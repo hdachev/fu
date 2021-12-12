@@ -141,17 +141,20 @@ namespace
 
     int WorkerSet_Create()
     {
-        // Number of workers = number of cores,
-        //  + main thread.
-        //
-        int count = std::thread::hardware_concurrency();
-            count = count > 1 ? count : 1;
+        int cores = std::thread::hardware_concurrency();
 
-        for (int i = 0; i < count; i++)
+        // TODO getenv("MAX_THREADS") here
+        // TODO all of this in a cpp, not here
+        cores = cores > 1 ? cores : 1;
+
+        // Number of workers = cores - 1,
+        //                   + main thread.
+        //
+        for (int i = 1; i < cores; i++)
             std::thread { TaskStack_Worker_Loop }
                 .detach();
 
-        return count;
+        return cores;
     }
 
     static const int TaskStack_Worker_Count = WorkerSet_Create();
@@ -214,8 +217,12 @@ namespace
         }
 
         size_t batches = size / per_batch;
-        if (batches > TaskStack_Worker_Count)
-            batches = TaskStack_Worker_Count;
+
+        batches = batches < TaskStack_Worker_Count
+                ? batches : TaskStack_Worker_Count;
+
+        batches = batches > 1
+                ? batches : 1;
 
         per_batch = size / batches;
 
