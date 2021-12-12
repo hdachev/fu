@@ -496,6 +496,15 @@ pub fn runTests()
         fn main() Test.a_len;
     `);
 
+    ZERO(`
+        fn incr(a) a++;
+        fn main() {
+            mut a = 1;
+            incr(|| a);
+            return a - 2;
+        }
+    `);
+
 
     // Lexical vs dynamically scoped templates -
     //  I guess we want both, but how?
