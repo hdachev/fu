@@ -2644,6 +2644,15 @@ pub fn runTests()
         }
     `);
 
+    ZERO(`
+        <alt>
+        nocopy
+        </alt>
+        struct X { items: i32[]; };
+        fn popfirst(mut arr: X[]) arr[0];
+        fn main() popfirst([ X() ]).items.len;
+    `);
+
     FAIL(`
         //*F
         nocopy
