@@ -2644,6 +2644,67 @@ pub fn runTests()
         }
     `);
 
+    FAIL(`
+        //*F
+        nocopy
+        /*/
+        //*/
+        struct SolvedNode {
+            kind: string;
+            items: SolvedNode[];
+        };
+
+        // Same as below but mut.
+        fn createBlock(mut items: SolvedNode[]) {
+            if (items.len) for (;;) {
+                let tail = items[items.len - 1]; // const-indexed but generated mutref tail, must be F_RRET?
+                if (tail.kind != "block")
+                    break;
+
+                let unwrap = tail.items;
+                items.pop();
+                return unwrap;
+            }
+
+            return [];
+        }
+
+        fn main() {
+            return createBlock([]).len;
+        }
+    `);
+
+    FAIL(`
+        //*F
+        nocopy
+        /*/
+        //*/
+        struct SolvedNode {
+            kind: string;
+            items: SolvedNode[];
+        };
+
+        // Same as above but ref.
+        fn createBlock(ref items: SolvedNode[]) {
+            if (items.len) for (;;) {
+                let tail = items[items.len - 1];
+                if (tail.kind != "block")
+                    break;
+
+                let unwrap = tail.items; // unwrap needs to copy here
+                items.pop(); ////////////// <- nuked here, but ignored!
+                return unwrap;
+            }
+
+            return [];
+        }
+
+        fn main() {
+            mut items: SolvedNode[];
+            return createBlock(items).len;
+        }
+    `);
+
 
     // Stuff that isn't working out quite right -
     //  Keep those around, there's no principle to these tests,
