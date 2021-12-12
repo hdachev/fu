@@ -860,6 +860,11 @@ pub fn solve(
         args?: [SolvedNode],
         flags?!: i32, target?!: Target): Target
     {
+        if (SELF_TEST)
+            for (mut i = 0; i < args.len; i++)
+                if (!args[i].kind)
+                    fail("Falsy arg.kind!");
+
         mut matchIdx: Target;
         mut DEBUG_assertMatch: Target;
 
@@ -2562,11 +2567,11 @@ pub fn solve(
 
             if (conversions.len > i && conversions[i].len)
                 mangle ~= serializeType(
-                    GET(conversions[i].last).type, debug: "mangle[Nodes #" ~ i ~ "].conv");
+                    GET(conversions[i].last).type, debug: "mangle.conv");
 
             else if (callsiteIndex >= 0 && callsiteIndex <= args.len)
                 mangle ~= serializeType(
-                    args[callsiteIndex].type, debug: "mangle[Nodes #" ~ i ~ "].no-conv");
+                    args[callsiteIndex].type, debug: "mangle.no-conv");
         }
 
         if (REST_START < REST_END)
@@ -3042,7 +3047,7 @@ pub fn solve(
 
             /////////////////////////////////////////////////////////////////////
             let TODO_FIX_convert_args0  = TODO_FIX_convert_args;
-            TODO_FIX_convert_args[0]    = SolvedNode(kind: "", type: Type());
+            TODO_FIX_convert_args[0]    = SolvedNode(kind: "__convert", type: Type());
             defer TODO_FIX_convert_args = TODO_FIX_convert_args0;
             /////////////////////////////////////////////////////////////////////
 
@@ -5515,9 +5520,12 @@ pub fn solve(
                     :kills,
                     steal: _helpers.last.vars.len - helpers0vars);
 
+                s_body.kind || fail("inline: no s_body.kind");
                 result.last = s_body;
 
-                return createBlock(result, :s_body.type);
+                let block = createBlock(result, :s_body.type);
+                block.kind || fail("inline: no createBlock().kind");
+                return block;
             }
         }
 
