@@ -331,11 +331,9 @@ pub fn build(
             // .unity.cpp
             if (unity)
             {
-                mut data = "#pragma once\n\n";
-
-                data ~= "#ifdef fu_UNITY_FULIB\n"
-                      ~ "#include <fu/_fulib.cpp>\n"
-                      ~ "#endif\n\n";
+                mut data = "#ifdef fu_UNITY_FULIB\n"
+                         ~ "#include <fu/_fulib.cpp>\n"
+                         ~ "#endif\n\n";
 
                 for (mut i = 0; i < cpp_files.len; i++)
                 {
