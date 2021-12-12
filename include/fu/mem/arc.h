@@ -2,6 +2,7 @@
 
 #include <atomic>
 #include <cassert>
+#include <cstddef>
 
 #include "../inl.h"
 
