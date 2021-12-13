@@ -2061,7 +2061,8 @@ pub fn cpp_codegen(
             {
                 fn supportsNRVO(o: Overload)
                     o.kind == "var" && !(o.flags & F_ARG)
-                        && o.local_of == _current_fn.target.index;
+                        && o.local_of == _current_fn.target.index
+                        && !o.solved.type.is_ref;
 
                 let nrvo = expr.kind == "call"
                         && expr.items.len == 0
