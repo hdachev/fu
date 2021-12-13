@@ -2653,6 +2653,45 @@ pub fn runTests()
         fn main() popfirst([ X() ]).items.len;
     `);
 
+    ZERO(`
+        nocopy struct SolvedNode {
+            items: SolvedNode[];
+        };
+
+        fn test(mut a: SolvedNode, mut b: SolvedNode) {
+            <alt>
+            ref n = a || b;
+            <alt/>
+            ref n = a.items ? a : b;
+            </alt>
+            return n;
+        }
+
+        fn main() test([], []).items.len;
+    `);
+
+    FAIL(`
+        //*F
+        nocopy
+        /*/
+        //*/
+        struct SolvedNode {
+            items: SolvedNode[];
+        };
+
+        // Reducing the thing below.
+        fn createBlock(mut items: SolvedNode[]) {
+            let tail = items[items.len - 1];
+            let unwrap = tail.items;
+            items.pop();
+            return unwrap;
+        }
+
+        fn main() {
+            return createBlock([]).len;
+        }
+    `);
+
     FAIL(`
         //*F
         nocopy
