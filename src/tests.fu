@@ -2675,6 +2675,58 @@ pub fn runTests()
         nocopy
         /*/
         //*/
+        struct SolvedNode { len: i32; }
+
+        fn createBlock(mut last: SolvedNode) {
+            let tail     = last || last;
+            let unwrap   = tail || tail;
+            last.len--;
+            return unwrap;
+        }
+
+        fn main() {
+            return createBlock([]).len;
+        }
+    `);
+
+    FAIL(`
+        //*F
+        nocopy
+        /*/
+        //*/
+        struct Items {
+            len: i32;
+        }
+
+        struct SolvedNode {
+            items: Items;
+        }
+
+        struct Nodes {
+            last: SolvedNode;
+        }
+
+        fn pop(ref n: Nodes) {
+            n.last.items.len--;
+        }
+
+        fn createBlock(mut items: Nodes) {
+            let tail = items.last;
+            let unwrap = tail.items;
+            items.pop();
+            return unwrap;
+        }
+
+        fn main() {
+            return createBlock(Nodes(SolvedNode([]))).len;
+        }
+    `);
+
+    FAIL(`
+        //*F
+        nocopy
+        /*/
+        //*/
         struct SolvedNode {
             items: SolvedNode[];
         };
