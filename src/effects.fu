@@ -4,7 +4,9 @@ import types;
 
 pub struct Flow
 {
-    invalidates:    i32[][];
+    // Any ref.
+    parents:        i32[][];
+    invalidates:    i32[][];        // Non-disjoint siblings and children.
 
     // Arguments at risk analysis.
     is_arg:         bitset::BitSet; // acceleration structure.
@@ -13,9 +15,6 @@ pub struct Flow
 
     arg_aliases:    i32[][];        // is_arg targets each target refers to.
     args_at_risk:   i32[][];        // ARG USES at risk from previous ARG WRITES.
-
-    // Order of eval.
-    ooe_aliases:    bitset::BitSet[]; // non-disjoint writeables by ref.
 };
 
 pub fn Reference_trackArgument(ref flow: Flow, target: i32, position: i32)
@@ -46,13 +45,17 @@ pub fn Reference_trackLocalRef(ref flow: Flow, left: i32, right: Lifetime)
     //
     // flow.invalidates.len <= left || assert();
 
-    flow.ooe_aliases.grow_if_oob(left);
+    mut parents: i32[];
 
     for (mut i = 0; i < right.uni0n.len; i++)
     {
         shadow let right = Region_asIndex(right.uni0n[i]);
         if !(right)
             continue;
+
+        //
+        parents.set::add(right);
+        parents.set::add(flow.parents.unless_oob(right));
 
         // For each lifetime on the right of the assignment,
         //  the invals are the stuff it kills on write.
@@ -76,21 +79,22 @@ pub fn Reference_trackLocalRef(ref flow: Flow, left: i32, right: Lifetime)
                 flow.invalidates[invals[i]].set::add(left);
         }
 
-        // Parent rule, one-sided:
-        //  Finally, RIGHT invalidates LEFT.
-        flow.invalidates.grow_if_oob(right).set::add(left);
-
         // Propagate alised arguments.
         if (flow.is_arg.has(right))
         {
             flow.is_arg.add(left);
             flow.arg_aliases.grow_if_oob(left).set::add(right);
         }
+    }
 
-        // Order of eval.
-        flow.ooe_aliases[left].add(right);
-        flow.ooe_aliases[left].add(flow.ooe_aliases[right]);
-        flow.ooe_aliases[right].add(left);
+    if (parents)
+    {
+        // Parent rule, one-sided:
+        //  Finally, RIGHT invalidates LEFT.
+        for (mut i = 0; i < parents.len; i++)
+            flow.invalidates.grow_if_oob(parents[i]).set::add(left);
+
+        flow.parents.grow_if_oob(left) = parents;
     }
 }
 
