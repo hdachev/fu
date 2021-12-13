@@ -2129,7 +2129,7 @@ pub fn cpp_codegen(
 
     fn cgMove(type: Type, src: string): string
     {
-        if (type.is_trivial)
+        if (type.is_trivial && type.is_rx_copy)
             return cgClone(type, src);
 
         return "static_cast<" ~ typeAnnotBase(type) ~ "&&>(" ~ src ~ ")";
