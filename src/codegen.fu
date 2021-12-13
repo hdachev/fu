@@ -999,7 +999,15 @@ pub fn cpp_codegen(
             return annot;
 
         let id      = localID(:node.target, dedupe: true);
-        let head    = (isUnused && "[[maybe_unused]] ") ~ (annot || fail()) ~ " " ~ id;
+        mut head    = (annot || fail()) ~ " " ~ id;
+
+        if (isUnused)
+            head    = "[[maybe_unused]] " ~ head;
+        if (node.target.flags & F_TODO_FIX_RRET)
+            head    = "/*RRET*/ " ~ head;
+        if (node.target.flags & F_MOVED_FROM)
+            head    = "/*MOV*/ " ~ head;
+
         if (!doInit || isArg)
             return head;
 
@@ -2069,7 +2077,7 @@ pub fn cpp_codegen(
                         && expr.target.GET.supportsNRVO;
 
                 if (nrvo)
-                    return cgNode(expr, debug: "NRVO");
+                    return "/*NRVO*/ " ~ cgNode(expr, debug: "NRVO");
             }
 
             if (!node.type.is_trivial)
