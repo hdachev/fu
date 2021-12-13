@@ -2162,7 +2162,7 @@ pub fn solve(
                 // This is not the endgame, but I need this to get going,
                 //  the compiler barely works anymore.
                 //
-                if (expr.is_ref)
+                if (expr.is_ref && !fnbody_of)
                     Lifetime_F_TODO_FIX_RRET(expr.lifetime, :h.locals_start);
             }
 
