@@ -213,10 +213,8 @@ struct fu_VEC
 
     /////////////////////////////////////////////
 
-    fu_INL fu::i unique_size() const noexcept {
-
-        assert(false && "Not tested!");
-
+    fu_INL fu::i unique_size() const noexcept
+    {
         if constexpr (!SHAREABLE)
             return size();
 
@@ -1152,7 +1150,8 @@ struct fu_VEC
 
     fu_INL T& mutref(fu::i idx) noexcept
     {
-        reserve();
+        if constexpr (SHAREABLE)
+            reserve();
 
         T* ok = (T*) data() + idx;
 
@@ -1176,15 +1175,41 @@ struct fu_VEC
     {
         T* ok = (T*) data() + idx;
 
+        #ifndef NDEBUG
+        assert((fu::u) idx < (fu::u) unique_size());
+        return *ok;
+        #endif
+
         #if fu_RETAIL
         return *ok;             // Assert unique + bounds check.
                                 // This is where this differs from the two above.
-        #else                   // ----------- //
-        return (fu::u) idx < (fu::u) unique_size() //
+        #else                   //   ___________
+        return (fu::u) idx < (fu::u) unique_size()
              ? *ok
              : *((T*)1);
 
         #endif
+    }
+
+    fu_INL T try_steal(fu::i idx) noexcept
+    {
+        if constexpr (SHAREABLE)
+        {
+            if constexpr (!TRIVIAL)
+            {
+                if ((fu::u) idx < (fu::u) unique_size())
+                {
+                    T* ok = (T*) data() + idx;
+                    return static_cast<T&&>(*ok);
+                }
+            }
+
+            return T((*this)[idx]);
+        }
+        else
+        {
+            return static_cast<T&&>(mutref(idx));
+        }
     }
 };
 
