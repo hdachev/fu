@@ -7299,6 +7299,45 @@ pub fn runTests()
         fn main()                           Overload([ "hello", "cruel", "world!" ]).test - 5;
     `);
 
+    ZERO(`
+        struct Helpers      { index: i32; };
+        struct HelpersData  { mask!: i16; };
+
+        let HM_Function     = 1.i16 << 3;
+        let HM_Struct       = 1.i16 << 5;
+
+        using inline fn GET(h: Helpers, implicit ref _helpers_data: HelpersData[]): HelpersData
+            _helpers_data[h.index];
+                                                            //////////////////
+        fn isFnOrType(h: Helpers): bool                     ;; EXPECT fu::view
+            !!(h.mask & (HM_Function | HM_Struct));         //////////////////
+
+        fn main() {
+            let implicit mut _helpers_data = [ HelpersData(mask: 0) ];
+            return Helpers(0).isFnOrType.i32;
+        }
+    `);
+
+    ZERO(`
+        struct Helpers      { index: i32; };
+        struct HelpersData  { mask!: i16; };
+
+        let HM_Function     = 1.i16 << 3;
+        let HM_Struct       = 1.i16 << 5;
+
+        fn main() {
+            let implicit mut _helpers_data = [ HelpersData(mask: 0) ];
+
+            using inline fn GET(h: Helpers): HelpersData
+                _helpers_data[h.index];
+                                                            //////////////////
+            fn isFnOrType(h: Helpers): bool                 ;; EXPECT fu::view
+                !!(h.mask & (HM_Function | HM_Struct));     //////////////////
+
+            return Helpers(0).isFnOrType.i32;
+        }
+    `);
+
 
     // Enum basics.
 
