@@ -38,6 +38,7 @@ fn TODO_gcc(src: string)
 let TODO_borrowck   = fn TODO;
 let TODO_disjoint   = fn TODO;
 let TODO_Map        = fn TODO;
+let TODO_move       = fn TODO;
 
 
 // Run the whole battery & build self.
@@ -2722,7 +2723,7 @@ pub fn runTests()
         }
     `);
 
-    FAIL(`
+    TODO_move(`
         //*F
         nocopy
         /*/
@@ -2744,7 +2745,7 @@ pub fn runTests()
         }
     `);
 
-    FAIL(`
+    TODO_move(`
         //*F
         nocopy
         /*/
@@ -2774,7 +2775,7 @@ pub fn runTests()
         }
     `);
 
-    FAIL(`
+    TODO_move(`
         //*F
         nocopy
         /*/
