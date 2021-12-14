@@ -2330,6 +2330,34 @@ pub fn solve(
         type: Type, mut items: SolvedNode[],
         label?: Target, h?: Helpers): SolvedNode
     {
+        // TODO INVESTIGATE potential gcc bug
+        //
+        //  Replace the `fail` here with a throw and the !kind bug on gcc stops to repro.
+        //   It's outright bizarre.
+        //
+        //  Happens for "inline"s, if the check is lifted in the outer fun it also doesn't repro.
+        //   Potentially we want to try this out with another gcc version or something,
+        //    its very, very fishy, and is only apparent in optimized builds.
+
+        // Also notice with this here,
+        //  there's barely any difference between the two things in cg output, all args are the same.
+        for (mut x = 0; x < items.len; x++)
+            if (!items[x].kind)
+                throw("createBlock.before-flatten.items: no kind on item #" ~ x);
+
+        if (_here && _helpers.len > 10000001)
+        {
+            // Comment out this line and gcc breaks under opti,
+            //  something is getting reordered or otherwise broken,
+            //   it's a heizenbug.
+            //
+            // I guess next part of the research is to
+            //  start toggling optimization options one by one,
+            //   I need to do this efficiently somehow.
+            //
+            throw("woot: " ~ _helpers.len);
+        }
+
         //////////////////////////////////////////////////////////////////////
         //////////////////////////////////////////////////////////////////////
         if (OPTI_flatten_blocks && items.len) for (;;)
