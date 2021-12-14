@@ -773,7 +773,7 @@ inline fu_STR join_9sek(fu::view<fu_STR> a, fu::view<fu::byte> sep)
     for (int i = 1; i < a.size(); i++)
         size += (sep.size() + a[i].size());
 
-    fu_STR res {};
+    /*MOV*/ fu_STR res {};
     res.grow<false>(size);
     fu::view<fu::byte> head = a[0];
     size = head.size();
@@ -786,7 +786,7 @@ inline fu_STR join_9sek(fu::view<fu_STR> a, fu::view<fu::byte> sep)
         fu::view_assign(fu::get_view_mut(res, size, (size + range.size())), range);
         size += range.size();
     };
-    return res;
+    return /*NRVO*/ res;
 }
                                 #endif
 
@@ -837,7 +837,7 @@ inline int only_VAhQ(fu::view<int> s)
                                 #define DEFt_replace_Q0b6
 inline fu_STR replace_Q0b6(const fu_STR& str_1, fu::view<fu::byte> all, fu::view<fu::byte> with)
 {
-    fu_STR result {};
+    /*MOV*/ fu_STR result {};
 
     {
         int last_1 = 0;
@@ -886,7 +886,7 @@ inline fu_STR replace_Q0b6(const fu_STR& str_1, fu::view<fu::byte> all, fu::view
             result += str_1;
         };
     };
-    return result;
+    return /*NRVO*/ result;
 }
                                 #endif
 
@@ -907,7 +907,7 @@ static fu_STR update_file(const fu_STR& fname_1, fu::view<fu::byte> data, fu::vi
     if (!(fu::lmatch(fname_2, dir_src)))
         fu::fail("ensure_local_fname broken"_fu);
 
-    fu_STR fname_3 = (dir_out + fu::slice(fname_2, dir_src.size()));
+    /*MOV*/ fu_STR fname_3 = (dir_out + fu::slice(fname_2, dir_src.size()));
     if (fu::file_read(fname_3) != data)
     {
         const int err = fu::file_write(fname_3, data);
@@ -916,7 +916,7 @@ static fu_STR update_file(const fu_STR& fname_1, fu::view<fu::byte> data, fu::vi
 
         (std::cout << ("  WROTE "_fu + fname_3) << '\n');
     };
-    return fname_3;
+    return /*NRVO*/ fname_3;
 }
 
 void build(const bool run, fu_STR&& dir_wrk, const fu_STR& fulib, fu_STR&& bin, fu_STR&& dir_obj, fu_STR&& dir_src, fu_STR&& dir_cpp, const fu_STR& unity_1, fu::view<fu::byte> scheme, const fu_STR& onfail, const s_Context& ctx)

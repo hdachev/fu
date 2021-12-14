@@ -17,10 +17,10 @@ static const fu_VEC<fu_VEC<fu_STR>> KEYWORDS = fu_VEC<fu_VEC<fu_STR>> { fu::slat
                                 #define DEFt_find_VtCz
 inline int find_VtCz(fu::view<fu_STR> a, fu::view<fu::byte> b)
 {
-    for (int i = 0; i < a.size(); i++)
+    for (/*MOV*/ int i = 0; i < a.size(); i++)
     {
         if (a[i] == b)
-            return i;
+            return /*NRVO*/ i;
 
     };
     return -1;
@@ -34,9 +34,9 @@ fu_STR ID(const fu_STR& id)
         const int idx = find_VtCz(KEYWORDS[id.size()], id);
         if ((idx >= 0))
         {
-            fu_STR cpy { id };
+            /*MOV*/ fu_STR cpy { id };
             cpy.mutref(1) = ascii_upper(cpy[1]);
-            return cpy;
+            return /*NRVO*/ cpy;
         };
     };
     return fu_STR(id);

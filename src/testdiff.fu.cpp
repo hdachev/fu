@@ -31,13 +31,13 @@ struct s_TestDiffs
 
 fu_STR serialize(const s_TestDiffs& diffs)
 {
-    fu_STR res {};
+    /*MOV*/ fu_STR res {};
     fu::view<fu_STR> keys = diffs.keys;
     fu::view<fu_STR> vals = diffs.vals;
     for (int i = 0; i < keys.size(); i++)
         res += (((keys[i] + "\n-----\n"_fu) + vals[i]) + "\n-----\n"_fu);
 
-    return res;
+    return /*NRVO*/ res;
 }
 
 void set_next(s_TestDiffs& diffs, const fu_STR& key, const fu_STR& val)

@@ -111,9 +111,9 @@ inline void split_mKuv(const fu_STR& str_1, fu::view<fu::byte> sep, int, fu_VEC<
                                 #define DEFt_split_OZkl
 inline fu_VEC<fu_STR> split_OZkl(const fu_STR& str_1, fu::view<fu::byte> sep)
 {
-    fu_VEC<fu_STR> result {};
+    /*MOV*/ fu_VEC<fu_STR> result {};
     split_mKuv(str_1, sep, 0, result);
-    return result;
+    return /*NRVO*/ result;
 }
                                 #endif
 
@@ -128,7 +128,7 @@ inline fu_STR join_9sek(fu::view<fu_STR> a, fu::view<fu::byte> sep)
     for (int i = 1; i < a.size(); i++)
         size += (sep.size() + a[i].size());
 
-    fu_STR res {};
+    /*MOV*/ fu_STR res {};
     res.grow<false>(size);
     fu::view<fu::byte> head = a[0];
     size = head.size();
@@ -141,7 +141,7 @@ inline fu_STR join_9sek(fu::view<fu_STR> a, fu::view<fu::byte> sep)
         fu::view_assign(fu::get_view_mut(res, size, (size + range.size())), range);
         size += range.size();
     };
-    return res;
+    return /*NRVO*/ res;
 }
                                 #endif
 
@@ -179,7 +179,7 @@ fu_STR path_relative(fu::view<fu::byte> from, const fu_STR& to)
             same = (i + 1);
 
     };
-    fu_STR res {};
+    /*MOV*/ fu_STR res {};
     for (int i_1 = same; i_1 < from.size(); i_1++)
     {
         if (from[i_1] == fu::byte('/'))
@@ -187,7 +187,7 @@ fu_STR path_relative(fu::view<fu::byte> from, const fu_STR& to)
 
     };
     res += fu::slice(to, same);
-    return res;
+    return /*NRVO*/ res;
 }
 
 fu_STR path_join(fu::view<fu::byte> a, const fu_STR& b)
@@ -198,7 +198,7 @@ fu_STR path_join(fu::view<fu::byte> a, const fu_STR& b)
 fu_STR ascii_lower(const fu_STR& a)
 {
     const int offset = (int(fu::byte('a')) - int(fu::byte('A')));
-    fu_STR res { a };
+    /*MOV*/ fu_STR res { a };
     for (int i = 0; i < res.size(); i++)
     {
         const fu::byte c = res[i];
@@ -206,7 +206,7 @@ fu_STR ascii_lower(const fu_STR& a)
             res.mutref(i) = fu::byte((int(c) + offset));
 
     };
-    return res;
+    return /*NRVO*/ res;
 }
 
 fu::byte ascii_upper(const fu::byte c)
@@ -216,7 +216,7 @@ fu::byte ascii_upper(const fu::byte c)
 
 int parse10i32(int& offset, fu::view<fu::byte> str_1)
 {
-    int result {};
+    /*MOV*/ int result {};
     while (offset < str_1.size())
     {
         const fu::byte c = str_1[offset];
@@ -226,7 +226,7 @@ int parse10i32(int& offset, fu::view<fu::byte> str_1)
         offset++;
         result = ((result * 10) + (int(c) - int(fu::byte('0'))));
     };
-    return result;
+    return /*NRVO*/ result;
 }
 
 #endif

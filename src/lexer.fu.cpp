@@ -94,7 +94,7 @@ inline fu_STR x7E_OZkl(fu::view<fu::byte> a, fu::view<fu::byte> b)
 
 static fu_STR unescapeStr(fu::view<fu::byte> esc, const int idx0, const int idx1)
 {
-    fu_STR out {};
+    /*MOV*/ fu_STR out {};
     const int n = (idx1 - 1);
     for (int i = (idx0 + 1); i < n; i++)
     {
@@ -118,7 +118,7 @@ static fu_STR unescapeStr(fu::view<fu::byte> esc, const int idx0, const int idx1
             out += c;
 
     };
-    return out;
+    return /*NRVO*/ out;
 }
 
                                 #ifndef DEFt_has_05eu

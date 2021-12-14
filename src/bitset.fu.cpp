@@ -116,7 +116,7 @@ void add_range(s_BitSet& _, const int start, const int end)
 
 int popcount(const s_BitSet& _)
 {
-    int sum = 0;
+    /*MOV*/ int sum = 0;
     const int N = (_._data.size() >> 3);
     fu::view<int64_t> i64s = fu::view_of(fu::get_view(_._data, 0, (N << 3)), int64_t{});
     for (int i = 0; i < i64s.size(); i++)
@@ -129,7 +129,7 @@ int popcount(const s_BitSet& _)
         tail |= int64_t(_._data[i_1]);
     };
     sum += __builtin_popcountll(tail);
-    return sum;
+    return /*NRVO*/ sum;
 }
 
 #endif

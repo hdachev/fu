@@ -27,7 +27,7 @@ struct s_TEA
 
 #ifndef FU_NO_FDEFs
 
-s_TEA hash(s_TEA&& res, fu::view<fu::byte> u8view)
+s_TEA hash(/*MOV*/ s_TEA&& res, fu::view<fu::byte> u8view)
 {
     const int u32len = (u8view.size() & ~3);
     fu::view<unsigned> u32view = fu::view_of(fu::get_view(u8view, 0, u32len), unsigned{});
@@ -73,14 +73,14 @@ s_TEA hash(s_TEA&& res, fu::view<fu::byte> u8view)
 
 s_TEA hash(fu::view<fu::byte> u8view)
 {
-    s_TEA res {};
+    /*MOV*/ s_TEA res {};
     res = hash(s_TEA(res), u8view);
-    return res;
+    return /*NRVO*/ res;
 }
 
 fu_STR hash62(fu::view<fu::byte> str_1, const int chars)
 {
-    fu_STR res {};
+    /*MOV*/ fu_STR res {};
     uint64_t _0 {};
     uint64_t v = (__extension__ (
     {
@@ -99,12 +99,12 @@ fu_STR hash62(fu::view<fu::byte> str_1, const int chars)
             res += fu::byte(((c - 36ull) + uint64_t(fu::byte('A'))));
 
     };
-    return res;
+    return /*NRVO*/ res;
 }
 
 fu_STR hash16(fu::view<fu::byte> str_1, const int chars)
 {
-    fu_STR res {};
+    /*MOV*/ fu_STR res {};
     uint64_t _0 {};
     uint64_t v = (__extension__ (
     {
@@ -121,7 +121,7 @@ fu_STR hash16(fu::view<fu::byte> str_1, const int chars)
             res += fu::byte(((c - 10ull) + uint64_t(fu::byte('a'))));
 
     };
-    return res;
+    return /*NRVO*/ res;
 }
 
 #endif

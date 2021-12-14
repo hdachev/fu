@@ -751,10 +751,10 @@ s_Struct& lookupStruct_mut(fu::view<fu::byte> canon_1, s_Module& module)
                                 #define DEFt_find_05eu
 inline int find_05eu(fu::view<fu::byte> a, const fu::byte b)
 {
-    for (int i = 0; i < a.size(); i++)
+    for (/*MOV*/ int i = 0; i < a.size(); i++)
     {
         if (a[i] == b)
-            return i;
+            return /*NRVO*/ i;
 
     };
     return -1;
@@ -779,14 +779,14 @@ inline bool has_05eu(fu::view<fu::byte> a, const fu::byte b)
                                 #define DEFt_bfind_VtCz
 inline int bfind_VtCz(fu::view<fu_STR> keys_2, const fu_STR& item)
 {
-    for (int i = 0; i < keys_2.size(); i++)
+    for (/*MOV*/ int i = 0; i < keys_2.size(); i++)
     {
         if ((keys_2[i] >= item))
         {
             if (keys_2[i] != item)
                 return -1;
 
-            return i;
+            return /*NRVO*/ i;
         };
     };
     return -1;
@@ -813,26 +813,26 @@ static fu_STR tryResolve(const fu_STR& path, const fu_STR& from, const fu_STR& n
 
 
     {
-        fu_STR path_1 = ((from + "lib/"_fu) + name_3);
+        /*MOV*/ fu_STR path_1 = ((from + "lib/"_fu) + name_3);
         const bool exists_1 = (fu::file_size(path_1) >= 0);
         if (exists_1)
-            return path_1;
+            return /*NRVO*/ path_1;
 
     };
 
     {
-        fu_STR path_1 = ((from + "vendor/"_fu) + name_3);
+        /*MOV*/ fu_STR path_1 = ((from + "vendor/"_fu) + name_3);
         const bool exists_1 = (fu::file_size(path_1) >= 0);
         if (exists_1)
-            return path_1;
+            return /*NRVO*/ path_1;
 
     };
 
     {
-        fu_STR path_1 = ((from + "fu/lib/"_fu) + name_3);
+        /*MOV*/ fu_STR path_1 = ((from + "fu/lib/"_fu) + name_3);
         const bool exists_1 = (fu::file_size(path_1) >= 0);
         if (exists_1)
-            return path_1;
+            return /*NRVO*/ path_1;
 
     };
     fu_STR fallback = path_dirname(from);
@@ -880,23 +880,23 @@ static fu_STR resolveFile(const fu_STR& from, const fu_STR& name_3, s_Context& c
     if (cached)
         return fu_STR(((cached == "\v"_fu) ? (*(const fu_STR*)fu::NIL) : cached));
 
-    fu_STR resolve = tryResolve(path, from, name_3, ctx);
+    /*MOV*/ fu_STR resolve = tryResolve(path, from, name_3, ctx);
     set_ZTZj(ctx.fuzzy, path, (resolve ? fu_STR(resolve) : "\v"_fu));
-    return resolve;
+    return /*NRVO*/ resolve;
 }
 
                                 #ifndef DEFt_bfind_9sek
                                 #define DEFt_bfind_9sek
 inline int bfind_9sek(fu::view<fu_STR> keys_2, const fu_STR& item)
 {
-    for (int i = 0; i < keys_2.size(); i++)
+    for (/*MOV*/ int i = 0; i < keys_2.size(); i++)
     {
         if ((keys_2[i] >= item))
         {
             if (keys_2[i] != item)
                 return -1;
 
-            return i;
+            return /*NRVO*/ i;
         };
     };
     return -1;
@@ -920,13 +920,13 @@ fu_STR resolveFile(const fu_STR& path, s_Context& ctx)
         fu_STR name_3 = fu::slice(path, (fuzzy_1 + 1));
         if (from && name_3 && !has_05eu(name_3, fu::byte('\v')))
         {
-            fu_STR res = resolveFile(from, name_3, ctx);
+            /*MOV*/ fu_STR res = resolveFile(from, name_3, ctx);
             if (res)
-                return res;
+                return /*NRVO*/ res;
 
-            fu_STR prepopulated = (from + name_3);
+            /*MOV*/ fu_STR prepopulated = (from + name_3);
             if (has_zJcj(ctx.files, prepopulated))
-                return prepopulated;
+                return /*NRVO*/ prepopulated;
 
         };
     };
@@ -937,7 +937,7 @@ fu_STR resolveFile(const fu_STR& path, s_Context& ctx)
                                 #define DEFt_replace_Q0b6
 inline fu_STR replace_Q0b6(const fu_STR& str_1, fu::view<fu::byte> all, fu::view<fu::byte> with)
 {
-    fu_STR result {};
+    /*MOV*/ fu_STR result {};
 
     {
         int last_1 = 0;
@@ -986,7 +986,7 @@ inline fu_STR replace_Q0b6(const fu_STR& str_1, fu::view<fu::byte> all, fu::view
             result += str_1;
         };
     };
-    return result;
+    return /*NRVO*/ result;
 }
                                 #endif
 
@@ -1001,14 +1001,14 @@ fu_STR resolveFile_x(const fu_STR& path, const s_Context& ctx)
                                 #define DEFt_bfind_Bd7d
 inline int bfind_Bd7d(fu::view<fu_STR> keys_2, const fu_STR& item)
 {
-    for (int i = 0; i < keys_2.size(); i++)
+    for (/*MOV*/ int i = 0; i < keys_2.size(); i++)
     {
         if ((keys_2[i] >= item))
         {
             if (keys_2[i] != item)
                 return -1;
 
-            return i;
+            return /*NRVO*/ i;
         };
     };
     return -1;
@@ -1064,9 +1064,9 @@ fu_STR getFile(fu_STR&& path, s_Context& ctx)
     if (cached)
         return fu_STR(((cached == "\v"_fu) ? (*(const fu_STR*)fu::NIL) : cached));
 
-    fu_STR read = fu::file_read(path);
+    /*MOV*/ fu_STR read = fu::file_read(path);
     set_pi1h(ctx.files, path, (read ? fu_STR(read) : "\v"_fu));
-    return read;
+    return /*NRVO*/ read;
 }
 
 s_Module& getModule(const fu_STR& fname_2, s_Context& ctx)
@@ -1166,7 +1166,7 @@ inline const fu_VEC<s_Target>& clone_ntxL(const fu_VEC<s_Target>& a)
                                 #define DEFt_clone_nijh
 inline s_Scope clone_nijh(const s_Scope& a)
 {
-    s_Scope res {};
+    /*MOV*/ s_Scope res {};
 
     {
         res.items = clone_sjQW(a.items);
@@ -1177,7 +1177,7 @@ inline s_Scope clone_nijh(const s_Scope& a)
         res.converts = clone_ntxL(a.converts);
         res.pub_count = clone_6Kad(a.pub_count);
     };
-    return res;
+    return /*NRVO*/ res;
 }
                                 #endif
 
@@ -1185,14 +1185,14 @@ inline s_Scope clone_nijh(const s_Scope& a)
                                 #define DEFt_clone_GiFx
 inline s_SolverOutput clone_GiFx(const s_SolverOutput& a)
 {
-    s_SolverOutput res {};
+    /*MOV*/ s_SolverOutput res {};
 
     {
         res.root = clone_8Z6B(a.root);
         res.scope = clone_nijh(a.scope);
         res.notes = clone_6Kad(a.notes);
     };
-    return res;
+    return /*NRVO*/ res;
 }
                                 #endif
 
@@ -1208,7 +1208,7 @@ inline const s_CodegenOutput& clone_wg6f(const s_CodegenOutput& a)
                                 #define DEFt_clone_KKqe
 inline s_ModuleOutputs clone_KKqe(const s_ModuleOutputs& a)
 {
-    s_ModuleOutputs res {};
+    /*MOV*/ s_ModuleOutputs res {};
 
     {
         res.deps = clone_xQkU(a.deps);
@@ -1216,7 +1216,7 @@ inline s_ModuleOutputs clone_KKqe(const s_ModuleOutputs& a)
         res.solve = clone_GiFx(a.solve);
         res.cpp = clone_wg6f(a.cpp);
     };
-    return res;
+    return /*NRVO*/ res;
 }
                                 #endif
 
@@ -1232,7 +1232,7 @@ inline const s_ModuleStats& clone_PHyv(const s_ModuleStats& a)
                                 #define DEFt_clone_P1L6
 inline s_Module clone_P1L6(const s_Module& a)
 {
-    s_Module res {};
+    /*MOV*/ s_Module res {};
 
     {
         res.modid = clone_6Kad(a.modid);
@@ -1241,7 +1241,7 @@ inline s_Module clone_P1L6(const s_Module& a)
         res.out = clone_KKqe(a.out);
         res.stats = clone_PHyv(a.stats);
     };
-    return res;
+    return /*NRVO*/ res;
 }
                                 #endif
 
@@ -1319,9 +1319,9 @@ inline void split_Iwpk(const fu_STR& str_1, fu::view<fu::byte> sep, int, fu_VEC<
                                 #define DEFt_split_OZkl
 inline fu_VEC<fu_STR> split_OZkl(const fu_STR& str_1, fu::view<fu::byte> sep)
 {
-    fu_VEC<fu_STR> result {};
+    /*MOV*/ fu_VEC<fu_STR> result {};
     split_Iwpk(str_1, sep, 0, result);
-    return result;
+    return /*NRVO*/ result;
 }
                                 #endif
 
@@ -1349,7 +1349,7 @@ fu_STR formatCodeSnippet(const s_TokenIdx& to, s_TokenIdx&& from, const int extr
     int l_end = (end_1.line + extraLines);
     l_start = std::max(l_start, 0);
     l_end = std::min(l_end, lines.size());
-    fu_STR result {};
+    /*MOV*/ fu_STR result {};
     for (int i = l_start; i < l_end; i++)
     {
         if ((i < (start_1.line - 1)) || (i >= end_1.line))
@@ -1376,7 +1376,7 @@ fu_STR formatCodeSnippet(const s_TokenIdx& to, s_TokenIdx&& from, const int extr
 
         result += "\n"_fu;
     };
-    return result;
+    return /*NRVO*/ result;
 }
 
 #endif

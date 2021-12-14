@@ -831,7 +831,7 @@ s_Type initStruct(const fu_STR& name_3, const int flags_4, const bool SELF_TEST,
     return s_Type { s_ValueType { int(specualtive_quals), int(MODID(module)), fu_STR(canon_1) }, s_Lifetime{} };
 }
 
-s_Type despeculateStruct(s_Type&& type_3)
+s_Type despeculateStruct(/*MOV*/ s_Type&& type_3)
 {
     type_3.vtype.quals &= ~q_rx_copy;
     return static_cast<s_Type&&>(type_3);
@@ -975,7 +975,7 @@ s_Target Scope_create(s_Scope& scope_1, const fu_STR& kind_3, const fu_STR& name
 {
     fu_VEC<s_Overload>& overloads_1 = ((nest && local_of_1) ? grow_if_oob_ZXR1(scope_1.extended, (local_of_1 - 1)).locals : scope_1.overloads);
     int _0 {};
-    const s_Target target_4 = s_Target { (nest && (_0 = -local_of_1) ? _0 : int(MODID(module))), (overloads_1.size() + 1) };
+    /*MOV*/ const s_Target target_4 = s_Target { (nest && (_0 = -local_of_1) ? _0 : int(MODID(module))), (overloads_1.size() + 1) };
     s_Overload item {};
     item.name = name_3;
     item.kind = kind_3;
@@ -985,7 +985,7 @@ s_Target Scope_create(s_Scope& scope_1, const fu_STR& kind_3, const fu_STR& name
     item.local_of = local_of_1;
     item.status = status_1;
     overloads_1.push(item);
-    return target_4;
+    return /*NRVO*/ target_4;
 }
 
 void Scope_set(s_Scope& scope_1, const fu_STR& id_1, const s_Target& target_4, const bool shadows)
@@ -1005,11 +1005,11 @@ inline constexpr int F_SHADOW = (1 << 23);
 
 s_Target Scope_Typedef(s_Scope& scope_1, const fu_STR& id_1, const s_Type& type_3, const int flags_4, const fu_STR& name_3, const unsigned status_1, const s_Module& module)
 {
-    const s_Target target_4 = Scope_create(scope_1, "type"_fu, name_3, type_3, flags_4, s_SolvedNode{}, 0, status_1, bool{}, module);
+    /*MOV*/ const s_Target target_4 = Scope_create(scope_1, "type"_fu, name_3, type_3, flags_4, s_SolvedNode{}, 0, status_1, bool{}, module);
     if (id_1)
         Scope_set(scope_1, id_1, target_4, !!(flags_4 & F_SHADOW));
 
-    return target_4;
+    return /*NRVO*/ target_4;
 }
 
 extern const s_Type t_i8;
@@ -1042,7 +1042,7 @@ extern const s_Type t_never;
 
 s_Scope listGlobals(const s_Module& module)
 {
-    s_Scope scope_1 {};
+    /*MOV*/ s_Scope scope_1 {};
     Scope_Typedef(scope_1, "i8"_fu, t_i8, F_PUB, (*(const fu_STR*)fu::NIL), 0u, module);
     Scope_Typedef(scope_1, "i16"_fu, t_i16, F_PUB, (*(const fu_STR*)fu::NIL), 0u, module);
     Scope_Typedef(scope_1, "i32"_fu, t_i32, F_PUB, (*(const fu_STR*)fu::NIL), 0u, module);
@@ -1057,7 +1057,7 @@ s_Scope listGlobals(const s_Module& module)
     Scope_Typedef(scope_1, "byte"_fu, t_byte, F_PUB, (*(const fu_STR*)fu::NIL), 0u, module);
     Scope_Typedef(scope_1, "void"_fu, t_void, F_PUB, (*(const fu_STR*)fu::NIL), 0u, module);
     Scope_Typedef(scope_1, "never"_fu, t_never, F_PUB, (*(const fu_STR*)fu::NIL), 0u, module);
-    return scope_1;
+    return /*NRVO*/ scope_1;
 }
 
 #endif

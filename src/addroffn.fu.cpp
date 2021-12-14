@@ -145,13 +145,13 @@ inline fu_STR x7E_OZkl(fu::view<fu::byte> a, fu::view<fu::byte> b)
 
 fu_STR packAddrOfFn(fu::view<s_Target> targets)
 {
-    fu_STR res {};
+    /*MOV*/ fu_STR res {};
     for (int i = 0; i < targets.size(); i++)
     {
         const s_Target& target_6 = targets[i];
         res += x7E_OZkl((x7E_OZkl("@"_fu, fu::i64dec(target_6.modid)) + ":"_fu), fu::i64dec(target_6.index));
     };
-    return res;
+    return /*NRVO*/ res;
 }
 
                                 #ifndef DEFt_unpackAddrOfFn_ykV9

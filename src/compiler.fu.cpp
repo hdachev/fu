@@ -827,14 +827,14 @@ inline fu_STR x7E_OZkl(fu::view<fu::byte> a, fu::view<fu::byte> b)
 
 fu_STR locate_PRJDIR()
 {
-    fu_STR dir = (HOME + "fu/"_fu);
+    /*MOV*/ fu_STR dir = (HOME + "fu/"_fu);
     fu_STR fn = (dir + "src/compiler.fu"_fu);
     const int fs = fu::file_size(fn);
     if (!(fs > 1000))
         fu::fail(x7E_OZkl((("Bad compiler.fu: "_fu + fn) + ": "_fu), fu::i64dec(fs)));
 
     (std::cout << ("PRJDIR: "_fu + dir) << '\n');
-    return dir;
+    return /*NRVO*/ dir;
 }
 
 extern const fu_STR PRJDIR = locate_PRJDIR();
@@ -929,7 +929,7 @@ inline const fu_VEC<s_Target>& clone_ntxL(const fu_VEC<s_Target>& a)
                                 #define DEFt_clone_nijh
 inline s_Scope clone_nijh(const s_Scope& a)
 {
-    s_Scope res {};
+    /*MOV*/ s_Scope res {};
 
     {
         res.items = clone_sjQW(a.items);
@@ -940,7 +940,7 @@ inline s_Scope clone_nijh(const s_Scope& a)
         res.converts = clone_ntxL(a.converts);
         res.pub_count = clone_6Kad(a.pub_count);
     };
-    return res;
+    return /*NRVO*/ res;
 }
                                 #endif
 
@@ -948,14 +948,14 @@ inline s_Scope clone_nijh(const s_Scope& a)
                                 #define DEFt_clone_GiFx
 inline s_SolverOutput clone_GiFx(const s_SolverOutput& a)
 {
-    s_SolverOutput res {};
+    /*MOV*/ s_SolverOutput res {};
 
     {
         res.root = clone_8Z6B(a.root);
         res.scope = clone_nijh(a.scope);
         res.notes = clone_6Kad(a.notes);
     };
-    return res;
+    return /*NRVO*/ res;
 }
                                 #endif
 
@@ -971,7 +971,7 @@ inline const s_CodegenOutput& clone_wg6f(const s_CodegenOutput& a)
                                 #define DEFt_clone_KKqe
 inline s_ModuleOutputs clone_KKqe(const s_ModuleOutputs& a)
 {
-    s_ModuleOutputs res {};
+    /*MOV*/ s_ModuleOutputs res {};
 
     {
         res.deps = clone_xQkU(a.deps);
@@ -979,7 +979,7 @@ inline s_ModuleOutputs clone_KKqe(const s_ModuleOutputs& a)
         res.solve = clone_GiFx(a.solve);
         res.cpp = clone_wg6f(a.cpp);
     };
-    return res;
+    return /*NRVO*/ res;
 }
                                 #endif
 
@@ -995,7 +995,7 @@ inline const s_ModuleStats& clone_PHyv(const s_ModuleStats& a)
                                 #define DEFt_clone_P1L6
 inline s_Module clone_P1L6(const s_Module& a)
 {
-    s_Module res {};
+    /*MOV*/ s_Module res {};
 
     {
         res.modid = clone_6Kad(a.modid);
@@ -1004,7 +1004,7 @@ inline s_Module clone_P1L6(const s_Module& a)
         res.out = clone_KKqe(a.out);
         res.stats = clone_PHyv(a.stats);
     };
-    return res;
+    return /*NRVO*/ res;
 }
                                 #endif
 
@@ -1012,12 +1012,12 @@ inline s_Module clone_P1L6(const s_Module& a)
                                 #define DEFt_map_Pq4T
 inline fu_VEC<s_Module> map_Pq4T(fu::view<s_Module> a, int)
 {
-    fu_VEC<s_Module> res {};
+    /*MOV*/ fu_VEC<s_Module> res {};
     res.grow<false>(a.size());
     for (int i = 0; i < a.size(); i++)
         res.mutref(i) = clone_P1L6(a[i]);
 
-    return res;
+    return /*NRVO*/ res;
 }
                                 #endif
 
@@ -1041,14 +1041,14 @@ inline const s_Map_OZkl& clone_DNSB(const s_Map_OZkl& a)
                                 #define DEFt_clone_5Wg9
 inline s_Context clone_5Wg9(const s_Context& a)
 {
-    s_Context res {};
+    /*MOV*/ s_Context res {};
 
     {
         res.modules = clone_teA7(a.modules);
         res.files = clone_DNSB(a.files);
         res.fuzzy = clone_DNSB(a.fuzzy);
     };
-    return res;
+    return /*NRVO*/ res;
 }
                                 #endif
 
@@ -1056,7 +1056,7 @@ inline s_Context clone_5Wg9(const s_Context& a)
                                 #define DEFt_clone_0uIe
 inline s_Scope clone_0uIe(const s_Scope& a)
 {
-    s_Scope res {};
+    /*MOV*/ s_Scope res {};
 
     {
         res.items = clone_sjQW(a.items);
@@ -1067,7 +1067,7 @@ inline s_Scope clone_0uIe(const s_Scope& a)
         res.converts = clone_ntxL(a.converts);
         res.pub_count = clone_6Kad(a.pub_count);
     };
-    return res;
+    return /*NRVO*/ res;
 }
                                 #endif
 
@@ -1075,14 +1075,14 @@ inline s_Scope clone_0uIe(const s_Scope& a)
                                 #define DEFt_clone_c2RA
 inline s_SolverOutput clone_c2RA(const s_SolverOutput& a)
 {
-    s_SolverOutput res {};
+    /*MOV*/ s_SolverOutput res {};
 
     {
         res.root = clone_8Z6B(a.root);
         res.scope = clone_0uIe(a.scope);
         res.notes = clone_6Kad(a.notes);
     };
-    return res;
+    return /*NRVO*/ res;
 }
                                 #endif
 
@@ -1090,7 +1090,7 @@ inline s_SolverOutput clone_c2RA(const s_SolverOutput& a)
                                 #define DEFt_clone_Bl4u
 inline s_ModuleOutputs clone_Bl4u(const s_ModuleOutputs& a)
 {
-    s_ModuleOutputs res {};
+    /*MOV*/ s_ModuleOutputs res {};
 
     {
         res.deps = clone_xQkU(a.deps);
@@ -1098,7 +1098,7 @@ inline s_ModuleOutputs clone_Bl4u(const s_ModuleOutputs& a)
         res.solve = clone_c2RA(a.solve);
         res.cpp = clone_wg6f(a.cpp);
     };
-    return res;
+    return /*NRVO*/ res;
 }
                                 #endif
 
@@ -1106,7 +1106,7 @@ inline s_ModuleOutputs clone_Bl4u(const s_ModuleOutputs& a)
                                 #define DEFt_clone_uibg
 inline s_Module clone_uibg(const s_Module& a)
 {
-    s_Module res {};
+    /*MOV*/ s_Module res {};
 
     {
         res.modid = clone_6Kad(a.modid);
@@ -1115,7 +1115,7 @@ inline s_Module clone_uibg(const s_Module& a)
         res.out = clone_Bl4u(a.out);
         res.stats = clone_PHyv(a.stats);
     };
-    return res;
+    return /*NRVO*/ res;
 }
                                 #endif
 
@@ -1235,7 +1235,7 @@ inline void set_ZTZj(s_Map_OZkl& _, const fu_STR& key, const fu_STR& value_1)
 
 s_Context compile_snippets(fu::view<fu_STR> sources, fu::view<fu_STR> fnames, fu::view<s_Options> options)
 {
-    s_Context ctx = clone_5Wg9(CTX_PRELUDE);
+    /*MOV*/ s_Context ctx = clone_5Wg9(CTX_PRELUDE);
     for (int i = 0; i < sources.size(); i++)
     {
         const fu_STR& snippet = sources[i];
@@ -1258,7 +1258,7 @@ s_Context compile_snippets(fu::view<fu_STR> sources, fu::view<fu_STR> fnames, fu
 
         };
     };
-    return ctx;
+    return /*NRVO*/ ctx;
 }
 
 fu_STR snippet2cpp(const fu_STR& src_2)
@@ -1292,9 +1292,9 @@ static int unindent_left(fu::view<fu::byte> src_2, const int i0)
     return int(i0);
 }
 
-                                #ifndef DEFt_split_CKcG
-                                #define DEFt_split_CKcG
-inline void split_CKcG(const fu_STR& str_1, fu::view<fu::byte> sep, int, fu_VEC<fu_STR>& result)
+                                #ifndef DEFt_split_xYoV
+                                #define DEFt_split_xYoV
+inline void split_xYoV(const fu_STR& str_1, fu::view<fu::byte> sep, int, fu_VEC<fu_STR>& result)
 {
     int last_1 = 0;
     int next = 0;
@@ -1326,9 +1326,9 @@ inline void split_CKcG(const fu_STR& str_1, fu::view<fu::byte> sep, int, fu_VEC<
                                 #define DEFt_split_OZkl
 inline fu_VEC<fu_STR> split_OZkl(const fu_STR& str_1, fu::view<fu::byte> sep)
 {
-    fu_VEC<fu_STR> result {};
-    split_CKcG(str_1, sep, 0, result);
-    return result;
+    /*MOV*/ fu_VEC<fu_STR> result {};
+    split_xYoV(str_1, sep, 0, result);
+    return /*NRVO*/ result;
 }
                                 #endif
 
@@ -1337,10 +1337,10 @@ inline fu_VEC<fu_STR> split_OZkl(const fu_STR& str_1, fu::view<fu::byte> sep)
 inline int find_ZPaI(fu::view<fu::byte> a, const fu::byte b, int start_1)
 {
     start_1 = ((start_1 > 0) ? int(start_1) : 0);
-    for (int i = start_1; i < a.size(); i++)
+    for (/*MOV*/ int i = start_1; i < a.size(); i++)
     {
         if (a[i] == b)
-            return i;
+            return /*NRVO*/ i;
 
     };
     return -1;
@@ -1351,10 +1351,10 @@ inline int find_ZPaI(fu::view<fu::byte> a, const fu::byte b, int start_1)
                                 #define DEFt_find_VtCz
 inline int find_VtCz(fu::view<fu_STR> a, fu::view<fu::byte> b)
 {
-    for (int i = 0; i < a.size(); i++)
+    for (/*MOV*/ int i = 0; i < a.size(); i++)
     {
         if (a[i] == b)
-            return i;
+            return /*NRVO*/ i;
 
     };
     return -1;
@@ -1376,10 +1376,10 @@ inline fu_VEC<fu_STR>& grow_if_oob_EmEP(fu_VEC<fu_VEC<fu_STR>>& a, const int i)
                                 #define DEFt_find_05eu
 inline int find_05eu(fu::view<fu::byte> a, const fu::byte b)
 {
-    for (int i = 0; i < a.size(); i++)
+    for (/*MOV*/ int i = 0; i < a.size(); i++)
     {
         if (a[i] == b)
-            return i;
+            return /*NRVO*/ i;
 
     };
     return -1;
@@ -1440,8 +1440,8 @@ s_Context ZERO(fu_VEC<fu_STR>&& sources, s_TestDiffs& testdiffs)
             const int end1 = (end0 + 6);
             start0 = unindent_left(src_2, start0);
             end0 = unindent_left(src_2, end0);
-            fu::view<fu::byte> prefix = fu::get_view(src_2, 0, start0);
-            fu::view<fu::byte> suffix = fu::get_view(src_2, end1, src_2.size());
+            fu_STR prefix = fu::slice(src_2, 0, start0);
+            fu_STR suffix = fu::slice(src_2, end1, src_2.size());
             fu_VEC<fu_STR> split_4 = split_OZkl(fu::slice(src_2, start1, end0), "<alt/>"_fu);
             if (split_4.size() < 2)
                 split_4 += (*(const fu_STR*)fu::NIL);
@@ -1496,7 +1496,7 @@ s_Context ZERO(fu_VEC<fu_STR>&& sources, s_TestDiffs& testdiffs)
         };
         options += s_Options { s_Lint{}, int(break_notes_1), 0u };
     };
-    s_Context ctx = compile_snippets(sources, fu::view<fu_STR>{}, options);
+    /*MOV*/ s_Context ctx = compile_snippets(sources, fu::view<fu_STR>{}, options);
     fu_STR testdiff_prepend {};
     for (int i_3 = 0; i_3 < expectations.size(); i_3++)
     {
@@ -1541,19 +1541,19 @@ s_Context ZERO(fu_VEC<fu_STR>&& sources, s_TestDiffs& testdiffs)
             set_next(testdiffs, key, (testdiff_prepend + actual));
         };
     };
-    return ctx;
+    return /*NRVO*/ ctx;
 }
 
 static fu_STR ERR_KEY(fu::view<fu_STR> sources)
 {
-    fu_STR key {};
+    /*MOV*/ fu_STR key {};
     for (int i = 0; i < sources.size(); i++)
     {
         fu::view<fu::byte> src_2 = sources[i];
         const int end_1 = unindent_left(src_2, src_2.size());
         key += fu::get_view(src_2, 0, end_1);
     };
-    return key;
+    return /*NRVO*/ key;
 }
 
 static fu_STR ERR_TRIM(const fu_STR& e)
@@ -1581,7 +1581,7 @@ static fu_STR ERR_TRIM(const fu_STR& e)
                                 #define DEFt_replace_ZeXZ
 inline fu_STR replace_ZeXZ(const fu_STR& str_1, fu::view<fu::byte> all, fu::view<fu::byte> with)
 {
-    fu_STR result {};
+    /*MOV*/ fu_STR result {};
 
     {
         int last_1 = 0;
@@ -1630,11 +1630,11 @@ inline fu_STR replace_ZeXZ(const fu_STR& str_1, fu::view<fu::byte> all, fu::view
             result += str_1;
         };
     };
-    return result;
+    return /*NRVO*/ result;
 }
                                 #endif
 
-static fu_VEC<fu_STR> FAIL_replace(fu_VEC<fu_STR>&& sources)
+static fu_VEC<fu_STR> FAIL_replace(/*MOV*/ fu_VEC<fu_STR>&& sources)
 {
     for (int i = 0; i < sources.size(); i++)
         sources.mutref(i) = replace_ZeXZ(sources[i], "//*F"_fu, "/*"_fu);
@@ -1646,7 +1646,7 @@ static fu_VEC<fu_STR> FAIL_replace(fu_VEC<fu_STR>&& sources)
                                 #define DEFt_replace_Q0b6
 inline fu_STR replace_Q0b6(const fu_STR& str_1, fu::view<fu::byte> all, fu::view<fu::byte> with)
 {
-    fu_STR result {};
+    /*MOV*/ fu_STR result {};
 
     {
         int last_1 = 0;
@@ -1695,7 +1695,7 @@ inline fu_STR replace_Q0b6(const fu_STR& str_1, fu::view<fu::byte> all, fu::view
             result += str_1;
         };
     };
-    return result;
+    return /*NRVO*/ result;
 }
                                 #endif
 
@@ -1762,7 +1762,7 @@ inline fu_STR join_VtCz(fu::view<fu_STR> a, fu::view<fu::byte> sep)
     for (int i = 1; i < a.size(); i++)
         size += (sep.size() + a[i].size());
 
-    fu_STR res {};
+    /*MOV*/ fu_STR res {};
     res.grow<false>(size);
     fu::view<fu::byte> head = a[0];
     size = head.size();
@@ -1775,7 +1775,7 @@ inline fu_STR join_VtCz(fu::view<fu_STR> a, fu::view<fu::byte> sep)
         fu::view_assign(fu::get_view_mut(res, size, (size + range.size())), range);
         size += range.size();
     };
-    return res;
+    return /*NRVO*/ res;
 }
                                 #endif
 

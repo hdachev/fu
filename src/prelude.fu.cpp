@@ -841,7 +841,7 @@ inline const fu_VEC<s_Target>& clone_ntxL(const fu_VEC<s_Target>& a)
                                 #define DEFt_clone_0uIe
 inline s_Scope clone_0uIe(const s_Scope& a)
 {
-    s_Scope res {};
+    /*MOV*/ s_Scope res {};
 
     {
         res.items = clone_sjQW(a.items);
@@ -852,7 +852,7 @@ inline s_Scope clone_0uIe(const s_Scope& a)
         res.converts = clone_ntxL(a.converts);
         res.pub_count = clone_6Kad(a.pub_count);
     };
-    return res;
+    return /*NRVO*/ res;
 }
                                 #endif
 
@@ -860,14 +860,14 @@ inline s_Scope clone_0uIe(const s_Scope& a)
                                 #define DEFt_clone_c2RA
 inline s_SolverOutput clone_c2RA(const s_SolverOutput& a)
 {
-    s_SolverOutput res {};
+    /*MOV*/ s_SolverOutput res {};
 
     {
         res.root = clone_8Z6B(a.root);
         res.scope = clone_0uIe(a.scope);
         res.notes = clone_6Kad(a.notes);
     };
-    return res;
+    return /*NRVO*/ res;
 }
                                 #endif
 
@@ -883,7 +883,7 @@ inline const s_CodegenOutput& clone_wg6f(const s_CodegenOutput& a)
                                 #define DEFt_clone_Bl4u
 inline s_ModuleOutputs clone_Bl4u(const s_ModuleOutputs& a)
 {
-    s_ModuleOutputs res {};
+    /*MOV*/ s_ModuleOutputs res {};
 
     {
         res.deps = clone_xQkU(a.deps);
@@ -891,7 +891,7 @@ inline s_ModuleOutputs clone_Bl4u(const s_ModuleOutputs& a)
         res.solve = clone_c2RA(a.solve);
         res.cpp = clone_wg6f(a.cpp);
     };
-    return res;
+    return /*NRVO*/ res;
 }
                                 #endif
 
@@ -907,7 +907,7 @@ inline const s_ModuleStats& clone_PHyv(const s_ModuleStats& a)
                                 #define DEFt_clone_uibg
 inline s_Module clone_uibg(const s_Module& a)
 {
-    s_Module res {};
+    /*MOV*/ s_Module res {};
 
     {
         res.modid = clone_6Kad(a.modid);
@@ -916,13 +916,13 @@ inline s_Module clone_uibg(const s_Module& a)
         res.out = clone_Bl4u(a.out);
         res.stats = clone_PHyv(a.stats);
     };
-    return res;
+    return /*NRVO*/ res;
 }
                                 #endif
 
 s_Context solvePrelude()
 {
-    s_Context ctx {};
+    /*MOV*/ s_Context ctx {};
     s_Module module = clone_uibg(getModule((*(const fu_STR*)fu::NIL), ctx));
     const s_Options options {};
     fu_STR fname_1 = "__prelude"_fu;
@@ -932,7 +932,7 @@ s_Context solvePrelude()
     setModule(module, ctx);
     module.out.solve = solve(options, ctx, module);
     setModule(module, ctx);
-    return ctx;
+    return /*NRVO*/ ctx;
 }
 
 extern const s_Context CTX_PRELUDE = solvePrelude();

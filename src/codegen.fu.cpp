@@ -899,6 +899,8 @@ static const int M_MUTVAR = (1 << 10);
 
 static const int M_MOVABLE = (1 << 11);
 
+static const int M_MOVE = (1 << 12);
+
                                 #ifndef DEFt_unless_oob_cxd2
                                 #define DEFt_unless_oob_cxd2
 inline const s_Extended& unless_oob_cxd2(fu::view<s_Extended> a, const int i)
@@ -1146,14 +1148,14 @@ static fu_STR typeAnnotBase(const s_Type& type_3, const int mode, fu_VEC<fu_STR>
     };
     const s_Struct* _0;
     const s_Struct& s = (*(_0 = &(lookupStruct(type_3, module, ctx))) ? *_0 : fail(("TODO: "_fu + type_3.vtype.canon), _here, ctx));
-    fu_STR id_2 = ("s_"_fu + s.name);
+    /*MOV*/ fu_STR id_2 = ("s_"_fu + s.name);
     if (add_once(_tfwd, type_3.vtype.modid, structIndex(type_3.vtype.canon)))
     {
         _tfwd_src += (("struct "_fu + id_2) + ";\n"_fu);
         fu_STR decl = declareStruct(id_2, type_3, s, module, ctx, _here, _libs, _tfwd, _tfwd_src, _tdef, _current_fn);
         _tdef += decl;
     };
-    return id_2;
+    return /*NRVO*/ id_2;
 }
 
 static fu_STR typeAnnot(const s_Type& type_3, const int mode, fu_VEC<fu_STR>& _libs, const s_TokenIdx& _here, const s_Context& ctx, const s_Module& module, fu_VEC<s_BitSet>& _tfwd, fu_VEC<fu_STR>& _tfwd_src, fu_STR& _tdef, const s_cg_CurrentFn& _current_fn)
@@ -1161,11 +1163,11 @@ static fu_STR typeAnnot(const s_Type& type_3, const int mode, fu_VEC<fu_STR>& _l
     if (type_isZST(type_3))
         return "int"_fu;
 
-    fu_STR fwd = typeAnnotBase(type_3, mode, _libs, _here, ctx, module, _tfwd, _tfwd_src, _tdef, _current_fn);
+    /*MOV*/ fu_STR fwd = typeAnnotBase(type_3, mode, _libs, _here, ctx, module, _tfwd, _tfwd_src, _tdef, _current_fn);
     if (is_ref(type_3))
     {
         if (fu::lmatch(fwd, "fu::view"_fu))
-            return fwd;
+            return /*NRVO*/ fwd;
 
         if (is_mutref(type_3, _here, ctx))
             return fwd + "&"_fu;
@@ -1188,15 +1190,15 @@ static fu_STR typeAnnot(const s_Type& type_3, const int mode, fu_VEC<fu_STR>& _l
     if ((mode & M_CONST) && is_trivial(type_3, module, ctx))
         return "const "_fu + fwd;
 
-    return fwd;
+    return /*NRVO*/ fwd;
 }
 
 static fu_STR emitTEMPVAR(fu::view<fu::byte> annot, bool& ptrflip, const fu_STR& id_2, const fu_STR& expr, s_cg_CurrentFn& _current_fn)
 {
     ptrflip = (annot[(annot.size() - 1)] == fu::byte('&'));
-    fu_STR id_3 = (id_2 ? fu_STR(id_2) : x7E_OZkl("_"_fu, fu::i64dec(_current_fn.numTEMPVARs++)));
+    /*MOV*/ fu_STR id_3 = (id_2 ? fu_STR(id_2) : x7E_OZkl("_"_fu, fu::i64dec(_current_fn.numTEMPVARs++)));
     _current_fn.TEMPVARs += (ptrflip ? ((fu::get_view(annot, 0, (annot.size() - 1)) + "* "_fu) + id_3) : (((annot + " "_fu) + id_3) + (expr ? (" = "_fu + expr) : " {}"_fu)));
-    return id_3;
+    return /*NRVO*/ id_3;
 }
 
 static fu_STR cgClone(const s_Type& type_3, fu::view<fu::byte> src_2, fu_VEC<fu_STR>& _libs, const s_TokenIdx& _here, const s_Context& ctx, const s_Module& module, fu_VEC<s_BitSet>& _tfwd, fu_VEC<fu_STR>& _tfwd_src, fu_STR& _tdef, const s_cg_CurrentFn& _current_fn)
@@ -1206,17 +1208,17 @@ static fu_STR cgClone(const s_Type& type_3, fu::view<fu::byte> src_2, fu_VEC<fu_
 
 static fu_STR cgMove(const s_Type& type_3, fu::view<fu::byte> src_2, const s_Module& module, const s_Context& ctx, fu_VEC<fu_STR>& _libs, const s_TokenIdx& _here, fu_VEC<s_BitSet>& _tfwd, fu_VEC<fu_STR>& _tfwd_src, fu_STR& _tdef, const s_cg_CurrentFn& _current_fn)
 {
-    if (is_trivial(type_3, module, ctx))
+    if (is_trivial(type_3, module, ctx) && is_rx_copy(type_3))
         return cgClone(type_3, src_2, _libs, _here, ctx, module, _tfwd, _tfwd_src, _tdef, _current_fn);
 
     return ((("static_cast<"_fu + typeAnnotBase(type_3, 0, _libs, _here, ctx, module, _tfwd, _tfwd_src, _tdef, _current_fn)) + "&&>("_fu) + src_2) + ")"_fu;
 }
 
-                                #ifndef DEFt_map_jQVj
-                                #define DEFt_map_jQVj
-inline fu_VEC<fu_STR> map_jQVj(fu::view<s_SolvedNode> a, int, const s_Module& module, const s_Context& ctx)
+                                #ifndef DEFt_map_DPZ3
+                                #define DEFt_map_DPZ3
+inline fu_VEC<fu_STR> map_DPZ3(fu::view<s_SolvedNode> a, int, const s_Module& module, const s_Context& ctx)
 {
-    fu_VEC<fu_STR> res {};
+    /*MOV*/ fu_VEC<fu_STR> res {};
     res.grow<false>(a.size());
     for (int i = 0; i < a.size(); i++)
     {
@@ -1227,7 +1229,7 @@ inline fu_VEC<fu_STR> map_jQVj(fu::view<s_SolvedNode> a, int, const s_Module& mo
             _0 = &(SolvedNodeData(i_1, module, ctx).kind);
         (void)0;}), *_0);
     };
-    return res;
+    return /*NRVO*/ res;
 }
                                 #endif
 
@@ -1242,7 +1244,7 @@ inline fu_STR join_VtCz(fu::view<fu_STR> a, fu::view<fu::byte> sep)
     for (int i = 1; i < a.size(); i++)
         size += (sep.size() + a[i].size());
 
-    fu_STR res {};
+    /*MOV*/ fu_STR res {};
     res.grow<false>(size);
     fu::view<fu::byte> head = a[0];
     size = head.size();
@@ -1255,7 +1257,7 @@ inline fu_STR join_VtCz(fu::view<fu_STR> a, fu::view<fu::byte> sep)
         fu::view_assign(fu::get_view_mut(res, size, (size + range.size())), range);
         size += range.size();
     };
-    return res;
+    return /*NRVO*/ res;
 }
                                 #endif
 
@@ -1263,10 +1265,10 @@ inline fu_STR join_VtCz(fu::view<fu_STR> a, fu::view<fu::byte> sep)
                                 #define DEFt_find_WqUX
 inline int find_WqUX(fu::view<fu::byte> a, const fu::byte b)
 {
-    for (int i = 0; i < a.size(); i++)
+    for (/*MOV*/ int i = 0; i < a.size(); i++)
     {
         if (a[i] == b)
-            return i;
+            return /*NRVO*/ i;
 
     };
     return -1;
@@ -1280,7 +1282,7 @@ static fu_STR& ARG(const int i, fu_VEC<fu_STR>& item_src)
 
 static fu_STR REST(const int start_1, fu::view<fu_STR> item_src)
 {
-    fu_STR src_2 {};
+    /*MOV*/ fu_STR src_2 {};
     for (int i = start_1; i < item_src.size(); i++)
     {
         if (i > start_1)
@@ -1288,7 +1290,7 @@ static fu_STR REST(const int start_1, fu::view<fu_STR> item_src)
 
         src_2 += item_src[i];
     };
-    return src_2;
+    return /*NRVO*/ src_2;
 }
 
 static fu_STR ooeWrap(const fu_STR& src_2, const fu_STR& ooe_header)
@@ -1524,7 +1526,7 @@ inline int& grow_if_oob_xJq8(fu_VEC<int>& a, const int i)
 static fu_STR localID(const s_Target& target_6, const bool dedupe, const s_Module& module, const s_Context& ctx, s_cg_CurrentFn& _current_fn)
 {
     const s_Overload& o = GET(target_6, module, ctx);
-    fu_STR id_2 { o.name };
+    /*MOV*/ fu_STR id_2 { o.name };
     const s_Target t = tryParseClosureID(id_2, MODID(module));
     if (t)
         id_2 = GET(t, module, ctx).name;
@@ -1559,8 +1561,13 @@ static fu_STR localID(const s_Target& target_6, const bool dedupe, const s_Modul
             return x7E_OZkl((id_2 + fu::byte('_')), fu::i64dec(dupes));
 
     };
-    return id_2;
+    return /*NRVO*/ id_2;
 }
+
+                                #ifndef DEF_F_TODO_FIX_RRET
+                                #define DEF_F_TODO_FIX_RRET
+inline constexpr int F_TODO_FIX_RRET = (1 << 27);
+                                #endif
 
                                 #ifndef DEF_LET_INIT
                                 #define DEF_LET_INIT
@@ -1578,7 +1585,7 @@ inline fu_STR join_9sek(fu::view<fu_STR> a, fu::view<fu::byte> sep)
     for (int i = 1; i < a.size(); i++)
         size += (sep.size() + a[i].size());
 
-    fu_STR res {};
+    /*MOV*/ fu_STR res {};
     res.grow<false>(size);
     fu::view<fu::byte> head = a[0];
     size = head.size();
@@ -1591,7 +1598,7 @@ inline fu_STR join_9sek(fu::view<fu_STR> a, fu::view<fu::byte> sep)
         fu::view_assign(fu::get_view_mut(res, size, (size + range.size())), range);
         size += range.size();
     };
-    return res;
+    return /*NRVO*/ res;
 }
                                 #endif
 
@@ -1606,18 +1613,27 @@ static fu_STR binding(const s_SolvedNode& node_1, const bool doInit, const bool 
     const s_Overload& overload = (SolvedNodeData(node_1, module, ctx).target ? GET(SolvedNodeData(node_1, module, ctx).target, module, ctx) : (*(const s_Overload*)fu::NIL));
     const int isArg = (overload.flags & F_ARG);
     s_Type node_type = (forceValue ? clear_refs(s_Type(SolvedNodeData(node_1, module, ctx).type)) : s_Type(SolvedNodeData(node_1, module, ctx).type));
-    fu_STR annot = typeAnnot(node_type, ((((!forceMut && !is_mutref(overload.type, _here, ctx) ? M_CONST : (*(const int*)fu::NIL)) | (isArg ? M_ARGUMENT : (*(const int*)fu::NIL))) | (is_mutref(overload.type, _here, ctx) ? M_MUTVAR : (*(const int*)fu::NIL))) | ((overload.flags & F_MOVED_FROM) ? M_MOVABLE : (*(const int*)fu::NIL))), _libs, _here, ctx, module, _tfwd, _tfwd_src, _tdef, _current_fn);
+    /*MOV*/ fu_STR annot = typeAnnot(node_type, ((((!forceMut && !is_mutref(overload.type, _here, ctx) ? M_CONST : (*(const int*)fu::NIL)) | (isArg ? M_ARGUMENT : (*(const int*)fu::NIL))) | (is_mutref(overload.type, _here, ctx) ? M_MUTVAR : (*(const int*)fu::NIL))) | ((overload.flags & F_MOVED_FROM) ? M_MOVABLE : (*(const int*)fu::NIL))), _libs, _here, ctx, module, _tfwd, _tfwd_src, _tdef, _current_fn);
     if (!SolvedNodeData(node_1, module, ctx).target)
-        return annot;
+        return /*NRVO*/ annot;
 
     const int isUnused = (overload.flags & F_UNUSED);
     if (isArg && isUnused)
-        return annot;
+        return /*NRVO*/ annot;
 
     fu_STR id_2 = localID(SolvedNodeData(node_1, module, ctx).target, true, module, ctx, _current_fn);
-    fu_STR head = ((((isUnused ? "[[maybe_unused]] "_fu : fu_STR{}) + (annot ? annot : fail(fu_STR{}, _here, ctx))) + " "_fu) + id_2);
+    /*MOV*/ fu_STR head = (((annot ? annot : fail(fu_STR{}, _here, ctx)) + " "_fu) + id_2);
+    if (isUnused)
+        head = ("[[maybe_unused]] "_fu + head);
+
+    if (GET(SolvedNodeData(node_1, module, ctx).target, module, ctx).flags & F_TODO_FIX_RRET)
+        head = ("/*RRET*/ "_fu + head);
+
+    if (GET(SolvedNodeData(node_1, module, ctx).target, module, ctx).flags & F_MOVED_FROM)
+        head = ("/*MOV*/ "_fu + head);
+
     if (!doInit || isArg)
-        return head;
+        return /*NRVO*/ head;
 
     const s_SolvedNode init = (SolvedNodeData(node_1, module, ctx).items ? s_SolvedNode(SolvedNodeData(node_1, module, ctx).items[LET_INIT]) : s_SolvedNode{});
     if (init)
@@ -1662,7 +1678,7 @@ static fu_STR cgFnSignature(const s_SolvedNode& fn, const s_Module& module, cons
     else
         id_2 = fnID(SolvedNodeData(fn, module, ctx).target, module, ctx, _here);
 
-    fu_STR src_2 = ((((fnLinkage(overload) + annot) + " "_fu) + id_2) + "("_fu);
+    /*MOV*/ fu_STR src_2 = ((((fnLinkage(overload) + annot) + " "_fu) + id_2) + "("_fu);
     for (int i = 0; i < (items_5.size() + FN_ARGS_BACK); i++)
     {
         if (i)
@@ -1679,7 +1695,7 @@ static fu_STR cgFnSignature(const s_SolvedNode& fn, const s_Module& module, cons
         src_2 += ", /*postfix*/int "_fu;
     };
     src_2 += ")"_fu;
-    return src_2;
+    return /*NRVO*/ src_2;
 }
 
 static bool exprOK(fu::view<s_SolvedNode> nodes_1, const s_Module& module, const s_Context& ctx)
@@ -1700,7 +1716,7 @@ static bool exprOK(fu::view<s_SolvedNode> nodes_1, const s_Module& module, const
 
 static fu_VEC<fu_STR> cgNodes(fu::view<s_SolvedNode> nodes_1, const int mode, const fu_STR& trail, fu::view<fu::byte> debug, s_cg_CurrentFn& _current_fn, const s_Module& module, const s_Context& ctx, s_TokenIdx& _here, fu_VEC<fu_STR>& _libs, fu_VEC<s_BitSet>& _tfwd, fu_VEC<fu_STR>& _tfwd_src, fu_STR& _tdef, s_BitSet& _idef, fu_STR& _indent, int& _hasMain, fu_STR& _fdef, fu_VEC<s_BitSet>& _ffwd, fu_VEC<fu_STR>& _ffwd_src, fu_VEC<int>& _unity, fu_VEC<int>& _unity_because, fu_VEC<s_BitSet>& _moveFromConstRefHelpers)
 {
-    fu_VEC<fu_STR> result {};
+    /*MOV*/ fu_VEC<fu_STR> result {};
     fu_VEC<fu_STR> _tv0 {};
     if (mode & M_STMT)
         std::swap(_tv0, _current_fn.TEMPVARs);
@@ -1725,7 +1741,7 @@ static fu_VEC<fu_STR> cgNodes(fu::view<s_SolvedNode> nodes_1, const int mode, co
 
         result.push(src_2);
     };
-    return result;
+    return /*NRVO*/ result;
 }
 
 static fu_STR cgComma(fu::view<s_SolvedNode> nodes_1, fu::view<fu::byte> debug, s_cg_CurrentFn& _current_fn, const s_Module& module, const s_Context& ctx, s_TokenIdx& _here, fu_VEC<fu_STR>& _libs, fu_VEC<s_BitSet>& _tfwd, fu_VEC<fu_STR>& _tfwd_src, fu_STR& _tdef, s_BitSet& _idef, fu_STR& _indent, int& _hasMain, fu_STR& _fdef, fu_VEC<s_BitSet>& _ffwd, fu_VEC<fu_STR>& _ffwd_src, fu_VEC<int>& _unity, fu_VEC<int>& _unity_because, fu_VEC<s_BitSet>& _moveFromConstRefHelpers)
@@ -1771,7 +1787,7 @@ static fu_STR cgStatements(fu::view<s_SolvedNode> nodes_1, int& count, const fu_
 {
     fu_VEC<fu_STR> lines = cgNodes(nodes_1, M_STMT, trail, "cgStatements"_fu, _current_fn, module, ctx, _here, _libs, _tfwd, _tfwd_src, _tdef, _idef, _indent, _hasMain, _fdef, _ffwd, _ffwd_src, _unity, _unity_because, _moveFromConstRefHelpers);
     count = lines.size();
-    fu_STR src_2 {};
+    /*MOV*/ fu_STR src_2 {};
     for (int i = 0; i < lines.size(); i++)
     {
         const fu_STR& line = lines[i];
@@ -1779,7 +1795,7 @@ static fu_STR cgStatements(fu::view<s_SolvedNode> nodes_1, int& count, const fu_
             src_2 += (((if_first_AwjY(line) == fu::byte('\n')) ? (fu::byte('\n') + line) : (_indent + line)) + ((if_last_AwjY(line) == fu::byte(';')) ? fu::byte('\n') : fu::byte(';')));
 
     };
-    return src_2;
+    return /*NRVO*/ src_2;
 }
 
 static fu_STR cgBlock(fu::view<s_SolvedNode> nodes_1, const bool skipCurlies, const bool gnuStmtExpr, const s_Target& label, const s_Type& type_3, s_cg_CurrentFn& _current_fn, fu_STR& _indent, const s_Module& module, const s_Context& ctx, fu_VEC<fu_STR>& _libs, s_TokenIdx& _here, fu_VEC<s_BitSet>& _tfwd, fu_VEC<fu_STR>& _tfwd_src, fu_STR& _tdef, s_BitSet& _idef, int& _hasMain, fu_STR& _fdef, fu_VEC<s_BitSet>& _ffwd, fu_VEC<fu_STR>& _ffwd_src, fu_VEC<int>& _unity, fu_VEC<int>& _unity_because, fu_VEC<s_BitSet>& _moveFromConstRefHelpers)
@@ -1811,7 +1827,7 @@ static fu_STR cgBlock(fu::view<s_SolvedNode> nodes_1, const bool skipCurlies, co
 
     };
     int count {};
-    fu_STR src_2 = cgStatements(nodes_1, count, trail, _current_fn, module, ctx, _here, _libs, _tfwd, _tfwd_src, _tdef, _idef, _indent, _hasMain, _fdef, _ffwd, _ffwd_src, _unity, _unity_because, _moveFromConstRefHelpers);
+    /*MOV*/ fu_STR src_2 = cgStatements(nodes_1, count, trail, _current_fn, module, ctx, _here, _libs, _tfwd, _tfwd_src, _tdef, _idef, _indent, _hasMain, _fdef, _ffwd, _ffwd_src, _unity, _unity_because, _moveFromConstRefHelpers);
     if (lbl.name)
     {
         fu_STR prefixed_id = ("L_"_fu + name_3);
@@ -1824,7 +1840,7 @@ static fu_STR cgBlock(fu::view<s_SolvedNode> nodes_1, const bool skipCurlies, co
     if (!skipCurlies || (nodes_1.size() != 1) || (count != 1) || ((SolvedNodeData(nodes_1[0], module, ctx).kind != "jump"_fu) && (SolvedNodeData(nodes_1[0], module, ctx).kind != "call"_fu)))
         src_2 = (((((gnuOpen + indent0) + open) + src_2) + indent0) + close);
 
-    return src_2;
+    return /*NRVO*/ src_2;
 }
 
 static fu_STR cgBlock(const s_SolvedNode& node_1, const int mode, fu::view<fu::byte> debug, const s_Module& module, const s_Context& ctx, s_cg_CurrentFn& _current_fn, s_TokenIdx& _here, fu_VEC<fu_STR>& _libs, fu_VEC<s_BitSet>& _tfwd, fu_VEC<fu_STR>& _tfwd_src, fu_STR& _tdef, s_BitSet& _idef, fu_STR& _indent, int& _hasMain, fu_STR& _fdef, fu_VEC<s_BitSet>& _ffwd, fu_VEC<fu_STR>& _ffwd_src, fu_VEC<int>& _unity, fu_VEC<int>& _unity_because, fu_VEC<s_BitSet>& _moveFromConstRefHelpers)
@@ -1990,9 +2006,9 @@ static fu_STR cgLet(const s_SolvedNode& node_1, const bool global, const bool fo
         return fu_STR{};
 
     const bool intconst = (global && is_primitive(SolvedNodeData(node_1, module, ctx).type) && !is_floating_pt(SolvedNodeData(node_1, module, ctx).type) && isIntegerConstant_8Z6B(SolvedNodeData(node_1, module, ctx).items[LET_INIT], module, ctx));
-    fu_STR src_2 = binding(node_1, (!foreign || intconst), bool{}, bool{}, _current_fn, module, ctx, _here, _libs, _tfwd, _tfwd_src, _tdef, _idef, _indent, _hasMain, _fdef, _ffwd, _ffwd_src, _unity, _unity_because, _moveFromConstRefHelpers);
+    /*MOV*/ fu_STR src_2 = binding(node_1, (!foreign || intconst), bool{}, bool{}, _current_fn, module, ctx, _here, _libs, _tfwd, _tfwd_src, _tdef, _idef, _indent, _hasMain, _fdef, _ffwd, _ffwd_src, _unity, _unity_because, _moveFromConstRefHelpers);
     if (!global)
-        return src_2;
+        return /*NRVO*/ src_2;
 
     if (fu::lmatch(src_2, "const "_fu))
         src_2 = fu::slice(src_2, 6);
@@ -2048,12 +2064,12 @@ static fu_STR via(s_TEMPVAR& tv, const s_Type& type_3, fu::view<fu::byte> expr, 
 static fu_STR cgPrint(fu::view<fu_STR> items_5, fu_VEC<fu_STR>& _libs)
 {
     include("<iostream>"_fu, _libs);
-    fu_STR src_2 = "(std::cout"_fu;
+    /*MOV*/ fu_STR src_2 = "(std::cout"_fu;
     for (int i = 0; i < items_5.size(); i++)
         src_2 += (" << "_fu + items_5[i]);
 
     src_2 += " << '\\n')"_fu;
-    return src_2;
+    return /*NRVO*/ src_2;
 }
 
 static fu_STR cgCall(const s_SolvedNode& node_1, const int mode, const s_Module& module, const s_Context& ctx, s_TokenIdx& _here, fu_VEC<fu_STR>& _libs, fu_VEC<s_BitSet>& _tfwd, fu_VEC<fu_STR>& _tfwd_src, fu_STR& _tdef, s_cg_CurrentFn& _current_fn, s_BitSet& _idef, fu_STR& _indent, int& _hasMain, fu_STR& _fdef, fu_VEC<s_BitSet>& _ffwd, fu_VEC<fu_STR>& _ffwd_src, fu_VEC<int>& _unity, fu_VEC<int>& _unity_because, fu_VEC<s_BitSet>& _moveFromConstRefHelpers)
@@ -2096,11 +2112,11 @@ static fu_STR cgCall(const s_SolvedNode& node_1, const int mode, const s_Module&
         item_src += src_2;
     };
     if (!(ooe_crosscheck == SolvedNodeData(node_1, module, ctx).helpers))
-        fail(((x7E_OZkl((x7E_OZkl("OOE crosscheck failed: codegen sequenced "_fu, fu::i64dec(ooe_crosscheck)) + ", but solver wants "_fu), fu::i64dec(SolvedNodeData(node_1, module, ctx).helpers)) + ": "_fu) + join_VtCz(map_jQVj(args_1, 0, module, ctx), "|"_fu)), _here, ctx);
+        fail(((x7E_OZkl((x7E_OZkl("OOE crosscheck failed: codegen sequenced "_fu, fu::i64dec(ooe_crosscheck)) + ", but solver wants "_fu), fu::i64dec(SolvedNodeData(node_1, module, ctx).helpers)) + ": "_fu) + join_VtCz(map_DPZ3(args_1, 0, module, ctx), "|"_fu)), _here, ctx);
 
     if (isNative && (target_6.name[0] == fu::byte('\n')))
     {
-        fu_STR id_2 = fu::slice(target_6.name, 1);
+        /*MOV*/ fu_STR id_2 = fu::slice(target_6.name, 1);
         const int idx = find_WqUX(id_2, fu::byte('\n'));
         if (idx > -1)
         {
@@ -2121,7 +2137,7 @@ static fu_STR cgCall(const s_SolvedNode& node_1, const int mode, const s_Module&
 
             return emitBinaryOp(id_2, args_1, _here, ctx, mode, ooe_header, item_src);
         };
-        return id_2;
+        return /*NRVO*/ id_2;
     };
     if (target_6.kind == "type"_fu)
     {
@@ -2169,13 +2185,18 @@ static fu_STR cgCall(const s_SolvedNode& node_1, const int mode, const s_Module&
             {
                 if (id_2 == "[]"_fu)
                 {
-                    if (is_mutref(SolvedNodeData(node_1, module, ctx).type, _here, ctx))
+                    if (mode & M_MOVE)
                     {
                         fu_STR _2 {};
-                        return (_2 = (ARG(0, item_src) + ".mutref("_fu), (static_cast<fu_STR&&>(_2) + ARG(1, item_src))) + ")"_fu;
+                        return (_2 = (ARG(0, item_src) + ".try_steal("_fu), (static_cast<fu_STR&&>(_2) + ARG(1, item_src))) + ")"_fu;
                     };
-                    fu_STR _3 {};
-                    return (_3 = (ARG(0, item_src) + "["_fu), (static_cast<fu_STR&&>(_3) + ARG(1, item_src))) + "]"_fu;
+                    if (is_mutref(SolvedNodeData(node_1, module, ctx).type, _here, ctx))
+                    {
+                        fu_STR _3 {};
+                        return (_3 = (ARG(0, item_src) + ".mutref("_fu), (static_cast<fu_STR&&>(_3) + ARG(1, item_src))) + ")"_fu;
+                    };
+                    fu_STR _4 {};
+                    return (_4 = (ARG(0, item_src) + "["_fu), (static_cast<fu_STR&&>(_4) + ARG(1, item_src))) + "]"_fu;
                 };
                 if (id_2 == "||="_fu)
                 {
@@ -2217,7 +2238,7 @@ inline bool has_WqUX(fu::view<fu::byte> a, const fu::byte b)
 
 static fu_STR cgLiteral(const s_SolvedNode& node_1, const s_Module& module, const s_Context& ctx, fu_VEC<fu_STR>& _libs, const s_TokenIdx& _here, fu_VEC<s_BitSet>& _tfwd, fu_VEC<fu_STR>& _tfwd_src, fu_STR& _tdef, const s_cg_CurrentFn& _current_fn)
 {
-    fu_STR src_2 { SolvedNodeData(node_1, module, ctx).value };
+    /*MOV*/ fu_STR src_2 { SolvedNodeData(node_1, module, ctx).value };
     if (is_unsigned(SolvedNodeData(node_1, module, ctx).type) && !has_WqUX(src_2, fu::byte('u')))
         src_2 += fu::byte('u');
 
@@ -2260,7 +2281,7 @@ static fu_STR cgLiteral(const s_SolvedNode& node_1, const s_Module& module, cons
             return ((typeAnnotBase(SolvedNodeData(node_1, module, ctx).type, 0, _libs, _here, ctx, module, _tfwd, _tfwd_src, _tdef, _current_fn) + "("_fu) + src_2) + ")"_fu;
 
     };
-    return src_2;
+    return /*NRVO*/ src_2;
 }
 
 static fu_STR cgCharLiteral(const s_SolvedNode& node_1, const s_Module& module, const s_Context& ctx, fu_VEC<fu_STR>& _libs)
@@ -2340,9 +2361,9 @@ static fu_STR cgDefinit(const s_SolvedNode& node_1, const int mode, const s_Type
     return cgArrayLiteral(node_1, mode, callarg, module, ctx, _here, _libs, _tfwd, _tfwd_src, _tdef, _current_fn, _idef, _indent, _hasMain, _fdef, _ffwd, _ffwd_src, _unity, _unity_because, _moveFromConstRefHelpers);
 }
 
-static bool supportsNRVO(const s_Overload& o, const s_cg_CurrentFn& _current_fn)
+static bool supportsNRVO(const s_Overload& o, const s_cg_CurrentFn& _current_fn, const s_Module& module, const s_Context& ctx)
 {
-    return (o.kind == "var"_fu) && !(o.flags & F_ARG) && (o.local_of == _current_fn.target.index);
+    return (o.kind == "var"_fu) && !(o.flags & F_ARG) && (o.local_of == _current_fn.target.index) && !is_ref(SolvedNodeData(o.solved, module, ctx).type);
 }
 
 static bool Lifetime_hasArguments(const s_Lifetime& lifetime_1)
@@ -2432,9 +2453,9 @@ static fu_STR cgMoveOrClone(const s_SolvedNode& node_1, const int mode, const s_
     {
         if (mode & M_RETURN)
         {
-            const bool nrvo = ((SolvedNodeData(expr, module, ctx).kind == "call"_fu) && (SolvedNodeData(expr, module, ctx).items.size() == 0) && supportsNRVO(GET(SolvedNodeData(expr, module, ctx).target, module, ctx), _current_fn));
+            const bool nrvo = ((SolvedNodeData(expr, module, ctx).kind == "call"_fu) && (SolvedNodeData(expr, module, ctx).items.size() == 0) && supportsNRVO(GET(SolvedNodeData(expr, module, ctx).target, module, ctx), _current_fn, module, ctx));
             if (nrvo)
-                return cgNode(expr, "NRVO"_fu, 0, (*(const s_Type*)fu::NIL), module, ctx, _here, _libs, _tfwd, _tfwd_src, _tdef, _current_fn, _idef, _indent, _hasMain, _fdef, _ffwd, _ffwd_src, _unity, _unity_because, _moveFromConstRefHelpers);
+                return "/*NRVO*/ "_fu + cgNode(expr, "NRVO"_fu, 0, (*(const s_Type*)fu::NIL), module, ctx, _here, _libs, _tfwd, _tfwd_src, _tdef, _current_fn, _idef, _indent, _hasMain, _fdef, _ffwd, _ffwd_src, _unity, _unity_because, _moveFromConstRefHelpers);
 
         };
         if (!is_trivial(SolvedNodeData(node_1, module, ctx).type, module, ctx))
@@ -2442,6 +2463,9 @@ static fu_STR cgMoveOrClone(const s_SolvedNode& node_1, const int mode, const s_
             if (SolvedNodeData(expr, module, ctx).kind == "call"_fu)
             {
                 const s_Overload& o = GET(SolvedNodeData(expr, module, ctx).target, module, ctx);
+                if ((o.kind == "__native"_fu) && (o.name == "[]"_fu))
+                    return cgNode(expr, "cgMoveOperator[]"_fu, M_MOVE, (*(const s_Type*)fu::NIL), module, ctx, _here, _libs, _tfwd, _tfwd_src, _tdef, _current_fn, _idef, _indent, _hasMain, _fdef, _ffwd, _ffwd_src, _unity, _unity_because, _moveFromConstRefHelpers);
+
                 if (!is_mutref(o.type, _here, ctx) && Lifetime_hasArguments(o.type.lifetime))
                 {
                     ensureMoveFromConstRefHelper(SolvedNodeData(expr, module, ctx).target, _moveFromConstRefHelpers, module, ctx, _here, _libs, _tfwd, _tfwd_src, _tdef, _current_fn, _idef, _indent, _hasMain, _fdef, _ffwd, _ffwd_src, _unity, _unity_because);
@@ -2519,13 +2543,13 @@ static fu_STR cgOr(const s_SolvedNode& node_1, const int mode, const s_Module& m
     const bool stmt = !!(mode & M_STMT);
     if (stmt)
     {
-        fu_STR src_2 = "if (!("_fu;
+        /*MOV*/ fu_STR src_2 = "if (!("_fu;
         cgAndOr_concat(src_2, " || "_fu, fu::get_view(items_5, 0, (items_5.size() - 1)), true, module, ctx, _here, _libs, _tfwd, _tfwd_src, _tdef, _current_fn, _idef, _indent, _hasMain, _fdef, _ffwd, _ffwd_src, _unity, _unity_because, _moveFromConstRefHelpers);
         src_2 += "))"_fu;
         src_2 += blockWrapSubstatement(items_5[(items_5.size() - 1)], 0, module, ctx, _current_fn, _here, _libs, _tfwd, _tfwd_src, _tdef, _idef, _indent, _hasMain, _fdef, _ffwd, _ffwd_src, _unity, _unity_because, _moveFromConstRefHelpers);
-        return src_2;
+        return /*NRVO*/ src_2;
     };
-    fu_STR src_2 = (!(mode & M_PARENS) ? "("_fu : fu_STR{});
+    /*MOV*/ fu_STR src_2 = (!(mode & M_PARENS) ? "("_fu : fu_STR{});
     if (is_bool(type_3))
         cgAndOr_concat(src_2, " || "_fu, items_5, true, module, ctx, _here, _libs, _tfwd, _tfwd_src, _tdef, _current_fn, _idef, _indent, _hasMain, _fdef, _ffwd, _ffwd_src, _unity, _unity_because, _moveFromConstRefHelpers);
     else
@@ -2553,7 +2577,7 @@ static fu_STR cgOr(const s_SolvedNode& node_1, const int mode, const s_Module& m
     if (!(mode & M_PARENS))
         src_2 += ")"_fu;
 
-    return src_2;
+    return /*NRVO*/ src_2;
 }
 
 static fu_STR cgAnd(fu::view<s_SolvedNode> items_5, const s_Type& type_3, const int mode, fu::view<fu::byte> debug, const s_Module& module, const s_Context& ctx, s_TokenIdx& _here, fu_VEC<fu_STR>& _libs, fu_VEC<s_BitSet>& _tfwd, fu_VEC<fu_STR>& _tfwd_src, fu_STR& _tdef, s_cg_CurrentFn& _current_fn, s_BitSet& _idef, fu_STR& _indent, int& _hasMain, fu_STR& _fdef, fu_VEC<s_BitSet>& _ffwd, fu_VEC<fu_STR>& _ffwd_src, fu_VEC<int>& _unity, fu_VEC<int>& _unity_because, fu_VEC<s_BitSet>& _moveFromConstRefHelpers)
@@ -2561,13 +2585,13 @@ static fu_STR cgAnd(fu::view<s_SolvedNode> items_5, const s_Type& type_3, const 
     const bool stmt = !!(mode & M_STMT);
     if (stmt)
     {
-        fu_STR src_2 = "if ("_fu;
+        /*MOV*/ fu_STR src_2 = "if ("_fu;
         cgAndOr_concat(src_2, " && "_fu, fu::get_view(items_5, 0, (items_5.size() - 1)), true, module, ctx, _here, _libs, _tfwd, _tfwd_src, _tdef, _current_fn, _idef, _indent, _hasMain, _fdef, _ffwd, _ffwd_src, _unity, _unity_because, _moveFromConstRefHelpers);
         src_2 += ")"_fu;
         src_2 += blockWrapSubstatement(items_5[(items_5.size() - 1)], 0, module, ctx, _current_fn, _here, _libs, _tfwd, _tfwd_src, _tdef, _idef, _indent, _hasMain, _fdef, _ffwd, _ffwd_src, _unity, _unity_because, _moveFromConstRefHelpers);
-        return src_2;
+        return /*NRVO*/ src_2;
     };
-    fu_STR src_2 = (!(mode & M_PARENS) ? "("_fu : fu_STR{});
+    /*MOV*/ fu_STR src_2 = (!(mode & M_PARENS) ? "("_fu : fu_STR{});
     if (is_bool(type_3))
         cgAndOr_concat(src_2, " && "_fu, items_5, true, module, ctx, _here, _libs, _tfwd, _tfwd_src, _tdef, _current_fn, _idef, _indent, _hasMain, _fdef, _ffwd, _ffwd_src, _unity, _unity_because, _moveFromConstRefHelpers);
     else
@@ -2609,7 +2633,7 @@ static fu_STR cgAnd(fu::view<s_SolvedNode> items_5, const s_Type& type_3, const 
     if (!(mode & M_PARENS))
         src_2 += ")"_fu;
 
-    return src_2;
+    return /*NRVO*/ src_2;
 }
 
 static fu_STR cgAnd(const s_SolvedNode& node_1, const int mode, fu::view<fu::byte> debug, const s_Module& module, const s_Context& ctx, s_TokenIdx& _here, fu_VEC<fu_STR>& _libs, fu_VEC<s_BitSet>& _tfwd, fu_VEC<fu_STR>& _tfwd_src, fu_STR& _tdef, s_cg_CurrentFn& _current_fn, s_BitSet& _idef, fu_STR& _indent, int& _hasMain, fu_STR& _fdef, fu_VEC<s_BitSet>& _ffwd, fu_VEC<fu_STR>& _ffwd_src, fu_VEC<int>& _unity, fu_VEC<int>& _unity_because, fu_VEC<s_BitSet>& _moveFromConstRefHelpers)
@@ -2634,12 +2658,12 @@ static fu_STR collectDedupes(fu_VEC<fu_STR>&& values, fu::view<fu::byte> prefix,
     if (!values.size())
         return fu_STR{};
 
-    fu_STR out_1 = "\n"_fu;
+    /*MOV*/ fu_STR out_1 = "\n"_fu;
     fu::sort(values);
     for (int i = 0; i < values.size(); i++)
         out_1 += ((prefix + values[i]) + suffix);
 
-    return out_1;
+    return /*NRVO*/ out_1;
 }
 
 static fu_STR collectDedupes(fu_VEC<fu_STR>&& values)
@@ -2647,12 +2671,12 @@ static fu_STR collectDedupes(fu_VEC<fu_STR>&& values)
     if (!values.size())
         return fu_STR{};
 
-    fu_STR out_1 = "\n"_fu;
+    /*MOV*/ fu_STR out_1 = "\n"_fu;
     fu::sort(values);
     for (int i = 0; i < values.size(); i++)
         out_1 += values[i];
 
-    return out_1;
+    return /*NRVO*/ out_1;
 }
 
 static fu_STR cgRoot(const s_SolvedNode& root_3, const s_Module& module, const s_Context& ctx, s_cg_CurrentFn& _current_fn, s_TokenIdx& _here, fu_VEC<fu_STR>& _libs, fu_VEC<s_BitSet>& _tfwd, fu_VEC<fu_STR>& _tfwd_src, fu_STR& _tdef, s_BitSet& _idef, fu_STR& _indent, int& _hasMain, fu_STR& _fdef, fu_VEC<s_BitSet>& _ffwd, fu_VEC<fu_STR>& _ffwd_src, fu_VEC<int>& _unity, fu_VEC<int>& _unity_because, fu_VEC<s_BitSet>& _moveFromConstRefHelpers)
