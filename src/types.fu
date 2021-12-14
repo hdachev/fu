@@ -6,19 +6,21 @@ import quals;
 let q_mutref            = 1 << 0;
 pub let q_rx_copy       = 1 << 1;
 let q_rx_resize         = 1 << 2;
+let q_rx_move           = 1 << 3;
 
 let TAGS =
 [
     "mutref",
     "copy",
     "resize",
+    "move",
 ];
 
 
 //
 
-pub let RELAX_before_bck    = q_mutref | q_rx_resize;
-pub let RELAX_all           = q_mutref | q_rx_copy | q_rx_resize;
+pub let RELAX_before_bck    = q_mutref             | q_rx_resize            ;
+pub let RELAX_all           = q_mutref | q_rx_copy | q_rx_resize | q_rx_move;
 
 
 //
@@ -209,6 +211,8 @@ pub fn isAssignable(host: Type, guest: Type): bool
 
 //
 
+let q_mutref_or_move = q_mutref | q_rx_move;
+
 pub fn is_ref(type: Type): bool
 {
     return !!type.lifetime;
@@ -247,7 +251,7 @@ pub fn is_ref2temp(type: Type): bool
 
 pub fn clear_refs(mut type: Type): Type
 {
-    type.quals &= ~q_mutref;
+    type.quals &= ~q_mutref_or_move;
     type.lifetime = Lifetime(); // <- discard lifetime
     return type;
 }
@@ -279,7 +283,7 @@ pub fn tryClear_ref(type: Type)
 
 pub fn add_refs(from: Type, mut to: Type)
 {
-    to.quals |= from.quals & q_mutref;
+    to.quals |= from.quals & q_mutref_or_move;
     to.lifetime = Lifetime_union(from.lifetime, to.lifetime);
     return to;
 }
