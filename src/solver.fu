@@ -1971,12 +1971,13 @@ pub fn solve(
             }
 
             // TODO FIX args need extra iteration here.
-            if (h.isFnOrType)
+            if (h.target == _current_fn.target)
             {
-                for (mut i = h.vars.len; i --> 0; )
+                let sig = _current_fn.items;
+                for (mut i = sig.len + FN_ARGS_BACK; i --> 0; )
                 {
-                    let t = nested(h.vars[i]);
-                    if (t.flags & F_ARG)
+                    let t = sig[i].target;
+                    if (t && t.flags & F_ARG)
                         relaxBlockVar(t, :relax_mask);
                 }
             }
