@@ -2893,11 +2893,6 @@ pub fn solve(
                         let argNode = items[i] || fail();
                         let annot   = argNode.items[LET_TYPE];
 
-                        // We can lose mutrefs here if arguments are defaulted.
-                        if (CANNOT_definit_mutrefs)
-                            if (inType.is_mutref && argNode.items[LET_INIT])
-                                inType = clear_mutref(inType);
-
                         /////////////////
                         // Literal fixup.
                         if (couldRetype(inValue))
@@ -4300,13 +4295,6 @@ pub fn solve(
         {
             if (specType)
             {
-                // Kinda arbitrary -
-                //  if init expr doesn't resolve to a mutref,
-                //   infer we want no mutref under any circumstance,
-                //    this should help herd the specs a little.
-                if (specType.is_mutref && !init.type.is_mutref)
-                    annot = clear_mutref(annot);
-
                 // Drop defaults that don't match current spec types,
                 //  this will effectively make the args non-defaulted.
                 if (!isAssignable(host: annot, init.type))

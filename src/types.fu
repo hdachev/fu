@@ -460,9 +460,6 @@ pub fn try_relax(ref type: Type, slot!: Type, mut relax_mask!: i32): bool
     if (!will_relax(type, :slot, :relax_mask))
         return false;
 
-    if (!slot.is_mutref)
-        type = clear_mutref(type);
-
     type.quals &= slot.quals | ~relax_mask;
     return true;
 }
