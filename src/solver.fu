@@ -324,6 +324,16 @@ pub fn solve(
 
     //
 
+    fn isRTL(o: Overload): bool
+        !!(o.flags & F_OOE_RTL);
+
+    fn isRTL_set(ref o: Overload, rtl: bool)
+        if (rtl)    o.flags |=  F_OOE_RTL;
+        else        o.flags &= ~F_OOE_RTL;
+
+
+    //
+
     fn SolvedNode_create(data: SolvedNodeData)
     {
         let nodeown = _current_fn_or_type;
@@ -1899,8 +1909,18 @@ pub fn solve(
             // Relax arguments.
             if (node.items)
             {
-                let host_args = node.target.args;
-                for (mut i = 0; i < node.items.len; i++)
+                let host_args   = node.target.args;
+                let rtl         = node.target.isRTL;
+
+                // Here we're visiting stuff in reverse order of execution -
+                //  so RTL means visit left to right and vice versa, watch it.
+                let N           = node.items.len;
+
+                let start       = rtl ? 0 : N - 1;
+                let end         = rtl ? N : 0 - 1;
+                let incr        = rtl ? +1  :  -1;
+
+                for (mut i = start; i != end; i += incr)
                     node.items[i].propagateType(host_args[i].type, :relax_mask);
             }
         }
@@ -3316,10 +3336,7 @@ pub fn solve(
                         && overload.flags & F_OPERATOR
                         && cpp::hasAssignment(overload.name);
 
-                    if (rtl)
-                        overload.flags |= F_OOE_RTL;
-                    else
-                        overload.flags &= ~F_OOE_RTL;
+                    overload.isRTL_set(rtl);
                 }
 
                 //
@@ -6100,7 +6117,7 @@ pub fn solve(
             mut ooe_reads:  i32[];
             mut ooe_writes: i32[];
 
-            let ooe_isRTL   = !!(target.flags & F_OOE_RTL);
+            let ooe_isRTL   = target.isRTL;
 
             ///////////////////////////////////////////////
             let ooe_START   = ooe_isRTL ? args.len -1 : 0;
