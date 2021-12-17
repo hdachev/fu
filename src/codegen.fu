@@ -1650,6 +1650,12 @@ pub fn cpp_codegen(
             }
         }
 
+        // Remove underscores, if any.
+        mut idx: i32;
+        while ((idx = src.find('_', start: idx)) >= 0)
+            src.splice(idx, 1);
+
+        //
         return src;
     }
 

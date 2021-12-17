@@ -259,6 +259,20 @@ pub fn lex(src: string, fname: string): LexerOutput
 
                     exp = true;
                 }
+                else if (c == '_')
+                {
+                    // Ignore underscores
+                    //  if they are followed by another digit.
+
+                    shadow let c = idx < end && src[idx];
+                    if !(c >= '0' && c <= '9'
+                           || hex && (c >= 'a' && c <= 'f'
+                                  || (c >= 'A' && c <= 'F')))
+                    {
+                        idx--;
+                        break;
+                    }
+                }
                 else
                 {
                     idx--;

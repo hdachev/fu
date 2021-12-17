@@ -4986,6 +4986,12 @@ pub fn runTests()
         fn main() "hello".leadingDigit.i32;
     `);
 
+    ZERO(`
+        fn main() 1_000_000 - 1000000
+               || 0xffff_ffff.i32 - 0xffffffff.i32
+               || 123_456.789.i32 - 123456.789.i32;
+    `);
+
 
     // Typedefs.
 
