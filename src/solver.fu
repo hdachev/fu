@@ -2944,10 +2944,7 @@ pub fn solve(
                             ref argName_typeParam = typeParams.map::ref(argName);
 
                             // Values vs refs.
-                            if (argNode.flags & F_MUT)
-                                inType = clear_refs(inType);
-                            else
-                                inType = add_ref(inType, Lifetime_temporary);
+                            inType = add_ref(inType, Lifetime_temporary);
 
                             //
                             (argName_typeParam && fail(
@@ -4337,19 +4334,21 @@ pub fn solve(
         //
         mut t_let   = annot && (flags & (F_ARG | F_MUT) || !t_init)
 
-                        ? flags & F_ARG && !(flags & F_MUT)
-                            ? add_ref(annot, Lifetime_temporary)
-                            : annot
+                        ? annot
 
                         : t_init.is_mutref || flags & F_MUT || killref
                             ? flags & F_REF                                     && (!killref || fail("redundant, see above, refs cant bind to temps"))
                                 ? t_init
-                                : !(flags & F_MUT) && !killref
-                                    ? clear_mutref(t_init)
-                                    : clear_refs(t_init)
-                            : flags & F_ARG && !(flags & F_MUT)
-                                ? add_ref(t_init, Lifetime_temporary)
-                                : t_init;
+                                : flags & F_MUT || killref
+                                    ? clear_refs(t_init)
+                                    : clear_mutref(t_init)
+
+                            : t_init;
+
+        // Add a temp lifetime to non F_MUT args -
+        //  currently all args are currentlypassed by ref.
+        if (flags & F_ARG && !(flags & F_MUT))
+            t_let = add_ref(t_let, Lifetime_temporary);
 
         // TODO clean this up: inliner broke for `v: &mut T` arg annots,
         //  which don't have the F_REF flag, which drops the mutrefness here on createLet.
