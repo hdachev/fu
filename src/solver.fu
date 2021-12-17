@@ -4350,14 +4350,6 @@ pub fn solve(
         if (flags & F_ARG && !(flags & F_MUT))
             t_let = add_ref(t_let, Lifetime_temporary);
 
-        // TODO clean this up: inliner broke for `v: &mut T` arg annots,
-        //  which don't have the F_REF flag, which drops the mutrefness here on createLet.
-        //
-        // Best way to fix is to use the original argument type on createLet,
-        //  search for TODO__ORIGINAL_ANNOT_OR_TYPE
-        if (t_let.is_mutref)
-            flags |= F_REF;
-
         // TODO clean this up, annots not needed.
         //  We could move init out of here?
         //   So we can edit out of order maybe?
