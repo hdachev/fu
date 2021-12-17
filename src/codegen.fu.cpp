@@ -1214,9 +1214,9 @@ static fu_STR cgMove(const s_Type& type_3, fu::view<fu::byte> src_2, const s_Mod
     return ((("static_cast<"_fu + typeAnnotBase(type_3, 0, _libs, _here, ctx, module, _tfwd, _tfwd_src, _tdef, _current_fn)) + "&&>("_fu) + src_2) + ")"_fu;
 }
 
-                                #ifndef DEFt_map_DPZ3
-                                #define DEFt_map_DPZ3
-inline fu_VEC<fu_STR> map_DPZ3(fu::view<s_SolvedNode> a, int, const s_Module& module, const s_Context& ctx)
+                                #ifndef DEFt_map_XG35
+                                #define DEFt_map_XG35
+inline fu_VEC<fu_STR> map_XG35(fu::view<s_SolvedNode> a, int, const s_Module& module, const s_Context& ctx)
 {
     /*MOV*/ fu_VEC<fu_STR> res {};
     res.grow<false>(a.size());
@@ -1459,6 +1459,11 @@ static fu::byte hex(const unsigned x)
     return ((x < 10u) ? fu::byte((uint32_t(fu::byte('0')) + x)) : fu::byte((uint32_t(fu::byte('A')) + (x - 10u))));
 }
 
+static fu_STR xHH(const unsigned c)
+{
+    return ("x"_fu + hex(((c >> 4u) & 0xfu))) + hex(((c >> 0u) & 0xfu));
+}
+
 static fu_STR valid_identifier(fu_STR&& str_1)
 {
     for (int i = str_1.size(); i-- > 0; )
@@ -1467,10 +1472,7 @@ static fu_STR valid_identifier(fu_STR&& str_1)
         if (((c >= fu::byte('a')) && (c <= fu::byte('z'))) || ((c >= fu::byte('A')) && (c <= fu::byte('Z'))) || ((c >= fu::byte('0')) && (c <= fu::byte('9'))) || (c == fu::byte('_')))
             continue;
 
-        const unsigned c_1 = uint32_t(c);
-        const unsigned b0 = ((c_1 >> 4u) & 0xfu);
-        const unsigned b1 = ((c_1 >> 0u) & 0xfu);
-        str_1 = ((((fu::get_view(str_1, 0, i) + fu::byte('x')) + hex(b0)) + hex(b1)) + fu::get_view(str_1, (i + 1), str_1.size()));
+        str_1 = ((fu::get_view(str_1, 0, i) + xHH(uint32_t(c))) + fu::get_view(str_1, (i + 1), str_1.size()));
     };
     return ID(str_1);
 }
@@ -2112,7 +2114,7 @@ static fu_STR cgCall(const s_SolvedNode& node_1, const int mode, const s_Module&
         item_src += src_2;
     };
     if (!(ooe_crosscheck == SolvedNodeData(node_1, module, ctx).helpers))
-        fail(((x7E_OZkl((x7E_OZkl("OOE crosscheck failed: codegen sequenced "_fu, fu::i64dec(ooe_crosscheck)) + ", but solver wants "_fu), fu::i64dec(SolvedNodeData(node_1, module, ctx).helpers)) + ": "_fu) + join_VtCz(map_DPZ3(args_1, 0, module, ctx), "|"_fu)), _here, ctx);
+        fail(((x7E_OZkl((x7E_OZkl("OOE crosscheck failed: codegen sequenced "_fu, fu::i64dec(ooe_crosscheck)) + ", but solver wants "_fu), fu::i64dec(SolvedNodeData(node_1, module, ctx).helpers)) + ": "_fu) + join_VtCz(map_XG35(args_1, 0, module, ctx), "|"_fu)), _here, ctx);
 
     if (isNative && (target_6.name[0] == fu::byte('\n')))
     {
@@ -2284,12 +2286,12 @@ static fu_STR cgLiteral(const s_SolvedNode& node_1, const s_Module& module, cons
     return /*NRVO*/ src_2;
 }
 
-static fu_STR cgCharLiteral(const s_SolvedNode& node_1, const s_Module& module, const s_Context& ctx, fu_VEC<fu_STR>& _libs)
+static fu_STR escapeStringLiteral(fu::view<fu::byte> str_1, const fu::byte quot)
 {
-    fu_STR esc {};
-    for (int i = 0; i < SolvedNodeData(node_1, module, ctx).value.size(); i++)
+    /*MOV*/ fu_STR esc = fu_STR { fu::slate<1, fu::byte> { fu::byte(quot) } };
+    for (int i = 0; i < str_1.size(); i++)
     {
-        const fu::byte c = SolvedNodeData(node_1, module, ctx).value[i];
+        const fu::byte c = str_1[i];
         if (c == fu::byte('\n'))
             esc += "\\n"_fu;
         else if (c == fu::byte('\r'))
@@ -2300,40 +2302,32 @@ static fu_STR cgCharLiteral(const s_SolvedNode& node_1, const s_Module& module, 
             esc += "\\v"_fu;
         else if (c == fu::byte('\\'))
             esc += "\\\\"_fu;
-        else if (c == fu::byte('\''))
-            esc += "\\'"_fu;
+        else if (fu::i8(c) < fu::i8(32))
+            esc += ("\\"_fu + xHH(uint32_t(c)));
         else
-            esc += c;
+        {
+            if (c == quot)
+                esc += fu::byte('\\');
 
+            esc += c;
+        };
     };
+    esc += quot;
+    return /*NRVO*/ esc;
+}
+
+static fu_STR cgCharLiteral(const s_SolvedNode& node_1, fu_VEC<fu_STR>& _libs, const s_Module& module, const s_Context& ctx)
+{
     include("<fu/int.h>"_fu, _libs);
-    return ("fu::byte('"_fu + esc) + "')"_fu;
+    return ("fu::byte("_fu + escapeStringLiteral(SolvedNodeData(node_1, module, ctx).value, fu::byte('\''))) + ")"_fu;
 }
 
 static fu_STR cgStringLiteral(const s_SolvedNode& node_1, fu_VEC<fu_STR>& _libs, const s_Module& module, const s_Context& ctx)
 {
     annotateString(_libs);
-    fu_STR esc {};
-    for (int i = 0; i < SolvedNodeData(node_1, module, ctx).value.size(); i++)
-    {
-        const fu::byte c = SolvedNodeData(node_1, module, ctx).value[i];
-        if (c == fu::byte('\n'))
-            esc += "\\n"_fu;
-        else if (c == fu::byte('\r'))
-            esc += "\\r"_fu;
-        else if (c == fu::byte('\t'))
-            esc += "\\t"_fu;
-        else if (c == fu::byte('\v'))
-            esc += "\\v"_fu;
-        else if (c == fu::byte('\\'))
-            esc += "\\\\"_fu;
-        else if (c == fu::byte('"'))
-            esc += "\\\""_fu;
-        else
-            esc += c;
-
-    };
-    return ("\""_fu + esc) + "\"_fu"_fu;
+    /*MOV*/ fu_STR esc = escapeStringLiteral(SolvedNodeData(node_1, module, ctx).value, fu::byte('"'));
+    esc += "_fu"_fu;
+    return /*NRVO*/ esc;
 }
 
 static fu_STR cgArrayLiteral(const s_SolvedNode& node_1, const int mode, const s_Type& callarg, const s_Module& module, const s_Context& ctx, s_TokenIdx& _here, fu_VEC<fu_STR>& _libs, fu_VEC<s_BitSet>& _tfwd, fu_VEC<fu_STR>& _tfwd_src, fu_STR& _tdef, s_cg_CurrentFn& _current_fn, s_BitSet& _idef, fu_STR& _indent, int& _hasMain, fu_STR& _fdef, fu_VEC<s_BitSet>& _ffwd, fu_VEC<fu_STR>& _ffwd_src, fu_VEC<int>& _unity, fu_VEC<int>& _unity_because, fu_VEC<s_BitSet>& _moveFromConstRefHelpers)
@@ -2880,7 +2874,7 @@ static fu_STR cgNode(const s_SolvedNode& node_1, fu::view<fu::byte> debug, const
         return cgLiteral(node_1, module, ctx, _libs, _here, _tfwd, _tfwd_src, _tdef, _current_fn);
 
     if (k == "char"_fu)
-        return cgCharLiteral(node_1, module, ctx, _libs);
+        return cgCharLiteral(node_1, _libs, module, ctx);
 
     if (k == "str"_fu)
         return cgStringLiteral(node_1, _libs, module, ctx);
