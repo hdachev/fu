@@ -75,7 +75,7 @@ pub fn lex(src: string, fname: string): LexerOutput
         err_str(kind, idx0, "`" ~ src[reason] ~ "`");
     }
 
-    fn unescapeStr(esc: string, idx0: i32, idx1: i32): string
+    fn UNSAFE_unescapeStr(esc: string, idx0: i32, idx1: i32, quot: byte): string
     {
         mut out = "";
 
@@ -85,6 +85,7 @@ pub fn lex(src: string, fname: string): LexerOutput
             let c = esc[i];
             if (c == '\\')
             {
+                // UNSAFE: string must not end in backslash
                 let c1 = esc[++i];
 
                 if      (c1 == '\\') out ~= '\\';
@@ -100,7 +101,27 @@ pub fn lex(src: string, fname: string): LexerOutput
                 else if (c1 ==  'b') out ~= '\b';
                 else if (c1 ==  'e') out ~= '\e';
 
-                else                out ~= c1;
+                else if (c1 == quot) out ~= quot;
+
+                else if (c1 ==  'x')
+                {
+                    if (i >= n - 2)
+                        err_str("str", i - 1, "Incomplete \\x-escape sequence.");
+
+                    fn parseHex()
+                    {
+                        shadow let c = esc[++i];
+
+                        return c >= '0' && c <= '9' ? c.i32 - '0'.i32
+                             : c >= 'A' && c <= 'F' ? c.i32 - 'A'.i32 + 10
+                             : c >= 'a' && c <= 'f' ? c.i32 - 'a'.i32 + 10
+                             : err_str("str", i - 1, "Non hexadecimal character in \\x-escape sequence.");
+                    }
+
+                    out ~= byte((parseHex() << 4) | parseHex());
+                }
+
+                else err_str("str", i - 1, "Unknown escape sequence.");
             }
             else
             {
@@ -306,7 +327,7 @@ pub fn lex(src: string, fname: string): LexerOutput
             else
             {
                 let idx1 = idx;
-                let str  = esc  ? unescapeStr(src, idx0, idx1)
+                let str  = esc  ? UNSAFE_unescapeStr(src, idx0, idx1, c)
                                 : src.slice(idx0 + 1, idx1 - 1);
 
                 let char = c == '\'';

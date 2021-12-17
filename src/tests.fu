@@ -1211,6 +1211,13 @@ pub fn runTests()
         return sum;
     `);
 
+    ZERO(`
+        fn main() '\\e'.i32 - 27
+             ||   '\\0'.i32
+             || '\\x11'.i32 - 17
+             || '\\xaA'.i32 - 170;
+    `);
+
 
     // String opti checkers.
 
