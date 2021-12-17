@@ -87,10 +87,19 @@ pub fn lex(src: string, fname: string): LexerOutput
             {
                 let c1 = esc[++i];
 
-                if      (c1 == 'n') out ~= '\n';
-                else if (c1 == 'r') out ~= '\r';
-                else if (c1 == 't') out ~= '\t';
-                else if (c1 == 'v') out ~= '\v';
+                if      (c1 == '\\') out ~= '\\';
+
+                else if (c1 ==  'n') out ~= '\n';
+                else if (c1 ==  'r') out ~= '\r';
+                else if (c1 ==  't') out ~= '\t';
+                else if (c1 ==  'f') out ~= '\f';
+                else if (c1 ==  'v') out ~= '\v';
+
+                else if (c1 ==  '0') out ~= '\0';
+                else if (c1 ==  'a') out ~= '\a';
+                else if (c1 ==  'b') out ~= '\b';
+                else if (c1 ==  'e') out ~= '\e';
+
                 else                out ~= c1;
             }
             else

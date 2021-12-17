@@ -102,14 +102,26 @@ static fu_STR unescapeStr(fu::view<fu::byte> esc, const int idx0, const int idx1
         if (c == fu::byte('\\'))
         {
             const fu::byte c1 = esc[++i];
-            if (c1 == fu::byte('n'))
+            if (c1 == fu::byte('\\'))
+                out += fu::byte('\\');
+            else if (c1 == fu::byte('n'))
                 out += fu::byte('\n');
             else if (c1 == fu::byte('r'))
                 out += fu::byte('\r');
             else if (c1 == fu::byte('t'))
                 out += fu::byte('\t');
+            else if (c1 == fu::byte('f'))
+                out += fu::byte('\f');
             else if (c1 == fu::byte('v'))
                 out += fu::byte('\v');
+            else if (c1 == fu::byte('0'))
+                out += fu::byte('\0');
+            else if (c1 == fu::byte('a'))
+                out += fu::byte('\a');
+            else if (c1 == fu::byte('b'))
+                out += fu::byte('\b');
+            else if (c1 == fu::byte('e'))
+                out += fu::byte(27);
             else
                 out += c1;
 
