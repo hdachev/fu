@@ -115,6 +115,26 @@ pub fn runTests()
         return sign(10) * 2 + sign(-5);
     `);
 
+    ZERO(`
+        fn main() {
+            let  i = -1;
+            let sb = i.i8;
+            let  b = i.u8;
+
+            return sb == -1 && b == 255 ? 0 : 1;
+        }
+    `);
+
+    ZERO(`
+        fn main() {
+            let sb = (-1).i8;
+            let  i =  sb.i32;
+            let  u =  sb.u32;
+
+            return i == -1 && u.i32 == 255 ? 0 : 1;
+        }
+    `);
+
 
     // Mutation & references.
 
