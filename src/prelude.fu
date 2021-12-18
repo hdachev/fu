@@ -9,14 +9,6 @@ let prelude_src = `
 fn STEAL (ref a: $T): $T __native;
 fn SWAP  (ref a: $T, ref b: $T): void __native("<utility>", "std::swap");
 
-fn println(): void __native;
-fn println(a: $A): void __native;
-fn println(a: $A, b: $B): void __native;
-fn println(a: $A, b: $B, c: $C): void __native;
-fn println(a: $A, b: $B, c: $C, d: $D): void __native;
-fn println(a: $A, b: $B, c: $C, d: $D, e: $E): void __native;
-fn println(a: $A, b: $B, c: $C, d: $D, e: $E, f: $F): void __native;
-
 
 // Arithmetics.
 
@@ -284,6 +276,14 @@ fn str(n: $T)
     case ($T -> @unsigned): string __native("<fu/decstr.h>", "fu::u64dec");
     case ($T -> @integral): string __native("<fu/decstr.h>", "fu::i64dec");
     case ($T -> @floating_point): string __native("<fu/decstr.h>", "fu::f64dec");
+
+
+// Printifiables = anything that implements print.
+
+inline fn print(x: string): string = x;
+inline fn print(x.str)    : string = x;
+
+fn println(parts.print[]: [string]): void __native("<fu/print.h>", "fu::println");
 
 
 // String commons.

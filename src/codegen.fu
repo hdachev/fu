@@ -1570,9 +1570,6 @@ pub fn cpp_codegen(
                 return cgMove(node.type, ARG(0));
         }
 
-        if (id == "println")
-            return cgPrint(item_src);
-
         isNative && fail("Unknown __native: `" ~ id ~ "`.");
 
         return emitFunctionCall(id.valid_identifier);
@@ -1620,18 +1617,6 @@ pub fn cpp_codegen(
         }
 
         fail("Unknown builtin: " ~ id);
-    }
-
-    fn cgPrint(items: string[]): string
-    {
-        include("<iostream>");
-
-        mut src = "(std::cout";
-        for (mut i = 0; i < items.len; i++)
-            src ~= " << " ~ items[i];
-
-        src ~= " << '\\n')";
-        return src;
     }
 
     fn annotateString(): string
