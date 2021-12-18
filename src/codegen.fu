@@ -1473,6 +1473,9 @@ pub fn cpp_codegen(
                 return emitPostfixOp(id);       // X`.a`
             }
 
+            if (id[0] == '/')
+                return ooeWrap(emitBuiltin(id, item_src, node));
+
             if (args)
             {
                 if (id.hasIdentifierChars)
@@ -1573,6 +1576,50 @@ pub fn cpp_codegen(
         isNative && fail("Unknown __native: `" ~ id ~ "`.");
 
         return emitFunctionCall(id.valid_identifier);
+    }
+
+    fn emitBuiltin(id: string, args: string[], node: SolvedNode): string
+    {
+        if (id == "/prim/convert")
+        {
+            let output  = node.type;
+            let input   = node.items.only.type;
+
+            let cast    = typeAnnotBase(node.type);
+
+            if (input.is_integral && node.type.is_integral &&
+                input.is_unsigned != node.type.is_unsigned)
+            {
+                // When casting between signed and unsigned integers,
+                //  we always go through an intermediate unsigned type
+                //   that is as big as the signed type:
+                //
+                //  i8 -> u32 :=  i8 ->  u8 -> u32
+                // u32 ->  i8 := u32 ->  u8 ->  i8
+                //
+                //  u8 -> i32 :=  u8 -> u32 -> i32
+                // i32 ->  u8 := i32 -> u32 ->  u8
+                //
+                // This means that we only move the sign bit around
+                //  when casting between signed types.
+                //
+                mut mid_t       = input.is_unsigned ? output : input;
+                mid_t.canon[0] == 'i' || fail();
+                mid_t.canon[0]  = 'u';
+
+                if (mid_t.canon != output.canon &&
+                    mid_t.canon != input.canon)
+                {
+                    let inner = typeAnnotBase(mid_t);
+
+                    return cast ~ '(' ~ inner ~ '(' ~ args.only ~ "))";
+                }
+            }
+
+            return cast ~ '(' ~ args.only ~ ')';
+        }
+
+        fail("Unknown builtin: " ~ id);
     }
 
     fn cgPrint(items: string[]): string
