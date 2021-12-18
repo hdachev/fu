@@ -4827,6 +4827,15 @@ pub fn solve(
                 return ok;
             }
         }
+        else if (node.kind == "call")
+        {
+            let fn = node.value;
+            if (node.items.len == 1)
+            {
+                if (fn == "!")
+                    return !evalTypePattern(node.items[0], typeParams);
+            }
+        }
 
         return fail("TODO evalTypePattern fallthrough: "
                     ~ node.kind ~ "(" ~ node.items.len ~ ")");
