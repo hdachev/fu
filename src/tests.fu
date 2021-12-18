@@ -6513,30 +6513,6 @@ pub fn runTests()
     `);
 
     ZERO(`
-        fn varargs(a[]) a[0] + a[1];
-        fn main() varargs(1, 2) - 3;
-    `);
-
-    ZERO(`
-        fn to_debug_str(a: i32) a     * 2;
-        fn to_debug_str(b: u32) b.i32 * 3;
-
-        <alt>
-        inline
-        </alt>
-        fn inspect(items.to_debug_str[]) // <- varargs!
-        {
-            mut a = 0;
-            for (mut i = 0; i < items.len; i++)
-                a += items[i];
-
-            return a;
-        }
-
-        fn main() inspect(5.i32, 7.u32) - 31;
-    `);
-
-    ZERO(`
         struct X { str: string; };
         fn ~(a: X, b: X) X(a.str ~ b.str);          // currently: invalid operator~ cg
         inline fn ~(a: X, b.to_debug_str) a ~ b;    // currently: pointless blocks
@@ -6627,6 +6603,33 @@ pub fn runTests()
             mut str = "a";
             return str.test(CodegenOutput("what")).len - 6; // "abwhat".len;
         }
+    `);
+
+
+    // Autocall, varargs & rest params.
+
+    ZERO(`
+        fn varargs(a[]) a[0] + a[1];
+        fn main() varargs(1, 2) - 3;
+    `);
+
+    ZERO(`
+        fn to_debug_str(a: i32) a     * 2;
+        fn to_debug_str(b: u32) b.i32 * 3;
+
+        <alt>
+        inline
+        </alt>
+        fn inspect(items.to_debug_str[]) // <- varargs!
+        {
+            mut a = 0;
+            for (mut i = 0; i < items.len; i++)
+                a += items[i];
+
+            return a;
+        }
+
+        fn main() inspect(5.i32, 7.u32) - 31;
     `);
 
 
