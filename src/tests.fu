@@ -6632,6 +6632,21 @@ pub fn runTests()
         fn main() inspect(5.i32, 7.u32) - 31;
     `);
 
+    ZERO(`
+        fn Stringy(i: i32) "i:" ~ i;
+
+        inline fn Printy(x: string): string = x;
+        inline fn Printy(x.Stringy): string = x;
+
+        fn Println(parts.Printy[]<alt>: [string]</alt>) {
+            mut total = 0;
+            for (mut i = 0; i < parts.len; i++) total += parts[i].len;
+            return total;
+        }
+
+        fn main() Println("str", 10) - 7; // 'stri:10'.len
+    `);
+
 
     // Addrofns of struct fields.
 
