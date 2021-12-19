@@ -225,7 +225,7 @@ pub fn runTests()
         return sum - 16;
     `);
 
-    TODO(`
+    ZERO(`
         mut i = 5;
         mut sum = 0;
         while (let x = i--) sum += x - i;

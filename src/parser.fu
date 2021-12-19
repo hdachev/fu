@@ -330,7 +330,7 @@ pub fn parse(modid: i32, fname: string, tokens: Token[], options: options::Optio
     fn parseCompilerPragma(): Node
     {
         let ret = make("compiler", :consume("id").value);
-        consume("op", ";");
+        softSemi();
         return ret;
     }
 
@@ -351,12 +351,29 @@ pub fn parse(modid: i32, fname: string, tokens: Token[], options: options::Optio
 
     //
 
+    fn softSemi()
+    {
+        let peek = tokens[_idx];
+        if (peek.kind == "op")
+        {
+            if (peek.value == ";") {
+                _idx++;
+                return;
+            }
+
+            if (peek.value == "}" || peek.value == ")")
+                return;
+        }
+
+        warn("Missing semicollon before `" ~ peek.value ~ "`.");
+    }
+
     fn parseTypedef(): Node
     {
         let name = consume("id").value;
         consume("op", "=");
         let annot = parseTypeAnnot();
-        consume("op", ";");
+        softSemi();
 
         return make("typedef", value: name, items: [ annot ]);
     }
@@ -385,7 +402,7 @@ pub fn parse(modid: i32, fname: string, tokens: Token[], options: options::Optio
     fn parseStructItem(): Node
     {
         mut member = parseLet(xqmark: true);
-        consume("op", ";");
+        softSemi();
         return member;
     }
 
@@ -546,10 +563,6 @@ pub fn parse(modid: i32, fname: string, tokens: Token[], options: options::Optio
 
             if (peek.kind == "id")
             {
-                if (v == "let")         return parseLetStmt();
-                if (v == "lax")         return { _idx--; parseLetStmt() };
-                if (v == "mut")         return { _idx--; parseLetStmt() };
-                if (v == "ref")         return { _idx--; parseLetStmt() };
                 if (v == "struct")      return parseStructDecl();
                 if (v == "type")        return parseTypedef();
 
@@ -567,6 +580,25 @@ pub fn parse(modid: i32, fname: string, tokens: Token[], options: options::Optio
                 if (v == "prefix")      return parseFixityDecl(F_PREFIX);
                 if (v == "postfix")     return parseFixityDecl(F_POSTFIX);
             }
+        }
+
+        ////////////
+        _idx--;
+        ////////////
+
+        return parseLetOrExpressionStatement();
+    }
+
+    fn parseLetOrExpressionStatement(): Node
+    {
+        let token = tokens[_idx++];
+        if (token.kind == "id" && tokens[_idx].kind == "id")
+        {
+            let v = token.value;
+            if (v == "let")         return parseLetStmt();
+            if (v == "lax")         return { _idx--; parseLetStmt() };
+            if (v == "mut")         return { _idx--; parseLetStmt() };
+            if (v == "ref")         return { _idx--; parseLetStmt() };
         }
 
         ////////////
@@ -608,7 +640,7 @@ pub fn parse(modid: i32, fname: string, tokens: Token[], options: options::Optio
             value = consume("str").value;
         }
 
-        consume("op", ";");
+        softSemi();
         value = registerImport(value);
         return make("import", :value);
     }
@@ -632,13 +664,7 @@ pub fn parse(modid: i32, fname: string, tokens: Token[], options: options::Optio
     fn parseExpressionStatement(): Node
     {
         let expr = parseExpression(P_RESET);
-
-        let peek = tokens[_idx];
-        if (peek.kind == "op" && peek.value == ";")
-            _idx++;
-        else if (peek.kind != "op" || peek.value != "}")
-            warn("Missing semicollon before `" ~ peek.value ~ "`.");
-
+        softSemi();
         return expr;
     }
 
@@ -973,7 +999,7 @@ pub fn parse(modid: i32, fname: string, tokens: Token[], options: options::Optio
             return make("catch", [ ret, err, catch ]);
         }
 
-        consume("op", ";");
+        softSemi();
         return ret;
     }
 
@@ -1611,8 +1637,9 @@ pub fn parse(modid: i32, fname: string, tokens: Token[], options: options::Optio
         let not = tryConsume("op", "!");
 
         consume("op", "(");
+        mut cond = parseLetOrExpressionStatement();
+        consume("op", ")");
 
-        mut cond = parseParens();
         if (not)
             cond = createPrefix("!", cond);
 
@@ -1694,7 +1721,7 @@ pub fn parse(modid: i32, fname: string, tokens: Token[], options: options::Optio
         if (init && init.kind != "let")
             fail("`for` expects a `let` statement, got a `" ~ init.kind ~ "`.");
 
-        let pre_cond = !tryConsume("op", ";") && parseExpressionStatement();
+        let pre_cond = !tryConsume("op", ";") && parseLetOrExpressionStatement();
 
         let token = tokens[_idx];
         let post = !(token.kind == "op" && token.value == ")")
@@ -1709,7 +1736,8 @@ pub fn parse(modid: i32, fname: string, tokens: Token[], options: options::Optio
     fn parseWhile(): Node
     {
         consume("op", "(");
-        let pre_cond = parseParens();
+        let pre_cond = parseLetOrExpressionStatement();
+        consume("op", ")");
         let body = parseStatement();
 
         return createLoop(:pre_cond, :body);
@@ -1720,8 +1748,9 @@ pub fn parse(modid: i32, fname: string, tokens: Token[], options: options::Optio
         let body = parseStatement();
         consume("id", "while");
         consume("op", "(");
-        let post_cond = parseParens();
-        consume("op", ";");
+        let post_cond = parseLetOrExpressionStatement();
+        consume("op", ")");
+        softSemi();
 
         return createLoop(:body, :post_cond);
     }
