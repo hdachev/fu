@@ -1096,10 +1096,21 @@ pub fn solve(
                     }
 
                     mut REST_TYPE: Type;
+                    mut REST_EXPECT: Type;
                     let REST_START = arity.findRestStart();
 
                     let N = (use_reorder ? reorder.len : args.len)
                         .max(!isZeroInit && arity.min);
+
+                    if (REST_START < N)
+                    {
+                        let expect = host_args[REST_START].type;
+                        if (expect)
+                            REST_EXPECT = tryClear_sliceable(expect) || fail(
+                                overloadIdx.name
+                                    ~ ": Rest argument annotation is not an array: "
+                                    ~ humanizeType(expect));
+                    }
 
                     if (N)
                     {
@@ -1110,7 +1121,7 @@ pub fn solve(
                         {
                             let rest        = i >= REST_START;
                             let host_arg    = host_args[rest ? REST_START : i];
-                            let expect      = host_arg.type;
+                            let expect      = rest ? REST_EXPECT : host_arg.type;
 
                             // TODO FIX!
                             if (TODO_FIX_skip_autocalls && rest)
