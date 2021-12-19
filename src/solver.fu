@@ -2081,7 +2081,7 @@ pub fn solve(
         fail("Noreturn during static init: this program will never finish booting.");
     }
 
-    fn solveBlock(node: Node, type!: Type, fnbody_of?!: i32, mask! = HM_CanBreak, kills?!: i32, id?!: string, steal?!: i32): SolvedNode
+    fn solveBlock(node: Node, type!: Type, fnbody_of?!: i32, mask! = HM_CanBreak, kills?!: i32, id?!: string, steal?!: i32, locals_start?!: i32): SolvedNode
     {
         let nodes = node.kind == "block"  ? node.items : [ node ];
         shadow let id = id || node.kind == "block" && node.value;
@@ -2096,7 +2096,7 @@ pub fn solve(
             ret_expect:     type,
             target:         fnbody_of && Target(:module.modid, fnbody_of),
             local_of:       fnbody_of ? -1 : _current_fn.target.index,
-            locals_start:   fnbody_of ? +1 : GET_next_local_index()));
+            locals_start:   fnbody_of ? +1 : locals_start || GET_next_local_index()));
 
         // TODO FIX ARGSTEAL Steal arguments from one level up, this real messy.
         if (steal)
@@ -5499,6 +5499,7 @@ pub fn solve(
                 host_args.len == args.len || fail("inline: arglen mismatch");
                 result.resize(args.len + 1);
 
+                let locals_start = args && GET_next_local_index();
                 for (mut i = 0; i < args.len; i++)
                 {
                     let slot = host_args[i];
@@ -5511,7 +5512,8 @@ pub fn solve(
                     mask: i16(HM_CanReturn | (n_fn.flags & F_LAMBDA && HM_Lambda)),
                     id: n_fn.value,
                     :kills,
-                    steal: _helpers.last.vars.len - helpers0vars);
+                    steal: _helpers.last.vars.len - helpers0vars,
+                    :locals_start);
 
                 _helpers.last.vars.len == helpers0vars || fail(
                     "inline: _helpers.len != helpers0vars");
