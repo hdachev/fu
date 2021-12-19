@@ -6633,6 +6633,16 @@ pub fn runTests()
     `);
 
     ZERO(`
+        fn va(args[]: i32[]) {
+            mut sum = 0;
+            for (mut i = 0; i < args.len; i++) sum += args[i];
+            return sum;
+        }
+
+        fn main() va(1, 2) - 3;
+    `);
+
+    ZERO(`
         fn Stringy(i: i32) "i:" ~ i;
 
         inline fn Printy(x: string): string = x;
