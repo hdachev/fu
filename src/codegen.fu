@@ -223,8 +223,10 @@ pub fn cpp_codegen(
             if (c == "f32")     return "float";
             if (c == "f64")     return "double";
 
-            // Narrow charascter types. TODO: byte!
-            if (c == "i8" || c == "u8" || c == "byte")
+            if (c == "byte")    return "char";
+
+            // Narrow charascter types.
+            if (c == "i8" || c == "u8")
             {
                 include("<fu/int.h>");
                 return "fu::" ~ c;
@@ -1240,7 +1242,7 @@ pub fn cpp_codegen(
 
     fn cgCharLiteral(node: SolvedNode): string
     {
-        //*
+        /*
         include("<fu/int.h>");
         return "fu::byte(" ~ escapeStringLiteral(node.value, '\'') ~ ")";
         /*/

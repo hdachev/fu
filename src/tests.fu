@@ -4691,7 +4691,7 @@ pub fn runTests()
         fn compile_snippets(x0: string) x0.find('a') && throw("throw#1");
         fn ZERO(x1: string) x1.find('b') && throw("throw#2");
 
-        fn FAIL(x2: string): string {                   ;; EXPECT fu::view<fu::byte> x2
+        fn FAIL(x2: string): string {                   ;; EXPECT fu::view<char> x2
             let ctx = compile_snippets(x2) && "hey"
                 catch e return ZERO(x2) && e;
 
@@ -5196,7 +5196,7 @@ pub fn runTests()
         fn test(a: [byte], b?: [byte]) a == b;
         fn main() test("") ? 0 : 1;
 
-        ;; EXPECT test(fu::view<fu::byte>{}, fu::view<fu::byte>{})
+        ;; EXPECT test(fu::view<char>{}, fu::view<char>{})
     `);
 
     ZERO(`
