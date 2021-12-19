@@ -893,6 +893,7 @@ pub fn parse(modid: i32, fname: string, tokens: Token[], options: options::Optio
 
         mut implicit: Node[];
         mut defaults = false;
+        mut firstDefault = -1;
 
         //////////////
         _dollarAuto++;
@@ -909,6 +910,8 @@ pub fn parse(modid: i32, fname: string, tokens: Token[], options: options::Optio
 
             first = false;
 
+            mut insertAt = -1;
+
             mut arg = parseLet(xqmark: true);
             if (_dollars.len > dollars0)
                 arg.flags |= F_TEMPLATE;
@@ -918,11 +921,16 @@ pub fn parse(modid: i32, fname: string, tokens: Token[], options: options::Optio
                 if (arg.flags & F_IMPLICIT)
                     fail("TODO default implicit arguments");
 
-                defaults = true;
+                defaults        = true;
+                firstDefault    = outArgs.len;
             }
             else if (defaults)
             {
-                fail("TODO non-trailing default arguments");
+                if !(arg.flags & F_MUSTNAME)
+                    fail("TODO non-trailing default arguments");
+
+                insertAt    = firstDefault;
+                firstDefault++;
             }
             else if (!arg.items[LET_TYPE])
             {
@@ -934,6 +942,8 @@ pub fn parse(modid: i32, fname: string, tokens: Token[], options: options::Optio
 
             if (arg.flags & F_IMPLICIT)
                 implicit.push(arg);
+            else if (insertAt > 0)
+                outArgs.insert(insertAt, arg);
             else
                 outArgs.push(arg);
         }

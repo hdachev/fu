@@ -5365,6 +5365,11 @@ pub fn runTests()
     `
     ]);
 
+    ZERO(`
+        fn what(a = -1, b!: i32) a + b; // Trailing explicit args.
+        fn main() what(b: +1);
+    `);
+
 
     // Optional arguments.
 
