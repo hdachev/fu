@@ -664,6 +664,18 @@ pub fn parse(modid: i32, fname: string, tokens: Token[], options: options::Optio
     fn parseExpressionStatement(): Node
     {
         let expr = parseExpression(P_RESET);
+
+        // Pipeline left expriment.
+        if (tryConsume("op", ":"))
+        {
+            if !(expr.kind == "call" && expr.items && expr.flags & (F_ACCESS | F_METHOD))
+                fail("We only allow x.y: z pipelines right now to avoid ambiguity.");
+
+            let right = parseExpression(P_RESET);
+            return pipelineLeft(expr, right);
+        }
+
+        //
         softSemi();
         return expr;
     }

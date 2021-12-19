@@ -6418,7 +6418,7 @@ pub fn runTests()
 
         fn main() {
             mut i = 0;                  // <- another i, i got them to shadow each other
-            [1, 2].each(|x| i += x);    //      in the everything-a-free-function
+            [1, 2].each: |x| i += x;    //      in the everything-a-free-function
             return i - 3;               //      impl of closures
         }
     `);
