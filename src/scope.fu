@@ -270,8 +270,8 @@ pub fn search(
 
         let item = scope_iterator >= items.len
             ? scope_iterator >= items.len + extra_items.len
-            ? field_items[scope_iterator - items.len - extra_items.len]
-            : TODO_FIX.target_TODOFIX(extra_items[scope_iterator - items.len])
+                ? field_items[scope_iterator - items.len - extra_items.len]
+                : TODO_FIX.target_TODOFIX(extra_items[scope_iterator - items.len])
             : items[scope_iterator];
 
         if (item.id == id)

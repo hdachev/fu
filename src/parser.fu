@@ -1068,11 +1068,19 @@ pub fn parse(modid: i32, fname: string, tokens: Token[], options: options::Optio
     {
         //////////////////////////////
         let p0 = _precedence;
-        let loc0 = _loc;
+        let loc00 = _loc;
         _precedence = p1;
         _loc = _idx;
         //////////////////////////////
 
+        // Whitespace lint -
+        //  Stricter whitespace for expressions that start on a new line,
+        //   the rest fall back to the _col0 from the nearest block.
+        let col00 = loc00 > 0 && tokens[loc00].line > tokens[loc00 - 1].line
+            ? tokens[loc00].col
+            : _col0;
+
+        //
         mut head = parseExpressionHead();
         {
             //////////////////////////////////////////////
@@ -1085,17 +1093,28 @@ pub fn parse(modid: i32, fname: string, tokens: Token[], options: options::Optio
                         : mode &~ M_LINT_UNARY_PRECEDENCE;
             //////////////////////////////////////////////
 
+            mut loc0 = _loc = _idx;
             mut out: Node;
             while (out = tryParseExpressionTail(:head, :mode))
             {
-                _loc = _idx;
+                // Whitespace lint.
+                {
+                    let t1 = tokens[_loc = loc0];
+                    t1.col > col00 || warn(
+                        "Ambiguous indent at `" ~ t1.value
+                            ~ "`: expected more than " ~ col00
+                            ~ ", got " ~ t1.col);
+                }
+
+                //
+                loc0 = _loc = _idx;
                 head = out;
             };
         }
 
         //////////////////////////////
         _precedence = p0;
-        _loc = loc0;
+        _loc = loc00;
         //////////////////////////////
 
         return head;
@@ -1248,12 +1267,9 @@ pub fn parse(modid: i32, fname: string, tokens: Token[], options: options::Optio
 
                 if (v == "::")
                 {
-                    // This is hacky but kinda great -
-                    //  we peek the id, take a step back
-                    //   and allow things to do their thing as usual.
                     let id = consume("id").value;
-                    _idx -= 2;
-                    return createRead(id);
+                    _idx--;
+                    return parseQualifierChain(createRead(id));
                 }
 
                 if (v == ".")
