@@ -31,3 +31,21 @@ fu_STR fu::i64dec(int64_t num)
 
     return fu::u64dec(uint64_t(num));
 }
+
+
+// This is really lame but it'll do for starters.
+
+#include <stdio.h>
+
+fu_STR fu::f64dec(double num)
+{
+    char buffer[64];
+    int len = snprintf(buffer, 64, "%f", num);
+
+    fu_STR res;
+    res.UNSAFE__init_copy(
+        buffer,
+        len > 0 ? len < 64 ? len : 64 : 0);
+
+    return res;
+}

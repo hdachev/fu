@@ -283,6 +283,7 @@ fn ~=(ref a: string, b.str) a ~= b;
 fn str(n: $T)
     case ($T -> @unsigned): string __native("<fu/decstr.h>", "fu::u64dec");
     case ($T -> @integral): string __native("<fu/decstr.h>", "fu::i64dec");
+    case ($T -> @floating_point): string __native("<fu/decstr.h>", "fu::f64dec");
 
 
 // String commons.

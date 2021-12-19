@@ -7,4 +7,6 @@ namespace fu {
 fu_STR u64dec(uint64_t num);
 fu_STR i64dec(int64_t num);
 
+fu_STR f64dec(double num);
+
 }
