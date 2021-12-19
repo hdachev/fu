@@ -6,6 +6,7 @@
 #include <fu/io.h>
 #include <fu/never.h>
 #include <fu/now.h>
+#include <fu/print.h>
 #include <fu/str.h>
 #include <fu/vec.h>
 #include <fu/vec/cmp.h>
@@ -15,7 +16,6 @@
 #include <fu/vec/slice.h>
 #include <fu/vec/view_assign.h>
 #include <fu/view.h>
-#include <iostream>
 
 struct s_ArgWrite;
 struct s_Argument;
@@ -833,7 +833,12 @@ fu_STR locate_PRJDIR()
     if (!(fs > 1000))
         fu::fail(x7E_OZkl((("Bad compiler.fu: "_fu + fn) + ": "_fu), fu::i64dec(fs)));
 
-    (std::cout << ("PRJDIR: "_fu + dir) << '\n');
+    fu_STR _0 {};
+    fu::println((fu::slate<1, fu_STR> { (__extension__ (
+    {
+        /*MOV*/ /*RRET*/ fu_STR x = ("PRJDIR: "_fu + dir);
+        _0 = (x);
+    (void)0;}), static_cast<fu_STR&&>(_0)) }));
     return /*NRVO*/ dir;
 }
 
@@ -1166,7 +1171,12 @@ void build(const fu_STR& fname_1, const bool run, const fu_STR& dir_wrk, const f
     const s_Options options = s_Options{};
 
     {
-        (std::cout << "COMPILE "_fu << fname_1 << '\n');
+        fu_STR _0 {};
+        fu::println((fu::slate<2, fu_STR> { (__extension__ (
+        {
+            /*MOV*/ /*RRET*/ fu_STR x = "COMPILE "_fu;
+            _0 = (x);
+        (void)0;}), static_cast<fu_STR&&>(_0)), fu_STR(fname_1) }));
         const double t0 = fu::now_hr();
         compile(fname_1, (*(const fu_STR*)fu::NIL), options, ctx);
         const double t1 = fu::now_hr();
@@ -1190,7 +1200,22 @@ void build(const fu_STR& fname_1, const bool run, const fu_STR& dir_wrk, const f
             ModuleStat_print(solve_2, "  solve "_fu, fu::view<fu::byte>{});
             ModuleStat_print(codegen_1, "codegen "_fu, "\n"_fu);
         };
-        (std::cout << "        "_fu << tt << "s\n"_fu << '\n');
+        fu_STR _1 {};
+        fu_STR _2 {};
+        fu_STR _3 {};
+        fu::println((fu::slate<3, fu_STR> { (__extension__ (
+        {
+            /*MOV*/ /*RRET*/ fu_STR x = "        "_fu;
+            _1 = (x);
+        (void)0;}), static_cast<fu_STR&&>(_1)), (__extension__ (
+        {
+            /*MOV*/ /*RRET*/ fu_STR x = fu::f64dec(tt);
+            _2 = (x);
+        (void)0;}), static_cast<fu_STR&&>(_2)), (__extension__ (
+        {
+            /*MOV*/ /*RRET*/ fu_STR x = "s\n"_fu;
+            _3 = (x);
+        (void)0;}), static_cast<fu_STR&&>(_3)) }));
     };
     build(run, fu_STR(dir_wrk), FULIB, fu_STR(bin), fu_STR(dir_obj), fu_STR(dir_src), fu_STR(dir_cpp), fname_1, scheme, (*(const fu_STR*)fu::NIL), ctx);
 }
@@ -1202,9 +1227,9 @@ static fu_STR ensure_main(const fu_STR& src_2)
     return (fu::has(src_2, "fn main"_fu) ? fu_STR(src_2) : (("\n\nfn main(): i32 {\n"_fu + src_2) + "\n}\n"_fu));
 }
 
-                                #ifndef DEFt_update_RLBR
-                                #define DEFt_update_RLBR
-inline void update_RLBR(int, const fu_STR& item, int, const fu_STR& extra, s_Map_OZkl& _)
+                                #ifndef DEFt_update_3Tdu
+                                #define DEFt_update_3Tdu
+inline void update_3Tdu(int, const fu_STR& item, int, const fu_STR& extra, s_Map_OZkl& _)
 {
     for (int i = 0; i < _.keys.size(); i++)
     {
@@ -1229,7 +1254,7 @@ inline void update_RLBR(int, const fu_STR& item, int, const fu_STR& extra, s_Map
                                 #define DEFt_set_ZTZj
 inline void set_ZTZj(s_Map_OZkl& _, const fu_STR& key, const fu_STR& value_1)
 {
-    update_RLBR(0, key, 0, value_1, _);
+    update_3Tdu(0, key, 0, value_1, _);
 }
                                 #endif
 
@@ -1292,9 +1317,9 @@ static int unindent_left(fu::view<fu::byte> src_2, const int i0)
     return int(i0);
 }
 
-                                #ifndef DEFt_split_xYoV
-                                #define DEFt_split_xYoV
-inline void split_xYoV(const fu_STR& str_1, fu::view<fu::byte> sep, int, fu_VEC<fu_STR>& result)
+                                #ifndef DEFt_split_TNPE
+                                #define DEFt_split_TNPE
+inline void split_TNPE(const fu_STR& str_1, fu::view<fu::byte> sep, int, fu_VEC<fu_STR>& result)
 {
     int last_1 = 0;
     int next = 0;
@@ -1327,7 +1352,7 @@ inline void split_xYoV(const fu_STR& str_1, fu::view<fu::byte> sep, int, fu_VEC<
 inline fu_VEC<fu_STR> split_OZkl(const fu_STR& str_1, fu::view<fu::byte> sep)
 {
     /*MOV*/ fu_VEC<fu_STR> result {};
-    split_xYoV(str_1, sep, 0, result);
+    split_TNPE(str_1, sep, 0, result);
     return /*NRVO*/ result;
 }
                                 #endif

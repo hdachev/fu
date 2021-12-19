@@ -41,7 +41,7 @@ bool add_once(s_BitSet& _, const int idx)
     const int no_neg = ((idx < 0) ? -1 : 0);
     const int bucket = ((idx / 8) | no_neg);
     const int bit = (idx % 8);
-    const fu::u8 mask = (fu::u8(1u) << fu::u8(bit));
+    const fu::u8 mask = (fu::u8(1u) << fu::u8(unsigned(bit)));
     fu::u8& entry = grow_if_oob_DlDj(_._data, bucket);
     if (!(entry & mask))
     {
@@ -56,7 +56,7 @@ void add(s_BitSet& _, const int idx)
     const int no_neg = ((idx < 0) ? -1 : 0);
     const int bucket = ((idx / 8) | no_neg);
     const int bit = (idx % 8);
-    const fu::u8 mask = (fu::u8(1u) << fu::u8(bit));
+    const fu::u8 mask = (fu::u8(1u) << fu::u8(unsigned(bit)));
     grow_if_oob_DlDj(_._data, bucket) |= mask;
 }
 
@@ -91,7 +91,7 @@ bool has(const s_BitSet& _, const int idx)
     const int no_neg = ((idx < 0) ? -1 : 0);
     const int bucket = ((idx / 8) | no_neg);
     const int bit = (idx % 8);
-    const fu::u8 mask = (fu::u8(1u) << fu::u8(bit));
+    const fu::u8 mask = (fu::u8(1u) << fu::u8(unsigned(bit)));
     return (_._data.size() > bucket) && ((_._data[bucket] & mask) != fu::u8(0u));
 }
 
@@ -102,7 +102,7 @@ void rem(s_BitSet& _, const int idx)
     if (_._data.size() > bucket)
     {
         const int bit = (idx % 8);
-        const fu::u8 mask = (fu::u8(1u) << fu::u8(bit));
+        const fu::u8 mask = (fu::u8(1u) << fu::u8(unsigned(bit)));
         _._data.mutref(bucket) &= ~mask;
     };
 }
@@ -126,7 +126,7 @@ int popcount(const s_BitSet& _)
     for (int i_1 = (N << 3); i_1 < _._data.size(); i_1++)
     {
         tail <<= 8ll;
-        tail |= int64_t(_._data[i_1]);
+        tail |= int64_t(uint64_t(_._data[i_1]));
     };
     sum += __builtin_popcountll(tail);
     return /*NRVO*/ sum;

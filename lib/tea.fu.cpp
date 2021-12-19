@@ -55,7 +55,7 @@ s_TEA hash(/*MOV*/ s_TEA&& res, fu::view<fu::byte> u8view)
             for (int i_1 = u32len; i_1 < u8view.size(); i_1++)
             {
                 last <<= 8u;
-                last |= uint32_t(u8view[i_1]);
+                last |= unsigned(u8view[i_1]);
             };
             res.v1 ^= last;
         };

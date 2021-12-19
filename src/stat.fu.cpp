@@ -3,10 +3,10 @@
 #include <fu/int.h>
 #include <fu/mem/arc.h>
 #include <fu/now.h>
+#include <fu/print.h>
 #include <fu/str.h>
 #include <fu/vec/concat.h>
 #include <fu/view.h>
-#include <iostream>
 
 struct s_ModuleStat;
 
@@ -70,7 +70,22 @@ inline fu_STR x7E_OZkl(fu::view<fu::byte> a, fu::view<fu::byte> b)
 
 void ModuleStat_print(const s_ModuleStat& a, const fu_STR& prefix, fu::view<fu::byte> suffix)
 {
-    (std::cout << prefix << a.time << " s\t"_fu << (a.alloc_count ? ((x7E_OZkl(x7E_OZkl(fu::i64dec(a.alloc_count), " allocs\t"_fu), fu::i64dec(a.alloc_bytes)) + " bytes"_fu) + suffix) : fu_STR{}) << '\n');
+    fu_STR _0 {};
+    fu_STR _1 {};
+    fu_STR _2 {};
+    fu::println((fu::slate<4, fu_STR> { fu_STR(prefix), (__extension__ (
+    {
+        /*MOV*/ /*RRET*/ fu_STR x = fu::f64dec(a.time);
+        _0 = (x);
+    (void)0;}), static_cast<fu_STR&&>(_0)), (__extension__ (
+    {
+        /*MOV*/ /*RRET*/ fu_STR x = " s\t"_fu;
+        _1 = (x);
+    (void)0;}), static_cast<fu_STR&&>(_1)), (__extension__ (
+    {
+        /*MOV*/ /*RRET*/ fu_STR x = (a.alloc_count ? ((x7E_OZkl(x7E_OZkl(fu::i64dec(a.alloc_count), " allocs\t"_fu), fu::i64dec(a.alloc_bytes)) + " bytes"_fu) + suffix) : fu_STR{});
+        _2 = (x);
+    (void)0;}), static_cast<fu_STR&&>(_2)) }));
 }
 
 #endif

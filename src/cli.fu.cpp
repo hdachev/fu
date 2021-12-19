@@ -3,6 +3,7 @@
 #include <fu/int.h>
 #include <fu/io.h>
 #include <fu/never.h>
+#include <fu/print.h>
 #include <fu/str.h>
 #include <fu/vec/cmp.h>
 #include <fu/vec/concat.h>
@@ -10,7 +11,6 @@
 #include <fu/vec/find.h>
 #include <fu/vec/slice.h>
 #include <fu/view.h>
-#include <iostream>
 
 fu_STR path_join(fu::view<fu::byte>, const fu_STR&);
 int self_test();
@@ -68,16 +68,41 @@ static int cli_handle(fu::view<fu_STR> argv, const fu_STR& cwd)
     const fu_STR& self = next(idx, argv);
     if (argv.size() == 1)
     {
-        (std::cout << "\n\tHello! "_fu << self << '\n');
-        (std::cout << "\tNothing to do, running a quick self test.\n"_fu << '\n');
+        fu_STR _0 {};
+        fu::println((fu::slate<2, fu_STR> { (__extension__ (
+        {
+            /*MOV*/ /*RRET*/ fu_STR x = "\n\tHello! "_fu;
+            _0 = (x);
+        (void)0;}), static_cast<fu_STR&&>(_0)), fu_STR(self) }));
+        fu_STR _1 {};
+        fu::println((fu::slate<1, fu_STR> { (__extension__ (
+        {
+            /*MOV*/ /*RRET*/ fu_STR x = "\tNothing to do, running a quick self test.\n"_fu;
+            _1 = (x);
+        (void)0;}), static_cast<fu_STR&&>(_1)) }));
         self_test();
-        (std::cout << "\tEverything checks out."_fu << '\n');
-        (std::cout << "\tTry `fu file.fu`.\n"_fu << '\n');
+        fu_STR _2 {};
+        fu::println((fu::slate<1, fu_STR> { (__extension__ (
+        {
+            /*MOV*/ /*RRET*/ fu_STR x = "\tEverything checks out."_fu;
+            _2 = (x);
+        (void)0;}), static_cast<fu_STR&&>(_2)) }));
+        fu_STR _3 {};
+        fu::println((fu::slate<1, fu_STR> { (__extension__ (
+        {
+            /*MOV*/ /*RRET*/ fu_STR x = "\tTry `fu file.fu`.\n"_fu;
+            _3 = (x);
+        (void)0;}), static_cast<fu_STR&&>(_3)) }));
         return 0;
     };
     if ((argv.size() == 2) && (argv[1] == "self"_fu))
     {
-        (std::cout << "\n\tRunning test suite and rebuilding self ...\n"_fu << '\n');
+        fu_STR _4 {};
+        fu::println((fu::slate<1, fu_STR> { (__extension__ (
+        {
+            /*MOV*/ /*RRET*/ fu_STR x = "\n\tRunning test suite and rebuilding self ...\n"_fu;
+            _4 = (x);
+        (void)0;}), static_cast<fu_STR&&>(_4)) }));
         self_test();
         runTestsAndBuildCompiler();
         return 0;
@@ -137,12 +162,12 @@ static int cli_handle(fu::view<fu_STR> argv, const fu_STR& cwd)
             dir_cpp = dir_src;
 
     };
-    fu_STR _0 {};
-    fu_STR fname = ((_0 = abs(val, cwd)) ? static_cast<fu_STR&&>(_0) : fu::fail(("Missing filename argument, a valid example is:"_fu + "\n\t`fu file.fu`."_fu)));
+    fu_STR _5 {};
+    fu_STR fname = ((_5 = abs(val, cwd)) ? static_cast<fu_STR&&>(_5) : fu::fail(("Missing filename argument, a valid example is:"_fu + "\n\t`fu file.fu`."_fu)));
     if (options & EMIT_BIN)
     {
-        fu_STR* _1;
-        (*(_1 = &(bin)) ? *_1 : *_1 = (fu::rmatch(fname, ".fu"_fu) ? fu::slice(fname, 0, (fname.size() - ".fu"_fu.size())) : (fname + ".exe"_fu)));
+        fu_STR* _6;
+        (*(_6 = &(bin)) ? *_6 : *_6 = (fu::rmatch(fname, ".fu"_fu) ? fu::slice(fname, 0, (fname.size() - ".fu"_fu.size())) : (fname + ".exe"_fu)));
     };
 
     {

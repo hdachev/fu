@@ -1,5 +1,4 @@
 
-#include <cstdint>
 #include <fu/default.h>
 #include <fu/int.h>
 #include <fu/never.h>
@@ -785,13 +784,13 @@ bool ScopeItem_shadows(const s_ScopeItem& si)
 
 s_ScopeItem ScopeItem(const fu_STR& id_1, const s_Target& target_4, const bool shadows)
 {
-    return s_ScopeItem { fu_STR(id_1), int(target_4.modid), (uint32_t(target_4.index) | (shadows ? (0x1u << 31u) : unsigned{})) };
+    return s_ScopeItem { fu_STR(id_1), int(target_4.modid), (unsigned(target_4.index) | (shadows ? (0x1u << 31u) : unsigned{})) };
 }
 
 s_ScopeItem& target_TODOFIX(s_ScopeItem& si, const s_Target& target_4)
 {
     si.modid = target_4.modid;
-    si.packed = uint32_t(target_4.index);
+    si.packed = unsigned(target_4.index);
     return si;
 }
 
@@ -812,7 +811,7 @@ inline constexpr int q_rx_copy = (1 << 1);
 
 s_Type initStruct(const fu_STR& name_3, const int flags_4, const bool SELF_TEST, s_Module& module)
 {
-    if (!((fu::u8(name_3[0]) - fu::u8(fu::byte('0'))) > fu::u8(9)))
+    if (!((fu::u8(name_3[0]) - fu::u8(fu::byte('0'))) > fu::u8(unsigned(9))))
         fu::fail((("Bad struct name, leading digit: `"_fu + name_3) + "`."_fu));
 
     const int index_2 = module.out.types.size();

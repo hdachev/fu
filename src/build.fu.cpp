@@ -5,6 +5,7 @@
 #include <fu/io.h>
 #include <fu/never.h>
 #include <fu/now.h>
+#include <fu/print.h>
 #include <fu/process.h>
 #include <fu/shell.h>
 #include <fu/str.h>
@@ -16,7 +17,6 @@
 #include <fu/vec/slice.h>
 #include <fu/vec/view_assign.h>
 #include <fu/view.h>
-#include <iostream>
 
 struct s_ArgWrite;
 struct s_Argument;
@@ -802,7 +802,12 @@ inline fu_STR join_9sek(fu::view<fu_STR> a, fu::view<fu::byte> sep)
         };
     };
     fu_STR fname_1 = (dir_wrk + "failing-testcase.cpp"_fu);
-    (std::cout << ("  WRITE "_fu + fname_1) << '\n');
+    fu_STR _0 {};
+    fu::println((fu::slate<1, fu_STR> { (__extension__ (
+    {
+        /*MOV*/ /*RRET*/ fu_STR x = ("  WRITE "_fu + fname_1);
+        _0 = (x);
+    (void)0;}), static_cast<fu_STR&&>(_0)) }));
     fu::file_write(fname_1, cpp_1);
     if (!stdout)
         stdout = x7E_OZkl("Exit code: "_fu, fu::i64dec(code));
@@ -914,7 +919,12 @@ static fu_STR update_file(const fu_STR& fname_1, fu::view<fu::byte> data, fu::vi
         if (err)
             fu::fail(x7E_OZkl((("Failed to write `"_fu + fname_3) + "`, error: #"_fu), fu::i64dec(err)));
 
-        (std::cout << ("  WROTE "_fu + fname_3) << '\n');
+        fu_STR _0 {};
+        fu::println((fu::slate<1, fu_STR> { (__extension__ (
+        {
+            /*MOV*/ /*RRET*/ fu_STR x = ("  WROTE "_fu + fname_3);
+            _0 = (x);
+        (void)0;}), static_cast<fu_STR&&>(_0)) }));
     };
     return /*NRVO*/ fname_3;
 }
@@ -1026,15 +1036,40 @@ void build(const bool run, fu_STR&& dir_wrk, const fu_STR& fulib, fu_STR&& bin, 
                 fu_STR human = (i_3 ? path_filename(ctx.modules[i_3].fname) : "fulib runtime"_fu);
                 const fu_STR& cpp_1 = units[i_3];
                 fu::file_write(F_cpp, cpp_1);
-                (std::cout << "  BUILD "_fu << human << " "_fu << F_cpp << '\n');
+                fu_STR _0 {};
+                fu_STR _1 {};
+                fu::println((fu::slate<4, fu_STR> { (__extension__ (
+                {
+                    /*MOV*/ /*RRET*/ fu_STR x = "  BUILD "_fu;
+                    _0 = (x);
+                (void)0;}), static_cast<fu_STR&&>(_0)), fu_STR(human), (__extension__ (
+                {
+                    /*MOV*/ /*RRET*/ fu_STR x = " "_fu;
+                    _1 = (x);
+                (void)0;}), static_cast<fu_STR&&>(_1)), fu_STR(F_cpp) }));
                 const double t0 = fu::now_hr();
-                int _0 {};
-                code = ((_0 = fu::shell_exec(((((((GCC_CMD + INCLUDE) + "-c -o "_fu) + F_tmp) + " "_fu) + F_cpp) + " 2>&1"_fu), stdout)) ? _0 : fu::shell_exec((((("mv "_fu + F_tmp) + " "_fu) + F_obj) + " 2>&1"_fu), stdout));
+                int _2 {};
+                code = ((_2 = fu::shell_exec(((((((GCC_CMD + INCLUDE) + "-c -o "_fu) + F_tmp) + " "_fu) + F_cpp) + " 2>&1"_fu), stdout)) ? _2 : fu::shell_exec((((("mv "_fu + F_tmp) + " "_fu) + F_obj) + " 2>&1"_fu), stdout));
                 if (code)
                     ERR(fu_STR(cpp_1), Fs, dir_wrk, stdout, code, onfail, ctx);
 
                 const double t1 = fu::now_hr();
-                (std::cout << "     OK "_fu << (t1 - t0) << "s"_fu << '\n');
+                fu_STR _3 {};
+                fu_STR _4 {};
+                fu_STR _5 {};
+                fu::println((fu::slate<3, fu_STR> { (__extension__ (
+                {
+                    /*MOV*/ /*RRET*/ fu_STR x = "     OK "_fu;
+                    _3 = (x);
+                (void)0;}), static_cast<fu_STR&&>(_3)), (__extension__ (
+                {
+                    /*MOV*/ /*RRET*/ fu_STR x = fu::f64dec((t1 - t0));
+                    _4 = (x);
+                (void)0;}), static_cast<fu_STR&&>(_4)), (__extension__ (
+                {
+                    /*MOV*/ /*RRET*/ fu_STR x = "s"_fu;
+                    _5 = (x);
+                (void)0;}), static_cast<fu_STR&&>(_5)) }));
             };
         };
         fu_STR F_tmp = (F_exe + ".tmp"_fu);
@@ -1049,17 +1084,42 @@ void build(const bool run, fu_STR&& dir_wrk, const fu_STR& fulib, fu_STR&& bin, 
         fu_STR LIBS = (fu::LINUX ? " -ldl -pthread"_fu : fu_STR{});
 
         {
-            (std::cout << "   LINK "_fu << F_exe << '\n');
+            fu_STR _6 {};
+            fu::println((fu::slate<2, fu_STR> { (__extension__ (
+            {
+                /*MOV*/ /*RRET*/ fu_STR x = "   LINK "_fu;
+                _6 = (x);
+            (void)0;}), static_cast<fu_STR&&>(_6)), fu_STR(F_exe) }));
             const double t0 = fu::now_hr();
-            int _1 {};
-            code = ((_1 = fu::shell_exec(((cmd + LIBS) + " 2>&1"_fu), stdout)) ? _1 : (_1 = fu::shell_exec((("chmod 755 "_fu + F_tmp) + " 2>&1"_fu), stdout)) ? _1 : fu::shell_exec((((("mv "_fu + F_tmp) + " "_fu) + F_exe) + " 2>&1"_fu), stdout));
+            int _7 {};
+            code = ((_7 = fu::shell_exec(((cmd + LIBS) + " 2>&1"_fu), stdout)) ? _7 : (_7 = fu::shell_exec((("chmod 755 "_fu + F_tmp) + " 2>&1"_fu), stdout)) ? _7 : fu::shell_exec((((("mv "_fu + F_tmp) + " "_fu) + F_exe) + " 2>&1"_fu), stdout));
             if (code)
             {
-                (std::cout << ("   FAIL "_fu + join_9sek(Fs, ("\n        "_fu + "\n"_fu))) << '\n');
+                fu_STR _8 {};
+                fu::println((fu::slate<1, fu_STR> { (__extension__ (
+                {
+                    /*MOV*/ /*RRET*/ fu_STR x = ("   FAIL "_fu + join_9sek(Fs, ("\n        "_fu + "\n"_fu)));
+                    _8 = (x);
+                (void)0;}), static_cast<fu_STR&&>(_8)) }));
                 ERR(fu_STR{}, Fs, dir_wrk, stdout, code, onfail, ctx);
             };
             const double t1 = fu::now_hr();
-            (std::cout << "     OK "_fu << (t1 - t0) << "s"_fu << '\n');
+            fu_STR _9 {};
+            fu_STR _10 {};
+            fu_STR _11 {};
+            fu::println((fu::slate<3, fu_STR> { (__extension__ (
+            {
+                /*MOV*/ /*RRET*/ fu_STR x = "     OK "_fu;
+                _9 = (x);
+            (void)0;}), static_cast<fu_STR&&>(_9)), (__extension__ (
+            {
+                /*MOV*/ /*RRET*/ fu_STR x = fu::f64dec((t1 - t0));
+                _10 = (x);
+            (void)0;}), static_cast<fu_STR&&>(_10)), (__extension__ (
+            {
+                /*MOV*/ /*RRET*/ fu_STR x = "s"_fu;
+                _11 = (x);
+            (void)0;}), static_cast<fu_STR&&>(_11)) }));
         };
         if (code)
             ERR(fu_STR{}, Fs, dir_wrk, stdout, code, onfail, ctx);

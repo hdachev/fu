@@ -1214,9 +1214,9 @@ static fu_STR cgMove(const s_Type& type_3, fu::view<fu::byte> src_2, const s_Mod
     return ((("static_cast<"_fu + typeAnnotBase(type_3, 0, _libs, _here, ctx, module, _tfwd, _tfwd_src, _tdef, _current_fn)) + "&&>("_fu) + src_2) + ")"_fu;
 }
 
-                                #ifndef DEFt_map_XG35
-                                #define DEFt_map_XG35
-inline fu_VEC<fu_STR> map_XG35(fu::view<s_SolvedNode> a, int, const s_Module& module, const s_Context& ctx)
+                                #ifndef DEFt_map_FmdT
+                                #define DEFt_map_FmdT
+inline fu_VEC<fu_STR> map_FmdT(fu::view<s_SolvedNode> a, int, const s_Module& module, const s_Context& ctx)
 {
     /*MOV*/ fu_VEC<fu_STR> res {};
     res.grow<false>(a.size());
@@ -1307,6 +1307,39 @@ static fu_STR emitMethodCall(fu::view<fu::byte> id_2, fu_VEC<fu_STR>& item_src, 
 static fu_STR emitPostfixOp(fu::view<fu::byte> op, fu_VEC<fu_STR>& item_src)
 {
     return ARG(0, item_src) + op;
+}
+
+                                #ifndef DEFt_only_2Suj
+                                #define DEFt_only_2Suj
+inline const fu_STR& only_2Suj(fu::view<fu_STR> s)
+{
+    return ((s.size() == 1) ? s[0] : fu::fail(x7E_OZkl("len != 1: "_fu, fu::i64dec(s.size()))));
+}
+                                #endif
+
+static fu_STR emitBuiltin(fu::view<fu::byte> id_2, fu::view<fu_STR> args_1, const s_SolvedNode& node_1, const s_Module& module, const s_Context& ctx, fu_VEC<fu_STR>& _libs, const s_TokenIdx& _here, fu_VEC<s_BitSet>& _tfwd, fu_VEC<fu_STR>& _tfwd_src, fu_STR& _tdef, const s_cg_CurrentFn& _current_fn)
+{
+    if (id_2 == "/prim/convert"_fu)
+    {
+        const s_Type& output = SolvedNodeData(node_1, module, ctx).type;
+        const s_Type& input = SolvedNodeData(only_Mzjf(SolvedNodeData(node_1, module, ctx).items), module, ctx).type;
+        fu_STR cast = typeAnnotBase(SolvedNodeData(node_1, module, ctx).type, 0, _libs, _here, ctx, module, _tfwd, _tfwd_src, _tdef, _current_fn);
+        if (is_integral(input) && is_integral(SolvedNodeData(node_1, module, ctx).type) && (is_unsigned(input) != is_unsigned(SolvedNodeData(node_1, module, ctx).type)))
+        {
+            s_Type mid_t { (is_unsigned(input) ? output : input) };
+            if (!(mid_t.vtype.canon[0] == fu::byte('i')))
+                fail(fu_STR{}, _here, ctx);
+
+            mid_t.vtype.canon.mutref(0) = fu::byte('u');
+            if ((mid_t.vtype.canon != output.vtype.canon) && (mid_t.vtype.canon != input.vtype.canon))
+            {
+                fu_STR inner = typeAnnotBase(mid_t, 0, _libs, _here, ctx, module, _tfwd, _tfwd_src, _tdef, _current_fn);
+                return ((((cast + fu::byte('(')) + inner) + fu::byte('(')) + only_2Suj(args_1)) + "))"_fu;
+            };
+        };
+        return ((cast + fu::byte('(')) + only_2Suj(args_1)) + fu::byte(')');
+    };
+    fail(("Unknown builtin: "_fu + id_2), _here, ctx);
 }
 
 static fu_STR emitFunctionCall(fu::view<fu::byte> id_2, fu::view<fu::byte> open, fu::view<fu::byte> close, fu::view<fu_STR> item_src, const fu_STR& ooe_header)
@@ -1456,7 +1489,7 @@ static fu_STR valid_operator(const fu_STR& str_1)
 
 static fu::byte hex(const unsigned x)
 {
-    return ((x < 10u) ? fu::byte((uint32_t(fu::byte('0')) + x)) : fu::byte((uint32_t(fu::byte('A')) + (x - 10u))));
+    return ((x < 10u) ? fu::byte((unsigned(fu::byte('0')) + x)) : fu::byte((unsigned(fu::byte('A')) + (x - 10u))));
 }
 
 static fu_STR xHH(const unsigned c)
@@ -1472,7 +1505,7 @@ static fu_STR valid_identifier(fu_STR&& str_1)
         if (((c >= fu::byte('a')) && (c <= fu::byte('z'))) || ((c >= fu::byte('A')) && (c <= fu::byte('Z'))) || ((c >= fu::byte('0')) && (c <= fu::byte('9'))) || (c == fu::byte('_')))
             continue;
 
-        str_1 = ((fu::get_view(str_1, 0, i) + xHH(uint32_t(c))) + fu::get_view(str_1, (i + 1), str_1.size()));
+        str_1 = ((fu::get_view(str_1, 0, i) + xHH(unsigned(c))) + fu::get_view(str_1, (i + 1), str_1.size()));
     };
     return ID(str_1);
 }
@@ -2063,17 +2096,6 @@ static fu_STR via(s_TEMPVAR& tv, const s_Type& type_3, fu::view<fu::byte> expr, 
     return ((((((("("_fu + tv.id) + " = "_fu) + expr) + ") ? static_cast<"_fu) + tv.annot) + "&&>("_fu) + tv.id) + ") : "_fu;
 }
 
-static fu_STR cgPrint(fu::view<fu_STR> items_5, fu_VEC<fu_STR>& _libs)
-{
-    include("<iostream>"_fu, _libs);
-    /*MOV*/ fu_STR src_2 = "(std::cout"_fu;
-    for (int i = 0; i < items_5.size(); i++)
-        src_2 += (" << "_fu + items_5[i]);
-
-    src_2 += " << '\\n')"_fu;
-    return /*NRVO*/ src_2;
-}
-
 static fu_STR cgCall(const s_SolvedNode& node_1, const int mode, const s_Module& module, const s_Context& ctx, s_TokenIdx& _here, fu_VEC<fu_STR>& _libs, fu_VEC<s_BitSet>& _tfwd, fu_VEC<fu_STR>& _tfwd_src, fu_STR& _tdef, s_cg_CurrentFn& _current_fn, s_BitSet& _idef, fu_STR& _indent, int& _hasMain, fu_STR& _fdef, fu_VEC<s_BitSet>& _ffwd, fu_VEC<fu_STR>& _ffwd_src, fu_VEC<int>& _unity, fu_VEC<int>& _unity_because, fu_VEC<s_BitSet>& _moveFromConstRefHelpers)
 {
     const s_Extended& ext = EXT(SolvedNodeData(node_1, module, ctx).target, module, ctx);
@@ -2114,7 +2136,7 @@ static fu_STR cgCall(const s_SolvedNode& node_1, const int mode, const s_Module&
         item_src += src_2;
     };
     if (!(ooe_crosscheck == SolvedNodeData(node_1, module, ctx).helpers))
-        fail(((x7E_OZkl((x7E_OZkl("OOE crosscheck failed: codegen sequenced "_fu, fu::i64dec(ooe_crosscheck)) + ", but solver wants "_fu), fu::i64dec(SolvedNodeData(node_1, module, ctx).helpers)) + ": "_fu) + join_VtCz(map_XG35(args_1, 0, module, ctx), "|"_fu)), _here, ctx);
+        fail(((x7E_OZkl((x7E_OZkl("OOE crosscheck failed: codegen sequenced "_fu, fu::i64dec(ooe_crosscheck)) + ", but solver wants "_fu), fu::i64dec(SolvedNodeData(node_1, module, ctx).helpers)) + ": "_fu) + join_VtCz(map_FmdT(args_1, 0, module, ctx), "|"_fu)), _here, ctx);
 
     if (isNative && (target_6.name[0] == fu::byte('\n')))
     {
@@ -2132,6 +2154,9 @@ static fu_STR cgCall(const s_SolvedNode& node_1, const int mode, const s_Module&
 
             return emitPostfixOp(id_2, item_src);
         };
+        if (id_2[0] == fu::byte('/'))
+            return ooeWrap(emitBuiltin(id_2, item_src, node_1, module, ctx, _libs, _here, _tfwd, _tfwd_src, _tdef, _current_fn), ooe_header);
+
         if (args_1)
         {
             if (hasIdentifierChars(id_2))
@@ -2215,9 +2240,6 @@ static fu_STR cgCall(const s_SolvedNode& node_1, const int mode, const s_Module&
             return cgMove(SolvedNodeData(node_1, module, ctx).type, ARG(0, item_src), module, ctx, _libs, _here, _tfwd, _tfwd_src, _tdef, _current_fn);
 
     };
-    if (id_2 == "println"_fu)
-        return cgPrint(item_src, _libs);
-
     if (isNative)
         fail((("Unknown __native: `"_fu + id_2) + "`."_fu), _here, ctx);
 
@@ -2235,6 +2257,21 @@ inline bool has_WqUX(fu::view<fu::byte> a, const fu::byte b)
 
     };
     return false;
+}
+                                #endif
+
+                                #ifndef DEFt_find_AP4C
+                                #define DEFt_find_AP4C
+inline int find_AP4C(fu::view<fu::byte> a, const fu::byte b, int start_1)
+{
+    start_1 = ((start_1 > 0) ? int(start_1) : 0);
+    for (/*MOV*/ int i = start_1; i < a.size(); i++)
+    {
+        if (a[i] == b)
+            return /*NRVO*/ i;
+
+    };
+    return -1;
 }
                                 #endif
 
@@ -2283,6 +2320,10 @@ static fu_STR cgLiteral(const s_SolvedNode& node_1, const s_Module& module, cons
             return ((typeAnnotBase(SolvedNodeData(node_1, module, ctx).type, 0, _libs, _here, ctx, module, _tfwd, _tfwd_src, _tdef, _current_fn) + "("_fu) + src_2) + ")"_fu;
 
     };
+    int idx {};
+    while (((idx = find_AP4C(src_2, fu::byte('_'), int(idx))) >= 0))
+        src_2.splice(idx, 1);
+
     return /*NRVO*/ src_2;
 }
 
@@ -2303,7 +2344,7 @@ static fu_STR escapeStringLiteral(fu::view<fu::byte> str_1, const fu::byte quot)
         else if (c == fu::byte('\\'))
             esc += "\\\\"_fu;
         else if (fu::i8(c) < fu::i8(32))
-            esc += ("\\"_fu + xHH(uint32_t(c)));
+            esc += ("\\"_fu + xHH(unsigned(c)));
         else
         {
             if (c == quot)

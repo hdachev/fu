@@ -92,7 +92,13 @@ inline fu_STR x7E_OZkl(fu::view<fu::byte> a, fu::view<fu::byte> b)
     err_str(kind, idx0, (("`"_fu + src[reason]) + "`"_fu), idx, end, src, lidx, fname, line);
 }
 
-static fu_STR unescapeStr(fu::view<fu::byte> esc, const int idx0, const int idx1)
+static int parseHex(fu::view<fu::byte> esc, int& i, int& idx, const int end, const fu_STR& src, const int lidx, fu::view<fu::byte> fname, const int line)
+{
+    const fu::byte c_1 = esc[++i];
+    return (((c_1 >= fu::byte('0')) && (c_1 <= fu::byte('9'))) ? (int(c_1) - int(fu::byte('0'))) : (((c_1 >= fu::byte('A')) && (c_1 <= fu::byte('F'))) ? ((int(c_1) - int(fu::byte('A'))) + 10) : (((c_1 >= fu::byte('a')) && (c_1 <= fu::byte('f'))) ? ((int(c_1) - int(fu::byte('a'))) + 10) : err_str("str"_fu, (i - 1), "Non hexadecimal character in \\x-escape sequence."_fu, idx, end, src, lidx, fname, line))));
+}
+
+static fu_STR UNSAFE_unescapeStr(fu::view<fu::byte> esc, const int idx0, const int idx1, const fu::byte quot, int& idx, const int end, const fu_STR& src, const int lidx, fu::view<fu::byte> fname, const int line)
 {
     /*MOV*/ fu_STR out {};
     const int n = (idx1 - 1);
@@ -111,19 +117,29 @@ static fu_STR unescapeStr(fu::view<fu::byte> esc, const int idx0, const int idx1
             else if (c1 == fu::byte('t'))
                 out += fu::byte('\t');
             else if (c1 == fu::byte('f'))
-                out += fu::byte('\f');
+                out += fu::byte('\x0C');
             else if (c1 == fu::byte('v'))
                 out += fu::byte('\v');
             else if (c1 == fu::byte('0'))
-                out += fu::byte('\0');
+                out += fu::byte('\x00');
             else if (c1 == fu::byte('a'))
-                out += fu::byte('\a');
+                out += fu::byte('\x07');
             else if (c1 == fu::byte('b'))
-                out += fu::byte('\b');
+                out += fu::byte('\x08');
             else if (c1 == fu::byte('e'))
-                out += fu::byte(27);
+                out += fu::byte('\x1B');
+            else if (c1 == quot)
+                out += quot;
+            else if (c1 == fu::byte('x'))
+            {
+                if ((i >= (n - 2)))
+                    err_str("str"_fu, (i - 1), "Incomplete \\x-escape sequence."_fu, idx, end, src, lidx, fname, line);
+
+                int _0 {};
+                out += fu::byte((_0 = (parseHex(esc, i, idx, end, src, lidx, fname, line) << 4), (int(_0) | parseHex(esc, i, idx, end, src, lidx, fname, line))));
+            }
             else
-                out += c1;
+                err_str("str"_fu, (i - 1), "Unknown escape sequence."_fu, idx, end, src, lidx, fname, line);
 
         }
         else
@@ -263,6 +279,15 @@ s_LexerOutput lex(const fu_STR& src, const fu_STR& fname)
 
                     exp_1 = true;
                 }
+                else if (c_1 == fu::byte('_'))
+                {
+                    const fu::byte c_2 = ((idx < end) ? src[idx] : (*(const fu::byte*)fu::NIL));
+                    if (!(((c_2 >= fu::byte('0')) && (c_2 <= fu::byte('9'))) || (hex && (((c_2 >= fu::byte('a')) && (c_2 <= fu::byte('f'))) || ((c_2 >= fu::byte('A')) && (c_2 <= fu::byte('F')))))))
+                    {
+                        idx--;
+                        break;
+                    };
+                }
                 else
                 {
                     idx--;
@@ -311,7 +336,7 @@ s_LexerOutput lex(const fu_STR& src, const fu_STR& fname)
             else
             {
                 const int idx1 = idx;
-                fu_STR str_1 = (esc ? unescapeStr(src, idx0, idx1) : fu::slice(src, (idx0 + 1), (idx1 - 1)));
+                fu_STR str_1 = (esc ? UNSAFE_unescapeStr(src, idx0, idx1, c, idx, end, src, lidx, fname, line) : fu::slice(src, (idx0 + 1), (idx1 - 1)));
                 const bool cHar = (c == fu::byte('\''));
                 fu_STR kind = (cHar ? "char"_fu : "str"_fu);
                 if (cHar && (str_1.size() != 1))
