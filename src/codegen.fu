@@ -1582,10 +1582,10 @@ pub fn cpp_codegen(
             let output  = node.type;
             let input   = node.items.only.type;
 
-            let cast    = typeAnnotBase(node.type);
+            let cast    = typeAnnotBase(output);
 
-            if (input.is_integral && node.type.is_integral &&
-                input.is_unsigned != node.type.is_unsigned)
+            if (input.is_integral && output.is_integral &&
+                input.is_unsigned != output.is_unsigned)
             {
                 // When casting between signed and unsigned integers,
                 //  we always go through an intermediate unsigned type
@@ -1611,6 +1611,13 @@ pub fn cpp_codegen(
 
                     return cast ~ '(' ~ inner ~ '(' ~ args.only ~ "))";
                 }
+            }
+            else if (input.is_byte && !output.is_byte)
+            {
+                // Go through unsigned char.
+                let inner = typeAnnotBase(t_u8);
+
+                return cast ~ '(' ~ inner ~ '(' ~ args.only ~ "))";
             }
 
             return cast ~ '(' ~ args.only ~ ')';

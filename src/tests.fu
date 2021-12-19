@@ -135,6 +135,14 @@ pub fn runTests()
         }
     `);
 
+    ZERO(`
+        fn main() {
+            let b = byte(200);
+            let i = b.i32;
+            return i == 200 ? 0 : 1;
+        }
+    `);
+
 
     // Mutation & references.
 
