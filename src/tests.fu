@@ -1497,22 +1497,6 @@ pub fn runTests()
     `);
 
 
-    // Lint.
-
-    FAIL(`
-        struct Test { x: i32; }
-        fn test(t: &mut Test) t.x++;
-        mut t = Test();
-        //*F
-        t.test; //ERR orphan
-        /*/
-        t.test();
-        //*/
-
-        return t.x - 1;
-    `);
-
-
     // Logical selectors.
 
     ZERO(`
@@ -1627,7 +1611,20 @@ pub fn runTests()
     `);
 
 
-    // Lint checks.
+    // Lints.
+
+    FAIL(`
+        struct Test { x: i32; }
+        fn test(t: &mut Test) t.x++;
+        mut t = Test();
+        //*F
+        t.test; //ERR orphan
+        /*/
+        t.test();
+        //*/
+
+        return t.x - 1;
+    `);
 
     ZERO(`
         {
@@ -1696,6 +1693,37 @@ pub fn runTests()
                 a && fail(a) ? b : a;
 
         fn main() hello("", "nope").len;
+    `);
+
+    FAIL(`
+        fn incr(ref x: i32) x++;
+        fn lints_ambig_expr_indent(ref a: i32, ref b: i32)
+            a.incr
+            //*F
+            +
+            /*/
+              +
+            //*/
+                b.incr;
+
+        fn main() {
+            mut a = 0; mut b = 0;
+            lints_ambig_expr_indent(a, b);
+            return a - b;
+        }
+    `);
+
+    FAIL(`
+        fn lints_ambig_jump_semis(mut x: i32) {
+            //*F
+            return
+            x;
+            /*/
+            return x * 2;
+            //*/
+        }
+
+        fn main() 0.lints_ambig_jump_semis;
     `);
 
 
