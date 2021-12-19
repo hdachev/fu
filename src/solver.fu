@@ -2109,7 +2109,7 @@ pub fn solve(
         }
 
         let expr        = !fnbody_of && !type.is_void;
-        mut items       = solveNodes(
+        let items       = solveNodes(
             nodes,
             type_all:           t_void,
             type_last:          type,
@@ -2118,11 +2118,11 @@ pub fn solve(
             // Kills is +1 so that kills=0 means noone.
             kills: helpers_idx + 1);
 
-        // Get rid of implicit arguments as they pop up randomly.
-        if (!fnbody_of)
-            TODO_FIX_argSteal_pushImplicitArgumentsUpTheHelpersStack(helpers_idx);
+        return solveBlock(:items, :helpers_idx, :expr, :mask, :fnbody_of);
+    }
 
-        //
+    fn solveBlock(items: SolvedNode[], helpers_idx!: i32, expr!: bool, mask!: i16, fnbody_of!: i32)
+    {
         let h = _helpers[helpers_idx];
 
         // TODO clean this up, non-return ret-expects
@@ -2249,41 +2249,6 @@ pub fn solve(
         }
 
         return block;
-    }
-
-    fn TODO_FIX_argSteal_pushImplicitArgumentsUpTheHelpersStack(helpers_idx: i32)
-    {
-        ref vars = _helpers[helpers_idx].vars;
-
-        mut implicits: i32[];
-        for (mut i = vars.len; i --> 0; )
-        {
-            let index = vars[i];
-            let var = GET(nested(:index));
-            if (var.flags & F_ARG)
-            {
-                var.flags & F_IMPLICIT || fail(
-                    "BUG: Non-implicit arg found during argSteal up.");
-
-                implicits ~= index;
-                vars.splice(i, 1);
-            }
-        }
-
-        if (implicits)
-        {
-            for (shadow mut i = helpers_idx; i --> 0; )
-            {
-                let parent = _helpers[i];
-                if (parent.isFnOrType)
-                {
-                    parent.vars ~= implicits;
-                    return;
-                }
-            }
-
-            fail("BUG: Cannot find a function or type frame to argSteal implicits to.");
-        }
     }
 
     fn relaxBlockVar(t: Target, relax_mask!: i32)
@@ -4160,10 +4125,6 @@ pub fn solve(
             local_of:       _current_fn.target.index,
             locals_start:   GET_next_local_index()));
 
-        ////////////////////////////////////////////////////////////////////////
-        defer TODO_FIX_argSteal_pushImplicitArgumentsUpTheHelpersStack(brk_idx);
-        ////////////////////////////////////////////////////////////////////////
-
         let n_init      = node.items[LOOP_INIT];
         let n_pre_cond  = node.items[LOOP_COND];
         let n_body      = node.items[LOOP_BODY];
@@ -5521,8 +5482,6 @@ pub fn solve(
                 defer {
                     Scope_pop(_scope, scope0);
                     _ss = ss0;
-                    if (_helpers)
-                        _helpers.last.vars.shrink(helpers0vars);
                 }
 
                 let template    = target.template;
@@ -5553,6 +5512,9 @@ pub fn solve(
                     id: n_fn.value,
                     :kills,
                     steal: _helpers.last.vars.len - helpers0vars);
+
+                _helpers.last.vars.len == helpers0vars || fail(
+                    "inline: _helpers.len != helpers0vars");
 
                 s_body.kind || fail("inline: no s_body.kind");
                 result.last = s_body;
