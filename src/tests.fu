@@ -7027,7 +7027,8 @@ pub fn runTests()
                 fn(arr[i]);
 
         fn some(arr, fn) {
-            arr.each(|x| { if (fn(x)) return x; });
+            arr.each: |x| if (fn(x)) return x;
+
             return 0;
         }
 

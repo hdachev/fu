@@ -170,6 +170,7 @@ pub let LOOP_POST       = 4;
 
 let M_LINT_UNARY_PRECEDENCE = 1 << 0;
 let M_LINT_ENSURE_INDENT    = 1 << 1;
+let M_LAMBDA_STMT_OK        = 1 << 2;
 
 
 //
@@ -681,7 +682,7 @@ pub fn parse(modid: i32, fname: string, tokens: Token[], options: options::Optio
             if !(expr.kind == "call" && expr.items && expr.flags & (F_ACCESS | F_METHOD))
                 fail("We only allow x.y: z pipelines right now to avoid ambiguity.");
 
-            let right = parseExpression(P_RESET);
+            let right = parseExpression(P_RESET, mode: M_LAMBDA_STMT_OK);
             return pipelineLeft(expr, right);
         }
 
@@ -738,7 +739,7 @@ pub fn parse(modid: i32, fname: string, tokens: Token[], options: options::Optio
 
     //
 
-    fn parseLambda(noArgs_noClosingPipe?!: bool): Node
+    fn parseLambda(noArgs_noClosingPipe?!: bool, mode?!: i32): Node
     {
         if (noArgs_noClosingPipe && _precedence > P_RESET && _precedence < P_PREFIX_UNARY)
             warn("Unparenthesized `|| lambda` within a binary expression.");
@@ -746,7 +747,7 @@ pub fn parse(modid: i32, fname: string, tokens: Token[], options: options::Optio
         let name = "l_" ~ modid ~ "_" ~ _anonFns++;
 
         return parseFnDecl_cont(endv: !noArgs_noClosingPipe && "|",
-            flags: F_INLINE | F_TEMPLATE | F_LAMBDA, expr: true, :name);
+            flags: F_INLINE | F_TEMPLATE | F_LAMBDA, expr: !(mode & M_LAMBDA_STMT_OK), :name);
     }
 
     fn parseFnDecl(mut flags?: i32, expr?!: bool): Node
@@ -1096,7 +1097,7 @@ pub fn parse(modid: i32, fname: string, tokens: Token[], options: options::Optio
                     ~ "`: expected more than " ~ _col0 ~ ", got " ~ tokens[_idx].col);
 
         //
-        mut head = parseExpressionHead();
+        mut head = parseExpressionHead(:mode);
         {
             //////////////////////////////////////////////
             // Lint, this looks crazy but its fine really,
@@ -1239,7 +1240,7 @@ pub fn parse(modid: i32, fname: string, tokens: Token[], options: options::Optio
         return { _idx--; miss() };
     }
 
-    fn parseExpressionHead(): Node
+    fn parseExpressionHead(mode: i32): Node
     {
         //////////////////////////////
         let token = tokens[_idx++];
@@ -1275,8 +1276,8 @@ pub fn parse(modid: i32, fname: string, tokens: Token[], options: options::Optio
                 if (v ==  "{") return parseBlock();
                 if (v ==  "[") return parseArrayLiteral();
                 if (v ==  "$") return parseTypeParam();
-                if (v ==  "|") return parseLambda();
-                if (v == "||") return parseLambda(noArgs_noClosingPipe: true);
+                if (v ==  "|") return parseLambda(:mode);
+                if (v == "||") return parseLambda(noArgs_noClosingPipe: true, :mode);
                 if (v == "[]") return createDefinit();
 
                 if (v == "::")
