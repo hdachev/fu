@@ -7441,6 +7441,26 @@ pub fn runTests()
     `);
 
 
+    // Mangling.
+
+    TODO(`
+        fn test(tokens: i32[]) {
+            mut lidx = 0;
+            mut sum  = 0;
+
+            fn token(idx: i32, col!: i32)       = sum += idx * col;
+            fn token(idx: i32)                  = token(:idx, col: lidx - idx);
+
+            for (mut i = 0; i < tokens.len; i++)
+                token(tokens[i]);
+
+            return sum;
+        }
+
+        fn main() [ 1 ].test - 1;
+    `);
+
+
     // Enum basics.
 
     // FAIL(`
