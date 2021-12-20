@@ -93,19 +93,19 @@ struct s_Lifetime
 
 #ifndef FU_NO_FDEFs
 
-void Reference_trackArgument(s_Flow& flow, const int target_3, const int position)
+void Reference_trackArgument(s_Flow& flow, const int target, const int position)
 {
     if (!((flow.arg_targets.size() <= position)))
         fu_ASSERT();
 
     flow.arg_targets.grow((position + 1));
-    flow.arg_targets.mutref(position) = target_3;
-    if (!((flow.arg_positions.size() <= target_3)))
+    flow.arg_targets.mutref(position) = target;
+    if (!((flow.arg_positions.size() <= target)))
         fu_ASSERT();
 
-    flow.arg_positions.grow((target_3 + 1));
-    flow.arg_positions.mutref(target_3) = (position + 1);
-    add(flow.is_arg, target_3);
+    flow.arg_positions.grow((target + 1));
+    flow.arg_positions.mutref(target) = (position + 1);
+    add(flow.is_arg, target);
 }
 
                                 #ifndef DEFt_add_xJq8
@@ -384,22 +384,22 @@ static void ArgsAtRisk_shake(s_Flow& flow, int high, int low)
                 fu_VEC<int> highs { unless_oob_luLQ(flow.arg_aliases, high) };
                 if (highs)
                 {
-                    const int last_1 = (highs.size() - 1);
-                    for (int i = 0; i < last_1; i++)
+                    const int last = (highs.size() - 1);
+                    for (int i = 0; i < last; i++)
                         ArgsAtRisk_shake(flow, int(highs[i]), int(low));
 
-                    high = highs[last_1];
+                    high = highs[last];
                     continue;
                 };
             };
             fu_VEC<int> lows { unless_oob_luLQ(flow.arg_aliases, low) };
             if (lows)
             {
-                const int last_1 = (lows.size() - 1);
-                for (int i = 0; i < last_1; i++)
+                const int last = (lows.size() - 1);
+                for (int i = 0; i < last; i++)
                     ArgsAtRisk_shake(flow, int(high), int(lows[i]));
 
-                low = lows[last_1];
+                low = lows[last];
                 continue;
             };
         };
@@ -431,25 +431,25 @@ inline int unless_oob_dhMB(fu::view<int> a, const int i)
 
 s_BitSet ArgsAtRisk_listRiskFree(const s_Flow& flow, const int position)
 {
-    /*MOV*/ s_BitSet risk_free_1 {};
+    /*MOV*/ s_BitSet risk_free {};
     if (position)
     {
-        add_range(risk_free_1, 0, position);
-        const int target_3 = unless_oob_dhMB(flow.arg_targets, position);
-        fu::view<int> at_risk_from = unless_oob_HoLq(flow.args_at_risk, target_3);
+        add_range(risk_free, 0, position);
+        const int target = unless_oob_dhMB(flow.arg_targets, position);
+        fu::view<int> at_risk_from = unless_oob_HoLq(flow.args_at_risk, target);
         for (int i = 0; i < at_risk_from.size(); i++)
         {
             const int other = at_risk_from[i];
-            if (other > target_3)
+            if (other > target)
                 break;
 
             const int other_position = (unless_oob_dhMB(flow.arg_positions, other) - 1);
             if ((other_position >= 0))
-                rem(risk_free_1, other_position);
+                rem(risk_free, other_position);
 
         };
     };
-    return /*NRVO*/ risk_free_1;
+    return /*NRVO*/ risk_free;
 }
 
 #endif

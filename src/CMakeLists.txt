@@ -34,6 +34,7 @@ set(FU_INPUTS
     addroffn.fu
     cpp.fu
     ../lib/tea.fu
+    ../lib/debug.fu
     codegen.fu
     ../lib/env.fu
     prelude.fu

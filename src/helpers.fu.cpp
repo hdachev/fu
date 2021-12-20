@@ -79,40 +79,40 @@ fu_STR path_filename(const fu_STR& path)
 
                                 #ifndef DEFt_split_mKuv
                                 #define DEFt_split_mKuv
-inline void split_mKuv(const fu_STR& str_1, fu::view<char> sep, int, fu_VEC<fu_STR>& result)
+inline void split_mKuv(const fu_STR& str, fu::view<char> sep, int, fu_VEC<fu_STR>& result)
 {
-    int last_1 = 0;
+    int last = 0;
     int next = 0;
     const int N = sep.size();
     if (N)
     {
-        while (((next = fu::lfind(str_1, sep, last_1)) >= 0))
+        while (((next = fu::lfind(str, sep, last)) >= 0))
         {
 
             {
-                fu_STR substr_1 = fu::slice(str_1, last_1, next);
-                result += substr_1;
+                fu_STR substr = fu::slice(str, last, next);
+                result += substr;
             };
-            last_1 = (next + N);
+            last = (next + N);
         };
     };
-    if (last_1)
+    if (last)
     {
-        fu_STR substr_1 = fu::slice(str_1, last_1);
-        result += substr_1;
+        fu_STR substr = fu::slice(str, last);
+        result += substr;
     }
     else
-        result += str_1;
+        result += str;
 
 }
                                 #endif
 
                                 #ifndef DEFt_split_OZkl
                                 #define DEFt_split_OZkl
-inline fu_VEC<fu_STR> split_OZkl(const fu_STR& str_1, fu::view<char> sep)
+inline fu_VEC<fu_STR> split_OZkl(const fu_STR& str, fu::view<char> sep)
 {
     /*MOV*/ fu_VEC<fu_STR> result {};
-    split_mKuv(str_1, sep, 0, result);
+    split_mKuv(str, sep, 0, result);
     return /*NRVO*/ result;
 }
                                 #endif
@@ -166,9 +166,9 @@ fu_STR path_normalize(const fu_STR& p)
 
 fu_STR path_relative(fu::view<char> from, const fu_STR& to)
 {
-    const int min_1 = ((from.size() < to.size()) ? from.size() : to.size());
+    const int min = ((from.size() < to.size()) ? from.size() : to.size());
     int same = 0;
-    for (int i = 0; i < min_1; i++)
+    for (int i = 0; i < min; i++)
     {
         const char a = from[i];
         const char b = to[i];
@@ -214,12 +214,12 @@ char ascii_upper(const char c)
     return (((c >= 'a') && (c <= 'z')) ? char((int(fu::u8(c)) + (int(fu::u8('A')) - int(fu::u8('a'))))) : char(c));
 }
 
-int parse10i32(int& offset, fu::view<char> str_1)
+int parse10i32(int& offset, fu::view<char> str)
 {
     /*MOV*/ int result {};
-    while (offset < str_1.size())
+    while (offset < str.size())
     {
-        const char c = str_1[offset];
+        const char c = str[offset];
         if ((c < '0') || (c > '9'))
             break;
 

@@ -88,9 +88,9 @@ inline fu_STR x7E_OZkl(fu::view<char> a, fu::view<char> b)
 }
                                 #endif
 
-fu_STR createStructCanon(const int index_2, fu::view<char>)
+fu_STR createStructCanon(const int index, fu::view<char>)
 {
-    return x7E_OZkl("$"_fu, fu::i64dec(index_2));
+    return x7E_OZkl("$"_fu, fu::i64dec(index));
 }
 
                                 #ifndef DEFt_starts_05eu
@@ -101,15 +101,15 @@ inline bool starts_05eu(fu::view<char> a, const char with)
 }
                                 #endif
 
-bool isStruct(const s_Type& type_3)
+bool isStruct(const s_Type& type)
 {
-    return starts_05eu(type_3.vtype.canon, '$');
+    return starts_05eu(type.vtype.canon, '$');
 }
 
-int structIndex(fu::view<char> canon_1)
+int structIndex(fu::view<char> canon)
 {
     int offset = 1;
-    return ((canon_1[0] == '$') ? parse10i32(offset, canon_1) : -1);
+    return ((canon[0] == '$') ? parse10i32(offset, canon) : -1);
 }
 
 #endif

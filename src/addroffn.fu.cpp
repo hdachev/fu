@@ -119,19 +119,19 @@ struct s_ScopeItem
 
 #ifndef FU_NO_FDEFs
 
-bool type_isAddrOfFn(const s_Type& type_3)
+bool type_isAddrOfFn(const s_Type& type)
 {
-    return fu::lmatch(type_3.vtype.canon, "@"_fu);
+    return fu::lmatch(type.vtype.canon, "@"_fu);
 }
 
-bool type_isZST(const s_Type& type_3)
+bool type_isZST(const s_Type& type)
 {
-    return type_isAddrOfFn(type_3);
+    return type_isAddrOfFn(type);
 }
 
-bool type_isCTC(const s_Type& type_3)
+bool type_isCTC(const s_Type& type)
 {
-    return type_isZST(type_3);
+    return type_isZST(type);
 }
 
                                 #ifndef DEFt_x7E_OZkl
@@ -147,45 +147,45 @@ fu_STR packAddrOfFn(fu::view<s_Target> targets)
     /*MOV*/ fu_STR res {};
     for (int i = 0; i < targets.size(); i++)
     {
-        const s_Target& target_6 = targets[i];
-        res += x7E_OZkl((x7E_OZkl("@"_fu, fu::i64dec(target_6.modid)) + ":"_fu), fu::i64dec(target_6.index));
+        const s_Target& target = targets[i];
+        res += x7E_OZkl((x7E_OZkl("@"_fu, fu::i64dec(target.modid)) + ":"_fu), fu::i64dec(target.index));
     };
     return /*NRVO*/ res;
 }
 
                                 #ifndef DEFt_unpackAddrOfFn_ykV9
                                 #define DEFt_unpackAddrOfFn_ykV9
-inline void unpackAddrOfFn_ykV9(fu::view<char> canon_1, int, fu_VEC<s_ScopeItem>& out_1, const fu_STR& id_2, const bool shadows)
+inline void unpackAddrOfFn_ykV9(fu::view<char> canon, int, fu_VEC<s_ScopeItem>& out, const fu_STR& id, const bool shadows)
 {
     int i = 0;
-    while (i < canon_1.size())
+    while (i < canon.size())
     {
-        if (!(canon_1[i++] == '@'))
-            fu::fail((("unpackAddrOfFn: bad canon [1]: `"_fu + canon_1) + "`."_fu));
+        if (!(canon[i++] == '@'))
+            fu::fail((("unpackAddrOfFn: bad canon [1]: `"_fu + canon) + "`."_fu));
 
-        const int modid_4 = parse10i32(i, canon_1);
-        if (!(canon_1[i++] == ':'))
-            fu::fail((("unpackAddrOfFn: bad canon [2]: `"_fu + canon_1) + "`."_fu));
+        const int modid = parse10i32(i, canon);
+        if (!(canon[i++] == ':'))
+            fu::fail((("unpackAddrOfFn: bad canon [2]: `"_fu + canon) + "`."_fu));
 
-        const int index_3 = parse10i32(i, canon_1);
-        const s_Target target_6 = s_Target { int(modid_4), int(index_3) };
-        Scope_set(out_1, id_2, target_6, shadows);
+        const int index = parse10i32(i, canon);
+        const s_Target target = s_Target { int(modid), int(index) };
+        Scope_set(out, id, target, shadows);
     };
 }
                                 #endif
 
-bool X_unpackAddrOfFnBinding(fu_VEC<s_ScopeItem>& out_1, const fu_STR& id_2, const s_Type& type_3, const bool shadows)
+bool X_unpackAddrOfFnBinding(fu_VEC<s_ScopeItem>& out, const fu_STR& id, const s_Type& type, const bool shadows)
 {
-    if (!type_isAddrOfFn(type_3))
+    if (!type_isAddrOfFn(type))
         return false;
 
-    unpackAddrOfFn_ykV9(type_3.vtype.canon, 0, out_1, id_2, shadows);
+    unpackAddrOfFn_ykV9(type.vtype.canon, 0, out, id, shadows);
     return true;
 }
 
-s_Type X_addrofTarget(const s_Target& target_6)
+s_Type X_addrofTarget(const s_Target& target)
 {
-    return s_Type { s_ValueType { 0, 0, packAddrOfFn((fu::slate<1, s_Target> { s_Target(target_6) })) }, s_Lifetime{} };
+    return s_Type { s_ValueType { 0, 0, packAddrOfFn((fu::slate<1, s_Target> { s_Target(target) })) }, s_Lifetime{} };
 }
 
 #endif

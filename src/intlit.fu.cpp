@@ -60,11 +60,11 @@ s_Intlit Intlit(fu::view<char> sign_prefix_value_suffix)
             continue;
 
         const uint64_t ci = (uint64_t(fu::u8(c)) - ((c < 'a') ? uint64_t(fu::u8('0')) : uint64_t(fu::u8('a'))));
-        const uint64_t last_1 = absval;
+        const uint64_t last = absval;
         absval *= base;
         absval += ci;
         fu_STR* _0;
-        (*(_0 = &(error)) ? *_0 : *_0 = ((last_1 != (absval / base)) ? "Integer literal overflows a u64."_fu : fu_STR{}));
+        (*(_0 = &(error)) ? *_0 : *_0 = ((last != (absval / base)) ? "Integer literal overflows a u64."_fu : fu_STR{}));
     };
     const bool uNsigned = ((suffix == 'u') || (base != 10ull));
     const bool negative = (sign == '-');

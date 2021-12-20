@@ -925,9 +925,9 @@ s_Context solvePrelude()
     /*MOV*/ s_Context ctx {};
     s_Module module = clone_uibg(getModule((*(const fu_STR*)fu::NIL), ctx));
     const s_Options options {};
-    fu_STR fname_1 = "__prelude"_fu;
-    s_LexerOutput lexed = lex(prelude_src, fname_1);
-    s_ParserOutput parsed = parse(0, fname_1, lexed.tokens, options);
+    fu_STR fname = "__prelude"_fu;
+    s_LexerOutput lexed = lex(prelude_src, fname);
+    s_ParserOutput parsed = parse(0, fname, lexed.tokens, options);
     module.in = s_ModuleInputs { fu_STR(prelude_src), s_LexerOutput(lexed), s_ParserOutput(parsed) };
     setModule(module, ctx);
     module.out.solve = solve(options, ctx, module);

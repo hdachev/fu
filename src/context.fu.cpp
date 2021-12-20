@@ -742,9 +742,9 @@ const fu_STR& _fname(const s_TokenIdx& idx, const s_Context& ctx)
     return ctx.modules[idx.modid].fname;
 }
 
-s_Struct& lookupStruct_mut(fu::view<char> canon_1, s_Module& module)
+s_Struct& lookupStruct_mut(fu::view<char> canon, s_Module& module)
 {
-    return module.out.types.mutref(structIndex(canon_1));
+    return module.out.types.mutref(structIndex(canon));
 }
 
                                 #ifndef DEFt_find_05eu
@@ -777,13 +777,13 @@ inline bool has_05eu(fu::view<char> a, const char b)
 
                                 #ifndef DEFt_bfind_VtCz
                                 #define DEFt_bfind_VtCz
-inline int bfind_VtCz(fu::view<fu_STR> keys_2, const fu_STR& item)
+inline int bfind_VtCz(fu::view<fu_STR> keys, const fu_STR& item)
 {
-    for (/*MOV*/ int i = 0; i < keys_2.size(); i++)
+    for (/*MOV*/ int i = 0; i < keys.size(); i++)
     {
-        if ((keys_2[i] >= item))
+        if ((keys[i] >= item))
         {
-            if (keys_2[i] != item)
+            if (keys[i] != item)
                 return -1;
 
             return /*NRVO*/ i;
@@ -805,7 +805,7 @@ inline const fu_STR& get_bmnP(const s_Map_OZkl& _, const fu_STR& key)
 }
                                 #endif
 
-static fu_STR tryResolve(const fu_STR& path, const fu_STR& from, const fu_STR& name_3, s_Context& ctx)
+static fu_STR tryResolve(const fu_STR& path, const fu_STR& from, const fu_STR& name, s_Context& ctx)
 {
     const bool exists = (fu::file_size(path) >= 0);
     if (exists)
@@ -813,7 +813,7 @@ static fu_STR tryResolve(const fu_STR& path, const fu_STR& from, const fu_STR& n
 
 
     {
-        /*MOV*/ fu_STR path_1 = ((from + "lib/"_fu) + name_3);
+        /*MOV*/ fu_STR path_1 = ((from + "lib/"_fu) + name);
         const bool exists_1 = (fu::file_size(path_1) >= 0);
         if (exists_1)
             return /*NRVO*/ path_1;
@@ -821,7 +821,7 @@ static fu_STR tryResolve(const fu_STR& path, const fu_STR& from, const fu_STR& n
     };
 
     {
-        /*MOV*/ fu_STR path_1 = ((from + "vendor/"_fu) + name_3);
+        /*MOV*/ fu_STR path_1 = ((from + "vendor/"_fu) + name);
         const bool exists_1 = (fu::file_size(path_1) >= 0);
         if (exists_1)
             return /*NRVO*/ path_1;
@@ -829,7 +829,7 @@ static fu_STR tryResolve(const fu_STR& path, const fu_STR& from, const fu_STR& n
     };
 
     {
-        /*MOV*/ fu_STR path_1 = ((from + "fu/lib/"_fu) + name_3);
+        /*MOV*/ fu_STR path_1 = ((from + "fu/lib/"_fu) + name);
         const bool exists_1 = (fu::file_size(path_1) >= 0);
         if (exists_1)
             return /*NRVO*/ path_1;
@@ -839,7 +839,7 @@ static fu_STR tryResolve(const fu_STR& path, const fu_STR& from, const fu_STR& n
     if (!fallback || (fallback.size() >= from.size()))
         return fu_STR{};
 
-    return resolveFile(fallback, name_3, ctx);
+    return resolveFile(fallback, name, ctx);
 }
 
                                 #ifndef DEFt_update_fvG9
@@ -867,33 +867,33 @@ inline void update_fvG9(int, const fu_STR& item, int, const fu_STR& extra, s_Map
 
                                 #ifndef DEFt_set_ZTZj
                                 #define DEFt_set_ZTZj
-inline void set_ZTZj(s_Map_OZkl& _, const fu_STR& key, const fu_STR& value_3)
+inline void set_ZTZj(s_Map_OZkl& _, const fu_STR& key, const fu_STR& value)
 {
-    update_fvG9(0, key, 0, value_3, _);
+    update_fvG9(0, key, 0, value, _);
 }
                                 #endif
 
-static fu_STR resolveFile(const fu_STR& from, const fu_STR& name_3, s_Context& ctx)
+static fu_STR resolveFile(const fu_STR& from, const fu_STR& name, s_Context& ctx)
 {
-    fu_STR path = (from + name_3);
+    fu_STR path = (from + name);
     const fu_STR& cached = get_bmnP(ctx.fuzzy, path);
     if (cached)
         return fu_STR(((cached == "\v"_fu) ? (*(const fu_STR*)fu::NIL) : cached));
 
-    /*MOV*/ fu_STR resolve = tryResolve(path, from, name_3, ctx);
+    /*MOV*/ fu_STR resolve = tryResolve(path, from, name, ctx);
     set_ZTZj(ctx.fuzzy, path, (resolve ? fu_STR(resolve) : "\v"_fu));
     return /*NRVO*/ resolve;
 }
 
                                 #ifndef DEFt_bfind_9sek
                                 #define DEFt_bfind_9sek
-inline int bfind_9sek(fu::view<fu_STR> keys_2, const fu_STR& item)
+inline int bfind_9sek(fu::view<fu_STR> keys, const fu_STR& item)
 {
-    for (/*MOV*/ int i = 0; i < keys_2.size(); i++)
+    for (/*MOV*/ int i = 0; i < keys.size(); i++)
     {
-        if ((keys_2[i] >= item))
+        if ((keys[i] >= item))
         {
-            if (keys_2[i] != item)
+            if (keys[i] != item)
                 return -1;
 
             return /*NRVO*/ i;
@@ -913,18 +913,18 @@ inline bool has_zJcj(const s_Map_OZkl& _, const fu_STR& key)
 
 fu_STR resolveFile(const fu_STR& path, s_Context& ctx)
 {
-    const int fuzzy_1 = find_05eu(path, '\v');
-    if (fuzzy_1 > 0)
+    const int fuzzy = find_05eu(path, '\v');
+    if (fuzzy > 0)
     {
-        fu_STR from = fu::slice(path, 0, fuzzy_1);
-        fu_STR name_3 = fu::slice(path, (fuzzy_1 + 1));
-        if (from && name_3 && !has_05eu(name_3, '\v'))
+        fu_STR from = fu::slice(path, 0, fuzzy);
+        fu_STR name = fu::slice(path, (fuzzy + 1));
+        if (from && name && !has_05eu(name, '\v'))
         {
-            /*MOV*/ fu_STR res = resolveFile(from, name_3, ctx);
+            /*MOV*/ fu_STR res = resolveFile(from, name, ctx);
             if (res)
                 return /*NRVO*/ res;
 
-            /*MOV*/ fu_STR prepopulated = (from + name_3);
+            /*MOV*/ fu_STR prepopulated = (from + name);
             if (has_zJcj(ctx.files, prepopulated))
                 return /*NRVO*/ prepopulated;
 
@@ -935,55 +935,55 @@ fu_STR resolveFile(const fu_STR& path, s_Context& ctx)
 
                                 #ifndef DEFt_replace_Q0b6
                                 #define DEFt_replace_Q0b6
-inline fu_STR replace_Q0b6(const fu_STR& str_1, fu::view<char> all, fu::view<char> with)
+inline fu_STR replace_Q0b6(const fu_STR& str, fu::view<char> all, fu::view<char> with)
 {
     /*MOV*/ fu_STR result {};
 
     {
-        int last_1 = 0;
+        int last = 0;
         int next = 0;
         const int N = all.size();
         if (N)
         {
-            while (((next = fu::lfind(str_1, all, last_1)) >= 0))
+            while (((next = fu::lfind(str, all, last)) >= 0))
             {
 
                 {
-                    fu_STR substr_1 = fu::slice(str_1, last_1, next);
-                    const bool first_1 = !last_1;
-                    const bool last_2 = false;
-                    if (!first_1)
+                    fu_STR substr = fu::slice(str, last, next);
+                    const bool first = !last;
+                    const bool last_1 = false;
+                    if (!first)
                         result += with;
-                    else if (last_2)
-                        return fu_STR(str_1);
+                    else if (last_1)
+                        return fu_STR(str);
 
-                    result += substr_1;
+                    result += substr;
                 };
-                last_1 = (next + N);
+                last = (next + N);
             };
         };
-        if (last_1)
+        if (last)
         {
-            fu_STR substr_1 = fu::slice(str_1, last_1);
-            const bool first_1 = false;
-            const bool last_2 = true;
-            if (!first_1)
+            fu_STR substr = fu::slice(str, last);
+            const bool first = false;
+            const bool last_1 = true;
+            if (!first)
                 result += with;
-            else if (last_2)
-                return fu_STR(str_1);
+            else if (last_1)
+                return fu_STR(str);
 
-            result += substr_1;
+            result += substr;
         }
         else
         {
-            const bool first_1 = true;
-            const bool last_2 = true;
-            if (!first_1)
+            const bool first = true;
+            const bool last_1 = true;
+            if (!first)
                 result += with;
-            else if (last_2)
-                return fu_STR(str_1);
+            else if (last_1)
+                return fu_STR(str);
 
-            result += str_1;
+            result += str;
         };
     };
     return /*NRVO*/ result;
@@ -999,13 +999,13 @@ fu_STR resolveFile_x(const fu_STR& path, const s_Context& ctx)
 
                                 #ifndef DEFt_bfind_Bd7d
                                 #define DEFt_bfind_Bd7d
-inline int bfind_Bd7d(fu::view<fu_STR> keys_2, const fu_STR& item)
+inline int bfind_Bd7d(fu::view<fu_STR> keys, const fu_STR& item)
 {
-    for (/*MOV*/ int i = 0; i < keys_2.size(); i++)
+    for (/*MOV*/ int i = 0; i < keys.size(); i++)
     {
-        if ((keys_2[i] >= item))
+        if ((keys[i] >= item))
         {
-            if (keys_2[i] != item)
+            if (keys[i] != item)
                 return -1;
 
             return /*NRVO*/ i;
@@ -1052,9 +1052,9 @@ inline void update_awUK(int, const fu_STR& item, int, const fu_STR& extra, s_Map
 
                                 #ifndef DEFt_set_pi1h
                                 #define DEFt_set_pi1h
-inline void set_pi1h(s_Map_OZkl& _, const fu_STR& key, const fu_STR& value_3)
+inline void set_pi1h(s_Map_OZkl& _, const fu_STR& key, const fu_STR& value)
 {
-    update_awUK(0, key, 0, value_3, _);
+    update_awUK(0, key, 0, value, _);
 }
                                 #endif
 
@@ -1069,16 +1069,16 @@ fu_STR getFile(fu_STR&& path, s_Context& ctx)
     return /*NRVO*/ read;
 }
 
-s_Module& getModule(const fu_STR& fname_2, s_Context& ctx)
+s_Module& getModule(const fu_STR& fname, s_Context& ctx)
 {
     for (int i = 0; i < ctx.modules.size(); i++)
     {
-        if (ctx.modules[i].fname == fname_2)
+        if (ctx.modules[i].fname == fname)
             return ctx.modules.mutref(i);
 
     };
     const int i_1 = ctx.modules.size();
-    ctx.modules.push(s_Module { int(i_1), fu_STR(fname_2), s_ModuleInputs{}, s_ModuleOutputs{}, s_ModuleStats{} });
+    ctx.modules.push(s_Module { int(i_1), fu_STR(fname), s_ModuleInputs{}, s_ModuleOutputs{}, s_ModuleStats{} });
     return ctx.modules.mutref(i_1);
 }
 
@@ -1254,73 +1254,73 @@ void setModule(const s_Module& module, s_Context& ctx)
     current = clone_P1L6(module);
 }
 
-const s_Struct& lookupStruct(const s_Type& type_3, const s_Module& module, const s_Context& ctx)
+const s_Struct& lookupStruct(const s_Type& type, const s_Module& module, const s_Context& ctx)
 {
-    if (type_3.vtype.modid == module.modid)
+    if (type.vtype.modid == module.modid)
     {
         const s_Struct* _0;
-        return *(_0 = &(module.out.types[structIndex(type_3.vtype.canon)])) ? *_0 : fu_ASSERT();
+        return *(_0 = &(module.out.types[structIndex(type.vtype.canon)])) ? *_0 : fu_ASSERT();
     };
     const s_Struct* _1;
-    return *(_1 = &(ctx.modules[type_3.vtype.modid].out.types[structIndex(type_3.vtype.canon)])) ? *_1 : fu_ASSERT();
+    return *(_1 = &(ctx.modules[type.vtype.modid].out.types[structIndex(type.vtype.canon)])) ? *_1 : fu_ASSERT();
 }
 
-bool is_trivial(const s_Type& type_3, const s_Module& module, const s_Context& ctx)
+bool is_trivial(const s_Type& type, const s_Module& module, const s_Context& ctx)
 {
-    return is_primitive(type_3) || (isStruct(type_3) && lookupStruct(type_3, module, ctx).all_triv);
+    return is_primitive(type) || (isStruct(type) && lookupStruct(type, module, ctx).all_triv);
 }
 
-const s_Struct& tryLookupStruct(const s_Type& type_3, const s_Module& module, const s_Context& ctx)
+const s_Struct& tryLookupStruct(const s_Type& type, const s_Module& module, const s_Context& ctx)
 {
-    return isStruct(type_3) ? lookupStruct(type_3, module, ctx) : (*(const s_Struct*)fu::NIL);
+    return isStruct(type) ? lookupStruct(type, module, ctx) : (*(const s_Struct*)fu::NIL);
 }
 
-const fu_VEC<int>& lookupTypeImports(const s_Type& type_3, const s_Module& module, const s_Context& ctx)
+const fu_VEC<int>& lookupTypeImports(const s_Type& type, const s_Module& module, const s_Context& ctx)
 {
-    return tryLookupStruct(type_3, module, ctx).imports;
+    return tryLookupStruct(type, module, ctx).imports;
 }
 
-const fu_VEC<s_Target>& lookupTypeConverts(const s_Type& type_3, const s_Module& module, const s_Context& ctx)
+const fu_VEC<s_Target>& lookupTypeConverts(const s_Type& type, const s_Module& module, const s_Context& ctx)
 {
-    return tryLookupStruct(type_3, module, ctx).converts;
+    return tryLookupStruct(type, module, ctx).converts;
 }
 
                                 #ifndef DEFt_split_Iwpk
                                 #define DEFt_split_Iwpk
-inline void split_Iwpk(const fu_STR& str_1, fu::view<char> sep, int, fu_VEC<fu_STR>& result)
+inline void split_Iwpk(const fu_STR& str, fu::view<char> sep, int, fu_VEC<fu_STR>& result)
 {
-    int last_1 = 0;
+    int last = 0;
     int next = 0;
     const int N = sep.size();
     if (N)
     {
-        while (((next = fu::lfind(str_1, sep, last_1)) >= 0))
+        while (((next = fu::lfind(str, sep, last)) >= 0))
         {
 
             {
-                fu_STR substr_1 = fu::slice(str_1, last_1, next);
-                result += substr_1;
+                fu_STR substr = fu::slice(str, last, next);
+                result += substr;
             };
-            last_1 = (next + N);
+            last = (next + N);
         };
     };
-    if (last_1)
+    if (last)
     {
-        fu_STR substr_1 = fu::slice(str_1, last_1);
-        result += substr_1;
+        fu_STR substr = fu::slice(str, last);
+        result += substr;
     }
     else
-        result += str_1;
+        result += str;
 
 }
                                 #endif
 
                                 #ifndef DEFt_split_OZkl
                                 #define DEFt_split_OZkl
-inline fu_VEC<fu_STR> split_OZkl(const fu_STR& str_1, fu::view<char> sep)
+inline fu_VEC<fu_STR> split_OZkl(const fu_STR& str, fu::view<char> sep)
 {
     /*MOV*/ fu_VEC<fu_STR> result {};
-    split_Iwpk(str_1, sep, 0, result);
+    split_Iwpk(str, sep, 0, result);
     return /*NRVO*/ result;
 }
                                 #endif
@@ -1341,18 +1341,18 @@ extern const fu_STR BAD;
 
 fu_STR formatCodeSnippet(const s_TokenIdx& to, s_TokenIdx&& from, const int extraLines, const s_Context& ctx)
 {
-    const fu_STR& src_2 = ctx.modules[to.modid].in.src;
-    fu_VEC<fu_STR> lines = split_OZkl(src_2, "\n"_fu);
-    const s_Token& start_1 = _token((from ? from : to), ctx);
-    const s_Token& end_1 = _token(to, ctx);
-    int l_start = ((start_1.line - extraLines) - 1);
-    int l_end = (end_1.line + extraLines);
+    const fu_STR& src = ctx.modules[to.modid].in.src;
+    fu_VEC<fu_STR> lines = split_OZkl(src, "\n"_fu);
+    const s_Token& start = _token((from ? from : to), ctx);
+    const s_Token& end = _token(to, ctx);
+    int l_start = ((start.line - extraLines) - 1);
+    int l_end = (end.line + extraLines);
     l_start = std::max(l_start, 0);
     l_end = std::min(l_end, lines.size());
     /*MOV*/ fu_STR result {};
     for (int i = l_start; i < l_end; i++)
     {
-        if ((i < (start_1.line - 1)) || (i >= end_1.line))
+        if ((i < (start.line - 1)) || (i >= end.line))
             result += (DIM + "      | "_fu);
         else
         {
@@ -1362,16 +1362,16 @@ fu_STR formatCodeSnippet(const s_TokenIdx& to, s_TokenIdx&& from, const int extr
 
             result += margin;
         };
-        fu_STR line_1 { lines[i] };
-        if (i == (end_1.line - 1))
+        fu_STR line { lines[i] };
+        if (i == (end.line - 1))
         {
-            const int c0 = std::max((end_1.col - 1), 0);
-            const int c1 = (c0 + std::min(end_1.value.size(), line_1.size()));
-            line_1.splice(c1, 0, RESET);
-            line_1.splice(c0, 0, BAD);
+            const int c0 = std::max((end.col - 1), 0);
+            const int c1 = (c0 + std::min(end.value.size(), line.size()));
+            line.splice(c1, 0, RESET);
+            line.splice(c0, 0, BAD);
         };
-        result += line_1;
-        if ((i < (start_1.line - 1)) || (i >= end_1.line))
+        result += line;
+        if ((i < (start.line - 1)) || (i >= end.line))
             result += RESET;
 
         result += "\n"_fu;

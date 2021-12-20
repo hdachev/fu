@@ -23,6 +23,7 @@
 #include "addroffn.fu.cpp"
 #include "cpp.fu.cpp"
 #include "../lib/tea.fu.cpp"
+#include "../lib/debug.fu.cpp"
 #include "codegen.fu.cpp"
 #include "prelude.fu.cpp"
 #include "build.fu.cpp"

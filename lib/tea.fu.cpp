@@ -78,13 +78,13 @@ s_TEA hash(fu::view<char> u8view)
     return /*NRVO*/ res;
 }
 
-fu_STR hash62(fu::view<char> str_1, const int chars)
+fu_STR hash62(fu::view<char> str, const int chars)
 {
     /*MOV*/ fu_STR res {};
     uint64_t _0 {};
     uint64_t v = (__extension__ (
     {
-        const s_TEA tea = hash(str_1);
+        const s_TEA tea = hash(str);
         _0 = ((uint64_t(tea.v0) | (uint64_t(tea.v1) << 32ull)));
     (void)0;}), uint64_t(_0));
     for (int i = 0; i < chars; i++)
@@ -102,13 +102,13 @@ fu_STR hash62(fu::view<char> str_1, const int chars)
     return /*NRVO*/ res;
 }
 
-fu_STR hash16(fu::view<char> str_1, const int chars)
+fu_STR hash16(fu::view<char> str, const int chars)
 {
     /*MOV*/ fu_STR res {};
     uint64_t _0 {};
     uint64_t v = (__extension__ (
     {
-        const s_TEA tea = hash(str_1);
+        const s_TEA tea = hash(str);
         _0 = ((uint64_t(tea.v0) | (uint64_t(tea.v1) << 32ull)));
     (void)0;}), uint64_t(_0));
     for (int i = 0; i < chars; i++)

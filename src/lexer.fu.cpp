@@ -103,8 +103,8 @@ inline fu_STR x7E_OZkl(fu::view<char> a, fu::view<char> b)
 
 static int parseHex(fu::view<char> esc, int& i, int& idx, const int end, const fu_STR& src, const int lidx, fu::view<char> fname, const int line)
 {
-    const char c_1 = esc[++i];
-    return (((c_1 >= '0') && (c_1 <= '9')) ? (int(fu::u8(c_1)) - int(fu::u8('0'))) : (((c_1 >= 'A') && (c_1 <= 'F')) ? ((int(fu::u8(c_1)) - int(fu::u8('A'))) + 10) : (((c_1 >= 'a') && (c_1 <= 'f')) ? ((int(fu::u8(c_1)) - int(fu::u8('a'))) + 10) : err_str("str"_fu, (i - 1), "Non hexadecimal character in \\x-escape sequence."_fu, idx, end, src, lidx, fname, line))));
+    const char c = esc[++i];
+    return (((c >= '0') && (c <= '9')) ? (int(fu::u8(c)) - int(fu::u8('0'))) : (((c >= 'A') && (c <= 'F')) ? ((int(fu::u8(c)) - int(fu::u8('A'))) + 10) : (((c >= 'a') && (c <= 'f')) ? ((int(fu::u8(c)) - int(fu::u8('a'))) + 10) : err_str("str"_fu, (i - 1), "Non hexadecimal character in \\x-escape sequence."_fu, idx, end, src, lidx, fname, line))));
 }
 
 static fu_STR UNSAFE_unescapeStr(fu::view<char> esc, const int idx0, const int idx1, const char quot, int& idx, const int end, const fu_STR& src, const int lidx, fu::view<char> fname, const int line)
@@ -227,9 +227,9 @@ s_LexerOutput lex(const fu_STR& src, const fu_STR& fname)
         {
             bool hex = false;
             bool dot = false;
-            bool exp_1 = false;
+            bool exp = false;
             bool ob = false;
-            char max_1 = '9';
+            char max = '9';
             if (c == '0')
             {
                 const char c_1 = ((idx < end) ? src[idx] : (*(const char*)fu::NIL));
@@ -241,13 +241,13 @@ s_LexerOutput lex(const fu_STR& src, const fu_STR& fname)
                 else if ((c_1 == 'o') || (c_1 == 'O'))
                 {
                     ob = true;
-                    max_1 = '7';
+                    max = '7';
                     idx++;
                 }
                 else if ((c_1 == 'b') || (c_1 == 'B'))
                 {
                     ob = true;
-                    max_1 = '1';
+                    max = '1';
                     idx++;
                 }
                 else if ((c_1 >= '0') && (c_1 <= '9'))
@@ -257,7 +257,7 @@ s_LexerOutput lex(const fu_STR& src, const fu_STR& fname)
             while (idx < end)
             {
                 const char c_1 = src[idx++];
-                if (((c_1 >= '0') && (c_1 <= max_1)) || (hex && (((c_1 >= 'a') && (c_1 <= 'f')) || ((c_1 >= 'A') && (c_1 <= 'F')))))
+                if (((c_1 >= '0') && (c_1 <= max)) || (hex && (((c_1 >= 'a') && (c_1 <= 'f')) || ((c_1 >= 'A') && (c_1 <= 'F')))))
                 {
                 }
                 else if (ob)
@@ -273,20 +273,20 @@ s_LexerOutput lex(const fu_STR& src, const fu_STR& fname)
                         idx--;
                         break;
                     };
-                    if (dot || exp_1)
+                    if (dot || exp)
                         err("real"_fu, idx0, (idx - 1), src, idx, end, lidx, fname, line);
 
                     dot = true;
                 }
                 else if ((hex ? ((c_1 == 'p') || (c_1 == 'P')) : ((c_1 == 'e') || (c_1 == 'E'))))
                 {
-                    if (exp_1)
+                    if (exp)
                         err("real"_fu, idx0, (idx - 1), src, idx, end, lidx, fname, line);
 
                     if ((idx < end) && ((src[idx] == '-') || (src[idx] == '+')))
                         idx++;
 
-                    exp_1 = true;
+                    exp = true;
                 }
                 else if (c_1 == '_')
                 {
@@ -309,11 +309,11 @@ s_LexerOutput lex(const fu_STR& src, const fu_STR& fname)
             else
             {
                 const int idx1 = idx;
-                fu_STR str_1 = fu::slice(src, idx0, idx1);
-                if (hex && dot && !exp_1)
+                fu_STR str = fu::slice(src, idx0, idx1);
+                if (hex && dot && !exp)
                     err_str("real"_fu, idx0, ("The exponent is never optional"_fu + " for hexadecimal floating-point literals."_fu), idx, end, src, lidx, fname, line);
                 else
-                    token(((dot || exp_1) ? "real"_fu : "int"_fu), ascii_lower(str_1), idx0, idx1, lidx, tokens, line);
+                    token(((dot || exp) ? "real"_fu : "int"_fu), ascii_lower(str), idx0, idx1, lidx, tokens, line);
 
             };
         }
@@ -346,13 +346,13 @@ s_LexerOutput lex(const fu_STR& src, const fu_STR& fname)
             else
             {
                 const int idx1 = idx;
-                fu_STR str_1 = (esc ? UNSAFE_unescapeStr(src, idx0, idx1, c, idx, end, src, lidx, fname, line) : fu::slice(src, (idx0 + 1), (idx1 - 1)));
+                fu_STR str = (esc ? UNSAFE_unescapeStr(src, idx0, idx1, c, idx, end, src, lidx, fname, line) : fu::slice(src, (idx0 + 1), (idx1 - 1)));
                 const bool cHar = (c == '\'');
                 fu_STR kind = (cHar ? "char"_fu : "str"_fu);
-                if (cHar && (str_1.size() != 1))
-                    err_str("char"_fu, idx0, x7E_OZkl("Char literal len != 1: "_fu, fu::i64dec(str_1.size())), idx, end, src, lidx, fname, line);
+                if (cHar && (str.size() != 1))
+                    err_str("char"_fu, idx0, x7E_OZkl("Char literal len != 1: "_fu, fu::i64dec(str.size())), idx, end, src, lidx, fname, line);
                 else
-                    token_c(kind, str_1, idx0, idx1, col, tokens, line);
+                    token_c(kind, str, idx0, idx1, col, tokens, line);
 
             };
         }

@@ -36,29 +36,23 @@ inline fu_STR x7E_OZkl(fu::view<char> a, fu::view<char> b)
 }
                                 #endif
 
-fu_STR ClosureID(const s_Target& target_3)
+fu_STR ClosureID(const s_Target& target)
 {
-    return ((target_3.modid < 0) ? x7E_OZkl((x7E_OZkl("`"_fu, fu::i64dec(target_3.index)) + "-"_fu), fu::i64dec(-target_3.modid)) : x7E_OZkl("`"_fu, fu::i64dec(target_3.index)));
+    return ((target.modid < 0) ? x7E_OZkl((x7E_OZkl("`"_fu, fu::i64dec(target.index)) + "-"_fu), fu::i64dec(-target.modid)) : x7E_OZkl("`"_fu, fu::i64dec(target.index)));
 }
 
-s_Target tryParseClosureID(fu::view<char> id_1, const int MODID)
+s_Target tryParseClosureID(fu::view<char> id, const int MODID)
 {
-    if (id_1[0] == '`')
+    if (id[0] == '`')
     {
         int offset = 1;
-        fu_DEFER(if (!(offset == id_1.size()))
+        fu_DEFER(if (!(offset == id.size()))
             fu::fail("Bad ClosureID."_fu););
-        const int index_2 = parse10i32(offset, id_1);
-        const int modid_4 = ((id_1.size() > offset) ? -parse10i32(++offset, id_1) : int(MODID));
-        return s_Target { int(modid_4), int(index_2) };
+        const int index = parse10i32(offset, id);
+        const int modid = ((id.size() > offset) ? -parse10i32(++offset, id) : int(MODID));
+        return s_Target { int(modid), int(index) };
     };
     return s_Target{};
-}
-
-int compilerBreak()
-{
-    /*MOV*/ const int a = 5;
-    return /*NRVO*/ a;
 }
 
 #endif
