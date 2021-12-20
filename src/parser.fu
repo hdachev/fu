@@ -169,6 +169,7 @@ pub let LOOP_POST       = 4;
 // Descent modes.
 
 let M_LINT_UNARY_PRECEDENCE = 1 << 0;
+let M_LINT_ENSURE_INDENT    = 1 << 1;
 
 
 //
@@ -1076,9 +1077,14 @@ pub fn parse(modid: i32, fname: string, tokens: Token[], options: options::Optio
         // Whitespace lint -
         //  Stricter whitespace for expressions that start on a new line,
         //   the rest fall back to the _col0 from the nearest block.
-        let col00 = loc00 > 0 && tokens[loc00].line > tokens[loc00 - 1].line
+        let col00 = tokens[loc00].line > tokens[loc00 - 1].line
             ? tokens[loc00].col
             : _col0;
+
+        if (mode & M_LINT_ENSURE_INDENT)
+            tokens[_idx].col > _col0 || warn(
+                "Ambiguous indent at `" ~ tokens[_idx].value
+                    ~ "`: expected more than " ~ _col0 ~ ", got " ~ tokens[_idx].col);
 
         //
         mut head = parseExpressionHead();
@@ -1598,7 +1604,10 @@ pub fn parse(modid: i32, fname: string, tokens: Token[], options: options::Optio
 
         mut expr: Node;
         if (!tryConsume("op", ";"))
-            expr = parseExpressionStatement();
+        {
+            expr = parseExpression(P_RESET, mode: M_LINT_ENSURE_INDENT);
+            softSemi();
+        }
 
         return createJump(:kind, :label, :expr);
     }
