@@ -1275,7 +1275,6 @@ pub fn parse(modid: i32, fname: string, tokens: Token[], options: options::Optio
                 if (v ==  "{") return parseBlock();
                 if (v ==  "[") return parseArrayLiteral();
                 if (v ==  "$") return parseTypeParam();
-                if (v ==  "@") return parseTypeTag();
                 if (v ==  "|") return parseLambda();
                 if (v == "||") return parseLambda(noArgs_noClosingPipe: true);
                 if (v == "[]") return createDefinit();
@@ -1330,16 +1329,6 @@ pub fn parse(modid: i32, fname: string, tokens: Token[], options: options::Optio
     fn createTypeParam(value: string): Node
     {
         return make("typeparam", :value);
-    }
-
-    fn parseTypeTag(): Node
-    {
-        return createTypeTag(consume("id").value);
-    }
-
-    fn createTypeTag(value: string): Node
-    {
-        return make("typetag", :value);
     }
 
     fn parsePrefix(mut op: string): Node
@@ -1434,6 +1423,11 @@ pub fn parse(modid: i32, fname: string, tokens: Token[], options: options::Optio
 
             path ~= "/" ~ id;
         }
+    }
+
+    fn createTypeTag(value: string): Node
+    {
+        return make("typetag", :value);
     }
 
 

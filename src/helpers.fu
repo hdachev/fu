@@ -205,7 +205,7 @@ pub fn each(a: [$T], fn)
 }
 
 pub fn clone(a: $T)
-case ($T -> @copy) a;
+case ($T.is::copy) a;
 case ($T -> [$U]) a.map(fn clone);
 case ($T -> $T)
 {
