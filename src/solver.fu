@@ -598,24 +598,14 @@ pub fn solve(
         // Unique identifiers.
         if (_root_scope)
         {
-            mut autoshadow  = 0;
-            mut id_clashes  = 0;
+            mut autoshadow = 0;
 
             _scope.items.each(_ss.declash, |item, index|
             {
                 let root = index <= _root_scope.items_len;
-
-                if (item.id == id)
-                {
-                    if (!root)
-                        autoshadow++;
-
-                    id_clashes++;
-                }
+                if (!root && item.id == id)
+                    autoshadow++;
             });
-
-            if (id_clashes)
-                name ~= "_" ~ id_clashes;
 
             // LEAKY TEMPLATES, part 1:
             //  All locals are F_SHADOW - this is a usability thing really,

@@ -1522,7 +1522,7 @@ pub fn cpp_codegen(
                     if (node.target.modid != module.modid)
                         cgForeignGlobal(node.target);
 
-                    return ID(id); // TODO ensure const emit.
+                    return rootNS(ID(id)); // TODO ensure const emit.
                 }
 
                 return localID(:node.target);
@@ -1574,7 +1574,15 @@ pub fn cpp_codegen(
 
         isNative && fail("Unknown __native: `" ~ id ~ "`.");
 
-        return emitFunctionCall(id.valid_identifier);
+        return emitFunctionCall(rootNS(id.valid_identifier));
+    }
+
+    fn rootNS(id: string)
+    {
+        if (_current_fn._ids_used.has(id))
+            return "::" ~ id;
+
+        return id;
     }
 
     fn emitBuiltin(id: string, args: string[], node: SolvedNode): string
