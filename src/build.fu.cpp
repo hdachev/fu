@@ -52,12 +52,12 @@ struct s_TokenIdx;
 struct s_Type;
 struct s_ValueType;
 
-fu_STR hash16(fu::view<fu::byte>, int);
+fu_STR hash16(fu::view<char>, int);
 fu_STR path_dirname(const fu_STR&);
 fu_STR path_filename(const fu_STR&);
-fu_STR path_join(fu::view<fu::byte>, const fu_STR&);
+fu_STR path_join(fu::view<char>, const fu_STR&);
 fu_STR path_noext(const fu_STR&);
-fu_STR path_relative(fu::view<fu::byte>, const fu_STR&);
+fu_STR path_relative(fu::view<char>, const fu_STR&);
 
                                 #ifndef DEF_s_Token
                                 #define DEF_s_Token
@@ -737,9 +737,9 @@ struct s_Context
 
                                 #ifndef DEFt_if_last_SzE9
                                 #define DEFt_if_last_SzE9
-inline fu::byte if_last_SzE9(fu::view<fu::byte> s)
+inline char if_last_SzE9(fu::view<char> s)
 {
-    return s.size() ? s[(s.size() - 1)] : (*(const fu::byte*)fu::NIL);
+    return s.size() ? s[(s.size() - 1)] : (*(const char*)fu::NIL);
 }
                                 #endif
 
@@ -756,7 +756,7 @@ inline fu_STR& grow_if_oob_snLz(fu_VEC<fu_STR>& a, const int i)
 
                                 #ifndef DEFt_x7E_OZkl
                                 #define DEFt_x7E_OZkl
-inline fu_STR x7E_OZkl(fu::view<fu::byte> a, fu::view<fu::byte> b)
+inline fu_STR x7E_OZkl(fu::view<char> a, fu::view<char> b)
 {
     return a + b;
 }
@@ -764,7 +764,7 @@ inline fu_STR x7E_OZkl(fu::view<fu::byte> a, fu::view<fu::byte> b)
 
                                 #ifndef DEFt_join_9sek
                                 #define DEFt_join_9sek
-inline fu_STR join_9sek(fu::view<fu_STR> a, fu::view<fu::byte> sep)
+inline fu_STR join_9sek(fu::view<fu_STR> a, fu::view<char> sep)
 {
     if (a.size() < 2)
         return fu_STR((a.size() ? a[0] : (*(const fu_STR*)fu::NIL)));
@@ -775,12 +775,12 @@ inline fu_STR join_9sek(fu::view<fu_STR> a, fu::view<fu::byte> sep)
 
     /*MOV*/ fu_STR res {};
     res.grow<false>(size);
-    fu::view<fu::byte> head = a[0];
+    fu::view<char> head = a[0];
     size = head.size();
     fu::view_assign(fu::get_view_mut(res, 0, head.size()), head);
     for (int i_1 = 1; i_1 < a.size(); i_1++)
     {
-        fu::view<fu::byte> range = a[i_1];
+        fu::view<char> range = a[i_1];
         fu::view_assign(fu::get_view_mut(res, size, (size + sep.size())), sep);
         size += sep.size();
         fu::view_assign(fu::get_view_mut(res, size, (size + range.size())), range);
@@ -790,7 +790,7 @@ inline fu_STR join_9sek(fu::view<fu_STR> a, fu::view<fu::byte> sep)
 }
                                 #endif
 
-[[noreturn]] static fu::never ERR(fu_STR&& cpp_1, fu::view<fu_STR> Fs, fu::view<fu::byte> dir_wrk, fu_STR& stdout, const int code, const fu_STR& onfail, const s_Context& ctx)
+[[noreturn]] static fu::never ERR(fu_STR&& cpp_1, fu::view<fu_STR> Fs, fu::view<char> dir_wrk, fu_STR& stdout, const int code, const fu_STR& onfail, const s_Context& ctx)
 {
     if (!cpp_1)
     {
@@ -840,7 +840,7 @@ inline int only_VAhQ(fu::view<int> s)
 
                                 #ifndef DEFt_replace_Q0b6
                                 #define DEFt_replace_Q0b6
-inline fu_STR replace_Q0b6(const fu_STR& str_1, fu::view<fu::byte> all, fu::view<fu::byte> with)
+inline fu_STR replace_Q0b6(const fu_STR& str_1, fu::view<char> all, fu::view<char> with)
 {
     /*MOV*/ fu_STR result {};
 
@@ -895,7 +895,7 @@ inline fu_STR replace_Q0b6(const fu_STR& str_1, fu::view<fu::byte> all, fu::view
 }
                                 #endif
 
-static fu_STR ensure_local_fname(const fu_STR& fname_1, fu::view<fu::byte> dir_src)
+static fu_STR ensure_local_fname(const fu_STR& fname_1, fu::view<char> dir_src)
 {
     if (fu::lmatch(fname_1, dir_src))
         return fu_STR(fname_1);
@@ -906,7 +906,7 @@ static fu_STR ensure_local_fname(const fu_STR& fname_1, fu::view<fu::byte> dir_s
     return foreign + rel;
 }
 
-static fu_STR update_file(const fu_STR& fname_1, fu::view<fu::byte> data, fu::view<fu::byte> dir_src, fu::view<fu::byte> dir_out)
+static fu_STR update_file(const fu_STR& fname_1, fu::view<char> data, fu::view<char> dir_src, fu::view<char> dir_out)
 {
     fu_STR fname_2 = ensure_local_fname(fname_1, dir_src);
     if (!(fu::lmatch(fname_2, dir_src)))
@@ -929,23 +929,23 @@ static fu_STR update_file(const fu_STR& fname_1, fu::view<fu::byte> data, fu::vi
     return /*NRVO*/ fname_3;
 }
 
-void build(const bool run, fu_STR&& dir_wrk, const fu_STR& fulib, fu_STR&& bin, fu_STR&& dir_obj, fu_STR&& dir_src, fu_STR&& dir_cpp, const fu_STR& unity_1, fu::view<fu::byte> scheme, const fu_STR& onfail, const s_Context& ctx)
+void build(const bool run, fu_STR&& dir_wrk, const fu_STR& fulib, fu_STR&& bin, fu_STR&& dir_obj, fu_STR&& dir_src, fu_STR&& dir_cpp, const fu_STR& unity_1, fu::view<char> scheme, const fu_STR& onfail, const s_Context& ctx)
 {
-    if (if_last_SzE9(dir_wrk) != fu::byte('/'))
+    if (if_last_SzE9(dir_wrk) != '/')
     {
         if (!(dir_wrk))
             fu::fail("No workspace directory provided."_fu);
 
-        dir_wrk += fu::byte('/');
+        dir_wrk += '/';
     };
-    if (dir_obj && (if_last_SzE9(dir_obj) != fu::byte('/')))
-        dir_obj += fu::byte('/');
+    if (dir_obj && (if_last_SzE9(dir_obj) != '/'))
+        dir_obj += '/';
 
-    if (dir_src && (if_last_SzE9(dir_src) != fu::byte('/')))
-        dir_src += fu::byte('/');
+    if (dir_src && (if_last_SzE9(dir_src) != '/'))
+        dir_src += '/';
 
-    if (dir_cpp && (if_last_SzE9(dir_cpp) != fu::byte('/')))
-        dir_cpp += fu::byte('/');
+    if (dir_cpp && (if_last_SzE9(dir_cpp) != '/'))
+        dir_cpp += '/';
 
     fu_STR O_lvl = ((scheme != "debug"_fu) ? "-O3 -DNDEBUG -fno-math-errno "_fu : "-Og "_fu);
     if ((scheme == "debug"_fu) || (scheme == "reldeb"_fu))
@@ -1134,7 +1134,7 @@ void build(const bool run, fu_STR&& dir_wrk, const fu_STR& fulib, fu_STR&& bin, 
             code = fu::shell_exec(fu_STR(F_exe), stdout);
             const bool pure = true;
             if (pure)
-                fu::file_write(F_exe, fu::view_of((fu::slate<1, int> { int(code) }), fu::byte{}));
+                fu::file_write(F_exe, fu::view_of((fu::slate<1, int> { int(code) }), char{}));
 
         };
     };

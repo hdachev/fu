@@ -1,6 +1,5 @@
 
 #include <fu/decstr.h>
-#include <fu/int.h>
 #include <fu/str.h>
 #include <fu/vec/concat.h>
 #include <fu/vec/concat_one.h>
@@ -11,11 +10,11 @@ fu_STR ansi(int, int, int);
 
 #ifndef FU_NO_FDEFs
 
-static const fu_STR ESC = (fu::byte(27) + "["_fu);
+static const fu_STR ESC = (char(27) + "["_fu);
 
                                 #ifndef DEFt_x7E_OZkl
                                 #define DEFt_x7E_OZkl
-inline fu_STR x7E_OZkl(fu::view<fu::byte> a, fu::view<fu::byte> b)
+inline fu_STR x7E_OZkl(fu::view<char> a, fu::view<char> b)
 {
     return a + b;
 }
@@ -23,17 +22,17 @@ inline fu_STR x7E_OZkl(fu::view<fu::byte> a, fu::view<fu::byte> b)
 
 fu_STR ansi(const int a)
 {
-    return x7E_OZkl(ESC, fu::i64dec(a)) + fu::byte('m');
+    return x7E_OZkl(ESC, fu::i64dec(a)) + 'm';
 }
 
 fu_STR ansi(const int a, const int b)
 {
-    return x7E_OZkl((x7E_OZkl(ESC, fu::i64dec(a)) + fu::byte(';')), fu::i64dec(b)) + fu::byte('m');
+    return x7E_OZkl((x7E_OZkl(ESC, fu::i64dec(a)) + ';'), fu::i64dec(b)) + 'm';
 }
 
 fu_STR ansi(const int a, const int b, const int c)
 {
-    return x7E_OZkl((x7E_OZkl((x7E_OZkl(ESC, fu::i64dec(a)) + fu::byte(';')), fu::i64dec(b)) + fu::byte(';')), fu::i64dec(c)) + fu::byte('m');
+    return x7E_OZkl((x7E_OZkl((x7E_OZkl(ESC, fu::i64dec(a)) + ';'), fu::i64dec(b)) + ';'), fu::i64dec(c)) + 'm';
 }
 
 extern const fu_STR RESET = ansi(0);

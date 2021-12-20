@@ -45,7 +45,7 @@ struct s_ValueType;
 bool operator<(const s_ScopeMemo&, const s_ScopeMemo&);
 bool operator==(const s_ScopeMemo&, const s_ScopeMemo&);
 bool operator>(const s_ScopeMemo&, const s_ScopeMemo&);
-fu_STR createStructCanon(int, fu::view<fu::byte>);
+fu_STR createStructCanon(int, fu::view<char>);
 s_ScopeItem ScopeItem(const fu_STR&, const s_Target&, bool);
 s_Target search(fu::view<s_ScopeItem>, const fu_STR&, int&, fu::view<s_ScopeSkip>, bool&, const s_Target&, fu::view<s_Target>, fu::view<s_ScopeItem>);
 void Scope_set(fu_VEC<s_ScopeItem>&, const fu_STR&, const s_Target&, bool);
@@ -811,7 +811,7 @@ inline constexpr int q_rx_copy = (1 << 1);
 
 s_Type initStruct(const fu_STR& name_3, const int flags_4, const bool SELF_TEST, s_Module& module)
 {
-    if (!((fu::u8(name_3[0]) - fu::u8(fu::byte('0'))) > fu::u8(unsigned(9))))
+    if (!((fu::u8(fu::u8(name_3[0])) - fu::u8(fu::u8('0'))) > fu::u8(unsigned(9))))
         fu::fail((("Bad struct name, leading digit: `"_fu + name_3) + "`."_fu));
 
     const int index_2 = module.out.types.size();

@@ -51,7 +51,7 @@ bool operator==(const s_Lifetime&, const s_Lifetime&);
 bool operator==(const s_Region&, const s_Region&);
 bool operator==(const s_Type&, const s_Type&);
 bool operator>(const s_Region&, const s_Region&);
-int parse10i32(int&, fu::view<fu::byte>);
+int parse10i32(int&, fu::view<char>);
 s_Lifetime Lifetime_static();
 static bool operator==(const s_ValueType&, const s_ValueType&);
 
@@ -1013,6 +1013,11 @@ bool is_bool(const s_Type& t)
     return t.vtype.canon == t_bool.vtype.canon;
 }
 
+bool is_byte(const s_Type& t)
+{
+    return t.vtype.canon == t_byte.vtype.canon;
+}
+
 bool is_never(const s_Type& t)
 {
     return t.vtype.canon == t_never.vtype.canon;
@@ -1035,7 +1040,7 @@ bool maybe_nonzero(const s_Type& t)
 
 extern const bool CANNOT_definit_mutrefs = true;
 
-static bool isCanonAssignable(fu::view<fu::byte> host, fu::view<fu::byte> guest)
+static bool isCanonAssignable(fu::view<char> host, fu::view<char> guest)
 {
     return host == guest;
 }
@@ -1148,7 +1153,7 @@ s_Type make_copyable(/*MOV*/ s_Type&& type_3)
 
                                 #ifndef DEFt_x7Ex3D_BWdE
                                 #define DEFt_x7Ex3D_BWdE
-inline fu_STR& x7Ex3D_BWdE(fu_STR& a, fu::view<fu::byte> b)
+inline fu_STR& x7Ex3D_BWdE(fu_STR& a, fu::view<char> b)
 {
     return (a += b);
 }
@@ -1156,13 +1161,13 @@ inline fu_STR& x7Ex3D_BWdE(fu_STR& a, fu::view<fu::byte> b)
 
                                 #ifndef DEFt_x7E_OZkl
                                 #define DEFt_x7E_OZkl
-inline fu_STR x7E_OZkl(fu::view<fu::byte> a, fu::view<fu::byte> b)
+inline fu_STR x7E_OZkl(fu::view<char> a, fu::view<char> b)
 {
     return a + b;
 }
                                 #endif
 
-fu_STR serializeType(const s_Type& type_3, fu::view<fu::byte> debug, const s_TokenIdx& _here, const s_Context& ctx)
+fu_STR serializeType(const s_Type& type_3, fu::view<char> debug, const s_TokenIdx& _here, const s_Context& ctx)
 {
     if (!(type_3))
         BUG(("serializeType: Falsy type in: "_fu + debug), _here, ctx);
@@ -1194,7 +1199,7 @@ s_ValueType parseType(const fu_STR& str_1)
     int offset {};
     const int modid_4 = parse10i32(offset, str_1);
     int quals_1 = 0;
-    if (str_1[offset] == fu::byte('+'))
+    if (str_1[offset] == '+')
     {
         offset++;
         quals_1 = parse10i32(offset, str_1);
@@ -1362,7 +1367,7 @@ struct s_ValueType;
 
 [[noreturn]] fu::never BUG(fu_STR&&, const s_TokenIdx&, const s_Context&);
 [[noreturn]] fu::never FAIL(fu_STR&&, const s_TokenIdx&, const s_Context&);
-[[noreturn]] static fu::never err(fu::view<fu::byte>, fu::view<fu::byte>, const s_SolvedNode&, const s_Module&, const s_Scope&, const s_Context&, const s_TokenIdx&, fu::view<s_Helpers>, fu::view<s_HelpersData>);
+[[noreturn]] static fu::never err(fu::view<char>, fu::view<char>, const s_SolvedNode&, const s_Module&, const s_Scope&, const s_Context&, const s_TokenIdx&, fu::view<s_Helpers>, fu::view<s_HelpersData>);
 [[noreturn]] static fu::never fail(fu_STR&&, const s_TokenIdx&, const s_Context&, fu::view<s_Helpers>, fu::view<s_HelpersData>, const s_Scope&, const s_Module&);
 bool Region_isArg(const s_Region&);
 bool Region_isStatic(const s_Region&);
@@ -1370,7 +1375,7 @@ bool Region_isTemp(const s_Region&);
 bool X_unpackAddrOfFnBinding(fu_VEC<s_ScopeItem>&, const fu_STR&, const s_Type&, bool);
 bool add_once(s_BitSet&, int);
 bool has(const s_BitSet&, int);
-bool hasAssignment(fu::view<fu::byte>);
+bool hasAssignment(fu::view<char>);
 bool isAssignable(const s_Type&, const s_Type&);
 bool isAssignableAsArgument(const s_Type&, const s_Type&);
 bool isStruct(const s_Type&);
@@ -1402,16 +1407,16 @@ const s_Struct& tryLookupStruct(const s_Type&, const s_Module&, const s_Context&
 const s_Token& _token(const s_TokenIdx&, const s_Context&);
 fu_STR ClosureID(const s_Target&);
 fu_STR formatCodeSnippet(const s_TokenIdx&, s_TokenIdx&&, int, const s_Context&);
-fu_STR hash62(fu::view<fu::byte>, int);
+fu_STR hash62(fu::view<char>, int);
 fu_STR humanizeQuals(const s_Type&);
 fu_STR packAddrOfFn(fu::view<s_Target>);
 fu_STR qBAD(const fu_STR&);
 fu_STR qID(const fu_STR&);
 fu_STR qKW(const fu_STR&);
 fu_STR resolveFile_x(const fu_STR&, const s_Context&);
-fu_STR serializeType(const s_Type&, fu::view<fu::byte>, const s_TokenIdx&, const s_Context&);
+fu_STR serializeType(const s_Type&, fu::view<char>, const s_TokenIdx&, const s_Context&);
 inline const s_Region& first_pdPA(fu::view<s_Region>);
-inline int find_VtCz(fu::view<fu_STR>, fu::view<fu::byte>);
+inline int find_VtCz(fu::view<fu_STR>, fu::view<char>);
 inline s_ScopeSkip& last_usdD(fu_VEC<s_ScopeSkip>&);
 inline s_SolvedNode& last_B9fx(fu_VEC<s_SolvedNode>&);
 int MODID(const s_Module&);
@@ -1420,10 +1425,10 @@ int Region_asIndex(const s_Region&);
 int Region_toArgIndex(const s_Region&);
 int Region_toLocalIndex(const s_Region&);
 int compilerBreak();
-int parse10i32(int&, fu::view<fu::byte>);
+int parse10i32(int&, fu::view<char>);
 int popcount(const s_BitSet&);
 s_BitSet ArgsAtRisk_listRiskFree(const s_Flow&, int);
-s_Intlit Intlit(fu::view<fu::byte>);
+s_Intlit Intlit(fu::view<char>);
 s_Lifetime Lifetime_inter(const s_Lifetime&, const s_Lifetime&);
 s_Lifetime Lifetime_makeShared(const s_Lifetime&);
 s_Lifetime Lifetime_placeholder();
@@ -1436,12 +1441,12 @@ s_Scope Scope_exports(const s_Scope&, int, const fu_VEC<s_ScopeItem>&);
 s_Scope listGlobals(const s_Module&);
 s_ScopeMemo Scope_snap(const s_Scope&, fu::view<s_Helpers>);
 s_SolverOutput solve(const s_Options&, const s_Context&, s_Module&);
-s_Struct& lookupStruct_mut(fu::view<fu::byte>, s_Module&);
+s_Struct& lookupStruct_mut(fu::view<char>, s_Module&);
 s_Target Scope_Typedef(s_Scope&, const fu_STR&, const s_Type&, int, const fu_STR&, unsigned, const s_Module&);
 s_Target Scope_create(s_Scope&, const fu_STR&, const fu_STR&, const s_Type&, int, const s_SolvedNode&, int, unsigned, bool, const s_Module&);
 s_Target search(fu::view<s_ScopeItem>, const fu_STR&, int&, fu::view<s_ScopeSkip>, bool&, const s_Target&, fu::view<s_Target>, fu::view<s_ScopeItem>);
 s_Target target(const s_ScopeItem&);
-s_Target tryParseClosureID(fu::view<fu::byte>, int);
+s_Target tryParseClosureID(fu::view<char>, int);
 s_Type X_addrofTarget(const s_Target&);
 s_Type add_mutref(s_Type&&, const s_Lifetime&, const s_TokenIdx&, const s_Context&);
 s_Type add_ref(s_Type&&, const s_Lifetime&, const s_TokenIdx&, const s_Context&);
@@ -2603,7 +2608,7 @@ static void _Scope_import__forceCopy(const int modid_5, const bool pRivate, cons
 
 extern const s_Type t_void;
 
-static int unorderedClassify(fu::view<fu::byte> kind_3)
+static int unorderedClassify(fu::view<char> kind_3)
 {
     if (kind_3 == "fn"_fu)
         return 1;
@@ -2637,7 +2642,7 @@ static const s_SolvedNodeData& SolvedNodeData(const s_SolvedNode& nid, const s_M
 
                                 #ifndef DEFt_x7E_OZkl
                                 #define DEFt_x7E_OZkl
-inline fu_STR x7E_OZkl(fu::view<fu::byte> a, fu::view<fu::byte> b)
+inline fu_STR x7E_OZkl(fu::view<char> a, fu::view<char> b)
 {
     return a + b;
 }
@@ -2871,7 +2876,7 @@ inline constexpr int F_COMPOUND_ID = (1 << 6);
 
                                 #ifndef DEFt_find_WqUX
                                 #define DEFt_find_WqUX
-inline int find_WqUX(fu::view<fu::byte> a, const fu::byte b)
+inline int find_WqUX(fu::view<char> a, const char b)
 {
     for (/*MOV*/ int i = 0; i < a.size(); i++)
     {
@@ -2899,7 +2904,7 @@ static const s_Module& findModule(const fu_STR& fuzimport, const s_Context& ctx,
 
 static const s_Scope& dequalify_andGetScope(fu_STR& id_2, const s_TokenIdx& _here, const s_Context& ctx, fu::view<s_Helpers> _helpers, fu::view<s_HelpersData> _helpers_data, const s_Scope& _scope, const s_Module& module)
 {
-    const int split_4 = find_WqUX(id_2, fu::byte('\t'));
+    const int split_4 = find_WqUX(id_2, '\t');
     if (!((split_4 >= 0)))
         fail(fu_STR{}, _here, ctx, _helpers, _helpers_data, _scope, module);
 
@@ -2982,7 +2987,7 @@ inline void each_iySd(fu::view<int> items_5, fu::view<s_ScopeSkip> scope_skip_1,
 }
                                 #endif
 
-static void visitTypeImports(const s_Type& type_3, const s_Module& module, const s_Context& ctx, s_BitSet& seen, const s_Scope& _scope, const bool local_scope, const s_ScopeSkipMemos& _ss, fu::view<fu::byte> id_2, fu_VEC<s_Target>& extra_items_1)
+static void visitTypeImports(const s_Type& type_3, const s_Module& module, const s_Context& ctx, s_BitSet& seen, const s_Scope& _scope, const bool local_scope, const s_ScopeSkipMemos& _ss, fu::view<char> id_2, fu_VEC<s_Target>& extra_items_1)
 {
     fu::view<int> visit = lookupTypeImports(type_3, module, ctx);
     for (int i = -1; i < visit.size(); i++)
@@ -3012,7 +3017,7 @@ static void visitTypeImports(const s_Type& type_3, const s_Module& module, const
 
                                 #ifndef DEFt_each_JmfV
                                 #define DEFt_each_JmfV
-inline void each_JmfV(fu::view<s_Target> items_5, fu::view<s_ScopeSkip> scope_skip_1, int, const int start_1, const s_Scope& _scope, const s_Module& module, const s_Context& ctx, const s_TokenIdx& _here, fu::view<s_Helpers> _helpers, fu::view<s_HelpersData> _helpers_data, s_BitSet& seen, const bool local_scope, const s_ScopeSkipMemos& _ss, fu::view<fu::byte> id_2, fu_VEC<s_Target>& extra_items_1)
+inline void each_JmfV(fu::view<s_Target> items_5, fu::view<s_ScopeSkip> scope_skip_1, int, const int start_1, const s_Scope& _scope, const s_Module& module, const s_Context& ctx, const s_TokenIdx& _here, fu::view<s_Helpers> _helpers, fu::view<s_HelpersData> _helpers_data, s_BitSet& seen, const bool local_scope, const s_ScopeSkipMemos& _ss, fu::view<char> id_2, fu_VEC<s_Target>& extra_items_1)
 {
     const s_ScopeSkip END_DUMMY = s_ScopeSkip { items_5.size(), items_5.size() };
     int i0 = start_1;
@@ -3083,16 +3088,16 @@ inline constexpr int F_INLINE = (1 << 29);
 
                                 #ifndef DEFt_unpackAddrOfFn_qU1U
                                 #define DEFt_unpackAddrOfFn_qU1U
-inline void unpackAddrOfFn_qU1U(fu::view<fu::byte> canon_1, int, const s_Module& module, const s_Scope& _scope, const s_Context& ctx, const s_TokenIdx& _here, fu::view<s_Helpers> _helpers, fu::view<s_HelpersData> _helpers_data, s_Template& template_1, int& parent_idx)
+inline void unpackAddrOfFn_qU1U(fu::view<char> canon_1, int, const s_Module& module, const s_Scope& _scope, const s_Context& ctx, const s_TokenIdx& _here, fu::view<s_Helpers> _helpers, fu::view<s_HelpersData> _helpers_data, s_Template& template_1, int& parent_idx)
 {
     int i = 0;
     while (i < canon_1.size())
     {
-        if (!(canon_1[i++] == fu::byte('@')))
+        if (!(canon_1[i++] == '@'))
             fu::fail((("unpackAddrOfFn: bad canon [1]: `"_fu + canon_1) + "`."_fu));
 
         const int modid_5 = parse10i32(i, canon_1);
-        if (!(canon_1[i++] == fu::byte(':')))
+        if (!(canon_1[i++] == ':'))
             fu::fail((("unpackAddrOfFn: bad canon [2]: `"_fu + canon_1) + "`."_fu));
 
         const int index_3 = parse10i32(i, canon_1);
@@ -3363,7 +3368,7 @@ extern const s_Type t_u16;
 
 extern const s_Type t_u8;
 
-static const s_Type& solveInt(fu::view<fu::byte> v, const s_Type& type_3, const s_TokenIdx& _here, const s_Context& ctx, fu::view<s_Helpers> _helpers, fu::view<s_HelpersData> _helpers_data, const s_Scope& _scope, const s_Module& module)
+static const s_Type& solveInt(fu::view<char> v, const s_Type& type_3, const s_TokenIdx& _here, const s_Context& ctx, fu::view<s_Helpers> _helpers, fu::view<s_HelpersData> _helpers_data, const s_Scope& _scope, const s_Module& module)
 {
     s_Intlit parse_4 = Intlit(v);
     if (parse_4.error)
@@ -3596,7 +3601,7 @@ static const s_Type& evalTypeParam(const fu_STR& id_2, const s_Map_Lvtq& typePar
     return *(_0 = &(get_dzEU(typeParams, id_2).matched)) ? *_0 : *(_0 = &(Scope_lookupType(("$"_fu + (id_2 ? id_2 : fail("Falsy type param id."_fu, _here, ctx, _helpers, _helpers_data, _scope, module))), 0, _here, ctx, _helpers, _helpers_data, _scope, module, _ss))) ? *_0 : fail((("No type param `$"_fu + id_2) + "` in scope."_fu), _here, ctx, _helpers, _helpers_data, _scope, module);
 }
 
-static bool type_has(const s_Type& type_3, fu::view<fu::byte> tag, const s_Module& module, const s_Context& ctx, const s_TokenIdx& _here)
+static bool type_has(const s_Type& type_3, fu::view<char> tag, const s_Module& module, const s_Context& ctx, const s_TokenIdx& _here)
 {
     if (tag == "trivial"_fu)
         return is_trivial(type_3, module, ctx);
@@ -3672,7 +3677,7 @@ static bool evalTypePattern(const s_Node& node_1, s_Map_Lvtq& typeParams, s_Toke
     }
     else if (node_1.kind == "call"_fu)
     {
-        fu::view<fu::byte> fn = node_1.value;
+        fu::view<char> fn = node_1.value;
         if (node_1.items.size() == 1)
         {
             if (fn == "!"_fu)
@@ -3732,7 +3737,7 @@ inline void pairs_as8f(const s_Map_Lvtq& _, int, const s_Module& module, const s
 {
     for (int i = 0; i < _.keys.size(); i++)
     {
-        fu::view<fu::byte> id_2 = _.keys[i];
+        fu::view<char> id_2 = _.keys[i];
         const s_TypeParam& tp = _.vals[i];
         fu_STR name_3 = ("$"_fu + id_2);
         const s_Type& type_3 = tp.matched;
@@ -3774,7 +3779,7 @@ inline constexpr int F_TEMPLATE = (1 << 28);
 inline constexpr int F_PURE = (1 << 13);
                                 #endif
 
-static s_Type tryGetArgSpecType(fu::view<fu::byte> id_2, fu::view<s_ScopeItem> extra_items_1, const s_Scope& _scope, const s_Module& module, const s_Context& ctx, const s_TokenIdx& _here, fu::view<s_Helpers> _helpers, fu::view<s_HelpersData> _helpers_data)
+static s_Type tryGetArgSpecType(fu::view<char> id_2, fu::view<s_ScopeItem> extra_items_1, const s_Scope& _scope, const s_Module& module, const s_Context& ctx, const s_TokenIdx& _here, fu::view<s_Helpers> _helpers, fu::view<s_HelpersData> _helpers_data)
 {
     fu_STR param = ("$"_fu + id_2);
     for (int i_1 = 0; i_1 < extra_items_1.size(); i_1++)
@@ -3799,7 +3804,7 @@ inline constexpr int F_ARG = (1 << 9);
 
                                 #ifndef DEFt_find_05eu
                                 #define DEFt_find_05eu
-inline int find_05eu(fu::view<fu::byte> a, const fu::byte b)
+inline int find_05eu(fu::view<char> a, const char b)
 {
     for (/*MOV*/ int i = 0; i < a.size(); i++)
     {
@@ -3823,7 +3828,7 @@ inline constexpr int F_USING = (1 << 18);
 
                                 #ifndef DEFt_each_Lby0
                                 #define DEFt_each_Lby0
-inline void each_Lby0(fu::view<s_ScopeItem> items_5, fu::view<s_ScopeSkip> scope_skip_1, int, const int start_1, const s_ScopeMemo& _root_scope, fu::view<fu::byte> id_2, int& autoshadow, int& id_clashes)
+inline void each_Lby0(fu::view<s_ScopeItem> items_5, fu::view<s_ScopeSkip> scope_skip_1, int, const int start_1, const s_ScopeMemo& _root_scope, fu::view<char> id_2, int& autoshadow, int& id_clashes)
 {
     const s_ScopeSkip END_DUMMY = s_ScopeSkip { items_5.size(), items_5.size() };
     int i0 = start_1;
@@ -3990,11 +3995,11 @@ static void solveLet(s_SolvedNode& out_1, const fu_STR& id_2, const s_Module& mo
     if (!(isArg || !(SolvedNodeData(out_1, module, _scope, ctx).flags & F_COMPOUND_ID)))
         fail("`let`: F_COMPOUND_ID on a non-F_ARG."_fu, _here, ctx, _helpers, _helpers_data, _scope, module);
 
-    const int autocall_1 = ((SolvedNodeData(out_1, module, _scope, ctx).flags & F_COMPOUND_ID) ? find_05eu(id_2, fu::byte('.')) : int{});
+    const int autocall_1 = ((SolvedNodeData(out_1, module, _scope, ctx).flags & F_COMPOUND_ID) ? find_05eu(id_2, '.') : int{});
     if (!((autocall_1 >= 0)))
         fail("`let`: F_COMPOUND_ID but no `.` in id."_fu, _here, ctx, _helpers, _helpers_data, _scope, module);
 
-    fu_STR cleanID = (autocall_1 ? fu::slice(id_2, 0, find_05eu(id_2, fu::byte('.'))) : fu_STR{});
+    fu_STR cleanID = (autocall_1 ? fu::slice(id_2, 0, find_05eu(id_2, '.')) : fu_STR{});
     const fu_STR& id_3 = (cleanID ? cleanID : id_2);
     if (!X_unpackAddrOfFnBinding(_scope.items, id_3, SolvedNodeData(out_1, module, _scope, ctx).type, shadows))
     {
@@ -4117,7 +4122,7 @@ static fu_STR Autocall_splice(fu_STR& name_3, const s_TokenIdx& _here, const s_C
 {
     for (int i = 0; i < name_3.size(); i++)
     {
-        if (name_3[i] == fu::byte('.'))
+        if (name_3[i] == '.')
         {
             /*MOV*/ fu_STR ret = fu::slice(name_3, (i + 1));
             name_3.shrink(i);
@@ -4165,7 +4170,7 @@ static fu_STR qSTACK(const s_Target& target_6, const int position, fu_VEC<s_Targ
 
                                 #ifndef DEFt_x7E_OZkl
                                 #define DEFt_x7E_OZkl
-inline fu_STR x7E_OZkl(fu::view<fu::byte> a, fu::view<fu::byte> b)
+inline fu_STR x7E_OZkl(fu::view<char> a, fu::view<char> b)
 {
     return a + b;
 }
@@ -4383,20 +4388,20 @@ static const s_Module& getModule(const int modid_5, const s_Module& module, cons
     return ctx.modules[modid_5];
 }
 
-static fu::view<fu::byte> trimmedName(const s_Module& module_1)
+static fu::view<char> trimmedName(const s_Module& module_1)
 {
-    fu::view<fu::byte> fname_1 = module_1.fname;
+    fu::view<char> fname_1 = module_1.fname;
     int start_1 = 0;
     int end_1 = fname_1.size();
     for (int i = end_1; i-- > 0; )
     {
-        const fu::byte c = fname_1[i];
-        if (c == fu::byte('/'))
+        const char c = fname_1[i];
+        if (c == '/')
         {
             start_1 = (i + 1);
             break;
         };
-        if (c == fu::byte('.'))
+        if (c == '.')
             end_1 = i;
 
     };
@@ -4415,14 +4420,14 @@ static fu_STR humanizeType(const s_Type& type_3, const s_Module& module, const s
     return /*NRVO*/ result;
 }
 
-static void checkAssignable(const s_Type& host, const s_Type& guest, fu::view<fu::byte> err, const fu_STR& id_2, const fu_STR& sep, const s_TokenIdx& _here, const s_Context& ctx, fu::view<s_Helpers> _helpers, fu::view<s_HelpersData> _helpers_data, const s_Scope& _scope, const s_Module& module)
+static void checkAssignable(const s_Type& host, const s_Type& guest, fu::view<char> err, const fu_STR& id_2, const fu_STR& sep, const s_TokenIdx& _here, const s_Context& ctx, fu::view<s_Helpers> _helpers, fu::view<s_HelpersData> _helpers_data, const s_Scope& _scope, const s_Module& module)
 {
     if (!(isAssignable((host ? host : fail("Bad host type."_fu, _here, ctx, _helpers, _helpers_data, _scope, module)), (guest ? guest : fail("Bad guest type."_fu, _here, ctx, _helpers, _helpers_data, _scope, module)))))
         fail((((((err + (id_2 ? ((" `"_fu + id_2) + "`"_fu) : fu_STR{})) + ": "_fu) + humanizeType(host, module, ctx)) + (sep ? fu_STR(sep) : " <- "_fu)) + humanizeType(guest, module, ctx)), _here, ctx, _helpers, _helpers_data, _scope, module);
 
 }
 
-static s_Type superType(fu::view<fu::byte> reason, const s_Type& a, const s_Type& b, const fu_STR& id_2, const s_Module& module, const s_Scope& _scope, const s_Context& ctx, const s_TokenIdx& _here, fu::view<s_Helpers> _helpers, fu::view<s_HelpersData> _helpers_data)
+static s_Type superType(fu::view<char> reason, const s_Type& a, const s_Type& b, const fu_STR& id_2, const s_Module& module, const s_Scope& _scope, const s_Context& ctx, const s_TokenIdx& _here, fu::view<s_Helpers> _helpers, fu::view<s_HelpersData> _helpers_data)
 {
     s_Type _0 {};
     return (_0 = type_trySuper(a, b)) ? static_cast<s_Type&&>(_0) : fail((((((((id_2 ? (("`"_fu + human(id_2, module, _scope, ctx, _here, _helpers, _helpers_data)) + "`: "_fu) : fu_STR{}) + reason) + "No common supertype: `"_fu) + humanizeType(a, module, ctx)) + "` | `"_fu) + humanizeType(b, module, ctx)) + "`."_fu), _here, ctx, _helpers, _helpers_data, _scope, module);
@@ -4654,7 +4659,7 @@ static void mcom_BlockReturns_CopyOrMoveDecision(const s_Helpers& h, fu_VEC<s_He
 
 }
 
-static void test_nodes(fu::view<s_SolvedNode> nodes_1, fu::view<fu::byte> debug, const s_Module& module, const s_Scope& _scope, const s_Context& ctx, s_TokenIdx& _here, fu::view<s_Helpers> _helpers, fu::view<s_HelpersData> _helpers_data)
+static void test_nodes(fu::view<s_SolvedNode> nodes_1, fu::view<char> debug, const s_Module& module, const s_Scope& _scope, const s_Context& ctx, s_TokenIdx& _here, fu::view<s_Helpers> _helpers, fu::view<s_HelpersData> _helpers_data)
 {
     for (int i = 0; i < nodes_1.size(); i++)
         test_node(nodes_1[i], (x7E_OZkl((debug + "["_fu), fu::i64dec(i)) + "]"_fu), module, _scope, ctx, _here, _helpers, _helpers_data);
@@ -4721,12 +4726,12 @@ static fu_STR explainWhichFn(const s_Target& overload, fu::view<fu_VEC<s_Target>
     return /*NRVO*/ result;
 }
 
-[[noreturn]] static fu::never err(fu::view<fu::byte> reason, fu::view<fu::byte> debug, const s_SolvedNode& callsite_2, const s_Module& module, const s_Scope& _scope, const s_Context& ctx, const s_TokenIdx& _here, fu::view<s_Helpers> _helpers, fu::view<s_HelpersData> _helpers_data)
+[[noreturn]] static fu::never err(fu::view<char> reason, fu::view<char> debug, const s_SolvedNode& callsite_2, const s_Module& module, const s_Scope& _scope, const s_Context& ctx, const s_TokenIdx& _here, fu::view<s_Helpers> _helpers, fu::view<s_HelpersData> _helpers_data)
 {
     fail(((((debug + " "_fu) + qWHAT(GET(SolvedNodeData(callsite_2, module, _scope, ctx).target, _scope, module, ctx, _here, _helpers, _helpers_data), module, _scope, ctx, _here, _helpers, _helpers_data)) + ": "_fu) + reason), _here, ctx, _helpers, _helpers_data, _scope, module);
 }
 
-static void test_CallSignature(const s_SolvedNode& callsite_2, fu::view<fu::byte> debug, const s_Module& module, const s_Scope& _scope, const s_Context& ctx, const s_TokenIdx& _here, fu::view<s_Helpers> _helpers, fu::view<s_HelpersData> _helpers_data)
+static void test_CallSignature(const s_SolvedNode& callsite_2, fu::view<char> debug, const s_Module& module, const s_Scope& _scope, const s_Context& ctx, const s_TokenIdx& _here, fu::view<s_Helpers> _helpers, fu::view<s_HelpersData> _helpers_data)
 {
     fu::view<s_Argument> host_args = EXT(SolvedNodeData(callsite_2, module, _scope, ctx).target, module, _scope, ctx).args;
     fu::view<s_SolvedNode> args_1 = SolvedNodeData(callsite_2, module, _scope, ctx).items;
@@ -4746,7 +4751,7 @@ static void test_CallSignature(const s_SolvedNode& callsite_2, fu::view<fu::byte
     };
 }
 
-static void test_Statements(const s_SolvedNode& block, fu::view<fu::byte> debug, const s_Module& module, const s_Scope& _scope, const s_Context& ctx, const s_TokenIdx& _here, fu::view<s_Helpers> _helpers, fu::view<s_HelpersData> _helpers_data)
+static void test_Statements(const s_SolvedNode& block, fu::view<char> debug, const s_Module& module, const s_Scope& _scope, const s_Context& ctx, const s_TokenIdx& _here, fu::view<s_Helpers> _helpers, fu::view<s_HelpersData> _helpers_data)
 {
     fu::view<s_SolvedNode> items_5 = SolvedNodeData(block, module, _scope, ctx).items;
     for (int i = 0; i < items_5.size(); i++)
@@ -4769,7 +4774,7 @@ static void test_node(const s_SolvedNode& node_1, fu_STR&& debug, const s_Module
     if (!(!is_ref(SolvedNodeData(node_1, module, _scope, ctx).type) == !SolvedNodeData(node_1, module, _scope, ctx).type.lifetime))
         fail(((debug + ": !!ref != !!lt: "_fu) + humanizeType(SolvedNodeData(node_1, module, _scope, ctx).type, module, ctx)), _here, ctx, _helpers, _helpers_data, _scope, module);
 
-    fu::view<fu::byte> k = SolvedNodeData(node_1, module, _scope, ctx).kind;
+    fu::view<char> k = SolvedNodeData(node_1, module, _scope, ctx).kind;
     if (k == "call"_fu)
         return test_CallSignature(node_1, debug, module, _scope, ctx, _here, _helpers, _helpers_data);
 
@@ -6166,7 +6171,7 @@ static void mcom_node(const s_SolvedNode& node_1, const s_Module& module, s_Scop
         mcom_node(s_SolvedNode(items_5[i]), module, _scope, ctx, _here, _helpers, _helpers_data, _current_fn_or_type, options, _notes);
 
     _here = SolvedNodeData(node_1, module, _scope, ctx).token;
-    fu::view<fu::byte> k = SolvedNodeData(node_1, module, _scope, ctx).kind;
+    fu::view<char> k = SolvedNodeData(node_1, module, _scope, ctx).kind;
     s_Type t { SolvedNodeData(node_1, module, _scope, ctx).type };
     if (k == "call"_fu)
     {
@@ -6525,7 +6530,7 @@ static s_Target doTrySpecialize(const s_Target& into, const s_Target& overloadId
         s_Map_Lvtq typeParams {};
         if (!into)
         {
-            fu::view<fu::byte> kind_3 = template_1.node.kind;
+            fu::view<char> kind_3 = template_1.node.kind;
             const int numArgs = ((kind_3 == "fn"_fu) ? (items_5.size() + FN_ARGS_BACK) : fail(("TODO numArgs for template:"_fu + kind_3), _here, ctx, _helpers, _helpers_data, _scope, module));
             fu_VEC<int> retypeIndices {};
             for (int pass_retype = 0; (pass_retype == 0) || ((pass_retype == 1) && retypeIndices); pass_retype++)
@@ -6590,7 +6595,7 @@ static s_Target doTrySpecialize(const s_Target& into, const s_Target& overloadId
             if (remangle && !isInline)
             {
                 int _3 {};
-                const int start_1 = ((_3 = (find_WqUX(mangle, fu::byte(' ')) + 1)) ? _3 : fail(fu_STR{}, _here, ctx, _helpers, _helpers_data, _scope, module));
+                const int start_1 = ((_3 = (find_WqUX(mangle, ' ') + 1)) ? _3 : fail(fu_STR{}, _here, ctx, _helpers, _helpers_data, _scope, module));
                 mangle = (fu::slice(mangle, 0, start_1) + mangleArguments_gHql(args_1, _here, ctx));
                 if (mangle00 != mangle)
                 {
@@ -6761,7 +6766,7 @@ static s_Target doTrySpecialize(const s_Target& into, const s_Target& overloadId
             if (!into && !isInline)
             {
                 int _10 {};
-                const int start_1 = ((_10 = (find_05eu(mangle0, fu::byte(' ')) + 1)) ? _10 : fail(fu_STR{}, _here, ctx, _helpers, _helpers_data, _scope, module));
+                const int start_1 = ((_10 = (find_05eu(mangle0, ' ') + 1)) ? _10 : fail(fu_STR{}, _here, ctx, _helpers, _helpers_data, _scope, module));
                 mangle = (fu::slice(mangle0, 0, start_1) + mangleArguments_YOPn(EXT(target_6, module, _scope, ctx).args, _here, ctx));
                 /*MOV*/ s_Target preexisting {};
                 const bool nx0 = (mangle0 != mangle);
@@ -6853,7 +6858,7 @@ static void reorderByNumUsings(bool& use_reorder, fu_VEC<int>& reorder, fu::view
 
                                 #ifndef DEFt_find_VtCz
                                 #define DEFt_find_VtCz
-inline int find_VtCz(fu::view<fu_STR> a, fu::view<fu::byte> b)
+inline int find_VtCz(fu::view<fu_STR> a, fu::view<char> b)
 {
     for (/*MOV*/ int i = 0; i < a.size(); i++)
     {
@@ -7147,7 +7152,7 @@ static fu_STR fnName(const int idx, const s_Module& module, const s_Scope& _scop
     return (idx ? (("`"_fu + GETfn(idx, module, _scope, ctx, _here, _helpers, _helpers_data).name) + "`"_fu) : "global scope"_fu);
 }
 
-static void disambig(const s_Target& matchIdx, const s_Target& overloadIdx, const s_Scope& _scope, const s_Module& module, const s_Context& ctx, const s_TokenIdx& _here, fu::view<s_Helpers> _helpers, fu::view<s_HelpersData> _helpers_data, const s_CurrentFn& _current_fn, fu::view<fu::byte> id_2, fu::view<fu_VEC<s_Target>> conversions, fu::view<fu_VEC<s_Target>> conversions_1)
+static void disambig(const s_Target& matchIdx, const s_Target& overloadIdx, const s_Scope& _scope, const s_Module& module, const s_Context& ctx, const s_TokenIdx& _here, fu::view<s_Helpers> _helpers, fu::view<s_HelpersData> _helpers_data, const s_CurrentFn& _current_fn, fu::view<char> id_2, fu::view<fu_VEC<s_Target>> conversions, fu::view<fu_VEC<s_Target>> conversions_1)
 {
     if (matchIdx)
     {
@@ -7555,7 +7560,7 @@ static s_SolvedNode SolvedNode_deepClone(s_SolvedNodeData&& data, const s_Module
     return SolvedNode_create(data, _current_fn_or_type, module, _scope);
 }
 
-static s_Type intersectionType(fu::view<fu::byte> reason, const s_Type& a, const s_Type& b, const fu_STR& id_2, const s_Module& module, const s_Scope& _scope, const s_Context& ctx, const s_TokenIdx& _here, fu::view<s_Helpers> _helpers, fu::view<s_HelpersData> _helpers_data)
+static s_Type intersectionType(fu::view<char> reason, const s_Type& a, const s_Type& b, const fu_STR& id_2, const s_Module& module, const s_Scope& _scope, const s_Context& ctx, const s_TokenIdx& _here, fu::view<s_Helpers> _helpers, fu::view<s_HelpersData> _helpers_data)
 {
     s_Type _0 {};
     return (_0 = type_tryIntersect(a, b)) ? static_cast<s_Type&&>(_0) : fail((((((((id_2 ? (("`"_fu + human(id_2, module, _scope, ctx, _here, _helpers, _helpers_data)) + "`: "_fu) : fu_STR{}) + reason) + "Cannot intersect a common subtype: `"_fu) + humanizeType(a, module, ctx)) + "` & `"_fu) + humanizeType(b, module, ctx)) + "`."_fu), _here, ctx, _helpers, _helpers_data, _scope, module);
@@ -7889,7 +7894,7 @@ static s_SolvedNode CallerNode(const fu_STR& debug, s_Target&& target_6, fu_VEC<
     /*MOV*/ const s_SolvedNode callsite_2 = SolvedNode("call"_fu, type_3, 0, debug, args_1, target_6, 0, _here, _current_fn_or_type, module, _scope);
     if ((target_6.modid < 0) || (target_6.modid == module.modid))
     {
-        fu::view<fu::byte> k = GET(target_6, _scope, module, ctx, _here, _helpers, _helpers_data).kind;
+        fu::view<char> k = GET(target_6, _scope, module, ctx, _here, _helpers, _helpers_data).kind;
         if ((k == "fn"_fu) || (k == "type"_fu))
         {
             EXT_mut(target_6, module, _scope).callsites += callsite_2;
@@ -8194,7 +8199,7 @@ static s_SolvedNode uPrepStruct(const s_Node& node_1, s_CurrentFn& _current_fn, 
 
 static s_SolvedNode unorderedPrep_A(const s_Node& node_1, s_CurrentFn& _current_fn, s_Module& module, s_Scope& _scope, const s_Context& ctx, fu_VEC<s_Helpers>& _helpers, s_ScopeSkipMemos& _ss, s_TokenIdx& _here, s_Target& _current_fn_or_type, fu_VEC<s_HelpersData>& _helpers_data, s_Map_n2DH& _specs, s_ScopeMemo& _root_scope, int& _anons, fu_VEC<s_SolvedNode>& TODO_FIX_convert_args, const s_SolvedNode& TODO_FIX_template_defarg, const s_Options& options, int& _notes, fu_VEC<s_ScopeItem>& _field_items, const s_Type& t_string)
 {
-    fu::view<fu::byte> k = node_1.kind;
+    fu::view<char> k = node_1.kind;
     if (k == "fn"_fu)
         return uPrepFn_A(node_1, _current_fn, module, _scope, ctx, _helpers, _ss, _here, _current_fn_or_type);
 
@@ -8214,7 +8219,7 @@ static void uPrepFn_B(const s_Target& target_6, const s_Module& module, s_Scope&
 
 static void unorderedPrep_B(const s_Node& node_1, const s_Target& into, const s_Module& module, s_Scope& _scope, fu::view<s_Helpers> _helpers)
 {
-    fu::view<fu::byte> k = node_1.kind;
+    fu::view<char> k = node_1.kind;
     if (k == "fn"_fu)
         uPrepFn_B(into, module, _scope, _helpers);
 
@@ -8945,7 +8950,7 @@ static s_SolvedNode solveDeclExpr(const s_Node& node_1, s_TokenIdx& _here, s_Mod
     return s_SolvedNode(only_Mzjf(solveNodes((fu::slate<1, s_Node> { s_Node(node_1) }), (*(const s_Type*)fu::NIL), (*(const s_Type*)fu::NIL), bool{}, 0, _here, module, _scope, ctx, _current_fn_or_type, _helpers, _helpers_data, _current_fn, _specs, _ss, _root_scope, _anons, TODO_FIX_convert_args, TODO_FIX_template_defarg, options, _notes, _field_items, t_string)));
 }
 
-static void walk(s_Node& node_3, fu::view<fu::byte> placeholder, const s_ScopeItem& field)
+static void walk(s_Node& node_3, fu::view<char> placeholder, const s_ScopeItem& field)
 {
     for (int i = 0; i < node_3.items.size(); i++)
         walk(node_3.items.mutref(i), placeholder, field);
@@ -8960,7 +8965,7 @@ static void walk(s_Node& node_3, fu::view<fu::byte> placeholder, const s_ScopeIt
     };
 }
 
-inline static s_Node astReplace_u2TO(const s_Node& node_2, int, fu::view<fu::byte> placeholder, const s_ScopeItem& field)
+inline static s_Node astReplace_u2TO(const s_Node& node_2, int, fu::view<char> placeholder, const s_ScopeItem& field)
 {
     /*MOV*/ s_Node node_3 { node_2 };
     walk(node_3, placeholder, field);
@@ -8969,7 +8974,7 @@ inline static s_Node astReplace_u2TO(const s_Node& node_2, int, fu::view<fu::byt
 
 static s_SolvedNode solveForFieldsOf(const s_Node& node_1, s_Module& module, s_Scope& _scope, const s_Context& ctx, s_TokenIdx& _here, s_Target& _current_fn_or_type, fu_VEC<s_Helpers>& _helpers, fu_VEC<s_HelpersData>& _helpers_data, s_CurrentFn& _current_fn, s_Map_n2DH& _specs, s_ScopeSkipMemos& _ss, s_ScopeMemo& _root_scope, int& _anons, fu_VEC<s_SolvedNode>& TODO_FIX_convert_args, const s_SolvedNode& TODO_FIX_template_defarg, const s_Options& options, int& _notes, fu_VEC<s_ScopeItem>& _field_items, const s_Type& t_string)
 {
-    fu::view<fu::byte> placeholder = node_1.value;
+    fu::view<char> placeholder = node_1.value;
     const s_Node& body_template = node_1.items[1];
     s_SolvedNode _0 {};
     const s_Type& fields_of = (_0 = evalTypeAnnot(node_1.items[0], (*(const s_Map_Lvtq*)fu::NIL), module, _scope, ctx, _here, _current_fn_or_type, _helpers, _helpers_data, _current_fn, _specs, _ss, _root_scope, _anons, TODO_FIX_convert_args, TODO_FIX_template_defarg, options, _notes, _field_items, t_string), SolvedNodeData(s_SolvedNode(_0), module, _scope, ctx)).type;
@@ -9029,7 +9034,7 @@ static s_SolvedNode executeCompilerPragma(const s_Node& node_1, const s_CurrentF
 static s_SolvedNode solveNode(const s_Node& node_1, const s_Type& type_3, const int kills_1, s_TokenIdx& _here, s_Module& module, s_Scope& _scope, const s_Context& ctx, s_Target& _current_fn_or_type, fu_VEC<s_Helpers>& _helpers, fu_VEC<s_HelpersData>& _helpers_data, s_CurrentFn& _current_fn, s_Map_n2DH& _specs, s_ScopeSkipMemos& _ss, s_ScopeMemo& _root_scope, int& _anons, fu_VEC<s_SolvedNode>& TODO_FIX_convert_args, const s_SolvedNode& TODO_FIX_template_defarg, const s_Options& options, int& _notes, fu_VEC<s_ScopeItem>& _field_items, const s_Type& t_string)
 {
     HERE(node_1.token, _here);
-    fu::view<fu::byte> k = node_1.kind;
+    fu::view<char> k = node_1.kind;
     if (k == "root"_fu)
         return solveRoot(node_1, _here, module, _scope, ctx, _current_fn_or_type, _helpers, _helpers_data, _current_fn, _specs, _ss, _root_scope, _anons, TODO_FIX_convert_args, TODO_FIX_template_defarg, options, _notes, _field_items, t_string);
 

@@ -1,6 +1,5 @@
 
 #include <fu/decstr.h>
-#include <fu/int.h>
 #include <fu/never.h>
 #include <fu/str.h>
 #include <fu/vec.h>
@@ -15,7 +14,7 @@ struct s_Target;
 struct s_Type;
 struct s_ValueType;
 
-int parse10i32(int&, fu::view<fu::byte>);
+int parse10i32(int&, fu::view<char>);
 void Scope_set(fu_VEC<s_ScopeItem>&, const fu_STR&, const s_Target&, bool);
 
                                 #ifndef DEF_s_ValueType
@@ -137,7 +136,7 @@ bool type_isCTC(const s_Type& type_3)
 
                                 #ifndef DEFt_x7E_OZkl
                                 #define DEFt_x7E_OZkl
-inline fu_STR x7E_OZkl(fu::view<fu::byte> a, fu::view<fu::byte> b)
+inline fu_STR x7E_OZkl(fu::view<char> a, fu::view<char> b)
 {
     return a + b;
 }
@@ -156,16 +155,16 @@ fu_STR packAddrOfFn(fu::view<s_Target> targets)
 
                                 #ifndef DEFt_unpackAddrOfFn_ykV9
                                 #define DEFt_unpackAddrOfFn_ykV9
-inline void unpackAddrOfFn_ykV9(fu::view<fu::byte> canon_1, int, fu_VEC<s_ScopeItem>& out_1, const fu_STR& id_2, const bool shadows)
+inline void unpackAddrOfFn_ykV9(fu::view<char> canon_1, int, fu_VEC<s_ScopeItem>& out_1, const fu_STR& id_2, const bool shadows)
 {
     int i = 0;
     while (i < canon_1.size())
     {
-        if (!(canon_1[i++] == fu::byte('@')))
+        if (!(canon_1[i++] == '@'))
             fu::fail((("unpackAddrOfFn: bad canon [1]: `"_fu + canon_1) + "`."_fu));
 
         const int modid_4 = parse10i32(i, canon_1);
-        if (!(canon_1[i++] == fu::byte(':')))
+        if (!(canon_1[i++] == ':'))
             fu::fail((("unpackAddrOfFn: bad canon [2]: `"_fu + canon_1) + "`."_fu));
 
         const int index_3 = parse10i32(i, canon_1);

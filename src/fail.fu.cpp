@@ -724,7 +724,7 @@ struct s_Context
 
                                 #ifndef DEFt_x7E_OZkl
                                 #define DEFt_x7E_OZkl
-inline fu_STR x7E_OZkl(fu::view<fu::byte> a, fu::view<fu::byte> b)
+inline fu_STR x7E_OZkl(fu::view<char> a, fu::view<char> b)
 {
     return a + b;
 }
@@ -733,9 +733,9 @@ inline fu_STR x7E_OZkl(fu::view<fu::byte> a, fu::view<fu::byte> b)
 [[noreturn]] fu::never FAIL(fu_STR&& reason, const s_TokenIdx& _here, const s_Context& ctx)
 {
     const s_Token& here = _token(_here, ctx);
-    fu::view<fu::byte> fname = _fname(_here, ctx);
+    fu::view<char> fname = _fname(_here, ctx);
     fu_STR addr = x7E_OZkl((x7E_OZkl("@"_fu, fu::i64dec(here.line)) + ":"_fu), fu::i64dec(here.col));
-    reason += fu::byte('\n');
+    reason += '\n';
     fu_STR snippet = formatCodeSnippet(_here, s_TokenIdx{}, 2, ctx);
     fu::fail(((((((fname + " "_fu) + addr) + ":\n\n"_fu) + snippet) + "\n\t"_fu) + reason));
 }

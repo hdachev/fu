@@ -1,6 +1,5 @@
 
 #include <fu/decstr.h>
-#include <fu/int.h>
 #include <fu/mem/arc.h>
 #include <fu/now.h>
 #include <fu/print.h>
@@ -54,7 +53,7 @@ s_ModuleStat ModuleStat_now()
 
                                 #ifndef DEFt_x7E_OZkl
                                 #define DEFt_x7E_OZkl
-inline fu_STR x7E_OZkl(fu::view<fu::byte> a, fu::view<fu::byte> b)
+inline fu_STR x7E_OZkl(fu::view<char> a, fu::view<char> b)
 {
     return a + b;
 }
@@ -62,13 +61,13 @@ inline fu_STR x7E_OZkl(fu::view<fu::byte> a, fu::view<fu::byte> b)
 
                                 #ifndef DEFt_x7E_OZkl
                                 #define DEFt_x7E_OZkl
-inline fu_STR x7E_OZkl(fu::view<fu::byte> a, fu::view<fu::byte> b)
+inline fu_STR x7E_OZkl(fu::view<char> a, fu::view<char> b)
 {
     return a + b;
 }
                                 #endif
 
-void ModuleStat_print(const s_ModuleStat& a, const fu_STR& prefix, fu::view<fu::byte> suffix)
+void ModuleStat_print(const s_ModuleStat& a, const fu_STR& prefix, fu::view<char> suffix)
 {
     fu_STR _0 {};
     fu_STR _1 {};

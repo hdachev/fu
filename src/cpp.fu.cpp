@@ -1,13 +1,12 @@
 
-#include <fu/int.h>
 #include <fu/str.h>
 #include <fu/vec.h>
 #include <fu/vec/cmp.h>
 #include <fu/vec/find.h>
 #include <fu/view.h>
 
-bool hasPostfix(fu::view<fu::byte>);
-fu::byte ascii_upper(fu::byte);
+bool hasPostfix(fu::view<char>);
+char ascii_upper(char);
 
 #ifndef FU_NO_FDEFs
 
@@ -15,7 +14,7 @@ static const fu_VEC<fu_VEC<fu_STR>> KEYWORDS = fu_VEC<fu_VEC<fu_STR>> { fu::slat
 
                                 #ifndef DEFt_find_VtCz
                                 #define DEFt_find_VtCz
-inline int find_VtCz(fu::view<fu_STR> a, fu::view<fu::byte> b)
+inline int find_VtCz(fu::view<fu_STR> a, fu::view<char> b)
 {
     for (/*MOV*/ int i = 0; i < a.size(); i++)
     {
@@ -50,17 +49,17 @@ static const fu_STR ASSIGN2 = "+=-=*=/=%=&=|=^="_fu;
 
 static const fu_STR ASSIGN3 = "<<=>>="_fu;
 
-bool hasAssignment(fu::view<fu::byte> op)
+bool hasAssignment(fu::view<char> op)
 {
     return (op == "="_fu) || ((op.size() == 2) && fu::has(ASSIGN2, op)) || ((op.size() == 3) && fu::has(ASSIGN3, op));
 }
 
-bool hasBinary(fu::view<fu::byte> op)
+bool hasBinary(fu::view<char> op)
 {
     return fu::has(BINARY, op);
 }
 
-bool hasUnary(fu::view<fu::byte> op)
+bool hasUnary(fu::view<char> op)
 {
     if (op.size() > 2)
         return hasPostfix(op);
@@ -68,7 +67,7 @@ bool hasUnary(fu::view<fu::byte> op)
     return fu::has(UNARY, op);
 }
 
-bool hasPostfix(fu::view<fu::byte> op)
+bool hasPostfix(fu::view<char> op)
 {
     return (op == "postfix++"_fu) || (op == "postfix--"_fu);
 }

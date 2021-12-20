@@ -13,12 +13,12 @@
 
 #ifndef FU_NO_FDEFs
 
-bool hasIdentifierChars(fu::view<fu::byte> id)
+bool hasIdentifierChars(fu::view<char> id)
 {
     for (int i = 0; i < id.size(); i++)
     {
-        const fu::byte c = id[i];
-        if ((c == fu::byte('_')) || ((c >= fu::byte('a')) && (c <= fu::byte('z'))) || ((c >= fu::byte('A')) && (c <= fu::byte('Z'))) || ((c >= fu::byte('0')) && (c <= fu::byte('9'))))
+        const char c = id[i];
+        if ((c == '_') || ((c >= 'a') && (c <= 'z')) || ((c >= 'A') && (c <= 'Z')) || ((c >= '0') && (c <= '9')))
             return true;
 
     };
@@ -29,11 +29,11 @@ fu_STR path_ext(const fu_STR& path)
 {
     for (int i = path.size(); i-- > 0; )
     {
-        const fu::byte c = path[i];
-        if (c == fu::byte('.'))
+        const char c = path[i];
+        if (c == '.')
             return fu::slice(path, i);
 
-        if (c == fu::byte('/'))
+        if (c == '/')
             break;
 
     };
@@ -44,11 +44,11 @@ fu_STR path_noext(const fu_STR& path)
 {
     for (int i = path.size(); i-- > 0; )
     {
-        const fu::byte c = path[i];
-        if (c == fu::byte('.'))
+        const char c = path[i];
+        if (c == '.')
             return fu::slice(path, 0, i);
 
-        if (c == fu::byte('/'))
+        if (c == '/')
             break;
 
     };
@@ -59,7 +59,7 @@ fu_STR path_dirname(const fu_STR& path)
 {
     for (int i = (path.size() - 1); i-- > 0; )
     {
-        if (path[i] == fu::byte('/'))
+        if (path[i] == '/')
             return fu::slice(path, 0, (i + 1));
 
     };
@@ -70,7 +70,7 @@ fu_STR path_filename(const fu_STR& path)
 {
     for (int i = path.size(); i-- > 0; )
     {
-        if (path[i] == fu::byte('/'))
+        if (path[i] == '/')
             return fu::slice(path, (i + 1));
 
     };
@@ -79,7 +79,7 @@ fu_STR path_filename(const fu_STR& path)
 
                                 #ifndef DEFt_split_mKuv
                                 #define DEFt_split_mKuv
-inline void split_mKuv(const fu_STR& str_1, fu::view<fu::byte> sep, int, fu_VEC<fu_STR>& result)
+inline void split_mKuv(const fu_STR& str_1, fu::view<char> sep, int, fu_VEC<fu_STR>& result)
 {
     int last_1 = 0;
     int next = 0;
@@ -109,7 +109,7 @@ inline void split_mKuv(const fu_STR& str_1, fu::view<fu::byte> sep, int, fu_VEC<
 
                                 #ifndef DEFt_split_OZkl
                                 #define DEFt_split_OZkl
-inline fu_VEC<fu_STR> split_OZkl(const fu_STR& str_1, fu::view<fu::byte> sep)
+inline fu_VEC<fu_STR> split_OZkl(const fu_STR& str_1, fu::view<char> sep)
 {
     /*MOV*/ fu_VEC<fu_STR> result {};
     split_mKuv(str_1, sep, 0, result);
@@ -119,7 +119,7 @@ inline fu_VEC<fu_STR> split_OZkl(const fu_STR& str_1, fu::view<fu::byte> sep)
 
                                 #ifndef DEFt_join_9sek
                                 #define DEFt_join_9sek
-inline fu_STR join_9sek(fu::view<fu_STR> a, fu::view<fu::byte> sep)
+inline fu_STR join_9sek(fu::view<fu_STR> a, fu::view<char> sep)
 {
     if (a.size() < 2)
         return fu_STR((a.size() ? a[0] : (*(const fu_STR*)fu::NIL)));
@@ -130,12 +130,12 @@ inline fu_STR join_9sek(fu::view<fu_STR> a, fu::view<fu::byte> sep)
 
     /*MOV*/ fu_STR res {};
     res.grow<false>(size);
-    fu::view<fu::byte> head = a[0];
+    fu::view<char> head = a[0];
     size = head.size();
     fu::view_assign(fu::get_view_mut(res, 0, head.size()), head);
     for (int i_1 = 1; i_1 < a.size(); i_1++)
     {
-        fu::view<fu::byte> range = a[i_1];
+        fu::view<char> range = a[i_1];
         fu::view_assign(fu::get_view_mut(res, size, (size + sep.size())), sep);
         size += sep.size();
         fu::view_assign(fu::get_view_mut(res, size, (size + range.size())), range);
@@ -164,25 +164,25 @@ fu_STR path_normalize(const fu_STR& p)
     return join_9sek(path, "/"_fu);
 }
 
-fu_STR path_relative(fu::view<fu::byte> from, const fu_STR& to)
+fu_STR path_relative(fu::view<char> from, const fu_STR& to)
 {
     const int min_1 = ((from.size() < to.size()) ? from.size() : to.size());
     int same = 0;
     for (int i = 0; i < min_1; i++)
     {
-        const fu::byte a = from[i];
-        const fu::byte b = to[i];
+        const char a = from[i];
+        const char b = to[i];
         if (b != a)
             break;
 
-        if (b == fu::byte('/'))
+        if (b == '/')
             same = (i + 1);
 
     };
     /*MOV*/ fu_STR res {};
     for (int i_1 = same; i_1 < from.size(); i_1++)
     {
-        if (from[i_1] == fu::byte('/'))
+        if (from[i_1] == '/')
             res += "../"_fu;
 
     };
@@ -190,41 +190,41 @@ fu_STR path_relative(fu::view<fu::byte> from, const fu_STR& to)
     return /*NRVO*/ res;
 }
 
-fu_STR path_join(fu::view<fu::byte> a, const fu_STR& b)
+fu_STR path_join(fu::view<char> a, const fu_STR& b)
 {
-    return ((b && (b[0] == fu::byte('/'))) ? path_normalize(b) : path_normalize(((a + fu::byte('/')) + b)));
+    return ((b && (b[0] == '/')) ? path_normalize(b) : path_normalize(((a + '/') + b)));
 }
 
 fu_STR ascii_lower(const fu_STR& a)
 {
-    const int offset = (int(fu::byte('a')) - int(fu::byte('A')));
+    const int offset = (int(fu::u8('a')) - int(fu::u8('A')));
     /*MOV*/ fu_STR res { a };
     for (int i = 0; i < res.size(); i++)
     {
-        const fu::byte c = res[i];
-        if ((c >= fu::byte('A')) && (c <= fu::byte('Z')))
-            res.mutref(i) = fu::byte((int(c) + offset));
+        const char c = res[i];
+        if ((c >= 'A') && (c <= 'Z'))
+            res.mutref(i) = char((int(fu::u8(c)) + offset));
 
     };
     return /*NRVO*/ res;
 }
 
-fu::byte ascii_upper(const fu::byte c)
+char ascii_upper(const char c)
 {
-    return (((c >= fu::byte('a')) && (c <= fu::byte('z'))) ? fu::byte((int(c) + (int(fu::byte('A')) - int(fu::byte('a'))))) : fu::byte(c));
+    return (((c >= 'a') && (c <= 'z')) ? char((int(fu::u8(c)) + (int(fu::u8('A')) - int(fu::u8('a'))))) : char(c));
 }
 
-int parse10i32(int& offset, fu::view<fu::byte> str_1)
+int parse10i32(int& offset, fu::view<char> str_1)
 {
     /*MOV*/ int result {};
     while (offset < str_1.size())
     {
-        const fu::byte c = str_1[offset];
-        if ((c < fu::byte('0')) || (c > fu::byte('9')))
+        const char c = str_1[offset];
+        if ((c < '0') || (c > '9'))
             break;
 
         offset++;
-        result = ((result * 10) + (int(c) - int(fu::byte('0'))));
+        result = ((result * 10) + (int(fu::u8(c)) - int(fu::u8('0'))));
     };
     return /*NRVO*/ result;
 }

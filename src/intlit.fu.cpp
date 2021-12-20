@@ -39,36 +39,36 @@ struct s_Intlit
 
 #ifndef FU_NO_FDEFs
 
-s_Intlit Intlit(fu::view<fu::byte> sign_prefix_value_suffix)
+s_Intlit Intlit(fu::view<char> sign_prefix_value_suffix)
 {
-    const fu::byte c_sign = sign_prefix_value_suffix[0];
-    const fu::byte sign = (((c_sign == fu::byte('-')) || (c_sign == fu::byte('+'))) ? c_sign : (*(const fu::byte*)fu::NIL));
-    fu::view<fu::byte> prefix_value_suffix = fu::get_view(sign_prefix_value_suffix, ((sign != fu::byte{}) ? 1 : int{}), sign_prefix_value_suffix.size());
-    const fu::byte c_prefix = ((prefix_value_suffix.size() > 1) ? prefix_value_suffix[1] : (*(const fu::byte*)fu::NIL));
-    const fu::byte prefix = (((c_prefix == fu::byte('x')) || (c_prefix == fu::byte('o')) || (c_prefix == fu::byte('b'))) && (prefix_value_suffix[0] == fu::byte('0')) ? c_prefix : (*(const fu::byte*)fu::NIL));
-    fu::view<fu::byte> value_suffix = fu::get_view(prefix_value_suffix, ((prefix != fu::byte{}) ? 2 : int{}), prefix_value_suffix.size());
-    const fu::byte c_suffix = (value_suffix.size() ? value_suffix[(value_suffix.size() - 1)] : (*(const fu::byte*)fu::NIL));
-    const fu::byte suffix = ((c_suffix == fu::byte('u')) ? c_suffix : (*(const fu::byte*)fu::NIL));
-    fu::view<fu::byte> value = fu::get_view(value_suffix, 0, (value_suffix.size() - ((suffix != fu::byte{}) ? 1 : int{})));
-    const uint64_t base = ((prefix == fu::byte('x')) ? uint64_t(unsigned(16)) : ((prefix == fu::byte('o')) ? uint64_t(unsigned(8)) : ((prefix == fu::byte('b')) ? uint64_t(unsigned(2)) : uint64_t(unsigned(10)))));
+    const char c_sign = sign_prefix_value_suffix[0];
+    const char sign = (((c_sign == '-') || (c_sign == '+')) ? c_sign : (*(const char*)fu::NIL));
+    fu::view<char> prefix_value_suffix = fu::get_view(sign_prefix_value_suffix, ((sign != char{}) ? 1 : int{}), sign_prefix_value_suffix.size());
+    const char c_prefix = ((prefix_value_suffix.size() > 1) ? prefix_value_suffix[1] : (*(const char*)fu::NIL));
+    const char prefix = (((c_prefix == 'x') || (c_prefix == 'o') || (c_prefix == 'b')) && (prefix_value_suffix[0] == '0') ? c_prefix : (*(const char*)fu::NIL));
+    fu::view<char> value_suffix = fu::get_view(prefix_value_suffix, ((prefix != char{}) ? 2 : int{}), prefix_value_suffix.size());
+    const char c_suffix = (value_suffix.size() ? value_suffix[(value_suffix.size() - 1)] : (*(const char*)fu::NIL));
+    const char suffix = ((c_suffix == 'u') ? c_suffix : (*(const char*)fu::NIL));
+    fu::view<char> value = fu::get_view(value_suffix, 0, (value_suffix.size() - ((suffix != char{}) ? 1 : int{})));
+    const uint64_t base = ((prefix == 'x') ? uint64_t(unsigned(16)) : ((prefix == 'o') ? uint64_t(unsigned(8)) : ((prefix == 'b') ? uint64_t(unsigned(2)) : uint64_t(unsigned(10)))));
     fu_STR error {};
     uint64_t absval {};
     for (int i = 0; i < value.size(); i++)
     {
-        const fu::byte c = value[i];
-        if (c == fu::byte('_'))
+        const char c = value[i];
+        if (c == '_')
             continue;
 
-        const uint64_t ci = (uint64_t(c) - ((c < fu::byte('a')) ? uint64_t(fu::byte('0')) : uint64_t(fu::byte('a'))));
+        const uint64_t ci = (uint64_t(fu::u8(c)) - ((c < 'a') ? uint64_t(fu::u8('0')) : uint64_t(fu::u8('a'))));
         const uint64_t last_1 = absval;
         absval *= base;
         absval += ci;
         fu_STR* _0;
         (*(_0 = &(error)) ? *_0 : *_0 = ((last_1 != (absval / base)) ? "Integer literal overflows a u64."_fu : fu_STR{}));
     };
-    const bool uNsigned = ((suffix == fu::byte('u')) || (base != 10ull));
-    const bool negative = (sign == fu::byte('-'));
-    const bool sIgned = (negative || (suffix == fu::byte('i')));
+    const bool uNsigned = ((suffix == 'u') || (base != 10ull));
+    const bool negative = (sign == '-');
+    const bool sIgned = (negative || (suffix == 'i'));
     fu_STR* _1;
     (*(_1 = &(error)) ? *_1 : *_1 = (sIgned && uNsigned ? "Ambiguous int literal: cannot decide if signed or unsigned."_fu : fu_STR{}));
     const uint64_t sizeval = ((negative && absval) ? (absval - 1ull) : uint64_t(absval));

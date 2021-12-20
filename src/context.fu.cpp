@@ -53,7 +53,7 @@ bool is_primitive(const s_Type&);
 const s_Struct& lookupStruct(const s_Type&, const s_Module&, const s_Context&);
 fu_STR path_dirname(const fu_STR&);
 fu_STR resolveFile(const fu_STR&, s_Context&);
-int structIndex(fu::view<fu::byte>);
+int structIndex(fu::view<char>);
 static fu_STR resolveFile(const fu_STR&, const fu_STR&, s_Context&);
 
                                 #ifndef DEF_s_Token
@@ -742,14 +742,14 @@ const fu_STR& _fname(const s_TokenIdx& idx, const s_Context& ctx)
     return ctx.modules[idx.modid].fname;
 }
 
-s_Struct& lookupStruct_mut(fu::view<fu::byte> canon_1, s_Module& module)
+s_Struct& lookupStruct_mut(fu::view<char> canon_1, s_Module& module)
 {
     return module.out.types.mutref(structIndex(canon_1));
 }
 
                                 #ifndef DEFt_find_05eu
                                 #define DEFt_find_05eu
-inline int find_05eu(fu::view<fu::byte> a, const fu::byte b)
+inline int find_05eu(fu::view<char> a, const char b)
 {
     for (/*MOV*/ int i = 0; i < a.size(); i++)
     {
@@ -763,7 +763,7 @@ inline int find_05eu(fu::view<fu::byte> a, const fu::byte b)
 
                                 #ifndef DEFt_has_05eu
                                 #define DEFt_has_05eu
-inline bool has_05eu(fu::view<fu::byte> a, const fu::byte b)
+inline bool has_05eu(fu::view<char> a, const char b)
 {
     for (int i = 0; i < a.size(); i++)
     {
@@ -913,12 +913,12 @@ inline bool has_zJcj(const s_Map_OZkl& _, const fu_STR& key)
 
 fu_STR resolveFile(const fu_STR& path, s_Context& ctx)
 {
-    const int fuzzy_1 = find_05eu(path, fu::byte('\v'));
+    const int fuzzy_1 = find_05eu(path, '\v');
     if (fuzzy_1 > 0)
     {
         fu_STR from = fu::slice(path, 0, fuzzy_1);
         fu_STR name_3 = fu::slice(path, (fuzzy_1 + 1));
-        if (from && name_3 && !has_05eu(name_3, fu::byte('\v')))
+        if (from && name_3 && !has_05eu(name_3, '\v'))
         {
             /*MOV*/ fu_STR res = resolveFile(from, name_3, ctx);
             if (res)
@@ -935,7 +935,7 @@ fu_STR resolveFile(const fu_STR& path, s_Context& ctx)
 
                                 #ifndef DEFt_replace_Q0b6
                                 #define DEFt_replace_Q0b6
-inline fu_STR replace_Q0b6(const fu_STR& str_1, fu::view<fu::byte> all, fu::view<fu::byte> with)
+inline fu_STR replace_Q0b6(const fu_STR& str_1, fu::view<char> all, fu::view<char> with)
 {
     /*MOV*/ fu_STR result {};
 
@@ -992,7 +992,7 @@ inline fu_STR replace_Q0b6(const fu_STR& str_1, fu::view<fu::byte> all, fu::view
 
 fu_STR resolveFile_x(const fu_STR& path, const s_Context& ctx)
 {
-    fu_STR clean = replace_Q0b6(path, "\v"_fu, fu::view<fu::byte>{});
+    fu_STR clean = replace_Q0b6(path, "\v"_fu, fu::view<char>{});
     const fu_STR& match = get_bmnP(ctx.fuzzy, clean);
     return fu_STR(((match && (match != "\v"_fu)) ? match : clean));
 }
@@ -1287,7 +1287,7 @@ const fu_VEC<s_Target>& lookupTypeConverts(const s_Type& type_3, const s_Module&
 
                                 #ifndef DEFt_split_Iwpk
                                 #define DEFt_split_Iwpk
-inline void split_Iwpk(const fu_STR& str_1, fu::view<fu::byte> sep, int, fu_VEC<fu_STR>& result)
+inline void split_Iwpk(const fu_STR& str_1, fu::view<char> sep, int, fu_VEC<fu_STR>& result)
 {
     int last_1 = 0;
     int next = 0;
@@ -1317,7 +1317,7 @@ inline void split_Iwpk(const fu_STR& str_1, fu::view<fu::byte> sep, int, fu_VEC<
 
                                 #ifndef DEFt_split_OZkl
                                 #define DEFt_split_OZkl
-inline fu_VEC<fu_STR> split_OZkl(const fu_STR& str_1, fu::view<fu::byte> sep)
+inline fu_VEC<fu_STR> split_OZkl(const fu_STR& str_1, fu::view<char> sep)
 {
     /*MOV*/ fu_VEC<fu_STR> result {};
     split_Iwpk(str_1, sep, 0, result);
@@ -1329,7 +1329,7 @@ extern const fu_STR DIM;
 
                                 #ifndef DEFt_x7E_OZkl
                                 #define DEFt_x7E_OZkl
-inline fu_STR x7E_OZkl(fu::view<fu::byte> a, fu::view<fu::byte> b)
+inline fu_STR x7E_OZkl(fu::view<char> a, fu::view<char> b)
 {
     return a + b;
 }

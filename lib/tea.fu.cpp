@@ -7,7 +7,7 @@
 
 struct s_TEA;
 
-s_TEA hash(fu::view<fu::byte>);
+s_TEA hash(fu::view<char>);
 
                                 #ifndef DEF_s_TEA
                                 #define DEF_s_TEA
@@ -27,7 +27,7 @@ struct s_TEA
 
 #ifndef FU_NO_FDEFs
 
-s_TEA hash(/*MOV*/ s_TEA&& res, fu::view<fu::byte> u8view)
+s_TEA hash(/*MOV*/ s_TEA&& res, fu::view<char> u8view)
 {
     const int u32len = (u8view.size() & ~3);
     fu::view<unsigned> u32view = fu::view_of(fu::get_view(u8view, 0, u32len), unsigned{});
@@ -55,7 +55,7 @@ s_TEA hash(/*MOV*/ s_TEA&& res, fu::view<fu::byte> u8view)
             for (int i_1 = u32len; i_1 < u8view.size(); i_1++)
             {
                 last <<= 8u;
-                last |= unsigned(u8view[i_1]);
+                last |= unsigned(fu::u8(u8view[i_1]));
             };
             res.v1 ^= last;
         };
@@ -71,14 +71,14 @@ s_TEA hash(/*MOV*/ s_TEA&& res, fu::view<fu::byte> u8view)
     return s_TEA(res);
 }
 
-s_TEA hash(fu::view<fu::byte> u8view)
+s_TEA hash(fu::view<char> u8view)
 {
     /*MOV*/ s_TEA res {};
     res = hash(s_TEA(res), u8view);
     return /*NRVO*/ res;
 }
 
-fu_STR hash62(fu::view<fu::byte> str_1, const int chars)
+fu_STR hash62(fu::view<char> str_1, const int chars)
 {
     /*MOV*/ fu_STR res {};
     uint64_t _0 {};
@@ -92,17 +92,17 @@ fu_STR hash62(fu::view<fu::byte> str_1, const int chars)
         const uint64_t c = (v % 62ull);
         v = (v / 62ull);
         if (c < 10ull)
-            res += fu::byte(((c - 0ull) + uint64_t(fu::byte('0'))));
+            res += char(((c - 0ull) + uint64_t(fu::u8('0'))));
         else if (c < 36ull)
-            res += fu::byte(((c - 10ull) + uint64_t(fu::byte('a'))));
+            res += char(((c - 10ull) + uint64_t(fu::u8('a'))));
         else
-            res += fu::byte(((c - 36ull) + uint64_t(fu::byte('A'))));
+            res += char(((c - 36ull) + uint64_t(fu::u8('A'))));
 
     };
     return /*NRVO*/ res;
 }
 
-fu_STR hash16(fu::view<fu::byte> str_1, const int chars)
+fu_STR hash16(fu::view<char> str_1, const int chars)
 {
     /*MOV*/ fu_STR res {};
     uint64_t _0 {};
@@ -116,9 +116,9 @@ fu_STR hash16(fu::view<fu::byte> str_1, const int chars)
         const uint64_t c = (v % 16ull);
         v = (v / 16ull);
         if (c < 10ull)
-            res += fu::byte(((c - 0ull) + uint64_t(fu::byte('0'))));
+            res += char(((c - 0ull) + uint64_t(fu::u8('0'))));
         else
-            res += fu::byte(((c - 10ull) + uint64_t(fu::byte('a'))));
+            res += char(((c - 10ull) + uint64_t(fu::u8('a'))));
 
     };
     return /*NRVO*/ res;
