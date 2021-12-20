@@ -480,7 +480,7 @@ pub fn cpp_codegen(
             {
                 mut dupes = 0;
 
-                REPEAT:
+                :REPEAT
                 for (;;)
                 {
                     let candidate = dupes

@@ -529,7 +529,7 @@ pub fn runTests()
         fn incr(a) a++;
         fn main() {
             mut a = 1;
-            incr(|| a);
+            incr: || a;
             return a - 2;
         }
     `);

@@ -563,9 +563,6 @@ pub fn parse(modid: i32, fname: string, tokens: Token[], options: options::Optio
             {
                 if (peek.value == "{" && v == "struct")
                     return parseStructDecl();
-
-                if (peek.value == ":")
-                    return { _idx--; parseLabelledStatement() };
             }
 
             if (v == "fn" && (peek.kind == "id" || !_fnDepth))
@@ -661,11 +658,6 @@ pub fn parse(modid: i32, fname: string, tokens: Token[], options: options::Optio
     {
         let label = consume("id").value;
 
-        /////////////////////////////////////////////////////
-        // TODO remove, this fwd compat from LABEL: to :LABEL
-        tryConsume("op", ":"); //////////////////////////////
-        /////////////////////////////////////////////////////
-
         mut stmt = parseStatement();
         if (stmt.kind == "loop" || stmt.kind == "block")
         {
@@ -684,7 +676,7 @@ pub fn parse(modid: i32, fname: string, tokens: Token[], options: options::Optio
         // Pipeline left expriment.
         if (tryConsume("op", ":"))
         {
-            if !(expr.kind == "call" && expr.items && expr.flags & (F_ACCESS | F_METHOD))
+            if !(expr.kind == "call" && expr.flags & (F_ACCESS | F_METHOD | F_ID))
                 fail("We only allow x.y: z pipelines right now to avoid ambiguity.");
 
             let right = parseExpression(P_RESET, mode: M_LAMBDA_STMT_OK);
@@ -1206,6 +1198,7 @@ pub fn parse(modid: i32, fname: string, tokens: Token[], options: options::Optio
             return fail("Cannot pipeline: not a call expr.");
 
         left.items.push(right);
+        left.flags &= ~F_ID; // non-orphan-looking
         return left;
     }
 

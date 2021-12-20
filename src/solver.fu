@@ -535,7 +535,7 @@ pub fn solve(
 
         mut offset = items.len;
 
-        NEXT_REGION:
+        :NEXT_REGION
         for (mut i = 0; i < returned.len; i++)
         {
             let region = returned[i];
@@ -984,7 +984,7 @@ pub fn solve(
 
             //
             mut shadows: bool;
-            NEXT: while (overloadIdx =
+            :NEXT while (overloadIdx =
                 (local_scope ? _scope : misc_scope).items.search(id, scope_iterator,
                     scope_skip: local_scope && (flags & F_IMPLICIT ? _ss.declash : _ss.items),
                     dont_search_just_return: target, :extra_items, :field_items, :shadows))
@@ -1001,7 +1001,7 @@ pub fn solve(
                 mut TODO_FIX_skip_autocalls = false;
                 ///////////////////////////////////
 
-                TEST_AGAIN: while (true)
+                :TEST_AGAIN while (true)
                 {
                     let overload = GET(overloadIdx);
 
@@ -1106,7 +1106,7 @@ pub fn solve(
                     {
                         reorder.len >= args.len || !reorder || optional || fail("reorder < args.");
 
-                        ARG_OK:
+                        :ARG_OK
                         for (mut i = 0; i < N; i++)
                         {
                             let rest        = i >= REST_START;
@@ -3704,7 +3704,7 @@ pub fn solve(
             mut dedupe: Target;
             let callsites = t.callsites;
 
-            NEXT_USER:
+            :NEXT_USER
             for (mut i = 0; i < callsites.len; i++)
             {
                 let callsite = callsites[i].nodeown;
@@ -3716,7 +3716,7 @@ pub fn solve(
                 //
                 mut index = callsite.index;
 
-                GO_UP:
+                :GO_UP
                 for (;;)
                 {
                     shadow ref o = GET_mut(
