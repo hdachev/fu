@@ -486,7 +486,7 @@ pub fn runTests()
         }
 
         pub fn clone(a: $T)
-        case ($T -> @copy) a;
+        case ($T.is::copy) a;
         case ($T -> [$U]) a.map(fn clone);
         default {
             mut res: $T;
@@ -4290,7 +4290,7 @@ pub fn runTests()
         //   we emit useless overloads for mutrefs when its clearly useless.
 
         fn rec_cases(a: $T)
-        case ($T -> @primitive) {
+        case ($T.is::primitive) {
             if (a)      return rec_cases(a / 2);
             else        return a;
         }
@@ -4309,7 +4309,7 @@ pub fn runTests()
 
     ZERO(`
         fn rec_cases(a: $T)
-        case ($T -> @primitive) {
+        case ($T.is::primitive) {
             if (a)      return rec_cases(a / 2);
             else        return a;
         }
@@ -5842,7 +5842,7 @@ pub fn runTests()
     ZERO([
     `
         pub fn clone(a: $T)
-        case ($T -> @copy) a;
+        case ($T.is::copy) a;
         case ($T -> $T) {
             mut res: $T;
             for (fieldname i: $T) res.i = a.i.clone();

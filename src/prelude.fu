@@ -12,111 +12,111 @@ fn SWAP  (ref a: $T, ref b: $T): void __native("<utility>", "std::swap");
 
 // Arithmetics.
 
-fn +(a: $T) case ($T -> @arithmetic): $T __native;
-fn -(a: $T) case ($T -> @arithmetic): $T __native;
+fn +(a: $T) case ($T.is::arithmetic): $T __native;
+fn -(a: $T) case ($T.is::arithmetic): $T __native;
 
-fn +(a: $T, b: $T) case ($T -> @arithmetic): $T __native;
-fn -(a: $T, b: $T) case ($T -> @arithmetic): $T __native;
-fn *(a: $T, b: $T) case ($T -> @arithmetic): $T __native;
-fn /(a: $T, b: $T) case ($T -> @arithmetic): $T __native;
+fn +(a: $T, b: $T) case ($T.is::arithmetic): $T __native;
+fn -(a: $T, b: $T) case ($T.is::arithmetic): $T __native;
+fn *(a: $T, b: $T) case ($T.is::arithmetic): $T __native;
+fn /(a: $T, b: $T) case ($T.is::arithmetic): $T __native;
 
 fn %(a: $T, b: $T)
-    case ($T -> @integral): $T __native;
-    case ($T -> @floating_point): $T __native("<cmath>", "std::fmod");
+    case ($T.is::integral): $T __native;
+    case ($T.is::floating_point): $T __native("<cmath>", "std::fmod");
 
-fn ++(a: &mut $T) case ($T -> @arithmetic): &mut $T __native;
-fn --(a: &mut $T) case ($T -> @arithmetic): &mut $T __native;
-postfix fn ++(a: &mut $T) case ($T -> @arithmetic): $T __native;
-postfix fn --(a: &mut $T) case ($T -> @arithmetic): $T __native;
+fn ++(a: &mut $T) case ($T.is::arithmetic): &mut $T __native;
+fn --(a: &mut $T) case ($T.is::arithmetic): &mut $T __native;
+postfix fn ++(a: &mut $T) case ($T.is::arithmetic): $T __native;
+postfix fn --(a: &mut $T) case ($T.is::arithmetic): $T __native;
 
-fn +=(a: &mut $T, b: $T) case ($T -> @arithmetic): &mut $T __native;
-fn -=(a: &mut $T, b: $T) case ($T -> @arithmetic): &mut $T __native;
-fn *=(a: &mut $T, b: $T) case ($T -> @arithmetic): &mut $T __native;
-fn /=(a: &mut $T, b: $T) case ($T -> @arithmetic): &mut $T __native;
+fn +=(a: &mut $T, b: $T) case ($T.is::arithmetic): &mut $T __native;
+fn -=(a: &mut $T, b: $T) case ($T.is::arithmetic): &mut $T __native;
+fn *=(a: &mut $T, b: $T) case ($T.is::arithmetic): &mut $T __native;
+fn /=(a: &mut $T, b: $T) case ($T.is::arithmetic): &mut $T __native;
 
-fn ==(a: $T, b: $T) case ($T -> @primitive): bool __native;
-fn !=(a: $T, b: $T) case ($T -> @primitive): bool __native;
+fn ==(a: $T, b: $T) case ($T.is::primitive): bool __native;
+fn !=(a: $T, b: $T) case ($T.is::primitive): bool __native;
 
-fn > (a: $T, b: $T) case ($T -> @primitive): bool __native;
-fn < (a: $T, b: $T) case ($T -> @primitive): bool __native;
-fn >=(a: $T, b: $T) case ($T -> @primitive): bool __native;
-fn <=(a: $T, b: $T) case ($T -> @primitive): bool __native;
+fn > (a: $T, b: $T) case ($T.is::primitive): bool __native;
+fn < (a: $T, b: $T) case ($T.is::primitive): bool __native;
+fn >=(a: $T, b: $T) case ($T.is::primitive): bool __native;
+fn <=(a: $T, b: $T) case ($T.is::primitive): bool __native;
 
 
 // Bitwise.
 
-fn  ~(a: $T)        case ($T -> @integral): $T __native;
-fn  &(a: $T, b: $T) case ($T -> @integral): $T __native;
-fn  |(a: $T, b: $T) case ($T -> @integral): $T __native;
-fn  ^(a: $T, b: $T) case ($T -> @integral): $T __native;
-fn <<(a: $T, b: $T) case ($T -> @integral): $T __native;
-fn >>(a: $T, b: $T) case ($T -> @integral): $T __native;
+fn  ~(a: $T)        case ($T.is::integral): $T __native;
+fn  &(a: $T, b: $T) case ($T.is::integral): $T __native;
+fn  |(a: $T, b: $T) case ($T.is::integral): $T __native;
+fn  ^(a: $T, b: $T) case ($T.is::integral): $T __native;
+fn <<(a: $T, b: $T) case ($T.is::integral): $T __native;
+fn >>(a: $T, b: $T) case ($T.is::integral): $T __native;
 
-fn  &=(a: &mut $T, b: $T) case ($T -> @integral): &mut $T __native;
-fn  |=(a: &mut $T, b: $T) case ($T -> @integral): &mut $T __native;
-fn  ^=(a: &mut $T, b: $T) case ($T -> @integral): &mut $T __native;
-fn <<=(a: &mut $T, b: $T) case ($T -> @integral): &mut $T __native;
-fn >>=(a: &mut $T, b: $T) case ($T -> @integral): &mut $T __native;
+fn  &=(a: &mut $T, b: $T) case ($T.is::integral): &mut $T __native;
+fn  |=(a: &mut $T, b: $T) case ($T.is::integral): &mut $T __native;
+fn  ^=(a: &mut $T, b: $T) case ($T.is::integral): &mut $T __native;
+fn <<=(a: &mut $T, b: $T) case ($T.is::integral): &mut $T __native;
+fn >>=(a: &mut $T, b: $T) case ($T.is::integral): &mut $T __native;
 
 
 // Numeric conversions.
 
-fn  i8(v: $T) case ($T -> @primitive):  i8 __native("/prim/convert");
-fn i16(v: $T) case ($T -> @primitive): i16 __native("/prim/convert");
-fn i32(v: $T) case ($T -> @primitive): i32 __native("/prim/convert");
-fn i64(v: $T) case ($T -> @primitive): i64 __native("/prim/convert");
+fn  i8(v: $T) case ($T.is::primitive):  i8 __native("/prim/convert");
+fn i16(v: $T) case ($T.is::primitive): i16 __native("/prim/convert");
+fn i32(v: $T) case ($T.is::primitive): i32 __native("/prim/convert");
+fn i64(v: $T) case ($T.is::primitive): i64 __native("/prim/convert");
 
-fn  u8(v: $T) case ($T -> @primitive):  u8 __native("/prim/convert");
-fn u16(v: $T) case ($T -> @primitive): u16 __native("/prim/convert");
-fn u32(v: $T) case ($T -> @primitive): u32 __native("/prim/convert");
-fn u64(v: $T) case ($T -> @primitive): u64 __native("/prim/convert");
+fn  u8(v: $T) case ($T.is::primitive):  u8 __native("/prim/convert");
+fn u16(v: $T) case ($T.is::primitive): u16 __native("/prim/convert");
+fn u32(v: $T) case ($T.is::primitive): u32 __native("/prim/convert");
+fn u64(v: $T) case ($T.is::primitive): u64 __native("/prim/convert");
 
-fn f32(v: $T) case ($T -> @primitive): f32 __native("/prim/convert");
-fn f64(v: $T) case ($T -> @primitive): f64 __native("/prim/convert");
+fn f32(v: $T) case ($T.is::primitive): f32 __native("/prim/convert");
+fn f64(v: $T) case ($T.is::primitive): f64 __native("/prim/convert");
 
-fn byte(v: $T) case ($T -> @primitive): byte __native("/prim/convert");
+fn byte(v: $T) case ($T.is::primitive): byte __native("/prim/convert");
 
 
 // Math.
 
-fn abs(v: $T) case ($T -> @floating_point): $T __native("<cmath>", "std::abs");
-fn max(a: $T, b: $T) case ($T -> @arithmetic): $T __native("<algorithm>", "std::max");
-fn min(a: $T, b: $T) case ($T -> @arithmetic): $T __native("<algorithm>", "std::min");
+fn abs(v: $T) case ($T.is::floating_point): $T __native("<cmath>", "std::abs");
+fn max(a: $T, b: $T) case ($T.is::arithmetic): $T __native("<algorithm>", "std::max");
+fn min(a: $T, b: $T) case ($T.is::arithmetic): $T __native("<algorithm>", "std::min");
 
-fn exp  (a: $T, b: $T) case ($T -> @floating_point): $T __native("<cmath>", "std::exp");
-fn exp2 (a: $T, b: $T) case ($T -> @floating_point): $T __native("<cmath>", "std::exp2");
-fn log  (a: $T, b: $T) case ($T -> @floating_point): $T __native("<cmath>", "std::log");
-fn log10(a: $T, b: $T) case ($T -> @floating_point): $T __native("<cmath>", "std::log10");
-fn log2 (a: $T, b: $T) case ($T -> @floating_point): $T __native("<cmath>", "std::log2");
+fn exp  (a: $T, b: $T) case ($T.is::floating_point): $T __native("<cmath>", "std::exp");
+fn exp2 (a: $T, b: $T) case ($T.is::floating_point): $T __native("<cmath>", "std::exp2");
+fn log  (a: $T, b: $T) case ($T.is::floating_point): $T __native("<cmath>", "std::log");
+fn log10(a: $T, b: $T) case ($T.is::floating_point): $T __native("<cmath>", "std::log10");
+fn log2 (a: $T, b: $T) case ($T.is::floating_point): $T __native("<cmath>", "std::log2");
 
-fn pow  (a: $T, b: $T) case ($T -> @floating_point): $T __native("<cmath>", "std::pow");
-fn sqrt (v: $T) case ($T -> @floating_point): $T __native("<cmath>", "std::sqrt");
-fn cbrt (v: $T) case ($T -> @floating_point): $T __native("<cmath>", "std::cbrt");
-fn hypot(v: $T) case ($T -> @floating_point): $T __native("<cmath>", "std::hypot");
+fn pow  (a: $T, b: $T) case ($T.is::floating_point): $T __native("<cmath>", "std::pow");
+fn sqrt (v: $T) case ($T.is::floating_point): $T __native("<cmath>", "std::sqrt");
+fn cbrt (v: $T) case ($T.is::floating_point): $T __native("<cmath>", "std::cbrt");
+fn hypot(v: $T) case ($T.is::floating_point): $T __native("<cmath>", "std::hypot");
 
-fn ceil (v: $T) case ($T -> @floating_point): $T __native("<cmath>", "std::ceil");
-fn floor(v: $T) case ($T -> @floating_point): $T __native("<cmath>", "std::floor");
-fn trunc(v: $T) case ($T -> @floating_point): $T __native("<cmath>", "std::trunc");
-fn round(v: $T) case ($T -> @floating_point): $T __native("<cmath>", "std::round");
+fn ceil (v: $T) case ($T.is::floating_point): $T __native("<cmath>", "std::ceil");
+fn floor(v: $T) case ($T.is::floating_point): $T __native("<cmath>", "std::floor");
+fn trunc(v: $T) case ($T.is::floating_point): $T __native("<cmath>", "std::trunc");
+fn round(v: $T) case ($T.is::floating_point): $T __native("<cmath>", "std::round");
 
-fn sin(v: $T) case ($T -> @floating_point): $T __native("<cmath>", "std::sin");
-fn cos(v: $T) case ($T -> @floating_point): $T __native("<cmath>", "std::cos");
-fn tan(v: $T) case ($T -> @floating_point): $T __native("<cmath>", "std::tan");
+fn sin(v: $T) case ($T.is::floating_point): $T __native("<cmath>", "std::sin");
+fn cos(v: $T) case ($T.is::floating_point): $T __native("<cmath>", "std::cos");
+fn tan(v: $T) case ($T.is::floating_point): $T __native("<cmath>", "std::tan");
 
-fn asin(v: $T) case ($T -> @floating_point): $T __native("<cmath>", "std::asin");
-fn acos(v: $T) case ($T -> @floating_point): $T __native("<cmath>", "std::acos");
-fn atan(v: $T) case ($T -> @floating_point): $T __native("<cmath>", "std::atan");
+fn asin(v: $T) case ($T.is::floating_point): $T __native("<cmath>", "std::asin");
+fn acos(v: $T) case ($T.is::floating_point): $T __native("<cmath>", "std::acos");
+fn atan(v: $T) case ($T.is::floating_point): $T __native("<cmath>", "std::atan");
 
-fn atan2(y: $T, x: $T) case ($T -> @floating_point): $T __native("<cmath>", "std::atan2");
+fn atan2(y: $T, x: $T) case ($T.is::floating_point): $T __native("<cmath>", "std::atan2");
 
 fn PI():  f64 __native("<math.h>", "M_PI");
 fn E():   f64 __native("<math.h>", "M_E");
 fn INF(): f64 __native("<math.h>", "INFINITY");
 fn NAN(): f64 __native("<math.h>", "NAN");
 
-fn nan(v: $T) case ($T -> @floating_point): bool __native("<cmath>", "std::isnan");
-fn inf(v: $T) case ($T -> @floating_point): bool __native("<cmath>", "std::isinf");
-fn finite(v: $T) case ($T -> @floating_point): bool __native("<cmath>", "std::isfinite");
+fn nan(v: $T) case ($T.is::floating_point): bool __native("<cmath>", "std::isnan");
+fn inf(v: $T) case ($T.is::floating_point): bool __native("<cmath>", "std::isinf");
+fn finite(v: $T) case ($T.is::floating_point): bool __native("<cmath>", "std::isfinite");
 
 
 // Logic.
@@ -175,17 +175,17 @@ fn sort(a: &mut $T[]): void __native("<fu/vec/sort.h>", "fu::sort");
 
 // String likes.
 
-fn ==(a: [$T], b: [$T]) case ($T -> @primitive): bool __native("<fu/vec/cmp.h>", "==");
-fn !=(a: [$T], b: [$T]) case ($T -> @primitive): bool __native("<fu/vec/cmp.h>", "!=");
+fn ==(a: [$T], b: [$T]) case ($T.is::primitive): bool __native("<fu/vec/cmp.h>", "==");
+fn !=(a: [$T], b: [$T]) case ($T.is::primitive): bool __native("<fu/vec/cmp.h>", "!=");
 
-fn starts(a: [$T], with: [$T]) case ($T -> @primitive): bool __native("<fu/vec/find.h>", "fu::lmatch");
-fn   ends(a: [$T], with: [$T]) case ($T -> @primitive): bool __native("<fu/vec/find.h>", "fu::rmatch");
+fn starts(a: [$T], with: [$T]) case ($T.is::primitive): bool __native("<fu/vec/find.h>", "fu::lmatch");
+fn   ends(a: [$T], with: [$T]) case ($T.is::primitive): bool __native("<fu/vec/find.h>", "fu::rmatch");
 
-fn find(a: [$T], b: [$T], start: i32, end: i32) case ($T -> @primitive): i32  __native("<fu/vec/find.h>", "fu::lfind");
-fn find(a: [$T], b: [$T], start: i32)           case ($T -> @primitive): i32  __native("<fu/vec/find.h>", "fu::lfind");
-fn find(a: [$T], b: [$T])                       case ($T -> @primitive): i32  __native("<fu/vec/find.h>", "fu::lfind");
+fn find(a: [$T], b: [$T], start: i32, end: i32) case ($T.is::primitive): i32  __native("<fu/vec/find.h>", "fu::lfind");
+fn find(a: [$T], b: [$T], start: i32)           case ($T.is::primitive): i32  __native("<fu/vec/find.h>", "fu::lfind");
+fn find(a: [$T], b: [$T])                       case ($T.is::primitive): i32  __native("<fu/vec/find.h>", "fu::lfind");
 
-fn has (a: [$T], b: [$T]) case ($T -> @primitive): bool __native("<fu/vec/find.h>", "fu::has");
+fn has (a: [$T], b: [$T]) case ($T.is::primitive): bool __native("<fu/vec/find.h>", "fu::has");
 
 
 // Find char.
@@ -252,10 +252,10 @@ fn ~=(a: &mut $T[], b:  $T ): &mut $T[] __native("<fu/vec/concat_one.h>", "+=");
 // Fun with views.
 
 fn view(a: [$T], t: $U)
-    case ($a -> &mut [$T] && $T -> @trivial && $U -> @trivial): &mut [$U] __native("<fu/view.h>", "fu::view_of_mut");
-    case (                   $T -> @trivial && $U -> @trivial):      [$U] __native("<fu/view.h>", "fu::view_of");
+    case ($a -> &mut [$T] && $T.is::trivial && $U.is::trivial): &mut [$U] __native("<fu/view.h>", "fu::view_of_mut");
+    case (                   $T.is::trivial && $U.is::trivial):      [$U] __native("<fu/view.h>", "fu::view_of");
 
-fn .=(a: &mut [$T], b: [$T]) case ($T -> @copy): void __native("<fu/vec/view_assign.h>", "fu::view_assign");
+fn .=(a: &mut [$T], b: [$T]) case ($T.is::copy): void __native("<fu/vec/view_assign.h>", "fu::view_assign");
 
 
 // Assertions, bugs & fails.
@@ -273,9 +273,9 @@ fn ~ (    a.str, b: string) a ~ b;
 fn ~=(ref a: string, b.str) a ~= b;
 
 fn str(n: $T)
-    case ($T -> @unsigned): string __native("<fu/decstr.h>", "fu::u64dec");
-    case ($T -> @integral): string __native("<fu/decstr.h>", "fu::i64dec");
-    case ($T -> @floating_point): string __native("<fu/decstr.h>", "fu::f64dec");
+    case ($T.is::unsigned): string __native("<fu/decstr.h>", "fu::u64dec");
+    case ($T.is::integral): string __native("<fu/decstr.h>", "fu::i64dec");
+    case ($T.is::floating_point): string __native("<fu/decstr.h>", "fu::f64dec");
 
 
 // Printifiables = anything that implements print.

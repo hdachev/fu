@@ -1418,8 +1418,16 @@ pub fn parse(modid: i32, fname: string, tokens: Token[], options: options::Optio
             let id = consume("id").value;
             if (!tryConsume("op", "::"))
             {
-                path = registerImport(path);
+                // HACK .is::primtive & co /////////////////
+                if (path == "is" && expr.items.len == 1)
+                {
+                    let left    = expr.items.only;
+                    let right   = createTypeTag(id);
+                    return typeAssert(left, right);
+                }
+                ////////////////////////////////////////////
 
+                path = registerImport(path);
                 expr.value = path ~ "\t" ~ id;
                 return expr;
             }
