@@ -46,9 +46,13 @@ pub fn lex(src: string, fname: string): LexerOutput
     fn token(kind: string, value: string, idx0: i32, idx1: i32)
     {
         let col = idx0 - lidx;
+        token_c(:kind, :value, :idx0, :idx1, :col);
+    }
 
-        tokens.push(
-            Token( :kind, :value, :idx0, :idx1, :line, :col ));
+    fn token_c(kind: string, value: string, idx0!: i32, idx1!: i32, col!: i32)
+    {
+        col >= 0 || assert();
+        tokens ~= Token(:kind, :value, :idx0, :idx1, :line, :col);
     }
 
     // Start token, so that no legit token has index 0.
@@ -314,6 +318,8 @@ pub fn lex(src: string, fname: string): LexerOutput
             mut esc = false;
             mut ok  = false;
 
+            let col = idx - lidx;
+
             while (idx < end)
             {
                 let c1 = src[idx++];
@@ -354,9 +360,7 @@ pub fn lex(src: string, fname: string): LexerOutput
                 }
                 else
                 {
-                    token(
-                        kind, str,
-                        idx0, idx1);
+                    token_c(kind, str, :idx0, :idx1, :col);
                 }
             }
         }
