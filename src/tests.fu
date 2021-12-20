@@ -3455,7 +3455,11 @@ pub fn runTests()
         }
     `);
 
-    ZERO(`
+    FAIL(`
+        //*F
+        novec // Abusing to test novec, unrelated to the test
+        /*/
+        //*/
         fn ScopeSkip_push(ref scope_skip: i32[]) {
             if (scope_skip) scope_skip[0]++;
             else            scope_skip ~= 1;

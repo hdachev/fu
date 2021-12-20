@@ -170,7 +170,8 @@ pub fn is_zeroes(t: Type) t.canon == t_zeroes.canon;
 
 //
 
-pub fn is_rx_copy(t: Type) !!(t.quals & q_rx_copy);
+pub fn is_rx_copy   (t: Type) !!(t.quals & q_rx_copy);
+pub fn is_rx_resize (t: Type) !!(t.quals & q_rx_resize);
 
 
 // TODO non zsts, non-empty structs, etc.

@@ -580,6 +580,7 @@ pub fn parse(modid: i32, fname: string, tokens: Token[], options: options::Optio
                 if (v == "using")       return parseConversionDecl();
 
                 if (v == "nocopy")      return parseNoCopy();
+                if (v == "novec")       return parseNovec();
                 if (v == "import")      return parseImport();
                 if (v == "compiler")    return parseCompilerPragma();
 
@@ -708,6 +709,11 @@ pub fn parse(modid: i32, fname: string, tokens: Token[], options: options::Optio
     fn parsePureDecl(mut flags?: i32): Node
     {
         return parseInlineDecl(:flags, F: F_PURE);
+    }
+
+    fn parseNovec(): Node
+    {
+        return parseInlineDecl(F: F_NOCOPY);
     }
 
     fn parseInlineDecl(mut flags?: i32, F = F_INLINE): Node

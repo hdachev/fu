@@ -3086,7 +3086,9 @@ pub fn solve(
             let isTemplate  = template.node.flags & F_TEMPLATE;
             let isSpec      = isTemplate && (!into || !isFirst); // TODO FIX this looks really flaky
             let isUnspec    = isTemplate && !isSpec;
+
             let isPure      = template.node.flags & F_PURE;
+            let isNovec     = template.node.flags & F_NOCOPY;
 
             for (mut i = 0; i < inItems.len + FN_ARGS_BACK; i++)
             {
@@ -3161,7 +3163,7 @@ pub fn solve(
             }
 
             // Used twice, once to enable recursion before body, and once when done.
-            fn updateScope(shadow out: CurrentFn, retval: Type)
+            fn updateScope(shadow out: CurrentFn, retval: Type, maybeLast!: bool)
             {
                 ///////////////////////////////
                 if (target.status & SS_DIRTY)
@@ -3212,6 +3214,9 @@ pub fn solve(
                     // Validate `pure` asserts.
                     if (isPure && written_via)
                         fail(target.qWHAT ~ " is not pure, writes to argument " ~ name.human.qID ~ ":\n" ~ written_via.qSTACK());
+
+                    if (maybeLast && isNovec && (argNode.type.is_rx_copy || argNode.type.is_rx_resize))
+                        fail(target.qWHAT ~ " is not novec, argument " ~ name.human.qID ~ " is " ~ humanizeType(argNode.type));
 
                     //
                     let arg = Argument(
@@ -3343,7 +3348,7 @@ pub fn solve(
                     ext.spec_of         = overloadIdx;
                 }
 
-                updateScope(_current_fn, retval: isInline ? ret_expect : ret_seed);
+                updateScope(_current_fn, retval: isInline ? ret_expect : ret_seed, maybeLast: false);
 
                 // setSpecs & co.
                 if (!into && !isInline)
@@ -3402,7 +3407,7 @@ pub fn solve(
                 }
 
                 //
-                updateScope(_current_fn, :retval);
+                updateScope(_current_fn, :retval, maybeLast: true);
             }
 
             if (!didSetBody)
