@@ -1,0 +1,10 @@
+
+pub fn break()
+{
+    let a = "Breakpoint here";
+    if (a)
+    {
+        // TODO send SIGSTOP of some shit?
+        //  No idea, a simple breakpoint will usually do.
+    }
+}

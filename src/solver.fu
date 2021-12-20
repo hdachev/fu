@@ -6877,7 +6877,7 @@ pub fn solve(
             println(debug);
 
         //
-        hacks::compilerBreak();
+        debug::break();
     }
 
 
