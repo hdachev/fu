@@ -366,6 +366,15 @@ pub fn parse(modid: i32, fname: string, tokens: Token[], options: options::Optio
                 return;
         }
 
+        // Experimental:
+        //  allow optional semis when
+        //   whitespace is completely unambiguous.
+        //
+        else if (peek.col == _col0)
+        {
+            return;
+        }
+
         warn("Missing semicollon before `" ~ peek.value ~ "`.");
     }
 
