@@ -1432,14 +1432,14 @@ pub fn runTests()
 
     ZERO(`
         mut sum = 0;
-        outer: for (mut y = 1; y < 10; y++)
+        :OUTER for (mut y = 1; y < 10; y++)
         {
             sum += y * 10; // 10, 20
             for (mut x = 1; x < 10; x++)
             {
                 sum += x; // 1, 1, 2
-                if (y == 1) continue :outer;
-                if (x == 2) break    :outer;
+                if (y == 1) continue :OUTER;
+                if (x == 2) break    :OUTER;
             }
         }
 
@@ -1448,10 +1448,10 @@ pub fn runTests()
 
     ZERO(`
         mut sum = 0;
-        outer: for (mut x = 0;; x++) {
+        :OUTER for (mut x = 0;; x++) {
             for (mut y = 0; y < x; y++) {
                 if (y & 1 && !(x & 1))
-                    continue :outer;
+                    continue :OUTER;
 
                 sum += x;
             }
@@ -1470,13 +1470,13 @@ pub fn runTests()
 
     FAIL(`
         fn test(ref sum: i32) {
-            FIRST: {
+            :FIRST {
                 if (sum & 1)
                     break:
                         FIRST;
                 sum++;
             }
-            SECOND: {
+            :SECOND {
                 if (sum & 1)
                     break: //*F
                         FIRST; /*/ SECOND; //*/
@@ -4672,7 +4672,7 @@ pub fn runTests()
             let c = [10007];                    ;; TODO fu::slate<1, int> c
             let a = [7, 11];                    ;; TODO fu::slate<2, int> a
             let b = {                           ;; TODO fu::slate<1, int> b
-                BRK: {
+                :BRK {
                     if (x & 2) break :BRK c;
                     if (x & 1) break :BRK [ x ]; // a val
                     a; // a ref
@@ -6946,10 +6946,10 @@ pub fn runTests()
 
     ZERO(`
         fn test(x: i32) {
-            outer: {
-                inner: {
-                    if (x > 1) break: outer;
-                    if (x > 0) break: inner;
+            :OUTER {
+                :INNER {
+                    if (x > 1) break :OUTER;
+                    if (x > 0) break :INNER;
                     return 2;
                 }
                 return 1;
@@ -6963,7 +6963,7 @@ pub fn runTests()
     ZERO(`
         fn test(x: i32) {
             return {
-                BLOCK: {
+                :BLOCK {
                     if (x & 1) break :BLOCK 1;
                     if (x & 2) return 2;
                     3
@@ -6977,10 +6977,10 @@ pub fn runTests()
     ZERO(`
         fn test(a: i32) {
             mut w = 3;
-            OUTER: w += {
-                INNER: {
-                    if (a & 1)  break: INNER;
-                    else        break: OUTER;
+            :OUTER w += {
+                :INNER {
+                    if (a & 1)  break :INNER;
+                    else        break :OUTER;
                 };
                 5
             };
@@ -6992,7 +6992,7 @@ pub fn runTests()
     ZERO(`
         fn v(x: i32) {
             return {
-                BLOCK:                          5000 + { // *2:
+                :BLOCK                          5000 + { // *2:
                     if (x == 9) continue :BLOCK 2000;    //   - here
                     if (x == 8) return           300;
                     if (x == 7) break :BLOCK      40;
@@ -7006,7 +7006,7 @@ pub fn runTests()
     ZERO(`
         pub fn test(x: i32[], y: i32[]) {
             let z = {
-                BLOCK: {
+                :BLOCK {
                     mut w: i32[] = x;
                     if (y[0]) w ~= y;
                     if (w[0] != 17)
@@ -7065,7 +7065,7 @@ pub fn runTests()
 
         fn main() {
             mut sum = 0;
-            OUTER: [1, 2, 3, 4].each(|x| {
+            :OUTER [1, 2, 3, 4].each(|x| {
                 sum += x;
                 for (mut i = 1; i--; ) // once
                     if (sum == 6) break :OUTER;

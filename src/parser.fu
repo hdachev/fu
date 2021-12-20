@@ -538,6 +538,7 @@ pub fn parse(modid: i32, fname: string, tokens: Token[], options: options::Optio
             let v = token.value;
 
             if (v == "{")           return parseBlock();
+            if (v == ":")           return parseLabelledStatement();
         }
         else if (token.kind == "id")
         {
@@ -659,7 +660,11 @@ pub fn parse(modid: i32, fname: string, tokens: Token[], options: options::Optio
     fn parseLabelledStatement(): Node
     {
         let label = consume("id").value;
-        consume("op", ":");
+
+        /////////////////////////////////////////////////////
+        // TODO remove, this fwd compat from LABEL: to :LABEL
+        tryConsume("op", ":"); //////////////////////////////
+        /////////////////////////////////////////////////////
 
         mut stmt = parseStatement();
         if (stmt.kind == "loop" || stmt.kind == "block")
