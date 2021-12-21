@@ -1088,11 +1088,8 @@ pub fn parse(modid: i32, fname: string, tokens: Token[], options: options::Optio
         //////////////////////////////
 
         // Whitespace lint -
-        //  Stricter whitespace for expressions that start on a new line,
-        //   the rest fall back to the _col0 from the nearest block.
-        let col00 = tokens[loc00].line > tokens[loc00 - 1].line
-            ? tokens[loc00].col
-            : _col0;
+        //  Expression tails cannot continue at or above current statement indent.
+        let col00 = _col0;
 
         if (mode & M_LINT_ENSURE_INDENT)
             tokens[_idx].col > _col0 || warn(
