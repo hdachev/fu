@@ -113,6 +113,7 @@ pub fn build(
         }
 
         mut unit = i;
+/*
         for (shadow mut i = 0; i < cpp.unity.len; i++)
         {
             let u = unit_mapping[cpp.unity[i]];
@@ -129,7 +130,7 @@ pub fn build(
                     if (unit_mapping[i] == u)
                         unit_mapping[i] = unit;
         }
-
+*/
         unit_mapping ~= unit;
         unit_fnames.grow_if_oob(unit) = i ? module.fname : "fulib runtime";
     }

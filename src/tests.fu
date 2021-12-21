@@ -3422,7 +3422,7 @@ pub fn runTests()
         }
     `);
 
-    ZERO([`
+    TODO([`
         let OPTOKENS = "{}[]()!?~@#$%^&*/-+<=>,.;:|";
 
         pub fn lex(src) // <- template

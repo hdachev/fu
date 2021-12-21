@@ -76,8 +76,6 @@ pub struct SolverOutput
 
 pub struct CodegenOutput
 {
-    unity?:         i32[];
-    unity_because?: i32[];
     using src:      string;
 };
 

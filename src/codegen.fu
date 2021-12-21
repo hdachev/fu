@@ -63,9 +63,6 @@ pub fn cpp_codegen(
     mut _indent: string = "\n";
     mut _hasMain: i32;
 
-    mut _unity:         i32[];
-    mut _unity_because: i32[];
-
     let implicit mut _here: TokenIdx;
 
 
@@ -1098,6 +1095,16 @@ pub fn cpp_codegen(
         if (src.starts(with: "const "))
             src = src.slice(6);
 
+        if (intconst)
+        {
+            _fdef  ~= "\n                                #ifndef DEF_" ~ node.value
+                    ~ "\n                                #define DEF_" ~ node.value
+                    ~ "\ninline constexpr " ~ src ~ ";"
+                    ~ "\n                                #endif\n";
+
+            return "";
+        }
+
         // Hide when possible.
         if (!(GET(node.target).flags & F_PUB))
         {
@@ -1107,16 +1114,10 @@ pub fn cpp_codegen(
 
             // But we can unity-build ourselves with them.
             else
-                _unity.set::add_once(node.target.modid || fail(),
-                    _unity_because, node.target.index);
+                fail("Cannot codegen, relies on an external static: " ~ node.target.name);
         }
-        else if (!intconst)
-            _fdef  ~= "\nextern const " ~ src ~ ";\n";
         else
-            _fdef  ~= "\n                                #ifndef DEF_" ~ node.value
-                    ~ "\n                                #define DEF_" ~ node.value
-                    ~ "\ninline constexpr " ~ src ~ ";"
-                    ~ "\n                                #endif\n";
+            _fdef  ~= "\nextern const " ~ src ~ ";\n";
 
         return "";
     }
@@ -2264,8 +2265,5 @@ pub fn cpp_codegen(
 
     let src = cgNode(root, debug: "cgRoot");
 
-    return CodegenOutput(
-        :src,
-        unity:          _unity,
-        unity_because:  _unity_because);
+    return CodegenOutput(:src);
 }
