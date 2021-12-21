@@ -277,15 +277,17 @@ pub fn cpp_codegen(
         if (_tfwd.add_once(type.modid, type.canon.structIndex))
         {
             _tfwd_src ~= "struct " ~ id ~ ";\n";
-            let decl = declareStruct(id, type, s);
+            let decl = declareStruct(id, s);
             _tdef ~= decl;
         }
 
         return id;
     }
 
-    fn declareStruct(id: string, t: Type, s: Struct): string
+    fn declareStruct(id: string, s: Struct): string
     {
+        let t = GET(s.target).type;
+
         mut def = "\n                                #ifndef DEF_" ~ id
                 ~ "\n                                #define DEF_" ~ id
                 ~ "\nstruct " ~ id ~ "\n{";
