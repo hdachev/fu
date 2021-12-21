@@ -36,6 +36,9 @@ pub struct ModuleOutputs
     types:      Struct[];
     solve:      SolverOutput;
     cpp:        CodegenOutput;
+
+    // Static init depth.
+    init_prio:  i32;
 };
 
 pub struct ModuleStats
@@ -67,11 +70,11 @@ pub struct Struct
 
 pub struct SolverOutput
 {
-    root:   SolvedNode;
-    scope:  Scope;
+    root:       SolvedNode;
+    scope:      Scope;
 
     // Important solver events for testing.
-    notes:  i32;
+    notes:      i32;
 };
 
 pub struct CodegenOutput

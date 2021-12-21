@@ -4,6 +4,7 @@
 #include "./arc.h"
 #include "../int/next_pow2.h"
 #include "../export.h"
+#include "../init_priority.h"
 
 constexpr uint8_t fu_EXIT_BadAlloc = 101;
 
@@ -114,19 +115,19 @@ struct fu_DEBUG_COUNTER
 //
 
 #if fu_ARC__DETECT_MEMORY_LEAKS
-static fu_DEBUG_CNTDWN fu_ARC__CDOWN_count  { "ARC  Leak Count" };
-static fu_DEBUG_CNTDWN fu_ARC__CDOWN_bytes  { "ARC  Leak Bytes" };
+static fu_DEBUG_CNTDWN fu_ARC__CDOWN_count  fu_LIB_INIT_PRIO { "ARC  Leak Count" };
+static fu_DEBUG_CNTDWN fu_ARC__CDOWN_bytes  fu_LIB_INIT_PRIO { "ARC  Leak Bytes" };
 
-static fu_DEBUG_CNTDWN fu_UNIQ__CDOWN_count { "UNIQ Leak Count" };
-static fu_DEBUG_CNTDWN fu_UNIQ__CDOWN_bytes { "UNIQ Leak Bytes" };
+static fu_DEBUG_CNTDWN fu_UNIQ__CDOWN_count fu_LIB_INIT_PRIO { "UNIQ Leak Count" };
+static fu_DEBUG_CNTDWN fu_UNIQ__CDOWN_bytes fu_LIB_INIT_PRIO { "UNIQ Leak Bytes" };
 #endif
 
 #if fu_ARC__PROFILE_MEMORY
-static fu_DEBUG_COUNTER fu_ARC__STAT_count  { "ARC  Total Count" };
-static fu_DEBUG_COUNTER fu_ARC__STAT_bytes  { "ARC  Total Bytes" };
+static fu_DEBUG_COUNTER fu_ARC__STAT_count  fu_LIB_INIT_PRIO { "ARC  Total Count" };
+static fu_DEBUG_COUNTER fu_ARC__STAT_bytes  fu_LIB_INIT_PRIO { "ARC  Total Bytes" };
 
-static fu_DEBUG_COUNTER fu_UNIQ__STAT_count { "UNIQ Total Count" };
-static fu_DEBUG_COUNTER fu_UNIQ__STAT_bytes { "UNIQ Total Bytes" };
+static fu_DEBUG_COUNTER fu_UNIQ__STAT_count fu_LIB_INIT_PRIO { "UNIQ Total Count" };
+static fu_DEBUG_COUNTER fu_UNIQ__STAT_bytes fu_LIB_INIT_PRIO { "UNIQ Total Bytes" };
 
 int fu_ARC::ALLOC_STAT_COUNT() { return fu_ARC__STAT_count.m_cnt; }
 int fu_ARC::ALLOC_STAT_BYTES() { return fu_ARC__STAT_bytes.m_cnt; }
@@ -137,11 +138,11 @@ int fu_ARC::ALLOC_STAT_BYTES() { return 0; }
 
 extern "C" fu_EXPORT void fu_ARC_DEALLOC(fu_ARC* arc, size_t bytes)
 {
-    assert((int)bytes <= arc->DEBUG_bytes
-               && arc == arc->DEBUG_self);
-
     #if fu_ARC__DETECT_MEMORY_LEAKS
     {
+        assert((int)bytes <= arc->DEBUG_bytes
+                   && arc == arc->DEBUG_self);
+
         fu_ARC__CDOWN_count.m_cnt -= 1;
         fu_ARC__CDOWN_bytes.m_cnt -= (int)arc->DEBUG_bytes;
 

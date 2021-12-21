@@ -1000,8 +1000,11 @@ pub fn cpp_codegen(
             return annot;
 
         let id      = localID(:node.target, dedupe: true);
-        mut head    = (annot || fail()) ~ " " ~ id;
+        mut head    = annot || fail();
 
+        head       ~= " " ~ id;
+
+        //
         if (isUnused)
             head    = "[[maybe_unused]] " ~ head;
         if (node.target.flags & F_TODO_FIX_RRET)
@@ -1107,6 +1110,20 @@ pub fn cpp_codegen(
             return "";
         }
 
+        // Static init prio.
+        let prio    = node.type.is_primitive                ? 0
+                    : node.target.modid == module.modid     ? module.out.init_prio
+                                                            : ctx.modules[node.target.modid].out.init_prio;
+        if (prio)
+        {
+            include("<fu/init_priority.h>");
+
+            let attr = "fu_INIT_PRIORITY(" ~ (1000 + prio) ~ ")";
+            let eq = src.find('=');
+            if (eq > 0)
+                src = src[0, eq] ~ attr ~ " " ~ src[eq, src.len];
+        }
+
         // Hide when possible.
         if (!(GET(node.target).flags & F_PUB))
         {
@@ -1119,7 +1136,12 @@ pub fn cpp_codegen(
                 fail("Cannot codegen, relies on an external static: " ~ node.target.name);
         }
         else
-            _fdef  ~= "\nextern const " ~ src ~ ";\n";
+        {
+            _fdef  ~= "\n                                #ifndef DEF_" ~ node.value
+                    ~ "\n                                #define DEF_" ~ node.value
+                    ~ "\nextern const " ~ src ~ ";"
+                    ~ "\n                                #endif\n";
+        }
 
         return "";
     }

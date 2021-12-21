@@ -50,12 +50,20 @@ fn compile(fname: string, via: string = "", options?: Options)
     // We're good to go here.
     if (!module.out)
     {
+        module.out.init_prio = 1;
+
         // Ensure dependencies.
         let fuzimports = module.in.parse.fuzimports;
         for (mut i = 0; i < fuzimports.len; i++)
-            compile(:options,
-                fname: resolveFile(fuzimports[i]),
-                  via: fname ~ (via && "\n\t<- " ~ via));
+        {
+            let prio =
+                compile(:options,
+                    fname: resolveFile(fuzimports[i]),
+                      via: fname ~ (via && "\n\t<- " ~ via));
+
+            if (module.out.init_prio < prio)
+                module.out.init_prio = prio;
+        }
 
         //
         let stat0 = ModuleStat_now();
@@ -73,6 +81,9 @@ fn compile(fname: string, via: string = "", options?: Options)
         // Final repersist.
         setModule(module);
     }
+
+    //
+    return module.out.init_prio + 1;
 }
 
 
