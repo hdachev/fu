@@ -101,9 +101,39 @@ pub fn build(
     mut unit_mapping: i32[];
     mut unit_fnames: string[];
 
-    for (mut i = 0; i < ctx.modules.len; i++)
+    //
+    let modules = ctx.modules;
+
+
+    // Depedency sort.
+
+    struct ModuleSortHelper { compile_index: i32; };
+
+    using fn GET(using _: ModuleSortHelper) modules[compile_index];
+
+    shadow let modules =
     {
-        let module  = ctx.modules[i];
+        mut buckets: ModuleSortHelper[][];
+        for (mut i = 0; i < modules.len; i++)
+        {
+            let module = modules[i];
+            buckets.grow_if_oob(module.out.init_prio) ~= ModuleSortHelper(i);
+        }
+
+        //
+        mut result: ModuleSortHelper[];
+        for (mut i = 0; i < buckets.len; i++)
+            result ~= buckets[i];
+
+        result
+    };
+
+
+    //
+
+    for (mut i = 0; i < modules.len; i++)
+    {
+        let module  = modules[i];
         let cpp     = i ? module.out.cpp
                         : fulib_cpp;
         if (!cpp.src)
@@ -138,9 +168,9 @@ pub fn build(
     // Concat unit sources.
     mut units: string[];
 
-    for (mut i = 0; i < ctx.modules.len; i++)
+    for (mut i = 0; i < modules.len; i++)
     {
-        let module  = ctx.modules[i];
+        let module  = modules[i];
         let cpp     = i ? module.out.cpp
                         : fulib_cpp;
         if (cpp.src)
@@ -193,16 +223,16 @@ pub fn build(
         if (onfail)
         {
             explain = "\nFailing testcase:\n\n";
-            for (mut i = 1; i < ctx.modules.len; i++)
+            for (mut i = 1; i < modules.len; i++)
                 explain ~= onfail == "print-src"
-                    ? ctx.modules[i].in.src
-                    : ctx.modules[i].fname ~ "\n";
+                    ? modules[i].in.src
+                    : modules[i].fname ~ "\n";
 
             if (onfail == "print-src")
             {
                 explain ~= "\nSources:\n";
-                for (mut i = 1; i < ctx.modules.len; i++)
-                    explain ~= ctx.modules[i].out.cpp.src;
+                for (mut i = 1; i < modules.len; i++)
+                    explain ~= modules[i].out.cpp.src;
             }
         }
 
@@ -228,7 +258,7 @@ pub fn build(
             {
                 // Prelude @ 0.
                 let human = i
-                    ? ctx.modules[i].fname.path_filename
+                    ? modules[i].fname.path_filename
                     : "fulib runtime";
 
                 let cpp = units[i];
@@ -359,11 +389,11 @@ pub fn build(
                 mut main: string;
                 mut includes: string;
 
-                for (mut i = 1; i < ctx.modules.len; i++)
+                for (mut i = 1; i < modules.len; i++)
                 {
-                    let module = ctx.modules[i];
+                    let module = modules[i];
                     let input = path_relative(CMakeLists, module.fname);
-                    if (i == 1)
+                    if (module.compile_index == 1)
                         main = input;
 
                     inputs.push(input);

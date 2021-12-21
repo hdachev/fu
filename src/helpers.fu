@@ -190,10 +190,10 @@ pub fn ascii_upper(c: byte): byte
 
 pub fn map(a: [$T], fn)
 {
-    mut res: fn($T)[];
+    mut res: fn($T, index?: a.len)[];
     res.grow_junk(a.len);
     for (mut i = 0; i < a.len; i++)
-        res[i] = fn(a[i]);
+        res[i] = fn(a[i], index?: i);
 
     return res;
 }
