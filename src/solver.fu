@@ -1703,7 +1703,6 @@ pub fn solve(
 
         if (k == "definit")     return solveDefinit(type);
 
-        if (k == "catch")       return solveCatch(node);
         if (k == "import")      return solveImport(node);
         if (k == "defer")       return solveDefer(node);
         if (k == "try")         return solveTryCatch(node);
@@ -2028,17 +2027,6 @@ pub fn solve(
             propagateType(recover, t_void, :relax_mask);
             propagateType(error, t_string, :relax_mask);
             propagateType(attempt, t_void, :relax_mask);
-        }
-        else if (k == "catch")
-        {
-            let lax trybind = node.items[0]; // TODO FIX the laxness due to rec solve
-            let lax error   = node.items[1]; // TODO FIX the laxness due to rec solve
-            let recover     = node.items[2];
-
-            // Relax in reverse.
-            propagateType(recover, t_void, :relax_mask);
-            propagateType(error, t_string, :relax_mask);
-            propagateType(trybind,  :slot, :relax_mask);
         }
         else if (k == "root")
         {
@@ -4433,33 +4421,6 @@ pub fn solve(
     {
         node.kind == "let" || fail("Expected a `let` statement, got: `" ~ node.kind ~ "`.");
         return solveNode(node, t_void);
-    }
-
-    fn solveCatch(node: Node): SolvedNode
-    {
-        node.items.len == 3 || fail();
-
-        let var_ok = solveLetStatement(node.items[0]);
-
-        ////////////////////////////////
-        let scope0 = Scope_snap(_scope);
-        defer Scope_pop(_scope, scope0);
-        ////////////////////////////////
-
-        let var_err = solveLetStatement(node.items[1]);
-        let catch   = solveNode(node.items[2], t_void);
-
-        let type = var_ok.type;
-        catch.type.is_never || fail(
-            "[let catch]: catch clause must exit local scope.");
-
-        var_err.kind == "let" && isAssignableAsArgument(
-            var_err.type, t_string) || fail(
-                "catch: exceptions are strings,"
-                    ~ " consider dropping the annotation.");
-
-        return solved(node, type,
-            [ var_ok, var_err, catch ]);
     }
 
     fn solveTryCatch(node: Node): SolvedNode

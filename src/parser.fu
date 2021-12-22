@@ -1016,15 +1016,6 @@ pub fn parse(modid: i32, fname: string, tokens: Token[], options: options::Optio
     {
         let ret = parseLet();
 
-        // Catch here.
-        if (tryConsume("id", "catch"))
-        {
-            let err = parseCatchErrvar();
-            let catch = parseStatement();
-
-            return make("catch", [ ret, err, catch ]);
-        }
-
         softSemi();
         return ret;
     }

@@ -517,7 +517,9 @@ pub fn FAIL(
     implicit ref testdiffs: testdiff::TestDiffs,
     sources: string[])
 {
-    let ctx = compile_snippets(sources) catch e
+    mut ctx: Context;
+    try ctx = compile_snippets(sources);
+    catch (e)
     {
         testdiffs.set_next(
             sources.ERR_KEY, e.ERR_TRIM);

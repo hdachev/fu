@@ -4426,11 +4426,13 @@ pub fn runTests()
         }
 
         fn main(): i32 {
-            let _x = throw_hey()
-                catch err
-                    return err.len - 3;
-
-            return _x || 7;
+            try {
+                let _x = throw_hey();
+                return _x || 7;
+            }
+            catch (err) {
+                return err.len - 3;
+            }
         }
     `);
 
@@ -4440,11 +4442,13 @@ pub fn runTests()
         }
 
         fn main(): i32 {
-            let _x = throw_hey()
-                catch err
-                    return err.len - 3;
-
-            return _x || 7;
+            try {
+                let _x = throw_hey();
+                return _x || 7;
+            }
+            catch (err) {
+                return err.len - 3;
+            }
         }
     `);
 
@@ -4725,10 +4729,13 @@ pub fn runTests()
         fn ZERO(x1: string) x1.find('b') && throw("throw#2");
 
         fn FAIL(x2: string): string {                   ;; EXPECT fu::view<char> x2
-            let ctx = compile_snippets(x2) && "hey"
-                catch e return ZERO(x2) && e;
-
-            return ctx;
+            try {
+                let ctx = compile_snippets(x2) && "hey";
+                return ctx;
+            }
+            catch (e) {
+                return ZERO(x2) && e;
+            }
         }
 
         fn main() FAIL("a").len;

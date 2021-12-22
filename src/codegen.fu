@@ -583,7 +583,7 @@ pub fn cpp_codegen(
             {
                 let n = nodes[i];
                 let k = n.kind;
-                if (k == "jump" || k == "loop" || k == "try" || k == "catch"
+                if (k == "jump" || k == "loop" || k == "try"
                     || k == "let" || k == "block") // TODO FIX we can handle both of these
                 {
                     return false;
@@ -2044,29 +2044,6 @@ pub fn cpp_codegen(
         return "while (" ~ cond ~ ")" ~ body ~ breakLabel;
     }
 
-    fn cgCatch(node: SolvedNode): string
-    {
-        let items       = node.items;
-        let var_name    = items[0];
-        if (var_name.kind != "let")
-            return cgTryCatch(node);
-
-        let try_init    = cgNode(items[0].items[LET_INIT], debug: "cgCatch") ~ ";";
-        let err         = GET(items[1].target).name;
-        let catch       = blockWrapSubstatement(items[2]);
-
-        mut vardecl     = !var_name.type.is_never &&
-            binding(var_name, forceMut: true) ~ " = {};";
-
-        return vardecl
-             ~ cgTryCatch(
-                var_name.type.is_never
-                    ? _indent ~ "    " ~  try_init
-                    : _indent ~ "    " ~  var_name.value ~ " = " ~ try_init,
-                err,
-                catch);
-    }
-
     fn cgTryCatch(node: SolvedNode): string
     {
         let items = node.items;
@@ -2133,7 +2110,6 @@ pub fn cpp_codegen(
 
         if (k == "loop")        return cgLoop(node);
         if (k == "try")         return cgTryCatch(node);
-        if (k == "catch")       return cgCatch(node);
         if (k == "defer")       return cgDefer(node);
 
         return fail("TODO: " ~ k);
