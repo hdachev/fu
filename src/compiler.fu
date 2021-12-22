@@ -266,8 +266,6 @@ pub fn ZERO(
     implicit ref testdiffs: testdiff::TestDiffs,
     mut sources: string[]): Context
 {
-    mut TODO_split = false;
-
     // Fuzzing module splits.
     for (mut i = 0; i < sources.len; i++)
     {
@@ -278,14 +276,7 @@ pub fn ZERO(
             mut start0 = src.find("<split/>");
             mut start1 = start0 + 8;
             if (start0 < 0)
-            {
-                start0 = src.find("<TODO::split/>");
-                start1 = start0 + 14;
-                if (start0 < 0)
-                    break;
-
-                TODO_split = true;
-            }
+                break;
 
             // Avoid trailing whitespace.
             let start00 = start0;
@@ -303,12 +294,6 @@ pub fn ZERO(
             sources[i]  = moduleA;
             sources.insert(i + 1, moduleB);
         }
-    }
-
-    if (TODO_split)
-    {
-        TODO(:sources);
-        return [];
     }
 
     // Test variations, very primitive fuzzing.
