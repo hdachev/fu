@@ -7467,6 +7467,24 @@ pub fn runTests()
     `);
 
 
+    // Fork/join parallelism.
+
+    TODO(`
+        fn test(ref aa: i32[], bb: i32[])
+            for (ref a, b in aa, bb) a += b;
+        /*
+            Technically the same as:
+            for (aa, bb, |ref a, b| a += b);
+        */
+
+        fn main() {
+            mut aa = [ 1, 2, 3 ];
+            test(aa, [ 10, 20, 30 ]);
+            return aa[1] - 22;
+        }
+    `);
+
+
     // Enum basics.
 
     // FAIL(`
