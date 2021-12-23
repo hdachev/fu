@@ -1644,8 +1644,8 @@ pub fn runTests()
             {
                 return 0;
             }
-        }
         //*/
+        }
     `);
 
     ZERO(`
