@@ -6223,10 +6223,10 @@ pub fn solve(
                                 mut err = target.qWHAT;
 
                                 err ~= host_args.len == 2 && target.flags & F_OPERATOR
-                                    ?   ": Both operands refer to:\n"
+                                    ?   ": Both operands alias:\n"
                                     :   ": Arguments " ~ host_args[i0].name.human.qBAD
                                         ~      " and " ~ host_args[i ].name.human.qBAD
-                                        ~      " (args #" ~ i0 ~ " and #" ~ i  ~ ") both refer to:\n";
+                                        ~      " (args #" ~ i0 ~ " and #" ~ i  ~ ") both alias:\n";
 
                                 for (shadow mut i = 0; i < inter.uni0n.len; i++)
                                 {

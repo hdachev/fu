@@ -290,8 +290,8 @@ pub fn ZERO(
             let msg    = src.slice(start0 + 5, start1 - 1);
 
             // Check against <fail/> and the like.
-            !msg || msg[0] == ' ' || throw(
-                "Bad <fail> tag: `<fail" ~ msg ~ ">`.");
+            msg             || throw("No <fail keywords>.");
+            msg[0] == ' '   || throw("Bad <fail keywords>: `<fail" ~ msg ~ ">`.");
 
             // Avoid trailing spaces.
             let end1   = end0   + 7;
@@ -559,18 +559,6 @@ pub fn ZERO(
     return ctx;
 }
 
-fn FAIL_replace(mut sources: string[]): string[]
-{
-    for (mut i = 0; i < sources.len; i++)
-        sources[i] = sources[i]
-            .replace(all: "//*F", with: "/*");
-
-    return sources;
-}
-
-fn indent(src: string): string
-    src.replace(all: "\n", with: "\n\t");
-
 fn ERR_KEY(sources: string[])
 {
     mut key = "";
@@ -679,35 +667,6 @@ fn ERR_STRIP_SNIPPETS(mut e: string)
     return e;
 }
 
-pub fn FAIL(
-    implicit ref testdiffs: testdiff::TestDiffs,
-    sources: string[])
-{
-    mut ctx: Context;
-    try ctx = compile_snippets(sources);
-    catch (e)
-    {
-        testdiffs.set_next(
-            sources.ERR_KEY, e.ERR_TRIM);
-
-        return ZERO(FAIL_replace(sources));
-    }
-
-    //
-    mut bad = "\nDID NOT THROW:\n";
-
-    for (mut i = 1; i < ctx.modules.len; i++)
-    {
-        let module = ctx.modules[i];
-        bad ~= "\n#" ~ i ~ ": "         ~ module.fname ~ "\n";
-        bad ~= "\nfu  [" ~ i ~ "]:\n\t" ~ module.in .src.indent
-             ~ "\ncpp [" ~ i ~ "]:\n\t" ~ module.out.cpp.indent
-             ~ "\n";
-    }
-
-    return throw(bad);
-}
-
 pub fn ZERO_SAME(alts: string[][])
 {
     let expect = ZERO(alts[0]).modules;
@@ -722,6 +681,9 @@ pub fn ZERO_SAME(alts: string[][])
         {
             let x = expect[m].out.cpp.src;
             let a = actual[m].out.cpp.src;
+
+            fn indent(src: string): string
+                src.replace(all: "\n", with: "\n\t");
 
             if (x != a)
                 throw(
@@ -752,7 +714,6 @@ pub fn TODO(
 
 
 pub fn ZERO(src: string) ZERO(sources: [ src ]);
-pub fn FAIL(src: string) FAIL(sources: [ src ]);
 pub fn TODO(src: string) TODO(sources: [ src ]);
 
 pub fn ZERO_SAME(alts: string[])
