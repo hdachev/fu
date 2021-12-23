@@ -266,37 +266,103 @@ pub fn ZERO(
     mut sources: string[],
     options?: Options): Context
 {
-    // Fuzzing module splits.
+    // <fail>x</fail>
+    // <fail>x<pass/>y</fail>
+    // <fail err>x<pass/>y</fail>
     for (mut i = 0; i < sources.len; i++)
     {
         for (;;)
         {
-            ref src = sources[i];
+            ref src    = sources[i];
 
-            mut start0 = src.find("<split/>");
-            mut start1 = start0 + 8;
+            mut start0 = src.find("<fail");
             if (start0 < 0)
                 break;
 
-            // Avoid trailing whitespace.
-            let start00 = start0;
-            while (start0 && src[start0 - 1] == ' ') start0--;
+            mut end0   = src.find("</fail>", start: start0);
+            end0 >= 0 || throw("No closing `</fail>` for `<fail>`.");
 
-            // We'll test with and without a module split here.
-            let moduleA = src.slice(0, start0);
-            let moduleB = src[start0, start00] ~ "import _" ~ i ~ ";" ~ src[start1, src.len];
-            let without = src[0, start0] ~ src[start1, src.len];
+            //
+            mut start1 = start0 + 5;
+            while (src[start1++] != '>') {}
 
-            sources[i]  = without;
-            ZERO(:sources);
+            //
+            let msg    = src.slice(start0 + 5, start1 - 1);
 
-            // Continue with the greater modules count here.
-            sources[i]  = moduleA;
-            sources.insert(i + 1, moduleB);
+            // Avoid trailing spaces.
+            let end1   = end0   + 7;
+
+            start0 = src.unindent_left(start0);
+            end0   = src.unindent_left(end0);
+
+            let prefix = src.slice(0, start0);
+            let suffix = src.slice(end1, src.len);
+
+            mut split  = src.slice(start1, end0).split("<pass/>");
+            split.len > 1 || throw("No `<pass/>` for `<fail>`.");
+            split.len < 3 || throw("Multiple `<pass/>` blocks for `<fail>`.");
+
+            mut fails  = split[0].split("<fail/>");
+
+            split.shift();
+            mut pass   = split.only;
+
+            for (mut j = fails.len; j --> 0; )
+            {
+                let fail    = fails[j];
+
+                let end     = fail.unindent_left(fail.len);
+                sources[i]  = prefix ~ fail[0, end] ~ suffix;
+
+                // Each fail variant must throw.
+                try ZERO(:sources);
+                catch (e)
+                {
+                    let actual = e.ascii_lower();
+
+                    // Verify error message.
+                    mut m0 = -1;
+                    for (mut m1 = 0; m1 <= msg.len; m1++)
+                    {
+                        let c = m1 < msg.len ? msg[m1] : ' ';
+                        if (c.i32 <= 32)
+                        {
+                            if (m0 >= 0)
+                            {
+                                mut expect = msg.slice(m0, m1).ascii_lower();
+                                if (!actual.has(expect))
+                                    throw("<error/> mismatch, expect `" ~ expect ~ "`, got:\n" ~ e);
+                            }
+
+                            m0 = -1;
+                        }
+                        else if (m0 < 0)
+                        {
+                            m0 = m1;
+                        }
+                    }
+
+                    //
+                    testdiffs.set_next(
+                        sources.ERR_KEY, e.ERR_TRIM);
+
+                    continue;
+                }
+
+                throw("<fail> does not throw:\n" ~ sources[i]);
+            }
+
+            // Finally, this should run fine,
+            //  just let the rest of the thing do its thing.
+            {
+                let end     = pass.unindent_left(pass.len);
+                sources[i]  = prefix ~ pass[0, end] ~ suffix;
+            }
         }
     }
 
-    // Test variations, very primitive fuzzing.
+    // <alt></alt>
+    // <alt><alt/></alt>
     for (mut i = 0; i < sources.len; i++)
     {
         for (;;)
@@ -336,6 +402,36 @@ pub fn ZERO(
                 if (j)
                     ZERO(:sources);
             }
+        }
+    }
+
+    // <split/>
+    for (mut i = 0; i < sources.len; i++)
+    {
+        for (;;)
+        {
+            ref src = sources[i];
+
+            mut start0 = src.find("<split/>");
+            mut start1 = start0 + 8;
+            if (start0 < 0)
+                break;
+
+            // Avoid trailing whitespace.
+            let start00 = start0;
+            while (start0 && src[start0 - 1] == ' ') start0--;
+
+            // We'll test with and without a module split here.
+            let moduleA = src.slice(0, start0);
+            let moduleB = src[start0, start00] ~ "import _" ~ i ~ ";" ~ src[start1, src.len];
+            let without = src[0, start0] ~ src[start1, src.len];
+
+            sources[i]  = without;
+            ZERO(:sources);
+
+            // Continue with the greater modules count here.
+            sources[i]  = moduleA;
+            sources.insert(i + 1, moduleB);
         }
     }
 

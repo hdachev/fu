@@ -51,20 +51,16 @@ pub fn runTests()
     let implicit mut testdiffs = testdiff::TestDiffs;
     ////////////////////////////////////////////////
 
-    FAIL(`
-        //*F
-        fn main(): i32 {}
-        /*/
-        fn main(): i32 { return 0; }
-        //*/
+    ZERO(`
+        <fail>
+        fn main(): i32 {}               <pass/>
+        fn main(): i32 { return 0; }    </fail>
     `);
 
-    FAIL(`
-        //*F
-        fn test(): i32 {}
-        /*/
-        fn test(): i32 { return 0; }
-        //*/
+    ZERO(`
+        <fail return>
+        fn test(): i32 {}               <pass/>
+        fn test(): i32 { return 0; }    </fail>
         fn main() test();
     `);
 
@@ -205,14 +201,12 @@ pub fn runTests()
         return sum - 15;
     `);
 
-    FAIL(`
-        //*F
-        let sum = 0;
-        /*/
-        mut sum = 0;
-        //*/
+    ZERO(`
+        <fail ++>
+        let sum = 0;        <pass/>
+        mut sum = 0;        </fail>
         while (sum < 15)
-            sum++; //ERR ++ overload
+            sum++;
 
         return sum - 15;
     `);
@@ -281,17 +275,15 @@ pub fn runTests()
         return r.max - r.min;
     `);
 
-    FAIL(`
+    ZERO(`
         struct Range {
             min: i32;
             max: i32;
         }
 
-        //*F
-        let r =
-        /*/
-        mut r =
-        //*/
+        <fail ++>
+        let r =             <pass/>
+        mut r =             </fail>
             Range(1, 2);
 
         r.min++; //ERR ++ overload
@@ -339,15 +331,13 @@ pub fn runTests()
         return dist(a, b) - 6;
     `);
 
-    FAIL(`
+    ZERO(`
         struct A { x: i32; y: i32; };
         struct B { x: i32; z: i32; };
         fn test(using a: A, using b: B)
-            //*F
-            x + z;
-            /*/
-            y + z;
-            //*/
+            <fail ambig>
+            x + z; <pass/>
+            y + z; </fail>
 
         fn main() test(A(1, 1), B(-1, -1));
     `);
@@ -1367,12 +1357,10 @@ pub fn runTests()
         return hey.x;
     `);
 
-    FAIL(`
-        //*F
-        fn test(a = "hello") a.len; //ERR assign
-        /*/
-        fn test(a = 0) a + 1;
-        //*/
+    ZERO(`
+        <fail bad args>
+        fn test(a = "hello") a.len;     <pass/>
+        fn test(a = 0) a + 1;           </fail>
         fn main() test(-1);
     `);
 
@@ -1468,7 +1456,7 @@ pub fn runTests()
         return sum - 4312;
     `);
 
-    FAIL(`
+    ZERO(`
         fn test(ref sum: i32) {
             :FIRST {
                 if (sum & 1)
@@ -1478,8 +1466,10 @@ pub fn runTests()
             }
             :SECOND {
                 if (sum & 1)
-                    break: //*F
-                        FIRST; /*/ SECOND; //*/
+                    break:
+                        <fail>
+                        FIRST;      <pass/>
+                        SECOND;     </fail>
                 sum++;
 
                 if (sum & 2)
@@ -1617,12 +1607,9 @@ pub fn runTests()
         struct Test { x: i32; }
         fn test(t: &mut Test) t.x++;
         mut t = Test();
-        //*F
-        t.test; //ERR orphan
-        /*/
-        t.test();
-        //*/
-
+        <fail orphan>
+        t.test;             <pass/>
+        t.test();           </fail>
         return t.x - 1;
     `);
 
