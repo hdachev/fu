@@ -4874,7 +4874,11 @@ pub fn solve(
             return createBlock(t_never, args);
         }
 
-        return createArrlit(args, itemType);
+        //
+        if !(node.flags & F_NAMED_ARGS)
+            return createArrlit(args, itemType);
+
+        fail("TODO: solveArrlit: tryMatch by [ argnames: ... ] without function name.");
     }
 
     fn solveArrlit_itemType_init(head!: Type)

@@ -1012,6 +1012,13 @@ pub fn runTests()
         return arr[0] + arr[1];
     `);
 
+    ZERO(`
+        <fail>
+        let x = [ named: 0 ]; <pass/>
+        let x = [        0 ]; </fail>
+        return x[0];
+    `);
+
 
     // A basic testing setup for array ops,
     //  that can be flipped around for making sure
