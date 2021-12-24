@@ -78,10 +78,6 @@ struct s_Region
 struct s_Lifetime
 {
     fu_VEC<s_Region> uni0n;
-    s_Lifetime(const s_Lifetime&) = delete;
-    s_Lifetime(s_Lifetime&&) = default;
-    s_Lifetime& operator=(const s_Lifetime&) = delete;
-    s_Lifetime& operator=(s_Lifetime&&) = default;
     explicit operator bool() const noexcept
     {
         return false

@@ -1,5 +1,6 @@
 
 #include <fu/decstr.h>
+#include <fu/init_priority.h>
 #include <fu/str.h>
 #include <fu/vec/concat.h>
 #include <fu/vec/concat_one.h>
@@ -10,7 +11,7 @@ fu_STR ansi(int, int, int);
 
 #ifndef FU_NO_FDEFs
 
-static const fu_STR ESC = (char(27) + "["_fu);
+static const fu_STR ESC fu_INIT_PRIORITY(1001) = (char(27) + "["_fu);
 
                                 #ifndef DEFt_x7E_OZkl
                                 #define DEFt_x7E_OZkl
@@ -35,15 +36,24 @@ fu_STR ansi(const int a, const int b, const int c)
     return x7E_OZkl((x7E_OZkl((x7E_OZkl(ESC, fu::i64dec(a)) + ';'), fu::i64dec(b)) + ';'), fu::i64dec(c)) + 'm';
 }
 
-extern const fu_STR RESET = ansi(0);
+                                #ifndef DEF_RESET
+                                #define DEF_RESET
+extern const fu_STR RESET fu_INIT_PRIORITY(1001) = ansi(0);
+                                #endif
 
-extern const fu_STR DIM = ansi(2);
+                                #ifndef DEF_DIM
+                                #define DEF_DIM
+extern const fu_STR DIM fu_INIT_PRIORITY(1001) = ansi(2);
+                                #endif
 
-extern const fu_STR BAD = ansi(31, 1);
+                                #ifndef DEF_BAD
+                                #define DEF_BAD
+extern const fu_STR BAD fu_INIT_PRIORITY(1001) = ansi(31, 1);
+                                #endif
 
-static const fu_STR cID = ansi(34, 1);
+static const fu_STR cID fu_INIT_PRIORITY(1001) = ansi(34, 1);
 
-static const fu_STR cKW = ansi(35, 1);
+static const fu_STR cKW fu_INIT_PRIORITY(1001) = ansi(35, 1);
 
 fu_STR qBAD(const fu_STR& id)
 {

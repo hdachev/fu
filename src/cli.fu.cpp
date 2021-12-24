@@ -1,5 +1,6 @@
 
 #include <fu/default.h>
+#include <fu/init_priority.h>
 #include <fu/io.h>
 #include <fu/never.h>
 #include <fu/print.h>
@@ -28,7 +29,10 @@ static const fu_STR& next(int& idx, fu::view<fu_STR> argv)
     return (*(const fu_STR*)fu::NIL);
 }
 
+                                #ifndef DEF_PRJDIR
+                                #define DEF_PRJDIR
 extern const fu_STR PRJDIR;
+                                #endif
 
 static void runTestsAndBuildCompiler()
 {
@@ -59,7 +63,10 @@ static void option(fu::view<char> sHort, fu::view<char> lOng, const int o, fu_ST
     };
 }
 
+                                #ifndef DEF_DEFAULT_WORKSPACE
+                                #define DEF_DEFAULT_WORKSPACE
 extern const fu_STR DEFAULT_WORKSPACE;
+                                #endif
 
 static int cli_handle(fu::view<fu_STR> argv, const fu_STR& cwd)
 {

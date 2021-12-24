@@ -580,14 +580,10 @@ struct s_SolverOutput
                                 #define DEF_s_CodegenOutput
 struct s_CodegenOutput
 {
-    fu_VEC<int> unity;
-    fu_VEC<int> unity_because;
     fu_STR src;
     explicit operator bool() const noexcept
     {
         return false
-            || unity
-            || unity_because
             || src
         ;
     }
@@ -602,6 +598,7 @@ struct s_ModuleOutputs
     fu_VEC<s_Struct> types;
     s_SolverOutput solve;
     s_CodegenOutput cpp;
+    int init_prio;
     s_ModuleOutputs(const s_ModuleOutputs&) = delete;
     s_ModuleOutputs(s_ModuleOutputs&&) = default;
     s_ModuleOutputs& operator=(const s_ModuleOutputs&) = delete;
@@ -613,6 +610,7 @@ struct s_ModuleOutputs
             || types
             || solve
             || cpp
+            || init_prio
         ;
     }
 };

@@ -13,10 +13,6 @@ struct s_TestDiffs
 {
     fu_VEC<fu_STR> keys;
     fu_VEC<fu_STR> vals;
-    s_TestDiffs(const s_TestDiffs&) = delete;
-    s_TestDiffs(s_TestDiffs&&) = default;
-    s_TestDiffs& operator=(const s_TestDiffs&) = delete;
-    s_TestDiffs& operator=(s_TestDiffs&&) = default;
     explicit operator bool() const noexcept
     {
         return false

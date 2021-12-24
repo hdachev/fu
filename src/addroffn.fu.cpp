@@ -69,10 +69,6 @@ struct s_Type
 {
     s_ValueType vtype;
     s_Lifetime lifetime;
-    s_Type(const s_Type&) = delete;
-    s_Type(s_Type&&) = default;
-    s_Type& operator=(const s_Type&) = delete;
-    s_Type& operator=(s_Type&&) = default;
     explicit operator bool() const noexcept
     {
         return false

@@ -1,5 +1,6 @@
 
 #include <fu/default.h>
+#include <fu/init_priority.h>
 #include <fu/int.h>
 #include <fu/never.h>
 #include <fu/str.h>
@@ -584,14 +585,10 @@ struct s_SolverOutput
                                 #define DEF_s_CodegenOutput
 struct s_CodegenOutput
 {
-    fu_VEC<int> unity;
-    fu_VEC<int> unity_because;
     fu_STR src;
     explicit operator bool() const noexcept
     {
         return false
-            || unity
-            || unity_because
             || src
         ;
     }
@@ -606,6 +603,7 @@ struct s_ModuleOutputs
     fu_VEC<s_Struct> types;
     s_SolverOutput solve;
     s_CodegenOutput cpp;
+    int init_prio;
     s_ModuleOutputs(const s_ModuleOutputs&) = delete;
     s_ModuleOutputs(s_ModuleOutputs&&) = default;
     s_ModuleOutputs& operator=(const s_ModuleOutputs&) = delete;
@@ -617,6 +615,7 @@ struct s_ModuleOutputs
             || types
             || solve
             || cpp
+            || init_prio
         ;
     }
 };
@@ -1011,33 +1010,75 @@ s_Target Scope_Typedef(s_Scope& scope, const fu_STR& id, const s_Type& type, con
     return /*NRVO*/ target;
 }
 
+                                #ifndef DEF_t_i8
+                                #define DEF_t_i8
 extern const s_Type t_i8;
+                                #endif
 
+                                #ifndef DEF_t_i16
+                                #define DEF_t_i16
 extern const s_Type t_i16;
+                                #endif
 
+                                #ifndef DEF_t_i32
+                                #define DEF_t_i32
 extern const s_Type t_i32;
+                                #endif
 
+                                #ifndef DEF_t_i64
+                                #define DEF_t_i64
 extern const s_Type t_i64;
+                                #endif
 
+                                #ifndef DEF_t_u8
+                                #define DEF_t_u8
 extern const s_Type t_u8;
+                                #endif
 
+                                #ifndef DEF_t_u16
+                                #define DEF_t_u16
 extern const s_Type t_u16;
+                                #endif
 
+                                #ifndef DEF_t_u32
+                                #define DEF_t_u32
 extern const s_Type t_u32;
+                                #endif
 
+                                #ifndef DEF_t_u64
+                                #define DEF_t_u64
 extern const s_Type t_u64;
+                                #endif
 
+                                #ifndef DEF_t_f32
+                                #define DEF_t_f32
 extern const s_Type t_f32;
+                                #endif
 
+                                #ifndef DEF_t_f64
+                                #define DEF_t_f64
 extern const s_Type t_f64;
+                                #endif
 
+                                #ifndef DEF_t_bool
+                                #define DEF_t_bool
 extern const s_Type t_bool;
+                                #endif
 
+                                #ifndef DEF_t_byte
+                                #define DEF_t_byte
 extern const s_Type t_byte;
+                                #endif
 
+                                #ifndef DEF_t_void
+                                #define DEF_t_void
 extern const s_Type t_void;
+                                #endif
 
+                                #ifndef DEF_t_never
+                                #define DEF_t_never
 extern const s_Type t_never;
+                                #endif
 
 s_Scope listGlobals(const s_Module& module)
 {

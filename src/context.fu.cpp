@@ -2,6 +2,7 @@
 #include <algorithm>
 #include <fu/decstr.h>
 #include <fu/default.h>
+#include <fu/init_priority.h>
 #include <fu/int.h>
 #include <fu/io.h>
 #include <fu/never.h>
@@ -590,14 +591,10 @@ struct s_SolverOutput
                                 #define DEF_s_CodegenOutput
 struct s_CodegenOutput
 {
-    fu_VEC<int> unity;
-    fu_VEC<int> unity_because;
     fu_STR src;
     explicit operator bool() const noexcept
     {
         return false
-            || unity
-            || unity_because
             || src
         ;
     }
@@ -612,6 +609,7 @@ struct s_ModuleOutputs
     fu_VEC<s_Struct> types;
     s_SolverOutput solve;
     s_CodegenOutput cpp;
+    int init_prio;
     s_ModuleOutputs(const s_ModuleOutputs&) = delete;
     s_ModuleOutputs(s_ModuleOutputs&&) = default;
     s_ModuleOutputs& operator=(const s_ModuleOutputs&) = delete;
@@ -623,6 +621,7 @@ struct s_ModuleOutputs
             || types
             || solve
             || cpp
+            || init_prio
         ;
     }
 };
@@ -1215,6 +1214,7 @@ inline s_ModuleOutputs clone_KKqe(const s_ModuleOutputs& a)
         res.types = clone_O2WC(a.types);
         res.solve = clone_GiFx(a.solve);
         res.cpp = clone_wg6f(a.cpp);
+        res.init_prio = clone_6Kad(a.init_prio);
     };
     return /*NRVO*/ res;
 }
@@ -1325,7 +1325,10 @@ inline fu_VEC<fu_STR> split_OZkl(const fu_STR& str, fu::view<char> sep)
 }
                                 #endif
 
+                                #ifndef DEF_DIM
+                                #define DEF_DIM
 extern const fu_STR DIM;
+                                #endif
 
                                 #ifndef DEFt_x7E_OZkl
                                 #define DEFt_x7E_OZkl
@@ -1335,9 +1338,15 @@ inline fu_STR x7E_OZkl(fu::view<char> a, fu::view<char> b)
 }
                                 #endif
 
+                                #ifndef DEF_RESET
+                                #define DEF_RESET
 extern const fu_STR RESET;
+                                #endif
 
+                                #ifndef DEF_BAD
+                                #define DEF_BAD
 extern const fu_STR BAD;
+                                #endif
 
 fu_STR formatCodeSnippet(const s_TokenIdx& to, s_TokenIdx&& from, const int extraLines, const s_Context& ctx)
 {

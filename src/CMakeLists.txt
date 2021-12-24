@@ -5,45 +5,45 @@ set(FU_TARGET cli)
 set(FU_MAIN cli.fu)
 
 set(FU_INPUTS
-    cli.fu
-    types.fu
     helpers.fu
-    module.fu
-    parser.fu
-    lexer.fu
-    map.fu
     set.fu
     options.fu
-    stat.fu
     ../lib/now.fu
     ../lib/alloc.fu
-    bitset.fu
     ../lib/bit.fu
-    fail.fu
-    context.fu
-    structs.fu
-    quals.fu
     ../lib/file.fu
     ../lib/ansi.fu
-    compiler.fu
-    solver.fu
-    scope.fu
-    effects.fu
-    hacks.fu
-    intlit.fu
-    addroffn.fu
-    cpp.fu
     ../lib/tea.fu
     ../lib/debug.fu
-    codegen.fu
     ../lib/env.fu
-    prelude.fu
-    build.fu
     ../lib/fs.fu
     ../lib/shell.fu
     ../lib/process.fu
     testdiff.fu
-    tests.fu)
+    lexer.fu
+    map.fu
+    stat.fu
+    bitset.fu
+    intlit.fu
+    cpp.fu
+    parser.fu
+    module.fu
+    structs.fu
+    quals.fu
+    hacks.fu
+    build.fu
+    context.fu
+    fail.fu
+    types.fu
+    scope.fu
+    effects.fu
+    addroffn.fu
+    solver.fu
+    codegen.fu
+    prelude.fu
+    compiler.fu
+    tests.fu
+    cli.fu)
 
 set(FU_OUTPUTS
     ${CMAKE_CURRENT_SOURCE_DIR}/cli.fu.unity.cpp)

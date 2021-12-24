@@ -2,6 +2,7 @@
 #include <fu/decstr.h>
 #include <fu/default.h>
 #include <fu/env.h>
+#include <fu/init_priority.h>
 #include <fu/int.h>
 #include <fu/io.h>
 #include <fu/never.h>
@@ -54,20 +55,20 @@ struct s_TokenIdx;
 struct s_Type;
 struct s_ValueType;
 
+fu_STR ascii_lower(const fu_STR&);
 fu_STR getFile(fu_STR&&, s_Context&);
+fu_STR qBAD(const fu_STR&);
 fu_STR resolveFile(const fu_STR&, s_Context&);
 s_CodegenOutput cpp_codegen(const s_SolvedNode&, const s_Module&, const s_Context&);
-s_Context FAIL(const fu_STR&, s_TestDiffs&);
-s_Context FAIL(const fu_VEC<fu_STR>&, s_TestDiffs&);
 s_Context ZERO(const fu_STR&, s_TestDiffs&);
 s_LexerOutput lex(const fu_STR&, const fu_STR&);
 s_Module& getModule(const fu_STR&, s_Context&);
 s_ModuleStat ModuleStat_now();
 s_ModuleStat operator-(const s_ModuleStat&, const s_ModuleStat&);
 s_ParserOutput parse(int, const fu_STR&, fu::view<s_Token>, const s_Options&);
-s_SolverOutput solve(const s_Options&, const s_Context&, s_Module&);
+s_SolverOutput solve(const s_Context&, s_Module&, const s_Options&);
 static fu_STR indent(const fu_STR&);
-static void compile(const fu_STR&, const fu_STR&, const s_Options&, s_Context&);
+static int compile(const fu_STR&, const fu_STR&, s_Context&, const s_Options&);
 void ModuleStat_print(const s_ModuleStat&, const fu_STR&, fu::view<char>);
 void TODO(const fu_STR&, s_TestDiffs&);
 void TODO(const fu_VEC<fu_STR>&, s_TestDiffs&);
@@ -612,14 +613,10 @@ struct s_SolverOutput
                                 #define DEF_s_CodegenOutput
 struct s_CodegenOutput
 {
-    fu_VEC<int> unity;
-    fu_VEC<int> unity_because;
     fu_STR src;
     explicit operator bool() const noexcept
     {
         return false
-            || unity
-            || unity_because
             || src
         ;
     }
@@ -634,6 +631,7 @@ struct s_ModuleOutputs
     fu_VEC<s_Struct> types;
     s_SolverOutput solve;
     s_CodegenOutput cpp;
+    int init_prio;
     s_ModuleOutputs(const s_ModuleOutputs&) = delete;
     s_ModuleOutputs(s_ModuleOutputs&&) = default;
     s_ModuleOutputs& operator=(const s_ModuleOutputs&) = delete;
@@ -645,6 +643,7 @@ struct s_ModuleOutputs
             || types
             || solve
             || cpp
+            || init_prio
         ;
     }
 };
@@ -815,7 +814,7 @@ static fu_STR absdir(const fu_STR& a)
     return ((if_last_AwjY(a) == '/') ? fu_STR(a) : (a + '/'));
 }
 
-static const fu_STR HOME = absdir(fu::env_get("HOME"_fu));
+static const fu_STR HOME fu_INIT_PRIORITY(1013) = absdir(fu::env_get("HOME"_fu));
 
                                 #ifndef DEFt_x7E_OZkl
                                 #define DEFt_x7E_OZkl
@@ -842,13 +841,25 @@ fu_STR locate_PRJDIR()
     return /*NRVO*/ dir;
 }
 
-extern const fu_STR PRJDIR = locate_PRJDIR();
+                                #ifndef DEF_PRJDIR
+                                #define DEF_PRJDIR
+extern const fu_STR PRJDIR fu_INIT_PRIORITY(1013) = locate_PRJDIR();
+                                #endif
 
-extern const fu_STR DEFAULT_WORKSPACE = (PRJDIR + "build-cpp/"_fu);
+                                #ifndef DEF_DEFAULT_WORKSPACE
+                                #define DEF_DEFAULT_WORKSPACE
+extern const fu_STR DEFAULT_WORKSPACE fu_INIT_PRIORITY(1013) = (PRJDIR + "build-cpp/"_fu);
+                                #endif
 
-extern const fu_STR FULIB = (PRJDIR + "include/fu/_fulib.cpp"_fu);
+                                #ifndef DEF_FULIB
+                                #define DEF_FULIB
+extern const fu_STR FULIB fu_INIT_PRIORITY(1013) = (PRJDIR + "include/fu/_fulib.cpp"_fu);
+                                #endif
 
+                                #ifndef DEF_CTX_PRELUDE
+                                #define DEF_CTX_PRELUDE
 extern const s_Context CTX_PRELUDE;
+                                #endif
 
                                 #ifndef DEFt_clone_6Kad
                                 #define DEFt_clone_6Kad
@@ -983,6 +994,7 @@ inline s_ModuleOutputs clone_KKqe(const s_ModuleOutputs& a)
         res.types = clone_O2WC(a.types);
         res.solve = clone_GiFx(a.solve);
         res.cpp = clone_wg6f(a.cpp);
+        res.init_prio = clone_6Kad(a.init_prio);
     };
     return /*NRVO*/ res;
 }
@@ -1102,6 +1114,7 @@ inline s_ModuleOutputs clone_Bl4u(const s_ModuleOutputs& a)
         res.types = clone_O2WC(a.types);
         res.solve = clone_c2RA(a.solve);
         res.cpp = clone_wg6f(a.cpp);
+        res.init_prio = clone_6Kad(a.init_prio);
     };
     return /*NRVO*/ res;
 }
@@ -1124,7 +1137,7 @@ inline s_Module clone_uibg(const s_Module& a)
 }
                                 #endif
 
-static void compile(const fu_STR& fname, const fu_STR& via, const s_Options& options, s_Context& ctx)
+static int compile(const fu_STR& fname, const fu_STR& via, s_Context& ctx, const s_Options& options)
 {
     s_Module module = clone_uibg(getModule(fname, ctx));
     if (!module.in)
@@ -1150,12 +1163,17 @@ static void compile(const fu_STR& fname, const fu_STR& via, const s_Options& opt
     };
     if (!module.out)
     {
-        fu::view<fu_STR> fuzimports = module.in.parse.fuzimports;
+        module.out.init_prio = 1;
+        fu_VEC<fu_STR> fuzimports { module.in.parse.fuzimports };
         for (int i = 0; i < fuzimports.size(); i++)
-            compile(resolveFile(fuzimports[i], ctx), (fname + (via ? ("\n\t<- "_fu + via) : fu_STR{})), options, ctx);
+        {
+            const int prio = compile(resolveFile(fuzimports[i], ctx), (fname + (via ? ("\n\t<- "_fu + via) : fu_STR{})), ctx, options);
+            if (module.out.init_prio < prio)
+                module.out.init_prio = prio;
 
+        };
         const s_ModuleStat stat0 = ModuleStat_now();
-        module.out.solve = solve(options, ctx, module);
+        module.out.solve = solve(ctx, module, options);
         const s_ModuleStat stat1 = ModuleStat_now();
         module.out.cpp = cpp_codegen(module.out.solve.root, module, ctx);
         const s_ModuleStat stat2 = ModuleStat_now();
@@ -1163,12 +1181,13 @@ static void compile(const fu_STR& fname, const fu_STR& via, const s_Options& opt
         module.stats.codegen = (stat2 - stat1);
         setModule(module, ctx);
     };
+    return module.out.init_prio + 1;
 }
 
 void build(const fu_STR& fname, const bool run, const fu_STR& dir_wrk, const fu_STR& bin, const fu_STR& dir_obj, const fu_STR& dir_src, const fu_STR& dir_cpp, fu::view<char> scheme)
 {
     s_Context ctx = clone_5Wg9(CTX_PRELUDE);
-    const s_Options options = s_Options{};
+    const s_Options options {};
 
     {
         fu_STR _0 {};
@@ -1178,7 +1197,7 @@ void build(const fu_STR& fname, const bool run, const fu_STR& dir_wrk, const fu_
             _0 = (x);
         (void)0;}), static_cast<fu_STR&&>(_0)), fu_STR(fname) }));
         const double t0 = fu::now_hr();
-        compile(fname, (*(const fu_STR*)fu::NIL), options, ctx);
+        compile(fname, (*(const fu_STR*)fu::NIL), ctx, options);
         const double t1 = fu::now_hr();
         const double tt = (t1 - t0);
         if ((t1 - t0) > 0.025)
@@ -1220,16 +1239,16 @@ void build(const fu_STR& fname, const bool run, const fu_STR& dir_wrk, const fu_
     build(run, fu_STR(dir_wrk), FULIB, fu_STR(bin), fu_STR(dir_obj), fu_STR(dir_src), fu_STR(dir_cpp), fname, scheme, (*(const fu_STR*)fu::NIL), ctx);
 }
 
-static const fu_VEC<fu_STR> NOTES = fu_VEC<fu_STR> { fu::slate<15, fu_STR> { "FN_recursion"_fu, "FN_resolve"_fu, "FN_reopen"_fu, "TYPE_recursion"_fu, "TYPE_resolve"_fu, "TYPE_reopen"_fu, "DEAD_code"_fu, "DEAD_call"_fu, "DEAD_let"_fu, "DEAD_if_cond"_fu, "DEAD_if_cons"_fu, "DEAD_arrlit"_fu, "DEAD_loop_init"_fu, "NONTRIV_autocopy"_fu, "RELAX_respec"_fu } };
+static const fu_VEC<fu_STR> NOTES fu_INIT_PRIORITY(1013) = fu_VEC<fu_STR> { fu::slate<15, fu_STR> { "FN_recursion"_fu, "FN_resolve"_fu, "FN_reopen"_fu, "TYPE_recursion"_fu, "TYPE_resolve"_fu, "TYPE_reopen"_fu, "DEAD_code"_fu, "DEAD_call"_fu, "DEAD_let"_fu, "DEAD_if_cond"_fu, "DEAD_if_cons"_fu, "DEAD_arrlit"_fu, "DEAD_loop_init"_fu, "NONTRIV_autocopy"_fu, "RELAX_respec"_fu } };
 
 static fu_STR ensure_main(const fu_STR& src)
 {
     return (fu::has(src, "fn main"_fu) ? fu_STR(src) : (("\n\nfn main(): i32 {\n"_fu + src) + "\n}\n"_fu));
 }
 
-                                #ifndef DEFt_update_3Tdu
-                                #define DEFt_update_3Tdu
-inline void update_3Tdu(int, const fu_STR& item, int, const fu_STR& extra, s_Map_OZkl& _)
+                                #ifndef DEFt_update_0mnp
+                                #define DEFt_update_0mnp
+inline void update_0mnp(int, const fu_STR& item, int, const fu_STR& extra, s_Map_OZkl& _)
 {
     for (int i = 0; i < _.keys.size(); i++)
     {
@@ -1254,7 +1273,7 @@ inline void update_3Tdu(int, const fu_STR& item, int, const fu_STR& extra, s_Map
                                 #define DEFt_set_ZTZj
 inline void set_ZTZj(s_Map_OZkl& _, const fu_STR& key, const fu_STR& value)
 {
-    update_3Tdu(0, key, 0, value, _);
+    update_0mnp(0, key, 0, value, _);
 }
                                 #endif
 
@@ -1267,7 +1286,7 @@ s_Context compile_snippets(fu::view<fu_STR> sources, fu::view<fu_STR> fnames, fu
         fu_STR src = ((i == (sources.size() - 1)) ? ensure_main(snippet) : fu_STR(snippet));
         fu_STR fname = ((fnames.size() > i) ? fu_STR(fnames[i]) : (x7E_OZkl((PRJDIR + "__tests__/_"_fu), fu::i64dec(i)) + ".fu"_fu));
         set_ZTZj(ctx.files, fname, src);
-        compile(fname, (*(const fu_STR*)fu::NIL), ((options.size() > i) ? options[i] : (*(const s_Options*)fu::NIL)), ctx);
+        compile(fname, (*(const fu_STR*)fu::NIL), ctx, ((options.size() > i) ? options[i] : (*(const s_Options*)fu::NIL)));
     };
     for (int i_1 = 0; i_1 < ctx.modules.size(); i_1++)
     {
@@ -1317,9 +1336,9 @@ static int unindent_left(fu::view<char> src, const int i0)
     return int(i0);
 }
 
-                                #ifndef DEFt_split_TNPE
-                                #define DEFt_split_TNPE
-inline void split_TNPE(const fu_STR& str, fu::view<char> sep, int, fu_VEC<fu_STR>& result)
+                                #ifndef DEFt_split_lngK
+                                #define DEFt_split_lngK
+inline void split_lngK(const fu_STR& str, fu::view<char> sep, int, fu_VEC<fu_STR>& result)
 {
     int last = 0;
     int next = 0;
@@ -1352,8 +1371,166 @@ inline void split_TNPE(const fu_STR& str, fu::view<char> sep, int, fu_VEC<fu_STR
 inline fu_VEC<fu_STR> split_OZkl(const fu_STR& str, fu::view<char> sep)
 {
     /*MOV*/ fu_VEC<fu_STR> result {};
-    split_TNPE(str, sep, 0, result);
+    split_lngK(str, sep, 0, result);
     return /*NRVO*/ result;
+}
+                                #endif
+
+                                #ifndef DEFt_split_2TzE
+                                #define DEFt_split_2TzE
+inline void split_2TzE(const fu_STR& str, fu::view<char> sep, int, fu_VEC<fu_STR>& result)
+{
+    int last = 0;
+    int next = 0;
+    const int N = sep.size();
+    if (N)
+    {
+        while (((next = fu::lfind(str, sep, last)) >= 0))
+        {
+
+            {
+                fu_STR substr = fu::slice(str, last, next);
+                result += substr;
+            };
+            last = (next + N);
+        };
+    };
+    if (last)
+    {
+        fu_STR substr = fu::slice(str, last);
+        result += substr;
+    }
+    else
+        result += str;
+
+}
+                                #endif
+
+                                #ifndef DEFt_split_FrnS
+                                #define DEFt_split_FrnS
+inline fu_VEC<fu_STR> split_FrnS(const fu_STR& str, fu::view<char> sep)
+{
+    /*MOV*/ fu_VEC<fu_STR> result {};
+    split_2TzE(str, sep, 0, result);
+    return /*NRVO*/ result;
+}
+                                #endif
+
+                                #ifndef DEFt_only_kORB
+                                #define DEFt_only_kORB
+inline const fu_STR& only_kORB(fu::view<fu_STR> s)
+{
+    return ((s.size() == 1) ? s[0] : fu::fail(x7E_OZkl("len != 1: "_fu, fu::i64dec(s.size()))));
+}
+                                #endif
+
+static fu_STR ERR_TRIM(const fu_STR& e)
+{
+    int start = 0;
+    bool startOK = false;
+    for (int i = 0; i < e.size(); i++)
+    {
+        const char c = e[i];
+        if (c == '/')
+            start = (i + 1);
+        else if (c == ':')
+            startOK = true;
+        else if (c == '\n')
+            break;
+
+    };
+    if (!(startOK))
+        fu::fail(("FAIL: Error does not start with an `dir/file.fu@line:col` marker:\n"_fu + e));
+
+    return fu::slice(e, start);
+}
+
+static fu_STR ERR_STRIP_ANSI(/*MOV*/ fu_STR&& e)
+{
+    for (int i = 0; i < e.size(); i++)
+    {
+        const char c = e[i];
+        if (c == '\x1B')
+        {
+            const int i0 = i++;
+            for (; i < e.size(); i++)
+            {
+                const char c_1 = e[i];
+                if (c_1 == 'm')
+                {
+                    i++;
+                    e.splice(i0, (i - i0));
+                    i = i0;
+                    i--;
+                    break;
+                };
+            };
+        };
+    };
+    return static_cast<fu_STR&&>(e);
+}
+
+static fu_STR ERR_STRIP_SNIPPETS(/*MOV*/ fu_STR&& e)
+{
+    int i0 = 0;
+    for (int i = 0; i < e.size(); i++)
+    {
+        const char c = e[i];
+        if ((c == ' ') || (c == '\n'))
+            continue;
+
+        const bool snippet = (((c >= '0') && (c <= '9')) || (c == '|'));
+        i++;
+        for (; i < e.size(); i++)
+        {
+            const char c_1 = e[i];
+            if (c_1 == '\n')
+            {
+                i++;
+                if (snippet)
+                {
+                    e.splice(i0, (i - i0));
+                    i = i0;
+                }
+                else
+                    i0 = i;
+
+                i--;
+                break;
+            };
+        };
+    };
+    return static_cast<fu_STR&&>(e);
+}
+
+static fu_STR ERR_KEY(fu::view<fu_STR> sources)
+{
+    /*MOV*/ fu_STR key {};
+    for (int i = 0; i < sources.size(); i++)
+    {
+        fu::view<char> src = sources[i];
+        const int end = unindent_left(src, src.size());
+        key += fu::get_view(src, 0, end);
+    };
+    return /*NRVO*/ key;
+}
+
+                                #ifndef DEFt_map_9vGK
+                                #define DEFt_map_9vGK
+inline fu_VEC<s_Options> map_9vGK(fu::view<fu_STR> a, int, const s_Options& options)
+{
+    /*MOV*/ fu_VEC<s_Options> res {};
+    res.grow<false>(a.size());
+    for (int i = 0; i < a.size(); i++)
+    {
+        const s_Options* _0;
+        res.mutref(i) = (__extension__ (
+        {
+            [[maybe_unused]] fu::view<char> _ = a[i];
+            _0 = &(options);
+        (void)0;}), *_0);
+    };
+    return /*NRVO*/ res;
 }
                                 #endif
 
@@ -1411,42 +1588,93 @@ inline int find_05eu(fu::view<char> a, const char b)
 }
                                 #endif
 
-s_Context ZERO(fu_VEC<fu_STR>&& sources, s_TestDiffs& testdiffs)
+s_Context ZERO(fu_VEC<fu_STR>&& sources, const s_Options& options, s_TestDiffs& testdiffs)
 {
-    bool TODO_split = false;
     for (int i = 0; i < sources.size(); i++)
     {
         for (; ; )
         {
             const fu_STR& src = sources[i];
-            int start0 = fu::lfind(src, "<split/>"_fu);
-            int start1 = (start0 + 8);
+            int start0 = fu::lfind(src, "<fail"_fu);
             if (start0 < 0)
+                break;
+
+            int end0 = fu::lfind(src, "</fail>"_fu, start0);
+            if (!((end0 >= 0)))
+                fu::fail("No closing `</fail>` for `<fail>`."_fu);
+
+            int start1 = (start0 + 5);
+            while (src[start1++] != '>')
             {
-                start0 = fu::lfind(src, "<TODO::split/>"_fu);
-                start1 = (start0 + 14);
-                if (start0 < 0)
-                    break;
-
-                TODO_split = true;
             };
-            const int start00 = start0;
-            while (start0 && (src[(start0 - 1)] == ' '))
-                start0--;
+            fu_STR msg = fu::slice(src, (start0 + 5), (start1 - 1));
+            if (!(msg))
+                fu::fail("No <fail keywords>."_fu);
 
-            fu_STR moduleA = fu::slice(src, 0, start0);
-            fu_STR moduleB = ((x7E_OZkl((fu::get_view(src, start0, start00) + "import _"_fu), fu::i64dec(i)) + ";"_fu) + fu::get_view(src, start1, src.size()));
-            fu_STR without = (fu::get_view(src, 0, start0) + fu::get_view(src, start1, src.size()));
-            sources.mutref(i) = without;
-            ZERO(fu_VEC<fu_STR>(sources), testdiffs);
-            sources.mutref(i) = moduleA;
-            sources.insert((i + 1), moduleB);
+            if (!(msg[0] == ' '))
+                fu::fail((("Bad <fail keywords>: `<fail"_fu + msg) + ">`."_fu));
+
+            const int end1 = (end0 + 7);
+            start0 = unindent_left(src, start0);
+            end0 = unindent_left(src, end0);
+            fu_STR prefix = fu::slice(src, 0, start0);
+            fu_STR suffix = fu::slice(src, end1, src.size());
+            fu_VEC<fu_STR> split = split_OZkl(fu::slice(src, start1, end0), "<pass/>"_fu);
+            if (!(split.size() > 1))
+                fu::fail("No `<pass/>` for `<fail>`."_fu);
+
+            if (!(split.size() < 3))
+                fu::fail("Multiple `<pass/>` blocks for `<fail>`."_fu);
+
+            fu_VEC<fu_STR> fails = split_FrnS(split[0], "<fail/>"_fu);
+            split.shift();
+            fu_STR pass { only_kORB(split) };
+            for (int j = fails.size(); j-- > 0; )
+            {
+                fu::view<char> fail = fails[j];
+                const int end = unindent_left(fail, fail.size());
+                sources.mutref(i) = ((prefix + fu::get_view(fail, 0, end)) + suffix);
+
+                try
+                {
+                    ZERO(fu_VEC<fu_STR>(sources), s_Options{}, testdiffs);
+                }
+                catch (const std::exception& o_0)
+                {
+                    fu_STR _e = fu_TO_STR(o_0.what());
+
+                {
+                    fu_STR e = ERR_TRIM(_e);
+                    fu_STR actual = ascii_lower(ERR_STRIP_SNIPPETS(ERR_STRIP_ANSI(fu_STR(e))));
+                    int m0 = -1;
+                    for (int m1 = 0; (m1 <= msg.size()); m1++)
+                    {
+                        const char c = ((m1 < msg.size()) ? char(msg[m1]) : ' ');
+                        if ((int(fu::u8(c)) <= 32))
+                        {
+                            if ((m0 >= 0))
+                            {
+                                fu_STR expect = ascii_lower(fu::slice(msg, m0, m1));
+                                if (!fu::has(actual, expect))
+                                    fu::fail((((((("<fail> mismatch:\n\n    Expected error keyword:\n        "_fu + qBAD(expect)) + " from pattern <fail"_fu) + qBAD(msg)) + ">"_fu) + "\n\n    ... not present in error message:\n\n"_fu) + e));
+
+                            };
+                            m0 = -1;
+                        }
+                        else if (m0 < 0)
+                            m0 = m1;
+
+                    };
+                    set_next(testdiffs, ERR_KEY(sources), e);
+                    continue;
+                }
+                }
+;
+                fu::fail(("<fail> does not throw:\n"_fu + sources[i]));
+            };
+            const int end = unindent_left(pass, pass.size());
+            sources.mutref(i) = ((prefix + fu::get_view(pass, 0, end)) + suffix);
         };
-    };
-    if (TODO_split)
-    {
-        TODO(sources, testdiffs);
-        return s_Context{};
     };
     for (int i_1 = 0; i_1 < sources.size(); i_1++)
     {
@@ -1477,16 +1705,39 @@ s_Context ZERO(fu_VEC<fu_STR>&& sources, s_TestDiffs& testdiffs)
                 const int end = unindent_left(part, part.size());
                 sources.mutref(i_1) = ((prefix + fu::get_view(part, 0, end)) + suffix);
                 if (j)
-                    ZERO(fu_VEC<fu_STR>(sources), testdiffs);
+                    ZERO(fu_VEC<fu_STR>(sources), s_Options{}, testdiffs);
 
             };
         };
     };
-    fu_VEC<fu_VEC<fu_STR>> expectations {};
-    fu_VEC<s_Options> options {};
     for (int i_2 = 0; i_2 < sources.size(); i_2++)
     {
-        fu_STR& src = sources.mutref(i_2);
+        for (; ; )
+        {
+            const fu_STR& src = sources[i_2];
+            int start0 = fu::lfind(src, "<split/>"_fu);
+            const int start1 = (start0 + 8);
+            if (start0 < 0)
+                break;
+
+            const int start00 = start0;
+            while (start0 && (src[(start0 - 1)] == ' '))
+                start0--;
+
+            fu_STR moduleA = fu::slice(src, 0, start0);
+            fu_STR moduleB = ((x7E_OZkl((fu::get_view(src, start0, start00) + "import _"_fu), fu::i64dec(i_2)) + ";"_fu) + fu::get_view(src, start1, src.size()));
+            fu_STR without = (fu::get_view(src, 0, start0) + fu::get_view(src, start1, src.size()));
+            sources.mutref(i_2) = without;
+            ZERO(fu_VEC<fu_STR>(sources), s_Options{}, testdiffs);
+            sources.mutref(i_2) = moduleA;
+            sources.insert((i_2 + 1), moduleB);
+        };
+    };
+    fu_VEC<fu_VEC<fu_STR>> expectations {};
+    fu_VEC<s_Options> options_1 = map_9vGK(sources, 0, options);
+    for (int i_3 = 0; i_3 < sources.size(); i_3++)
+    {
+        fu_STR& src = sources.mutref(i_3);
 
         {
             int end = src.size();
@@ -1513,24 +1764,24 @@ s_Context ZERO(fu_VEC<fu_STR>&& sources, s_TestDiffs& testdiffs)
                 break_notes |= (1 << idx);
             }
             else
-                grow_if_oob_EmEP(expectations, i_2) += annot;
+                grow_if_oob_EmEP(expectations, i_3) += annot;
 
             src.mutref((start + 1)) = '/';
             src.mutref((start + 2)) = '/';
             start = end;
         };
-        options += s_Options { s_Lint{}, int(break_notes), 0u };
+        options_1.mutref(i_3).break_notes = break_notes;
     };
-    /*MOV*/ s_Context ctx = compile_snippets(sources, fu::view<fu_STR>{}, options);
+    /*MOV*/ s_Context ctx = compile_snippets(sources, fu::view<fu_STR>{}, options_1);
     fu_STR testdiff_prepend {};
-    for (int i_3 = 0; i_3 < expectations.size(); i_3++)
+    for (int i_4 = 0; i_4 < expectations.size(); i_4++)
     {
-        fu::view<fu_STR> arr = expectations[i_3];
-        fu::view<char> src = sources[i_3];
-        const s_CodegenOutput& cpp = ctx.modules[(i_3 + 1)].out.cpp;
-        for (int i_4 = 0; i_4 < arr.size(); i_4++)
+        fu::view<fu_STR> arr = expectations[i_4];
+        fu::view<char> src = sources[i_4];
+        const s_CodegenOutput& cpp = ctx.modules[(i_4 + 1)].out.cpp;
+        for (int i_5 = 0; i_5 < arr.size(); i_5++)
         {
-            const fu_STR& x = arr[i_4];
+            const fu_STR& x = arr[i_5];
             const int idx = find_05eu(x, ' ');
             fu_STR cmd = fu::slice(x, 0, idx);
             fu_STR rest = fu::slice(x, (idx + 1));
@@ -1559,112 +1810,14 @@ s_Context ZERO(fu_VEC<fu_STR>&& sources, s_TestDiffs& testdiffs)
             testdiff_prepend += "\n"_fu;
 
         fu_STR key {};
-        for (int i_4 = 0; i_4 < sources.size(); i_4++)
+        for (int i_5 = 0; i_5 < sources.size(); i_5++)
         {
-            key += sources[i_4];
-            fu::view<char> actual = ctx.modules[((i_4 + ctx.modules.size()) - sources.size())].out.cpp.src;
+            key += sources[i_5];
+            fu::view<char> actual = ctx.modules[((i_5 + ctx.modules.size()) - sources.size())].out.cpp.src;
             set_next(testdiffs, key, (testdiff_prepend + actual));
         };
     };
     return /*NRVO*/ ctx;
-}
-
-static fu_STR ERR_KEY(fu::view<fu_STR> sources)
-{
-    /*MOV*/ fu_STR key {};
-    for (int i = 0; i < sources.size(); i++)
-    {
-        fu::view<char> src = sources[i];
-        const int end = unindent_left(src, src.size());
-        key += fu::get_view(src, 0, end);
-    };
-    return /*NRVO*/ key;
-}
-
-static fu_STR ERR_TRIM(const fu_STR& e)
-{
-    int start = 0;
-    bool startOK = false;
-    for (int i = 0; i < e.size(); i++)
-    {
-        const char c = e[i];
-        if (c == '/')
-            start = (i + 1);
-        else if (c == ':')
-            startOK = true;
-        else if (c == '\n')
-            break;
-
-    };
-    if (!(startOK))
-        fu::fail(("FAIL: Error does not start with an `dir/file.fu@line:col` marker:\n"_fu + e));
-
-    return fu::slice(e, start);
-}
-
-                                #ifndef DEFt_replace_ZeXZ
-                                #define DEFt_replace_ZeXZ
-inline fu_STR replace_ZeXZ(const fu_STR& str, fu::view<char> all, fu::view<char> with)
-{
-    /*MOV*/ fu_STR result {};
-
-    {
-        int last = 0;
-        int next = 0;
-        const int N = all.size();
-        if (N)
-        {
-            while (((next = fu::lfind(str, all, last)) >= 0))
-            {
-
-                {
-                    fu_STR substr = fu::slice(str, last, next);
-                    const bool first = !last;
-                    const bool last_1 = false;
-                    if (!first)
-                        result += with;
-                    else if (last_1)
-                        return fu_STR(str);
-
-                    result += substr;
-                };
-                last = (next + N);
-            };
-        };
-        if (last)
-        {
-            fu_STR substr = fu::slice(str, last);
-            const bool first = false;
-            const bool last_1 = true;
-            if (!first)
-                result += with;
-            else if (last_1)
-                return fu_STR(str);
-
-            result += substr;
-        }
-        else
-        {
-            const bool first = true;
-            const bool last_1 = true;
-            if (!first)
-                result += with;
-            else if (last_1)
-                return fu_STR(str);
-
-            result += str;
-        };
-    };
-    return /*NRVO*/ result;
-}
-                                #endif
-
-static fu_VEC<fu_STR> FAIL_replace(/*MOV*/ fu_VEC<fu_STR>&& sources)
-{
-    for (int i = 0; i < sources.size(); i++)
-        sources.mutref(i) = replace_ZeXZ(sources[i], "//*F"_fu, "/*"_fu);
-
-    return static_cast<fu_VEC<fu_STR>&&>(sources);
 }
 
                                 #ifndef DEFt_replace_Q0b6
@@ -1729,36 +1882,9 @@ static fu_STR indent(const fu_STR& src)
     return replace_Q0b6(src, "\n"_fu, "\n\t"_fu);
 }
 
-s_Context FAIL(const fu_VEC<fu_STR>& sources, s_TestDiffs& testdiffs)
-{
-    s_Context ctx = {};
-    try
-    {
-        ctx = compile_snippets(sources, fu::view<fu_STR>{}, fu::view<s_Options>{});
-    }
-    catch (const std::exception& o_0)
-    {
-        fu_STR e = fu_TO_STR(o_0.what());
-
-    {
-        set_next(testdiffs, ERR_KEY(sources), ERR_TRIM(e));
-        return ZERO(FAIL_replace(fu_VEC<fu_STR>(sources)), testdiffs);
-    }
-    }
-;
-    fu_STR bad = "\nDID NOT THROW:\n"_fu;
-    for (int i = 1; i < ctx.modules.size(); i++)
-    {
-        const s_Module& module = ctx.modules[i];
-        bad += (((x7E_OZkl("\n#"_fu, fu::i64dec(i)) + ": "_fu) + module.fname) + "\n"_fu);
-        bad += (((x7E_OZkl((((x7E_OZkl("\nfu  ["_fu, fu::i64dec(i)) + "]:\n\t"_fu) + indent(module.in.src)) + "\ncpp ["_fu), fu::i64dec(i)) + "]:\n\t"_fu) + indent(module.out.cpp.src)) + "\n"_fu);
-    };
-    fu::fail(bad);
-}
-
 void ZERO_SAME(fu::view<fu_VEC<fu_STR>> alts, s_TestDiffs& testdiffs)
 {
-    fu_VEC<s_Module> expect = ZERO(fu_VEC<fu_STR>(alts[0]), testdiffs).modules;
+    fu_VEC<s_Module> expect = ZERO(fu_VEC<fu_STR>(alts[0]), s_Options{}, testdiffs).modules;
     for (int i = 1; i < alts.size(); i++)
     {
         fu_VEC<s_Module> actual = compile_snippets(alts[i], fu::view<fu_STR>{}, fu::view<s_Options>{}).modules;
@@ -1809,7 +1935,7 @@ void TODO(const fu_VEC<fu_STR>& sources, s_TestDiffs& testdiffs)
 
     try
     {
-        ZERO(fu_VEC<fu_STR>(sources), testdiffs);
+        ZERO(fu_VEC<fu_STR>(sources), s_Options{}, testdiffs);
     }
     catch (const std::exception& o_0)
     {
@@ -1826,12 +1952,7 @@ void TODO(const fu_VEC<fu_STR>& sources, s_TestDiffs& testdiffs)
 
 s_Context ZERO(const fu_STR& src, s_TestDiffs& testdiffs)
 {
-    return ZERO(fu_VEC<fu_STR> { fu::slate<1, fu_STR> { fu_STR(src) } }, testdiffs);
-}
-
-s_Context FAIL(const fu_STR& src, s_TestDiffs& testdiffs)
-{
-    return FAIL(fu_VEC<fu_STR> { fu::slate<1, fu_STR> { fu_STR(src) } }, testdiffs);
+    return ZERO(fu_VEC<fu_STR> { fu::slate<1, fu_STR> { fu_STR(src) } }, s_Options{}, testdiffs);
 }
 
 void TODO(const fu_STR& src, s_TestDiffs& testdiffs)
