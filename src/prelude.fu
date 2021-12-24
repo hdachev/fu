@@ -450,19 +450,19 @@ pub fn solvePrelude(): Context
     let implicit mut ctx: Context;
     let implicit mut module = getModule("").helpers::clone();
 
-    let options: options::Options;
+    let implicit options: options::Options;
 
     let src     = prelude_src;
     let fname   = "__prelude";
     let lexed   = lexer::lex(:src, :fname);
-    let parsed  = parser::parse(0, :fname, :lexed.tokens, :options );
+    let parsed  = parser::parse(0, :fname, :lexed.tokens);
 
     module.in = ModuleInputs(
         :src, lex: lexed,
         parse: parsed);
 
     setModule(module);
-    module.out.solve = solver::solve(:options);
+    module.out.solve = solver::solve();
     setModule(module);
 
     return ctx;

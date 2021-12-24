@@ -7,7 +7,7 @@ import module;
 
 //
 
-fn compile(fname: string, via: string = "", options?: Options)
+fn compile(fname: string, via: string = "")
 {
     let implicit mut module = getModule(fname).clone();
 
@@ -24,7 +24,7 @@ fn compile(fname: string, via: string = "", options?: Options)
         let lexer_result = lexer::lex(:fname, :src);
 
         let stat1 = ModuleStat_now();
-        let parser_result = parser::parse( :module.modid, :fname, :lexer_result.tokens, :options );
+        let parser_result = parser::parse(:module.modid, :fname, :lexer_result.tokens);
 
         let stat2 = ModuleStat_now();
 
@@ -57,7 +57,7 @@ fn compile(fname: string, via: string = "", options?: Options)
         for (mut i = 0; i < fuzimports.len; i++)
         {
             let prio =
-                compile(:options,
+                compile(
                     fname: resolveFile(fuzimports[i]),
                       via: fname ~ (via && "\n\t<- " ~ via));
 
@@ -67,7 +67,7 @@ fn compile(fname: string, via: string = "", options?: Options)
 
         //
         let stat0 = ModuleStat_now();
-        module.out.solve = solver::solve(:options);
+        module.out.solve = solver::solve();
 
         let stat1 = ModuleStat_now();
         module.out.cpp = codegen::cpp_codegen(
@@ -125,16 +125,13 @@ pub fn build(
     scheme  = "")
 {
     let implicit mut ctx = prelude::CTX_PRELUDE.clone();
-
-    // TEMP ////////////////////////////////////////
-    let options = Options; // (dev: DEV_DisableBCK);
-    ////////////////////////////////////////////////
+    let implicit options: Options;
 
     {
         println("COMPILE ", fname);
 
         let t0 = now::hr();
-        compile(:fname, :options);
+        compile(:fname);
         let t1 = now::hr();
         let tt = t1 - t0;
 
@@ -205,7 +202,9 @@ pub fn compile_snippets(sources: string[], fnames?: string[], options?: Options[
                     ? ensure_main(snippet)
                     : snippet;
 
-        let fname   = fnames.len > i ? fnames[i] : PRJDIR ~ "__tests__/_" ~ i ~ ".fu";
+        let fname   = fnames.len > i
+                    ? fnames[i]
+                    : PRJDIR ~ "__tests__/_" ~ i ~ ".fu";
 
         ctx.files.map::set(fname, src);
         compile(:fname, options:
@@ -264,7 +263,8 @@ fn unindent_left(src: string, i0: i32): i32
 
 pub fn ZERO(
     implicit ref testdiffs: testdiff::TestDiffs,
-    mut sources: string[]): Context
+    mut sources: string[],
+    options?: Options): Context
 {
     // Fuzzing module splits.
     for (mut i = 0; i < sources.len; i++)
@@ -341,7 +341,7 @@ pub fn ZERO(
 
     //
     mut expectations: string[][];
-    mut options: Options[];
+    shadow mut options = sources.map(|_| options);
     for (mut i = 0; i < sources.len; i++)
     {
         ref src = sources[i];
@@ -384,7 +384,7 @@ pub fn ZERO(
             start           = end;
         }
 
-        options ~= Options(:break_notes);
+        options[i].break_notes = break_notes;
     }
 
     // We can now safely do the nowrites second -

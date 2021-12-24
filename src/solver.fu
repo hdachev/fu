@@ -62,7 +62,7 @@ let SELF_TEST               = true;
 pub fn solve(
     implicit ctx: Context,
     implicit ref module: Module,
-    options: options::Options): SolverOutput
+    implicit options: options::Options): SolverOutput
 {
     let parse = module.in.parse.root;
 
