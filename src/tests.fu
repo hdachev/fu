@@ -524,6 +524,11 @@ pub fn runTests()
         }
     `);
 
+    ZERO(`
+        inline fn inl_lies(x: u32)<fail actual return match annot>: i32<pass/></fail> = x;
+        fn main() 0.inl_lies ? 1 : 0;
+    `);
+
 
     // Lexical vs dynamically scoped templates -
     //  I guess we want both, but how?
@@ -6597,6 +6602,18 @@ pub fn runTests()
         }
 
         fn main() Println("str", 10) - 7; // 'stri:10'.len
+    `);
+
+    TODO(` // inline fn empty retval on autocall
+        inline fn concatable(a: bool)               a ? "yes" : "no";
+        inline fn concat(a.concatable, b: string)   a.concatable ~ b;
+        fn main()                                   concat(true, "!").len - 4;
+    `);
+
+    TODO(` // inline fn empty retval on autocall
+        inline fn inl_print(a: byte)                a;
+        fn inl_println(a.inl_print[]: [string])     a.len;
+        fn main()                                   inl_println('a', 'b') - 2;
     `);
 
 
