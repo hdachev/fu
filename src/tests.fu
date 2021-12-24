@@ -4081,9 +4081,12 @@ pub fn runTests()
                 return test(2);
             }
             catch (e) {
-                return e == "x=2: even!"
-                     ? 0
-                     : 10;
+                <alt>
+                return e == "x=2: even!" ? 0 : 10;
+                <alt/>
+                shadow let e = "hello " ~ e;
+                return e == "hello x=2: even!" ? 0 : 10;
+                </alt>
             }
         }
     `);

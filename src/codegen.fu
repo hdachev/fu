@@ -2046,24 +2046,18 @@ pub fn cpp_codegen(
 
     fn cgTryCatch(node: SolvedNode): string
     {
-        let items = node.items;
-        let try = blockWrapSubstatement(items[0]);
+        let items   = node.items;
+        let try     = blockWrapSubstatement(items[0]);
+        let err     = localID(items[1].target, dedupe: true);
+        let catch   = blockWrapSubstatement(items[2]);
 
-        let err = GET(items[1].target).name;
-        let catch = blockWrapSubstatement(items[2]);
-
-        return cgTryCatch(try, err, catch);
-    }
-
-    fn cgTryCatch(try: string, err: string, catch: string): string
-    {
         return _indent ~ "try"
              ~ _indent ~ "{"
              ~  try
              ~ _indent ~ "}"
              ~ _indent ~ "catch (const std::exception& o_0)"
              ~ _indent ~ "{"
-             ~ _indent ~ "    fu_STR " ~ ID(err) ~ " = fu_TO_STR(o_0.what());\n"
+             ~ _indent ~ "    fu_STR " ~ err ~ " = fu_TO_STR(o_0.what());\n"
              ~  catch
              ~ _indent ~ "}\n";
     }
