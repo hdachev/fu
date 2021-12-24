@@ -289,6 +289,10 @@ pub fn ZERO(
             //
             let msg    = src.slice(start0 + 5, start1 - 1);
 
+            // Check against <fail/> and the like.
+            !msg || msg[0] == ' ' || throw(
+                "Bad <fail> tag: `<fail" ~ msg ~ ">`.");
+
             // Avoid trailing spaces.
             let end1   = end0   + 7;
 
@@ -316,9 +320,14 @@ pub fn ZERO(
 
                 // Each fail variant must throw.
                 try ZERO(:sources);
-                catch (e)
+                catch (_e)
                 {
-                    let actual = e.ascii_lower();
+                    let e       = _e.ERR_TRIM;
+
+                    mut actual  = e
+                        .ERR_STRIP_ANSI
+                        .ERR_STRIP_SNIPPETS
+                        .ascii_lower();
 
                     // Verify error message.
                     mut m0 = -1;
@@ -331,7 +340,10 @@ pub fn ZERO(
                             {
                                 mut expect = msg.slice(m0, m1).ascii_lower();
                                 if (!actual.has(expect))
-                                    throw("<error/> mismatch, expect `" ~ expect ~ "`, got:\n" ~ e);
+                                    throw("<fail> mismatch:\n\n    Expected error keyword:\n        "
+                                        ~ expect.ansi::qBAD ~ " from pattern <fail" ~ msg.ansi::qBAD ~ ">"
+                                        ~ "\n\n    ... not present in error message:\n\n"
+                                        ~ e);
                             }
 
                             m0 = -1;
@@ -344,7 +356,7 @@ pub fn ZERO(
 
                     //
                     testdiffs.set_next(
-                        sources.ERR_KEY, e.ERR_TRIM);
+                        sources.ERR_KEY, e/*.ERR_TRIM*/);
 
                     continue;
                 }
@@ -592,6 +604,79 @@ fn ERR_TRIM(e: string)
     startOK || throw("FAIL: Error does not start with an `dir/file.fu@line:col` marker:\n" ~ e);
 
     return e.slice(start);
+}
+
+fn ERR_STRIP_ANSI(mut e: string)
+{
+    // This is a more optimal one liner with a compile-time regex -
+    //  its just e.replace(/\e[^m]+m/g, ""),
+    //   the way i splice here is inefficient.
+
+    for (mut i = 0; i < e.len; i++)
+    {
+        let c = e[i];
+        if (c == '\e')
+        {
+            let i0 = i++;
+            for ( ; i < e.len; i++)
+            {
+                shadow let c = e[i];
+                if (c == 'm')
+                {
+                    i++; // inclusive
+
+                    e.splice(i0, i - i0);
+                    i = i0;
+
+                    i--; // revisit
+                    break;
+                }
+            }
+        }
+    }
+
+    return e;
+}
+
+fn ERR_STRIP_SNIPPETS(mut e: string)
+{
+    mut i0 = 0;
+
+    for (mut i = 0; i < e.len; i++)
+    {
+        shadow let c = e[i];
+        if (c == ' ' || c == '\n')
+            continue;
+
+        // Snippets start with a line number or a pipe.
+        let snippet = c >= '0' && c <= '9' || c == '|';
+
+        i++;
+        for ( ; i < e.len; i++)
+        {
+            shadow let c = e[i];
+            if (c == '\n')
+            {
+                i++; // inclusive
+
+                if (snippet)
+                {
+                    // println(" SPLICE " ~ e[i0, i - 1]);
+                    e.splice(i0, i - i0);
+                    i = i0;
+                }
+                else
+                {
+                    i0 = i;
+                }
+
+                i--; // revisit
+                break;
+            }
+        }
+    }
+
+    return e;
 }
 
 pub fn FAIL(
