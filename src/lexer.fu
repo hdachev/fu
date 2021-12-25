@@ -76,6 +76,16 @@ pub fn lex(src: string, fname: string): LexerOutput
                 // UNSAFE: string must not end in backslash
                 let c1 = esc[++i];
 
+                fn parseHex(topic = "\\x-escape sequence")
+                {
+                    shadow let c = esc[++i];
+
+                    return c >= '0' && c <= '9' ? c.u32 - '0'.u32
+                         : c >= 'A' && c <= 'F' ? c.u32 - 'A'.u32 + 10
+                         : c >= 'a' && c <= 'f' ? c.u32 - 'a'.u32 + 10
+                         : err_str("str", i - 1, "Non hexadecimal character in " ~ topic ~ ": `" ~ c ~ "`.");
+                }
+
                 if      (c1 == '\\') out ~= '\\';
 
                 else if (c1 ==  'n') out ~= '\n';
@@ -96,17 +106,42 @@ pub fn lex(src: string, fname: string): LexerOutput
                     if (i >= n - 2)
                         err_str("str", i - 1, "Incomplete \\x-escape sequence.");
 
-                    fn parseHex()
-                    {
-                        shadow let c = esc[++i];
+                    out ~= byte((parseHex() << 4) | parseHex());
+                }
 
-                        return c >= '0' && c <= '9' ? c.i32 - '0'.i32
-                             : c >= 'A' && c <= 'F' ? c.i32 - 'A'.i32 + 10
-                             : c >= 'a' && c <= 'f' ? c.i32 - 'a'.i32 + 10
-                             : err_str("str", i - 1, "Non hexadecimal character in \\x-escape sequence.");
+                else if (c1 ==  'u')
+                {
+                    if (i == n || esc[++i] != '{')
+                        err_str("str", i - 1, "Invalid \\u-escape: no opening `{`.");
+
+                    mut unicode: u32;
+                    mut digits = 0;
+
+                    :HEX
+                    {
+                        while (++i < n)
+                        {
+                            if (esc[i] == '}')
+                                break: HEX;
+                            else if (digits == 6)
+                                err_str("str", i - 1, "Invalid \\u-escape: no closing `}` after 6 digits.");
+
+                            digits++;
+                            unicode <<= 4;
+
+                            i--;
+                            unicode |= parseHex("\\u-escape sequence");
+                        }
+
+                        err_str("str", i - 1, "Incomplete \\u-escape: no closing `}`.");
                     }
 
-                    out ~= byte((parseHex() << 4) | parseHex());
+                    if (!digits)
+                        err_str("str", i - 1, "Empty \\u-escape.");
+
+                    // Append the code point.
+                    out ~= utf8::bytes(:unicode) || err_str(
+                        "str", i - 1, "Invalid \\u-escape: bad code point.");
                 }
 
                 else err_str("str", i - 1, "Unknown escape sequence.");

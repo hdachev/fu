@@ -1248,6 +1248,13 @@ pub fn runTests()
              || '\\xaA'.i32 - 170;
     `);
 
+    ZERO(`
+        fn main()                           <fail invalid code point>
+            "\\u{ffffff}".u32               <pass/>
+            "\\u{042e}" == "Ю"  ? 0 : 1     </fail>
+            ;
+    `);
+
 
     // String opti checkers.
 
