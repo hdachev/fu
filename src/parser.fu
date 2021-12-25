@@ -1011,32 +1011,45 @@ pub fn parse(
         if (tryConsume("id", "mut"     ))   flags |= F_MUT;
         if (tryConsume("id", "ref"     ))   flags |= F_REF;
 
-        mut id          = consume("id").value;
+        mut id = consume("id").value;
         if (id[0] == '_')
             flags |= F_LAX;
 
-        let mustname    = xqmark && tryConsume("op", "!");
+        // Explicit external arg name.
+        if (xqmark && tryConsume("op", "!"))
+        {
+            flags |= F_MUSTNAME;
 
+            // Alternate internal arg name.
+            let inner_id = tryConsume("id").value;
+            if (inner_id)
+            {
+                flags |= F_COMPOUND_ID;
+                id    ~= "!" ~ inner_id;
+            }
+        }
+
+        // Argument autocalls.
         if (xqmark && tryConsume("op", "."))
         {
             flags |= F_COMPOUND_ID;
+            id    ~= "." ~ consume("id").value;
 
-            id ~= "." ~ consume("id").value;
             while (tryConsume("op", "::"))
                 id ~= "\t" ~ consume("id").value;
         }
 
+        // Varargs & rest params.
         if (xqmark && tryConsume("op", "[]"))
             flags |= F_REST_ARG;
 
+        //
         let optional    = xqmark && tryConsume("op", "?");
 
         let type        = tryPopTypeAnnot();
         let init        = optional
             ? createDefinit()
             : tryConsume("op", "=") && parseExpression(P_RESET);
-
-        if (mustname)                       flags |= F_MUSTNAME;
 
         return createLet(id, flags, type, init);
     }

@@ -2484,11 +2484,32 @@ pub fn solve(
 
     //
 
-    fn Autocall_splice(ref name: string): string
+    fn CompoundArgID_outerSplice(ref name: string): string
     {
+        mut exclam = false;
+
         for (mut i = 0; i < name.len; i++)
         {
-            if (name[i] == '.')
+            let c = name[i];
+
+            // Strip internal argument name.
+            if (c == '!')
+            {
+                exclam && fail("CompoundArgID: double bang in `" ~ name ~ "`.");
+                exclam = true;
+
+                let i0 = i++;
+                for ( ; i < name.len; i++)
+                    if (name[i] == '.')
+                        break;
+
+                name.splice(i0, i - i0);
+                i = i0 - 1;
+                continue;
+            }
+
+            // Extract autocall expression.
+            if (c == '.')
             {
                 let ret = name.slice(i + 1);
                 name.shrink(i);
@@ -2496,7 +2517,10 @@ pub fn solve(
             }
         }
 
-        fail("Autocall: no `.` in id `" ~ name ~ "`.");
+        if (!exclam)
+            fail("CompoundArgID: no `.` nor `!` in id `" ~ name ~ "`.");
+
+        return [];
     }
 
     fn uPrepFn_A(node: Node): SolvedNode
@@ -3185,7 +3209,7 @@ pub fn solve(
                     argNode.kind == "let" || fail();
 
                     mut name        = argNode.value;
-                    let autocall    = argNode.flags & F_COMPOUND_ID && Autocall_splice(name);
+                    let autocall    = argNode.flags & F_COMPOUND_ID && CompoundArgID_outerSplice(name);
                     let isImplicit  = !!(argNode.flags & F_IMPLICIT);
 
                     // ARGUMENTS AT RISK ////////////////////////
@@ -4339,15 +4363,24 @@ pub fn solve(
         mut shadows     = !!(out.flags & F_SHADOW);
         let isArg       = out.flags & F_ARG;
 
-        // TODO FIX: AUTOCALL //////////////////////////////////////////
-        isArg || !(out.flags & F_COMPOUND_ID) || fail(
-            "`let`: F_COMPOUND_ID on a non-F_ARG.");
+        // AUTOCALL ////////////////////////////////////////////////////
+        mut cleanID     = "";
 
-        let autocall    = out.flags & F_COMPOUND_ID && id.find('.');
-        autocall >= 0 || fail(
-            "`let`: F_COMPOUND_ID but no `.` in id.");
+        if (out.flags & F_COMPOUND_ID)
+        {
+            isArg || fail("`let`: F_COMPOUND_ID on a non-F_ARG.");
 
-        let cleanID     = autocall && id.slice(0, id.find('.'));
+            let start   = id.find('!') + 1;
+            let end     = id.find('.', start: start > 0 ? start : 0);
+
+            cleanID     = id.slice(
+                start > 0 ? start : 0,
+                end   > 0 ? end   : id.len);
+
+            cleanID && cleanID.len < id.len || fail(
+                "`let`: F_COMPOUND_ID bad cleanID.");
+        }
+
         shadow let id   = cleanID || id;
         ////////////////////////////////////////////////////////////////
 

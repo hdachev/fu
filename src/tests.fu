@@ -5383,6 +5383,11 @@ pub fn runTests()
         fn main() what(b: +1);
     `);
 
+    ZERO(`
+        fn greet(with!greeting: string)     greeting.len;
+        fn main()                           greet(with: "Hello!") - 6;
+    `);
+
 
     // Optional arguments.
 
