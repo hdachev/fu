@@ -6,8 +6,7 @@ let prelude_src = `
 
 // Some lolcode.
 
-fn STEAL (ref a: $T): $T __native;
-fn SWAP  (ref a: $T, ref b: $T): void __native("<utility>", "std::swap");
+fn SWAP(ref a: $T, ref b: $T): void __native("<utility>", "std::swap");
 
 
 // Arithmetics.

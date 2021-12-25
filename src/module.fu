@@ -1,4 +1,3 @@
-import helpers;
 
 
 //
@@ -306,7 +305,6 @@ pub struct Type
     using vtype:    ValueType;
     lifetime?:      Lifetime;
 };
-
 
 pub struct Lifetime { uni0n!: Region[]; };
 
