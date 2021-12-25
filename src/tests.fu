@@ -3459,7 +3459,7 @@ pub fn runTests()
     `]);
 
     ZERO(`
-        fn each(a: [$T], fn, start?!: i32)
+        fn each(a: [$T], fn, start!?: i32)
             for (mut i = start; i < a.len; i++)
                 fn(a[i]);
 
@@ -5347,7 +5347,7 @@ pub fn runTests()
     `);
 
     ZERO(`
-        struct Test { a?: i32; b?!: i32; };
+        struct Test { a?: i32; b!?: i32; };
         fn test(t: Test) t.a + t.b;
         <fail bad args>
         return Test(-2, +2).test;    <pass/>
@@ -5367,7 +5367,7 @@ pub fn runTests()
         fn main() A + B;
     `,
     `
-        fn A(x?!: i32) x;
+        fn A(x!?: i32) x;
         fn B(x?: i32) A(:x);
         fn main() A + B;
     `,

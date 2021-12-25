@@ -226,13 +226,13 @@ pub fn solve(
         _notes |= note;
     }
 
-    fn _Scope_import__forceCopy(modid: i32, private?!: bool): void
+    fn _Scope_import__forceCopy(modid: i32, private!?: bool): void
     {
         let s = ctx.modules[modid].out.solve.scope;
         _scope.items ~= s.items[0, private ? s.items.len : s.pub_count];
     }
 
-    fn Scope_import(modid: i32, private?!: bool): void
+    fn Scope_import(modid: i32, private!?: bool): void
     {
         _scope.imports.each(_ss.imports, |import|
         {
@@ -429,7 +429,7 @@ pub fn solve(
         return res.lifetime;
     }
 
-    fn Lifetime_test(lifetime: Lifetime, tempsOK?!: bool): Lifetime
+    fn Lifetime_test(lifetime: Lifetime, tempsOK!?: bool): Lifetime
     {
         if (SELF_TEST)
         {
@@ -858,7 +858,7 @@ pub fn solve(
         local_scope!?: bool,
         misc_scope!?: Scope,
         args?: [SolvedNode],
-        flags?!: i32, target?!: Target): Target
+        flags!?: i32, target!?: Target): Target
     {
         if (SELF_TEST)
             for (mut i = 0; i < args.len; i++)
@@ -1673,7 +1673,7 @@ pub fn solve(
 
     //
 
-    fn solveNode(node: Node, type: Type = [], kills?!: i32): SolvedNode
+    fn solveNode(node: Node, type: Type = [], kills!?: i32): SolvedNode
     {
         HERE(node);
 
@@ -2070,7 +2070,7 @@ pub fn solve(
         fail("Noreturn during static init: this program will never finish booting.");
     }
 
-    fn solveBlock(node: Node, type!: Type, fnbody_of?!: i32, mask! = HM_CanBreak, kills?!: i32, id?!: string, steal?!: i32, locals_start?!: i32): SolvedNode
+    fn solveBlock(node: Node, type!: Type, fnbody_of!?: i32, mask! = HM_CanBreak, kills!?: i32, id!?: string, steal!?: i32, locals_start!?: i32): SolvedNode
     {
         let nodes = node.kind == "block"  ? node.items : [ node ];
         shadow let id = id || node.kind == "block" && node.value;
@@ -3455,7 +3455,7 @@ pub fn solve(
         return __solveStruct(solve: false, :node);
     }
 
-    fn __solveStruct(solve!: bool, node: Node, into?!: Target): SolvedNode
+    fn __solveStruct(solve!: bool, node: Node, into!?: Target): SolvedNode
     {
         let origId  = node.value;
         let name    = origId || _current_fn.target && GET(_current_fn.target).name || "Anon";
@@ -3804,7 +3804,7 @@ pub fn solve(
 
     //////////////////////////////////////////////////////////
 
-    fn Lifetime_each(lifetime, visit, locals_start?!: i32)
+    fn Lifetime_each(lifetime, visit, locals_start!?: i32)
     {
         for (mut i = lifetime.uni0n.len; i --> 0; )
         {
@@ -3829,7 +3829,7 @@ pub fn solve(
             && o.solved.items[LET_INIT].type;
     }
 
-    fn Lifetime_unwind(mut lifetime: Lifetime, locals_start?!: i32): Lifetime
+    fn Lifetime_unwind(mut lifetime: Lifetime, locals_start!?: i32): Lifetime
     {
         Lifetime_each(:lifetime, :locals_start, visit: |o, i, shadow lifetime|
         {
@@ -3879,7 +3879,7 @@ pub fn solve(
         });
     }
 
-    fn Lifetime_allowsMutrefReturn(lifetime: Lifetime, locals_start?!: i32): bool
+    fn Lifetime_allowsMutrefReturn(lifetime: Lifetime, locals_start!?: i32): bool
     {
         Lifetime_each(:lifetime, :locals_start, visit: |o|
         {
@@ -4218,7 +4218,7 @@ pub fn solve(
     //
 
     fn solveLetLike_dontTouchScope(
-        node: Node, specType?!: Type): SolvedNode
+        node: Node, specType!?: Type): SolvedNode
     {
         let n_annot = node.items[LET_TYPE];
         mut annot   = specType || n_annot && evalTypeAnnot(n_annot).type;
@@ -4238,7 +4238,7 @@ pub fn solve(
     fn solveLetLike_dontTouchScope(
         id: string, mut flags: i32,
         mut init!: SolvedNode,
-        mut annot?!: Type, specType?!: Type): SolvedNode
+        mut annot!?: Type, specType!?: Type): SolvedNode
     {
         annot || init.type || fail(
             "Variable declarations without type annotations must be initialized: `" ~ id ~ "`.");
@@ -4313,7 +4313,7 @@ pub fn solve(
             type: t_let, items: [ SolvedNode, init ]);
     }
 
-    fn solveLet(node: Node, specType?!: Type): SolvedNode
+    fn solveLet(node: Node, specType!?: Type): SolvedNode
     {
         mut out = solveLetLike_dontTouchScope(node, :specType);
         let id  = out.value;
@@ -4824,7 +4824,7 @@ pub fn solve(
         fail("Qualified " ~ id.qBAD ~ ":: access current module.");
     }
 
-    fn solveCall(node: Node, target?!: Target, kills?!: i32): SolvedNode
+    fn solveCall(node: Node, target!?: Target, kills!?: i32): SolvedNode
     {
         // Dead code elim.
         mut args = solveNodes(node.items);
@@ -5287,7 +5287,7 @@ pub fn solve(
 
     fn CallerNode(
         debug: string,
-        mut target: Target, mut args: SolvedNode[] = [], kills?!: i32, reorder?: i32[], conversions?: Target[][])
+        mut target: Target, mut args: SolvedNode[] = [], kills!?: i32, reorder?: i32[], conversions?: Target[][])
             : SolvedNode
     {
         // Do reorder.
@@ -5687,9 +5687,9 @@ pub fn solve(
     fn solveNodes(
         nodes: Node[],
         type_all?: Type,
-        type_last?!: Type,
-        use_type_last?!: bool,
-        kills?!: i32): SolvedNode[]
+        type_last!?: Type,
+        use_type_last!?: bool,
+        kills!?: i32): SolvedNode[]
     {
         mut result: SolvedNode[];
 

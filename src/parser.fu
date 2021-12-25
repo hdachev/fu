@@ -722,7 +722,7 @@ pub fn parse(
 
     //
 
-    fn parseLambda(noArgs_noClosingPipe?!: bool, mode?!: i32): Node
+    fn parseLambda(noArgs_noClosingPipe!?: bool, mode!?: i32): Node
     {
         if (noArgs_noClosingPipe && _precedence > P_RESET && _precedence < P_PREFIX_UNARY)
             warn("Unparenthesized `|| lambda` within a binary expression.");
@@ -733,7 +733,7 @@ pub fn parse(
             flags: F_INLINE | F_TEMPLATE | F_LAMBDA, expr: !(mode & M_LAMBDA_STMT_OK), :name);
     }
 
-    fn parseFnDecl(mut flags?: i32, expr?!: bool): Node
+    fn parseFnDecl(mut flags?: i32, expr!?: bool): Node
     {
         // fn hello(), fn +()
         mut name = tryConsume("id").value;
@@ -784,7 +784,7 @@ pub fn parse(
         return make(kind: "addroffn", :flags, value: name);
     }
 
-    fn parseFnDecl_cont(name!: string, mut flags?!: i32, expr?!: bool, endv! = ")"): Node
+    fn parseFnDecl_cont(name!: string, mut flags!?: i32, expr!?: bool, endv! = ")"): Node
     {
         // Opening parens!
         mut items: Node[];
@@ -1015,7 +1015,7 @@ pub fn parse(
         if (id[0] == '_')
             flags |= F_LAX;
 
-        mut mustname    = xqmark && tryConsume("op", "!");
+        let mustname    = xqmark && tryConsume("op", "!");
 
         if (xqmark && tryConsume("op", "."))
         {
@@ -1030,7 +1030,6 @@ pub fn parse(
             flags |= F_REST_ARG;
 
         let optional    = xqmark && tryConsume("op", "?");
-        mustname      ||= xqmark && tryConsume("op", "!"); // TODO remove, backcompat
 
         let type        = tryPopTypeAnnot();
         let init        = optional
@@ -1049,7 +1048,7 @@ pub fn parse(
         return make("let", [ type, init ], flags, id);
     }
 
-    fn parseExpression(p1: i32, mode?!: i32): Node
+    fn parseExpression(p1: i32, mode!?: i32): Node
     {
         //////////////////////////////
         let p0 = _precedence;
@@ -1596,12 +1595,12 @@ pub fn parse(
         return createJump(:kind, :label, :expr);
     }
 
-    fn createReturn(expr: Node, flags?!: i32): Node =
+    fn createReturn(expr: Node, flags!?: i32): Node =
         createJump(kind: "return", :expr, :flags);
 
     fn createJump(
         kind!: string/*"break"|"continue"|"return"*/,
-        label?!: string, expr?: Node, flags?!: i32): Node
+        label!?: string, expr?: Node, flags!?: i32): Node
     {
         return make(kind, value: label, expr && [ expr ], :flags);
     }
@@ -1776,7 +1775,7 @@ pub fn parse(
         return createLoop(:body, :post_cond);
     }
 
-    fn createLoop(init?!: Node, pre_cond?!: Node, body?!: Node, post_cond?!: Node, post?!: Node): Node
+    fn createLoop(init!?: Node, pre_cond!?: Node, body!?: Node, post_cond!?: Node, post!?: Node): Node
     {
         return make("loop", [ init, pre_cond, body, post_cond, post ]);
     }

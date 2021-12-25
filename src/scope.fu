@@ -40,13 +40,13 @@ pub struct Helpers
 
 pub struct HelpersData
 {
-    target?!:       Target;
+    target!?:       Target;
 
     id?:            string;
-    mask?!:         i16;
-    local_of?!:     i32;
-    kills?!:        i32;
-    locals_start?!: i32;
+    mask!?:         i16;
+    local_of!?:     i32;
+    kills!?:        i32;
+    locals_start!?: i32;
 
     ret_expect?:    Type;
     ret_actual?:    Type;
@@ -325,9 +325,9 @@ pub fn ==(a: ScopeMemo, b: ScopeMemo) cmp(a, b) == 0;
 
 pub fn Scope_create(
     scope: &mut Scope,
-    kind = "_no_kind_yet_", name?!: string,
-    type?: Type, flags?!: i32,
-    solved?: SolvedNode, local_of?!: i32,
+    kind = "_no_kind_yet_", name!?: string,
+    type?: Type, flags!?: i32,
+    solved?: SolvedNode, local_of!?: i32,
     status?: u32,
     nest?: bool): Target
 {

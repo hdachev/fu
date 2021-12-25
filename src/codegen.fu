@@ -515,7 +515,7 @@ pub fn cpp_codegen(
 
     //
 
-    fn cgStatements(nodes: SolvedNode[], ref count!: i32, trail?!: string): string
+    fn cgStatements(nodes: SolvedNode[], ref count!: i32, trail!?: string): string
     {
         let lines = cgNodes(nodes, M_STMT, :trail, debug: "cgStatements");
         count = lines.len;
@@ -968,7 +968,7 @@ pub fn cpp_codegen(
         return mode & M_STMT ? "" : "0";
     }
 
-    fn binding(node: SolvedNode, doInit?!: bool, forceMut?!: bool, forceValue?!: bool): string
+    fn binding(node: SolvedNode, doInit!?: bool, forceMut!?: bool, forceValue!?: bool): string
     {
         //////////////////////////////////////////////////////////
         mut _tv0: string[];
@@ -1941,7 +1941,7 @@ pub fn cpp_codegen(
         return false;
     }
 
-    fn cgAndOr_concat(ref src: string, op: string, items: [SolvedNode], parens?!: bool)
+    fn cgAndOr_concat(ref src: string, op: string, items: [SolvedNode], parens!?: bool)
     {
         let mode = M_RETBOOL | (parens && items.len == 1 && M_PARENS);
         for (mut i = 0; i < items.len; i++)
@@ -2217,7 +2217,7 @@ pub fn cpp_codegen(
         return id;
     }
 
-    fn cgNodes(nodes: SolvedNode[], mode: i32 = 0, trail?!: string, debug!?: string): string[]
+    fn cgNodes(nodes: SolvedNode[], mode: i32 = 0, trail!?: string, debug!?: string): string[]
     {
         mut result: string[] = [];
 
