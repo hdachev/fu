@@ -130,8 +130,8 @@ fn swap(ref a: $T, ref b: $T): void __native("<utility>", "std::swap");
 
 // Arrays.
 //
-// TODO mutval push/insert/unshift, just like the assignments above.
-// TODO trivial .=
+// TODO mutval splice, ~= and .=,
+//  just like the assignments above.
 
 fn len (a: [$T]): i32 __native(".size()");
 
@@ -143,9 +143,9 @@ fn [](a: [$T], start: i32, end: i32)
     case ($a -> &mut [$T]): &mut [$T] __native("<fu/view.h>", "fu::get_view_mut");
     default               : &    [$T] __native("<fu/view.h>", "fu::get_view");
 
-fn    push(a: &mut $T[], b: $T): void __native(".push");
-fn unshift(a: &mut $T[], b: $T): void __native(".unshift");
-fn  insert(a: &mut $T[], i: i32, b: $T): void __native(".insert");
+fn    push(a: &mut $T[], mut b: $T): void __native(".push");
+fn unshift(a: &mut $T[], mut b: $T): void __native(".unshift");
+fn  insert(a: &mut $T[], i: i32, mut b: $T): void __native(".insert");
 
 fn  slice(a: $T[], start: i32, end: i32): $T[] __native("<fu/vec/slice.h>", "fu::slice");
 fn  slice(a: $T[], start: i32): $T[] __native("<fu/vec/slice.h>", "fu::slice");
@@ -241,8 +241,8 @@ fn ~(a: [$T], b: [$T]): $T[] __native("<fu/vec/concat.h>",     "+");
 fn ~(a: [$T], b:  $T ): $T[] __native("<fu/vec/concat_one.h>", "+");
 fn ~(a:  $T , b: [$T]): $T[] __native("<fu/vec/concat_one.h>", "+");
 
-fn ~=(a: &mut $T[], b: [$T]): &mut $T[] __native("<fu/vec/concat.h>",     "+=");
-fn ~=(a: &mut $T[], b:  $T ): &mut $T[] __native("<fu/vec/concat_one.h>", "+=");
+fn ~=(a: &mut $T[],     b: [$T]): &mut $T[] __native("<fu/vec/concat.h>",     "+=");
+fn ~=(a: &mut $T[], mut b:  $T ): &mut $T[] __native("<fu/vec/concat_one.h>", "+=");
 
 
 // Fun with views.
