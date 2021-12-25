@@ -1281,8 +1281,8 @@ pub fn solve(
                     disambig();
 
                     // Output conversions /////////////
-                    SWAP(reorder,     reorder_out    );
-                    SWAP(conversions, conversions_out);
+                    swap(reorder,     reorder_out    );
+                    swap(conversions, conversions_out);
                     ///////////////////////////////////
 
                     // Done!
@@ -3078,10 +3078,10 @@ pub fn solve(
             if (!root_scope0)
                 _root_scope = scope0;
 
-            SWAP(_current_fn, out);
+            swap(_current_fn, out);
 
             defer {
-                SWAP(_current_fn, out);
+                swap(_current_fn, out);
                 _root_scope = root_scope0;
             }
 
@@ -5368,7 +5368,7 @@ pub fn solve(
 
             for (mut i = args.len; i --> REST_START; )
             {
-                SWAP(rest[i - REST_START], args[i]);
+                swap(rest[i - REST_START], args[i]);
                 if (i > REST_START)
                     args.splice(i, 1);
                 else
@@ -5663,7 +5663,7 @@ pub fn solve(
         ref newNodeData = MUT(newNode);
         ref oldNodeData = MUT(node);
 
-        SWAP(newNodeData, oldNodeData);
+        swap(newNodeData, oldNodeData);
         oldNodeData.items.only = newNode;
 
         /*/
@@ -5680,15 +5680,15 @@ pub fn solve(
         mut temp: SolvedNodeData;
 
         ref newNodeData = MUT(newNode);
-        SWAP(temp, newNodeData);
+        swap(temp, newNodeData);
 
         ref oldNodeData = MUT(node);
-        SWAP(temp, oldNodeData);
+        swap(temp, oldNodeData);
 
         oldNodeData.items.only = newNode;
 
         shadow ref newNodeData = MUT(newNode);
-        SWAP(temp, newNodeData);
+        swap(temp, newNodeData);
 
         //*/
     }

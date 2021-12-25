@@ -53,7 +53,7 @@ pub fn try_steal(ref a: [$T], i: i32)
     if (i < a.len)
     {
         mut slot: $T;
-        SWAP(slot, a[i]);
+        swap(slot, a[i]);
         return slot;
     }
 
@@ -224,7 +224,7 @@ pub fn steal(a: $T[], start: i32, end: i32)
     ret.resize(size);
 
     for (mut i = 0; i < size; i++)
-        SWAP(ret[i], a[i + start]);
+        swap(ret[i], a[i + start]);
 
     a.splice(start, count: size);
     return ret;
@@ -238,7 +238,7 @@ pub fn remove(ref a: $T[], predicate)
     for (mut i = 0; i < size; i++) {
         if (!predicate(a[i])) {
             if (i > keep)
-                SWAP(a[i], a[keep]);
+                swap(a[i], a[keep]);
 
             keep++;
         }

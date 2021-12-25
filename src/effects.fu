@@ -160,7 +160,7 @@ fn ArgsAtRisk_shake(ref flow: Flow, mut high: i32, mut low: i32)
         //     but A & B are fine together.
         //
         if (high < low)
-            SWAP(high, low);
+            swap(high, low);
 
         // One edge - prefer storing index of lower in higher bitmask -
         //  extra mileage for small bitmask optimizatons.

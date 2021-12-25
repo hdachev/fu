@@ -4,11 +4,6 @@ import context;
 let prelude_src = `
 
 
-// Some lolcode.
-
-fn SWAP(ref a: $T, ref b: $T): void __native("<utility>", "std::swap");
-
-
 // Arithmetics.
 
 fn +(a: $T) case ($T.is::arithmetic): $T __native;
@@ -129,6 +124,8 @@ fn false(): bool __native("false");
 
 fn   =(a: &mut $T, mut b: $T): &mut $T __native;
 fn ||=(a: &mut $T, mut b: $T): &mut $T __native;
+
+fn swap(ref a: $T, ref b: $T): void __native("<utility>", "std::swap");
 
 
 // Arrays.

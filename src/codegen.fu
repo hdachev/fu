@@ -788,8 +788,8 @@ pub fn cpp_codegen(
         ////////////////////////////////////////////
         mut current_fn0 = cg_CurrentFn(target: target);
 
-        defer SWAP(_current_fn, current_fn0);
-        SWAP(_current_fn, current_fn0);
+        defer swap(_current_fn, current_fn0);
+        swap(_current_fn, current_fn0);
         ////////////////////////////////////////////
 
         let ret     = overload.type || fail();
@@ -939,8 +939,8 @@ pub fn cpp_codegen(
             ////////////////////////////////////////////
             mut current_fn0 = cg_CurrentFn(target: fn.target);
 
-            defer SWAP(_current_fn, current_fn0);
-            SWAP(_current_fn, current_fn0);
+            defer swap(_current_fn, current_fn0);
+            swap(_current_fn, current_fn0);
             ////////////////////////////////////////////
 
             src ~= cgFnSignature(fn);
@@ -972,9 +972,9 @@ pub fn cpp_codegen(
     {
         //////////////////////////////////////////////////////////
         mut _tv0: string[];
-        if !(_current_fn.index) SWAP(_tv0, _current_fn.TEMPVARs);
+        if !(_current_fn.index) swap(_tv0, _current_fn.TEMPVARs);
         defer {
-            if !(_current_fn.index) SWAP(_tv0, _current_fn.TEMPVARs);
+            if !(_current_fn.index) swap(_tv0, _current_fn.TEMPVARs);
         }
         //////////////////////////////////////////////////////////
 
@@ -2223,9 +2223,9 @@ pub fn cpp_codegen(
 
         //////////////////////////////////////////////////////////
         mut _tv0: string[];
-        if (mode & M_STMT) SWAP(_tv0, _current_fn.TEMPVARs);
+        if (mode & M_STMT) swap(_tv0, _current_fn.TEMPVARs);
         defer {
-            if (mode & M_STMT) SWAP(_tv0, _current_fn.TEMPVARs);
+            if (mode & M_STMT) swap(_tv0, _current_fn.TEMPVARs);
         }
         //////////////////////////////////////////////////////////
 
