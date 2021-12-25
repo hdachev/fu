@@ -89,6 +89,7 @@ pub fn build(
     let GCC_CMD = GCChash
                 ~ "-pedantic-errors -Wall -Wextra -Werror " // opt-in
                 ~ "-Wdouble-promotion " // opt-in
+                ~ "-Wconversion -Wsign-conversion " // opt-in
                 ;
 
     //
