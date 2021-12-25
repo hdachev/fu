@@ -1,28 +1,11 @@
 import helpers;
-import lexer;
+import module;
+import fail;
 
 
 //
 
 let use_AUTOPUB     = true;
-
-
-//
-
-pub struct TokenIdx // 8b vs 48b, nobrainer
-{
-    modid:  i32;
-    tokidx: i32;
-};
-
-pub struct Node
-{
-    kind:       string;
-    flags?:     i32;
-    value:      string;
-    items?:     Node[];
-    token:      TokenIdx;
-};
 
 
 // Calltypes, probably an enum is better for the 4 kinds,
@@ -175,17 +158,10 @@ let M_LAMBDA_STMT_OK        = 1 << 2;
 
 //
 
-pub struct ParserOutput
-{
-    root:       Node;
-    fuzimports: string[];
-    warnings:   string[];
-}
-
-
-//
-
-pub fn parse(modid: i32, fname: string, tokens: Token[], implicit options: options::Options): ParserOutput
+pub fn parse(
+    modid!: i32,
+    fname!: string, src!: string, tokens!: Token[],
+    implicit options!: options::Options): ParserOutput
 {
     mut _idx        = 0;
     mut _loc        = 0;
@@ -228,6 +204,15 @@ pub fn parse(modid: i32, fname: string, tokens: Token[], implicit options: optio
 
     //
 
+    fn fail(mut reason: string = "")
+    {
+        let token = tokens[_idx];
+        if (!reason)
+            reason = "Unexpected `" ~ token.value ~ "`.";
+
+        return FAIL(:fname, :src, :token, :reason);
+    }
+
     fn fail_compose(mut reason: string)
     {
         let loc  = tokens[_loc];
@@ -247,11 +232,6 @@ pub fn parse(modid: i32, fname: string, tokens: Token[], implicit options: optio
             : "@" ~ l0 ~ ":" ~ c0 ~ ".." ~ l1 ~ ":" ~ c1;
 
         return fname ~ " " ~ addr ~ ":\n\t" ~ reason;
-    }
-
-    fn fail(mut reason: string = "")
-    {
-        throw(fail_compose(reason));
     }
 
     fn warn(reason: string)

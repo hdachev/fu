@@ -1,3 +1,4 @@
+import module;
 
 let OPTOKENS = "{}[]()!?~@#$%^&*/-+<=>,.;:|";
 
@@ -16,23 +17,6 @@ let MBOPS =
     "&&=", "||=",
     ".=",
 ];
-
-pub struct Token
-{
-    kind:   string;
-    value:  string;
-
-    idx0:   i32;
-    idx1:   i32;
-    line:   i32;
-    col:    i32;
-};
-
-pub struct LexerOutput
-{
-    fname:  string;
-    tokens: Token[];
-};
 
 pub fn lex(src: string, fname: string): LexerOutput
 {
@@ -444,5 +428,5 @@ pub fn lex(src: string, fname: string): LexerOutput
         idx, idx);
 
     // err, data
-    return LexerOutput( :fname, :tokens );
+    return LexerOutput(:tokens);
 }

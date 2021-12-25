@@ -454,12 +454,10 @@ pub fn solvePrelude(): Context
 
     let src     = prelude_src;
     let fname   = "__prelude";
-    let lexed   = lexer::lex(:src, :fname);
-    let parsed  = parser::parse(0, :fname, :lexed.tokens);
+    let lex     = lexer::lex(:src, :fname);
+    let parse   = parser::parse(modid: 0, :fname, :src, :lex.tokens);
 
-    module.in = ModuleInputs(
-        :src, lex: lexed,
-        parse: parsed);
+    module.in   = ModuleInputs(:src, :lex, :parse);
 
     setModule(module);
     module.out.solve = solver::solve();

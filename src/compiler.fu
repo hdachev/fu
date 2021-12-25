@@ -24,7 +24,8 @@ fn compile(fname: string, via: string = "")
         let lexer_result = lexer::lex(:fname, :src);
 
         let stat1 = ModuleStat_now();
-        let parser_result = parser::parse(:module.modid, :fname, :lexer_result.tokens);
+        let parser_result = parser::parse(
+            :module.modid, :fname, :src, :lexer_result.tokens);
 
         let stat2 = ModuleStat_now();
 

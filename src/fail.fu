@@ -1,18 +1,24 @@
-import parser;
+import module;
 import context;
 
-pub fn FAIL(implicit _here: TokenIdx, mut reason: string): never
+pub fn FAIL(implicit _here: TokenIdx, reason: string): never
 {
-    let here    = _here._token;
+    let src     = getModuleSrc(:_here.modid);
+    let token   = _here._token;
     let fname   = _here._fname;
-    let addr    = "@" ~ here.line ~ ":" ~ here.col;
 
-    reason ~= '\n';
+    return FAIL(:fname, :src, :token, :reason);
+}
 
-    // Try to present a code snippet.
-    let snippet = formatCodeSnippet(_here);
+pub fn FAIL(
+    fname!: string, src!: string,
+    token!: Token, reason!: string): never
+{
+    let addr    = "@" ~ token.line ~ ":" ~ token.col;
+    let snippet = formatCodeSnippet(
+        :src, start: token, end: token);
 
-    return throw(fname ~ " " ~ addr ~ ":\n\n" ~ snippet ~ "\n\t" ~ reason);
+    return throw(fname ~ ' ' ~ addr ~ ":\n\n" ~ snippet ~ "\n\t" ~ reason ~ "\n");
 }
 
 pub fn HERE(implicit ref _here: TokenIdx, node.token: TokenIdx)
