@@ -90,12 +90,12 @@ struct fu_VEC
     /////////////////////////////////////////////
 
     fu_INL static constexpr fu::i UNSAFE__Unpack(fu::i packed) noexcept {
-        if constexpr (PACK_CAPA) return (packed << 8) | (fu::u(packed) >> 24);
+        if constexpr (PACK_CAPA) return (packed << 8) | fu::i(fu::u(packed) >> 24);
         else                     return  packed;
     }
 
     fu_INL static constexpr fu::i UNSAFE__Pack(fu::i actual) noexcept {
-        if constexpr (PACK_CAPA) return (actual << 24) | (fu::u(actual) >> 8);
+        if constexpr (PACK_CAPA) return (actual << 24) | fu::i(fu::u(actual) >> 8);
         else                     return  actual;
     }
 
@@ -289,7 +289,7 @@ struct fu_VEC
                     old_data,
                     old_data + old_size);
 
-                fu_ARC_DEALLOC(arc, shared_capa * sizeof(T));
+                fu_ARC_DEALLOC(arc, size_t(shared_capa) * sizeof(T));
             }
         }
         else {
@@ -297,7 +297,7 @@ struct fu_VEC
                 old_data,
                 old_data + old_size);
 
-            fu_UNIQ_DEALLOC(old_data, shared_capa * sizeof(T));
+            fu_UNIQ_DEALLOC(old_data, size_t(shared_capa) * sizeof(T));
         }
     }
 
@@ -325,10 +325,10 @@ struct fu_VEC
             assert(arc->decr() && "not unique");
             #endif
 
-            fu_ARC_DEALLOC(arc, old_capa * sizeof(T));
+            fu_ARC_DEALLOC(arc, size_t(old_capa) * sizeof(T));
         }
         else {
-            fu_UNIQ_DEALLOC(old_data, old_capa * sizeof(T));
+            fu_UNIQ_DEALLOC(old_data, size_t(old_capa) * sizeof(T));
         }
     }
 
@@ -771,7 +771,7 @@ struct fu_VEC
         if constexpr (!TRIVIAL || ZERO_FILL)
         {
             if (end > start)
-                memset((void*)start, 0, (const char*)end - (const char*)start);
+                memset((void*)start, 0, size_t((const char*)end - (const char*)start));
         }
         //*/
 

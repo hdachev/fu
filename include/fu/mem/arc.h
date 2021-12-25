@@ -85,7 +85,7 @@ inline void fu_ALLOC(T*& out_ptr, int& inout_cnt)
         cnt = cnt > 1
             ? cnt : 1;
 
-    size_t bytes    = cnt * sizeof(T);
+    size_t bytes    = size_t(cnt) * sizeof(T);
     out_ptr         = SHAREABLE ? (T*)fu_ARC_ALLOC(&bytes)
                                 : (T*)fu_UNIQ_ALLOC(&bytes);
     inout_cnt       = int(bytes / sizeof(T));

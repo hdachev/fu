@@ -255,7 +255,7 @@ view<Dest> into_view(const V& src) noexcept
 {
     char* start = (char*) src.data();
 
-    size_t  src_size = src.size();
+    size_t  src_size = (size_t) src.size();
     size_t dest_size = src_size * sizeof(Src) / sizeof(Dest);
 
     // Exact fit.
@@ -264,7 +264,7 @@ view<Dest> into_view(const V& src) noexcept
 
     return view<Dest>(
         (Dest*) start,
-                dest_size);
+        (fu::i) dest_size);
 }
 
 template <typename Dest, typename V, typename Src = typename V::value_type>
@@ -272,7 +272,7 @@ view_mut<Dest> into_view_mut(V& src) noexcept
 {
     char* start = (char*) src.data_mut();
 
-    size_t  src_size = src.size();
+    size_t  src_size = (size_t) src.size();
     size_t dest_size = src_size * sizeof(Src) / sizeof(Dest);
 
     // Exact fit.
@@ -281,7 +281,7 @@ view_mut<Dest> into_view_mut(V& src) noexcept
 
     return view_mut<Dest>(
         (Dest*) start,
-                dest_size);
+        (fu::i) dest_size);
 }
 
 template <typename Dest, typename V>

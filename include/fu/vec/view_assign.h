@@ -20,8 +20,8 @@ fu_INL void view_assign(V0& a, const V1& b) noexcept
         sizeof(T1) % sizeof(T0) == 0,
             "view_assign: neither T0/T1 is size-mod the other.");
 
-    auto s0 = a.size() * sizeof(T0);
-    auto s1 = b.size() * sizeof(T1);
+    auto s0 = (size_t) a.size() * sizeof(T0);
+    auto s1 = (size_t) b.size() * sizeof(T1);
     assert(s0 == s1);
 
     auto s  = s0 < s1 ? s0 : s1;
