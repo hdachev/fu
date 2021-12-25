@@ -90,6 +90,12 @@ pub fn build(
                 ~ "-pedantic-errors -Wall -Wextra -Werror " // opt-in
                 ~ "-Wdouble-promotion " // opt-in
                 ~ "-Wconversion -Wsign-conversion " // opt-in
+
+                // clang issue with float->bool,
+                //  if we have an explicit !! codegen this can be fixed,
+                //   an x != 0 works, this can be also used non-zero non-nan check.
+                //
+                ~ "-Wno-float-conversion " // opt-out
                 ;
 
     //
