@@ -1,10 +1,3 @@
-
-//////////////////////////////////////////////////////////////
-// TODO FIX translation-unity auto-unity builds are broken, //
-//  modules need to be imported in the right order.         //
-import types;                                               //
-//////////////////////////////////////////////////////////////
-
 import helpers;
 import compiler;
 import tests;

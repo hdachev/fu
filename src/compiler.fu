@@ -320,11 +320,11 @@ pub fn ZERO(
 
                 // Each fail variant must throw.
                 try ZERO(:sources);
-                catch (_e)
+                catch (e)
                 {
-                    let e       = _e.ERR_TRIM;
+                    shadow let e    = e.ERR_TRIM;
 
-                    mut actual  = e
+                    mut actual      = e
                         .ERR_STRIP_ANSI
                         .ERR_STRIP_SNIPPETS
                         .ascii_lower();
