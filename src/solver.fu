@@ -5469,11 +5469,6 @@ pub fn solve(
                     /////////////////
                 }
                 /////////////////////////////////////////////////////////////////////////////////
-
-                if (type.is_ref)
-                    type.lifetime = Lifetime_test(
-                        Lifetime_replaceArgsAtCallsite(target, args),
-                        tempsOK: true);
             }
 
             // Inliner.
@@ -5529,6 +5524,12 @@ pub fn solve(
                 block.kind || fail("inline: no createBlock().kind");
                 return block;
             }
+
+            // Not relevant for inline fns.
+            if (type.is_ref)
+                type.lifetime = Lifetime_test(
+                    Lifetime_replaceArgsAtCallsite(target, args),
+                    tempsOK: true);
         }
 
         //
