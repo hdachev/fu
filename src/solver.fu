@@ -5421,6 +5421,13 @@ pub fn solve(
         //  previously we tracked them separately but we're making everything more samey.
         else if (target.kind == "var")
         {
+            // INLINE ARGUMENTS ////////////////////////////////////////////
+            if (target.flags & F_INLINE)
+                return SolvedNode_deepClone(
+                    target.solved.items[LET_INIT]);
+            // INLINE ARGUMENTS ////////////////////////////////////////////
+
+            //
             type.lifetime.uni0n.len == 1 || fail(
                 "CallerNode: var " ~ target.name ~ " type.lifetime.len != 1");
 
@@ -5508,6 +5515,11 @@ pub fn solve(
                     let slot = host_args[i];
                     result[i] = createLet(id: slot.name, init: args[i], // TODO__ORIGINAL_ANNOT_OR_TYPE
                         :slot.flags &~ (F_ARG | F_COMPOUND_ID)); // As if not an arg + no autocall.
+
+                    // INLINE ARGUMENTS ////////////////////////////////////////////
+                    if (slot.flags & F_INLINE)
+                        result[i] = createEmpty();
+                    // INLINE ARGUMENTS ////////////////////////////////////////////
                 }
 
                 let s_body = solveBlock(

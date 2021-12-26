@@ -942,11 +942,18 @@ pub fn parse(
 
             first = false;
 
-            mut insertAt = -1;
+            let isInline = !!tryConsume("id", "inline");
 
+            mut insertAt = -1;
             mut arg = parseLet(xqmark: true);
             if (_dollars.len > dollars0)
                 arg.flags |= F_TEMPLATE;
+
+            if (isInline)
+            {
+                arg.flags |= F_INLINE;
+                outFlags  |= F_INLINE;
+            }
 
             if (arg.items[LET_INIT])
             {

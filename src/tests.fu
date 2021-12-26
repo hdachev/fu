@@ -1633,6 +1633,19 @@ pub fn runTests()
         return i - 11;
     `);
 
+    ZERO(`
+        mut a = 1;
+        mut b = 0;
+        a ||= ++b;
+        return  b;
+    `);
+
+    ZERO(`
+        mut CHANGE = false;
+        CHANGE ||= true;
+        return CHANGE.i32 - 1;
+    `);
+
     TODO_Map(`
         mut m: Map(string, string);
         mut g = 0;

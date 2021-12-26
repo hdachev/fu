@@ -122,10 +122,12 @@ fn false(): bool __native("false");
 
 // Assignment.
 
-fn   =(a: &mut $T, mut b: $T): &mut $T __native;
-fn ||=(a: &mut $T, mut b: $T): &mut $T __native;
+fn   =(a: &mut $T,    mut b: $T): &mut $T __native;
+fn ||=(a: &mut $T, inline b: $T): &mut $T = a || (a = b);
+fn &&=(a: &mut $T, inline b: $T): &mut $T = a && (a = b);
 
 fn swap(ref a: $T, ref b: $T): void __native("<utility>", "std::swap");
+
 
 
 // Arrays.
