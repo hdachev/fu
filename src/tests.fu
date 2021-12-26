@@ -1588,6 +1588,34 @@ pub fn runTests()
         }
     `);
 
+    ZERO(`
+        fn test(mut init: string) {
+            init.len && init || throw("noreturn");
+            return init.len;
+        }
+
+        fn main() test("woot!") - 5;
+    `);
+
+    ZERO(`
+        fn is_mutref(t: string)     t.len == 6;
+        fn is_never(t: string)      t.len == 5;
+        let F_ARG = 1;
+
+        fn test(ref init: string, ref annot: string, mut flags: i32) {
+            init.is_mutref  || init.is_never  && annot
+                            || !init && flags & F_ARG
+                            || throw("noreturn");
+            return flags;
+        }
+
+        fn main() {
+            mut annot = "hey!";
+            mut init = "woot!";
+            return test(:init, :annot, 0);
+        }
+    `);
+
 
     // Short-circuit assignment, esp. useful for maps
     //  and the cpp `map[k] = v`,
