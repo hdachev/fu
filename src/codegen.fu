@@ -1741,6 +1741,14 @@ pub fn cpp_codegen(
 
     //
 
+    fn acceptsBool(type: Type)
+    {
+        // Basically, will a bool do, e.g. -
+        //  do you need a ternary or do || and && do the job, etc.
+        //
+        return isAssignable(host: type, t_bool);
+    }
+
     fn cgIf(node: SolvedNode, mode: i32): string
     {
         let n0 = node.items[0];
@@ -1782,7 +1790,7 @@ pub fn cpp_codegen(
         }
 
         mut src = !(mode & M_PARENS) && "(";
-        if (type.is_bool)
+        if (type.acceptsBool)
         {
             cgAndOr_concat(src, " && ", items, parens: true);
         }
@@ -1843,7 +1851,7 @@ pub fn cpp_codegen(
         }
 
         mut src = !(mode & M_PARENS) && "(";
-        if (type.is_bool)
+        if (type.acceptsBool)
         {
             cgAndOr_concat(src, " || ", items, parens: true);
         }

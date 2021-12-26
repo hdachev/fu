@@ -162,7 +162,6 @@ pub let t_byte      = Type(ValueType(modid: 0, canon: "byte",   quals: Primitive
 //
 
 pub fn is_void  (t: Type) t.canon == t_void  .canon;
-pub fn is_bool  (t: Type) t.canon == t_bool  .canon;
 pub fn is_byte  (t: Type) t.canon == t_byte  .canon;
 pub fn is_never (t: Type) t.canon == t_never .canon;
 pub fn is_zeroes(t: Type) t.canon == t_zeroes.canon;

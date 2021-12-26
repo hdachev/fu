@@ -5100,7 +5100,7 @@ pub fn solve(
             type = t_bool;
 
         // Unless this is an explicit bool context:
-        if (!type.is_bool)
+        if !(type == t_bool)
         {
             mut sumType: Type;
             mut hasNever = false;
@@ -5161,7 +5161,7 @@ pub fn solve(
             type = t_bool;
 
         // Unless this is an explicit bool context:
-        if (!type.is_bool)
+        if !(type == t_bool)
         {
             mut sumType: Type;
 
@@ -6712,7 +6712,7 @@ pub fn solve(
             mut expr = h.returns[i].items.only;
             mut type = expr.type;
 
-            if (expr.is_ref)
+            if (type.is_ref)
             {
                 type.lifetime = type.lifetime.Lifetime_unwind(:h.locals_start);
                 let ltCompare = type.lifetime.Lifetime_vs(:h.locals_start || fail());
@@ -6807,7 +6807,7 @@ pub fn solve(
         }
         else if (k == "or")
         {
-            if (!t.is_bool && !t.is_ref)
+            if (!(t == t_bool) && !t.is_ref)
                 for (mut i = 0; i < items.len; i++)
                     maybeCopyOrMove(items[i], t);
         }
