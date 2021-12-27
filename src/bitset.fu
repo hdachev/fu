@@ -85,14 +85,14 @@ pub fn popcount(using _: BitSet)
     mut sum = 0;
 
     let N = _data.len >> 3;
-    let i64s = _data[0, N << 3].view(i64);
-    for (mut i = 0; i < i64s.len; i++)
-        sum += bit::popcount(i64s[i]);
+    let u64s = _data[0, N << 3].view(u64);
+    for (mut i = 0; i < u64s.len; i++)
+        sum += bit::popcount(u64s[i]);
 
-    mut tail: i64;
+    mut tail: u64;
     for (mut i = N << 3; i < _data.len; i++) {
         tail <<= 8;
-        tail |= _data[i].i64;
+        tail |= _data[i].u64;
     }
 
     sum += bit::popcount(tail);

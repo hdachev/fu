@@ -1,3 +1,3 @@
 
-pub fn popcount(path: i32): i32 __native("__builtin_popcount");
-pub fn popcount(path: i64): i32 __native("__builtin_popcountll");
+pub fn popcount(path: u32): i32 __native("__builtin_popcount");
+pub fn popcount(path: u64): i32 __native("__builtin_popcountll");
