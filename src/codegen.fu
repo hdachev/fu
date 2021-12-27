@@ -1558,8 +1558,6 @@ pub fn cpp_codegen(
 
             if (node.target.isOp)
             {
-                let head = args[0] || fail();
-
                 if (args.len == 1)
                     return target.flags & F_POSTFIX ? emitPostfixOp(id.valid_operator)
                                                     : emitPrefixOp (id.valid_operator);
@@ -1575,17 +1573,6 @@ pub fn cpp_codegen(
                             return ARG(0) ~ ".mutref(" ~ ARG(1) ~ ")";
 
                         return ARG(0) ~ "[" ~ ARG(1) ~ "]";
-                    }
-
-                    // Conditional lazy assignment.
-                    if (id == "||=")
-                    {
-                        let arg0 = ARG(0);
-
-                        mut tv: TEMPVAR;
-                        let condcons = via(:tv, :head.type, expr: arg0);
-                        let alt = tv.ptrflip ? "*" ~ tv.id : tv.id || arg0;
-                        return ooeWrap("(" ~ condcons ~ alt ~ " = " ~ ARG(1) ~ ")");
                     }
 
                     // Skip some of the ridiculous parens.
