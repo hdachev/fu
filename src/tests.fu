@@ -5927,25 +5927,6 @@ pub fn runTests()
         }
     `]);
 
-    ZERO([`
-        fn each(y<alt>: i32</alt>)
-            y & 1   ? y
-                    : y / 2 + each(y / 2);
-    `,
-    `
-        fn each(y<alt>: i32</alt>)
-            y & 1   ? y / 2
-                    : y / 2 + each(y / 2);
-    `,
-    `
-        fn main() {
-            let a = _0::each(100);
-            let b = _1::each(8);
-
-            return a+b - 107;
-        }
-    `]);
-
 
     // Explicit shadowing.
 
@@ -6716,32 +6697,6 @@ pub fn runTests()
         }
     `);
 
-    TODO([`
-        fn sum_each(a, b, each)     a.each + b.each;
-
-        fn hello(x) {
-            if (x & 1) {
-                fn each(y) y    ? y * each(y - 1)
-                                : 100;
-
-                return sum_each(x, x, fn each);
-            }
-            else {
-                fn each(y) y    ? y * each(y - 1)
-                                : 10000;
-
-                return sum_each(x, x, fn each);
-            }
-        }
-    `,
-    `
-        fn each(y) y & 1    ? y
-                            : y / 2 + each(y / 2);
-
-        fn main() _0::hello(1) - 2 * each(100)
-                + _0::hello(2) - 2 * each(20000);
-    `]);
-
 
     // Let's try to break scope-skips.
 
@@ -6884,48 +6839,6 @@ pub fn runTests()
         type a = sB(i32);
         fn main() a(1).test;
     `);
-
-    ZERO([`
-        fn find(keys: $T[], item: $T) {
-            for (mut i = 0; i < keys.len; i++) {
-                if (keys[i] >= item) {
-                    if (keys[i] != item)
-                        return -1;
-
-                    return i;
-                }
-            }
-
-            return -1;
-        }
-    `,
-    `
-        fn Set(_: $K) struct { keys: $K[]; };
-
-        fn has(using _, key)
-            _0::find(keys, key) >= 0;
-    `,
-    `
-        fn use_Set(a: string) {
-            mut set: _1::Set(string);
-            set.keys ~= a;
-            return set._1::has(a);
-        }
-
-        fn dont_use_Set(a: string, b: string) {
-            mut keys: string[];
-            keys ~= b;
-            keys ~= a;
-            return keys.find(a);
-        }
-
-        fn main() {
-            if (!use_Set("a"))
-                return -1;
-
-            return dont_use_Set("a", "b") - 1;
-        }
-    `]);
 
 
     // Macros & loops.
@@ -7430,7 +7343,68 @@ pub fn runTests()
 
     // Mangling.
 
-    TODO(`
+    ZERO([`
+        fn each(y<alt>: i32</alt>)
+            y & 1   ? y
+                    : y / 2 + each(y / 2);
+    `,
+    `
+        fn each(y<alt>: i32</alt>)
+            y & 1   ? y / 2
+                    : y / 2 + each(y / 2);
+    `,
+    `
+        fn main() {
+            let a = _0::each(100);
+            let b = _1::each(8);
+
+            return a+b - 107;
+        }
+    `]);
+
+    ZERO([`
+        fn find(keys: $T[], item: $T) {
+            for (mut i = 0; i < keys.len; i++) {
+                if (keys[i] >= item) {
+                    if (keys[i] != item)
+                        return -1;
+
+                    return i;
+                }
+            }
+
+            return -1;
+        }
+    `,
+    `
+        fn Set(_: $K) struct { keys: $K[]; };
+
+        fn has(using _, key)
+            _0::find(keys, key) >= 0;
+    `,
+    `
+        fn use_Set(a: string) {
+            mut set: _1::Set(string);
+            set.keys ~= a;
+            return set._1::has(a);
+        }
+
+        fn dont_use_Set(a: string, b: string) {
+            mut keys: string[];
+            keys ~= b;
+            keys ~= a;
+            return keys.find(a);
+        }
+
+        fn main() {
+            if (!use_Set("a"))
+                return -1;
+
+            return dont_use_Set("a", "b") - 1;
+        }
+    `]);
+
+    ZERO(`
         fn test(tokens: i32[]) {
             mut lidx = 0;
             mut sum  = 0;
@@ -7444,8 +7418,34 @@ pub fn runTests()
             return sum;
         }
 
-        fn main() [ 1 ].test - 1;
+        fn main() [ 1 ].test + 1;
     `);
+
+    TODO([`
+        fn sum_each(a, b, each)     a.each + b.each;
+
+        fn hello(x) {
+            if (x & 1) {
+                fn each(y) y    ? y * each(y - 1)
+                                : 100;
+
+                return sum_each(x, x, fn each);
+            }
+            else {
+                fn each(y) y    ? y * each(y - 1)
+                                : 10000;
+
+                return sum_each(x, x, fn each);
+            }
+        }
+    `,
+    `
+        fn each(y) y & 1    ? y
+                            : y / 2 + each(y / 2);
+
+        fn main() _0::hello(1) - 2 * each(100)
+                + _0::hello(2) - 2 * each(20000);
+    `]);
 
 
     // Fork/join parallelism.
