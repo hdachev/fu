@@ -1176,8 +1176,10 @@ pub fn runTests()
         let str = "hello " ~ "world";
 
         return str.starts(with: "hel")
+             ? str  .ends(with: "rld")
              ? str.len - 11
-             : 171;
+             : 171
+             : 173;
     `);
 
     ZERO(`
