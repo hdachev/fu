@@ -593,6 +593,21 @@ pub fn solve(
 
     //
 
+    fn shouldAutoshadow(id: string)
+    {
+        if (!OPTI_autoshadow)
+            return false;
+
+        _scope.items.each(_ss.declash, |item, index|
+        {
+            let root = index <= _root_scope.items_len;
+            if (!root && item.id == id)
+                return false;
+        });
+
+        return true;
+    }
+
     fn Binding(id: string, mut type: Type, flags!: i32, ref shadows!: bool)
     {
         mut name = id;
@@ -603,15 +618,6 @@ pub fn solve(
         // Unique identifiers.
         if (_root_scope)
         {
-            mut autoshadow = 0;
-
-            _scope.items.each(_ss.declash, |item, index|
-            {
-                let root = index <= _root_scope.items_len;
-                if (!root && item.id == id)
-                    autoshadow++;
-            });
-
             // LEAKY TEMPLATES, part 1:
             //  All locals are F_SHADOW - this is a usability thing really,
             //   otherwise you'd simply have to `shadow` everything manually.
@@ -619,7 +625,7 @@ pub fn solve(
             // Actually turning this on for everything -
             //  it might optimize scope lookups all over the place.
             //
-            if (OPTI_autoshadow && local_of && !autoshadow)
+            if (local_of && shouldAutoshadow(id))
                 shadows = true;
         }
 
