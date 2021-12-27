@@ -3361,8 +3361,9 @@ pub fn solve(
                             ? sourceModid && module.modid && getShortModuleName(ctx.modules[sourceModid].fname)
                             : shortModuleName;
 
-                        let idx_end = outItems.len + FN_ARGS_BACK;
-                        let sig     = shortModuleName ~ mangleArguments(outItems[0, idx_end]);
+                        let sig     = (target.local_of && target.index.str)
+                                    ~ shortModuleName
+                                    ~ mangleArguments(outItems[0, outItems.len + FN_ARGS_BACK]);
                         if (sig)
                         {
                             let hash = tea::hash62(sig, chars: 8) || fail();
