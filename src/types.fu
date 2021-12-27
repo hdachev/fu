@@ -136,33 +136,36 @@ pub fn ==(a: Type, b: Type)
 
 //
 
-pub let Primitive   = q_rx_copy;
+fn Primitive(canon: string)
+    Type(ValueType(modid: 0, :canon, quals: q_rx_copy));
 
-pub let t_i8        = Type(ValueType(modid: 0, canon: "i8",  quals: Primitive));
-pub let t_i16       = Type(ValueType(modid: 0, canon: "i16", quals: Primitive));
-pub let t_i32       = Type(ValueType(modid: 0, canon: "i32", quals: Primitive));
-pub let t_i64       = Type(ValueType(modid: 0, canon: "i64", quals: Primitive));
+pub let t_i8        = Primitive("i8");
+pub let t_i16       = Primitive("i16");
+pub let t_i32       = Primitive("i32");
+pub let t_i64       = Primitive("i64");
 
-pub let t_u8        = Type(ValueType(modid: 0, canon: "u8",  quals: Primitive));
-pub let t_u16       = Type(ValueType(modid: 0, canon: "u16", quals: Primitive));
-pub let t_u32       = Type(ValueType(modid: 0, canon: "u32", quals: Primitive));
-pub let t_u64       = Type(ValueType(modid: 0, canon: "u64", quals: Primitive));
+pub let t_u8        = Primitive("u8");
+pub let t_u16       = Primitive("u16");
+pub let t_u32       = Primitive("u32");
+pub let t_u64       = Primitive("u64");
 
-pub let t_f32       = Type(ValueType(modid: 0, canon: "f32", quals: Primitive));
-pub let t_f64       = Type(ValueType(modid: 0, canon: "f64", quals: Primitive));
+pub let t_f32       = Primitive("f32");
+pub let t_f64       = Primitive("f64");
 
-pub let t_void      = Type(ValueType(modid: 0, canon: "void",   quals: 0));
-pub let t_bool      = Type(ValueType(modid: 0, canon: "bool",   quals: Primitive));
-pub let t_never     = Type(ValueType(modid: 0, canon: "never",  quals: 0));
-pub let t_zeroes    = Type(ValueType(modid: 0, canon: "zeroes", quals: 0));
-
-pub let t_byte      = Type(ValueType(modid: 0, canon: "byte",   quals: Primitive));
+pub let t_bool      = Primitive("bool");
+pub let t_byte      = Primitive("byte");
 
 
-//
+// I think these should also be non-refereable?
+
+fn NotSure(canon: string)
+    Type(ValueType(modid: 0, :canon, quals: 0));
+
+pub let t_void      = NotSure("void");
+pub let t_never     = NotSure("never");
+pub let t_zeroes    = NotSure("zeroes");
 
 pub fn is_void  (t: Type) t.canon == t_void  .canon;
-pub fn is_byte  (t: Type) t.canon == t_byte  .canon;
 pub fn is_never (t: Type) t.canon == t_never .canon;
 pub fn is_zeroes(t: Type) t.canon == t_zeroes.canon;
 
@@ -171,11 +174,6 @@ pub fn is_zeroes(t: Type) t.canon == t_zeroes.canon;
 
 pub fn is_rx_copy   (t: Type) !!(t.quals & q_rx_copy);
 pub fn is_rx_resize (t: Type) !!(t.quals & q_rx_resize);
-
-
-// TODO non zsts, non-empty structs, etc.
-
-pub fn maybe_nonzero(t: Type) t.is_never || t.is_void;
 
 
 //

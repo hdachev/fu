@@ -1647,7 +1647,8 @@ pub fn cpp_codegen(
                     return cast ~ '(' ~ inner ~ '(' ~ args.only ~ "))";
                 }
             }
-            else if (input.is_byte && !output.is_byte)
+            else if (input.canon == t_byte.canon &&
+                    output.canon != t_byte.canon)
             {
                 // Go through unsigned char.
                 let inner = typeAnnotBase(t_u8);
@@ -2240,7 +2241,8 @@ pub fn cpp_codegen(
         for (mut i = 0; i < nodes.len; i++)
         {
             let node    = nodes[i];
-            let isTrail = trail && i == nodes.len - 1 && !node.type.maybe_nonzero;
+            let isTrail = trail && i == nodes.len - 1 && !node.is_never && !node.is_void;
+
             mut src     = node && cgNode(node, isTrail ? mode &~ M_STMT : mode, debug: debug ~ ".cgNodes");
 
             src || mode & M_STMT || fail("cgNodes: empty output for Node(kind=`" ~ node.kind ~ "` value=`" ~ node.value ~ "`).");
