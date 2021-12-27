@@ -1448,14 +1448,32 @@ pub fn cpp_codegen(
 
         //
 
+        fn affectedByIntegerPromotions(type: Type)
+        {
+            if (!type.is_integral || type.is_ref)
+                return false;
+
+            let c = type.canon;
+            return c.len == 2 // u8, i8
+                || c.len == 3 && c[1, 3] == "16";
+        }
+
+        fn unpromote(expr: string)
+        {
+            if (isNative && node.type.affectedByIntegerPromotions)
+                return typeAnnotBase(node.type) ~ "(" ~ expr ~ ")";
+
+            return expr;
+        }
+
         fn emitPostfixOp(op: string)
         {
-            return ARG(0) ~ op;
+            return unpromote(ARG(0) ~ op);
         }
 
         fn emitPrefixOp(op: string)
         {
-            return op ~ ARG(0);
+            return unpromote(op ~ ARG(0));
         }
 
         fn emitBinaryOp(op: string)
@@ -1465,7 +1483,7 @@ pub fn cpp_codegen(
             if (binSkipParens(op, mode) && !ooe_header)
                 return ARG(0) ~ " " ~ op ~ " " ~ ARG(1);
 
-            return ooeWrap("(" ~ ARG(0) ~ " " ~ op ~ " " ~ ARG(1) ~ ")");
+            return ooeWrap(unpromote("(" ~ ARG(0) ~ " " ~ op ~ " " ~ ARG(1) ~ ")"));
         }
 
         fn emitMethodCall(id: string)
