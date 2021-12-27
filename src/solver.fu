@@ -66,6 +66,11 @@ pub fn solve(
 {
     let parse = module.in.parse.root;
 
+    let shortModuleName = module.modid && getShortModuleName(module.fname);
+
+
+    //
+
     let implicit mut _here: TokenIdx;
 
 
@@ -3324,15 +3329,43 @@ pub fn solve(
             {
                 // Previously initScope:
                 {
-                    // TODO FIX currently we only hash template names.
+                    // Let's consider: hashing all fns,
+                    //  including the module name and directory in the sighash,
+                    //   and potentially extending the hashlen to 6 or 8 chars.
+                    //
+                    // Perhaps we should do this mangling in the codegen?
+                    //
                     mut name = n_fn.value || fail("TODO anonymous fns");
-                    if (isSpec && !isNative && !isInline)
+                    if (!isNative && !isInline && !isUnspec
+
+                        // TODO FIX easy by tagging entry fns
+                        && name != "main"
+
+                        // TODO FIX operators are a more serious problem -
+                        //  we want operators to codegen c++ operators,
+                        //   esp. assignments because they have guaranteed order of eval -
+                        //    which means we can't add these hashes around.
+                        //
+                        // For cpp we could use namespaces,
+                        //  but we can't do ns::operator+= calls,
+                        //   because that doesn't guarantee eval,
+                        //    so there must be a using or something, it's fragile.
+                        //
+                        // Something has to give somewhere.
+                        //
+                        && !(n_fn.flags & F_OPERATOR))
                     {
+                        // "namespacing" via the signature hashes.
+                        let sourceModid             = template.node.token.modid;
+                        shadow let shortModuleName  = sourceModid != module.modid
+                            ? sourceModid && module.modid && getShortModuleName(ctx.modules[sourceModid].fname)
+                            : shortModuleName;
+
                         let idx_end = outItems.len + FN_ARGS_BACK;
-                        let sig = mangleArguments(outItems[0, idx_end]);
+                        let sig     = shortModuleName ~ mangleArguments(outItems[0, idx_end]);
                         if (sig)
                         {
-                            let hash = tea::hash62(sig, chars: 4) || fail();
+                            let hash = tea::hash62(sig, chars: 8) || fail();
                             name ~= "_" ~ hash;
                         }
                     }

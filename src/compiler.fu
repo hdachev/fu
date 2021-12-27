@@ -231,7 +231,7 @@ pub fn compile_snippets(sources: string[], fnames?: string[], options?: Options[
 
 pub fn snippet2cpp(src: string): string
 {
-    let fname = "SNIPPET";
+    let fname = "/DIR/FILE.fu";
 
     let ctx = compile_snippets([ src ], [ fname ]);
     for (mut i = 0; i < ctx.modules.len; i++)

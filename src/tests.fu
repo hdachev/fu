@@ -5283,7 +5283,7 @@ pub fn runTests()
         fn test(a: [byte], b?: [byte]) a == b;
         fn main() test("") ? 0 : 1;
 
-        ;; EXPECT test(fu::view<char>{}, fu::view<char>{})
+        ;; EXPECT (fu::view<char>{}, fu::view<char>{})
     `);
 
     ZERO(`
@@ -5927,7 +5927,7 @@ pub fn runTests()
         }
     `]);
 
-    TODO([`
+    ZERO([`
         fn each(y<alt>: i32</alt>)
             y & 1   ? y
                     : y / 2 + each(y / 2);
@@ -6885,7 +6885,7 @@ pub fn runTests()
         fn main() a(1).test;
     `);
 
-    TODO([`
+    ZERO([`
         fn find(keys: $T[], item: $T) {
             for (mut i = 0; i < keys.len; i++) {
                 if (keys[i] >= item) {

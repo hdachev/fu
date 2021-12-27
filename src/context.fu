@@ -252,3 +252,27 @@ pub fn formatCodeSnippet(src!: string, start!: Token, end!: Token, extraLines! =
 
     return result;
 }
+
+
+//
+
+pub fn getShortModuleName(fname: string)
+{
+    // fname.ends(with: ".fu") || assert();
+    let end = fname.len - 3;
+
+    mut found = false;
+    for (mut i = end; i --> 0; )
+    {
+        let c = fname[i];
+        if (c != '/')
+            continue;
+
+        if (found)
+            return fname.slice(i + 1, end);
+
+        found = true;
+    }
+
+    assert();
+}
