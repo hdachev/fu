@@ -4629,7 +4629,7 @@ pub fn solve(
                 // Can't shadow here -
                 //  shadowing works per signature,
                 //   we can't just shadow everything by the same name in scope.
-                result.push(target);
+                result.unshift(target);
             }
         }
 
