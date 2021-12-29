@@ -567,6 +567,25 @@ pub fn runTests()
         }
     `);
 
+    ZERO([`
+        fn template_add(a, b) a + b;
+    `,`
+        struct HasInt { i: i32 };
+        <split/>
+        fn +(a: HasInt, b: HasInt) HasInt(a.i + b.i);
+        fn main() _0::template_add(HasInt(1), HasInt(2)).i - 3;
+    `]);
+
+    TODO([`
+        fn template_add(a, b) a + b;
+    `,`
+        struct HasInt { i: i32 };
+        fn main() {
+            infix fn +(a: HasInt, b: HasInt) HasInt(a.i + b.i); // its hard to defend this -
+            _0::template_add(HasInt(1), HasInt(2)).i - 3;       //  the thing above works but this doesn't.
+        }                                                       //   given the autoshadowing, we might just want to allow everything.
+    `]);
+
 
     // Recursion, closures & implicit args.
 
@@ -7447,6 +7466,33 @@ pub fn runTests()
     `
         fn each(y) y & 1    ? y
                             : y / 2 + each(y / 2);
+
+        fn main() _0::hello(1) - 2 * each(100)
+                + _0::hello(2) - 2 * each(20000);
+    `]);
+
+    TODO([`
+        fn sum_each(a, b)       // Same as above,
+            a.each + b.each;    //  but we don't explicitly pass the fn each in.
+
+        fn hello(x) {
+            if (x & 1) {
+                fn each(a) a    ? a * each(a - 1)   // These get ignored?
+                                : 100;              //  sum_each goes and selects the one from _1.
+
+                return sum_each(x, x);
+            }
+            else {
+                fn each(b) b    ? b * each(b - 1)
+                                : 10000;
+
+                return sum_each(x, x);
+            }
+        }
+    `,
+    `
+        fn each(c) c & 1    ? c
+                            : c / 2 + each(c / 2);
 
         fn main() _0::hello(1) - 2 * each(100)
                 + _0::hello(2) - 2 * each(20000);
