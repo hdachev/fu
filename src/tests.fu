@@ -5107,6 +5107,11 @@ pub fn runTests()
                || 123_456.789.i32 - 123456.789.i32;
     `);
 
+    TODO(`                                  // litfix through && /////
+        fn test(a: u32, shadows: bool)      (a << 1) | (shadows && 1);
+        fn main()                           1.test.i32 - 2;
+    `);
+
 
     // Typedefs.
 
