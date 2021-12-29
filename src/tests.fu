@@ -7426,7 +7426,7 @@ pub fn runTests()
         fn main() [ 1 ].test + 1;
     `);
 
-    TODO([`
+    ZERO([`
         fn sum_each(a, b, each)     a.each + b.each;
 
         fn hello(x) {

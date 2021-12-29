@@ -593,6 +593,12 @@ pub fn solve(
 
     //
 
+    fn autoshadow(ref shadows: bool, local_of: i32, id: string)
+    {
+        if (!shadows && local_of && shouldAutoshadow(id))
+            shadows = true;
+    }
+
     fn shouldAutoshadow(id: string)
     {
         if (!OPTI_autoshadow)
@@ -625,8 +631,7 @@ pub fn solve(
             // Actually turning this on for everything -
             //  it might optimize scope lookups all over the place.
             //
-            if (local_of && shouldAutoshadow(id))
-                shadows = true;
+            autoshadow(:shadows, :local_of, :id);
         }
 
         // Reserve the slot.
@@ -2549,7 +2554,10 @@ pub fn solve(
         ext.min         = 0x7fffffff.i32;
         ext.max         = 0;
 
-        Scope_set(_scope, :target, :id, shadows: !!(node.flags & F_SHADOW));
+        mut shadows     = !!(node.flags & F_SHADOW);
+        autoshadow(:shadows, :local_of, :id);
+
+        Scope_set(_scope, :target, :id, :shadows);
 
         // Experimental conversion functions.
         if (node.flags & F_CONVERSION)
