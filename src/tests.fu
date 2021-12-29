@@ -2347,6 +2347,30 @@ pub fn runTests()
     `);
 
     TODO_borrowck(`
+        fn test(ref a: i32, ref b: i32) {
+            a += b;
+            b += a;
+        }
+
+        struct AB { a: i32; b: i32 };
+
+        fn main() {
+            mut ab = AB(1, 2);
+            <alt>
+            ref a = ab.a;
+            ref b = ab.b;
+            test(a, b);
+            <alt/>
+            ref a = ab.a;
+            test(a, ab.b);
+            <alt/>
+            test(ab.a, ab.b);
+            </alt>
+            return ab.b - 5;
+        }
+    `);
+
+    TODO_borrowck(`
         struct Helper { vars: i32[]; };
 
         fn test(ref _helpers: Helper[], helpers_idx: i32) {
