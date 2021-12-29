@@ -4916,10 +4916,7 @@ pub fn solve(
         // Dead code elim.
         mut args = solveNodes(node.items);
         if (args.if_last.type.is_never)
-        {
-            makeNote(N_DeadCall);
-            return createBlock(t_never, args);
-        }
+            return deadCall(args);
 
         //
         mut id = node.value;
@@ -4938,6 +4935,21 @@ pub fn solve(
 
         //
         return CallerNode(node.value, callTargIdx, args, :kills, :reorder, :conversions);
+    }
+
+    fn deadCall(args: SolvedNode[]): SolvedNode
+    {
+        // TODO FIX deadCall order of eval is kinda broken -
+        //  a dead default arg will respect LTR but not RTL order of eval,
+        //   a dead arg pre-match won't respect any order at all.
+        //
+        // This would be kinda solved if we decide that order of eval
+        //  is as written at each callsite, and not dependent on the target fn,
+        //   and we'll enforce RTL for assignments just because that's what's written,
+        //    e.g. if invoked as a regular fn it'd be LTR.
+        //
+        makeNote(N_DeadCall);
+        return createBlock(t_never, args);
     }
 
 
@@ -5457,6 +5469,13 @@ pub fn solve(
                         bindImplicitArg(:host_arg.name,
                                         :host_arg.type, becauseOf: target)
                     };
+
+                    // This can result in a dead call too.
+                    if (args[i].is_never)
+                    {
+                        args.shrink(i + 1);
+                        return deadCall(args);
+                    }
                 }
             }
         }
