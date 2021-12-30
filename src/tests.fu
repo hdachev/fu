@@ -5969,6 +5969,20 @@ pub fn runTests()
         }
     `]);
 
+    TODO([`
+        fn private(x)           x * 3;              // Scope_import is broken,
+        pub fn public(y)        private(y) * 2;     //  doesnt always import privates.
+        <split/>
+        fn main()               1.public - 6;
+    `]);
+
+    TODO([`
+        fn private(x: i32)      x * 3;              // cg fail:
+        pub fn public(y)        private(y) * 2;     //  fn private hidden in first translation unit.
+    `,`
+        fn main()               1._0::public - 6;
+    `]);
+
 
     // Explicit shadowing.
 
