@@ -171,6 +171,7 @@ pub nocopy struct Scope
     extended:   Extended[];
 
     imports:    i32[];
+    privates:   i32[];
     usings:     Target[];
     converts:   Target[];
 
@@ -194,6 +195,7 @@ pub struct ScopeMemo
 {
     items_len:      i32;
     imports_len:    i32;
+    privates_len:   i32;
     usings_len:     i32;
     converts_len:   i32;
     helpers_len:    i32;
@@ -208,6 +210,8 @@ pub struct ScopeSkipMemos
     declash:    ScopeSkip[];
 
     imports:    ScopeSkip[];
+    privates:   ScopeSkip[];
+
     usings:     ScopeSkip[];
     converts:   ScopeSkip[];
 

@@ -161,8 +161,9 @@ pub fn Scope_exports(scope: Scope, modid!: i32, field_items: ScopeItem[])
     let pub_cnvrts  = converts.len;
     converts       ~= prv_converts;
 
-    let no_imports: i32[];
-    let no_usings: Target[];
+    let no_imports:     i32[];
+    let no_privates:    i32[];
+    let no_usings:      Target[];
 
     return Scope(
         :items,     :pub_items,
@@ -170,8 +171,10 @@ pub fn Scope_exports(scope: Scope, modid!: i32, field_items: ScopeItem[])
 
         :scope.overloads,
         :scope.extended,
-        imports: no_imports,
-        usings:  no_usings);
+
+        imports:    no_imports,
+        privates:   no_privates,
+        usings:     no_usings);
 }
 
 
@@ -311,6 +314,7 @@ pub fn Scope_snap(scope: Scope, implicit _helpers: Helpers[])
     ScopeMemo(
         items_len:    scope.items   .len,
         imports_len:  scope.imports .len,
+        privates_len: scope.privates.len,
         usings_len:   scope.usings  .len,
         converts_len: scope.converts.len,
         helpers_len:       _helpers .len);
@@ -319,6 +323,7 @@ pub fn Scope_pop(ref scope: Scope, implicit ref _helpers: Helpers[], memo: Scope
 {
     scope.items   .shrink(memo.items_len);
     scope.imports .shrink(memo.imports_len);
+    scope.privates.shrink(memo.privates_len);
     scope.usings  .shrink(memo.usings_len);
     scope.converts.shrink(memo.converts_len);
     _helpers      .shrink(memo.helpers_len);
@@ -327,6 +332,7 @@ pub fn Scope_pop(ref scope: Scope, implicit ref _helpers: Helpers[], memo: Scope
 fn cmp(a: ScopeMemo, b: ScopeMemo)
     a.items_len     - b.items_len     ||
     a.imports_len   - b.imports_len   ||
+    a.privates_len  - b.privates_len  ||
     a.usings_len    - b.usings_len    ||
     a.converts_len  - b.converts_len  ||
     a.helpers_len   - b.helpers_len;
