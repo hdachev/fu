@@ -231,26 +231,49 @@ pub fn solve(
         _notes |= note;
     }
 
-    fn _Scope_import__forceCopy(modid: i32, private!?: bool): void
+
+    // Public & private imports.
+
+    fn _Scope_import__forceCopy(modid: i32): void
     {
         let s = ctx.modules[modid].out.solve.scope;
 
-        _scope.items    ~= s.items   [0, private ? s.items.len    : s.pub_items];
-        _scope.converts ~= s.converts[0, private ? s.converts.len : s.pub_cnvrts];
+        _scope.items    ~= s.items   [0, s.pub_items ];
+        _scope.converts ~= s.converts[0, s.pub_cnvrts];
     }
 
-    fn Scope_import(modid: i32, private!?: bool): void
+    fn _Scope_import__forceCopy_privates(modid: i32): void
     {
-        _scope.imports.each(_ss.imports, |import|
-        {
-            if (import == modid)
+        let s = ctx.modules[modid].out.solve.scope;
+
+        _scope.items    ~= s.items   [s.pub_items , s.items.len   ];
+        _scope.converts ~= s.converts[s.pub_cnvrts, s.converts.len];
+    }
+
+    fn Scope_import(modid: i32): void
+    {
+        _scope.imports.each(_ss.imports): |i|
+            if (i == modid)
                 return;
-        });
 
         modid || fail("Attempting to import modid-0.");
         _scope.imports ~= modid;
-        _Scope_import__forceCopy(modid, :private);
+        _Scope_import__forceCopy(modid);
     }
+
+    fn Scope_import_privates(modid: i32): void
+    {
+        _scope.privates.each(_ss.privates): |i|
+            if (i == modid)
+                return;
+
+        modid || fail("Attempting to import_privates modid-0.");
+        _scope.privates ~= modid;
+        _Scope_import__forceCopy_privates(modid);
+    }
+
+
+    //
 
     using fn GET(target: Target)
     {
@@ -2711,7 +2734,11 @@ pub fn solve(
         // We'll need the original imports in scope
         //  in order to solve type params & pattern match below.
         for (mut i = 0; i < template.imports.len; i++)
-            Scope_import(template.imports[i], private: i == 0);
+        {
+            Scope_import(template.imports[i]);
+            if (i == 0)
+                Scope_import_privates(template.imports[i]);
+        }
     }
 
 
