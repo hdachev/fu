@@ -174,7 +174,8 @@ pub nocopy struct Scope
     usings:     Target[];
     converts:   Target[];
 
-    pub_count:  i32;
+    pub_items:  i32;
+    pub_cnvrts: i32;
 };
 
 

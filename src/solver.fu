@@ -234,7 +234,9 @@ pub fn solve(
     fn _Scope_import__forceCopy(modid: i32, private!?: bool): void
     {
         let s = ctx.modules[modid].out.solve.scope;
-        _scope.items ~= s.items[0, private ? s.items.len : s.pub_count];
+
+        _scope.items    ~= s.items   [0, private ? s.items.len    : s.pub_items];
+        _scope.converts ~= s.converts[0, private ? s.converts.len : s.pub_cnvrts];
     }
 
     fn Scope_import(modid: i32, private!?: bool): void

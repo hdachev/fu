@@ -129,8 +129,11 @@ pub fn despeculateStruct(mut type: Type)
 
 pub fn Scope_exports(scope: Scope, modid!: i32, field_items: ScopeItem[])
 {
-    mut result:  ScopeItem[] = field_items;
-    mut private: ScopeItem[];
+    mut items:          ScopeItem[] = field_items;
+    mut prv_items:      ScopeItem[];
+
+    mut converts:       Target[];
+    mut prv_converts:   Target[];
 
     for (mut i = 0; i < scope.items.len; i++)
     {
@@ -138,23 +141,35 @@ pub fn Scope_exports(scope: Scope, modid!: i32, field_items: ScopeItem[])
         if (item.target.modid == modid)
         {
             let overload = scope.overloads[item.target.index - 1];
-            (overload.flags & F_PUB ? result : private)
-                .push(item);
+            (overload.flags & F_PUB ? items : prv_items) ~= item;
         }
     }
 
-    let pub_count = result.len;
-    result ~= private;
+    for (mut i = 0; i < scope.converts.len; i++)
+    {
+        let item = scope.converts[i];
+        if (item.modid == modid)
+        {
+            let overload = scope.overloads[item.index - 1];
+            (overload.flags & F_PUB ? converts : prv_converts) ~= item;
+        }
+    }
+
+    let pub_items   = items.len;
+    items          ~= prv_items;
+
+    let pub_cnvrts  = converts.len;
+    converts       ~= prv_converts;
 
     let no_imports: i32[];
     let no_usings: Target[];
 
     return Scope(
-        items: result,
+        :items,     :pub_items,
+        :converts,  :pub_cnvrts,
+
         :scope.overloads,
         :scope.extended,
-        :scope.converts,
-        :pub_count,
         imports: no_imports,
         usings:  no_usings);
 }
