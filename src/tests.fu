@@ -5949,14 +5949,14 @@ pub fn runTests()
         fn main()               1.public - 6;
     `]);
 
-    TODO([`
+    ZERO([`
         fn private(x: i32)      x * 3;              // cg fail:
         pub fn public(y)        private(y) * 2;     //  fn private hidden in first translation unit.
     `,`
         fn main()               1._0::public - 6;
     `]);
 
-    TODO([`
+    ZERO([`
         let OPTOKENS = "{}[]()!?~@#$%^&*/-+<=>,.;:|";   // nowadays problem is OPTOKENS cgs to static in first translation unit
 
         pub fn lex(src) // <- template

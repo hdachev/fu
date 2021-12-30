@@ -37,6 +37,9 @@ pub let N_BckVarCopy        = 1 << 15;
 pub let N_BckArgCopy        = 1 << 16;
 pub let N_BckExplicitLTR    = 1 << 17;
 
+pub let N_SD_HasStaticInit  = 1 << 18;
+pub let N_SD_ExternPrivates = 1 << 19;
+
 
 //
 
@@ -7003,6 +7006,63 @@ pub fn solve(
     }
 
 
+    //
+
+    fn Scope_observeDefects(items: ScopeItem[])
+    {
+        mut hasLets         = false;
+        mut hasPubTemplates = false;
+
+        mut privates: Target[];
+
+        for (mut i = 0; i < items.len; i++)
+        {
+            let t = items[i].target;
+            if (t.modid != module.modid)
+                continue;
+
+            let o = GET(t);
+            if (o.kind == "var")
+            {
+                hasLets = true;
+                if !(o.flags & F_PUB)
+                    privates ~= t;
+            }
+            else if (o.kind == "fn")
+            {
+                if !(o.flags & F_PUB)
+                    privates ~= t;
+            }
+            else if (o.kind == "template")
+            {
+                if (o.flags & F_PUB)
+                    hasPubTemplates = true;
+            }
+        }
+
+        // Note if we need to orchestrate c++ static init order.
+        //  OPTIMIZABLE: not every let needs static init,
+        //   flag constexpr stuff here instead of in codegen.
+        if (hasLets)
+            makeNote(N_SD_HasStaticInit);
+
+        // Ensuring public templates have access
+        //  to private stuff across translation units.
+        if (privates && hasPubTemplates)
+        {
+            makeNote(N_SD_ExternPrivates);
+
+            // F_PUB all privates so they get externed by codegen,
+            //  so public templates can access them from other translation units.
+            for (mut i = 0; i < privates.len; i++)
+            {
+                ref o = GET_mut(privates[i]);
+                o.flags |= F_EXTERN_PRIV;
+            }
+        }
+    }
+
+
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
@@ -7031,6 +7091,8 @@ pub fn solve(
         _current_fn.out && fail("non-empty _current_fn.");
 
         // println("TOTAL OVERLOADS " ~ module.fname ~ ": " ~ _scope.overloads.len);
+
+        Scope_observeDefects(_scope.items);
 
         // Run the thing.
         return SolverOutput(:root,

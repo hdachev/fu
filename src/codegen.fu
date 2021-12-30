@@ -727,11 +727,16 @@ pub fn cpp_codegen(
                             :              id.valid_identifier;
     }
 
+    fn isExtLinked(overload: Overload)
+    {
+        return overload.flags & (F_PUB | F_EXTERN_PRIV);
+    }
+
     fn fnLinkage(overload: Overload)
     {
-        return    (  overload.type.is_never      && "[[noreturn]] ")
-                ~ (  overload.flags & F_TEMPLATE && "inline "      )
-                ~ (!(overload.flags & F_PUB)     && "static "      );
+        return    (  overload.type.is_never         && "[[noreturn]] ")
+                ~ (  overload.flags & F_TEMPLATE    && "inline "      )
+                ~ (!(overload.isExtLinked)          && "static "      );
     }
 
     fn cgFnSignature(fn: SolvedNode): string
@@ -902,7 +907,7 @@ pub fn cpp_codegen(
     {
         let o = GET(fndef.target);
         let n = o.solved;
-        if !(n && o.flags & F_PUB)
+        if !(n && o.isExtLinked)
             return mode & M_STMT ? "" : "0";
 
         n.kind == "fn" || fail("cgFnDef non-fn");
@@ -1125,7 +1130,7 @@ pub fn cpp_codegen(
         }
 
         // Hide when possible.
-        if (!(GET(node.target).flags & F_PUB))
+        if !(GET(node.target).isExtLinked)
         {
             // We can't "forward declare" foreign private globals.
             if (!foreign)
@@ -1548,7 +1553,7 @@ pub fn cpp_codegen(
 
         if (node.target.modid && target.kind == "fn")
         {
-            if (target.solved.flags & F_TEMPLATE || !(target.solved.flags & F_PUB))
+            if (target.solved.flags & F_TEMPLATE || !target.isExtLinked)
                 ensureFnDef(node.target, target);
             else if (node.target.modid != module.modid)
                 ensureFwdDecl(node.target);
