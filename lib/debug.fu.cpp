@@ -3,7 +3,7 @@
 
 #ifndef FU_NO_FDEFs
 
-void bReak()
+void break_DX6KImTN()
 {
     fu_STR a = "Breakpoint here"_fu;
     if (a)

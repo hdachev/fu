@@ -13,7 +13,7 @@
 
 #ifndef FU_NO_FDEFs
 
-bool hasIdentifierChars(fu::view<char> id)
+bool hasIdentifierChars_rOVPWlZS(fu::view<char> id)
 {
     for (int i = 0; i < id.size(); i++)
     {
@@ -25,7 +25,7 @@ bool hasIdentifierChars(fu::view<char> id)
     return false;
 }
 
-fu_STR path_ext(const fu_STR& path)
+fu_STR path_ext_rOVPWlZS(const fu_STR& path)
 {
     for (int i = path.size(); i-- > 0; )
     {
@@ -40,7 +40,7 @@ fu_STR path_ext(const fu_STR& path)
     return fu_STR{};
 }
 
-fu_STR path_noext(const fu_STR& path)
+fu_STR path_noext_rOVPWlZS(const fu_STR& path)
 {
     for (int i = path.size(); i-- > 0; )
     {
@@ -55,7 +55,7 @@ fu_STR path_noext(const fu_STR& path)
     return fu_STR{};
 }
 
-fu_STR path_dirname(const fu_STR& path)
+fu_STR path_dirname_rOVPWlZS(const fu_STR& path)
 {
     for (int i = (path.size() - 1); i-- > 0; )
     {
@@ -66,7 +66,7 @@ fu_STR path_dirname(const fu_STR& path)
     return "/"_fu;
 }
 
-fu_STR path_filename(const fu_STR& path)
+fu_STR path_filename_rOVPWlZS(const fu_STR& path)
 {
     for (int i = path.size(); i-- > 0; )
     {
@@ -77,9 +77,9 @@ fu_STR path_filename(const fu_STR& path)
     return fu_STR(path);
 }
 
-                                #ifndef DEFt_split_mKuv
-                                #define DEFt_split_mKuv
-inline void split_mKuv(const fu_STR& str, fu::view<char> sep, int, fu_VEC<fu_STR>& result)
+                                #ifndef DEFt_split_jAwjKkXL
+                                #define DEFt_split_jAwjKkXL
+inline void split_jAwjKkXL(const fu_STR& str, fu::view<char> sep, int, fu_VEC<fu_STR>& result)
 {
     int last = 0;
     int next = 0;
@@ -91,7 +91,7 @@ inline void split_mKuv(const fu_STR& str, fu::view<char> sep, int, fu_VEC<fu_STR
 
             {
                 fu_STR substr = fu::slice(str, last, next);
-                result += substr;
+                result += fu_STR(substr);
             };
             last = (next + N);
         };
@@ -99,27 +99,27 @@ inline void split_mKuv(const fu_STR& str, fu::view<char> sep, int, fu_VEC<fu_STR
     if (last)
     {
         fu_STR substr = fu::slice(str, last);
-        result += substr;
+        result += fu_STR(substr);
     }
     else
-        result += str;
+        result += fu_STR(str);
 
 }
                                 #endif
 
-                                #ifndef DEFt_split_OZkl
-                                #define DEFt_split_OZkl
-inline fu_VEC<fu_STR> split_OZkl(const fu_STR& str, fu::view<char> sep)
+                                #ifndef DEFt_split_OZkl8S7R
+                                #define DEFt_split_OZkl8S7R
+inline fu_VEC<fu_STR> split_OZkl8S7R(const fu_STR& str, fu::view<char> sep)
 {
     /*MOV*/ fu_VEC<fu_STR> result {};
-    split_mKuv(str, sep, 0, result);
+    split_jAwjKkXL(str, sep, 0, result);
     return /*NRVO*/ result;
 }
                                 #endif
 
-                                #ifndef DEFt_join_9sek
-                                #define DEFt_join_9sek
-inline fu_STR join_9sek(fu::view<fu_STR> a, fu::view<char> sep)
+                                #ifndef DEFt_join_9sek5qv2
+                                #define DEFt_join_9sek5qv2
+inline fu_STR join_9sek5qv2(fu::view<fu_STR> a, fu::view<char> sep)
 {
     if (a.size() < 2)
         return fu_STR((a.size() ? a[0] : (*(const fu_STR*)fu::NIL)));
@@ -145,9 +145,9 @@ inline fu_STR join_9sek(fu::view<fu_STR> a, fu::view<char> sep)
 }
                                 #endif
 
-fu_STR path_normalize(const fu_STR& p)
+fu_STR path_normalize_rOVPWlZS(const fu_STR& p)
 {
-    fu_VEC<fu_STR> path = split_OZkl(p, "/"_fu);
+    fu_VEC<fu_STR> path = split_OZkl8S7R(p, "/"_fu);
     for (int i = path.size(); i-- > 0; )
     {
         const fu_STR& part = path[i];
@@ -161,10 +161,10 @@ fu_STR path_normalize(const fu_STR& p)
             path.splice(--i_1, 2);
 
     };
-    return join_9sek(path, "/"_fu);
+    return join_9sek5qv2(path, "/"_fu);
 }
 
-fu_STR path_relative(fu::view<char> from, const fu_STR& to)
+fu_STR path_relative_iwa818V1(fu::view<char> from, const fu_STR& to)
 {
     const int min = ((from.size() < to.size()) ? from.size() : to.size());
     int same = 0;
@@ -190,12 +190,12 @@ fu_STR path_relative(fu::view<char> from, const fu_STR& to)
     return /*NRVO*/ res;
 }
 
-fu_STR path_join(fu::view<char> a, const fu_STR& b)
+fu_STR path_join_iwa818V1(fu::view<char> a, const fu_STR& b)
 {
-    return ((b && (b[0] == '/')) ? path_normalize(b) : path_normalize(((a + '/') + b)));
+    return ((b && (b[0] == '/')) ? path_normalize_rOVPWlZS(b) : path_normalize_rOVPWlZS(((a + '/') + b)));
 }
 
-fu_STR ascii_lower(const fu_STR& a)
+fu_STR ascii_lower_rOVPWlZS(const fu_STR& a)
 {
     const int offset = (int(fu::u8('a')) - int(fu::u8('A')));
     /*MOV*/ fu_STR res { a };
@@ -209,12 +209,12 @@ fu_STR ascii_lower(const fu_STR& a)
     return /*NRVO*/ res;
 }
 
-char ascii_upper(const char c)
+char ascii_upper_DzYgSkPo(const char c)
 {
     return (((c >= 'a') && (c <= 'z')) ? char((int(fu::u8(c)) + (int(fu::u8('A')) - int(fu::u8('a'))))) : char(c));
 }
 
-int parse10i32(int& offset, fu::view<char> str)
+int parse10i32_g2vqWUwe(int& offset, fu::view<char> str)
 {
     /*MOV*/ int result {};
     while (offset < str.size())

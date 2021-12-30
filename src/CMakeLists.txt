@@ -6,39 +6,40 @@ set(FU_MAIN cli.fu)
 
 set(FU_INPUTS
     helpers.fu
+    module.fu
+    map.fu
     set.fu
-    options.fu
+    stat.fu
     ../lib/now.fu
     ../lib/alloc.fu
+    bitset.fu
     ../lib/bit.fu
+    structs.fu
+    quals.fu
     ../lib/file.fu
     ../lib/ansi.fu
+    options.fu
+    lexer.fu
+    ../lib/utf8.fu
+    hacks.fu
+    intlit.fu
+    cpp.fu
     ../lib/tea.fu
     ../lib/debug.fu
     ../lib/env.fu
+    build.fu
     ../lib/fs.fu
     ../lib/shell.fu
     ../lib/process.fu
     testdiff.fu
-    lexer.fu
-    map.fu
-    stat.fu
-    bitset.fu
-    intlit.fu
-    cpp.fu
-    parser.fu
-    module.fu
-    structs.fu
-    quals.fu
-    hacks.fu
-    build.fu
     context.fu
+    parser.fu
     fail.fu
     types.fu
     scope.fu
     effects.fu
-    addroffn.fu
     solver.fu
+    addroffn.fu
     codegen.fu
     prelude.fu
     compiler.fu

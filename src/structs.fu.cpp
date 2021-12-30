@@ -10,7 +10,7 @@ struct s_Region;
 struct s_Type;
 struct s_ValueType;
 
-int parse10i32(int&, fu::view<char>);
+int parse10i32_g2vqWUwe(int&, fu::view<char>);
 
                                 #ifndef DEF_s_ValueType
                                 #define DEF_s_ValueType
@@ -76,36 +76,36 @@ struct s_Type
 
 #ifndef FU_NO_FDEFs
 
-                                #ifndef DEFt_x7E_OZkl
-                                #define DEFt_x7E_OZkl
-inline fu_STR x7E_OZkl(fu::view<char> a, fu::view<char> b)
+                                #ifndef DEFt_x7E
+                                #define DEFt_x7E
+inline fu_STR x7E(fu::view<char> a, fu::view<char> b)
 {
     return a + b;
 }
                                 #endif
 
-fu_STR createStructCanon(const int index, fu::view<char>)
+fu_STR createStructCanon_bjRZEcOr(const int index, fu::view<char>)
 {
-    return x7E_OZkl("$"_fu, fu::i64dec(index));
+    return x7E("$"_fu, fu::i64dec(index));
 }
 
-                                #ifndef DEFt_starts_05eu
-                                #define DEFt_starts_05eu
-inline bool starts_05eu(fu::view<char> a, const char with)
+                                #ifndef DEFt_starts_05euw4KZ
+                                #define DEFt_starts_05euw4KZ
+inline bool starts_05euw4KZ(fu::view<char> a, const char with)
 {
     return a.size() && (a[0] == with);
 }
                                 #endif
 
-bool isStruct(const s_Type& type)
+bool isStruct_C02JG8Ye(const s_Type& type)
 {
-    return starts_05eu(type.vtype.canon, '$');
+    return starts_05euw4KZ(type.vtype.canon, '$');
 }
 
-int structIndex(fu::view<char> canon)
+int structIndex_j5f0QjYP(fu::view<char> canon)
 {
     int offset = 1;
-    return ((canon[0] == '$') ? parse10i32(offset, canon) : -1);
+    return ((canon[0] == '$') ? parse10i32_g2vqWUwe(offset, canon) : -1);
 }
 
 #endif

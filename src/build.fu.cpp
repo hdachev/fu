@@ -26,7 +26,7 @@ struct s_Context;
 struct s_Extended;
 struct s_LexerOutput;
 struct s_Lifetime;
-struct s_Map_OZkl;
+struct s_Map_tcbzgxDC;
 struct s_Module;
 struct s_ModuleInputs;
 struct s_ModuleOutputs;
@@ -53,12 +53,12 @@ struct s_TokenIdx;
 struct s_Type;
 struct s_ValueType;
 
-fu_STR hash16(fu::view<char>, int);
-fu_STR path_dirname(const fu_STR&);
-fu_STR path_filename(const fu_STR&);
-fu_STR path_join(fu::view<char>, const fu_STR&);
-fu_STR path_noext(const fu_STR&);
-fu_STR path_relative(fu::view<char>, const fu_STR&);
+fu_STR hash16_ID6Pdhz7(fu::view<char>, int);
+fu_STR path_dirname_rOVPWlZS(const fu_STR&);
+fu_STR path_filename_rOVPWlZS(const fu_STR&);
+fu_STR path_join_iwa818V1(fu::view<char>, const fu_STR&);
+fu_STR path_noext_rOVPWlZS(const fu_STR&);
+fu_STR path_relative_iwa818V1(fu::view<char>, const fu_STR&);
 
                                 #ifndef DEF_s_Token
                                 #define DEF_s_Token
@@ -88,12 +88,10 @@ struct s_Token
                                 #define DEF_s_LexerOutput
 struct s_LexerOutput
 {
-    fu_STR fname;
     fu_VEC<s_Token> tokens;
     explicit operator bool() const noexcept
     {
         return false
-            || fname
             || tokens
         ;
     }
@@ -404,6 +402,7 @@ struct s_ScopeMemo
 {
     int items_len;
     int imports_len;
+    int privates_len;
     int usings_len;
     int converts_len;
     int helpers_len;
@@ -412,6 +411,7 @@ struct s_ScopeMemo
         return false
             || items_len
             || imports_len
+            || privates_len
             || usings_len
             || converts_len
             || helpers_len
@@ -443,6 +443,7 @@ struct s_ScopeSkipMemos
     fu_VEC<s_ScopeSkip> items;
     fu_VEC<s_ScopeSkip> declash;
     fu_VEC<s_ScopeSkip> imports;
+    fu_VEC<s_ScopeSkip> privates;
     fu_VEC<s_ScopeSkip> usings;
     fu_VEC<s_ScopeSkip> converts;
     fu_VEC<s_ScopeSkip> helpers;
@@ -452,6 +453,7 @@ struct s_ScopeSkipMemos
             || items
             || declash
             || imports
+            || privates
             || usings
             || converts
             || helpers
@@ -546,9 +548,11 @@ struct s_Scope
     fu_VEC<s_Overload> overloads;
     fu_VEC<s_Extended> extended;
     fu_VEC<int> imports;
+    fu_VEC<int> privates;
     fu_VEC<s_Target> usings;
     fu_VEC<s_Target> converts;
-    int pub_count;
+    int pub_items;
+    int pub_cnvrts;
     s_Scope(const s_Scope&) = delete;
     s_Scope(s_Scope&&) = default;
     s_Scope& operator=(const s_Scope&) = delete;
@@ -560,9 +564,11 @@ struct s_Scope
             || overloads
             || extended
             || imports
+            || privates
             || usings
             || converts
-            || pub_count
+            || pub_items
+            || pub_cnvrts
         ;
     }
 };
@@ -694,9 +700,9 @@ struct s_Module
 };
                                 #endif
 
-                                #ifndef DEF_s_Map_OZkl
-                                #define DEF_s_Map_OZkl
-struct s_Map_OZkl
+                                #ifndef DEF_s_Map_tcbzgxDC
+                                #define DEF_s_Map_tcbzgxDC
+struct s_Map_tcbzgxDC
 {
     fu_VEC<fu_STR> keys;
     fu_VEC<fu_STR> vals;
@@ -715,8 +721,8 @@ struct s_Map_OZkl
 struct s_Context
 {
     fu_VEC<s_Module> modules;
-    s_Map_OZkl files;
-    s_Map_OZkl fuzzy;
+    s_Map_tcbzgxDC files;
+    s_Map_tcbzgxDC fuzzy;
     s_Context(const s_Context&) = delete;
     s_Context(s_Context&&) = default;
     s_Context& operator=(const s_Context&) = delete;
@@ -748,17 +754,17 @@ struct s_ModuleSortHelper
 
 #ifndef FU_NO_FDEFs
 
-                                #ifndef DEFt_if_last_SzE9
-                                #define DEFt_if_last_SzE9
-inline char if_last_SzE9(fu::view<char> s)
+                                #ifndef DEFt_if_last_o4lVLEQ3
+                                #define DEFt_if_last_o4lVLEQ3
+inline char if_last_o4lVLEQ3(fu::view<char> s)
 {
     return s.size() ? s[(s.size() - 1)] : (*(const char*)fu::NIL);
 }
                                 #endif
 
-                                #ifndef DEFt_grow_if_oob_iEAH
-                                #define DEFt_grow_if_oob_iEAH
-inline fu_VEC<s_ModuleSortHelper>& grow_if_oob_iEAH(fu_VEC<fu_VEC<s_ModuleSortHelper>>& a, const int i)
+                                #ifndef DEFt_grow_if_oob_Q6SArRrh
+                                #define DEFt_grow_if_oob_Q6SArRrh
+inline fu_VEC<s_ModuleSortHelper>& grow_if_oob_Q6SArRrh(fu_VEC<fu_VEC<s_ModuleSortHelper>>& a, const int i)
 {
     if ((a.size() <= i))
         a.grow((i + 1));
@@ -767,14 +773,14 @@ inline fu_VEC<s_ModuleSortHelper>& grow_if_oob_iEAH(fu_VEC<fu_VEC<s_ModuleSortHe
 }
                                 #endif
 
-static const s_Module& GET(const s_ModuleSortHelper& _, fu::view<s_Module> modules)
+static const s_Module& GET_qpqsduxE(const s_ModuleSortHelper& _, fu::view<s_Module> modules)
 {
     return modules[_.compile_index];
 }
 
-                                #ifndef DEFt_grow_if_oob_snLz
-                                #define DEFt_grow_if_oob_snLz
-inline fu_STR& grow_if_oob_snLz(fu_VEC<fu_STR>& a, const int i)
+                                #ifndef DEFt_grow_if_oob_yU7JiXdg
+                                #define DEFt_grow_if_oob_yU7JiXdg
+inline fu_STR& grow_if_oob_yU7JiXdg(fu_VEC<fu_STR>& a, const int i)
 {
     if ((a.size() <= i))
         a.grow((i + 1));
@@ -783,17 +789,17 @@ inline fu_STR& grow_if_oob_snLz(fu_VEC<fu_STR>& a, const int i)
 }
                                 #endif
 
-                                #ifndef DEFt_x7E_OZkl
-                                #define DEFt_x7E_OZkl
-inline fu_STR x7E_OZkl(fu::view<char> a, fu::view<char> b)
+                                #ifndef DEFt_x7E
+                                #define DEFt_x7E
+inline fu_STR x7E(fu::view<char> a, fu::view<char> b)
 {
     return a + b;
 }
                                 #endif
 
-                                #ifndef DEFt_join_9sek
-                                #define DEFt_join_9sek
-inline fu_STR join_9sek(fu::view<fu_STR> a, fu::view<char> sep)
+                                #ifndef DEFt_join_9sek5qv2
+                                #define DEFt_join_9sek5qv2
+inline fu_STR join_9sek5qv2(fu::view<fu_STR> a, fu::view<char> sep)
 {
     if (a.size() < 2)
         return fu_STR((a.size() ? a[0] : (*(const fu_STR*)fu::NIL)));
@@ -819,7 +825,7 @@ inline fu_STR join_9sek(fu::view<fu_STR> a, fu::view<char> sep)
 }
                                 #endif
 
-[[noreturn]] static fu::never ERR(fu_STR&& cpp, fu::view<fu_STR> Fs, fu::view<char> dir_wrk, fu_STR& stdout, const int code, const fu_STR& onfail, fu::view<s_ModuleSortHelper> modules, fu::view<s_Module> modules_1)
+[[noreturn]] static fu::never ERR_hDQ5EcKA(fu_STR&& cpp, fu::view<fu_STR> Fs, fu::view<char> dir_wrk, fu_STR& stdout, const int code, const fu_STR& onfail, fu::view<s_ModuleSortHelper> modules, fu::view<s_Module> modules_1)
 {
     if (!cpp)
     {
@@ -839,37 +845,45 @@ inline fu_STR join_9sek(fu::view<fu_STR> a, fu::view<char> sep)
     (void)0;}), static_cast<fu_STR&&>(_0)) }));
     fu::file_write(fname, cpp);
     if (!stdout)
-        stdout = x7E_OZkl("Exit code: "_fu, fu::i64dec(code));
+        stdout = x7E("Exit code: "_fu, fu::i64dec(code));
 
     fu_STR explain {};
     if (onfail)
     {
         explain = "\nFailing testcase:\n\n"_fu;
         for (int i = 1; i < modules.size(); i++)
-            explain += ((onfail == "print-src"_fu) ? fu_STR(GET(modules[i], modules_1).in.src) : (GET(modules[i], modules_1).fname + "\n"_fu));
+            explain += ((onfail == "print-src"_fu) ? fu_STR(GET_qpqsduxE(modules[i], modules_1).in.src) : (GET_qpqsduxE(modules[i], modules_1).fname + "\n"_fu));
 
         if (onfail == "print-src"_fu)
         {
             explain += "\nSources:\n"_fu;
             for (int i_1 = 1; i_1 < modules.size(); i_1++)
-                explain += GET(modules[i_1], modules_1).out.cpp.src;
+                explain += GET_qpqsduxE(modules[i_1], modules_1).out.cpp.src;
 
         };
     };
     fu::fail((stdout + explain));
 }
 
-                                #ifndef DEFt_only_VAhQ
-                                #define DEFt_only_VAhQ
-inline int only_VAhQ(fu::view<int> s)
+                                #ifndef DEFt_only_ucURvN0q
+                                #define DEFt_only_ucURvN0q
+inline int only_ucURvN0q(fu::view<int> s)
 {
-    return ((s.size() == 1) ? s[0] : fu::fail(x7E_OZkl("len != 1: "_fu, fu::i64dec(s.size()))));
+    return ((s.size() == 1) ? s[0] : fu::fail(x7E("len != 1: "_fu, fu::i64dec(s.size()))));
 }
                                 #endif
 
-                                #ifndef DEFt_replace_Q0b6
-                                #define DEFt_replace_Q0b6
-inline fu_STR replace_Q0b6(const fu_STR& str, fu::view<char> all, fu::view<char> with)
+                                #ifndef DEFt_starts_OZkl8S7R
+                                #define DEFt_starts_OZkl8S7R
+inline bool starts_OZkl8S7R(fu::view<char> a, fu::view<char> with)
+{
+    return (a.size() >= with.size()) && (fu::get_view(a, 0, with.size()) == with);
+}
+                                #endif
+
+                                #ifndef DEFt_replace_Q0b6Gw5m
+                                #define DEFt_replace_Q0b6Gw5m
+inline fu_STR replace_Q0b6Gw5m(const fu_STR& str, fu::view<char> all, fu::view<char> with)
 {
     /*MOV*/ fu_STR result {};
 
@@ -924,21 +938,21 @@ inline fu_STR replace_Q0b6(const fu_STR& str, fu::view<char> all, fu::view<char>
 }
                                 #endif
 
-static fu_STR ensure_local_fname(const fu_STR& fname, fu::view<char> dir_src)
+static fu_STR ensure_local_fname_ztTUL7Zq(const fu_STR& fname, fu::view<char> dir_src)
 {
-    if (fu::lmatch(fname, dir_src))
+    if (starts_OZkl8S7R(fname, dir_src))
         return fu_STR(fname);
 
     fu_STR foreign = (dir_src + ".foreign/"_fu);
     fu::fs_mkdir_p(fu_STR(foreign));
-    fu_STR rel = replace_Q0b6(replace_Q0b6(path_relative(dir_src, fname), "../"_fu, "up__"_fu), "/"_fu, "__"_fu);
+    fu_STR rel = replace_Q0b6Gw5m(replace_Q0b6Gw5m(path_relative_iwa818V1(dir_src, fname), "../"_fu, "up__"_fu), "/"_fu, "__"_fu);
     return foreign + rel;
 }
 
-static fu_STR update_file(const fu_STR& fname, fu::view<char> data, fu::view<char> dir_src, fu::view<char> dir_out)
+static fu_STR update_file_hRiwgSdB(const fu_STR& fname, fu::view<char> data, fu::view<char> dir_src, fu::view<char> dir_out)
 {
-    fu_STR fname_1 = ensure_local_fname(fname, dir_src);
-    if (!(fu::lmatch(fname_1, dir_src)))
+    fu_STR fname_1 = ensure_local_fname_ztTUL7Zq(fname, dir_src);
+    if (!(starts_OZkl8S7R(fname_1, dir_src)))
         fu::fail("ensure_local_fname broken"_fu);
 
     /*MOV*/ fu_STR fname_2 = (dir_out + fu::slice(fname_1, dir_src.size()));
@@ -946,7 +960,7 @@ static fu_STR update_file(const fu_STR& fname, fu::view<char> data, fu::view<cha
     {
         const int err = fu::file_write(fname_2, data);
         if (err)
-            fu::fail(x7E_OZkl((("Failed to write `"_fu + fname_2) + "`, error: #"_fu), fu::i64dec(err)));
+            fu::fail(x7E((("Failed to write `"_fu + fname_2) + "`, error: #"_fu), fu::i64dec(err)));
 
         fu_STR _0 {};
         fu::println((fu::slate<1, fu_STR> { (__extension__ (
@@ -958,22 +972,22 @@ static fu_STR update_file(const fu_STR& fname, fu::view<char> data, fu::view<cha
     return /*NRVO*/ fname_2;
 }
 
-void build(const bool run, fu_STR&& dir_wrk, const fu_STR& fulib, fu_STR&& bin, fu_STR&& dir_obj, fu_STR&& dir_src, fu_STR&& dir_cpp, const fu_STR& unity, fu::view<char> scheme, const fu_STR& onfail, const s_Context& ctx)
+void build_iE8lIG83(const bool run, fu_STR&& dir_wrk, const fu_STR& fulib, fu_STR&& bin, fu_STR&& dir_obj, fu_STR&& dir_src, fu_STR&& dir_cpp, const fu_STR& unity, fu::view<char> scheme, const fu_STR& onfail, const s_Context& ctx)
 {
-    if (if_last_SzE9(dir_wrk) != '/')
+    if (if_last_o4lVLEQ3(dir_wrk) != '/')
     {
         if (!(dir_wrk))
             fu::fail("No workspace directory provided."_fu);
 
         dir_wrk += '/';
     };
-    if (dir_obj && (if_last_SzE9(dir_obj) != '/'))
+    if (dir_obj && (if_last_o4lVLEQ3(dir_obj) != '/'))
         dir_obj += '/';
 
-    if (dir_src && (if_last_SzE9(dir_src) != '/'))
+    if (dir_src && (if_last_o4lVLEQ3(dir_src) != '/'))
         dir_src += '/';
 
-    if (dir_cpp && (if_last_SzE9(dir_cpp) != '/'))
+    if (dir_cpp && (if_last_o4lVLEQ3(dir_cpp) != '/'))
         dir_cpp += '/';
 
     fu_STR O_lvl = ((scheme != "debug"_fu) ? "-O3 -DNDEBUG -fno-math-errno "_fu : "-Og "_fu);
@@ -985,7 +999,7 @@ void build(const bool run, fu_STR&& dir_wrk, const fu_STR& fulib, fu_STR&& bin, 
 
     fu_STR INCLUDE = "-I ~/fu/include "_fu;
     fu_STR GCChash = ("g++ -std=c++1z "_fu + O_lvl);
-    fu_STR GCC_CMD = ((GCChash + "-pedantic-errors -Wall -Wextra -Werror "_fu) + "-Wdouble-promotion "_fu);
+    fu_STR GCC_CMD = ((((GCChash + "-pedantic-errors -Wall -Wextra -Werror "_fu) + "-Wdouble-promotion "_fu) + "-Wconversion -Wsign-conversion "_fu) + "-Wno-float-conversion "_fu);
     s_CodegenOutput fulib_cpp = s_CodegenOutput { fu::file_read(fulib) };
     fu_VEC<int> unit_mapping {};
     fu_VEC<fu_STR> unit_fnames {};
@@ -997,7 +1011,7 @@ void build(const bool run, fu_STR&& dir_wrk, const fu_STR& fulib, fu_STR&& bin, 
         for (int i = 0; i < modules.size(); i++)
         {
             const s_Module& module = modules[i];
-            grow_if_oob_iEAH(buckets, module.out.init_prio) += s_ModuleSortHelper { int(i) };
+            grow_if_oob_Q6SArRrh(buckets, module.out.init_prio) += s_ModuleSortHelper { int(i) };
         };
         /*MOV*/ /*RRET*/ fu_VEC<s_ModuleSortHelper> result {};
         for (int i_1 = 0; i_1 < buckets.size(); i_1++)
@@ -1008,23 +1022,23 @@ void build(const bool run, fu_STR&& dir_wrk, const fu_STR& fulib, fu_STR&& bin, 
     for (int i = 0; i < modules_1.size(); i++)
     {
         const s_ModuleSortHelper& module = modules_1[i];
-        const s_CodegenOutput& cpp = (i ? GET(module, modules).out.cpp : fulib_cpp);
+        const s_CodegenOutput& cpp = (i ? GET_qpqsduxE(module, modules).out.cpp : fulib_cpp);
         if (!cpp.src)
         {
             unit_mapping += -1;
             continue;
         };
         const int unit = i;
-        unit_mapping += unit;
-        grow_if_oob_snLz(unit_fnames, unit) = (i ? fu_STR(GET(module, modules).fname) : "fulib runtime"_fu);
+        unit_mapping += int(unit);
+        grow_if_oob_yU7JiXdg(unit_fnames, unit) = (i ? fu_STR(GET_qpqsduxE(module, modules).fname) : "fulib runtime"_fu);
     };
     fu_VEC<fu_STR> units {};
     for (int i_1 = 0; i_1 < modules_1.size(); i_1++)
     {
         const s_ModuleSortHelper& module = modules_1[i_1];
-        const s_CodegenOutput& cpp = (i_1 ? GET(module, modules).out.cpp : fulib_cpp);
+        const s_CodegenOutput& cpp = (i_1 ? GET_qpqsduxE(module, modules).out.cpp : fulib_cpp);
         if (cpp.src)
-            grow_if_oob_snLz(units, unit_mapping[i_1]) += cpp.src;
+            grow_if_oob_yU7JiXdg(units, unit_mapping[i_1]) += cpp.src;
 
     };
     fu_VEC<fu_STR> Fs {};
@@ -1035,12 +1049,12 @@ void build(const bool run, fu_STR&& dir_wrk, const fu_STR& fulib, fu_STR&& bin, 
         if (!cpp)
             continue;
 
-        fu_STR F = x7E_OZkl((((dir_wrk + "o-"_fu) + hash16((GCChash + cpp), 16)) + "-"_fu), fu::i64dec(cpp.size()));
-        grow_if_oob_snLz(Fs, i_2) = F;
+        fu_STR F = x7E((((dir_wrk + "o-"_fu) + hash16_ID6Pdhz7((GCChash + cpp), 16)) + "-"_fu), fu::i64dec(cpp.size()));
+        grow_if_oob_yU7JiXdg(Fs, i_2) = F;
         len_all += cpp.size();
     };
     fu::fs_mkdir_p(fu_STR(dir_wrk));
-    fu_STR F_exe = x7E_OZkl((x7E_OZkl((((dir_wrk + "b-"_fu) + hash16(join_9sek(Fs, "/"_fu), 16)) + "-"_fu), fu::i64dec(len_all)) + "-"_fu), fu::i64dec(Fs.size()));
+    fu_STR F_exe = x7E((x7E((((dir_wrk + "b-"_fu) + hash16_ID6Pdhz7(join_9sek5qv2(Fs, "/"_fu), 16)) + "-"_fu), fu::i64dec(len_all)) + "-"_fu), fu::i64dec(Fs.size()));
     int code {};
     fu_STR stdout {};
     const int exe_size = fu::file_size(F_exe);
@@ -1057,7 +1071,7 @@ void build(const bool run, fu_STR&& dir_wrk, const fu_STR& fulib, fu_STR&& bin, 
             fu_STR F_obj = (F + ".o"_fu);
             if (fu::file_size(F_obj) < 1)
             {
-                fu_STR human = (i_3 ? path_filename(GET(modules_1[i_3], modules).fname) : "fulib runtime"_fu);
+                fu_STR human = (i_3 ? path_filename_rOVPWlZS(GET_qpqsduxE(modules_1[i_3], modules).fname) : "fulib runtime"_fu);
                 const fu_STR& cpp = units[i_3];
                 fu::file_write(F_cpp, cpp);
                 fu_STR _1 {};
@@ -1075,7 +1089,7 @@ void build(const bool run, fu_STR&& dir_wrk, const fu_STR& fulib, fu_STR&& bin, 
                 int _3 {};
                 code = ((_3 = fu::shell_exec(((((((GCC_CMD + INCLUDE) + "-c -o "_fu) + F_tmp) + " "_fu) + F_cpp) + " 2>&1"_fu), stdout)) ? _3 : fu::shell_exec((((("mv "_fu + F_tmp) + " "_fu) + F_obj) + " 2>&1"_fu), stdout));
                 if (code)
-                    ERR(fu_STR(cpp), Fs, dir_wrk, stdout, code, onfail, modules_1, modules);
+                    ERR_hDQ5EcKA(fu_STR(cpp), Fs, dir_wrk, stdout, code, onfail, modules_1, modules);
 
                 const double t1 = fu::now_hr();
                 fu_STR _4 {};
@@ -1122,10 +1136,10 @@ void build(const bool run, fu_STR&& dir_wrk, const fu_STR& fulib, fu_STR&& bin, 
                 fu_STR _9 {};
                 fu::println((fu::slate<1, fu_STR> { (__extension__ (
                 {
-                    /*MOV*/ /*RRET*/ fu_STR x = ("   FAIL "_fu + join_9sek(Fs, ("\n        "_fu + "\n"_fu)));
+                    /*MOV*/ /*RRET*/ fu_STR x = ("   FAIL "_fu + join_9sek5qv2(Fs, ("\n        "_fu + "\n"_fu)));
                     _9 = (x);
                 (void)0;}), static_cast<fu_STR&&>(_9)) }));
-                ERR(fu_STR{}, Fs, dir_wrk, stdout, code, onfail, modules_1, modules);
+                ERR_hDQ5EcKA(fu_STR{}, Fs, dir_wrk, stdout, code, onfail, modules_1, modules);
             };
             const double t1 = fu::now_hr();
             fu_STR _10 {};
@@ -1146,13 +1160,13 @@ void build(const bool run, fu_STR&& dir_wrk, const fu_STR& fulib, fu_STR&& bin, 
             (void)0;}), static_cast<fu_STR&&>(_12)) }));
         };
         if (code)
-            ERR(fu_STR{}, Fs, dir_wrk, stdout, code, onfail, modules_1, modules);
+            ERR_hDQ5EcKA(fu_STR{}, Fs, dir_wrk, stdout, code, onfail, modules_1, modules);
 
     };
     if (run)
     {
         if (exe_size == 4)
-            code = only_VAhQ(fu::view_of(fu::file_read(F_exe), int{}));
+            code = only_ucURvN0q(fu::view_of(fu::file_read(F_exe), int{}));
         else
         {
             code = fu::shell_exec(fu_STR(F_exe), stdout);
@@ -1163,7 +1177,7 @@ void build(const bool run, fu_STR&& dir_wrk, const fu_STR& fulib, fu_STR&& bin, 
         };
     };
     if (code)
-        ERR(fu_STR{}, Fs, dir_wrk, stdout, code, onfail, modules_1, modules);
+        ERR_hDQ5EcKA(fu_STR{}, Fs, dir_wrk, stdout, code, onfail, modules_1, modules);
 
     if (dir_cpp && dir_src)
     {
@@ -1173,10 +1187,10 @@ void build(const bool run, fu_STR&& dir_wrk, const fu_STR& fulib, fu_STR&& bin, 
         {
             const fu_STR& data = units[i_3];
             fu_STR fname = (data ? (unit_fnames[i_3] + ".cpp"_fu) : fu_STR{});
-            fu_STR fname_1 = (fname ? update_file(fname, data, dir_src, dir_cpp) : fu_STR{});
-            cpp_files.push(fname_1);
+            fu_STR fname_1 = (fname ? update_file_hRiwgSdB(fname, data, dir_src, dir_cpp) : fu_STR{});
+            cpp_files.push(fu_STR(fname_1));
         };
-        fu_STR CMakeLists = (unity ? path_join(path_dirname(unity), "CMakeLists.txt"_fu) : fu_STR{});
+        fu_STR CMakeLists = (unity ? path_join_iwa818V1(path_dirname_rOVPWlZS(unity), "CMakeLists.txt"_fu) : fu_STR{});
         if (unity || CMakeLists)
         {
             if (unity)
@@ -1186,10 +1200,10 @@ void build(const bool run, fu_STR&& dir_wrk, const fu_STR& fulib, fu_STR&& bin, 
                 {
                     const fu_STR& incl = cpp_files[i_4];
                     if (incl)
-                        data += (("#include \""_fu + path_relative(unity, incl)) + "\"\n"_fu);
+                        data += (("#include \""_fu + path_relative_iwa818V1(unity, incl)) + "\"\n"_fu);
 
                 };
-                update_file((unity + ".unity.cpp"_fu), data, dir_src, dir_cpp);
+                update_file_hRiwgSdB((unity + ".unity.cpp"_fu), data, dir_src, dir_cpp);
             };
             if (CMakeLists)
             {
@@ -1201,31 +1215,31 @@ void build(const bool run, fu_STR&& dir_wrk, const fu_STR& fulib, fu_STR&& bin, 
                 for (int i_4 = 1; i_4 < modules_1.size(); i_4++)
                 {
                     const s_ModuleSortHelper& module = modules_1[i_4];
-                    fu_STR input = path_relative(CMakeLists, GET(module, modules).fname);
+                    fu_STR input = path_relative_iwa818V1(CMakeLists, GET_qpqsduxE(module, modules).fname);
                     if (module.compile_index == 1)
                         main = input;
 
-                    inputs.push(input);
-                    fu_STR custom = (GET(module, modules).fname + ".cmake"_fu);
+                    inputs.push(fu_STR(input));
+                    fu_STR custom = (GET_qpqsduxE(module, modules).fname + ".cmake"_fu);
                     if (fu::file_size(custom) > 0)
-                        includes += (("include("_fu + path_relative(CMakeLists, custom)) + ")\n"_fu);
+                        includes += (("include("_fu + path_relative_iwa818V1(CMakeLists, custom)) + ")\n"_fu);
 
                 };
                 for (int i_5 = 0; i_5 < cpp_files.size(); i_5++)
                 {
                     const fu_STR& cpp_file = cpp_files[i_5];
                     if (cpp_file)
-                        outputs.push(("${CMAKE_CURRENT_SOURCE_DIR}/"_fu + path_relative(CMakeLists, cpp_file)));
+                        outputs.push(("${CMAKE_CURRENT_SOURCE_DIR}/"_fu + path_relative_iwa818V1(CMakeLists, cpp_file)));
 
                 };
-                fu_STR libname = path_noext(path_filename(main));
+                fu_STR libname = path_noext_rOVPWlZS(path_filename_rOVPWlZS(main));
                 data += (("set(FU_TARGET "_fu + libname) + ")\n\n"_fu);
                 data += (("set(FU_MAIN "_fu + main) + ")\n\n"_fu);
-                data += (("set(FU_INPUTS\n    "_fu + join_9sek(inputs, "\n    "_fu)) + ")\n\n"_fu);
+                data += (("set(FU_INPUTS\n    "_fu + join_9sek5qv2(inputs, "\n    "_fu)) + ")\n\n"_fu);
                 if (unity)
-                    data += ((("set(FU_OUTPUTS\n    "_fu + "${CMAKE_CURRENT_SOURCE_DIR}/"_fu) + path_relative(CMakeLists, unity)) + ".unity.cpp)\n\n"_fu);
+                    data += ((("set(FU_OUTPUTS\n    "_fu + "${CMAKE_CURRENT_SOURCE_DIR}/"_fu) + path_relative_iwa818V1(CMakeLists, unity)) + ".unity.cpp)\n\n"_fu);
                 else
-                    data += (("set(FU_OUTPUTS\n    "_fu + join_9sek(outputs, "\n    "_fu)) + ")\n\n"_fu);
+                    data += (("set(FU_OUTPUTS\n    "_fu + join_9sek5qv2(outputs, "\n    "_fu)) + ")\n\n"_fu);
 
                 data += (((((("add_custom_command(\n"_fu + "    OUTPUT ${FU_OUTPUTS}\n"_fu) + "    COMMAND $ENV{HOME}/fu/bin/fu\n"_fu) + "    ARGS -c ${FU_MAIN}\n"_fu) + "    DEPENDS ${FU_INPUTS}\n"_fu) + "    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}\n"_fu) + "    VERBATIM)\n\n"_fu);
                 data += "add_library(${FU_TARGET} ${FU_OUTPUTS})\n\n"_fu;
@@ -1233,17 +1247,17 @@ void build(const bool run, fu_STR&& dir_wrk, const fu_STR& fulib, fu_STR&& bin, 
                 if (includes)
                     data += (includes + "\n"_fu);
 
-                update_file(CMakeLists, data, dir_src, dir_cpp);
+                update_file_hRiwgSdB(CMakeLists, data, dir_src, dir_cpp);
             };
         };
     };
     if (bin)
     {
-        fu::fs_mkdir_p(path_dirname(bin));
+        fu::fs_mkdir_p(path_dirname_rOVPWlZS(bin));
         code = fu::shell_exec((((("mv "_fu + F_exe) + " "_fu) + bin) + " 2>&1"_fu), stdout);
     };
     if (code)
-        ERR(fu_STR{}, Fs, dir_wrk, stdout, code, onfail, modules_1, modules);
+        ERR_hDQ5EcKA(fu_STR{}, Fs, dir_wrk, stdout, code, onfail, modules_1, modules);
 
 }
 

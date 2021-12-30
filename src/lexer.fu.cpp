@@ -15,9 +15,9 @@
 struct s_LexerOutput;
 struct s_Token;
 
-[[noreturn]] static fu::never err(fu::view<char>, int, int, const fu_STR&, int&, int, int, fu::view<char>, int);
-fu_STR ascii_lower(const fu_STR&);
-static void token(const fu_STR&, const fu_STR&, int, int, int, fu_VEC<s_Token>&, int);
+fu_STR ascii_lower_rOVPWlZS(const fu_STR&);
+fu_STR bytes_g8ILRu05(unsigned);
+inline fu_STR x7E(fu::view<char>, fu::view<char>);
 
                                 #ifndef DEF_s_Token
                                 #define DEF_s_Token
@@ -47,12 +47,10 @@ struct s_Token
                                 #define DEF_s_LexerOutput
 struct s_LexerOutput
 {
-    fu_STR fname;
     fu_VEC<s_Token> tokens;
     explicit operator bool() const noexcept
     {
         return false
-            || fname
             || tokens
         ;
     }
@@ -61,11 +59,11 @@ struct s_LexerOutput
 
 #ifndef FU_NO_FDEFs
 
-static const fu_STR OPTOKENS fu_INIT_PRIORITY(1002) = "{}[]()!?~@#$%^&*/-+<=>,.;:|"_fu;
+static const fu_STR OPTOKENS fu_INIT_PRIORITY(1001) = "{}[]()!?~@#$%^&*/-+<=>,.;:|"_fu;
 
-static const fu_VEC<fu_STR> MBOPS fu_INIT_PRIORITY(1002) = fu_VEC<fu_STR> { fu::slate<40, fu_STR> { "++"_fu, "--"_fu, "**"_fu, "<<"_fu, "<<<"_fu, ">>"_fu, ">>>"_fu, "==="_fu, "=="_fu, "!="_fu, "!=="_fu, "<="_fu, ">="_fu, "=>"_fu, "->"_fu, "<=>"_fu, "|>"_fu, "<|"_fu, "??"_fu, ".."_fu, "..."_fu, "::"_fu, "&&"_fu, "||"_fu, "[]"_fu, "+="_fu, "-="_fu, "*="_fu, "**="_fu, "/="_fu, "%="_fu, "&="_fu, "|="_fu, "^="_fu, "<<="_fu, ">>="_fu, "~="_fu, "&&="_fu, "||="_fu, ".="_fu } };
+static const fu_VEC<fu_STR> MBOPS fu_INIT_PRIORITY(1001) = fu_VEC<fu_STR> { fu::slate<40, fu_STR> { "++"_fu, "--"_fu, "**"_fu, "<<"_fu, "<<<"_fu, ">>"_fu, ">>>"_fu, "==="_fu, "=="_fu, "!="_fu, "!=="_fu, "<="_fu, ">="_fu, "=>"_fu, "->"_fu, "<=>"_fu, "|>"_fu, "<|"_fu, "??"_fu, ".."_fu, "..."_fu, "::"_fu, "&&"_fu, "||"_fu, "[]"_fu, "+="_fu, "-="_fu, "*="_fu, "**="_fu, "/="_fu, "%="_fu, "&="_fu, "|="_fu, "^="_fu, "<<="_fu, ">>="_fu, "~="_fu, "&&="_fu, "||="_fu, ".="_fu } };
 
-static void token_c(const fu_STR& kind, const fu_STR& value, const int idx0, const int idx1, const int col, fu_VEC<s_Token>& tokens, const int line)
+static void token_c_9y0a41gP(const fu_STR& kind, const fu_STR& value, const int idx0, const int idx1, const int col, fu_VEC<s_Token>& tokens, const int line)
 {
     if (!((col >= 0)))
         fu_ASSERT();
@@ -73,42 +71,42 @@ static void token_c(const fu_STR& kind, const fu_STR& value, const int idx0, con
     tokens += s_Token { fu_STR(kind), fu_STR(value), int(idx0), int(idx1), int(line), int(col) };
 }
 
-static void token(const fu_STR& kind, const fu_STR& value, const int idx0, const int idx1, const int lidx, fu_VEC<s_Token>& tokens, const int line)
+static void token_zWP832C4(const fu_STR& kind, const fu_STR& value, const int idx0, const int idx1, const int lidx, fu_VEC<s_Token>& tokens, const int line)
 {
     const int col = (idx0 - lidx);
-    token_c(kind, value, idx0, idx1, col, tokens, line);
+    token_c_9y0a41gP(kind, value, idx0, idx1, col, tokens, line);
 }
 
-                                #ifndef DEFt_x7E_OZkl
-                                #define DEFt_x7E_OZkl
-inline fu_STR x7E_OZkl(fu::view<char> a, fu::view<char> b)
+                                #ifndef DEFt_x7E
+                                #define DEFt_x7E
+inline fu_STR x7E(fu::view<char> a, fu::view<char> b)
 {
     return a + b;
 }
                                 #endif
 
-[[noreturn]] static fu::never err_str(fu::view<char> kind, const int idx0, fu::view<char> reason, int& idx, const int end, const fu_STR& src, const int lidx, fu::view<char> fname, const int line)
+[[noreturn]] static fu::never err_str_u8sZNLL1(fu::view<char> kind, const int idx0, fu::view<char> reason, int& idx, const int end, const fu_STR& src, const int lidx, fu::view<char> fname, const int line)
 {
     while ((idx < end) && (src[idx] > ' '))
         idx++;
 
     const int col = (idx0 - lidx);
     fu_STR value = fu::slice(src, idx0, idx);
-    fu::fail((((((((x7E_OZkl((x7E_OZkl((("LEX ERROR: "_fu + fname) + "@"_fu), fu::i64dec(line)) + ":"_fu), fu::i64dec(col)) + ":\n\t"_fu) + reason) + "\n\t"_fu) + kind) + ": `"_fu) + value) + "`"_fu));
+    fu::fail((((((((x7E((x7E((("LEX ERROR: "_fu + fname) + "@"_fu), fu::i64dec(line)) + ":"_fu), fu::i64dec(col)) + ":\n\t"_fu) + reason) + "\n\t"_fu) + kind) + ": `"_fu) + value) + "`"_fu));
 }
 
-[[noreturn]] static fu::never err(fu::view<char> kind, const int idx0, const int reason, const fu_STR& src, int& idx, const int end, const int lidx, fu::view<char> fname, const int line)
+[[noreturn]] static fu::never err_7Gb25y0w(fu::view<char> kind, const int idx0, const int reason, const fu_STR& src, int& idx, const int end, const int lidx, fu::view<char> fname, const int line)
 {
-    err_str(kind, idx0, (("`"_fu + src[reason]) + "`"_fu), idx, end, src, lidx, fname, line);
+    err_str_u8sZNLL1(kind, idx0, (("`"_fu + src[reason]) + "`"_fu), idx, end, src, lidx, fname, line);
 }
 
-static int parseHex(fu::view<char> esc, int& i, int& idx, const int end, const fu_STR& src, const int lidx, fu::view<char> fname, const int line)
+static unsigned parseHex_PeAURiwJ(fu::view<char> topic, fu::view<char> esc, int& i, int& idx, const int end, const fu_STR& src, const int lidx, fu::view<char> fname, const int line)
 {
     const char c = esc[++i];
-    return (((c >= '0') && (c <= '9')) ? (int(fu::u8(c)) - int(fu::u8('0'))) : (((c >= 'A') && (c <= 'F')) ? ((int(fu::u8(c)) - int(fu::u8('A'))) + 10) : (((c >= 'a') && (c <= 'f')) ? ((int(fu::u8(c)) - int(fu::u8('a'))) + 10) : err_str("str"_fu, (i - 1), "Non hexadecimal character in \\x-escape sequence."_fu, idx, end, src, lidx, fname, line))));
+    return (((c >= '0') && (c <= '9')) ? (unsigned(fu::u8(c)) - unsigned(fu::u8('0'))) : (((c >= 'A') && (c <= 'F')) ? ((unsigned(fu::u8(c)) - unsigned(fu::u8('A'))) + 10u) : (((c >= 'a') && (c <= 'f')) ? ((unsigned(fu::u8(c)) - unsigned(fu::u8('a'))) + 10u) : err_str_u8sZNLL1("str"_fu, (i - 1), (((("Non hexadecimal character in "_fu + topic) + ": `"_fu) + c) + "`."_fu), idx, end, src, lidx, fname, line))));
 }
 
-static fu_STR UNSAFE_unescapeStr(fu::view<char> esc, const int idx0, const int idx1, const char quot, int& idx, const int end, const fu_STR& src, const int lidx, fu::view<char> fname, const int line)
+static fu_STR UNSAFE_unescapeStr_yuiAocVo(fu::view<char> esc, const int idx0, const int idx1, const char quot, int& idx, const int end, const fu_STR& src, const int lidx, fu::view<char> fname, const int line)
 {
     /*MOV*/ fu_STR out {};
     const int n = (idx1 - 1);
@@ -139,29 +137,59 @@ static fu_STR UNSAFE_unescapeStr(fu::view<char> esc, const int idx0, const int i
             else if (c1 == 'e')
                 out += '\x1B';
             else if (c1 == quot)
-                out += quot;
+                out += char(quot);
             else if (c1 == 'x')
             {
                 if ((i >= (n - 2)))
-                    err_str("str"_fu, (i - 1), "Incomplete \\x-escape sequence."_fu, idx, end, src, lidx, fname, line);
+                    err_str_u8sZNLL1("str"_fu, (i - 1), "Incomplete \\x-escape sequence."_fu, idx, end, src, lidx, fname, line);
 
-                int _0 {};
-                out += char((_0 = (parseHex(esc, i, idx, end, src, lidx, fname, line) << 4), (int(_0) | parseHex(esc, i, idx, end, src, lidx, fname, line))));
+                unsigned _0 {};
+                out += char((_0 = (parseHex_PeAURiwJ("\\x-escape sequence"_fu, esc, i, idx, end, src, lidx, fname, line) << 4u), (unsigned(_0) | parseHex_PeAURiwJ("\\x-escape sequence"_fu, esc, i, idx, end, src, lidx, fname, line))));
+            }
+            else if (c1 == 'u')
+            {
+                if ((i == n) || (esc[++i] != '{'))
+                    err_str_u8sZNLL1("str"_fu, (i - 1), "Invalid \\u-escape: no opening `{`."_fu, idx, end, src, lidx, fname, line);
+
+                unsigned unicode {};
+                int digits = 0;
+
+                { {
+                    while (++i < n)
+                    {
+                        if (esc[i] == '}')
+                            goto L_HEX;
+                        else if (digits == 6)
+                            err_str_u8sZNLL1("str"_fu, (i - 1), "Invalid \\u-escape: no closing `}` after 6 digits."_fu, idx, end, src, lidx, fname, line);
+
+                        digits++;
+                        unicode <<= 4u;
+                        i--;
+                        unicode |= parseHex_PeAURiwJ("\\u-escape sequence"_fu, esc, i, idx, end, src, lidx, fname, line);
+                    };
+                    err_str_u8sZNLL1("str"_fu, (i - 1), "Incomplete \\u-escape: no closing `}`."_fu, idx, end, src, lidx, fname, line);
+                  } L_HEX:;
+                };
+                if (!digits)
+                    err_str_u8sZNLL1("str"_fu, (i - 1), "Empty \\u-escape."_fu, idx, end, src, lidx, fname, line);
+
+                fu_STR _1 {};
+                out += ((_1 = bytes_g8ILRu05(unicode)) ? static_cast<fu_STR&&>(_1) : err_str_u8sZNLL1("str"_fu, (i - 1), "Invalid \\u-escape: bad code point."_fu, idx, end, src, lidx, fname, line));
             }
             else
-                err_str("str"_fu, (i - 1), "Unknown escape sequence."_fu, idx, end, src, lidx, fname, line);
+                err_str_u8sZNLL1("str"_fu, (i - 1), "Unknown escape sequence."_fu, idx, end, src, lidx, fname, line);
 
         }
         else
-            out += c;
+            out += char(c);
 
     };
     return /*NRVO*/ out;
 }
 
-                                #ifndef DEFt_has_05eu
-                                #define DEFt_has_05eu
-inline bool has_05eu(fu::view<char> a, const char b)
+                                #ifndef DEFt_has_05euw4KZ
+                                #define DEFt_has_05euw4KZ
+inline bool has_05euw4KZ(fu::view<char> a, const char b)
 {
     for (int i = 0; i < a.size(); i++)
     {
@@ -173,9 +201,9 @@ inline bool has_05eu(fu::view<char> a, const char b)
 }
                                 #endif
 
-                                #ifndef DEFt_has_VtCz
-                                #define DEFt_has_VtCz
-inline bool has_VtCz(fu::view<fu_STR> a, fu::view<char> b)
+                                #ifndef DEFt_has_VtCzn94C
+                                #define DEFt_has_VtCzn94C
+inline bool has_VtCzn94C(fu::view<fu_STR> a, fu::view<char> b)
 {
     for (int i = 0; i < a.size(); i++)
     {
@@ -187,14 +215,14 @@ inline bool has_VtCz(fu::view<fu_STR> a, fu::view<char> b)
 }
                                 #endif
 
-s_LexerOutput lex(const fu_STR& src, const fu_STR& fname)
+s_LexerOutput lex_GLuqYFLb(const fu_STR& src, fu::view<char> fname)
 {
     const int end = src.size();
     int line = 1;
     int lidx = -1;
     int idx = 0;
     fu_VEC<s_Token> tokens {};
-    token("sof"_fu, "sof"_fu, idx, idx, lidx, tokens, line);
+    token_zWP832C4("sof"_fu, "sof"_fu, idx, idx, lidx, tokens, line);
     while (idx < end)
     {
         const int idx0 = idx;
@@ -222,7 +250,7 @@ s_LexerOutput lex(const fu_STR& src, const fu_STR& fname)
                 };
             };
             const int idx1 = idx;
-            token("id"_fu, fu::slice(src, idx0, idx1), idx0, idx1, lidx, tokens, line);
+            token_zWP832C4("id"_fu, fu::slice(src, idx0, idx1), idx0, idx1, lidx, tokens, line);
         }
         else if ((c >= '0') && (c <= '9'))
         {
@@ -252,7 +280,7 @@ s_LexerOutput lex(const fu_STR& src, const fu_STR& fname)
                     idx++;
                 }
                 else if ((c_1 >= '0') && (c_1 <= '9'))
-                    err_str("real"_fu, idx0, ("Leading `0` in numeric literal,"_fu + " perhaps you meant `0x`, `0b` or `0o`."_fu), idx, end, src, lidx, fname, line);
+                    err_str_u8sZNLL1("real"_fu, idx0, ("Leading `0` in numeric literal,"_fu + " perhaps you meant `0x`, `0b` or `0o`."_fu), idx, end, src, lidx, fname, line);
 
             };
             while (idx < end)
@@ -275,14 +303,14 @@ s_LexerOutput lex(const fu_STR& src, const fu_STR& fname)
                         break;
                     };
                     if (dot || exp)
-                        err("real"_fu, idx0, (idx - 1), src, idx, end, lidx, fname, line);
+                        err_7Gb25y0w("real"_fu, idx0, (idx - 1), src, idx, end, lidx, fname, line);
 
                     dot = true;
                 }
                 else if ((hex ? ((c_1 == 'p') || (c_1 == 'P')) : ((c_1 == 'e') || (c_1 == 'E'))))
                 {
                     if (exp)
-                        err("real"_fu, idx0, (idx - 1), src, idx, end, lidx, fname, line);
+                        err_7Gb25y0w("real"_fu, idx0, (idx - 1), src, idx, end, lidx, fname, line);
 
                     if ((idx < end) && ((src[idx] == '-') || (src[idx] == '+')))
                         idx++;
@@ -306,15 +334,15 @@ s_LexerOutput lex(const fu_STR& src, const fu_STR& fname)
             };
             const char trail = src[(idx - 1)];
             if (!((trail >= '0') && (trail <= '9')) && !(hex && (((trail >= 'a') && (trail <= 'f')) || ((trail >= 'A') && (trail <= 'F')))))
-                err("real"_fu, idx0, (idx - 1), src, idx, end, lidx, fname, line);
+                err_7Gb25y0w("real"_fu, idx0, (idx - 1), src, idx, end, lidx, fname, line);
             else
             {
                 const int idx1 = idx;
                 fu_STR str = fu::slice(src, idx0, idx1);
                 if (hex && dot && !exp)
-                    err_str("real"_fu, idx0, ("The exponent is never optional"_fu + " for hexadecimal floating-point literals."_fu), idx, end, src, lidx, fname, line);
+                    err_str_u8sZNLL1("real"_fu, idx0, ("The exponent is never optional"_fu + " for hexadecimal floating-point literals."_fu), idx, end, src, lidx, fname, line);
                 else
-                    token(((dot || exp) ? "real"_fu : "int"_fu), ascii_lower(str), idx0, idx1, lidx, tokens, line);
+                    token_zWP832C4(((dot || exp) ? "real"_fu : "int"_fu), ascii_lower_rOVPWlZS(str), idx0, idx1, lidx, tokens, line);
 
             };
         }
@@ -343,17 +371,17 @@ s_LexerOutput lex(const fu_STR& src, const fu_STR& fname)
                 };
             };
             if (!ok)
-                err_str("str"_fu, idx0, "Unterminated string literal."_fu, idx, end, src, lidx, fname, line);
+                err_str_u8sZNLL1("str"_fu, idx0, "Unterminated string literal."_fu, idx, end, src, lidx, fname, line);
             else
             {
                 const int idx1 = idx;
-                fu_STR str = (esc ? UNSAFE_unescapeStr(src, idx0, idx1, c, idx, end, src, lidx, fname, line) : fu::slice(src, (idx0 + 1), (idx1 - 1)));
+                fu_STR str = (esc ? UNSAFE_unescapeStr_yuiAocVo(src, idx0, idx1, c, idx, end, src, lidx, fname, line) : fu::slice(src, (idx0 + 1), (idx1 - 1)));
                 const bool cHar = (c == '\'');
                 fu_STR kind = (cHar ? "char"_fu : "str"_fu);
                 if (cHar && (str.size() != 1))
-                    err_str("char"_fu, idx0, x7E_OZkl("Char literal len != 1: "_fu, fu::i64dec(str.size())), idx, end, src, lidx, fname, line);
+                    err_str_u8sZNLL1("char"_fu, idx0, x7E("Char literal len != 1: "_fu, fu::i64dec(str.size())), idx, end, src, lidx, fname, line);
                 else
-                    token_c(kind, str, idx0, idx1, col, tokens, line);
+                    token_c_9y0a41gP(kind, str, idx0, idx1, col, tokens, line);
 
             };
         }
@@ -389,16 +417,16 @@ s_LexerOutput lex(const fu_STR& src, const fu_STR& fname)
                 };
             };
         }
-        else if (has_05eu(OPTOKENS, c))
+        else if (has_05euw4KZ(OPTOKENS, c))
         {
             fu_STR candidate = fu_STR { fu::slate<1, char> { char(c) } };
             while (idx < end)
             {
                 const char c_1 = src[idx++];
-                if (has_05eu(OPTOKENS, c_1))
+                if (has_05euw4KZ(OPTOKENS, c_1))
                 {
                     fu_STR c1 = (candidate + c_1);
-                    if (has_VtCz(MBOPS, c1))
+                    if (has_VtCzn94C(MBOPS, c1))
                     {
                         candidate = c1;
                         continue;
@@ -407,16 +435,16 @@ s_LexerOutput lex(const fu_STR& src, const fu_STR& fname)
                 idx--;
                 break;
             };
-            token("op"_fu, candidate, idx0, idx, lidx, tokens, line);
+            token_zWP832C4("op"_fu, candidate, idx0, idx, lidx, tokens, line);
         }
         else
-            err("?"_fu, idx0, idx0, src, idx, end, lidx, fname, line);
+            err_7Gb25y0w("?"_fu, idx0, idx0, src, idx, end, lidx, fname, line);
 
     };
     line++;
     lidx = (idx + 0);
-    token("eof"_fu, "eof"_fu, idx, idx, lidx, tokens, line);
-    return s_LexerOutput { fu_STR(fname), fu_VEC<s_Token>(tokens) };
+    token_zWP832C4("eof"_fu, "eof"_fu, idx, idx, lidx, tokens, line);
+    return s_LexerOutput { fu_VEC<s_Token>(tokens) };
 }
 
 #endif

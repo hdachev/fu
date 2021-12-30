@@ -39,7 +39,7 @@ struct s_Intlit
 
 #ifndef FU_NO_FDEFs
 
-s_Intlit Intlit(fu::view<char> sign_prefix_value_suffix)
+s_Intlit Intlit_NbHm0tEz(fu::view<char> sign_prefix_value_suffix)
 {
     const char c_sign = sign_prefix_value_suffix[0];
     const char sign = (((c_sign == '-') || (c_sign == '+')) ? c_sign : (*(const char*)fu::NIL));
@@ -63,20 +63,23 @@ s_Intlit Intlit(fu::view<char> sign_prefix_value_suffix)
         const uint64_t last = absval;
         absval *= base;
         absval += ci;
-        fu_STR* _0;
-        (*(_0 = &(error)) ? *_0 : *_0 = ((last != (absval / base)) ? "Integer literal overflows a u64."_fu : fu_STR{}));
+        if (!(error))
+            error = ((last != (absval / base)) ? "Integer literal overflows a u64."_fu : fu_STR{});
+
     };
     const bool uNsigned = ((suffix == 'u') || (base != 10ull));
     const bool negative = (sign == '-');
     const bool sIgned = (negative || (suffix == 'i'));
-    fu_STR* _1;
-    (*(_1 = &(error)) ? *_1 : *_1 = (sIgned && uNsigned ? "Ambiguous int literal: cannot decide if signed or unsigned."_fu : fu_STR{}));
+    if (!(error))
+        error = (sIgned && uNsigned ? "Ambiguous int literal: cannot decide if signed or unsigned."_fu : fu_STR{});
+
     const uint64_t sizeval = ((negative && absval) ? (absval - 1ull) : uint64_t(absval));
     const int minsize_i = ((sizeval < 0x80ull) ? 8 : ((sizeval < 0x8000ull) ? 16 : ((sizeval < 0x80000000ull) ? 32 : ((sizeval < 0x8000000000000000ull) ? 64 : 128))));
     const int minsize_u = (negative ? 255 : ((absval < 0x100ull) ? 8 : ((absval < 0x10000ull) ? 16 : ((absval < 0x100000000ull) ? 32 : 64))));
     const int minsize_f = ((absval < 0x1000000ull) ? 32 : 64);
-    fu_STR* _2;
-    (*(_2 = &(error)) ? *_2 : *_2 = (sIgned ? ((minsize_i > 64) ? "Oversized signed int literal."_fu : fu_STR{}) : ((minsize_u > 64) ? "Oversized unsigned int literal."_fu : fu_STR{})));
+    if (!(error))
+        error = (sIgned ? ((minsize_i > 64) ? "Oversized signed int literal."_fu : fu_STR{}) : ((minsize_u > 64) ? "Oversized unsigned int literal."_fu : fu_STR{}));
+
     return s_Intlit { fu::u8(base), fu::u8(unsigned(minsize_i)), fu::u8(unsigned(minsize_u)), fu::u8(unsigned(minsize_f)), bool(sIgned), bool(uNsigned), bool(negative), uint64_t(absval), fu_STR(error) };
 }
 

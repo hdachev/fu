@@ -12,12 +12,12 @@ struct s_Flow;
 struct s_Lifetime;
 struct s_Region;
 
-bool has(const s_BitSet&, int);
-int Region_asIndex(const s_Region&);
-void ArgsAtRisk_shake(s_Flow&);
-void add(s_BitSet&, int);
-void add_range(s_BitSet&, int, int);
-void rem(s_BitSet&, int);
+bool has_asJtcpQm(const s_BitSet&, int);
+int Region_asIndex_rLDFQf65(const s_Region&);
+void ArgsAtRisk_shake_CooqGQ4F(s_Flow&, int, int);
+void add_range_mQD1F0il(s_BitSet&, int, int);
+void add_zoGTyg4u(s_BitSet&, int);
+void rem_zoGTyg4u(s_BitSet&, int);
 
                                 #ifndef DEF_s_BitSet
                                 #define DEF_s_BitSet
@@ -89,7 +89,7 @@ struct s_Lifetime
 
 #ifndef FU_NO_FDEFs
 
-void Reference_trackArgument(s_Flow& flow, const int target, const int position)
+void Reference_trackArgument_CooqGQ4F(s_Flow& flow, const int target, const int position)
 {
     if (!((flow.arg_targets.size() <= position)))
         fu_ASSERT();
@@ -101,12 +101,12 @@ void Reference_trackArgument(s_Flow& flow, const int target, const int position)
 
     flow.arg_positions.grow((target + 1));
     flow.arg_positions.mutref(target) = (position + 1);
-    add(flow.is_arg, target);
+    add_zoGTyg4u(flow.is_arg, target);
 }
 
-                                #ifndef DEFt_add_xJq8
-                                #define DEFt_add_xJq8
-inline bool add_xJq8(fu_VEC<int>& dest, const int item)
+                                #ifndef DEFt_add_thBfcIkV
+                                #define DEFt_add_thBfcIkV
+inline bool add_thBfcIkV(fu_VEC<int>& dest, const int item)
 {
     for (int i = 0; i < dest.size(); i++)
     {
@@ -114,28 +114,28 @@ inline bool add_xJq8(fu_VEC<int>& dest, const int item)
         {
             if (dest[i] != item)
             {
-                dest.insert(i, item);
+                dest.insert(i, int(item));
                 return true;
             };
             return false;
         };
     };
-    dest.push(item);
+    dest.push(int(item));
     return true;
 }
                                 #endif
 
-                                #ifndef DEFt_unless_oob_HoLq
-                                #define DEFt_unless_oob_HoLq
-inline const fu_VEC<int>& unless_oob_HoLq(fu::view<fu_VEC<int>> a, const int i)
+                                #ifndef DEFt_unless_oob_py9Y5UMJ
+                                #define DEFt_unless_oob_py9Y5UMJ
+inline const fu_VEC<int>& unless_oob_py9Y5UMJ(fu::view<fu_VEC<int>> a, const int i)
 {
     return (i < a.size()) ? a[i] : (*(const fu_VEC<int>*)fu::NIL);
 }
                                 #endif
 
-                                #ifndef DEFt_add_p8Tz
-                                #define DEFt_add_p8Tz
-inline void add_p8Tz(fu_VEC<int>& a, fu::view<int> b)
+                                #ifndef DEFt_add_TFYcR2KX
+                                #define DEFt_add_TFYcR2KX
+inline void add_TFYcR2KX(fu_VEC<int>& a, fu::view<int> b)
 {
     int x = 0;
     int y = 0;
@@ -147,7 +147,7 @@ inline void add_p8Tz(fu_VEC<int>& a, fu::view<int> b)
         {
             if (X != Y)
             {
-                a.insert(x, Y);
+                a.insert(x, int(Y));
                 y++;
             }
             else
@@ -162,17 +162,17 @@ inline void add_p8Tz(fu_VEC<int>& a, fu::view<int> b)
 }
                                 #endif
 
-                                #ifndef DEFt_unless_oob_kedP
-                                #define DEFt_unless_oob_kedP
-inline const fu_VEC<int>& unless_oob_kedP(fu::view<fu_VEC<int>> a, const int i)
+                                #ifndef DEFt_unless_oob_rN5NP2j0
+                                #define DEFt_unless_oob_rN5NP2j0
+inline const fu_VEC<int>& unless_oob_rN5NP2j0(fu::view<fu_VEC<int>> a, const int i)
 {
     return (i < a.size()) ? a[i] : (*(const fu_VEC<int>*)fu::NIL);
 }
                                 #endif
 
-                                #ifndef DEFt_rem_xJq8
-                                #define DEFt_rem_xJq8
-inline bool rem_xJq8(fu_VEC<int>& dest, const int item)
+                                #ifndef DEFt_rem_thBfcIkV
+                                #define DEFt_rem_thBfcIkV
+inline bool rem_thBfcIkV(fu_VEC<int>& dest, const int item)
 {
     for (int i = 0; i < dest.size(); i++)
     {
@@ -190,9 +190,9 @@ inline bool rem_xJq8(fu_VEC<int>& dest, const int item)
 }
                                 #endif
 
-                                #ifndef DEFt_grow_if_oob_aIXs
-                                #define DEFt_grow_if_oob_aIXs
-inline fu_VEC<int>& grow_if_oob_aIXs(fu_VEC<fu_VEC<int>>& a, const int i)
+                                #ifndef DEFt_grow_if_oob_k9KHuFdm
+                                #define DEFt_grow_if_oob_k9KHuFdm
+inline fu_VEC<int>& grow_if_oob_k9KHuFdm(fu_VEC<fu_VEC<int>>& a, const int i)
 {
     if ((a.size() <= i))
         a.grow((i + 1));
@@ -201,9 +201,9 @@ inline fu_VEC<int>& grow_if_oob_aIXs(fu_VEC<fu_VEC<int>>& a, const int i)
 }
                                 #endif
 
-                                #ifndef DEFt_add_9KMC
-                                #define DEFt_add_9KMC
-inline void add_9KMC(fu_VEC<int>& a, fu::view<int> b)
+                                #ifndef DEFt_add_XS7JLwrP
+                                #define DEFt_add_XS7JLwrP
+inline void add_XS7JLwrP(fu_VEC<int>& a, fu::view<int> b)
 {
     int x = 0;
     int y = 0;
@@ -215,7 +215,7 @@ inline void add_9KMC(fu_VEC<int>& a, fu::view<int> b)
         {
             if (X != Y)
             {
-                a.insert(x, Y);
+                a.insert(x, int(Y));
                 y++;
             }
             else
@@ -230,9 +230,9 @@ inline void add_9KMC(fu_VEC<int>& a, fu::view<int> b)
 }
                                 #endif
 
-                                #ifndef DEFt_grow_if_oob_xvHU
-                                #define DEFt_grow_if_oob_xvHU
-inline fu_VEC<int>& grow_if_oob_xvHU(fu_VEC<fu_VEC<int>>& a, const int i)
+                                #ifndef DEFt_grow_if_oob_EE7n9Jkc
+                                #define DEFt_grow_if_oob_EE7n9Jkc
+inline fu_VEC<int>& grow_if_oob_EE7n9Jkc(fu_VEC<fu_VEC<int>>& a, const int i)
 {
     if ((a.size() <= i))
         a.grow((i + 1));
@@ -241,46 +241,46 @@ inline fu_VEC<int>& grow_if_oob_xvHU(fu_VEC<fu_VEC<int>>& a, const int i)
 }
                                 #endif
 
-void Reference_trackLocalRef(s_Flow& flow, const int left, const s_Lifetime& right)
+void Reference_trackLocalRef_AADR3Ix2(s_Flow& flow, const int left, const s_Lifetime& right)
 {
     fu_VEC<int> parents {};
     for (int i = 0; i < right.uni0n.size(); i++)
     {
-        const int right_1 = Region_asIndex(right.uni0n[i]);
+        const int right_1 = Region_asIndex_rLDFQf65(right.uni0n[i]);
         if (!right_1)
             continue;
 
-        add_xJq8(parents, right_1);
-        add_p8Tz(parents, unless_oob_HoLq(flow.parents, right_1));
-        fu_VEC<int> invals { unless_oob_kedP(flow.invalidates, right_1) };
-        if (!(!rem_xJq8(invals, left) || (i > 0)))
+        add_thBfcIkV(parents, right_1);
+        add_TFYcR2KX(parents, unless_oob_py9Y5UMJ(flow.parents, right_1));
+        fu_VEC<int> invals { unless_oob_rN5NP2j0(flow.invalidates, right_1) };
+        if (!(!rem_thBfcIkV(invals, left) || (i > 0)))
             fu_ASSERT();
 
         if (invals)
         {
-            add_9KMC(grow_if_oob_aIXs(flow.invalidates, left), invals);
+            add_XS7JLwrP(grow_if_oob_k9KHuFdm(flow.invalidates, left), invals);
             for (int i_1 = 0; i_1 < invals.size(); i_1++)
-                add_xJq8(flow.invalidates.mutref(invals[i_1]), left);
+                add_thBfcIkV(flow.invalidates.mutref(invals[i_1]), left);
 
         };
-        if (has(flow.is_arg, right_1))
+        if (has_asJtcpQm(flow.is_arg, right_1))
         {
-            add(flow.is_arg, left);
-            add_xJq8(grow_if_oob_aIXs(flow.arg_aliases, left), right_1);
+            add_zoGTyg4u(flow.is_arg, left);
+            add_thBfcIkV(grow_if_oob_k9KHuFdm(flow.arg_aliases, left), right_1);
         };
     };
     if (parents)
     {
         for (int i_1 = 0; i_1 < parents.size(); i_1++)
-            add_xJq8(grow_if_oob_xvHU(flow.invalidates, parents[i_1]), left);
+            add_thBfcIkV(grow_if_oob_EE7n9Jkc(flow.invalidates, parents[i_1]), left);
 
-        grow_if_oob_aIXs(flow.parents, left) = parents;
+        grow_if_oob_k9KHuFdm(flow.parents, left) = parents;
     };
 }
 
-                                #ifndef DEFt_try_steal_aIXs
-                                #define DEFt_try_steal_aIXs
-inline fu_VEC<int> try_steal_aIXs(fu_VEC<fu_VEC<int>>& a, const int i)
+                                #ifndef DEFt_try_steal_k9KHuFdm
+                                #define DEFt_try_steal_k9KHuFdm
+inline fu_VEC<int> try_steal_k9KHuFdm(fu_VEC<fu_VEC<int>>& a, const int i)
 {
     if (i < a.size())
     {
@@ -292,9 +292,9 @@ inline fu_VEC<int> try_steal_aIXs(fu_VEC<fu_VEC<int>>& a, const int i)
 }
                                 #endif
 
-                                #ifndef DEFt_find_C47D
-                                #define DEFt_find_C47D
-inline int find_C47D(fu::view<int> a, const int b)
+                                #ifndef DEFt_find_C47D8dNR
+                                #define DEFt_find_C47D8dNR
+inline int find_C47D8dNR(fu::view<int> a, const int b)
 {
     for (/*MOV*/ int i = 0; i < a.size(); i++)
     {
@@ -306,36 +306,50 @@ inline int find_C47D(fu::view<int> a, const int b)
 }
                                 #endif
 
-void Reference_untrackLocalRef(s_Flow& flow, const int left, const s_Lifetime& right)
+void Reference_untrackLocalRef_AADR3Ix2(s_Flow& flow, const int left, const s_Lifetime& right)
 {
     for (int i = 0; i < right.uni0n.size(); i++)
     {
-        const int right_1 = Region_asIndex(right.uni0n[i]);
+        const int right_1 = Region_asIndex_rLDFQf65(right.uni0n[i]);
         if (!right_1)
             continue;
 
-        if (!(rem_xJq8(flow.invalidates.mutref(right_1), left)))
+        if (!(rem_thBfcIkV(flow.invalidates.mutref(right_1), left)))
             fu_ASSERT();
 
     };
-    fu_VEC<int> invals = try_steal_aIXs(flow.invalidates, left);
+    fu_VEC<int> invals = try_steal_k9KHuFdm(flow.invalidates, left);
     for (int i_1 = 0; i_1 < invals.size(); i_1++)
     {
-        const int idx = find_C47D(unless_oob_HoLq(flow.invalidates, invals[i_1]), left);
+        const int idx = find_C47D8dNR(unless_oob_py9Y5UMJ(flow.invalidates, invals[i_1]), left);
         if ((idx >= 0))
             flow.invalidates.mutref(invals[i_1]).splice(idx, 1);
 
     };
 }
 
-static fu_VEC<int>& at_risk_from(s_Flow& flow, const int use)
+static fu_VEC<int>& at_risk_from_DjwGFJ12(s_Flow& flow, const int use)
 {
     return flow.args_at_risk.mutref(use);
 }
 
-                                #ifndef DEFt_add_zs1w
-                                #define DEFt_add_zs1w
-inline bool add_zs1w(fu_VEC<int>& dest, const int item)
+void ArgsAtRisk_shake_9E7k4Ce5(s_Flow& flow)
+{
+    for (int i = 0; i < flow.args_at_risk.size(); i++)
+    {
+        const int use = i;
+        for (int i_1 = at_risk_from_DjwGFJ12(flow, use).size(); i_1-- > 0; )
+        {
+            const int write = at_risk_from_DjwGFJ12(flow, use)[i_1];
+            at_risk_from_DjwGFJ12(flow, use).splice(i_1, 1);
+            ArgsAtRisk_shake_CooqGQ4F(flow, int(use), int(write));
+        };
+    };
+}
+
+                                #ifndef DEFt_add_bmhzXgqs
+                                #define DEFt_add_bmhzXgqs
+inline bool add_bmhzXgqs(fu_VEC<int>& dest, const int item)
 {
     for (int i = 0; i < dest.size(); i++)
     {
@@ -343,26 +357,26 @@ inline bool add_zs1w(fu_VEC<int>& dest, const int item)
         {
             if (dest[i] != item)
             {
-                dest.insert(i, item);
+                dest.insert(i, int(item));
                 return true;
             };
             return false;
         };
     };
-    dest.push(item);
+    dest.push(int(item));
     return true;
 }
                                 #endif
 
-                                #ifndef DEFt_unless_oob_luLQ
-                                #define DEFt_unless_oob_luLQ
-inline const fu_VEC<int>& unless_oob_luLQ(fu::view<fu_VEC<int>> a, const int i)
+                                #ifndef DEFt_unless_oob_RhFXRcia
+                                #define DEFt_unless_oob_RhFXRcia
+inline const fu_VEC<int>& unless_oob_RhFXRcia(fu::view<fu_VEC<int>> a, const int i)
 {
     return (i < a.size()) ? a[i] : (*(const fu_VEC<int>*)fu::NIL);
 }
                                 #endif
 
-static void ArgsAtRisk_shake(s_Flow& flow, int high, int low)
+void ArgsAtRisk_shake_CooqGQ4F(s_Flow& flow, int high, int low)
 {
     for (; ; )
     {
@@ -372,28 +386,28 @@ static void ArgsAtRisk_shake(s_Flow& flow, int high, int low)
         if (high < low)
             std::swap(high, low);
 
-        add_zs1w(grow_if_oob_xvHU(flow.args_at_risk, high), low);
+        add_bmhzXgqs(grow_if_oob_EE7n9Jkc(flow.args_at_risk, high), low);
 
         {
 
             {
-                fu_VEC<int> highs { unless_oob_luLQ(flow.arg_aliases, high) };
+                fu_VEC<int> highs { unless_oob_RhFXRcia(flow.arg_aliases, high) };
                 if (highs)
                 {
                     const int last = (highs.size() - 1);
                     for (int i = 0; i < last; i++)
-                        ArgsAtRisk_shake(flow, int(highs[i]), int(low));
+                        ArgsAtRisk_shake_CooqGQ4F(flow, int(highs[i]), int(low));
 
                     high = highs[last];
                     continue;
                 };
             };
-            fu_VEC<int> lows { unless_oob_luLQ(flow.arg_aliases, low) };
+            fu_VEC<int> lows { unless_oob_RhFXRcia(flow.arg_aliases, low) };
             if (lows)
             {
                 const int last = (lows.size() - 1);
                 for (int i = 0; i < last; i++)
-                    ArgsAtRisk_shake(flow, int(high), int(lows[i]));
+                    ArgsAtRisk_shake_CooqGQ4F(flow, int(high), int(lows[i]));
 
                 low = lows[last];
                 continue;
@@ -403,45 +417,31 @@ static void ArgsAtRisk_shake(s_Flow& flow, int high, int low)
     };
 }
 
-void ArgsAtRisk_shake(s_Flow& flow)
-{
-    for (int i = 0; i < flow.args_at_risk.size(); i++)
-    {
-        const int use = i;
-        for (int i_1 = at_risk_from(flow, use).size(); i_1-- > 0; )
-        {
-            const int write = at_risk_from(flow, use)[i_1];
-            at_risk_from(flow, use).splice(i_1, 1);
-            ArgsAtRisk_shake(flow, int(use), int(write));
-        };
-    };
-}
-
-                                #ifndef DEFt_unless_oob_dhMB
-                                #define DEFt_unless_oob_dhMB
-inline int unless_oob_dhMB(fu::view<int> a, const int i)
+                                #ifndef DEFt_unless_oob_HMyQV5gI
+                                #define DEFt_unless_oob_HMyQV5gI
+inline int unless_oob_HMyQV5gI(fu::view<int> a, const int i)
 {
     return (i < a.size()) ? a[i] : (*(const int*)fu::NIL);
 }
                                 #endif
 
-s_BitSet ArgsAtRisk_listRiskFree(const s_Flow& flow, const int position)
+s_BitSet ArgsAtRisk_listRiskFree_VUCqjTi1(const s_Flow& flow, const int position)
 {
     /*MOV*/ s_BitSet risk_free {};
     if (position)
     {
-        add_range(risk_free, 0, position);
-        const int target = unless_oob_dhMB(flow.arg_targets, position);
-        fu::view<int> at_risk_from = unless_oob_HoLq(flow.args_at_risk, target);
+        add_range_mQD1F0il(risk_free, 0, position);
+        const int target = unless_oob_HMyQV5gI(flow.arg_targets, position);
+        fu::view<int> at_risk_from = unless_oob_py9Y5UMJ(flow.args_at_risk, target);
         for (int i = 0; i < at_risk_from.size(); i++)
         {
             const int other = at_risk_from[i];
             if (other > target)
                 break;
 
-            const int other_position = (unless_oob_dhMB(flow.arg_positions, other) - 1);
+            const int other_position = (unless_oob_HMyQV5gI(flow.arg_positions, other) - 1);
             if ((other_position >= 0))
-                rem(risk_free, other_position);
+                rem_zoGTyg4u(risk_free, other_position);
 
         };
     };

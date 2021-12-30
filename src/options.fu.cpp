@@ -22,7 +22,7 @@ struct s_Lint
 inline constexpr unsigned DEV_DisableBCK = (0x1u << 0u);
                                 #endif
 
-s_Lint Lint_lax()
+s_Lint Lint_lax_KjUu65ky()
 {
     return s_Lint { 10 };
 }

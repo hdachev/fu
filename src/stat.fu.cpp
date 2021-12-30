@@ -46,28 +46,28 @@ void operator+=(s_ModuleStat& a, const s_ModuleStat& b)
     a.alloc_bytes += b.alloc_bytes;
 }
 
-s_ModuleStat ModuleStat_now()
+s_ModuleStat ModuleStat_now_pUbtfzLn()
 {
     return s_ModuleStat { fu::now_hr(), fu_ARC::ALLOC_STAT_COUNT(), fu_ARC::ALLOC_STAT_BYTES() };
 }
 
-                                #ifndef DEFt_x7E_OZkl
-                                #define DEFt_x7E_OZkl
-inline fu_STR x7E_OZkl(fu::view<char> a, fu::view<char> b)
+                                #ifndef DEFt_x7E
+                                #define DEFt_x7E
+inline fu_STR x7E(fu::view<char> a, fu::view<char> b)
 {
     return a + b;
 }
                                 #endif
 
-                                #ifndef DEFt_x7E_OZkl
-                                #define DEFt_x7E_OZkl
-inline fu_STR x7E_OZkl(fu::view<char> a, fu::view<char> b)
+                                #ifndef DEFt_x7E
+                                #define DEFt_x7E
+inline fu_STR x7E(fu::view<char> a, fu::view<char> b)
 {
     return a + b;
 }
                                 #endif
 
-void ModuleStat_print(const s_ModuleStat& a, const fu_STR& prefix, fu::view<char> suffix)
+void ModuleStat_print_2JzWOtmi(const s_ModuleStat& a, const fu_STR& prefix, fu::view<char> suffix)
 {
     fu_STR _0 {};
     fu_STR _1 {};
@@ -82,7 +82,7 @@ void ModuleStat_print(const s_ModuleStat& a, const fu_STR& prefix, fu::view<char
         _1 = (x);
     (void)0;}), static_cast<fu_STR&&>(_1)), (__extension__ (
     {
-        /*MOV*/ /*RRET*/ fu_STR x = (a.alloc_count ? ((x7E_OZkl(x7E_OZkl(fu::i64dec(a.alloc_count), " allocs\t"_fu), fu::i64dec(a.alloc_bytes)) + " bytes"_fu) + suffix) : fu_STR{});
+        /*MOV*/ /*RRET*/ fu_STR x = (a.alloc_count ? ((x7E(x7E(fu::i64dec(a.alloc_count), " allocs\t"_fu), fu::i64dec(a.alloc_bytes)) + " bytes"_fu) + suffix) : fu_STR{});
         _2 = (x);
     (void)0;}), static_cast<fu_STR&&>(_2)) }));
 }
