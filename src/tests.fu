@@ -3538,27 +3538,6 @@ pub fn runTests()
         }
     `);
 
-    TODO([`
-        let OPTOKENS = "{}[]()!?~@#$%^&*/-+<=>,.;:|";
-
-        pub fn lex(src) // <- template
-        {
-            let end = src.len;
-            mut idx = 0;
-
-            while (idx < end) {
-                let c = src[idx++];
-                if (OPTOKENS.has(c)) // <- no OPTOKENS in scope
-                    return idx - 1;
-            }
-
-            return src.len;
-        }
-    `,
-    `
-        fn main() _0::lex("3 - 3") - 2; // <- from here
-    `]);
-
     ZERO(`
         fn each(a: [$T], fn, start!?: i32)
             for (mut i = start; i < a.len; i++)
@@ -5981,6 +5960,27 @@ pub fn runTests()
         pub fn public(y)        private(y) * 2;     //  fn private hidden in first translation unit.
     `,`
         fn main()               1._0::public - 6;
+    `]);
+
+    TODO([`
+        let OPTOKENS = "{}[]()!?~@#$%^&*/-+<=>,.;:|";   // nowadays problem is OPTOKENS cgs to static in first translation unit
+
+        pub fn lex(src) // <- template
+        {
+            let end = src.len;
+            mut idx = 0;
+
+            while (idx < end) {
+                let c = src[idx++];
+                if (OPTOKENS.has(c)) // <- originally, no OPTOKENS in scope ...
+                    return idx - 1;
+            }
+
+            return src.len;
+        }
+    `,
+    `
+        fn main() _0::lex("3 - 3") - 2; // <- from here
     `]);
 
 
