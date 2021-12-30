@@ -149,7 +149,7 @@ struct slate
 
     static_assert(m_size > 0);
 
-    T m_data[m_size];
+    T m_data[(size_t) m_size];
 
     slate(const slate&)             = delete;
     slate(slate&&)                  = delete;

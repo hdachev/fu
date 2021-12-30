@@ -9,7 +9,7 @@ namespace fu {
 
 template <typename Clock>
 inline double fu_NOW() {
-    return std::chrono::duration_cast<std::chrono::microseconds>(
+    return (double) std::chrono::duration_cast<std::chrono::microseconds>(
         Clock::now()
             .time_since_epoch()).count()
                 * 0.000001;
