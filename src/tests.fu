@@ -503,12 +503,6 @@ pub fn runTests()
         return X(1).hey;
     `);
 
-    TODO(`
-        fn a_len(a: [$T]) a.len; // a conversion could navigate this here
-        struct Test { using a: i32[]; };
-        fn main() Test.a_len;
-    `);
-
     ZERO(`
         fn incr(a) a++;
         fn main() {
@@ -6642,6 +6636,12 @@ pub fn runTests()
             overloads ~= Overload("What");
             return try_GET(Target(0, 1)).kind.len - 4;
         }
+    `);
+
+    TODO(`
+        fn a_len(a: [$T]) a.len; // a conversion could navigate this here
+        struct Test { using a: i32[]; };
+        fn main() Test.a_len;
     `);
 
     TODO(`
