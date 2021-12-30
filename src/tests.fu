@@ -2334,7 +2334,7 @@ pub fn runTests()
         }
     `);
 
-    TODO_borrowck(`
+    TODO_disjoint(`
         fn test(ref a: i32, ref b: i32) {
             a += b;
             b += a;
@@ -7351,6 +7351,12 @@ pub fn runTests()
     TODO(`
         struct Overload { items: string[]; };
 
+        // This is a bit borderline -
+        //  the problem here is that a: $T[] doesn't relax to a: [$T] (not during prep) -
+        //   so we don't match at all. Still, that's what's written -
+        //    perhaps regular fns are what doesn't behave correctly,
+        //     since their relax can create ambiguity?
+        //
         fn last(a: $T[])                    a[a.len - 1];
         fn arg_lets(overload: Overload)     overload.items[0, overload.items.len - 2];
         fn test(overload: Overload)         overload.arg_lets.last.len;
