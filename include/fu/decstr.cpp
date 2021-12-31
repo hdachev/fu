@@ -49,3 +49,13 @@ fu_STR fu::f64dec(double num)
 
     return res;
 }
+
+
+// This is for symmetry ... not sure if it should be true/false or 1/0 or what.
+//  Needed to pass the `a ~ (smth && SelfRecursiveCall())` test.
+//   Stringifying bools feels off, but everyone does it, so I guess it is fine.
+
+fu_STR fu::booldec(bool num)
+{
+    return num ? "1"_fu : "0"_fu;
+}

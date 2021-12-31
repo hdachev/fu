@@ -4008,7 +4008,7 @@ pub fn runTests()
         }
     `);
 
-    TODO(`
+    ZERO(`
         fn qSTACK(x: i32) {
             let rec = x & 1 && "rec ";
             let via = !rec && qSTACK(x / 2);
