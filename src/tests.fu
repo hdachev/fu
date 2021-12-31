@@ -928,7 +928,7 @@ pub fn runTests()
         }
     `);
 
-    TODO(`
+    ZERO(`
         pub fn ZERO(implicit ref sum: i32, mut x: i32) {
             while (x) {
                 let y = x / 2;

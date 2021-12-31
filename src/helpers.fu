@@ -235,10 +235,13 @@ pub fn remove(ref a: $T[], predicate)
     let size = a.len;
     mut keep = 0;
 
+    // TODO OPTI no need to swap trivial
+    // TODO OPTI inefficient if array is shared, spec for shared
+
     for (mut i = 0; i < size; i++) {
         if (!predicate(a[i])) {
             if (i > keep)
-                swap(a[i], a[keep]);
+                a.swap(i, keep);
 
             keep++;
         }

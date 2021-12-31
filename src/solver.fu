@@ -170,6 +170,17 @@ pub fn solve(
 
     //
 
+    struct Warning {
+        dedupe:     i32;
+        token:      TokenIdx;
+        message:    string;
+    };
+
+    mut _warnings: Warning[];
+
+
+    //
+
     let t_string = createArray(t_byte);
 
     struct TypeParam {
@@ -2292,8 +2303,11 @@ pub fn solve(
         let usage = _current_fn.var_usage.unless_oob(t.index);
         if (!usage && relax_mask == RELAX_all)
         {
-            var.flags & F_LAX || fail(
-                "Unused variable: `" ~ var.name ~ "`: make it `lax` if this is intentional.");
+            if !(var.flags & F_LAX)
+                _warnings ~= Warning(
+                    dedupe: _current_fn.target.index,
+                    token: var.solved.token,
+                    message: "Unused variable: `" ~ var.name ~ "`: make it `lax` if this is intentional.");
 
             GET_mut(t).flags |= F_UNUSED;
         }
@@ -3102,16 +3116,25 @@ pub fn solve(
             // Go!
             {
                 ref o = EXT_mut(target);
-                o.locals.clear();
-                o.nodes.clear();
-
-                // Reset all node indices in the signature, this is very unpleasant,
-                //  but what you otherwise get is random derefs.
-                for (mut i = 0; i < o.args.len; i++)
+                if (o.nodes)
                 {
-                    ref written_via = o.args[i].written_via;
-                    if (written_via)
-                        written_via.nodeidx = -1;
+                    o.locals.clear();
+                    o.nodes.clear();
+
+                    // This looks horrible but hope is
+                    //  warnings array should be usually empty,
+                    //   otherwise we'll likely emit an error on solved.
+                    _warnings.remove(
+                        |w| w.dedupe == target.index);
+
+                    // Reset all node indices in the signature, this is very unpleasant,
+                    //  but what you otherwise get is random derefs.
+                    for (mut i = 0; i < o.args.len; i++)
+                    {
+                        ref written_via = o.args[i].written_via;
+                        if (written_via)
+                            written_via.nodeidx = -1;
+                    }
                 }
             }
 
@@ -7092,9 +7115,18 @@ pub fn solve(
 
         // println("TOTAL OVERLOADS " ~ module.fname ~ ": " ~ _scope.overloads.len);
 
+        // Global deoptis so it can all work.
         Scope_observeDefects(_scope.items);
 
-        // Run the thing.
+        // TODO suppressing & opting out of warnings.
+        for (mut i = 0; i < _warnings.len; i++)
+        {
+            let w = _warnings[i];
+            _here = w.token;
+            fail(w.message);
+        }
+
+        // Exports.
         return SolverOutput(:root,
             scope: Scope_exports(_scope, :module.modid, _field_items),
             notes: _notes);
