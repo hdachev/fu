@@ -181,8 +181,8 @@ pub fn parse(
 
     //
 
-    mut _imports: string[];
-    mut warnings: string[];
+    mut fuzimports: string[];
+    mut warnings:   string[];
 
     fn registerImport(mut value: string): string
     {
@@ -195,8 +195,8 @@ pub fn parse(
                 ? path_join(dir, value)
                 : dir ~ '\v' ~ value;
 
-        if (!_imports.has(value))
-            _imports.push(value);
+        if (!fuzimports.has(value))
+            fuzimports.push(value);
 
         return value;
     }
@@ -1813,5 +1813,5 @@ pub fn parse(
     let root = parseRoot();
 
     return ParserOutput(
-        :root, fuzimports: _imports, :warnings);
+        :root, :fuzimports, :warnings);
 }
