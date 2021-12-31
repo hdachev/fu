@@ -3407,8 +3407,9 @@ pub fn solve(
                     mut name = n_fn.value || fail("TODO anonymous fns");
                     if (!isNative && !isInline && !isUnspec
 
-                        // TODO FIX easy by tagging entry fns
-                        && name != "main"
+                        // Explicit externs don't get tagged,
+                        //  so you can refer to them by their naked names.
+                        && !(n_fn.flags & F_EXTERN)
 
                         // TODO FIX operators are a more serious problem -
                         //  we want operators to codegen c++ operators,
@@ -7080,7 +7081,7 @@ pub fn solve(
             for (mut i = 0; i < privates.len; i++)
             {
                 ref o = GET_mut(privates[i]);
-                o.flags |= F_EXTERN_PRIV;
+                o.flags |= F_EXTERN;
             }
         }
     }

@@ -729,7 +729,7 @@ pub fn cpp_codegen(
 
     fn isExtLinked(overload: Overload)
     {
-        return overload.flags & (F_PUB | F_EXTERN_PRIV);
+        return overload.flags & (F_PUB | F_EXTERN);
     }
 
     fn fnLinkage(overload: Overload)

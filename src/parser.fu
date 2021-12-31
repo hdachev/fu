@@ -36,7 +36,7 @@ pub let F_OPT_ARG       = 1 << 15;
 pub let F_MUT           = 1 << 16;
 pub let F_IMPLICIT      = 1 << 17;
 pub let F_USING         = 1 << 18;
-pub let F_MUSTNAME      = 1 << 19;
+pub let F_MUSTNAME      = 1 << 19;          pub let F_EXTERN        = F_MUSTNAME;
 
 pub let F_PUB           = 1 << 20;
 pub let F_OPERATOR      = 1 << 21;
@@ -46,7 +46,7 @@ pub let F_SHADOW        = 1 << 23;
 
 pub let F_NAMED_ARGS    = 1 << 24;
 pub let F_SPREAD_INLINE = 1 << 25;
-pub let F_REST_ARG      = 1 << 26;          pub let F_EXTERN_PRIV   = F_REST_ARG;
+pub let F_REST_ARG      = 1 << 26;
 pub let F_TODO_FIX_RRET = 1 << 27;          pub let F_OOE_RTL       = F_TODO_FIX_RRET;
 
 pub let F_TEMPLATE      = 1 << 28;
@@ -566,6 +566,7 @@ pub fn parse(
 
                 if (v == "pure")        return parsePureDecl();
                 if (v == "inline")      return parseInlineDecl();
+                if (v == "extern")      return parseExternDecl();
                 if (v == "infix")       return parseFixityDecl(F_INFIX);
                 if (v == "prefix")      return parseFixityDecl(F_PREFIX);
                 if (v == "postfix")     return parseFixityDecl(F_POSTFIX);
@@ -694,6 +695,11 @@ pub fn parse(
     fn parseNovec(): Node
     {
         return parseInlineDecl(F: F_NOCOPY);
+    }
+
+    fn parseExternDecl(): Node
+    {
+        return parseInlineDecl(F: F_EXTERN);
     }
 
     fn parseInlineDecl(mut flags?: i32, F = F_INLINE): Node
@@ -828,6 +834,7 @@ pub fn parse(
                 fail("fn main() must return i32.");
 
             set_PUB(flags);
+            flags |= F_EXTERN;
         }
 
         //
