@@ -262,7 +262,10 @@ fn view(a: [$T], t: $U)
     case ($a -> &mut [$T] && $T.is::trivial && $U.is::trivial): &mut [$U] __native("<fu/view.h>", "fu::view_of_mut");
     case (                   $T.is::trivial && $U.is::trivial):      [$U] __native("<fu/view.h>", "fu::view_of");
 
-fn .=(a: &mut [$T], b: [$T]) case ($T.is::copy): void __native("<fu/vec/view_assign.h>", "fu::view_assign");
+fn   .=(ref a: [$T], b: [$T]) case ($T.is::copy): void __native("<fu/vec/view_assign.h>", "fu::view_assign");
+
+// TODO not needed if swap(x, y) alias-ok's its two arguments:
+fn swap(ref a: [$T], i: i32, j: i32): void __native("<fu/vec/view_swap.h>", "fu::view_swap");
 
 
 // Assertions, bugs & fails.

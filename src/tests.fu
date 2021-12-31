@@ -2987,6 +2987,18 @@ pub fn runTests()
         }
     `);
 
+    ZERO(`
+        fn test(ref a: i32[]) = a.swap(0, 1);
+
+        fn main() {
+            mut nums = [1, 2];
+            nums.test();
+            return nums.len == 2 && nums[0] == 2 && nums[1] == 1
+                 ? 0
+                 : 1;
+        }
+    `);
+
 
     // Stuff that isn't working out quite right -
     //  Keep those around, there's no principle to these tests,
