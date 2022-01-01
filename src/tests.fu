@@ -5989,6 +5989,13 @@ pub fn runTests()
         fn main() _0::lex("3 - 3") - 2; // <- from here
     `]);
 
+    TODO([`
+        pub fn pubbed(a: i32) a * 2;
+        fn not_pubbed(b: i32) b * 3;
+    `,`
+        fn main() 1._0::pubbed._0::not_pubbed - 6;
+    `]);
+
 
     // Explicit shadowing.
 
