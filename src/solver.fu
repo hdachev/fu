@@ -3276,6 +3276,9 @@ pub fn solve(
                 mut min = 0;
                 mut max = 0;
 
+                let NativeOpts =
+                    isNative && hacks::NativeOpts(target.name);
+
                 shadow mut args: Argument[];
                 for (mut i = 0; i < N; i++)
                 {
@@ -3287,7 +3290,8 @@ pub fn solve(
                     let isImplicit  = !!(argNode.flags & F_IMPLICIT);
 
                     // ARGUMENTS AT RISK ////////////////////////
-                    let risk_free   = !isNative && !isUnspec
+                    let risk_free   = (!isNative || NativeOpts.no_AAR)
+                        && !isUnspec
                         && out.flow.ArgsAtRisk_listRiskFree(i);
 
                     let argTarget   = argNode.target;

@@ -31,8 +31,10 @@ pub fn self_test(): i32
 
 let TODO_borrowck   = fn TODO;
 let TODO_disjoint   = fn TODO;
-let TODO_Map        = fn TODO;
 let TODO_move       = fn TODO;
+let TODO_unique     = fn TODO;
+
+let TODO_Map        = fn TODO;
 
 
 // Run the whole battery & build self.
@@ -2996,6 +2998,17 @@ pub fn runTests()
             return nums.len == 2 && nums[0] == 2 && nums[1] == 1
                  ? 0
                  : 1;
+        }
+    `);
+
+    TODO_unique(`
+        fn Swap(ref a: i32[], x: i32, y: i32)
+            swap(a[x], a[y]);
+
+        fn main() {
+            mut a = [ 1, 2 ];
+            a.Swap(0, 1);
+            return a[0] - 2 == 0 && a[1] - 1 == 0 ? 0 : 1;
         }
     `);
 

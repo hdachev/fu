@@ -1,11 +1,11 @@
 import module;
 
-pub fn ClosureID(using target: Target)
+fn ClosureID(using target: Target)
     modid < 0
         ? "`" ~ index ~ "-" ~ -modid
         : "`" ~ index;
 
-pub fn tryParseClosureID(id!: string, MODID: i32)
+fn tryParseClosureID(id!: string, MODID: i32)
 {
     if (id[0] == '`')
     {
@@ -18,6 +18,29 @@ pub fn tryParseClosureID(id!: string, MODID: i32)
             : MODID;
 
         return Target(:modid, :index);
+    }
+
+    return [];
+}
+
+
+//
+
+struct NativeOpts
+{
+    name_start_idx:     i32;
+
+    // Opts.
+    no_AAR:             bool;
+};
+
+fn NativeOpts(name: string)
+{
+    if (name.starts(with: "\nno_AAR"))
+    {
+        return NativeOpts(
+            name_start_idx: 7,
+            no_AAR: true);
     }
 
     return [];

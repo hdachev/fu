@@ -1506,7 +1506,9 @@ pub fn cpp_codegen(
 
         if (isNative && target.name[0] == '\n')
         {
-            mut id = target.name.slice(1);
+            mut id = target.name.slice(
+                hacks::NativeOpts(target.name)
+                    .name_start_idx + 1);
 
             let idx = id.find('\n');
             if (idx > -1)
