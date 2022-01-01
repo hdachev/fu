@@ -27,10 +27,10 @@ pub let F_ARG           = 1 << 9;
 pub let F_UNUSED        = 1 << 10;
 pub let F_MOVED_FROM    = 1 << 11;
 
-pub let F_NOCOPY        = 1 << 12;
+pub let F_NOCOPY        = 1 << 12;          pub let F_NOVEC         = F_NOCOPY;
 pub let F_PURE          = 1 << 13;
 pub let F_CONVERSION    = 1 << 14;
-pub let F_OPT_ARG       = 1 << 15;
+pub let F_OPT_ARG       = 1 << 15;          pub let F_CTX_PURE      = F_OPT_ARG;
 
 
 pub let F_MUT           = 1 << 16;
@@ -724,7 +724,7 @@ pub fn parse(
 
     fn parseNovec(): Node
     {
-        return parseInlineDecl(F: F_NOCOPY);
+        return parseInlineDecl(F: F_NOVEC);
     }
 
     fn parseExternDecl(): Node
