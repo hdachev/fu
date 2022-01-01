@@ -1171,6 +1171,26 @@ pub fn runTests()
         return b.len - b[2];
     `);
 
+    ZERO(`
+        fn sort01(ref arr: [$T]) {
+            mut tmp: $T;
+            if (arr[0] > arr[1]) {
+                swap(arr[0], tmp);
+                swap(arr[1], tmp);
+            }
+        }
+
+        fn collectDedupes(mut vals) {
+            vals.sort01();
+            return vals[0];
+        }
+
+        fn main() {
+            let vals = [ 1, 0 ];
+            return collectDedupes(vals);
+        }
+    `);
+
 
     // Strings.
 
