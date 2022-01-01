@@ -7587,7 +7587,29 @@ pub fn runTests()
     `);
 
 
-    // Enum basics.
+    // Custom primitives, enums & flags.
+
+    TODO(`
+        primitive s32: i32;
+
+        fn main() {
+            let i: s32 = 0;
+            <fail return type annot>
+            return i;        <pass/>
+            return i.i32;    </fail>
+        }
+    `);
+
+    TODO(`
+        enum E { None };
+
+        fn main() {
+            let e = None;
+            <fail return type annot>
+            return e;        <pass/>
+            return e.i32;    </fail>
+        }
+    `);
 
     // FAIL(`
     //     enum Test: i32 { A; B; C; };

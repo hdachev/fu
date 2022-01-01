@@ -45,7 +45,7 @@ pub let F_SHADOW        = 1 << 23;
 
 
 pub let F_NAMED_ARGS    = 1 << 24;
-pub let F_SPREAD_INLINE = 1 << 25;
+pub let F_SPREAD_INLINE = 1 << 25;          pub let F_ENUM          = F_SPREAD_INLINE;
 pub let F_REST_ARG      = 1 << 26;
 pub let F_TODO_FIX_RRET = 1 << 27;          pub let F_OOE_RTL       = F_TODO_FIX_RRET;
 
@@ -385,9 +385,7 @@ pub fn parse(
 
         consume("op", "{");
         let items = parseBlockLike("op", "}", struct: true);
-        let struct = make("struct", items, :flags, name);
-
-        return struct;
+        return make("struct", items, :flags, name);
     }
 
     fn parseStructItem(): Node
@@ -400,9 +398,38 @@ pub fn parse(
 
     //
 
+    fn parsePrimDecl(enum!: bool): Node
+    {
+        let name    = tryConsume("id").value;
+        let annot   = tryPopTypeAnnot();
+        mut items   = tryConsume("op", "{") && parseBlockLike("op", "}", enum: true);
+
+        if (enum)
+            items || fail("`enum` declarations require a non-empty { list of variants }.");
+        else
+            annot || fail("`primitive` declarations require a base type annotation.");
+
+        return make(
+            "primdecl", flags: enum && F_ENUM, value: name,
+                [ annot, items && make("items", items) ]);
+    }
+
+    fn parseEnumItem(): Node
+    {
+        let id      = consume("id").value;
+        let init    = tryParseLetInit();
+        softSemi();
+
+        return createLet(:id, flags: 0, [], :init);
+    }
+
+
+    //
+
     fn parseBlockLike(
         endKind: string, endVal: string,
-        struct! = false): Node[]
+        struct! = false,
+        enum! = false): Node[]
     {
         let line0   = _idx && tokens[_idx - 1].line;
         let col00   = _col0;
@@ -457,9 +484,9 @@ pub fn parse(
             lineNN = token.line;
 
             //
-            let expr = struct
-                ? parseStructItem()
-                : parseStatementOrDefer();
+            let expr    = struct    ? parseStructItem()
+                        : enum      ? parseEnumItem()
+                                    : parseStatementOrDefer();
 
             // Maybe we should get rid of this.
             expr.kind != "call"
@@ -570,6 +597,9 @@ pub fn parse(
                 if (v == "infix")       return parseFixityDecl(F_INFIX);
                 if (v == "prefix")      return parseFixityDecl(F_PREFIX);
                 if (v == "postfix")     return parseFixityDecl(F_POSTFIX);
+
+                if (v == "primitive")   return parsePrimDecl(enum: false);
+                if (v == "enum")        return parsePrimDecl(enum: true);
             }
         }
 
@@ -1063,9 +1093,14 @@ pub fn parse(
         let type        = tryPopTypeAnnot();
         let init        = optional
             ? createDefinit()
-            : tryConsume("op", "=") && parseExpression(P_RESET);
+            : tryParseLetInit();
 
         return createLet(id, flags, type, init);
+    }
+
+    fn tryParseLetInit()
+    {
+        return tryConsume("op", "=") && parseExpression(P_RESET);
     }
 
     fn createLet(
