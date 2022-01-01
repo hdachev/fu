@@ -1594,9 +1594,6 @@ pub fn cpp_codegen(
                         if (mode & M_MOVE)
                             return ARG(0) ~ ".try_steal(" ~ ARG(1) ~ ")";
 
-                        if (node.type.is_mutref)
-                            return ARG(0) ~ ".mutref(" ~ ARG(1) ~ ")";
-
                         return ARG(0) ~ "[" ~ ARG(1) ~ "]";
                     }
 

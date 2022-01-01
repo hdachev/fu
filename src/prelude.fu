@@ -139,7 +139,7 @@ fn swap(ref a: $T, ref b: $T): void __native(
 fn len (a: [$T]): i32 __native(".size()");
 
 fn [](a: [$T], i: i32)
-    case ($a -> &mut [$T]): &mut $T __native;
+    case ($a -> &mut [$T]): &mut $T __native(".mutref");
     default               : &    $T __native;
 
 fn [](a: [$T], start: i32, end: i32)
