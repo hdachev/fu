@@ -1172,6 +1172,18 @@ pub fn runTests()
     `);
 
     ZERO(`
+        fn collectDedupes(mut vals<alt>: i32[]</alt>) {
+            vals.sort();
+            return vals[0];
+        }
+
+        fn main() {
+            let vals = [ 1, 0 ];
+            return collectDedupes(vals);
+        }
+    `);
+
+    ZERO(`
         fn sort01(ref arr: [$T]) {
             mut tmp: $T;
             if (arr[0] > arr[1]) {

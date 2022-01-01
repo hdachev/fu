@@ -169,7 +169,7 @@ fn   grow(a: &mut $T[], len: i32): void __native(".grow");
 fn resize_junk(a: &mut $T[], len: i32): void __native(".resize<false>");
 fn   grow_junk(a: &mut $T[], len: i32): void __native(".grow<false>");
 
-fn sort(a: &mut $T[]): void __native("<fu/vec/sort.h>", "fu::sort");
+fn sort(ref a: [$T]): void __native("<fu/vec/sort.h>", "fu::sort");
 
 
 // String likes.
