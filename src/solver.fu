@@ -3073,8 +3073,16 @@ pub fn solve(
                         let argNode = items[i] || fail();
                         let id = argNode.value;
 
-                        typeParams.map::if_ref(id, |tp|
-                            tp.matched = tp.consumed);
+                        typeParams.map::if_ref(id): |tp|
+                        {
+                            ////////////////////////////////////////////////////////////////
+                            // TEMP HACK REMOVE ME:
+                            //  Allowing untyped lambdas as args to native fns,
+                            //   REMOVE THIS WHEN DONE
+                            if (!tp.matched.addroffn::type_isAddrOfFn)
+                            ////////////////////////////////////////////////////////////////
+                                tp.matched = tp.consumed;
+                        }
                     }
                 }
             }

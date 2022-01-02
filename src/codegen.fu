@@ -23,6 +23,7 @@ let M_LOOP_BODY         = 1 << 9;
 let M_MUTVAR            = 1 << 10;
 let M_MOVABLE           = 1 << 11;
 let M_MOVE              = 1 << 12;
+let M_ARG_TO_NATIVE     = 1 << 13;
 
 
 //
@@ -825,18 +826,26 @@ pub fn cpp_codegen(
         return;
     }
 
-    fn ensureFnDef(target: Target, overload: Overload)
+    fn ensureFnUsable(target: Target)
+    {
+        if (target.solved.flags & F_TEMPLATE || !target.isExtLinked)
+            ensureFnDef(target);
+        else if (target.modid != module.modid)
+            ensureFwdDecl(target);
+    }
+
+    fn ensureFnDef(target: Target)
     {
         target.modid == module.modid || fail(
             "ensureFnDef: fndef is needed outside of its original scope: "
                 ~ target.modid ~ " vs " ~ module.modid ~ ": `"
-                ~ overload.kind ~ " " ~ overload.name ~ "`.");
+                ~ target.kind ~ " " ~ target.name ~ "`.");
 
         if !(_idef.add_once(target.index))
             return;
 
         // Go!
-        let node = overload.solved;
+        let node = target.solved;
         node.kind == "fn" || fail("ensureFnDef non-fn");
         cgFn(node, M_STMT);
     }
@@ -908,7 +917,7 @@ pub fn cpp_codegen(
         let o = GET(fndef.target);
         let n = o.solved;
         if !(n && o.isExtLinked)
-            return mode & M_STMT ? "" : "0";
+            return cgEmpty(fndef, mode);
 
         n.kind == "fn" || fail("cgFnDef non-fn");
         return cgFn(n, mode);
@@ -970,7 +979,7 @@ pub fn cpp_codegen(
         if (dedupe)
             _fdef ~= "                                #endif\n";
 
-        return mode & M_STMT ? "" : "0";
+        return cgEmpty(fn, mode);
     }
 
     fn binding(node: SolvedNode, doInit!?: bool, forceMut!?: bool, forceValue!?: bool): string
@@ -1386,7 +1395,8 @@ pub fn cpp_codegen(
 
             mut src = cgNode(
                 arg, callarg: ext.args[i].type,
-                debug: "cgCall(" ~ node.value ~ ").ARG(" ~ i ~ ")");
+                debug: "cgCall(" ~ node.value ~ ").ARG(" ~ i ~ ")",
+                mode: isNative && M_ARG_TO_NATIVE);
 
             // Explicit sequencing.
             let MUSTSEQ_bit = 1 << (i & 31);
@@ -1554,12 +1564,7 @@ pub fn cpp_codegen(
         }
 
         if (node.target.modid && target.kind == "fn")
-        {
-            if (target.solved.flags & F_TEMPLATE || !target.isExtLinked)
-                ensureFnDef(node.target, target);
-            else if (node.target.modid != module.modid)
-                ensureFwdDecl(node.target);
-        }
+            ensureFnUsable(node.target);
 
         let id = target.name || fail();
 
@@ -1743,8 +1748,29 @@ pub fn cpp_codegen(
         return src;
     }
 
-    fn cgEmpty(mode: i32): string
+    fn cgEmpty(node: SolvedNode, mode: i32): string
     {
+        if (mode & M_ARG_TO_NATIVE && node.type.addroffn::type_isAddrOfFn)
+        {
+            mut last: Target;
+            addroffn::unpackAddrOfFn(node.type.canon, |target|
+            {
+                last && fail("Codegen cannot decine which fn to pass as a c++ lambda at __native callsite: " ~ last.name ~ " vs " ~ target.name);
+                last = target;
+
+                target.kind == "fn" || fail("Cannot codegen a non-fn: " ~ target.kind ~ " " ~ target.name);
+
+                let args = target.args;
+                for (mut i = 0; i < args.len; i++)
+                    if (args[i].flags & F_IMPLICIT)
+                        fail("How do we codegen F_IMPLICIT arguments through lambdas?");
+
+                ensureFnUsable(target);
+            });
+
+            return "&" ~ fnID(last);
+        }
+
         return mode & M_STMT ? "" : "0";
     }
 
@@ -2112,7 +2138,7 @@ pub fn cpp_codegen(
 
         // Empties.
         if (k == "fndef")       return cgFnDef(node, mode); // TODO no point in this here
-        if (k == "empty")       return cgEmpty(mode);
+        if (k == "empty")       return cgEmpty(node, mode);
 
         // Stuff that we can't cg as expressions.
         if !(mode & M_STMT)

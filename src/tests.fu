@@ -7608,6 +7608,16 @@ pub fn runTests()
         fn main()                                       = apply([1], |i| i - 1);
     `);
 
+    ZERO(`
+        fn desc(a: i32, b: i32) b < a;
+
+        fn main() {
+            mut vals = [ 1, 2 ];
+            vals.sort(fn desc);
+            return vals[0] - 2;
+        }
+    `);
+
 
     // Fork/join parallelism.
 
