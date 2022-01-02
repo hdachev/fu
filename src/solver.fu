@@ -529,7 +529,7 @@ pub fn solve(
         return lifetime;
     }
 
-    fn Lifetime_fromBinding(target: Target, local_of!: i32, flags!: i32, type: Type): Lifetime
+    fn Lifetime_fromBinding(target: Target, local_of!: i32, flags!: i32): Lifetime
     {
         target.modid < 0 || target.modid < 0 || target.modid == module.modid || fail("not from this module");
 
@@ -537,22 +537,9 @@ pub fn solve(
         if (!local_of)
             return Lifetime_static();
 
-        // Alias?
-        //
-        // SHALLOW LIFETIMES: The problem with this is that we lose the notion of what invalidates what -
-        //  var0, var1 = var0.smth, `var2 = var1.smth`:
-        //   assigning to `var2` does not invalidate `var1` or `var0`.
-        //
-        let isArg = flags & F_ARG;
-        // if (!isArg && type.is_ref)
-        //     return Lifetime_test(type.lifetime);
-        //
-        // So we try to still emit an inner lifetime,
-        //  and reveal the super lifetime only when needed.
-
         // Argument?
         let index       = target.index;
-        let region      = isArg && type.is_ref
+        let region      = flags & (F_ARG | F_MUT) == F_ARG
             ? Region_fromArgIndex(index)
             : Region_fromLocalIndex(index);
 
@@ -681,7 +668,7 @@ pub fn solve(
         // Setup the lifetime for references to this binding.
         ref overload = GET_mut(target);
         {
-            let lifetime = Lifetime_fromBinding(target, :local_of, :flags, type);
+            let lifetime = Lifetime_fromBinding(target, :local_of, :flags);
 
             ///////////////////////////////////////////////////////////////
             // Throw away argument lifetime, union below will fix it up. //
