@@ -5783,7 +5783,7 @@ pub fn solve(
             return;
         }
 
-        if (!slot.is_rx_copy)
+        if (!node.type.is_rx_copy)
             fail("Needs an explicit STEAL or CLONE: " ~ humanizeType(slot));
 
         if (!node.type.is_trivial)
