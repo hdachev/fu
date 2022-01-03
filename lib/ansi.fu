@@ -25,6 +25,7 @@ pub let BAD     = ansi(31,1);
 
 let cID         = ansi(34,1);
 let cKW         = ansi(35,1);
+let cLT         = ansi(32,1);
 
 
 //
@@ -37,3 +38,6 @@ pub fn qID(id: string) =
 
 pub fn qKW(id: string) =
     cKW ~ (id || "``") ~ RESET;
+
+pub fn qLT(id: string) =
+    cLT ~ (id || "``") ~ RESET;

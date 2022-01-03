@@ -225,7 +225,13 @@ pub fn solve(
 
     fn qWHAT(o: Overload)
     {
-        return o.kind.qKW ~ " " ~ o.name.human.qID;
+        let kind = o.kind;
+
+        shadow let kind = kind == "var" && o.flags & F_ARG
+            ? "arg"
+            : kind;
+
+        return kind.qKW ~ " " ~ o.name.human.qID;
     }
 
     fn human(id: string)
@@ -772,6 +778,14 @@ pub fn solve(
 
         if (type.quals)
             result ~= humanizeQuals(type);
+
+        type.lifetime.uni0n.each: |r|
+        {
+            result ~= " ref:".qLT;
+            result ~= r.Region_isTemp() ? "temp".qKW
+                    : r.Region_isStatic ? "static".qKW
+                                        : nested(Region_asIndex(r)).qWHAT;
+        }
 
         return result;
     }
