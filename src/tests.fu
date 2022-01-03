@@ -7604,8 +7604,8 @@ pub fn runTests()
     // Function types sketch.
 
     TODO(`
-        fn apply(num: i32, func: pure fn (i32): i32)    = func(num);
-        fn main()                                       = apply([1], |i| i - 1);
+        fn apply(num: i32, func: fn (i32): i32) = func(num);
+        fn main()                               = apply([1], |i| i - 1);
     `);
 
     ZERO(`
@@ -7614,6 +7614,27 @@ pub fn runTests()
         fn main() {
             mut vals = [ 1, 2 ];
             vals.sort(fn desc);
+            return vals[0] - 2;
+        }
+    `);
+
+    TODO(`
+        fn main() {
+            mut vals = [ 1, 2 ];
+            vals.sort(|a: i32, b: i32| b < a);
+            return vals[0] - 2;
+        }
+    `);
+
+    TODO(`
+        fn test(ref vals: i32[], xor: i32)
+            vals.sort(
+                |a: i32, b: i32|
+                    a^xor < b^xor);
+
+        fn main() {
+            mut vals = [ 1, 2 ];
+            vals.test(xor: 3); // xor:3 descs 1 and 2.
             return vals[0] - 2;
         }
     `);
