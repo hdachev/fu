@@ -7,6 +7,7 @@ import types;
 import quals;
 import structs;
 import flow;
+import effects;
 import module;
 import fail;
 
@@ -132,6 +133,7 @@ pub fn solve(
         using out:      SolvedNode;
         using flow?:    Flow;
 
+        effects?:       Effects;
         events?:        Events;
         loop_start?:    i32;
 
@@ -347,7 +349,11 @@ pub fn solve(
     {
         let t = nid.nodeown;
         if (t.modid != module.modid || t.index != _current_fn_or_type.index)
-            fail("MUT(nid.nodeown) not current-fn.");
+        {
+            let n = t.EXT.nodes[nid.nodeidx];
+            fail("MUT(nid.nodeown) not current-fn: "
+                ~ t.qWHAT ~ " :: " ~ n.kind ~ "/" ~ n.value);
+        }
 
         return t.EXT_mut.nodes[nid.nodeidx];
     }
@@ -2160,7 +2166,7 @@ pub fn solve(
         push(HelpersData( :id, :mask, :kills,
             ret_expect:     type,
             target:         fnbody_of && Target(:module.modid, fnbody_of),
-            local_of:       fnbody_of ? -1 : _current_fn.target.index,
+            local_of:       fnbody_of ? fnbody_of : _current_fn.target.index,
             locals_start:   fnbody_of ? +1 : locals_start || GET_next_local_index()));
 
         // TODO FIX ARGSTEAL Steal arguments from one level up, this real messy.
@@ -2211,7 +2217,8 @@ pub fn solve(
             //  and use that to relax all locals.
             for (mut i = 0; i < h.returns.len; i++)
             {
-                shadow mut expr = h.returns[i].items.only;
+                shadow let expr = h.returns[i].items.only;
+                _here = expr.token;
                 reportReturnType(:h, expr.type);
             }
 
@@ -2309,11 +2316,16 @@ pub fn solve(
             //    just finish up asap.
             //
             let status = Target(:module.modid, fnbody_of).status;
-            if !(status & SS_DIRTY)
+            if (!(status & SS_DIRTY) && !currentFn_mustBecomeInline())
                 runAllPasses(block);
         }
 
         return block;
+    }
+
+    fn currentFn_mustBecomeInline()
+    {
+        return _current_fn.effects.far_jumps.len > 0;
     }
 
     fn relaxBlockVar(t: Target, relax_mask!: i32)
@@ -2850,9 +2862,6 @@ pub fn solve(
                         if (target.modid < 0 || target.modid == module.modid)
                         {
                             let overload = GET(target);
-                            if (overload.flags & F_SPREAD_INLINE)
-                                template.node.flags |= F_INLINE;
-
                             let local_of = overload.local_of;
                             if (parent_idx < local_of)
                                 parent_idx = local_of;
@@ -3528,6 +3537,7 @@ pub fn solve(
             mut didSetBody = false;
 
             // Regular fns again.
+            :NOT_INLINE
             if (!isInline && !isUnspec)
             {
                 // The usual.
@@ -3540,6 +3550,25 @@ pub fn solve(
                         id: n_fn.value,
                         mask: i16(HM_Function | HM_CanReturn | HM_LabelUsed | (n_fn.flags & F_LAMBDA && HM_Lambda)),
                         steal: _helpers.last.vars.len - helpers0vars);
+
+                    if (currentFn_mustBecomeInline)
+                    {
+                        isFirst || fail(
+                            "Function wants to become inline on after first solve.");
+
+                        // Unfortunately we have to throw away
+                        //  all this work and start over.
+                        //
+                        // Unless we make the inliner do something different,
+                        //  just move all the newly solved stuff into the parent fn,
+                        //   so that no effort is lost at this point.
+                        //
+                        ref o  = GET_mut(target);
+                        o.kind = "inline";
+                        o.type = ret_expect;
+
+                        break :NOT_INLINE;
+                    }
 
                     retval = s_body.type;
 
@@ -4102,6 +4131,7 @@ pub fn solve(
     {
         fn h = _helpers[helpers_idx];
 
+        //
         let type = h.ret_actual || h.ret_expect;
 
         // Deal with expression first, might noop the jump.
@@ -4114,6 +4144,16 @@ pub fn solve(
         // Dead code elim.
         if (expr.type.is_never)
             return expr;
+
+        // Detect & shim non-local jumps.
+        if (h.local_of != _current_fn.target.index)
+        {
+            _current_fn.effects.far_jumps.set::add(h.local_of);
+
+            // The fn will solve again as inline,
+            //  return a shim here that looks jumpy.
+            return createEmpty(kind: "__far_jump", type: t_never);
+        }
 
         // This kinda does it for return non-expression.
         let redundant = kills == helpers_idx + 1;

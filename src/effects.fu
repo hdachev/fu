@@ -31,7 +31,7 @@ pub struct Effects
     //   and later we might be able to jump out of recursive stacks by throwing,
     //    or extra return out-params & flags or whatever.
     //
-    far_jumps:      Target[];
+    far_jumps:      i32[];
 
     // Types thrown -
     //

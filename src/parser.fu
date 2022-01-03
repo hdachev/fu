@@ -45,9 +45,9 @@ pub let F_SHADOW        = 1 << 23;
 
 
 pub let F_NAMED_ARGS    = 1 << 24;
-pub let F_SPREAD_INLINE = 1 << 25;          pub let F_ENUM          = F_SPREAD_INLINE;
+pub let F_OOE_RTL       = 1 << 25;          pub let F_ENUM          = F_OOE_RTL;
 pub let F_REST_ARG      = 1 << 26;
-pub let F_TODO_FIX_RRET = 1 << 27;          pub let F_OOE_RTL       = F_TODO_FIX_RRET;
+pub let F_TODO_FIX_RRET = 1 << 27;
 
 pub let F_TEMPLATE      = 1 << 28;
 pub let F_INLINE        = 1 << 29;
@@ -173,8 +173,6 @@ pub fn parse(
     mut _dollars    : string[];
 
     mut _anonFns    = 0;
-
-    mut _numReturns = 0;
 
     mut _hasPUB     = false;
 
@@ -766,7 +764,7 @@ pub fn parse(
         let name = "l_" ~ modid ~ "_" ~ _anonFns++;
 
         return parseFnDecl_cont(endv: !noArgs_noClosingPipe && "|",
-            flags: F_INLINE | F_TEMPLATE | F_LAMBDA, expr: !(mode & M_LAMBDA_STMT_OK), :name);
+            flags: F_LAMBDA, expr: !(mode & M_LAMBDA_STMT_OK), :name);
     }
 
     fn parseFnDecl(mut flags?: i32, expr!?: bool): Node
@@ -842,18 +840,8 @@ pub fn parse(
         let retIdx = items.len;
         items.push(type);
 
-        let numReturns0 = _numReturns;
-
         // Body or pattern (case/case).
         flags |= parseFnBodyOrPattern(items, :expr);
-
-        if (flags & F_LAMBDA)         {
-            if (_numReturns > numReturns0)
-                flags |= F_SPREAD_INLINE;
-        }
-        else {
-            _numReturns = numReturns0;
-        }
 
         // Ensure main: i32, kinda lame doing it here.
         if (name == "main" && _fnDepth == 1)
@@ -1651,9 +1639,6 @@ pub fn parse(
         _fnDepth > 0 || { _idx--; fail() };
 
         let label = tryConsume("op", ":") && consume("id").value;
-
-        if (kind == "return")
-            _numReturns++;
 
         mut expr: Node;
         if (!tryConsume("op", ";"))

@@ -7159,7 +7159,7 @@ pub fn runTests()
     `);
 
     ZERO(`
-        inline fn loop1d(i0, i1, fn)
+        fn loop1d(i0, i1, fn)
             for (mut i = i0; i < i1; i++)
                 fn(i);
 
@@ -7370,7 +7370,7 @@ pub fn runTests()
         fn main() = test() - 1;
     `);
 
-    TODO(`
+    ZERO(`
         struct Overload {
             is_var?: bool;
             lifetime?: i32[];
@@ -7633,10 +7633,18 @@ pub fn runTests()
         }
     `);
 
-    TODO(`
+    ZERO(`
         fn main() {
             mut vals = [ 1, 2 ];
             vals.sort(|a: i32, b: i32| b < a);
+            return vals[0] - 2;
+        }
+    `);
+
+    TODO(`
+        fn main() {
+            mut vals = [ 1, 2 ];
+            vals.sort(|a, b| b < a);
             return vals[0] - 2;
         }
     `);
