@@ -6,7 +6,7 @@ import context;
 import types;
 import quals;
 import structs;
-import effects;
+import flow;
 import module;
 import fail;
 
