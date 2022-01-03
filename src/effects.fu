@@ -1,0 +1,51 @@
+import helpers;
+import module;
+import types;
+
+
+// Sketch.
+
+pub fn Fx_Misc                  = 1 <<  0; // unknown: but can't purecode-eliminate, e.g. debug print
+
+pub fn Fx_Exits                 = 1 <<  1; // can crash/exit program,   `noexit` tests for these defects
+pub fn Fx_Blocks                = 1 <<  2; // can block exection,       `realtime` tests for these defects
+// ...
+
+pub fn Fx_Exits_Div0            = 1 <<  4; // risks int/0
+pub fn Fx_Exits_Segv            = 1 <<  5; // risks oob
+// ...
+// ...
+
+pub fn Fx_Blocks_Alloc          = 1 <<  8; // allocates, might lock on allocator, `no alloc` tests for this defect
+pub fn Fx_Blocks_Await          = 1 <<  9; // might wait on async work join
+pub fn Fx_Blocks_Syscall        = 1 << 10; // might wait on a syscall, probably every Fx_Blocks is a due to a syscall?
+
+
+// Function effects -
+//  Things not well expressed by its arg & return signature.
+
+pub struct Effects
+{
+    // Non-local jumps -
+    //  So we know what needs to get inlined into what,
+    //   and later we might be able to jump out of recursive stacks by throwing,
+    //    or extra return out-params & flags or whatever.
+    //
+    far_jumps:      Target[];
+
+    // Types thrown -
+    //
+    //
+    // throws:         Type[];
+
+    // Anti-deadlock?
+    //  Honestly, I don't want locks at all, but if we do get them, there must be some anti-deadlock thing going on.
+    //
+    // locks:       What?
+
+    // Complexity and computational expense?
+    //  This is interesting for automatic parallelization.
+    //
+    // loopdepth:   What?
+    // est_cost:    What?
+}
