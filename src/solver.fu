@@ -790,6 +790,26 @@ pub fn solve(
         return result;
     }
 
+    fn qWHAT(n: SolvedNode)
+    {
+        mut src = n.kind.qKW;
+
+        if (n.kind == "call")
+            src ~= "(" ~ n.target.qWHAT ~ ")";
+        else if (n.value)
+            src ~= "(" ~ n.value.qID ~ ")";
+
+        if (n.type)
+            src ~= " -> " ~ humanizeType(n.type);
+
+        if (n.items.len == 1)
+            src ~= " { " ~ n.items.only.qWHAT ~ " }";
+        else if (n.items.len > 0)
+            src ~= " { " ~ n.items.len ~ " }";
+
+        return src;
+    }
+
 
     //
 
