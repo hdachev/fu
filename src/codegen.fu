@@ -95,11 +95,16 @@ pub fn cpp_codegen(
 
     mut _current_fn: cg_CurrentFn;
 
+    fn isLocal(target: Target)
+    {
+        return target.modid < 0;
+    }
+
     using fn GET(target: Target)
     {
         target.index > 0 || assert();
 
-        if (target.modid < 0)
+        if (target.isLocal)
             return module.out.solve.scope.extended[-target.modid - 1].locals[target.index - 1];
 
         let m = target.modid == module.modid
@@ -470,7 +475,7 @@ pub fn cpp_codegen(
 
         id = ID(id);
 
-        if (o.local_of)
+        if (target.isLocal)
         {
             fn _ids_dedupe  = _current_fn._ids_dedupe;
             fn _ids_used    = _current_fn._ids_used;
@@ -1572,7 +1577,7 @@ pub fn cpp_codegen(
         {
             if (target.kind == "var")
             {
-                if (!target.local_of)
+                if (!node.target.isLocal)
                 {
                     if (node.target.modid != module.modid)
                         cgForeignGlobal(node.target);
@@ -2167,7 +2172,7 @@ pub fn cpp_codegen(
             {
                 fn supportsNRVO(o: Overload)
                     o.kind == "var" && !(o.flags & F_ARG)
-                        && o.local_of == _current_fn.target.index
+                        // && o.local_of == _current_fn.target.index
                         && !o.solved.type.is_ref;
 
                 let nrvo = expr.kind == "call"
