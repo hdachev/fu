@@ -7186,6 +7186,32 @@ pub fn runTests()
         }
     `);
 
+    ZERO(`
+        fn next(implicit ref sum: i32, lifetime: [i32], locals_start: i32) {
+            sum += lifetime.len;
+            return lifetime[locals_start, lifetime.len];
+        }
+
+        fn Lifetime_each(lifetime: [i32], visit) {
+            for (mut i = 0; i < lifetime.len; i++)
+                visit(lifetime[i, lifetime.len]);
+        }
+
+        fn Lifetime_F_TODO_FIX_RRET(lifetime: [i32], locals_start: i32) {
+            Lifetime_each(:lifetime, visit: |l| {
+                if (l)
+                    Lifetime_F_TODO_FIX_RRET(l.next(locals_start), locals_start);
+            });
+        }
+
+        fn main() {
+            let lifetime = [ 1, 2 ];
+            let implicit mut sum = 0;
+            Lifetime_F_TODO_FIX_RRET(lifetime, locals_start: 1);
+            return sum - 4;
+        }
+    `);
+
 
     // Relaxer.
 
