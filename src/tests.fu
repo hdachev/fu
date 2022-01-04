@@ -7095,6 +7095,21 @@ pub fn runTests()
         ;; !NONTRIV_autocopy
     `);
 
+    TODO(`
+        inline fn hello(ref sum) {  //     when inlined into woot
+            if (sum > 2) return;    //      the hello block now looks like an expr
+            sum += 2;               // <-    with a diverging tail return here
+        }
+
+        fn woot(ref sum) hello(sum);
+
+        fn main() {
+            mut sum = -2;
+            sum.woot();
+            return sum;
+        }
+    `);
+
     ZERO(`
         fn loop1d(i0, i1, fn)
             for (mut i = i0; i < i1; i++)
