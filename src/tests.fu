@@ -7633,7 +7633,7 @@ pub fn runTests()
         }
     `);
 
-    ZERO(`
+    TODO(`
         fn main() {
             mut vals = [ 1, 2 ];
             vals.sort(|a: i32, b: i32| b < a);

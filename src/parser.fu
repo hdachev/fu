@@ -764,7 +764,7 @@ pub fn parse(
         let name = "l_" ~ modid ~ "_" ~ _anonFns++;
 
         return parseFnDecl_cont(endv: !noArgs_noClosingPipe && "|",
-            flags: F_LAMBDA, expr: !(mode & M_LAMBDA_STMT_OK), :name);
+            flags: F_INLINE | F_LAMBDA, expr: !(mode & M_LAMBDA_STMT_OK), :name);
     }
 
     fn parseFnDecl(mut flags?: i32, expr!?: bool): Node
