@@ -440,8 +440,6 @@ pub fn solve(
     mut TODO_FIX_convert_args = [ SolvedNode(kind: "", type: Type()) ];
     /////////////////////////////////////////////
 
-    let TODO_FIX_template_defarg = SolvedNode(kind: "__defarg", type: Type());
-
 
     //
 
@@ -3241,7 +3239,11 @@ pub fn solve(
                 {
                     outItems[i] = SolvedNode(
                         kind: "let", flags: n_arg.flags, value: n_arg.value,
-                        type: Type(), items: [ SolvedNode, n_arg.items[LET_INIT] && TODO_FIX_template_defarg ]);
+                        type: Type(), items: [ SolvedNode,
+
+                            // TODO FIX This is such shit + not sure what its for.
+                            n_arg.items[LET_INIT] && SolvedNode(
+                                kind: "__defarg", type: []) ]);
 
                     continue;
                 }
