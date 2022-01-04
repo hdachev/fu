@@ -7095,7 +7095,7 @@ pub fn runTests()
         ;; !NONTRIV_autocopy
     `);
 
-    TODO(`
+    ZERO(`
         inline fn hello(ref sum) {  //     when inlined into woot
             if (sum > 2) return;    //      the hello block now looks like an expr
             sum += 2;               // <-    with a diverging tail return here

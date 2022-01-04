@@ -51,8 +51,8 @@ pub let F_TODO_FIX_RRET = 1 << 27;          pub let F_OOE_RTL       = F_TODO_FIX
 
 pub let F_TEMPLATE      = 1 << 28;
 pub let F_INLINE        = 1 << 29;
-pub let F_LAMBDA        = 1 << 30;
-pub let F_SINGLE_STMT   = 1 << 31;
+pub let F_LAMBDA        = 1 << 30;          pub let F_SINGLE_STMT   = F_LAMBDA;
+// pub let F_SINGLE_STMT   = 1 << 31;
 
 
 // Operator precedence table.
@@ -925,12 +925,20 @@ pub fn parse(
         tryConsume("op", "=");
 
         //
-        let body = expr
+        mut body = expr
             ? parseExpression(_precedence)
             : parseStatement();
 
         if (body.kind == "block")
+        {
+            // Make sure last item doesn't look like a trailing return.
+            //  With this we could probably get rid of F_SINGLE_STMT.
+            //
+            if (body.items && body.items.last.kind != "return")
+                body.items ~= make("void");
+
             return body;
+        }
 
         if (body.kind == "return")
             return createBlock([ body ]);
