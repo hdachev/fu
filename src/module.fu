@@ -261,22 +261,23 @@ pub struct Overload
     kind:           string;
     name:           string;
     type:           Type;
+
     flags:          i32;
+
+    // Solver state.
+    status?:        u32;
 
     // TODO move exotic bloat over to module,
     //  all trailers can fit in the same
     //   [ modid / thing ] slot here.
     solved:         SolvedNode;
-
-    // Solver state. // maybe we need flags enums already
-    status?:        u32; // <- u32 to differentiate from flags
-
-    // For locals, if non-zero, index of enclosing fn, obviously same modid.
-    local_of?:      i32;
 };
 
 pub struct Extended
 {
+    // For locals, if non-zero, index of enclosing fn, obviously same modid.
+    local_of:       i32;
+
     // Arity.
     min:            i32;
     max:            i32;

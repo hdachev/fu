@@ -242,7 +242,7 @@ pub fn solve(
         if (!t) return id;
 
         let o = GET(t);
-        return GET(Target(:module.modid, o.local_of)).name ~ ":" ~ o.name;
+        return GET(Target(:module.modid, t.localOf)).name ~ ":" ~ o.name;
     }
 
     fn makeNote(note: i32)
@@ -297,22 +297,21 @@ pub fn solve(
 
     //
 
+    fn isLocal(target: Target)
+    {
+        return target.modid < 0;
+    }
+
     using fn GET(target: Target)
     {
-        if (target.modid < 0)
+        if (target.isLocal)
             return _scope.extended[-target.modid - 1].locals[target.index - 1];
 
         if (target.modid == module.modid)
             return _scope.overloads[target.index - 1];
 
-        let o = ctx.modules[target.modid]
+        return ctx.modules[target.modid]
             .out.solve.scope.overloads[target.index - 1];
-
-        o.local_of && fail(
-            "Working with locals from other modules would "
-                ~ "prevent bucketing overloads within other overloads: " ~ o.qWHAT);
-
-        return o;
     }
 
     fn GET_mut(target: Target)
@@ -331,6 +330,14 @@ pub fn solve(
 
         return target.modid >= 0
             && ctx.modules[target.modid].out.solve.scope.extended.unless_oob(target.index - 1);
+    }
+
+    fn localOf(target: Target)
+    {
+        if (target.isLocal)
+            return -target.modid;
+
+        return target.local_of;
     }
 
     fn EXT_mut(target: Target)
@@ -514,26 +521,11 @@ pub fn solve(
                     continue;
                 }
 
-                fn fnd(index: i32)
-                    GET(nested(:index));
-
                 let index = region.Region_toLocalIndex;
-                let local = index && fnd(index);
-                let local_of = local.local_of; // zero for globals
-                if (local_of)
+                if (index)
                 {
-                    mut frame = current_fn.index;
-                    while (local_of != frame)
-                    {
-                        local_of <= frame || fail("Lifetime_test: `" ~ local.name ~ "` is not a local: `"
-                            ~ fnd(local_of).name ~ "` does not contain "
-                            ~ (frame    ? "`" ~ fnd(frame).name ~ "`"
-                                        : "global scope")
-                            ~ (current_fn.index != frame ? ", testing from `" ~ fnd(current_fn.index).name ~ "`." : "."));
-
-                        frame || fail("Lifetime_test: climbed up to root");
-                        frame = fnd(frame).local_of;
-                    }
+                    let o = GET(nested(:index));
+                    o.kind == "var" || fail("Lifetime_test: local is not a var: " ~ o.kind ~ " " ~ o.name);
                 }
             }
         }
@@ -673,7 +665,7 @@ pub fn solve(
         }
 
         // Reserve the slot.
-        let target = Scope_create(_scope, kind: "var", :name, :flags, :local_of, nest: true);
+        let target = Scope_create(_scope, kind: "var", :name, :flags, nest:local_of);
 
         _helpers.last.vars ~= target.index;
 
@@ -1132,7 +1124,7 @@ pub fn solve(
                     {
                         if (matchIdx)
                         {
-                            fn GETfn(idx: i32) GET(Target(modid: module.modid, index: idx));
+                            fn GETfn(idx: i32) Target(modid: module.modid, index: idx);
 
                             fn fnName(idx: i32) idx
                                 ? "`" ~ GETfn(idx).name ~ "`"
@@ -1141,20 +1133,20 @@ pub fn solve(
                             let PREV        = matchIdx;
                             let NEXT        = overloadIdx;
 
-                            let inner       = PREV.local_of;            // first to match is innermost scope
-                            let outer       = NEXT.local_of;            //  what we're currently looking is upscope
+                            let inner       = PREV.localOf;             // first to match is innermost scope
+                            let outer       = NEXT.localOf;             //  what we're currently looking is upscope
                             let callsite    = _current_fn.target.index; //   as seen from where we currently are
 
                             if (SELF_TEST)
                             {
                                 mut _c = callsite;
-                                while (_c > inner) _c = GETfn(_c).local_of;
+                                while (_c > inner) _c = GETfn(_c).localOf;
                                 _c == inner || fail(
                                     "BUG! Leaking `" ~ id ~ "` between functions [inner/callsite]: "
                                         ~ inner.fnName ~ " is seen from " ~ callsite.fnName);
 
                                 mut _i = inner;
-                                while (_i > outer) _i = GETfn(_i).local_of;
+                                while (_i > outer) _i = GETfn(_i).localOf;
                                 _i == outer || fail(
                                     "BUG! Leaking `" ~ id ~ "` between functions [inner/outer]: "
                                         ~ inner.fnName ~ " and " ~ outer.fnName
@@ -2622,9 +2614,11 @@ pub fn solve(
 
         let target      = Scope_create(_scope,
             kind: "fn", name: "__prep__",
-            :node.flags, :local_of, :status);
+            :node.flags, :status);
 
         ref ext         = target.EXT_mut;
+        ext.local_of    = local_of;
+
         ext.template    = createTemplate(node);
         ext.min         = 0x7fffffff.i32;
         ext.max         = 0;
@@ -2861,8 +2855,7 @@ pub fn solve(
                     {
                         if (target.modid < 0 || target.modid == module.modid)
                         {
-                            let overload = GET(target);
-                            let local_of = overload.local_of;
+                            let local_of = target.localOf;
                             if (parent_idx < local_of)
                                 parent_idx = local_of;
                         }
@@ -3135,16 +3128,19 @@ pub fn solve(
             let mangle0 = mangle;
 
             // Prep reject.
-            target = into || Scope_create(_scope, local_of: parent_idx,
-                status: SS_DID_START | SS_LAZY);
+            target = into || Scope_create(_scope, status: SS_DID_START | SS_LAZY);
+            target.EXT_mut.local_of = parent_idx;
 
+            //
             let extra_items = into
                 ? original.extra_items
                 : (target.EXT_mut.extra_items = typeParams.intoScopeItems());
 
+            //////////////////////////////////////////////////
             let current_fn_or_type0     = _current_fn_or_type;
             defer _current_fn_or_type   = current_fn_or_type0;
             _current_fn_or_type         = target;
+            //////////////////////////////////////////////////
 
             ////////////////////////////////////
             // Reset anon counters /////////////
@@ -3879,7 +3875,7 @@ pub fn solve(
         ref o = GET_mut(t);
         mut reopen: i32[];
 
-        let parent = o.local_of;
+        let parent = t.local_of;
         if (o.status & SS_UPDATED)
         {
             o.status &= ~SS_UPDATED;
@@ -3902,8 +3898,8 @@ pub fn solve(
                 :GO_UP
                 for (;;)
                 {
-                    shadow ref o = GET_mut(
-                        Target(:module.modid, :index));
+                    shadow let t = Target(:module.modid, :index);
+                    shadow ref o = GET_mut(t);
 
                     // If not started or dirty, means someone else will take care of us here.
                     if (o.status & (SS_DID_START | SS_DIRTY) != SS_DID_START)
@@ -3920,7 +3916,7 @@ pub fn solve(
                     //  this is A->B->C being invalidated by A->D:
                     //   can't just reopen C here, because we don't have B in scope,
                     //    so we have to invalidate B.
-                    let up = o.local_of;
+                    let up = t.local_of;
                     if (up != parent) // !sibling
                     {
                         up > parent || fail("lazySolveEnd: about to climb up the wrong tree.");
@@ -4230,7 +4226,7 @@ pub fn solve(
     {
         return Scope_create(_scope, "label",
             name: id || ANON(),
-            type: Type, flags: F_SHADOW, :local_of, nest: true);
+            type: Type, flags: F_SHADOW, nest:local_of);
     }
 
     fn Scope_lookupReturn(id: string, lambdaOK: bool): i32
@@ -5209,14 +5205,10 @@ pub fn solve(
         // CLOSURE-ID-HACK
         {
             let target = hacks::tryParseClosureID(:id, :MODID);
-            if (target)
+            if (target && target.localOf == _current_fn.target.index)
             {
-                let o = GET(target);
-                if (o.local_of == _current_fn.target.index)
-                {
-                    o.kind == "var" || fail("CLOSURE-ID-HACK #2");
-                    return CallerNode("__closure", target);
-                }
+                target.kind == "var" || fail("CLOSURE-ID-HACK #2");
+                return CallerNode("__closure", target);
             }
         }
         // CLOSURE-ID-HACK
@@ -5633,8 +5625,8 @@ pub fn solve(
             type.lifetime.uni0n.len == 1 || fail(
                 "CallerNode: var " ~ target.name ~ " type.lifetime.len != 1");
 
-            if (target.local_of &&
-                target.local_of != _current_fn.target.index)
+            if (target.isLocal &&
+                target.localOf != _current_fn.target.index)
             {
                 // CLOSURE-ID-HACK
                 // TODO perhaps forbid ClosureIDs here, and hunt down the source of the problem -
