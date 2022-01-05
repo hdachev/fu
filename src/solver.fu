@@ -3376,7 +3376,7 @@ pub fn solve(
 
                 mut change      = false;
 
-                if (ext.callsites)
+                if (ext.callers)
                 {
                     change = args.len != ext.args.len
                         || !(overload.type == retval);
@@ -3830,7 +3830,7 @@ pub fn solve(
             ext.max         = max;
             ext.args        = args;
 
-            let mustUpdate  = CHANGE && ext.callsites;
+            let mustUpdate  = CHANGE && ext.callers.len;
 
             //
             ref overload    = GET_mut(out_target);
@@ -3883,20 +3883,12 @@ pub fn solve(
         {
             o.status &= ~SS_UPDATED;
 
-            mut dedupe: Target;
-            let callsites = t.callsites;
+            let callers = t.callers;
 
             :NEXT_USER
-            for (mut i = 0; i < callsites.len; i++)
+            for (mut i = 0; i < callers.len; i++)
             {
-                let callsite = callsites[i].nodeown;
-                if (callsite == dedupe)
-                    continue;
-
-                dedupe = callsite;
-
-                //
-                mut index = callsite.index;
+                mut index = callers[i];
 
                 :GO_UP
                 for (;;)
@@ -5758,7 +5750,7 @@ pub fn solve(
             // Tracking call graph & type annotations.
             if (k == "fn" || k == "type")
             {
-                EXT_mut(target).callsites ~= callsite;
+                EXT_mut(target).callers.set::add(callsite.nodeown.index);
                 detectRecursion(target);
             }
         }
