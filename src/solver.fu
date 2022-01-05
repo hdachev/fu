@@ -2355,7 +2355,7 @@ pub fn solve(
             let init = node.items && node.items[LET_INIT];
             if (init)
             {
-                node.items[LET_INIT].propagateType(node.type, :relax_mask);
+                init.propagateType(node.type, :relax_mask);
 
                 // TODO FIX Codegen helper, this is for the `fu_STR& src = sources[i]` case.
                 //  Ideally we should do without this, otherwise we can rerun the solveLet crap.
