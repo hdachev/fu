@@ -133,8 +133,8 @@ pub fn cpp_codegen(
 
     using fn SolvedNodeData(nid: SolvedNode)
     {
-        return nid.nodeown
-            && nid.nodeown.EXT.nodes[nid.nodeidx];
+        return nid.nodeidx
+            && nid.nodeown.nodes[nid.nodeidx - 1];
     }
 
 

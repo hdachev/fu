@@ -348,8 +348,8 @@ pub fn solve(
 
     using fn SolvedNodeData(nid: SolvedNode)
     {
-        return nid.nodeown
-            && nid.nodeown.nodes[nid.nodeidx];
+        return nid.nodeidx
+            && nid.nodeown.nodes[nid.nodeidx - 1];
     }
 
     fn MUT(nid: SolvedNode)
@@ -357,12 +357,12 @@ pub fn solve(
         let t = nid.nodeown;
         if (t.modid != module.modid || t.index != _current_fn_or_type.index)
         {
-            let n = t.EXT.nodes[nid.nodeidx];
+            let n = t.EXT.nodes[nid.nodeidx - 1];
             fail("MUT(nid.nodeown) not current-fn: "
                 ~ t.qWHAT ~ " :: " ~ n.kind ~ "/" ~ n.value);
         }
 
-        return t.EXT_mut.nodes[nid.nodeidx];
+        return t.EXT_mut.nodes[nid.nodeidx - 1];
     }
 
     fn GET_next_local_index()
@@ -401,8 +401,8 @@ pub fn solve(
     {
         let nodeown = _current_fn_or_type;
         ref nodes   = nodeown.EXT_mut.nodes;
-        let nodeidx = nodes.len;
         nodes      ~= data;
+        let nodeidx = nodes.len;
 
         // println("    SN " ~ kind ~ " " ~ value ~ "    @ " ~ nodeown.index ~ ":" ~ nodes.len - 1);
 
