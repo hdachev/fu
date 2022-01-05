@@ -157,11 +157,10 @@ pub fn solve(
 
     // Setup the module globals helper.
 
-    _scope.extended ~= Extended(); // global nodes and such
+    _scope.extended ~= Extended();  // global nodes and such
+    push(HelpersData());            // not sure why this is needed
 
-    let MODULE_TOP = Scope_create(_scope, kind: "_module_top_");
-    push(HelpersData( target: MODULE_TOP,   id: "_module_top_"));
-    mut _current_fn_or_type = MODULE_TOP;
+    mut _current_fn_or_type = Target(:module.modid, index: 0); // root!
 
 
     // Can't we just list them all and scan through?
