@@ -353,7 +353,7 @@ pub fn Scope_create(
     nest!?: i32): Target
 {
     ref overloads = nest
-        ? scope.extended.grow_if_oob(nest - 1).locals
+        ? scope.extended.grow_if_oob(nest).locals
         : scope.overloads;
 
     let target = Target(

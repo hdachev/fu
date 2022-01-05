@@ -105,7 +105,7 @@ pub fn cpp_codegen(
         target.index > 0 || assert();
 
         if (target.isLocal)
-            return module.out.solve.scope.extended[-target.modid - 1].locals[target.index - 1];
+            return module.out.solve.scope.extended[-target.modid].locals[target.index - 1];
 
         let m = target.modid == module.modid
             ? module
@@ -122,13 +122,13 @@ pub fn cpp_codegen(
     using fn EXT(target: Target)
     {
         if (target.modid == module.modid)
-            return module.out.solve.scope.extended.unless_oob(target.index - 1);
+            return module.out.solve.scope.extended.unless_oob(target.index);
 
         if (target.modid < 0)
             return [];
 
         return ctx.modules[target.modid]
-            .out.solve.scope.extended.unless_oob(target.index - 1);
+            .out.solve.scope.extended.unless_oob(target.index);
     }
 
     using fn SolvedNodeData(nid: SolvedNode)

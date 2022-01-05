@@ -157,6 +157,8 @@ pub fn solve(
 
     // Setup the module globals helper.
 
+    _scope.extended ~= Extended(); // global nodes and such
+
     let MODULE_TOP = Scope_create(_scope, kind: "_module_top_");
     push(HelpersData( target: MODULE_TOP,   id: "_module_top_"));
     mut _current_fn_or_type = MODULE_TOP;
@@ -305,7 +307,7 @@ pub fn solve(
     using fn GET(target: Target)
     {
         if (target.isLocal)
-            return _scope.extended[-target.modid - 1].locals[target.index - 1];
+            return _scope.extended[-target.modid].locals[target.index - 1];
 
         if (target.modid == module.modid)
             return _scope.overloads[target.index - 1];
@@ -317,7 +319,7 @@ pub fn solve(
     fn GET_mut(target: Target)
     {
         if (target.modid < 0)
-            return _scope.extended[-target.modid - 1].locals[target.index - 1];
+            return _scope.extended[-target.modid].locals[target.index - 1];
 
         target.index > 0 && target.modid == MODID || assert();
         return _scope.overloads[target.index - 1];
@@ -326,10 +328,10 @@ pub fn solve(
     using fn EXT(target: Target)
     {
         if (target.modid == module.modid)
-            return _scope.extended.unless_oob(target.index - 1);
+            return _scope.extended.unless_oob(target.index);
 
         return target.modid >= 0
-            && ctx.modules[target.modid].out.solve.scope.extended.unless_oob(target.index - 1);
+            && ctx.modules[target.modid].out.solve.scope.extended.unless_oob(target.index);
     }
 
     fn localOf(target: Target)
@@ -343,7 +345,7 @@ pub fn solve(
     fn EXT_mut(target: Target)
     {
         target.modid == module.modid || assert();
-        return _scope.extended.grow_if_oob(target.index - 1);
+        return _scope.extended.grow_if_oob(target.index);
     }
 
     using fn SolvedNodeData(nid: SolvedNode)
@@ -368,7 +370,7 @@ pub fn solve(
     fn GET_next_local_index()
     {
         return _current_fn.target.index
-            && _scope.extended[_current_fn.target.index - 1].locals.len + 1;
+            && _scope.extended[_current_fn.target.index].locals.len + 1;
     }
 
     fn nested(index: i32)
