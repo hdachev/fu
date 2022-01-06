@@ -922,7 +922,7 @@ pub fn cpp_codegen(
         let o = GET(fndef.target);
         let n = o.solved;
         if !(n && o.isExtLinked)
-            return cgEmpty(fndef, mode);
+            return cgEmpty(n, mode);
 
         n.kind == "fn" || fail("cgFnDef non-fn");
         return cgFn(n, mode);
