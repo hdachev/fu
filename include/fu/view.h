@@ -46,6 +46,11 @@ struct view
     {
         const T* ok = m_data + idx;
 
+        #ifndef NDEBUG
+        assert((fu::u) idx < (fu::u) m_size);
+        return *ok;
+        #endif
+
         #if fu_RETAIL
         return *ok;
 
@@ -104,6 +109,11 @@ struct view_mut
     fu_INL const T& operator[](fu::i idx) const noexcept
     {
         const T* ok = m_data + idx;
+
+        #ifndef NDEBUG
+        assert((fu::u) idx < (fu::u) m_size);
+        return *ok;
+        #endif
 
         #if fu_RETAIL
         return *ok;
