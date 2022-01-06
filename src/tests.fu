@@ -6477,6 +6477,22 @@ pub fn runTests()
     `);
 
     ZERO(`
+        let overloaded = 1;
+        fn overloaded(a) a*2;
+        fn test(b, fn) fn(fn + fn(b));
+        fn main() 14 - test(3, fn overloaded);
+    `);
+
+    TODO(`
+        fn overloaded(a) a*2;
+        fn test(b, fn) fn(fn + fn(b));
+        fn main() {
+            let overloaded = 1;
+            return 14 - test(3, fn overloaded);
+        }
+    `);
+
+    ZERO(`
         fn map(items: $T[], fn) {
             mut result: fn(items[0])[];
             for (mut i = 0; i < items.len; i++)
