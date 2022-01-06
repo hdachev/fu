@@ -239,7 +239,7 @@ pub fn solve(
 
     fn human(id: string)
     {
-        let t = hacks::tryParseClosureID(:id, :MODID);
+        let t = hacks::tryParseClosureID(:id);
         if (!t) return id;
 
         let o = GET(t);
@@ -320,7 +320,7 @@ pub fn solve(
         if (target.modid < 0)
             return _scope.extended[-target.modid].locals[target.index - 1];
 
-        target.index > 0 && target.modid == MODID || assert();
+        target.index > 0 && target.modid == module.modid || assert();
         return _scope.overloads[target.index - 1];
     }
 
@@ -5199,7 +5199,7 @@ pub fn solve(
 
         // CLOSURE-ID-HACK
         {
-            let target = hacks::tryParseClosureID(:id, :MODID);
+            let target = hacks::tryParseClosureID(:id);
             if (target && target.localOf == _current_fn.target.index)
             {
                 target.kind == "var" || fail("CLOSURE-ID-HACK #2");
@@ -5629,7 +5629,7 @@ pub fn solve(
                 //   there's a good test for it.
                 target = injectImplicitArg(
                     id:     hacks::ClosureID(
-                            hacks::tryParseClosureID(id: target.name, :MODID) || target),
+                            hacks::tryParseClosureID(id: target.name) || target),
 
                     type:   target.type, becauseOf: target);
                 // CLOSURE-ID-HACK

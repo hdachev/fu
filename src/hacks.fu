@@ -3,19 +3,21 @@ import module;
 fn ClosureID(using target: Target)
     modid < 0
         ? "`" ~ index ~ "-" ~ -modid
-        : "`" ~ index;
+        : throw("Not a local.");
 
-fn tryParseClosureID(id!: string, MODID: i32)
+fn tryParseClosureID(id!: string)
 {
     if (id[0] == '`')
     {
         mut   offset = 1;
-        defer offset == id.len || throw("Bad ClosureID.");
+        defer offset == id.len || throw(
+            "Bad ClosureID: trailing stuff.");
 
         let index = helpers::parse10i32(offset, id);
-        let modid = id.len > offset
-            ? -helpers::parse10i32(++offset, id)
-            : MODID;
+        id[offset++] == '-' || throw(
+            "Bad ClosureID: no dash.");
+
+        let modid = -helpers::parse10i32(offset, id);
 
         return Target(:modid, :index);
     }

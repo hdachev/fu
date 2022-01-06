@@ -357,7 +357,7 @@ pub fn Scope_create(
         : scope.overloads;
 
     let target = Target(
-        modid: nest && -nest || MODID,
+        modid: nest ? -nest : MODID,
         index: overloads.len + 1);
 
     mut item: Overload;
