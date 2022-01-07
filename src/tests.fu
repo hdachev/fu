@@ -947,6 +947,71 @@ pub fn runTests()
         }
     `);
 
+    TODO(`
+        struct Node {
+            items: Node[];
+        }
+
+        fn solve(root: Node)
+        {
+            fn solveBlock(node: Node) {
+                let items = solveNodes(node.items);
+                //*
+                return solveBlock(items);
+            }
+
+            fn solveBlock(items: i32[]) {
+                //*/
+                if (!Lifetime_allowsMutrefReturn(items))
+                    throw("Nope!");
+
+                return items;
+            }
+
+            fn solveNode(node: Node, implicit ref next: i32) {
+                if (!node.items)
+                    return [ next++ ];
+
+                let implicit CTX = node.items.len; // <- this shows up as an closure-arg with an outdated revision
+                return solveBlock(node);
+            }
+
+            fn Lifetime_each(items, visit)
+                for (mut i = items.len; i --> 0; )
+                    visit(items[i]);
+
+            fn Lifetime_allowsMutrefReturn(items: i32[]) {
+                Lifetime_each(:items, visit: |item, implicit CTX: i32| {
+                    if (item == CTX)
+                        return false;
+                });
+
+                return true;
+            }
+
+            fn solveNodes(nodes: Node[]) {
+                mut result: i32[];
+                for (mut i = 0; i < nodes.len; i++)
+                    result ~= solveNode(nodes[i]);
+
+                return result;
+            }
+
+            return solveNode(root);
+        }
+
+        fn main() {
+            let implicit mut next = 0;
+
+            let solve = solve(Node([
+                Node([ Node ]),
+                Node(),
+            ]));
+
+            return solve.len - 2;
+        }
+    `);
+
 
     //
 
