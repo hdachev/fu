@@ -239,11 +239,11 @@ pub fn solve(
 
     fn human(id: string)
     {
-        let t = hacks::tryParseClosureID(:id);
-        if (!t) return id;
+        let t = hacks::tryParseClosureID(:id).target;
+        if (!t)
+            return id;
 
-        let o = GET(t);
-        return GET(Target(:module.modid, t.localOf)).name ~ ":" ~ o.name;
+        return GET(t.parent).name ~ ":" ~ GET(t).name;
     }
 
     fn makeNote(note: i32)
@@ -339,6 +339,11 @@ pub fn solve(
             return -target.modid;
 
         return target.local_of;
+    }
+
+    fn parent(target: Target)
+    {
+        return Target(:module.modid, target.localOf);
     }
 
     fn EXT_mut(target: Target)
@@ -1518,8 +1523,8 @@ pub fn solve(
                         //  this means we've got a conversion edge that works.
                         if (match)
                         {
-                            mut suffix  = "\n\t" ~ explainConversion(match) ~ "\n\tand:"
-                                        ~ "\n\t" ~ explainConversion(path ~ t);
+                            mut suffix  = "\n\t\t" ~ explainConversion(match) ~ "\n\tand:"
+                                        ~ "\n\t\t" ~ explainConversion(path ~ t);
 
                             if (actual)
                                 fail("Conversion ambiguity, multiple ways to convert `"
@@ -3149,6 +3154,8 @@ pub fn solve(
             // Go!
             {
                 ref o = EXT_mut(target);
+                o.revision++;
+
                 if (o.nodes)
                 {
                     o.locals.clear();
@@ -5199,10 +5206,17 @@ pub fn solve(
 
         // CLOSURE-ID-HACK
         {
-            let target = hacks::tryParseClosureID(:id);
-            if (target && target.localOf == _current_fn.target.index)
+            let using _ = hacks::tryParseClosureID(:id);
+            if (target.localOf == _current_fn.target.index)
             {
-                target.kind == "var" || fail("CLOSURE-ID-HACK #2");
+                revision == _current_fn.target.revision || fail(
+                    "ClosureID.revision mismatch: " ~ target.qWHAT
+                        ~ "\n\tCaptured at: " ~ revision
+                        ~ "\n\tCurrent rev: " ~ _current_fn.target.revision);
+
+                target.kind == "var" || fail(
+                    "ClosureID.target is not a var: " ~ target.qWHAT);
+
                 return CallerNode("__closure", target);
             }
         }
@@ -5627,10 +5641,13 @@ pub fn solve(
                 // TODO perhaps forbid ClosureIDs here, and hunt down the source of the problem -
                 //  complicated close-over schemes do this but its really confusing so not exactly sure why,
                 //   there's a good test for it.
-                target = injectImplicitArg(
-                    id:     hacks::ClosureID(
-                            hacks::tryParseClosureID(id: target.name) || target),
+                let clID = hacks::tryParseClosureID(id: target.name)
+                        || hacks::ClosureID(:target, target.parent.revision || fail(
+                            "ClosureID: about to serialize at rev 0: "
+                                ~ target.qWHAT));
 
+                target = injectImplicitArg(
+                    id:     clID.serialize(),
                     type:   target.type, becauseOf: target);
                 // CLOSURE-ID-HACK
 

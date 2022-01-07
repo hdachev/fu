@@ -468,9 +468,9 @@ pub fn cpp_codegen(
         mut id = o.name;
 
         // CLOSURE-ID-HACK
-        let t = hacks::tryParseClosureID(:id);
-        if (t)
-            id = GET(t).name;
+        let cid = hacks::tryParseClosureID(:id);
+        if (cid.target)
+            id = GET(cid.target).name;
         // CLOSURE-ID-HACK
 
         id = ID(id);

@@ -1,25 +1,30 @@
 import module;
 
-fn ClosureID(using target: Target)
-    modid < 0
-        ? "`" ~ index ~ "-" ~ -modid
+struct ClosureID {
+    target: Target;
+    revision: i32;
+};
+
+fn serialize(using _: ClosureID)
+    target.modid < 0
+        ? "`" ~ target.index ~ "-" ~ -target.modid ~ "-" ~ revision
         : throw("Not a local.");
 
-fn tryParseClosureID(id!: string)
+fn tryParseClosureID(id!: string): ClosureID
 {
     if (id[0] == '`')
     {
         mut   offset = 1;
-        defer offset == id.len || throw(
-            "Bad ClosureID: trailing stuff.");
-
+        defer offset == id.len || throw("Bad ClosureID: trailing stuff.");
         let index = helpers::parse10i32(offset, id);
-        id[offset++] == '-' || throw(
-            "Bad ClosureID: no dash.");
 
+        id[offset++] == '-' || throw("Bad ClosureID: no modid-dash.");
         let modid = -helpers::parse10i32(offset, id);
 
-        return Target(:modid, :index);
+        id[offset++] == '-' || throw("Bad ClosureID: no rev-dash.");
+        let revision = helpers::parse10i32(offset, id);
+
+        return ClosureID(Target(:modid, :index), :revision);
     }
 
     return [];

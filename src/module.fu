@@ -277,6 +277,7 @@ pub struct Extended
 {
     // For locals, if non-zero, index of enclosing fn, obviously same modid.
     local_of:       i32;
+    revision:       i32;
 
     // Arity.
     min:            i32;
