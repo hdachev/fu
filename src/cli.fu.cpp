@@ -19,7 +19,7 @@ void runTests_n07RecyR();
 
 #ifndef FU_NO_FDEFs
 
-static const fu_STR& next_ddcIFquK(int& idx, fu::view<fu_STR> argv)
+static const fu_STR& next_gjrd4WUD(int& idx, fu::view<fu_STR> argv)
 {
     const int i = idx++;
     if (i < argv.size())
@@ -39,12 +39,12 @@ static void runTestsAndBuildCompiler_6GAg88gF()
     cli_handle_yqAAbyk2((fu::slate<5, fu_STR> { "fu"_fu, "--bin"_fu, "bin/fu"_fu, "-c"_fu, "src/cli.fu"_fu }), PRJDIR);
 }
 
-static fu_STR abs_wLpZga5N(const fu_STR& path, fu::view<char> cwd)
+static fu_STR abs_f06I5WiD(const fu_STR& path, fu::view<char> cwd)
 {
     return path && (path[0] != '-') ? path_join_iwa818V1(cwd, path) : fu_STR{};
 }
 
-static void option_FSYwjCmB(fu::view<char> sHort, fu::view<char> lOng, const int o, fu_STR& dir, fu_STR& opt, int& options, fu_STR& val, fu::view<char> cwd, int& idx, fu::view<fu_STR> argv)
+static void option_BQa16LRb(fu::view<char> sHort, fu::view<char> lOng, const int o, fu_STR& dir, fu_STR& opt, int& options, fu_STR& val, fu::view<char> cwd, int& idx, fu::view<fu_STR> argv)
 {
     if ((opt == sHort) || (opt == lOng))
     {
@@ -55,8 +55,8 @@ static void option_FSYwjCmB(fu::view<char> sHort, fu::view<char> lOng, const int
                 fu::fail((((opt + ": already set to `"_fu) + dir) + "`."_fu));
 
             fu_STR _0 {};
-            dir = ((_0 = abs_wLpZga5N(val, cwd)) ? static_cast<fu_STR&&>(_0) : fu::fail((((((((("Option "_fu + lOng) + " expects a path,"_fu) + "\n\tgot `"_fu) + val) + "`,"_fu) + "\n\ttry `"_fu) + lOng) + " rel/or/abs/dir/`."_fu)));
-            val = next_ddcIFquK(idx, argv);
+            dir = ((_0 = abs_f06I5WiD(val, cwd)) ? static_cast<fu_STR&&>(_0) : fu::fail((((((((("Option "_fu + lOng) + " expects a path,"_fu) + "\n\tgot `"_fu) + val) + "`,"_fu) + "\n\ttry `"_fu) + lOng) + " rel/or/abs/dir/`."_fu)));
+            val = next_gjrd4WUD(idx, argv);
         };
         opt = fu_STR{};
     };
@@ -78,7 +78,7 @@ extern const fu_STR DEFAULT_WORKSPACE;
 static int cli_handle_yqAAbyk2(fu::view<fu_STR> argv, const fu_STR& cwd)
 {
     int idx = 0;
-    const fu_STR& self = next_ddcIFquK(idx, argv);
+    const fu_STR& self = next_gjrd4WUD(idx, argv);
     if (argv.size() == 1)
     {
         fu_STR _0 {};
@@ -130,7 +130,7 @@ static int cli_handle_yqAAbyk2(fu::view<fu_STR> argv, const fu_STR& cwd)
     int options {};
     fu_STR scheme {};
     bool run {};
-    fu_STR val { next_ddcIFquK(idx, argv) };
+    fu_STR val { next_gjrd4WUD(idx, argv) };
     while ((val.size() > 1) && (val[0] == '-'))
     {
         fu_STR opt { val };
@@ -139,16 +139,16 @@ static int cli_handle_yqAAbyk2(fu::view<fu_STR> argv, const fu_STR& cwd)
             opt = fu_STR { fu::slate<1, char> { char(opt[1]) } };
             val = ('-' + fu::slice(val, 2));
             if (val == "-"_fu)
-                val = next_ddcIFquK(idx, argv);
+                val = next_gjrd4WUD(idx, argv);
 
         }
         else
-            val = next_ddcIFquK(idx, argv);
+            val = next_gjrd4WUD(idx, argv);
 
-        option_FSYwjCmB("-"_fu, "--src"_fu, 0, dir_src, opt, options, val, cwd, idx, argv);
-        option_FSYwjCmB("c"_fu, "--cpp"_fu, EMIT_CPP, dir_cpp, opt, options, val, cwd, idx, argv);
-        option_FSYwjCmB("o"_fu, "--obj"_fu, EMIT_OBJ, dir_obj, opt, options, val, cwd, idx, argv);
-        option_FSYwjCmB("b"_fu, "--bin"_fu, EMIT_BIN, bin, opt, options, val, cwd, idx, argv);
+        option_BQa16LRb("-"_fu, "--src"_fu, 0, dir_src, opt, options, val, cwd, idx, argv);
+        option_BQa16LRb("c"_fu, "--cpp"_fu, EMIT_CPP, dir_cpp, opt, options, val, cwd, idx, argv);
+        option_BQa16LRb("o"_fu, "--obj"_fu, EMIT_OBJ, dir_obj, opt, options, val, cwd, idx, argv);
+        option_BQa16LRb("b"_fu, "--bin"_fu, EMIT_BIN, bin, opt, options, val, cwd, idx, argv);
         if ((opt == "--debug"_fu) || (opt == "--reldeb"_fu) || (opt == "--release"_fu) || (opt == "--retail"_fu))
         {
             if (scheme)
@@ -176,7 +176,7 @@ static int cli_handle_yqAAbyk2(fu::view<fu_STR> argv, const fu_STR& cwd)
 
     };
     fu_STR _5 {};
-    fu_STR fname = ((_5 = abs_wLpZga5N(val, cwd)) ? static_cast<fu_STR&&>(_5) : fu::fail(("Missing filename argument, a valid example is:"_fu + "\n\t`fu file.fu`."_fu)));
+    fu_STR fname = ((_5 = abs_f06I5WiD(val, cwd)) ? static_cast<fu_STR&&>(_5) : fu::fail(("Missing filename argument, a valid example is:"_fu + "\n\t`fu file.fu`."_fu)));
     if (options & EMIT_BIN)
     {
         if (!(bin))
@@ -185,7 +185,7 @@ static int cli_handle_yqAAbyk2(fu::view<fu_STR> argv, const fu_STR& cwd)
     };
 
     {
-        const fu_STR& val_1 = next_ddcIFquK(idx, argv);
+        const fu_STR& val_1 = next_gjrd4WUD(idx, argv);
         if (val_1)
             fu::fail((("Leftover option: `"_fu + val_1) + "`."_fu));
 

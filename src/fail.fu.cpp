@@ -26,6 +26,7 @@ struct s_Node;
 struct s_Overload;
 struct s_ParserOutput;
 struct s_Region;
+struct s_RemoteNode;
 struct s_Scope;
 struct s_ScopeItem;
 struct s_ScopeMemo;
@@ -224,16 +225,14 @@ struct s_Struct
 };
                                 #endif
 
-                                #ifndef DEF_s_SolvedNode
-                                #define DEF_s_SolvedNode
-struct s_SolvedNode
+                                #ifndef DEF_s_RemoteNode
+                                #define DEF_s_RemoteNode
+struct s_RemoteNode
 {
-    s_Target nodeown;
     int nodeidx;
     explicit operator bool() const noexcept
     {
         return false
-            || nodeown
             || nodeidx
         ;
     }
@@ -310,9 +309,8 @@ struct s_Overload
     fu_STR name;
     s_Type type;
     int flags;
-    s_SolvedNode solved;
     unsigned status;
-    int local_of;
+    s_RemoteNode remote;
     explicit operator bool() const noexcept
     {
         return false
@@ -320,9 +318,8 @@ struct s_Overload
             || name
             || type
             || flags
-            || solved
             || status
-            || local_of
+            || remote
         ;
     }
 };
@@ -365,7 +362,7 @@ struct s_Argument
     fu_STR name;
     fu_STR autocall;
     s_Type type;
-    s_SolvedNode dEfault;
+    s_RemoteNode dEfault;
     int flags;
     s_BitSet risk_free;
     s_ArgWrite written_via;
@@ -429,7 +426,6 @@ struct s_ScopeSkip
 struct s_ScopeSkipMemos
 {
     fu_VEC<s_ScopeSkip> items;
-    fu_VEC<s_ScopeSkip> declash;
     fu_VEC<s_ScopeSkip> imports;
     fu_VEC<s_ScopeSkip> privates;
     fu_VEC<s_ScopeSkip> usings;
@@ -439,7 +435,6 @@ struct s_ScopeSkipMemos
     {
         return false
             || items
-            || declash
             || imports
             || privates
             || usings
@@ -470,6 +465,22 @@ struct s_Template
 };
                                 #endif
 
+                                #ifndef DEF_s_SolvedNode
+                                #define DEF_s_SolvedNode
+struct s_SolvedNode
+{
+    s_Target nodeown;
+    int nodeidx;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || nodeown
+            || nodeidx
+        ;
+    }
+};
+                                #endif
+
                                 #ifndef DEF_s_SolvedNodeData
                                 #define DEF_s_SolvedNodeData
 struct s_SolvedNodeData
@@ -478,7 +489,7 @@ struct s_SolvedNodeData
     int helpers;
     int flags;
     fu_STR value;
-    fu_VEC<s_SolvedNode> items;
+    fu_VEC<s_SolvedNode> _items;
     s_TokenIdx token;
     s_Type type;
     s_Target target;
@@ -489,7 +500,7 @@ struct s_SolvedNodeData
             || helpers
             || flags
             || value
-            || items
+            || _items
             || token
             || type
             || target
@@ -502,6 +513,8 @@ struct s_SolvedNodeData
                                 #define DEF_s_Extended
 struct s_Extended
 {
+    int local_of;
+    int revision;
     int min;
     int max;
     fu_VEC<s_Argument> args;
@@ -510,10 +523,12 @@ struct s_Extended
     fu_VEC<s_SolvedNodeData> nodes;
     fu_VEC<s_Overload> locals;
     fu_VEC<s_ScopeItem> extra_items;
-    fu_VEC<s_SolvedNode> callsites;
+    fu_VEC<int> callers;
     explicit operator bool() const noexcept
     {
         return false
+            || local_of
+            || revision
             || min
             || max
             || args
@@ -522,7 +537,7 @@ struct s_Extended
             || nodes
             || locals
             || extra_items
-            || callsites
+            || callers
         ;
     }
 };
@@ -566,7 +581,7 @@ struct s_Scope
                                 #define DEF_s_SolverOutput
 struct s_SolverOutput
 {
-    s_SolvedNode root;
+    s_RemoteNode root;
     s_Scope scope;
     int notes;
     s_SolverOutput(const s_SolverOutput&) = delete;

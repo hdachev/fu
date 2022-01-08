@@ -37,6 +37,7 @@ set(FU_INPUTS
     fail.fu
     types.fu
     scope.fu
+    flow.fu
     effects.fu
     solver.fu
     addroffn.fu

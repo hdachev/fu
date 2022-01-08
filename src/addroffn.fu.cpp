@@ -15,7 +15,7 @@ struct s_Type;
 struct s_ValueType;
 
 int parse10i32_g2vqWUwe(int&, fu::view<char>);
-void Scope_set_ebsiWNpD(fu_VEC<s_ScopeItem>&, const fu_STR&, const s_Target&, bool);
+void Scope_set_VGSSTPCP(fu_VEC<s_ScopeItem>&, const fu_STR&, const s_Target&, bool);
 
                                 #ifndef DEF_s_ValueType
                                 #define DEF_s_ValueType
@@ -123,19 +123,19 @@ inline bool starts_OZkl8S7R(fu::view<char> a, fu::view<char> with)
 }
                                 #endif
 
-bool type_isAddrOfFn_5vhU4AHS(const s_Type& type)
+bool type_isAddrOfFn_DWwAMDO6(const s_Type& type)
 {
     return starts_OZkl8S7R(type.vtype.canon, "@"_fu);
 }
 
-bool type_isZST_5vhU4AHS(const s_Type& type)
+bool type_isZST_DWwAMDO6(const s_Type& type)
 {
-    return type_isAddrOfFn_5vhU4AHS(type);
+    return type_isAddrOfFn_DWwAMDO6(type);
 }
 
-bool type_isCTC_5vhU4AHS(const s_Type& type)
+bool type_isCTC_DWwAMDO6(const s_Type& type)
 {
-    return type_isZST_5vhU4AHS(type);
+    return type_isZST_DWwAMDO6(type);
 }
 
                                 #ifndef DEFt_x7E
@@ -157,9 +157,9 @@ fu_STR packAddrOfFn_i4cXBxfC(fu::view<s_Target> targets)
     return /*NRVO*/ res;
 }
 
-                                #ifndef DEFt_unpackAddrOfFn_79rlA6Yb
-                                #define DEFt_unpackAddrOfFn_79rlA6Yb
-inline void unpackAddrOfFn_79rlA6Yb(fu::view<char> canon, int, fu_VEC<s_ScopeItem>& out, const fu_STR& id, const bool shadows)
+                                #ifndef DEFt_unpackAddrOfFn_FQxvZ85Z
+                                #define DEFt_unpackAddrOfFn_FQxvZ85Z
+inline void unpackAddrOfFn_FQxvZ85Z(fu::view<char> canon, int, fu_VEC<s_ScopeItem>& out, const fu_STR& id, const bool shadows)
 {
     int i = 0;
     while (i < canon.size())
@@ -173,17 +173,17 @@ inline void unpackAddrOfFn_79rlA6Yb(fu::view<char> canon, int, fu_VEC<s_ScopeIte
 
         const int index = parse10i32_g2vqWUwe(i, canon);
         const s_Target target = s_Target { int(modid), int(index) };
-        Scope_set_ebsiWNpD(out, id, target, shadows);
+        Scope_set_VGSSTPCP(out, id, target, shadows);
     };
 }
                                 #endif
 
-bool X_unpackAddrOfFnBinding_PsLoxX6P(fu_VEC<s_ScopeItem>& out, const fu_STR& id, const s_Type& type, const bool shadows)
+bool X_unpackAddrOfFnBinding_SyIXScnm(fu_VEC<s_ScopeItem>& out, const fu_STR& id, const s_Type& type, const bool shadows)
 {
-    if (!type_isAddrOfFn_5vhU4AHS(type))
+    if (!type_isAddrOfFn_DWwAMDO6(type))
         return false;
 
-    unpackAddrOfFn_79rlA6Yb(type.vtype.canon, 0, out, id, shadows);
+    unpackAddrOfFn_FQxvZ85Z(type.vtype.canon, 0, out, id, shadows);
     return true;
 }
 

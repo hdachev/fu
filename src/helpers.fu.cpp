@@ -77,9 +77,9 @@ fu_STR path_filename_rOVPWlZS(const fu_STR& path)
     return fu_STR(path);
 }
 
-                                #ifndef DEFt_split_jAwjKkXL
-                                #define DEFt_split_jAwjKkXL
-inline void split_jAwjKkXL(const fu_STR& str, fu::view<char> sep, int, fu_VEC<fu_STR>& result)
+                                #ifndef DEFt_split_DrcGWxO1
+                                #define DEFt_split_DrcGWxO1
+inline void split_DrcGWxO1(const fu_STR& str, fu::view<char> sep, int, fu_VEC<fu_STR>& result)
 {
     int last = 0;
     int next = 0;
@@ -112,7 +112,7 @@ inline void split_jAwjKkXL(const fu_STR& str, fu::view<char> sep, int, fu_VEC<fu
 inline fu_VEC<fu_STR> split_OZkl8S7R(const fu_STR& str, fu::view<char> sep)
 {
     /*MOV*/ fu_VEC<fu_STR> result {};
-    split_jAwjKkXL(str, sep, 0, result);
+    split_DrcGWxO1(str, sep, 0, result);
     return /*NRVO*/ result;
 }
                                 #endif

@@ -97,7 +97,7 @@ inline bool starts_05euw4KZ(fu::view<char> a, const char with)
 }
                                 #endif
 
-bool isStruct_C02JG8Ye(const s_Type& type)
+bool isStruct_2z3reG8b(const s_Type& type)
 {
     return starts_05euw4KZ(type.vtype.canon, '$');
 }

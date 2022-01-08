@@ -52,6 +52,8 @@ static const fu_STR cID fu_INIT_PRIORITY(1001) = ansi_OrKGJuy2(34, 1);
 
 static const fu_STR cKW fu_INIT_PRIORITY(1001) = ansi_OrKGJuy2(35, 1);
 
+static const fu_STR cLT fu_INIT_PRIORITY(1001) = ansi_OrKGJuy2(32, 1);
+
 fu_STR qBAD_PSFLzFOM(const fu_STR& id)
 {
     return (BAD + (id ? fu_STR(id) : "``"_fu)) + RESET;
@@ -65,6 +67,11 @@ fu_STR qID_PSFLzFOM(const fu_STR& id)
 fu_STR qKW_PSFLzFOM(const fu_STR& id)
 {
     return (cKW + (id ? fu_STR(id) : "``"_fu)) + RESET;
+}
+
+fu_STR qLT_PSFLzFOM(const fu_STR& id)
+{
+    return (cLT + (id ? fu_STR(id) : "``"_fu)) + RESET;
 }
 
 #endif

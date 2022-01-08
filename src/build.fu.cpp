@@ -37,6 +37,7 @@ struct s_Node;
 struct s_Overload;
 struct s_ParserOutput;
 struct s_Region;
+struct s_RemoteNode;
 struct s_Scope;
 struct s_ScopeItem;
 struct s_ScopeMemo;
@@ -236,16 +237,14 @@ struct s_Struct
 };
                                 #endif
 
-                                #ifndef DEF_s_SolvedNode
-                                #define DEF_s_SolvedNode
-struct s_SolvedNode
+                                #ifndef DEF_s_RemoteNode
+                                #define DEF_s_RemoteNode
+struct s_RemoteNode
 {
-    s_Target nodeown;
     int nodeidx;
     explicit operator bool() const noexcept
     {
         return false
-            || nodeown
             || nodeidx
         ;
     }
@@ -322,9 +321,8 @@ struct s_Overload
     fu_STR name;
     s_Type type;
     int flags;
-    s_SolvedNode solved;
     unsigned status;
-    int local_of;
+    s_RemoteNode remote;
     explicit operator bool() const noexcept
     {
         return false
@@ -332,9 +330,8 @@ struct s_Overload
             || name
             || type
             || flags
-            || solved
             || status
-            || local_of
+            || remote
         ;
     }
 };
@@ -377,7 +374,7 @@ struct s_Argument
     fu_STR name;
     fu_STR autocall;
     s_Type type;
-    s_SolvedNode dEfault;
+    s_RemoteNode dEfault;
     int flags;
     s_BitSet risk_free;
     s_ArgWrite written_via;
@@ -441,7 +438,6 @@ struct s_ScopeSkip
 struct s_ScopeSkipMemos
 {
     fu_VEC<s_ScopeSkip> items;
-    fu_VEC<s_ScopeSkip> declash;
     fu_VEC<s_ScopeSkip> imports;
     fu_VEC<s_ScopeSkip> privates;
     fu_VEC<s_ScopeSkip> usings;
@@ -451,7 +447,6 @@ struct s_ScopeSkipMemos
     {
         return false
             || items
-            || declash
             || imports
             || privates
             || usings
@@ -482,6 +477,22 @@ struct s_Template
 };
                                 #endif
 
+                                #ifndef DEF_s_SolvedNode
+                                #define DEF_s_SolvedNode
+struct s_SolvedNode
+{
+    s_Target nodeown;
+    int nodeidx;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || nodeown
+            || nodeidx
+        ;
+    }
+};
+                                #endif
+
                                 #ifndef DEF_s_SolvedNodeData
                                 #define DEF_s_SolvedNodeData
 struct s_SolvedNodeData
@@ -490,7 +501,7 @@ struct s_SolvedNodeData
     int helpers;
     int flags;
     fu_STR value;
-    fu_VEC<s_SolvedNode> items;
+    fu_VEC<s_SolvedNode> _items;
     s_TokenIdx token;
     s_Type type;
     s_Target target;
@@ -501,7 +512,7 @@ struct s_SolvedNodeData
             || helpers
             || flags
             || value
-            || items
+            || _items
             || token
             || type
             || target
@@ -514,6 +525,8 @@ struct s_SolvedNodeData
                                 #define DEF_s_Extended
 struct s_Extended
 {
+    int local_of;
+    int revision;
     int min;
     int max;
     fu_VEC<s_Argument> args;
@@ -522,10 +535,12 @@ struct s_Extended
     fu_VEC<s_SolvedNodeData> nodes;
     fu_VEC<s_Overload> locals;
     fu_VEC<s_ScopeItem> extra_items;
-    fu_VEC<s_SolvedNode> callsites;
+    fu_VEC<int> callers;
     explicit operator bool() const noexcept
     {
         return false
+            || local_of
+            || revision
             || min
             || max
             || args
@@ -534,7 +549,7 @@ struct s_Extended
             || nodes
             || locals
             || extra_items
-            || callsites
+            || callers
         ;
     }
 };
@@ -578,7 +593,7 @@ struct s_Scope
                                 #define DEF_s_SolverOutput
 struct s_SolverOutput
 {
-    s_SolvedNode root;
+    s_RemoteNode root;
     s_Scope scope;
     int notes;
     s_SolverOutput(const s_SolverOutput&) = delete;
@@ -762,9 +777,9 @@ inline char if_last_o4lVLEQ3(fu::view<char> s)
 }
                                 #endif
 
-                                #ifndef DEFt_grow_if_oob_Q6SArRrh
-                                #define DEFt_grow_if_oob_Q6SArRrh
-inline fu_VEC<s_ModuleSortHelper>& grow_if_oob_Q6SArRrh(fu_VEC<fu_VEC<s_ModuleSortHelper>>& a, const int i)
+                                #ifndef DEFt_grow_if_oob_iKhflWHb
+                                #define DEFt_grow_if_oob_iKhflWHb
+inline fu_VEC<s_ModuleSortHelper>& grow_if_oob_iKhflWHb(fu_VEC<fu_VEC<s_ModuleSortHelper>>& a, const int i)
 {
     if ((a.size() <= i))
         a.grow((i + 1));
@@ -773,7 +788,7 @@ inline fu_VEC<s_ModuleSortHelper>& grow_if_oob_Q6SArRrh(fu_VEC<fu_VEC<s_ModuleSo
 }
                                 #endif
 
-static const s_Module& GET_qpqsduxE(const s_ModuleSortHelper& _, fu::view<s_Module> modules)
+static const s_Module& GET_SfF6cLf1(const s_ModuleSortHelper& _, fu::view<s_Module> modules)
 {
     return modules[_.compile_index];
 }
@@ -825,7 +840,7 @@ inline fu_STR join_9sek5qv2(fu::view<fu_STR> a, fu::view<char> sep)
 }
                                 #endif
 
-[[noreturn]] static fu::never ERR_hDQ5EcKA(fu_STR&& cpp, fu::view<fu_STR> Fs, fu::view<char> dir_wrk, fu_STR& stdout, const int code, const fu_STR& onfail, fu::view<s_ModuleSortHelper> modules, fu::view<s_Module> modules_1)
+[[noreturn]] static fu::never ERR_Ori7Nq08(fu_STR&& cpp, fu::view<fu_STR> Fs, fu::view<char> dir_wrk, fu_STR& stdout, const int code, const fu_STR& onfail, fu::view<s_ModuleSortHelper> modules, fu::view<s_Module> modules_1)
 {
     if (!cpp)
     {
@@ -852,13 +867,13 @@ inline fu_STR join_9sek5qv2(fu::view<fu_STR> a, fu::view<char> sep)
     {
         explain = "\nFailing testcase:\n\n"_fu;
         for (int i = 1; i < modules.size(); i++)
-            explain += ((onfail == "print-src"_fu) ? fu_STR(GET_qpqsduxE(modules[i], modules_1).in.src) : (GET_qpqsduxE(modules[i], modules_1).fname + "\n"_fu));
+            explain += ((onfail == "print-src"_fu) ? fu_STR(GET_SfF6cLf1(modules[i], modules_1).in.src) : (GET_SfF6cLf1(modules[i], modules_1).fname + "\n"_fu));
 
         if (onfail == "print-src"_fu)
         {
             explain += "\nSources:\n"_fu;
             for (int i_1 = 1; i_1 < modules.size(); i_1++)
-                explain += GET_qpqsduxE(modules[i_1], modules_1).out.cpp.src;
+                explain += GET_SfF6cLf1(modules[i_1], modules_1).out.cpp.src;
 
         };
     };
@@ -1011,7 +1026,7 @@ void build_iE8lIG83(const bool run, fu_STR&& dir_wrk, const fu_STR& fulib, fu_ST
         for (int i = 0; i < modules.size(); i++)
         {
             const s_Module& module = modules[i];
-            grow_if_oob_Q6SArRrh(buckets, module.out.init_prio) += s_ModuleSortHelper { int(i) };
+            grow_if_oob_iKhflWHb(buckets, module.out.init_prio) += s_ModuleSortHelper { int(i) };
         };
         /*MOV*/ /*RRET*/ fu_VEC<s_ModuleSortHelper> result {};
         for (int i_1 = 0; i_1 < buckets.size(); i_1++)
@@ -1022,7 +1037,7 @@ void build_iE8lIG83(const bool run, fu_STR&& dir_wrk, const fu_STR& fulib, fu_ST
     for (int i = 0; i < modules_1.size(); i++)
     {
         const s_ModuleSortHelper& module = modules_1[i];
-        const s_CodegenOutput& cpp = (i ? GET_qpqsduxE(module, modules).out.cpp : fulib_cpp);
+        const s_CodegenOutput& cpp = (i ? GET_SfF6cLf1(module, modules).out.cpp : fulib_cpp);
         if (!cpp.src)
         {
             unit_mapping += -1;
@@ -1030,13 +1045,13 @@ void build_iE8lIG83(const bool run, fu_STR&& dir_wrk, const fu_STR& fulib, fu_ST
         };
         const int unit = i;
         unit_mapping += int(unit);
-        grow_if_oob_yU7JiXdg(unit_fnames, unit) = (i ? fu_STR(GET_qpqsduxE(module, modules).fname) : "fulib runtime"_fu);
+        grow_if_oob_yU7JiXdg(unit_fnames, unit) = (i ? fu_STR(GET_SfF6cLf1(module, modules).fname) : "fulib runtime"_fu);
     };
     fu_VEC<fu_STR> units {};
     for (int i_1 = 0; i_1 < modules_1.size(); i_1++)
     {
         const s_ModuleSortHelper& module = modules_1[i_1];
-        const s_CodegenOutput& cpp = (i_1 ? GET_qpqsduxE(module, modules).out.cpp : fulib_cpp);
+        const s_CodegenOutput& cpp = (i_1 ? GET_SfF6cLf1(module, modules).out.cpp : fulib_cpp);
         if (cpp.src)
             grow_if_oob_yU7JiXdg(units, unit_mapping[i_1]) += cpp.src;
 
@@ -1071,7 +1086,7 @@ void build_iE8lIG83(const bool run, fu_STR&& dir_wrk, const fu_STR& fulib, fu_ST
             fu_STR F_obj = (F + ".o"_fu);
             if (fu::file_size(F_obj) < 1)
             {
-                fu_STR human = (i_3 ? path_filename_rOVPWlZS(GET_qpqsduxE(modules_1[i_3], modules).fname) : "fulib runtime"_fu);
+                fu_STR human = (i_3 ? path_filename_rOVPWlZS(GET_SfF6cLf1(modules_1[i_3], modules).fname) : "fulib runtime"_fu);
                 const fu_STR& cpp = units[i_3];
                 fu::file_write(F_cpp, cpp);
                 fu_STR _1 {};
@@ -1089,7 +1104,7 @@ void build_iE8lIG83(const bool run, fu_STR&& dir_wrk, const fu_STR& fulib, fu_ST
                 int _3 {};
                 code = ((_3 = fu::shell_exec(((((((GCC_CMD + INCLUDE) + "-c -o "_fu) + F_tmp) + " "_fu) + F_cpp) + " 2>&1"_fu), stdout)) ? _3 : fu::shell_exec((((("mv "_fu + F_tmp) + " "_fu) + F_obj) + " 2>&1"_fu), stdout));
                 if (code)
-                    ERR_hDQ5EcKA(fu_STR(cpp), Fs, dir_wrk, stdout, code, onfail, modules_1, modules);
+                    ERR_Ori7Nq08(fu_STR(cpp), Fs, dir_wrk, stdout, code, onfail, modules_1, modules);
 
                 const double t1 = fu::now_hr();
                 fu_STR _4 {};
@@ -1139,7 +1154,7 @@ void build_iE8lIG83(const bool run, fu_STR&& dir_wrk, const fu_STR& fulib, fu_ST
                     /*MOV*/ /*RRET*/ fu_STR x = ("   FAIL "_fu + join_9sek5qv2(Fs, ("\n        "_fu + "\n"_fu)));
                     _9 = (x);
                 (void)0;}), static_cast<fu_STR&&>(_9)) }));
-                ERR_hDQ5EcKA(fu_STR{}, Fs, dir_wrk, stdout, code, onfail, modules_1, modules);
+                ERR_Ori7Nq08(fu_STR{}, Fs, dir_wrk, stdout, code, onfail, modules_1, modules);
             };
             const double t1 = fu::now_hr();
             fu_STR _10 {};
@@ -1160,7 +1175,7 @@ void build_iE8lIG83(const bool run, fu_STR&& dir_wrk, const fu_STR& fulib, fu_ST
             (void)0;}), static_cast<fu_STR&&>(_12)) }));
         };
         if (code)
-            ERR_hDQ5EcKA(fu_STR{}, Fs, dir_wrk, stdout, code, onfail, modules_1, modules);
+            ERR_Ori7Nq08(fu_STR{}, Fs, dir_wrk, stdout, code, onfail, modules_1, modules);
 
     };
     if (run)
@@ -1177,7 +1192,7 @@ void build_iE8lIG83(const bool run, fu_STR&& dir_wrk, const fu_STR& fulib, fu_ST
         };
     };
     if (code)
-        ERR_hDQ5EcKA(fu_STR{}, Fs, dir_wrk, stdout, code, onfail, modules_1, modules);
+        ERR_Ori7Nq08(fu_STR{}, Fs, dir_wrk, stdout, code, onfail, modules_1, modules);
 
     if (dir_cpp && dir_src)
     {
@@ -1215,12 +1230,12 @@ void build_iE8lIG83(const bool run, fu_STR&& dir_wrk, const fu_STR& fulib, fu_ST
                 for (int i_4 = 1; i_4 < modules_1.size(); i_4++)
                 {
                     const s_ModuleSortHelper& module = modules_1[i_4];
-                    fu_STR input = path_relative_iwa818V1(CMakeLists, GET_qpqsduxE(module, modules).fname);
+                    fu_STR input = path_relative_iwa818V1(CMakeLists, GET_SfF6cLf1(module, modules).fname);
                     if (module.compile_index == 1)
                         main = input;
 
                     inputs.push(fu_STR(input));
-                    fu_STR custom = (GET_qpqsduxE(module, modules).fname + ".cmake"_fu);
+                    fu_STR custom = (GET_SfF6cLf1(module, modules).fname + ".cmake"_fu);
                     if (fu::file_size(custom) > 0)
                         includes += (("include("_fu + path_relative_iwa818V1(CMakeLists, custom)) + ")\n"_fu);
 
@@ -1257,7 +1272,7 @@ void build_iE8lIG83(const bool run, fu_STR&& dir_wrk, const fu_STR& fulib, fu_ST
         code = fu::shell_exec((((("mv "_fu + F_exe) + " "_fu) + bin) + " 2>&1"_fu), stdout);
     };
     if (code)
-        ERR_hDQ5EcKA(fu_STR{}, Fs, dir_wrk, stdout, code, onfail, modules_1, modules);
+        ERR_Ori7Nq08(fu_STR{}, Fs, dir_wrk, stdout, code, onfail, modules_1, modules);
 
 }
 

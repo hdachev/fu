@@ -23,6 +23,7 @@
 #include "fail.fu.cpp"
 #include "types.fu.cpp"
 #include "scope.fu.cpp"
+#include "flow.fu.cpp"
 #include "effects.fu.cpp"
 #include "solver.fu.cpp"
 #include "addroffn.fu.cpp"

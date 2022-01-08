@@ -25,7 +25,7 @@ struct s_TEA
 
 #ifndef FU_NO_FDEFs
 
-s_TEA hash_X3P8zZIL(/*MOV*/ s_TEA&& res, fu::view<char> u8view)
+s_TEA hash_cuWm6Zey(/*MOV*/ s_TEA&& res, fu::view<char> u8view)
 {
     const int u32len = (u8view.size() & ~3);
     fu::view<unsigned> u32view = fu::view_of(fu::get_view(u8view, 0, u32len), unsigned{});
@@ -34,12 +34,15 @@ s_TEA hash_X3P8zZIL(/*MOV*/ s_TEA&& res, fu::view<char> u8view)
         res.v0 ^= u32view[(i - 1)];
         res.v1 ^= u32view[i];
         unsigned sum {};
-        const unsigned delta = 0x9e3779b9u;
-        for (int i_1 = 0; i_1 < 16; i_1++)
+
         {
-            sum += delta;
-            res.v0 += ((((res.v1 << 4u) + 0xa341316cu) ^ (res.v1 + sum)) ^ ((res.v1 >> 5u) + 0xc8013ea4u));
-            res.v1 += ((((res.v0 << 4u) + 0xad90777du) ^ (res.v0 + sum)) ^ ((res.v0 >> 5u) + 0x7e95761eu));
+            const unsigned delta = 0x9e3779b9u;
+            for (int i_1 = 0; i_1 < 16; i_1++)
+            {
+                sum += delta;
+                res.v0 += ((((res.v1 << 4u) + 0xa341316cu) ^ (res.v1 + sum)) ^ ((res.v1 >> 5u) + 0xc8013ea4u));
+                res.v1 += ((((res.v0 << 4u) + 0xad90777du) ^ (res.v0 + sum)) ^ ((res.v0 >> 5u) + 0x7e95761eu));
+            };
         };
     };
     if (u8view.size() & 7)
@@ -58,12 +61,15 @@ s_TEA hash_X3P8zZIL(/*MOV*/ s_TEA&& res, fu::view<char> u8view)
             res.v1 ^= last;
         };
         unsigned sum {};
-        const unsigned delta = 0x9e3779b9u;
-        for (int i_1 = 0; i_1 < 16; i_1++)
+
         {
-            sum += delta;
-            res.v0 += ((((res.v1 << 4u) + 0xa341316cu) ^ (res.v1 + sum)) ^ ((res.v1 >> 5u) + 0xc8013ea4u));
-            res.v1 += ((((res.v0 << 4u) + 0xad90777du) ^ (res.v0 + sum)) ^ ((res.v0 >> 5u) + 0x7e95761eu));
+            const unsigned delta = 0x9e3779b9u;
+            for (int i_1 = 0; i_1 < 16; i_1++)
+            {
+                sum += delta;
+                res.v0 += ((((res.v1 << 4u) + 0xa341316cu) ^ (res.v1 + sum)) ^ ((res.v1 >> 5u) + 0xc8013ea4u));
+                res.v1 += ((((res.v0 << 4u) + 0xad90777du) ^ (res.v0 + sum)) ^ ((res.v0 >> 5u) + 0x7e95761eu));
+            };
         };
     };
     return s_TEA(res);
@@ -72,7 +78,7 @@ s_TEA hash_X3P8zZIL(/*MOV*/ s_TEA&& res, fu::view<char> u8view)
 s_TEA hash_BE4Wuzmo(fu::view<char> u8view)
 {
     /*MOV*/ s_TEA res {};
-    res = hash_X3P8zZIL(s_TEA(res), u8view);
+    res = hash_cuWm6Zey(s_TEA(res), u8view);
     return /*NRVO*/ res;
 }
 
