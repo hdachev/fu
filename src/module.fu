@@ -246,6 +246,7 @@ pub struct Argument
     using type?:    Type;
     default?:       SolvedNode;
     flags?:         i32;
+    local?:         i32;
 
     // subset_at_risk: bitset::BitSet;
     risk_free?:     bitset::BitSet;

@@ -555,13 +555,10 @@ pub fn solve(
         return res;
     }
 
-    fn arg_lets(overload: Overload)
-        overload.solved.items[0, overload.solved.items.len + FN_ARGS_BACK];
-
-    fn Lifetime_replaceArgsAtCallsite(overload: Overload, argNodes: [SolvedNode]): Lifetime
+    fn Lifetime_replaceArgsAtCallsite(target: Target, argNodes: [SolvedNode]): Lifetime
     {
-        let returned    = overload.type.lifetime.uni0n;
-        let items       = overload.arg_lets;
+        let returned    = target.type.lifetime.uni0n;
+        let host_args   = target.args;
 
         // Nothing to do if empty/non-arg.
         // TODO FIX this opti no longer works correctly
@@ -572,7 +569,7 @@ pub fn solve(
         mut keep:       Lifetime;
         mut replace:    Lifetime;
 
-        mut offset = items.len;
+        mut offset      = host_args.len;
 
         :NEXT_REGION
         for (mut i = 0; i < returned.len; i++)
@@ -594,8 +591,8 @@ pub fn solve(
             // Full union here, otherwise we risk messing things up.
             while (offset--)
             {
-                let here = items[offset].target;
-                if (here.index == index)
+                let here = host_args[offset].local;
+                if (here == index)
                 {
                     let argNode = argNodes[offset];
 
@@ -607,7 +604,7 @@ pub fn solve(
                     continue :NEXT_REGION;
                 }
 
-                !here.index || here.index > index || fail("Nope, going backwards: " ~ here.qWHAT);
+                !here || here > index || fail("Nope, going backwards.");
             }
 
             fail("Could not find argument region: " ~ index);
@@ -1941,7 +1938,7 @@ pub fn solve(
                     // We'll only attempt to relax arguments whose lifetimes appear in the return value.
                     //  There's this other thing, perhaps we only need to relax a single such argument?
                     //
-                    if (t.type.lifetime.uni0n.TODO_FIX_has(Region_fromArgIndex(t.arg_lets[i].target.index)))
+                    if (t.type.lifetime.uni0n.TODO_FIX_has(Region_fromArgIndex(t.args[i].local)))
                     {
                         mut type = orig.type;
                         if (type.try_relax(:slot, :relax_mask))
@@ -1966,8 +1963,7 @@ pub fn solve(
 
                     if (spec && !(spec == t.spec_of))
                     {
-                        let o1 = GET(spec);
-                        checkAssignable(host: node.type, o1.type,
+                        checkAssignable(host: node.type, spec.type,
                             "Relaxed specialization does not return a subtype");
 
                         //////////////////////////
@@ -1976,7 +1972,7 @@ pub fn solve(
 
                         if (node.type.is_ref)
                             node.MUT.type.lifetime = Lifetime_test(
-                                Lifetime_replaceArgsAtCallsite(o1, relaxed),
+                                Lifetime_replaceArgsAtCallsite(spec, relaxed),
                                 tempsOK: true);
 
                         node.MUT.target = spec;
@@ -3353,6 +3349,7 @@ pub fn solve(
                         :argNode.flags,
                         :argNode.type,
                         default: !isImplicit && argNode.items[LET_INIT],
+                        local: argTarget.index,
                         :risk_free,
                         :written_via);
 
@@ -6452,12 +6449,12 @@ pub fn solve(
                                     // Don't attempt if no-copy, the error is not useful.
                                     if (args[which].is_rx_copy)
                                     {
-                                        shadow let argLet = target.arg_lets[which];
+                                        shadow let argLocalIdx = target.args[which].local;
 
                                         // Re: m_and_c_cant_alias_002 test:
                                         //  We don't want to return a reference to the temporary,
                                         //   so for now we just forbid this.
-                                        let argLt = Region_fromArgIndex(argLet.target.index);
+                                        let argLt = Region_fromArgIndex(argLocalIdx);
                                         let isReturned = target.type.lifetime.uni0n.has(argLt);
                                         if (!isReturned)
                                         {
