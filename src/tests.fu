@@ -635,7 +635,6 @@ pub fn runTests()
         inline fn inner_inl(i: i32): i32
             outer_inl(i - 1);
 
-        /*TODO inline tailrec*/
         fn outer_inl(implicit x: i32, i: i32): i32
             i > 0   ? inner_inl(i)
                     : x + i;
@@ -681,11 +680,23 @@ pub fn runTests()
     `);
 
     ZERO(`
+        fn has_implicit(implicit i: i32, add: i32): i32
+            i + add;
+
+        inline fn injects_implicit_while_inlined(): i32
+            has_implicit(1);
+
+        fn main() {
+            let implicit i = 2;
+            return injects_implicit_while_inlined() - 3;
+        }
+    `);
+
+    ZERO(`
         inline fn outer_inl(i: i32): i32
             i > 0   ? inner_inl(i)
                     : 2 * i;
 
-        /*TODO inline tailrec*/
         fn inner_inl(implicit x: i32, i: i32): i32
             outer_inl(i - 2 * x);
 

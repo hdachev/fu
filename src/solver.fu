@@ -638,7 +638,7 @@ pub fn solve(
         if (!OPTI_autoshadow)
             return false;
 
-        _scope.items.each(_ss.declash, |item, index|
+        _scope.items.each(_ss.items, |item, index|
         {
             let root = index <= _root_scope.items_len;
             if (!root && item.id == id)
@@ -2766,9 +2766,14 @@ pub fn solve(
 
             ScopeSkip_push(_ss.items,    start: start.items_len,    end: scope0.items_len);
 
-            // The declash thing is for ease of codegen - not technically needed by the solver.
-            //  This is what postfixes variable names with numbers to disambiguate them,
-            //   and not pushing here means we'll declash against things we don't see in items above.
+            // Declash now only used for providing access to callsite scope
+            //  for inline funcs, only useful for binding to implicits,
+            //   see the inline_implicit_arg testcase.
+            //
+            // It becomes increasingly apparent that inlines
+            //  should just solve like any other function,
+            //   and then have their code inlined as a separate pass or something.
+            //
             if (!isInline)
                 ScopeSkip_push(_ss.declash,  start: start.items_len,    end: scope0.items_len);
 
