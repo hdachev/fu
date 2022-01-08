@@ -1064,7 +1064,7 @@ pub fn solve(
             mut shadows: bool;
             :NEXT while (overloadIdx =
                 (local_scope ? _scope : misc_scope).items.search(id, scope_iterator,
-                    scope_skip: local_scope && (flags & F_IMPLICIT ? _ss.declash : _ss.items),
+                    scope_skip: local_scope && _ss.items,
                     dont_search_just_return: target, :extra_items, :field_items, :shadows))
             {
                 ///////////////////////////////////
@@ -2757,7 +2757,7 @@ pub fn solve(
             scope_skip ~= ScopeSkip(:start, :end);
     }
 
-    fn ScopeSkip_setup(template: Template, scope0: ScopeMemo, isInline!: bool)
+    fn ScopeSkip_setup(template: Template, scope0: ScopeMemo)
     {
         if (_root_scope)
         {
@@ -2765,23 +2765,10 @@ pub fn solve(
             _ss = template.scope_skip;
 
             ScopeSkip_push(_ss.items,    start: start.items_len,    end: scope0.items_len);
-
-            // Declash now only used for providing access to callsite scope
-            //  for inline funcs, only useful for binding to implicits,
-            //   see the inline_implicit_arg testcase.
-            //
-            // It becomes increasingly apparent that inlines
-            //  should just solve like any other function,
-            //   and then have their code inlined as a separate pass or something.
-            //
-            if (!isInline)
-                ScopeSkip_push(_ss.declash,  start: start.items_len,    end: scope0.items_len);
-
             ScopeSkip_push(_ss.imports,  start: start.imports_len,  end: scope0.imports_len);
             ScopeSkip_push(_ss.privates, start: start.privates_len, end: scope0.privates_len);
             ScopeSkip_push(_ss.usings,   start: start.usings_len,   end: scope0.usings_len);
             ScopeSkip_push(_ss.converts, start: start.converts_len, end: scope0.converts_len);
-
             ScopeSkip_push(_ss.helpers,  start: start.helpers_len,  end: scope0.helpers_len);
         }
 
@@ -2917,7 +2904,7 @@ pub fn solve(
                 _helpers_data.shrink(helpers_data0);
             }
 
-            ScopeSkip_setup(:template, :scope0, :isInline);
+            ScopeSkip_setup(:template, :scope0);
 
             //
             let items = template.node.items;
@@ -5708,7 +5695,7 @@ pub fn solve(
 
                 let template    = target.template;
 
-                ScopeSkip_setup(:template, :scope0, isInline: true);
+                ScopeSkip_setup(:template, :scope0);
                 _scope.items ~= target.extra_items;
 
                 //

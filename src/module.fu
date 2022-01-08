@@ -207,14 +207,10 @@ pub struct ScopeSkipMemos
     //  this is due to templates but exported templates dont skip
 
     items:      ScopeSkip[];
-    declash:    ScopeSkip[];
-
     imports:    ScopeSkip[];
     privates:   ScopeSkip[];
-
     usings:     ScopeSkip[];
     converts:   ScopeSkip[];
-
     helpers:    ScopeSkip[];
 };
 
