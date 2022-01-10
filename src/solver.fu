@@ -4561,7 +4561,7 @@ pub fn solve(
             shadows: true))
         {
             ////////////////////////////////////////////////////////////////
-            if (OPTI_dedupe_vars && !isArg && !(out.flags & F_PUB))
+            if (OPTI_dedupe_vars && !isArg && !(out.flags & (F_PUB|F_IMPLICIT)))
             {
                 let init = out.items[LET_INIT];
                 if (init.kind == "call" && !init.items)

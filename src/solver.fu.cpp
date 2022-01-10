@@ -2943,7 +2943,7 @@ static void solveLet_YvdJPDqc(s_SolvedNode& out, const fu_STR& id, const s_Modul
     const fu_STR& id_1 = (cleanID ? cleanID : id);
     if (!X_unpackAddrOfFnBinding_SyIXScnm(_scope.items, id_1, SolvedNodeData_EmVp42bk(out, module, _scope, ctx).type, true))
     {
-        if (OPTI_dedupe_vars && !isArg && !(SolvedNodeData_EmVp42bk(out, module, _scope, ctx).flags & F_PUB))
+        if (OPTI_dedupe_vars && !isArg && !(SolvedNodeData_EmVp42bk(out, module, _scope, ctx).flags & (F_PUB|F_IMPLICIT)))
         {
             const s_SolvedNode& init = items_0cRZxJWj(SolvedNodeData_EmVp42bk(out, module, _scope, ctx))[LET_INIT];
             if ((SolvedNodeData_EmVp42bk(init, module, _scope, ctx).kind == "call"_fu) && !items_0cRZxJWj(SolvedNodeData_EmVp42bk(init, module, _scope, ctx)))
