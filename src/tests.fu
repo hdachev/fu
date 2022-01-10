@@ -6117,6 +6117,14 @@ pub fn runTests()
         fn main() 1._0::pubbed._0::not_pubbed - 6;
     `]);
 
+    TODO([`
+        let SELF_TEST           = true;
+        let NODEIDX_signbits    = SELF_TEST && 4;
+        let NODEIDX_signmask    = (1 << NODEIDX_signbits) - 1;
+    `,`
+        fn main() _0::NODEIDX_signmask - 15;
+    `]);
+
 
     // Explicit shadowing.
 
