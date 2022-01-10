@@ -781,13 +781,14 @@ pub fn solve(
         if (type.quals)
             result ~= humanizeQuals(type);
 
-        type.lifetime.uni0n.each: |r|
-        {
-            result ~= " ref:".qLT;
-            result ~= r.Region_isTemp() ? "temp".qKW
-                    : r.Region_isStatic ? "static".qKW
-                                        : nested(Region_asIndex(r)).qWHAT;
-        }
+        // NOT SAFE! nested here blows up on return types
+        // type.lifetime.uni0n.each: |r|
+        // {
+        //     result ~= " ref:".qLT;
+        //     result ~= r.Region_isTemp() ? "temp".qKW
+        //             : r.Region_isStatic ? "static".qKW
+        //                                 : nested(Region_asIndex(r)).qWHAT;
+        // }
 
         return result;
     }

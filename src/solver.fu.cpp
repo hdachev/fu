@@ -3203,19 +3203,6 @@ static fu::view<char> trimmedName_MXtqob2u(const s_Module& module)
     return fu::get_view(fname, start, end);
 }
 
-                                #ifndef DEFt_each_wNXygn52
-                                #define DEFt_each_wNXygn52
-inline void each_wNXygn52(fu::view<s_Region> a, int, fu_STR& result, const s_CurrentFn& _current_fn, const s_Module& module, const s_Scope& _scope, const s_Context& ctx)
-{
-    for (int i = 0; i < a.size(); i++)
-    {
-        const s_Region& r = a[i];
-        result += qLT_PSFLzFOM(" ref:"_fu);
-        result += (Region_isTemp_bhNkG49Y(r) ? qKW_PSFLzFOM("temp"_fu) : (Region_isStatic_bhNkG49Y(r) ? qKW_PSFLzFOM("static"_fu) : qWHAT_e08XXVg5(GET_ZUpW8tyV(nested_A6e3q54t(Region_asIndex_bhNkG49Y(r), _current_fn, module, _scope, ctx), _scope, module, ctx), module, _scope, ctx)));
-    };
-}
-                                #endif
-
 static fu_STR humanizeType_8A9L4M3P(const s_Type& type, const s_Module& module, const s_Context& ctx, const s_CurrentFn& _current_fn, const s_Scope& _scope)
 {
     /*MOV*/ fu_STR result { (isStruct_2z3reG8b(type) ? lookupStruct_tXr3wKio(type, module, ctx).name : type.vtype.canon) };
@@ -3225,7 +3212,6 @@ static fu_STR humanizeType_8A9L4M3P(const s_Type& type, const s_Module& module, 
     if (type.vtype.quals)
         result += humanizeQuals_knS7ptQD(type);
 
-    each_wNXygn52(type.lifetime.uni0n, 0, result, _current_fn, module, _scope, ctx);
     return /*NRVO*/ result;
 }
 
