@@ -1097,7 +1097,7 @@ pub fn cpp_codegen(
                 {
                     for (mut i = 0; i < expr.items.len; i++)
                         if (!expr.items[i].isIntegerConstant)
-                            return true;
+                            return false;
 
                     return true;
                 }
