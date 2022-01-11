@@ -30,7 +30,7 @@ pub let HM_LabelUsed    = 1.i16 << 6;
 pub struct RWEvent
 {
     target:         i32;
-    nodeidx:        i32;
+    signedidx:      i32;
 };
 
 pub struct Helpers
@@ -348,7 +348,6 @@ pub fn Scope_create(
     scope: &mut Scope,
     kind = "_no_kind_yet_", name!?: string,
     type?: Type, flags!?: i32,
-    solved?: SolvedNode,
     status?: u32,
     nest!?: i32): Target
 {
@@ -366,8 +365,6 @@ pub fn Scope_create(
     item.kind           = kind;
     item.flags          = flags;
     item.type           = type;
-
-    item.solved         = solved;
     item.status         = status;
 
     overloads.push(item);

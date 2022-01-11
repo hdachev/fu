@@ -135,8 +135,7 @@ pub struct Target
 
 pub struct SolvedNode
 {
-    nodeown:    Target; // TODO need to clean up Argument.default, callsites & structs -
-    nodeidx:    i32;    //  We shouldn't need a target, all nodes are local to their fn.
+    signedidx!: i32;
 };
 
 pub struct SolvedNodeData
@@ -234,7 +233,7 @@ pub struct Partial
 
 pub struct ArgWrite
 {
-    nodeidx:        i32; // Callsite nodeidx.
+    signedidx:      i32; // Callsite nodeidx.
     arg_position:   i32; // Argument item idx.
 };
 
@@ -264,9 +263,6 @@ pub struct Overload
     // Solver state.
     status?:        u32;
 
-    // TODO move exotic bloat over to module,
-    //  all trailers can fit in the same
-    //   [ modid / thing ] slot here.
     solved:         SolvedNode;
 };
 

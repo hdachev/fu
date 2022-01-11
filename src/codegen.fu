@@ -3,6 +3,7 @@ import parser;
 import types;
 import quals;
 import scope;
+import solver;
 import context;
 import bitset;
 import cpp;
@@ -42,10 +43,7 @@ fn add_once(ref bs: BitSet2D, target: Target): bool
     return bs.add_once(target.modid, target.index);
 }
 
-pub fn cpp_codegen(
-    implicit module: Module,
-    implicit ctx: Context,
-    root: SolvedNode): CodegenOutput
+pub fn cpp_codegen(implicit module: Module, implicit ctx: Context): CodegenOutput
 {
     mut _libs: string[];
 
@@ -131,10 +129,15 @@ pub fn cpp_codegen(
             .out.solve.scope.extended.unless_oob(target.index);
     }
 
-    using fn SolvedNodeData(nid: SolvedNode)
+
+    // RemoteNode nonsense
+
+    using fn SolvedNodeData(sn: SolvedNode, implicit _current_nodes: [SolvedNodeData], implicit _current_fnort: Target)
     {
-        return nid.nodeidx
-            && nid.nodeown.nodes[nid.nodeidx - 1];
+        !sn || sn.signedidx & NODEIDX_signmask == _current_fnort.index & NODEIDX_signmask || fail("RemoteNode: signature is off.");
+
+        let nodeidx = sn.signedidx >> NODEIDX_signbits;
+        return nodeidx && _current_nodes[nodeidx - 1];
     }
 
 
@@ -789,6 +792,11 @@ pub fn cpp_codegen(
 
     fn ensureFwdDecl(target: Target)
     {
+        ///////////////////////////////////////////
+        let implicit _current_nodes = target.nodes;
+        let implicit _current_fnort = target;
+        ///////////////////////////////////////////
+
         let overload = GET(target);
         if (overload.kind != "fn" || overload.name == "main")
             return;
@@ -833,6 +841,11 @@ pub fn cpp_codegen(
 
     fn ensureFnUsable(target: Target)
     {
+        ///////////////////////////////////////////
+        let implicit _current_nodes = target.nodes;
+        let implicit _current_fnort = target;
+        ///////////////////////////////////////////
+
         if (target.solved.flags & F_TEMPLATE || !target.isExtLinked)
             ensureFnDef(target);
         else if (target.modid != module.modid)
@@ -857,6 +870,11 @@ pub fn cpp_codegen(
 
     fn ensureMoveFromConstRefHelper(target: Target)
     {
+        ///////////////////////////////////////////
+        let implicit _current_nodes = target.nodes;
+        let implicit _current_fnort = target;
+        ///////////////////////////////////////////
+
         if (!_moveFromConstRefHelpers.add_once(target))
             return;
 
@@ -919,8 +937,15 @@ pub fn cpp_codegen(
 
     fn cgFnDef(fndef: SolvedNode, mode: i32): string
     {
-        let o = GET(fndef.target);
-        let n = o.solved;
+        let target = fndef.target;
+
+        ///////////////////////////////////////////
+        let implicit _current_nodes = target.nodes;
+        let implicit _current_fnort = target;
+        ///////////////////////////////////////////
+
+        let o = GET(target);
+        let n = target.solved;
         if !(n && o.isExtLinked)
             return cgEmpty(n, mode);
 
@@ -1170,8 +1195,12 @@ pub fn cpp_codegen(
         if !(_ffwd.add_once(target))
             return;
 
-        let o = GET(target);
-        cgLet(o.solved, global: true, foreign: true);
+        /////////////////////////////////////////////////////////////
+        let implicit _current_nodes = Target(:target.modid, 0).nodes;
+        let implicit _current_fnort = Target(:target.modid, 0);
+        /////////////////////////////////////////////////////////////
+
+        cgLet(target.solved, global: true, foreign: true);
     }
 
     fn cgJump(node: SolvedNode): string
@@ -2170,14 +2199,14 @@ pub fn cpp_codegen(
             // NRVO now here, solver doesn't care.
             if (mode & M_RETURN)
             {
-                fn supportsNRVO(o: Overload)
-                    o.kind == "var" && !(o.flags & F_ARG)
+                fn supportsNRVO(t: Target)
+                    t.kind == "var" && !(t.flags & F_ARG)
                         // && o.local_of == _current_fn.target.index
-                        && !o.solved.type.is_ref;
+                        && !t.solved.type.is_ref;
 
                 let nrvo = expr.kind == "call"
                         && expr.items.len == 0
-                        && expr.target.GET.supportsNRVO;
+                        && expr.target.supportsNRVO;
 
                 if (nrvo)
                     return "/*NRVO*/ " ~ cgNode(expr, debug: "NRVO");
@@ -2303,8 +2332,12 @@ pub fn cpp_codegen(
     }
 
 
-    //
+    /////////////////////////////////////////////////////////////
+    let implicit _current_nodes = Target(:module.modid, 0).nodes;
+    let implicit _current_fnort = Target(:module.modid, 0);
+    /////////////////////////////////////////////////////////////
 
+    let root = module.out.solve.root;
     root.kind == "root" || fail();
 
     let src = cgNode(root, debug: "cgRoot");

@@ -53,6 +53,12 @@ let USE_nontriv_autocopy    = true;
 let SELF_TEST               = true;
 
 
+//
+
+pub let NODEIDX_signbits    = 4;
+pub let NODEIDX_signmask    = (1 << NODEIDX_signbits) - 1;
+
+
 
 ///////////////////////////////////////
 ///////////////////////////////////////
@@ -352,23 +358,30 @@ pub fn solve(
         return _scope.extended.grow_if_oob(target.index);
     }
 
-    using fn SolvedNodeData(nid: SolvedNode)
+    fn SolvedNodeData(sn: SolvedNode, from!: Target)
     {
-        return nid.nodeidx
-            && nid.nodeown.nodes[nid.nodeidx - 1];
-    }
-
-    fn MUT(nid: SolvedNode)
-    {
-        let t = nid.nodeown;
-        if (t.modid != module.modid || t.index != _current_fn_or_type.index)
+        if (sn)
         {
-            let n = t.EXT.nodes[nid.nodeidx - 1];
-            fail("MUT(nid.nodeown) not current-fn: "
-                ~ t.qWHAT ~ " :: " ~ n.kind ~ "/" ~ n.value);
+            sn.signedidx & NODEIDX_signmask == from.index & NODEIDX_signmask || fail("SolvedNodeData() signedidx is off.");
+
+            let nodeidx = sn.signedidx >> NODEIDX_signbits;
+            return sn && from.nodes[nodeidx - 1];
         }
 
-        return t.EXT_mut.nodes[nid.nodeidx - 1];
+        return [];
+    }
+
+    using fn SolvedNodeData(sn: SolvedNode, implicit _current_fnort: Target)
+    {
+        return SolvedNodeData(:sn, from: _current_fnort);
+    }
+
+    fn MUT(sn: SolvedNode, implicit _current_fnort: Target)
+    {
+        sn.signedidx & NODEIDX_signmask == _current_fnort.index & NODEIDX_signmask || fail("MUT(): signedidx is off.");
+
+        let nodeidx = sn.signedidx >> NODEIDX_signbits;
+        return _current_fnort.EXT_mut.nodes[nodeidx - 1];
     }
 
     fn GET_next_local_index()
@@ -401,9 +414,15 @@ pub fn solve(
         else        o.flags &= ~F_OOE_RTL;
 
 
+    // RemoteNode nonsense
+
+    fn solved_set(target: Target, node: SolvedNode)
+        target.GET_mut.solved = node;
+
+
     //
 
-    fn SolvedNode_create(data: SolvedNodeData)
+    fn SolvedNode_create(data: SolvedNodeData, implicit _current_fnort: Target)
     {
         let nodeown = _current_fn_or_type;
         ref nodes   = nodeown.EXT_mut.nodes;
@@ -412,16 +431,24 @@ pub fn solve(
 
         // println("    SN " ~ kind ~ " " ~ value ~ "    @ " ~ nodeown.index ~ ":" ~ nodes.len - 1);
 
-        return SolvedNode(:nodeown, :nodeidx);
+        return SolvedNode(signedidx:
+            nodeidx << NODEIDX_signbits | _current_fnort.index & NODEIDX_signmask);
     }
 
-    fn SolvedNode_deepClone(mut data: SolvedNodeData)
+    fn SolvedNode_deepClone(sn: SolvedNode, from!: Target)
     {
+        mut data = SolvedNodeData(sn, :from);
+
         ref items = data.items;
         for (mut i = 0; i < items.len; i++)
-            items[i] = SolvedNode_deepClone(items[i]);
+            items[i] = SolvedNode_deepClone(items[i], :from);
 
         return SolvedNode_create(data);
+    }
+
+    fn SolvedNode_deepClone(sn: SolvedNode, implicit _current_fnort: Target)
+    {
+        return SolvedNode_deepClone(sn, from: _current_fnort)
     }
 
     fn SolvedNode(
@@ -435,14 +462,19 @@ pub fn solve(
     {
         let data    = SolvedNodeData(
             :kind, :flags, :value,
-            :items, :type, :target, token: _here,
+            :items,
+            :type, :target, token: _here,
             :helpers);
 
         return SolvedNode_create(data);
     }
 
     // TODO FIX /////////////////////////////////
-    mut TODO_FIX_convert_args = [ SolvedNode(kind: "", type: Type()) ];
+    fn meh() {
+        let implicit _current_fnort = _current_fn_or_type;
+        return [ SolvedNode(kind: "", type: Type()) ];
+    }
+    mut TODO_FIX_convert_args = meh();
     /////////////////////////////////////////////
 
 
@@ -1214,7 +1246,6 @@ pub fn solve(
                                     //  If we decide to not support more than a single using,
                                     //   we could simply assume it's a match here.
                                     //
-                                    shadow let expect = expect || host_arg.default.type;
                                     if (expect)
                                     {
                                         let conversion = tryConvert(:misc_scope, :local_scope, :expect);
@@ -2331,8 +2362,8 @@ pub fn solve(
         {
             if !(var.flags & F_LAX)
                 _warnings ~= Warning(
-                    dedupe: _current_fn.target.index,
-                    token: var.solved.token,
+                    dedupe:  _current_fn.target.index,
+                    token:   t.solved.token,
                     message: "Unused variable: `" ~ var.name ~ "`: make it `lax` if this is intentional.");
 
             GET_mut(t).flags |= F_UNUSED;
@@ -2346,11 +2377,11 @@ pub fn solve(
         //////////////////////////////////////////////
 
         // Either way, try to relax.
-        o.solved.type || fail("!var.solved.type, can`t propagateType");
 
         {
-            let node = o.solved;
+            let node = t.solved;
 
+            node.type || fail("!var.solved.type, can`t propagateType");
             node.MUT.type.try_relax(slot: usage, :relax_mask);
 
             let init = node.items && node.items[LET_INIT];
@@ -2374,8 +2405,9 @@ pub fn solve(
             {
                 // usage.is_mutref || fail("THIS IS NOT A BUG, REMOVE THIS ASSERT.\n\n\tFound a case where we can\'t lift a F_MUT because the variable is returned from: " ~ o.qWHAT);
 
-                let type = clear_refs(o.solved.type);
-                o.solved.MUT.type = type;
+                let node = t.solved;
+                let type = clear_refs(node.type);
+                node.MUT.type = type;
             }
             else
             {
@@ -3130,16 +3162,18 @@ pub fn solve(
                 ? original.extra_items
                 : (target.EXT_mut.extra_items = typeParams.intoScopeItems());
 
+            /////////////////////////////////////
+            // Reset anon counters //////////////
+            if (!_current_fn_or_type) _anons = 0;
+            /////////////////////////////////////
+
             //////////////////////////////////////////////////
             let current_fn_or_type0     = _current_fn_or_type;
             defer _current_fn_or_type   = current_fn_or_type0;
             _current_fn_or_type         = target;
             //////////////////////////////////////////////////
-
-            ////////////////////////////////////
-            // Reset anon counters /////////////
-            if (!_current_fn.target) _anons = 0;
-            ////////////////////////////////////
+            let implicit _current_fnort = target;
+            //////////////////////////////////////////////////
 
             // Go!
             {
@@ -3163,7 +3197,7 @@ pub fn solve(
                     {
                         ref written_via = o.args[i].written_via;
                         if (written_via)
-                            written_via.nodeidx = -1;
+                            written_via.signedidx = -1;
                     }
                 }
             }
@@ -3198,7 +3232,7 @@ pub fn solve(
             // Arg decls.
             _scope.items ~= extra_items;
 
-            let isFirst     = !GET(target).solved;
+            let isFirst     = !target.solved;
             let isTemplate  = template.node.flags & F_TEMPLATE;
             let isSpec      = isTemplate && (!into || !isFirst); // TODO FIX this looks really flaky
             let isUnspec    = isTemplate && !isSpec;
@@ -3406,7 +3440,6 @@ pub fn solve(
                     Lifetime_test(retval.lifetime);
 
                 overload.flags  = out.flags;
-                overload.solved = !isUnspec && out.out;
 
                 // Not amazing but it is what it is,
                 //  these are the only calls c++ guarantees order of eval for,
@@ -3430,6 +3463,9 @@ pub fn solve(
                 //
                 if (change)
                     overload.status |= SS_UPDATED;
+
+                //
+                target.solved_set(!isUnspec && out);
             }
 
             // Enable recursion.
@@ -3668,11 +3704,13 @@ pub fn solve(
         if (!solve)
             return createEmpty(target: out_target, type: out_type);
 
-        ///////////////////////////////////////////////
+        //////////////////////////////////////////////////
         let current_fn_or_type0     = _current_fn_or_type;
         defer _current_fn_or_type   = current_fn_or_type0;
         _current_fn_or_type         = out_target;
-        ///////////////////////////////////////////////
+        //////////////////////////////////////////////////
+        let implicit _current_fnort = out_target;
+        //////////////////////////////////////////////////
 
         GET_mut(out_target).status |= SS_DID_START;
 
@@ -4004,8 +4042,10 @@ pub fn solve(
         o.kind == "var" || fail(
             "Lifetime_climbType: not a `var`: " ~ o.qWHAT);
 
-        return o.solved.is_ref
-            && o.solved.items[LET_INIT].type;
+        let node = o.solved;
+
+        return node.is_ref
+            && node.items[LET_INIT].type;
     }
 
     fn Lifetime_unwind(mut lifetime: Lifetime, locals_start!?: i32): Lifetime
@@ -4587,7 +4627,7 @@ pub fn solve(
             ////////////////////////////////////////////////////////////////
 
             let target = out.MUT.target = Binding(:id, :out.flags, :out.type, :shadows);
-            GET_mut(target).solved = out;
+            target.solved_set(out);
 
             Scope_set(_scope, :id, :target, :shadows);
             if (out.flags & F_USING)
@@ -5148,7 +5188,7 @@ pub fn solve(
             kind: "let", :flags,
             value: target.name, :target.type, :target);
 
-        target.GET_mut.solved = ret;
+        target.solved_set(ret);
         return ret;
     }
 
@@ -5434,11 +5474,9 @@ pub fn solve(
         return token.addr ~ ":\n\n" ~ formatCodeSnippet(token);
     }
 
-    fn RWEvent_stack(nodeidx: i32, target: i32)
+    fn RWEvent_stack(signedidx!: i32, target!: i32)
     {
-        let nodeown = _current_fn.target || fail("RWEvent_stack: no current fn.");
-        let node    = SolvedNode(:nodeown, :nodeidx);
-
+        let node = SolvedNode(:signedidx);
         if (node.kind != "call")
             return "\n\tVia " ~ node.kind.qKW;
 
@@ -5467,10 +5505,16 @@ pub fn solve(
 
     fn qSTACK(written_via: ArgWrite, nodeown?: Target, mut seen?: Target[])
     {
-        if (written_via.nodeidx < 0 || seen.len >= 8)
+        if (written_via.signedidx < 0 || seen.len >= 8)
             return "";
 
-        let callsite = written_via.callsite(nodeown || _current_fn.target);
+        shadow let nodeown = nodeown || _current_fn.target;
+
+        //////////////////////////////////////////////////
+        let implicit _current_fnort = nodeown;
+        //////////////////////////////////////////////////
+
+        let callsite = written_via.callsite;
         let target   = callsite.target;
 
         // Recursion abort.
@@ -5581,7 +5625,7 @@ pub fn solve(
                 {
                     let host_arg = host_args[i];
 
-                    args[i] = host_arg.default ? SolvedNode_deepClone(host_arg.default) :
+                    args[i] = host_arg.default ? SolvedNode_deepClone(host_arg.default, from: target) :
                     {
                         host_arg.flags & F_IMPLICIT || fail(
                             "tryMatch: about to implicit-bind a non-implicit argument: `"
@@ -5758,7 +5802,7 @@ pub fn solve(
             // Tracking call graph & type annotations.
             if (k == "fn" || k == "type")
             {
-                EXT_mut(target).callers.set::add(callsite.nodeown.index);
+                EXT_mut(target).callers.set::add(_current_fn_or_type.index);
                 detectRecursion(target);
             }
         }
@@ -5768,7 +5812,8 @@ pub fn solve(
 
     fn BORROWCK_resolveByMutvar(target: i32)
     {
-        ref o = GET_mut(nested(target));
+        let t = nested(target);
+        ref o = GET_mut(t);
         if (o.flags & (F_TODO_FIX_RRET | F_REF) || o.type.is_mutref || !o.type.is_rx_copy)
             return false;
 
@@ -5779,7 +5824,7 @@ pub fn solve(
             o.flags  |= F_MUT;
             let t_let = clear_refs(o.type);
 
-            o.solved.MUT.type = t_let;
+            t.solved.MUT.type = t_let;
         }
 
         return true;
@@ -6057,12 +6102,12 @@ pub fn solve(
 
     fn callsite(rw: RWEvent)
     {
-        return SolvedNode(nodeown: _current_fn.target, :rw.nodeidx);
+        return SolvedNode(:rw.signedidx);
     }
 
-    fn callsite(aw: ArgWrite, nodeown: Target)
+    fn callsite(aw: ArgWrite)
     {
-        return SolvedNode(:nodeown, :aw.nodeidx);
+        return SolvedNode(:aw.signedidx);
     }
 
 
@@ -6100,7 +6145,7 @@ pub fn solve(
                             ~ " " ~   target.bck_name.qBAD ~ ", reference invalidated by write to"
                             ~ " " ~ u.target.bck_name.qBAD ~ " at "
                             ~ u.callsite.token.addr_and_snippet
-                            ~ RWEvent_stack(u.nodeidx, u.target));
+                            ~ RWEvent_stack(:u.signedidx, :u.target));
                 }
             }
 
@@ -6114,7 +6159,7 @@ pub fn solve(
             //  OPTIMIZABLE we don't need the read nodeidx here,
             //   we only need the target int.
             //
-            events.reads ~= RWEvent(:target, :callsite.nodeidx);
+            events.reads ~= RWEvent(:target, :callsite.signedidx);
         }
 
         // Track reads in a loop.
@@ -6129,7 +6174,7 @@ pub fn solve(
             {
                 ref u = events.used_in_a_loop.grow_if_oob(target);
                 if (!u.target)
-                    u = RWEvent(target: loop_start, :callsite.nodeidx);
+                    u = RWEvent(target: loop_start, :callsite.signedidx);
             }
 
             // ARGUMENTS AT RISK ////////////////////////
@@ -6183,7 +6228,7 @@ pub fn solve(
                 }
             }
 
-            let write = RWEvent(:target, :callsite.nodeidx);
+            let write = RWEvent(:target, :callsite.signedidx);
 
             // Track writes, easy.
             for (shadow mut i = 0; i < invalidates.len; i++)
@@ -6198,7 +6243,7 @@ pub fn solve(
             {
                 events.args_written.set::add(target);
                 events.args_written_via.grow_if_oob(target) ||= ArgWrite(
-                    :callsite.nodeidx, arg_position: position);
+                    :callsite.signedidx, arg_position: position);
 
                 if (loop_start)
                     for (shadow mut i = 0; i < events.args_in_a_loop.len; i++)
@@ -6663,7 +6708,7 @@ pub fn solve(
                                                     ~ inter.first.qWHAT ~ " upon evaluation of argument "
                                                     ~ host_args[w].name.human.qBAD ~ " (arg #" ~ w ~ ") at "
                                                     ~ write.callsite.token.addr_and_snippet
-                                                    ~ RWEvent_stack(write.nodeidx, write.target));
+                                                    ~ RWEvent_stack(:write.signedidx, :write.target));
                                             }
 
                                             // We'll have to inject a copy here.
@@ -7178,6 +7223,8 @@ pub fn solve(
     {
         // println("\n----------------------------\n");
 
+        let implicit _current_fnort = Target(:module.modid, 0);
+
         let root = solveNode(parse);
 
         _current_fn.out && fail("non-empty _current_fn.");
@@ -7196,7 +7243,8 @@ pub fn solve(
         }
 
         // Exports.
-        return SolverOutput(:root,
+        return SolverOutput(
+            root:  root,
             scope: Scope_exports(_scope, :module.modid, _field_items),
             notes: _notes);
     }
