@@ -7077,6 +7077,42 @@ pub fn runTests()
         fn main() a(1).test;
     `);
 
+    ZERO(`
+        fn setupOperators(i: i32) {
+            struct BINOP { i: i32; };
+            return BINOP(:i);
+        }
+
+        fn main() setupOperators(0).i;
+    `);
+
+    ZERO(`
+        fn sB(_: $T) struct { hey: $T; };
+
+        fn setupOperators(i: i32) {
+            struct BINOP { i: sB(i32); };
+            mut s: sB(i32) = [ i ];
+            return BINOP(s);
+        }
+
+        fn main() setupOperators(0).i.hey;
+    `);
+
+    TODO(`
+        fn sB(_: $T) struct { hey: $T; };
+
+        fn setupOperators(i: i32) {
+            struct BINOP { i: sB(i32); };
+            <alt>
+            return BINOP([ i ]);
+            <alt/>
+            return BINOP(sB(i));
+            </alt>
+        }
+
+        fn main() setupOperators(0).i.hey;
+    `);
+
     TODO(`
         fn sB(_: $T) struct { hey: $T; };
 
