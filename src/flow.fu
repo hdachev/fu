@@ -234,20 +234,15 @@ pub fn ArgsAtRisk_listRiskFree(flow: Flow, position: i32)
 
 //
 
-pub fn ArgsWritten_shake(flow: Flow, ref args: [$T])
+pub fn ArgsWritten_shake(flow: Flow, ref args: bitset::BitSet)
 {
-    for (mut i = min(args.len, flow.arg_aliases.len); i --> 0; )
+    for (mut i = min(args.size, flow.arg_aliases.len); i --> 0; )
     {
-        let x = args[i];
-        if (x)
-        {
-            let aliases = flow.arg_aliases[i];
-            for (shadow mut i = 0; i < aliases.len; i++)
-            {
-                ref y = args[aliases[i]];
-                if (!y)
-                    y = x;
-            }
-        }
+        if !(args.has(i))
+            continue;
+
+        let aliases = flow.arg_aliases[i];
+        for (shadow mut i = 0; i < aliases.len; i++)
+            args.add(aliases[i]);
     }
 }

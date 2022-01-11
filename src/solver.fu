@@ -109,7 +109,7 @@ pub fn solve(
 
         // The arguments at risk aparata.
         args_in_a_loop:     i32[];
-        args_written_via:   ArgWrite[];
+        args_ever_written:  bitset::BitSet;
 
         // The read/write journal, for checking order of eval.
         //  I think unordered access should be super strict,
@@ -2242,8 +2242,13 @@ pub fn solve(
             for (mut i = 0; i < h.returns.len; i++)
             {
                 shadow let expr = h.returns[i].items.only;
-                _here = expr.token;
+
+                ///////////////////////////////////////////////////////////
+                let here0 = _here; _here = expr.token; defer _here = here0;
+                ///////////////////////////////////////////////////////////
+
                 reportReturnType(:h, expr.type);
+
             }
 
             // NOW, IMPORTANTLY:
@@ -3190,15 +3195,6 @@ pub fn solve(
                     //   otherwise we'll likely emit an error on solved.
                     _warnings.remove(
                         |w| w.dedupe == target.index);
-
-                    // Reset all node indices in the signature, this is very unpleasant,
-                    //  but what you otherwise get is random derefs.
-                    for (mut i = 0; i < o.args.len; i++)
-                    {
-                        ref written_via = o.args[i].written_via;
-                        if (written_via)
-                            written_via.signedidx = -1;
-                    }
                 }
             }
 
@@ -3364,14 +3360,13 @@ pub fn solve(
 
                     let argTarget   = argNode.target;
                     let written_via = argNode.type.is_mutref
-                        && (isNative
-                            ? ArgWrite(-1, -1) // Self: assume all mutref taking natives do actually write.
-                            : out.events.args_written_via.unless_oob(argTarget.index));
+                        && (isNative || out.events.args_ever_written.has(argTarget.index));
                     /////////////////////////////////////////////
 
                     // Validate `pure` asserts.
                     if (isPure && written_via)
-                        fail(target.qWHAT ~ " is not pure, writes to argument " ~ name.human.qID ~ ":\n" ~ written_via.qSTACK());
+                        fail(target.qWHAT   ~ " is not pure, writes to argument " ~ name.human.qID ~ ":\n"
+                                            ~ qSTACK(:target, region: Region_fromArgIndex(argTarget.index)));
 
                     if (maybeLast && isNovec && (argNode.type.is_rx_copy || argNode.type.is_rx_resize))
                         fail(target.qWHAT ~ " is not novec, argument " ~ name.human.qID ~ " is " ~ humanizeType(argNode.type));
@@ -3380,12 +3375,11 @@ pub fn solve(
                     let arg = Argument(
                         :name,
                         :autocall,
-                        :argNode.flags,
+                        :argNode.flags | (written_via && F_WRITTEN_TO),
                         :argNode.type,
                         default: !isImplicit && argNode.items[LET_INIT],
                         local: argTarget.index,
-                        :risk_free,
-                        :written_via);
+                        :risk_free);
 
                     arg.type || isUnspec || fail("Unexpected untyped argument: `" ~ name ~ "`.");
                     args.push(arg);
@@ -3613,7 +3607,7 @@ pub fn solve(
 
                     // ARGUMENTS AT RISK ///////////////////////////////////////////////////
                     _current_fn.flow.ArgsAtRisk_shake();
-                    _current_fn.flow.ArgsWritten_shake(_current_fn.events.args_written_via);
+                    _current_fn.flow.ArgsWritten_shake(_current_fn.events.args_ever_written);
                     ////////////////////////////////////////////////////////////////////////
                 }
 
@@ -5489,10 +5483,10 @@ pub fn solve(
                 let arg = node.items[i];
                 if (arg.lifetime.uni0n.set::inter(uni0n))
                 {
-                    let written_via = node.target.args[i].written_via;
-                    if (written_via)
+                    let host_arg = node.target.args[i];
+                    if (host_arg.flags & F_WRITTEN_TO)
                     {
-                        stack = qSTACK(:written_via, node.target);
+                        stack = qSTACK(node.target, position: i);
                         break;
                     }
                 }
@@ -5503,39 +5497,53 @@ pub fn solve(
         return "\n\tAt call to " ~ o.name.qID ~ stack;
     }
 
-    fn qSTACK(written_via: ArgWrite, nodeown?: Target, mut seen?: Target[])
+    fn qSTACK(target: Target, position!: i32, seen!?: Target[])
     {
-        if (written_via.signedidx < 0 || seen.len >= 8)
-            return "";
-
-        shadow let nodeown = nodeown || _current_fn.target;
-
-        //////////////////////////////////////////////////
-        let implicit _current_fnort = nodeown;
-        //////////////////////////////////////////////////
-
-        let callsite = written_via.callsite;
-        let target   = callsite.target;
-
-        // Recursion abort.
-        let rec = seen.has(target) && "recursively ";
-        seen ~= target;
-
-        let via = rec ? ""
-                : qSTACK(target, written_via.arg_position, :seen);
-
-        return "\n            " ~ rec ~ "via " ~ target.qWHAT
-             ~ " at " ~ callsite.token.addr_and_snippet
-             ~ via;
+        return qSTACK(:target, Region_fromArgIndex(target.args[position].local), :seen);
     }
 
-    fn qSTACK(target: Target, position: i32, mut seen?: Target[])
+    fn qSTACK(target: Target, region: Region, seen!?: Target[])
     {
-        let host_arg = target.args[position];
-        if (host_arg.written_via)
-            return host_arg.written_via.qSTACK(nodeown: target, :seen);
+        mut src = "\n            ";
 
-        return "";
+        let rec = seen.has(target);
+        if (rec)
+            src ~= "recursively ";
+
+        //////////////////////////////////////////////////
+        let implicit _current_fnort = target;
+        //////////////////////////////////////////////////
+
+        let nodes = target.nodes;
+
+        :SEARCH
+        for (mut i = 0; i < nodes.len; i++)
+        {
+            let callsite = nodes[i];
+            if (callsite.kind == "call")
+            {
+                let host_args = callsite.target.args;
+                for (shadow mut i = 0; i < host_args.len; i++)
+                {
+                    let host_arg = host_args[i];
+                    if (host_arg.flags & F_WRITTEN_TO)
+                    {
+                        let arg = callsite.items[i];
+                        if (Lifetime_unwind(arg.type.lifetime).uni0n.has(region))
+                        {
+                            src ~= "via " ~ callsite.target.qWHAT ~ " at ";
+                            src ~= callsite.token.addr_and_snippet;
+                            if (!rec && seen.len < 8)
+                                src ~= qSTACK(callsite.target, position: i, seen: seen ~ target);
+
+                            break :SEARCH;
+                        }
+                    }
+                }
+            }
+        }
+
+        return src;
     }
 
 
@@ -6105,11 +6113,6 @@ pub fn solve(
         return SolvedNode(:rw.signedidx);
     }
 
-    fn callsite(aw: ArgWrite)
-    {
-        return SolvedNode(:aw.signedidx);
-    }
-
 
     // Reads.
 
@@ -6224,7 +6227,7 @@ pub fn solve(
                             ~ " invalidates the use of " ~ other.bck_name.qBAD ~ " at "
                             ~ u.callsite.token.addr_and_snippet
                             ~ "\n\t... on next loop iteration.\n\n\tWritten"
-                            ~ qSTACK(callsite.target, position)); // TODO loop starts at x:x!
+                            ~ qSTACK(callsite.target, :position)); // TODO loop starts at x:x!
                 }
             }
 
@@ -6242,8 +6245,7 @@ pub fn solve(
             if (flow.is_arg.has(target))
             {
                 events.args_written.set::add(target);
-                events.args_written_via.grow_if_oob(target) ||= ArgWrite(
-                    :callsite.signedidx, arg_position: position);
+                events.args_ever_written.add(target);
 
                 if (loop_start)
                     for (shadow mut i = 0; i < events.args_in_a_loop.len; i++)
@@ -6563,7 +6565,7 @@ pub fn solve(
                         mutref_last = i0;
 
                         // We'll batch all writes together in a bit.
-                        if (host_arg.written_via)
+                        if (host_arg.flags & F_WRITTEN_TO)
                         {
                             let arg = args[i0];
 

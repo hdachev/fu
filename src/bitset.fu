@@ -4,6 +4,11 @@ pub struct BitSet
     _data: u8[];
 };
 
+pub fn size(using _: BitSet)
+{
+    return _data.len * 8;
+}
+
 pub fn add_once(using _: &mut BitSet, idx: i32): bool
 {
     let no_neg = idx < 0 ? -1 : 0;

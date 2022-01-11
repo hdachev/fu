@@ -231,12 +231,6 @@ pub struct Partial
     target:     Target;
 };
 
-pub struct ArgWrite
-{
-    signedidx:      i32; // Callsite nodeidx.
-    arg_position:   i32; // Argument item idx.
-};
-
 pub struct Argument
 {
     name?:          string;
@@ -249,7 +243,6 @@ pub struct Argument
 
     // subset_at_risk: bitset::BitSet;
     risk_free?:     bitset::BitSet;
-    written_via?:   ArgWrite;
 };
 
 pub struct Overload

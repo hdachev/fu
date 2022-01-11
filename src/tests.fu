@@ -2548,7 +2548,7 @@ pub fn runTests()
 
     ZERO(`
         fn but_is_it_pure(ref x: i32) {
-            <fail not pure>
+            <fail not pure 6:9 8:34 4:21>
             return x++; <pass/>
             return x;   </fail>
         }
