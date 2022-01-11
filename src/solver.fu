@@ -5201,7 +5201,7 @@ pub fn solve(
         // CLOSURE-ID-HACK
         {
             let using _ = hacks::tryParseClosureID(:id);
-            if (target.localOf == _current_fn.target.index)
+            if (target.isLocal && target.localOf == _current_fn.target.index)
             {
                 revision == _current_fn.target.revision || fail(
                     "ClosureID.revision mismatch: " ~ target.qWHAT

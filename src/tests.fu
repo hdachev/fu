@@ -1023,6 +1023,34 @@ pub fn runTests()
         }
     `);
 
+    ZERO(`
+        fn woot(implicit x: i32) = x;
+
+        fn main() {
+            <fail no implicit x>
+            <pass/>
+            let implicit x = 2;
+            </fail>
+            return woot() - 2;
+        }
+    `);
+
+    ZERO(`
+        <fail no implicit y>
+        fn woot(implicit y: i32) = y;
+        <pass/>
+        fn woot(implicit x: i32) = x;
+        </fail>
+
+        fn hey() {
+            let implicit x = 2;
+            return woot() - 2;
+        }
+
+        let here = hey();
+        fn main() = here;
+    `);
+
 
     //
 
