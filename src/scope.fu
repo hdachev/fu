@@ -27,12 +27,6 @@ pub let HM_LabelUsed    = 1.i16 << 6;
 
 //
 
-pub struct RWEvent
-{
-    target:         i32;
-    signedidx:      i32;
-};
-
 pub struct Helpers
 {
     index:          i32;

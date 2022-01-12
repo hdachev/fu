@@ -92,6 +92,12 @@ pub fn solve(
     mut _field_items:   ScopeItem[];
     mut _notes:         i32;
 
+    struct RWEvent
+    {
+        rw_target:      i32;
+        signedidx:      i32;
+    };
+
     struct EventsSnap
     {
         // TODO Consider opti -
@@ -5468,16 +5474,16 @@ pub fn solve(
         return token.addr ~ ":\n\n" ~ formatCodeSnippet(token);
     }
 
-    fn RWEvent_stack(signedidx!: i32, target!: i32)
+    fn RWEvent_stack(u: RWEvent)
     {
-        let node = SolvedNode(:signedidx);
+        let node = SolvedNode(:u.signedidx);
         if (node.kind != "call")
             return "\n\tVia " ~ node.kind.qKW;
 
         mut stack: string;
-        if (target)
+        if (u.rw_target)
         {
-            let uni0n = nested(target).type.lifetime.uni0n;
+            let uni0n = nested(u.rw_target).type.lifetime.uni0n;
             if (uni0n) for (mut i = 0; i < node.items.len; i++)
             {
                 let arg = node.items[i];
@@ -5494,7 +5500,7 @@ pub fn solve(
         }
 
         let o = GET(node.target);
-        return "\n\tAt call to " ~ o.name.qID ~ stack;
+        return node.token.addr_and_snippet ~ "\n\tAt call to " ~ o.name.qID ~ stack;
     }
 
     fn qSTACK(target: Target, position!: i32, seen!?: Target[])
@@ -6108,11 +6114,6 @@ pub fn solve(
         return GET(nested(target)).name.human;
     }
 
-    fn callsite(rw: RWEvent)
-    {
-        return SolvedNode(:rw.signedidx);
-    }
-
 
     // Reads.
 
@@ -6141,14 +6142,13 @@ pub fn solve(
             if (events.invalidated_by.len > target)
             {
                 let u = events.invalidated_by[target];
-                if (u.target)
+                if (u.rw_target)
                 {
                     if !(BORROWCK_resolveByMutvar(target) || options.dev & options::DEV_DisableBCK)
                         fail("Cannot access"
-                            ~ " " ~   target.bck_name.qBAD ~ ", reference invalidated by write to"
-                            ~ " " ~ u.target.bck_name.qBAD ~ " at "
-                            ~ u.callsite.token.addr_and_snippet
-                            ~ RWEvent_stack(:u.signedidx, :u.target));
+                            ~ " " ~      target.bck_name.qBAD ~ ", reference invalidated by write to"
+                            ~ " " ~ u.rw_target.bck_name.qBAD ~ " at "
+                            ~ RWEvent_stack(u));
                 }
             }
 
@@ -6162,7 +6162,7 @@ pub fn solve(
             //  OPTIMIZABLE we don't need the read nodeidx here,
             //   we only need the target int.
             //
-            events.reads ~= RWEvent(:target, :callsite.signedidx);
+            events.reads ~= RWEvent(target, :callsite.signedidx);
         }
 
         // Track reads in a loop.
@@ -6176,8 +6176,8 @@ pub fn solve(
             if (target < loop_start)
             {
                 ref u = events.used_in_a_loop.grow_if_oob(target);
-                if (!u.target)
-                    u = RWEvent(target: loop_start, :callsite.signedidx);
+                if (!u.rw_target)
+                    u = RWEvent(loop_start, :callsite.signedidx);
             }
 
             // ARGUMENTS AT RISK ////////////////////////
@@ -6219,25 +6219,25 @@ pub fn solve(
             {
                 let other = invalidates[i];
                 let u = events.used_in_a_loop.unless_oob(other);
-                if (u.target)
+                if (u.rw_target)
                 {
                     if !(BORROWCK_resolveByMutvar(other) || options.dev & options::DEV_DisableBCK)
                         fail("Write to " ~ target.bck_name.qBAD
                             ~ " at call to " ~ callsite.target.qWHAT
                             ~ " invalidates the use of " ~ other.bck_name.qBAD ~ " at "
-                            ~ u.callsite.token.addr_and_snippet
+                            ~ SolvedNode(:u.signedidx).token.addr_and_snippet
                             ~ "\n\t... on next loop iteration.\n\n\tWritten"
                             ~ qSTACK(callsite.target, :position)); // TODO loop starts at x:x!
                 }
             }
 
-            let write = RWEvent(:target, :callsite.signedidx);
+            let write = RWEvent(target, :callsite.signedidx);
 
             // Track writes, easy.
             for (shadow mut i = 0; i < invalidates.len; i++)
             {
                 ref u = events.invalidated_by.grow_if_oob(invalidates[i]);
-                if (!u.target)
+                if (!u.rw_target)
                     u = write;
             }
 
@@ -6606,7 +6606,7 @@ pub fn solve(
                     for (mut w = ooe_write0; w < ooe_write1; w++)
                     {
                         let write   = _current_fn.events.writes[w];
-                        let written = write.target.nested.type.lifetime.uni0n;
+                        let written = write.rw_target.nested.type.lifetime.uni0n;
 
                         // RTL indexing is reversed, so 0 always means first.
                         let iw_evalsFirst = ooe_iw == 0;
@@ -6655,7 +6655,7 @@ pub fn solve(
                                 for (mut r = ooe_read0; r < ooe_read1; r++)
                                 {
                                     let read    = _current_fn.events.reads[r];
-                                    let regions = read.target.nested.type.lifetime.uni0n;
+                                    let regions = read.rw_target.nested.type.lifetime.uni0n;
 
                                     // TODO: set::has_inter,
                                     //  how can this optimization work automatically?
@@ -6709,8 +6709,7 @@ pub fn solve(
                                                     ~ "\n\t... invalidated by subsequent write to "
                                                     ~ inter.first.qWHAT ~ " upon evaluation of argument "
                                                     ~ host_args[w].name.human.qBAD ~ " (arg #" ~ w ~ ") at "
-                                                    ~ write.callsite.token.addr_and_snippet
-                                                    ~ RWEvent_stack(:write.signedidx, :write.target));
+                                                    ~ RWEvent_stack(write));
                                             }
 
                                             // We'll have to inject a copy here.
