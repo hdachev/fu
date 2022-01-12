@@ -95,8 +95,10 @@ pub fn solve(
     struct RWEvent
     {
         rw_target:      i32;
-        signedidx:      i32;
     };
+
+    struct ReadID  { id: i32 };
+    struct WriteID { id: i32 };
 
     struct EventsSnap
     {
@@ -104,14 +106,14 @@ pub fn solve(
         //  we could replace these with bitsets,
         //   and keep this as details only, not restored/merged.
         //
-        invalidated_by:     RWEvent[];
+        invalidated_by:     WriteID[];
         args_written:       i32[];
     };
 
     struct Events
     {
         using snap:         EventsSnap;
-        used_in_a_loop:     RWEvent[];
+        used_in_a_loop:     ReadID[];
 
         // The arguments at risk aparata.
         args_in_a_loop:     i32[];
@@ -1925,7 +1927,7 @@ pub fn solve(
         {
             let t = node.target;
             if (t.kind == "field")
-                return node.items[0].propagateType(slot, :relax_mask);
+                return node.items.only.propagateType(slot, :relax_mask);
 
             if (t.kind == "var")
             {
@@ -5474,16 +5476,54 @@ pub fn solve(
         return token.addr ~ ":\n\n" ~ formatCodeSnippet(token);
     }
 
-    fn RWEvent_stack(u: RWEvent)
+
+    //
+
+    fn SLOW_find(test, miss): SolvedNodeData
     {
-        let node = SolvedNode(:u.signedidx);
+        let nodes = _current_fn.target.nodes;
+
+        :SKIP
+        for (mut i = 0; i < nodes.len; i++)
+        {
+            let node = nodes[i];
+            if (test(:node))
+            {
+                let items = node.items;
+                for (shadow mut i = 0; i < items.len; i++)
+                    if (test(node: items[i]))
+                        continue :SKIP;
+
+                return node;
+            }
+        }
+
+        return miss();
+    }
+
+    fn SLOW_findByReadID(read: ReadID)
+        SLOW_find(|node| node.reads0 < read.id && node.reads1 >= read.id,
+                      || fail("Cannot find ReadID(" ~ read.id ~ ")."));
+
+    fn SLOW_findByWriteID(write: WriteID)
+        SLOW_find(|node| node.writes0 < write.id && node.writes1 >= write.id,
+                      || fail("Cannot find WriteID(" ~ write.id ~ ")."));
+
+
+    //
+
+    using fn RWEvent(write: WriteID)
+        _current_fn.events.writes[write.id - 1];
+
+    fn RWEvent_stack(write: WriteID)
+    {
+        let node = SLOW_findByWriteID(write);
         if (node.kind != "call")
             return "\n\tVia " ~ node.kind.qKW;
 
         mut stack: string;
-        if (u.rw_target)
         {
-            let uni0n = nested(u.rw_target).type.lifetime.uni0n;
+            let uni0n = nested(write.rw_target).type.lifetime.uni0n;
             if (uni0n) for (mut i = 0; i < node.items.len; i++)
             {
                 let arg = node.items[i];
@@ -6142,7 +6182,7 @@ pub fn solve(
             if (events.invalidated_by.len > target)
             {
                 let u = events.invalidated_by[target];
-                if (u.rw_target)
+                if (u)
                 {
                     if !(BORROWCK_resolveByMutvar(target) || options.dev & options::DEV_DisableBCK)
                         fail("Cannot access"
@@ -6162,33 +6202,26 @@ pub fn solve(
             //  OPTIMIZABLE we don't need the read nodeidx here,
             //   we only need the target int.
             //
-            events.reads ~= RWEvent(target, :callsite.signedidx);
-        }
+            events.reads ~= RWEvent(target);
+            let readID = ReadID(events.reads.len);
 
-        // Track reads in a loop.
-        if (loop_start) for (mut i = 0; i < regions.len; i++)
-        {
-            let target = Region_asIndex(regions[i]);
-            if (!target)
-                continue;
-
-            // Track uses.
-            if (target < loop_start)
+            // Track reads in a loop.
+            if (loop_start)
             {
-                ref u = events.used_in_a_loop.grow_if_oob(target);
-                if (!u.rw_target)
-                    u = RWEvent(loop_start, :callsite.signedidx);
-            }
+                // Track uses.
+                if (target < loop_start)
+                    events.used_in_a_loop.grow_if_oob(target) ||= readID;
 
-            // ARGUMENTS AT RISK ////////////////////////
-            if (flow.is_arg.has(target))
-            {
-                // And this clearly sucks
-                //  because we can't clean up after ourselves,
-                //   perhaps we don't want this but should use used_in_a_loop instead?
-                events.args_in_a_loop.set::add(target);
+                // ARGUMENTS AT RISK ////////////////////////
+                if (flow.is_arg.has(target))
+                {
+                    // And this clearly sucks
+                    //  because we can't clean up after ourselves,
+                    //   perhaps we don't want this but should use used_in_a_loop instead?
+                    events.args_in_a_loop.set::add(target);
+                }
+                /////////////////////////////////////////////
             }
-            /////////////////////////////////////////////
         }
     }
 
@@ -6218,28 +6251,26 @@ pub fn solve(
             for (shadow mut i = 0; i < invalidates.len; i++)
             {
                 let other = invalidates[i];
-                let u = events.used_in_a_loop.unless_oob(other);
-                if (u.rw_target)
+                let readID = events.used_in_a_loop.unless_oob(other);
+                if (readID)
                 {
                     if !(BORROWCK_resolveByMutvar(other) || options.dev & options::DEV_DisableBCK)
                         fail("Write to " ~ target.bck_name.qBAD
                             ~ " at call to " ~ callsite.target.qWHAT
                             ~ " invalidates the use of " ~ other.bck_name.qBAD ~ " at "
-                            ~ SolvedNode(:u.signedidx).token.addr_and_snippet
+                            ~ SLOW_findByReadID(readID).token.addr_and_snippet
                             ~ "\n\t... on next loop iteration.\n\n\tWritten"
                             ~ qSTACK(callsite.target, :position)); // TODO loop starts at x:x!
                 }
             }
 
-            let write = RWEvent(target, :callsite.signedidx);
+            // Order of eval.
+            events.writes ~= RWEvent(target);
+            let writeID = WriteID(events.writes.len);
 
             // Track writes, easy.
             for (shadow mut i = 0; i < invalidates.len; i++)
-            {
-                ref u = events.invalidated_by.grow_if_oob(invalidates[i]);
-                if (!u.rw_target)
-                    u = write;
-            }
+                events.invalidated_by.grow_if_oob(invalidates[i]) ||= writeID;
 
             // ARGUMENTS AT RISK ////////////////////////
             if (flow.is_arg.has(target))
@@ -6253,9 +6284,6 @@ pub fn solve(
                             .set::add(target);
             }
             /////////////////////////////////////////////
-
-            // Order of eval.
-            events.writes ~= write;
         }
     }
 
@@ -6275,7 +6303,7 @@ pub fn solve(
         //   But this same technique can also be used for ref reassignment later on.
         //
         if (events.invalidated_by.unless_oob(index))
-            events.invalidated_by[index] = RWEvent;
+            events.invalidated_by[index] = WriteID();
 
         // The GET_next_local_index() thing doesn't work with LATE_BCK,
         //  but this kinda fixes it.
@@ -6605,7 +6633,8 @@ pub fn solve(
                     //
                     for (mut w = ooe_write0; w < ooe_write1; w++)
                     {
-                        let write   = _current_fn.events.writes[w];
+                        let writeID = WriteID(w + 1);
+                        let write   = RWEvent(writeID);
                         let written = write.rw_target.nested.type.lifetime.uni0n;
 
                         // RTL indexing is reversed, so 0 always means first.
@@ -6709,7 +6738,7 @@ pub fn solve(
                                                     ~ "\n\t... invalidated by subsequent write to "
                                                     ~ inter.first.qWHAT ~ " upon evaluation of argument "
                                                     ~ host_args[w].name.human.qBAD ~ " (arg #" ~ w ~ ") at "
-                                                    ~ RWEvent_stack(write));
+                                                    ~ RWEvent_stack(writeID));
                                             }
 
                                             // We'll have to inject a copy here.
@@ -6836,41 +6865,50 @@ pub fn solve(
     {
         let k = node.kind;
 
-        // This is the only place where reads & writes actually happen.
+        ////////////////////////////////////////////
+        mut rwr: RWRanges;
+        rwr.reads0 = _current_fn.events.reads.len;
+        rwr.writes0 = _current_fn.events.writes.len;
+        ////////////////////////////////////////////
+
         if (k == "call")
-            return bck_call(node);
+        {
+            // This is the only place where reads & writes actually happen.
+            bck_call(node);
+        }
+        else if (k == "loop")
+        {
+            // The extra stuff we need to check backward jumps.
+            bck_loop(node);
+        }
+        else if (k == "let")
+        {
+            // Variable initialization.
+            bck_let(node);
+        }
+        else if (k == "if")
+        {
+            // Isolate cons from alt and combine effects on exit.
+            bck_if(node);
+        }
+        else if (k == "block")
+        {
+            // TODO If broken-from, hide effects and append to jumped-to.
+            bck_block(node);
+        }
+        else
+        {
+            // The default - descend recursively.
+            // TODO: be exhaustive here
+            bck_nodes(node.items);
+        }
 
-        // The extra stuff we need to check backward jumps.
-        if (k == "loop")
-            return bck_loop(node);
-
-        // Variable initialization.
-        if (k == "let")
-            return bck_let(node);
-
-        // Isolate cons from alt and combine effects on exit.
-        if (k == "if")
-            return bck_if(node);
-
-        // If broken-from, hide effects and append to jumped-to.
-        //
-        // if (k == "branch")
-        //     ...
-
-        // I don't think there's anything we can do for ands and ors,
-        //  until we get a notion of guarantees -
-        //   in which case we lose them all after first expr.
-        // if (k == "and" || k == "or")
-        //     ...
-
-        // Support for defers here.
-        if (k == "block")
-            return bck_block(node);
-
-        // TODO: be exhaustive here
-
-        // The default - descend recursively.
-        bck_nodes(node.items);
+        ////////////////////////////////////////////
+        rwr.reads1 = _current_fn.events.reads.len;
+        rwr.writes1 = _current_fn.events.writes.len;
+        if (rwr.reads1 > rwr.reads0 || rwr.writes1 > rwr.writes0)
+            node.MUT.rwr = rwr;
+        ////////////////////////////////////////////
     }
 
 

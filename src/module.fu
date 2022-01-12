@@ -131,12 +131,20 @@ pub struct Target
 {
     modid:      i32;
     index:      i32;
-};
+}
 
 pub struct SolvedNode
 {
     signedidx!: i32;
-};
+}
+
+pub struct RWRanges
+{
+    reads0:     i32;
+    reads1:     i32;
+    writes0:    i32;
+    writes1:    i32;
+}
 
 pub struct SolvedNodeData
 {
@@ -151,7 +159,9 @@ pub struct SolvedNodeData
 
     using type: Type;
     target:     Target;
-};
+
+    using rwr?: RWRanges;
+}
 
 
 //
