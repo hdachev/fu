@@ -2039,7 +2039,7 @@ pub fn runTests()
         fn test(ref a: i32[]) {
             ref b = a[0];
             if (a.len & 1) {
-                <fail invalidate>
+                <fail invalidate 9:13 6:19>
                 a ~= 1; // Invalidates 'b'.
                 <pass/>
                 b++;
@@ -2074,7 +2074,7 @@ pub fn runTests()
         fn test(ref a: i32[]) {
             ref b = a[0];
             if (a.len & 1) { // Lets be extra sure here.
-                <fail invalidate>
+                <fail invalidate 7:17 6:19>
                 a ~= 1; // Invalidates 'b'.
                 b++;
                 <pass/>
@@ -2099,7 +2099,7 @@ pub fn runTests()
             {
                 b++; // Same thing but reordered as a loop.
                 if (a.len & 3) {
-                    <fail inval next iter>
+                    <fail inval next iter 9:23 6:17>
                     a ~= 1; // Invalidates 'b'.
                     <pass/>
                     b++;
@@ -2165,7 +2165,7 @@ pub fn runTests()
             mut A: V = [ 1 ];
             mut B: V = [ 1 ];
 
-            <fail invalidate>
+            <fail invalidate 20:20 18:15>
             ref aa = A.v || A.w; <pass/>
             fn  aa = A.v || A.w; </fail>
 
@@ -2362,7 +2362,7 @@ pub fn runTests()
 
     ZERO(`
         fn test(ref a: i32[], ref b: i32[]) {
-            <fail invalidate>
+            <fail invalidate 7:28 6:30>
             ref aa = a[0]; <pass/>
             fn  aa() a[0]; </fail>
 
@@ -2376,7 +2376,7 @@ pub fn runTests()
 
     ZERO(`
         fn test(ref a: i32[], ref b: i32[]) {
-            <fail invalidate>
+            <fail invalidate 7:26 6:30>
             ref aa = a[0]; <pass/>
             fn  aa() a[0]; </fail>
 
@@ -2390,7 +2390,7 @@ pub fn runTests()
     ZERO(`
         fn noop(x) x;
         fn test(ref a: i32[], ref b: i32[]) {
-            <fail invalidate>
+            <fail invalidate 8:31 7:30>
             ref aa = a[0]; <pass/>
             fn  aa() a[0]; </fail>
 
@@ -2404,7 +2404,7 @@ pub fn runTests()
     ZERO(`
         fn either(a, b) a || b;
         fn test(ref a: i32[], ref b: i32[]) {
-            <fail invalidate>
+            <fail invalidate 8:31 7:30>
             ref aa = a[0]; <pass/>
             fn aa()  a[0]; </fail>
 
@@ -2904,8 +2904,8 @@ pub fn runTests()
     `);
 
     ZERO(`
-        <fail arg inval subsequent write>
-        nocopy             <pass/></fail>
+        <fail arg inval subsequent write 14:23 14:25 14:33 8:16>
+        nocopy                                    <pass/></fail>
         struct X { x: i32; }
         fn sum(a: X, b: X) a.x + b.x;
 
@@ -2921,8 +2921,8 @@ pub fn runTests()
     `);
 
     ZERO(`
-        <fail arg inval subsequent write>
-        nocopy             <pass/></fail>
+        <fail arg inval subsequent write 23:23 23:25 23:33 16:18>
+        nocopy                                     <pass/></fail>
         struct X { x: i32; }
         struct Y { y: X;   }
 
@@ -2947,8 +2947,8 @@ pub fn runTests()
     `);
 
     ZERO(`
-        <fail arg inval subsequent write>
-        nocopy             <pass/></fail>
+        <fail arg inval subsequent write 19:27 19:32 19:21 7:16>
+        nocopy                                    <pass/></fail>
         struct X { x: i32; };
 
         fn incr(ref x: X) {
