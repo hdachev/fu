@@ -41,3 +41,5 @@ pub fn qKW(id: string) =
 
 pub fn qLT(id: string) =
     cLT ~ (id || "``") ~ RESET;
+
+pub fn qCODE(id: string) = id.qID;

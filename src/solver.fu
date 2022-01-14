@@ -251,6 +251,11 @@ pub fn solve(
         return kind.qKW ~ " " ~ o.name.human.qID;
     }
 
+    fn qWHAT(arg: Argument)
+    {
+        return "arg".qKW ~ " " ~ arg.name.human.qID;
+    }
+
     fn human(id: string)
     {
         let t = hacks::tryParseClosureID(:id).target;
@@ -982,7 +987,6 @@ pub fn solve(
                     fail("Falsy arg.kind!");
 
         mut matchIdx: Target;
-        mut DEBUG_assertMatch: Target;
 
         fn countUsings()
         {
@@ -1100,11 +1104,13 @@ pub fn solve(
 
             //
             mut shadows: bool;
-            :NEXT while (overloadIdx =
+            :MATCH_FAIL while (overloadIdx =
                 (local_scope ? _scope : misc_scope).items.search(id, scope_iterator,
                     scope_skip: local_scope && _ss.items,
                     dont_search_just_return: target, :extra_items, :field_items, :shadows))
             {
+                mut DEBUG_mustMatch = false;
+
                 ///////////////////////////////////
                 ref conversions_out = conversions;
                 shadow mut conversions: Target[][];
@@ -1120,6 +1126,14 @@ pub fn solve(
                 :TEST_AGAIN while (true)
                 {
                     let overload = GET(overloadIdx);
+
+                    fn matchFail(inline err: string)
+                    {
+                        if (DEBUG_mustMatch)
+                            fail(overload.qWHAT ~ " mustMatch.matchFail: " ~ err);
+
+                        continue :MATCH_FAIL;
+                    }
 
                     // Make sure we know what this is.
                     if (lazySolveStart(overloadIdx, overload))
@@ -1140,9 +1154,15 @@ pub fn solve(
                     // Arity check.
                     let arity = overloadIdx.EXT;
                     let isZeroInit = isType && !explicitArity;
-                    if (!isZeroInit)
-                        if (arity.max < minArity || arity.min > maxArity)
-                            continue :NEXT;
+                    if (!isZeroInit && (arity.max < minArity || arity.min > maxArity))
+                    {
+                        fn str(min: i32, max: i32)
+                            min != max  ? "[" ~ min ~ ", " ~ max ~ "]"
+                                        : min.str;
+
+                        matchFail("Wrong number of arguments: expects " ~ str(:arity.min, :arity.max)
+                                ~ ", got " ~ str(minArity, maxArity) ~ ".");
+                    }
 
                     // Reorder by argument names or number of implicit `using` args.
                     let host_args   = arity.args;
@@ -1153,14 +1173,14 @@ pub fn solve(
                     if (!names)
                         reorderByNumUsings(:use_reorder, :reorder, host_args, args.len, :num_usings);
                     else if (!reorderByArgIDs(:use_reorder, :reorder, names, optional, host_args, :num_usings))
-                        continue :NEXT;
+                        matchFail("Argument name mismatch [TODO REPORT]");
 
                     // Forbid optional argument ambiguities -
                     //  We should either have all optional args satisfied at the receiver or sender part,
                     //   we shouldn't allow dangling cables on both ends because that's super typo-prone.
                     if (optional && reorder)
                         if (reorder.len < args.len && reorder.len < arity.max)
-                            continue :NEXT; // TODO NICE ERROR HERE
+                            matchFail("Optional argument ambiguity, not all optional arguments provided, and not all callsite arguments used. Cannot distinguish from a typo. [TODO LIST MISSING ARGS]");
 
                     fn disambig()
                     {
@@ -1265,14 +1285,14 @@ pub fn solve(
                                     }
                                 }
 
-                                continue :NEXT;
+                                matchFail("Cannot infer missing argument " ~ host_arg.qWHAT);
                             }
 
                             // Explicit argname requirements.
                             if (host_arg.flags & F_MUSTNAME)
                             {
                                 if (names.len <= callsiteIndex || !names[callsiteIndex])
-                                    continue :NEXT;
+                                    matchFail("Argument must be :explicitly named " ~ host_arg.qWHAT);
                             }
 
                             // Autocall.
@@ -1287,7 +1307,8 @@ pub fn solve(
 
                                 let t = tryMatch__mutargs(:misc_scope, :local_scope, id: host_arg.autocall, args: autocall_args, reorder: autocall_reorder, conversions: autocall_conversions);
                                 if (!t)
-                                    continue :NEXT;
+                                    matchFail("Cannot match argument autocall for "
+                                        ~ host_arg.qWHAT ~ ": " ~ host_arg.autocall.qCODE);
 
                                 if (autocall_conversions)
                                     conversions.grow_if_oob(i) ~= autocall_conversions.only;
@@ -1336,7 +1357,9 @@ pub fn solve(
                             }
 
                             // Nope, args fail.
-                            continue :NEXT;
+                            matchFail("Argument " ~ host_arg.qWHAT
+                                    ~ " expects " ~ humanizeType(expect)
+                                    ~ ", got "    ~ humanizeType(actual));
                         }
                     }
 
@@ -1352,10 +1375,10 @@ pub fn solve(
 
                             REST_TYPE = i == REST_START
                                 ? solveArrlit_itemType_init(head: actual)
-                                : type_trySuper(REST_TYPE, actual);
-
-                            if (!REST_TYPE)
-                                continue :NEXT;
+                                : type_trySuper(REST_TYPE, actual)
+                                    || matchFail("Rest arguments have no common supertype: "
+                                                             ~ humanizeType(REST_TYPE)
+                                                    ~ " <- " ~ humanizeType(actual));
                         }
 
                         REST_TYPE = solveArrlit_done(itemType: REST_TYPE);
@@ -1376,7 +1399,7 @@ pub fn solve(
                             :REST_START, :REST_TYPE);
 
                         if (!specIdx)
-                            continue :NEXT;
+                            matchFail("Could not specialize [TODO doTrySpec ERROR]");
 
                         // Repeat arity checks and such.
                         //
@@ -1385,7 +1408,7 @@ pub fn solve(
                         //   and end up not using it.
                         //
                         overloadIdx         = specIdx;
-                        DEBUG_assertMatch   = specIdx;
+                        DEBUG_mustMatch     = true;
 
                         TODO_FIX_skip_autocalls = true;
 
@@ -1405,7 +1428,7 @@ pub fn solve(
 
                     // Arity 0 auto-shadows.
                     if (shadows)
-                        break :NEXT;
+                        break :MATCH_FAIL;
 
                     // Done here.
                     break :TEST_AGAIN;
@@ -1421,10 +1444,6 @@ pub fn solve(
             alternate_ids.pop();
             //////////////////////////////////
         }
-
-        if (DEBUG_assertMatch)
-            DEBUG_assertMatch == matchIdx || fail(
-                "Specialized `" ~ GET(DEBUG_assertMatch).name ~ "` but ended up not using it.");
 
         return matchIdx;
     }
