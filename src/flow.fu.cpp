@@ -1,4 +1,5 @@
 
+#include <algorithm>
 #include <fu/default.h>
 #include <fu/int.h>
 #include <fu/never.h>
@@ -13,8 +14,8 @@ struct s_Lifetime;
 struct s_Region;
 
 bool has_asJtcpQm(const s_BitSet&, int);
-int Region_asIndex_bhNkG49Y(const s_Region&);
-void ArgsAtRisk_shake_8HAzLaZD(s_Flow&, int, int);
+int Region_asIndex_rLDFQf65(const s_Region&);
+int size_Btvcdbd3(const s_BitSet&);
 void add_range_mQD1F0il(s_BitSet&, int, int);
 void add_zoGTyg4u(s_BitSet&, int);
 void rem_zoGTyg4u(s_BitSet&, int);
@@ -241,12 +242,12 @@ inline fu_VEC<int>& grow_if_oob_EE7n9Jkc(fu_VEC<fu_VEC<int>>& a, const int i)
 }
                                 #endif
 
-void Reference_trackLocalRef_D0wuNIjX(s_Flow& flow, const int left, const s_Lifetime& right)
+void Reference_trackLocalRef_qERgTRRj(s_Flow& flow, const int left, const s_Lifetime& right)
 {
     fu_VEC<int> parents {};
     for (int i = 0; i < right.uni0n.size(); i++)
     {
-        const int right_1 = Region_asIndex_bhNkG49Y(right.uni0n[i]);
+        const int right_1 = Region_asIndex_rLDFQf65(right.uni0n[i]);
         if (!right_1)
             continue;
 
@@ -306,11 +307,11 @@ inline int find_C47D8dNR(fu::view<int> a, const int b)
 }
                                 #endif
 
-void Reference_untrackLocalRef_D0wuNIjX(s_Flow& flow, const int left, const s_Lifetime& right)
+void Reference_untrackLocalRef_qERgTRRj(s_Flow& flow, const int left, const s_Lifetime& right)
 {
     for (int i = 0; i < right.uni0n.size(); i++)
     {
-        const int right_1 = Region_asIndex_bhNkG49Y(right.uni0n[i]);
+        const int right_1 = Region_asIndex_rLDFQf65(right.uni0n[i]);
         if (!right_1)
             continue;
 
@@ -331,20 +332,6 @@ void Reference_untrackLocalRef_D0wuNIjX(s_Flow& flow, const int left, const s_Li
 static fu_VEC<int>& at_risk_from_QHBFNeEQ(s_Flow& flow, const int use)
 {
     return flow.args_at_risk.mutref(use);
-}
-
-void ArgsAtRisk_shake_UoicnRMt(s_Flow& flow)
-{
-    for (int i = 0; i < flow.args_at_risk.size(); i++)
-    {
-        const int use = i;
-        for (int i_1 = at_risk_from_QHBFNeEQ(flow, use).size(); i_1-- > 0; )
-        {
-            const int write = at_risk_from_QHBFNeEQ(flow, use)[i_1];
-            at_risk_from_QHBFNeEQ(flow, use).splice(i_1, 1);
-            ArgsAtRisk_shake_8HAzLaZD(flow, int(use), int(write));
-        };
-    };
 }
 
                                 #ifndef DEFt_add_bmhzXgqs
@@ -376,7 +363,7 @@ inline const fu_VEC<int>& unless_oob_RhFXRcia(fu::view<fu_VEC<int>> a, const int
 }
                                 #endif
 
-void ArgsAtRisk_shake_8HAzLaZD(s_Flow& flow, int high, int low)
+static void ArgsAtRisk_shake_8HAzLaZD(s_Flow& flow, int high, int low)
 {
     for (; ; )
     {
@@ -417,6 +404,20 @@ void ArgsAtRisk_shake_8HAzLaZD(s_Flow& flow, int high, int low)
     };
 }
 
+void ArgsAtRisk_shake_UoicnRMt(s_Flow& flow)
+{
+    for (int i = 0; i < flow.args_at_risk.size(); i++)
+    {
+        const int use = i;
+        for (int i_1 = at_risk_from_QHBFNeEQ(flow, use).size(); i_1-- > 0; )
+        {
+            const int write = at_risk_from_QHBFNeEQ(flow, use)[i_1];
+            at_risk_from_QHBFNeEQ(flow, use).splice(i_1, 1);
+            ArgsAtRisk_shake_8HAzLaZD(flow, int(use), int(write));
+        };
+    };
+}
+
                                 #ifndef DEFt_unless_oob_HMyQV5gI
                                 #define DEFt_unless_oob_HMyQV5gI
 inline int unless_oob_HMyQV5gI(fu::view<int> a, const int i)
@@ -446,6 +447,20 @@ s_BitSet ArgsAtRisk_listRiskFree_xUdc86nO(const s_Flow& flow, const int position
         };
     };
     return /*NRVO*/ risk_free;
+}
+
+void ArgsWritten_shake_OnZ6Pgmj(const s_Flow& flow, s_BitSet& args)
+{
+    for (int i = std::min(size_Btvcdbd3(args), flow.arg_aliases.size()); i-- > 0; )
+    {
+        if (!has_asJtcpQm(args, i))
+            continue;
+
+        fu::view<int> aliases = flow.arg_aliases[i];
+        for (int i_1 = 0; i_1 < aliases.size(); i_1++)
+            add_zoGTyg4u(args, aliases[i_1]);
+
+    };
 }
 
 #endif

@@ -22,6 +22,11 @@ struct s_BitSet
 
 #ifndef FU_NO_FDEFs
 
+int size_Btvcdbd3(const s_BitSet& _)
+{
+    return _._data.size() * 8;
+}
+
                                 #ifndef DEFt_grow_if_oob_hUkNCHRW
                                 #define DEFt_grow_if_oob_hUkNCHRW
 inline fu::u8& grow_if_oob_hUkNCHRW(fu_VEC<fu::u8>& a, const int i)

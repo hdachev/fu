@@ -18,7 +18,6 @@
 #include <fu/vec/view_assign.h>
 #include <fu/view.h>
 
-struct s_ArgWrite;
 struct s_Argument;
 struct s_BitSet;
 struct s_CodegenOutput;
@@ -37,8 +36,8 @@ struct s_Node;
 struct s_Options;
 struct s_Overload;
 struct s_ParserOutput;
+struct s_RWRanges;
 struct s_Region;
-struct s_RemoteNode;
 struct s_Scope;
 struct s_ScopeItem;
 struct s_ScopeMemo;
@@ -249,15 +248,15 @@ struct s_Struct
 };
                                 #endif
 
-                                #ifndef DEF_s_RemoteNode
-                                #define DEF_s_RemoteNode
-struct s_RemoteNode
+                                #ifndef DEF_s_SolvedNode
+                                #define DEF_s_SolvedNode
+struct s_SolvedNode
 {
-    int nodeidx;
+    int signedidx;
     explicit operator bool() const noexcept
     {
         return false
-            || nodeidx
+            || signedidx
         ;
     }
 };
@@ -334,7 +333,7 @@ struct s_Overload
     s_Type type;
     int flags;
     unsigned status;
-    s_RemoteNode remote;
+    s_SolvedNode solved;
     explicit operator bool() const noexcept
     {
         return false
@@ -343,7 +342,7 @@ struct s_Overload
             || type
             || flags
             || status
-            || remote
+            || solved
         ;
     }
 };
@@ -363,22 +362,6 @@ struct s_BitSet
 };
                                 #endif
 
-                                #ifndef DEF_s_ArgWrite
-                                #define DEF_s_ArgWrite
-struct s_ArgWrite
-{
-    int nodeidx;
-    int arg_position;
-    explicit operator bool() const noexcept
-    {
-        return false
-            || nodeidx
-            || arg_position
-        ;
-    }
-};
-                                #endif
-
                                 #ifndef DEF_s_Argument
                                 #define DEF_s_Argument
 struct s_Argument
@@ -386,10 +369,10 @@ struct s_Argument
     fu_STR name;
     fu_STR autocall;
     s_Type type;
-    s_RemoteNode dEfault;
+    s_SolvedNode dEfault;
     int flags;
+    int local;
     s_BitSet risk_free;
-    s_ArgWrite written_via;
     explicit operator bool() const noexcept
     {
         return false
@@ -398,8 +381,8 @@ struct s_Argument
             || type
             || dEfault
             || flags
+            || local
             || risk_free
-            || written_via
         ;
     }
 };
@@ -489,17 +472,21 @@ struct s_Template
 };
                                 #endif
 
-                                #ifndef DEF_s_SolvedNode
-                                #define DEF_s_SolvedNode
-struct s_SolvedNode
+                                #ifndef DEF_s_RWRanges
+                                #define DEF_s_RWRanges
+struct s_RWRanges
 {
-    s_Target nodeown;
-    int nodeidx;
+    int reads0;
+    int reads1;
+    int writes0;
+    int writes1;
     explicit operator bool() const noexcept
     {
         return false
-            || nodeown
-            || nodeidx
+            || reads0
+            || reads1
+            || writes0
+            || writes1
         ;
     }
 };
@@ -513,10 +500,11 @@ struct s_SolvedNodeData
     int helpers;
     int flags;
     fu_STR value;
-    fu_VEC<s_SolvedNode> _items;
+    fu_VEC<s_SolvedNode> items;
     s_TokenIdx token;
     s_Type type;
     s_Target target;
+    s_RWRanges rwr;
     explicit operator bool() const noexcept
     {
         return false
@@ -524,10 +512,11 @@ struct s_SolvedNodeData
             || helpers
             || flags
             || value
-            || _items
+            || items
             || token
             || type
             || target
+            || rwr
         ;
     }
 };
@@ -605,7 +594,7 @@ struct s_Scope
                                 #define DEF_s_SolverOutput
 struct s_SolverOutput
 {
-    s_RemoteNode root;
+    s_SolvedNode root;
     s_Scope scope;
     int notes;
     s_SolverOutput(const s_SolverOutput&) = delete;
@@ -917,7 +906,7 @@ inline const fu_VEC<s_Struct>& clone_TyHd3cFd(const fu_VEC<s_Struct>& a)
 
                                 #ifndef DEFt_clone_Ga719jiI
                                 #define DEFt_clone_Ga719jiI
-inline const s_RemoteNode& clone_Ga719jiI(const s_RemoteNode& a)
+inline const s_SolvedNode& clone_Ga719jiI(const s_SolvedNode& a)
 {
     return a;
 }
@@ -931,17 +920,17 @@ inline const fu_VEC<s_ScopeItem>& clone_UugjtQNo(const fu_VEC<s_ScopeItem>& a)
 }
                                 #endif
 
-                                #ifndef DEFt_clone_vHWyh2kA
-                                #define DEFt_clone_vHWyh2kA
-inline const fu_VEC<s_Overload>& clone_vHWyh2kA(const fu_VEC<s_Overload>& a)
+                                #ifndef DEFt_clone_QHG5KFZs
+                                #define DEFt_clone_QHG5KFZs
+inline const fu_VEC<s_Overload>& clone_QHG5KFZs(const fu_VEC<s_Overload>& a)
 {
     return a;
 }
                                 #endif
 
-                                #ifndef DEFt_clone_mya8cha1
-                                #define DEFt_clone_mya8cha1
-inline const fu_VEC<s_Extended>& clone_mya8cha1(const fu_VEC<s_Extended>& a)
+                                #ifndef DEFt_clone_vHWyh2kA
+                                #define DEFt_clone_vHWyh2kA
+inline const fu_VEC<s_Extended>& clone_vHWyh2kA(const fu_VEC<s_Extended>& a)
 {
     return a;
 }
@@ -963,8 +952,8 @@ inline s_Scope clone_KgAJF7rh(const s_Scope& a)
 
     {
         res.items = clone_UugjtQNo(a.items);
-        res.overloads = clone_vHWyh2kA(a.overloads);
-        res.extended = clone_mya8cha1(a.extended);
+        res.overloads = clone_QHG5KFZs(a.overloads);
+        res.extended = clone_vHWyh2kA(a.extended);
         res.imports = clone_Z5oQfAXT(a.imports);
         res.privates = clone_Z5oQfAXT(a.privates);
         res.usings = clone_g4Ujnafl(a.usings);
@@ -1062,9 +1051,9 @@ inline fu_VEC<s_Module> clone_iDg7mVx5(fu::view<s_Module> a)
 }
                                 #endif
 
-                                #ifndef DEFt_clone_4bSXVtDS
-                                #define DEFt_clone_4bSXVtDS
-inline const s_Map_tcbzgxDC& clone_4bSXVtDS(const s_Map_tcbzgxDC& a)
+                                #ifndef DEFt_clone_7Uuj74VO
+                                #define DEFt_clone_7Uuj74VO
+inline const s_Map_tcbzgxDC& clone_7Uuj74VO(const s_Map_tcbzgxDC& a)
 {
     return a;
 }
@@ -1078,8 +1067,8 @@ inline s_Context clone_8XhxuvqN(const s_Context& a)
 
     {
         res.modules = clone_iDg7mVx5(a.modules);
-        res.files = clone_4bSXVtDS(a.files);
-        res.fuzzy = clone_4bSXVtDS(a.fuzzy);
+        res.files = clone_7Uuj74VO(a.files);
+        res.fuzzy = clone_7Uuj74VO(a.fuzzy);
     };
     return /*NRVO*/ res;
 }
@@ -1093,8 +1082,8 @@ inline s_Scope clone_WzMqKZ7M(const s_Scope& a)
 
     {
         res.items = clone_UugjtQNo(a.items);
-        res.overloads = clone_vHWyh2kA(a.overloads);
-        res.extended = clone_mya8cha1(a.extended);
+        res.overloads = clone_QHG5KFZs(a.overloads);
+        res.extended = clone_vHWyh2kA(a.extended);
         res.imports = clone_Z5oQfAXT(a.imports);
         res.privates = clone_Z5oQfAXT(a.privates);
         res.usings = clone_g4Ujnafl(a.usings);
@@ -1292,9 +1281,9 @@ inline void update_M4LPCBPo(int, const fu_STR& item, int, const fu_STR& extra, s
 }
                                 #endif
 
-                                #ifndef DEFt_set_TxPe8oL8
-                                #define DEFt_set_TxPe8oL8
-inline void set_TxPe8oL8(s_Map_tcbzgxDC& _, const fu_STR& key, const fu_STR& value)
+                                #ifndef DEFt_set_zwkdaU4e
+                                #define DEFt_set_zwkdaU4e
+inline void set_zwkdaU4e(s_Map_tcbzgxDC& _, const fu_STR& key, const fu_STR& value)
 {
     update_M4LPCBPo(0, key, 0, value, _);
 }
@@ -1308,7 +1297,7 @@ s_Context compile_snippets_qTyLxMej(fu::view<fu_STR> sources, fu::view<fu_STR> f
         const fu_STR& snippet = sources[i];
         fu_STR src = ((i == (sources.size() - 1)) ? ensure_main_w1DB7L4Z(snippet) : fu_STR(snippet));
         fu_STR fname = ((fnames.size() > i) ? fu_STR(fnames[i]) : (x7E((PRJDIR + "__tests__/_"_fu), fu::i64dec(i)) + ".fu"_fu));
-        set_TxPe8oL8(ctx.files, fname, src);
+        set_zwkdaU4e(ctx.files, fname, src);
         compile_O1wkXc2m(fname, (*(const fu_STR*)fu::NIL), ctx, ((options.size() > i) ? options[i] : (*(const s_Options*)fu::NIL)));
     };
     for (int i_1 = 0; i_1 < ctx.modules.size(); i_1++)

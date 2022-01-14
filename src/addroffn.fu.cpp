@@ -123,19 +123,19 @@ inline bool starts_OZkl8S7R(fu::view<char> a, fu::view<char> with)
 }
                                 #endif
 
-bool type_isAddrOfFn_DWwAMDO6(const s_Type& type)
+bool type_isAddrOfFn_5vhU4AHS(const s_Type& type)
 {
     return starts_OZkl8S7R(type.vtype.canon, "@"_fu);
 }
 
-bool type_isZST_DWwAMDO6(const s_Type& type)
+bool type_isZST_5vhU4AHS(const s_Type& type)
 {
-    return type_isAddrOfFn_DWwAMDO6(type);
+    return type_isAddrOfFn_5vhU4AHS(type);
 }
 
-bool type_isCTC_DWwAMDO6(const s_Type& type)
+bool type_isCTC_5vhU4AHS(const s_Type& type)
 {
-    return type_isZST_DWwAMDO6(type);
+    return type_isZST_5vhU4AHS(type);
 }
 
                                 #ifndef DEFt_x7E
@@ -178,9 +178,9 @@ inline void unpackAddrOfFn_FQxvZ85Z(fu::view<char> canon, int, fu_VEC<s_ScopeIte
 }
                                 #endif
 
-bool X_unpackAddrOfFnBinding_SyIXScnm(fu_VEC<s_ScopeItem>& out, const fu_STR& id, const s_Type& type, const bool shadows)
+bool X_unpackAddrOfFnBinding_5Q9XevCv(fu_VEC<s_ScopeItem>& out, const fu_STR& id, const s_Type& type, const bool shadows)
 {
-    if (!type_isAddrOfFn_DWwAMDO6(type))
+    if (!type_isAddrOfFn_5vhU4AHS(type))
         return false;
 
     unpackAddrOfFn_FQxvZ85Z(type.vtype.canon, 0, out, id, shadows);

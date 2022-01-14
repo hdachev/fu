@@ -74,4 +74,9 @@ fu_STR qLT_PSFLzFOM(const fu_STR& id)
     return (cLT + (id ? fu_STR(id) : "``"_fu)) + RESET;
 }
 
+fu_STR qCODE_PSFLzFOM(const fu_STR& id)
+{
+    return qID_PSFLzFOM(id);
+}
+
 #endif

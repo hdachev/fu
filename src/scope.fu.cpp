@@ -10,7 +10,6 @@
 #include <fu/vec/concat_one.h>
 #include <fu/view.h>
 
-struct s_ArgWrite;
 struct s_Argument;
 struct s_BitSet;
 struct s_CodegenOutput;
@@ -26,8 +25,8 @@ struct s_ModuleStats;
 struct s_Node;
 struct s_Overload;
 struct s_ParserOutput;
+struct s_RWRanges;
 struct s_Region;
-struct s_RemoteNode;
 struct s_Scope;
 struct s_ScopeItem;
 struct s_ScopeMemo;
@@ -226,15 +225,15 @@ struct s_Struct
 };
                                 #endif
 
-                                #ifndef DEF_s_RemoteNode
-                                #define DEF_s_RemoteNode
-struct s_RemoteNode
+                                #ifndef DEF_s_SolvedNode
+                                #define DEF_s_SolvedNode
+struct s_SolvedNode
 {
-    int nodeidx;
+    int signedidx;
     explicit operator bool() const noexcept
     {
         return false
-            || nodeidx
+            || signedidx
         ;
     }
 };
@@ -311,7 +310,7 @@ struct s_Overload
     s_Type type;
     int flags;
     unsigned status;
-    s_RemoteNode remote;
+    s_SolvedNode solved;
     explicit operator bool() const noexcept
     {
         return false
@@ -320,7 +319,7 @@ struct s_Overload
             || type
             || flags
             || status
-            || remote
+            || solved
         ;
     }
 };
@@ -340,22 +339,6 @@ struct s_BitSet
 };
                                 #endif
 
-                                #ifndef DEF_s_ArgWrite
-                                #define DEF_s_ArgWrite
-struct s_ArgWrite
-{
-    int nodeidx;
-    int arg_position;
-    explicit operator bool() const noexcept
-    {
-        return false
-            || nodeidx
-            || arg_position
-        ;
-    }
-};
-                                #endif
-
                                 #ifndef DEF_s_Argument
                                 #define DEF_s_Argument
 struct s_Argument
@@ -363,10 +346,10 @@ struct s_Argument
     fu_STR name;
     fu_STR autocall;
     s_Type type;
-    s_RemoteNode dEfault;
+    s_SolvedNode dEfault;
     int flags;
+    int local;
     s_BitSet risk_free;
-    s_ArgWrite written_via;
     explicit operator bool() const noexcept
     {
         return false
@@ -375,8 +358,8 @@ struct s_Argument
             || type
             || dEfault
             || flags
+            || local
             || risk_free
-            || written_via
         ;
     }
 };
@@ -466,17 +449,21 @@ struct s_Template
 };
                                 #endif
 
-                                #ifndef DEF_s_SolvedNode
-                                #define DEF_s_SolvedNode
-struct s_SolvedNode
+                                #ifndef DEF_s_RWRanges
+                                #define DEF_s_RWRanges
+struct s_RWRanges
 {
-    s_Target nodeown;
-    int nodeidx;
+    int reads0;
+    int reads1;
+    int writes0;
+    int writes1;
     explicit operator bool() const noexcept
     {
         return false
-            || nodeown
-            || nodeidx
+            || reads0
+            || reads1
+            || writes0
+            || writes1
         ;
     }
 };
@@ -490,10 +477,11 @@ struct s_SolvedNodeData
     int helpers;
     int flags;
     fu_STR value;
-    fu_VEC<s_SolvedNode> _items;
+    fu_VEC<s_SolvedNode> items;
     s_TokenIdx token;
     s_Type type;
     s_Target target;
+    s_RWRanges rwr;
     explicit operator bool() const noexcept
     {
         return false
@@ -501,10 +489,11 @@ struct s_SolvedNodeData
             || helpers
             || flags
             || value
-            || _items
+            || items
             || token
             || type
             || target
+            || rwr
         ;
     }
 };
@@ -582,7 +571,7 @@ struct s_Scope
                                 #define DEF_s_SolverOutput
 struct s_SolverOutput
 {
-    s_RemoteNode root;
+    s_SolvedNode root;
     s_Scope scope;
     int notes;
     s_SolverOutput(const s_SolverOutput&) = delete;
@@ -757,37 +746,37 @@ inline constexpr unsigned SS_FN_RECUR = (0x1u << 17u);
 
                                 #ifndef DEF_HM_CanBreak
                                 #define DEF_HM_CanBreak
-inline constexpr short HM_CanBreak = short((short(1) << short(0)));
+extern const short HM_CanBreak = short((short(1) << short(0)));
                                 #endif
 
                                 #ifndef DEF_HM_CanReturn
                                 #define DEF_HM_CanReturn
-inline constexpr short HM_CanReturn = short((short(1) << short(1)));
+extern const short HM_CanReturn = short((short(1) << short(1)));
                                 #endif
 
                                 #ifndef DEF_HM_Anon
                                 #define DEF_HM_Anon
-inline constexpr short HM_Anon = short((short(1) << short(2)));
+extern const short HM_Anon = short((short(1) << short(2)));
                                 #endif
 
                                 #ifndef DEF_HM_Function
                                 #define DEF_HM_Function
-inline constexpr short HM_Function = short((short(1) << short(3)));
+extern const short HM_Function = short((short(1) << short(3)));
                                 #endif
 
                                 #ifndef DEF_HM_Lambda
                                 #define DEF_HM_Lambda
-inline constexpr short HM_Lambda = short((short(1) << short(4)));
+extern const short HM_Lambda = short((short(1) << short(4)));
                                 #endif
 
                                 #ifndef DEF_HM_Struct
                                 #define DEF_HM_Struct
-inline constexpr short HM_Struct = short((short(1) << short(5)));
+extern const short HM_Struct = short((short(1) << short(5)));
                                 #endif
 
                                 #ifndef DEF_HM_LabelUsed
                                 #define DEF_HM_LabelUsed
-inline constexpr short HM_LabelUsed = short((short(1) << short(6)));
+extern const short HM_LabelUsed = short((short(1) << short(6)));
                                 #endif
 
 s_Target target_CL3tG3Pe(const s_ScopeItem& si)
@@ -848,7 +837,7 @@ s_Type initStruct_kwC0rL39(const fu_STR& name, const int flags, const bool SELF_
     return s_Type { s_ValueType { int(specualtive_quals), int(MODID_yuJMA1l6(module)), fu_STR(canon) }, s_Lifetime{} };
 }
 
-s_Type despeculateStruct_JAXyQrt3(/*MOV*/ s_Type&& type)
+s_Type despeculateStruct_sClxAUhz(/*MOV*/ s_Type&& type)
 {
     type.vtype.quals &= ~q_rx_copy;
     return static_cast<s_Type&&>(type);
@@ -893,7 +882,7 @@ s_Scope Scope_exports_UPJ2tLZs(const s_Scope& scope, const int modid, const fu_V
     return s_Scope { fu_VEC<s_ScopeItem>(items), fu_VEC<s_Overload>(scope.overloads), fu_VEC<s_Extended>(scope.extended), fu_VEC<int>(no_imports), fu_VEC<int>(no_privates), fu_VEC<s_Target>(no_usings), fu_VEC<s_Target>(converts), int(pub_items), int(pub_cnvrts) };
 }
 
-static void nextSkip_CY2gvm2w(fu::view<s_ScopeSkip> scope_skip, int& scope_iterator, int& skiptrap, fu::view<s_ScopeItem> items)
+static void nextSkip_cYWSZjKA(fu::view<s_ScopeSkip> scope_skip, int& scope_iterator, int& skiptrap, fu::view<s_ScopeItem> items)
 {
     for (int i = scope_skip.size(); i-- > 0; )
     {
@@ -932,7 +921,7 @@ s_Target search_KNlWqVSS(fu::view<s_ScopeItem> items, const fu_STR& id, int& sco
 
     int skiptrap = -1;
     scope_iterator--;
-    nextSkip_CY2gvm2w(scope_skip, scope_iterator, skiptrap, items);
+    nextSkip_cYWSZjKA(scope_skip, scope_iterator, skiptrap, items);
     scope_iterator++;
     s_ScopeItem TODO_FIX = s_ScopeItem{};
     if (extra_items)
@@ -941,7 +930,7 @@ s_Target search_KNlWqVSS(fu::view<s_ScopeItem> items, const fu_STR& id, int& sco
     while (scope_iterator-- > 0)
     {
         if (scope_iterator == skiptrap)
-            nextSkip_CY2gvm2w(scope_skip, scope_iterator, skiptrap, items);
+            nextSkip_cYWSZjKA(scope_skip, scope_iterator, skiptrap, items);
 
         const s_ScopeItem& item = ((scope_iterator >= items.size()) ? ((scope_iterator >= (items.size() + extra_items.size())) ? field_items[((scope_iterator - items.size()) - extra_items.size())] : target_TODOFIX_KQ5QuDt6(TODO_FIX, extra_items[(scope_iterator - items.size())])) : items[scope_iterator]);
         if (item.id == id)
@@ -956,12 +945,12 @@ s_Target search_KNlWqVSS(fu::view<s_ScopeItem> items, const fu_STR& id, int& sco
     return s_Target{};
 }
 
-s_ScopeMemo Scope_snap_fMP5kLpG(const s_Scope& scope, fu::view<s_Helpers> _helpers)
+s_ScopeMemo Scope_snap_a3v7I8zX(const s_Scope& scope, fu::view<s_Helpers> _helpers)
 {
     return s_ScopeMemo { scope.items.size(), scope.imports.size(), scope.privates.size(), scope.usings.size(), scope.converts.size(), _helpers.size() };
 }
 
-void Scope_pop_DxdnefxR(s_Scope& scope, const s_ScopeMemo& memo, fu_VEC<s_Helpers>& _helpers)
+void Scope_pop_df60cAJ8(s_Scope& scope, const s_ScopeMemo& memo, fu_VEC<s_Helpers>& _helpers)
 {
     scope.items.shrink(memo.items_len);
     scope.imports.shrink(memo.imports_len);
@@ -992,9 +981,9 @@ bool operator==(const s_ScopeMemo& a, const s_ScopeMemo& b)
     return cmp_yfPFYctn(a, b) == 0;
 }
 
-                                #ifndef DEFt_grow_if_oob_sXwG2Qu6
-                                #define DEFt_grow_if_oob_sXwG2Qu6
-inline s_Extended& grow_if_oob_sXwG2Qu6(fu_VEC<s_Extended>& a, const int i)
+                                #ifndef DEFt_grow_if_oob_FDumx48H
+                                #define DEFt_grow_if_oob_FDumx48H
+inline s_Extended& grow_if_oob_FDumx48H(fu_VEC<s_Extended>& a, const int i)
 {
     if ((a.size() <= i))
         a.grow((i + 1));
@@ -1003,9 +992,9 @@ inline s_Extended& grow_if_oob_sXwG2Qu6(fu_VEC<s_Extended>& a, const int i)
 }
                                 #endif
 
-s_Target Scope_create_steyaZOo(s_Scope& scope, const fu_STR& kind, const fu_STR& name, const s_Type& type, const int flags, const unsigned status, const int nest, const s_Module& module)
+s_Target Scope_create_vJwCb5Oj(s_Scope& scope, const fu_STR& kind, const fu_STR& name, const s_Type& type, const int flags, const unsigned status, const int nest, const s_Module& module)
 {
-    fu_VEC<s_Overload>& overloads = (nest ? grow_if_oob_sXwG2Qu6(scope.extended, nest).locals : scope.overloads);
+    fu_VEC<s_Overload>& overloads = (nest ? grow_if_oob_FDumx48H(scope.extended, nest).locals : scope.overloads);
     /*MOV*/ const s_Target target = s_Target { (nest ? -nest : int(MODID_yuJMA1l6(module))), (overloads.size() + 1) };
     s_Overload item {};
     item.name = name;
@@ -1032,9 +1021,9 @@ void Scope_set_VGSSTPCP(fu_VEC<s_ScopeItem>& items, const fu_STR& id, const s_Ta
 inline constexpr int F_SHADOW = (1 << 23);
                                 #endif
 
-s_Target Scope_Typedef_w75mBtzv(s_Scope& scope, const fu_STR& id, const s_Type& type, const int flags, const fu_STR& name, const unsigned status, const s_Module& module)
+s_Target Scope_Typedef_hJ6IO1eT(s_Scope& scope, const fu_STR& id, const s_Type& type, const int flags, const fu_STR& name, const unsigned status, const s_Module& module)
 {
-    /*MOV*/ const s_Target target = Scope_create_steyaZOo(scope, "type"_fu, name, type, flags, status, 0, module);
+    /*MOV*/ const s_Target target = Scope_create_vJwCb5Oj(scope, "type"_fu, name, type, flags, status, 0, module);
     if (id)
         Scope_set_ATHtezm5(scope, id, target, !!(flags & F_SHADOW));
 
@@ -1114,20 +1103,20 @@ extern const s_Type t_never;
 s_Scope listGlobals_yuJMA1l6(const s_Module& module)
 {
     /*MOV*/ s_Scope scope {};
-    Scope_Typedef_w75mBtzv(scope, "i8"_fu, t_i8, F_PUB, (*(const fu_STR*)fu::NIL), 0u, module);
-    Scope_Typedef_w75mBtzv(scope, "i16"_fu, t_i16, F_PUB, (*(const fu_STR*)fu::NIL), 0u, module);
-    Scope_Typedef_w75mBtzv(scope, "i32"_fu, t_i32, F_PUB, (*(const fu_STR*)fu::NIL), 0u, module);
-    Scope_Typedef_w75mBtzv(scope, "i64"_fu, t_i64, F_PUB, (*(const fu_STR*)fu::NIL), 0u, module);
-    Scope_Typedef_w75mBtzv(scope, "u8"_fu, t_u8, F_PUB, (*(const fu_STR*)fu::NIL), 0u, module);
-    Scope_Typedef_w75mBtzv(scope, "u16"_fu, t_u16, F_PUB, (*(const fu_STR*)fu::NIL), 0u, module);
-    Scope_Typedef_w75mBtzv(scope, "u32"_fu, t_u32, F_PUB, (*(const fu_STR*)fu::NIL), 0u, module);
-    Scope_Typedef_w75mBtzv(scope, "u64"_fu, t_u64, F_PUB, (*(const fu_STR*)fu::NIL), 0u, module);
-    Scope_Typedef_w75mBtzv(scope, "f32"_fu, t_f32, F_PUB, (*(const fu_STR*)fu::NIL), 0u, module);
-    Scope_Typedef_w75mBtzv(scope, "f64"_fu, t_f64, F_PUB, (*(const fu_STR*)fu::NIL), 0u, module);
-    Scope_Typedef_w75mBtzv(scope, "bool"_fu, t_bool, F_PUB, (*(const fu_STR*)fu::NIL), 0u, module);
-    Scope_Typedef_w75mBtzv(scope, "byte"_fu, t_byte, F_PUB, (*(const fu_STR*)fu::NIL), 0u, module);
-    Scope_Typedef_w75mBtzv(scope, "void"_fu, t_void, F_PUB, (*(const fu_STR*)fu::NIL), 0u, module);
-    Scope_Typedef_w75mBtzv(scope, "never"_fu, t_never, F_PUB, (*(const fu_STR*)fu::NIL), 0u, module);
+    Scope_Typedef_hJ6IO1eT(scope, "i8"_fu, t_i8, F_PUB, (*(const fu_STR*)fu::NIL), 0u, module);
+    Scope_Typedef_hJ6IO1eT(scope, "i16"_fu, t_i16, F_PUB, (*(const fu_STR*)fu::NIL), 0u, module);
+    Scope_Typedef_hJ6IO1eT(scope, "i32"_fu, t_i32, F_PUB, (*(const fu_STR*)fu::NIL), 0u, module);
+    Scope_Typedef_hJ6IO1eT(scope, "i64"_fu, t_i64, F_PUB, (*(const fu_STR*)fu::NIL), 0u, module);
+    Scope_Typedef_hJ6IO1eT(scope, "u8"_fu, t_u8, F_PUB, (*(const fu_STR*)fu::NIL), 0u, module);
+    Scope_Typedef_hJ6IO1eT(scope, "u16"_fu, t_u16, F_PUB, (*(const fu_STR*)fu::NIL), 0u, module);
+    Scope_Typedef_hJ6IO1eT(scope, "u32"_fu, t_u32, F_PUB, (*(const fu_STR*)fu::NIL), 0u, module);
+    Scope_Typedef_hJ6IO1eT(scope, "u64"_fu, t_u64, F_PUB, (*(const fu_STR*)fu::NIL), 0u, module);
+    Scope_Typedef_hJ6IO1eT(scope, "f32"_fu, t_f32, F_PUB, (*(const fu_STR*)fu::NIL), 0u, module);
+    Scope_Typedef_hJ6IO1eT(scope, "f64"_fu, t_f64, F_PUB, (*(const fu_STR*)fu::NIL), 0u, module);
+    Scope_Typedef_hJ6IO1eT(scope, "bool"_fu, t_bool, F_PUB, (*(const fu_STR*)fu::NIL), 0u, module);
+    Scope_Typedef_hJ6IO1eT(scope, "byte"_fu, t_byte, F_PUB, (*(const fu_STR*)fu::NIL), 0u, module);
+    Scope_Typedef_hJ6IO1eT(scope, "void"_fu, t_void, F_PUB, (*(const fu_STR*)fu::NIL), 0u, module);
+    Scope_Typedef_hJ6IO1eT(scope, "never"_fu, t_never, F_PUB, (*(const fu_STR*)fu::NIL), 0u, module);
     return /*NRVO*/ scope;
 }
 

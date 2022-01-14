@@ -18,7 +18,6 @@
 #include <fu/vec/view_assign.h>
 #include <fu/view.h>
 
-struct s_ArgWrite;
 struct s_Argument;
 struct s_BitSet;
 struct s_CodegenOutput;
@@ -36,8 +35,8 @@ struct s_ModuleStats;
 struct s_Node;
 struct s_Overload;
 struct s_ParserOutput;
+struct s_RWRanges;
 struct s_Region;
-struct s_RemoteNode;
 struct s_Scope;
 struct s_ScopeItem;
 struct s_ScopeMemo;
@@ -237,15 +236,15 @@ struct s_Struct
 };
                                 #endif
 
-                                #ifndef DEF_s_RemoteNode
-                                #define DEF_s_RemoteNode
-struct s_RemoteNode
+                                #ifndef DEF_s_SolvedNode
+                                #define DEF_s_SolvedNode
+struct s_SolvedNode
 {
-    int nodeidx;
+    int signedidx;
     explicit operator bool() const noexcept
     {
         return false
-            || nodeidx
+            || signedidx
         ;
     }
 };
@@ -322,7 +321,7 @@ struct s_Overload
     s_Type type;
     int flags;
     unsigned status;
-    s_RemoteNode remote;
+    s_SolvedNode solved;
     explicit operator bool() const noexcept
     {
         return false
@@ -331,7 +330,7 @@ struct s_Overload
             || type
             || flags
             || status
-            || remote
+            || solved
         ;
     }
 };
@@ -351,22 +350,6 @@ struct s_BitSet
 };
                                 #endif
 
-                                #ifndef DEF_s_ArgWrite
-                                #define DEF_s_ArgWrite
-struct s_ArgWrite
-{
-    int nodeidx;
-    int arg_position;
-    explicit operator bool() const noexcept
-    {
-        return false
-            || nodeidx
-            || arg_position
-        ;
-    }
-};
-                                #endif
-
                                 #ifndef DEF_s_Argument
                                 #define DEF_s_Argument
 struct s_Argument
@@ -374,10 +357,10 @@ struct s_Argument
     fu_STR name;
     fu_STR autocall;
     s_Type type;
-    s_RemoteNode dEfault;
+    s_SolvedNode dEfault;
     int flags;
+    int local;
     s_BitSet risk_free;
-    s_ArgWrite written_via;
     explicit operator bool() const noexcept
     {
         return false
@@ -386,8 +369,8 @@ struct s_Argument
             || type
             || dEfault
             || flags
+            || local
             || risk_free
-            || written_via
         ;
     }
 };
@@ -477,17 +460,21 @@ struct s_Template
 };
                                 #endif
 
-                                #ifndef DEF_s_SolvedNode
-                                #define DEF_s_SolvedNode
-struct s_SolvedNode
+                                #ifndef DEF_s_RWRanges
+                                #define DEF_s_RWRanges
+struct s_RWRanges
 {
-    s_Target nodeown;
-    int nodeidx;
+    int reads0;
+    int reads1;
+    int writes0;
+    int writes1;
     explicit operator bool() const noexcept
     {
         return false
-            || nodeown
-            || nodeidx
+            || reads0
+            || reads1
+            || writes0
+            || writes1
         ;
     }
 };
@@ -501,10 +488,11 @@ struct s_SolvedNodeData
     int helpers;
     int flags;
     fu_STR value;
-    fu_VEC<s_SolvedNode> _items;
+    fu_VEC<s_SolvedNode> items;
     s_TokenIdx token;
     s_Type type;
     s_Target target;
+    s_RWRanges rwr;
     explicit operator bool() const noexcept
     {
         return false
@@ -512,10 +500,11 @@ struct s_SolvedNodeData
             || helpers
             || flags
             || value
-            || _items
+            || items
             || token
             || type
             || target
+            || rwr
         ;
     }
 };
@@ -593,7 +582,7 @@ struct s_Scope
                                 #define DEF_s_SolverOutput
 struct s_SolverOutput
 {
-    s_RemoteNode root;
+    s_SolvedNode root;
     s_Scope scope;
     int notes;
     s_SolverOutput(const s_SolverOutput&) = delete;

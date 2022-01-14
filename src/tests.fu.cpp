@@ -9,7 +9,6 @@
 #include <fu/vec/slice.h>
 #include <fu/view.h>
 
-struct s_ArgWrite;
 struct s_Argument;
 struct s_BitSet;
 struct s_CodegenOutput;
@@ -28,8 +27,8 @@ struct s_Node;
 struct s_Options;
 struct s_Overload;
 struct s_ParserOutput;
+struct s_RWRanges;
 struct s_Region;
-struct s_RemoteNode;
 struct s_Scope;
 struct s_ScopeItem;
 struct s_ScopeMemo;
@@ -247,15 +246,15 @@ struct s_Struct
 };
                                 #endif
 
-                                #ifndef DEF_s_RemoteNode
-                                #define DEF_s_RemoteNode
-struct s_RemoteNode
+                                #ifndef DEF_s_SolvedNode
+                                #define DEF_s_SolvedNode
+struct s_SolvedNode
 {
-    int nodeidx;
+    int signedidx;
     explicit operator bool() const noexcept
     {
         return false
-            || nodeidx
+            || signedidx
         ;
     }
 };
@@ -332,7 +331,7 @@ struct s_Overload
     s_Type type;
     int flags;
     unsigned status;
-    s_RemoteNode remote;
+    s_SolvedNode solved;
     explicit operator bool() const noexcept
     {
         return false
@@ -341,7 +340,7 @@ struct s_Overload
             || type
             || flags
             || status
-            || remote
+            || solved
         ;
     }
 };
@@ -361,22 +360,6 @@ struct s_BitSet
 };
                                 #endif
 
-                                #ifndef DEF_s_ArgWrite
-                                #define DEF_s_ArgWrite
-struct s_ArgWrite
-{
-    int nodeidx;
-    int arg_position;
-    explicit operator bool() const noexcept
-    {
-        return false
-            || nodeidx
-            || arg_position
-        ;
-    }
-};
-                                #endif
-
                                 #ifndef DEF_s_Argument
                                 #define DEF_s_Argument
 struct s_Argument
@@ -384,10 +367,10 @@ struct s_Argument
     fu_STR name;
     fu_STR autocall;
     s_Type type;
-    s_RemoteNode dEfault;
+    s_SolvedNode dEfault;
     int flags;
+    int local;
     s_BitSet risk_free;
-    s_ArgWrite written_via;
     explicit operator bool() const noexcept
     {
         return false
@@ -396,8 +379,8 @@ struct s_Argument
             || type
             || dEfault
             || flags
+            || local
             || risk_free
-            || written_via
         ;
     }
 };
@@ -487,17 +470,21 @@ struct s_Template
 };
                                 #endif
 
-                                #ifndef DEF_s_SolvedNode
-                                #define DEF_s_SolvedNode
-struct s_SolvedNode
+                                #ifndef DEF_s_RWRanges
+                                #define DEF_s_RWRanges
+struct s_RWRanges
 {
-    s_Target nodeown;
-    int nodeidx;
+    int reads0;
+    int reads1;
+    int writes0;
+    int writes1;
     explicit operator bool() const noexcept
     {
         return false
-            || nodeown
-            || nodeidx
+            || reads0
+            || reads1
+            || writes0
+            || writes1
         ;
     }
 };
@@ -511,10 +498,11 @@ struct s_SolvedNodeData
     int helpers;
     int flags;
     fu_STR value;
-    fu_VEC<s_SolvedNode> _items;
+    fu_VEC<s_SolvedNode> items;
     s_TokenIdx token;
     s_Type type;
     s_Target target;
+    s_RWRanges rwr;
     explicit operator bool() const noexcept
     {
         return false
@@ -522,10 +510,11 @@ struct s_SolvedNodeData
             || helpers
             || flags
             || value
-            || _items
+            || items
             || token
             || type
             || target
+            || rwr
         ;
     }
 };
@@ -603,7 +592,7 @@ struct s_Scope
                                 #define DEF_s_SolverOutput
 struct s_SolverOutput
 {
-    s_RemoteNode root;
+    s_SolvedNode root;
     s_Scope scope;
     int notes;
     s_SolverOutput(const s_SolverOutput&) = delete;
@@ -1000,6 +989,8 @@ void runTests_n07RecyR()
     ZERO_XdvOmfpz("\n        pub fn ZERO(implicit ref sum: i32, mut x: i32) {\n            while (x) {\n                ZERO( --x ); // Same as below but without the unused 'y' thing,\n                sum += x;    //  everything works because the call to ZERO isnt really unconditional,\n            }                //   and if it were, then the never return would actually be correct.\n        }\n\n        fn main() {\n            let implicit mut sum = 0;\n            ZERO(4);\n            return sum - 11;\n        }\n    "_fu, testdiffs);
     ZERO_XdvOmfpz("\n        pub fn ZERO(implicit ref sum: i32, mut x: i32) {\n            while (x) {\n                let y = x / 2;\n                ZERO( --x ); // Unconditional self recursion, initially hinted as t_never,\n                ZERO(   y ); //  meaning y remains unused here on first solve.\n                sum += x;\n            }\n        }\n\n        fn main() {\n            let implicit mut sum = 0;\n            ZERO(4);\n            return sum - 12;\n        }\n    "_fu, testdiffs);
     TODO_XdvOmfpz("\n        struct Node {\n            items: Node[];\n        }\n\n        fn solve(root: Node)\n        {\n            fn solveBlock(node: Node) {\n                let items = solveNodes(node.items);\n                //*\n                return solveBlock(items);\n            }\n\n            fn solveBlock(items: i32[]) {\n                //*/\n                if (!Lifetime_allowsMutrefReturn(items))\n                    throw(\"Nope!\");\n\n                return items;\n            }\n\n            fn solveNode(node: Node, implicit ref next: i32) {\n                if (!node.items)\n                    return [ next++ ];\n\n                let implicit CTX = node.items.len; // <- this shows up as an closure-arg with an outdated revision\n                return solveBlock(node);\n            }\n\n            fn Lifetime_each(items, visit)\n                for (mut i = items.len; i --> 0; )\n                    visit(items[i]);\n\n            fn Lifetime_allowsMutrefReturn(items: i32[]) {\n                Lifetime_each(:items, visit: |item, implicit CTX: i32| {\n                    if (item == CTX)\n                        return false;\n                });\n\n                return true;\n            }\n\n            fn solveNodes(nodes: Node[]) {\n                mut result: i32[];\n                for (mut i = 0; i < nodes.len; i++)\n                    result ~= solveNode(nodes[i]);\n\n                return result;\n            }\n\n            return solveNode(root);\n        }\n\n        fn main() {\n            let implicit mut next = 0;\n\n            let solve = solve(Node([\n                Node([ Node ]),\n                Node(),\n            ]));\n\n            return solve.len - 2;\n        }\n    "_fu, testdiffs);
+    ZERO_XdvOmfpz("\n        fn woot(implicit x: i32) = x;\n\n        fn main() {\n            <fail no implicit x>\n            <pass/>\n            let implicit x = 2;\n            </fail>\n            return woot() - 2;\n        }\n    "_fu, testdiffs);
+    ZERO_XdvOmfpz("\n        <fail no implicit y>\n        fn woot(implicit y: i32) = y;\n        <pass/>\n        fn woot(implicit x: i32) = x;\n        </fail>\n\n        fn hey() {\n            let implicit x = 2;\n            return woot() - 2;\n        }\n\n        let here = hey();\n        fn main() = here;\n    "_fu, testdiffs);
     ZERO_XdvOmfpz("\n        let x = 1;\n\n        fn test(): &i32\n            x;\n\n        return test - 1;\n    "_fu, testdiffs);
     ZERO_XdvOmfpz("\n        let a = 1;\n        let x: &i32 = a;\n\n        return a - x;\n    "_fu, testdiffs);
     ZERO_XdvOmfpz("\n        struct Test {\n            x: &i32;\n        }\n\n        let a = 1;\n        let test = Test(a);\n\n        return test.x - 1;\n    "_fu, testdiffs);
@@ -1050,7 +1041,7 @@ void runTests_n07RecyR()
     ZERO_XdvOmfpz("\n        struct Test { a?: i32; b?: i32; }\n        let t = Test(b: 1);\n        return t.b - 1 + t.a * 7;\n    "_fu, testdiffs);
     ZERO_XdvOmfpz("\n        struct Test { x?: i32; };\n        fn hey() Test();\n        return hey.x;\n    "_fu, testdiffs);
     ZERO_XdvOmfpz("\n        struct Test { x?: i32; };\n        fn hey(y: i32 = 0)\n            y   ? Test(1)\n                : Test();\n\n        return hey.x;\n    "_fu, testdiffs);
-    ZERO_XdvOmfpz("\n        <fail bad args>\n        fn test(a = \"hello\") a.len;     <pass/>\n        fn test(a = 0) a + 1;           </fail>\n        fn main() test(-1);\n    "_fu, testdiffs);
+    ZERO_XdvOmfpz("\n        <fail bad call>\n        fn test(a = \"hello\") a.len;     <pass/>\n        fn test(a = 0) a + 1;           </fail>\n        fn main() test(-1);\n    "_fu, testdiffs);
     TODO_XdvOmfpz("\n        fn test(a = 3, b = a * 2) a + b;\n        fn main() test + test(a: -1) * 3;\n    "_fu, testdiffs);
     ZERO_XdvOmfpz("\n        let s = 7;\n        return s ? 0 : 1;\n    "_fu, testdiffs);
     ZERO_XdvOmfpz("\n        let s = 0;\n        return s ? 1 : 0;\n    "_fu, testdiffs);
@@ -1094,14 +1085,14 @@ void runTests_n07RecyR()
     ZERO_XdvOmfpz("\n        //\n        // The -1.abs problem.\n        //\n        // Ruby lexes the minus into the numeric literal.\n        //  This is kinda inconsistent, altough it does make sense.\n        //\n        // Rust & all c-likes lex to -abs(1).\n        //  Rust linters warn about this.\n        //\n        // One thing we can do is change the precedence of some unaries\n        //  to above method call - others, like ! benefit from usual precedence.\n        //   In my experience, the unary * op in c/cpp always disappoints re: precedence,\n        //    but the & op usually works the way you want it to.\n        //     So introducing more precedence rules is a really questionable idea.\n        //\n        // We'll go the rust way for starters,\n        //  this will be a compile time error for now.\n        //\n        fn test()   <fail parenthes explicit>\n            -1.0    <pass/>\n            (-1.0)  </fail>\n                .abs;\n\n        fn main() test ? 0 : 7;\n    "_fu, testdiffs);
     ZERO_XdvOmfpz("\n        fn test(ref a: i32, ref b: i32) {\n            return (++a) + (++b);\n        }\n\n        fn main() {\n            mut x = 0;\n\n            <fail alias>\n            ref y = x; <pass/>\n            mut y = x; </fail>\n\n            let z = test(x, y);\n            return x+y - z;\n        }\n    "_fu, testdiffs);
     ZERO_XdvOmfpz("\n        pub fn test_inner(ref a: i32, ref b: i32)\n            (++a) + (++b);\n\n        pub fn test_outer(ref a: i32, ref b: i32)\n            test_inner(a, b);\n\n        fn main() {\n            mut x = 0;\n\n            <fail alias>\n            ref y = x; <pass/>\n            mut y = x; </fail>\n\n            let z = test_outer(x, y);\n            return x+y - z;\n        }\n    "_fu, testdiffs);
-    ZERO_XdvOmfpz("\n        fn test(ref a: i32[]) {\n            ref b = a[0];\n            if (a.len & 1) {\n                <fail invalidate>\n                a ~= 1; // Invalidates 'b'.\n                <pass/>\n                b++;\n                </fail>\n            }\n            b++;\n        }\n\n        fn main() {\n            mut arr = [ 1 ]; test(arr);\n            mut sum = 0;\n            for (mut i = 0; i < arr.len; i++) sum += arr[i];\n            return sum - 3;\n        }\n    "_fu, testdiffs);
+    ZERO_XdvOmfpz("\n        fn test(ref a: i32[]) {\n            ref b = a[0];\n            if (a.len & 1) {\n                <fail invalidate 9:13 6:19>\n                a ~= 1; // Invalidates 'b'.\n                <pass/>\n                b++;\n                </fail>\n            }\n            b++;\n        }\n\n        fn main() {\n            mut arr = [ 1 ]; test(arr);\n            mut sum = 0;\n            for (mut i = 0; i < arr.len; i++) sum += arr[i];\n            return sum - 3;\n        }\n    "_fu, testdiffs);
     ZERO_XdvOmfpz("\n        nocopy struct nci32 { i: i32; };\n\n        fn test(ref a: nci32, b: nci32) a.i++ || b.i;\n        fn main() {\n            mut x = nci32(0);\n            <fail alias>\n            ref y = x;          <pass/>\n            let y = nci32(0);   </fail>\n\n            return test(x, y);\n        }\n    "_fu, testdiffs);
-    ZERO_XdvOmfpz("\n        fn test(ref a: i32[]) {\n            ref b = a[0];\n            if (a.len & 1) { // Lets be extra sure here.\n                <fail invalidate>\n                a ~= 1; // Invalidates 'b'.\n                b++;\n                <pass/>\n                b++;\n                a ~= 1;\n                </fail>\n            }\n        }\n\n        fn main() {\n            mut arr = [ 1 ]; test(arr);\n            mut sum = 0;\n            for (mut i = 0; i < arr.len; i++) sum += arr[i];\n            return sum - 3;\n        }\n    "_fu, testdiffs);
-    ZERO_XdvOmfpz("\n        fn test(ref a: i32[]) {\n            ref b = a[0];\n            for (mut i = 2; i --> 0; )\n            {\n                b++; // Same thing but reordered as a loop.\n                if (a.len & 3) {\n                    <fail inval next iter>\n                    a ~= 1; // Invalidates 'b'.\n                    <pass/>\n                    b++;\n                    </fail>\n                }\n            }\n            a ~= 100; // Invalidates 'b' but that's fine!\n        }\n\n        fn main() {\n            mut arr = [ 1 ]; test(arr);\n            mut sum = 0;\n            for (mut i = 0; i < arr.len; i++) sum += arr[i];\n            return sum - 105;\n        }\n    "_fu, testdiffs);
+    ZERO_XdvOmfpz("\n        fn test(ref a: i32[]) {\n            ref b = a[0];\n            if (a.len & 1) { // Lets be extra sure here.\n                <fail invalidate 7:17 6:19>\n                a ~= 1; // Invalidates 'b'.\n                b++;\n                <pass/>\n                b++;\n                a ~= 1;\n                </fail>\n            }\n        }\n\n        fn main() {\n            mut arr = [ 1 ]; test(arr);\n            mut sum = 0;\n            for (mut i = 0; i < arr.len; i++) sum += arr[i];\n            return sum - 3;\n        }\n    "_fu, testdiffs);
+    ZERO_XdvOmfpz("\n        fn test(ref a: i32[]) {\n            ref b = a[0];\n            for (mut i = 2; i --> 0; )\n            {\n                b++; // Same thing but reordered as a loop.\n                if (a.len & 3) {\n                    <fail inval next iter 9:23 6:17>\n                    a ~= 1; // Invalidates 'b'.\n                    <pass/>\n                    b++;\n                    </fail>\n                }\n            }\n            a ~= 100; // Invalidates 'b' but that's fine!\n        }\n\n        fn main() {\n            mut arr = [ 1 ]; test(arr);\n            mut sum = 0;\n            for (mut i = 0; i < arr.len; i++) sum += arr[i];\n            return sum - 105;\n        }\n    "_fu, testdiffs);
     ZERO_XdvOmfpz("\n        // both args alias, but there's no risk of inval.\n        fn incr_a_or_b(ref a: i32, ref b: i32)\n            (a || b)++;\n\n        fn main() {\n            mut Z = 0;\n            mut A = 1;\n            mut B = 0;\n\n            incr_a_or_b(Z, B); // incr B, now 1\n            incr_a_or_b(A, B); // incr A, now 2\n            incr_a_or_b(B, B); // incr _target, now 2 // alias!\n\n            return (100*A + B) - 202;\n        }\n    "_fu, testdiffs);
     ZERO_XdvOmfpz("\n        struct V { v: i32; };\n\n        fn main() {\n            mut A: V = [ 1 ];\n            ref a = A.v;\n            ref b = A.v;\n            ref c = a || b;\n            return ++++c - 3; // double mutation of a union\n        }\n    "_fu, testdiffs);
     ZERO_XdvOmfpz("\n        struct V { v: i32; };\n\n        fn main() {\n            mut A: V = [ 1 ];\n            ref a = A.v;\n            ref b = A.v;\n            return ++++(a || b) - 3; // same, without a helper var\n        }\n    "_fu, testdiffs);
-    ZERO_XdvOmfpz("\n        struct V { v: i32; w?: i32; ww?: i32; };\n\n        fn main() {\n            mut A: V = [ 1 ];\n            mut B: V = [ 1 ];\n\n            <fail invalidate>\n            ref aa = A.v || A.w; <pass/>\n            fn  aa = A.v || A.w; </fail>\n\n            ref bb = B.v || B.w;\n            ++++bb;\n\n            ref a = A.v || A.ww;\n            ref b = B.v || B.ww;\n\n            ref c = a || b;\n            ++++c;\n\n            return aa - 3; // same, without a helper var\n        }\n    "_fu, testdiffs);
+    ZERO_XdvOmfpz("\n        struct V { v: i32; w?: i32; ww?: i32; };\n\n        fn main() {\n            mut A: V = [ 1 ];\n            mut B: V = [ 1 ];\n\n            <fail invalidate 20:20 18:15>\n            ref aa = A.v || A.w; <pass/>\n            fn  aa = A.v || A.w; </fail>\n\n            ref bb = B.v || B.w;\n            ++++bb;\n\n            ref a = A.v || A.ww;\n            ref b = B.v || B.ww;\n\n            ref c = a || b;\n            ++++c;\n\n            return aa - 3; // same, without a helper var\n        }\n    "_fu, testdiffs);
     ZERO_XdvOmfpz("\n        // a can alias b\n        // c can alias d\n        pub fn ab_cd (ref a: i32, ref b: i32, ref c: i32, ref d: i32) {\n            ref ab = a || b;\n            ref cd = c || d;\n            ++++ab;\n            ++++cd;\n        }\n\n        fn main() {\n            mut ab = 0;\n            mut cd = 0;\n\n            <fail alias>\n            ab_cd(ab, cd, ab, cd); <pass/>\n            ab_cd(ab, ab, cd, cd); </fail>\n\n            return ab - cd;\n        }\n    "_fu, testdiffs);
     ZERO_XdvOmfpz("\n        struct X { i: i32; j: i32; };\n        // a can alias b\n        // c can alias d\n        pub fn ab_cd_defer(ref a: X, ref b: X, ref c: X, ref d: X, j?: bool) {\n            defer {\n                ref ab = a || b;\n                ref abi = j ? ab.j : ab.i;\n                ++++abi;\n            }\n            ref cd = c || d;\n            ref cdi = j ? cd.j : cd.i;\n            ++++cdi;\n        }\n\n        fn main() {\n            mut ab = X(0, 0);\n            mut cd = X(0, 0);\n\n            <fail alias>\n            ab_cd_defer(ab, cd, ab, cd); <pass/>\n            ab_cd_defer(ab, ab, cd, cd); </fail>\n\n            return ab.i - cd.i;\n        }\n    "_fu, testdiffs);
     ZERO_XdvOmfpz("\n        // a can alias b\n        // c can alias d\n        pub fn ab_cd_inner (ref a: i32, ref b: i32, ref c: i32, ref d: i32) {\n            ref ab = a || b;\n            ref cd = c || d;\n            ++++ab;\n            ++++cd;\n        }\n\n        pub fn ab_cd_outer (ref a: i32, ref b: i32, ref c: i32, ref d: i32)\n            ab_cd_inner(a, b, c, d);\n\n        fn main() {\n            mut ab = 0;\n            mut cd = 0;\n\n            <fail alias>\n            ab_cd_outer(ab, cd, ab, cd); <pass/>\n            ab_cd_outer(ab, ab, cd, cd); </fail>\n\n            return ab - cd;\n        }\n    "_fu, testdiffs);
@@ -1110,17 +1101,17 @@ void runTests_n07RecyR()
     ZERO_XdvOmfpz("\n        // same as below -\n        //  but using a helper variable\n        //   which provides a \"name\" for the outcome of a|b.\n        fn incr_a_or_b_by2_via_x(ref a: i32, ref b: i32) {\n            ref x = a || b;\n            ++++x;\n        }\n\n        fn main() {\n            mut Z = 0;\n            mut A = 2;\n            mut B = 0;\n\n            incr_a_or_b_by2_via_x(Z, B); // incr B, now 2\n            incr_a_or_b_by2_via_x(A, B); // incr A, now 4\n            incr_a_or_b_by2_via_x(B, B); // incr _target, now 4 // alias!\n\n            return (100*A + B) - 404;\n        }\n    "_fu, testdiffs);
     ZERO_XdvOmfpz("\n        // same as above -\n        //  but notice we increment twice, which breaks current setup.\n        fn incr_a_or_b_by2(ref a: i32, ref b: i32)\n            ++++(a || b);\n\n        fn main() {\n            mut Z = 0;\n            mut A = 2;\n            mut B = 0;\n\n            incr_a_or_b_by2(Z, B); // incr B, now 2\n            incr_a_or_b_by2(A, B); // incr A, now 4\n            incr_a_or_b_by2(B, B); // incr _target, now 4 // alias!\n\n            return (100*A + B) - 404;\n        }\n    "_fu, testdiffs);
     ZERO_XdvOmfpz("\n        fn alias(ref arr: i32[], ref item: i32) {\n            arr ~= 1;\n            return item;\n        }\n\n        fn main() {\n            mut a = [ 0 ];\n            <fail alias>\n            ref c = alias(a, a[0]);\n            <pass/>\n            mut b = [ 0 ];\n            ref c = alias(a, b[0]);\n            </fail>\n            return c++;\n        }\n    "_fu, testdiffs);
-    ZERO_XdvOmfpz("\n        fn test(ref a: i32[], ref b: i32[]) {\n            <fail invalidate>\n            ref aa = a[0]; <pass/>\n            fn  aa() a[0]; </fail>\n\n            ref bb = b[0]; a ~= 1; // Invalidates 'aa' if ref.\n            ref cc = bb || aa;     // Mustn't compile.\n            return cc;\n        }\n\n        fn main() { mut a = [ 0 ]; mut b = [ 0 ]; return test(a, b); }\n    "_fu, testdiffs);
-    ZERO_XdvOmfpz("\n        fn test(ref a: i32[], ref b: i32[]) {\n            <fail invalidate>\n            ref aa = a[0]; <pass/>\n            fn  aa() a[0]; </fail>\n\n            ref bb = b[0]; a ~= 1; // Invalidates 'aa' if ref.\n            return bb || aa;       // Same as above, but no explicit binding.\n        }\n\n        fn main() { mut a = [ 0 ]; mut b = [ 0 ]; return test(a, b); }\n    "_fu, testdiffs);
-    ZERO_XdvOmfpz("\n        fn noop(x) x;\n        fn test(ref a: i32[], ref b: i32[]) {\n            <fail invalidate>\n            ref aa = a[0]; <pass/>\n            fn  aa() a[0]; </fail>\n\n            ref bb = b[0]; a ~= 1; // Invalidates 'aa' if ref.\n            return noop(bb || aa); // Same as above, but bound at callsite.\n        }\n\n        fn main() { mut a = [ 0 ]; mut b = [ 0 ]; return test(a, b); }\n    "_fu, testdiffs);
-    ZERO_XdvOmfpz("\n        fn either(a, b) a || b;\n        fn test(ref a: i32[], ref b: i32[]) {\n            <fail invalidate>\n            ref aa = a[0]; <pass/>\n            fn aa()  a[0]; </fail>\n\n            ref bb = b[0]; a ~= 1; // Invalidates 'aa' if ref.\n            return either(bb, aa); // For completeness.\n        }\n\n        fn main() { mut a = [ 0 ]; mut b = [ 0 ]; return test(a, b); }\n    "_fu, testdiffs);
+    ZERO_XdvOmfpz("\n        fn test(ref a: i32[], ref b: i32[]) {\n            <fail invalidate 7:28 6:30>\n            ref aa = a[0]; <pass/>\n            fn  aa() a[0]; </fail>\n\n            ref bb = b[0]; a ~= 1; // Invalidates 'aa' if ref.\n            ref cc = bb || aa;     // Mustn't compile.\n            return cc;\n        }\n\n        fn main() { mut a = [ 0 ]; mut b = [ 0 ]; return test(a, b); }\n    "_fu, testdiffs);
+    ZERO_XdvOmfpz("\n        fn test(ref a: i32[], ref b: i32[]) {\n            <fail invalidate 7:26 6:30>\n            ref aa = a[0]; <pass/>\n            fn  aa() a[0]; </fail>\n\n            ref bb = b[0]; a ~= 1; // Invalidates 'aa' if ref.\n            return bb || aa;       // Same as above, but no explicit binding.\n        }\n\n        fn main() { mut a = [ 0 ]; mut b = [ 0 ]; return test(a, b); }\n    "_fu, testdiffs);
+    ZERO_XdvOmfpz("\n        fn noop(x) x;\n        fn test(ref a: i32[], ref b: i32[]) {\n            <fail invalidate 8:31 7:30>\n            ref aa = a[0]; <pass/>\n            fn  aa() a[0]; </fail>\n\n            ref bb = b[0]; a ~= 1; // Invalidates 'aa' if ref.\n            return noop(bb || aa); // Same as above, but bound at callsite.\n        }\n\n        fn main() { mut a = [ 0 ]; mut b = [ 0 ]; return test(a, b); }\n    "_fu, testdiffs);
+    ZERO_XdvOmfpz("\n        fn either(a, b) a || b;\n        fn test(ref a: i32[], ref b: i32[]) {\n            <fail invalidate 8:31 7:30>\n            ref aa = a[0]; <pass/>\n            fn aa()  a[0]; </fail>\n\n            ref bb = b[0]; a ~= 1; // Invalidates 'aa' if ref.\n            return either(bb, aa); // For completeness.\n        }\n\n        fn main() { mut a = [ 0 ]; mut b = [ 0 ]; return test(a, b); }\n    "_fu, testdiffs);
     ZERO_XdvOmfpz("\n        fn what(ref cond: i32, ref cons: i32)\n            cond && (cons += 1);\n\n        fn main() {\n            mut x = 1;\n            return what(x, x) - 2;\n        }\n    "_fu, testdiffs);
     ZERO_XdvOmfpz("\n        struct Target {\n            overload: i32[];\n            extended: i32[];\n        };\n\n        fn which(ref t: Target, i: i32) i & 1\n            ? t.overload\n            : t.extended;\n\n        fn test(ref target: Target)\n        {\n            ref overload = target.which(target.overload.len);\n            ref extended = target.which(target.overload.len + 1);\n\n            mut change = false;\n            if (overload)\n            {\n                for (mut i = 0; i < overload.len; i++)\n                {\n                    let a = overload[i];\n                    let b = extended[i];\n                    if (a != b)\n                    {\n                        change = true;\n                        break;\n                    }\n                }\n            }\n\n            if (change)\n            {\n                extended[0] = 3;\n\n                shadow ref overload = target.which(target.overload.len);\n                overload[0] = 5; // Said write to overload invalidates ext on next loop iter.\n            }\n        }\n\n        fn main()\n        {\n            mut target = Target([ 0 ], [ 1 ]);\n            target.test();\n            return target.overload[0] * 10 + target.extended[0] * 100 - 350;\n        }\n    "_fu, testdiffs);
     TODO_XdvOmfpz("\n        fn test(ref a: i32, ref b: i32) {\n            a += b;\n            b += a;\n        }\n\n        struct AB { a: i32; b: i32 };\n\n        fn main() {\n            mut ab = AB(1, 2);\n            <alt>\n            ref a = ab.a;\n            ref b = ab.b;\n            test(a, b);\n            <alt/>\n            ref a = ab.a;\n            test(a, ab.b);\n            <alt/>\n            test(ab.a, ab.b);\n            </alt>\n            return ab.b - 5;\n        }\n    "_fu, testdiffs);
     TODO_XdvOmfpz("\n        struct Helper { vars: i32[]; };\n\n        fn test(ref _helpers: Helper[], helpers_idx: i32) {\n            ref old = _helpers[helpers_idx - 1].vars;\n            ref new = _helpers[helpers_idx    ].vars;\n            new    ~= old[helpers_idx];\n        }\n\n        fn main() {\n            mut helpers = [ Helpers([ 1, 2 ]), Helpers([ 4, 8 ]) ];\n            test(helpers, 1);\n            return helpers[1][2] - 2;\n        }\n    "_fu, testdiffs);
     ZERO_XdvOmfpz("\n        fn outer() {\n            mut sum = 0;\n            mut x = 1;\n            for (;;) {      // bck complained that the write to 'x' at the end\n                let v = x;  //  invalidates use of 'v' on next loop iter here, which is not true\n                for (mut i = 0; i < 10; i++) {\n                    sum += v;\n                    if (sum > 40)\n                        return sum;\n                }\n\n                x = v * 2;\n            }\n        }\n\n        fn main() outer - 42;\n    "_fu, testdiffs);
     ZERO_XdvOmfpz("\n        fn append_self(ref a: i32[])\n        {\n            let b = a;\n            a ~= b; // b narrowed down to a slice which is non-copyable\n                    //  but it (unfortunately) wanted to copy to a temp.\n        }\n\n        fn main() {\n            mut arr = [1, 2];\n            arr.append_self();\n            return arr[2] + arr[3] - 3;\n        }\n    "_fu, testdiffs);
-    ZERO_XdvOmfpz("\n        fn but_is_it_pure(ref x: i32) {\n            <fail not pure>\n            return x++; <pass/>\n            return x;   </fail>\n        }\n        pure fn pure_fn(ref a: i32, ref b: i32) {\n            ref x = a || b;\n            return but_is_it_pure(x);\n        }\n        fn main() {\n            mut x = 0;\n            mut y = 0;\n            return pure_fn(x, y);\n        }\n    "_fu, testdiffs);
+    ZERO_XdvOmfpz("\n        fn but_is_it_pure(ref x: i32) {\n            <fail not pure 6:9 8:34 4:21>\n            return x++; <pass/>\n            return x;   </fail>\n        }\n        pure fn pure_fn(ref a: i32, ref b: i32) {\n            ref x = a || b;\n            return but_is_it_pure(x);\n        }\n        fn main() {\n            mut x = 0;\n            mut y = 0;\n            return pure_fn(x, y);\n        }\n    "_fu, testdiffs);
     ZERO_XdvOmfpz("\n        fn main() {\n            mut _info: string[];\n\n            pure fn fail(mut reason: string = \"\") {\n                for (mut i = _info.len; i --> 0; ) {\n                    ref info = _info[i]; // notice the ref, has to relax away\n                    reason ~= info<alt> && i<alt/> ? i : []</alt>;\n                }\n\n                return reason;\n            }\n\n            return fail.len;\n        }\n    "_fu, testdiffs);
     ZERO_XdvOmfpz("\n        fn main() {\n            mut _info = [ 101 ];\n\n            pure fn fail(mut reason: string = \"\") {\n                ref info = _info[0]; // <- notice the ref, has to relax away\n                reason ~= info<alt> && (\"\" ~ info)<alt/> ? (\"\" ~ info) : []</alt>;\n                return reason;\n            }\n\n            return fail.len - 3; // \"101\".len is 3.\n        }\n    "_fu, testdiffs);
     ZERO_XdvOmfpz("\n        struct Helpers { row: i32[]; };\n\n        fn test(ref _helpers: Helpers[], mut N: i32, row: i32)\n        {\n            fn solveNode_H(h: Helpers) {\n                while (N % h.row[h.row.len - 1]) {\n                    N--;\n                    _helpers.grow(_helpers.len * 2);\n                }\n            }\n\n            fn solveJump() {\n                solveNode_H(_helpers[row]);\n                return _helpers.len;\n            }\n\n            return solveJump() - 1 * 2*2*2*2;\n        }\n\n        fn main()\n        {\n            mut _helpers = [ Helpers([ 1, 2, 3, 4, 5 ]) ];\n            return test(_helpers, row: 0, N: 4)\n        }\n    "_fu, testdiffs);
@@ -1136,9 +1127,9 @@ void runTests_n07RecyR()
     TODO_XdvOmfpz("\n        fn indexIntoImplicit(j: i32, implicit strings: string[]) strings[j];\n\n        fn selfRecurBeforeImplicitDep(x: i32)\n        {\n            // On second solve we're talking about a region, but the argnode is gone.\n            fn T(i: i32) selfRecurBeforeImplicitDep(i / 2);\n            if (x > 1) return T(x);\n            return indexIntoImplicit(x);\n        }\n\n        fn main() {\n            let strings = [ \"a\", \"b\" ];\n            return selfRecurBeforeImplicitDep(2) == \"b\" ? 0 : 1;\n        }\n    "_fu, testdiffs);
     TODO_XdvOmfpz("\n        //*F\n        nocopy\n        /*/\n        //*/\n        struct Type       { canon: string; };\n        struct SolvedNode {  type: Type;   };\n\n        fn solved(type: Type, implicit ref out: SolvedNode[]) {\n            out.grow(out.len * 100 + 1);\n\n            ref tail = out[out.len - 1];\n            tail.type.canon = type.canon;\n            return tail;\n        }\n\n        fn createMap(a: Type, b: Type): Type {\n            return Type(a.canon ~ b.canon);\n        }\n\n        fn evalTypeAnnot(nodes: string[]): SolvedNode\n        {\n            // Each T() call should invalidate the results from previous T() calls -\n            //  so this shouldn't compile if Type is nocopy.\n            fn T(i: i32)\n                evalTypeAnnot([ nodes[i] ]).type;\n\n            if (nodes.len > 1)\n                return solved(createMap(T(0), T(1)));\n\n            return solved(Type(nodes[0]));\n        }\n\n        fn main() {\n            let implicit mut out: SolvedNode[];\n            let annot = evalTypeAnnot([ \"a\", \"b\" ]);\n            return annot.type.canon.len * 1000 + out.len - 2101;\n        }\n    "_fu, testdiffs);
     ZERO_XdvOmfpz("\n        fn main() {\n            mut x = 0;\n            let s = ++x + ++x;\n            return s - 3; // Not 4! one arg must invalidate\n        }\n    "_fu, testdiffs);
-    ZERO_XdvOmfpz("\n        <fail arg inval subsequent write>\n        nocopy             <pass/></fail>\n        struct X { x: i32; }\n        fn sum(a: X, b: X) a.x + b.x;\n\n        fn incr(ref x: X) {\n            x.x++;\n            return x;\n        }\n\n        fn main() {\n            mut x: X;\n            return sum(x.incr, x.incr) - 3; // Not 4! one arg must invalidate\n        }\n    "_fu, testdiffs);
-    ZERO_XdvOmfpz("\n        <fail arg inval subsequent write>\n        nocopy             <pass/></fail>\n        struct X { x: i32; }\n        struct Y { y: X;   }\n\n        fn x(y: Y) y.y.x;\n        fn sum(a, b) a.x + b.x;\n\n        fn incr(ref x: X) {\n            x.x++;\n            return x;\n        }\n\n        fn incr(ref y: Y) {\n            y.y.x++;\n            return y;\n        }\n\n        fn main() {\n            mut x: Y;\n            ref y = x.y;\n            return sum(y.incr, x.incr) - 3; // Not 4! one arg must invalidate\n        }\n    "_fu, testdiffs);
-    ZERO_XdvOmfpz("\n        <fail arg inval subsequent write>\n        nocopy             <pass/></fail>\n        struct X { x: i32; };\n\n        fn incr(ref x: X) {\n            x.x++;\n            return x;\n        }\n\n        fn +=(a: X, b: X) {\n            // Notice, this is not a real +=,\n            //  just checking the order of eval here.\n            return a.x + b.x;\n        }\n\n        fn test(ref x: X, ref y: X) {\n            ref xy = y || x;\n            return x.incr += xy.incr; // <- xy invalidated by x.incr\n        }\n\n        fn main() {\n            mut x: X;\n            mut y: X;\n            return test(x, y) - 3;\n        }\n    "_fu, testdiffs);
+    ZERO_XdvOmfpz("\n        <fail arg inval subsequent write 14:23 14:25 14:33 8:16>\n        nocopy                                    <pass/></fail>\n        struct X { x: i32; }\n        fn sum(a: X, b: X) a.x + b.x;\n\n        fn incr(ref x: X) {\n            x.x++;\n            return x;\n        }\n\n        fn main() {\n            mut x: X;\n            return sum(x.incr, x.incr) - 3; // Not 4! one arg must invalidate\n        }\n    "_fu, testdiffs);
+    ZERO_XdvOmfpz("\n        <fail arg inval subsequent write 23:23 23:25 23:33 16:18>\n        nocopy                                     <pass/></fail>\n        struct X { x: i32; }\n        struct Y { y: X;   }\n\n        fn x(y: Y) y.y.x;\n        fn sum(a, b) a.x + b.x;\n\n        fn incr(ref x: X) {\n            x.x++;\n            return x;\n        }\n\n        fn incr(ref y: Y) {\n            y.y.x++;\n            return y;\n        }\n\n        fn main() {\n            mut x: Y;\n            ref y = x.y;\n            return sum(y.incr, x.incr) - 3; // Not 4! one arg must invalidate\n        }\n    "_fu, testdiffs);
+    ZERO_XdvOmfpz("\n        <fail arg inval subsequent write 19:27 19:32 19:21 7:16>\n        nocopy                                    <pass/></fail>\n        struct X { x: i32; };\n\n        fn incr(ref x: X) {\n            x.x++;\n            return x;\n        }\n\n        fn +=(a: X, b: X) {\n            // Notice, this is not a real +=,\n            //  just checking the order of eval here.\n            return a.x + b.x;\n        }\n\n        fn test(ref x: X, ref y: X) {\n            ref xy = y || x;\n            return x.incr += xy.incr; // <- xy invalidated by x.incr\n        }\n\n        fn main() {\n            mut x: X;\n            mut y: X;\n            return test(x, y) - 3;\n        }\n    "_fu, testdiffs);
     ZERO_XdvOmfpz("\n        <alt>\n        nocopy\n        </alt>\n        struct X { items: i32[]; };\n        fn popfirst(mut arr: X[]) arr[0];\n        fn main() popfirst([ X() ]).items.len;\n    "_fu, testdiffs);
     ZERO_XdvOmfpz("\n        nocopy struct SolvedNode {\n            items: SolvedNode[];\n        };\n\n        fn test(mut a: SolvedNode, mut b: SolvedNode) {\n            <alt>\n            ref n = a || b;\n            <alt/>\n            ref n = a.items ? a : b;\n            </alt>\n            return n;\n        }\n\n        fn main() test([], []).items.len;\n    "_fu, testdiffs);
     ZERO_XdvOmfpz("\n        <fail cannot access invalidated>\n        nocopy            <pass/></fail>\n        struct SolvedNode { len: i32; }\n\n        fn createBlock(mut last: SolvedNode) {\n            let tail     = last || last;\n            let unwrap   = tail || tail;\n            last.len--;\n            return unwrap;\n        }\n\n        fn main() {\n            return createBlock([]).len;\n        }\n    "_fu, testdiffs);
@@ -1201,7 +1192,7 @@ void runTests_n07RecyR()
     ZERO_XdvOmfpz("\n        struct S { i: i32; }\n\n        let a = S(0);\n        let b = S(3);\n\n        return a.i\n            || (b || S(4)).i * 2 - (a || S(6)).i\n            && throw(\"woot\");\n    "_fu, testdiffs);
     ZERO_XdvOmfpz("\n        struct TrueStory { kind: string; value: string; };\n\n        mut specialized = TrueStory(kind: \"fn\", value: \"val\");\n\n        specialized.kind == \"fn\" && specialized.value || throw(\"nope\");\n\n        let v: &mut string = specialized.kind == \"fn\"\n                          && specialized.value\n                          || throw(\"nope\");\n        v ~= \"ue\";\n\n        return specialized.value == \"value\" ? 0 : 1;\n    "_fu, testdiffs);
     ZERO_XdvOmfpz("\n        struct Token {\n            value: string;\n        };\n\n        fn consume(): Token {\n            return Token(\"hey\");\n        };\n\n        fn main(): i32 {\n            let a = 3;\n            let v = a && consume().value;\n            return v.len - a;\n        };\n    "_fu, testdiffs);
-    ZERO_XdvOmfpz("\n        struct ScopeIdx { raw: i32; };\n        <fail bad args>\n        fn thing(x: i32) x;             <pass/>\n        fn thing(x: i32) ScopeIdx(x);   </fail>\n        mut _return_scope: ScopeIdx;\n\n        fn hey(x: i32) {\n            let scope0 = thing(x);\n            _return_scope = scope0; //overload\n            return _return_scope.raw;\n        }\n\n        return hey(0);\n    "_fu, testdiffs);
+    ZERO_XdvOmfpz("\n        struct ScopeIdx { raw: i32; };\n        <fail bad call>\n        fn thing(x: i32) x;             <pass/>\n        fn thing(x: i32) ScopeIdx(x);   </fail>\n        mut _return_scope: ScopeIdx;\n\n        fn hey(x: i32) {\n            let scope0 = thing(x);\n            _return_scope = scope0; //overload\n            return _return_scope.raw;\n        }\n\n        return hey(0);\n    "_fu, testdiffs);
     ZERO_XdvOmfpz("\n        fn maybe_empty(N: i32) {\n            mut res: string[];\n            for (mut i = 0; i < N; i++) res ~= [ \"world!\" ]; // same as below but wrapped\n            return res;\n        }\n        fn main() {\n            mut arr = [ \"Hello\" ];\n            for (mut i = 0; i < 2; i++) arr ~= maybe_empty(i); // will append empty\n            return arr.join(\" \") == \"Hello world!\" ? 0 : 1;\n        }\n    "_fu, testdiffs);
     ZERO_XdvOmfpz("\n        fn maybe_empty(N: i32) {\n            mut res: string[];\n            for (mut i = 0; i < N; i++) res ~= \"world!\"; // cpp template issue here\n            return res;\n        }\n        fn main() {\n            mut arr = [ \"Hello\" ];\n            for (mut i = 0; i < 2; i++) arr ~= maybe_empty(i); // will append empty\n            return arr.join(\" \") == \"Hello world!\" ? 0 : 1;\n        }\n    "_fu, testdiffs);
     ZERO_XdvOmfpz("\n        fn main() {\n            mut _info = \"abc\";\n\n            pure fn fail(mut reason: string = \"\") {\n                ref info = _info[0]; // <- notice the ref, has to relax away\n                reason ~= info && info.i32;\n                return reason;\n            }\n\n            return fail.len - 2; // 'a' is 97, \"97\".len is 2.\n        }\n    "_fu, testdiffs);
@@ -1214,7 +1205,7 @@ void runTests_n07RecyR()
     ZERO_XdvOmfpz("\n        struct S { i: i32; }\n        fn test(mut x: S) x.i += 1;\n        return S(-1).test;\n    "_fu, testdiffs);
     ZERO_XdvOmfpz("\n        fn ARR_LAST(a: $T[])\n            a[a.len - 1];\n\n        let a = [1];\n        mut b = [2];\n\n        b.ARR_LAST += a.ARR_LAST;\n        return b.ARR_LAST - [3].ARR_LAST;\n    "_fu, testdiffs);
     ZERO_XdvOmfpz("\n        struct mat4 { i: i32; };\n        struct RenderFrame { u_mat4_VP: mat4; };\n\n        inline fn mat4_identity() mat4(1);\n\n        fn test(output: &mut RenderFrame) {\n            output.u_mat4_VP = mat4_identity;\n        }\n\n        fn main() {\n            mut ret: RenderFrame;\n            test(ret);\n            return ret.u_mat4_VP.i - 1;\n        }\n    "_fu, testdiffs);
-    ZERO_XdvOmfpz("\n        pub struct ScopeSkip {\n            start: i32;\n            end:   i32;\n        };\n\n        pub fn search(skip: ScopeSkip = [])\n            skip.end - skip.start;\n\n        pub fn main()\n            <fail bad args>\n            ScopeSkip(min: -1, max: +1)     <pass/>\n            ScopeSkip(start: -1, end: +1)   </fail>\n                .end - 1;\n    "_fu, testdiffs);
+    ZERO_XdvOmfpz("\n        pub struct ScopeSkip {\n            start: i32;\n            end:   i32;\n        };\n\n        pub fn search(skip: ScopeSkip = [])\n            skip.end - skip.start;\n\n        pub fn main()\n            <fail bad call>\n            ScopeSkip(min: -1, max: +1)     <pass/>\n            ScopeSkip(start: -1, end: +1)   </fail>\n                .end - 1;\n    "_fu, testdiffs);
     ZERO_XdvOmfpz("\n        struct vec3 { x?: f32; y?: f32; z?: f32; };\n\n        struct mat34 {\n            mx: vec3; my: vec3; mz: vec3;\n            mo: vec3;\n        };\n\n        inline fn mat34_identity()\n            mat34(\n                vec3(x: 1),\n                vec3(y: 1),\n                vec3(z: 1), vec3 /*point3*/);\n\n        // What broke is this using reports a conflict,\n        //  because 'determinant' got expanded within 'inverse',\n        //   and there's another using mat34 there.\n        //    Basically we totally don't want it to expand there.\n        inline fn determinant(using _: mat34): f32\n            - mz.x * my.y * mx.z + my.x * mz.y * mx.z + mz.x * mx.y * my.z\n            - mx.x * mz.y * my.z - my.x * mx.y * mz.z + mx.x * my.y * mz.z;\n\n        fn inverse(using mat: mat34): mat34\n        {\n            let idet = 1 / mat.determinant;\n\n            let i_mx = vec3(\n                idet * (- mz.y * my.z + my.y * mz.z),\n                idet * (+ mz.y * mx.z - mx.y * mz.z),\n                idet * (- my.y * mx.z + mx.y * my.z));\n\n            let i_my = vec3(\n                idet * (+ mz.x * my.z - my.x * mz.z),\n                idet * (- mz.x * mx.z + mx.x * mz.z),\n                idet * (+ my.x * mx.z - mx.x * my.z));\n\n            let i_mz = vec3(\n                idet * (- mz.x * my.y + my.x * mz.y),\n                idet * (+ mz.x * mx.y - mx.x * mz.y),\n                idet * (- my.x * mx.y + mx.x * my.y));\n\n            return mat34(\n                i_mx, i_my, i_mz,\n\n                vec3( // point3\n                      mo.x * -i_mx.x\n                    + mo.y * -i_my.x\n                    + mo.z * -i_mz.x,\n\n                      mo.x * -i_mx.y\n                    + mo.y * -i_my.y\n                    + mo.z * -i_mz.y,\n\n                      mo.x * -i_mx.z\n                    + mo.y * -i_my.z\n                    + mo.z * -i_mz.z));\n        }\n\n        fn main() i32 <|\n            mat34_identity.inverse.determinant - 1;\n    "_fu, testdiffs);
     ZERO_XdvOmfpz("\n        struct TEA\n        {\n            v0: u32;\n            v1: u32;\n        }\n\n        inline fn r4(using _: &mut TEA, sum: &mut u32)\n        {\n            mut delta: u32 = 0x9e3779b9;\n\n            for (mut i = 0; i < 4; i++) {\n                sum += delta;\n\n                v0 += ((v1<<4) + 0xA341316C) ^ (v1 + sum) ^ ((v1>>5) + 0xC8013EA4);\n                v1 += ((v0<<4) + 0xAD90777D) ^ (v0 + sum) ^ ((v0>>5) + 0x7E95761E);\n            }\n        }\n\n        // Stack overflow solving this,\n        //  argmax is +inf, and it just\n        //   re-enters and re-enters.\n        inline fn r4(tea: &mut TEA) {\n            mut sum: u32; tea.r4(sum);\n        }\n\n        fn main() {\n            mut tea: TEA;\n            tea.r4();\n            return (tea.v0 ^ tea.v0).i32;\n        }\n    "_fu, testdiffs);
     TODO_XdvOmfpz("\n        struct ScopeSkip {\n            min: i32;\n            max: i32;\n        };\n\n        fn main() {\n            let a = 1;\n            mut x: ScopeSkip; x = []; x = [ -2, 0 ]; // Inference fail.\n            mut t: ScopeSkip; t = x.min && [ x.min, a ];\n            return a + t.min + t.max;\n        }\n    "_fu, testdiffs);
@@ -1300,14 +1291,14 @@ void runTests_n07RecyR()
     ZERO_XdvOmfpz("\n        struct Test {\n            b: i32;\n        <fail expects 2 arg>\n            a: i32;  <pass/>\n            a?: i32; </fail>\n        };\n\n        return Test(1).a;\n    "_fu, testdiffs);
     ZERO_XdvOmfpz("\n        struct Node {\n            items?: Node[];\n            stuff?: Node[];\n        };\n\n        fn rec_copy(ref a: Node) {\n            // If implemented naively,\n            //  by the time you copy stuff it's no longer there.\n            a = a.items[0];\n        }\n\n        fn main() {\n            mut a = Node(items: [ Node(stuff: [ Node ]) ]);\n            rec_copy(a);\n            return a.stuff.len - 1;\n        }\n    "_fu, testdiffs);
     ZERO_XdvOmfpz("\n        fn test(a: i32, b!: i32 = 1) a + b;\n        return test(-1);\n    "_fu, testdiffs);
-    ZERO_XdvOmfpz("\n        fn test(a: i32, b!: i32 = 1) a + b;\n        <fail bad args>\n        return test(-2, +2);    <pass/>\n        return test(-2, b: +2); </fail>\n    "_fu, testdiffs);
-    ZERO_XdvOmfpz("\n        struct Test { a: i32; b!: i32; };\n        fn test(t: Test) t.a + t.b;\n        <fail bad args>\n        return Test(-2, +2).test;    <pass/>\n        return Test(-2, b: +2).test; </fail>\n    "_fu, testdiffs);
-    ZERO_XdvOmfpz("\n        struct Test { a?: i32; b!?: i32; };\n        fn test(t: Test) t.a + t.b;\n        <fail bad args>\n        return Test(-2, +2).test;    <pass/>\n        return Test(b: +2).test - 2; </fail>\n    "_fu, testdiffs);
+    ZERO_XdvOmfpz("\n        fn test(a: i32, b!: i32 = 1) a + b;\n        <fail bad call>\n        return test(-2, +2);    <pass/>\n        return test(-2, b: +2); </fail>\n    "_fu, testdiffs);
+    ZERO_XdvOmfpz("\n        struct Test { a: i32; b!: i32; };\n        fn test(t: Test) t.a + t.b;\n        <fail bad call>\n        return Test(-2, +2).test;    <pass/>\n        return Test(-2, b: +2).test; </fail>\n    "_fu, testdiffs);
+    ZERO_XdvOmfpz("\n        struct Test { a?: i32; b!?: i32; };\n        fn test(t: Test) t.a + t.b;\n        <fail bad call>\n        return Test(-2, +2).test;    <pass/>\n        return Test(b: +2).test - 2; </fail>\n    "_fu, testdiffs);
     ZERO_XdvOmfpz("\n        let _precedence = 0;\n        fn parseExpression(p1 = _precedence, mode! = 0) p1 + mode;\n        fn main() parseExpression();\n    "_fu, testdiffs);
     ZERO_SAME_5NtmOG0A((fu::slate<3, fu_STR> { "\n        fn A(x!: i32 = 0) x;\n        fn B(x: i32 = 0) A(:x);\n        fn main() A + B;\n    "_fu, "\n        fn A(x!?: i32) x;\n        fn B(x?: i32) A(:x);\n        fn main() A + B;\n    "_fu, "\n        fn A(x! = 0) x;\n        fn B(x = 0) A(:x);\n        fn main() A + B;\n    "_fu }), testdiffs);
     ZERO_XdvOmfpz("\n        fn what(a = -1, b!: i32) a + b; // Trailing explicit args.\n        fn main() what(b: +1);\n    "_fu, testdiffs);
     ZERO_XdvOmfpz("\n        fn greet(with!greeting: string)     greeting.len;\n        fn main()                           greet(with: \"Hello!\") - 6;\n    "_fu, testdiffs);
-    ZERO_XdvOmfpz("\n        fn a0o0() 0;\n        fn a1o0(a : i32) a;\n        fn a2o1(a : i32, b?: i32) a + b;\n        fn a2o2(a?: i32, b?: i32) a + b;\n        fn main() a0o0(a?: 1, b?: 2) *      1   //      .\n                + a1o0(a?: 1, b?: 2) *     10   //     10\n                + a2o1(a?: 1, b?: 2) *    100   //    300\n                + a2o2(a?: 1, b?: 2) *   1000   //   3000\n                + a2o1(a : 1, <fail bad args>\n                              c       <pass/>\n                              b       </fail>\n                               ?: 2) *  10000   //  30000\n                + a2o1(a : 1)        * 100000   // 100000\n                                // ----------------------\n                                     - 133310;\n    "_fu, testdiffs);
+    ZERO_XdvOmfpz("\n        fn a0o0() 0;\n        fn a1o0(a : i32) a;\n        fn a2o1(a : i32, b?: i32) a + b;\n        fn a2o2(a?: i32, b?: i32) a + b;\n        fn main() a0o0(a?: 1, b?: 2) *      1   //      .\n                + a1o0(a?: 1, b?: 2) *     10   //     10\n                + a2o1(a?: 1, b?: 2) *    100   //    300\n                + a2o2(a?: 1, b?: 2) *   1000   //   3000\n                + a2o1(a : 1, <fail bad call>\n                              c       <pass/>\n                              b       </fail>\n                               ?: 2) *  10000   //  30000\n                + a2o1(a : 1)        * 100000   // 100000\n                                // ----------------------\n                                     - 133310;\n    "_fu, testdiffs);
     ZERO_XdvOmfpz("\n        pub fn reveach(items: [$T], fn)\n            for (mut i = items.len; i --> 0; )\n                fn(items[i], i?: i);\n\n        pub fn main() {\n            mut sum = 0;\n            [1, 2, 3].reveach(|x   | sum += x          );\n            [1, 2, 3].reveach(|x, i| sum += x * i * 100);\n            return sum - 806;\n        }\n    "_fu, testdiffs);
     ZERO_XdvOmfpz("\n        pub fn noop() 0;\n        pub fn woot(ref i: i32, fn) i += fn(i?: i += 1); // Will not add 1.\n\n        fn main() {\n            mut sum = 0;\n            woot(sum, fn noop);\n            return sum;\n        }\n    "_fu, testdiffs);
     ZERO_XdvOmfpz("\n        fn main() {\n            let ret: i8 = <fail annot match>\n                128 <pass/>\n                127 </fail>;\n\n            return (ret - 100).i32 - 27;\n        }\n    "_fu, testdiffs);
@@ -1343,6 +1334,7 @@ void runTests_n07RecyR()
     ZERO_I6W2v6xm(fu_VEC<fu_STR> { fu::slate<2, fu_STR> { "\n        fn private(x: i32)      x * 3;              // cg fail:\n        pub fn public(y)        private(y) * 2;     //  fn private hidden in first translation unit.\n    "_fu, "\n        fn main()               1._0::public - 6;\n    "_fu } }, s_Options{}, testdiffs);
     ZERO_I6W2v6xm(fu_VEC<fu_STR> { fu::slate<2, fu_STR> { "\n        let OPTOKENS = \"{}[]()!?~@#$%^&*/-+<=>,.;:|\";   // nowadays problem is OPTOKENS cgs to static in first translation unit\n\n        pub fn lex(src) // <- template\n        {\n            let end = src.len;\n            mut idx = 0;\n\n            while (idx < end) {\n                let c = src[idx++];\n                if (OPTOKENS.has(c)) // <- originally, no OPTOKENS in scope ...\n                    return idx - 1;\n            }\n\n            return src.len;\n        }\n    "_fu, "\n        fn main() _0::lex(\"3 - 3\") - 2; // <- from here\n    "_fu } }, s_Options{}, testdiffs);
     TODO_F0x7UbmU(fu_VEC<fu_STR> { fu::slate<2, fu_STR> { "\n        pub fn pubbed(a: i32) a * 2;\n        fn not_pubbed(b: i32) b * 3;\n    "_fu, "\n        fn main() 1._0::pubbed._0::not_pubbed - 6;\n    "_fu } }, testdiffs);
+    ZERO_I6W2v6xm(fu_VEC<fu_STR> { fu::slate<2, fu_STR> { "\n        let SELF_TEST           = true;\n        let NODEIDX_signbits    = SELF_TEST && 4;\n        let NODEIDX_signmask    = (1 << NODEIDX_signbits) - 1;\n    "_fu, "\n        fn main() _0::NODEIDX_signmask - 15;\n    "_fu } }, s_Options{}, testdiffs);
     ZERO_XdvOmfpz("\n        let a = 1;\n        shadow let a = a + 1;\n        return a - 2;\n    "_fu, testdiffs);
     ZERO_XdvOmfpz("\n        inline fn outer() inner(); // <- this reset root-scope\n        inline fn inner() {\n            // <- so main::i was visible here\n            for (mut i = 0; i < 10; i++) return i;\n            return 1;\n        }\n        fn main() {\n            for (mut i = 0; i < 10; i++) return outer();\n            return 1;\n        }\n    "_fu, testdiffs);
     ZERO_XdvOmfpz("\n        pub struct Target { modid: i32; packed: u32; };\n\n        pub fn index(t: Target) i32(t.packed & 0x7fffffff);\n\n        pub fn local_eq(t: Target, index: i32, implicit modid: i32)\n            modid - t.modid || index - t.index;\n\n        fn main() {\n            let implicit modid = 1;\n            return local_eq(Target(1, 0x80000002), 7) - 5;\n        }\n    "_fu, testdiffs);
@@ -1370,7 +1362,7 @@ void runTests_n07RecyR()
     ZERO_XdvOmfpz("\n        fn test_defer_if_errok(throw_err: bool) {\n            mut x      = 1;\n            mut if_err = 0;\n            mut if_ok  = 0;\n            try {\n                defer x++;\n                defer:err if_err += x;\n                defer:ok  if_ok  += x;\n\n                if (throw_err)\n                    throw(\"len=5\");\n\n                x += 8; // 9 defer++ = 10\n            }\n            catch (e) {\n                x += e.len; // 6 defer++ = 7\n            }\n\n            return x * 3 + if_err * 5 + if_ok * 7;\n        }\n\n        fn main()   (test_defer_if_errok(true)  - 7 *3 - 1*5 - 0*7)\n            + 100 * (test_defer_if_errok(false) - 10*3 - 0*5 - 9*7);\n    "_fu, testdiffs);
     ZERO_XdvOmfpz("\n        fn sum_amulb(a: i32[], b: i32[], ref sum: i32)\n            for (mut i = 0; i < a.len; i++)\n                sum += a[i] * b[i];\n\n        fn incrarr_by1(ref a: i32[])\n            for (mut i = 0; i < a.len; i++)\n                a[i] += 1;\n\n        fn test(ref a: i32[], ref sum: i32) {\n            let b = a;\n            defer sum_amulb(:a, :b, :sum);\n\n            <alt>\n            for (mut i = 0; i < a.len; i++) a[i] += 1;\n            return a[0] - 2;\n            <alt/>\n            defer for (mut i = 0; i < a.len; i++) a[i] += 1;\n            return a[0] - 1;\n            <alt/>\n            incrarr_by1(:a);\n            return a[0] - 2;\n            <alt/>\n            defer incrarr_by1(:a);\n            return a[0] - 1;\n            </alt>\n        }\n\n        fn main() {\n            mut a = [ 1 ];\n            mut sum = 0;\n            let ret = 100 * test(:a, :sum);\n            return sum - 2 + ret;\n        }\n    "_fu, testdiffs);
     ZERO_XdvOmfpz("\n        type Test = i8;\n        fn main() 256.Test.i32;\n    "_fu, testdiffs);
-    ZERO_XdvOmfpz("\n        fn test(a: $A, b: $B) b +   <fail bad args>\n            a;                      <pass/>\n            $B(a);                  </fail>\n\n        fn main() i8(-1).test(+1);\n    "_fu, testdiffs);
+    ZERO_XdvOmfpz("\n        fn test(a: $A, b: $B) b +   <fail bad call>\n            a;                      <pass/>\n            $B(a);                  </fail>\n\n        fn main() i8(-1).test(+1);\n    "_fu, testdiffs);
     ZERO_XdvOmfpz("\n        let x = { mut z = 0; z++; z };\n        return x - 1;\n    "_fu, testdiffs);
     ZERO_XdvOmfpz("\n        fn mul2(a) a*2;\n        fn test(b, fn) fn(1 + fn(b));\n        fn main() 14 - test(3, fn mul2);\n    "_fu, testdiffs);
     ZERO_XdvOmfpz("\n        let overloaded = 1;\n        fn overloaded(a) a*2;\n        fn test(b, fn) fn(fn + fn(b));\n        fn main() 14 - test(3, fn overloaded);\n    "_fu, testdiffs);
@@ -1408,8 +1400,11 @@ void runTests_n07RecyR()
     ZERO_XdvOmfpz("\n        fn test(depth0)\n        {\n            fn first(depth1) {\n                fn first_inner(depth2) {\n                    let sum = depth0 + depth1 + depth2;\n                    return sum;\n                }\n\n                let sum = depth0 + depth1;\n                return first_inner(|| sum);\n            }\n\n            fn second(depth1) {\n                fn second_inner(depth2) {\n                    let sum = depth0 + depth1 + depth2;\n                    return sum + first(|| sum);\n                }\n\n                let sum = depth0 + depth1;\n                return second_inner(|| sum);\n            }\n\n            let sum = depth0 + depth0;\n            return second(|| sum);\n        }\n\n        fn main() test(0);\n    "_fu, testdiffs);
     ZERO_XdvOmfpz("\n        fn use_a(implicit a: i32) a * a;\n        fn use_b(implicit b: i32) b * b;\n        fn use_c(implicit c: i32) c * c;\n\n        fn parseStuff(x: i32) {\n            fn doStuff(y: i32) doSomething(y * y);\n            return doStuff(x * x);\n        }\n\n        fn doSomething(x: i32) {\n            fn doSomething_inner(y: i32) y * use_a * descend(y * y);\n            return doSomething_inner(x * x);\n        }\n\n        fn descend(x: i32) { // <- x here\n            fn descend_inner(y: i32)\n                y & 1 ? parseStuff(y / 2) * parseStuff(x) // x not defined here?\n                      : doSomethingElse(y * y) * use_c;\n\n            return descend_inner(x * x);\n        }\n\n        fn doSomethingElse(x: i32) {\n            fn doSomethingElse_inner(y: i32) y * use_b;\n            return doSomethingElse_inner(x * x);\n        }\n\n        fn main() {\n            let implicit a = 0;\n            let implicit b = 0;\n            let implicit c = 0;\n            return parseStuff(0);\n        }\n    "_fu, testdiffs);
     ZERO_XdvOmfpz("\n        fn sA(_: $T) struct { hey: $T; };\n\n        fn fA(a: $T): sA($T) = [ a + 2 ];\n        fn main() 1.fA.hey - 3;\n    "_fu, testdiffs);
-    ZERO_XdvOmfpz("\n        fn sB(_: $T) struct { hey: $T; };\n\n        fn fB(a: $T): sB($T) = [ a + 2 ];\n        fn main() 1.fB.hey - 1.u32.fB.hey <fail bad args><pass/> .i32 </fail> ;\n    "_fu, testdiffs);
+    ZERO_XdvOmfpz("\n        fn sB(_: $T) struct { hey: $T; };\n\n        fn fB(a: $T): sB($T) = [ a + 2 ];\n        fn main() 1.fB.hey - 1.u32.fB.hey <fail bad call><pass/> .i32 </fail> ;\n    "_fu, testdiffs);
     ZERO_XdvOmfpz("\n        fn sB(_: $T) struct { hey: $T; };\n\n        // Prep for the thing below.\n        fn test(x) x.hey - 1;\n\n        // 'a' must be callable.\n        type a = sB(i32);\n        fn main() a(1).test;\n    "_fu, testdiffs);
+    ZERO_XdvOmfpz("\n        fn setupOperators(i: i32) {\n            struct BINOP { i: i32; };\n            return BINOP(:i);\n        }\n\n        fn main() setupOperators(0).i;\n    "_fu, testdiffs);
+    ZERO_XdvOmfpz("\n        fn sB(_: $T) struct { hey: $T; };\n\n        fn setupOperators(i: i32) {\n            struct BINOP { i: sB(i32); };\n            mut s: sB(i32) = [ i ];\n            return BINOP(s);\n        }\n\n        fn main() setupOperators(0).i.hey;\n    "_fu, testdiffs);
+    TODO_XdvOmfpz("\n        fn sB(_: $T) struct { hey: $T; };\n\n        fn setupOperators(i: i32) {\n            struct BINOP { i: sB(i32); };\n            <alt>\n            return BINOP([ i ]);\n            <alt/>\n            return BINOP(sB(i));\n            </alt>\n        }\n\n        fn main() setupOperators(0).i.hey;\n    "_fu, testdiffs);
     TODO_XdvOmfpz("\n        fn sB(_: $T) struct { hey: $T; };\n\n        // Pattern & partial spec, how?\n        fn test(x: sB($T)): $T =\n            x.hey - 1;\n\n        type a = sB(i32);\n        fn main() a(1).test;\n    "_fu, testdiffs);
     ZERO_XdvOmfpz("\n        fn test(x: i32) {\n            :OUTER {\n                :INNER {\n                    if (x > 1) break :OUTER;\n                    if (x > 0) break :INNER;\n                    return 2;\n                }\n                return 1;\n            }\n            return 0;\n        }\n\n        fn main() 2.test * 11 + (1.test - 1) * 13 + (0.test - 2) * 17;\n    "_fu, testdiffs);
     ZERO_XdvOmfpz("\n        fn test(x: i32) {\n            return {\n                :BLOCK {\n                    if (x & 1) break :BLOCK 1;\n                    if (x & 2) return 2;\n                    3\n                }\n            };\n        }\n\n        fn main() 4.test - 5.test - 6.test; // 3-1-2\n    "_fu, testdiffs);
