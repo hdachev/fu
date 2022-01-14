@@ -519,6 +519,20 @@ pub fn runTests()
         fn main() 0.inl_lies ? 1 : 0;
     `);
 
+    TODO(`
+        fn what(ref x: i32, ref y: i32) {
+            <fail bad call swap>
+            let z = y;   <pass/>
+            ref z = y;   </fail>
+            swap(x, z);  // swap is defined(ref x: $T, ref y: $T),
+        }                //  we ignore the 'ref' part in type patterns,
+                         //   so we only notice later when checking the spec
+        fn main() {
+            mut a = 1; mut b = 0; what(a, b);
+            return a;
+        }
+    `);
+
 
     // Lexical vs dynamically scoped templates -
     //  I guess we want both, but how?

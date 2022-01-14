@@ -330,6 +330,8 @@ pub fn ZERO(
                         .ERR_STRIP_SNIPPETS
                         .ascii_lower();
 
+                    mut BUG_ok = false;
+
                     // Verify error message.
                     mut m0 = -1;
                     for (mut m1 = 0; m1 <= msg.len; m1++)
@@ -339,7 +341,11 @@ pub fn ZERO(
                         {
                             if (m0 >= 0)
                             {
-                                mut expect = msg.slice(m0, m1).ascii_lower();
+                                let exact = msg.slice(m0, m1);
+                                if (exact == "BUG")
+                                    BUG_ok = true;
+
+                                let expect = exact.ascii_lower();
                                 if (!actual.has(expect))
                                     throw("<fail> mismatch:\n\n    Expected error keyword:\n        "
                                         ~ expect.ansi::qBAD ~ " from pattern <fail" ~ msg.ansi::qBAD ~ ">"
@@ -354,6 +360,9 @@ pub fn ZERO(
                             m0 = m1;
                         }
                     }
+
+                    if (!BUG_ok && e.has("BUG"))
+                        throw("<fail> error message contains BUG:\n\n" ~ e);
 
                     //
                     testdiffs.set_next(

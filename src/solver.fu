@@ -1137,7 +1137,7 @@ pub fn solve(
                             shadow let err = overload.qWHAT ~ ": " ~ err;
 
                             if (DEBUG_mustMatch)
-                                fail("mustMatch.matchFail: " ~ err);
+                                BUG("mustMatch.matchFail: " ~ err);
                             else
                                 error ~= "\n\n\t" ~ err;
                         }
