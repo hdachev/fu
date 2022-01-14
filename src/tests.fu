@@ -6830,6 +6830,22 @@ pub fn runTests()
         }
     `);
 
+    ZERO(`
+        struct RWEvent { rw_target!: i32 };
+        struct ReadID  { id: i32 };
+
+        fn main()
+        {
+            <fail ambig rw_target>
+            using   <pass/></fail>
+            fn RWEvent(read: ReadID)    RWEvent(rw_target: read.id);
+
+            fn rw_target(read: ReadID)  read.id;
+
+            return ReadID(0).rw_target;
+        }
+    `);
+
     TODO(`
         fn a_len(a: [$T]) a.len; // a conversion could navigate this here
         struct Test { using a: i32[]; };
