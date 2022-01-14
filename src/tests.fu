@@ -1523,7 +1523,7 @@ pub fn runTests()
     `);
 
     ZERO(`
-        <fail bad args>
+        <fail bad call>
         fn test(a = "hello") a.len;     <pass/>
         fn test(a = 0) a + 1;           </fail>
         fn main() test(-1);
@@ -4220,7 +4220,7 @@ pub fn runTests()
 
     ZERO(`
         struct ScopeIdx { raw: i32; };
-        <fail bad args>
+        <fail bad call>
         fn thing(x: i32) x;             <pass/>
         fn thing(x: i32) ScopeIdx(x);   </fail>
         mut _return_scope: ScopeIdx;
@@ -4422,7 +4422,7 @@ pub fn runTests()
             skip.end - skip.start;
 
         pub fn main()
-            <fail bad args>
+            <fail bad call>
             ScopeSkip(min: -1, max: +1)     <pass/>
             ScopeSkip(start: -1, end: +1)   </fail>
                 .end - 1;
@@ -5573,7 +5573,7 @@ pub fn runTests()
 
     ZERO(`
         fn test(a: i32, b!: i32 = 1) a + b;
-        <fail bad args>
+        <fail bad call>
         return test(-2, +2);    <pass/>
         return test(-2, b: +2); </fail>
     `);
@@ -5581,7 +5581,7 @@ pub fn runTests()
     ZERO(`
         struct Test { a: i32; b!: i32; };
         fn test(t: Test) t.a + t.b;
-        <fail bad args>
+        <fail bad call>
         return Test(-2, +2).test;    <pass/>
         return Test(-2, b: +2).test; </fail>
     `);
@@ -5589,7 +5589,7 @@ pub fn runTests()
     ZERO(`
         struct Test { a?: i32; b!?: i32; };
         fn test(t: Test) t.a + t.b;
-        <fail bad args>
+        <fail bad call>
         return Test(-2, +2).test;    <pass/>
         return Test(b: +2).test - 2; </fail>
     `);
@@ -5640,7 +5640,7 @@ pub fn runTests()
                 + a1o0(a?: 1, b?: 2) *     10   //     10
                 + a2o1(a?: 1, b?: 2) *    100   //    300
                 + a2o2(a?: 1, b?: 2) *   1000   //   3000
-                + a2o1(a : 1, <fail bad args>
+                + a2o1(a : 1, <fail bad call>
                               c       <pass/>
                               b       </fail>
                                ?: 2) *  10000   //  30000
@@ -6567,7 +6567,7 @@ pub fn runTests()
     `);
 
     ZERO(`
-        fn test(a: $A, b: $B) b +   <fail bad args>
+        fn test(a: $A, b: $B) b +   <fail bad call>
             a;                      <pass/>
             $B(a);                  </fail>
 
@@ -7063,7 +7063,7 @@ pub fn runTests()
         fn sB(_: $T) struct { hey: $T; };
 
         fn fB(a: $T): sB($T) = [ a + 2 ];
-        fn main() 1.fB.hey - 1.u32.fB.hey <fail bad args><pass/> .i32 </fail> ;
+        fn main() 1.fB.hey - 1.u32.fB.hey <fail bad call><pass/> .i32 </fail> ;
     `);
 
     ZERO(`

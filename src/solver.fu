@@ -976,11 +976,14 @@ pub fn solve(
         mut id: string,
         ref reorder: i32[],
         ref conversions: Target[][],
+        ref error!: string,
         local_scope!?: bool,
         misc_scope!?: Scope,
         args?: [SolvedNode],
         flags!?: i32, target!?: Target): Target
     {
+        let error_len0 = error.len;
+
         if (SELF_TEST)
             for (mut i = 0; i < args.len; i++)
                 if (!args[i].kind)
@@ -1129,8 +1132,15 @@ pub fn solve(
 
                     fn matchFail(inline err: string)
                     {
-                        if (DEBUG_mustMatch)
-                            fail(overload.qWHAT ~ " mustMatch.matchFail: " ~ err);
+                        if (DEBUG_mustMatch || error)
+                        {
+                            shadow let err = overload.qWHAT ~ ": " ~ err;
+
+                            if (DEBUG_mustMatch)
+                                fail("mustMatch.matchFail: " ~ err);
+                            else
+                                error ~= "\n\n\t" ~ err;
+                        }
 
                         continue :MATCH_FAIL;
                     }
@@ -1305,10 +1315,12 @@ pub fn solve(
                                 autocall_args.resize(1);
                                 autocall_args[0] = args[callsiteIndex];
 
-                                let t = tryMatch__mutargs(:misc_scope, :local_scope, id: host_arg.autocall, args: autocall_args, reorder: autocall_reorder, conversions: autocall_conversions);
+                                mut autocall_error = error
+                                    && "Cannot match argument " ~ host_arg.qWHAT ~ " autocall " ~ host_arg.autocall.qCODE ~ ": ";
+
+                                let t = tryMatch__mutargs(:misc_scope, :local_scope, id: host_arg.autocall, args: autocall_args, reorder: autocall_reorder, conversions: autocall_conversions, error: autocall_error);
                                 if (!t)
-                                    matchFail("Cannot match argument autocall for "
-                                        ~ host_arg.qWHAT ~ ": " ~ host_arg.autocall.qCODE);
+                                    matchFail(autocall_error.replace("\t", "\t\t"));
 
                                 if (autocall_conversions)
                                     conversions.grow_if_oob(i) ~= autocall_conversions.only;
@@ -1445,6 +1457,10 @@ pub fn solve(
             //////////////////////////////////
         }
 
+        // Not defined msg.
+        if (error && error.len == error_len0 && !matchIdx)
+            error ~= id.qID ~ " is not defined here.";
+
         return matchIdx;
     }
 
@@ -1544,9 +1560,10 @@ pub fn solve(
                 }
                 //////////////////////////////////////////////////
 
+                mut error: string;
                 mut candidate: Target;
                 if (nullary || (candidate = tryMatch__mutargs(
-                    target: t,
+                    target: t, :error,
                     id: "",
                     args: TODO_FIX_convert_args,
                     reorder: TODO_FIX_reorder,
@@ -1681,15 +1698,21 @@ pub fn solve(
         ref conversions: Target[][],
         flags: i32, target: Target): Target
     {
-        let ret = tryMatch__mutargs(:misc_scope, :local_scope, :id, :args, :reorder, :conversions, :flags, :target);
+        mut error: string;
+
+        let ret = tryMatch__mutargs(:misc_scope, :local_scope, :id, :args, :reorder, :conversions, :flags, :target, :error);
         if (ret)
             return ret;
 
-        let debug = tryMatch__mutargs(:misc_scope, :local_scope, :id, :args, :reorder, :conversions, :flags, :target);
-        if (debug)
-            return debug;
+        // Compose error message:
+        //  separate pass, so we don't have to worry about unnecessary string concats.
+        error = "Bad call to " ~ id.qID ~ ": ";
 
-        return NICERR_mismatch(:misc_scope, :local_scope, :id, :args);
+        let debug = tryMatch__mutargs(:misc_scope, :local_scope, :id, :args, :reorder, :conversions, :flags, :target, :error);
+        if (debug)
+            fail("Did match on second pass: " ~ debug.qWHAT);
+
+        fail(error);
     }
 
     fn explainWhichFn(overload: Target, conversions?: Target[][])
@@ -1722,86 +1745,6 @@ pub fn solve(
 
         result ~= "`";
         return result;
-    }
-
-    fn NICERR_mismatch(
-        misc_scope: Scope, local_scope: bool,
-        id: string, args: SolvedNode[]): never
-    {
-        // TODO instead of this -
-        //  run tryMatch__mutargs again with an error output attached,
-        //   this way we don't need the second pass for debugging,
-        //    we can #bake alla jblow the if (explain) parts,
-        //     and we can rid ourselves of Scope_lookup altogether.
-
-        // We should do everything possible to be helpful here,
-        //  do whatever you need, this is compile-fail path.
-
-        mut overloads: Target[] = [];
-
-        mut scope_iterator: i32;
-        mut target: Target;
-        mut shadows: bool;
-        while (target = (local_scope ? _scope : misc_scope).items.search(:id, :scope_iterator,
-            scope_skip:  local_scope && _ss.items,
-            field_items: local_scope && _field_items, :shadows))
-        {
-            overloads.push(target);
-        }
-
-        mut min = 0x7fffffff.i32;
-        mut max = 0;
-        for (mut i = 0; i < overloads.len; i++)
-        {
-            let o = overloads[i];
-            if (min > o.min) min = o.min;
-            if (max < o.max) max = o.max;
-        }
-
-        fn expectedArgs(shadow targets: Target[]): string
-        {
-            mut result = "";
-
-            for (mut i = 0; i < targets.len; i++)
-            {
-                if (result)
-                    result ~= "\n\t\t";
-                else if (targets.len > 1)
-                    result ~= ", available overloads:\n\t\t";
-                else
-                    result ~= ".\nExpect: ";
-
-                result ~= explainWhichFn(targets[i]);
-            }
-
-            return result || ".";
-        }
-
-        fn actualArgs(shadow args: SolvedNode[]): string
-        {
-            mut result = "\nActual: (";
-
-            for (mut i = 0; i < args.len; i++)
-            {
-                let arg = args[i];
-                if (i)
-                    result ~= ",";
-
-                result ~= "\n\t";
-                if (arg.kind == "argid")
-                    result ~= arg.value ~ ": ";
-
-                result ~= humanizeType(arg.type);
-            }
-
-            return result ~ ").";
-        }
-
-        return overloads
-                ? args.len < min ? fail("`" ~ id ~ "` expects at least " ~ min ~ " arguments, " ~ args.len ~ " provided" ~ expectedArgs(overloads))
-                : args.len > max ? fail("`" ~ id ~ "` expects at most " ~ max ~ " arguments, " ~ args.len ~ " provided" ~ expectedArgs(overloads))
-                : fail("`" ~ id ~ "` bad args" ~ expectedArgs(overloads) ~ actualArgs(args))
-             : fail("`" ~ id ~ "` is not defined in this scope: " ~ ("`" ~ _current_fn.value ~ "`." || "root scope."));
     }
 
 
@@ -5274,9 +5217,10 @@ pub fn solve(
         }
         // CLOSURE-ID-HACK
 
+        mut error: string;
         mut reorder: i32[];
         mut conversions: Target[][];
-        let target = tryMatch__mutargs(local_scope: true, :id, :reorder, :conversions, flags: F_IMPLICIT)
+        let target = tryMatch__mutargs(local_scope: true, :id, :reorder, :conversions, flags: F_IMPLICIT, :error)
             || injectImplicitArg(:id, :type, :becauseOf)
             || fail();
 
