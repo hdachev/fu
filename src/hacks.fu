@@ -12,7 +12,7 @@ fn serialize(using _: ClosureID)
 
 fn tryParseClosureID(id!: string): ClosureID
 {
-    if (id[0] == '`')
+    if (id.len > 5 /* "`0-0-0".len == 6 */ && id[0] == '`')
     {
         mut   offset = 1;
         defer offset == id.len || throw("Bad ClosureID: trailing stuff.");
