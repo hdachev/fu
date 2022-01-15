@@ -215,10 +215,9 @@ pub fn solve(
         return _helpers_data[h.index];
     }
 
-    fn fail(mut reason: string = ""): never
+    fn fail(mut reason: string): never
     {
-        if (!reason)
-            reason = "Unexpected `" ~ _here._token.value ~ "`.";
+        reason || BUG();
 
         // What were we currently solving?
         mut callstack = 0;
@@ -997,7 +996,7 @@ pub fn solve(
 
             mut count = 0;
             if (scope.usings)
-                scope.usings.each(local_scope && _ss.usings, |u| u ? count++ : fail());
+                scope.usings.each(local_scope && _ss.usings, |u| u ? count++ : BUG());
 
             return count;
         }
@@ -1018,7 +1017,7 @@ pub fn solve(
             {
                 let arg = args[i];
                 names.push(arg.kind == "argid"
-                    ? { some = true; arg.value } || fail()
+                    ? { some = true; arg.value } || BUG()
                     : "");
 
                 if (arg.flags & F_OPT_ARG)
@@ -1028,7 +1027,7 @@ pub fn solve(
                 }
             }
 
-            some || fail();
+            some || BUG();
         }
 
         mut reusable_mangle: string;
@@ -1578,7 +1577,7 @@ pub fn solve(
                     convert.type || fail("No convert.type, perhaps a `using inline fn` without a return type annotation: `" ~ convert.qWHAT ~ "`.");
 
                     let convertType = convert.kind == "field"
-                        ? add_refs(from: from || fail(), to: convert.type)
+                        ? add_refs(from: from || BUG(), to: convert.type)
                         : convert.type;
 
                     shadow let isStruct = convertType.isStruct;
@@ -2305,7 +2304,7 @@ pub fn solve(
         //
 
         let block = createBlock(:items,
-            type: h.ret_actual || fail(),
+            type: h.ret_actual || BUG(),
             label: h.mask & HM_LabelUsed && h.target,
             :h);
 
@@ -2571,7 +2570,7 @@ pub fn solve(
     fn createTypeParam(value: string): Node
     {
         return Node(kind: "typeparam",
-            :value, token: _here || fail());
+            :value, token: _here || BUG());
     }
 
 
@@ -2830,7 +2829,7 @@ pub fn solve(
         let SPECFAIL = Target(modid: 2147483647, index: 0);
 
         //
-        let original = overloadIdx || into || fail();
+        let original = overloadIdx || into || BUG();
         mut template = original.template;
 
         ////////////////////
@@ -2959,7 +2958,7 @@ pub fn solve(
                             ? reorder.len > i && reorder[i] >= 0 && args_in[reorder[i]]
                             : args_in.len > i && args_in[i];
 
-                        let argNode = items[i] || fail();
+                        let argNode = items[i] || BUG();
                         let annot   = argNode.items[LET_TYPE];
 
                         /////////////////
@@ -2993,7 +2992,7 @@ pub fn solve(
                         //        /LITFIX
                         /////////////////
 
-                        argNode.kind == "let"  || fail();
+                        argNode.kind == "let"  || BUG();
 
                         //
                         if (inType)
@@ -3007,7 +3006,7 @@ pub fn solve(
                             }
 
                             //
-                            let argName = argNode.value || fail();
+                            let argName = argNode.value || BUG();
 
                             // Same pattern - grabs a mutref.
                             ref argName_typeParam = typeParams.map::ref(argName);
@@ -3039,7 +3038,7 @@ pub fn solve(
                 if (remangle && !isInline)
                 {
                     // TODO FIX
-                    let start = mangle.find(' ') + 1 || fail();
+                    let start = mangle.find(' ') + 1 || BUG();
                     mangle = mangle.slice(0, start) ~ mangleArguments(args);
 
                     if (mangle00 != mangle)
@@ -3063,7 +3062,7 @@ pub fn solve(
                     return SPECFAIL;
 
                 // Pattern matching.
-                let body = items[items.len + FN_BODY_BACK] || fail();
+                let body = items[items.len + FN_BODY_BACK] || BUG();
                 if (body.kind == "pattern")
                 {
                     let undo = typeParams;
@@ -3110,7 +3109,7 @@ pub fn solve(
                 {
                     for (shadow mut i = 0; i < numArgs; i++)
                     {
-                        let argNode = items[i] || fail();
+                        let argNode = items[i] || BUG();
                         let id = argNode.value;
 
                         typeParams.map::if_ref(id): |tp|
@@ -3319,7 +3318,7 @@ pub fn solve(
                 for (mut i = 0; i < N; i++)
                 {
                     let argNode = items[i];
-                    argNode.kind == "let" || fail();
+                    argNode.kind == "let" || BUG();
 
                     mut name        = argNode.value;
                     let autocall    = argNode.flags & F_COMPOUND_ID && CompoundArgID_outerSplice(name);
@@ -3477,7 +3476,7 @@ pub fn solve(
                                     ~ mangleArguments(outItems[0, outItems.len + FN_ARGS_BACK]);
                         if (sig)
                         {
-                            let hash = tea::hash62(sig, chars: 8) || fail();
+                            let hash = tea::hash62(sig, chars: 8) || BUG();
                             name ~= "_" ~ hash;
                         }
                     }
@@ -3493,7 +3492,7 @@ pub fn solve(
                     }
 
                     ref overload        = GET_mut(target);
-                    overload.name       = HACK_nativeNameParts || name || fail();
+                    overload.name       = HACK_nativeNameParts || name || BUG();
 
                     overload.kind       = isUnspec      ? "template"
                                         : isNative      ? "__native"
@@ -3510,7 +3509,7 @@ pub fn solve(
                 // setSpecs & co.
                 if (!into && !isInline)
                 {
-                    let start   = mangle0.find(' ') + 1 || fail();
+                    let start   = mangle0.find(' ') + 1 || BUG();
                     mangle      = mangle0.slice(0, start)
                                 ~ mangleArguments(target.args);
 
@@ -3729,7 +3728,7 @@ pub fn solve(
                 {
                     let id = node.items[i].value;
                     let target = Scope_create(
-                        _scope, "field", name: id || fail(),
+                        _scope, "field", name: id || BUG(),
                         flags: F_PUB);
 
                     ref ext     = EXT_mut(target);
@@ -3813,8 +3812,8 @@ pub fn solve(
                 let member = members[i];
 
                 let arg = Argument(
-                    name:       member.value || fail(),
-                    type:       member.type  || fail(),
+                    name:       member.value || BUG(),
+                    type:       member.type  || BUG(),
                     default:    member.items[LET_INIT],
                     flags:      member.flags & F_MUSTNAME);
 
@@ -4022,7 +4021,7 @@ pub fn solve(
             if !(init.is_ref)
                 continue;
 
-            init.lifetime.uni0n.len || fail();
+            init.lifetime.uni0n.len || BUG();
             lifetime.uni0n.splice(i, 1);
 
             let N0      = lifetime.uni0n.len;
@@ -4636,7 +4635,7 @@ pub fn solve(
 
     fn solveTryCatch(node: Node): SolvedNode
     {
-        node.items.len == 3 || fail();
+        node.items.len == 3 || BUG();
 
         /////////////////////////////////
         let scope0  = Scope_snap(_scope);
@@ -4722,7 +4721,7 @@ pub fn solve(
         {
             let maybe = GET(overloadIdx);
             if (maybe.kind == "type")
-                return maybe.type || fail();
+                return maybe.type || BUG();
         }
 
         return fail("No type `" ~ id ~ "` in scope.");
@@ -4866,7 +4865,7 @@ pub fn solve(
                         return false;
 
                     return trySolveTypeParams(
-                        items[0] || fail(), t, typeParams);
+                        items[0] || BUG(), t, typeParams);
                 }
             }
             else
@@ -4878,7 +4877,7 @@ pub fn solve(
         }
         else if (node.kind == "typeparam")
         {
-            let id = node.value || fail();
+            let id = node.value || BUG();
 
             // What is happening here?
             // This is crazy, no?
@@ -4909,7 +4908,7 @@ pub fn solve(
             // Slice.
             let t = tryClear_sliceable(type);
             return t && trySolveTypeParams(
-                node.items[0] || fail(), t, typeParams);
+                node.items[0] || BUG(), t, typeParams);
         }
 
         return fail("TODO trySolveTypeParams fallthrough");
@@ -4935,8 +4934,8 @@ pub fn solve(
         }
         else if (node.kind == "typeassert")
         {
-            let left  = node.items[0] || fail();
-            let right = node.items[1] || fail();
+            let left  = node.items[0] || BUG();
+            let right = node.items[1] || BUG();
 
             // We'll have to figure out the type tag nonsense at some point.
             //  Perhaps when we have an `any` type,
@@ -5017,13 +5016,13 @@ pub fn solve(
         return Node(
             kind:   "call",
             value:  id,
-            token:  (_here || fail()));
+            token:  (_here || BUG()));
     }
 
     fn dequalify_andGetScope(ref id: string): &Scope
     {
         let split = id.find('\t');
-        split >= 0 || fail();
+        split >= 0 || BUG();
 
         let fname = id.slice(0, split);
         id        = id.slice(split + 1);
@@ -5044,7 +5043,7 @@ pub fn solve(
 
         //
         mut id = node.value;
-        if (!id) target || fail();
+        if (!id) target || BUG();
 
         // Qualified?
         let qualified = node.flags & F_COMPOUND_ID;
@@ -5107,7 +5106,7 @@ pub fn solve(
     fn solveArrlit_itemType_init(head!: Type)
     {
         // Super trivial, just don't want to hardcode this here.
-        return clear_refs(head) || fail();
+        return clear_refs(head) || BUG();
     }
 
     fn solveArrlit_itemType(items: [SolvedNode], mut itemType?: Type, mut start = 0)
@@ -5180,7 +5179,7 @@ pub fn solve(
                 arg.target.GET_mut.type = super;                        //
                 //////////////////////////////////////////////////////////
 
-                return arg.target || fail();
+                return arg.target || BUG();
             }
         }
 
@@ -5224,7 +5223,7 @@ pub fn solve(
         mut conversions: Target[][];
         let target = tryMatch__mutargs(local_scope: true, :id, :reorder, :conversions, flags: F_IMPLICIT, :error)
             || injectImplicitArg(:id, :type, :becauseOf)
-            || fail();
+            || BUG();
 
         let o = GET(target);
         o.flags & F_IMPLICIT || fail(
@@ -5271,7 +5270,7 @@ pub fn solve(
         if (cons.type.is_never && alt.type.is_never)
             type = t_never;
 
-        return solved(node, type || fail(), [ cond, cons, alt ]);
+        return solved(node, type || BUG(), [ cond, cons, alt ]);
     }
 
 
@@ -5671,7 +5670,7 @@ pub fn solve(
         //   OR alternatively, do this for arrays too.
         if (target.kind == "field")
         {
-            type = add_refs(from: args.only.type || fail(), to: target.type);
+            type = add_refs(from: args.only.type || BUG(), to: target.type);
         }
 
         // So we're turning closeovers into implicit arguments -
@@ -6070,7 +6069,7 @@ pub fn solve(
             }
 
             // Later we'll continue from group end.
-            i1 > i0 || fail();
+            i1 > i0 || BUG();
             i = i1 - 1; // <- loop++
 
             // Second prep pass, limit access to scope
@@ -6644,7 +6643,7 @@ pub fn solve(
                                     ? written_and_invalidated
                                     : written;
 
-                                written || fail();
+                                written || BUG();
 
                                 for (mut r = ooe_read0; r < ooe_read1; r++)
                                 {
@@ -6973,7 +6972,7 @@ pub fn solve(
             if (type.is_ref)
             {
                 type.lifetime = type.lifetime.Lifetime_unwind(:h.locals_start);
-                let ltCompare = type.lifetime.Lifetime_vs(:h.locals_start || fail());
+                let ltCompare = type.lifetime.Lifetime_vs(:h.locals_start || BUG());
 
                 if (ltCompare >= 0)
                 {

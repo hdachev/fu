@@ -27,7 +27,7 @@ pub fn HERE(implicit ref _here: TokenIdx, node.token: TokenIdx)
         _here = node;
 }
 
-pub fn BUG(mut reason: string)
+pub fn BUG(mut reason?: string)
 {
     FAIL("COMPILER BUG:\n\n\t" ~ (reason || "Assertion failed."));
 }
