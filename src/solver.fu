@@ -6860,11 +6860,20 @@ pub fn solve(
             // TODO If broken-from, hide effects and append to jumped-to.
             bck_block(node);
         }
-        else
+        else if (k == "root"
+              || k == "and"  || k == "or"
+              || k == "jump"
+              || k == "try"
+
+              || k == "copy" || k == "move" // TODO shouldn't occur before bck
+              || k == "arrlit")             // TODO get rid of arrlits
         {
             // The default - descend recursively.
-            // TODO: be exhaustive here
             bck_nodes(node.items);
+        }
+        else if (node.items)
+        {
+            fail("TODO: bck_node(non-empty " ~ k ~ ").");
         }
 
         ////////////////////////////////////////////
