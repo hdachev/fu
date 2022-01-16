@@ -3436,6 +3436,8 @@ pub fn solve(
             // Enable recursion.
             if (isFirst)
             {
+                updateScope(_current_fn, retval: isInline ? ret_expect : ret_seed, maybeLast: false);
+
                 // Previously initScope:
                 {
                     // Let's consider: hashing all fns,
@@ -3473,7 +3475,7 @@ pub fn solve(
 
                         let sig     = (target.local_of && target.index.str)
                                     ~ shortModuleName
-                                    ~ mangleArguments(outItems[0, outItems.len + FN_ARGS_BACK]);
+                                    ~ mangleArguments(target.args);
                         if (sig)
                         {
                             let hash = tea::hash62(sig, chars: 8) || BUG();
@@ -3503,8 +3505,6 @@ pub fn solve(
                     ext.template        = template;
                     ext.spec_of         = overloadIdx;
                 }
-
-                updateScope(_current_fn, retval: isInline ? ret_expect : ret_seed, maybeLast: false);
 
                 // setSpecs & co.
                 if (!into && !isInline)
