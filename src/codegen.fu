@@ -98,6 +98,12 @@ pub fn cpp_codegen(implicit module: Module, implicit ctx: Context): CodegenOutpu
         return target.modid < 0;
     }
 
+    fn nested(index: i32)
+    {
+        return index
+            && Target(modid: -_current_fn.index, :index);
+    }
+
     using fn GET(target: Target)
     {
         target.index > 0 || assert();
@@ -162,7 +168,7 @@ pub fn cpp_codegen(implicit module: Module, implicit ctx: Context): CodegenOutpu
     fn typeAnnot(type: Type, mode: i32 = 0): string
     {
         if (type.addroffn::type_isZST)
-            return "int";
+            return annotateAddrofn();
 
         let fwd = typeAnnotBase(type, :mode);
 
@@ -753,14 +759,14 @@ pub fn cpp_codegen(implicit module: Module, implicit ctx: Context): CodegenOutpu
         let target      = fn.target;
         let overload    = GET(target);
 
-        let items       = fn.items;
+        let host_args   = target.args;
         let annot       = typeAnnot(overload.type || fail(), M_RETVAL);
 
         //
         mut id          = overload.name;
         if (id == "main")
         {
-            _hasMain    = fn.items.len + FN_ARGS_BACK ? 2 : 1;
+            _hasMain    = host_args ? 2 : 1;
             id          = "fu_MAIN";
         }
         else
@@ -771,12 +777,12 @@ pub fn cpp_codegen(implicit module: Module, implicit ctx: Context): CodegenOutpu
         //
         mut src         = overload.fnLinkage ~ annot ~ " " ~ id ~ "(";
 
-        for (mut i = 0; i < items.len + FN_ARGS_BACK; i++)
+        for (mut i = 0; i < host_args.len; i++)
         {
             if (i)
                 src ~= ", ";
 
-            src ~= binding(items[i] || fail());
+            src ~= binding(host_args[i]);
         }
 
         if (overload.flags & F_POSTFIX)
@@ -792,11 +798,6 @@ pub fn cpp_codegen(implicit module: Module, implicit ctx: Context): CodegenOutpu
 
     fn ensureFwdDecl(target: Target)
     {
-        ///////////////////////////////////////////
-        let implicit _current_nodes = target.nodes;
-        let implicit _current_fnort = target;
-        ///////////////////////////////////////////
-
         let overload = GET(target);
         if (overload.kind != "fn" || overload.name == "main")
             return;
@@ -804,9 +805,11 @@ pub fn cpp_codegen(implicit module: Module, implicit ctx: Context): CodegenOutpu
         if !(_ffwd.add_once(target))
             return;
 
-        ////////////////////////////////////////////
+        ///////////////////////////////////////////
+        let implicit _current_nodes = target.nodes;
+        let implicit _current_fnort = target;
+        ///////////////////////////////////////////
         mut current_fn0 = cg_CurrentFn(target: target);
-
         defer swap(_current_fn, current_fn0);
         swap(_current_fn, current_fn0);
         ////////////////////////////////////////////
@@ -870,33 +873,33 @@ pub fn cpp_codegen(implicit module: Module, implicit ctx: Context): CodegenOutpu
 
     fn ensureMoveFromConstRefHelper(target: Target)
     {
+        if (!_moveFromConstRefHelpers.add_once(target))
+            return;
+
         ///////////////////////////////////////////
         let implicit _current_nodes = target.nodes;
         let implicit _current_fnort = target;
         ///////////////////////////////////////////
+        mut current_fn0 = cg_CurrentFn(target: target);
+        defer swap(_current_fn, current_fn0);
+        swap(_current_fn, current_fn0);
+        ////////////////////////////////////////////
 
-        if (!_moveFromConstRefHelpers.add_once(target))
-            return;
+        let name        = fnID(target);
+        let args        = target.args;
 
-        let name    = fnID(target);
-        let args    = target.args;
+        let annot       = typeAnnot(clear_refs(target.type));
+        mut src         = "inline " ~ annot ~ " " ~ name ~ "(";
 
-        let annot   = typeAnnot(clear_refs(target.type));
-        mut src     = "inline " ~ annot ~ " " ~ name ~ "(";
+        let retargs     = target.type.lifetime.uni0n;
 
-        let items   = target.solved.items;
-        let retargs = target.type.lifetime.uni0n;
-
-        mut body    = "return static_cast<" ~ annot ~ "&&>(const_cast<" ~ annot ~ "&>(" ~ name ~ "(";
+        mut body        = "return static_cast<" ~ annot ~ "&&>(const_cast<" ~ annot ~ "&>(" ~ name ~ "(";
 
         for (mut i = 0; i < args.len; i++)
         {
-            let argNode     = items[i] || fail();
-            let argTarget   = argNode.target;
-
-            //
-            let forceValue  = retargs.has(Region_fromArgIndex(argTarget.index));
-            let binding     = binding(argNode, :forceValue);
+            let arg         = args[i] || fail();
+            let forceValue  = retargs.has(Region_fromArgIndex(arg.local));
+            let binding     = binding(arg, :forceValue);
 
             // Split annot from id.
             mut space = -1;
@@ -912,7 +915,7 @@ pub fn cpp_codegen(implicit module: Module, implicit ctx: Context): CodegenOutpu
             space > 0 || fail("ensureMoveFromConstRefHelper: cant split annot/id.");
 
             mut pass = binding.slice(space + 1);
-            if (!argNode.type.is_ref)
+            if (!arg.type.is_ref)
                 pass = "static_cast<" ~ binding.slice(0, space) ~ "&&>(" ~ pass ~ ")";
 
             // Append to signature and forwarder.
@@ -1012,38 +1015,30 @@ pub fn cpp_codegen(implicit module: Module, implicit ctx: Context): CodegenOutpu
         return cgEmpty(fn, mode);
     }
 
-    fn binding(node: SolvedNode, doInit!?: bool, forceMut!?: bool, forceValue!?: bool): string
+
+    //
+
+    fn binding(target!: Target, forceValue!?: bool)
     {
-        //////////////////////////////////////////////////////////
-        mut _tv0: string[];
-        if !(_current_fn.index) swap(_tv0, _current_fn.TEMPVARs);
-        defer {
-            if !(_current_fn.index) swap(_tv0, _current_fn.TEMPVARs);
-        }
-        //////////////////////////////////////////////////////////
+        let overload    = GET(target);
+        let place_type  = overload.solved.type;
+        let isArg       = overload.flags & F_ARG;
 
-        let overload = node.target && GET(node.target);
-
-        let isArg = overload.flags & F_ARG;
-
-        let node_type = forceValue
-            ? clear_refs(node.type)
-            : node.type;
+        shadow let place_type  = forceValue
+            ? clear_refs(place_type)
+            : place_type;
 
         let annot = typeAnnot(
-            node_type, (!forceMut && !overload.type.is_mutref && M_CONST)
-                     | (isArg && M_ARGUMENT)
-                     | (overload.type.is_mutref && M_MUTVAR)
-                     | (overload.flags & F_MOVED_FROM && M_MOVABLE));
-
-        if (!node.target)
-            return annot;
+            place_type, (!overload.type.is_mutref && M_CONST)
+                      | (isArg && M_ARGUMENT)
+                      | (overload.type.is_mutref && M_MUTVAR)
+                      | (overload.flags & F_MOVED_FROM && M_MOVABLE));
 
         let isUnused = overload.flags & F_UNUSED;
         if (isArg && isUnused)
             return annot;
 
-        let id      = localID(:node.target, dedupe: true);
+        let id      = localID(:target, dedupe: true);
         mut head    = annot || fail();
 
         head       ~= " " ~ id;
@@ -1051,48 +1046,68 @@ pub fn cpp_codegen(implicit module: Module, implicit ctx: Context): CodegenOutpu
         //
         if (isUnused)
             head    = "[[maybe_unused]] " ~ head;
-        if (node.target.flags & F_TODO_FIX_RRET)
+        if (target.flags & F_TODO_FIX_RRET)
             head    = "/*RRET*/ " ~ head;
-        if (node.target.flags & F_MOVED_FROM)
+        if (target.flags & F_MOVED_FROM)
             head    = "/*MOV*/ " ~ head;
 
-        if (!doInit || isArg)
+        return head;
+    }
+
+    fn binding(target!: Target, init: SolvedNode, doInit!: bool)
+    {
+        let head = binding(:target);
+        if (!doInit)
             return head;
 
-        let init    = node.items ? node.items[LET_INIT] : SolvedNode;
         if (init)
         {
             // Definit.
             if (init.kind == "definit" && !init.type.is_ref)
-            {
-                init.type == node.type || fail("what's this now");
                 return head ~ " {}";
-            }
-
-            let isCopy = init.kind == "copy" && !node.type.is_ref;
 
             // A less verbose copy init.
-            let expr = cgNode(debug: "binding(" ~ id ~ ")",
-                isCopy  ? init.items.only
-                        : init);
+            let isCopy = init.kind == "copy" && !target.solved.is_ref;
 
-            // HACK - wrap in a lambda when we need temps here
-            if (!_current_fn.index && _current_fn.TEMPVARs)
+            shadow let init = isCopy
+                ? init.items.only
+                : init;
+
+            /////////////////////////////////////////////
+            /////////////////////////////////////////////
+            /////////////////////////////////////////////
+            let use_initTEMPVARs = !_current_fn.index;
+            mut initTEMPVARs: string[];
+
+            if (use_initTEMPVARs)
+                swap(initTEMPVARs, _current_fn.TEMPVARs);
+            /////////////////////////////////////////////
+            ///
+            let expr = cgNode(debug: "binding", init);
+            ///
+            /////////////////////////////////////////////
+            if (use_initTEMPVARs)
+                swap(initTEMPVARs, _current_fn.TEMPVARs);
+
+            if (initTEMPVARs)
             {
-                shadow let annot = annot.starts(with: "const ") ? annot.slice(6) : annot;
-                shadow let expr  = isCopy ? cgClone(init, expr) : expr;
+                // HACK - wrap in a lambda when we need temps here
+                let iife    = " { []() -> " ~ typeAnnot(init.type)
+                            ~ " {\n    " ~ initTEMPVARs.join(";\n    ")
+                            ~  ";\n    return " ~ expr ~ ";\n}() }";
 
-                shadow let iife  = " { []() -> " ~ annot ~ " {\n    " ~ _current_fn.TEMPVARs.join(";\n    ") ~ ";\n    return " ~ expr ~ ";\n}() }";
-                _current_fn.TEMPVARs.clear();
                 return head ~ iife;
             }
+            /////////////////////////////////////////////
+            /////////////////////////////////////////////
+            /////////////////////////////////////////////
 
             // I think we can use curlies everywhere,
             //  here we make an exception for copy inits,
             //   but we skip primitives which doesn't make sense -
             //    curly init is BETTER for primitives because it prevents narrowing.
             //*/
-            if (isCopy && !node.type.is_primitive)
+            if (isCopy && !init.is_primitive)
                 return head ~ " { " ~ expr ~ " }";
 
             return head ~ " = " ~ expr;
@@ -1103,6 +1118,31 @@ pub fn cpp_codegen(implicit module: Module, implicit ctx: Context): CodegenOutpu
 
         return head ~ " {}";
     }
+
+    fn binding(node: SolvedNode, doInit!?: bool): string
+    {
+        let target  = node.target;
+        let init    = doInit && node.items && node.items[LET_INIT];
+
+        return binding(:target, :init, :doInit);
+    }
+
+    fn binding(arg: Argument, forceValue!?: bool)
+    {
+        let target = nested(arg.local);
+
+        if (!target)
+        {
+            // HACK - addrofn arguments, best thing would be to altogether skip ZST args
+            arg.type.addroffn::type_isZST || fail("binding(no target)");
+            return annotateAddrofn();
+        }
+
+        return binding(:target, :forceValue);
+    }
+
+
+    //
 
     fn cgLet(node: SolvedNode, global!: bool, foreign?: bool): string
     {
@@ -1722,6 +1762,11 @@ pub fn cpp_codegen(implicit module: Module, implicit ctx: Context): CodegenOutpu
         include("<fu/never.h>");
 
         return "fu::never";
+    }
+
+    fn annotateAddrofn()
+    {
+        return "int";
     }
 
     fn cgLiteral(node: SolvedNode): string
