@@ -1848,6 +1848,10 @@ pub fn solve(
             return relaxBlockVar(node.target, :relax_mask);
         }
 
+        // INDIRECTION !!!
+        if (k == "letdef")
+            return propagateType(node.target.solved, :slot, :relax_mask);
+
         ////////////////////////////
         let here0   = _here;
         _here       = node.token;
@@ -3320,6 +3324,11 @@ pub fn solve(
                 for (mut i = 0; i < N; i++)
                 {
                     let argNode = items[i];
+
+                    shadow let argNode = argNode.kind == "letdef"
+                        ? argNode.target.solved
+                        : argNode;
+
                     argNode.kind == "let" || BUG();
 
                     mut name        = argNode.value;
@@ -4514,20 +4523,18 @@ pub fn solve(
     {
         mut out = solveLetLike_dontTouchScope(node, :specType);
         let id  = out.value;
-        solveLet(:out, :id);
-        return out;
+        return solveLet(:out, :id);
     }
 
-    fn solveLet(ref out!: SolvedNode, id!: string)
+    fn solveLet(ref out!: SolvedNode, id!: string): SolvedNode
     {
         // Dead code elim.
         if (out.kind != "let")
         {
-            if (SELF_TEST)
-                out.type.is_never || fail(
-                    "solveLet: results in a `" ~ out.kind ~ ": " ~ id ~ "`.");
+            out.type.is_never || fail(
+                "solveLet: results in a `" ~ out.kind ~ ": " ~ id ~ "`.");
 
-            return;
+            return out;
         }
 
         !out.type.is_ref || out.type.lifetime || fail(
@@ -4586,7 +4593,7 @@ pub fn solve(
                                 _scope.usings.push(target);
 
                             out = createEmpty();
-                            return;
+                            return out;
                         }
                     }
                 }
@@ -4599,14 +4606,30 @@ pub fn solve(
             Scope_set(_scope, :id, :target, :shadows);
             if (out.flags & F_USING)
                 _scope.usings.push(target);
+
+            //
+            return createLetDef(:target);
         }
+
+        // TODO FIX: these are the addrofn target-less lets,
+        //  which aren't runtime arguments, we need them cleaned up during spec
+        //   so we don't have to deal with them all over the place like this
+        //
+        if (out.flags & F_ARG)
+            return out;
+
+        return createEmpty();
+    }
+
+    fn createLetDef(target: Target)
+    {
+        return SolvedNode(kind: "letdef", :target, type: []);
     }
 
     fn createLet(id: string, flags: i32, init: SolvedNode)
     {
         mut out = solveLetLike_dontTouchScope(:flags, :id, :init);
-        solveLet(:out, :id);
-        return out;
+        return solveLet(:out, :id);
     }
 
 
@@ -4657,8 +4680,8 @@ pub fn solve(
         Scope_pop(_scope, scope0);
         //////////////////////////
 
-        err.kind == "let" && isAssignableAsArgument(
-            host: err.type, t_string) || fail(
+        err.kind == "letdef" && isAssignableAsArgument(
+            host: err.target.solved.type, t_string) || fail(
                 "catch: exceptions are strings,"
                     ~ " consider dropping the annotation.");
 
@@ -6847,6 +6870,11 @@ pub fn solve(
             // The extra stuff we need to check backward jumps.
             bck_loop(node);
         }
+        else if (k == "letdef")
+        {
+            // INDIRECTION !!!!
+            bck_node(node.target.solved);
+        }
         else if (k == "let")
         {
             // Variable initialization.
@@ -7055,6 +7083,11 @@ pub fn solve(
                 for (mut i = 0; i < h.returns.len; i++)
                     maybeCopyOrMove(h.returns[i].items.only, h.ret_actual);
             }
+        }
+        else if (k == "letdef")
+        {
+            // INDIRECTION !!!!
+            mcom_node(node.target.solved);
         }
         else if (k == "let")
         {

@@ -599,7 +599,7 @@ pub fn cpp_codegen(implicit module: Module, implicit ctx: Context): CodegenOutpu
                 let n = nodes[i];
                 let k = n.kind;
                 if (k == "jump" || k == "loop" || k == "try"
-                    || k == "let" || k == "block") // TODO FIX we can handle both of these
+                    || k == "letdef" || k == "block") // TODO FIX we can handle both of these
                 {
                     return false;
                 }
@@ -1242,6 +1242,14 @@ pub fn cpp_codegen(implicit module: Module, implicit ctx: Context): CodegenOutpu
 
         cgLet(target.solved, global: true, foreign: true);
     }
+
+    fn cgLetDef(node: SolvedNode)
+    {
+        return cgLet(node.target.solved, global: !_current_fn.index);
+    }
+
+
+    //
 
     fn cgJump(node: SolvedNode): string
     {
@@ -2209,7 +2217,7 @@ pub fn cpp_codegen(implicit module: Module, implicit ctx: Context): CodegenOutpu
         if (k == "or")          return cgOr(node, mode);
         if (k == "and")         return cgAnd(node, mode, :debug);
 
-        if (k == "let")         return cgLet(node, global: !_current_fn.index);
+        if (k == "letdef")      return cgLetDef(node);
 
         if (k == "root")        return cgRoot(node);
         if (k == "block")       return cgBlock(node, mode, debug: "block");
