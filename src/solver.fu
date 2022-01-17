@@ -2025,10 +2025,12 @@ pub fn solve(
         }
         else if (k == "arrlit")
         {
+            let itemSlot = tryClear_sliceable(slot) || fail(
+                "propagateType(arrlit): Can't clear solve item type.");
+
             for (mut i = 0; i < node.items.len; i++)
                 propagateType(node.items[i], :relax_mask,
-                    tryClear_sliceable(slot) || fail(
-                        "propagateType(arrlit): Can't clear solve item type."));
+                    slot: itemSlot);
         }
         else if (k == "argid")
         {
