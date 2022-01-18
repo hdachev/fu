@@ -3031,6 +3031,33 @@ pub fn runTests()
         }
     `);
 
+    TODO(`
+        <fail cannot access invalidated>
+        nocopy            <pass/></fail>
+        struct SolvedNode { items: SolvedNode[] };
+
+        fn popAndOr(ref node: SolvedNode) {
+            let N = node.items.len;
+
+            let pop = node.items[N - 1];
+            if (N > 2) {
+                node.items.pop();
+            }
+            else {
+                let head = node.items[0];
+                node = head;
+            }
+
+            return pop;
+        }
+
+        fn main() {
+            mut a = SolvedNode([ SolvedNode, SolvedNode ]);
+            let b = a.popAndOr();
+            return a.items.len + b.items.len;
+        }
+    `);
+
     ZERO(`
         <fail cannot access invalidated>
         nocopy            <pass/></fail>
