@@ -2199,53 +2199,20 @@ pub fn solve(
             h.ret_expect = [];
 
         // Block tail expressions.
-        if (expr && items && !items.last.is_void)
+        if (expr && items && !items.last.is_never)
+                          /////////////////////// we dont seem to be hitting this check at all
+                          ///////////////////////
         {
             // Pretend this is a jump, the jump node itself is never used
             //  but we just go through the stuff below
             //   to make it look like a regular return.
             //
-            h.returns ~= createJump(items.last, :h);
+            createJump(items.last, :h);
         }
 
         // There's a conflict between vars & returns.
         if (h.returns)
         {
-            // First off, compute a permissive estimate of the return value,
-            //  and use that to relax all locals.
-            for (mut i = 0; i < h.returns.len; i++)
-            {
-                shadow let expr = h.returns[i].items.only;
-
-                ///////////////////////////////////////////////////////////
-                let here0 = _here; _here = expr.token; defer _here = here0;
-                ///////////////////////////////////////////////////////////
-
-                reportReturnType(:h, expr.type);
-
-            }
-
-            // NOW, IMPORTANTLY:
-            //  If we're about to return a mutref, make sure it doesn't go through an F_MUT.
-            //   There's a bit of a conflict of interest here with F_REFs and templates,
-            //    we can also start with non-F_REF but keep in mind that this worsens
-            //     the problem of const-vs-mut templates, so the rules are a bit blurry here.
-            //      We might be better off with explicit consts than explicit vars,
-            //       or perhaps allow ref vars to bind to constants.
-            //
-            if (h.ret_actual.is_mutref)
-            {
-                for (mut i = 0; i < h.returns.len; i++)
-                {
-                    shadow mut expr = h.returns[i].items.only;
-                    if (!expr.type.lifetime.Lifetime_allowsMutrefReturn(:h.locals_start))
-                    {
-                        reportReturnType(:h, clear_mutref(expr.type));
-                        break;
-                    }
-                }
-            }
-
             // TODO FIX Clear this up, there's local lifetimes in the return value.
             if (h.ret_actual.lifetime)
                 h.ret_actual.lifetime = Lifetime_placeholder();
@@ -4143,15 +4110,31 @@ pub fn solve(
         h.mask |= HM_LabelUsed;
 
         //
-        let jump = createJump(:h, expr);
-        h.returns ~= jump;
-        return jump;
+        return createJump(:h, expr);
     }
 
-    fn createJump(expr?: SolvedNode, h?: Helpers)
+    fn createJump(expr: SolvedNode, h: Helpers)
     {
-        return SolvedNode("jump", type: t_never,
+        let jump = SolvedNode("jump", type: t_never,
             items: expr && [ expr ], helpers: h.index);
+
+        h.returns ~= jump;
+
+        // NOW, IMPORTANTLY:
+        //  If we're about to return a mutref, make sure it doesn't go through an F_MUT.
+        //   There's a bit of a conflict of interest here with F_REFs and templates,
+        //    we can also start with non-F_REF but keep in mind that this worsens
+        //     the problem of const-vs-mut templates, so the rules are a bit blurry here.
+        //      We might be better off with explicit consts than explicit vars,
+        //       or perhaps allow ref vars to bind to constants.
+        //
+        let type = expr.type.is_mutref && !expr.type.lifetime.Lifetime_allowsMutrefReturn(:h.locals_start)
+            ? clear_mutref(expr.type)
+            :              expr.type;
+
+        reportReturnType(:h, type);
+
+        return jump;
     }
 
     fn reportReturnType(h!: Helpers, type: Type)
@@ -6984,11 +6967,11 @@ pub fn solve(
                     h.returns[i].MUT.items.only = expr;
                     type                        = expr.type;
                 }
-            }
 
-            // Report the unwound lifetime,
-            //  but leave the original lifetime on the expr for bck & co.
-            reportReturnType(:h, type);
+                // Report the unwound lifetime,
+                //  but leave the original lifetime on the expr for bck & co.
+                reportReturnType(:h, type);
+            }
         }
 
         if (h.ret_expect)
@@ -7022,15 +7005,10 @@ pub fn solve(
                     maybeCopyOrMove(items[i], host_args[i].type, isArgument: true);
             }
         }
-        else if (k == "block")
+        else if (k == "jump")
         {
-            if (node.helpers)
-            {
-                // cpy/move.
-                let h = Helpers(node.helpers);
-                for (mut i = 0; i < h.returns.len; i++)
-                    maybeCopyOrMove(h.returns[i].items.only, h.ret_actual);
-            }
+            let h = Helpers(node.helpers);
+            maybeCopyOrMove(node.items.only, h.ret_actual);
         }
         else if (k == "letdef")
         {
