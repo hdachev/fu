@@ -2246,22 +2246,6 @@ pub fn solve(
                 }
             }
 
-            // In order to relax them locals we'll first need to relax their callsites.
-            for (mut i = 0; i < h.returns.len; i++)
-            {
-                shadow mut expr = h.returns[i].items.only;
-
-                // We want to enable bck ASAP -
-                //  on first pass, we'll promote stuff to fmuts unless it hurts our returns,
-                //   else we emit an error. Same, we wont relax F_MUTs when we RRET.
-                //
-                // This is not the endgame, but I need this to get going,
-                //  the compiler barely works anymore.
-                //
-                if (expr.is_ref && !fnbody_of)
-                    Lifetime_F_TODO_FIX_RRET(expr.lifetime, :h.locals_start);
-            }
-
             // TODO FIX Clear this up, there's local lifetimes in the return value.
             if (h.ret_actual.lifetime)
                 h.ret_actual.lifetime = Lifetime_placeholder();
@@ -2380,7 +2364,7 @@ pub fn solve(
         // Lose the F_MUT annots on values that don't need them.
         if (o.flags & F_MUT)
         {
-            if (usage.is_mutref || o.flags & F_TODO_FIX_RRET)
+            if (usage.is_mutref)
             {
                 // usage.is_mutref || fail("THIS IS NOT A BUG, REMOVE THIS ASSERT.\n\n\tFound a case where we can\'t lift a F_MUT because the variable is returned from: " ~ o.qWHAT);
 
@@ -4056,18 +4040,6 @@ pub fn solve(
             let init = o.Lifetime_climbType;
             if (init.is_ref)
                 Lifetime_F_MOVED_FROM(init.lifetime);
-        });
-    }
-
-    fn Lifetime_F_TODO_FIX_RRET(lifetime: Lifetime, locals_start!: i32)
-    {
-        Lifetime_each(:lifetime, :locals_start, visit: |o|
-        {
-            o.flags |= F_TODO_FIX_RRET;
-
-            let init = o.Lifetime_climbType;
-            if (init.is_ref)
-                Lifetime_F_TODO_FIX_RRET(init.lifetime, :locals_start);
         });
     }
 
@@ -5853,7 +5825,7 @@ pub fn solve(
     {
         let t = nested(target);
         ref o = GET_mut(t);
-        if (o.flags & (F_TODO_FIX_RRET | F_REF) || o.type.is_mutref || !o.type.is_rx_copy)
+        if (o.flags & F_REF || o.type.is_mutref || !o.type.is_rx_copy)
             return false;
 
         o.kind == "var"                 || fail("BUG: Not a variable.");

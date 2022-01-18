@@ -47,7 +47,7 @@ pub let F_SHADOW        = 1 << 23;
 pub let F_NAMED_ARGS    = 1 << 24;
 pub let F_OOE_RTL       = 1 << 25;          pub let F_ENUM          = F_OOE_RTL;
 pub let F_REST_ARG      = 1 << 26;
-pub let F_TODO_FIX_RRET = 1 << 27;
+// pub let F_TODO_FIX_RRET = 1 << 27;
 
 pub let F_TEMPLATE      = 1 << 28;
 pub let F_INLINE        = 1 << 29;
