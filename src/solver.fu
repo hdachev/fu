@@ -5286,7 +5286,7 @@ pub fn solve(
             ? if_A_and_NEVER_then_B_else_C
             : solveBlock(node.items[1], :type);
 
-        mut alt     = solveBlock(node.items[2], type: type || cons.type);
+        mut alt     = solveBlock(node.items[2], :type);
 
         if (!type.is_void)
             type = superType("if/else: ", cons.type, alt.type);
@@ -5401,6 +5401,11 @@ pub fn solve(
                 {
                     type    = item.type;
                     sumType = item.type;
+
+                    // Stop summing up if we've got zeroinit -
+                    //  it gets lost in the type union.
+                    if (type.is_zeroes)
+                        break;
                 }
             }
 
@@ -5897,25 +5902,18 @@ pub fn solve(
     {
         if (slot.canon != node.canon && !node.is_never)
         {
-            // TODO EASY instead of this replace the node with a createDefinit,
-            //  not doing it now because we need to make sure to keep all the side effects (if any) -
-            //   perhaps definits can carry an arg for effects?
-            //    Or just return a block with a definit after the expr?
-            //     But best to only do this if there are actual side effects, so there's that.
-            //      Perhaps createBlock should shake off all effect-free code.
-            //
-            // Just get a two arg createDefinit that ignores the expr if its a definit already,
-            //  else returns a block with the two things for starters.
-            //
-            if (node.kind == "definit" && !slot.is_mutref)
+            if (node.type.is_zeroes && !(slot.is_mutref && CANNOT_definit_mutrefs))
             {
-                node.MUT.type = slot;
-                return;
+                node.MUT.type = slot.is_ref
+                    ? slot.clear_refs.add_ref(Lifetime_static)
+                    : slot;
             }
-
-            fail("Considering copy or move for incompatible types: "
-                ~ humanizeType(slot) ~ " <- "
-                ~ humanizeType(node));
+            else
+            {
+                fail("Considering copy or move for incompatible types: "
+                    ~ humanizeType(slot) ~ " <- "
+                    ~ humanizeType(node));
+            }
         }
 
         // No copy needed when the slot is a reference.
