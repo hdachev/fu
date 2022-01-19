@@ -2042,15 +2042,12 @@ pub fn solve(
         }
         else if (k == "jump")
         {
-            if (node.items)
-            {
-                let h = Helpers(node.helpers);
+            let h = Helpers(node.helpers);
 
-                h.ret_actual || fail(
-                    "propagateType(jump): h.ret_actual not available.");
+            h.ret_actual || fail(
+                "propagateType(jump): h.ret_actual not available.");
 
-                propagateType(node.items.only, :relax_mask, h.ret_actual);
-            }
+            propagateType(node.items.only, :relax_mask, h.ret_actual);
         }
         else if (k == "block")
         {
@@ -4140,7 +4137,7 @@ pub fn solve(
         let type = h.ret_actual || h.ret_expect;
 
         // Deal with expression first, might noop the jump.
-        mut expr = items && solveNode(
+        mut expr = !items ? createEmpty() : solveNode(
             items.only, :type,
 
             // Kills is +1 so that kills=0 means noone.
@@ -4179,17 +4176,10 @@ pub fn solve(
 
         h.mask |= HM_LabelUsed;
 
-        if (!items)
-        {
-            reportReturnType(:h, t_void);
-            return createJump(:target, :h);
-        }
-
         //
         let jump = createJump(:target, expr, :h);
         h.returns ~= jump;
         return jump;
-
     }
 
     fn createJump(target: Target, expr?: SolvedNode, h?: Helpers)
@@ -4323,7 +4313,8 @@ pub fn solve(
             id:             node.value,
             mask:           HM_Anon | HM_CanBreak,
             local_of:       _current_fn.target.index,
-            locals_start:   GET_next_local_index()));
+            locals_start:   GET_next_local_index(),
+            ret_actual:     t_void));
 
         let n_init      = node.items[LOOP_INIT];
         let n_pre_cond  = node.items[LOOP_COND];
