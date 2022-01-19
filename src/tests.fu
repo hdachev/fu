@@ -1777,6 +1777,29 @@ pub fn runTests()
         }
     `);
 
+    ZERO(`
+        fn a(ref a)  a ?  a : [];   // ifs used cons-type to seed alt-type
+        fn b(ref b) !b ? [] : b;    //  which works for 'a', but not for 'b'.
+        fn main() 1.a - 1.b;
+    `);
+
+    ZERO(`
+        struct Type { i: i32 };
+        fn is_mutref (t: Type) !!(t.i & 3);
+        fn is_ref    (t: Type) !!(t.i & 1);
+        fn clear_refs(t: Type) Type(t.i &~ 3);
+
+        fn tryClearRefs(t: Type, mutref?: bool): Type =     // type-hints vs type-assertions:
+            (mutref ? t.is_mutref : t.is_ref)               //  solveBlocks used within '&&' and '?'
+                && clear_refs(t);                           //   so the '?' complained 'bool' doesnt assign to 'Type'
+
+        fn main() {
+            let a = tryClearRefs(Type(6), true);
+            let b = tryClearRefs(Type(6), false);
+            return a.i + b.i - 4;
+        }
+    `);
+
 
     // Short-circuit assignment, esp. useful for maps
     //  and the cpp `map[k] = v`,
