@@ -4231,6 +4231,40 @@ pub fn runTests()
         fn main() qSTACK(2).len - 2 - 4 - 8 - 2;
     `);
 
+    ZERO(`
+        fn path_relative(from: string, to: string): string {
+            let min = from.len < to.len ? from.len : to.len;
+
+            mut same = 0;
+            for (mut i = 0; i < min; i++) {
+                let a = from[i];
+                let b = to[i];
+
+                if (b != a)
+                    break;
+
+                if (b == '/')
+                    same = i + 1;
+            }
+
+            mut res: string;
+            for (mut i = same; i < from.len; i++)
+                if (from[i] == '/')
+                    res ~= "../";
+
+            res ~= to.slice(same);
+            return res;
+        }
+
+        fn main() {
+            let from    = "/a/b/c";
+            let to      = "/a/e/f";
+            let rel     = path_relative(:from, :to);
+
+            return rel == "../e/f" ? 0 : 1;
+        }
+    `);
+
 
     // Let's move on to some cooler quality of life shit.
 
