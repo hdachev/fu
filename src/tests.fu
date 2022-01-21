@@ -7319,6 +7319,22 @@ pub fn runTests()
     `);
 
     ZERO(`
+        fn test(mut x: i32) {
+            {
+                x++;
+                :CANT_FLATTEN { // naive block flattening
+                                //  can damage this label
+                    if (x & 1) break :CANT_FLATTEN;
+                    return x;
+                }
+            }
+            return x * 2;
+        }
+
+        fn main() test(1) + test(2) - 8;
+    `);
+
+    ZERO(`
         fn each(arr, fn)
             for (mut i = 0; i < arr.len; i++)
                 fn(arr[i]);

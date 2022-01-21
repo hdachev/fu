@@ -67,9 +67,11 @@ pub fn cpp_codegen(implicit module: Module, implicit ctx: Context): CodegenOutpu
 
     //
 
-    struct cg_Blockval
+    struct cg_Block
     {
-        label: Target;
+        name: string;
+        helpers: i32;
+        has_val: bool;
         ptrflip: bool;
     };
 
@@ -80,10 +82,12 @@ pub fn cpp_codegen(implicit module: Module, implicit ctx: Context): CodegenOutpu
         numTEMPVARs?:   i32;
         TEMPVARs?:      string[];
 
-        blockvals?:     cg_Blockval[];
+        blocks?:        cg_Block[];
+        num_labels?:    i32;
 
-        can_break?:     Target;
-        can_cont?:      Target;
+        can_return?:    i32;
+        can_break?:     i32;
+        can_cont?:      i32;
 
         _ids_used?:     string[];
         _ids_dedupe?:   i32[];
@@ -578,12 +582,12 @@ pub fn cpp_codegen(implicit module: Module, implicit ctx: Context): CodegenOutpu
 
     fn cgBlock(node: SolvedNode, mode: i32, debug!: string): string
     {
-        let items = node.kind == "block"  ? node.items : [ node ];
-        let label = node.kind == "block" && node.target;
+        let items   = node.kind == "block"  ? node.items : [ node ];
+        let helpers = node.kind == "block" && node.helpers;
 
         ///////////////////////////////////////////
         if (mode & M_LOOP_BODY)
-            _current_fn.can_cont = label;
+            _current_fn.can_cont = helpers;
         ///////////////////////////////////////////
 
         // We'll try to avoid block expressions as much as we can.
@@ -612,16 +616,33 @@ pub fn cpp_codegen(implicit module: Module, implicit ctx: Context): CodegenOutpu
             return true;
         }
 
+        fn labelUsed(shadow items: [SolvedNode])
+        {
+            for (mut i = 0; i < items.len; i++)
+            {
+                let item = items[i];
+                if (item.kind == "jump" && item.helpers == helpers ||
+                    item.items.labelUsed())
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
         let expr = !(mode & M_STMT);
-        if (expr && !label && items.exprOK)
+        if (expr && items.exprOK && !labelUsed(items))
             return cgComma(items, debug: debug ~ ".cgBlock");
 
         //
-        return cgBlock(items, skipCurlies: !!(mode & M_OPT_CURLIES), gnuStmtExpr: expr, :label,
-            type: expr && node.type);
+        return cgBlock(items, skipCurlies: !!(mode & M_OPT_CURLIES), gnuStmtExpr: expr,
+            :helpers, type: expr && node.type);
     }
 
-    fn cgBlock(nodes: SolvedNode[], skipCurlies!: bool, gnuStmtExpr!: bool, label!: Target, type: Type): string
+    fn cgBlock(
+        nodes: SolvedNode[], skipCurlies!: bool, gnuStmtExpr!: bool,
+        helpers!: i32, type: Type): string
     {
         ///////////////////////////////////////////////
         let _ids_used0 = _current_fn._ids_used.len;
@@ -639,23 +660,15 @@ pub fn cpp_codegen(implicit module: Module, implicit ctx: Context): CodegenOutpu
         mut close   = gnuStmtExpr ? "}))" : "}";
         mut trail   = "";
 
-        let lbl     = label && GET(label);
-        let name    = lbl.name;
+        let name    = "BL_" ~ _current_fn.num_labels++;
 
-        // Blockvals! /////////////////////////////////
-        let blockvals0  = _current_fn.blockvals.len;
-        defer _current_fn.blockvals.shrink(blockvals0);
-        ///////////////////////////////////////////////
+        mut has_val     = type && !type.is_void;
+        mut ptrflip     = false;
 
-        if (type && !type.is_void)
+        if (has_val)
         {
-            mut ptrflip = false;
             let annot   = typeAnnot(type);
-            let id      = emitTEMPVAR(annot, :ptrflip, name && "L_" ~ name ~ "_v");
-
-            // Blockvals! //////////////////////////////////////////////
-            _current_fn.blockvals ~= cg_Blockval(:label, ptrflip);
-            ////////////////////////////////////////////////////////////
+            let id      = emitTEMPVAR(annot, :ptrflip, name && name ~ "_v");
 
             let out     = ptrflip ? "*" ~ id : cgMove(:type, id);
             close       = "(void)0;}), " ~ out ~ ")";
@@ -665,23 +678,26 @@ pub fn cpp_codegen(implicit module: Module, implicit ctx: Context): CodegenOutpu
                 trail  ~= "&";
         }
 
+        // Blockvals! //////////////////////////////////////////////////////////////////////////////
+        let blocks0  = _current_fn.blocks.len;
+        defer _current_fn.blocks.shrink(blocks0);
+        _current_fn.blocks ~= cg_Block(:name, :helpers, ptrflip, :has_val);
+        ////////////////////////////////////////////////////////////////////////////////////////////
+
         //
         mut count: i32;
         mut src = cgStatements(nodes, :count, :trail);
 
         // Block label & retval.
-        if (lbl.name)
+        let labelUsed = src.has("goto " ~ name ~ ";");
+        if (labelUsed) // TODO FIX track label usage
         {
-            let prefixed_id = "L_" ~ name;
-            if (src.has("goto " ~ prefixed_id ~ ";")) // TODO FIX track label usage
-            {
-                close = "  } " ~ prefixed_id ~ ":;" ~ indent0 ~ close;
-                open  = "{ {";
-            }
+            close = "  } " ~ name ~ ":;" ~ indent0 ~ close;
+            open  = "{ {";
         }
 
         //
-        if (!skipCurlies || nodes.len != 1 || count != 1 || nodes[0].kind != "jump" && nodes[0].kind != "call")
+        if (!skipCurlies || nodes.len != 1 || count != 1 || nodes[0].kind != "jump" && nodes[0].kind != "call" || labelUsed)
             src = gnuOpen ~ indent0 ~ open ~ src ~ indent0 ~ close;
 
         return src;
@@ -990,6 +1006,8 @@ pub fn cpp_codegen(implicit module: Module, implicit ctx: Context): CodegenOutpu
             swap(_current_fn, current_fn0);
             ////////////////////////////////////////////
 
+            _current_fn.can_return = body.helpers;
+
             src ~= cgFnSignature(fn);
             src ~= cgBlock(body, M_STMT, debug: "cgFn(" ~ id ~ ")");
         }
@@ -1251,10 +1269,22 @@ pub fn cpp_codegen(implicit module: Module, implicit ctx: Context): CodegenOutpu
 
     fn cgJump(node: SolvedNode): string
     {
-        let dest_idx    = node.target;
+        let helpers     = node.helpers;
+        let use_return  = helpers == _current_fn.can_return;
 
-        let use_return  = dest_idx == _current_fn.target;
-        let dest        = GET(dest_idx);
+        fn findBlock()
+        {
+            for (mut i = _current_fn.blocks.len; i --> 0; )
+            {
+                let block = _current_fn.blocks[i];
+                if (block.helpers == helpers)
+                    return block;
+            }
+
+            fail("No such block in scope: " ~ helpers);
+        }
+
+        let block       = !use_return && findBlock();
 
         if (node.items.only.kind != "empty")
         {
@@ -1263,40 +1293,13 @@ pub fn cpp_codegen(implicit module: Module, implicit ctx: Context): CodegenOutpu
             // Break with value.
             if (!use_return)
             {
-                mut hasval  = false;
-                mut ptrflip = false;
-
-                for (mut i = _current_fn.blockvals.len; i --> 0; )
-                {
-                    let bv = _current_fn.blockvals[i];
-                    if (bv.label == dest_idx)
-                    {
-                        hasval = true;
-                        ptrflip = bv.ptrflip;
-                        break;
-                    }
-                }
-
-                let assign = hasval && "L_" ~ dest.name ~ "_v = ";
-
-                mut value = cgNode(head, !assign && M_STMT, debug: "cgJump[val.break]");
-                if (ptrflip)
-                    value = "&(" ~ value ~ ")";
+                let assign  = block.has_val && block.name ~ "_v = ";
+                mut value   = cgNode(head, !assign && M_STMT, debug: "cgJump[val.break]");
+                if (block.ptrflip)
+                    value   = "&(" ~ value ~ ")";
 
                 return "{ " ~ assign ~ value
-                     ~ "; goto L_" ~ dest.name ~ "; }";
-            }
-
-            // [[noreturns]] shouldn't have return statements,
-            //  but regular fns should return the output of [[noreturns]]
-            //   for them to end on a return. It's a mess man.
-            if (head.type.is_never)
-            {
-                if (dest.type.is_never)
-                    return cgNode(head, M_STMT, debug: "cgJump[val.return.never]");
-
-                if (dest.type.is_void)
-                    return "return (void) " ~ cgNode(head, M_RETURN, debug: "cgJump[val.return.void]");
+                     ~ "; goto " ~ block.name ~ "; }";
             }
 
             // I think the prefix keywords beat everything re: precedence.
@@ -1307,12 +1310,12 @@ pub fn cpp_codegen(implicit module: Module, implicit ctx: Context): CodegenOutpu
         if (use_return)
             return "return";
 
-        if (dest_idx == _current_fn.can_break)
+        if (helpers == _current_fn.can_break)
             return "break";
-        if (dest_idx == _current_fn.can_cont)
+        if (helpers == _current_fn.can_cont)
             return "continue";
 
-        return "goto L_" ~ dest.name;
+        return "goto " ~ block.name;
     }
 
 
@@ -2129,8 +2132,8 @@ pub fn cpp_codegen(implicit module: Module, implicit ctx: Context): CodegenOutpu
             _current_fn.can_break = can_break0;
         }
 
-        _current_fn.can_cont = Target();
-        _current_fn.can_break = Target();
+        _current_fn.can_cont = 0;
+        _current_fn.can_break = 0;
 
         //
         let items = node.items;
@@ -2147,22 +2150,23 @@ pub fn cpp_codegen(implicit module: Module, implicit ctx: Context): CodegenOutpu
         let post = n_post && cgNode(n_post, M_STMT, debug: "cgLoop[post]");
 
         //
-        let label = node.target;
-        _current_fn.can_break = label;
+        let name = "LL_" ~ _current_fn.num_labels++;
+        let helpers = node.helpers;
+        _current_fn.can_break = helpers;
+
+        // Blockvals! /////////////////////////////////////////////////////////////////////////////
+        // TODO FIX duplication with blocks, loop labels should just be a block around the loop.
+        let blocks0  = _current_fn.blocks.len;
+        defer _current_fn.blocks.shrink(blocks0);
+
+        _current_fn.blocks ~= cg_Block(:name, :helpers, false, false);
+        ///////////////////////////////////////////////////////////////////////////////////////////
 
         mut body = n_body && blockWrapSubstatement(n_body, M_LOOP_BODY);
 
         //
-        mut breakLabel = "";
-
-        let lbl     = label && GET(label);
-        let name    = lbl.name;
-        if (body && name)
-        {
-            let brk = "L_" ~ name;
-            if (body.has("goto " ~ brk ~ ";")) // TODO FIX track label usage
-                breakLabel = " " ~ brk ~ ":;";
-        }
+        let labelUsed  = body.has("goto " ~ name ~ ";"); // TODO FIX track label usage
+        let breakLabel = labelUsed && " " ~ name ~ ":;";
 
         //
         if (pcnd)

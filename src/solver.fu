@@ -2205,7 +2205,7 @@ pub fn solve(
             //  but we just go through the stuff below
             //   to make it look like a regular return.
             //
-            h.returns ~= createJump(target: Target(), items.last, :h);
+            h.returns ~= createJump(items.last, :h);
         }
 
         // There's a conflict between vars & returns.
@@ -2292,7 +2292,6 @@ pub fn solve(
 
         let block = createBlock(:items,
             type: h.ret_actual || BUG(),
-            label: h.mask & HM_LabelUsed && h.target,
             :h);
 
         if (fnbody_of)
@@ -2380,8 +2379,7 @@ pub fn solve(
     }
 
     fn createBlock(
-        type: Type, mut items: SolvedNode[],
-        label?: Target, h?: Helpers): SolvedNode
+        type: Type, mut items: SolvedNode[], h?: Helpers): SolvedNode
     {
         // TODO INVESTIGATE potential gcc bug
         //
@@ -2416,7 +2414,7 @@ pub fn solve(
         if (OPTI_flatten_blocks && items.len) for (;;)
         {
             let tail = items.last;
-            if (tail.kind != "block" || tail.target)
+            if (tail.kind != "block" || tail.helpers && Helpers(tail.helpers).mask & HM_LabelUsed)
                 break;
 
             let unwrap = tail.items;
@@ -2429,7 +2427,7 @@ pub fn solve(
         // Compact + stress test.
         if (items.len)
         {
-            mut ok = !label && !(h && h.vars);
+            mut ok = !(h.mask & HM_LabelUsed) && !(h && h.vars);
             for (mut i = 0; i < items.len - 1; i++)
             {
                 if (items[i].kind != "empty")
@@ -2444,11 +2442,9 @@ pub fn solve(
         }
 
         //
-        let block = SolvedNode(
+        return SolvedNode(
             kind: "block", :type, :items,
-            target: label, helpers: h.index);
-
-        return block;
+            helpers: h.index);
     }
 
 
@@ -4144,19 +4140,17 @@ pub fn solve(
             return expr;
 
         // Lazy labels.
-        let target = h.target ||= Scope_addLabel(h.id, :h.local_of);
-
         h.mask |= HM_LabelUsed;
 
         //
-        let jump = createJump(:target, expr, :h);
+        let jump = createJump(:h, expr);
         h.returns ~= jump;
         return jump;
     }
 
-    fn createJump(target: Target, expr?: SolvedNode, h?: Helpers)
+    fn createJump(expr?: SolvedNode, h?: Helpers)
     {
-        return SolvedNode("jump", type: t_never, :target,
+        return SolvedNode("jump", type: t_never,
             items: expr && [ expr ], helpers: h.index);
     }
 
@@ -4192,13 +4186,6 @@ pub fn solve(
 
 
     // Loops.
-
-    fn Scope_addLabel(id: string, local_of!: i32): Target
-    {
-        return Scope_create(_scope, "label",
-            name: id || ANON(),
-            type: Type, flags: F_SHADOW, nest:local_of);
-    }
 
     fn Scope_lookupReturn(id: string, lambdaOK: bool): i32
     {
@@ -4308,14 +4295,14 @@ pub fn solve(
 
         // Control flow.
         let h           = _helpers[brk_idx];
-        let label_used  = h.mask & HM_LabelUsed;
-        let type        = !pre_cond && !post_cond && !label_used
+        let type        = !pre_cond && !post_cond && !(h.mask & HM_LabelUsed)
                             ? t_never
                             : t_void;
 
-        return solved(node, type,
-            [ init, pre_cond, body, post_cond, post ],
-                target: label_used && h.target);
+        return SolvedNode(
+            kind: "loop", :type,
+            items: [ init, pre_cond, body, post_cond, post ],
+            helpers: h.index);
     }
 
 
