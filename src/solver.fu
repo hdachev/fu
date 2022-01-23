@@ -665,6 +665,26 @@ pub fn solve(
         return GET(nested(idx));
     }
 
+    fn qWHAT(l: Lifetime)
+    {
+        mut str = "";
+        for (mut i = 0; i < l.uni0n.len; i++)
+        {
+            if (i)
+                str ~= "|";
+
+            let r = l.uni0n[i];
+            if (r.Region_isStatic)
+                str ~= "static";
+            else if (r.Region_isTemp)
+                str ~= "temp";
+            else
+                str ~= r.qWHAT();
+        }
+
+        return str;
+    }
+
 
     //
 
@@ -3527,7 +3547,9 @@ pub fn solve(
                         break :NOT_INLINE;
                     }
 
-                    retval = s_body.type;
+                    //
+                    retval = Helpers(s_body.helpers).ret_actual;
+                    checkAssignable(host: retval, s_body.type, "reval after runAllPasses");
 
                     // MUT DURING SOLVE,
                     //  implicit args splice in
