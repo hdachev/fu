@@ -3359,6 +3359,10 @@ pub fn solve(
                 if (retval.is_ref)
                     Lifetime_test(retval.lifetime);
 
+                retval.lifetime.uni0n.each: |r|
+                    r.Region_isArg() || r.Region_isStatic() || fail(
+                        "updateScope: Non-static/non-arg leaked in retval lifetime: " ~ r.qWHAT);
+
                 overload.flags  = out.flags;
 
                 // Not amazing but it is what it is,
