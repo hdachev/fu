@@ -91,6 +91,9 @@ pub fn cpp_codegen(implicit module: Module, implicit ctx: Context): CodegenOutpu
 
         _ids_used?:     string[];
         _ids_dedupe?:   i32[];
+
+        // We'll start with the silliest thing here.
+        _hoist?:        string[];
     };
 
     struct TEMPVAR { annot?: string; id?: string; ptrflip?: bool; };
@@ -647,7 +650,10 @@ pub fn cpp_codegen(implicit module: Module, implicit ctx: Context): CodegenOutpu
     {
         ///////////////////////////////////////////////
         let _ids_used0 = _current_fn._ids_used.len;
-        defer _current_fn._ids_used.shrink(_ids_used0);
+        defer {
+            if (!_current_fn._hoist)
+                _current_fn._ids_used.shrink(_ids_used0);
+        }
         ///////////////////////////////////////////////
 
         //////////////////////
@@ -946,7 +952,21 @@ pub fn cpp_codegen(implicit module: Module, implicit ctx: Context): CodegenOutpu
             _current_fn.can_return = body.helpers;
 
             src ~= cgFnSignature(fn);
-            src ~= cgBlock(body, M_STMT, debug: "cgFn(" ~ id ~ ")");
+
+            mut body_src = cgBlock(body, M_STMT, debug: "cgFn(" ~ id ~ ")");
+
+            if (_current_fn._hoist)
+            {
+                mut hoist = "\n    // Hoisted:";
+                for (mut i = 0; i < _current_fn._hoist.len; i++)
+                    hoist ~= "\n    " ~ _current_fn._hoist[i] ~ ";";
+
+                let idx = body_src.find("{") + 1;
+                if (idx > 0)
+                    body_src.splice(idx, 0, hoist ~ "\n");
+            }
+
+            src ~= body_src;
         }
 
         // Consider a fwdannot after outputting body,
@@ -973,6 +993,15 @@ pub fn cpp_codegen(implicit module: Module, implicit ctx: Context): CodegenOutpu
 
     //
 
+    fn F_HOIST_asPtr(target: Target)
+    {
+        if !(target.flags & F_HOIST)
+            return false;
+
+        let t = target.solved.type;
+        return t.is_ref && (!t.type_isSliceable || t.type_isArray);
+    }
+
     fn binding(target!: Target, forceValue!?: bool)
     {
         let overload    = GET(target);
@@ -994,11 +1023,32 @@ pub fn cpp_codegen(implicit module: Module, implicit ctx: Context): CodegenOutpu
             return annot;
 
         let id      = localID(:target, dedupe: true);
-        mut head    = annot || fail();
 
-        head       ~= " " ~ id;
+        // The new hoisting stuff, obviously comes as a complete afterthought.
+        if (target.flags & F_HOIST)
+        {
+            _current_fn.target || BUG("TODO: hoisting for global variables.");
+
+            // This is such crap.
+            mut hoistDecl = annot.starts(with: "const ")
+                ? annot.slice(6)
+                : annot;
+
+            if (target.F_HOIST_asPtr)
+            {
+                hoistDecl[hoistDecl.len - 1] == '&' || BUG("F_HOIST_asPtr: Decl not a ref: " ~ hoistDecl);
+                hoistDecl[hoistDecl.len - 1] = '*';
+            }
+
+            _current_fn._hoist ~= hoistDecl ~ " " ~ id;
+
+            //
+            return id;
+        }
 
         //
+        mut head    = annot || fail();
+        head       ~= " " ~ id;
         if (isUnused)
             head    = "[[maybe_unused]] " ~ head;
         if (target.flags & F_MOVED_FROM)
@@ -1009,67 +1059,72 @@ pub fn cpp_codegen(implicit module: Module, implicit ctx: Context): CodegenOutpu
 
     fn binding(target!: Target, init: SolvedNode, doInit!: bool)
     {
-        let head = binding(:target);
+        mut head = binding(:target);
         if (!doInit)
             return head;
 
-        if (init)
-        {
-            // Definit.
-            if (init.kind == "definit" && !init.type.is_ref)
-                return head ~ " {}";
+        // Hoisted vars: the declaration is elsewhere,
+        //  this is an assignment here.
+        if (target.flags & F_HOIST)
+            head ~= " = ";
 
-            // A less verbose copy init.
-            let isCopy = init.kind == "copy" && !target.solved.is_ref;
+        // Definit.
+        if (!init || init.kind == "definit" && !init.type.is_ref)
+            return head ~ " {}";
 
-            shadow let init = isCopy
-                ? init.items.only
-                : init;
+        // A less verbose copy init.
+        let isCopy = init.kind == "copy" && !target.solved.is_ref;
 
-            /////////////////////////////////////////////
-            /////////////////////////////////////////////
-            /////////////////////////////////////////////
-            let use_initTEMPVARs = !_current_fn.index;
-            mut initTEMPVARs: string[];
+        shadow let init = isCopy
+            ? init.items.only
+            : init;
 
-            if (use_initTEMPVARs)
-                swap(initTEMPVARs, _current_fn.TEMPVARs);
-            /////////////////////////////////////////////
-            ///
-            let expr = cgNode(debug: "binding", init);
-            ///
-            /////////////////////////////////////////////
-            if (use_initTEMPVARs)
-                swap(initTEMPVARs, _current_fn.TEMPVARs);
+        /////////////////////////////////////////////
+        /////////////////////////////////////////////
+        /////////////////////////////////////////////
+        let use_initTEMPVARs = !_current_fn.index;
+        mut initTEMPVARs: string[];
 
-            if (initTEMPVARs)
-            {
-                // HACK - wrap in a lambda when we need temps here
-                let iife    = " { []() -> " ~ typeAnnot(init.type)
-                            ~ " {\n    " ~ initTEMPVARs.join(";\n    ")
-                            ~  ";\n    return " ~ expr ~ ";\n}() }";
+        if (use_initTEMPVARs)
+            swap(initTEMPVARs, _current_fn.TEMPVARs);
+        /////////////////////////////////////////////
+        ///
+        mut expr = cgNode(debug: "binding", init);
+        ///
+        /////////////////////////////////////////////
+        if (use_initTEMPVARs)
+            swap(initTEMPVARs, _current_fn.TEMPVARs);
 
-                return head ~ iife;
-            }
-            /////////////////////////////////////////////
-            /////////////////////////////////////////////
-            /////////////////////////////////////////////
+        // HACK - wrap in a lambda when we need temps here
+        if (initTEMPVARs)
+            expr    = "[]() -> " ~ typeAnnot(init.type)
+                    ~ " {\n    " ~ initTEMPVARs.join(";\n    ")
+                    ~  ";\n    return " ~ expr ~ ";\n}()";
+        /////////////////////////////////////////////
+        /////////////////////////////////////////////
+        /////////////////////////////////////////////
 
-            // I think we can use curlies everywhere,
-            //  here we make an exception for copy inits,
-            //   but we skip primitives which doesn't make sense -
-            //    curly init is BETTER for primitives because it prevents narrowing.
-            //*/
-            if (isCopy && !init.is_primitive)
-                return head ~ " { " ~ expr ~ " }";
-
-            return head ~ " = " ~ expr;
-            /*/
+        // I think we can use curlies everywhere,
+        //  here we make an exception for copy inits,
+        //   but we skip primitives which doesn't make sense -
+        //    curly init is BETTER for primitives because it prevents narrowing.
+        //*/
+        if (isCopy && !init.is_primitive)
             return head ~ " { " ~ expr ~ " }";
-            //*/
+
+        // Hoisting.
+        if (target.flags & F_HOIST)
+        {
+            if (target.F_HOIST_asPtr)
+                return head ~ "&(" ~ expr ~ ")";
+
+            return head ~ expr;
         }
 
-        return head ~ " {}";
+        return head ~ " = " ~ expr;
+        /*/
+        return head ~ " { " ~ expr ~ " }";
+        //*/
     }
 
     fn binding(node: SolvedNode, doInit!?: bool): string
@@ -1600,7 +1655,12 @@ pub fn cpp_codegen(implicit module: Module, implicit ctx: Context): CodegenOutpu
                     return rootNS(ID(id)); // TODO ensure const emit.
                 }
 
-                return localID(:node.target);
+                // Derefing ptrs.
+                shadow let id = localID(:node.target);
+                if (node.target.F_HOIST_asPtr)
+                    return "(*" ~ id ~ ")";
+
+                return id;
             }
 
             if (target.kind == "field")

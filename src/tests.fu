@@ -3074,7 +3074,7 @@ pub fn runTests()
         }
     `);
 
-    TODO(`
+    ZERO(`
         <fail cannot access invalidated>
         nocopy            <pass/></fail>
         struct SolvedNode { items: SolvedNode[] };
@@ -3132,7 +3132,7 @@ pub fn runTests()
         }
     `);
 
-    TODO_move(`
+    ZERO(`
         <fail cannot access invalidated>
         nocopy            <pass/></fail>
         struct SolvedNode {
@@ -3148,11 +3148,11 @@ pub fn runTests()
         }
 
         fn main() {
-            return createBlock([]).len;
+            return createBlock([ SolvedNode ]).len;
         }
     `);
 
-    TODO_move(`
+    ZERO(`
         <fail cannot access invalidated>
         nocopy            <pass/></fail>
         struct SolvedNode {
@@ -3180,7 +3180,7 @@ pub fn runTests()
         }
     `);
 
-    TODO_move(`
+    ZERO(`
         <fail cannot access invalidated>
         nocopy            <pass/></fail>
         struct SolvedNode {

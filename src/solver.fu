@@ -592,6 +592,17 @@ pub fn solve(
 
         // Argument?
         let index       = target.index;
+
+        // TODO FIX: there must be no difference between regular & F_MUT args,
+        //  F_MUT args reside in the caller,
+        //   so we can totally return a ref to them,
+        //    no need to copy/move things around in inside.
+        //
+        // TWO THINGS TO FIX:
+        //  1. this here
+        //  2. we "Add a temp lifetime to non F_MUT args"
+        //      in solveLetLike_dontTouchScope() around line 4k
+        //
         let region      = flags & (F_ARG | F_MUT) == F_ARG
             ? Region_fromArgIndex(index)
             : Region_fromLocalIndex(index);
@@ -2222,16 +2233,6 @@ pub fn solve(
             createJump(items.last, :h);
         }
 
-        // There's a conflict between vars & returns.
-        if (h.returns)
-        {
-            // TODO FIX Clear this up, there's local lifetimes in the return value.
-            if (h.ret_actual.lifetime)
-                h.ret_actual.lifetime = Lifetime_placeholder();
-
-            h.ret_actual.is_ref;
-        }
-
         // This will work ideally in a reverse pass,
         //  going through all blocks in reverse and relaxing their returns.
         {
@@ -2255,16 +2256,6 @@ pub fn solve(
             if (!h.ret_actual)
                 reportReturnType(:h, t_void);
         }
-
-
-        //
-
-        mcom_BlockReturns_CopyOrMoveDecision(:h);
-
-
-        //
-
-        h.ret_actual.lifetime.Lifetime_placeholder_remove();
 
 
         //
@@ -2305,7 +2296,9 @@ pub fn solve(
                 _warnings ~= Warning(
                     dedupe:  _current_fn.target.index,
                     token:   t.solved.token,
-                    message: "Unused variable: `" ~ var.name ~ "`: make it `lax` if this is intentional.");
+                    message: "Unused variable: "
+                                ~ var.name.qBAD ~ ": make it "
+                                ~ "lax".qKW ~ " if this is intentional.");
 
             GET_mut(t).flags |= F_UNUSED;
         }
@@ -4163,9 +4156,13 @@ pub fn solve(
         // TEMP ////////////////////////////////////////////////////////
         // Same as above - if we're returning strictly local variable,
         //  we're done here, behave as if we're returning a temp.
-        shadow let type = Lifetime_vs(Lifetime_unwind(type.lifetime), :h.locals_start) > 0
-            ? clear_refs(type)
-            :            type;
+        //
+        // DISABLING: this should be more "optimal"
+        //  but we must compile correctly without it
+        //
+        // shadow let type = Lifetime_vs(Lifetime_unwind(type.lifetime), :h.locals_start) > 0
+        //     ? clear_refs(type)
+        //     :            type;
         ////////////////////////////////////////////////////////////////
 
         reportReturnType(:h, type);
@@ -6972,6 +6969,52 @@ pub fn solve(
 
     fn mcom_BlockReturns_CopyOrMoveDecision(h: Helpers)
     {
+        if (!h.ret_actual.is_ref)
+            return;
+
+        // This is not perfect (potentially inefficient),
+        //   but it should work correctly out of order.
+        //
+        // If the jump is a return-current-fn:
+        //  We cannot promote var lifetimes past this fn
+        //   (we actually can but its more complicated and not necessary)
+        //    BUT we dont have to worry about retval users,
+        //     so just change the retval to reflect the current var/ref situation.
+        //
+        // Otherwise, we can extend local LTs,
+        //  so that's what we're gonna do for now.
+        //   We need to figure out how to determine if LT-extend is better/worse than cpy/mov -
+        //    depends on what you do with the result, if you later cpy, the mov would have been better,
+        //     if you just use as ref, LT-extend is better.
+        //
+        let canHoistVariables = !(h.mask & HM_Function);
+        if (canHoistVariables)
+        {
+            // Add hoisting flags.
+            let regions = h.ret_actual.lifetime.uni0n;
+            for (mut i = 0; i < regions.len; i++)
+            {
+                let r = regions[i];
+
+                if (r.Region_isArg || r.Region_isStatic)
+                    continue;
+
+                let index = Region_toLocalIndex(r);
+                if (index < h.locals_start)
+                    continue;
+
+                ref o = nested(:index).GET_mut;
+                o.flags & F_ARG && BUG("About to F_HOIST an argument.");
+
+                o.flags |= F_HOIST;
+            }
+
+            return;
+        }
+
+        if (h.returns)
+            h.ret_actual = [];
+
         // Previously in solveJump, the move-vs-copy decision:
         for (mut i = 0; i < h.returns.len; i++)
         {
@@ -7006,11 +7049,11 @@ pub fn solve(
                     h.returns[i].MUT.items.only = expr;
                     type                        = expr.type;
                 }
-
-                // Report the unwound lifetime,
-                //  but leave the original lifetime on the expr for bck & co.
-                reportReturnType(:h, type);
             }
+
+            // Report the unwound lifetime,
+            //  but leave the original lifetime on the expr for bck & co.
+            reportReturnType(:h, type);
         }
     }
 
@@ -7019,6 +7062,17 @@ pub fn solve(
 
     fn mcom_node(node: SolvedNode)
     {
+        let k = node.kind;
+        let t = node.type;
+
+        // Before children.
+        if (k == "block")
+        {
+            if (node.helpers)
+                mcom_BlockReturns_CopyOrMoveDecision(Helpers(node.helpers));
+        }
+
+        // Children.
         let items = node.items;
         for (mut i = 0; i < items.len; i++)
             mcom_node(items[i]);
@@ -7026,9 +7080,6 @@ pub fn solve(
         ///////////////////
         _here = node.token;
         ///////////////////
-
-        let k = node.kind;
-        let t = node.type;
 
         if (k == "call")
         {

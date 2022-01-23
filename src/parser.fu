@@ -39,7 +39,7 @@ pub let F_USING         = 1 << 18;
 pub let F_MUSTNAME      = 1 << 19;          pub let F_EXTERN        = F_MUSTNAME;
 
 pub let F_PUB           = 1 << 20;
-pub let F_OPERATOR      = 1 << 21;
+pub let F_OPERATOR      = 1 << 21;          pub let F_HOIST         = F_OPERATOR;
 pub let F_REF           = 1 << 22;
 pub let F_SHADOW        = 1 << 23;
                                             ///////////////////
