@@ -4132,6 +4132,15 @@ pub fn solve(
             ? clear_mutref(expr.type)
             :              expr.type;
 
+        // TEMP ////////////////////////////////////////////////////////
+        // I'm postponing work on lengthening temporary lifetimes -
+        //  same principle as locals but i need extra stuff i dont have,
+        //   so lets try to get it right without this first.
+        shadow let type = type.is_ref2temp
+            ? clear_refs(type)
+            :            type;
+        ////////////////////////////////////////////////////////////////
+
         reportReturnType(:h, type);
 
         return jump;
