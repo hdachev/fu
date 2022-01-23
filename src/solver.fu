@@ -297,7 +297,7 @@ pub fn solve(
             if (i == modid)
                 return;
 
-        modid || fail("Attempting to import modid-0.");
+        modid || BUG("Attempting to import modid-0.");
         _scope.imports ~= modid;
         _Scope_import__forceCopy(modid);
     }
@@ -308,7 +308,7 @@ pub fn solve(
             if (i == modid)
                 return;
 
-        modid || fail("Attempting to import_privates modid-0.");
+        modid || BUG("Attempting to import_privates modid-0.");
         _scope.privates ~= modid;
         _Scope_import__forceCopy_privates(modid);
     }
@@ -374,7 +374,7 @@ pub fn solve(
     {
         if (sn)
         {
-            sn.signedidx & NODEIDX_signmask == from.index & NODEIDX_signmask || fail("SolvedNodeData() signedidx is off.");
+            sn.signedidx & NODEIDX_signmask == from.index & NODEIDX_signmask || BUG("SolvedNodeData() signedidx is off.");
 
             let nodeidx = sn.signedidx >> NODEIDX_signbits;
             return sn && from.nodes[nodeidx - 1];
@@ -390,7 +390,7 @@ pub fn solve(
 
     fn MUT(sn: SolvedNode, implicit _current_fnort: Target)
     {
-        sn.signedidx & NODEIDX_signmask == _current_fnort.index & NODEIDX_signmask || fail("MUT(): signedidx is off.");
+        sn.signedidx & NODEIDX_signmask == _current_fnort.index & NODEIDX_signmask || BUG("MUT(): signedidx is off.");
 
         let nodeidx = sn.signedidx >> NODEIDX_signbits;
         return _current_fnort.EXT_mut.nodes[nodeidx - 1];
@@ -494,7 +494,7 @@ pub fn solve(
 
     fn Lifetime_fromNative(sig: [Node], args: [SolvedNode], actual: Type): Lifetime
     {
-        sig.len + FN_ARGS_BACK == args.len || fail("sig.len != args.len");
+        sig.len + FN_ARGS_BACK == args.len || BUG("sig.len != args.len");
 
         let ret = sig[sig.len + FN_RET_BACK];
         mut mutref = ret.kind == "call" && ret.items.len == 1 && ret.value == "&mut";
@@ -549,14 +549,14 @@ pub fn solve(
             if (debug_2) {}
 
             if !(lifetime.uni0n.len)
-                fail("Lifetime_test: no region set.");
+                BUG("Lifetime_test: no region set.");
 
             mut _last: Region;
             for (mut i = 0; i < lifetime.uni0n.len; i++)
             {
                 let region  = lifetime.uni0n[i];
                 {
-                    !i || region > _last || fail("Lifetime_test: not a sorted set");
+                    !i || region > _last || BUG("Lifetime_test: not a sorted set");
                     _last = region;
                 }
 
@@ -565,7 +565,7 @@ pub fn solve(
 
                 if (region.Region_isTemp)
                 {
-                    i == lifetime.uni0n.len - 1 && tempsOK || fail("Lifetime_test: unexpected temporary.");
+                    i == lifetime.uni0n.len - 1 && tempsOK || BUG("Lifetime_test: unexpected temporary.");
                     continue;
                 }
 
@@ -573,7 +573,7 @@ pub fn solve(
                 if (index)
                 {
                     let o = GET(nested(:index));
-                    o.kind == "var" || fail("Lifetime_test: local is not a var: " ~ o.kind ~ " " ~ o.name);
+                    o.kind == "var" || BUG("Lifetime_test: local is not a var: " ~ o.kind ~ " " ~ o.name);
                 }
             }
         }
@@ -583,7 +583,7 @@ pub fn solve(
 
     fn Lifetime_fromBinding(target: Target, local_of!: i32, flags!: i32): Lifetime
     {
-        target.modid < 0 || target.modid < 0 || target.modid == module.modid || fail("not from this module");
+        target.modid < 0 || target.modid < 0 || target.modid == module.modid || BUG("not from this module");
 
         // Globals?
         if (!local_of)
@@ -625,12 +625,12 @@ pub fn solve(
                 continue;
             }
 
-            region.Region_isArg() || fail("Not an argument region: " ~ region.index);
+            region.Region_isArg() || BUG("Not an argument region: " ~ region.index);
 
             let index = region.Region_toArgIndex;
 
             // TODO UNCOMMENT .last doesn't relax correctly, there's a test for that already
-            // items.last.target.index >= index || fail("Arg region > last.index: " ~ index);
+            // items.last.target.index >= index || BUG("Arg region > last.index: " ~ index);
 
             // Full union here, otherwise we risk messing things up.
             while (offset--)
@@ -641,17 +641,17 @@ pub fn solve(
                     let argNode = argNodes[offset];
 
                     let argLt = argNode.type.is_ref
-                        ? argNode.type.lifetime || fail("refarg without lifetime")
+                        ? argNode.type.lifetime || BUG("refarg without lifetime")
                         : Lifetime_temporary();
 
                     replace = Lifetime_union(replace, argLt);
                     continue :NEXT_REGION;
                 }
 
-                !here || here > index || fail("Nope, going backwards.");
+                !here || here > index || BUG("Nope, going backwards.");
             }
 
-            fail("Could not find argument region: " ~ index);
+            BUG("Could not find argument region: " ~ index);
         }
 
         return Lifetime_union(keep, replace);
@@ -1006,7 +1006,7 @@ pub fn solve(
         if (SELF_TEST)
             for (mut i = 0; i < args.len; i++)
                 if (!args[i].kind)
-                    fail("Falsy arg.kind!");
+                    BUG("Falsy arg.kind!");
 
         mut matchIdx: Target;
 
@@ -1232,15 +1232,15 @@ pub fn solve(
                             {
                                 mut _c = callsite;
                                 while (_c > inner) _c = GETfn(_c).localOf;
-                                _c == inner || fail(
-                                    "BUG! Leaking `" ~ id ~ "` between functions [inner/callsite]: "
+                                _c == inner || BUG(
+                                    "Leaking `" ~ id ~ "` between functions [inner/callsite]: "
                                         ~ inner.fnName ~ "::" ~ PREV.qWHAT
                                         ~ " is seen from " ~ callsite.fnName);
 
                                 mut _i = inner;
                                 while (_i > outer) _i = GETfn(_i).localOf;
-                                _i == outer || fail(
-                                    "BUG! Leaking `" ~ id ~ "` between functions [inner/outer]: "
+                                _i == outer || BUG(
+                                    "Leaking `" ~ id ~ "` between functions [inner/outer]: "
                                         ~ inner.fnName ~ "::" ~ PREV.qWHAT ~ " and "
                                         ~ outer.fnName ~ "::" ~ NEXT.qWHAT
                                         ~ " as seen from " ~ callsite.fnName);
@@ -1271,7 +1271,7 @@ pub fn solve(
 
                     if (N)
                     {
-                        reorder.len >= args.len || !reorder || optional || fail("reorder < args.");
+                        reorder.len >= args.len || !reorder || optional || BUG("reorder < args.");
 
                         :ARG_OK
                         for (mut i = 0; i < N; i++)
@@ -1347,7 +1347,7 @@ pub fn solve(
                                     conversions.grow_if_oob(i) ~= autocall_conversions.only;
 
                                 conversions.grow_if_oob(i) ~= t;
-                                autocall_reorder.len < 2 || fail("autocall: reorder");
+                                autocall_reorder.len < 2 || BUG("autocall: reorder");
                             }
 
                             // Templates.
@@ -1359,7 +1359,7 @@ pub fn solve(
                                 ? GET(conversions[i].last).type
                                 : args[callsiteIndex].type;
 
-                            if (isAssignableAsArgument(expect, actual || fail("tryMatch: !actual")))
+                            if (isAssignableAsArgument(expect, actual || BUG("tryMatch: !actual")))
                                 continue :ARG_OK;
 
                             /////////////////
@@ -1731,7 +1731,7 @@ pub fn solve(
 
         let debug = tryMatch__mutargs(:misc_scope, :local_scope, :id, :args, :reorder, :conversions, :flags, :target, :error);
         if (debug)
-            fail("Did match on second pass: " ~ debug.qWHAT);
+            BUG("Did match on second pass: " ~ debug.qWHAT);
 
         fail(error);
     }
@@ -2049,8 +2049,7 @@ pub fn solve(
         }
         else if (k == "arrlit")
         {
-            let itemSlot = tryClear_sliceable(slot) || fail(
-                "propagateType(arrlit): Can't clear solve item type.");
+            let itemSlot = clear_sliceable(slot);
 
             for (mut i = 0; i < node.items.len; i++)
                 propagateType(node.items[i], :relax_mask,
@@ -2330,7 +2329,7 @@ pub fn solve(
         {
             let node = t.solved;
 
-            node.type || fail("!var.solved.type, can`t propagateType");
+            node.type || BUG("relaxBlockVar: !var.solved.type, can`t propagateType");
             node.MUT.type.try_relax(slot: usage, :relax_mask);
 
             let init = node.items && node.items[LET_INIT];
@@ -2557,7 +2556,7 @@ pub fn solve(
             // Strip internal argument name.
             if (c == '!')
             {
-                exclam && fail("CompoundArgID: double bang in `" ~ name ~ "`.");
+                exclam && BUG("CompoundArgID: double bang in `" ~ name ~ "`.");
                 exclam = true;
 
                 let i0 = i++;
@@ -2580,7 +2579,7 @@ pub fn solve(
         }
 
         if (!exclam)
-            fail("CompoundArgID: no `.` nor `!` in id `" ~ name ~ "`.");
+            BUG("CompoundArgID: no `.` nor `!` in id `" ~ name ~ "`.");
 
         return [];
     }
@@ -2718,12 +2717,12 @@ pub fn solve(
 
     fn ScopeSkip_push(ref scope_skip: ScopeSkip[], start: i32, end: i32)
     {
-        start <= end || fail("ScopeSkip_push: bad args.");
+        start <= end || BUG("ScopeSkip_push: bad args.");
         if (end == start)
             return;
 
         let last = scope_skip.if_last;
-        last.end <= start || fail("ScopeSkip_push: last.end > start.");
+        last.end <= start || BUG("ScopeSkip_push: last.end > start.");
 
         // Opti - don't grow if possible, so we stay in small storage.
         if (scope_skip && last.end == start)
@@ -2841,7 +2840,7 @@ pub fn solve(
 
         fn setSpec(shadow mangle: string, target: Target, nx?: bool)
         {
-            isInline && fail("inline.setSpec");
+            isInline && BUG("inline.setSpec");
 
             ref t = _specs.map::ref(mangle);
 
@@ -2849,7 +2848,7 @@ pub fn solve(
                 target.is_SPECFAIL  ? "SPEC_FAIL"
                                     : "`" ~ GET(target).name ~ "`";
 
-            !t && nx || t.is_SPECFAIL && !nx || fail(
+            !t && nx || t.is_SPECFAIL && !nx || BUG(
                 "About to screw up royally, replacing spec: "
                     ~ t.index ~ " with " ~ target.index
                         ~ ", mangle: " ~ mangle ~ ", that's: "
@@ -2884,7 +2883,7 @@ pub fn solve(
             //
             let items = template.node.items;
             ref n_fn = template.node;
-            n_fn.kind == "fn" || fail("n_fn not a `fn`.");
+            n_fn.kind == "fn" || BUG("n_fn not a `fn`.");
 
             // println("  doTrySpec " ~ n_fn.value);
 
@@ -3057,7 +3056,7 @@ pub fn solve(
                             if (n_ret) sig[sig.len + FN_RET_BACK] = n_ret;
 
                             let n_body = cons[cons.len + FN_BODY_BACK];
-                            sig[sig.len + FN_BODY_BACK] = n_body || fail("doTrySpec: no case/body.");
+                            sig[sig.len + FN_BODY_BACK] = n_body || BUG("doTrySpec: no case/body.");
                         }
 
                         did_match = true;
@@ -3229,17 +3228,17 @@ pub fn solve(
             let n_body  = inItems[inItems.len + FN_BODY_BACK];
 
             // Builtin?
-            n_body || fail("solveFn: no body.");
+            n_body || BUG("solveFn: no body.");
 
             let isNative = n_body.isNativeBody;
             if (!isNative && !isUnspec)
-                n_body.kind == "block" || fail("solveFn: Body not a block: `" ~ n_body.kind ~ "`.");
+                n_body.kind == "block" || BUG("solveFn: Body not a block: `" ~ n_body.kind ~ "`.");
 
             // Return type annot.
             let ret_expect = n_ret && evalTypeAnnot(n_ret).type;
 
             // Seed return value.
-            mut ret_seed = n_ret    ? ret_expect || fail("falsy ret_expect: " ~ n_fn.value)
+            mut ret_seed = n_ret    ? ret_expect || BUG("falsy ret_expect: " ~ n_fn.value)
                                     : t_never;
 
             if (ret_seed.lifetime)
@@ -3247,10 +3246,6 @@ pub fn solve(
                 ret_seed.lifetime = isNative
                     ? Lifetime_fromNative(inItems, _current_fn.items[0, _current_fn.items.len + FN_ARGS_BACK], ret_seed)
                     : Lifetime_static(); // we'll overpromise during prep
-            }
-            else if (ret_seed.is_ref)
-            {
-                fail("fn.ret_actual is a ref without a lifetime.");
             }
 
             // Used twice, once to enable recursion before body, and once when done.
@@ -3327,7 +3322,7 @@ pub fn solve(
                         local: argTarget.index,
                         :risk_free);
 
-                    arg.type || isUnspec || fail("Unexpected untyped argument: `" ~ name ~ "`.");
+                    arg.type || isUnspec || BUG("updateScope: Unexpected untyped argument: `" ~ name ~ "`.");
                     args.push(arg);
 
                     if (!isImplicit)
@@ -3375,13 +3370,13 @@ pub fn solve(
                 if (isInline)
                     return;
 
-                retval || fail("FnDecl_update: no return type.");
+                retval || BUG("updateScope: no return type.");
                 if (retval.is_ref)
                     Lifetime_test(retval.lifetime);
 
                 retval.lifetime.uni0n.each: |r|
-                    r.Region_isArg() || r.Region_isStatic() || fail(
-                        "updateScope: Non-static/non-arg leaked in retval lifetime: " ~ r.qWHAT);
+                    r.Region_isArg() || r.Region_isStatic() || BUG(
+                        "updateScope: Non-static/non-arg leaked:\n\t" ~ r.qWHAT ~ "\n\n\tIn retval lifetime:\n\t" ~ retval.lifetime.qWHAT);
 
                 overload.flags  = out.flags;
 
@@ -3554,7 +3549,7 @@ pub fn solve(
                     // MUT DURING SOLVE,
                     //  implicit args splice in
                     let idx_body = outItems.len + FN_BODY_BACK;
-                    outItems[idx_body] = s_body || fail("falsy body");
+                    outItems[idx_body] = s_body || BUG("falsy body");
                     didSetBody = true;
 
                     // ARGUMENTS AT RISK ///////////////////////////////////////////////////
@@ -3570,7 +3565,7 @@ pub fn solve(
             if (!didSetBody)
             {
                 let o = GET(target);
-                o.kind != "fn" || fail(
+                o.kind != "fn" || BUG(
                     "did not set body on " ~ o.qWHAT ~ ": " ~ humanizeType(o.type));
             }
         }
@@ -3668,7 +3663,7 @@ pub fn solve(
             _helpers_data.shrink(helpers_data0);
         }
 
-        push(HelpersData(mask: HM_Struct, target: out_target || fail(
+        push(HelpersData(mask: HM_Struct, target: out_target || BUG(
             "solveStruct: no out_target: `" ~ origId ~ "`.")));
         ///////////////////////////////////////////////
 
@@ -3682,7 +3677,7 @@ pub fn solve(
         // Struct members, pass 0.
         fn solveMember(shadow node: Node)
         {
-            node.kind == "let" || fail("solveStructMembers_1: " ~ node.kind);
+            node.kind == "let" || BUG("solveStructMembers_1: " ~ node.kind);
 
             node.items[LET_INIT] &&
             node.items[LET_INIT].kind != "definit" &&
@@ -3724,14 +3719,14 @@ pub fn solve(
             }
 
             // Update field types.
-            innerScope.len == members.len || fail(
+            innerScope.len == members.len || BUG(
                 "solveStructMembers_3: field lens mismatch: " ~ innerScope.len ~ " vs " ~ members.len ~ "/" ~ node.items.len ~ ": `struct " ~ name ~ "`.");
 
             for (mut i = 0; i < innerScope.len; i++)
             {
                 let item = innerScope[i];
                 shadow let member = members[i];
-                item.id == member.value || fail("solveStructMembers_4: field id mismatch.");
+                item.id == member.value || BUG("solveStructMembers_4: field id mismatch.");
 
                 ref field = GET_mut(item.target);
                 field.type = member.type;
@@ -3767,7 +3762,7 @@ pub fn solve(
             //
             {
                 ref s       = lookupStruct_mut(out_type.canon);
-                s.target    = out_target || fail("No struct/out_target.");
+                s.target    = out_target || BUG("No struct/out_target.");
                 s.converts  = structConverts;
                 s.imports   = structImports;
 
@@ -3779,7 +3774,7 @@ pub fn solve(
 
                 CHANGE    ||= flat0 != flat_cnt || triv0 != all_triv;
 
-                GET(s.target).status & SS_DID_START || fail(
+                GET(s.target).status & SS_DID_START || BUG(
                     "Setting stuff but missing SS_DID_START.");
             }
 
@@ -3840,7 +3835,7 @@ pub fn solve(
 
         {
             ref o = GET_mut(target);
-            o.status & (SS_FINALIZED | SS_DID_START | SS_DIRTY) && fail("SS_DID_START: non-zero solver status: " ~ overload.status);
+            o.status & (SS_FINALIZED | SS_DID_START | SS_DIRTY) && BUG("SS_DID_START: non-zero solver status: " ~ overload.status);
             o.status |= SS_DID_START;
 
             if (o.kind == "fn")
@@ -3848,7 +3843,7 @@ pub fn solve(
             else if (o.kind == "type")
                 __solveStruct(solve: true, :target.template.node, into: target);
             else
-                fail("lazySolveStart: kind is `" ~ o.kind ~ "`.");
+                BUG("lazySolveStart: kind is `" ~ o.kind ~ "`.");
         }
 
         // Expect changes.
@@ -3896,7 +3891,7 @@ pub fn solve(
                     let up = t.local_of;
                     if (up != parent) // !sibling
                     {
-                        up > parent || fail("lazySolveEnd: about to climb up the wrong tree.");
+                        up > parent || BUG("lazySolveEnd: about to climb up the wrong tree.");
                         index = up;
                         continue :GO_UP;
                     }
@@ -3922,7 +3917,7 @@ pub fn solve(
         }
         else
         {
-            o.status & SS_FINALIZED && fail("Stray SS_FINALIZED.");
+            o.status & SS_FINALIZED && BUG("Stray SS_FINALIZED.");
             o.status &= ~(SS_DID_START | SS_DIRTY);
             makeNote(o.kind == "type" ? N_TypeResolve : N_FnResolve);
         }
@@ -3953,7 +3948,7 @@ pub fn solve(
             if !(h.isFnOrType)
                 continue;
 
-            h.mask & HM_Lambda && fail("Recursive lambda, what happened here?");
+            h.mask & HM_Lambda && BUG("Recursive lambda, what happened here?");
             GET_mut(h.target).status |= status;
             makeNote(note);
 
@@ -3961,7 +3956,7 @@ pub fn solve(
                 return;
         }
 
-        fail("detectRecursion: no _helpers entry for `" ~ overload.name ~ " (" ~ overload.status ~ ")`.");
+        BUG("detectRecursion: no _helpers entry for `" ~ overload.name ~ " (" ~ overload.status ~ ")`.");
     }
 
 
@@ -3985,8 +3980,7 @@ pub fn solve(
 
     fn Lifetime_climbType(o: Overload)
     {
-        o.kind == "var" || fail(
-            "Lifetime_climbType: not a `var`: " ~ o.qWHAT);
+        o.kind == "var" || BUG("Lifetime_climbType: not a `var`: " ~ o.qWHAT);
 
         let node = o.solved;
 
@@ -4036,7 +4030,7 @@ pub fn solve(
     {
         Lifetime_each(:lifetime, :locals_start, visit: |o|
         {
-            o.type.is_mutref || fail(
+            o.type.is_mutref || BUG(
                 "Checking for mutref-return-ok found non-mutref: " ~ o.qWHAT);
 
             if (o.kind == "var" && !(o.flags & F_REF))
@@ -4618,7 +4612,7 @@ pub fn solve(
 
     fn solveLetStatement(node: Node): SolvedNode
     {
-        node.kind == "let" || fail("Expected a `let` statement, got: `" ~ node.kind ~ "`.");
+        node.kind == "let" || BUG("Expected a `let` statement, got: `" ~ node.kind ~ "`.");
         return solveNode(node, t_void);
     }
 
@@ -5194,12 +5188,12 @@ pub fn solve(
             let using _ = hacks::tryParseClosureID(:id);
             if (target.isLocal && target.localOf == _current_fn.target.index)
             {
-                revision == _current_fn.target.revision || fail(
+                revision == _current_fn.target.revision || BUG(
                     "ClosureID.revision mismatch: " ~ target.qWHAT
                         ~ "\n\tCaptured at: " ~ revision
                         ~ "\n\tCurrent rev: " ~ _current_fn.target.revision);
 
-                target.kind == "var" || fail(
+                target.kind == "var" || BUG(
                     "ClosureID.target is not a var: " ~ target.qWHAT);
 
                 return CallerNode("__closure", target);
@@ -5461,11 +5455,11 @@ pub fn solve(
 
     fn SLOW_findByReadID(read: ReadID)
         SLOW_find(|node| node.reads0 < read.id && node.reads1 >= read.id,
-                      || fail("Cannot find ReadID(" ~ read.id ~ ")."));
+                      || BUG("Cannot find ReadID(" ~ read.id ~ ")."));
 
     fn SLOW_findByWriteID(write: WriteID)
         SLOW_find(|node| node.writes0 < write.id && node.writes1 >= write.id,
-                      || fail("Cannot find WriteID(" ~ write.id ~ ")."));
+                      || BUG("Cannot find WriteID(" ~ write.id ~ ")."));
 
 
     //
@@ -5678,7 +5672,7 @@ pub fn solve(
             // INLINE ARGUMENTS ////////////////////////////////////////////
 
             //
-            type.lifetime.uni0n.len == 1 || fail(
+            type.lifetime.uni0n.len == 1 || BUG(
                 "CallerNode: var " ~ target.name ~ " type.lifetime.len != 1");
 
             if (target.isLocal &&
@@ -5689,7 +5683,7 @@ pub fn solve(
                 //  complicated close-over schemes do this but its really confusing so not exactly sure why,
                 //   there's a good test for it.
                 let clID = hacks::tryParseClosureID(id: target.name)
-                        || hacks::ClosureID(:target, target.parent.revision || fail(
+                        || hacks::ClosureID(:target, target.parent.revision || BUG(
                             "ClosureID: about to serialize at rev 0: "
                                 ~ target.qWHAT));
 
@@ -5698,7 +5692,7 @@ pub fn solve(
                     type:   target.type, becauseOf: target);
                 // CLOSURE-ID-HACK
 
-                type = GET(target).type || fail("CallerNode: !type on var " ~ target.name);
+                type = GET(target).type || BUG("CallerNode: !type on var " ~ target.name);
             }
         }
 
@@ -5708,8 +5702,8 @@ pub fn solve(
             // Tag copies and moves.
             if (args)
             {
-                let host_args = target.args || fail("CallerNode: no host args: " ~ target.qWHAT);
-                host_args.len >= args.len || fail("CallerNode: host_arg.len mismatch: " ~ target.qWHAT);
+                let host_args = target.args || BUG("CallerNode: no host args: " ~ target.qWHAT);
+                host_args.len >= args.len || BUG("CallerNode: host_arg.len mismatch: " ~ target.qWHAT);
 
                 for (mut i0 = 0; i0 < args.len; i0++)
                 {
@@ -5759,7 +5753,7 @@ pub fn solve(
                 let host_args   = target.args;
 
                 mut result: SolvedNode[];
-                host_args.len == args.len || fail("inline: arglen mismatch");
+                host_args.len == args.len || BUG("inline: arglen mismatch");
                 result.resize(args.len + 1);
 
                 let locals_start = args && GET_next_local_index();
@@ -5783,14 +5777,14 @@ pub fn solve(
                     steal: _helpers.last.vars.len - helpers0vars,
                     :locals_start);
 
-                _helpers.last.vars.len == helpers0vars || fail(
+                _helpers.last.vars.len == helpers0vars || BUG(
                     "inline: _helpers.len != helpers0vars");
 
-                s_body.kind || fail("inline: no s_body.kind");
+                s_body.kind || BUG("inline: no s_body.kind");
                 result.last = s_body;
 
                 let block = createBlock(result, :s_body.type);
-                block.kind || fail("inline: no createBlock().kind");
+                block.kind || BUG("inline: no createBlock().kind");
                 return block;
             }
 
@@ -5829,8 +5823,8 @@ pub fn solve(
         if (o.flags & F_REF || o.type.is_mutref || !o.type.is_rx_copy)
             return false;
 
-        o.kind == "var"                 || fail("BUG: Not a variable.");
-        o.type.lifetime.uni0n.len == 1  || fail("BUG: lt.len != 1"  );
+        o.kind == "var"                 || BUG("BORROWCK_resolveByMutvar: Not a variable.");
+        o.type.lifetime.uni0n.len == 1  || BUG("BORROWCK_resolveByMutvar: lt.len != 1"  );
         if !(o.flags & F_MUT)
         {
             o.flags  |= F_MUT;
@@ -5874,7 +5868,7 @@ pub fn solve(
             }
             else
             {
-                fail("Considering copy or move for incompatible types: "
+                BUG("Considering copy or move for incompatible types: "
                     ~ humanizeType(slot) ~ " <- "
                     ~ humanizeType(node));
             }
@@ -6044,7 +6038,7 @@ pub fn solve(
             //  without doing type checking when possible.
             for (shadow mut i = i0; i < nodes.len; i++)
             {
-                shadow let node = nodes[i] || fail("solveNodes, prep-a: falsy node");
+                shadow let node = nodes[i] || BUG("solveNodes, prep-a: falsy node");
                 if (unorderedClassify(node.kind) != unorderedClass)
                 {
                     i1 = i;
@@ -6064,7 +6058,7 @@ pub fn solve(
             //
             for (shadow mut i = i0; i < i1; i++)
             {
-                shadow let node = nodes[i] || fail("solveNodes, prep-b: falsy node");
+                shadow let node = nodes[i] || BUG("solveNodes, prep-b: falsy node");
                 HERE(node);
                 unorderedPrep_B(:node, result[i + offset].target);
             }
@@ -6077,7 +6071,7 @@ pub fn solve(
 
                 for (shadow mut i = i0; i < i1; i++)
                 {
-                    shadow let node = nodes[i] || fail("solveNodes, solve: falsy node");
+                    shadow let node = nodes[i] || BUG("solveNodes, solve: falsy node");
                     HERE(node);
 
                     // TODO do this while listing exports instead, expect trouble with prelude.
@@ -6273,10 +6267,10 @@ pub fn solve(
         // Track references.
         if (node.is_ref)
         {
-            node.flags & F_ARG && fail("bck_let: Found an argument!");
+            node.flags & F_ARG && BUG("bck_let: Found an argument!");
 
             let init = node.items[LET_INIT];
-            init.type.is_ref || fail("What!");
+            init.type.is_ref || BUG("What!");
 
             Reference_trackLocalRef(_current_fn.flow,
                 left:  node.target.index,
@@ -6548,8 +6542,8 @@ pub fn solve(
                         {
                             let arg = args[i0];
 
-                            host_arg.is_mutref || fail(host_arg.name.human.qID ~ ": host_arg.written but !host_arg.is_mutref");
-                            arg.is_mutref      || fail(host_arg.name.human.qID ~ ": host_arg.written but !arg.is_mutref");
+                            host_arg.is_mutref || BUG(host_arg.name.human.qID ~ ": host_arg.written but !host_arg.is_mutref");
+                            arg.is_mutref      || BUG(host_arg.name.human.qID ~ ": host_arg.written but !arg.is_mutref");
 
                             bck_writes.set::add(arg.lifetime.uni0n,
                                 extras: bck_positions, extra: i0);
@@ -6563,7 +6557,7 @@ pub fn solve(
             //  but tracking args one by one would prevent args-at-risk.
             if (bck_writes)
             {
-                bck_positions.len == bck_writes.len || fail("bck_position.len is off");
+                bck_positions.len == bck_writes.len || BUG("bck_position.len is off");
                 bck_trackWrites(:callsite, bck_writes, positions: bck_positions);
             }
             /////////////////////////////////////////////////////////////////
@@ -6724,7 +6718,7 @@ pub fn solve(
             }
 
             // The sequencing fingerprint, just in case.
-            (callsite.MUT.helpers && fail("helpers already contain something")) = MUSTSEQ_mask;
+            (callsite.MUT.helpers && BUG("helpers already contain something")) = MUSTSEQ_mask;
         }
 
         //
@@ -6891,7 +6885,7 @@ pub fn solve(
             return;
 
         fn err(reason: string)
-            fail(debug ~ " " ~ callsite.target.qWHAT ~ ": " ~ reason);
+            BUG(debug ~ " " ~ callsite.target.qWHAT ~ ": " ~ reason);
 
         host_args.len == args.len || err(
             "host_args.len (" ~ host_args.len ~ ") != args.len (" ~ args.len ~ "):"
@@ -6917,7 +6911,7 @@ pub fn solve(
         for (mut i = 0; i < items.len; i++)
         {
             let n = items[i];
-            n.kind || fail(debug ~ ": No .kind on item[" ~ i ~ "].");
+            n.kind || BUG(debug ~ ": No .kind on item[" ~ i ~ "].");
         }
     }
 
@@ -6937,7 +6931,7 @@ pub fn solve(
         test_nodes(node.items, :debug); _here = node.token;
 
         // General invariants.
-        !node.is_ref == !node.lifetime || fail(
+        !node.is_ref == !node.lifetime || BUG(
             debug ~ ": !!ref != !!lt: " ~ humanizeType(node.type));
 
         //
@@ -6948,10 +6942,10 @@ pub fn solve(
         if (k == "block" || k == "and" || k == "or" || k == "if")
         {
             if (k == "and" || k == "or")
-                node.items.len > 1 || fail(debug ~ ".len: " ~ node.items.len);
+                node.items.len > 1 || BUG(debug ~ ".len: " ~ node.items.len);
 
             if (k == "if")
-                node.items.len == 3 || fail(debug ~ ".len: " ~ node.items.len);
+                node.items.len == 3 || BUG(debug ~ ".len: " ~ node.items.len);
 
             return test_Statements(node, :debug);
         }
@@ -7227,7 +7221,7 @@ pub fn solve(
 
         let root = solveNode(parse);
 
-        _current_fn.out && fail("non-empty _current_fn.");
+        _current_fn.out && BUG("non-empty _current_fn.");
 
         // println("TOTAL OVERLOADS " ~ module.fname ~ ": " ~ _scope.overloads.len);
 
