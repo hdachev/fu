@@ -2248,7 +2248,7 @@ pub fn solve(
             if (items.if_last.type.is_never)
             {
                 if (!h.ret_actual)
-                    h.ret_actual = t_never;
+                    reportReturnType(:h, t_never);
             }
             else if (fnbody_of)
             {
@@ -2261,7 +2261,7 @@ pub fn solve(
             }
 
             if (!h.ret_actual)
-                h.ret_actual = t_void;
+                reportReturnType(:h, t_void);
         }
 
 
@@ -4176,15 +4176,15 @@ pub fn solve(
     {
         // Regular block expects are best-effort type inference hints,
         //  whereas fn expects are explicit type annotations that must be enforced.
-        if (h.ret_expect && h.mask & HM_Function)
+        if (h.ret_expect)
             checkAssignable(host: h.ret_expect, type,
-                "Expression not assignable to return annotation");
+                "Actual return type does not match annotation");
 
         h.ret_actual = h.ret_actual
             ? superType("Subsequent return: ", h.ret_actual, type)
             : type;
 
-        h.ret_actual || fail("Can't be null past this point.");
+        h.ret_actual || BUG("Can't be null past this point.");
     }
 
 
@@ -4195,8 +4195,8 @@ pub fn solve(
         id?: string, sep?: string)
     {
         isAssignable(
-            :host   || fail("Bad host type."),
-            :guest  || fail("Bad guest type."))
+            :host   || BUG("Bad host type."),
+            :guest  || BUG("Bad guest type."))
                     || fail(err ~ (id && " `" ~ id ~ "`") ~ ": "
                                 ~ host .humanizeType() ~ (sep || " <- ")
                                 ~ guest.humanizeType());
@@ -4466,7 +4466,7 @@ pub fn solve(
                         ? annot
 
                         : t_init.is_mutref || flags & F_MUT || killref
-                            ? flags & F_REF                                     && (!killref || fail("redundant, see above, refs cant bind to temps"))
+                            ? flags & F_REF                                     && (!killref || BUG("redundant, see above, refs cant bind to temps"))
                                 ? t_init
                                 : flags & F_MUT || killref
                                     ? clear_refs(t_init)
@@ -4499,14 +4499,11 @@ pub fn solve(
         // Dead code elim.
         if (out.kind != "let")
         {
-            out.type.is_never || fail(
+            out.type.is_never || BUG(
                 "solveLet: results in a `" ~ out.kind ~ ": " ~ id ~ "`.");
 
             return out;
         }
-
-        !out.type.is_ref || out.type.lifetime || fail(
-            "solveLet: ref without lifetime: `" ~ id ~ "`.");
 
         mut shadows     = !!(out.flags & F_SHADOW);
         let isArg       = out.flags & F_ARG;
@@ -4516,7 +4513,7 @@ pub fn solve(
 
         if (out.flags & F_COMPOUND_ID)
         {
-            isArg || fail("`let`: F_COMPOUND_ID on a non-F_ARG.");
+            isArg || BUG("solveLet: F_COMPOUND_ID on a non-F_ARG.");
 
             let start   = id.find('!') + 1;
             let end     = id.find('.', start: start > 0 ? start : 0);
@@ -4525,8 +4522,7 @@ pub fn solve(
                 start > 0 ? start : 0,
                 end   > 0 ? end   : id.len);
 
-            cleanID && cleanID.len < id.len || fail(
-                "`let`: F_COMPOUND_ID bad cleanID.");
+            cleanID && cleanID.len < id.len || BUG("solveLet: F_COMPOUND_ID bad cleanID.");
         }
 
         shadow let id   = cleanID || id;
@@ -7008,10 +7004,6 @@ pub fn solve(
                 reportReturnType(:h, type);
             }
         }
-
-        if (h.ret_expect)
-            checkAssignable(host: h.ret_expect, h.ret_actual,
-                "Actual return type does not match annotation");
     }
 
 
