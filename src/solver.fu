@@ -5905,15 +5905,6 @@ pub fn solve(
             return;
         }
 
-        if (!node.type.is_rx_copy)
-            fail("Needs an explicit STEAL or CLONE: " ~ humanizeType(slot));
-
-        if (!node.type.is_trivial)
-        {
-            USE_nontriv_autocopy || fail("Non-trivial implicit copy.");
-            makeNote(N_NonTrivAutoCopy);
-        }
-
 
         /* This doesn't pass bck.
 
@@ -5953,6 +5944,15 @@ pub fn solve(
 
     fn createCopy(node: SolvedNode): SolvedNode
     {
+        if (!node.type.is_rx_copy)
+            fail("Needs an explicit STEAL or CLONE: " ~ humanizeType(node.type));
+
+        if (!node.type.is_trivial)
+        {
+            USE_nontriv_autocopy || fail("Non-trivial implicit copy.");
+            makeNote(N_NonTrivAutoCopy);
+        }
+
         return SolvedNode(
             kind:   "copy",
             items:  [ node ],
