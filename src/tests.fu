@@ -3252,6 +3252,21 @@ pub fn runTests()
         }
     `);
 
+    ZERO(`
+        inline fn must_not_return_ref_or_view(ref x: i32[][]) {
+            let y = x[100];
+            x.shrink(y.len);
+            return y;
+        }
+
+        fn main() {
+            mut arr: i32[][];
+            arr.grow(101);
+            arr[100] = [ 7 ]
+            return arr.must_not_return_ref_or_view()[0] - 7;
+        }
+    `);
+
 
     // Stuff that isn't working out quite right -
     //  Keep those around, there's no principle to these tests,
