@@ -2351,8 +2351,6 @@ pub fn solve(
         {
             if (usage.is_mutref)
             {
-                // usage.is_mutref || fail("THIS IS NOT A BUG, REMOVE THIS ASSERT.\n\n\tFound a case where we can\'t lift a F_MUT because the variable is returned from: " ~ o.qWHAT);
-
                 let node = t.solved;
                 let type = clear_refs(node.type);
                 node.MUT.type = type;
@@ -4157,6 +4155,14 @@ pub fn solve(
         //  same principle as locals but i need extra stuff i dont have,
         //   so lets try to get it right without this first.
         shadow let type = type.is_ref2temp
+            ? clear_refs(type)
+            :            type;
+        ////////////////////////////////////////////////////////////////
+
+        // TEMP ////////////////////////////////////////////////////////
+        // Same as above - if we're returning strictly local variable,
+        //  we're done here, behave as if we're returning a temp.
+        shadow let type = Lifetime_vs(Lifetime_unwind(type.lifetime), :h.locals_start) > 0
             ? clear_refs(type)
             :            type;
         ////////////////////////////////////////////////////////////////
