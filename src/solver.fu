@@ -183,6 +183,7 @@ pub fn solve(
     //    its append only and trivial to maintain.
 
     mut _specs: map::Map(string, Target); // mangle -> spec
+    mut _spec_errors = [ "BUG: Specializer reentry." ];
 
 
     //
@@ -1431,8 +1432,8 @@ pub fn solve(
                             :conversions, :args_mangled,
                             :REST_START, :REST_TYPE);
 
-                        if (!specIdx)
-                            matchFail("Could not specialize [TODO doTrySpec ERROR]");
+                        if (specIdx.is_SPECFAIL)
+                            matchFail("Could not specialize: " ~ _spec_errors[specIdx.index]);
 
                         // Repeat arity checks and such.
                         //
@@ -1987,7 +1988,7 @@ pub fn solve(
                     let spec = trySpecialize(
                         t.spec_of, args: relaxed, :args_mangled, REST_START: relaxed.len);
 
-                    if (spec && !(spec == t.spec_of))
+                    if (!spec.is_SPECFAIL && !(spec == t.spec_of))
                     {
                         checkAssignable(host: node.type, spec.type,
                             "Relaxed specialization does not return a subtype");
@@ -2702,12 +2703,11 @@ pub fn solve(
         //  Would make the prefix stuff more meaningful.
         //
         let mangle = overloadIdx.modid ~ "#" ~ overloadIdx.index ~ " " ~ args_mangled;
-        let spec = _specs.map::get(mangle) || doTrySpecialize(
+        return _specs.map::get(mangle) || doTrySpecialize(
             :overloadIdx, args_in:args, :mangle,
             :reorder, :use_reorder, :conversions,
-            :REST_START, :REST_TYPE);
-
-        return !spec.is_SPECFAIL && spec;
+            :REST_START, :REST_TYPE)
+                || BUG("doTrySpecialize returns empty target.");
     }
 
 
@@ -2792,8 +2792,11 @@ pub fn solve(
             args[REST_START] = REST_TYPE;
 
         //
+        let SPECFAIL_RentrySafety =
+            Target(modid: 2147483647, index: 0);
+
+        //
         let mangle00 = mangle;
-        let SPECFAIL = Target(modid: 2147483647, index: 0);
 
         //
         let original = overloadIdx || into || BUG();
@@ -2856,7 +2859,7 @@ pub fn solve(
         }
 
         if (!into && !isInline)
-            setSpec(mangle, SPECFAIL, nx: true);
+            setSpec(mangle, SPECFAIL_RentrySafety, nx: true);
 
         // Scopes & scope skips.
         mut target: Target;
@@ -2886,7 +2889,7 @@ pub fn solve(
             // println("  doTrySpec " ~ n_fn.value);
 
             //
-            mut ok = true;
+            mut error = "";
             mut remangle = false;
             mut typeParams: TypeParams;
 
@@ -2983,17 +2986,18 @@ pub fn solve(
 
                             //
                             (argName_typeParam && fail(
-                                "Type param name collision with argument: `" ~ argName ~ "`."))
+                                "Type param name collision with argument " ~ argName.qID ~ "."))
                                     .matched = inType;
 
                             // Type check.
                             if (annot)
                             {
-                                let argOk = inType && trySolveTypeParams(
-                                    annot, inType, typeParams);
+                                let argOk = trySolveTypeParams(annot, inType, typeParams);
 
-                                ok = ok && argOk;
-                                if (!ok && !remangle)
+                                if (!error && !argOk)
+                                    error = "Cannot solve argument " ~ argName.qID ~ " pattern for " ~ humanizeType(inType);
+
+                                if (error && !remangle)
                                     break;
                             }
                         }
@@ -3018,15 +3022,29 @@ pub fn solve(
                         }
 
                         if (!into)
-                            setSpec(mangle, SPECFAIL, nx: true);
+                            setSpec(mangle, SPECFAIL_RentrySafety, nx: true);
                     }
                 }
                 //        /LITFIX
                 /////////////////
 
+                fn SPECFAIL(reason: string)
+                {
+                    let index       = _spec_errors.len;
+                    _spec_errors   ~= reason;
+
+                    let spec        = Target(
+                        modid: SPECFAIL_RentrySafety.modid, :index);
+
+                    setSpec(mangle00, spec);
+                    setSpec(mangle,   spec);
+
+                    return spec;
+                }
+
                 // Match pattern arm here.
-                if (!ok)
-                    return SPECFAIL;
+                if (error)
+                    return SPECFAIL(error);
 
                 // Pattern matching.
                 let body = items[items.len + FN_BODY_BACK] || BUG();
@@ -3064,7 +3082,7 @@ pub fn solve(
                     // All branches mismatch?
                     //  Can't return, faking RAII here.
                     if (!did_match)
-                        return SPECFAIL;
+                        return SPECFAIL("No body pattern matched.");
                 }
 
                 // Native relaxer.
