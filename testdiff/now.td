@@ -1,18 +1,14 @@
 
-        //*F
-        fn main(): i32 {}
-        /*/
-        fn main(): i32 { return 0; }
-        //*/
+
+        fn main(): i32 {}               
 
 -----
 _0.fu @3:9:
 
 [2m      | [0m
-[2m      |         //*F[0m
-    3 |         [31;1mfn[0m main(): i32 {}
-[2m      |         /*/[0m
-[2m      |         fn main(): i32 { return 0; }[0m
+[2m      | [0m
+    3 |         [31;1mfn[0m main(): i32 {}               
+[2m      | [0m
 
 	Actual return type does not match annotation: i32: copy <- void
 
@@ -20,11 +16,8 @@ _0.fu @3:9:
 
 -----
 
-        /*
-        fn main(): i32 {}
-        /*/
-        fn main(): i32 { return 0; }
-        //*/
+
+        fn main(): i32 { return 0; }    
 
 -----
 
@@ -42,47 +35,41 @@ int main() { return fu_MAIN(); }
 
 -----
 
-        //*F
-        fn test(): i32 {}
-        /*/
-        fn test(): i32 { return 0; }
-        //*/
+
+        fn test(): i32 {}               
         fn main() test();
 
 -----
 _0.fu @3:9:
 
 [2m      | [0m
-[2m      |         //*F[0m
-    3 |         [31;1mfn[0m test(): i32 {}
-[2m      |         /*/[0m
-[2m      |         fn test(): i32 { return 0; }[0m
+[2m      | [0m
+    3 |         [31;1mfn[0m test(): i32 {}               
+[2m      |         fn main() test();[0m
+[2m      | [0m
 
 	Actual return type does not match annotation: i32: copy <- void
 
-        Solving [35;1mfn[0m [34;1mtest[0m
+        Solving [35;1mfn[0m [34;1mtest_H9fhQUVP[0m
 
 -----
 
-        /*
-        fn test(): i32 {}
-        /*/
-        fn test(): i32 { return 0; }
-        //*/
+
+        fn test(): i32 { return 0; }    
         fn main() test();
 
 -----
 
 #ifndef FU_NO_FDEFs
 
-static int test()
+static int test_H9fhQUVP()
 {
     return 0;
 }
 
 int fu_MAIN()
 {
-    return test();
+    return test_H9fhQUVP();
 }
 
 #endif
@@ -119,14 +106,14 @@ int main() { return fu_MAIN(); }
 
 #ifndef FU_NO_FDEFs
 
-static int sum(const int a, const int b)
+static int sum_wbbymoXS(const int a, const int b)
 {
     return a + b;
 }
 
 int fu_MAIN()
 {
-    return sum(1, -1);
+    return sum_wbbymoXS(1, -1);
 }
 
 #endif
@@ -145,14 +132,14 @@ int main() { return fu_MAIN(); }
 
 #ifndef FU_NO_FDEFs
 
-static int sum(const int a, const int b)
+static int sum_wbbymoXS(const int a, const int b)
 {
     return a + b;
 }
 
 int fu_MAIN()
 {
-    return sum(1, -1);
+    return sum_wbbymoXS(1, -1);
 }
 
 #endif
@@ -171,14 +158,14 @@ int main() { return fu_MAIN(); }
 
 #ifndef FU_NO_FDEFs
 
-static int sign(const int a)
+static int sign_ibgn75mP(const int a)
 {
     return ((a > 0) ? 1 : ((a < 0) ? -1 : 0));
 }
 
 int fu_MAIN()
 {
-    return (sign(7) + sign(-3)) + sign(0);
+    return (sign_ibgn75mP(7) + sign_ibgn75mP(-3)) + sign_ibgn75mP(0);
 }
 
 #endif
@@ -201,7 +188,7 @@ int main() { return fu_MAIN(); }
 
 #ifndef FU_NO_FDEFs
 
-static int sign(const int a)
+static int sign_ibgn75mP(const int a)
 {
     if (a > 0)
         return 1;
@@ -211,7 +198,7 @@ static int sign(const int a)
 
 int fu_MAIN()
 {
-    return (sign(10) * 2) + sign(-5);
+    return (sign_ibgn75mP(10) * 2) + sign_ibgn75mP(-5);
 }
 
 #endif
@@ -234,7 +221,7 @@ int main() { return fu_MAIN(); }
 
 #ifndef FU_NO_FDEFs
 
-static int sign(const int a)
+static int sign_ibgn75mP(const int a)
 {
     if (a > 0)
         return 1;
@@ -245,13 +232,14 @@ static int sign(const int a)
 
 int fu_MAIN()
 {
-    return (sign(10) * 2) + sign(-5);
+    return (sign_ibgn75mP(10) * 2) + sign_ibgn75mP(-5);
 }
 
 #endif
 
 
 int main() { return fu_MAIN(); }
+// DEAD_code
 
 -----
 
@@ -402,7 +390,7 @@ int main() { return fu_MAIN(); }
 
 #ifndef FU_NO_FDEFs
 
-static int decr(int& num)
+static int decr_w1jxUjR7(int& num)
 {
     return num--;
 }
@@ -410,7 +398,7 @@ static int decr(int& num)
 int fu_MAIN()
 {
     int res = 0;
-    decr(res);
+    decr_w1jxUjR7(res);
     return res + 1;
 }
 
@@ -432,7 +420,7 @@ int main() { return fu_MAIN(); }
 
 #ifndef FU_NO_FDEFs
 
-static int decr(int& num)
+static int decr_w1jxUjR7(int& num)
 {
     return num--;
 }
@@ -440,7 +428,7 @@ static int decr(int& num)
 int fu_MAIN()
 {
     int res = 0;
-    decr(res);
+    decr_w1jxUjR7(res);
     return res + 1;
 }
 
@@ -462,7 +450,7 @@ int main() { return fu_MAIN(); }
 
 #ifndef FU_NO_FDEFs
 
-static int decr(int& res)
+static int decr_EJhRWC6k(int& res)
 {
     return res--;
 }
@@ -470,7 +458,7 @@ static int decr(int& res)
 int fu_MAIN()
 {
     int res = 0;
-    decr(res);
+    decr_EJhRWC6k(res);
     return res + 1;
 }
 
@@ -491,7 +479,7 @@ int main() { return fu_MAIN(); }
 
 #ifndef FU_NO_FDEFs
 
-static void decr(int& num)
+static void decr_w1jxUjR7(int& num)
 {
     num--;
 }
@@ -499,7 +487,7 @@ static void decr(int& num)
 int fu_MAIN()
 {
     int res = 0;
-    decr(res);
+    decr_w1jxUjR7(res);
     return res + 1;
 }
 
@@ -536,42 +524,34 @@ int main() { return fu_MAIN(); }
 
 -----
 
-        //*F
-        let sum = 0;
-        /*/
-        mut sum = 0;
-        //*/
+
+        let sum = 0;        
         while (sum < 15)
-            sum++; //ERR ++ overload
+            sum++;
 
         return sum - 15;
 
 -----
-_0.fu @11:16:
+_0.fu @8:16:
 
-[2m      |         //*/[0m
+[2m      |         let sum = 0;        [0m
 [2m      |         while (sum < 15)[0m
-   11 |             sum[31;1m++[0m; //ERR ++ overload
+    8 |             sum[31;1m++[0m;
 [2m      | [0m
 [2m      |         return sum - 15;[0m
 
-	`postfix++` bad args.
-Expect: `postfix++(
-	[34;1ma[0m: $)`
-Actual: (
-	i32: copy).
+	Bad call to [34;1mpostfix++[0m: 
+
+	[35;1mtemplate[0m [34;1mpostfix++[0m: Could not specialize [TODO doTrySpec ERROR]
 
         Solving [35;1mfn[0m [34;1mmain[0m
 
 -----
 
-        /*
-        let sum = 0;
-        /*/
-        mut sum = 0;
-        //*/
+
+        mut sum = 0;        
         while (sum < 15)
-            sum++; //ERR ++ overload
+            sum++;
 
         return sum - 15;
 
@@ -656,14 +636,14 @@ int main() { return fu_MAIN(); }
 
 #ifndef FU_NO_FDEFs
 
-static int named(const int a, const int b)
+static int named_wbbymoXS(const int a, const int b)
 {
     return a - (b * 2);
 }
 
 int fu_MAIN()
 {
-    return named(6, 3);
+    return named_wbbymoXS(6, 3);
 }
 
 #endif
@@ -685,19 +665,19 @@ int main() { return fu_MAIN(); }
 
 #ifndef FU_NO_FDEFs
 
-static int named(const int a, const int b)
+static int named_wbbymoXS(const int a, const int b)
 {
     return a - (b * 2);
 }
 
-static int other(const int a, const int b)
+static int other_jRR1mEcq(const int a, const int b)
 {
-    return named(a, b);
+    return named_wbbymoXS(a, b);
 }
 
 int fu_MAIN()
 {
-    return other(6, 3);
+    return other_jRR1mEcq(6, 3);
 }
 
 #endif
@@ -715,14 +695,14 @@ int main() { return fu_MAIN(); }
 
 #ifndef FU_NO_FDEFs
 
-inline static int ret_only_arg_6Kad(const int a)
+inline static int ret_only_arg_1hpjcHdP(const int a)
 {
     return a;
 }
 
 int fu_MAIN()
 {
-    return int(ret_only_arg_6Kad(0));
+    return int(ret_only_arg_1hpjcHdP(0));
 }
 
 #endif
@@ -746,9 +726,9 @@ int main() { return fu_MAIN(); }
 
 #ifndef FU_NO_FDEFs
 
-                                #ifndef DEFt_ret_only_arg_6Kad
-                                #define DEFt_ret_only_arg_6Kad
-inline int ret_only_arg_6Kad(const int a)
+                                #ifndef DEFt_ret_only_arg_1hpjcHdP
+                                #define DEFt_ret_only_arg_1hpjcHdP
+inline int ret_only_arg_1hpjcHdP(const int a)
 {
     return a;
 }
@@ -756,7 +736,7 @@ inline int ret_only_arg_6Kad(const int a)
 
 int fu_MAIN()
 {
-    return int(ret_only_arg_6Kad(0));
+    return int(ret_only_arg_1hpjcHdP(0));
 }
 
 #endif
@@ -798,14 +778,14 @@ struct s_Range
 
 #ifndef FU_NO_FDEFs
 
-static int size(const s_Range& r)
+static int size_eShNLeiM(const s_Range& r)
 {
     return r.max - r.min;
 }
 
 int fu_MAIN()
 {
-    return size(s_Range { 14, 21 }) - 7;
+    return size_eShNLeiM(s_Range { 14, 21 }) - 7;
 }
 
 #endif
@@ -865,30 +845,25 @@ int main() { return fu_MAIN(); }
             max: i32;
         }
 
-        //*F
-        let r =
-        /*/
-        mut r =
-        //*/
+
+        let r =             
             Range(1, 2);
 
-        r.min++; //ERR ++ overload
+        r.min++;
         return r.max - r.min;
 
 -----
-_0.fu @17:14:
+_0.fu @14:14:
 
 [2m      |             Range(1, 2);[0m
 [2m      | [0m
-   17 |         r.min[31;1m++[0m; //ERR ++ overload
+   14 |         r.min[31;1m++[0m;
 [2m      |         return r.max - r.min;[0m
-[2m      |     [0m
+[2m      | [0m
 
-	`postfix++` bad args.
-Expect: `postfix++(
-	[34;1ma[0m: $)`
-Actual: (
-	i32: copy).
+	Bad call to [34;1mpostfix++[0m: 
+
+	[35;1mtemplate[0m [34;1mpostfix++[0m: Could not specialize [TODO doTrySpec ERROR]
 
         Solving [35;1mfn[0m [34;1mmain[0m
 
@@ -899,14 +874,11 @@ Actual: (
             max: i32;
         }
 
-        /*
-        let r =
-        /*/
-        mut r =
-        //*/
+
+        mut r =             
             Range(1, 2);
 
-        r.min++; //ERR ++ overload
+        r.min++;
         return r.max - r.min;
 
 -----
@@ -977,14 +949,14 @@ struct s_Range
 
 #ifndef FU_NO_FDEFs
 
-static int size(const s_Range& r)
+static int size_eShNLeiM(const s_Range& r)
 {
     return r.r_max - r.r_min;
 }
 
 int fu_MAIN()
 {
-    return size(s_Range { 14, 21 }) - 7;
+    return size_eShNLeiM(s_Range { 14, 21 }) - 7;
 }
 
 #endif
@@ -1023,19 +995,19 @@ struct s_X
 
 #ifndef FU_NO_FDEFs
 
-static int test(const s_X& x, const int b)
+static int test_Mgx9C8xP(const s_X& x, const int b)
 {
     return x.a + b;
 }
 
-static int hey(const s_X& x)
+static int hey_eShNLeiM(const s_X& x)
 {
-    return test(x, -1);
+    return test_Mgx9C8xP(x, -1);
 }
 
 int fu_MAIN()
 {
-    return hey(s_X { 1 });
+    return hey_eShNLeiM(s_X { 1 });
 }
 
 #endif
@@ -1096,7 +1068,7 @@ struct s_Player
 
 #ifndef FU_NO_FDEFs
 
-static int dist(const s_Player& p, const s_Player& other)
+static int dist_yZPrBTz7(const s_Player& p, const s_Player& other)
 {
     return p.pos.x - other.pos.x;
 }
@@ -1105,7 +1077,7 @@ int fu_MAIN()
 {
     const s_Player a = s_Player { s_Pos { 10 } };
     const s_Player b = s_Player { s_Pos { 4 } };
-    return dist(a, b) - 6;
+    return dist_yZPrBTz7(a, b) - 6;
 }
 
 #endif
@@ -1118,11 +1090,8 @@ int main() { return fu_MAIN(); }
         struct A { x: i32; y: i32; };
         struct B { x: i32; z: i32; };
         fn test(using a: A, using b: B)
-            //*F
-            x + z;
-            /*/
-            y + z;
-            //*/
+
+            x + z; 
 
         fn main() test(A(1, 1), B(-1, -1));
 
@@ -1130,27 +1099,24 @@ int main() { return fu_MAIN(); }
 _0.fu @6:13:
 
 [2m      |         fn test(using a: A, using b: B)[0m
-[2m      |             //*F[0m
-    6 |             [31;1mx[0m + z;
-[2m      |             /*/[0m
-[2m      |             y + z;[0m
+[2m      | [0m
+    6 |             [31;1mx[0m + z; 
+[2m      | [0m
+[2m      |         fn main() test(A(1, 1), B(-1, -1));[0m
 
 	Ambiguous callsite, matches multiple items in scope: `x(
-	[34;1mthis[0m: _0::B via `[35;1mvar[0m [34;1mb[0m: _0::B: copy`)` from global scope and `x(
-	[34;1mthis[0m: _0::A via `[35;1mvar[0m [34;1ma[0m: _0::A: copy`)` from global scope, as seen from `test`.
+	[34;1mthis[0m: _0::B via `[35;1marg[0m [34;1mb[0m: _0::B: copy`)` from global scope and `x(
+	[34;1mthis[0m: _0::A via `[35;1marg[0m [34;1ma[0m: _0::A: copy`)` from global scope, as seen from `test_1l2K0JTF`.
 
-        Solving [35;1mfn[0m [34;1mtest[0m
+        Solving [35;1mfn[0m [34;1mtest_1l2K0JTF[0m
 
 -----
 
         struct A { x: i32; y: i32; };
         struct B { x: i32; z: i32; };
         fn test(using a: A, using b: B)
-            /*
-            x + z;
-            /*/
-            y + z;
-            //*/
+
+            y + z; 
 
         fn main() test(A(1, 1), B(-1, -1));
 
@@ -1193,14 +1159,14 @@ struct s_B
 
 #ifndef FU_NO_FDEFs
 
-static int test(const s_A& a, const s_B& b)
+static int test_1l2K0JTF(const s_A& a, const s_B& b)
 {
     return a.y + b.z;
 }
 
 int fu_MAIN()
 {
-    return test(s_A { 1, 1 }, s_B { -1, -1 });
+    return test_1l2K0JTF(s_A { 1, 1 }, s_B { -1, -1 });
 }
 
 #endif
@@ -1259,14 +1225,14 @@ struct s_CurrentFn
 
 #ifndef FU_NO_FDEFs
 
-static int test(const s_CurrentFn& f)
+static int test_PXTKu1UQ(const s_CurrentFn& f)
 {
     return f.parent_idx - f.RoR.ret_count;
 }
 
 int fu_MAIN()
 {
-    return test(s_CurrentFn { 1, s_CurrentFn_ResetOnResolve { 1 } });
+    return test_PXTKu1UQ(s_CurrentFn { 1, s_CurrentFn_ResetOnResolve { 1 } });
 }
 
 #endif
@@ -1303,14 +1269,14 @@ int main() { return fu_MAIN(); }
 
 #ifndef FU_NO_FDEFs
 
-inline static int hey_6Kad(const int a)
+inline static int hey_1hpjcHdP(const int a)
 {
     return a * a;
 }
 
 int fu_MAIN()
 {
-    return hey_6Kad(0);
+    return hey_1hpjcHdP(0);
 }
 
 #endif
@@ -1327,14 +1293,14 @@ int main() { return fu_MAIN(); }
 
 #ifndef FU_NO_FDEFs
 
-inline static int div3by_6Kad(const int a)
+inline static int div3by_ZSoae05p(const int a)
 {
     return 3 / a;
 }
 
 int fu_MAIN()
 {
-    return div3by_6Kad(2) - 1;
+    return div3by_ZSoae05p(2) - 1;
 }
 
 #endif
@@ -1351,14 +1317,14 @@ int main() { return fu_MAIN(); }
 
 #ifndef FU_NO_FDEFs
 
-inline static int div3by_6Kad(const int a)
+inline static int div3by_ZSoae05p(const int a)
 {
     return 3 / a;
 }
 
 int fu_MAIN()
 {
-    return div3by_6Kad(2) - 1;
+    return div3by_ZSoae05p(2) - 1;
 }
 
 #endif
@@ -1375,14 +1341,14 @@ int main() { return fu_MAIN(); }
 
 #ifndef FU_NO_FDEFs
 
-static int add3(const int a, const int b)
+static int add3_TbYXL7io(const int a, const int b)
 {
     return a + b;
 }
 
 int fu_MAIN()
 {
-    return add3(-3, 3);
+    return add3_TbYXL7io(-3, 3);
 }
 
 #endif
@@ -1422,14 +1388,14 @@ static s_v1 operator+(const s_v1& a, const int b)
     return s_v1 { (a.x + b) };
 }
 
-inline static s_v1 add3_0vQb(const s_v1& a, const int b)
+inline static s_v1 add3_uKSNOX4B(const s_v1& a, const int b)
 {
     return a + b;
 }
 
 int fu_MAIN()
 {
-    return add3_0vQb(s_v1 { 2 }, 3).x - 5;
+    return add3_uKSNOX4B(s_v1 { 2 }, 3).x - 5;
 }
 
 #endif
@@ -1446,14 +1412,14 @@ int main() { return fu_MAIN(); }
 
 #ifndef FU_NO_FDEFs
 
-inline static int mul_ab_init_wWYe(const int a, const int b)
+inline static int mul_ab_init_TbYXL7io(const int a, const int b)
 {
     return a * b;
 }
 
 int fu_MAIN()
 {
-    return mul_ab_init_wWYe(1, 0);
+    return mul_ab_init_TbYXL7io(1, 0);
 }
 
 #endif
@@ -1470,14 +1436,14 @@ int main() { return fu_MAIN(); }
 
 #ifndef FU_NO_FDEFs
 
-inline static int mul_ab_annot_init_wWYe(const int a, const int b)
+inline static int mul_ab_annot_init_TbYXL7io(const int a, const int b)
 {
     return a * b;
 }
 
 int fu_MAIN()
 {
-    return mul_ab_annot_init_wWYe(1, 0);
+    return mul_ab_annot_init_TbYXL7io(1, 0);
 }
 
 #endif
@@ -1494,14 +1460,14 @@ int main() { return fu_MAIN(); }
 
 #ifndef FU_NO_FDEFs
 
-inline static int mul_ab_opt_wWYe(const int a, const int b)
+inline static int mul_ab_opt_TbYXL7io(const int a, const int b)
 {
     return a * b;
 }
 
 int fu_MAIN()
 {
-    return mul_ab_opt_wWYe(1, 0);
+    return mul_ab_opt_TbYXL7io(1, 0);
 }
 
 #endif
@@ -1518,14 +1484,14 @@ int main() { return fu_MAIN(); }
 
 #ifndef FU_NO_FDEFs
 
-inline static int ab_wWYe(const int a, const int b)
+inline static int ab_TbYXL7io(const int a, const int b)
 {
     return a + (b * 2);
 }
 
 int fu_MAIN()
 {
-    return ab_wWYe(-2, 1);
+    return ab_TbYXL7io(-2, 1);
 }
 
 #endif
@@ -1559,14 +1525,14 @@ struct s_yi32
 
 #ifndef FU_NO_FDEFs
 
-inline static int add_s_vy_0vQb(const s_yi32& v, const int s)
+inline static int add_s_vy_uKSNOX4B(const s_yi32& v, const int s)
 {
     return s + v.y;
 }
 
 int fu_MAIN()
 {
-    return add_s_vy_0vQb(s_yi32 { 1 }, -1);
+    return add_s_vy_uKSNOX4B(s_yi32 { 1 }, -1);
 }
 
 #endif
@@ -1600,14 +1566,14 @@ struct s_xi32
 
 #ifndef FU_NO_FDEFs
 
-inline static int add_s_vx_yrSl(const int s, const s_xi32& v)
+inline static int add_s_vx_ukQB196t(const int s, const s_xi32& v)
 {
     return s + v.x;
 }
 
 int fu_MAIN()
 {
-    return add_s_vx_yrSl(-1, s_xi32 { 1 });
+    return add_s_vx_ukQB196t(-1, s_xi32 { 1 });
 }
 
 #endif
@@ -1624,14 +1590,14 @@ int main() { return fu_MAIN(); }
 
 #ifndef FU_NO_FDEFs
 
-inline static int ab_WNgS(const int a, const int b, const int c)
+inline static int ab_YNCgGNb6(const int a, const int b, const int c)
 {
     return (a + (b * 2)) + (c * 3);
 }
 
 int fu_MAIN()
 {
-    return ab_WNgS(3, 0, -1);
+    return ab_YNCgGNb6(3, 0, -1);
 }
 
 #endif
@@ -1648,14 +1614,14 @@ int main() { return fu_MAIN(); }
 
 #ifndef FU_NO_FDEFs
 
-inline static double ab_dD9K(const double a, const double b)
+inline static double ab_o0PSLXup(const double a, const double b)
 {
     return a + (b * 2.0);
 }
 
 int fu_MAIN()
 {
-    return int(ab_dD9K(3.0, -1.5));
+    return int(ab_o0PSLXup(3.0, -1.5));
 }
 
 #endif
@@ -1675,14 +1641,14 @@ int main() { return fu_MAIN(); }
 
 static const double NEG_ONE_FIVE = -1.5;
 
-inline static double ab_dD9K(const double a, const double b)
+inline static double ab_o0PSLXup(const double a, const double b)
 {
     return a + (b * 2.0);
 }
 
 int fu_MAIN()
 {
-    return int(ab_dD9K(3.0, NEG_ONE_FIVE));
+    return int(ab_o0PSLXup(3.0, NEG_ONE_FIVE));
 }
 
 #endif
@@ -1702,14 +1668,14 @@ int main() { return fu_MAIN(); }
 
 static const double TWO = 2.0;
 
-inline static double ab_dD9K(const double a, const double b)
+inline static double ab_o0PSLXup(const double a, const double b)
 {
     return a + (b * 2.0);
 }
 
 int fu_MAIN()
 {
-    return int(ab_dD9K(TWO, -1.0));
+    return int(ab_o0PSLXup(TWO, -1.0));
 }
 
 #endif
@@ -1729,14 +1695,14 @@ int main() { return fu_MAIN(); }
 
 #ifndef FU_NO_FDEFs
 
-inline static int self_rec_template_6Kad(const int x)
+inline static int self_rec_template_1hpjcHdP(const int x)
 {
-    return ((x > 0) ? self_rec_template_6Kad(((x / 2) - 5)) : int(x));
+    return ((x > 0) ? self_rec_template_1hpjcHdP(((x / 2) - 5)) : int(x));
 }
 
 int fu_MAIN()
 {
-    return self_rec_template_6Kad(7) + 2;
+    return self_rec_template_1hpjcHdP(7) + 2;
 }
 
 #endif
@@ -1753,23 +1719,23 @@ int main() { return fu_MAIN(); }
 
 -----
 
-inline static int ab_rec_6Kad(int);
+inline static int ab_rec_1hpjcHdP(int);
 
 #ifndef FU_NO_FDEFs
 
-inline static int ba_rec_6Kad(const int a)
+inline static int ba_rec_1hpjcHdP(const int a)
 {
-    return (a ? ab_rec_6Kad((a - 7)) : -200);
+    return (a ? ab_rec_1hpjcHdP((a - 7)) : -200);
 }
 
-inline static int ab_rec_6Kad(const int a)
+inline static int ab_rec_1hpjcHdP(const int a)
 {
-    return (a ? ba_rec_6Kad((a - 2)) : -100);
+    return (a ? ba_rec_1hpjcHdP((a - 2)) : -100);
 }
 
 int fu_MAIN()
 {
-    return ab_rec_6Kad(11) + 200;
+    return ab_rec_1hpjcHdP(11) + 200;
 }
 
 #endif
@@ -1790,7 +1756,7 @@ int main() { return fu_MAIN(); }
 
 #ifndef FU_NO_FDEFs
 
-inline static int add1_6Kad(const int b, const int a)
+inline static int add1_ZSoae05p(const int b, const int a)
 {
     return a + b;
 }
@@ -1798,7 +1764,7 @@ inline static int add1_6Kad(const int b, const int a)
 int fu_MAIN()
 {
     const int a = 1;
-    return add1_6Kad(2, a) - 3;
+    return add1_ZSoae05p(2, a) - 3;
 }
 
 #endif
@@ -1880,64 +1846,64 @@ struct s_ModuleOutputs
 
 #ifndef FU_NO_FDEFs
 
-                                #ifndef DEFt_clone_6Kad
-                                #define DEFt_clone_6Kad
-inline int clone_6Kad(const int a)
+                                #ifndef DEFt_clone_1hpjcHdP
+                                #define DEFt_clone_1hpjcHdP
+inline int clone_1hpjcHdP(const int a)
 {
     return a;
 }
                                 #endif
 
-                                #ifndef DEFt_clone_ecaa
-                                #define DEFt_clone_ecaa
-inline s_Scope clone_ecaa(const s_Scope& a)
+                                #ifndef DEFt_clone_uKUKCXdJ
+                                #define DEFt_clone_uKUKCXdJ
+inline s_Scope clone_uKUKCXdJ(const s_Scope& a)
 {
     /*MOV*/ s_Scope res {};
-    res.x = clone_6Kad(a.x);
+    res.x = clone_1hpjcHdP(a.x);
     return /*NRVO*/ res;
 }
                                 #endif
 
-                                #ifndef DEFt_map_pV6J
-                                #define DEFt_map_pV6J
-inline fu_VEC<s_Scope> map_pV6J(fu::view<s_Scope> a, int)
+                                #ifndef DEFt_map_TGG1zJ5p
+                                #define DEFt_map_TGG1zJ5p
+inline fu_VEC<s_Scope> map_TGG1zJ5p(fu::view<s_Scope> a, int)
 {
     /*MOV*/ fu_VEC<s_Scope> res {};
     res.grow<false>(a.size());
     for (int i = 0; i < a.size(); i++)
-        res.mutref(i) = clone_ecaa(a[i]);
+        res.mutref(i) = clone_uKUKCXdJ(a[i]);
 
     return /*NRVO*/ res;
 }
                                 #endif
 
-                                #ifndef DEFt_clone_7jXi
-                                #define DEFt_clone_7jXi
-inline fu_VEC<s_Scope> clone_7jXi(fu::view<s_Scope> a)
+                                #ifndef DEFt_clone_8fx1mNnU
+                                #define DEFt_clone_8fx1mNnU
+inline fu_VEC<s_Scope> clone_8fx1mNnU(fu::view<s_Scope> a)
 {
-    return map_pV6J(a, 0);
+    return map_TGG1zJ5p(a, 0);
 }
                                 #endif
 
-                                #ifndef DEFt_clone_hRas
-                                #define DEFt_clone_hRas
-inline s_ModuleOutputs clone_hRas(const s_ModuleOutputs& a)
+                                #ifndef DEFt_clone_xW4lXZJk
+                                #define DEFt_clone_xW4lXZJk
+inline s_ModuleOutputs clone_xW4lXZJk(const s_ModuleOutputs& a)
 {
     /*MOV*/ s_ModuleOutputs res {};
-    res.deps = clone_7jXi(a.deps);
+    res.deps = clone_8fx1mNnU(a.deps);
     return /*NRVO*/ res;
 }
                                 #endif
 
-int test(const s_ModuleOutputs& a)
+int test_xW4lXZJk(const s_ModuleOutputs& a)
 {
-    s_ModuleOutputs b = clone_hRas(a);
+    s_ModuleOutputs b = clone_xW4lXZJk(a);
     return a.deps.size() - b.deps.size();
 }
 
 int fu_MAIN()
 {
-    return test(s_ModuleOutputs{});
+    return test_xW4lXZJk(s_ModuleOutputs{});
 }
 
 #endif
@@ -1973,7 +1939,7 @@ struct s_X
 
 #ifndef FU_NO_FDEFs
 
-static int hey(const s_X& x)
+static int hey_eShNLeiM(const s_X& x)
 {
     const int b = -1;
     return x.a + b;
@@ -1981,7 +1947,7 @@ static int hey(const s_X& x)
 
 int fu_MAIN()
 {
-    return hey(s_X { 1 });
+    return hey_eShNLeiM(s_X { 1 });
 }
 
 #endif
@@ -2016,47 +1982,25 @@ struct s_X
 
 #ifndef FU_NO_FDEFs
 
-inline static int add_uxa_b_template_0vQb(const s_X& x, const int b)
+inline static int add_uxa_b_template_szVUuWNT(const s_X& x, const int b)
 {
     return x.a + b;
 }
 
-static int hey(const s_X& x)
+static int hey_eShNLeiM(const s_X& x)
 {
-    return add_uxa_b_template_0vQb(x, -1);
+    return add_uxa_b_template_szVUuWNT(x, -1);
 }
 
 int fu_MAIN()
 {
-    return hey(s_X { 1 });
+    return hey_eShNLeiM(s_X { 1 });
 }
 
 #endif
 
 
 int main() { return fu_MAIN(); }
-
------
-
-        fn a_len(a: [$T]) a.len; // a conversion could navigate this here
-        struct Test { using a: i32[]; };
-        fn main() Test.a_len;
-
------
-TODO: _0.fu @4:23:
-
-[2m      |         fn a_len(a: [$T]) a.len; // a conversion could navigate this here[0m
-[2m      |         struct Test { using a: i32[]; };[0m
-    4 |         fn main() Test[31;1m.[0ma_len;
-[2m      | [0m
-
-	`a_len` bad args.
-Expect: `a_len(
-	[34;1ma[0m: $)`
-Actual: (
-	_0::Test: copy).
-
-        Solving [35;1mfn[0m [34;1mmain[0m
 
 -----
 
@@ -2071,7 +2015,7 @@ Actual: (
 
 #ifndef FU_NO_FDEFs
 
-inline static int incr_8Fob(int, int& a)
+inline static int incr_9sDRtLCF(int, int& a)
 {
     return a++;
 }
@@ -2079,7 +2023,7 @@ inline static int incr_8Fob(int, int& a)
 int fu_MAIN()
 {
     int a = 1;
-    incr_8Fob(0, a);
+    incr_9sDRtLCF(0, a);
     return a - 2;
 }
 
@@ -2087,6 +2031,84 @@ int fu_MAIN()
 
 
 int main() { return fu_MAIN(); }
+
+-----
+
+        inline fn inl_lies(x: u32): i32 = x;
+        fn main() 0.inl_lies ? 1 : 0;
+
+-----
+_0.fu @3:20:
+
+[2m      | [0m
+[2m      |         inline fn inl_lies(x: u32): i32 = x;[0m
+    3 |         fn main() 0[31;1m.[0minl_lies ? 1 : 0;
+[2m      | [0m
+
+	Actual return type does not match annotation: i32: copy <- u32: copy
+
+        Solving [35;1mfn[0m [34;1mmain[0m
+
+-----
+
+        inline fn inl_lies(x: u32) = x;
+        fn main() 0.inl_lies ? 1 : 0;
+
+-----
+
+#ifndef FU_NO_FDEFs
+
+int fu_MAIN()
+{
+    unsigned BL_1_v {};
+    return ((__extension__ (
+    {
+        /*MOV*/ const unsigned x = 0u;
+        BL_1_v = (x);
+    (void)0;}), unsigned(BL_1_v)) ? 1 : 0);
+}
+
+#endif
+
+
+int main() { return fu_MAIN(); }
+
+-----
+
+        fn what(ref x: i32, ref y: i32) {
+            <fail bad call swap>
+            let z = y;   <pass/>
+            ref z = y;   </fail>
+            swap(x, z);  // swap is defined(ref x: $T, ref y: $T),
+        }                //  we ignore the 'ref' part in type patterns,
+                         //   so we only notice later when checking the spec
+        fn main() {
+            mut a = 1; mut b = 0; what(a, b);
+            return a;
+        }
+
+-----
+TODO: <fail> mismatch:
+
+    Expected error keyword:
+        [31;1mbad[0m from pattern <fail[31;1m bad call swap[0m>
+
+    ... not present in error message:
+
+_0.fu @5:17:
+
+[2m      | [0m
+[2m      |             let z = y;   [0m
+    5 |             swap[31;1m([0mx, z);  // swap is defined(ref x: $T, ref y: $T),
+[2m      |         }                //  we ignore the 'ref' part in type patterns,[0m
+[2m      |                          //   so we only notice later when checking the spec[0m
+
+	COMPILER BUG:
+
+	mustMatch.matchFail: [35;1m__native[0m [34;1m
+no_AAR
+<utility>
+std::swap[0m: Argument [35;1marg[0m [34;1mb[0m expects i32: mutref copy, got i32: copy
 
 -----
 
@@ -2110,9 +2132,9 @@ int main() { return fu_MAIN(); }
 inline constexpr int dont_leak_me = 1;
                                 #endif
 
-                                #ifndef DEFt_identity_6Kad
-                                #define DEFt_identity_6Kad
-inline int identity_6Kad(const int dont_leak_me)
+                                #ifndef DEFt_identity_1hpjcHdP
+                                #define DEFt_identity_1hpjcHdP
+inline int identity_1hpjcHdP(const int dont_leak_me)
 {
     return dont_leak_me;
 }
@@ -2120,7 +2142,7 @@ inline int identity_6Kad(const int dont_leak_me)
 
 int fu_MAIN()
 {
-    return identity_6Kad((dont_leak_me * 2)) - 2;
+    return identity_1hpjcHdP((dont_leak_me * 2)) - 2;
 }
 
 #endif
@@ -2145,12 +2167,12 @@ inline constexpr int dont_leak_me = 1;
 
 int fu_MAIN()
 {
-    int _0 {};
+    int BL_1_v {};
     return (__extension__ (
     {
-        /*MOV*/ /*RRET*/ const int dont_leak_me = (::dont_leak_me * 2);
-        _0 = (dont_leak_me);
-    (void)0;}), int(_0)) - 2;
+        /*MOV*/ const int dont_leak_me = (::dont_leak_me * 2);
+        BL_1_v = (dont_leak_me);
+    (void)0;}), int(BL_1_v)) - 2;
 }
 
 #endif
@@ -2180,12 +2202,12 @@ inline constexpr int sTatic = 1;
 inline constexpr int arg = 7;
                                 #endif
 
-inline static int template_6Kad(const int arg)
+inline static int template_1hpjcHdP(const int arg)
 {
     return sTatic + arg;
 }
 
-static const int result = template_6Kad((arg / -4));
+static const int result = template_1hpjcHdP((arg / -4));
 
 int fu_MAIN()
 {
@@ -2210,7 +2232,7 @@ int main() { return fu_MAIN(); }
 
 #ifndef FU_NO_FDEFs
 
-inline static int template_6Kad(const int arg, const int sTatic)
+inline static int template_ohWVVsvS(const int arg, const int sTatic)
 {
     return sTatic + arg;
 }
@@ -2219,13 +2241,163 @@ int fu_MAIN()
 {
     const int sTatic = 1;
     const int arg = 7;
-    return template_6Kad((arg / -4), sTatic);
+    return template_ohWVVsvS((arg / -4), sTatic);
 }
 
 #endif
 
 
 int main() { return fu_MAIN(); }
+
+-----
+
+        fn template_add(a, b) a + b;
+
+-----
+
+-----
+
+        fn template_add(a, b) a + b;
+
+        struct HasInt { i: i32 };
+
+        fn +(a: HasInt, b: HasInt) HasInt(a.i + b.i);
+        fn main() _0::template_add(HasInt(1), HasInt(2)).i - 3;
+
+-----
+
+struct s_HasInt;
+
+                                #ifndef DEF_s_HasInt
+                                #define DEF_s_HasInt
+struct s_HasInt
+{
+    int i;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || i
+        ;
+    }
+};
+                                #endif
+
+#ifndef FU_NO_FDEFs
+
+static s_HasInt operator+(const s_HasInt& a, const s_HasInt& b)
+{
+    return s_HasInt { (a.i + b.i) };
+}
+
+                                #ifndef DEFt_template_add_MsGit72p
+                                #define DEFt_template_add_MsGit72p
+inline s_HasInt template_add_MsGit72p(const s_HasInt& a, const s_HasInt& b)
+{
+    return a + b;
+}
+                                #endif
+
+int fu_MAIN()
+{
+    return template_add_MsGit72p(s_HasInt { 1 }, s_HasInt { 2 }).i - 3;
+}
+
+#endif
+
+
+int main() { return fu_MAIN(); }
+
+-----
+
+        fn template_add(a, b) a + b;
+
+-----
+
+-----
+
+        fn template_add(a, b) a + b;
+
+        struct HasInt { i: i32 };
+
+-----
+
+-----
+
+        fn template_add(a, b) a + b;
+
+        struct HasInt { i: i32 };
+        import _1;
+        fn +(a: HasInt, b: HasInt) HasInt(a.i + b.i);
+        fn main() _0::template_add(HasInt(1), HasInt(2)).i - 3;
+
+-----
+
+struct s_HasInt;
+
+                                #ifndef DEF_s_HasInt
+                                #define DEF_s_HasInt
+struct s_HasInt
+{
+    int i;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || i
+        ;
+    }
+};
+                                #endif
+
+#ifndef FU_NO_FDEFs
+
+static s_HasInt operator+(const s_HasInt& a, const s_HasInt& b)
+{
+    return s_HasInt { (a.i + b.i) };
+}
+
+                                #ifndef DEFt_template_add_MsGit72p
+                                #define DEFt_template_add_MsGit72p
+inline s_HasInt template_add_MsGit72p(const s_HasInt& a, const s_HasInt& b)
+{
+    return a + b;
+}
+                                #endif
+
+int fu_MAIN()
+{
+    return template_add_MsGit72p(s_HasInt { 1 }, s_HasInt { 2 }).i - 3;
+}
+
+#endif
+
+
+int main() { return fu_MAIN(); }
+
+-----
+
+        fn template_add(a, b) a + b;
+
+        struct HasInt { i: i32 };
+        fn main() {
+            infix fn +(a: HasInt, b: HasInt) HasInt(a.i + b.i); // its hard to defend this -
+            _0::template_add(HasInt(1), HasInt(2)).i - 3;       //  the thing above works but this doesn't.
+        }                                                       //   given the autoshadowing, we might just want to allow everything.
+
+-----
+TODO: _0.fu @2:33:
+
+[2m      | [0m
+    2 |         fn template_add(a, b) a [31;1m+[0m b;
+[2m      | [0m
+
+	Bad call to [34;1m+[0m: 
+
+	[35;1mtemplate[0m [34;1m+[0m: Could not specialize [TODO doTrySpec ERROR]
+
+	[35;1mtemplate[0m [34;1m+[0m: Wrong number of arguments: expects 1, got 2.
+
+        Solving [35;1mfn[0m [34;1mtemplate_add_MsGit72p[0m
+                [35;1mfn[0m [34;1mmain[0m
 
 -----
 
@@ -2239,23 +2411,23 @@ int main() { return fu_MAIN(); }
 
 -----
 
-static int outer(int);
+static int outer_ZSoae05p(int);
 
 #ifndef FU_NO_FDEFs
 
-static int inner(const int i)
+static int inner_ibgn75mP(const int i)
 {
-    return ((i > 0) ? outer((i - 1)) : 0);
+    return ((i > 0) ? outer_ZSoae05p((i - 1)) : 0);
 }
 
-static int outer(const int i)
+static int outer_ZSoae05p(const int i)
 {
-    return 2 * inner(i);
+    return 2 * inner_ibgn75mP(i);
 }
 
 int fu_MAIN()
 {
-    return outer(1);
+    return outer_ZSoae05p(1);
 }
 
 #endif
@@ -2284,30 +2456,30 @@ int main() { return fu_MAIN(); }
 
 -----
 
-static int outer(int, int, int, int);
+static int outer_isCmZmcq(int, int, int, int);
 
 #ifndef FU_NO_FDEFs
 
-static int inner(const int i, const int zero, const int one, const int two)
+static int inner_M4wzZ8cA(const int i, const int zero, const int one, const int two)
 {
-    return ((i > zero) ? outer((i - one), two, zero, one) : int(zero));
+    return ((i > zero) ? outer_isCmZmcq((i - one), two, zero, one) : int(zero));
 }
 
-static int outer(const int i, const int two, const int zero, const int one)
+static int outer_isCmZmcq(const int i, const int two, const int zero, const int one)
 {
-    return two * inner(i, zero, one, two);
+    return two * inner_M4wzZ8cA(i, zero, one, two);
 }
 
-static int test(const int one)
+static int test_1hpjcHdP(const int one)
 {
     const int zero = (one - 1);
     const int two = (one * 2);
-    return outer(one, two, zero, one) + ((two - one) * 17);
+    return outer_isCmZmcq(one, two, zero, one) + ((two - one) * 17);
 }
 
 int fu_MAIN()
 {
-    return test(1) - 17;
+    return test_1hpjcHdP(1) - 17;
 }
 
 #endif
@@ -2331,24 +2503,24 @@ int main() { return fu_MAIN(); }
 
 -----
 
-static int outer(int, int);
+static int outer_jRR1mEcq(int, int);
 
 #ifndef FU_NO_FDEFs
 
-static int inner(const int i, const int x)
+static int inner_ibgn75mP(const int i, const int x)
 {
-    return outer((i - 1), x);
+    return outer_jRR1mEcq((i - 1), x);
 }
 
-static int outer(const int i, const int x)
+static int outer_jRR1mEcq(const int i, const int x)
 {
-    return ((i > 0) ? inner(i, x) : (x + i));
+    return ((i > 0) ? inner_ibgn75mP(i, x) : (x + i));
 }
 
 int fu_MAIN()
 {
     const int x = 7;
-    return outer(1, x) - 7;
+    return outer_jRR1mEcq(1, x) - 7;
 }
 
 #endif
@@ -2372,24 +2544,24 @@ int main() { return fu_MAIN(); }
 
 -----
 
-static int outer_noret(int, int);
+static int outer_noret_jRR1mEcq(int, int);
 
 #ifndef FU_NO_FDEFs
 
-static int inner_noret(const int i, const int x)
+static int inner_noret_ibgn75mP(const int i, const int x)
 {
-    return outer_noret((i - 1), x);
+    return outer_noret_jRR1mEcq((i - 1), x);
 }
 
-static int outer_noret(const int i, const int x)
+static int outer_noret_jRR1mEcq(const int i, const int x)
 {
-    return ((i > 0) ? inner_noret(i, x) : (x + i));
+    return ((i > 0) ? inner_noret_ibgn75mP(i, x) : (x + i));
 }
 
 int fu_MAIN()
 {
     const int x = 7;
-    return outer_noret(1, x) - 7;
+    return outer_noret_jRR1mEcq(1, x) - 7;
 }
 
 #endif
@@ -2404,7 +2576,6 @@ int main() { return fu_MAIN(); }
         inline fn inner_inl(i: i32): i32
             outer_inl(i - 1);
 
-        /*TODO inline tailrec*/
         fn outer_inl(implicit x: i32, i: i32): i32
             i > 0   ? inner_inl(i)
                     : x + i;
@@ -2416,15 +2587,15 @@ int main() { return fu_MAIN(); }
 
 #ifndef FU_NO_FDEFs
 
-static int outer_inl(const int i, const int x)
+static int outer_inl_jRR1mEcq(const int i, const int x, const int x_1)
 {
-    return ((i > 0) ? outer_inl((i - 1), x) : (x + i));
+    return ((i > 0) ? outer_inl_jRR1mEcq((i - 1), x_1, x_1) : (x + i));
 }
 
 int fu_MAIN()
 {
     const int x = 7;
-    return outer_inl(1, x) - 7;
+    return outer_inl_jRR1mEcq(1, x, x) - 7;
 }
 
 #endif
@@ -2432,6 +2603,7 @@ int fu_MAIN()
 
 int main() { return fu_MAIN(); }
 // FN_recursion
+// FN_resolve
 
 -----
 
@@ -2447,24 +2619,24 @@ int main() { return fu_MAIN(); }
 
 -----
 
-inline static int outer_templ_wWYe(int, int);
+inline static int outer_templ_m45Igahy(int, int);
 
 #ifndef FU_NO_FDEFs
 
-inline static int inner_templ_6Kad(const int i, const int x)
+inline static int inner_templ_AFNAvEzW(const int i, const int x)
 {
-    return outer_templ_wWYe((i - 1), x);
+    return outer_templ_m45Igahy((i - 1), x);
 }
 
-inline static int outer_templ_wWYe(const int i, const int x)
+inline static int outer_templ_m45Igahy(const int i, const int x)
 {
-    return ((i > 0) ? inner_templ_6Kad(i, x) : (x + i));
+    return ((i > 0) ? inner_templ_AFNAvEzW(i, x) : (x + i));
 }
 
 int fu_MAIN()
 {
     const int x = 7;
-    return outer_templ_wWYe(1, x) - 7;
+    return outer_templ_m45Igahy(1, x) - 7;
 }
 
 #endif
@@ -2487,24 +2659,24 @@ int main() { return fu_MAIN(); }
 
 -----
 
-inline static int outer_templ_noret_wWYe(int, int);
+inline static int outer_templ_noret_m45Igahy(int, int);
 
 #ifndef FU_NO_FDEFs
 
-inline static int inner_templ_noret_6Kad(const int i, const int x)
+inline static int inner_templ_noret_AFNAvEzW(const int i, const int x)
 {
-    return outer_templ_noret_wWYe((i - 1), x);
+    return outer_templ_noret_m45Igahy((i - 1), x);
 }
 
-inline static int outer_templ_noret_wWYe(const int i, const int x)
+inline static int outer_templ_noret_m45Igahy(const int i, const int x)
 {
-    return ((i > 0) ? inner_templ_noret_6Kad(i, x) : (x + i));
+    return ((i > 0) ? inner_templ_noret_AFNAvEzW(i, x) : (x + i));
 }
 
 int fu_MAIN()
 {
     const int x = 7;
-    return outer_templ_noret_wWYe(1, x) - 7;
+    return outer_templ_noret_m45Igahy(1, x) - 7;
 }
 
 #endif
@@ -2528,24 +2700,24 @@ int main() { return fu_MAIN(); }
 
 -----
 
-static int outer(int, int);
+static int outer_ibgn75mP(int, int);
 
 #ifndef FU_NO_FDEFs
 
-static int inner(const int i, const int x)
+static int inner_jRR1mEcq(const int i, const int x)
 {
-    return outer((i - (2 * x)), x);
+    return outer_ibgn75mP((i - (2 * x)), x);
 }
 
-static int outer(const int i, const int x)
+static int outer_ibgn75mP(const int i, const int x)
 {
-    return ((i > 0) ? inner(i, x) : (2 * i));
+    return ((i > 0) ? inner_jRR1mEcq(i, x) : (2 * i));
 }
 
 int fu_MAIN()
 {
     const int x = 3;
-    return outer(6, x);
+    return outer_ibgn75mP(6, x);
 }
 
 #endif
@@ -2557,39 +2729,50 @@ int main() { return fu_MAIN(); }
 
 -----
 
+        fn has_implicit(implicit i: i32, add: i32): i32
+            i + add;
+
+        inline fn injects_implicit_while_inlined(): i32
+            has_implicit(1); // broken by no ss.declash
+
+        fn main() {
+            let implicit i = 2;
+            return injects_implicit_while_inlined() - 3;
+        }
+
+-----
+TODO: _0.fu @9:30:
+
+[2m      | [0m
+[2m      |         fn main() {[0m
+    9 |             let implicit i = [31;1m2[0m;
+[2m      |             return injects_implicit_while_inlined() - 3;[0m
+[2m      |         }[0m
+
+	Unused variable: `i`: make it `lax` if this is intentional.
+
+-----
+
         inline fn outer_inl(i: i32): i32
             i > 0   ? inner_inl(i)
                     : 2 * i;
 
-        /*TODO inline tailrec*/
         fn inner_inl(implicit x: i32, i: i32): i32
-            outer_inl(i - 2 * x);
+            outer_inl(i - 2 * x); // broken by no ss.declash
 
         let implicit x = 3;
         return outer_inl(6);
 
 -----
+TODO: _0.fu @12:26:
 
-#ifndef FU_NO_FDEFs
+[2m      |             outer_inl(i - 2 * x); // broken by no ss.declash[0m
+[2m      | [0m
+   12 |         let implicit x = [31;1m3[0m;
+[2m      |         return outer_inl(6);[0m
+[2m      | [0m
 
-static int inner_inl(const int i, const int x)
-{
-    const int i_1 = (i - (2 * x));
-    return ((i_1 > 0) ? inner_inl(i_1, x) : (2 * i_1));
-}
-
-int fu_MAIN()
-{
-    const int x = 3;
-    const int i = 6;
-    return ((i > 0) ? inner_inl(i, x) : (2 * i));
-}
-
-#endif
-
-
-int main() { return fu_MAIN(); }
-// FN_recursion
+	Unused variable: `x`: make it `lax` if this is intentional.
 
 -----
 
@@ -2605,24 +2788,24 @@ int main() { return fu_MAIN(); }
 
 -----
 
-inline static int outer_templ_6Kad(int, int);
+inline static int outer_templ_3AoyBXRR(int, int);
 
 #ifndef FU_NO_FDEFs
 
-inline static int inner_templ_wWYe(const int i, const int x)
+inline static int inner_templ_GcnxXINf(const int i, const int x)
 {
-    return outer_templ_6Kad((i - (2 * x)), x);
+    return outer_templ_3AoyBXRR((i - (2 * x)), x);
 }
 
-inline static int outer_templ_6Kad(const int i, const int x)
+inline static int outer_templ_3AoyBXRR(const int i, const int x)
 {
-    return ((i > 0) ? inner_templ_wWYe(i, x) : (2 * i));
+    return ((i > 0) ? inner_templ_GcnxXINf(i, x) : (2 * i));
 }
 
 int fu_MAIN()
 {
     const int x = 3;
-    return outer_templ_6Kad(6, x);
+    return outer_templ_3AoyBXRR(6, x);
 }
 
 #endif
@@ -2646,24 +2829,24 @@ int main() { return fu_MAIN(); }
 
 -----
 
-static int outer(int, int);
+static int outer_wbbymoXS(int, int);
 
 #ifndef FU_NO_FDEFs
 
-static int inner(const int i, const int x)
+static int inner_ZSoae05p(const int i, const int x)
 {
-    return outer((i - 1), x);
+    return outer_wbbymoXS((i - 1), x);
 }
 
-static int outer(const int i, const int x)
+static int outer_wbbymoXS(const int i, const int x)
 {
-    return ((i > 0) ? inner(i, x) : (x + i));
+    return ((i > 0) ? inner_ZSoae05p(i, x) : (x + i));
 }
 
 int fu_MAIN()
 {
     const int x = 7;
-    return outer(1, x) - 7;
+    return outer_wbbymoXS(1, x) - 7;
 }
 
 #endif
@@ -2692,34 +2875,34 @@ int main() { return fu_MAIN(); }
 
 -----
 
-static int outer(int, int);
+static int outer_TbYXL7io(int, int);
 
 #ifndef FU_NO_FDEFs
 
-static int noret(const int i, const int x)
+static int noret_1hpjcHdP(const int i, const int x)
 {
-    return outer(i, x);
+    return outer_TbYXL7io(i, x);
 }
 
-inline static int template_6Kad(const int i, const int x)
+inline static int template_1hpjcHdP(const int i, const int x)
 {
-    return ((i & 1) ? outer(i, x) : noret(i, x));
+    return ((i & 1) ? outer_TbYXL7io(i, x) : noret_1hpjcHdP(i, x));
 }
 
-static int inner(const int i, const int x)
+static int inner_1hpjcHdP(const int i, const int x)
 {
-    return template_6Kad((i - 1), x);
+    return template_1hpjcHdP((i - 1), x);
 }
 
-static int outer(const int i, const int x)
+static int outer_TbYXL7io(const int i, const int x)
 {
-    return ((i > 0) ? inner(i, x) : (x + i));
+    return ((i > 0) ? inner_1hpjcHdP(i, x) : (x + i));
 }
 
 int fu_MAIN()
 {
     const int x = 7;
-    return outer(1, x) - 7;
+    return outer_TbYXL7io(1, x) - 7;
 }
 
 #endif
@@ -2727,7 +2910,6 @@ int fu_MAIN()
 
 int main() { return fu_MAIN(); }
 // FN_recursion
-// FN_resolve
 // FN_reopen
 
 -----
@@ -2745,20 +2927,20 @@ int main() { return fu_MAIN(); }
 
 #ifndef FU_NO_FDEFs
 
-static int returns_x(const int x)
+static int returns_x_ibgn75mP(const int x)
 {
     return x;
 }
 
-static int calls_self_1(const bool call_self, const int x)
+static int calls_self_1_juSpEJnx(const bool call_self, const int x)
 {
-    return (!call_self ? int(returns_x(x)) : (calls_self_1(false, x) * 2));
+    return (!call_self ? int(returns_x_ibgn75mP(x)) : (calls_self_1_juSpEJnx(false, x) * 2));
 }
 
 int fu_MAIN()
 {
     const int x = 7;
-    return calls_self_1(true, x) - 14;
+    return calls_self_1_juSpEJnx(true, x) - 14;
 }
 
 #endif
@@ -2783,20 +2965,20 @@ int main() { return fu_MAIN(); }
 
 #ifndef FU_NO_FDEFs
 
-static int returns_x(const int x)
+static int returns_x_ibgn75mP(const int x)
 {
     return x;
 }
 
-static int calls_self_2(const bool call_self, const int x)
+static int calls_self_2_juSpEJnx(const bool call_self, const int x)
 {
-    return (call_self ? (calls_self_2(false, x) * 3) : int(returns_x(x)));
+    return (call_self ? (calls_self_2_juSpEJnx(false, x) * 3) : int(returns_x_ibgn75mP(x)));
 }
 
 int fu_MAIN()
 {
     const int x = 7;
-    return calls_self_2(true, x) - 21;
+    return calls_self_2_juSpEJnx(true, x) - 21;
 }
 
 #endif
@@ -2825,30 +3007,30 @@ int main() { return fu_MAIN(); }
 
 -----
 
-static int calls_self_3(bool, int);
+static int calls_self_3_juSpEJnx(bool, int);
 
 #ifndef FU_NO_FDEFs
 
-static int do_call_self(const int mul, const int x, const int add)
+static int do_call_self_XYvJZG7F(const int mul, const int x, const int add)
 {
-    return (calls_self_3(false, x) * mul) + add;
+    return (calls_self_3_juSpEJnx(false, x) * mul) + add;
 }
 
-static int returns_x(const int x)
+static int returns_x_ibgn75mP(const int x)
 {
     return x;
 }
 
-static int calls_self_3(const bool call_self, const int x)
+static int calls_self_3_juSpEJnx(const bool call_self, const int x)
 {
     const int add = 1;
-    return (call_self ? do_call_self(4, x, add) : int(returns_x(x)));
+    return (call_self ? do_call_self_XYvJZG7F(4, x, add) : int(returns_x_ibgn75mP(x)));
 }
 
 int fu_MAIN()
 {
     const int x = 7;
-    return calls_self_3(true, x) - 29;
+    return calls_self_3_juSpEJnx(true, x) - 29;
 }
 
 #endif
@@ -2874,20 +3056,20 @@ int main() { return fu_MAIN(); }
 
 #ifndef FU_NO_FDEFs
 
-static int noret_x(const int x)
+static int noret_x_1hpjcHdP(const int x)
 {
     return x;
 }
 
-inline static int templ_calls_self_2_25BA(const bool call_self, const int x)
+inline static int templ_calls_self_2_O4yD91Dh(const bool call_self, const int x)
 {
-    return (call_self ? (templ_calls_self_2_25BA(false, x) * 3) : int(noret_x(x)));
+    return (call_self ? (templ_calls_self_2_O4yD91Dh(false, x) * 3) : int(noret_x_1hpjcHdP(x)));
 }
 
 int fu_MAIN()
 {
     const int x = 7;
-    return templ_calls_self_2_25BA(true, x) - 21;
+    return templ_calls_self_2_O4yD91Dh(true, x) - 21;
 }
 
 #endif
@@ -2936,20 +3118,20 @@ struct s_Range
 
 #ifndef FU_NO_FDEFs
 
-static int size(const s_Range& r)
+static int size_eShNLeiM(const s_Range& r)
 {
     return r.max - r.min;
 }
 
-static int test(const s_Range& r)
+static int test_fwJRfWgj(const s_Range& r)
 {
-    return size(r);
+    return size_eShNLeiM(r);
 }
 
 int fu_MAIN()
 {
     const s_Range r = s_Range { 14, 21 };
-    return test(r) - 7;
+    return test_fwJRfWgj(r) - 7;
 }
 
 #endif
@@ -2999,25 +3181,25 @@ struct s_Range
 
 #ifndef FU_NO_FDEFs
 
-static int size(const s_Range& r)
+static int size_eShNLeiM(const s_Range& r)
 {
     return r.max - r.min;
 }
 
-static int inner(const s_Range& r)
+static int inner_fwJRfWgj(const s_Range& r)
 {
-    return size(r);
+    return size_eShNLeiM(r);
 }
 
-static int outer(const s_Range& r)
+static int outer_GlILXiYX(const s_Range& r)
 {
-    return inner(r);
+    return inner_fwJRfWgj(r);
 }
 
 int fu_MAIN()
 {
     const s_Range r = s_Range { 14, 21 };
-    return outer(r) - 7;
+    return outer_GlILXiYX(r) - 7;
 }
 
 #endif
@@ -3051,19 +3233,19 @@ int main() { return fu_MAIN(); }
 
 #ifndef FU_NO_FDEFs
 
-static int sibling1(const int z, const int c)
+static int sibling1_ZSoae05p(const int z, const int c)
 {
     return z + c;
 }
 
-static int depth2(const int y, const int x, const int b, const int c)
+static int depth2_3AoyBXRR(const int y, const int x, const int b, const int c)
 {
-    return sibling1(((x + y) + b), c);
+    return sibling1_ZSoae05p(((x + y) + b), c);
 }
 
-static int depth1(const int x, const int a, const int b, const int c)
+static int depth1_ibgn75mP(const int x, const int a, const int b, const int c)
 {
-    return depth2((x + a), x, b, c);
+    return depth2_3AoyBXRR((x + a), x, b, c);
 }
 
 int fu_MAIN()
@@ -3071,7 +3253,7 @@ int fu_MAIN()
     const int a = 1;
     const int b = 2;
     const int c = 3;
-    return depth1(0, a, b, c) - 6;
+    return depth1_ibgn75mP(0, a, b, c) - 6;
 }
 
 #endif
@@ -3088,14 +3270,14 @@ int main() { return fu_MAIN(); }
 
 #ifndef FU_NO_FDEFs
 
-inline static int goto0_6Kad(const int x)
+inline static int goto0_1hpjcHdP(const int x)
 {
-    return (x ? goto0_6Kad((x / 2)) : 0);
+    return (x ? goto0_1hpjcHdP((x / 2)) : 0);
 }
 
 int fu_MAIN()
 {
-    return goto0_6Kad(1);
+    return goto0_1hpjcHdP(1);
 }
 
 #endif
@@ -3113,14 +3295,14 @@ int main() { return fu_MAIN(); }
 
 #ifndef FU_NO_FDEFs
 
-inline static int goto0_6Kad(const int x)
+inline static int goto0_1hpjcHdP(const int x)
 {
-    return (x ? goto0_6Kad((x / 2)) : 0);
+    return (x ? goto0_1hpjcHdP((x / 2)) : 0);
 }
 
 int fu_MAIN()
 {
-    return goto0_6Kad(1);
+    return goto0_1hpjcHdP(1);
 }
 
 #endif
@@ -3139,14 +3321,14 @@ int main() { return fu_MAIN(); }
 
 #ifndef FU_NO_FDEFs
 
-inline static int goto0_6Kad(const int x)
+inline static int goto0_1hpjcHdP(const int x)
 {
-    return (x ? goto0_6Kad((x / 2)) : int(x));
+    return (x ? goto0_1hpjcHdP((x / 2)) : int(x));
 }
 
 int fu_MAIN()
 {
-    return goto0_6Kad(1);
+    return goto0_1hpjcHdP(1);
 }
 
 #endif
@@ -3165,14 +3347,14 @@ int main() { return fu_MAIN(); }
 
 #ifndef FU_NO_FDEFs
 
-inline static int goto0_6Kad(const int x)
+inline static int goto0_1hpjcHdP(const int x)
 {
-    return x ? goto0_6Kad((x / 2)) : int{};
+    return x ? goto0_1hpjcHdP((x / 2)) : int{};
 }
 
 int fu_MAIN()
 {
-    return goto0_6Kad(1);
+    return goto0_1hpjcHdP(1);
 }
 
 #endif
@@ -3197,7 +3379,7 @@ int main() { return fu_MAIN(); }
 
 #ifndef FU_NO_FDEFs
 
-static int& ref_a(int& a)
+static int& ref_a_fvq3PhFm(int& a)
 {
     return a;
 }
@@ -3205,7 +3387,7 @@ static int& ref_a(int& a)
 int fu_MAIN()
 {
     int a {};
-    int& r = ref_a(a);
+    int& r = ref_a_fvq3PhFm(a);
     r++;
     return a - 1;
 }
@@ -3232,7 +3414,7 @@ int main() { return fu_MAIN(); }
 
 #ifndef FU_NO_FDEFs
 
-static int& ref_a_or_ref_b(int& a, int& b)
+static int& ref_a_or_ref_b_fhn2FPSp(int& a, int& b)
 {
     return a ? a : b;
 }
@@ -3241,7 +3423,7 @@ int fu_MAIN()
 {
     int a {};
     int b {};
-    int& a_or_b = ref_a_or_ref_b(a, b);
+    int& a_or_b = ref_a_or_ref_b_fhn2FPSp(a, b);
     a_or_b++;
     return b - 1;
 }
@@ -3266,21 +3448,21 @@ int main() { return fu_MAIN(); }
 
 #ifndef FU_NO_FDEFs
 
-static int& impl(int& _impl)
+static int& impl_fvq3PhFm(int& _impl)
 {
     return _impl;
 }
 
-static int& arg_or_impl(int& arg, int& _impl)
+static int& arg_or_impl_fvq3PhFm(int& arg, int& _impl)
 {
-    return arg ? arg : impl(_impl);
+    return arg ? arg : impl_fvq3PhFm(_impl);
 }
 
 int fu_MAIN()
 {
     int _impl {};
     int arg {};
-    const int ref = arg_or_impl(arg, _impl);
+    const int ref = arg_or_impl_fvq3PhFm(arg, _impl);
     return arg - ref;
 }
 
@@ -3310,7 +3492,7 @@ int main() { return fu_MAIN(); }
 
 #ifndef FU_NO_FDEFs
 
-static fu_VEC<int>& hello(fu_VEC<int>& a, fu_VEC<int>& b, const int x)
+static fu_VEC<int>& hello_8y7cuhTn(fu_VEC<int>& a, fu_VEC<int>& b, const int x)
 {
     if (x == 0)
         return a;
@@ -3318,14 +3500,14 @@ static fu_VEC<int>& hello(fu_VEC<int>& a, fu_VEC<int>& b, const int x)
     if (x == 1)
         return b;
 
-    return hello(b, a, (x / 17));
+    return hello_8y7cuhTn(b, a, (x / 17));
 }
 
 int fu_MAIN()
 {
     fu_VEC<int> a = fu_VEC<int> { fu::slate<3, int> { 1, 2, 3 } };
     fu_VEC<int> b = fu_VEC<int> { fu::slate<3, int> { 4, 5, 6 } };
-    hello(a, b, 397).mutref(1) *= 5;
+    hello_8y7cuhTn(a, b, 397).mutref(1) *= 5;
     return b[1] - 25;
 }
 
@@ -3356,11 +3538,11 @@ int main() { return fu_MAIN(); }
 
 #ifndef FU_NO_FDEFs
 
-void ZERO(int x, int& sum)
+void ZERO_VDMxVTXJ(int x, int& sum)
 {
     while (x)
     {
-        ZERO(int(--x), sum);
+        ZERO_VDMxVTXJ(int(--x), sum);
         sum += x;
     };
 }
@@ -3368,7 +3550,7 @@ void ZERO(int x, int& sum)
 int fu_MAIN()
 {
     int sum = 0;
-    ZERO(4, sum);
+    ZERO_VDMxVTXJ(4, sum);
     return sum - 11;
 }
 
@@ -3398,17 +3580,446 @@ int main() { return fu_MAIN(); }
         }
 
 -----
-TODO: _0.fu @3:20:
 
+#ifndef FU_NO_FDEFs
+
+void ZERO_VDMxVTXJ(int x, int& sum)
+{
+    while (x)
+    {
+        const int y = (x / 2);
+        ZERO_VDMxVTXJ(int(--x), sum);
+        ZERO_VDMxVTXJ(int(y), sum);
+        sum += x;
+    };
+}
+
+int fu_MAIN()
+{
+    int sum = 0;
+    ZERO_VDMxVTXJ(4, sum);
+    return sum - 12;
+}
+
+#endif
+
+
+int main() { return fu_MAIN(); }
+// FN_recursion
+// FN_resolve
+// DEAD_code
+
+-----
+
+        struct Node {
+            items: Node[];
+        }
+
+        fn solve(root: Node)
+        {
+            fn solveBlock(node: Node) {
+                let items = solveNodes(node.items);
+                //*
+                return solveBlock(items);
+            }
+
+            fn solveBlock(items: i32[]) {
+                //*/
+                if (!Lifetime_allowsMutrefReturn(items))
+                    throw("Nope!");
+
+                return items;
+            }
+
+            fn solveNode(node: Node, implicit ref next: i32) {
+                if (!node.items)
+                    return [ next++ ];
+
+                let implicit CTX = node.items.len; // <- this shows up as an closure-arg with an outdated revision
+                return solveBlock(node);
+            }
+
+            fn Lifetime_each(items, visit)
+                for (mut i = items.len; i --> 0; )
+                    visit(items[i]);
+
+            fn Lifetime_allowsMutrefReturn(items: i32[]) {
+                Lifetime_each(:items, visit: |item, implicit CTX: i32| {
+                    if (item == CTX)
+                        return false;
+                });
+
+                return true;
+            }
+
+            fn solveNodes(nodes: Node[]) {
+                mut result: i32[];
+                for (mut i = 0; i < nodes.len; i++)
+                    result ~= solveNode(nodes[i]);
+
+                return result;
+            }
+
+            return solveNode(root);
+        }
+
+        fn main() {
+            let implicit mut next = 0;
+
+            let solve = solve(Node([
+                Node([ Node ]),
+                Node(),
+            ]));
+
+            return solve.len - 2;
+        }
+
+-----
+TODO: o-311d3a10ebcc362e-2597.cpp:72:12: error: no matching constructor for initialization of 'fu_VEC<int>'
+    return solveBlock_DDI8tT5Q(items, CTX);
+           ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/Users/hdachev/fu/include/fu/./vec/../vec.h:361:12: note: candidate constructor not viable: 1st argument ('const fu_VEC<int>') would lose const qualifier
+    fu_INL fu_VEC(fu_VEC&& x) noexcept
+           ^
+/Users/hdachev/fu/include/fu/./vec/../vec.h:1116:12: note: candidate template ignored: could not match 'slate' against 'fu_VEC'
+    inline fu_VEC(fu::slate<new_size, T>&& init) noexcept
+           ^
+/Users/hdachev/fu/include/fu/./vec/../vec.h:344:21: note: explicit constructor is not a candidate
+    fu_INL explicit fu_VEC(const fu_VEC& c) noexcept
+                    ^
+/Users/hdachev/fu/include/fu/./vec/../vec.h:88:15: note: candidate constructor not viable: requires 0 arguments, but 1 was provided
+    constexpr fu_VEC() = default;
+              ^
+1 error generated.
+
+Failing testcase:
+
+
+        struct Node {
+            items: Node[];
+        }
+
+        fn solve(root: Node)
+        {
+            fn solveBlock(node: Node) {
+                let items = solveNodes(node.items);
+                //*
+                return solveBlock(items);
+            }
+
+            fn solveBlock(items: i32[]) {
+                //*/
+                if (!Lifetime_allowsMutrefReturn(items))
+                    throw("Nope!");
+
+                return items;
+            }
+
+            fn solveNode(node: Node, implicit ref next: i32) {
+                if (!node.items)
+                    return [ next++ ];
+
+                let implicit CTX = node.items.len; // <- this shows up as an closure-arg with an outdated revision
+                return solveBlock(node);
+            }
+
+            fn Lifetime_each(items, visit)
+                for (mut i = items.len; i --> 0; )
+                    visit(items[i]);
+
+            fn Lifetime_allowsMutrefReturn(items: i32[]) {
+                Lifetime_each(:items, visit: |item, implicit CTX: i32| {
+                    if (item == CTX)
+                        return false;
+                });
+
+                return true;
+            }
+
+            fn solveNodes(nodes: Node[]) {
+                mut result: i32[];
+                for (mut i = 0; i < nodes.len; i++)
+                    result ~= solveNode(nodes[i]);
+
+                return result;
+            }
+
+            return solveNode(root);
+        }
+
+        fn main() {
+            let implicit mut next = 0;
+
+            let solve = solve(Node([
+                Node([ Node ]),
+                Node(),
+            ]));
+
+            return solve.len - 2;
+        }
+
+Sources:
+
+#include <fu/never.h>
+#include <fu/str.h>
+#include <fu/vec.h>
+#include <fu/vec/concat.h>
+#include <fu/view.h>
+
+struct s_Node;
+
+static const fu_VEC<int>& solveBlock_DDI8tT5Q(const fu_VEC<int>&, int);
+static fu_VEC<int> solveNode_J9NUd1g6(const s_Node&, int&);
+
+                                #ifndef DEF_s_Node
+                                #define DEF_s_Node
+struct s_Node
+{
+    fu_VEC<s_Node> items;
+    s_Node(const s_Node&) = default;
+    s_Node(s_Node&&) = default;
+    s_Node& operator=(s_Node&&) = default;
+    s_Node& operator=(const s_Node& selfrec) { return *this = s_Node(selfrec); }
+    explicit operator bool() const noexcept
+    {
+        return false
+            || items
+        ;
+    }
+};
+                                #endif
+
+#ifndef FU_NO_FDEFs
+
+static fu_VEC<int> solveNodes_XY8VqbVx(fu::view<s_Node> nodes, int& next)
+{
+    /*MOV*/ fu_VEC<int> result {};
+    for (int i = 0; i < nodes.size(); i++)
+        result += solveNode_J9NUd1g6(nodes[i], next);
+
+    return /*NRVO*/ result;
+}
+
+inline fu_VEC<int> solveBlock_DDI8tT5Q(fu_VEC<int>&& items, const int CTX)
+{
+    return static_cast<fu_VEC<int>&&>(const_cast<fu_VEC<int>&>(solveBlock_DDI8tT5Q(items, CTX)));
+}
+
+
+static bool Lifetime_allowsMutrefReturn_pewgvbuV(fu::view<int> items, const int CTX)
+{
+    for (int i = items.size(); i-- > 0; )
+    {
+        const int item = items[i];
+        const int CTX_1 = CTX;
+        if (item == CTX_1)
+            return false;
+
+    };
+    return true;
+}
+
+static const fu_VEC<int>& solveBlock_DDI8tT5Q(const fu_VEC<int>& items, const int CTX)
+{
+    if (!Lifetime_allowsMutrefReturn_pewgvbuV(items, CTX))
+        fu::fail("Nope!"_fu);
+
+    return items;
+}
+
+static fu_VEC<int> solveBlock_eShNLeiM(const s_Node& node, int& next, const int CTX)
+{
+    /*MOV*/ fu_VEC<int> items = solveNodes_XY8VqbVx(node.items, next);
+    return solveBlock_DDI8tT5Q(items, CTX);
+}
+
+static fu_VEC<int> solveNode_J9NUd1g6(const s_Node& node, int& next)
+{
+    if (!node.items)
+        return fu_VEC<int> { fu::slate<1, int> { next++ } };
+
+    const int CTX = node.items.size();
+    return solveBlock_eShNLeiM(node, next, CTX);
+}
+
+static fu_VEC<int> solve_PXTKu1UQ(const s_Node& root, int& next)
+{
+    return solveNode_J9NUd1g6(root, next);
+}
+
+int fu_MAIN()
+{
+    int next = 0;
+    fu_VEC<int> solve = solve_PXTKu1UQ(s_Node { fu_VEC<s_Node> { fu::slate<2, s_Node> { s_Node { fu_VEC<s_Node> { fu::slate<1, s_Node> { s_Node{} } } }, s_Node{} } } }, next);
+    return solve.size() - 2;
+}
+
+#endif
+
+
+int main() { return fu_MAIN(); }
+// FN_recursion
+// FN_reopen
+// TYPE_recursion
+// TYPE_resolve
+// RELAX_respec
+
+-----
+
+        fn woot(implicit x: i32) = x;
+
+        fn main() {
+
+
+            return woot() - 2;
+        }
+
+-----
+o-03e6eac9413d43a9-391.cpp:27:12: error: no matching function for call to 'fu_MAIN'
+    return fu_MAIN(static_cast<fu_VEC<fu_STR>&&>(args));
+           ^~~~~~~
+/Users/hdachev/fu/build-cpp/o-03e6eac9413d43a9-391.cpp:11:5: note: candidate function not viable: no known conversion from 'fu_VEC<fu_STR>' (aka 'fu_VEC<fu_VEC<char>>') to 'const int' for 1st argument
+int fu_MAIN(const int x)
+    ^
+1 error generated.
+
+Failing testcase:
+
+
+        fn woot(implicit x: i32) = x;
+
+        fn main() {
+
+
+            return woot() - 2;
+        }
+
+Sources:
+
+#include <fu/str.h>
+
+#ifndef FU_NO_FDEFs
+
+static int woot_1hpjcHdP(const int x)
+{
+    return x;
+}
+
+int fu_MAIN(const int x)
+{
+    return woot_1hpjcHdP(x) - 2;
+}
+
+#endif
+
+
+int main(int argc, char* argv[])
+{
+    fu_VEC<fu_STR> args;
+    args.reserve(argc);
+
+    for (int i = 0; i < argc; i++)
+        args.push(fu_TO_STR(argv[i]));
+
+    return fu_MAIN(static_cast<fu_VEC<fu_STR>&&>(args));
+}
+
+-----
+
+        fn woot(implicit x: i32) = x;
+
+        fn main() {
+
+            let implicit x = 2;
+
+            return woot() - 2;
+        }
+
+-----
+
+#ifndef FU_NO_FDEFs
+
+static int woot_1hpjcHdP(const int x)
+{
+    return x;
+}
+
+int fu_MAIN()
+{
+    const int x = 2;
+    return woot_1hpjcHdP(x) - 2;
+}
+
+#endif
+
+
+int main() { return fu_MAIN(); }
+
+-----
+
+
+        fn woot(implicit y: i32) = y;
+
+
+        fn hey() {
+            let implicit x = 2;
+            return woot() - 2;
+        }
+
+        let here = hey();
+        fn main() = here;
+
+-----
+_0.fu @11:23:
+
+[2m      |         }[0m
 [2m      | [0m
-[2m      |         pub fn ZERO(implicit ref sum: i32, mut x: i32) {[0m
-    3 |             while ([31;1mx[0m) {
-[2m      |                 let y = x / 2;[0m
-[2m      |                 ZERO( --x ); // Unconditional self recursion, initially hinted as t_never,[0m
+   11 |         let here = hey[31;1m([0m);
+[2m      |         fn main() = here;[0m
+[2m      | [0m
 
-	Unused variable: `y`: make it `lax` if this is intentional.
+	No implicit `y` in scope, needed to call `hey_H9fhQUVP`.
 
-        Solving [35;1mfn[0m [34;1mZERO[0m
+-----
+
+
+        fn woot(implicit x: i32) = x;
+
+
+        fn hey() {
+            let implicit x = 2;
+            return woot() - 2;
+        }
+
+        let here = hey();
+        fn main() = here;
+
+-----
+
+#ifndef FU_NO_FDEFs
+
+static int woot_1hpjcHdP(const int x)
+{
+    return x;
+}
+
+static int hey_H9fhQUVP()
+{
+    const int x = 2;
+    return woot_1hpjcHdP(x) - 2;
+}
+
+static const int here = hey_H9fhQUVP();
+
+int fu_MAIN()
+{
+    return here;
+}
+
+#endif
+
+
+int main() { return fu_MAIN(); }
 
 -----
 
@@ -3423,7 +4034,7 @@ TODO: _0.fu @3:20:
 
 #ifndef FU_NO_FDEFs
 
-static int test(const int x)
+static int test_EJhRWC6k(const int x)
 {
     return x;
 }
@@ -3431,7 +4042,7 @@ static int test(const int x)
 int fu_MAIN()
 {
     const int x = 1;
-    return test(x) - 1;
+    return test_EJhRWC6k(x) - 1;
 }
 
 #endif
@@ -3553,7 +4164,7 @@ int main() { return fu_MAIN(); }
 
 #ifndef FU_NO_FDEFs
 
-static int test(fu::view<int> view)
+static int test_DDI8tT5Q(fu::view<int> view)
 {
     int sum = 0;
     for (int i = 0; i < view.size(); i++)
@@ -3566,7 +4177,7 @@ int fu_MAIN()
 {
     fu_VEC<int> arr = fu_VEC<int> { fu::slate<5, int> { 0, 1, 2, 3, 4 } };
     arr.push(5);
-    return test(arr);
+    return test_DDI8tT5Q(arr);
 }
 
 #endif
@@ -3597,7 +4208,7 @@ int main() { return fu_MAIN(); }
 
 #ifndef FU_NO_FDEFs
 
-static int test(fu::view<int> view)
+static int test_DDI8tT5Q(fu::view<int> view)
 {
     int sum = 0;
     for (int i = 0; i < view.size(); i++)
@@ -3610,7 +4221,7 @@ int fu_MAIN()
 {
     fu_VEC<int> arr = fu_VEC<int> { fu::slate<4, int> { 1, 2, 3, 4 } };
     arr.push(5);
-    return test(arr);
+    return test_DDI8tT5Q(arr);
 }
 
 #endif
@@ -3636,7 +4247,7 @@ int fu_MAIN()
 {
     const int x = 5;
     fu_VEC<int> arr = fu_VEC<int> { fu::slate<1, int> { -5 } };
-    arr.push(x);
+    arr.push(int(x));
     return arr[0] + arr[1];
 }
 
@@ -3649,6 +4260,49 @@ int main() { return fu_MAIN(); }
 -----
 
 
+        let x = [ named: 0 ]; 
+        return x[0];
+
+-----
+_0.fu @6:17:
+
+[2m      | [0m
+[2m      | [0m
+    6 |         let x = [31;1m[[0m named: 0 ]; 
+[2m      |         return x[0];[0m
+[2m      | [0m
+
+	TODO: solveArrlit: tryMatch by [ argnames: ... ] without function name.
+
+        Solving [35;1mfn[0m [34;1mmain[0m
+
+-----
+
+
+        let x = [        0 ]; 
+        return x[0];
+
+-----
+
+#include <fu/vec.h>
+
+#ifndef FU_NO_FDEFs
+
+int fu_MAIN()
+{
+    fu_VEC<int> x = fu_VEC<int> { fu::slate<1, int> { 0 } };
+    return int(x[0]);
+}
+
+#endif
+
+
+int main() { return fu_MAIN(); }
+// RELAX_respec
+
+-----
+
+
     {
         mut arr0 = [0,1,2,3,4];
         arr0.push(5);
@@ -3664,9 +4318,8 @@ int main() { return fu_MAIN(); }
     }
 
     {
-        mut arr2 = STEAL(orig);
+        ref arr2 = orig;
         if (arr2.len != 5) return 38;
-        if (orig.len) return 19;
         arr2.push(5);
         if ((arr2[1] + arr2[4] - arr2[5]) != 0) return 23;
     }
@@ -3700,15 +4353,11 @@ int fu_MAIN()
     };
 
     {
-        fu_VEC<int> arr2 = static_cast<fu_VEC<int>&&>(orig);
-        if (arr2.size() != 5)
+        if (orig.size() != 5)
             return 38;
 
-        if (orig.size())
-            return 19;
-
-        arr2.push(5);
-        if (((arr2[1] + arr2[4]) - arr2[5]) != 0)
+        orig.push(5);
+        if (((orig[1] + orig[4]) - orig[5]) != 0)
             return 23;
 
     };
@@ -3740,9 +4389,8 @@ int main() { return fu_MAIN(); }
     }
 
     {
-        mut arr2 = STEAL(orig);
+        ref arr2 = orig;
         if (arr2.len != 5) return 38;
-        if (orig.len) return 19;
         arr2.insert(5, 5);
         if ((arr2[1] + arr2[4] - arr2[5]) != 0) return 23;
     }
@@ -3776,15 +4424,11 @@ int fu_MAIN()
     };
 
     {
-        fu_VEC<int> arr2 = static_cast<fu_VEC<int>&&>(orig);
-        if (arr2.size() != 5)
+        if (orig.size() != 5)
             return 38;
 
-        if (orig.size())
-            return 19;
-
-        arr2.insert(5, 5);
-        if (((arr2[1] + arr2[4]) - arr2[5]) != 0)
+        orig.insert(5, 5);
+        if (((orig[1] + orig[4]) - orig[5]) != 0)
             return 23;
 
     };
@@ -3816,9 +4460,8 @@ int main() { return fu_MAIN(); }
     }
 
     {
-        mut arr2 = STEAL(orig);
+        ref arr2 = orig;
         if (arr2.len != 5) return 38;
-        if (orig.len) return 19;
         arr2.pop();
         if ((arr2[1] + arr2[3] - arr2.len) != 0) return 23;
     }
@@ -3852,15 +4495,11 @@ int fu_MAIN()
     };
 
     {
-        fu_VEC<int> arr2 = static_cast<fu_VEC<int>&&>(orig);
-        if (arr2.size() != 5)
+        if (orig.size() != 5)
             return 38;
 
-        if (orig.size())
-            return 19;
-
-        arr2.pop();
-        if (((arr2[1] + arr2[3]) - arr2.size()) != 0)
+        orig.pop();
+        if (((orig[1] + orig[3]) - orig.size()) != 0)
             return 23;
 
     };
@@ -3892,9 +4531,8 @@ int main() { return fu_MAIN(); }
     }
 
     {
-        mut arr2 = STEAL(orig);
+        ref arr2 = orig;
         if (arr2.len != 5) return 38;
-        if (orig.len) return 19;
         arr2.splice(4, 1);
         if ((arr2[1] + arr2[3] - arr2.len) != 0) return 23;
     }
@@ -3928,15 +4566,11 @@ int fu_MAIN()
     };
 
     {
-        fu_VEC<int> arr2 = static_cast<fu_VEC<int>&&>(orig);
-        if (arr2.size() != 5)
+        if (orig.size() != 5)
             return 38;
 
-        if (orig.size())
-            return 19;
-
-        arr2.splice(4, 1);
-        if (((arr2[1] + arr2[3]) - arr2.size()) != 0)
+        orig.splice(4, 1);
+        if (((orig[1] + orig[3]) - orig.size()) != 0)
             return 23;
 
     };
@@ -3968,9 +4602,8 @@ int main() { return fu_MAIN(); }
     }
 
     {
-        mut arr2 = STEAL(orig);
+        ref arr2 = orig;
         if (arr2.len != 5) return 38;
-        if (orig.len) return 19;
         arr2.unshift(5);
         if ((arr2[2] + arr2[5] - arr2[0]) != 0) return 23;
     }
@@ -4004,15 +4637,11 @@ int fu_MAIN()
     };
 
     {
-        fu_VEC<int> arr2 = static_cast<fu_VEC<int>&&>(orig);
-        if (arr2.size() != 5)
+        if (orig.size() != 5)
             return 38;
 
-        if (orig.size())
-            return 19;
-
-        arr2.unshift(5);
-        if (((arr2[2] + arr2[5]) - arr2[0]) != 0)
+        orig.unshift(5);
+        if (((orig[2] + orig[5]) - orig[0]) != 0)
             return 23;
 
     };
@@ -4044,9 +4673,8 @@ int main() { return fu_MAIN(); }
     }
 
     {
-        mut arr2 = STEAL(orig);
+        ref arr2 = orig;
         if (arr2.len != 5) return 38;
-        if (orig.len) return 19;
         arr2.insert(0, 5);
         if ((arr2[2] + arr2[5] - arr2[0]) != 0) return 23;
     }
@@ -4080,15 +4708,11 @@ int fu_MAIN()
     };
 
     {
-        fu_VEC<int> arr2 = static_cast<fu_VEC<int>&&>(orig);
-        if (arr2.size() != 5)
+        if (orig.size() != 5)
             return 38;
 
-        if (orig.size())
-            return 19;
-
-        arr2.insert(0, 5);
-        if (((arr2[2] + arr2[5]) - arr2[0]) != 0)
+        orig.insert(0, 5);
+        if (((orig[2] + orig[5]) - orig[0]) != 0)
             return 23;
 
     };
@@ -4120,9 +4744,8 @@ int main() { return fu_MAIN(); }
     }
 
     {
-        mut arr2 = STEAL(orig);
+        ref arr2 = orig;
         if (arr2.len != 5) return 38;
-        if (orig.len) return 19;
         arr2.shift();
         if ((arr2[0] + arr2[2] - arr2[3]) != 0) return 23;
     }
@@ -4156,15 +4779,11 @@ int fu_MAIN()
     };
 
     {
-        fu_VEC<int> arr2 = static_cast<fu_VEC<int>&&>(orig);
-        if (arr2.size() != 5)
+        if (orig.size() != 5)
             return 38;
 
-        if (orig.size())
-            return 19;
-
-        arr2.shift();
-        if (((arr2[0] + arr2[2]) - arr2[3]) != 0)
+        orig.shift();
+        if (((orig[0] + orig[2]) - orig[3]) != 0)
             return 23;
 
     };
@@ -4196,9 +4815,8 @@ int main() { return fu_MAIN(); }
     }
 
     {
-        mut arr2 = STEAL(orig);
+        ref arr2 = orig;
         if (arr2.len != 5) return 38;
-        if (orig.len) return 19;
         arr2.insert(1, 5);
         if ((arr2[2] + arr2[5] - arr2[1]) != 0) return 23;
     }
@@ -4232,15 +4850,11 @@ int fu_MAIN()
     };
 
     {
-        fu_VEC<int> arr2 = static_cast<fu_VEC<int>&&>(orig);
-        if (arr2.size() != 5)
+        if (orig.size() != 5)
             return 38;
 
-        if (orig.size())
-            return 19;
-
-        arr2.insert(1, 5);
-        if (((arr2[2] + arr2[5]) - arr2[1]) != 0)
+        orig.insert(1, 5);
+        if (((orig[2] + orig[5]) - orig[1]) != 0)
             return 23;
 
     };
@@ -4272,9 +4886,8 @@ int main() { return fu_MAIN(); }
     }
 
     {
-        mut arr2 = STEAL(orig);
+        ref arr2 = orig;
         if (arr2.len != 5) return 38;
-        if (orig.len) return 19;
         arr2.splice(1, 3);
         if ((arr2.len + arr2[0] + arr2[1] - 102) != 0) return 23;
     }
@@ -4308,15 +4921,11 @@ int fu_MAIN()
     };
 
     {
-        fu_VEC<int> arr2 = static_cast<fu_VEC<int>&&>(orig);
-        if (arr2.size() != 5)
+        if (orig.size() != 5)
             return 38;
 
-        if (orig.size())
-            return 19;
-
-        arr2.splice(1, 3);
-        if ((((arr2.size() + arr2[0]) + arr2[1]) - 102) != 0)
+        orig.splice(1, 3);
+        if ((((orig.size() + orig[0]) + orig[1]) - 102) != 0)
             return 23;
 
     };
@@ -4694,6 +5303,138 @@ int main() { return fu_MAIN(); }
 
 -----
 
+        fn collectDedupes(mut vals) {
+            vals.sort();
+            return vals[0];
+        }
+
+        fn main() {
+            let vals = [ 1, 0 ];
+            return collectDedupes(vals);
+        }
+
+-----
+
+#include <fu/vec.h>
+#include <fu/vec/sort.h>
+
+#ifndef FU_NO_FDEFs
+
+inline static int collectDedupes_ZvOm7cyv(/*MOV*/ fu_VEC<int>&& vals)
+{
+    fu::sort(vals);
+    return int(vals[0]);
+}
+
+int fu_MAIN()
+{
+    fu_VEC<int> vals = fu_VEC<int> { fu::slate<2, int> { 1, 0 } };
+    return collectDedupes_ZvOm7cyv(fu_VEC<int>(vals));
+}
+
+#endif
+
+
+int main() { return fu_MAIN(); }
+// NONTRIV_autocopy
+// RELAX_respec
+
+-----
+
+        fn collectDedupes(mut vals: i32[]) {
+            vals.sort();
+            return vals[0];
+        }
+
+        fn main() {
+            let vals = [ 1, 0 ];
+            return collectDedupes(vals);
+        }
+
+-----
+
+#include <fu/vec.h>
+#include <fu/vec/sort.h>
+
+#ifndef FU_NO_FDEFs
+
+static int collectDedupes_ZvOm7cyv(/*MOV*/ fu_VEC<int>&& vals)
+{
+    fu::sort(vals);
+    return int(vals[0]);
+}
+
+int fu_MAIN()
+{
+    fu_VEC<int> vals = fu_VEC<int> { fu::slate<2, int> { 1, 0 } };
+    return collectDedupes_ZvOm7cyv(fu_VEC<int>(vals));
+}
+
+#endif
+
+
+int main() { return fu_MAIN(); }
+// NONTRIV_autocopy
+// RELAX_respec
+
+-----
+
+        fn sort01(ref arr: [$T]) {
+            mut tmp: $T;
+            if (arr[0] > arr[1]) {
+                swap(arr[0], tmp);
+                swap(arr[1], tmp);
+            }
+        }
+
+        fn collectDedupes(mut vals) {
+            vals.sort01();
+            return vals[0];
+        }
+
+        fn main() {
+            let vals = [ 1, 0 ];
+            return collectDedupes(vals);
+        }
+
+-----
+
+#include <fu/vec.h>
+#include <utility>
+
+#ifndef FU_NO_FDEFs
+
+inline static void sort01_j3F1UXeO(fu_VEC<int>& arr)
+{
+    int tmp {};
+    if (arr[0] > arr[1])
+    {
+        std::swap(arr.mutref(0), tmp);
+        std::swap(arr.mutref(1), tmp);
+    };
+}
+
+inline static int collectDedupes_ZvOm7cyv(/*MOV*/ fu_VEC<int>&& vals)
+{
+    sort01_j3F1UXeO(vals);
+    return int(vals[0]);
+}
+
+int fu_MAIN()
+{
+    fu_VEC<int> vals = fu_VEC<int> { fu::slate<2, int> { 1, 0 } };
+    return collectDedupes_ZvOm7cyv(fu_VEC<int>(vals));
+}
+
+#endif
+
+
+int main() { return fu_MAIN(); }
+// NONTRIV_autocopy
+// RELAX_respec
+
+-----
+
         mut str = "hello ";
         str ~= "world";
 
@@ -4723,27 +5464,47 @@ int main() { return fu_MAIN(); }
         let str = "hello " ~ "world";
 
         return str.starts(with: "hel")
+             ? str  .ends(with: "rld")
              ? str.len - 11
-             : 171;
+             : 171
+             : 173;
 
 -----
 
 #include <fu/str.h>
+#include <fu/vec/cmp.h>
 #include <fu/vec/concat.h>
-#include <fu/vec/find.h>
+#include <fu/view.h>
 
 #ifndef FU_NO_FDEFs
+
+                                #ifndef DEFt_starts_OZkl8S7R
+                                #define DEFt_starts_OZkl8S7R
+inline bool starts_OZkl8S7R(fu::view<char> a, fu::view<char> with)
+{
+    return (a.size() >= with.size()) && (fu::get_view(a, 0, with.size()) == with);
+}
+                                #endif
+
+                                #ifndef DEFt_ends_OZkl8S7R
+                                #define DEFt_ends_OZkl8S7R
+inline bool ends_OZkl8S7R(fu::view<char> a, fu::view<char> with)
+{
+    return (a.size() >= with.size()) && (fu::get_view(a, (a.size() - with.size()), a.size()) == with);
+}
+                                #endif
 
 int fu_MAIN()
 {
     fu_STR str = ("hello "_fu + "world"_fu);
-    return (fu::lmatch(str, "hel"_fu) ? (str.size() - 11) : 171);
+    return (starts_OZkl8S7R(str, "hel"_fu) ? (ends_OZkl8S7R(str, "rld"_fu) ? (str.size() - 11) : 171) : 173);
 }
 
 #endif
 
 
 int main() { return fu_MAIN(); }
+// RELAX_respec
 
 -----
 
@@ -4762,9 +5523,9 @@ int main() { return fu_MAIN(); }
 
 #ifndef FU_NO_FDEFs
 
-                                #ifndef DEFt_x7E_OZkl
-                                #define DEFt_x7E_OZkl
-inline fu_STR x7E_OZkl(fu::view<char> a, fu::view<char> b)
+                                #ifndef DEFt_x7E
+                                #define DEFt_x7E
+inline fu_STR x7E(fu::view<char> a, fu::view<char> b)
 {
     return a + b;
 }
@@ -4772,7 +5533,7 @@ inline fu_STR x7E_OZkl(fu::view<char> a, fu::view<char> b)
 
 int fu_MAIN()
 {
-    fu_STR str = x7E_OZkl("a"_fu, fu::i64dec(1710010));
+    fu_STR str = x7E("a"_fu, fu::i64dec(1710010));
     return ((str == "a1710010"_fu) ? 0 : 101);
 }
 
@@ -4803,7 +5564,7 @@ int fu_MAIN()
     fu_STR str = "hello world"_fu;
     fu_STR cpy {};
     for (int i = 0; i < str.size(); i++)
-        cpy += str[i];
+        cpy += char(str[i]);
 
     return (cpy.size() - 11) + ((cpy == str) ? 0 : 1);
 }
@@ -4827,9 +5588,9 @@ int main() { return fu_MAIN(); }
 
 #ifndef FU_NO_FDEFs
 
-                                #ifndef DEFt_find_C47D
-                                #define DEFt_find_C47D
-inline int find_C47D(fu::view<int> a, const int b)
+                                #ifndef DEFt_find_C47D8dNR
+                                #define DEFt_find_C47D8dNR
+inline int find_C47D8dNR(fu::view<int> a, const int b)
 {
     for (/*MOV*/ int i = 0; i < a.size(); i++)
     {
@@ -4843,7 +5604,7 @@ inline int find_C47D(fu::view<int> a, const int b)
 
 int fu_MAIN()
 {
-    return fu::lfind("hello world"_fu, "world"_fu) - (2 * find_C47D((fu::slate<5, int> { 1, 7, 13, 14, 19 }), 14));
+    return fu::lfind("hello world"_fu, "world"_fu) - (2 * find_C47D8dNR((fu::slate<5, int> { 1, 7, 13, 14, 19 }), 14));
 }
 
 #endif
@@ -4866,9 +5627,9 @@ int main() { return fu_MAIN(); }
 
 #ifndef FU_NO_FDEFs
 
-                                #ifndef DEFt_has_C47D
-                                #define DEFt_has_C47D
-inline bool has_C47D(fu::view<int> a, const int b)
+                                #ifndef DEFt_has_C47D8dNR
+                                #define DEFt_has_C47D8dNR
+inline bool has_C47D8dNR(fu::view<int> a, const int b)
 {
     for (int i = 0; i < a.size(); i++)
     {
@@ -4882,7 +5643,7 @@ inline bool has_C47D(fu::view<int> a, const int b)
 
 int fu_MAIN()
 {
-    return ((fu::has("hello world"_fu, "world"_fu) ? 1 : 0) + (has_C47D((fu::slate<4, int> { 1, 14, 96, 2 }), 14) ? 2 : 0)) - 3;
+    return ((fu::has("hello world"_fu, "world"_fu) ? 1 : 0) + (has_C47D8dNR((fu::slate<4, int> { 1, 14, 96, 2 }), 14) ? 2 : 0)) - 3;
 }
 
 #endif
@@ -4959,9 +5720,9 @@ int main() { return fu_MAIN(); }
 
 #ifndef FU_NO_FDEFs
 
-                                #ifndef DEFt_split_azQB
-                                #define DEFt_split_azQB
-inline void split_azQB(const fu_STR& str, fu::view<char> sep, int, fu_VEC<fu_STR>& result)
+                                #ifndef DEFt_split_xBQaY9Do
+                                #define DEFt_split_xBQaY9Do
+inline void split_xBQaY9Do(const fu_STR& str, fu::view<char> sep, int, fu_VEC<fu_STR>& result)
 {
     int last = 0;
     int next = 0;
@@ -4973,7 +5734,7 @@ inline void split_azQB(const fu_STR& str, fu::view<char> sep, int, fu_VEC<fu_STR
 
             {
                 fu_STR substr = fu::slice(str, last, next);
-                result += substr;
+                result += fu_STR(substr);
             };
             last = (next + N);
         };
@@ -4981,27 +5742,27 @@ inline void split_azQB(const fu_STR& str, fu::view<char> sep, int, fu_VEC<fu_STR
     if (last)
     {
         fu_STR substr = fu::slice(str, last);
-        result += substr;
+        result += fu_STR(substr);
     }
     else
-        result += str;
+        result += fu_STR(str);
 
 }
                                 #endif
 
-                                #ifndef DEFt_split_OZkl
-                                #define DEFt_split_OZkl
-inline fu_VEC<fu_STR> split_OZkl(const fu_STR& str, fu::view<char> sep)
+                                #ifndef DEFt_split_OZkl8S7R
+                                #define DEFt_split_OZkl8S7R
+inline fu_VEC<fu_STR> split_OZkl8S7R(const fu_STR& str, fu::view<char> sep)
 {
     /*MOV*/ fu_VEC<fu_STR> result {};
-    split_azQB(str, sep, 0, result);
+    split_xBQaY9Do(str, sep, 0, result);
     return /*NRVO*/ result;
 }
                                 #endif
 
-                                #ifndef DEFt_join_VtCz
-                                #define DEFt_join_VtCz
-inline fu_STR join_VtCz(fu::view<fu_STR> a, fu::view<char> sep)
+                                #ifndef DEFt_join_VtCzn94C
+                                #define DEFt_join_VtCzn94C
+inline fu_STR join_VtCzn94C(fu::view<fu_STR> a, fu::view<char> sep)
 {
     if (a.size() < 2)
         return fu_STR((a.size() ? a[0] : (*(const fu_STR*)fu::NIL)));
@@ -5027,9 +5788,9 @@ inline fu_STR join_VtCz(fu::view<fu_STR> a, fu::view<char> sep)
 }
                                 #endif
 
-static int test(const fu_STR& item)
+static int test_JO4sXOPn(const fu_STR& item)
 {
-    return ((item == join_VtCz(split_OZkl(item, " "_fu), " "_fu)) ? 0 : item.size());
+    return ((item == join_VtCzn94C(split_OZkl8S7R(item, " "_fu), " "_fu)) ? 0 : item.size());
 }
 
 int fu_MAIN()
@@ -5037,7 +5798,7 @@ int fu_MAIN()
     fu_VEC<fu_STR> tests = fu_VEC<fu_STR> { fu::slate<9, fu_STR> { fu_STR{}, " "_fu, "  "_fu, "hey you duders"_fu, " hey you duders"_fu, "hey you duders "_fu, "  hey you duders "_fu, "  hey you  duders "_fu, "  hey you  duders  "_fu } };
     /*MOV*/ int sum = 0;
     for (int i = 0; i < tests.size(); i++)
-        sum += test(tests[i]);
+        sum += test_JO4sXOPn(tests[i]);
 
     return /*NRVO*/ sum;
 }
@@ -5066,6 +5827,39 @@ int fu_MAIN()
 {
     int _0 {};
     return (_0 = (int(fu::u8('\x1B')) - 27)) ? _0 : (_0 = int(fu::u8('\x00'))) ? _0 : (_0 = (int(fu::u8('\x11')) - 17)) ? _0 : (int(fu::u8('\xAA')) - 170);
+}
+
+#endif
+
+
+int main() { return fu_MAIN(); }
+
+-----
+
+        fn main()                           
+            "\u{ffffff}".u32               
+            ;
+
+-----
+_0.fu@3:22:
+	Invalid \u-escape: bad code point.
+	str: `f}".u32`
+-----
+
+        fn main()                           
+            "\u{042e}" == "Ю"  ? 0 : 1     
+            ;
+
+-----
+
+#include <fu/str.h>
+#include <fu/vec/cmp.h>
+
+#ifndef FU_NO_FDEFs
+
+int fu_MAIN()
+{
+    return (("\xD0\xAE"_fu == "\xD0\xAE"_fu) ? 0 : 1);
 }
 
 #endif
@@ -5137,7 +5931,7 @@ TODO: _0.fu @5:9:
 [2m      | [0m
 [2m      |         x["hello"] = 1;[0m
 
-	`Map` is not defined in this scope: `main`.
+	Bad call to [34;1mMap[0m: [34;1mMap[0m is not defined here.
 
         Solving [35;1mfn[0m [34;1mmain[0m
 
@@ -5176,7 +5970,7 @@ TODO: _0.fu @5:9:
 [2m      | [0m
 [2m      |         x["hello"] = 1;[0m
 
-	`Map` is not defined in this scope: `main`.
+	Bad call to [34;1mMap[0m: [34;1mMap[0m is not defined here.
 
         Solving [35;1mfn[0m [34;1mmain[0m
 
@@ -5189,14 +5983,14 @@ TODO: _0.fu @5:9:
 
 #ifndef FU_NO_FDEFs
 
-static int test(const int a, const int b)
+static int test_wbbymoXS(const int a, const int b)
 {
     return a + b;
 }
 
 int fu_MAIN()
 {
-    return test(1, 2) - 3;
+    return test_wbbymoXS(1, 2) - 3;
 }
 
 #endif
@@ -5213,14 +6007,14 @@ int main() { return fu_MAIN(); }
 
 #ifndef FU_NO_FDEFs
 
-static int test(const int a, const int b)
+static int test_wbbymoXS(const int a, const int b)
 {
     return a + b;
 }
 
 int fu_MAIN()
 {
-    return test(1, -1);
+    return test_wbbymoXS(1, -1);
 }
 
 #endif
@@ -5237,14 +6031,14 @@ int main() { return fu_MAIN(); }
 
 #ifndef FU_NO_FDEFs
 
-static int test(const int a, const int b)
+static int test_wbbymoXS(const int a, const int b)
 {
     return a + b;
 }
 
 int fu_MAIN()
 {
-    return test(-2, 2);
+    return test_wbbymoXS(-2, 2);
 }
 
 #endif
@@ -5434,14 +6228,14 @@ struct s_Test
 
 #ifndef FU_NO_FDEFs
 
-static s_Test hey()
+static s_Test hey_hpa9AihZ()
 {
     return s_Test{};
 }
 
 int fu_MAIN()
 {
-    return hey().x;
+    return hey_hpa9AihZ().x;
 }
 
 #endif
@@ -5478,14 +6272,14 @@ struct s_Test
 
 #ifndef FU_NO_FDEFs
 
-static s_Test hey(const int y)
+static s_Test hey_3AoyBXRR(const int y)
 {
     return (y ? s_Test { 1 } : s_Test{});
 }
 
 int fu_MAIN()
 {
-    return hey(0).x;
+    return hey_3AoyBXRR(0).x;
 }
 
 #endif
@@ -5495,50 +6289,42 @@ int main() { return fu_MAIN(); }
 
 -----
 
-        //*F
-        fn test(a = "hello") a.len; //ERR assign
-        /*/
-        fn test(a = 0) a + 1;
-        //*/
+
+        fn test(a = "hello") a.len;     
         fn main() test(-1);
 
 -----
-_0.fu @7:23:
+_0.fu @4:23:
 
-[2m      |         fn test(a = 0) a + 1;[0m
-[2m      |         //*/[0m
-    7 |         fn main() test[31;1m([0m-1);
-[2m      |     [0m
+[2m      | [0m
+[2m      |         fn test(a = "hello") a.len;     [0m
+    4 |         fn main() test[31;1m([0m-1);
+[2m      | [0m
 
-	`test` bad args.
-Expect: `test(
-	[34;1ma[0m?: []+2byte)`
-Actual: (
-	i32: copy).
+	Bad call to [34;1mtest[0m: 
+
+	[35;1mfn[0m [34;1mtest_naPRfSop[0m: Argument [35;1marg[0m [34;1ma[0m expects []+2byte, got i32: copy
 
         Solving [35;1mfn[0m [34;1mmain[0m
 
 -----
 
-        /*
-        fn test(a = "hello") a.len; //ERR assign
-        /*/
-        fn test(a = 0) a + 1;
-        //*/
+
+        fn test(a = 0) a + 1;           
         fn main() test(-1);
 
 -----
 
 #ifndef FU_NO_FDEFs
 
-static int test(const int a)
+static int test_1hpjcHdP(const int a)
 {
     return a + 1;
 }
 
 int fu_MAIN()
 {
-    return test(-1);
+    return test_1hpjcHdP(-1);
 }
 
 #endif
@@ -5552,12 +6338,12 @@ int main() { return fu_MAIN(); }
         fn main() test + test(a: -1) * 3;
 
 -----
-TODO: o-74e61297bd47cf07-203.cpp:11:21: error: use of undeclared identifier 'a'
-    return test(3, (a * 2)) + (test(-1, (a * 2)) * 3);
-                    ^
-/Users/hdachev/fu/build-cpp/o-74e61297bd47cf07-203.cpp:11:42: error: use of undeclared identifier 'a'
-    return test(3, (a * 2)) + (test(-1, (a * 2)) * 3);
-                                         ^
+TODO: o-3cc713afdf13f3f5-230.cpp:11:30: error: use of undeclared identifier 'a'
+    return test_TbYXL7io(3, (a * 2)) + (test_TbYXL7io(-1, (a * 2)) * 3);
+                             ^
+/Users/hdachev/fu/build-cpp/o-3cc713afdf13f3f5-230.cpp:11:60: error: use of undeclared identifier 'a'
+    return test_TbYXL7io(3, (a * 2)) + (test_TbYXL7io(-1, (a * 2)) * 3);
+                                                           ^
 2 errors generated.
 
 Failing testcase:
@@ -5570,14 +6356,14 @@ Sources:
 
 #ifndef FU_NO_FDEFs
 
-static int test(const int a, const int b)
+static int test_TbYXL7io(const int a, const int b)
 {
     return a + b;
 }
 
 int fu_MAIN()
 {
-    return test(3, (a * 2)) + (test(-1, (a * 2)) * 3);
+    return test_TbYXL7io(3, (a * 2)) + (test_TbYXL7io(-1, (a * 2)) * 3);
 }
 
 #endif
@@ -5820,14 +6606,14 @@ int fu_MAIN()
         {
             sum += x;
             if (y == 1)
-                goto L_00;
+                goto BL_2;
 
             if (x == 2)
-                goto L_OUTER;
+                goto LL_1;
 
         };
-      } L_00:;
-    } L_OUTER:;
+      } BL_2:;
+    } LL_1:;
 
     return sum - 34;
 }
@@ -5871,7 +6657,7 @@ int fu_MAIN()
         for (int y = 0; y < x; y++)
         {
             if ((y & 1) && !(x & 1))
-                goto L_00;
+                goto BL_2;
 
             sum += x;
         };
@@ -5879,7 +6665,7 @@ int fu_MAIN()
         if (x > 1)
             break;
 
-      } L_00:;
+      } BL_2:;
     };
     return sum - 4312;
 }
@@ -5900,8 +6686,9 @@ int main() { return fu_MAIN(); }
             }
             :SECOND {
                 if (sum & 1)
-                    break: //*F
-                        FIRST; /*/ SECOND; //*/
+                    break:
+
+                        FIRST;      
                 sum++;
 
                 if (sum & 2)
@@ -5922,13 +6709,13 @@ _0.fu @11:21:
 
 [2m      |             :SECOND {[0m
 [2m      |                 if (sum & 1)[0m
-   11 |                     [31;1mbreak[0m: //*F
-[2m      |                         FIRST; /*/ SECOND; //*/[0m
-[2m      |                 sum++;[0m
+   11 |                     [31;1mbreak[0m:
+[2m      | [0m
+[2m      |                         FIRST;      [0m
 
 	No label `FIRST` in scope.
 
-        Solving [35;1mfn[0m [34;1mtest[0m
+        Solving [35;1mfn[0m [34;1mtest_fvq3PhFm[0m
 
 -----
 
@@ -5941,8 +6728,9 @@ _0.fu @11:21:
             }
             :SECOND {
                 if (sum & 1)
-                    break: /*
-                        FIRST; /*/ SECOND; //*/
+                    break:
+
+                        SECOND;     
                 sum++;
 
                 if (sum & 2)
@@ -5962,30 +6750,34 @@ _0.fu @11:21:
 
 #ifndef FU_NO_FDEFs
 
-static void test(int& sum)
+static void test_fvq3PhFm(int& sum)
 {
 
     { {
         if (sum & 1)
-            goto L_FIRST;
+            goto BL_1;
 
         sum++;
-      } L_FIRST:;
+      } BL_1:;
     };
-    if (sum & 1)
-        return;
 
-    sum++;
-    if (sum & 2)
-        return;
+    { {
+        if (sum & 1)
+            goto BL_3;
 
-    sum++;
+        sum++;
+        if (sum & 2)
+            goto BL_3;
+
+        sum++;
+      } BL_3:;
+    };
 }
 
 int fu_MAIN()
 {
     int sum = 0;
-    test(sum);
+    test_fvq3PhFm(sum);
     return sum - 1;
 }
 
@@ -6163,7 +6955,7 @@ int main() { return fu_MAIN(); }
 
 #ifndef FU_NO_FDEFs
 
-static int what(const int a)
+static int what_1hpjcHdP(const int a)
 {
     if (!((a == 2) || (a & 1)))
         fu::fail("what1"_fu);
@@ -6179,7 +6971,7 @@ static int what(const int a)
 
 int fu_MAIN()
 {
-    return (what(1) - what(2)) + 1;
+    return (what_1hpjcHdP(1) - what_1hpjcHdP(2)) + 1;
 }
 
 #endif
@@ -6209,25 +7001,25 @@ int main() { return fu_MAIN(); }
 
 #ifndef FU_NO_FDEFs
 
-static fu_VEC<int> gen(const int len)
+static fu_VEC<int> gen_1hpjcHdP(const int len)
 {
     /*MOV*/ fu_VEC<int> res {};
     for (int i = 0; i < len; i++)
-        res += i;
+        res += int(i);
 
     return /*NRVO*/ res;
 }
 
-static int test(const int len)
+static int test_1hpjcHdP(const int len)
 {
     fu_VEC<int> x = fu_VEC<int> { fu::slate<2, int> { -5, +5 } };
-    fu::view<int> y = (gen(len) ? x : fu::view<int>{});
+    fu::view<int> y = (gen_1hpjcHdP(len) ? x : fu::view<int>{});
     return int(x[(y.size() / 2)]);
 }
 
 int fu_MAIN()
 {
-    return test(0) + test(1);
+    return test_1hpjcHdP(0) + test_1hpjcHdP(1);
 }
 
 #endif
@@ -6235,6 +7027,253 @@ int fu_MAIN()
 
 int main() { return fu_MAIN(); }
 // RELAX_respec
+
+-----
+
+        fn is_mutref(t: string)     t.len == 6;
+        fn is_never(t: string)      t.len == 5;
+
+        fn test(ref init: string, ref annot: string)
+            init.is_mutref && annot ||
+            init.is_never  && annot || throw("noreturn");
+
+        fn main() {
+            mut annot = "hey!";
+            mut init = "woot!";
+            return test(:init, :annot).len - 4;
+        }
+
+-----
+
+#include <fu/never.h>
+#include <fu/str.h>
+#include <fu/view.h>
+
+#ifndef FU_NO_FDEFs
+
+static bool is_mutref_naPRfSop(fu::view<char> t)
+{
+    return t.size() == 6;
+}
+
+static bool is_never_naPRfSop(fu::view<char> t)
+{
+    return t.size() == 5;
+}
+
+static fu_STR& test_qLFF0tTm(fu::view<char> init, fu_STR& annot)
+{
+    return is_mutref_naPRfSop(init) && annot ? annot : is_never_naPRfSop(init) && annot ? annot : fu::fail("noreturn"_fu);
+}
+
+int fu_MAIN()
+{
+    fu_STR annot = "hey!"_fu;
+    fu_STR init = "woot!"_fu;
+    return test_qLFF0tTm(init, annot).size() - 4;
+}
+
+#endif
+
+
+int main() { return fu_MAIN(); }
+
+-----
+
+        fn test(mut init: string) {
+            init.len && init || throw("noreturn");
+            return init.len;
+        }
+
+        fn main() test("woot!") - 5;
+
+-----
+
+#include <fu/never.h>
+#include <fu/str.h>
+
+#ifndef FU_NO_FDEFs
+
+static int test_naPRfSop(fu_STR&& init)
+{
+    if (!(init.size() && init))
+        fu::fail("noreturn"_fu);
+
+    return init.size();
+}
+
+int fu_MAIN()
+{
+    return test_naPRfSop("woot!"_fu) - 5;
+}
+
+#endif
+
+
+int main() { return fu_MAIN(); }
+
+-----
+
+        fn is_mutref(t: string)     t.len == 6;
+        fn is_never(t: string)      t.len == 5;
+        let F_ARG = 1;
+
+        fn test(ref init: string, ref annot: string, mut flags: i32) {
+            init.is_mutref  || init.is_never  && annot
+                            || !init && flags & F_ARG
+                            || throw("noreturn");
+            return flags;
+        }
+
+        fn main() {
+            mut annot = "hey!";
+            mut init = "woot!";
+            return test(:init, :annot, 0);
+        }
+
+-----
+
+#include <fu/never.h>
+#include <fu/str.h>
+#include <fu/view.h>
+
+#ifndef FU_NO_FDEFs
+
+                                #ifndef DEF_F_ARG
+                                #define DEF_F_ARG
+inline constexpr int F_ARG = 1;
+                                #endif
+
+static bool is_mutref_naPRfSop(fu::view<char> t)
+{
+    return t.size() == 6;
+}
+
+static bool is_never_naPRfSop(fu::view<char> t)
+{
+    return t.size() == 5;
+}
+
+static int test_93gOYiC0(const fu_STR& init, fu::view<char> annot, /*MOV*/ const int flags)
+{
+    if (!(is_mutref_naPRfSop(init) || (is_never_naPRfSop(init) && annot) || (!init && (flags & F_ARG))))
+        fu::fail("noreturn"_fu);
+
+    return int(flags);
+}
+
+int fu_MAIN()
+{
+    fu_STR annot = "hey!"_fu;
+    fu_STR init = "woot!"_fu;
+    return test_93gOYiC0(init, annot, 0);
+}
+
+#endif
+
+
+int main() { return fu_MAIN(); }
+
+-----
+
+        fn a(ref a)  a ?  a : [];   // ifs used cons-type to seed alt-type
+        fn b(ref b) !b ? [] : b;    //  which works for 'a', but not for 'b'.
+        fn main() 1.a - 1.b;
+
+-----
+
+#include <fu/zeroes.h>
+
+#ifndef FU_NO_FDEFs
+
+inline static int a_fvq3PhFm(const int a)
+{
+    return (a ? a : fu::zeroes());
+}
+
+inline static int b_fvq3PhFm(const int b)
+{
+    return (!b ? fu::zeroes() : b);
+}
+
+int fu_MAIN()
+{
+    return a_fvq3PhFm(1) - b_fvq3PhFm(1);
+}
+
+#endif
+
+
+int main() { return fu_MAIN(); }
+
+-----
+
+        struct Type { i: i32 };
+        fn is_mutref (t: Type) !!(t.i & 3);
+        fn is_ref    (t: Type) !!(t.i & 1);
+        fn clear_refs(t: Type) Type(t.i &~ 3);
+
+        fn tryClearRefs(t: Type, mutref?: bool): Type =     // type-hints vs type-assertions:
+            (mutref ? t.is_mutref : t.is_ref)               //  solveBlocks used within '&&' and '?'
+                && clear_refs(t);                           //   so the '?' complained 'bool' doesnt assign to 'Type'
+
+        fn main() {
+            let a = tryClearRefs(Type(6), true);
+            let b = tryClearRefs(Type(6), false);
+            return a.i + b.i - 4;
+        }
+
+-----
+
+struct s_Type;
+
+                                #ifndef DEF_s_Type
+                                #define DEF_s_Type
+struct s_Type
+{
+    int i;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || i
+        ;
+    }
+};
+                                #endif
+
+#ifndef FU_NO_FDEFs
+
+static bool is_mutref_PXTKu1UQ(const s_Type& t)
+{
+    return !!(t.i & 3);
+}
+
+static bool is_ref_PXTKu1UQ(const s_Type& t)
+{
+    return !!(t.i & 1);
+}
+
+static s_Type clear_refs_PXTKu1UQ(const s_Type& t)
+{
+    return s_Type { (t.i & ~3) };
+}
+
+static s_Type tryClearRefs_TkAxdP37(const s_Type& t, const bool mutref)
+{
+    return (mutref ? is_mutref_PXTKu1UQ(t) : is_ref_PXTKu1UQ(t)) ? clear_refs_PXTKu1UQ(t) : s_Type{};
+}
+
+int fu_MAIN()
+{
+    const s_Type a = tryClearRefs_TkAxdP37(s_Type { 6 }, true);
+    const s_Type b = tryClearRefs_TkAxdP37(s_Type { 6 }, false);
+    return (a.i + b.i) - 4;
+}
+
+#endif
+
+
+int main() { return fu_MAIN(); }
 
 -----
 
@@ -6249,8 +7288,9 @@ int main() { return fu_MAIN(); }
 int fu_MAIN()
 {
     int i = 7;
-    int* _0;
-    (*(_0 = &(i)) ? *_0 : *_0 = 11);
+    if (!(i))
+        i = 11;
+
     return i - 7;
 }
 
@@ -6272,9 +7312,60 @@ int main() { return fu_MAIN(); }
 int fu_MAIN()
 {
     int i = 0;
-    int* _0;
-    (*(_0 = &(i)) ? *_0 : *_0 = 11);
+    if (!(i))
+        i = 11;
+
     return i - 11;
+}
+
+#endif
+
+
+int main() { return fu_MAIN(); }
+
+-----
+
+        mut a = 1;
+        mut b = 0;
+        a ||= ++b;
+        return  b;
+
+-----
+
+#ifndef FU_NO_FDEFs
+
+int fu_MAIN()
+{
+    int a = 1;
+    /*MOV*/ int b = 0;
+    if (!(a))
+        a = ++b;
+
+    return /*NRVO*/ b;
+}
+
+#endif
+
+
+int main() { return fu_MAIN(); }
+
+-----
+
+        mut CHANGE = false;
+        CHANGE ||= true;
+        return CHANGE.i32 - 1;
+
+-----
+
+#ifndef FU_NO_FDEFs
+
+int fu_MAIN()
+{
+    bool CHANGE = false;
+    if (!(CHANGE))
+        CHANGE = true;
+
+    return int(CHANGE) - 1;
 }
 
 #endif
@@ -6305,7 +7396,7 @@ TODO: _0.fu @5:9:
 [2m      |         mut g = 0;[0m
 [2m      | [0m
 
-	`Map` is not defined in this scope: `main`.
+	Bad call to [34;1mMap[0m: [34;1mMap[0m is not defined here.
 
         Solving [35;1mfn[0m [34;1mmain[0m
 
@@ -6332,7 +7423,7 @@ TODO: _0.fu @5:9:
 [2m      |         mut g = 0;[0m
 [2m      | [0m
 
-	`Map` is not defined in this scope: `main`.
+	Bad call to [34;1mMap[0m: [34;1mMap[0m is not defined here.
 
         Solving [35;1mfn[0m [34;1mmain[0m
 
@@ -6341,28 +7432,28 @@ TODO: _0.fu @5:9:
         struct Test { x: i32; }
         fn test(t: &mut Test) t.x++;
         mut t = Test();
-        //*F
-        t.test; //ERR orphan
-        /*/
-        t.test();
-        //*/
 
+        t.test;             
         return t.x - 1;
 
 -----
-_0.fu @3:16..14:9:
+_0.fu @10:9:
+
+[2m      | [0m
+[2m      |         t.test;             [0m
+   10 |         [31;1mreturn[0m t.x - 1;
+[2m      | [0m
+[2m      | }[0m
+
 	Orphan pure-looking expression.
+
 -----
 
         struct Test { x: i32; }
         fn test(t: &mut Test) t.x++;
         mut t = Test();
-        /*
-        t.test; //ERR orphan
-        /*/
-        t.test();
-        //*/
 
+        t.test();           
         return t.x - 1;
 
 -----
@@ -6385,7 +7476,7 @@ struct s_Test
 
 #ifndef FU_NO_FDEFs
 
-static int test(s_Test& t)
+static int test_B4iIn6ig(s_Test& t)
 {
     return t.x++;
 }
@@ -6393,7 +7484,7 @@ static int test(s_Test& t)
 int fu_MAIN()
 {
     s_Test t = s_Test{};
-    test(t);
+    test_B4iIn6ig(t);
     return t.x - 1;
 }
 
@@ -6423,37 +7514,38 @@ int fu_MAIN()
 
 
 int main() { return fu_MAIN(); }
+// DEAD_code
 
 -----
 
         {
-        //*F
+
         {
-            return 0; //ERR block
+            return 0;
         }
-        /*/
-            {
-                return 0;
-            }
+
         }
-        //*/
 
 -----
-_0.fu @5:9..7:9:
+_0.fu @7:9:
+
+[2m      |         {[0m
+[2m      | [0m
+    7 |         [31;1m{[0m
+[2m      |             return 0;[0m
+[2m      |         }[0m
+
 	Inconsistent indent at `{`: expected more than 9, got 9. Block starts on line 5.
+
 -----
 
         {
-        /*
-        {
-            return 0; //ERR block
-        }
-        /*/
+
             {
                 return 0;
             }
+
         }
-        //*/
 
 -----
 
@@ -6468,6 +7560,7 @@ int fu_MAIN()
 
 
 int main() { return fu_MAIN(); }
+// DEAD_code
 
 -----
 
@@ -6488,29 +7581,33 @@ int fu_MAIN()
 
 
 int main() { return fu_MAIN(); }
+// DEAD_code
 
 -----
 
         {
-            return 0; //ERR block
-        //*F
+            return 0;
+
        }
-        /*/
-        }
-        //*/
+
 
 -----
-_0.fu @5:9..13:1:
+_0.fu @11:1:
+
+[2m      | [0m
+[2m      | [0m
+   11 | [31;1m}[0m
+[2m      | [0m
+
 	Inconsistent indent at closing `}`: expected 8, got 7. Block starts on line 5.
+
 -----
 
         {
-            return 0; //ERR block
-        /*
-       }
-        /*/
+            return 0;
+
         }
-        //*/
+
 
 -----
 
@@ -6525,29 +7622,33 @@ int fu_MAIN()
 
 
 int main() { return fu_MAIN(); }
+// DEAD_code
 
 -----
 
         {
-            return 0; //ERR block
-        //*F
+            return 0;
+
          }
-        /*/
-        }
-        //*/
+
 
 -----
-_0.fu @5:9..13:1:
+_0.fu @11:1:
+
+[2m      | [0m
+[2m      | [0m
+   11 | [31;1m}[0m
+[2m      | [0m
+
 	Inconsistent indent at closing `}`: expected 8, got 9. Block starts on line 5.
+
 -----
 
         {
-            return 0; //ERR block
-        /*
-         }
-        /*/
+            return 0;
+
         }
-        //*/
+
 
 -----
 
@@ -6562,27 +7663,32 @@ int fu_MAIN()
 
 
 int main() { return fu_MAIN(); }
+// DEAD_code
 
 -----
 
         let y = [ 1 ];              ;; TODO fu::slate<1, int> y
-        let
-        //*F
-        /*/ lax //*/ //ERR unused
-        z = [ 2 ];                  ;; TODO fu::slate<1, int> z
+        let 
+            z = [ 2 ];              ;; TODO fu::slate<1, int> z
 
         return y[0] - 1
 
 -----
-_0.fu @5:45:
-	Missing semicollon before `fu`.
+_0.fu @7:17:
+
+[2m      |         let y = [ 1 ];              // TODO fu::slate<1, int> y[0m
+[2m      |         let [0m
+    7 |             z = [31;1m[[0m 2 ];              // TODO fu::slate<1, int> z
+[2m      | [0m
+[2m      |         return y[0] - 1[0m
+
+	Unused variable: `z`: make it `lax` if this is intentional.
+
 -----
 
         let y = [ 1 ];              // TODO fu::slate<1, int> y
-        let
-        /*
-        /*/ lax //*/ //ERR unused
-        z = [ 2 ];                  // TODO fu::slate<1, int> z
+        let lax
+            z = [ 2 ];              // TODO fu::slate<1, int> z
 
         return y[0] - 1
 
@@ -6612,8 +7718,7 @@ int main() { return fu_MAIN(); }
 
         fn fail(a: string) throw("hey: " ~ a);
         fn hello(a: string,
-            //*F
-            /*/ lax //*/ //ERR unused
+
             b: string)
                 a && fail(a) ? b : a;
 
@@ -6625,19 +7730,16 @@ _0.fu @3:9:
 [2m      | [0m
 [2m      |         fn fail(a: string) throw("hey: " ~ a);[0m
     3 |         [31;1mfn[0m hello(a: string,
-[2m      |             //*F[0m
-[2m      |             /*/ lax //*/ //ERR unused[0m
+[2m      | [0m
+[2m      |             b: string)[0m
 
 	Unused variable: `b`: make it `lax` if this is intentional.
-
-        Solving [35;1mfn[0m [34;1mhello[0m
 
 -----
 
         fn fail(a: string) throw("hey: " ~ a);
         fn hello(a: string,
-            /*
-            /*/ lax //*/ //ERR unused
+lax
             b: string)
                 a && fail(a) ? b : a;
 
@@ -6653,19 +7755,19 @@ _0.fu @3:9:
 
 #ifndef FU_NO_FDEFs
 
-[[noreturn]] static fu::never fail(fu::view<char> a)
+[[noreturn]] static fu::never fail_naPRfSop(fu::view<char> a)
 {
     fu::fail(("hey: "_fu + a));
 }
 
-static const fu_STR& hello(const fu_STR& a, fu::view<char>)
+static const fu_STR& hello_fhJuvQpZ(const fu_STR& a, fu::view<char>)
 {
-    return (a ? fail(a) : a);
+    return (a ? fail_naPRfSop(a) : a);
 }
 
 int fu_MAIN()
 {
-    return hello((*(const fu_STR*)fu::NIL), "nope"_fu).size();
+    return hello_fhJuvQpZ((*(const fu_STR*)fu::NIL), "nope"_fu).size();
 }
 
 #endif
@@ -6679,11 +7781,9 @@ int main() { return fu_MAIN(); }
         fn incr(ref x: i32) x++;
         fn lints_ambig_expr_indent(ref a: i32, ref b: i32) {
             return a.incr
-            //*F
+
             +
-            /*/
-              +
-            //*/
+
                 b.incr;
         }
 
@@ -6694,18 +7794,24 @@ int main() { return fu_MAIN(); }
         }
 
 -----
-_0.fu @6:13..10:23:
+_0.fu @8:23:
+
+[2m      |             +[0m
+[2m      | [0m
+    8 |                 b.incr[31;1m;[0m
+[2m      |         }[0m
+[2m      | [0m
+
 	Ambiguous indent at `+`: expected more than 13, got 13
+
 -----
 
         fn incr(ref x: i32) x++;
         fn lints_ambig_expr_indent(ref a: i32, ref b: i32) {
             return a.incr
-            /*
-            +
-            /*/
+
               +
-            //*/
+
                 b.incr;
         }
 
@@ -6719,21 +7825,21 @@ _0.fu @6:13..10:23:
 
 #ifndef FU_NO_FDEFs
 
-static int incr(int& x)
+static int incr_fvq3PhFm(int& x)
 {
     return x++;
 }
 
-static int lints_ambig_expr_indent(int& a, int& b)
+static int lints_ambig_expr_indent_fhn2FPSp(int& a, int& b)
 {
-    return incr(a) + incr(b);
+    return incr_fvq3PhFm(a) + incr_fvq3PhFm(b);
 }
 
 int fu_MAIN()
 {
     int a = 0;
     int b = 0;
-    lints_ambig_expr_indent(a, b);
+    lints_ambig_expr_indent_fhn2FPSp(a, b);
     return a - b;
 }
 
@@ -6745,28 +7851,31 @@ int main() { return fu_MAIN(); }
 -----
 
         fn lints_ambig_jump_semis(mut x: i32) {
-            //*F
+
             return
             x;
-            /*/
-            return x * 2;
-            //*/
+
         }
 
         fn main() 0.lints_ambig_jump_semis;
 
 -----
 _0.fu @5:13:
+
+[2m      | [0m
+[2m      |             return[0m
+    5 |             [31;1mx[0m;
+[2m      | [0m
+[2m      |         }[0m
+
 	Ambiguous indent at `x`: expected more than 13, got 13
+
 -----
 
         fn lints_ambig_jump_semis(mut x: i32) {
-            /*
-            return
-            x;
-            /*/
-            return x * 2;
-            //*/
+
+            return x;
+
         }
 
         fn main() 0.lints_ambig_jump_semis;
@@ -6775,14 +7884,251 @@ _0.fu @5:13:
 
 #ifndef FU_NO_FDEFs
 
-static int lints_ambig_jump_semis(const int x)
+static int lints_ambig_jump_semis_1hpjcHdP(/*MOV*/ const int x)
 {
-    return x * 2;
+    return int(x);
 }
 
 int fu_MAIN()
 {
-    return lints_ambig_jump_semis(0);
+    return lints_ambig_jump_semis_1hpjcHdP(0);
+}
+
+#endif
+
+
+int main() { return fu_MAIN(); }
+
+-----
+
+        fn incr(ref a: i32) ++a;
+        fn A(ref a: i32) a || 
+                              a = A(incr(a));     //  this was an honest mistake.
+
+        fn main() { mut v = 0; return A(v) - 1; }
+
+-----
+_0.fu @4:45:
+
+[2m      |         fn incr(ref a: i32) ++a;[0m
+[2m      |         fn A(ref a: i32) a || [0m
+    4 |                               a = A(incr(a))[31;1m;[0m     //  this was an honest mistake.
+[2m      | [0m
+[2m      |         fn main() { mut v = 0; return A(v) - 1; }[0m
+
+	Unparenthesized `or` on the left side of an `=`.
+
+-----
+
+        fn incr(ref a: i32) ++a;
+        fn A(ref a: i32) a ||  // Lint should complain here,
+                             (a = A(incr(a)));    //  this was an honest mistake.
+
+        fn main() { mut v = 0; return A(v) - 1; }
+
+-----
+
+#ifndef FU_NO_FDEFs
+
+static int& incr_fvq3PhFm(int& a)
+{
+    return ++a;
+}
+
+static int& A_fvq3PhFm(int& a)
+{
+    return a ? a : (a = A_fvq3PhFm(incr_fvq3PhFm(a)));
+}
+
+int fu_MAIN()
+{
+    int v = 0;
+    return A_fvq3PhFm(v) - 1;
+}
+
+#endif
+
+
+int main() { return fu_MAIN(); }
+// FN_recursion
+// FN_resolve
+// DEAD_call
+
+-----
+
+        fn test(is_mutref: bool, args: i32[], ref sum: i32) {
+
+            if (is_mutref)
+                for (mut i = 0; i < args.len; i++)
+                    if (args[i] & 1)
+                        sum += args[i];
+
+            else
+                for (mut i = 0; i < args.len; i++)
+                    if (args[i] & 2)
+                        sum += args[i];
+        }
+
+        fn main() {
+            mut sum = 0;
+            test(true , [ 1,  2,  3  ], sum);
+            test(false, [ 11, 22, 33 ], sum);
+            return sum - 1 - 3 - 11 - 22;
+        }
+
+-----
+_0.fu @10:17:
+
+[2m      | [0m
+[2m      |             else[0m
+   10 |                 [31;1mfor[0m (mut i = 0; i < args.len; i++)
+[2m      |                     if (args[i] & 2)[0m
+[2m      |                         sum += args[i];[0m
+
+	Inconsistent indent at `else`: expected 21, got 13. `if` starts on line 6.
+
+-----
+
+        fn test(is_mutref: bool, args: i32[], ref sum: i32) {
+
+            if (is_mutref) {
+                for (mut i = 0; i < args.len; i++)
+                    if (args[i] & 1)
+                        sum += args[i];
+            }
+
+            else
+                for (mut i = 0; i < args.len; i++)
+                    if (args[i] & 2)
+                        sum += args[i];
+        }
+
+        fn main() {
+            mut sum = 0;
+            test(true , [ 1,  2,  3  ], sum);
+            test(false, [ 11, 22, 33 ], sum);
+            return sum - 1 - 3 - 11 - 22;
+        }
+
+-----
+
+#include <fu/view.h>
+
+#ifndef FU_NO_FDEFs
+
+static void test_sThk4hzC(const bool is_mutref, fu::view<int> args, int& sum)
+{
+    if (is_mutref)
+    {
+        for (int i = 0; i < args.size(); i++)
+        {
+            if (args[i] & 1)
+                sum += args[i];
+
+        };
+    }
+    else
+    {
+        for (int i = 0; i < args.size(); i++)
+        {
+            if (args[i] & 2)
+                sum += args[i];
+
+        };
+    };
+}
+
+int fu_MAIN()
+{
+    int sum = 0;
+    test_sThk4hzC(true, (fu::slate<3, int> { 1, 2, 3 }), sum);
+    test_sThk4hzC(false, (fu::slate<3, int> { 11, 22, 33 }), sum);
+    return (((sum - 1) - 3) - 11) - 22;
+}
+
+#endif
+
+
+int main() { return fu_MAIN(); }
+// RELAX_respec
+
+-----
+
+        //
+        // The -1.abs problem.
+        //
+        // Ruby lexes the minus into the numeric literal.
+        //  This is kinda inconsistent, altough it does make sense.
+        //
+        // Rust & all c-likes lex to -abs(1).
+        //  Rust linters warn about this.
+        //
+        // One thing we can do is change the precedence of some unaries
+        //  to above method call - others, like ! benefit from usual precedence.
+        //   In my experience, the unary * op in c/cpp always disappoints re: precedence,
+        //    but the & op usually works the way you want it to.
+        //     So introducing more precedence rules is a really questionable idea.
+        //
+        // We'll go the rust way for starters,
+        //  this will be a compile time error for now.
+        //
+        fn test()   
+            -1.0    
+                .abs;
+
+        fn main() test ? 0 : 7;
+
+-----
+_0.fu @22:18:
+
+[2m      |         fn test()   [0m
+[2m      |             -1.0    [0m
+   22 |                 .[31;1mabs[0m;
+[2m      | [0m
+[2m      |         fn main() test ? 0 : 7;[0m
+
+	Here the unary -/+ separates from the numeric literal, and wraps around the whole expression. Please parenthesize explicitly to make this obvious.
+
+-----
+
+        //
+        // The -1.abs problem.
+        //
+        // Ruby lexes the minus into the numeric literal.
+        //  This is kinda inconsistent, altough it does make sense.
+        //
+        // Rust & all c-likes lex to -abs(1).
+        //  Rust linters warn about this.
+        //
+        // One thing we can do is change the precedence of some unaries
+        //  to above method call - others, like ! benefit from usual precedence.
+        //   In my experience, the unary * op in c/cpp always disappoints re: precedence,
+        //    but the & op usually works the way you want it to.
+        //     So introducing more precedence rules is a really questionable idea.
+        //
+        // We'll go the rust way for starters,
+        //  this will be a compile time error for now.
+        //
+        fn test()   
+            (-1.0)  
+                .abs;
+
+        fn main() test ? 0 : 7;
+
+-----
+
+#include <cmath>
+
+#ifndef FU_NO_FDEFs
+
+static double test_H9fhQUVP()
+{
+    return std::abs(-1.0);
+}
+
+int fu_MAIN()
+{
+    return (test_H9fhQUVP() ? 0 : 7);
 }
 
 #endif
@@ -6798,25 +8144,24 @@ int main() { return fu_MAIN(); }
 
         fn main() {
             mut x = 0;
-            //*F
-            ref y = x;
-            /*/
-            mut y = 0;
-            //*/
+
+
+            ref y = x; 
+
             let z = test(x, y);
             return x+y - z;
         }
 
 -----
-_0.fu @13:29:
+_0.fu @12:29:
 
-[2m      |             mut y = 0;[0m
-[2m      |             //*/[0m
-   13 |             let z = test(x, [31;1my[0m);
+[2m      |             ref y = x; [0m
+[2m      | [0m
+   12 |             let z = test(x, [31;1my[0m);
 [2m      |             return x+y - z;[0m
 [2m      |         }[0m
 
-	[35;1mfn[0m [34;1mtest[0m: Arguments [31;1mb[0m and [31;1ma[0m (args #1 and #0) both refer to:
+	[35;1mfn[0m [34;1mtest_fhn2FPSp[0m: Arguments [31;1mb[0m and [31;1ma[0m (args #1 and #0) both alias:
 
                 [35;1mvar[0m [34;1mx[0m
 
@@ -6830,11 +8175,10 @@ _0.fu @13:29:
 
         fn main() {
             mut x = 0;
-            /*
-            ref y = x;
-            /*/
-            mut y = 0;
-            //*/
+
+
+            mut y = x; 
+
             let z = test(x, y);
             return x+y - z;
         }
@@ -6843,7 +8187,7 @@ _0.fu @13:29:
 
 #ifndef FU_NO_FDEFs
 
-static int test(int& a, int& b)
+static int test_fhn2FPSp(int& a, int& b)
 {
     return ++a + ++b;
 }
@@ -6851,8 +8195,8 @@ static int test(int& a, int& b)
 int fu_MAIN()
 {
     int x = 0;
-    int y = 0;
-    const int z = test(x, y);
+    int y = x;
+    const int z = test_fhn2FPSp(x, y);
     return (x + y) - z;
 }
 
@@ -6871,25 +8215,24 @@ int main() { return fu_MAIN(); }
 
         fn main() {
             mut x = 0;
-            //*F
-            ref y = x;
-            /*/
-            mut y = 0;
-            //*/
+
+
+            ref y = x; 
+
             let z = test_outer(x, y);
             return x+y - z;
         }
 
 -----
-_0.fu @15:35:
+_0.fu @14:35:
 
-[2m      |             mut y = 0;[0m
-[2m      |             //*/[0m
-   15 |             let z = test_outer(x, [31;1my[0m);
+[2m      |             ref y = x; [0m
+[2m      | [0m
+   14 |             let z = test_outer(x, [31;1my[0m);
 [2m      |             return x+y - z;[0m
 [2m      |         }[0m
 
-	[35;1mfn[0m [34;1mtest_outer[0m: Arguments [31;1mb[0m and [31;1ma[0m (args #1 and #0) both refer to:
+	[35;1mfn[0m [34;1mtest_outer_fhn2FPSp[0m: Arguments [31;1mb[0m and [31;1ma[0m (args #1 and #0) both alias:
 
                 [35;1mvar[0m [34;1mx[0m
 
@@ -6905,11 +8248,10 @@ _0.fu @15:35:
 
         fn main() {
             mut x = 0;
-            /*
-            ref y = x;
-            /*/
-            mut y = 0;
-            //*/
+
+
+            mut y = x; 
+
             let z = test_outer(x, y);
             return x+y - z;
         }
@@ -6918,21 +8260,21 @@ _0.fu @15:35:
 
 #ifndef FU_NO_FDEFs
 
-int test_inner(int& a, int& b)
+int test_inner_fhn2FPSp(int& a, int& b)
 {
     return ++a + ++b;
 }
 
-int test_outer(int& a, int& b)
+int test_outer_fhn2FPSp(int& a, int& b)
 {
-    return test_inner(a, b);
+    return test_inner_fhn2FPSp(a, b);
 }
 
 int fu_MAIN()
 {
     int x = 0;
-    int y = 0;
-    const int z = test_outer(x, y);
+    int y = x;
+    const int z = test_outer_fhn2FPSp(x, y);
     return (x + y) - z;
 }
 
@@ -6946,11 +8288,9 @@ int main() { return fu_MAIN(); }
         fn test(ref a: i32[]) {
             ref b = a[0];
             if (a.len & 1) {
-                //*F
+
                 a ~= 1; // Invalidates 'b'.
-                /*/
-                b++;
-                //*/
+
             }
             b++;
         }
@@ -6963,38 +8303,37 @@ int main() { return fu_MAIN(); }
         }
 
 -----
-_0.fu @11:13:
+_0.fu @9:13:
 
-[2m      |                 //*/[0m
+[2m      | [0m
 [2m      |             }[0m
-   11 |             [31;1mb[0m++;
+    9 |             [31;1mb[0m++;
 [2m      |         }[0m
 [2m      | [0m
 
 	Cannot access [31;1mb[0m, reference invalidated by write to [31;1ma[0m at 6:19:
 
 [2m      |             if (a.len & 1) {[0m
-[2m      |                 //*F[0m
+[2m      | [0m
     6 |                 a [31;1m~=[0m 1; // Invalidates 'b'.
-[2m      |                 /*/[0m
-[2m      |                 b++;[0m
+[2m      | [0m
+[2m      |             }[0m
 
 	At call to [34;1m
 <fu/vec/concat_one.h>
 +=[0m
+            
 
-        Solving [35;1mfn[0m [34;1mtest[0m
+        Solving [35;1mfn[0m [34;1mtest_j3F1UXeO[0m
 
 -----
 
         fn test(ref a: i32[]) {
             ref b = a[0];
             if (a.len & 1) {
-                /*
-                a ~= 1; // Invalidates 'b'.
-                /*/
+
                 b++;
-                //*/
+
             }
             b++;
         }
@@ -7012,7 +8351,7 @@ _0.fu @11:13:
 
 #ifndef FU_NO_FDEFs
 
-static void test(fu_VEC<int>& a)
+static void test_j3F1UXeO(fu_VEC<int>& a)
 {
     int& b = a.mutref(0);
     if (a.size() & 1)
@@ -7024,7 +8363,7 @@ static void test(fu_VEC<int>& a)
 int fu_MAIN()
 {
     fu_VEC<int> arr = fu_VEC<int> { fu::slate<1, int> { 1 } };
-    test(arr);
+    test_j3F1UXeO(arr);
     int sum = 0;
     for (int i = 0; i < arr.size(); i++)
         sum += arr[i];
@@ -7045,24 +8384,22 @@ int main() { return fu_MAIN(); }
         fn test(ref a: nci32, b: nci32) a.i++ || b.i;
         fn main() {
             mut x = nci32(0);
-            //*F
-            ref y = x;
-            /*/
-            let y = nci32(0);
-            //*/
+
+            ref y = x;          
+
             return test(x, y);
         }
 
 -----
-_0.fu @12:28:
+_0.fu @10:28:
 
-[2m      |             let y = nci32(0);[0m
-[2m      |             //*/[0m
-   12 |             return test(x, [31;1my[0m);
+[2m      |             ref y = x;          [0m
+[2m      | [0m
+   10 |             return test(x, [31;1my[0m);
 [2m      |         }[0m
-[2m      |     [0m
+[2m      | [0m
 
-	[35;1mfn[0m [34;1mtest[0m: Arguments [31;1mb[0m and [31;1ma[0m (args #1 and #0) both refer to:
+	[35;1mfn[0m [34;1mtest_q4EjjPgw[0m: Arguments [31;1mb[0m and [31;1ma[0m (args #1 and #0) both alias:
 
                 [35;1mvar[0m [34;1mx[0m
 
@@ -7075,11 +8412,9 @@ _0.fu @12:28:
         fn test(ref a: nci32, b: nci32) a.i++ || b.i;
         fn main() {
             mut x = nci32(0);
-            /*
-            ref y = x;
-            /*/
-            let y = nci32(0);
-            //*/
+
+            let y = nci32(0);   
+
             return test(x, y);
         }
 
@@ -7107,7 +8442,7 @@ struct s_nci32
 
 #ifndef FU_NO_FDEFs
 
-static int test(s_nci32& a, const s_nci32& b)
+static int test_q4EjjPgw(s_nci32& a, const s_nci32& b)
 {
     int _0 {};
     return (_0 = a.i++) ? _0 : int(b.i);
@@ -7117,7 +8452,7 @@ int fu_MAIN()
 {
     s_nci32 x = s_nci32 { 0 };
     const s_nci32 y = s_nci32 { 0 };
-    return test(x, y);
+    return test_q4EjjPgw(x, y);
 }
 
 #endif
@@ -7130,13 +8465,10 @@ int main() { return fu_MAIN(); }
         fn test(ref a: i32[]) {
             ref b = a[0];
             if (a.len & 1) { // Lets be extra sure here.
-                //*F
+
                 a ~= 1; // Invalidates 'b'.
                 b++;
-                /*/
-                b++;
-                a ~= 1;
-                //*/
+
             }
         }
 
@@ -7150,38 +8482,36 @@ int main() { return fu_MAIN(); }
 -----
 _0.fu @7:17:
 
-[2m      |                 //*F[0m
+[2m      | [0m
 [2m      |                 a ~= 1; // Invalidates 'b'.[0m
     7 |                 [31;1mb[0m++;
-[2m      |                 /*/[0m
-[2m      |                 b++;[0m
+[2m      | [0m
+[2m      |             }[0m
 
 	Cannot access [31;1mb[0m, reference invalidated by write to [31;1ma[0m at 6:19:
 
 [2m      |             if (a.len & 1) { // Lets be extra sure here.[0m
-[2m      |                 //*F[0m
+[2m      | [0m
     6 |                 a [31;1m~=[0m 1; // Invalidates 'b'.
 [2m      |                 b++;[0m
-[2m      |                 /*/[0m
+[2m      | [0m
 
 	At call to [34;1m
 <fu/vec/concat_one.h>
 +=[0m
+            
 
-        Solving [35;1mfn[0m [34;1mtest[0m
+        Solving [35;1mfn[0m [34;1mtest_j3F1UXeO[0m
 
 -----
 
         fn test(ref a: i32[]) {
             ref b = a[0];
             if (a.len & 1) { // Lets be extra sure here.
-                /*
-                a ~= 1; // Invalidates 'b'.
-                b++;
-                /*/
+
                 b++;
                 a ~= 1;
-                //*/
+
             }
         }
 
@@ -7199,7 +8529,7 @@ _0.fu @7:17:
 
 #ifndef FU_NO_FDEFs
 
-static void test(fu_VEC<int>& a)
+static void test_j3F1UXeO(fu_VEC<int>& a)
 {
     int& b = a.mutref(0);
     if (a.size() & 1)
@@ -7212,7 +8542,7 @@ static void test(fu_VEC<int>& a)
 int fu_MAIN()
 {
     fu_VEC<int> arr = fu_VEC<int> { fu::slate<1, int> { 1 } };
-    test(arr);
+    test_j3F1UXeO(arr);
     int sum = 0;
     for (int i = 0; i < arr.size(); i++)
         sum += arr[i];
@@ -7234,11 +8564,9 @@ int main() { return fu_MAIN(); }
             {
                 b++; // Same thing but reordered as a loop.
                 if (a.len & 3) {
-                    //*F
-                    a ~= 1; // Invalidates 'b' on next iter.
-                    /*/
-                    b++;
-                    //*/
+
+                    a ~= 1; // Invalidates 'b'.
+
                 }
             }
             a ~= 100; // Invalidates 'b' but that's fine!
@@ -7255,10 +8583,10 @@ int main() { return fu_MAIN(); }
 _0.fu @9:23:
 
 [2m      |                 if (a.len & 3) {[0m
-[2m      |                     //*F[0m
-    9 |                     a [31;1m~=[0m 1; // Invalidates 'b' on next iter.
-[2m      |                     /*/[0m
-[2m      |                     b++;[0m
+[2m      | [0m
+    9 |                     a [31;1m~=[0m 1; // Invalidates 'b'.
+[2m      | [0m
+[2m      |                 }[0m
 
 	Write to [31;1ma[0m at call to [35;1m__native[0m [34;1m
 <fu/vec/concat_one.h>
@@ -7268,13 +8596,14 @@ _0.fu @9:23:
 [2m      |             {[0m
     6 |                 [31;1mb[0m++; // Same thing but reordered as a loop.
 [2m      |                 if (a.len & 3) {[0m
-[2m      |                     //*F[0m
+[2m      | [0m
 
 	... on next loop iteration.
 
 	Written
+            
 
-        Solving [35;1mfn[0m [34;1mtest[0m
+        Solving [35;1mfn[0m [34;1mtest_j3F1UXeO[0m
 
 -----
 
@@ -7284,11 +8613,9 @@ _0.fu @9:23:
             {
                 b++; // Same thing but reordered as a loop.
                 if (a.len & 3) {
-                    /*
-                    a ~= 1; // Invalidates 'b' on next iter.
-                    /*/
+
                     b++;
-                    //*/
+
                 }
             }
             a ~= 100; // Invalidates 'b' but that's fine!
@@ -7308,7 +8635,7 @@ _0.fu @9:23:
 
 #ifndef FU_NO_FDEFs
 
-static void test(fu_VEC<int>& a)
+static void test_j3F1UXeO(fu_VEC<int>& a)
 {
     int& b = a.mutref(0);
     for (int i = 2; i-- > 0; )
@@ -7324,7 +8651,7 @@ static void test(fu_VEC<int>& a)
 int fu_MAIN()
 {
     fu_VEC<int> arr = fu_VEC<int> { fu::slate<1, int> { 1 } };
-    test(arr);
+    test_j3F1UXeO(arr);
     int sum = 0;
     for (int i = 0; i < arr.size(); i++)
         sum += arr[i];
@@ -7360,7 +8687,7 @@ int main() { return fu_MAIN(); }
 
 #ifndef FU_NO_FDEFs
 
-static int incr_a_or_b(int& a, int& b)
+static int incr_a_or_b_fhn2FPSp(int& a, int& b)
 {
     return (a ? a : b)++;
 }
@@ -7370,9 +8697,9 @@ int fu_MAIN()
     int Z = 0;
     int A = 1;
     int B = 0;
-    incr_a_or_b(Z, B);
-    incr_a_or_b(A, B);
-    incr_a_or_b(B, B);
+    incr_a_or_b_fhn2FPSp(Z, B);
+    incr_a_or_b_fhn2FPSp(A, B);
+    incr_a_or_b_fhn2FPSp(B, B);
     return ((100 * A) + B) - 202;
 }
 
@@ -7479,11 +8806,8 @@ int main() { return fu_MAIN(); }
             mut A: V = [ 1 ];
             mut B: V = [ 1 ];
 
-            //*F
-            ref aa = A.v || A.w;
-            /*/
-            fn aa  = A.v || A.w;
-            //*/
+
+            ref aa = A.v || A.w; 
 
             ref bb = B.v || B.w;
             ++++bb;
@@ -7498,23 +8822,24 @@ int main() { return fu_MAIN(); }
         }
 
 -----
-_0.fu @23:20:
+_0.fu @20:20:
 
 [2m      |             ++++c;[0m
 [2m      | [0m
-   23 |             return [31;1maa[0m - 3; // same, without a helper var
+   20 |             return [31;1maa[0m - 3; // same, without a helper var
 [2m      |         }[0m
-[2m      |     [0m
+[2m      | [0m
 
-	Cannot access [31;1maa[0m, reference invalidated by write to [31;1mc[0m at 21:15:
+	Cannot access [31;1maa[0m, reference invalidated by write to [31;1mc[0m at 18:15:
 
 [2m      | [0m
 [2m      |             ref c = a || b;[0m
-   21 |             ++[31;1m++[0mc;
+   18 |             ++[31;1m++[0mc;
 [2m      | [0m
 [2m      |             return aa - 3; // same, without a helper var[0m
 
 	At call to [34;1m++[0m
+            
 
         Solving [35;1mfn[0m [34;1mmain[0m
 
@@ -7526,11 +8851,8 @@ _0.fu @23:20:
             mut A: V = [ 1 ];
             mut B: V = [ 1 ];
 
-            /*
-            ref aa = A.v || A.w;
-            /*/
-            fn aa  = A.v || A.w;
-            //*/
+
+            fn  aa = A.v || A.w; 
 
             ref bb = B.v || B.w;
             ++++bb;
@@ -7568,7 +8890,7 @@ struct s_V
 
 #ifndef FU_NO_FDEFs
 
-static int& aa(s_V& A)
+static int& aa_fwJRfWgj(s_V& A)
 {
     return A.v ? A.v : A.w;
 }
@@ -7583,7 +8905,7 @@ int fu_MAIN()
     int& b = (B.v ? B.v : B.ww);
     int& c = (a ? a : b);
     ++++c;
-    return aa(A) - 3;
+    return aa_fwJRfWgj(A) - 3;
 }
 
 #endif
@@ -7605,24 +8927,23 @@ int main() { return fu_MAIN(); }
         fn main() {
             mut ab = 0;
             mut cd = 0;
-            //*F
-            ab_cd(ab, cd, ab, cd);
-            /*/
-            ab_cd(ab, ab, cd, cd);
-            //*/
+
+
+            ab_cd(ab, cd, ab, cd); 
+
             return ab - cd;
         }
 
 -----
-_0.fu @15:31:
+_0.fu @16:31:
 
-[2m      |             mut cd = 0;[0m
-[2m      |             //*F[0m
-   15 |             ab_cd(ab, cd, ab, [31;1mcd[0m);
-[2m      |             /*/[0m
-[2m      |             ab_cd(ab, ab, cd, cd);[0m
+[2m      | [0m
+[2m      | [0m
+   16 |             ab_cd(ab, cd, ab, [31;1mcd[0m); 
+[2m      | [0m
+[2m      |             return ab - cd;[0m
 
-	[35;1mfn[0m [34;1mab_cd[0m: Arguments [31;1mc[0m and [31;1ma[0m (args #2 and #0) both refer to:
+	[35;1mfn[0m [34;1mab_cd_Wkf9vdEe[0m: Arguments [31;1mc[0m and [31;1ma[0m (args #2 and #0) both alias:
 
                 [35;1mvar[0m [34;1mab[0m
 
@@ -7642,11 +8963,10 @@ _0.fu @15:31:
         fn main() {
             mut ab = 0;
             mut cd = 0;
-            /*
-            ab_cd(ab, cd, ab, cd);
-            /*/
-            ab_cd(ab, ab, cd, cd);
-            //*/
+
+
+            ab_cd(ab, ab, cd, cd); 
+
             return ab - cd;
         }
 
@@ -7654,7 +8974,7 @@ _0.fu @15:31:
 
 #ifndef FU_NO_FDEFs
 
-void ab_cd(int& a, int& b, int& c, int& d)
+void ab_cd_Wkf9vdEe(int& a, int& b, int& c, int& d)
 {
     int& ab = (a ? a : b);
     int& cd = (c ? c : d);
@@ -7666,7 +8986,7 @@ int fu_MAIN()
 {
     int ab = 0;
     int cd = 0;
-    ab_cd(ab, ab, cd, cd);
+    ab_cd_Wkf9vdEe(ab, ab, cd, cd);
     return ab - cd;
 }
 
@@ -7694,24 +9014,23 @@ int main() { return fu_MAIN(); }
         fn main() {
             mut ab = X(0, 0);
             mut cd = X(0, 0);
-            //*F
-            ab_cd_defer(ab, cd, ab, cd);
-            /*/
-            ab_cd_defer(ab, ab, cd, cd);
-            //*/
+
+
+            ab_cd_defer(ab, cd, ab, cd); 
+
             return ab.i - cd.i;
         }
 
 -----
-_0.fu @20:37:
+_0.fu @21:37:
 
-[2m      |             mut cd = X(0, 0);[0m
-[2m      |             //*F[0m
-   20 |             ab_cd_defer(ab, cd, ab, [31;1mcd[0m);
-[2m      |             /*/[0m
-[2m      |             ab_cd_defer(ab, ab, cd, cd);[0m
+[2m      | [0m
+[2m      | [0m
+   21 |             ab_cd_defer(ab, cd, ab, [31;1mcd[0m); 
+[2m      | [0m
+[2m      |             return ab.i - cd.i;[0m
 
-	[35;1mfn[0m [34;1mab_cd_defer[0m: Arguments [31;1mc[0m and [31;1ma[0m (args #2 and #0) both refer to:
+	[35;1mfn[0m [34;1mab_cd_defer_e0sAGcRp[0m: Arguments [31;1mc[0m and [31;1ma[0m (args #2 and #0) both alias:
 
                 [35;1mvar[0m [34;1mab[0m
 
@@ -7736,11 +9055,10 @@ _0.fu @20:37:
         fn main() {
             mut ab = X(0, 0);
             mut cd = X(0, 0);
-            /*
-            ab_cd_defer(ab, cd, ab, cd);
-            /*/
-            ab_cd_defer(ab, ab, cd, cd);
-            //*/
+
+
+            ab_cd_defer(ab, ab, cd, cd); 
+
             return ab.i - cd.i;
         }
 
@@ -7768,7 +9086,7 @@ struct s_X
 
 #ifndef FU_NO_FDEFs
 
-void ab_cd_defer(s_X& a, s_X& b, s_X& c, s_X& d, const bool j)
+void ab_cd_defer_e0sAGcRp(s_X& a, s_X& b, s_X& c, s_X& d, const bool j)
 {
     fu_DEFER(
     {
@@ -7785,7 +9103,7 @@ int fu_MAIN()
 {
     s_X ab = s_X { 0, 0 };
     s_X cd = s_X { 0, 0 };
-    ab_cd_defer(ab, ab, cd, cd, bool{});
+    ab_cd_defer_e0sAGcRp(ab, ab, cd, cd, bool{});
     return ab.i - cd.i;
 }
 
@@ -7811,24 +9129,23 @@ int main() { return fu_MAIN(); }
         fn main() {
             mut ab = 0;
             mut cd = 0;
-            //*F
-            ab_cd_outer(ab, cd, ab, cd);
-            /*/
-            ab_cd_outer(ab, ab, cd, cd);
-            //*/
+
+
+            ab_cd_outer(ab, cd, ab, cd); 
+
             return ab - cd;
         }
 
 -----
-_0.fu @18:37:
+_0.fu @19:37:
 
-[2m      |             mut cd = 0;[0m
-[2m      |             //*F[0m
-   18 |             ab_cd_outer(ab, cd, ab, [31;1mcd[0m);
-[2m      |             /*/[0m
-[2m      |             ab_cd_outer(ab, ab, cd, cd);[0m
+[2m      | [0m
+[2m      | [0m
+   19 |             ab_cd_outer(ab, cd, ab, [31;1mcd[0m); 
+[2m      | [0m
+[2m      |             return ab - cd;[0m
 
-	[35;1mfn[0m [34;1mab_cd_outer[0m: Arguments [31;1mc[0m and [31;1ma[0m (args #2 and #0) both refer to:
+	[35;1mfn[0m [34;1mab_cd_outer_Wkf9vdEe[0m: Arguments [31;1mc[0m and [31;1ma[0m (args #2 and #0) both alias:
 
                 [35;1mvar[0m [34;1mab[0m
 
@@ -7851,11 +9168,10 @@ _0.fu @18:37:
         fn main() {
             mut ab = 0;
             mut cd = 0;
-            /*
-            ab_cd_outer(ab, cd, ab, cd);
-            /*/
-            ab_cd_outer(ab, ab, cd, cd);
-            //*/
+
+
+            ab_cd_outer(ab, ab, cd, cd); 
+
             return ab - cd;
         }
 
@@ -7863,7 +9179,7 @@ _0.fu @18:37:
 
 #ifndef FU_NO_FDEFs
 
-void ab_cd_inner(int& a, int& b, int& c, int& d)
+void ab_cd_inner_Wkf9vdEe(int& a, int& b, int& c, int& d)
 {
     int& ab = (a ? a : b);
     int& cd = (c ? c : d);
@@ -7871,16 +9187,16 @@ void ab_cd_inner(int& a, int& b, int& c, int& d)
     ++++cd;
 }
 
-void ab_cd_outer(int& a, int& b, int& c, int& d)
+void ab_cd_outer_Wkf9vdEe(int& a, int& b, int& c, int& d)
 {
-    ab_cd_inner(a, b, c, d);
+    ab_cd_inner_Wkf9vdEe(a, b, c, d);
 }
 
 int fu_MAIN()
 {
     int ab = 0;
     int cd = 0;
-    ab_cd_outer(ab, ab, cd, cd);
+    ab_cd_outer_Wkf9vdEe(ab, ab, cd, cd);
     return ab - cd;
 }
 
@@ -7907,24 +9223,23 @@ int main() { return fu_MAIN(); }
         fn main() {
             mut ab = 0; mut cd = 0;
             mut ef = 0; mut gh = 0;
-            //*F
-            abcd_efgh(ab, ab, cd, gh, ef, ef, cd, gh);
-            /*/
-            abcd_efgh(ab, ab, cd, cd, ef, ef, gh, gh);
-            //*/
+
+
+            abcd_efgh(ab, ab, cd, gh, ef, ef, cd, gh); 
+
             return (ab + cd) - (ef + gh);
         }
 
 -----
-_0.fu @19:51:
+_0.fu @20:51:
 
-[2m      |             mut ef = 0; mut gh = 0;[0m
-[2m      |             //*F[0m
-   19 |             abcd_efgh(ab, ab, cd, gh, ef, ef, cd, [31;1mgh[0m);
-[2m      |             /*/[0m
-[2m      |             abcd_efgh(ab, ab, cd, cd, ef, ef, gh, gh);[0m
+[2m      | [0m
+[2m      | [0m
+   20 |             abcd_efgh(ab, ab, cd, gh, ef, ef, cd, [31;1mgh[0m); 
+[2m      | [0m
+[2m      |             return (ab + cd) - (ef + gh);[0m
 
-	[35;1mfn[0m [34;1mabcd_efgh[0m: Arguments [31;1mg[0m and [31;1mc[0m (args #6 and #2) both refer to:
+	[35;1mfn[0m [34;1mabcd_efgh_gZkYBgka[0m: Arguments [31;1mg[0m and [31;1mc[0m (args #6 and #2) both alias:
 
                 [35;1mvar[0m [34;1mcd[0m
 
@@ -7948,11 +9263,10 @@ _0.fu @19:51:
         fn main() {
             mut ab = 0; mut cd = 0;
             mut ef = 0; mut gh = 0;
-            /*
-            abcd_efgh(ab, ab, cd, gh, ef, ef, cd, gh);
-            /*/
-            abcd_efgh(ab, ab, cd, cd, ef, ef, gh, gh);
-            //*/
+
+
+            abcd_efgh(ab, ab, cd, cd, ef, ef, gh, gh); 
+
             return (ab + cd) - (ef + gh);
         }
 
@@ -7960,7 +9274,7 @@ _0.fu @19:51:
 
 #ifndef FU_NO_FDEFs
 
-void abcd_efgh(int& a, int& b, int& c, int& d, int& e, int& f, int& g, int& h)
+void abcd_efgh_gZkYBgka(int& a, int& b, int& c, int& d, int& e, int& f, int& g, int& h)
 {
     int& ab = (a ? a : b);
     int& cd = (c ? c : d);
@@ -7982,7 +9296,7 @@ int fu_MAIN()
     int cd = 0;
     int ef = 0;
     int gh = 0;
-    abcd_efgh(ab, ab, cd, cd, ef, ef, gh, gh);
+    abcd_efgh_gZkYBgka(ab, ab, cd, cd, ef, ef, gh, gh);
     return (ab + cd) - (ef + gh);
 }
 
@@ -8002,24 +9316,23 @@ int main() { return fu_MAIN(); }
         fn main() {
             mut a = 0;
             mut b = 0;
-            //*F
-            incr_a_or_b_and_b_or_a(a, a);
-            /*/
-            incr_a_or_b_and_b_or_a(a, b);
-            //*/
+
+
+            incr_a_or_b_and_b_or_a(a, a); 
+
             return a + b - 2;
         }
 
 -----
-_0.fu @12:39:
+_0.fu @13:39:
 
-[2m      |             mut b = 0;[0m
-[2m      |             //*F[0m
-   12 |             incr_a_or_b_and_b_or_a(a, [31;1ma[0m);
-[2m      |             /*/[0m
-[2m      |             incr_a_or_b_and_b_or_a(a, b);[0m
+[2m      | [0m
+[2m      | [0m
+   13 |             incr_a_or_b_and_b_or_a(a, [31;1ma[0m); 
+[2m      | [0m
+[2m      |             return a + b - 2;[0m
 
-	[35;1mfn[0m [34;1mincr_a_or_b_and_b_or_a[0m: Arguments [31;1mb[0m and [31;1ma[0m (args #1 and #0) both refer to:
+	[35;1mfn[0m [34;1mincr_a_or_b_and_b_or_a_fhn2FPSp[0m: Arguments [31;1mb[0m and [31;1ma[0m (args #1 and #0) both alias:
 
                 [35;1mvar[0m [34;1ma[0m
 
@@ -8036,11 +9349,10 @@ _0.fu @12:39:
         fn main() {
             mut a = 0;
             mut b = 0;
-            /*
-            incr_a_or_b_and_b_or_a(a, a);
-            /*/
-            incr_a_or_b_and_b_or_a(a, b);
-            //*/
+
+
+            incr_a_or_b_and_b_or_a(a, b); 
+
             return a + b - 2;
         }
 
@@ -8048,7 +9360,7 @@ _0.fu @12:39:
 
 #ifndef FU_NO_FDEFs
 
-void incr_a_or_b_and_b_or_a(int& a, int& b)
+void incr_a_or_b_and_b_or_a_fhn2FPSp(int& a, int& b)
 {
     int& x = (a ? a : b);
     ++x;
@@ -8060,7 +9372,7 @@ int fu_MAIN()
 {
     int a = 0;
     int b = 0;
-    incr_a_or_b_and_b_or_a(a, b);
+    incr_a_or_b_and_b_or_a_fhn2FPSp(a, b);
     return (a + b) - 2;
 }
 
@@ -8095,7 +9407,7 @@ int main() { return fu_MAIN(); }
 
 #ifndef FU_NO_FDEFs
 
-static void incr_a_or_b_by2_via_x(int& a, int& b)
+static void incr_a_or_b_by2_via_x_fhn2FPSp(int& a, int& b)
 {
     int& x = (a ? a : b);
     ++++x;
@@ -8106,9 +9418,9 @@ int fu_MAIN()
     int Z = 0;
     int A = 2;
     int B = 0;
-    incr_a_or_b_by2_via_x(Z, B);
-    incr_a_or_b_by2_via_x(A, B);
-    incr_a_or_b_by2_via_x(B, B);
+    incr_a_or_b_by2_via_x_fhn2FPSp(Z, B);
+    incr_a_or_b_by2_via_x_fhn2FPSp(A, B);
+    incr_a_or_b_by2_via_x_fhn2FPSp(B, B);
     return ((100 * A) + B) - 404;
 }
 
@@ -8140,7 +9452,7 @@ int main() { return fu_MAIN(); }
 
 #ifndef FU_NO_FDEFs
 
-static int& incr_a_or_b_by2(int& a, int& b)
+static int& incr_a_or_b_by2_fhn2FPSp(int& a, int& b)
 {
     return ++++(a ? a : b);
 }
@@ -8150,9 +9462,9 @@ int fu_MAIN()
     int Z = 0;
     int A = 2;
     int B = 0;
-    incr_a_or_b_by2(Z, B);
-    incr_a_or_b_by2(A, B);
-    incr_a_or_b_by2(B, B);
+    incr_a_or_b_by2_fhn2FPSp(Z, B);
+    incr_a_or_b_by2_fhn2FPSp(A, B);
+    incr_a_or_b_by2_fhn2FPSp(B, B);
     return ((100 * A) + B) - 404;
 }
 
@@ -8170,12 +9482,9 @@ int main() { return fu_MAIN(); }
 
         fn main() {
             mut a = [ 0 ];
-            //*F
+
             ref c = alias(a, a[0]);
-            /*/
-            mut b = [ 0 ];
-            ref c = alias(a, b[0]);
-            //*/
+
             return c++;
         }
 
@@ -8183,12 +9492,12 @@ int main() { return fu_MAIN(); }
 _0.fu @10:31:
 
 [2m      |             mut a = [ 0 ];[0m
-[2m      |             //*F[0m
+[2m      | [0m
    10 |             ref c = alias(a, a[31;1m[[0m0]);
-[2m      |             /*/[0m
-[2m      |             mut b = [ 0 ];[0m
+[2m      | [0m
+[2m      |             return c++;[0m
 
-	[35;1mfn[0m [34;1malias[0m: Arguments [31;1mitem[0m and [31;1marr[0m (args #1 and #0) both refer to:
+	[35;1mfn[0m [34;1malias_lvvWGyRY[0m: Arguments [31;1mitem[0m and [31;1marr[0m (args #1 and #0) both alias:
 
                 [35;1mvar[0m [34;1ma[0m
 
@@ -8203,12 +9512,10 @@ _0.fu @10:31:
 
         fn main() {
             mut a = [ 0 ];
-            /*
-            ref c = alias(a, a[0]);
-            /*/
+
             mut b = [ 0 ];
             ref c = alias(a, b[0]);
-            //*/
+
             return c++;
         }
 
@@ -8219,7 +9526,7 @@ _0.fu @10:31:
 
 #ifndef FU_NO_FDEFs
 
-static int& alias(fu_VEC<int>& arr, int& item)
+static int& alias_lvvWGyRY(fu_VEC<int>& arr, int& item)
 {
     arr += 1;
     return item;
@@ -8229,7 +9536,7 @@ int fu_MAIN()
 {
     fu_VEC<int> a = fu_VEC<int> { fu::slate<1, int> { 0 } };
     fu_VEC<int> b = fu_VEC<int> { fu::slate<1, int> { 0 } };
-    int& c = alias(a, b.mutref(0));
+    int& c = alias_lvvWGyRY(a, b.mutref(0));
     return c++;
 }
 
@@ -8242,53 +9549,48 @@ int main() { return fu_MAIN(); }
 -----
 
         fn test(ref a: i32[], ref b: i32[]) {
-            //*F
-            ref aa = a[0];
-            /*/
-            fn aa()  a[0];
-            //*/
-            ref bb = b[0]; a ~= 1; // Invalidates 'aa' if ref.
 
-            ref cc = bb || aa; // Mustn't compile.
+            ref aa = a[0]; 
+
+            ref bb = b[0]; a ~= 1; // Invalidates 'aa' if ref.
+            ref cc = bb || aa;     // Mustn't compile.
             return cc;
         }
 
         fn main() { mut a = [ 0 ]; mut b = [ 0 ]; return test(a, b); }
 
 -----
-_0.fu @10:28:
+_0.fu @7:28:
 
-[2m      |             ref bb = b[0]; a ~= 1; // Invalidates 'aa' if ref.[0m
 [2m      | [0m
-   10 |             ref cc = bb || [31;1maa[0m; // Mustn't compile.
+[2m      |             ref bb = b[0]; a ~= 1; // Invalidates 'aa' if ref.[0m
+    7 |             ref cc = bb || [31;1maa[0m;     // Mustn't compile.
 [2m      |             return cc;[0m
 [2m      |         }[0m
 
-	Cannot access [31;1maa[0m, reference invalidated by write to [31;1ma[0m at 8:30:
+	Cannot access [31;1maa[0m, reference invalidated by write to [31;1ma[0m at 6:30:
 
-[2m      |             fn aa()  a[0];[0m
-[2m      |             //*/[0m
-    8 |             ref bb = b[0]; a [31;1m~=[0m 1; // Invalidates 'aa' if ref.
+[2m      |             ref aa = a[0]; [0m
 [2m      | [0m
-[2m      |             ref cc = bb || aa; // Mustn't compile.[0m
+    6 |             ref bb = b[0]; a [31;1m~=[0m 1; // Invalidates 'aa' if ref.
+[2m      |             ref cc = bb || aa;     // Mustn't compile.[0m
+[2m      |             return cc;[0m
 
 	At call to [34;1m
 <fu/vec/concat_one.h>
 +=[0m
+            
 
-        Solving [35;1mfn[0m [34;1mtest[0m
+        Solving [35;1mfn[0m [34;1mtest_Qwe6jMsz[0m
 
 -----
 
         fn test(ref a: i32[], ref b: i32[]) {
-            /*
-            ref aa = a[0];
-            /*/
-            fn aa()  a[0];
-            //*/
-            ref bb = b[0]; a ~= 1; // Invalidates 'aa' if ref.
 
-            ref cc = bb || aa; // Mustn't compile.
+            fn  aa() a[0]; 
+
+            ref bb = b[0]; a ~= 1; // Invalidates 'aa' if ref.
+            ref cc = bb || aa;     // Mustn't compile.
             return cc;
         }
 
@@ -8301,16 +9603,16 @@ _0.fu @10:28:
 
 #ifndef FU_NO_FDEFs
 
-static int& aa(fu_VEC<int>& a)
+static int& aa_y1jV3SX3(fu_VEC<int>& a)
 {
     return a.mutref(0);
 }
 
-static int& test(fu_VEC<int>& a, fu_VEC<int>& b)
+static int& test_Qwe6jMsz(fu_VEC<int>& a, fu_VEC<int>& b)
 {
     int& bb = b.mutref(0);
     a += 1;
-    int& cc = (bb ? bb : aa(a));
+    int& cc = (bb ? bb : aa_y1jV3SX3(a));
     return cc;
 }
 
@@ -8318,7 +9620,7 @@ int fu_MAIN()
 {
     /*MOV*/ fu_VEC<int> a = fu_VEC<int> { fu::slate<1, int> { 0 } };
     /*MOV*/ fu_VEC<int> b = fu_VEC<int> { fu::slate<1, int> { 0 } };
-    return int(test(a, b));
+    return int(test_Qwe6jMsz(a, b));
 }
 
 #endif
@@ -8330,52 +9632,47 @@ int main() { return fu_MAIN(); }
 -----
 
         fn test(ref a: i32[], ref b: i32[]) {
-            //*F
-            ref aa = a[0];
-            /*/
-            fn aa()  a[0];
-            //*/
-            ref bb = b[0]; a ~= 1; // Invalidates 'aa' if ref.
 
-            return bb || aa; // Same as above, but no explicit binding.
+            ref aa = a[0]; 
+
+            ref bb = b[0]; a ~= 1; // Invalidates 'aa' if ref.
+            return bb || aa;       // Same as above, but no explicit binding.
         }
 
         fn main() { mut a = [ 0 ]; mut b = [ 0 ]; return test(a, b); }
 
 -----
-_0.fu @10:26:
+_0.fu @7:26:
 
-[2m      |             ref bb = b[0]; a ~= 1; // Invalidates 'aa' if ref.[0m
 [2m      | [0m
-   10 |             return bb || [31;1maa[0m; // Same as above, but no explicit binding.
+[2m      |             ref bb = b[0]; a ~= 1; // Invalidates 'aa' if ref.[0m
+    7 |             return bb || [31;1maa[0m;       // Same as above, but no explicit binding.
 [2m      |         }[0m
 [2m      | [0m
 
-	Cannot access [31;1maa[0m, reference invalidated by write to [31;1ma[0m at 8:30:
+	Cannot access [31;1maa[0m, reference invalidated by write to [31;1ma[0m at 6:30:
 
-[2m      |             fn aa()  a[0];[0m
-[2m      |             //*/[0m
-    8 |             ref bb = b[0]; a [31;1m~=[0m 1; // Invalidates 'aa' if ref.
+[2m      |             ref aa = a[0]; [0m
 [2m      | [0m
-[2m      |             return bb || aa; // Same as above, but no explicit binding.[0m
+    6 |             ref bb = b[0]; a [31;1m~=[0m 1; // Invalidates 'aa' if ref.
+[2m      |             return bb || aa;       // Same as above, but no explicit binding.[0m
+[2m      |         }[0m
 
 	At call to [34;1m
 <fu/vec/concat_one.h>
 +=[0m
+            
 
-        Solving [35;1mfn[0m [34;1mtest[0m
+        Solving [35;1mfn[0m [34;1mtest_Qwe6jMsz[0m
 
 -----
 
         fn test(ref a: i32[], ref b: i32[]) {
-            /*
-            ref aa = a[0];
-            /*/
-            fn aa()  a[0];
-            //*/
-            ref bb = b[0]; a ~= 1; // Invalidates 'aa' if ref.
 
-            return bb || aa; // Same as above, but no explicit binding.
+            fn  aa() a[0]; 
+
+            ref bb = b[0]; a ~= 1; // Invalidates 'aa' if ref.
+            return bb || aa;       // Same as above, but no explicit binding.
         }
 
         fn main() { mut a = [ 0 ]; mut b = [ 0 ]; return test(a, b); }
@@ -8387,23 +9684,23 @@ _0.fu @10:26:
 
 #ifndef FU_NO_FDEFs
 
-static int& aa(fu_VEC<int>& a)
+static int& aa_y1jV3SX3(fu_VEC<int>& a)
 {
     return a.mutref(0);
 }
 
-static int& test(fu_VEC<int>& a, fu_VEC<int>& b)
+static int& test_Qwe6jMsz(fu_VEC<int>& a, fu_VEC<int>& b)
 {
     int& bb = b.mutref(0);
     a += 1;
-    return bb ? bb : aa(a);
+    return bb ? bb : aa_y1jV3SX3(a);
 }
 
 int fu_MAIN()
 {
     /*MOV*/ fu_VEC<int> a = fu_VEC<int> { fu::slate<1, int> { 0 } };
     /*MOV*/ fu_VEC<int> b = fu_VEC<int> { fu::slate<1, int> { 0 } };
-    return int(test(a, b));
+    return int(test_Qwe6jMsz(a, b));
 }
 
 #endif
@@ -8416,52 +9713,47 @@ int main() { return fu_MAIN(); }
 
         fn noop(x) x;
         fn test(ref a: i32[], ref b: i32[]) {
-            //*F
-            ref aa = a[0];
-            /*/
-            fn aa()  a[0];
-            //*/
-            ref bb = b[0]; a ~= 1; // Invalidates 'aa' if ref.
 
+            ref aa = a[0]; 
+
+            ref bb = b[0]; a ~= 1; // Invalidates 'aa' if ref.
             return noop(bb || aa); // Same as above, but bound at callsite.
         }
 
         fn main() { mut a = [ 0 ]; mut b = [ 0 ]; return test(a, b); }
 
 -----
-_0.fu @11:31:
+_0.fu @8:31:
 
-[2m      |             ref bb = b[0]; a ~= 1; // Invalidates 'aa' if ref.[0m
 [2m      | [0m
-   11 |             return noop(bb || [31;1maa[0m); // Same as above, but bound at callsite.
+[2m      |             ref bb = b[0]; a ~= 1; // Invalidates 'aa' if ref.[0m
+    8 |             return noop(bb || [31;1maa[0m); // Same as above, but bound at callsite.
 [2m      |         }[0m
 [2m      | [0m
 
-	Cannot access [31;1maa[0m, reference invalidated by write to [31;1ma[0m at 9:30:
+	Cannot access [31;1maa[0m, reference invalidated by write to [31;1ma[0m at 7:30:
 
-[2m      |             fn aa()  a[0];[0m
-[2m      |             //*/[0m
-    9 |             ref bb = b[0]; a [31;1m~=[0m 1; // Invalidates 'aa' if ref.
+[2m      |             ref aa = a[0]; [0m
 [2m      | [0m
+    7 |             ref bb = b[0]; a [31;1m~=[0m 1; // Invalidates 'aa' if ref.
 [2m      |             return noop(bb || aa); // Same as above, but bound at callsite.[0m
+[2m      |         }[0m
 
 	At call to [34;1m
 <fu/vec/concat_one.h>
 +=[0m
+            
 
-        Solving [35;1mfn[0m [34;1mtest[0m
+        Solving [35;1mfn[0m [34;1mtest_Qwe6jMsz[0m
 
 -----
 
         fn noop(x) x;
         fn test(ref a: i32[], ref b: i32[]) {
-            /*
-            ref aa = a[0];
-            /*/
-            fn aa()  a[0];
-            //*/
-            ref bb = b[0]; a ~= 1; // Invalidates 'aa' if ref.
 
+            fn  aa() a[0]; 
+
+            ref bb = b[0]; a ~= 1; // Invalidates 'aa' if ref.
             return noop(bb || aa); // Same as above, but bound at callsite.
         }
 
@@ -8474,28 +9766,28 @@ _0.fu @11:31:
 
 #ifndef FU_NO_FDEFs
 
-static int& aa(fu_VEC<int>& a)
+static int& aa_hpa9AihZ(fu_VEC<int>& a)
 {
     return a.mutref(0);
 }
 
-inline static int& noop_Xn88(int& x)
+inline static int& noop_fvq3PhFm(int& x)
 {
     return x;
 }
 
-static int& test(fu_VEC<int>& a, fu_VEC<int>& b)
+static int& test_Qwe6jMsz(fu_VEC<int>& a, fu_VEC<int>& b)
 {
     int& bb = b.mutref(0);
     a += 1;
-    return noop_Xn88((bb ? bb : aa(a)));
+    return noop_fvq3PhFm((bb ? bb : aa_hpa9AihZ(a)));
 }
 
 int fu_MAIN()
 {
     /*MOV*/ fu_VEC<int> a = fu_VEC<int> { fu::slate<1, int> { 0 } };
     /*MOV*/ fu_VEC<int> b = fu_VEC<int> { fu::slate<1, int> { 0 } };
-    return int(test(a, b));
+    return int(test_Qwe6jMsz(a, b));
 }
 
 #endif
@@ -8508,52 +9800,47 @@ int main() { return fu_MAIN(); }
 
         fn either(a, b) a || b;
         fn test(ref a: i32[], ref b: i32[]) {
-            //*F
-            ref aa = a[0];
-            /*/
-            fn aa()  a[0];
-            //*/
-            ref bb = b[0]; a ~= 1; // Invalidates 'aa' if ref.
 
+            ref aa = a[0]; 
+
+            ref bb = b[0]; a ~= 1; // Invalidates 'aa' if ref.
             return either(bb, aa); // For completeness.
         }
 
         fn main() { mut a = [ 0 ]; mut b = [ 0 ]; return test(a, b); }
 
 -----
-_0.fu @11:31:
+_0.fu @8:31:
 
-[2m      |             ref bb = b[0]; a ~= 1; // Invalidates 'aa' if ref.[0m
 [2m      | [0m
-   11 |             return either(bb, [31;1maa[0m); // For completeness.
+[2m      |             ref bb = b[0]; a ~= 1; // Invalidates 'aa' if ref.[0m
+    8 |             return either(bb, [31;1maa[0m); // For completeness.
 [2m      |         }[0m
 [2m      | [0m
 
-	Cannot access [31;1maa[0m, reference invalidated by write to [31;1ma[0m at 9:30:
+	Cannot access [31;1maa[0m, reference invalidated by write to [31;1ma[0m at 7:30:
 
-[2m      |             fn aa()  a[0];[0m
-[2m      |             //*/[0m
-    9 |             ref bb = b[0]; a [31;1m~=[0m 1; // Invalidates 'aa' if ref.
+[2m      |             ref aa = a[0]; [0m
 [2m      | [0m
+    7 |             ref bb = b[0]; a [31;1m~=[0m 1; // Invalidates 'aa' if ref.
 [2m      |             return either(bb, aa); // For completeness.[0m
+[2m      |         }[0m
 
 	At call to [34;1m
 <fu/vec/concat_one.h>
 +=[0m
+            
 
-        Solving [35;1mfn[0m [34;1mtest[0m
+        Solving [35;1mfn[0m [34;1mtest_Qwe6jMsz[0m
 
 -----
 
         fn either(a, b) a || b;
         fn test(ref a: i32[], ref b: i32[]) {
-            /*
-            ref aa = a[0];
-            /*/
-            fn aa()  a[0];
-            //*/
-            ref bb = b[0]; a ~= 1; // Invalidates 'aa' if ref.
 
+            fn aa()  a[0]; 
+
+            ref bb = b[0]; a ~= 1; // Invalidates 'aa' if ref.
             return either(bb, aa); // For completeness.
         }
 
@@ -8566,28 +9853,28 @@ _0.fu @11:31:
 
 #ifndef FU_NO_FDEFs
 
-static int& aa(fu_VEC<int>& a)
+static int& aa_hpa9AihZ(fu_VEC<int>& a)
 {
     return a.mutref(0);
 }
 
-inline static int& either_xY8N(int& a, int& b)
+inline static int& either_fhn2FPSp(int& a, int& b)
 {
     return a ? a : b;
 }
 
-static int& test(fu_VEC<int>& a, fu_VEC<int>& b)
+static int& test_Qwe6jMsz(fu_VEC<int>& a, fu_VEC<int>& b)
 {
     int& bb = b.mutref(0);
     a += 1;
-    return either_xY8N(bb, aa(a));
+    return either_fhn2FPSp(bb, aa_hpa9AihZ(a));
 }
 
 int fu_MAIN()
 {
     /*MOV*/ fu_VEC<int> a = fu_VEC<int> { fu::slate<1, int> { 0 } };
     /*MOV*/ fu_VEC<int> b = fu_VEC<int> { fu::slate<1, int> { 0 } };
-    return int(test(a, b));
+    return int(test_Qwe6jMsz(a, b));
 }
 
 #endif
@@ -8610,7 +9897,7 @@ int main() { return fu_MAIN(); }
 
 #ifndef FU_NO_FDEFs
 
-static int& what(int& cond, int& cons)
+static int& what_fhn2FPSp(int& cond, int& cons)
 {
     return !cond ? cond : (cons += 1);
 }
@@ -8618,7 +9905,7 @@ static int& what(int& cond, int& cons)
 int fu_MAIN()
 {
     int x = 1;
-    return what(x, x) - 2;
+    return what_fhn2FPSp(x, x) - 2;
 }
 
 #endif
@@ -8697,15 +9984,15 @@ struct s_Target
 
 #ifndef FU_NO_FDEFs
 
-static fu_VEC<int>& which(s_Target& t, const int i)
+static fu_VEC<int>& which_ycL5xugz(s_Target& t, const int i)
 {
     return ((i & 1) ? t.overload : t.extended);
 }
 
-static void test(s_Target& target)
+static void test_ACFtvDNv(s_Target& target)
 {
-    const fu_VEC<int>& overload = which(target, target.overload.size());
-    fu_VEC<int>& extended = which(target, (target.overload.size() + 1));
+    const fu_VEC<int>& overload = which_ycL5xugz(target, target.overload.size());
+    fu_VEC<int>& extended = which_ycL5xugz(target, (target.overload.size() + 1));
     bool change = false;
     if (overload)
     {
@@ -8723,7 +10010,7 @@ static void test(s_Target& target)
     if (change)
     {
         extended.mutref(0) = 3;
-        fu_VEC<int>& overload_1 = which(target, target.overload.size());
+        fu_VEC<int>& overload_1 = which_ycL5xugz(target, target.overload.size());
         overload_1.mutref(0) = 5;
     };
 }
@@ -8731,7 +10018,7 @@ static void test(s_Target& target)
 int fu_MAIN()
 {
     s_Target target = s_Target { fu_VEC<int> { fu::slate<1, int> { 0 } }, fu_VEC<int> { fu::slate<1, int> { 1 } } };
-    test(target);
+    test_ACFtvDNv(target);
     return ((target.overload[0] * 10) + (target.extended[0] * 100)) - 350;
 }
 
@@ -8740,6 +10027,45 @@ int fu_MAIN()
 
 int main() { return fu_MAIN(); }
 // RELAX_respec
+
+-----
+
+        fn test(ref a: i32, ref b: i32) {
+            a += b;
+            b += a;
+        }
+
+        struct AB { a: i32; b: i32 };
+
+        fn main() {
+            mut ab = AB(1, 2);
+            <alt>
+            ref a = ab.a;
+            ref b = ab.b;
+            test(a, b);
+            <alt/>
+            ref a = ab.a;
+            test(a, ab.b);
+            <alt/>
+            test(ab.a, ab.b);
+            </alt>
+            return ab.b - 5;
+        }
+
+-----
+TODO: _0.fu @12:24:
+
+[2m      |             mut ab = AB(1, 2);[0m
+[2m      | [0m
+   12 |             test(ab.a, [31;1mab[0m.b);
+[2m      | [0m
+[2m      |             return ab.b - 5;[0m
+
+	[35;1mfn[0m [34;1mtest_fhn2FPSp[0m: Arguments [31;1mb[0m and [31;1ma[0m (args #1 and #0) both alias:
+
+                [35;1mvar[0m [34;1mab[0m
+
+        Solving [35;1mfn[0m [34;1mmain[0m
 
 -----
 
@@ -8774,9 +10100,11 @@ TODO: _0.fu @7:23:
 [2m      |             new    ~= old[helpers_idx];[0m
 [2m      |         }[0m
 
-	At call to [34;1m[][0m
+	At call to [34;1m
+.mutref[0m
+            
 
-        Solving [35;1mfn[0m [34;1mtest[0m
+        Solving [35;1mfn[0m [34;1mtest_3eLcRIbm[0m
 
 -----
 
@@ -8801,7 +10129,7 @@ TODO: _0.fu @7:23:
 
 #ifndef FU_NO_FDEFs
 
-static int outer()
+static int outer_H9fhQUVP()
 {
     /*MOV*/ int sum = 0;
     int x = 1;
@@ -8821,13 +10149,14 @@ static int outer()
 
 int fu_MAIN()
 {
-    return outer() - 42;
+    return outer_H9fhQUVP() - 42;
 }
 
 #endif
 
 
 int main() { return fu_MAIN(); }
+// DEAD_code
 
 -----
 
@@ -8851,7 +10180,7 @@ int main() { return fu_MAIN(); }
 
 #ifndef FU_NO_FDEFs
 
-static void append_self(fu_VEC<int>& a)
+static void append_self_j3F1UXeO(fu_VEC<int>& a)
 {
     const fu_VEC<int>& b = a;
     a += fu_VEC<int>(b);
@@ -8860,7 +10189,7 @@ static void append_self(fu_VEC<int>& a)
 int fu_MAIN()
 {
     fu_VEC<int> arr = fu_VEC<int> { fu::slate<2, int> { 1, 2 } };
-    append_self(arr);
+    append_self_j3F1UXeO(arr);
     return (arr[2] + arr[3]) - 3;
 }
 
@@ -8874,11 +10203,8 @@ int main() { return fu_MAIN(); }
 -----
 
         fn but_is_it_pure(ref x: i32) {
-            //*F
-            return x++;
-            /*/
-            return x;
-            //*/
+
+            return x++; 
         }
         pure fn pure_fn(ref a: i32, ref b: i32) {
             ref x = a || b;
@@ -8891,41 +10217,39 @@ int main() { return fu_MAIN(); }
         }
 
 -----
-_0.fu @9:9:
+_0.fu @6:9:
 
-[2m      |             //*/[0m
+[2m      |             return x++; [0m
 [2m      |         }[0m
-    9 |         [31;1mpure[0m fn pure_fn(ref a: i32, ref b: i32) {
+    6 |         [31;1mpure[0m fn pure_fn(ref a: i32, ref b: i32) {
 [2m      |             ref x = a || b;[0m
 [2m      |             return but_is_it_pure(x);[0m
 
-	[35;1mfn[0m [34;1mpure_fn[0m is not pure, writes to argument [34;1ma[0m:
+	[35;1mfn[0m [34;1mpure_fn_fhn2FPSp[0m is not pure, writes to argument [34;1ma[0m:
 
-            via [35;1mfn[0m [34;1mbut_is_it_pure[0m at 11:34:
+            via [35;1mfn[0m [34;1mbut_is_it_pure_fvq3PhFm[0m at 8:34:
 
 [2m      |         pure fn pure_fn(ref a: i32, ref b: i32) {[0m
 [2m      |             ref x = a || b;[0m
-   11 |             return but_is_it_pure[31;1m([0mx);
+    8 |             return but_is_it_pure[31;1m([0mx);
 [2m      |         }[0m
 [2m      |         fn main() {[0m
 
             via [35;1m__native[0m [34;1mpostfix++[0m at 4:21:
 
 [2m      |         fn but_is_it_pure(ref x: i32) {[0m
-[2m      |             //*F[0m
-    4 |             return x[31;1m++[0m;
-[2m      |             /*/[0m
-[2m      |             return x;[0m
+[2m      | [0m
+    4 |             return x[31;1m++[0m; 
+[2m      |         }[0m
+[2m      |         pure fn pure_fn(ref a: i32, ref b: i32) {[0m
 
+            
 
 -----
 
         fn but_is_it_pure(ref x: i32) {
-            /*
-            return x++;
-            /*/
-            return x;
-            //*/
+
+            return x;   
         }
         pure fn pure_fn(ref a: i32, ref b: i32) {
             ref x = a || b;
@@ -8941,22 +10265,22 @@ _0.fu @9:9:
 
 #ifndef FU_NO_FDEFs
 
-static int& but_is_it_pure(int& x)
+static int& but_is_it_pure_fvq3PhFm(int& x)
 {
     return x;
 }
 
-static int& pure_fn(int& a, int& b)
+static int& pure_fn_fhn2FPSp(int& a, int& b)
 {
     int& x = (a ? a : b);
-    return but_is_it_pure(x);
+    return but_is_it_pure_fvq3PhFm(x);
 }
 
 int fu_MAIN()
 {
     /*MOV*/ int x = 0;
     /*MOV*/ int y = 0;
-    return int(pure_fn(x, y));
+    return int(pure_fn_fhn2FPSp(x, y));
 }
 
 #endif
@@ -8988,23 +10312,24 @@ int main() { return fu_MAIN(); }
 #include <fu/vec.h>
 #include <fu/vec/concat.h>
 #include <fu/view.h>
+#include <fu/zeroes.h>
 
 #ifndef FU_NO_FDEFs
 
-                                #ifndef DEFt_x7Ex3D_BWdE
-                                #define DEFt_x7Ex3D_BWdE
-inline fu_STR& x7Ex3D_BWdE(fu_STR& a, fu::view<char> b)
+                                #ifndef DEFt_x7Ex3D
+                                #define DEFt_x7Ex3D
+inline fu_STR& x7Ex3D(fu_STR& a, fu::view<char> b)
 {
     return (a += b);
 }
                                 #endif
 
-static fu_STR fail(/*MOV*/ fu_STR&& reason, fu::view<fu_STR> _info)
+static fu_STR fail_JO4sXOPn(/*MOV*/ fu_STR&& reason, fu::view<fu_STR> _info)
 {
     for (int i = _info.size(); i-- > 0; )
     {
         const fu_STR& info = _info[i];
-        x7Ex3D_BWdE(reason, fu::i64dec((info ? i : 0)));
+        x7Ex3D(reason, fu::i64dec((info ? i : fu::zeroes())));
     };
     return static_cast<fu_STR&&>(reason);
 }
@@ -9012,7 +10337,7 @@ static fu_STR fail(/*MOV*/ fu_STR&& reason, fu::view<fu_STR> _info)
 int fu_MAIN()
 {
     fu_VEC<fu_STR> _info {};
-    return fail(fu_STR{}, _info).size();
+    return fail_JO4sXOPn(fu_STR{}, _info).size();
 }
 
 #endif
@@ -9049,20 +10374,20 @@ int main() { return fu_MAIN(); }
 
 #ifndef FU_NO_FDEFs
 
-                                #ifndef DEFt_x7Ex3D_BWdE
-                                #define DEFt_x7Ex3D_BWdE
-inline fu_STR& x7Ex3D_BWdE(fu_STR& a, fu::view<char> b)
+                                #ifndef DEFt_x7Ex3D
+                                #define DEFt_x7Ex3D
+inline fu_STR& x7Ex3D(fu_STR& a, fu::view<char> b)
 {
     return (a += b);
 }
                                 #endif
 
-static fu_STR fail(/*MOV*/ fu_STR&& reason, fu::view<fu_STR> _info)
+static fu_STR fail_JO4sXOPn(/*MOV*/ fu_STR&& reason, fu::view<fu_STR> _info)
 {
     for (int i = _info.size(); i-- > 0; )
     {
         const fu_STR& info = _info[i];
-        x7Ex3D_BWdE(reason, fu::i64dec((info ? i : (*(const int*)fu::NIL))));
+        x7Ex3D(reason, fu::i64dec((info ? i : (*(const int*)fu::NIL))));
     };
     return static_cast<fu_STR&&>(reason);
 }
@@ -9070,7 +10395,7 @@ static fu_STR fail(/*MOV*/ fu_STR&& reason, fu::view<fu_STR> _info)
 int fu_MAIN()
 {
     fu_VEC<fu_STR> _info {};
-    return fail(fu_STR{}, _info).size();
+    return fail_JO4sXOPn(fu_STR{}, _info).size();
 }
 
 #endif
@@ -9103,25 +10428,25 @@ int main() { return fu_MAIN(); }
 
 #ifndef FU_NO_FDEFs
 
-                                #ifndef DEFt_x7E_OZkl
-                                #define DEFt_x7E_OZkl
-inline fu_STR x7E_OZkl(fu::view<char> a, fu::view<char> b)
+                                #ifndef DEFt_x7E
+                                #define DEFt_x7E
+inline fu_STR x7E(fu::view<char> a, fu::view<char> b)
 {
     return a + b;
 }
                                 #endif
 
-static fu_STR fail(/*MOV*/ fu_STR&& reason, fu::view<int> _info)
+static fu_STR fail_JO4sXOPn(/*MOV*/ fu_STR&& reason, fu::view<int> _info)
 {
     const int info = _info[0];
-    reason += (info ? x7E_OZkl(fu::view<char>{}, fu::i64dec(info)) : fu_STR{});
+    reason += (info ? x7E(fu::view<char>{}, fu::i64dec(info)) : fu_STR{});
     return static_cast<fu_STR&&>(reason);
 }
 
 int fu_MAIN()
 {
     fu_VEC<int> _info = fu_VEC<int> { fu::slate<1, int> { 101 } };
-    return fail(fu_STR{}, _info).size() - 3;
+    return fail_JO4sXOPn(fu_STR{}, _info).size() - 3;
 }
 
 #endif
@@ -9154,25 +10479,25 @@ int main() { return fu_MAIN(); }
 
 #ifndef FU_NO_FDEFs
 
-                                #ifndef DEFt_x7E_OZkl
-                                #define DEFt_x7E_OZkl
-inline fu_STR x7E_OZkl(fu::view<char> a, fu::view<char> b)
+                                #ifndef DEFt_x7E
+                                #define DEFt_x7E
+inline fu_STR x7E(fu::view<char> a, fu::view<char> b)
 {
     return a + b;
 }
                                 #endif
 
-static fu_STR fail(/*MOV*/ fu_STR&& reason, fu::view<int> _info)
+static fu_STR fail_JO4sXOPn(/*MOV*/ fu_STR&& reason, fu::view<int> _info)
 {
     const int info = _info[0];
-    reason += (info ? x7E_OZkl(fu::view<char>{}, fu::i64dec(info)) : fu_STR{});
+    reason += (info ? x7E(fu::view<char>{}, fu::i64dec(info)) : fu_STR{});
     return static_cast<fu_STR&&>(reason);
 }
 
 int fu_MAIN()
 {
     fu_VEC<int> _info = fu_VEC<int> { fu::slate<1, int> { 101 } };
-    return fail(fu_STR{}, _info).size() - 3;
+    return fail_JO4sXOPn(fu_STR{}, _info).size() - 3;
 }
 
 #endif
@@ -9230,7 +10555,7 @@ struct s_Helpers
 
 #ifndef FU_NO_FDEFs
 
-static void solveNode_H(const s_Helpers& h, int& N, fu_VEC<s_Helpers>& _helpers)
+static void solveNode_H_eShNLeiM(const s_Helpers& h, int& N, fu_VEC<s_Helpers>& _helpers)
 {
     while (N % h.row[(h.row.size() - 1)])
     {
@@ -9239,21 +10564,21 @@ static void solveNode_H(const s_Helpers& h, int& N, fu_VEC<s_Helpers>& _helpers)
     };
 }
 
-static int solveJump(fu_VEC<s_Helpers>& _helpers, const int row, int& N)
+static int solveJump_fwJRfWgj(fu_VEC<s_Helpers>& _helpers, const int row, int& N)
 {
-    solveNode_H(s_Helpers(_helpers[row]), N, _helpers);
+    solveNode_H_eShNLeiM(s_Helpers(_helpers[row]), N, _helpers);
     return _helpers.size();
 }
 
-static int test(fu_VEC<s_Helpers>& _helpers, int N, const int row)
+static int test_qTFmmm68(fu_VEC<s_Helpers>& _helpers, int N, const int row)
 {
-    return solveJump(_helpers, row, N) - ((((1 * 2) * 2) * 2) * 2);
+    return solveJump_fwJRfWgj(_helpers, row, N) - ((((1 * 2) * 2) * 2) * 2);
 }
 
 int fu_MAIN()
 {
     fu_VEC<s_Helpers> _helpers = fu_VEC<s_Helpers> { fu::slate<1, s_Helpers> { s_Helpers { fu_VEC<int> { fu::slate<5, int> { 1, 2, 3, 4, 5 } } } } };
-    return test(_helpers, 4, 0);
+    return test_qTFmmm68(_helpers, 4, 0);
 }
 
 #endif
@@ -9300,8 +10625,6 @@ int main() { return fu_MAIN(); }
 
 struct s_Helpers;
 
-static void solveNode_HH(const s_Helpers&, int&, fu_VEC<s_Helpers>&);
-
                                 #ifndef DEF_s_Helpers
                                 #define DEF_s_Helpers
 struct s_Helpers
@@ -9318,7 +10641,7 @@ struct s_Helpers
 
 #ifndef FU_NO_FDEFs
 
-static void solveNode_HH_inner(const s_Helpers& h, int& N, fu_VEC<s_Helpers>& _helpers)
+static void solveNode_HH_inner_eShNLeiM(const s_Helpers& h, int& N, fu_VEC<s_Helpers>& _helpers)
 {
     while (N % h.row[(h.row.size() - 1)])
     {
@@ -9327,26 +10650,26 @@ static void solveNode_HH_inner(const s_Helpers& h, int& N, fu_VEC<s_Helpers>& _h
     };
 }
 
-static void solveNode_HH(const s_Helpers& h, int& N, fu_VEC<s_Helpers>& _helpers)
+static void solveNode_HH_wD7I3JbX(const s_Helpers& h, int& N, fu_VEC<s_Helpers>& _helpers)
 {
-    solveNode_HH_inner(h, N, _helpers);
+    solveNode_HH_inner_eShNLeiM(h, N, _helpers);
 }
 
-static int solveJump(fu_VEC<s_Helpers>& _helpers, const int row, int& N)
+static int solveJump_GlILXiYX(fu_VEC<s_Helpers>& _helpers, const int row, int& N)
 {
-    solveNode_HH(s_Helpers(_helpers[row]), N, _helpers);
+    solveNode_HH_wD7I3JbX(s_Helpers(_helpers[row]), N, _helpers);
     return _helpers.size();
 }
 
-static int test(fu_VEC<s_Helpers>& _helpers, int N, const int row)
+static int test_qTFmmm68(fu_VEC<s_Helpers>& _helpers, int N, const int row)
 {
-    return solveJump(_helpers, row, N) - ((((1 * 2) * 2) * 2) * 2);
+    return solveJump_GlILXiYX(_helpers, row, N) - ((((1 * 2) * 2) * 2) * 2);
 }
 
 int fu_MAIN()
 {
     fu_VEC<s_Helpers> _helpers = fu_VEC<s_Helpers> { fu::slate<1, s_Helpers> { s_Helpers { fu_VEC<int> { fu::slate<5, int> { 1, 2, 3, 4, 5 } } } } };
-    return test(_helpers, 4, 0);
+    return test_qTFmmm68(_helpers, 4, 0);
 }
 
 #endif
@@ -9388,7 +10711,7 @@ int main() { return fu_MAIN(); }
 
 #ifndef FU_NO_FDEFs
 
-static void solveNode_a(fu::view<int> h, int& N, fu_VEC<fu_VEC<int>>& _helpers)
+static void solveNode_a_BQt9g4SR(fu::view<int> h, int& N, fu_VEC<fu_VEC<int>>& _helpers)
 {
     while (N % h[(h.size() - 1)])
     {
@@ -9397,21 +10720,21 @@ static void solveNode_a(fu::view<int> h, int& N, fu_VEC<fu_VEC<int>>& _helpers)
     };
 }
 
-static int solveJump(fu_VEC<fu_VEC<int>>& _helpers, const int row, int& N)
+static int solveJump_hpa9AihZ(fu_VEC<fu_VEC<int>>& _helpers, const int row, int& N)
 {
-    solveNode_a(fu_VEC<int>(_helpers[row]), N, _helpers);
+    solveNode_a_BQt9g4SR(fu_VEC<int>(_helpers[row]), N, _helpers);
     return _helpers.size();
 }
 
-static int test(fu_VEC<fu_VEC<int>>& _helpers, int N, const int row)
+static int test_m18eICud(fu_VEC<fu_VEC<int>>& _helpers, int N, const int row)
 {
-    return solveJump(_helpers, row, N) - ((((1 * 2) * 2) * 2) * 2);
+    return solveJump_hpa9AihZ(_helpers, row, N) - ((((1 * 2) * 2) * 2) * 2);
 }
 
 int fu_MAIN()
 {
     fu_VEC<fu_VEC<int>> _helpers = fu_VEC<fu_VEC<int>> { fu::slate<1, fu_VEC<int>> { fu_VEC<int> { fu::slate<5, int> { 1, 2, 3, 4, 5 } } } };
-    return test(_helpers, 4, 0);
+    return test_m18eICud(_helpers, 4, 0);
 }
 
 #endif
@@ -9431,12 +10754,9 @@ int main() { return fu_MAIN(); }
             // This miscompiles to ref into args,
             //  after which we invalidate the reference.
             //
-            //*F
-            ref
-            /*/
-            mut
-            //*/
-                badref = args[0];
+
+            ref  badref = args[0];
+
             args = [ Arg(11) ]; // INVALIDATE badref.
             return badref;
         }       // oct2021: now latest issue here is that
@@ -9450,25 +10770,26 @@ int main() { return fu_MAIN(); }
         }
 
 -----
-_0.fu @17:20:
+_0.fu @14:20:
 
-[2m      |                 badref = args[0];[0m
+[2m      | [0m
 [2m      |             args = [ Arg(11) ]; // INVALIDATE badref.[0m
-   17 |             return [31;1mbadref[0m;
+   14 |             return [31;1mbadref[0m;
 [2m      |         }       // oct2021: now latest issue here is that[0m
 [2m      |                 //  this gets bcked AFTER jump lifetimes are unwound[0m
 
-	Cannot access [31;1mbadref[0m, reference invalidated by write to [31;1margs[0m at 16:18:
+	Cannot access [31;1mbadref[0m, reference invalidated by write to [31;1margs[0m at 13:18:
 
-[2m      |             //*/[0m
-[2m      |                 badref = args[0];[0m
-   16 |             args [31;1m=[0m [ Arg(11) ]; // INVALIDATE badref.
+[2m      |             ref  badref = args[0];[0m
+[2m      | [0m
+   13 |             args [31;1m=[0m [ Arg(11) ]; // INVALIDATE badref.
 [2m      |             return badref;[0m
 [2m      |         }       // oct2021: now latest issue here is that[0m
 
 	At call to [34;1m=[0m
+            
 
-        Solving [35;1mfn[0m [34;1mmutargs[0m
+        Solving [35;1mfn[0m [34;1mmutargs_HUxoY46N[0m
 
 -----
 
@@ -9480,12 +10801,9 @@ _0.fu @17:20:
             // This miscompiles to ref into args,
             //  after which we invalidate the reference.
             //
-            /*
-            ref
-            /*/
-            mut
-            //*/
-                badref = args[0];
+
+            mut  badref = args[0];
+
             args = [ Arg(11) ]; // INVALIDATE badref.
             return badref;
         }       // oct2021: now latest issue here is that
@@ -9520,7 +10838,7 @@ struct s_Arg
 
 #ifndef FU_NO_FDEFs
 
-static s_Arg mutargs(fu_VEC<s_Arg>& args)
+static s_Arg mutargs_HUxoY46N(fu_VEC<s_Arg>& args)
 {
     /*MOV*/ const s_Arg badref { args[0] };
     args = fu_VEC<s_Arg> { fu::slate<1, s_Arg> { s_Arg { 11 } } };
@@ -9530,7 +10848,7 @@ static s_Arg mutargs(fu_VEC<s_Arg>& args)
 int fu_MAIN()
 {
     fu_VEC<s_Arg> args = fu_VEC<s_Arg> { fu::slate<1, s_Arg> { s_Arg { 7 } } };
-    return mutargs(args).i - 7;
+    return mutargs_HUxoY46N(args).i - 7;
 }
 
 #endif
@@ -9547,12 +10865,9 @@ int main() { return fu_MAIN(); }
             i[i.len - 1] * 4;
 
         fn mutargs(args: &mut Arg[]) {
-            //*F
-            ref
-            /*/
-            let
-            //*/
-                badref = args[0];
+
+            ref  badref = args[0];
+
             args = [ Arg([ 11 ]) ]; // INVALIDATE badref.
             return witharg(badref);
         }
@@ -9563,25 +10878,26 @@ int main() { return fu_MAIN(); }
         }
 
 -----
-_0.fu @15:28:
+_0.fu @12:28:
 
-[2m      |                 badref = args[0];[0m
+[2m      | [0m
 [2m      |             args = [ Arg([ 11 ]) ]; // INVALIDATE badref.[0m
-   15 |             return witharg([31;1mbadref[0m);
+   12 |             return witharg([31;1mbadref[0m);
 [2m      |         }[0m
 [2m      | [0m
 
-	Cannot access [31;1mbadref[0m, reference invalidated by write to [31;1margs[0m at 14:18:
+	Cannot access [31;1mbadref[0m, reference invalidated by write to [31;1margs[0m at 11:18:
 
-[2m      |             //*/[0m
-[2m      |                 badref = args[0];[0m
-   14 |             args [31;1m=[0m [ Arg([ 11 ]) ]; // INVALIDATE badref.
+[2m      |             ref  badref = args[0];[0m
+[2m      | [0m
+   11 |             args [31;1m=[0m [ Arg([ 11 ]) ]; // INVALIDATE badref.
 [2m      |             return witharg(badref);[0m
 [2m      |         }[0m
 
 	At call to [34;1m=[0m
+            
 
-        Solving [35;1mfn[0m [34;1mmutargs[0m
+        Solving [35;1mfn[0m [34;1mmutargs_HUxoY46N[0m
 
 -----
 
@@ -9591,12 +10907,9 @@ _0.fu @15:28:
             i[i.len - 1] * 4;
 
         fn mutargs(args: &mut Arg[]) {
-            /*
-            ref
-            /*/
-            let
-            //*/
-                badref = args[0];
+
+            let  badref = args[0];
+
             args = [ Arg([ 11 ]) ]; // INVALIDATE badref.
             return witharg(badref);
         }
@@ -9628,22 +10941,22 @@ struct s_Arg
 
 #ifndef FU_NO_FDEFs
 
-static int witharg(const s_Arg& a)
+static int witharg_PXTKu1UQ(const s_Arg& a)
 {
     return a.i[(a.i.size() - 1)] * 4;
 }
 
-static int mutargs(fu_VEC<s_Arg>& args)
+static int mutargs_HUxoY46N(fu_VEC<s_Arg>& args)
 {
     s_Arg badref { args[0] };
     args = fu_VEC<s_Arg> { fu::slate<1, s_Arg> { s_Arg { fu_VEC<int> { fu::slate<1, int> { 11 } } } } };
-    return witharg(badref);
+    return witharg_PXTKu1UQ(badref);
 }
 
 int fu_MAIN()
 {
     fu_VEC<s_Arg> args = fu_VEC<s_Arg> { fu::slate<1, s_Arg> { s_Arg { fu_VEC<int> { fu::slate<1, int> { 7 } } } } };
-    return mutargs(args) - 28;
+    return mutargs_HUxoY46N(args) - 28;
 }
 
 #endif
@@ -9661,12 +10974,8 @@ int main() { return fu_MAIN(); }
             i[i.len - 1] * x;
 
         fn mutargs(args: &mut Arg[]) {
-            //*F
-            ref
-            /*/
-            let
-            //*/
-                badref = args[0];
+
+            ref  badref = args[0];
 
             for (mut i = 0;; i++) {
                 let ret = witharg(badref, i * 4);
@@ -9683,27 +10992,28 @@ int main() { return fu_MAIN(); }
         }
 
 -----
-_0.fu @20:22:
+_0.fu @16:22:
 
 [2m      |                     return ret;[0m
 [2m      | [0m
-   20 |                 args [31;1m=[0m [ Arg([ 11 ]) ]; // INVALIDATE badref.
+   16 |                 args [31;1m=[0m [ Arg([ 11 ]) ]; // INVALIDATE badref.
 [2m      |             }[0m
 [2m      |         }[0m
 
-	Write to [31;1margs[0m at call to [35;1m__native[0m [34;1m=[0m invalidates the use of [31;1mbadref[0m at 16:35:
+	Write to [31;1margs[0m at call to [35;1m__native[0m [34;1m=[0m invalidates the use of [31;1mbadref[0m at 12:35:
 
 [2m      | [0m
 [2m      |             for (mut i = 0;; i++) {[0m
-   16 |                 let ret = witharg([31;1mbadref[0m, i * 4);
+   12 |                 let ret = witharg([31;1mbadref[0m, i * 4);
 [2m      |                 if (ret)[0m
 [2m      |                     return ret;[0m
 
 	... on next loop iteration.
 
 	Written
+            
 
-        Solving [35;1mfn[0m [34;1mmutargs[0m
+        Solving [35;1mfn[0m [34;1mmutargs_HUxoY46N[0m
 
 -----
 
@@ -9713,12 +11023,8 @@ _0.fu @20:22:
             i[i.len - 1] * x;
 
         fn mutargs(args: &mut Arg[]) {
-            /*
-            ref
-            /*/
-            let
-            //*/
-                badref = args[0];
+
+            let  badref = args[0];
 
             for (mut i = 0;; i++) {
                 let ret = witharg(badref, i * 4);
@@ -9756,17 +11062,17 @@ struct s_Arg
 
 #ifndef FU_NO_FDEFs
 
-static int witharg(const s_Arg& a, const int x)
+static int witharg_uKSNOX4B(const s_Arg& a, const int x)
 {
     return a.i[(a.i.size() - 1)] * x;
 }
 
-static int mutargs(fu_VEC<s_Arg>& args)
+static int mutargs_HUxoY46N(fu_VEC<s_Arg>& args)
 {
     s_Arg badref { args[0] };
     for (int i = 0; ; i++)
     {
-        /*MOV*/ const int ret = witharg(badref, (i * 4));
+        /*MOV*/ const int ret = witharg_uKSNOX4B(badref, (i * 4));
         if (ret)
             return /*NRVO*/ ret;
 
@@ -9777,13 +11083,14 @@ static int mutargs(fu_VEC<s_Arg>& args)
 int fu_MAIN()
 {
     fu_VEC<s_Arg> args = fu_VEC<s_Arg> { fu::slate<1, s_Arg> { s_Arg { fu_VEC<int> { fu::slate<1, int> { 7 } } } } };
-    return mutargs(args) - 28;
+    return mutargs_HUxoY46N(args) - 28;
 }
 
 #endif
 
 
 int main() { return fu_MAIN(); }
+// DEAD_code
 // NONTRIV_autocopy
 // RELAX_respec
 
@@ -9793,10 +11100,8 @@ int main() { return fu_MAIN(); }
             ref b = woot[y];
             ref a = woot[x]; // the 'shadow ref' below ...
             if (a == 1) {
-                //*F
-                /*/
-                shadow ref a = woot[x]; // ... should relax 'ref a' above to a let ...
-                //*/
+
+
                 a += 1;
             }
             else {
@@ -9811,11 +11116,11 @@ int main() { return fu_MAIN(); }
         }
 
 -----
-_0.fu @13:17:
+_0.fu @11:17:
 
 [2m      |             }[0m
 [2m      |             else {[0m
-   13 |                 [31;1mb[0m += 1; // ... and this should ignore cond write above.
+   11 |                 [31;1mb[0m += 1; // ... and this should ignore cond write above.
 [2m      |             }[0m
 [2m      |         }[0m
 
@@ -9825,11 +11130,13 @@ _0.fu @13:17:
 [2m      |             ref b = woot[y];[0m
     4 |             ref a = woot[31;1m[[0mx]; // the 'shadow ref' below ...
 [2m      |             if (a == 1) {[0m
-[2m      |                 //*F[0m
+[2m      | [0m
 
-	At call to [34;1m[][0m
+	At call to [34;1m
+.mutref[0m
+            
 
-        Solving [35;1mfn[0m [34;1mtest[0m
+        Solving [35;1mfn[0m [34;1mtest_LFiBUD15[0m
 
 -----
 
@@ -9837,10 +11144,9 @@ _0.fu @13:17:
             ref b = woot[y];
             ref a = woot[x]; // the 'shadow ref' below ...
             if (a == 1) {
-                /*
-                /*/
+
                 shadow ref a = woot[x]; // ... should relax 'ref a' above to a let ...
-                //*/
+
                 a += 1;
             }
             else {
@@ -9860,7 +11166,7 @@ _0.fu @13:17:
 
 #ifndef FU_NO_FDEFs
 
-static void test(fu_VEC<int>& woot, const int x, const int y)
+static void test_LFiBUD15(fu_VEC<int>& woot, const int x, const int y)
 {
     int& b = woot.mutref(y);
     const int a = woot[x];
@@ -9877,7 +11183,7 @@ static void test(fu_VEC<int>& woot, const int x, const int y)
 int fu_MAIN()
 {
     fu_VEC<int> x = fu_VEC<int> { fu::slate<2, int> { -1, +1 } };
-    test(x, 0, 1);
+    test_LFiBUD15(x, 0, 1);
     return x[1] - 2;
 }
 
@@ -9890,11 +11196,8 @@ int main() { return fu_MAIN(); }
 -----
 
         fn test(ref a: i32[], ref b: i32[]) {
-            //*F
-            if (a[0] += 1)
-            /*/
-            if (a[0] == 1)
-            //*/
+
+            if (a[0] += 1) 
                 a ~= 1;
             else
                 b ~= 1;
@@ -9907,15 +11210,15 @@ int main() { return fu_MAIN(); }
         }
 
 -----
-_0.fu @15:21:
+_0.fu @12:21:
 
 [2m      |         fn main() {[0m
 [2m      |             mut x = [ 1 ];[0m
-   15 |             test(x, [31;1mx[0m);
+   12 |             test(x, [31;1mx[0m);
 [2m      |             return x.len - 2;[0m
 [2m      |         }[0m
 
-	[35;1mfn[0m [34;1mtest[0m: Arguments [31;1mb[0m and [31;1ma[0m (args #1 and #0) both refer to:
+	[35;1mfn[0m [34;1mtest_Qwe6jMsz[0m: Arguments [31;1mb[0m and [31;1ma[0m (args #1 and #0) both alias:
 
                 [35;1mvar[0m [34;1mx[0m
 
@@ -9924,11 +11227,8 @@ _0.fu @15:21:
 -----
 
         fn test(ref a: i32[], ref b: i32[]) {
-            /*
-            if (a[0] += 1)
-            /*/
-            if (a[0] == 1)
-            //*/
+
+            if (a[0] == 1) 
                 a ~= 1;
             else
                 b ~= 1;
@@ -9947,7 +11247,7 @@ _0.fu @15:21:
 
 #ifndef FU_NO_FDEFs
 
-static void test(fu_VEC<int>& a, fu_VEC<int>& b)
+static void test_Qwe6jMsz(fu_VEC<int>& a, fu_VEC<int>& b)
 {
     if (a[0] == 1)
         a += 1;
@@ -9959,7 +11259,7 @@ static void test(fu_VEC<int>& a, fu_VEC<int>& b)
 int fu_MAIN()
 {
     fu_VEC<int> x = fu_VEC<int> { fu::slate<1, int> { 1 } };
-    test(x, x);
+    test_Qwe6jMsz(x, x);
     return x.size() - 2;
 }
 
@@ -10013,8 +11313,9 @@ TODO: _0.fu @15:13:
 	At call to [34;1m
 <fu/vec/concat.h>
 +=[0m
+            
 
-        Solving [35;1mfn[0m [34;1mtest[0m
+        Solving [35;1mfn[0m [34;1mtest_Wvy3Ix0v[0m
 
 -----
 
@@ -10049,7 +11350,7 @@ TODO: _0.fu @20:21:
 [2m      |             return w.x.len;[0m
 [2m      |         }[0m
 
-	[35;1mfn[0m [34;1mtest[0m: Arguments [31;1mw1[0m and [31;1mw0[0m (args #1 and #0) both refer to:
+	[35;1mfn[0m [34;1mtest_nQkUwNff[0m: Arguments [31;1mw1[0m and [31;1mw0[0m (args #1 and #0) both alias:
 
                 [35;1mvar[0m [34;1mw[0m
 
@@ -10073,19 +11374,17 @@ TODO: _0.fu @20:21:
         }
 
 -----
-TODO: _0.fu @7:52:
+TODO: _0.fu @14:46:
 
-[2m      |         {[0m
-[2m      |             // On second solve we're talking about a region, but the argnode is gone.[0m
-    7 |             fn T(i: i32) selfRecurBeforeImplicitDep[31;1m([0mi / 2);
-[2m      |             if (x > 1) return T(x);[0m
-[2m      |             return indexIntoImplicit(x);[0m
+[2m      |         fn main() {[0m
+[2m      |             let strings = [ "a", "b" ];[0m
+   14 |             return selfRecurBeforeImplicitDep[31;1m([0m2) == "b" ? 0 : 1;
+[2m      |         }[0m
+[2m      | [0m
 
-	Nope, going backwards: [35;1mvar[0m [34;1mx[0m
+	Matching a non-implicit item in scope: `strings`, binds to call to `selfRecurBeforeImplicitDep_1hpjcHdP`.
 
-        Solving [35;1mfn[0m [34;1mT[0m
-                [35;1mfn[0m [34;1mselfRecurBeforeImplicitDep[0m
-                [35;1mfn[0m [34;1mmain[0m
+        Solving [35;1mfn[0m [34;1mmain[0m
 
 -----
 
@@ -10128,7 +11427,32 @@ TODO: _0.fu @7:52:
         }
 
 -----
-TODO: _0.fu @26:30:
+TODO: _0.fu @29:40:
+
+[2m      | [0m
+[2m      |             if (nodes.len > 1)[0m
+   29 |                 return solved(createMap[31;1m([0mT(0), T(1)));
+[2m      | [0m
+[2m      |             return solved(Type(nodes[0]));[0m
+
+	At call to [35;1mfn[0m [34;1mcreateMap_PMB1ye5F[0m, argument binding [31;1ma[0m (arg #0) at 29:42:
+
+[2m      | [0m
+[2m      |             if (nodes.len > 1)[0m
+   29 |                 return solved(createMap(T[31;1m([0m0), T(1)));
+[2m      | [0m
+[2m      |             return solved(Type(nodes[0]));[0m
+
+	... invalidated by subsequent write to [35;1marg[0m [34;1mout[0m upon evaluation of argument [31;1mb[0m (arg #1) at 29:48:
+
+[2m      | [0m
+[2m      |             if (nodes.len > 1)[0m
+   29 |                 return solved(createMap(T(0), T[31;1m([0m1)));
+[2m      | [0m
+[2m      |             return solved(Type(nodes[0]));[0m
+
+	At call to [34;1mT_avg8BOeI[0m
+            via [35;1mfn[0m [34;1mevalTypeAnnot_CaSpsqZh[0m at 26:30:
 
 [2m      |             //  so this shouldn't compile if Type is nocopy.[0m
 [2m      |             fn T(i: i32)[0m
@@ -10136,10 +11460,24 @@ TODO: _0.fu @26:30:
 [2m      | [0m
 [2m      |             if (nodes.len > 1)[0m
 
-	Nope, going backwards: [35;1mvar[0m [34;1mnodes[0m
+            via [35;1mfn[0m [34;1mT_avg8BOeI[0m at 29:42:
 
-        Solving [35;1mfn[0m [34;1mT[0m
-                [35;1mfn[0m [34;1mevalTypeAnnot[0m
+[2m      | [0m
+[2m      |             if (nodes.len > 1)[0m
+   29 |                 return solved(createMap(T[31;1m([0m0), T(1)));
+[2m      | [0m
+[2m      |             return solved(Type(nodes[0]));[0m
+
+            recursively via [35;1mfn[0m [34;1mevalTypeAnnot_CaSpsqZh[0m at 26:30:
+
+[2m      |             //  so this shouldn't compile if Type is nocopy.[0m
+[2m      |             fn T(i: i32)[0m
+   26 |                 evalTypeAnnot[31;1m([0m[ nodes[i] ]).type;
+[2m      | [0m
+[2m      |             if (nodes.len > 1)[0m
+
+
+        Solving [35;1mfn[0m [34;1mevalTypeAnnot_CaSpsqZh[0m
                 [35;1mfn[0m [34;1mmain[0m
 
 -----
@@ -10169,10 +11507,8 @@ int main() { return fu_MAIN(); }
 
 -----
 
-        //*F
-        nocopy
-        /*/
-        //*/
+
+        nocopy                                    
         struct X { x: i32; }
         fn sum(a: X, b: X) a.x + b.x;
 
@@ -10187,48 +11523,46 @@ int main() { return fu_MAIN(); }
         }
 
 -----
-_0.fu @16:23:
+_0.fu @14:23:
 
 [2m      |         fn main() {[0m
 [2m      |             mut x: X;[0m
-   16 |             return sum[31;1m([0mx.incr, x.incr) - 3; // Not 4! one arg must invalidate
+   14 |             return sum[31;1m([0mx.incr, x.incr) - 3; // Not 4! one arg must invalidate
 [2m      |         }[0m
-[2m      |     [0m
+[2m      | [0m
 
-	At call to [35;1mfn[0m [34;1msum[0m, argument binding [31;1ma[0m (arg #0) at 16:25:
+	At call to [35;1mfn[0m [34;1msum_PMB1ye5F[0m, argument binding [31;1ma[0m (arg #0) at 14:25:
 
 [2m      |         fn main() {[0m
 [2m      |             mut x: X;[0m
-   16 |             return sum(x[31;1m.[0mincr, x.incr) - 3; // Not 4! one arg must invalidate
+   14 |             return sum(x[31;1m.[0mincr, x.incr) - 3; // Not 4! one arg must invalidate
 [2m      |         }[0m
-[2m      |     [0m
+[2m      | [0m
 
-	... invalidated by subsequent write to [35;1mvar[0m [34;1mx[0m upon evaluation of argument [31;1mb[0m (arg #1) at 16:33:
+	... invalidated by subsequent write to [35;1mvar[0m [34;1mx[0m upon evaluation of argument [31;1mb[0m (arg #1) at 14:33:
 
 [2m      |         fn main() {[0m
 [2m      |             mut x: X;[0m
-   16 |             return sum(x.incr, x[31;1m.[0mincr) - 3; // Not 4! one arg must invalidate
+   14 |             return sum(x.incr, x[31;1m.[0mincr) - 3; // Not 4! one arg must invalidate
 [2m      |         }[0m
-[2m      |     [0m
+[2m      | [0m
 
-	At call to [34;1mincr[0m
-            via [35;1m__native[0m [34;1mpostfix++[0m at 10:16:
+	At call to [34;1mincr_Wvy3Ix0v[0m
+            via [35;1m__native[0m [34;1mpostfix++[0m at 8:16:
 
 [2m      | [0m
 [2m      |         fn incr(ref x: X) {[0m
-   10 |             x.x[31;1m++[0m;
+    8 |             x.x[31;1m++[0m;
 [2m      |             return x;[0m
 [2m      |         }[0m
 
+            
 
         Solving [35;1mfn[0m [34;1mmain[0m
 
 -----
 
-        /*
-        nocopy
-        /*/
-        //*/
+
         struct X { x: i32; }
         fn sum(a: X, b: X) a.x + b.x;
 
@@ -10262,13 +11596,13 @@ struct s_X
 
 #ifndef FU_NO_FDEFs
 
-static s_X& incr(s_X& x)
+static s_X& incr_ACFtvDNv(s_X& x)
 {
     x.x++;
     return x;
 }
 
-static int sum(const s_X& a, const s_X& b)
+static int sum_IoqbVCwL(const s_X& a, const s_X& b)
 {
     return a.x + b.x;
 }
@@ -10277,7 +11611,7 @@ int fu_MAIN()
 {
     s_X x {};
     s_X _0 {};
-    return (_0 = s_X(incr(x)), sum(s_X(_0), incr(x))) - 3;
+    return (_0 = s_X(incr_ACFtvDNv(x)), sum_IoqbVCwL(s_X(_0), incr_ACFtvDNv(x))) - 3;
 }
 
 #endif
@@ -10287,10 +11621,8 @@ int main() { return fu_MAIN(); }
 
 -----
 
-        //*F
-        nocopy
-        /*/
-        //*/
+
+        nocopy                                     
         struct X { x: i32; }
         struct Y { y: X;   }
 
@@ -10314,48 +11646,46 @@ int main() { return fu_MAIN(); }
         }
 
 -----
-_0.fu @25:23:
+_0.fu @23:23:
 
 [2m      |             mut x: Y;[0m
 [2m      |             ref y = x.y;[0m
-   25 |             return sum[31;1m([0my.incr, x.incr) - 3; // Not 4! one arg must invalidate
+   23 |             return sum[31;1m([0my.incr, x.incr) - 3; // Not 4! one arg must invalidate
 [2m      |         }[0m
-[2m      |     [0m
+[2m      | [0m
 
-	At call to [35;1mfn[0m [34;1msum_yPG8[0m, argument binding [31;1ma[0m (arg #0) at 25:25:
+	At call to [35;1mfn[0m [34;1msum_IRXjtweG[0m, argument binding [31;1ma[0m (arg #0) at 23:25:
 
 [2m      |             mut x: Y;[0m
 [2m      |             ref y = x.y;[0m
-   25 |             return sum(y[31;1m.[0mincr, x.incr) - 3; // Not 4! one arg must invalidate
+   23 |             return sum(y[31;1m.[0mincr, x.incr) - 3; // Not 4! one arg must invalidate
 [2m      |         }[0m
-[2m      |     [0m
+[2m      | [0m
 
-	... invalidated by subsequent write to [35;1mvar[0m [34;1my[0m upon evaluation of argument [31;1mb[0m (arg #1) at 25:33:
+	... invalidated by subsequent write to [35;1mvar[0m [34;1my[0m upon evaluation of argument [31;1mb[0m (arg #1) at 23:33:
 
 [2m      |             mut x: Y;[0m
 [2m      |             ref y = x.y;[0m
-   25 |             return sum(y.incr, x[31;1m.[0mincr) - 3; // Not 4! one arg must invalidate
+   23 |             return sum(y.incr, x[31;1m.[0mincr) - 3; // Not 4! one arg must invalidate
 [2m      |         }[0m
-[2m      |     [0m
+[2m      | [0m
 
-	At call to [34;1mincr[0m
-            via [35;1m__native[0m [34;1mpostfix++[0m at 18:18:
+	At call to [34;1mincr_NJ8vw4dr[0m
+            via [35;1m__native[0m [34;1mpostfix++[0m at 16:18:
 
 [2m      | [0m
 [2m      |         fn incr(ref y: Y) {[0m
-   18 |             y.y.x[31;1m++[0m;
+   16 |             y.y.x[31;1m++[0m;
 [2m      |             return y;[0m
 [2m      |         }[0m
 
+            
 
         Solving [35;1mfn[0m [34;1mmain[0m
 
 -----
 
-        /*
-        nocopy
-        /*/
-        //*/
+
         struct X { x: i32; }
         struct Y { y: X;   }
 
@@ -10382,9 +11712,6 @@ _0.fu @25:23:
 
 struct s_X;
 struct s_Y;
-
-static int x(const s_Y&);
-static s_Y& incr(s_Y&);
 
                                 #ifndef DEF_s_X
                                 #define DEF_s_X
@@ -10416,26 +11743,26 @@ struct s_Y
 
 #ifndef FU_NO_FDEFs
 
-static s_X& incr(s_X& x)
+static s_X& incr_ACFtvDNv(s_X& x)
 {
     x.x++;
     return x;
 }
 
-static s_Y& incr(s_Y& y)
+static s_Y& incr_S7VvsIqD(s_Y& y)
 {
     y.y.x++;
     return y;
 }
 
-static int x(const s_Y& y)
+static int x_ZQYePgvT(const s_Y& y)
 {
     return y.y.x;
 }
 
-inline static int sum_7JUo(const s_X& a, const s_Y& b)
+inline static int sum_RdjkDOZy(const s_X& a, const s_Y& b)
 {
-    return a.x + x(b);
+    return a.x + x_ZQYePgvT(b);
 }
 
 int fu_MAIN()
@@ -10443,7 +11770,7 @@ int fu_MAIN()
     s_Y x {};
     s_X& y = x.y;
     s_X _0 {};
-    return (_0 = s_X(incr(y)), sum_7JUo(s_X(_0), incr(x))) - 3;
+    return (_0 = s_X(incr_ACFtvDNv(y)), sum_RdjkDOZy(s_X(_0), incr_S7VvsIqD(x))) - 3;
 }
 
 #endif
@@ -10453,10 +11780,8 @@ int main() { return fu_MAIN(); }
 
 -----
 
-        //*F
-        nocopy
-        /*/
-        //*/
+
+        nocopy                                    
         struct X { x: i32; };
 
         fn incr(ref x: X) {
@@ -10482,48 +11807,46 @@ int main() { return fu_MAIN(); }
         }
 
 -----
-_0.fu @21:27:
+_0.fu @19:27:
 
 [2m      |         fn test(ref x: X, ref y: X) {[0m
 [2m      |             ref xy = y || x;[0m
-   21 |             return x.incr [31;1m+=[0m xy.incr; // <- xy invalidated by x.incr
+   19 |             return x.incr [31;1m+=[0m xy.incr; // <- xy invalidated by x.incr
 [2m      |         }[0m
 [2m      | [0m
 
-	At call to [35;1mfn[0m [34;1m+=[0m, argument binding [31;1mb[0m (arg #1) at 21:32:
+	At call to [35;1mfn[0m [34;1m+=[0m, argument binding [31;1mb[0m (arg #1) at 19:32:
 
 [2m      |         fn test(ref x: X, ref y: X) {[0m
 [2m      |             ref xy = y || x;[0m
-   21 |             return x.incr += xy[31;1m.[0mincr; // <- xy invalidated by x.incr
+   19 |             return x.incr += xy[31;1m.[0mincr; // <- xy invalidated by x.incr
 [2m      |         }[0m
 [2m      | [0m
 
-	... invalidated by subsequent write to [35;1mvar[0m [34;1mxy[0m upon evaluation of argument [31;1ma[0m (arg #0) at 21:21:
+	... invalidated by subsequent write to [35;1mvar[0m [34;1mxy[0m upon evaluation of argument [31;1ma[0m (arg #0) at 19:21:
 
 [2m      |         fn test(ref x: X, ref y: X) {[0m
 [2m      |             ref xy = y || x;[0m
-   21 |             return x[31;1m.[0mincr += xy.incr; // <- xy invalidated by x.incr
+   19 |             return x[31;1m.[0mincr += xy.incr; // <- xy invalidated by x.incr
 [2m      |         }[0m
 [2m      | [0m
 
-	At call to [34;1mincr[0m
-            via [35;1m__native[0m [34;1mpostfix++[0m at 9:16:
+	At call to [34;1mincr_Wvy3Ix0v[0m
+            via [35;1m__native[0m [34;1mpostfix++[0m at 7:16:
 
 [2m      | [0m
 [2m      |         fn incr(ref x: X) {[0m
-    9 |             x.x[31;1m++[0m;
+    7 |             x.x[31;1m++[0m;
 [2m      |             return x;[0m
 [2m      |         }[0m
 
+            
 
-        Solving [35;1mfn[0m [34;1mtest[0m
+        Solving [35;1mfn[0m [34;1mtest_nQkUwNff[0m
 
 -----
 
-        /*
-        nocopy
-        /*/
-        //*/
+
         struct X { x: i32; };
 
         fn incr(ref x: X) {
@@ -10568,7 +11891,7 @@ struct s_X
 
 #ifndef FU_NO_FDEFs
 
-static s_X& incr(s_X& x)
+static s_X& incr_ACFtvDNv(s_X& x)
 {
     x.x++;
     return x;
@@ -10579,17 +11902,17 @@ static int operator+=(const s_X& a, const s_X& b)
     return a.x + b.x;
 }
 
-static int test(s_X& x, s_X& y)
+static int test_WIaPdgvO(s_X& x, s_X& y)
 {
     s_X& xy = (y ? y : x);
-    return (incr(x) += s_X(incr(xy)));
+    return (incr_ACFtvDNv(x) += s_X(incr_ACFtvDNv(xy)));
 }
 
 int fu_MAIN()
 {
     s_X x {};
     s_X y {};
-    return test(x, y) - 3;
+    return test_WIaPdgvO(x, y) - 3;
 }
 
 #endif
@@ -10626,14 +11949,14 @@ struct s_X
 
 #ifndef FU_NO_FDEFs
 
-static s_X popfirst(/*MOV*/ fu_VEC<s_X>&& arr)
+static s_X popfirst_C7jasMbI(/*MOV*/ fu_VEC<s_X>&& arr)
 {
     return arr.try_steal(0);
 }
 
 int fu_MAIN()
 {
-    return popfirst(fu_VEC<s_X> { fu::slate<1, s_X> { s_X{} } }).items.size();
+    return popfirst_C7jasMbI(fu_VEC<s_X> { fu::slate<1, s_X> { s_X{} } }).items.size();
 }
 
 #endif
@@ -10677,14 +12000,14 @@ struct s_X
 
 #ifndef FU_NO_FDEFs
 
-static s_X popfirst(/*MOV*/ fu_VEC<s_X>&& arr)
+static s_X popfirst_8fx1mNnU(/*MOV*/ fu_VEC<s_X>&& arr)
 {
     return arr.try_steal(0);
 }
 
 int fu_MAIN()
 {
-    return popfirst(fu_VEC<s_X> { fu::slate<1, s_X> { s_X{} } }).items.size();
+    return popfirst_8fx1mNnU(fu_VEC<s_X> { fu::slate<1, s_X> { s_X{} } }).items.size();
 }
 
 #endif
@@ -10734,7 +12057,7 @@ struct s_SolvedNode
 
 #ifndef FU_NO_FDEFs
 
-static s_SolvedNode test(/*MOV*/ s_SolvedNode&& a, /*MOV*/ s_SolvedNode&& b)
+static s_SolvedNode test_PMB1ye5F(/*MOV*/ s_SolvedNode&& a, /*MOV*/ s_SolvedNode&& b)
 {
     /*MOV*/ s_SolvedNode& n = (a.items ? a : b);
     return static_cast<s_SolvedNode&&>(n);
@@ -10742,7 +12065,7 @@ static s_SolvedNode test(/*MOV*/ s_SolvedNode&& a, /*MOV*/ s_SolvedNode&& b)
 
 int fu_MAIN()
 {
-    return test(s_SolvedNode{}, s_SolvedNode{}).items.size();
+    return test_PMB1ye5F(s_SolvedNode{}, s_SolvedNode{}).items.size();
 }
 
 #endif
@@ -10793,7 +12116,7 @@ struct s_SolvedNode
 
 #ifndef FU_NO_FDEFs
 
-static s_SolvedNode test(/*MOV*/ s_SolvedNode&& a, /*MOV*/ s_SolvedNode&& b)
+static s_SolvedNode test_PMB1ye5F(/*MOV*/ s_SolvedNode&& a, /*MOV*/ s_SolvedNode&& b)
 {
     /*MOV*/ s_SolvedNode& n = (a ? a : b);
     return static_cast<s_SolvedNode&&>(n);
@@ -10801,7 +12124,7 @@ static s_SolvedNode test(/*MOV*/ s_SolvedNode&& a, /*MOV*/ s_SolvedNode&& b)
 
 int fu_MAIN()
 {
-    return test(s_SolvedNode{}, s_SolvedNode{}).items.size();
+    return test_PMB1ye5F(s_SolvedNode{}, s_SolvedNode{}).items.size();
 }
 
 #endif
@@ -10813,10 +12136,8 @@ int main() { return fu_MAIN(); }
 
 -----
 
-        //*F
-        nocopy
-        /*/
-        //*/
+
+        nocopy            
         struct SolvedNode { len: i32; }
 
         fn createBlock(mut last: SolvedNode) {
@@ -10831,32 +12152,30 @@ int main() { return fu_MAIN(); }
         }
 
 -----
-_0.fu @12:20:
+_0.fu @10:20:
 
 [2m      |             let unwrap   = tail || tail;[0m
 [2m      |             last.len--;[0m
-   12 |             return [31;1munwrap[0m;
+   10 |             return [31;1munwrap[0m;
 [2m      |         }[0m
 [2m      | [0m
 
-	Cannot access [31;1munwrap[0m, reference invalidated by write to [31;1mlast[0m at 11:21:
+	Cannot access [31;1munwrap[0m, reference invalidated by write to [31;1mlast[0m at 9:21:
 
 [2m      |             let tail     = last || last;[0m
 [2m      |             let unwrap   = tail || tail;[0m
-   11 |             last.len[31;1m--[0m;
+    9 |             last.len[31;1m--[0m;
 [2m      |             return unwrap;[0m
 [2m      |         }[0m
 
 	At call to [34;1mpostfix--[0m
+            
 
-        Solving [35;1mfn[0m [34;1mcreateBlock[0m
+        Solving [35;1mfn[0m [34;1mcreateBlock_uKUKCXdJ[0m
 
 -----
 
-        /*
-        nocopy
-        /*/
-        //*/
+
         struct SolvedNode { len: i32; }
 
         fn createBlock(mut last: SolvedNode) {
@@ -10890,7 +12209,7 @@ struct s_SolvedNode
 
 #ifndef FU_NO_FDEFs
 
-static s_SolvedNode createBlock(/*MOV*/ s_SolvedNode&& last)
+static s_SolvedNode createBlock_PXTKu1UQ(/*MOV*/ s_SolvedNode&& last)
 {
     /*MOV*/ const s_SolvedNode& tail = (last ? last : last);
     /*MOV*/ const s_SolvedNode unwrap { (tail ? tail : tail) };
@@ -10900,7 +12219,7 @@ static s_SolvedNode createBlock(/*MOV*/ s_SolvedNode&& last)
 
 int fu_MAIN()
 {
-    return createBlock(s_SolvedNode{}).len;
+    return createBlock_PXTKu1UQ(s_SolvedNode{}).len;
 }
 
 #endif
@@ -10910,10 +12229,173 @@ int main() { return fu_MAIN(); }
 
 -----
 
-        //*F
-        nocopy
-        /*/
-        //*/
+
+        nocopy            
+        struct SolvedNode { items: SolvedNode[] };
+
+        fn popAndOr(ref node: SolvedNode) {
+            let N = node.items.len;
+
+            let pop = node.items[N - 1];
+            if (N > 2) {
+                node.items.pop();
+            }
+            else {
+                let head = node.items[0];
+                node = head;
+            }
+
+            return pop;
+        }
+
+        fn main() {
+            mut a = SolvedNode([ SolvedNode, SolvedNode ]);
+            let b = a.popAndOr();
+            return a.items.len + b.items.len;
+        }
+
+-----
+_0.fu @18:20:
+
+[2m      |             }[0m
+[2m      | [0m
+   18 |             return [31;1mpop[0m;
+[2m      |         }[0m
+[2m      | [0m
+
+	Cannot access [31;1mpop[0m, reference invalidated by write to [31;1mnode[0m at 15:22:
+
+[2m      |             else {[0m
+[2m      |                 let head = node.items[0];[0m
+   15 |                 node [31;1m=[0m head;
+[2m      |             }[0m
+[2m      | [0m
+
+	At call to [34;1m=[0m
+            
+
+        Solving [35;1mfn[0m [34;1mpopAndOr_Wvy3Ix0v[0m
+
+-----
+
+        <fail cannot access invalidated>
+        nocopy            <pass/></fail>
+        struct SolvedNode { items: SolvedNode[] };
+
+        fn popAndOr(ref node: SolvedNode) {
+            let N = node.items.len;
+
+            let pop = node.items[N - 1];
+            if (N > 2) {
+                node.items.pop();
+            }
+            else {
+                let head = node.items[0];
+                node = head;
+            }
+
+            return pop;
+        }
+
+        fn main() {
+            mut a = SolvedNode([ SolvedNode, SolvedNode ]);
+            let b = a.popAndOr();
+            return a.items.len + b.items.len;
+        }
+
+-----
+TODO: o-d42808a5afb0140e-1285.cpp:37:12: error: reference to stack memory associated with local variable 'pop' returned [-Werror,-Wreturn-stack-address]
+    return pop;
+           ^~~
+1 error generated.
+
+Failing testcase:
+
+
+
+        struct SolvedNode { items: SolvedNode[] };
+
+        fn popAndOr(ref node: SolvedNode) {
+            let N = node.items.len;
+
+            let pop = node.items[N - 1];
+            if (N > 2) {
+                node.items.pop();
+            }
+            else {
+                let head = node.items[0];
+                node = head;
+            }
+
+            return pop;
+        }
+
+        fn main() {
+            mut a = SolvedNode([ SolvedNode, SolvedNode ]);
+            let b = a.popAndOr();
+            return a.items.len + b.items.len;
+        }
+
+Sources:
+
+#include <fu/vec.h>
+
+struct s_SolvedNode;
+
+                                #ifndef DEF_s_SolvedNode
+                                #define DEF_s_SolvedNode
+struct s_SolvedNode
+{
+    fu_VEC<s_SolvedNode> items;
+    s_SolvedNode(const s_SolvedNode&) = default;
+    s_SolvedNode(s_SolvedNode&&) = default;
+    s_SolvedNode& operator=(s_SolvedNode&&) = default;
+    s_SolvedNode& operator=(const s_SolvedNode& selfrec) { return *this = s_SolvedNode(selfrec); }
+    explicit operator bool() const noexcept
+    {
+        return false
+            || items
+        ;
+    }
+};
+                                #endif
+
+#ifndef FU_NO_FDEFs
+
+static const s_SolvedNode& popAndOr_ACFtvDNv(s_SolvedNode& node)
+{
+    const int N = node.items.size();
+    s_SolvedNode pop { node.items[(N - 1)] };
+    if (N > 2)
+        node.items.pop();
+    else
+    {
+        const s_SolvedNode& head = node.items[0];
+        node = head;
+    };
+    return pop;
+}
+
+int fu_MAIN()
+{
+    s_SolvedNode a = s_SolvedNode { fu_VEC<s_SolvedNode> { fu::slate<2, s_SolvedNode> { s_SolvedNode{}, s_SolvedNode{} } } };
+    const s_SolvedNode& b = popAndOr_ACFtvDNv(a);
+    return a.items.size() + b.items.size();
+}
+
+#endif
+
+
+int main() { return fu_MAIN(); }
+// TYPE_recursion
+// TYPE_resolve
+// NONTRIV_autocopy
+// RELAX_respec
+
+-----
+
+
+        nocopy            
         struct Items {
             len: i32;
         }
@@ -10942,40 +12424,38 @@ int main() { return fu_MAIN(); }
         }
 
 -----
-_0.fu @26:20:
+_0.fu @24:20:
 
 [2m      |             let unwrap = tail.items;[0m
 [2m      |             items.pop();[0m
-   26 |             return [31;1munwrap[0m;
+   24 |             return [31;1munwrap[0m;
 [2m      |         }[0m
 [2m      | [0m
 
-	Cannot access [31;1munwrap[0m, reference invalidated by write to [31;1mitems[0m at 25:22:
+	Cannot access [31;1munwrap[0m, reference invalidated by write to [31;1mitems[0m at 23:22:
 
 [2m      |             let tail = items.last;[0m
 [2m      |             let unwrap = tail.items;[0m
-   25 |             items.pop[31;1m([0m);
+   23 |             items.pop[31;1m([0m);
 [2m      |             return unwrap;[0m
 [2m      |         }[0m
 
-	At call to [34;1mpop[0m
-            via [35;1m__native[0m [34;1mpostfix--[0m at 19:29:
+	At call to [34;1mpop_1svFzb0K[0m
+            via [35;1m__native[0m [34;1mpostfix--[0m at 17:29:
 
 [2m      | [0m
 [2m      |         fn pop(ref n: Nodes) {[0m
-   19 |             n.last.items.len[31;1m--[0m;
+   17 |             n.last.items.len[31;1m--[0m;
 [2m      |         }[0m
 [2m      | [0m
 
+            
 
-        Solving [35;1mfn[0m [34;1mcreateBlock[0m
+        Solving [35;1mfn[0m [34;1mcreateBlock_DNDivbkG[0m
 
 -----
 
-        /*
-        nocopy
-        /*/
-        //*/
+
         struct Items {
             len: i32;
         }
@@ -11053,22 +12533,22 @@ struct s_Nodes
 
 #ifndef FU_NO_FDEFs
 
-static void pop(s_Nodes& n)
+static void pop_eH5pCNJQ(s_Nodes& n)
 {
     n.last.items.len--;
 }
 
-static s_Items createBlock(/*MOV*/ s_Nodes&& items)
+static s_Items createBlock_tA7rLF5C(/*MOV*/ s_Nodes&& items)
 {
     /*MOV*/ const s_SolvedNode& tail = items.last;
     /*MOV*/ const s_Items unwrap { tail.items };
-    pop(items);
+    pop_eH5pCNJQ(items);
     return /*NRVO*/ unwrap;
 }
 
 int fu_MAIN()
 {
-    return createBlock(s_Nodes { s_SolvedNode { s_Items{} } }).len;
+    return createBlock_tA7rLF5C(s_Nodes { s_SolvedNode { s_Items{} } }).len;
 }
 
 #endif
@@ -11078,10 +12558,8 @@ int main() { return fu_MAIN(); }
 
 -----
 
-        //*F
-        nocopy
-        /*/
-        //*/
+
+        nocopy            
         struct SolvedNode {
             items: SolvedNode[];
         };
@@ -11099,33 +12577,126 @@ int main() { return fu_MAIN(); }
         }
 
 -----
-TODO: _0.fu @15:20:
+_0.fu @13:20:
 
 [2m      |             let unwrap = tail.items;[0m
 [2m      |             items.pop();[0m
-   15 |             return [31;1munwrap[0m;
+   13 |             return [31;1munwrap[0m;
 [2m      |         }[0m
 [2m      | [0m
 
-	Cannot access [31;1munwrap[0m, reference invalidated by write to [31;1mitems[0m at 14:22:
+	Cannot access [31;1munwrap[0m, reference invalidated by write to [31;1mitems[0m at 12:22:
 
 [2m      |             let tail = items[items.len - 1];[0m
 [2m      |             let unwrap = tail.items;[0m
-   14 |             items.pop[31;1m([0m);
+   12 |             items.pop[31;1m([0m);
 [2m      |             return unwrap;[0m
 [2m      |         }[0m
 
 	At call to [34;1m
 .pop()[0m
+            
 
-        Solving [35;1mfn[0m [34;1mcreateBlock[0m
+        Solving [35;1mfn[0m [34;1mcreateBlock_8fx1mNnU[0m
 
 -----
 
-        //*F
-        nocopy
-        /*/
-        //*/
+        <fail cannot access invalidated>
+        nocopy            <pass/></fail>
+        struct SolvedNode {
+            items: SolvedNode[];
+        };
+
+        // Reducing the thing below.
+        fn createBlock(mut items: SolvedNode[]) {
+            let tail = items[items.len - 1];
+            let unwrap = tail.items;
+            items.pop();
+            return unwrap;
+        }
+
+        fn main() {
+            return createBlock([]).len;
+        }
+
+-----
+TODO: o-46438613766a7c33-1079.cpp:28:27: error: binding reference of type 's_SolvedNode' to value of type 'const s_SolvedNode' drops 'const' qualifier
+    /*MOV*/ s_SolvedNode& tail = items[(items.size() - 1)];
+                          ^      ~~~~~~~~~~~~~~~~~~~~~~~~~
+1 error generated.
+
+Failing testcase:
+
+
+
+        struct SolvedNode {
+            items: SolvedNode[];
+        };
+
+        // Reducing the thing below.
+        fn createBlock(mut items: SolvedNode[]) {
+            let tail = items[items.len - 1];
+            let unwrap = tail.items;
+            items.pop();
+            return unwrap;
+        }
+
+        fn main() {
+            return createBlock([]).len;
+        }
+
+Sources:
+
+#include <fu/vec.h>
+
+struct s_SolvedNode;
+
+                                #ifndef DEF_s_SolvedNode
+                                #define DEF_s_SolvedNode
+struct s_SolvedNode
+{
+    fu_VEC<s_SolvedNode> items;
+    s_SolvedNode(const s_SolvedNode&) = default;
+    s_SolvedNode(s_SolvedNode&&) = default;
+    s_SolvedNode& operator=(s_SolvedNode&&) = default;
+    s_SolvedNode& operator=(const s_SolvedNode& selfrec) { return *this = s_SolvedNode(selfrec); }
+    explicit operator bool() const noexcept
+    {
+        return false
+            || items
+        ;
+    }
+};
+                                #endif
+
+#ifndef FU_NO_FDEFs
+
+static fu_VEC<s_SolvedNode> createBlock_C7jasMbI(/*MOV*/ fu_VEC<s_SolvedNode>&& items)
+{
+    /*MOV*/ s_SolvedNode& tail = items[(items.size() - 1)];
+    /*MOV*/ fu_VEC<s_SolvedNode> unwrap { tail.items };
+    items.pop();
+    return /*NRVO*/ unwrap;
+}
+
+int fu_MAIN()
+{
+    return createBlock_C7jasMbI(fu_VEC<s_SolvedNode>{}).size();
+}
+
+#endif
+
+
+int main() { return fu_MAIN(); }
+// TYPE_recursion
+// TYPE_resolve
+// NONTRIV_autocopy
+// RELAX_respec
+
+-----
+
+
+        nocopy            
         struct SolvedNode {
             kind: string;
             items: SolvedNode[];
@@ -11151,33 +12722,156 @@ TODO: _0.fu @15:20:
         }
 
 -----
-TODO: _0.fu @20:24:
+_0.fu @18:24:
 
 [2m      |                 let unwrap = tail.items;[0m
 [2m      |                 items.pop();[0m
-   20 |                 return [31;1munwrap[0m;
+   18 |                 return [31;1munwrap[0m;
 [2m      |             }[0m
 [2m      | [0m
 
-	Cannot access [31;1munwrap[0m, reference invalidated by write to [31;1mitems[0m at 19:26:
+	Cannot access [31;1munwrap[0m, reference invalidated by write to [31;1mitems[0m at 17:26:
 
 [2m      | [0m
 [2m      |                 let unwrap = tail.items;[0m
-   19 |                 items.pop[31;1m([0m);
+   17 |                 items.pop[31;1m([0m);
 [2m      |                 return unwrap;[0m
 [2m      |             }[0m
 
 	At call to [34;1m
 .pop()[0m
+            
 
-        Solving [35;1mfn[0m [34;1mcreateBlock[0m
+        Solving [35;1mfn[0m [34;1mcreateBlock_8fx1mNnU[0m
 
 -----
 
-        //*F
-        nocopy
-        /*/
-        //*/
+        <fail cannot access invalidated>
+        nocopy            <pass/></fail>
+        struct SolvedNode {
+            kind: string;
+            items: SolvedNode[];
+        };
+
+        // Same as below but mut.
+        fn createBlock(mut items: SolvedNode[]) {
+            if (items.len) for (;;) {
+                let tail = items[items.len - 1]; // const-indexed but generated mutref tail, must be F_RRET?
+                if (tail.kind != "block")
+                    break;
+
+                let unwrap = tail.items;
+                items.pop();
+                return unwrap;
+            }
+
+            return [];
+        }
+
+        fn main() {
+            return createBlock([]).len;
+        }
+
+-----
+TODO: o-c1a14281364bd189-1367.cpp:36:35: error: binding reference of type 's_SolvedNode' to value of type 'const s_SolvedNode' drops 'const' qualifier
+            /*MOV*/ s_SolvedNode& tail = items[(items.size() - 1)];
+                                  ^      ~~~~~~~~~~~~~~~~~~~~~~~~~
+1 error generated.
+
+Failing testcase:
+
+
+
+        struct SolvedNode {
+            kind: string;
+            items: SolvedNode[];
+        };
+
+        // Same as below but mut.
+        fn createBlock(mut items: SolvedNode[]) {
+            if (items.len) for (;;) {
+                let tail = items[items.len - 1]; // const-indexed but generated mutref tail, must be F_RRET?
+                if (tail.kind != "block")
+                    break;
+
+                let unwrap = tail.items;
+                items.pop();
+                return unwrap;
+            }
+
+            return [];
+        }
+
+        fn main() {
+            return createBlock([]).len;
+        }
+
+Sources:
+
+#include <fu/str.h>
+#include <fu/vec.h>
+#include <fu/vec/cmp.h>
+
+struct s_SolvedNode;
+
+                                #ifndef DEF_s_SolvedNode
+                                #define DEF_s_SolvedNode
+struct s_SolvedNode
+{
+    fu_STR kind;
+    fu_VEC<s_SolvedNode> items;
+    s_SolvedNode(const s_SolvedNode&) = default;
+    s_SolvedNode(s_SolvedNode&&) = default;
+    s_SolvedNode& operator=(s_SolvedNode&&) = default;
+    s_SolvedNode& operator=(const s_SolvedNode& selfrec) { return *this = s_SolvedNode(selfrec); }
+    explicit operator bool() const noexcept
+    {
+        return false
+            || kind
+            || items
+        ;
+    }
+};
+                                #endif
+
+#ifndef FU_NO_FDEFs
+
+static fu_VEC<s_SolvedNode> createBlock_C7jasMbI(/*MOV*/ fu_VEC<s_SolvedNode>&& items)
+{
+    if (items.size())
+    {
+        for (; ; )
+        {
+            /*MOV*/ s_SolvedNode& tail = items[(items.size() - 1)];
+            if (tail.kind != "block"_fu)
+                break;
+
+            /*MOV*/ fu_VEC<s_SolvedNode> unwrap { tail.items };
+            items.pop();
+            return /*NRVO*/ unwrap;
+        };
+    };
+    return fu_VEC<s_SolvedNode>{};
+}
+
+int fu_MAIN()
+{
+    return createBlock_C7jasMbI(fu_VEC<s_SolvedNode>{}).size();
+}
+
+#endif
+
+
+int main() { return fu_MAIN(); }
+// TYPE_recursion
+// TYPE_resolve
+// NONTRIV_autocopy
+// RELAX_respec
+
+-----
+
+
+        nocopy            
         struct SolvedNode {
             kind: string;
             items: SolvedNode[];
@@ -11204,26 +12898,238 @@ TODO: _0.fu @20:24:
         }
 
 -----
-TODO: _0.fu @20:24:
+_0.fu @18:24:
 
 [2m      |                 let unwrap = tail.items; // unwrap needs to copy here[0m
 [2m      |                 items.pop(); ////////////// <- nuked here, but ignored![0m
-   20 |                 return [31;1munwrap[0m;
+   18 |                 return [31;1munwrap[0m;
 [2m      |             }[0m
 [2m      | [0m
 
-	Cannot access [31;1munwrap[0m, reference invalidated by write to [31;1mitems[0m at 19:26:
+	Cannot access [31;1munwrap[0m, reference invalidated by write to [31;1mitems[0m at 17:26:
 
 [2m      | [0m
 [2m      |                 let unwrap = tail.items; // unwrap needs to copy here[0m
-   19 |                 items.pop[31;1m([0m); ////////////// <- nuked here, but ignored!
+   17 |                 items.pop[31;1m([0m); ////////////// <- nuked here, but ignored!
 [2m      |                 return unwrap;[0m
 [2m      |             }[0m
 
 	At call to [34;1m
 .pop()[0m
+            
 
-        Solving [35;1mfn[0m [34;1mcreateBlock[0m
+        Solving [35;1mfn[0m [34;1mcreateBlock_dIzVu9a0[0m
+
+-----
+
+        <fail cannot access invalidated>
+        nocopy            <pass/></fail>
+        struct SolvedNode {
+            kind: string;
+            items: SolvedNode[];
+        };
+
+        // Same as above but ref.
+        fn createBlock(ref items: SolvedNode[]) {
+            if (items.len) for (;;) {
+                let tail = items[items.len - 1];
+                if (tail.kind != "block")
+                    break;
+
+                let unwrap = tail.items; // unwrap needs to copy here
+                items.pop(); ////////////// <- nuked here, but ignored!
+                return unwrap;
+            }
+
+            return [];
+        }
+
+        fn main() {
+            mut items: SolvedNode[];
+            return createBlock(items).len;
+        }
+
+-----
+TODO: o-add9fcf27b41c2ff-1405.cpp:43:20: error: reference to stack memory associated with local variable 'unwrap' returned [-Werror,-Wreturn-stack-address]
+            return unwrap;
+                   ^~~~~~
+1 error generated.
+
+Failing testcase:
+
+
+
+        struct SolvedNode {
+            kind: string;
+            items: SolvedNode[];
+        };
+
+        // Same as above but ref.
+        fn createBlock(ref items: SolvedNode[]) {
+            if (items.len) for (;;) {
+                let tail = items[items.len - 1];
+                if (tail.kind != "block")
+                    break;
+
+                let unwrap = tail.items; // unwrap needs to copy here
+                items.pop(); ////////////// <- nuked here, but ignored!
+                return unwrap;
+            }
+
+            return [];
+        }
+
+        fn main() {
+            mut items: SolvedNode[];
+            return createBlock(items).len;
+        }
+
+Sources:
+
+#include <fu/default.h>
+#include <fu/str.h>
+#include <fu/vec.h>
+#include <fu/vec/cmp.h>
+
+struct s_SolvedNode;
+
+                                #ifndef DEF_s_SolvedNode
+                                #define DEF_s_SolvedNode
+struct s_SolvedNode
+{
+    fu_STR kind;
+    fu_VEC<s_SolvedNode> items;
+    s_SolvedNode(const s_SolvedNode&) = default;
+    s_SolvedNode(s_SolvedNode&&) = default;
+    s_SolvedNode& operator=(s_SolvedNode&&) = default;
+    s_SolvedNode& operator=(const s_SolvedNode& selfrec) { return *this = s_SolvedNode(selfrec); }
+    explicit operator bool() const noexcept
+    {
+        return false
+            || kind
+            || items
+        ;
+    }
+};
+                                #endif
+
+#ifndef FU_NO_FDEFs
+
+static const fu_VEC<s_SolvedNode>& createBlock_HUxoY46N(fu_VEC<s_SolvedNode>& items)
+{
+    if (items.size())
+    {
+        for (; ; )
+        {
+            const s_SolvedNode& tail = items[(items.size() - 1)];
+            if (tail.kind != "block"_fu)
+                break;
+
+            fu_VEC<s_SolvedNode> unwrap { tail.items };
+            items.pop();
+            return unwrap;
+        };
+    };
+    return (*(const fu_VEC<s_SolvedNode>*)fu::NIL);
+}
+
+int fu_MAIN()
+{
+    fu_VEC<s_SolvedNode> items {};
+    return createBlock_HUxoY46N(items).size();
+}
+
+#endif
+
+
+int main() { return fu_MAIN(); }
+// TYPE_recursion
+// TYPE_resolve
+// NONTRIV_autocopy
+// RELAX_respec
+
+-----
+
+        fn test(ref a: i32[]) = a.swap(0, 1);
+
+        fn main() {
+            mut nums = [1, 2];
+            nums.test();
+            return nums.len == 2 && nums[0] == 2 && nums[1] == 1
+                 ? 0
+                 : 1;
+        }
+
+-----
+
+#include <fu/vec.h>
+#include <fu/vec/view_swap.h>
+#include <fu/view.h>
+
+#ifndef FU_NO_FDEFs
+
+static void test_j3F1UXeO(fu::view_mut<int> a)
+{
+    fu::view_swap(a, 0, 1);
+}
+
+int fu_MAIN()
+{
+    fu_VEC<int> nums = fu_VEC<int> { fu::slate<2, int> { 1, 2 } };
+    test_j3F1UXeO(nums);
+    return (((nums.size() == 2) && (nums[0] == 2) && (nums[1] == 1)) ? 0 : 1);
+}
+
+#endif
+
+
+int main() { return fu_MAIN(); }
+// RELAX_respec
+
+-----
+
+        fn Swap(ref a: i32[], x: i32, y: i32)
+            swap(a[x], a[y]);
+
+        fn main() {
+            mut a = [ 1, 2 ];
+            a.Swap(0, 1);
+            return a[0] - 2 == 0 && a[1] - 1 == 0 ? 0 : 1;
+        }
+
+-----
+TODO: _0.fu @3:17:
+
+[2m      | [0m
+[2m      |         fn Swap(ref a: i32[], x: i32, y: i32)[0m
+    3 |             swap[31;1m([0ma[x], a[y]);
+[2m      | [0m
+[2m      |         fn main() {[0m
+
+	At call to [35;1m__native[0m [34;1m
+no_AAR
+<utility>
+std::swap[0m, argument binding [31;1ma[0m (arg #0) at 3:19:
+
+[2m      | [0m
+[2m      |         fn Swap(ref a: i32[], x: i32, y: i32)[0m
+    3 |             swap(a[31;1m[[0mx], a[y]);
+[2m      | [0m
+[2m      |         fn main() {[0m
+
+	... invalidated by subsequent write to [35;1marg[0m [34;1ma[0m upon evaluation of argument [31;1mb[0m (arg #1) at 3:25:
+
+[2m      | [0m
+[2m      |         fn Swap(ref a: i32[], x: i32, y: i32)[0m
+    3 |             swap(a[x], a[31;1m[[0my]);
+[2m      | [0m
+[2m      |         fn main() {[0m
+
+	At call to [34;1m
+.mutref[0m
+            
+
+        Solving [35;1mfn[0m [34;1mSwap_LFiBUD15[0m
 
 -----
 
@@ -11256,7 +13162,7 @@ TODO: _0.fu @2:9:
 [2m      |             P: Map(string, i32);[0m
 [2m      |         };[0m
 
-	`Map` is not defined in this scope: ``.
+	Bad call to [34;1mMap[0m: [34;1mMap[0m is not defined here.
 
         Solving [35;1mtype[0m [34;1mBINOP[0m
 
@@ -11413,7 +13319,7 @@ struct s_SolvedNode
 
 #ifndef FU_NO_FDEFs
 
-static s_SolvedNode createDefaultInit(const s_Type& type, const s_Token& _here)
+static s_SolvedNode createDefaultInit_EwEdtI30(const s_Type& type, const s_Token& _here)
 {
     return s_SolvedNode { "definit"_fu, 0, fu_STR{}, fu_VEC<s_SolvedNode>{}, s_Token(_here), s_Type(type), s_ScopeIdx{} };
 }
@@ -11421,7 +13327,7 @@ static s_SolvedNode createDefaultInit(const s_Type& type, const s_Token& _here)
 int fu_MAIN()
 {
     const s_Token _here {};
-    return createDefaultInit(s_Type{}, _here).target.i;
+    return createDefaultInit_EwEdtI30(s_Type{}, _here).target.i;
 }
 
 #endif
@@ -11555,7 +13461,7 @@ struct s_Partial
 
 #ifndef FU_NO_FDEFs
 
-static int Scope_add(const s_Scope& scope, fu::view<char> kind, fu::view<char> id, const s_Type& type, const int min, const int max, fu::view<fu_STR> arg_n, fu::view<s_Type> arg_t, fu::view<s_SolvedNode> arg_d, const s_Template& tEmplate, const s_Partial& partial)
+static int Scope_add_Zp4ivewJ(const s_Scope& scope, fu::view<char> kind, fu::view<char> id, const s_Type& type, const int min, const int max, fu::view<fu_STR> arg_n, fu::view<s_Type> arg_t, fu::view<s_SolvedNode> arg_d, const s_Template& tEmplate, const s_Partial& partial)
 {
     return (((((((((scope.i + kind.size()) + id.size()) + type.i) + min) + max) + arg_n.size()) + arg_t.size()) + arg_d.size()) + tEmplate.i) + partial.i;
 }
@@ -11569,7 +13475,7 @@ int fu_MAIN()
     const int max {};
     fu_VEC<fu_STR> arg_n {};
     const s_Template tEmplate {};
-    return Scope_add(_scope, fu::view<char>{}, id, t_template, min, max, arg_n, fu::view<s_Type>{}, fu::view<s_SolvedNode>{}, tEmplate, s_Partial{});
+    return Scope_add_Zp4ivewJ(_scope, fu::view<char>{}, id, t_template, min, max, arg_n, fu::view<s_Type>{}, fu::view<s_SolvedNode>{}, tEmplate, s_Partial{});
 }
 
 #endif
@@ -11637,14 +13543,14 @@ int main() { return fu_MAIN(); }
 
 #ifndef FU_NO_FDEFs
 
-static int test(const int id)
+static int test_ibgn75mP(const int id)
 {
     return id;
 }
 
 int fu_MAIN()
 {
-    return int(test(0));
+    return int(test_ibgn75mP(0));
 }
 
 #endif
@@ -11718,9 +13624,9 @@ int main() { return fu_MAIN(); }
 
 #ifndef FU_NO_FDEFs
 
-                                #ifndef DEFt_split_azQB
-                                #define DEFt_split_azQB
-inline void split_azQB(const fu_STR& str, fu::view<char> sep, int, fu_VEC<fu_STR>& result)
+                                #ifndef DEFt_split_xBQaY9Do
+                                #define DEFt_split_xBQaY9Do
+inline void split_xBQaY9Do(const fu_STR& str, fu::view<char> sep, int, fu_VEC<fu_STR>& result)
 {
     int last = 0;
     int next = 0;
@@ -11732,7 +13638,7 @@ inline void split_azQB(const fu_STR& str, fu::view<char> sep, int, fu_VEC<fu_STR
 
             {
                 fu_STR substr = fu::slice(str, last, next);
-                result += substr;
+                result += fu_STR(substr);
             };
             last = (next + N);
         };
@@ -11740,27 +13646,27 @@ inline void split_azQB(const fu_STR& str, fu::view<char> sep, int, fu_VEC<fu_STR
     if (last)
     {
         fu_STR substr = fu::slice(str, last);
-        result += substr;
+        result += fu_STR(substr);
     }
     else
-        result += str;
+        result += fu_STR(str);
 
 }
                                 #endif
 
-                                #ifndef DEFt_split_OZkl
-                                #define DEFt_split_OZkl
-inline fu_VEC<fu_STR> split_OZkl(const fu_STR& str, fu::view<char> sep)
+                                #ifndef DEFt_split_OZkl8S7R
+                                #define DEFt_split_OZkl8S7R
+inline fu_VEC<fu_STR> split_OZkl8S7R(const fu_STR& str, fu::view<char> sep)
 {
     /*MOV*/ fu_VEC<fu_STR> result {};
-    split_azQB(str, sep, 0, result);
+    split_xBQaY9Do(str, sep, 0, result);
     return /*NRVO*/ result;
 }
                                 #endif
 
-                                #ifndef DEFt_join_9sek
-                                #define DEFt_join_9sek
-inline fu_STR join_9sek(fu::view<fu_STR> a, fu::view<char> sep)
+                                #ifndef DEFt_join_9sek5qv2
+                                #define DEFt_join_9sek5qv2
+inline fu_STR join_9sek5qv2(fu::view<fu_STR> a, fu::view<char> sep)
 {
     if (a.size() < 2)
         return fu_STR((a.size() ? a[0] : (*(const fu_STR*)fu::NIL)));
@@ -11786,9 +13692,9 @@ inline fu_STR join_9sek(fu::view<fu_STR> a, fu::view<char> sep)
 }
                                 #endif
 
-static fu_STR path_normalize(const fu_STR& p)
+static fu_STR path_normalize_naPRfSop(const fu_STR& p)
 {
-    fu_VEC<fu_STR> path = split_OZkl(p, "/"_fu);
+    fu_VEC<fu_STR> path = split_OZkl8S7R(p, "/"_fu);
     for (int i = path.size(); i-- > 0; )
     {
         const fu_STR& part = path[i];
@@ -11796,12 +13702,12 @@ static fu_STR path_normalize(const fu_STR& p)
             path.splice(i, 1);
 
     };
-    return join_9sek(path, "/"_fu);
+    return join_9sek5qv2(path, "/"_fu);
 }
 
 int fu_MAIN()
 {
-    return ((path_normalize("./hello///hey"_fu) == "hello/hey"_fu) ? 0 : 1);
+    return ((path_normalize_naPRfSop("./hello///hey"_fu) == "hello/hey"_fu) ? 0 : 1);
 }
 
 #endif
@@ -11852,9 +13758,9 @@ int main() { return fu_MAIN(); }
 
 #ifndef FU_NO_FDEFs
 
-                                #ifndef DEFt_split_SMy5
-                                #define DEFt_split_SMy5
-inline void split_SMy5(const fu_STR& str, fu::view<char> sep, int, fu_VEC<fu_STR>& result)
+                                #ifndef DEFt_split_C2JnoxIp
+                                #define DEFt_split_C2JnoxIp
+inline void split_C2JnoxIp(const fu_STR& str, fu::view<char> sep, int, fu_VEC<fu_STR>& result)
 {
     int last = 0;
     int next = 0;
@@ -11866,7 +13772,7 @@ inline void split_SMy5(const fu_STR& str, fu::view<char> sep, int, fu_VEC<fu_STR
 
             {
                 fu_STR substr = fu::slice(str, last, next);
-                result += substr;
+                result += fu_STR(substr);
             };
             last = (next + N);
         };
@@ -11874,27 +13780,27 @@ inline void split_SMy5(const fu_STR& str, fu::view<char> sep, int, fu_VEC<fu_STR
     if (last)
     {
         fu_STR substr = fu::slice(str, last);
-        result += substr;
+        result += fu_STR(substr);
     }
     else
-        result += str;
+        result += fu_STR(str);
 
 }
                                 #endif
 
-                                #ifndef DEFt_split_OZkl
-                                #define DEFt_split_OZkl
-inline fu_VEC<fu_STR> split_OZkl(const fu_STR& str, fu::view<char> sep)
+                                #ifndef DEFt_split_OZkl8S7R
+                                #define DEFt_split_OZkl8S7R
+inline fu_VEC<fu_STR> split_OZkl8S7R(const fu_STR& str, fu::view<char> sep)
 {
     /*MOV*/ fu_VEC<fu_STR> result {};
-    split_SMy5(str, sep, 0, result);
+    split_C2JnoxIp(str, sep, 0, result);
     return /*NRVO*/ result;
 }
                                 #endif
 
-                                #ifndef DEFt_join_9sek
-                                #define DEFt_join_9sek
-inline fu_STR join_9sek(fu::view<fu_STR> a, fu::view<char> sep)
+                                #ifndef DEFt_join_9sek5qv2
+                                #define DEFt_join_9sek5qv2
+inline fu_STR join_9sek5qv2(fu::view<fu_STR> a, fu::view<char> sep)
 {
     if (a.size() < 2)
         return fu_STR((a.size() ? a[0] : (*(const fu_STR*)fu::NIL)));
@@ -11920,9 +13826,9 @@ inline fu_STR join_9sek(fu::view<fu_STR> a, fu::view<char> sep)
 }
                                 #endif
 
-static fu_STR path_normalize(const fu_STR& p)
+static fu_STR path_normalize_naPRfSop(const fu_STR& p)
 {
-    fu_VEC<fu_STR> path = split_OZkl(p, "/"_fu);
+    fu_VEC<fu_STR> path = split_OZkl8S7R(p, "/"_fu);
     for (int i = path.size(); i-- > 0; )
     {
         const fu_STR& part = path[i];
@@ -11936,17 +13842,17 @@ static fu_STR path_normalize(const fu_STR& p)
             path.splice(--i_1, 2);
 
     };
-    return join_9sek(path, "/"_fu);
+    return join_9sek5qv2(path, "/"_fu);
 }
 
-static fu_STR path_join(fu::view<char> a, fu::view<char> b)
+static fu_STR path_join_fhJuvQpZ(fu::view<char> a, fu::view<char> b)
 {
-    return path_normalize(((a + "/"_fu) + b));
+    return path_normalize_naPRfSop(((a + "/"_fu) + b));
 }
 
 int fu_MAIN()
 {
-    return ((path_join("hello/hey"_fu, "./../you//"_fu) == "hello/you/"_fu) ? 0 : 1);
+    return ((path_join_fhJuvQpZ("hello/hey"_fu, "./../you//"_fu) == "hello/you/"_fu) ? 0 : 1);
 }
 
 #endif
@@ -12126,20 +14032,20 @@ struct s_MeshBuilder
 
 #ifndef FU_NO_FDEFs
 
-void alloc(s_MeshBuilder& mb, const int new_verts, const int new_indices)
+void alloc_J18F5x99(s_MeshBuilder& mb, const int new_verts, const int new_indices)
 {
     mb.verts.resize<false>(((mb.verts.size() + new_verts) * mb.vert_bytes));
     const int index_bytes = 4;
     mb.indices.resize<false>(((mb.indices.size() + new_indices) * index_bytes));
 }
 
-fu::view_mut<char> setup_quads(s_MeshBuilder& mb, const int num_quads)
+fu::view_mut<char> setup_quads_ycL5xugz(s_MeshBuilder& mb, const int num_quads)
 {
     const int b0 = mb.verts.size();
     const int v0 = mb.num_verts;
     const int i0 = mb.indices.size();
     int v1 = v0;
-    alloc(mb, (num_quads * 4), (num_quads * 6));
+    alloc_J18F5x99(mb, (num_quads * 4), (num_quads * 6));
     fu::view_mut<int> indices_i32 = fu::view_of_mut(fu::get_view_mut(mb.indices, i0, mb.indices.size()), int{});
     for (int i = 0; i < indices_i32.size(); i += 6)
     {
@@ -12160,7 +14066,7 @@ static const fu_VEC<float> QUAD_VBO fu_INIT_PRIORITY(1001) = fu_VEC<float> { fu:
 int fu_MAIN()
 {
     s_MeshBuilder mb = s_MeshBuilder { fu_STR{}, fu_STR{}, (4 * ((3 + 3) + 2)), 0 };
-    fu::view_assign(fu::view_of_mut(setup_quads(mb, 1), float{}), QUAD_VBO);
+    fu::view_assign(fu::view_of_mut(setup_quads_ycL5xugz(mb, 1), float{}), QUAD_VBO);
     return mb.num_verts - 4;
 }
 
@@ -12200,28 +14106,28 @@ int main() { return fu_MAIN(); }
 
 #ifndef FU_NO_FDEFs
 
-static int& target(int& _target)
+static int& target_fvq3PhFm(int& _target)
 {
     return _target;
 }
 
-static int& GET_mut(int& x, int& _target)
+static int& GET_mut_fvq3PhFm(int& x, int& _target)
 {
-    return x ? x : target(_target);
+    return x ? x : target_fvq3PhFm(_target);
 }
 
-static void checkRecursions(int& o, const int incr, int& _target)
+static void checkRecursions_Pj5JYag8(int& o, const int incr, int& _target)
 {
-    GET_mut(o, _target) += incr;
+    GET_mut_fvq3PhFm(o, _target) += incr;
 }
 
-static int __solveStruct(/*MOV*/ int arg, int& _target)
+static int __solveStruct_1hpjcHdP(/*MOV*/ int arg, int& _target)
 {
     if (arg)
     {
-        int& o = GET_mut(arg, _target);
+        int& o = GET_mut_fvq3PhFm(arg, _target);
         o++;
-        checkRecursions(o, int(o), _target);
+        checkRecursions_Pj5JYag8(o, int(o), _target);
     };
     return int(arg);
 }
@@ -12229,7 +14135,7 @@ static int __solveStruct(/*MOV*/ int arg, int& _target)
 int fu_MAIN()
 {
     int _target = 0;
-    return __solveStruct(1, _target) - 4;
+    return __solveStruct_1hpjcHdP(1, _target) - 4;
 }
 
 #endif
@@ -12250,16 +14156,16 @@ int main() { return fu_MAIN(); }
 
 #ifndef FU_NO_FDEFs
 
-static int& GET_mut(int& x, int& target)
+static int& GET_mut_w1jxUjR7(int& x, int& target)
 {
     int* _0;
-    return x ? x : (_0 = &((target += 1)), GET_mut(*_0, target));
+    return x ? x : (_0 = &((target += 1)), GET_mut_w1jxUjR7(*_0, target));
 }
 
 int fu_MAIN()
 {
     int target = 0;
-    return GET_mut(target, target) - 1;
+    return GET_mut_w1jxUjR7(target, target) - 1;
 }
 
 #endif
@@ -12284,21 +14190,21 @@ int main() { return fu_MAIN(); }
 
 #ifndef FU_NO_FDEFs
 
-static int& target(int& _itarg)
+static int& target_fvq3PhFm(int& _itarg)
 {
     return _itarg;
 }
 
-static int& GET_mut(int& x, int& _itarg)
+static int& GET_mut_mLjSuzEy(int& x, int& _itarg)
 {
     int* _0;
-    return x ? x : (_0 = &((target(_itarg) += 1)), GET_mut(*_0, _itarg));
+    return x ? x : (_0 = &((target_fvq3PhFm(_itarg) += 1)), GET_mut_mLjSuzEy(*_0, _itarg));
 }
 
 int fu_MAIN()
 {
     int _itarg = 0;
-    return GET_mut(target(_itarg), _itarg) - 1;
+    return GET_mut_mLjSuzEy(target_fvq3PhFm(_itarg), _itarg) - 1;
 }
 
 #endif
@@ -12323,21 +14229,21 @@ int main() { return fu_MAIN(); }
 
 #ifndef FU_NO_FDEFs
 
-static int& target(int& _itarg)
+static int& target_fvq3PhFm(int& _itarg)
 {
     return _itarg;
 }
 
-static int& GET_mut(int& x, int& _itarg)
+static int& GET_mut_fvq3PhFm(int& x, int& _itarg)
 {
     int* _0;
-    return x ? x : (_0 = &((target(_itarg) += 1)), GET_mut(*_0, _itarg));
+    return x ? x : (_0 = &((target_fvq3PhFm(_itarg) += 1)), GET_mut_fvq3PhFm(*_0, _itarg));
 }
 
 int fu_MAIN()
 {
     int _itarg = 0;
-    return GET_mut(target(_itarg), _itarg) - 1;
+    return GET_mut_fvq3PhFm(target_fvq3PhFm(_itarg), _itarg) - 1;
 }
 
 #endif
@@ -12360,16 +14266,16 @@ int main() { return fu_MAIN(); }
 
 #ifndef FU_NO_FDEFs
 
-static int& GET_mut(int& x, int& target)
+static int& GET_mut_w1jxUjR7(int& x, int& target)
 {
     int* _0;
-    return x ? x : (_0 = &(++target), GET_mut(*_0, target));
+    return x ? x : (_0 = &(++target), GET_mut_w1jxUjR7(*_0, target));
 }
 
 int fu_MAIN()
 {
     int target = 0;
-    return GET_mut(target, target) - 1;
+    return GET_mut_w1jxUjR7(target, target) - 1;
 }
 
 #endif
@@ -12395,19 +14301,19 @@ int main() { return fu_MAIN(); }
 
 -----
 
-static int& __solveStruct(int, int&);
+static int& __solveStruct_ibgn75mP(int, int&);
 
 #ifndef FU_NO_FDEFs
 
-static int& GET_mut(int& x, int& target)
+static int& GET_mut_mLjSuzEy(int& x, int& target)
 {
     int _0 {};
-    return x ? x : (target = (_0 = int((target += 1)), __solveStruct(int(_0), target)));
+    return x ? x : (target = (_0 = int((target += 1)), __solveStruct_ibgn75mP(int(_0), target)));
 }
 
-static int& __solveStruct(int arg, int& target)
+static int& __solveStruct_ibgn75mP(int arg, int& target)
 {
-    int& o = GET_mut(arg, target);
+    int& o = GET_mut_mLjSuzEy(arg, target);
     o += int(target);
     return target;
 }
@@ -12415,7 +14321,7 @@ static int& __solveStruct(int arg, int& target)
 int fu_MAIN()
 {
     int target = 0;
-    return __solveStruct(0, target) - 2;
+    return __solveStruct_ibgn75mP(0, target) - 2;
 }
 
 #endif
@@ -12428,82 +14334,35 @@ int main() { return fu_MAIN(); }
 -----
 
         fn incr(ref a: i32) ++a;
-        fn A(ref a: i32) a || //*F
-                              a = A(incr(a))    /*/         // Lint should complain here,
-                             (a = A(incr(a))); //*/         //  this was an honest mistake.
-        fn main() { mut v = 0; return A(v) - 1; }
-
------
-_0.fu @4:33..6:9:
-	Unparenthesized `or` on the left side of an `=`.
------
-
-        fn incr(ref a: i32) ++a;
-        fn A(ref a: i32) a || /*
-                              a = A(incr(a))    /*/         // Lint should complain here,
-                             (a = A(incr(a))); //*/         //  this was an honest mistake.
-        fn main() { mut v = 0; return A(v) - 1; }
-
------
-
-#ifndef FU_NO_FDEFs
-
-static int& incr(int& a)
-{
-    return ++a;
-}
-
-static int& A(int& a)
-{
-    return a ? a : (a = A(incr(a)));
-}
-
-int fu_MAIN()
-{
-    int v = 0;
-    return A(v) - 1;
-}
-
-#endif
-
-
-int main() { return fu_MAIN(); }
-// FN_recursion
-// FN_resolve
-// DEAD_call
-
------
-
-        fn incr(ref a: i32) ++a;
         fn A(ref a: i32) a || (a = B(incr(a)));
         fn B(ref b: i32) b || (b = A(incr(b)));
         fn main() { mut v = 0; return A(v) - 1; }
 
 -----
 
-static int& A(int&);
+static int& A_fvq3PhFm(int&);
 
 #ifndef FU_NO_FDEFs
 
-static int& incr(int& a)
+static int& incr_fvq3PhFm(int& a)
 {
     return ++a;
 }
 
-static int& B(int& b)
+static int& B_fvq3PhFm(int& b)
 {
-    return b ? b : (b = A(incr(b)));
+    return b ? b : (b = A_fvq3PhFm(incr_fvq3PhFm(b)));
 }
 
-static int& A(int& a)
+static int& A_fvq3PhFm(int& a)
 {
-    return a ? a : (a = B(incr(a)));
+    return a ? a : (a = B_fvq3PhFm(incr_fvq3PhFm(a)));
 }
 
 int fu_MAIN()
 {
     int v = 0;
-    return A(v) - 1;
+    return A_fvq3PhFm(v) - 1;
 }
 
 #endif
@@ -12523,31 +14382,31 @@ int main() { return fu_MAIN(); }
 
 -----
 
-static int& A(int&);
+static int& A_fvq3PhFm(int&);
 
 #ifndef FU_NO_FDEFs
 
-static int& incr(int& a)
+static int& incr_fvq3PhFm(int& a)
 {
     return ++a;
 }
 
-static int& B(int& b)
+static int& B_fvq3PhFm(int& b)
 {
-    int& bb = (b ? b : (b = A(incr(b))));
+    int& bb = (b ? b : (b = A_fvq3PhFm(incr_fvq3PhFm(b))));
     return bb;
 }
 
-static int& A(int& a)
+static int& A_fvq3PhFm(int& a)
 {
-    int& aa = (a ? a : (a = B(incr(a))));
+    int& aa = (a ? a : (a = B_fvq3PhFm(incr_fvq3PhFm(a))));
     return aa;
 }
 
 int fu_MAIN()
 {
     int v = 0;
-    return A(v) - 1;
+    return A_fvq3PhFm(v) - 1;
 }
 
 #endif
@@ -12573,25 +14432,25 @@ int main() { return fu_MAIN(); }
 
 #ifndef FU_NO_FDEFs
 
-static int& arg(int& __arg)
+static int& arg_mLjSuzEy(int& __arg)
 {
     return __arg;
 }
 
-inline static int& each_ydSq(int& cond, int, int& __arg, const int x)
+inline static int& each_3li1Ju6y(int& cond, int, int& __arg, const int x)
 {
-    return !cond ? cond : (arg(__arg) += x);
+    return !cond ? cond : (arg_mLjSuzEy(__arg) += x);
 }
 
-static int& __solveStruct(const int x, int& __arg)
+static int& __solveStruct_3AoyBXRR(const int x, int& __arg)
 {
-    return each_ydSq(arg(__arg), 0, __arg, x);
+    return each_3li1Ju6y(arg_mLjSuzEy(__arg), 0, __arg, x);
 }
 
 int fu_MAIN()
 {
     int __arg = 1;
-    return __solveStruct(3, __arg) - 4;
+    return __solveStruct_3AoyBXRR(3, __arg) - 4;
 }
 
 #endif
@@ -12613,19 +14472,19 @@ int main() { return fu_MAIN(); }
 
 #ifndef FU_NO_FDEFs
 
-inline static int each_GWLh(const int cond, int, const int arg)
+inline static int each_KKJdo7NP(const int cond, int, const int arg)
 {
     return cond ? arg : (*(const int*)fu::NIL);
 }
 
-static int arg_incr_x(/*MOV*/ const int arg)
+static int arg_incr_x_ZSoae05p(/*MOV*/ const int arg)
 {
-    return int(each_GWLh(arg, 0, arg));
+    return int(each_KKJdo7NP(arg, 0, arg));
 }
 
 int fu_MAIN()
 {
-    return arg_incr_x(+7) - 7;
+    return arg_incr_x_ZSoae05p(+7) - 7;
 }
 
 #endif
@@ -12648,19 +14507,19 @@ int main() { return fu_MAIN(); }
 
 #ifndef FU_NO_FDEFs
 
-inline static int each_GWLh(const int cond, int, int& arg, const int x)
+inline static int each_YbE0df6B(const int cond, int, int& arg, const int x)
 {
     return cond ? (arg += x) : (*(const int*)fu::NIL);
 }
 
-static int arg_incr_x(/*MOV*/ int arg, const int x)
+static int arg_incr_x_jRR1mEcq(/*MOV*/ int arg, const int x)
 {
-    return int(each_GWLh(arg, 0, arg, x));
+    return int(each_YbE0df6B(arg, 0, arg, x));
 }
 
 int fu_MAIN()
 {
-    return arg_incr_x(+7, -11) + 4;
+    return arg_incr_x_jRR1mEcq(+7, -11) + 4;
 }
 
 #endif
@@ -12686,20 +14545,20 @@ int main() { return fu_MAIN(); }
 
 #ifndef FU_NO_FDEFs
 
-inline static int each_36HA(const int cond, int, int& arg, const int x)
+inline static int each_5XgEZ3w6(const int cond, int, int& arg, const int x)
 {
     return cond ? (arg += x) : (*(const int*)fu::NIL);
 }
 
-static int arg_incr_x(/*MOV*/ int arg, const int x)
+static int arg_incr_x_jRR1mEcq(/*MOV*/ int arg, const int x)
 {
-    each_36HA(arg, 0, arg, x);
+    each_5XgEZ3w6(arg, 0, arg, x);
     return int(arg);
 }
 
 int fu_MAIN()
 {
-    return arg_incr_x(+7, -11) + 4;
+    return arg_incr_x_jRR1mEcq(+7, -11) + 4;
 }
 
 #endif
@@ -12737,33 +14596,33 @@ int main() { return fu_MAIN(); }
 
 #include <fu/default.h>
 
-static int __solveStruct(int, int, int&);
+static int __solveStruct_m45Igahy(int, int, int&);
 
 #ifndef FU_NO_FDEFs
 
-inline static int each_8swZ(const int cond, int, int& arg, const int x)
+inline static int each_TFMMPKwM(const int cond, int, int& arg, const int x)
 {
     return cond ? (arg += x) : (*(const int*)fu::NIL);
 }
 
-static int& GET_mut(int& x, int& target)
+static int& GET_mut_mLjSuzEy(int& x, int& target)
 {
-    return x ? x : (target = __solveStruct(int(target), 0, target));
+    return x ? x : (target = __solveStruct_m45Igahy(int(target), 0, target));
 }
 
-static void checkRecursions(int& o, const int incr, int& target)
+static void checkRecursions_9V58EIjQ(int& o, const int incr, int& target)
 {
-    GET_mut(o, target) += incr;
+    GET_mut_mLjSuzEy(o, target) += incr;
 }
 
-static int __solveStruct(/*MOV*/ int arg, const int x, int& target)
+static int __solveStruct_m45Igahy(/*MOV*/ int arg, const int x, int& target)
 {
-    each_8swZ(arg, 0, arg, x);
+    each_TFMMPKwM(arg, 0, arg, x);
     if (arg)
     {
-        int& o = GET_mut(arg, target);
+        int& o = GET_mut_mLjSuzEy(arg, target);
         o++;
-        checkRecursions(o, int(o), target);
+        checkRecursions_9V58EIjQ(o, int(o), target);
     };
     return int(arg);
 }
@@ -12771,7 +14630,7 @@ static int __solveStruct(/*MOV*/ int arg, const int x, int& target)
 int fu_MAIN()
 {
     int target = 0;
-    return __solveStruct(1, 0, target) - 4;
+    return __solveStruct_m45Igahy(1, 0, target) - 4;
 }
 
 #endif
@@ -12810,27 +14669,27 @@ int main() { return fu_MAIN(); }
 
 -----
 
-static int __solveStruct(int, int&);
+static int __solveStruct_ZSoae05p(int, int&);
 
 #ifndef FU_NO_FDEFs
 
-inline static int& GET_mut_Xn88(int& x, int& target)
+inline static int& GET_mut_mmNB87Uh(int& x, int& target)
 {
-    return x ? x : (target = __solveStruct(int(target), target));
+    return x ? x : (target = __solveStruct_ZSoae05p(int(target), target));
 }
 
-static void checkRecursions(int& o, const int incr, int& target)
+static void checkRecursions_Lrjja4B3(int& o, const int incr, int& target)
 {
-    GET_mut_Xn88(o, target) += incr;
+    GET_mut_mmNB87Uh(o, target) += incr;
 }
 
-static int __solveStruct(/*MOV*/ int arg, int& target)
+static int __solveStruct_ZSoae05p(/*MOV*/ int arg, int& target)
 {
     if (arg)
     {
-        int& o = GET_mut_Xn88(arg, target);
+        int& o = GET_mut_mmNB87Uh(arg, target);
         o++;
-        checkRecursions(o, int(o), target);
+        checkRecursions_Lrjja4B3(o, int(o), target);
     };
     return int(arg);
 }
@@ -12838,7 +14697,7 @@ static int __solveStruct(/*MOV*/ int arg, int& target)
 int fu_MAIN()
 {
     int target = 0;
-    return __solveStruct(1, target) - 4;
+    return __solveStruct_ZSoae05p(1, target) - 4;
 }
 
 #endif
@@ -12869,8 +14728,9 @@ int main() { return fu_MAIN(); }
                 // This template should start expanding on GET(target).name,
                 //  which should conflict with overload name.
                 fn name(shadow target)
-                    GET(target) //*F
-                        .name; /*/ .id; //*/
+                    GET(target) <fail ambig>
+                        .name;  <pass/>
+                        .id;    </fail>
 
                 return t.name;
             }
@@ -12879,7 +14739,14 @@ int main() { return fu_MAIN(); }
         }
 
 -----
-TODO: _0.fu @13:13:
+TODO: <fail> mismatch:
+
+    Expected error keyword:
+        [31;1mambig[0m from pattern <fail[31;1m ambig[0m>
+
+    ... not present in error message:
+
+_0.fu @13:13:
 
 [2m      | [0m
 [2m      |         fn main() {[0m
@@ -12887,7 +14754,7 @@ TODO: _0.fu @13:13:
 [2m      | [0m
 [2m      |             fn setSpec(mangle: string) {[0m
 
-	`Map` is not defined in this scope: `main`.
+	Bad call to [34;1mMap[0m: [34;1mMap[0m is not defined here.
 
         Solving [35;1mfn[0m [34;1mmain[0m
 
@@ -12946,9 +14813,9 @@ struct s_ScopeSkip
 
 #ifndef FU_NO_FDEFs
 
-                                #ifndef DEFt_each_9FVy
-                                #define DEFt_each_9FVy
-inline void each_9FVy(fu::view<int> items, fu::view<s_ScopeSkip> scope_skip, int, const int start, int& sum)
+                                #ifndef DEFt_each_SXRunewi
+                                #define DEFt_each_SXRunewi
+inline void each_SXRunewi(fu::view<int> items, fu::view<s_ScopeSkip> scope_skip, int, const int start, int& sum)
 {
     const s_ScopeSkip END_DUMMY = s_ScopeSkip { items.size(), items.size() };
     int i0 = start;
@@ -12969,17 +14836,17 @@ inline void each_9FVy(fu::view<int> items, fu::view<s_ScopeSkip> scope_skip, int
 }
                                 #endif
 
-int test(fu::view<int> items)
+int test_ZvOm7cyv(fu::view<int> items)
 {
     /*MOV*/ int sum = 0;
     fu_VEC<s_ScopeSkip> ss {};
-    each_9FVy(items, ss, 0, sum, sum);
+    each_SXRunewi(items, ss, 0, sum, sum);
     return /*NRVO*/ sum;
 }
 
 int fu_MAIN()
 {
-    return test(fu::view<int>{});
+    return test_ZvOm7cyv(fu::view<int>{});
 }
 
 #endif
@@ -13030,49 +14897,14 @@ TODO: _0.fu @4:13:
 [2m      |                 PRECEDENCE:     Map(string, i32);[0m
 [2m      |                 RIGHT_TO_LEFT:  Map(i32,   bool);[0m
 
-	`Map` is not defined in this scope: `setupOperators`.
+	Bad call to [34;1mMap[0m: [34;1mMap[0m is not defined here.
 
         Solving [35;1mtype[0m [34;1mBINOP[0m
-                [35;1mfn[0m [34;1msetupOperators_6Kad[0m
+                [35;1mfn[0m [34;1msetupOperators_1hpjcHdP[0m
 
 -----
 
-        let OPTOKENS = "{}[]()!?~@#$%^&*/-+<=>,.;:|";
-
-        pub fn lex(src) // <- template
-        {
-            let end = src.len;
-            mut idx = 0;
-
-            while (idx < end) {
-                let c = src[idx++];
-                if (OPTOKENS.has(c)) // <- no OPTOKENS in scope
-                    return idx - 1;
-            }
-
-            return src.len;
-        }
-
-        fn main() _0::lex("3 - 3") - 2; // <- from here
-
------
-TODO: _0.fu @11:21:
-
-[2m      |             while (idx < end) {[0m
-[2m      |                 let c = src[idx++];[0m
-   11 |                 if ([31;1mOPTOKENS[0m.has(c)) // <- no OPTOKENS in scope
-[2m      |                     return idx - 1;[0m
-[2m      |             }[0m
-
-	THIS IS A COMPILER BUG.
-
-	CODEGEN FAIL:
-
-	Cannot codegen, relies on an external static: OPTOKENS
-
------
-
-        fn each(a: [$T], fn, start?!: i32)
+        fn each(a: [$T], fn, start!?: i32)
             for (mut i = start; i < a.len; i++)
                 fn(a[i]);
 
@@ -13090,7 +14922,7 @@ TODO: _0.fu @11:21:
 
 #ifndef FU_NO_FDEFs
 
-inline static void each_QA6x(fu::view<int> a, int, const int start, int& sum)
+inline static void each_GaekNmBU(fu::view<int> a, int, const int start, int& sum)
 {
     for (int i = start; i < a.size(); i++)
     {
@@ -13103,7 +14935,7 @@ int fu_MAIN()
 {
     int sum = 0;
     fu_VEC<int> a = fu_VEC<int> { fu::slate<3, int> { 1, 2, 3 } };
-    each_QA6x(a, 0, sum, sum);
+    each_GaekNmBU(a, 0, sum, sum);
     return sum - 6;
 }
 
@@ -13115,10 +14947,9 @@ int main() { return fu_MAIN(); }
 
 -----
 
-        //*F
+
         novec // Abusing to test novec, unrelated to the test
-        /*/
-        //*/
+
         fn ScopeSkip_push(ref scope_skip: i32[]) {
             if (scope_skip) scope_skip[0]++;
             else            scope_skip ~= 1;
@@ -13134,19 +14965,16 @@ int main() { return fu_MAIN(); }
 _0.fu @3:9:
 
 [2m      | [0m
-[2m      |         //*F[0m
+[2m      | [0m
     3 |         [31;1mnovec[0m // Abusing to test novec, unrelated to the test
-[2m      |         /*/[0m
-[2m      |         //*/[0m
+[2m      | [0m
+[2m      |         fn ScopeSkip_push(ref scope_skip: i32[]) {[0m
 
-	[35;1mfn[0m [34;1mScopeSkip_push[0m is not novec, argument [34;1mscope_skip[0m is []+2i32: mutref copy resize
+	[35;1mfn[0m [34;1mScopeSkip_push_j3F1UXeO[0m is not novec, argument [34;1mscope_skip[0m is []+2i32: mutref copy resize
 
 -----
 
-        /*
-        novec // Abusing to test novec, unrelated to the test
-        /*/
-        //*/
+
         fn ScopeSkip_push(ref scope_skip: i32[]) {
             if (scope_skip) scope_skip[0]++;
             else            scope_skip ~= 1;
@@ -13165,7 +14993,7 @@ _0.fu @3:9:
 
 #ifndef FU_NO_FDEFs
 
-static void ScopeSkip_push(fu_VEC<int>& scope_skip)
+static void ScopeSkip_push_j3F1UXeO(fu_VEC<int>& scope_skip)
 {
     if (scope_skip)
         scope_skip.mutref(0)++;
@@ -13177,7 +15005,7 @@ static void ScopeSkip_push(fu_VEC<int>& scope_skip)
 int fu_MAIN()
 {
     fu_VEC<int> scope_skip = fu_VEC<int> { fu::slate<1, int> { 1 } };
-    ScopeSkip_push(scope_skip);
+    ScopeSkip_push_j3F1UXeO(scope_skip);
     return scope_skip[0] - 2;
 }
 
@@ -13242,7 +15070,7 @@ struct s_Context
 
 #ifndef FU_NO_FDEFs
 
-static fu_STR snippet2cpp(const fu_STR& cpp)
+static fu_STR snippet2cpp_naPRfSop(const fu_STR& cpp)
 {
     /*MOV*/ s_Context ctx = s_Context { s_Module { fu_STR(cpp) } };
 
@@ -13257,7 +15085,7 @@ static fu_STR snippet2cpp(const fu_STR& cpp)
 
 int fu_MAIN()
 {
-    return snippet2cpp("1"_fu).size() - 1;
+    return snippet2cpp_naPRfSop("1"_fu).size() - 1;
 }
 
 #endif
@@ -13326,7 +15154,7 @@ struct s_Context
 
 #ifndef FU_NO_FDEFs
 
-static fu_STR snippet2cpp(const fu_STR& cpp)
+static fu_STR snippet2cpp_naPRfSop(const fu_STR& cpp)
 {
     s_Context ctx = s_Context { fu_VEC<s_Module> { fu::slate<1, s_Module> { s_Module { fu_STR(cpp) } } } };
     for (int i = 0; i < ctx.modules.size(); i++)
@@ -13341,7 +15169,7 @@ static fu_STR snippet2cpp(const fu_STR& cpp)
 
 int fu_MAIN()
 {
-    return snippet2cpp("1"_fu).size() - 1;
+    return snippet2cpp_naPRfSop("1"_fu).size() - 1;
 }
 
 #endif
@@ -13370,31 +15198,31 @@ int main() { return fu_MAIN(); }
 #include <fu/vec/concat.h>
 #include <fu/view.h>
 
-static fu_STR outer(const fu_STR&, fu::view<char>);
+static fu_STR outer_UtpG340j(const fu_STR&, fu::view<char>);
 
 #ifndef FU_NO_FDEFs
 
-static fu_STR inner(const fu_STR& you, fu::view<char> hey)
+static fu_STR inner_BnjbCx49(const fu_STR& you, fu::view<char> hey)
 {
     fu_STR _0 {};
-    return you && (_0 = (hey + you)) ? static_cast<fu_STR&&>(_0) : outer("what#1"_fu, hey);
+    return you && (_0 = (hey + you)) ? static_cast<fu_STR&&>(_0) : outer_UtpG340j("what#1"_fu, hey);
 }
 
-static fu_STR outer(const fu_STR& arg, fu::view<char> hey)
+static fu_STR outer_UtpG340j(const fu_STR& arg, fu::view<char> hey)
 {
     fu_STR _0 {};
-    return (_0 = inner((arg ? (" "_fu + arg) : fu_STR{}), hey)) ? static_cast<fu_STR&&>(_0) : inner("what#2"_fu, hey);
+    return (_0 = inner_BnjbCx49((arg ? (" "_fu + arg) : fu_STR{}), hey)) ? static_cast<fu_STR&&>(_0) : inner_BnjbCx49("what#2"_fu, hey);
 }
 
-static fu_STR test(const fu_STR& x)
+static fu_STR test_naPRfSop(const fu_STR& x)
 {
     fu_STR hey = "hey"_fu;
-    return outer(x, hey);
+    return outer_UtpG340j(x, hey);
 }
 
 int fu_MAIN()
 {
-    return test("you"_fu).size() - 7;
+    return test_naPRfSop("you"_fu).size() - 7;
 }
 
 #endif
@@ -13453,7 +15281,7 @@ struct s_CurrentFn
 
 #ifndef FU_NO_FDEFs
 
-static int hello(const s_CurrentFn& c)
+static int hello_ZQYePgvT(const s_CurrentFn& c)
 {
     const s_Target& a = c.target;
     return a.packed;
@@ -13461,7 +15289,7 @@ static int hello(const s_CurrentFn& c)
 
 int fu_MAIN()
 {
-    return int(hello(s_CurrentFn{}));
+    return int(hello_ZQYePgvT(s_CurrentFn{}));
 }
 
 #endif
@@ -13525,7 +15353,7 @@ struct s_CurrentFn
 
 #ifndef FU_NO_FDEFs
 
-static int hello(const s_CurrentFn& c)
+static int hello_Igerru4f(const s_CurrentFn& c)
 {
     const s_Target& a = c.target;
     return a.packed;
@@ -13533,7 +15361,7 @@ static int hello(const s_CurrentFn& c)
 
 int fu_MAIN()
 {
-    return int(hello(s_CurrentFn{}));
+    return int(hello_Igerru4f(s_CurrentFn{}));
 }
 
 #endif
@@ -13600,21 +15428,21 @@ struct s_Data
 
 #ifndef FU_NO_FDEFs
 
-static const s_Data& Data(const s_ID& nid, fu::view<s_Data> all)
+static const s_Data& Data_0EnDz8Zh(const s_ID& nid, fu::view<s_Data> all)
 {
     return all[nid.offset];
 }
 
-static int test(const s_ID& node, fu::view<s_Data> all)
+static int test_PXTKu1UQ(const s_ID& node, fu::view<s_Data> all)
 {
-    const s_ID& init = Data(node, all).items[0];
-    return Data(init, all).items.size();
+    const s_ID& init = Data_0EnDz8Zh(node, all).items[0];
+    return Data_0EnDz8Zh(init, all).items.size();
 }
 
 int fu_MAIN()
 {
     fu_VEC<s_Data> all = fu_VEC<s_Data> { fu::slate<2, s_Data> { s_Data { fu_VEC<s_ID> { fu::slate<1, s_ID> { s_ID { 1 } } } }, s_Data { fu_VEC<s_ID> { fu::slate<3, s_ID> { s_ID{}, s_ID{}, s_ID{} } } } } };
-    return test(s_ID { 0 }, all) - 3;
+    return test_PXTKu1UQ(s_ID { 0 }, all) - 3;
 }
 
 #endif
@@ -13693,7 +15521,7 @@ TODO: _0.fu @2:9:
 [2m      |         {[0m
 [2m      |             fuzzy: Map(string, string);[0m
 
-	`Map` is not defined in this scope: ``.
+	Bad call to [34;1mMap[0m: [34;1mMap[0m is not defined here.
 
         Solving [35;1mtype[0m [34;1mContext[0m
 
@@ -13739,7 +15567,7 @@ static int& x7Cx3D(s_S& s, const int v, const int w)
     return (s.i |= (v << w));
 }
 
-static void hello(s_S& s, const int w)
+static void hello_ycL5xugz(s_S& s, const int w)
 {
     x7Cx3D(s, 2, w);
 }
@@ -13747,7 +15575,7 @@ static void hello(s_S& s, const int w)
 int fu_MAIN()
 {
     s_S s = s_S { 1 };
-    hello(s, 3);
+    hello_ycL5xugz(s, 3);
     return s.i - 17;
 }
 
@@ -13778,11 +15606,9 @@ int main() { return fu_MAIN(); }
 #include <fu/str.h>
 #include <fu/vec/slice.h>
 
-static fu_STR err(int, int&, int, const fu_STR&);
-
 #ifndef FU_NO_FDEFs
 
-static fu_STR err_str(const int idx1, int& idx, const int end, const fu_STR& src)
+static fu_STR err_str_xgaVcuE6(const int idx1, int& idx, const int end, const fu_STR& src)
 {
     while ((idx < end) && (src[idx] == ' '))
         idx++;
@@ -13790,21 +15616,21 @@ static fu_STR err_str(const int idx1, int& idx, const int end, const fu_STR& src
     return fu::slice(src, idx, idx1);
 }
 
-static fu_STR err(const int idx1_x2, int& idx, const int end, const fu_STR& src)
+static fu_STR err_ohWVVsvS(const int idx1_x2, int& idx, const int end, const fu_STR& src)
 {
-    return err_str((idx1_x2 / 2), idx, end, src);
+    return err_str_xgaVcuE6((idx1_x2 / 2), idx, end, src);
 }
 
-static fu_STR lex(const fu_STR& src)
+static fu_STR lex_naPRfSop(const fu_STR& src)
 {
     const int end = src.size();
     int idx = 0;
-    return err((end * 2), idx, end, src);
+    return err_ohWVVsvS((end * 2), idx, end, src);
 }
 
 int fu_MAIN()
 {
-    return lex("    hello"_fu).size() - 5;
+    return lex_naPRfSop("    hello"_fu).size() - 5;
 }
 
 #endif
@@ -13843,7 +15669,7 @@ TODO: _0.fu @4:36:
 [2m      |         }[0m
 [2m      |         fn main() {[0m
 
-	... invalidated by subsequent write to [35;1mvar[0m [34;1msources[0m upon evaluation of argument [31;1mb[0m (arg #1) at 4:38:
+	... invalidated by subsequent write to [35;1marg[0m [34;1msources[0m upon evaluation of argument [31;1mb[0m (arg #1) at 4:38:
 
 [2m      |         fn test(ref sources: string[]) {[0m
 [2m      |             fn src = sources[sources.len / 2];[0m
@@ -13851,8 +15677,9 @@ TODO: _0.fu @4:36:
 [2m      |         }[0m
 [2m      |         fn main() {[0m
 
-	At call to [34;1msrc[0m
-            via [35;1m__native[0m [34;1m[][0m at 3:29:
+	At call to [34;1msrc_y1jV3SX3[0m
+            via [35;1m__native[0m [34;1m
+.mutref[0m at 3:29:
 
 [2m      | [0m
 [2m      |         fn test(ref sources: string[]) {[0m
@@ -13860,8 +15687,9 @@ TODO: _0.fu @4:36:
 [2m      |             return src[1, src.len] ~ src[0, 1];[0m
 [2m      |         }[0m
 
+            
 
-        Solving [35;1mfn[0m [34;1mtest[0m
+        Solving [35;1mfn[0m [34;1mtest_bGfbmqQp[0m
 
 -----
 
@@ -13919,15 +15747,15 @@ TODO: _0.fu @4:36:
 
 #ifndef FU_NO_FDEFs
 
-                                #ifndef DEFt_x7E_OZkl
-                                #define DEFt_x7E_OZkl
-inline fu_STR x7E_OZkl(fu::view<char> a, fu::view<char> b)
+                                #ifndef DEFt_x7E
+                                #define DEFt_x7E
+inline fu_STR x7E(fu::view<char> a, fu::view<char> b)
 {
     return a + b;
 }
                                 #endif
 
-void ZERO(fu_VEC<fu_STR>&& sources, int& sum)
+void ZERO_NyHalNs1(fu_VEC<fu_STR>&& sources, int& sum)
 {
     for (int i = 0; i < sources.size(); i++)
     {
@@ -13944,20 +15772,20 @@ void ZERO(fu_VEC<fu_STR>&& sources, int& sum)
                 start0--;
 
             fu_STR moduleA = fu::slice(src, 0, start0);
-            fu_STR moduleB = ((x7E_OZkl((fu::get_view(src, start0, start00) + "import _"_fu), fu::i64dec(i)) + ";"_fu) + fu::get_view(src, start1, src.size()));
+            fu_STR moduleB = ((x7E((fu::get_view(src, start0, start00) + "import _"_fu), fu::i64dec(i)) + ";"_fu) + fu::get_view(src, start1, src.size()));
             fu_STR without = (fu::get_view(src, 0, start0) + fu::get_view(src, start1, src.size()));
             sources.mutref(i) = without;
-            ZERO(fu_VEC<fu_STR>(sources), sum);
+            ZERO_NyHalNs1(fu_VEC<fu_STR>(sources), sum);
             sources.mutref(i) = moduleA;
-            sources.insert((i + 1), moduleB);
+            sources.insert((i + 1), fu_STR(moduleB));
         };
         sum += sources[i].size();
     };
 }
 
-                                #ifndef DEFt_split_olrX
-                                #define DEFt_split_olrX
-inline void split_olrX(const fu_STR& str, fu::view<char> sep, int, fu_VEC<fu_STR>& result)
+                                #ifndef DEFt_split_NmVAtoxu
+                                #define DEFt_split_NmVAtoxu
+inline void split_NmVAtoxu(const fu_STR& str, fu::view<char> sep, int, fu_VEC<fu_STR>& result)
 {
     int last = 0;
     int next = 0;
@@ -13969,7 +15797,7 @@ inline void split_olrX(const fu_STR& str, fu::view<char> sep, int, fu_VEC<fu_STR
 
             {
                 fu_STR substr = fu::slice(str, last, next);
-                result += substr;
+                result += fu_STR(substr);
             };
             last = (next + N);
         };
@@ -13977,20 +15805,20 @@ inline void split_olrX(const fu_STR& str, fu::view<char> sep, int, fu_VEC<fu_STR
     if (last)
     {
         fu_STR substr = fu::slice(str, last);
-        result += substr;
+        result += fu_STR(substr);
     }
     else
-        result += str;
+        result += fu_STR(str);
 
 }
                                 #endif
 
-                                #ifndef DEFt_split_OZkl
-                                #define DEFt_split_OZkl
-inline fu_VEC<fu_STR> split_OZkl(const fu_STR& str, fu::view<char> sep)
+                                #ifndef DEFt_split_OZkl8S7R
+                                #define DEFt_split_OZkl8S7R
+inline fu_VEC<fu_STR> split_OZkl8S7R(const fu_STR& str, fu::view<char> sep)
 {
     /*MOV*/ fu_VEC<fu_STR> result {};
-    split_olrX(str, sep, 0, result);
+    split_NmVAtoxu(str, sep, 0, result);
     return /*NRVO*/ result;
 }
                                 #endif
@@ -13998,7 +15826,7 @@ inline fu_VEC<fu_STR> split_OZkl(const fu_STR& str, fu::view<char> sep)
 int fu_MAIN()
 {
     int sum {};
-    ZERO(split_OZkl("AAAA|BB[split/]CC"_fu, "|"_fu), sum);
+    ZERO_NyHalNs1(split_OZkl8S7R("AAAA|BB[split/]CC"_fu, "|"_fu), sum);
     const int expect = ((((((4 + 2) + 2) + 4) + 2) + 2) + 10);
     return sum - expect;
 }
@@ -14059,24 +15887,24 @@ struct s_SolvedNode
 
 #ifndef FU_NO_FDEFs
 
-static int NOT_PREPPED_YET(const int x)
+static int NOT_PREPPED_YET_1hpjcHdP(const int x)
 {
     return x * 2;
 }
 
-static s_SolvedNode SolvedNode(fu::view<char> blah)
+static s_SolvedNode SolvedNode_naPRfSop(fu::view<char> blah)
 {
-    return s_SolvedNode { NOT_PREPPED_YET(blah.size()) };
+    return s_SolvedNode { NOT_PREPPED_YET_1hpjcHdP(blah.size()) };
 }
 
-static int ARG_ANNOT_TRIGGERS_SOLVE(const s_SolvedNode& node)
+static int ARG_ANNOT_TRIGGERS_SOLVE_PXTKu1UQ(const s_SolvedNode& node)
 {
     return node.bli + 2;
 }
 
 int fu_MAIN()
 {
-    return ARG_ANNOT_TRIGGERS_SOLVE(SolvedNode("hello"_fu)) - ((2 * 5) + 2);
+    return ARG_ANNOT_TRIGGERS_SOLVE_PXTKu1UQ(SolvedNode_naPRfSop("hello"_fu)) - ((2 * 5) + 2);
 }
 
 #endif
@@ -14202,22 +16030,22 @@ struct s_Overload
 
 #ifndef FU_NO_FDEFs
 
-static const s_SolvedNodeData& SolvedNodeData(const s_SolvedNode& nid, fu::view<s_Overload> overloads)
+static const s_SolvedNodeData& SolvedNodeData_2J6NHS9d(const s_SolvedNode& nid, fu::view<s_Overload> overloads)
 {
     fu::view<s_SolvedNodeData> nodes = overloads[nid.nodeidx].nodes;
     return nodes[nid.nodeidx];
 }
 
-static const s_Overload& GET(const s_Target& target, fu::view<s_Overload> overloads)
+static const s_Overload& GET_ouQNBJqx(const s_Target& target, fu::view<s_Overload> overloads)
 {
     const s_Overload& o = overloads[target.index];
     return o;
 }
 
-static int test(fu::view<s_Overload> overloads, const s_CurrentFn& _current_fn)
+static int test_OdN7Le8G(fu::view<s_Overload> overloads, const s_CurrentFn& _current_fn)
 {
-    const s_Target& current_fn = SolvedNodeData(_current_fn.out, overloads).target;
-    const s_Overload& debug_2 = (current_fn ? GET(current_fn, overloads) : (*(const s_Overload*)fu::NIL));
+    const s_Target& current_fn = SolvedNodeData_2J6NHS9d(_current_fn.out, overloads).target;
+    const s_Overload& debug_2 = (current_fn ? GET_ouQNBJqx(current_fn, overloads) : (*(const s_Overload*)fu::NIL));
     return debug_2 ? current_fn.index : (*(const int*)fu::NIL);
 }
 
@@ -14225,7 +16053,7 @@ int fu_MAIN()
 {
     const s_CurrentFn _current_fn = s_CurrentFn { s_SolvedNode { 0 } };
     fu_VEC<s_Overload> overloads = fu_VEC<s_Overload> { fu::slate<1, s_Overload> { s_Overload { fu_VEC<s_SolvedNodeData> { fu::slate<1, s_SolvedNodeData> { s_SolvedNodeData { s_Target { 0 } } } } } } };
-    return int(test(overloads, _current_fn));
+    return int(test_OdN7Le8G(overloads, _current_fn));
 }
 
 #endif
@@ -14354,12 +16182,12 @@ struct s_Overload
 
 #ifndef FU_NO_FDEFs
 
-static const s_SolvedNodeData& SolvedNodeData(const s_SolvedNode& nid, fu::view<s_Overload> overloads)
+static const s_SolvedNodeData& SolvedNodeData_2J6NHS9d(const s_SolvedNode& nid, fu::view<s_Overload> overloads)
 {
     return (nid.nodeidx != 303) ? overloads[nid.nodeidx].nodes[nid.nodeidx] : (*(const s_SolvedNodeData*)fu::NIL);
 }
 
-static const s_Overload& GET(const s_Target& target, fu::view<s_Overload> overloads)
+static const s_Overload& GET_ouQNBJqx(const s_Target& target, fu::view<s_Overload> overloads)
 {
     if (target.index != 303)
         return overloads[target.index];
@@ -14367,10 +16195,10 @@ static const s_Overload& GET(const s_Target& target, fu::view<s_Overload> overlo
     return (*(const s_Overload*)fu::NIL);
 }
 
-static int test(fu::view<s_Overload> overloads, const s_CurrentFn& _current_fn)
+static int test_OdN7Le8G(fu::view<s_Overload> overloads, const s_CurrentFn& _current_fn)
 {
-    const s_Target& current_fn = SolvedNodeData(_current_fn.out, overloads).target;
-    const s_Overload& debug_2 = (current_fn ? GET(current_fn, overloads) : (*(const s_Overload*)fu::NIL));
+    const s_Target& current_fn = SolvedNodeData_2J6NHS9d(_current_fn.out, overloads).target;
+    const s_Overload& debug_2 = (current_fn ? GET_ouQNBJqx(current_fn, overloads) : (*(const s_Overload*)fu::NIL));
     return debug_2 ? current_fn.index : (*(const int*)fu::NIL);
 }
 
@@ -14378,7 +16206,7 @@ int fu_MAIN()
 {
     const s_CurrentFn _current_fn = s_CurrentFn { s_SolvedNode { 0 } };
     fu_VEC<s_Overload> overloads = fu_VEC<s_Overload> { fu::slate<1, s_Overload> { s_Overload { fu_VEC<s_SolvedNodeData> { fu::slate<1, s_SolvedNodeData> { s_SolvedNodeData { s_Target { 0 } } } } } } };
-    return int(test(overloads, _current_fn));
+    return int(test_OdN7Le8G(overloads, _current_fn));
 }
 
 #endif
@@ -14450,8 +16278,6 @@ int main() { return fu_MAIN(); }
 
 struct s_Token;
 
-static const s_Token& parse(fu::view<s_Token>);
-
                                 #ifndef DEF_s_Token
                                 #define DEF_s_Token
 struct s_Token
@@ -14472,15 +16298,15 @@ struct s_Token
 
 #ifndef FU_NO_FDEFs
 
-                                #ifndef DEFt_x7E_OZkl
-                                #define DEFt_x7E_OZkl
-inline fu_STR x7E_OZkl(fu::view<char> a, fu::view<char> b)
+                                #ifndef DEFt_x7E
+                                #define DEFt_x7E
+inline fu_STR x7E(fu::view<char> a, fu::view<char> b)
 {
     return a + b;
 }
                                 #endif
 
-[[noreturn]] static fu::never fail(fu_STR&& reason, fu::view<s_Token> tokens, const int _loc, const int _idx)
+[[noreturn]] static fu::never fail_UHgn8j0k(fu_STR&& reason, fu::view<s_Token> tokens, const int _loc, const int _idx)
 {
     const s_Token& loc = tokens[_loc];
     const s_Token& here = tokens[_idx];
@@ -14491,11 +16317,11 @@ inline fu_STR x7E_OZkl(fu::view<char> a, fu::view<char> b)
     const int c0 = loc.col;
     const int l1 = here.line;
     const int c1 = here.col;
-    fu_STR addr = ((l1 == l0) ? x7E_OZkl((x7E_OZkl("@"_fu, fu::i64dec(l1)) + ":"_fu), fu::i64dec(c1)) : x7E_OZkl((x7E_OZkl((x7E_OZkl((x7E_OZkl("@"_fu, fu::i64dec(l0)) + ":"_fu), fu::i64dec(c0)) + ".."_fu), fu::i64dec(l1)) + ":"_fu), fu::i64dec(c1)));
+    fu_STR addr = ((l1 == l0) ? x7E((x7E("@"_fu, fu::i64dec(l1)) + ":"_fu), fu::i64dec(c1)) : x7E((x7E((x7E((x7E("@"_fu, fu::i64dec(l0)) + ":"_fu), fu::i64dec(c0)) + ".."_fu), fu::i64dec(l1)) + ":"_fu), fu::i64dec(c1)));
     fu::fail(((addr + ":\n\t"_fu) + reason));
 }
 
-static const s_Token& consume(fu::view<char> value, const fu_STR& err, fu::view<s_Token> tokens, int& _idx, const int _loc)
+static const s_Token& consume_juGZtWQE(fu::view<char> value, const fu_STR& err, fu::view<s_Token> tokens, int& _idx, const int _loc)
 {
     const s_Token& token = tokens[_idx];
     if (token.value == value)
@@ -14503,26 +16329,26 @@ static const s_Token& consume(fu::view<char> value, const fu_STR& err, fu::view<
         _idx++;
         return token;
     };
-    fail(((((((err ? fu_STR(err) : "Expected"_fu) + " '"_fu) + value) + "', got '"_fu) + token.value) + "'."_fu), tokens, _loc, _idx);
+    fail_UHgn8j0k(((((((err ? fu_STR(err) : "Expected"_fu) + " '"_fu) + value) + "', got '"_fu) + token.value) + "'."_fu), tokens, _loc, _idx);
 }
 
-static const s_Token& parseRoot(fu::view<s_Token> tokens, int& _idx, int& _loc)
+static const s_Token& parseRoot_YRVICTlM(fu::view<s_Token> tokens, int& _idx, int& _loc)
 {
-    const s_Token& ret = consume("sof"_fu, (*(const fu_STR*)fu::NIL), tokens, _idx, _loc);
+    const s_Token& ret = consume_juGZtWQE("sof"_fu, (*(const fu_STR*)fu::NIL), tokens, _idx, _loc);
     _loc = _idx;
     return ret;
 }
 
-static const s_Token& parse(fu::view<s_Token> tokens)
+static const s_Token& parse_C7jasMbI(fu::view<s_Token> tokens)
 {
     int _idx = 0;
     int _loc = 0;
-    return parseRoot(tokens, _idx, _loc);
+    return parseRoot_YRVICTlM(tokens, _idx, _loc);
 }
 
 int fu_MAIN()
 {
-    return parse((fu::slate<1, s_Token> { s_Token { 1, 1, "sof"_fu } })).value.size() - 3;
+    return parse_C7jasMbI((fu::slate<1, s_Token> { s_Token { 1, 1, "sof"_fu } })).value.size() - 3;
 }
 
 #endif
@@ -14555,17 +16381,17 @@ int main() { return fu_MAIN(); }
 
 #ifndef FU_NO_FDEFs
 
-static int CallerNode(/*MOV*/ const int t, fu::view<int> arr)
+static int CallerNode_d0bxMh94(/*MOV*/ const int t, fu::view<int> arr)
 {
     for (int i = 0; i < arr.size(); i++)
-        return CallerNode(int(arr[i]), fu::view<int>{});
+        return CallerNode_d0bxMh94(int(arr[i]), fu::view<int>{});
 
     return int(t);
 }
 
 int fu_MAIN()
 {
-    return CallerNode(0, fu::view<int>{});
+    return CallerNode_d0bxMh94(0, fu::view<int>{});
 }
 
 #endif
@@ -14661,7 +16487,7 @@ struct s_SolvedNode
 
 #ifndef FU_NO_FDEFs
 
-static s_SolvedNode CallerNode(s_Target&& target, fu_VEC<s_SolvedNode>&& args, const fu_VEC<int>& reorder, fu::view<fu_VEC<s_Target>> conversions)
+static s_SolvedNode CallerNode_YRwzuqSS(s_Target&& target, fu_VEC<s_SolvedNode>&& args, const fu_VEC<int>& reorder, fu::view<fu_VEC<s_Target>> conversions)
 {
     if (reorder)
     {
@@ -14680,7 +16506,7 @@ static s_SolvedNode CallerNode(s_Target&& target, fu_VEC<s_SolvedNode>&& args, c
     {
         fu::view<s_Target> conversion = conversions[argIdx];
         for (int i = 0; i < conversion.size(); i++)
-            args.mutref(argIdx) = CallerNode(s_Target(conversion[i]), fu_VEC<s_SolvedNode>{}, (*(const fu_VEC<int>*)fu::NIL), fu::view<fu_VEC<s_Target>>{});
+            args.mutref(argIdx) = CallerNode_YRwzuqSS(s_Target(conversion[i]), fu_VEC<s_SolvedNode>{}, (*(const fu_VEC<int>*)fu::NIL), fu::view<fu_VEC<s_Target>>{});
 
     };
     return s_SolvedNode { s_Target(target), fu_VEC<s_SolvedNode>(args) };
@@ -14688,7 +16514,7 @@ static s_SolvedNode CallerNode(s_Target&& target, fu_VEC<s_SolvedNode>&& args, c
 
 int fu_MAIN()
 {
-    return CallerNode(s_Target { 0 }, fu_VEC<s_SolvedNode>{}, (*(const fu_VEC<int>*)fu::NIL), fu::view<fu_VEC<s_Target>>{}).target.index;
+    return CallerNode_YRwzuqSS(s_Target { 0 }, fu_VEC<s_SolvedNode>{}, (*(const fu_VEC<int>*)fu::NIL), fu::view<fu_VEC<s_Target>>{}).target.index;
 }
 
 #endif
@@ -14713,43 +16539,124 @@ int main() { return fu_MAIN(); }
         fn main() qSTACK(2).len - 2 - 4 - 8 - 2;
 
 -----
-TODO: _0.fu @5:44:
 
-[2m      |             let rec = x & 1 && "rec ";[0m
-[2m      |             let via = !rec && qSTACK(x / 2);[0m
-    5 |             return "\n" ~ rec ~ "at #" ~ x [31;1m~[0m via;
-[2m      |         }[0m
-[2m      | [0m
+#include <fu/decstr.h>
+#include <fu/str.h>
+#include <fu/vec/concat.h>
+#include <fu/view.h>
 
-	`~` bad args, available overloads:
-		`~(
-	[34;1ma[0m: $,
-	[34;1mb[0m: []+2byte: copy resize)`
-		`~(
-	[34;1ma[0m: []+2byte: copy resize,
-	[34;1mb[0m: $)`
-		`
-<fu/vec/concat_one.h>
-+(
-	[34;1ma[0m: $,
-	[34;1mb[0m: $)`
-		`
-<fu/vec/concat_one.h>
-+(
-	[34;1ma[0m: $,
-	[34;1mb[0m: $)`
-		`
-<fu/vec/concat.h>
-+(
-	[34;1ma[0m: $,
-	[34;1mb[0m: $)`
-		`~(
-	[34;1ma[0m: $)`
-Actual: (
-	[]+2byte: copy resize,
-	bool: copy).
+#ifndef FU_NO_FDEFs
 
-        Solving [35;1mfn[0m [34;1mqSTACK[0m
+                                #ifndef DEFt_x7E
+                                #define DEFt_x7E
+inline fu_STR x7E(fu::view<char> a, fu::view<char> b)
+{
+    return a + b;
+}
+                                #endif
+
+static fu_STR qSTACK_1hpjcHdP(const int x)
+{
+    fu_STR rec = ((x & 1) ? "rec "_fu : fu_STR{});
+    fu_STR via = (!rec ? qSTACK_1hpjcHdP((x / 2)) : fu_STR{});
+    return x7E((("\n"_fu + rec) + "at #"_fu), fu::i64dec(x)) + via;
+}
+
+int fu_MAIN()
+{
+    return (((qSTACK_1hpjcHdP(2).size() - 2) - 4) - 8) - 2;
+}
+
+#endif
+
+
+int main() { return fu_MAIN(); }
+// FN_recursion
+// FN_resolve
+
+-----
+
+        fn path_relative(from: string, to: string): string {
+            let min = from.len < to.len ? from.len : to.len;
+
+            mut same = 0;
+            for (mut i = 0; i < min; i++) {
+                let a = from[i];
+                let b = to[i];
+
+                if (b != a)
+                    break;
+
+                if (b == '/')
+                    same = i + 1;
+            }
+
+            mut res: string;
+            for (mut i = same; i < from.len; i++)
+                if (from[i] == '/')
+                    res ~= "../";
+
+            res ~= to.slice(same);
+            return res;
+        }
+
+        fn main() {
+            let from    = "/a/b/c";
+            let to      = "/a/e/f";
+            let rel     = path_relative(:from, :to);
+
+            return rel == "../e/f" ? 0 : 1;
+        }
+
+-----
+
+#include <fu/str.h>
+#include <fu/vec/cmp.h>
+#include <fu/vec/concat.h>
+#include <fu/vec/slice.h>
+#include <fu/view.h>
+
+#ifndef FU_NO_FDEFs
+
+static fu_STR path_relative_fhJuvQpZ(fu::view<char> from, const fu_STR& to)
+{
+    const int min = ((from.size() < to.size()) ? from.size() : to.size());
+    int same = 0;
+    for (int i = 0; i < min; i++)
+    {
+        const char a = from[i];
+        const char b = to[i];
+        if (b != a)
+            break;
+
+        if (b == '/')
+            same = (i + 1);
+
+    };
+    /*MOV*/ fu_STR res {};
+    for (int i_1 = same; i_1 < from.size(); i_1++)
+    {
+        if (from[i_1] == '/')
+            res += "../"_fu;
+
+    };
+    res += fu::slice(to, same);
+    return /*NRVO*/ res;
+}
+
+int fu_MAIN()
+{
+    fu_STR from = "/a/b/c"_fu;
+    fu_STR to = "/a/e/f"_fu;
+    fu_STR rel = path_relative_fhJuvQpZ(from, to);
+    return ((rel == "../e/f"_fu) ? 0 : 1);
+}
+
+#endif
+
+
+int main() { return fu_MAIN(); }
+// RELAX_respec
 
 -----
 
@@ -14916,7 +16823,7 @@ struct s_Token
 
 #ifndef FU_NO_FDEFs
 
-static s_Token consume()
+static s_Token consume_H9fhQUVP()
 {
     return s_Token { "hey"_fu };
 }
@@ -14924,7 +16831,7 @@ static s_Token consume()
 int fu_MAIN()
 {
     const int a = 3;
-    fu_STR v = (a ? consume().value : fu_STR{});
+    fu_STR v = (a ? consume_H9fhQUVP().value : fu_STR{});
     return v.size() - a;
 }
 
@@ -14936,11 +16843,8 @@ int main() { return fu_MAIN(); }
 -----
 
         struct ScopeIdx { raw: i32; };
-        //*F
-        fn thing(x: i32) x;
-        /*/
-        fn thing(x: i32) ScopeIdx(x);
-        //*/
+
+        fn thing(x: i32) x;             
         mut _return_scope: ScopeIdx;
 
         fn hey(x: i32) {
@@ -14952,33 +16856,26 @@ int main() { return fu_MAIN(); }
         return hey(0);
 
 -----
-_0.fu @15:27:
+_0.fu @12:27:
 
 [2m      |         fn hey(x: i32) {[0m
 [2m      |             let scope0 = thing(x);[0m
-   15 |             _return_scope [31;1m=[0m scope0; //overload
+   12 |             _return_scope [31;1m=[0m scope0; //overload
 [2m      |             return _return_scope.raw;[0m
 [2m      |         }[0m
 
-	`=` bad args.
-Expect: `=(
-	[34;1ma[0m: $,
-	[34;1mb[0m: $)`
-Actual: (
-	_0::ScopeIdx: mutref copy,
-	i32: copy).
+	Bad call to [34;1m=[0m: 
 
-        Solving [35;1mfn[0m [34;1mhey[0m
+	[35;1mtemplate[0m [34;1m=[0m: Could not specialize [TODO doTrySpec ERROR]
+
+        Solving [35;1mfn[0m [34;1mhey_3IEr0IhH[0m
                 [35;1mfn[0m [34;1mmain[0m
 
 -----
 
         struct ScopeIdx { raw: i32; };
-        /*
-        fn thing(x: i32) x;
-        /*/
-        fn thing(x: i32) ScopeIdx(x);
-        //*/
+
+        fn thing(x: i32) ScopeIdx(x);   
         mut _return_scope: ScopeIdx;
 
         fn hey(x: i32) {
@@ -15009,14 +16906,14 @@ struct s_ScopeIdx
 
 #ifndef FU_NO_FDEFs
 
-static s_ScopeIdx thing(const int x)
+static s_ScopeIdx thing_3AoyBXRR(const int x)
 {
     return s_ScopeIdx { int(x) };
 }
 
-static int& hey(const int x, s_ScopeIdx& _return_scope)
+static int& hey_3IEr0IhH(const int x, s_ScopeIdx& _return_scope)
 {
-    const s_ScopeIdx scope0 = thing(x);
+    const s_ScopeIdx scope0 = thing_3AoyBXRR(x);
     _return_scope = scope0;
     return _return_scope.raw;
 }
@@ -15024,7 +16921,7 @@ static int& hey(const int x, s_ScopeIdx& _return_scope)
 int fu_MAIN()
 {
     /*MOV*/ s_ScopeIdx _return_scope {};
-    return int(hey(0, _return_scope));
+    return int(hey_3IEr0IhH(0, _return_scope));
 }
 
 #endif
@@ -15057,7 +16954,7 @@ int main() { return fu_MAIN(); }
 
 #ifndef FU_NO_FDEFs
 
-static fu_VEC<fu_STR> maybe_empty(const int N)
+static fu_VEC<fu_STR> maybe_empty_1hpjcHdP(const int N)
 {
     /*MOV*/ fu_VEC<fu_STR> res {};
     for (int i = 0; i < N; i++)
@@ -15066,9 +16963,9 @@ static fu_VEC<fu_STR> maybe_empty(const int N)
     return /*NRVO*/ res;
 }
 
-                                #ifndef DEFt_join_9sek
-                                #define DEFt_join_9sek
-inline fu_STR join_9sek(fu::view<fu_STR> a, fu::view<char> sep)
+                                #ifndef DEFt_join_9sek5qv2
+                                #define DEFt_join_9sek5qv2
+inline fu_STR join_9sek5qv2(fu::view<fu_STR> a, fu::view<char> sep)
 {
     if (a.size() < 2)
         return fu_STR((a.size() ? a[0] : (*(const fu_STR*)fu::NIL)));
@@ -15098,9 +16995,9 @@ int fu_MAIN()
 {
     fu_VEC<fu_STR> arr = fu_VEC<fu_STR> { fu::slate<1, fu_STR> { "Hello"_fu } };
     for (int i = 0; i < 2; i++)
-        arr += maybe_empty(i);
+        arr += maybe_empty_1hpjcHdP(i);
 
-    return ((join_9sek(arr, " "_fu) == "Hello world!"_fu) ? 0 : 1);
+    return ((join_9sek5qv2(arr, " "_fu) == "Hello world!"_fu) ? 0 : 1);
 }
 
 #endif
@@ -15136,7 +17033,7 @@ int main() { return fu_MAIN(); }
 
 #ifndef FU_NO_FDEFs
 
-static fu_VEC<fu_STR> maybe_empty(const int N)
+static fu_VEC<fu_STR> maybe_empty_1hpjcHdP(const int N)
 {
     /*MOV*/ fu_VEC<fu_STR> res {};
     for (int i = 0; i < N; i++)
@@ -15145,9 +17042,9 @@ static fu_VEC<fu_STR> maybe_empty(const int N)
     return /*NRVO*/ res;
 }
 
-                                #ifndef DEFt_join_9sek
-                                #define DEFt_join_9sek
-inline fu_STR join_9sek(fu::view<fu_STR> a, fu::view<char> sep)
+                                #ifndef DEFt_join_9sek5qv2
+                                #define DEFt_join_9sek5qv2
+inline fu_STR join_9sek5qv2(fu::view<fu_STR> a, fu::view<char> sep)
 {
     if (a.size() < 2)
         return fu_STR((a.size() ? a[0] : (*(const fu_STR*)fu::NIL)));
@@ -15177,9 +17074,9 @@ int fu_MAIN()
 {
     fu_VEC<fu_STR> arr = fu_VEC<fu_STR> { fu::slate<1, fu_STR> { "Hello"_fu } };
     for (int i = 0; i < 2; i++)
-        arr += maybe_empty(i);
+        arr += maybe_empty_1hpjcHdP(i);
 
-    return ((join_9sek(arr, " "_fu) == "Hello world!"_fu) ? 0 : 1);
+    return ((join_9sek5qv2(arr, " "_fu) == "Hello world!"_fu) ? 0 : 1);
 }
 
 #endif
@@ -15213,25 +17110,25 @@ int main() { return fu_MAIN(); }
 
 #ifndef FU_NO_FDEFs
 
-                                #ifndef DEFt_x7Ex3D_BWdE
-                                #define DEFt_x7Ex3D_BWdE
-inline fu_STR& x7Ex3D_BWdE(fu_STR& a, fu::view<char> b)
+                                #ifndef DEFt_x7Ex3D
+                                #define DEFt_x7Ex3D
+inline fu_STR& x7Ex3D(fu_STR& a, fu::view<char> b)
 {
     return (a += b);
 }
                                 #endif
 
-static fu_STR fail(/*MOV*/ fu_STR&& reason, fu::view<char> _info)
+static fu_STR fail_JO4sXOPn(/*MOV*/ fu_STR&& reason, fu::view<char> _info)
 {
     const char info = _info[0];
-    x7Ex3D_BWdE(reason, fu::i64dec((info ? int(fu::u8(info)) : int{})));
+    x7Ex3D(reason, fu::i64dec((info ? int(fu::u8(info)) : int{})));
     return static_cast<fu_STR&&>(reason);
 }
 
 int fu_MAIN()
 {
     fu_STR _info = "abc"_fu;
-    return fail(fu_STR{}, _info).size() - 2;
+    return fail_JO4sXOPn(fu_STR{}, _info).size() - 2;
 }
 
 #endif
@@ -15260,7 +17157,7 @@ inline constexpr int q_mutref = 1;
 extern const int RELAX_mutref_only = q_mutref;
                                 #endif
 
-int what(const int relax_mask)
+int what_1hpjcHdP(const int relax_mask)
 {
     return relax_mask - 1;
 }
@@ -15278,7 +17175,7 @@ int what(const int relax_mask)
 
 -----
 
-int what(int);
+int what_1hpjcHdP(int);
 
 #ifndef FU_NO_FDEFs
 
@@ -15289,7 +17186,7 @@ extern const int RELAX_mutref_only;
 
 int fu_MAIN()
 {
-    return what(RELAX_mutref_only);
+    return what_1hpjcHdP(RELAX_mutref_only);
 }
 
 #endif
@@ -15325,7 +17222,7 @@ TODO: _0.fu @10:13:
 [2m      |             map[1] = 2;[0m
 [2m      |             map[3] = 4;[0m
 
-	`Map` is not defined in this scope: `main`.
+	Bad call to [34;1mMap[0m: [34;1mMap[0m is not defined here.
 
         Solving [35;1mfn[0m [34;1mmain[0m
 
@@ -15363,6 +17260,7 @@ int fu_MAIN()
 
 
 int main() { return fu_MAIN(); }
+// DEAD_code
 
 -----
 
@@ -15388,9 +17286,10 @@ int main() { return fu_MAIN(); }
                 return test(2);
             }
             catch (e) {
-                return e == "x=2: even!"
-                     ? 0
-                     : 10;
+
+                shadow let e = "hello " ~ e;
+                return e == "hello x=2: even!" ? 0 : 10;
+
             }
         }
 
@@ -15405,29 +17304,29 @@ int main() { return fu_MAIN(); }
 
 #ifndef FU_NO_FDEFs
 
-                                #ifndef DEFt_x7E_OZkl
-                                #define DEFt_x7E_OZkl
-inline fu_STR x7E_OZkl(fu::view<char> a, fu::view<char> b)
+                                #ifndef DEFt_x7E
+                                #define DEFt_x7E
+inline fu_STR x7E(fu::view<char> a, fu::view<char> b)
 {
     return a + b;
 }
                                 #endif
 
-[[noreturn]] static fu::never fail(fu::view<char> str)
+[[noreturn]] static fu::never fail_naPRfSop(fu::view<char> str)
 {
     fu::fail((str + "!"_fu));
 }
 
-static int test(const int x)
+static int test_1hpjcHdP(const int x)
 {
     int _0 {};
-    fu::never _1 {};
+    fu::never BL_1_v {};
     return (_0 = (x & 1)) ? _0 : (__extension__ (
     {
         fu_STR str = "even"_fu;
-        str = ((x7E_OZkl("x="_fu, fu::i64dec(x)) + ": "_fu) + str);
-        fail(str);
-    (void)0;}), static_cast<fu::never&&>(_1));
+        str = ((x7E("x="_fu, fu::i64dec(x)) + ": "_fu) + str);
+        fail_naPRfSop(str);
+    (void)0;}), static_cast<fu::never&&>(BL_1_v));
 }
 
 int fu_MAIN()
@@ -15435,7 +17334,98 @@ int fu_MAIN()
 
     try
     {
-        return test(2);
+        return test_1hpjcHdP(2);
+    }
+    catch (const std::exception& o_0)
+    {
+        fu_STR e = fu_TO_STR(o_0.what());
+
+    {
+        fu_STR e_1 = ("hello "_fu + e);
+        return ((e_1 == "hello x=2: even!"_fu) ? 0 : 10);
+    }
+    }
+;
+}
+
+#endif
+
+
+int main() { return fu_MAIN(); }
+// DEAD_code
+
+-----
+
+        fn fail(str: string)
+            throw(str ~ "!");
+
+        fn test(x: i32)
+        {
+            // We want to override fail but
+            //  we want to call it within the override,
+            //   so we can do this i guess?
+            //
+            shadow let fail = |mut str: string| {
+                str = "x=" ~ x ~ ": " ~ str;
+                fail(str);
+            };
+
+            return x & 1 || fail("even");
+        }
+
+        fn main() {
+            try {
+                return test(2);
+            }
+            catch (e) {
+
+                return e == "x=2: even!" ? 0 : 10;
+
+            }
+        }
+
+-----
+
+#include <fu/decstr.h>
+#include <fu/never.h>
+#include <fu/str.h>
+#include <fu/vec/cmp.h>
+#include <fu/vec/concat.h>
+#include <fu/view.h>
+
+#ifndef FU_NO_FDEFs
+
+                                #ifndef DEFt_x7E
+                                #define DEFt_x7E
+inline fu_STR x7E(fu::view<char> a, fu::view<char> b)
+{
+    return a + b;
+}
+                                #endif
+
+[[noreturn]] static fu::never fail_naPRfSop(fu::view<char> str)
+{
+    fu::fail((str + "!"_fu));
+}
+
+static int test_1hpjcHdP(const int x)
+{
+    int _0 {};
+    fu::never BL_1_v {};
+    return (_0 = (x & 1)) ? _0 : (__extension__ (
+    {
+        fu_STR str = "even"_fu;
+        str = ((x7E("x="_fu, fu::i64dec(x)) + ": "_fu) + str);
+        fail_naPRfSop(str);
+    (void)0;}), static_cast<fu::never&&>(BL_1_v));
+}
+
+int fu_MAIN()
+{
+
+    try
+    {
+        return test_1hpjcHdP(2);
     }
     catch (const std::exception& o_0)
     {
@@ -15450,6 +17440,7 @@ int fu_MAIN()
 
 
 int main() { return fu_MAIN(); }
+// DEAD_code
 
 -----
 
@@ -15473,12 +17464,12 @@ int main() { return fu_MAIN(); }
 
 #ifndef FU_NO_FDEFs
 
-inline static int& ARR_LAST_dkLb(fu_VEC<int>& a)
+inline static int& ARR_LAST_j3F1UXeO(fu_VEC<int>& a)
 {
     return a.mutref((a.size() - 1));
 }
 
-inline static int ARR_LAST_xQkU(fu::view<int> a)
+inline static int ARR_LAST_ZvOm7cyv(fu::view<int> a)
 {
     return a[(a.size() - 1)];
 }
@@ -15487,8 +17478,8 @@ int fu_MAIN()
 {
     fu_VEC<int> a = fu_VEC<int> { fu::slate<1, int> { 1 } };
     fu_VEC<int> b = fu_VEC<int> { fu::slate<1, int> { 2 } };
-    ARR_LAST_dkLb(b) += ARR_LAST_xQkU(a);
-    return ARR_LAST_dkLb(b) - 3;
+    ARR_LAST_j3F1UXeO(b) += ARR_LAST_ZvOm7cyv(a);
+    return ARR_LAST_j3F1UXeO(b) - 3;
 }
 
 #endif
@@ -15516,12 +17507,12 @@ int main() { return fu_MAIN(); }
 
 #ifndef FU_NO_FDEFs
 
-inline static int& ARR_LAST_dkLb(fu_VEC<int>& a)
+inline static int& ARR_LAST_xeB4cVjo(fu_VEC<int>& a)
 {
     return a.mutref((a.size() - 1));
 }
 
-inline static int ARR_LAST_xQkU(fu::view<int> a)
+inline static int ARR_LAST_zh6Dgc6Q(fu::view<int> a)
 {
     return a[(a.size() - 1)];
 }
@@ -15530,8 +17521,8 @@ int fu_MAIN()
 {
     fu_VEC<int> a = fu_VEC<int> { fu::slate<1, int> { 1 } };
     fu_VEC<int> b = fu_VEC<int> { fu::slate<1, int> { 2 } };
-    ARR_LAST_dkLb(b) += ARR_LAST_xQkU(a);
-    return ARR_LAST_dkLb(b) - 3;
+    ARR_LAST_xeB4cVjo(b) += ARR_LAST_zh6Dgc6Q(a);
+    return ARR_LAST_xeB4cVjo(b) - 3;
 }
 
 #endif
@@ -15566,14 +17557,14 @@ struct s_S
 
 #ifndef FU_NO_FDEFs
 
-static int test(/*MOV*/ s_S&& x)
+static int test_e7zqBAFR(/*MOV*/ s_S&& x)
 {
     return int((x.i += 1));
 }
 
 int fu_MAIN()
 {
-    return test(s_S { -1 });
+    return test_e7zqBAFR(s_S { -1 });
 }
 
 #endif
@@ -15599,12 +17590,12 @@ int main() { return fu_MAIN(); }
 
 #ifndef FU_NO_FDEFs
 
-inline static int& ARR_LAST_dkLb(fu_VEC<int>& a)
+inline static int& ARR_LAST_xeB4cVjo(fu_VEC<int>& a)
 {
     return a.mutref((a.size() - 1));
 }
 
-inline static int ARR_LAST_xQkU(fu::view<int> a)
+inline static int ARR_LAST_zh6Dgc6Q(fu::view<int> a)
 {
     return a[(a.size() - 1)];
 }
@@ -15613,8 +17604,8 @@ int fu_MAIN()
 {
     fu_VEC<int> a = fu_VEC<int> { fu::slate<1, int> { 1 } };
     fu_VEC<int> b = fu_VEC<int> { fu::slate<1, int> { 2 } };
-    ARR_LAST_dkLb(b) += ARR_LAST_xQkU(a);
-    return ARR_LAST_dkLb(b) - ARR_LAST_xQkU((fu::slate<1, int> { 3 }));
+    ARR_LAST_xeB4cVjo(b) += ARR_LAST_zh6Dgc6Q(a);
+    return ARR_LAST_xeB4cVjo(b) - ARR_LAST_zh6Dgc6Q((fu::slate<1, int> { 3 }));
 }
 
 #endif
@@ -15675,7 +17666,7 @@ struct s_RenderFrame
 
 #ifndef FU_NO_FDEFs
 
-static void test(s_RenderFrame& output)
+static void test_S7VvsIqD(s_RenderFrame& output)
 {
     output.u_mat4_VP = s_mat4 { 1 };
 }
@@ -15683,7 +17674,7 @@ static void test(s_RenderFrame& output)
 int fu_MAIN()
 {
     s_RenderFrame ret {};
-    test(ret);
+    test_S7VvsIqD(ret);
     return ret.u_mat4_VP.i - 1;
 }
 
@@ -15703,29 +17694,22 @@ int main() { return fu_MAIN(); }
             skip.end - skip.start;
 
         pub fn main()
-            //*F
-            ScopeSkip(min: -1, max: +1)
-            /*/
-            ScopeSkip(start: -1, end: +1)
-            //*/
+
+            ScopeSkip(min: -1, max: +1)     
                 .end - 1;
 
 -----
 _0.fu @12:22:
 
 [2m      |         pub fn main()[0m
-[2m      |             //*F[0m
-   12 |             ScopeSkip[31;1m([0mmin: -1, max: +1)
-[2m      |             /*/[0m
-[2m      |             ScopeSkip(start: -1, end: +1)[0m
+[2m      | [0m
+   12 |             ScopeSkip[31;1m([0mmin: -1, max: +1)     
+[2m      |                 .end - 1;[0m
+[2m      | [0m
 
-	`ScopeSkip` bad args.
-Expect: `ScopeSkip(
-	[34;1mstart[0m: i32: copy,
-	[34;1mend[0m: i32: copy)`
-Actual: (
-	min: i32: copy,
-	max: i32: copy).
+	Bad call to [34;1mScopeSkip[0m: 
+
+	[35;1mtype[0m [34;1mScopeSkip[0m: Argument name mismatch [TODO REPORT]
 
         Solving [35;1mfn[0m [34;1mmain[0m
 
@@ -15740,11 +17724,8 @@ Actual: (
             skip.end - skip.start;
 
         pub fn main()
-            /*
-            ScopeSkip(min: -1, max: +1)
-            /*/
-            ScopeSkip(start: -1, end: +1)
-            //*/
+
+            ScopeSkip(start: -1, end: +1)   
                 .end - 1;
 
 -----
@@ -15769,7 +17750,7 @@ struct s_ScopeSkip
 
 #ifndef FU_NO_FDEFs
 
-int search(const s_ScopeSkip& skip)
+int search_PXTKu1UQ(const s_ScopeSkip& skip)
 {
     return skip.end - skip.start;
 }
@@ -15891,7 +17872,7 @@ struct s_mat34
 
 #ifndef FU_NO_FDEFs
 
-static s_mat34 inverse(const s_mat34& mat)
+static s_mat34 inverse_ZQYePgvT(const s_mat34& mat)
 {
     const float idet = (1.0f / (((((((-mat.mz.x * mat.my.y) * mat.mx.z) + ((mat.my.x * mat.mz.y) * mat.mx.z)) + ((mat.mz.x * mat.mx.y) * mat.my.z)) - ((mat.mx.x * mat.mz.y) * mat.my.z)) - ((mat.my.x * mat.mx.y) * mat.mz.z)) + ((mat.mx.x * mat.my.y) * mat.mz.z)));
     const s_vec3 i_mx = s_vec3 { (idet * ((-mat.mz.y * mat.my.z) + (mat.my.y * mat.mz.z))), (idet * ((+mat.mz.y * mat.mx.z) - (mat.mx.y * mat.mz.z))), (idet * ((-mat.my.y * mat.mx.z) + (mat.mx.y * mat.my.z))) };
@@ -15902,12 +17883,12 @@ static s_mat34 inverse(const s_mat34& mat)
 
 int fu_MAIN()
 {
-    float _0 {};
+    float BL_1_v {};
     return int(((__extension__ (
     {
-        const s_mat34 _ = inverse(s_mat34 { s_vec3 { 1.0f, 0.0f, 0.0f }, s_vec3 { 0.0f, 1.0f, 0.0f }, s_vec3 { 0.0f, 0.0f, 1.0f }, s_vec3{} });
-        _0 = ((((((((-_.mz.x * _.my.y) * _.mx.z) + ((_.my.x * _.mz.y) * _.mx.z)) + ((_.mz.x * _.mx.y) * _.my.z)) - ((_.mx.x * _.mz.y) * _.my.z)) - ((_.my.x * _.mx.y) * _.mz.z)) + ((_.mx.x * _.my.y) * _.mz.z)));
-    (void)0;}), float(_0)) - 1.0f));
+        const s_mat34 _ = inverse_ZQYePgvT(s_mat34 { s_vec3 { 1.0f, 0.0f, 0.0f }, s_vec3 { 0.0f, 1.0f, 0.0f }, s_vec3 { 0.0f, 0.0f, 1.0f }, s_vec3{} });
+        BL_1_v = ((((((((-_.mz.x * _.my.y) * _.mx.z) + ((_.my.x * _.mz.y) * _.mx.z)) + ((_.mz.x * _.mx.y) * _.my.z)) - ((_.mx.x * _.mz.y) * _.my.z)) - ((_.my.x * _.mx.y) * _.mz.z)) + ((_.mx.x * _.my.y) * _.mz.z)));
+    (void)0;}), float(BL_1_v)) - 1.0f));
 }
 
 #endif
@@ -15976,12 +17957,15 @@ int fu_MAIN()
 
     {
         unsigned sum {};
-        const unsigned delta = 0x9e3779b9u;
-        for (int i = 0; i < 4; i++)
+
         {
-            sum += delta;
-            tea.v0 += ((((tea.v1 << 4u) + 0xa341316cu) ^ (tea.v1 + sum)) ^ ((tea.v1 >> 5u) + 0xc8013ea4u));
-            tea.v1 += ((((tea.v0 << 4u) + 0xad90777du) ^ (tea.v0 + sum)) ^ ((tea.v0 >> 5u) + 0x7e95761eu));
+            const unsigned delta = 0x9e3779b9u;
+            for (int i = 0; i < 4; i++)
+            {
+                sum += delta;
+                tea.v0 += ((((tea.v1 << 4u) + 0xa341316cu) ^ (tea.v1 + sum)) ^ ((tea.v1 >> 5u) + 0xc8013ea4u));
+                tea.v1 += ((((tea.v0 << 4u) + 0xad90777du) ^ (tea.v0 + sum)) ^ ((tea.v0 >> 5u) + 0x7e95761eu));
+            };
         };
     };
     return int((tea.v0 ^ tea.v0));
@@ -16015,13 +17999,9 @@ TODO: _0.fu @9:41:
 [2m      |             mut t: ScopeSkip; t = x.min && [ x.min, a ];[0m
 [2m      |             return a + t.min + t.max;[0m
 
-	`=` bad args.
-Expect: `=(
-	[34;1ma[0m: $,
-	[34;1mb[0m: $)`
-Actual: (
-	_0::ScopeSkip: mutref copy,
-	[]+2i32: copy resize).
+	Bad call to [34;1m=[0m: 
+
+	[35;1mtemplate[0m [34;1m=[0m: Could not specialize [TODO doTrySpec ERROR]
 
         Solving [35;1mfn[0m [34;1mmain[0m
 
@@ -16068,53 +18048,53 @@ struct s_X
 
 #ifndef FU_NO_FDEFs
 
-inline static int rec_cases_6Kad(const int a)
+inline static int rec_cases_1hpjcHdP(const int a)
 {
     if (a)
-        return rec_cases_6Kad((a / 2));
+        return rec_cases_1hpjcHdP((a / 2));
     else
         return int(a);
 
 }
 
-inline static int rec_cases_Xn88(const int a)
+inline static int rec_cases_fvq3PhFm(const int a)
 {
     if (a)
-        return rec_cases_6Kad((a / 2));
+        return rec_cases_1hpjcHdP((a / 2));
     else
         return int(a);
 
 }
 
-inline static int rec_cases_IS9C(const s_X& a)
+inline static int rec_cases_ACFtvDNv(const s_X& a)
 {
     if (a.i)
     {
         s_X a_1 { a };
         a_1.i /= 2;
-        return rec_cases_IS9C(a_1);
+        return rec_cases_ACFtvDNv(a_1);
     }
     else
-        return rec_cases_Xn88(a.i);
+        return rec_cases_fvq3PhFm(a.i);
 
 }
 
-inline static int rec_cases_ui1m(const s_X& a)
+inline static int rec_cases_PXTKu1UQ(const s_X& a)
 {
     if (a.i)
     {
         s_X a_1 { a };
         a_1.i /= 2;
-        return rec_cases_IS9C(a_1);
+        return rec_cases_ACFtvDNv(a_1);
     }
     else
-        return rec_cases_6Kad(a.i);
+        return rec_cases_1hpjcHdP(a.i);
 
 }
 
 int fu_MAIN()
 {
-    return rec_cases_ui1m(s_X { 1 });
+    return rec_cases_PXTKu1UQ(s_X { 1 });
 }
 
 #endif
@@ -16123,6 +18103,7 @@ int fu_MAIN()
 int main() { return fu_MAIN(); }
 // FN_recursion
 // FN_resolve
+// DEAD_code
 
 -----
 
@@ -16159,27 +18140,27 @@ struct s_X
 
 #ifndef FU_NO_FDEFs
 
-inline static int rec_cases_6Kad(const int a)
+inline static int rec_cases_1hpjcHdP(const int a)
 {
     if (a)
-        return rec_cases_6Kad((a / 2));
+        return rec_cases_1hpjcHdP((a / 2));
     else
         return int(a);
 
 }
 
-inline static int rec_cases_ui1m(const s_X& a)
+inline static int rec_cases_PXTKu1UQ(const s_X& a)
 {
     if (a.i)
-        return rec_cases_ui1m(s_X { (a.i / 2) });
+        return rec_cases_PXTKu1UQ(s_X { (a.i / 2) });
     else
-        return rec_cases_6Kad(a.i);
+        return rec_cases_1hpjcHdP(a.i);
 
 }
 
 int fu_MAIN()
 {
-    return rec_cases_ui1m(s_X { 1 });
+    return rec_cases_PXTKu1UQ(s_X { 1 });
 }
 
 #endif
@@ -16188,6 +18169,7 @@ int fu_MAIN()
 int main() { return fu_MAIN(); }
 // FN_recursion
 // FN_resolve
+// DEAD_code
 
 -----
 
@@ -16296,37 +18278,40 @@ struct s_Node
 
 #ifndef FU_NO_FDEFs
 
-static void walk(s_Node& node, fu::view<char> a, const fu_STR& b)
+static void walk_Ui3oAjkr(s_Node& node, fu::view<char> a, const fu_STR& b)
 {
     for (int i = 0; i < node.items.size(); i++)
-        walk(node.items.mutref(i), a, b);
+        walk_Ui3oAjkr(node.items.mutref(i), a, b);
 
-    if (node.value == a)
+
     {
-        if ((node.items.size() == 1) && (node.kind == "call"_fu))
-            node.value = b;
-        else if (node.kind == "str"_fu)
-            node.value = b;
+        if (node.value == a)
+        {
+            if ((node.items.size() == 1) && (node.kind == "call"_fu))
+                node.value = b;
+            else if (node.kind == "str"_fu)
+                node.value = b;
 
+        };
     };
 }
 
-inline static s_Node astReplace_XWz5(const s_Node& node, int, fu::view<char> a, const fu_STR& b)
+inline static s_Node astReplace_aMKAAtId(const s_Node& node, int, fu::view<char> a, const fu_STR& b)
 {
     /*MOV*/ s_Node node_1 { node };
-    walk(node_1, a, b);
+    walk_Ui3oAjkr(node_1, a, b);
     return /*NRVO*/ node_1;
 }
 
-static s_Node test(const s_Node& n, fu::view<char> a, const fu_STR& b)
+static s_Node test_tgnWCoyT(const s_Node& n, fu::view<char> a, const fu_STR& b)
 {
-    return astReplace_XWz5(n, 0, a, b);
+    return astReplace_aMKAAtId(n, 0, a, b);
 }
 
 int fu_MAIN()
 {
     s_Node v0 = s_Node { "str"_fu, fu_VEC<s_Node>{}, "woot"_fu };
-    s_Node v1 = test(v0, "woot"_fu, "who"_fu);
+    s_Node v1 = test_tgnWCoyT(v0, "woot"_fu, "who"_fu);
     return v1.value.size() - 3;
 }
 
@@ -16421,29 +18406,29 @@ struct s_Visitor
 
 #ifndef FU_NO_FDEFs
 
-static void visit(s_Visitor& v, const s_SolvedNode& node)
+static void visit_nhEYR0qE(s_Visitor& v, const s_SolvedNode& node)
 {
     v.sum += node.value;
 }
 
-static void traverse(s_Visitor& v, const s_SolvedNode& n)
+static void traverse_hcD8vXQ8(s_Visitor& v, const s_SolvedNode& n)
 {
-    visit(v, n);
+    visit_nhEYR0qE(v, n);
     for (int i = 0; i < n.items.size(); i++)
-        traverse(v, n.items[i]);
+        traverse_hcD8vXQ8(v, n.items[i]);
 
 }
 
-inline static void visitNodes_x7WJ(s_Visitor& _v, const s_SolvedNode& _n)
+inline static void visitNodes_nhEYR0qE(s_Visitor& _v, const s_SolvedNode& _n)
 {
-    traverse(_v, _n);
+    traverse_hcD8vXQ8(_v, _n);
 }
 
 int fu_MAIN()
 {
     s_SolvedNode tree = s_SolvedNode { 3, fu_VEC<s_SolvedNode> { fu::slate<2, s_SolvedNode> { s_SolvedNode { 5, fu_VEC<s_SolvedNode>{} }, s_SolvedNode { 7, fu_VEC<s_SolvedNode>{} } } } };
     s_Visitor myVisitor {};
-    visitNodes_x7WJ(myVisitor, tree);
+    visitNodes_nhEYR0qE(myVisitor, tree);
     return myVisitor.sum - 15;
 }
 
@@ -16541,22 +18526,22 @@ struct s_Visitor
 
 #ifndef FU_NO_FDEFs
 
-static void visit(s_Visitor& v, const s_SolvedNode& node)
+static void visit_nhEYR0qE(s_Visitor& v, const s_SolvedNode& node)
 {
     v.sum += node.value;
 }
 
-static void traverse(s_Visitor& v, const s_SolvedNode& n)
+static void traverse_hcD8vXQ8(s_Visitor& v, const s_SolvedNode& n)
 {
-    visit(v, n);
+    visit_nhEYR0qE(v, n);
     for (int i = 0; i < n.items.size(); i++)
-        traverse(v, n.items[i]);
+        traverse_hcD8vXQ8(v, n.items[i]);
 
 }
 
-inline static void visitNodes_x7WJ(s_Visitor& _v, const s_SolvedNode& _n)
+inline static void visitNodes_nhEYR0qE(s_Visitor& _v, const s_SolvedNode& _n)
 {
-    traverse(_v, _n);
+    traverse_hcD8vXQ8(_v, _n);
 }
 
 int fu_MAIN()
@@ -16567,7 +18552,7 @@ int fu_MAIN()
     {
     };
     s_Visitor myVisitor {};
-    visitNodes_x7WJ(myVisitor, tree);
+    visitNodes_nhEYR0qE(myVisitor, tree);
     return myVisitor.sum - 15;
 }
 
@@ -16627,7 +18612,7 @@ int main() { return fu_MAIN(); }
 
 #ifndef FU_NO_FDEFs
 
-[[noreturn]] static fu::never throw_hey()
+[[noreturn]] static fu::never throw_hey_H9fhQUVP()
 {
     fu::fail("hey"_fu);
 }
@@ -16637,7 +18622,7 @@ int fu_MAIN()
 
     try
     {
-        throw_hey();
+        throw_hey_H9fhQUVP();
     }
     catch (const std::exception& o_0)
     {
@@ -16678,7 +18663,7 @@ int main() { return fu_MAIN(); }
 
 #ifndef FU_NO_FDEFs
 
-[[noreturn]] static fu::never throw_hey()
+[[noreturn]] static fu::never throw_hey_H9fhQUVP()
 {
     fu::fail("hey"_fu);
 }
@@ -16688,7 +18673,7 @@ int fu_MAIN()
 
     try
     {
-        throw_hey();
+        throw_hey_H9fhQUVP();
     }
     catch (const std::exception& o_0)
     {
@@ -16731,7 +18716,7 @@ int main() { return fu_MAIN(); }
 
 #ifndef FU_NO_FDEFs
 
-[[noreturn]] static fu::never throw_hey()
+[[noreturn]] static fu::never throw_hey_H9fhQUVP()
 {
     fu::fail("hey"_fu);
 }
@@ -16741,7 +18726,7 @@ int fu_MAIN()
 
     try
     {
-        throw_hey();
+        throw_hey_H9fhQUVP();
     }
     catch (const std::exception& o_0)
     {
@@ -16787,7 +18772,7 @@ int main() { return fu_MAIN(); }
 
 #ifndef FU_NO_FDEFs
 
-static const fu_STR& next(int& idx, fu::view<fu_STR> args)
+static const fu_STR& next_y1jV3SX3(int& idx, fu::view<fu_STR> args)
 {
     const int i = idx++;
     if (i < args.size())
@@ -16796,15 +18781,15 @@ static const fu_STR& next(int& idx, fu::view<fu_STR> args)
     return (*(const fu_STR*)fu::NIL);
 }
 
-static int cli_handle(fu::view<fu_STR> args)
+static int cli_handle_CaSpsqZh(fu::view<fu_STR> args)
 {
     int idx = 0;
-    return next(idx, args).size() - 5;
+    return next_y1jV3SX3(idx, args).size() - 5;
 }
 
 int fu_MAIN()
 {
-    return cli_handle((fu::slate<2, fu_STR> { "hello"_fu, "you"_fu }));
+    return cli_handle_CaSpsqZh((fu::slate<2, fu_STR> { "hello"_fu, "you"_fu }));
 }
 
 #endif
@@ -16826,7 +18811,7 @@ int main() { return fu_MAIN(); }
 
 #ifndef FU_NO_FDEFs
 
-static int test()
+static int test_H9fhQUVP()
 {
     /*MOV*/ const int x = 5;
     return /*NRVO*/ x;
@@ -16834,7 +18819,7 @@ static int test()
 
 int fu_MAIN()
 {
-    return test() - 5;
+    return test_H9fhQUVP() - 5;
 }
 
 #endif
@@ -16874,7 +18859,7 @@ struct s_Test
 
 #ifndef FU_NO_FDEFs
 
-static s_Test test()
+static s_Test test_H9fhQUVP()
 {
     /*MOV*/ const s_Test x = s_Test { 5 };
     return /*NRVO*/ x;
@@ -16882,7 +18867,7 @@ static s_Test test()
 
 int fu_MAIN()
 {
-    return test().i - 5;
+    return test_H9fhQUVP().i - 5;
 }
 
 #endif
@@ -16924,7 +18909,7 @@ struct s_Test
 
 #ifndef FU_NO_FDEFs
 
-static s_Test test()
+static s_Test test_H9fhQUVP()
 {
     /*MOV*/ const s_Test x = s_Test { 5, -5 };
     return /*NRVO*/ x;
@@ -16932,7 +18917,7 @@ static s_Test test()
 
 int fu_MAIN()
 {
-    return test().a + test().b;
+    return test_H9fhQUVP().a + test_H9fhQUVP().b;
 }
 
 #endif
@@ -16970,14 +18955,14 @@ struct s_X
 
 #ifndef FU_NO_FDEFs
 
-static const s_X& ref2arg(const s_X& x)
+static const s_X& ref2arg_PXTKu1UQ(const s_X& x)
 {
     return x;
 }
 
 int fu_MAIN()
 {
-    const s_X NOTREF { ref2arg(s_X { 101 }) };
+    const s_X NOTREF { ref2arg_PXTKu1UQ(s_X { 101 }) };
     return NOTREF.x - 101;
 }
 
@@ -16988,10 +18973,8 @@ int main() { return fu_MAIN(); }
 
 -----
 
-        //*F
-        nocopy
-        /*/
-        //*/
+
+        nocopy 
         struct Copied { x: i32; };
 
         fn main() {
@@ -17002,11 +18985,11 @@ int main() { return fu_MAIN(); }
         }
 
 -----
-_0.fu @10:21:
+_0.fu @8:21:
 
 [2m      |         fn main() {[0m
 [2m      |             let a = Copied(1);[0m
-   10 |             mut b = [31;1ma[0m;
+    8 |             mut b = [31;1ma[0m;
 [2m      |             b.x++;[0m
 [2m      |             return b.x - a.x * 2;[0m
 
@@ -17016,10 +18999,7 @@ _0.fu @10:21:
 
 -----
 
-        /*
-        nocopy
-        /*/
-        //*/
+
         struct Copied { x: i32; };
 
         fn main() {
@@ -17110,7 +19090,7 @@ struct s_NoCopy
 
 #ifndef FU_NO_FDEFs
 
-static s_NoCopy& retmutref(s_NoCopy& nc)
+static s_NoCopy& retmutref_Wvy3Ix0v(s_NoCopy& nc)
 {
     return nc;
 }
@@ -17118,7 +19098,7 @@ static s_NoCopy& retmutref(s_NoCopy& nc)
 int fu_MAIN()
 {
     s_NoCopy nc {};
-    retmutref(retmutref(nc)).i++;
+    retmutref_Wvy3Ix0v(retmutref_Wvy3Ix0v(nc)).i++;
     return nc.i - 1;
 }
 
@@ -17165,7 +19145,7 @@ struct s_NoCopy
 
 #ifndef FU_NO_FDEFs
 
-static s_NoCopy& mutrefself(s_NoCopy& nc)
+static s_NoCopy& mutrefself_Wvy3Ix0v(s_NoCopy& nc)
 {
     nc.i++;
     return nc;
@@ -17174,7 +19154,7 @@ static s_NoCopy& mutrefself(s_NoCopy& nc)
 int fu_MAIN()
 {
     s_NoCopy nc {};
-    mutrefself(mutrefself(nc));
+    mutrefself_Wvy3Ix0v(mutrefself_Wvy3Ix0v(nc));
     return nc.i - 2;
 }
 
@@ -17204,8 +19184,6 @@ int main() { return fu_MAIN(); }
 
 struct s_NoCopy;
 
-static const s_NoCopy& retarg(const s_NoCopy&);
-
                                 #ifndef DEF_s_NoCopy
                                 #define DEF_s_NoCopy
 struct s_NoCopy
@@ -17226,22 +19204,22 @@ struct s_NoCopy
 
 #ifndef FU_NO_FDEFs
 
-static const s_NoCopy& retargs_or(const s_NoCopy& a, const s_NoCopy& b)
+static const s_NoCopy& retargs_or_PMB1ye5F(const s_NoCopy& a, const s_NoCopy& b)
 {
     return a ? a : b;
 }
 
-static const s_NoCopy& retargs_and(const s_NoCopy& a, const s_NoCopy& b)
+static const s_NoCopy& retargs_and_PMB1ye5F(const s_NoCopy& a, const s_NoCopy& b)
 {
     return a ? b : (*(const s_NoCopy*)fu::NIL);
 }
 
-static const s_NoCopy& retargs_if(const s_NoCopy& a, const s_NoCopy& b)
+static const s_NoCopy& retargs_if_PMB1ye5F(const s_NoCopy& a, const s_NoCopy& b)
 {
     return (a.i ? b : a);
 }
 
-static const s_NoCopy& retarg(const s_NoCopy& a)
+static const s_NoCopy& retarg_uKUKCXdJ(const s_NoCopy& a)
 {
     return a;
 }
@@ -17250,7 +19228,7 @@ int fu_MAIN()
 {
     /*MOV*/ const s_NoCopy a {};
     /*MOV*/ const s_NoCopy b {};
-    return int(retarg(retargs_if(a, retargs_and(a, retargs_or(a, b)))).i);
+    return int(retarg_uKUKCXdJ(retargs_if_PMB1ye5F(a, retargs_and_PMB1ye5F(a, retargs_or_PMB1ye5F(a, b)))).i);
 }
 
 #endif
@@ -17279,8 +19257,6 @@ int main() { return fu_MAIN(); }
 
 struct s_NoCopy;
 
-static const s_NoCopy& retarg(const s_NoCopy&);
-
                                 #ifndef DEF_s_NoCopy
                                 #define DEF_s_NoCopy
 struct s_NoCopy
@@ -17301,22 +19277,22 @@ struct s_NoCopy
 
 #ifndef FU_NO_FDEFs
 
-static const s_NoCopy& retargs_or(const s_NoCopy& a, const s_NoCopy& b)
+static const s_NoCopy& retargs_or_PMB1ye5F(const s_NoCopy& a, const s_NoCopy& b)
 {
     return a ? a : b;
 }
 
-static const s_NoCopy& retargs_and(const s_NoCopy& a, const s_NoCopy& b)
+static const s_NoCopy& retargs_and_PMB1ye5F(const s_NoCopy& a, const s_NoCopy& b)
 {
     return a ? b : (*(const s_NoCopy*)fu::NIL);
 }
 
-static const s_NoCopy& retargs_if(const s_NoCopy& a, const s_NoCopy& b)
+static const s_NoCopy& retargs_if_PMB1ye5F(const s_NoCopy& a, const s_NoCopy& b)
 {
     return (a.i ? b : a);
 }
 
-static const s_NoCopy& retarg(const s_NoCopy& a)
+static const s_NoCopy& retarg_uKUKCXdJ(const s_NoCopy& a)
 {
     return a;
 }
@@ -17324,7 +19300,7 @@ static const s_NoCopy& retarg(const s_NoCopy& a)
 int fu_MAIN()
 {
     /*MOV*/ const s_NoCopy a {};
-    return int(retarg(retargs_if(a, retargs_and(a, retargs_or(a, s_NoCopy{})))).i);
+    return int(retarg_uKUKCXdJ(retargs_if_PMB1ye5F(a, retargs_and_PMB1ye5F(a, retargs_or_PMB1ye5F(a, s_NoCopy{})))).i);
 }
 
 #endif
@@ -17372,22 +19348,22 @@ struct s_NoCopy
 
 #ifndef FU_NO_FDEFs
 
-inline static s_NoCopy& retargs_or_bbhF(s_NoCopy& a, s_NoCopy& b)
+inline static s_NoCopy& retargs_or_nQkUwNff(s_NoCopy& a, s_NoCopy& b)
 {
     return a ? a : b;
 }
 
-inline static s_NoCopy& retargs_and_bbhF(s_NoCopy& a, s_NoCopy& b)
+inline static s_NoCopy& retargs_and_nQkUwNff(s_NoCopy& a, s_NoCopy& b)
 {
     return !a ? a : b;
 }
 
-inline static s_NoCopy& retargs_if_bbhF(s_NoCopy& a, s_NoCopy& b)
+inline static s_NoCopy& retargs_if_nQkUwNff(s_NoCopy& a, s_NoCopy& b)
 {
     return (a.i ? b : a);
 }
 
-inline static s_NoCopy& retarg_yfZN(s_NoCopy& a)
+inline static s_NoCopy& retarg_Wvy3Ix0v(s_NoCopy& a)
 {
     return a;
 }
@@ -17396,7 +19372,7 @@ int fu_MAIN()
 {
     s_NoCopy a {};
     s_NoCopy b {};
-    retarg_yfZN(retargs_if_bbhF(a, retargs_and_bbhF(a, retargs_or_bbhF(a, b)))).i++;
+    retarg_Wvy3Ix0v(retargs_if_nQkUwNff(a, retargs_and_nQkUwNff(a, retargs_or_nQkUwNff(a, b)))).i++;
     return (a.i + b.i) - 1;
 }
 
@@ -17422,7 +19398,7 @@ int main() { return fu_MAIN(); }
 
 #ifndef FU_NO_FDEFs
 
-static int as_blocks_after(const int x)
+static int as_blocks_after_1hpjcHdP(const int x)
 {
     /*MOV*/ int zero = 0;
     if (x > 2)
@@ -17436,7 +19412,7 @@ static int as_blocks_after(const int x)
 
 int fu_MAIN()
 {
-    return as_blocks_after(2);
+    return as_blocks_after_1hpjcHdP(2);
 }
 
 #endif
@@ -17480,7 +19456,7 @@ int main() { return fu_MAIN(); }
 
 struct s_Lifetime;
 
-static const s_Lifetime& Lifetime_test(const s_Lifetime&);
+static const s_Lifetime& Lifetime_test_PXTKu1UQ(const s_Lifetime&);
 
                                 #ifndef DEF_s_Lifetime
                                 #define DEF_s_Lifetime
@@ -17502,35 +19478,35 @@ struct s_Lifetime
 
 #ifndef FU_NO_FDEFs
 
-inline s_Lifetime Lifetime_test(s_Lifetime&& x_1)
+inline s_Lifetime Lifetime_test_PXTKu1UQ(s_Lifetime&& x)
 {
-    return static_cast<s_Lifetime&&>(const_cast<s_Lifetime&>(Lifetime_test(x_1)));
+    return static_cast<s_Lifetime&&>(const_cast<s_Lifetime&>(Lifetime_test_PXTKu1UQ(x)));
 }
 
 
-static const s_Lifetime& Lifetime_test(const s_Lifetime& x)
+static const s_Lifetime& Lifetime_test_PXTKu1UQ(const s_Lifetime& x)
 {
     if (x.woot.size() & 1)
         fu::fail("This is very important."_fu);
 
     for (int i = 0; i < x.woot.size(); i++)
-        Lifetime_test(x.woot[i]);
+        Lifetime_test_PXTKu1UQ(x.woot[i]);
 
     return x;
 }
 
-static s_Lifetime Lifetime_fromBinding(const int x)
+static s_Lifetime Lifetime_fromBinding_1hpjcHdP(const int x)
 {
     fu_VEC<s_Lifetime> woot {};
     for (int i = 0; i < x; i++)
         woot.mutref(i) = s_Lifetime{};
 
-    return Lifetime_test(s_Lifetime { fu_VEC<s_Lifetime>(woot) });
+    return Lifetime_test_PXTKu1UQ(s_Lifetime { fu_VEC<s_Lifetime>(woot) });
 }
 
 int fu_MAIN()
 {
-    return Lifetime_fromBinding(0).woot.size();
+    return Lifetime_fromBinding_1hpjcHdP(0).woot.size();
 }
 
 #endif
@@ -17571,28 +19547,28 @@ int main() { return fu_MAIN(); }
 
 #ifndef FU_NO_FDEFs
 
-static int test(const int x)
+static int test_1hpjcHdP(const int x)
 {
     fu_VEC<int> c = fu_VEC<int> { fu::slate<1, int> { 10007 } };
     fu_VEC<int> a = fu_VEC<int> { fu::slate<2, int> { 7, 11 } };
-    fu_VEC<int> L_00_v {};
+    fu_VEC<int> BL_1_v {};
     fu_VEC<int> b = (__extension__ (
     { {
         if (x & 2)
-            { L_00_v = fu_VEC<int>(c); goto L_00; };
+            { BL_1_v = fu_VEC<int>(c); goto BL_1; };
 
         if (x & 1)
-            { L_00_v = fu_VEC<int> { fu::slate<1, int> { int(x) } }; goto L_00; };
+            { BL_1_v = fu_VEC<int> { fu::slate<1, int> { int(x) } }; goto BL_1; };
 
-        L_00_v = (a);
-      } L_00:;
-    (void)0;}), static_cast<fu_VEC<int>&&>(L_00_v));
+        BL_1_v = (a);
+      } BL_1:;
+    (void)0;}), static_cast<fu_VEC<int>&&>(BL_1_v));
     return a[0] - (b[0] * a[1]);
 }
 
 int fu_MAIN()
 {
-    return test(1) + 4;
+    return test_1hpjcHdP(1) + 4;
 }
 
 #endif
@@ -17638,7 +19614,7 @@ struct s_Test
 
 #ifndef FU_NO_FDEFs
 
-static s_Test test(/*MOV*/ s_Test&& x)
+static s_Test test_PXTKu1UQ(/*MOV*/ s_Test&& x)
 {
     x.i.mutref(0) += int(x.i[1]);
     return static_cast<s_Test&&>(x);
@@ -17647,7 +19623,7 @@ static s_Test test(/*MOV*/ s_Test&& x)
 int fu_MAIN()
 {
     s_Test s = s_Test { fu_VEC<int> { fu::slate<2, int> { 1, 2 } } };
-    return test(s_Test(s)).i[0] - (s.i[0] * 3);
+    return test_PXTKu1UQ(s_Test(s)).i[0] - (s.i[0] * 3);
 }
 
 #endif
@@ -17693,7 +19669,7 @@ struct s_Test
 
 #ifndef FU_NO_FDEFs
 
-static s_Test test(/*MOV*/ s_Test&& x)
+static s_Test test_PXTKu1UQ(/*MOV*/ s_Test&& x)
 {
     x.i.mutref(0) += int(x.i[1]);
     return static_cast<s_Test&&>(x);
@@ -17702,7 +19678,7 @@ static s_Test test(/*MOV*/ s_Test&& x)
 int fu_MAIN()
 {
     s_Test s = s_Test { fu_VEC<int> { fu::slate<2, int> { 1, 2 } } };
-    return test(s_Test(s)).i[0] - (s.i[0] * 3);
+    return test_PXTKu1UQ(s_Test(s)).i[0] - (s.i[0] * 3);
 }
 
 #endif
@@ -17738,9 +19714,9 @@ int main() { return fu_MAIN(); }
 
 #ifndef FU_NO_FDEFs
 
-                                #ifndef DEFt_find_05eu
-                                #define DEFt_find_05eu
-inline int find_05eu(fu::view<char> a, const char b)
+                                #ifndef DEFt_find_05euw4KZ
+                                #define DEFt_find_05euw4KZ
+inline int find_05euw4KZ(fu::view<char> a, const char b)
 {
     for (/*MOV*/ int i = 0; i < a.size(); i++)
     {
@@ -17752,25 +19728,25 @@ inline int find_05eu(fu::view<char> a, const char b)
 }
                                 #endif
 
-static int compile_snippets(fu::view<char> x0)
+static int compile_snippets_naPRfSop(fu::view<char> x0)
 {
     int _0 {};
-    return !(_0 = find_05eu(x0, 'a')) ? _0 : fu::fail("throw#1"_fu);
+    return !(_0 = find_05euw4KZ(x0, 'a')) ? _0 : fu::fail("throw#1"_fu);
 }
 
-static int ZERO(fu::view<char> x1)
+static int ZERO_naPRfSop(fu::view<char> x1)
 {
     int _0 {};
-    return !(_0 = find_05eu(x1, 'b')) ? _0 : fu::fail("throw#2"_fu);
+    return !(_0 = find_05euw4KZ(x1, 'b')) ? _0 : fu::fail("throw#2"_fu);
 }
 
-static fu_STR FAIL(fu::view<char> x2)
+static fu_STR FAIL_naPRfSop(fu::view<char> x2)
 {
 
     try
     {
     {
-        /*MOV*/ fu_STR ctx = (compile_snippets(x2) ? "hey"_fu : fu_STR{});
+        /*MOV*/ fu_STR ctx = (compile_snippets_naPRfSop(x2) ? "hey"_fu : fu_STR{});
         return /*NRVO*/ ctx;
     }
     }
@@ -17778,20 +19754,22 @@ static fu_STR FAIL(fu::view<char> x2)
     {
         fu_STR e = fu_TO_STR(o_0.what());
 
-        return fu_STR((ZERO(x2) ? e : (*(const fu_STR*)fu::NIL)));
+        return fu_STR((ZERO_naPRfSop(x2) ? e : (*(const fu_STR*)fu::NIL)));
     }
 ;
 }
 
 int fu_MAIN()
 {
-    return FAIL("a"_fu).size();
+    return FAIL_naPRfSop("a"_fu).size();
 }
 
 #endif
 
 
 int main() { return fu_MAIN(); }
+// DEAD_code
+// NONTRIV_autocopy
 // RELAX_respec
 
 -----
@@ -17810,7 +19788,7 @@ int main() { return fu_MAIN(); }
 
 #ifndef FU_NO_FDEFs
 
-static fu_STR test(const fu_STR& x)
+static fu_STR test_naPRfSop(const fu_STR& x)
 {
     const fu_STR* _0;
     return fu_STR((*(_0 = &((fu::slate<1, fu_STR> { fu_STR(x) })[0])) ? *_0 : fu::fail("nope!"_fu)));
@@ -17818,7 +19796,7 @@ static fu_STR test(const fu_STR& x)
 
 int fu_MAIN()
 {
-    return test("what"_fu).size() - 4;
+    return test_naPRfSop("what"_fu).size() - 4;
 }
 
 #endif
@@ -17889,7 +19867,7 @@ struct s_SolvedNode
 
 #ifndef FU_NO_FDEFs
 
-static fu_VEC<s_SolvedNode> solveNodes(fu::view<s_Node> n)
+static fu_VEC<s_SolvedNode> solveNodes_C7jasMbI(fu::view<s_Node> n)
 {
     /*MOV*/ fu_VEC<s_SolvedNode> r {};
     for (int i = 0; i < n.size(); i++)
@@ -17898,28 +19876,28 @@ static fu_VEC<s_SolvedNode> solveNodes(fu::view<s_Node> n)
     return /*NRVO*/ r;
 }
 
-                                #ifndef DEFt_x7E_OZkl
-                                #define DEFt_x7E_OZkl
-inline fu_STR x7E_OZkl(fu::view<char> a, fu::view<char> b)
+                                #ifndef DEFt_x7E
+                                #define DEFt_x7E
+inline fu_STR x7E(fu::view<char> a, fu::view<char> b)
 {
     return a + b;
 }
                                 #endif
 
-inline static const s_SolvedNode& only_3Yye(fu::view<s_SolvedNode> s)
+inline static const s_SolvedNode& only_MD6wobHp(fu::view<s_SolvedNode> s)
 {
-    return ((s.size() == 1) ? s[0] : fu::fail(x7E_OZkl("len != 1: "_fu, fu::i64dec(s.size()))));
+    return ((s.size() == 1) ? s[0] : fu::fail(x7E("len != 1: "_fu, fu::i64dec(s.size()))));
 }
 
-static s_SolvedNode solveDeclExpr(const s_Node& n)
+static s_SolvedNode solveDeclExpr_PXTKu1UQ(const s_Node& n)
 {
     const s_SolvedNode* _0;
-    return s_SolvedNode((*(_0 = &(only_3Yye(solveNodes((fu::slate<1, s_Node> { s_Node(n) }))))) ? *_0 : fu::fail("!only"_fu)));
+    return s_SolvedNode((*(_0 = &(only_MD6wobHp(solveNodes_C7jasMbI((fu::slate<1, s_Node> { s_Node(n) }))))) ? *_0 : fu::fail("!only"_fu)));
 }
 
 int fu_MAIN()
 {
-    return solveDeclExpr(s_Node { "a"_fu }).kind.size() - 1;
+    return solveDeclExpr_PXTKu1UQ(s_Node { "a"_fu }).kind.size() - 1;
 }
 
 #endif
@@ -17960,16 +19938,16 @@ int main() { return fu_MAIN(); }
 
 #ifndef FU_NO_FDEFs
 
-fu_VEC<int> test(const int x)
+fu_VEC<int> test_1hpjcHdP(const int x)
 {
     /*MOV*/ fu_VEC<int> a = fu_VEC<int> { fu::slate<1, int> { 4 } };
     /*MOV*/ fu_VEC<int> b = fu_VEC<int> { fu::slate<1, int> { 5 } };
     /*MOV*/ fu_VEC<int> c = fu_VEC<int> { fu::slate<1, int> { 6 } };
     for (int i = 0; i < x; i++)
     {
-        a.unshift(x);
-        b.unshift(x);
-        c.unshift(x);
+        a.unshift(int(x));
+        b.unshift(int(x));
+        c.unshift(int(x));
     };
     if (!(x & 2))
         return static_cast<fu_VEC<int>&&>(((x & 1) ? a : b));
@@ -17979,108 +19957,7 @@ fu_VEC<int> test(const int x)
 
 int fu_MAIN()
 {
-    return (test(2)[2] + test(1)[1]) - (2 * test(0)[0]);
-}
-
-#endif
-
-
-int main() { return fu_MAIN(); }
-// RELAX_respec
-
------
-
-        fn test(is_mutref: bool, args: i32[], ref sum: i32) {
-            //*F
-            if (is_mutref)
-            /*/
-            if (is_mutref) {
-            //*/
-                for (mut i = 0; i < args.len; i++)
-                    if (args[i] & 1)
-                        sum += args[i];
-            //*F
-            /*/
-            }
-            //*/
-            else
-                for (mut i = 0; i < args.len; i++)
-                    if (args[i] & 2)
-                        sum += args[i];
-        }
-
-        fn main() {
-            mut sum = 0;
-            test(true , [ 1,  2,  3  ], sum);
-            test(false, [ 11, 22, 33 ], sum);
-            return sum - 1 - 3 - 11 - 22;
-        }
-
------
-_0.fu @9:21..16:17:
-	Inconsistent indent at `else`: expected 21, got 13. `if` starts on line 9.
------
-
-        fn test(is_mutref: bool, args: i32[], ref sum: i32) {
-            /*
-            if (is_mutref)
-            /*/
-            if (is_mutref) {
-            //*/
-                for (mut i = 0; i < args.len; i++)
-                    if (args[i] & 1)
-                        sum += args[i];
-            /*
-            /*/
-            }
-            //*/
-            else
-                for (mut i = 0; i < args.len; i++)
-                    if (args[i] & 2)
-                        sum += args[i];
-        }
-
-        fn main() {
-            mut sum = 0;
-            test(true , [ 1,  2,  3  ], sum);
-            test(false, [ 11, 22, 33 ], sum);
-            return sum - 1 - 3 - 11 - 22;
-        }
-
------
-
-#include <fu/view.h>
-
-#ifndef FU_NO_FDEFs
-
-static void test(const bool is_mutref, fu::view<int> args, int& sum)
-{
-    if (is_mutref)
-    {
-        for (int i = 0; i < args.size(); i++)
-        {
-            if (args[i] & 1)
-                sum += args[i];
-
-        };
-    }
-    else
-    {
-        for (int i = 0; i < args.size(); i++)
-        {
-            if (args[i] & 2)
-                sum += args[i];
-
-        };
-    };
-}
-
-int fu_MAIN()
-{
-    int sum = 0;
-    test(true, (fu::slate<3, int> { 1, 2, 3 }), sum);
-    test(false, (fu::slate<3, int> { 11, 22, 33 }), sum);
-    return (((sum - 1) - 3) - 11) - 22;
+    return (test_1hpjcHdP(2)[2] + test_1hpjcHdP(1)[1]) - (2 * test_1hpjcHdP(0)[0]);
 }
 
 #endif
@@ -18109,23 +19986,23 @@ int main() { return fu_MAIN(); }
 
 #ifndef FU_NO_FDEFs
 
-static int incr_x(int& x)
+static int incr_x_y1jV3SX3(int& x)
 {
     return x++;
 }
 
-static void incr_x_to_1(int& x)
+static void incr_x_to_1_fvq3PhFm(int& x)
 {
     if (x)
         fu::fail("this reports return t_never"_fu);
 
-    incr_x(x);
+    incr_x_y1jV3SX3(x);
 }
 
 int fu_MAIN()
 {
     int x = 0;
-    incr_x_to_1(x);
+    incr_x_to_1_fvq3PhFm(x);
     return x - 1;
 }
 
@@ -18154,23 +20031,23 @@ int main() { return fu_MAIN(); }
 
 #ifndef FU_NO_FDEFs
 
-static int incr_x(int& x)
+static int incr_x_y1jV3SX3(int& x)
 {
     return x++;
 }
 
-static void incr_x_to_1(int& x)
+static void incr_x_to_1_EJhRWC6k(int& x)
 {
     if (x)
         fu::fail("this reports return t_never"_fu);
 
-    incr_x(x);
+    incr_x_y1jV3SX3(x);
 }
 
 int fu_MAIN()
 {
     int x = 0;
-    incr_x_to_1(x);
+    incr_x_to_1_EJhRWC6k(x);
     return x - 1;
 }
 
@@ -18205,7 +20082,7 @@ int main() { return fu_MAIN(); }
 
 #ifndef FU_NO_FDEFs
 
-static int visit(const int item, int& x)
+static int visit_3AoyBXRR(const int item, int& x)
 {
     if (item)
         return int(item);
@@ -18213,23 +20090,23 @@ static int visit(const int item, int& x)
     return x++;
 }
 
-inline static int apply_WKSt(int, const int v, int& x)
+inline static int apply_Sjbv6NN5(int, const int v, int& x)
 {
-    return visit(v, x);
+    return visit_3AoyBXRR(v, x);
 }
 
-static void scope_using(const int via, int& x)
+static void scope_using_ZSoae05p(const int via, int& x)
 {
     if (x)
         fu::fail("this reports return t_never"_fu);
 
-    apply_WKSt(0, via, x);
+    apply_Sjbv6NN5(0, via, x);
 }
 
 int fu_MAIN()
 {
     int x = 0;
-    scope_using(x, x);
+    scope_using_ZSoae05p(x, x);
     return x - 1;
 }
 
@@ -18416,14 +20293,14 @@ int main() { return fu_MAIN(); }
 
 #ifndef FU_NO_FDEFs
 
-static bool gt0(const float x)
+static bool gt0_168RJrX2(const float x)
 {
     return x > 0.0f;
 }
 
 int fu_MAIN()
 {
-    return (gt0(float(1)) ? 0 : 1);
+    return (gt0_168RJrX2(float(1)) ? 0 : 1);
 }
 
 #endif
@@ -18457,14 +20334,14 @@ struct s_Hey
 
 #ifndef FU_NO_FDEFs
 
-static s_Hey hey()
+static s_Hey hey_H9fhQUVP()
 {
     return s_Hey { 1.0f };
 }
 
 int fu_MAIN()
 {
-    return int(hey().x) - 1;
+    return int(hey_H9fhQUVP().x) - 1;
 }
 
 #endif
@@ -18505,14 +20382,14 @@ struct s_vec3
 
 #ifndef FU_NO_FDEFs
 
-static s_vec3 test(const int i)
+static s_vec3 test_1hpjcHdP(const int i)
 {
     return s_vec3 { float((i - 2)), 0.0f, 1.0f };
 }
 
 int fu_MAIN()
 {
-    const s_vec3 v = test(1);
+    const s_vec3 v = test_1hpjcHdP(1);
     return int((v.x + v.z));
 }
 
@@ -18554,14 +20431,14 @@ struct s_vec3
 
 #ifndef FU_NO_FDEFs
 
-static s_vec3 test(const float f)
+static s_vec3 test_168RJrX2(const float f)
 {
     return s_vec3 { float(f), 0.0f, -1.0f };
 }
 
 int fu_MAIN()
 {
-    const s_vec3 v = test(-1.0f);
+    const s_vec3 v = test_168RJrX2(-1.0f);
     return int((v.x - v.z));
 }
 
@@ -18579,14 +20456,14 @@ int main() { return fu_MAIN(); }
 
 #ifndef FU_NO_FDEFs
 
-static float hey(const float i)
+static float hey_168RJrX2(const float i)
 {
     return float(i) + 0.5f;
 }
 
 int fu_MAIN()
 {
-    return int(hey(1.0f)) - 1;
+    return int(hey_168RJrX2(1.0f)) - 1;
 }
 
 #endif
@@ -18614,19 +20491,19 @@ int main() { return fu_MAIN(); }
 
 #ifndef FU_NO_FDEFs
 
-static float lin2srgb(const float l)
+static float lin2srgb_168RJrX2(const float l)
 {
     return ((l <= 0.0031308f) ? (l * 12.92f) : ((1.055f * std::pow(l, (1.0f / float(2.4)))) - 0.055f));
 }
 
-static unsigned lin255(const float v)
+static unsigned lin255_168RJrX2(const float v)
 {
-    return unsigned((std::min(std::max(lin2srgb(v), 0.0f), 1.0f) * 255.99f));
+    return unsigned((std::min(std::max(lin2srgb_168RJrX2(v), 0.0f), 1.0f) * 255.99f));
 }
 
 int fu_MAIN()
 {
-    return int((lin255(1.0f) - 255u));
+    return int((lin255_168RJrX2(1.0f) - 255u));
 }
 
 #endif
@@ -18670,13 +20547,13 @@ struct s_vec3
 
 int fu_MAIN()
 {
-    s_vec3 _0 {};
+    s_vec3 BL_1_v {};
     return int(((__extension__ (
     {
         const float a = 1.0f;
         const s_vec3 b = s_vec3 { 1.0f, 0.0f, 0.0f };
-        _0 = (s_vec3 { (a / b.x), (a / b.y), (a / b.z) });
-    (void)0;}), s_vec3(_0)).x - 1.0f));
+        BL_1_v = (s_vec3 { (a / b.x), (a / b.y), (a / b.z) });
+    (void)0;}), s_vec3(BL_1_v)).x - 1.0f));
 }
 
 #endif
@@ -18730,14 +20607,14 @@ int main() { return fu_MAIN(); }
 
 #ifndef FU_NO_FDEFs
 
-static fu::u8 test(const bool a)
+static fu::u8 test_O4yD91Dh(const bool a)
 {
     return (a ? fu::u8(1u) : fu::u8(0u));
 }
 
 int fu_MAIN()
 {
-    return int(unsigned(test(false)));
+    return int(unsigned(test_O4yD91Dh(false)));
 }
 
 #endif
@@ -18757,14 +20634,14 @@ int main() { return fu_MAIN(); }
 
 #ifndef FU_NO_FDEFs
 
-static fu::u8 test(const bool a)
+static fu::u8 test_O4yD91Dh(const bool a)
 {
     return a ? fu::u8(1u) : fu::u8{};
 }
 
 int fu_MAIN()
 {
-    return int(unsigned(test(false)));
+    return int(unsigned(test_O4yD91Dh(false)));
 }
 
 #endif
@@ -18797,14 +20674,14 @@ int main() { return fu_MAIN(); }
 inline constexpr fu::u8 A_u8 = fu::u8(0x0u);
                                 #endif
 
-static fu::u8 ATTRIB(const fu::u8 type, const int count, const bool srgb)
+static fu::u8 ATTRIB_4aGw5MnM(const fu::u8 type, const int count, const bool srgb)
 {
-    return ((type & fu::u8(0x3u)) | (fu::u8(unsigned(count)) << fu::u8(2u))) | (srgb ? fu::u8(0x80u) : fu::u8{});
+    return fu::u8((fu::u8((type & fu::u8(0x3u))) | fu::u8((fu::u8(unsigned(count)) << fu::u8(2u))))) | (srgb ? fu::u8(0x80u) : fu::u8{});
 }
 
 int fu_MAIN()
 {
-    return int(unsigned(ATTRIB(A_u8, 4, false))) - 16;
+    return int(unsigned(ATTRIB_4aGw5MnM(A_u8, 4, false))) - 16;
 }
 
 #endif
@@ -18961,7 +20838,7 @@ struct s_RenderFrame_in
 
 #ifndef FU_NO_FDEFs
 
-s_RenderFrame APP_renderFrame(const s_RenderFrame_in& args)
+s_RenderFrame APP_renderFrame_2DugeCCd(const s_RenderFrame_in& args)
 {
     return s_RenderFrame { int(args.logic.HDR.t) };
 }
@@ -18989,14 +20866,14 @@ int main() { return fu_MAIN(); }
 
 #ifndef FU_NO_FDEFs
 
-static bool leadingDigit(fu::view<char> name)
+static bool leadingDigit_naPRfSop(fu::view<char> name)
 {
-    return (fu::u8(fu::u8(name[0])) - fu::u8(fu::u8('0'))) < fu::u8(10u);
+    return fu::u8((fu::u8(fu::u8(name[0])) - fu::u8(fu::u8('0')))) < fu::u8(10u);
 }
 
 int fu_MAIN()
 {
-    return int(leadingDigit("hello"_fu));
+    return int(leadingDigit_naPRfSop("hello"_fu));
 }
 
 #endif
@@ -19027,6 +20904,25 @@ int fu_MAIN()
 int main() { return fu_MAIN(); }
 
 -----
+                                  // litfix through && /////
+        fn test(a: u32, shadows: bool)      (a << 1) | (shadows && 1);
+        fn main()                           1.test.i32 - 2;
+
+-----
+TODO: _0.fu @2:54:
+
+[2m      |                                   // litfix through && /////[0m
+    2 |         fn test(a: u32, shadows: bool)      (a << 1) [31;1m|[0m (shadows && 1);
+[2m      |         fn main()                           1.test.i32 - 2;[0m
+[2m      | [0m
+
+	Bad call to [34;1m|[0m: 
+
+	[35;1mtemplate[0m [34;1m|[0m: Could not specialize [TODO doTrySpec ERROR]
+
+        Solving [35;1mfn[0m [34;1mtest_gR4rTmJm[0m
+
+-----
 
         type Test = i32[];
         fn yo(t: Test) t[0] + t[1];
@@ -19038,14 +20934,14 @@ int main() { return fu_MAIN(); }
 
 #ifndef FU_NO_FDEFs
 
-static int yo(fu::view<int> t)
+static int yo_ZvOm7cyv(fu::view<int> t)
 {
     return t[0] + t[1];
 }
 
 int fu_MAIN()
 {
-    return yo((fu::slate<2, int> { -1, +1 }));
+    return yo_ZvOm7cyv((fu::slate<2, int> { -1, +1 }));
 }
 
 #endif
@@ -19067,19 +20963,19 @@ int main() { return fu_MAIN(); }
 
 #ifndef FU_NO_FDEFs
 
-inline static int if_first_xQkU(const fu_VEC<int>& a)
+inline static int if_first_ZvOm7cyv(const fu_VEC<int>& a)
 {
     return a ? a[0] : (*(const int*)fu::NIL);
 }
 
-static int hello(const fu_VEC<int>& a)
+static int hello_ZvOm7cyv(const fu_VEC<int>& a)
 {
-    return if_first_xQkU(a);
+    return if_first_ZvOm7cyv(a);
 }
 
 int fu_MAIN()
 {
-    return hello(fu_VEC<int> { fu::slate<1, int> { 3 } }) - 3;
+    return hello_ZvOm7cyv(fu_VEC<int> { fu::slate<1, int> { 3 } }) - 3;
 }
 
 #endif
@@ -19102,19 +20998,19 @@ int main() { return fu_MAIN(); }
 
 #ifndef FU_NO_FDEFs
 
-inline static int if_first_xQkU(const fu_VEC<int>& a)
+inline static int if_first_ZvOm7cyv(const fu_VEC<int>& a)
 {
     return a ? a[0] : (*(const int*)fu::NIL);
 }
 
-static int hello(const fu_VEC<int>& a)
+static int hello_ZvOm7cyv(const fu_VEC<int>& a)
 {
-    return if_first_xQkU(a);
+    return if_first_ZvOm7cyv(a);
 }
 
 int fu_MAIN()
 {
-    return hello(fu_VEC<int> { fu::slate<1, int> { 3 } }) - 3;
+    return hello_ZvOm7cyv(fu_VEC<int> { fu::slate<1, int> { 3 } }) - 3;
 }
 
 #endif
@@ -19141,29 +21037,29 @@ int main() { return fu_MAIN(); }
 
 #ifndef FU_NO_FDEFs
 
-static fu_VEC<fu_VEC<int>> list()
+static fu_VEC<fu_VEC<int>> list_H9fhQUVP()
 {
     return fu_VEC<fu_VEC<int>> { fu::slate<1, fu_VEC<int>> { fu_VEC<int> { fu::slate<1, int> { 3 } } } };
 }
 
-inline static const fu_VEC<int>& if_first_GN7R(const fu_VEC<fu_VEC<int>>& a)
+inline static const fu_VEC<int>& if_first_7PMk2Phs(const fu_VEC<fu_VEC<int>>& a)
 {
     return a ? a[0] : (*(const fu_VEC<int>*)fu::NIL);
 }
 
-inline static int if_first_xQkU(const fu_VEC<int>& a)
+inline static int if_first_ZvOm7cyv(const fu_VEC<int>& a)
 {
     return a ? a[0] : (*(const int*)fu::NIL);
 }
 
-static int hello()
+static int hello_H9fhQUVP()
 {
-    return int(if_first_xQkU(if_first_GN7R(list())));
+    return int(if_first_ZvOm7cyv(if_first_7PMk2Phs(list_H9fhQUVP())));
 }
 
 int fu_MAIN()
 {
-    return hello() - 3;
+    return hello_H9fhQUVP() - 3;
 }
 
 #endif
@@ -19191,29 +21087,29 @@ int main() { return fu_MAIN(); }
 
 #ifndef FU_NO_FDEFs
 
-static fu_VEC<fu_VEC<int>> list()
+static fu_VEC<fu_VEC<int>> list_H9fhQUVP()
 {
     return fu_VEC<fu_VEC<int>> { fu::slate<1, fu_VEC<int>> { fu_VEC<int> { fu::slate<1, int> { 3 } } } };
 }
 
-inline static const fu_VEC<int>& if_first_GN7R(const fu_VEC<fu_VEC<int>>& a)
+inline static const fu_VEC<int>& if_first_7PMk2Phs(const fu_VEC<fu_VEC<int>>& a)
 {
     return a ? a[0] : (*(const fu_VEC<int>*)fu::NIL);
 }
 
-inline static int if_first_xQkU(const fu_VEC<int>& a)
+inline static int if_first_ZvOm7cyv(const fu_VEC<int>& a)
 {
     return a ? a[0] : (*(const int*)fu::NIL);
 }
 
-static int hello()
+static int hello_H9fhQUVP()
 {
-    return int(if_first_xQkU(if_first_GN7R(list())));
+    return int(if_first_ZvOm7cyv(if_first_7PMk2Phs(list_H9fhQUVP())));
 }
 
 int fu_MAIN()
 {
-    return hello() - 3;
+    return hello_H9fhQUVP() - 3;
 }
 
 #endif
@@ -19239,14 +21135,14 @@ int main() { return fu_MAIN(); }
 
 static const fu_VEC<int> arr fu_INIT_PRIORITY(1001) = fu_VEC<int> { fu::slate<2, int> { 1, 2 } };
 
-static bool eq(fu::view<int> a, fu::view<int> b)
+static bool eq_ou7eQsH4(fu::view<int> a, fu::view<int> b)
 {
     return a == b;
 }
 
 int fu_MAIN()
 {
-    return (eq(arr, arr) ? 0 : 1);
+    return (eq_ou7eQsH4(arr, arr) ? 0 : 1);
 }
 
 #endif
@@ -19271,14 +21167,14 @@ int main() { return fu_MAIN(); }
 
 static const fu_VEC<int> arr fu_INIT_PRIORITY(1001) = fu_VEC<int> { fu::slate<2, int> { 1, 2 } };
 
-inline static bool eq_0Mn9(fu::view<int> a, fu::view<int> b)
+inline static bool eq_ou7eQsH4(fu::view<int> a, fu::view<int> b)
 {
     return a == b;
 }
 
 int fu_MAIN()
 {
-    return (eq_0Mn9(arr, arr) ? 0 : 1);
+    return (eq_ou7eQsH4(arr, arr) ? 0 : 1);
 }
 
 #endif
@@ -19302,14 +21198,14 @@ int main() { return fu_MAIN(); }
 
 #ifndef FU_NO_FDEFs
 
-static int test(fu::view<int> hey)
+static int test_jHt08kjM(fu::view<int> hey)
 {
     return hey[0] + hey[1];
 }
 
 int fu_MAIN()
 {
-    return test((fu::slate<2, int> { -1, +1 }));
+    return test_jHt08kjM((fu::slate<2, int> { -1, +1 }));
 }
 
 #endif
@@ -19334,7 +21230,7 @@ int main() { return fu_MAIN(); }
 
 #ifndef FU_NO_FDEFs
 
-static int& test(fu::view_mut<int> hey)
+static int& test_7eNrHa1c(fu::view_mut<int> hey)
 {
     return (hey.mutref(0) += int(hey[1]));
 }
@@ -19342,7 +21238,7 @@ static int& test(fu::view_mut<int> hey)
 int fu_MAIN()
 {
     /*MOV*/ fu_VEC<int> hey = fu_VEC<int> { fu::slate<2, int> { -1, +1 } };
-    return int(test(hey));
+    return int(test_7eNrHa1c(hey));
 }
 
 #endif
@@ -19362,14 +21258,14 @@ int main() { return fu_MAIN(); }
 
 #ifndef FU_NO_FDEFs
 
-static fu_VEC<int> test(const int i)
+static fu_VEC<int> test_1hpjcHdP(const int i)
 {
     return fu_VEC<int> { fu::slate<2, int> { int(i), (i + 1) } };
 }
 
 int fu_MAIN()
 {
-    return test(0)[1] - 1;
+    return test_1hpjcHdP(0)[1] - 1;
 }
 
 #endif
@@ -19395,7 +21291,7 @@ int main() { return fu_MAIN(); }
 
 #ifndef FU_NO_FDEFs
 
-static unsigned test(fu::view<char> hey)
+static unsigned test_naPRfSop(fu::view<char> hey)
 {
     return fu::view_of(hey, unsigned{})[0];
 }
@@ -19403,7 +21299,7 @@ static unsigned test(fu::view<char> hey)
 int fu_MAIN()
 {
     fu_STR hey = fu_STR { fu::slate<4, char> { char(1), char(1), char(1), char(1) } };
-    return int((test(hey) - 0x1010101u));
+    return int((test_naPRfSop(hey) - 0x1010101u));
 }
 
 #endif
@@ -19429,7 +21325,7 @@ int main() { return fu_MAIN(); }
 
 #ifndef FU_NO_FDEFs
 
-static int test(fu::view<int> hey)
+static int test_jHt08kjM(fu::view<int> hey)
 {
     return hey[0] + hey[1];
 }
@@ -19437,7 +21333,7 @@ static int test(fu::view<int> hey)
 int fu_MAIN()
 {
     fu_VEC<int> hey = fu_VEC<int> { fu::slate<3, int> { 7, -1, +1 } };
-    return test(fu::get_view(hey, 1, 3));
+    return test_jHt08kjM(fu::get_view(hey, 1, 3));
 }
 
 #endif
@@ -19463,7 +21359,7 @@ int main() { return fu_MAIN(); }
 
 #ifndef FU_NO_FDEFs
 
-static int& test(fu::view_mut<int> hey)
+static int& test_7eNrHa1c(fu::view_mut<int> hey)
 {
     return (hey.mutref(0) += int(hey[1]));
 }
@@ -19471,7 +21367,7 @@ static int& test(fu::view_mut<int> hey)
 int fu_MAIN()
 {
     /*MOV*/ fu_VEC<int> hey = fu_VEC<int> { fu::slate<3, int> { 7, -1, +1 } };
-    return int(test(fu::get_view_mut(hey, 1, 3)));
+    return int(test_7eNrHa1c(fu::get_view_mut(hey, 1, 3)));
 }
 
 #endif
@@ -19499,7 +21395,7 @@ int main() { return fu_MAIN(); }
 
 #ifndef FU_NO_FDEFs
 
-static void test(fu::view_mut<int> hey)
+static void test_7eNrHa1c(fu::view_mut<int> hey)
 {
     fu::view_assign(hey, (fu::slate<2, int> { 2, -3 }));
 }
@@ -19507,7 +21403,7 @@ static void test(fu::view_mut<int> hey)
 int fu_MAIN()
 {
     fu_VEC<int> hey = fu_VEC<int> { fu::slate<3, int> { 1, 0, 0 } };
-    test(fu::get_view_mut(hey, 1, 3));
+    test_7eNrHa1c(fu::get_view_mut(hey, 1, 3));
     return (hey[0] + hey[1]) + hey[2];
 }
 
@@ -19558,7 +21454,7 @@ struct s_Hey
 
 #ifndef FU_NO_FDEFs
 
-static void test(fu::view_mut<s_Hey> out)
+static void test_uZpy6ltQ(fu::view_mut<s_Hey> out)
 {
     fu::view_assign(fu::view_of_mut(out, fu::u8{}), (fu::slate<4, fu::u8> { fu::u8(unsigned(1)), fu::u8(unsigned(1)), fu::u8(unsigned(1)), fu::u8(unsigned(1)) }));
 }
@@ -19566,7 +21462,7 @@ static void test(fu::view_mut<s_Hey> out)
 int fu_MAIN()
 {
     fu_VEC<s_Hey> a = fu_VEC<s_Hey> { fu::slate<1, s_Hey> { s_Hey{} } };
-    test(a);
+    test_uZpy6ltQ(a);
     return a[0].i - 16843009;
 }
 
@@ -19615,7 +21511,7 @@ struct s_Hey
 
 #ifndef FU_NO_FDEFs
 
-static void test(fu::view_mut<int> x, fu::view<s_Hey> y)
+static void test_Lb9EEaOH(fu::view_mut<int> x, fu::view<s_Hey> y)
 {
     fu::view_assign(x, fu::view_of(y, int{}));
 }
@@ -19623,7 +21519,7 @@ static void test(fu::view_mut<int> x, fu::view<s_Hey> y)
 int fu_MAIN()
 {
     fu_VEC<int> a = fu_VEC<int> { fu::slate<1, int> { 0 } };
-    test(a, (fu::slate<1, s_Hey> { s_Hey { 13 } }));
+    test_Lb9EEaOH(a, (fu::slate<1, s_Hey> { s_Hey { 13 } }));
     return a[0] - 13;
 }
 
@@ -19687,7 +21583,7 @@ int main() { return fu_MAIN(); }
         fn test(a: [byte], b?: [byte]) a == b;
         fn main() test("") ? 0 : 1;
 
-        // EXPECT test(fu::view<char>{}, fu::view<char>{})
+        // EXPECT (fu::view<char>{}, fu::view<char>{})
 
 -----
 
@@ -19696,14 +21592,14 @@ int main() { return fu_MAIN(); }
 
 #ifndef FU_NO_FDEFs
 
-static bool test(fu::view<char> a, fu::view<char> b)
+static bool test_YwUhuVHF(fu::view<char> a, fu::view<char> b)
 {
     return a == b;
 }
 
 int fu_MAIN()
 {
-    return (test(fu::view<char>{}, fu::view<char>{}) ? 0 : 1);
+    return (test_YwUhuVHF(fu::view<char>{}, fu::view<char>{}) ? 0 : 1);
 }
 
 #endif
@@ -19745,9 +21641,9 @@ int main() { return fu_MAIN(); }
 
 static const fu_VEC<fu_STR> NOTES fu_INIT_PRIORITY(1001) = fu_VEC<fu_STR> { fu::slate<3, fu_STR> { "AAA"_fu, "BBB"_fu, "CCC"_fu } };
 
-                                #ifndef DEFt_find_Bz0D
-                                #define DEFt_find_Bz0D
-inline int find_Bz0D(fu::view<fu_STR> a, fu::view<char> b)
+                                #ifndef DEFt_find_Bz0DkUlt
+                                #define DEFt_find_Bz0DkUlt
+inline int find_Bz0DkUlt(fu::view<fu_STR> a, fu::view<char> b)
 {
     for (/*MOV*/ int i = 0; i < a.size(); i++)
     {
@@ -19759,14 +21655,14 @@ inline int find_Bz0D(fu::view<fu_STR> a, fu::view<char> b)
 }
                                 #endif
 
-static int what(fu::view<char> annot)
+static int what_naPRfSop(fu::view<char> annot)
 {
-    return find_Bz0D(NOTES, fu::get_view(annot, 1, annot.size()));
+    return find_Bz0DkUlt(NOTES, fu::get_view(annot, 1, annot.size()));
 }
 
 int fu_MAIN()
 {
-    return what("!BBB"_fu) - 1;
+    return what_naPRfSop("!BBB"_fu) - 1;
 }
 
 #endif
@@ -19890,14 +21786,14 @@ struct s_Hey
 
 #ifndef FU_NO_FDEFs
 
-static s_Hey test()
+static s_Hey test_H9fhQUVP()
 {
     return s_Hey { 0 };
 }
 
 int fu_MAIN()
 {
-    return test().i;
+    return test_H9fhQUVP().i;
 }
 
 #endif
@@ -19908,40 +21804,33 @@ int main() { return fu_MAIN(); }
 -----
 
         struct Test {
-        //*F
-            a: i32;
-        /*/
-            a?: i32;
-        //*/
+
+            a: i32;  
             b: i32;
         };
 
         return Test(b: 1).a;
 
 -----
-_0.fu @14:20:
+_0.fu @11:20:
 
 [2m      |         };[0m
 [2m      | [0m
-   14 |         return Test[31;1m([0mb: 1).a;
-[2m      |     [0m
+   11 |         return Test[31;1m([0mb: 1).a;
+[2m      | [0m
 [2m      | }[0m
 
-	`Test` expects at least 2 arguments, 1 provided.
-Expect: `Test(
-	[34;1ma[0m: i32: copy,
-	[34;1mb[0m: i32: copy)`
+	Bad call to [34;1mTest[0m: 
+
+	[35;1mtype[0m [34;1mTest[0m: Wrong number of arguments: expects 2, got 1.
 
         Solving [35;1mfn[0m [34;1mmain[0m
 
 -----
 
         struct Test {
-        /*
-            a: i32;
-        /*/
-            a?: i32;
-        //*/
+
+            a?: i32; 
             b: i32;
         };
 
@@ -19983,28 +21872,24 @@ int main() { return fu_MAIN(); }
 
         struct Test {
             b: i32;
-        //*F
-            a: i32;
-        /*/
-            a?: i32;
-        //*/
+
+            a: i32;  
         };
 
         return Test(1).a;
 
 -----
-_0.fu @14:20:
+_0.fu @11:20:
 
 [2m      |         };[0m
 [2m      | [0m
-   14 |         return Test[31;1m([0m1).a;
-[2m      |     [0m
+   11 |         return Test[31;1m([0m1).a;
+[2m      | [0m
 [2m      | }[0m
 
-	`Test` expects at least 2 arguments, 1 provided.
-Expect: `Test(
-	[34;1mb[0m: i32: copy,
-	[34;1ma[0m: i32: copy)`
+	Bad call to [34;1mTest[0m: 
+
+	[35;1mtype[0m [34;1mTest[0m: Wrong number of arguments: expects 2, got 1.
 
         Solving [35;1mfn[0m [34;1mmain[0m
 
@@ -20012,11 +21897,8 @@ Expect: `Test(
 
         struct Test {
             b: i32;
-        /*
-            a: i32;
-        /*/
-            a?: i32;
-        //*/
+
+            a?: i32; 
         };
 
         return Test(1).a;
@@ -20100,7 +21982,7 @@ struct s_Node
 
 #ifndef FU_NO_FDEFs
 
-static void rec_copy(s_Node& a)
+static void rec_copy_ACFtvDNv(s_Node& a)
 {
     a = a.items[0];
 }
@@ -20108,7 +21990,7 @@ static void rec_copy(s_Node& a)
 int fu_MAIN()
 {
     s_Node a = s_Node { fu_VEC<s_Node> { fu::slate<1, s_Node> { s_Node { fu_VEC<s_Node>{}, fu_VEC<s_Node> { fu::slate<1, s_Node> { s_Node{} } } } } }, fu_VEC<s_Node>{} };
-    rec_copy(a);
+    rec_copy_ACFtvDNv(a);
     return a.stuff.size() - 1;
 }
 
@@ -20130,14 +22012,14 @@ int main() { return fu_MAIN(); }
 
 #ifndef FU_NO_FDEFs
 
-static int test(const int a, const int b)
+static int test_wbbymoXS(const int a, const int b)
 {
     return a + b;
 }
 
 int fu_MAIN()
 {
-    return test(-1, 1);
+    return test_wbbymoXS(-1, 1);
 }
 
 #endif
@@ -20148,52 +22030,42 @@ int main() { return fu_MAIN(); }
 -----
 
         fn test(a: i32, b!: i32 = 1) a + b;
-        //*F
-        return test(-2, +2);
-        /*/
-        return test(-2, b: +2);
-        //*/
+
+        return test(-2, +2);    
 
 -----
 _0.fu @7:20:
 
 [2m      |         fn test(a: i32, b!: i32 = 1) a + b;[0m
-[2m      |         //*F[0m
-    7 |         return test[31;1m([0m-2, +2);
-[2m      |         /*/[0m
-[2m      |         return test(-2, b: +2);[0m
+[2m      | [0m
+    7 |         return test[31;1m([0m-2, +2);    
+[2m      | [0m
+[2m      | }[0m
 
-	`test` bad args.
-Expect: `test(
-	[34;1ma[0m: i32: copy,
-	[34;1mb[0m!?: i32: copy)`
-Actual: (
-	i32: copy,
-	i32: copy).
+	Bad call to [34;1mtest[0m: 
+
+	[35;1mfn[0m [34;1mtest_wbbymoXS[0m: Argument must be :explicitly named [35;1marg[0m [34;1mb[0m
 
         Solving [35;1mfn[0m [34;1mmain[0m
 
 -----
 
         fn test(a: i32, b!: i32 = 1) a + b;
-        /*
-        return test(-2, +2);
-        /*/
-        return test(-2, b: +2);
-        //*/
+
+        return test(-2, b: +2); 
 
 -----
 
 #ifndef FU_NO_FDEFs
 
-static int test(const int a, const int b)
+static int test_wbbymoXS(const int a, const int b)
 {
     return a + b;
 }
 
 int fu_MAIN()
 {
-    return test(-2, +2);
+    return test_wbbymoXS(-2, +2);
 }
 
 #endif
@@ -20205,28 +22077,21 @@ int main() { return fu_MAIN(); }
 
         struct Test { a: i32; b!: i32; };
         fn test(t: Test) t.a + t.b;
-        //*F
-        return Test(-2, +2).test;
-        /*/
-        return Test(-2, b: +2).test;
-        //*/
+
+        return Test(-2, +2).test;    
 
 -----
 _0.fu @8:20:
 
 [2m      |         fn test(t: Test) t.a + t.b;[0m
-[2m      |         //*F[0m
-    8 |         return Test[31;1m([0m-2, +2).test;
-[2m      |         /*/[0m
-[2m      |         return Test(-2, b: +2).test;[0m
+[2m      | [0m
+    8 |         return Test[31;1m([0m-2, +2).test;    
+[2m      | [0m
+[2m      | }[0m
 
-	`Test` bad args.
-Expect: `Test(
-	[34;1ma[0m: i32: copy,
-	[34;1mb[0m!: i32: copy)`
-Actual: (
-	i32: copy,
-	i32: copy).
+	Bad call to [34;1mTest[0m: 
+
+	[35;1mtype[0m [34;1mTest[0m: Argument must be :explicitly named [35;1marg[0m [34;1mb[0m
 
         Solving [35;1mfn[0m [34;1mmain[0m
 
@@ -20234,11 +22099,8 @@ Actual: (
 
         struct Test { a: i32; b!: i32; };
         fn test(t: Test) t.a + t.b;
-        /*
-        return Test(-2, +2).test;
-        /*/
-        return Test(-2, b: +2).test;
-        //*/
+
+        return Test(-2, b: +2).test; 
 
 -----
 
@@ -20262,14 +22124,14 @@ struct s_Test
 
 #ifndef FU_NO_FDEFs
 
-static int test(const s_Test& t)
+static int test_eShNLeiM(const s_Test& t)
 {
     return t.a + t.b;
 }
 
 int fu_MAIN()
 {
-    return test(s_Test { -2, +2 });
+    return test_eShNLeiM(s_Test { -2, +2 });
 }
 
 #endif
@@ -20279,42 +22141,32 @@ int main() { return fu_MAIN(); }
 
 -----
 
-        struct Test { a?: i32; b?!: i32; };
+        struct Test { a?: i32; b!?: i32; };
         fn test(t: Test) t.a + t.b;
-        //*F
-        return Test(-2, +2).test;
-        /*/
-        return Test(b: +2).test - 2;
-        //*/
+
+        return Test(-2, +2).test;    
 
 -----
 _0.fu @8:20:
 
 [2m      |         fn test(t: Test) t.a + t.b;[0m
-[2m      |         //*F[0m
-    8 |         return Test[31;1m([0m-2, +2).test;
-[2m      |         /*/[0m
-[2m      |         return Test(b: +2).test - 2;[0m
+[2m      | [0m
+    8 |         return Test[31;1m([0m-2, +2).test;    
+[2m      | [0m
+[2m      | }[0m
 
-	`Test` bad args.
-Expect: `Test(
-	[34;1ma[0m?: i32: copy,
-	[34;1mb[0m!?: i32: copy)`
-Actual: (
-	i32: copy,
-	i32: copy).
+	Bad call to [34;1mTest[0m: 
+
+	[35;1mtype[0m [34;1mTest[0m: Argument must be :explicitly named [35;1marg[0m [34;1mb[0m
 
         Solving [35;1mfn[0m [34;1mmain[0m
 
 -----
 
-        struct Test { a?: i32; b?!: i32; };
+        struct Test { a?: i32; b!?: i32; };
         fn test(t: Test) t.a + t.b;
-        /*
-        return Test(-2, +2).test;
-        /*/
-        return Test(b: +2).test - 2;
-        //*/
+
+        return Test(b: +2).test - 2; 
 
 -----
 
@@ -20338,14 +22190,14 @@ struct s_Test
 
 #ifndef FU_NO_FDEFs
 
-static int test(const s_Test& t)
+static int test_eShNLeiM(const s_Test& t)
 {
     return t.a + t.b;
 }
 
 int fu_MAIN()
 {
-    return test(s_Test { 0, +2 }) - 2;
+    return test_eShNLeiM(s_Test { 0, +2 }) - 2;
 }
 
 #endif
@@ -20368,14 +22220,14 @@ int main() { return fu_MAIN(); }
 inline constexpr int _precedence = 0;
                                 #endif
 
-static int parseExpression(const int p1, const int mode)
+static int parseExpression_TbYXL7io(const int p1, const int mode)
 {
     return p1 + mode;
 }
 
 int fu_MAIN()
 {
-    return parseExpression(_precedence, 0);
+    return parseExpression_TbYXL7io(_precedence, 0);
 }
 
 #endif
@@ -20393,19 +22245,19 @@ int main() { return fu_MAIN(); }
 
 #ifndef FU_NO_FDEFs
 
-static int A(const int x)
+static int A_1hpjcHdP(const int x)
 {
     return x;
 }
 
-static int B(const int x)
+static int B_1hpjcHdP(const int x)
 {
-    return A(x);
+    return A_1hpjcHdP(x);
 }
 
 int fu_MAIN()
 {
-    return A(0) + B(0);
+    return A_1hpjcHdP(0) + B_1hpjcHdP(0);
 }
 
 #endif
@@ -20422,14 +22274,41 @@ int main() { return fu_MAIN(); }
 
 #ifndef FU_NO_FDEFs
 
-static int what(const int a, const int b)
+static int what_TbYXL7io(const int a, const int b)
 {
     return a + b;
 }
 
 int fu_MAIN()
 {
-    return what(-1, +1);
+    return what_TbYXL7io(-1, +1);
+}
+
+#endif
+
+
+int main() { return fu_MAIN(); }
+
+-----
+
+        fn greet(with!greeting: string)     greeting.len;
+        fn main()                           greet(with: "Hello!") - 6;
+
+-----
+
+#include <fu/str.h>
+#include <fu/view.h>
+
+#ifndef FU_NO_FDEFs
+
+static int greet_naPRfSop(fu::view<char> greeting)
+{
+    return greeting.size();
+}
+
+int fu_MAIN()
+{
+    return greet_naPRfSop("Hello!"_fu) - 6;
 }
 
 #endif
@@ -20447,11 +22326,8 @@ int main() { return fu_MAIN(); }
                 + a1o0(a?: 1, b?: 2) *     10   //     10
                 + a2o1(a?: 1, b?: 2) *    100   //    300
                 + a2o2(a?: 1, b?: 2) *   1000   //   3000
-                + a2o1(a : 1, //*F
-                              c
-                              /*/
-                              b
-                              //*/
+                + a2o1(a : 1, 
+                              c       
                                ?: 2) *  10000   //  30000
                 + a2o1(a : 1)        * 100000   // 100000
                                 // ----------------------
@@ -20462,17 +22338,13 @@ _0.fu @10:23:
 
 [2m      |                 + a2o1(a?: 1, b?: 2) *    100   //    300[0m
 [2m      |                 + a2o2(a?: 1, b?: 2) *   1000   //   3000[0m
-   10 |                 + a2o1[31;1m([0ma : 1, //*F
-[2m      |                               c[0m
-[2m      |                               /*/[0m
+   10 |                 + a2o1[31;1m([0ma : 1, 
+[2m      |                               c       [0m
+[2m      |                                ?: 2) *  10000   //  30000[0m
 
-	`a2o1` bad args.
-Expect: `a2o1(
-	[34;1ma[0m: i32: copy,
-	[34;1mb[0m?: i32: copy)`
-Actual: (
-	a: i32: copy,
-	c: i32: copy).
+	Bad call to [34;1ma2o1[0m: 
+
+	[35;1mfn[0m [34;1ma2o1_TbYXL7io[0m: Optional argument ambiguity, not all optional arguments provided, and not all callsite arguments used. Cannot distinguish from a typo. [TODO LIST MISSING ARGS]
 
         Solving [35;1mfn[0m [34;1mmain[0m
 
@@ -20486,11 +22358,8 @@ Actual: (
                 + a1o0(a?: 1, b?: 2) *     10   //     10
                 + a2o1(a?: 1, b?: 2) *    100   //    300
                 + a2o2(a?: 1, b?: 2) *   1000   //   3000
-                + a2o1(a : 1, /*
-                              c
-                              /*/
-                              b
-                              //*/
+                + a2o1(a : 1, 
+                              b       
                                ?: 2) *  10000   //  30000
                 + a2o1(a : 1)        * 100000   // 100000
                                 // ----------------------
@@ -20500,29 +22369,29 @@ Actual: (
 
 #ifndef FU_NO_FDEFs
 
-static int a0o0()
+static int a0o0_H9fhQUVP()
 {
     return 0;
 }
 
-static int a1o0(const int a)
+static int a1o0_1hpjcHdP(const int a)
 {
     return a;
 }
 
-static int a2o1(const int a, const int b)
+static int a2o1_TbYXL7io(const int a, const int b)
 {
     return a + b;
 }
 
-static int a2o2(const int a, const int b)
+static int a2o2_TbYXL7io(const int a, const int b)
 {
     return a + b;
 }
 
 int fu_MAIN()
 {
-    return ((((((a0o0() * 1) + (a1o0(1) * 10)) + (a2o1(1, 2) * 100)) + (a2o2(1, 2) * 1000)) + (a2o1(1, 2) * 10000)) + (a2o1(1, 0) * 100000)) - 133310;
+    return ((((((a0o0_H9fhQUVP() * 1) + (a1o0_1hpjcHdP(1) * 10)) + (a2o1_TbYXL7io(1, 2) * 100)) + (a2o2_TbYXL7io(1, 2) * 1000)) + (a2o1_TbYXL7io(1, 2) * 10000)) + (a2o1_TbYXL7io(1, 0) * 100000)) - 133310;
 }
 
 #endif
@@ -20549,9 +22418,9 @@ int main() { return fu_MAIN(); }
 
 #ifndef FU_NO_FDEFs
 
-                                #ifndef DEFt_reveach_eyDx
-                                #define DEFt_reveach_eyDx
-inline void reveach_eyDx(fu::view<int> items, int, int& sum)
+                                #ifndef DEFt_reveach_d5Dgo7pq
+                                #define DEFt_reveach_d5Dgo7pq
+inline void reveach_d5Dgo7pq(fu::view<int> items, int, int& sum)
 {
     for (int i = items.size(); i-- > 0; )
     {
@@ -20561,9 +22430,9 @@ inline void reveach_eyDx(fu::view<int> items, int, int& sum)
 }
                                 #endif
 
-                                #ifndef DEFt_reveach_57NI
-                                #define DEFt_reveach_57NI
-inline void reveach_57NI(fu::view<int> items, int, int& sum)
+                                #ifndef DEFt_reveach_cUn8JPfp
+                                #define DEFt_reveach_cUn8JPfp
+inline void reveach_cUn8JPfp(fu::view<int> items, int, int& sum)
 {
     for (int i = items.size(); i-- > 0; )
     {
@@ -20576,8 +22445,8 @@ inline void reveach_57NI(fu::view<int> items, int, int& sum)
 int fu_MAIN()
 {
     int sum = 0;
-    reveach_eyDx((fu::slate<3, int> { 1, 2, 3 }), 0, sum);
-    reveach_57NI((fu::slate<3, int> { 1, 2, 3 }), 0, sum);
+    reveach_d5Dgo7pq((fu::slate<3, int> { 1, 2, 3 }), 0, sum);
+    reveach_cUn8JPfp((fu::slate<3, int> { 1, 2, 3 }), 0, sum);
     return sum - 806;
 }
 
@@ -20602,23 +22471,23 @@ int main() { return fu_MAIN(); }
 
 #ifndef FU_NO_FDEFs
 
-int noop()
+int noop_H9fhQUVP()
 {
     return 0;
 }
 
-                                #ifndef DEFt_woot_xePR
-                                #define DEFt_woot_xePR
-inline int& woot_xePR(int& i, int)
+                                #ifndef DEFt_woot_TVWvJeLH
+                                #define DEFt_woot_TVWvJeLH
+inline int& woot_TVWvJeLH(int& i, int)
 {
-    return (i += noop());
+    return (i += noop_H9fhQUVP());
 }
                                 #endif
 
 int fu_MAIN()
 {
     /*MOV*/ int sum = 0;
-    woot_xePR(sum, 0);
+    woot_TVWvJeLH(sum, 0);
     return /*NRVO*/ sum;
 }
 
@@ -20631,25 +22500,20 @@ int main() { return fu_MAIN(); }
 -----
 
         fn main() {
-            let ret: i8 =
-                //*F
-                128
-                /*/
-                127
-                //*/
-                ;
+            let ret: i8 = 
+                128 ;
 
             return (ret - 100).i32 - 27;
         }
 
 -----
-_0.fu @5:17:
+_0.fu @4:17:
 
-[2m      |             let ret: i8 =[0m
-[2m      |                 //*F[0m
-    5 |                 [31;1m128[0m
-[2m      |                 /*/[0m
-[2m      |                 127[0m
+[2m      |         fn main() {[0m
+[2m      |             let ret: i8 = [0m
+    4 |                 [31;1m128[0m ;
+[2m      | [0m
+[2m      |             return (ret - 100).i32 - 27;[0m
 
 	Type annotation does not match init expression `ret`: i8: copy=i32: copy
 
@@ -20658,13 +22522,8 @@ _0.fu @5:17:
 -----
 
         fn main() {
-            let ret: i8 =
-                /*
-                128
-                /*/
-                127
-                //*/
-                ;
+            let ret: i8 = 
+                127 ;
 
             return (ret - 100).i32 - 27;
         }
@@ -20678,7 +22537,7 @@ _0.fu @5:17:
 int fu_MAIN()
 {
     const fu::i8 ret = fu::i8(127);
-    return int((ret - fu::i8(100))) - 27;
+    return int(fu::i8((ret - fu::i8(100)))) - 27;
 }
 
 #endif
@@ -20689,25 +22548,20 @@ int main() { return fu_MAIN(); }
 -----
 
         fn main() {
-            let ret: i16 =
-                //*F
-                32768
-                /*/
-                32767
-                //*/
-                ;
+            let ret: i16 = 
+                32768 ;
 
             return (ret - 32700).i32 - 67;
         }
 
 -----
-_0.fu @5:17:
+_0.fu @4:17:
 
-[2m      |             let ret: i16 =[0m
-[2m      |                 //*F[0m
-    5 |                 [31;1m32768[0m
-[2m      |                 /*/[0m
-[2m      |                 32767[0m
+[2m      |         fn main() {[0m
+[2m      |             let ret: i16 = [0m
+    4 |                 [31;1m32768[0m ;
+[2m      | [0m
+[2m      |             return (ret - 32700).i32 - 67;[0m
 
 	Type annotation does not match init expression `ret`: i16: copy=i32: copy
 
@@ -20716,13 +22570,8 @@ _0.fu @5:17:
 -----
 
         fn main() {
-            let ret: i16 =
-                /*
-                32768
-                /*/
-                32767
-                //*/
-                ;
+            let ret: i16 = 
+                32767 ;
 
             return (ret - 32700).i32 - 67;
         }
@@ -20734,7 +22583,7 @@ _0.fu @5:17:
 int fu_MAIN()
 {
     const short ret = short(32767);
-    return int((ret - short(32700))) - 67;
+    return int(short((ret - short(32700)))) - 67;
 }
 
 #endif
@@ -20745,25 +22594,20 @@ int main() { return fu_MAIN(); }
 -----
 
         fn main() {
-            let ret: i32 =
-                //*F
-                2147483648
-                /*/
-                2147483647
-                //*/
-                ;
+            let ret: i32 = 
+                2147483648 ;
 
             return (ret - 2147483600).i32 - 47;
         }
 
 -----
-_0.fu @5:17:
+_0.fu @4:17:
 
-[2m      |             let ret: i32 =[0m
-[2m      |                 //*F[0m
-    5 |                 [31;1m2147483648[0m
-[2m      |                 /*/[0m
-[2m      |                 2147483647[0m
+[2m      |         fn main() {[0m
+[2m      |             let ret: i32 = [0m
+    4 |                 [31;1m2147483648[0m ;
+[2m      | [0m
+[2m      |             return (ret - 2147483600).i32 - 47;[0m
 
 	Type annotation does not match init expression `ret`: i32: copy=i64: copy
 
@@ -20772,13 +22616,8 @@ _0.fu @5:17:
 -----
 
         fn main() {
-            let ret: i32 =
-                /*
-                2147483648
-                /*/
-                2147483647
-                //*/
-                ;
+            let ret: i32 = 
+                2147483647 ;
 
             return (ret - 2147483600).i32 - 47;
         }
@@ -20800,26 +22639,21 @@ int main() { return fu_MAIN(); }
 
 -----
 
-        fn main() {
-            let ret: i64 =
-                //*F
-                9223372036854775808
-                /*/
-                9223372036854775807
-                //*/
-                ;
+        fn main() { // weird error, see the other two below
+            let ret: i64 = 
+                9223372036854775808 ;
 
             return (ret - 9223372036854775800).i32 - 7;
         }
 
 -----
-_0.fu @5:17:
+_0.fu @4:17:
 
-[2m      |             let ret: i64 =[0m
-[2m      |                 //*F[0m
-    5 |                 [31;1m9223372036854775808[0m
-[2m      |                 /*/[0m
-[2m      |                 9223372036854775807[0m
+[2m      |         fn main() { // weird error, see the other two below[0m
+[2m      |             let ret: i64 = [0m
+    4 |                 [31;1m9223372036854775808[0m ;
+[2m      | [0m
+[2m      |             return (ret - 9223372036854775800).i32 - 7;[0m
 
 	Bad int literal.
 
@@ -20827,14 +22661,9 @@ _0.fu @5:17:
 
 -----
 
-        fn main() {
-            let ret: i64 =
-                /*
-                9223372036854775808
-                /*/
-                9223372036854775807
-                //*/
-                ;
+        fn main() { // weird error, see the other two below
+            let ret: i64 = 
+                9223372036854775807 ;
 
             return (ret - 9223372036854775800).i32 - 7;
         }
@@ -20859,25 +22688,20 @@ int main() { return fu_MAIN(); }
 -----
 
         fn main() {
-            let ret: i8 =
-                //*F
-                -129
-                /*/
-                -128
-                //*/
-                ;
+            let ret: i8 = 
+                -129 ;
 
             return (ret + 100).i32 + 28;
         }
 
 -----
-_0.fu @5:18:
+_0.fu @4:18:
 
-[2m      |             let ret: i8 =[0m
-[2m      |                 //*F[0m
-    5 |                 -[31;1m129[0m
-[2m      |                 /*/[0m
-[2m      |                 -128[0m
+[2m      |         fn main() {[0m
+[2m      |             let ret: i8 = [0m
+    4 |                 -[31;1m129[0m ;
+[2m      | [0m
+[2m      |             return (ret + 100).i32 + 28;[0m
 
 	Type annotation does not match init expression `ret`: i8: copy=i32: copy
 
@@ -20886,13 +22710,8 @@ _0.fu @5:18:
 -----
 
         fn main() {
-            let ret: i8 =
-                /*
-                -129
-                /*/
-                -128
-                //*/
-                ;
+            let ret: i8 = 
+                -128 ;
 
             return (ret + 100).i32 + 28;
         }
@@ -20906,7 +22725,7 @@ _0.fu @5:18:
 int fu_MAIN()
 {
     const fu::i8 ret = fu::i8(-128);
-    return int((ret + fu::i8(100))) + 28;
+    return int(fu::i8((ret + fu::i8(100)))) + 28;
 }
 
 #endif
@@ -20917,25 +22736,20 @@ int main() { return fu_MAIN(); }
 -----
 
         fn main() {
-            let ret: i16 =
-                //*F
-                -32769
-                /*/
-                -32768
-                //*/
-                ;
+            let ret: i16 = 
+                -32769 ;
 
             return (ret + 32700).i32 + 68;
         }
 
 -----
-_0.fu @5:18:
+_0.fu @4:18:
 
-[2m      |             let ret: i16 =[0m
-[2m      |                 //*F[0m
-    5 |                 -[31;1m32769[0m
-[2m      |                 /*/[0m
-[2m      |                 -32768[0m
+[2m      |         fn main() {[0m
+[2m      |             let ret: i16 = [0m
+    4 |                 -[31;1m32769[0m ;
+[2m      | [0m
+[2m      |             return (ret + 32700).i32 + 68;[0m
 
 	Type annotation does not match init expression `ret`: i16: copy=i32: copy
 
@@ -20944,13 +22758,8 @@ _0.fu @5:18:
 -----
 
         fn main() {
-            let ret: i16 =
-                /*
-                -32769
-                /*/
-                -32768
-                //*/
-                ;
+            let ret: i16 = 
+                -32768 ;
 
             return (ret + 32700).i32 + 68;
         }
@@ -20962,7 +22771,7 @@ _0.fu @5:18:
 int fu_MAIN()
 {
     const short ret = short(-32768);
-    return int((ret + short(32700))) + 68;
+    return int(short((ret + short(32700)))) + 68;
 }
 
 #endif
@@ -20973,25 +22782,20 @@ int main() { return fu_MAIN(); }
 -----
 
         fn main() {
-            let ret: i32 =
-                //*F
-                -2147483649
-                /*/
-                -2147483648
-                //*/
-                ;
+            let ret: i32 = 
+                -2147483649 ;
 
             return (ret + 2147483600).i32 + 48;
         }
 
 -----
-_0.fu @5:18:
+_0.fu @4:18:
 
-[2m      |             let ret: i32 =[0m
-[2m      |                 //*F[0m
-    5 |                 -[31;1m2147483649[0m
-[2m      |                 /*/[0m
-[2m      |                 -2147483648[0m
+[2m      |         fn main() {[0m
+[2m      |             let ret: i32 = [0m
+    4 |                 -[31;1m2147483649[0m ;
+[2m      | [0m
+[2m      |             return (ret + 2147483600).i32 + 48;[0m
 
 	Type annotation does not match init expression `ret`: i32: copy=i64: copy
 
@@ -21000,13 +22804,8 @@ _0.fu @5:18:
 -----
 
         fn main() {
-            let ret: i32 =
-                /*
-                -2147483649
-                /*/
-                -2147483648
-                //*/
-                ;
+            let ret: i32 = 
+                -2147483648 ;
 
             return (ret + 2147483600).i32 + 48;
         }
@@ -21028,26 +22827,21 @@ int main() { return fu_MAIN(); }
 
 -----
 
-        fn main() {
-            let ret: i64 =
-                //*F
-                -9223372036854775809
-                /*/
-                -9223372036854775808
-                //*/
-                ;
+        fn main() { // wording different from the ones above and below
+            let ret: i64 = 
+                -9223372036854775809 ;
 
             return (ret + 9223372036854775800).i32 + 8;
         }
 
 -----
-_0.fu @5:18:
+_0.fu @4:18:
 
-[2m      |             let ret: i64 =[0m
-[2m      |                 //*F[0m
-    5 |                 -[31;1m9223372036854775809[0m
-[2m      |                 /*/[0m
-[2m      |                 -9223372036854775808[0m
+[2m      |         fn main() { // wording different from the ones above and below[0m
+[2m      |             let ret: i64 = [0m
+    4 |                 -[31;1m9223372036854775809[0m ;
+[2m      | [0m
+[2m      |             return (ret + 9223372036854775800).i32 + 8;[0m
 
 	Oversized signed int literal.
 
@@ -21055,14 +22849,9 @@ _0.fu @5:18:
 
 -----
 
-        fn main() {
-            let ret: i64 =
-                /*
-                -9223372036854775809
-                /*/
-                -9223372036854775808
-                //*/
-                ;
+        fn main() { // wording different from the ones above and below
+            let ret: i64 = 
+                -9223372036854775808 ;
 
             return (ret + 9223372036854775800).i32 + 8;
         }
@@ -21087,25 +22876,20 @@ int main() { return fu_MAIN(); }
 -----
 
         fn main() {
-            let ret: u8 =
-                //*F
-                256
-                /*/
-                255
-                //*/
-                ;
+            let ret: u8 = 
+                256 ;
 
             return (ret - 0xff).i32;
         }
 
 -----
-_0.fu @5:17:
+_0.fu @4:17:
 
-[2m      |             let ret: u8 =[0m
-[2m      |                 //*F[0m
-    5 |                 [31;1m256[0m
-[2m      |                 /*/[0m
-[2m      |                 255[0m
+[2m      |         fn main() {[0m
+[2m      |             let ret: u8 = [0m
+    4 |                 [31;1m256[0m ;
+[2m      | [0m
+[2m      |             return (ret - 0xff).i32;[0m
 
 	Type annotation does not match init expression `ret`: u8: copy=i32: copy
 
@@ -21114,13 +22898,8 @@ _0.fu @5:17:
 -----
 
         fn main() {
-            let ret: u8 =
-                /*
-                256
-                /*/
-                255
-                //*/
-                ;
+            let ret: u8 = 
+                255 ;
 
             return (ret - 0xff).i32;
         }
@@ -21134,7 +22913,7 @@ _0.fu @5:17:
 int fu_MAIN()
 {
     const fu::u8 ret = fu::u8(255u);
-    return int(unsigned((ret - fu::u8(0xffu))));
+    return int(unsigned(fu::u8((ret - fu::u8(0xffu)))));
 }
 
 #endif
@@ -21145,25 +22924,20 @@ int main() { return fu_MAIN(); }
 -----
 
         fn main() {
-            let ret: u16 =
-                //*F
-                65536
-                /*/
-                65535
-                //*/
-                ;
+            let ret: u16 = 
+                65536 ;
 
             return (ret - 0xffff).i32;
         }
 
 -----
-_0.fu @5:17:
+_0.fu @4:17:
 
-[2m      |             let ret: u16 =[0m
-[2m      |                 //*F[0m
-    5 |                 [31;1m65536[0m
-[2m      |                 /*/[0m
-[2m      |                 65535[0m
+[2m      |         fn main() {[0m
+[2m      |             let ret: u16 = [0m
+    4 |                 [31;1m65536[0m ;
+[2m      | [0m
+[2m      |             return (ret - 0xffff).i32;[0m
 
 	Type annotation does not match init expression `ret`: u16: copy=i32: copy
 
@@ -21172,13 +22946,8 @@ _0.fu @5:17:
 -----
 
         fn main() {
-            let ret: u16 =
-                /*
-                65536
-                /*/
-                65535
-                //*/
-                ;
+            let ret: u16 = 
+                65535 ;
 
             return (ret - 0xffff).i32;
         }
@@ -21192,7 +22961,7 @@ _0.fu @5:17:
 int fu_MAIN()
 {
     const uint16_t ret = uint16_t(65535u);
-    return int(unsigned((ret - uint16_t(0xffffu))));
+    return int(unsigned(uint16_t((ret - uint16_t(0xffffu)))));
 }
 
 #endif
@@ -21203,25 +22972,20 @@ int main() { return fu_MAIN(); }
 -----
 
         fn main() {
-            let ret: u32 =
-                //*F
-                4294967296
-                /*/
-                4294967295
-                //*/
-                ;
+            let ret: u32 = 
+                4294967296 ;
 
             return (ret - 0xffffffff).i32;
         }
 
 -----
-_0.fu @5:17:
+_0.fu @4:17:
 
-[2m      |             let ret: u32 =[0m
-[2m      |                 //*F[0m
-    5 |                 [31;1m4294967296[0m
-[2m      |                 /*/[0m
-[2m      |                 4294967295[0m
+[2m      |         fn main() {[0m
+[2m      |             let ret: u32 = [0m
+    4 |                 [31;1m4294967296[0m ;
+[2m      | [0m
+[2m      |             return (ret - 0xffffffff).i32;[0m
 
 	Type annotation does not match init expression `ret`: u32: copy=i64: copy
 
@@ -21230,13 +22994,8 @@ _0.fu @5:17:
 -----
 
         fn main() {
-            let ret: u32 =
-                /*
-                4294967296
-                /*/
-                4294967295
-                //*/
-                ;
+            let ret: u32 = 
+                4294967295 ;
 
             return (ret - 0xffffffff).i32;
         }
@@ -21258,26 +23017,21 @@ int main() { return fu_MAIN(); }
 
 -----
 
-        fn main() {
-            let ret: u64 =
-                //*F
-                18446744073709551616
-                /*/
-                18446744073709551615
-                //*/
-                ;
+        fn main() { // this is the best of the weird ones
+            let ret: u64 = 
+                18446744073709551616 ;
 
             return (ret - 0xffffffffffffffff).i32;
         }
 
 -----
-_0.fu @5:17:
+_0.fu @4:17:
 
-[2m      |             let ret: u64 =[0m
-[2m      |                 //*F[0m
-    5 |                 [31;1m18446744073709551616[0m
-[2m      |                 /*/[0m
-[2m      |                 18446744073709551615[0m
+[2m      |         fn main() { // this is the best of the weird ones[0m
+[2m      |             let ret: u64 = [0m
+    4 |                 [31;1m18446744073709551616[0m ;
+[2m      | [0m
+[2m      |             return (ret - 0xffffffffffffffff).i32;[0m
 
 	Integer literal overflows a u64.
 
@@ -21285,14 +23039,9 @@ _0.fu @5:17:
 
 -----
 
-        fn main() {
-            let ret: u64 =
-                /*
-                18446744073709551616
-                /*/
-                18446744073709551615
-                //*/
-                ;
+        fn main() { // this is the best of the weird ones
+            let ret: u64 = 
+                18446744073709551615 ;
 
             return (ret - 0xffffffffffffffff).i32;
         }
@@ -21339,9 +23088,9 @@ int main() { return fu_MAIN(); }
 
 #ifndef FU_NO_FDEFs
 
-                                #ifndef DEFt_set_once_nigQ
-                                #define DEFt_set_once_nigQ
-inline bool set_once_nigQ(uint64_t& entry, const int bit)
+                                #ifndef DEFt_set_once_rVpd4TL1
+                                #define DEFt_set_once_rVpd4TL1
+inline bool set_once_rVpd4TL1(uint64_t& entry, const int bit)
 {
     const uint64_t mask = (1ull << uint64_t(unsigned(bit)));
     if (entry & mask)
@@ -21355,8 +23104,8 @@ inline bool set_once_nigQ(uint64_t& entry, const int bit)
 int fu_MAIN()
 {
     uint64_t entry {};
-    const bool a = set_once_nigQ(entry, 32);
-    const bool b = set_once_nigQ(entry, 32);
+    const bool a = set_once_rVpd4TL1(entry, 32);
+    const bool b = set_once_rVpd4TL1(entry, 32);
     return ((a && !b) ? 0 : 101);
 }
 
@@ -21368,10 +23117,7 @@ int main() { return fu_MAIN(); }
 -----
 
         pub fn noop() {} // AUTOPUB
-        //*F
-        /*/
-        pub
-        //*/
+
         fn hello() 3;
 
         import _0;
@@ -21383,30 +23129,29 @@ _1.fu @3:23:
 [2m      | [0m
 [2m      |         import _0;[0m
     3 |         fn main() 6 - [31;1mhello[0m * 2;
-[2m      |     [0m
+[2m      | [0m
 
-	`hello` is not defined in this scope: `main`.
+	Bad call to [34;1mhello[0m: [34;1mhello[0m is not defined here.
 
         Solving [35;1mfn[0m [34;1mmain[0m
 
 -----
 
         pub fn noop() {} // AUTOPUB
-        /*
-        /*/
+
         pub
-        //*/
+
         fn hello() 3;
 
 -----
 
 #ifndef FU_NO_FDEFs
 
-void noop()
+void noop_H9fhQUVP()
 {
 }
 
-int hello()
+int hello_H9fhQUVP()
 {
     return 3;
 }
@@ -21416,10 +23161,9 @@ int hello()
 -----
 
         pub fn noop() {} // AUTOPUB
-        /*
-        /*/
+
         pub
-        //*/
+
         fn hello() 3;
 
         import _0;
@@ -21427,13 +23171,13 @@ int hello()
 
 -----
 
-int hello();
+int hello_H9fhQUVP();
 
 #ifndef FU_NO_FDEFs
 
 int fu_MAIN()
 {
-    return 6 - (hello() * 2);
+    return 6 - (hello_H9fhQUVP() * 2);
 }
 
 #endif
@@ -21530,12 +23274,12 @@ struct s_Hey
 
 int fu_MAIN()
 {
-    int _0 {};
+    int BL_1_v {};
     return (__extension__ (
     {
         const s_Hey h = s_Hey { 1 };
-        _0 = ((h.i + 2));
-    (void)0;}), int(_0)) - 3;
+        BL_1_v = ((h.i + 2));
+    (void)0;}), int(BL_1_v)) - 3;
 }
 
 #endif
@@ -21588,12 +23332,12 @@ struct s_Hey
 
 int fu_MAIN()
 {
-    int _0 {};
+    int BL_1_v {};
     return (__extension__ (
     {
         const s_Hey h = s_Hey { 1 };
-        _0 = ((h.i + 2));
-    (void)0;}), int(_0)) - 3;
+        BL_1_v = ((h.i + 2));
+    (void)0;}), int(BL_1_v)) - 3;
 }
 
 #endif
@@ -21645,12 +23389,12 @@ struct s_Hey
 
 int fu_MAIN()
 {
-    int _0 {};
+    int BL_1_v {};
     return (__extension__ (
     {
         const s_Hey h = s_Hey { 1 };
-        _0 = ((h.i + 2));
-    (void)0;}), int(_0)) - 3;
+        BL_1_v = ((h.i + 2));
+    (void)0;}), int(BL_1_v)) - 3;
 }
 
 #endif
@@ -21706,7 +23450,7 @@ struct s_Hey
 
 #ifndef FU_NO_FDEFs
 
-s_Hey init3()
+s_Hey init3_t0IXs7Dh()
 {
     return s_Hey { s_You { 3 } };
 }
@@ -21740,7 +23484,7 @@ s_Hey init3()
 struct s_Hey;
 struct s_You;
 
-s_Hey init3();
+s_Hey init3_t0IXs7Dh();
 
                                 #ifndef DEF_s_You
                                 #define DEF_s_You
@@ -21774,12 +23518,12 @@ struct s_Hey
 
 int fu_MAIN()
 {
-    int _0 {};
+    int BL_1_v {};
     return (__extension__ (
     {
-        const s_Hey h = init3();
-        _0 = ((h.you.i + 7));
-    (void)0;}), int(_0)) - 10;
+        const s_Hey h = init3_t0IXs7Dh();
+        BL_1_v = ((h.you.i + 7));
+    (void)0;}), int(BL_1_v)) - 10;
 }
 
 #endif
@@ -21919,7 +23663,7 @@ struct s_mat4
 
 #ifndef FU_NO_FDEFs
 
-float determinant(const s_mat4& _)
+float determinant_BcyCo3Aw(const s_mat4& _)
 {
     return (((((((((((((((((((((((((+_.mC * _.m9) * _.m6) * _.m3) - (((_.m8 * _.mD) * _.m6) * _.m3)) - (((_.mC * _.m5) * _.mA) * _.m3)) + (((_.m4 * _.mD) * _.mA) * _.m3)) + (((_.m8 * _.m5) * _.mE) * _.m3)) - (((_.m4 * _.m9) * _.mE) * _.m3)) - (((_.mC * _.m9) * _.m2) * _.m7)) + (((_.m8 * _.mD) * _.m2) * _.m7)) + (((_.mC * _.m1) * _.mA) * _.m7)) - (((_.m0 * _.mD) * _.mA) * _.m7)) - (((_.m8 * _.m1) * _.mE) * _.m7)) + (((_.m0 * _.m9) * _.mE) * _.m7)) + (((_.mC * _.m5) * _.m2) * _.mB)) - (((_.m4 * _.mD) * _.m2) * _.mB)) - (((_.mC * _.m1) * _.m6) * _.mB)) + (((_.m0 * _.mD) * _.m6) * _.mB)) + (((_.m4 * _.m1) * _.mE) * _.mB)) - (((_.m0 * _.m5) * _.mE) * _.mB)) - (((_.m8 * _.m5) * _.m2) * _.mF)) + (((_.m4 * _.m9) * _.m2) * _.mF)) + (((_.m8 * _.m1) * _.m6) * _.mF)) - (((_.m0 * _.m9) * _.m6) * _.mF)) - (((_.m4 * _.m1) * _.mA) * _.mF)) + (((_.m0 * _.m5) * _.mA) * _.mF);
 }
@@ -21987,7 +23731,7 @@ struct s_mat34;
 struct s_mat4;
 struct s_vec3;
 
-float determinant(const s_mat4&);
+float determinant_BcyCo3Aw(const s_mat4&);
 
                                 #ifndef DEF_s_vec3
                                 #define DEF_s_vec3
@@ -22077,7 +23821,7 @@ int fu_MAIN()
 {
     const s_mat34 m34 = s_mat34 { s_vec3 { 1.0f, 0.0f, 0.0f }, s_vec3 { 0.0f, 1.0f, 0.0f }, s_vec3 { 0.0f, 0.0f, 1.0f }, s_vec3{} };
     const s_mat4 m44 = s_mat4 { float(m34.mx.x), float(m34.mx.y), float(m34.mx.z), 0.0f, float(m34.my.x), float(m34.my.y), float(m34.my.z), 0.0f, float(m34.mz.x), float(m34.mz.y), float(m34.mz.z), 0.0f, float(m34.mo.x), float(m34.mo.y), float(m34.mo.z), 1.0f };
-    return int(determinant(m44)) - 1;
+    return int(determinant_BcyCo3Aw(m44)) - 1;
 }
 
 #endif
@@ -22107,7 +23851,7 @@ int main() { return fu_MAIN(); }
 
 #ifndef FU_NO_FDEFs
 
-int _0(const int i)
+int _0_1hpjcHdP(const int i)
 {
     return i + 1;
 }
@@ -22122,13 +23866,13 @@ int _0(const int i)
 
 -----
 
-int _0(int);
+int _0_1hpjcHdP(int);
 
 #ifndef FU_NO_FDEFs
 
 int fu_MAIN()
 {
-    return _0(-1);
+    return _0_1hpjcHdP(-1);
 }
 
 #endif
@@ -22180,32 +23924,32 @@ int main() { return fu_MAIN(); }
 
 #ifndef FU_NO_FDEFs
 
-                                #ifndef DEFt_add_xJq8
-                                #define DEFt_add_xJq8
-inline void add_xJq8(fu_VEC<int>& to, const int item)
+                                #ifndef DEFt_add_sGfQ1efb
+                                #define DEFt_add_sGfQ1efb
+inline void add_sGfQ1efb(fu_VEC<int>& to, const int item)
 {
     for (int i = 0; i < to.size(); i++)
     {
         if ((to[i] >= item))
         {
             if (to[i] != item)
-                to.insert(i, item);
+                to.insert(i, int(item));
 
             return;
         };
     };
-    to.push(item);
+    to.push(int(item));
 }
                                 #endif
 
 int fu_MAIN()
 {
     fu_VEC<int> x = fu_VEC<int> { fu::slate<3, int> { 1, 2, 3 } };
-    add_xJq8(x, 3);
+    add_sGfQ1efb(x, 3);
     if (x.size() != 3)
         return 33;
 
-    add_xJq8(x, 4);
+    add_sGfQ1efb(x, 4);
     return x.size() - x[3];
 }
 
@@ -22376,7 +24120,7 @@ extern const fu_STR A;
 extern const fu_STR B;
                                 #endif
 
-static int test(const int i)
+static int test_sZhpQHO6(const int i)
 {
     fu::view<char> v = ((i & 1) ? A : B);
     return v.size();
@@ -22384,7 +24128,7 @@ static int test(const int i)
 
 int fu_MAIN()
 {
-    return test(0) - test(1);
+    return test_sZhpQHO6(0) - test_sZhpQHO6(1);
 }
 
 #endif
@@ -22475,55 +24219,55 @@ struct s_ModuleOutputs
 
 #ifndef FU_NO_FDEFs
 
-                                #ifndef DEFt_clone_xQkU
-                                #define DEFt_clone_xQkU
-inline const fu_VEC<int>& clone_xQkU(const fu_VEC<int>& a)
+                                #ifndef DEFt_clone_ZvOm7cyv
+                                #define DEFt_clone_ZvOm7cyv
+inline const fu_VEC<int>& clone_ZvOm7cyv(const fu_VEC<int>& a)
 {
     return a;
 }
                                 #endif
 
-                                #ifndef DEFt_clone_6Kad
-                                #define DEFt_clone_6Kad
-inline int clone_6Kad(const int a)
+                                #ifndef DEFt_clone_1hpjcHdP
+                                #define DEFt_clone_1hpjcHdP
+inline int clone_1hpjcHdP(const int a)
 {
     return a;
 }
                                 #endif
 
-                                #ifndef DEFt_clone_EjfK
-                                #define DEFt_clone_EjfK
-inline s_Scope clone_EjfK(const s_Scope& a)
+                                #ifndef DEFt_clone_CjN3HFV1
+                                #define DEFt_clone_CjN3HFV1
+inline s_Scope clone_CjN3HFV1(const s_Scope& a)
 {
     /*MOV*/ s_Scope res {};
-    res.x = clone_6Kad(a.x);
+    res.x = clone_1hpjcHdP(a.x);
     return /*NRVO*/ res;
 }
                                 #endif
 
-                                #ifndef DEFt_clone_gxJO
-                                #define DEFt_clone_gxJO
-inline s_ModuleOutputs clone_gxJO(const s_ModuleOutputs& a)
+                                #ifndef DEFt_clone_v5LVj5XB
+                                #define DEFt_clone_v5LVj5XB
+inline s_ModuleOutputs clone_v5LVj5XB(const s_ModuleOutputs& a)
 {
     /*MOV*/ s_ModuleOutputs res {};
 
     {
-        res.deps = clone_xQkU(a.deps);
-        res.scope = clone_EjfK(a.scope);
+        res.deps = clone_ZvOm7cyv(a.deps);
+        res.scope = clone_CjN3HFV1(a.scope);
     };
     return /*NRVO*/ res;
 }
                                 #endif
 
-int test(const s_ModuleOutputs& a)
+int test_Yqr4gEaR(const s_ModuleOutputs& a)
 {
-    s_ModuleOutputs b = clone_gxJO(a);
+    s_ModuleOutputs b = clone_v5LVj5XB(a);
     return a.deps.size() - b.deps.size();
 }
 
 int fu_MAIN()
 {
-    return test(s_ModuleOutputs{});
+    return test_Yqr4gEaR(s_ModuleOutputs{});
 }
 
 #endif
@@ -22547,14 +24291,14 @@ int main() { return fu_MAIN(); }
 
 #ifndef FU_NO_FDEFs
 
-static const fu_STR& createShader(const fu_STR& src)
+static const fu_STR& createShader_naPRfSop(const fu_STR& src)
 {
     return src;
 }
 
                                 #ifndef DEF_GEOMETRY_PASS_TEST
                                 #define DEF_GEOMETRY_PASS_TEST
-extern const fu_STR GEOMETRY_PASS_TEST { createShader("source code"_fu) };
+extern const fu_STR GEOMETRY_PASS_TEST { createShader_naPRfSop("source code"_fu) };
                                 #endif
 
 #endif
@@ -22636,9 +24380,9 @@ struct s_List
 
 #ifndef FU_NO_FDEFs
 
-fu_VEC<fu_STR>& add(s_List& _, const fu_STR& val)
+fu_VEC<fu_STR>& add_gx4pQbvi(s_List& _, const fu_STR& val)
 {
-    return (_.vals += val);
+    return (_.vals += fu_STR(val));
 }
 
 int x5Bx5D(const s_List& _, fu::view<char> val)
@@ -22654,6 +24398,7 @@ int x5Bx5D(const s_List& _, fu::view<char> val)
 }
 
 #endif
+// NONTRIV_autocopy
 // RELAX_respec
 
 -----
@@ -22690,7 +24435,7 @@ int x5Bx5D(const s_List& _, fu::view<char> val)
 
 struct s_List;
 
-fu_VEC<fu_STR>& add(s_List&, const fu_STR&);
+fu_VEC<fu_STR>& add_gx4pQbvi(s_List&, const fu_STR&);
 int x5Bx5D(const s_List&, fu::view<char>);
 
                                 #ifndef DEF_s_List
@@ -22713,7 +24458,7 @@ int fu_MAIN()
 {
     s_List list {};
     for (int i = 0; i < 3; i++)
-        add(list, ((i & 1) ? "a"_fu : "b"_fu));
+        add_gx4pQbvi(list, ((i & 1) ? "a"_fu : "b"_fu));
 
     return x5Bx5D(list, "b"_fu) - 2;
 }
@@ -22829,77 +24574,306 @@ int main() { return fu_MAIN(); }
 
 -----
 
-        fn each(y<alt>: i32</alt>)
-            y & 1   ? y
-                    : y / 2 + each(y / 2);
+        fn private(x)           x * 3;              // Scope_import is broken,
+        pub fn public(y)        private(y) * 2;     //  doesnt always import privates.
 
-        fn each(y<alt>: i32</alt>)
-            y & 1   ? y / 2
-                    : y / 2 + each(y / 2);
-
-        fn main() {
-            let a = _0::each(100);
-            let b = _1::each(8);
-
-            return a+b - 107;
-        }
+        fn main()               1.public - 6;
 
 -----
-TODO: Exit code: 256
-Failing testcase:
-
-
-        fn each(y)
-            y & 1   ? y
-                    : y / 2 + each(y / 2);
-
-        fn each(y)
-            y & 1   ? y / 2
-                    : y / 2 + each(y / 2);
-
-        fn main() {
-            let a = _0::each(100);
-            let b = _1::each(8);
-
-            return a+b - 107;
-        }
-
-Sources:
-
-inline int each_6Kad(int);
 
 #ifndef FU_NO_FDEFs
 
-                                #ifndef DEFt_each_6Kad
-                                #define DEFt_each_6Kad
-inline int each_6Kad(const int y)
+inline static int private_1hpjcHdP(const int x)
 {
-    return ((y & 1) ? int(y) : ((y / 2) + each_6Kad((y / 2))));
+    return x * 3;
 }
-                                #endif
 
-                                #ifndef DEFt_each_6Kad
-                                #define DEFt_each_6Kad
-inline int each_6Kad(const int y)
+                                #ifndef DEFt_public_1hpjcHdP
+                                #define DEFt_public_1hpjcHdP
+inline int public_1hpjcHdP(const int y)
 {
-    return ((y & 1) ? (y / 2) : ((y / 2) + each_6Kad((y / 2))));
+    return private_1hpjcHdP(y) * 2;
 }
                                 #endif
 
 int fu_MAIN()
 {
-    const int a = each_6Kad(100);
-    const int b = each_6Kad(8);
-    return (a + b) - 107;
+    return public_1hpjcHdP(1) - 6;
 }
 
 #endif
 
 
 int main() { return fu_MAIN(); }
-// FN_recursion
-// FN_resolve
-// DEAD_call
+
+-----
+
+        fn private(x)           x * 3;              // Scope_import is broken,
+        pub fn public(y)        private(y) * 2;     //  doesnt always import privates.
+
+-----
+
+-----
+
+        fn private(x)           x * 3;              // Scope_import is broken,
+        pub fn public(y)        private(y) * 2;     //  doesnt always import privates.
+        import _0;
+        fn main()               1.public - 6;
+
+-----
+
+#ifndef FU_NO_FDEFs
+
+inline static int private_1hpjcHdP(const int x)
+{
+    return x * 3;
+}
+
+                                #ifndef DEFt_public_1hpjcHdP
+                                #define DEFt_public_1hpjcHdP
+inline int public_1hpjcHdP(const int y)
+{
+    return private_1hpjcHdP(y) * 2;
+}
+                                #endif
+
+int fu_MAIN()
+{
+    return public_1hpjcHdP(1) - 6;
+}
+
+#endif
+
+
+int main() { return fu_MAIN(); }
+
+-----
+
+        fn private(x: i32)      x * 3;              // cg fail:
+        pub fn public(y)        private(y) * 2;     //  fn private hidden in first translation unit.
+
+-----
+
+#ifndef FU_NO_FDEFs
+
+int private_1hpjcHdP(const int x)
+{
+    return x * 3;
+}
+
+#endif
+
+-----
+
+        fn private(x: i32)      x * 3;              // cg fail:
+        pub fn public(y)        private(y) * 2;     //  fn private hidden in first translation unit.
+
+        fn main()               1._0::public - 6;
+
+-----
+
+int private_1hpjcHdP(int);
+
+#ifndef FU_NO_FDEFs
+
+                                #ifndef DEFt_public_1hpjcHdP
+                                #define DEFt_public_1hpjcHdP
+inline int public_1hpjcHdP(const int y)
+{
+    return private_1hpjcHdP(y) * 2;
+}
+                                #endif
+
+int fu_MAIN()
+{
+    return public_1hpjcHdP(1) - 6;
+}
+
+#endif
+
+
+int main() { return fu_MAIN(); }
+
+-----
+
+        let OPTOKENS = "{}[]()!?~@#$%^&*/-+<=>,.;:|";   // nowadays problem is OPTOKENS cgs to static in first translation unit
+
+        pub fn lex(src) // <- template
+        {
+            let end = src.len;
+            mut idx = 0;
+
+            while (idx < end) {
+                let c = src[idx++];
+                if (OPTOKENS.has(c)) // <- originally, no OPTOKENS in scope ...
+                    return idx - 1;
+            }
+
+            return src.len;
+        }
+
+-----
+
+#include <fu/init_priority.h>
+#include <fu/str.h>
+
+#ifndef FU_NO_FDEFs
+
+                                #ifndef DEF_OPTOKENS
+                                #define DEF_OPTOKENS
+extern const fu_STR OPTOKENS fu_INIT_PRIORITY(1001) = "{}[]()!?~@#$%^&*/-+<=>,.;:|"_fu;
+                                #endif
+
+#endif
+
+-----
+
+        let OPTOKENS = "{}[]()!?~@#$%^&*/-+<=>,.;:|";   // nowadays problem is OPTOKENS cgs to static in first translation unit
+
+        pub fn lex(src) // <- template
+        {
+            let end = src.len;
+            mut idx = 0;
+
+            while (idx < end) {
+                let c = src[idx++];
+                if (OPTOKENS.has(c)) // <- originally, no OPTOKENS in scope ...
+                    return idx - 1;
+            }
+
+            return src.len;
+        }
+
+        fn main() _0::lex("3 - 3") - 2; // <- from here
+
+-----
+
+#include <fu/init_priority.h>
+#include <fu/str.h>
+#include <fu/view.h>
+
+#ifndef FU_NO_FDEFs
+
+                                #ifndef DEF_OPTOKENS
+                                #define DEF_OPTOKENS
+extern const fu_STR OPTOKENS;
+                                #endif
+
+                                #ifndef DEFt_has_05euw4KZ
+                                #define DEFt_has_05euw4KZ
+inline bool has_05euw4KZ(fu::view<char> a, const char b)
+{
+    for (int i = 0; i < a.size(); i++)
+    {
+        if (a[i] == b)
+            return true;
+
+    };
+    return false;
+}
+                                #endif
+
+                                #ifndef DEFt_lex_naPRfSop
+                                #define DEFt_lex_naPRfSop
+inline int lex_naPRfSop(fu::view<char> src)
+{
+    const int end = src.size();
+    int idx = 0;
+    while (idx < end)
+    {
+        const char c = src[idx++];
+        if (has_05euw4KZ(OPTOKENS, c))
+            return idx - 1;
+
+    };
+    return src.size();
+}
+                                #endif
+
+int fu_MAIN()
+{
+    return lex_naPRfSop("3 - 3"_fu) - 2;
+}
+
+#endif
+
+
+int main() { return fu_MAIN(); }
+// RELAX_respec
+
+-----
+
+        pub fn pubbed(a: i32) a * 2;
+        fn not_pubbed(b: i32) b * 3;
+
+        fn main() 1._0::pubbed._0::not_pubbed - 6;
+
+-----
+TODO: _1.fu @2:19:
+
+[2m      | [0m
+    2 |         fn main() [31;1m1[0m._0::pubbed._0::not_pubbed - 6;
+[2m      | [0m
+
+	THIS IS A COMPILER BUG.
+
+	CODEGEN FAIL:
+
+	ensureFnDef: fndef is needed outside of its original scope: 1 vs 2: `fn not_pubbed_1hpjcHdP`.
+
+-----
+
+        let SELF_TEST           = true;
+        let NODEIDX_signbits    = SELF_TEST && 4;
+        let NODEIDX_signmask    = (1 << NODEIDX_signbits) - 1;
+
+-----
+
+#ifndef FU_NO_FDEFs
+
+                                #ifndef DEF_SELF_TEST
+                                #define DEF_SELF_TEST
+extern const bool SELF_TEST = true;
+                                #endif
+
+                                #ifndef DEF_NODEIDX_signbits
+                                #define DEF_NODEIDX_signbits
+extern const int NODEIDX_signbits = (SELF_TEST ? 4 : int{});
+                                #endif
+
+                                #ifndef DEF_NODEIDX_signmask
+                                #define DEF_NODEIDX_signmask
+extern const int NODEIDX_signmask = ((1 << NODEIDX_signbits) - 1);
+                                #endif
+
+#endif
+
+-----
+
+        let SELF_TEST           = true;
+        let NODEIDX_signbits    = SELF_TEST && 4;
+        let NODEIDX_signmask    = (1 << NODEIDX_signbits) - 1;
+
+        fn main() _0::NODEIDX_signmask - 15;
+
+-----
+
+#ifndef FU_NO_FDEFs
+
+                                #ifndef DEF_NODEIDX_signmask
+                                #define DEF_NODEIDX_signmask
+extern const int NODEIDX_signmask;
+                                #endif
+
+int fu_MAIN()
+{
+    return NODEIDX_signmask - 15;
+}
+
+#endif
+
+
+int main() { return fu_MAIN(); }
 
 -----
 
@@ -22993,21 +24967,21 @@ struct s_Target
 
 #ifndef FU_NO_FDEFs
 
-int index(const s_Target& t)
+int index_PXTKu1UQ(const s_Target& t)
 {
     return int((t.packed & 0x7fffffffu));
 }
 
-int local_eq(const s_Target& t, const int index, const int modid)
+int local_eq_ylYHLHdL(const s_Target& t, const int index, const int modid)
 {
     int _0 {};
-    return (_0 = (modid - t.modid)) ? _0 : (index - ::index(t));
+    return (_0 = (modid - t.modid)) ? _0 : (index - index_PXTKu1UQ(t));
 }
 
 int fu_MAIN()
 {
     const int modid = 1;
-    return local_eq(s_Target { 1, 0x80000002u }, 7, modid) - 5;
+    return local_eq_ylYHLHdL(s_Target { 1, 0x80000002u }, 7, modid) - 5;
 }
 
 #endif
@@ -23046,7 +25020,7 @@ struct s_HasInt
 
 #ifndef FU_NO_FDEFs
 
-static int test(const s_HasInt& s)
+static int test_PXTKu1UQ(const s_HasInt& s)
 {
     const int i = s.i;
     return i;
@@ -23054,7 +25028,7 @@ static int test(const s_HasInt& s)
 
 int fu_MAIN()
 {
-    return test(s_HasInt { -1 }) + 1;
+    return test_PXTKu1UQ(s_HasInt { -1 }) + 1;
 }
 
 #endif
@@ -23071,14 +25045,14 @@ int main() { return fu_MAIN(); }
 
 #ifndef FU_NO_FDEFs
 
-static int test(const int x)
+static int test_1hpjcHdP(const int x)
 {
     return x;
 }
 
 int fu_MAIN()
 {
-    return test(3) - 3;
+    return test_1hpjcHdP(3) - 3;
 }
 
 #endif
@@ -23099,19 +25073,19 @@ int main() { return fu_MAIN(); }
 
 #ifndef FU_NO_FDEFs
 
-static int inner(const int x)
+static int inner_y1jV3SX3(const int x)
 {
     return x;
 }
 
-static int test(const int x)
+static int test_1hpjcHdP(const int x)
 {
-    return inner(x);
+    return inner_y1jV3SX3(x);
 }
 
 int fu_MAIN()
 {
-    return test(3) - 3;
+    return test_1hpjcHdP(3) - 3;
 }
 
 #endif
@@ -23150,19 +25124,19 @@ struct s_I
 
 #ifndef FU_NO_FDEFs
 
-static int inner(const s_I& x)
+static int inner_V6uTIUa3(const s_I& x)
 {
     return x.v;
 }
 
-static int test(const s_I& x)
+static int test_PXTKu1UQ(const s_I& x)
 {
-    return inner(x);
+    return inner_V6uTIUa3(x);
 }
 
 int fu_MAIN()
 {
-    return test(s_I { 3 }) - 3;
+    return test_PXTKu1UQ(s_I { 3 }) - 3;
 }
 
 #endif
@@ -23203,19 +25177,19 @@ struct s_I
 
 #ifndef FU_NO_FDEFs
 
-static int inner(const s_I& x)
+static int inner_V6uTIUa3(const s_I& x)
 {
     return x.v[0];
 }
 
-static int test(const s_I& x)
+static int test_PXTKu1UQ(const s_I& x)
 {
-    return inner(x);
+    return inner_V6uTIUa3(x);
 }
 
 int fu_MAIN()
 {
-    return test(s_I { fu_VEC<int> { fu::slate<1, int> { 3 } } }) - 3;
+    return test_PXTKu1UQ(s_I { fu_VEC<int> { fu::slate<1, int> { 3 } } }) - 3;
 }
 
 #endif
@@ -23262,20 +25236,20 @@ struct s_I
 
 #ifndef FU_NO_FDEFs
 
-static int inner(const s_I& x)
+static int inner_V6uTIUa3(const s_I& x)
 {
     fu::view<int> v = x.v;
     return v[0];
 }
 
-static int test(const s_I& x)
+static int test_PXTKu1UQ(const s_I& x)
 {
-    return inner(x);
+    return inner_V6uTIUa3(x);
 }
 
 int fu_MAIN()
 {
-    return test(s_I { fu_VEC<int> { fu::slate<1, int> { 3 } } }) - 3;
+    return test_PXTKu1UQ(s_I { fu_VEC<int> { fu::slate<1, int> { 3 } } }) - 3;
 }
 
 #endif
@@ -23302,22 +25276,22 @@ int main() { return fu_MAIN(); }
 
 #ifndef FU_NO_FDEFs
 
-[[noreturn]] static fu::never noReturn()
+[[noreturn]] static fu::never noReturn_H9fhQUVP()
 {
     fu::fail("ex"_fu);
 }
 
-static int doesReturn(const int a)
+static int doesReturn_1hpjcHdP(const int a)
 {
     if (a > 0)
-        noReturn();
+        noReturn_H9fhQUVP();
 
     return a;
 }
 
 int fu_MAIN()
 {
-    return doesReturn(-3) + 3;
+    return doesReturn_1hpjcHdP(-3) + 3;
 }
 
 #endif
@@ -23392,15 +25366,15 @@ struct s_Context
 
 #ifndef FU_NO_FDEFs
 
-                                #ifndef DEFt_x7E_OZkl
-                                #define DEFt_x7E_OZkl
-inline fu_STR x7E_OZkl(fu::view<char> a, fu::view<char> b)
+                                #ifndef DEFt_x7E
+                                #define DEFt_x7E
+inline fu_STR x7E(fu::view<char> a, fu::view<char> b)
 {
     return a + b;
 }
                                 #endif
 
-static const s_Module& findModule(const int fname, const s_Context& ctx)
+static const s_Module& findModule_ohWVVsvS(const int fname, const s_Context& ctx)
 {
     fu::view<s_Module> modules = ctx.modules;
     for (int i = 0; i < modules.size(); i++)
@@ -23410,24 +25384,25 @@ static const s_Module& findModule(const int fname, const s_Context& ctx)
             return module;
 
     };
-    fu::fail(x7E_OZkl("Cannot locate: "_fu, fu::i64dec(fname)));
+    fu::fail(x7E("Cannot locate: "_fu, fu::i64dec(fname)));
 }
 
-static const s_Module& test(const s_Context& ctx)
+static const s_Module& test_PXTKu1UQ(const s_Context& ctx)
 {
-    return findModule(0, ctx);
+    return findModule_ohWVVsvS(0, ctx);
 }
 
 int fu_MAIN()
 {
     s_Context ctx = s_Context { fu_VEC<s_Module> { fu::slate<1, s_Module> { s_Module{} } } };
-    return int(test(ctx).fname);
+    return int(test_PXTKu1UQ(ctx).fname);
 }
 
 #endif
 
 
 int main() { return fu_MAIN(); }
+// DEAD_code
 // RELAX_respec
 
 -----
@@ -23450,21 +25425,21 @@ int main() { return fu_MAIN(); }
 
 #ifndef FU_NO_FDEFs
 
-[[noreturn]] static fu::never noReturn()
+[[noreturn]] static fu::never noReturn_H9fhQUVP()
 {
     fu::fail("ex"_fu);
 }
 
-static void returnVoid(const int a)
+static void returnVoid_1hpjcHdP(const int a)
 {
     if (a > 0)
-        noReturn();
+        noReturn_H9fhQUVP();
 
 }
 
 int fu_MAIN()
 {
-    returnVoid(0);
+    returnVoid_1hpjcHdP(0);
     return 0;
 }
 
@@ -23488,7 +25463,7 @@ int main() { return fu_MAIN(); }
 
 #ifndef FU_NO_FDEFs
 
-static int parseQualifierChain(/*MOV*/ int i)
+static int parseQualifierChain_1hpjcHdP(/*MOV*/ int i)
 {
     for (; ; )
     {
@@ -23501,13 +25476,14 @@ static int parseQualifierChain(/*MOV*/ int i)
 
 int fu_MAIN()
 {
-    return parseQualifierChain(15);
+    return parseQualifierChain_1hpjcHdP(15);
 }
 
 #endif
 
 
 int main() { return fu_MAIN(); }
+// DEAD_code
 
 -----
 
@@ -23534,13 +25510,13 @@ int main() { return fu_MAIN(); }
 
 #ifndef FU_NO_FDEFs
 
-static void compile(const int x, int& sum)
+static void compile_ibgn75mP(const int x, int& sum)
 {
     if (!(x))
         fu::fail("x=0"_fu);
 
     if (x & 1)
-        compile((x + 1), sum);
+        compile_ibgn75mP((x + 1), sum);
 
     sum += x;
 }
@@ -23548,7 +25524,7 @@ static void compile(const int x, int& sum)
 int fu_MAIN()
 {
     int sum = 0;
-    compile(2, sum);
+    compile_ibgn75mP(2, sum);
     return sum - 2;
 }
 
@@ -23596,14 +25572,14 @@ int main() { return fu_MAIN(); }
 
 #ifndef FU_NO_FDEFs
 
-static int getModule(fu::view<char> fname)
+static int getModule_JO4sXOPn(fu::view<char> fname)
 {
     return fname.size();
 }
 
-                                #ifndef DEFt_split_IT5c
-                                #define DEFt_split_IT5c
-inline void split_IT5c(const fu_STR& str, fu::view<char> sep, int, fu_VEC<fu_STR>& result)
+                                #ifndef DEFt_split_p38f9TPA
+                                #define DEFt_split_p38f9TPA
+inline void split_p38f9TPA(const fu_STR& str, fu::view<char> sep, int, fu_VEC<fu_STR>& result)
 {
     int last = 0;
     int next = 0;
@@ -23615,7 +25591,7 @@ inline void split_IT5c(const fu_STR& str, fu::view<char> sep, int, fu_VEC<fu_STR
 
             {
                 fu_STR substr = fu::slice(str, last, next);
-                result += substr;
+                result += fu_STR(substr);
             };
             last = (next + N);
         };
@@ -23623,33 +25599,33 @@ inline void split_IT5c(const fu_STR& str, fu::view<char> sep, int, fu_VEC<fu_STR
     if (last)
     {
         fu_STR substr = fu::slice(str, last);
-        result += substr;
+        result += fu_STR(substr);
     }
     else
-        result += str;
+        result += fu_STR(str);
 
 }
                                 #endif
 
-                                #ifndef DEFt_split_OZkl
-                                #define DEFt_split_OZkl
-inline fu_VEC<fu_STR> split_OZkl(const fu_STR& str, fu::view<char> sep)
+                                #ifndef DEFt_split_OZkl8S7R
+                                #define DEFt_split_OZkl8S7R
+inline fu_VEC<fu_STR> split_OZkl8S7R(const fu_STR& str, fu::view<char> sep)
 {
     /*MOV*/ fu_VEC<fu_STR> result {};
-    split_IT5c(str, sep, 0, result);
+    split_p38f9TPA(str, sep, 0, result);
     return /*NRVO*/ result;
 }
                                 #endif
 
-static void compile(const fu_STR& fname, fu::view<char> via, int& sum)
+static void compile_aeuHhddS(const fu_STR& fname, fu::view<char> via, int& sum)
 {
     int _0 {};
-    const int module = ((_0 = getModule(fname)) ? _0 : fu::fail(((("import circle: '"_fu + via) + fname) + "'."_fu)));
+    const int module = ((_0 = getModule_JO4sXOPn(fname)) ? _0 : fu::fail(((("import circle: '"_fu + via) + fname) + "'."_fu)));
     if (module & 1)
     {
-        fu_VEC<fu_STR> fuzimports = split_OZkl(fname, "a"_fu);
+        fu_VEC<fu_STR> fuzimports = split_OZkl8S7R(fname, "a"_fu);
         for (int i = 0; i < fuzimports.size(); i++)
-            compile(fuzimports[i], ((fname + " <- "_fu) + via), sum);
+            compile_aeuHhddS(fuzimports[i], ((fname + " <- "_fu) + via), sum);
 
     };
     sum += module;
@@ -23658,7 +25634,7 @@ static void compile(const fu_STR& fname, fu::view<char> via, int& sum)
 int fu_MAIN()
 {
     int sum = 0;
-    compile("ab"_fu, fu::view<char>{}, sum);
+    compile_aeuHhddS("ab"_fu, fu::view<char>{}, sum);
     return sum - 2;
 }
 
@@ -23668,6 +25644,7 @@ int fu_MAIN()
 int main() { return fu_MAIN(); }
 // FN_recursion
 // FN_resolve
+// NONTRIV_autocopy
 
 -----
 
@@ -23709,60 +25686,60 @@ int main() { return fu_MAIN(); }
 #include <fu/int.h>
 #include <fu/vec.h>
 
-static int either(int, const fu_VEC<fu::u8>&, const fu_VEC<int>&);
+static int either_1hpjcHdP(int, const fu_VEC<fu::u8>&, const fu_VEC<int>&);
 
 #ifndef FU_NO_FDEFs
 
-static const fu_VEC<int>& A(const fu_VEC<int>& _A)
+static const fu_VEC<int>& A_ZvOm7cyv(const fu_VEC<int>& _A)
 {
     return _A;
 }
 
-static const fu_VEC<fu::u8>& B(const fu_VEC<fu::u8>& _B)
+static const fu_VEC<fu::u8>& B_Og2zkNrU(const fu_VEC<fu::u8>& _B)
 {
     return _B;
 }
 
-static int AB(const int x, const fu_VEC<int>& _A, const fu_VEC<fu::u8>& _B)
+static int AB_1hpjcHdP(const int x, const fu_VEC<int>& _A, const fu_VEC<fu::u8>& _B)
 {
-    return A(_A)[x] - int(unsigned(B(_B)[x]));
+    return A_ZvOm7cyv(_A)[x] - int(unsigned(B_Og2zkNrU(_B)[x]));
 }
 
-static int BA(const int x, const fu_VEC<fu::u8>& _B, const fu_VEC<int>& _A)
+static int BA_1hpjcHdP(const int x, const fu_VEC<fu::u8>& _B, const fu_VEC<int>& _A)
 {
-    return int(unsigned(B(_B)[x])) - A(_A)[x];
+    return int(unsigned(B_Og2zkNrU(_B)[x])) - A_ZvOm7cyv(_A)[x];
 }
 
-static int cycleA_inner(const int x, const fu_VEC<fu::u8>& _B, const fu_VEC<int>& _A)
+static int cycleA_inner_1hpjcHdP(const int x, const fu_VEC<fu::u8>& _B, const fu_VEC<int>& _A)
 {
-    return ((x & 1) ? (either((x + 1), _B, _A) + AB(x, _A, _B)) : BA(x, _B, _A));
+    return ((x & 1) ? (either_1hpjcHdP((x + 1), _B, _A) + AB_1hpjcHdP(x, _A, _B)) : BA_1hpjcHdP(x, _B, _A));
 }
 
-static int cycleA_outer(const int x, const fu_VEC<fu::u8>& _B, const fu_VEC<int>& _A)
+static int cycleA_outer_1hpjcHdP(const int x, const fu_VEC<fu::u8>& _B, const fu_VEC<int>& _A)
 {
-    return ((x & 1) ? (cycleA_inner((x + 1), _B, _A) + AB(x, _A, _B)) : BA(x, _B, _A));
+    return ((x & 1) ? (cycleA_inner_1hpjcHdP((x + 1), _B, _A) + AB_1hpjcHdP(x, _A, _B)) : BA_1hpjcHdP(x, _B, _A));
 }
 
-static int cycleB_inner(const int x, const fu_VEC<fu::u8>& _B, const fu_VEC<int>& _A)
+static int cycleB_inner_1hpjcHdP(const int x, const fu_VEC<fu::u8>& _B, const fu_VEC<int>& _A)
 {
-    return ((x & 2) ? (either((x + 1), _B, _A) + BA(x, _B, _A)) : AB(x, _A, _B));
+    return ((x & 2) ? (either_1hpjcHdP((x + 1), _B, _A) + BA_1hpjcHdP(x, _B, _A)) : AB_1hpjcHdP(x, _A, _B));
 }
 
-static int cycleB_outer(const int x, const fu_VEC<fu::u8>& _B, const fu_VEC<int>& _A)
+static int cycleB_outer_1hpjcHdP(const int x, const fu_VEC<fu::u8>& _B, const fu_VEC<int>& _A)
 {
-    return ((x & 2) ? (cycleB_inner((x + 1), _B, _A) + BA(x, _B, _A)) : AB(x, _A, _B));
+    return ((x & 2) ? (cycleB_inner_1hpjcHdP((x + 1), _B, _A) + BA_1hpjcHdP(x, _B, _A)) : AB_1hpjcHdP(x, _A, _B));
 }
 
-static int either(const int x, const fu_VEC<fu::u8>& _B, const fu_VEC<int>& _A)
+static int either_1hpjcHdP(const int x, const fu_VEC<fu::u8>& _B, const fu_VEC<int>& _A)
 {
-    return ((x & 4) ? cycleA_outer(x, _B, _A) : cycleB_outer(x, _B, _A));
+    return ((x & 4) ? cycleA_outer_1hpjcHdP(x, _B, _A) : cycleB_outer_1hpjcHdP(x, _B, _A));
 }
 
 int fu_MAIN()
 {
     fu_VEC<int> _A = fu_VEC<int> { fu::slate<3, int> { 0, 1, 2 } };
     fu_VEC<fu::u8> _B = fu_VEC<fu::u8> { fu::slate<3, fu::u8> { fu::u8(unsigned(0)), fu::u8(unsigned(1)), fu::u8(unsigned(2)) } };
-    return either(0, _B, _A);
+    return either_1hpjcHdP(0, _B, _A);
 }
 
 #endif
@@ -23789,7 +25766,7 @@ int main() { return fu_MAIN(); }
 
 #ifndef FU_NO_FDEFs
 
-static int if0_ret101(const int x)
+static int if0_ret101_1hpjcHdP(const int x)
 {
     if (x > 2)
         return x * 2;
@@ -23801,7 +25778,7 @@ static int if0_ret101(const int x)
 
 int fu_MAIN()
 {
-    return if0_ret101(0) - 101;
+    return if0_ret101_1hpjcHdP(0) - 101;
 }
 
 #endif
@@ -23814,11 +25791,9 @@ int main() { return fu_MAIN(); }
         fn hello(x: i32) {
             if (x & 1)
                 return x * 2;
-            //*F
-            x; //ERR return
-            /*/
-            return x;
-            //*/
+
+
+            x;            
         }
 
         fn main() 0.hello;
@@ -23833,18 +25808,16 @@ _0.fu @2:9:
 
 	Non-void returning fn missing a final return.
 
-        Solving [35;1mfn[0m [34;1mhello[0m
+        Solving [35;1mfn[0m [34;1mhello_1hpjcHdP[0m
 
 -----
 
         fn hello(x: i32) {
             if (x & 1)
                 return x * 2;
-            /*
-            x; //ERR return
-            /*/
-            return x;
-            //*/
+
+
+            return x;     
         }
 
         fn main() 0.hello;
@@ -23853,7 +25826,7 @@ _0.fu @2:9:
 
 #ifndef FU_NO_FDEFs
 
-static int hello(const int x)
+static int hello_1hpjcHdP(const int x)
 {
     if (x & 1)
         return x * 2;
@@ -23863,7 +25836,7 @@ static int hello(const int x)
 
 int fu_MAIN()
 {
-    return hello(0);
+    return hello_1hpjcHdP(0);
 }
 
 #endif
@@ -23881,25 +25854,6 @@ int main() { return fu_MAIN(); }
         }
 
 -----
-TODO: o-09c785691e006979-471.cpp:15:5: error: expression result unused [-Werror,-Wunused-value]
-    a;
-    ^
-/Users/hdachev/fu/build-cpp/o-09c785691e006979-471.cpp:16:1: error: function declared 'noreturn' should not return [-Werror,-Winvalid-noreturn]
-}
-^
-2 errors generated.
-
-Failing testcase:
-
-
-        fn throws()         { throw("WHAT!");   }
-        fn myfn(a = throws) { return a;         } // never in default argument position!
-        fn main() {
-            try             { return myfn();                }
-            catch (e)       { return e == "WHAT!" ? 0 : 1;  }
-        }
-
-Sources:
 
 #include <fu/never.h>
 #include <fu/str.h>
@@ -23907,14 +25861,9 @@ Sources:
 
 #ifndef FU_NO_FDEFs
 
-[[noreturn]] static fu::never throws()
+[[noreturn]] static fu::never throws_H9fhQUVP()
 {
     fu::fail("WHAT!"_fu);
-}
-
-[[noreturn]] static fu::never myfn(const fu::never& a)
-{
-    a;
 }
 
 int fu_MAIN()
@@ -23922,7 +25871,7 @@ int fu_MAIN()
 
     try
     {
-        myfn(throws());
+        throws_H9fhQUVP();
     }
     catch (const std::exception& o_0)
     {
@@ -23937,6 +25886,8 @@ int fu_MAIN()
 
 
 int main() { return fu_MAIN(); }
+// DEAD_code
+// DEAD_call
 
 -----
 
@@ -23999,90 +25950,6 @@ int main() { return fu_MAIN(); }
 
 -----
 
-        //
-        // The -1.abs problem.
-        //
-        // Ruby lexes the minus into the numeric literal.
-        //  This is kinda inconsistent, altough it does make sense.
-        //
-        // Rust & all c-likes lex to -abs(1).
-        //  Rust linters warn about this.
-        //
-        // One thing we can do is change the precedence of some unaries
-        //  to above method call - others, like ! benefit from usual precedence.
-        //   In my experience, the unary * op in c/cpp always disappoints re: precedence,
-        //    but the & op usually works the way you want it to.
-        //     So introducing more precedence rules is a really questionable idea.
-        //
-        // We'll go the rust way for starters,
-        //  this will be a compile time error for now.
-        //
-        fn test()
-        //*F
-            -1.0
-        /*/
-            (-1.0)
-        //*/
-                .abs;
-
-        fn main() test ? 0 : 7;
-
------
-_0.fu @26:18:
-	Here the unary -/+ separates from the numeric literal, and wraps around the whole expression. Please parenthesize explicitly to make this obvious.
------
-
-        //
-        // The -1.abs problem.
-        //
-        // Ruby lexes the minus into the numeric literal.
-        //  This is kinda inconsistent, altough it does make sense.
-        //
-        // Rust & all c-likes lex to -abs(1).
-        //  Rust linters warn about this.
-        //
-        // One thing we can do is change the precedence of some unaries
-        //  to above method call - others, like ! benefit from usual precedence.
-        //   In my experience, the unary * op in c/cpp always disappoints re: precedence,
-        //    but the & op usually works the way you want it to.
-        //     So introducing more precedence rules is a really questionable idea.
-        //
-        // We'll go the rust way for starters,
-        //  this will be a compile time error for now.
-        //
-        fn test()
-        /*
-            -1.0
-        /*/
-            (-1.0)
-        //*/
-                .abs;
-
-        fn main() test ? 0 : 7;
-
------
-
-#include <cmath>
-
-#ifndef FU_NO_FDEFs
-
-static double test()
-{
-    return std::abs(-1.0);
-}
-
-int fu_MAIN()
-{
-    return (test() ? 0 : 7);
-}
-
-#endif
-
-
-int main() { return fu_MAIN(); }
-
------
-
         fn test(s: $T) {
             mut sum = 0;
             for (fieldname i: $T) sum += s.i;
@@ -24119,7 +25986,7 @@ struct s_XY
 
 #ifndef FU_NO_FDEFs
 
-inline static int test_ui1m(const s_XY& s)
+inline static int test_PXTKu1UQ(const s_XY& s)
 {
     /*MOV*/ int sum = 0;
 
@@ -24133,7 +26000,7 @@ inline static int test_ui1m(const s_XY& s)
 int fu_MAIN()
 {
     const s_XY thing = s_XY { 1, 2 };
-    const int sum = test_ui1m(thing);
+    const int sum = test_PXTKu1UQ(thing);
     return sum - 3;
 }
 
@@ -24151,14 +26018,14 @@ int main() { return fu_MAIN(); }
 
 #ifndef FU_NO_FDEFs
 
-static int test()
+static int test_H9fhQUVP()
 {
     return 0;
 }
 
 int fu_MAIN()
 {
-    return test();
+    return test_H9fhQUVP();
 }
 
 #endif
@@ -24274,7 +26141,7 @@ int main() { return fu_MAIN(); }
 
 #ifndef FU_NO_FDEFs
 
-static int test_defer_if_errok(const bool throw_err)
+static int test_defer_if_errok_O4yD91Dh(const bool throw_err)
 {
     int x = 1;
     int if_err = 0;
@@ -24304,7 +26171,7 @@ static int test_defer_if_errok(const bool throw_err)
 
 int fu_MAIN()
 {
-    return (((test_defer_if_errok(true) - (7 * 3)) - (1 * 5)) - (0 * 7)) + (100 * (((test_defer_if_errok(false) - (10 * 3)) - (0 * 5)) - (9 * 7)));
+    return (((test_defer_if_errok_O4yD91Dh(true) - (7 * 3)) - (1 * 5)) - (0 * 7)) + (100 * (((test_defer_if_errok_O4yD91Dh(false) - (10 * 3)) - (0 * 5)) - (9 * 7)));
 }
 
 #endif
@@ -24347,25 +26214,25 @@ int main() { return fu_MAIN(); }
 
 #ifndef FU_NO_FDEFs
 
-static void sum_amulb(fu::view<int> a, fu::view<int> b, int& sum)
+static void sum_amulb_zIeUHLrS(fu::view<int> a, fu::view<int> b, int& sum)
 {
     for (int i = 0; i < a.size(); i++)
         sum += (a[i] * b[i]);
 
 }
 
-static void incrarr_by1(fu_VEC<int>& a)
+static void incrarr_by1_j3F1UXeO(fu_VEC<int>& a)
 {
     for (int i = 0; i < a.size(); i++)
         a.mutref(i) += 1;
 
 }
 
-static int test(fu_VEC<int>& a, int& sum)
+static int test_lvvWGyRY(fu_VEC<int>& a, int& sum)
 {
     fu_VEC<int> b { a };
-    fu_DEFER(sum_amulb(a, b, sum));
-    fu_DEFER(incrarr_by1(a));
+    fu_DEFER(sum_amulb_zIeUHLrS(a, b, sum));
+    fu_DEFER(incrarr_by1_j3F1UXeO(a));
     return a[0] - 1;
 }
 
@@ -24373,7 +26240,7 @@ int fu_MAIN()
 {
     fu_VEC<int> a = fu_VEC<int> { fu::slate<1, int> { 1 } };
     int sum = 0;
-    const int ret = (100 * test(a, sum));
+    const int ret = (100 * test_lvvWGyRY(a, sum));
     return (sum - 2) + ret;
 }
 
@@ -24419,25 +26286,25 @@ int main() { return fu_MAIN(); }
 
 #ifndef FU_NO_FDEFs
 
-static void sum_amulb(fu::view<int> a, fu::view<int> b, int& sum)
+static void sum_amulb_zIeUHLrS(fu::view<int> a, fu::view<int> b, int& sum)
 {
     for (int i = 0; i < a.size(); i++)
         sum += (a[i] * b[i]);
 
 }
 
-static void incrarr_by1(fu_VEC<int>& a)
+static void incrarr_by1_j3F1UXeO(fu_VEC<int>& a)
 {
     for (int i = 0; i < a.size(); i++)
         a.mutref(i) += 1;
 
 }
 
-static int test(fu_VEC<int>& a, int& sum)
+static int test_lvvWGyRY(fu_VEC<int>& a, int& sum)
 {
     fu_VEC<int> b { a };
-    fu_DEFER(sum_amulb(a, b, sum));
-    incrarr_by1(a);
+    fu_DEFER(sum_amulb_zIeUHLrS(a, b, sum));
+    incrarr_by1_j3F1UXeO(a);
     return a[0] - 2;
 }
 
@@ -24445,7 +26312,7 @@ int fu_MAIN()
 {
     fu_VEC<int> a = fu_VEC<int> { fu::slate<1, int> { 1 } };
     int sum = 0;
-    const int ret = (100 * test(a, sum));
+    const int ret = (100 * test_lvvWGyRY(a, sum));
     return (sum - 2) + ret;
 }
 
@@ -24491,17 +26358,17 @@ int main() { return fu_MAIN(); }
 
 #ifndef FU_NO_FDEFs
 
-static void sum_amulb(fu::view<int> a, fu::view<int> b, int& sum)
+static void sum_amulb_zIeUHLrS(fu::view<int> a, fu::view<int> b, int& sum)
 {
     for (int i = 0; i < a.size(); i++)
         sum += (a[i] * b[i]);
 
 }
 
-static int test(fu_VEC<int>& a, int& sum)
+static int test_lvvWGyRY(fu_VEC<int>& a, int& sum)
 {
     fu_VEC<int> b { a };
-    fu_DEFER(sum_amulb(a, b, sum));
+    fu_DEFER(sum_amulb_zIeUHLrS(a, b, sum));
     fu_DEFER(for (int i = 0; i < a.size(); i++)
         a.mutref(i) += 1;);
     return a[0] - 1;
@@ -24511,7 +26378,7 @@ int fu_MAIN()
 {
     fu_VEC<int> a = fu_VEC<int> { fu::slate<1, int> { 1 } };
     int sum = 0;
-    const int ret = (100 * test(a, sum));
+    const int ret = (100 * test_lvvWGyRY(a, sum));
     return (sum - 2) + ret;
 }
 
@@ -24557,17 +26424,17 @@ int main() { return fu_MAIN(); }
 
 #ifndef FU_NO_FDEFs
 
-static void sum_amulb(fu::view<int> a, fu::view<int> b, int& sum)
+static void sum_amulb_zIeUHLrS(fu::view<int> a, fu::view<int> b, int& sum)
 {
     for (int i = 0; i < a.size(); i++)
         sum += (a[i] * b[i]);
 
 }
 
-static int test(fu_VEC<int>& a, int& sum)
+static int test_lvvWGyRY(fu_VEC<int>& a, int& sum)
 {
     fu_VEC<int> b { a };
-    fu_DEFER(sum_amulb(a, b, sum));
+    fu_DEFER(sum_amulb_zIeUHLrS(a, b, sum));
     for (int i = 0; i < a.size(); i++)
         a.mutref(i) += 1;
 
@@ -24578,7 +26445,7 @@ int fu_MAIN()
 {
     fu_VEC<int> a = fu_VEC<int> { fu::slate<1, int> { 1 } };
     int sum = 0;
-    const int ret = (100 * test(a, sum));
+    const int ret = (100 * test_lvvWGyRY(a, sum));
     return (sum - 2) + ret;
 }
 
@@ -24612,41 +26479,33 @@ int main() { return fu_MAIN(); }
 
 -----
 
-        fn test(a: $A, b: $B) b + //*F
-            a;
-            /*/
-            $B(a);
-            //*/
+        fn test(a: $A, b: $B) b +   
+            a;                      
+
         fn main() i8(-1).test(+1);
 
 -----
 _0.fu @2:33:
 
 [2m      | [0m
-    2 |         fn test(a: $A, b: $B) b [31;1m+[0m //*F
-[2m      |             a;[0m
-[2m      |             /*/[0m
+    2 |         fn test(a: $A, b: $B) b [31;1m+[0m   
+[2m      |             a;                      [0m
+[2m      | [0m
 
-	`+` bad args, available overloads:
-		`+(
-	[34;1ma[0m: $,
-	[34;1mb[0m: $)`
-		`+(
-	[34;1ma[0m: $)`
-Actual: (
-	i32: copy,
-	i8: copy).
+	Bad call to [34;1m+[0m: 
 
-        Solving [35;1mfn[0m [34;1mtest_MpJO[0m
+	[35;1mtemplate[0m [34;1m+[0m: Could not specialize [TODO doTrySpec ERROR]
+
+	[35;1mtemplate[0m [34;1m+[0m: Wrong number of arguments: expects 1, got 2.
+
+        Solving [35;1mfn[0m [34;1mtest_lDsEa3Ax[0m
                 [35;1mfn[0m [34;1mmain[0m
 
 -----
 
-        fn test(a: $A, b: $B) b + /*
-            a;
-            /*/
-            $B(a);
-            //*/
+        fn test(a: $A, b: $B) b +   
+            $B(a);                  
+
         fn main() i8(-1).test(+1);
 
 -----
@@ -24655,14 +26514,14 @@ Actual: (
 
 #ifndef FU_NO_FDEFs
 
-inline static int test_MpJO(const fu::i8 a, const int b)
+inline static int test_lDsEa3Ax(const fu::i8 a, const int b)
 {
     return b + int(a);
 }
 
 int fu_MAIN()
 {
-    return test_MpJO(fu::i8(-1), +1);
+    return test_lDsEa3Ax(fu::i8(-1), +1);
 }
 
 #endif
@@ -24681,13 +26540,13 @@ int main() { return fu_MAIN(); }
 
 int fu_MAIN()
 {
-    int _0 {};
+    int BL_1_v {};
     const int x = (__extension__ (
     {
-        /*MOV*/ /*RRET*/ int z = 0;
+        /*MOV*/ int z = 0;
         z++;
-        _0 = (z);
-    (void)0;}), int(_0));
+        BL_1_v = (z);
+    (void)0;}), int(BL_1_v));
     return x - 1;
 }
 
@@ -24706,19 +26565,19 @@ int main() { return fu_MAIN(); }
 
 #ifndef FU_NO_FDEFs
 
-inline static int mul2_6Kad(const int a)
+inline static int mul2_1hpjcHdP(const int a)
 {
     return a * 2;
 }
 
-inline static int test_AVZV(const int b, int)
+inline static int test_pvBotHN0(const int b, int)
 {
-    return mul2_6Kad((1 + mul2_6Kad(b)));
+    return mul2_1hpjcHdP((1 + mul2_1hpjcHdP(b)));
 }
 
 int fu_MAIN()
 {
-    return 14 - test_AVZV(3, 0);
+    return 14 - test_pvBotHN0(3, 0);
 }
 
 #endif
@@ -24726,6 +26585,53 @@ int fu_MAIN()
 
 int main() { return fu_MAIN(); }
 
+-----
+
+        let overloaded = 1;
+        fn overloaded(a) a*2;
+        fn test(b, fn) fn(fn + fn(b));
+        fn main() 14 - test(3, fn overloaded);
+
+-----
+
+#ifndef FU_NO_FDEFs
+
+                                #ifndef DEF_overloaded
+                                #define DEF_overloaded
+inline constexpr int overloaded = 1;
+                                #endif
+
+inline static int overloaded_1hpjcHdP(const int a)
+{
+    return a * 2;
+}
+
+inline static int test_AoOvtpUu(const int b, int)
+{
+    return overloaded_1hpjcHdP((overloaded + overloaded_1hpjcHdP(b)));
+}
+
+int fu_MAIN()
+{
+    return 14 - test_AoOvtpUu(3, 0);
+}
+
+#endif
+
+
+int main() { return fu_MAIN(); }
+
+-----
+
+        fn overloaded(a) a*2;
+        fn test(b, fn) fn(fn + fn(b));
+        fn main() {
+            let overloaded = 1;
+            return 14 - test(3, fn overloaded);
+        }
+
+-----
+TODO: unpackAddrOfFn: bad canon [2]: `@1:1@-3:1`.
 -----
 
         fn map(items: $T[], fn) {
@@ -24753,23 +26659,23 @@ int main() { return fu_MAIN(); }
 
 #ifndef FU_NO_FDEFs
 
-inline static int sqr_6Kad(const int x)
+inline static int sqr_1hpjcHdP(const int x)
 {
     return x * x;
 }
 
-inline static fu_VEC<int> map_iaSJ(fu::view<int> items, int)
+inline static fu_VEC<int> map_33hj3G0B(fu::view<int> items, int)
 {
     /*MOV*/ fu_VEC<int> result {};
     for (int i = 0; i < items.size(); i++)
-        result.push(sqr_6Kad(items[i]));
+        result.push(sqr_1hpjcHdP(items[i]));
 
     return /*NRVO*/ result;
 }
 
 int fu_MAIN()
 {
-    return map_iaSJ((fu::slate<1, int> { 2 }), 0)[0] - 4;
+    return map_33hj3G0B((fu::slate<1, int> { 2 }), 0)[0] - 4;
 }
 
 #endif
@@ -24796,24 +26702,24 @@ int main() { return fu_MAIN(); }
 
 #ifndef FU_NO_FDEFs
 
-inline static int reduce_qleR(fu::view<int> items, int, const int init)
+inline static int reduce_LYPNepg9(fu::view<int> items, int, const int init)
 {
     /*MOV*/ int result = init;
     for (int i = 0; i < items.size(); i++)
     {
-        int _0 {};
+        int BL_3_v {};
         result = (__extension__ (
         {
             const int b = items[i];
-            _0 = ((result + b));
-        (void)0;}), int(_0));
+            BL_3_v = ((result + b));
+        (void)0;}), int(BL_3_v));
     };
     return /*NRVO*/ result;
 }
 
 int fu_MAIN()
 {
-    return reduce_qleR((fu::slate<2, int> { 1, 2 }), 0, 0) - 3;
+    return reduce_LYPNepg9((fu::slate<2, int> { 1, 2 }), 0, 0) - 3;
 }
 
 #endif
@@ -24841,7 +26747,7 @@ int main() { return fu_MAIN(); }
 
 #ifndef FU_NO_FDEFs
 
-inline static void each_eyDx(fu::view<int> items, int, int& i)
+inline static void each_d5Dgo7pq(fu::view<int> items, int, int& i)
 {
     for (int i_1 = 0; i_1 < items.size(); i_1++)
     {
@@ -24853,7 +26759,7 @@ inline static void each_eyDx(fu::view<int> items, int, int& i)
 int fu_MAIN()
 {
     int i = 0;
-    each_eyDx((fu::slate<2, int> { 1, 2 }), 0, i);
+    each_d5Dgo7pq((fu::slate<2, int> { 1, 2 }), 0, i);
     return i - 3;
 }
 
@@ -24884,25 +26790,25 @@ int main() { return fu_MAIN(); }
 
 #ifndef FU_NO_FDEFs
 
-static void makeDirty(const int parent_idx, int& sum)
+static void makeDirty_ZSoae05p(const int parent_idx, int& sum)
 {
     sum += parent_idx;
 }
 
-inline static void each_hjHd(int, const int parent_idx, int& sum)
+inline static void each_GdwGnS6C(int, const int parent_idx, int& sum)
 {
-    makeDirty(parent_idx, sum);
+    makeDirty_ZSoae05p(parent_idx, sum);
 }
 
-static void FnDecl_update(const int parent_idx, int& sum)
+static void FnDecl_update_ibgn75mP(const int parent_idx, int& sum)
 {
-    each_hjHd(0, parent_idx, sum);
+    each_GdwGnS6C(0, parent_idx, sum);
 }
 
 int fu_MAIN()
 {
     int sum = 2;
-    FnDecl_update(1, sum);
+    FnDecl_update_ibgn75mP(1, sum);
     return sum - 3;
 }
 
@@ -24955,14 +26861,14 @@ struct s_B
 
 #ifndef FU_NO_FDEFs
 
-static s_B bananas(const s_A& a)
+static s_B bananas_PXTKu1UQ(const s_A& a)
 {
     return s_B { (a.a * 2) };
 }
 
 int fu_MAIN()
 {
-    return bananas(s_A { 1 }).b - 2;
+    return bananas_PXTKu1UQ(s_A { 1 }).b - 2;
 }
 
 #endif
@@ -24976,23 +26882,104 @@ int main() { return fu_MAIN(); }
         struct B { b: i32; };
         using fn bananas(a: A) B(a.a * 2);
 
-        <split/>
+
+-----
+
+struct s_A;
+struct s_B;
+
+                                #ifndef DEF_s_B
+                                #define DEF_s_B
+struct s_B
+{
+    int b;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || b
+        ;
+    }
+};
+                                #endif
+
+                                #ifndef DEF_s_A
+                                #define DEF_s_A
+struct s_A
+{
+    int a;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || a
+        ;
+    }
+};
+                                #endif
+
+#ifndef FU_NO_FDEFs
+
+s_B bananas_PXTKu1UQ(const s_A& a)
+{
+    return s_B { (a.a * 2) };
+}
+
+#endif
+
+-----
+
+        struct A { a: i32; };
+        struct B { b: i32; };
+        using fn bananas(a: A) B(a.a * 2);
+
+        import _0;
         fn main() 1.A.b - 2;
 
 -----
-TODO: _1.fu @2:22:
 
-[2m      |         import _0;[0m
-    2 |         fn main() 1.A[31;1m.[0mb - 2;
-[2m      | [0m
+struct s_A;
+struct s_B;
 
-	`b` bad args.
-Expect: `b(
-	[34;1mthis[0m: _0::B)`
-Actual: (
-	_0::A: copy).
+s_B bananas_PXTKu1UQ(const s_A&);
 
-        Solving [35;1mfn[0m [34;1mmain[0m
+                                #ifndef DEF_s_A
+                                #define DEF_s_A
+struct s_A
+{
+    int a;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || a
+        ;
+    }
+};
+                                #endif
+
+                                #ifndef DEF_s_B
+                                #define DEF_s_B
+struct s_B
+{
+    int b;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || b
+        ;
+    }
+};
+                                #endif
+
+#ifndef FU_NO_FDEFs
+
+int fu_MAIN()
+{
+    return bananas_PXTKu1UQ(s_A { 1 }).b - 2;
+}
+
+#endif
+
+
+int main() { return fu_MAIN(); }
 
 -----
 
@@ -25038,14 +27025,14 @@ struct s_B
 
 #ifndef FU_NO_FDEFs
 
-inline static s_B bananas_ui1m(const s_A& a)
+inline static s_B bananas_PXTKu1UQ(const s_A& a)
 {
     return s_B { (a.a * 2) };
 }
 
 int fu_MAIN()
 {
-    return bananas_ui1m(s_A { 1 }).b - 2;
+    return bananas_PXTKu1UQ(s_A { 1 }).b - 2;
 }
 
 #endif
@@ -25059,23 +27046,70 @@ int main() { return fu_MAIN(); }
         struct B { b: i32; };
         using fn bananas(a) B(a.a * 2); // <- template
 
-        <split/>
+
+-----
+
+-----
+
+        struct A { a: i32; };
+        struct B { b: i32; };
+        using fn bananas(a) B(a.a * 2); // <- template
+
+        import _0;
         fn main() 1.A.b - 2;
 
 -----
-TODO: _1.fu @2:22:
 
-[2m      |         import _0;[0m
-    2 |         fn main() 1.A[31;1m.[0mb - 2;
-[2m      | [0m
+struct s_A;
+struct s_B;
 
-	`b` bad args.
-Expect: `b(
-	[34;1mthis[0m: _0::B)`
-Actual: (
-	_0::A: copy).
+                                #ifndef DEF_s_A
+                                #define DEF_s_A
+struct s_A
+{
+    int a;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || a
+        ;
+    }
+};
+                                #endif
 
-        Solving [35;1mfn[0m [34;1mmain[0m
+                                #ifndef DEF_s_B
+                                #define DEF_s_B
+struct s_B
+{
+    int b;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || b
+        ;
+    }
+};
+                                #endif
+
+#ifndef FU_NO_FDEFs
+
+                                #ifndef DEFt_bananas_PXTKu1UQ
+                                #define DEFt_bananas_PXTKu1UQ
+inline s_B bananas_PXTKu1UQ(const s_A& a)
+{
+    return s_B { (a.a * 2) };
+}
+                                #endif
+
+int fu_MAIN()
+{
+    return bananas_PXTKu1UQ(s_A { 1 }).b - 2;
+}
+
+#endif
+
+
+int main() { return fu_MAIN(); }
 
 -----
 
@@ -25087,19 +27121,19 @@ Actual: (
 
 #ifndef FU_NO_FDEFs
 
-static int sqr(const int a)
+static int sqr_1hpjcHdP(const int a)
 {
     return a * a;
 }
 
-inline static int woot_6Kad(const int a)
+inline static int woot_1hpjcHdP(const int a)
 {
     return a + 1;
 }
 
 int fu_MAIN()
 {
-    return woot_6Kad(sqr(2)) - 5;
+    return woot_1hpjcHdP(sqr_1hpjcHdP(2)) - 5;
 }
 
 #endif
@@ -25124,8 +27158,6 @@ int main() { return fu_MAIN(); }
 struct s_A0;
 struct s_A1;
 struct s_B;
-
-static int a0(const s_A1&);
 
                                 #ifndef DEF_s_A0
                                 #define DEF_s_A0
@@ -25171,29 +27203,29 @@ struct s_A1
 
 #ifndef FU_NO_FDEFs
 
-inline static s_B bananas_ui1m(const s_A0& a)
+inline static s_B bananas_PXTKu1UQ(const s_A0& a)
 {
     return s_B { (a.a0 * 2) };
 }
 
-static int woot(const s_B& a)
+static int woot_tA7rLF5C(const s_B& a)
 {
     return a.b;
 }
 
-static int a0(const s_A1& a1)
+static int a0_ZQYePgvT(const s_A1& a1)
 {
     return a1.a1 * 100;
 }
 
-inline static s_B bananas_hUCw(const s_A1& a)
+inline static s_B bananas_ZQYePgvT(const s_A1& a)
 {
-    return s_B { (a0(a) * 2) };
+    return s_B { (a0_ZQYePgvT(a) * 2) };
 }
 
 int fu_MAIN()
 {
-    return (woot(bananas_ui1m(s_A0 { 1 })) + woot(bananas_hUCw(s_A1 { 1 }))) - 202;
+    return (woot_tA7rLF5C(bananas_PXTKu1UQ(s_A0 { 1 })) + woot_tA7rLF5C(bananas_ZQYePgvT(s_A1 { 1 }))) - 202;
 }
 
 #endif
@@ -25224,8 +27256,6 @@ struct s_A1;
 struct s_B0;
 struct s_B1;
 struct s_C;
-
-static s_B1 bananas(const s_A1&);
 
                                 #ifndef DEF_s_A0
                                 #define DEF_s_A0
@@ -25299,34 +27329,34 @@ struct s_B1
 
 #ifndef FU_NO_FDEFs
 
-static s_B0 bananas(const s_A0& _)
+static s_B0 bananas_PXTKu1UQ(const s_A0& _)
 {
     return s_B0 { (_.a0 * 2) };
 }
 
-static s_C c0(const s_B0& _)
+static s_C c0_tA7rLF5C(const s_B0& _)
 {
     return s_C { (_.b0 * 5) };
 }
 
-static int woot(const s_C& a)
+static int woot_LqVuejub(const s_C& a)
 {
     return a.c;
 }
 
-static s_B1 bananas(const s_A1& _)
+static s_B1 bananas_ZQYePgvT(const s_A1& _)
 {
     return s_B1 { (_.a1 * 3) };
 }
 
-static s_C c1(const s_B1& _)
+static s_C c1_8hSWr6SJ(const s_B1& _)
 {
     return s_C { (_.b1 * 7) };
 }
 
 int fu_MAIN()
 {
-    return (woot(c0(bananas(s_A0 { 1 }))) + woot(c1(bananas(s_A1 { 1 })))) - 31;
+    return (woot_LqVuejub(c0_tA7rLF5C(bananas_PXTKu1UQ(s_A0 { 1 }))) + woot_LqVuejub(c1_8hSWr6SJ(bananas_ZQYePgvT(s_A1 { 1 })))) - 31;
 }
 
 #endif
@@ -25353,8 +27383,6 @@ struct s_A0;
 struct s_A1;
 struct s_B0;
 struct s_B1;
-
-static s_B1 bananas(const s_A1&);
 
                                 #ifndef DEF_s_A0
                                 #define DEF_s_A0
@@ -25414,29 +27442,29 @@ struct s_B1
 
 #ifndef FU_NO_FDEFs
 
-static s_B0 bananas(const s_A0& a0)
+static s_B0 bananas_PXTKu1UQ(const s_A0& a0)
 {
     return s_B0 { (a0.a0 * 2) };
 }
 
-inline static int woot_AzFm(const s_B0& a)
+inline static int woot_tA7rLF5C(const s_B0& a)
 {
     return a.b;
 }
 
-static s_B1 bananas(const s_A1& a1)
+static s_B1 bananas_ZQYePgvT(const s_A1& a1)
 {
     return s_B1 { (a1.a1 * 3) };
 }
 
-inline static int woot_1EqW(const s_B1& a)
+inline static int woot_8hSWr6SJ(const s_B1& a)
 {
     return a.b;
 }
 
 int fu_MAIN()
 {
-    return (woot_AzFm(bananas(s_A0 { 1 })) + woot_1EqW(bananas(s_A1 { 1 }))) - 5;
+    return (woot_tA7rLF5C(bananas_PXTKu1UQ(s_A0 { 1 })) + woot_8hSWr6SJ(bananas_ZQYePgvT(s_A1 { 1 }))) - 5;
 }
 
 #endif
@@ -25465,40 +27493,40 @@ int main() { return fu_MAIN(); }
 
 #ifndef FU_NO_FDEFs
 
-static int times7(const int x)
+static int times7_1hpjcHdP(const int x)
 {
     return x * 7;
 }
 
-static int woot(const int a, const int b)
+static int woot_TbYXL7io(const int a, const int b)
 {
     return a * b;
 }
 
-static int test0()
+static int test0_H9fhQUVP()
 {
-    return woot(3, times7(int(2)));
+    return woot_TbYXL7io(3, times7_1hpjcHdP(int(2)));
 }
 
-static int times_implicit(const int x, const int y)
+static int times_implicit_TbYXL7io(const int x, const int y)
 {
     return x * y;
 }
 
-inline static int woot_Xes1(const int a, const unsigned b)
+inline static int woot_YbRwvB9J(const int a, const unsigned b)
 {
     return a * int(b);
 }
 
-static int test1()
+static int test1_H9fhQUVP()
 {
     const int y = 7;
-    return woot_Xes1(times_implicit(3, y), unsigned(2));
+    return woot_YbRwvB9J(times_implicit_TbYXL7io(3, y), unsigned(2));
 }
 
 int fu_MAIN()
 {
-    return (test0() + (test1() * 1000)) - 42042;
+    return (test0_H9fhQUVP() + (test1_H9fhQUVP() * 1000)) - 42042;
 }
 
 #endif
@@ -25545,17 +27573,17 @@ struct s_X
 
 #ifndef FU_NO_FDEFs
 
-                                #ifndef DEFt_x7E_OZkl
-                                #define DEFt_x7E_OZkl
-inline fu_STR x7E_OZkl(fu::view<char> a, fu::view<char> b)
+                                #ifndef DEFt_x7E
+                                #define DEFt_x7E
+inline fu_STR x7E(fu::view<char> a, fu::view<char> b)
 {
     return a + b;
 }
                                 #endif
 
-static s_X to_debug_str(const int a)
+static s_X to_debug_str_1hpjcHdP(const int a)
 {
-    return s_X { x7E_OZkl("i"_fu, fu::i64dec(a)) };
+    return s_X { x7E("i"_fu, fu::i64dec(a)) };
 }
 
 static s_X x7E(const s_X& a, const s_X& b)
@@ -25565,13 +27593,13 @@ static s_X x7E(const s_X& a, const s_X& b)
 
 int fu_MAIN()
 {
-    s_X _0 {};
+    s_X BL_1_v {};
     s_X hey = (__extension__ (
     {
         s_X a = s_X { "Hey! "_fu };
-        s_X b = to_debug_str(5);
-        _0 = (x7E(a, b));
-    (void)0;}), static_cast<s_X&&>(_0));
+        s_X b = to_debug_str_1hpjcHdP(5);
+        BL_1_v = (x7E(a, b));
+    (void)0;}), static_cast<s_X&&>(BL_1_v));
     return ((hey.str == "Hey! i5"_fu) ? 0 : 1);
 }
 
@@ -25627,18 +27655,18 @@ struct s_conv32
 
 int fu_MAIN()
 {
-    s_vec32 _0 {};
+    s_vec32 BL_1_v {};
     return int(((__extension__ (
     {
-        s_conv32 _1 {};
+        s_conv32 BL_2_v {};
         const s_conv32 a = (__extension__ (
         {
             const int v = 1;
-            _1 = (s_conv32 { float(v) });
-        (void)0;}), s_conv32(_1));
+            BL_2_v = (s_conv32 { float(v) });
+        (void)0;}), s_conv32(BL_2_v));
         const s_vec32 b = s_vec32 { 1.0f };
-        _0 = (s_vec32 { (a.v / b.x) });
-    (void)0;}), s_vec32(_0)).x - 1.0f));
+        BL_1_v = (s_vec32 { (a.v / b.x) });
+    (void)0;}), s_vec32(BL_1_v)).x - 1.0f));
 }
 
 #endif
@@ -25693,18 +27721,18 @@ struct s_conv32
 
 int fu_MAIN()
 {
-    s_vec32 _0 {};
+    s_vec32 BL_1_v {};
     return int(((__extension__ (
     {
-        s_conv32 _1 {};
+        s_conv32 BL_2_v {};
         const s_conv32 a = (__extension__ (
         {
             const float v = 1.0f;
-            _1 = (s_conv32 { float(v) });
-        (void)0;}), s_conv32(_1));
+            BL_2_v = (s_conv32 { float(v) });
+        (void)0;}), s_conv32(BL_2_v));
         const s_vec32 b = s_vec32 { 1.0f };
-        _0 = (s_vec32 { (a.v / b.x) });
-    (void)0;}), s_vec32(_0)).x - 1.0f));
+        BL_1_v = (s_vec32 { (a.v / b.x) });
+    (void)0;}), s_vec32(BL_1_v)).x - 1.0f));
 }
 
 #endif
@@ -25769,18 +27797,18 @@ struct s_conv32
 
 int fu_MAIN()
 {
-    s_vec32 _0 {};
+    s_vec32 BL_1_v {};
     return int(((__extension__ (
     {
-        s_conv32 _1 {};
+        s_conv32 BL_2_v {};
         const s_conv32 a = (__extension__ (
         {
             const float v = 1.0f;
-            _1 = (s_conv32 { float(v) });
-        (void)0;}), s_conv32(_1));
+            BL_2_v = (s_conv32 { float(v) });
+        (void)0;}), s_conv32(BL_2_v));
         const s_vec32 b = s_vec32 { 1.0f };
-        _0 = (s_vec32 { (a.v / b.x) });
-    (void)0;}), s_vec32(_0)).x - 1.0f));
+        BL_1_v = (s_vec32 { (a.v / b.x) });
+    (void)0;}), s_vec32(BL_1_v)).x - 1.0f));
 }
 
 #endif
@@ -25864,7 +27892,7 @@ struct s_Target
 
 #ifndef FU_NO_FDEFs
 
-static const s_Overload& GET(const s_Target& target, fu::view<s_Overload> overloads)
+static const s_Overload& GET_qdnlivTd(const s_Target& target, fu::view<s_Overload> overloads)
 {
     if (!(target.index > 0))
         fu_ASSERT();
@@ -25876,16 +27904,16 @@ static const s_Overload& GET(const s_Target& target, fu::view<s_Overload> overlo
 
 }
 
-static const s_Overload& try_GET(const s_Target& target, fu::view<s_Overload> overloads)
+static const s_Overload& try_GET_AnnZF7a6(const s_Target& target, fu::view<s_Overload> overloads)
 {
-    return target ? GET(target, overloads) : (*(const s_Overload*)fu::NIL);
+    return target ? GET_qdnlivTd(target, overloads) : (*(const s_Overload*)fu::NIL);
 }
 
 int fu_MAIN()
 {
     fu_VEC<s_Overload> overloads {};
     overloads += s_Overload { "What"_fu, fu_VEC<s_Overload>{} };
-    return try_GET(s_Target { 0, 1 }, overloads).kind.size() - 4;
+    return try_GET_AnnZF7a6(s_Target { 0, 1 }, overloads).kind.size() - 4;
 }
 
 #endif
@@ -25894,7 +27922,109 @@ int fu_MAIN()
 int main() { return fu_MAIN(); }
 // TYPE_recursion
 // TYPE_resolve
+// DEAD_code
 // RELAX_respec
+
+-----
+
+        struct RWEvent { rw_target!: i32 };
+        struct ReadID  { id: i32 };
+
+        fn main()
+        {
+
+            using   
+            fn RWEvent(read: ReadID)    RWEvent(rw_target: read.id);
+
+            fn rw_target(read: ReadID)  read.id;
+
+            return ReadID(0).rw_target;
+        }
+
+-----
+_0.fu @13:29:
+
+[2m      |             fn rw_target(read: ReadID)  read.id;[0m
+[2m      | [0m
+   13 |             return ReadID(0)[31;1m.[0mrw_target;
+[2m      |         }[0m
+[2m      | [0m
+
+	Ambiguous callsite, matches multiple items in scope: `rw_target(
+	[34;1mthis[0m: _0::RWEvent via `[35;1mfn[0m [34;1mRWEvent_F885o1s0[0m: _0::RWEvent: copy`)` from global scope and `rw_target_zZhCG4JC(
+	[34;1mread[0m: _0::ReadID: copy)` from `main`, as seen from `main`.
+
+        Solving [35;1mfn[0m [34;1mmain[0m
+
+-----
+
+        struct RWEvent { rw_target!: i32 };
+        struct ReadID  { id: i32 };
+
+        fn main()
+        {
+
+            fn RWEvent(read: ReadID)    RWEvent(rw_target: read.id);
+
+            fn rw_target(read: ReadID)  read.id;
+
+            return ReadID(0).rw_target;
+        }
+
+-----
+
+struct s_ReadID;
+
+                                #ifndef DEF_s_ReadID
+                                #define DEF_s_ReadID
+struct s_ReadID
+{
+    int id;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || id
+        ;
+    }
+};
+                                #endif
+
+#ifndef FU_NO_FDEFs
+
+static int rw_target_zZhCG4JC(const s_ReadID& read)
+{
+    return read.id;
+}
+
+int fu_MAIN()
+{
+    return int(rw_target_zZhCG4JC(s_ReadID { 0 }));
+}
+
+#endif
+
+
+int main() { return fu_MAIN(); }
+
+-----
+
+        fn a_len(a: [$T]) a.len; // a conversion could navigate this here
+        struct Test { using a: i32[]; };
+        fn main() Test.a_len;
+
+-----
+TODO: _0.fu @4:23:
+
+[2m      |         fn a_len(a: [$T]) a.len; // a conversion could navigate this here[0m
+[2m      |         struct Test { using a: i32[]; };[0m
+    4 |         fn main() Test[31;1m.[0ma_len;
+[2m      | [0m
+
+	Bad call to [34;1ma_len[0m: 
+
+	[35;1mtemplate[0m [34;1ma_len[0m: Could not specialize [TODO doTrySpec ERROR]
+
+        Solving [35;1mfn[0m [34;1mmain[0m
 
 -----
 
@@ -25919,35 +28049,35 @@ TODO: _0.fu @6:24:
 [2m      |         }[0m
 [2m      | [0m
 
-	`~` bad args, available overloads:
-		`~(
-	[34;1ma[0m: $,
-	[34;1mb[0m: []+2byte: copy resize)`
-		`~(
-	[34;1ma[0m: []+2byte: copy resize,
-	[34;1mb[0m: $)`
-		`
-<fu/vec/concat_one.h>
-+(
-	[34;1ma[0m: $,
-	[34;1mb[0m: $)`
-		`
-<fu/vec/concat_one.h>
-+(
-	[34;1ma[0m: $,
-	[34;1mb[0m: $)`
-		`
-<fu/vec/concat.h>
-+(
-	[34;1ma[0m: $,
-	[34;1mb[0m: $)`
-		`~(
-	[34;1ma[0m: $)`
-Actual: (
-	[]+2byte: mutref copy resize,
-	_0::CodegenOutput: copy).
+	Bad call to [34;1m~[0m: 
 
-        Solving [35;1mfn[0m [34;1mtest[0m
+	[35;1mtemplate[0m [34;1m~[0m: Cannot match argument [35;1marg[0m [34;1ma[0m autocall [34;1mstr[0m: 
+
+		[35;1marg[0m [34;1mstr[0m: Wrong number of arguments: expects 0, got 1.
+
+		[35;1mtemplate[0m [34;1mstr[0m: Could not specialize [TODO doTrySpec ERROR]
+
+	[35;1mtemplate[0m [34;1m~[0m: Cannot match argument [35;1marg[0m [34;1mb[0m autocall [34;1mstr[0m: 
+
+		[35;1marg[0m [34;1mstr[0m: Wrong number of arguments: expects 0, got 1.
+
+		[35;1mtemplate[0m [34;1mstr[0m: Could not specialize [TODO doTrySpec ERROR]
+
+	[35;1mtemplate[0m [34;1m
+<fu/vec/concat_one.h>
++[0m: Could not specialize [TODO doTrySpec ERROR]
+
+	[35;1mtemplate[0m [34;1m
+<fu/vec/concat_one.h>
++[0m: Could not specialize [TODO doTrySpec ERROR]
+
+	[35;1mtemplate[0m [34;1m
+<fu/vec/concat.h>
++[0m: Could not specialize [TODO doTrySpec ERROR]
+
+	[35;1mtemplate[0m [34;1m~[0m: Wrong number of arguments: expects 1, got 2.
+
+        Solving [35;1mfn[0m [34;1mtest_ALT37imi[0m
 
 -----
 
@@ -25960,14 +28090,14 @@ Actual: (
 
 #ifndef FU_NO_FDEFs
 
-inline static int varargs_xQkU(fu::view<int> a)
+inline static int varargs_ZvOm7cyv(fu::view<int> a)
 {
     return a[0] + a[1];
 }
 
 int fu_MAIN()
 {
-    return varargs_xQkU((fu::slate<2, int> { 1, 2 })) - 3;
+    return varargs_ZvOm7cyv((fu::slate<2, int> { 1, 2 })) - 3;
 }
 
 #endif
@@ -25997,21 +28127,19 @@ int main() { return fu_MAIN(); }
 
 #include <fu/view.h>
 
-static int to_debug_str(unsigned);
-
 #ifndef FU_NO_FDEFs
 
-static int to_debug_str(const int a)
+static int to_debug_str_1hpjcHdP(const int a)
 {
     return a * 2;
 }
 
-static int to_debug_str(const unsigned b)
+static int to_debug_str_9NgBjzTb(const unsigned b)
 {
     return int(b) * 3;
 }
 
-inline static int inspect_xQkU(fu::view<int> items)
+inline static int inspect_ZvOm7cyv(fu::view<int> items)
 {
     /*MOV*/ int a = 0;
     for (int i = 0; i < items.size(); i++)
@@ -26022,7 +28150,7 @@ inline static int inspect_xQkU(fu::view<int> items)
 
 int fu_MAIN()
 {
-    return inspect_xQkU((fu::slate<2, int> { to_debug_str(int(5)), to_debug_str(unsigned(7)) })) - 31;
+    return inspect_ZvOm7cyv((fu::slate<2, int> { to_debug_str_1hpjcHdP(int(5)), to_debug_str_9NgBjzTb(unsigned(7)) })) - 31;
 }
 
 #endif
@@ -26054,32 +28182,30 @@ int main() { return fu_MAIN(); }
 
 #include <fu/vec.h>
 
-static int to_debug_str(unsigned);
-
 #ifndef FU_NO_FDEFs
 
-static int to_debug_str(const int a)
+static int to_debug_str_1hpjcHdP(const int a)
 {
     return a * 2;
 }
 
-static int to_debug_str(const unsigned b)
+static int to_debug_str_9NgBjzTb(const unsigned b)
 {
     return int(b) * 3;
 }
 
 int fu_MAIN()
 {
-    int _0 {};
+    int BL_1_v {};
     return (__extension__ (
     {
-        fu_VEC<int> items = fu_VEC<int> { fu::slate<2, int> { to_debug_str(int(5)), to_debug_str(unsigned(7)) } };
-        /*MOV*/ /*RRET*/ int a = 0;
+        fu_VEC<int> items = fu_VEC<int> { fu::slate<2, int> { to_debug_str_1hpjcHdP(int(5)), to_debug_str_9NgBjzTb(unsigned(7)) } };
+        /*MOV*/ int a = 0;
         for (int i = 0; i < items.size(); i++)
             a += items[i];
 
-        _0 = (a);
-    (void)0;}), int(_0)) - 31;
+        BL_1_v = (a);
+    (void)0;}), int(BL_1_v)) - 31;
 }
 
 #endif
@@ -26104,7 +28230,7 @@ int main() { return fu_MAIN(); }
 
 #ifndef FU_NO_FDEFs
 
-static int va(fu::view<int> args)
+static int va_ZvOm7cyv(fu::view<int> args)
 {
     /*MOV*/ int sum = 0;
     for (int i = 0; i < args.size(); i++)
@@ -26115,7 +28241,7 @@ static int va(fu::view<int> args)
 
 int fu_MAIN()
 {
-    return va((fu::slate<2, int> { 1, 2 })) - 3;
+    return va_ZvOm7cyv((fu::slate<2, int> { 1, 2 })) - 3;
 }
 
 #endif
@@ -26148,20 +28274,20 @@ int main() { return fu_MAIN(); }
 
 #ifndef FU_NO_FDEFs
 
-                                #ifndef DEFt_x7E_OZkl
-                                #define DEFt_x7E_OZkl
-inline fu_STR x7E_OZkl(fu::view<char> a, fu::view<char> b)
+                                #ifndef DEFt_x7E
+                                #define DEFt_x7E
+inline fu_STR x7E(fu::view<char> a, fu::view<char> b)
 {
     return a + b;
 }
                                 #endif
 
-static fu_STR Stringy(const int i)
+static fu_STR Stringy_1hpjcHdP(const int i)
 {
-    return x7E_OZkl("i:"_fu, fu::i64dec(i));
+    return x7E("i:"_fu, fu::i64dec(i));
 }
 
-inline static int Println_b8iG(fu::view<fu_STR> parts)
+inline static int Println_CaSpsqZh(fu::view<fu_STR> parts)
 {
     /*MOV*/ int total = 0;
     for (int i = 0; i < parts.size(); i++)
@@ -26172,17 +28298,17 @@ inline static int Println_b8iG(fu::view<fu_STR> parts)
 
 int fu_MAIN()
 {
-    fu_STR _0 {};
-    fu_STR _1 {};
-    return Println_b8iG((fu::slate<2, fu_STR> { (__extension__ (
+    fu_STR BL_1_v {};
+    fu_STR BL_2_v {};
+    return Println_CaSpsqZh((fu::slate<2, fu_STR> { (__extension__ (
     {
-        /*MOV*/ /*RRET*/ fu_STR x = "str"_fu;
-        _0 = (x);
-    (void)0;}), static_cast<fu_STR&&>(_0)), (__extension__ (
+        /*MOV*/ fu_STR x = "str"_fu;
+        BL_1_v = (x);
+    (void)0;}), static_cast<fu_STR&&>(BL_1_v)), (__extension__ (
     {
-        /*MOV*/ /*RRET*/ fu_STR x = Stringy(10);
-        _1 = (x);
-    (void)0;}), static_cast<fu_STR&&>(_1)) })) - 7;
+        /*MOV*/ fu_STR x = Stringy_1hpjcHdP(10);
+        BL_2_v = (x);
+    (void)0;}), static_cast<fu_STR&&>(BL_2_v)) })) - 7;
 }
 
 #endif
@@ -26215,20 +28341,20 @@ int main() { return fu_MAIN(); }
 
 #ifndef FU_NO_FDEFs
 
-                                #ifndef DEFt_x7E_OZkl
-                                #define DEFt_x7E_OZkl
-inline fu_STR x7E_OZkl(fu::view<char> a, fu::view<char> b)
+                                #ifndef DEFt_x7E
+                                #define DEFt_x7E
+inline fu_STR x7E(fu::view<char> a, fu::view<char> b)
 {
     return a + b;
 }
                                 #endif
 
-static fu_STR Stringy(const int i)
+static fu_STR Stringy_1hpjcHdP(const int i)
 {
-    return x7E_OZkl("i:"_fu, fu::i64dec(i));
+    return x7E("i:"_fu, fu::i64dec(i));
 }
 
-static int Println(fu::view<fu_STR> parts)
+static int Println_lxjTAQrc(fu::view<fu_STR> parts)
 {
     /*MOV*/ int total = 0;
     for (int i = 0; i < parts.size(); i++)
@@ -26239,23 +28365,59 @@ static int Println(fu::view<fu_STR> parts)
 
 int fu_MAIN()
 {
-    fu_STR _0 {};
-    fu_STR _1 {};
-    return Println((fu::slate<2, fu_STR> { (__extension__ (
+    fu_STR BL_1_v {};
+    fu_STR BL_2_v {};
+    return Println_lxjTAQrc((fu::slate<2, fu_STR> { (__extension__ (
     {
-        /*MOV*/ /*RRET*/ fu_STR x = "str"_fu;
-        _0 = (x);
-    (void)0;}), static_cast<fu_STR&&>(_0)), (__extension__ (
+        /*MOV*/ fu_STR x = "str"_fu;
+        BL_1_v = (x);
+    (void)0;}), static_cast<fu_STR&&>(BL_1_v)), (__extension__ (
     {
-        /*MOV*/ /*RRET*/ fu_STR x = Stringy(10);
-        _1 = (x);
-    (void)0;}), static_cast<fu_STR&&>(_1)) })) - 7;
+        /*MOV*/ fu_STR x = Stringy_1hpjcHdP(10);
+        BL_2_v = (x);
+    (void)0;}), static_cast<fu_STR&&>(BL_2_v)) })) - 7;
 }
 
 #endif
 
 
 int main() { return fu_MAIN(); }
+
+-----
+ // inline fn empty retval on autocall
+        inline fn concatable(a: bool)               a ? "yes" : "no";
+        inline fn concat(a.concatable, b: string)   a.concatable ~ b;
+        fn main()                                   concat(true, "!").len - 4;
+
+-----
+TODO: _0.fu @4:59:
+
+[2m      |         inline fn concatable(a: bool)               a ? "yes" : "no";[0m
+[2m      |         inline fn concat(a.concatable, b: string)   a.concatable ~ b;[0m
+    4 |         fn main()                                   concat[31;1m([0mtrue, "!").len - 4;
+[2m      | [0m
+
+	COMPILER BUG:
+
+	serializeType: Falsy type in: mangle.conv
+
+-----
+ // inline fn empty retval on autocall
+        inline fn inl_print(a: byte)                a;
+        fn inl_println(a.inl_print[]: [string])     a.len;
+        fn main()                                   inl_println('a', 'b') - 2;
+
+-----
+TODO: _0.fu @4:64:
+
+[2m      |         inline fn inl_print(a: byte)                a;[0m
+[2m      |         fn inl_println(a.inl_print[]: [string])     a.len;[0m
+    4 |         fn main()                                   inl_println[31;1m([0m'a', 'b') - 2;
+[2m      | [0m
+
+	COMPILER BUG:
+
+	tryMatch: !actual
 
 -----
 
@@ -26288,12 +28450,12 @@ struct s_XY
 
 #ifndef FU_NO_FDEFs
 
-inline static int fn_v_ziMI(int, const s_XY& v)
+inline static int fn_v_tbPAqcdu(int, const s_XY& v)
 {
     return v.x;
 }
 
-inline static int fn_v_x9V3(int, const s_XY& v)
+inline static int fn_v_z5sjE5fl(int, const s_XY& v)
 {
     return v.y;
 }
@@ -26301,7 +28463,7 @@ inline static int fn_v_x9V3(int, const s_XY& v)
 int fu_MAIN()
 {
     const s_XY v = s_XY { 11, 13 };
-    return (fn_v_ziMI(0, v) + fn_v_x9V3(0, v)) - 24;
+    return (fn_v_tbPAqcdu(0, v) + fn_v_z5sjE5fl(0, v)) - 24;
 }
 
 #endif
@@ -26340,12 +28502,12 @@ struct s_XY
 
 #ifndef FU_NO_FDEFs
 
-inline static int fn_v_ziMI(int, const s_XY& v)
+inline static int fn_v_tbPAqcdu(int, const s_XY& v)
 {
     return v.x;
 }
 
-inline static int fn_v_x9V3(int, const s_XY& v)
+inline static int fn_v_z5sjE5fl(int, const s_XY& v)
 {
     return v.y;
 }
@@ -26353,7 +28515,7 @@ inline static int fn_v_x9V3(int, const s_XY& v)
 int fu_MAIN()
 {
     const s_XY v = s_XY { 11, 13 };
-    return (fn_v_ziMI(0, v) + fn_v_x9V3(0, v)) - 24;
+    return (fn_v_tbPAqcdu(0, v) + fn_v_z5sjE5fl(0, v)) - 24;
 }
 
 #endif
@@ -26393,79 +28555,36 @@ struct s_XY
 
 #ifndef FU_NO_FDEFs
 
-inline static int fn_w_x9V3(int, const s_XY& y)
+inline static int fn_w_z5sjE5fl(int, const s_XY& y)
 {
     return y.x;
 }
 
-inline static int fn_v_x9V3(int, const s_XY& x)
+inline static int fn_v_z5sjE5fl(int, const s_XY& x)
 {
-    return fn_w_x9V3(0, x);
+    return fn_w_z5sjE5fl(0, x);
 }
 
-inline static int fn_w_fzdw(int, const s_XY& y)
+inline static int fn_w_E6PdOsnY(int, const s_XY& y)
 {
     return y.y;
 }
 
-inline static int fn_v_fzdw(int, const s_XY& x)
+inline static int fn_v_E6PdOsnY(int, const s_XY& x)
 {
-    return fn_w_fzdw(0, x);
+    return fn_w_E6PdOsnY(0, x);
 }
 
 int fu_MAIN()
 {
     const s_XY v = s_XY { 11, 13 };
-    return (fn_v_x9V3(0, v) + fn_v_fzdw(0, v)) - 24;
+    return (fn_v_z5sjE5fl(0, v) + fn_v_E6PdOsnY(0, v)) - 24;
 }
 
 #endif
 
 
 int main() { return fu_MAIN(); }
-
------
-
-        fn sum_each(a, b, each)     a.each + b.each;
-
-        fn hello(x) {
-            if (x & 1) {
-                fn each(y) y    ? y * each(y - 1)
-                                : 100;
-
-                return sum_each(x, x, fn each);
-            }
-            else {
-                fn each(y) y    ? y * each(y - 1)
-                                : 10000;
-
-                return sum_each(x, x, fn each);
-            }
-        }
-
-        fn each(y) y & 1    ? y
-                            : y / 2 + each(y / 2);
-
-        fn main() _0::hello(1) - 2 * each(100)
-                + _0::hello(2) - 2 * each(20000);
-
------
-TODO: _0.fu @6:43:
-
-[2m      |         fn hello(x) {[0m
-[2m      |             if (x & 1) {[0m
-    6 |                 fn each(y) y    ? y * each[31;1m([0my - 1)
-[2m      |                                 : 100;[0m
-[2m      | [0m
-
-	Ambiguous callsite, matches multiple items in scope: `each_6Kad(
-	[34;1my[0m: i32: copy)` from `hello_6Kad` and `each_6Kad(
-	[34;1my[0m: i32: copy)` from global scope, as seen from `each_6Kad`.
-
-        Solving [35;1mfn[0m [34;1meach_6Kad[0m
-                [35;1mfn[0m [34;1msum_each_wYDi[0m
-                [35;1mfn[0m [34;1mhello_6Kad[0m
-                [35;1mfn[0m [34;1mmain[0m
 
 -----
 
@@ -26481,20 +28600,20 @@ TODO: _0.fu @6:43:
 
 #ifndef FU_NO_FDEFs
 
-inline static int identity_citJ(int, const int depth1)
+inline static int identity_BAZ2xIRf(int, const int depth1)
 {
     return depth1;
 }
 
-inline static int outer_6Kad(const int depth1)
+inline static int outer_3AoyBXRR(const int depth1)
 {
-    return identity_citJ(0, depth1);
+    return identity_BAZ2xIRf(0, depth1);
 }
 
 int fu_MAIN()
 {
     /*MOV*/ const int sum = 0;
-    return int(outer_6Kad(sum));
+    return int(outer_3AoyBXRR(sum));
 }
 
 #endif
@@ -26517,24 +28636,24 @@ int main() { return fu_MAIN(); }
 
 #ifndef FU_NO_FDEFs
 
-inline static int identity_yHpl(int, const int depth0)
+inline static int identity_uWX5c3KB(int, const int depth0)
 {
     return depth0;
 }
 
-inline static int outer_qHa6(int, const int depth0)
+inline static int outer_fXjNRKkj(int, const int depth0)
 {
-    return identity_yHpl(0, depth0);
+    return identity_uWX5c3KB(0, depth0);
 }
 
-inline static int test_6Kad(const int depth0)
+inline static int test_1hpjcHdP(const int depth0)
 {
-    return outer_qHa6(0, depth0);
+    return outer_fXjNRKkj(0, depth0);
 }
 
 int fu_MAIN()
 {
-    return int(test_6Kad(0));
+    return int(test_1hpjcHdP(0));
 }
 
 #endif
@@ -26560,29 +28679,29 @@ int main() { return fu_MAIN(); }
 
 #ifndef FU_NO_FDEFs
 
-inline static int identity_T7J5(int, const int depth0)
+inline static int identity_Ueg2HEZU(int, const int depth0)
 {
     return depth0;
 }
 
-inline static int inner_eYLX(int, const int depth0)
+inline static int inner_cl8ThSON(int, const int depth0)
 {
-    return identity_T7J5(0, depth0);
+    return identity_Ueg2HEZU(0, depth0);
 }
 
-inline static int outer_qHa6(int, const int depth0)
+inline static int outer_fXjNRKkj(int, const int depth0)
 {
-    return inner_eYLX(0, depth0);
+    return inner_cl8ThSON(0, depth0);
 }
 
-inline static int test_6Kad(const int depth0)
+inline static int test_1hpjcHdP(const int depth0)
 {
-    return outer_qHa6(0, depth0);
+    return outer_fXjNRKkj(0, depth0);
 }
 
 int fu_MAIN()
 {
-    return int(test_6Kad(0));
+    return int(test_1hpjcHdP(0));
 }
 
 #endif
@@ -26624,39 +28743,39 @@ int main() { return fu_MAIN(); }
 
 #ifndef FU_NO_FDEFs
 
-inline static int first_inner_2upl(int, const int depth0, const int sum, const int sum_1)
+inline static int first_inner_XT5ou0HP(int, const int depth0, const int sum, const int sum_1)
 {
     /*MOV*/ const int sum_2 = ((depth0 + sum) + sum_1);
     return /*NRVO*/ sum_2;
 }
 
-inline static int first_Fjk8(int, const int depth0, const int sum)
+inline static int first_nLIAEa98(int, const int depth0, const int sum)
 {
     const int sum_1 = (depth0 + sum);
-    return first_inner_2upl(0, depth0, sum, sum_1);
+    return first_inner_XT5ou0HP(0, depth0, sum, sum_1);
 }
 
-inline static int second_inner_SGmy(int, const int depth0, const int sum, const int sum_1)
+inline static int second_inner_FsAUJWjO(int, const int depth0, const int sum, const int sum_1)
 {
     const int sum_2 = ((depth0 + sum) + sum_1);
-    return sum_2 + first_Fjk8(0, depth0, sum_2);
+    return sum_2 + first_nLIAEa98(0, depth0, sum_2);
 }
 
-inline static int second_eYLX(int, const int depth0, const int sum)
+inline static int second_cl8ThSON(int, const int depth0, const int sum)
 {
     const int sum_1 = (depth0 + sum);
-    return second_inner_SGmy(0, depth0, sum, sum_1);
+    return second_inner_FsAUJWjO(0, depth0, sum, sum_1);
 }
 
-inline static int test_6Kad(const int depth0)
+inline static int test_1hpjcHdP(const int depth0)
 {
     const int sum = (depth0 + depth0);
-    return second_eYLX(0, depth0, sum);
+    return second_cl8ThSON(0, depth0, sum);
 }
 
 int fu_MAIN()
 {
-    return test_6Kad(0);
+    return test_1hpjcHdP(0);
 }
 
 #endif
@@ -26702,66 +28821,63 @@ int main() { return fu_MAIN(); }
 
 -----
 
-static int descend(int, int, int, int);
-static int doSomething(int, int, int, int);
-static int doSomethingElse(int, int);
-static int parseStuff(int, int, int, int);
+static int parseStuff_1hpjcHdP(int, int, int, int);
 
 #ifndef FU_NO_FDEFs
 
-static int use_a(const int a)
+static int use_a_1hpjcHdP(const int a)
 {
     return a * a;
 }
 
-static int use_b(const int b)
+static int use_b_1hpjcHdP(const int b)
 {
     return b * b;
 }
 
-static int doSomethingElse_inner(const int y, const int b)
+static int doSomethingElse_inner_J5qqRG8c(const int y, const int b)
 {
-    return y * use_b(b);
+    return y * use_b_1hpjcHdP(b);
 }
 
-static int doSomethingElse(const int x, const int b)
+static int doSomethingElse_1hpjcHdP(const int x, const int b)
 {
-    return doSomethingElse_inner((x * x), b);
+    return doSomethingElse_inner_J5qqRG8c((x * x), b);
 }
 
-static int use_c(const int c)
+static int use_c_1hpjcHdP(const int c)
 {
     return c * c;
 }
 
-static int descend_inner(const int y, const int a, const int b, const int c, const int x)
+static int descend_inner_aiabi8z6(const int y, const int a, const int b, const int c, const int x)
 {
-    return ((y & 1) ? (parseStuff((y / 2), a, b, c) * parseStuff(x, a, b, c)) : (doSomethingElse((y * y), b) * use_c(c)));
+    return ((y & 1) ? (parseStuff_1hpjcHdP((y / 2), a, b, c) * parseStuff_1hpjcHdP(x, a, b, c)) : (doSomethingElse_1hpjcHdP((y * y), b) * use_c_1hpjcHdP(c)));
 }
 
-static int descend(const int x, const int a, const int b, const int c)
+static int descend_1hpjcHdP(const int x, const int a, const int b, const int c)
 {
-    return descend_inner((x * x), a, b, c, x);
+    return descend_inner_aiabi8z6((x * x), a, b, c, x);
 }
 
-static int doSomething_inner(const int y, const int a, const int b, const int c)
+static int doSomething_inner_zkSk231J(const int y, const int a, const int b, const int c)
 {
-    return (y * use_a(a)) * descend((y * y), a, b, c);
+    return (y * use_a_1hpjcHdP(a)) * descend_1hpjcHdP((y * y), a, b, c);
 }
 
-static int doSomething(const int x, const int a, const int b, const int c)
+static int doSomething_1hpjcHdP(const int x, const int a, const int b, const int c)
 {
-    return doSomething_inner((x * x), a, b, c);
+    return doSomething_inner_zkSk231J((x * x), a, b, c);
 }
 
-static int doStuff(const int y, const int a, const int b, const int c)
+static int doStuff_XYvJZG7F(const int y, const int a, const int b, const int c)
 {
-    return doSomething((y * y), a, b, c);
+    return doSomething_1hpjcHdP((y * y), a, b, c);
 }
 
-static int parseStuff(const int x, const int a, const int b, const int c)
+static int parseStuff_1hpjcHdP(const int x, const int a, const int b, const int c)
 {
-    return doStuff((x * x), a, b, c);
+    return doStuff_XYvJZG7F((x * x), a, b, c);
 }
 
 int fu_MAIN()
@@ -26769,7 +28885,7 @@ int fu_MAIN()
     const int a = 0;
     const int b = 0;
     const int c = 0;
-    return parseStuff(0, a, b, c);
+    return parseStuff_1hpjcHdP(0, a, b, c);
 }
 
 #endif
@@ -26790,11 +28906,11 @@ int main() { return fu_MAIN(); }
 
 -----
 
-struct s_sA_6Kad;
+struct s_sA_1hpjcHdP;
 
-                                #ifndef DEF_s_sA_6Kad
-                                #define DEF_s_sA_6Kad
-struct s_sA_6Kad
+                                #ifndef DEF_s_sA_1hpjcHdP
+                                #define DEF_s_sA_1hpjcHdP
+struct s_sA_1hpjcHdP
 {
     int hey;
     explicit operator bool() const noexcept
@@ -26808,14 +28924,14 @@ struct s_sA_6Kad
 
 #ifndef FU_NO_FDEFs
 
-inline static s_sA_6Kad fA_6Kad(const int a)
+inline static s_sA_1hpjcHdP fA_1hpjcHdP(const int a)
 {
-    return s_sA_6Kad { (a + 2) };
+    return s_sA_1hpjcHdP { (a + 2) };
 }
 
 int fu_MAIN()
 {
-    return fA_6Kad(1).hey - 3;
+    return fA_1hpjcHdP(1).hey - 3;
 }
 
 #endif
@@ -26828,27 +28944,21 @@ int main() { return fu_MAIN(); }
         fn sB(_: $T) struct { hey: $T; };
 
         fn fB(a: $T): sB($T) = [ a + 2 ];
-        fn main() 1.fB.hey - 1.u32.fB.hey //*F
-            ; /*/ .i32; //*/
+        fn main() 1.fB.hey - 1.u32.fB.hey  ;
 
 -----
 _0.fu @5:28:
 
 [2m      | [0m
 [2m      |         fn fB(a: $T): sB($T) = [ a + 2 ];[0m
-    5 |         fn main() 1.fB.hey [31;1m-[0m 1.u32.fB.hey //*F
-[2m      |             ; /*/ .i32; //*/[0m
-[2m      |     [0m
+    5 |         fn main() 1.fB.hey [31;1m-[0m 1.u32.fB.hey  ;
+[2m      | [0m
 
-	`-` bad args, available overloads:
-		`-(
-	[34;1ma[0m: $,
-	[34;1mb[0m: $)`
-		`-(
-	[34;1ma[0m: $)`
-Actual: (
-	i32: copy,
-	u32: copy).
+	Bad call to [34;1m-[0m: 
+
+	[35;1mtemplate[0m [34;1m-[0m: Could not specialize [TODO doTrySpec ERROR]
+
+	[35;1mtemplate[0m [34;1m-[0m: Wrong number of arguments: expects 1, got 2.
 
         Solving [35;1mfn[0m [34;1mmain[0m
 
@@ -26857,17 +28967,16 @@ Actual: (
         fn sB(_: $T) struct { hey: $T; };
 
         fn fB(a: $T): sB($T) = [ a + 2 ];
-        fn main() 1.fB.hey - 1.u32.fB.hey /*
-            ; /*/ .i32; //*/
+        fn main() 1.fB.hey - 1.u32.fB.hey  .i32  ;
 
 -----
 
-struct s_sB_6Kad;
-struct s_sB_M4Se;
+struct s_sB_1hpjcHdP;
+struct s_sB_9NgBjzTb;
 
-                                #ifndef DEF_s_sB_6Kad
-                                #define DEF_s_sB_6Kad
-struct s_sB_6Kad
+                                #ifndef DEF_s_sB_1hpjcHdP
+                                #define DEF_s_sB_1hpjcHdP
+struct s_sB_1hpjcHdP
 {
     int hey;
     explicit operator bool() const noexcept
@@ -26879,9 +28988,9 @@ struct s_sB_6Kad
 };
                                 #endif
 
-                                #ifndef DEF_s_sB_M4Se
-                                #define DEF_s_sB_M4Se
-struct s_sB_M4Se
+                                #ifndef DEF_s_sB_9NgBjzTb
+                                #define DEF_s_sB_9NgBjzTb
+struct s_sB_9NgBjzTb
 {
     unsigned hey;
     explicit operator bool() const noexcept
@@ -26895,19 +29004,19 @@ struct s_sB_M4Se
 
 #ifndef FU_NO_FDEFs
 
-inline static s_sB_6Kad fB_6Kad(const int a)
+inline static s_sB_1hpjcHdP fB_1hpjcHdP(const int a)
 {
-    return s_sB_6Kad { (a + 2) };
+    return s_sB_1hpjcHdP { (a + 2) };
 }
 
-inline static s_sB_M4Se fB_M4Se(const unsigned a)
+inline static s_sB_9NgBjzTb fB_9NgBjzTb(const unsigned a)
 {
-    return s_sB_M4Se { (a + 2u) };
+    return s_sB_9NgBjzTb { (a + 2u) };
 }
 
 int fu_MAIN()
 {
-    return fB_6Kad(1).hey - int(fB_M4Se(unsigned(1)).hey);
+    return fB_1hpjcHdP(1).hey - int(fB_9NgBjzTb(unsigned(1)).hey);
 }
 
 #endif
@@ -26928,11 +29037,11 @@ int main() { return fu_MAIN(); }
 
 -----
 
-struct s_sB_6Kad;
+struct s_sB_1hpjcHdP;
 
-                                #ifndef DEF_s_sB_6Kad
-                                #define DEF_s_sB_6Kad
-struct s_sB_6Kad
+                                #ifndef DEF_s_sB_1hpjcHdP
+                                #define DEF_s_sB_1hpjcHdP
+struct s_sB_1hpjcHdP
 {
     int hey;
     explicit operator bool() const noexcept
@@ -26946,14 +29055,211 @@ struct s_sB_6Kad
 
 #ifndef FU_NO_FDEFs
 
-inline static int test_ui1m(const s_sB_6Kad& x)
+inline static int test_PXTKu1UQ(const s_sB_1hpjcHdP& x)
 {
     return x.hey - 1;
 }
 
 int fu_MAIN()
 {
-    return test_ui1m(s_sB_6Kad { 1 });
+    return test_PXTKu1UQ(s_sB_1hpjcHdP { 1 });
+}
+
+#endif
+
+
+int main() { return fu_MAIN(); }
+
+-----
+
+        fn setupOperators(i: i32) {
+            struct BINOP { i: i32; };
+            return BINOP(:i);
+        }
+
+        fn main() setupOperators(0).i;
+
+-----
+
+struct s_BINOP;
+
+                                #ifndef DEF_s_BINOP
+                                #define DEF_s_BINOP
+struct s_BINOP
+{
+    int i;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || i
+        ;
+    }
+};
+                                #endif
+
+#ifndef FU_NO_FDEFs
+
+static s_BINOP setupOperators_1hpjcHdP(const int i)
+{
+    return s_BINOP { int(i) };
+}
+
+int fu_MAIN()
+{
+    return setupOperators_1hpjcHdP(0).i;
+}
+
+#endif
+
+
+int main() { return fu_MAIN(); }
+
+-----
+
+        fn sB(_: $T) struct { hey: $T; };
+
+        fn setupOperators(i: i32) {
+            struct BINOP { i: sB(i32); };
+            mut s: sB(i32) = [ i ];
+            return BINOP(s);
+        }
+
+        fn main() setupOperators(0).i.hey;
+
+-----
+
+struct s_BINOP;
+struct s_sB_1hpjcHdP;
+
+                                #ifndef DEF_s_sB_1hpjcHdP
+                                #define DEF_s_sB_1hpjcHdP
+struct s_sB_1hpjcHdP
+{
+    int hey;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || hey
+        ;
+    }
+};
+                                #endif
+
+                                #ifndef DEF_s_BINOP
+                                #define DEF_s_BINOP
+struct s_BINOP
+{
+    s_sB_1hpjcHdP i;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || i
+        ;
+    }
+};
+                                #endif
+
+#ifndef FU_NO_FDEFs
+
+static s_BINOP setupOperators_1hpjcHdP(const int i)
+{
+    const s_sB_1hpjcHdP s = s_sB_1hpjcHdP { int(i) };
+    return s_BINOP { s_sB_1hpjcHdP(s) };
+}
+
+int fu_MAIN()
+{
+    return setupOperators_1hpjcHdP(0).i.hey;
+}
+
+#endif
+
+
+int main() { return fu_MAIN(); }
+
+-----
+
+        fn sB(_: $T) struct { hey: $T; };
+
+        fn setupOperators(i: i32) {
+            struct BINOP { i: sB(i32); };
+            <alt>
+            return BINOP([ i ]);
+            <alt/>
+            return BINOP(sB(i));
+            </alt>
+        }
+
+        fn main() setupOperators(0).i.hey;
+
+-----
+TODO: o-26f6b47b44baa396-921.cpp:37:5: error: non-void function 'sB_1hpjcHdP' should return a value [-Wreturn-type]
+    return;
+    ^
+1 error generated.
+
+Failing testcase:
+
+
+        fn sB(_: $T) struct { hey: $T; };
+
+        fn setupOperators(i: i32) {
+            struct BINOP { i: sB(i32); };
+
+            return BINOP(sB(i));
+
+        }
+
+        fn main() setupOperators(0).i.hey;
+
+Sources:
+
+struct s_BINOP;
+struct s_sB_1hpjcHdP;
+
+                                #ifndef DEF_s_sB_1hpjcHdP
+                                #define DEF_s_sB_1hpjcHdP
+struct s_sB_1hpjcHdP
+{
+    int hey;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || hey
+        ;
+    }
+};
+                                #endif
+
+                                #ifndef DEF_s_BINOP
+                                #define DEF_s_BINOP
+struct s_BINOP
+{
+    s_sB_1hpjcHdP i;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || i
+        ;
+    }
+};
+                                #endif
+
+#ifndef FU_NO_FDEFs
+
+inline static s_sB_1hpjcHdP sB_1hpjcHdP(const int)
+{
+    return;
+}
+
+static s_BINOP setupOperators_1hpjcHdP(const int i)
+{
+    return s_BINOP { sB_1hpjcHdP(i) };
+}
+
+int fu_MAIN()
+{
+    return setupOperators_1hpjcHdP(0).i.hey;
 }
 
 #endif
@@ -26987,186 +29293,6 @@ TODO: _0.fu @5:9:
 
 -----
 
-        fn find(keys: $T[], item: $T) {
-            for (mut i = 0; i < keys.len; i++) {
-                if (keys[i] >= item) {
-                    if (keys[i] != item)
-                        return -1;
-
-                    return i;
-                }
-            }
-
-            return -1;
-        }
-
-        fn Set(_: $K) struct { keys: $K[]; };
-
-        fn has(using _, key)
-            _0::find(keys, key) >= 0;
-
-        fn use_Set(a: string) {
-            mut set: _1::Set(string);
-            set.keys ~= a;
-            return set._1::has(a);
-        }
-
-        fn dont_use_Set(a: string, b: string) {
-            mut keys: string[];
-            keys ~= b;
-            keys ~= a;
-            return keys.find(a);
-        }
-
-        fn main() {
-            if (!use_Set("a"))
-                return -1;
-
-            return dont_use_Set("a", "b") - 1;
-        }
-
------
-TODO: Exit code: 65024
-Failing testcase:
-
-
-        fn find(keys: $T[], item: $T) {
-            for (mut i = 0; i < keys.len; i++) {
-                if (keys[i] >= item) {
-                    if (keys[i] != item)
-                        return -1;
-
-                    return i;
-                }
-            }
-
-            return -1;
-        }
-
-        fn Set(_: $K) struct { keys: $K[]; };
-
-        fn has(using _, key)
-            _0::find(keys, key) >= 0;
-
-        fn use_Set(a: string) {
-            mut set: _1::Set(string);
-            set.keys ~= a;
-            return set._1::has(a);
-        }
-
-        fn dont_use_Set(a: string, b: string) {
-            mut keys: string[];
-            keys ~= b;
-            keys ~= a;
-            return keys.find(a);
-        }
-
-        fn main() {
-            if (!use_Set("a"))
-                return -1;
-
-            return dont_use_Set("a", "b") - 1;
-        }
-
-Sources:
-
-#include <fu/str.h>
-#include <fu/vec.h>
-#include <fu/vec/cmp.h>
-#include <fu/vec/concat_one.h>
-#include <fu/view.h>
-
-struct s_Set_AwjY;
-
-inline int find_9sek(fu::view<fu_STR>, fu::view<char>);
-
-                                #ifndef DEF_s_Set_AwjY
-                                #define DEF_s_Set_AwjY
-struct s_Set_AwjY
-{
-    fu_VEC<fu_STR> keys;
-    explicit operator bool() const noexcept
-    {
-        return false
-            || keys
-        ;
-    }
-};
-                                #endif
-
-#ifndef FU_NO_FDEFs
-
-                                #ifndef DEFt_find_9sek
-                                #define DEFt_find_9sek
-inline int find_9sek(fu::view<fu_STR> keys, const fu_STR& item)
-{
-    for (/*MOV*/ int i = 0; i < keys.size(); i++)
-    {
-        if ((keys[i] >= item))
-        {
-            if (keys[i] != item)
-                return -1;
-
-            return /*NRVO*/ i;
-        };
-    };
-    return -1;
-}
-                                #endif
-
-                                #ifndef DEFt_has_EgQG
-                                #define DEFt_has_EgQG
-inline bool has_EgQG(const s_Set_AwjY& _, const fu_STR& key)
-{
-    return (find_9sek(_.keys, key) >= 0);
-}
-                                #endif
-
-static bool use_Set(const fu_STR& a)
-{
-    s_Set_AwjY set {};
-    set.keys += a;
-    return has_EgQG(set, a);
-}
-
-                                #ifndef DEFt_find_9sek
-                                #define DEFt_find_9sek
-inline int find_9sek(fu::view<fu_STR> a, fu::view<char> b)
-{
-    for (/*MOV*/ int i = 0; i < a.size(); i++)
-    {
-        if (a[i] == b)
-            return /*NRVO*/ i;
-
-    };
-    return -1;
-}
-                                #endif
-
-static int dont_use_Set(const fu_STR& a, const fu_STR& b)
-{
-    fu_VEC<fu_STR> keys {};
-    keys += b;
-    keys += a;
-    return find_9sek(keys, a);
-}
-
-int fu_MAIN()
-{
-    if (!use_Set("a"_fu))
-        return -1;
-
-    return dont_use_Set("a"_fu, "b"_fu) - 1;
-}
-
-#endif
-
-
-int main() { return fu_MAIN(); }
-// RELAX_respec
-
------
-
         fn test(x: i32) {
             :OUTER {
                 :INNER {
@@ -27185,30 +29311,30 @@ int main() { return fu_MAIN(); }
 
 #ifndef FU_NO_FDEFs
 
-static int test(const int x)
+static int test_1hpjcHdP(const int x)
 {
 
     { {
 
         { {
             if (x > 1)
-                goto L_OUTER;
+                goto BL_1;
 
             if (x > 0)
-                goto L_INNER;
+                goto BL_2;
 
             return 2;
-          } L_INNER:;
+          } BL_2:;
         };
         return 1;
-      } L_OUTER:;
+      } BL_1:;
     };
     return 0;
 }
 
 int fu_MAIN()
 {
-    return ((test(2) * 11) + ((test(1) - 1) * 13)) + ((test(0) - 2) * 17);
+    return ((test_1hpjcHdP(2) * 11) + ((test_1hpjcHdP(1) - 1) * 13)) + ((test_1hpjcHdP(0) - 2) * 17);
 }
 
 #endif
@@ -27234,9 +29360,9 @@ int main() { return fu_MAIN(); }
 
 #ifndef FU_NO_FDEFs
 
-static int test(const int x)
+static int test_1hpjcHdP(const int x)
 {
-    int _0 {};
+    int BL_1_v {};
     return (__extension__ (
     {
         if (x & 1)
@@ -27245,13 +29371,13 @@ static int test(const int x)
         if (x & 2)
             return 2;
 
-        _0 = (3);
-    (void)0;}), int(_0));
+        BL_1_v = (3);
+    (void)0;}), int(BL_1_v));
 }
 
 int fu_MAIN()
 {
-    return (test(4) - test(5)) - test(6);
+    return (test_1hpjcHdP(4) - test_1hpjcHdP(5)) - test_1hpjcHdP(6);
 }
 
 #endif
@@ -27278,33 +29404,33 @@ int main() { return fu_MAIN(); }
 
 #ifndef FU_NO_FDEFs
 
-static int test(const int a)
+static int test_1hpjcHdP(const int a)
 {
     /*MOV*/ int w = 3;
 
     { {
-        int _0 {};
+        int BL_2_v {};
         w += (__extension__ (
         {
 
             { {
                 if (a & 1)
-                    goto L_INNER;
+                    goto BL_3;
                 else
-                    goto L_OUTER;
+                    goto BL_1;
 
-              } L_INNER:;
+              } BL_3:;
             };
-            _0 = (5);
-        (void)0;}), int(_0));
-      } L_OUTER:;
+            BL_2_v = (5);
+        (void)0;}), int(BL_2_v));
+      } BL_1:;
     };
     return /*NRVO*/ w;
 }
 
 int fu_MAIN()
 {
-    return (test(0) + test(1)) - 11;
+    return (test_1hpjcHdP(0) + test_1hpjcHdP(1)) - 11;
 }
 
 #endif
@@ -27332,29 +29458,29 @@ int main() { return fu_MAIN(); }
 
 #ifndef FU_NO_FDEFs
 
-static int v(const int x)
+static int v_1hpjcHdP(const int x)
 {
-    int L_00_v {};
+    int BL_1_v {};
     return 5000 + (__extension__ (
     { {
         if (x == 9)
-            { L_00_v = 2000; goto L_00; };
+            { BL_1_v = 2000; goto BL_1; };
 
         if (x == 8)
             return 300;
 
-        fu::never _0 {};
-        L_00_v = (((x == 7) ? (__extension__ (
+        fu::never BL_4_v {};
+        BL_1_v = (((x == 7) ? (__extension__ (
         {
             return 40;
-        (void)0;}), static_cast<fu::never&&>(_0)) : 5));
-      } L_00:;
-    (void)0;}), int(L_00_v));
+        (void)0;}), static_cast<fu::never&&>(BL_4_v)) : 5));
+      } BL_1:;
+    (void)0;}), int(BL_1_v));
 }
 
 int fu_MAIN()
 {
-    return (((v(9) + v(8)) + v(7)) + v(6)) - 12345;
+    return (((v_1hpjcHdP(9) + v_1hpjcHdP(8)) + v_1hpjcHdP(7)) + v_1hpjcHdP(6)) - 12345;
 }
 
 #endif
@@ -27388,27 +29514,27 @@ int main() { return fu_MAIN(); }
 
 #ifndef FU_NO_FDEFs
 
-int test(const fu_VEC<int>& x, fu::view<int> y)
+int test_ou7eQsH4(const fu_VEC<int>& x, fu::view<int> y)
 {
-    fu_VEC<int> L_00_v {};
+    fu_VEC<int> BL_1_v {};
     fu_VEC<int> z = (__extension__ (
     { {
-        /*MOV*/ /*RRET*/ fu_VEC<int> w { x };
+        /*MOV*/ fu_VEC<int> w { x };
         if (y[0])
             w += y;
 
         if (w[0] != 17)
-            { L_00_v = static_cast<fu_VEC<int>&&>(w); goto L_00; };
+            { BL_1_v = static_cast<fu_VEC<int>&&>(w); goto BL_1; };
 
-        L_00_v = (x);
-      } L_00:;
-    (void)0;}), static_cast<fu_VEC<int>&&>(L_00_v));
+        BL_1_v = (x);
+      } BL_1:;
+    (void)0;}), static_cast<fu_VEC<int>&&>(BL_1_v));
     return z[0] + z[(z.size() - 1)];
 }
 
 int fu_MAIN()
 {
-    return test(fu_VEC<int> { fu::slate<1, int> { 1 } }, (fu::slate<1, int> { 2 })) - 3;
+    return test_ou7eQsH4(fu_VEC<int> { fu::slate<1, int> { 1 } }, (fu::slate<1, int> { 2 })) - 3;
 }
 
 #endif
@@ -27417,6 +29543,50 @@ int fu_MAIN()
 int main() { return fu_MAIN(); }
 // NONTRIV_autocopy
 // RELAX_respec
+
+-----
+
+        fn test(mut x: i32) {
+            {
+                x++;
+                :CANT_FLATTEN { // naive block flattening
+                                //  can damage this label
+                    if (x & 1) break :CANT_FLATTEN;
+                    return x;
+                }
+            }
+            return x * 2;
+        }
+
+        fn main() test(1) + test(2) - 8;
+
+-----
+
+#ifndef FU_NO_FDEFs
+
+static int test_1hpjcHdP(/*MOV*/ int x)
+{
+
+    { {
+        x++;
+        if (x & 1)
+            goto BL_1;
+
+        return int(x);
+      } BL_1:;
+    };
+    return x * 2;
+}
+
+int fu_MAIN()
+{
+    return (test_1hpjcHdP(1) + test_1hpjcHdP(2)) - 8;
+}
+
+#endif
+
+
+int main() { return fu_MAIN(); }
 
 -----
 
@@ -27440,24 +29610,21 @@ int main() { return fu_MAIN(); }
 
 #ifndef FU_NO_FDEFs
 
-inline static int some_qHla(fu::view<int> arr, int)
+inline static int some_g8xdwiEe(fu::view<int> arr, int)
 {
-
+    for (int i = 0; i < arr.size(); i++)
     {
-        for (int i = 0; i < arr.size(); i++)
-        {
-            const int x = arr[i];
-            if ((x & 1) == 0)
-                return int(x);
+        const int x = arr[i];
+        if ((x & 1) == 0)
+            return int(x);
 
-        };
     };
     return 0;
 }
 
 int fu_MAIN()
 {
-    return some_qHla((fu::slate<3, int> { 1, 2, 3 }), 0) - 2;
+    return some_g8xdwiEe((fu::slate<3, int> { 1, 2, 3 }), 0) - 2;
 }
 
 #endif
@@ -27491,13 +29658,13 @@ int main() { return fu_MAIN(); }
 
 #ifndef FU_NO_FDEFs
 
-static int outer()
+static int outer_H9fhQUVP()
 {
     /*MOV*/ int sum = 0;
     int x = 1;
     for (; ; )
     {
-        int _0 {};
+        int BL_3_v {};
         x = (__extension__ (
         {
             const int v = x;
@@ -27508,20 +29675,21 @@ static int outer()
                     return /*NRVO*/ sum;
 
             };
-            _0 = ((v * 2));
-        (void)0;}), int(_0));
+            BL_3_v = ((v * 2));
+        (void)0;}), int(BL_3_v));
     };
 }
 
 int fu_MAIN()
 {
-    return outer() - 42;
+    return outer_H9fhQUVP() - 42;
 }
 
 #endif
 
 
 int main() { return fu_MAIN(); }
+// DEAD_code
 
 -----
 
@@ -27560,11 +29728,11 @@ int fu_MAIN()
             for (int i_1 = 1; i_1--; )
             {
                 if (sum == 6)
-                    goto L_OUTER;
+                    goto BL_1;
 
             };
         };
-      } L_OUTER:;
+      } BL_1:;
     };
     return sum - 6;
 }
@@ -27574,6 +29742,45 @@ int fu_MAIN()
 
 int main() { return fu_MAIN(); }
 // RELAX_respec
+
+-----
+
+        inline fn hello(ref sum) {  //     when inlined into woot
+            if (sum > 2) return;    //      the hello block now looks like an expr
+            sum += 2;               // <-    with a diverging tail return here
+        }
+
+        fn woot(ref sum) hello(sum);
+
+        fn main() {
+            mut sum = -2;
+            sum.woot();
+            return sum;
+        }
+
+-----
+
+#ifndef FU_NO_FDEFs
+
+inline static void woot_fvq3PhFm(int& sum)
+{
+    if (sum > 2)
+        return;
+
+    sum += 2;
+}
+
+int fu_MAIN()
+{
+    /*MOV*/ int sum = -2;
+    woot_fvq3PhFm(sum);
+    return /*NRVO*/ sum;
+}
+
+#endif
+
+
+int main() { return fu_MAIN(); }
 
 -----
 
@@ -27591,7 +29798,7 @@ int main() { return fu_MAIN(); }
 
 #ifndef FU_NO_FDEFs
 
-inline static void loop1d_l8JT(const int i0, const int i1, int, int& x)
+inline static void loop1d_Z32bi2uc(const int i0, const int i1, int, int& x)
 {
     for (int i = i0; i < i1; i++)
     {
@@ -27604,7 +29811,7 @@ inline static void loop1d_l8JT(const int i0, const int i1, int, int& x)
 int fu_MAIN()
 {
     int x = 0;
-    loop1d_l8JT(0, 10, 0, x);
+    loop1d_Z32bi2uc(0, 10, 0, x);
     return x - 1;
 }
 
@@ -27679,7 +29886,7 @@ int main() { return fu_MAIN(); }
 
 #ifndef FU_NO_FDEFs
 
-inline static void loop2d_WXpb(const int x0, const int x1, const int y0, const int y1, int, int& sum)
+inline static void loop2d_Z4XDdJPt(const int x0, const int x1, const int y0, const int y1, int, int& sum)
 {
     for (int y = y0; y < y1; y++)
     {
@@ -27701,7 +29908,7 @@ inline static void loop2d_WXpb(const int x0, const int x1, const int y0, const i
 int fu_MAIN()
 {
     int sum = 0;
-    loop2d_WXpb(0, 10, 10, 12, 0, sum);
+    loop2d_Z4XDdJPt(0, 10, 10, 12, 0, sum);
     return sum - 21;
 }
 
@@ -27712,7 +29919,7 @@ int main() { return fu_MAIN(); }
 
 -----
 
-        inline fn loop1d(i0, i1, fn)
+        fn loop1d(i0, i1, fn)
             for (mut i = i0; i < i1; i++)
                 fn(i);
 
@@ -27742,7 +29949,7 @@ int main() { return fu_MAIN(); }
 
 #ifndef FU_NO_FDEFs
 
-inline static void loop2d_qRls(const int x0, const int x1, const int y0, const int y1, int, int& sum)
+inline static void loop2d_XuMwHuOo(const int x0, const int x1, const int y0, const int y1, int, int& sum)
 {
     for (int i = y0; i < y1; i++)
     {
@@ -27764,7 +29971,7 @@ inline static void loop2d_qRls(const int x0, const int x1, const int y0, const i
 int fu_MAIN()
 {
     int sum = 0;
-    loop2d_qRls(0, 10, 10, 12, 0, sum);
+    loop2d_XuMwHuOo(0, 10, 10, 12, 0, sum);
     return sum - 21;
 }
 
@@ -27772,6 +29979,80 @@ int fu_MAIN()
 
 
 int main() { return fu_MAIN(); }
+
+-----
+
+        fn next(implicit ref sum: i32, lifetime: [i32], locals_start: i32) {
+            sum += lifetime.len;
+            return lifetime[locals_start, lifetime.len];
+        }
+
+        fn Lifetime_each(lifetime: [i32], visit) {
+            for (mut i = 0; i < lifetime.len; i++)
+                visit(lifetime[i, lifetime.len]);
+        }
+
+        fn Lifetime_F_TODO_FIX_RRET(lifetime: [i32], locals_start: i32) {
+            Lifetime_each(:lifetime, visit: |l| {
+                if (l)
+                    Lifetime_F_TODO_FIX_RRET(l.next(locals_start), locals_start);
+            });
+        }
+
+        fn main() {
+            let lifetime = [ 1, 2 ];
+            let implicit mut sum = 0;
+            Lifetime_F_TODO_FIX_RRET(lifetime, locals_start: 1);
+            return sum - 4;
+        }
+
+-----
+
+#include <fu/vec.h>
+#include <fu/view.h>
+
+static void Lifetime_F_TODO_FIX_RRET_m5ogMmp6(fu::view<int>, int, int&);
+
+#ifndef FU_NO_FDEFs
+
+static fu::view<int> next_MFatdSPD(fu::view<int> lifetime, const int locals_start, int& sum)
+{
+    sum += lifetime.size();
+    return fu::get_view(lifetime, locals_start, lifetime.size());
+}
+
+inline static void Lifetime_each_8kXUZyRH(fu::view<int> lifetime, int, const int locals_start, int& sum)
+{
+    for (int i = 0; i < lifetime.size(); i++)
+    {
+        fu::view<int> l = fu::get_view(lifetime, i, lifetime.size());
+        if (l)
+        {
+            fu::view<int> _0 {};
+            (_0 = next_MFatdSPD(l, locals_start, sum), Lifetime_F_TODO_FIX_RRET_m5ogMmp6(static_cast<fu::view<int>&&>(_0), locals_start, sum));
+        };
+    };
+}
+
+static void Lifetime_F_TODO_FIX_RRET_m5ogMmp6(fu::view<int> lifetime, const int locals_start, int& sum)
+{
+    Lifetime_each_8kXUZyRH(lifetime, 0, locals_start, sum);
+}
+
+int fu_MAIN()
+{
+    fu_VEC<int> lifetime = fu_VEC<int> { fu::slate<2, int> { 1, 2 } };
+    int sum = 0;
+    Lifetime_F_TODO_FIX_RRET_m5ogMmp6(lifetime, 1, sum);
+    return sum - 4;
+}
+
+#endif
+
+
+int main() { return fu_MAIN(); }
+// FN_recursion
+// FN_resolve
 
 -----
 
@@ -27786,7 +30067,7 @@ int main() { return fu_MAIN(); }
 
 #ifndef FU_NO_FDEFs
 
-inline static int hello_Xn88(const int a)
+inline static int hello_fvq3PhFm(const int a)
 {
     return a * a;
 }
@@ -27794,7 +30075,7 @@ inline static int hello_Xn88(const int a)
 int fu_MAIN()
 {
     const int a = 3;
-    const int b = hello_Xn88(a);
+    const int b = hello_fvq3PhFm(a);
     return b - 9;
 }
 
@@ -27835,20 +30116,20 @@ struct s_AB
 
 #ifndef FU_NO_FDEFs
 
-static int sqr(const int x)
+static int sqr_fvq3PhFm(const int x)
 {
     return x * x;
 }
 
-static int outer(const s_AB& ab)
+static int outer_ACFtvDNv(const s_AB& ab)
 {
-    return sqr(ab.a) + sqr(ab.b);
+    return sqr_fvq3PhFm(ab.a) + sqr_fvq3PhFm(ab.b);
 }
 
 int fu_MAIN()
 {
     const s_AB ab = s_AB { 3, 5 };
-    return outer(ab) - 34;
+    return outer_ACFtvDNv(ab) - 34;
 }
 
 #endif
@@ -27884,7 +30165,7 @@ int main() { return fu_MAIN(); }
 
 #ifndef FU_NO_FDEFs
 
-static fu_STR ascii_lower(const fu_STR& a)
+static fu_STR ascii_lower_naPRfSop(const fu_STR& a)
 {
     const int offset = (int(fu::u8('a')) - int(fu::u8('A')));
     /*MOV*/ fu_STR res { a };
@@ -27900,7 +30181,7 @@ static fu_STR ascii_lower(const fu_STR& a)
 
 int fu_MAIN()
 {
-    return int(fu::u8(ascii_lower("WORLD!"_fu)[2])) - int(fu::u8('r'));
+    return int(fu::u8(ascii_lower_naPRfSop("WORLD!"_fu)[2])) - int(fu::u8('r'));
 }
 
 #endif
@@ -27935,7 +30216,7 @@ int main() { return fu_MAIN(); }
 
 #ifndef FU_NO_FDEFs
 
-fu_STR ascii_lower(const fu_STR& a)
+fu_STR ascii_lower_naPRfSop(const fu_STR& a)
 {
     const int offset = (int(fu::u8('a')) - int(fu::u8('A')));
     /*MOV*/ fu_STR res { a };
@@ -27979,13 +30260,13 @@ fu_STR ascii_lower(const fu_STR& a)
 #include <fu/int.h>
 #include <fu/str.h>
 
-fu_STR ascii_lower(const fu_STR&);
+fu_STR ascii_lower_naPRfSop(const fu_STR&);
 
 #ifndef FU_NO_FDEFs
 
 int fu_MAIN()
 {
-    return int(fu::u8(ascii_lower("WORLD!"_fu)[2])) - int(fu::u8('r'));
+    return int(fu::u8(ascii_lower_naPRfSop("WORLD!"_fu)[2])) - int(fu::u8('r'));
 }
 
 #endif
@@ -28104,7 +30385,7 @@ struct s_Overload
 
 #ifndef FU_NO_FDEFs
 
-void test(const s_Overload& overload, fu_VEC<s_SolvedNode>& args)
+void test_k7cypJjl(const s_Overload& overload, fu_VEC<s_SolvedNode>& args)
 {
     fu::view<s_Argument> host_args = overload.args;
     args.resize(host_args.size());
@@ -28125,7 +30406,7 @@ int fu_MAIN()
         o.args += s_Argument { s_SolvedNode { int(i) } };
 
     fu_VEC<s_SolvedNode> args {};
-    test(o, args);
+    test_k7cypJjl(o, args);
     return (args.size() - args[(args.size() - 1)].x) - 1;
 }
 
@@ -28163,11 +30444,11 @@ TODO: _0.fu @10:51:
 [2m      |         }                                               //  But can be made to work by creating an intermediate copyvar[0m
 [2m      |                                                         //   and move-returning from there.[0m
 
-	[35;1mfn[0m [34;1mm_and_c_cant_alias_001[0m: Arguments [31;1mc[0m and [31;1mm[0m (args #1 and #0) both refer to:
+	[35;1mfn[0m [34;1mm_and_c_cant_alias_001_wAaUWlDr[0m: Arguments [31;1mc[0m and [31;1mm[0m (args #1 and #0) both alias:
 
-                [35;1mvar[0m [34;1mmc[0m
+                [35;1marg[0m [34;1mmc[0m
 
-        Solving [35;1mfn[0m [34;1mtest[0m
+        Solving [35;1mfn[0m [34;1mtest_ACFtvDNv[0m
 
 -----
 
@@ -28184,12 +30465,9 @@ TODO: _0.fu @10:51:
 
         fn main() {
             mut mc  = S([ 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 ]);
-            //*F
+
             let hey = m_and_c_cant_alias_002(mc, mc);
-            /*/
-            mut bc  = mc;
-            let hey = m_and_c_cant_alias_002(mc, bc);
-            //*/
+
             return hey.len - 10;
         }
 
@@ -28197,12 +30475,12 @@ TODO: _0.fu @10:51:
 _0.fu @16:50:
 
 [2m      |             mut mc  = S([ 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 ]);[0m
-[2m      |             //*F[0m
+[2m      | [0m
    16 |             let hey = m_and_c_cant_alias_002(mc, [31;1mmc[0m);
-[2m      |             /*/[0m
-[2m      |             mut bc  = mc;[0m
+[2m      | [0m
+[2m      |             return hey.len - 10;[0m
 
-	[35;1mfn[0m [34;1mm_and_c_cant_alias_002[0m: Arguments [31;1mc[0m and [31;1mm[0m (args #1 and #0) both refer to:
+	[35;1mfn[0m [34;1mm_and_c_cant_alias_002_wAaUWlDr[0m: Arguments [31;1mc[0m and [31;1mm[0m (args #1 and #0) both alias:
 
                 [35;1mvar[0m [34;1mmc[0m
 
@@ -28223,12 +30501,10 @@ _0.fu @16:50:
 
         fn main() {
             mut mc  = S([ 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 ]);
-            /*
-            let hey = m_and_c_cant_alias_002(mc, mc);
-            /*/
+
             mut bc  = mc;
             let hey = m_and_c_cant_alias_002(mc, bc);
-            //*/
+
             return hey.len - 10;
         }
 
@@ -28255,7 +30531,7 @@ struct s_S
 
 #ifndef FU_NO_FDEFs
 
-static const fu_VEC<int>& m_and_c_cant_alias_002(s_S& m, const s_S& c)
+static const fu_VEC<int>& m_and_c_cant_alias_002_wAaUWlDr(s_S& m, const s_S& c)
 {
     m.hey.clear();
     return c.hey;
@@ -28265,7 +30541,7 @@ int fu_MAIN()
 {
     s_S mc = s_S { fu_VEC<int> { fu::slate<10, int> { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 } } };
     s_S bc { mc };
-    fu::view<int> hey = m_and_c_cant_alias_002(mc, bc);
+    fu::view<int> hey = m_and_c_cant_alias_002_wAaUWlDr(mc, bc);
     return hey.size() - 10;
 }
 
@@ -28323,8 +30599,6 @@ int main() { return fu_MAIN(); }
 
 struct s_BitSet;
 
-static bool add_once(fu_VEC<s_BitSet>&, int, int);
-
                                 #ifndef DEF_s_BitSet
                                 #define DEF_s_BitSet
 struct s_BitSet
@@ -28341,7 +30615,7 @@ struct s_BitSet
 
 #ifndef FU_NO_FDEFs
 
-inline static s_BitSet& grow_if_oob_OyA5(fu_VEC<s_BitSet>& a, const int i)
+inline static s_BitSet& grow_if_oob_3eLcRIbm(fu_VEC<s_BitSet>& a, const int i)
 {
     if ((a.size() <= i))
         a.grow((i + 1));
@@ -28349,7 +30623,7 @@ inline static s_BitSet& grow_if_oob_OyA5(fu_VEC<s_BitSet>& a, const int i)
     return a.mutref(i);
 }
 
-inline static fu::u8& grow_if_oob_DlDj(fu_VEC<fu::u8>& a, const int i)
+inline static fu::u8& grow_if_oob_RxViuLnf(fu_VEC<fu::u8>& a, const int i)
 {
     if ((a.size() <= i))
         a.grow((i + 1));
@@ -28357,14 +30631,14 @@ inline static fu::u8& grow_if_oob_DlDj(fu_VEC<fu::u8>& a, const int i)
     return a.mutref(i);
 }
 
-static bool add_once(s_BitSet& _, const int idx)
+static bool add_once_ycL5xugz(s_BitSet& _, const int idx)
 {
     const int no_neg = ((idx < 0) ? -1 : 0);
     const int bucket = ((idx / 8) | no_neg);
     const int bit = (idx % 8);
-    const fu::u8 mask = (fu::u8(1u) << fu::u8(unsigned(bit)));
-    fu::u8& entry = grow_if_oob_DlDj(_._data, bucket);
-    if (!(entry & mask))
+    const fu::u8 mask = fu::u8((fu::u8(1u) << fu::u8(unsigned(bit))));
+    fu::u8& entry = grow_if_oob_RxViuLnf(_._data, bucket);
+    if (!fu::u8((entry & mask)))
     {
         entry |= mask;
         return true;
@@ -28372,15 +30646,15 @@ static bool add_once(s_BitSet& _, const int idx)
     return false;
 }
 
-static bool add_once(fu_VEC<s_BitSet>& bs, const int i, const int j)
+static bool add_once_qTFmmm68(fu_VEC<s_BitSet>& bs, const int i, const int j)
 {
-    return add_once(grow_if_oob_OyA5(bs, i), j);
+    return add_once_ycL5xugz(grow_if_oob_3eLcRIbm(bs, i), j);
 }
 
 int fu_MAIN()
 {
     fu_VEC<s_BitSet> bs {};
-    add_once(bs, 9, 9);
+    add_once_qTFmmm68(bs, 9, 9);
     return (bs.size() + (1000 * bs[9]._data.size())) - 2010;
 }
 
@@ -28411,31 +30685,31 @@ int main() { return fu_MAIN(); }
 
 -----
 
-static int parseExpression(int, int&);
+static int parseExpression_ZSoae05p(int, int&);
 
 #ifndef FU_NO_FDEFs
 
-static int parseExpressionHead(int& _precedence)
+static int parseExpressionHead_hpa9AihZ(int& _precedence)
 {
-    return parseExpression(((_precedence * 101) + 1), _precedence);
+    return parseExpression_ZSoae05p(((_precedence * 101) + 1), _precedence);
 }
 
-static int parseExpression(const int p1, int& _precedence)
+static int parseExpression_ZSoae05p(const int p1, int& _precedence)
 {
     if (!(_precedence = p1))
-        return parseExpressionHead(_precedence);
+        return parseExpressionHead_hpa9AihZ(_precedence);
 
     return int(_precedence);
 }
 
-static int test(int _precedence)
+static int test_1hpjcHdP(int _precedence)
 {
-    return parseExpression(0, _precedence);
+    return parseExpression_ZSoae05p(0, _precedence);
 }
 
 int fu_MAIN()
 {
-    return test(0) - 1;
+    return test_1hpjcHdP(0) - 1;
 }
 
 #endif
@@ -28503,44 +30777,111 @@ int main() { return fu_MAIN(); }
         }
 
 -----
-TODO: _0.fu @33:28:
 
-[2m      |             Lifetime_ascend(:lifetime, visit: |o| {[0m
-[2m      |                 if (o.is_var)[0m
-   33 |                     return [31;1mfalse[0m; // ERR: propagateType(jump): h.ret_actual not available.
-[2m      |             });[0m
-[2m      | [0m
+#include <fu/vec.h>
+#include <fu/vec/concat.h>
+#include <fu/view.h>
 
-	propagateType(jump): h.ret_actual not available.
+struct s_Overload;
 
-        Solving [35;1mfn[0m [34;1mLifetime_each_DU5D[0m
-                [35;1mfn[0m [34;1mLifetime_allowsMutrefReturn[0m
+                                #ifndef DEF_s_Overload
+                                #define DEF_s_Overload
+struct s_Overload
+{
+    bool is_var;
+    fu_VEC<int> lifetime;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || is_var
+            || lifetime
+        ;
+    }
+};
+                                #endif
+
+#ifndef FU_NO_FDEFs
+
+static const s_Overload& GET_KlHkkeGE(const int idx, fu::view<s_Overload> overloads)
+{
+    return overloads[idx];
+}
+
+static bool Lifetime_allowsMutrefReturn_ZvOm7cyv(const fu_VEC<int>& lifetime, fu::view<s_Overload> overloads)
+{
+
+    {
+        fu_VEC<int> lifetime_1 { lifetime };
+
+        {
+            fu_VEC<int> lifetime_2 { lifetime_1 };
+            for (int i = 0; i < lifetime_2.size(); i++)
+            {
+                const int r = lifetime_2[i];
+                const s_Overload& o = GET_KlHkkeGE(r, overloads);
+
+                {
+                    if (o.is_var)
+                        return false;
+
+                };
+                lifetime_2 += o.lifetime;
+            };
+        };
+    };
+    return true;
+}
+
+int fu_MAIN()
+{
+    fu_VEC<s_Overload> overloads = fu_VEC<s_Overload> { fu::slate<6, s_Overload> { s_Overload{}, s_Overload { bool{}, fu_VEC<int> { fu::slate<1, int> { 0 } } }, s_Overload { true, fu_VEC<int> { fu::slate<1, int> { 1 } } }, s_Overload { bool{}, fu_VEC<int> { fu::slate<1, int> { 1 } } }, s_Overload { bool{}, fu_VEC<int> { fu::slate<1, int> { 2 } } }, s_Overload { bool{}, fu_VEC<int> { fu::slate<1, int> { 3 } } } } };
+    const bool expect_false = Lifetime_allowsMutrefReturn_ZvOm7cyv(fu_VEC<int> { fu::slate<1, int> { 4 } }, overloads);
+    const bool expect_true = Lifetime_allowsMutrefReturn_ZvOm7cyv(fu_VEC<int> { fu::slate<1, int> { 5 } }, overloads);
+    if (expect_false)
+        return 20;
+
+    if (!expect_true)
+        return 10;
+
+    return 0;
+}
+
+#endif
+
+
+int main() { return fu_MAIN(); }
+// NONTRIV_autocopy
+// RELAX_respec
 
 -----
 
         struct Overload { items: string[]; };
 
+        // This is a bit borderline -
+        //  the problem here is that a: $T[] doesn't relax to a: [$T] (not during prep) -
+        //   so we don't match at all. Still, that's what's written -
+        //    perhaps regular fns are what doesn't behave correctly,
+        //     since their relax can create ambiguity?
+        //
         fn last(a: $T[])                    a[a.len - 1];
         fn arg_lets(overload: Overload)     overload.items[0, overload.items.len - 2];
         fn test(overload: Overload)         overload.arg_lets.last.len;
         fn main()                           Overload([ "hello", "cruel", "world!" ]).test - 5;
 
 -----
-TODO: _0.fu @6:62:
+TODO: _0.fu @12:62:
 
 [2m      |         fn last(a: $T[])                    a[a.len - 1];[0m
 [2m      |         fn arg_lets(overload: Overload)     overload.items[0, overload.items.len - 2];[0m
-    6 |         fn test(overload: Overload)         overload.arg_lets[31;1m.[0mlast.len;
+   12 |         fn test(overload: Overload)         overload.arg_lets[31;1m.[0mlast.len;
 [2m      |         fn main()                           Overload([ "hello", "cruel", "world!" ]).test - 5;[0m
 [2m      | [0m
 
-	`last` bad args.
-Expect: `last(
-	[34;1ma[0m: $)`
-Actual: (
-	[]+6[]+2byte).
+	Bad call to [34;1mlast[0m: 
 
-        Solving [35;1mfn[0m [34;1mtest[0m
+	[35;1mtemplate[0m [34;1mlast[0m: Could not specialize [TODO doTrySpec ERROR]
+
+        Solving [35;1mfn[0m [34;1mtest_PXTKu1UQ[0m
 
 -----
 
@@ -28599,25 +30940,24 @@ struct s_Helpers
 
 #ifndef FU_NO_FDEFs
 
-                                #ifndef DEF_HM_Function
-                                #define DEF_HM_Function
-inline constexpr short HM_Function = (short(1) << short(3));
-                                #endif
+static const short HM_Function = short((short(1) << short(3)));
 
-                                #ifndef DEF_HM_Struct
-                                #define DEF_HM_Struct
-inline constexpr short HM_Struct = (short(1) << short(5));
-                                #endif
+static const short HM_Struct = short((short(1) << short(5)));
 
-static bool isFnOrType(const s_Helpers& h, fu::view<s_HelpersData> _helpers_data)
+static bool isFnOrType_PXTKu1UQ(const s_Helpers& h, fu::view<s_HelpersData> _helpers_data)
 {
-    return !!(_helpers_data[h.index].mask & (HM_Function | HM_Struct));
+    const s_HelpersData* BL_1_v;
+    return !!short(((__extension__ (
+    {
+        fu::view<s_HelpersData> _helpers_data_1 = _helpers_data;
+        BL_1_v = &(_helpers_data_1[h.index]);
+    (void)0;}), *BL_1_v).mask & short((HM_Function | HM_Struct))));
 }
 
 int fu_MAIN()
 {
     fu_VEC<s_HelpersData> _helpers_data = fu_VEC<s_HelpersData> { fu::slate<1, s_HelpersData> { s_HelpersData { short(0) } } };
-    return int(isFnOrType(s_Helpers { 0 }, _helpers_data));
+    return int(isFnOrType_PXTKu1UQ(s_Helpers { 0 }, _helpers_data));
 }
 
 #endif
@@ -28684,31 +31024,508 @@ struct s_Helpers
 
 #ifndef FU_NO_FDEFs
 
-                                #ifndef DEF_HM_Function
-                                #define DEF_HM_Function
-inline constexpr short HM_Function = (short(1) << short(3));
-                                #endif
+static const short HM_Function = short((short(1) << short(3)));
 
-                                #ifndef DEF_HM_Struct
-                                #define DEF_HM_Struct
-inline constexpr short HM_Struct = (short(1) << short(5));
-                                #endif
+static const short HM_Struct = short((short(1) << short(5)));
 
-static bool isFnOrType(const s_Helpers& h, fu::view<s_HelpersData> _helpers_data)
+static bool isFnOrType_EwEdtI30(const s_Helpers& h, fu::view<s_HelpersData> _helpers_data)
 {
-    return !!(_helpers_data[h.index].mask & (HM_Function | HM_Struct));
+    return !!short((_helpers_data[h.index].mask & short((HM_Function | HM_Struct))));
 }
 
 int fu_MAIN()
 {
     fu_VEC<s_HelpersData> _helpers_data = fu_VEC<s_HelpersData> { fu::slate<1, s_HelpersData> { s_HelpersData { short(0) } } };
-    return int(isFnOrType(s_Helpers { 0 }, _helpers_data));
+    return int(isFnOrType_EwEdtI30(s_Helpers { 0 }, _helpers_data));
 }
 
 #endif
 
 
 int main() { return fu_MAIN(); }
+// RELAX_respec
+
+-----
+
+        fn each(y)
+            y & 1   ? y
+                    : y / 2 + each(y / 2);
+
+-----
+
+-----
+
+        fn each(y)
+            y & 1   ? y
+                    : y / 2 + each(y / 2);
+
+        fn each(y)
+            y & 1   ? y / 2
+                    : y / 2 + each(y / 2);
+
+-----
+
+-----
+
+        fn each(y)
+            y & 1   ? y
+                    : y / 2 + each(y / 2);
+
+        fn each(y)
+            y & 1   ? y / 2
+                    : y / 2 + each(y / 2);
+
+        fn main() {
+            let a = _0::each(100);
+            let b = _1::each(8);
+
+            return a+b - 107;
+        }
+
+-----
+
+#ifndef FU_NO_FDEFs
+
+                                #ifndef DEFt_each_1hpjcHdP
+                                #define DEFt_each_1hpjcHdP
+inline int each_1hpjcHdP(const int y)
+{
+    return ((y & 1) ? int(y) : ((y / 2) + each_1hpjcHdP((y / 2))));
+}
+                                #endif
+
+                                #ifndef DEFt_each_sZhpQHO6
+                                #define DEFt_each_sZhpQHO6
+inline int each_sZhpQHO6(const int y)
+{
+    return ((y & 1) ? (y / 2) : ((y / 2) + each_sZhpQHO6((y / 2))));
+}
+                                #endif
+
+int fu_MAIN()
+{
+    const int a = each_1hpjcHdP(100);
+    const int b = each_sZhpQHO6(8);
+    return (a + b) - 107;
+}
+
+#endif
+
+
+int main() { return fu_MAIN(); }
+// FN_recursion
+// FN_resolve
+// DEAD_call
+
+-----
+
+        fn each(y)
+            y & 1   ? y
+                    : y / 2 + each(y / 2);
+
+-----
+
+-----
+
+        fn each(y)
+            y & 1   ? y
+                    : y / 2 + each(y / 2);
+
+        fn each(y: i32)
+            y & 1   ? y / 2
+                    : y / 2 + each(y / 2);
+
+-----
+
+#ifndef FU_NO_FDEFs
+
+int each_sZhpQHO6(const int y)
+{
+    return ((y & 1) ? (y / 2) : ((y / 2) + each_sZhpQHO6((y / 2))));
+}
+
+#endif
+// FN_recursion
+// FN_resolve
+// DEAD_call
+
+-----
+
+        fn each(y)
+            y & 1   ? y
+                    : y / 2 + each(y / 2);
+
+        fn each(y: i32)
+            y & 1   ? y / 2
+                    : y / 2 + each(y / 2);
+
+        fn main() {
+            let a = _0::each(100);
+            let b = _1::each(8);
+
+            return a+b - 107;
+        }
+
+-----
+
+int each_sZhpQHO6(int);
+
+#ifndef FU_NO_FDEFs
+
+                                #ifndef DEFt_each_1hpjcHdP
+                                #define DEFt_each_1hpjcHdP
+inline int each_1hpjcHdP(const int y)
+{
+    return ((y & 1) ? int(y) : ((y / 2) + each_1hpjcHdP((y / 2))));
+}
+                                #endif
+
+int fu_MAIN()
+{
+    const int a = each_1hpjcHdP(100);
+    const int b = each_sZhpQHO6(8);
+    return (a + b) - 107;
+}
+
+#endif
+
+
+int main() { return fu_MAIN(); }
+// FN_recursion
+// FN_resolve
+// DEAD_call
+
+-----
+
+        fn each(y: i32)
+            y & 1   ? y
+                    : y / 2 + each(y / 2);
+
+-----
+
+#ifndef FU_NO_FDEFs
+
+int each_1hpjcHdP(const int y)
+{
+    return ((y & 1) ? int(y) : ((y / 2) + each_1hpjcHdP((y / 2))));
+}
+
+#endif
+// FN_recursion
+// FN_resolve
+// DEAD_call
+
+-----
+
+        fn each(y: i32)
+            y & 1   ? y
+                    : y / 2 + each(y / 2);
+
+        fn each(y)
+            y & 1   ? y / 2
+                    : y / 2 + each(y / 2);
+
+-----
+
+-----
+
+        fn each(y: i32)
+            y & 1   ? y
+                    : y / 2 + each(y / 2);
+
+        fn each(y)
+            y & 1   ? y / 2
+                    : y / 2 + each(y / 2);
+
+        fn main() {
+            let a = _0::each(100);
+            let b = _1::each(8);
+
+            return a+b - 107;
+        }
+
+-----
+
+int each_1hpjcHdP(int);
+
+#ifndef FU_NO_FDEFs
+
+                                #ifndef DEFt_each_sZhpQHO6
+                                #define DEFt_each_sZhpQHO6
+inline int each_sZhpQHO6(const int y)
+{
+    return ((y & 1) ? (y / 2) : ((y / 2) + each_sZhpQHO6((y / 2))));
+}
+                                #endif
+
+int fu_MAIN()
+{
+    const int a = each_1hpjcHdP(100);
+    const int b = each_sZhpQHO6(8);
+    return (a + b) - 107;
+}
+
+#endif
+
+
+int main() { return fu_MAIN(); }
+// FN_recursion
+// FN_resolve
+// DEAD_call
+
+-----
+
+        fn each(y: i32)
+            y & 1   ? y
+                    : y / 2 + each(y / 2);
+
+-----
+
+#ifndef FU_NO_FDEFs
+
+int each_1hpjcHdP(const int y)
+{
+    return ((y & 1) ? int(y) : ((y / 2) + each_1hpjcHdP((y / 2))));
+}
+
+#endif
+// FN_recursion
+// FN_resolve
+// DEAD_call
+
+-----
+
+        fn each(y: i32)
+            y & 1   ? y
+                    : y / 2 + each(y / 2);
+
+        fn each(y: i32)
+            y & 1   ? y / 2
+                    : y / 2 + each(y / 2);
+
+-----
+
+#ifndef FU_NO_FDEFs
+
+int each_sZhpQHO6(const int y)
+{
+    return ((y & 1) ? (y / 2) : ((y / 2) + each_sZhpQHO6((y / 2))));
+}
+
+#endif
+// FN_recursion
+// FN_resolve
+// DEAD_call
+
+-----
+
+        fn each(y: i32)
+            y & 1   ? y
+                    : y / 2 + each(y / 2);
+
+        fn each(y: i32)
+            y & 1   ? y / 2
+                    : y / 2 + each(y / 2);
+
+        fn main() {
+            let a = _0::each(100);
+            let b = _1::each(8);
+
+            return a+b - 107;
+        }
+
+-----
+
+int each_1hpjcHdP(int);
+int each_sZhpQHO6(int);
+
+#ifndef FU_NO_FDEFs
+
+int fu_MAIN()
+{
+    const int a = each_1hpjcHdP(100);
+    const int b = each_sZhpQHO6(8);
+    return (a + b) - 107;
+}
+
+#endif
+
+
+int main() { return fu_MAIN(); }
+
+-----
+
+        fn find(keys: $T[], item: $T) {
+            for (mut i = 0; i < keys.len; i++) {
+                if (keys[i] >= item) {
+                    if (keys[i] != item)
+                        return -1;
+
+                    return i;
+                }
+            }
+
+            return -1;
+        }
+
+-----
+
+-----
+
+        fn find(keys: $T[], item: $T) {
+            for (mut i = 0; i < keys.len; i++) {
+                if (keys[i] >= item) {
+                    if (keys[i] != item)
+                        return -1;
+
+                    return i;
+                }
+            }
+
+            return -1;
+        }
+
+        fn Set(_: $K) struct { keys: $K[]; };
+
+        fn has(using _, key)
+            _0::find(keys, key) >= 0;
+
+-----
+
+-----
+
+        fn find(keys: $T[], item: $T) {
+            for (mut i = 0; i < keys.len; i++) {
+                if (keys[i] >= item) {
+                    if (keys[i] != item)
+                        return -1;
+
+                    return i;
+                }
+            }
+
+            return -1;
+        }
+
+        fn Set(_: $K) struct { keys: $K[]; };
+
+        fn has(using _, key)
+            _0::find(keys, key) >= 0;
+
+        fn use_Set(a: string) {
+            mut set: _1::Set(string);
+            set.keys ~= a;
+            return set._1::has(a);
+        }
+
+        fn dont_use_Set(a: string, b: string) {
+            mut keys: string[];
+            keys ~= b;
+            keys ~= a;
+            return keys.find(a);
+        }
+
+        fn main() {
+            if (!use_Set("a"))
+                return -1;
+
+            return dont_use_Set("a", "b") - 1;
+        }
+
+-----
+
+#include <fu/str.h>
+#include <fu/vec.h>
+#include <fu/vec/cmp.h>
+#include <fu/vec/concat_one.h>
+#include <fu/view.h>
+
+struct s_Set_29SuNYQx;
+
+                                #ifndef DEF_s_Set_29SuNYQx
+                                #define DEF_s_Set_29SuNYQx
+struct s_Set_29SuNYQx
+{
+    fu_VEC<fu_STR> keys;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || keys
+        ;
+    }
+};
+                                #endif
+
+#ifndef FU_NO_FDEFs
+
+                                #ifndef DEFt_find_bhJPSlVH
+                                #define DEFt_find_bhJPSlVH
+inline int find_bhJPSlVH(fu::view<fu_STR> keys, const fu_STR& item)
+{
+    for (/*MOV*/ int i = 0; i < keys.size(); i++)
+    {
+        if ((keys[i] >= item))
+        {
+            if (keys[i] != item)
+                return -1;
+
+            return /*NRVO*/ i;
+        };
+    };
+    return -1;
+}
+                                #endif
+
+                                #ifndef DEFt_has_DYDvhHrh
+                                #define DEFt_has_DYDvhHrh
+inline bool has_DYDvhHrh(const s_Set_29SuNYQx& _, const fu_STR& key)
+{
+    return (find_bhJPSlVH(_.keys, key) >= 0);
+}
+                                #endif
+
+static bool use_Set_Gjrx3vUZ(const fu_STR& a)
+{
+    s_Set_29SuNYQx set {};
+    set.keys += fu_STR(a);
+    return has_DYDvhHrh(set, a);
+}
+
+                                #ifndef DEFt_find_9sek5qv2
+                                #define DEFt_find_9sek5qv2
+inline int find_9sek5qv2(fu::view<fu_STR> a, fu::view<char> b)
+{
+    for (/*MOV*/ int i = 0; i < a.size(); i++)
+    {
+        if (a[i] == b)
+            return /*NRVO*/ i;
+
+    };
+    return -1;
+}
+                                #endif
+
+static int dont_use_Set_MotYUA7q(const fu_STR& a, const fu_STR& b)
+{
+    fu_VEC<fu_STR> keys {};
+    keys += fu_STR(b);
+    keys += fu_STR(a);
+    return find_9sek5qv2(keys, a);
+}
+
+int fu_MAIN()
+{
+    if (!use_Set_Gjrx3vUZ("a"_fu))
+        return -1;
+
+    return dont_use_Set_MotYUA7q("a"_fu, "b"_fu) - 1;
+}
+
+#endif
+
+
+int main() { return fu_MAIN(); }
+// NONTRIV_autocopy
 // RELAX_respec
 
 -----
@@ -28726,66 +31543,37 @@ int main() { return fu_MAIN(); }
             return sum;
         }
 
-        fn main() [ 1 ].test - 1;
+        fn main() [ 1 ].test + 1;
 
 -----
-TODO: o-9c3940f2acaa0b17-606.cpp:13:13: error: redefinition of 'token'
-static int& token(const int idx, const int lidx, int& sum)
-            ^
-/Users/hdachev/fu/build-cpp/o-9c3940f2acaa0b17-606.cpp:8:13: note: previous definition is here
-static int& token(const int idx, const int col, int& sum)
-            ^
-1 error generated.
-
-Failing testcase:
-
-
-        fn test(tokens: i32[]) {
-            mut lidx = 0;
-            mut sum  = 0;
-
-            fn token(idx: i32, col!: i32)       = sum += idx * col;
-            fn token(idx: i32)                  = token(:idx, col: lidx - idx);
-
-            for (mut i = 0; i < tokens.len; i++)
-                token(tokens[i]);
-
-            return sum;
-        }
-
-        fn main() [ 1 ].test - 1;
-
-Sources:
 
 #include <fu/view.h>
 
-static int& token(int, int, int&);
-
 #ifndef FU_NO_FDEFs
 
-static int& token(const int idx, const int col, int& sum)
+static int& token_jRR1mEcq(const int idx, const int col, int& sum)
 {
     return (sum += (idx * col));
 }
 
-static int& token(const int idx, const int lidx, int& sum)
+static int& token_3AoyBXRR(const int idx, const int lidx, int& sum)
 {
-    return token(idx, (lidx - idx), sum);
+    return token_jRR1mEcq(idx, (lidx - idx), sum);
 }
 
-static int test(fu::view<int> tokens)
+static int test_ZvOm7cyv(fu::view<int> tokens)
 {
     const int lidx = 0;
     /*MOV*/ int sum = 0;
     for (int i = 0; i < tokens.size(); i++)
-        token(tokens[i], lidx, sum);
+        token_3AoyBXRR(tokens[i], lidx, sum);
 
     return /*NRVO*/ sum;
 }
 
 int fu_MAIN()
 {
-    return test((fu::slate<1, int> { 1 })) - 1;
+    return test_ZvOm7cyv((fu::slate<1, int> { 1 })) + 1;
 }
 
 #endif
@@ -28793,6 +31581,700 @@ int fu_MAIN()
 
 int main() { return fu_MAIN(); }
 // RELAX_respec
+
+-----
+
+        fn sum_each(a, b, each)     a.each + b.each;
+
+        fn hello(x) {
+            if (x & 1) {
+                fn each(y) y    ? y * each(y - 1)
+                                : 100;
+
+                return sum_each(x, x, fn each);
+            }
+            else {
+                fn each(y) y    ? y * each(y - 1)
+                                : 10000;
+
+                return sum_each(x, x, fn each);
+            }
+        }
+
+-----
+
+-----
+
+        fn sum_each(a, b, each)     a.each + b.each;
+
+        fn hello(x) {
+            if (x & 1) {
+                fn each(y) y    ? y * each(y - 1)
+                                : 100;
+
+                return sum_each(x, x, fn each);
+            }
+            else {
+                fn each(y) y    ? y * each(y - 1)
+                                : 10000;
+
+                return sum_each(x, x, fn each);
+            }
+        }
+
+        fn each(y) y & 1    ? y
+                            : y / 2 + each(y / 2);
+
+        fn main() _0::hello(1) - 2 * each(100)
+                + _0::hello(2) - 2 * each(20000);
+
+-----
+
+#ifndef FU_NO_FDEFs
+
+inline static int each_QzrOIn8p(const int y)
+{
+    return (y ? (y * each_QzrOIn8p((y - 1))) : 100);
+}
+
+                                #ifndef DEFt_sum_each_BBvDIXhB
+                                #define DEFt_sum_each_BBvDIXhB
+inline int sum_each_BBvDIXhB(const int a, const int b, int)
+{
+    return each_QzrOIn8p(a) + each_QzrOIn8p(b);
+}
+                                #endif
+
+inline static int each_DmEYqVKN(const int y)
+{
+    return (y ? (y * each_DmEYqVKN((y - 1))) : 10000);
+}
+
+                                #ifndef DEFt_sum_each_UaJhK4tV
+                                #define DEFt_sum_each_UaJhK4tV
+inline int sum_each_UaJhK4tV(const int a, const int b, int)
+{
+    return each_DmEYqVKN(a) + each_DmEYqVKN(b);
+}
+                                #endif
+
+                                #ifndef DEFt_hello_1hpjcHdP
+                                #define DEFt_hello_1hpjcHdP
+inline int hello_1hpjcHdP(const int x)
+{
+    if (x & 1)
+    {
+        return sum_each_BBvDIXhB(x, x, 0);
+    }
+    else
+    {
+        return sum_each_UaJhK4tV(x, x, 0);
+    };
+}
+                                #endif
+
+inline static int each_sZhpQHO6(const int y)
+{
+    return ((y & 1) ? int(y) : ((y / 2) + each_sZhpQHO6((y / 2))));
+}
+
+int fu_MAIN()
+{
+    return ((hello_1hpjcHdP(1) - (2 * each_sZhpQHO6(100))) + hello_1hpjcHdP(2)) - (2 * each_sZhpQHO6(20000));
+}
+
+#endif
+
+
+int main() { return fu_MAIN(); }
+// FN_recursion
+// FN_resolve
+// DEAD_code
+// DEAD_call
+
+-----
+
+        fn sum_each(a, b)       // Same as above,
+            a.each + b.each;    //  but we don't explicitly pass the fn each in.
+
+        fn hello(x) {
+            if (x & 1) {
+                fn each(a) a    ? a * each(a - 1)   // These get ignored?
+                                : 100;              //  sum_each goes and selects the one from _1.
+
+                return sum_each(x, x);
+            }
+            else {
+                fn each(b) b    ? b * each(b - 1)
+                                : 10000;
+
+                return sum_each(x, x);
+            }
+        }
+
+        fn each(c) c & 1    ? c
+                            : c / 2 + each(c / 2);
+
+        fn main() _0::hello(1) - 2 * each(100)
+                + _0::hello(2) - 2 * each(20000);
+
+-----
+TODO: Exit code: 65024
+Failing testcase:
+
+
+        fn sum_each(a, b)       // Same as above,
+            a.each + b.each;    //  but we don't explicitly pass the fn each in.
+
+        fn hello(x) {
+            if (x & 1) {
+                fn each(a) a    ? a * each(a - 1)   // These get ignored?
+                                : 100;              //  sum_each goes and selects the one from _1.
+
+                return sum_each(x, x);
+            }
+            else {
+                fn each(b) b    ? b * each(b - 1)
+                                : 10000;
+
+                return sum_each(x, x);
+            }
+        }
+
+        fn each(c) c & 1    ? c
+                            : c / 2 + each(c / 2);
+
+        fn main() _0::hello(1) - 2 * each(100)
+                + _0::hello(2) - 2 * each(20000);
+
+Sources:
+
+#ifndef FU_NO_FDEFs
+
+inline static int each_sZhpQHO6(const int c)
+{
+    return ((c & 1) ? int(c) : ((c / 2) + each_sZhpQHO6((c / 2))));
+}
+
+                                #ifndef DEFt_sum_each_TbYXL7io
+                                #define DEFt_sum_each_TbYXL7io
+inline int sum_each_TbYXL7io(const int a, const int b)
+{
+    return each_sZhpQHO6(a) + each_sZhpQHO6(b);
+}
+                                #endif
+
+                                #ifndef DEFt_hello_1hpjcHdP
+                                #define DEFt_hello_1hpjcHdP
+inline int hello_1hpjcHdP(const int x)
+{
+    if (x & 1)
+    {
+        return sum_each_TbYXL7io(x, x);
+    }
+    else
+    {
+        return sum_each_TbYXL7io(x, x);
+    };
+}
+                                #endif
+
+int fu_MAIN()
+{
+    return ((hello_1hpjcHdP(1) - (2 * each_sZhpQHO6(100))) + hello_1hpjcHdP(2)) - (2 * each_sZhpQHO6(20000));
+}
+
+#endif
+
+
+int main() { return fu_MAIN(); }
+// FN_recursion
+// FN_resolve
+// DEAD_code
+// DEAD_call
+
+-----
+
+        fn apply(num: i32, func: fn (i32): i32) = func(num);
+        fn main()                               = apply([1], |i| i - 1);
+
+-----
+TODO: _0.fu @2:42:
+
+[2m      | [0m
+    2 |         fn apply(num: i32, func: fn (i32)[31;1m:[0m i32) = func(num);
+[2m      |         fn main()                               = apply([1], |i| i - 1);[0m
+[2m      | [0m
+
+	Expected `,`, got `:`.
+
+-----
+
+        fn desc(a: i32, b: i32) b < a;
+
+        fn main() {
+            mut vals = [ 1, 2 ];
+            vals.sort(fn desc);
+            return vals[0] - 2;
+        }
+
+-----
+
+#include <fu/vec.h>
+#include <fu/vec/sort.h>
+
+#ifndef FU_NO_FDEFs
+
+static bool desc_TbYXL7io(const int a, const int b)
+{
+    return b < a;
+}
+
+int fu_MAIN()
+{
+    fu_VEC<int> vals = fu_VEC<int> { fu::slate<2, int> { 1, 2 } };
+    fu::sort(vals, &desc_TbYXL7io);
+    return vals[0] - 2;
+}
+
+#endif
+
+
+int main() { return fu_MAIN(); }
+// RELAX_respec
+
+-----
+
+        fn main() {
+            mut vals = [ 1, 2 ];
+            vals.sort(|a: i32, b: i32| b < a);
+            return vals[0] - 2;
+        }
+
+-----
+TODO: o-476e511e37d62c1c-259.cpp:3:
+In file included from /Users/hdachev/fu/include/fu/vec/sort.h:1:
+/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/algorithm:3968:17: error: called object type 'int' is not a function or function pointer
+            if (__comp(*--__last, *__first))
+                ^~~~~~
+/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/algorithm:4149:12: note: in instantiation of function template specialization 'std::__1::__sort<int &, int *>' requested here
+    _VSTD::__sort<_Comp_ref>(__first, __last, _Comp_ref(__comp));
+           ^
+/Users/hdachev/fu/include/fu/vec/sort.h:16:10: note: in instantiation of function template specialization 'std::__1::sort<int *, int>' requested here
+    std::sort(data, data + vec.size(), lessThan);
+         ^
+/Users/hdachev/fu/build-cpp/o-476e511e37d62c1c-259.cpp:10:9: note: in instantiation of function template specialization 'fu::sort<fu_VEC<int>, int>' requested here
+    fu::sort(vals, 0);
+        ^
+In file included from /Users/hdachev/fu/build-cpp/o-476e511e37d62c1c-259.cpp:3:
+In file included from /Users/hdachev/fu/include/fu/vec/sort.h:1:
+/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/algorithm:4015:14: error: called object type 'int' is not a function or function pointer
+        if (!__comp(*__i, *__m))  // if *__first == *__m
+             ^~~~~~
+/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/algorithm:4083:24: error: called object type 'int' is not a function or function pointer
+                while (__comp(*__i, *__m))
+                       ^~~~~~
+/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/algorithm:4086:25: error: called object type 'int' is not a function or function pointer
+                while (!__comp(*--__j, *__m))
+                        ^~~~~~
+/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/algorithm:4100:27: error: called object type 'int' is not a function or function pointer
+        if (__i != __m && __comp(*__m, *__i))
+                          ^~~~~~
+/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/algorithm:3717:10: error: called object type 'int' is not a function or function pointer
+    if (!__c(*__y, *__x))          // if x <= y
+         ^~~
+/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/algorithm:3972:20: note: in instantiation of function template specialization 'std::__1::__sort3<int &, int *>' requested here
+            _VSTD::__sort3<_Compare>(__first, __first+1, --__last, __comp);
+                   ^
+/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/algorithm:4149:12: note: in instantiation of function template specialization 'std::__1::__sort<int &, int *>' requested here
+    _VSTD::__sort<_Comp_ref>(__first, __last, _Comp_ref(__comp));
+           ^
+/Users/hdachev/fu/include/fu/vec/sort.h:16:10: note: in instantiation of function template specialization 'std::__1::sort<int *, int>' requested here
+    std::sort(data, data + vec.size(), lessThan);
+         ^
+/Users/hdachev/fu/build-cpp/o-476e511e37d62c1c-259.cpp:10:9: note: in instantiation of function template specialization 'fu::sort<fu_VEC<int>, int>' requested here
+    fu::sort(vals, 0);
+        ^
+In file included from /Users/hdachev/fu/build-cpp/o-476e511e37d62c1c-259.cpp:3:
+In file included from /Users/hdachev/fu/include/fu/vec/sort.h:1:
+/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/algorithm:3731:9: error: called object type 'int' is not a function or function pointer
+    if (__c(*__z, *__y))           // x > y, if y > z
+        ^~~
+/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/algorithm:3739:9: error: called object type 'int' is not a function or function pointer
+    if (__c(*__z, *__y))           // if y > z
+        ^~~
+/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/algorithm:3754:20: error: no matching function for call to '__sort3'
+    unsigned __r = __sort3<_Compare>(__x1, __x2, __x3, __c);
+                   ^~~~~~~~~~~~~~~~~
+/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/algorithm:3975:20: note: in instantiation of function template specialization 'std::__1::__sort4<int &, int *>' requested here
+            _VSTD::__sort4<_Compare>(__first, __first+1, __first+2, --__last, __comp);
+                   ^
+/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/algorithm:4149:12: note: in instantiation of function template specialization 'std::__1::__sort<int &, int *>' requested here
+    _VSTD::__sort<_Comp_ref>(__first, __last, _Comp_ref(__comp));
+           ^
+/Users/hdachev/fu/include/fu/vec/sort.h:16:10: note: in instantiation of function template specialization 'std::__1::sort<int *, int>' requested here
+    std::sort(data, data + vec.size(), lessThan);
+         ^
+/Users/hdachev/fu/build-cpp/o-476e511e37d62c1c-259.cpp:10:9: note: in instantiation of function template specialization 'fu::sort<fu_VEC<int>, int>' requested here
+    fu::sort(vals, 0);
+        ^
+/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/algorithm:3714:1: note: candidate template ignored: substitution failure [with _Compare = int &, _ForwardIterator = int *]
+__sort3(_ForwardIterator __x, _ForwardIterator __y, _ForwardIterator __z, _Compare __c)
+^
+/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/algorithm:3755:9: error: called object type 'int' is not a function or function pointer
+    if (__c(*__x4, *__x3))
+        ^~~
+/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/algorithm:3781:20: error: no matching function for call to '__sort4'
+    unsigned __r = __sort4<_Compare>(__x1, __x2, __x3, __x4, __c);
+                   ^~~~~~~~~~~~~~~~~
+/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/algorithm:3978:20: note: in instantiation of function template specialization 'std::__1::__sort5<int &, int *>' requested here
+            _VSTD::__sort5<_Compare>(__first, __first+1, __first+2, __first+3, --__last, __comp);
+                   ^
+/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/algorithm:4149:12: note: in instantiation of function template specialization 'std::__1::__sort<int &, int *>' requested here
+    _VSTD::__sort<_Comp_ref>(__first, __last, _Comp_ref(__comp));
+           ^
+/Users/hdachev/fu/include/fu/vec/sort.h:16:10: note: in instantiation of function template specialization 'std::__1::sort<int *, int>' requested here
+    std::sort(data, data + vec.size(), lessThan);
+         ^
+/Users/hdachev/fu/build-cpp/o-476e511e37d62c1c-259.cpp:10:9: note: in instantiation of function template specialization 'fu::sort<fu_VEC<int>, int>' requested here
+    fu::sort(vals, 0);
+        ^
+/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/algorithm:3751:1: note: candidate template ignored: substitution failure [with _Compare = int &, _ForwardIterator = int *]
+__sort4(_ForwardIterator __x1, _ForwardIterator __x2, _ForwardIterator __x3,
+^
+/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/algorithm:3782:9: error: called object type 'int' is not a function or function pointer
+    if (__c(*__x5, *__x4))
+        ^~~
+/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/algorithm:3846:5: error: no matching function for call to '__sort3'
+    __sort3<_Compare>(__first, __first+1, __j, __comp);
+    ^~~~~~~~~~~~~~~~~
+/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/algorithm:3983:20: note: in instantiation of function template specialization 'std::__1::__insertion_sort_3<int &, int *>' requested here
+            _VSTD::__insertion_sort_3<_Compare>(__first, __last, __comp);
+                   ^
+/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/algorithm:4149:12: note: in instantiation of function template specialization 'std::__1::__sort<int &, int *>' requested here
+    _VSTD::__sort<_Comp_ref>(__first, __last, _Comp_ref(__comp));
+           ^
+/Users/hdachev/fu/include/fu/vec/sort.h:16:10: note: in instantiation of function template specialization 'std::__1::sort<int *, int>' requested here
+    std::sort(data, data + vec.size(), lessThan);
+         ^
+/Users/hdachev/fu/build-cpp/o-476e511e37d62c1c-259.cpp:10:9: note: in instantiation of function template specialization 'fu::sort<fu_VEC<int>, int>' requested here
+    fu::sort(vals, 0);
+        ^
+/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/algorithm:3714:1: note: candidate template ignored: substitution failure [with _Compare = int &, _ForwardIterator = int *]
+__sort3(_ForwardIterator __x, _ForwardIterator __y, _ForwardIterator __z, _Compare __c)
+^
+/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/algorithm:3849:13: error: called object type 'int' is not a function or function pointer
+        if (__comp(*__i, *__j))
+            ^~~~~~
+/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/algorithm:3875:13: error: called object type 'int' is not a function or function pointer
+        if (__comp(*--__last, *__first))
+            ^~~~~~
+/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/algorithm:4109:32: note: in instantiation of function template specialization 'std::__1::__insertion_sort_incomplete<int &, int *>' requested here
+            bool __fs = _VSTD::__insertion_sort_incomplete<_Compare>(__first, __i, __comp);
+                               ^
+/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/algorithm:4149:12: note: in instantiation of function template specialization 'std::__1::__sort<int &, int *>' requested here
+    _VSTD::__sort<_Comp_ref>(__first, __last, _Comp_ref(__comp));
+           ^
+/Users/hdachev/fu/include/fu/vec/sort.h:16:10: note: in instantiation of function template specialization 'std::__1::sort<int *, int>' requested here
+    std::sort(data, data + vec.size(), lessThan);
+         ^
+/Users/hdachev/fu/build-cpp/o-476e511e37d62c1c-259.cpp:10:9: note: in instantiation of function template specialization 'fu::sort<fu_VEC<int>, int>' requested here
+    fu::sort(vals, 0);
+        ^
+In file included from /Users/hdachev/fu/build-cpp/o-476e511e37d62c1c-259.cpp:3:
+In file included from /Users/hdachev/fu/include/fu/vec/sort.h:1:
+/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/algorithm:3879:9: error: no matching function for call to '__sort3'
+        _VSTD::__sort3<_Compare>(__first, __first+1, --__last, __comp);
+        ^~~~~~~~~~~~~~~~~~~~~~~~
+/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/__config:852:15: note: expanded from macro '_VSTD'
+#define _VSTD std::_LIBCPP_ABI_NAMESPACE
+              ^
+/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/algorithm:3714:1: note: candidate template ignored: substitution failure [with _Compare = int &, _ForwardIterator = int *]
+__sort3(_ForwardIterator __x, _ForwardIterator __y, _ForwardIterator __z, _Compare __c)
+^
+/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/algorithm:3882:9: error: no matching function for call to '__sort4'
+        _VSTD::__sort4<_Compare>(__first, __first+1, __first+2, --__last, __comp);
+        ^~~~~~~~~~~~~~~~~~~~~~~~
+/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/__config:852:15: note: expanded from macro '_VSTD'
+#define _VSTD std::_LIBCPP_ABI_NAMESPACE
+              ^
+/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/algorithm:3751:1: note: candidate template ignored: substitution failure [with _Compare = int &, _ForwardIterator = int *]
+__sort4(_ForwardIterator __x1, _ForwardIterator __x2, _ForwardIterator __x3,
+^
+/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/algorithm:3885:9: error: no matching function for call to '__sort5'
+        _VSTD::__sort5<_Compare>(__first, __first+1, __first+2, __first+3, --__last, __comp);
+        ^~~~~~~~~~~~~~~~~~~~~~~~
+/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/__config:852:15: note: expanded from macro '_VSTD'
+#define _VSTD std::_LIBCPP_ABI_NAMESPACE
+              ^
+/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/algorithm:3778:1: note: candidate template ignored: substitution failure [with _Compare = int &, _ForwardIterator = int *]
+__sort5(_ForwardIterator __x1, _ForwardIterator __x2, _ForwardIterator __x3,
+^
+/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/algorithm:3890:5: error: no matching function for call to '__sort3'
+    __sort3<_Compare>(__first, __first+1, __j, __comp);
+    ^~~~~~~~~~~~~~~~~
+/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/algorithm:3714:1: note: candidate template ignored: substitution failure [with _Compare = int &, _ForwardIterator = int *]
+__sort3(_ForwardIterator __x, _ForwardIterator __y, _ForwardIterator __z, _Compare __c)
+^
+fatal error: too many errors emitted, stopping now [-ferror-limit=]
+20 errors generated.
+
+Failing testcase:
+
+
+        fn main() {
+            mut vals = [ 1, 2 ];
+            vals.sort(|a: i32, b: i32| b < a);
+            return vals[0] - 2;
+        }
+
+Sources:
+
+#include <fu/vec.h>
+#include <fu/vec/sort.h>
+
+#ifndef FU_NO_FDEFs
+
+int fu_MAIN()
+{
+    fu_VEC<int> vals = fu_VEC<int> { fu::slate<2, int> { 1, 2 } };
+    fu::sort(vals, 0);
+    return vals[0] - 2;
+}
+
+#endif
+
+
+int main() { return fu_MAIN(); }
+// RELAX_respec
+
+-----
+
+        fn main() {
+            mut vals = [ 1, 2 ];
+            vals.sort(|a, b| b < a);
+            return vals[0] - 2;
+        }
+
+-----
+TODO: o-476e511e37d62c1c-259.cpp:3:
+In file included from /Users/hdachev/fu/include/fu/vec/sort.h:1:
+/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/algorithm:3968:17: error: called object type 'int' is not a function or function pointer
+            if (__comp(*--__last, *__first))
+                ^~~~~~
+/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/algorithm:4149:12: note: in instantiation of function template specialization 'std::__1::__sort<int &, int *>' requested here
+    _VSTD::__sort<_Comp_ref>(__first, __last, _Comp_ref(__comp));
+           ^
+/Users/hdachev/fu/include/fu/vec/sort.h:16:10: note: in instantiation of function template specialization 'std::__1::sort<int *, int>' requested here
+    std::sort(data, data + vec.size(), lessThan);
+         ^
+/Users/hdachev/fu/build-cpp/o-476e511e37d62c1c-259.cpp:10:9: note: in instantiation of function template specialization 'fu::sort<fu_VEC<int>, int>' requested here
+    fu::sort(vals, 0);
+        ^
+In file included from /Users/hdachev/fu/build-cpp/o-476e511e37d62c1c-259.cpp:3:
+In file included from /Users/hdachev/fu/include/fu/vec/sort.h:1:
+/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/algorithm:4015:14: error: called object type 'int' is not a function or function pointer
+        if (!__comp(*__i, *__m))  // if *__first == *__m
+             ^~~~~~
+/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/algorithm:4083:24: error: called object type 'int' is not a function or function pointer
+                while (__comp(*__i, *__m))
+                       ^~~~~~
+/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/algorithm:4086:25: error: called object type 'int' is not a function or function pointer
+                while (!__comp(*--__j, *__m))
+                        ^~~~~~
+/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/algorithm:4100:27: error: called object type 'int' is not a function or function pointer
+        if (__i != __m && __comp(*__m, *__i))
+                          ^~~~~~
+/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/algorithm:3717:10: error: called object type 'int' is not a function or function pointer
+    if (!__c(*__y, *__x))          // if x <= y
+         ^~~
+/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/algorithm:3972:20: note: in instantiation of function template specialization 'std::__1::__sort3<int &, int *>' requested here
+            _VSTD::__sort3<_Compare>(__first, __first+1, --__last, __comp);
+                   ^
+/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/algorithm:4149:12: note: in instantiation of function template specialization 'std::__1::__sort<int &, int *>' requested here
+    _VSTD::__sort<_Comp_ref>(__first, __last, _Comp_ref(__comp));
+           ^
+/Users/hdachev/fu/include/fu/vec/sort.h:16:10: note: in instantiation of function template specialization 'std::__1::sort<int *, int>' requested here
+    std::sort(data, data + vec.size(), lessThan);
+         ^
+/Users/hdachev/fu/build-cpp/o-476e511e37d62c1c-259.cpp:10:9: note: in instantiation of function template specialization 'fu::sort<fu_VEC<int>, int>' requested here
+    fu::sort(vals, 0);
+        ^
+In file included from /Users/hdachev/fu/build-cpp/o-476e511e37d62c1c-259.cpp:3:
+In file included from /Users/hdachev/fu/include/fu/vec/sort.h:1:
+/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/algorithm:3731:9: error: called object type 'int' is not a function or function pointer
+    if (__c(*__z, *__y))           // x > y, if y > z
+        ^~~
+/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/algorithm:3739:9: error: called object type 'int' is not a function or function pointer
+    if (__c(*__z, *__y))           // if y > z
+        ^~~
+/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/algorithm:3754:20: error: no matching function for call to '__sort3'
+    unsigned __r = __sort3<_Compare>(__x1, __x2, __x3, __c);
+                   ^~~~~~~~~~~~~~~~~
+/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/algorithm:3975:20: note: in instantiation of function template specialization 'std::__1::__sort4<int &, int *>' requested here
+            _VSTD::__sort4<_Compare>(__first, __first+1, __first+2, --__last, __comp);
+                   ^
+/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/algorithm:4149:12: note: in instantiation of function template specialization 'std::__1::__sort<int &, int *>' requested here
+    _VSTD::__sort<_Comp_ref>(__first, __last, _Comp_ref(__comp));
+           ^
+/Users/hdachev/fu/include/fu/vec/sort.h:16:10: note: in instantiation of function template specialization 'std::__1::sort<int *, int>' requested here
+    std::sort(data, data + vec.size(), lessThan);
+         ^
+/Users/hdachev/fu/build-cpp/o-476e511e37d62c1c-259.cpp:10:9: note: in instantiation of function template specialization 'fu::sort<fu_VEC<int>, int>' requested here
+    fu::sort(vals, 0);
+        ^
+/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/algorithm:3714:1: note: candidate template ignored: substitution failure [with _Compare = int &, _ForwardIterator = int *]
+__sort3(_ForwardIterator __x, _ForwardIterator __y, _ForwardIterator __z, _Compare __c)
+^
+/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/algorithm:3755:9: error: called object type 'int' is not a function or function pointer
+    if (__c(*__x4, *__x3))
+        ^~~
+/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/algorithm:3781:20: error: no matching function for call to '__sort4'
+    unsigned __r = __sort4<_Compare>(__x1, __x2, __x3, __x4, __c);
+                   ^~~~~~~~~~~~~~~~~
+/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/algorithm:3978:20: note: in instantiation of function template specialization 'std::__1::__sort5<int &, int *>' requested here
+            _VSTD::__sort5<_Compare>(__first, __first+1, __first+2, __first+3, --__last, __comp);
+                   ^
+/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/algorithm:4149:12: note: in instantiation of function template specialization 'std::__1::__sort<int &, int *>' requested here
+    _VSTD::__sort<_Comp_ref>(__first, __last, _Comp_ref(__comp));
+           ^
+/Users/hdachev/fu/include/fu/vec/sort.h:16:10: note: in instantiation of function template specialization 'std::__1::sort<int *, int>' requested here
+    std::sort(data, data + vec.size(), lessThan);
+         ^
+/Users/hdachev/fu/build-cpp/o-476e511e37d62c1c-259.cpp:10:9: note: in instantiation of function template specialization 'fu::sort<fu_VEC<int>, int>' requested here
+    fu::sort(vals, 0);
+        ^
+/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/algorithm:3751:1: note: candidate template ignored: substitution failure [with _Compare = int &, _ForwardIterator = int *]
+__sort4(_ForwardIterator __x1, _ForwardIterator __x2, _ForwardIterator __x3,
+^
+/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/algorithm:3782:9: error: called object type 'int' is not a function or function pointer
+    if (__c(*__x5, *__x4))
+        ^~~
+/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/algorithm:3846:5: error: no matching function for call to '__sort3'
+    __sort3<_Compare>(__first, __first+1, __j, __comp);
+    ^~~~~~~~~~~~~~~~~
+/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/algorithm:3983:20: note: in instantiation of function template specialization 'std::__1::__insertion_sort_3<int &, int *>' requested here
+            _VSTD::__insertion_sort_3<_Compare>(__first, __last, __comp);
+                   ^
+/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/algorithm:4149:12: note: in instantiation of function template specialization 'std::__1::__sort<int &, int *>' requested here
+    _VSTD::__sort<_Comp_ref>(__first, __last, _Comp_ref(__comp));
+           ^
+/Users/hdachev/fu/include/fu/vec/sort.h:16:10: note: in instantiation of function template specialization 'std::__1::sort<int *, int>' requested here
+    std::sort(data, data + vec.size(), lessThan);
+         ^
+/Users/hdachev/fu/build-cpp/o-476e511e37d62c1c-259.cpp:10:9: note: in instantiation of function template specialization 'fu::sort<fu_VEC<int>, int>' requested here
+    fu::sort(vals, 0);
+        ^
+/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/algorithm:3714:1: note: candidate template ignored: substitution failure [with _Compare = int &, _ForwardIterator = int *]
+__sort3(_ForwardIterator __x, _ForwardIterator __y, _ForwardIterator __z, _Compare __c)
+^
+/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/algorithm:3849:13: error: called object type 'int' is not a function or function pointer
+        if (__comp(*__i, *__j))
+            ^~~~~~
+/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/algorithm:3875:13: error: called object type 'int' is not a function or function pointer
+        if (__comp(*--__last, *__first))
+            ^~~~~~
+/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/algorithm:4109:32: note: in instantiation of function template specialization 'std::__1::__insertion_sort_incomplete<int &, int *>' requested here
+            bool __fs = _VSTD::__insertion_sort_incomplete<_Compare>(__first, __i, __comp);
+                               ^
+/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/algorithm:4149:12: note: in instantiation of function template specialization 'std::__1::__sort<int &, int *>' requested here
+    _VSTD::__sort<_Comp_ref>(__first, __last, _Comp_ref(__comp));
+           ^
+/Users/hdachev/fu/include/fu/vec/sort.h:16:10: note: in instantiation of function template specialization 'std::__1::sort<int *, int>' requested here
+    std::sort(data, data + vec.size(), lessThan);
+         ^
+/Users/hdachev/fu/build-cpp/o-476e511e37d62c1c-259.cpp:10:9: note: in instantiation of function template specialization 'fu::sort<fu_VEC<int>, int>' requested here
+    fu::sort(vals, 0);
+        ^
+In file included from /Users/hdachev/fu/build-cpp/o-476e511e37d62c1c-259.cpp:3:
+In file included from /Users/hdachev/fu/include/fu/vec/sort.h:1:
+/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/algorithm:3879:9: error: no matching function for call to '__sort3'
+        _VSTD::__sort3<_Compare>(__first, __first+1, --__last, __comp);
+        ^~~~~~~~~~~~~~~~~~~~~~~~
+/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/__config:852:15: note: expanded from macro '_VSTD'
+#define _VSTD std::_LIBCPP_ABI_NAMESPACE
+              ^
+/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/algorithm:3714:1: note: candidate template ignored: substitution failure [with _Compare = int &, _ForwardIterator = int *]
+__sort3(_ForwardIterator __x, _ForwardIterator __y, _ForwardIterator __z, _Compare __c)
+^
+/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/algorithm:3882:9: error: no matching function for call to '__sort4'
+        _VSTD::__sort4<_Compare>(__first, __first+1, __first+2, --__last, __comp);
+        ^~~~~~~~~~~~~~~~~~~~~~~~
+/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/__config:852:15: note: expanded from macro '_VSTD'
+#define _VSTD std::_LIBCPP_ABI_NAMESPACE
+              ^
+/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/algorithm:3751:1: note: candidate template ignored: substitution failure [with _Compare = int &, _ForwardIterator = int *]
+__sort4(_ForwardIterator __x1, _ForwardIterator __x2, _ForwardIterator __x3,
+^
+/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/algorithm:3885:9: error: no matching function for call to '__sort5'
+        _VSTD::__sort5<_Compare>(__first, __first+1, __first+2, __first+3, --__last, __comp);
+        ^~~~~~~~~~~~~~~~~~~~~~~~
+/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/__config:852:15: note: expanded from macro '_VSTD'
+#define _VSTD std::_LIBCPP_ABI_NAMESPACE
+              ^
+/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/algorithm:3778:1: note: candidate template ignored: substitution failure [with _Compare = int &, _ForwardIterator = int *]
+__sort5(_ForwardIterator __x1, _ForwardIterator __x2, _ForwardIterator __x3,
+^
+/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/algorithm:3890:5: error: no matching function for call to '__sort3'
+    __sort3<_Compare>(__first, __first+1, __j, __comp);
+    ^~~~~~~~~~~~~~~~~
+/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/algorithm:3714:1: note: candidate template ignored: substitution failure [with _Compare = int &, _ForwardIterator = int *]
+__sort3(_ForwardIterator __x, _ForwardIterator __y, _ForwardIterator __z, _Compare __c)
+^
+fatal error: too many errors emitted, stopping now [-ferror-limit=]
+20 errors generated.
+
+Failing testcase:
+
+
+        fn main() {
+            mut vals = [ 1, 2 ];
+            vals.sort(|a, b| b < a);
+            return vals[0] - 2;
+        }
+
+Sources:
+
+#include <fu/vec.h>
+#include <fu/vec/sort.h>
+
+#ifndef FU_NO_FDEFs
+
+int fu_MAIN()
+{
+    fu_VEC<int> vals = fu_VEC<int> { fu::slate<2, int> { 1, 2 } };
+    fu::sort(vals, 0);
+    return vals[0] - 2;
+}
+
+#endif
+
+
+int main() { return fu_MAIN(); }
+// RELAX_respec
+
+-----
+
+        fn test(ref vals: i32[], xor: i32)
+            vals.sort(
+                |a: i32, b: i32|
+                    a^xor < b^xor);
+
+        fn main() {
+            mut vals = [ 1, 2 ];
+            vals.test(xor: 3); // xor:3 descs 1 and 2.
+            return vals[0] - 2;
+        }
+
+-----
+TODO: _0.fu @2:9:
+
+[2m      | [0m
+    2 |         [31;1mfn[0m test(ref vals: i32[], xor: i32)
+[2m      |             vals.sort([0m
+[2m      |                 |a: i32, b: i32|[0m
+
+	Unused variable: `xor`: make it `lax` if this is intentional.
 
 -----
 
@@ -28811,5 +32293,69 @@ int main() { return fu_MAIN(); }
 
 -----
 TODO: _0.fu @3:23:
+
+[2m      | [0m
+[2m      |         fn test(ref aa: i32[], bb: i32[])[0m
+    3 |             for (ref a[31;1m,[0m b in aa, bb) a += b;
+[2m      |         /*[0m
+[2m      |             Technically the same as:[0m
+
 	Missing semicollon before `,`.
+
+-----
+
+        primitive s32: i32;
+
+        fn main() {
+            let i: s32 = 0;
+            <fail return type annot>
+            return i;        <pass/>
+            return i.i32;    </fail>
+        }
+
+-----
+TODO: <fail> mismatch:
+
+    Expected error keyword:
+        [31;1mreturn[0m from pattern <fail[31;1m return type annot[0m>
+
+    ... not present in error message:
+
+_0.fu @2:9:
+
+[2m      | [0m
+    2 |         [31;1mprimitive[0m s32: i32;
+[2m      | [0m
+[2m      |         fn main() {[0m
+
+	TODO: primdecl
+
+-----
+
+        enum E { None };
+
+        fn main() {
+            let e = None;
+            <fail return type annot>
+            return e;        <pass/>
+            return e.i32;    </fail>
+        }
+
+-----
+TODO: <fail> mismatch:
+
+    Expected error keyword:
+        [31;1mreturn[0m from pattern <fail[31;1m return type annot[0m>
+
+    ... not present in error message:
+
+_0.fu @2:9:
+
+[2m      | [0m
+    2 |         [31;1menum[0m E { None };
+[2m      | [0m
+[2m      |         fn main() {[0m
+
+	TODO: primdecl
+
 -----
