@@ -4430,7 +4430,10 @@ pub fn solve(
         }
 
         let t_init  = init.type;
-        let killref = t_init.is_ref2temp();
+
+        shadow let t_init = t_init.is_ref2temp
+            ? clear_refs(t_init)
+            : t_init;
 
         // Dead code elim.
         if (!(flags & F_ARG) && t_init.is_never)
@@ -4449,9 +4452,6 @@ pub fn solve(
                                 || !init && flags & F_ARG || fail(
                 "`ref` variables must be initialized to a mutable reference: `" ~ id ~ "`"
                     ~ (t_init ? " = " ~ humanizeType(t_init) : "."));
-
-            killref && fail(
-                "`ref` varibles cannot bind to temporaries.");
         }
 
         //
@@ -4459,10 +4459,10 @@ pub fn solve(
 
                         ? annot
 
-                        : t_init.is_mutref || flags & F_MUT || killref
-                            ? flags & F_REF                                     && (!killref || BUG("redundant, see above, refs cant bind to temps"))
+                        : t_init.is_mutref || flags & F_MUT
+                            ? flags & F_REF
                                 ? t_init
-                                : flags & F_MUT || killref
+                                : flags & F_MUT
                                     ? clear_refs(t_init)
                                     : clear_mutref(t_init)
 
