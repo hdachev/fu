@@ -4463,16 +4463,9 @@ pub fn solve(
 
         //
         mut t_let   = annot && (flags & F_ARG || !t_init)
-
                         ? annot
-
-                        : t_init.is_mutref || flags & F_MUT
-                            ? flags & F_REF
-                                ? t_init
-                                : flags & F_MUT
-                                    ? clear_refs(t_init)
-                                    : clear_mutref(t_init)
-
+                        : t_init.is_mutref && !(flags & F_REF)
+                            ? clear_mutref(t_init)
                             : t_init;
 
         // Add a temp lifetime to non F_MUT args -
@@ -4538,7 +4531,11 @@ pub fn solve(
             shadows: true))
         {
             ////////////////////////////////////////////////////////////////
-            if (OPTI_dedupe_vars && !isArg && !(out.flags & (F_PUB|F_IMPLICIT)))
+            // TODO we need this to happen at a much later stage.
+            //  Can we keep this var here and then just codegen it
+            //   as a ref to the original?
+            //
+            if (OPTI_dedupe_vars && !isArg && !(out.flags & (F_PUB|F_IMPLICIT|F_MUT)))
             {
                 let init = out.items[LET_INIT];
                 if (init.kind == "call" && !init.items)
