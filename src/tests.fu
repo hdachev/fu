@@ -139,6 +139,13 @@ pub fn runTests()
     // Mutation & references.
 
     ZERO(`
+        let a = 3;
+        mut b = a;
+        b++;
+        return b - (a + 1);
+    `);
+
+    ZERO(`
         mut sum = 0;
         for (mut i = 0; i < 10; i++)
             sum++;
