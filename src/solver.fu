@@ -4461,7 +4461,7 @@ pub fn solve(
         }
 
         //
-        mut t_let   = annot && (flags & (F_ARG | F_MUT) || !t_init)
+        mut t_let   = annot && (flags & F_ARG || !t_init)
 
                         ? annot
 
