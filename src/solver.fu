@@ -2396,7 +2396,7 @@ pub fn solve(
 
         //////////////////////////////////////////////////////////////////////
         //////////////////////////////////////////////////////////////////////
-        if (OPTI_flatten_blocks && items.len) for (;;)
+        if (OPTI_flatten_blocks) while (items.len)
         {
             let tail = items.last;
             if (tail.kind != "block" || tail.helpers && Helpers(tail.helpers).mask & HM_LabelUsed)
@@ -2410,21 +2410,12 @@ pub fn solve(
         //////////////////////////////////////////////////////////////////////
 
         // Compact + stress test.
-        if (items.len)
-        {
-            mut ok = !(h.mask & HM_LabelUsed) && !(h && h.vars);
-            for (mut i = 0; i < items.len - 1; i++)
-            {
-                if (items[i].kind != "empty")
-                {
-                    ok = false;
-                    break;
-                }
-            }
+        for (mut i = items.len - 1; i --> 0; )
+            if (items[i].kind == "empty")
+                items.splice(i, 1);
 
-            if (ok)
-                return items.last;
-        }
+        if (!(h.mask & HM_LabelUsed) && !(h && h.vars) && items.len == 1)
+            return items.only;
 
         //
         return SolvedNode(
