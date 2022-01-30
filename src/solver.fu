@@ -5819,8 +5819,12 @@ pub fn solve(
     {
         let t = nested(target);
         ref o = GET_mut(t);
-        if (o.flags & F_REF || o.type.is_mutref || !o.type.is_rx_copy)
+        if (o.flags & F_REF || !o.type.is_rx_copy)
             return false;
+
+        o.type.is_mutref && BUG(
+            o.qWHAT ~ ": Not F_REF but type.is_mutref"
+                    ~ " in BORROWCK_resolveByMutvar: is this a problem?");
 
         o.kind == "var"                 || BUG("BORROWCK_resolveByMutvar: Not a variable.");
         o.type.lifetime.uni0n.len == 1  || BUG("BORROWCK_resolveByMutvar: lt.len != 1"  );
