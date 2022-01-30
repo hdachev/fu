@@ -3031,12 +3031,12 @@ pub fn runTests()
         }
     `);
 
-    ZERO(`
+    TODO_move(`
         <alt>
         nocopy
         </alt>
         struct X { items: i32[]; };
-        fn popfirst(mut arr: X[]) arr[0];
+        fn popfirst(mut arr: X[]) arr[0]; // mcom_BlockReturn after relax: arr[] adds 'static
         fn main() popfirst([ X() ]).items.len;
     `);
 
