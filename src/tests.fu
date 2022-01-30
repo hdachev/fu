@@ -3232,6 +3232,26 @@ pub fn runTests()
         }
     `);
 
+    ZERO(`
+        fn test(ref arg: i32[]) {
+            let encloses_unchanged = arg;
+
+            fn closure()
+                for (mut i = 0; i < arg.len; i++)
+                    arg[i] += encloses_unchanged[i];
+
+            closure();
+            if (arg.len & 1)
+                closure();
+        }
+
+        fn main() {
+            mut a = [ 3 ];
+            test(a);
+            return a[0] - 9;
+        }
+    `);
+
 
     // Stuff that isn't working out quite right -
     //  Keep those around, there's no principle to these tests,
