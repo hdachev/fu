@@ -733,8 +733,6 @@ pub fn solve(
         // Reserve the slot.
         let target = Scope_create(_scope, kind: "var", :name, :flags, nest:local_of);
 
-        _helpers.last.vars ~= target.index;
-
         // Setup the lifetime for references to this binding.
         ref overload = GET_mut(target);
         {
@@ -2174,7 +2172,7 @@ pub fn solve(
         fail("Noreturn during static init: this program will never finish booting.");
     }
 
-    fn solveBlock(node: Node, type!: Type, fnbody_of!?: i32, mask! = HM_CanBreak, kills!?: i32, id!?: string, steal!?: i32, locals_start!?: i32): SolvedNode
+    fn solveBlock(node: Node, type!: Type, fnbody_of!?: i32, mask! = HM_CanBreak, kills!?: i32, id!?: string, locals_start!?: i32): SolvedNode
     {
         let nodes = node.kind == "block"  ? node.items : [ node ];
         shadow let id = id || node.kind == "block" && node.value;
@@ -2190,16 +2188,6 @@ pub fn solve(
             target:         fnbody_of && Target(:module.modid, fnbody_of),
             local_of:       fnbody_of ? fnbody_of : _current_fn.target.index,
             locals_start:   fnbody_of ? +1 : locals_start || GET_next_local_index()));
-
-        // TODO FIX ARGSTEAL Steal arguments from one level up, this real messy.
-        if (steal)
-        {
-            ref old  = _helpers[helpers_idx - 1].vars;
-            let vars = old.steal(old.len - steal, old.len);
-
-            ref new  = _helpers[helpers_idx    ].vars;
-            new     ~= vars;
-        }
 
         let expr        = !fnbody_of && !type.is_void;
         let items       = solveNodes(
@@ -2418,7 +2406,7 @@ pub fn solve(
             if (items[i].kind == "empty")
                 items.splice(i, 1);
 
-        if (!(h.mask & (HM_LabelUsed | HM_KeepBlock)) && !(h && h.vars) && items.len == 1)
+        if (!(h.mask & (HM_LabelUsed | HM_KeepBlock)) && items.len == 1)
             return items.only;
 
         //
@@ -2862,14 +2850,11 @@ pub fn solve(
         {
             let scope0 = Scope_snap(_scope);
             let ss0 = _ss;
-            let helpers0vars = _helpers.last.vars.len;
             let helpers_data0 = _helpers_data.len;
 
             defer {
                 Scope_pop(_scope, scope0);
                 _ss = ss0;
-                if (_helpers) // TODO why the if? what's this
-                    _helpers.last.vars.shrink(helpers0vars);
 
                 _helpers_data.shrink(helpers_data0);
             }
@@ -3531,8 +3516,7 @@ pub fn solve(
                         n_body, type: ret_expect,
                         fnbody_of: target.index,
                         id: n_fn.value,
-                        mask: i16(HM_Function | HM_CanReturn | HM_LabelUsed | (n_fn.flags & F_LAMBDA && HM_Lambda)),
-                        steal: _helpers.last.vars.len - helpers0vars);
+                        mask: i16(HM_Function | HM_CanReturn | HM_LabelUsed | (n_fn.flags & F_LAMBDA && HM_Lambda)));
 
                     if (currentFn_mustBecomeInline)
                     {
@@ -5753,7 +5737,6 @@ pub fn solve(
             {
                 let scope0 = Scope_snap(_scope);
                 let ss0 = _ss;
-                let helpers0vars = _helpers.last.vars.len;
 
                 defer {
                     Scope_pop(_scope, scope0);
@@ -5792,11 +5775,7 @@ pub fn solve(
                     mask: i16(HM_CanReturn | (n_fn.flags & F_LAMBDA && HM_Lambda) | (arg_defs && HM_KeepBlock)),
                     id: n_fn.value,
                     :kills,
-                    steal: _helpers.last.vars.len - helpers0vars,
                     :locals_start);
-
-                _helpers.last.vars.len == helpers0vars || BUG(
-                    "inline: _helpers.len != helpers0vars");
 
                 s_body.kind || BUG("inline: no s_body.kind");
                 s_body.MUT.items.splice(0, 0, arg_defs);
