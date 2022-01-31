@@ -2418,7 +2418,7 @@ pub fn solve(
             if (items[i].kind == "empty")
                 items.splice(i, 1);
 
-        if (!(h.mask & HM_LabelUsed) && !(h && h.vars) && items.len == 1)
+        if (!(h.mask & (HM_LabelUsed | HM_KeepBlock)) && !(h && h.vars) && items.len == 1)
             return items.only;
 
         //
@@ -5771,26 +5771,25 @@ pub fn solve(
                 let ret_expect  = target.type;
                 let host_args   = target.args;
 
-                mut result: SolvedNode[];
+                mut arg_defs: SolvedNode[];
                 host_args.len == args.len || BUG("inline: arglen mismatch");
-                result.resize(args.len + 1);
 
                 let locals_start = args && GET_next_local_index();
                 for (mut i = 0; i < args.len; i++)
                 {
                     let slot = host_args[i];
-                    result[i] = createLet(id: slot.name, init: args[i], // TODO__ORIGINAL_ANNOT_OR_TYPE
+                    arg_defs ~= createLet(id: slot.name, init: args[i], // TODO__ORIGINAL_ANNOT_OR_TYPE
                         :slot.flags &~ (F_ARG | F_COMPOUND_ID)); // As if not an arg + no autocall.
 
                     // INLINE ARGUMENTS ////////////////////////////////////////////
                     if (slot.flags & F_INLINE)
-                        result[i] = createEmpty();
+                        arg_defs.pop();
                     // INLINE ARGUMENTS ////////////////////////////////////////////
                 }
 
                 let s_body = solveBlock(
                     n_body, type: ret_expect,
-                    mask: i16(HM_CanReturn | (n_fn.flags & F_LAMBDA && HM_Lambda)),
+                    mask: i16(HM_CanReturn | (n_fn.flags & F_LAMBDA && HM_Lambda) | (arg_defs && HM_KeepBlock)),
                     id: n_fn.value,
                     :kills,
                     steal: _helpers.last.vars.len - helpers0vars,
@@ -5800,11 +5799,9 @@ pub fn solve(
                     "inline: _helpers.len != helpers0vars");
 
                 s_body.kind || BUG("inline: no s_body.kind");
-                result.last = s_body;
+                s_body.MUT.items.splice(0, 0, arg_defs);
 
-                let block = createBlock(result, :s_body.type);
-                block.kind || BUG("inline: no createBlock().kind");
-                return block;
+                return s_body;
             }
 
             // Not relevant for inline fns.
