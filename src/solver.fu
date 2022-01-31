@@ -2156,8 +2156,11 @@ pub fn solve(
 
     fn solveRoot(node: Node): SolvedNode
     {
-        let items = solveNodes(node.items, t_void);
+        // Root vars & such.
+        push(HelpersData());
 
+        //
+        let items = solveNodes(node.items, t_void);
         if (!items.last.is_never)
         {
             let root = solved(node, t_void, items);
@@ -7237,6 +7240,8 @@ pub fn solve(
         let root = solveNode(parse);
 
         _current_fn.out && BUG("non-empty _current_fn.");
+
+        _helpers_data[0] && BUG("non-empty _helpers_data[0].");
 
         // println("TOTAL OVERLOADS " ~ module.fname ~ ": " ~ _scope.overloads.len);
 
