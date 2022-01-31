@@ -2076,6 +2076,7 @@ pub fn solve(
             h.ret_actual.try_relax(:slot, :relax_mask);
 
             //
+            mut isLast = true;
             for (mut i = node.items.len; i --> 0; )
             {
                 shadow let node = node.items[i];
@@ -2087,7 +2088,7 @@ pub fn solve(
                     : node;
 
                 propagateType(node, :relax_mask,
-                    i != 0 ? slot : t_void);
+                    isLast ? { isLast = false; slot } : t_void);
             }
 
             // TODO FIX args need extra iteration here.
