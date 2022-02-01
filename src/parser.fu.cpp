@@ -2011,6 +2011,10 @@ static s_Node parseLet_qSIkPGgm(const bool xqmark, fu::view<s_Token> tokens, int
 
 static s_Node parseStructItem_chMzY9wp(fu::view<s_Token> tokens, int& _idx, const fu_STR& fname, const fu_STR& src, int& _precedence, int& _loc, int& _col0, fu_VEC<fu_STR>& warnings, const s_Options& options, const int modid, int& _fnDepth, fu_VEC<fu_STR>& _dollars, int& _dollarAuto, bool& _hasPUB, fu_VEC<fu_STR>& fuzimports, int& _anonFns)
 {
+    // FWD COMPAT with `true` fields //////////////////////////////////////////////////
+    const s_Token& isPredicate = tryConsume_xnvIoOgV("id"_fu, "true"_fu, tokens, _idx);
+    ///////////////////////////////////////////////////////////////////////////////////
+
     /*MOV*/ s_Node member = parseLet_qSIkPGgm(true, tokens, _idx, fname, src, _precedence, _loc, _col0, warnings, options, modid, _fnDepth, _dollars, _dollarAuto, _hasPUB, fuzimports, _anonFns);
     softSemi_4HKhA3FO(tokens, _idx, _col0, warnings, options, fname, src, _loc);
     return /*NRVO*/ member;
