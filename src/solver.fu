@@ -7025,10 +7025,11 @@ pub fn solve(
                     maybeCopyOrMove(items[i], host_args[i].type, isArgument: true);
             }
         }
-        else if (k == "jump")
+        else if (k == "block")
         {
             let h = Helpers(node.helpers);
-            maybeCopyOrMove(node.items.only, h.ret_actual);
+            for (mut i = 0; i < h.returns.len; i++)
+                maybeCopyOrMove(h.returns[i].items.only, h.ret_actual);
         }
         else if (k == "letdef")
         {
