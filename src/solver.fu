@@ -6455,33 +6455,47 @@ pub fn solve(
                             let other = host_args[i];
 
                             // Try to resolve by injecting a copy -
-                            //  We don't allow this on implicit arguments, which includes closures.
-                            //   Implicitly copying implicit arguments is a bit much (TODO not sure, is it?).
                             {
                                 mut which = -1;
 
                                 // It's either or, there's no case
                                 //  where you can copy either (at least one is a ref).
-                                if !(host_arg.is_mutref || host_arg.flags & F_IMPLICIT)
+                                if !(host_arg.is_mutref)
                                     which = i0;
-                                else if !(other.is_mutref || other.flags & F_IMPLICIT)
+                                else if !(other.is_mutref)
                                     which = i;
 
                                 if (which >= 0)
                                 {
-                                    // Don't attempt if no-copy, the error is not useful.
-                                    if (args[which].is_rx_copy)
-                                    {
-                                        shadow let argLocalIdx = target.args[which].local;
+                                    shadow let arg = args[which];
 
-                                        // Re: m_and_c_cant_alias_002 test:
-                                        //  We don't want to return a reference to the temporary,
-                                        //   so for now we just forbid this.
-                                        let argLt = Region_fromArgIndex(argLocalIdx);
-                                        let isReturned = target.type.lifetime.uni0n.has(argLt);
-                                        if (!isReturned)
+                                    // Don't attempt if no-copy, the error is not useful.
+                                    if (arg.is_rx_copy)
+                                    {
+                                        // Try to introduce a copy on an intermediate variable.
+                                        //  This should help with closures and stuff.
+                                        if (arg.kind == "call" &&  arg.target.kind == "var"
+                                                               && !arg.target.type.is_mutref)
                                         {
-                                            return BORROWCK_resolveByTempCopy(:callsite, which);
+                                            if (BORROWCK_resolveByMutvar(arg.target.index))
+                                                return;
+                                        }
+
+                                        // We don't allow this on implicit arguments, which includes closures.
+                                        //  Implicitly copying implicit arguments is a bit much (TODO not sure, is it?).
+                                        if !(host_args[which].flags & F_IMPLICIT)
+                                        {
+                                            shadow let argLocalIdx = target.args[which].local;
+
+                                            // Re: m_and_c_cant_alias_002 test:
+                                            //  We don't want to return a reference to the temporary,
+                                            //   so for now we just forbid this.
+                                            let argLt = Region_fromArgIndex(argLocalIdx);
+                                            let isReturned = target.type.lifetime.uni0n.has(argLt);
+                                            if (!isReturned)
+                                            {
+                                                return BORROWCK_resolveByTempCopy(:callsite, which);
+                                            }
                                         }
                                     }
                                 }
