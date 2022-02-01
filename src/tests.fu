@@ -359,6 +359,19 @@ pub fn runTests()
         fn main() test(CurrentFn(1, CurrentFn_ResetOnResolve(1)));
     `);
 
+    ZERO(`
+        struct HasPredicate {
+            true kind   : string;
+            items       : i32;
+        };
+
+        fn main() {
+            let isTrue  = HasPredicate("let", 0);
+            let isFalse = HasPredicate("",    1);
+            return isTrue && !isFalse ? 0 : 1;
+        }
+    `);
+
 
     // Templating checks.
 

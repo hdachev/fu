@@ -341,7 +341,8 @@ pub fn cpp_codegen(implicit module: Module, implicit ctx: Context): CodegenOutpu
         def ~= "\n        return false";
 
         for (mut i = 0; i < fields.len; i++)
-            def ~= "\n            || " ~ ID(fields[i].id);
+            if (fields[i].target.flags & F_PREDICATE)
+                def ~= "\n            || " ~ ID(fields[i].id);
 
         def ~= "\n        ;";
         def ~= "\n    }";

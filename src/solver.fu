@@ -3698,9 +3698,13 @@ pub fn solve(
                 for (mut i = 0; i < members.len; i++)
                 {
                     let id = node.items[i].value;
+
+                    // `true` fields.
+                    let isPredicate = node.items[i].flags & F_PREDICATE;
+
                     let target = Scope_create(
                         _scope, "field", name: id || BUG(),
-                        flags: F_PUB);
+                        flags: F_PUB | isPredicate);
 
                     ref ext     = EXT_mut(target);
                     ext.args    = args;

@@ -42,9 +42,9 @@ pub let F_PUB           = 1 << 20;
 pub let F_OPERATOR      = 1 << 21;
 pub let F_REF           = 1 << 22;
 pub let F_SHADOW        = 1 << 23;
-
-
-pub let F_NAMED_ARGS    = 1 << 24;
+                                            ///////////////////
+                                            // `true` fields //
+pub let F_NAMED_ARGS    = 1 << 24;          pub let F_PREDICATE     = F_NAMED_ARGS;
 pub let F_OOE_RTL       = 1 << 25;          pub let F_ENUM          = F_OOE_RTL;
 pub let F_REST_ARG      = 1 << 26;
 // pub let F_TODO_FIX_RRET = 1 << 27;
@@ -382,14 +382,37 @@ pub fn parse(
         let name = tryConsume("id").value;
 
         consume("op", "{");
-        let items = parseBlockLike("op", "}", struct: true);
+        mut items = parseBlockLike("op", "}", struct: true);
+
+        :F_PREDICATE
+        {
+            // Unless user tagged somethign as F_PREDICATE explicitly ...
+            items.each: |item|
+                if (item.kind == "let")
+                    if (item.flags & F_PREDICATE)
+                        break :F_PREDICATE;
+
+            //  ... then every field is a predicate.
+            items.each: |item|
+                if (item.kind == "let")
+                    item.flags |= F_PREDICATE;
+        }
+
         return make("struct", items, :flags, name);
     }
 
     fn parseStructItem(): Node
     {
+        // Subset of fields we're gonna be using for conversion to bool -
+        //  for example, a dynamic array's `size`, or a Node's `kind` here.
+        let isPredicate = tryConsume("id", "true");
+
         mut member = parseLet(xqmark: true);
         softSemi();
+
+        if (isPredicate)
+            member.flags |= F_PREDICATE;
+
         return member;
     }
 
