@@ -33,6 +33,7 @@ let TODO_borrowck   = fn TODO;
 let TODO_disjoint   = fn TODO;
 let TODO_move       = fn TODO;
 let TODO_unique     = fn TODO;
+let TODO_inline     = fn TODO;
 
 let TODO_Map        = fn TODO;
 
@@ -713,7 +714,7 @@ pub fn runTests()
         return outer(6);
     `);
 
-    TODO(`
+    TODO_inline(`
         fn has_implicit(implicit i: i32, add: i32): i32
             i + add;
 
@@ -726,7 +727,7 @@ pub fn runTests()
         }
     `);
 
-    TODO(`
+    TODO_inline(`
         inline fn outer_inl(i: i32): i32
             i > 0   ? inner_inl(i)
                     : 2 * i;
@@ -2895,7 +2896,7 @@ pub fn runTests()
         }
     `);
 
-    TODO(`
+    ZERO(`
         fn indexIntoImplicit(j: i32, implicit strings: string[]) strings[j];
 
         fn selfRecurBeforeImplicitDep(x: i32)
@@ -2907,7 +2908,7 @@ pub fn runTests()
         }
 
         fn main() {
-            let strings = [ "a", "b" ];
+            let implicit strings = [ "a", "b" ];
             return selfRecurBeforeImplicitDep(2) == "b" ? 0 : 1;
         }
     `);
