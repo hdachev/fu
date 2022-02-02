@@ -6365,8 +6365,10 @@ pub fn runTests()
         fn main() _0::lex("3 - 3") - 2; // <- from here
     `]);
 
-    TODO([`
+    ZERO([`
         pub fn pubbed(a: i32) a * 2;
+        <fail not_pubbed not defined><pass/>
+        pub                          </fail>
         fn not_pubbed(b: i32) b * 3;
     `,`
         fn main() 1._0::pubbed._0::not_pubbed - 6;

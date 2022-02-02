@@ -1137,9 +1137,10 @@ pub fn solve(
             //
             mut shadows: bool;
             :MATCH_FAIL while (overloadIdx =
-                (local_scope ? _scope : misc_scope).items.search(id, scope_iterator,
-                    scope_skip: local_scope && _ss.items,
-                    dont_search_just_return: target, :extra_items, :field_items, :shadows))
+                (local_scope ? _scope.items : misc_scope.items[0, misc_scope.pub_items])
+                    .search(id, scope_iterator,
+                        scope_skip: local_scope && _ss.items,
+                        dont_search_just_return: target, :extra_items, :field_items, :shadows))
             {
                 mut DEBUG_mustMatch = false;
 
