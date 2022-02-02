@@ -888,70 +888,6 @@ pub fn cpp_codegen(implicit module: Module, implicit ctx: Context): CodegenOutpu
         cgFn(node, M_STMT);
     }
 
-    fn ensureMoveFromConstRefHelper(target: Target)
-    {
-        if (!_moveFromConstRefHelpers.add_once(target))
-            return;
-
-        ///////////////////////////////////////////
-        let implicit _current_nodes = target.nodes;
-        let implicit _current_fnort = target;
-        ///////////////////////////////////////////
-        mut current_fn0 = cg_CurrentFn(target: target);
-        defer swap(_current_fn, current_fn0);
-        swap(_current_fn, current_fn0);
-        ////////////////////////////////////////////
-
-        let name        = fnID(target);
-        let args        = target.args;
-
-        let annot       = typeAnnot(clear_refs(target.type));
-        mut src         = "inline " ~ annot ~ " " ~ name ~ "(";
-
-        let retargs     = target.type.lifetime.uni0n;
-
-        mut body        = "return static_cast<" ~ annot ~ "&&>(const_cast<" ~ annot ~ "&>(" ~ name ~ "(";
-
-        for (mut i = 0; i < args.len; i++)
-        {
-            let arg         = args[i] || fail();
-            let forceValue  = retargs.has(Region_fromArgIndex(arg.local));
-            let binding     = binding(arg, :forceValue);
-
-            // Split annot from id.
-            mut space = -1;
-            for (shadow mut i = binding.len; i --> 0; )
-            {
-                if (binding[i] == ' ')
-                {
-                    space = i;
-                    break;
-                }
-            }
-
-            space > 0 || fail("ensureMoveFromConstRefHelper: cant split annot/id.");
-
-            mut pass = binding.slice(space + 1);
-            if (!arg.type.is_ref)
-                pass = "static_cast<" ~ binding.slice(0, space) ~ "&&>(" ~ pass ~ ")";
-
-            // Append to signature and forwarder.
-            if (i)
-            {
-                src  ~= ", ";
-                body ~= ", ";
-            }
-
-            src     ~= binding;
-            body    ~= pass;
-        }
-
-        // Done!
-        src ~= ")\n{\n    " ~ body ~ ")));\n}\n";
-
-        _fdef ~= "\n" ~ src ~ "\n";
-    }
-
 
     //
 
@@ -2310,10 +2246,10 @@ pub fn cpp_codegen(implicit module: Module, implicit ctx: Context): CodegenOutpu
 
                     //
                     if (!o.type.is_mutref && o.type.lifetime.Lifetime_hasArguments)
-                    {
-                        ensureMoveFromConstRefHelper(expr.target);
-                        return cgNode(expr, debug: "cgMoveFromConstRefHelper");
-                    }
+                        return "/* MOVE_FROM_CONST_REF */static_cast<"
+                             ~ typeAnnotBase(o.type) ~ "&&>(const_cast<"
+                             ~ typeAnnotBase(o.type)  ~ "&>("
+                             ~ cgNode(expr, debug: "cgMoveFromConstRefHelper") ~ "))";
                 }
             }
         }
