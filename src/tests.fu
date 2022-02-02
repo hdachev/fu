@@ -4321,6 +4321,54 @@ pub fn runTests()
     `);
 
     ZERO(`
+        inline fn test(ref a: i32[]) {
+            if ((a[0] + a[2]) & 1) {
+                shadow ref a = a[0, 2];
+                return a;
+            }
+            else {
+                shadow ref a = a[2, 4];
+                return a;
+            }
+        }
+
+        inline fn sum(ref a: [i32]) {
+            mut sum = 0;
+            for (mut i = 0; i < a.len; i++) sum += a[i];
+            for (mut i = 0; i < a.len; i++) a[i] = sum;
+            return a;
+        }
+
+        fn main() {
+            mut a = [ 1, 2, 3, 4 ];
+            return sum(test(a))[0] - 7;
+        }
+    `);
+
+    ZERO(`
+        inline fn test(ref a: i32[], ref b: i32[]) {
+            if ((a[0] + b[0]) & 1)
+                return a;
+
+            return b;
+        }
+
+        inline fn sum(ref a: i32[]) {
+            mut sum = 0;
+            for (mut i = 0; i < a.len; i++) sum += a[i];
+            a.shrink(1);
+            a[0] = sum;
+            return a;
+        }
+
+        fn main() {
+            mut a = [ 1, 2 ];
+            mut b = [ 3, 4 ];
+            return sum(test(a, b))[0] - 7;
+        }
+    `);
+
+    ZERO(`
         inline fn grow_if_oob(ref a: $T[], i: i32): &mut $T {
             if (a.len <= i)
                 a.grow(i + 1);
