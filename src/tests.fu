@@ -4320,6 +4320,31 @@ pub fn runTests()
         }
     `);
 
+    ZERO(`
+        inline fn grow_if_oob(ref a: $T[], i: i32): &mut $T {
+            if (a.len <= i)
+                a.grow(i + 1);
+
+            return a[i];
+        }
+
+        inline fn hey(ref arr: i32[], a: i32) {
+            if (a & 1) {
+                arr.grow_if_oob(a)++;
+                <alt>
+                return arr[0, a + 1];
+                </alt>
+            }
+
+            return arr;
+        }
+
+        fn main() {
+            mut a = [ 1 ];
+            return a[0] - hey(a, 1)[1];
+        }
+    `);
+
 
     // Let's move on to some cooler quality of life shit.
 
