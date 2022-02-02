@@ -6713,7 +6713,7 @@ pub fn runTests()
         fn main() 14 - test(3, fn overloaded);
     `);
 
-    TODO(`
+    ZERO(`
         fn overloaded(a) a*2;
         fn test(b, fn) fn(fn + fn(b));
         fn main() {

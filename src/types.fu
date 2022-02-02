@@ -311,12 +311,12 @@ pub fn parseType(str: string): ValueType
 {
     mut offset: i32;
 
-    let modid = parse10i32(offset, str);
+    let modid = parse10u32(offset, str).i32;
     mut quals = 0;
     if (str[offset] == '+')
     {
         offset++;
-        quals = parse10i32(offset, str);
+        quals = parse10u32(offset, str).i32;
     }
 
     let canon = str.slice(offset);

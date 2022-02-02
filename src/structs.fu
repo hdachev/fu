@@ -16,6 +16,6 @@ pub fn structIndex(canon: string): i32
 {
     mut offset = 1;
     return canon[0] == '$'
-         ? parse10i32(:offset, canon)
+         ? parse10u32(:offset, canon).i32
          : -1;
 }

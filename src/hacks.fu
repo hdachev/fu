@@ -16,13 +16,13 @@ fn tryParseClosureID(id!: string): ClosureID
     {
         mut   offset = 1;
         defer offset == id.len || throw("Bad ClosureID: trailing stuff.");
-        let index = helpers::parse10i32(offset, id);
+        let index = helpers::parse10u32(offset, id).i32;
 
         id[offset++] == '-' || throw("Bad ClosureID: no modid-dash.");
-        let modid = -helpers::parse10i32(offset, id);
+        let modid = -helpers::parse10u32(offset, id).i32;
 
         id[offset++] == '-' || throw("Bad ClosureID: no rev-dash.");
-        let revision = helpers::parse10i32(offset, id);
+        let revision = helpers::parse10u32(offset, id).i32;
 
         return ClosureID(Target(:modid, :index), :revision);
     }

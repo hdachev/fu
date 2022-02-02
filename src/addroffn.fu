@@ -32,10 +32,10 @@ pub fn unpackAddrOfFn(canon: string, fn)
     while (i < canon.len)
     {
         canon[i++] == '@' || throw("unpackAddrOfFn: bad canon [1]: `" ~ canon ~ "`.");
-        let modid = helpers::parse10i32(i, canon);
+        let modid = helpers::parse10s32(i, canon).i32;
 
         canon[i++] == ':' || throw("unpackAddrOfFn: bad canon [2]: `" ~ canon ~ "`.");
-        let index = helpers::parse10i32(i, canon);
+        let index = helpers::parse10u32(i, canon).i32;
 
         fn(Target(:modid, :index));
     }
