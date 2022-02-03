@@ -6834,6 +6834,12 @@ pub fn solve(
         // Defers in reverse.
         for (mut i = defers.len; i --> 0; )
             bck_node(defers[i]);
+
+        // We need this before mcom -
+        //  and without the .returns listing, this is as late as we can do this.
+        if (node.helpers)
+            mcom_BlockReturns_CopyOrMoveDecision(
+                Helpers(node.helpers));
     }
 
 
@@ -7071,13 +7077,6 @@ pub fn solve(
         let k = node.kind;
         let t = node.type;
 
-        // Before children.
-        if (k == "block")
-        {
-            if (node.helpers)
-                mcom_BlockReturns_CopyOrMoveDecision(Helpers(node.helpers));
-        }
-
         // Children.
         let items = node.items;
         for (mut i = 0; i < items.len; i++)
@@ -7097,11 +7096,11 @@ pub fn solve(
                     maybeCopyOrMove(items[i], host_args[i].type, isArgument: true);
             }
         }
-        else if (k == "block")
+        else if (k == "block" || k == "jump")
         {
             let h = Helpers(node.helpers);
-            for (mut i = 0; i < h.returns.len; i++)
-                maybeCopyOrMove(h.returns[i].items.only, h.ret_actual);
+            if (h.ret_actual && !h.ret_actual.is_void && !h.ret_actual.is_never)
+                maybeCopyOrMove(node.items.last, h.ret_actual);
         }
         else if (k == "letdef")
         {
