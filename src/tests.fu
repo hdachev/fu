@@ -3268,6 +3268,31 @@ pub fn runTests()
         }
     `);
 
+    ZERO(`
+        struct HasVec { x: i32[] };
+        inline fn last(x: i32[]) x[x.len - 1];
+
+        <alt>
+        inline
+        </alt>
+        fn will_return_value(ref x: HasVec) {
+            let bck_will_cpy = x;
+
+            let vec0 = bck_will_cpy.x;
+            if (bck_will_cpy.x.len & 1)
+                return vec0;
+
+            x.x ~= x.x.len;
+            let vec1 = bck_will_cpy.x;
+            return vec1;
+        }
+
+        fn main() {
+            mut x = HasVec([ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 ]);
+            return will_return_value(x).last/*9*/ - x.x.last/*10*/ + 1;
+        }
+    `);
+
 
     // Stuff that isn't working out quite right -
     //  Keep those around, there's no principle to these tests,
