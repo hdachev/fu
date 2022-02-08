@@ -1361,14 +1361,23 @@ pub fn solve(
                                 autocall_reorder.len < 2 || BUG("autocall: reorder");
                             }
 
-                            // Templates.
-                            if (!expect)
-                                continue :ARG_OK;
-
+                            // Actual arg type.
                             let hasConv = conversions.len > i && conversions[i].len;
                             let actual = hasConv
                                 ? GET(conversions[i].last).type
                                 : args[callsiteIndex].type;
+
+                            // Templates arguments.
+                            if (!expect)
+                            {
+                                // TODO FIX Check that ref args are mutrefs,
+                                //  otherwise we get mustMatch fails after a spec-ok.
+                                if (host_arg.flags & F_REF && !actual.is_mutref)
+                                    matchFail("Argument " ~ host_arg.qWHAT
+                                            ~ " expects a mutref, got " ~ humanizeType(actual));
+
+                                continue :ARG_OK;
+                            }
 
                             if (isAssignableAsArgument(expect, actual || BUG("tryMatch: !actual")))
                                 continue :ARG_OK;

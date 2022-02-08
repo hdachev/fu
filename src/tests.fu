@@ -540,7 +540,7 @@ pub fn runTests()
         fn main() 0.inl_lies ? 1 : 0;
     `);
 
-    TODO(`
+    ZERO(`
         fn what(ref x: i32, ref y: i32) {
             <fail bad call swap>
             let z = y;   <pass/>
@@ -1799,8 +1799,8 @@ pub fn runTests()
     `);
 
     ZERO(`
-        fn a(ref a)  a ?  a : [];   // ifs used cons-type to seed alt-type
-        fn b(ref b) !b ? [] : b;    //  which works for 'a', but not for 'b'.
+        fn a(a)  a ?  a : [];   // ifs used cons-type to seed alt-type
+        fn b(b) !b ? [] : b;    //  which works for 'a', but not for 'b'.
         fn main() 1.a - 1.b;
     `);
 
