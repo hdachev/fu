@@ -4437,6 +4437,30 @@ pub fn runTests()
         }
     `);
 
+    ZERO(`
+        fn serializeType(type: string, debug: string)
+            debug ~ ":" ~ type;
+
+        fn mangleArguments(args: [$T]): string {
+            mut mangle = "";
+            for (mut i = 0; i < args.len; i++) {
+                if (i) mangle ~= ",";
+                mangle ~= serializeType(args[i], debug: "M");
+            }
+            return mangle;
+        }
+
+        fn trySpecialize(args: string[], ref args_mangled: string) {
+            args_mangled ||= mangleArguments(args);
+            return args_mangled.len;
+        }
+
+        fn main() {
+            mut args_mangled: string;
+            return trySpecialize([ "a", "b" ], args_mangled) - 7;
+        }
+    `);
+
 
     // Let's move on to some cooler quality of life shit.
 
