@@ -3508,6 +3508,59 @@ pub fn runTests()
     `);
 
     ZERO(`
+        fn each(a: [$T], fn)
+            for (mut i = 0; i < a.len; i++)
+                fn(a[i]);
+
+        struct Node { kind: string; items: Node[]; flags: i32; };
+
+        let F_PREDICATE = 2;
+
+        fn parse(tokens: byte[]): Node {
+            mut _idx = 0;
+
+            fn parseStructDecl(flags! = 0): Node {
+                mut items = parseBlockLike('}');
+
+                :F_PREDICATE {
+                    items.each: |item|
+                        if (item.kind == "let")
+                            if (item.flags & F_PREDICATE)
+                                break :F_PREDICATE;
+
+                    items.each: |item|
+                        if (item.kind == "let")
+                            item.flags |= F_PREDICATE;
+                }
+
+                return Node("struct", items, :flags);
+            }
+
+            fn parseBlockLike(endToken: byte): Node[] {
+                mut items: Node[] = [];
+                for (;;) {
+                    let token = tokens[_idx++];
+                    if (token == endToken)
+                        break;
+
+                    items ~= Node("let", [], flags: token == '+' && F_PREDICATE);
+                }
+
+                return items;
+            }
+
+            return parseStructDecl();
+        }
+
+        fn main() {
+            let tokens = "+-}";
+            let p = parse(tokens).items;
+            return p.len - p[0].flags
+                         + p[1].flags * 17;
+        }
+    `);
+
+    ZERO(`
         pub struct MeshBuilder
         {
             verts?:     byte[];
