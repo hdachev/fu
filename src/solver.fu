@@ -7036,6 +7036,20 @@ pub fn solve(
             return Lifetime_slotsUp2(:h.ret_actual.lifetime, :h.locals_start).each(|index|
                 GET_mut(nested(index)).flags |= F_HOIST);
 
+        // Finally this is where we decide if this fn returns a reference or a value -
+        //  bck has done its thing, which means we now know for sure which vars are values are which are refs -
+        //   so we can figure this out here.
+        //
+        // There's another way to do this -
+        //  if some return path makes everything else incur a copy for the return to work,
+        //   we could inject a return-slot argument for that specific return,
+        //    have it assign to it and return a ref to the slot.
+        //
+        // This would pay off massively if the local is an exotic return,
+        //  everything else returns a ref, and callers don't need the value.
+        //   The last one is unfortunately undecidable from within the fn -
+        //    ... unless one day we start speccing based on retval usage.
+        //
         if (h.returns)
             h.ret_actual = [];
 
