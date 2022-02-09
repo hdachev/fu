@@ -4461,6 +4461,67 @@ pub fn runTests()
         }
     `);
 
+    ZERO(`
+        let EMIT_CPP = 1 << 0;
+        let EMIT_OBJ = 1 << 1;
+        let EMIT_BIN = 1 << 2;
+
+        struct Cmd { self: string; options: i32 };
+
+        inline fn unlessHasExt(str: string) {
+            let idx = str.find('.');
+            if (idx > 0)
+                return [];
+
+            return str;
+        }
+
+        fn parseOptions(argv: string[]) {
+            mut idx = 0;
+            fn next(): string {
+                let i = idx++;
+                if (i < argv.len) return argv[i];
+                return "";
+            }
+
+            let self = next();
+            if (argv.len == 1) // Exit 0 on no command, else we fail build-checks.
+                return [];
+
+            mut options: i32;
+            mut val = next();
+            while (val.len > 1 && val[0] == '-') {
+                mut opt = val;
+                if (opt[1] != '-') {
+                    opt = [ opt[1] ];
+                    val = '-' ~ val.slice(2);
+                    if (val == "-")
+                        val = next();
+                }
+                else
+                    val = next();
+
+                fn option(short: string, o: i32) {
+                    if (opt == short) {
+                        options |= o;
+                        opt = "";
+                    }
+                }
+
+                option("c", EMIT_CPP);
+                option("o", EMIT_OBJ);
+                option("b", EMIT_BIN);
+
+                if (opt)
+                    throw("Unknown option: '" ~ opt ~ "'.");
+            }
+
+            return Cmd(unlessHasExt(self), options);
+        }
+
+        fn main() = parseOptions([ "./hey", "-c", "-b" ]).options - (EMIT_CPP | EMIT_BIN);
+    `);
+
 
     // Let's move on to some cooler quality of life shit.
 
