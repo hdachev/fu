@@ -529,13 +529,13 @@ pub fn solve(
 
         res.lifetime.uni0n.only.Region_isArg || fail("Non-single-arg __native lifetime.");
 
-        // TODO FIX UNIQUENESS adding a static lifetime to constref results
+        // TODO FIX UNIQUENESS adding a static lifetime to ref results
         //  that are not assignable from the source argument,
         //   this coincides with container derefs currently -
         //
         // We only want to avoid attempts to move from there for now.
         //
-        if (!actual.is_mutref && !isAssignable(host: actual, res))
+        if (!isAssignable(host: actual, res))
             return Lifetime_makeShared(res.lifetime);
 
         return res.lifetime;

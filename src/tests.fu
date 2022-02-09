@@ -3041,7 +3041,7 @@ pub fn runTests()
         fn main() popfirst([ X() ]).items.len;
     `);
 
-    TODO_move(`
+    ZERO(`
         struct AB { a: i32[][]; b: i32[][]; };
 
         fn problematic_moves(mut ab: AB) {
