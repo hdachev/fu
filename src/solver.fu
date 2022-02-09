@@ -4011,6 +4011,21 @@ pub fn solve(
         return lifetime;
     }
 
+    fn Lifetime_slotsUp2(lifetime: Lifetime, locals_start!: i32): i32[]
+    {
+        let unwound = Lifetime_unwind(lifetime, :locals_start).uni0n;
+
+        mut result: i32[];
+        for (mut i = 0; i < unwound.len; i++)
+        {
+            let r = unwound[i];
+            if (r.index >= locals_start)
+                result ~= r.index;
+        }
+
+        return result;
+    }
+
     fn Lifetime_F_MOVED_FROM(lifetime: Lifetime)
     {
         Lifetime_each(:lifetime, visit: |o|
@@ -4044,22 +4059,6 @@ pub fn solve(
         });
 
         return true;
-    }
-
-    fn Lifetime_F_HOIST(lifetime: Lifetime, locals_start!?: i32): void
-    {
-        Lifetime_each(:lifetime, :locals_start, visit: |o|
-        {
-            if (o.kind != "var")
-                continue;
-
-            if !(o.solved.is_ref)
-                o.flags |= F_HOIST;
-
-            let init = o.Lifetime_climbType;
-            if (init.is_ref)
-                Lifetime_F_HOIST(init.lifetime, :locals_start);
-        });
     }
 
     //////////////////////////////////////////////////////////
@@ -7020,9 +7019,8 @@ pub fn solve(
         //     if you just use as ref, LT-extend is better.
         //
         if !(h.mask & HM_Function)
-            return Lifetime_F_HOIST(
-                :h.ret_actual.lifetime,
-                :h.locals_start);
+            return Lifetime_slotsUp2(:h.ret_actual.lifetime, :h.locals_start).each(|index|
+                GET_mut(nested(index)).flags |= F_HOIST);
 
         if (h.returns)
             h.ret_actual = [];
