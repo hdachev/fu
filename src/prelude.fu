@@ -18,15 +18,15 @@ fn %(a: $T, b: $T)
     case ($T.is::integral): $T __native;
     case ($T.is::floating_point): $T __native("<cmath>", "std::fmod");
 
-fn ++(a: &mut $T) case ($T.is::arithmetic): &mut $T __native;
-fn --(a: &mut $T) case ($T.is::arithmetic): &mut $T __native;
-postfix fn ++(a: &mut $T) case ($T.is::arithmetic): $T __native;
-postfix fn --(a: &mut $T) case ($T.is::arithmetic): $T __native;
+fn ++(ref a: $T) case ($T.is::arithmetic): &mut $T __native;
+fn --(ref a: $T) case ($T.is::arithmetic): &mut $T __native;
+postfix fn ++(ref a: $T) case ($T.is::arithmetic): $T __native;
+postfix fn --(ref a: $T) case ($T.is::arithmetic): $T __native;
 
-fn +=(a: &mut $T, b: $T) case ($T.is::arithmetic): &mut $T __native;
-fn -=(a: &mut $T, b: $T) case ($T.is::arithmetic): &mut $T __native;
-fn *=(a: &mut $T, b: $T) case ($T.is::arithmetic): &mut $T __native;
-fn /=(a: &mut $T, b: $T) case ($T.is::arithmetic): &mut $T __native;
+fn +=(ref a: $T, b: $T) case ($T.is::arithmetic): &mut $T __native;
+fn -=(ref a: $T, b: $T) case ($T.is::arithmetic): &mut $T __native;
+fn *=(ref a: $T, b: $T) case ($T.is::arithmetic): &mut $T __native;
+fn /=(ref a: $T, b: $T) case ($T.is::arithmetic): &mut $T __native;
 
 fn ==(a: $T, b: $T) case ($T.is::primitive): bool __native;
 fn !=(a: $T, b: $T) case ($T.is::primitive): bool __native;
@@ -46,11 +46,11 @@ fn  ^(a: $T, b: $T) case ($T.is::integral): $T __native;
 fn <<(a: $T, b: $T) case ($T.is::integral): $T __native;
 fn >>(a: $T, b: $T) case ($T.is::integral): $T __native;
 
-fn  &=(a: &mut $T, b: $T) case ($T.is::integral): &mut $T __native;
-fn  |=(a: &mut $T, b: $T) case ($T.is::integral): &mut $T __native;
-fn  ^=(a: &mut $T, b: $T) case ($T.is::integral): &mut $T __native;
-fn <<=(a: &mut $T, b: $T) case ($T.is::integral): &mut $T __native;
-fn >>=(a: &mut $T, b: $T) case ($T.is::integral): &mut $T __native;
+fn  &=(ref a: $T, b: $T) case ($T.is::integral): &mut $T __native;
+fn  |=(ref a: $T, b: $T) case ($T.is::integral): &mut $T __native;
+fn  ^=(ref a: $T, b: $T) case ($T.is::integral): &mut $T __native;
+fn <<=(ref a: $T, b: $T) case ($T.is::integral): &mut $T __native;
+fn >>=(ref a: $T, b: $T) case ($T.is::integral): &mut $T __native;
 
 
 // Numeric conversions.
@@ -122,9 +122,9 @@ fn false(): bool __native("false");
 
 // Assignment.
 
-fn   =(a: &mut $T,    mut b: $T): &mut $T __native;
-fn ||=(a: &mut $T, inline b: $T): &mut $T = a || (a = b);
-fn &&=(a: &mut $T, inline b: $T): &mut $T = a && (a = b);
+fn   =(ref a: $T,    mut b: $T): &mut $T __native;
+fn ||=(ref a: $T, inline b: $T): &mut $T = a || (a = b);
+fn &&=(ref a: $T, inline b: $T): &mut $T = a && (a = b);
 
 fn swap(ref a: $T, ref b: $T): void __native(
     "no_AAR", "<utility>", "std::swap");
@@ -146,28 +146,28 @@ fn [](a: [$T], start: i32, end: i32)
     case ($a -> &mut [$T]): &mut [$T] __native("<fu/view.h>", "fu::get_view_mut");
     default               : &    [$T] __native("<fu/view.h>", "fu::get_view");
 
-fn    push(a: &mut $T[], mut b: $T): void __native(".push");
-fn unshift(a: &mut $T[], mut b: $T): void __native(".unshift");
-fn  insert(a: &mut $T[], i: i32, mut b: $T): void __native(".insert");
+fn    push(ref a: $T[], mut b: $T): void __native(".push");
+fn unshift(ref a: $T[], mut b: $T): void __native(".unshift");
+fn  insert(ref a: $T[], i: i32, mut b: $T): void __native(".insert");
 
 fn  slice(a: $T[], start: i32, end: i32): $T[] __native("<fu/vec/slice.h>", "fu::slice");
 fn  slice(a: $T[], start: i32): $T[] __native("<fu/vec/slice.h>", "fu::slice");
 fn substr(a: $T[], start: i32, end: i32): $T[] __native("<fu/vec/slice.h>", "fu::substr");
 
-fn splice(a: &mut $T[], start: i32, count: i32): void  __native(".splice");
-fn splice(a: &mut $T[], start: i32, count: i32, b: [$T]): void  __native(".splice");
+fn splice(ref a: $T[], start: i32, count: i32): void  __native(".splice");
+fn splice(ref a: $T[], start: i32, count: i32, b: [$T]): void  __native(".splice");
 
-fn    pop(a: &mut $T[]): void __native(".pop()");
-fn  shift(a: &mut $T[]): void __native(".shift()");
+fn    pop(ref a: $T[]): void __native(".pop()");
+fn  shift(ref a: $T[]): void __native(".shift()");
 
-fn  clear(a: &mut $T[]): void __native(".clear()");
-fn shrink(a: &mut $T[], len: i32): void __native(".shrink");
+fn  clear(ref a: $T[]): void __native(".clear()");
+fn shrink(ref a: $T[], len: i32): void __native(".shrink");
 
-fn resize(a: &mut $T[], len: i32): void __native(".resize");
-fn   grow(a: &mut $T[], len: i32): void __native(".grow");
+fn resize(ref a: $T[], len: i32): void __native(".resize");
+fn   grow(ref a: $T[], len: i32): void __native(".grow");
 
-fn resize_junk(a: &mut $T[], len: i32): void __native(".resize<false>");
-fn   grow_junk(a: &mut $T[], len: i32): void __native(".grow<false>");
+fn resize_junk(ref a: $T[], len: i32): void __native(".resize<false>");
+fn   grow_junk(ref a: $T[], len: i32): void __native(".grow<false>");
 
 fn sort(ref a: [$T]): void __native("<fu/vec/sort.h>", "fu::sort");
 
@@ -255,8 +255,8 @@ fn ~(a: [$T], b: [$T]): $T[] __native("<fu/vec/concat.h>",     "+");
 fn ~(a: [$T], b:  $T ): $T[] __native("<fu/vec/concat_one.h>", "+");
 fn ~(a:  $T , b: [$T]): $T[] __native("<fu/vec/concat_one.h>", "+");
 
-fn ~=(a: &mut $T[],     b: [$T]): &mut $T[] __native("<fu/vec/concat.h>",     "+=");
-fn ~=(a: &mut $T[], mut b:  $T ): &mut $T[] __native("<fu/vec/concat_one.h>", "+=");
+fn ~=(ref a: $T[],     b: [$T]): &mut $T[] __native("<fu/vec/concat.h>",     "+=");
+fn ~=(ref a: $T[], mut b:  $T ): &mut $T[] __native("<fu/vec/concat_one.h>", "+=");
 
 
 // Fun with views.

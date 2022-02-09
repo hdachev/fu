@@ -1109,10 +1109,29 @@ pub fn parse(
         //
         let optional    = xqmark && tryConsume("op", "?");
 
-        let type        = tryPopTypeAnnot();
+        mut type        = tryPopTypeAnnot();
         let init        = optional
             ? createDefinit()
             : tryParseLetInit();
+
+        // TODO FIX unify &mut annots with ref-prefixed vars -
+        //  initially started by replacing a: &mut annots with refs,
+        //   caused a bunch of problems ultimate bottom line is that
+        //    the type annot is no longer one thing but two -
+        //     the annot node and flags.
+        //
+        // Trying out the opposite - going for &mut annots only.
+        //  To finish this up we can have `let a: &mut _ = b`,
+        //   and `ref a = b` would be sugar for that.
+        //
+        if (flags & F_REF && type)
+        {
+            if (type.kind != "call" || type.value != "&mut")
+            {
+                type = createPrefix("&mut", type);
+                flags &= ~F_REF;
+            }
+        }
 
         return createLet(id, flags, type, init);
     }
