@@ -6869,6 +6869,30 @@ pub fn runTests()
         }
     `);
 
+    TODO(`
+        struct ScopeSkip     { imports:     i32[]; implicits:     i32[]; }
+        struct ScopeSkipMemo { imports_len: i32;   implicits_len: i32[]; }
+
+        fn snap(ss: SS) {
+            mut r: ScopeSkipMemo;       // imports wouldn't work -
+            for (fieldname i: ss)       //  we need to know what to import much earlier.
+                r.i::_len = ss.i.len;   //   <- which frees up this syntax
+
+            return r;
+        }
+
+        fn check(v) {
+            mut sum = 0; mut mul = 1;
+            for (fieldname i: v) {
+                sum += v.i * mul; mul *= 10;
+            }
+
+            return sum;
+        }
+
+        fn main() check(snap(ScopeSkip([ 1 ], [ 2, 2 ]))) - 21;
+    `);
+
 
     // Type assert.
 
