@@ -145,6 +145,10 @@ pub fn solve(
     struct CurrentFn
     {
         using out:      SolvedNode;
+
+        // Start-of-func scope0 for implicit scopeskip.
+        scope0:         ScopeMemo;
+
         using flow?:    Flow;
 
         effects?:       Effects;
@@ -1129,6 +1133,17 @@ pub fn solve(
         //
         mut alternate_ids: string[];
 
+        // This got kinda messy.
+        inline fn _SCOPE_ITEMS =
+            local_scope
+                ? flags & F_IMPLICIT ? _scope.implicits : _scope.items
+                : misc_scope.items[0, misc_scope.pub_items];
+
+        inline fn _SSKIP_ITEMS =
+            local_scope &&
+                (flags & F_IMPLICIT ? _ss.implicits : _ss.items);
+
+        //
         for (;;)
         {
             mut scope_iterator: i32;
@@ -1137,9 +1152,9 @@ pub fn solve(
             //
             mut shadows: bool;
             :MATCH_FAIL while (overloadIdx =
-                (local_scope ? _scope.items : misc_scope.items[0, misc_scope.pub_items])
+                _SCOPE_ITEMS
                     .search(id, scope_iterator,
-                        scope_skip: local_scope && _ss.items,
+                        scope_skip: _SSKIP_ITEMS,
                         dont_search_just_return: target, :extra_items, :field_items, :shadows))
             {
                 mut DEBUG_mustMatch = false;
@@ -2715,19 +2730,25 @@ pub fn solve(
             scope_skip ~= ScopeSkip(:start, :end);
     }
 
-    fn ScopeSkip_setup(template: Template, scope0: ScopeMemo)
+    fn ScopeSkip_setup(template: Template, scope0: ScopeMemo, isInline!?: bool)
     {
         if (_root_scope)
         {
             let start = template.scope_memo || _root_scope;
             _ss = template.scope_skip;
 
-            ScopeSkip_push(_ss.items,    start: start.items_len,    end: scope0.items_len);
-            ScopeSkip_push(_ss.imports,  start: start.imports_len,  end: scope0.imports_len);
-            ScopeSkip_push(_ss.privates, start: start.privates_len, end: scope0.privates_len);
-            ScopeSkip_push(_ss.usings,   start: start.usings_len,   end: scope0.usings_len);
-            ScopeSkip_push(_ss.converts, start: start.converts_len, end: scope0.converts_len);
-            ScopeSkip_push(_ss.helpers,  start: start.helpers_len,  end: scope0.helpers_len);
+            ScopeSkip_push(_ss.items,       start: start.items_len,     end: scope0.items_len);
+
+            ScopeSkip_push(_ss.implicits,   start: start.implicits_len, end:
+                isInline
+                    ? _current_fn.scope0.implicits_len
+                    :             scope0.implicits_len);
+
+            ScopeSkip_push(_ss.imports,     start: start.imports_len,   end: scope0.imports_len);
+            ScopeSkip_push(_ss.privates,    start: start.privates_len,  end: scope0.privates_len);
+            ScopeSkip_push(_ss.usings,      start: start.usings_len,    end: scope0.usings_len);
+            ScopeSkip_push(_ss.converts,    start: start.converts_len,  end: scope0.converts_len);
+            ScopeSkip_push(_ss.helpers,     start: start.helpers_len,   end: scope0.helpers_len);
         }
 
         // We'll need the original imports in scope
@@ -3143,7 +3164,7 @@ pub fn solve(
             defer TODO_FIX_convert_args = TODO_FIX_convert_args0;
             /////////////////////////////////////////////////////////////////////
 
-            mut out = CurrentFn(
+            mut out = CurrentFn(:scope0,
                 solved(n_fn,
                     :target, type: addroffn::X_addrofTarget(target)));
 
@@ -4595,7 +4616,12 @@ pub fn solve(
             let target = out.MUT.target = Binding(:id, :out.flags, :out.type, :shadows);
             target.solved_set(out);
 
+            // List.
             Scope_set(_scope, :id, :target, :shadows);
+
+            if (out.flags & F_IMPLICIT)
+                Scope_set(_scope.implicits, :id, :target, :shadows);
+
             if (out.flags & F_USING)
                 _scope.usings.push(target);
 
@@ -5222,7 +5248,7 @@ pub fn solve(
             let using _ = hacks::tryParseClosureID(:id);
             if (target.isLocal && target.localOf == _current_fn.target.index)
             {
-                revision == _current_fn.target.revision || BUG(
+                revision == _current_fn.target.revision || fail(
                     "ClosureID.revision mismatch: " ~ target.qWHAT
                         ~ "\n\tCaptured at: " ~ revision
                         ~ "\n\tCurrent rev: " ~ _current_fn.target.revision);
@@ -5776,7 +5802,7 @@ pub fn solve(
 
                 let template    = target.template;
 
-                ScopeSkip_setup(:template, :scope0);
+                ScopeSkip_setup(:template, :scope0, isInline: true);
                 _scope.items ~= target.extra_items;
 
                 //

@@ -175,10 +175,11 @@ pub struct ScopeItem
 
 pub nocopy struct Scope
 {
-    items:      ScopeItem[];
     overloads:  Overload[];
     extended:   Extended[];
 
+    items:      ScopeItem[];
+    implicits:  ScopeItem[];
     imports:    i32[];
     privates:   i32[];
     usings:     Target[];
@@ -203,6 +204,7 @@ pub struct Template
 pub struct ScopeMemo
 {
     items_len:      i32;
+    implicits_len:  i32;
     imports_len:    i32;
     privates_len:   i32;
     usings_len:     i32;
@@ -216,6 +218,7 @@ pub struct ScopeSkipMemos
     //  this is due to templates but exported templates dont skip
 
     items:      ScopeSkip[];
+    implicits:  ScopeSkip[];
     imports:    ScopeSkip[];
     privates:   ScopeSkip[];
     usings:     ScopeSkip[];

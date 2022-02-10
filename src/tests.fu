@@ -714,7 +714,7 @@ pub fn runTests()
         return outer(6);
     `);
 
-    TODO_inline(`
+    ZERO(`
         fn has_implicit(implicit i: i32, add: i32): i32
             i + add;
 
@@ -727,7 +727,7 @@ pub fn runTests()
         }
     `);
 
-    TODO_inline(`
+    ZERO(`
         inline fn outer_inl(i: i32): i32
             i > 0   ? inner_inl(i)
                     : 2 * i;

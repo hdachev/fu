@@ -155,10 +155,6 @@ pub fn Scope_exports(scope: Scope, modid!: i32, field_items: ScopeItem[])
     let pub_cnvrts  = converts.len;
     converts       ~= prv_converts;
 
-    let no_imports:     i32[];
-    let no_privates:    i32[];
-    let no_usings:      Target[];
-
     return Scope(
         :items,     :pub_items,
         :converts,  :pub_cnvrts,
@@ -166,9 +162,10 @@ pub fn Scope_exports(scope: Scope, modid!: i32, field_items: ScopeItem[])
         :scope.overloads,
         :scope.extended,
 
-        imports:    no_imports,
-        privates:   no_privates,
-        usings:     no_usings);
+        implicits:  [],
+        imports:    [],
+        privates:   [],
+        usings:     []);
 }
 
 
@@ -306,25 +303,28 @@ pub fn search(
 
 pub fn Scope_snap(scope: Scope, implicit _helpers: Helpers[])
     ScopeMemo(
-        items_len:    scope.items   .len,
-        imports_len:  scope.imports .len,
-        privates_len: scope.privates.len,
-        usings_len:   scope.usings  .len,
-        converts_len: scope.converts.len,
-        helpers_len:       _helpers .len);
+        items_len:      scope.items     .len,
+        implicits_len:  scope.implicits .len,
+        imports_len:    scope.imports   .len,
+        privates_len:   scope.privates  .len,
+        usings_len:     scope.usings    .len,
+        converts_len:   scope.converts  .len,
+        helpers_len:         _helpers   .len);
 
 pub fn Scope_pop(ref scope: Scope, implicit ref _helpers: Helpers[], memo: ScopeMemo)
 {
-    scope.items   .shrink(memo.items_len);
-    scope.imports .shrink(memo.imports_len);
-    scope.privates.shrink(memo.privates_len);
-    scope.usings  .shrink(memo.usings_len);
-    scope.converts.shrink(memo.converts_len);
-    _helpers      .shrink(memo.helpers_len);
+    scope.items     .shrink(memo.items_len);
+    scope.implicits .shrink(memo.implicits_len);
+    scope.imports   .shrink(memo.imports_len);
+    scope.privates  .shrink(memo.privates_len);
+    scope.usings    .shrink(memo.usings_len);
+    scope.converts  .shrink(memo.converts_len);
+    _helpers        .shrink(memo.helpers_len);
 }
 
 fn cmp(a: ScopeMemo, b: ScopeMemo)
     a.items_len     - b.items_len     ||
+    a.implicits_len - b.implicits_len ||
     a.imports_len   - b.imports_len   ||
     a.privates_len  - b.privates_len  ||
     a.usings_len    - b.usings_len    ||
