@@ -4011,6 +4011,14 @@ pub fn solve(
         return lifetime;
     }
 
+    fn Lifetime_unwind_noStatic(mut lifetime: Lifetime)
+    {
+        if (lifetime.uni0n.if_first.Region_isStatic)
+            lifetime.uni0n.shift();
+
+        return Lifetime_unwind(lifetime);
+    }
+
     fn Lifetime_slotsUp2(lifetime: Lifetime, locals_start!: i32): i32[]
     {
         let unwound = Lifetime_unwind(lifetime, :locals_start).uni0n;
@@ -5834,6 +5842,12 @@ pub fn solve(
         return callsite;
     }
 
+    fn BORROWCK_resolveByMutvar(target: Target)
+    {
+        target.modid == -_current_fn.target.index || BUG("Trying to mutvar a static.");
+        return BORROWCK_resolveByMutvar(target.index);
+    }
+
     fn BORROWCK_resolveByMutvar(target: i32)
     {
         let t = nested(target);
@@ -6387,7 +6401,7 @@ pub fn solve(
                             bck_unwound.resize(args.len);
                             for (shadow mut i0 = ref_first; i0 <= ref_last; i0++)
                             {
-                                let unwound = bck_unwound[i0] = Lifetime_unwind(args[i0].type.lifetime);
+                                let unwound = bck_unwound[i0] = Lifetime_unwind_noStatic(args[i0].type.lifetime);
 
                                 // Locate first and last callsite arguments
                                 //  that refer to caller arguments,
@@ -6416,7 +6430,7 @@ pub fn solve(
                     // Validate aliasing.
                     if (bck_unwound)
                     {
-                        let unwound = bck_unwound[i0] = Lifetime_unwind(args[i0].type.lifetime);
+                        let unwound = bck_unwound[i0] = Lifetime_unwind_noStatic(args[i0].type.lifetime);
 
                         // Keep track of caller arguments.
                         for (mut i = 0; i < unwound.uni0n.len; i++)
@@ -6496,7 +6510,7 @@ pub fn solve(
                                         if (arg.kind == "call" &&  arg.target.kind == "var"
                                                                && !arg.target.type.is_mutref)
                                         {
-                                            if (BORROWCK_resolveByMutvar(arg.target.index))
+                                            if (BORROWCK_resolveByMutvar(arg.target))
                                                 return;
                                         }
 
