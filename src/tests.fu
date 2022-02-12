@@ -7592,27 +7592,31 @@ pub fn runTests()
     TODO(`
         fn sB(_: $T) struct { hey: $T; };
 
+        // Pattern & partial spec, how?
+        fn test(x: sB($T)): $T = x.hey - 1;
+
+        type a = sB(i32);
+        fn main() a(1).test;
+    `);
+
+    TODO(`
         fn setupOperators(i: i32) {
-            struct BINOP { i: sB(i32); };
-            <alt>
+            struct sB { hey: i32; }; // same as below
+            struct BINOP { i: sB; }; //  but no templates
             return BINOP([ i ]);
-            <alt/>
-            return BINOP(sB(i));
-            </alt>
         }
 
         fn main() setupOperators(0).i.hey;
     `);
 
     TODO(`
-        fn sB(_: $T) struct { hey: $T; };
+        fn setupOperators(i: i32) {
+            fn sB(_: $T) struct { hey: $T; }; // same as above
+            struct BINOP { i: sB(i32); };     //  but template
+            return BINOP([ i ]);
+        }
 
-        // Pattern & partial spec, how?
-        fn test(x: sB($T)): $T =
-            x.hey - 1;
-
-        type a = sB(i32);
-        fn main() a(1).test;
+        fn main() setupOperators(0).i.hey;
     `);
 
 

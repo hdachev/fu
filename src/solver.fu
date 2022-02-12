@@ -4797,7 +4797,14 @@ pub fn solve(
     fn solveAddrOfFn(node: Node): SolvedNode
     {
         let id = node.value;
+        let result = solveAddrOfFn(:id, :node.flags);
 
+        let type = Type(ValueType(quals: 0, modid: 0, canon: addroffn::packAddrOfFn(result)));
+        return createEmpty(:type);
+    }
+
+    fn solveAddrOfFn(id: string, flags = 0): Target[]
+    {
         mut shadow = false;
         mut result: Target[];
 
@@ -4821,7 +4828,7 @@ pub fn solve(
 
         // TODO FIX:
         //  emit a regular lambda instead.
-        if (node.flags & F_ACCESS)
+        if (flags & F_ACCESS)
         {
             // Iterate all visible types, this is slow.
             //  Alternatively we could just unwrap all of these things in
@@ -4839,10 +4846,7 @@ pub fn solve(
         }
 
         //
-        result || fail("No `fn " ~ id ~ "` in scope.");
-
-        let type = Type(ValueType(quals: 0, modid: 0, canon: addroffn::packAddrOfFn(result)));
-        return createEmpty(:type);
+        return result || fail("No `fn " ~ id ~ "` in scope.");
     }
 
 
@@ -4899,28 +4903,30 @@ pub fn solve(
         if (node.kind == "call")
         {
             let items = node.items;
-            if (items.len)
-            {
-                if (items.len == 1)
-                {
-                    mut t   = node.value == "&"    ? tryClear_ref(type)
-                            : node.value == "&mut" ? tryClear_mutref(type)
-                            : node.value == "[]"   ? tryClear_array(type)
-                            : fail("TODO trySolveTypeParams unary call");
-
-                    if (!t)
-                        return false;
-
-                    return trySolveTypeParams(
-                        items[0] || BUG(), t, typeParams);
-                }
-            }
-            else
-            {
+            if !(items.len)
                 return isAssignable(
                     Scope_lookupType(node),
                         type);
+
+            :UNARY
+            if (items.len == 1)
+            {
+                mut t   = node.value == "&"    ? tryClear_ref(type)
+                        : node.value == "&mut" ? tryClear_mutref(type)
+                        : node.value == "[]"   ? tryClear_array(type)
+                        : { break :UNARY; };
+
+                if (!t)
+                    return false;
+
+                return trySolveTypeParams(
+                    items[0] || BUG(), t, typeParams);
             }
+
+            // Any call.
+
+
+            fail("TODO: do the stuff");
         }
         else if (node.kind == "typeparam")
         {
