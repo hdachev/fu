@@ -3770,6 +3770,10 @@ pub fn solve(
             }
         }
 
+        // List imports in scope.
+        _scope.imports.each(_ss.imports,
+            |import| structImports.set::add(import));
+
         // Add a default constructor.
         {
             mut CHANGE = false;

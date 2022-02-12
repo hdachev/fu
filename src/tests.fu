@@ -7521,7 +7521,7 @@ pub fn runTests()
     `);
 
 
-    // Template structs.
+    // Template structs / generics.
 
     ZERO(`
         fn sA(_: $T) struct { hey: $T; };
@@ -7568,6 +7568,26 @@ pub fn runTests()
 
         fn main() setupOperators(0).i.hey;
     `);
+
+    ZERO([`
+        fn Hey = struct { i: i32 }; // fn Hey generated nonsense code
+        fn get(s: Hey) s.i;
+    `,`
+        fn main() {
+            mut s: _0::Hey();
+            return s.get();
+        }
+    `]);
+
+    ZERO([`
+        fn Hey(_: $T) = struct { i: $T };
+        fn get(s) s.i;
+    `,`
+        fn main() {
+            mut s: _0::Hey(i32);
+            return s.get(); // get(): wasn't visible, the struct didnt remember its template origin module.
+        }
+    `]);
 
     TODO(`
         fn sB(_: $T) struct { hey: $T; };

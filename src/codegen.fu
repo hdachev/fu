@@ -1277,16 +1277,15 @@ pub fn cpp_codegen(implicit module: Module, implicit ctx: Context): CodegenOutpu
         }
 
         let block       = !use_return && findBlock();
+        let expr        = node.items.only;
 
-        if (node.items.only.kind != "empty")
+        if (expr.kind != "empty" || !expr.type.is_void)
         {
-            let head    = node.items.only;
-
             // Break with value.
             if (!use_return)
             {
                 let assign  = block.has_val && block.name ~ "_v = ";
-                mut value   = cgNode(head, !assign && M_STMT, debug: "cgJump[val.break]");
+                mut value   = cgNode(expr, !assign && M_STMT, debug: "cgJump[val.break]");
                 if (block.ptrflip)
                     value   = "&(" ~ value ~ ")";
 
@@ -1295,7 +1294,7 @@ pub fn cpp_codegen(implicit module: Module, implicit ctx: Context): CodegenOutpu
             }
 
             // I think the prefix keywords beat everything re: precedence.
-            return "return " ~ cgNode(head, M_PARENS|M_RETURN, debug: "cgJump[val.return]");
+            return "return " ~ cgNode(expr, M_PARENS|M_RETURN, debug: "cgJump[val.return]");
         }
 
         //
@@ -1835,6 +1834,9 @@ pub fn cpp_codegen(implicit module: Module, implicit ctx: Context): CodegenOutpu
 
     fn cgEmpty(node: SolvedNode, mode: i32): string
     {
+        if (mode & M_STMT)
+            return "";
+
         if (mode & M_ARG_TO_NATIVE && node.type.addroffn::type_isAddrOfFn)
         {
             mut last: Target;
@@ -1856,7 +1858,10 @@ pub fn cpp_codegen(implicit module: Module, implicit ctx: Context): CodegenOutpu
             return "&" ~ fnID(last);
         }
 
-        return mode & M_STMT ? "" : "0";
+        if (!node.type)
+            return "0";
+
+        return cgDefault(node.type);
     }
 
 
@@ -2107,6 +2112,9 @@ pub fn cpp_codegen(implicit module: Module, implicit ctx: Context): CodegenOutpu
             include("<fu/default.h>");
             return "(*(const " ~ typeAnnot(clear_refs(type)) ~ "*)fu::NIL)";
         }
+
+        if (type.is_void)
+            return "void()";
 
         return typeAnnot(type) ~ "{}";
     }
