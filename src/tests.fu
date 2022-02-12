@@ -29,14 +29,6 @@ pub fn self_test(): i32
     return cpp.find("int main()") ? 0 : 101;
 }
 
-let TODO_borrowck   = fn TODO;
-let TODO_disjoint   = fn TODO;
-let TODO_move       = fn TODO;
-let TODO_unique     = fn TODO;
-let TODO_inline     = fn TODO;
-
-let TODO_Map        = fn TODO;
-
 
 // Run the whole battery & build self.
 
@@ -44,9 +36,38 @@ pub fn runTests()
 {
     ////////////////////////////////////////////////
     let TESTDIFFS_FILE = PRJDIR ~ "testdiff/now.td";
-
     let implicit mut testdiffs = testdiff::TestDiffs;
+    defer:ok file::write(
+        TESTDIFFS_FILE, testdiff::serialize(testdiffs));
     ////////////////////////////////////////////////
+
+
+    // Solo mode, so you can mute all tests
+    //  but what you want to work on -
+
+    /*
+    let SOLO = fn ZERO;
+
+    fn SOLO_muteRest (lax a) {}
+    let ZERO = fn SOLO_muteRest;
+    let TODO = fn SOLO_muteRest;
+
+    defer:ok throw("\n\n\tDONT COMMIT:\n\n\tSOLO mode is on.\n");
+    // */
+
+
+    // Categorizing what doesn't work and why -
+
+    let TODO_borrowck   = fn TODO;
+    let TODO_disjoint   = fn TODO;
+    let TODO_move       = fn TODO;
+    let TODO_unique     = fn TODO;
+    let TODO_inline     = fn TODO;
+
+    let TODO_Map        = fn TODO;
+
+
+    //
 
     ZERO(`
         <fail return>
@@ -8454,9 +8475,4 @@ pub fn runTests()
     //     fn main()
     //         TODO;
     // `);
-
-    ////////////////////////////////////////////////
-    file::write(TESTDIFFS_FILE,
-        testdiff::serialize(testdiffs));
-    ////////////////////////////////////////////////
 }
