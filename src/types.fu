@@ -158,8 +158,9 @@ pub let CANNOT_definit_mutrefs = true;
 
 pub fn isAssignableAsArgument(host: Type, guest: Type): bool
 {
-    return isCanonAssignable(host: host.canon, guest.canon)
-        && areQualsAssignable(host: host.quals, guest.quals)
+    return areQualsAssignable(host: host.quals, guest.quals)
+        &&  isCanonAssignable(host: host.canon, guest.canon)
+
         || guest.is_never
         || guest.is_zeroes && !(CANNOT_definit_mutrefs && host.quals & q_mutref);
 }
