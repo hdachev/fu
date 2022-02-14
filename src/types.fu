@@ -265,7 +265,7 @@ pub fn serializeType(type: Type, debug!: string)
     mut prefix: string;
 
     if (type.quals)
-        prefix ~= "+" ~ type.quals;
+        prefix ~= type.quals;
 
     return prefix ~ (type.canon || BUG("serializeType: No type.canon in: " ~ debug));
 }
@@ -285,13 +285,7 @@ pub fn parseType(str: string): ValueType
 {
     mut offset: i32;
 
-    mut quals = 0;
-    if (str[offset] == '+')
-    {
-        offset++;
-        quals = parse10u32(offset, str).i32;
-    }
-
+    let quals = parse10u32(offset, str).i32;
     let canon = str.slice(offset);
     return ValueType(:canon, :quals);
 }
