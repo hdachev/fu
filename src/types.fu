@@ -291,42 +291,13 @@ pub fn parseType(str: string): ValueType
 }
 
 
-//
-
-pub fn type_isArray(type: Type): bool
-{
-    return type.quals & (q_rx_resize | q_rx_copy)
-        && type.canon.starts(with: "[]");
-}
-
-pub fn createArray(item: Type): Type
-{
-    let canon = "[]" ~ serializeType(item, debug: "createArray");
-    let quals = (item.quals & q_rx_copy) | q_rx_resize;
-
-    return Type(
-        ValueType(:canon, :quals),
-            :item.lifetime);
-}
-
-pub fn tryClear_array(type: Type): Type
-{
-    let q = q_rx_resize;
-    if (type.quals & q_rx_resize != q_rx_resize || !type_isArray(type))
-        return Type();
-
-    let vtype = parseType(type.canon.slice(2));
-    return Type(:vtype/*, :type.lifetime*/);
-}
-
-
 // Experimental -
 //  Slices are refs to arrays,
 //   with revoked copy & resize priviledges.
 
 pub fn type_isSliceable(type: Type): bool
 {
-    return type.canon.starts(with: "[]");
+    return type.canon.starts(with: '#');
 }
 
 pub fn createSlice(item: Type, lifetime: Lifetime): Type
@@ -341,7 +312,7 @@ pub fn tryClear_sliceable(type: Type): Type
     if (!type_isSliceable(type))
         return Type();
 
-    let vtype = parseType(type.canon.slice(2));
+    let vtype = parseType(type.canon.slice(1));
     return Type(:vtype/*, :type.lifetime*/);
 }
 
@@ -349,6 +320,37 @@ pub fn clear_sliceable(type: Type): Type
 {
     return tryClear_sliceable(type)
         || BUG("Not sliceable: " ~ type.canon);
+}
+
+
+//
+
+pub fn createArray(item: Type): Type
+{
+    let canon = "#" ~ serializeType(item, debug: "createArray");
+    let quals = (item.quals & q_rx_copy) | q_rx_resize;
+
+    return Type(
+        ValueType(:canon, :quals),
+            :item.lifetime);
+}
+
+pub fn tryClear_array(type: Type): Type
+{
+    let q = q_rx_resize;
+    if (type.quals & q_rx_resize != q_rx_resize)
+        return Type();
+
+    return tryClear_sliceable(type);
+}
+
+pub fn TODO_FIX_isArray(type: Type): bool
+{
+    // TODO FIX: isArray doesn't match the tryClear_array, which requires q_rx_resize
+    //  this is only used in cg, which is post-relax so perhaps we should just move it over there,
+    //   naming it impossibly right now to disambiguate
+    return type.quals & (q_rx_resize | q_rx_copy)
+        && type.type_isSliceable();
 }
 
 

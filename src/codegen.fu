@@ -271,7 +271,7 @@ pub fn cpp_codegen(implicit module: Module, implicit ctx: Context): CodegenOutpu
         if (arrayItem)
         {
             // Arrays & strings.
-            if (type.type_isArray || !type.is_ref)
+            if (type.TODO_FIX_isArray || !type.is_ref)
             {
                 if (arrayItem == t_byte)
                     return annotateString();
@@ -1000,7 +1000,7 @@ pub fn cpp_codegen(implicit module: Module, implicit ctx: Context): CodegenOutpu
             return false;
 
         let t = target.solved.type;
-        return t.is_ref && (!t.type_isSliceable || t.type_isArray);
+        return t.is_ref && (!t.type_isSliceable || t.TODO_FIX_isArray);
     }
 
     fn binding(target!: Target, forceValue!?: bool)
@@ -1381,7 +1381,7 @@ pub fn cpp_codegen(implicit module: Module, implicit ctx: Context): CodegenOutpu
         let slate = "fu::slate<" ~ items.len ~ ", " ~ itemT ~ "> " ~ curly;
 
         // fu::slate literals
-        if (callarg.is_ref && !callarg.type_isArray)
+        if (callarg.is_ref && !callarg.TODO_FIX_isArray)
         {
             include("<fu/view.h>");
 
