@@ -14,7 +14,9 @@ pub fn _fname(implicit ctx: Context, idx: TokenIdx): string
 
 pub fn lookupStruct_mut(implicit module: &mut Module, canon: string): &mut Struct
 {
-    return module.out.types[canon.structIndex];
+    let scp = parseStructCanon(canon);
+    scp.modid == module.modid || throw("lookupStruct_mut: Not from this module (" ~ module.modid ~ ": " ~ canon ~ ")");
+    return module.out.types[scp.index];
 }
 
 
@@ -158,11 +160,13 @@ pub fn lookupStruct(
     implicit ctx: Context,
     type: Type)
 {
-    if (type.modid == module.modid)
-        return module.out.types[type.canon.structIndex]
+    let scp = parseStructCanon(type.canon);
+
+    if (scp.modid == module.modid)
+        return module.out.types[scp.index]
             || assert();
 
-    return ctx.modules[type.modid].out.types[type.canon.structIndex]
+    return ctx.modules[scp.modid].out.types[scp.index]
         || assert();
 }
 

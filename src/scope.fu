@@ -86,7 +86,7 @@ pub fn initStruct(implicit module: &mut Module, name: string, flags: i32, SELF_T
         "Bad struct name, leading digit: `" ~ name ~ "`.");
 
     let index = module.out.types.len;
-    let canon = createStructCanon(:index, :name);
+    let canon = createStructCanon(:module.modid, :index, :name);
 
     if (SELF_TEST)
         for (mut i = 0; i < module.out.types.len; i++)
