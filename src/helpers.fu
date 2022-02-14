@@ -253,7 +253,7 @@ pub fn remove(ref a: $T[], predicate)
 
 //
 
-pub fn parse10u32(offset: &mut i32, str: string)
+pub fn parse10u32(ref offset: i32, str: string)
 {
     mut result: u32;
     while (offset < str.len)
@@ -269,7 +269,7 @@ pub fn parse10u32(offset: &mut i32, str: string)
     return result;
 }
 
-pub fn parse10s32(offset: &mut i32, str: string)
+pub fn parse10s32(ref offset: i32, str: string)
 {
     if (offset >= str.len)
         return 0;
@@ -279,4 +279,126 @@ pub fn parse10s32(offset: &mut i32, str: string)
         : +1;
 
     return parse10u32(offset, str).i32 * mul;
+}
+
+
+// The crazier MMMiiiMMMiii style hex packing.
+
+struct Mi { modid: i32; index: i32 };
+
+pub fn parseMi(ref offset: i32, str: string)
+{
+    if (offset >= str.len)
+        return [];
+
+    mut modid = 0;
+    mut index = 0;
+
+    mut c = str[offset++];
+
+    :END_OF_STRING
+    {
+        // M
+        if (c >= 'G' && c <= 'V')
+        {
+            // Negative modid!
+            defer modid *= -1;
+            modid = c.i32 - 'G'.i32;
+
+            mut shift = 4;
+            for (;;)
+            {
+                if (offset == str.len)
+                    break :END_OF_STRING;
+
+                c = str[offset++];
+                if (c < 'G' || c > 'V')
+                    break;
+
+                modid |= (c.i32 - 'G'.i32) << shift;
+                shift += 4;
+            }
+        }
+        else if (c >= 'g' && c <= 'v')
+        {
+            modid = c.i32 - 'g'.i32;
+
+            mut shift = 4;
+            for (;;)
+            {
+                if (offset == str.len)
+                    break :END_OF_STRING;
+
+                c = str[offset++];
+                if (c < 'g' || c > 'v')
+                    break;
+
+                modid |= (c.i32 - 'g'.i32) << shift;
+                shift += 4;
+            }
+        }
+
+        // i
+        if (c >= '0' && c <= '9' || c >= 'a' && c <= 'f')
+        {
+            index = c >= 'a' ? c.i32 - 'a'.i32 + 10
+                             : c.i32 - '0'.i32;
+            mut shift = 4;
+            for (;;)
+            {
+                if (offset == str.len)
+                    break :END_OF_STRING;
+
+                c = str[offset++];
+                if (c >= '0' && c <= '9')
+                    index |= (c.i32 - '0'.i32     ) << shift;
+                else if (c >= 'a' && c <= 'f')
+                    index |= (c.i32 - 'a'.i32 + 10) << shift;
+                else
+                    break;
+
+                shift += 4;
+            }
+        }
+
+        // Unless we ran out of chars
+        //  we would have advanced the cursor
+        //   one char too far.
+        offset--;
+    }
+
+    return Mi(:modid, :index);
+}
+
+pub fn appendMi(ref str: string, mut modid!: i32, mut index!: i32)
+{
+    // M
+    if (modid < 0)
+    {
+        modid *= -1;
+        do
+        {
+            str ~= ((modid & 15) + 'G'.i32).byte;
+            modid >>= 4;
+        }
+        while (modid);
+    }
+    else do
+    {
+        str ~= ((modid & 15) + 'g'.i32).byte;
+        modid >>= 4;
+    }
+    while (modid);
+
+    // i
+    do
+    {
+        let c = index & 15;
+        index >>= 4;
+
+        str ~= c >= 10
+             ? (c - 10 + 'a'.i32).byte
+             : (c      + '0'.i32).byte;
+    }
+    while (index);
 }
