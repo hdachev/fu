@@ -1,5 +1,6 @@
 import scope;
 import module;
+import helpers;
 
 
 // This is experimental, super dirty shit.
@@ -16,11 +17,11 @@ pub fn type_isCTC(type: Type): bool =
 
 pub fn packAddrOfFn(targets: Target[])
 {
-    mut res = "";
+    mut res = "@";
     for (mut i = 0; i < targets.len; i++)
     {
         let target = targets[i];
-        res ~= "@" ~ target.modid ~ ":" ~ target.index;
+        res.appendMi(:target.modid, :target.index);
     }
 
     return res;
@@ -28,16 +29,13 @@ pub fn packAddrOfFn(targets: Target[])
 
 pub fn unpackAddrOfFn(canon: string, fn)
 {
-    mut i = 0;
-    while (i < canon.len)
+    canon[0] == '@' || throw("unpackAddrOfFn: No leading @ in `" ~ canon ~ "`.");
+
+    mut offset = 1;
+    while (offset < canon.len)
     {
-        canon[i++] == '@' || throw("unpackAddrOfFn: bad canon [1]: `" ~ canon ~ "`.");
-        let modid = helpers::parse10s32(i, canon).i32;
-
-        canon[i++] == ':' || throw("unpackAddrOfFn: bad canon [2]: `" ~ canon ~ "`.");
-        let index = helpers::parse10u32(i, canon).i32;
-
-        fn(Target(:modid, :index));
+        let mi = parseMi(offset, canon);
+        fn(Target(:mi.modid, :mi.index));
     }
 }
 
