@@ -302,7 +302,6 @@ pub struct Extended
 pub struct ValueType
 {
     quals:          i32;
-    modid:          i32;
     canon:          string;
 };
 

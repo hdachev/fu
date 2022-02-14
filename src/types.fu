@@ -90,7 +90,6 @@ pub fn Lifetime_temporary(): Lifetime =
 
 fn ==(a: ValueType, b: ValueType)
     a.quals == b.quals &&
-    a.modid == b.modid &&
     a.canon == b.canon;
 
 pub fn ==(a: Lifetime, b: Lifetime)
@@ -104,7 +103,7 @@ pub fn ==(a: Type, b: Type)
 //
 
 fn Primitive(canon: string)
-    Type(ValueType(modid: 0, :canon, quals: q_rx_copy));
+    Type(ValueType(:canon, quals: q_rx_copy));
 
 pub let t_i8        = Primitive("i8");
 pub let t_i16       = Primitive("i16");
@@ -126,7 +125,7 @@ pub let t_byte      = Primitive("byte");
 // I think these should also be non-refereable?
 
 fn NotSure(canon: string)
-    Type(ValueType(modid: 0, :canon, quals: 0));
+    Type(ValueType(:canon, quals: 0));
 
 pub let t_void      = NotSure("void");
 pub let t_never     = NotSure("never");
@@ -161,8 +160,7 @@ pub let CANNOT_definit_mutrefs = true;
 
 pub fn isAssignableAsArgument(host: Type, guest: Type): bool
 {
-    return host.modid == guest.modid
-        && isCanonAssignable(host: host.canon, guest.canon)
+    return isCanonAssignable(host: host.canon, guest.canon)
         && areQualsAssignable(host: host.quals, guest.quals)
         || guest.is_never
         || guest.is_zeroes && !(CANNOT_definit_mutrefs && host.quals & q_mutref);
@@ -270,8 +268,6 @@ pub fn serializeType(type: Type, debug!: string)
 
     mut prefix: string;
 
-    if (type.modid)
-        prefix ~= type.modid;
     if (type.quals)
         prefix ~= "+" ~ type.quals;
 
@@ -293,7 +289,6 @@ pub fn parseType(str: string): ValueType
 {
     mut offset: i32;
 
-    let modid = parse10u32(offset, str).i32;
     mut quals = 0;
     if (str[offset] == '+')
     {
@@ -302,9 +297,7 @@ pub fn parseType(str: string): ValueType
     }
 
     let canon = str.slice(offset);
-
-    return ValueType(
-        :modid, :canon, :quals);
+    return ValueType(:canon, :quals);
 }
 
 
@@ -320,10 +313,9 @@ pub fn createArray(item: Type): Type
 {
     let canon = "[]" ~ serializeType(item, debug: "createArray");
     let quals = (item.quals & q_rx_copy) | q_rx_resize;
-    let modid = 0;
 
     return Type(
-        ValueType(:canon, :quals, :modid),
+        ValueType(:canon, :quals),
             :item.lifetime);
 }
 
@@ -374,7 +366,7 @@ pub fn clear_sliceable(type: Type): Type
 
 pub fn type_trySuper(a: Type, b: Type)
 {
-    if (a.canon != b.canon || a.modid != b.modid)
+    if (a.canon != b.canon)
         return a.is_never  ? b
              : b.is_never  ? a
              : a.is_zeroes ? CANNOT_definit_mutrefs ? clear_mutref(b) : b
@@ -386,7 +378,7 @@ pub fn type_trySuper(a: Type, b: Type)
                 && Lifetime_union(a.lifetime, b.lifetime);
 
     return Type(
-        ValueType(:a.canon, :quals, :a.modid),
+        ValueType(:a.canon, :quals),
         :lifetime);
 }
 
@@ -394,7 +386,7 @@ pub fn type_tryIntersect(a: Type, b: Type)
 {
     // Can't intersect with never or any -
     //  you can't use a value as `never` or `any`.
-    if (a.canon != b.canon || a.modid != b.modid)
+    if (a.canon != b.canon)
         return Type;
 
     let quals = a.quals | b.quals;
@@ -409,7 +401,7 @@ pub fn type_tryIntersect(a: Type, b: Type)
 
     //
     return Type(
-        ValueType(:a.canon, :quals, :a.modid),
+        ValueType(:a.canon, :quals),
         :lifetime);
 }
 

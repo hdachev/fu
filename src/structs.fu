@@ -26,3 +26,17 @@ pub fn parseStructCanon(canon: string): StructCanon
 
     return StructCanon(:modid, :index);
 }
+
+
+//
+
+pub fn modidOfOrigin(type: Type)
+{
+    if (type.canon[0] == '/')
+    {
+        let scp = parseStructCanon(type.canon);
+        return scp.modid;
+    }
+
+    return 0;
+}

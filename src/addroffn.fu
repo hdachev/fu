@@ -57,5 +57,5 @@ pub fn X_unpackAddrOfFnBinding(ref out: ScopeItem[], id: string, type: Type, sha
 
 pub fn X_addrofTarget(target: Target)
 {
-    return Type(ValueType(quals: 0, modid: 0, canon: packAddrOfFn([ target ])));
+    return Type(ValueType(quals: 0, canon: packAddrOfFn([ target ])));
 }

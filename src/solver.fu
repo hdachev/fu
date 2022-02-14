@@ -850,9 +850,6 @@ pub fn solve(
             ? lookupStruct(type).name
             : type.canon;
 
-        if (type.modid)
-            result = getModule(:type.modid).trimmedName() ~ "::" ~ result;
-
         if (type.quals)
             result ~= humanizeQuals(type);
 
@@ -1083,7 +1080,7 @@ pub fn solve(
                 let visit = type.lookupTypeImports();
                 for (mut i = -1; i < visit.len; i++)
                 {
-                    let modid = i >= 0 ? visit[i] : type.modid;
+                    let modid = i >= 0 ? visit[i] : type.modidOfOrigin;
                     if (seen.has(modid))
                         continue;
 
@@ -3762,8 +3759,9 @@ pub fn solve(
                 {
                     structConverts.push(item.target);
 
-                    if (field.type.modid != module.modid)
-                        structImports.set::add(field.type.modid);
+                    let m = field.type.modidOfOrigin;
+                    if (m && m != module.modid)
+                        structImports.set::add(m);
 
                     structImports.set::add(field.type.lookupTypeImports());
                 }
@@ -4799,7 +4797,7 @@ pub fn solve(
         let id = node.value;
         let result = solveAddrOfFn(:id, :node.flags);
 
-        let type = Type(ValueType(quals: 0, modid: 0, canon: addroffn::packAddrOfFn(result)));
+        let type = Type(ValueType(quals: 0, canon: addroffn::packAddrOfFn(result)));
         return createEmpty(:type);
     }
 
