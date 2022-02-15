@@ -3099,15 +3099,7 @@ pub fn solve(
                         let id = argNode.value;
 
                         typeParams.map::if_ref(id): |tp|
-                        {
-                            ////////////////////////////////////////////////////////////////
-                            // TEMP HACK REMOVE ME:
-                            //  Allowing untyped lambdas as args to native fns,
-                            //   REMOVE THIS WHEN DONE
-                            if (!tp.matched.addroffn::type_isAddrOfFn)
-                            ////////////////////////////////////////////////////////////////
-                                tp.matched = tp.consumed;
-                        }
+                            tp.matched = tp.consumed;
                     }
                 }
             }
