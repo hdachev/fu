@@ -298,7 +298,7 @@ pub fn parseType(str: string): ValueType
 
 pub fn type_isSliceable(type: Type): bool
 {
-    return type.canon.starts(with: '#');
+    return type.canon.starts(with: '[');
 }
 
 pub fn createSlice(item: Type, lifetime: Lifetime): Type
@@ -313,7 +313,7 @@ pub fn tryClear_sliceable(type: Type): Type
     if (!type_isSliceable(type))
         return Type();
 
-    let vtype = parseType(type.canon.slice(1));
+    let vtype = parseType(type.canon.slice(1, type.canon.len - 1));
     return Type(:vtype/*, :type.lifetime*/);
 }
 
@@ -328,7 +328,7 @@ pub fn clear_sliceable(type: Type): Type
 
 pub fn createArray(item: Type): Type
 {
-    let canon = "#" ~ serializeType(item, debug: "createArray");
+    let canon = "[" ~ serializeType(item, debug: "createArray") ~ "]";
     let quals = (item.quals & q_rx_copy) | q_rx_resize;
 
     return Type(
