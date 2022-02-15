@@ -65,6 +65,7 @@ pub fn runTests()
     let TODO_inline     = fn TODO;
 
     let TODO_Map        = fn TODO;
+    let TODO_lint       = fn TODO;
 
 
     //
@@ -4594,6 +4595,96 @@ pub fn runTests()
         }
 
         fn main() = parseOptions([ "./hey", "-c", "-b" ]).options - (EMIT_CPP | EMIT_BIN);
+    `);
+
+    TODO(`
+        fn tryIntersect(left: [byte], right: [byte], withMatch) {
+            let l =  left[0];
+            let r = right[0];
+            let lq = l > '0' && l < '8';
+            let rq = r > '0' && r < '8';
+
+            if (left[lq && 1, left.len] != right[rq && 1, right.len])
+                return false;
+
+            let ll = lq && l.i32 - '0'.i32;
+            let rr = rq && r.i32 - '0'.i32;
+            let qq = ll | rr;
+
+            <alt>
+            mut tmp: string;
+            return withMatch(qq == ll ? left
+                           : qq == rr ? right
+                           : tmp = (qq.byte ~ left[lq && 1, left.len]),
+            <alt/>
+            return withMatch(qq == ll ? left
+                           : qq == rr ? right
+                           : qq.byte ~ left[lq && 1, left.len],
+            </alt>
+                left?:  qq == ll,
+                right?: qq == rr);
+        }
+
+        fn main() {
+            tryIntersect("7a012345678900123456789001234567890"
+                       , "5a012345678900123456789001234567890"): |m, left!|
+            {
+                return m == "7a" && left ? 0 : 100;
+            }
+
+            return 101;
+        }
+    `);
+
+    TODO_lint(`
+        fn tryIntersect(left: [byte], right: [byte], ifLeft, ifNotLeft) {
+            let l =  left[0];
+            let r = right[0];
+            let lq = l > '0' && l < '8';
+            let rq = r > '0' && r < '8';
+
+            if (left[lq && 1, left.len] != right[rq && 1, right.len])
+                return false;
+
+            let ll = lq && l.i32 - '0'.i32;
+            let rr = rq && r.i32 - '0'.i32;
+            let qq = ll | rr;
+
+            if (qq == ll)   ifLeft();
+            else            ifNotLeft(qq == rr ? right : right[rq && 1, right.len]);
+
+            return true;
+        }
+
+        fn TP_upsert(ref typeParams!: string, id!: string, canon: string) {
+            let start = TP_get(:typeParams, :id);
+            if (start < 0) {
+                typeParams ~= id;
+                typeParams ~= canon;
+                typeParams ~= '\t';
+                return true;
+            }
+
+            let end = typeParams.find('\t', :start);
+            return tryIntersect(typeParams[start, end], canon,
+                ifLeft: ||
+                {
+                    return true;
+                },                  // <- Lint complained about the nested curlies here ...
+                ifNotLeft: |inter|
+                {
+                    typeParams.splice(start, end - start, inter);
+                    return true;
+                }); // <-  ... and here.
+
+            return false;
+        }
+
+        fn main() {
+            mut typeParams = "$T 3hey\t";
+            return TP_upsert(:typeParams, "$T", "4hey")
+                && typeParams == "$T 7hey\t" ? 0 : 101;
+        }
     `);
 
 
