@@ -364,7 +364,7 @@ pub fn type_trySuper(a: Type, b: Type)
              : b.is_never  ? a
              : a.is_zeroes ? CANNOT_definit_mutrefs ? clear_mutref(b) : b
              : b.is_zeroes ? CANNOT_definit_mutrefs ? clear_mutref(a) : a
-             : Type;
+             : [];
 
     let quals = a.quals & b.quals;
     let lifetime = a.lifetime && b.lifetime
@@ -380,7 +380,7 @@ pub fn type_tryIntersect(a: Type, b: Type)
     // Can't intersect with never or any -
     //  you can't use a value as `never` or `any`.
     if (a.canon != b.canon)
-        return Type;
+        return [];
 
     let quals = a.quals | b.quals;
 
@@ -390,7 +390,7 @@ pub fn type_tryIntersect(a: Type, b: Type)
     let lifetime = Lifetime_inter(a.lifetime, b.lifetime);
 
     if (!lifetime && (a.lifetime || b.lifetime))
-        return Type;
+        return [];
 
     //
     return Type(

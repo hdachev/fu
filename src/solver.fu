@@ -1404,7 +1404,7 @@ pub fn solve(
                                     : arg;
 
                                 let retype = tryRetyping(arg, expect);
-                                if (isAssignableAsArgument(expect, retype))
+                                if (retype && isAssignableAsArgument(expect, retype))
                                     continue :ARG_OK;
                             }
                             //        /LITFIX
@@ -5780,7 +5780,7 @@ pub fn solve(
                     let expect = host_arg.type;
                     {
                         let retype = tryRetyping(arg, expect);
-                        if (isAssignableAsArgument(expect, retype))
+                        if (retype && isAssignableAsArgument(expect, retype))
                             arg.MUT.type = retype;
                     }
                     //        /LITFIX
