@@ -5202,8 +5202,8 @@ pub fn solve(
 
     fn injectImplicitArg(id: string, type: Type, becauseOf!: Target): Target
     {
-        _current_fn.items || fail(
-            "No implicit `" ~ id ~ "` in scope, needed to call `" ~ GET(becauseOf).name ~ "`.");
+        _current_fn.items && !(_current_fn.out.flags & F_EXTERN) || fail(
+            "No implicit " ~ id.qBAD ~ " in scope, needed to call " ~ becauseOf.qWHAT ~ ".");
 
         // Reuse existing or add new argnode.
         for (mut i = 0; i < _current_fn.items.len + FN_ARGS_BACK; i++)
