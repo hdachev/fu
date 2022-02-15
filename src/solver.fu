@@ -894,7 +894,7 @@ pub fn solve(
         let right  = node.items[1];
 
         // left -> right.
-        let expect = evalTypeAnnot(right).type;
+        let expect = evalTypeAnnot(right);
         let actual = solveNode(left, expect);
 
         checkAssignable(host: expect, actual.type,
@@ -3252,7 +3252,7 @@ pub fn solve(
                 n_body.kind == "block" || BUG("solveFn: Body not a block: `" ~ n_body.kind ~ "`.");
 
             // Return type annot.
-            let ret_expect = n_ret && evalTypeAnnot(n_ret).type;
+            let ret_expect = n_ret && evalTypeAnnot(n_ret);
 
             // Seed return value.
             mut ret_seed = n_ret    ? ret_expect || BUG("falsy ret_expect: " ~ n_fn.value)
@@ -4399,7 +4399,7 @@ pub fn solve(
 
         let placeholder     = node.value;
         let body_template   = node.items[1];
-        let fields_of       = evalTypeAnnot(node.items[0]).type;
+        let fields_of       = evalTypeAnnot(node.items[0]);
         fields_of.isStruct || fail("[for fieldname]: This is not a struct: `" ~ humanizeType(fields_of) ~ "`.");
 
         let fields          = lookupStruct(fields_of).items;
@@ -4449,7 +4449,7 @@ pub fn solve(
         node: Node, specType!?: Type): SolvedNode
     {
         let n_annot = node.items[LET_TYPE];
-        mut annot   = specType || n_annot && evalTypeAnnot(n_annot).type;
+        mut annot   = specType || n_annot && evalTypeAnnot(n_annot);
 
         if (annot && node.flags & F_REF)
             annot   = add_mutref(annot, Lifetime_temporary);
@@ -4664,10 +4664,10 @@ pub fn solve(
         //   Perhaps this is fine but we only want to do it if the annot is exactly the same as the original,
         //    or perhaps if the original is assignable to this annot or something?
         //
-        if (annot.type.isStruct)
-            Scope_set(_scope, node.value, lookupStruct(annot.type).target, shadows: false);
+        if (annot.isStruct)
+            Scope_set(_scope, node.value, lookupStruct(annot).target, shadows: false);
         else
-            Scope_Typedef(_scope, node.value, annot.type, node.flags);
+            Scope_Typedef(_scope, node.value, annot, node.flags);
 
         return createEmpty();
     }
@@ -4850,11 +4850,11 @@ pub fn solve(
 
     //
 
-    fn evalTypeAnnot(node: Node, typeParams?: TypeParams): SolvedNode
+    fn evalTypeAnnot(node: Node, typeParams?: TypeParams): Type
     {
 //*
         fn T(i: i32 = 0) {
-            mut danglefix = evalTypeAnnot(node.items[i], typeParams).type;
+            mut danglefix = evalTypeAnnot(node.items[i], typeParams);
             return danglefix;
         }
 /*/
@@ -4871,25 +4871,25 @@ pub fn solve(
             if (items.len == 1)
             {
                 if (node.value == "&")
-                    return solved(node, add_ref(T, Lifetime_temporary));
+                    return add_ref(T, Lifetime_temporary);
 
                 if (node.value == "&mut")
-                    return solved(node, add_mutref(T, Lifetime_temporary));
+                    return add_mutref(T, Lifetime_temporary);
 
                 if (node.value == "[]")
-                    return solved(node, createArray(T));
+                    return createArray(T);
             }
 
-            return solveCall(node);
+            return solveCall(node).type;
         }
         else if (node.kind == "typeparam")
         {
-            return solved(node, evalTypeParam(node.value, typeParams));
+            return evalTypeParam(node.value, typeParams);
         }
         else if (node.kind == "arrlit" && node.items.len == 1)
         {
             // Slice.
-            return solved(node, createSlice(T, Lifetime_temporary));
+            return createSlice(T, Lifetime_temporary);
         }
 
         return fail("TODO evalTypeAnnot: " ~ node.kind ~ "[" ~ node.items.len ~ "]");
@@ -4997,7 +4997,7 @@ pub fn solve(
                     right.value || fail("Falsy type tag."));
             else
             {
-                let actual = evalTypeAnnot(left, typeParams).type;
+                let actual = evalTypeAnnot(left, typeParams);
 
                 let ok = trySolveTypeParams(
                     type: actual, node: right,
