@@ -579,6 +579,21 @@ pub fn runTests()
         }
     `);
 
+    ZERO(`
+        fn any(a, b) a || b;
+        fn main() any(0, []);
+    `);
+
+    ZERO(`
+        fn both(a, b) a && b;
+        fn main() both(1, []);
+    `);
+
+    ZERO(`
+        fn either(a, b) a ? a : b;
+        fn main() either(0, []);
+    `);
+
 
     // Lexical vs dynamically scoped templates -
     //  I guess we want both, but how?
