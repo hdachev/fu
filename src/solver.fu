@@ -2539,6 +2539,11 @@ pub fn solve(
             :value, token: _here || BUG());
     }
 
+    fn X_addrofTarget(target: Target)
+    {
+        return Type(ValueType(quals: 0, canon: packAddrOfFn([ target ])));
+    }
+
 
     //
 
@@ -2607,7 +2612,7 @@ pub fn solve(
         if (node.flags & F_CONVERSION)
             _scope.converts.push(target);
 
-        return createFnDef(:target, type: addroffn::X_addrofTarget(target));
+        return createFnDef(:target, type: X_addrofTarget(target));
     }
 
     fn uPrepFn_B(target: Target)
@@ -2825,9 +2830,9 @@ pub fn solve(
             for (mut i = 0; i < args.len; i++)
             {
                 let arg_t = args[i];
-                if (addroffn::type_isAddrOfFn(arg_t))
+                if (type_isAddrOfFn(arg_t))
                 {
-                    addroffn::unpackAddrOfFn(arg_t.canon, |target|
+                    unpackAddrOfFn(arg_t.canon, |target|
                     {
                         if (target.modid < 0 || target.modid == module.modid)
                         {
@@ -3155,7 +3160,7 @@ pub fn solve(
 
             mut out = CurrentFn(:scope0,
                 solved(n_fn,
-                    :target, type: addroffn::X_addrofTarget(target)));
+                    :target, type: X_addrofTarget(target)));
 
             let root_scope0 = _root_scope;
             if (!root_scope0)
@@ -4567,13 +4572,18 @@ pub fn solve(
         shadow let id   = cleanID || id;
         ////////////////////////////////////////////////////////////////
 
-        if (!addroffn::X_unpackAddrOfFnBinding(_scope.items, id, out.type,
-
+        if (out.type.type_isAddrOfFn)
+        {
             // Shadowing & addroffns are broken,
             //  we'll just get rid of addroffns,
             //   it was a bad idea.
             //
-            shadows: true))
+            shadow let shadows = true;
+
+            unpackAddrOfFn(out.type.canon, |target|
+                Scope_set(_scope.items, :id, :target, :shadows));
+        }
+        else
         {
             ////////////////////////////////////////////////////////////////
             // TODO we need this to happen at a much later stage.
@@ -4789,7 +4799,7 @@ pub fn solve(
         let id = node.value;
         let result = solveAddrOfFn(:id, :node.flags);
 
-        let type = Type(ValueType(quals: 0, canon: addroffn::packAddrOfFn(result)));
+        let type = Type(ValueType(quals: 0, canon: packAddrOfFn(result)));
         return createEmpty(:type);
     }
 

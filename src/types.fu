@@ -401,6 +401,39 @@ pub fn type_tryIntersect(a: Type, b: Type)
 
 //
 
+pub fn type_isAddrOfFn(type: Type): bool =
+    type.canon.starts(with: '@');
+
+pub fn type_isZST(type: Type): bool =
+    type.type_isAddrOfFn; // TODO zeroes, void, etc.
+
+pub fn packAddrOfFn(targets: Target[])
+{
+    mut res = "@";
+    for (mut i = 0; i < targets.len; i++)
+    {
+        let target = targets[i];
+        res.appendMi(:target.modid, :target.index);
+    }
+
+    return res;
+}
+
+pub fn unpackAddrOfFn(canon: string, fn)
+{
+    canon[0] == '@' || throw("unpackAddrOfFn: No leading @ in `" ~ canon ~ "`.");
+
+    mut offset = 1;
+    while (offset < canon.len)
+    {
+        let mi = parseMi(offset, canon);
+        fn(Target(:mi.modid, :mi.index));
+    }
+}
+
+
+//
+
 pub fn will_relax(ref type: Type, slot!: Type, mut relax_mask!: i32): bool
 {
     return (type.quals &~ slot.quals) & relax_mask != 0;

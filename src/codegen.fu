@@ -174,7 +174,7 @@ pub fn cpp_codegen(implicit module: Module, implicit ctx: Context): CodegenOutpu
 
     fn typeAnnot(type: Type, mode: i32 = 0): string
     {
-        if (type.addroffn::type_isZST)
+        if (type.type_isZST)
             return annotateAddrofn();
 
         let fwd = typeAnnotBase(type, :mode);
@@ -1143,7 +1143,7 @@ pub fn cpp_codegen(implicit module: Module, implicit ctx: Context): CodegenOutpu
         if (!target)
         {
             // HACK - addrofn arguments, best thing would be to altogether skip ZST args
-            arg.type.addroffn::type_isZST || fail("binding(no target)");
+            arg.type.type_isZST || fail("binding(no target)");
             return annotateAddrofn();
         }
 
@@ -1155,7 +1155,7 @@ pub fn cpp_codegen(implicit module: Module, implicit ctx: Context): CodegenOutpu
 
     fn cgLet(node: SolvedNode, global!: bool, foreign?: bool): string
     {
-        if (node.type.addroffn::type_isZST)
+        if (node.type.type_isZST)
             return "";
 
         // GLOBALS ///////////////////////////////////////////////
@@ -1838,10 +1838,10 @@ pub fn cpp_codegen(implicit module: Module, implicit ctx: Context): CodegenOutpu
         if (mode & M_STMT)
             return "";
 
-        if (mode & M_ARG_TO_NATIVE && node.type.addroffn::type_isAddrOfFn)
+        if (mode & M_ARG_TO_NATIVE && node.type.type_isAddrOfFn)
         {
             mut last: Target;
-            addroffn::unpackAddrOfFn(node.type.canon, |target|
+            unpackAddrOfFn(node.type.canon, |target|
             {
                 last && fail("Codegen cannot decine which fn to pass as a c++ lambda at __native callsite: " ~ last.name ~ " vs " ~ target.name);
                 last = target;
