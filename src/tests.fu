@@ -580,7 +580,7 @@ pub fn runTests()
         }
     `);
 
-    TODO_zst(`
+    ZERO(`
         fn any(a, b) a || b;
         fn main() any(0, []);
     `);
@@ -590,7 +590,7 @@ pub fn runTests()
         fn main() both(1, []);
     `);
 
-    TODO_zst(`
+    ZERO(`
         fn either(a, b) a ? a : b;
         fn main() either(0, []);
     `);

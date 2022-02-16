@@ -174,9 +174,6 @@ pub fn cpp_codegen(implicit module: Module, implicit ctx: Context): CodegenOutpu
 
     fn typeAnnot(type: Type, mode: i32 = 0): string
     {
-        if (type.type_isZST)
-            return annotateAddrofn();
-
         let fwd = typeAnnotBase(type, :mode);
 
         if (type.is_ref)
@@ -263,8 +260,8 @@ pub fn cpp_codegen(implicit module: Module, implicit ctx: Context): CodegenOutpu
             fail("Unknown primitive.");
         }
 
-        if (c == "void")   return "void";
-        if (c == "never")  return annotateNever();
+        if (type.type_isZST)    return annotateZST();
+        if (c == "never")       return annotateNever();
 
         // TODO FIX slice definit - (arg?: [byte]) somehow manages to drop ref on definit.
         let arrayItem = tryClear_sliceable(type);
@@ -801,11 +798,17 @@ pub fn cpp_codegen(implicit module: Module, implicit ctx: Context): CodegenOutpu
         //
         mut src         = overload.fnLinkage ~ annot ~ " " ~ id ~ "(";
 
+        mut some        = false;
+
         for (mut i = 0; i < host_args.len; i++)
         {
-            if (i)
+            if (host_args[i].type_isZST)
+                continue;
+
+            if (some)
                 src ~= ", ";
 
+            some = true;
             src ~= binding(host_args[i]);
         }
 
@@ -1140,13 +1143,6 @@ pub fn cpp_codegen(implicit module: Module, implicit ctx: Context): CodegenOutpu
     {
         let target = nested(arg.local);
 
-        if (!target)
-        {
-            // HACK - addrofn arguments, best thing would be to altogether skip ZST args
-            arg.type.type_isZST || fail("binding(no target)");
-            return annotateAddrofn();
-        }
-
         return binding(:target, :forceValue);
     }
 
@@ -1468,15 +1464,32 @@ pub fn cpp_codegen(implicit module: Module, implicit ctx: Context): CodegenOutpu
                 ? arg.items.only
                 : arg;
 
-            mut src = cgNode(
+            mut junk = false;
+
+            if (arg.type_isZST)
+            {
+                // Thinking is - solver can move non-discardable expressions out of the way,
+                //  so we're left with these stubs we can trivially throw away here.
+                junk = arg.kind == "empty"
+                    || arg.kind == "definit"
+                    || arg.kind == "fndef"
+                    || arg.kind == "call" && arg.target.kind == "var";
+
+                if (!junk)
+                    fail("Cannot discard ZST arg, kind is `" ~ arg.kind ~ "`.");
+            }
+
+            mut src = junk ? "" : cgNode(
                 arg, callarg: ext.args[i].type,
                 debug: "cgCall(" ~ node.value ~ ").ARG(" ~ i ~ ")",
-                mode: isNative && M_ARG_TO_NATIVE);
+                mode: isNative && M_ARG_TO_NATIVE) || fail("Empty arg src.");
 
             // Explicit sequencing.
             let MUSTSEQ_bit = 1 << (i & 31);
             if (MUSTSEQ_mask & MUSTSEQ_bit)
             {
+                junk && fail("Trying to MUSTSEQ a discarded argument, shouldnt happen.");
+
                 ooe_crosscheck |= MUSTSEQ_bit;
 
                 if !(arg.isFieldChain)
@@ -1524,7 +1537,11 @@ pub fn cpp_codegen(implicit module: Module, implicit ctx: Context): CodegenOutpu
             mut src = "";
             for (mut i = start; i < item_src.len; i++)
             {
-                if (i > start)
+                let item = item_src[i];
+                if (!item)
+                    continue;
+
+                if (src)
                     src ~= ", ";
 
                 src ~= item_src[i];
@@ -1647,6 +1664,10 @@ pub fn cpp_codegen(implicit module: Module, implicit ctx: Context): CodegenOutpu
         {
             if (target.kind == "var")
             {
+                // So we don't look for variables that aren't there.
+                if (target.type.type_isZST)
+                    return cgDefault(target.type);
+
                 if (!node.target.isLocal)
                 {
                     if (node.target.modid != module.modid)
@@ -1770,9 +1791,9 @@ pub fn cpp_codegen(implicit module: Module, implicit ctx: Context): CodegenOutpu
         return "fu::never";
     }
 
-    fn annotateAddrofn()
+    fn annotateZST()
     {
-        return "int";
+        return "void";
     }
 
     fn cgLiteral(node: SolvedNode): string
