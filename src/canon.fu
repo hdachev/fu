@@ -1,0 +1,175 @@
+
+fn assignableAsArgument(host: string, guest: string)
+{
+    mut ih = 0;
+    mut ig = 0;
+
+    return aaaNext(:host, :guest, :ih, :ig);
+}
+
+fn aaaNext(host: string, guest: string, ref ih!, ref ig!)
+{
+    mut h =  host[ih++];
+    mut g = guest[ig++];
+
+    // Check quals, 1-7 inclusive.
+    {
+        let hq = h > '0' && h < '8';
+        let gq = g > '0' && g < '8';
+        if (hq)
+        {
+            if (!gq)
+                return false;
+
+            let hh = h.i32 - '0'.i32;
+            let gg = g.i32 - '0'.i32;
+            if (hh & gg != hh)
+                return false;
+
+            h =  host[ih++];
+            g = guest[ig++];
+        }
+        else if (gq)
+        {
+            g = guest[ig++];
+        }
+    }
+
+    // Next char is type encoding -
+    //
+    //      lowercase are primitives & not-sures (void, never, etc)
+    //
+    //      / is struct
+    //      @ is addrofn            - potentially assignable to fnptr (guest only)
+    //
+    //      [ is array, term ]
+    //      { is tuple, term }
+    //      ( is fnsig, term )
+    //      < is generic, term >
+    //
+    //      $ is type param         - templates (host only)
+    //      _ is any
+    //
+    if (h != g)
+    {
+        // Type params? We'll handle this here later on.
+        if (h == '$')
+        {
+            // TODO if we have an type-params map or something handy,
+            //  here we can do the stuff that's currently done in the pattern matcher
+            //   in the doTrySpec stuff, should be quicker here;
+            //
+            // Downside is we'd be doing it many times over as opposed to once.
+            //
+            skipAtom(ih, host);
+            skip(g, ig, guest);
+            return true;
+        }
+
+        // Takes any?
+        if (h == '_')
+        {
+            // Should be noop for _,
+            //  we've already moved past it.
+            //
+            // skipAtom(ih, host);
+
+            skip(g, ig, guest);
+            return true;
+        }
+
+        // Addrofn -> fnptr.
+        if (h == '(' && g == '@')
+        {
+            // TODO we've got to check the fnptrs here -
+            //  or do we do it later? How the hell do we do it efficiently?
+            //   Ideally we should have a serial for each fn we can scroll through like this here,
+            //    note the contravariance that's gonna turn up as we go through the args.
+            //
+            skipCompound('(', ')', ih, host);
+            skipAtom(ig, guest);
+            return true;
+        }
+
+        // Nope.
+        return false;
+    }
+
+    // Arrays & slices.
+    if (h == '[')
+    {
+        if !(aaaNext(host, guest, :ih, :ig))
+            return false;
+
+        // Skip past terminator.
+        let he =  host[ih++];
+        let ge = guest[ig++];
+        he == ']' && ge == ']' || assert();
+        return true;
+    }
+
+    // TODO structural (tuples & fnsigs).
+    if (h == '{' || h == '(' || h == '<')
+        throw("TODO: structural type check for tuples, fnsigs & generics");
+
+    // Atom-equal.
+    //  See, the termination rule for atoms is messy -
+    //   if canon strings could always end on a terminator that'd be nice,
+    //    but it doesn't feel practical
+    //
+    for (;;)
+    {
+        h = ih !=  host.len &&  host[ih];
+        g = ig != guest.len && guest[ig];
+
+        if (h != g)
+            return false;
+
+        if (h.nonAlphaNum)
+            return true;
+
+        ih++;
+        ig++;
+    }
+}
+
+fn skipCompound(open: byte, close: byte, ref i: i32, canon: string)
+{
+    mut depth = 0;
+    for (;;)
+    {
+        let c = canon[i++];
+        if (c == open)
+            depth++;
+        else if (c == close && !(depth--))
+            return;
+    }
+}
+
+fn skip(head: byte, ref i: i32, canon: string)
+{
+    if (head == '[') return skipCompound('[', ']', i, canon);
+    if (head == '<') return skipCompound('<', '>', i, canon);
+    if (head == '{') return skipCompound('{', '}', i, canon);
+    if (head == '(') return skipCompound('(', ')', i, canon);
+
+    return skipAtom(i, canon);
+}
+
+fn skipAtom(ref i: i32, canon: string)
+{
+    // Skip to next nonalphabetic.
+    for ( ; i < canon.len; i++)
+    {
+        let c = canon[i];
+        if (c.nonAlphaNum)
+            return;
+    }
+}
+
+fn nonAlphaNum(c: byte)
+{
+    return (c < '0' || c > '9')
+        && (c < 'a' || c > 'z')
+        && (c < 'A' || c > 'Z');
+}
