@@ -65,11 +65,14 @@ pub fn runTests()
     let TODO_inline     = fn TODO;
     let TODO_lint       = fn TODO;
     let TODO_args       = fn TODO;
+    let TODO_conv       = fn TODO;
     let TODO_fntype     = fn TODO;
     let TODO_specpat    = fn TODO;
     let TODO_zst        = fn TODO;
 
     let TODO_Map        = fn TODO;
+
+    let SKETCH          = fn TODO;
 
 
     //
@@ -5081,7 +5084,7 @@ pub fn runTests()
         }
     `);
 
-    TODO(`
+    TODO_conv(`
         struct ScopeSkip {
             min: i32;
             max: i32;
@@ -5836,7 +5839,7 @@ pub fn runTests()
                || 123_456.789.i32 - 123456.789.i32;
     `);
 
-    TODO(`                                  // litfix through && /////
+    TODO_conv(`                             // litfix through && /////
         fn test(a: u32, shadows: bool)      (a << 1) | (shadows && 1);
         fn main()                           1.test.i32 - 2;
     `);
@@ -7019,7 +7022,7 @@ pub fn runTests()
         }
     `);
 
-    TODO(`
+    SKETCH(`
         struct ScopeSkip     { imports:     i32[]; implicits:     i32[]; }
         struct ScopeSkipMemo { imports_len: i32;   implicits_len: i32[]; }
 
@@ -7430,13 +7433,13 @@ pub fn runTests()
         }
     `);
 
-    TODO(`
+    TODO_conv(`
         fn a_len(a: [$T]) a.len; // a conversion could navigate this here
         struct Test { using a: i32[]; };
         fn main() Test.a_len;
     `);
 
-    TODO(`
+    TODO_conv(`
         struct CodegenOutput { using src: string; };
 
         fn test(ref str: string, out: CodegenOutput) {
@@ -8495,7 +8498,7 @@ pub fn runTests()
 
     // Fork/join parallelism.
 
-    TODO(`
+    SKETCH(`
         fn test(ref aa: i32[], bb: i32[])
             for (ref a, b in aa, bb) a += b;
         /*
@@ -8513,7 +8516,7 @@ pub fn runTests()
 
     // Custom primitives, enums & flags.
 
-    TODO(`
+    SKETCH(`
         primitive s32: i32;
 
         fn main() {
@@ -8524,7 +8527,7 @@ pub fn runTests()
         }
     `);
 
-    TODO(`
+    SKETCH(`
         enum E { None };
 
         fn main() {
