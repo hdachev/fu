@@ -178,7 +178,7 @@ pub fn cpp_codegen(implicit module: Module, implicit ctx: Context): CodegenOutpu
 
         if (type.is_ref)
         {
-            if (fwd.starts(with: "fu::view"))
+            if (fwd.starts(with: "fu::view") || fwd == "void")
                 return fwd;
 
             if (type.is_mutref)
@@ -2119,11 +2119,8 @@ pub fn cpp_codegen(implicit module: Module, implicit ctx: Context): CodegenOutpu
     {
         type.is_mutref && fail("Cannot definit mutrefs.");
 
-        if (type.is_zeroes)
-        {
-            include("<fu/zeroes.h>");
-            return "fu::zeroes()";
-        }
+        if (type.type_isZST)
+            return "void()";
 
         if (type.is_ref)
         {
@@ -2134,9 +2131,6 @@ pub fn cpp_codegen(implicit module: Module, implicit ctx: Context): CodegenOutpu
             include("<fu/default.h>");
             return "(*(const " ~ typeAnnot(clear_refs(type)) ~ "*)fu::NIL)";
         }
-
-        if (type.is_void)
-            return "void()";
 
         return typeAnnot(type) ~ "{}";
     }

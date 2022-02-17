@@ -5928,15 +5928,46 @@ pub fn solve(
             slot:      host_args[idx].type);
     }
 
+    fn SWAP(a: SolvedNode, b: SolvedNode)
+    {
+        mut temp: SolvedNodeData;
+
+        swap(a.MUT, temp);
+        swap(b.MUT, temp);
+        swap(a.MUT, temp);
+    }
+
+    fn definitWrap(node: SolvedNode, slot: Type)
+    {
+        slot.is_mutref && CANNOT_definit_mutrefs && BUG(
+            "Trying to definitWrap a mutref.");
+
+        if (node.kind == "definit")
+        {
+            node.MUT.type = slot.is_ref
+                ? slot.clear_refs.add_ref(Lifetime_static)
+                : slot;
+
+            return;
+        }
+
+        let block = createBlock(type: slot, [
+            createEmpty(kind: "__block_wrap_expr"),
+            createDefinit(type: slot),
+        ]);
+
+        SWAP(node, block.items.first);
+        SWAP(node, block);
+    }
+
     fn maybeCopyOrMove(node: SolvedNode, slot: Type, lax isArgument = false): void
     {
         if (slot.canon != node.canon && !node.is_never)
         {
             if (node.type.is_zeroes && !(slot.is_mutref && CANNOT_definit_mutrefs))
             {
-                node.MUT.type = slot.is_ref
-                    ? slot.clear_refs.add_ref(Lifetime_static)
-                    : slot;
+                definitWrap(node, slot);
+                return;
             }
             else
             {
@@ -5977,6 +6008,12 @@ pub fn solve(
             return;
         }
 
+        // Getting messier by the minute.
+        if (node.is_zeroes)
+        {
+            definitWrap(node, slot);
+            return;
+        }
 
         /* This doesn't pass bck.
 
@@ -7171,16 +7208,16 @@ pub fn solve(
         }
         else if (k == "let")
         {
-            if (node.items && !node.is_ref)
+            if (node.items)
             {
                 let init = node.items[LET_INIT];
-                if (init && init.is_ref)
+                if (init)
                     maybeCopyOrMove(init, node.type);
             }
         }
         else if (k == "if")
         {
-            if (!t.is_void && !t.is_ref)
+            if !(t.is_void)
             {
                 maybeCopyOrMove(items[1], t);
                 maybeCopyOrMove(items[2], t);
@@ -7188,7 +7225,7 @@ pub fn solve(
         }
         else if (k == "or")
         {
-            if (!(t == t_bool) && !t.is_ref)
+            if !(t == t_bool)
                 for (mut i = 0; i < items.len; i++)
                     maybeCopyOrMove(items[i], t);
         }
