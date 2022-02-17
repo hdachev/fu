@@ -1286,6 +1286,11 @@ pub fn cpp_codegen(implicit module: Module, implicit ctx: Context): CodegenOutpu
                 if (block.ptrflip)
                     value   = "&(" ~ value ~ ")";
 
+                // TODO FIX: this is a lame way to deal with -Werror=unused-value,
+                //  we need some kind of dead code elim so we don't need crap like this
+                if !(assign || value.hasNonIdentifierChars)
+                    value   = "/* TODO FIX UNUSED VAL " ~ value ~ " */";
+
                 return "{ " ~ assign ~ value
                      ~ "; goto " ~ block.name ~ "; }";
             }

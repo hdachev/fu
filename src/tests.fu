@@ -4638,7 +4638,16 @@ pub fn runTests()
         fn main() = parseOptions([ "./hey", "-c", "-b" ]).options - (EMIT_CPP | EMIT_BIN);
     `);
 
-    TODO(`
+    ZERO(`
+        fn withPrefixed(b: byte, view: [byte], fn) {
+            mut tmp: string;
+            return fn(view.len > 1 ? view : tmp = b ~ view);
+        }
+
+        fn main() withPrefixed('a', "b"): |ab| return ab.len - 2;
+    `);
+
+    ZERO(`
         fn tryIntersect(left: [byte], right: [byte], withMatch) {
             let l =  left[0];
             let r = right[0];
@@ -4670,7 +4679,7 @@ pub fn runTests()
             tryIntersect("7a012345678900123456789001234567890"
                        , "5a012345678900123456789001234567890"): |m, left!|
             {
-                return m == "7a" && left ? 0 : 100;
+                return m == "7a012345678900123456789001234567890" && left ? 0 : 100;
             }
 
             return 101;
