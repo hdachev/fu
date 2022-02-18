@@ -68,7 +68,6 @@ pub fn runTests()
     let TODO_conv       = fn TODO;
     let TODO_fntype     = fn TODO;
     let TODO_specpat    = fn TODO;
-    let TODO_zst        = fn TODO;
 
     let TODO_Map        = fn TODO;
 
@@ -588,7 +587,7 @@ pub fn runTests()
         fn main() any(0, []);
     `);
 
-    TODO_zst(`
+    ZERO(`
         fn both(a, b) a && b;
         fn main() both(1, []);
     `);

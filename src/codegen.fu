@@ -26,6 +26,10 @@ let M_MOVABLE           = 1 << 11;
 let M_MOVE              = 1 << 12;
 let M_ARG_TO_NATIVE     = 1 << 13;
 
+let MAIN_needed         = 1 << 0;
+let MAIN_argv           = 1 << 1;
+let MAIN_zst            = 1 << 2;
+
 
 //
 
@@ -456,8 +460,12 @@ pub fn cpp_codegen(implicit module: Module, implicit ctx: Context): CodegenOutpu
         if (!_hasMain)
             return "";
 
-        if (_hasMain != 2)
-            return "\n\nint main() { return fu_MAIN(); }\n";
+        mut zst = "";
+        if (_hasMain & MAIN_zst)
+            zst = ", 0"
+
+        if !(_hasMain & MAIN_argv)
+            return "\n\nint main() { return fu_MAIN()" ~ zst ~ "; }\n";
 
         // Main with cli args.
         annotateString();
@@ -470,7 +478,7 @@ pub fn cpp_codegen(implicit module: Module, implicit ctx: Context): CodegenOutpu
             ~  "\n    for (int i = 0; i < argc; i++)"
             ~  "\n        args.push(fu_TO_STR(argv[i]));"
             ~  "\n"
-            ~  "\n    return fu_MAIN(static_cast<fu_VEC<fu_STR>&&>(args));"
+            ~  "\n    return fu_MAIN(static_cast<fu_VEC<fu_STR>&&>(args))" ~ zst ~ ";"
             ~  "\n}\n";
     }
 
@@ -787,8 +795,13 @@ pub fn cpp_codegen(implicit module: Module, implicit ctx: Context): CodegenOutpu
         mut id          = overload.name;
         if (id == "main")
         {
-            _hasMain    = host_args ? 2 : 1;
+            _hasMain    = MAIN_needed;
             id          = "fu_MAIN";
+
+            if (host_args)
+                _hasMain |= MAIN_argv;
+            if (overload.type.type_isZST)
+                _hasMain |= MAIN_zst;
         }
         else
         {
