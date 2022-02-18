@@ -5212,8 +5212,20 @@ pub fn solve(
 
     fn injectImplicitArg(id: string, type: Type, becauseOf!: Target): Target
     {
-        _current_fn.items && !(_current_fn.out.flags & F_EXTERN) || fail(
-            "No implicit " ~ id.qBAD ~ " in scope, needed to call " ~ becauseOf.qWHAT ~ ".");
+        if (!_current_fn.items || _current_fn.out.flags & F_EXTERN)
+        {
+            // SKETCH EFFECTS //////////////////////////////////////////////
+            if (type.isStruct)
+            {
+                let s = lookupStruct(type);
+                if (s.target.flags & F_EFFECT)
+                    return s.target;
+            }
+            // SKETCH EFFECTS //////////////////////////////////////////////
+
+            fail("No implicit " ~ id.qBAD ~ " in scope, needed to call " ~ becauseOf.qWHAT ~ ".");
+        }
+
 
         // Reuse existing or add new argnode.
         for (mut i = 0; i < _current_fn.items.len + FN_ARGS_BACK; i++)

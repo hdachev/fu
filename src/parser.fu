@@ -22,7 +22,7 @@ pub let F_COMPOUND_ID   = 1 << 6;
 let     F_PARENS        = 1 << 7;           pub let F_WRITTEN_TO    = F_PARENS;
 
 
-pub let F_LAX           = 1 << 8;
+pub let F_LAX           = 1 << 8;           pub let F_EFFECT        = F_LAX;
 pub let F_ARG           = 1 << 9; ///////// TODO get rid of this
 pub let F_UNUSED        = 1 << 10;
 pub let F_MOVED_FROM    = 1 << 11;
@@ -621,6 +621,10 @@ pub fn parse(
 
                 if (v == "primitive")   return parsePrimDecl(enum: false);
                 if (v == "enum")        return parsePrimDecl(enum: true);
+
+                // SKETCH EFFECTS //////////////////////////////////////////////
+                if (v == "effect")      return parseStructDecl(flags: F_EFFECT);
+                // SKETCH EFFECTS //////////////////////////////////////////////
             }
         }
 
