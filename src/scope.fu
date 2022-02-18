@@ -45,8 +45,6 @@ pub struct HelpersData
 
     ret_expect?:    Type;
     ret_actual?:    Type;
-
-    returns?:       SolvedNode[];
 };
 
 pub fn target(si: ScopeItem)

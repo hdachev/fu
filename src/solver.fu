@@ -4113,7 +4113,7 @@ pub fn solve(
             ~ humanizeType(a) ~ "` & `" ~ humanizeType(b) ~ "`.");
     }
 
-    fn Lifetime_vs(lifetime: Lifetime, locals_start!: i32)
+    fn Lifetime_vs(lifetime: Lifetime, locals_start!?: i32)
     {
         return lifetime.uni0n.if_first.Region_toLocalIndex >= locals_start  ? +1
              : lifetime.uni0n.if_last .Region_toLocalIndex <  locals_start  ? -1
@@ -4182,8 +4182,6 @@ pub fn solve(
     {
         let jump = SolvedNode("jump", type: t_never,
             items: expr && [ expr ], helpers: h.index);
-
-        h.returns ~= jump;
 
         // NOW, IMPORTANTLY:
         //  If we're about to return a mutref, make sure it doesn't go through an F_MUT.
@@ -5972,7 +5970,7 @@ pub fn solve(
         SWAP(node, block);
     }
 
-    fn maybeCopyOrMove(node: SolvedNode, slot: Type, lax isArgument = false): void
+    fn maybeCopyOrMove(node: SolvedNode, slot: Type, isArgument! = false, isReturn! = false): void
     {
         if (slot.canon != node.canon && !node.is_never)
         {
@@ -6045,7 +6043,10 @@ pub fn solve(
         //
         //  Perhaps we can just go for a custom array swap here?
 
-        let newNode     = createCopy(node);
+        let canMove     = isReturn && node.type.lifetime.Lifetime_unwind()
+                                                        .Lifetime_vs() > 0;
+
+        let newNode     = canMove ? createMove(node) : createCopy(node);
 
         mut temp: SolvedNodeData;
 
@@ -6932,12 +6933,6 @@ pub fn solve(
         // Defers in reverse.
         for (mut i = defers.len; i --> 0; )
             bck_node(defers[i]);
-
-        // We need this before mcom -
-        //  and without the .returns listing, this is as late as we can do this.
-        if (node.helpers)
-            mcom_BlockReturns_CopyOrMoveDecision(
-                Helpers(node.helpers));
     }
 
 
@@ -7102,81 +7097,31 @@ pub fn solve(
         if (!h.ret_actual.is_ref)
             return;
 
-        // This is not perfect (potentially inefficient),
-        //   but it should work correctly out of order.
-        //
         // If the jump is a return-current-fn:
         //  We cannot promote var lifetimes past this fn
         //   (we actually can but its more complicated and not necessary)
         //    BUT we dont have to worry about retval users,
         //     so just change the retval to reflect the current var/ref situation.
         //
+        if (h.mask & HM_Function)
+        {
+            let unwind = Lifetime_unwind(h.ret_actual.lifetime);
+            if (Lifetime_vs(unwind, :h.locals_start) < 0)
+                h.ret_actual.lifetime = unwind;
+            else
+                reportReturnType(:h, clear_refs(h.ret_actual));
+        }
         // Otherwise, we can extend local LTs,
         //  so that's what we're gonna do for now.
         //   We need to figure out how to determine if LT-extend is better/worse than cpy/mov -
         //    depends on what you do with the result, if you later cpy, the mov would have been better,
         //     if you just use as ref, LT-extend is better.
         //
-        if !(h.mask & HM_Function)
-            return Lifetime_slotsUp2(:h.ret_actual.lifetime, :h.locals_start).each(|index|
-                GET_mut(nested(index)).flags |= F_HOIST);
-
-        // Finally this is where we decide if this fn returns a reference or a value -
-        //  bck has done its thing, which means we now know for sure which vars are values are which are refs -
-        //   so we can figure this out here.
-        //
-        // There's another way to do this -
-        //  if some return path makes everything else incur a copy for the return to work,
-        //   we could inject a return-slot argument for that specific return,
-        //    have it assign to it and return a ref to the slot.
-        //
-        // This would pay off massively if the local is an exotic return,
-        //  everything else returns a ref, and callers don't need the value.
-        //   The last one is unfortunately undecidable from within the fn -
-        //    ... unless one day we start speccing based on retval usage.
-        //
-        if (h.returns)
-            h.ret_actual = [];
-
-        // Previously in solveJump, the move-vs-copy decision:
-        for (mut i = 0; i < h.returns.len; i++)
+        else
         {
-            mut expr = h.returns[i].items.only;
-            mut type = expr.type;
-
-            if (type.is_ref)
-            {
-                type.lifetime = type.lifetime.Lifetime_unwind(:h.locals_start);
-                let ltCompare = type.lifetime.Lifetime_vs(:h.locals_start || BUG());
-
-                if (ltCompare >= 0)
-                {
-                    if (ltCompare > 0)
-                    {
-                        expr = createMove(expr);
-                    }
-                    else
-                    {
-                        // Might survive, so we cant move,
-                        //  might not survive, so we can't return reference,
-                        //   so we have to copy.
-                        //
-                        // We'll try to prevent this from happening by hinting control flow
-                        //  primitives such as and/or/ifs to copy preemptively
-                        //   but this can happen after lt replace on callsite,
-                        //    when return might point to a temporary argument.
-                        //
-                        expr = createCopy(expr);
-                    }
-
-                    h.returns[i].MUT.items.only = expr;
-                    type                        = expr.type;
-                }
-            }
-
-            // Report the unwound lifetime,
-            //  but leave the original lifetime on the expr for bck & co.
-            reportReturnType(:h, type);
+            Lifetime_slotsUp2(:h.ret_actual.lifetime, :h.locals_start)
+                .each(|index|
+                    GET_mut(nested(index)).flags |= F_HOIST);
         }
     }
 
@@ -7187,6 +7132,15 @@ pub fn solve(
     {
         let k = node.kind;
         let t = node.type;
+
+        if (k == "block")
+        {
+            // We need this before mcom -
+            //  and without the .returns listing, this is as late as we can do this.
+            if (node.helpers)
+                mcom_BlockReturns_CopyOrMoveDecision(
+                    Helpers(node.helpers));
+        }
 
         // Children.
         let items = node.items;
@@ -7211,7 +7165,7 @@ pub fn solve(
         {
             let h = Helpers(node.helpers);
             if (h.ret_actual && !h.ret_actual.is_void && !h.ret_actual.is_never)
-                maybeCopyOrMove(node.items.last, h.ret_actual);
+                maybeCopyOrMove(node.items.last, h.ret_actual, isReturn: true);
         }
         else if (k == "letdef")
         {
