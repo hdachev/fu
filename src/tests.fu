@@ -1215,6 +1215,25 @@ pub fn runTests()
         return x[0];
     `);
 
+    ZERO(`
+        mut other: i32[][];
+        mut arr:   i32[][];
+        for (mut i = 4; i --> 0; )
+        {
+            arr.resize(i);
+
+            // fill up with non small vecs so we can check alloc counts
+            for (shadow mut i = 0; i < arr.len; i++)
+                arr[i] ||= [ i, i, i, i, i, i, i, i ]; // defeat small vec
+
+            // now this convers the "Last chance to do nothing" opti -
+            //  noop resize a shared vec.
+            other = arr;
+            arr.resize(other.len || i);
+        }
+        return other.len;
+    `);
+
 
     // A basic testing setup for array ops,
     //  that can be flipped around for making sure

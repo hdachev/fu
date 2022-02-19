@@ -558,14 +558,12 @@ struct fu_VEC
                     goto CONSIDER_HOLDING_GROUND;
                 }
 
-                // Last chance to do nothing - insert nothing, delete nothing, shrink to same, etc.
+                // Last chance to do nothing -
+                //  insert nothing, delete nothing, shrink to same, etc.
                 if constexpr (!is_Init && !is_Clear && !is_Reserve)
                 {
                     if (del + pop + insert + push == 0)
-                    {
-                        assert(false && "Just verifying that this opti is useful.");
                         return nullptr;
-                    }
                 }
             }
         }
