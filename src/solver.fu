@@ -1891,7 +1891,7 @@ pub fn solve(
         let k = node.kind;
 
         // Shortcutting lets, they source the slot from usage.
-        if (k == "let")
+        if (k == "let" || k == "letdef")
         {
             // Addrofn & co.
             if (!node.target)
@@ -1899,10 +1899,6 @@ pub fn solve(
 
             return relaxBlockVar(node.target, :relax_mask);
         }
-
-        // INDIRECTION !!!
-        if (k == "letdef")
-            return propagateType(node.target.solved, :slot, :relax_mask);
 
         ////////////////////////////
         let here0   = _here;
