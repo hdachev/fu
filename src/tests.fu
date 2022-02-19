@@ -68,6 +68,7 @@ pub fn runTests()
     let TODO_conv       = fn TODO;
     let TODO_fntype     = fn TODO;
     let TODO_specpat    = fn TODO;
+    let TODO_relaxer    = fn TODO;
 
     let TODO_Map        = fn TODO;
 
@@ -3389,6 +3390,47 @@ pub fn runTests()
         fn main() {
             mut x = HasVec([ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 ]);
             return will_return_value(x).last/*9*/ - x.x.last/*10*/ + 1;
+        }
+    `);
+
+    TODO_borrowck(`
+        struct Node { id: i32; items?: Node[]; };
+
+        fn traverse(node: Node, visit): bool {
+            if !(visit(node))
+                return false;
+
+            for (mut i = 0; i < node.items.len; i++)
+                if !(traverse(node.items[i], fn visit))
+                    return false;
+
+            return true;
+        }
+
+        fn PASS_borrowCheck(ref root: Node)
+        {
+            mut n: i32;
+            fn count(id: i32) {
+                traverse(root): |i|
+                    if (i.id == id)
+                        n++;
+            }
+
+            fn check(ref node: Node) {
+                if (node.items)
+                    for (mut i = 0; i < node.items.len; i++)
+                        check(node.items[i]);
+                else
+                    count(node.id++);
+            }
+
+            check(root);
+            return n;
+        }
+
+        fn main() {
+            mut tree = Node(0, [ Node(2), Node(2) ]);
+            return PASS_borrowCheck(tree) - 1;
         }
     `);
 
@@ -8338,6 +8380,23 @@ pub fn runTests()
                 !!(h.mask & (HM_Function | HM_Struct));     //////////////////
 
             return Helpers(0).isFnOrType.i32;
+        }
+    `);
+
+    TODO_relaxer(`
+        struct Node { items: Node[]; };
+
+        pure fn rec_useless_ref(ref n: Node) {
+            mut ret = n.items.len;
+            for (mut i = 0; i < n.items.len; i++)
+                ret += rec_useless_ref(n.items[i]);
+
+            return ret;
+        }
+
+        fn main() {
+            mut tree = Node([ Node(), Node() ]);
+            return rec_useless_ref(tree) - 2;
         }
     `);
 
