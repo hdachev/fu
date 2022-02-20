@@ -4239,17 +4239,6 @@ pub fn runTests()
         fn main() lex("    hello").len - 5;
     `);
 
-    TODO_borrowck(`
-        fn test(ref sources: string[]) {
-            fn src = sources[sources.len / 2];
-            return src[1, src.len] ~ src[0, 1];
-        }
-        fn main() {
-            mut sources = [ "ab" ];
-            return test(sources) == "ba" ? 0 : 1;
-        }
-    `);
-
     ZERO(`
         pub fn ZERO(implicit ref sum: i32, mut sources: string[]): void
         {
@@ -8380,6 +8369,17 @@ pub fn runTests()
                 !!(h.mask & (HM_Function | HM_Struct));     //////////////////
 
             return Helpers(0).isFnOrType.i32;
+        }
+    `);
+
+    TODO_relaxer(`
+        fn useless_ref_lambda(ref sources: string[]) {
+            fn src = sources[sources.len / 2]; // didn't relax the ref, failed bck
+            return src[1, src.len] ~ src[0, 1];
+        }
+        fn main() {
+            mut sources = [ "ab" ];
+            return useless_ref_lambda(sources) == "ba" ? 0 : 1;
         }
     `);
 
