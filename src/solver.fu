@@ -4440,10 +4440,12 @@ pub fn solve(
         node: Node, specType!?: Type): SolvedNode
     {
         let n_annot = node.items[LET_TYPE];
-        mut annot   = specType || n_annot && evalTypeAnnot(n_annot);
+        let annot   = specType || n_annot && evalTypeAnnot(n_annot);
 
-        if (annot && node.flags & F_REF)
-            annot   = add_mutref(annot, Lifetime_temporary);
+        shadow let annot =
+            annot && node.flags & F_REF
+                ? add_mutref(annot, Lifetime_temporary)
+                : annot;
 
         let n_init  = node.items[LET_INIT];
         let init    = n_init && solveNode(n_init, annot);
@@ -4456,31 +4458,26 @@ pub fn solve(
 
     fn solveLetLike_dontTouchScope(
         id: string, mut flags: i32,
-        mut init!: SolvedNode,
-        mut annot!?: Type, specType!?: Type): SolvedNode
+        init!: SolvedNode,
+        annot!?: Type,
+        specType!?: Type): SolvedNode
     {
         annot || init.type || fail(
             "Variable declarations without type annotations must be initialized: `" ~ id ~ "`.");
 
-        if (annot && init.type)
-        {
-            if (specType)
-            {
-                // Drop defaults that don't match current spec types,
-                //  this will effectively make the args non-defaulted.
-                if (!isAssignable(host: annot, init.type))
-                    init = SolvedNode();
-            }               // ^
-                            // |
-            if (init.type)  // | Might be dropped here.
-            {
-                checkAssignable(host: annot, init.type,
-                    "Type annotation does not match init expression",
-                        id, "=");
-            }
-        }
+        // Drop defaults that don't match current spec types,
+        //  this will effectively make the args non-defaulted.
+        shadow let init = specType && init.type && !isAssignable(host: specType, init.type)
+            ? SolvedNode
+            : init;
 
-        let t_init  = init.type;
+        if (annot && init.type)
+            checkAssignable(host: annot, init.type,
+                "Type annotation does not match init expression",
+                    id, "=");
+
+        // Lose refs to temporaries.
+        let t_init = init.type;
 
         shadow let t_init = t_init.is_ref2temp
             ? clear_refs(t_init)
