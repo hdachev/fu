@@ -5843,6 +5843,11 @@ pub fn solve(
         return true;
     }
 
+    fn acceptsTempCopies(arg: Argument)
+    {
+        return !(arg.flags & (F_IMPLICIT | F_REF));
+    }
+
     fn BORROWCK_resolveByTempCopy(node: SolvedNode, slot: Type)
     {
         // Reconstruct a maybe-copyable value type -
@@ -6597,7 +6602,7 @@ pub fn solve(
 
                                             // We don't allow this on implicit arguments, which includes closures.
                                             //  Implicitly copying implicit arguments is a bit much (TODO not sure, is it?).
-                                            if !(host_args[which].flags & F_IMPLICIT)
+                                            if (host_args[which].acceptsTempCopies)
                                             {
                                                 shadow let argLocalIdx = target.args[which].local;
 
