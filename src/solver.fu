@@ -2347,9 +2347,8 @@ pub fn solve(
             }
         }
 
-        shadow ref o = GET_mut(t);
-
         // Lose the F_MUT annots on values that don't need them.
+        shadow ref o = GET_mut(t);
         if (o.flags & F_MUT)
         {
             if (usage.is_mutref)
@@ -2362,6 +2361,16 @@ pub fn solve(
             {
                 o.flags &= ~F_MUT;
             }
+        }
+
+        // Decide on relaxable refs.
+        shadow ref o = GET_mut(t);
+        if (o.flags & F_RELAXABLE_REF)
+        {
+            let strip = F_RELAXABLE_REF | (!usage.is_mutref && F_REF);
+
+            o.flags             &= ~strip;
+            t.solved.MUT.flags  &= ~strip;
         }
     }
 
@@ -4438,7 +4447,16 @@ pub fn solve(
         node: Node, specType!?: Type): SolvedNode
     {
         let n_annot = node.items[LET_TYPE];
-        let annot   = specType || n_annot && evalTypeAnnot(n_annot);
+        let annot   = n_annot && evalTypeAnnot(n_annot);
+
+        // When we're specializing with a mutref, but there's no explicit mutref annot,
+        //  we allow relaxing the F_REF so that e.g. bck can resolve by temp-copy.
+        mut flags   = node.flags;
+
+        if (specType.is_mutref && !(flags & F_REF || annot.is_mutref))
+            flags  |= F_RELAXABLE_REF;
+
+        shadow let annot = specType || annot;
 
         shadow let annot =
             annot && node.flags & F_REF
@@ -4455,7 +4473,7 @@ pub fn solve(
             : init;
 
         return solveLetLike_dontTouchScope(
-            node.value, :node.flags,
+            node.value, :flags,
             :annot, :init);
     }
 
@@ -4486,7 +4504,7 @@ pub fn solve(
             return init;
         }
 
-        //
+        // Trying to unify &muts and refs.
         if (annot.is_mutref)
             flags |= F_REF;
 
