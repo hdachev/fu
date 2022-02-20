@@ -2995,11 +2995,9 @@ pub fn runTests()
         }
     `);
 
-    TODO_borrowck(`
-        //*F
-        nocopy
-        /*/
-        //*/
+    ZERO(`
+        <fail arg invalidated by subseq eval>
+        nocopy                 <pass/></fail>
         struct Type       { canon: string; };
         struct SolvedNode {  type: Type;   };
 
@@ -3023,7 +3021,7 @@ pub fn runTests()
                 evalTypeAnnot([ nodes[i] ]).type;
 
             if (nodes.len > 1)
-                return solved(createMap(T(0), T(1)));
+                return solved(createMap(T(0), T(1))); // <<< HERE >>>
 
             return solved(Type(nodes[0]));
         }
@@ -3031,7 +3029,7 @@ pub fn runTests()
         fn main() {
             let implicit mut out: SolvedNode[];
             let annot = evalTypeAnnot([ "a", "b" ]);
-            return annot.type.canon.len * 1000 + out.len - 2101;
+            return out.len == 10101 && annot.type.canon.len == 2 ? 0 : 1;
         }
     `);
 
