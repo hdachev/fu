@@ -8389,6 +8389,47 @@ pub fn runTests()
         }
     `);
 
+    ZERO([`
+        pub fn ref(dest, item: $T, extras) {
+            for (mut i = 0; i < dest.len; i++) {
+                if (dest[i] >= item) {
+                    if (dest[i] != item) {
+                        dest.insert(i, item);
+                        extras.insert(i, []);
+                    }
+                    return extras[i];
+                }
+            }
+
+            dest.push(item);
+            extras.push([]);
+            return extras[extras.len - 1];
+        }
+    `,
+    `
+        fn Map(lax k: $K, lax v: $V) struct {
+            keys: $K[];
+            vals: $V[];
+        };
+
+        fn ref(using ref _, key)
+            _0::ref(
+                || keys, key,
+                || vals);
+    `,
+    `
+        fn main() {
+            mut _map: _1::Map(string, string);
+
+            fn upsert(k: string, v: string) _map._1::ref(k) = v;
+            upsert("hello", "world");
+
+            // Relaxer failed here while I was trying to get rid of F_REFs from specTypes.
+            fn check(k: string) _map._1::ref(k) == "world" ? 0 : 1;
+            return check("hello");
+        }
+    `]);
+
     TODO_relaxer(`
         fn useless_ref_lambda(ref sources: string[]) {
             fn src = sources[sources.len / 2]; // didn't relax the ref, failed bck
