@@ -3432,6 +3432,25 @@ pub fn runTests()
         }
     `);
 
+    ZERO(`
+        pub fn grow_if_oob(ref a: $T[], i: i32) {
+            if (a.len <= i) a.grow(i + 1);
+            return a[i];
+        }
+
+        fn grow_if_oob_to_len_from_self(ref arr: i32[], idx: i32)
+            arr.grow_if_oob(arr[idx]); // i was F_REF for some reason
+
+        fn main() {
+            mut arr = [3];
+            arr.grow_if_oob_to_len_from_self(0) = 2;
+
+            mut sum = 0;
+            for (mut i = 0; i < arr.len; i++) sum += arr[i];
+            return sum - 5;
+        }
+    `);
+
 
     // Stuff that isn't working out quite right -
     //  Keep those around, there's no principle to these tests,
