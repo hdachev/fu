@@ -4450,26 +4450,24 @@ pub fn solve(
         let n_init  = node.items[LET_INIT];
         let init    = n_init && solveNode(n_init, annot);
 
-        return solveLetLike_dontTouchScope(
-            node.value, :node.flags,
-            :annot, :init,
-            :specType);
-    }
-
-    fn solveLetLike_dontTouchScope(
-        id: string, mut flags: i32,
-        init!: SolvedNode,
-        annot!?: Type,
-        specType!?: Type): SolvedNode
-    {
-        annot || init.type || fail(
-            "Variable declarations without type annotations must be initialized: `" ~ id ~ "`.");
-
         // Drop defaults that don't match current spec types,
         //  this will effectively make the args non-defaulted.
         shadow let init = specType && init.type && !isAssignable(host: specType, init.type)
             ? SolvedNode
             : init;
+
+        return solveLetLike_dontTouchScope(
+            node.value, :node.flags,
+            :annot, :init);
+    }
+
+    fn solveLetLike_dontTouchScope(
+        id: string, mut flags: i32,
+        init!: SolvedNode,
+        annot!?: Type): SolvedNode
+    {
+        annot || init.type || fail(
+            "Variable declarations without type annotations must be initialized: `" ~ id ~ "`.");
 
         if (annot && init.type)
             checkAssignable(host: annot, init.type,
