@@ -2015,7 +2015,7 @@ pub fn solve(
                     let spec = trySpecialize(
                         t.spec_of, args: relaxed, :args_mangled, REST_START: relaxed.len);
 
-                    if (!spec.is_SPECFAIL && !(spec == t.spec_of))
+                    if (!spec.is_SPECFAIL && !(spec == t))
                     {
                         checkAssignable(host: node.type, spec.type,
                             "Relaxed specialization does not return a subtype");
