@@ -193,7 +193,6 @@ pub fn solve(
     //
 
     struct Warning {
-        dedupe:     i32;
         token:      TokenIdx;
         message:    string;
     };
@@ -2302,6 +2301,11 @@ pub fn solve(
         return _current_fn.effects.far_jumps.len > 0;
     }
 
+    fn warn(token: TokenIdx, inline message: string)
+    {
+        _warnings.grow_if_oob(_current_fn.target.index) ||= Warning(:token, :message);
+    }
+
     fn relaxBlockVar(t: Target, relax_mask!: i32)
     {
         let var = GET(t);
@@ -2311,12 +2315,7 @@ pub fn solve(
         if (!usage && relax_mask == RELAX_all)
         {
             if !(var.flags & F_LAX)
-                _warnings ~= Warning(
-                    dedupe:  _current_fn.target.index,
-                    token:   t.solved.token,
-                    message: "Unused variable: "
-                                ~ var.name.qBAD ~ ": make it "
-                                ~ "lax".qKW ~ " if this is intentional.");
+                warn(:t.solved.token, "Unused variable: " ~ var.name.qBAD ~ ": make it " ~ "lax".qKW ~ " if this is intentional.");
 
             GET_mut(t).flags |= F_UNUSED;
         }
@@ -3142,8 +3141,8 @@ pub fn solve(
                     // This looks horrible but hope is
                     //  warnings array should be usually empty,
                     //   otherwise we'll likely emit an error on solved.
-                    _warnings.remove(
-                        |w| w.dedupe == target.index);
+                    if (_warnings.len > target.index)
+                        _warnings[target.index] = Warning();
                 }
             }
 
@@ -7376,8 +7375,11 @@ pub fn solve(
         for (mut i = 0; i < _warnings.len; i++)
         {
             let w = _warnings[i];
-            _here = w.token;
-            fail(w.message);
+            if (w.token)
+            {
+                _here = w.token;
+                fail(w.message);
+            }
         }
 
         // Exports.
