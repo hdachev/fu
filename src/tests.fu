@@ -3392,6 +3392,19 @@ pub fn runTests()
     `);
 
     TODO_borrowck(`
+        fn PASS_borrowCheck_incr_a_ret_b(ref a: i32, ref b: i32) {
+            a++;        // we're done writing to a before
+            return b;   //  EXTRA DRAMA: we dont cg const refs for primitives right now
+        }
+
+        fn main() {
+            mut x = 5;
+            PASS_borrowCheck_incr_a_ret_b(x, x);
+            return x - 6;
+        }
+    `);
+
+    TODO_borrowck(`
         fn PASS_borrowCheck_reduct(ref a: i32, ref b: i32[])
         {
             // If this were (ref!b a, ref b):
