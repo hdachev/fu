@@ -2132,11 +2132,11 @@ pub fn solve(
         }
         else if (k == "loop")
         {
-            let init        = node.items[LOOP_INIT];
-            let pre_cond    = node.items[LOOP_COND];
-            let body        = node.items[LOOP_BODY];
-            let post_cond   = node.items[LOOP_POST_COND];
-            let post        = node.items[LOOP_POST];
+            fn init         = node.items[LOOP_INIT];
+            fn pre_cond     = node.items[LOOP_COND];
+            fn body         = node.items[LOOP_BODY];
+            fn post_cond    = node.items[LOOP_POST_COND];
+            fn post         = node.items[LOOP_POST];
 
             // Relax in reverse.
             if (post)       propagateType(post, t_void, :relax_mask);
@@ -2147,9 +2147,9 @@ pub fn solve(
         }
         else if (k == "try")
         {
-            let lax attempt = node.items[0]; // TODO FIX the laxness due to rec solve
-            let lax error   = node.items[1]; // TODO FIX the laxness due to rec solve
-            let recover     = node.items[2];
+            fn attempt      = node.items[0]; // TODO FIX the laxness due to rec solve
+            fn error        = node.items[1]; // TODO FIX the laxness due to rec solve
+            fn recover      = node.items[2];
 
             // Relax in reverse.
             propagateType(recover, t_void, :relax_mask);
@@ -3133,9 +3133,8 @@ pub fn solve(
             // Go!
             {
                 ref o = EXT_mut(target);
-                o.revision++;
 
-                if (o.nodes)
+                if (o.revision++ > 0)
                 {
                     o.locals.clear();
                     o.nodes.clear();
@@ -7074,6 +7073,13 @@ pub fn solve(
         let k = node.kind;
         if (k == "call")
             return test_CallSignature(node, :debug);
+
+        if (k == "let")
+        {
+            node.items.len == 2 || BUG("let.items.len: " ~ node.items.len);
+            node.items[0] && BUG("let.items[0] not empty: " ~ node.items[0].kind);
+            return;
+        }
 
         if (k == "block" || k == "and" || k == "or" || k == "if")
         {
