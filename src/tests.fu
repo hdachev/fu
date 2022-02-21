@@ -3392,6 +3392,35 @@ pub fn runTests()
     `);
 
     TODO_borrowck(`
+        fn PASS_borrowCheck_reduct(ref a: i32, ref b: i32[])
+        {
+            // If this were (ref!b a, ref b):
+            //
+            // When a points into b:
+            //  - a++ read ok, write ok
+            //   - b read ok, write ok + invalidates a
+            //    - a not usable from here on
+            //
+            // The point is we should be able to deduce this automatically,
+            //  if nothing a-related is used after b gets used for the first time,
+            //   then we're fine if b aliases a ...
+            //
+            // ... EXCEPT that's if b doesn't acceptTempCopies -
+            //  meaning it's either F_IMPLICIT or F_REF -
+            //   otherwise there's ambiguity.
+            //
+            a++;
+            b ~= 10;
+        }
+
+        fn main() {
+            mut arr = [ 9 ];
+            PASS_borrowCheck_reduct(arr[0], arr);
+            return arr[0] - arr[1];
+        }
+    `);
+
+    TODO_borrowck(`
         struct Node { id: i32; items?: Node[]; };
 
         fn traverse(node: Node, visit): bool {

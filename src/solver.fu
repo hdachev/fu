@@ -6548,7 +6548,7 @@ pub fn solve(
                                             for (shadow mut i = 0; i < unwound1.uni0n.len; i++)
                                             {
                                                 let arg1 = Region_asArgIndex(unwound1.uni0n[i]);
-                                                if (arg1 < arg0)
+                                                if (arg1 > 0 && arg1 < arg0)
                                                 {
                                                     _current_fn.flow.args_at_risk.grow_if_oob(arg0)
                                                         .set::add(arg1);
