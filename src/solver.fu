@@ -5502,70 +5502,6 @@ pub fn solve(
 
     //
 
-    fn SLOW_find(test, miss): SolvedNodeData
-    {
-        let nodes = _current_fn.target.nodes;
-
-        :SKIP
-        for (mut i = 0; i < nodes.len; i++)
-        {
-            let node = nodes[i];
-            if (test(:node))
-            {
-                let items = node.items;
-                for (shadow mut i = 0; i < items.len; i++)
-                    if (test(node: items[i]))
-                        continue :SKIP;
-
-                return node;
-            }
-        }
-
-        return miss();
-    }
-
-    fn SLOW_findByReadID(read: ReadID)
-        SLOW_find(|node| node.reads0 < read.id && node.reads1 >= read.id,
-                      || BUG("Cannot find ReadID(" ~ read.id ~ ")."));
-
-    fn SLOW_findByWriteID(write: WriteID)
-        SLOW_find(|node| node.writes0 < write.id && node.writes1 >= write.id,
-                      || BUG("Cannot find WriteID(" ~ write.id ~ ")."));
-
-
-    //
-
-    using fn RWEvent(write: WriteID)
-        _current_fn.events.writes[write.id - 1];
-
-    fn RWEvent_stack(write: WriteID)
-    {
-        let node = SLOW_findByWriteID(write);
-        if (node.kind != "call")
-            return "\n\tVia " ~ node.kind.qKW;
-
-        mut stack: string;
-        {
-            let uni0n = nested(write.rw_target).type.lifetime.uni0n;
-            if (uni0n) for (mut i = 0; i < node.items.len; i++)
-            {
-                let arg = node.items[i];
-                if (arg.lifetime.uni0n.set::inter(uni0n))
-                {
-                    let host_arg = node.target.args[i];
-                    if (host_arg.flags & F_WRITTEN_TO)
-                    {
-                        stack = qSTACK(node.target, position: i);
-                        break;
-                    }
-                }
-            }
-        }
-
-        let o = GET(node.target);
-        return node.token.addr_and_snippet ~ "\n\tAt call to " ~ o.name.qID ~ stack;
-    }
-
     fn qSTACK(target: Target, position!: i32, seen!?: Target[])
     {
         return qSTACK(:target, Region_fromArgIndex(target.args[position].local), :seen);
@@ -6207,794 +6143,867 @@ pub fn solve(
     // Borrow checker, runs. after relaxer, but before AAR (ideally) -
     //  This means everything solved, fully relaxed, a lot of mutrefs now refs, etc.
 
-    fn bck_name(shadow target: i32)
+    fn PASS_borrowCheck(root: SolvedNode)
     {
-        return GET(nested(target)).name.human;
-    }
 
-
-    // Reads.
-
-    fn flow         = _current_fn.flow;
-    fn events       = _current_fn.events;
-
-    fn bck_trackRead(callsite: SolvedNode)
-    {
-        if (!callsite.type.is_ref || !_current_fn.target.index)
-            return;
-
-        _here           = callsite.token;
-
-        let regions     = callsite.type.lifetime.uni0n;
-        let loop_start  = _current_fn.loop_start;
-
-        // Writes invalidate subsequent reads.
-        for (mut i = 0; i < regions.len; i++)
+        fn bck_name(shadow target: i32)
         {
-            let target = Region_asIndex(regions[i]);
-            if (!target)
-                continue;
+            return GET(nested(target)).name.human;
+        }
 
-            // println("bck_trackRead " ~ target ~ " " ~ callsite.value);
 
-            if (events.invalidated_by.len > target)
+        //
+
+        fn SLOW_find(test, miss): SolvedNodeData
+        {
+            let nodes = _current_fn.target.nodes;
+
+            :SKIP
+            for (mut i = 0; i < nodes.len; i++)
             {
-                let u = events.invalidated_by[target];
-                if (u)
+                let node = nodes[i];
+                if (test(:node))
                 {
-                    if !(BORROWCK_resolveByMutvar(target) || options.dev & options::DEV_DisableBCK)
-                        fail("Cannot access"
-                            ~ " " ~      target.bck_name.qBAD ~ ", reference invalidated by write to"
-                            ~ " " ~ u.rw_target.bck_name.qBAD ~ " at "
-                            ~ RWEvent_stack(u));
+                    let items = node.items;
+                    for (shadow mut i = 0; i < items.len; i++)
+                        if (test(node: items[i]))
+                            continue :SKIP;
+
+                    return node;
                 }
             }
 
-            // ARGUMENTS AT RISK ////////////////////////
-            if (events.args_written && flow.is_arg.has(target))
-                flow.args_at_risk.grow_if_oob(target)
-                    .set::add(events.args_written);
-            /////////////////////////////////////////////
+            return miss();
+        }
 
-            // Order of eval.
-            //  OPTIMIZABLE we don't need the read nodeidx here,
-            //   we only need the target int.
-            //
-            events.reads ~= RWEvent(target);
-            let readID = ReadID(events.reads.len);
+        fn SLOW_findByReadID(read: ReadID)
+            SLOW_find(|node| node.reads0 < read.id && node.reads1 >= read.id,
+                          || BUG("Cannot find ReadID(" ~ read.id ~ ")."));
 
-            // Track reads in a loop.
-            if (loop_start)
+        fn SLOW_findByWriteID(write: WriteID)
+            SLOW_find(|node| node.writes0 < write.id && node.writes1 >= write.id,
+                          || BUG("Cannot find WriteID(" ~ write.id ~ ")."));
+
+
+        //
+
+        using fn RWEvent(write: WriteID)
+            _current_fn.events.writes[write.id - 1];
+
+        fn RWEvent_stack(write: WriteID)
+        {
+            let node = SLOW_findByWriteID(write);
+            if (node.kind != "call")
+                return "\n\tVia " ~ node.kind.qKW;
+
+            mut stack: string;
             {
-                // Track uses.
-                if (target < loop_start)
-                    events.used_in_a_loop.grow_if_oob(target) ||= readID;
+                let uni0n = nested(write.rw_target).type.lifetime.uni0n;
+                if (uni0n) for (mut i = 0; i < node.items.len; i++)
+                {
+                    let arg = node.items[i];
+                    if (arg.lifetime.uni0n.set::inter(uni0n))
+                    {
+                        let host_arg = node.target.args[i];
+                        if (host_arg.flags & F_WRITTEN_TO)
+                        {
+                            stack = qSTACK(node.target, position: i);
+                            break;
+                        }
+                    }
+                }
+            }
+
+            let o = GET(node.target);
+            return node.token.addr_and_snippet ~ "\n\tAt call to " ~ o.name.qID ~ stack;
+        }
+
+
+        // Reads.
+
+        fn flow         = _current_fn.flow;
+        fn events       = _current_fn.events;
+
+        fn bck_trackRead(callsite: SolvedNode)
+        {
+            if (!callsite.type.is_ref || !_current_fn.target.index)
+                return;
+
+            _here           = callsite.token;
+
+            let regions     = callsite.type.lifetime.uni0n;
+            let loop_start  = _current_fn.loop_start;
+
+            // Writes invalidate subsequent reads.
+            for (mut i = 0; i < regions.len; i++)
+            {
+                let target = Region_asIndex(regions[i]);
+                if (!target)
+                    continue;
+
+                // println("bck_trackRead " ~ target ~ " " ~ callsite.value);
+
+                if (events.invalidated_by.len > target)
+                {
+                    let u = events.invalidated_by[target];
+                    if (u)
+                    {
+                        if !(BORROWCK_resolveByMutvar(target) || options.dev & options::DEV_DisableBCK)
+                            fail("Cannot access"
+                                ~ " " ~      target.bck_name.qBAD ~ ", reference invalidated by write to"
+                                ~ " " ~ u.rw_target.bck_name.qBAD ~ " at "
+                                ~ RWEvent_stack(u));
+                    }
+                }
+
+                // ARGUMENTS AT RISK ////////////////////////
+                if (events.args_written && flow.is_arg.has(target))
+                    flow.args_at_risk.grow_if_oob(target)
+                        .set::add(events.args_written);
+                /////////////////////////////////////////////
+
+                // Order of eval.
+                //  OPTIMIZABLE we don't need the read nodeidx here,
+                //   we only need the target int.
+                //
+                events.reads ~= RWEvent(target);
+                let readID = ReadID(events.reads.len);
+
+                // Track reads in a loop.
+                if (loop_start)
+                {
+                    // Track uses.
+                    if (target < loop_start)
+                        events.used_in_a_loop.grow_if_oob(target) ||= readID;
+
+                    // ARGUMENTS AT RISK ////////////////////////
+                    if (flow.is_arg.has(target))
+                    {
+                        // And this clearly sucks
+                        //  because we can't clean up after ourselves,
+                        //   perhaps we don't want this but should use used_in_a_loop instead?
+                        events.args_in_a_loop.set::add(target);
+                    }
+                    /////////////////////////////////////////////
+                }
+            }
+        }
+
+
+        // Writes.
+
+        fn bck_trackWrites(callsite: SolvedNode, regions: Region[], positions!: i32[])
+        {
+            _here           = callsite.token;
+
+            let loop_start  = _current_fn.loop_start;
+
+            //
+            for (mut i = 0; i < regions.len; i++)
+            {
+                let target      = Region_asIndex(regions[i]);
+                if (!target)
+                    continue;
+
+                let position    = positions[i];
+
+                // println("bck_trackWrite " ~ target ~ " " ~ callsite.value);
+
+                let invalidates = flow.invalidates.unless_oob(target);
+
+                // Writes in a loop invalidate preceding reads.
+                for (shadow mut i = 0; i < invalidates.len; i++)
+                {
+                    let other = invalidates[i];
+                    let readID = events.used_in_a_loop.unless_oob(other);
+                    if (readID)
+                    {
+                        if !(BORROWCK_resolveByMutvar(other) || options.dev & options::DEV_DisableBCK)
+                            fail("Write to " ~ target.bck_name.qBAD
+                                ~ " at call to " ~ callsite.target.qWHAT
+                                ~ " invalidates the use of " ~ other.bck_name.qBAD ~ " at "
+                                ~ SLOW_findByReadID(readID).token.addr_and_snippet
+                                ~ "\n\t... on next loop iteration.\n\n\tWritten"
+                                ~ qSTACK(callsite.target, :position)); // TODO loop starts at x:x!
+                    }
+                }
+
+                // Order of eval.
+                events.writes ~= RWEvent(target);
+                let writeID = WriteID(events.writes.len);
+
+                // Track writes, easy.
+                for (shadow mut i = 0; i < invalidates.len; i++)
+                    events.invalidated_by.grow_if_oob(invalidates[i]) ||= writeID;
 
                 // ARGUMENTS AT RISK ////////////////////////
                 if (flow.is_arg.has(target))
                 {
-                    // And this clearly sucks
-                    //  because we can't clean up after ourselves,
-                    //   perhaps we don't want this but should use used_in_a_loop instead?
-                    events.args_in_a_loop.set::add(target);
+                    events.args_written.set::add(target);
+                    events.args_ever_written.add(target);
+
+                    if (loop_start)
+                        for (shadow mut i = 0; i < events.args_in_a_loop.len; i++)
+                            flow.args_at_risk.grow_if_oob(events.args_in_a_loop[i])
+                                .set::add(target);
                 }
                 /////////////////////////////////////////////
             }
         }
-    }
 
-
-    // Writes.
-
-    fn bck_trackWrites(callsite: SolvedNode, regions: Region[], positions!: i32[])
-    {
-        _here           = callsite.token;
-
-        let loop_start  = _current_fn.loop_start;
-
-        //
-        for (mut i = 0; i < regions.len; i++)
+        fn bck_trackInit(target: Target)
         {
-            let target      = Region_asIndex(regions[i]);
-            if (!target)
-                continue;
+            let index   = target.index;
 
-            let position    = positions[i];
+            // TODO FIX addrofn emits target=0 lets,
+            //  this is stupid, no need for such garbage to stay in the ast.
+            if (!index)
+                return;
 
-            // println("bck_trackWrite " ~ target ~ " " ~ callsite.value);
+            // println("bck_trackInit " ~ target.index ~ " " ~ target.name);
 
-            let invalidates = flow.invalidates.unless_oob(target);
+            // Clear invalidation event -
+            //  we mistakenly collect these for writes to vars we depend on before init event.
+            //   But this same technique can also be used for ref reassignment later on.
+            //
+            if (events.invalidated_by.unless_oob(index))
+                events.invalidated_by[index] = WriteID();
 
-            // Writes in a loop invalidate preceding reads.
-            for (shadow mut i = 0; i < invalidates.len; i++)
-            {
-                let other = invalidates[i];
-                let readID = events.used_in_a_loop.unless_oob(other);
-                if (readID)
-                {
-                    if !(BORROWCK_resolveByMutvar(other) || options.dev & options::DEV_DisableBCK)
-                        fail("Write to " ~ target.bck_name.qBAD
-                            ~ " at call to " ~ callsite.target.qWHAT
-                            ~ " invalidates the use of " ~ other.bck_name.qBAD ~ " at "
-                            ~ SLOW_findByReadID(readID).token.addr_and_snippet
-                            ~ "\n\t... on next loop iteration.\n\n\tWritten"
-                            ~ qSTACK(callsite.target, :position)); // TODO loop starts at x:x!
-                }
-            }
-
-            // Order of eval.
-            events.writes ~= RWEvent(target);
-            let writeID = WriteID(events.writes.len);
-
-            // Track writes, easy.
-            for (shadow mut i = 0; i < invalidates.len; i++)
-                events.invalidated_by.grow_if_oob(invalidates[i]) ||= writeID;
-
-            // ARGUMENTS AT RISK ////////////////////////
-            if (flow.is_arg.has(target))
-            {
-                events.args_written.set::add(target);
-                events.args_ever_written.add(target);
-
-                if (loop_start)
-                    for (shadow mut i = 0; i < events.args_in_a_loop.len; i++)
-                        flow.args_at_risk.grow_if_oob(events.args_in_a_loop[i])
-                            .set::add(target);
-            }
-            /////////////////////////////////////////////
-        }
-    }
-
-    fn bck_trackInit(target: Target)
-    {
-        let index   = target.index;
-
-        // TODO FIX addrofn emits target=0 lets,
-        //  this is stupid, no need for such garbage to stay in the ast.
-        if (!index)
-            return;
-
-        // println("bck_trackInit " ~ target.index ~ " " ~ target.name);
-
-        // Clear invalidation event -
-        //  we mistakenly collect these for writes to vars we depend on before init event.
-        //   But this same technique can also be used for ref reassignment later on.
-        //
-        if (events.invalidated_by.unless_oob(index))
-            events.invalidated_by[index] = WriteID();
-
-        // The GET_next_local_index() thing doesn't work with LATE_BCK,
-        //  but this kinda fixes it.
-        if (_current_fn.loop_start > index)
-            _current_fn.loop_start = index;
-    }
-
-
-    //
-
-    fn bck_let(node: SolvedNode)
-    {
-        // Solve init expr.
-        bck_nodes(node.items);
-
-        // Track references.
-        if (node.is_ref)
-        {
-            node.flags & F_ARG && BUG("bck_let: Found an argument!");
-
-            let init = node.items[LET_INIT];
-            init.type.is_ref || BUG("What!");
-
-            Reference_trackLocalRef(_current_fn.flow,
-                left:  node.target.index,
-                right: init.type.lifetime);
+            // The GET_next_local_index() thing doesn't work with LATE_BCK,
+            //  but this kinda fixes it.
+            if (_current_fn.loop_start > index)
+                _current_fn.loop_start = index;
         }
 
-        // De-invalidate after init expr,
-        //  could be invalidated by the init expr, for example:
-        //   let c = a = b;
-        //
-        bck_trackInit(node.target);
-    }
-
-
-    //
-
-    fn bck_call(callsite: SolvedNode)
-    {
-        let target = callsite.target;
 
         //
-        let args = callsite.items;
-        if (args)
+
+        fn bck_let(node: SolvedNode)
         {
-            let host_args = target.args;
+            // Solve init expr.
+            bck_nodes(node.items);
 
-            // Unless c++ guarantees some order of eval,
-            //  we'll keep track of reads and writes,
-            //   we add sequencing tags last thing here.
-            //
-            let ooe_read0   = _current_fn.events.reads.len;
-            let ooe_write0  = _current_fn.events.writes.len;
-
-            mut ooe_reads:  i32[];
-            mut ooe_writes: i32[];
-
-            let ooe_isRTL   = target.isRTL;
-
-            ///////////////////////////////////////////////
-            let ooe_START   = ooe_isRTL ? args.len -1 : 0;
+            // Track references.
+            if (node.is_ref)
             {
-                shadow lax mut ooe_read0  = ooe_read0;
-                shadow lax mut ooe_write0 = ooe_write0;
+                node.flags & F_ARG && BUG("bck_let: Found an argument!");
 
-                for (mut ooe_i = 0; ooe_i < args.len; ooe_i++)
-                {
-                    bck_node(args[ooe_isRTL ? ooe_START - ooe_i : ooe_i]);
+                let init = node.items[LET_INIT];
+                init.type.is_ref || BUG("What!");
 
-                    let r1 = _current_fn.events.reads.len;
-                    let w1 = _current_fn.events.writes.len;
-
-                    if (r1 > ooe_read0)  ooe_reads .grow_oob(ooe_i, fill: ooe_read0) = r1;
-                    if (w1 > ooe_write0) ooe_writes.grow_oob(ooe_i, fill: ooe_write0) = w1;
-
-                    ooe_read0 = r1;
-                    ooe_write0 = w1;
-                }
+                Reference_trackLocalRef(_current_fn.flow,
+                    left:  node.target.index,
+                    right: init.type.lifetime);
             }
-            ///////////////////////////////////////////////
 
-            // BORROWCK ////////////////
-            mut bck_writes: Region[];
-            mut bck_positions: i32[];
+            // De-invalidate after init expr,
+            //  could be invalidated by the init expr, for example:
+            //   let c = a = b;
+            //
+            bck_trackInit(node.target);
+        }
 
-            mut mutref_first    = -1;
-            mut mutref_last     = -1;
-            mut ref_first       = -1;
-            mut ref_last        = -1;
+
+        //
+
+        fn bck_call(callsite: SolvedNode)
+        {
+            let target = callsite.target;
 
             //
-            mut bck_unwound: Lifetime[];
-
-            mut arg_first       = -1;
-            mut arg_last        = -1;
-            ////////////////////////////
-
-
-            for (mut i0 = 0; i0 < args.len; i0++)
+            let args = callsite.items;
+            if (args)
             {
-                let host_arg    = host_args[i0];
-                let expect      = host_arg.type;
+                let host_args = target.args;
 
-                // BORROWCK: multiple mutrefs error,
-                //  this is the only thing we can't workaround by copying.
-                if (expect.is_ref)
+                // Unless c++ guarantees some order of eval,
+                //  we'll keep track of reads and writes,
+                //   we add sequencing tags last thing here.
+                //
+                let ooe_read0   = _current_fn.events.reads.len;
+                let ooe_write0  = _current_fn.events.writes.len;
+
+                mut ooe_reads:  i32[];
+                mut ooe_writes: i32[];
+
+                let ooe_isRTL   = target.isRTL;
+
+                ///////////////////////////////////////////////
+                let ooe_START   = ooe_isRTL ? args.len -1 : 0;
                 {
-                    // Lazy init unwound lifetimes.
-                    if !(bck_unwound)
+                    shadow lax mut ooe_read0  = ooe_read0;
+                    shadow lax mut ooe_write0 = ooe_write0;
+
+                    for (mut ooe_i = 0; ooe_i < args.len; ooe_i++)
                     {
-                        if (mutref_first >= 0 || ref_first >= 0 && expect.is_mutref)
-                        {
-                            bck_unwound.resize(args.len);
-                            for (shadow mut i0 = ref_first; i0 <= ref_last; i0++)
-                            {
-                                let unwound = bck_unwound[i0] = Lifetime_unwind_noStatic(args[i0].type.lifetime);
+                        bck_node(args[ooe_isRTL ? ooe_START - ooe_i : ooe_i]);
 
-                                // Locate first and last callsite arguments
-                                //  that refer to caller arguments,
-                                //   so we can later on loop over them faster.
-                                //
-                                // TODO: args at risk: ignore closures & implicits,
-                                //  they are disjoint by definition.
-                                //   But are they? You can totally have
-                                //    an implicit ref a = implicit b.
-                                //
-                                // TODO: args at risk: ignore non-aliasable types.
-                                //
-                                for (mut i = 0; i < unwound.uni0n.len; i++)
+                        let r1 = _current_fn.events.reads.len;
+                        let w1 = _current_fn.events.writes.len;
+
+                        if (r1 > ooe_read0)  ooe_reads .grow_oob(ooe_i, fill: ooe_read0) = r1;
+                        if (w1 > ooe_write0) ooe_writes.grow_oob(ooe_i, fill: ooe_write0) = w1;
+
+                        ooe_read0 = r1;
+                        ooe_write0 = w1;
+                    }
+                }
+                ///////////////////////////////////////////////
+
+                // BORROWCK ////////////////
+                mut bck_writes: Region[];
+                mut bck_positions: i32[];
+
+                mut mutref_first    = -1;
+                mut mutref_last     = -1;
+                mut ref_first       = -1;
+                mut ref_last        = -1;
+
+                //
+                mut bck_unwound: Lifetime[];
+
+                mut arg_first       = -1;
+                mut arg_last        = -1;
+                ////////////////////////////
+
+
+                for (mut i0 = 0; i0 < args.len; i0++)
+                {
+                    let host_arg    = host_args[i0];
+                    let expect      = host_arg.type;
+
+                    // BORROWCK: multiple mutrefs error,
+                    //  this is the only thing we can't workaround by copying.
+                    if (expect.is_ref)
+                    {
+                        // Lazy init unwound lifetimes.
+                        if !(bck_unwound)
+                        {
+                            if (mutref_first >= 0 || ref_first >= 0 && expect.is_mutref)
+                            {
+                                bck_unwound.resize(args.len);
+                                for (shadow mut i0 = ref_first; i0 <= ref_last; i0++)
                                 {
-                                    if (unwound.uni0n[i].Region_asIndex() > 0)
+                                    let unwound = bck_unwound[i0] = Lifetime_unwind_noStatic(args[i0].type.lifetime);
+
+                                    // Locate first and last callsite arguments
+                                    //  that refer to caller arguments,
+                                    //   so we can later on loop over them faster.
+                                    //
+                                    // TODO: args at risk: ignore closures & implicits,
+                                    //  they are disjoint by definition.
+                                    //   But are they? You can totally have
+                                    //    an implicit ref a = implicit b.
+                                    //
+                                    // TODO: args at risk: ignore non-aliasable types.
+                                    //
+                                    for (mut i = 0; i < unwound.uni0n.len; i++)
                                     {
-                                        arg_first   = arg_first < 0 ? i0 : arg_first;
-                                        arg_last    = i0;
-                                        continue;
+                                        if (unwound.uni0n[i].Region_asIndex() > 0)
+                                        {
+                                            arg_first   = arg_first < 0 ? i0 : arg_first;
+                                            arg_last    = i0;
+                                            continue;
+                                        }
                                     }
                                 }
                             }
                         }
-                    }
 
-                    // Validate aliasing.
-                    if (bck_unwound)
-                    {
-                        let unwound = bck_unwound[i0] = Lifetime_unwind_noStatic(args[i0].type.lifetime);
-
-                        // Keep track of caller arguments.
-                        for (mut i = 0; i < unwound.uni0n.len; i++)
+                        // Validate aliasing.
+                        if (bck_unwound)
                         {
-                            if (unwound.uni0n[i].Region_asIndex() > 0)
+                            let unwound = bck_unwound[i0] = Lifetime_unwind_noStatic(args[i0].type.lifetime);
+
+                            // Keep track of caller arguments.
+                            for (mut i = 0; i < unwound.uni0n.len; i++)
                             {
-                                arg_first   = arg_first < 0 ? i0 : arg_first;
-                                arg_last    = i0;
-                                continue;
+                                if (unwound.uni0n[i].Region_asIndex() > 0)
+                                {
+                                    arg_first   = arg_first < 0 ? i0 : arg_first;
+                                    arg_last    = i0;
+                                    continue;
+                                }
+                            }
+
+                            //
+                            fn validate(i: i32)
+                            {
+                                // Can the fn handle aliasing here?
+                                if (host_arg.risk_free.has(i))
+                                    return;
+
+                                // ARGUMENTS AT RISK ////////////////////////
+                                // ARGUMENTS AT RISK AT DEPTH ///////////////
+                                let unwound1 = bck_unwound[i];
+
+                                if (i0 >= arg_first && i0 <= arg_last &&
+                                    i  >= arg_first && i  <= arg_last)
+                                {
+                                    // TODO avoid the N*M thing here -
+                                    //  both lists are sorted, we can iterate them together.
+                                    for (shadow mut i = 0; i < unwound.uni0n.len; i++)
+                                    {
+                                        let arg0 = Region_asArgIndex(unwound.uni0n[i]);
+                                        if (arg0 > 0)
+                                        {
+                                            for (shadow mut i = 0; i < unwound1.uni0n.len; i++)
+                                            {
+                                                let arg1 = Region_asArgIndex(unwound1.uni0n[i]);
+                                                if (arg1 < arg0)
+                                                {
+                                                    _current_fn.flow.args_at_risk.grow_if_oob(arg0)
+                                                        .set::add(arg1);
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                                /////////////////////////////////////////////
+                                /////////////////////////////////////////////
+
+                                // Do we see any aliasing here?
+                                let inter = Lifetime_inter(unwound, unwound1);
+                                if !(inter)
+                                    return;
+
+                                // TODO here we can verify subsets at risk + subsets written.
+                                let other = host_args[i];
+
+                                // Try to resolve by injecting a copy -
+                                {
+                                    mut which = -1;
+
+                                    // It's either or, there's no case
+                                    //  where you can copy either (at least one is a ref).
+                                    if !(host_arg.is_mutref)
+                                        which = i0;
+                                    else if !(other.is_mutref)
+                                        which = i;
+
+                                    if (which >= 0)
+                                    {
+                                        shadow let arg = args[which];
+
+                                        // Don't attempt if no-copy, the error is not useful.
+                                        if (arg.is_rx_copy)
+                                        {
+                                            // Try to introduce a copy on an intermediate variable.
+                                            //  This should help with closures and stuff.
+                                            if (arg.kind == "call" &&  arg.target.kind == "var"
+                                                                   && !arg.target.type.is_mutref)
+                                            {
+                                                if (BORROWCK_resolveByMutvar(arg.target))
+                                                    return;
+                                            }
+
+                                            // We don't allow this on implicit arguments, which includes closures.
+                                            //  Implicitly copying implicit arguments is a bit much (TODO not sure, is it?).
+                                            if !(host_args[which].flags & F_IMPLICIT)
+                                            {
+                                                shadow let argLocalIdx = target.args[which].local;
+
+                                                // Re: m_and_c_cant_alias_002 test:
+                                                //  We don't want to return a reference to the temporary,
+                                                //   so for now we just forbid this.
+                                                let argLt = Region_fromArgIndex(argLocalIdx);
+                                                let isReturned = target.type.lifetime.uni0n.has(argLt);
+                                                if (!isReturned)
+                                                {
+                                                    return BORROWCK_resolveByTempCopy(:callsite, which);
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+
+                                // BORROWCK Error message.
+                                if !(options.dev & options::DEV_DisableBCK)
+                                {
+                                    mut err = target.qWHAT;
+
+                                    err ~= host_args.len == 2 && target.flags & F_OPERATOR
+                                        ?   ": Both operands alias:\n"
+                                        :   ": Arguments " ~ host_args[i0].name.human.qBAD
+                                            ~      " and " ~ host_args[i ].name.human.qBAD
+                                            ~      " (args #" ~ i0 ~ " and #" ~ i  ~ ") both alias:\n";
+
+                                    for (shadow mut i = 0; i < inter.uni0n.len; i++)
+                                    {
+                                        let o = inter.uni0n[i];
+
+                                        err ~=   "\n                ";
+                                        err ~= o.qWHAT;
+                                    }
+
+                                    fail(err);
+                                }
+                            }
+
+                            // If we have a mutref, go over all refs.
+                            if (expect.is_mutref) {
+                                for (mut i = ref_first; i <= ref_last; i++)
+                                    if (host_args[i].is_ref)
+                                        validate(i);
+                            }
+
+                            // Else we only care about mutrefs here.
+                            else if (bck_unwound) {
+                                for (mut i = mutref_first; i <= mutref_last; i++)
+                                    if (host_args[i].is_mutref)
+                                        validate(i);
                             }
                         }
+
+                        // Track the two lists.
+                        {
+                            if (ref_first < 0)
+                                ref_first = i0;
+
+                            ref_last = i0;
+                        }
+
+                        if (expect.is_mutref)
+                        {
+                            if (mutref_first < 0)
+                                mutref_first = i0;
+
+                            mutref_last = i0;
+
+                            // We'll batch all writes together in a bit.
+                            if (host_arg.flags & F_WRITTEN_TO)
+                            {
+                                let arg = args[i0];
+
+                                host_arg.is_mutref || BUG(host_arg.name.human.qID ~ ": host_arg.written but !host_arg.is_mutref");
+                                arg.is_mutref      || BUG(host_arg.name.human.qID ~ ": host_arg.written but !arg.is_mutref");
+
+                                bck_writes.set::add(arg.lifetime.uni0n,
+                                    extras: bck_positions, extra: i0);
+                            }
+                        }
+                    }
+                }
+
+                // BORROWCK /////////////////////////////////////////////////////
+                // Track all writes at once, not important for reads,
+                //  but tracking args one by one would prevent args-at-risk.
+                if (bck_writes)
+                {
+                    bck_positions.len == bck_writes.len || BUG("bck_position.len is off");
+                    bck_trackWrites(:callsite, bck_writes, positions: bck_positions);
+                }
+                /////////////////////////////////////////////////////////////////
+
+                mut MUSTSEQ_mask = 0;
+
+                // We've injected copies and such,
+                //  so now all that's left is to add some explicit sequencing.
+                {
+                    shadow mut ooe_write0 = ooe_write0;
+
+                    for (mut ooe_iw = 0; ooe_iw < ooe_writes.len; ooe_iw++)
+                    {
+                        let ooe_write1 = ooe_writes[ooe_iw];
+                        if (ooe_write1 == ooe_write0)
+                            continue;
 
                         //
-                        fn validate(i: i32)
+                        for (mut w = ooe_write0; w < ooe_write1; w++)
                         {
-                            // Can the fn handle aliasing here?
-                            if (host_arg.risk_free.has(i))
-                                return;
+                            let writeID = WriteID(w + 1);
+                            let write   = RWEvent(writeID);
+                            let written = write.rw_target.nested.type.lifetime.uni0n;
 
-                            // ARGUMENTS AT RISK ////////////////////////
-                            // ARGUMENTS AT RISK AT DEPTH ///////////////
-                            let unwound1 = bck_unwound[i];
+                            // RTL indexing is reversed, so 0 always means first.
+                            let iw_evalsFirst = ooe_iw == 0;
 
-                            if (i0 >= arg_first && i0 <= arg_last &&
-                                i  >= arg_first && i  <= arg_last)
+                            mut written_and_invalidated: Region[];
+                            if (!iw_evalsFirst)
                             {
-                                // TODO avoid the N*M thing here -
-                                //  both lists are sorted, we can iterate them together.
-                                for (shadow mut i = 0; i < unwound.uni0n.len; i++)
+                                written_and_invalidated = written;
+
+                                // Deep expansion only useful on non-first arg,
+                                //  we only use it for preceding args in OOE.
+                                //
+                                for (mut i = 0; i < written.len; i++)
                                 {
-                                    let arg0 = Region_asArgIndex(unwound.uni0n[i]);
-                                    if (arg0 > 0)
-                                    {
-                                        for (shadow mut i = 0; i < unwound1.uni0n.len; i++)
-                                        {
-                                            let arg1 = Region_asArgIndex(unwound1.uni0n[i]);
-                                            if (arg1 < arg0)
-                                            {
-                                                _current_fn.flow.args_at_risk.grow_if_oob(arg0)
-                                                    .set::add(arg1);
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                            /////////////////////////////////////////////
-                            /////////////////////////////////////////////
-
-                            // Do we see any aliasing here?
-                            let inter = Lifetime_inter(unwound, unwound1);
-                            if !(inter)
-                                return;
-
-                            // TODO here we can verify subsets at risk + subsets written.
-                            let other = host_args[i];
-
-                            // Try to resolve by injecting a copy -
-                            {
-                                mut which = -1;
-
-                                // It's either or, there's no case
-                                //  where you can copy either (at least one is a ref).
-                                if !(host_arg.is_mutref)
-                                    which = i0;
-                                else if !(other.is_mutref)
-                                    which = i;
-
-                                if (which >= 0)
-                                {
-                                    shadow let arg = args[which];
-
-                                    // Don't attempt if no-copy, the error is not useful.
-                                    if (arg.is_rx_copy)
-                                    {
-                                        // Try to introduce a copy on an intermediate variable.
-                                        //  This should help with closures and stuff.
-                                        if (arg.kind == "call" &&  arg.target.kind == "var"
-                                                               && !arg.target.type.is_mutref)
-                                        {
-                                            if (BORROWCK_resolveByMutvar(arg.target))
-                                                return;
-                                        }
-
-                                        // We don't allow this on implicit arguments, which includes closures.
-                                        //  Implicitly copying implicit arguments is a bit much (TODO not sure, is it?).
-                                        if !(host_args[which].flags & F_IMPLICIT)
-                                        {
-                                            shadow let argLocalIdx = target.args[which].local;
-
-                                            // Re: m_and_c_cant_alias_002 test:
-                                            //  We don't want to return a reference to the temporary,
-                                            //   so for now we just forbid this.
-                                            let argLt = Region_fromArgIndex(argLocalIdx);
-                                            let isReturned = target.type.lifetime.uni0n.has(argLt);
-                                            if (!isReturned)
-                                            {
-                                                return BORROWCK_resolveByTempCopy(:callsite, which);
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-
-                            // BORROWCK Error message.
-                            if !(options.dev & options::DEV_DisableBCK)
-                            {
-                                mut err = target.qWHAT;
-
-                                err ~= host_args.len == 2 && target.flags & F_OPERATOR
-                                    ?   ": Both operands alias:\n"
-                                    :   ": Arguments " ~ host_args[i0].name.human.qBAD
-                                        ~      " and " ~ host_args[i ].name.human.qBAD
-                                        ~      " (args #" ~ i0 ~ " and #" ~ i  ~ ") both alias:\n";
-
-                                for (shadow mut i = 0; i < inter.uni0n.len; i++)
-                                {
-                                    let o = inter.uni0n[i];
-
-                                    err ~=   "\n                ";
-                                    err ~= o.qWHAT;
-                                }
-
-                                fail(err);
-                            }
-                        }
-
-                        // If we have a mutref, go over all refs.
-                        if (expect.is_mutref) {
-                            for (mut i = ref_first; i <= ref_last; i++)
-                                if (host_args[i].is_ref)
-                                    validate(i);
-                        }
-
-                        // Else we only care about mutrefs here.
-                        else if (bck_unwound) {
-                            for (mut i = mutref_first; i <= mutref_last; i++)
-                                if (host_args[i].is_mutref)
-                                    validate(i);
-                        }
-                    }
-
-                    // Track the two lists.
-                    {
-                        if (ref_first < 0)
-                            ref_first = i0;
-
-                        ref_last = i0;
-                    }
-
-                    if (expect.is_mutref)
-                    {
-                        if (mutref_first < 0)
-                            mutref_first = i0;
-
-                        mutref_last = i0;
-
-                        // We'll batch all writes together in a bit.
-                        if (host_arg.flags & F_WRITTEN_TO)
-                        {
-                            let arg = args[i0];
-
-                            host_arg.is_mutref || BUG(host_arg.name.human.qID ~ ": host_arg.written but !host_arg.is_mutref");
-                            arg.is_mutref      || BUG(host_arg.name.human.qID ~ ": host_arg.written but !arg.is_mutref");
-
-                            bck_writes.set::add(arg.lifetime.uni0n,
-                                extras: bck_positions, extra: i0);
-                        }
-                    }
-                }
-            }
-
-            // BORROWCK /////////////////////////////////////////////////////
-            // Track all writes at once, not important for reads,
-            //  but tracking args one by one would prevent args-at-risk.
-            if (bck_writes)
-            {
-                bck_positions.len == bck_writes.len || BUG("bck_position.len is off");
-                bck_trackWrites(:callsite, bck_writes, positions: bck_positions);
-            }
-            /////////////////////////////////////////////////////////////////
-
-            mut MUSTSEQ_mask = 0;
-
-            // We've injected copies and such,
-            //  so now all that's left is to add some explicit sequencing.
-            {
-                shadow mut ooe_write0 = ooe_write0;
-
-                for (mut ooe_iw = 0; ooe_iw < ooe_writes.len; ooe_iw++)
-                {
-                    let ooe_write1 = ooe_writes[ooe_iw];
-                    if (ooe_write1 == ooe_write0)
-                        continue;
-
-                    //
-                    for (mut w = ooe_write0; w < ooe_write1; w++)
-                    {
-                        let writeID = WriteID(w + 1);
-                        let write   = RWEvent(writeID);
-                        let written = write.rw_target.nested.type.lifetime.uni0n;
-
-                        // RTL indexing is reversed, so 0 always means first.
-                        let iw_evalsFirst = ooe_iw == 0;
-
-                        mut written_and_invalidated: Region[];
-                        if (!iw_evalsFirst)
-                        {
-                            written_and_invalidated = written;
-
-                            // Deep expansion only useful on non-first arg,
-                            //  we only use it for preceding args in OOE.
-                            //
-                            for (mut i = 0; i < written.len; i++)
-                            {
-                                let index = Region_asIndex(written[i]);
-                                if (!index)
-                                    continue;
-
-                                let invalidates = flow.invalidates.unless_oob(index);
-                                written_and_invalidated.set::add(invalidates.view(Region));
-                            }
-                        }
-
-                        ////////////////////////////////////////////////////
-                        // TODO we need written to be the full set        //
-                        //  of written which is a superset of invalidated //
-                        ////////////////////////////////////////////////////
-
-                        // Check remaining arguments.
-                        shadow mut ooe_read0 = ooe_read0;
-
-                        for (mut ooe_ir = 0; ooe_ir < ooe_reads.len; ooe_ir++)
-                        {
-                            let ooe_read1 = ooe_reads[ooe_ir];
-
-                            if (ooe_ir != ooe_iw)
-                            {
-                                let ooe_ir_evalsBefore_iw = ooe_ir < ooe_iw;
-
-                                shadow let written = ooe_ir_evalsBefore_iw
-                                    ? written_and_invalidated
-                                    : written;
-
-                                written || BUG();
-
-                                for (mut r = ooe_read0; r < ooe_read1; r++)
-                                {
-                                    let read    = _current_fn.events.reads[r];
-                                    let regions = read.rw_target.nested.type.lifetime.uni0n;
-
-                                    // TODO: set::has_inter,
-                                    //  how can this optimization work automatically?
-                                    //   !!set::inter -> set::has_inter?
-                                    if !(regions.set::inter(written))
+                                    let index = Region_asIndex(written[i]);
+                                    if (!index)
                                         continue;
 
-                                    // At this point, we've detected an order-of-eval issue.
-                                    //  It's either just that, in which case F_MUSTSEQ is fine,
-                                    //   or it might be that an arg invalidates a previously evaluated arg
-                                    //    (if you imagine that each arg is a let arg0 = xxx, let arg1 = yyy),
-                                    //     in which case we'll have to resolve-by-copy.
-
-                                    // Now this is important:
-                                    //  If this argument ooe-precedes the writes,
-                                    //   we need to check the writes don't garble it's value.
-                                    //
-                                    // This is not about invalidation -
-                                    //  in ++x + ++x nothing gets invalidated,
-                                    //   yet you want the first ++x arg to bind to the value of its init,
-                                    //    just like any other var, and not get thrashed by the other arg.
-                                    //
-                                    // If needed, we'll inject a write,
-                                    //  if not possible, we'll error out.
-
-                                    // DANGER ZONE:
-                                    //
-                                    //  RTL methods have these indices flipped,
-                                    //   here we index in ORDER OF EVALUATION, not order in AST.
-                                    //
-                                    //  Wonder if we shouldn't just order things correctly
-                                    //   in the AST and avoid this altogether?
-                                    //
-                                    shadow let r = ooe_isRTL ? ooe_START - ooe_ir : ooe_ir;
-                                    shadow let w = ooe_isRTL ? ooe_START - ooe_iw : ooe_iw;
-
-                                    if (ooe_ir_evalsBefore_iw)
-                                    {
-                                        let arg     = args[r];
-                                        let bound   = arg.type.lifetime.uni0n;
-                                        let inter   = bound.set::inter(written);
-                                        if (inter)
-                                        {
-                                            if (host_args[r].is_mutref || !arg.is_rx_copy)
-                                            {
-                                                _here = callsite.token;
-
-                                                fail("At call to " ~ target.qWHAT ~ ", argument binding "
-                                                    ~ host_args[r].name.human.qBAD ~ " (arg #" ~ r ~ ") at "
-                                                    ~ arg.token.addr_and_snippet
-                                                    ~ "\n\t... invalidated by subsequent write to "
-                                                    ~ inter.first.qWHAT ~ " upon evaluation of argument "
-                                                    ~ host_args[w].name.human.qBAD ~ " (arg #" ~ w ~ ") at "
-                                                    ~ RWEvent_stack(writeID));
-                                            }
-
-                                            // We'll have to inject a copy here.
-                                            BORROWCK_resolveByTempCopy(:callsite, r);
-                                        }
-                                    }
-
-                                    // TODO FIX: have codegen disregard the mask
-                                    //  when cpp guarantees the order - it's call-syntax related.
-                                    //
-                                    if !(ooe_isRTL)
-                                    {
-                                        // Flag the arg that needs to eval first for explicit sequencing.
-                                        //  This mask thing is kinda stupid, calls with more than 32 args
-                                        //   could needlessly sequence some of their args,
-                                        //    but it's safe.
-                                        //
-                                        let mustSeq = ooe_ir_evalsBefore_iw ? r : w;
-                                        MUSTSEQ_mask |= 1 << (mustSeq & 31);
-                                    }
-
-                                    break;
+                                    let invalidates = flow.invalidates.unless_oob(index);
+                                    written_and_invalidated.set::add(invalidates.view(Region));
                                 }
                             }
 
-                            ooe_read0 = ooe_read1;
-                        }
-                    }
+                            ////////////////////////////////////////////////////
+                            // TODO we need written to be the full set        //
+                            //  of written which is a superset of invalidated //
+                            ////////////////////////////////////////////////////
 
-                    ooe_write0 = ooe_write1;
+                            // Check remaining arguments.
+                            shadow mut ooe_read0 = ooe_read0;
+
+                            for (mut ooe_ir = 0; ooe_ir < ooe_reads.len; ooe_ir++)
+                            {
+                                let ooe_read1 = ooe_reads[ooe_ir];
+
+                                if (ooe_ir != ooe_iw)
+                                {
+                                    let ooe_ir_evalsBefore_iw = ooe_ir < ooe_iw;
+
+                                    shadow let written = ooe_ir_evalsBefore_iw
+                                        ? written_and_invalidated
+                                        : written;
+
+                                    written || BUG();
+
+                                    for (mut r = ooe_read0; r < ooe_read1; r++)
+                                    {
+                                        let read    = _current_fn.events.reads[r];
+                                        let regions = read.rw_target.nested.type.lifetime.uni0n;
+
+                                        // TODO: set::has_inter,
+                                        //  how can this optimization work automatically?
+                                        //   !!set::inter -> set::has_inter?
+                                        if !(regions.set::inter(written))
+                                            continue;
+
+                                        // At this point, we've detected an order-of-eval issue.
+                                        //  It's either just that, in which case F_MUSTSEQ is fine,
+                                        //   or it might be that an arg invalidates a previously evaluated arg
+                                        //    (if you imagine that each arg is a let arg0 = xxx, let arg1 = yyy),
+                                        //     in which case we'll have to resolve-by-copy.
+
+                                        // Now this is important:
+                                        //  If this argument ooe-precedes the writes,
+                                        //   we need to check the writes don't garble it's value.
+                                        //
+                                        // This is not about invalidation -
+                                        //  in ++x + ++x nothing gets invalidated,
+                                        //   yet you want the first ++x arg to bind to the value of its init,
+                                        //    just like any other var, and not get thrashed by the other arg.
+                                        //
+                                        // If needed, we'll inject a write,
+                                        //  if not possible, we'll error out.
+
+                                        // DANGER ZONE:
+                                        //
+                                        //  RTL methods have these indices flipped,
+                                        //   here we index in ORDER OF EVALUATION, not order in AST.
+                                        //
+                                        //  Wonder if we shouldn't just order things correctly
+                                        //   in the AST and avoid this altogether?
+                                        //
+                                        shadow let r = ooe_isRTL ? ooe_START - ooe_ir : ooe_ir;
+                                        shadow let w = ooe_isRTL ? ooe_START - ooe_iw : ooe_iw;
+
+                                        if (ooe_ir_evalsBefore_iw)
+                                        {
+                                            let arg     = args[r];
+                                            let bound   = arg.type.lifetime.uni0n;
+                                            let inter   = bound.set::inter(written);
+                                            if (inter)
+                                            {
+                                                if (host_args[r].is_mutref || !arg.is_rx_copy)
+                                                {
+                                                    _here = callsite.token;
+
+                                                    fail("At call to " ~ target.qWHAT ~ ", argument binding "
+                                                        ~ host_args[r].name.human.qBAD ~ " (arg #" ~ r ~ ") at "
+                                                        ~ arg.token.addr_and_snippet
+                                                        ~ "\n\t... invalidated by subsequent write to "
+                                                        ~ inter.first.qWHAT ~ " upon evaluation of argument "
+                                                        ~ host_args[w].name.human.qBAD ~ " (arg #" ~ w ~ ") at "
+                                                        ~ RWEvent_stack(writeID));
+                                                }
+
+                                                // We'll have to inject a copy here.
+                                                BORROWCK_resolveByTempCopy(:callsite, r);
+                                            }
+                                        }
+
+                                        // TODO FIX: have codegen disregard the mask
+                                        //  when cpp guarantees the order - it's call-syntax related.
+                                        //
+                                        if !(ooe_isRTL)
+                                        {
+                                            // Flag the arg that needs to eval first for explicit sequencing.
+                                            //  This mask thing is kinda stupid, calls with more than 32 args
+                                            //   could needlessly sequence some of their args,
+                                            //    but it's safe.
+                                            //
+                                            let mustSeq = ooe_ir_evalsBefore_iw ? r : w;
+                                            MUSTSEQ_mask |= 1 << (mustSeq & 31);
+                                        }
+
+                                        break;
+                                    }
+                                }
+
+                                ooe_read0 = ooe_read1;
+                            }
+                        }
+
+                        ooe_write0 = ooe_write1;
+                    }
                 }
+
+                // The sequencing fingerprint, just in case.
+                (callsite.MUT.helpers && BUG("helpers already contain something")) = MUSTSEQ_mask;
             }
 
-            // The sequencing fingerprint, just in case.
-            (callsite.MUT.helpers && BUG("helpers already contain something")) = MUSTSEQ_mask;
+            //
+            else if (target.kind == "var")
+            {
+                bck_trackRead(callsite);
+            }
         }
+
 
         //
-        else if (target.kind == "var")
+
+        fn bck_loop(node: SolvedNode)
         {
-            bck_trackRead(callsite);
-        }
-    }
+            let items = node.items;
 
+            bck_node(items[0]);
 
-    //
+            // BORROWCK ////////////////////////////////////////////////////////////
+            let loop_start0                     = _current_fn.loop_start;
+            let loop_start                      = GET_next_local_index(); // TODO FIX patched up in bck_let but doesn't work
+            let events0                         = _current_fn.events.used_in_a_loop;
 
-    fn bck_loop(node: SolvedNode)
-    {
-        let items = node.items;
+            _current_fn.loop_start              = loop_start;
+            defer _current_fn.loop_start        = loop_start0;
+            ////////////////////////////////////////////////////////////////////////
 
-        bck_node(items[0]);
+            for (mut i = 1; i < items.len; i++)
+                bck_node(items[i]);
 
-        // BORROWCK ////////////////////////////////////////////////////////////
-        let loop_start0                     = _current_fn.loop_start;
-        let loop_start                      = GET_next_local_index(); // TODO FIX patched up in bck_let but doesn't work
-        let events0                         = _current_fn.events.used_in_a_loop;
-
-        _current_fn.loop_start              = loop_start;
-        defer _current_fn.loop_start        = loop_start0;
-        ////////////////////////////////////////////////////////////////////////
-
-        for (mut i = 1; i < items.len; i++)
-            bck_node(items[i]);
-
-        // BORROWCK ////////////////////////////////////////////////////////////
-        _current_fn.events.used_in_a_loop   = events0;
-        ////////////////////////////////////////////////////////////////////////
-    }
-
-    fn bck_if(node: SolvedNode)
-    {
-        let items = node.items;
-
-        // Cond.
-        bck_node(items[0]);
-
-        // Cons //////////////////////////////////////////////
-        let e_Restore_AfterCond     = _current_fn.events.snap;
-        //////////////////////////////////////////////////////
-
-        bck_node(items[1]);
-
-        // Alt ///////////////////////////////////////////////
-        let e_Merge_AfterCons       = _current_fn.events.snap;
-        _current_fn.events.snap     = e_Restore_AfterCond;
-        //////////////////////////////////////////////////////
-
-        bck_node(items[2]);
-
-        // Done //////////////////////////////////////////////
-        _current_fn.events   .Events_merge(e_Merge_AfterCons);
-        //////////////////////////////////////////////////////
-    }
-
-    fn bck_block(node: SolvedNode)
-    {
-        mut defers: SolvedNode[];
-
-        // Regular items forward.
-        let items = node.items;
-        for (mut i = 0; i < items.len; i++)
-        {
-            shadow let node = items[i];
-            if (node.kind == "defer")
-                defers ~= node.items.only;
-            else
-                bck_node(node);
+            // BORROWCK ////////////////////////////////////////////////////////////
+            _current_fn.events.used_in_a_loop   = events0;
+            ////////////////////////////////////////////////////////////////////////
         }
 
-        // Defers in reverse.
-        for (mut i = defers.len; i --> 0; )
-            bck_node(defers[i]);
-    }
+        fn bck_if(node: SolvedNode)
+        {
+            let items = node.items;
 
+            // Cond.
+            bck_node(items[0]);
 
-    // Borrow check router.
+            // Cons //////////////////////////////////////////////
+            let e_Restore_AfterCond     = _current_fn.events.snap;
+            //////////////////////////////////////////////////////
 
-    fn bck_nodes(items: SolvedNode[])
-        for (mut i = 0; i < items.len; i++)
-            bck_node(items[i]);
+            bck_node(items[1]);
 
-    fn bck_node(node: SolvedNode)
-    {
-        let k = node.kind;
+            // Alt ///////////////////////////////////////////////
+            let e_Merge_AfterCons       = _current_fn.events.snap;
+            _current_fn.events.snap     = e_Restore_AfterCond;
+            //////////////////////////////////////////////////////
 
-        ////////////////////////////////////////////
-        mut rwr: RWRanges;
-        rwr.reads0 = _current_fn.events.reads.len;
-        rwr.writes0 = _current_fn.events.writes.len;
-        ////////////////////////////////////////////
+            bck_node(items[2]);
 
-        if (k == "call")
-        {
-            // This is the only place where reads & writes actually happen.
-            bck_call(node);
-        }
-        else if (k == "loop")
-        {
-            // The extra stuff we need to check backward jumps.
-            bck_loop(node);
-        }
-        else if (k == "letdef")
-        {
-            // INDIRECTION !!!!
-            bck_node(node.target.solved);
-        }
-        else if (k == "let")
-        {
-            // Variable initialization.
-            bck_let(node);
-        }
-        else if (k == "if")
-        {
-            // Isolate cons from alt and combine effects on exit.
-            bck_if(node);
-        }
-        else if (k == "block")
-        {
-            // TODO If broken-from, hide effects and append to jumped-to.
-            bck_block(node);
-        }
-        else if (k == "root"
-              || k == "and"  || k == "or"
-              || k == "jump"
-              || k == "try"
-
-              || k == "copy" || k == "move" // TODO shouldn't occur before bck
-              || k == "arrlit")             // TODO get rid of arrlits
-        {
-            // The default - descend recursively.
-            bck_nodes(node.items);
-        }
-        else if (node.items)
-        {
-            fail("TODO: bck_node(non-empty " ~ k ~ ").");
+            // Done //////////////////////////////////////////////
+            _current_fn.events   .Events_merge(e_Merge_AfterCons);
+            //////////////////////////////////////////////////////
         }
 
-        ////////////////////////////////////////////
-        rwr.reads1 = _current_fn.events.reads.len;
-        rwr.writes1 = _current_fn.events.writes.len;
-        if (rwr.reads1 > rwr.reads0 || rwr.writes1 > rwr.writes0)
-            node.MUT.rwr = rwr;
-        ////////////////////////////////////////////
+        fn bck_block(node: SolvedNode)
+        {
+            mut defers: SolvedNode[];
+
+            // Regular items forward.
+            let items = node.items;
+            for (mut i = 0; i < items.len; i++)
+            {
+                shadow let node = items[i];
+                if (node.kind == "defer")
+                    defers ~= node.items.only;
+                else
+                    bck_node(node);
+            }
+
+            // Defers in reverse.
+            for (mut i = defers.len; i --> 0; )
+                bck_node(defers[i]);
+        }
+
+
+        // Borrow check router.
+
+        fn bck_nodes(items: SolvedNode[])
+            for (mut i = 0; i < items.len; i++)
+                bck_node(items[i]);
+
+        fn bck_node(node: SolvedNode)
+        {
+            let k = node.kind;
+
+            ////////////////////////////////////////////
+            mut rwr: RWRanges;
+            rwr.reads0 = _current_fn.events.reads.len;
+            rwr.writes0 = _current_fn.events.writes.len;
+            ////////////////////////////////////////////
+
+            if (k == "call")
+            {
+                // This is the only place where reads & writes actually happen.
+                bck_call(node);
+            }
+            else if (k == "loop")
+            {
+                // The extra stuff we need to check backward jumps.
+                bck_loop(node);
+            }
+            else if (k == "letdef")
+            {
+                // INDIRECTION !!!!
+                bck_node(node.target.solved);
+            }
+            else if (k == "let")
+            {
+                // Variable initialization.
+                bck_let(node);
+            }
+            else if (k == "if")
+            {
+                // Isolate cons from alt and combine effects on exit.
+                bck_if(node);
+            }
+            else if (k == "block")
+            {
+                // TODO If broken-from, hide effects and append to jumped-to.
+                bck_block(node);
+            }
+            else if (k == "root"
+                  || k == "and"  || k == "or"
+                  || k == "jump"
+                  || k == "try"
+
+                  || k == "copy" || k == "move" // TODO shouldn't occur before bck
+                  || k == "arrlit")             // TODO get rid of arrlits
+            {
+                // The default - descend recursively.
+                bck_nodes(node.items);
+            }
+            else if (node.items)
+            {
+                fail("TODO: bck_node(non-empty " ~ k ~ ").");
+            }
+
+            ////////////////////////////////////////////
+            rwr.reads1 = _current_fn.events.reads.len;
+            rwr.writes1 = _current_fn.events.writes.len;
+            if (rwr.reads1 > rwr.reads0 || rwr.writes1 > rwr.writes0)
+                node.MUT.rwr = rwr;
+            ////////////////////////////////////////////
+        }
+
+        bck_node(root);
     }
 
 
@@ -7213,7 +7222,7 @@ pub fn solve(
         if (SELF_TEST) test_node(node, "PASS.0.relax ");
         ///////////////////////////////
 
-        bck_node(node);
+        PASS_borrowCheck(node);
 
         ///////////////////////////////
         if (SELF_TEST) test_node(node, "PASS.1 ");
