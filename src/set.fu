@@ -5,10 +5,10 @@ fn bfind(keys, item: $T, hit, miss)
     mut N = keys.len;
     for (mut i = 0; i < N; i++)
     {
-        let k = keys[i];
-        if (k >= item)  // TODO use <=> instead
-        {               // TODO use <!> instead
-            if (k == item)
+        let cmp = keys[i] <> item;
+        if (cmp >= 0)
+        {
+            if (cmp == 0)
                 return hit(i);
 
             N = i;
@@ -180,8 +180,9 @@ pub fn add(ref a: $T[], b: [$T])
         let X = a[x];
         let Y = b[y];
 
-        if (X >= Y) {
-            if (X != Y) {
+        let cmp = X <> Y;
+        if (cmp >= 0) {
+            if (cmp != 0) {
                 a.insert(x, Y); // TODO FIX
                 y++;
             }
@@ -205,8 +206,9 @@ pub fn add(ref a: $T[], b: $T[], ref extras: $U[], extra: $U)
         let X = a[x];
         let Y = b[y];
 
-        if (X >= Y) {
-            if (X != Y) {
+        let cmp = X <> Y;
+        if (cmp >= 0) {
+            if (cmp != 0) {
                 a.insert(x, Y); // TODO FIX
                 extras.insert(x, extra);
                 y++;
@@ -236,11 +238,12 @@ pub fn keep(ref a: $T[], b: $T[])
         let X = a[x];
         let Y = b[y];
 
-        if (X == Y) {
+        let cmp = X <> Y;
+        if (cmp == 0) {
             x++;
             y++;
         }
-        else if (X > Y) {
+        else if (cmp > 0) {
             y++;
         }
         else {
@@ -262,11 +265,12 @@ pub fn rem(ref a: $T[], b: $T[])
         let X = a[x];
         let Y = b[y];
 
-        if (X == Y) {
+        let cmp = X <> Y;
+        if (cmp == 0) {
             a.splice(x, 1); // TODO FIX
             y++;
         }
-        else if (X > Y) {
+        else if (cmp > 0) {
             y++;
         }
         else {
