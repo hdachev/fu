@@ -33,20 +33,15 @@ fn Map(lax k: $K, lax v: $V) struct
 };
 
 fn has(using _, key)
-    set::bfind(keys, key) >= 0;
+    set::has(keys, key);
 
 fn set(using ref _, key, value)
     set::update(
         || keys, key,
         || vals, value);
 
-fn get(using _, key) {
-    let idx = set::bfind(keys, key);
-    if (idx >= 0)
-        return vals[idx];
-
-    return [];
-}
+fn get(using _, key)
+    set::get(keys, key, vals);
 
 fn each(using _, fn)
     for (mut i = 0; i < vals.len; i++)

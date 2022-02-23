@@ -1,149 +1,138 @@
 
-pub fn bfind(keys: $T[], item: $T)
+fn bfind(keys, item: $T, hit, miss)
 {
     // TODO bsearch instead
-    for (mut i = 0; i < keys.len; i++) {
-        if (keys[i] >= item) {
-            if (keys[i] != item)
-                return -1;
+    mut N = keys.len;
+    for (mut i = 0; i < N; i++)
+    {
+        let k = keys[i];
+        if (k >= item)  // TODO use <=> instead
+        {               // TODO use <!> instead
+            if (k == item)
+                return hit(i);
 
-            return i;
+            N = i;
+            break;
         }
     }
 
-    return -1;
+    return miss(N);
 }
 
 pub fn has(keys: $T[], item: $T)
 {
-    // TODO bsearch instead
-    for (mut i = 0; i < keys.len; i++)
-        if (keys[i] >= item)
-            return keys[i] == item;
+    bfind(:keys, :item,
 
-    return false;
+    hit: |_| {
+        return true;
+    },
+
+    miss: |_| {
+        return false;
+    });
 }
 
-pub fn add(ref dest: $T[], item: $T)
+pub fn add(ref keys: $T[], item: $T)
 {
-    // TODO bsearch instead
-    for (mut i = 0; i < dest.len; i++) {
-        if (dest[i] >= item) {
-            if (dest[i] != item) {
-                dest.insert(i, item);
-                return true;
-            }
+    bfind(:keys, :item,
 
-            return false;
-        }
-    }
+    hit: |_| {
+        return false;
+    },
 
-    dest.push(item);
-    return true;
+    miss: |i| {
+        keys.insert(i, item);
+        return true;
+    });
 }
 
-pub fn add_once(ref dest: $T[], item: $T, ref extras: $U[], extra: $U)
+// pub fn add_once(ref keys: $T[], item: $T, ref extras: $U[], inline extra: $U)
+// {
+//     bfind(:keys, :item,
+//
+//     hit: |_| {
+//         return false;
+//     },
+//
+//     miss: |i| {
+//         keys.insert(i, item);
+//         extras.insert(i, extra);
+//         return true;
+//     });
+// }
+
+pub fn update(keys, item: $T, extras, extra: $U)
 {
-    // TODO bsearch instead
-    for (mut i = 0; i < dest.len; i++) {
-        if (dest[i] >= item) {
-            if (dest[i] != item) {
-                dest.insert(i, item);
-                extras.insert(i, extra);
-                return true;
-            }
+    bfind(fn keys, :item,
 
-            return false;
-        }
-    }
+    hit: |i| {
+        extras[i] = extra;
+        return false;
+    },
 
-    dest.push(item);
-    extras.push(extra);
-    return true;
+    miss: |i| {
+        keys.insert(i, item);
+        extras.insert(i, extra);
+        return true;
+    });
 }
 
-pub fn update(dest, item: $T, extras, extra: $U)
+pub fn ref(keys, item: $T, extras)
 {
-    // TODO bsearch instead
-    for (mut i = 0; i < dest.len; i++) {
-        if (dest[i] >= item) {
-            if (dest[i] != item) {
-                dest.insert(i, item);
-                extras.insert(i, extra);
-                return;
-            }
+    let idx = bfind(fn keys, :item,
 
-            extras[i] = extra;
-            return;
-        }
-    }
+    hit: |i| {
+        break i;
+    },
 
-    dest.push(item);
-    extras.push(extra);
+    miss: |i| {
+        keys.insert(i, item);
+        extras.insert(i, []);
+        break i;
+    });
+
+    return extras[idx];
 }
 
-pub fn ref(dest, item: $T, extras)
+pub fn if_ref(keys, item: $T, extras, visit)
 {
-    // TODO bsearch instead
-    for (mut i = 0; i < dest.len; i++) {
-        if (dest[i] >= item) {
-            if (dest[i] != item) {
-                dest.insert(i, item);
-                extras.insert(i, []);
-            }
+    bfind(fn keys, :item,
 
-            return extras[i];
-        }
-    }
+    hit: |i| {
+        visit(extras[i]);
+        return true;
+    },
 
-    dest.push(item);
-    extras.push([]);
-    return extras[extras.len - 1];
+    miss: |_| {
+        return false;
+    });
 }
 
-pub fn if_ref(dest, item: $T, extras, visit)
+pub fn get(keys: $T[], item: $T, extras: $U[])
 {
-    // TODO bsearch instead
-    for (mut i = 0; i < dest.len; i++) {
-        if (dest[i] >= item) {
-            if (dest[i] == item)
-                visit(extras[i]);
+    bfind(:keys, :item,
 
-            return;
-        }
-    }
+    hit: |i| {
+        return extras[i];
+    },
+
+    miss: |_| {
+        return [];
+    });
 }
 
-pub fn get(dest: $T[], item: $T, extras: $U[])
+pub fn rem(ref keys: $T[], item: $T)
 {
-    // TODO bsearch instead
-    for (mut i = 0; i < dest.len; i++) {
-        if (dest[i] >= item) {
-            if (dest[i] != item)
-                return [];
+    bfind(:keys, :item,
 
-            return extras[i];
-        }
-    }
+    hit: |i| {
+        keys.splice(i, 1);
+        return true;
+    },
 
-    return [];
-}
-
-pub fn rem(ref dest: $T[], item: $T)
-{
-    // TODO bsearch instead
-    for (mut i = 0; i < dest.len; i++) {
-        if (dest[i] >= item) {
-            if (dest[i] == item) {
-                dest.splice(i, 1);
-                return true;
-            }
-
-            return false;
-        }
-    }
-
-    return false;
+    miss: |_| {
+        return false;
+    });
 }
 
 
