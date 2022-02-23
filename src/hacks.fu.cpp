@@ -11,7 +11,7 @@ struct s_ClosureID;
 struct s_NativeOpts;
 struct s_Target;
 
-int parse10i32_g2vqWUwe(int&, fu::view<char>);
+unsigned parse10u32_t6R8uPsY(int&, fu::view<char>);
 
                                 #ifndef DEF_s_Target
                                 #define DEF_s_Target
@@ -71,43 +71,43 @@ inline fu_STR x7E(fu::view<char> a, fu::view<char> b)
 }
                                 #endif
 
-fu_STR serialize_RzDpXp73(const s_ClosureID& _)
+fu_STR serialize_ibraIJtk(const s_ClosureID& _)
 {
     return ((_.target.modid < 0) ? x7E((x7E((x7E("`"_fu, fu::i64dec(_.target.index)) + "-"_fu), fu::i64dec(-_.target.modid)) + "-"_fu), fu::i64dec(_.revision)) : fu::fail("Not a local."_fu));
 }
 
-s_ClosureID tryParseClosureID_3jVozxZ2(fu::view<char> id)
+s_ClosureID tryParseClosureID_RHyKU5hm(fu::view<char> id)
 {
-    if (id[0] == '`')
+    if ((id.size() > 5) && (id[0] == '`'))
     {
         int offset = 1;
         fu_DEFER(if (!(offset == id.size()))
             fu::fail("Bad ClosureID: trailing stuff."_fu););
-        const int index = parse10i32_g2vqWUwe(offset, id);
+        const int index = int(parse10u32_t6R8uPsY(offset, id));
         if (!(id[offset++] == '-'))
             fu::fail("Bad ClosureID: no modid-dash."_fu);
 
-        const int modid = -parse10i32_g2vqWUwe(offset, id);
+        const int modid = -int(parse10u32_t6R8uPsY(offset, id));
         if (!(id[offset++] == '-'))
             fu::fail("Bad ClosureID: no rev-dash."_fu);
 
-        const int revision = parse10i32_g2vqWUwe(offset, id);
+        const int revision = int(parse10u32_t6R8uPsY(offset, id));
         return s_ClosureID { s_Target { int(modid), int(index) }, int(revision) };
     };
     return s_ClosureID{};
 }
 
-                                #ifndef DEFt_starts_OZkl8S7R
-                                #define DEFt_starts_OZkl8S7R
-inline bool starts_OZkl8S7R(fu::view<char> a, fu::view<char> with)
+                                #ifndef DEFt_starts_KclJlPSO
+                                #define DEFt_starts_KclJlPSO
+inline bool starts_KclJlPSO(fu::view<char> a, fu::view<char> with)
 {
     return (a.size() >= with.size()) && (fu::get_view(a, 0, with.size()) == with);
 }
                                 #endif
 
-s_NativeOpts NativeOpts_3jVozxZ2(fu::view<char> name)
+s_NativeOpts NativeOpts_RHyKU5hm(fu::view<char> name)
 {
-    if (starts_OZkl8S7R(name, "\nno_AAR"_fu))
+    if (starts_KclJlPSO(name, "\nno_AAR"_fu))
         return s_NativeOpts { 7, true };
 
     return s_NativeOpts{};

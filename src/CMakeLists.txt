@@ -40,7 +40,6 @@ set(FU_INPUTS
     flow.fu
     effects.fu
     solver.fu
-    addroffn.fu
     codegen.fu
     prelude.fu
     compiler.fu

@@ -18,65 +18,65 @@ inline fu_STR x7E(fu::view<char> a, fu::view<char> b)
 }
                                 #endif
 
-fu_STR ansi_54Zb0YfD(const int a)
+fu_STR ansi_hY4cvvzq(const int a)
 {
     return x7E(ESC, fu::i64dec(a)) + 'm';
 }
 
-fu_STR ansi_OrKGJuy2(const int a, const int b)
+fu_STR ansi_07w8vJVm(const int a, const int b)
 {
     return x7E((x7E(ESC, fu::i64dec(a)) + ';'), fu::i64dec(b)) + 'm';
 }
 
-fu_STR ansi_OLuXMuEN(const int a, const int b, const int c)
+fu_STR ansi_TaYLiavq(const int a, const int b, const int c)
 {
     return x7E((x7E((x7E(ESC, fu::i64dec(a)) + ';'), fu::i64dec(b)) + ';'), fu::i64dec(c)) + 'm';
 }
 
                                 #ifndef DEF_RESET
                                 #define DEF_RESET
-extern const fu_STR RESET fu_INIT_PRIORITY(1001) = ansi_54Zb0YfD(0);
+extern const fu_STR RESET fu_INIT_PRIORITY(1001) = ansi_hY4cvvzq(0);
                                 #endif
 
                                 #ifndef DEF_DIM
                                 #define DEF_DIM
-extern const fu_STR DIM fu_INIT_PRIORITY(1001) = ansi_54Zb0YfD(2);
+extern const fu_STR DIM fu_INIT_PRIORITY(1001) = ansi_hY4cvvzq(2);
                                 #endif
 
                                 #ifndef DEF_BAD
                                 #define DEF_BAD
-extern const fu_STR BAD fu_INIT_PRIORITY(1001) = ansi_OrKGJuy2(31, 1);
+extern const fu_STR BAD fu_INIT_PRIORITY(1001) = ansi_07w8vJVm(31, 1);
                                 #endif
 
-static const fu_STR cID fu_INIT_PRIORITY(1001) = ansi_OrKGJuy2(34, 1);
+static const fu_STR cID fu_INIT_PRIORITY(1001) = ansi_07w8vJVm(34, 1);
 
-static const fu_STR cKW fu_INIT_PRIORITY(1001) = ansi_OrKGJuy2(35, 1);
+static const fu_STR cKW fu_INIT_PRIORITY(1001) = ansi_07w8vJVm(35, 1);
 
-static const fu_STR cLT fu_INIT_PRIORITY(1001) = ansi_OrKGJuy2(32, 1);
+static const fu_STR cLT fu_INIT_PRIORITY(1001) = ansi_07w8vJVm(32, 1);
 
-fu_STR qBAD_PSFLzFOM(const fu_STR& id)
+fu_STR qBAD_HIwg52Ja(const fu_STR& id)
 {
     return (BAD + (id ? fu_STR(id) : "``"_fu)) + RESET;
 }
 
-fu_STR qID_PSFLzFOM(const fu_STR& id)
+fu_STR qID_HIwg52Ja(const fu_STR& id)
 {
     return (cID + (id ? fu_STR(id) : "``"_fu)) + RESET;
 }
 
-fu_STR qKW_PSFLzFOM(const fu_STR& id)
+fu_STR qKW_HIwg52Ja(const fu_STR& id)
 {
     return (cKW + (id ? fu_STR(id) : "``"_fu)) + RESET;
 }
 
-fu_STR qLT_PSFLzFOM(const fu_STR& id)
+fu_STR qLT_HIwg52Ja(const fu_STR& id)
 {
     return (cLT + (id ? fu_STR(id) : "``"_fu)) + RESET;
 }
 
-fu_STR qCODE_PSFLzFOM(const fu_STR& id)
+fu_STR qCODE_HIwg52Ja(const fu_STR& id)
 {
-    return qID_PSFLzFOM(id);
+    return qID_HIwg52Ja(id);
 }
 
 #endif

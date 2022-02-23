@@ -25,7 +25,7 @@ struct s_TEA
 
 #ifndef FU_NO_FDEFs
 
-s_TEA hash_cuWm6Zey(/*MOV*/ s_TEA&& res, fu::view<char> u8view)
+s_TEA hash_4OYu43HZ(/*MOV*/ s_TEA&& res, fu::view<char> u8view)
 {
     const int u32len = (u8view.size() & ~3);
     fu::view<unsigned> u32view = fu::view_of(fu::get_view(u8view, 0, u32len), unsigned{});
@@ -75,22 +75,22 @@ s_TEA hash_cuWm6Zey(/*MOV*/ s_TEA&& res, fu::view<char> u8view)
     return s_TEA(res);
 }
 
-s_TEA hash_BE4Wuzmo(fu::view<char> u8view)
+s_TEA hash_vRQP3xwv(fu::view<char> u8view)
 {
     /*MOV*/ s_TEA res {};
-    res = hash_cuWm6Zey(s_TEA(res), u8view);
+    res = hash_4OYu43HZ(s_TEA(res), u8view);
     return /*NRVO*/ res;
 }
 
-fu_STR hash62_ID6Pdhz7(fu::view<char> str, const int chars)
+fu_STR hash62_HxcQaXaI(fu::view<char> str, const int chars)
 {
     /*MOV*/ fu_STR res {};
-    uint64_t _0 {};
+    uint64_t BL_1_v {};
     uint64_t v = (__extension__ (
     {
-        const s_TEA tea = hash_BE4Wuzmo(str);
-        _0 = ((uint64_t(tea.v0) | (uint64_t(tea.v1) << 32ull)));
-    (void)0;}), uint64_t(_0));
+        const s_TEA tea = hash_vRQP3xwv(str);
+        BL_1_v = ((uint64_t(tea.v0) | (uint64_t(tea.v1) << 32ull)));
+    (void)0;}), uint64_t(BL_1_v));
     for (int i = 0; i < chars; i++)
     {
         const uint64_t c = (v % 62ull);
@@ -106,15 +106,15 @@ fu_STR hash62_ID6Pdhz7(fu::view<char> str, const int chars)
     return /*NRVO*/ res;
 }
 
-fu_STR hash16_ID6Pdhz7(fu::view<char> str, const int chars)
+fu_STR hash16_HxcQaXaI(fu::view<char> str, const int chars)
 {
     /*MOV*/ fu_STR res {};
-    uint64_t _0 {};
+    uint64_t BL_1_v {};
     uint64_t v = (__extension__ (
     {
-        const s_TEA tea = hash_BE4Wuzmo(str);
-        _0 = ((uint64_t(tea.v0) | (uint64_t(tea.v1) << 32ull)));
-    (void)0;}), uint64_t(_0));
+        const s_TEA tea = hash_vRQP3xwv(str);
+        BL_1_v = ((uint64_t(tea.v0) | (uint64_t(tea.v1) << 32ull)));
+    (void)0;}), uint64_t(BL_1_v));
     for (int i = 0; i < chars; i++)
     {
         const uint64_t c = (v % 16ull);

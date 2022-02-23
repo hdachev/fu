@@ -1,5 +1,6 @@
 
 #include <fu/default.h>
+#include <fu/defer.h>
 #include <fu/int.h>
 #include <fu/str.h>
 #include <fu/vec.h>
@@ -11,9 +12,27 @@
 #include <fu/vec/view_assign.h>
 #include <fu/view.h>
 
+struct s_Mi;
+
+                                #ifndef DEF_s_Mi
+                                #define DEF_s_Mi
+struct s_Mi
+{
+    int modid;
+    int index;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || modid
+            || index
+        ;
+    }
+};
+                                #endif
+
 #ifndef FU_NO_FDEFs
 
-bool hasIdentifierChars_rOVPWlZS(fu::view<char> id)
+bool hasIdentifierChars_85KQkyE0(fu::view<char> id)
 {
     for (int i = 0; i < id.size(); i++)
     {
@@ -25,7 +44,7 @@ bool hasIdentifierChars_rOVPWlZS(fu::view<char> id)
     return false;
 }
 
-fu_STR path_ext_rOVPWlZS(const fu_STR& path)
+fu_STR path_ext_85KQkyE0(const fu_STR& path)
 {
     for (int i = path.size(); i-- > 0; )
     {
@@ -40,7 +59,7 @@ fu_STR path_ext_rOVPWlZS(const fu_STR& path)
     return fu_STR{};
 }
 
-fu_STR path_noext_rOVPWlZS(const fu_STR& path)
+fu_STR path_noext_85KQkyE0(const fu_STR& path)
 {
     for (int i = path.size(); i-- > 0; )
     {
@@ -55,7 +74,7 @@ fu_STR path_noext_rOVPWlZS(const fu_STR& path)
     return fu_STR{};
 }
 
-fu_STR path_dirname_rOVPWlZS(const fu_STR& path)
+fu_STR path_dirname_85KQkyE0(const fu_STR& path)
 {
     for (int i = (path.size() - 1); i-- > 0; )
     {
@@ -66,7 +85,7 @@ fu_STR path_dirname_rOVPWlZS(const fu_STR& path)
     return "/"_fu;
 }
 
-fu_STR path_filename_rOVPWlZS(const fu_STR& path)
+fu_STR path_filename_85KQkyE0(const fu_STR& path)
 {
     for (int i = path.size(); i-- > 0; )
     {
@@ -77,9 +96,9 @@ fu_STR path_filename_rOVPWlZS(const fu_STR& path)
     return fu_STR(path);
 }
 
-                                #ifndef DEFt_split_DrcGWxO1
-                                #define DEFt_split_DrcGWxO1
-inline void split_DrcGWxO1(const fu_STR& str, fu::view<char> sep, int, fu_VEC<fu_STR>& result)
+                                #ifndef DEFt_split_5otB8BKh
+                                #define DEFt_split_5otB8BKh
+inline void split_5otB8BKh(const fu_STR& str, fu::view<char> sep, fu_VEC<fu_STR>& result)
 {
     int last = 0;
     int next = 0;
@@ -107,19 +126,19 @@ inline void split_DrcGWxO1(const fu_STR& str, fu::view<char> sep, int, fu_VEC<fu
 }
                                 #endif
 
-                                #ifndef DEFt_split_OZkl8S7R
-                                #define DEFt_split_OZkl8S7R
-inline fu_VEC<fu_STR> split_OZkl8S7R(const fu_STR& str, fu::view<char> sep)
+                                #ifndef DEFt_split_KclJlPSO
+                                #define DEFt_split_KclJlPSO
+inline fu_VEC<fu_STR> split_KclJlPSO(const fu_STR& str, fu::view<char> sep)
 {
     /*MOV*/ fu_VEC<fu_STR> result {};
-    split_DrcGWxO1(str, sep, 0, result);
+    split_5otB8BKh(str, sep, result);
     return /*NRVO*/ result;
 }
                                 #endif
 
-                                #ifndef DEFt_join_9sek5qv2
-                                #define DEFt_join_9sek5qv2
-inline fu_STR join_9sek5qv2(fu::view<fu_STR> a, fu::view<char> sep)
+                                #ifndef DEFt_join_hXY7eLHr
+                                #define DEFt_join_hXY7eLHr
+inline fu_STR join_hXY7eLHr(fu::view<fu_STR> a, fu::view<char> sep)
 {
     if (a.size() < 2)
         return fu_STR((a.size() ? a[0] : (*(const fu_STR*)fu::NIL)));
@@ -145,9 +164,9 @@ inline fu_STR join_9sek5qv2(fu::view<fu_STR> a, fu::view<char> sep)
 }
                                 #endif
 
-fu_STR path_normalize_rOVPWlZS(const fu_STR& p)
+fu_STR path_normalize_85KQkyE0(const fu_STR& p)
 {
-    fu_VEC<fu_STR> path = split_OZkl8S7R(p, "/"_fu);
+    fu_VEC<fu_STR> path = split_KclJlPSO(p, "/"_fu);
     for (int i = path.size(); i-- > 0; )
     {
         const fu_STR& part = path[i];
@@ -161,10 +180,10 @@ fu_STR path_normalize_rOVPWlZS(const fu_STR& p)
             path.splice(--i_1, 2);
 
     };
-    return join_9sek5qv2(path, "/"_fu);
+    return join_hXY7eLHr(path, "/"_fu);
 }
 
-fu_STR path_relative_iwa818V1(fu::view<char> from, const fu_STR& to)
+fu_STR path_relative_7wphlfxd(fu::view<char> from, const fu_STR& to)
 {
     const int min = ((from.size() < to.size()) ? from.size() : to.size());
     int same = 0;
@@ -190,12 +209,12 @@ fu_STR path_relative_iwa818V1(fu::view<char> from, const fu_STR& to)
     return /*NRVO*/ res;
 }
 
-fu_STR path_join_iwa818V1(fu::view<char> a, const fu_STR& b)
+fu_STR path_join_7wphlfxd(fu::view<char> a, const fu_STR& b)
 {
-    return ((b && (b[0] == '/')) ? path_normalize_rOVPWlZS(b) : path_normalize_rOVPWlZS(((a + '/') + b)));
+    return ((b && (b[0] == '/')) ? path_normalize_85KQkyE0(b) : path_normalize_85KQkyE0(((a + '/') + b)));
 }
 
-fu_STR ascii_lower_rOVPWlZS(const fu_STR& a)
+fu_STR ascii_lower_85KQkyE0(const fu_STR& a)
 {
     const int offset = (int(fu::u8('a')) - int(fu::u8('A')));
     /*MOV*/ fu_STR res { a };
@@ -209,14 +228,14 @@ fu_STR ascii_lower_rOVPWlZS(const fu_STR& a)
     return /*NRVO*/ res;
 }
 
-char ascii_upper_DzYgSkPo(const char c)
+char ascii_upper_8UxcpLHF(const char c)
 {
     return (((c >= 'a') && (c <= 'z')) ? char((int(fu::u8(c)) + (int(fu::u8('A')) - int(fu::u8('a'))))) : char(c));
 }
 
-int parse10i32_g2vqWUwe(int& offset, fu::view<char> str)
+unsigned parse10u32_t6R8uPsY(int& offset, fu::view<char> str)
 {
-    /*MOV*/ int result {};
+    /*MOV*/ unsigned result {};
     while (offset < str.size())
     {
         const char c = str[offset];
@@ -224,9 +243,119 @@ int parse10i32_g2vqWUwe(int& offset, fu::view<char> str)
             break;
 
         offset++;
-        result = ((result * 10) + (int(fu::u8(c)) - int(fu::u8('0'))));
+        result = ((result * 10u) + (unsigned(fu::u8(c)) - unsigned(fu::u8('0'))));
     };
     return /*NRVO*/ result;
+}
+
+int parse10s32_t6R8uPsY(int& offset, fu::view<char> str)
+{
+    if ((offset >= str.size()))
+        return 0;
+
+    const int mul = ((str[offset] == '-') ? ((void)offset++, -1) : +1);
+    return int(parse10u32_t6R8uPsY(offset, str)) * mul;
+}
+
+s_Mi parseMi_t6R8uPsY(int& offset, fu::view<char> str)
+{
+    if ((offset >= str.size()))
+        return s_Mi{};
+
+    int modid = 0;
+    int index = 0;
+    char c = str[offset++];
+
+    { {
+        if ((c >= 'G') && (c <= 'V'))
+        {
+            fu_DEFER(modid *= -1);
+            modid = (int(fu::u8(c)) - int(fu::u8('G')));
+            int shift = 4;
+            for (; ; )
+            {
+                if (offset == str.size())
+                    goto BL_2;
+
+                c = str[offset++];
+                if ((c < 'G') || (c > 'V'))
+                    break;
+
+                modid |= ((int(fu::u8(c)) - int(fu::u8('G'))) << shift);
+                shift += 4;
+            };
+        }
+        else if ((c >= 'g') && (c <= 'v'))
+        {
+            modid = (int(fu::u8(c)) - int(fu::u8('g')));
+            int shift = 4;
+            for (; ; )
+            {
+                if (offset == str.size())
+                    goto BL_2;
+
+                c = str[offset++];
+                if ((c < 'g') || (c > 'v'))
+                    break;
+
+                modid |= ((int(fu::u8(c)) - int(fu::u8('g'))) << shift);
+                shift += 4;
+            };
+        };
+        if (((c >= '0') && (c <= '9')) || ((c >= 'a') && (c <= 'f')))
+        {
+            index = ((c >= 'a') ? ((int(fu::u8(c)) - int(fu::u8('a'))) + 10) : (int(fu::u8(c)) - int(fu::u8('0'))));
+            int shift = 4;
+            for (; ; )
+            {
+                if (offset == str.size())
+                    goto BL_2;
+
+                c = str[offset++];
+                if ((c >= '0') && (c <= '9'))
+                    index |= ((int(fu::u8(c)) - int(fu::u8('0'))) << shift);
+                else if ((c >= 'a') && (c <= 'f'))
+                    index |= (((int(fu::u8(c)) - int(fu::u8('a'))) + 10) << shift);
+                else
+                    break;
+
+                shift += 4;
+            };
+        };
+        offset--;
+      } BL_2:;
+    };
+    return s_Mi { int(modid), int(index) };
+}
+
+void appendMi_RIPPDRFZ(fu_STR& str, int modid, int index)
+{
+    if (modid < 0)
+    {
+        modid *= -1;
+        do
+        {
+            str += char(((modid & 15) + int(fu::u8('G'))));
+            modid >>= 4;
+        }
+        while (modid);
+    }
+    else
+    {
+        do
+        {
+            str += char(((modid & 15) + int(fu::u8('g'))));
+            modid >>= 4;
+        }
+        while (modid);
+    };
+    do
+    {
+        const int c = (index & 15);
+        index >>= 4;
+        str += ((c >= 10) ? char(((c - 10) + int(fu::u8('a')))) : char((c + int(fu::u8('0')))));
+    }
+    while (index);
 }
 
 #endif

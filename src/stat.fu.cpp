@@ -67,24 +67,29 @@ inline fu_STR x7E(fu::view<char> a, fu::view<char> b)
 }
                                 #endif
 
-void ModuleStat_print_2JzWOtmi(const s_ModuleStat& a, const fu_STR& prefix, fu::view<char> suffix)
+void ModuleStat_print_WPxitUbE(const s_ModuleStat& a, const fu_STR& prefix, fu::view<char> suffix)
 {
-    fu_STR _0 {};
-    fu_STR _1 {};
-    fu_STR _2 {};
-    fu::println((fu::slate<4, fu_STR> { fu_STR(prefix), (__extension__ (
+    // Hoisted:
+    fu_STR x;
+    fu_STR x_1;
+    fu_STR x_2;
+
+    const fu_STR* BL_1_v;
+    const fu_STR* BL_2_v;
+    const fu_STR* BL_3_v;
+    fu::println((fu::slate<4, fu_STR> { fu_STR(((void)void(), prefix)), fu_STR((__extension__ (
     {
-        /*MOV*/ /*RRET*/ fu_STR x = fu::f64dec(a.time);
-        _0 = (x);
-    (void)0;}), static_cast<fu_STR&&>(_0)), (__extension__ (
+        x = fu::f64dec(a.time);
+        BL_1_v = &(x);
+    (void)0;}), *BL_1_v)), fu_STR((__extension__ (
     {
-        /*MOV*/ /*RRET*/ fu_STR x = " s\t"_fu;
-        _1 = (x);
-    (void)0;}), static_cast<fu_STR&&>(_1)), (__extension__ (
+        x_1 = " s\t"_fu;
+        BL_2_v = &(x_1);
+    (void)0;}), *BL_2_v)), fu_STR((__extension__ (
     {
-        /*MOV*/ /*RRET*/ fu_STR x = (a.alloc_count ? ((x7E(x7E(fu::i64dec(a.alloc_count), " allocs\t"_fu), fu::i64dec(a.alloc_bytes)) + " bytes"_fu) + suffix) : fu_STR{});
-        _2 = (x);
-    (void)0;}), static_cast<fu_STR&&>(_2)) }));
+        x_2 = (a.alloc_count ? ((x7E(x7E(fu::i64dec(a.alloc_count), " allocs\t"_fu), fu::i64dec(a.alloc_bytes)) + " bytes"_fu) + suffix) : fu_STR{});
+        BL_3_v = &(x_2);
+    (void)0;}), *BL_3_v)) }));
 }
 
 #endif

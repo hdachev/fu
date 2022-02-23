@@ -12,13 +12,11 @@ struct s_ValueType;
 struct s_ValueType
 {
     int quals;
-    int modid;
     fu_STR canon;
     explicit operator bool() const noexcept
     {
         return false
             || quals
-            || modid
             || canon
         ;
     }
@@ -71,31 +69,31 @@ struct s_Type
 
 #ifndef FU_NO_FDEFs
 
-bool is_primitive_dtjgvDEj(const s_Type& t)
+bool is_primitive_KyrTVXnz(const s_Type& t)
 {
     const char c = t.vtype.canon[0];
     return (c == 'u') || (c == 'i') || (c == 'f') || (c == 'b');
 }
 
-bool is_arithmetic_dtjgvDEj(const s_Type& t)
+bool is_arithmetic_KyrTVXnz(const s_Type& t)
 {
     const char c = t.vtype.canon[0];
     return (c == 'u') || (c == 'i') || (c == 'f');
 }
 
-bool is_integral_dtjgvDEj(const s_Type& t)
+bool is_integral_KyrTVXnz(const s_Type& t)
 {
     const char c = t.vtype.canon[0];
     return (c == 'u') || (c == 'i');
 }
 
-bool is_unsigned_dtjgvDEj(const s_Type& t)
+bool is_unsigned_KyrTVXnz(const s_Type& t)
 {
     const char c = t.vtype.canon[0];
     return c == 'u';
 }
 
-bool is_floating_pt_dtjgvDEj(const s_Type& t)
+bool is_floating_pt_KyrTVXnz(const s_Type& t)
 {
     const char c = t.vtype.canon[0];
     return c == 'f';

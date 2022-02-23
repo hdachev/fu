@@ -1,29 +1,63 @@
 
-#include <fu/decstr.h>
+#include <fu/never.h>
+#include <fu/print.h>
 #include <fu/str.h>
 #include <fu/vec.h>
 #include <fu/vec/concat.h>
 #include <fu/view.h>
 
 struct s_Lifetime;
+struct s_Mi;
 struct s_Region;
+struct s_StructCanon;
 struct s_Type;
 struct s_ValueType;
 
-int parse10i32_g2vqWUwe(int&, fu::view<char>);
+s_Mi parseMi_t6R8uPsY(int&, fu::view<char>);
+void appendMi_RIPPDRFZ(fu_STR&, int, int);
+
+                                #ifndef DEF_s_StructCanon
+                                #define DEF_s_StructCanon
+struct s_StructCanon
+{
+    int modid;
+    int index;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || modid
+            || index
+        ;
+    }
+};
+                                #endif
+
+                                #ifndef DEF_s_Mi
+                                #define DEF_s_Mi
+struct s_Mi
+{
+    int modid;
+    int index;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || modid
+            || index
+        ;
+    }
+};
+                                #endif
 
                                 #ifndef DEF_s_ValueType
                                 #define DEF_s_ValueType
 struct s_ValueType
 {
     int quals;
-    int modid;
     fu_STR canon;
     explicit operator bool() const noexcept
     {
         return false
             || quals
-            || modid
             || canon
         ;
     }
@@ -76,36 +110,62 @@ struct s_Type
 
 #ifndef FU_NO_FDEFs
 
-                                #ifndef DEFt_x7E
-                                #define DEFt_x7E
-inline fu_STR x7E(fu::view<char> a, fu::view<char> b)
+s_StructCanon parseStructCanon_1WZjPEgG(fu::view<char> canon)
 {
-    return a + b;
-}
-                                #endif
+    if (!(canon[0] == '/'))
+        fu::fail((("parseStructCanon: no `/` in "_fu + canon) + "`."_fu));
 
-fu_STR createStructCanon_bjRZEcOr(const int index, fu::view<char>)
+    int offset = 1;
+    const s_Mi mi = parseMi_t6R8uPsY(offset, canon);
+    if (!(offset == canon.size()))
+        fu::fail((("parseStructCanon: trailing garbage in `"_fu + canon) + "`."_fu));
+
+    return s_StructCanon { int(mi.modid), int(mi.index) };
+}
+
+fu_STR createStructCanon_b7S4k2GX(const int modid, const int index, fu::view<char>)
 {
-    return x7E("$"_fu, fu::i64dec(index));
+    // Hoisted:
+    fu_STR x;
+
+    /*MOV*/ fu_STR res = "/"_fu;
+    appendMi_RIPPDRFZ(res, int(modid), int(index));
+    const s_StructCanon check = parseStructCanon_1WZjPEgG(res);
+    if (!((check.modid == modid) && (check.index == index)))
+    {
+        const fu_STR* BL_2_v;
+        fu::println((fu::slate<1, fu_STR> { fu_STR((__extension__ (
+        {
+            x = "NOPE!!!!!"_fu;
+            BL_2_v = &(x);
+        (void)0;}), *BL_2_v)) }));
+        parseStructCanon_1WZjPEgG(res);
+        fu::fail("Nope!"_fu);
+    };
+    return /*NRVO*/ res;
 }
 
-                                #ifndef DEFt_starts_05euw4KZ
-                                #define DEFt_starts_05euw4KZ
-inline bool starts_05euw4KZ(fu::view<char> a, const char with)
+                                #ifndef DEFt_starts_3yRdKyg4
+                                #define DEFt_starts_3yRdKyg4
+inline bool starts_3yRdKyg4(fu::view<char> a, const char with)
 {
     return a.size() && (a[0] == with);
 }
                                 #endif
 
-bool isStruct_C02JG8Ye(const s_Type& type)
+bool isStruct_5BOF5uJ9(const s_Type& type)
 {
-    return starts_05euw4KZ(type.vtype.canon, '$');
+    return starts_3yRdKyg4(type.vtype.canon, '/');
 }
 
-int structIndex_j5f0QjYP(fu::view<char> canon)
+int modidOfOrigin_5BOF5uJ9(const s_Type& type)
 {
-    int offset = 1;
-    return ((canon[0] == '$') ? parse10i32_g2vqWUwe(offset, canon) : -1);
+    if (type.vtype.canon[0] == '/')
+    {
+        /*MOV*/ const s_StructCanon scp = parseStructCanon_1WZjPEgG(type.vtype.canon);
+        return int(scp.modid);
+    };
+    return 0;
 }
 
 #endif
