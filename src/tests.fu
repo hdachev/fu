@@ -8634,6 +8634,15 @@ pub fn runTests()
                 + _0::hello(2) - 2 * each(20000);
     `]);
 
+    ZERO(`
+        fn a        = "aaa";
+        fn shorter  = "bb";
+        fn greater  = "aac";
+
+        return a <> shorter == +1
+            && a <> greater == -1 ? 0 : 101;
+    `);
+
 
     // Function types sketch.
 

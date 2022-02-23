@@ -451,6 +451,30 @@ fn replace(str: $T[], all: [$T], with: [$T])
 }
 
 
+//
+
+fn <>(a: $T, b: $T)
+case ($T.is::primitive) = a < b ? -1 : a > b ? +1 : 0;
+case ($T -> [$U]) {
+    mut cmp = a.len <> b.len;
+    for (mut i = 0; i < a.len && !cmp; i++)
+        cmp = a[i] <> b[i];
+
+    return cmp;
+}
+default {
+    // TODO this would be better if it went through each member doing the trivial work first -
+    //  only then going through them again and looking at e.g. array contents etc.
+    for (fieldname i: a) {
+        let cmp = a.i <> b.i;
+        if (cmp)
+            return cmp;
+    }
+
+    return 0;
+}
+
+
 `;
 
 

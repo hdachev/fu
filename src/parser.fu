@@ -108,7 +108,7 @@ fn setupOperators()
     binop([ "~" ]); // concat operator - same prec as in lua, as weak as possible
     binop([ "<=>" ]);
     binop([ "in", "is", "as", "->" ]); // see c# as, is and js in, instanceof
-    binop([ "<", "<=", ">", ">=" ]);
+    binop([ "<", "<=", ">", ">=", "<=>", "<>" ]);
     binop([ "==", "!=" ]);
     binop([ "&&" ]);
     binop([ "||" ]);

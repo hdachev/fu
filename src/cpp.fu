@@ -70,3 +70,8 @@ pub fn hasPostfix(op: string)
     return op == "postfix++"
         || op == "postfix--";
 }
+
+pub fn hasOperator(op: string)
+{
+    return hasBinary(op) || hasUnary(op);
+}

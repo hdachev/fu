@@ -3456,7 +3456,7 @@ pub fn solve(
                         //
                         // Something has to give somewhere.
                         //
-                        && !(n_fn.flags & F_OPERATOR))
+                        && !(n_fn.flags & F_OPERATOR && cpp::hasOperator(name)))
                     {
                         // "namespacing" via the signature hashes.
                         let sourceModid             = template.node.token.modid;
