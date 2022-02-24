@@ -57,8 +57,6 @@ pub fn cpp_codegen(implicit module: Module, implicit ctx: Context): CodegenOutpu
     mut _ffwd: BitSet2D;
     mut _ffwd_src: string[];
 
-    mut _moveFromConstRefHelpers: BitSet2D;
-
     mut _idef: bitset::BitSet;
     mut _tdef: string;
     mut _fdef: string;
@@ -845,9 +843,6 @@ pub fn cpp_codegen(implicit module: Module, implicit ctx: Context): CodegenOutpu
         if !(_ffwd.add_once(target))
             return;
 
-        ///////////////////////////////////////////
-        let implicit _current_nodes = target.nodes;
-        let implicit _current_fnort = target;
         ///////////////////////////////////////////
         mut current_fn0 = cg_CurrentFn(target: target);
         defer swap(_current_fn, current_fn0);

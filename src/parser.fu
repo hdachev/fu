@@ -1079,7 +1079,7 @@ pub fn parse(
         if (tryConsume("id", "ref"     ))   flags |= F_REF;
 
         mut id = consume("id").value;
-        if (id[0] == '_')
+        if (id == "_")
             flags |= F_LAX;
 
         // Explicit external arg name.
