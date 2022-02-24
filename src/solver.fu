@@ -6552,6 +6552,10 @@ pub fn solve(
                                 if (host_arg.risk_free.has(i))
                                     return;
 
+                                // ......
+                                // ......
+                                // ......
+
                                 // ARGUMENTS AT RISK ////////////////////////
                                 // ARGUMENTS AT RISK AT DEPTH ///////////////
                                 let unwound1 = bck_unwound[i];
@@ -6667,7 +6671,7 @@ pub fn solve(
                             }
 
                             // Else we only care about mutrefs here.
-                            else if (bck_unwound) {
+                            else {
                                 for (mut i = mutref_first; i <= mutref_last; i++)
                                     if (host_args[i].is_mutref)
                                         validate(i);
