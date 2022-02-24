@@ -4268,7 +4268,7 @@ pub fn runTests()
         struct S { i: i32; };
 
         fn hello(ref s: S, w: i32) {
-            infix fn |=(ref s: S, v: i32)
+            infix fn |=(<fail ambig><pass/>shadow </fail>ref s: S, v: i32)
                 s.i |= v << w;
 
             s |= 2;
