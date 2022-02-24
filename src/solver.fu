@@ -714,12 +714,10 @@ pub fn solve(
         if (!OPTI_autoshadow)
             return false;
 
-        _scope.items.each(_ss.items, |item, index|
-        {
-            let root = index <= _root_scope.items_len;
-            if (!root && item.id == id)
-                return false;
-        });
+        _scope.items.each(_ss.items): |item, index|
+            if (index >= _root_scope.items_len)
+                if (item.id == id)
+                    return false;
 
         return true;
     }

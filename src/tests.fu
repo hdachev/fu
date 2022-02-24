@@ -46,11 +46,12 @@ pub fn runTests()
     //  but what you want to work on -
 
     /*
-    let SOLO = fn ZERO;
+    let SOLO            = fn ZERO;
 
     fn SOLO_muteRest (lax a) {}
-    let ZERO = fn SOLO_muteRest;
-    let TODO = fn SOLO_muteRest;
+    let ZERO            = fn SOLO_muteRest;
+    let TODO            = fn SOLO_muteRest;
+    let ZERO_SAME       = fn SOLO_muteRest;
 
     defer:ok throw("\n\n\tDONT COMMIT:\n\n\tSOLO mode is on.\n");
     // */
@@ -7516,8 +7517,6 @@ pub fn runTests()
         pub struct Overload     { kind: string; locals?: Overload[]; };
 
         fn main() {
-            let implicit mut overloads: Overload[];
-
             using fn GET(target: Target, implicit overloads: Overload[]) {
                 target.index > 0 || assert();
                 if (target.modid < 0)
@@ -7529,6 +7528,7 @@ pub fn runTests()
             fn try_GET(target: Target)
                 target && GET(target);
 
+            let implicit mut overloads: Overload[];
             overloads ~= Overload("What");
             return try_GET(Target(0, 1)).kind.len - 4;
         }
