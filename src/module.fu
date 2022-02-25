@@ -265,8 +265,30 @@ pub struct Argument
     flags?:         i32;
     local?:         i32;
 
-    // subset_at_risk: bitset::BitSet;
-    risk_free?:     bitset::BitSet;
+    // Arguments at risk -
+    //  This is the borrow checker's global component.
+    //
+    // Soft vs hard risk:
+    //
+    //  - soft risk means it's ok if args alias,
+    //     unless writes to the other argument
+    //      invalidate this argument's binding.
+    //
+    soft_risk?:     bitset::BitSet;
+    //
+    //  - hard risk means it's never ok for these args to alias,
+    //     which means we're relying on a derived expr from this arg
+    //      after writing to the other argument.
+    //
+    //  - hard risk is symmetric,
+    //     no point in flagging it on both args.
+    //
+    //  - the old risk-free stuff would only flag the item on the higher arg,
+    //     but i'm starting to think that we should only set the flags on the
+    //      arguments that get written to and invalidate the others,
+    //       this means that we only need to flag the mutrefs.
+    //
+    hard_risk?:     bitset::BitSet;
 };
 
 pub struct Overload

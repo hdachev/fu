@@ -216,33 +216,20 @@ fn ArgsAtRisk_shake(ref flow: Flow, mut high: i32, mut low: i32)
     }
 }
 
-pub fn ArgsAtRisk_listRiskFree(flow: Flow, position: i32)
+pub fn ArgsAtRisk_list(
+    ref hard_risk: bitset::BitSet,
+        flow: Flow, position: i32)
 {
-    mut risk_free: bitset::BitSet;
+    let target          = flow.arg_targets.unless_oob(position);
+    let at_risk_from    = flow.args_at_risk.unless_oob(target);
 
-    if (position)
+    for (mut i = 0; i < at_risk_from.len; i++)
     {
-        // Each bitset as small as possible -
-        //  lesser args listed in greater args bitsets -
-        //   so even if we have 200 args, most of the bitsets will be smallvecs.
-        risk_free.add_range(end: position);
-
-        let target          = flow.arg_targets.unless_oob(position);
-        let at_risk_from    = flow.args_at_risk.unless_oob(target);
-
-        for (mut i = 0; i < at_risk_from.len; i++)
-        {
-            let other           = at_risk_from[i];
-            if (other > target)
-                break;
-
-            let other_position  = flow.arg_positions.unless_oob(other) - 1;
-            if (other_position >= 0)
-                risk_free.rem(other_position);
-        }
+        let other           = at_risk_from[i];
+        let other_position  = flow.arg_positions.unless_oob(other) - 1;
+        if (other_position >= 0)
+            hard_risk.add(other_position);
     }
-
-    return risk_free;
 }
 
 

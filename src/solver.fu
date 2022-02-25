@@ -3330,13 +3330,23 @@ pub fn solve(
                     let isImplicit  = !!(argNode.flags & F_IMPLICIT);
 
                     // ARGUMENTS AT RISK ////////////////////////
-                    let risk_free   = (!isNative || NativeOpts.no_AAR)
-                        && !isUnspec
-                        && out.flow.ArgsAtRisk_listRiskFree(i);
 
                     let argTarget   = argNode.target;
-                    let written_via = argNode.type.is_mutref
+                    let written_via = !isUnspec
+                        && argNode.type.is_mutref
                         && (isNative || out.events.args_ever_written.has(argTarget.index));
+
+                    mut hard_risk: bitset::BitSet;
+                    if (written_via)
+                    {
+                        if (isNative && !NativeOpts.no_AAR) {
+                            hard_risk.add_range(end: N);
+                            hard_risk.rem(i);
+                        }
+                        else {
+                            hard_risk.ArgsAtRisk_list(out.flow, position: i);
+                        }
+                    }
                     /////////////////////////////////////////////
 
                     // Validate `pure` asserts.
@@ -3355,7 +3365,11 @@ pub fn solve(
                         :argNode.type,
                         default: !isImplicit && argNode.items[LET_INIT],
                         local: argTarget.index,
-                        :risk_free);
+
+                        // TODO: currently mocking up the stuff -
+                        //  everything's hard_risk.
+                        //
+                        :hard_risk);
 
                     arg.type || isUnspec || BUG("updateScope: Unexpected untyped argument: `" ~ name ~ "`.");
                     args.push(arg);
@@ -6615,8 +6629,10 @@ pub fn solve(
                             //
                             fn validate(i: i32)
                             {
+                                let other = host_args[i];
+
                                 // Can the fn handle aliasing here?
-                                if (host_arg.risk_free.has(i))
+                                if (!host_arg.hard_risk.has(i) && !other.hard_risk.has(i0))
                                     return;
 
                                 // ......
@@ -6656,9 +6672,6 @@ pub fn solve(
                                 let inter = Lifetime_inter(unwound, unwound1);
                                 if !(inter)
                                     return;
-
-                                // TODO here we can verify subsets at risk + subsets written.
-                                let other = host_args[i];
 
                                 // Try to resolve by injecting a copy -
                                 {
