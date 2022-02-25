@@ -211,7 +211,7 @@ pub fn ArgsAtRisk_listRiskFree(flow: Flow, position: i32)
         // Each bitset as small as possible -
         //  lesser args listed in greater args bitsets -
         //   so even if we have 200 args, most of the bitsets will be smallvecs.
-        risk_free.add_range(0, position);
+        risk_free.add_range(end: position);
 
         let target          = flow.arg_targets.unless_oob(position);
         let at_risk_from    = flow.args_at_risk.unless_oob(target);

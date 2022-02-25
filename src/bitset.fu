@@ -78,11 +78,25 @@ pub fn rem(using _: &mut BitSet, idx: i32)
     }
 }
 
-pub fn add_range(using _: &mut BitSet, start: i32, end: i32)
+pub fn add_range(using _: &mut BitSet, end!: i32)
 {
-    // TODO FIX !!!!!!!!!!!!!!!!!!!!!
-    for (mut i = start; i < end; i++)
-        add(i);
+    let floorBytes  =  end      >> 3;
+    let ceilBytes   = (end + 7) >> 3;
+
+    _data.grow(ceilBytes);
+    for (mut i = 0; i < floorBytes; i++)
+        _data[i] = 0xff;
+
+    if (ceilBytes > floorBytes)
+    {
+        mut tail: u8;
+
+        mut i = floorBytes << 3;
+        do  tail |= 1 << (i & 7).u8;
+        while (i++ < end);
+
+        _data[floorBytes] = tail;
+    }
 }
 
 pub fn popcount(using _: BitSet)
