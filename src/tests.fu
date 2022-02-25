@@ -75,6 +75,8 @@ pub fn runTests()
 
     let SKETCH          = fn TODO;
 
+    let TODO_NICE_ERROR = fn TODO;
+
 
     //
 
@@ -1652,6 +1654,14 @@ pub fn runTests()
         }
     `);
 
+    TODO_NICE_ERROR(`
+        struct Arg { name: string };
+        fn main() {
+            let arg = Arg(<fail argument name id>id<pass/>name</fail>: "hey");
+            return arg.name.len - 3;
+        }
+    `);
+
 
     // Truth tests.
 
@@ -2203,9 +2213,9 @@ pub fn runTests()
         fn test(ref a: nci32, b: nci32) a.i++ || b.i;
         fn main() {
             mut x = nci32(0);
-            <fail alias>
-            ref y = x;          <pass/>
-            let y = nci32(0);   </fail>
+            <fail arguments b and a both alias var x>
+            ref y = x;                        <pass/>
+            let y = nci32(0);                 </fail>
 
             return test(x, y);
         }
