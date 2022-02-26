@@ -8,13 +8,14 @@ pub struct Flow
     parents:        i32[][];
     invalidates:    i32[][];        // Non-disjoint siblings and children.
 
-    // Arguments at risk analysis.
+    // Arguments at risk.
+    arg_parents:    i32[][];        // is_arg targets each target refers to.
+    args_at_risk:   i32[][];        // ARG USES at risk from previous ARG WRITES.
+
+    // AAR: helpers.
     is_arg:         bitset::BitSet; // acceleration structure.
     arg_targets:    i32[];          // argument targets at each position.
     arg_positions:  i32[];          // arguments (position + 1) at each target.
-
-    arg_aliases:    i32[][];        // is_arg targets each target refers to.
-    args_at_risk:   i32[][];        // ARG USES at risk from previous ARG WRITES.
 };
 
 pub fn Reference_trackArgument(ref flow: Flow, target: i32, position: i32)
@@ -83,7 +84,7 @@ pub fn Reference_trackLocalRef(ref flow: Flow, left: i32, right: Lifetime)
         if (flow.is_arg.has(right))
         {
             flow.is_arg.add(left);
-            flow.arg_aliases.grow_if_oob(left).set::add(right);
+            flow.arg_parents.grow_if_oob(left).set::add(right);
         }
     }
 
@@ -170,7 +171,7 @@ fn ArgsAtRisk_shake(ref flow: Flow, mut high: i32, mut low: i32)
         flow.args_at_risk.grow_if_oob(high).set::add(low); //
         { ////////////////////////////////////////////////////////
             {
-                mut highs = flow.arg_aliases.unless_oob(high); /*bck fix*/
+                mut highs = flow.arg_parents.unless_oob(high); /*bck fix*/
                 if (highs)
                 {
                     let last = highs.len - 1;
@@ -184,7 +185,7 @@ fn ArgsAtRisk_shake(ref flow: Flow, mut high: i32, mut low: i32)
             }
 
             {
-                mut lows = flow.arg_aliases.unless_oob(low); /*bck fix*/
+                mut lows = flow.arg_parents.unless_oob(low); /*bck fix*/
                 if (lows)
                 {
                     let last = lows.len - 1;
@@ -236,12 +237,12 @@ pub fn ArgsAtRisk_listRiskFree(flow: Flow, position: i32)
 
 pub fn ArgsWritten_shake(flow: Flow, ref args: bitset::BitSet)
 {
-    for (mut i = min(args.size, flow.arg_aliases.len); i --> 0; )
+    for (mut i = min(args.size, flow.arg_parents.len); i --> 0; )
     {
         if !(args.has(i))
             continue;
 
-        let aliases = flow.arg_aliases[i];
+        let aliases = flow.arg_parents[i];
         for (shadow mut i = 0; i < aliases.len; i++)
             args.add(aliases[i]);
     }
