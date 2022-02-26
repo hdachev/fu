@@ -133,6 +133,12 @@ pub struct Target
     index:      i32;
 }
 
+pub struct Local
+{
+    // modid: -this.fn, this is a fn-local.
+    index:      i32;
+}
+
 pub struct SolvedNode
 {
     signedidx!: i32;

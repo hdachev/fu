@@ -411,6 +411,15 @@ pub fn solve(
         return Target(modid: -_current_fn.target.index || module.modid, :index);
     }
 
+    // TODO failcase: uncommenting this leads to conversion resolution issues,
+    //  i can't narrow it down and gotta work on smth else right now,
+    //   so TODO bisect this here and minimize a test.
+    //
+    // using fn nested(local: Local)
+    // {
+    //     return nested(local.index);
+    // }
+
     fn isNested(target: Target)
     {
         return target.modid == -_current_fn.target.index;
