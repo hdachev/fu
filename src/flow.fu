@@ -7,6 +7,7 @@ pub struct Flow
     // Any ref.
     parents:        i32[][];
     invalidates:    i32[][];        // Non-disjoint siblings and children.
+    invalidators:   i32[][];        // Same thing in reverse.
 
     // Arguments at risk.
     arg_parents:    i32[][];        // is_arg targets each target refers to.
@@ -60,24 +61,33 @@ pub fn Reference_trackLocalRef(ref flow: Flow, left: i32, right: Lifetime)
 
         // For each lifetime on the right of the assignment,
         //  the invals are the stuff it kills on write.
-        mut invals = flow.invalidates.unless_oob(right);
+        mut siblings = flow.invalidates.unless_oob(right);
 
         // LEFT can show up in the inval lists
         //  after we process the first lifetime.
-        !invals.set::rem(left) || i > 0 || assert();
+        !siblings.set::rem(left) || i > 0 || assert();
 
         // So, if:
         //  LEFT = &RIGHT;
-        if (invals)
+        if (siblings)
         {
-            // Grand parents and siblings:
+            // Siblings rule:
             //  LEFT invalidates everything RIGHT invalidates.
-            flow.invalidates.grow_if_oob(left).set::add(invals);
-
+            //
             // Same thing backward:
             //  Everything that RIGHT invalidates potentially invalidates LEFT.
-            for (shadow mut i = 0; i < invals.len; i++)
-                flow.invalidates[invals[i]].set::add(left);
+            //
+            flow.invalidates .grow_if_oob(left).set::add(siblings);
+            flow.invalidators.grow_if_oob(left).set::add(siblings);
+
+            for (shadow mut i = 0; i < siblings.len; i++)
+            {
+                shadow let sibling = siblings[i];
+
+                // TODO failcase without the grow_if_oobs, suite doesn't catch it
+                flow.invalidates .grow_if_oob(sibling).set::add(left);
+                flow.invalidators.grow_if_oob(sibling).set::add(left);
+            }
         }
 
         // Propagate alised arguments.
@@ -95,6 +105,9 @@ pub fn Reference_trackLocalRef(ref flow: Flow, left: i32, right: Lifetime)
         for (mut i = 0; i < parents.len; i++)
             flow.invalidates.grow_if_oob(parents[i]).set::add(left);
 
+        flow.invalidators.grow_if_oob(left).set::add(parents);
+
+        // This is the same as the parents set.
         flow.parents.grow_if_oob(left) = parents;
     }
 }
