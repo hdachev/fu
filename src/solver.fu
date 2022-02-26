@@ -1673,18 +1673,17 @@ pub fn solve(
                                 {
                                     if (path[i] == t)
                                     {
-                                        mut err = "Conversion loop:";
+                                        mut err = "Conversion loop:\n";
 
                                         for (shadow mut i = i; i < path.len; i++)
                                         {
-                                            if (!i) err ~= "\n\t`";
-                                            else    err ~= " `";
+                                            err ~= "\n\t    ";
 
                                             shadow let convert = GET(path[i]);
-                                            err ~= convert.qWHAT ~ ": " ~ humanizeType(convertType) ~ "` ->";
+                                            err ~= convert.qWHAT ~ ": " ~ humanizeType(convertType) ~ " ->";
                                         }
 
-                                        err ~= "\n\t\t`" ~ convert.qWHAT ~ "`.";
+                                        err ~= "\n\t        " ~ convert.qWHAT;
                                         fail(err);
                                     }
                                 }
