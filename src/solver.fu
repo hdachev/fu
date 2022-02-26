@@ -102,18 +102,19 @@ pub fn solve(
 
     struct EventsSnap
     {
-        // TODO Consider opti -
-        //  we could replace these with bitsets,
-        //   and keep this as details only, not restored/merged.
-        //
+        // Writes invalidate subsequent reads -
         invalidated_by:     WriteID[];
+
+        // Pure fn tracking, and mutref passthrough -
         args_written:       i32[];
     };
 
     struct Events
     {
         using snap:         EventsSnap;
-        used_in_a_loop:     ReadID[];
+
+        // In a loop, reads forbid subsequent writes -
+        cant_invalidate:    ReadID[];
 
         // The arguments at risk aparata.
         args_in_a_loop:     i32[];
@@ -138,8 +139,8 @@ pub fn solve(
                 dest[i] ||= src[i];
         }
 
-        events.invalidated_by .Events_merge(snap.invalidated_by);
-        events.args_written   .Events_merge(snap.args_written);
+        for (fieldname i: snap)
+            events.i.Events_merge(snap.i);
     }
 
     struct CurrentFn
@@ -6216,6 +6217,9 @@ pub fn solve(
         using fn RWEvent(write: WriteID)
             _current_fn.events.writes[write.id - 1];
 
+        using fn RWEvent(read: ReadID)
+            _current_fn.events.reads[read.id - 1];
+
         fn RWEvent_stack(write: WriteID)
         {
             let node = SLOW_findByWriteID(write);
@@ -6300,7 +6304,12 @@ pub fn solve(
                 {
                     // Track uses.
                     if (target < loop_start)
-                        events.used_in_a_loop.grow_if_oob(target) ||= readID;
+                    {
+                        let invalidators = flow.invalidators.unless_oob(target);
+
+                        for (shadow mut i = 0; i < invalidators.len; i++)
+                            events.cant_invalidate.grow_if_oob(invalidators[i]) ||= readID;
+                    }
 
                     // ARGUMENTS AT RISK ////////////////////////
                     if (flow.is_arg.has(target))
@@ -6335,20 +6344,17 @@ pub fn solve(
 
                 // println("bck_trackWrite " ~ target ~ " " ~ callsite.value);
 
-                let invalidates = flow.invalidates.unless_oob(target);
-
                 // Writes in a loop invalidate preceding reads.
-                for (shadow mut i = 0; i < invalidates.len; i++)
+                if (events.cant_invalidate.len > target)
                 {
-                    let other = invalidates[i];
-                    let readID = events.used_in_a_loop.unless_oob(other);
-                    if (readID)
+                    let u = events.cant_invalidate[target];
+                    if (u)
                     {
-                        if !(BORROWCK_resolveByMutvar(other) || options.dev & options::DEV_DisableBCK)
+                        if !(BORROWCK_resolveByMutvar(u.rw_target) || options.dev & options::DEV_DisableBCK)
                             fail("Write to " ~ target.bck_name.qBAD
                                 ~ " at call to " ~ callsite.target.qWHAT
-                                ~ " invalidates the use of " ~ other.bck_name.qBAD ~ " at "
-                                ~ SLOW_findByReadID(readID).token.addr_and_snippet
+                                ~ " invalidates the use of " ~ u.rw_target.bck_name.qBAD ~ " at "
+                                ~ SLOW_findByReadID(u).token.addr_and_snippet
                                 ~ "\n\t... on next loop iteration.\n\n\tWritten"
                                 ~ qSTACK(callsite.target, :position)); // TODO loop starts at x:x!
                     }
@@ -6359,6 +6365,8 @@ pub fn solve(
                 let writeID = WriteID(events.writes.len);
 
                 // Track writes, easy.
+                let invalidates = flow.invalidates.unless_oob(target);
+
                 for (shadow mut i = 0; i < invalidates.len; i++)
                     events.invalidated_by.grow_if_oob(invalidates[i]) ||= writeID;
 
@@ -6903,7 +6911,7 @@ pub fn solve(
             // BORROWCK ////////////////////////////////////////////////////////////
             let loop_start0                     = _current_fn.loop_start;
             let loop_start                      = GET_next_local_index(); // TODO FIX patched up in bck_let but doesn't work
-            let events0                         = _current_fn.events.used_in_a_loop;
+            let events0                         = _current_fn.events.cant_invalidate;
 
             _current_fn.loop_start              = loop_start;
             defer _current_fn.loop_start        = loop_start0;
@@ -6913,7 +6921,7 @@ pub fn solve(
                 bck_node(items[i]);
 
             // BORROWCK ////////////////////////////////////////////////////////////
-            _current_fn.events.used_in_a_loop   = events0;
+            _current_fn.events.cant_invalidate  = events0;
             ////////////////////////////////////////////////////////////////////////
         }
 
