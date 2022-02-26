@@ -2269,6 +2269,33 @@ pub fn runTests()
     `);
 
     ZERO(`
+        fn test(ref a: i32[]) {
+            ref b = a[0];
+            for (mut i = 2; i --> 0; )
+            {
+                if (i & 1) {
+                    b += 2; // Same thing but reordered as a loop.
+                }
+                else {
+                    <fail inval next iter 11:23 7:21>
+                    a ~= 1; // Invalidates 'b', same as a above, but now in an if/else -
+                    <pass/> //  got the used-in-a-loop stuff wrong when switching to cant_invalidate.
+                    b += 3;
+                    </fail>
+                }
+            }
+            a ~= 100; // Invalidates 'b' but that's fine!
+        }
+
+        fn main() {
+            mut arr = [ 1 ]; test(arr);
+            mut sum = 0;
+            for (mut i = 0; i < arr.len; i++) sum += arr[i];
+            return sum - 106;
+        }
+    `);
+
+    ZERO(`
         // both args alias, but there's no risk of inval.
         fn incr_a_or_b(ref a: i32, ref b: i32)
             (a || b)++;
