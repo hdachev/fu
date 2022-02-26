@@ -1266,9 +1266,9 @@ pub fn solve(
                                         ~ " as seen from " ~ callsite.fnName);
                             }
 
-                            fail("Ambiguous callsite, matches multiple items in scope: "
-                                ~ explainWhichFn(PREV, conversions_out) ~ " from " ~ inner.fnName ~ " and "
-                                ~ explainWhichFn(NEXT, conversions    ) ~ " from " ~ outer.fnName ~ ", as seen from " ~ callsite.fnName ~ ".");
+                            fail("Ambiguous callsite, matches multiple items in scope:"
+                                ~ "\n\n\t" ~ explainWhichFn(PREV, conversions_out) ~ " from " ~ inner.fnName ~ " and "
+                                ~ "\n\n\t" ~ explainWhichFn(NEXT, conversions    ) ~ " from " ~ outer.fnName ~ ", as seen from " ~ callsite.fnName ~ ".");
                         }
                     }
 
@@ -1546,18 +1546,18 @@ pub fn solve(
 
     fn explainConversion(shadow path: [Target])
     {
-        mut res = "`";
+        mut res = "";
         for (mut i = 0; i < path.len; i++)
         {
-            if (i) res ~= "` -> `";
+            if (i) res ~= " -> ";
 
             let o = GET(path[i]);
             res ~= o.qWHAT;
 
-            if (i < path.len) res ~= ": " ~ humanizeType(o.type);
+            if (i < path.len - 1)
+                res ~= ": " ~ humanizeType(o.type);
         }
 
-        res ~= "`";
         return res;
     }
 
@@ -1767,7 +1767,7 @@ pub fn solve(
 
     fn explainWhichFn(overload: Target, conversions?: Target[][])
     {
-        mut result = "`" ~ overload.name;
+        mut result = overload.qWHAT;
 
         if (overload.args)
         {
@@ -1779,7 +1779,7 @@ pub fn solve(
                 if (i)
                     result ~= ",";
 
-                result ~= "\n\t"
+                result ~= "\n\t    "
                         ~  arg.name.human.qID
                         ~ (arg.flags & F_MUSTNAME ? "!" : "")
                         ~ (arg.default ? "?: " : ": ")
@@ -1787,13 +1787,12 @@ pub fn solve(
 
                 let c = conversions.len > i && conversions[i];
                 if (c)
-                    result ~= " via " ~ explainConversion(c);
+                    result ~= "\n\t        via " ~ explainConversion(c);
             }
 
             result ~= ")";
         }
 
-        result ~= "`";
         return result;
     }
 
