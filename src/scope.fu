@@ -28,11 +28,6 @@ pub let HM_KeepBlock    = 1.i16 << 7;
 
 //
 
-pub struct Helpers
-{
-    index:          i32;
-};
-
 pub struct HelpersData
 {
     target!?:       Target;

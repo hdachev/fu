@@ -72,10 +72,13 @@ pub fn cpp_codegen(implicit module: Module, implicit ctx: Context): CodegenOutpu
     struct cg_Block
     {
         name: string;
-        helpers: i32;
+        helpers: Helpers;
         has_val: bool;
         ptrflip: bool;
     };
+
+    infix fn ==(a: Helpers, b: Helpers)
+        a.index == b.index;
 
     struct cg_CurrentFn // TODO FIX postfix/prefix non-pub symbols?
     {                   //  Or prefix structs with module name?
@@ -87,9 +90,9 @@ pub fn cpp_codegen(implicit module: Module, implicit ctx: Context): CodegenOutpu
         blocks?:        cg_Block[];
         num_labels?:    i32;
 
-        can_return?:    i32;
-        can_break?:     i32;
-        can_cont?:      i32;
+        can_return?:    Helpers;
+        can_break?:     Helpers;
+        can_cont?:      Helpers;
 
         _ids_used?:     string[];
         _ids_dedupe?:   i32[];
@@ -650,7 +653,7 @@ pub fn cpp_codegen(implicit module: Module, implicit ctx: Context): CodegenOutpu
 
     fn cgBlock(
         nodes: SolvedNode[], skipCurlies!: bool, gnuStmtExpr!: bool,
-        helpers!: i32, type: Type): string
+        helpers!: Helpers, type: Type): string
     {
         ///////////////////////////////////////////////
         let _ids_used0 = _current_fn._ids_used.len;
@@ -1285,7 +1288,7 @@ pub fn cpp_codegen(implicit module: Module, implicit ctx: Context): CodegenOutpu
                     return block;
             }
 
-            fail("No such block in scope: " ~ helpers);
+            fail("No such block in scope: " ~ helpers.index);
         }
 
         let block       = !use_return && findBlock();
@@ -1470,7 +1473,7 @@ pub fn cpp_codegen(implicit module: Module, implicit ctx: Context): CodegenOutpu
 
         //
 
-        let MUSTSEQ_mask    = node.helpers;
+        let MUSTSEQ_mask    = node.helpers.index;
         mut ooe_crosscheck  = 0;
         mut ooe_header      = "";
 
@@ -1537,9 +1540,9 @@ pub fn cpp_codegen(implicit module: Module, implicit ctx: Context): CodegenOutpu
             item_src ~= src;
         }
 
-        ooe_crosscheck == node.helpers || fail(
+        ooe_crosscheck == MUSTSEQ_mask || fail(
             "OOE crosscheck failed: codegen sequenced " ~ ooe_crosscheck
-                                ~ ", but solver wants " ~ node.helpers ~ ": "
+                                ~ ", but solver wants " ~ MUSTSEQ_mask ~ ": "
                                 ~ args.map(|i| i.kind).join("|"));
 
         fn ooeWrap(src: string)
@@ -2181,8 +2184,8 @@ pub fn cpp_codegen(implicit module: Module, implicit ctx: Context): CodegenOutpu
             _current_fn.can_break = can_break0;
         }
 
-        _current_fn.can_cont = 0;
-        _current_fn.can_break = 0;
+        _current_fn.can_cont = [];
+        _current_fn.can_break = [];
 
         //
         let items = node.items;

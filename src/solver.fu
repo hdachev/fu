@@ -484,7 +484,7 @@ pub fn solve(
         value?:     string,
         items?:     SolvedNode[],
         target?:    Target,
-        helpers?:   i32)
+        helpers?:   Helpers)
     {
         let data    = SolvedNodeData(
             :kind, :flags, :value,
@@ -2094,7 +2094,7 @@ pub fn solve(
         }
         else if (k == "jump")
         {
-            let h = Helpers(node.helpers);
+            let h = node.helpers;
 
             h.ret_actual || fail(
                 "propagateType(jump): h.ret_actual not available.");
@@ -2103,7 +2103,7 @@ pub fn solve(
         }
         else if (k == "block")
         {
-            let h = Helpers(node.helpers);
+            let h = node.helpers;
 
             h.ret_actual.try_relax(:slot, :relax_mask);
 
@@ -2416,7 +2416,7 @@ pub fn solve(
         if (OPTI_flatten_blocks) while (items.len)
         {
             let tail = items.last;
-            if (tail.kind != "block" || tail.helpers && Helpers(tail.helpers).mask & HM_LabelUsed)
+            if (tail.kind != "block" || tail.helpers && tail.helpers.mask & HM_LabelUsed)
                 break;
 
             let unwrap = tail.items;
@@ -2437,7 +2437,7 @@ pub fn solve(
         //
         return SolvedNode(
             kind: "block", :type, :items,
-            helpers: h.index);
+            helpers: h);
     }
 
 
@@ -3565,7 +3565,7 @@ pub fn solve(
                     }
 
                     //
-                    retval = Helpers(s_body.helpers).ret_actual;
+                    retval = s_body.helpers.ret_actual;
                     checkAssignable(host: retval, s_body.type, "reval after runAllPasses");
 
                     // MUT DURING SOLVE,
@@ -4190,7 +4190,7 @@ pub fn solve(
     fn createJump(expr: SolvedNode, h: Helpers)
     {
         let jump = SolvedNode("jump", type: t_never,
-            items: expr && [ expr ], helpers: h.index);
+            items: expr && [ expr ], helpers: h);
 
         // NOW, IMPORTANTLY:
         //  If we're about to return a mutref, make sure it doesn't go through an F_MUT.
@@ -4378,7 +4378,7 @@ pub fn solve(
         return SolvedNode(
             kind: "loop", :type,
             items: [ init, pre_cond, body, post_cond, post ],
-            helpers: h.index);
+            helpers: h);
     }
 
 
@@ -6889,7 +6889,7 @@ pub fn solve(
                 }
 
                 // The sequencing fingerprint, just in case.
-                (callsite.MUT.helpers && BUG("helpers already contain something")) = MUSTSEQ_mask;
+                (callsite.MUT.helpers && BUG("helpers already contain something")) = Helpers(MUSTSEQ_mask);
             }
 
             //
@@ -7184,7 +7184,7 @@ pub fn solve(
             //  and without the .returns listing, this is as late as we can do this.
             if (node.helpers)
                 mcom_BlockReturns_CopyOrMoveDecision(
-                    Helpers(node.helpers));
+                    node.helpers);
         }
 
         // Children.
@@ -7208,7 +7208,7 @@ pub fn solve(
         }
         else if (k == "block" || k == "jump")
         {
-            let h = Helpers(node.helpers);
+            let h = node.helpers;
             if (h.ret_actual && !h.ret_actual.is_void && !h.ret_actual.is_never)
                 maybeCopyOrMove(node.items.last, h.ret_actual, isReturn: true);
         }
