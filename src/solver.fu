@@ -1891,6 +1891,28 @@ pub fn solve(
 
     //
 
+    fn _current_fn_eachArg_BACK(visit)
+    {
+        let sig = _current_fn.items;
+        for (mut i = sig.len + FN_ARGS_BACK; i --> 0; )
+        {
+            let t = sig[i].target;
+            if (t && t.flags & F_ARG)
+                visit(t);
+        }
+    }
+
+    fn _current_fn_eachArg_FWD(visit)
+    {
+        let sig = _current_fn.items;
+        for (mut i = 0; i < sig.len + FN_ARGS_BACK; i++)
+        {
+            let t = sig[i].target;
+            if (t && t.flags & F_ARG)
+                visit(t, position?: i);
+        }
+    }
+
     fn propagateType(node: SolvedNode, slot: Type, relax_mask!: i32)
     {
         let k = node.kind;
@@ -2125,15 +2147,8 @@ pub fn solve(
 
             // TODO FIX args need extra iteration here.
             if (h.target == _current_fn.target)
-            {
-                let sig = _current_fn.items;
-                for (mut i = sig.len + FN_ARGS_BACK; i --> 0; )
-                {
-                    let t = sig[i].target;
-                    if (t && t.flags & F_ARG)
-                        relaxBlockVar(t, :relax_mask);
-                }
-            }
+                _current_fn_eachArg_BACK: |t|
+                    relaxBlockVar(t, :relax_mask);
         }
         else if (k == "loop")
         {
@@ -3241,9 +3256,6 @@ pub fn solve(
                 let specType    = isSpec && tryGetArgSpecType(n_arg.value);
                 let arg         = solveLet(n_arg, :specType);
                 outItems[i]     = arg;
-
-                if (!isUnspec && arg.target)
-                    Reference_trackArgument(_current_fn.flow, arg.target.index, position: i);
             }
 
             /////////////////////////////////////////////////////
@@ -5267,8 +5279,6 @@ pub fn solve(
         let newArgIdx   = _current_fn.items.len + FN_ARGS_BACK;
         _current_fn.MUT.items.insert(newArgIdx, newArgNode);
 
-        Reference_trackArgument(_current_fn.flow, newArgNode.target.index, position: newArgIdx);
-
         return newArgNode.target;
     }
 
@@ -7040,6 +7050,15 @@ pub fn solve(
                 node.MUT.rwr = rwr;
             ////////////////////////////////////////////
         }
+
+
+        //
+
+        _current_fn_eachArg_FWD: |target, position|
+            Reference_trackArgument(flow, target.index, :position);
+
+
+        //
 
         bck_node(root);
     }
