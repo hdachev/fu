@@ -6,6 +6,7 @@ pub struct BitSet
 
 pub fn size(using _: BitSet)
 {
+    // WTF is this
     return _data.len * 8;
 }
 
@@ -39,19 +40,13 @@ pub fn add(using _: &mut BitSet, idx: i32)
 
 pub fn add(using _: &mut BitSet, other: BitSet)
 {
-    for (mut i1 = other._data.len; i1 --> 0; )
-    {
-        if (other._data[i1])
-        {
-            _data.helpers::grow_if_oob(i1);
+    let N = other._data.len;
+    if (_data.len < N)
+        _data.grow(N);
 
-            // TODO zip over in u64s first.
-            for (mut i = 0; i <= i1; i++)
-                _data[i] |= other._data[i];
-
-            break;
-        }
-    }
+    // TODO zip over in u64s first.
+    for (mut i = 0; i < N; i++)
+        _data[i] |= other._data[i];
 }
 
 pub fn has(using _: BitSet, idx: i32)
@@ -72,21 +67,33 @@ pub fn rem(using _: &mut BitSet, idx: i32)
     let bit    = idx & 7;
     let mask   = 1 << bit.u8;
 
+    // So this is way more complicated than add() -
+    //  but we want to make sure the following works:
+    //
+    //   - if (bitset) should be false if no bits are set.
+    //
+    //   - .add(bitset) shouldn't have to loop back through zero bytes
+    //      to size up the result.
+    //
     if (_data.len > bucket)
-        _data[bucket] &= ~mask;
-}
-
-pub fn rem_once(using _: &mut BitSet, idx: i32)
-{
-    let no_neg = idx & 0x80000000.i32;
-    let bucket = idx >> 3 | no_neg;
-    let bit    = idx & 7;
-    let mask   = 1 << bit.u8;
-
-    if (_data.len > bucket && _data[bucket] & mask)
     {
-        _data[bucket] &= ~mask;
-        return true;
+        let item = _data[bucket];
+        if (item & mask)
+        {
+            _data[bucket] &= ~mask;
+
+            if (item == mask && _data.len == bucket + 1)
+            {
+                mut end = bucket;
+                while (end --> 0)
+                    if (_data[end])
+                        break;
+
+                _data.shrink(end + 1);
+            }
+
+            return true;
+        }
     }
 
     return false;
