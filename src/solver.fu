@@ -5847,61 +5847,6 @@ pub fn solve(
         return callsite;
     }
 
-    fn BORROWCK_resolveByMutvar(target: Target)
-    {
-        target.modid == -_current_fn.target.index || BUG("Trying to mutvar a static.");
-        return BORROWCK_resolveByMutvar(target.index);
-    }
-
-    fn BORROWCK_resolveByMutvar(target: i32)
-    {
-        let t = nested(target);
-        ref o = GET_mut(t);
-        if (o.flags & F_REF || !o.type.is_rx_copy)
-            return false;
-
-        o.type.is_mutref && BUG(
-            o.qWHAT ~ ": Not F_REF but type.is_mutref"
-                    ~ " in BORROWCK_resolveByMutvar: is this a problem?");
-
-        o.kind == "var"                 || BUG("BORROWCK_resolveByMutvar: Not a variable.");
-        o.type.lifetime.uni0n.len == 1  || BUG("BORROWCK_resolveByMutvar: lt.len != 1"  );
-        if !(o.flags & F_MUT)
-        {
-            o.flags  |= F_MUT;
-            let t_let = clear_refs(o.type);
-
-            t.solved.MUT.type = t_let;
-        }
-
-        return true;
-    }
-
-    fn acceptsTempCopies(arg: Argument)
-    {
-        return !(arg.flags & (F_IMPLICIT | F_REF));
-    }
-
-    fn BORROWCK_resolveByTempCopy(node: SolvedNode, slot: Type)
-    {
-        // Reconstruct a maybe-copyable value type -
-        //  slot is a ref which may not need q_rx_copy.
-        shadow let slot = slot.clear_refs().make_copyable();
-
-        // TODO FIX How do we defer this copy?
-        //  MCOM needs to pick up something.
-        return maybeCopyOrMove(:node, slot);
-    }
-
-    fn BORROWCK_resolveByTempCopy(callsite: SolvedNode, idx: i32)
-    {
-        let host_args = callsite.target.args;
-
-        return BORROWCK_resolveByTempCopy(
-            node: callsite.items[idx],
-            slot:      host_args[idx].type);
-    }
-
     fn SWAP(a: SolvedNode, b: SolvedNode)
     {
         mut temp: SolvedNodeData;
@@ -6183,6 +6128,69 @@ pub fn solve(
     fn PASS_borrowCheck(root: SolvedNode)
     {
 
+        // Converting lets into vals:
+
+        fn RESOLVE_byMutvar(target: Target)
+        {
+            target.modid == -_current_fn.target.index || BUG("Trying to mutvar a static.");
+            return RESOLVE_byMutvar(target.index);
+        }
+
+        fn RESOLVE_byMutvar(target: i32)
+        {
+            let t = nested(target);
+            ref o = GET_mut(t);
+            if (o.flags & F_REF || !o.type.is_rx_copy)
+                return false;
+
+            o.type.is_mutref && BUG(
+                o.qWHAT ~ ": Not F_REF but type.is_mutref"
+                        ~ " in RESOLVE_byMutvar: is this a problem?");
+
+            o.kind == "var"                 || BUG("RESOLVE_byMutvar: Not a variable.");
+            o.type.lifetime.uni0n.len == 1  || BUG("RESOLVE_byMutvar: lt.len != 1"  );
+            if !(o.flags & F_MUT)
+            {
+                o.flags  |= F_MUT;
+                let t_let = clear_refs(o.type);
+
+                t.solved.MUT.type = t_let;
+            }
+
+            return true;
+        }
+
+
+        // Inserting a temporary.
+
+        fn RESOLVE_byTempCopy(node: SolvedNode, slot: Type)
+        {
+            // Reconstruct a maybe-copyable value type -
+            //  slot is a ref which may not need q_rx_copy.
+            shadow let slot = slot.clear_refs().make_copyable();
+
+            // TODO FIX How do we defer this copy?
+            //  MCOM needs to pick up something.
+            return maybeCopyOrMove(:node, slot);
+        }
+
+        fn RESOLVE_byTempCopy(callsite: SolvedNode, idx: i32)
+        {
+            let host_args = callsite.target.args;
+
+            return RESOLVE_byTempCopy(
+                node: callsite.items[idx],
+                slot:      host_args[idx].type);
+        }
+
+
+        //
+
+        fn acceptsTempCopies(arg: Argument)
+        {
+            return !(arg.flags & (F_IMPLICIT | F_REF));
+        }
+
         fn bck_name(shadow target: i32)
         {
             return GET(nested(target)).name.human;
@@ -6288,7 +6296,7 @@ pub fn solve(
                     let u = events.invalidated_by[target];
                     if (u)
                     {
-                        if !(BORROWCK_resolveByMutvar(target) || options.dev & options::DEV_DisableBCK)
+                        if !(RESOLVE_byMutvar(target) || options.dev & options::DEV_DisableBCK)
                             fail("Cannot access"
                                 ~ " " ~      target.bck_name.qBAD ~ ", reference invalidated by write to"
                                 ~ " " ~ u.rw_target.bck_name.qBAD ~ " at "
@@ -6360,7 +6368,7 @@ pub fn solve(
                     let u = events.cant_invalidate[target];
                     if (u)
                     {
-                        if !(BORROWCK_resolveByMutvar(u.rw_target) || options.dev & options::DEV_DisableBCK)
+                        if !(RESOLVE_byMutvar(u.rw_target) || options.dev & options::DEV_DisableBCK)
                             fail("Write to " ~ target.bck_name.qBAD
                                 ~ " at call to " ~ callsite.target.qWHAT
                                 ~ " invalidates the use of " ~ u.rw_target.bck_name.qBAD ~ " at "
@@ -6641,7 +6649,7 @@ pub fn solve(
                                             if (arg.kind == "call" &&  arg.target.kind == "var"
                                                                    && !arg.target.type.is_mutref)
                                             {
-                                                if (BORROWCK_resolveByMutvar(arg.target))
+                                                if (RESOLVE_byMutvar(arg.target))
                                                     return;
                                             }
 
@@ -6658,7 +6666,7 @@ pub fn solve(
                                                 let isReturned = target.type.lifetime.uni0n.has(argLt);
                                                 if (!isReturned)
                                                 {
-                                                    return BORROWCK_resolveByTempCopy(:callsite, which);
+                                                    return RESOLVE_byTempCopy(:callsite, which);
                                                 }
                                             }
                                         }
@@ -6868,7 +6876,7 @@ pub fn solve(
                                                 }
 
                                                 // We'll have to inject a copy here.
-                                                BORROWCK_resolveByTempCopy(:callsite, r);
+                                                RESOLVE_byTempCopy(:callsite, r);
                                             }
                                         }
 
