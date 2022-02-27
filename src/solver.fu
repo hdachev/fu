@@ -104,9 +104,6 @@ pub fn solve(
     {
         // Writes invalidate subsequent reads -
         invalidated_by:     WriteID[];
-
-        // Pure fn tracking, and mutref passthrough -
-        args_written:       i32[];
     };
 
     struct Events
@@ -117,7 +114,6 @@ pub fn solve(
         cant_invalidate:    ReadID[];
 
         // The arguments at risk aparata.
-        args_in_a_loop:     i32[];
         args_ever_written:  bitset::BitSet;
 
         // The read/write journal, for checking order of eval.
@@ -3601,7 +3597,6 @@ pub fn solve(
                     didSetBody = true;
 
                     // ARGUMENTS AT RISK ///////////////////////////////////////////////////
-                    _current_fn.flow.ArgsAtRisk_shake();
                     _current_fn.flow.ArgsWritten_shake(_current_fn.events.args_ever_written);
                     ////////////////////////////////////////////////////////////////////////
                 }
@@ -6141,6 +6136,102 @@ pub fn solve(
 
     fn PASS_borrowCheck(root: SolvedNode)
     {
+        // Now bck does two passes:
+        //
+        //  - AAR = false:  this is the fn-local first bck pass.
+        //  - AAR = true:   this is the second ARGUMENTS AT RISK pass.
+        //
+        mut AAR = false;
+
+        fn RESOLVE_byAAR(read!: i32, write!: i32)
+        {
+            AAR || BUG();
+
+            read != write || BUG("RESOLVE_byAAR: read == write");
+
+            // On first add -
+            if (_current_fn.flow.args_at_risk.grow_if_oob(write).set::add(read))
+            {
+                // Shake [1] - decomp write parents on first add.
+                let ascendWrites = ||
+                {
+                    let parents = _current_fn.flow.arg_parents.unless_oob(write);
+                    if (parents)
+                    {
+                        for (mut i = 0; i < parents.len; i++)
+                        {
+                            let parent = parents[i];
+
+                            // Here's the smart ascent thing -
+                            //  A write through some parent binding
+                            //   can't invalidate the same binding's read.
+                            //
+                            // This is a bit crazy, I think it wouldn't be necessary
+                            //  if we could remove the invalidation edges on the go.
+                            //
+                            if (parent != read)
+                                RESOLVE_byAAR(:read, write: parent);
+                        }
+
+                        return true;
+                    }
+                };
+
+                // Shake [2] - decomp read parents on first add.
+                let ascendReads = ||
+                {
+                    let parents = _current_fn.flow.arg_parents.unless_oob(read);
+                    if (parents)
+                    {
+                        for (mut i = 0; i < parents.len; i++)
+                        {
+                            let parent = parents[i];
+
+                            // TODO failcase without this if, suite doesn't catch items
+                            if (parent != write)
+                                RESOLVE_byAAR(:write, read: parent);
+                        }
+
+                        return true;
+                    }
+                };
+
+                // Climb one way or the other.
+                let firstTry_to_ascendWrites = write > read;
+                for (mut i = 0; i < 2; i++)
+                    if (!i == firstTry_to_ascendWrites) // if (!0 == true or !1 == false)
+                        ascendWrites();
+                    else
+                        ascendReads();
+            }
+
+            return true;
+        }
+
+        fn RESOLVE_byAAR(writes!: Region[], reads!: Region[])
+        {
+            for (mut w = 0; w < writes.len; w++)
+            {
+                let write = Region_asIndex(writes[w]);
+                if (write) for (mut r = 0; r < reads.len; r++)
+                {
+                    let read = Region_asIndex(reads[r]);
+                    if (read && read != write)
+                        RESOLVE_byAAR(:read, :write);
+                }
+            }
+
+            return true;
+        }
+
+        fn AAR_cannotFail(reason: string)
+        {
+            if (AAR)    BUG("AAR PASS is trying to emit an error:\n\n\t" ~ reason);
+            else        fail(reason);
+        }
+
+        shadow let fail = fn AAR_cannotFail;
+
 
         // Converting lets into vals:
 
@@ -6152,6 +6243,8 @@ pub fn solve(
 
         fn RESOLVE_byMutvar(target: i32)
         {
+            AAR && BUG();
+
             let t = nested(target);
             ref o = GET_mut(t);
             if (o.flags & F_REF || !o.type.is_rx_copy)
@@ -6179,6 +6272,8 @@ pub fn solve(
 
         fn RESOLVE_byTempCopy(callsite: SolvedNode, position: i32)
         {
+            AAR && BUG();
+
             fn RESOLVE_byTempCopy(node: SolvedNode, slot: Type)
             {
                 // Reconstruct a maybe-copyable value type -
@@ -6341,19 +6436,16 @@ pub fn solve(
                     let u = events.invalidated_by[target];
                     if (u)
                     {
-                        if !(RESOLVE_byMutvar(target) || options.dev & options::DEV_DisableBCK)
+                        if (AAR ? !RESOLVE_byAAR(read: target, write: u.rw_target)
+                                : !RESOLVE_byMutvar(target))
+                        {
                             fail("Cannot access"
                                 ~ " " ~      target.bck_name.qBAD ~ ", reference invalidated by write to"
                                 ~ " " ~ u.rw_target.bck_name.qBAD ~ " at "
                                 ~ RWEvent_stack(u));
+                        }
                     }
                 }
-
-                // ARGUMENTS AT RISK ////////////////////////
-                if (events.args_written && flow.is_arg.has(target))
-                    flow.args_at_risk.grow_if_oob(target)
-                        .set::add(events.args_written);
-                /////////////////////////////////////////////
 
                 // Order of eval.
                 //  OPTIMIZABLE we don't need the read nodeidx here,
@@ -6363,26 +6455,12 @@ pub fn solve(
                 let readID = ReadID(events.reads.len);
 
                 // Track reads in a loop.
-                if (loop_start)
+                if (loop_start && target < loop_start)
                 {
-                    // Track uses.
-                    if (target < loop_start)
-                    {
-                        let invalidators = flow.invalidators.unless_oob(target);
+                    let invalidators = flow.invalidators.unless_oob(target);
 
-                        for (shadow mut i = 0; i < invalidators.len; i++)
-                            events.cant_invalidate.grow_if_oob(invalidators[i]) ||= readID;
-                    }
-
-                    // ARGUMENTS AT RISK ////////////////////////
-                    if (flow.is_arg.has(target))
-                    {
-                        // And this clearly sucks
-                        //  because we can't clean up after ourselves,
-                        //   perhaps we don't want this but should use used_in_a_loop instead?
-                        events.args_in_a_loop.set::add(target);
-                    }
-                    /////////////////////////////////////////////
+                    for (shadow mut i = 0; i < invalidators.len; i++)
+                        events.cant_invalidate.grow_if_oob(invalidators[i]) ||= readID;
                 }
             }
         }
@@ -6393,8 +6471,6 @@ pub fn solve(
         fn bck_trackWrites(callsite: SolvedNode, regions: Region[], positions!: i32[])
         {
             _here           = callsite.token;
-
-            let loop_start  = _current_fn.loop_start;
 
             //
             for (mut i = 0; i < regions.len; i++)
@@ -6413,13 +6489,16 @@ pub fn solve(
                     let u = events.cant_invalidate[target];
                     if (u)
                     {
-                        if !(RESOLVE_byMutvar(u.rw_target) || options.dev & options::DEV_DisableBCK)
+                        if (AAR ? !RESOLVE_byAAR(read: u.rw_target, write: target)
+                                : !RESOLVE_byMutvar(u.rw_target))
+                        {
                             fail("Write to " ~ target.bck_name.qBAD
                                 ~ " at call to " ~ callsite.target.qWHAT
                                 ~ " invalidates the use of " ~ u.rw_target.bck_name.qBAD ~ " at "
                                 ~ SLOW_findByReadID(u).token.addr_and_snippet
                                 ~ "\n\t... on next loop iteration.\n\n\tWritten"
                                 ~ qSTACK(callsite.target, :position)); // TODO loop starts at x:x!
+                        }
                     }
                 }
 
@@ -6435,15 +6514,7 @@ pub fn solve(
 
                 // ARGUMENTS AT RISK ////////////////////////
                 if (flow.is_arg.has(target))
-                {
-                    events.args_written.set::add(target);
                     events.args_ever_written.add(target);
-
-                    if (loop_start)
-                        for (shadow mut i = 0; i < events.args_in_a_loop.len; i++)
-                            flow.args_at_risk.grow_if_oob(events.args_in_a_loop[i])
-                                .set::add(target);
-                }
                 /////////////////////////////////////////////
             }
         }
@@ -6635,38 +6706,47 @@ pub fn solve(
                                 if (!host_arg.hard_risk.has(i) && !other.hard_risk.has(i0))
                                     return;
 
-                                // ......
-                                // ......
-                                // ......
-
-                                // ARGUMENTS AT RISK ////////////////////////
-                                // ARGUMENTS AT RISK AT DEPTH ///////////////
+                                //
                                 let unwound1 = bck_unwound[i];
 
-                                if (i0 >= arg_first && i0 <= arg_last &&
-                                    i  >= arg_first && i  <= arg_last)
+                                // A note on something that's non-obvious -
+                                //  the AAR stuff here DOESNT CARE ABOUT ALIASING -
+                                //   we've already dealt with aliasing by the time this runs.
+                                //
+                                // Also the invalidates/invalidators AAR stuff doesn't affect parenting,
+                                //  so we don't get intersections in unwound0 and unwound1.
+                                //
+                                if (AAR)
                                 {
-                                    // TODO avoid the N*M thing here -
-                                    //  both lists are sorted, we can iterate them together.
-                                    for (shadow mut i = 0; i < unwound.uni0n.len; i++)
+                                    if (i0 >= arg_first && i0 <= arg_last &&
+                                        i  >= arg_first && i  <= arg_last)
                                     {
-                                        let arg0 = Region_asArgIndex(unwound.uni0n[i]);
-                                        if (arg0 > 0)
+                                        // TODO avoid the N*M thing here -
+                                        //  both lists are sorted, we can iterate them together.
+                                        for (shadow mut i = 0; i < unwound.uni0n.len; i++)
                                         {
-                                            for (shadow mut i = 0; i < unwound1.uni0n.len; i++)
+                                            let arg0 = Region_asArgIndex(unwound.uni0n[i]);
+                                            if (arg0 > 0)
                                             {
-                                                let arg1 = Region_asArgIndex(unwound1.uni0n[i]);
-                                                if (arg1 > 0 && arg1 < arg0)
+                                                for (shadow mut i = 0; i < unwound1.uni0n.len; i++)
                                                 {
-                                                    _current_fn.flow.args_at_risk.grow_if_oob(arg0)
-                                                        .set::add(arg1);
+                                                    let arg1 = Region_asArgIndex(unwound1.uni0n[i]);
+                                                    if (arg1 > 0 && arg1 < arg0)
+                                                    {
+                                                        if (host_arg.is_mutref)
+                                                            RESOLVE_byAAR(write: arg0, read: arg1);
+
+                                                        if (other.is_mutref)
+                                                            RESOLVE_byAAR(read: arg0, write: arg1);
+                                                    }
                                                 }
                                             }
                                         }
                                     }
+
+                                    // AAR ends here, inters are not relevant, etc.
+                                    return;
                                 }
-                                /////////////////////////////////////////////
-                                /////////////////////////////////////////////
 
                                 // Do we see any aliasing here?
                                 let inter = Lifetime_inter(unwound, unwound1);
@@ -6828,6 +6908,8 @@ pub fn solve(
                                 {
                                     let ooe_ir_evalsBefore_iw = ooe_ir < ooe_iw;
 
+                                    let just_written = written || BUG();
+
                                     shadow let written = ooe_ir_evalsBefore_iw
                                         ? written_and_invalidated
                                         : written;
@@ -6882,7 +6964,8 @@ pub fn solve(
                                             if (inter)
                                             {
                                                 // We'll have to inject a copy here.
-                                                if (!RESOLVE_byTempCopy(:callsite, r))
+                                                if (AAR ? !RESOLVE_byAAR(writes: just_written, reads: inter)
+                                                        : !RESOLVE_byTempCopy(:callsite, r))
                                                 {
                                                     _here = callsite.token;
 
@@ -6890,7 +6973,7 @@ pub fn solve(
                                                         ~ host_args[r].name.human.qBAD ~ " (arg #" ~ r ~ ") at "
                                                         ~ arg.token.addr_and_snippet
                                                         ~ "\n\t... invalidated by subsequent write to "
-                                                        ~ inter.first.qWHAT ~ " upon evaluation of argument "
+                                                        ~ just_written.first.qWHAT ~ " upon evaluation of argument "
                                                         ~ host_args[w].name.human.qBAD ~ " (arg #" ~ w ~ ") at "
                                                         ~ RWEvent_stack(writeID));
                                                 }
@@ -7077,15 +7160,88 @@ pub fn solve(
         }
 
 
-        //
+        // This feels like its no longer relevant -
 
         _current_fn_eachArg_FWD: |target, position|
             Reference_trackArgument(flow, target.index, :position);
 
 
-        //
+        // BCK PASS 1: Local analysis & resolve-by-copy.
 
         bck_node(root);
+
+
+        // BCK PASS 2: ARGUMENTS AT RISK
+        //
+        // Previously we had a separate AAR thing going,
+        //  now we're trying to piggy back on the regular bck stuff as much as possible,
+        //   and only handle things differently when we would otherwise emit an error.
+        //
+        :SOLVE_AAR
+        {
+            mut consts: i32[];
+            mut refs:   i32[];
+
+            // We only need to seed invalidations from mutref arguments.
+            {
+                mut last = 0;
+                _current_fn_eachArg_FWD: |target|
+                {
+                    target.modid == -_current_fn.target.index || BUG();
+                    last < (last = target.index) || BUG();
+
+                    if (target.solved.type.is_mutref)
+                        refs    ~= target.index;
+                    else if (target.solved.type.is_ref)
+                        consts  ~= target.index;
+                }
+            }
+
+            if !(refs)
+                break :SOLVE_AAR;
+
+            // Setup the AAR invalidation matrix -
+            //  we assume that each ref argument invalidates EVERY other argument.
+            //
+            // As bck runs, instead of raising errors when this causes issues,
+            //  we take note that the args can't alias for things to work,
+            //   and this becomes our hard_risks/soft_risks solution.
+            //
+            shadow ref flow = _current_fn.flow;
+
+            // Reset these, here we use them for the speculative aliasing.
+            flow.invalidates .clear();
+            flow.invalidators.clear();
+
+            // First, ref -> const relationships, cheaper setup.
+            for (mut i = 0; i < consts.len; i++)
+            {
+                let target = consts[i];
+                flow.invalidators.grow_if_oob(target) = refs;
+            }
+
+            for (mut i = 0; i < refs.len; i++)
+            {
+                let target = refs[i];
+                flow.invalidates.grow_if_oob(target) = consts;
+
+                // Finally set up the ref <-> ref relationships,
+                //  which are symmetric.
+                //
+                shadow mut refs = refs;
+                refs.set::rem(target);
+
+                flow.invalidates .grow_if_oob(target).set::add(refs);
+                flow.invalidators.grow_if_oob(target).set::add(refs);
+            }
+
+            // Go.
+            {
+                AAR = true;
+                _current_fn.events = Events();
+                bck_node(root);
+            }
+        }
     }
 
 
