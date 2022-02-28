@@ -402,3 +402,46 @@ pub fn appendMi(ref str: string, mut modid!: i32, mut index!: i32)
     }
     while (index);
 }
+
+
+/* TODO this needs a failcase -
+//  breaks other stuff that's not string-related for some reason,
+//   I think we start matching the .str autocall too early,
+//    no time now.
+
+pub fn str(arr: [$T]) case (!($T -> byte))
+{
+    if (!arr)
+        return "[]";
+
+    mut result = "[ ";
+    for (mut i = 0; i < arr.len; i++)
+    {
+        result ~= (i ? ", " : "[ ");
+        result ~= arr[i];
+    }
+
+    result ~= " ]";
+    return result;
+}
+
+// */
+
+pub fn str(arr: [$T]) case ($T.is::arithmetic)
+{
+    mut result = "";
+    for (mut i = 0; i < arr.len; i++)
+    {
+        if (i == 5 && arr.len > 16)
+        {
+            i = arr.len - 5;
+            result ~= ", ... (" ~ arr.len - 10 ~ " more) ...";
+        }
+
+        result ~= (i ? ", " : "[ ");
+        result ~= arr[i];
+    }
+
+    result ~= result ? " ]" : "[]";
+    return result;
+}
