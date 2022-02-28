@@ -6163,24 +6163,46 @@ pub fn solve(
 
         // Inserting a temporary.
 
-        fn RESOLVE_byTempCopy(node: SolvedNode, slot: Type)
+        fn RESOLVE_byTempCopy(callsite: SolvedNode, position: i32)
         {
-            // Reconstruct a maybe-copyable value type -
-            //  slot is a ref which may not need q_rx_copy.
-            shadow let slot = slot.clear_refs().make_copyable();
+            fn RESOLVE_byTempCopy(node: SolvedNode, slot: Type)
+            {
+                // Reconstruct a maybe-copyable value type -
+                //  slot is a ref which may not need q_rx_copy.
+                shadow let slot = slot.clear_refs().make_copyable();
 
-            // TODO FIX How do we defer this copy?
-            //  MCOM needs to pick up something.
-            return maybeCopyOrMove(:node, slot);
-        }
+                // TODO FIX How do we defer this copy?
+                //  MCOM needs to pick up something.
+                maybeCopyOrMove(:node, slot);
+                return true;
+            }
 
-        fn RESOLVE_byTempCopy(callsite: SolvedNode, idx: i32)
-        {
-            let host_args = callsite.target.args;
+            // Back here.
+            let target      = callsite.target;
+            let host_args   = target.args;
+            let host_arg    = host_args[position];
+            let call_arg    = callsite.items[position];
+
+            // No go if arg is nocopy.
+            if (!call_arg.is_rx_copy)
+                return false;
+
+            // We don't allow this on implicit arguments, which includes closures.
+            //  Implicitly copying implicit arguments is a bit much (TODO not sure, is it?).
+            if (!host_arg.acceptsTempCopies)
+                return false;
+
+            // Re: m_and_c_cant_alias_002 test:
+            //  We don't want to return a reference to the temporary,
+            //   so for now we just forbid this.
+            let argLt       = Region_fromArgIndex(host_arg.local);
+            let isReturned  = target.type.lifetime.uni0n.has(argLt);
+            if (isReturned)
+                return false;
 
             return RESOLVE_byTempCopy(
-                node: callsite.items[idx],
-                slot:      host_args[idx].type);
+                node: callsite.items[position],
+                slot:      host_args[position].type);
         }
 
 
@@ -6653,22 +6675,8 @@ pub fn solve(
                                                     return;
                                             }
 
-                                            // We don't allow this on implicit arguments, which includes closures.
-                                            //  Implicitly copying implicit arguments is a bit much (TODO not sure, is it?).
-                                            if (host_args[which].acceptsTempCopies)
-                                            {
-                                                shadow let argLocalIdx = target.args[which].local;
-
-                                                // Re: m_and_c_cant_alias_002 test:
-                                                //  We don't want to return a reference to the temporary,
-                                                //   so for now we just forbid this.
-                                                let argLt = Region_fromArgIndex(argLocalIdx);
-                                                let isReturned = target.type.lifetime.uni0n.has(argLt);
-                                                if (!isReturned)
-                                                {
-                                                    return RESOLVE_byTempCopy(:callsite, which);
-                                                }
-                                            }
+                                            if (RESOLVE_byTempCopy(:callsite, which))
+                                                return;
                                         }
                                     }
                                 }
@@ -6863,7 +6871,8 @@ pub fn solve(
                                             let inter   = bound.set::inter(written);
                                             if (inter)
                                             {
-                                                if (host_args[r].is_mutref || !arg.is_rx_copy)
+                                                // We'll have to inject a copy here.
+                                                if (!RESOLVE_byTempCopy(:callsite, r))
                                                 {
                                                     _here = callsite.token;
 
@@ -6875,9 +6884,6 @@ pub fn solve(
                                                         ~ host_args[w].name.human.qBAD ~ " (arg #" ~ w ~ ") at "
                                                         ~ RWEvent_stack(writeID));
                                                 }
-
-                                                // We'll have to inject a copy here.
-                                                RESOLVE_byTempCopy(:callsite, r);
                                             }
                                         }
 
