@@ -876,7 +876,7 @@ pub fn solve(
     {
         mut src = n.kind.qKW;
 
-        if (n.kind == "call")
+        if (n.kind == "call" || n.kind == "let" || n.kind == "letdef")
             src ~= "(" ~ n.target.qWHAT ~ ")";
         else if (n.value)
             src ~= "(" ~ n.value.qID ~ ")";
@@ -6692,6 +6692,7 @@ pub fn solve(
                                         err ~= o.qWHAT;
                                     }
 
+                                    _here = args[i0].token;
                                     fail(err);
                                 }
                             }
