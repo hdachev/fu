@@ -6181,11 +6181,20 @@ pub fn solve(
             let target      = callsite.target;
             let host_args   = target.args;
             let host_arg    = host_args[position];
-            let call_arg    = callsite.items[position];
+            let arg         = callsite.items[position];
 
             // No go if arg is nocopy.
-            if (!call_arg.is_rx_copy)
+            if (!arg.is_rx_copy)
                 return false;
+
+            // Try to introduce a copy on an intermediate variable.
+            //  This should help with closures and stuff.
+            if (arg.kind == "call" &&  arg.target.kind == "var"
+                                   && !arg.target.type.is_mutref)
+            {
+                if (RESOLVE_byMutvar(arg.target))
+                    return true;
+            }
 
             // We don't allow this on implicit arguments, which includes closures.
             //  Implicitly copying implicit arguments is a bit much (TODO not sure, is it?).
@@ -6661,23 +6670,8 @@ pub fn solve(
 
                                     if (which >= 0)
                                     {
-                                        shadow let arg = args[which];
-
-                                        // Don't attempt if no-copy, the error is not useful.
-                                        if (arg.is_rx_copy)
-                                        {
-                                            // Try to introduce a copy on an intermediate variable.
-                                            //  This should help with closures and stuff.
-                                            if (arg.kind == "call" &&  arg.target.kind == "var"
-                                                                   && !arg.target.type.is_mutref)
-                                            {
-                                                if (RESOLVE_byMutvar(arg.target))
-                                                    return;
-                                            }
-
-                                            if (RESOLVE_byTempCopy(:callsite, which))
-                                                return;
-                                        }
+                                        if (RESOLVE_byTempCopy(:callsite, which))
+                                            return;
                                     }
                                 }
 
