@@ -47,6 +47,7 @@ pub let N_SD_ExternPrivates = 1 << 19;
 let OPTI_autoshadow         = true;
 let OPTI_dedupe_vars        = true;
 let OPTI_flatten_blocks     = true;
+let OPTI_bck                = true;
 
 let USE_nontriv_autocopy    = true;
 
@@ -103,7 +104,7 @@ pub fn solve(
     struct EventsSnap
     {
         // Writes invalidate subsequent reads -
-        invalidated_by:     WriteID[];
+        invalidated_by:     WriteID[][];
     };
 
     struct Events
@@ -111,7 +112,7 @@ pub fn solve(
         using snap:         EventsSnap;
 
         // In a loop, reads forbid subsequent writes -
-        cant_invalidate:    ReadID[];
+        cant_invalidate:    ReadID[][];
 
         // The arguments at risk aparata.
         args_ever_written:  bitset::BitSet;
@@ -131,8 +132,11 @@ pub fn solve(
             if (dest.len < src.len)
                 dest.grow(src.len);
 
-            for (mut i = 0; i < src.len; i++)
-                dest[i] ||= src[i];
+            for (mut i = 0; i < src.len; i++) {
+                shadow let src = src[i];
+                if (src)
+                    dest[i].set::add(src);
+            }
         }
 
         for (fieldname i: snap)
@@ -6143,6 +6147,17 @@ pub fn solve(
         //
         mut AAR = false;
 
+        fn AAR_cannotFail(reason: string)
+        {
+            if (AAR)    BUG("AAR PASS is trying to emit an error:\n\n\t" ~ reason);
+            else        fail(reason);
+        }
+
+        shadow let fail = fn AAR_cannotFail;
+
+
+        //
+
         fn RESOLVE_byAAR(read!: i32, write!: i32)
         {
             AAR || BUG();
@@ -6224,13 +6239,30 @@ pub fn solve(
             return true;
         }
 
-        fn AAR_cannotFail(reason: string)
+
+        //
+
+        using fn RWEvent(write: WriteID)
+            _current_fn.events.writes[write.id - 1];
+
+        using fn RWEvent(read: ReadID)
+            _current_fn.events.reads[read.id - 1];
+
+        fn RESOLVE_byAAR(writes!: WriteID[], read!: i32)
         {
-            if (AAR)    BUG("AAR PASS is trying to emit an error:\n\n\t" ~ reason);
-            else        fail(reason);
+            for (mut i = 0; i < writes.len; i++)
+                RESOLVE_byAAR(write: writes[i].rw_target, :read);
+
+            return true;
         }
 
-        shadow let fail = fn AAR_cannotFail;
+        fn RESOLVE_byAAR(reads!: ReadID[], write!: i32)
+        {
+            for (mut i = 0; i < reads.len; i++)
+                RESOLVE_byAAR(read: reads[i].rw_target, :write);
+
+            return true;
+        }
 
 
         // Converting lets into vals:
@@ -6372,12 +6404,6 @@ pub fn solve(
 
         //
 
-        using fn RWEvent(write: WriteID)
-            _current_fn.events.writes[write.id - 1];
-
-        using fn RWEvent(read: ReadID)
-            _current_fn.events.reads[read.id - 1];
-
         fn RWEvent_stack(write: WriteID)
         {
             let node = SLOW_findByWriteID(write);
@@ -6436,14 +6462,18 @@ pub fn solve(
                     let u = events.invalidated_by[target];
                     if (u)
                     {
-                        if (AAR ? !RESOLVE_byAAR(read: target, write: u.rw_target)
+                        if (AAR ? !RESOLVE_byAAR(read: target, writes: u)
                                 : !RESOLVE_byMutvar(target))
                         {
+                            shadow let u = u.first;
                             fail("Cannot access"
                                 ~ " " ~      target.bck_name.qBAD ~ ", reference invalidated by write to"
                                 ~ " " ~ u.rw_target.bck_name.qBAD ~ " at "
                                 ~ RWEvent_stack(u));
                         }
+
+                        if (OPTI_bck)
+                            events.invalidated_by[target] = [];
                     }
                 }
 
@@ -6460,7 +6490,11 @@ pub fn solve(
                     let invalidators = flow.invalidators.unless_oob(target);
 
                     for (shadow mut i = 0; i < invalidators.len; i++)
-                        events.cant_invalidate.grow_if_oob(invalidators[i]) ||= readID;
+                    {
+                        ref set = events.cant_invalidate.grow_if_oob(invalidators[i]);
+                        if (!OPTI_bck || AAR || !set)
+                            set ~= readID;
+                    }
                 }
             }
         }
@@ -6489,9 +6523,10 @@ pub fn solve(
                     let u = events.cant_invalidate[target];
                     if (u)
                     {
-                        if (AAR ? !RESOLVE_byAAR(read: u.rw_target, write: target)
-                                : !RESOLVE_byMutvar(u.rw_target))
+                        if (AAR ? !RESOLVE_byAAR(reads: u, write: target)
+                                : !RESOLVE_byMutvar(u.first.rw_target))
                         {
+                            shadow let u = u.first;
                             fail("Write to " ~ target.bck_name.qBAD
                                 ~ " at call to " ~ callsite.target.qWHAT
                                 ~ " invalidates the use of " ~ u.rw_target.bck_name.qBAD ~ " at "
@@ -6499,6 +6534,9 @@ pub fn solve(
                                 ~ "\n\t... on next loop iteration.\n\n\tWritten"
                                 ~ qSTACK(callsite.target, :position)); // TODO loop starts at x:x!
                         }
+
+                        if (OPTI_bck)
+                            events.cant_invalidate[target] = [];
                     }
                 }
 
@@ -6510,7 +6548,11 @@ pub fn solve(
                 let invalidates = flow.invalidates.unless_oob(target);
 
                 for (shadow mut i = 0; i < invalidates.len; i++)
-                    events.invalidated_by.grow_if_oob(invalidates[i]) ||= writeID;
+                {
+                    ref set = events.invalidated_by.grow_if_oob(invalidates[i]);
+                    if (!OPTI_bck || AAR || !set)
+                        set ~= writeID;
+                }
 
                 // ARGUMENTS AT RISK ////////////////////////
                 if (flow.is_arg.has(target))
@@ -7007,7 +7049,9 @@ pub fn solve(
                 }
 
                 // The sequencing fingerprint, just in case.
-                (callsite.MUT.helpers && BUG("helpers already contain something")) = Helpers(MUSTSEQ_mask);
+                ref helpers = callsite.MUT.helpers;
+                !helpers || AAR || BUG("MUSTSEQ_mask: helpers already contain something");
+                helpers = Helpers(MUSTSEQ_mask | helpers.index);
             }
 
             //
