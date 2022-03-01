@@ -6449,8 +6449,11 @@ pub fn solve(
             //  we mistakenly collect these for writes to vars we depend on before init event.
             //   But this same technique can also be used for ref reassignment later on.
             //
-            if (events.invalidated_by.unless_oob(index))
-                events.invalidated_by[index] = WriteID();
+            // NOT EXPECTING THIS RIGHT NOW //////////////////////////
+            events.invalidated_by.unless_oob(index) && BUG();       //
+            // if (events.invalidated_by.unless_oob(index))         //
+            //     events.invalidated_by[index] = WriteID();        //
+            //////////////////////////////////////////////////////////
 
             // The GET_next_local_index() thing doesn't work with LATE_BCK,
             //  but this kinda fixes it.
