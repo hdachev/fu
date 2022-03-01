@@ -11,7 +11,8 @@ pub struct Flow
 
     // Arguments at risk.
     arg_parents:    i32[][];        // is_arg targets each target refers to.
-    args_at_risk:   i32[][];        // ARG USES at risk from previous ARG WRITES.
+    at_soft_risk:   i32[][];        // ARG USES at risk from previous ARG WRITES.
+    at_hard_risk:   i32[][];
 
     // AAR: helpers.
     is_arg:         bitset::BitSet; // acceleration structure.
@@ -139,17 +140,17 @@ pub fn Reference_untrackLocalRef(ref flow: Flow, left: i32, right: Lifetime)
 //
 
 pub fn ArgsAtRisk_list(
-    ref hard_risk: bitset::BitSet,
-        flow: Flow, position: i32)
+    ref out: bitset::BitSet,
+        flow: Flow, position: i32, at_risk: i32[][])
 {
     let target          = flow.arg_targets.unless_oob(position);
-    let at_risk_from    = flow.args_at_risk.unless_oob(target);
+    let at_risk_from    = at_risk.unless_oob(target);
 
     for (mut i = 0; i < at_risk_from.len; i++)
     {
         let other           = at_risk_from[i];
         let other_position  = flow.arg_positions.unless_oob(other) - 1;
         if (other_position >= 0)
-            hard_risk.add(other_position);
+            out.add(other_position);
     }
 }

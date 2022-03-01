@@ -3330,21 +3330,27 @@ pub fn solve(
                     let isImplicit  = !!(argNode.flags & F_IMPLICIT);
 
                     // ARGUMENTS AT RISK ////////////////////////
-
                     let argTarget   = argNode.target;
                     let written_via = !isUnspec
                         && argNode.type.is_mutref
                         && (isNative || out.events.ever_written.has(argTarget.index));
 
+                    mut soft_risk: bitset::BitSet;
                     mut hard_risk: bitset::BitSet;
                     if (written_via)
                     {
-                        if (isNative && !NativeOpts.no_AAR) {
-                            hard_risk.add_range(end: N);
-                            hard_risk.rem(i);
+                        if (!isNative)
+                        {
+                            soft_risk.ArgsAtRisk_list(out.flow, position: i, out.flow.at_soft_risk);
+                            hard_risk.ArgsAtRisk_list(out.flow, position: i, out.flow.at_hard_risk);
                         }
-                        else {
-                            hard_risk.ArgsAtRisk_list(out.flow, position: i);
+                        else if (!NativeOpts.no_AAR)
+                        {
+                            // Natives: we can't see inside, assume everything restricted.
+                            soft_risk.add_range(end: N);
+                            soft_risk.rem(i);
+
+                            hard_risk = soft_risk;
                         }
                     }
                     /////////////////////////////////////////////
@@ -3366,10 +3372,8 @@ pub fn solve(
                         default: !isImplicit && argNode.items[LET_INIT],
                         local: argTarget.index,
 
-                        // TODO: currently mocking up the stuff -
-                        //  everything's hard_risk.
-                        //
-                        :hard_risk);
+                        // ARGUMENTS AT RISK //
+                        :soft_risk, :hard_risk);
 
                     arg.type || isUnspec || BUG("updateScope: Unexpected untyped argument: `" ~ name ~ "`.");
                     args.push(arg);
@@ -6154,15 +6158,20 @@ pub fn solve(
 
         //
 
-        fn RESOLVE_byAAR(read!: i32, write!: i32)
+        fn RESOLVE_byAAR(read!: i32, write!: i32, trySoft!: bool)
         {
             AAR || BUG();
 
             read != write || BUG("RESOLVE_byAAR: read == write");
 
             // On first add -
-            if (_current_fn.flow.args_at_risk.grow_if_oob(write).set::add(read))
+            if (_current_fn.flow.at_soft_risk.grow_if_oob(write).set::add(read))
             {
+                // Soft vs hard risk -
+                //  Non-direct reads from arguments put the argument at hard risk.
+                if (!trySoft || !nested(read).isSoftRiskOkArg)
+                    _current_fn.flow.at_hard_risk.grow_if_oob(write).set::add(read);
+
                 // Shake [1] - decomp write parents on first add.
                 let ascendWrites = ||
                 {
@@ -6181,7 +6190,7 @@ pub fn solve(
                             //  if we could remove the invalidation edges on the go.
                             //
                             if (parent != read)
-                                RESOLVE_byAAR(:read, write: parent);
+                                RESOLVE_byAAR(:read, write: parent, :trySoft);
                         }
 
                         return true;
@@ -6200,7 +6209,7 @@ pub fn solve(
 
                             // TODO failcase without this if, suite doesn't catch items
                             if (parent != write)
-                                RESOLVE_byAAR(:write, read: parent);
+                                RESOLVE_byAAR(:write, read: parent, trySoft: false);
                         }
 
                         return true;
@@ -6219,7 +6228,7 @@ pub fn solve(
             return true;
         }
 
-        fn RESOLVE_byAAR(writes!: Region[], reads!: Region[])
+        fn RESOLVE_byAAR(writes!: Region[], reads!: Region[], trySoft!: bool)
         {
             for (mut w = 0; w < writes.len; w++)
             {
@@ -6228,7 +6237,7 @@ pub fn solve(
                 {
                     let read = Region_asIndex(reads[r]);
                     if (read && read != write)
-                        RESOLVE_byAAR(:read, :write);
+                        RESOLVE_byAAR(:read, :write, :trySoft);
                 }
             }
 
@@ -6244,18 +6253,18 @@ pub fn solve(
         using fn RWEvent(read: ReadID)
             _current_fn.events.reads[read.id - 1];
 
-        fn RESOLVE_byAAR(writes!: WriteID[], read!: i32)
+        fn RESOLVE_byAAR(writes!: WriteID[], read!: i32, trySoft!: bool)
         {
             for (mut i = 0; i < writes.len; i++)
-                RESOLVE_byAAR(write: writes[i].rw_target, :read);
+                RESOLVE_byAAR(write: writes[i].rw_target, :read, :trySoft);
 
             return true;
         }
 
-        fn RESOLVE_byAAR(reads!: ReadID[], write!: i32)
+        fn RESOLVE_byAAR(reads!: ReadID[], write!: i32, trySoft!: bool)
         {
             for (mut i = 0; i < reads.len; i++)
-                RESOLVE_byAAR(read: reads[i].rw_target, :write);
+                RESOLVE_byAAR(read: reads[i].rw_target, :write, :trySoft);
 
             return true;
         }
@@ -6472,14 +6481,13 @@ pub fn solve(
                     let u = events.invalidated_by[target];
                     if (u)
                     {
-                        if (AAR ? !RESOLVE_byAAR(read: target, writes: u)
+                        if (AAR ? !RESOLVE_byAAR(read: target, writes: u, trySoft: true)
                                 : !RESOLVE_byMutvar(target))
                         {
-                            shadow let u = u.first;
                             fail("Cannot access"
-                                ~ " " ~      target.bck_name.qBAD ~ ", reference invalidated by write to"
-                                ~ " " ~ u.rw_target.bck_name.qBAD ~ " at "
-                                ~ RWEvent_stack(u));
+                                ~ " " ~            target.bck_name.qBAD ~ ", reference invalidated by write to"
+                                ~ " " ~ u.first.rw_target.bck_name.qBAD ~ " at "
+                                ~ RWEvent_stack(u.first));
                         }
 
                         if (OPTI_bck)
@@ -6501,9 +6509,12 @@ pub fn solve(
 
                     for (shadow mut i = 0; i < invalidators.len; i++)
                     {
-                        ref set = events.cant_invalidate.grow_if_oob(invalidators[i]);
-                        if (!OPTI_bck || AAR || !set)
-                            set ~= readID;
+                        // Can't opti -
+                        //  all reads need to get listed here,
+                        //   else we won't RESOLVE_byMutvar & co all of them.
+                        //
+                        // TODO failcase: suite didn't catch this and we compiled ok
+                        events.cant_invalidate.grow_if_oob(invalidators[i]) ~= readID;
                     }
                 }
             }
@@ -6533,11 +6544,16 @@ pub fn solve(
                     let u = events.cant_invalidate[target];
                     if (u)
                     {
-                        if (AAR ? !RESOLVE_byAAR(reads: u, write: target)
-                                : !RESOLVE_byMutvar(u.first.rw_target))
+                        if (AAR)
                         {
-                            shadow let u = u.first;
-                            fail("Write to " ~ target.bck_name.qBAD
+                            RESOLVE_byAAR(reads: u, write: target, trySoft: true);
+                        }
+                        else for (shadow mut i = 0; i < u.len; i++)
+                        {
+                            shadow let u = u[i];
+
+                            RESOLVE_byMutvar(u.rw_target) || fail(
+                                "Write to " ~ target.bck_name.qBAD
                                 ~ " at call to " ~ callsite.target.qWHAT
                                 ~ " invalidates the use of " ~ u.rw_target.bck_name.qBAD ~ " at "
                                 ~ SLOW_findByReadID(u).token.addr_and_snippet
@@ -6739,7 +6755,8 @@ pub fn solve(
                         // Validate aliasing.
                         if (bck_unwound)
                         {
-                            let unwound = bck_unwound[i0] = Lifetime_unwind_noStatic(args[i0].type.lifetime);
+                            let shallow = args[i0].type.lifetime;
+                            let unwound = bck_unwound[i0] = Lifetime_unwind_noStatic(shallow);
 
                             // Keep track of caller arguments.
                             for (mut i = 0; i < unwound.uni0n.len; i++)
@@ -6758,11 +6775,8 @@ pub fn solve(
                                 let other = host_args[i];
 
                                 // Can the fn handle aliasing here?
-                                if (!host_arg.hard_risk.has(i) && !other.hard_risk.has(i0))
+                                if (!host_arg.soft_risk.has(i) && !other.soft_risk.has(i0))
                                     return;
-
-                                //
-                                let unwound1 = bck_unwound[i];
 
                                 // A note on something that's non-obvious -
                                 //  the AAR stuff here DOESNT CARE ABOUT ALIASING -
@@ -6773,26 +6787,30 @@ pub fn solve(
                                 //
                                 if (AAR)
                                 {
+                                    let shallow1 = args[i].type.lifetime;
+
                                     if (i0 >= arg_first && i0 <= arg_last &&
                                         i  >= arg_first && i  <= arg_last)
                                     {
                                         // TODO avoid the N*M thing here -
                                         //  both lists are sorted, we can iterate them together.
-                                        for (shadow mut i = 0; i < unwound.uni0n.len; i++)
+                                        for (shadow mut i = 0; i < shallow.uni0n.len; i++)
                                         {
-                                            let arg0 = Region_asArgIndex(unwound.uni0n[i]);
-                                            if (arg0 > 0)
+                                            let region0 = Region_asIndex(shallow.uni0n[i]);
+                                            if (region0 > 0)
                                             {
-                                                for (shadow mut i = 0; i < unwound1.uni0n.len; i++)
+                                                for (shadow mut i = 0; i < shallow1.uni0n.len; i++)
                                                 {
-                                                    let arg1 = Region_asArgIndex(unwound1.uni0n[i]);
-                                                    if (arg1 > 0 && arg1 < arg0)
+                                                    let region1 = Region_asIndex(shallow1.uni0n[i]);
+                                                    if (region1 > 0 && region1 != region0)
                                                     {
                                                         if (host_arg.is_mutref)
-                                                            RESOLVE_byAAR(write: arg0, read: arg1);
+                                                            RESOLVE_byAAR(write: region0, read: region1,
+                                                                trySoft: !host_arg.hard_risk.has(i));
 
                                                         if (other.is_mutref)
-                                                            RESOLVE_byAAR(read: arg0, write: arg1);
+                                                            RESOLVE_byAAR(read: region0, write: region1,
+                                                                trySoft: !other.hard_risk.has(i));
                                                     }
                                                 }
                                             }
@@ -6804,6 +6822,8 @@ pub fn solve(
                                 }
 
                                 // Do we see any aliasing here?
+                                let unwound1 = bck_unwound[i];
+
                                 let inter = Lifetime_inter(unwound, unwound1);
                                 if !(inter)
                                     return;
@@ -7019,7 +7039,7 @@ pub fn solve(
                                             if (inter)
                                             {
                                                 // We'll have to inject a copy here.
-                                                if (AAR ? !RESOLVE_byAAR(writes: just_written, reads: inter)
+                                                if (AAR ? !RESOLVE_byAAR(writes: just_written, reads: inter, trySoft: true)
                                                         : !RESOLVE_byTempCopy(:callsite, r))
                                                 {
                                                     _here = callsite.token;
