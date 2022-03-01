@@ -115,7 +115,7 @@ pub fn solve(
         cant_invalidate:    ReadID[][];
 
         // The arguments at risk aparata.
-        args_ever_written:  bitset::BitSet;
+        ever_written:       bitset::BitSet;
 
         // The read/write journal, for checking order of eval.
         //  I think unordered access should be super strict,
@@ -3334,7 +3334,7 @@ pub fn solve(
                     let argTarget   = argNode.target;
                     let written_via = !isUnspec
                         && argNode.type.is_mutref
-                        && (isNative || out.events.args_ever_written.has(argTarget.index));
+                        && (isNative || out.events.ever_written.has(argTarget.index));
 
                     mut hard_risk: bitset::BitSet;
                     if (written_via)
@@ -3599,10 +3599,6 @@ pub fn solve(
                     let idx_body = outItems.len + FN_BODY_BACK;
                     outItems[idx_body] = s_body || BUG("falsy body");
                     didSetBody = true;
-
-                    // ARGUMENTS AT RISK ///////////////////////////////////////////////////
-                    _current_fn.flow.ArgsWritten_shake(_current_fn.events.args_ever_written);
-                    ////////////////////////////////////////////////////////////////////////
                 }
 
                 //
@@ -6555,8 +6551,11 @@ pub fn solve(
                 }
 
                 // ARGUMENTS AT RISK ////////////////////////
-                if (flow.is_arg.has(target))
-                    events.args_ever_written.add(target);
+                fn tagWritten(shadow target: i32)
+                    if (events.ever_written.add_once(target))
+                        flow.parents.unless_oob(target).each(fn tagWritten);
+
+                tagWritten(target);
                 /////////////////////////////////////////////
             }
         }

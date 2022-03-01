@@ -153,19 +153,3 @@ pub fn ArgsAtRisk_list(
             hard_risk.add(other_position);
     }
 }
-
-
-//
-
-pub fn ArgsWritten_shake(flow: Flow, ref args: bitset::BitSet)
-{
-    for (mut i = min(args.size, flow.arg_parents.len); i --> 0; )
-    {
-        if !(args.has(i))
-            continue;
-
-        let aliases = flow.arg_parents[i];
-        for (shadow mut i = 0; i < aliases.len; i++)
-            args.add(aliases[i]);
-    }
-}
