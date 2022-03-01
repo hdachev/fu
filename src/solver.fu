@@ -6265,8 +6265,8 @@ pub fn solve(
 
         fn RESOLVE_byMutvar(target: Target)
         {
-            target.modid == -_current_fn.target.index || BUG("Trying to mutvar a static.");
-            return RESOLVE_byMutvar(target.index);
+            return target.modid == -_current_fn.target.index
+                && RESOLVE_byMutvar(target.index);
         }
 
         fn RESOLVE_byMutvar(target: i32)
@@ -6275,7 +6275,8 @@ pub fn solve(
 
             let t = nested(target);
             ref o = GET_mut(t);
-            if (o.flags & F_REF || !o.type.is_rx_copy)
+
+            if (!o.acceptsTempCopies)
                 return false;
 
             o.type.is_mutref && BUG(
@@ -6284,6 +6285,10 @@ pub fn solve(
 
             o.kind == "var"                 || BUG("RESOLVE_byMutvar: Not a variable.");
             o.type.lifetime.uni0n.len == 1  || BUG("RESOLVE_byMutvar: lt.len != 1"  );
+
+            if (!o.type.is_rx_copy)
+                return false;
+
             if !(o.flags & F_MUT)
             {
                 o.flags  |= F_MUT;
@@ -6326,12 +6331,8 @@ pub fn solve(
 
             // Try to introduce a copy on an intermediate variable.
             //  This should help with closures and stuff.
-            if (arg.kind == "call" &&  arg.target.kind == "var"
-                                   && !arg.target.type.is_mutref)
-            {
-                if (RESOLVE_byMutvar(arg.target))
-                    return true;
-            }
+            if (arg.kind == "call" && RESOLVE_byMutvar(arg.target))
+                return true;
 
             // We don't allow this on implicit arguments, which includes closures.
             //  Implicitly copying implicit arguments is a bit much (TODO not sure, is it?).
@@ -6357,6 +6358,19 @@ pub fn solve(
         fn acceptsTempCopies(arg: Argument)
         {
             return !(arg.flags & (F_IMPLICIT | F_REF));
+        }
+
+        fn acceptsTempCopies(o: Overload)
+        {
+            return   o.kind == "var"
+                && !(o.flags & (F_IMPLICIT | F_REF))
+                &&  !o.type.is_mutref;
+        }
+
+        fn isSoftRiskOkArg(target: Target)
+        {
+            return target.flags & F_ARG
+                && target.acceptsTempCopies();
         }
 
         fn bck_name(shadow target: i32)
