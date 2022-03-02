@@ -34,12 +34,11 @@ pub let N_NonTrivAutoCopy   = 1 << 13;
 
 pub let N_RelaxRespec       = 1 << 14;
 
-pub let N_BckVarCopy        = 1 << 15;
-pub let N_BckArgCopy        = 1 << 16;
-pub let N_BckExplicitLTR    = 1 << 17;
+pub let N_BckSoftRisk       = 1 << 15;
+pub let N_BckMustSeq        = 1 << 16;
 
-pub let N_SD_HasStaticInit  = 1 << 18;
-pub let N_SD_ExternPrivates = 1 << 19;
+pub let N_SD_HasStaticInit  = 1 << 30;
+pub let N_SD_ExternPrivates = 1 << 31;
 
 
 //
@@ -6354,6 +6353,24 @@ pub fn solve(
             return o.flags & F_ARG && !o.acceptsTempCopies();
         }
 
+        fn isInvalidatedBy(read: Region[], write: Region[])
+        {
+            // TODO if regions were target indices we could just inter here,
+            //  but we can't because arg regions are negative.
+            for (mut r = 0; r < read.len; r++)
+            {
+                shadow let r = Region_asLocal(read[r]);
+                if (r) for (mut w = 0; w < write.len; w++)
+                {
+                    shadow let w = Region_asLocal(write[w]);
+                    if (w && flow.invalidates.unless_oob(w).has(r))
+                        return true;
+                }
+            }
+
+            return false;
+        }
+
 
         //
 
@@ -6791,31 +6808,27 @@ pub fn solve(
                                     return;
                                 }
 
-                                // Soft risk check -
-                                //  If neither is listed as a hard risk,
-                                //   and neither invalidates the other, then we should be good.
-                                if (!host_arg0.hard_risk.has(i1) &&
-                                    !host_arg1.hard_risk.has(i0))
-                                {
-                                    /*
-                                    let arg0 = args[i0];
-                                    let arg1 = args[i1];
-
-                                    if ((!host_arg0.is_mutref || !shallow1.isInvalidatedBy(shallow0)) &&
-                                        (!host_arg1.is_mutref || !shallow0.isInvalidatedBy(shallow1)))
-                                    {
-                                        // Soft risk ok.
-                                        return;
-                                    }
-                                    */
-                                }
-
                                 // Do we see any aliasing here?
                                 let unwound1 = bck_unwound[i1];
 
                                 let inter = Lifetime_inter(unwound0, unwound1);
                                 if !(inter)
                                     return;
+
+                                // Soft risk check -
+                                //  If neither is listed as a hard risk,
+                                //   and neither invalidates the other, then we should be good.
+                                if (!host_arg0.hard_risk.has(i1) &&
+                                    !host_arg1.hard_risk.has(i0))
+                                {
+                                    if ((!host_arg0.is_mutref || !shallow1.uni0n.isInvalidatedBy(write: shallow0.uni0n)) &&
+                                        (!host_arg1.is_mutref || !shallow0.uni0n.isInvalidatedBy(write: shallow1.uni0n)))
+                                    {
+                                        // Soft risk ok -
+                                        //  this is the new thing, further relaxing the bck.
+                                        return makeNote(N_BckSoftRisk);
+                                    }
+                                }
 
                                 // Try to resolve by injecting a copy -
                                 {
@@ -7056,6 +7069,7 @@ pub fn solve(
                                             //
                                             let mustSeq = ooe_ir_evalsBefore_iw ? r : w;
                                             MUSTSEQ_mask |= 1 << (mustSeq & 31);
+                                            makeNote(N_BckMustSeq);
                                         }
 
                                         break;
