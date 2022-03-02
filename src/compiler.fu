@@ -525,16 +525,24 @@ pub fn ZERO(
     {
         let arr = expectations[i];
         let src = sources[i];
-        let cpp = ctx.modules[i + 1].out.cpp;
+        let out = ctx.modules[i + 1].out;
+        let cpp = out.cpp;
 
         for (shadow mut i = 0; i < arr.len; i++)
         {
             let x = arr[i];
-            let idx = x.find(' ');
-            let cmd = x.slice(0, idx);
-            let rest = x.slice(idx + 1);
 
-            let found = cpp.src.has(rest);
+            let noteBit = NOTES.find(x);
+            if (noteBit >= 0)
+            {
+                out.solve.notes & (1 << noteBit) || throw("Expected note not listed: `" ~ x ~ "` in:\n" ~ src ~ "\n\nOutput is:\n\n" ~ cpp.src);
+                continue;
+            }
+
+            let idx     = x.find(' ');
+            let cmd     = x.slice(0, idx);
+            let rest    = x.slice(idx + 1);
+            let found   = cpp.src.has(rest);
 
             if (cmd == "EXPECT")
                 found || throw("EXPECT mismatch: `;; " ~ x ~ "` in:\n" ~ src ~ "\n\nOutput is:\n\n" ~ cpp.src);
