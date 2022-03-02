@@ -2152,37 +2152,37 @@ pub fn runTests()
 
     ZERO(`
         fn test(ref a: i32, ref b: i32) {
-            return (++a) + (++b);
+            return (++a) + 10 * (++b);              ;; BCK_must_seq
         }
 
-        fn main() {
+        fn main() {                                 ;; BCK_soft_risk
             mut x = 0;
-
-            <fail alias>
-            ref y = x; <pass/>
-            mut y = x; </fail>
-
+        <alt>
+            let z = test(x, x);
+        <alt/>
+            ref y = x;
             let z = test(x, y);
-            return x+y - z;
+        </alt>
+            return x == 2 && z == 21 ? 0 : 1;
         }
     `);
 
     ZERO(`
         pub fn test_inner(ref a: i32, ref b: i32)
-            (++a) + (++b);
+            (++a) + 10 * (++b);                     ;; BCK_must_seq
 
         pub fn test_outer(ref a: i32, ref b: i32)
             test_inner(a, b);
 
-        fn main() {
+        fn main() {                                 ;; BCK_soft_risk
             mut x = 0;
-
-            <fail alias>
-            ref y = x; <pass/>
-            mut y = x; </fail>
-
+        <alt>
+            let z = test_outer(x, x);
+        <alt/>
+            ref y = x;
             let z = test_outer(x, y);
-            return x+y - z;
+        </alt>
+            return x == 2 && z == 21 ? 0 : 1;
         }
     `);
 
@@ -2461,21 +2461,22 @@ pub fn runTests()
     `);
 
     ZERO(`
-        // a cannot alias b
         pub fn incr_a_or_b_and_b_or_a(ref a: i32, ref b: i32) {
             ref x = a || b; ++x;
             ref y = b || a; ++y;
         }
 
         fn main() {
-            mut a = 0;
-            mut b = 0;
+            mut a = 0;                          ;; BCK_soft_risk
 
-            <fail alias>
-            incr_a_or_b_and_b_or_a(a, a); <pass/>
-            incr_a_or_b_and_b_or_a(a, b); </fail>
+            <alt>
+            incr_a_or_b_and_b_or_a(a, a);
+            <alt/>
+            ref b = a;
+            incr_a_or_b_and_b_or_a(a, b);
+            </alt>
 
-            return a + b - 2;
+            return a - 2;
         }
     `);
 
@@ -2953,9 +2954,11 @@ pub fn runTests()
 
     ZERO(`
         fn test(ref a: i32[], ref b: i32[]) {
-            <fail alias>
-            if (a[0] += 1) <pass/>
-            if (a[0] == 1) </fail>
+            <alt>
+            if (a[0]++ == 1)            ;; BCK_soft_risk
+            <alt/>
+            if (a[0] == 1)
+            </alt>
                 a ~= 1;
             else
                 b ~= 1;
@@ -3429,7 +3432,7 @@ pub fn runTests()
         }
     `);
 
-    TODO_borrowck(`
+    ZERO(`
         fn PASS_borrowCheck_incr_a_ret_b(ref a: i32, ref b: i32) {
             a++;        // we're done writing to a before
             return b;   //  EXTRA DRAMA: we dont cg const refs for primitives right now
@@ -3442,7 +3445,7 @@ pub fn runTests()
         }
     `);
 
-    TODO_borrowck(`
+    ZERO(`
         fn PASS_borrowCheck_reduct(ref a: i32, ref b: i32[])
         {
             // If this were (ref!b a, ref b):
@@ -3471,28 +3474,22 @@ pub fn runTests()
         }
     `);
 
-    TODO_borrowck(`
+    ZERO(`
         struct Node { id: i32; items?: Node[]; };
 
-        fn traverse(node: Node, visit): bool {
-            if !(visit(node))
-                return false;
-
+        fn traverse(node: Node, visit) {
+            visit(node);
             for (mut i = 0; i < node.items.len; i++)
-                if !(traverse(node.items[i], fn visit))
-                    return false;
-
-            return true;
+                traverse(node.items[i], fn visit);
         }
 
         fn PASS_borrowCheck(ref root: Node)
         {
             mut n: i32;
-            fn count(id: i32) {
+            fn count(id: i32)
                 traverse(root): |i|
                     if (i.id == id)
                         n++;
-            }
 
             fn check(ref node: Node) {
                 if (node.items)
