@@ -432,6 +432,9 @@ pub fn solve(
 
     //
 
+    fn isRefArg(o: Overload): bool
+        o.flags & F_ARG && o.kind == "var" && o.solved.type.is_ref;
+
     fn isRTL(o: Overload): bool
         !!(o.flags & F_OOE_RTL);
 
@@ -540,7 +543,8 @@ pub fn solve(
             mutref = false;
         }
 
-        res.lifetime.uni0n.only.Region_isArg || fail("Non-single-arg __native lifetime.");
+        res.lifetime.uni0n.only.Region_isArgPosition || fail(
+            "Non-single-arg __native lifetime.");
 
         // TODO FIX UNIQUENESS adding a static lifetime to ref results
         //  that are not assignable from the source argument,
@@ -570,11 +574,12 @@ pub fn solve(
             {
                 let region  = lifetime.uni0n[i];
                 {
-                    !i || region > _last || BUG("Lifetime_test: not a sorted set");
+                    !i || region <> _last > 0 || BUG("Lifetime_test: not a sorted set");
                     _last = region;
                 }
 
-                if (Region_isArg(region))
+                // TODO we shouldn't see these during solve anymore
+                if (Region_isArgPosition(region))
                     continue;
 
                 if (region.Region_isTemp)
@@ -632,7 +637,7 @@ pub fn solve(
         // Nothing to do if empty/non-arg.
         // TODO FIX this opti no longer works correctly
         //  since the static LT now looks like an argument (is negative).
-        if (!Region_isArg(returned.if_first))
+        if (!Region_isArgPosition(returned.if_first))
             return Lifetime(uni0n: returned);
 
         mut keep:       Lifetime;
@@ -650,7 +655,8 @@ pub fn solve(
                 continue;
             }
 
-            region.Region_isArg() || BUG("Not an argument region: " ~ region.index);
+            region.Region_isArgPosition() || BUG(
+                "Not an argument position: " ~ region.index);
 
             let index = region.Region_toArgIndex;
 
@@ -684,10 +690,7 @@ pub fn solve(
 
     using fn Region_GET(r: Region)
     {
-        // TODO statics
-        let idx = Region_isArg(r)   ? Region_toArgIndex(r)
-                                    : Region_toLocalIndex(r);
-        return GET(nested(idx));
+        return GET(nested(Region_asIndex(r)));
     }
 
     fn qWHAT(l: Lifetime)
@@ -3428,7 +3431,7 @@ pub fn solve(
                     Lifetime_test(retval.lifetime);
 
                 retval.lifetime.uni0n.each: |r|
-                    r.Region_isArg() || r.Region_isStatic() || BUG(
+                    r.Region_isArgPosition() || r.Region_isStatic() || BUG(
                         "updateScope: Non-static/non-arg leaked:\n\t" ~ r.qWHAT ~ "\n\n\tIn retval lifetime:\n\t" ~ retval.lifetime.qWHAT);
 
                 overload.flags  = out.flags;
@@ -4149,9 +4152,24 @@ pub fn solve(
 
     fn Lifetime_vs(lifetime: Lifetime, locals_start!?: i32)
     {
-        return lifetime.uni0n.if_first.Region_toLocalIndex >= locals_start  ? +1
-             : lifetime.uni0n.if_last .Region_toLocalIndex <  locals_start  ? -1
-                                                                            :  0;
+        mut neg = false;
+        mut pos = false;
+
+        let r = lifetime.uni0n;
+        for (mut i = 0; i < r.len && !(pos && neg); i++)
+        {
+            shadow let r = r[i];
+            if (Region_toLocalIndex(r) < locals_start)
+                neg = true;
+            else if (Region_isTemp(r))
+                pos = true;
+            else if (Region_GET(r).isRefArg)
+                neg = true;
+            else
+                pos = true;
+        }
+
+        return neg == pos ? 0 : neg ? -1 : +1;
     }
 
     fn solveJump(node: Node, kills: i32): SolvedNode
@@ -4236,18 +4254,6 @@ pub fn solve(
         shadow let type = type.is_ref2temp
             ? clear_refs(type)
             :            type;
-        ////////////////////////////////////////////////////////////////
-
-        // TEMP ////////////////////////////////////////////////////////
-        // Same as above - if we're returning strictly local variable,
-        //  we're done here, behave as if we're returning a temp.
-        //
-        // DISABLING: this should be more "optimal"
-        //  but we must compile correctly without it
-        //
-        // shadow let type = Lifetime_vs(Lifetime_unwind(type.lifetime), :h.locals_start) > 0
-        //     ? clear_refs(type)
-        //     :            type;
         ////////////////////////////////////////////////////////////////
 
         reportReturnType(:h, type);

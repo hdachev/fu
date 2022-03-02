@@ -36,15 +36,11 @@ pub fn ==(a: Target, b: Target)
 // locals      = int pos
 // temporary   = int max
 
-pub fn > (a: Region, b: Region) a.index >  b.index;
-pub fn >=(a: Region, b: Region) a.index >= b.index;
 pub fn !=(a: Region, b: Region) a.index != b.index;
 pub fn ==(a: Region, b: Region) a.index == b.index;
 
 pub fn Region_toLocalIndex(region: Region) region.index;
 pub fn Region_fromLocalIndex(index: i32) Region(:index);
-
-pub fn Region_isArg(region: Region) region.index < 0;
 
 pub fn Region_toArgIndex(region: Region) -region.Region_toLocalIndex;
 pub fn Region_fromArgIndex(index: i32) Region_fromLocalIndex(-index);
@@ -54,6 +50,9 @@ let Region_STATIC   = Region_fromLocalIndex(0x80000001.i32); // not 0x80000000, 
 
 pub fn Region_isTemp(region: Region)    region == Region_TEMP;
 pub fn Region_isStatic(region: Region)  region == Region_STATIC;
+
+pub fn Region_isArgPosition(region: Region)
+    region.index < 0 // && !region.Region_isStatic; // TODO FIX wtf
 
 pub fn Region_asIndex(using r: Region)
 {

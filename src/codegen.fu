@@ -2343,10 +2343,10 @@ pub fn cpp_codegen(implicit module: Module, implicit ctx: Context): CodegenOutpu
                 //
                 if (expr.kind == "call")
                 {
-                    fn Lifetime_hasArguments(lifetime: Lifetime)
+                    fn Lifetime_hasArgPositions(lifetime: Lifetime)
                     {
                         for (mut i = 0; i < lifetime.uni0n.len; i++)
-                            if (lifetime.uni0n[i].Region_isArg)
+                            if (lifetime.uni0n[i].Region_isArgPosition)
                                 return true;
 
                         return false;
@@ -2360,7 +2360,7 @@ pub fn cpp_codegen(implicit module: Module, implicit ctx: Context): CodegenOutpu
                         return cgNode(expr, debug: "cgMoveOperator[]", mode: M_MOVE);
 
                     //
-                    if (!o.type.is_mutref && o.type.lifetime.Lifetime_hasArguments)
+                    if (!o.type.is_mutref && o.type.lifetime.Lifetime_hasArgPositions)
                         return "/* MOVE_FROM_CONST_REF */static_cast<"
                              ~ typeAnnotBase(o.type) ~ "&&>(const_cast<"
                              ~ typeAnnotBase(o.type)  ~ "&>("
