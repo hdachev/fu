@@ -6560,7 +6560,21 @@ int main() { return fu_MAIN(); }
         }
 
 -----
-TODO: o-922f1da53df8e612-13992.cpp:97
+TODO: _0.fu @5:23:
+
+[2m      |             fn woot(x, ref b: i32 = a) {[0m
+[2m      |                 if (x & 1) {[0m
+    5 |                     x [31;1m/=[0m 2;
+[2m      |                     return test(x, b);[0m
+[2m      |                 }[0m
+
+	Bad call to [34;1m/=[0m: 
+
+	[35;1mtemplate[0m [34;1m/=[0m: Could not specialize: Cannot solve argument [34;1ma[0m pattern for i32: copy
+
+        Solving [35;1mfn[0m [34;1mwoot_HLUB9EFQ[0m
+                [35;1mfn[0m [34;1mtest_eiJQ4WXt[0m
+
 -----
 
         struct Arg { name: string };
@@ -9280,11 +9294,11 @@ int main() { return fu_MAIN(); }
         }
 
 -----
-_0.fu @16:31:
+_0.fu @16:27:
 
 [2m      | [0m
 [2m      | [0m
-   16 |             ab_cd(ab, cd, ab, [31;1mcd[0m); 
+   16 |             ab_cd(ab, cd, [31;1mab[0m, cd); 
 [2m      | [0m
 [2m      |             return ab - cd;[0m
 
@@ -9367,11 +9381,11 @@ int main() { return fu_MAIN(); }
         }
 
 -----
-_0.fu @21:37:
+_0.fu @21:33:
 
 [2m      | [0m
 [2m      | [0m
-   21 |             ab_cd_defer(ab, cd, ab, [31;1mcd[0m); 
+   21 |             ab_cd_defer(ab, cd, [31;1mab[0m, cd); 
 [2m      | [0m
 [2m      |             return ab.i - cd.i;[0m
 
@@ -9482,11 +9496,11 @@ int main() { return fu_MAIN(); }
         }
 
 -----
-_0.fu @19:37:
+_0.fu @19:33:
 
 [2m      | [0m
 [2m      | [0m
-   19 |             ab_cd_outer(ab, cd, ab, [31;1mcd[0m); 
+   19 |             ab_cd_outer(ab, cd, [31;1mab[0m, cd); 
 [2m      | [0m
 [2m      |             return ab - cd;[0m
 
@@ -9576,11 +9590,11 @@ int main() { return fu_MAIN(); }
         }
 
 -----
-_0.fu @20:51:
+_0.fu @20:47:
 
 [2m      | [0m
 [2m      | [0m
-   20 |             abcd_efgh(ab, ab, cd, gh, ef, ef, cd, [31;1mgh[0m); 
+   20 |             abcd_efgh(ab, ab, cd, gh, ef, ef, [31;1mcd[0m, gh); 
 [2m      | [0m
 [2m      |             return (ab + cd) - (ef + gh);[0m
 
@@ -10398,11 +10412,11 @@ int main() { return fu_MAIN(); }
         }
 
 -----
-TODO: _0.fu @12:24:
+TODO: _0.fu @12:26:
 
 [2m      |             mut ab = AB(1, 2);[0m
 [2m      | [0m
-   12 |             test(ab.a, [31;1mab[0m.b);
+   12 |             test(ab.a, ab[31;1m.[0mb);
 [2m      | [0m
 [2m      |             return ab.b - 5;[0m
 
@@ -33219,17 +33233,7 @@ int main() { return fu_MAIN(); }
         }
 
 -----
-TODO: _0.fu @4:36:
-
-[2m      |         fn useless_ref_lambda(ref sources: string[]) {[0m
-[2m      |             fn src = sources[sources.len / 2]; // didn't relax the ref, failed bck[0m
-    4 |             return src[1, src.len] [31;1m~[0m src[0, 1];
-[2m      |         }[0m
-[2m      |         fn main() {[0m
-
-	At call to [35;1m__native[0m [34;1m
-<fu/vec/concat.h>
-+[0m, argument binding [31;1ma[0m (arg #0) at 4:23:
+TODO: _0.fu @4:23:
 
 [2m      |         fn useless_ref_lambda(ref sources: string[]) {[0m
 [2m      |             fn src = sources[sources.len / 2]; // didn't relax the ref, failed bck[0m
@@ -33237,11 +33241,21 @@ TODO: _0.fu @4:36:
 [2m      |         }[0m
 [2m      |         fn main() {[0m
 
-	... invalidated by subsequent write to [35;1marg[0m [34;1msources[0m upon evaluation of argument [31;1mb[0m (arg #1) at 4:38:
+	At call to [35;1m__native[0m [34;1m
+<fu/view.h>
+fu::get_view[0m, argument binding [31;1ma[0m (arg #0) at 4:20:
 
 [2m      |         fn useless_ref_lambda(ref sources: string[]) {[0m
 [2m      |             fn src = sources[sources.len / 2]; // didn't relax the ref, failed bck[0m
-    4 |             return src[1, src.len] ~ [31;1msrc[0m[0, 1];
+    4 |             return [31;1msrc[0m[1, src.len] ~ src[0, 1];
+[2m      |         }[0m
+[2m      |         fn main() {[0m
+
+	... invalidated by subsequent write to [35;1marg[0m [34;1msources[0m upon evaluation of argument [31;1mend[0m (arg #2) at 4:27:
+
+[2m      |         fn useless_ref_lambda(ref sources: string[]) {[0m
+[2m      |             fn src = sources[sources.len / 2]; // didn't relax the ref, failed bck[0m
+    4 |             return src[1, [31;1msrc[0m.len] ~ src[0, 1];
 [2m      |         }[0m
 [2m      |         fn main() {[0m
 
