@@ -12174,7 +12174,7 @@ _0.fu @23:23:
 [2m      |         }[0m
 [2m      | [0m
 
-	... invalidated by subsequent write to [35;1mvar[0m [34;1my[0m upon evaluation of argument [31;1mb[0m (arg #1) at 23:33:
+	... invalidated by subsequent write to [35;1mvar[0m [34;1mx[0m upon evaluation of argument [31;1mb[0m (arg #1) at 23:33:
 
 [2m      |             mut x: Y;[0m
 [2m      |             ref y = x.y;[0m
@@ -12335,7 +12335,7 @@ _0.fu @19:27:
 [2m      |         }[0m
 [2m      | [0m
 
-	... invalidated by subsequent write to [35;1mvar[0m [34;1mxy[0m upon evaluation of argument [31;1ma[0m (arg #0) at 19:21:
+	... invalidated by subsequent write to [35;1marg[0m [34;1mx[0m upon evaluation of argument [31;1ma[0m (arg #0) at 19:21:
 
 [2m      |         fn test(ref x: X, ref y: X) {[0m
 [2m      |             ref xy = y || x;[0m
@@ -12810,15 +12810,16 @@ _0.fu @18:20:
 [2m      |         }[0m
 [2m      | [0m
 
-	Cannot access [31;1mpop[0m, reference invalidated by write to [31;1mnode[0m at 15:22:
+	Cannot access [31;1mpop[0m, reference invalidated by write to [31;1mnode[0m at 11:31:
 
-[2m      |             else {[0m
-[2m      |                 let head = node.items[0];[0m
-   15 |                 node [31;1m=[0m head;
+[2m      |             let pop = node.items[N - 1];[0m
+[2m      |             if (N > 2) {[0m
+   11 |                 node.items.pop[31;1m([0m);
 [2m      |             }[0m
-[2m      | [0m
+[2m      |             else {[0m
 
-	At call to [34;1m=[0m
+	At call to [34;1m
+.pop()[0m
             
 
         Solving [35;1mfn[0m [34;1mpopAndOr_FtANIDl0[0m
