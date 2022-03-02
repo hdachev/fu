@@ -6169,7 +6169,7 @@ pub fn solve(
             {
                 // Soft vs hard risk -
                 //  Non-direct reads from arguments put the argument at hard risk.
-                if (!trySoft || !nested(read).isSoftRiskOkArg)
+                if (!trySoft || !nested(read).acceptsSoftRisk)
                     _current_fn.flow.at_hard_risk.grow_if_oob(write).set::add(read);
 
                 // Shake [1] - decomp write parents on first add.
@@ -6376,15 +6376,14 @@ pub fn solve(
                 &&  !o.type.is_mutref;
         }
 
-        fn isSoftRiskOkArg(target: Target)
+        fn acceptsSoftRisk(arg: Argument)
         {
-            return target.flags & F_ARG
-                && target.acceptsTempCopies();
+            return !arg.acceptsTempCopies();
         }
 
-        fn bck_name(shadow target: i32)
+        fn acceptsSoftRisk(o: Overload)
         {
-            return GET(nested(target)).name.human;
+            return o.flags & F_ARG && !o.acceptsTempCopies();
         }
 
 
@@ -6449,6 +6448,11 @@ pub fn solve(
 
             let o = GET(node.target);
             return node.token.addr_and_snippet ~ "\n\tAt call to " ~ o.name.qID ~ stack;
+        }
+
+        fn bck_name(shadow target: i32)
+        {
+            return GET(nested(target)).name.human;
         }
 
 
@@ -6711,8 +6715,8 @@ pub fn solve(
 
                 for (mut i0 = 0; i0 < args.len; i0++)
                 {
-                    let host_arg    = host_args[i0];
-                    let expect      = host_arg.type;
+                    let host_arg0   = host_args[i0];
+                    let expect      = host_arg0.type;
 
                     // BORROWCK: multiple mutrefs error,
                     //  this is the only thing we can't workaround by copying.
@@ -6755,13 +6759,13 @@ pub fn solve(
                         // Validate aliasing.
                         if (bck_unwound)
                         {
-                            let shallow = args[i0].type.lifetime;
-                            let unwound = bck_unwound[i0] = Lifetime_unwind_noStatic(shallow);
+                            let shallow0 = args[i0].type.lifetime;
+                            let unwound0 = bck_unwound[i0] = Lifetime_unwind_noStatic(shallow0);
 
                             // Keep track of caller arguments.
-                            for (mut i = 0; i < unwound.uni0n.len; i++)
+                            for (mut i = 0; i < unwound0.uni0n.len; i++)
                             {
-                                if (unwound.uni0n[i].Region_asIndex() > 0)
+                                if (unwound0.uni0n[i].Region_asIndex() > 0)
                                 {
                                     arg_first   = arg_first < 0 ? i0 : arg_first;
                                     arg_last    = i0;
@@ -6770,13 +6774,15 @@ pub fn solve(
                             }
 
                             //
-                            fn validate(i: i32)
+                            fn validate(i1: i32)
                             {
-                                let other = host_args[i];
+                                let host_arg1 = host_args[i1];
 
                                 // Can the fn handle aliasing here?
-                                if (!host_arg.soft_risk.has(i) && !other.soft_risk.has(i0))
+                                if (!host_arg0.soft_risk.has(i1) && !host_arg1.soft_risk.has(i0))
                                     return;
+
+                                let shallow1 = args[i1].type.lifetime;
 
                                 // A note on something that's non-obvious -
                                 //  the AAR stuff here DOESNT CARE ABOUT ALIASING -
@@ -6787,30 +6793,26 @@ pub fn solve(
                                 //
                                 if (AAR)
                                 {
-                                    let shallow1 = args[i].type.lifetime;
-
                                     if (i0 >= arg_first && i0 <= arg_last &&
-                                        i  >= arg_first && i  <= arg_last)
+                                        i1 >= arg_first && i1 <= arg_last)
                                     {
-                                        // TODO avoid the N*M thing here -
-                                        //  both lists are sorted, we can iterate them together.
-                                        for (shadow mut i = 0; i < shallow.uni0n.len; i++)
+                                        for (mut r0 = 0; r0 < shallow0.uni0n.len; r0++)
                                         {
-                                            let region0 = Region_asIndex(shallow.uni0n[i]);
-                                            if (region0 > 0)
+                                            let region0 = Region_asIndex(shallow0.uni0n[r0]);
+                                            if (region0)
                                             {
-                                                for (shadow mut i = 0; i < shallow1.uni0n.len; i++)
+                                                for (mut r1 = 0; r1 < shallow1.uni0n.len; r1++)
                                                 {
-                                                    let region1 = Region_asIndex(shallow1.uni0n[i]);
-                                                    if (region1 > 0 && region1 != region0)
+                                                    let region1 = Region_asIndex(shallow1.uni0n[r1]);
+                                                    if (region1 && region0 != region1)
                                                     {
-                                                        if (host_arg.is_mutref)
+                                                        if (host_arg0.is_mutref)
                                                             RESOLVE_byAAR(write: region0, read: region1,
-                                                                trySoft: !host_arg.hard_risk.has(i));
+                                                                trySoft: !host_arg0.hard_risk.has(i1));
 
-                                                        if (other.is_mutref)
+                                                        if (host_arg1.is_mutref)
                                                             RESOLVE_byAAR(read: region0, write: region1,
-                                                                trySoft: !other.hard_risk.has(i));
+                                                                trySoft: !host_arg1.hard_risk.has(i0));
                                                     }
                                                 }
                                             }
@@ -6821,10 +6823,29 @@ pub fn solve(
                                     return;
                                 }
 
-                                // Do we see any aliasing here?
-                                let unwound1 = bck_unwound[i];
+                                // Soft risk check -
+                                //  If neither is listed as a hard risk,
+                                //   and neither invalidates the other, then we should be good.
+                                if (!host_arg0.hard_risk.has(i1) &&
+                                    !host_arg1.hard_risk.has(i0))
+                                {
+                                    /*
+                                    let arg0 = args[i0];
+                                    let arg1 = args[i1];
 
-                                let inter = Lifetime_inter(unwound, unwound1);
+                                    if ((!host_arg0.is_mutref || !shallow1.isInvalidatedBy(shallow0)) &&
+                                        (!host_arg1.is_mutref || !shallow0.isInvalidatedBy(shallow1)))
+                                    {
+                                        // Soft risk ok.
+                                        return;
+                                    }
+                                    */
+                                }
+
+                                // Do we see any aliasing here?
+                                let unwound1 = bck_unwound[i1];
+
+                                let inter = Lifetime_inter(unwound0, unwound1);
                                 if !(inter)
                                     return;
 
@@ -6834,10 +6855,10 @@ pub fn solve(
 
                                     // It's either or, there's no case
                                     //  where you can copy either (at least one is a ref).
-                                    if !(host_arg.is_mutref)
+                                    if !(host_arg0.is_mutref)
                                         which = i0;
-                                    else if !(other.is_mutref)
-                                        which = i;
+                                    else if !(host_arg1.is_mutref)
+                                        which = i1;
 
                                     if (which >= 0)
                                     {
@@ -6853,9 +6874,9 @@ pub fn solve(
 
                                     err ~= host_args.len == 2 && target.flags & F_OPERATOR
                                         ?   ": Both operands alias:\n"
-                                        :   ": Arguments " ~ host_args[i0].name.human.qBAD
-                                            ~      " and " ~ host_args[i ].name.human.qBAD
-                                            ~      " (args #" ~ i0 ~ " and #" ~ i  ~ ") both alias:\n";
+                                        :   ": Arguments " ~ host_arg0.name.human.qBAD
+                                            ~      " and " ~ host_arg1.name.human.qBAD
+                                            ~      " (args #" ~ i0 ~ " and #" ~ i1 ~ ") both alias:\n";
 
                                     for (shadow mut i = 0; i < inter.uni0n.len; i++)
                                     {
@@ -6901,14 +6922,14 @@ pub fn solve(
                             mutref_last = i0;
 
                             // We'll batch all writes together in a bit.
-                            if (host_arg.flags & F_WRITTEN_TO)
+                            if (host_arg0.flags & F_WRITTEN_TO)
                             {
-                                let arg = args[i0];
+                                let arg0 = args[i0];
 
-                                host_arg.is_mutref || BUG(host_arg.name.human.qID ~ ": host_arg.written but !host_arg.is_mutref");
-                                arg.is_mutref      || BUG(host_arg.name.human.qID ~ ": host_arg.written but !arg.is_mutref");
+                                host_arg0.is_mutref || BUG(host_arg0.name.human.qID ~ ": host_arg0.written but !host_arg0.is_mutref");
+                                arg0.is_mutref      || BUG(host_arg0.name.human.qID ~ ": host_arg0.written but !arg.is_mutref");
 
-                                bck_writes.set::add(arg.lifetime.uni0n,
+                                bck_writes.set::add(arg0.lifetime.uni0n,
                                     extras: bck_positions, extra: i0);
                             }
                         }
