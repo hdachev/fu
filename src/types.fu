@@ -28,25 +28,16 @@ pub fn ==(a: Target, b: Target)
     a.index == b.index;
 
 
-// LIFETIMES
-//
-// static      = int min
-// arguments   = int neg
-// fn frame    = 0
-// locals      = int pos
-// temporary   = int max
+// Lifetimes.
 
 pub fn !=(a: Region, b: Region) a.index != b.index;
 pub fn ==(a: Region, b: Region) a.index == b.index;
 
-pub fn Region_toLocalIndex(region: Region) region.index;
-pub fn Region_fromLocalIndex(index: i32) Region(:index);
+pub fn Region_toLocal(region: Region) region.index;
+pub fn Region_fromLocal(index: i32) Region(:index);
 
-pub fn Region_toArgIndex(region: Region) -region.Region_toLocalIndex;
-pub fn Region_fromArgIndex(index: i32) Region_fromLocalIndex(-index);
-
-let Region_TEMP     = Region_fromLocalIndex(0x7fffffff.i32);
-let Region_STATIC   = Region_fromLocalIndex(0x80000001.i32); // not 0x80000000, overflows when negated
+let Region_TEMP     = Region_fromLocal(0x7fffffff.i32);
+let Region_STATIC   = Region_fromLocal(0x80000001.i32); // not 0x80000000, overflows when negated
 
 pub fn Region_isTemp(region: Region)    region == Region_TEMP;
 pub fn Region_isStatic(region: Region)  region == Region_STATIC;
@@ -54,15 +45,11 @@ pub fn Region_isStatic(region: Region)  region == Region_STATIC;
 pub fn Region_isArgPosition(region: Region)
     region.index < 0 // && !region.Region_isStatic; // TODO FIX wtf
 
-pub fn Region_asIndex(using r: Region)
-{
-    return r == Region_TEMP || r == Region_STATIC ? 0 : index < 0 ? -index : index;
-}
+pub fn Region_toArgPosition(region: Region)     -(region.index + 1);
+pub fn Region_fromArgPosition(position: i32)    Region(index: -(position + 1));
 
-pub fn Region_asArgIndex(using r: Region)
-{
-    return r == Region_STATIC || r.index > 0 ? 0 : -index;
-}
+pub fn Region_asLocal(using r: Region)
+    r == Region_TEMP || index < 0 ? 0 : index;
 
 
 //

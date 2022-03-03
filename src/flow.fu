@@ -52,7 +52,7 @@ pub fn Reference_trackLocalRef(ref flow: Flow, left: i32, right: Lifetime)
 
     for (mut i = 0; i < right.uni0n.len; i++)
     {
-        shadow let right = Region_asIndex(right.uni0n[i]);
+        shadow let right = Region_asLocal(right.uni0n[i]);
         if !(right)
             continue;
 
@@ -118,7 +118,7 @@ pub fn Reference_untrackLocalRef(ref flow: Flow, left: i32, right: Lifetime)
     // Unlist parents.
     for (mut i = 0; i < right.uni0n.len; i++)
     {
-        shadow let right = Region_asIndex(right.uni0n[i]);
+        shadow let right = Region_asLocal(right.uni0n[i]);
         if (!right)
             continue;
 

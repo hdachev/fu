@@ -401,15 +401,15 @@ pub fn solve(
         return _current_fnort.EXT_mut.nodes[nodeidx - 1];
     }
 
-    fn GET_next_local_index()
+    fn GET_next_local_index(implicit _current_fnort: Target)
     {
         return _current_fn.target.index
-            && _scope.extended[_current_fn.target.index].locals.len + 1;
+            && _scope.extended[_current_fnort.index].locals.len + 1;
     }
 
-    fn nested(index: i32)
+    fn nested(index: i32, implicit _current_fnort: Target)
     {
-        return Target(modid: -_current_fn.target.index || module.modid, :index);
+        return Target(modid: -_current_fnort.index || module.modid, :index);
     }
 
     // TODO failcase: uncommenting this leads to conversion resolution issues,
@@ -543,8 +543,8 @@ pub fn solve(
             mutref = false;
         }
 
-        res.lifetime.uni0n.only.Region_isArgPosition || fail(
-            "Non-single-arg __native lifetime.");
+        res.lifetime.uni0n.only.Region_asLocal || fail(
+            "Non-single-local __native lifetime.");
 
         // TODO FIX UNIQUENESS adding a static lifetime to ref results
         //  that are not assignable from the source argument,
@@ -588,7 +588,7 @@ pub fn solve(
                     continue;
                 }
 
-                let index = region.Region_toLocalIndex;
+                let index = region.Region_toLocal;
                 if (index)
                 {
                     let o = GET(nested(:index));
@@ -600,7 +600,7 @@ pub fn solve(
         return lifetime;
     }
 
-    fn Lifetime_fromBinding(target: Target, local_of!: i32, flags!: i32): Lifetime
+    fn Lifetime_fromBinding(target: Target, local_of!: i32): Lifetime
     {
         target.modid < 0 || target.modid < 0 || target.modid == module.modid || BUG("not from this module");
 
@@ -610,87 +610,43 @@ pub fn solve(
 
         // Argument?
         let index       = target.index;
+        let region      = Region_fromLocal(index);
 
-        // TODO FIX: there must be no difference between regular & F_MUT args,
-        //  F_MUT args reside in the caller,
-        //   so we can totally return a ref to them,
-        //    no need to copy/move things around in inside.
-        //
-        // TWO THINGS TO FIX:
-        //  1. this here
-        //  2. we "Add a temp lifetime to non F_MUT args"
-        //      in solveLetLike_dontTouchScope() around line 4k
-        //
-        let region      = flags & (F_ARG | F_MUT) == F_ARG
-            ? Region_fromArgIndex(index)
-            : Region_fromLocalIndex(index);
-
-        let res = Lifetime_test(Lifetime(uni0n: [ region ]));
-        return res;
+        return Lifetime_test(Lifetime(uni0n: [ region ]));
     }
 
     fn Lifetime_replaceArgsAtCallsite(target: Target, argNodes: [SolvedNode]): Lifetime
     {
-        let returned    = target.type.lifetime.uni0n;
-        let host_args   = target.args;
-
-        // Nothing to do if empty/non-arg.
-        // TODO FIX this opti no longer works correctly
-        //  since the static LT now looks like an argument (is negative).
-        if (!Region_isArgPosition(returned.if_first))
-            return Lifetime(uni0n: returned);
-
         mut keep:       Lifetime;
         mut replace:    Lifetime;
 
-        mut offset      = host_args.len;
-
-        :NEXT_REGION
-        for (mut i = 0; i < returned.len; i++)
+        let returned    = target.type.lifetime;
+        for (mut i = 0; i < returned.uni0n.len; i++)
         {
-            let region = returned[i];
-
-            if (region.Region_isStatic) {
+            let region = returned.uni0n[i];
+            if (region.Region_isStatic)
+            {
                 keep.uni0n ~= region;
                 continue;
             }
 
-            region.Region_isArgPosition() || BUG(
-                "Not an argument position: " ~ region.index);
+            let argNode = argNodes[region.Region_toArgPosition];
+            let argLt   = argNode.type.is_ref
+                ? argNode.type.lifetime
+                : Lifetime_temporary();
 
-            let index = region.Region_toArgIndex;
-
-            // TODO UNCOMMENT .last doesn't relax correctly, there's a test for that already
-            // items.last.target.index >= index || BUG("Arg region > last.index: " ~ index);
-
-            // Full union here, otherwise we risk messing things up.
-            while (offset--)
-            {
-                let here = host_args[offset].local;
-                if (here == index)
-                {
-                    let argNode = argNodes[offset];
-
-                    let argLt = argNode.type.is_ref
-                        ? argNode.type.lifetime || BUG("refarg without lifetime")
-                        : Lifetime_temporary();
-
-                    replace = Lifetime_union(replace, argLt);
-                    continue :NEXT_REGION;
-                }
-
-                !here || here > index || BUG("Nope, going backwards.");
-            }
-
-            BUG("Could not find argument region: " ~ index);
+            replace     = Lifetime_union(replace, argLt || BUG("refarg without lifetime"));
         }
 
-        return Lifetime_union(keep, replace);
+        return replace
+             ? keep ? Lifetime_union(keep, replace)
+                    : replace
+             : returned;
     }
 
     using fn Region_GET(r: Region)
     {
-        return GET(nested(Region_asIndex(r)));
+        return GET(nested(Region_toLocal(r)));
     }
 
     fn qWHAT(l: Lifetime)
@@ -761,7 +717,7 @@ pub fn solve(
         // Setup the lifetime for references to this binding.
         ref overload = GET_mut(target);
         {
-            let lifetime = Lifetime_fromBinding(target, :local_of, :flags);
+            let lifetime = Lifetime_fromBinding(target, :local_of);
 
             ///////////////////////////////////////////////////////////////
             // Throw away argument lifetime, union below will fix it up. //
@@ -2007,22 +1963,10 @@ pub fn solve(
                 {
                     let orig = node.items[i];
 
-                    // Otherwise the `==` fn never gets "imported".
-                    //  I guess we should move away from the cpp "intrinsics" for these?
-                    //
-                    fn TODO_FIX_has(a: Region[], b: Region)
-                    {
-                        for (shadow mut i = 0; i < a.len; i++)
-                            if (a[i] == b)
-                                return true;
-
-                        return false;
-                    }
-
                     // We'll only attempt to relax arguments whose lifetimes appear in the return value.
                     //  There's this other thing, perhaps we only need to relax a single such argument?
                     //
-                    if (t.type.lifetime.uni0n.TODO_FIX_has(Region_fromArgIndex(t.args[i].local)))
+                    if (t.type.lifetime.uni0n.has(Region_fromArgPosition(i)))
                     {
                         mut type = orig.type;
                         if (type.try_relax(:slot, :relax_mask))
@@ -3287,7 +3231,7 @@ pub fn solve(
             }
 
             // Used twice, once to enable recursion before body, and once when done.
-            fn updateScope(shadow out: CurrentFn, retval: Type, maybeLast!: bool)
+            fn updateScope(shadow out: CurrentFn, mut retval: Type, maybeLast!: bool)
             {
                 ///////////////////////////////
                 if (target.status & SS_DIRTY)
@@ -3328,6 +3272,7 @@ pub fn solve(
 
                     argNode.kind == "let" || BUG();
 
+                    //
                     mut name        = argNode.value;
                     let autocall    = argNode.flags & F_COMPOUND_ID && CompoundArgID_outerSplice(name);
                     let isImplicit  = !!(argNode.flags & F_IMPLICIT);
@@ -3361,7 +3306,7 @@ pub fn solve(
                     // Validate `pure` asserts.
                     if (isPure && written_via)
                         fail(target.qWHAT   ~ " is not pure, writes to argument " ~ name.human.qID ~ ":\n"
-                                            ~ qSTACK(:target, region: Region_fromArgIndex(argTarget.index)));
+                                            ~ qSTACK(:target, position: i));
 
                     if (maybeLast && isNovec && (argNode.type.is_rx_copy || argNode.type.is_rx_resize))
                         fail(target.qWHAT ~ " is not novec, argument " ~ name.human.qID ~ " is " ~ humanizeType(argNode.type));
@@ -3391,6 +3336,19 @@ pub fn solve(
 
                     if (arg.flags & F_REST_ARG)
                         max = 0x7fffffff.i32;
+
+                    // Finally, replace arg target in retval
+                    //  with the argument position.
+                    if (retval.is_ref && argNode.is_ref)
+                    {
+                        let region      = Region_fromLocal(argTarget.index);
+                        let idx         = retval.lifetime.uni0n.find(region);
+                        if (idx >= 0)
+                        {
+                            retval.lifetime.uni0n.splice(idx, 1);
+                            retval.lifetime.uni0n.set::add(Region_fromArgPosition(i));
+                        }
+                    }
                 }
 
                 // Unconditionally replacing the stuff.
@@ -4032,7 +3990,7 @@ pub fn solve(
             if (r.Region_isTemp)
                 continue;
 
-            ref o = GET_mut(nested(r.Region_toLocalIndex()));
+            ref o = GET_mut(nested(r.Region_toLocal()));
             visit(:o, i?: i, lifetime?: lifetime);
         }
     }
@@ -4044,6 +4002,7 @@ pub fn solve(
         let node = o.solved;
 
         return node.is_ref
+            && node.items
             && node.items[LET_INIT].type;
     }
 
@@ -4159,7 +4118,7 @@ pub fn solve(
         for (mut i = 0; i < r.len && !(pos && neg); i++)
         {
             shadow let r = r[i];
-            if (Region_toLocalIndex(r) < locals_start)
+            if (Region_toLocal(r) < locals_start)
                 neg = true;
             else if (Region_isTemp(r))
                 pos = true;
@@ -5292,7 +5251,10 @@ pub fn solve(
 
         // We'll be adding a new thing here.
         mut shadows: bool;
-        let flags = F_IMPLICIT | F_ARG;
+        mut flags = F_IMPLICIT | F_ARG;
+
+        if (type.is_mutref)
+            flags |= F_REF | F_RELAXABLE_REF;
 
         let newArgNode  = createLet(id, type, :flags, :shadows);
         let newArgIdx   = _current_fn.items.len + FN_ARGS_BACK;
@@ -5555,7 +5517,7 @@ pub fn solve(
 
     fn qSTACK(target: Target, position!: i32, seen!?: Target[])
     {
-        return qSTACK(:target, Region_fromArgIndex(target.args[position].local), :seen);
+        return qSTACK(:target, Region_fromLocal(target.args[position].local), :seen);
     }
 
     fn qSTACK(target: Target, region: Region, seen!?: Target[])
@@ -6238,10 +6200,10 @@ pub fn solve(
         {
             for (mut w = 0; w < writes.len; w++)
             {
-                let write = Region_asIndex(writes[w]);
+                let write = Region_asLocal(writes[w]);
                 if (write) for (mut r = 0; r < reads.len; r++)
                 {
-                    let read = Region_asIndex(reads[r]);
+                    let read = Region_asLocal(reads[r]);
                     if (read && read != write)
                         RESOLVE_byAAR(:read, :write, :trySoft);
                 }
@@ -6357,7 +6319,7 @@ pub fn solve(
             // Re: m_and_c_cant_alias_002 test:
             //  We don't want to return a reference to the temporary,
             //   so for now we just forbid this.
-            let argLt       = Region_fromArgIndex(host_arg.local);
+            let argLt       = Region_fromArgPosition(:position);
             let isReturned  = target.type.lifetime.uni0n.has(argLt);
             if (isReturned)
                 return false;
@@ -6480,7 +6442,7 @@ pub fn solve(
             // Writes invalidate subsequent reads.
             for (mut i = 0; i < regions.len; i++)
             {
-                let target = Region_asIndex(regions[i]);
+                let target = Region_asLocal(regions[i]);
                 if (!target)
                     continue;
 
@@ -6540,7 +6502,7 @@ pub fn solve(
             //
             for (mut i = 0; i < regions.len; i++)
             {
-                let target      = Region_asIndex(regions[i]);
+                let target      = Region_asLocal(regions[i]);
                 if (!target)
                     continue;
 
@@ -6751,7 +6713,7 @@ pub fn solve(
                                     //
                                     for (mut i = 0; i < unwound.uni0n.len; i++)
                                     {
-                                        if (unwound.uni0n[i].Region_asIndex() > 0)
+                                        if (unwound.uni0n[i].Region_asLocal)
                                         {
                                             arg_first   = arg_first < 0 ? i0 : arg_first;
                                             arg_last    = i0;
@@ -6771,7 +6733,7 @@ pub fn solve(
                             // Keep track of caller arguments.
                             for (mut i = 0; i < unwound0.uni0n.len; i++)
                             {
-                                if (unwound0.uni0n[i].Region_asIndex() > 0)
+                                if (unwound0.uni0n[i].Region_asLocal)
                                 {
                                     arg_first   = arg_first < 0 ? i0 : arg_first;
                                     arg_last    = i0;
@@ -6804,12 +6766,12 @@ pub fn solve(
                                     {
                                         for (mut r0 = 0; r0 < shallow0.uni0n.len; r0++)
                                         {
-                                            let region0 = Region_asIndex(shallow0.uni0n[r0]);
+                                            let region0 = Region_asLocal(shallow0.uni0n[r0]);
                                             if (region0)
                                             {
                                                 for (mut r1 = 0; r1 < shallow1.uni0n.len; r1++)
                                                 {
-                                                    let region1 = Region_asIndex(shallow1.uni0n[r1]);
+                                                    let region1 = Region_asLocal(shallow1.uni0n[r1]);
                                                     if (region1 && region0 != region1)
                                                     {
                                                         if (host_arg0.is_mutref)
@@ -6985,7 +6947,7 @@ pub fn solve(
                                 //
                                 for (mut i = 0; i < written.len; i++)
                                 {
-                                    let index = Region_asIndex(written[i]);
+                                    let index = Region_asLocal(written[i]);
                                     if (!index)
                                         continue;
 
@@ -7468,9 +7430,12 @@ pub fn solve(
         //
         else
         {
-            Lifetime_slotsUp2(:h.ret_actual.lifetime, :h.locals_start)
-                .each(|index|
-                    GET_mut(nested(index)).flags |= F_HOIST);
+            Lifetime_slotsUp2(:h.ret_actual.lifetime, :h.locals_start).each: |index|
+            {
+                ref o = GET_mut(nested(index));
+                if !(o.flags & F_ARG)
+                    o.flags |= F_HOIST;
+            }
         }
     }
 
