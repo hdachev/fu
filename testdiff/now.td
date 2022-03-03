@@ -8076,7 +8076,8 @@ static int incr_K4OPjUNR(int& x)
 
 static int lints_ambig_expr_indent_vnbprror(int& a, int& b)
 {
-    return incr_K4OPjUNR(a) + incr_K4OPjUNR(b);
+    int _0 {};
+    return (_0 = incr_K4OPjUNR(a), (int(_0) + incr_K4OPjUNR(b)));
 }
 
 int fu_MAIN()
@@ -8091,6 +8092,7 @@ int fu_MAIN()
 
 
 int main() { return fu_MAIN(); }
+// BCK_must_seq
 
 -----
 
@@ -8384,48 +8386,16 @@ int main() { return fu_MAIN(); }
 -----
 
         fn test(ref a: i32, ref b: i32) {
-            return (++a) + (++b);
+            return (++a) + 10 * (++b);              // BCK_must_seq
         }
 
-        fn main() {
+        fn main() {                                 // BCK_soft_risk
             mut x = 0;
 
-
-            ref y = x; 
-
+            ref y = x;
             let z = test(x, y);
-            return x+y - z;
-        }
 
------
-_0.fu @12:29:
-
-[2m      |             ref y = x; [0m
-[2m      | [0m
-   12 |             let z = test(x, [31;1my[0m);
-[2m      |             return x+y - z;[0m
-[2m      |         }[0m
-
-	[35;1mfn[0m [34;1mtest_vnbprror[0m: Arguments [31;1mb[0m and [31;1ma[0m (args #1 and #0) both alias:
-
-                [35;1mvar[0m [34;1mx[0m
-
-        Solving [35;1mfn[0m [34;1mmain[0m
-
------
-
-        fn test(ref a: i32, ref b: i32) {
-            return (++a) + (++b);
-        }
-
-        fn main() {
-            mut x = 0;
-
-
-            mut y = x; 
-
-            let z = test(x, y);
-            return x+y - z;
+            return x == 2 && z == 21 ? 0 : 1;
         }
 
 -----
@@ -8434,71 +8404,77 @@ _0.fu @12:29:
 
 static int test_vnbprror(int& a, int& b)
 {
-    return ++a + ++b;
+    int _0 {};
+    return (_0 = ++a, (int(_0) + (10 * ++b)));
 }
 
 int fu_MAIN()
 {
     int x = 0;
-    int y = x;
-    const int z = test_vnbprror(x, y);
-    return (x + y) - z;
+    const int z = test_vnbprror(x, x);
+    return (((x == 2) && (z == 21)) ? 0 : 1);
 }
 
 #endif
 
 
 int main() { return fu_MAIN(); }
+// BCK_soft_risk
+// BCK_must_seq
 
 -----
 
-        pub fn test_inner(ref a: i32, ref b: i32)
-            (++a) + (++b);
+        fn test(ref a: i32, ref b: i32) {
+            return (++a) + 10 * (++b);              // BCK_must_seq
+        }
 
-        pub fn test_outer(ref a: i32, ref b: i32)
-            test_inner(a, b);
-
-        fn main() {
+        fn main() {                                 // BCK_soft_risk
             mut x = 0;
 
+            let z = test(x, x);
 
-            ref y = x; 
-
-            let z = test_outer(x, y);
-            return x+y - z;
+            return x == 2 && z == 21 ? 0 : 1;
         }
 
 -----
-_0.fu @14:35:
 
-[2m      |             ref y = x; [0m
-[2m      | [0m
-   14 |             let z = test_outer(x, [31;1my[0m);
-[2m      |             return x+y - z;[0m
-[2m      |         }[0m
+#ifndef FU_NO_FDEFs
 
-	[35;1mfn[0m [34;1mtest_outer_vnbprror[0m: Arguments [31;1mb[0m and [31;1ma[0m (args #1 and #0) both alias:
+static int test_vnbprror(int& a, int& b)
+{
+    int _0 {};
+    return (_0 = ++a, (int(_0) + (10 * ++b)));
+}
 
-                [35;1mvar[0m [34;1mx[0m
+int fu_MAIN()
+{
+    int x = 0;
+    const int z = test_vnbprror(x, x);
+    return (((x == 2) && (z == 21)) ? 0 : 1);
+}
 
-        Solving [35;1mfn[0m [34;1mmain[0m
+#endif
+
+
+int main() { return fu_MAIN(); }
+// BCK_soft_risk
+// BCK_must_seq
 
 -----
 
         pub fn test_inner(ref a: i32, ref b: i32)
-            (++a) + (++b);
+            (++a) + 10 * (++b);                     // BCK_must_seq
 
         pub fn test_outer(ref a: i32, ref b: i32)
             test_inner(a, b);
 
-        fn main() {
+        fn main() {                                 // BCK_soft_risk
             mut x = 0;
 
-
-            mut y = x; 
-
+            ref y = x;
             let z = test_outer(x, y);
-            return x+y - z;
+
+            return x == 2 && z == 21 ? 0 : 1;
         }
 
 -----
@@ -8507,7 +8483,8 @@ _0.fu @14:35:
 
 int test_inner_vnbprror(int& a, int& b)
 {
-    return ++a + ++b;
+    int _0 {};
+    return (_0 = ++a, (int(_0) + (10 * ++b)));
 }
 
 int test_outer_vnbprror(int& a, int& b)
@@ -8518,15 +8495,61 @@ int test_outer_vnbprror(int& a, int& b)
 int fu_MAIN()
 {
     int x = 0;
-    int y = x;
-    const int z = test_outer_vnbprror(x, y);
-    return (x + y) - z;
+    const int z = test_outer_vnbprror(x, x);
+    return (((x == 2) && (z == 21)) ? 0 : 1);
 }
 
 #endif
 
 
 int main() { return fu_MAIN(); }
+// BCK_soft_risk
+// BCK_must_seq
+
+-----
+
+        pub fn test_inner(ref a: i32, ref b: i32)
+            (++a) + 10 * (++b);                     // BCK_must_seq
+
+        pub fn test_outer(ref a: i32, ref b: i32)
+            test_inner(a, b);
+
+        fn main() {                                 // BCK_soft_risk
+            mut x = 0;
+
+            let z = test_outer(x, x);
+
+            return x == 2 && z == 21 ? 0 : 1;
+        }
+
+-----
+
+#ifndef FU_NO_FDEFs
+
+int test_inner_vnbprror(int& a, int& b)
+{
+    int _0 {};
+    return (_0 = ++a, (int(_0) + (10 * ++b)));
+}
+
+int test_outer_vnbprror(int& a, int& b)
+{
+    return test_inner_vnbprror(a, b);
+}
+
+int fu_MAIN()
+{
+    int x = 0;
+    const int z = test_outer_vnbprror(x, x);
+    return (((x == 2) && (z == 21)) ? 0 : 1);
+}
+
+#endif
+
+
+int main() { return fu_MAIN(); }
+// BCK_soft_risk
+// BCK_must_seq
 
 -----
 
@@ -9381,19 +9404,84 @@ int main() { return fu_MAIN(); }
         }
 
 -----
-_0.fu @21:33:
+Exit code: 64512
+Failing testcase:
 
-[2m      | [0m
-[2m      | [0m
-   21 |             ab_cd_defer(ab, cd, [31;1mab[0m, cd); 
-[2m      | [0m
-[2m      |             return ab.i - cd.i;[0m
 
-	[35;1mfn[0m [34;1mab_cd_defer_KE4Hkugz[0m: Arguments [31;1mc[0m and [31;1ma[0m (args #2 and #0) both alias:
+        struct X { i: i32; j: i32; };
+        // a can alias b
+        // c can alias d
+        pub fn ab_cd_defer(ref a: X, ref b: X, ref c: X, ref d: X, j?: bool) {
+            defer {
+                ref ab = a || b;
+                ref abi = j ? ab.j : ab.i;
+                ++++abi;
+            }
+            ref cd = c || d;
+            ref cdi = j ? cd.j : cd.i;
+            ++++cdi;
+        }
 
-                [35;1mvar[0m [34;1mab[0m
+        fn main() {
+            mut ab = X(0, 0);
+            mut cd = X(0, 0);
 
-        Solving [35;1mfn[0m [34;1mmain[0m
+
+            ab_cd_defer(ab, cd, ab, cd); 
+
+            return ab.i - cd.i;
+        }
+
+Sources:
+
+#include <fu/defer.h>
+
+struct s_X;
+
+                                #ifndef DEF_s_X
+                                #define DEF_s_X
+struct s_X
+{
+    int i;
+    int j;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || i
+            || j
+        ;
+    }
+};
+                                #endif
+
+#ifndef FU_NO_FDEFs
+
+void ab_cd_defer_KE4Hkugz(s_X& a, s_X& b, s_X& c, s_X& d, const bool j)
+{
+    fu_DEFER(
+    {
+        s_X& ab = (a ? a : b);
+        int& abi = (j ? ab.j : ab.i);
+        ++++abi;
+    });
+    s_X& cd = (c ? c : d);
+    int& cdi = (j ? cd.j : cd.i);
+    ++++cdi;
+}
+
+int fu_MAIN()
+{
+    s_X ab = s_X { 0, 0 };
+    s_X cd = s_X { 0, 0 };
+    ab_cd_defer_KE4Hkugz(ab, cd, ab, cd, bool{});
+    return ab.i - cd.i;
+}
+
+#endif
+
+
+int main() { return fu_MAIN(); }
+// BCK_soft_risk
 
 -----
 
@@ -9666,53 +9754,20 @@ int main() { return fu_MAIN(); }
 
 -----
 
-        // a cannot alias b
         pub fn incr_a_or_b_and_b_or_a(ref a: i32, ref b: i32) {
             ref x = a || b; ++x;
             ref y = b || a; ++y;
         }
 
         fn main() {
-            mut a = 0;
-            mut b = 0;
+            mut a = 0;                          // BCK_soft_risk
 
 
-            incr_a_or_b_and_b_or_a(a, a); 
-
-            return a + b - 2;
-        }
-
------
-_0.fu @13:39:
-
-[2m      | [0m
-[2m      | [0m
-   13 |             incr_a_or_b_and_b_or_a(a, [31;1ma[0m); 
-[2m      | [0m
-[2m      |             return a + b - 2;[0m
-
-	[35;1mfn[0m [34;1mincr_a_or_b_and_b_or_a_vnbprror[0m: Arguments [31;1mb[0m and [31;1ma[0m (args #1 and #0) both alias:
-
-                [35;1mvar[0m [34;1ma[0m
-
-        Solving [35;1mfn[0m [34;1mmain[0m
-
------
-
-        // a cannot alias b
-        pub fn incr_a_or_b_and_b_or_a(ref a: i32, ref b: i32) {
-            ref x = a || b; ++x;
-            ref y = b || a; ++y;
-        }
-
-        fn main() {
-            mut a = 0;
-            mut b = 0;
+            ref b = a;
+            incr_a_or_b_and_b_or_a(a, b);
 
 
-            incr_a_or_b_and_b_or_a(a, b); 
-
-            return a + b - 2;
+            return a - 2;
         }
 
 -----
@@ -9730,15 +9785,57 @@ void incr_a_or_b_and_b_or_a_vnbprror(int& a, int& b)
 int fu_MAIN()
 {
     int a = 0;
-    int b = 0;
-    incr_a_or_b_and_b_or_a_vnbprror(a, b);
-    return (a + b) - 2;
+    incr_a_or_b_and_b_or_a_vnbprror(a, a);
+    return a - 2;
 }
 
 #endif
 
 
 int main() { return fu_MAIN(); }
+// BCK_soft_risk
+
+-----
+
+        pub fn incr_a_or_b_and_b_or_a(ref a: i32, ref b: i32) {
+            ref x = a || b; ++x;
+            ref y = b || a; ++y;
+        }
+
+        fn main() {
+            mut a = 0;                          // BCK_soft_risk
+
+
+            incr_a_or_b_and_b_or_a(a, a);
+
+
+            return a - 2;
+        }
+
+-----
+
+#ifndef FU_NO_FDEFs
+
+void incr_a_or_b_and_b_or_a_vnbprror(int& a, int& b)
+{
+    int& x = (a ? a : b);
+    ++x;
+    int& y = (b ? b : a);
+    ++y;
+}
+
+int fu_MAIN()
+{
+    int a = 0;
+    incr_a_or_b_and_b_or_a_vnbprror(a, a);
+    return a - 2;
+}
+
+#endif
+
+
+int main() { return fu_MAIN(); }
+// BCK_soft_risk
 
 -----
 
@@ -9848,7 +9945,23 @@ int main() { return fu_MAIN(); }
         }
 
 -----
-_0.fu @10:31:
+_0.fu @10:26:
+
+[2m      |             mut a = [ 0 ];[0m
+[2m      | [0m
+   10 |             ref c = alias[31;1m([0ma, a[0]);
+[2m      | [0m
+[2m      |             return c++;[0m
+
+	At call to [35;1mfn[0m [34;1malias_ndkRofCB[0m, argument binding [31;1marr[0m (arg #0) at 10:27:
+
+[2m      |             mut a = [ 0 ];[0m
+[2m      | [0m
+   10 |             ref c = alias([31;1ma[0m, a[0]);
+[2m      | [0m
+[2m      |             return c++;[0m
+
+	... invalidated by subsequent write to [35;1mvar[0m [34;1ma[0m upon evaluation of argument [31;1mitem[0m (arg #1) at 10:31:
 
 [2m      |             mut a = [ 0 ];[0m
 [2m      | [0m
@@ -9856,9 +9969,9 @@ _0.fu @10:31:
 [2m      | [0m
 [2m      |             return c++;[0m
 
-	[35;1mfn[0m [34;1malias_ndkRofCB[0m: Arguments [31;1mitem[0m and [31;1marr[0m (args #1 and #0) both alias:
-
-                [35;1mvar[0m [34;1ma[0m
+	At call to [34;1m
+.mutref[0m
+            
 
         Solving [35;1mfn[0m [34;1mmain[0m
 
@@ -10241,6 +10354,7 @@ int fu_MAIN()
 
 int main() { return fu_MAIN(); }
 // RELAX_respec
+// BCK_must_seq
 
 -----
 
@@ -11556,38 +11670,8 @@ int main() { return fu_MAIN(); }
 
         fn test(ref a: i32[], ref b: i32[]) {
 
-            if (a[0] += 1) 
-                a ~= 1;
-            else
-                b ~= 1;
-        }
+            if (a[0] == 1)
 
-        fn main() {
-            mut x = [ 1 ];
-            test(x, x);
-            return x.len - 2;
-        }
-
------
-_0.fu @12:21:
-
-[2m      |         fn main() {[0m
-[2m      |             mut x = [ 1 ];[0m
-   12 |             test(x, [31;1mx[0m);
-[2m      |             return x.len - 2;[0m
-[2m      |         }[0m
-
-	[35;1mfn[0m [34;1mtest_p5gMbQCn[0m: Arguments [31;1mb[0m and [31;1ma[0m (args #1 and #0) both alias:
-
-                [35;1mvar[0m [34;1mx[0m
-
-        Solving [35;1mfn[0m [34;1mmain[0m
-
------
-
-        fn test(ref a: i32[], ref b: i32[]) {
-
-            if (a[0] == 1) 
                 a ~= 1;
             else
                 b ~= 1;
@@ -11627,6 +11711,53 @@ int fu_MAIN()
 
 int main() { return fu_MAIN(); }
 // RELAX_respec
+
+-----
+
+        fn test(ref a: i32[], ref b: i32[]) {
+
+            if (a[0]++ == 1)            // BCK_soft_risk
+
+                a ~= 1;
+            else
+                b ~= 1;
+        }
+
+        fn main() {
+            mut x = [ 1 ];
+            test(x, x);
+            return x.len - 2;
+        }
+
+-----
+
+#include <fu/vec.h>
+#include <fu/vec/concat_one.h>
+
+#ifndef FU_NO_FDEFs
+
+static void test_p5gMbQCn(fu_VEC<int>& a, fu_VEC<int>& b)
+{
+    if (a.mutref(0)++ == 1)
+        a += 1;
+    else
+        b += 1;
+
+}
+
+int fu_MAIN()
+{
+    fu_VEC<int> x = fu_VEC<int> { fu::slate<1, int> { 1 } };
+    test_p5gMbQCn(x, x);
+    return x.size() - 2;
+}
+
+#endif
+
+
+int main() { return fu_MAIN(); }
+// RELAX_respec
+// BCK_soft_risk
 
 -----
 
@@ -11991,6 +12122,7 @@ int main() { return fu_MAIN(); }
 // FN_resolve
 // NONTRIV_autocopy
 // RELAX_respec
+// BCK_must_seq
 
 -----
 
@@ -12016,6 +12148,7 @@ int fu_MAIN()
 
 
 int main() { return fu_MAIN(); }
+// BCK_must_seq
 
 -----
 
@@ -12130,6 +12263,7 @@ int fu_MAIN()
 
 
 int main() { return fu_MAIN(); }
+// BCK_must_seq
 
 -----
 
@@ -12289,6 +12423,7 @@ int fu_MAIN()
 
 
 int main() { return fu_MAIN(); }
+// BCK_must_seq
 
 -----
 
@@ -13733,6 +13868,7 @@ int fu_MAIN()
 
 int main() { return fu_MAIN(); }
 // NONTRIV_autocopy
+// BCK_must_seq
 
 -----
 
@@ -13820,6 +13956,7 @@ int fu_MAIN()
 
 int main() { return fu_MAIN(); }
 // NONTRIV_autocopy
+// BCK_must_seq
 
 -----
 
@@ -13835,19 +13972,27 @@ int main() { return fu_MAIN(); }
         }
 
 -----
-TODO: _0.fu @9:46:
 
-[2m      |         fn main() {[0m
-[2m      |             mut x = 5;[0m
-    9 |             PASS_borrowCheck_incr_a_ret_b(x, [31;1mx[0m);
-[2m      |             return x - 6;[0m
-[2m      |         }[0m
+#ifndef FU_NO_FDEFs
 
-	[35;1mfn[0m [34;1mPASS_borrowCheck_incr_a_ret_b_vnbprror[0m: Arguments [31;1mb[0m and [31;1ma[0m (args #1 and #0) both alias:
+static int& PASS_borrowCheck_incr_a_ret_b_vnbprror(int& a, int& b)
+{
+    a++;
+    return b;
+}
 
-                [35;1mvar[0m [34;1mx[0m
+int fu_MAIN()
+{
+    int x = 5;
+    PASS_borrowCheck_incr_a_ret_b_vnbprror(x, x);
+    return x - 6;
+}
 
-        Solving [35;1mfn[0m [34;1mmain[0m
+#endif
+
+
+int main() { return fu_MAIN(); }
+// BCK_soft_risk
 
 -----
 
@@ -13879,43 +14024,51 @@ TODO: _0.fu @9:46:
         }
 
 -----
-TODO: _0.fu @25:45:
 
-[2m      |         fn main() {[0m
-[2m      |             mut arr = [ 9 ];[0m
-   25 |             PASS_borrowCheck_reduct(arr[0], [31;1marr[0m);
-[2m      |             return arr[0] - arr[1];[0m
-[2m      |         }[0m
+#include <fu/vec.h>
+#include <fu/vec/concat_one.h>
 
-	[35;1mfn[0m [34;1mPASS_borrowCheck_reduct_ur7owel4[0m: Arguments [31;1mb[0m and [31;1ma[0m (args #1 and #0) both alias:
+#ifndef FU_NO_FDEFs
 
-                [35;1mvar[0m [34;1marr[0m
+static void PASS_borrowCheck_reduct_ur7owel4(int& a, fu_VEC<int>& b)
+{
+    a++;
+    b += 10;
+}
 
-        Solving [35;1mfn[0m [34;1mmain[0m
+int fu_MAIN()
+{
+    fu_VEC<int> arr = fu_VEC<int> { fu::slate<1, int> { 9 } };
+    int* _0;
+    (_0 = &(arr.mutref(0)), PASS_borrowCheck_reduct_ur7owel4(*_0, arr));
+    return arr[0] - arr[1];
+}
+
+#endif
+
+
+int main() { return fu_MAIN(); }
+// RELAX_respec
+// BCK_soft_risk
+// BCK_must_seq
 
 -----
 
         struct Node { id: i32; items?: Node[]; };
 
-        fn traverse(node: Node, visit): bool {
-            if !(visit(node))
-                return false;
-
+        fn traverse(node: Node, visit) {
+            visit(node);
             for (mut i = 0; i < node.items.len; i++)
-                if !(traverse(node.items[i], fn visit))
-                    return false;
-
-            return true;
+                traverse(node.items[i], fn visit);
         }
 
         fn PASS_borrowCheck(ref root: Node)
         {
             mut n: i32;
-            fn count(id: i32) {
+            fn count(id: i32)
                 traverse(root): |i|
                     if (i.id == id)
                         n++;
-            }
 
             fn check(ref node: Node) {
                 if (node.items)
@@ -13935,19 +14088,90 @@ TODO: _0.fu @25:45:
         }
 
 -----
-TODO: _0.fu @32:18:
 
-[2m      |             }[0m
-[2m      | [0m
-   32 |             check[31;1m([0mroot);
-[2m      |             return n;[0m
-[2m      |         }[0m
+#include <fu/vec.h>
 
-	[35;1mfn[0m [34;1mcheck_RlfZxdFT[0m: Arguments [31;1mPASS_borrowCheck_4htgoDpn:root[0m and [31;1mnode[0m (args #1 and #0) both alias:
+struct s_Node;
 
-                [35;1marg[0m [34;1mroot[0m
+inline static void traverse_nkbR4CeJ(const s_Node&, int, int&);
+static void check_RlfZxdFT(s_Node&, const s_Node&, int&);
 
-        Solving [35;1mfn[0m [34;1mPASS_borrowCheck_4htgoDpn[0m
+                                #ifndef DEF_s_Node
+                                #define DEF_s_Node
+struct s_Node
+{
+    int id;
+    fu_VEC<s_Node> items;
+    s_Node(const s_Node&) = default;
+    s_Node(s_Node&&) = default;
+    s_Node& operator=(s_Node&&) = default;
+    s_Node& operator=(const s_Node& selfrec) { return *this = s_Node(selfrec); }
+    explicit operator bool() const noexcept
+    {
+        return false
+            || id
+            || items
+        ;
+    }
+};
+                                #endif
+
+#ifndef FU_NO_FDEFs
+
+inline static void traverse_nkbR4CeJ(const s_Node& node, const int id, int& n)
+{
+
+    {
+        if (node.id == id)
+            n++;
+
+    };
+    for (int i = 0; i < node.items.size(); i++)
+        traverse_nkbR4CeJ(node.items[i], id, n);
+
+}
+
+static void count_GFXc0u8P(const int id, const s_Node& root, int& n)
+{
+    traverse_nkbR4CeJ(root, id, n);
+}
+
+static void check_RlfZxdFT(s_Node& node, const s_Node& root, int& n)
+{
+    if (node.items)
+    {
+        for (int i = 0; i < node.items.size(); i++)
+            check_RlfZxdFT(node.items.mutref(i), root, n);
+
+    }
+    else
+        count_GFXc0u8P(node.id++, root, n);
+
+}
+
+static int PASS_borrowCheck_4htgoDpn(s_Node& root)
+{
+    /*MOV*/ int n {};
+    check_RlfZxdFT(root, root, n);
+    return /*NRVO*/ n;
+}
+
+int fu_MAIN()
+{
+    s_Node tree = s_Node { 0, fu_VEC<s_Node> { fu::slate<2, s_Node> { s_Node { 2, fu_VEC<s_Node>{} }, s_Node { 2, fu_VEC<s_Node>{} } } } };
+    return PASS_borrowCheck_4htgoDpn(tree) - 1;
+}
+
+#endif
+
+
+int main() { return fu_MAIN(); }
+// FN_recursion
+// FN_resolve
+// TYPE_recursion
+// TYPE_resolve
+// RELAX_respec
+// BCK_soft_risk
 
 -----
 
@@ -14962,6 +15186,7 @@ int main() { return fu_MAIN(); }
 // TYPE_resolve
 // NONTRIV_autocopy
 // RELAX_respec
+// BCK_must_seq
 
 -----
 
@@ -15213,6 +15438,7 @@ int fu_MAIN()
 int main() { return fu_MAIN(); }
 // FN_recursion
 // FN_resolve
+// BCK_must_seq
 
 -----
 
@@ -15254,6 +15480,7 @@ int fu_MAIN()
 int main() { return fu_MAIN(); }
 // FN_recursion
 // FN_resolve
+// BCK_must_seq
 
 -----
 
@@ -15295,6 +15522,7 @@ int fu_MAIN()
 int main() { return fu_MAIN(); }
 // FN_recursion
 // FN_resolve
+// BCK_must_seq
 
 -----
 
@@ -15329,6 +15557,7 @@ int fu_MAIN()
 int main() { return fu_MAIN(); }
 // FN_recursion
 // FN_resolve
+// BCK_must_seq
 
 -----
 
@@ -15376,6 +15605,7 @@ int fu_MAIN()
 int main() { return fu_MAIN(); }
 // FN_recursion
 // FN_reopen
+// BCK_must_seq
 
 -----
 
@@ -17875,6 +18105,7 @@ int fu_MAIN()
 
 int main() { return fu_MAIN(); }
 // RELAX_respec
+// BCK_must_seq
 
 -----
 
@@ -17931,6 +18162,7 @@ int fu_MAIN()
 
 int main() { return fu_MAIN(); }
 // RELAX_respec
+// BCK_must_seq
 
 -----
 
@@ -32031,6 +32263,7 @@ int fu_MAIN()
 int main() { return fu_MAIN(); }
 // FN_recursion
 // FN_resolve
+// BCK_must_seq
 
 -----
 
