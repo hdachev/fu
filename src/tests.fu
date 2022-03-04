@@ -3528,6 +3528,31 @@ pub fn runTests()
         }
     `);
 
+    ZERO(`
+        fn used_in_a_loop__invalidated__by_new_var(
+            ref arr: i32[], ref barr: i32[], ref carr: i32[])
+        {
+            ref head = arr[arr.len - 1];
+            for (mut i = 0; i < arr.len; i++) {
+                head += arr.len;
+                let head_cpy = head + 0;
+                ref barrcarr = barr || carr;
+                barrcarr.resize(head_cpy);
+            }
+        }
+
+        fn main() {
+            mut arr = [ 1 ];
+
+            <fail both alias arr>
+            ref barr = arr; <pass/>
+            mut barr = arr; </fail>
+
+            used_in_a_loop__invalidated__by_new_var(arr, barr, barr);
+            return barr.len == 2 ? 0 : 1;
+        }
+    `);
+
 
     // Stuff that isn't working out quite right -
     //  Keep those around, there's no principle to these tests,
