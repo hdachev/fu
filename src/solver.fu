@@ -6131,14 +6131,17 @@ pub fn solve(
 
             read != write || BUG("RESOLVE_byAAR: read == write");
 
-            // On first add -
-            if (_current_fn.flow.at_soft_risk.grow_if_oob(write).set::add(read))
-            {
-                // Soft vs hard risk -
-                //  Non-direct reads from arguments put the argument at hard risk.
-                if (!trySoft || !nested(read).acceptsSoftRisk)
-                    _current_fn.flow.at_hard_risk.grow_if_oob(write).set::add(read);
+            mut change = _current_fn.flow.at_soft_risk.grow_if_oob(write).set::add(read);
 
+            // Soft vs hard risk -
+            //  Non-direct reads from arguments put the argument at hard risk.
+            if (!trySoft || !nested(read).acceptsSoftRisk)
+                if (_current_fn.flow.at_hard_risk.grow_if_oob(write).set::add(read))
+                    change = true;
+
+            // On first add -
+            if (change)
+            {
                 // Shake [1] - decomp write parents on first add.
                 let ascendWrites = ||
                 {
