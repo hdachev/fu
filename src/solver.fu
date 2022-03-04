@@ -111,7 +111,7 @@ pub fn solve(
         using snap:         EventsSnap;
 
         // In a loop, reads forbid subsequent writes -
-        cant_invalidate:    ReadID[][];
+        used_in_a_loop:     ReadID[];
 
         // The arguments at risk aparata.
         ever_written:       bitset::BitSet;
@@ -6493,19 +6493,7 @@ pub fn solve(
 
                 // Track reads in a loop.
                 if (loop_start && target < loop_start)
-                {
-                    let invalidators = flow.invalidators.unless_oob(target);
-
-                    for (shadow mut i = 0; i < invalidators.len; i++)
-                    {
-                        // Can't opti -
-                        //  all reads need to get listed here,
-                        //   else we won't RESOLVE_byMutvar & co all of them.
-                        //
-                        // TODO failcase: suite didn't catch this and we compiled ok
-                        events.cant_invalidate.grow_if_oob(invalidators[i]) ~= readID;
-                    }
-                }
+                    events.used_in_a_loop.grow_if_oob(target) ||= readID;
             }
         }
 
@@ -6527,31 +6515,25 @@ pub fn solve(
 
                 // println("bck_trackWrite " ~ target ~ " " ~ callsite.value);
 
+                let invalidates = flow.invalidates.unless_oob(target);
+
                 // Writes in a loop invalidate preceding reads.
-                if (events.cant_invalidate.len > target)
+                if (events.used_in_a_loop) for (shadow mut i = 0; i < invalidates.len; i++)
                 {
-                    let u = events.cant_invalidate[target];
-                    if (u)
+                    let read    = invalidates[i];
+                    let readID  = events.used_in_a_loop.unless_oob(read);
+                    if (readID)
                     {
                         if (AAR)
-                        {
-                            RESOLVE_byAAR(reads: u, write: target, trySoft: true);
-                        }
-                        else for (shadow mut i = 0; i < u.len; i++)
-                        {
-                            shadow let u = u[i];
-
-                            RESOLVE_byMutvar(u.rw_target) || fail(
+                            RESOLVE_byAAR(:read, write: target, trySoft: true);
+                        else
+                            RESOLVE_byMutvar(read) || fail(
                                 "Write to " ~ target.bck_name.qBAD
                                 ~ " at call to " ~ callsite.target.qWHAT
-                                ~ " invalidates the use of " ~ u.rw_target.bck_name.qBAD ~ " at "
-                                ~ SLOW_findByReadID(u).token.addr_and_snippet
+                                ~ " invalidates the use of " ~ read.bck_name.qBAD ~ " at "
+                                ~ SLOW_findByReadID(readID).token.addr_and_snippet
                                 ~ "\n\t... on next loop iteration.\n\n\tWritten"
                                 ~ qSTACK(callsite.target, :position)); // TODO loop starts at x:x!
-                        }
-
-                        if (OPTI_bck)
-                            events.cant_invalidate[target] = [];
                     }
                 }
 
@@ -6560,8 +6542,6 @@ pub fn solve(
                 let writeID = WriteID(events.writes.len);
 
                 // Track writes, easy.
-                let invalidates = flow.invalidates.unless_oob(target);
-
                 for (shadow mut i = 0; i < invalidates.len; i++)
                 {
                     ref set = events.invalidated_by.grow_if_oob(invalidates[i]);
@@ -7109,7 +7089,7 @@ pub fn solve(
             // BORROWCK ////////////////////////////////////////////////////////////
             let loop_start0                     = _current_fn.loop_start;
             let loop_start                      = GET_next_local_index(); // TODO FIX patched up in bck_let but doesn't work
-            let events0                         = _current_fn.events.cant_invalidate;
+            let events0                         = _current_fn.events.used_in_a_loop;
 
             _current_fn.loop_start              = loop_start;
             defer _current_fn.loop_start        = loop_start0;
@@ -7119,7 +7099,7 @@ pub fn solve(
                 bck_node(items[i]);
 
             // BORROWCK ////////////////////////////////////////////////////////////
-            _current_fn.events.cant_invalidate  = events0;
+            _current_fn.events.used_in_a_loop   = events0;
             ////////////////////////////////////////////////////////////////////////
         }
 
@@ -7290,20 +7270,15 @@ pub fn solve(
             shadow ref flow = _current_fn.flow;
 
             // Reset these, here we use them for the speculative aliasing.
-            flow.invalidates .clear();
-            flow.invalidators.clear();
-
-            // First, ref -> const relationships, cheaper setup.
-            for (mut i = 0; i < consts.len; i++)
-            {
-                let target = consts[i];
-                flow.invalidators.grow_if_oob(target) = refs;
-            }
+            flow.invalidates.clear();
 
             for (mut i = 0; i < refs.len; i++)
             {
                 let target = refs[i];
-                flow.invalidates.grow_if_oob(target) = consts;
+
+                // First, ref -> const relationships, cheaper setup.
+                if (consts)
+                    flow.invalidates.grow_if_oob(target) = consts;
 
                 // Finally set up the ref <-> ref relationships,
                 //  which are symmetric.
@@ -7311,8 +7286,8 @@ pub fn solve(
                 shadow mut refs = refs;
                 refs.set::rem(target);
 
-                flow.invalidates .grow_if_oob(target).set::add(refs);
-                flow.invalidators.grow_if_oob(target).set::add(refs);
+                if (refs)
+                    flow.invalidates.grow_if_oob(target).set::add(refs);
             }
 
             // Go.

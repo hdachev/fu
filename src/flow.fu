@@ -7,7 +7,6 @@ pub struct Flow
     // Any ref.
     parents:        i32[][];
     invalidates:    i32[][];        // Non-disjoint siblings and children.
-    invalidators:   i32[][];        // Same thing in reverse.
 
     // Arguments at risk.
     arg_parents:    i32[][];        // is_arg targets each target refers to.
@@ -79,7 +78,6 @@ pub fn Reference_trackLocalRef(ref flow: Flow, left: i32, right: Lifetime)
             //  Everything that RIGHT invalidates potentially invalidates LEFT.
             //
             flow.invalidates .grow_if_oob(left).set::add(siblings);
-            flow.invalidators.grow_if_oob(left).set::add(siblings);
 
             for (shadow mut i = 0; i < siblings.len; i++)
             {
@@ -87,7 +85,6 @@ pub fn Reference_trackLocalRef(ref flow: Flow, left: i32, right: Lifetime)
 
                 // TODO failcase without the grow_if_oobs, suite doesn't catch it
                 flow.invalidates .grow_if_oob(sibling).set::add(left);
-                flow.invalidators.grow_if_oob(sibling).set::add(left);
             }
         }
 
@@ -105,8 +102,6 @@ pub fn Reference_trackLocalRef(ref flow: Flow, left: i32, right: Lifetime)
         //  Finally, RIGHT invalidates LEFT.
         for (mut i = 0; i < parents.len; i++)
             flow.invalidates.grow_if_oob(parents[i]).set::add(left);
-
-        flow.invalidators.grow_if_oob(left).set::add(parents);
 
         // This is the same as the parents set.
         flow.parents.grow_if_oob(left) = parents;
