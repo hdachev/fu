@@ -3553,6 +3553,30 @@ pub fn runTests()
         }
     `);
 
+    ZERO(`
+        fn grow_if_oob(ref a: i32[], i: i32) {
+            if (a.len <= i) a.grow(i + 1);
+            return a[i];
+        }
+
+        fn assign(ref what: i32, ref to: i32) to = what;
+
+        fn two_writes_in_an_arg(ref arr: i32[], ref brr: i32[], ref x: i32)
+            assign( what: x ? arr.grow_if_oob(10)
+                            : brr.grow_if_oob(10), to: x );
+
+        fn main() {
+            mut arr = [ 0, 1, 2, 3 ];
+            mut brr = [ 0, 2, 4, 6 ];
+
+            <fail args x both alias>
+            ref x = brr[0];  <pass/>
+            mut x = 0;       </fail>
+
+            return two_writes_in_an_arg(arr, brr, x);
+        }
+    `);
+
 
     // Stuff that isn't working out quite right -
     //  Keep those around, there's no principle to these tests,

@@ -6230,14 +6230,6 @@ pub fn solve(
             return true;
         }
 
-        fn RESOLVE_byAAR(reads!: ReadID[], write!: i32, trySoft!: bool)
-        {
-            for (mut i = 0; i < reads.len; i++)
-                RESOLVE_byAAR(read: reads[i].rw_target, :write, :trySoft);
-
-            return true;
-        }
-
 
         // Converting lets into vals:
 
