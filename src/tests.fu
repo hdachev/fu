@@ -4905,6 +4905,26 @@ pub fn runTests()
         }
     `);
 
+    TODO_NICE_ERROR(`
+        fn fails_with_silly_error(ref set, i) {
+            <fail arg not assignable>
+            set  ||= i;       <pass/>   // this BUGged out instead of
+            set   ~= i;       </fail>   //  outputing a decent err msg
+            return set;
+        }
+
+        fn main() {
+            mut set = [ 0 ];
+            fails_with_silly_error(set, 2);
+
+            mut sum = 0;
+            for (mut i = 0; i < set.len; i++) sum += set[i];
+            return sum - 2;
+        }
+    `);
+
+    // /quite right
+
 
     // Let's move on to some cooler quality of life shit.
 
