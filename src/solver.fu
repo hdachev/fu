@@ -6131,71 +6131,70 @@ pub fn solve(
 
             read != write || BUG("RESOLVE_byAAR: read == write");
 
-            mut change = _current_fn.flow.at_soft_risk.grow_if_oob(write).set::add(read);
-
             // Soft vs hard risk -
             //  Non-direct reads from arguments put the argument at hard risk.
             if (!trySoft || !nested(read).acceptsSoftRisk)
-                if (_current_fn.flow.at_hard_risk.grow_if_oob(write).set::add(read))
-                    change = true;
+                if (!_current_fn.flow.at_hard_risk.grow_if_oob(write).set::add(read))
+                    return true; // Done this already.
 
-            // On first add -
-            if (change)
+            // So, on first add -
+            if (!_current_fn.flow.at_soft_risk.grow_if_oob(write).set::add(read))
+                return true; // Done this already.
+
+            // Shake [1] - decomp write parents on first add.
+            let ascendWrites = ||
             {
-                // Shake [1] - decomp write parents on first add.
-                let ascendWrites = ||
+                let parents = _current_fn.flow.arg_parents.unless_oob(write);
+                if (parents)
                 {
-                    let parents = _current_fn.flow.arg_parents.unless_oob(write);
-                    if (parents)
+                    for (mut i = 0; i < parents.len; i++)
                     {
-                        for (mut i = 0; i < parents.len; i++)
-                        {
-                            let parent = parents[i];
+                        let parent = parents[i];
 
-                            // Here's the smart ascent thing -
-                            //  A write through some parent binding
-                            //   can't invalidate the same binding's read.
-                            //
-                            // This is a bit crazy, I think it wouldn't be necessary
-                            //  if we could remove the invalidation edges on the go.
-                            //
-                            if (parent != read)
-                                RESOLVE_byAAR(:read, write: parent, :trySoft);
-                        }
-
-                        return true;
+                        // Here's the smart ascent thing -
+                        //  A write through some parent binding
+                        //   can't invalidate the same binding's read.
+                        //
+                        // This is a bit crazy, I think it wouldn't be necessary
+                        //  if we could remove the invalidation edges on the go.
+                        //
+                        if (parent != read)
+                            RESOLVE_byAAR(:read, write: parent, :trySoft);
                     }
-                };
 
-                // Shake [2] - decomp read parents on first add.
-                let ascendReads = ||
+                    return true; // AAR always succeeds.
+                }
+            };
+
+            // Shake [2] - decomp read parents on first add.
+            let ascendReads = ||
+            {
+                let parents = _current_fn.flow.arg_parents.unless_oob(read);
+                if (parents)
                 {
-                    let parents = _current_fn.flow.arg_parents.unless_oob(read);
-                    if (parents)
+                    for (mut i = 0; i < parents.len; i++)
                     {
-                        for (mut i = 0; i < parents.len; i++)
-                        {
-                            let parent = parents[i];
+                        let parent = parents[i];
 
-                            // TODO failcase without this if, suite doesn't catch items
-                            if (parent != write)
-                                RESOLVE_byAAR(:write, read: parent, trySoft: false);
-                        }
-
-                        return true;
+                        // TODO failcase without this if, suite doesn't catch items
+                        if (parent != write)
+                            RESOLVE_byAAR(:write, read: parent, trySoft: false);
                     }
-                };
 
-                // Climb one way or the other.
-                let firstTry_to_ascendWrites = write > read;
-                for (mut i = 0; i < 2; i++)
-                    if (!i == firstTry_to_ascendWrites) // if (!0 == true or !1 == false)
-                        ascendWrites();
-                    else
-                        ascendReads();
-            }
+                    return true; // AAR always succeeds.
+                }
+            };
 
-            return true;
+            // Climb one way or the other.
+            let firstTry_to_ascendWrites = write > read;
+            for (mut i = 0; i < 2; i++)
+                if (!i == firstTry_to_ascendWrites) // if (!0 == true or !1 == false)
+                    ascendWrites();
+                else
+                    ascendReads();
+
+            //
+            return true; // AAR always succeeds.
         }
 
         fn RESOLVE_byAAR(writes!: Region[], reads!: Region[], trySoft!: bool)
