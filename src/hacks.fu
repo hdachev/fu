@@ -33,21 +33,21 @@ fn tryParseClosureID(id!: string): ClosureID
 
 //
 
-struct NativeOpts
+struct NativeHacks
 {
     name_start_idx:     i32;
 
     // Opts.
-    no_AAR:             bool;
+    soft_risk:          bool;
 };
 
-fn NativeOpts(name: string)
+fn NativeHacks(name: string)
 {
-    if (name.starts(with: "\nno_AAR"))
+    if (name.starts(with: "\nhacks/soft_risk"))
     {
-        return NativeOpts(
-            name_start_idx: 7,
-            no_AAR: true);
+        return NativeHacks(
+            name_start_idx:     16,
+            soft_risk:          true);
     }
 
     return [];

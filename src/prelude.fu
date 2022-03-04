@@ -127,7 +127,8 @@ fn ||=(ref a: $T, inline b: $T): &mut $T = a || (a = b);
 fn &&=(ref a: $T, inline b: $T): &mut $T = a && (a = b);
 
 fn swap(ref a: $T, ref b: $T): void __native(
-    "no_AAR", "<utility>", "std::swap");
+    "hacks/soft_risk",
+    "<utility>", "std::swap");
 
 
 

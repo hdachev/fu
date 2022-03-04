@@ -3578,6 +3578,22 @@ pub fn runTests()
     `);
 
     ZERO(`
+        struct Node { items: Node[] };
+
+        fn main() {
+            mut root = Node([
+                Node([ Node, Node ])
+            ]);
+
+            <fail both arg alias root>
+            swap(root.items[0], root);  <pass/> // write to root invalidates root.items[0]
+            root = root.items[0];       </fail> // this is fine
+
+            return root.items.len - 2;
+        }
+    `);
+
+    ZERO(`
         fn grow_if_oob(ref a: i32[], i: i32) {
             if (a.len <= i) a.grow(i + 1);
             return a[i];

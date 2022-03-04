@@ -3257,8 +3257,8 @@ pub fn solve(
                 mut min = 0;
                 mut max = 0;
 
-                let NativeOpts =
-                    isNative && hacks::NativeOpts(target.name);
+                let NativeHacks =
+                    isNative && hacks::NativeHacks(target.name);
 
                 shadow mut args: Argument[];
                 for (mut i = 0; i < N; i++)
@@ -3291,13 +3291,14 @@ pub fn solve(
                             soft_risk.ArgsAtRisk_list(out.flow, position: i, out.flow.at_soft_risk);
                             hard_risk.ArgsAtRisk_list(out.flow, position: i, out.flow.at_hard_risk);
                         }
-                        else if (!NativeOpts.no_AAR)
+                        else
                         {
                             // Natives: we can't see inside, assume everything restricted.
                             soft_risk.add_range(end: N);
                             soft_risk.rem(i);
 
-                            hard_risk = soft_risk;
+                            if (!NativeHacks.soft_risk)
+                                hard_risk = soft_risk;
                         }
                     }
                     /////////////////////////////////////////////
