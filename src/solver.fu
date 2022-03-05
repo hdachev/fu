@@ -6198,17 +6198,13 @@ pub fn solve(
             return true; // AAR always succeeds.
         }
 
-        fn RESOLVE_byAAR(writes!: Region[], reads!: Region[], trySoft!: bool)
+        fn RESOLVE_byAAR(write!: i32, reads!: Region[], trySoft!: bool)
         {
-            for (mut w = 0; w < writes.len; w++)
+            for (mut r = 0; r < reads.len; r++)
             {
-                let write = Region_asLocal(writes[w]);
-                if (write) for (mut r = 0; r < reads.len; r++)
-                {
-                    let read = Region_asLocal(reads[r]);
-                    if (read && read != write)
-                        RESOLVE_byAAR(:read, :write, :trySoft);
-                }
+                let read = Region_asLocal(reads[r]);
+                if (read && read != write)
+                    RESOLVE_byAAR(:read, :write, :trySoft);
             }
 
             return true;
@@ -6936,29 +6932,23 @@ pub fn solve(
                         for (mut w = ooe_write0; w < ooe_write1; w++)
                         {
                             let writeID = WriteID(w + 1);
-                            let write   = RWEvent(writeID);
-                            let written = write.rw_target.nested.type.lifetime.uni0n;
+                            let write   = RWEvent(writeID).rw_target;
 
                             // RTL indexing is reversed, so 0 always means first.
                             let iw_evalsFirst = ooe_iw == 0;
 
+                            let just_the_write = [ Region_fromLocal(write) ];
+
                             mut written_and_invalidated: Region[];
                             if (!iw_evalsFirst)
                             {
-                                written_and_invalidated = written;
+                                written_and_invalidated = just_the_write;
 
                                 // Deep expansion only useful on non-first arg,
                                 //  we only use it for preceding args in OOE.
                                 //
-                                for (mut i = 0; i < written.len; i++)
-                                {
-                                    let index = Region_asLocal(written[i]);
-                                    if (!index)
-                                        continue;
-
-                                    let invalidates = flow.invalidates.unless_oob(index);
-                                    written_and_invalidated.set::add(invalidates.view(Region));
-                                }
+                                let invalidates = flow.invalidates.unless_oob(write);
+                                written_and_invalidated.set::add(invalidates.view(Region));
                             }
 
                             ////////////////////////////////////////////////////
@@ -6977,11 +6967,9 @@ pub fn solve(
                                 {
                                     let ooe_ir_evalsBefore_iw = ooe_ir < ooe_iw;
 
-                                    let just_written = written || BUG();
-
-                                    shadow let written = ooe_ir_evalsBefore_iw
+                                    let written = ooe_ir_evalsBefore_iw
                                         ? written_and_invalidated
-                                        : written;
+                                        : just_the_write;
 
                                     written || BUG();
 
@@ -7033,7 +7021,7 @@ pub fn solve(
                                             if (inter)
                                             {
                                                 // We'll have to inject a copy here.
-                                                if (AAR ? !RESOLVE_byAAR(writes: just_written, reads: inter, trySoft: true)
+                                                if (AAR ? !RESOLVE_byAAR(:write, reads: inter, trySoft: true)
                                                         : !RESOLVE_byTempCopy(:callsite, r))
                                                 {
                                                     _here = callsite.token;
@@ -7042,7 +7030,7 @@ pub fn solve(
                                                         ~ host_args[r].name.human.qBAD ~ " (arg #" ~ r ~ ") at "
                                                         ~ arg.token.addr_and_snippet
                                                         ~ "\n\t... invalidated by subsequent write to "
-                                                        ~ just_written.first.qWHAT ~ " upon evaluation of argument "
+                                                        ~ just_the_write.first.qWHAT ~ " upon evaluation of argument "
                                                         ~ host_args[w].name.human.qBAD ~ " (arg #" ~ w ~ ") at "
                                                         ~ RWEvent_stack(writeID));
                                                 }
