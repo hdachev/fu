@@ -3624,6 +3624,27 @@ pub fn runTests()
         }
     `);
 
+    ZERO(`
+        fn writes_to_two_args(ref item: i32, ref arr: i32[], ref brr: i32[]) {
+            ref arrbrr = arr || brr;
+            arrbrr.resize(100 + arrbrr.len);
+            return item += arrbrr.len;
+        }
+
+        fn main() {
+            mut arr: i32[] = [      ];
+            mut brr: i32[] = [ -101 ];
+
+            <fail alias brr>
+            ref item = brr[0]; <pass/>
+            mut item = brr[0]; </fail>
+
+            return writes_to_two_args(:item, :arr, :brr);
+        }
+    `);
+
+    // /Borrow checker
+
 
     // Stuff that isn't working out quite right -
     //  Keep those around, there's no principle to these tests,
