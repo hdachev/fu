@@ -6346,18 +6346,11 @@ pub fn solve(
 
         fn isInvalidatedBy(read: Region[], write: Region[])
         {
-            // TODO if regions were target indices we could just inter here,
-            //  but we can't because arg regions are negative.
-            for (mut r = 0; r < read.len; r++)
-            {
-                shadow let r = Region_asLocal(read[r]);
-                if (r) for (mut w = 0; w < write.len; w++)
-                {
-                    shadow let w = Region_asLocal(write[w]);
-                    if (w && flow.invalidates.unless_oob(w).has(r))
-                        return true;
-                }
-            }
+            shadow let read = read.view(i32);
+
+            write.each: |w.Region_asLocal|
+                if (w && flow.invalidates.unless_oob(w).set::has_inter(read))
+                    return true;
 
             return false;
         }
@@ -6981,7 +6974,7 @@ pub fn solve(
                                         // TODO: set::has_inter,
                                         //  how can this optimization work automatically?
                                         //   !!set::inter -> set::has_inter?
-                                        if !(regions.set::inter(written))
+                                        if !(regions.set::has_inter(written))
                                             continue;
 
                                         // At this point, we've detected an order-of-eval issue.
