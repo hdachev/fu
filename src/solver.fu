@@ -6366,6 +6366,21 @@ pub fn solve(
             return false;
         }
 
+        fn softRiskSafe(arg: SolvedNode)
+        {
+            // TODO FIX this is idiotic, the problem is that
+            //  when we have value with lt'x, we don't know if
+            //   - this points directly to the bytes of x
+            //   - or is some kind of computed thing,
+            //      e.g. ptr to rellocatable mem or smth.
+            //
+            // This is the major complication to getting disjoint stuff working,
+            //  it's kinda easy for vars but what do we do with arg exprs here,
+            //   it's that we don't really have any way to tell what's what.
+            //
+            return arg.kind == "call" && arg.target.kind == "var";
+        }
+
 
         //
 
@@ -6719,7 +6734,8 @@ pub fn solve(
                         // Validate aliasing.
                         if (bck_unwound)
                         {
-                            let shallow0 = args[i0].type.lifetime;
+                            let arg0     = args[i0];
+                            let shallow0 = arg0.type.lifetime;
                             let unwound0 = bck_unwound[i0] = Lifetime_unwind_noStatic(shallow0);
 
                             // Keep track of caller arguments.
@@ -6742,7 +6758,8 @@ pub fn solve(
                                 if (!host_arg0.soft_risk.has(i1) && !host_arg1.soft_risk.has(i0))
                                     return;
 
-                                let shallow1 = args[i1].type.lifetime;
+                                let arg1     = args[i1];
+                                let shallow1 = arg1.type.lifetime;
 
                                 // A note on something that's non-obvious -
                                 //  the AAR stuff here DOESNT CARE ABOUT ALIASING -
@@ -6796,8 +6813,8 @@ pub fn solve(
                                 if (!host_arg0.hard_risk.has(i1) &&
                                     !host_arg1.hard_risk.has(i0))
                                 {
-                                    if ((!host_arg0.is_mutref || !shallow1.uni0n.isInvalidatedBy(write: shallow0.uni0n)) &&
-                                        (!host_arg1.is_mutref || !shallow0.uni0n.isInvalidatedBy(write: shallow1.uni0n)))
+                                    if ((!host_arg0.soft_risk.has(i1) || arg1.softRiskSafe && !shallow1.uni0n.isInvalidatedBy(write: shallow0.uni0n)) &&
+                                        (!host_arg1.soft_risk.has(i0) || arg0.softRiskSafe && !shallow0.uni0n.isInvalidatedBy(write: shallow1.uni0n)))
                                     {
                                         // Soft risk ok -
                                         //  this is the new thing, further relaxing the bck.
