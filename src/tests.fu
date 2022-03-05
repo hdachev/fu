@@ -3665,6 +3665,32 @@ pub fn runTests()
         }
     `);
 
+    ZERO(`
+        fn grow(ref arr: i32[], by!n: i32) {
+            arr.resize(arr.len + n);
+            return arr;
+        }
+
+        fn incr__ltr_oee(ref what: i32, by: i32)
+            what += by;
+
+        fn reads_from_two_args__single_expr(ref left: i32, ref right: i32, ref arr: i32[], ref brr: i32[])
+            incr__ltr_oee(left || right, grow(arr || brr, by: 100).len);
+
+        fn main() {
+            mut arr: i32[] = [      ];
+            mut brr: i32[] = [ -101 ];
+
+            mut left = 0;
+
+            <fail alias brr>
+            ref right = brr[0]; <pass/>
+            mut right = brr[0]; </fail>
+
+            return reads_from_two_args__single_expr(:left, :right, :arr, :brr);
+        }
+    `);
+
     // /Borrow checker
 
 
