@@ -153,12 +153,12 @@ inline bool starts_3yRdKyg4(fu::view<char> a, const char with)
 }
                                 #endif
 
-bool isStruct_5BOF5uJ9(const s_Type& type)
+bool isStruct_ZYIX8afu(const s_Type& type)
 {
     return starts_3yRdKyg4(type.vtype.canon, '/');
 }
 
-int modidOfOrigin_5BOF5uJ9(const s_Type& type)
+int modidOfOrigin_ZYIX8afu(const s_Type& type)
 {
     if (type.vtype.canon[0] == '/')
     {

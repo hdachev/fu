@@ -40,9 +40,9 @@ inline fu::u8& grow_if_oob_S61HT2sA(fu_VEC<fu::u8>& a, const int i)
 
 bool add_once_yDyCXbrU(s_BitSet& _, const int idx)
 {
-    const int no_neg = ((idx < 0) ? -1 : 0);
-    const int bucket = ((idx / 8) | no_neg);
-    const int bit = (idx % 8);
+    const int no_neg = (idx & int(0x80000000u));
+    const int bucket = ((idx >> 3) | no_neg);
+    const int bit = (idx & 7);
     const fu::u8 mask = fu::u8((fu::u8(1u) << fu::u8(unsigned(bit))));
     fu::u8& entry = grow_if_oob_S61HT2sA(_._data, bucket);
     if (!fu::u8((entry & mask)))
@@ -55,65 +55,80 @@ bool add_once_yDyCXbrU(s_BitSet& _, const int idx)
 
 void add_yDyCXbrU(s_BitSet& _, const int idx)
 {
-    const int no_neg = ((idx < 0) ? -1 : 0);
-    const int bucket = ((idx / 8) | no_neg);
-    const int bit = (idx % 8);
+    const int no_neg = (idx & int(0x80000000u));
+    const int bucket = ((idx >> 3) | no_neg);
+    const int bit = (idx & 7);
     const fu::u8 mask = fu::u8((fu::u8(1u) << fu::u8(unsigned(bit))));
     grow_if_oob_S61HT2sA(_._data, bucket) |= mask;
 }
 
-                                #ifndef DEFt_grow_if_oob_CCLb3WGy
-                                #define DEFt_grow_if_oob_CCLb3WGy
-inline fu::u8& grow_if_oob_CCLb3WGy(fu_VEC<fu::u8>& a, const int i)
-{
-    if ((a.size() <= i))
-        a.grow((i + 1));
-
-    return a.mutref(i);
-}
-                                #endif
-
 void add_FrY1wfGJ(s_BitSet& _, const s_BitSet& other)
 {
-    for (int i1 = other._data.size(); i1-- > 0; )
-    {
-        if (other._data[i1])
-        {
-            grow_if_oob_CCLb3WGy(_._data, i1);
-            for (int i = 0; (i <= i1); i++)
-                _._data.mutref(i) |= other._data[i];
+    const int N = other._data.size();
+    if (_._data.size() < N)
+        _._data.grow(N);
 
-            break;
-        };
-    };
+    for (int i = 0; i < N; i++)
+        _._data.mutref(i) |= other._data[i];
+
 }
 
 bool has_CoC0247n(const s_BitSet& _, const int idx)
 {
-    const int no_neg = ((idx < 0) ? -1 : 0);
-    const int bucket = ((idx / 8) | no_neg);
-    const int bit = (idx % 8);
+    const int no_neg = (idx & int(0x80000000u));
+    const int bucket = ((idx >> 3) | no_neg);
+    const int bit = (idx & 7);
     const fu::u8 mask = fu::u8((fu::u8(1u) << fu::u8(unsigned(bit))));
     return (_._data.size() > bucket) && (fu::u8((_._data[bucket] & mask)) != fu::u8(0u));
 }
 
-void rem_yDyCXbrU(s_BitSet& _, const int idx)
+bool rem_yDyCXbrU(s_BitSet& _, const int idx)
 {
-    const int no_neg = ((idx < 0) ? -1 : 0);
-    const int bucket = ((idx / 8) | no_neg);
+    const int no_neg = (idx & int(0x80000000u));
+    const int bucket = ((idx >> 3) | no_neg);
+    const int bit = (idx & 7);
+    const fu::u8 mask = fu::u8((fu::u8(1u) << fu::u8(unsigned(bit))));
     if (_._data.size() > bucket)
     {
-        const int bit = (idx % 8);
-        const fu::u8 mask = fu::u8((fu::u8(1u) << fu::u8(unsigned(bit))));
-        _._data.mutref(bucket) &= fu::u8(~mask);
+        const fu::u8 item = _._data[bucket];
+        if (item & mask)
+        {
+            _._data.mutref(bucket) &= fu::u8(~mask);
+            if ((item == mask) && (_._data.size() == (bucket + 1)))
+            {
+                int end = bucket;
+                while (end-- > 0)
+                {
+                    if (_._data[end])
+                        break;
+
+                };
+                _._data.shrink((end + 1));
+            };
+            return true;
+        };
     };
+    return false;
 }
 
-void add_range_8iwsu9xD(s_BitSet& _, const int start, const int end)
+void add_range_yDyCXbrU(s_BitSet& _, const int end)
 {
-    for (int i = start; i < end; i++)
-        add_yDyCXbrU(_, i);
+    const int no_neg = (end & int(0x80000000u));
+    const int floorBytes = ((end >> 3) | no_neg);
+    const int ceilBytes = (((end + 7) >> 3) | no_neg);
+    _._data.grow(ceilBytes);
+    for (int i = 0; i < floorBytes; i++)
+        _._data.mutref(i) = fu::u8(0xffu);
 
+    if (ceilBytes > floorBytes)
+    {
+        fu::u8 tail {};
+        int i_1 = (floorBytes << 3);
+        do
+            tail |= fu::u8((fu::u8(1u) << fu::u8(unsigned((i_1 & 7)))));
+        while ((i_1++ < end));
+        _._data.mutref(floorBytes) = tail;
+    };
 }
 
 int popcount_pXOENYsj(const s_BitSet& _)

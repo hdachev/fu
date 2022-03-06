@@ -23,6 +23,7 @@ struct s_BitSet;
 struct s_CodegenOutput;
 struct s_Context;
 struct s_Extended;
+struct s_Helpers;
 struct s_LexerOutput;
 struct s_Lifetime;
 struct s_Map_EmVtl5Qe;
@@ -342,7 +343,8 @@ struct s_Argument
     s_SolvedNode dEfault;
     int flags;
     int local;
-    s_BitSet risk_free;
+    s_BitSet soft_risk;
+    s_BitSet hard_risk;
     explicit operator bool() const noexcept
     {
         return false
@@ -352,7 +354,8 @@ struct s_Argument
             || dEfault
             || flags
             || local
-            || risk_free
+            || soft_risk
+            || hard_risk
         ;
     }
 };
@@ -443,6 +446,20 @@ struct s_Template
 };
                                 #endif
 
+                                #ifndef DEF_s_Helpers
+                                #define DEF_s_Helpers
+struct s_Helpers
+{
+    int index;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || index
+        ;
+    }
+};
+                                #endif
+
                                 #ifndef DEF_s_RWRanges
                                 #define DEF_s_RWRanges
 struct s_RWRanges
@@ -468,7 +485,7 @@ struct s_RWRanges
 struct s_SolvedNodeData
 {
     fu_STR kind;
-    int helpers;
+    s_Helpers helpers;
     int flags;
     fu_STR value;
     fu_VEC<s_SolvedNode> items;

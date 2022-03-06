@@ -8,7 +8,7 @@
 #include <fu/view.h>
 
 struct s_ClosureID;
-struct s_NativeOpts;
+struct s_NativeHacks;
 struct s_Target;
 
 unsigned parse10u32_t6R8uPsY(int&, fu::view<char>);
@@ -45,17 +45,17 @@ struct s_ClosureID
 };
                                 #endif
 
-                                #ifndef DEF_s_NativeOpts
-                                #define DEF_s_NativeOpts
-struct s_NativeOpts
+                                #ifndef DEF_s_NativeHacks
+                                #define DEF_s_NativeHacks
+struct s_NativeHacks
 {
     int name_start_idx;
-    bool no_AAR;
+    bool soft_risk;
     explicit operator bool() const noexcept
     {
         return false
             || name_start_idx
-            || no_AAR
+            || soft_risk
         ;
     }
 };
@@ -105,12 +105,12 @@ inline bool starts_KclJlPSO(fu::view<char> a, fu::view<char> with)
 }
                                 #endif
 
-s_NativeOpts NativeOpts_RHyKU5hm(fu::view<char> name)
+s_NativeHacks NativeHacks_RHyKU5hm(fu::view<char> name)
 {
-    if (starts_KclJlPSO(name, "\nno_AAR"_fu))
-        return s_NativeOpts { 7, true };
+    if (starts_KclJlPSO(name, "\nhacks/soft_risk"_fu))
+        return s_NativeHacks { 16, true };
 
-    return s_NativeOpts{};
+    return s_NativeHacks{};
 }
 
 #endif

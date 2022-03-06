@@ -69,31 +69,31 @@ struct s_Type
 
 #ifndef FU_NO_FDEFs
 
-bool is_primitive_KyrTVXnz(const s_Type& t)
+bool is_primitive_CbRwLCm2(const s_Type& t)
 {
     const char c = t.vtype.canon[0];
     return (c == 'u') || (c == 'i') || (c == 'f') || (c == 'b');
 }
 
-bool is_arithmetic_KyrTVXnz(const s_Type& t)
+bool is_arithmetic_CbRwLCm2(const s_Type& t)
 {
     const char c = t.vtype.canon[0];
     return (c == 'u') || (c == 'i') || (c == 'f');
 }
 
-bool is_integral_KyrTVXnz(const s_Type& t)
+bool is_integral_CbRwLCm2(const s_Type& t)
 {
     const char c = t.vtype.canon[0];
     return (c == 'u') || (c == 'i');
 }
 
-bool is_unsigned_KyrTVXnz(const s_Type& t)
+bool is_unsigned_CbRwLCm2(const s_Type& t)
 {
     const char c = t.vtype.canon[0];
     return c == 'u';
 }
 
-bool is_floating_pt_KyrTVXnz(const s_Type& t)
+bool is_floating_pt_CbRwLCm2(const s_Type& t)
 {
     const char c = t.vtype.canon[0];
     return c == 'f';
