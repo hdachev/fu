@@ -5063,7 +5063,7 @@ pub fn runTests()
         }
     `);
 
-    TODO_inline(`
+    ZERO(`
         fn solve(ref output: i32[], input: i32[])
         {
             fn SLOW_traverse(visit)
@@ -5078,7 +5078,7 @@ pub fn runTests()
                 return 0;
             }
 
-            fn doTrySpecialize(target: i32, ref output: i32[])
+            fn doTrySpecialize(target: i32)
             {
                 fn updateScope(result: i32)
                     output ~= result || qSTACK(result + 1);

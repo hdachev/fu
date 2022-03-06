@@ -2712,8 +2712,16 @@ pub fn solve(
 
             ScopeSkip_push(_ss.items,       start: start.items_len,     end: scope0.items_len);
 
-            ScopeSkip_push(_ss.implicits,   start: start.implicits_len, end:
-                isInline
+            ScopeSkip_push(_ss.implicits,
+
+                // Not sure about this, the whole thing is a mess -
+                //  not sure what's happening here and why this is needed,
+                //   but it helps with the qSTACK/updateScope testcase thing.
+                start: isInline && start.implicits_len > _current_fn.scope0.implicits_len
+                    ? _current_fn.scope0.implicits_len
+                    : start.implicits_len,
+
+                end: isInline
                     ? _current_fn.scope0.implicits_len
                     :             scope0.implicits_len);
 
