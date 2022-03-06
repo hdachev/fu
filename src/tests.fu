@@ -5063,6 +5063,52 @@ pub fn runTests()
         }
     `);
 
+    TODO_inline(`
+        fn solve(ref output: i32[], input: i32[])
+        {
+            fn SLOW_traverse(visit)
+                for (mut i = 0; i < input.len; i++)
+                    visit(input[i]);
+
+            fn qSTACK(id: i32, implicit _current_fnort: i32) {
+                SLOW_traverse: |x|
+                    if (id == x)
+                        return id || _current_fnort;
+
+                return 0;
+            }
+
+            fn doTrySpecialize(target: i32, ref output: i32[])
+            {
+                fn updateScope(result: i32)
+                    output ~= result || qSTACK(result + 1);
+
+                if (target & 1) {
+                    updateScope(target); // 1 - 1
+                    return;
+                }
+
+                let implicit _current_fnort = target;
+                updateScope(target / 2); // 4 - 2, 2 - 1, 0 - 0
+            }
+
+            let implicit _current_fnort = 1;
+
+            doTrySpecialize(1);
+            for (mut i = 0; i < input.len; i++)
+                doTrySpecialize(input[i]);
+        }
+
+        fn main() {
+            mut output: i32[];
+            solve(output, input: [ 0, 3 ]);
+
+            return output[0] == 1
+                && output[1] == 0
+                && output[2] == 3 ? 0 : 1;
+        }
+    `);
+
     // /quite right
 
 
