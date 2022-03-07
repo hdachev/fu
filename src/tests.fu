@@ -2934,7 +2934,7 @@ pub fn runTests()
             ref b = woot[y];
             ref a = woot[x]; // the 'shadow ref' below ...
             if (a == 1) {
-                <fail invalidate>
+                <fail invalidate write to woot at 4:25>
                 <pass/>
                 shadow ref a = woot[x]; // ... should relax 'ref a' above to a let ...
                 </fail>
