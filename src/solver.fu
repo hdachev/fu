@@ -3273,6 +3273,10 @@ pub fn solve(
                 {
                     let argNode = items[i];
 
+                    argNode.kind == "letdef" || argNode.target
+                        && BUG("Argnode is not letdef, but has a target: "
+                                ~ argNode.target.qWHAT);
+
                     shadow let argNode = argNode.kind == "letdef"
                         ? argNode.target.solved
                         : argNode;
@@ -5208,15 +5212,15 @@ pub fn solve(
 
     //
 
-    fn createLet(id: string, type: Type, flags: i32, ref shadows!: bool): SolvedNode
+    fn createLet(id: string, type: Type, flags: i32, ref shadows!: bool)
     {
-        let target = Binding(id, type, :flags, :shadows);
-        let ret = SolvedNode(
+        let target  = Binding(id, type, :flags, :shadows);
+        let ret     = SolvedNode(
             kind: "let", :flags,
             value: target.name, :target.type, :target);
 
         target.solved_set(ret);
-        return ret;
+        return target;
     }
 
     fn injectImplicitArg(id: string, type: Type, becauseOf!: Target): Target
@@ -5235,11 +5239,15 @@ pub fn solve(
             fail("No implicit " ~ id.qBAD ~ " in scope, needed to call " ~ becauseOf.qWHAT ~ ".");
         }
 
-
         // Reuse existing or add new argnode.
         for (mut i = 0; i < _current_fn.items.len + FN_ARGS_BACK; i++)
         {
             let arg = _current_fn.items[i];
+
+            shadow let arg = arg.kind == "letdef"
+                ? arg.target.solved
+                : arg;
+
             if (arg.value == id)
             {
                 mut super = intersectionType(
@@ -5264,11 +5272,13 @@ pub fn solve(
         if (type.is_mutref)
             flags |= F_REF | F_RELAXABLE_REF;
 
-        let newArgNode  = createLet(id, type, :flags, :shadows);
-        let newArgIdx   = _current_fn.items.len + FN_ARGS_BACK;
-        _current_fn.MUT.items.insert(newArgIdx, newArgNode);
+        let newArgTarget    = createLet(id, type, :flags, :shadows);
+        let newArgIdx       = _current_fn.items.len + FN_ARGS_BACK;
+        let newLetDef       = createLetDef(newArgTarget);
 
-        return newArgNode.target;
+        _current_fn.MUT.items.insert(newArgIdx, newLetDef);
+
+        return newArgTarget;
     }
 
     fn bindImplicitArg(name: string, type: Type, becauseOf!: Target): SolvedNode
