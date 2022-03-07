@@ -374,32 +374,6 @@ pub fn solve(
         return _scope.extended.grow_if_oob(target.index);
     }
 
-    fn SolvedNodeData(sn: SolvedNode, from!: Target)
-    {
-        if (sn)
-        {
-            sn.signedidx & NODEIDX_signmask == from.index & NODEIDX_signmask || BUG("SolvedNodeData() signedidx is off.");
-
-            let nodeidx = sn.signedidx >> NODEIDX_signbits;
-            return sn && from.nodes[nodeidx - 1];
-        }
-
-        return [];
-    }
-
-    using fn SolvedNodeData(sn: SolvedNode, implicit _current_fnort: Target)
-    {
-        return SolvedNodeData(:sn, from: _current_fnort);
-    }
-
-    fn MUT(sn: SolvedNode, implicit _current_fnort: Target)
-    {
-        sn.signedidx & NODEIDX_signmask == _current_fnort.index & NODEIDX_signmask || BUG("MUT(): signedidx is off.");
-
-        let nodeidx = sn.signedidx >> NODEIDX_signbits;
-        return _current_fnort.EXT_mut.nodes[nodeidx - 1];
-    }
-
     fn GET_next_local_index(implicit _current_fnort: Target)
     {
         return _current_fn.target.index
@@ -450,35 +424,6 @@ pub fn solve(
 
     //
 
-    fn SolvedNode_create(data: SolvedNodeData, implicit _current_fnort: Target)
-    {
-        let nodeown = _current_fn_or_type;
-        ref nodes   = nodeown.EXT_mut.nodes;
-        nodes      ~= data;
-        let nodeidx = nodes.len;
-
-        // println("    SN " ~ kind ~ " " ~ value ~ "    @ " ~ nodeown.index ~ ":" ~ nodes.len - 1);
-
-        return SolvedNode(signedidx:
-            nodeidx << NODEIDX_signbits | _current_fnort.index & NODEIDX_signmask);
-    }
-
-    fn SolvedNode_deepClone(sn: SolvedNode, from!: Target)
-    {
-        mut data = SolvedNodeData(sn, :from);
-
-        ref items = data.items;
-        for (mut i = 0; i < items.len; i++)
-            items[i] = SolvedNode_deepClone(items[i], :from);
-
-        return SolvedNode_create(data);
-    }
-
-    fn SolvedNode_deepClone(sn: SolvedNode, implicit _current_fnort: Target)
-    {
-        return SolvedNode_deepClone(sn, from: _current_fnort)
-    }
-
     fn SolvedNode(
         kind:       string,
         type:       Type,
@@ -488,21 +433,15 @@ pub fn solve(
         target?:    Target,
         helpers?:   Helpers)
     {
-        let data    = SolvedNodeData(
+        return SolvedNode(
             :kind, :flags, :value,
             :items,
             :type, :target, token: _here,
             :helpers);
-
-        return SolvedNode_create(data);
     }
 
     // TODO FIX /////////////////////////////////
-    fn meh() {
-        let implicit _current_fnort = _current_fn_or_type;
-        return [ SolvedNode(kind: "", type: Type()) ];
-    }
-    mut TODO_FIX_convert_args = meh();
+    mut TODO_FIX_convert_args = [ SolvedNode(kind: "", type: Type()) ];
     /////////////////////////////////////////////
 
 
@@ -1566,7 +1505,7 @@ pub fn solve(
                     if (root && retype)
                         TODO_FIX_convert_args[0] = retype;
                     else
-                        TODO_FIX_convert_args[0].MUT.type = from;
+                        TODO_FIX_convert_args[0].type = from;
                 }
 
                 defer if (!nullary)
@@ -1574,7 +1513,7 @@ pub fn solve(
                     if (root && retype)
                         TODO_FIX_convert_args[0] = arg0;
                     else
-                        TODO_FIX_convert_args[0].MUT.type = arg0type0;
+                        TODO_FIX_convert_args[0].type = arg0type0;
                 }
                 //////////////////////////////////////////////////
 
@@ -1871,7 +1810,7 @@ pub fn solve(
         }
     }
 
-    fn propagateType(node: SolvedNode, slot: Type, relax_mask!: i32)
+    fn propagateType(ref node: SolvedNode, slot: Type, relax_mask!: i32)
     {
         let k = node.kind;
 
@@ -1892,7 +1831,7 @@ pub fn solve(
         ////////////////////////////
 
         //
-        node.MUT.type.try_relax(:slot, :relax_mask);
+        node.type.try_relax(:slot, :relax_mask);
         shadow let slot = node.type;
 
         //
@@ -1998,11 +1937,11 @@ pub fn solve(
                         //////////////////////////
 
                         if (node.type.is_ref)
-                            node.MUT.type.lifetime = Lifetime_test(
+                            node.type.lifetime = Lifetime_test(
                                 Lifetime_replaceArgsAtCallsite(spec, relaxed),
                                 tempsOK: true);
 
-                        node.MUT.target = spec;
+                        node.target = spec;
                         makeNote(N_RelaxRespec);
                     }
                 }
@@ -2079,11 +2018,11 @@ pub fn solve(
             mut isLast = true;
             for (mut i = node.items.len; i --> 0; )
             {
-                shadow let node = node.items[i];
+                shadow ref node = node.items[i];
 
                 // Removing propagateType(defer) and handling here:
                 //  this validates we don't get stray defers outside of blocks.
-                shadow let node = node.kind == "defer"
+                shadow ref node = node.kind == "defer"
                     ? node.items.only
                     : node;
 
@@ -2157,7 +2096,7 @@ pub fn solve(
         let items = solveNodes(node.items, t_void);
         if (!items.last.is_never)
         {
-            let root = solved(node, t_void, items);
+            mut root = solved(node, t_void, items);
             runAllPasses(root);
             return root;
         }
@@ -2244,7 +2183,7 @@ pub fn solve(
 
         //
 
-        let block = createBlock(:items,
+        mut block = createBlock(:items,
             type: h.ret_actual || BUG(),
             :h);
 
@@ -2297,20 +2236,29 @@ pub fn solve(
         // Either way, try to relax.
 
         {
-            let node = t.solved;
+            ref node = o.solved;
 
             node.type || BUG("relaxBlockVar: !var.solved.type, can`t propagateType");
-            node.MUT.type.try_relax(slot: usage, :relax_mask);
+            node.type.try_relax(slot: usage, :relax_mask);
 
-            let init = node.items && node.items[LET_INIT];
-            if (init)
+            // Steal init expression for processing.
+            if (node.items && node.items[LET_INIT])
             {
+                mut init: SolvedNode;
+                swap(init, node.items[LET_INIT]);
+
                 init.propagateType(node.type, :relax_mask);
+
+                shadow ref o    = GET_mut(t);
+                shadow ref node = o.solved;
 
                 // TODO FIX Codegen helper, this is for the `fu_STR& src = sources[i]` case.
                 //  Ideally we should do without this, otherwise we can rerun the solveLet crap.
                 if (node.type.is_ref && !(node.flags & F_ARG))
-                    node.MUT.type.lifetime = init.type.lifetime;
+                    node.type.lifetime = init.type.lifetime;
+
+                // Done, put it back.
+                swap(init, node.items[LET_INIT]);
             }
         }
 
@@ -2320,9 +2268,9 @@ pub fn solve(
         {
             if (usage.is_mutref)
             {
-                let node = t.solved;
+                ref node = GET_mut(t).solved;
                 let type = clear_refs(node.type);
-                node.MUT.type = type;
+                node.type = type;
             }
             else
             {
@@ -2337,7 +2285,7 @@ pub fn solve(
             let strip = F_RELAXABLE_REF | (!usage.is_mutref && F_REF);
 
             o.flags             &= ~strip;
-            t.solved.MUT.flags  &= ~strip;
+            o.solved.flags      &= ~strip;
         }
     }
 
@@ -2999,7 +2947,7 @@ pub fn solve(
 
                     if (mangle00 != mangle)
                     {
-                        mut preexisting = _specs.map::get(mangle); // TODO BORROWCK RRETfix
+                        let preexisting = _specs.map::get(mangle);
                         if (preexisting)
                         {
                             setSpec(mangle00, preexisting);
@@ -3120,7 +3068,6 @@ pub fn solve(
                 if (o.revision++ > 0)
                 {
                     o.locals.clear();
-                    o.nodes.clear();
 
                     // This looks horrible but hope is
                     //  warnings array should be usually empty,
@@ -3152,7 +3099,7 @@ pub fn solve(
             }
 
             /////////////////////////////////
-            fn outItems() _current_fn.MUT.items;
+            fn outItems() _current_fn.items;
 
             let inItems = n_fn.items;
             outItems.resize(inItems.len);
@@ -3318,7 +3265,8 @@ pub fn solve(
                     // Validate `pure` asserts.
                     if (isPure && written_via)
                         fail(target.qWHAT   ~ " is not pure, writes to argument " ~ name.human.qID ~ ":\n"
-                                            ~ qSTACK(:target, position: i));
+                            ~ qSTACK(:target, Region_fromLocal(argTarget.index),
+                                        node: out.out));
 
                     if (maybeLast && isNovec && (argNode.type.is_rx_copy || argNode.type.is_rx_resize))
                         fail(target.qWHAT ~ " is not novec, argument " ~ name.human.qID ~ " is " ~ humanizeType(argNode.type));
@@ -4630,7 +4578,7 @@ pub fn solve(
             }
             ////////////////////////////////////////////////////////////////
 
-            let target = out.MUT.target = Binding(:id, :out.flags, :out.type, :shadows);
+            let target = out.target = Binding(:id, :out.flags, :out.type, :shadows);
             target.solved_set(out);
 
             // List.
@@ -5242,10 +5190,11 @@ pub fn solve(
         // Reuse existing or add new argnode.
         for (mut i = 0; i < _current_fn.items.len + FN_ARGS_BACK; i++)
         {
-            let arg = _current_fn.items[i];
+            ref arg     = _current_fn.items[i];
+            let target  = arg.target;
 
-            shadow let arg = arg.kind == "letdef"
-                ? arg.target.solved
+            shadow ref arg = arg.kind == "letdef"
+                ? target.GET_mut.solved
                 : arg;
 
             if (arg.value == id)
@@ -5257,11 +5206,11 @@ pub fn solve(
                 //////////////////////////////////////////////////////////
                 // TODO FIX just let the stuff below rerun?             //
                 //  Here we're monkey patching, this is just not good.  //
-                arg.MUT.type            = super;                        //
-                arg.target.GET_mut.type = super;                        //
+                arg.type                = super;                        //
+                target.GET_mut.type     = super;                        //
                 //////////////////////////////////////////////////////////
 
-                return arg.target || BUG();
+                return target || BUG();
             }
         }
 
@@ -5276,7 +5225,7 @@ pub fn solve(
         let newArgIdx       = _current_fn.items.len + FN_ARGS_BACK;
         let newLetDef       = createLetDef(newArgTarget);
 
-        _current_fn.MUT.items.insert(newArgIdx, newLetDef);
+        _current_fn.items.insert(newArgIdx, newLetDef);
 
         return newArgTarget;
     }
@@ -5386,7 +5335,7 @@ pub fn solve(
             // Sum types, ignoring never.
             for (mut i = items.len; i --> 0; )
             {
-                let item = items[i];
+                ref item = items[i];
                 if (item.type.is_never)
                 {
                     hasNever = true;
@@ -5399,7 +5348,7 @@ pub fn solve(
                     && item.items && item.items[item.items.len - 1];
 
                 let itemType = andLast && !andLast.type.is_never
-                    ? (item.MUT.type = andLast.type)
+                    ? (item.type = andLast.type)
                     :  item.type;
 
                 //
@@ -5499,10 +5448,10 @@ pub fn solve(
     fn popAndOr(ref node: SolvedNode)
     {
         let N   = node.items.len;
-        mut pop = node.MUT.items[N - 1]; // TODO BORROWCK RRETfix
+        let pop = node.items[N - 1];
 
         if (N > 2) {
-            node.MUT.items.pop();
+            node.items.pop();
         }
         else {
             let head = node.items[0];
@@ -5533,6 +5482,35 @@ pub fn solve(
 
     //
 
+    fn SLOW_traverse(node: SolvedNode, visit)
+    {
+        mut stack = [ node ];
+
+        fn TODO_FIX_pop(arr: $T[])
+        {
+            mut item: $T; ////////////////////
+            swap(item, arr[arr.len - 1]); //// we need a nice pop()
+            arr.pop(); ///////////////////////  so lame we dont have it
+            return item;
+        }
+
+        while (stack)
+        {
+            shadow let node = stack.TODO_FIX_pop();
+
+            // INDIRECTION !!!!
+            shadow let node = node.kind == "letdef"
+                ? node.target.solved
+                : node;
+            // INDIRECTION !!!!
+
+            visit(node);
+
+            for (mut i = node.items.len; i --> 0; )
+                stack ~= node.items[i];
+        }
+    }
+
     fn qSTACK(target: Target, position!: i32, seen!?: Target[])
     {
         return qSTACK(:target, Region_fromLocal(target.args[position].local), :seen);
@@ -5540,42 +5518,44 @@ pub fn solve(
 
     fn qSTACK(target: Target, region: Region, seen!?: Target[])
     {
+        //////////////////////////////////////////////////
+        let implicit _current_fnort = target;
+        //////////////////////////////////////////////////
+
+        return qSTACK(target, target.solved, :region, :seen);
+    }
+
+    fn qSTACK(target: Target, node: SolvedNode, region: Region, seen!?: Target[])
+    {
         mut src = "\n            ";
 
         let rec = seen.has(target);
         if (rec)
             src ~= "recursively ";
 
-        //////////////////////////////////////////////////
-        let implicit _current_fnort = target;
-        //////////////////////////////////////////////////
-
-        let nodes = target.nodes;
-
         :SEARCH
-        for (mut i = 0; i < nodes.len; i++)
+        SLOW_traverse(node): |callsite|
         {
-            let callsite = nodes[i];
-            if (callsite.kind == "call")
-            {
-                let host_args = callsite.target.args;
-                for (shadow mut i = 0; i < host_args.len; i++)
-                {
-                    let host_arg = host_args[i];
-                    if (host_arg.flags & F_WRITTEN_TO)
-                    {
-                        let arg = callsite.items[i];
-                        if (Lifetime_unwind(arg.type.lifetime).uni0n.has(region))
-                        {
-                            src ~= "via " ~ callsite.target.qWHAT ~ " at ";
-                            src ~= callsite.token.addr_and_snippet;
-                            if (!rec && seen.len < 8)
-                                src ~= qSTACK(callsite.target, position: i, seen: seen ~ target);
+            if (callsite.kind != "call")
+                continue;
 
-                            break :SEARCH;
-                        }
-                    }
-                }
+            let host_args = callsite.target.args;
+            for (shadow mut i = 0; i < host_args.len; i++)
+            {
+                let host_arg = host_args[i];
+                if !(host_arg.flags & F_WRITTEN_TO)
+                    continue;
+
+                let arg = callsite.items[i];
+                if !(Lifetime_unwind(arg.type.lifetime).uni0n.has(region))
+                    continue;
+
+                src ~= "via " ~ callsite.target.qWHAT ~ " at ";
+                src ~= callsite.token.addr_and_snippet;
+                if (!rec && seen.len < 8)
+                    src ~= qSTACK(callsite.target, position: i, seen: seen ~ target);
+
+                break :SEARCH;
             }
         }
 
@@ -5669,7 +5649,7 @@ pub fn solve(
                 {
                     let host_arg = host_args[i];
 
-                    args[i] = host_arg.default ? SolvedNode_deepClone(host_arg.default, from: target) :
+                    args[i] = host_arg.default ||
                     {
                         host_arg.flags & F_IMPLICIT || fail(
                             "tryMatch: about to implicit-bind a non-implicit argument: `"
@@ -5705,8 +5685,7 @@ pub fn solve(
         {
             // INLINE ARGUMENTS ////////////////////////////////////////////
             if (target.flags & F_INLINE)
-                return SolvedNode_deepClone(
-                    target.solved.items[LET_INIT]);
+                return target.solved.items[LET_INIT];
             // INLINE ARGUMENTS ////////////////////////////////////////////
 
             //
@@ -5759,7 +5738,7 @@ pub fn solve(
                     {
                         let retype = tryRetyping(arg, expect);
                         if (retype && isAssignableAsArgument(expect, retype))
-                            arg.MUT.type = retype;
+                            arg.type = retype;
                     }
                     //        /LITFIX
                     /////////////////
@@ -5805,7 +5784,7 @@ pub fn solve(
                     // INLINE ARGUMENTS ////////////////////////////////////////////
                 }
 
-                let s_body = solveBlock(
+                mut s_body = solveBlock(
                     n_body, type: ret_expect,
                     mask: i16(HM_CanReturn | (n_fn.flags & F_LAMBDA && HM_Lambda) | (arg_defs && HM_KeepBlock)),
                     id: n_fn.value,
@@ -5813,7 +5792,7 @@ pub fn solve(
                     :locals_start);
 
                 s_body.kind || BUG("inline: no s_body.kind");
-                s_body.MUT.items.splice(0, 0, arg_defs);
+                s_body.items.splice(0, 0, arg_defs);
 
                 return s_body;
             }
@@ -5846,39 +5825,23 @@ pub fn solve(
         return callsite;
     }
 
-    fn SWAP(a: SolvedNode, b: SolvedNode)
-    {
-        mut temp: SolvedNodeData;
-
-        swap(a.MUT, temp);
-        swap(b.MUT, temp);
-        swap(a.MUT, temp);
-    }
-
-    fn definitWrap(node: SolvedNode, slot: Type)
+    fn definitWrap(ref node: SolvedNode, slot: Type)
     {
         slot.is_mutref && CANNOT_definit_mutrefs && BUG(
             "Trying to definitWrap a mutref.");
 
         if (node.kind == "definit")
-        {
-            node.MUT.type = slot.is_ref
+            node.type = slot.is_ref
                 ? slot.clear_refs.add_ref(Lifetime_static)
                 : slot;
-
-            return;
-        }
-
-        let block = createBlock(type: slot, [
-            createEmpty(kind: "__block_wrap_expr"),
-            createDefinit(type: slot),
-        ]);
-
-        SWAP(node, block.items.first);
-        SWAP(node, block);
+        else
+            node = createBlock(type: slot, [
+                node,
+                createDefinit(type: slot),
+            ]);
     }
 
-    fn maybeCopyOrMove(node: SolvedNode, slot: Type, isArgument! = false, isReturn! = false): void
+    fn maybeCopyOrMove(ref node: SolvedNode, slot: Type, isArgument! = false, isReturn! = false): void
     {
         if (slot.canon != node.canon && !node.is_never)
         {
@@ -5909,7 +5872,7 @@ pub fn solve(
                 //  we don't want to add a destructor call here.
                 //
                 if (node.kind == "definit" && isArgument)
-                    node.MUT.type = clear_refs(node.type);
+                    node.type = clear_refs(node.type);
             }
 
             return;
@@ -5922,7 +5885,7 @@ pub fn solve(
         // Definits can just as well emit values.
         if (node.kind == "definit")
         {
-            node.MUT.type = clear_refs(node.type);
+            node.type = clear_refs(node.type);
             return;
         }
 
@@ -5933,43 +5896,11 @@ pub fn solve(
             return;
         }
 
-        /* This doesn't pass bck.
+        // Copy or move.
+        let canMove = isReturn && node.type.lifetime.Lifetime_unwind()
+                                                    .Lifetime_vs() > 0;
 
-        let newNode     = createCopy(node);
-        ref newNodeData = MUT(newNode);
-        ref oldNodeData = MUT(node);
-
-        swap(newNodeData, oldNodeData);
-        oldNodeData.items.only = newNode;
-
-        /*/
-
-        // This does but is extra nasty.
-        //  For stuff like this not to be necessary
-        //   we need both:  a] uniqueness - (also notice, this is uniquness at depth)
-        //                  b] disjoint vector access ... which is beyond non-trivial here.
-        //
-        //  Perhaps we can just go for a custom array swap here?
-
-        let canMove     = isReturn && node.type.lifetime.Lifetime_unwind()
-                                                        .Lifetime_vs() > 0;
-
-        let newNode     = canMove ? createMove(node) : createCopy(node);
-
-        mut temp: SolvedNodeData;
-
-        ref newNodeData = MUT(newNode);
-        swap(temp, newNodeData);
-
-        ref oldNodeData = MUT(node);
-        swap(temp, oldNodeData);
-
-        oldNodeData.items.only = newNode;
-
-        shadow ref newNodeData = MUT(newNode);
-        swap(temp, newNodeData);
-
-        //*/
+        node = canMove ? createMove(node) : createCopy(node);
     }
 
     fn createCopy(node: SolvedNode): SolvedNode
@@ -6124,7 +6055,7 @@ pub fn solve(
     // Borrow checker, runs. after relaxer, but before AAR (ideally) -
     //  This means everything solved, fully relaxed, a lot of mutrefs now refs, etc.
 
-    fn PASS_borrowCheck(root: SolvedNode)
+    fn PASS_borrowCheck(ref root: SolvedNode)
     {
         // Now bck does two passes:
         //
@@ -6279,7 +6210,7 @@ pub fn solve(
                 o.flags  |= F_MUT;
                 let t_let = clear_refs(o.type);
 
-                t.solved.MUT.type = t_let;
+                o.solved.type = t_let;
             }
 
             return true;
@@ -6288,11 +6219,11 @@ pub fn solve(
 
         // Inserting a temporary.
 
-        fn RESOLVE_byTempCopy(callsite: SolvedNode, position: i32)
+        fn RESOLVE_byTempCopy(ref callsite: SolvedNode, position: i32)
         {
             AAR && BUG();
 
-            fn RESOLVE_byTempCopy(node: SolvedNode, slot: Type)
+            fn RESOLVE_byTempCopy(ref node: SolvedNode, slot: Type)
             {
                 // Reconstruct a maybe-copyable value type -
                 //  slot is a ref which may not need q_rx_copy.
@@ -6391,26 +6322,15 @@ pub fn solve(
 
         //
 
-        fn SLOW_find(test, miss): SolvedNodeData
+        fn SLOW_find(test, miss): SolvedNode
         {
-            let nodes = _current_fn.target.nodes;
+            mut result: SolvedNode;
 
-            :SKIP
-            for (mut i = 0; i < nodes.len; i++)
-            {
-                let node = nodes[i];
+            SLOW_traverse(root): |node|
                 if (test(:node))
-                {
-                    let items = node.items;
-                    for (shadow mut i = 0; i < items.len; i++)
-                        if (test(node: items[i]))
-                            continue :SKIP;
+                    result = node;
 
-                    return node;
-                }
-            }
-
-            return miss();
+            return result;
         }
 
         fn SLOW_findByReadID(read: ReadID)
@@ -6606,7 +6526,7 @@ pub fn solve(
 
         //
 
-        fn bck_let(node: SolvedNode)
+        fn bck_let(ref node: SolvedNode)
         {
             // Solve init expr.
             bck_nodes(node.items);
@@ -6634,12 +6554,11 @@ pub fn solve(
 
         //
 
-        fn bck_call(callsite: SolvedNode)
+        fn bck_call(ref callsite: SolvedNode)
         {
-            let target = callsite.target;
+            fn target   = callsite.target;
+            fn args     = callsite.items;
 
-            //
-            let args = callsite.items;
             if (args)
             {
                 let host_args = target.args;
@@ -7076,7 +6995,7 @@ pub fn solve(
                 }
 
                 // The sequencing fingerprint, just in case.
-                ref helpers = callsite.MUT.helpers;
+                ref helpers = callsite.helpers;
                 !helpers || AAR || BUG("MUSTSEQ_mask: helpers already contain something");
                 helpers = Helpers(MUSTSEQ_mask | helpers.index);
             }
@@ -7091,9 +7010,9 @@ pub fn solve(
 
         //
 
-        fn bck_loop(node: SolvedNode)
+        fn bck_loop(ref node: SolvedNode)
         {
-            let items = node.items;
+            ref items = node.items;
 
             bck_node(items[0]);
 
@@ -7114,9 +7033,9 @@ pub fn solve(
             ////////////////////////////////////////////////////////////////////////
         }
 
-        fn bck_if(node: SolvedNode)
+        fn bck_if(ref node: SolvedNode)
         {
-            let items = node.items;
+            ref items = node.items;
 
             // Cond.
             bck_node(items[0]);
@@ -7139,15 +7058,15 @@ pub fn solve(
             //////////////////////////////////////////////////////
         }
 
-        fn bck_block(node: SolvedNode)
+        fn bck_block(ref node: SolvedNode)
         {
             mut defers: SolvedNode[];
 
             // Regular items forward.
-            let items = node.items;
+            ref items = node.items;
             for (mut i = 0; i < items.len; i++)
             {
-                shadow let node = items[i];
+                shadow ref node = items[i];
                 if (node.kind == "defer")
                     defers ~= node.items.only;
                 else
@@ -7162,11 +7081,11 @@ pub fn solve(
 
         // Borrow check router.
 
-        fn bck_nodes(items: SolvedNode[])
+        fn bck_nodes(ref items: SolvedNode[])
             for (mut i = 0; i < items.len; i++)
                 bck_node(items[i]);
 
-        fn bck_node(node: SolvedNode)
+        fn bck_node(ref node: SolvedNode)
         {
             let k = node.kind;
 
@@ -7189,7 +7108,9 @@ pub fn solve(
             else if (k == "letdef")
             {
                 // INDIRECTION !!!!
-                bck_node(node.target.solved);
+                swap(GET_mut(node.target).solved, node);
+                bck_node(node);
+                swap(GET_mut(node.target).solved, node);
             }
             else if (k == "let")
             {
@@ -7226,10 +7147,9 @@ pub fn solve(
             rwr.reads1 = _current_fn.events.reads.len;
             rwr.writes1 = _current_fn.events.writes.len;
             if (rwr.reads1 > rwr.reads0 || rwr.writes1 > rwr.writes0)
-                node.MUT.rwr = rwr;
+                node.rwr = rwr;
             ////////////////////////////////////////////
         }
-
 
         // This feels like its no longer relevant -
 
@@ -7309,6 +7229,7 @@ pub fn solve(
             }
         }
     }
+
 
 
     //////////////////////////////////////////////////////////////////////////
@@ -7442,7 +7363,7 @@ pub fn solve(
 
     // Maybe-copy-or-move router.
 
-    fn mcom_node(node: SolvedNode)
+    fn mcom_node(ref node: SolvedNode)
     {
         let k = node.kind;
         let t = node.type;
@@ -7457,7 +7378,7 @@ pub fn solve(
         }
 
         // Children.
-        let items = node.items;
+        ref items = node.items;
         for (mut i = 0; i < items.len; i++)
             mcom_node(items[i]);
 
@@ -7484,13 +7405,15 @@ pub fn solve(
         else if (k == "letdef")
         {
             // INDIRECTION !!!!
-            mcom_node(node.target.solved);
+            swap(GET_mut(node.target).solved, node);
+            mcom_node(node);
+            swap(GET_mut(node.target).solved, node);
         }
         else if (k == "let")
         {
             if (node.items)
             {
-                let init = node.items[LET_INIT];
+                ref init = node.items[LET_INIT];
                 if (init)
                     maybeCopyOrMove(init, node.type);
             }
@@ -7523,7 +7446,7 @@ pub fn solve(
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    fn runAllPasses(node: SolvedNode)
+    fn runAllPasses(ref node: SolvedNode)
     {
         ///////////////////////////////
         if (SELF_TEST) test_node(node, "PASS.0 ");

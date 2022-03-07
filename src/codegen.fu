@@ -148,17 +148,6 @@ pub fn cpp_codegen(implicit module: Module, implicit ctx: Context): CodegenOutpu
     }
 
 
-    // RemoteNode nonsense
-
-    using fn SolvedNodeData(sn: SolvedNode, implicit _current_nodes: [SolvedNodeData], implicit _current_fnort: Target)
-    {
-        !sn || sn.signedidx & NODEIDX_signmask == _current_fnort.index & NODEIDX_signmask || fail("RemoteNode: signature is off.");
-
-        let nodeidx = sn.signedidx >> NODEIDX_signbits;
-        return nodeidx && _current_nodes[nodeidx - 1];
-    }
-
-
     //
 
     fn fail(mut reason = "")
@@ -890,11 +879,6 @@ pub fn cpp_codegen(implicit module: Module, implicit ctx: Context): CodegenOutpu
 
     fn ensureFnUsable(target: Target)
     {
-        ///////////////////////////////////////////
-        let implicit _current_nodes = target.nodes;
-        let implicit _current_fnort = target;
-        ///////////////////////////////////////////
-
         if (target.modid != module.modid)
             ensureFwdDecl(target);
         else
@@ -923,11 +907,6 @@ pub fn cpp_codegen(implicit module: Module, implicit ctx: Context): CodegenOutpu
     fn cgFnDef(fndef: SolvedNode, mode: i32): string
     {
         let target = fndef.target;
-
-        ///////////////////////////////////////////
-        let implicit _current_nodes = target.nodes;
-        let implicit _current_fnort = target;
-        ///////////////////////////////////////////
 
         let o = GET(target);
         let n = target.solved;
@@ -1257,11 +1236,6 @@ pub fn cpp_codegen(implicit module: Module, implicit ctx: Context): CodegenOutpu
     {
         if !(_ffwd.add_once(target))
             return;
-
-        /////////////////////////////////////////////////////////////
-        let implicit _current_nodes = Target(:target.modid, 0).nodes;
-        let implicit _current_fnort = Target(:target.modid, 0);
-        /////////////////////////////////////////////////////////////
 
         cgLet(target.solved, global: true, foreign: true);
     }
@@ -2445,10 +2419,7 @@ pub fn cpp_codegen(implicit module: Module, implicit ctx: Context): CodegenOutpu
     }
 
 
-    /////////////////////////////////////////////////////////////
-    let implicit _current_nodes = Target(:module.modid, 0).nodes;
-    let implicit _current_fnort = Target(:module.modid, 0);
-    /////////////////////////////////////////////////////////////
+    //
 
     let root = module.out.solve.root;
     root.kind == "root" || fail();

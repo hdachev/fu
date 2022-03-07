@@ -139,11 +139,6 @@ pub struct Local
     index:      i32;
 }
 
-pub struct SolvedNode
-{
-    signedidx!: i32;
-}
-
 pub struct RWRanges
 {
     reads0:     i32;
@@ -157,7 +152,7 @@ pub struct Helpers
     index:      i32;
 };
 
-pub struct SolvedNodeData
+pub struct SolvedNode
 {
     true kind:  string; // TODO enum, will save so many string copies
 
@@ -321,7 +316,6 @@ pub struct Extended
     template:       Template;
 
     // The new nodelists.
-    nodes?:         SolvedNodeData[];
     locals?:        Overload[];
 
     // These are single-module-solve-only, no need to keep them here.
