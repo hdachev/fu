@@ -1636,21 +1636,21 @@ pub fn runTests()
     `);
 
     TODO_args(`
-        fn test(ref a: i32, incr: i32) {
-            fn woot(x, ref b: i32 = a) {
+        fn test(ref a: i32, mut incr: i32) {
+            fn woot(ref x, ref b = a) { // 'a' closes over here!
                 if (x & 1) {
                     x /= 2;
                     return test(x, b);
                 }
-                b += x;
+                return b += x;
             }
-            return woot(incr, a);
+
+            return woot(incr<alt>, a</alt>);
         }
 
         fn main() {
             mut x = 10;
-            test(x, 5);
-            return x - 12;
+            return test(x, 5) - 12;
         }
     `);
 

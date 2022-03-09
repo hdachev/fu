@@ -1,6 +1,7 @@
 import helpers;
 import module;
 import types;
+import fail;
 
 pub struct Flow
 {
@@ -23,11 +24,11 @@ pub fn Reference_trackArgument(ref flow: Flow, target: i32, position: i32)
 {
     // Argument position -> target,
     //  this is only needed for collecting the outcomes at the end.
-    flow.arg_targets.len <= position || assert();
+    flow.arg_targets.len <= position || BUG("Reference_trackArgument: positions out of order.");
     flow.arg_targets.grow(position + 1);
     flow.arg_targets[position] = target;
 
-    flow.arg_positions.len <= target || assert();
+    flow.arg_positions.len <= target || BUG("Reference_trackArgument: targets out of order.");
     flow.arg_positions.grow(target + 1);
     flow.arg_positions[target] = position + 1;
 
