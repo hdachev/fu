@@ -8908,6 +8908,25 @@ pub fn runTests()
             && a <> greater == -1 ? 0 : 101;
     `);
 
+    ZERO([`
+        fn &(a, b) {
+            mut res = a;
+            for (fieldname i: $a) res.i &= b.i;
+            return res;
+        }
+
+        struct XY  { x: i32; y: i32 };
+        struct UVW { u: i32; v: i32; w: i32 };
+    `,`
+        import _0;
+
+        fn main() {
+            mut xy  =  XY(1, 2)    &  XY(2, 3);
+            mut uvw = UVW(1, 2, 3) & UVW(2, 3, 4);
+            return xy.y - uvw.v;
+        }
+    `]);
+
 
     // Function types sketch.
 
