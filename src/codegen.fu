@@ -979,6 +979,11 @@ pub fn cpp_codegen(implicit module: Module, implicit ctx: Context): CodegenOutpu
                   && overload.flags & F_TEMPLATE
                   && overload.name.valid_identifier;
 
+        shadow let dedupe = dedupe
+                && overload.sighash
+                    ? dedupe ~ '_' ~ overload.sighash
+                    : dedupe;
+
         if (dedupe)
             _fdef ~= "\n                                #ifndef DEFt_" ~ dedupe
                    ~ "\n                                #define DEFt_" ~ dedupe;

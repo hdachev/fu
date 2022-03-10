@@ -3395,27 +3395,11 @@ pub fn solve(
                     // Perhaps we should do this mangling in the codegen?
                     //
                     mut name = n_fn.value || fail("TODO anonymous fns");
-                    if (!isNative && !isInline && !isUnspec
 
-                        // Explicit externs don't get tagged,
-                        //  so you can refer to them by their naked names.
-                        && !(n_fn.flags & F_EXTERN)
-
-                        // TODO FIX operators are a more serious problem -
-                        //  we want operators to codegen c++ operators,
-                        //   esp. assignments because they have guaranteed order of eval -
-                        //    which means we can't add these hashes around.
-                        //
-                        // For cpp we could use namespaces,
-                        //  but we can't do ns::operator+= calls,
-                        //   because that doesn't guarantee eval,
-                        //    so there must be a using or something, it's fragile.
-                        //
-                        // Something has to give somewhere.
-                        //
-                        && !(n_fn.flags & F_OPERATOR && cpp::hasOperator(name)))
+                    mut sighash: string;
+                    if (!isNative && !isInline && !isUnspec)
                     {
-                        // "namespacing" via the signature hashes.
+                        // "namespacing" via the sighash hashes.
                         let sourceModid             = template.node.token.modid;
                         shadow let shortModuleName  = sourceModid != module.modid
                             ? sourceModid && module.modid && getShortModuleName(ctx.modules[sourceModid].fname)
@@ -3426,8 +3410,20 @@ pub fn solve(
                                     ~ mangleArguments(target.args);
                         if (sig)
                         {
-                            let hash = tea::hash62(sig, chars: 8) || BUG();
-                            name ~= "_" ~ hash;
+                            sighash = tea::hash62(sig) || BUG();
+
+                            // TODO FIX only doing the separate sighashes for operators -
+                            //  get rid of this and make everything work the same,
+                            //   which means no name postfixing and such.
+                            //
+                            if !(n_fn.flags & F_EXTERN ||
+                                (n_fn.flags & F_OPERATOR && cpp::hasOperator(name)))
+                            {
+                                name ~= '_';
+                                name ~= sighash[0, 8];
+
+                                sighash = "";
+                            }
                         }
                     }
 
@@ -3443,6 +3439,7 @@ pub fn solve(
 
                     ref overload        = GET_mut(target);
                     overload.name       = HACK_nativeNameParts || name || BUG();
+                    overload.sighash    = sighash;
 
                     overload.kind       = isUnspec      ? "template"
                                         : isNative      ? "__native"

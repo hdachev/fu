@@ -290,6 +290,15 @@ pub struct Overload
 {
     true kind:      string;
     name:           string;
+
+    // Previously we appended a fns signature hash to its name,
+    //  now we'll do this in the codegen.
+    //
+    // But this could also be used for some kind of content addressed code thing,
+    //  TBD where we can take this, deduplicate identical functions or something.
+    //
+    sighash:        string;
+
     type:           Type;
 
     flags:          i32;
