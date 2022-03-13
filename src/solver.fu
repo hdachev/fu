@@ -1469,8 +1469,8 @@ pub fn solve(
     }
 
     fn tryConvert(
-        misc_scope: Scope, local_scope!: bool,
-        expect: Type, actual?: Type, retype?: SolvedNode): Target[]
+        expect: Type, actual?: Type, retype?: SolvedNode,
+        misc_scope!?: Scope, local_scope!: bool): Target[]
     {
         mut match:  Target[];
         mut path:   Target[];
@@ -2086,6 +2086,18 @@ pub fn solve(
 
 
     //
+
+    fn solved(
+        node: Node, type: Type, items: SolvedNode[] = [], target = Target)
+            : SolvedNode
+    {
+        return SolvedNode(
+            kind:  node.kind ,
+            flags: node.flags,
+            value: node.value,
+
+            :items, :type, :target);
+    }
 
     fn solveRoot(node: Node): SolvedNode
     {
@@ -5268,6 +5280,73 @@ pub fn solve(
 
     //
 
+    fn convertToSuperType(topic: string, ref a: SolvedNode, ref b: SolvedNode): Type
+    {
+        {
+            let super = type_trySuper(a, b);
+            if (super)
+                return super;
+        }
+
+        :TRY_RETYPE
+        {
+            let aRetype = tryRetyping(a, b.type);
+            let bRetype = tryRetyping(b, a.type);
+
+            if (aRetype)
+            {
+                if (bRetype)
+                    break :TRY_RETYPE;
+
+                let super = type_trySuper(aRetype, b);
+                if (super)
+                {
+                    applyRetype(a, aRetype);
+                    return super;
+                }
+            }
+
+            if (bRetype)
+            {
+                let super = type_trySuper(bRetype, a);
+                if (super)
+                {
+                    applyRetype(b, bRetype);
+                    return super;
+                }
+            }
+        }
+
+        :TRY_CONVERT
+        {
+            // TODO write some tests for this /////////////////
+            if (true) BUG("TRY_CONVERT has no test coverage.");
+            ///////////////////////////////////////////////////
+
+            let aConv = tryConvert(a, expect: b.type, local_scope: true);
+            let bConv = tryConvert(b, expect: a.type, local_scope: true);
+
+            if (aConv)
+            {
+                if (bConv)
+                    break :TRY_CONVERT;
+
+                applyConversion(a, aConv);
+                return b.type;
+            }
+
+            if (bConv)
+            {
+                applyConversion(b, bConv);
+                return a.type;
+            }
+        }
+
+        fail(topic ~ ": No common supertype: "
+            ~ a.humanizeType ~ " <-> "
+            ~ b.humanizeType);
+    }
+
     fn solveIf(node: Node, mut type: Type): SolvedNode
     {
         mut cond    = solveNode(node.items[0], t_bool);
@@ -5295,7 +5374,7 @@ pub fn solve(
         mut alt     = solveBlock(node.items[2], :type);
 
         if (!type.is_void)
-            type = superType("if/else: ", cons.type, alt.type);
+            type = convertToSuperType("if/else", cons, alt);
 
         // Control flow.
         if (cons.type.is_never && alt.type.is_never)
@@ -5562,16 +5641,26 @@ pub fn solve(
 
     //
 
-    fn solved(
-        node: Node, type: Type, items: SolvedNode[] = [], target = Target)
-            : SolvedNode
+    fn applyRetype(ref arg: SolvedNode, retype: Type)
     {
-        return SolvedNode(
-            kind:  node.kind ,
-            flags: node.flags,
-            value: node.value,
+        arg.type = retype;
+    }
 
-            :items, :type, :target);
+    fn applyConversion(ref arg: SolvedNode, conversion: Target[])
+    {
+        for (mut i = 0; i < conversion.len; i++)
+        {
+            let t = conversion[i];
+            if (t.min || t.max && arg)
+            {
+                arg = CallerNode("__using.a", t, [ arg ]);
+                continue;
+            }
+
+            i && fail("Bad conversion chain, non-leading nullary: `" ~ t.name ~ "`.");
+            arg && fail("Bad conversion chain, about to throw away an argnode.");
+            arg = CallerNode("__using.b", t);
+        }
     }
 
     fn CallerNode(
@@ -5599,20 +5688,7 @@ pub fn solve(
         for (mut argIdx = 0; argIdx < conversions.len; argIdx++)
         {
             let conversion = conversions[argIdx];
-
-            for (mut i = 0; i < conversion.len; i++)
-            {
-                let t = conversion[i];
-                if (t.min || t.max && args[argIdx])
-                {
-                    args[argIdx] = CallerNode("__using.a", t, [ args[argIdx] ]);
-                    continue;
-                }
-
-                i && fail("Bad conversion chain, non-leading nullary: `" ~ t.name ~ "`.");
-                args[argIdx] && fail("Bad conversion chain, about to throw away an argnode.");
-                args[argIdx] = CallerNode("__using.b", t);
-            }
+            applyConversion(args[argIdx], :conversion);
         }
 
         // Rest params.
@@ -5735,7 +5811,7 @@ pub fn solve(
                     {
                         let retype = tryRetyping(arg, expect);
                         if (retype && isAssignableAsArgument(expect, retype))
-                            arg.type = retype;
+                            applyRetype(arg, retype);
                     }
                     //        /LITFIX
                     /////////////////
