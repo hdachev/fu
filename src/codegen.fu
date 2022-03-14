@@ -2232,6 +2232,29 @@ pub fn cpp_codegen(implicit module: Module, implicit ctx: Context): CodegenOutpu
              ~ _indent ~ "}\n";
     }
 
+    fn cgCompilerPragma(node: SolvedNode): string
+    {
+        if (node.value != "emit")
+            BUG("Unknown compiler pragma: " ~ node.value);
+
+        mut result = "";
+
+        for (mut i = 0; i < node.items.len; i++)
+        {
+            shadow let node = node.items[i];
+            if (node.kind == "str")
+                result ~= node.value;
+            else
+                result ~= cgNode(:node, debug: "compiler:emit");
+        }
+
+        if (_current_fn)
+            return result;
+
+        _ffwd_src ~= result;
+        return "";
+    }
+
 
     //
 
@@ -2275,6 +2298,8 @@ pub fn cpp_codegen(implicit module: Module, implicit ctx: Context): CodegenOutpu
         if (k == "loop")        return cgLoop(node);
         if (k == "try")         return cgTryCatch(node);
         if (k == "defer")       return cgDefer(node);
+
+        if (k == "compiler")    return cgCompilerPragma(node);
 
         return fail("TODO: " ~ k);
     }

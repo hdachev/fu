@@ -8952,6 +8952,23 @@ pub fn runTests()
     `]);
 
 
+    // C++ hacks.
+
+    ZERO(`
+        compiler emit("
+            void ccIncrX2(int& a, int b) {
+                a += b * 2;
+            }
+        ");
+
+        fn main() {
+            mut a = 0;
+            compiler emit("ccIncrX2(", a, ", 5);");
+            return a - 10;
+        }
+    `);
+
+
     // Function types sketch.
 
     TODO_fntype(`

@@ -2078,6 +2078,15 @@ pub fn solve(
             //
             // propagateType(node.items, t_void, :relax_mask);
         }
+        else if (k == "compiler")
+        {
+            // Noop - but do track variable use
+            //  so we don't emit warnings
+            //   and so we don't overrelax.
+            //
+            for (mut i = 0; i < node.items.len; i++)
+                node.items[i].propagateType(node.items[i].type, :relax_mask);
+        }
         else
         {
             fail("TODO: propagateType(" ~ k ~ ").");
@@ -2453,6 +2462,11 @@ pub fn solve(
 
     fn executeCompilerPragma(node: Node)
     {
+        if (node.value == "emit")
+            return SolvedNode("compiler", value: "emit",
+                items: solveNodes(node.items), type: t_void);
+
+        //
         if (node.value == "break")
             compilerBreak();
         else
@@ -7210,6 +7224,10 @@ pub fn solve(
             {
                 // The default - descend recursively.
                 bck_nodes(node.items);
+            }
+            else if (k == "compiler")
+            {
+                // Noop.
             }
             else if (node.items)
             {
