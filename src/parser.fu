@@ -309,20 +309,20 @@ pub fn parse(
 
     fn parseCompilerPragma(): Node
     {
-        let id = consume("id").value;
+        let value = consume("id").value;
 
         // Codegen passthrough for direct c++ hacks.
-        if (id == "emit")
+        if (value != "break")
         {
             mut items: Node[];
             consume("op", "(");
             parseCallArgs(")", items);
 
-            return make("compiler", value: "emit", :items);
+            return make("compiler", :value, :items);
         }
 
         //
-        let ret = make("compiler", :consume("id").value);
+        let ret = make("compiler", :value);
         softSemi();
         return ret;
     }

@@ -90,6 +90,9 @@ pub struct SolverOutput
 pub struct CodegenOutput
 {
     using src:  string;
+
+    // Libraries and such.
+    link?:      string[];
 };
 
 

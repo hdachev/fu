@@ -2462,16 +2462,11 @@ pub fn solve(
 
     fn executeCompilerPragma(node: Node)
     {
-        if (node.value == "emit")
-            return SolvedNode("compiler", value: "emit",
+        if (node.value != "break")
+            return SolvedNode("compiler", :node.value,
                 items: solveNodes(node.items), type: t_void);
 
-        //
-        if (node.value == "break")
-            compilerBreak();
-        else
-            fail("Unknown compiler pragma: `" ~ node.value ~ "`.");
-
+        compilerBreak();
         return createEmpty();
     }
 

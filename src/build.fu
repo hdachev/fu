@@ -204,9 +204,6 @@ pub fn build(
     //
     fs::mkdir_p(dir_wrk);
 
-    let F_exe = dir_wrk ~ "b-" ~ tea::hash16(Fs.join("/"))
-                        ~  "-" ~ len_all ~ "-" ~ Fs.len;
-
     //
     mut code:   i32;
     mut stdout: string;
@@ -246,7 +243,51 @@ pub fn build(
         return throw(stdout ~ explain);
     }
 
+    ////////////////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////////////////
+    ////
+    ////  Total nonsense, tbd how we're gonna do this,
+    ////   but I'd like us to have something that
+    ////    just-works for the simplest things like your local glfw.
+    ////
+    mut HACK_linkFlags:         string[];
+    mut HACK_pkgConfig_libs:    string[];
+    mut HACK_pkgConfig_cflags:  string[];
+
+    for (mut i = 0; i < modules.len; i++)
+    {
+        mut cflags = "";
+
+        mut libs = modules[i].out.cpp.link;
+        for (shadow mut i = 0; i < libs.len; i++)
+        {
+            mut lib = libs[i];
+
+            if (lib.starts(with: "-")) {
+                HACK_linkFlags.set::add(lib);
+            }
+            else {
+                cflags ~= lib;
+                HACK_pkgConfig_libs.set::add(lib);
+            }
+        }
+
+        if (cflags)
+            HACK_pkgConfig_cflags.grow_if_oob(i) = " $(pkg-config --cflags " ~ cflags ~ ")";
+    }
+
+    let LIBS = (HACK_linkFlags      && " "                     ~ HACK_linkFlags.join(" "))
+             ~ (HACK_pkgConfig_libs && " $(pkg-config --libs " ~ HACK_pkgConfig_libs.join(" ") ~ ")");
+    ////
+    ////////////////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////////////////
+
     //
+    let F_exe = dir_wrk ~ "b-" ~ tea::hash16(Fs.join("/") ~ LIBS)
+                        ~  "-" ~ len_all ~ "-" ~ Fs.len;
+
     let exe_size = file::size(F_exe);
     if (exe_size < 1 && (bin || run))
     {
@@ -275,6 +316,10 @@ pub fn build(
 
                 let t0 = now::hr();
 
+                ///////////////////////////////////////////////////////////////////
+                shadow let INCLUDE = INCLUDE ~ HACK_pkgConfig_cflags.unless_oob(i);
+                ///////////////////////////////////////////////////////////////////
+
                 code = shell::exec(GCC_CMD ~ INCLUDE ~ "-c -o " ~ F_tmp ~ " " ~ F_cpp ~ " 2>&1", stdout)
                     || shell::exec("mv " ~ F_tmp ~ " " ~ F_obj ~ " 2>&1", stdout);
 
@@ -296,11 +341,9 @@ pub fn build(
                 cmd ~= F ~ ".o ";
         }
 
-        // This is not amazing.
-        let LIBS = process::LINUX && " -ldl -pthread";
-
+        //
         {
-            println("   LINK ", F_exe);
+            println("   LINK ", F_exe, LIBS);
             let t0 = now::hr();
 
             code = shell::exec(cmd ~ LIBS ~ " 2>&1", stdout)
