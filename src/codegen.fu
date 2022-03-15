@@ -66,7 +66,9 @@ pub fn cpp_codegen(implicit module: Module, implicit ctx: Context): CodegenOutpu
 
     let implicit mut _here: TokenIdx;
 
-    mut HACK_link: string[];
+    mut HACK_link:          string[];
+    mut HACK_include_dirs:  string[];
+    mut HACK_extra_sources: string[];
 
 
     //
@@ -2236,7 +2238,11 @@ pub fn cpp_codegen(implicit module: Module, implicit ctx: Context): CodegenOutpu
 
     fn cgCompilerPragma(node: SolvedNode): string
     {
-        if (node.value == "link")
+        let cmd = node.value;
+
+        if (cmd == "link"         ||
+            cmd == "include_dirs" ||
+            cmd == "sources")
         {
             for (mut i = 0; i < node.items.len; i++)
             {
@@ -2244,14 +2250,19 @@ pub fn cpp_codegen(implicit module: Module, implicit ctx: Context): CodegenOutpu
                 if (item.kind != "str")
                     fail("compiler link: All arguments must be string literals, got a `" ~ item.kind ~ "`.");
 
-                HACK_link.set::add(item.value);
+                if (cmd == "link")
+                    HACK_link.set::add(item.value);
+                else if (cmd == "include_dirs")
+                    HACK_include_dirs.set::add(item.value);
+                else
+                    HACK_extra_sources.set::add(item.value);
             }
 
             return "";
         }
 
-        if (node.value != "emit")
-            BUG("Unknown compiler pragma: " ~ node.value);
+        if (cmd != "emit")
+            BUG("Unknown compiler pragma: " ~ cmd);
 
         mut result = "";
 
@@ -2472,5 +2483,8 @@ pub fn cpp_codegen(implicit module: Module, implicit ctx: Context): CodegenOutpu
 
     let src = cgNode(root, debug: "cgRoot");
 
-    return CodegenOutput(:src, link: HACK_link);
+    return CodegenOutput(:src,
+        link:           HACK_link,
+        include_dirs:   HACK_include_dirs,
+        extra_sources:  HACK_extra_sources);
 }

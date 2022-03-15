@@ -81,8 +81,6 @@ pub fn build(
     if (scheme == "retail")
         O_lvl ~= "-Dfu_RETAIL ";
 
-    let INCLUDE = "-I ~/fu/include ";
-
     let GCChash = "g++ -std=c++1z " ~ O_lvl;
 
     // Not considering warnings when hashing files.
@@ -255,11 +253,31 @@ pub fn build(
     mut HACK_pkgConfig_libs:    string[];
     mut HACK_pkgConfig_cflags:  string[];
 
+    mut HACK_include_dirs:      string[];
+
     for (mut i = 0; i < modules.len; i++)
     {
+        let module = modules[i];
+
+        //
+        let include_dirs = module.out.cpp.include_dirs;
+        if (include_dirs)
+        {
+            let dir = path_dirname(module.fname);
+            include_dirs.each: |incl|
+                HACK_include_dirs.set::add(
+                    incl.starts(with: '.')
+                        ? path_join(dir, incl)
+                        : incl);
+        }
+
+        HACK_include_dirs.set::add(
+            module.out.cpp.include_dirs);
+
+        //
         mut cflags = "";
 
-        mut libs = modules[i].out.cpp.link;
+        mut libs = module.out.cpp.link;
         for (shadow mut i = 0; i < libs.len; i++)
         {
             mut lib = libs[i];
@@ -276,6 +294,9 @@ pub fn build(
         if (cflags)
             HACK_pkgConfig_cflags.grow_if_oob(i) = " $(pkg-config --cflags " ~ cflags ~ ")";
     }
+
+    let INCLUDE = "-I ~/fu/include "
+        ~ (HACK_include_dirs && "-I " ~ HACK_include_dirs.join(" -I ") ~ " ");
 
     let LIBS = (HACK_linkFlags      && " "                     ~ HACK_linkFlags.join(" "))
              ~ (HACK_pkgConfig_libs && " $(pkg-config --libs " ~ HACK_pkgConfig_libs.join(" ") ~ ")");

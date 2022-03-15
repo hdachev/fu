@@ -92,7 +92,9 @@ pub struct CodegenOutput
     using src:  string;
 
     // Libraries and such.
-    link?:      string[];
+    link?:              string[];
+    include_dirs?:      string[];
+    extra_sources?:     string[];
 };
 
 
