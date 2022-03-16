@@ -2254,8 +2254,10 @@ pub fn cpp_codegen(implicit module: Module, implicit ctx: Context): CodegenOutpu
                     HACK_link.set::add(item.value);
                 else if (cmd == "include_dirs")
                     HACK_include_dirs.set::add(item.value);
-                else
+                else if (cmd == "sources")
                     HACK_extra_sources.set::add(item.value);
+                else
+                    BUG("Unknown compiler pragma [2]: " ~ cmd);
             }
 
             return "";
@@ -2481,7 +2483,31 @@ pub fn cpp_codegen(implicit module: Module, implicit ctx: Context): CodegenOutpu
     let root = module.out.solve.root;
     root.kind == "root" || fail();
 
-    let src = cgNode(root, debug: "cgRoot");
+    mut src = cgNode(root, debug: "cgRoot");
+
+
+    // TODO FIX just add these as translation units,
+    //  need proper hashing and everything, so they should just skip over compile & cg
+    //   but otherwise work like our own generated sources.
+
+    fn addExtraSources(files: string)
+    {
+        HACK_extra_sources ~= files;
+    }
+
+    for (mut i = 0; i < HACK_extra_sources.len; i++)
+    {
+        let orig = HACK_extra_sources[i];
+        let file = orig.starts(with: '.')
+                 ? path_join(path_dirname(module.fname), orig)
+                 : orig;
+
+        src ~= "\n// " ~ orig ~ "\n";
+        src ~= file::read(file);
+    }
+
+
+    //
 
     return CodegenOutput(:src,
         link:           HACK_link,
