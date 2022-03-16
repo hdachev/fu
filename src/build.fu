@@ -54,7 +54,10 @@ pub fn build(
     mut dir_cpp ! = "",
         unity   ! = "",
         scheme  ! = "",
-        onfail  ! = ""): void
+        onfail  ! = "",
+
+        flags_ld!?: string[],
+        flags_cc!?: string[]): void
 {
     // Where we do our dirtywork.
     if (dir_wrk.if_last != '/')
@@ -295,10 +298,11 @@ pub fn build(
             HACK_pkgConfig_cflags.grow_if_oob(i) = " $(pkg-config --cflags " ~ cflags ~ ")";
     }
 
-    let INCLUDE = " -I ~/fu/include"
-        ~ (HACK_include_dirs && " -I " ~ HACK_include_dirs.join(" -I "));
+    let INCLUDE = (flags_cc && " " ~ flags_cc.join(' ')) ~ " -I ~/fu/include"
+                ~ (HACK_include_dirs && " -I " ~ HACK_include_dirs.join(" -I "));
 
-    let LIBS = (HACK_linkFlags      && " "                     ~ HACK_linkFlags.join(" "))
+    let LIBS = (flags_ld && " " ~ flags_ld.join(' '))
+             ~ (HACK_linkFlags      && " "                     ~ HACK_linkFlags.join(" "))
              ~ (HACK_pkgConfig_libs && " $(pkg-config --libs " ~ HACK_pkgConfig_libs.join(" ") ~ ")");
     ////
     ////////////////////////////////////////////////////////////////

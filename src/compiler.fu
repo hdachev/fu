@@ -119,11 +119,14 @@ pub fn build(
 
     dir_wrk: string,
 
-    bin     = "",
-    dir_obj = "",
-    dir_src = "",
-    dir_cpp = "",
-    scheme  = "")
+    bin     ! = "",
+    dir_obj ! = "",
+    dir_src ! = "",
+    dir_cpp ! = "",
+    scheme  ! = "",
+
+    flags_cc!?: string[],
+    flags_ld!?: string[])
 {
     let implicit mut ctx = prelude::CTX_PRELUDE.clone();
     let implicit options: Options;
@@ -164,6 +167,7 @@ pub fn build(
     return ::build(
         :ctx, :run, :bin, :scheme,
         :dir_wrk, :dir_obj, :dir_src, :dir_cpp,
+        :flags_cc, :flags_ld,
         unity: fname, fulib: FULIB);
 }
 
