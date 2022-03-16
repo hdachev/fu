@@ -295,8 +295,8 @@ pub fn build(
             HACK_pkgConfig_cflags.grow_if_oob(i) = " $(pkg-config --cflags " ~ cflags ~ ")";
     }
 
-    let INCLUDE = "-I ~/fu/include "
-        ~ (HACK_include_dirs && "-I " ~ HACK_include_dirs.join(" -I ") ~ " ");
+    let INCLUDE = " -I ~/fu/include"
+        ~ (HACK_include_dirs && " -I " ~ HACK_include_dirs.join(" -I "));
 
     let LIBS = (HACK_linkFlags      && " "                     ~ HACK_linkFlags.join(" "))
              ~ (HACK_pkgConfig_libs && " $(pkg-config --libs " ~ HACK_pkgConfig_libs.join(" ") ~ ")");
@@ -341,7 +341,10 @@ pub fn build(
                 shadow let INCLUDE = INCLUDE ~ HACK_pkgConfig_cflags.unless_oob(i);
                 ///////////////////////////////////////////////////////////////////
 
-                code = shell::exec(GCC_CMD ~ INCLUDE ~ "-c -o " ~ F_tmp ~ " " ~ F_cpp ~ " 2>&1", stdout)
+                let CMD = GCC_CMD ~ " -c" ~ INCLUDE ~ " -o " ~ F_tmp ~ " " ~ F_cpp ~ " 2>&1";
+
+                // println("      > ", CMD);
+                code = shell::exec(CMD, stdout)
                     || shell::exec("mv " ~ F_tmp ~ " " ~ F_obj ~ " 2>&1", stdout);
 
                 if (code) return ERR(cpp);
@@ -365,9 +368,13 @@ pub fn build(
         //
         {
             println("   LINK ", F_exe, LIBS);
+
             let t0 = now::hr();
 
-            code = shell::exec(cmd ~ LIBS ~ " 2>&1", stdout)
+            let CMD = cmd ~ LIBS ~ " 2>&1";
+
+            // println("      > ", CMD);
+            code = shell::exec(CMD, stdout)
                 || shell::exec("chmod 755 " ~ F_tmp ~ " 2>&1", stdout)
                 || shell::exec("mv " ~ F_tmp ~ " " ~ F_exe ~ " 2>&1", stdout);
 
