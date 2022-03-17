@@ -129,7 +129,10 @@ pub fn path_normalize(p: string): string {
 
     for (mut i = 1; i < path.len; i++) {
         if (path[i] == "..")
+        {
             path.splice(--i, 2);
+            if (i) i--;
+        }
     }
 
     return path.join("/");
