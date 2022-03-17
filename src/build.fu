@@ -274,9 +274,6 @@ pub fn build(
                         : incl);
         }
 
-        HACK_include_dirs.set::add(
-            module.out.cpp.include_dirs);
-
         //
         mut cflags = "";
 
@@ -329,10 +326,12 @@ pub fn build(
 
             if (file::size(F_obj) < 1)
             {
+                let original_fname = i && modules[i].fname;
+
                 // Prelude @ 0.
-                let human = i
-                    ? modules[i].fname.path_filename
-                    : "fulib runtime";
+                let human = original_fname
+                          ? original_fname.path_filename
+                          : "fulib runtime";
 
                 let cpp = units[i];
                 file::write(F_cpp, cpp);
@@ -344,6 +343,10 @@ pub fn build(
                 ///////////////////////////////////////////////////////////////////
                 shadow let INCLUDE = INCLUDE ~ HACK_pkgConfig_cflags.unless_oob(i);
                 ///////////////////////////////////////////////////////////////////
+
+                ////////////////////////////////////////////////////////////////////////////////////////////////
+                shadow let INCLUDE = INCLUDE ~ (original_fname && " -iquote " ~ original_fname.path_dirname);
+                ////////////////////////////////////////////////////////////////////////////////////////////////
 
                 let CMD = GCC_CMD ~ " -c" ~ INCLUDE ~ " -o " ~ F_tmp ~ " " ~ F_cpp ~ " 2>&1";
 

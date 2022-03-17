@@ -51,6 +51,8 @@ pub fn cpp_codegen(implicit module: Module, implicit ctx: Context): CodegenOutpu
 {
     mut _libs: string[];
 
+    mut _top_emits: string;
+
     mut _tfwd: BitSet2D;
     mut _tfwd_src: string[];
 
@@ -165,6 +167,13 @@ pub fn cpp_codegen(implicit module: Module, implicit ctx: Context): CodegenOutpu
     fn include(lib: string)
     {
         _libs.set::add(lib);
+    }
+
+    fn localPath(path: string)
+    {
+        return path.starts(with: '.')
+             ? path_join(path_dirname(module.fname), path)
+             : path;
     }
 
 
@@ -443,6 +452,7 @@ pub fn cpp_codegen(implicit module: Module, implicit ctx: Context): CodegenOutpu
                    ~ collectDedupes(_tfwd_src)
                    ~ collectDedupes(_ffwd_src)
                    ~               (_tdef)
+                   ~               (_top_emits)
                    ~ (_fdef && "\n#ifndef FU_NO_FDEFs\n" ~ _fdef ~ "\n#endif\n")
                    ;
 
@@ -2240,9 +2250,29 @@ pub fn cpp_codegen(implicit module: Module, implicit ctx: Context): CodegenOutpu
     {
         let cmd = node.value;
 
-        if (cmd == "link"         ||
-            cmd == "include_dirs" ||
-            cmd == "sources")
+        // Verbatim cpp nonsense.
+        if (cmd == "emit")
+        {
+            mut result = "";
+
+            for (mut i = 0; i < node.items.len; i++)
+            {
+                shadow let node = node.items[i];
+                if (node.kind == "str")
+                    result ~= node.value;
+                else
+                    result ~= cgNode(:node, debug: "compiler:emit");
+            }
+
+            if (_current_fn)
+                return result;
+
+            _top_emits ~= result;
+            return "";
+        }
+
+        // Misc hacks.
+        let eachStringLiteral = |visit|
         {
             for (mut i = 0; i < node.items.len; i++)
             {
@@ -2250,38 +2280,25 @@ pub fn cpp_codegen(implicit module: Module, implicit ctx: Context): CodegenOutpu
                 if (item.kind != "str")
                     fail("compiler link: All arguments must be string literals, got a `" ~ item.kind ~ "`.");
 
-                if (cmd == "link")
-                    HACK_link.set::add(item.value);
-                else if (cmd == "include_dirs")
-                    HACK_include_dirs.set::add(item.value);
-                else if (cmd == "sources")
-                    HACK_extra_sources.set::add(item.value);
-                else
-                    BUG("Unknown compiler pragma [2]: " ~ cmd);
+                visit(item.value);
             }
 
             return "";
-        }
+        };
 
-        if (cmd != "emit")
-            BUG("Unknown compiler pragma: " ~ cmd);
+        if (cmd == "link")
+            eachStringLiteral: |i|
+                HACK_link.set::add(i);
 
-        mut result = "";
+        if (cmd == "include_dirs")
+            eachStringLiteral: |i|
+                HACK_include_dirs.set::add(i);
 
-        for (mut i = 0; i < node.items.len; i++)
-        {
-            shadow let node = node.items[i];
-            if (node.kind == "str")
-                result ~= node.value;
-            else
-                result ~= cgNode(:node, debug: "compiler:emit");
-        }
+        if (cmd == "sources")
+            eachStringLiteral: |i|
+                HACK_extra_sources.set::add(i);
 
-        if (_current_fn)
-            return result;
-
-        _ffwd_src ~= result;
-        return "";
+        BUG("Unknown compiler pragma: " ~ cmd);
     }
 
 
@@ -2490,18 +2507,10 @@ pub fn cpp_codegen(implicit module: Module, implicit ctx: Context): CodegenOutpu
     //  need proper hashing and everything, so they should just skip over compile & cg
     //   but otherwise work like our own generated sources.
 
-    fn addExtraSources(files: string)
-    {
-        HACK_extra_sources ~= files;
-    }
-
     for (mut i = 0; i < HACK_extra_sources.len; i++)
     {
         let orig = HACK_extra_sources[i];
-        let file = orig.starts(with: '.')
-                 ? path_join(path_dirname(module.fname), orig)
-                 : orig;
-
+        let file = localPath(orig);
         src ~= "\n// " ~ orig ~ "\n";
         src ~= file::read(file);
     }
