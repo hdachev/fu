@@ -33,32 +33,37 @@ fn resolveFile(
 
     fn tryResolve(): string
     {
-        let exists = file::size(path) >= 0;
-        if (exists)
-            return path;
-
-        // TODO FIX
+        let check = |shadow path: string|
         {
-            shadow let path = from ~ "lib/" ~ name;
-            shadow let exists = file::size(path) >= 0;
+            let exists = file::size(path) >= 0;
             if (exists)
                 return path;
-        }
+        };
 
-        // TODO FIX
-        {
-            shadow let path = from ~ "vendor/" ~ name;
-            shadow let exists = file::size(path) >= 0;
-            if (exists)
-                return path;
-        }
+        check(path);
+        check(from ~    "lib/" ~ name);
+        check(from ~ "fu/lib/" ~ name);
 
-        // TODO FIX
+        // Finally, try lib/x/x.fu
+        if (name.ends(with: ".fu"))
         {
-            shadow let path = from ~ "fu/lib/" ~ name;
-            shadow let exists = file::size(path) >= 0;
-            if (exists)
-                return path;
+            let ext = name.len - 3;
+
+            mut dir = 0;
+            for (mut i = ext; i --> 0; ) {
+                if (name[i] == '/') {
+                    dir = i + 1;
+                    break;
+                }
+            }
+
+            shadow let name = name[0,   dir]
+                            ~ name[dir, ext] ~ '/'
+                            ~ name[dir, name.len];
+
+            check(from ~ name);
+            check(from ~    "lib/" ~ name);
+            check(from ~ "fu/lib/" ~ name);
         }
 
         /////////////////////////////////
