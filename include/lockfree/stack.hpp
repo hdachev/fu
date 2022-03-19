@@ -22,9 +22,9 @@ namespace lockfree
 
         // Pointer validation.
 
-        static constexpr u64 ALIGN     = 1 << ALIGN_BITS;
+        static constexpr u64 ALIGN     = 1ull << ALIGN_BITS;
         static constexpr u64 PTR_48    = 0x0000ffffffffffff;
-        static constexpr u64 PTR_4x    = PTR_48 & ~((1 << ALIGN_BITS) - 1);
+        static constexpr u64 PTR_4x    = PTR_48 & ~((1ull << ALIGN_BITS) - 1ull);
                                 // e.g.  0x0000fffffffffff0;
 
 
