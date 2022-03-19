@@ -3135,6 +3135,7 @@ pub fn solve(
 
             let isPure      = template.node.flags & F_PURE;
             let isNovec     = template.node.flags & F_NOVEC;
+            let isPureCtx   = template.node.flags & F_PURE_CTX;
 
             for (mut i = 0; i < inItems.len + FN_ARGS_BACK; i++)
             {
@@ -3286,6 +3287,11 @@ pub fn solve(
                     // Validate `pure` asserts.
                     if (isPure && written_via)
                         fail(target.qWHAT   ~ " is not pure, writes to argument " ~ name.human.qID ~ ":\n"
+                            ~ qSTACK(:target, Region_fromLocal(argTarget.index),
+                                        node: out.out));
+
+                    if (isPureCtx && written_via && isImplicit)
+                        fail(target.qWHAT   ~ " is not purectx, writes to implicit argument " ~ name.human.qID ~ ":\n"
                             ~ qSTACK(:target, Region_fromLocal(argTarget.index),
                                         node: out.out));
 

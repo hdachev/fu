@@ -30,7 +30,7 @@ pub let F_MOVED_FROM    = 1 << 11;
 pub let F_NOCOPY        = 1 << 12;          pub let F_NOVEC         = F_NOCOPY;
 pub let F_PURE          = 1 << 13;
 pub let F_CONVERSION    = 1 << 14;
-pub let F_OPT_ARG       = 1 << 15;          pub let F_CTX_PURE      = F_OPT_ARG;
+pub let F_OPT_ARG       = 1 << 15;          pub let F_PURE_CTX      = F_OPT_ARG;
 
 
 pub let F_MUT           = 1 << 16;
@@ -626,6 +626,8 @@ pub fn parse(
                 if (v == "compiler")    return parseCompilerPragma();
 
                 if (v == "pure")        return parsePureDecl();
+                if (v == "purectx")     return parsePureCtxDecl();
+
                 if (v == "inline")      return parseInlineDecl();
                 if (v == "extern")      return parseExternDecl();
                 if (v == "infix")       return parseFixityDecl(F_INFIX);
@@ -758,6 +760,11 @@ pub fn parse(
     fn parsePureDecl(mut flags?: i32): Node
     {
         return parseInlineDecl(:flags, F: F_PURE);
+    }
+
+    fn parsePureCtxDecl(mut flags?: i32): Node
+    {
+        return parseInlineDecl(:flags, F: F_PURE_CTX);
     }
 
     fn parseNovec(): Node

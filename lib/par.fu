@@ -6,13 +6,10 @@
 // TODO FIX currently DOES NOT codegen a view
 //  - add a novec annot here and see why that fails.
 //
-// TODO FIX add a ctxpure annot
-//  - must enforce no mutation to implicit arguments.
-//
-// TODO FIX add a flowpure annot
+// TODO FIX add a pureflow annot
 //  - must enforce no foreign control flow.
 
-fn each(arr: [$T], fn, min! = 1)
+purectx fn each(arr: [$T], fn, min! = 1)
 {
     mut start   = 0;
     mut end     = arr.len;
