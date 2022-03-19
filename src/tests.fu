@@ -8789,6 +8789,24 @@ pub fn runTests()
         }
     `);
 
+    ZERO(`
+        fn last(s: $T[])
+            s.len ? s[s.len - 1] : throw("len == 0");
+
+        struct Node { kind: string; items: Node[] }
+
+        pure fn check(ref node: Node)
+            node.kind != "block" ||
+            node.items.last.kind == "return";
+
+        fn main() {
+            mut node: Node;
+            return node.check ? 0 : 1;
+        }
+    `);
+
+    // /Relaxer.
+
 
     // Mangling.
 

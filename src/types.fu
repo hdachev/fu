@@ -17,7 +17,7 @@ let TAGS =
 
 //
 
-pub let RELAX_before_bck    = q_mutref             | q_rx_resize;
+pub let RELAX_before_bck    = q_mutref;
 pub let RELAX_all           = q_mutref | q_rx_copy | q_rx_resize;
 
 
