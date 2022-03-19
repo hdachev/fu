@@ -1,10 +1,4 @@
 
-// CRITICAL: arr MUST be a view, not a vec
-//  we don't want indexing to lazily reserve inside worker threads.
-//
-// TODO FIX currently DOES NOT codegen a view
-//  - add a novec annot here and see why that fails.
-
 pub purectx fn each(arr: [$T], visit, min! = 1)
     parallel_for(:min, end: arr.len): |i|
         visit(arr[i], idx?: i);
@@ -14,7 +8,7 @@ pub purectx fn each(arr: [$T], visit, min! = 1)
 //  This is way to hacky for comfort but it's the best we can do
 //   without function types with noflow & purectx assertions.
 
-noflow fn parallel_for(min!, mut end!, visit)
+novec noflow fn parallel_for(min!, mut end!, visit)
 {
     mut start   = end * 0;
 

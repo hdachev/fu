@@ -3895,7 +3895,19 @@ pub fn runTests()
     `);
 
     ZERO(`
-        fn each(a: [$T], fn)
+        novec fn novec_each(a: $T[], fn)
+            for (mut i = 0; i < a.len; i++)
+                fn(a[i]);
+
+        fn main() {
+            mut a = [ 1 ];
+            a.novec_each: |i| i *= 2;
+            return a[0] - 2;
+        }
+    `);
+
+    ZERO(`
+        novec fn each(a: [$T], fn)
             for (mut i = 0; i < a.len; i++)
                 fn(a[i]);
 

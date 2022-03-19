@@ -3296,7 +3296,7 @@ pub fn solve(
                             ~ qSTACK(:target, Region_fromLocal(argTarget.index),
                                         node: out.out));
 
-                    if (maybeLast && isNovec && (argNode.type.is_rx_copy || argNode.type.is_rx_resize))
+                    if (maybeLast && isNovec && !(argNode.type.is_trivial) && (argNode.type.is_rx_copy || argNode.type.is_rx_resize))
                         fail(target.qWHAT ~ " is not novec, argument " ~ name.human.qID ~ " is " ~ humanizeType(argNode.type));
 
                     //
