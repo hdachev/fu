@@ -2298,6 +2298,10 @@ pub fn cpp_codegen(implicit module: Module, implicit ctx: Context): CodegenOutpu
             eachStringLiteral: |i|
                 HACK_extra_sources.set::add(i);
 
+        if (cmd == "include")
+            eachStringLiteral: |i|
+                include(i.starts(with: '<') ? i : '"' ~ i ~ '"');
+
         BUG("Unknown compiler pragma: " ~ cmd);
     }
 

@@ -97,6 +97,9 @@ pub fn build(
                 //   an x != 0 works, this can be also used non-zero non-nan check.
                 //
                 ~ "-Wno-float-conversion " // opt-out
+
+                // TODO request this from within the lib
+                ~ (process::LINUX && "-pthread ")
                 ;
 
     //

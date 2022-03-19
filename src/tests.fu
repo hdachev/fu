@@ -9018,18 +9018,17 @@ pub fn runTests()
 
     // Fork/join parallelism.
 
-    SKETCH(`
-        fn test(ref aa: i32[], bb: i32[])
-            for (ref a, b in aa, bb) a += b;
-        /*
-            Technically the same as:
-            for (aa, bb, |ref a, b| a += b);
-        */
-
+    ZERO(`
         fn main() {
-            mut aa = [ 1, 2, 3 ];
-            test(aa, [ 10, 20, 30 ]);
-            return aa[1] - 22;
+            mut arr = [ 1, 2, 3, 4 ];
+
+            arr.par::each: |i| i *= 2;
+
+            mut sum = 0;
+            for (mut i = 0; i < arr.len; i++)
+                sum += arr[i];
+
+            return sum - 2 - 4 - 6 - 8;
         }
     `);
 

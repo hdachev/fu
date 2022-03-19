@@ -139,25 +139,31 @@ namespace
     ////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////
 
-    int WorkerSet_Create()
+    size_t WorkerSet_Create()
     {
-        int cores = std::thread::hardware_concurrency();
+        size_t cores = std::thread::hardware_concurrency();
 
         // TODO getenv("MAX_THREADS") here
         // TODO all of this in a cpp, not here
-        cores = cores > 1 ? cores : 1;
+
+        cores   = cores >= 64 ? cores - 4   // leave three cores to the OS, ~ 5% breathing room
+                : cores >= 32 ? cores - 3   // leave two cores to the OS,   ~ 6% breathing room
+                : cores >= 16 ? cores - 2   // leave one core to the OS,    ~ 6% breathing room
+                : cores >=  8 ? cores - 1   // there's also the main thread here, so threads=cores
+                : cores >=  1 ? cores       // oversubscribe 1 core
+                : 1;
 
         // Number of workers = cores - 1,
         //                   + main thread.
         //
-        for (int i = 1; i < cores; i++)
+        for (size_t i = 1; i < cores; i++)
             std::thread { TaskStack_Worker_Loop }
                 .detach();
 
         return cores;
     }
 
-    static const int TaskStack_Worker_Count = WorkerSet_Create();
+    static const size_t TaskStack_Worker_Count = WorkerSet_Create();
 
 
 
@@ -232,9 +238,11 @@ namespace
 
         //
         parfor_Task* tasks = (parfor_Task*) &control[1];
-        new (control) parfor_Control { fn, batches };
 
-        for (int i = 0; i < batches; i++) {
+
+        new (control) parfor_Control { fn, (/*atomic*/int) batches, {}, {}, {} };
+
+        for (size_t i = 0; i < batches; i++) {
             auto& t = tasks[i];
 
             t.run                   = parfor_run;
