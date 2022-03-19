@@ -1,18 +1,22 @@
 
-
 // CRITICAL: arr MUST be a view, not a vec
 //  we don't want indexing to lazily reserve inside worker threads.
 //
 // TODO FIX currently DOES NOT codegen a view
 //  - add a novec annot here and see why that fails.
-//
-// TODO FIX add a pureflow annot
-//  - must enforce no foreign control flow.
 
-purectx fn each(arr: [$T], fn, min! = 1)
+pub purectx fn each(arr: [$T], visit, min! = 1)
+    parallel_for(:min, end: arr.len): |i|
+        visit(arr[i], idx?: i);
+
+
+// **noflow** must be on the inside, otherwise it doesn't catch breaks.
+//  This is way to hacky for comfort but it's the best we can do
+//   without function types with noflow & purectx assertions.
+
+noflow fn parallel_for(min!, mut end!, visit)
 {
-    mut start   = 0;
-    mut end     = arr.len;
+    mut start   = end * 0;
 
     compiler include("../hacking/task_stack.hpp");
 
@@ -38,7 +42,7 @@ purectx fn each(arr: [$T], fn, min! = 1)
         {
             // And this magically still looks like a loop -
             //  no linear / affine nonsense etc.
-            fn(arr[i], idx?: i);
+            visit(i);
         }
     }
 

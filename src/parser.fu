@@ -1,3 +1,4 @@
+import ansi;
 import helpers;
 import module;
 import fail;
@@ -25,7 +26,7 @@ let     F_PARENS        = 1 << 7;           pub let F_WRITTEN_TO    = F_PARENS;
 pub let F_LAX           = 1 << 8;           pub let F_EFFECT        = F_LAX;
 pub let F_ARG           = 1 << 9; ///////// TODO get rid of this
 pub let F_UNUSED        = 1 << 10;
-pub let F_MOVED_FROM    = 1 << 11;
+pub let F_MOVED_FROM    = 1 << 11;          pub let F_NOFLOW        = F_MOVED_FROM;
 
 pub let F_NOCOPY        = 1 << 12;          pub let F_NOVEC         = F_NOCOPY;
 pub let F_PURE          = 1 << 13;
@@ -621,12 +622,8 @@ pub fn parse(
                 if (v == "using")       return parseConversionDecl();
 
                 if (v == "nocopy")      return parseNoCopy();
-                if (v == "novec")       return parseNovec();
                 if (v == "import")      return parseImport();
                 if (v == "compiler")    return parseCompilerPragma();
-
-                if (v == "pure")        return parsePureDecl();
-                if (v == "purectx")     return parsePureCtxDecl();
 
                 if (v == "inline")      return parseInlineDecl();
                 if (v == "extern")      return parseExternDecl();
@@ -636,6 +633,11 @@ pub fn parse(
 
                 if (v == "primitive")   return parsePrimDecl(enum: false);
                 if (v == "enum")        return parsePrimDecl(enum: true);
+
+                if (v == "novec")       return parseExoticDecl(F_NOVEC);
+                if (v == "noflow")      return parseExoticDecl(F_NOFLOW);
+                if (v == "pure")        return parseExoticDecl(F_PURE);
+                if (v == "purectx")     return parseExoticDecl(F_PURE_CTX);
 
                 // SKETCH EFFECTS //////////////////////////////////////////////
                 if (v == "effect")      return parseStructDecl(flags: F_EFFECT);
@@ -750,26 +752,33 @@ pub fn parse(
         let flags = F_CONVERSION;
 
         let v = consume("id").value;
-        if (v == "pure")   return parsePureDecl(flags);
+        if (v == "pure")   return parseExoticDecl(flags | F_PURE);
         if (v == "inline") return parseInlineDecl(flags);
         _idx--;
 
         return parseFixityDecl(flags);
     }
 
-    fn parsePureDecl(mut flags?: i32): Node
+    fn parseExoticDecl(mut flags?: i32): Node
     {
-        return parseInlineDecl(:flags, F: F_PURE);
-    }
+        for (;;)
+        {
+            let v = consume("id").value;
 
-    fn parsePureCtxDecl(mut flags?: i32): Node
-    {
-        return parseInlineDecl(:flags, F: F_PURE_CTX);
-    }
+            fn add(flag: i32) {
+                flags  & flag && fail("Duplicate qualifier: " ~ v.qKW);
+                flags |= flag;
+            }
 
-    fn parseNovec(): Node
-    {
-        return parseInlineDecl(F: F_NOVEC);
+            if      (v == "pure")       add(F_PURE);
+            else if (v == "purectx")    add(F_PURE_CTX);
+            else if (v == "novec")      add(F_NOVEC);
+            else if (v == "noflow")     add(F_NOFLOW);
+            else if (v == "fn")
+                return { _idx--; parseInlineDecl(F: flags) };
+            else
+                fail("Unknown qualifier: " ~ v.qKW);
+        }
     }
 
     fn parseExternDecl(): Node

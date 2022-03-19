@@ -9050,6 +9050,28 @@ pub fn runTests()
         }
     `);
 
+    ZERO(`
+        fn seq__each(a: [$T], fn)
+            for (mut i = 0; i < a.len; i++)
+                fn(a[i]);
+
+        fn main() {
+            mut arr = [ 1, 2, 3, 4 ];
+
+            <fail noflow non local control flow>
+            arr.par::each: |i| <pass/>
+            arr.seq__each: |i| </fail>
+                if ((i *= 2) > 4)
+                    break;
+
+            mut sum = 0;
+            for (mut i = 0; i < arr.len; i++)
+                sum += arr[i];
+
+            return sum - 2 - 4 - 6 - 4/*unchanged after break*/;
+        }
+    `);
+
 
     // Custom primitives, enums & flags.
 

@@ -2225,7 +2225,7 @@ pub fn solve(
 
     fn currentFn_mustBecomeInline()
     {
-        return _current_fn.effects.far_jumps.len > 0;
+        return _current_fn.effects.far_jumps.len > 0 && "Contains non-local control flow.";
     }
 
     fn warn(token: TokenIdx, inline message: string)
@@ -3136,6 +3136,7 @@ pub fn solve(
             let isPure      = template.node.flags & F_PURE;
             let isNovec     = template.node.flags & F_NOVEC;
             let isPureCtx   = template.node.flags & F_PURE_CTX;
+            let isNoFlow    = template.node.flags & F_NOFLOW;
 
             for (mut i = 0; i < inItems.len + FN_ARGS_BACK; i++)
             {
@@ -3520,10 +3521,14 @@ pub fn solve(
                         id: n_fn.value,
                         mask: i16(HM_Function | HM_CanReturn | HM_LabelUsed | (n_fn.flags & F_LAMBDA && HM_Lambda)));
 
-                    if (currentFn_mustBecomeInline)
+                    let mustBecomeInlineBecause = currentFn_mustBecomeInline;
+                    if (mustBecomeInlineBecause)
                     {
                         isFirst || fail(
                             "Function wants to become inline on after first solve.");
+
+                        isNoFlow && fail(
+                            "Function is not noflow: " ~ mustBecomeInlineBecause.qBAD);
 
                         // Unfortunately we have to throw away
                         //  all this work and start over.
