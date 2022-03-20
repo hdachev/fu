@@ -172,6 +172,11 @@ pub fn runTests()
     // Mutation & references.
 
     ZERO(`
+        mut arr = [ 0 ];
+        return arr[0];
+    `);
+
+    ZERO(`
         let a = 3;
         mut b = a;
         b++;

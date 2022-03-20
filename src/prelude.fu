@@ -137,13 +137,13 @@ fn swap(ref a: $T, ref b: $T): void __native(
 // TODO mutval .=,
 //  just like the assignments and splice.
 
-fn len (a: [$T]): i32 __native(".size()");
+novec fn len (a: [$T]): i32 __native(".size()");
 
-fn [](a: [$T], i: i32)
+novec fn [](a: [$T], i: i32)
     case ($a -> &mut [$T]): &mut $T __native(".mutref");
     default               : &    $T __native;
 
-fn [](a: [$T], start: i32, end: i32)
+novec fn [](a: [$T], start: i32, end: i32)
     case ($a -> &mut [$T]): &mut [$T] __native("<fu/view.h>", "fu::get_view_mut");
     default               : &    [$T] __native("<fu/view.h>", "fu::get_view");
 
