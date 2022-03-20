@@ -134,8 +134,8 @@ fn swap(ref a: $T, ref b: $T): void __native(
 
 // Arrays.
 //
-// TODO mutval splice, ~= and .=,
-//  just like the assignments above.
+// TODO mutval .=,
+//  just like the assignments and splice.
 
 fn len (a: [$T]): i32 __native(".size()");
 
@@ -156,7 +156,7 @@ fn  slice(a: $T[], start: i32): $T[] __native("<fu/vec/slice.h>", "fu::slice");
 fn substr(a: $T[], start: i32, end: i32): $T[] __native("<fu/vec/slice.h>", "fu::substr");
 
 fn splice(ref a: $T[], start: i32, count: i32): void  __native(".splice");
-fn splice(ref a: $T[], start: i32, count: i32, b: [$T]): void  __native(".splice");
+fn splice(ref a: $T[], start: i32, count: i32, mut b: $T[]): void  __native(".splice");
 
 fn    pop(ref a: $T[]): void __native(".pop()");
 fn  shift(ref a: $T[]): void __native(".shift()");
