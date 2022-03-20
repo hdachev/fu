@@ -4942,6 +4942,8 @@ pub fn solve(
             // After the match we need this to e.g. lift `non_zero`
             //  from integral results, etc.
             //
+            shadow let type = relax_typeParam(type);
+
             _param.matched = relax_typeParam(type);
 
             return true;
@@ -4995,15 +4997,23 @@ pub fn solve(
                     type: actual, node: right,
                         :typeParams);
 
+                ////////////////////////////////////
+                // NATIVE RELAXER                 //
+                // TODO dont bother unless native //
                 if (ok && left.kind == "typeparam")
                 {
+                    let expect = evalTypeAnnot(right, :typeParams);
+
                     let id = left.value;
                     ref tp = typeParams.map::ref(id);
 
                     tp.consumed = tp.consumed
-                        ? type_tryIntersect(tp.consumed, actual) || fail("typeassert intersect fail.")
-                        : actual;
+                        ? type_tryIntersect(tp.consumed, expect) || fail("typeassert intersect fail.")
+                        : expect;
                 }
+                // TODO dont bother unless native //
+                // NATIVE RELAXER                 //
+                ////////////////////////////////////
 
                 return ok;
             }
