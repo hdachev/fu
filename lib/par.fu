@@ -1,7 +1,22 @@
 
-pub purectx fn each(arr: [$T], visit, min! = 1)
+pub purectx fn each(arr: [$T], visit, min!?: i32)
     parallel_for(:min, end: arr.len): |i|
-        visit(arr[i], idx?: i);
+        visit(arr[i], i?: i);
+
+pub purectx fn zip(arr: [$T], barr: [$U], visit, min!?: i32)
+    parallel_for(:min, end: arr.len.min(barr.len)): |i|
+        visit(arr[i], barr[i], i?: i);
+
+pub purectx fn map(arr: [$T], visit, min!?: i32)
+{
+    mut result: (visit(arr[0]))[];
+    result.grow_junk(arr.len);
+
+    parallel_for(:min, end: arr.len): |i|
+        result[i] = visit(arr[i], i?: i);
+
+    return result;
+}
 
 
 // **noflow** must be on the inside, otherwise it doesn't catch breaks.

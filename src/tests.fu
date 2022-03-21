@@ -9080,7 +9080,7 @@ pub fn runTests()
         fn main() {
             mut arr = [ 1, 2, 3, 4 ];
 
-            arr.par::each: |i| i *= 2;
+            arr.par::each: |it| it *= 2;
 
             mut sum = 0;
             for (mut i = 0; i < arr.len; i++)
@@ -9100,9 +9100,9 @@ pub fn runTests()
             mut sum = 0;
 
             <fail purectx writes to implicit sum>
-            arr.par::each: |i| <pass/>
-            arr.seq__each: |i| </fail>
-                sum += i *= 2;
+            arr.par::each: |it| <pass/>
+            arr.seq__each: |it| </fail>
+                sum += it *= 2;
 
             return sum - 2 - 4 - 6 - 8;
         }
@@ -9117,9 +9117,9 @@ pub fn runTests()
             mut arr = [ 1, 2, 3, 4 ];
 
             <fail noflow non local control flow>
-            arr.par::each: |i| <pass/>
-            arr.seq__each: |i| </fail>
-                if ((i *= 2) > 4)
+            arr.par::each: |it| <pass/>
+            arr.seq__each: |it| </fail>
+                if ((it *= 2) > 4)
                     break;
 
             mut sum = 0;
