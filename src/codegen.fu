@@ -1536,7 +1536,7 @@ pub fn cpp_codegen(implicit module: Module, implicit ctx: Context): CodegenOutpu
         ooe_crosscheck == MUSTSEQ_mask || fail(
             "OOE crosscheck failed: codegen sequenced " ~ ooe_crosscheck
                                 ~ ", but solver wants " ~ MUSTSEQ_mask ~ ": "
-                                ~ args.map(|i| i.kind).join("|"));
+                                ~ args.map(.kind).join("|"));
 
         fn ooeWrap(src: string)
         {

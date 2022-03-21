@@ -6636,6 +6636,22 @@ pub fn runTests()
         fn main()                           greet(with: "Hello!") - 6;
     `);
 
+    TODO_args(`
+        fn each(arr: $T[], visit)
+            for (mut i = 0; i < arr.len; i++)
+                visit(arr[i], i?: i);
+
+        fn main() {
+            mut muls = 0;
+            mut arr = [ 1, 2, 3 ];
+
+            arr.each: |v, i!index|
+                muls += v * index; // complained no index in scope
+
+            return muls - 8;
+        }
+    `);
+
 
     // Optional arguments.
 

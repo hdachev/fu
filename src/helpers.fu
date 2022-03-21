@@ -196,7 +196,7 @@ pub fn map(a: [$T], fn)
     mut res: fn($T, index?: a.len)[];
     res.grow_junk(a.len);
     for (mut i = 0; i < a.len; i++)
-        res[i] = fn(a[i], index?: i);
+        res[i] = fn(a[i], i?: i);
 
     return res;
 }
@@ -204,7 +204,7 @@ pub fn map(a: [$T], fn)
 pub fn each(a: [$T], fn)
 {
     for (mut i = 0; i < a.len; i++)
-        fn(a[i]);
+        fn(a[i], i?: i);
 }
 
 pub fn clone(a: $T)

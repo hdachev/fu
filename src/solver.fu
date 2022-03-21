@@ -297,8 +297,8 @@ pub fn solve(
 
     fn Scope_import(modid: i32): void
     {
-        _scope.imports.each(_ss.imports): |i|
-            if (i == modid)
+        _scope.imports.each(_ss.imports): |m|
+            if (m == modid)
                 return;
 
         modid || BUG("Attempting to import modid-0.");
@@ -308,8 +308,8 @@ pub fn solve(
 
     fn Scope_import_privates(modid: i32): void
     {
-        _scope.privates.each(_ss.privates): |i|
-            if (i == modid)
+        _scope.privates.each(_ss.privates): |m|
+            if (m == modid)
                 return;
 
         modid || BUG("Attempting to import_privates modid-0.");
@@ -621,8 +621,8 @@ pub fn solve(
         if (!OPTI_autoshadow)
             return false;
 
-        _scope.items.each(_ss.items): |item, index|
-            if (index >= _root_scope.items_len)
+        _scope.items.each(_ss.items): |item, i|
+            if (i >= _root_scope.items_len)
                 if (item.id == id)
                     return false;
 
