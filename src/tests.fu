@@ -3696,6 +3696,29 @@ pub fn runTests()
         }
     `);
 
+    ZERO(`
+        fn main() {
+            mut arr = [ 1,1,1,1,1 ];
+            mut sum = 0;
+
+            // veach(view) should decay to a slice -
+            //  which push will invalidate.
+            //
+            fn veach(view, fn) {
+                for (mut i = 0; i < view.len; i++) {
+                    fn(view[i]);
+                    arr ~= arr; // Relocate arr.
+                }
+            }
+
+            arr.veach: |i| sum += <fail both alias arr>
+                            (i *= 2)            <pass/>
+                            (i  * 2)            </fail>;
+
+            return sum - 10;
+        }
+    `);
+
     // /Borrow checker
 
 
