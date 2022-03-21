@@ -1,3 +1,55 @@
 
-pub fn exec(mut cmd: string): i32 __native("<fu/shell.h>", "fu::shell_exec");
-pub fn exec(mut cmd: string, stdout: &mut string): i32 __native("<fu/shell.h>", "fu::shell_exec");
+fn exec(mut cmd: string, ref stdout: string): i32
+{
+    compiler include(
+        "<stdio.h>",
+        "<fu/vec/c_str.h>",
+        "<fu/defer.h>");
+
+    mut status = -1;
+
+    compiler emit(`
+
+        const auto pipe = popen(FU_TEMP_CSTR(`, cmd, `), "r");
+        if (pipe)
+        {
+            fu_DEFER( `, status, ` = pclose(pipe); );
+
+            const size_t BUF_SIZE = 64 * 1024;
+            fu::byte BUF[BUF_SIZE];
+
+            auto size = `, stdout, `.size();
+
+            for (;;)
+            {
+                void*  data = BUF;
+                size_t capa = BUF_SIZE;
+
+                // Write directly onto the string
+                //  if it has more capa than the buffer here.
+                //
+                auto avail = `, stdout, `.capa() - size;
+                if (avail > 0 && size_t(avail) > BUF_SIZE)
+                {
+                    data = `, stdout, `.data_mut() + size;
+                    capa = size_t(avail);
+                }
+
+                auto count = fu::i(fread(data, 1, capa, pipe));
+                if (!count)
+                    break;
+
+                // Copy or just incr size.
+                if (data == BUF)
+                    `, stdout, `.append_copy(
+                        fu_ZERO(), BUF, count);
+                else
+                    `, stdout, `.UNSAFE__WriteSize(
+                        size += count);
+            }
+        }
+
+    `);
+
+    return status;
+}
