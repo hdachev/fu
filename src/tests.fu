@@ -1515,10 +1515,10 @@ pub fn runTests()
 
         fn main()
         {
-            let a0 = alloc::STAT_COUNT();
+            let a0 = mem::ALLOC_STAT_COUNT();
             strA.slice(0, 26) == "0123456789abcdef0123456789" || throw("bad slice");
 
-            let a1 = alloc::STAT_COUNT();
+            let a1 = mem::ALLOC_STAT_COUNT();
             a0 == a1 || throw("did alloc");
 
             return 0;

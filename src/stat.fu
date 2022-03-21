@@ -24,8 +24,8 @@ pub fn +=(a: &mut ModuleStat, b: ModuleStat)
 pub fn ModuleStat_now()
     ModuleStat(
         time:           now::hr(),
-        alloc_count:    alloc::STAT_COUNT,
-        alloc_bytes:    alloc::STAT_BYTES);
+        alloc_count:    mem::ALLOC_STAT_COUNT,
+        alloc_bytes:    mem::ALLOC_STAT_BYTES);
 
 pub fn ModuleStat_print(a: ModuleStat, prefix: string, suffix = "")
 {
