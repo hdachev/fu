@@ -154,3 +154,17 @@ pub fn each(using _: BitSet, visit)
         }
     }
 }
+
+
+// Ops, this would be nicer as an operator:
+//
+// fn a &= ~b           // but see, what we want is a single `&=~` op
+
+pub fn and_not_assign(ref a: BitSet, b: BitSet)
+{
+    let N = a._data.len.min(b._data.len);
+    for (mut i = 0; i < N; i++)
+        a._data[i] &= ~b._data[i];
+
+    return a;
+}

@@ -3272,6 +3272,28 @@ pub fn solve(
                         {
                             soft_risk.ArgsAtRisk_list(out.flow, position: i, out.flow.at_soft_risk);
                             hard_risk.ArgsAtRisk_list(out.flow, position: i, out.flow.at_hard_risk);
+
+                            if (argNode.type.TODO_FIX_isArray)
+                            {
+                                ////////////////////////////////////////////////////////////////
+                                // TODO FIX soft risk doesn't interop well
+                                //  with conversions to slices -
+                                //
+                                // When an array binds to a slice arg, that caches the array's length -
+                                //  Relocating the array via another arg looks like soft-risk to bck,
+                                //   but, the way we cg, the view is left dangling.
+                                ////////////////////////////////////////////////////////////////
+
+                                mut soft = soft_risk;
+                                soft.and_not_assign(hard_risk);
+
+                                soft.each: |index: i32|
+                                {
+                                    let other = items[index].target.solved;
+                                    if !(other.type.TODO_FIX_isArray)
+                                        hard_risk.add(index);
+                                }
+                            }
                         }
                         else
                         {
