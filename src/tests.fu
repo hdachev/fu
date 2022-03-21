@@ -6984,15 +6984,18 @@ pub fn runTests()
     `
     ]);
 
-    ZERO(`
-        import vec3;
-
-        fn main() vec3.maxc.i32;
-    `);
-
-    ZERO(`
-        fn main() ::vec3.maxc.i32;
-    `);
+    ZERO([`
+        struct _0 { x?: f32; y?: f32 };
+        fn maxc(using vec: _0) x > y ? x : y;
+    `,
+    `
+        <alt>
+        import _0;
+        fn main() _0.maxc.i32;
+        <alt/>
+        fn main() ::_0.maxc.i32;
+        </alt>
+    `]);
 
     ZERO([
     `
