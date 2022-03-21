@@ -1,4 +1,5 @@
 
+#include <algorithm>
 #include <cstdint>
 #include <fu/int.h>
 #include <fu/vec.h>
@@ -22,7 +23,7 @@ struct s_BitSet
 
 #ifndef FU_NO_FDEFs
 
-int size_pXOENYsj(const s_BitSet& _)
+int size_jPdA3jy1(const s_BitSet& _)
 {
     return _._data.size() * 8;
 }
@@ -38,7 +39,7 @@ inline fu::u8& grow_if_oob_S61HT2sA(fu_VEC<fu::u8>& a, const int i)
 }
                                 #endif
 
-bool add_once_yDyCXbrU(s_BitSet& _, const int idx)
+bool add_once_PCSel0xp(s_BitSet& _, const int idx)
 {
     const int no_neg = (idx & int(0x80000000u));
     const int bucket = ((idx >> 3) | no_neg);
@@ -53,7 +54,7 @@ bool add_once_yDyCXbrU(s_BitSet& _, const int idx)
     return false;
 }
 
-void add_yDyCXbrU(s_BitSet& _, const int idx)
+void add_PCSel0xp(s_BitSet& _, const int idx)
 {
     const int no_neg = (idx & int(0x80000000u));
     const int bucket = ((idx >> 3) | no_neg);
@@ -62,7 +63,7 @@ void add_yDyCXbrU(s_BitSet& _, const int idx)
     grow_if_oob_S61HT2sA(_._data, bucket) |= mask;
 }
 
-void add_FrY1wfGJ(s_BitSet& _, const s_BitSet& other)
+void add_Vnn4kEu4(s_BitSet& _, const s_BitSet& other)
 {
     const int N = other._data.size();
     if (_._data.size() < N)
@@ -73,7 +74,7 @@ void add_FrY1wfGJ(s_BitSet& _, const s_BitSet& other)
 
 }
 
-bool has_CoC0247n(const s_BitSet& _, const int idx)
+bool has_noL0hivx(const s_BitSet& _, const int idx)
 {
     const int no_neg = (idx & int(0x80000000u));
     const int bucket = ((idx >> 3) | no_neg);
@@ -82,7 +83,7 @@ bool has_CoC0247n(const s_BitSet& _, const int idx)
     return (_._data.size() > bucket) && (fu::u8((_._data[bucket] & mask)) != fu::u8(0u));
 }
 
-bool rem_yDyCXbrU(s_BitSet& _, const int idx)
+bool rem_PCSel0xp(s_BitSet& _, const int idx)
 {
     const int no_neg = (idx & int(0x80000000u));
     const int bucket = ((idx >> 3) | no_neg);
@@ -111,7 +112,7 @@ bool rem_yDyCXbrU(s_BitSet& _, const int idx)
     return false;
 }
 
-void add_range_yDyCXbrU(s_BitSet& _, const int end)
+void add_range_PCSel0xp(s_BitSet& _, const int end)
 {
     const int no_neg = (end & int(0x80000000u));
     const int floorBytes = ((end >> 3) | no_neg);
@@ -131,7 +132,7 @@ void add_range_yDyCXbrU(s_BitSet& _, const int end)
     };
 }
 
-int popcount_pXOENYsj(const s_BitSet& _)
+int popcount_jPdA3jy1(const s_BitSet& _)
 {
     /*MOV*/ int sum = 0;
     const int N = (_._data.size() >> 3);
@@ -147,6 +148,15 @@ int popcount_pXOENYsj(const s_BitSet& _)
     };
     sum += __builtin_popcountll(tail);
     return /*NRVO*/ sum;
+}
+
+s_BitSet& and_not_assign_Vnn4kEu4(s_BitSet& a, const s_BitSet& b)
+{
+    const int N = std::min(a._data.size(), b._data.size());
+    for (int i = 0; i < N; i++)
+        a._data.mutref(i) &= fu::u8(~b._data[i]);
+
+    return a;
 }
 
 #endif

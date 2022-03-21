@@ -63,15 +63,15 @@ struct s_NativeHacks
 
 #ifndef FU_NO_FDEFs
 
-                                #ifndef DEFt_x7E
-                                #define DEFt_x7E
+                                #ifndef DEFt_x7E_KclJlPSOsdf
+                                #define DEFt_x7E_KclJlPSOsdf
 inline fu_STR x7E(fu::view<char> a, fu::view<char> b)
 {
     return a + b;
 }
                                 #endif
 
-fu_STR serialize_ibraIJtk(const s_ClosureID& _)
+fu_STR serialize_db1BrgVV(const s_ClosureID& _)
 {
     return ((_.target.modid < 0) ? x7E((x7E((x7E("`"_fu, fu::i64dec(_.target.index)) + "-"_fu), fu::i64dec(-_.target.modid)) + "-"_fu), fu::i64dec(_.revision)) : fu::fail("Not a local."_fu));
 }

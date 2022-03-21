@@ -6,7 +6,7 @@
 #include <fu/vec/find.h>
 #include <fu/view.h>
 
-char ascii_upper_8UxcpLHF(char);
+char upper_uI3peNuh(char);
 
 #ifndef FU_NO_FDEFs
 
@@ -34,7 +34,7 @@ fu_STR ID_YqscxHlw(const fu_STR& id)
         if ((idx >= 0))
         {
             /*MOV*/ fu_STR cpy { id };
-            cpy.mutref(1) = ascii_upper_8UxcpLHF(cpy[1]);
+            cpy.mutref(1) = upper_uI3peNuh(cpy[1]);
             return /*NRVO*/ cpy;
         };
     };

@@ -19,7 +19,7 @@ struct s_Helpers;
 struct s_LexerOutput;
 struct s_Lifetime;
 struct s_Lint;
-struct s_Map_EmVtl5Qe;
+struct s_Map_JBAFFW0D;
 struct s_Module;
 struct s_ModuleInputs;
 struct s_ModuleOutputs;
@@ -37,7 +37,6 @@ struct s_ScopeMemo;
 struct s_ScopeSkip;
 struct s_ScopeSkipMemos;
 struct s_SolvedNode;
-struct s_SolvedNodeData;
 struct s_SolverOutput;
 struct s_Struct;
 struct s_Target;
@@ -48,12 +47,12 @@ struct s_TokenIdx;
 struct s_Type;
 struct s_ValueType;
 
-fu_STR serialize_0fZoGkc4(const s_TestDiffs&);
+fu_STR serialize_zP1960QX(const s_TestDiffs&);
 fu_STR snippet2cpp_0X4li7Vn(const fu_STR&);
-s_Context ZERO_0ErTzBWG(fu_VEC<fu_STR>&&, const s_Options&, s_TestDiffs&);
 s_Context ZERO_0X4li7Vn(const fu_STR&, s_TestDiffs&);
+s_Context ZERO_a6MPmkBY(fu_VEC<fu_STR>&&, const s_Options&, s_TestDiffs&);
 void TODO_0X4li7Vn(const fu_STR&, s_TestDiffs&);
-void TODO_YxitWGqo(const fu_VEC<fu_STR>&, s_TestDiffs&);
+void TODO_gbRYYHIW(const fu_VEC<fu_STR>&, s_TestDiffs&);
 void ZERO_SAME_Ys7VTVTn(fu::view<fu_STR>, s_TestDiffs&);
 
                                 #ifndef DEF_s_TestDiffs
@@ -237,15 +236,15 @@ struct s_Struct
 };
                                 #endif
 
-                                #ifndef DEF_s_SolvedNode
-                                #define DEF_s_SolvedNode
-struct s_SolvedNode
+                                #ifndef DEF_s_Helpers
+                                #define DEF_s_Helpers
+struct s_Helpers
 {
-    int signedidx;
+    int index;
     explicit operator bool() const noexcept
     {
         return false
-            || signedidx
+            || index
         ;
     }
 };
@@ -311,12 +310,59 @@ struct s_Type
 };
                                 #endif
 
+                                #ifndef DEF_s_RWRanges
+                                #define DEF_s_RWRanges
+struct s_RWRanges
+{
+    int reads0;
+    int reads1;
+    int writes0;
+    int writes1;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || reads0
+            || reads1
+            || writes0
+            || writes1
+        ;
+    }
+};
+                                #endif
+
+                                #ifndef DEF_s_SolvedNode
+                                #define DEF_s_SolvedNode
+struct s_SolvedNode
+{
+    fu_STR kind;
+    s_Helpers helpers;
+    int flags;
+    fu_STR value;
+    fu_VEC<s_SolvedNode> items;
+    s_TokenIdx token;
+    s_Type type;
+    s_Target target;
+    s_RWRanges rwr;
+    s_SolvedNode(const s_SolvedNode&) = default;
+    s_SolvedNode(s_SolvedNode&&) = default;
+    s_SolvedNode& operator=(s_SolvedNode&&) = default;
+    s_SolvedNode& operator=(const s_SolvedNode& selfrec) { return *this = s_SolvedNode(selfrec); }
+    explicit operator bool() const noexcept
+    {
+        return false
+            || kind
+        ;
+    }
+};
+                                #endif
+
                                 #ifndef DEF_s_Overload
                                 #define DEF_s_Overload
 struct s_Overload
 {
     fu_STR kind;
     fu_STR name;
+    fu_STR sighash;
     s_Type type;
     int flags;
     unsigned status;
@@ -457,62 +503,6 @@ struct s_Template
 };
                                 #endif
 
-                                #ifndef DEF_s_Helpers
-                                #define DEF_s_Helpers
-struct s_Helpers
-{
-    int index;
-    explicit operator bool() const noexcept
-    {
-        return false
-            || index
-        ;
-    }
-};
-                                #endif
-
-                                #ifndef DEF_s_RWRanges
-                                #define DEF_s_RWRanges
-struct s_RWRanges
-{
-    int reads0;
-    int reads1;
-    int writes0;
-    int writes1;
-    explicit operator bool() const noexcept
-    {
-        return false
-            || reads0
-            || reads1
-            || writes0
-            || writes1
-        ;
-    }
-};
-                                #endif
-
-                                #ifndef DEF_s_SolvedNodeData
-                                #define DEF_s_SolvedNodeData
-struct s_SolvedNodeData
-{
-    fu_STR kind;
-    s_Helpers helpers;
-    int flags;
-    fu_STR value;
-    fu_VEC<s_SolvedNode> items;
-    s_TokenIdx token;
-    s_Type type;
-    s_Target target;
-    s_RWRanges rwr;
-    explicit operator bool() const noexcept
-    {
-        return false
-            || kind
-        ;
-    }
-};
-                                #endif
-
                                 #ifndef DEF_s_Extended
                                 #define DEF_s_Extended
 struct s_Extended
@@ -524,7 +514,6 @@ struct s_Extended
     fu_VEC<s_Argument> args;
     s_Target spec_of;
     s_Template tEmplate;
-    fu_VEC<s_SolvedNodeData> nodes;
     fu_VEC<s_Overload> locals;
     fu_VEC<s_ScopeItem> extra_items;
     fu_VEC<int> callers;
@@ -538,7 +527,6 @@ struct s_Extended
             || args
             || spec_of
             || tEmplate
-            || nodes
             || locals
             || extra_items
             || callers
@@ -610,10 +598,16 @@ struct s_SolverOutput
 struct s_CodegenOutput
 {
     fu_STR src;
+    fu_VEC<fu_STR> link;
+    fu_VEC<fu_STR> include_dirs;
+    fu_VEC<fu_STR> extra_sources;
     explicit operator bool() const noexcept
     {
         return false
             || src
+            || link
+            || include_dirs
+            || extra_sources
         ;
     }
 };
@@ -709,9 +703,9 @@ struct s_Module
 };
                                 #endif
 
-                                #ifndef DEF_s_Map_EmVtl5Qe
-                                #define DEF_s_Map_EmVtl5Qe
-struct s_Map_EmVtl5Qe
+                                #ifndef DEF_s_Map_JBAFFW0D
+                                #define DEF_s_Map_JBAFFW0D
+struct s_Map_JBAFFW0D
 {
     fu_VEC<fu_STR> keys;
     fu_VEC<fu_STR> vals;
@@ -730,8 +724,8 @@ struct s_Map_EmVtl5Qe
 struct s_Context
 {
     fu_VEC<s_Module> modules;
-    s_Map_EmVtl5Qe files;
-    s_Map_EmVtl5Qe fuzzy;
+    s_Map_JBAFFW0D files;
+    s_Map_JBAFFW0D fuzzy;
     s_Context(const s_Context&) = delete;
     s_Context(s_Context&&) = default;
     s_Context& operator=(const s_Context&) = delete;
@@ -891,7 +885,7 @@ void runTests_n07RecyR()
 {
     fu_STR TESTDIFFS_FILE = (PRJDIR + "testdiff/now.td"_fu);
     s_TestDiffs testdiffs = s_TestDiffs{};
-    fu_DEFER_IF_OK(fu::file_write(TESTDIFFS_FILE, serialize_0fZoGkc4(testdiffs)));
+    fu_DEFER_IF_OK(fu::file_write(TESTDIFFS_FILE, serialize_zP1960QX(testdiffs)));
     ZERO_0X4li7Vn("\n        <fail return>\n        fn main(): i32 {}               <pass/>\n        fn main(): i32 { return 0; }    </fail>\n    "_fu, testdiffs);
     ZERO_0X4li7Vn("\n        <fail return>\n        fn test(): i32 {}               <pass/>\n        fn test(): i32 { return 0; }    </fail>\n        fn main() test();\n    "_fu, testdiffs);
     ZERO_0X4li7Vn("\n        return 1 - 1;\n    "_fu, testdiffs);
@@ -903,6 +897,7 @@ void runTests_n07RecyR()
     ZERO_0X4li7Vn("\n        fn main() {\n            let  i = -1;\n            let sb = i.i8;\n            let  b = i.u8;\n\n            return sb == -1 && b == 255 ? 0 : 1;\n        }\n    "_fu, testdiffs);
     ZERO_0X4li7Vn("\n        fn main() {\n            let sb = (-1).i8;\n            let  i =  sb.i32;\n            let  u =  sb.u32;\n\n            return i == -1 && u.i32 == 255 ? 0 : 1;\n        }\n    "_fu, testdiffs);
     ZERO_0X4li7Vn("\n        fn main() {\n            let b = byte(200);\n            let i = b.i32;\n            return i == 200 ? 0 : 1;\n        }\n    "_fu, testdiffs);
+    ZERO_0X4li7Vn("\n        mut arr = [ 0 ];\n        return arr[0];\n    "_fu, testdiffs);
     ZERO_0X4li7Vn("\n        let a = 3;\n        mut b = a;\n        b++;\n        return b - (a + 1);\n    "_fu, testdiffs);
     ZERO_0X4li7Vn("\n        mut sum = 0;\n        for (mut i = 0; i < 10; i++)\n            sum++;\n\n        return sum * 2 - 20;\n    "_fu, testdiffs);
     ZERO_0X4li7Vn("\n        mut sum = 0;\n        for (mut i = 10; i --> 0; )\n            sum--;\n\n        return sum * 2 + 20;\n    "_fu, testdiffs);
@@ -954,12 +949,12 @@ void runTests_n07RecyR()
     ZERO_0X4li7Vn("\n        fn any(a, b) a || b;\n        fn main() any(0, []);\n    "_fu, testdiffs);
     ZERO_0X4li7Vn("\n        fn both(a, b) a && b;\n        fn main() both(1, []);\n    "_fu, testdiffs);
     ZERO_0X4li7Vn("\n        fn either(a, b) a ? a : b;\n        fn main() either(0, []);\n    "_fu, testdiffs);
-    ZERO_0ErTzBWG(fu_VEC<fu_STR> { fu::slate<2, fu_STR> { "\n        pub fn identity(dont_leak_me) dont_leak_me;\n    "_fu, "\n        let dont_leak_me = 1;\n        fn main() _0::identity(dont_leak_me * 2) - 2;\n    "_fu } }, s_Options{}, testdiffs);
+    ZERO_a6MPmkBY(fu_VEC<fu_STR> { fu::slate<2, fu_STR> { "\n        pub fn identity(dont_leak_me) dont_leak_me;\n    "_fu, "\n        let dont_leak_me = 1;\n        fn main() _0::identity(dont_leak_me * 2) - 2;\n    "_fu } }, s_Options{}, testdiffs);
     ZERO_0X4li7Vn("\n        pub inline fn inl_id_leak(dont_leak_me) dont_leak_me;\n        let dont_leak_me = 1;\n        fn main() inl_id_leak(dont_leak_me * 2) - 2;\n    "_fu, testdiffs);
     ZERO_0X4li7Vn("\n        let static = 1;\n        fn template(arg) static + arg;\n        let arg = 7;                        // <- template shouldn't see this\n        let result = template(arg / -4);    // <- when specializing here\n        fn main() result;\n    "_fu, testdiffs);
     ZERO_0X4li7Vn("\n        fn main() {\n            let static = 1;\n            fn template(arg) static + arg;\n            let arg = 7; // same here, except we're in a fn.\n            return template(arg / -4);\n        }\n    "_fu, testdiffs);
-    ZERO_0ErTzBWG(fu_VEC<fu_STR> { fu::slate<2, fu_STR> { "\n        fn template_add(a, b) a + b;\n    "_fu, "\n        struct HasInt { i: i32 };\n        <split/>\n        fn +(a: HasInt, b: HasInt) HasInt(a.i + b.i);\n        fn main() _0::template_add(HasInt(1), HasInt(2)).i - 3;\n    "_fu } }, s_Options{}, testdiffs);
-    TODO_YxitWGqo(fu_VEC<fu_STR> { fu::slate<2, fu_STR> { "\n        fn template_add(a, b) a + b;\n    "_fu, "\n        struct HasInt { i: i32 };\n        fn main() {\n            infix fn +(a: HasInt, b: HasInt) HasInt(a.i + b.i); // its hard to defend this -\n            _0::template_add(HasInt(1), HasInt(2)).i - 3;       //  the thing above works but this doesn't.\n        }                                                       //   given the autoshadowing, we might just want to allow everything.\n    "_fu } }, testdiffs);
+    ZERO_a6MPmkBY(fu_VEC<fu_STR> { fu::slate<2, fu_STR> { "\n        fn template_add(a, b) a + b;\n    "_fu, "\n        struct HasInt { i: i32 };\n        <split/>\n        fn +(a: HasInt, b: HasInt) HasInt(a.i + b.i);\n        fn main() _0::template_add(HasInt(1), HasInt(2)).i - 3;\n    "_fu } }, s_Options{}, testdiffs);
+    TODO_gbRYYHIW(fu_VEC<fu_STR> { fu::slate<2, fu_STR> { "\n        fn template_add(a, b) a + b;\n    "_fu, "\n        struct HasInt { i: i32 };\n        fn main() {\n            infix fn +(a: HasInt, b: HasInt) HasInt(a.i + b.i); // its hard to defend this -\n            _0::template_add(HasInt(1), HasInt(2)).i - 3;       //  the thing above works but this doesn't.\n        }                                                       //   given the autoshadowing, we might just want to allow everything.\n    "_fu } }, testdiffs);
     ZERO_0X4li7Vn("\n        fn inner(i: i32): i32\n            i > 0 ? outer(i - 1) : 0;\n\n        fn outer(i: i32): i32\n            2 * inner(i);\n\n        return outer(1);\n    "_fu, testdiffs);
     ZERO_0X4li7Vn("\n        fn test(one: i32)\n        {\n            let zero = one - 1;\n            let two  = one * 2;\n\n            fn inner(i: i32): i32\n                i > zero ? outer(i - one) : zero;\n\n            fn outer(i: i32): i32\n                two * inner(i);\n\n            return outer(one) + (two - one) * 17;\n        }\n\n        fn main() test(1) - 17;\n    "_fu, testdiffs);
     ZERO_0X4li7Vn("\n        fn inner(i: i32): i32\n            outer(i - 1);\n\n        fn outer(implicit x: i32, i: i32): i32\n            i > 0   ? inner(i)\n                    : x + i;\n\n        let implicit x = 7;\n        return outer(1) - 7;\n    "_fu, testdiffs);
@@ -1046,7 +1041,7 @@ void runTests_n07RecyR()
     ZERO_0X4li7Vn("\n        struct Test { x?: i32; };\n        fn hey(y: i32 = 0)\n            y   ? Test(1)\n                : Test();\n\n        return hey.x;\n    "_fu, testdiffs);
     ZERO_0X4li7Vn("\n        <fail bad call>\n        fn test(a = \"hello\") a.len;     <pass/>\n        fn test(a = 0) a + 1;           </fail>\n        fn main() test(-1);\n    "_fu, testdiffs);
     TODO_0X4li7Vn("\n        fn test(a = 3, b = a * 2) a + b;\n        fn main() test + test(a: -1) * 3;\n    "_fu, testdiffs);
-    TODO_0X4li7Vn("\n        fn test(ref a: i32, incr: i32) {\n            fn woot(x, ref b: i32 = a) {\n                if (x & 1) {\n                    x /= 2;\n                    return test(x, b);\n                }\n                b += x;\n            }\n            return woot(incr, a);\n        }\n\n        fn main() {\n            mut x = 10;\n            test(x, 5);\n            return x - 12;\n        }\n    "_fu, testdiffs);
+    TODO_0X4li7Vn("\n        fn test(ref a: i32, mut incr: i32) {\n            fn woot(ref x, ref b = a) { // 'a' closes over here!\n                if (x & 1) {\n                    x /= 2;\n                    return test(x, b);\n                }\n                return b += x;\n            }\n\n            return woot(incr<alt>, a</alt>);\n        }\n\n        fn main() {\n            mut x = 10;\n            return test(x, 5) - 12;\n        }\n    "_fu, testdiffs);
     TODO_0X4li7Vn("\n        struct Arg { name: string };\n        fn main() {\n            let arg = Arg(<fail argument name id>id<pass/>name</fail>: \"hey\");\n            return arg.name.len - 3;\n        }\n    "_fu, testdiffs);
     ZERO_0X4li7Vn("\n        let s = 7;\n        return s ? 0 : 1;\n    "_fu, testdiffs);
     ZERO_0X4li7Vn("\n        let s = 0;\n        return s ? 1 : 0;\n    "_fu, testdiffs);
@@ -1128,7 +1123,7 @@ void runTests_n07RecyR()
     ZERO_0X4li7Vn("\n        struct Arg { i: i32; };\n\n        // A mutref fail.\n        fn mutargs(args: &mut Arg[])\n        {\n            // This miscompiles to ref into args,\n            //  after which we invalidate the reference.\n            //\n            <fail inval badref>\n            ref <pass/>\n            mut </fail> badref = args[0];\n\n            args = [ Arg(11) ]; // INVALIDATE badref.\n            return badref;\n        }       // oct2021: now latest issue here is that\n                //  this gets bcked AFTER jump lifetimes are unwound\n                //   and it all looks as if everything's fine (lt badref == lt args).\n\n        fn main()\n        {\n            mut args = [ Arg(7) ];\n            return mutargs(args).i - 7;\n        }\n    "_fu, testdiffs);
     ZERO_0X4li7Vn("\n        struct Arg { i: i32[]; };\n\n        fn witharg(using a: Arg)\n            i[i.len - 1] * 4;\n\n        fn mutargs(args: &mut Arg[]) {\n            <fail invalidate badref>\n            ref <pass/>\n            let </fail> badref = args[0];\n\n            args = [ Arg([ 11 ]) ]; // INVALIDATE badref.\n            return witharg(badref);\n        }\n\n        fn main() {\n            mut args = [ Arg([ 7 ]) ];\n            return mutargs(args) - 28;\n        }\n    "_fu, testdiffs);
     ZERO_0X4li7Vn("\n        struct Arg { i: i32[]; };\n\n        fn witharg(using a: Arg, x: i32)\n            i[i.len - 1] * x;\n\n        fn mutargs(args: &mut Arg[]) {\n            <fail inval badref>\n            ref <pass/>\n            let </fail> badref = args[0];\n\n            for (mut i = 0;; i++) {\n                let ret = witharg(badref, i * 4);\n                if (ret)\n                    return ret;\n\n                args = [ Arg([ 11 ]) ]; // INVALIDATE badref.\n            }\n        }\n\n        fn main() {\n            mut args = [ Arg([ 7 ]) ];\n            return mutargs(args) - 28;\n        }\n    "_fu, testdiffs);
-    ZERO_0X4li7Vn("\n        fn test(ref woot: i32[], x: i32, y: i32) {\n            ref b = woot[y];\n            ref a = woot[x]; // the 'shadow ref' below ...\n            if (a == 1) {\n                <fail invalidate>\n                <pass/>\n                shadow ref a = woot[x]; // ... should relax 'ref a' above to a let ...\n                </fail>\n                a += 1;\n            }\n            else {\n                b += 1; // ... and this should ignore cond write above.\n            }\n        }\n\n        fn main() {\n            mut x = [ -1, +1 ];\n            test(x, 0, 1);\n            return x[1] - 2;\n        }\n    "_fu, testdiffs);
+    ZERO_0X4li7Vn("\n        fn test(ref woot: i32[], x: i32, y: i32) {\n            ref b = woot[y];\n            ref a = woot[x]; // the 'shadow ref' below ...\n            if (a == 1) {\n                <fail invalidate write to woot at 4:25>\n                <pass/>\n                shadow ref a = woot[x]; // ... should relax 'ref a' above to a let ...\n                </fail>\n                a += 1;\n            }\n            else {\n                b += 1; // ... and this should ignore cond write above.\n            }\n        }\n\n        fn main() {\n            mut x = [ -1, +1 ];\n            test(x, 0, 1);\n            return x[1] - 2;\n        }\n    "_fu, testdiffs);
     ZERO_0X4li7Vn("\n        fn test(ref a: i32[], ref b: i32[]) {\n            <alt>\n            if (a[0]++ == 1)            ;; BCK_soft_risk\n            <alt/>\n            if (a[0] == 1)\n            </alt>\n                a ~= 1;\n            else\n                b ~= 1;\n        }\n\n        fn main() {\n            mut x = [ 1 ];\n            test(x, x);\n            return x.len - 2;\n        }\n    "_fu, testdiffs);
     TODO_0X4li7Vn("\n        nocopy struct Woot {\n            x: i32[];\n            y: i32[];\n        };\n\n        fn test(ref w: Woot) {\n            ref x = w.x;\n            //*F\n            ref y = w.x;\n            /*/\n            ref y = w.y;\n            //*/\n            y ~= y; // <- DONT RESOLVE BY COPY! ref can relax to let\n            x ~= y;\n        }\n\n        fn main() {\n            mut w: Woot;\n            test(w);\n            return w.x.len;\n        }\n    "_fu, testdiffs);
     TODO_0X4li7Vn("\n        nocopy struct Woot {\n            x: i32[];\n            y: i32[];\n        };\n\n        fn test(ref w0: Woot, ref w1: Woot) {\n            ref x = w0.x;\n            //*F\n            ref y = w1.x;\n            /*/\n            ref y = w1.y;\n            //*/\n            y ~= y; // <- DONT RESOLVE BY COPY! ref can relax to let\n            x ~= y;\n        }\n\n        fn main() {\n            mut w: Woot;\n            test(w, w);\n            return w.x.len;\n        }\n    "_fu, testdiffs);
@@ -1163,6 +1158,7 @@ void runTests_n07RecyR()
     ZERO_0X4li7Vn("\n        fn writes_to_two_args(ref item: i32, ref arr: i32[], ref brr: i32[]) {\n            ref arrbrr = arr || brr;\n            arrbrr.resize(100 + arrbrr.len);\n            return item += arrbrr.len;\n        }\n\n        fn main() {\n            mut arr: i32[] = [      ];\n            mut brr: i32[] = [ -101 ];\n\n            <fail alias brr>\n            ref item = brr[0]; <pass/>\n            mut item = brr[0]; </fail>\n\n            return writes_to_two_args(:item, :arr, :brr);\n        }\n    "_fu, testdiffs);
     ZERO_0X4li7Vn("\n        fn reads_from_two_args(ref left: i32, ref right: i32, ref arr: i32[], ref brr: i32[]) {\n            ref arrbrr = arr || brr;\n            ref item = left || right;\n            arrbrr.resize(100 + arrbrr.len);\n            return item += arrbrr.len;\n        }\n\n        fn main() {\n            mut arr: i32[] = [      ];\n            mut brr: i32[] = [ -101 ];\n\n            mut left = 0;\n\n            <fail alias brr>\n            ref right = brr[0]; <pass/>\n            mut right = brr[0]; </fail>\n\n            return reads_from_two_args(:left, :right, :arr, :brr);\n        }\n    "_fu, testdiffs);
     ZERO_0X4li7Vn("\n        fn grow(ref arr: i32[], by!n: i32) {\n            arr.resize(arr.len + n);\n            return arr;\n        }\n\n        fn incr__ltr_oee(ref what: i32, by: i32)\n            what += by;\n\n        fn reads_from_two_args__single_expr(ref left: i32, ref right: i32, ref arr: i32[], ref brr: i32[])\n            incr__ltr_oee(left || right, grow(arr || brr, by: 100).len);\n\n        fn main() {\n            mut arr: i32[] = [      ];\n            mut brr: i32[] = [ -101 ];\n\n            mut left = 0;\n\n            <fail alias brr>\n            ref right = brr[0]; <pass/>\n            mut right = brr[0]; </fail>\n\n            return reads_from_two_args__single_expr(:left, :right, :arr, :brr);\n        }\n    "_fu, testdiffs);
+    ZERO_0X4li7Vn("\n        fn main() {\n            mut arr = [ 1,1,1,1,1 ];\n            mut sum = 0;\n\n            // veach(view) should decay to a slice -\n            //  which push will invalidate.\n            //\n            fn veach(view, fn) {\n                for (mut i = 0; i < view.len; i++) {\n                    fn(view[i]);\n                    arr ~= arr; // Relocate arr.\n                }\n            }\n\n            arr.veach: |i| sum += <fail both alias arr>\n                            (i *= 2)            <pass/>\n                            (i  * 2)            </fail>;\n\n            return sum - 10;\n        }\n    "_fu, testdiffs);
     TODO_0X4li7Vn("\n        struct BINOP {\n            P: Map(string, i32);\n        };\n\n        fn setupOperators(): BINOP\n        {\n            mut out: BINOP;\n\n            fn binop(op: string)\n                out.P[op] = 7;\n\n            binop(\",\");\n\n            return out;\n        }\n\n        shadow let BINOP = setupOperators();\n        let P_COMMA = BINOP.P[\",\"] || assert();\n\n        fn main() P_COMMA - 7;\n    "_fu, testdiffs);
     ZERO_0X4li7Vn("\n        // -no-lambda\n        // This converted to a ref-returning\n        // logical chain for some reason.\n        let hex = true;\n        let trail = \"x\";\n        if (!(trail >= \"0\" && trail <= \"9\") &&\n            !(hex && (trail >= \"a\" && trail <= \"f\"\n                   || trail >= \"A\" && trail <= \"F\")))\n        {\n            return 0;\n        }\n\n        return 1;\n    "_fu, testdiffs);
     ZERO_0X4li7Vn("\n        struct Type     { i: i32; };\n        struct Token    { i: i32; };\n        struct ScopeIdx { i: i32; };\n\n        struct SolvedNode\n        {\n            kind:       string;\n            flags?:     i32;\n            value?:     string;\n            items?:     SolvedNode[];\n            token:      Token;\n\n            type:       Type;\n            target?:    ScopeIdx;\n        };\n\n        let _here: Token;\n\n        fn createDefaultInit(type: Type): SolvedNode\n        {\n            // Broken arg re-arrange.\n            return SolvedNode(\n                kind: \"definit\",\n                token: _here,\n                :type);\n        }\n\n        return createDefaultInit(Type()).target.i;\n    "_fu, testdiffs);
@@ -1175,7 +1171,8 @@ void runTests_n07RecyR()
     ZERO_0X4li7Vn("\n        fn path_normalize(p: string): string {\n            mut path = p.split(\"/\");\n\n            for (mut i = path.len; i --> 0; ) {\n                let part: &string = path[i];\n                if (part == \".\" || !part && i > 0 && i < path.len - 1)\n                    path.splice(i, 1);\n            }\n\n            return path.join(\"/\");\n        }\n\n        fn main() path_normalize(\"./hello///hey\") == \"hello/hey\" ? 0 : 1;\n    "_fu, testdiffs);
     ZERO_0X4li7Vn("\n        fn path_normalize(p: string): string {\n            mut path = p.split(\"/\");\n\n            for (mut i = path.len; i --> 0; ) {\n                let part = path[i];\n                if (part == \".\" || !part && i > 0 && i < path.len - 1)\n                    path.splice(i, 1);\n            }\n\n            for (mut i = 1; i < path.len; i++) {\n                if (path[i] == \"..\")\n                    path.splice(--i, 2);\n            }\n\n            return path.join(\"/\");\n        }\n\n        fn path_join(a: string, b: string)\n            path_normalize(a ~ \"/\" ~ b);\n\n        fn main()\n            path_join(\"hello/hey\", \"./../you//\") == \"hello/you/\"\n                ? 0 : 1;\n    "_fu, testdiffs);
     ZERO_0X4li7Vn("\n        pub struct Template { locals: ScopeMemo; }; // <- used ahead of the def, was missing q_trivial\n        pub struct ScopeMemo { x: i32; }; // <- trivial, discovered on solve here after Template is done\n        pub fn +(a: ScopeMemo, b: ScopeMemo) a.x + b.x; // <- used here after both structs are done\n\n        pub fn main() {\n            let a = Template(ScopeMemo(+3));\n            let b = Template(ScopeMemo(-3));\n            return a.locals + b.locals; // <- fails to match.\n        }\n    "_fu, testdiffs);
-    ZERO_0X4li7Vn("\n        fn each(a: [$T], fn)\n            for (mut i = 0; i < a.len; i++)\n                fn(a[i]);\n\n        struct Node { kind: string; items: Node[]; flags: i32; };\n\n        let F_PREDICATE = 2;\n\n        fn parse(tokens: byte[]): Node {\n            mut _idx = 0;\n\n            fn parseStructDecl(flags! = 0): Node {\n                mut items = parseBlockLike('}');\n\n                :F_PREDICATE {\n                    items.each: |item|\n                        if (item.kind == \"let\")\n                            if (item.flags & F_PREDICATE)\n                                break :F_PREDICATE;\n\n                    items.each: |item|\n                        if (item.kind == \"let\")\n                            item.flags |= F_PREDICATE;\n                }\n\n                return Node(\"struct\", items, :flags);\n            }\n\n            fn parseBlockLike(endToken: byte): Node[] {\n                mut items: Node[] = [];\n                for (;;) {\n                    let token = tokens[_idx++];\n                    if (token == endToken)\n                        break;\n\n                    items ~= Node(\"let\", [], flags: token == '+' && F_PREDICATE);\n                }\n\n                return items;\n            }\n\n            return parseStructDecl();\n        }\n\n        fn main() {\n            let tokens = \"+-}\";\n            let p = parse(tokens).items;\n            return p.len - p[0].flags\n                         + p[1].flags * 17;\n        }\n    "_fu, testdiffs);
+    ZERO_0X4li7Vn("\n        novec fn novec_each(a: $T[], fn)\n            for (mut i = 0; i < a.len; i++)\n                fn(a[i]);\n\n        fn main() {\n            mut a = [ 1 ];\n            a.novec_each: |i| i *= 2;\n            return a[0] - 2;\n        }\n    "_fu, testdiffs);
+    ZERO_0X4li7Vn("\n        novec fn each(a: [$T], fn)\n            for (mut i = 0; i < a.len; i++)\n                fn(a[i]);\n\n        struct Node { kind: string; items: Node[]; flags: i32; };\n\n        let F_PREDICATE = 2;\n\n        fn parse(tokens: byte[]): Node {\n            mut _idx = 0;\n\n            fn parseStructDecl(flags! = 0): Node {\n                mut items = parseBlockLike('}');\n\n                :F_PREDICATE {\n                    items.each: |item|\n                        if (item.kind == \"let\")\n                            if (item.flags & F_PREDICATE)\n                                break :F_PREDICATE;\n\n                    items.each: |item|\n                        if (item.kind == \"let\")\n                            item.flags |= F_PREDICATE;\n                }\n\n                return Node(\"struct\", items, :flags);\n            }\n\n            fn parseBlockLike(endToken: byte): Node[] {\n                mut items: Node[] = [];\n                for (;;) {\n                    let token = tokens[_idx++];\n                    if (token == endToken)\n                        break;\n\n                    items ~= Node(\"let\", [], flags: token == '+' && F_PREDICATE);\n                }\n\n                return items;\n            }\n\n            return parseStructDecl();\n        }\n\n        fn main() {\n            let tokens = \"+-}\";\n            let p = parse(tokens).items;\n            return p.len - p[0].flags\n                         + p[1].flags * 17;\n        }\n    "_fu, testdiffs);
     ZERO_0X4li7Vn("\n        pub struct MeshBuilder\n        {\n            verts?:     byte[];\n            indices?:   byte[];\n            vert_bytes: i32;\n            num_verts?: i32;\n        };\n\n        pub fn alloc(\n            using mb: &mut MeshBuilder,\n            new_verts: i32,\n            new_indices: i32)\n        {\n            verts.resize_junk((verts.len + new_verts) * vert_bytes);\n\n            let index_bytes = 4;\n            indices.resize_junk((indices.len + new_indices) * index_bytes);\n        }\n\n        pub fn setup_quads(\n            using mb: &mut MeshBuilder, // <- the 'using' introduced more bindings,\n            num_quads: i32)             // <-  advancing the target index number of this arg,\n                : &mut [byte]           // <-   confusing the callsite lifetime of this view.\n        {\n            let b0 = verts.len;\n            let v0 = num_verts;\n            let i0 = indices.len;\n\n            mut v1 = v0;\n\n            alloc(num_quads * 4, num_quads * 6);\n\n            let indices_i32: &mut [i32] =\n                indices[i0, indices.len]\n                    .view(i32);\n\n            for (mut i = 0; i < indices_i32.len; i += 6)\n            {\n                indices_i32[i    ] = v1;\n                indices_i32[i + 1] = v1 + 1;\n                indices_i32[i + 2] = v1 + 2;\n\n                indices_i32[i + 3] = v1;\n                indices_i32[i + 4] = v1 + 2;\n                indices_i32[i + 5] = v1 + 3;\n\n                v1 += 4;\n            }\n\n            num_verts = v1;\n\n            return verts[b0, verts.len];\n        }\n\n        let QUAD_VBO: f32[] =\n        [\n            -1, -1, 0,      0, 0, 1,    0, 0,\n            +1, -1, 0,      0, 0, 1,    1, 0,\n            +1, +1, 0,      0, 0, 1,    1, 1,\n            -1, +1, 0,      0, 0, 1,    0, 1,\n        ];\n\n        pub fn main()\n        {\n            mut mb = MeshBuilder(\n                vert_bytes: 4 * (3+3+2));\n\n            mb.setup_quads(1).view(f32) .= QUAD_VBO;\n\n            return mb.num_verts - 4;\n        }\n    "_fu, testdiffs);
     ZERO_0X4li7Vn("\n        fn target(implicit ref _target: i32) _target;\n\n        // this suddenly reported that it doesn't see __solveStruct\n        fn GET_mut(ref x: i32) x || target;\n\n        // while i was trying to reproduce an ambig \"o\" fail here\n        fn __solveStruct(mut arg: i32): i32 {\n            if (arg) {\n                ref o = GET_mut(arg);\n                o++;\n                checkRecursions(o, o);\n            }\n            return arg;\n        }\n\n        fn checkRecursions(ref o: i32, incr: i32): void { GET_mut(o) += incr; }\n\n        fn main()\n        {\n            let implicit mut _target = 0;\n\n            return __solveStruct(1) - 4;\n        }\n    "_fu, testdiffs);
     ZERO_0X4li7Vn("\n        fn main()\n        {\n            mut target = 0;\n            fn GET_mut(ref x: i32) x || GET_mut(target += 1);\n            return GET_mut(target) - 1;\n        }\n    "_fu, testdiffs);
@@ -1231,7 +1228,7 @@ void runTests_n07RecyR()
     ZERO_0X4li7Vn("\n        fn maybe_empty(N: i32) {\n            mut res: string[];\n            for (mut i = 0; i < N; i++) res ~= [ \"world!\" ]; // same as below but wrapped\n            return res;\n        }\n        fn main() {\n            mut arr = [ \"Hello\" ];\n            for (mut i = 0; i < 2; i++) arr ~= maybe_empty(i); // will append empty\n            return arr.join(\" \") == \"Hello world!\" ? 0 : 1;\n        }\n    "_fu, testdiffs);
     ZERO_0X4li7Vn("\n        fn maybe_empty(N: i32) {\n            mut res: string[];\n            for (mut i = 0; i < N; i++) res ~= \"world!\"; // cpp template issue here\n            return res;\n        }\n        fn main() {\n            mut arr = [ \"Hello\" ];\n            for (mut i = 0; i < 2; i++) arr ~= maybe_empty(i); // will append empty\n            return arr.join(\" \") == \"Hello world!\" ? 0 : 1;\n        }\n    "_fu, testdiffs);
     ZERO_0X4li7Vn("\n        fn main() {\n            mut _info = \"abc\";\n\n            pure fn fail(mut reason: string = \"\") {\n                ref info = _info[0]; // <- notice the ref, has to relax away\n                reason ~= info && info.i32;\n                return reason;\n            }\n\n            return fail.len - 2; // 'a' is 97, \"97\".len is 2.\n        }\n    "_fu, testdiffs);
-    ZERO_0ErTzBWG(fu_VEC<fu_STR> { fu::slate<2, fu_STR> { "\n        let q_mutref = 1;\n        pub let RELAX_mutref_only = q_mutref;\n        pub fn what(relax_mask: i32) relax_mask -1;\n    "_fu, "\n        import _0;\n        fn main() what(RELAX_mutref_only);\n    "_fu } }, s_Options{}, testdiffs);
+    ZERO_a6MPmkBY(fu_VEC<fu_STR> { fu::slate<2, fu_STR> { "\n        let q_mutref = 1;\n        pub let RELAX_mutref_only = q_mutref;\n        pub fn what(relax_mask: i32) relax_mask -1;\n    "_fu, "\n        import _0;\n        fn main() what(RELAX_mutref_only);\n    "_fu } }, s_Options{}, testdiffs);
     TODO_0X4li7Vn("\n        pub fn pairs(a: Map($K, $V), fn) {\n            let k = a.keys;\n            let v = a.values;\n            for (mut i = 0; i < k.len; i++)\n                fn(k[i], v[i]);\n        }\n\n        fn main() {\n            mut map: Map(i32, i32);\n            map[1] = 2;\n            map[3] = 4;\n\n            mut sum = 0;\n            map.pairs(|k, v| sum += k + v * 100);\n            return sum - 604;\n        }\n    "_fu, testdiffs);
     ZERO_0X4li7Vn("\n        fn main() {\n            try         { return 0; }\n            catch (e)   { return e == \"x=2: even!\" ? 11 : 22; }\n        }\n    "_fu, testdiffs);
     ZERO_0X4li7Vn("\n        fn fail(str: string)\n            throw(str ~ \"!\");\n\n        fn test(x: i32)\n        {\n            // We want to override fail but\n            //  we want to call it within the override,\n            //   so we can do this i guess?\n            //\n            shadow let fail = |mut str: string| {\n                str = \"x=\" ~ x ~ \": \" ~ str;\n                fail(str);\n            };\n\n            return x & 1 || fail(\"even\");\n        }\n\n        fn main() {\n            try {\n                return test(2);\n            }\n            catch (e) {\n                <alt>\n                return e == \"x=2: even!\" ? 0 : 10;\n                <alt/>\n                shadow let e = \"hello \" ~ e;\n                return e == \"hello x=2: even!\" ? 0 : 10;\n                </alt>\n            }\n        }\n    "_fu, testdiffs);
@@ -1300,6 +1297,7 @@ void runTests_n07RecyR()
     ZERO_0X4li7Vn("\n        fn leadingDigit(name: string) name[0].u8 - '0'.u8 < 10;\n        fn main() \"hello\".leadingDigit.i32;\n    "_fu, testdiffs);
     ZERO_0X4li7Vn("\n        fn main() 1_000_000 - 1000000\n               || 0xffff_ffff.i32 - 0xffffffff.i32\n               || 123_456.789.i32 - 123456.789.i32;\n    "_fu, testdiffs);
     TODO_0X4li7Vn("                             // litfix through && /////\n        fn test(a: u32, shadows: bool)      (a << 1) | (shadows && 1);\n        fn main()                           1.test.i32 - 2;\n    "_fu, testdiffs);
+    ZERO_a6MPmkBY(fu_VEC<fu_STR> { fu::slate<2, fu_STR> { "\n        struct vec3 { x?: f32; y?: f32; z?: f32; };\n        inline fn *(a: vec3, b: vec3) vec3(a.x * b.x, a.y * b.y, a.z * b.z);\n        inline fn *(a: vec3, b: f32) vec3(a.x * b, a.y * b, a.z * b);\n        inline fn lensq(a: vec3) a.x * a.x + a.y * a.y + a.z * a.z;\n        inline fn len(a: vec3) a.lensq.sqrt;\n\n        inline fn norm(a: vec3) {\n            mut n = 1 / a.len;\n            n = n.finite ? n : 0;\n            return a * n;\n        }\n    "_fu, "\n        inline fn test(ref v) {\n            v = v.norm();\n            return v.len;\n        }\n\n        fn main() {\n            mut v = _0::vec3(2, 0, 0);\n            return v.test() == 1 ? 0 : 1;\n        }\n    "_fu } }, s_Options{}, testdiffs);
     ZERO_0X4li7Vn("\n        type Test = i32[];\n        fn yo(t: Test) t[0] + t[1];\n        fn main() yo([-1, +1]);\n    "_fu, testdiffs);
     ZERO_0X4li7Vn("\n        fn if_first(a: $T[]) a && a[0];\n        fn hello(a: i32[]) a.if_first;\n        fn main() hello([ 3 ]) - 3;\n    "_fu, testdiffs);
     ZERO_0X4li7Vn("\n        fn if_first(a: $T[]) a && a[0];\n        type X = i32[];\n        fn hello(a: X) a.if_first;\n        fn main() hello([ 3 ]) - 3;\n    "_fu, testdiffs);
@@ -1333,6 +1331,7 @@ void runTests_n07RecyR()
     ZERO_SAME_Ys7VTVTn((fu::slate<3, fu_STR> { "\n        fn A(x!: i32 = 0) x;\n        fn B(x: i32 = 0) A(:x);\n        fn main() A + B;\n    "_fu, "\n        fn A(x!?: i32) x;\n        fn B(x?: i32) A(:x);\n        fn main() A + B;\n    "_fu, "\n        fn A(x! = 0) x;\n        fn B(x = 0) A(:x);\n        fn main() A + B;\n    "_fu }), testdiffs);
     ZERO_0X4li7Vn("\n        fn what(a = -1, b!: i32) a + b; // Trailing explicit args.\n        fn main() what(b: +1);\n    "_fu, testdiffs);
     ZERO_0X4li7Vn("\n        fn greet(with!greeting: string)     greeting.len;\n        fn main()                           greet(with: \"Hello!\") - 6;\n    "_fu, testdiffs);
+    TODO_0X4li7Vn("\n        fn each(arr: $T[], visit)\n            for (mut i = 0; i < arr.len; i++)\n                visit(arr[i], i?: i);\n\n        fn main() {\n            mut muls = 0;\n            mut arr = [ 1, 2, 3 ];\n\n            arr.each: |v, i!index|\n                muls += v * index; // complained no index in scope\n\n            return muls - 8;\n        }\n    "_fu, testdiffs);
     ZERO_0X4li7Vn("\n        fn a0o0() 0;\n        fn a1o0(a : i32) a;\n        fn a2o1(a : i32, b?: i32) a + b;\n        fn a2o2(a?: i32, b?: i32) a + b;\n        fn main() a0o0(a?: 1, b?: 2) *      1   //      .\n                + a1o0(a?: 1, b?: 2) *     10   //     10\n                + a2o1(a?: 1, b?: 2) *    100   //    300\n                + a2o2(a?: 1, b?: 2) *   1000   //   3000\n                + a2o1(a : 1, <fail bad call>\n                              c       <pass/>\n                              b       </fail>\n                               ?: 2) *  10000   //  30000\n                + a2o1(a : 1)        * 100000   // 100000\n                                // ----------------------\n                                     - 133310;\n    "_fu, testdiffs);
     ZERO_0X4li7Vn("\n        pub fn reveach(items: [$T], fn)\n            for (mut i = items.len; i --> 0; )\n                fn(items[i], i?: i);\n\n        pub fn main() {\n            mut sum = 0;\n            [1, 2, 3].reveach(|x   | sum += x          );\n            [1, 2, 3].reveach(|x, i| sum += x * i * 100);\n            return sum - 806;\n        }\n    "_fu, testdiffs);
     ZERO_0X4li7Vn("\n        pub fn noop() 0;\n        pub fn woot(ref i: i32, fn) i += fn(i?: i += 1); // Will not add 1.\n\n        fn main() {\n            mut sum = 0;\n            woot(sum, fn noop);\n            return sum;\n        }\n    "_fu, testdiffs);
@@ -1349,25 +1348,26 @@ void runTests_n07RecyR()
     ZERO_0X4li7Vn("\n        fn main() {\n            let ret: u32 = <fail annot match>\n                4294967296 <pass/>\n                4294967295 </fail>;\n\n            return (ret - 0xffffffff).i32;\n        }\n    "_fu, testdiffs);
     ZERO_0X4li7Vn("\n        fn main() { // this is the best of the weird ones\n            let ret: u64 = <fail integer overflows u64>\n                18446744073709551616 <pass/>\n                18446744073709551615 </fail>;\n\n            return (ret - 0xffffffffffffffff).i32;\n        }\n    "_fu, testdiffs);
     ZERO_0X4li7Vn("\n        pub fn set_once(ref entry, bit: i32): bool\n        {\n            let mask = 1 << bit.u64;    // cg'd into '1u << uint64_t(bit)'\n            if (entry & mask)           //  which doesnt work for some reason\n                return false;\n\n            entry |= mask;\n            return true;\n        }\n\n        fn main() {\n            mut entry: u64;\n            let a = set_once(entry, 32);\n            let b = set_once(entry, 32);\n            return a && !b ? 0 : 101;\n        }\n    "_fu, testdiffs);
-    ZERO_0ErTzBWG(fu_VEC<fu_STR> { fu::slate<2, fu_STR> { "\n        pub fn noop() {} // AUTOPUB\n        <fail hello is not defined><pass/>\n        pub\n        </fail>\n        fn hello() 3;\n    "_fu, "\n        import _0;\n        fn main() 6 - hello * 2;\n    "_fu } }, s_Options{}, testdiffs);
-    ZERO_0ErTzBWG(fu_VEC<fu_STR> { fu::slate<2, fu_STR> { "\n        pub struct Hey { i: i32; };\n    "_fu, "\n        fn main() 1._0::Hey.i - 1;\n    "_fu } }, s_Options{}, testdiffs);
-    ZERO_0ErTzBWG(fu_VEC<fu_STR> { fu::slate<3, fu_STR> { "\n        pub struct Hey { i: i32; };\n    "_fu, "\n        import _0;\n        pub inline fn test(h: Hey) h.i + 2;\n    "_fu, "\n        import _1;\n        fn main() 1._0::Hey.test - 3;\n    "_fu } }, s_Options{}, testdiffs);
-    ZERO_0ErTzBWG(fu_VEC<fu_STR> { fu::slate<3, fu_STR> { "\n        pub struct Hey { i: i32; };\n    "_fu, "\n        pub inline fn test(h: _0::Hey) h.i + 2;\n    "_fu, "\n        import _1;\n        fn main() 1._0::Hey.test - 3;\n    "_fu } }, s_Options{}, testdiffs);
-    ZERO_0ErTzBWG(fu_VEC<fu_STR> { fu::slate<3, fu_STR> { "\n        pub struct Hey { i: i32; };\n    "_fu, "\n        pub inline fn test(h: _0::Hey) h.i + 2;\n    "_fu, "\n        fn main() 1._0::Hey._1::test - 3;\n    "_fu } }, s_Options{}, testdiffs);
-    ZERO_0ErTzBWG(fu_VEC<fu_STR> { fu::slate<4, fu_STR> { "\n        pub struct You { i: i32; };\n    "_fu, "\n        pub struct Hey { using you: _0::You; };\n        pub fn init3(): Hey = [ _0::You(3) ];\n    "_fu, "\n        pub inline fn test(using h = _1::init3) i + 7;\n    "_fu, "\n        fn main() _2::test - 10;\n    "_fu } }, s_Options{}, testdiffs);
-    ZERO_0ErTzBWG(fu_VEC<fu_STR> { fu::slate<4, fu_STR> { "\n        pub struct vec3 {\n            x?: f32;\n            y?: f32;\n            z?: f32;\n        };\n    "_fu, "\n        import _0;\n\n        pub struct mat34 {\n            mx: vec3;\n            my: vec3;\n            mz: vec3;\n            mo: vec3;\n        };\n\n        pub inline fn mat34_identity()\n            mat34(\n                vec3(x: 1),\n                vec3(y: 1),\n                vec3(z: 1), vec3 /*point3*/);\n    "_fu, "\n        pub struct mat4 {\n            m0: f32; m1: f32; m2: f32; m3: f32;\n            m4: f32; m5: f32; m6: f32; m7: f32;\n            m8: f32; m9: f32; mA: f32; mB: f32;\n            mC: f32; mD: f32; mE: f32; mF: f32;\n        };\n\n        pub inline fn mat4(using m: _1::mat34)\n            mat4(\n                mx.x, mx.y, mx.z, 0,\n                my.x, my.y, my.z, 0,\n                mz.x, mz.y, mz.z, 0,\n                mo.x, mo.y, mo.z, 1);\n\n        pub fn determinant(using _: mat4)\n            + mC * m9 * m6 * m3 - m8 * mD * m6 * m3 - mC * m5 * mA * m3\n            + m4 * mD * mA * m3 + m8 * m5 * mE * m3 - m4 * m9 * mE * m3\n            - mC * m9 * m2 * m7 + m8 * mD * m2 * m7 + mC * m1 * mA * m7\n            - m0 * mD * mA * m7 - m8 * m1 * mE * m7 + m0 * m9 * mE * m7\n            + mC * m5 * m2 * mB - m4 * mD * m2 * mB - mC * m1 * m6 * mB\n            + m0 * mD * m6 * mB + m4 * m1 * mE * mB - m0 * m5 * mE * mB\n            - m8 * m5 * m2 * mF + m4 * m9 * m2 * mF + m8 * m1 * m6 * mF\n            - m0 * m9 * m6 * mF - m4 * m1 * mA * mF + m0 * m5 * mA * mF;\n    "_fu, "\n        pub fn main()\n        {\n            let m34 = _1::mat34_identity;\n            let m44 = _2::mat4(m34);\n\n            return m44.determinant.i32 - 1;\n        }\n    "_fu } }, s_Options{}, testdiffs);
-    ZERO_0ErTzBWG(fu_VEC<fu_STR> { fu::slate<2, fu_STR> { "\n        pub fn _0(i: i32) i + 1;\n    "_fu, "\n        fn main() (-1).::_0;\n    "_fu } }, s_Options{}, testdiffs);
-    ZERO_0ErTzBWG(fu_VEC<fu_STR> { fu::slate<2, fu_STR> { "\n        pub fn add(ref to: $T[], item: $T) {\n            for (mut i = 0; i < to.len; i++) {\n                if (to[i] >= item) {\n                    if (to[i] != item)\n                        to.insert(i, item);\n\n                    return;\n                }\n            }\n\n            to.push(item);\n        }\n    "_fu, "\n        fn main() {\n            mut x = [1, 2, 3];\n            x._0::add(3); if (x.len != 3) return 33;\n            x._0::add(4); return x.len - x[3];\n        }\n    "_fu } }, s_Options{}, testdiffs);
-    ZERO_0ErTzBWG(fu_VEC<fu_STR> { fu::slate<2, fu_STR> { "\n        pub let pad0 = 0; pub let pad1 = 1; pub let pad2 = 2; pub let pad3 = 3; pub let pad4 = 4; pub let pad5 = 5; pub let pad6 = 6; pub let pad7 = 7; pub let pad8 = 8; pub let pad9 = 9;\n        pub let PAD0 = 0; pub let PAD1 = 1; pub let PAD2 = 2; pub let PAD3 = 3; pub let PAD4 = 4; pub let PAD5 = 5; pub let PAD6 = 6; pub let PAD7 = 7; pub let PAD8 = 8; pub let PAD9 = 9;\n\n        pub let A = \"hello\";\n        pub let B = \"world\";\n    "_fu, "\n        import _0;\n        fn test(i: i32) {\n            let v = i & 1 ? A : B;\n            return v.len;\n        }\n\n        fn main() 0.test - 1.test;\n    "_fu } }, s_Options{}, testdiffs);
-    ZERO_0ErTzBWG(fu_VEC<fu_STR> { fu::slate<2, fu_STR> { "\n        pub fn clone(a: $T)\n        case ($T.is::copy) a;\n        case ($T -> $T) {\n            mut res: $T;\n            for (fieldname i: $T) res.i = a.i.clone();\n            return res;\n        }\n    "_fu, "\n        pub nocopy struct Scope { x: i32; };\n\n        pub struct ModuleOutputs {\n            deps: i32[];\n            scope: Scope;\n        };\n\n        pub fn test(a: ModuleOutputs) {\n            let b = a._0::clone();\n            return a.deps.len - b.deps.len;\n        }\n\n        pub fn main() test(ModuleOutputs);\n    "_fu } }, s_Options{}, testdiffs);
-    ZERO_0ErTzBWG(fu_VEC<fu_STR> { fu::slate<2, fu_STR> { "\n        // a private fn\n        fn createShader(src: string) = src;\n\n        // inits a public let\n        pub let GEOMETRY_PASS_TEST = createShader(\"source code\");\n    "_fu, "\n        pub fn main() _0::GEOMETRY_PASS_TEST.len - 11;\n    "_fu } }, s_Options{}, testdiffs);
-    ZERO_0ErTzBWG(fu_VEC<fu_STR> { fu::slate<2, fu_STR> { "\n        struct List {\n            vals: string[];\n        };\n\n        fn add(using ref _: List, val: string)\n            vals ~= val;\n\n        fn [](using _: List, val: string) {\n            mut count = 0;\n            for (mut i = 0; i < vals.len; i++)\n                if (vals[i] == val)\n                    count++;\n\n            return count;\n        }\n    "_fu, "\n        fn main() {\n            mut list: _0::List;\n            for (mut i = 0; i < 3; i++)\n                list.add(i & 1 ? \"a\" : \"b\");\n\n            return list[\"b\"] - 2;\n        }\n    "_fu } }, s_Options{}, testdiffs);
-    ZERO_0ErTzBWG(fu_VEC<fu_STR> { fu::slate<2, fu_STR> { "\n        struct Int { i: i32; };\n        fn -(a: Int) Int(-a.i);\n        fn +(a: Int, b: Int) Int(a.i + b.i);\n        fn +=(ref a: Int, b: Int) { a.i += b.i; return a; };\n        postfix fn ++(ref a: Int) { a.i++; };\n    "_fu, "\n        fn main() {\n            mut x: _0::Int = [ 1 ];\n            x += -(x + x);\n            x++;\n            return x.i;\n        }\n    "_fu } }, s_Options{}, testdiffs);
-    ZERO_0ErTzBWG(fu_VEC<fu_STR> { fu::slate<1, fu_STR> { "\n        fn private(x)           x * 3;              // Scope_import is broken,\n        pub fn public(y)        private(y) * 2;     //  doesnt always import privates.\n        <split/>\n        fn main()               1.public - 6;\n    "_fu } }, s_Options{}, testdiffs);
-    ZERO_0ErTzBWG(fu_VEC<fu_STR> { fu::slate<2, fu_STR> { "\n        fn private(x: i32)      x * 3;              // cg fail:\n        pub fn public(y)        private(y) * 2;     //  fn private hidden in first translation unit.\n    "_fu, "\n        fn main()               1._0::public - 6;\n    "_fu } }, s_Options{}, testdiffs);
-    ZERO_0ErTzBWG(fu_VEC<fu_STR> { fu::slate<2, fu_STR> { "\n        let OPTOKENS = \"{}[]()!?~@#$%^&*/-+<=>,.;:|\";   // nowadays problem is OPTOKENS cgs to static in first translation unit\n\n        pub fn lex(src) // <- template\n        {\n            let end = src.len;\n            mut idx = 0;\n\n            while (idx < end) {\n                let c = src[idx++];\n                if (OPTOKENS.has(c)) // <- originally, no OPTOKENS in scope ...\n                    return idx - 1;\n            }\n\n            return src.len;\n        }\n    "_fu, "\n        fn main() _0::lex(\"3 - 3\") - 2; // <- from here\n    "_fu } }, s_Options{}, testdiffs);
-    ZERO_0ErTzBWG(fu_VEC<fu_STR> { fu::slate<2, fu_STR> { "\n        pub fn pubbed(a: i32) a * 2;\n        <fail not_pubbed not defined><pass/>\n        pub                          </fail>\n        fn not_pubbed(b: i32) b * 3;\n    "_fu, "\n        fn main() 1._0::pubbed._0::not_pubbed - 6;\n    "_fu } }, s_Options{}, testdiffs);
-    ZERO_0ErTzBWG(fu_VEC<fu_STR> { fu::slate<2, fu_STR> { "\n        let SELF_TEST           = true;\n        let NODEIDX_signbits    = SELF_TEST && 4;\n        let NODEIDX_signmask    = (1 << NODEIDX_signbits) - 1;\n    "_fu, "\n        fn main() _0::NODEIDX_signmask - 15;\n    "_fu } }, s_Options{}, testdiffs);
+    ZERO_a6MPmkBY(fu_VEC<fu_STR> { fu::slate<2, fu_STR> { "\n        pub fn noop() {} // AUTOPUB\n        <fail hello is not defined><pass/>\n        pub\n        </fail>\n        fn hello() 3;\n    "_fu, "\n        import _0;\n        fn main() 6 - hello * 2;\n    "_fu } }, s_Options{}, testdiffs);
+    ZERO_a6MPmkBY(fu_VEC<fu_STR> { fu::slate<2, fu_STR> { "\n        pub struct Hey { i: i32; };\n    "_fu, "\n        fn main() 1._0::Hey.i - 1;\n    "_fu } }, s_Options{}, testdiffs);
+    ZERO_a6MPmkBY(fu_VEC<fu_STR> { fu::slate<3, fu_STR> { "\n        pub struct Hey { i: i32; };\n    "_fu, "\n        import _0;\n        pub inline fn test(h: Hey) h.i + 2;\n    "_fu, "\n        import _1;\n        fn main() 1._0::Hey.test - 3;\n    "_fu } }, s_Options{}, testdiffs);
+    ZERO_a6MPmkBY(fu_VEC<fu_STR> { fu::slate<3, fu_STR> { "\n        pub struct Hey { i: i32; };\n    "_fu, "\n        pub inline fn test(h: _0::Hey) h.i + 2;\n    "_fu, "\n        import _1;\n        fn main() 1._0::Hey.test - 3;\n    "_fu } }, s_Options{}, testdiffs);
+    ZERO_a6MPmkBY(fu_VEC<fu_STR> { fu::slate<3, fu_STR> { "\n        pub struct Hey { i: i32; };\n    "_fu, "\n        pub inline fn test(h: _0::Hey) h.i + 2;\n    "_fu, "\n        fn main() 1._0::Hey._1::test - 3;\n    "_fu } }, s_Options{}, testdiffs);
+    ZERO_a6MPmkBY(fu_VEC<fu_STR> { fu::slate<4, fu_STR> { "\n        pub struct You { i: i32; };\n    "_fu, "\n        pub struct Hey { using you: _0::You; };\n        pub fn init3(): Hey = [ _0::You(3) ];\n    "_fu, "\n        pub inline fn test(using h = _1::init3) i + 7;\n    "_fu, "\n        fn main() _2::test - 10;\n    "_fu } }, s_Options{}, testdiffs);
+    ZERO_a6MPmkBY(fu_VEC<fu_STR> { fu::slate<4, fu_STR> { "\n        pub struct vec3 {\n            x?: f32;\n            y?: f32;\n            z?: f32;\n        };\n    "_fu, "\n        import _0;\n\n        pub struct mat34 {\n            mx: vec3;\n            my: vec3;\n            mz: vec3;\n            mo: vec3;\n        };\n\n        pub inline fn mat34_identity()\n            mat34(\n                vec3(x: 1),\n                vec3(y: 1),\n                vec3(z: 1), vec3 /*point3*/);\n    "_fu, "\n        pub struct mat4 {\n            m0: f32; m1: f32; m2: f32; m3: f32;\n            m4: f32; m5: f32; m6: f32; m7: f32;\n            m8: f32; m9: f32; mA: f32; mB: f32;\n            mC: f32; mD: f32; mE: f32; mF: f32;\n        };\n\n        pub inline fn mat4(using m: _1::mat34)\n            mat4(\n                mx.x, mx.y, mx.z, 0,\n                my.x, my.y, my.z, 0,\n                mz.x, mz.y, mz.z, 0,\n                mo.x, mo.y, mo.z, 1);\n\n        pub fn determinant(using _: mat4)\n            + mC * m9 * m6 * m3 - m8 * mD * m6 * m3 - mC * m5 * mA * m3\n            + m4 * mD * mA * m3 + m8 * m5 * mE * m3 - m4 * m9 * mE * m3\n            - mC * m9 * m2 * m7 + m8 * mD * m2 * m7 + mC * m1 * mA * m7\n            - m0 * mD * mA * m7 - m8 * m1 * mE * m7 + m0 * m9 * mE * m7\n            + mC * m5 * m2 * mB - m4 * mD * m2 * mB - mC * m1 * m6 * mB\n            + m0 * mD * m6 * mB + m4 * m1 * mE * mB - m0 * m5 * mE * mB\n            - m8 * m5 * m2 * mF + m4 * m9 * m2 * mF + m8 * m1 * m6 * mF\n            - m0 * m9 * m6 * mF - m4 * m1 * mA * mF + m0 * m5 * mA * mF;\n    "_fu, "\n        pub fn main()\n        {\n            let m34 = _1::mat34_identity;\n            let m44 = _2::mat4(m34);\n\n            return m44.determinant.i32 - 1;\n        }\n    "_fu } }, s_Options{}, testdiffs);
+    ZERO_a6MPmkBY(fu_VEC<fu_STR> { fu::slate<2, fu_STR> { "\n        struct _0 { x?: f32; y?: f32 };\n        fn maxc(using vec: _0) x > y ? x : y;\n    "_fu, "\n        <alt>\n        import _0;\n        fn main() _0.maxc.i32;\n        <alt/>\n        fn main() ::_0.maxc.i32;\n        </alt>\n    "_fu } }, s_Options{}, testdiffs);
+    ZERO_a6MPmkBY(fu_VEC<fu_STR> { fu::slate<2, fu_STR> { "\n        pub fn _0(i: i32) i + 1;\n    "_fu, "\n        fn main() (-1).::_0;\n    "_fu } }, s_Options{}, testdiffs);
+    ZERO_a6MPmkBY(fu_VEC<fu_STR> { fu::slate<2, fu_STR> { "\n        pub fn add(ref to: $T[], item: $T) {\n            for (mut i = 0; i < to.len; i++) {\n                if (to[i] >= item) {\n                    if (to[i] != item)\n                        to.insert(i, item);\n\n                    return;\n                }\n            }\n\n            to.push(item);\n        }\n    "_fu, "\n        fn main() {\n            mut x = [1, 2, 3];\n            x._0::add(3); if (x.len != 3) return 33;\n            x._0::add(4); return x.len - x[3];\n        }\n    "_fu } }, s_Options{}, testdiffs);
+    ZERO_a6MPmkBY(fu_VEC<fu_STR> { fu::slate<2, fu_STR> { "\n        pub let pad0 = 0; pub let pad1 = 1; pub let pad2 = 2; pub let pad3 = 3; pub let pad4 = 4; pub let pad5 = 5; pub let pad6 = 6; pub let pad7 = 7; pub let pad8 = 8; pub let pad9 = 9;\n        pub let PAD0 = 0; pub let PAD1 = 1; pub let PAD2 = 2; pub let PAD3 = 3; pub let PAD4 = 4; pub let PAD5 = 5; pub let PAD6 = 6; pub let PAD7 = 7; pub let PAD8 = 8; pub let PAD9 = 9;\n\n        pub let A = \"hello\";\n        pub let B = \"world\";\n    "_fu, "\n        import _0;\n        fn test(i: i32) {\n            let v = i & 1 ? A : B;\n            return v.len;\n        }\n\n        fn main() 0.test - 1.test;\n    "_fu } }, s_Options{}, testdiffs);
+    ZERO_a6MPmkBY(fu_VEC<fu_STR> { fu::slate<2, fu_STR> { "\n        pub fn clone(a: $T)\n        case ($T.is::copy) a;\n        case ($T -> $T) {\n            mut res: $T;\n            for (fieldname i: $T) res.i = a.i.clone();\n            return res;\n        }\n    "_fu, "\n        pub nocopy struct Scope { x: i32; };\n\n        pub struct ModuleOutputs {\n            deps: i32[];\n            scope: Scope;\n        };\n\n        pub fn test(a: ModuleOutputs) {\n            let b = a._0::clone();\n            return a.deps.len - b.deps.len;\n        }\n\n        pub fn main() test(ModuleOutputs);\n    "_fu } }, s_Options{}, testdiffs);
+    ZERO_a6MPmkBY(fu_VEC<fu_STR> { fu::slate<2, fu_STR> { "\n        // a private fn\n        fn createShader(src: string) = src;\n\n        // inits a public let\n        pub let GEOMETRY_PASS_TEST = createShader(\"source code\");\n    "_fu, "\n        pub fn main() _0::GEOMETRY_PASS_TEST.len - 11;\n    "_fu } }, s_Options{}, testdiffs);
+    ZERO_a6MPmkBY(fu_VEC<fu_STR> { fu::slate<2, fu_STR> { "\n        struct List {\n            vals: string[];\n        };\n\n        fn add(using ref _: List, val: string)\n            vals ~= val;\n\n        fn [](using _: List, val: string) {\n            mut count = 0;\n            for (mut i = 0; i < vals.len; i++)\n                if (vals[i] == val)\n                    count++;\n\n            return count;\n        }\n    "_fu, "\n        fn main() {\n            mut list: _0::List;\n            for (mut i = 0; i < 3; i++)\n                list.add(i & 1 ? \"a\" : \"b\");\n\n            return list[\"b\"] - 2;\n        }\n    "_fu } }, s_Options{}, testdiffs);
+    ZERO_a6MPmkBY(fu_VEC<fu_STR> { fu::slate<2, fu_STR> { "\n        struct Int { i: i32; };\n        fn -(a: Int) Int(-a.i);\n        fn +(a: Int, b: Int) Int(a.i + b.i);\n        fn +=(ref a: Int, b: Int) { a.i += b.i; return a; };\n        postfix fn ++(ref a: Int) { a.i++; };\n    "_fu, "\n        fn main() {\n            mut x: _0::Int = [ 1 ];\n            x += -(x + x);\n            x++;\n            return x.i;\n        }\n    "_fu } }, s_Options{}, testdiffs);
+    ZERO_a6MPmkBY(fu_VEC<fu_STR> { fu::slate<1, fu_STR> { "\n        fn private(x)           x * 3;              // Scope_import is broken,\n        pub fn public(y)        private(y) * 2;     //  doesnt always import privates.\n        <split/>\n        fn main()               1.public - 6;\n    "_fu } }, s_Options{}, testdiffs);
+    ZERO_a6MPmkBY(fu_VEC<fu_STR> { fu::slate<2, fu_STR> { "\n        fn private(x: i32)      x * 3;              // cg fail:\n        pub fn public(y)        private(y) * 2;     //  fn private hidden in first translation unit.\n    "_fu, "\n        fn main()               1._0::public - 6;\n    "_fu } }, s_Options{}, testdiffs);
+    ZERO_a6MPmkBY(fu_VEC<fu_STR> { fu::slate<2, fu_STR> { "\n        let OPTOKENS = \"{}[]()!?~@#$%^&*/-+<=>,.;:|\";   // nowadays problem is OPTOKENS cgs to static in first translation unit\n\n        pub fn lex(src) // <- template\n        {\n            let end = src.len;\n            mut idx = 0;\n\n            while (idx < end) {\n                let c = src[idx++];\n                if (OPTOKENS.has(c)) // <- originally, no OPTOKENS in scope ...\n                    return idx - 1;\n            }\n\n            return src.len;\n        }\n    "_fu, "\n        fn main() _0::lex(\"3 - 3\") - 2; // <- from here\n    "_fu } }, s_Options{}, testdiffs);
+    ZERO_a6MPmkBY(fu_VEC<fu_STR> { fu::slate<2, fu_STR> { "\n        pub fn pubbed(a: i32) a * 2;\n        <fail not_pubbed not defined><pass/>\n        pub                          </fail>\n        fn not_pubbed(b: i32) b * 3;\n    "_fu, "\n        fn main() 1._0::pubbed._0::not_pubbed - 6;\n    "_fu } }, s_Options{}, testdiffs);
+    ZERO_a6MPmkBY(fu_VEC<fu_STR> { fu::slate<2, fu_STR> { "\n        let SELF_TEST           = true;\n        let NODEIDX_signbits    = SELF_TEST && 4;\n        let NODEIDX_signmask    = (1 << NODEIDX_signbits) - 1;\n    "_fu, "\n        fn main() _0::NODEIDX_signmask - 15;\n    "_fu } }, s_Options{}, testdiffs);
     ZERO_0X4li7Vn("\n        let a = 1;\n        shadow let a = a + 1;\n        return a - 2;\n    "_fu, testdiffs);
     ZERO_0X4li7Vn("\n        inline fn outer() inner(); // <- this reset root-scope\n        inline fn inner() {\n            // <- so main::i was visible here\n            for (mut i = 0; i < 10; i++) return i;\n            return 1;\n        }\n        fn main() {\n            for (mut i = 0; i < 10; i++) return outer();\n            return 1;\n        }\n    "_fu, testdiffs);
     ZERO_0X4li7Vn("\n        pub struct Target { modid: i32; packed: u32; };\n\n        pub fn index(t: Target) i32(t.packed & 0x7fffffff);\n\n        pub fn local_eq(t: Target, index: i32, implicit modid: i32)\n            modid - t.modid || index - t.index;\n\n        fn main() {\n            let implicit modid = 1;\n            return local_eq(Target(1, 0x80000002), 7) - 5;\n        }\n    "_fu, testdiffs);
@@ -1439,8 +1439,8 @@ void runTests_n07RecyR()
     ZERO_0X4li7Vn("\n        fn sB(_: $T) struct { hey: $T; };\n\n        // Prep for the thing below.\n        fn test(x) x.hey - 1;\n\n        // 'a' must be callable.\n        type a = sB(i32);\n        fn main() a(1).test;\n    "_fu, testdiffs);
     ZERO_0X4li7Vn("\n        fn setupOperators(i: i32) {\n            struct BINOP { i: i32; };\n            return BINOP(:i);\n        }\n\n        fn main() setupOperators(0).i;\n    "_fu, testdiffs);
     ZERO_0X4li7Vn("\n        fn sB(_: $T) struct { hey: $T; };\n\n        fn setupOperators(i: i32) {\n            struct BINOP { i: sB(i32); };\n            mut s: sB(i32) = [ i ];\n            return BINOP(s);\n        }\n\n        fn main() setupOperators(0).i.hey;\n    "_fu, testdiffs);
-    ZERO_0ErTzBWG(fu_VEC<fu_STR> { fu::slate<2, fu_STR> { "\n        fn Hey = struct { i: i32 }; // fn Hey generated nonsense code\n        fn get(s: Hey) s.i;\n    "_fu, "\n        fn main() {\n            mut s: _0::Hey();\n            return s.get();\n        }\n    "_fu } }, s_Options{}, testdiffs);
-    ZERO_0ErTzBWG(fu_VEC<fu_STR> { fu::slate<2, fu_STR> { "\n        fn Hey(_: $T) = struct { i: $T };\n        fn get(s) s.i;\n    "_fu, "\n        fn main() {\n            mut s: _0::Hey(i32);\n            return s.get(); // get(): wasn't visible, the struct didnt remember its template origin module.\n        }\n    "_fu } }, s_Options{}, testdiffs);
+    ZERO_a6MPmkBY(fu_VEC<fu_STR> { fu::slate<2, fu_STR> { "\n        fn Hey = struct { i: i32 }; // fn Hey generated nonsense code\n        fn get(s: Hey) s.i;\n    "_fu, "\n        fn main() {\n            mut s: _0::Hey();\n            return s.get();\n        }\n    "_fu } }, s_Options{}, testdiffs);
+    ZERO_a6MPmkBY(fu_VEC<fu_STR> { fu::slate<2, fu_STR> { "\n        fn Hey(_: $T) = struct { i: $T };\n        fn get(s) s.i;\n    "_fu, "\n        fn main() {\n            mut s: _0::Hey(i32);\n            return s.get(); // get(): wasn't visible, the struct didnt remember its template origin module.\n        }\n    "_fu } }, s_Options{}, testdiffs);
     TODO_0X4li7Vn("\n        fn sB(_: $T) struct { hey: $T; };\n\n        // Pattern & partial spec, how?\n        fn test(x: sB($T)): $T = x.hey - 1;\n\n        type a = sB(i32);\n        fn main() a(1).test;\n    "_fu, testdiffs);
     TODO_0X4li7Vn("\n        fn setupOperators(i: i32) {\n            struct sB { hey: i32; }; // same as below\n            struct BINOP { i: sB; }; //  but no templates\n            return BINOP([ i ]);\n        }\n\n        fn main() setupOperators(0).i.hey;\n    "_fu, testdiffs);
     TODO_0X4li7Vn("\n        fn setupOperators(i: i32) {\n            fn sB(_: $T) struct { hey: $T; }; // same as above\n            struct BINOP { i: sB(i32); };     //  but template\n            return BINOP([ i ]);\n        }\n\n        fn main() setupOperators(0).i.hey;\n    "_fu, testdiffs);
@@ -1472,21 +1472,26 @@ void runTests_n07RecyR()
     TODO_0X4li7Vn("\n        struct Overload { items: string[]; };\n\n        // This is a bit borderline -\n        //  the problem here is that a: $T[] doesn't relax to a: [$T] (not during prep) -\n        //   so we don't match at all. Still, that's what's written -\n        //    perhaps regular fns are what doesn't behave correctly,\n        //     since their relax can create ambiguity?\n        //\n        fn last(a: $T[])                    a[a.len - 1];\n        fn arg_lets(overload: Overload)     overload.items[0, overload.items.len - 2];\n        fn test(overload: Overload)         overload.arg_lets.last.len;\n        fn main()                           Overload([ \"hello\", \"cruel\", \"world!\" ]).test - 5;\n    "_fu, testdiffs);
     ZERO_0X4li7Vn("\n        struct Helpers      { index: i32; };\n        struct HelpersData  { mask!: i16; };\n\n        let HM_Function     = 1.i16 << 3;\n        let HM_Struct       = 1.i16 << 5;\n\n        using inline fn GET(h: Helpers, implicit ref _helpers_data: HelpersData[]): HelpersData\n            _helpers_data[h.index];\n                                                            //////////////////\n        fn isFnOrType(h: Helpers): bool                     ;; EXPECT fu::view\n            !!(h.mask & (HM_Function | HM_Struct));         //////////////////\n\n        fn main() {\n            let implicit mut _helpers_data = [ HelpersData(mask: 0) ];\n            return Helpers(0).isFnOrType.i32;\n        }\n    "_fu, testdiffs);
     ZERO_0X4li7Vn("\n        struct Helpers      { index: i32; };\n        struct HelpersData  { mask!: i16; };\n\n        let HM_Function     = 1.i16 << 3;\n        let HM_Struct       = 1.i16 << 5;\n\n        fn main() {\n            let implicit mut _helpers_data = [ HelpersData(mask: 0) ];\n\n            using inline fn GET(h: Helpers): HelpersData\n                _helpers_data[h.index];\n                                                            //////////////////\n            fn isFnOrType(h: Helpers): bool                 ;; EXPECT fu::view\n                !!(h.mask & (HM_Function | HM_Struct));     //////////////////\n\n            return Helpers(0).isFnOrType.i32;\n        }\n    "_fu, testdiffs);
-    ZERO_0ErTzBWG(fu_VEC<fu_STR> { fu::slate<3, fu_STR> { "\n        pub fn ref(dest, item: $T, extras) {\n            for (mut i = 0; i < dest.len; i++) {\n                if (dest[i] >= item) {\n                    if (dest[i] != item) {\n                        dest.insert(i, item);\n                        extras.insert(i, []);\n                    }\n                    return extras[i];\n                }\n            }\n\n            dest.push(item);\n            extras.push([]);\n            return extras[extras.len - 1];\n        }\n    "_fu, "\n        fn Map(lax k: $K, lax v: $V) struct {\n            keys: $K[];\n            vals: $V[];\n        };\n\n        fn ref(using ref _, key)\n            _0::ref(\n                || keys, key,\n                || vals);\n    "_fu, "\n        fn main() {\n            mut _map: _1::Map(string, string);\n\n            fn upsert(k: string, v: string) _map._1::ref(k) = v;\n            upsert(\"hello\", \"world\");\n\n            // Relaxer failed here while I was trying to get rid of F_REFs from specTypes.\n            fn check(k: string) _map._1::ref(k) == \"world\" ? 0 : 1;\n            return check(\"hello\");\n        }\n    "_fu } }, s_Options{}, testdiffs);
+    ZERO_a6MPmkBY(fu_VEC<fu_STR> { fu::slate<3, fu_STR> { "\n        pub fn ref(dest, item: $T, extras) {\n            for (mut i = 0; i < dest.len; i++) {\n                if (dest[i] >= item) {\n                    if (dest[i] != item) {\n                        dest.insert(i, item);\n                        extras.insert(i, []);\n                    }\n                    return extras[i];\n                }\n            }\n\n            dest.push(item);\n            extras.push([]);\n            return extras[extras.len - 1];\n        }\n    "_fu, "\n        fn Map(lax k: $K, lax v: $V) struct {\n            keys: $K[];\n            vals: $V[];\n        };\n\n        fn ref(using ref _, key)\n            _0::ref(\n                || keys, key,\n                || vals);\n    "_fu, "\n        fn main() {\n            mut _map: _1::Map(string, string);\n\n            fn upsert(k: string, v: string) _map._1::ref(k) = v;\n            upsert(\"hello\", \"world\");\n\n            // Relaxer failed here while I was trying to get rid of F_REFs from specTypes.\n            fn check(k: string) _map._1::ref(k) == \"world\" ? 0 : 1;\n            return check(\"hello\");\n        }\n    "_fu } }, s_Options{}, testdiffs);
     TODO_0X4li7Vn("\n        fn useless_ref_lambda(ref sources: string[]) {\n            fn src = sources[sources.len / 2]; // didn't relax the ref, failed bck\n            return src[1, src.len] ~ src[0, 1];\n        }\n        fn main() {\n            mut sources = [ \"ab\" ];\n            return useless_ref_lambda(sources) == \"ba\" ? 0 : 1;\n        }\n    "_fu, testdiffs);
     TODO_0X4li7Vn("\n        struct Node { items: Node[]; };\n\n        pure fn rec_useless_ref(ref n: Node) {\n            mut ret = n.items.len;\n            for (mut i = 0; i < n.items.len; i++)\n                ret += rec_useless_ref(n.items[i]);\n\n            return ret;\n        }\n\n        fn main() {\n            mut tree = Node([ Node(), Node() ]);\n            return rec_useless_ref(tree) - 2;\n        }\n    "_fu, testdiffs);
-    ZERO_0ErTzBWG(fu_VEC<fu_STR> { fu::slate<3, fu_STR> { "\n        fn each(y<alt>: i32</alt>)\n            y & 1   ? y\n                    : y / 2 + each(y / 2);\n    "_fu, "\n        fn each(y<alt>: i32</alt>)\n            y & 1   ? y / 2\n                    : y / 2 + each(y / 2);\n    "_fu, "\n        fn main() {\n            let a = _0::each(100);\n            let b = _1::each(8);\n\n            return a+b - 107;\n        }\n    "_fu } }, s_Options{}, testdiffs);
-    ZERO_0ErTzBWG(fu_VEC<fu_STR> { fu::slate<3, fu_STR> { "\n        fn find(keys: $T[], item: $T) {\n            for (mut i = 0; i < keys.len; i++) {\n                if (keys[i] >= item) {\n                    if (keys[i] != item)\n                        return -1;\n\n                    return i;\n                }\n            }\n\n            return -1;\n        }\n    "_fu, "\n        fn Set(_: $K) struct { keys: $K[]; };\n\n        fn has(using _, key)\n            _0::find(keys, key) >= 0;\n    "_fu, "\n        fn use_Set(a: string) {\n            mut set: _1::Set(string);\n            set.keys ~= a;\n            return set._1::has(a);\n        }\n\n        fn dont_use_Set(a: string, b: string) {\n            mut keys: string[];\n            keys ~= b;\n            keys ~= a;\n            return keys.find(a);\n        }\n\n        fn main() {\n            if (!use_Set(\"a\"))\n                return -1;\n\n            return dont_use_Set(\"a\", \"b\") - 1;\n        }\n    "_fu } }, s_Options{}, testdiffs);
+    ZERO_0X4li7Vn("\n        fn last(s: $T[])\n            s.len ? s[s.len - 1] : throw(\"len == 0\");\n\n        struct Node { kind: string; items: Node[] }\n\n        pure fn check(ref node: Node)\n            node.kind != \"block\" ||\n            node.items.last.kind == \"return\";\n\n        fn main() {\n            mut node: Node;\n            return node.check ? 0 : 1;\n        }\n    "_fu, testdiffs);
+    ZERO_a6MPmkBY(fu_VEC<fu_STR> { fu::slate<3, fu_STR> { "\n        fn each(y<alt>: i32</alt>)\n            y & 1   ? y\n                    : y / 2 + each(y / 2);\n    "_fu, "\n        fn each(y<alt>: i32</alt>)\n            y & 1   ? y / 2\n                    : y / 2 + each(y / 2);\n    "_fu, "\n        fn main() {\n            let a = _0::each(100);\n            let b = _1::each(8);\n\n            return a+b - 107;\n        }\n    "_fu } }, s_Options{}, testdiffs);
+    ZERO_a6MPmkBY(fu_VEC<fu_STR> { fu::slate<3, fu_STR> { "\n        fn find(keys: $T[], item: $T) {\n            for (mut i = 0; i < keys.len; i++) {\n                if (keys[i] >= item) {\n                    if (keys[i] != item)\n                        return -1;\n\n                    return i;\n                }\n            }\n\n            return -1;\n        }\n    "_fu, "\n        fn Set(_: $K) struct { keys: $K[]; };\n\n        fn has(using _, key)\n            _0::find(keys, key) >= 0;\n    "_fu, "\n        fn use_Set(a: string) {\n            mut set: _1::Set(string);\n            set.keys ~= a;\n            return set._1::has(a);\n        }\n\n        fn dont_use_Set(a: string, b: string) {\n            mut keys: string[];\n            keys ~= b;\n            keys ~= a;\n            return keys.find(a);\n        }\n\n        fn main() {\n            if (!use_Set(\"a\"))\n                return -1;\n\n            return dont_use_Set(\"a\", \"b\") - 1;\n        }\n    "_fu } }, s_Options{}, testdiffs);
     ZERO_0X4li7Vn("\n        fn test(tokens: i32[]) {\n            mut lidx = 0;\n            mut sum  = 0;\n\n            fn token(idx: i32, col!: i32)       = sum += idx * col;\n            fn token(idx: i32)                  = token(:idx, col: lidx - idx);\n\n            for (mut i = 0; i < tokens.len; i++)\n                token(tokens[i]);\n\n            return sum;\n        }\n\n        fn main() [ 1 ].test + 1;\n    "_fu, testdiffs);
-    ZERO_0ErTzBWG(fu_VEC<fu_STR> { fu::slate<2, fu_STR> { "\n        fn sum_each(a, b, each)     a.each + b.each;\n\n        fn hello(x) {\n            if (x & 1) {\n                fn each(y) y    ? y * each(y - 1)\n                                : 100;\n\n                return sum_each(x, x, fn each);\n            }\n            else {\n                fn each(y) y    ? y * each(y - 1)\n                                : 10000;\n\n                return sum_each(x, x, fn each);\n            }\n        }\n    "_fu, "\n        fn each(y) y & 1    ? y\n                            : y / 2 + each(y / 2);\n\n        fn main() _0::hello(1) - 2 * each(100)\n                + _0::hello(2) - 2 * each(20000);\n    "_fu } }, s_Options{}, testdiffs);
-    TODO_YxitWGqo(fu_VEC<fu_STR> { fu::slate<2, fu_STR> { "\n        fn sum_each(a, b)       // Same as above,\n            a.each + b.each;    //  but we don't explicitly pass the fn each in.\n\n        fn hello(x) {\n            if (x & 1) {\n                fn each(a) a    ? a * each(a - 1)   // These get ignored?\n                                : 100;              //  sum_each goes and selects the one from _1.\n\n                return sum_each(x, x);\n            }\n            else {\n                fn each(b) b    ? b * each(b - 1)\n                                : 10000;\n\n                return sum_each(x, x);\n            }\n        }\n    "_fu, "\n        fn each(c) c & 1    ? c\n                            : c / 2 + each(c / 2);\n\n        fn main() _0::hello(1) - 2 * each(100)\n                + _0::hello(2) - 2 * each(20000);\n    "_fu } }, testdiffs);
+    ZERO_a6MPmkBY(fu_VEC<fu_STR> { fu::slate<2, fu_STR> { "\n        fn sum_each(a, b, each)     a.each + b.each;\n\n        fn hello(x) {\n            if (x & 1) {\n                fn each(y) y    ? y * each(y - 1)\n                                : 100;\n\n                return sum_each(x, x, fn each);\n            }\n            else {\n                fn each(y) y    ? y * each(y - 1)\n                                : 10000;\n\n                return sum_each(x, x, fn each);\n            }\n        }\n    "_fu, "\n        fn each(y) y & 1    ? y\n                            : y / 2 + each(y / 2);\n\n        fn main() _0::hello(1) - 2 * each(100)\n                + _0::hello(2) - 2 * each(20000);\n    "_fu } }, s_Options{}, testdiffs);
+    TODO_gbRYYHIW(fu_VEC<fu_STR> { fu::slate<2, fu_STR> { "\n        fn sum_each(a, b)       // Same as above,\n            a.each + b.each;    //  but we don't explicitly pass the fn each in.\n\n        fn hello(x) {\n            if (x & 1) {\n                fn each(a) a    ? a * each(a - 1)   // These get ignored?\n                                : 100;              //  sum_each goes and selects the one from _1.\n\n                return sum_each(x, x);\n            }\n            else {\n                fn each(b) b    ? b * each(b - 1)\n                                : 10000;\n\n                return sum_each(x, x);\n            }\n        }\n    "_fu, "\n        fn each(c) c & 1    ? c\n                            : c / 2 + each(c / 2);\n\n        fn main() _0::hello(1) - 2 * each(100)\n                + _0::hello(2) - 2 * each(20000);\n    "_fu } }, testdiffs);
     ZERO_0X4li7Vn("\n        fn a        = \"aaa\";\n        fn shorter  = \"bb\";\n        fn greater  = \"aac\";\n\n        return a <> shorter == +1\n            && a <> greater == -1 ? 0 : 101;\n    "_fu, testdiffs);
+    ZERO_a6MPmkBY(fu_VEC<fu_STR> { fu::slate<2, fu_STR> { "\n        fn &(a, b) {\n            mut res = a;\n            for (fieldname i: $a) res.i &= b.i;\n            return res;\n        }\n\n        struct XY  { x: i32; y: i32 };\n        struct UVW { u: i32; v: i32; w: i32 };\n    "_fu, "\n        import _0;\n\n        fn main() {\n            mut xy  =  XY(1, 2)    &  XY(2, 3);\n            mut uvw = UVW(1, 2, 3) & UVW(2, 3, 4);\n            return xy.y - uvw.v;\n        }\n    "_fu } }, s_Options{}, testdiffs);
+    ZERO_0X4li7Vn("\n        compiler emit(\"\n            void ccIncrX2(int& a, int b) {\n                a += b * 2;\n            }\n        \");\n\n        fn main() {\n            mut a = 0;\n            compiler emit(\"ccIncrX2(\", a, \", 5);\");\n            return a - 10;\n        }\n    "_fu, testdiffs);
     TODO_0X4li7Vn("\n        fn apply(num: i32, func: fn (i32): i32) = func(num);\n        fn main()                               = apply([1], |i| i - 1);\n    "_fu, testdiffs);
     TODO_0X4li7Vn("\n        fn desc(a: i32, b: i32) b < a;\n\n        fn main() {\n            mut vals = [ 1, 2 ];\n            vals.sort(fn desc);\n            return vals[0] - 2;\n        }\n    "_fu, testdiffs);
     TODO_0X4li7Vn("\n        fn main() {\n            mut vals = [ 1, 2 ];\n            vals.sort(|a: i32, b: i32| b < a);\n            return vals[0] - 2;\n        }\n    "_fu, testdiffs);
     TODO_0X4li7Vn("\n        fn main() {\n            mut vals = [ 1, 2 ];\n            vals.sort(|a, b| b < a);\n            return vals[0] - 2;\n        }\n    "_fu, testdiffs);
     TODO_0X4li7Vn("\n        fn test(ref vals: i32[], xor: i32)\n            vals.sort(\n                |a: i32, b: i32|\n                    a^xor < b^xor);\n\n        fn main() {\n            mut vals = [ 1, 2 ];\n            vals.test(xor: 3); // xor:3 descs 1 and 2.\n            return vals[0] - 2;\n        }\n    "_fu, testdiffs);
-    TODO_0X4li7Vn("\n        fn test(ref aa: i32[], bb: i32[])\n            for (ref a, b in aa, bb) a += b;\n        /*\n            Technically the same as:\n            for (aa, bb, |ref a, b| a += b);\n        */\n\n        fn main() {\n            mut aa = [ 1, 2, 3 ];\n            test(aa, [ 10, 20, 30 ]);\n            return aa[1] - 22;\n        }\n    "_fu, testdiffs);
+    ZERO_0X4li7Vn("\n        fn main() {\n            mut arr = [ 1, 2, 3, 4 ];\n\n            arr.par::each: |it| it *= 2;\n\n            mut sum = 0;\n            for (mut i = 0; i < arr.len; i++)\n                sum += arr[i];\n\n            return sum - 2 - 4 - 6 - 8;\n        }\n    "_fu, testdiffs);
+    ZERO_0X4li7Vn("\n        fn seq__each(a: [$T], fn)\n            for (mut i = 0; i < a.len; i++)\n                fn(a[i]);\n\n        fn main() {\n            mut arr = [ 1, 2, 3, 4 ];\n            mut sum = 0;\n\n            <fail purectx writes to implicit sum>\n            arr.par::each: |it| <pass/>\n            arr.seq__each: |it| </fail>\n                sum += it *= 2;\n\n            return sum - 2 - 4 - 6 - 8;\n        }\n    "_fu, testdiffs);
+    ZERO_0X4li7Vn("\n        fn seq__each(a: [$T], fn)\n            for (mut i = 0; i < a.len; i++)\n                fn(a[i]);\n\n        fn main() {\n            mut arr = [ 1, 2, 3, 4 ];\n\n            <fail noflow non local control flow>\n            arr.par::each: |it| <pass/>\n            arr.seq__each: |it| </fail>\n                if ((it *= 2) > 4)\n                    break;\n\n            mut sum = 0;\n            for (mut i = 0; i < arr.len; i++)\n                sum += arr[i];\n\n            return sum - 2 - 4 - 6 - 4/*unchanged after break*/;\n        }\n    "_fu, testdiffs);
     TODO_0X4li7Vn("\n        primitive s32: i32;\n\n        fn main() {\n            let i: s32 = 0;\n            <fail return type annot>\n            return i;        <pass/>\n            return i.i32;    </fail>\n        }\n    "_fu, testdiffs);
     TODO_0X4li7Vn("\n        enum E { None };\n\n        fn main() {\n            let e = None;\n            <fail return type annot>\n            return e;        <pass/>\n            return e.i32;    </fail>\n        }\n    "_fu, testdiffs);
 }

@@ -16,7 +16,7 @@ struct s_Extended;
 struct s_Helpers;
 struct s_LexerOutput;
 struct s_Lifetime;
-struct s_Map_EmVtl5Qe;
+struct s_Map_JBAFFW0D;
 struct s_Module;
 struct s_ModuleInputs;
 struct s_ModuleOutputs;
@@ -33,7 +33,6 @@ struct s_ScopeMemo;
 struct s_ScopeSkip;
 struct s_ScopeSkipMemos;
 struct s_SolvedNode;
-struct s_SolvedNodeData;
 struct s_SolverOutput;
 struct s_Struct;
 struct s_Target;
@@ -213,15 +212,15 @@ struct s_Struct
 };
                                 #endif
 
-                                #ifndef DEF_s_SolvedNode
-                                #define DEF_s_SolvedNode
-struct s_SolvedNode
+                                #ifndef DEF_s_Helpers
+                                #define DEF_s_Helpers
+struct s_Helpers
 {
-    int signedidx;
+    int index;
     explicit operator bool() const noexcept
     {
         return false
-            || signedidx
+            || index
         ;
     }
 };
@@ -287,12 +286,59 @@ struct s_Type
 };
                                 #endif
 
+                                #ifndef DEF_s_RWRanges
+                                #define DEF_s_RWRanges
+struct s_RWRanges
+{
+    int reads0;
+    int reads1;
+    int writes0;
+    int writes1;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || reads0
+            || reads1
+            || writes0
+            || writes1
+        ;
+    }
+};
+                                #endif
+
+                                #ifndef DEF_s_SolvedNode
+                                #define DEF_s_SolvedNode
+struct s_SolvedNode
+{
+    fu_STR kind;
+    s_Helpers helpers;
+    int flags;
+    fu_STR value;
+    fu_VEC<s_SolvedNode> items;
+    s_TokenIdx token;
+    s_Type type;
+    s_Target target;
+    s_RWRanges rwr;
+    s_SolvedNode(const s_SolvedNode&) = default;
+    s_SolvedNode(s_SolvedNode&&) = default;
+    s_SolvedNode& operator=(s_SolvedNode&&) = default;
+    s_SolvedNode& operator=(const s_SolvedNode& selfrec) { return *this = s_SolvedNode(selfrec); }
+    explicit operator bool() const noexcept
+    {
+        return false
+            || kind
+        ;
+    }
+};
+                                #endif
+
                                 #ifndef DEF_s_Overload
                                 #define DEF_s_Overload
 struct s_Overload
 {
     fu_STR kind;
     fu_STR name;
+    fu_STR sighash;
     s_Type type;
     int flags;
     unsigned status;
@@ -433,62 +479,6 @@ struct s_Template
 };
                                 #endif
 
-                                #ifndef DEF_s_Helpers
-                                #define DEF_s_Helpers
-struct s_Helpers
-{
-    int index;
-    explicit operator bool() const noexcept
-    {
-        return false
-            || index
-        ;
-    }
-};
-                                #endif
-
-                                #ifndef DEF_s_RWRanges
-                                #define DEF_s_RWRanges
-struct s_RWRanges
-{
-    int reads0;
-    int reads1;
-    int writes0;
-    int writes1;
-    explicit operator bool() const noexcept
-    {
-        return false
-            || reads0
-            || reads1
-            || writes0
-            || writes1
-        ;
-    }
-};
-                                #endif
-
-                                #ifndef DEF_s_SolvedNodeData
-                                #define DEF_s_SolvedNodeData
-struct s_SolvedNodeData
-{
-    fu_STR kind;
-    s_Helpers helpers;
-    int flags;
-    fu_STR value;
-    fu_VEC<s_SolvedNode> items;
-    s_TokenIdx token;
-    s_Type type;
-    s_Target target;
-    s_RWRanges rwr;
-    explicit operator bool() const noexcept
-    {
-        return false
-            || kind
-        ;
-    }
-};
-                                #endif
-
                                 #ifndef DEF_s_Extended
                                 #define DEF_s_Extended
 struct s_Extended
@@ -500,7 +490,6 @@ struct s_Extended
     fu_VEC<s_Argument> args;
     s_Target spec_of;
     s_Template tEmplate;
-    fu_VEC<s_SolvedNodeData> nodes;
     fu_VEC<s_Overload> locals;
     fu_VEC<s_ScopeItem> extra_items;
     fu_VEC<int> callers;
@@ -514,7 +503,6 @@ struct s_Extended
             || args
             || spec_of
             || tEmplate
-            || nodes
             || locals
             || extra_items
             || callers
@@ -586,10 +574,16 @@ struct s_SolverOutput
 struct s_CodegenOutput
 {
     fu_STR src;
+    fu_VEC<fu_STR> link;
+    fu_VEC<fu_STR> include_dirs;
+    fu_VEC<fu_STR> extra_sources;
     explicit operator bool() const noexcept
     {
         return false
             || src
+            || link
+            || include_dirs
+            || extra_sources
         ;
     }
 };
@@ -685,9 +679,9 @@ struct s_Module
 };
                                 #endif
 
-                                #ifndef DEF_s_Map_EmVtl5Qe
-                                #define DEF_s_Map_EmVtl5Qe
-struct s_Map_EmVtl5Qe
+                                #ifndef DEF_s_Map_JBAFFW0D
+                                #define DEF_s_Map_JBAFFW0D
+struct s_Map_JBAFFW0D
 {
     fu_VEC<fu_STR> keys;
     fu_VEC<fu_STR> vals;
@@ -706,8 +700,8 @@ struct s_Map_EmVtl5Qe
 struct s_Context
 {
     fu_VEC<s_Module> modules;
-    s_Map_EmVtl5Qe files;
-    s_Map_EmVtl5Qe fuzzy;
+    s_Map_JBAFFW0D files;
+    s_Map_JBAFFW0D fuzzy;
     s_Context(const s_Context&) = delete;
     s_Context(s_Context&&) = default;
     s_Context& operator=(const s_Context&) = delete;
@@ -725,8 +719,8 @@ struct s_Context
 
 #ifndef FU_NO_FDEFs
 
-                                #ifndef DEFt_x7E
-                                #define DEFt_x7E
+                                #ifndef DEFt_x7E_KclJlPSOsdf
+                                #define DEFt_x7E_KclJlPSOsdf
 inline fu_STR x7E(fu::view<char> a, fu::view<char> b)
 {
     return a + b;

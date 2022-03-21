@@ -33,7 +33,6 @@ struct s_ScopeMemo;
 struct s_ScopeSkip;
 struct s_ScopeSkipMemos;
 struct s_SolvedNode;
-struct s_SolvedNodeData;
 struct s_SolverOutput;
 struct s_Struct;
 struct s_Target;
@@ -210,15 +209,15 @@ struct s_Struct
 };
                                 #endif
 
-                                #ifndef DEF_s_SolvedNode
-                                #define DEF_s_SolvedNode
-struct s_SolvedNode
+                                #ifndef DEF_s_Helpers
+                                #define DEF_s_Helpers
+struct s_Helpers
 {
-    int signedidx;
+    int index;
     explicit operator bool() const noexcept
     {
         return false
-            || signedidx
+            || index
         ;
     }
 };
@@ -284,12 +283,59 @@ struct s_Type
 };
                                 #endif
 
+                                #ifndef DEF_s_RWRanges
+                                #define DEF_s_RWRanges
+struct s_RWRanges
+{
+    int reads0;
+    int reads1;
+    int writes0;
+    int writes1;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || reads0
+            || reads1
+            || writes0
+            || writes1
+        ;
+    }
+};
+                                #endif
+
+                                #ifndef DEF_s_SolvedNode
+                                #define DEF_s_SolvedNode
+struct s_SolvedNode
+{
+    fu_STR kind;
+    s_Helpers helpers;
+    int flags;
+    fu_STR value;
+    fu_VEC<s_SolvedNode> items;
+    s_TokenIdx token;
+    s_Type type;
+    s_Target target;
+    s_RWRanges rwr;
+    s_SolvedNode(const s_SolvedNode&) = default;
+    s_SolvedNode(s_SolvedNode&&) = default;
+    s_SolvedNode& operator=(s_SolvedNode&&) = default;
+    s_SolvedNode& operator=(const s_SolvedNode& selfrec) { return *this = s_SolvedNode(selfrec); }
+    explicit operator bool() const noexcept
+    {
+        return false
+            || kind
+        ;
+    }
+};
+                                #endif
+
                                 #ifndef DEF_s_Overload
                                 #define DEF_s_Overload
 struct s_Overload
 {
     fu_STR kind;
     fu_STR name;
+    fu_STR sighash;
     s_Type type;
     int flags;
     unsigned status;
@@ -430,62 +476,6 @@ struct s_Template
 };
                                 #endif
 
-                                #ifndef DEF_s_Helpers
-                                #define DEF_s_Helpers
-struct s_Helpers
-{
-    int index;
-    explicit operator bool() const noexcept
-    {
-        return false
-            || index
-        ;
-    }
-};
-                                #endif
-
-                                #ifndef DEF_s_RWRanges
-                                #define DEF_s_RWRanges
-struct s_RWRanges
-{
-    int reads0;
-    int reads1;
-    int writes0;
-    int writes1;
-    explicit operator bool() const noexcept
-    {
-        return false
-            || reads0
-            || reads1
-            || writes0
-            || writes1
-        ;
-    }
-};
-                                #endif
-
-                                #ifndef DEF_s_SolvedNodeData
-                                #define DEF_s_SolvedNodeData
-struct s_SolvedNodeData
-{
-    fu_STR kind;
-    s_Helpers helpers;
-    int flags;
-    fu_STR value;
-    fu_VEC<s_SolvedNode> items;
-    s_TokenIdx token;
-    s_Type type;
-    s_Target target;
-    s_RWRanges rwr;
-    explicit operator bool() const noexcept
-    {
-        return false
-            || kind
-        ;
-    }
-};
-                                #endif
-
                                 #ifndef DEF_s_Extended
                                 #define DEF_s_Extended
 struct s_Extended
@@ -497,7 +487,6 @@ struct s_Extended
     fu_VEC<s_Argument> args;
     s_Target spec_of;
     s_Template tEmplate;
-    fu_VEC<s_SolvedNodeData> nodes;
     fu_VEC<s_Overload> locals;
     fu_VEC<s_ScopeItem> extra_items;
     fu_VEC<int> callers;
@@ -511,7 +500,6 @@ struct s_Extended
             || args
             || spec_of
             || tEmplate
-            || nodes
             || locals
             || extra_items
             || callers
@@ -583,10 +571,16 @@ struct s_SolverOutput
 struct s_CodegenOutput
 {
     fu_STR src;
+    fu_VEC<fu_STR> link;
+    fu_VEC<fu_STR> include_dirs;
+    fu_VEC<fu_STR> extra_sources;
     explicit operator bool() const noexcept
     {
         return false
             || src
+            || link
+            || include_dirs
+            || extra_sources
         ;
     }
 };
@@ -759,12 +753,12 @@ extern const short HM_LabelUsed = short((short(1) << short(6)));
 extern const short HM_KeepBlock = short((short(1) << short(7)));
                                 #endif
 
-s_Target target_wh65lsPu(const s_ScopeItem& si)
+s_Target target_e3eS1o6f(const s_ScopeItem& si)
 {
     return s_Target { int(si.modid), int((si.packed & ~(0x1u << 31u))) };
 }
 
-bool ScopeItem_shadows_wh65lsPu(const s_ScopeItem& si)
+bool ScopeItem_shadows_e3eS1o6f(const s_ScopeItem& si)
 {
     return !!(si.packed & (0x1u << 31u));
 }
@@ -774,7 +768,7 @@ s_ScopeItem ScopeItem_52GMMWwq(const fu_STR& id, const s_Target& target, const b
     return s_ScopeItem { fu_STR(id), int(target.modid), (unsigned(target.index) | (shadows ? (0x1u << 31u) : unsigned{})) };
 }
 
-s_ScopeItem& target_TODOFIX_b9qBLn1Z(s_ScopeItem& si, const s_Target& target)
+s_ScopeItem& target_TODOFIX_MVBFLiMx(s_ScopeItem& si, const s_Target& target)
 {
     si.modid = target.modid;
     si.packed = unsigned(target.index);
@@ -817,7 +811,7 @@ s_Type initStruct_afXwHDbN(const fu_STR& name, const int flags, const bool SELF_
     return s_Type { s_ValueType { int(specualtive_quals), fu_STR(canon) }, s_Lifetime{} };
 }
 
-s_Type despeculateStruct_CPSh38G1(/*MOV*/ s_Type&& type)
+s_Type despeculateStruct_c5L0jVYk(/*MOV*/ s_Type&& type)
 {
     type.vtype.quals &= ~q_rx_copy;
     return static_cast<s_Type&&>(type);
@@ -828,7 +822,7 @@ s_Type despeculateStruct_CPSh38G1(/*MOV*/ s_Type&& type)
 inline constexpr int F_PUB = (1 << 20);
                                 #endif
 
-s_Scope Scope_exports_3xUYpXMb(const s_Scope& scope, const int modid, const fu_VEC<s_ScopeItem>& field_items)
+s_Scope Scope_exports_lbD2qaob(const s_Scope& scope, const int modid, const fu_VEC<s_ScopeItem>& field_items)
 {
     fu_VEC<s_ScopeItem> items { field_items };
     fu_VEC<s_ScopeItem> prv_items {};
@@ -837,9 +831,9 @@ s_Scope Scope_exports_3xUYpXMb(const s_Scope& scope, const int modid, const fu_V
     for (int i = 0; i < scope.items.size(); i++)
     {
         const s_ScopeItem& item = scope.items[i];
-        if (target_wh65lsPu(item).modid == modid)
+        if (target_e3eS1o6f(item).modid == modid)
         {
-            const s_Overload& overload = scope.overloads[(target_wh65lsPu(item).index - 1)];
+            const s_Overload& overload = scope.overloads[(target_e3eS1o6f(item).index - 1)];
             ((overload.flags & F_PUB) ? items : prv_items) += s_ScopeItem(item);
         };
     };
@@ -880,7 +874,7 @@ static void nextSkip_3evJgP9V(fu::view<s_ScopeSkip> scope_skip, int& scope_itera
 
 }
 
-s_Target search_P1VobFQ5(fu::view<s_ScopeItem> items, const fu_STR& id, int& scope_iterator, fu::view<s_ScopeSkip> scope_skip, bool& shadows, const s_Target& dont_search_just_return, fu::view<s_Target> extra_items, fu::view<s_ScopeItem> field_items)
+s_Target search_qV63L7fS(fu::view<s_ScopeItem> items, const fu_STR& id, int& scope_iterator, fu::view<s_ScopeSkip> scope_skip, bool& shadows, const s_Target& dont_search_just_return, fu::view<s_Target> extra_items, fu::view<s_ScopeItem> field_items)
 {
     if (dont_search_just_return)
     {
@@ -909,25 +903,25 @@ s_Target search_P1VobFQ5(fu::view<s_ScopeItem> items, const fu_STR& id, int& sco
         if (scope_iterator == skiptrap)
             nextSkip_3evJgP9V(scope_skip, scope_iterator, skiptrap, items);
 
-        const s_ScopeItem& item = ((scope_iterator >= items.size()) ? ((scope_iterator >= (items.size() + extra_items.size())) ? field_items[((scope_iterator - items.size()) - extra_items.size())] : target_TODOFIX_b9qBLn1Z(TODO_FIX, extra_items[(scope_iterator - items.size())])) : items[scope_iterator]);
+        const s_ScopeItem& item = ((scope_iterator >= items.size()) ? ((scope_iterator >= (items.size() + extra_items.size())) ? field_items[((scope_iterator - items.size()) - extra_items.size())] : target_TODOFIX_MVBFLiMx(TODO_FIX, extra_items[(scope_iterator - items.size())])) : items[scope_iterator]);
         if (item.id == id)
         {
             if (!scope_iterator)
                 scope_iterator = -1;
 
-            shadows = ScopeItem_shadows_wh65lsPu(item);
-            return target_wh65lsPu(item);
+            shadows = ScopeItem_shadows_e3eS1o6f(item);
+            return target_e3eS1o6f(item);
         };
     };
     return s_Target{};
 }
 
-s_ScopeMemo Scope_snap_WgJlFXyy(const s_Scope& scope, fu::view<s_Helpers> _helpers)
+s_ScopeMemo Scope_snap_xL8BbLPe(const s_Scope& scope, fu::view<s_Helpers> _helpers)
 {
     return s_ScopeMemo { scope.items.size(), scope.implicits.size(), scope.imports.size(), scope.privates.size(), scope.usings.size(), scope.converts.size(), _helpers.size() };
 }
 
-void Scope_pop_pJmZr7lr(s_Scope& scope, const s_ScopeMemo& memo, fu_VEC<s_Helpers>& _helpers)
+void Scope_pop_GvGeMzm4(s_Scope& scope, const s_ScopeMemo& memo, fu_VEC<s_Helpers>& _helpers)
 {
     scope.items.shrink(memo.items_len);
     scope.implicits.shrink(memo.implicits_len);
@@ -938,7 +932,7 @@ void Scope_pop_pJmZr7lr(s_Scope& scope, const s_ScopeMemo& memo, fu_VEC<s_Helper
     _helpers.shrink(memo.helpers_len);
 }
 
-int cmp_dl5ghMes(const s_ScopeMemo& a, const s_ScopeMemo& b)
+int cmp_x94nMfq3(const s_ScopeMemo& a, const s_ScopeMemo& b)
 {
     int _0 {};
     return (_0 = (a.items_len - b.items_len)) ? _0 : (_0 = (a.implicits_len - b.implicits_len)) ? _0 : (_0 = (a.imports_len - b.imports_len)) ? _0 : (_0 = (a.privates_len - b.privates_len)) ? _0 : (_0 = (a.usings_len - b.usings_len)) ? _0 : (_0 = (a.converts_len - b.converts_len)) ? _0 : (a.helpers_len - b.helpers_len);
@@ -946,22 +940,22 @@ int cmp_dl5ghMes(const s_ScopeMemo& a, const s_ScopeMemo& b)
 
 bool operator>(const s_ScopeMemo& a, const s_ScopeMemo& b)
 {
-    return cmp_dl5ghMes(a, b) > 0;
+    return cmp_x94nMfq3(a, b) > 0;
 }
 
 bool operator<(const s_ScopeMemo& a, const s_ScopeMemo& b)
 {
-    return cmp_dl5ghMes(a, b) < 0;
+    return cmp_x94nMfq3(a, b) < 0;
 }
 
 bool operator==(const s_ScopeMemo& a, const s_ScopeMemo& b)
 {
-    return cmp_dl5ghMes(a, b) == 0;
+    return cmp_x94nMfq3(a, b) == 0;
 }
 
-                                #ifndef DEFt_grow_if_oob_h4z4Xr0k
-                                #define DEFt_grow_if_oob_h4z4Xr0k
-inline s_Extended& grow_if_oob_h4z4Xr0k(fu_VEC<s_Extended>& a, const int i)
+                                #ifndef DEFt_grow_if_oob_5lGz9ZEs
+                                #define DEFt_grow_if_oob_5lGz9ZEs
+inline s_Extended& grow_if_oob_5lGz9ZEs(fu_VEC<s_Extended>& a, const int i)
 {
     if ((a.size() <= i))
         a.grow((i + 1));
@@ -970,9 +964,9 @@ inline s_Extended& grow_if_oob_h4z4Xr0k(fu_VEC<s_Extended>& a, const int i)
 }
                                 #endif
 
-s_Target Scope_create_y5D8w502(s_Scope& scope, const fu_STR& kind, const fu_STR& name, const s_Type& type, const int flags, const unsigned status, const int nest, const s_Module& module)
+s_Target Scope_create_ogkrG8By(s_Scope& scope, const fu_STR& kind, const fu_STR& name, const s_Type& type, const int flags, const unsigned status, const int nest, const s_Module& module)
 {
-    fu_VEC<s_Overload>& overloads = (nest ? grow_if_oob_h4z4Xr0k(scope.extended, nest).locals : scope.overloads);
+    fu_VEC<s_Overload>& overloads = (nest ? grow_if_oob_5lGz9ZEs(scope.extended, nest).locals : scope.overloads);
     /*MOV*/ const s_Target target = s_Target { (nest ? -nest : int(MODID_6iVz8n7c(module))), (overloads.size() + 1) };
     s_Overload item {};
     item.name = name;
@@ -984,14 +978,14 @@ s_Target Scope_create_y5D8w502(s_Scope& scope, const fu_STR& kind, const fu_STR&
     return /*NRVO*/ target;
 }
 
-void Scope_set_2MWrvrAm(fu_VEC<s_ScopeItem>& items, const fu_STR& id, const s_Target& target, const bool shadows)
+void Scope_set_dXgzwdCQ(fu_VEC<s_ScopeItem>& items, const fu_STR& id, const s_Target& target, const bool shadows)
 {
     items.push(ScopeItem_52GMMWwq(id, target, shadows));
 }
 
-void Scope_set_ljfk0DdH(s_Scope& scope, const fu_STR& id, const s_Target& target, const bool shadows)
+void Scope_set_CN2X3aNb(s_Scope& scope, const fu_STR& id, const s_Target& target, const bool shadows)
 {
-    Scope_set_2MWrvrAm(scope.items, id, target, shadows);
+    Scope_set_dXgzwdCQ(scope.items, id, target, shadows);
 }
 
                                 #ifndef DEF_F_SHADOW
@@ -999,11 +993,11 @@ void Scope_set_ljfk0DdH(s_Scope& scope, const fu_STR& id, const s_Target& target
 inline constexpr int F_SHADOW = (1 << 23);
                                 #endif
 
-s_Target Scope_Typedef_c000CgrR(s_Scope& scope, const fu_STR& id, const s_Type& type, const int flags, const fu_STR& name, const unsigned status, const s_Module& module)
+s_Target Scope_Typedef_CUDLzI5V(s_Scope& scope, const fu_STR& id, const s_Type& type, const int flags, const fu_STR& name, const unsigned status, const s_Module& module)
 {
-    /*MOV*/ const s_Target target = Scope_create_y5D8w502(scope, "type"_fu, name, type, flags, status, 0, module);
+    /*MOV*/ const s_Target target = Scope_create_ogkrG8By(scope, "type"_fu, name, type, flags, status, 0, module);
     if (id)
-        Scope_set_ljfk0DdH(scope, id, target, !!(flags & F_SHADOW));
+        Scope_set_CN2X3aNb(scope, id, target, !!(flags & F_SHADOW));
 
     return /*NRVO*/ target;
 }
@@ -1081,20 +1075,20 @@ extern const s_Type t_never;
 s_Scope listGlobals_6iVz8n7c(const s_Module& module)
 {
     /*MOV*/ s_Scope scope {};
-    Scope_Typedef_c000CgrR(scope, "i8"_fu, t_i8, F_PUB, (*(const fu_STR*)fu::NIL), 0u, module);
-    Scope_Typedef_c000CgrR(scope, "i16"_fu, t_i16, F_PUB, (*(const fu_STR*)fu::NIL), 0u, module);
-    Scope_Typedef_c000CgrR(scope, "i32"_fu, t_i32, F_PUB, (*(const fu_STR*)fu::NIL), 0u, module);
-    Scope_Typedef_c000CgrR(scope, "i64"_fu, t_i64, F_PUB, (*(const fu_STR*)fu::NIL), 0u, module);
-    Scope_Typedef_c000CgrR(scope, "u8"_fu, t_u8, F_PUB, (*(const fu_STR*)fu::NIL), 0u, module);
-    Scope_Typedef_c000CgrR(scope, "u16"_fu, t_u16, F_PUB, (*(const fu_STR*)fu::NIL), 0u, module);
-    Scope_Typedef_c000CgrR(scope, "u32"_fu, t_u32, F_PUB, (*(const fu_STR*)fu::NIL), 0u, module);
-    Scope_Typedef_c000CgrR(scope, "u64"_fu, t_u64, F_PUB, (*(const fu_STR*)fu::NIL), 0u, module);
-    Scope_Typedef_c000CgrR(scope, "f32"_fu, t_f32, F_PUB, (*(const fu_STR*)fu::NIL), 0u, module);
-    Scope_Typedef_c000CgrR(scope, "f64"_fu, t_f64, F_PUB, (*(const fu_STR*)fu::NIL), 0u, module);
-    Scope_Typedef_c000CgrR(scope, "bool"_fu, t_bool, F_PUB, (*(const fu_STR*)fu::NIL), 0u, module);
-    Scope_Typedef_c000CgrR(scope, "byte"_fu, t_byte, F_PUB, (*(const fu_STR*)fu::NIL), 0u, module);
-    Scope_Typedef_c000CgrR(scope, "void"_fu, t_void, F_PUB, (*(const fu_STR*)fu::NIL), 0u, module);
-    Scope_Typedef_c000CgrR(scope, "never"_fu, t_never, F_PUB, (*(const fu_STR*)fu::NIL), 0u, module);
+    Scope_Typedef_CUDLzI5V(scope, "i8"_fu, t_i8, F_PUB, (*(const fu_STR*)fu::NIL), 0u, module);
+    Scope_Typedef_CUDLzI5V(scope, "i16"_fu, t_i16, F_PUB, (*(const fu_STR*)fu::NIL), 0u, module);
+    Scope_Typedef_CUDLzI5V(scope, "i32"_fu, t_i32, F_PUB, (*(const fu_STR*)fu::NIL), 0u, module);
+    Scope_Typedef_CUDLzI5V(scope, "i64"_fu, t_i64, F_PUB, (*(const fu_STR*)fu::NIL), 0u, module);
+    Scope_Typedef_CUDLzI5V(scope, "u8"_fu, t_u8, F_PUB, (*(const fu_STR*)fu::NIL), 0u, module);
+    Scope_Typedef_CUDLzI5V(scope, "u16"_fu, t_u16, F_PUB, (*(const fu_STR*)fu::NIL), 0u, module);
+    Scope_Typedef_CUDLzI5V(scope, "u32"_fu, t_u32, F_PUB, (*(const fu_STR*)fu::NIL), 0u, module);
+    Scope_Typedef_CUDLzI5V(scope, "u64"_fu, t_u64, F_PUB, (*(const fu_STR*)fu::NIL), 0u, module);
+    Scope_Typedef_CUDLzI5V(scope, "f32"_fu, t_f32, F_PUB, (*(const fu_STR*)fu::NIL), 0u, module);
+    Scope_Typedef_CUDLzI5V(scope, "f64"_fu, t_f64, F_PUB, (*(const fu_STR*)fu::NIL), 0u, module);
+    Scope_Typedef_CUDLzI5V(scope, "bool"_fu, t_bool, F_PUB, (*(const fu_STR*)fu::NIL), 0u, module);
+    Scope_Typedef_CUDLzI5V(scope, "byte"_fu, t_byte, F_PUB, (*(const fu_STR*)fu::NIL), 0u, module);
+    Scope_Typedef_CUDLzI5V(scope, "void"_fu, t_void, F_PUB, (*(const fu_STR*)fu::NIL), 0u, module);
+    Scope_Typedef_CUDLzI5V(scope, "never"_fu, t_never, F_PUB, (*(const fu_STR*)fu::NIL), 0u, module);
     return /*NRVO*/ scope;
 }
 

@@ -10,8 +10,8 @@
 
 static const fu_STR ESC fu_INIT_PRIORITY(1001) = (char(27) + "["_fu);
 
-                                #ifndef DEFt_x7E
-                                #define DEFt_x7E
+                                #ifndef DEFt_x7E_KclJlPSOsdf
+                                #define DEFt_x7E_KclJlPSOsdf
 inline fu_STR x7E(fu::view<char> a, fu::view<char> b)
 {
     return a + b;

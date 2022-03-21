@@ -25,7 +25,7 @@ struct s_TEA
 
 #ifndef FU_NO_FDEFs
 
-s_TEA hash_4OYu43HZ(/*MOV*/ s_TEA&& res, fu::view<char> u8view)
+s_TEA hash_fzLVe6Z4(/*MOV*/ s_TEA&& res, fu::view<char> u8view)
 {
     const int u32len = (u8view.size() & ~3);
     fu::view<unsigned> u32view = fu::view_of(fu::get_view(u8view, 0, u32len), unsigned{});
@@ -78,7 +78,7 @@ s_TEA hash_4OYu43HZ(/*MOV*/ s_TEA&& res, fu::view<char> u8view)
 s_TEA hash_vRQP3xwv(fu::view<char> u8view)
 {
     /*MOV*/ s_TEA res {};
-    res = hash_4OYu43HZ(s_TEA(res), u8view);
+    res = hash_fzLVe6Z4(s_TEA(res), u8view);
     return /*NRVO*/ res;
 }
 

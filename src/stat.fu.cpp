@@ -51,16 +51,16 @@ s_ModuleStat ModuleStat_now_pUbtfzLn()
     return s_ModuleStat { fu::now_hr(), fu_ARC::ALLOC_STAT_COUNT(), fu_ARC::ALLOC_STAT_BYTES() };
 }
 
-                                #ifndef DEFt_x7E
-                                #define DEFt_x7E
+                                #ifndef DEFt_x7E_KclJlPSOsdf
+                                #define DEFt_x7E_KclJlPSOsdf
 inline fu_STR x7E(fu::view<char> a, fu::view<char> b)
 {
     return a + b;
 }
                                 #endif
 
-                                #ifndef DEFt_x7E
-                                #define DEFt_x7E
+                                #ifndef DEFt_x7E_KclJlPSOsdf
+                                #define DEFt_x7E_KclJlPSOsdf
 inline fu_STR x7E(fu::view<char> a, fu::view<char> b)
 {
     return a + b;

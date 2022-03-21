@@ -15,8 +15,8 @@
 struct s_LexerOutput;
 struct s_Token;
 
-fu_STR ascii_lower_85KQkyE0(const fu_STR&);
 fu_STR bytes_BKZeX3f7(unsigned);
+fu_STR lower_Z2cjwPPO(fu_STR&&);
 
                                 #ifndef DEF_s_Token
                                 #define DEF_s_Token
@@ -71,8 +71,8 @@ static void token_VHD1vdBh(const fu_STR& kind, const fu_STR& value, const int id
     token_c_PuM2Gusu(kind, value, idx0, idx1, col, tokens, line);
 }
 
-                                #ifndef DEFt_x7E
-                                #define DEFt_x7E
+                                #ifndef DEFt_x7E_KclJlPSOsdf
+                                #define DEFt_x7E_KclJlPSOsdf
 inline fu_STR x7E(fu::view<char> a, fu::view<char> b)
 {
     return a + b;
@@ -94,7 +94,7 @@ inline fu_STR x7E(fu::view<char> a, fu::view<char> b)
     err_str_Qkbq2DIe(kind, idx0, (("`"_fu + src[reason]) + "`"_fu), idx, end, src, lidx, fname, line);
 }
 
-static unsigned parseHex_WFBliWrz(fu::view<char> topic, fu::view<char> esc, int& i, int& idx, const int end, const fu_STR& src, const int lidx, fu::view<char> fname, const int line)
+static unsigned parseHex_4HQWTv3k(fu::view<char> topic, fu::view<char> esc, int& i, int& idx, const int end, const fu_STR& src, const int lidx, fu::view<char> fname, const int line)
 {
     const char c = esc[++i];
     return (((c >= '0') && (c <= '9')) ? (unsigned(fu::u8(c)) - unsigned(fu::u8('0'))) : (((c >= 'A') && (c <= 'F')) ? ((unsigned(fu::u8(c)) - unsigned(fu::u8('A'))) + 10u) : (((c >= 'a') && (c <= 'f')) ? ((unsigned(fu::u8(c)) - unsigned(fu::u8('a'))) + 10u) : err_str_Qkbq2DIe("str"_fu, (i - 1), (((("Non hexadecimal character in "_fu + topic) + ": `"_fu) + c) + "`."_fu), idx, end, src, lidx, fname, line))));
@@ -138,7 +138,7 @@ static fu_STR UNSAFE_unescapeStr_MaWemLgh(fu::view<char> esc, const int idx0, co
                     err_str_Qkbq2DIe("str"_fu, (i - 1), "Incomplete \\x-escape sequence."_fu, idx, end, src, lidx, fname, line);
 
                 unsigned _0 {};
-                out += char((_0 = (parseHex_WFBliWrz("\\x-escape sequence"_fu, esc, i, idx, end, src, lidx, fname, line) << 4u), (unsigned(_0) | parseHex_WFBliWrz("\\x-escape sequence"_fu, esc, i, idx, end, src, lidx, fname, line))));
+                out += char((_0 = (parseHex_4HQWTv3k("\\x-escape sequence"_fu, esc, i, idx, end, src, lidx, fname, line) << 4u), (unsigned(_0) | parseHex_4HQWTv3k("\\x-escape sequence"_fu, esc, i, idx, end, src, lidx, fname, line))));
             }
             else if (c1 == 'u')
             {
@@ -159,7 +159,7 @@ static fu_STR UNSAFE_unescapeStr_MaWemLgh(fu::view<char> esc, const int idx0, co
                         digits++;
                         unicode <<= 4u;
                         i--;
-                        unicode |= parseHex_WFBliWrz("\\u-escape sequence"_fu, esc, i, idx, end, src, lidx, fname, line);
+                        unicode |= parseHex_4HQWTv3k("\\u-escape sequence"_fu, esc, i, idx, end, src, lidx, fname, line);
                     };
                     err_str_Qkbq2DIe("str"_fu, (i - 1), "Incomplete \\u-escape: no closing `}`."_fu, idx, end, src, lidx, fname, line);
                   } BL_19:;
@@ -336,7 +336,7 @@ s_LexerOutput lex_SxV1vceq(const fu_STR& src, fu::view<char> fname)
                 if (hex && dot && !exp)
                     err_str_Qkbq2DIe("real"_fu, idx0, ("The exponent is never optional"_fu + " for hexadecimal floating-point literals."_fu), idx, end, src, lidx, fname, line);
                 else
-                    token_VHD1vdBh(((dot || exp) ? "real"_fu : "int"_fu), ascii_lower_85KQkyE0(str), idx0, idx1, lidx, tokens, line);
+                    token_VHD1vdBh(((dot || exp) ? "real"_fu : "int"_fu), lower_Z2cjwPPO(fu_STR(str)), idx0, idx1, lidx, tokens, line);
 
             };
         }

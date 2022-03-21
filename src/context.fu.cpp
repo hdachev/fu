@@ -23,7 +23,7 @@ struct s_Extended;
 struct s_Helpers;
 struct s_LexerOutput;
 struct s_Lifetime;
-struct s_Map_EmVtl5Qe;
+struct s_Map_JBAFFW0D;
 struct s_Module;
 struct s_ModuleInputs;
 struct s_ModuleOutputs;
@@ -40,7 +40,6 @@ struct s_ScopeMemo;
 struct s_ScopeSkip;
 struct s_ScopeSkipMemos;
 struct s_SolvedNode;
-struct s_SolvedNodeData;
 struct s_SolverOutput;
 struct s_Struct;
 struct s_StructCanon;
@@ -51,13 +50,13 @@ struct s_TokenIdx;
 struct s_Type;
 struct s_ValueType;
 
-bool isStruct_ZYIX8afu(const s_Type&);
-bool is_primitive_CbRwLCm2(const s_Type&);
-fu_STR path_dirname_85KQkyE0(const fu_STR&);
+bool isStruct_usAEukhR(const s_Type&);
+bool is_primitive_oPp5yWwB(const s_Type&);
+fu_STR dirname_9EcF53rc(const fu_STR&);
 fu_STR resolveFile_JdJwrrbj(const fu_STR&, s_Context&);
 s_StructCanon parseStructCanon_1WZjPEgG(fu::view<char>);
 static fu_STR resolveFile_VHeaw58u(const fu_STR&, const fu_STR&, s_Context&);
-static fu_STR tryResolve_UEsp9jLs(const fu_STR&, const fu_STR&, const fu_STR&, s_Context&);
+static fu_STR tryResolve_DALprdvw(const fu_STR&, const fu_STR&, const fu_STR&, s_Context&);
 
                                 #ifndef DEF_s_Token
                                 #define DEF_s_Token
@@ -224,15 +223,15 @@ struct s_Struct
 };
                                 #endif
 
-                                #ifndef DEF_s_SolvedNode
-                                #define DEF_s_SolvedNode
-struct s_SolvedNode
+                                #ifndef DEF_s_Helpers
+                                #define DEF_s_Helpers
+struct s_Helpers
 {
-    int signedidx;
+    int index;
     explicit operator bool() const noexcept
     {
         return false
-            || signedidx
+            || index
         ;
     }
 };
@@ -298,12 +297,59 @@ struct s_Type
 };
                                 #endif
 
+                                #ifndef DEF_s_RWRanges
+                                #define DEF_s_RWRanges
+struct s_RWRanges
+{
+    int reads0;
+    int reads1;
+    int writes0;
+    int writes1;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || reads0
+            || reads1
+            || writes0
+            || writes1
+        ;
+    }
+};
+                                #endif
+
+                                #ifndef DEF_s_SolvedNode
+                                #define DEF_s_SolvedNode
+struct s_SolvedNode
+{
+    fu_STR kind;
+    s_Helpers helpers;
+    int flags;
+    fu_STR value;
+    fu_VEC<s_SolvedNode> items;
+    s_TokenIdx token;
+    s_Type type;
+    s_Target target;
+    s_RWRanges rwr;
+    s_SolvedNode(const s_SolvedNode&) = default;
+    s_SolvedNode(s_SolvedNode&&) = default;
+    s_SolvedNode& operator=(s_SolvedNode&&) = default;
+    s_SolvedNode& operator=(const s_SolvedNode& selfrec) { return *this = s_SolvedNode(selfrec); }
+    explicit operator bool() const noexcept
+    {
+        return false
+            || kind
+        ;
+    }
+};
+                                #endif
+
                                 #ifndef DEF_s_Overload
                                 #define DEF_s_Overload
 struct s_Overload
 {
     fu_STR kind;
     fu_STR name;
+    fu_STR sighash;
     s_Type type;
     int flags;
     unsigned status;
@@ -444,62 +490,6 @@ struct s_Template
 };
                                 #endif
 
-                                #ifndef DEF_s_Helpers
-                                #define DEF_s_Helpers
-struct s_Helpers
-{
-    int index;
-    explicit operator bool() const noexcept
-    {
-        return false
-            || index
-        ;
-    }
-};
-                                #endif
-
-                                #ifndef DEF_s_RWRanges
-                                #define DEF_s_RWRanges
-struct s_RWRanges
-{
-    int reads0;
-    int reads1;
-    int writes0;
-    int writes1;
-    explicit operator bool() const noexcept
-    {
-        return false
-            || reads0
-            || reads1
-            || writes0
-            || writes1
-        ;
-    }
-};
-                                #endif
-
-                                #ifndef DEF_s_SolvedNodeData
-                                #define DEF_s_SolvedNodeData
-struct s_SolvedNodeData
-{
-    fu_STR kind;
-    s_Helpers helpers;
-    int flags;
-    fu_STR value;
-    fu_VEC<s_SolvedNode> items;
-    s_TokenIdx token;
-    s_Type type;
-    s_Target target;
-    s_RWRanges rwr;
-    explicit operator bool() const noexcept
-    {
-        return false
-            || kind
-        ;
-    }
-};
-                                #endif
-
                                 #ifndef DEF_s_Extended
                                 #define DEF_s_Extended
 struct s_Extended
@@ -511,7 +501,6 @@ struct s_Extended
     fu_VEC<s_Argument> args;
     s_Target spec_of;
     s_Template tEmplate;
-    fu_VEC<s_SolvedNodeData> nodes;
     fu_VEC<s_Overload> locals;
     fu_VEC<s_ScopeItem> extra_items;
     fu_VEC<int> callers;
@@ -525,7 +514,6 @@ struct s_Extended
             || args
             || spec_of
             || tEmplate
-            || nodes
             || locals
             || extra_items
             || callers
@@ -597,10 +585,16 @@ struct s_SolverOutput
 struct s_CodegenOutput
 {
     fu_STR src;
+    fu_VEC<fu_STR> link;
+    fu_VEC<fu_STR> include_dirs;
+    fu_VEC<fu_STR> extra_sources;
     explicit operator bool() const noexcept
     {
         return false
             || src
+            || link
+            || include_dirs
+            || extra_sources
         ;
     }
 };
@@ -696,9 +690,9 @@ struct s_Module
 };
                                 #endif
 
-                                #ifndef DEF_s_Map_EmVtl5Qe
-                                #define DEF_s_Map_EmVtl5Qe
-struct s_Map_EmVtl5Qe
+                                #ifndef DEF_s_Map_JBAFFW0D
+                                #define DEF_s_Map_JBAFFW0D
+struct s_Map_JBAFFW0D
 {
     fu_VEC<fu_STR> keys;
     fu_VEC<fu_STR> vals;
@@ -717,8 +711,8 @@ struct s_Map_EmVtl5Qe
 struct s_Context
 {
     fu_VEC<s_Module> modules;
-    s_Map_EmVtl5Qe files;
-    s_Map_EmVtl5Qe fuzzy;
+    s_Map_JBAFFW0D files;
+    s_Map_JBAFFW0D fuzzy;
     s_Context(const s_Context&) = delete;
     s_Context(s_Context&&) = default;
     s_Context& operator=(const s_Context&) = delete;
@@ -762,8 +756,8 @@ const fu_STR& _fname_GF4X2sQy(const s_TokenIdx& idx, const s_Context& ctx)
     return ctx.modules[idx.modid].fname;
 }
 
-                                #ifndef DEFt_x7E
-                                #define DEFt_x7E
+                                #ifndef DEFt_x7E_KclJlPSOsdf
+                                #define DEFt_x7E_KclJlPSOsdf
 inline fu_STR x7E(fu::view<char> a, fu::view<char> b)
 {
     return a + b;
@@ -835,9 +829,9 @@ inline int x3Cx3E_KclJlPSO(fu::view<char> a, fu::view<char> b)
 }
                                 #endif
 
-                                #ifndef DEFt_get_wc8KkiLz
-                                #define DEFt_get_wc8KkiLz
-inline const fu_STR& get_wc8KkiLz(fu::view<fu_STR> keys, fu::view<char> item, fu::view<fu_STR> extras)
+                                #ifndef DEFt_get_Z0pwPCX0
+                                #define DEFt_get_Z0pwPCX0
+inline const fu_STR& get_Z0pwPCX0(fu::view<fu_STR> keys, fu::view<char> item, fu::view<fu_STR> extras)
 {
     int lo = 0;
     int hi = keys.size();
@@ -859,45 +853,83 @@ inline const fu_STR& get_wc8KkiLz(fu::view<fu_STR> keys, fu::view<char> item, fu
 }
                                 #endif
 
-                                #ifndef DEFt_get_POW1DsAO
-                                #define DEFt_get_POW1DsAO
-inline const fu_STR& get_POW1DsAO(const s_Map_EmVtl5Qe& _, fu::view<char> key)
+                                #ifndef DEFt_get_5qDFBGvo
+                                #define DEFt_get_5qDFBGvo
+inline const fu_STR& get_5qDFBGvo(const s_Map_JBAFFW0D& _, fu::view<char> key)
 {
-    return get_wc8KkiLz(_.keys, key, _.vals);
+    return get_Z0pwPCX0(_.keys, key, _.vals);
 }
                                 #endif
 
-static fu_STR tryResolve_UEsp9jLs(const fu_STR& path, const fu_STR& from, const fu_STR& name, s_Context& ctx)
+                                #ifndef DEFt_ends_KclJlPSO
+                                #define DEFt_ends_KclJlPSO
+inline bool ends_KclJlPSO(fu::view<char> a, fu::view<char> with)
 {
-    const bool exists = (fu::file_size(path) >= 0);
-    if (exists)
-        return fu_STR(path);
+    return (a.size() >= with.size()) && (fu::get_view(a, (a.size() - with.size()), a.size()) == with);
+}
+                                #endif
 
+static fu_STR tryResolve_DALprdvw(const fu_STR& path, const fu_STR& from, const fu_STR& name, s_Context& ctx)
+{
 
     {
-        /*MOV*/ fu_STR path_1 = ((from + "lib/"_fu) + name);
-        const bool exists_1 = (fu::file_size(path_1) >= 0);
-        if (exists_1)
-            return /*NRVO*/ path_1;
+        const bool exists = (fu::file_size(path) >= 0);
+        if (exists)
+            return fu_STR(path);
 
     };
 
     {
-        /*MOV*/ fu_STR path_1 = ((from + "vendor/"_fu) + name);
-        const bool exists_1 = (fu::file_size(path_1) >= 0);
-        if (exists_1)
+        /*MOV*/ fu_STR path_1 = ((from + "lib/"_fu) + name);
+        const bool exists = (fu::file_size(path_1) >= 0);
+        if (exists)
             return /*NRVO*/ path_1;
 
     };
 
     {
         /*MOV*/ fu_STR path_1 = ((from + "fu/lib/"_fu) + name);
-        const bool exists_1 = (fu::file_size(path_1) >= 0);
-        if (exists_1)
+        const bool exists = (fu::file_size(path_1) >= 0);
+        if (exists)
             return /*NRVO*/ path_1;
 
     };
-    fu_STR fallback = path_dirname_85KQkyE0(from);
+    if (ends_KclJlPSO(name, ".fu"_fu))
+    {
+        const int ext = (name.size() - 3);
+        int dir = 0;
+        for (int i = ext; i-- > 0; )
+        {
+            if (name[i] == '/')
+            {
+                dir = (i + 1);
+                break;
+            };
+        };
+        fu_STR name_1 = (((fu::get_view(name, 0, dir) + fu::get_view(name, dir, ext)) + '/') + fu::get_view(name, dir, name.size()));
+
+        {
+            /*MOV*/ fu_STR path_1 = (from + name_1);
+            const bool exists = (fu::file_size(path_1) >= 0);
+            if (exists)
+                return /*NRVO*/ path_1;
+
+        };
+
+        {
+            /*MOV*/ fu_STR path_1 = ((from + "lib/"_fu) + name_1);
+            const bool exists = (fu::file_size(path_1) >= 0);
+            if (exists)
+                return /*NRVO*/ path_1;
+
+        };
+        /*MOV*/ fu_STR path_1 = ((from + "fu/lib/"_fu) + name_1);
+        const bool exists = (fu::file_size(path_1) >= 0);
+        if (exists)
+            return /*NRVO*/ path_1;
+
+    };
+    fu_STR fallback = dirname_9EcF53rc(from);
     if (!fallback || (fallback.size() >= from.size()))
         return fu_STR{};
 
@@ -924,9 +956,9 @@ inline int x3Cx3E_wtS8CFRs(fu::view<char> a, fu::view<char> b)
 }
                                 #endif
 
-                                #ifndef DEFt_update_mkdaxG3I
-                                #define DEFt_update_mkdaxG3I
-inline bool update_mkdaxG3I(const fu_STR& item, const fu_STR& extra, s_Map_EmVtl5Qe& _)
+                                #ifndef DEFt_update_aqg3fV3e
+                                #define DEFt_update_aqg3fV3e
+inline bool update_aqg3fV3e(const fu_STR& item, const fu_STR& extra, s_Map_JBAFFW0D& _)
 {
     int lo = 0;
     int hi = _.keys.size();
@@ -951,29 +983,29 @@ inline bool update_mkdaxG3I(const fu_STR& item, const fu_STR& extra, s_Map_EmVtl
 }
                                 #endif
 
-                                #ifndef DEFt_set_6moaAJB1
-                                #define DEFt_set_6moaAJB1
-inline bool set_6moaAJB1(s_Map_EmVtl5Qe& _, const fu_STR& key, const fu_STR& value)
+                                #ifndef DEFt_set_QiKLJrR8
+                                #define DEFt_set_QiKLJrR8
+inline bool set_QiKLJrR8(s_Map_JBAFFW0D& _, const fu_STR& key, const fu_STR& value)
 {
-    return update_mkdaxG3I(key, value, _);
+    return update_aqg3fV3e(key, value, _);
 }
                                 #endif
 
 static fu_STR resolveFile_VHeaw58u(const fu_STR& from, const fu_STR& name, s_Context& ctx)
 {
     fu_STR path = (from + name);
-    const fu_STR& cached = get_POW1DsAO(ctx.fuzzy, path);
+    const fu_STR& cached = get_5qDFBGvo(ctx.fuzzy, path);
     if (cached)
         return fu_STR(((cached == "\v"_fu) ? (*(const fu_STR*)fu::NIL) : cached));
 
-    /*MOV*/ fu_STR resolve = tryResolve_UEsp9jLs(path, from, name, ctx);
-    set_6moaAJB1(ctx.fuzzy, path, (resolve ? fu_STR(resolve) : "\v"_fu));
+    /*MOV*/ fu_STR resolve = tryResolve_DALprdvw(path, from, name, ctx);
+    set_QiKLJrR8(ctx.fuzzy, path, (resolve ? fu_STR(resolve) : "\v"_fu));
     return /*NRVO*/ resolve;
 }
 
-                                #ifndef DEFt_has_n5fL7Bm1
-                                #define DEFt_has_n5fL7Bm1
-inline bool has_n5fL7Bm1(fu::view<fu_STR> keys, fu::view<char> item)
+                                #ifndef DEFt_has_n0llXOoR
+                                #define DEFt_has_n0llXOoR
+inline bool has_n0llXOoR(fu::view<fu_STR> keys, fu::view<char> item)
 {
     int lo = 0;
     int hi = keys.size();
@@ -995,11 +1027,11 @@ inline bool has_n5fL7Bm1(fu::view<fu_STR> keys, fu::view<char> item)
 }
                                 #endif
 
-                                #ifndef DEFt_has_VYdZlka8
-                                #define DEFt_has_VYdZlka8
-inline bool has_VYdZlka8(const s_Map_EmVtl5Qe& _, fu::view<char> key)
+                                #ifndef DEFt_has_q3LptlKc
+                                #define DEFt_has_q3LptlKc
+inline bool has_q3LptlKc(const s_Map_JBAFFW0D& _, fu::view<char> key)
 {
-    return has_n5fL7Bm1(_.keys, key);
+    return has_n0llXOoR(_.keys, key);
 }
                                 #endif
 
@@ -1017,7 +1049,7 @@ fu_STR resolveFile_JdJwrrbj(const fu_STR& path, s_Context& ctx)
                 return /*NRVO*/ res;
 
             /*MOV*/ fu_STR prepopulated = (from + name);
-            if (has_VYdZlka8(ctx.files, prepopulated))
+            if (has_q3LptlKc(ctx.files, prepopulated))
                 return /*NRVO*/ prepopulated;
 
         };
@@ -1085,7 +1117,7 @@ inline fu_STR replace_lxKOEoJG(const fu_STR& str, fu::view<char> all, fu::view<c
 fu_STR resolveFile_x_pcVfgwiN(const fu_STR& path, const s_Context& ctx)
 {
     fu_STR clean = replace_lxKOEoJG(path, "\v"_fu, fu::view<char>{});
-    const fu_STR& match = get_POW1DsAO(ctx.fuzzy, clean);
+    const fu_STR& match = get_5qDFBGvo(ctx.fuzzy, clean);
     return fu_STR(((match && (match != "\v"_fu)) ? match : clean));
 }
 
@@ -1109,9 +1141,9 @@ inline int x3Cx3E_8hN0LrtI(fu::view<char> a, fu::view<char> b)
 }
                                 #endif
 
-                                #ifndef DEFt_get_eULe0tbu
-                                #define DEFt_get_eULe0tbu
-inline const fu_STR& get_eULe0tbu(fu::view<fu_STR> keys, fu::view<char> item, fu::view<fu_STR> extras)
+                                #ifndef DEFt_get_l4s8z1e0
+                                #define DEFt_get_l4s8z1e0
+inline const fu_STR& get_l4s8z1e0(fu::view<fu_STR> keys, fu::view<char> item, fu::view<fu_STR> extras)
 {
     int lo = 0;
     int hi = keys.size();
@@ -1133,11 +1165,11 @@ inline const fu_STR& get_eULe0tbu(fu::view<fu_STR> keys, fu::view<char> item, fu
 }
                                 #endif
 
-                                #ifndef DEFt_get_CSv2TDv1
-                                #define DEFt_get_CSv2TDv1
-inline const fu_STR& get_CSv2TDv1(const s_Map_EmVtl5Qe& _, fu::view<char> key)
+                                #ifndef DEFt_get_YNpmPTsO
+                                #define DEFt_get_YNpmPTsO
+inline const fu_STR& get_YNpmPTsO(const s_Map_JBAFFW0D& _, fu::view<char> key)
 {
-    return get_eULe0tbu(_.keys, key, _.vals);
+    return get_l4s8z1e0(_.keys, key, _.vals);
 }
                                 #endif
 
@@ -1161,9 +1193,9 @@ inline int x3Cx3E_2l3thTbu(fu::view<char> a, fu::view<char> b)
 }
                                 #endif
 
-                                #ifndef DEFt_update_ygjyXZ2q
-                                #define DEFt_update_ygjyXZ2q
-inline bool update_ygjyXZ2q(const fu_STR& item, const fu_STR& extra, s_Map_EmVtl5Qe& _)
+                                #ifndef DEFt_update_DxpUD5pV
+                                #define DEFt_update_DxpUD5pV
+inline bool update_DxpUD5pV(const fu_STR& item, const fu_STR& extra, s_Map_JBAFFW0D& _)
 {
     int lo = 0;
     int hi = _.keys.size();
@@ -1188,22 +1220,22 @@ inline bool update_ygjyXZ2q(const fu_STR& item, const fu_STR& extra, s_Map_EmVtl
 }
                                 #endif
 
-                                #ifndef DEFt_set_YLj1LCkj
-                                #define DEFt_set_YLj1LCkj
-inline bool set_YLj1LCkj(s_Map_EmVtl5Qe& _, const fu_STR& key, const fu_STR& value)
+                                #ifndef DEFt_set_LFhsvZOG
+                                #define DEFt_set_LFhsvZOG
+inline bool set_LFhsvZOG(s_Map_JBAFFW0D& _, const fu_STR& key, const fu_STR& value)
 {
-    return update_ygjyXZ2q(key, value, _);
+    return update_DxpUD5pV(key, value, _);
 }
                                 #endif
 
 fu_STR getFile_JdJwrrbj(fu_STR&& path, s_Context& ctx)
 {
-    const fu_STR& cached = get_CSv2TDv1(ctx.files, path);
+    const fu_STR& cached = get_YNpmPTsO(ctx.files, path);
     if (cached)
         return fu_STR(((cached == "\v"_fu) ? (*(const fu_STR*)fu::NIL) : cached));
 
     /*MOV*/ fu_STR read = fu::file_read(path);
-    set_YLj1LCkj(ctx.files, path, (read ? fu_STR(read) : "\v"_fu));
+    set_LFhsvZOG(ctx.files, path, (read ? fu_STR(read) : "\v"_fu));
     return /*NRVO*/ read;
 }
 
@@ -1260,9 +1292,17 @@ inline const fu_VEC<s_Struct>& clone_RKBsevnx(const fu_VEC<s_Struct>& a)
 }
                                 #endif
 
-                                #ifndef DEFt_clone_LCvKZbnl
-                                #define DEFt_clone_LCvKZbnl
-inline const s_SolvedNode& clone_LCvKZbnl(const s_SolvedNode& a)
+                                #ifndef DEFt_clone_qVCYkPgh
+                                #define DEFt_clone_qVCYkPgh
+inline const s_SolvedNode& clone_qVCYkPgh(const s_SolvedNode& a)
+{
+    return a;
+}
+                                #endif
+
+                                #ifndef DEFt_clone_bjZCjfhl
+                                #define DEFt_clone_bjZCjfhl
+inline const fu_VEC<s_Overload>& clone_bjZCjfhl(const fu_VEC<s_Overload>& a)
 {
     return a;
 }
@@ -1270,23 +1310,15 @@ inline const s_SolvedNode& clone_LCvKZbnl(const s_SolvedNode& a)
 
                                 #ifndef DEFt_clone_fx1SDBUT
                                 #define DEFt_clone_fx1SDBUT
-inline const fu_VEC<s_Overload>& clone_fx1SDBUT(const fu_VEC<s_Overload>& a)
+inline const fu_VEC<s_Extended>& clone_fx1SDBUT(const fu_VEC<s_Extended>& a)
 {
     return a;
 }
                                 #endif
 
-                                #ifndef DEFt_clone_pVzH1qAz
-                                #define DEFt_clone_pVzH1qAz
-inline const fu_VEC<s_Extended>& clone_pVzH1qAz(const fu_VEC<s_Extended>& a)
-{
-    return a;
-}
-                                #endif
-
-                                #ifndef DEFt_clone_wD9DGSZd
-                                #define DEFt_clone_wD9DGSZd
-inline const fu_VEC<s_ScopeItem>& clone_wD9DGSZd(const fu_VEC<s_ScopeItem>& a)
+                                #ifndef DEFt_clone_vOYHP1IT
+                                #define DEFt_clone_vOYHP1IT
+inline const fu_VEC<s_ScopeItem>& clone_vOYHP1IT(const fu_VEC<s_ScopeItem>& a)
 {
     return a;
 }
@@ -1300,17 +1332,17 @@ inline const fu_VEC<s_Target>& clone_fnMFgrK3(const fu_VEC<s_Target>& a)
 }
                                 #endif
 
-                                #ifndef DEFt_clone_rV5C67N4
-                                #define DEFt_clone_rV5C67N4
-inline s_Scope clone_rV5C67N4(const s_Scope& a)
+                                #ifndef DEFt_clone_Aj8LNizZ
+                                #define DEFt_clone_Aj8LNizZ
+inline s_Scope clone_Aj8LNizZ(const s_Scope& a)
 {
     /*MOV*/ s_Scope res {};
 
     {
-        res.overloads = clone_fx1SDBUT(a.overloads);
-        res.extended = clone_pVzH1qAz(a.extended);
-        res.items = clone_wD9DGSZd(a.items);
-        res.implicits = clone_wD9DGSZd(a.implicits);
+        res.overloads = clone_bjZCjfhl(a.overloads);
+        res.extended = clone_fx1SDBUT(a.extended);
+        res.items = clone_vOYHP1IT(a.items);
+        res.implicits = clone_vOYHP1IT(a.implicits);
         res.imports = clone_krBIyjUl(a.imports);
         res.privates = clone_krBIyjUl(a.privates);
         res.usings = clone_fnMFgrK3(a.usings);
@@ -1329,8 +1361,8 @@ inline s_SolverOutput clone_zyxQCvJi(const s_SolverOutput& a)
     /*MOV*/ s_SolverOutput res {};
 
     {
-        res.root = clone_LCvKZbnl(a.root);
-        res.scope = clone_rV5C67N4(a.scope);
+        res.root = clone_qVCYkPgh(a.root);
+        res.scope = clone_Aj8LNizZ(a.scope);
         res.notes = clone_uFTeeyF6(a.notes);
     };
     return /*NRVO*/ res;
@@ -1396,7 +1428,7 @@ void setModule_IgtJxUnL(const s_Module& module, s_Context& ctx)
     current = clone_eixx2GVS(module);
 }
 
-const s_Struct& lookupStruct_LWkAag39(const s_Type& type, const s_Module& module, const s_Context& ctx)
+const s_Struct& lookupStruct_GBXUPXZt(const s_Type& type, const s_Module& module, const s_Context& ctx)
 {
     const s_StructCanon scp = parseStructCanon_1WZjPEgG(type.vtype.canon);
     if (scp.modid == module.modid)
@@ -1408,24 +1440,24 @@ const s_Struct& lookupStruct_LWkAag39(const s_Type& type, const s_Module& module
     return *(_1 = &(ctx.modules[scp.modid].out.types[scp.index])) ? *_1 : fu_ASSERT();
 }
 
-bool is_trivial_K61azC5I(const s_Type& type, const s_Module& module, const s_Context& ctx)
+bool is_trivial_JKdxRWxB(const s_Type& type, const s_Module& module, const s_Context& ctx)
 {
-    return is_primitive_CbRwLCm2(type) || (isStruct_ZYIX8afu(type) ? lookupStruct_LWkAag39(type, module, ctx).all_triv : (*(const bool*)fu::NIL));
+    return is_primitive_oPp5yWwB(type) || (isStruct_usAEukhR(type) ? lookupStruct_GBXUPXZt(type, module, ctx).all_triv : (*(const bool*)fu::NIL));
 }
 
-const s_Struct& tryLookupStruct_K61azC5I(const s_Type& type, const s_Module& module, const s_Context& ctx)
+const s_Struct& tryLookupStruct_JKdxRWxB(const s_Type& type, const s_Module& module, const s_Context& ctx)
 {
-    return isStruct_ZYIX8afu(type) ? lookupStruct_LWkAag39(type, module, ctx) : (*(const s_Struct*)fu::NIL);
+    return isStruct_usAEukhR(type) ? lookupStruct_GBXUPXZt(type, module, ctx) : (*(const s_Struct*)fu::NIL);
 }
 
-const fu_VEC<int>& lookupTypeImports_K61azC5I(const s_Type& type, const s_Module& module, const s_Context& ctx)
+const fu_VEC<int>& lookupTypeImports_JKdxRWxB(const s_Type& type, const s_Module& module, const s_Context& ctx)
 {
-    return tryLookupStruct_K61azC5I(type, module, ctx).imports;
+    return tryLookupStruct_JKdxRWxB(type, module, ctx).imports;
 }
 
-const fu_VEC<s_Target>& lookupTypeConverts_K61azC5I(const s_Type& type, const s_Module& module, const s_Context& ctx)
+const fu_VEC<s_Target>& lookupTypeConverts_JKdxRWxB(const s_Type& type, const s_Module& module, const s_Context& ctx)
 {
-    return tryLookupStruct_K61azC5I(type, module, ctx).converts;
+    return tryLookupStruct_JKdxRWxB(type, module, ctx).converts;
 }
 
 const fu_STR& getModuleSrc_7k0snHP1(const int modid, const s_Context& ctx)
@@ -1433,9 +1465,9 @@ const fu_STR& getModuleSrc_7k0snHP1(const int modid, const s_Context& ctx)
     return ctx.modules[modid].in.src;
 }
 
-                                #ifndef DEFt_split_wFbQir8m
-                                #define DEFt_split_wFbQir8m
-inline void split_wFbQir8m(const fu_STR& str, fu::view<char> sep, fu_VEC<fu_STR>& result)
+                                #ifndef DEFt_split_xM5CwCCH
+                                #define DEFt_split_xM5CwCCH
+inline void split_xM5CwCCH(const fu_STR& str, fu::view<char> sep, fu_VEC<fu_STR>& result)
 {
     int last = 0;
     int next = 0;
@@ -1468,7 +1500,7 @@ inline void split_wFbQir8m(const fu_STR& str, fu::view<char> sep, fu_VEC<fu_STR>
 inline fu_VEC<fu_STR> split_KclJlPSO(const fu_STR& str, fu::view<char> sep)
 {
     /*MOV*/ fu_VEC<fu_STR> result {};
-    split_wFbQir8m(str, sep, result);
+    split_xM5CwCCH(str, sep, result);
     return /*NRVO*/ result;
 }
                                 #endif
@@ -1478,8 +1510,8 @@ inline fu_VEC<fu_STR> split_KclJlPSO(const fu_STR& str, fu::view<char> sep)
 extern const fu_STR DIM;
                                 #endif
 
-                                #ifndef DEFt_x7E
-                                #define DEFt_x7E
+                                #ifndef DEFt_x7E_KclJlPSOsdf
+                                #define DEFt_x7E_KclJlPSOsdf
 inline fu_STR x7E(fu::view<char> a, fu::view<char> b)
 {
     return a + b;
@@ -1521,8 +1553,8 @@ fu_STR formatCodeSnippet_tVfuVdgh(const fu_STR& src, const s_Token& start, const
         {
             const int c0 = std::max((end.col - 1), 0);
             const int c1 = (c0 + std::min(end.value.size(), line.size()));
-            line.splice(c1, 0, RESET);
-            line.splice(c0, 0, BAD);
+            line.splice(c1, 0, fu_STR(RESET));
+            line.splice(c0, 0, fu_STR(BAD));
         };
         result += line;
         if ((i < (start.line - 1)) || (i >= end.line))

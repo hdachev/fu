@@ -7,30 +7,32 @@ set(FU_MAIN cli.fu)
 set(FU_INPUTS
     helpers.fu
     module.fu
-    map.fu
-    set.fu
+    lib/map.fu
+    lib/set.fu
     stat.fu
     ../lib/now.fu
-    ../lib/alloc.fu
-    bitset.fu
+    ../lib/mem.fu
+    lib/bitset.fu
     ../lib/bit.fu
     structs.fu
     quals.fu
     ../lib/file.fu
-    ../lib/ansi.fu
+    ../lib/path.fu
+    lib/ansi.fu
     options.fu
     lexer.fu
     ../lib/utf8.fu
+    ../lib/ascii.fu
     hacks.fu
     intlit.fu
     cpp.fu
     ../lib/tea.fu
-    ../lib/debug.fu
+    lib/debug.fu
     ../lib/env.fu
     build.fu
     ../lib/fs.fu
-    ../lib/shell.fu
     ../lib/process.fu
+    ../lib/shell.fu
     testdiff.fu
     context.fu
     parser.fu
