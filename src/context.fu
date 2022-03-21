@@ -67,7 +67,7 @@ fn resolveFile(
         }
 
         /////////////////////////////////
-        let fallback = from.path_dirname;
+        let fallback = from.path::dirname;
         if (!fallback || fallback.len >= from.len)
             return "";
 

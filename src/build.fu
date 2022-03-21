@@ -9,7 +9,7 @@ fn ensure_local_fname(fname: string, dir_src: string): string
     let foreign = dir_src ~ ".foreign/";
     fs::mkdir_p(foreign);
 
-    let rel = path_relative(from: dir_src, to: fname)
+    let rel = path::relative(from: dir_src, to: fname)
         .replace(all: "../", with: "up__")
         .replace(all:   "/", with:   "__");
 
@@ -269,11 +269,11 @@ pub fn build(
         let include_dirs = module.out.cpp.include_dirs;
         if (include_dirs)
         {
-            let dir = path_dirname(module.fname);
+            let dir = path::dirname(module.fname);
             include_dirs.each: |incl|
                 HACK_include_dirs.set::add(
                     incl.starts(with: '.')
-                        ? path_join(dir, incl)
+                        ? path::join(dir, incl)
                         : incl);
         }
 
@@ -333,7 +333,7 @@ pub fn build(
 
                 // Prelude @ 0.
                 let human = original_fname
-                          ? original_fname.path_filename
+                          ? original_fname.path::filename
                           : "fulib runtime";
 
                 let cpp = units[i];
@@ -348,7 +348,7 @@ pub fn build(
                 ///////////////////////////////////////////////////////////////////
 
                 ////////////////////////////////////////////////////////////////////////////////////////////////
-                shadow let INCLUDE = INCLUDE ~ (original_fname && " -iquote " ~ original_fname.path_dirname);
+                shadow let INCLUDE = INCLUDE ~ (original_fname && " -iquote " ~ original_fname.path::dirname);
                 ////////////////////////////////////////////////////////////////////////////////////////////////
 
                 let CMD = GCC_CMD ~ " -c" ~ INCLUDE ~ " -o " ~ F_tmp ~ " " ~ F_cpp ~ " 2>&1";
@@ -443,7 +443,7 @@ pub fn build(
         }
 
         // TODO FIX
-        let CMakeLists = unity && path_join(path_dirname(unity), "CMakeLists.txt");
+        let CMakeLists = unity && path::join(path::dirname(unity), "CMakeLists.txt");
 
         if (unity || CMakeLists)
         {
@@ -458,7 +458,7 @@ pub fn build(
                 {
                     let incl = cpp_files[i];
                     if (incl)
-                        data ~= "#include \"" ~ path_relative(unity, incl) ~ "\"\n";
+                        data ~= "#include \"" ~ path::relative(unity, incl) ~ "\"\n";
                 }
 
                 update_file(
@@ -480,7 +480,7 @@ pub fn build(
                 for (mut i = 1; i < modules.len; i++)
                 {
                     let module = modules[i];
-                    let input = path_relative(CMakeLists, module.fname);
+                    let input = path::relative(CMakeLists, module.fname);
                     if (module.compile_index == 1)
                         main = input;
 
@@ -489,17 +489,17 @@ pub fn build(
                     // Check for custom cmake files.
                     let custom = module.fname ~ ".cmake";
                     if (file::size(custom) > 0)
-                        includes ~= "include(" ~ path_relative(CMakeLists, custom) ~ ")\n";
+                        includes ~= "include(" ~ path::relative(CMakeLists, custom) ~ ")\n";
                 }
 
                 for (mut i = 0; i < cpp_files.len; i++)
                 {
                     let cpp_file = cpp_files[i];
                     if (cpp_file)
-                        outputs.push("${CMAKE_CURRENT_SOURCE_DIR}/" ~ path_relative(CMakeLists, cpp_file));
+                        outputs.push("${CMAKE_CURRENT_SOURCE_DIR}/" ~ path::relative(CMakeLists, cpp_file));
                 }
 
-                let libname = path_noext(path_filename(main));
+                let libname = path::noext(path::filename(main));
 
                 data ~= "set(FU_TARGET " ~ libname ~ ")\n\n";
 
@@ -507,7 +507,7 @@ pub fn build(
                 data ~= "set(FU_INPUTS\n    " ~ inputs.join("\n    ") ~ ")\n\n";
 
                 if (unity)
-                    data ~= "set(FU_OUTPUTS\n    " ~ "${CMAKE_CURRENT_SOURCE_DIR}/" ~ path_relative(CMakeLists, unity) ~ ".unity.cpp)\n\n";
+                    data ~= "set(FU_OUTPUTS\n    " ~ "${CMAKE_CURRENT_SOURCE_DIR}/" ~ path::relative(CMakeLists, unity) ~ ".unity.cpp)\n\n";
                 else
                     data ~= "set(FU_OUTPUTS\n    " ~ outputs.join("\n    ") ~ ")\n\n";
 
@@ -538,7 +538,7 @@ pub fn build(
     // output binary.
     if (bin)
     {
-        fs::mkdir_p( path_dirname(bin) );
+        fs::mkdir_p( path::dirname(bin) );
 
         code = shell::exec("mv " ~ F_exe ~ " " ~ bin ~ " 2>&1", stdout);
     }

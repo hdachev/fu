@@ -185,13 +185,13 @@ pub fn parse(
 
     fn registerImport(mut value: string): string
     {
-        if (!value.path_ext)
+        if (!value.path::ext)
             value ~= ".fu";
 
         // Exact relative or fuzzy?
-        let dir = path_dirname(fname);
+        let dir = path::dirname(fname);
         value   = value.starts(with: ".")
-                ? path_join(dir, value)
+                ? path::join(dir, value)
                 : dir ~ '\v' ~ value;
 
         if (!fuzimports.has(value))

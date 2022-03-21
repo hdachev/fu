@@ -42,7 +42,7 @@ fn cli_handle(argv: string[], cwd = fs::cwd()): i32
 
     fn abs(path: string)
         path    && path[0] != '-'
-                && path_join(cwd, path);
+                && path::join(cwd, path);
 
     // A silly option parser.
     let EMIT_CPP = 1 << 0;
