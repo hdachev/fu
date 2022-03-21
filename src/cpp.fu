@@ -32,7 +32,7 @@ pub fn ID(id: string)
         if (idx >= 0)
         {
             mut cpy = id;
-            cpy[1] = cpy[1].helpers::ascii_upper;
+            cpy[1] = cpy[1].ascii::upper;
             return cpy;
         }
     }

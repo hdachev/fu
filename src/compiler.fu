@@ -339,7 +339,7 @@ pub fn ZERO(
                     mut actual      = e
                         .ERR_STRIP_ANSI
                         .ERR_STRIP_SNIPPETS
-                        .ascii_lower();
+                        .ascii::lower();
 
                     mut BUG_ok = false;
 
@@ -356,7 +356,7 @@ pub fn ZERO(
                                 if (exact == "BUG")
                                     BUG_ok = true;
 
-                                let expect = exact.ascii_lower();
+                                let expect = exact.ascii::lower();
                                 if (!actual.has(expect))
                                     throw("<fail> mismatch:\n\n    Expected error keyword:\n        "
                                         ~ expect.ansi::qBAD ~ " from pattern <fail" ~ msg.ansi::qBAD ~ ">"

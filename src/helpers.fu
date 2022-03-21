@@ -76,28 +76,6 @@ pub fn hasIdentifierChars(id: string)
     return false;
 }
 
-pub fn ascii_lower(a: string): string
-{
-    let offset = 'a'.i32 - 'A'.i32;
-
-    mut res = a;
-    for (mut i = 0; i < res.len; i++)
-    {
-        let c = res[i];
-        if (c >= 'A' && c <= 'Z')
-            res[i] = byte(c.i32 + offset);
-    }
-
-    return res;
-}
-
-pub fn ascii_upper(c: byte): byte
-{
-    return c >= 'a' && c <= 'z'
-         ? byte(c.i32 + ('A'.i32 - 'a'.i32))
-         : c;
-}
-
 
 //
 

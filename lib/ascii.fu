@@ -1,0 +1,38 @@
+
+fn upper(mut str: string): string
+{
+    for (mut i = 0; i < str.len; i++)
+    {
+        let c = str[i];
+        if (c >= 'a' && c <= 'z')
+            str[i] = byte(c.i32 + ('A'.i32 - 'a'.i32));
+    }
+
+    return str;
+}
+
+fn lower(mut str: string): string
+{
+    for (mut i = 0; i < str.len; i++)
+    {
+        let c = str[i];
+        if (c >= 'A' && c <= 'Z')
+            str[i] = byte(c.i32 + ('a'.i32 - 'A'.i32));
+    }
+
+    return str;
+}
+
+fn upper(c: byte): byte
+{
+    return c >= 'a' && c <= 'z'
+         ? byte(c.i32 + ('A'.i32 - 'a'.i32))
+         : c;
+}
+
+fn lower(c: byte): byte
+{
+    return c >= 'A' && c <= 'Z'
+         ? byte(c.i32 + ('a'.i32 - 'A'.i32))
+         : c;
+}
