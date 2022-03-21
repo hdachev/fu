@@ -403,7 +403,7 @@ fn split(str: $T[], sep: [$T], each)
         each(str, first?: true, last?: true);
 }
 
-fn split(str: $T[], sep: $T)
+fn split(str: $T[], sep: $T, each)
 {
     mut last = 0;
     mut next = 0;

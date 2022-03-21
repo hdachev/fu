@@ -43,7 +43,7 @@ fn filename(path: string): string
 
 fn normalize(p: string): string
 {
-    mut path = p.split("/");
+    mut path = p.split('/');
 
     for (mut i = path.len; i --> 0; ) {
         let part = path[i];
@@ -59,7 +59,7 @@ fn normalize(p: string): string
         }
     }
 
-    return path.join("/");
+    return path.join('/');
 }
 
 fn relative(from: string, to: string): string
