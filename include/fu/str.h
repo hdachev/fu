@@ -10,6 +10,7 @@ typedef fu_VEC<fu::byte> fu_STR;
 
 inline fu_STR fu_TO_STR(const char* cstr) noexcept
 {
+    cstr = cstr ? cstr : "";
     fu_STR vec;
     vec.UNSAFE__init_copy((const fu::byte*)cstr, fu::i(strlen(cstr)));
     return vec;

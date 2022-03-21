@@ -3,14 +3,16 @@ fn exec(mut cmd: string, ref stdout: string): i32
 {
     compiler include(
         "<stdio.h>",
-        "<fu/vec/c_str.h>",
         "<fu/defer.h>");
 
     mut status = -1;
 
+    // c-str ok
+    cmd ~= '\0';
+
     compiler emit(`
 
-        const auto pipe = popen(FU_TEMP_CSTR(`, cmd, `), "r");
+        const auto pipe = popen(`, cmd, `.data(), "r");
         if (pipe)
         {
             fu_DEFER( `, status, ` = pclose(pipe); );
@@ -39,13 +41,13 @@ fn exec(mut cmd: string, ref stdout: string): i32
                 if (!count)
                     break;
 
-                // Copy or just incr size.
+                size += count;
+
+                // Copy if using the local buffer.
                 if (data == BUF)
-                    `, stdout, `.append_copy(
-                        fu_ZERO(), BUF, count);
+                    `, stdout, `.append_copy(fu_ZERO(), BUF, count);
                 else
-                    `, stdout, `.UNSAFE__WriteSize(
-                        size += count);
+                    `, stdout, `.UNSAFE__WriteSize(size);
             }
         }
 

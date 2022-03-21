@@ -1,4 +1,94 @@
 
-pub fn cwd(): string __native("<fu/io.h>", "fu::fs_cwd()");
-pub fn mkdir_p(mut path: string): i32 __native("<fu/io.h>", "fu::fs_mkdir_p");
-pub fn mkdir_p(mut path: string, mode: i32): i32 __native("<fu/io.h>", "fu::fs_mkdir_p");
+let RWX_RWX_RWX = 0x7 << 6
+                | 0x7 << 3
+                | 0x7 << 0;
+
+fn mkdir_p(mut path: string, mode = RWX_RWX_RWX): i32
+{
+    // Try create,
+    //  on ENOENT try parent and repeat.
+    //
+    fn visit(shadow ref path: [byte])
+    {
+        let N           = path.len - 1;
+
+        path[N]         = '\0';
+        defer path[N]   = '/';
+
+        mut err: i32;
+        mut is_ENOENT   = false;
+
+        compiler include(
+            "<sys/stat.h>",
+            "<errno.h>");
+
+        compiler emit(`
+
+            if (mkdir(`, path, `.data(), mode_t(`, mode, `)))
+                `, is_ENOENT, ` = (`, err, ` = errno) == ENOENT;
+        `);
+
+        if (is_ENOENT) for (mut i = N; i --> 1; )
+        {
+            if (path[i] != '/')
+                continue;
+
+            ref parent = path[0, i + 1];
+            if (parent.visit() == 0)
+            {
+                compiler emit(`
+
+                    if (mkdir(`, path, `.data(), mode_t(`, mode, `)))
+                        `, err, ` = errno;
+                `);
+            }
+
+            break;
+        }
+
+        return err;
+    }
+
+    // Alloc enough space for a nullterm.
+    if !(path.ends(with: '/'))
+        path ~= '/';
+
+    return path.visit();
+}
+
+
+//
+
+fn cwd(): string
+{
+    compiler include(
+        "<unistd.h>",
+        "<fu/defer.h>");
+
+    mut cwd: string;
+
+    compiler emit(`
+
+        const auto& init = []()
+        {
+            // As an extension to the POSIX.1-2001 standard, glibc's getcwd()
+            //  allocates the buffer dynamically using malloc(3) if buf is NULL.
+            //
+            // In this case, the allocated buffer has the length size unless
+            //  size is zero, when buf is allocated as big as necessary.
+            //
+            // The caller should free(3) the returned buffer.
+            //
+            char* cstr_cwd  = getcwd(/*buf*/NULL, /*size*/0);
+            fu_DEFER( free(cstr_cwd); );
+
+            return fu_TO_STR(cstr_cwd);
+        };
+
+        static const fu_STR value = init();
+
+        `, cwd, ` = value;
+    `);
+
+    return cwd;
+}

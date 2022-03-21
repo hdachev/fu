@@ -1,5 +1,133 @@
 
-pub fn size (path: string): i32 __native("<fu/io.h>", "fu::file_size");
-pub fn read (path: string): string __native("<fu/io.h>", "fu::file_read");
-pub fn write(path: string, body: [byte]): i32 __native("<fu/io.h>", "fu::file_write");
-pub fn rename(old: string, new: string): i32 __native("<fu/io.h>", "fu::file_rename");
+fn write(mut path: string, data: [byte]): i32
+{
+    // C-str ok.
+    path ~= '\0';
+
+    compiler include(
+        "<stdio.h>",
+        "<errno.h>",
+        "<fu/defer.h>");
+
+    mut err: i32;
+
+    compiler emit(`
+
+        FILE* file = fopen(`, path, `.data(), "w");
+        if (!file)
+            return (`, err, `) = errno;
+
+        fu_DEFER( fclose(file) );
+
+        size_t expect = (size_t) `, data, `.size();
+        size_t actual = fwrite(`, data, `.data(), 1, expect, file);
+
+        if (actual == expect)
+            err = -1;
+
+    `);
+
+    return err;
+}
+
+fn read(mut path: string): string
+{
+    mut output: string;
+    read(path, output);
+    return output;
+}
+
+fn read(mut path: string, ref output: string): i32
+{
+    // C-str ok.
+    path ~= '\0';
+
+    compiler include(
+        "<stdio.h>",
+        "<errno.h>",
+        "<fu/defer.h>");
+
+    mut err: i32;
+
+    compiler emit(`
+
+        auto file = fopen(`, path, `.data(), "r");
+        if (!file)
+            return (`, err, ` = errno);
+
+        fu_DEFER( fclose(file); );
+
+        const size_t BUF_SIZE = 64 * 1024;
+        fu::byte BUF[BUF_SIZE];
+
+        auto size = `, output, `.size();
+
+        for (;;)
+        {
+            void*  data = BUF;
+            size_t capa = BUF_SIZE;
+
+            // Write directly onto the string
+            //  if it has more capa than the buffer here.
+            //
+            auto avail = `, output, `.capa() - size;
+            if (avail > 0 && size_t(avail) > BUF_SIZE)
+            {
+                data = `, output, `.data_mut() + size;
+                capa = size_t(avail);
+            }
+
+            auto count = fu::i(fread(data, 1, capa, file));
+            if (!count)
+                break;
+
+            size += count;
+
+            // Copy if using the local buffer.
+            if (data == BUF)
+                `, output, `.append_copy(fu_ZERO(), BUF, count);
+            else
+                `, output, `.UNSAFE__WriteSize(size);
+        }
+    `);
+
+    return err;
+}
+
+fn rename(mut from: string, mut to: string): i32
+{
+    // C-str ok.
+    from ~= '\0';
+    to   ~= '\0';
+
+    compiler include(
+        "<stdio.h>",
+        "<errno.h>");
+
+    mut err: i32;
+
+    compiler emit(`
+
+        if (rename(`, from, `.data(), `, to, `.data()))
+            `, err, ` = errno;
+    `);
+
+    return err;
+}
+
+fn size(mut path: string): i64
+{
+    // C-str ok.
+    path ~= '\0';
+
+    compiler include("<sys/stat.h>")
+
+    compiler emit(`
+
+        struct stat sb;
+        if (stat(`, path, `.data(), &sb) == 0)
+            return (signed long long) sb.st_size;
+    `);
+
+    return -1;
+}
