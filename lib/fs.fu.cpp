@@ -4,6 +4,7 @@
 #include <fu/str.h>
 #include <fu/vec/concat_one.h>
 #include <fu/view.h>
+#include <stdlib.h>
 #include <sys/stat.h>
 #include <unistd.h>
 

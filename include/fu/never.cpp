@@ -2,13 +2,13 @@
 
 #include <stdexcept>
 
-[[noreturn]] fu_EXPORT fu::never fu::fail(const char* what)
+[[noreturn]] fu_EXPORT fu::never fu::fail(const char* reason)
 {
-    throw std::runtime_error(what);
+    throw std::runtime_error(reason);
 }
 
-[[noreturn]] fu_EXPORT fu::never fu::fail(fu_STR&& what)
+[[noreturn]] fu_EXPORT fu::never fu::fail(fu_STR&& reason)
 {
-    what.push('0');
-    fu::fail((const char*)what.data());
+    reason.push('\0');
+    fu::fail((const char*)reason.data());
 }
