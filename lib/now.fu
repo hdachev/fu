@@ -1,3 +1,34 @@
 
-pub fn hr (): f64 __native("<fu/now.h>", "fu::now_hr()");
-pub fn utc(): f64 __native("<fu/now.h>", "fu::now_utc()");
+fn hr()
+{
+    mut timestamp: f64;
+
+    compiler include("<chrono>");
+
+    compiler emit(`
+
+        `, timestamp, ` =
+            std::chrono::duration<double>(
+                std::chrono::high_resolution_clock::now().time_since_epoch())
+                    .count();
+    `);
+
+    return timestamp;
+}
+
+fn utc()
+{
+    mut timestamp: f64;
+
+    compiler include("<chrono>");
+
+    compiler emit(`
+
+        `, timestamp, ` =
+            std::chrono::duration<double>(
+                std::chrono::system_clock::now().time_since_epoch())
+                    .count();
+    `);
+
+    return timestamp;
+}
