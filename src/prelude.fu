@@ -281,7 +281,7 @@ fn swap(ref a: [$T], i: i32, j: i32): void __native("<fu/vec/view_swap.h>", "fu:
 //  TODO i dont actually think we want to have nullary stuff in prelude,
 //   so TODO needs to take an arg, same with assert - perhaps a pass-through argument.
 
-fn throw(reason: string): never __native("<fu/never.h>", "fu::fail");
+fn throw(mut reason: string): never __native("<fu/never.h>", "fu::fail");
 fn assert(): never __native("<fu/never.h>", "fu_ASSERT()");
 
 

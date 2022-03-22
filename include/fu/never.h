@@ -14,7 +14,6 @@ struct never
 };
 
 [[noreturn]] never fail(const char* what = "Assertion failed.");
-[[noreturn]] never fail(const fu_STR& what);
 [[noreturn]] never fail(fu_STR&& what);
 
 
