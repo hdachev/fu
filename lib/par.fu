@@ -27,9 +27,9 @@ novec noflow fn parallel_for(min!, mut end!, visit)
 {
     mut start   = end * 0;
 
-    compiler include("../hacking/task_stack.hpp");
+    pragma include("../hacking/task_stack.hpp");
 
-    compiler emit(`
+    pragma emit(`
     ////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////
     (void) start;
@@ -55,7 +55,7 @@ novec noflow fn parallel_for(min!, mut end!, visit)
         }
     }
 
-    compiler emit(`
+    pragma emit(`
     ////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////
 

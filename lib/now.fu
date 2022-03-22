@@ -3,9 +3,9 @@ fn hr()
 {
     mut timestamp: f64;
 
-    compiler include("<chrono>");
+    pragma include("<chrono>");
 
-    compiler emit(`
+    pragma emit(`
 
         `, timestamp, ` =
             std::chrono::duration<double>(
@@ -20,9 +20,9 @@ fn utc()
 {
     mut timestamp: f64;
 
-    compiler include("<chrono>");
+    pragma include("<chrono>");
 
-    compiler emit(`
+    pragma emit(`
 
         `, timestamp, ` =
             std::chrono::duration<double>(

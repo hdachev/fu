@@ -9032,7 +9032,7 @@ pub fn runTests()
     // C++ hacks.
 
     ZERO(`
-        compiler emit("
+        pragma emit("
             void ccIncrX2(int& a, int b) {
                 a += b * 2;
             }
@@ -9040,7 +9040,7 @@ pub fn runTests()
 
         fn main() {
             mut a = 0;
-            compiler emit("ccIncrX2(", a, ", 5);");
+            pragma emit("ccIncrX2(", a, ", 5);");
             return a - 10;
         }
     `);

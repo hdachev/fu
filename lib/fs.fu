@@ -18,11 +18,11 @@ fn mkdir_p(mut path: string, mode = RWX_RWX_RWX): i32
         mut err: i32;
         mut is_ENOENT   = false;
 
-        compiler include(
+        pragma include(
             "<sys/stat.h>",
             "<errno.h>");
 
-        compiler emit(`
+        pragma emit(`
 
             if (mkdir(`, path, `.data(), mode_t(`, mode, `)))
                 `, is_ENOENT, ` = (`, err, ` = errno) == ENOENT;
@@ -36,7 +36,7 @@ fn mkdir_p(mut path: string, mode = RWX_RWX_RWX): i32
             ref parent = path[0, i + 1];
             if (parent.visit() == 0)
             {
-                compiler emit(`
+                pragma emit(`
 
                     if (mkdir(`, path, `.data(), mode_t(`, mode, `)))
                         `, err, ` = errno;
@@ -61,14 +61,14 @@ fn mkdir_p(mut path: string, mode = RWX_RWX_RWX): i32
 
 fn cwd(): string
 {
-    compiler include(
+    pragma include(
         "<stdlib.h>",   // free
         "<unistd.h>",   // getcwd
         "<fu/defer.h>");
 
     mut cwd: string;
 
-    compiler emit(`
+    pragma emit(`
 
         const auto& init = []()
         {

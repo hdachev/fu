@@ -1,7 +1,7 @@
 
 fn exec(mut cmd: string, ref stdout: string): i32
 {
-    compiler include(
+    pragma include(
         "<stdio.h>",
         "<fu/defer.h>");
 
@@ -10,7 +10,7 @@ fn exec(mut cmd: string, ref stdout: string): i32
     // c-str ok
     cmd ~= '\0';
 
-    compiler emit(`
+    pragma emit(`
 
         const auto pipe = popen(`, cmd, `.data(), "r");
         if (pipe)

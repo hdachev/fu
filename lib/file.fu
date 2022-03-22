@@ -11,12 +11,12 @@ fn write(mut path: string, data: [byte], mode = RW_RW_RW): i32
     mut err: i32;
 
     //*
-    compiler include(
+    pragma include(
         "<errno.h>",
         "<fcntl.h>",
         "<unistd.h>");
 
-    compiler emit(`
+    pragma emit(`
 
         auto fd = open(`, path, `.data(), O_WRONLY | O_CREAT | O_TRUNC, mode_t(`, mode, `));
         if (fd == -1)
@@ -45,12 +45,12 @@ fn write(mut path: string, data: [byte], mode = RW_RW_RW): i32
     `);
 
     /*/
-    compiler include(
+    pragma include(
         "<stdio.h>",
         "<errno.h>",
         "<fu/defer.h>");
 
-    compiler emit(`
+    pragma emit(`
 
         // Used by posix open, ignored here.
         (void) `, mode, `;
@@ -94,13 +94,13 @@ fn read(mut path: string, ref output: string): i32
     mut err: i32;
 
     //*
-    compiler include(
+    pragma include(
         "<errno.h>",
         "<fcntl.h>",
         "<unistd.h>",
         "<fu/defer.h>");
 
-    compiler emit(`
+    pragma emit(`
 
         auto fd = open(`, path, `.data(), O_RDONLY);
         if (fd == -1)
@@ -151,12 +151,12 @@ fn read(mut path: string, ref output: string): i32
     `);
 
     /*/
-    compiler include(
+    pragma include(
         "<stdio.h>",
         "<errno.h>",
         "<fu/defer.h>");
 
-    compiler emit(`
+    pragma emit(`
 
         auto file = fopen(`, path, `.data(), "r");
         if (!file)
@@ -208,13 +208,13 @@ fn rename(mut from: string, mut to: string): i32
     from ~= '\0';
     to   ~= '\0';
 
-    compiler include(
+    pragma include(
         "<stdio.h>",
         "<errno.h>");
 
     mut err: i32;
 
-    compiler emit(`
+    pragma emit(`
 
         if (rename(`, from, `.data(), `, to, `.data()))
             `, err, ` = errno;
@@ -228,9 +228,9 @@ fn size(mut path: string): i64
     // C-str ok.
     path ~= '\0';
 
-    compiler include("<sys/stat.h>")
+    pragma include("<sys/stat.h>")
 
-    compiler emit(`
+    pragma emit(`
 
         struct stat sb;
         if (stat(`, path, `.data(), &sb) == 0)

@@ -625,7 +625,6 @@ pub fn parse(
                 if (v == "import")      return parseImport();
 
                 if (v == "pragma")      return parseCompilerPragma();
-                if (v == "compiler")    return parseCompilerPragma(); // TODO REMOVE
 
                 if (v == "inline")      return parseInlineDecl();
                 if (v == "extern")      return parseExternDecl();
