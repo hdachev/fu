@@ -5,7 +5,6 @@
 #include <fu/defer.h>
 #include <fu/init_priority.h>
 #include <fu/int.h>
-#include <fu/io.h>
 #include <fu/never.h>
 #include <fu/str.h>
 #include <fu/vec.h>
@@ -90,6 +89,7 @@ const s_Struct& lookupStruct_GBXUPXZt(const s_Type&, const s_Module&, const s_Co
 fu_STR ID_YqscxHlw(const fu_STR&);
 fu_STR dirname_9EcF53rc(const fu_STR&);
 fu_STR join_lq7BzT61(fu::view<char>, const fu_STR&);
+fu_STR read_1WaOntvF(fu_STR&&);
 inline static bool isIntegerConstant_wTT8NhrO(const s_SolvedNode&, const s_Module&, const s_Context&);
 s_ClosureID tryParseClosureID_RHyKU5hm(fu::view<char>);
 s_Intlit Intlit_hdlyM3zq(fu::view<char>);
@@ -3468,7 +3468,7 @@ s_CodegenOutput cpp_codegen_2xq2c97A(const s_Module& module, const s_Context& ct
         const fu_STR& orig = HACK_extra_sources[i];
         fu_STR file = localPath_ozNJN3BA(orig, module);
         src += (("\n// "_fu + orig) + "\n"_fu);
-        src += fu::file_read(file);
+        src += read_1WaOntvF(fu_STR(file));
     };
     return s_CodegenOutput { fu_STR(src), fu_VEC<fu_STR>(HACK_link), fu_VEC<fu_STR>(HACK_include_dirs), fu_VEC<fu_STR>(HACK_extra_sources) };
 }

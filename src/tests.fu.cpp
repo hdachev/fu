@@ -2,7 +2,6 @@
 #include <fu/defer.h>
 #include <fu/init_priority.h>
 #include <fu/int.h>
-#include <fu/io.h>
 #include <fu/str.h>
 #include <fu/vec.h>
 #include <fu/vec/concat.h>
@@ -49,6 +48,7 @@ struct s_ValueType;
 
 fu_STR serialize_zP1960QX(const s_TestDiffs&);
 fu_STR snippet2cpp_0X4li7Vn(const fu_STR&);
+int write_mwfGe7o8(fu_STR&&, fu::view<char>);
 s_Context ZERO_0X4li7Vn(const fu_STR&, s_TestDiffs&);
 s_Context ZERO_a6MPmkBY(fu_VEC<fu_STR>&&, const s_Options&, s_TestDiffs&);
 void TODO_0X4li7Vn(const fu_STR&, s_TestDiffs&);
@@ -885,7 +885,7 @@ void runTests_n07RecyR()
 {
     fu_STR TESTDIFFS_FILE = (PRJDIR + "testdiff/now.td"_fu);
     s_TestDiffs testdiffs = s_TestDiffs{};
-    fu_DEFER_IF_OK(fu::file_write(TESTDIFFS_FILE, serialize_zP1960QX(testdiffs)));
+    fu_DEFER_IF_OK(write_mwfGe7o8(fu_STR(TESTDIFFS_FILE), serialize_zP1960QX(testdiffs)));
     ZERO_0X4li7Vn("\n        <fail return>\n        fn main(): i32 {}               <pass/>\n        fn main(): i32 { return 0; }    </fail>\n    "_fu, testdiffs);
     ZERO_0X4li7Vn("\n        <fail return>\n        fn test(): i32 {}               <pass/>\n        fn test(): i32 { return 0; }    </fail>\n        fn main() test();\n    "_fu, testdiffs);
     ZERO_0X4li7Vn("\n        return 1 - 1;\n    "_fu, testdiffs);

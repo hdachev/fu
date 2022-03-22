@@ -1,10 +1,10 @@
 
 #include <algorithm>
+#include <cstdint>
 #include <fu/decstr.h>
 #include <fu/default.h>
 #include <fu/init_priority.h>
 #include <fu/int.h>
-#include <fu/io.h>
 #include <fu/never.h>
 #include <fu/str.h>
 #include <fu/vec.h>
@@ -53,7 +53,9 @@ struct s_ValueType;
 bool isStruct_usAEukhR(const s_Type&);
 bool is_primitive_oPp5yWwB(const s_Type&);
 fu_STR dirname_9EcF53rc(const fu_STR&);
+fu_STR read_1WaOntvF(fu_STR&&);
 fu_STR resolveFile_JdJwrrbj(const fu_STR&, s_Context&);
+int64_t size_1WaOntvF(fu_STR&&);
 s_StructCanon parseStructCanon_1WZjPEgG(fu::view<char>);
 static fu_STR resolveFile_VHeaw58u(const fu_STR&, const fu_STR&, s_Context&);
 static fu_STR tryResolve_DALprdvw(const fu_STR&, const fu_STR&, const fu_STR&, s_Context&);
@@ -873,7 +875,7 @@ static fu_STR tryResolve_DALprdvw(const fu_STR& path, const fu_STR& from, const 
 {
 
     {
-        const bool exists = (fu::file_size(path) >= 0);
+        const bool exists = (size_1WaOntvF(fu_STR(path)) >= 0ll);
         if (exists)
             return fu_STR(path);
 
@@ -881,7 +883,7 @@ static fu_STR tryResolve_DALprdvw(const fu_STR& path, const fu_STR& from, const 
 
     {
         /*MOV*/ fu_STR path_1 = ((from + "lib/"_fu) + name);
-        const bool exists = (fu::file_size(path_1) >= 0);
+        const bool exists = (size_1WaOntvF(fu_STR(path_1)) >= 0ll);
         if (exists)
             return /*NRVO*/ path_1;
 
@@ -889,7 +891,7 @@ static fu_STR tryResolve_DALprdvw(const fu_STR& path, const fu_STR& from, const 
 
     {
         /*MOV*/ fu_STR path_1 = ((from + "fu/lib/"_fu) + name);
-        const bool exists = (fu::file_size(path_1) >= 0);
+        const bool exists = (size_1WaOntvF(fu_STR(path_1)) >= 0ll);
         if (exists)
             return /*NRVO*/ path_1;
 
@@ -910,7 +912,7 @@ static fu_STR tryResolve_DALprdvw(const fu_STR& path, const fu_STR& from, const 
 
         {
             /*MOV*/ fu_STR path_1 = (from + name_1);
-            const bool exists = (fu::file_size(path_1) >= 0);
+            const bool exists = (size_1WaOntvF(fu_STR(path_1)) >= 0ll);
             if (exists)
                 return /*NRVO*/ path_1;
 
@@ -918,13 +920,13 @@ static fu_STR tryResolve_DALprdvw(const fu_STR& path, const fu_STR& from, const 
 
         {
             /*MOV*/ fu_STR path_1 = ((from + "lib/"_fu) + name_1);
-            const bool exists = (fu::file_size(path_1) >= 0);
+            const bool exists = (size_1WaOntvF(fu_STR(path_1)) >= 0ll);
             if (exists)
                 return /*NRVO*/ path_1;
 
         };
         /*MOV*/ fu_STR path_1 = ((from + "fu/lib/"_fu) + name_1);
-        const bool exists = (fu::file_size(path_1) >= 0);
+        const bool exists = (size_1WaOntvF(fu_STR(path_1)) >= 0ll);
         if (exists)
             return /*NRVO*/ path_1;
 
@@ -956,9 +958,9 @@ inline int x3Cx3E_wtS8CFRs(fu::view<char> a, fu::view<char> b)
 }
                                 #endif
 
-                                #ifndef DEFt_update_aqg3fV3e
-                                #define DEFt_update_aqg3fV3e
-inline bool update_aqg3fV3e(const fu_STR& item, const fu_STR& extra, s_Map_JBAFFW0D& _)
+                                #ifndef DEFt_update_UecoyT3L
+                                #define DEFt_update_UecoyT3L
+inline bool update_UecoyT3L(const fu_STR& item, const fu_STR& extra, s_Map_JBAFFW0D& _)
 {
     int lo = 0;
     int hi = _.keys.size();
@@ -987,7 +989,7 @@ inline bool update_aqg3fV3e(const fu_STR& item, const fu_STR& extra, s_Map_JBAFF
                                 #define DEFt_set_QiKLJrR8
 inline bool set_QiKLJrR8(s_Map_JBAFFW0D& _, const fu_STR& key, const fu_STR& value)
 {
-    return update_aqg3fV3e(key, value, _);
+    return update_UecoyT3L(key, value, _);
 }
                                 #endif
 
@@ -1193,9 +1195,9 @@ inline int x3Cx3E_2l3thTbu(fu::view<char> a, fu::view<char> b)
 }
                                 #endif
 
-                                #ifndef DEFt_update_DxpUD5pV
-                                #define DEFt_update_DxpUD5pV
-inline bool update_DxpUD5pV(const fu_STR& item, const fu_STR& extra, s_Map_JBAFFW0D& _)
+                                #ifndef DEFt_update_ArdY7va8
+                                #define DEFt_update_ArdY7va8
+inline bool update_ArdY7va8(const fu_STR& item, const fu_STR& extra, s_Map_JBAFFW0D& _)
 {
     int lo = 0;
     int hi = _.keys.size();
@@ -1224,7 +1226,7 @@ inline bool update_DxpUD5pV(const fu_STR& item, const fu_STR& extra, s_Map_JBAFF
                                 #define DEFt_set_LFhsvZOG
 inline bool set_LFhsvZOG(s_Map_JBAFFW0D& _, const fu_STR& key, const fu_STR& value)
 {
-    return update_DxpUD5pV(key, value, _);
+    return update_ArdY7va8(key, value, _);
 }
                                 #endif
 
@@ -1234,7 +1236,7 @@ fu_STR getFile_JdJwrrbj(fu_STR&& path, s_Context& ctx)
     if (cached)
         return fu_STR(((cached == "\v"_fu) ? (*(const fu_STR*)fu::NIL) : cached));
 
-    /*MOV*/ fu_STR read = fu::file_read(path);
+    /*MOV*/ fu_STR read = read_1WaOntvF(fu_STR(path));
     set_LFhsvZOG(ctx.files, path, (read ? fu_STR(read) : "\v"_fu));
     return /*NRVO*/ read;
 }
@@ -1465,9 +1467,9 @@ const fu_STR& getModuleSrc_7k0snHP1(const int modid, const s_Context& ctx)
     return ctx.modules[modid].in.src;
 }
 
-                                #ifndef DEFt_split_xM5CwCCH
-                                #define DEFt_split_xM5CwCCH
-inline void split_xM5CwCCH(const fu_STR& str, fu::view<char> sep, fu_VEC<fu_STR>& result)
+                                #ifndef DEFt_split_CvoNe2Wk
+                                #define DEFt_split_CvoNe2Wk
+inline void split_CvoNe2Wk(const fu_STR& str, fu::view<char> sep, fu_VEC<fu_STR>& result)
 {
     int last = 0;
     int next = 0;
@@ -1500,7 +1502,7 @@ inline void split_xM5CwCCH(const fu_STR& str, fu::view<char> sep, fu_VEC<fu_STR>
 inline fu_VEC<fu_STR> split_KclJlPSO(const fu_STR& str, fu::view<char> sep)
 {
     /*MOV*/ fu_VEC<fu_STR> result {};
-    split_xM5CwCCH(str, sep, result);
+    split_CvoNe2Wk(str, sep, result);
     return /*NRVO*/ result;
 }
                                 #endif

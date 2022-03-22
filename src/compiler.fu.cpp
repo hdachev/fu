@@ -1,10 +1,9 @@
 
+#include <cstdint>
 #include <fu/decstr.h>
 #include <fu/default.h>
-#include <fu/env.h>
 #include <fu/init_priority.h>
 #include <fu/int.h>
-#include <fu/io.h>
 #include <fu/never.h>
 #include <fu/now.h>
 #include <fu/print.h>
@@ -56,9 +55,11 @@ struct s_Type;
 struct s_ValueType;
 
 fu_STR getFile_JdJwrrbj(fu_STR&&, s_Context&);
+fu_STR get_k88nYqFr(fu_STR&&);
 fu_STR lower_Z2cjwPPO(fu_STR&&);
 fu_STR qBAD_HIwg52Ja(const fu_STR&);
 fu_STR resolveFile_JdJwrrbj(const fu_STR&, s_Context&);
+int64_t size_1WaOntvF(fu_STR&&);
 s_CodegenOutput cpp_codegen_2xq2c97A(const s_Module&, const s_Context&);
 s_Context ZERO_0X4li7Vn(const fu_STR&, s_TestDiffs&);
 s_Context ZERO_a6MPmkBY(fu_VEC<fu_STR>&&, const s_Options&, s_TestDiffs&);
@@ -808,7 +809,7 @@ static fu_STR absdir_0X4li7Vn(const fu_STR& a)
     return ((if_last_85KQkyE0(a) == '/') ? fu_STR(a) : (a + '/'));
 }
 
-static const fu_STR HOME fu_INIT_PRIORITY(1006) = absdir_0X4li7Vn(fu::env_get("HOME"_fu));
+static const fu_STR HOME fu_INIT_PRIORITY(1006) = absdir_0X4li7Vn(get_k88nYqFr("HOME"_fu));
 
                                 #ifndef DEFt_x7E_KclJlPSOsdf
                                 #define DEFt_x7E_KclJlPSOsdf
@@ -825,8 +826,8 @@ fu_STR locate_PRJDIR_LI96RGZs()
 
     /*MOV*/ fu_STR dir = (HOME + "fu/"_fu);
     fu_STR fn = (dir + "src/compiler.fu"_fu);
-    const int fs = fu::file_size(fn);
-    if (!(fs > 1000))
+    const int64_t fs = size_1WaOntvF(fu_STR(fn));
+    if (!(fs > 1000ll))
         fu::fail(x7E((("Bad compiler.fu: "_fu + fn) + ": "_fu), fu::i64dec(fs)));
 
     const fu_STR* BL_2_v;

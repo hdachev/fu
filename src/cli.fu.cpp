@@ -1,7 +1,6 @@
 
 #include <fu/default.h>
 #include <fu/init_priority.h>
-#include <fu/io.h>
 #include <fu/never.h>
 #include <fu/print.h>
 #include <fu/str.h>
@@ -12,6 +11,7 @@
 #include <fu/vec/slice.h>
 #include <fu/view.h>
 
+fu_STR cwd_OvAHpuKu();
 fu_STR join_lq7BzT61(fu::view<char>, const fu_STR&);
 int self_test_n07RecyR();
 static int cli_handle_JsZC3dIZ(fu::view<fu_STR>, const fu_STR&);
@@ -247,7 +247,7 @@ static int cli_handle_JsZC3dIZ(fu::view<fu_STR> argv, const fu_STR& cwd)
 
 int fu_MAIN(fu::view<fu_STR> argv)
 {
-    return cli_handle_JsZC3dIZ(argv, fu::fs_cwd());
+    return cli_handle_JsZC3dIZ(argv, cwd_OvAHpuKu());
 }
 
 #endif

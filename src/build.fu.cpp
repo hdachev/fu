@@ -1,13 +1,12 @@
 
+#include <cstdint>
 #include <fu/decstr.h>
 #include <fu/default.h>
 #include <fu/int.h>
-#include <fu/io.h>
 #include <fu/never.h>
 #include <fu/now.h>
 #include <fu/print.h>
 #include <fu/process.h>
-#include <fu/shell.h>
 #include <fu/str.h>
 #include <fu/vec.h>
 #include <fu/vec/cmp.h>
@@ -58,7 +57,12 @@ fu_STR filename_9EcF53rc(const fu_STR&);
 fu_STR hash16_HxcQaXaI(fu::view<char>, int);
 fu_STR join_lq7BzT61(fu::view<char>, const fu_STR&);
 fu_STR noext_9EcF53rc(const fu_STR&);
+fu_STR read_1WaOntvF(fu_STR&&);
 fu_STR relative_lq7BzT61(fu::view<char>, const fu_STR&);
+int exec_TfeT8afd(fu_STR&&, fu_STR&);
+int mkdir_p_GHMYB2ew(fu_STR&&, unsigned);
+int write_mwfGe7o8(fu_STR&&, fu::view<char>);
+int64_t size_1WaOntvF(fu_STR&&);
 
                                 #ifndef DEF_s_Token
                                 #define DEF_s_Token
@@ -789,6 +793,11 @@ inline fu_STR x7E(fu::view<char> a, fu::view<char> b)
 }
                                 #endif
 
+                                #ifndef DEF_RWX_RWX_RWX
+                                #define DEF_RWX_RWX_RWX
+inline constexpr unsigned RWX_RWX_RWX = (((0x7u << 6u) | (0x7u << 3u)) | (0x7u << 0u));
+                                #endif
+
                                 #ifndef DEFt_starts_3yRdKyg4
                                 #define DEFt_starts_3yRdKyg4
 inline bool starts_3yRdKyg4(fu::view<char> a, const char with)
@@ -1000,7 +1009,7 @@ inline const fu_STR& unless_oob_I0yWRS5A(fu::view<fu_STR> a, const int i)
         x = ("  WRITE "_fu + fname);
         BL_5_v = &(x);
     (void)0;}), *BL_5_v)) }));
-    fu::file_write(fname, cpp);
+    write_mwfGe7o8(fu_STR(fname), cpp);
     if (!stdout)
         stdout = x7E("Exit code: "_fu, fu::i64dec(code));
 
@@ -1101,7 +1110,7 @@ static fu_STR ensure_local_fname_TALuNyKA(const fu_STR& fname, fu::view<char> di
         return fu_STR(fname);
 
     fu_STR foreign = (dir_src + ".foreign/"_fu);
-    fu::fs_mkdir_p(fu_STR(foreign));
+    mkdir_p_GHMYB2ew(fu_STR(foreign), RWX_RWX_RWX);
     fu_STR rel = replace_lxKOEoJG(replace_lxKOEoJG(relative_lq7BzT61(dir_src, fname), "../"_fu, "up__"_fu), "/"_fu, "__"_fu);
     return foreign + rel;
 }
@@ -1116,9 +1125,9 @@ static fu_STR update_file_rciCNKpX(const fu_STR& fname, fu::view<char> data, fu:
         fu::fail("ensure_local_fname broken"_fu);
 
     /*MOV*/ fu_STR fname_2 = (dir_out + fu::slice(fname_1, dir_src.size()));
-    if (fu::file_read(fname_2) != data)
+    if (read_1WaOntvF(fu_STR(fname_2)) != data)
     {
-        const int err = fu::file_write(fname_2, data);
+        const int err = write_mwfGe7o8(fu_STR(fname_2), data);
         if (err)
             fu::fail(x7E((("Failed to write `"_fu + fname_2) + "`, error: #"_fu), fu::i64dec(err)));
 
@@ -1172,7 +1181,7 @@ void build_Ha3Hbin4(const bool run, fu_STR&& dir_wrk, const fu_STR& fulib, const
 
     fu_STR GCChash = ("g++ -std=c++1z "_fu + O_lvl);
     fu_STR GCC_CMD = (((((GCChash + "-pedantic-errors -Wall -Wextra -Werror "_fu) + "-Wdouble-promotion "_fu) + "-Wconversion -Wsign-conversion "_fu) + "-Wno-float-conversion "_fu) + (fu::LINUX ? "-pthread "_fu : fu_STR{}));
-    s_CodegenOutput fulib_cpp = s_CodegenOutput { fu::file_read(fulib), fu_VEC<fu_STR>{}, fu_VEC<fu_STR>{}, fu_VEC<fu_STR>{} };
+    s_CodegenOutput fulib_cpp = s_CodegenOutput { read_1WaOntvF(fu_STR(fulib)), fu_VEC<fu_STR>{}, fu_VEC<fu_STR>{}, fu_VEC<fu_STR>{} };
     fu_VEC<int> unit_mapping {};
     fu_VEC<fu_STR> unit_fnames {};
     fu::view<s_Module> modules = ctx.modules;
@@ -1225,7 +1234,7 @@ void build_Ha3Hbin4(const bool run, fu_STR&& dir_wrk, const fu_STR& fulib, const
         grow_if_oob_bXA2BeTH(Fs, i_4) = F;
         len_all += cpp_2.size();
     };
-    fu::fs_mkdir_p(fu_STR(dir_wrk));
+    mkdir_p_GHMYB2ew(fu_STR(dir_wrk), RWX_RWX_RWX);
     int code {};
     fu_STR stdout {};
     fu_VEC<fu_STR> HACK_linkFlags {};
@@ -1261,8 +1270,8 @@ void build_Ha3Hbin4(const bool run, fu_STR&& dir_wrk, const fu_STR& fulib, const
     fu_STR INCLUDE = (((flags_cc ? (" "_fu + join_Raki7j6q(flags_cc, ' ')) : fu_STR{}) + " -I ~/fu/include"_fu) + (HACK_include_dirs ? (" -I "_fu + join_hXY7eLHr(HACK_include_dirs, " -I "_fu)) : fu_STR{}));
     fu_STR LIBS = (((flags_ld ? (" "_fu + join_Raki7j6q(flags_ld, ' ')) : fu_STR{}) + (HACK_linkFlags ? (" "_fu + join_hXY7eLHr(HACK_linkFlags, " "_fu)) : fu_STR{})) + (HACK_pkgConfig_libs ? ((" $(pkg-config --libs "_fu + join_hXY7eLHr(HACK_pkgConfig_libs, " "_fu)) + ")"_fu) : fu_STR{}));
     fu_STR F_exe = x7E((x7E((((dir_wrk + "b-"_fu) + hash16_HxcQaXaI((join_hXY7eLHr(Fs, "/"_fu) + LIBS), 16)) + "-"_fu), fu::i64dec(len_all)) + "-"_fu), fu::i64dec(Fs.size()));
-    const int exe_size = fu::file_size(F_exe);
-    if ((exe_size < 1) && (bin || run))
+    const int64_t exe_size = size_1WaOntvF(fu_STR(F_exe));
+    if ((exe_size < 1ll) && (bin || run))
     {
         for (int i_7 = 0; i_7 < Fs.size(); i_7++)
         {
@@ -1273,12 +1282,12 @@ void build_Ha3Hbin4(const bool run, fu_STR&& dir_wrk, const fu_STR& fulib, const
             fu_STR F_cpp = (F_1 + ".cpp"_fu);
             fu_STR F_tmp = (F_1 + ".o.tmp"_fu);
             fu_STR F_obj = (F_1 + ".o"_fu);
-            if (fu::file_size(F_obj) < 1)
+            if (size_1WaOntvF(fu_STR(F_obj)) < 1ll)
             {
                 const fu_STR& original_fname = (i_7 ? GET_u5CHa43i(modules_1[i_7], modules).fname : (*(const fu_STR*)fu::NIL));
                 fu_STR human = (original_fname ? filename_9EcF53rc(original_fname) : "fulib runtime"_fu);
                 const fu_STR& cpp_3 = units[i_7];
-                fu::file_write(F_cpp, cpp_3);
+                write_mwfGe7o8(fu_STR(F_cpp), cpp_3);
                 const fu_STR* BL_35_v;
                 const fu_STR* BL_36_v;
                 fu::println((fu::slate<4, fu_STR> { fu_STR((__extension__ (
@@ -1295,7 +1304,7 @@ void build_Ha3Hbin4(const bool run, fu_STR&& dir_wrk, const fu_STR& fulib, const
                 fu_STR INCLUDE_2 = (INCLUDE_1 + (original_fname ? (" -iquote "_fu + dirname_9EcF53rc(original_fname)) : fu_STR{}));
                 fu_STR CMD = (((((((GCC_CMD + " -c"_fu) + INCLUDE_2) + " -o "_fu) + F_tmp) + " "_fu) + F_cpp) + " 2>&1"_fu);
                 int _0 {};
-                code = ((_0 = fu::shell_exec(fu_STR(CMD), stdout)) ? _0 : fu::shell_exec((((("mv "_fu + F_tmp) + " "_fu) + F_obj) + " 2>&1"_fu), stdout));
+                code = ((_0 = exec_TfeT8afd(fu_STR(CMD), stdout)) ? _0 : exec_TfeT8afd((((("mv "_fu + F_tmp) + " "_fu) + F_obj) + " 2>&1"_fu), stdout));
                 if (code)
                     ERR_5VbL1Ywt(fu_STR(cpp_3), Fs, dir_wrk, stdout, code, onfail, modules_1, modules);
 
@@ -1338,7 +1347,7 @@ void build_Ha3Hbin4(const bool run, fu_STR&& dir_wrk, const fu_STR& fulib, const
             const double t0_1 = fu::now_hr();
             fu_STR CMD_1 = ((cmd + LIBS) + " 2>&1"_fu);
             int _1 {};
-            code = ((_1 = fu::shell_exec(fu_STR(CMD_1), stdout)) ? _1 : (_1 = fu::shell_exec((("chmod 755 "_fu + F_tmp_1) + " 2>&1"_fu), stdout)) ? _1 : fu::shell_exec((((("mv "_fu + F_tmp_1) + " "_fu) + F_exe) + " 2>&1"_fu), stdout));
+            code = ((_1 = exec_TfeT8afd(fu_STR(CMD_1), stdout)) ? _1 : (_1 = exec_TfeT8afd((("chmod 755 "_fu + F_tmp_1) + " 2>&1"_fu), stdout)) ? _1 : exec_TfeT8afd((((("mv "_fu + F_tmp_1) + " "_fu) + F_exe) + " 2>&1"_fu), stdout));
             if (code)
             {
                 const fu_STR* BL_47_v;
@@ -1373,14 +1382,14 @@ void build_Ha3Hbin4(const bool run, fu_STR&& dir_wrk, const fu_STR& fulib, const
     };
     if (run)
     {
-        if (exe_size == 4)
-            code = only_80Mq0iZv(fu::view_of(fu::file_read(F_exe), int{}));
+        if (exe_size == 4ll)
+            code = only_80Mq0iZv(fu::view_of(read_1WaOntvF(fu_STR(F_exe)), int{}));
         else
         {
-            code = fu::shell_exec(fu_STR(F_exe), stdout);
+            code = exec_TfeT8afd(fu_STR(F_exe), stdout);
             const bool pure = true;
             if (pure)
-                fu::file_write(F_exe, fu::view_of((fu::slate<1, int> { int(code) }), char{}));
+                write_mwfGe7o8(fu_STR(F_exe), fu::view_of((fu::slate<1, int> { int(code) }), char{}));
 
         };
     };
@@ -1389,7 +1398,7 @@ void build_Ha3Hbin4(const bool run, fu_STR&& dir_wrk, const fu_STR& fulib, const
 
     if (dir_cpp && dir_src)
     {
-        fu::fs_mkdir_p(fu_STR(dir_cpp));
+        mkdir_p_GHMYB2ew(fu_STR(dir_cpp), RWX_RWX_RWX);
         fu_VEC<fu_STR> cpp_files {};
         for (int i_9 = 1; i_9 < units.size(); i_9++)
         {
@@ -1429,7 +1438,7 @@ void build_Ha3Hbin4(const bool run, fu_STR&& dir_wrk, const fu_STR& fulib, const
 
                     inputs.push(fu_STR(input));
                     fu_STR custom = (GET_u5CHa43i(module_3, modules).fname + ".cmake"_fu);
-                    if (fu::file_size(custom) > 0)
+                    if (size_1WaOntvF(fu_STR(custom)) > 0ll)
                         includes += (("include("_fu + relative_lq7BzT61(CMakeLists, custom)) + ")\n"_fu);
 
                 };
@@ -1461,8 +1470,8 @@ void build_Ha3Hbin4(const bool run, fu_STR&& dir_wrk, const fu_STR& fulib, const
     };
     if (bin)
     {
-        fu::fs_mkdir_p(dirname_9EcF53rc(bin));
-        code = fu::shell_exec((((("mv "_fu + F_exe) + " "_fu) + bin) + " 2>&1"_fu), stdout);
+        mkdir_p_GHMYB2ew(dirname_9EcF53rc(bin), RWX_RWX_RWX);
+        code = exec_TfeT8afd((((("mv "_fu + F_exe) + " "_fu) + bin) + " 2>&1"_fu), stdout);
     };
     if (code)
         ERR_5VbL1Ywt(fu_STR{}, Fs, dir_wrk, stdout, code, onfail, modules_1, modules);

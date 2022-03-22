@@ -29,7 +29,6 @@ set(FU_INPUTS
     ../lib/tea.fu
     lib/debug.fu
     ../lib/env.fu
-    build.fu
     ../lib/fs.fu
     ../lib/process.fu
     ../lib/shell.fu
@@ -38,6 +37,7 @@ set(FU_INPUTS
     parser.fu
     fail.fu
     types.fu
+    build.fu
     scope.fu
     flow.fu
     effects.fu
