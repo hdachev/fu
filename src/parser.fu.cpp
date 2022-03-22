@@ -1509,7 +1509,7 @@ static s_Node parseStatement_R38NSHBa(int& _loc, fu::view<s_Token> tokens, int& 
             if (v == "import"_fu)
                 return parseImport_bBivss9s(tokens, _idx, fname, src, _col0, warnings, options, _loc, fuzimports, modid);
 
-            if (v == "compiler"_fu)
+            if (v == "compiler"_fu || v == "pragma"_fu)
                 return parseCompilerPragma_6GTsIxpa(tokens, _idx, fname, src, _precedence, _loc, _col0, warnings, options, modid, _fnDepth, _dollars, _dollarAuto, _hasPUB, fuzimports, _anonFns);
 
             if (v == "inline"_fu)

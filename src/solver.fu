@@ -1749,7 +1749,7 @@ pub fn solve(
 
         // Exotics
         if (k == "forfieldsof") return solveForFieldsOf(node);
-        if (k == "compiler")    return executeCompilerPragma(node);
+        if (k == "pragma")      return executeCompilerPragma(node);
         if (k == "void")        return createEmpty();
 
         //
@@ -2078,7 +2078,7 @@ pub fn solve(
             //
             // propagateType(node.items, t_void, :relax_mask);
         }
-        else if (k == "compiler")
+        else if (k == "pragma")
         {
             // Noop - but do track variable use
             //  so we don't emit warnings
@@ -2463,7 +2463,7 @@ pub fn solve(
     fn executeCompilerPragma(node: Node)
     {
         if (node.value != "break")
-            return SolvedNode("compiler", :node.value,
+            return SolvedNode("pragma", :node.value,
                 items: solveNodes(node.items), type: t_void);
 
         compilerBreak();
@@ -7263,7 +7263,7 @@ pub fn solve(
                 // The default - descend recursively.
                 bck_nodes(node.items);
             }
-            else if (k == "compiler")
+            else if (k == "pragma")
             {
                 // Noop.
             }

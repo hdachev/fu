@@ -319,11 +319,11 @@ pub fn parse(
             consume("op", "(");
             parseCallArgs(")", items);
 
-            return make("compiler", :value, :items);
+            return make("pragma", :value, :items);
         }
 
         //
-        let ret = make("compiler", :value);
+        let ret = make("pragma", :value);
         softSemi();
         return ret;
     }
@@ -623,7 +623,9 @@ pub fn parse(
 
                 if (v == "nocopy")      return parseNoCopy();
                 if (v == "import")      return parseImport();
-                if (v == "compiler")    return parseCompilerPragma();
+
+                if (v == "pragma")      return parseCompilerPragma();
+                if (v == "compiler")    return parseCompilerPragma(); // TODO REMOVE
 
                 if (v == "inline")      return parseInlineDecl();
                 if (v == "extern")      return parseExternDecl();

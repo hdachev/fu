@@ -2349,7 +2349,7 @@ pub fn cpp_codegen(implicit module: Module, implicit ctx: Context): CodegenOutpu
         if (k == "try")         return cgTryCatch(node);
         if (k == "defer")       return cgDefer(node);
 
-        if (k == "compiler")    return cgCompilerPragma(node);
+        if (k == "pragma")      return cgCompilerPragma(node);
 
         return fail("TODO: " ~ k);
     }
