@@ -118,6 +118,20 @@ fn nan(v: $T) case ($T.is::floating_point): bool __native("<cmath>", "std::isnan
 fn inf(v: $T) case ($T.is::floating_point): bool __native("<cmath>", "std::isinf");
 fn finite(v: $T) case ($T.is::floating_point): bool __native("<cmath>", "std::isfinite");
 
+fn MIN(_: $T)
+    case ($T -> i8 )        -128;
+    case ($T -> i16)        -32768;
+    case ($T -> i32)        -2147483648;
+    case ($T -> i64)        -9223372036854775808;
+    case ($T.is::unsigned)  $T(0);
+
+fn MAX(_: $T)
+    case ($T -> i8 )        127;
+    case ($T -> i16)        32767;
+    case ($T -> i32)        2147483647;
+    case ($T -> i64)        9223372036854775807;
+    case ($T.is::unsigned)  $T(-1);
+
 
 // Logic.
 
