@@ -1,10 +1,12 @@
 #include <new>
 #include <cstdlib>
 
-#include "./arc.h"
-#include "../int/next_pow2.h"
 #include "../export.h"
 #include "../init_priority.h"
+
+#include "./arc.h"
+#include "./next_pow2.h"
+
 
 constexpr uint8_t fu_EXIT_BadAlloc = 101;
 
