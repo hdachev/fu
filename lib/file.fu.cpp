@@ -1,33 +1,52 @@
 
 #include <cstdint>
 #include <errno.h>
+#include <fcntl.h>
 #include <fu/defer.h>
 #include <fu/str.h>
 #include <fu/vec/concat_one.h>
 #include <fu/view.h>
 #include <stdio.h>
 #include <sys/stat.h>
+#include <unistd.h>
 
 #ifndef FU_NO_FDEFs
 
-int write_mwfGe7o8(fu_STR&& path, fu::view<char> data)
+                                #ifndef DEF_RW_RW_RW
+                                #define DEF_RW_RW_RW
+inline constexpr unsigned RW_RW_RW = (((0x6u << 6u) | (0x6u << 3u)) | (0x6u << 0u));
+                                #endif
+
+int write_hRROHsch(fu_STR&& path, fu::view<char> data, const unsigned mode)
 {
     path += '\x00';
     /*MOV*/ int err {};
 
 
-        FILE* file = fopen(path.data(), "w");
-        if (!file)
-            return (err) = errno;
+        auto fd = open(path.data(), O_WRONLY | O_CREAT | O_TRUNC, mode_t(mode));
+        if (fd == -1)
+            return (err = errno);
 
-        fu_DEFER( fclose(file) );
+        auto* buf = data.data();
+        auto size = size_t(data.size());
 
-        size_t expect = (size_t) data.size();
-        size_t actual = fwrite(data.data(), 1, expect, file);
+        while (size > 0)
+        {
+            auto written = write(fd, buf, size);
+            if (written <= 0)
+            {
+                if (written < 0)
+                    err = errno;
 
-        if (actual == expect)
-            err = -1;
+                break;
+            }
 
+            buf  +=        written;
+            size -= size_t(written);
+        }
+
+        if (close(fd) && !err)
+            err = errno;
     ;
     return /*NRVO*/ err;
 }
@@ -38,11 +57,14 @@ int read_rdNIrUmo(fu_STR&& path, fu_STR& output)
     /*MOV*/ int err {};
 
 
-        auto file = fopen(path.data(), "r");
-        if (!file)
+        auto fd = open(path.data(), O_RDONLY);
+        if (fd == -1)
             return (err = errno);
 
-        fu_DEFER( fclose(file); );
+        fu_DEFER(
+            if (close(fd) && !err)
+                err = errno;
+        );
 
         const size_t BUF_SIZE = 64 * 1024;
         fu::byte BUF[BUF_SIZE];
@@ -64,9 +86,14 @@ int read_rdNIrUmo(fu_STR&& path, fu_STR& output)
                 capa = size_t(avail);
             }
 
-            auto count = fu::i(fread(data, 1, capa, file));
-            if (!count)
+            auto count = (fu::i) read(fd, data, capa);
+            if (count <= 0)
+            {
+                if (count < 0)
+                    err = errno;
+
                 break;
+            }
 
             size += count;
 
@@ -83,7 +110,9 @@ int read_rdNIrUmo(fu_STR&& path, fu_STR& output)
 fu_STR read_1WaOntvF(fu_STR&& path)
 {
     /*MOV*/ fu_STR output {};
-    read_rdNIrUmo(fu_STR(path), output);
+    if (read_rdNIrUmo(fu_STR(path), output))
+        output.clear();
+
     return /*NRVO*/ output;
 }
 

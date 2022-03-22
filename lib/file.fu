@@ -1,39 +1,88 @@
 
-fn write(mut path: string, data: [byte]): i32
+let RW_RW_RW    = 0x6 << 6
+                | 0x6 << 3
+                | 0x6 << 0;
+
+fn write(mut path: string, data: [byte], mode = RW_RW_RW): i32
 {
     // C-str ok.
     path ~= '\0';
 
+    mut err: i32;
+
+    //*
+    compiler include(
+        "<errno.h>",
+        "<fcntl.h>",
+        "<unistd.h>");
+
+    compiler emit(`
+
+        auto fd = open(`, path, `.data(), O_WRONLY | O_CREAT | O_TRUNC, mode_t(`, mode, `));
+        if (fd == -1)
+            return (`, err, ` = errno);
+
+        auto* buf = `, data, `.data();
+        auto size = size_t(`, data, `.size());
+
+        while (size > 0)
+        {
+            auto written = write(fd, buf, size);
+            if (written <= 0)
+            {
+                if (written < 0)
+                    `, err, ` = errno;
+
+                break;
+            }
+
+            buf  +=        written;
+            size -= size_t(written);
+        }
+
+        if (close(fd) && !`, err, `)
+            `, err, ` = errno;
+    `);
+
+    /*/
     compiler include(
         "<stdio.h>",
         "<errno.h>",
         "<fu/defer.h>");
 
-    mut err: i32;
-
     compiler emit(`
 
+        // Used by posix open, ignored here.
+        (void) `, mode, `;
+
         FILE* file = fopen(`, path, `.data(), "w");
-        if (!file)
-            return (`, err, `) = errno;
+        if (file)
+        {
+            fu_DEFER( fclose(file) );
 
-        fu_DEFER( fclose(file) );
+            size_t expect = (size_t) `, data, `.size();
+            size_t actual = fwrite(`, data, `.data(), 1, expect, file);
 
-        size_t expect = (size_t) `, data, `.size();
-        size_t actual = fwrite(`, data, `.data(), 1, expect, file);
+            if (actual == expect)
+                return 0;
 
-        if (actual == expect)
-            err = -1;
+            `, err, ` = ferror(file);
+        }
 
+        if (!`, err, `)
+            `, err, ` = errno ? errno : -1;
     `);
 
+    //*/
     return err;
 }
 
 fn read(mut path: string): string
 {
     mut output: string;
-    read(path, output);
+    if (read(path, output))
+        output.clear();
+
     return output;
 }
 
@@ -42,12 +91,70 @@ fn read(mut path: string, ref output: string): i32
     // C-str ok.
     path ~= '\0';
 
+    mut err: i32;
+
+    //*
+    compiler include(
+        "<errno.h>",
+        "<fcntl.h>",
+        "<unistd.h>",
+        "<fu/defer.h>");
+
+    compiler emit(`
+
+        auto fd = open(`, path, `.data(), O_RDONLY);
+        if (fd == -1)
+            return (`, err, ` = errno);
+
+        fu_DEFER(
+            if (close(fd) && !`, err, `)
+                `, err, ` = errno;
+        );
+
+        const size_t BUF_SIZE = 64 * 1024;
+        fu::byte BUF[BUF_SIZE];
+
+        auto size = `, output, `.size();
+
+        for (;;)
+        {
+            void*  data = BUF;
+            size_t capa = BUF_SIZE;
+
+            // Write directly onto the string
+            //  if it has more capa than the buffer here.
+            //
+            auto avail = `, output, `.capa() - size;
+            if (avail > 0 && size_t(avail) > BUF_SIZE)
+            {
+                data = `, output, `.data_mut() + size;
+                capa = size_t(avail);
+            }
+
+            auto count = (fu::i) read(fd, data, capa);
+            if (count <= 0)
+            {
+                if (count < 0)
+                    `, err, ` = errno;
+
+                break;
+            }
+
+            size += count;
+
+            // Copy if using the local buffer.
+            if (data == BUF)
+                `, output, `.append_copy(fu_ZERO(), BUF, count);
+            else
+                `, output, `.UNSAFE__WriteSize(size);
+        }
+    `);
+
+    /*/
     compiler include(
         "<stdio.h>",
         "<errno.h>",
         "<fu/defer.h>");
-
-    mut err: i32;
 
     compiler emit(`
 
@@ -91,6 +198,7 @@ fn read(mut path: string, ref output: string): i32
         }
     `);
 
+    //*/
     return err;
 }
 

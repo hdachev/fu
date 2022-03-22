@@ -61,7 +61,7 @@ fu_STR read_1WaOntvF(fu_STR&&);
 fu_STR relative_lq7BzT61(fu::view<char>, const fu_STR&);
 int exec_TfeT8afd(fu_STR&&, fu_STR&);
 int mkdir_p_GHMYB2ew(fu_STR&&, unsigned);
-int write_mwfGe7o8(fu_STR&&, fu::view<char>);
+int write_hRROHsch(fu_STR&&, fu::view<char>, unsigned);
 int64_t size_1WaOntvF(fu_STR&&);
 
                                 #ifndef DEF_s_Token
@@ -980,6 +980,11 @@ inline fu_STR join_hXY7eLHr(fu::view<fu_STR> a, fu::view<char> sep)
 }
                                 #endif
 
+                                #ifndef DEF_RW_RW_RW
+                                #define DEF_RW_RW_RW
+inline constexpr unsigned RW_RW_RW = (((0x6u << 6u) | (0x6u << 3u)) | (0x6u << 0u));
+                                #endif
+
                                 #ifndef DEFt_unless_oob_I0yWRS5A
                                 #define DEFt_unless_oob_I0yWRS5A
 inline const fu_STR& unless_oob_I0yWRS5A(fu::view<fu_STR> a, const int i)
@@ -1009,7 +1014,7 @@ inline const fu_STR& unless_oob_I0yWRS5A(fu::view<fu_STR> a, const int i)
         x = ("  WRITE "_fu + fname);
         BL_5_v = &(x);
     (void)0;}), *BL_5_v)) }));
-    write_mwfGe7o8(fu_STR(fname), cpp);
+    write_hRROHsch(fu_STR(fname), cpp, RW_RW_RW);
     if (!stdout)
         stdout = x7E("Exit code: "_fu, fu::i64dec(code));
 
@@ -1127,7 +1132,7 @@ static fu_STR update_file_rciCNKpX(const fu_STR& fname, fu::view<char> data, fu:
     /*MOV*/ fu_STR fname_2 = (dir_out + fu::slice(fname_1, dir_src.size()));
     if (read_1WaOntvF(fu_STR(fname_2)) != data)
     {
-        const int err = write_mwfGe7o8(fu_STR(fname_2), data);
+        const int err = write_hRROHsch(fu_STR(fname_2), data, RW_RW_RW);
         if (err)
             fu::fail(x7E((("Failed to write `"_fu + fname_2) + "`, error: #"_fu), fu::i64dec(err)));
 
@@ -1287,7 +1292,7 @@ void build_Ha3Hbin4(const bool run, fu_STR&& dir_wrk, const fu_STR& fulib, const
                 const fu_STR& original_fname = (i_7 ? GET_u5CHa43i(modules_1[i_7], modules).fname : (*(const fu_STR*)fu::NIL));
                 fu_STR human = (original_fname ? filename_9EcF53rc(original_fname) : "fulib runtime"_fu);
                 const fu_STR& cpp_3 = units[i_7];
-                write_mwfGe7o8(fu_STR(F_cpp), cpp_3);
+                write_hRROHsch(fu_STR(F_cpp), cpp_3, RW_RW_RW);
                 const fu_STR* BL_35_v;
                 const fu_STR* BL_36_v;
                 fu::println((fu::slate<4, fu_STR> { fu_STR((__extension__ (
@@ -1389,7 +1394,7 @@ void build_Ha3Hbin4(const bool run, fu_STR&& dir_wrk, const fu_STR& fulib, const
             code = exec_TfeT8afd(fu_STR(F_exe), stdout);
             const bool pure = true;
             if (pure)
-                write_mwfGe7o8(fu_STR(F_exe), fu::view_of((fu::slate<1, int> { int(code) }), char{}));
+                write_hRROHsch(fu_STR(F_exe), fu::view_of((fu::slate<1, int> { int(code) }), char{}), RW_RW_RW);
 
         };
     };

@@ -48,7 +48,7 @@ struct s_ValueType;
 
 fu_STR serialize_zP1960QX(const s_TestDiffs&);
 fu_STR snippet2cpp_0X4li7Vn(const fu_STR&);
-int write_mwfGe7o8(fu_STR&&, fu::view<char>);
+int write_hRROHsch(fu_STR&&, fu::view<char>, unsigned);
 s_Context ZERO_0X4li7Vn(const fu_STR&, s_TestDiffs&);
 s_Context ZERO_a6MPmkBY(fu_VEC<fu_STR>&&, const s_Options&, s_TestDiffs&);
 void TODO_0X4li7Vn(const fu_STR&, s_TestDiffs&);
@@ -788,6 +788,11 @@ int self_test_n07RecyR()
 extern const fu_STR PRJDIR;
                                 #endif
 
+                                #ifndef DEF_RW_RW_RW
+                                #define DEF_RW_RW_RW
+inline constexpr unsigned RW_RW_RW = (((0x6u << 6u) | (0x6u << 3u)) | (0x6u << 0u));
+                                #endif
+
                                 #ifndef DEFt_replace_2qp5gcGE
                                 #define DEFt_replace_2qp5gcGE
 inline fu_STR replace_2qp5gcGE(const fu_STR& str, fu::view<char> all, fu::view<char> with)
@@ -885,7 +890,7 @@ void runTests_n07RecyR()
 {
     fu_STR TESTDIFFS_FILE = (PRJDIR + "testdiff/now.td"_fu);
     s_TestDiffs testdiffs = s_TestDiffs{};
-    fu_DEFER_IF_OK(write_mwfGe7o8(fu_STR(TESTDIFFS_FILE), serialize_zP1960QX(testdiffs)));
+    fu_DEFER_IF_OK(write_hRROHsch(fu_STR(TESTDIFFS_FILE), serialize_zP1960QX(testdiffs), RW_RW_RW));
     ZERO_0X4li7Vn("\n        <fail return>\n        fn main(): i32 {}               <pass/>\n        fn main(): i32 { return 0; }    </fail>\n    "_fu, testdiffs);
     ZERO_0X4li7Vn("\n        <fail return>\n        fn test(): i32 {}               <pass/>\n        fn test(): i32 { return 0; }    </fail>\n        fn main() test();\n    "_fu, testdiffs);
     ZERO_0X4li7Vn("\n        return 1 - 1;\n    "_fu, testdiffs);
