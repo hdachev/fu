@@ -74,8 +74,14 @@ fn byte(v: $T) case ($T.is::primitive): byte __native("/prim/convert");
 // Math.
 
 fn abs(v: $T) case ($T.is::floating_point): $T __native("<cmath>", "std::abs");
-fn max(a: $T, b: $T) case ($T.is::arithmetic): $T __native("<algorithm>", "std::max");
-fn min(a: $T, b: $T) case ($T.is::arithmetic): $T __native("<algorithm>", "std::min");
+
+fn max(a: $T, b: $T)
+    case ($T.is::floating_point) a >= b || b != b ? a : b;
+    case ($T.is::arithmetic)     a >= b           ? a : b;
+
+fn min(a: $T, b: $T)
+    case ($T.is::floating_point) a <= b || b != b ? a : b;
+    case ($T.is::arithmetic)     a <= b           ? a : b;
 
 fn exp  (a: $T, b: $T) case ($T.is::floating_point): $T __native("<cmath>", "std::exp");
 fn exp2 (a: $T, b: $T) case ($T.is::floating_point): $T __native("<cmath>", "std::exp2");
