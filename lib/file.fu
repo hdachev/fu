@@ -16,14 +16,14 @@ fn write(mut path: string, data: [byte], mode = RW_RW_RW): i32
         "<fcntl.h>",
         "<unistd.h>");
 
-    pragma emit(`
-
-        auto fd = open(`, path, `.data(), O_WRONLY | O_CREAT | O_TRUNC, mode_t(`, mode, `));
+    pragma emit(
+    `
+        auto fd = open(`path`.data(), O_WRONLY | O_CREAT | O_TRUNC, mode_t(`mode`));
         if (fd == -1)
-            return (`, err, ` = errno);
+            return (`err` = errno);
 
-        auto* buf = `, data, `.data();
-        auto size = size_t(`, data, `.size());
+        auto* buf = `data`.data();
+        auto size = size_t(`data`.size());
 
         while (size > 0)
         {
@@ -31,7 +31,7 @@ fn write(mut path: string, data: [byte], mode = RW_RW_RW): i32
             if (written <= 0)
             {
                 if (written < 0)
-                    `, err, ` = errno;
+                    `err` = errno;
 
                 break;
             }
@@ -40,8 +40,8 @@ fn write(mut path: string, data: [byte], mode = RW_RW_RW): i32
             size -= size_t(written);
         }
 
-        if (close(fd) && !`, err, `)
-            `, err, ` = errno;
+        if (close(fd) && !`err`)
+            `err` = errno;
     `);
 
     /*/
@@ -50,27 +50,27 @@ fn write(mut path: string, data: [byte], mode = RW_RW_RW): i32
         "<errno.h>",
         "<fu/defer.h>");
 
-    pragma emit(`
-
+    pragma emit(
+    `
         // Used by posix open, ignored here.
-        (void) `, mode, `;
+        (void) `mode`;
 
-        FILE* file = fopen(`, path, `.data(), "w");
+        FILE* file = fopen(`path`.data(), "w");
         if (file)
         {
             fu_DEFER( fclose(file) );
 
-            size_t expect = (size_t) `, data, `.size();
-            size_t actual = fwrite(`, data, `.data(), 1, expect, file);
+            size_t expect = (size_t) `data`.size();
+            size_t actual = fwrite(`data`.data(), 1, expect, file);
 
             if (actual == expect)
                 return 0;
 
-            `, err, ` = ferror(file);
+            `err` = ferror(file);
         }
 
-        if (!`, err, `)
-            `, err, ` = errno ? errno : -1;
+        if (!`err`)
+            `err` = errno ? errno : -1;
     `);
 
     //*/
@@ -94,61 +94,91 @@ fn read(mut path: string, ref output: string): i32
     mut err: i32;
 
     //*
-    pragma include(
-        "<errno.h>",
-        "<fcntl.h>",
-        "<unistd.h>",
-        "<fu/defer.h>");
+    // Block around the thing to scope the defer
+    //  to set errnos before we return.
+    {
+        pragma include(
+            "<sys/stat.h>",
+            "<errno.h>",
+            "<fcntl.h>",
+            "<unistd.h>",
+            "<fu/defer.h>");
 
-    pragma emit(`
+        mut size: i64;
 
-        auto fd = open(`, path, `.data(), O_RDONLY);
-        if (fd == -1)
-            return (`, err, ` = errno);
+        pragma emit(
+        `
+            struct stat sb;
+            if (stat(`path`.data(), &sb))
+                return (`err` = errno);
 
-        fu_DEFER(
-            if (close(fd) && !`, err, `)
-                `, err, ` = errno;
-        );
+            `size` = sb.st_size;
+        `);
 
-        const size_t BUF_SIZE = 64 * 1024;
-        fu::byte BUF[BUF_SIZE];
+        mut len0 = output.len;
 
-        auto size = `, output, `.size();
-
-        for (;;)
+        // Smallvecs should fit up to (2GB - 16b),
+        //  but this is vec size-type agnostic.
+        let len1 = len0.i64 + size;
+        if (len1 > len0.MAX.i64 - 16)
         {
-            void*  data = BUF;
-            size_t capa = BUF_SIZE;
-
-            // Write directly onto the string
-            //  if it has more capa than the buffer here.
-            //
-            auto avail = `, output, `.capa() - size;
-            if (avail > 0 && size_t(avail) > BUF_SIZE)
-            {
-                data = `, output, `.data_mut() + size;
-                capa = size_t(avail);
-            }
-
-            auto count = (fu::i) read(fd, data, capa);
-            if (count <= 0)
-            {
-                if (count < 0)
-                    `, err, ` = errno;
-
-                break;
-            }
-
-            size += count;
-
-            // Copy if using the local buffer.
-            if (data == BUF)
-                `, output, `.append_copy(fu_ZERO(), BUF, count);
-            else
-                `, output, `.UNSAFE__WriteSize(size);
+            // Try to return a meaningful error code.
+            pragma emit(
+            `
+                return (`err` = EFBIG);
+            `);
         }
-    `);
+
+        // Last chance for things to fail before we alloc.
+        pragma emit(
+        `
+            auto fd = open(`path`.data(), O_RDONLY);
+            if (fd == -1)
+                return (`err` = errno);
+        `);
+
+        // Cleanup.
+        defer
+        {
+            // Shrink result in case of error,
+            //  and again trying to return a meaningful errno
+            //   when we're about to return the wrong number of bytes.
+            //
+            pragma emit(
+            `
+                if (close(fd) && !`err`)
+                    `err` = errno;
+
+                if (`len0` != `len1`)
+                {
+                    output.UNSAFE__WriteSize(`len0`);
+                    `err` = ERANGE;
+                }
+            `);
+        }
+
+        // Allocate.
+        output.grow(len1.i32);
+
+        //
+        pragma emit(
+        `
+            auto* buf = `output`.data_mut();
+            while (`len0` < `len1`)
+            {
+                auto count = read(fd, buf, size_t(`len1` - `len0`));
+                if (count <= 0)
+                {
+                    if (count < 0)
+                        `err` = errno;
+
+                    break;
+                }
+
+                `len0` += (decltype(`len0`)) count;
+            }
+        `);
+    }
 
     /*/
     pragma include(
@@ -156,18 +186,18 @@ fn read(mut path: string, ref output: string): i32
         "<errno.h>",
         "<fu/defer.h>");
 
-    pragma emit(`
-
-        auto file = fopen(`, path, `.data(), "r");
+    pragma emit(
+    `
+        auto file = fopen(`path`.data(), "r");
         if (!file)
-            return (`, err, ` = errno);
+            return (`err` = errno);
 
         fu_DEFER( fclose(file); );
 
         const size_t BUF_SIZE = 64 * 1024;
         fu::byte BUF[BUF_SIZE];
 
-        auto size = `, output, `.size();
+        auto size = `output`.size();
 
         for (;;)
         {
@@ -177,10 +207,10 @@ fn read(mut path: string, ref output: string): i32
             // Write directly onto the string
             //  if it has more capa than the buffer here.
             //
-            auto avail = `, output, `.capa() - size;
+            auto avail = `output`.capa() - size;
             if (avail > 0 && size_t(avail) > BUF_SIZE)
             {
-                data = `, output, `.data_mut() + size;
+                data = `output`.data_mut() + size;
                 capa = size_t(avail);
             }
 
@@ -192,9 +222,9 @@ fn read(mut path: string, ref output: string): i32
 
             // Copy if using the local buffer.
             if (data == BUF)
-                `, output, `.append_copy(fu_ZERO(), BUF, count);
+                `output`.append_copy(fu_ZERO(), BUF, count);
             else
-                `, output, `.UNSAFE__WriteSize(size);
+                `output`.UNSAFE__WriteSize(size);
         }
     `);
 
@@ -214,10 +244,10 @@ fn rename(mut from: string, mut to: string): i32
 
     mut err: i32;
 
-    pragma emit(`
-
-        if (rename(`, from, `.data(), `, to, `.data()))
-            `, err, ` = errno;
+    pragma emit(
+    `
+        if (rename(`from`.data(), `to`.data()))
+            `err` = errno;
     `);
 
     return err;
@@ -230,10 +260,10 @@ fn size(mut path: string): i64
 
     pragma include("<sys/stat.h>")
 
-    pragma emit(`
-
+    pragma emit(
+    `
         struct stat sb;
-        if (stat(`, path, `.data(), &sb) == 0)
+        if (stat(`path`.data(), &sb) == 0)
             return (signed long long) sb.st_size;
     `);
 
