@@ -1,13 +1,14 @@
 
 #include <fu/decstr.h>
 #include <fu/mem/arc.h>
-#include <fu/now.h>
 #include <fu/print.h>
 #include <fu/str.h>
 #include <fu/vec/concat.h>
 #include <fu/view.h>
 
 struct s_ModuleStat;
+
+double hr_CPFg3qvV();
 
                                 #ifndef DEF_s_ModuleStat
                                 #define DEF_s_ModuleStat
@@ -48,7 +49,7 @@ void operator+=(s_ModuleStat& a, const s_ModuleStat& b)
 
 s_ModuleStat ModuleStat_now_pUbtfzLn()
 {
-    return s_ModuleStat { fu::now_hr(), fu_ARC::ALLOC_STAT_COUNT(), fu_ARC::ALLOC_STAT_BYTES() };
+    return s_ModuleStat { hr_CPFg3qvV(), fu_ARC::ALLOC_STAT_COUNT(), fu_ARC::ALLOC_STAT_BYTES() };
 }
 
                                 #ifndef DEFt_x7E_KclJlPSOsdf

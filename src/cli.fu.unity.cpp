@@ -4,6 +4,7 @@
 
 #include "helpers.fu.cpp"
 #include "stat.fu.cpp"
+#include "../lib/now.fu.cpp"
 #include "lib/bitset.fu.cpp"
 #include "structs.fu.cpp"
 #include "quals.fu.cpp"

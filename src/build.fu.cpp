@@ -4,7 +4,6 @@
 #include <fu/default.h>
 #include <fu/int.h>
 #include <fu/never.h>
-#include <fu/now.h>
 #include <fu/print.h>
 #include <fu/process.h>
 #include <fu/str.h>
@@ -52,6 +51,7 @@ struct s_TokenIdx;
 struct s_Type;
 struct s_ValueType;
 
+double hr_CPFg3qvV();
 fu_STR dirname_9EcF53rc(const fu_STR&);
 fu_STR filename_9EcF53rc(const fu_STR&);
 fu_STR hash16_HxcQaXaI(fu::view<char>, int);
@@ -1304,7 +1304,7 @@ void build_Ha3Hbin4(const bool run, fu_STR&& dir_wrk, const fu_STR& fulib, const
                     x_1 = " "_fu;
                     BL_36_v = &(x_1);
                 (void)0;}), *BL_36_v)), fu_STR(((void)void(), F_cpp)) }));
-                const double t0 = fu::now_hr();
+                const double t0 = hr_CPFg3qvV();
                 fu_STR INCLUDE_1 = (INCLUDE + unless_oob_I0yWRS5A(HACK_pkgConfig_cflags, i_7));
                 fu_STR INCLUDE_2 = (INCLUDE_1 + (original_fname ? (" -iquote "_fu + dirname_9EcF53rc(original_fname)) : fu_STR{}));
                 fu_STR CMD = (((((((GCC_CMD + " -c"_fu) + INCLUDE_2) + " -o "_fu) + F_tmp) + " "_fu) + F_cpp) + " 2>&1"_fu);
@@ -1313,7 +1313,7 @@ void build_Ha3Hbin4(const bool run, fu_STR&& dir_wrk, const fu_STR& fulib, const
                 if (code)
                     ERR_5VbL1Ywt(fu_STR(cpp_3), Fs, dir_wrk, stdout, code, onfail, modules_1, modules);
 
-                const double t1 = fu::now_hr();
+                const double t1 = hr_CPFg3qvV();
                 const fu_STR* BL_38_v;
                 const fu_STR* BL_39_v;
                 const fu_STR* BL_40_v;
@@ -1349,7 +1349,7 @@ void build_Ha3Hbin4(const bool run, fu_STR&& dir_wrk, const fu_STR& fulib, const
                 x_5 = "   LINK "_fu;
                 BL_45_v = &(x_5);
             (void)0;}), *BL_45_v)), fu_STR(((void)void(), F_exe)), fu_STR(((void)void(), LIBS)) }));
-            const double t0_1 = fu::now_hr();
+            const double t0_1 = hr_CPFg3qvV();
             fu_STR CMD_1 = ((cmd + LIBS) + " 2>&1"_fu);
             int _1 {};
             code = ((_1 = exec_TfeT8afd(fu_STR(CMD_1), stdout)) ? _1 : (_1 = exec_TfeT8afd((("chmod 755 "_fu + F_tmp_1) + " 2>&1"_fu), stdout)) ? _1 : exec_TfeT8afd((((("mv "_fu + F_tmp_1) + " "_fu) + F_exe) + " 2>&1"_fu), stdout));
@@ -1363,7 +1363,7 @@ void build_Ha3Hbin4(const bool run, fu_STR&& dir_wrk, const fu_STR& fulib, const
                 (void)0;}), *BL_47_v)) }));
                 ERR_5VbL1Ywt(fu_STR{}, Fs, dir_wrk, stdout, code, onfail, modules_1, modules);
             };
-            const double t1_1 = fu::now_hr();
+            const double t1_1 = hr_CPFg3qvV();
             const fu_STR* BL_48_v;
             const fu_STR* BL_49_v;
             const fu_STR* BL_50_v;

@@ -5,7 +5,6 @@
 #include <fu/init_priority.h>
 #include <fu/int.h>
 #include <fu/never.h>
-#include <fu/now.h>
 #include <fu/print.h>
 #include <fu/str.h>
 #include <fu/vec.h>
@@ -54,6 +53,7 @@ struct s_TokenIdx;
 struct s_Type;
 struct s_ValueType;
 
+double hr_CPFg3qvV();
 fu_STR getFile_JdJwrrbj(fu_STR&&, s_Context&);
 fu_STR get_k88nYqFr(fu_STR&&);
 fu_STR lower_Z2cjwPPO(fu_STR&&);
@@ -1211,9 +1211,9 @@ void build_L8bvuAIR(const fu_STR& fname, const bool run, const fu_STR& dir_wrk, 
             x = "COMPILE "_fu;
             BL_2_v = &(x);
         (void)0;}), *BL_2_v)), fu_STR(((void)void(), fname)) }));
-        const double t0 = fu::now_hr();
+        const double t0 = hr_CPFg3qvV();
         compile_ivuwbXwC(fname, (*(const fu_STR*)fu::NIL), ctx, options);
-        const double t1 = fu::now_hr();
+        const double t1 = hr_CPFg3qvV();
         const double tt = (t1 - t0);
         if ((t1 - t0) > 0.025)
         {
