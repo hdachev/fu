@@ -86,7 +86,7 @@ fn read(mut path: string): string
     return output;
 }
 
-fn read(mut path: string, ref output: string): i32
+fn read(mut path: string, ref output: string, mut size?: i64): i32
 {
     // C-str ok.
     path ~= '\0';
@@ -105,16 +105,21 @@ fn read(mut path: string, ref output: string): i32
             "<limits.h>",   // SSIZE_MAX
             "<fu/defer.h>");
 
-        mut size: i64;
+        // Caller may know the size,
+        //  which makes better use of size checks here
+        //   and avoids the call to stat.
+        //
+        if (size <= 0)
+        {
+            pragma emit(
+            `
+                struct stat sb;
+                if (stat(`path`.data(), &sb))
+                    return (`err` = errno);
 
-        pragma emit(
-        `
-            struct stat sb;
-            if (stat(`path`.data(), &sb))
-                return (`err` = errno);
-
-            `size` = sb.st_size;
-        `);
+                `size` = sb.st_size;
+            `);
+        }
 
         mut len0 = output.len;
 
