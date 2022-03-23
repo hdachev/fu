@@ -1336,16 +1336,34 @@ static int parseCallArgs_yL7Kcldy(fu::view<char> endop, fu_VEC<s_Node>& out_args
     bool first = true;
     for (; ; )
     {
+
+        // softComma:
+        if (!first)
+        {
+            const s_Token& peek = tokens[_idx];
+            if (peek.kind == "op"_fu)
+            {
+                if (peek.value == ","_fu)
+                {
+                    _idx++;
+                    goto softComma_return;
+                };
+                if (peek.value == endop)
+                    goto softComma_return;
+
+            };
+            if ((peek.kind == "str"_fu) != (tokens[(_idx - 1)].kind == "str"_fu))
+                goto softComma_return;
+
+            warn_BvCCSOQU((("Missing comma before `"_fu + peek.value) + "`."_fu), warnings, options, tokens, _idx, fname, src, _loc);
+        }
+        softComma_return:
+        /////////////////
+
+
         if (tryConsume_Cuf7epIa("op"_fu, endop, tokens, _idx))
             break;
 
-        if (!first)
-        {
-            consume_34nGe8HQ("op"_fu, ","_fu, (("Call expr expected `"_fu + endop) + "` or"_fu), tokens, _idx, fname, src);
-            if (tryConsume_Cuf7epIa("op"_fu, endop, tokens, _idx))
-                break;
-
-        };
         first = false;
         fu_STR name {};
         bool autoName = false;

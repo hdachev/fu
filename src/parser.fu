@@ -345,6 +345,30 @@ pub fn parse(
 
     //
 
+    fn softComma(endop: string)
+    {
+        let peek = tokens[_idx];
+        if (peek.kind == "op")
+        {
+            if (peek.value == ",") {
+                _idx++;
+                return;
+            }
+
+            if (peek.value == endop)
+                return;
+        }
+
+        // Experimental,
+        //  optional commas around string literals -
+        //   but not when two literals are adjacent.
+        //
+        if ((peek.kind == "str") != (tokens[_idx - 1].kind == "str"))
+            return;
+
+        warn("Missing comma before `" ~ peek.value ~ "`.");
+    }
+
     fn softSemi()
     {
         let peek = tokens[_idx];
@@ -1546,19 +1570,14 @@ pub fn parse(
         mut first = true;
         for (;;)
         {
-            if (tryConsume("op", endop))
-                break;
-
             // Comma juggle.
             if (!first)
-            {
-                consume("op", ",", "Call expr expected `" ~ endop ~ "` or");
+                softComma(:endop);
 
-                // Trailing comma -
-                //  array literals, fncalls, etc.
-                if (tryConsume("op", endop))
-                    break;
-            }
+            // Trailing comma -
+            //  array literals, fncalls, etc.
+            if (tryConsume("op", endop))
+                break;
 
             first = false;
 
