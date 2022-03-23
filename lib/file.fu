@@ -159,7 +159,7 @@ fn read(mut path: string, ref output: string): i32
         }
 
         // Allocate.
-        output.grow(len1.i32);
+        output.grow(len1.int);
 
         // We request an extra byte when we have the capa for it,
         //  so the OS can confirm the file size by stopping one byte early,

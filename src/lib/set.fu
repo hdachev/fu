@@ -324,7 +324,7 @@ fn merge(l: [$T], r: [$T], left_or_both, right)
         if (cmp <= 0) {
             left_or_both(L, left?: li, right?: ri);
             li++;
-            ri += (cmp == 0).i32;
+            ri += int(cmp == 0);
         }
         else {
             right(R, left?: li, right?: ri);

@@ -35,7 +35,7 @@ let MAIN_zst            = 1 << 2;
 
 type BitSet2D = bitset::BitSet[];
 
-fn add_once(ref bs: BitSet2D, i: i32, j: i32): bool
+fn add_once(ref bs: BitSet2D, i: int, j: int): bool
 {
     return bs
         .grow_if_oob(i)
@@ -548,7 +548,7 @@ pub fn cpp_codegen(implicit module: Module, implicit ctx: Context): CodegenOutpu
 
     //
 
-    fn cgStatements(nodes: SolvedNode[], ref count!: i32, trail!?: string): string
+    fn cgStatements(nodes: SolvedNode[], ref count!: int, trail!?: string): string
     {
         let lines = cgNodes(nodes, M_STMT, :trail, debug: "cgStatements");
         count = lines.len;
@@ -702,7 +702,7 @@ pub fn cpp_codegen(implicit module: Module, implicit ctx: Context): CodegenOutpu
         ////////////////////////////////////////////////////////////////////////////////////////////
 
         //
-        mut count: i32;
+        mut count: int;
         mut src = cgStatements(nodes, :count, :trail);
 
         // Block label & retval.
@@ -1548,7 +1548,7 @@ pub fn cpp_codegen(implicit module: Module, implicit ctx: Context): CodegenOutpu
 
         //
 
-        fn REST(start: i32 = 0)
+        fn REST(start: int = 0)
         {
             mut src = "";
             for (mut i = start; i < item_src.len; i++)
@@ -1566,7 +1566,7 @@ pub fn cpp_codegen(implicit module: Module, implicit ctx: Context): CodegenOutpu
             return src;
         }
 
-        fn ARG(i: i32) item_src[i];
+        fn ARG(i: int) item_src[i];
 
 
         //
@@ -1862,7 +1862,7 @@ pub fn cpp_codegen(implicit module: Module, implicit ctx: Context): CodegenOutpu
         }
 
         // Remove underscores, if any.
-        mut idx: i32;
+        mut idx: int;
         while ((idx = src.find('_', start: idx)) >= 0)
             src.splice(idx, 1);
 

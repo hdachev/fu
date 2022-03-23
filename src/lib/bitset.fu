@@ -10,9 +10,9 @@ pub fn size(using _: BitSet)
     return _data.len * 8;
 }
 
-pub fn add_once(using _: &mut BitSet, idx: i32): bool
+pub fn add_once(using _: &mut BitSet, idx: int): bool
 {
-    let no_neg = idx & 0x80000000.i32;
+    let no_neg = idx & int.MIN;
     let bucket = idx >> 3 | no_neg;
     let bit    = idx & 7;
     let mask   = 1 << bit.u8;
@@ -28,9 +28,9 @@ pub fn add_once(using _: &mut BitSet, idx: i32): bool
     return false;
 }
 
-pub fn add(using _: &mut BitSet, idx: i32)
+pub fn add(using _: &mut BitSet, idx: int)
 {
-    let no_neg = idx & 0x80000000.i32;
+    let no_neg = idx & int.MIN;
     let bucket = idx >> 3 | no_neg;
     let bit    = idx & 7;
     let mask   = 1 << bit.u8;
@@ -49,9 +49,9 @@ pub fn add(using _: &mut BitSet, other: BitSet)
         _data[i] |= other._data[i];
 }
 
-pub fn has(using _: BitSet, idx: i32)
+pub fn has(using _: BitSet, idx: int)
 {
-    let no_neg = idx & 0x80000000.i32;
+    let no_neg = idx & int.MIN;
     let bucket = idx >> 3 | no_neg;
     let bit    = idx & 7;
     let mask   = 1 << bit.u8;
@@ -60,9 +60,9 @@ pub fn has(using _: BitSet, idx: i32)
         && _data[bucket] & mask != 0;
 }
 
-pub fn rem(using _: &mut BitSet, idx: i32)
+pub fn rem(using _: &mut BitSet, idx: int)
 {
-    let no_neg = idx & 0x80000000.i32;
+    let no_neg = idx & int.MIN;
     let bucket = idx >> 3 | no_neg;
     let bit    = idx & 7;
     let mask   = 1 << bit.u8;
@@ -99,9 +99,9 @@ pub fn rem(using _: &mut BitSet, idx: i32)
     return false;
 }
 
-pub fn add_range(using _: &mut BitSet, end!: i32)
+pub fn add_range(using _: &mut BitSet, end!: int)
 {
-    let no_neg      =  end & 0x80000000.i32;
+    let no_neg      =  end & int.MIN;
 
     let floorBytes  =  end      >> 3 | no_neg;
     let ceilBytes   = (end + 7) >> 3 | no_neg;
@@ -150,7 +150,7 @@ pub fn each(using _: BitSet, visit)
         {
             let mask = 1 << b.u8;
             if (item & mask)
-                visit(i << 3 | b.i32);
+                visit(i << 3 | b.int);
         }
     }
 }

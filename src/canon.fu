@@ -133,7 +133,7 @@ fn aaaNext(host: string, guest: string, ref ih!, ref ig!)
     }
 }
 
-fn skipCompound(open: byte, close: byte, ref i: i32, canon: string)
+fn skipCompound(open: byte, close: byte, ref i: int, canon: string)
 {
     mut depth = 0;
     for (;;)
@@ -146,7 +146,7 @@ fn skipCompound(open: byte, close: byte, ref i: i32, canon: string)
     }
 }
 
-fn skip(head: byte, ref i: i32, canon: string)
+fn skip(head: byte, ref i: int, canon: string)
 {
     if (head == '[') return skipCompound('[', ']', i, canon);
     if (head == '<') return skipCompound('<', '>', i, canon);
@@ -156,7 +156,7 @@ fn skip(head: byte, ref i: i32, canon: string)
     return skipAtom(i, canon);
 }
 
-fn skipAtom(ref i: i32, canon: string)
+fn skipAtom(ref i: int, canon: string)
 {
     // Skip to next nonalphabetic.
     for ( ; i < canon.len; i++)
