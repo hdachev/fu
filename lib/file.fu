@@ -100,8 +100,9 @@ fn read(mut path: string, ref output: string): i32
         pragma include(
             "<sys/stat.h>",
             "<errno.h>",
-            "<fcntl.h>",
-            "<unistd.h>",
+            "<fcntl.h>",    // open
+            "<unistd.h>",   // read
+            "<limits.h>",   // SSIZE_MAX
             "<fu/defer.h>");
 
         mut size: i64;
@@ -160,13 +161,22 @@ fn read(mut path: string, ref output: string): i32
         // Allocate.
         output.grow(len1.i32);
 
+        // We request an extra byte when we have the capa for it,
+        //  so the OS can confirm the file size by stopping one byte early,
+        //   this is intended to detect concurrent file writes.
         //
         pragma emit(
         `
             auto* buf = `output`.data_mut();
-            while (`len0` < `len1`)
+
+            ssize_t check = `output`.capa() > `len1` ? 1 : 0;
+            ssize_t request;
+            while ((request = `len1` - `len0`) > 0)
             {
-                auto count = read(fd, buf, size_t(`len1` - `len0`));
+                request += check;
+                request = request < SSIZE_MAX ? request : SSIZE_MAX;
+
+                auto count = read(fd, buf, size_t(request));
                 if (count <= 0)
                 {
                     if (count < 0)
