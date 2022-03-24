@@ -49,28 +49,51 @@ fn add_once(ref bs: BitSet2D, target: Target): bool
 
 pub fn cpp_codegen(implicit module: Module, implicit ctx: Context): CodegenOutput
 {
-    mut _libs: string[];
 
-    mut _top_emits: string;
-
-    mut _tfwd: BitSet2D;
-    mut _tfwd_src: string[];
-
-    mut _ffwd: BitSet2D;
-    mut _ffwd_src: string[];
-
-    mut _idef: bitset::BitSet;
-    mut _tdef: string;
-    mut _fdef: string;
-
-    mut _indent: string = "\n";
-    mut _hasMain: i32;
+    //
 
     let implicit mut _here: TokenIdx;
 
-    mut HACK_link:          string[];
-    mut HACK_include_dirs:  string[];
-    mut HACK_extra_sources: string[];
+    nocopy struct Outputs
+    {
+        // #include ...
+        _libs:              string[];
+
+        // static pragma emit
+        _top_emits:         string;
+
+        // struct fwd decls
+        _tfwd:              BitSet2D;
+        _tfwd_src:          string[];
+
+        // fn fwd decls
+        _ffwd:              BitSet2D;
+        _ffwd_src:          string[];
+
+        // type definitions
+        // TODO track separately, we dont need all types defined
+        _tdef:              string;
+
+        // fn definitions
+        _idef:              bitset::BitSet;
+        _fdef:              string;
+
+        // misc garbage
+        _indent:            string;
+        _hasMain:           i32;
+
+        // experimentals
+        HACK_link:          string[];
+        HACK_include_dirs:  string[];
+        HACK_extra_sources: string[];
+    };
+
+    let using mut outputs: Outputs;
+
+
+    //
+
+    outputs._indent = "\n";
 
 
     //
@@ -916,7 +939,9 @@ pub fn cpp_codegen(implicit module: Module, implicit ctx: Context): CodegenOutpu
         if !(_ffwd.add_once(target))
             return;
 
-        _ffwd_src ~= target.cgFnPrototype() ~ ";\n";
+        let src     = target.cgFnPrototype() ~ ";\n";
+        _ffwd_src  ~= src;
+
         return;
     }
 
