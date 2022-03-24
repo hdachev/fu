@@ -840,6 +840,73 @@ pub fn cpp_codegen(implicit module: Module, implicit ctx: Context): CodegenOutpu
         return src;
     }
 
+    fn cgFnPrototype(target: Target, fnptr!?: bool)
+    {
+        ///////////////////////////////////////////
+        mut current_fn0 = cg_CurrentFn(target: target);
+        defer swap(_current_fn, current_fn0);
+        swap(_current_fn, current_fn0);
+        ////////////////////////////////////////////
+
+        mut src         = "";
+        let overload    = GET(target);
+
+        // Linkage.
+        {
+            let linkage = overload.fnLinkage;
+
+            src ~= linkage;
+        }
+
+        // Retval.
+        {
+            let ret     = overload.type || fail();
+            let annot   = typeAnnot(ret, M_RETVAL);
+
+            src ~= annot ~ " ";
+        }
+
+        // Name, (*Name), etc.
+        {
+            let name    = fnID(target);
+
+            src ~= fnptr    ? "(*" ~ name ~ ")"
+                            :        name;
+        }
+
+        // Arglist.
+        {
+            src ~= "(";
+
+            let args    = target.args;
+            mut first   = true;
+            for (mut i = 0; i < args.len; i++)
+            {
+                let arg = args[i].type;
+                if (arg.type_isZST)
+                    continue;
+
+                if (first)
+                    first = false;
+                else
+                    src ~= ", ";
+
+                src ~= typeAnnot(arg, M_ARGUMENT | M_FWDECL);
+            }
+
+            if (overload.flags & F_POSTFIX)
+            {
+                overload.flags & F_OPERATOR || assert();
+                src ~= ", /*postfix*/int";
+            }
+
+            src ~= ")";
+        }
+
+        //
+        return src;
+    }
+
     fn ensureFwdDecl(target: Target)
     {
         let overload = GET(target);
@@ -849,45 +916,7 @@ pub fn cpp_codegen(implicit module: Module, implicit ctx: Context): CodegenOutpu
         if !(_ffwd.add_once(target))
             return;
 
-        ///////////////////////////////////////////
-        mut current_fn0 = cg_CurrentFn(target: target);
-        defer swap(_current_fn, current_fn0);
-        swap(_current_fn, current_fn0);
-        ////////////////////////////////////////////
-
-        let ret     = overload.type || fail();
-        let annot   = typeAnnot(ret, M_RETVAL);
-
-        let name    = fnID(target);
-        mut src     = overload.fnLinkage ~ annot ~ " " ~ name ~ "(";
-
-        let args    = target.args;
-
-        mut first   = true;
-        for (mut i = 0; i < args.len; i++)
-        {
-            let arg = args[i].type;
-            if (arg.type_isZST)
-                continue;
-
-            if (first)
-                first = false;
-            else
-                src ~= ", ";
-
-            src ~= typeAnnot(arg, M_ARGUMENT | M_FWDECL);
-        }
-
-        if (overload.flags & F_POSTFIX)
-        {
-            overload.flags & F_OPERATOR || assert();
-            src ~= ", /*postfix*/int ";
-        }
-
-        src ~= ");\n";
-
-        _ffwd_src ~= src;
-
+        _ffwd_src ~= target.cgFnPrototype() ~ ";\n";
         return;
     }
 
