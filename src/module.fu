@@ -95,6 +95,9 @@ pub struct CodegenOutput
     link?:              string[];
     include_dirs?:      string[];
     extra_sources?:     string[];
+
+    // Live exports.
+    live?:              i32[];
 };
 
 

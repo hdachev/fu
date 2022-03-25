@@ -17,7 +17,7 @@ pub let F_INFIX         = 1 << 1;
 pub let F_PREFIX        = 1 << 2;
 pub let F_POSTFIX       = 1 << 3;
 
-pub let F_ACCESS        = 1 << 4;
+pub let F_ACCESS        = 1 << 4;           pub let F_HOTSWAP       = F_ACCESS;
 let     F_ID            = 1 << 5;
 pub let F_COMPOUND_ID   = 1 << 6;
 let     F_PARENS        = 1 << 7;           pub let F_WRITTEN_TO    = F_PARENS;
@@ -651,7 +651,6 @@ pub fn parse(
                 if (v == "pragma")      return parseCompilerPragma();
 
                 if (v == "inline")      return parseInlineDecl();
-                if (v == "extern")      return parseExternDecl();
                 if (v == "infix")       return parseFixityDecl(F_INFIX);
                 if (v == "prefix")      return parseFixityDecl(F_PREFIX);
                 if (v == "postfix")     return parseFixityDecl(F_POSTFIX);
@@ -659,10 +658,12 @@ pub fn parse(
                 if (v == "primitive")   return parsePrimDecl(enum: false);
                 if (v == "enum")        return parsePrimDecl(enum: true);
 
-                if (v == "novec")       return parseExoticDecl(F_NOVEC);
-                if (v == "noflow")      return parseExoticDecl(F_NOFLOW);
                 if (v == "pure")        return parseExoticDecl(F_PURE);
                 if (v == "purectx")     return parseExoticDecl(F_PURE_CTX);
+                if (v == "novec")       return parseExoticDecl(F_NOVEC);
+                if (v == "noflow")      return parseExoticDecl(F_NOFLOW);
+                if (v == "extern")      return parseExoticDecl(F_EXTERN);
+                if (v == "hotswap")     return parseExoticDecl(F_HOTSWAP);
 
                 // SKETCH EFFECTS //////////////////////////////////////////////
                 if (v == "effect")      return parseStructDecl(flags: F_EFFECT);
@@ -799,16 +800,14 @@ pub fn parse(
             else if (v == "purectx")    add(F_PURE_CTX);
             else if (v == "novec")      add(F_NOVEC);
             else if (v == "noflow")     add(F_NOFLOW);
+            else if (v == "extern")     add(F_EXTERN);
+            else if (v == "hotswap")    add(F_HOTSWAP);
+
             else if (v == "fn")
                 return { _idx--; parseInlineDecl(F: flags) };
             else
                 fail("Unknown qualifier: " ~ v.qKW);
         }
-    }
-
-    fn parseExternDecl(): Node
-    {
-        return parseInlineDecl(F: F_EXTERN);
     }
 
     fn parseInlineDecl(mut flags?: i32, F = F_INLINE): Node

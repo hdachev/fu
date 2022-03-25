@@ -64,11 +64,14 @@ pub fn cpp_codegen(implicit module: Module, implicit ctx: Context): CodegenOutpu
 
         // struct fwd decls
         _tfwd:              BitSet2D;
-        _tfwd_src:          string[];
+        _tfwd_src:          string;
 
         // fn fwd decls
         _ffwd:              BitSet2D;
-        _ffwd_src:          string[];
+        _ffwd_src:          string;
+
+        _ffwd_live_client:  string;
+        _ffwd_live_nclient: string;
 
         // type definitions
         // TODO track separately, we dont need all types defined
@@ -86,6 +89,9 @@ pub fn cpp_codegen(implicit module: Module, implicit ctx: Context): CodegenOutpu
         HACK_link:          string[];
         HACK_include_dirs:  string[];
         HACK_extra_sources: string[];
+
+        // live
+        HACK_live:          i32[];
     };
 
     let using mut outputs: Outputs;
@@ -471,15 +477,32 @@ pub fn cpp_codegen(implicit module: Module, implicit ctx: Context): CodegenOutpu
         let src    = cgStatements(root.items, :count);
         let main   = cgMain();
 
-        let header = collectDedupes(_libs, prefix: "#include ")
-                   ~ collectDedupes(_tfwd_src)
-                   ~ collectDedupes(_ffwd_src)
-                   ~               (_tdef)
-                   ~               (_top_emits)
-                   ~ (_fdef && "\n#ifndef FU_NO_FDEFs\n" ~ _fdef ~ "\n#endif\n")
-                   ;
+        return collectDedupes(_libs, prefix: "#include ")
 
-        return header ~ src ~ main;
+            // Fwd-declared structs & enums.
+            ~ _tfwd_src
+
+            // Fwd-declared functions.
+            ~ _ffwd_src
+
+            ~ (_ffwd_live_client && "\n                                #ifdef fu_HOTSWAP_client\n")
+            ~ (_ffwd_live_client)
+            ~ (_ffwd_live_client && "                                #else\n")
+            ~ (_ffwd_live_nclient)
+            ~ (_ffwd_live_client && "                                #endif\n")
+
+            // Type definitions.
+            ~ _tdef
+            ~ _top_emits
+
+            // Function definitions.
+            ~ (_fdef && "\n#ifndef fu_NO_fdefs\n")
+            ~ (_fdef)
+            ~ (_fdef && "\n#endif\n")
+
+            // Rest.
+            ~ src
+            ~ main;
     }
 
     fn cgMain(): string
@@ -875,6 +898,7 @@ pub fn cpp_codegen(implicit module: Module, implicit ctx: Context): CodegenOutpu
         let overload    = GET(target);
 
         // Linkage.
+        if (!fnptr)
         {
             let linkage = overload.fnLinkage;
 
@@ -939,10 +963,19 @@ pub fn cpp_codegen(implicit module: Module, implicit ctx: Context): CodegenOutpu
         if !(_ffwd.add_once(target))
             return;
 
-        let src     = target.cgFnPrototype() ~ ";\n";
-        _ffwd_src  ~= src;
+        let fwdDecl = target.cgFnPrototype() ~ ";\n";
 
-        return;
+        if (overload.flags & F_HOTSWAP)
+        {
+            let fnPtr = "extern " ~ target.cgFnPrototype(fnptr: true) ~ ";\n";
+
+            _ffwd_live_client  ~= fnPtr;
+            _ffwd_live_nclient ~= fwdDecl;
+        }
+        else
+        {
+            _ffwd_src ~= fwdDecl;
+        }
     }
 
     fn ensureFnUsable(target: Target)
@@ -994,7 +1027,8 @@ pub fn cpp_codegen(implicit module: Module, implicit ctx: Context): CodegenOutpu
         let items = fn.items;
         let body  = items[items.len + FN_BODY_BACK];
 
-        let overload = GET(fn.target);
+        let target = fn.target;
+        let overload = GET(target);
         let id = overload.name;
         overload.status & SS_FINALIZED || fail("cgFn: fn not finalized: " ~ id);
 
@@ -1052,15 +1086,41 @@ pub fn cpp_codegen(implicit module: Module, implicit ctx: Context): CodegenOutpu
                     ? dedupe ~ '_' ~ overload.sighash
                     : dedupe;
 
+        // LIVE ////////////////////////
+        if (overload.flags & F_HOTSWAP)
+        {
+            target.modid == module.modid || assert();
+            HACK_live ~= target.index;
+
+            //
+            let fnID        = target.fnID;
+            let fnID_local  = fnID ~ "_local";
+            let fnPtrAnnot  = target.cgFnPrototype(fnptr: true);
+
+            src = "                                #ifdef fu_HOTSWAP_client\n"
+                ~ "                                #define " ~ fnID ~ " " ~ fnID_local ~ "\n"
+                ~ "                                #endif\n\n"
+
+                ~ src
+
+                ~ "\n"
+                ~ "                                #ifdef fu_HOTSWAP_client\n"
+                ~ "                                #undef " ~ fnID ~ "\n"
+                ~ fnPtrAnnot ~ " = &" ~ fnID_local ~ ";\n"
+                ~ "                                #endif";
+        }
+        ////////////////////////////////
+
         if (dedupe)
-            _fdef ~= "\n                                #ifndef DEFt_" ~ dedupe
-                   ~ "\n                                #define DEFt_" ~ dedupe;
+            _fdef ~= "\n                                #ifndef DEF_" ~ dedupe
+                   ~ "\n                                #define DEF_" ~ dedupe;
 
         _fdef ~= "\n" ~ src ~ "\n";
 
         if (dedupe)
             _fdef ~= "                                #endif\n";
 
+        //
         return cgEmpty(fn, mode);
     }
 
