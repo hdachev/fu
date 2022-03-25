@@ -91,7 +91,7 @@ pub fn cpp_codegen(implicit module: Module, implicit ctx: Context): CodegenOutpu
         HACK_extra_sources: string[];
 
         // live
-        HACK_live:          i32[];
+        _live_targets:      i32[];
     };
 
     let using mut outputs: Outputs;
@@ -485,6 +485,7 @@ pub fn cpp_codegen(implicit module: Module, implicit ctx: Context): CodegenOutpu
             // Fwd-declared functions.
             ~ _ffwd_src
 
+            // Hotswap fwd-decls grouped up in two ifdef branches.
             ~ (_ffwd_live_client && "\n                                #ifdef fu_HOTSWAP_client\n")
             ~ (_ffwd_live_client)
             ~ (_ffwd_live_client && "                                #else\n")
@@ -502,7 +503,8 @@ pub fn cpp_codegen(implicit module: Module, implicit ctx: Context): CodegenOutpu
 
             // Rest.
             ~ src
-            ~ main;
+            ~ main
+        ;
     }
 
     fn cgMain(): string
@@ -512,24 +514,36 @@ pub fn cpp_codegen(implicit module: Module, implicit ctx: Context): CodegenOutpu
 
         mut zst = "";
         if (_hasMain & MAIN_zst)
-            zst = ", 0"
+            zst = ", 0";
 
-        if !(_hasMain & MAIN_argv)
-            return "\n\nint main() { return fu_MAIN()" ~ zst ~ "; }\n";
+        mut src = "\nint main() { return fu_MAIN()" ~ zst ~ "; }";
 
-        // Main with cli args.
-        annotateString();
+        if (_hasMain & MAIN_argv)
+        {
+            // Main with cli args.
+            annotateString();
 
-        return "\n\nint main(int argc, char* argv[])"
-            ~  "\n{"
-            ~  "\n    fu_VEC<fu_STR> args;"
-            ~  "\n    args.reserve(argc);"
-            ~  "\n"
-            ~  "\n    for (int i = 0; i < argc; i++)"
-            ~  "\n        args.push(fu_TO_STR(argv[i]));"
-            ~  "\n"
-            ~  "\n    return fu_MAIN(static_cast<fu_VEC<fu_STR>&&>(args))" ~ zst ~ ";"
-            ~  "\n}\n";
+            src = "\nint main(int argc, char* argv[])"
+                ~ "\n{"
+                ~ "\n    fu_VEC<fu_STR> args;"
+                ~ "\n    args.reserve(argc);"
+                ~ "\n"
+                ~ "\n    for (int i = 0; i < argc; i++)"
+                ~ "\n        args.push(fu_TO_STR(argv[i]));"
+                ~ "\n"
+                ~ "\n    return fu_MAIN(static_cast<fu_VEC<fu_STR>&&>(args))" ~ zst ~ ";"
+                ~ "\n}";
+        }
+
+        // LIVE ////////////////////////
+        {
+            src = "\n\n                                #ifndef fu_HOTSWAP_server\n"
+                ~ src
+                ~ "\n\n                                #endif\n";
+        }
+        ////////////////////////////////
+
+        return src;
     }
 
 
@@ -1090,23 +1104,28 @@ pub fn cpp_codegen(implicit module: Module, implicit ctx: Context): CodegenOutpu
         if (overload.flags & F_HOTSWAP)
         {
             target.modid == module.modid || assert();
-            HACK_live ~= target.index;
+            _live_targets ~= target.index;
 
             //
             let fnID        = target.fnID;
             let fnID_local  = fnID ~ "_local";
             let fnPtrAnnot  = target.cgFnPrototype(fnptr: true);
 
+            //
+            include("<fu/hotswap.h>");
+            ensureFwdDecl(target);
+
+            //
             src = "                                #ifdef fu_HOTSWAP_client\n"
                 ~ "                                #define " ~ fnID ~ " " ~ fnID_local ~ "\n"
-                ~ "                                #endif\n\n"
-
+                ~ "                                #endif\n"
+                ~ "fu_HOTSWAP\n"
                 ~ src
 
                 ~ "\n"
                 ~ "                                #ifdef fu_HOTSWAP_client\n"
                 ~ "                                #undef " ~ fnID ~ "\n"
-                ~ fnPtrAnnot ~ " = &" ~ fnID_local ~ ";\n"
+                ~ fnPtrAnnot ~ " =\n    fu::hotswap(\"" ~ fnID ~ "\",\n                 " ~ fnID ~ ",\n                &" ~ fnID_local ~ ");\n"
                 ~ "                                #endif";
         }
         ////////////////////////////////
