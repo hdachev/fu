@@ -2,6 +2,7 @@
 fn exec(mut cmd: string, ref stdout: string): i32
 {
     pragma include(
+        "<errno.h>",
         "<stdio.h>",
         "<fu/defer.h>");
 
@@ -10,17 +11,21 @@ fn exec(mut cmd: string, ref stdout: string): i32
     // c-str ok
     cmd ~= '\0';
 
-    pragma emit(`
-
-        const auto pipe = popen(`, cmd, `.data(), "r");
-        if (pipe)
+    pragma emit(
+    `
+        const auto pipe = popen(`cmd`.data(), "r");
+        if (!pipe)
         {
-            fu_DEFER( `, status, ` = pclose(pipe); );
+            `status` = errno;
+        }
+        else
+        {
+            fu_DEFER( `status` = pclose(pipe); );
 
             const size_t BUF_SIZE = 64 * 1024;
             fu::byte BUF[BUF_SIZE];
 
-            auto size = `, stdout, `.size();
+            auto size = `stdout`.size();
 
             for (;;)
             {
@@ -30,10 +35,10 @@ fn exec(mut cmd: string, ref stdout: string): i32
                 // Write directly onto the string
                 //  if it has more capa than the buffer here.
                 //
-                auto avail = `, stdout, `.capa() - size;
+                auto avail = `stdout`.capa() - size;
                 if (avail > 0 && size_t(avail) > BUF_SIZE)
                 {
-                    data = `, stdout, `.data_mut() + size;
+                    data = `stdout`.data_mut() + size;
                     capa = size_t(avail);
                 }
 
@@ -45,12 +50,11 @@ fn exec(mut cmd: string, ref stdout: string): i32
 
                 // Copy if using the local buffer.
                 if (data == BUF)
-                    `, stdout, `.append_copy(fu_ZERO(), BUF, count);
+                    `stdout`.append_copy(fu_ZERO(), BUF, count);
                 else
-                    `, stdout, `.UNSAFE__WriteSize(size);
+                    `stdout`.UNSAFE__WriteSize(size);
             }
         }
-
     `);
 
     return status;
