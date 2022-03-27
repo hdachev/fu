@@ -22,10 +22,10 @@ fn mkdir_p(mut path: string, mode = RWX_RWX_RWX): i32
             "<sys/stat.h>",
             "<errno.h>");
 
-        pragma emit(`
-
-            if (mkdir(`, path, `.data(), mode_t(`, mode, `)))
-                `, is_ENOENT, ` = (`, err, ` = errno) == ENOENT;
+        pragma emit(
+        `
+            if (mkdir(`path`.data(), mode_t(`mode`)))
+                `is_ENOENT` = (`err` = errno) == ENOENT;
         `);
 
         if (is_ENOENT) for (mut i = N; i --> 1; )
@@ -38,8 +38,8 @@ fn mkdir_p(mut path: string, mode = RWX_RWX_RWX): i32
             {
                 pragma emit(`
 
-                    if (mkdir(`, path, `.data(), mode_t(`, mode, `)))
-                        `, err, ` = errno;
+                    if (mkdir(`path`.data(), mode_t(`mode`)))
+                        `err` = errno;
                 `);
             }
 

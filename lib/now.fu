@@ -5,9 +5,9 @@ fn hr()
 
     pragma include("<chrono>");
 
-    pragma emit(`
-
-        `, timestamp, ` =
+    pragma emit(
+    `
+        `timestamp` =
             std::chrono::duration<double>(
                 std::chrono::high_resolution_clock::now().time_since_epoch())
                     .count();
@@ -22,9 +22,9 @@ fn utc()
 
     pragma include("<chrono>");
 
-    pragma emit(`
-
-        `, timestamp, ` =
+    pragma emit(
+    `
+        `timestamp` =
             std::chrono::duration<double>(
                 std::chrono::system_clock::now().time_since_epoch())
                     .count();

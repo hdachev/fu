@@ -23,44 +23,36 @@ pub purectx fn map(arr: [$T], visit, min!?: int)
 //  This is way to hacky for comfort but it's the best we can do
 //   without function types with noflow & purectx assertions.
 
+// TODO nothrow - can't deal with exceptions here, we need a check for this
+
 novec noflow fn parallel_for(min!, mut end!, visit)
 {
-    mut start   = end * 0;
+    mut start = end & 0;
 
     pragma include("../hacking/task_stack.hpp");
 
-    pragma emit(`
-    ////////////////////////////////////////////////////////////////
-    ////////////////////////////////////////////////////////////////
-    (void) start;
+    pragma emit(
+    `
+        (void) start;
 
-    typedef decltype(`, start, `) start_t;
-    typedef decltype(`, end,   `) end_t;
+        typedef decltype(`start`) start_t;
+        typedef decltype(`end  `) end_t;
 
-    parallel_for(size_t(end), size_t(`, min, ` > 1 ? `, min, ` : 1), [&](size_t Start, size_t End)
-    {
-        auto start = (start_t) Start;
-        auto end   = (end_t  ) End;
-
-    ////////////////////////////////////////////////////////////////
-    ////////////////////////////////////////////////////////////////
+        parallel_for(size_t(end), size_t(`min` > 1 ? `min` : 1), [&](size_t Start, size_t End)
+        {
+            auto start = (start_t) Start;
+            auto end   = (end_t  ) End;
     `);
 
+    for (mut i = start; i < end; i++)
     {
-        for (mut i = start; i < end; i++)
-        {
-            // And this magically still looks like a loop -
-            //  no linear / affine nonsense etc.
-            visit(i);
-        }
+        // And this magically still looks like a loop -
+        //  no linear / affine nonsense etc.
+        visit(i);
     }
 
-    pragma emit(`
-    ////////////////////////////////////////////////////////////////
-    ////////////////////////////////////////////////////////////////
-
-    });
-    ////////////////////////////////////////////////////////////////
-    ////////////////////////////////////////////////////////////////
+    pragma emit(
+    `
+        });
     `);
 }
