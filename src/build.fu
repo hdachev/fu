@@ -108,8 +108,11 @@ pub fn build(
                 //
                 ~ "-Wno-float-conversion " // opt-out
 
+                // Clang warns extern "C" hotswap fns are incompatible with c
+                ~ (hotswap && process::APPLE && "-Wno-return-type-c-linkage ")
+
                 // TODO request this from within the lib
-                ~ (process::LINUX && "-pthread ")
+                ~ (process::LINUX && "-pthread -ldl ")
                 ;
 
     //
@@ -380,7 +383,16 @@ pub fn build(
         mut cmd = GCC_CMD ~ "-o " ~ F_tmp ~ " ";
 
         if (shared)
+        {
             cmd ~= "-shared ";
+
+            // Linker -soname
+            let soname = path::filename(bin);
+            if (process::APPLE)
+                cmd ~= "-Wl,-install_name," ~ soname ~ " ";
+            else
+                cmd ~= "-Wl,-soname," ~ soname ~ " ";
+        }
 
         for (mut i = 0; i < Fs.len; i++)
         {
@@ -404,7 +416,7 @@ pub fn build(
 
             if (code)
             {
-                println("   FAIL " ~ Fs.join("\n        " ~ "\n"));
+                println("   FAIL " ~ CMD);
                 return ERR;
             }
 
