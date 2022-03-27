@@ -486,7 +486,7 @@ pub fn cpp_codegen(implicit module: Module, implicit ctx: Context): CodegenOutpu
             ~ _ffwd_src
 
             // Hotswap fwd-decls grouped up in two ifdef branches.
-            ~ (_ffwd_live_client && "\n                                #ifdef fu_HOTSWAP_client\n")
+            ~ (_ffwd_live_client && "\n                                #ifdef fu_HOTSWAP\n")
             ~ (_ffwd_live_client)
             ~ (_ffwd_live_client && "                                #else\n")
             ~ (_ffwd_live_nclient)
@@ -534,14 +534,6 @@ pub fn cpp_codegen(implicit module: Module, implicit ctx: Context): CodegenOutpu
                 ~ "\n    return fu_MAIN(static_cast<fu_VEC<fu_STR>&&>(args))" ~ zst ~ ";"
                 ~ "\n}";
         }
-
-        // LIVE ////////////////////////
-        {
-            src = "\n\n                                #ifndef fu_HOTSWAP_server\n"
-                ~ src
-                ~ "\n\n                                #endif\n";
-        }
-        ////////////////////////////////
 
         return src;
     }
@@ -1116,16 +1108,16 @@ pub fn cpp_codegen(implicit module: Module, implicit ctx: Context): CodegenOutpu
             ensureFwdDecl(target);
 
             //
-            src = "                                #ifdef fu_HOTSWAP_client\n"
+            src = "                                #ifdef fu_HOTSWAP\n"
                 ~ "                                #define " ~ fnID ~ " " ~ fnID_local ~ "\n"
+                ~ "extern \"C\" fu_EXPORT\n"
                 ~ "                                #endif\n"
-                ~ "fu_HOTSWAP\n"
                 ~ src
 
                 ~ "\n"
-                ~ "                                #ifdef fu_HOTSWAP_client\n"
+                ~ "                                #ifdef fu_HOTSWAP\n"
                 ~ "                                #undef " ~ fnID ~ "\n"
-                ~ fnPtrAnnot ~ " =\n    fu::hotswap(\"" ~ fnID ~ "\",\n                 " ~ fnID ~ ",\n                &" ~ fnID_local ~ ");\n"
+                ~ fnPtrAnnot ~ " =\n    fu::hotswap(\"" ~ fnID_local ~ "\",\n                 " ~ fnID ~ ",\n                &" ~ fnID_local ~ ");\n"
                 ~ "                                #endif";
         }
         ////////////////////////////////

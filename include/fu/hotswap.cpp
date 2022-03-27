@@ -12,9 +12,9 @@ namespace {
 
 // My ubuntu refuses to reload the same lib.
 
-constexpr bool RENAME_LIBS_RANDOMLY = true;
-
-constexpr bool VERBOSE = true;
+constexpr bool RENAME_LIBS_RANDOMLY     = true;
+constexpr bool LOAD_ON_BOOT             = false;
+          bool VERBOSE                  = !!getenv("fu_VERBOSE");
 
 
 //
@@ -47,7 +47,12 @@ bool try_reload(Item& item, const Loader& ld)
     if (new_fnptr)
     {
         if (VERBOSE)
-            printf("HOTSWAP Found `%s` in `%s`\n", item.symbol, ld.filename);
+        {
+            if (*item.slot == new_fnptr)
+                printf("HOTSWAP Got the same fnptr for `%s` in `%s`\n", item.symbol, ld.filename);
+            else
+                printf("HOTSWAP Found `%s` in `%s`\n", item.symbol, ld.filename);
+        }
 
         *item.slot = new_fnptr;
         return true;
@@ -108,11 +113,9 @@ bool try_reload(Loader& ld)
         ld.handle       = new_handle;
         return true;
     }
-    else
-    {
-        if (VERBOSE)
-            printf("HOTSWAP Could not reload `%s`\n", ld.filename);
-    }
+
+    if (VERBOSE)
+        printf("HOTSWAP Could not reload `%s`\n", ld.filename);
 
     return false;
 }
@@ -130,18 +133,21 @@ extern "C" void onSIGUSR1_reloadLibs(int /*signal*/)
 
     Hotswap& h = get_inst();
 
-    for (fu::i i = 0; i < h.libs.size(); i++)
-    {
-        Loader& lib = h.libs.mutref(i);
+    for (auto& lib: h.libs.mut())
         if (try_reload(lib))
-            for (fu::i i = 0; i < h.items.size(); i++)
-                try_reload(h.items.mutref(i), lib);
-    }
+            for (auto& item: h.items.mut())
+                try_reload(item, lib);
 }
 
-void attach_onSIGUSR1_reloadLibs()
+bool attach_onSIGUSR1_reloadLibs()
 {
-    signal(SIGUSR1, onSIGUSR1_reloadLibs);
+    auto prev = signal(SIGUSR1, onSIGUSR1_reloadLibs);
+    if (prev == SIG_DFL || prev == SIG_IGN)
+        return true;
+
+    // This is a plugin, the signal handler is already set, put it back.
+    signal(SIGUSR1, prev);
+    return false;
 }
 
 
@@ -149,8 +155,6 @@ void attach_onSIGUSR1_reloadLibs()
 
 Hotswap initialize()
 {
-    attach_onSIGUSR1_reloadLibs();
-
     Hotswap h = Hotswap();
 
     // Two ways to provide a default lib to hotswap:
@@ -163,11 +167,29 @@ Hotswap initialize()
             if (!libname)
                 return;
 
+            // Attach signal handler on first lib.
+            if (!h.libs)
+            {
+                // ... unless this is a plugin in which case
+                //  the signal handler will already have been set.
+                if (!attach_onSIGUSR1_reloadLibs())
+                    return;
+            }
+
+            if (VERBOSE)
+                printf("HOTSWAP Ready to load %s\n", libname);
+
             // Try load & list, ignore fail, might show up later.
             Loader l = { libname, nullptr, nullptr };
-            try_reload(l);
+
+            if (LOAD_ON_BOOT)
+                try_reload(l);
+
             h.libs.push(l);
         };
+
+        if (VERBOSE)
+            printf("HOTSWAP Init ...\n");
 
         const char* env = getenv("fu_HOTSWAP_lib");
         if (env)
@@ -213,14 +235,13 @@ void* fu::hotswap_init(const char* symbol, void*& fnptr, void* fallback)
     void* ret = fnptr = fallback;
 
     // Try load immediately.
-    Item item = { symbol, &fnptr };
+    Hotswap& h  = get_inst();
+    Item item   = { symbol, &fnptr };
 
-    Hotswap& h = get_inst();
-    for (fu::i i = 0; i < h.libs.size(); i++)
-    {
-        const Loader& loader = h.libs[i];
-        try_reload(item, loader);
-    }
+    if (LOAD_ON_BOOT)
+        for (auto& lib: h.libs)
+            if (lib.handle)
+                try_reload(item, lib);
 
     // List.
     h.items.push(item);

@@ -43,21 +43,26 @@ fn update_file(
 
 pub fn build(
     implicit ctx: Context,
-    run: bool,
 
     mut dir_wrk !: string,
         fulib   !: string,
 
-    mut bin     ! = "",
-    mut dir_obj ! = "",
-    mut dir_src ! = "",
-    mut dir_cpp ! = "",
-        unity   ! = "",
-        scheme  ! = "",
-        onfail  ! = "",
+    mut bin     !?: string,
+    mut dir_obj !?: string,
+    mut dir_src !?: string,
+    mut dir_cpp !?: string,
+        unity   !?: string,
+        scheme  !?: string,
+        onfail  !?: string,
 
-        flags_ld!?: string[],
-        flags_cc!?: string[]): void
+        // TODO clean these up, this makes NO SENSE //
+        run     !?: bool,
+        shared  !?: bool,
+        hotswap !?: bool,
+        //////////////////////////////////////////////
+
+        flags_cc!?: string[],
+        flags_ld!?: string[]): void
 {
     // Where we do our dirtywork.
     if (dir_wrk.if_last != '/')
@@ -83,6 +88,11 @@ pub fn build(
 
     if (scheme == "retail")
         O_lvl ~= "-Dfu_RETAIL ";
+
+    if (shared)
+        O_lvl ~= "-fPIC ";
+    if (hotswap)
+        O_lvl ~= "-Dfu_HOTSWAP ";
 
     let GCChash = "g++ -std=c++1z " ~ O_lvl;
 
@@ -368,6 +378,10 @@ pub fn build(
         let F_tmp = F_exe ~ ".tmp";
 
         mut cmd = GCC_CMD ~ "-o " ~ F_tmp ~ " ";
+
+        if (shared)
+            cmd ~= "-shared ";
+
         for (mut i = 0; i < Fs.len; i++)
         {
             let F = Fs[i];
@@ -443,7 +457,8 @@ pub fn build(
         }
 
         // TODO FIX
-        let CMakeLists = unity && path::join(path::dirname(unity), "CMakeLists.txt");
+        let cmake       = false;
+        let CMakeLists  = cmake && path::join(path::dirname(unity), "CMakeLists.txt");
 
         if (unity || CMakeLists)
         {

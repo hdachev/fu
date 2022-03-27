@@ -45,18 +45,21 @@ fn cli_handle(argv: string[], cwd = fs::cwd()): i32
                 && path::join(cwd, path);
 
     // A silly option parser.
-    let EMIT_CPP = 1 << 0;
-    let EMIT_OBJ = 1 << 1;
-    let EMIT_BIN = 1 << 2;
+    let EMIT_CPP    = 1 << 0;
+    let EMIT_OBJ    = 1 << 1;
+    let EMIT_BIN    = 1 << 2;
 
-    mut dir_src: string;
-    mut dir_cpp: string;
-    mut dir_obj: string;
-    mut bin:     string;
+    mut dir_src:    string;
+    mut dir_cpp:    string;
+    mut dir_obj:    string;
+    mut bin:        string;
 
-    mut options: i32;
-    mut scheme:  string;
-    mut run:     bool;
+    mut options:    i32;
+    mut scheme:     string;
+
+    mut run:        bool;
+    mut shared:     bool;
+    mut hotswap:    bool;
 
     mut flags_cc:   string[];
     mut flags_ld:   string[];
@@ -104,12 +107,23 @@ fn cli_handle(argv: string[], cwd = fs::cwd()): i32
             continue;
         }
 
-        // Run or don't.
+        //
         if (opt == "--run" || opt == "r") {
             run = true;
             continue;
         }
 
+        if (opt == "--hotswap" || opt == "h") {
+            hotswap = true;
+            continue;
+        }
+
+        if (opt == "--shared" || opt == "s") {
+            shared = true;
+            continue;
+        }
+
+        //
         else if (opt)
             throw("Unknown option: `" ~ opt ~ "`.");
     }
@@ -167,7 +181,8 @@ fn cli_handle(argv: string[], cwd = fs::cwd()): i32
     }
 
     // Go.
-    build(:fname, :run, :bin,
+    build(:fname, :bin,
+        :run, :shared, :hotswap,
         :dir_wrk, :dir_src, :dir_cpp, :dir_obj,
         :scheme,
         :flags_cc, :flags_ld);

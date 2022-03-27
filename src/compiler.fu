@@ -108,22 +108,29 @@ pub fn locate_PRJDIR(): string
 
 pub let PRJDIR              = locate_PRJDIR();
 pub let DEFAULT_WORKSPACE   = PRJDIR ~ "build-cpp/";
+
 pub let FULIB               = PRJDIR ~ "include/fu/_fulib.cpp";
+pub let SHAREDLIB           = PRJDIR ~ "include/fu/_sharedlib.cpp";
 
 
 //
 
 pub fn build(
       fname: string,
-        run: bool,
 
     dir_wrk: string,
 
-    bin     ! = "",
-    dir_obj ! = "",
-    dir_src ! = "",
-    dir_cpp ! = "",
-    scheme  ! = "",
+    bin     !?: string,
+    dir_obj !?: string,
+    dir_src !?: string,
+    dir_cpp !?: string,
+    scheme  !?: string,
+
+    // TODO clean these up, this makes NO SENSE //
+    run     !?: bool,
+    shared  !?: bool,
+    hotswap !?: bool,
+    //////////////////////////////////////////////
 
     flags_cc!?: string[],
     flags_ld!?: string[])
@@ -165,10 +172,11 @@ pub fn build(
     }
 
     return ::build(
-        :ctx, :run, :bin, :scheme,
+        :ctx, :run, :shared, :hotswap, :bin, :scheme,
         :dir_wrk, :dir_obj, :dir_src, :dir_cpp,
         :flags_cc, :flags_ld,
-        unity: fname, fulib: FULIB);
+        unity: fname,
+        fulib: hotswap ? SHAREDLIB : FULIB);
 }
 
 
