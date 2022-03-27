@@ -66,6 +66,17 @@ struct view
     {
         return m_size != 0;
     }
+
+
+    // cpp iteration.
+
+    const T* begin() const noexcept {
+        return data();
+    }
+
+    const T* end() const noexcept {
+        return data() + size();
+    }
 };
 
 template <typename T>
@@ -144,6 +155,17 @@ struct view_mut
     fu_INL explicit operator bool() const noexcept
     {
         return m_size != 0;
+    }
+
+
+    // cpp iteration.
+
+    T* begin() noexcept {
+        return data_mut();
+    }
+
+    T* end() noexcept {
+        return data_mut() + size();
     }
 };
 
