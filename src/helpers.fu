@@ -81,7 +81,7 @@ pub fn hasIdentifierChars(id: string)
 
 pub fn map(a: [$T], fn)
 {
-    mut res: fn($T, index?: a.len)[];
+    mut res: fn($T, i?: a.len)[];
     res.grow_junk(a.len);
     for (mut i = 0; i < a.len; i++)
         res[i] = fn(a[i], i?: i);

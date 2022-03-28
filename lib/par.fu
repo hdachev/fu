@@ -9,7 +9,7 @@ pub purectx fn zip(arr: [$T], barr: [$U], visit, min!?: int)
 
 pub purectx fn map(arr: [$T], visit, min!?: int)
 {
-    mut result: (visit(arr[0]))[];
+    mut result: (visit(arr[0], i?: 0))[];
     result.grow_junk(arr.len);
 
     parallel_for(:min, end: arr.len): |i|
