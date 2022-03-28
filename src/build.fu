@@ -329,12 +329,16 @@ pub fn build(
     let exe_size = file::size(F_exe);
     if (exe_size < 1 && (bin || run))
     {
-        // Build.
-        for (mut i = 0; i < Fs.len; i++)
+        struct BuildError {
+            code: i32;
+            cpp: string;
+            stdout: string;
+        };
+
+        fn buildFile(F: string, i: int): BuildError
         {
-            let F = Fs[i];
             if (!F)
-                continue;
+                return [];
 
             let F_cpp = F ~ ".cpp";
             let F_tmp = F ~ ".o.tmp";
@@ -367,13 +371,29 @@ pub fn build(
                 let CMD = GCC_CMD ~ " -c" ~ INCLUDE ~ " -o " ~ F_tmp ~ " " ~ F_cpp ~ " 2>&1";
 
                 // println("      > ", CMD);
-                code = shell::exec(CMD, stdout)
-                    || shell::exec("mv " ~ F_tmp ~ " " ~ F_obj ~ " 2>&1", stdout);
+                shadow mut stdout: string;
+                shadow let code  = shell::exec(CMD, stdout)
+                                || shell::exec("mv " ~ F_tmp ~ " " ~ F_obj ~ " 2>&1", stdout);
 
-                if (code) return ERR(cpp);
+                if (code) return BuildError(:code, :cpp, :stdout);
 
                 let t1 = now::hr();
-                println("     OK ", t1 - t0, "s");
+                println("     OK ", human, " ", t1 - t0, "s");
+            }
+
+            return [];
+        }
+
+        // Build.
+        let buildErrors = Fs.par::map(fn buildFile);
+
+        for (mut i = 0; i < buildErrors.len; i++)
+        {
+            let err = buildErrors[i];
+            if ((code = err.code))
+            {
+                stdout = err.stdout;
+                return ERR(err.cpp);
             }
         }
 
