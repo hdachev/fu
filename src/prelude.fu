@@ -200,10 +200,41 @@ fn   grow_junk(ref a: $T[], len: int): void __native(".grow<false>");
 // Sorts, via std::sort - fnptrs.
 
 fn sort(ref a: [$T]): void
-    __native("<fu/vec/sort.h>", "fu::sort");
+{
+    pragma include("<algorithm>");
+    pragma emit(
+    "
+        auto* data = "a".data_mut();
+        std::sort(data, data + "a".size());
+    ");
+}
 
 fn sort(ref a: [$T], less/*: fn(a: $T, b: $T): bool*/): void
-    __native("<fu/vec/sort.h>", "fu::sort");
+{
+    noflow fn sort()
+    {
+        mut l: $T;
+        mut r: $T;
+        pragma include("<algorithm>");
+        pragma emit(
+        "
+            (void) "l";
+            (void) "r";
+            auto* data = "a".data_mut();
+            std::sort(data, data + "a".size(), [&](auto& "l", auto& "r")
+            {
+        ");
+
+        mut lt: bool = less(l, r);
+        pragma emit(
+        "
+                return "lt";
+            });
+        ");
+    }
+
+    sort();
+}
 
 
 // String likes.
