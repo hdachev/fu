@@ -1,9 +1,29 @@
 #pragma once
 
+#include <fu/export.h>
 #include <task/batch.hpp>
 
 namespace task {
 
+
+//
+
+struct parfor_Task: Task
+{
+    void* control;
+    size_t start;
+    size_t end;
+};
+
+extern "C" fu_EXPORT void parallel_for(
+    size_t size,
+    size_t per_batch,
+    void (*parfor_run)(Task*),
+    void* control,
+    PendingBatchCounter& pbc);
+
+
+//
 
 template <typename Fn>
 void parallel_for(size_t size, size_t per_batch, const Fn& fn)
@@ -14,38 +34,52 @@ void parallel_for(size_t size, size_t per_batch, const Fn& fn)
         PendingBatchCounter pbc;
     };
 
-    struct parfor_Task: Task
+    const auto parfor_run   = [](Task* t)
     {
-        parfor_Control* control;
-        size_t start, end;
+        parfor_Task* task   = (parfor_Task*) t;
+        auto control        = (parfor_Control*) task->control;
+
+        control->fn(task->start, task->end);
+        control->pbc.decrement();
     };
 
-    const auto parfor_run = [](Task* t)
-    {
-        parfor_Task* task = (parfor_Task*) t;
-        task->control->fn(task->start, task->end);
-        task->control->pbc.decrement();
-    };
+    parfor_Control control { fn, {} };
+
+    parallel_for(
+        size,
+        per_batch,
+        parfor_run,
+        &control,
+        control.pbc);
+}
+
+} // namespace
 
 
-    // There may be no point in suspending at all.
 
-    // TODO FIX: this can potentially duplicate the code of `fn`
-    //  Perhaps it's smarter to do this in the PushAndWork call,
-    //   which also reuses it for a bunch of other things.
+// This goes in the cpp.
 
-    if (size < per_batch * 2) {
-        fn(0, size);
-        return;
-    }
+void task::parallel_for(
+    size_t size,
+    size_t per_batch,
+    void (*parfor_run)(task::Task*),
+    void* control,
+    PendingBatchCounter& pbc)
+{
+    using namespace fu;
 
 
-    //
+    // TODO add log2(size) instead of the 1 at the end.
+
+    size_t max_batches = TaskStack_Worker_Count + 1;
+
+
+    // Enforce max_batches.
 
     size_t batches = size / per_batch;
 
-    batches = batches < TaskStack_Worker_Count
-            ? batches : TaskStack_Worker_Count;
+    batches = batches < max_batches
+            ? batches : max_batches;
 
     batches = batches > 1
             ? batches : 1;
@@ -53,23 +87,12 @@ void parallel_for(size_t size, size_t per_batch, const Fn& fn)
     per_batch = size / batches;
 
 
-    //
+    // Allocate & link up all tasks -
+    //  note the last task has the wrong 'end' index -
+    //   we don't submit it, we fix it up and run it here.
 
-    parfor_Control* control = (parfor_Control*) alloca(
-        sizeof(parfor_Control)  +
-        sizeof(parfor_Task)     * batches);
-
-    parfor_Task* tasks = (parfor_Task*) &control[1];
-
-
-    //
-
-    new (control) parfor_Control { fn, {} };
-
-
-    //
-
-    control->pbc.init(batches);
+    parfor_Task* tasks = (parfor_Task*) alloca(
+        sizeof(parfor_Task) * batches);
 
     for (size_t i = 0; i < batches; i++)
     {
@@ -78,27 +101,34 @@ void parallel_for(size_t size, size_t per_batch, const Fn& fn)
         t.run       = parfor_run;
         t.control   = control;
 
-        t.start     = size_t(i) * per_batch;
-        t.end       = i < batches - 1
-                        ? t.start + per_batch
-                        : size;
+        t.start     =  i      * per_batch;
+        t.end       = (i + 1) * per_batch;
 
         t.next_task = &t + 1;
     }
 
-    TaskStack_Push(tasks, tasks + batches - 1);
 
-    TaskStack_Notify();
+    // Submit everything but the last task.
+
+    if (batches > 1)
+    {
+        pbc.init(batches);
+
+        TaskStack_Push(tasks, tasks + batches - 2);
+        TaskStack_Notify();
+    }
 
 
-    // Now for the stupid part -
-    //  This is pretty horrible, because we might end up sleeping and not working,
-    //   and waiting-by-doing-work can lock things up if we pop a big task.
+    // Fixup & run the last task right here.
+
+    {
+        auto& last = tasks[batches - 1];
+        last.end = size;
+        last.run(&last);
+    }
+
+
     //
-    // In the absence of fibers this is the best we can do.
 
-    control->pbc.wait();
+    pbc.wait();
 }
-
-
-} // namespace
