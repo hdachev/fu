@@ -59,22 +59,23 @@ namespace lockfree
 
         // We sync on the .next pointers.
 
-        void push(char* mem)
+        void push(char* mem_first, char* mem_last)
         {
-            Node* node = (Node*)mem;
+            Node* first = (Node*)mem_first;
+            Node* last  = (Node*)mem_last;
 
-            u64 state0 = head.load(
+            u64 state0  = head.load(
                 std::memory_order_relaxed);
 
             Retry:
             {
-                node->next.store(untag(state0), //////////////
+                last->next.store(untag(state0), //////////////
                     std::memory_order_release); //// sync ////
                                                 //////////////
 
-                const u64 state1 = tag(node, tagof(state0));
+                const u64 state1 = tag(first, tagof(state0));
 
-                assert(untag(state1) == node);
+                assert(untag(state1) == first);
 
                 if (!head.compare_exchange_weak(
                     state0, state1,

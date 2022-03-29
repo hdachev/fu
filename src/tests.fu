@@ -9149,6 +9149,34 @@ pub fn runTests()
         }
     `);
 
+    ZERO(`
+        fn test(ref arr: i32[])
+            arr.par::each: |v, i| v = i;
+
+        fn main() {
+            let N = 1087 * 1091;
+
+            mut orig: i32[];
+            orig.resize(N);
+
+            mut arr = orig;
+            arr.test();
+
+            if (arr.len != N || arr.len != orig.len)
+                return 1;
+
+            for (mut i = 0; i < N; i++)
+                if (orig[i] != 0)
+                    return 2;
+
+            for (mut i = 0; i < N; i++)
+                if (arr[i] != i)
+                    return 3;
+
+            return 0;
+        }
+    `);
+
 
     // Custom primitives, enums & flags.
 
