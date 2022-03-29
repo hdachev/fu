@@ -1,11 +1,11 @@
 
-pub struct TEA
+struct TEA
 {
     v0: u32;
     v1: u32;
 }
 
-pub inline fn r4(using ref _: TEA, ref sum: u32)
+inline fn r4(using ref _: TEA, ref sum: u32)
 {
     mut delta: u32 = 0x9e3779b9;
 
@@ -17,7 +17,7 @@ pub inline fn r4(using ref _: TEA, ref sum: u32)
     }
 }
 
-pub inline fn r8(using ref _: TEA, ref sum: u32)
+inline fn r8(using ref _: TEA, ref sum: u32)
 {
     mut delta: u32 = 0x9e3779b9;
 
@@ -29,7 +29,7 @@ pub inline fn r8(using ref _: TEA, ref sum: u32)
     }
 }
 
-pub inline fn r16(using ref _: TEA, ref sum: u32)
+inline fn r16(using ref _: TEA, ref sum: u32)
 {
     mut delta: u32 = 0x9e3779b9;
 
@@ -44,22 +44,22 @@ pub inline fn r16(using ref _: TEA, ref sum: u32)
 
 // Shorthands.
 
-pub inline fn r4(ref tea: TEA) {
+inline fn r4(ref tea: TEA) {
     mut sum: u32; tea.r4(sum);
 }
 
-pub inline fn r8(ref tea: TEA) {
+inline fn r8(ref tea: TEA) {
     mut sum: u32; tea.r8(sum);
 }
 
-pub inline fn r16(ref tea: TEA) {
+inline fn r16(ref tea: TEA) {
     mut sum: u32; tea.r16(sum);
 }
 
 
 //
 
-pub inline fn u64(tea: TEA)
+inline fn u64(tea: TEA): u64 =
     tea.v0.u64 | (tea.v1.u64 << 32);
 
 
@@ -67,10 +67,10 @@ pub inline fn u64(tea: TEA)
 //  This doesn't use the head byte
 //   which allows you to pick bools without correlation.
 
-pub inline fn uniform_f01(u: u32)
+inline fn uniform_f01(u: u32)
     (u & 0xffffff).f32 * (1 / 0x1000000 .f32);
 
-pub inline fn uniform_f11(u: u32)
+inline fn uniform_f11(u: u32)
 {
     let f01 = u.uniform_f01;
     return u & 0x1000000 ? -f01 : +f01;
@@ -79,7 +79,7 @@ pub inline fn uniform_f11(u: u32)
 
 // Let's put our cooler features to use.
 
-pub fn hash(mut res: TEA, u8view: [byte])
+fn hash(ref res: TEA, u8view: [byte])
 {
     // First off, a view over most of the array as u32s.
     let u32len  = u8view.len & ~3;
@@ -118,17 +118,18 @@ pub fn hash(mut res: TEA, u8view: [byte])
     return res;
 }
 
-pub fn hash(u8view: [byte])
+fn hash(u8view: [byte])
 {
     mut res: TEA;
-    res = res.hash(u8view);
+    res.hash(u8view);
     return res;
 }
 
-pub fn hash62(str: [byte], chars = 11): string
+fn digest62(mut v.u64: u64, mut chars!?: int): string
 {
+    chars = chars > 0 && chars < 11 ? chars : 11;
+
     mut res: string;
-    mut v = str.hash.u64;
     for (mut i = 0; i < chars; i++)
     {
         //*/
@@ -151,10 +152,11 @@ pub fn hash62(str: [byte], chars = 11): string
     return res;
 }
 
-pub fn hash16(str: [byte], chars = 16): string
+fn digest16(mut v.u64: u64, mut chars!?: int): string
 {
+    chars = chars > 0 && chars < 16 ? chars : 16;
+
     mut res: string;
-    mut v = str.hash.u64;
     for (mut i = 0; i < chars; i++)
     {
         let c = v % 16;
@@ -167,4 +169,18 @@ pub fn hash16(str: [byte], chars = 16): string
     }
 
     return res;
+}
+
+fn hash62(str: [byte], chars = 11): string
+{
+    mut res: TEA;
+    res.hash(str);
+    return res.digest62(:chars);
+}
+
+fn hash16(str: [byte], chars = 16): string
+{
+    mut res: TEA;
+    res.hash(str);
+    return res.digest16(:chars);
 }
