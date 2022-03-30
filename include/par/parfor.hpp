@@ -60,7 +60,8 @@ namespace fu
 
             control->fn(task->start, task->end);
 
-            PBC_Decrement(*control->pbc);
+            if (control->pbc)
+                PBC_Decrement(*control->pbc);
         };
 
         parfor_Control control { nullptr, fn };

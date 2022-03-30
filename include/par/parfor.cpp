@@ -204,6 +204,30 @@ namespace fu
         if (pbc.pending.fetch_add(-1, std::memory_order_release) == 1)
         {
             #ifndef use_cpp20_ATOMIC_FLAG_WAIT
+
+                // We don't hit the mutex for every decrement
+                //  so without this the following can happen:
+                //
+                //  THREAD A            THREAD B
+                //
+                //                      check counter
+                //  decrement
+                //  notify
+                //                      wait
+                //
+                // This is why PBC_Wait does the final check
+                //  inside the mutex, and we also hit the mutex here.
+                //
+                std::unique_lock<std::mutex> lock(pbc.mutex);
+                //
+                // We don't need to hold the lock during the notify,
+                //  we just need to make sure the decr+notify
+                //   can't squeeze in between the check and the wait there.
+                //
+                lock.unlock();
+                //
+                // We don't have these problems with the atomic variant.
+
                 pbc.cv.notify_one();
             #else
                 pbc.pending.notify_one();
@@ -219,11 +243,19 @@ namespace fu
             {
                 #ifndef use_cpp20_ATOMIC_FLAG_WAIT
 
-                    ///////////////////
-                    // THIS IS A BUG //
-                    (void) expect; ////
-
                     std::unique_lock<std::mutex> lock(pbc.mutex);
+
+                    // Repeat the check while holding the mutex.
+                    //
+                    // See the comment in PBC_Decrement -
+                    //  it acquires the mutex after decrementing the counter
+                    //   and before the notify, so it can't squeeze in
+                    //    between the check and the wait here.
+                    //
+                    (void) expect;
+                    if (!pbc.pending.load(std::memory_order_acquire))
+                        return;
+
                     pbc.cv.wait(lock);
                 #else
                     pbc.pending.wait(expect, std::memory_order_acquire);
@@ -243,7 +275,6 @@ namespace fu
 ////////////////////////////////////////////////////////////////
 ////////
 ////////  The type-erased parfor.
-
 
 namespace fu
 {
@@ -295,6 +326,18 @@ namespace fu
             t.next_task = &t + 1;
         }
 
+        auto& last = tasks[batches - 1];
+        last.end = size;
+
+
+        // Skip over the counter, decr & check if possible.
+
+        if (batches == 1)
+        {
+            last.run(&last); // DUPLICATED //
+            return;
+        }
+
 
         // Control must start with a pbc*.
 
@@ -304,23 +347,10 @@ namespace fu
 
         // Submit everything but the last task.
 
-        if (batches > 1)
-        {
-            TaskStack_Push(tasks, tasks + batches - 2);
-            TaskStack_Notify();
-        }
+        TaskStack_Push(tasks, tasks + batches - 2);
+        TaskStack_Notify();
 
-
-        // Fixup & run the last task right here.
-
-        {
-            auto& last = tasks[batches - 1];
-            last.end = size;
-            last.run(&last);
-        }
-
-
-        //
+        last.run(&last); // DUPLICATED //
 
         PBC_Wait(pbc);
     }
