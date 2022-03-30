@@ -5,58 +5,54 @@
 namespace task {
 
 
-struct PendingBatchCounter
+struct PendingBatchCount
 {
-    std::atomic_int                 m_pending;
+    std::atomic_int                 pending;
 
     #ifndef use_cpp20_ATOMIC_FLAG_WAIT
-        char mutex_ANTISHARE[64 - sizeof(std::atomic_int)];
+        char mutex_ANTISHARE[64 - sizeof(std::atomic_int)]  {};
 
-        std::mutex                  m_mutex;
-        std::condition_variable     m_cv;
+        std::mutex                  mutex                   {};
+        std::condition_variable     cv                      {};
     #endif
 
+    PendingBatchCount(size_t batches)
+        : pending { (int) batches }
+    {}
+};
 
-    //
-
-    inline void init(size_t num_batches)
+void PBC_Decrement(PendingBatchCount& pbc)
+{
+    if (pbc.pending.fetch_add(-1, std::memory_order_release) == 1)
     {
-        m_pending.store((int) num_batches, std::memory_order_relaxed);
+        #ifndef use_cpp20_ATOMIC_FLAG_WAIT
+            pbc.cv.notify_one();
+        #else
+            pbc.pending.notify_one();
+        #endif
     }
+}
 
-    inline void decrement()
+void PBC_Wait(PendingBatchCount& pbc)
+{
+    while (auto expect = pbc.pending.load(std::memory_order_acquire))
     {
-        if (m_pending.fetch_add(-1, std::memory_order_release) == 1)
+        if (!TaskStack_TryWork())
         {
             #ifndef use_cpp20_ATOMIC_FLAG_WAIT
-                m_cv.notify_one();
+
+                ///////////////////
+                // THIS IS A BUG //
+                (void) expect; ////
+
+                std::unique_lock<std::mutex> lock(pbc.mutex);
+                pbc.cv.wait(lock);
             #else
-                m_pending.notify_one();
+                pbc.pending.wait(expect, std::memory_order_acquire);
             #endif
         }
     }
-
-    void wait()
-    {
-        while (auto expect = m_pending.load(std::memory_order_acquire))
-        {
-            if (!TaskStack_TryWork())
-            {
-                #ifndef use_cpp20_ATOMIC_FLAG_WAIT
-
-                    ///////////////////
-                    // THIS IS A BUG //
-                    (void) expect; ////
-
-                    std::unique_lock<std::mutex> lock(m_mutex);
-                    m_cv.wait(lock);
-                #else
-                    m_pending.wait(expect, std::memory_order_acquire);
-                #endif
-            }
-        }
-    }
-};
+}
 
 
 } // namespace

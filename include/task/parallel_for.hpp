@@ -1,9 +1,17 @@
 #pragma once
 
+#include <task/pool.hpp>
 #include <fu/export.h>
-#include <task/batch.hpp>
 
 namespace task {
+
+
+//
+
+struct PendingBatchCount;
+
+extern "C" fu_EXPORT void PBC_Decrement(
+    PendingBatchCount& pbc);
 
 
 //
@@ -19,8 +27,7 @@ extern "C" fu_EXPORT void parallel_for(
     size_t size,
     size_t per_batch,
     void (*parfor_run)(Task*),
-    void* control,
-    PendingBatchCounter& pbc);
+    PendingBatchCount*& control);
 
 
 //
@@ -30,8 +37,11 @@ void parallel_for(size_t size, size_t per_batch, const Fn& fn)
 {
     struct parfor_Control
     {
+        // Must begin with a pbc*,
+        //  so pbc* == control*.
+        //
+        PendingBatchCount* pbc;
         const Fn& fn;
-        PendingBatchCounter pbc;
     };
 
     const auto parfor_run   = [](Task* t)
@@ -40,31 +50,32 @@ void parallel_for(size_t size, size_t per_batch, const Fn& fn)
         auto control        = (parfor_Control*) task->control;
 
         control->fn(task->start, task->end);
-        control->pbc.decrement();
+
+        PBC_Decrement(*control->pbc);
     };
 
-    parfor_Control control { fn, {} };
+    parfor_Control control { nullptr, fn };
 
     parallel_for(
         size,
         per_batch,
         parfor_run,
-        &control,
         control.pbc);
 }
+
 
 } // namespace
 
 
-
 // This goes in the cpp.
+
+#include <task/batch.hpp>
 
 void task::parallel_for(
     size_t size,
     size_t per_batch,
     void (*parfor_run)(task::Task*),
-    void* control,
-    PendingBatchCounter& pbc)
+    PendingBatchCount*& control)
 {
     using namespace fu;
 
@@ -99,7 +110,7 @@ void task::parallel_for(
         auto& t     = tasks[i];
 
         t.run       = parfor_run;
-        t.control   = control;
+        t.control   = &control;
 
         t.start     =  i      * per_batch;
         t.end       = (i + 1) * per_batch;
@@ -108,12 +119,16 @@ void task::parallel_for(
     }
 
 
+    // Control must start with a pbc*.
+
+    PendingBatchCount pbc(batches);
+    control = &pbc;
+
+
     // Submit everything but the last task.
 
     if (batches > 1)
     {
-        pbc.init(batches);
-
         TaskStack_Push(tasks, tasks + batches - 2);
         TaskStack_Notify();
     }
@@ -130,5 +145,5 @@ void task::parallel_for(
 
     //
 
-    pbc.wait();
+    PBC_Wait(pbc);
 }
