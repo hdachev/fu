@@ -29,7 +29,7 @@ novec noflow fn parallel_for(min!, mut end!, visit)
 {
     mut start = end & 0;
 
-    pragma include("<task/parallel_for.hpp>");
+    pragma include("<par/parfor.cpp>");
 
     pragma emit(
     `
@@ -38,7 +38,7 @@ novec noflow fn parallel_for(min!, mut end!, visit)
         typedef decltype(`start`) start_t;
         typedef decltype(`end  `) end_t;
 
-        task::parallel_for(size_t(end), size_t(`min` > 1 ? `min` : 1), [&](size_t Start, size_t End)
+        fu::parallel_for(size_t(end), size_t(`min` > 1 ? `min` : 1), [&](size_t Start, size_t End)
         {
             auto start = (start_t) Start;
             auto end   = (end_t  ) End;
