@@ -22,3 +22,9 @@ pub fn set_next(ref diffs: TestDiffs, key: string, val: string)
     diffs.keys ~= key;
     diffs.vals ~= val;
 }
+
+pub fn append(ref diffs: TestDiffs, other: TestDiffs)
+{
+    diffs.keys ~= other.keys;
+    diffs.vals ~= other.vals;
+}

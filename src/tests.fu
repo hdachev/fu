@@ -58,6 +58,57 @@ pub fn runTests()
     // */
 
 
+    // Parallel mode,
+    //  comment it out to set breakpoints & such.
+
+    /*
+    mut PARZERO_queue: string[][];
+
+    fn PARZERO(src: string[])
+        PARZERO_queue ~= src;
+
+    fn PARZERO(src: string)
+        PARZERO_queue ~= [ src ];
+
+    defer:ok
+    {
+        struct TestResult
+        {
+            error:      string;
+            testdiffs:  testdiff::TestDiffs;
+        };
+
+        let results = PARZERO_queue.par::map(|test|
+        {
+            mut error: string;
+            let implicit shadow mut testdiffs: testdiff::TestDiffs;
+
+            try
+                ZERO(test);
+            catch (e)
+                error = e;
+
+            continue TestResult(:error, :testdiffs);
+        });
+
+        mut error: string;
+        for (mut i = 0; i < results.len; i++)
+        {
+            let result = results[i];
+            if (result.error)
+                error ~= result.error ~ "\n";
+            else
+                testdiffs.append(result.testdiffs);
+        }
+
+        if (error)
+            throw(error);
+    }
+
+    shadow let ZERO = fn PARZERO;
+    // */
+
+
     // Categorizing what doesn't work and why -
 
     let TODO_borrowck   = fn TODO;
