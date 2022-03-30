@@ -1,6 +1,6 @@
 import ansi;
 import helpers;
-import parser;
+import flags;
 import scope;
 import context;
 import types;
@@ -9,36 +9,8 @@ import structs;
 import flow;
 import effects;
 import module;
+import notes;
 import fail;
-
-
-// Solver notes.
-
-pub let N_FnRecursion       = 1 << 0;
-pub let N_FnResolve         = 1 << 1;
-pub let N_FnReopen          = 1 << 2;
-
-pub let N_TypeRecursion     = 1 << 3;
-pub let N_TypeResolve       = 1 << 4;
-pub let N_TypeReopen        = 1 << 5;
-
-pub let N_DeadCode          = 1 << 6;
-pub let N_DeadCall          = 1 << 7;
-pub let N_DeadLet           = 1 << 8;
-pub let N_DeadIfCond        = 1 << 9;
-pub let N_DeadIfCons        = 1 << 10;
-pub let N_DeadArrlit        = 1 << 11;
-pub let N_DeadLoopInit      = 1 << 12;
-
-pub let N_NonTrivAutoCopy   = 1 << 13;
-
-pub let N_RelaxRespec       = 1 << 14;
-
-pub let N_BckSoftRisk       = 1 << 15;
-pub let N_BckMustSeq        = 1 << 16;
-
-pub let N_SD_HasStaticInit  = 1 << 30;
-pub let N_SD_ExternPrivates = 1 << 31;
 
 
 //
@@ -51,12 +23,6 @@ let OPTI_bck                = true;
 let USE_nontriv_autocopy    = true;
 
 let SELF_TEST               = true;
-
-
-//
-
-pub let NODEIDX_signbits    = 4;
-pub let NODEIDX_signmask    = (1 << NODEIDX_signbits) - 1;
 
 
 

@@ -1,0 +1,65 @@
+
+
+//
+
+let F_METHOD        = 1 << 0;
+let F_INFIX         = 1 << 1;
+let F_PREFIX        = 1 << 2;
+let F_POSTFIX       = 1 << 3;
+
+let F_ACCESS        = 1 << 4;           let F_HOTSWAP       = F_ACCESS;
+let     F_ID        = 1 << 5;
+let F_COMPOUND_ID   = 1 << 6;
+let     F_PARENS    = 1 << 7;           let F_WRITTEN_TO    = F_PARENS;
+
+
+let F_LAX           = 1 << 8;           let F_EFFECT        = F_LAX;
+let F_ARG           = 1 << 9; ///////// TODO get rid of this
+let F_UNUSED        = 1 << 10;
+let F_MOVED_FROM    = 1 << 11;          let F_NOFLOW        = F_MOVED_FROM;
+
+let F_NOCOPY        = 1 << 12;          let F_NOVEC         = F_NOCOPY;
+let F_PURE          = 1 << 13;
+let F_CONVERSION    = 1 << 14;
+let F_OPT_ARG       = 1 << 15;          let F_PURE_CTX      = F_OPT_ARG;
+
+
+let F_MUT           = 1 << 16;
+let F_IMPLICIT      = 1 << 17;
+let F_USING         = 1 << 18;
+let F_MUSTNAME      = 1 << 19;          let F_EXTERN        = F_MUSTNAME;
+
+let F_PUB           = 1 << 20;
+let F_OPERATOR      = 1 << 21;          let F_HOIST         = F_OPERATOR;
+let F_REF           = 1 << 22;
+let F_SHADOW        = 1 << 23;
+                                        ///////////////////
+                                        // `true` fields //
+let F_NAMED_ARGS    = 1 << 24;          let F_PREDICATE     = F_NAMED_ARGS;
+let F_OOE_RTL       = 1 << 25;          let F_ENUM          = F_OOE_RTL;
+let F_REST_ARG      = 1 << 26;
+let F_RELAXABLE_REF = 1 << 27;
+
+let F_TEMPLATE      = 1 << 28;
+let F_INLINE        = 1 << 29;
+let F_LAMBDA        = 1 << 30;          let F_SINGLE_STMT   = F_LAMBDA;
+// let F_SINGLE_STMT   = 1 << 31;
+
+
+
+// Commons.
+
+let LET_TYPE        = 0;
+let LET_INIT        = 1;
+
+let FN_RET_BACK     = -2;
+let FN_BODY_BACK    = -1;
+let FN_ARGS_BACK    = FN_RET_BACK;
+
+let TYPECTOR_BACK   = -1;
+
+let LOOP_INIT       = 0;
+let LOOP_COND       = 1;
+let LOOP_BODY       = 2;
+let LOOP_POST_COND  = 3;
+let LOOP_POST       = 4;

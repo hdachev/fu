@@ -1,0 +1,57 @@
+
+
+// Solver notes.
+
+let N_FnRecursion       = 1 << 0;
+let N_FnResolve         = 1 << 1;
+let N_FnReopen          = 1 << 2;
+
+let N_TypeRecursion     = 1 << 3;
+let N_TypeResolve       = 1 << 4;
+let N_TypeReopen        = 1 << 5;
+
+let N_DeadCode          = 1 << 6;
+let N_DeadCall          = 1 << 7;
+let N_DeadLet           = 1 << 8;
+let N_DeadIfCond        = 1 << 9;
+let N_DeadIfCons        = 1 << 10;
+let N_DeadArrlit        = 1 << 11;
+let N_DeadLoopInit      = 1 << 12;
+
+let N_NonTrivAutoCopy   = 1 << 13;
+
+let N_RelaxRespec       = 1 << 14;
+
+let N_BckSoftRisk       = 1 << 15;
+let N_BckMustSeq        = 1 << 16;
+
+let N_SD_HasStaticInit  = 1 << 30;
+let N_SD_ExternPrivates = 1 << 31;
+
+
+// Same thing.
+
+let NOTES = [
+    "FN_recursion",
+    "FN_resolve",
+    "FN_reopen",
+
+    "TYPE_recursion",
+    "TYPE_resolve",
+    "TYPE_reopen",
+
+    "DEAD_code",
+    "DEAD_call",
+    "DEAD_let",
+    "DEAD_if_cond",
+    "DEAD_if_cons",
+    "DEAD_arrlit",
+    "DEAD_loop_init",
+
+    "NONTRIV_autocopy",
+
+    "RELAX_respec",
+
+    "BCK_soft_risk",
+    "BCK_must_seq",
+];

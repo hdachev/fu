@@ -1,9 +1,8 @@
 import helpers;
-import parser;
+import flags;
 import types;
 import quals;
 import scope;
-import solver;
 import context;
 import bitset;
 import cpp;

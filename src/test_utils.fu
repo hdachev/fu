@@ -2,34 +2,10 @@ import compiler;
 import options;
 import helpers;
 import module;
+import notes;
 
 
 // Test running infra.
-
-let NOTES = [
-    "FN_recursion",
-    "FN_resolve",
-    "FN_reopen",
-
-    "TYPE_recursion",
-    "TYPE_resolve",
-    "TYPE_reopen",
-
-    "DEAD_code",
-    "DEAD_call",
-    "DEAD_let",
-    "DEAD_if_cond",
-    "DEAD_if_cons",
-    "DEAD_arrlit",
-    "DEAD_loop_init",
-
-    "NONTRIV_autocopy",
-
-    "RELAX_respec",
-
-    "BCK_soft_risk",
-    "BCK_must_seq",
-];
 
 pub fn compile_snippets(sources: string[], fnames?: string[], options?: Options[]): Context
 {

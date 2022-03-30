@@ -2,58 +2,12 @@ import ansi;
 import helpers;
 import module;
 import fail;
+import flags;
 
 
 //
 
 let use_AUTOPUB     = true;
-
-
-// Calltypes, probably an enum is better for the 4 kinds,
-//  can't be mixed and matched.
-
-pub let F_METHOD        = 1 << 0;
-pub let F_INFIX         = 1 << 1;
-pub let F_PREFIX        = 1 << 2;
-pub let F_POSTFIX       = 1 << 3;
-
-pub let F_ACCESS        = 1 << 4;           pub let F_HOTSWAP       = F_ACCESS;
-let     F_ID            = 1 << 5;
-pub let F_COMPOUND_ID   = 1 << 6;
-let     F_PARENS        = 1 << 7;           pub let F_WRITTEN_TO    = F_PARENS;
-
-
-pub let F_LAX           = 1 << 8;           pub let F_EFFECT        = F_LAX;
-pub let F_ARG           = 1 << 9; ///////// TODO get rid of this
-pub let F_UNUSED        = 1 << 10;
-pub let F_MOVED_FROM    = 1 << 11;          pub let F_NOFLOW        = F_MOVED_FROM;
-
-pub let F_NOCOPY        = 1 << 12;          pub let F_NOVEC         = F_NOCOPY;
-pub let F_PURE          = 1 << 13;
-pub let F_CONVERSION    = 1 << 14;
-pub let F_OPT_ARG       = 1 << 15;          pub let F_PURE_CTX      = F_OPT_ARG;
-
-
-pub let F_MUT           = 1 << 16;
-pub let F_IMPLICIT      = 1 << 17;
-pub let F_USING         = 1 << 18;
-pub let F_MUSTNAME      = 1 << 19;          pub let F_EXTERN        = F_MUSTNAME;
-
-pub let F_PUB           = 1 << 20;
-pub let F_OPERATOR      = 1 << 21;          pub let F_HOIST         = F_OPERATOR;
-pub let F_REF           = 1 << 22;
-pub let F_SHADOW        = 1 << 23;
-                                            ///////////////////
-                                            // `true` fields //
-pub let F_NAMED_ARGS    = 1 << 24;          pub let F_PREDICATE     = F_NAMED_ARGS;
-pub let F_OOE_RTL       = 1 << 25;          pub let F_ENUM          = F_OOE_RTL;
-pub let F_REST_ARG      = 1 << 26;
-pub let F_RELAXABLE_REF = 1 << 27;
-
-pub let F_TEMPLATE      = 1 << 28;
-pub let F_INLINE        = 1 << 29;
-pub let F_LAMBDA        = 1 << 30;          pub let F_SINGLE_STMT   = F_LAMBDA;
-// pub let F_SINGLE_STMT   = 1 << 31;
 
 
 // Operator precedence table.
@@ -130,24 +84,6 @@ fn setupOperators()
 }
 
 let BINOP     = setupOperators();
-
-
-// Commons.
-
-pub let LET_TYPE        = 0;
-pub let LET_INIT        = 1;
-
-pub let FN_RET_BACK     = -2;
-pub let FN_BODY_BACK    = -1;
-pub let FN_ARGS_BACK    = FN_RET_BACK;
-
-pub let TYPECTOR_BACK   = -1;
-
-pub let LOOP_INIT       = 0;
-pub let LOOP_COND       = 1;
-pub let LOOP_BODY       = 2;
-pub let LOOP_POST_COND  = 3;
-pub let LOOP_POST       = 4;
 
 
 // Descent modes.

@@ -84,7 +84,7 @@ pub fn compile(fname: string, via: string = "")
 
     //
     return module.out.init_prio
-        + (module.out.solve.notes & solver::N_SD_HasStaticInit && 1);
+        + (module.out.solve.notes & notes::N_SD_HasStaticInit && 1);
 }
 
 
