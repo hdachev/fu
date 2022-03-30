@@ -1,4 +1,5 @@
 import compiler;
+import test_utils;
 
 
 // A quick self-test without I/O.

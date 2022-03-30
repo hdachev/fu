@@ -1,0 +1,587 @@
+import compiler;
+import options;
+import helpers;
+import module;
+
+
+// Test running infra.
+
+let NOTES = [
+    "FN_recursion",
+    "FN_resolve",
+    "FN_reopen",
+
+    "TYPE_recursion",
+    "TYPE_resolve",
+    "TYPE_reopen",
+
+    "DEAD_code",
+    "DEAD_call",
+    "DEAD_let",
+    "DEAD_if_cond",
+    "DEAD_if_cons",
+    "DEAD_arrlit",
+    "DEAD_loop_init",
+
+    "NONTRIV_autocopy",
+
+    "RELAX_respec",
+
+    "BCK_soft_risk",
+    "BCK_must_seq",
+];
+
+pub fn compile_snippets(sources: string[], fnames?: string[], options?: Options[]): Context
+{
+    fn ensure_main(src: string)
+        src.has("fn main")
+            ? src
+            : "\n\nfn main(): i32 {\n" ~ src ~ "\n}\n";
+
+    let implicit mut ctx = prelude::CTX_PRELUDE.clone();
+    for (mut i = 0; i < sources.len; i++)
+    {
+        let snippet = sources[i];
+        let src     = i == sources.len - 1
+                    ? ensure_main(snippet)
+                    : snippet;
+
+        let fname   = fnames.len > i
+                    ? fnames[i]
+                    : PRJDIR ~ "__tests__/_" ~ i ~ ".fu";
+
+        ctx.files.map::set(fname, src);
+        compile(:fname, options:
+            options.len > i && options[i]);
+    }
+
+    for (mut i = 0; i < ctx.modules.len; i++)
+    {
+        ref module = ctx.modules[i];
+        mut notes = module.out.solve.notes;
+        for (mut bit = 0; bit < NOTES.len && notes; bit++)
+        {
+            let mask  = 1 << bit;
+            let isset = notes & mask;
+            notes &= ~mask;
+            if (isset)
+                module.out.cpp.src ~= "// " ~ NOTES[bit] ~ "\n";
+        }
+    }
+
+    return ctx;
+}
+
+pub fn snippet2cpp(src: string): string
+{
+    let fname = "/DIR/FILE.fu";
+
+    let ctx = compile_snippets([ src ], [ fname ]);
+    for (mut i = 0; i < ctx.modules.len; i++)
+    {
+        let module = ctx.modules[i];
+        if (module.fname == fname)
+            return module.out.cpp.src;
+    }
+
+    return "";
+}
+
+fn unindent_left(src: string, i0: int): int
+{
+    mut i1 = i0;
+    while (i1--)
+    {
+        let c = src[i1];
+        if (c != ' ')
+        {
+            if (c == '\n')
+                return i1 + 1;
+
+            break;
+        }
+    }
+
+    return i0;
+}
+
+pub fn ZERO(
+    implicit ref testdiffs: testdiff::TestDiffs,
+    mut sources: string[],
+    options?: Options): Context
+{
+    // <fail>x</fail>
+    // <fail>x<pass/>y</fail>
+    // <fail err>x<pass/>y</fail>
+    for (mut i = 0; i < sources.len; i++)
+    {
+        for (;;)
+        {
+            ref src    = sources[i];
+
+            mut start0 = src.find("<fail");
+            if (start0 < 0)
+                break;
+
+            mut end0   = src.find("</fail>", start: start0);
+            end0 >= 0 || throw("No closing `</fail>` for `<fail>`.");
+
+            //
+            mut start1 = start0 + 5;
+            while (src[start1++] != '>') {}
+
+            //
+            let msg    = src.slice(start0 + 5, start1 - 1);
+
+            // Check against <fail/> and the like.
+            msg             || throw("No <fail keywords>.");
+            msg[0] == ' '   || throw("Bad <fail keywords>: `<fail" ~ msg ~ ">`.");
+
+            // Avoid trailing spaces.
+            let end1   = end0   + 7;
+
+            start0 = src.unindent_left(start0);
+            end0   = src.unindent_left(end0);
+
+            let prefix = src.slice(0, start0);
+            let suffix = src.slice(end1, src.len);
+
+            mut split  = src.slice(start1, end0).split("<pass/>");
+            split.len > 1 || throw("No `<pass/>` for `<fail>`.");
+            split.len < 3 || throw("Multiple `<pass/>` blocks for `<fail>`.");
+
+            mut fails  = split[0].split("<fail/>");
+
+            split.shift();
+            mut pass   = split.only;
+
+            for (mut j = fails.len; j --> 0; )
+            {
+                let fail    = fails[j];
+
+                let end     = fail.unindent_left(fail.len);
+                sources[i]  = prefix ~ fail[0, end] ~ suffix;
+
+                // Each fail variant must throw.
+                try ZERO(:sources);
+                catch (e)
+                {
+                    shadow let e    = e.ERR_TRIM;
+
+                    mut actual      = e
+                        .ERR_STRIP_ANSI
+                        .ERR_STRIP_SNIPPETS
+                        .ascii::lower();
+
+                    mut BUG_ok = false;
+
+                    // Verify error message.
+                    mut m0 = -1;
+                    for (mut m1 = 0; m1 <= msg.len; m1++)
+                    {
+                        let c = m1 < msg.len ? msg[m1] : ' ';
+                        if (c.i32 <= 32)
+                        {
+                            if (m0 >= 0)
+                            {
+                                let exact = msg.slice(m0, m1);
+                                if (exact == "BUG")
+                                    BUG_ok = true;
+
+                                let expect = exact.ascii::lower();
+                                if (!actual.has(expect))
+                                    throw("<fail> mismatch:\n\n    Expected error keyword:\n        "
+                                        ~ expect.ansi::qBAD ~ " from pattern <fail" ~ msg.ansi::qBAD ~ ">"
+                                        ~ "\n\n    ... not present in error message:\n\n"
+                                        ~ e);
+                            }
+
+                            m0 = -1;
+                        }
+                        else if (m0 < 0)
+                        {
+                            m0 = m1;
+                        }
+                    }
+
+                    if (!BUG_ok && e.has("BUG"))
+                        throw("<fail> error message contains BUG:\n\n" ~ e);
+
+                    //
+                    testdiffs.set_next(
+                        sources.ERR_KEY, e/*.ERR_TRIM*/);
+
+                    continue;
+                }
+
+                throw("<fail> does not throw:\n" ~ sources[i]);
+            }
+
+            // Finally, this should run fine,
+            //  just let the rest of the thing do its thing.
+            {
+                let end     = pass.unindent_left(pass.len);
+                sources[i]  = prefix ~ pass[0, end] ~ suffix;
+            }
+        }
+    }
+
+    // <alt></alt>
+    // <alt><alt/></alt>
+    for (mut i = 0; i < sources.len; i++)
+    {
+        for (;;)
+        {
+            ref src = sources[i];
+
+            mut start0 = src.find("<alt>");
+            if (start0 < 0)
+                break;
+
+            mut end0 = src.find("</alt>", start: start0);
+            end0 >= 0 || throw("No closing `</alt>` for `<alt>`.");
+
+            // Avoid trailing spaces.
+            let start1 = start0 + 5;
+            let end1   = end0   + 6;
+
+            start0 = src.unindent_left(start0);
+            end0   = src.unindent_left(end0);
+
+            let prefix = src.slice(0, start0);
+            let suffix = src.slice(end1, src.len);
+
+            mut split  = src.slice(start1, end0).split("<alt/>");
+            if (split.len < 2)
+                split ~= "";
+
+            for (mut j = split.len; j --> 0; )
+            {
+                let part = split[j];
+                let end  = part.unindent_left(part.len);
+
+                sources[i] = prefix ~ part[0, end] ~ suffix;
+
+                // Re-run everything but the last alt,
+                //  which is gonna run anyway below.
+                if (j)
+                    ZERO(:sources);
+            }
+        }
+    }
+
+    // <split/>
+    for (mut i = 0; i < sources.len; i++)
+    {
+        for (;;)
+        {
+            ref src = sources[i];
+
+            mut start0 = src.find("<split/>");
+            mut start1 = start0 + 8;
+            if (start0 < 0)
+                break;
+
+            // Avoid trailing whitespace.
+            let start00 = start0;
+            while (start0 && src[start0 - 1] == ' ') start0--;
+
+            // We'll test with and without a module split here.
+            let moduleA = src.slice(0, start0);
+            let moduleB = src[start0, start00] ~ "import _" ~ i ~ ";" ~ src[start1, src.len];
+            let without = src[0, start0] ~ src[start1, src.len];
+
+            sources[i]  = without;
+            ZERO(:sources);
+
+            // Continue with the greater modules count here.
+            sources[i]  = moduleA;
+            sources.insert(i + 1, moduleB);
+        }
+    }
+
+    //
+    mut expectations: string[][];
+    shadow mut options = sources.map(|_| options);
+    for (mut i = 0; i < sources.len; i++)
+    {
+        ref src = sources[i];
+
+        // Trim trailing spaces
+        //  to help with manual testdiff edits.
+        {
+            mut end = src.len;
+            for (mut r = src.len; r --> 0 && src[r] == ' '; )
+                end = r;
+
+            src.shrink(end);
+        }
+
+        // Collect ;; TODO and ;; EXPECTs.
+        mut break_notes: i32;
+
+        mut start = 0;
+        while ((start = src.find(" ;; ", :start)) >= 0)
+        {
+            mut end = src.find('\n', start + 4);
+            if (end < 0)
+                end = src.len;
+
+            let annot = src.slice(start + 4, end);
+            if (annot[0] == '!')
+            {
+                let idx = NOTES.find(annot.slice(1, annot.len));
+                idx >= 0 || throw("Bad break_note: `;; " ~ annot ~ "`.");
+                break_notes |= 1 << idx;
+            }
+            else
+            {
+                expectations.grow_if_oob(i) ~= annot;
+            }
+
+            // Turn ;; commands into // comments and hop over.
+            src[start + 1]  = '/';
+            src[start + 2]  = '/';
+            start           = end;
+        }
+
+        options[i].break_notes = break_notes;
+    }
+
+    // We can now safely do the nowrites second -
+    //  so that we can first test if the thing works,
+    //   and only then allow you to persist it as an OK test output.
+    //
+    let ctx = compile_snippets(:sources, :options);
+
+    mut testdiff_prepend = "";
+
+    // Deal with expectations first, nicer errors.
+    for (mut i = 0; i < expectations.len; i++)
+    {
+        let arr = expectations[i];
+        let src = sources[i];
+        let out = ctx.modules[i + 1].out;
+        let cpp = out.cpp;
+
+        for (shadow mut i = 0; i < arr.len; i++)
+        {
+            let x = arr[i];
+
+            let noteBit = NOTES.find(x);
+            if (noteBit >= 0)
+            {
+                out.solve.notes & (1 << noteBit) || throw("Expected note not listed: `" ~ x ~ "` in:\n" ~ src ~ "\n\nOutput is:\n\n" ~ cpp.src);
+                continue;
+            }
+
+            let idx     = x.find(' ');
+            let cmd     = x.slice(0, idx);
+            let rest    = x.slice(idx + 1);
+            let found   = cpp.src.has(rest);
+
+            if (cmd == "EXPECT")
+                found || throw("EXPECT mismatch: `;; " ~ x ~ "` in:\n" ~ src ~ "\n\nOutput is:\n\n" ~ cpp.src);
+            else if (cmd != "TODO")
+                throw("Unknown ;; CHECK: `;; " ~ x ~ "` in:\n" ~ src);
+            else if (found)
+                throw("TODO test is actually passing: `;; " ~ x ~ "` in:\n" ~ src ~ "\n\nOutput is:\n\n" ~ cpp.src);
+            else
+                testdiff_prepend ~= ";; " ~ x ~ "\n";
+        }
+    }
+
+    let run = true;
+    let fulib = FULIB;
+    let dir_wrk = DEFAULT_WORKSPACE;
+
+    ::build(:ctx, :run, :fulib, :dir_wrk, scheme: "debug"   , onfail: "print-src");
+    ::build(:ctx, :run, :fulib, :dir_wrk                    , onfail: "print-src");
+
+    // OK so it works, let's see if test output actually matches -
+    //  this also allows us to perhaps defer all nowrite fails till all tests clear.
+    //
+    {
+        if (testdiff_prepend)
+            testdiff_prepend ~= "\n";
+
+        mut key = "";
+        for (mut i = 0; i < sources.len; i++)
+        {
+            key ~= sources[i];
+            let actual = ctx.modules
+                [i + ctx.modules.len - sources.len]
+                    .out.cpp.src;
+
+            testdiffs.set_next(key, testdiff_prepend ~ actual);
+        }
+    }
+
+    return ctx;
+}
+
+fn ERR_KEY(sources: string[])
+{
+    mut key = "";
+    for (mut i = 0; i < sources.len; i++)
+    {
+        let src = sources[i];
+        let end = src.unindent_left(src.len);
+        key ~= src[0, end];
+    }
+
+    return key;
+}
+
+fn ERR_TRIM(e: string)
+{
+    // Trim leading slashes till first newline, this is the path/.fu part,
+    //  this may include an abspath we dont want in testdiff.
+    mut start   = 0;
+    mut startOK = false;
+    for (shadow mut i = 0; i < e.len; i++)
+    {
+        let c = e[i];
+        if (c == '/')
+            start = i + 1;
+        else if (c == ':')
+            startOK = true;
+        else if (c == '\n')
+            break;
+    }
+
+    startOK || throw("FAIL: Error does not start with an `dir/file.fu@line:col` marker:\n" ~ e);
+
+    return e.slice(start);
+}
+
+fn ERR_STRIP_ANSI(mut e: string)
+{
+    // This is a more optimal one liner with a compile-time regex -
+    //  its just e.replace(/\e[^m]+m/g, ""),
+    //   the way i splice here is inefficient.
+
+    for (mut i = 0; i < e.len; i++)
+    {
+        let c = e[i];
+        if (c == '\e')
+        {
+            let i0 = i++;
+            for ( ; i < e.len; i++)
+            {
+                shadow let c = e[i];
+                if (c == 'm')
+                {
+                    i++; // inclusive
+
+                    e.splice(i0, i - i0);
+                    i = i0;
+
+                    i--; // revisit
+                    break;
+                }
+            }
+        }
+    }
+
+    return e;
+}
+
+fn ERR_STRIP_SNIPPETS(mut e: string)
+{
+    mut i0 = 0;
+
+    for (mut i = 0; i < e.len; i++)
+    {
+        shadow let c = e[i];
+        if (c == ' ' || c == '\n')
+            continue;
+
+        // Snippets start with a line number or a pipe.
+        let snippet = c >= '0' && c <= '9' || c == '|';
+
+        i++;
+        for ( ; i < e.len; i++)
+        {
+            shadow let c = e[i];
+            if (c == '\n')
+            {
+                i++; // inclusive
+
+                if (snippet)
+                {
+                    // println(" SPLICE " ~ e[i0, i - 1]);
+                    e.splice(i0, i - i0);
+                    i = i0;
+                }
+                else
+                {
+                    i0 = i;
+                }
+
+                i--; // revisit
+                break;
+            }
+        }
+    }
+
+    return e;
+}
+
+pub fn ZERO_SAME(alts: string[][])
+{
+    let expect = ZERO(alts[0]).modules;
+
+    for (mut i = 1; i < alts.len; i++)
+    {
+        let actual = compile_snippets(sources: alts[i]).modules;
+        if (expect.len != actual.len)
+            throw("ZERO_SAME: expect/actual len mismatch.");
+
+        for (mut m = 0; m < actual.len; m++)
+        {
+            let x = expect[m].out.cpp.src;
+            let a = actual[m].out.cpp.src;
+
+            fn indent(src: string): string
+                src.replace(all: "\n", with: "\n\t");
+
+            if (x != a)
+                throw(
+                    "ZERO_SAME: alts[" ~ i ~ "] mismatch at:\n"
+                        ~ "\nexpect[" ~ m ~ "]:\n\t" ~ x.indent
+                        ~ "\nactual[" ~ m ~ "]:\n\t" ~ a.indent
+                        ~ "\n");
+        }
+    }
+}
+
+pub fn TODO(
+    implicit ref testdiffs: testdiff::TestDiffs,
+    sources: string[])
+{
+    try {
+        ZERO(:sources);
+    }
+    catch (e) {
+        testdiffs.set_next(
+            sources.ERR_KEY, "TODO: " ~ e.ERR_TRIM);
+
+        return;
+    }
+
+    throw("TODO test is actually passing: " ~ sources.join("\n\n"));
+}
+
+
+pub fn ZERO(src: string) ZERO(sources: [ src ]);
+pub fn TODO(src: string) TODO(sources: [ src ]);
+
+pub fn ZERO_SAME(alts: string[])
+{
+    mut wrap: string[][];
+    for (mut i = 0; i < alts.len; i++)
+        wrap ~= [ alts[i] ];
+
+    return ZERO_SAME(wrap);
+}

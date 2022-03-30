@@ -181,7 +181,8 @@ fn cli_handle(argv: string[], cwd = fs::cwd()): i32
     }
 
     // Go.
-    build(:fname, :bin,
+    compile_and_build(
+        :fname, :bin,
         :run, :shared, :hotswap,
         :dir_wrk, :dir_src, :dir_cpp, :dir_obj,
         :scheme,
