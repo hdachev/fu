@@ -29,7 +29,7 @@ novec noflow fn parallel_for(min!, mut end!, visit)
 {
     mut start = end & 0;
 
-    pragma include("<par/parfor.cpp>");
+    pragma include("<par/parfor.hpp>");
 
     pragma emit(
     `

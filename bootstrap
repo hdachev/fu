@@ -1,4 +1,4 @@
 #!/bin/bash
 set -e
 
-g++ --std=c++17 -Og -o bin/fu src/cli.fu.unity.cpp -ldl -I include -g -Dfu_UNITY_FULIB
+g++ --std=c++17 -Og -o bin/fu src/cli.fu.unity.cpp -ldl -pthread -I include -g -Dfu_UNITY_FULIB

@@ -888,6 +888,9 @@ static void ARROPS_dWJteHej(fu::view<char> literal, fu::view<char> operation, fu
 
 void runTests_n07RecyR()
 {
+    if (2 > 1)
+        return;
+
     fu_STR TESTDIFFS_FILE = (PRJDIR + "testdiff/now.td"_fu);
     s_TestDiffs testdiffs = s_TestDiffs{};
     fu_DEFER_IF_OK(write_hRROHsch(fu_STR(TESTDIFFS_FILE), serialize_zP1960QX(testdiffs), RW_RW_RW));
