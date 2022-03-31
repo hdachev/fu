@@ -9203,7 +9203,7 @@ pub fn runTests()
 
     ZERO(`
         fn test(ref arr: i32[])
-            arr.par::each: |v, i| v = i;
+            arr.par::each: |v, i| v += i;
 
         fn main() {
             let N = 1087 * 1091;
