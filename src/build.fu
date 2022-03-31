@@ -326,8 +326,8 @@ pub fn build(
     let F_exe = dir_wrk ~ "b-" ~ tea::hash16(Fs.join("/") ~ LIBS)
                         ~  "-" ~ len_all ~ "-" ~ Fs.len;
 
-    let exe_size = file::size(F_exe);
-    if (exe_size < 1 && (bin || run))
+    let old_size = file::size(F_exe);
+    if (old_size < 1 && (bin || run))
     {
         struct BuildError {
             code: i32;
@@ -450,21 +450,52 @@ pub fn build(
     //
     if (run)
     {
-        // TODO FIX: this is a small testsuite runtime opti
-        if (exe_size == 4)
+        // TODO FIX
+        //
+        // The intent is that if this only reports a status code,
+        //  and does not depend on anything from the environment,
+        //   there's no point in ever rerunning it.
+        //
+        let OPTI_StatusCode = true;
+
+        fn READ_StatusCode()
+            file::read(F_exe).view(i32).only;
+
+        fn WRITE_StatusCode(shadow code: i32)
+            file::write(F_exe, [ code ].view(byte));
+
+        //
+        if (OPTI_StatusCode && old_size == 4)
         {
-            code = file::read(F_exe).view(i32).only;
+            code = READ_StatusCode();
         }
         else
         {
+            println("    RUN " F_exe);
+
+            let t0 = now::hr();
             code = shell::exec(F_exe, stdout);
+            let t1 = now::hr();
 
-            // TODO FIX ////////////////////////////
-            let pure = true; ///////////////////////
-            ////////////////////////////////////////
+            println("     OK ", t1 - t0, "s");
 
-            if (pure)
-                file::write(F_exe, [ code ].view(byte));
+            //
+            if (OPTI_StatusCode)
+            {
+                // However, when tests run in parallel this can totally brick itself -
+                //  if for some reason we already did this and tried to run the 4-byte exe,
+                //   it obviously breaks and here we'd persist the broken result forever.
+                //
+                // We can notice the exe has shrunk to 4 bytes though,
+                //  and discard the result of our run with the one
+                //   that was just cached by a parallel run.
+                //
+                let new_size = file::size(F_exe);
+                if (new_size > 4)
+                    WRITE_StatusCode(code);
+                else if (new_size == 4)
+                    code = READ_StatusCode();
+            }
         }
     }
 
