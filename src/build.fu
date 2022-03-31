@@ -344,43 +344,58 @@ pub fn build(
             let F_tmp = F ~ ".o.tmp";
             let F_obj = F ~ ".o";
 
-            if (file::size(F_obj) < 1)
+            fn CACHE_objFileAvailable()
+                file::size(F_obj) > 0;
+
+            if (CACHE_objFileAvailable())
+                return [];
+
+            let original_fname = i && modules[i].fname;
+
+            // Prelude @ 0.
+            let human = original_fname
+                      ? original_fname.path::filename
+                      : "fulib runtime";
+
+            let cpp = units[i];
+            file::write(F_cpp, cpp);
+
+            println("  BUILD ", human, " ", F_cpp);
+
+            let t0 = now::hr();
+
+            ///////////////////////////////////////////////////////////////////
+            shadow let INCLUDE = INCLUDE ~ HACK_pkgConfig_cflags.unless_oob(i);
+            ///////////////////////////////////////////////////////////////////
+
+            ////////////////////////////////////////////////////////////////////////////////////////////////
+            shadow let INCLUDE = INCLUDE ~ (original_fname && " -iquote " ~ original_fname.path::dirname);
+            ////////////////////////////////////////////////////////////////////////////////////////////////
+
+            let CMD = GCC_CMD ~ " -c" ~ INCLUDE ~ " -o " ~ F_tmp ~ " " ~ F_cpp ~ " 2>&1";
+
+            // println("      > ", CMD);
+            shadow mut stdout: string;
+            shadow let code  = shell::exec(CMD, stdout)
+                            || shell::exec("mv " ~ F_tmp ~ " " ~ F_obj ~ " 2>&1", stdout);
+
+            if (code)
             {
-                let original_fname = i && modules[i].fname;
+                if (CACHE_objFileAvailable())
+                {
+                    // We can race with a parallel build here,
+                    //  so long as the obj is now present in its final location
+                    //   we're fine to go forward.
+                    //
+                    println("RACE OK ", human);
+                    return [];
+                }
 
-                // Prelude @ 0.
-                let human = original_fname
-                          ? original_fname.path::filename
-                          : "fulib runtime";
-
-                let cpp = units[i];
-                file::write(F_cpp, cpp);
-
-                println("  BUILD ", human, " ", F_cpp);
-
-                let t0 = now::hr();
-
-                ///////////////////////////////////////////////////////////////////
-                shadow let INCLUDE = INCLUDE ~ HACK_pkgConfig_cflags.unless_oob(i);
-                ///////////////////////////////////////////////////////////////////
-
-                ////////////////////////////////////////////////////////////////////////////////////////////////
-                shadow let INCLUDE = INCLUDE ~ (original_fname && " -iquote " ~ original_fname.path::dirname);
-                ////////////////////////////////////////////////////////////////////////////////////////////////
-
-                let CMD = GCC_CMD ~ " -c" ~ INCLUDE ~ " -o " ~ F_tmp ~ " " ~ F_cpp ~ " 2>&1";
-
-                // println("      > ", CMD);
-                shadow mut stdout: string;
-                shadow let code  = shell::exec(CMD, stdout)
-                                || shell::exec("mv " ~ F_tmp ~ " " ~ F_obj ~ " 2>&1", stdout);
-
-                if (code) return BuildError(:code, :cpp, :stdout);
-
-                let t1 = now::hr();
-                println("     OK ", human, " ", t1 - t0, "s");
+                return BuildError(:code, :cpp, :stdout);
             }
 
+            let t1 = now::hr();
+            println("     OK ", human, " ", t1 - t0, "s");
             return [];
         }
 
