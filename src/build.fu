@@ -377,7 +377,7 @@ pub fn build(
             // println("      > ", CMD);
             shadow mut stdout: string;
             shadow let code  = shell::exec(CMD, stdout)
-                            || shell::exec("mv " ~ F_tmp ~ " " ~ F_obj ~ " 2>&1", stdout);
+                            || file::rename(F_tmp, F_obj);
 
             if (code)
             {
@@ -446,8 +446,8 @@ pub fn build(
 
             // println("      > ", CMD);
             code = shell::exec(CMD, stdout)
-                || shell::exec("chmod 755 " ~ F_tmp ~ " 2>&1", stdout)
-                || shell::exec("mv " ~ F_tmp ~ " " ~ F_exe ~ " 2>&1", stdout);
+                || file::chmod(F_tmp, file::RWX_RX_RX)
+                || file::rename(F_tmp, F_exe);
 
             if (code)
             {
@@ -633,7 +633,7 @@ pub fn build(
     {
         fs::mkdir_p( path::dirname(bin) );
 
-        code = shell::exec("mv " ~ F_exe ~ " " ~ bin ~ " 2>&1", stdout);
+        code = file::rename(F_exe, bin);
     }
 
     if (code) return ERR;
