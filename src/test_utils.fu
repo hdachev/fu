@@ -24,7 +24,7 @@ pub fn compile_snippets(sources: string[], fnames?: string[], options?: Options[
 
         let fname   = fnames.len > i
                     ? fnames[i]
-                    : PRJDIR ~ "__tests__/_" ~ i ~ ".fu";
+                    : FUDIR ~ "__tests__/_" ~ i ~ ".fu";
 
         ctx.files.map::set(fname, src);
         compile(:fname, options:
@@ -368,11 +368,11 @@ pub fn ZERO(
     }
 
     let run = true;
-    let fulib = FULIB;
+    let fudir = FUDIR;
     let dir_wrk = DEFAULT_WORKSPACE;
 
-    ::build(:ctx, :run, :fulib, :dir_wrk, scheme: "debug"   , onfail: "print-src");
-    ::build(:ctx, :run, :fulib, :dir_wrk                    , onfail: "print-src");
+    ::build(:ctx, :run, :fudir, :dir_wrk, scheme: "debug"   , onfail: "print-src");
+    ::build(:ctx, :run, :fudir, :dir_wrk                    , onfail: "print-src");
 
     // OK so it works, let's see if test output actually matches -
     //  this also allows us to perhaps defer all nowrite fails till all tests clear.

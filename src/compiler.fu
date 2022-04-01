@@ -95,22 +95,19 @@ fn absdir(a: string)
 
 let HOME = absdir(env::get("HOME"));
 
-pub fn locate_PRJDIR(): string
+pub fn locate_FUDIR(): string
 {
     let dir = HOME ~ "fu/";
     let fn = dir  ~ "src/compiler.fu";
     let fs = file::size(fn);
     fs > 1000 || throw("Bad compiler.fu: " ~ fn ~ ": " ~ fs);
 
-    println("PRJDIR: " ~ dir);
+    println("FUDIR: " ~ dir);
     return dir;
 }
 
-pub let PRJDIR              = locate_PRJDIR();
-pub let DEFAULT_WORKSPACE   = PRJDIR ~ "build-cpp/";
-
-pub let FULIB               = PRJDIR ~ "include/fu/_fulib.cpp";
-pub let SHAREDLIB           = PRJDIR ~ "include/fu/_sharedlib.cpp";
+pub let FUDIR              = locate_FUDIR();
+pub let DEFAULT_WORKSPACE   = FUDIR ~ "build-cpp/";
 
 
 //
@@ -177,5 +174,5 @@ pub fn compile_and_build(
         :dir_wrk, :dir_obj, :dir_src, :dir_cpp,
         :flags_cc, :flags_ld,
         unity: fname,
-        fulib: hotswap ? SHAREDLIB : FULIB);
+        fudir: FUDIR);
 }

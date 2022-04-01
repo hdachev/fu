@@ -202,6 +202,6 @@ fn runTestsAndBuildCompiler()
     runTests();
 
     cli_handle(
-        cwd: PRJDIR,
+        cwd: FUDIR,
         [ "fu", "--bin", "bin/fu", "-c", "src/cli.fu" ]);
 }

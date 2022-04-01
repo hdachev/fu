@@ -36,7 +36,7 @@ pub fn self_test(): i32
 pub fn runTests()
 {
     ////////////////////////////////////////////////
-    let TESTDIFFS_FILE = PRJDIR ~ "testdiff/now.td";
+    let TESTDIFFS_FILE = FUDIR ~ "testdiff/now.td";
     let implicit mut testdiffs = testdiff::TestDiffs;
     defer:ok file::write(
         TESTDIFFS_FILE, testdiff::serialize(testdiffs));

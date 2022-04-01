@@ -44,8 +44,10 @@ fn update_file(
 pub fn build(
     implicit ctx: Context,
 
-    mut dir_wrk !: string,
-        fulib   !: string,
+    mut dir_wrk  !: string,
+
+        fudir    !: string,
+    mut fulib   !?: string,
 
     mut bin     !?: string,
     mut dir_obj !?: string,
@@ -116,6 +118,9 @@ pub fn build(
                 ;
 
     //
+    fulib ||= path::join(fudir, hotswap ? "include/fu/_sharedlib.cpp"
+                                        : "include/fu/_fulib.cpp");
+
     let fulib_cpp = CodegenOutput(src: file::read(fulib));
 
     // Map modules into translation units,
@@ -311,7 +316,7 @@ pub fn build(
             HACK_pkgConfig_cflags.grow_if_oob(i) = " $(pkg-config --cflags " ~ cflags ~ ")";
     }
 
-    let INCLUDE = (flags_cc && " " ~ flags_cc.join(' ')) ~ " -I ~/fu/include"
+    let INCLUDE = (flags_cc && " " ~ flags_cc.join(' ')) ~ " -I " ~ fudir ~ "include"
                 ~ (HACK_include_dirs && " -I " ~ HACK_include_dirs.join(" -I "));
 
     let LIBS = (flags_ld && " " ~ flags_ld.join(' '))
@@ -451,7 +456,7 @@ pub fn build(
 
             if (code)
             {
-                println("   FAIL " ~ CMD);
+                println("   FAIL " ~ CMD ~ " EXIT=" ~ code ~ "\n" ~ stdout);
                 return ERR;
             }
 
