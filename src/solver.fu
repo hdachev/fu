@@ -758,7 +758,7 @@ pub fn solve(
 
     //
 
-    fn solveTypeAssert(node: Node): SolvedNode
+    fn solveTypeCast(node: Node): SolvedNode
     {
         let left   = node.items[0];
         let right  = node.items[1];
@@ -767,6 +767,7 @@ pub fn solve(
         let expect = evalTypeAnnot(right);
         let actual = solveNode(left, expect);
 
+        // TODO convert if needed
         checkAssignable(host: expect, actual.type,
             "Type assertion failed");
 
@@ -1706,7 +1707,7 @@ pub fn solve(
         if (k == "try")         return solveTryCatch(node);
 
         if (k == "typedef")     return solveTypedef(node);
-        if (k == "typeassert")  return solveTypeAssert(node);
+        if (k == "typecast")    return solveTypeCast(node);
         if (k == "typeparam")   return solveTypeParam(node);
         if (k == "addroffn")    return solveAddrOfFn(node);
 
@@ -4965,7 +4966,7 @@ pub fn solve(
 
             return false;
         }
-        else if (node.kind == "typeassert")
+        else if (node.kind == "typecheck")
         {
             let left  = node.items[0] || BUG();
             let right = node.items[1] || BUG();
@@ -4996,7 +4997,7 @@ pub fn solve(
                     ref tp = typeParams.map::ref(id);
 
                     tp.consumed = tp.consumed
-                        ? type_tryIntersect(tp.consumed, expect) || fail("typeassert intersect fail.")
+                        ? type_tryIntersect(tp.consumed, expect) || fail("typecheck intersect fail.")
                         : expect;
                 }
                 // TODO dont bother unless native //

@@ -7568,7 +7568,7 @@ pub fn runTests()
     // Type assert.
 
     ZERO(`
-        fn test() [] -> i32;
+        fn test() [] => i32;
         fn main() test;
     `);
 

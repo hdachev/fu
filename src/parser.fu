@@ -62,7 +62,7 @@ fn setupOperators()
     binop([ "|" ]);
     binop([ "~" ]); // concat operator - same prec as in lua, as weak as possible
     binop([ "<=>", "<>" ]);
-    binop([ "in", "is", "as", "->" ]); // see c# as, is and js in, instanceof
+    binop([ "=>", "->" ]); // see c# as, is and js in, instanceof
     binop([ "<", "<=", ">", ">=", "<=>" ]);
     binop([ "==", "!=" ]);
     binop([ "&&" ]);
@@ -1233,16 +1233,25 @@ pub fn parse(
         if (op == "<|") return pipelineLeft (left, right);
 
         //
-        if (op == "->") return typeAssert(left, right);
+        if (op == "->") return typeCheck(left, right);
+        if (op == "=>") return typeCast(left, right);
 
         //
         return createCall(
             op, F_INFIX | F_OPERATOR, [ left, right ]);
     }
 
-    fn typeAssert(actual: Node, expect: Node): Node
+    fn typeCheck(actual: Node, expect: Node): Node
     {
-        return make("typeassert", [ actual, expect ]);
+        // Returns true if actual assigns to expect.
+        return make("typecheck", [ actual, expect ]);
+    }
+
+    fn typeCast(actual: Node, expect: Node): Node
+    {
+        // Asserts type of expression.
+        //  We might decide to use this as the type-cast operator.
+        return make("typecast", [ actual, expect ]);
     }
 
     fn pipelineRight(left: Node, mut right: Node): Node
@@ -1477,7 +1486,7 @@ pub fn parse(
                 {
                     let left    = expr.items.only;
                     let right   = createTypeTag(id);
-                    return typeAssert(left, right);
+                    return typeCheck(left, right);
                 }
                 ////////////////////////////////////////////
 
