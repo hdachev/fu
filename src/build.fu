@@ -377,12 +377,14 @@ pub fn build(
             shadow let INCLUDE = INCLUDE ~ (original_fname && " -iquote " ~ original_fname.path::dirname);
             ////////////////////////////////////////////////////////////////////////////////////////////////
 
-            let CMD = GCC_CMD ~ " -c" ~ INCLUDE ~ " -o " ~ F_tmp ~ " " ~ F_cpp ~ " 2>&1";
+            let CMD = GCC_CMD ~ "-c" ~ INCLUDE ~ " -o " ~ F_tmp ~ " " ~ F_cpp;
 
             // println("      > ", CMD);
             shadow mut stdout: string;
-            shadow let code  = shell::exec(CMD, stdout)
-                            || file::rename(F_tmp, F_obj);
+
+            mut status: i32;
+            shadow let code = ::spawn(CMD.split(' '), :status, /*:stdout*/) || status
+                           || file::rename(F_tmp, F_obj);
 
             if (code)
             {
@@ -420,25 +422,25 @@ pub fn build(
         // Link.
         let F_tmp = F_exe ~ ".tmp";
 
-        mut cmd = GCC_CMD ~ "-o " ~ F_tmp ~ " ";
+        mut cmd = GCC_CMD ~ "-o " ~ F_tmp;
 
         if (shared)
         {
-            cmd ~= "-shared ";
+            cmd ~= " -shared";
 
             // Linker -soname
             let soname = path::filename(bin);
             if (process::APPLE)
-                cmd ~= "-Wl,-install_name," ~ soname ~ " ";
+                cmd ~= " -Wl,-install_name," ~ soname;
             else
-                cmd ~= "-Wl,-soname," ~ soname ~ " ";
+                cmd ~= " -Wl,-soname," ~ soname;
         }
 
         for (mut i = 0; i < Fs.len; i++)
         {
             let F = Fs[i];
             if (F)
-                cmd ~= F ~ ".o ";
+                cmd ~= " " ~ F ~ ".o";
         }
 
         //
@@ -447,10 +449,12 @@ pub fn build(
 
             let t0 = now::hr();
 
-            let CMD = cmd ~ LIBS ~ " 2>&1";
+            let CMD = cmd ~ LIBS;
 
             // println("      > ", CMD);
-            code = shell::exec(CMD, stdout)
+
+            mut status: i32;
+            code = ::spawn(CMD.split(' '), :status, /*:stdout*/) || status
                 || file::chmod(F_tmp, file::RWX_RX_RX)
                 || file::rename(F_tmp, F_exe);
 
@@ -494,7 +498,8 @@ pub fn build(
             println("    RUN " F_exe);
 
             let t0 = now::hr();
-            code = shell::exec(F_exe, stdout);
+            mut status: i32;
+            code = ::spawn([ F_exe ], :status) || status;
             let t1 = now::hr();
 
             println("     OK ", t1 - t0, "s");
