@@ -383,7 +383,7 @@ pub fn build(
             shadow mut stdout: string;
 
             mut status: i32;
-            shadow let code = ::spawn(CMD.split(' '), :status, /*:stdout*/) || status
+            shadow let code = ::spawn(CMD.split(' '), :status, :stdout, stderr: stdout) || status
                            || file::rename(F_tmp, F_obj);
 
             if (code)
@@ -454,7 +454,7 @@ pub fn build(
             // println("      > ", CMD);
 
             mut status: i32;
-            code = ::spawn(CMD.split(' '), :status, /*:stdout*/) || status
+            code = ::spawn(CMD.split(' '), :status, :stdout, stderr: stdout) || status
                 || file::chmod(F_tmp, file::RWX_RX_RX)
                 || file::rename(F_tmp, F_exe);
 
@@ -499,7 +499,7 @@ pub fn build(
 
             let t0 = now::hr();
             mut status: i32;
-            code = ::spawn([ F_exe ], :status) || status;
+            code = ::spawn([ F_exe ], :status, :stdout, stderr: stdout) || status;
             let t1 = now::hr();
 
             println("     OK ", t1 - t0, "s");
