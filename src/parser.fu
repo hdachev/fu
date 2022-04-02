@@ -1507,13 +1507,25 @@ pub fn parse(
 
     //
 
-    fn parseCallArgs(endop: string, ref out_args: Node[]): i32
+    fn parseCallArgs(
+        endop: string, ref out_args: Node[],
+
+        experimental_sliceAnnots!?: bool): i32
     {
         mut flags = 0;
 
         mut first = true;
         for (;;)
         {
+            // EXPERIMENTAL //////////////////////////////////////////
+            //  Trying out the [$T;] syntax for slices.             //
+            if (experimental_sliceAnnots && tryConsume("op", ";"))  //
+            {                                                       //
+                consume("op", endop);                               //
+                break;                                              //
+            }                                                       //
+            //////////////////////////////////////////////////////////
+
             // Comma juggle.
             if (!first)
                 softComma(:endop);
@@ -1635,7 +1647,8 @@ pub fn parse(
     fn parseArrayLiteral(): Node
     {
         mut args: Node[] = [];
-        let argFlags = parseCallArgs("]", args);
+        let argFlags = parseCallArgs("]", args,
+            experimental_sliceAnnots: true);
 
         return createArrayLiteral(argFlags, args);
     }
