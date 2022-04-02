@@ -146,26 +146,29 @@ namespace fu
 
     static size_t WorkerSet_Create()
     {
-        size_t cores = std::thread::hardware_concurrency();
+        size_t workers = std::thread::hardware_concurrency();
 
         // TODO getenv("MAX_THREADS") here
         // TODO all of this in a cpp, not here
 
-        cores   = cores >= 64 ? cores - 4   // leave three cores to the OS, ~ 5% breathing room
-                : cores >= 32 ? cores - 3   // leave two cores to the OS,   ~ 6% breathing room
-                : cores >= 16 ? cores - 2   // leave one core to the OS,    ~ 6% breathing room
-                : cores >=  8 ? cores - 1   // there's also the main thread here, so threads=cores
-                : cores >=  1 ? cores       // oversubscribe 1 core
+        workers = workers >= 64 ? workers - 4   // leave three cores to the OS, ~ 5% breathing room
+                : workers >= 32 ? workers - 3   // leave two cores to the OS,   ~ 6% breathing room
+                : workers >= 16 ? workers - 2   // leave one core to the OS,    ~ 6% breathing room
+                : workers >=  8 ? workers - 1   // there's also the main thread here, so threads=cores
+                : workers >=  1 ? workers       // oversubscribe 1 core
                 : 1;
 
-        // Number of workers = cores - 1,
-        //                   + main thread.
+
+        // Number of threads = workers + 1 main thread.
         //
-        for (size_t i = 1; i < cores; i++)
+        // printf("Spawning %i worker threads, for a total of %i threads ...\n",
+        //        int(workers), int(workers + 1));
+        //
+        for (size_t i = 0; i < workers; i++)
             std::thread { TaskStack_Worker_Loop }
                 .detach();
 
-        return cores;
+        return workers;
     }
 
     static const size_t TaskStack_Worker_Count = WorkerSet_Create();
