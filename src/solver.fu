@@ -5343,7 +5343,9 @@ pub fn solve(
             if (aRetype)
             {
                 if (bRetype)
-                    break :TRY_RETYPE;
+                    fail(topic ~ ": Type ambiguity, literals can be retyped both ways: "
+                        ~ a.humanizeType ~ " <-> "
+                        ~ b.humanizeType);
 
                 let super = type_trySuper(aRetype, b);
                 if (super)
@@ -5366,17 +5368,15 @@ pub fn solve(
 
         :TRY_CONVERT
         {
-            // TODO write some tests for this /////////////////
-            if (true) BUG("TRY_CONVERT has no test coverage.");
-            ///////////////////////////////////////////////////
-
             let aConv = tryConvert(a, expect: b.type, local_scope: true);
             let bConv = tryConvert(b, expect: a.type, local_scope: true);
 
             if (aConv)
             {
                 if (bConv)
-                    break :TRY_CONVERT;
+                    fail(topic ~ ": Type ambiguity, conversions exist both ways: "
+                        ~ a.humanizeType ~ " <-> "
+                        ~ b.humanizeType);
 
                 applyConversion(a, aConv);
                 return b.type;
