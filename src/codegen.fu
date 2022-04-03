@@ -58,6 +58,9 @@ pub fn cpp_codegen(implicit module: Module, implicit ctx: Context): CodegenOutpu
         // #include ...
         _libs:              string[];
 
+        // diagnostics
+        _gcc_ignore:        string[];
+
         // static pragma emit
         _top_emits:         string;
 
@@ -389,15 +392,21 @@ pub fn cpp_codegen(implicit module: Module, implicit ctx: Context): CodegenOutpu
 
     //
 
-    fn collectDedupes(mut values: string[], prefix: string, suffix = "\n"): string
+    fn collectDedupes(
+        mut values: string[],
+        prefix?: string, suffix = "\n",
+        header?: string, footer = "\n"): string
     {
         mut out = "";
+
+        if (values)
+            out ~= header;
 
         for (mut i = 0; i < values.len; i++)
             out ~= prefix ~ values[i] ~ suffix;
 
         if (out)
-            out ~= "\n";
+            out ~= footer;
 
         return out;
     }
@@ -478,6 +487,12 @@ pub fn cpp_codegen(implicit module: Module, implicit ctx: Context): CodegenOutpu
 
             // Type definitions.
             ~ _tdef
+
+            ~ collectDedupes(_gcc_ignore,
+                prefix: "#pragma GCC diagnostic ignored \"",
+                suffix: "\"\n",
+                header: "#pragma GCC diagnostic warning \"-Wunknown-warning-option\"\n")
+
             ~ _top_emits
 
             // Function definitions.
@@ -2377,8 +2392,7 @@ pub fn cpp_codegen(implicit module: Module, implicit ctx: Context): CodegenOutpu
             // TODO FIX the arbitrary indentation of emit blocks gets flagged by gcc.
             //  I guess the legit fix here would be to reindent the snippet.
             //
-            if (!_top_emits)
-                _top_emits ~= "#pragma GCC diagnostic ignored \"-Wmisleading-indentation\"\n";
+            _gcc_ignore.set::add("-Wmisleading-indentation");
 
             if (_current_fn)
                 return result;
