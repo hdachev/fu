@@ -3295,6 +3295,10 @@ static fu_STR cgCompilerPragma_KwqYse5r(const s_SolvedNode& node, s_TokenIdx& _h
                 result += cgNode_DHTo9Tlc(node_1, "compiler:emit"_fu, 0, (*(const s_Type*)fu::NIL), _here, ctx, module, _libs, _tfwd, _tfwd_src, _tdef, _current_fn, _ffwd, _ffwd_src, _idef, _indent, _hasMain, _fdef, _top_emits, HACK_link, HACK_include_dirs, HACK_extra_sources);
 
         };
+
+        if (!_top_emits)
+            _top_emits += "#pragma GCC diagnostic ignored \"-Wmisleading-indentation\"\n"_fu;
+
         if (_current_fn)
             return /*NRVO*/ result;
 

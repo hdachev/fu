@@ -2374,6 +2374,12 @@ pub fn cpp_codegen(implicit module: Module, implicit ctx: Context): CodegenOutpu
                     result ~= cgNode(:node, debug: "compiler:emit");
             }
 
+            // TODO FIX the arbitrary indentation of emit blocks gets flagged by gcc.
+            //  I guess the legit fix here would be to reindent the snippet.
+            //
+            if (!_top_emits)
+                _top_emits ~= "#pragma GCC diagnostic ignored \"-Wmisleading-indentation\"\n";
+
             if (_current_fn)
                 return result;
 
