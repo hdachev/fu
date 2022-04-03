@@ -1559,6 +1559,15 @@ pub fn runTests()
     `);
 
     ZERO(`
+        fn main() {
+            let sj = "heelloo"  .split("ee").join("e")
+                                .split('o').join("o!");
+
+            return sj == "hello!o!" ? 0 : 1;
+        }
+    `);
+
+    ZERO(`
         fn main() '\\e'.i32 - 27
              ||   '\\0'.i32
              || '\\x11'.i32 - 17

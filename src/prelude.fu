@@ -440,12 +440,12 @@ fn join(a: $T[][], sep: $T[])
     return res;
 }
 
-fn split(str: $T[], sep: [$T;], each)
+fn split(str: $T[], sep, each)
 {
     mut last = 0;
     mut next = 0;
 
-    let N = sep.len;
+    let N = sep -> [$T;] ? sep.len : 1;
     if (N) while ((next = str.find(sep, start: last)) >= 0)
     {
         each(str.slice(last, next), first?: !last, last?: false);
@@ -458,34 +458,17 @@ fn split(str: $T[], sep: [$T;], each)
         each(str, first?: true, last?: true);
 }
 
-fn split(str: $T[], sep: $T, each)
-{
-    mut last = 0;
-    mut next = 0;
-
-    while ((next = str.find(sep, start: last)) >= 0)
-    {
-        each(str.slice(last, next), first?: !last, last?: false);
-        last = next + 1;
-    }
-
-    if (last)
-        each(str.slice(last), first?: false, last?: true);
-    else
-        each(str, first?: true, last?: true);
-}
-
 fn split(str: $T[], sep: [$T;])
 {
     mut result: $T[][];
-    split(str, sep, |substr| result ~= substr);
+    split(str, :sep, |substr| result ~= substr);
     return result;
 }
 
 fn split(str: $T[], sep: $T)
 {
     mut result: $T[][];
-    split(str, sep, |substr| result ~= substr);
+    split(str, :sep, |substr| result ~= substr);
     return result;
 }
 
