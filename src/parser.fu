@@ -1680,6 +1680,9 @@ pub fn parse(
 
     fn createRead(id: string): Node
     {
+        if (id == "true" || id == "false")
+            return make("bool", value: id);
+
         return createCall(id || fail(), F_ID);
     }
 

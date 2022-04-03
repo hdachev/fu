@@ -24,3 +24,12 @@ pub fn is_floating_pt(t: Type) {
     let c = t.canon[0];
     return c == 'f';
 }
+
+pub fn is_boolean(t: Type)
+{
+    // TODO FIX rename byte to c8 and bool to b8,
+    //  so booleans start with 'b'
+    //   and bytes start with 'c'.
+    //
+    return t.canon == "bool";
+}

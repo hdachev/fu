@@ -7572,6 +7572,21 @@ pub fn runTests()
         fn main() test;
     `);
 
+    ZERO(`
+        fn test(a) {
+            if (a -> [$U])
+                return a.len;
+
+            return a * 10;
+        }
+
+        fn main() {
+            let A = [ 0, 1 ].test;
+            let B = 4.test;
+            return A + B == 42 ? 0 : 1;
+        }
+    `);
+
 
     // Defer.
 

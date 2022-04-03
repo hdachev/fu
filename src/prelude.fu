@@ -142,8 +142,6 @@ fn MAX(_: $T)
 // Logic.
 
 fn !(v: $T): bool __native;
-fn true (): bool __native("true");
-fn false(): bool __native("false");
 
 
 // Assignment.

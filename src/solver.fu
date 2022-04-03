@@ -665,6 +665,9 @@ pub fn solve(
         if (type.is_floating_pt)
             return SolvedNode(kind: "real", :type, value: "0");
 
+        if (type.is_boolean)
+            return createBool(value: "false", :type);
+
         return SolvedNode(kind: "definit", :type);
     }
 
@@ -772,6 +775,12 @@ pub fn solve(
             "Type assertion failed");
 
         return actual;
+    }
+
+    fn solveTypeCheck(node: Node): SolvedNode
+    {
+        mut typeParams: TypeParams;
+        return createBool(evalTypePattern(node, typeParams));
     }
 
 
@@ -1699,6 +1708,7 @@ pub fn solve(
         if (k == "real")        return solveNum(node, type);
         if (k == "str")         return solveStr(node);
         if (k == "char")        return solveChar(node);
+        if (k == "bool")        return createBool(:node.value);
 
         if (k == "definit")     return solveDefinit(type);
 
@@ -1708,6 +1718,7 @@ pub fn solve(
 
         if (k == "typedef")     return solveTypedef(node);
         if (k == "typecast")    return solveTypeCast(node);
+        if (k == "typecheck")   return solveTypeCheck(node);
         if (k == "typeparam")   return solveTypeParam(node);
         if (k == "addroffn")    return solveAddrOfFn(node);
 
@@ -1932,7 +1943,7 @@ pub fn solve(
                     node.items[i].propagateType(host_args[i].type, :relax_mask);
             }
         }
-        else if (k == "int" || k == "real" || k == "char" || k == "str" || k == "definit")
+        else if (k == "int" || k == "real" || k == "char" || k == "str" || k == "definit" || k == "bool")
         {
             //////////////
             // Nothing! //
@@ -2325,8 +2336,11 @@ pub fn solve(
 
         // Compact + stress test.
         for (mut i = items.len - 1; i --> 0; )
-            if (items[i].kind == "empty")
+        {
+            let k = items[i].kind;
+            if (k == "empty" || k == "bool")
                 items.splice(i, 1);
+        }
 
         if (!(h.mask & (HM_LabelUsed | HM_KeepBlock)) && items.len == 1)
             return items.only;
@@ -2435,6 +2449,20 @@ pub fn solve(
 
         compilerBreak();
         return createEmpty();
+    }
+
+
+    //
+
+    fn createBool(value: bool): SolvedNode
+    {
+        return createBool(value ? "true" : "false");
+    }
+
+    fn createBool(value: string, type = t_bool): SolvedNode
+    {
+        value == "true" || value == "false" || BUG();
+        return SolvedNode(kind: "bool", :value, :type);
     }
 
 
@@ -5370,6 +5398,11 @@ pub fn solve(
     {
         mut cond    = solveNode(node.items[0], t_bool);
 
+        // Static eval - first pass on static ifs,
+        //  immediately discard one of the branches.
+        if (cond.kind == "bool")
+            return solveNode(node.items[cond.value == "true" ? 1 : 2], :type);
+
         // Dead code elim.
         if (cond.type.is_never)
         {
@@ -5412,6 +5445,7 @@ pub fn solve(
         mut items = solveNodes(node.items,
             type_last: type,
             use_type_last: true,
+            static_eval_brk: "true",
             type_all: type.is_void ? t_bool : type);
 
         if (items.len < 2)
@@ -5473,6 +5507,7 @@ pub fn solve(
         let items = solveNodes(node.items,
             type_last: type,
             use_type_last: true,
+            static_eval_brk: "false",
             type_all: type.is_void ? t_bool : type);
 
         if (items.len < 2)
@@ -6033,6 +6068,7 @@ pub fn solve(
         type_all?: Type,
         type_last!?: Type,
         use_type_last!?: bool,
+        static_eval_brk!?: string, // OR breaks on "true", AND breaks on "false"
         kills!?: i32): SolvedNode[]
     {
         mut result: SolvedNode[];
@@ -6070,6 +6106,16 @@ pub fn solve(
                         makeNote(N_DeadCode);
 
                     break;
+                }
+
+                // Static eval.
+                if (static_eval_brk && solved.kind == "bool")
+                {
+                    if (solved.value == static_eval_brk)
+                        break;
+
+                    if (i < nodes.len - 1)
+                        result.pop();
                 }
 
                 continue;
