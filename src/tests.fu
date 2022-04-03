@@ -8008,6 +8008,17 @@ pub fn runTests()
         }
     `);
 
+    ZERO(`
+        struct linearRGB    { r: i32; };
+        struct sRGB         { r: i32; };
+
+        <fail cannot convert><pass/>
+        using                </fail>
+        fn srgb2lin(c: sRGB): linearRGB = [ c.r * 7 ];
+
+        fn main() = (sRGB(r: 3) => linearRGB).r - 21;
+    `);
+
 
     // Autocall, varargs & rest params.
 

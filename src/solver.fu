@@ -768,12 +768,18 @@ pub fn solve(
 
         // left -> right.
         let expect = evalTypeAnnot(right);
-        let actual = solveNode(left, expect);
+        mut actual = solveNode(left, expect);
 
-        // TODO convert if needed
-        checkAssignable(host: expect, actual.type,
-            "Type assertion failed");
+        //
+        if (isAssignable(host: expect, actual.type))
+            return actual;
 
+        let conv = tryConvert(actual, :expect, local_scope: true);
+        if !(conv)
+            fail("Cannot convert: " ~ expect.humanizeType
+                           ~ " <- " ~ actual.humanizeType);
+
+        applyConversion(actual, conv);
         return actual;
     }
 
