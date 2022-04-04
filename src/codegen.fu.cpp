@@ -3297,7 +3297,10 @@ static fu_STR cgCompilerPragma_KwqYse5r(const s_SolvedNode& node, s_TokenIdx& _h
         };
 
         if (!_top_emits)
+        {
+            _top_emits += "#ifdef __clang__\n#pragma GCC diagnostic warning \"-Wunknown-warning-option\"\n#endif\n"_fu;
             _top_emits += "#pragma GCC diagnostic ignored \"-Wmisleading-indentation\"\n"_fu;
+        }
 
         if (_current_fn)
             return /*NRVO*/ result;
