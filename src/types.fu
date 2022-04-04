@@ -142,18 +142,18 @@ fn isLifetimeAssignable(host: Lifetime, guest: Lifetime)
 
 pub let CANNOT_definit_mutrefs = true;
 
-pub fn isAssignableAsArgument(host: Type, guest: Type): bool
+pub fn isAssignableAsArgument(host: Type, guest: Type, DONT_match_zeroes!?: bool): bool
 {
     return areQualsAssignable(host: host.quals, guest.quals)
         &&  isCanonAssignable(host: host.canon, guest.canon)
 
         || guest.is_never
-        || guest.is_zeroes && !(CANNOT_definit_mutrefs && host.quals & q_mutref);
+        || guest.is_zeroes && !DONT_match_zeroes && !(CANNOT_definit_mutrefs && host.quals & q_mutref);
 }
 
-pub fn isAssignable(host: Type, guest: Type): bool
+pub fn isAssignable(host: Type, guest: Type, DONT_match_zeroes!?: bool): bool
 {
-    return isAssignableAsArgument(:host, :guest)
+    return isAssignableAsArgument(:host, :guest, :DONT_match_zeroes)
         && isLifetimeAssignable(host.lifetime, guest.lifetime);
 }
 
@@ -343,13 +343,13 @@ pub fn TODO_FIX_isArray(type: Type): bool
 
 //
 
-pub fn type_trySuper(a: Type, b: Type)
+pub fn type_trySuper(a: Type, b: Type, DONT_match_zeroes!?: bool)
 {
     if (a.canon != b.canon)
         return a.is_never  ? b
              : b.is_never  ? a
-             : a.is_zeroes ? CANNOT_definit_mutrefs ? clear_mutref(b) : b
-             : b.is_zeroes ? CANNOT_definit_mutrefs ? clear_mutref(a) : a
+             : a.is_zeroes && !DONT_match_zeroes ? CANNOT_definit_mutrefs ? clear_mutref(b) : b
+             : b.is_zeroes && !DONT_match_zeroes ? CANNOT_definit_mutrefs ? clear_mutref(a) : a
              : [];
 
     let quals = a.quals & b.quals;

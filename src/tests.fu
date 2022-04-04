@@ -6567,7 +6567,7 @@ pub fn runTests()
         fn main() what("!BBB") - 1;
     `);
 
-    TODO_specpat(`
+    ZERO(`
         fn Join(a: $T[][], lax sep = [])    // The sep is of type any-init.
         {                                   //
             if (a.len < 2)                  //

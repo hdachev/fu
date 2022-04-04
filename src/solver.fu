@@ -25,6 +25,17 @@ let USE_nontriv_autocopy    = true;
 let SELF_TEST               = true;
 
 
+// When you have an if (a -> $T) somewhere,
+//  it's just not very useful for -> to match on default-anything,
+//   so let's define `->` to be the `is` operator.
+//
+// We have the `=>` as the `as` operator,
+//  we need a counterpart for an `assigns to` operator,
+//   which can naturally fit zeroes.
+//
+let DONT_match_zeroes       = true;
+
+
 
 ///////////////////////////////////////
 ///////////////////////////////////////
@@ -4926,8 +4937,7 @@ pub fn solve(
                     return true;
 
                 return isAssignable(
-                    Scope_lookupType(node),
-                        type);
+                    Scope_lookupType(node), type, :DONT_match_zeroes);
             }
 
             :UNARY
@@ -4959,7 +4969,7 @@ pub fn solve(
             ref _param = typeParams.map::ref(id);
             if (_param)
             {
-                let union = type_trySuper(_param.matched, type);
+                let union = type_trySuper(_param.matched, type, :DONT_match_zeroes);
                 if (!union)
                     return false;
 
