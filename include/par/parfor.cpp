@@ -221,14 +221,26 @@ namespace fu
                 // This is why PBC_Wait does the final check
                 //  inside the mutex, and we also hit the mutex here.
                 //
-                std::unique_lock<std::mutex> lock(pbc.mutex);
-                //
                 // We don't need to hold the lock during the notify,
                 //  we just need to make sure the decr+notify
                 //   can't squeeze in between the check and the wait there.
-                //
-                lock.unlock();
-                //
+                {
+                    std::unique_lock<std::mutex> lock(pbc.mutex);
+
+                    // Previously used .unlock(),
+                    //  but hit an assertion on Apple clang 11.0.0,
+                    //   (clang-1100.0.33.8):
+                    //
+                    // Assertion failed: (ec == 0), function unlock,
+                    //  file .../libcxx/libcxx-400.9.4/src/mutex.cpp, line 48.
+                    //
+                    // It looks like pthread_mutex_unlock returns non-zero, see:
+                    //  https://linux.die.net/man/3/pthread_mutex_unlock
+                    //
+                    // Anyway, with the scope here I'm just relying
+                    //  on the destructor to do this,
+                    //   the .unlock() was redundant.
+                }
                 // We don't have these problems with the atomic variant.
 
                 pbc.cv.notify_one();
