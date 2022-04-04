@@ -489,9 +489,9 @@ pub fn cpp_codegen(implicit module: Module, implicit ctx: Context): CodegenOutpu
             ~ _tdef
 
             ~ collectDedupes(_gcc_ignore,
+                header: "#pragma GCC diagnostic push\n#ifdef __clang__\n#pragma GCC diagnostic warning \"-Wunknown-warning-option\"\n#endif\n",
                 prefix: "#pragma GCC diagnostic ignored \"",
-                suffix: "\"\n",
-                header: "#ifdef __clang__\n#pragma GCC diagnostic warning \"-Wunknown-warning-option\"\n#endif\n\n")
+                suffix: "\"\n")
 
             ~ _top_emits
 
@@ -503,6 +503,9 @@ pub fn cpp_codegen(implicit module: Module, implicit ctx: Context): CodegenOutpu
             // Rest.
             ~ src
             ~ main
+
+            //
+            ~ (_gcc_ignore && "\n#pragma GCC diagnostic pop\n")
         ;
     }
 
