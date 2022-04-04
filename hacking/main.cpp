@@ -15,8 +15,7 @@
 //
 
 #include "./cow_vec_test.hpp"
-#include "./task_stack.hpp"
-#include "./task_stack_test.hpp"
+#include "./parfor_test.hpp"
 
 
 // So lets go.
