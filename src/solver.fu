@@ -534,6 +534,8 @@ pub fn solve(
                 continue;
             }
 
+            region.Region_isTemp && BUG("Lifetime_replaceArgsAtCallsite: found a temp lt in: " ~ target.type.lifetime.qWHAT);
+
             let argNode = argNodes[region.Region_toArgPosition];
             let argLt   = argNode.type.is_ref
                 ? argNode.type.lifetime
@@ -5938,7 +5940,7 @@ pub fn solve(
             }
 
             // Not relevant for inline fns.
-            if (type.is_ref)
+            if (args && type.is_ref)
                 type.lifetime = Lifetime_test(
                     Lifetime_replaceArgsAtCallsite(target, args),
                     tempsOK: true);
