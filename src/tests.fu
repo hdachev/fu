@@ -157,7 +157,7 @@ pub fn runTests()
 
     ZERO(`
         return 0
-        <fail EXIT CODE 6>
+        <fail EXIT CODE>
             || throw("TESTERR")
                  <pass/></fail>
     `);
