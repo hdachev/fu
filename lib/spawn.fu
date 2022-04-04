@@ -80,13 +80,13 @@ static Errno fu_spawn(
 }
 
 static Errno fu_waitpid(
-    int pid, int& status)
+    int pid, int& wstatus)
 {
-    Errno err = -1;
+    wstatus     = -1;
+    Errno err   = -1;
 
     for (;;)
     {
-        int wstatus {};
         int options {};
         int wait_ret = waitpid(pid, &wstatus, options);
 
@@ -117,11 +117,10 @@ static Errno fu_waitpid(
         if (wait_ret != pid)
             return -1;
 
-        // We care about the exit status here.
-        {
-            status = WEXITSTATUS(wstatus);
-            return 0;
-        }
+        // The exit code, term sig, etc are all packed in wstatus,
+        //  wstatus = 0 means exit-ok, code = 0.
+        //
+        return 0;
 
         // Let's not do this for starters,
         //  but we could do a non-blocking wait and then TryWork() here.

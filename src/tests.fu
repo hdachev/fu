@@ -150,6 +150,13 @@ pub fn runTests()
     `);
 
     ZERO(`
+        return 0
+        <fail exit code>
+            || throw("Assertion failed.")
+                <pass/></fail>
+    `);
+
+    ZERO(`
         fn sum(a: i32, b: i32): i32
             a + b;
 
