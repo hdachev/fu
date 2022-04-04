@@ -386,14 +386,16 @@ fn join(a: $T[][])
     return res;
 }
 
-fn join(a: $T[][], sep: $T)
+fn join(a: $T[][], sep/*: $T or [$T;]*/)
 {
     if (a.len < 2)
         return a.len && a[0];
 
+    let N = sep -> [$T;] ? sep.len : 1;
+
     mut size = a[0].len;
     for (mut i = 1; i < a.len; i++)
-        size += 1 + a[i].len;
+        size += N + a[i].len;
 
     mut res: $T[];
     res.grow_junk(size);
@@ -404,8 +406,12 @@ fn join(a: $T[][], sep: $T)
     for (mut i = 1; i < a.len; i++)
     {
         let range = a[i];
-        res[size] = sep;
-        size += 1;
+        if (sep -> [$T;])
+            res[size, size + N] .= sep;
+        else
+            res[size] = sep;
+
+        size += N;
         res[size, size + range.len] .= range;
         size += range.len;
     }
@@ -413,34 +419,7 @@ fn join(a: $T[][], sep: $T)
     return res;
 }
 
-fn join(a: $T[][], sep: $T[])
-{
-    if (a.len < 2)
-        return a.len && a[0];
-
-    mut size = a[0].len;
-    for (mut i = 1; i < a.len; i++)
-        size += sep.len + a[i].len;
-
-    mut res: $T[];
-    res.grow_junk(size);
-
-    let head = a[0];
-    size = head.len;
-    res[0, head.len] .= head;
-    for (mut i = 1; i < a.len; i++)
-    {
-        let range = a[i];
-        res[size, size + sep.len] .= sep;
-        size += sep.len;
-        res[size, size + range.len] .= range;
-        size += range.len;
-    }
-
-    return res;
-}
-
-fn split(str: $T[], sep, each)
+fn split(str: $T[], sep/*: $T or [$T;]*/, each)
 {
     mut last = 0;
     mut next = 0;
