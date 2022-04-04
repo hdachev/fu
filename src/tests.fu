@@ -6580,6 +6580,22 @@ pub fn runTests()
         }
     `);
 
+    ZERO(`
+        // one of these things reported there's no $S in scope.
+        fn Join(a: $T, b: $T, lax sep: $S = [])
+            case ($S -> $T || $S -> [$T;] || $S -> [])
+        {
+            return sep -> $T || sep -> [$T;]
+                 ? a ~ sep ~ b
+                 : a ~ b;
+        }
+
+        fn main() {
+            let res = Join("hello", "world");
+            return res == "helloworld" ? 0 : 1;
+        }
+    `);
+
 
     // Don't repeat yourself ctors.
 
