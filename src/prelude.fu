@@ -363,7 +363,8 @@ fn println(parts.print[]: [string]): void __native("<fu/print.h>", "fu::println"
 
 // String commons.
 
-fn join(a: $T[][], lax sep/*: $T or [$T;] or void*/ = void)
+fn join(a: $T[][], lax sep: $S = [])
+    case ($S -> $T || $S -> [$T;] || $S -> [])
 {
     if (a.len < 2)
         return a.len && a[0];
@@ -398,7 +399,8 @@ fn join(a: $T[][], lax sep/*: $T or [$T;] or void*/ = void)
     return res;
 }
 
-fn split(str: $T[], sep/*: $T or [$T;]*/, each)
+fn split(str: $T[], sep: $S, each)
+    case ($S -> $T || $S -> [$T;])
 {
     mut last = 0;
     mut next = 0;

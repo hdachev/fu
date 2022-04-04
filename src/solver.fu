@@ -5015,8 +5015,18 @@ pub fn solve(
         else if (node.kind == "or")
         {
             for (mut i = 0; i < node.items.len; i++)
+            {
+                /////////////////////////////
+                mut typeParams0 = typeParams;
+                /////////////////////////////
+
                 if (evalTypePattern(node.items[i], typeParams))
                     return true;
+
+                /////////////////////////
+                typeParams = typeParams0;
+                /////////////////////////
+            }
 
             return false;
         }
