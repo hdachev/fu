@@ -150,10 +150,16 @@ pub fn runTests()
     `);
 
     ZERO(`
+        return <fail EXIT CODE 3>
+                        3 <pass/>
+                        0 </fail>
+    `);
+
+    ZERO(`
         return 0
-        <fail exit code>
-            || throw("Assertion failed.")
-                <pass/></fail>
+        <fail EXIT CODE 6>
+            || throw("TESTERR")
+                 <pass/></fail>
     `);
 
     ZERO(`

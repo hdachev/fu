@@ -241,10 +241,13 @@ pub fn build(
         println("  WRITE " ~ fname);
         file::write(fname, cpp);
 
-        //
-        if (!stdout)
-            stdout = "Exit code: " ~ code;
+        // Print exit code.
+        if (stdout)
+            stdout ~= "\n\n";
 
+        stdout ~= "   EXIT code: " ~ code;
+
+        //
         mut explain = "";
         if (onfail)
         {
