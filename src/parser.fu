@@ -114,6 +114,19 @@ pub fn parse(
     mut _hasPUB     = false;
 
 
+    // TODO FIX So the $T thing backfired -
+    //  when you have an if (a -> $T) in the middle of some fn,
+    //   if you rename the $T in the fn sig,
+    //    it starts introducing a new unused type param AND DOES NOTHING.
+    //
+    // It's not neat, so we'll have to go for introducing type params explicitly so these things are unambiguous.
+    //  In the meantime, we forbid the introduction of new type params halfway through a function.
+    //
+    // The upside is this frees up the dollar sigil.
+
+    mut _TODO_FIX_dollarOk  = false;
+
+
     //
 
     mut fuzimports: string[];
@@ -842,10 +855,12 @@ pub fn parse(
         ////////////////////////////////
         _fnDepth++;
         let dollars0 = _dollars.len;
+        let dollarsOk0 = _TODO_FIX_dollarOk;
 
         defer {
             _fnDepth--;
             _dollars.shrink(dollars0);
+            _TODO_FIX_dollarOk = dollarsOk0;
         }
         ////////////////////////////////
 
@@ -892,7 +907,10 @@ pub fn parse(
 
             fn parseBranch(noCond?: bool)
             {
+                _TODO_FIX_dollarOk = true;
                 let cond = !noCond && parseUnaryExpression();
+                _TODO_FIX_dollarOk = false;
+
                 let type = tryPopTypeAnnot();
                 let cons = parseFnBodyBranch();
 
@@ -978,6 +996,7 @@ pub fn parse(
 
         //////////////
         _dollarAuto++;
+        _TODO_FIX_dollarOk = true;
         //////////////
 
         let dollars0 = _dollars.len;
@@ -1038,6 +1057,7 @@ pub fn parse(
 
         //////////////
         _dollarAuto--;
+        _TODO_FIX_dollarOk = false;
         //////////////
 
         // Ensures implicit arguments always come last.
@@ -1244,7 +1264,7 @@ pub fn parse(
     fn typeCheck(actual: Node, expect: Node): Node
     {
         // Returns true if actual assigns to expect.
-        return make("typecheck", [ actual, expect ]);
+        return make("typeassert", [ actual, expect ]);
     }
 
     fn typeCast(actual: Node, expect: Node): Node
@@ -1394,6 +1414,10 @@ pub fn parse(
     fn parseTypeParam(): Node
     {
         let value = consume("id").value;
+
+        if (!_TODO_FIX_dollarOk)
+            return createRead("$" ~ value);
+
         if (!_dollars.has(value) && _dollarAuto)
             _dollars.push(value);
 

@@ -7596,7 +7596,7 @@ pub fn runTests()
 
     ZERO(`
         fn test(a) {
-            if (a -> [$U])
+            if (a -> [any;])
                 return a.len;
 
             return a * 10;
