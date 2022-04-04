@@ -363,35 +363,14 @@ fn println(parts.print[]: [string]): void __native("<fu/print.h>", "fu::println"
 
 // String commons.
 
-fn join(a: $T[][])
+fn join(a: $T[][], lax sep/*: $T or [$T;] or void*/ = void)
 {
     if (a.len < 2)
         return a.len && a[0];
 
-    mut size = 0;
-    for (mut i = 0; i < a.len; i++)
-        size += a[i].len;
-
-    mut res: $T[];
-    res.grow_junk(size);
-
-    size = 0;
-    for (mut i = 0; i < a.len; i++)
-    {
-        let range = a[i];
-        res[size, size + range.len] .= range;
-        size += range.len;
-    }
-
-    return res;
-}
-
-fn join(a: $T[][], sep/*: $T or [$T;]*/)
-{
-    if (a.len < 2)
-        return a.len && a[0];
-
-    let N = sep -> [$T;] ? sep.len : 1;
+    let N = sep -> [$T;] ? sep.len
+          : sep ->  $T   ? 1
+                         : 0;
 
     mut size = a[0].len;
     for (mut i = 1; i < a.len; i++)
@@ -408,7 +387,7 @@ fn join(a: $T[][], sep/*: $T or [$T;]*/)
         let range = a[i];
         if (sep -> [$T;])
             res[size, size + N] .= sep;
-        else
+        else if (sep -> $T)
             res[size] = sep;
 
         size += N;

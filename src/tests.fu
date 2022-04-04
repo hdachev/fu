@@ -1561,9 +1561,10 @@ pub fn runTests()
     ZERO(`
         fn main() {
             let sj = "heelloo"  .split("ee").join("e")
-                                .split('o').join("o!");
+                                .split('o').join("o!")
+                                .split("he").join();
 
-            return sj == "hello!o!" ? 0 : 1;
+            return sj == "llo!o!" ? 0 : 1;
         }
     `);
 
@@ -6426,7 +6427,7 @@ pub fn runTests()
     `);
 
 
-    // Slices, pass one.
+    // Slices.
 
     ZERO(`
         fn test(hey: [i32])
@@ -6564,6 +6565,48 @@ pub fn runTests()
         let NOTES = [ "AAA", "BBB", "CCC" ];
         fn what(annot: string) NOTES.find(annot[1, annot.len]);
         fn main() what("!BBB") - 1;
+    `);
+
+    TODO_specpat(`
+        fn Join(a: $T[][], lax sep = [])    // The sep is of type any-init.
+        {                                   //
+            if (a.len < 2)                  //
+                return a.len && a[0];       // NOT SURE WHAT'S 100% IDEAL, BUT:
+                                            //
+            let N = sep -> [$T;] ? sep.len  // should either match here,
+                  : sep ->  $T   ? 1        //                                    but currently matches here, which is just wrong.
+                                 : 0;       //                           or here,
+
+            mut size = a[0].len;
+            for (mut i = 1; i < a.len; i++)
+                size += N + a[i].len;
+
+            mut res: $T[];
+            res.grow_junk(size);
+
+            let head = a[0];
+            size = head.len;
+            res[0, head.len] .= head;
+            for (mut i = 1; i < a.len; i++)
+            {
+                let range = a[i];
+                if (sep -> [$T;])
+                    res[size, size + N] .= sep;
+                else if (sep -> $T)
+                    res[size] = sep;
+
+                size += N;
+                res[size, size + range.len] .= range;
+                size += range.len;
+            }
+
+            return res;
+        }
+
+        fn main() {
+            let res = Join([ "hello", "world" ], []); // the [] fails the case above
+            return res == "helloworld" ? 0 : 1;
+        }
     `);
 
 

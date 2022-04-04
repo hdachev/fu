@@ -1617,7 +1617,7 @@ pub fn cpp_codegen(implicit module: Module, implicit ctx: Context): CodegenOutpu
                 junk = arg.kind == "empty"
                     || arg.kind == "definit"
                     || arg.kind == "fndef"
-                    || arg.kind == "call" && arg.target.kind == "var";
+                    || arg.kind == "call" && (arg.target.kind == "var" || arg.target.kind == "type" && !arg.items);
 
                 if (!junk)
                     fail("Cannot discard ZST arg, kind is `" ~ arg.kind ~ "`.");
