@@ -243,8 +243,8 @@ pub fn formatCodeSnippet(src!: string, start!: Token, end!: Token, extraLines! =
         //   I guess we do need the end column coordinate.
         if (i == end.line - 1)
         {
-            let c0 = (end.col - 1).max(0);
-            let c1 = c0 + end.value.len.min(line.len);
+            let c0 = (end.col - 1       ).max(0       );
+            let c1 = (c0 + end.value.len).min(line.len);
 
             line.splice(c1, 0, ansi::RESET);
             line.splice(c0, 0, ansi::BAD);

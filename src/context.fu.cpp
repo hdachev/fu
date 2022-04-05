@@ -1554,7 +1554,7 @@ fu_STR formatCodeSnippet_tVfuVdgh(const fu_STR& src, const s_Token& start, const
         if (i == (end.line - 1))
         {
             const int c0 = std::max((end.col - 1), 0);
-            const int c1 = (c0 + std::min(end.value.size(), line.size()));
+            const int c1 = std::min((c0 + end.value.size()), line.size());
             line.splice(c1, 0, fu_STR(RESET));
             line.splice(c0, 0, fu_STR(BAD));
         };
