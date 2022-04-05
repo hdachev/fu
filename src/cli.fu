@@ -14,19 +14,13 @@ fn cli_handle(argv: string[], cwd = fs::cwd()): i32
         return "";
     }
 
-    // Router.
+    // Consume argv[0].
     let self = next();
 
     // Exit 0 on no command, else we fail build-checks.
     if (argv.len == 1)
     {
-        println("\n\tHello! ", self);
-        println(  "\tNothing to do, running a quick self test.\n");
-
-        self_test();
-        println("\tEverything checks out.");
-        println("\tTry `fu file.fu`.\n");
-
+        println("\tTry `" self " file.fu`.\n");
         return 0;
     }
 
@@ -35,7 +29,6 @@ fn cli_handle(argv: string[], cwd = fs::cwd()): i32
     {
         println("\n\tRunning test suite and rebuilding self ...\n");
 
-        self_test();
         runTestsAndBuildCompiler();
         return 0;
     }

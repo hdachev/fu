@@ -23,7 +23,6 @@
 int main(int argc, const char * argv[])
 {
     cow_vec_tests();
-    self_test_n07RecyR();
     runTestsAndBuildCompiler_6GAg88gF();
 
     // TaskStack_Test();
