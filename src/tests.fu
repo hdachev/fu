@@ -7625,9 +7625,9 @@ pub fn runTests()
 
     ZERO(`
         fn staticIfSymmetry(
-            <fail no type T in scope>
-            ref a: $U[], b)   <pass/>
-            ref a: $T[], b)   </fail>
+            <fail $T is not defined>
+            ref a: $U[], b)  <pass/>
+            ref a: $T[], b)  </fail>
         {
             let N = b ->  $T   ? 1 : 2;
             let M = b -> [$T;] ? 2 : 1;

@@ -3224,6 +3224,8 @@ pub fn solve(
             // Used twice, once to enable recursion before body, and once when done.
             fn updateScope(shadow out: CurrentFn, mut retval: Type, maybeLast!: bool)
             {
+                _here = n_fn.token || BUG();
+
                 ///////////////////////////////
                 if (target.status & SS_DIRTY)
                 {
@@ -4880,19 +4882,13 @@ pub fn solve(
 
     fn evalTypeAnnot(node: Node, typeParams?: TypeParams): Type
     {
-//*
-        fn T(i: i32 = 0) {
-            mut danglefix = evalTypeAnnot(node.items[i], typeParams);
-            return danglefix;
-        }
-/*/
         // Each T() call should invalidate the results from previous T() calls -
         //  for some reason that's not what's happening here,
         //   and we're happily using the refs.
         //
         fn T(i: i32 = 0)
-            evalTypeAnnot(node.items[i], typeParams).type;
-//*/
+            evalTypeAnnot(node.items[i], typeParams);
+
         if (node.kind == "call")
         {
             let items = node.items;
@@ -4907,8 +4903,6 @@ pub fn solve(
                 if (node.value == "[]")
                     return createArray(T);
             }
-
-            return solveCall(node).type;
         }
         else if (node.kind == "typeparam")
         {
@@ -4920,7 +4914,7 @@ pub fn solve(
             return createSlice(T, Lifetime_temporary);
         }
 
-        return fail("TODO evalTypeAnnot: " ~ node.kind ~ "[" ~ node.items.len ~ "]");
+        return solveNode(node).type;
     }
 
     fn trySolveTypeParams(
@@ -4935,9 +4929,6 @@ pub fn solve(
                 //  alternatively use an `_` as a special purpose notation here.
                 if (node.value == "any")
                     return true;
-
-                return isAssignable(
-                    Scope_lookupType(node), type, :DONT_match_zeroes);
             }
 
             :UNARY
@@ -4954,11 +4945,6 @@ pub fn solve(
                 return trySolveTypeParams(
                     items[0] || BUG(), t, typeParams);
             }
-
-            // Any call.
-
-
-            fail("TODO: do the stuff");
         }
         else if (node.kind == "typeparam")
         {
@@ -4998,7 +4984,9 @@ pub fn solve(
                 node.items[0] || BUG(), t, typeParams);
         }
 
-        return fail("TODO trySolveTypeParams fallthrough");
+        // Everything else is a regular type annotation.
+        return isAssignable(
+            evalTypeAnnot(node), type, :DONT_match_zeroes);
     }
 
     fn evalTypePattern(node: Node, ref typeParams: TypeParams): bool
