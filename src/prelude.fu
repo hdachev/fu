@@ -363,8 +363,7 @@ fn println(parts.print[]: [string]): void __native("<fu/print.h>", "fu::println"
 
 // String commons.
 
-fn join(a: $T[][], lax sep: $S = [])
-    case ($S -> $T || $S -> [$T;] || $S -> [])
+fn join(a: $T[][], lax sep?: $T or [$T;] or [])
 {
     if (a.len < 2)
         return a.len && a[0];
@@ -399,8 +398,7 @@ fn join(a: $T[][], lax sep: $S = [])
     return res;
 }
 
-fn split(str: $T[], sep: $S, each)
-    case ($S -> $T || $S -> [$T;])
+fn split(str: $T[], sep: $T or [$T;], each)
 {
     mut last = 0;
     mut next = 0;
@@ -418,14 +416,7 @@ fn split(str: $T[], sep: $S, each)
         each(str, first?: true, last?: true);
 }
 
-fn split(str: $T[], sep: [$T;])
-{
-    mut result: $T[][];
-    split(str, :sep, |substr| result ~= substr);
-    return result;
-}
-
-fn split(str: $T[], sep: $T)
+fn split(str: $T[], sep: $T or [$T;])
 {
     mut result: $T[][];
     split(str, :sep, |substr| result ~= substr);
@@ -438,13 +429,13 @@ fn split(str: $T[], sep: $T)
 //   This would be generally useful, e.g.
 //    .map.maps and .map.filters could use this to skip allocs.
 
-fn replace(str: $T[], all: [$T;], with: [$T;])
+fn replace(str: $T[], all: $T or [$T;], with: $T or [$T;] or [])
 {
     mut result: $T[];
     split(str, sep: all, |substr, first, last|
     {
         if (!first)
-            result ~= with;
+            with -> [] ? with() : result ~= with;
         else if (last)
             return str;
 
