@@ -1750,7 +1750,7 @@ pub fn solve(
         if (k == "void")        return createEmpty();
 
         //
-        return fail("TODO: " ~ k);
+        return fail("TODO: solveNode(" ~ k ~ ").");
     }
 
     fn solveDeclExpr(node: Node): SolvedNode

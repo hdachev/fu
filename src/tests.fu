@@ -9368,6 +9368,15 @@ pub fn runTests()
 
     // Custom primitives, enums & flags.
 
+    ZERO(`
+        fn main() {
+            let i: i8 = 0;
+            <fail return type annot>
+            return i;        <pass/>
+            return i.i32;    </fail>
+        }
+    `);
+
     SKETCH(`
         primitive s32: i32;
 
@@ -9380,7 +9389,7 @@ pub fn runTests()
     `);
 
     SKETCH(`
-        enum E { None };
+        enum Enum { None };
 
         fn main() {
             let e = None;
@@ -9390,51 +9399,52 @@ pub fn runTests()
         }
     `);
 
-    // FAIL(`
-    //     enum Test: i32 { A; B; C; };
-    //     fn main() C.i32 - 2;
-    //         //*F
-    //         C - 2;
-    //         /*/
-    //         C.i32 - 2;
-    //         //*/
-    // `);
+    SKETCH(`
+        enum Test: i32 { A; B; C };
+        fn main()
+            <fail - bad call>
+            C - 2;      <pass/>
+            C.i32 - 2;  </fail>
+    `);
 
-    // FAIL(`
-    //     //*F
-    //     /*/
-    //     flags //*/
-    //     enum Test: i32 { A; B; };
-    //     fn main() (A | B).i32 - 3;
-    // `);
+    SKETCH(`
+        <fail bad call to ->
+        enum         <pass/>
+        primitive    </fail> Test: i32 { A; B };
+        fn main() (B - A).i32 - 1;
+    `);
 
-    // ZERO(`
-    //     enum Test: i32 { A = 1; };
-    //     fn main() A.i32 - 1;
-    // `);
+    SKETCH(`
+        primitive PrimA: i32;
+        primitive PrimB: PrimA { Zero; One };
+        fn main() (One - 1).i32;
+    `);
 
-    // ZERO(`
-    //     enum Test { A = 1; B; };
-    //     fn main() B.i32 - 2;
-    // `);
+    SKETCH(`
+        enum EnumA: i32;
+        enum EnumB: EnumA { Zero };
+        fn main() Zero.i32;
+    `);
 
-    // ZERO(`
-    //     enum Test { A; B = 2; C; };
-    //     fn main() C.i32 - 3;
-    // `);
+    SKETCH(`
+        enum Test: i32 { A = 1; };
+        fn main() A.i32 - 1;
+    `);
 
-    // ZERO(`
-    //     enum Test { A; B = A; C; };
-    //     fn main() C.i32 - 1;
-    // `);
+    SKETCH(`
+        enum Test { A = 1; B; };
+        fn main() B.i32 - 2;
+    `);
 
-    // ZERO(`
-    //     //*F
-    //     /*/
-    //     arithmetic //*/
-    //     enum Test { A; B; };
-    //     fn main() (B - A).i32 - 1;
-    // `);
+    SKETCH(`
+        enum Test { A; B = 2; C; };
+        fn main() C.i32 - 3;
+    `);
+
+    SKETCH(`
+        enum Test { A; B = A; C; };
+        fn main() C.i32 - 1;
+    `);
 
     // ZERO(`
     //     enum Thing {
