@@ -971,16 +971,27 @@ pub fn parse(
         return createBlock([ createReturn(body, flags: F_SINGLE_STMT) ]);
     }
 
-    fn tryPopTypeAnnot(): Node
+    fn tryPopTypeAnnot(allowTypeUnions! = false): Node
     {
         return tryConsume("op", ":")
-             ? parseTypeAnnot()
+             ? parseTypeAnnot(:allowTypeUnions)
              : miss;
     }
 
-    fn parseTypeAnnot(): Node
+    fn parseTypeAnnot(allowTypeUnions! = false): Node
     {
-        return parseUnaryExpression();
+        mut res = parseUnaryExpression();
+
+        // EXPERIMENTAL type union syntax
+        while (allowTypeUnions && tryConsume("id", "or"))
+        {
+            if (res.kind != "typeunion")
+                res = make("typeunion", [ res ]);
+
+            res.items ~= parseUnaryExpression();
+        }
+
+        return res;
     }
 
     fn parseArgsDecl(
@@ -1013,8 +1024,8 @@ pub fn parse(
             let isInline = !!tryConsume("id", "inline");
 
             mut insertAt = -1;
-            mut arg = parseLet(xqmark: true);
-            if (_dollars.len > dollars0)
+            mut arg = parseLet(xqmark: true, allowTypeUnions: true);
+            if (_dollars.len > dollars0 || arg.items[LET_TYPE].kind == "typeunion")
                 arg.flags |= F_TEMPLATE;
 
             if (isInline)
@@ -1076,7 +1087,7 @@ pub fn parse(
         return ret;
     }
 
-    fn parseLet(xqmark! = false): Node
+    fn parseLet(xqmark! = false, allowTypeUnions! = false): Node
     {
         mut flags = 0;
 
@@ -1122,7 +1133,8 @@ pub fn parse(
         //
         let optional    = xqmark && tryConsume("op", "?");
 
-        mut type        = tryPopTypeAnnot();
+        mut type        = tryPopTypeAnnot(:allowTypeUnions);
+
         let init        = optional
             ? createDefinit()
             : tryParseLetInit();

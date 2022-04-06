@@ -4483,7 +4483,7 @@ pub fn solve(
         node: Node, specType!?: Type): SolvedNode
     {
         let n_annot = node.items[LET_TYPE];
-        let annot   = n_annot && evalTypeAnnot(n_annot);
+        let annot   = n_annot && n_annot.kind != "typeunion" && evalTypeAnnot(n_annot);
 
         // When we're specializing with a mutref, but there's no explicit mutref annot,
         //  we allow relaxing the F_REF so that e.g. bck can resolve by temp-copy.
@@ -4996,6 +4996,19 @@ pub fn solve(
             return t && trySolveTypeParams(
                 node.items[0] || BUG(), t, typeParams);
         }
+        else if (node.kind == "typeunion")
+        {
+            mut undo = typeParams;
+            for (mut i = 0; i < node.items.len; i++)
+            {
+                if (trySolveTypeParams(node.items[i], :type, :typeParams))
+                    return true;
+
+                typeParams = undo;
+            }
+
+            return false;
+        }
 
         // Everything else is a regular type annotation.
         return isAssignable(
@@ -5014,18 +5027,13 @@ pub fn solve(
         }
         else if (node.kind == "or")
         {
+            mut undo = typeParams;
             for (mut i = 0; i < node.items.len; i++)
             {
-                /////////////////////////////
-                mut typeParams0 = typeParams;
-                /////////////////////////////
-
                 if (evalTypePattern(node.items[i], typeParams))
                     return true;
 
-                /////////////////////////
-                typeParams = typeParams0;
-                /////////////////////////
+                typeParams = undo;
             }
 
             return false;

@@ -6596,7 +6596,7 @@ pub fn runTests()
         }
     `);
 
-    TODO_args(`
+    ZERO(`
         // This is the initial type union concept
         fn Join(a: $T, b: $T, lax sep?: $T or [$T;] or [])
         {
