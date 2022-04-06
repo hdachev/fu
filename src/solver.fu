@@ -4916,6 +4916,14 @@ pub fn solve(
                 if (node.value == "[]")
                     return createArray(T);
             }
+
+            // TODO RESEARCH:
+            //
+            // Falling through to the solveNode() below slows down the compiler by 20% -
+            //  it's completely insane, we don't call this that often,
+            //   and there's just an extra if/else cascade there.
+            //
+            return solveCall(node).type;
         }
         else if (node.kind == "typeparam")
         {
