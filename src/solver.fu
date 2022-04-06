@@ -4267,9 +4267,9 @@ pub fn solve(
 
     fn checkAssignable(
         host: Type, guest: Type, err: string,
-        id?: string, sep?: string)
+        id?: string, sep?: string, asArgument!?: bool)
     {
-        isAssignable(
+        isAssignable(:asArgument,
             :host   || BUG("Bad host type."),
             :guest  || BUG("Bad guest type."))
                     || fail(err ~ (id && " `" ~ id ~ "`") ~ ": "
@@ -4491,7 +4491,7 @@ pub fn solve(
 
         // Drop defaults that don't match current spec types,
         //  this will effectively make the args non-defaulted.
-        shadow let init = specType && init.type && !isAssignable(host: specType, init.type)
+        shadow let init = specType && init.type && !isAssignableAsArgument(host: specType, init.type)
             ? SolvedNode
             : init;
 
@@ -4509,7 +4509,7 @@ pub fn solve(
             "Variable declarations without type annotations must be initialized: `" ~ id ~ "`.");
 
         if (annot && init.type)
-            checkAssignable(host: annot, init.type,
+            checkAssignable(host: annot, init.type, asArgument: !!(flags & F_ARG),
                 "Type annotation does not match init expression",
                     id, "=");
 
@@ -5332,7 +5332,7 @@ pub fn solve(
         o.flags & F_IMPLICIT || fail(
             "Matching a non-implicit item in scope: `" ~ name ~ "`, binds to call to `" ~ GET(becauseOf).name ~ "`.");
 
-        checkAssignable(host: type, o.type, "Implicit `" ~ name ~ "` type mismatch");
+        checkAssignable(host: type, o.type, "Implicit `" ~ name ~ "` type mismatch", asArgument: true);
 
         return CallerNode("__implicit", :target, :reorder, :conversions);
     }

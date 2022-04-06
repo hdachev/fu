@@ -151,10 +151,10 @@ pub fn isAssignableAsArgument(host: Type, guest: Type, DONT_match_zeroes!?: bool
         || guest.is_zeroes && !DONT_match_zeroes && !(CANNOT_definit_mutrefs && host.quals & q_mutref);
 }
 
-pub fn isAssignable(host: Type, guest: Type, DONT_match_zeroes!?: bool): bool
+pub fn isAssignable(host: Type, guest: Type, DONT_match_zeroes!?: bool, asArgument!?: bool): bool
 {
     return isAssignableAsArgument(:host, :guest, :DONT_match_zeroes)
-        && isLifetimeAssignable(host.lifetime, guest.lifetime);
+        && (asArgument || isLifetimeAssignable(host.lifetime, guest.lifetime));
 }
 
 
