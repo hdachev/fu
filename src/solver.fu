@@ -2899,6 +2899,15 @@ pub fn solve(
                         let argNode = items[i] || BUG();
                         let annot   = argNode.items[LET_TYPE];
 
+                        // Use previously solved argument defaults
+                        //  to let all type params solve normally.
+                        let host_arg = original.args[i];
+
+                        shadow let inValue = inValue || {
+                            inType = host_arg.default.type;
+                            host_arg.default
+                        };
+
                         /////////////////
                         // Literal fixup.
                         if (couldRetype(inValue))
@@ -2915,7 +2924,10 @@ pub fn solve(
                                 let retype = tryRetyping(inValue, paramType);
                                 if (retype && retype.canon != inType.canon)
                                 {
-                                    inType   = args[i] = retype;
+                                    inType = retype;
+                                    if (args.len > i)
+                                        args[i] = inType;
+
                                     remangle = true;
                                 }
                             }
@@ -2936,10 +2948,12 @@ pub fn solve(
                         if (inType)
                         {
                             // Enable conversions on fully typed arguments.
-                            let exactType = original.args[i].type;
+                            let exactType = host_arg.type;
                             if (exactType)
                             {
-                                args[i] = exactType;
+                                if (args.len > i)
+                                    args[i] = exactType;
+
                                 continue;
                             }
 
@@ -3180,13 +3194,12 @@ pub fn solve(
                 //          Super unclean but at least its contained here.
                 if (isUnspec && (n_arg.flags & F_TEMPLATE || !n_arg.items[LET_TYPE]))
                 {
+                    let init = n_arg.items[LET_INIT]
+                            && solveNode(n_arg.items[LET_INIT]);
+
                     outItems[i] = SolvedNode(
                         kind: "let", flags: n_arg.flags, value: n_arg.value,
-                        type: Type(), items: [ SolvedNode,
-
-                            // TODO FIX This is such shit + not sure what its for.
-                            n_arg.items[LET_INIT] && SolvedNode(
-                                kind: "__defarg", type: []) ]);
+                        type: Type(), items: [ [], init, ]);
 
                     continue;
                 }
