@@ -102,8 +102,8 @@ pub let t_u64       = Primitive("u64");
 pub let t_f32       = Primitive("f32");
 pub let t_f64       = Primitive("f64");
 
-pub let t_bool      = Primitive("bool");
-pub let t_byte      = Primitive("byte");
+pub let t_bool      = Primitive("b8");
+pub let t_byte      = Primitive("c8");
 
 
 // I think these should also be non-refereable?

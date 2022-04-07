@@ -272,14 +272,13 @@ pub fn cpp_codegen(implicit module: Module, implicit ctx: Context): CodegenOutpu
             if (c == "i16")     return "short";
             if (c == "u32")     return "unsigned";
 
-            if (c == "bool")    return "bool";
+            if (c == "b8")      return "bool";
+            if (c == "c8")      return "char";
 
             if (c == "f32")     return "float";
             if (c == "f64")     return "double";
 
-            if (c == "byte")    return "char";
-
-            // Narrow charascter types.
+            // char vs signed char vs unsigned char.
             if (c == "i8" || c == "u8")
             {
                 include("<fu/int.h>");
@@ -295,7 +294,7 @@ pub fn cpp_codegen(implicit module: Module, implicit ctx: Context): CodegenOutpu
             if (c == "u32")     return "uint32_t";
             if (c == "u64")     return "uint64_t";
 
-            fail("Unknown primitive.");
+            fail("Unknown primitive: `" ~ c ~ "`.");
         }
 
         if (type.type_isZST)    return annotateZST();

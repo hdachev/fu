@@ -2,7 +2,7 @@ import module;
 
 pub fn is_primitive(t: Type) {
     let c = t.canon[0];
-    return c == 'u' || c == 'i' || c == 'f' || c == 'b';
+    return c == 'u' || c == 'i' || c == 'f' || c == 'b' || c == 'c';
 }
 
 pub fn is_arithmetic(t: Type) {
@@ -25,11 +25,7 @@ pub fn is_floating_pt(t: Type) {
     return c == 'f';
 }
 
-pub fn is_boolean(t: Type)
-{
-    // TODO FIX rename byte to c8 and bool to b8,
-    //  so booleans start with 'b'
-    //   and bytes start with 'c'.
-    //
-    return t.canon == "bool";
+pub fn is_boolean(t: Type) {
+    let c = t.canon[0];
+    return c == 'f';
 }
