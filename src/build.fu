@@ -39,6 +39,18 @@ fn update_file(
 }
 
 
+// TODO FIX
+
+fn exec(cmd: string, ref stdout: string)
+{
+    if (cmd.has("$("))
+        return ::exec(cmd, stdout);
+
+    mut status = 0;
+    return ::spawn(cmd.split(' '), :status, :stdout, stderr: stdout) || status;
+}
+
+
 //
 
 pub fn build(
@@ -385,8 +397,7 @@ pub fn build(
             // println("      > ", CMD);
             shadow mut stdout: string;
 
-            mut status: i32;
-            shadow let code = ::spawn(CMD.split(' '), :status, :stdout, stderr: stdout) || status
+            shadow let code = exec(CMD, :stdout)
                            || file::rename(F_tmp, F_obj);
 
             if (code)
@@ -456,8 +467,7 @@ pub fn build(
 
             // println("      > ", CMD);
 
-            mut status: i32;
-            code = ::spawn(CMD.split(' '), :status, :stdout, stderr: stdout) || status
+            code = exec(CMD, :stdout)
                 || file::chmod(F_tmp, file::RWX_RX_RX)
                 || file::rename(F_tmp, F_exe);
 
@@ -501,8 +511,7 @@ pub fn build(
             println("    RUN " F_exe);
 
             let t0 = now::hr();
-            mut status: i32;
-            code = ::spawn([ F_exe ], :status, :stdout, stderr: stdout) || status;
+            code = exec(F_exe, :stdout);
             let t1 = now::hr();
 
             println("     OK ", t1 - t0, "s");
