@@ -63,3 +63,6 @@ let LOOP_COND       = 1;
 let LOOP_BODY       = 2;
 let LOOP_POST_COND  = 3;
 let LOOP_POST       = 4;
+
+let STRUCT_BASE     = 0;
+let STRUCT_MEMBERS  = 1;

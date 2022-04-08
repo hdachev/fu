@@ -385,7 +385,8 @@ pub fn parse(
                     item.flags |= F_PREDICATE;
         }
 
-        return make("struct", items, :flags, name);
+        // Items: [ Base type (primitives), items (structs, enums & unions) ]
+        return make("struct", [ [], make("members", items) ], :flags, name);
     }
 
     fn parseStructItem(): Node
@@ -418,8 +419,8 @@ pub fn parse(
             annot || fail("`primitive` declarations require a base type annotation.");
 
         return make(
-            "primdecl", flags: enum && F_ENUM, value: name,
-                [ annot, items && make("items", items) ]);
+            "struct", flags: enum && F_ENUM, value: name,
+                [ annot, items && make("variants", items) ]);
     }
 
     fn parseEnumItem(): Node

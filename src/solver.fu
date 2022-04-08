@@ -3736,7 +3736,8 @@ pub fn solve(
             return solveLetLike_dontTouchScope(node);
         }
 
-        let members = node.items.map(fn solveMember);
+        let items = node.items[STRUCT_MEMBERS].items;
+        let members = items.map(fn solveMember);
 
         // (Re)poplate fields.
         {
@@ -3750,10 +3751,10 @@ pub fn solve(
 
                 for (mut i = 0; i < members.len; i++)
                 {
-                    let id = node.items[i].value;
+                    let id = items[i].value;
 
                     // `true` fields.
-                    let isPredicate = node.items[i].flags & F_PREDICATE;
+                    let isPredicate = items[i].flags & F_PREDICATE;
 
                     let target = Scope_create(
                         _scope, "field", name: id || BUG(),
@@ -3772,7 +3773,7 @@ pub fn solve(
 
             // Update field types.
             innerScope.len == members.len || BUG(
-                "solveStructMembers_3: field lens mismatch: " ~ innerScope.len ~ " vs " ~ members.len ~ "/" ~ node.items.len ~ ": `struct " ~ name ~ "`.");
+                "solveStructMembers_3: field lens mismatch: " ~ innerScope.len ~ " vs " ~ members.len ~ "/" ~ items.len ~ ": `struct " ~ name ~ "`.");
 
             for (mut i = 0; i < innerScope.len; i++)
             {
