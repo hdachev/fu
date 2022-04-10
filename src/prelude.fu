@@ -39,16 +39,18 @@ fn <=(a: $T, b: $T) case ($T.is::primitive): bool __native;
 
 // Bitwise.
 
-fn  ~(a: $T)        case ($T.is::integral): $T __native;
-fn  &(a: $T, b: $T) case ($T.is::integral): $T __native;
-fn  |(a: $T, b: $T) case ($T.is::integral): $T __native;
-fn  ^(a: $T, b: $T) case ($T.is::integral): $T __native;
+fn ~(a: $T)        case ($T.is::bitfield): $T __native;
+fn &(a: $T, b: $T) case ($T.is::bitfield): $T __native;
+fn |(a: $T, b: $T) case ($T.is::bitfield): $T __native;
+fn ^(a: $T, b: $T) case ($T.is::bitfield): $T __native;
+
+fn &=(ref a: $T, b: $T) case ($T.is::bitfield): &mut $T __native;
+fn |=(ref a: $T, b: $T) case ($T.is::bitfield): &mut $T __native;
+fn ^=(ref a: $T, b: $T) case ($T.is::bitfield): &mut $T __native;
+
 fn <<(a: $T, b: $T) case ($T.is::integral): $T __native;
 fn >>(a: $T, b: $T) case ($T.is::integral): $T __native;
 
-fn  &=(ref a: $T, b: $T) case ($T.is::integral): &mut $T __native;
-fn  |=(ref a: $T, b: $T) case ($T.is::integral): &mut $T __native;
-fn  ^=(ref a: $T, b: $T) case ($T.is::integral): &mut $T __native;
 fn <<=(ref a: $T, b: $T) case ($T.is::integral): &mut $T __native;
 fn >>=(ref a: $T, b: $T) case ($T.is::integral): &mut $T __native;
 

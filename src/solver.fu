@@ -5116,6 +5116,9 @@ pub fn solve(
         if (tag == "primitive")
             return type.is_primitive;
 
+        if (tag == "bitfield")
+            return type.is_bitfield;
+
         if (tag == "integral")
             return type.is_integral;
 

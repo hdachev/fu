@@ -10,6 +10,11 @@ pub fn is_arithmetic(t: Type) {
     return c == 'u' || c == 'i' || c == 'f';
 }
 
+pub fn is_bitfield(t: Type) {
+    let c = t.canon[0];
+    return c == 'u' || c == 'i' || c == 'm';
+}
+
 pub fn is_integral(t: Type) {
     let c = t.canon[0];
     return c == 'u' || c == 'i';
