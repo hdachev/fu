@@ -37,6 +37,11 @@ pub fn is_boolean(t: Type) {
     return c == 'f';
 }
 
+pub fn is_enum(t: Type) {
+    let c = t.canon[0];
+    return c == 'e';
+}
+
 
 //
 

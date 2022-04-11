@@ -1423,7 +1423,8 @@ pub fn solve(
     {
         return node.kind == "int"
             || node.kind == "real"
-            || node.kind == "definit";
+            || node.kind == "definit"
+            || node.kind == "str";
     }
 
     fn tryRetyping(node: SolvedNode, expect: Type): Type
@@ -1439,6 +1440,17 @@ pub fn solve(
 
         if (node.kind == "definit")
             return trySolveDefinit(expect);
+
+        //////////////////////////////////////////////
+        // HACK - Retyping string literals to enums //
+        if (node.kind == "str" && expect.is_enum)
+        {
+            let members = lookupStruct(expect).items;
+            for (mut i = 0; i < members.len; i++)
+                if (members[i].id == node.value)
+                    return clear_refs(expect);
+        }
+        //////////////////////////////////////////////
 
         return [];
     }

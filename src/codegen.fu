@@ -1512,6 +1512,12 @@ pub fn cpp_codegen(implicit module: Module, implicit ctx: Context): CodegenOutpu
 
     fn cgStringLiteral(node: SolvedNode): string
     {
+        //////////////////////////////////////////////
+        // HACK - Retyping string literals to enums //
+        if (node.type.is_enum)
+            return cgEnumv(node.type, node.value);
+        //////////////////////////////////////////////
+
         annotateString();
 
         mut esc = escapeStringLiteral(node.value, '"');
@@ -1857,10 +1863,7 @@ pub fn cpp_codegen(implicit module: Module, implicit ctx: Context): CodegenOutpu
                 return ARG(0) ~ "." ~ ID(id);
 
             if (target.kind == "enumv")
-            {
-                typeAnnotBase(target.type);
-                return ID(id);
-            }
+                return cgEnumv(target.type, id);
 
             if (node.target.isOp)
             {
@@ -1890,6 +1893,12 @@ pub fn cpp_codegen(implicit module: Module, implicit ctx: Context): CodegenOutpu
         isNative && fail("Unknown __native: `" ~ id ~ "`.");
 
         return emitFunctionCall(rootNS(id.valid_identifier));
+    }
+
+    fn cgEnumv(type: Type, id: string)
+    {
+        typeAnnotBase(type);
+        return ID(id);
     }
 
     fn rootNS(id: string)

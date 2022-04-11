@@ -9426,6 +9426,12 @@ pub fn runTests()
         fn main() Zero.i32;
     `);
 
+    ZERO(`
+        enum Hey { foo; bar };
+        fn test(hey: Hey) hey.i32;
+        fn main() test("bar") - 1;
+    `);
+
     SKETCH(`
         enum Test: i32 { A = 1; };
         fn main() A.i32 - 1;
