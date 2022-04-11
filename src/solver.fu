@@ -1741,13 +1741,13 @@ pub fn solve(
         if (k == "typeparam")   return solveTypeParam(node);
         if (k == "addroffn")    return solveAddrOfFn(node);
 
-        if (k == "fn")          return solveDeclExpr(node);
-        if (k == "struct")      return solveDeclExpr(node);
-
-        // Exotics
+        // Exotics.
         if (k == "forfieldsof") return solveForFieldsOf(node);
         if (k == "pragma")      return executeCompilerPragma(node);
         if (k == "void")        return createEmpty();
+
+        if (unorderedClassify(k))
+            return solveDeclExpr(node);
 
         //
         return fail("TODO: solveNode(" ~ k ~ ").");
@@ -1760,19 +1760,26 @@ pub fn solve(
 
     fn unorderedClassify(kind: string): i32
     {
-        if (kind == "fn")       return 1;
-        if (kind == "struct")   return 10;
+        if (kind == "fn")
+            return 1;
+
+        if (kind == "struct" || kind == "primitive" || kind == "enum" || kind == "flags")
+            return 10;
 
         return 0;
     }
 
     fn unorderedPrep_A(node: Node): SolvedNode
     {
-        let k = node.kind;
-        if (k == "fn")          return uPrepFn_A(node);
-        if (k == "struct")      return uPrepStruct(node);
+        let kind = node.kind;
 
-        return fail("TODO: " ~ k);
+        if (kind == "fn")
+            return uPrepFn_A(node);
+
+        if (kind == "struct" || kind == "primitive" || kind == "enum" || kind == "flags")
+            return uPrepStruct(node);
+
+        BUG("TODO: unorderedPrep_A(" ~ node.kind ~ ").");
     }
 
     fn unorderedPrep_B(node: Node, into: Target)
