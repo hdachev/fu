@@ -337,17 +337,17 @@ pub fn cpp_codegen(implicit module: Module, implicit ctx: Context): CodegenOutpu
         let scp = parseStructCanon(type.canon);
         if (_tfwd.add_once(scp.modid, scp.index))
         {
-            let decl = declareStruct(type, id, s);
+            let decl = declareStruct(id, s);
             _tdef ~= decl;
         }
 
         return id;
     }
 
-    fn declareStruct(type: Type, id: string, s: Struct): string
+    fn declareStruct(id: string, s: Struct): string
     {
         if (s.base)
-            return declarePrimitive(type, id, s);
+            return declarePrimitive(id, s);
 
         _tfwd_src ~= "struct " ~ id ~ ";\n";
 
@@ -396,11 +396,16 @@ pub fn cpp_codegen(implicit module: Module, implicit ctx: Context): CodegenOutpu
         return def ~ "\n};\n                                #endif\n";
     }
 
-    fn declarePrimitive(type: Type, id: string, s: Struct): string
+    fn declarePrimitive(id: string, s: Struct): string
     {
         let baseprim    = primAnnotBase(s.base);
-        let scoped      = type.canon.starts(with: 'e');
-        let header      = "enum" ~ (scoped && " class") ~ " " ~ id ~ ": " ~ baseprim;
+
+        // We won't be using scoped enums (enum class) for now -
+        //  a] They don't work for flags enums & co,
+        //  b] Importantly, they can't have an explicit operator bool,
+        //      so they need verbose boolchecks, not great.
+        //
+        let header      = "enum " ~ id ~ ": " ~ baseprim;
 
         _tfwd_src ~= header ~ ";\n";
 
@@ -412,7 +417,7 @@ pub fn cpp_codegen(implicit module: Module, implicit ctx: Context): CodegenOutpu
         for (mut i = 0; i < members.len; i++)
         {
             let member = GET(members[i].target);
-            def ~= "\n    " ~ ID(member.name) ~ ",";
+            def ~= "\n    " ~ id ~ "_" ~ member.name ~ ",";
         }
 
         return def ~ "\n};\n                                #endif\n";
@@ -1901,14 +1906,8 @@ pub fn cpp_codegen(implicit module: Module, implicit ctx: Context): CodegenOutpu
 
     fn cgEnumv(type: Type, id: string)
     {
-        let base        = typeAnnotBase(type);
-        shadow let id   = ID(id);
-
-        // We won't scope flags enums, cg too messy.
-        if (type.canon.starts(with: 'e'))
-            return base ~ "::" ~ id;
-
-        return id;
+        let base = typeAnnotBase(type);
+        return base ~ "_" ~ id;
     }
 
     fn rootNS(id: string)
