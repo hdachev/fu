@@ -2,7 +2,8 @@ import module;
 
 pub fn is_primitive(t: Type) {
     let c = t.canon[0];
-    return c == 'u' || c == 'i' || c == 'f' || c == 'b' || c == 'c';
+    return c == 'u' || c == 'i' || c == 'f' || c == 'b' || c == 'c'
+                    || c == 'm' || c == 'e';
 }
 
 pub fn is_arithmetic(t: Type) {
@@ -12,7 +13,8 @@ pub fn is_arithmetic(t: Type) {
 
 pub fn is_bitfield(t: Type) {
     let c = t.canon[0];
-    return c == 'u' || c == 'i' || c == 'm';
+    return c == 'u' || c == 'i'
+                    || c == 'm';
 }
 
 pub fn is_integral(t: Type) {
@@ -33,4 +35,31 @@ pub fn is_floating_pt(t: Type) {
 pub fn is_boolean(t: Type) {
     let c = t.canon[0];
     return c == 'f';
+}
+
+
+//
+
+pub fn basePrimPrefixLen(canon: string): int
+{
+    mut c = canon[0];
+
+    // Let's consider two new category types:
+    //  e - for enums, no arithmetics, no bitwise ops
+    //  m - for flags, bitwise ops are fine
+
+    // Category.
+    c == 'i' || c == 'u'
+             || c == 'f'
+             || c == 'b' || c == 'c'
+             || c == 'e' || c == 'm'
+             || throw("basePrimPrefix: bad char0: " ~ canon);
+
+    // Bitcount.
+    for (mut offset = 1;; offset++)
+    {
+        c = offset < canon.len && canon[offset];
+        if (c < '0' || c > '9')
+            return offset;
+    }
 }
