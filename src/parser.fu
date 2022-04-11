@@ -1098,6 +1098,15 @@ pub fn parse(
         if (tryConsume("id", "mut"     ))   flags |= F_MUT;
         if (tryConsume("id", "ref"     ))   flags |= F_REF;
 
+        // Experimental shorthand, meant for fn arguments -
+        //
+        //  fn name(kind: kind::kind, ...)      max verbose
+        //  fn name(kind: ::kind, ...)          we already had this
+        //  fn name(::kind, ...)                the new thing, shorter
+        //
+        let sh_import = tryConsume("op", "::");
+
+        //
         mut id = consume("id").value;
         if (id == "_")
             flags |= F_LAX;
@@ -1133,7 +1142,8 @@ pub fn parse(
         //
         let optional    = xqmark && tryConsume("op", "?");
 
-        mut type        = tryPopTypeAnnot(:allowTypeUnions);
+        mut type        = sh_import ? createRead(registerImport(id) ~ '\t' ~ id, flags: F_COMPOUND_ID)
+                        : tryPopTypeAnnot(:allowTypeUnions);
 
         let init        = optional
             ? createDefinit()
@@ -1714,12 +1724,12 @@ pub fn parse(
         return make("call", args, flags, id);
     }
 
-    fn createRead(id: string): Node
+    fn createRead(id: string, flags?: i32): Node
     {
         if (id == "true" || id == "false")
             return make("bool", value: id);
 
-        return createCall(id || fail(), F_ID);
+        return createCall(id || fail(), F_ID | flags);
     }
 
 
