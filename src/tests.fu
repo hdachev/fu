@@ -8170,6 +8170,28 @@ pub fn runTests()
         fn main()                                   inl_println('a', 'b') - 2;
     `);
 
+    TODO_conv(`
+        struct My { i: i32 };
+
+        fn test(oh: My)
+        {
+            // autocall(): never
+            let str = |my: My|: never {
+                return my.i; // exits test() here
+            };
+
+            <alt>
+            let hello = "Hello, " ~ oh;     <alt/> // both mess up, this one emits a pointless overload,
+            let hello = oh ~ "!";           </alt> //  this one messes up earlier in the solver
+
+            return hello.len;
+        }
+
+        fn main() {
+            return test(My(3)) - 3;
+        }
+    `);
+
 
     // Addrofns of struct fields.
 
