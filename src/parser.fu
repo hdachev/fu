@@ -191,7 +191,7 @@ pub fn parse(
     }
 
     fn make(
-        kind:  string,
+        ::kind,
         items: Node[] = [],
         flags: i32    =  0,
         value: string = "")
@@ -206,7 +206,7 @@ pub fn parse(
 
     //
 
-    fn consume(kind: [byte], value?: [byte], err?: string): Token
+    fn consume(::kind, value?: [byte], err?: string): Token
     {
         let token = tokens[_idx];
         if (token.kind == kind && (!value || token.value == value))
@@ -219,7 +219,7 @@ pub fn parse(
             " `" ~ (value || kind) ~ "`, got `" ~ token.value ~ "`.");
     }
 
-    fn tryConsume(kind: [byte], value?: [byte]): Token
+    fn tryConsume(::kind, value?: [byte]): Token
     {
         let token = tokens[_idx];
         if (token.kind == kind && (!value || token.value == value))
@@ -407,7 +407,7 @@ pub fn parse(
 
     //
 
-    fn parsePrimDecl(kind: string): Node
+    fn parsePrimDecl(::kind): Node
     {
         let name    = tryConsume("id").value;
         let annot   = tryPopTypeAnnot();
@@ -418,7 +418,7 @@ pub fn parse(
 
         return make(
             :kind, value: name,
-                [ annot, items && make("variants", items) ]);
+                [ annot, items && make("members", items) ]);
     }
 
     fn parseEnumItem(): Node
@@ -434,7 +434,7 @@ pub fn parse(
     //
 
     fn parseBlockLike(
-        endKind: string, endVal: string,
+        endKind: ::kind, endVal: string,
         struct! = false,
         enum! = false): Node[]
     {
@@ -603,9 +603,9 @@ pub fn parse(
                 if (v == "prefix")      return parseFixityDecl(F_PREFIX);
                 if (v == "postfix")     return parseFixityDecl(F_POSTFIX);
 
-                if (v == "primitive")   return parsePrimDecl(v);
-                if (v == "flags")       return parsePrimDecl(v);
-                if (v == "enum")        return parsePrimDecl(v);
+                if (v == "primitive")   return parsePrimDecl("primitive");
+                if (v == "flags")       return parsePrimDecl("flags");
+                if (v == "enum")        return parsePrimDecl("enum");
 
                 if (v == "pure")        return parseExoticDecl(F_PURE);
                 if (v == "purectx")     return parseExoticDecl(F_PURE_CTX);
@@ -996,7 +996,7 @@ pub fn parse(
 
     fn parseArgsDecl(
         ref outArgs: Node[],
-        endk: string, endv: string): i32
+        endk: ::kind, endv: string): i32
     {
         mut first = true;
         mut outFlags = 0;
@@ -1714,7 +1714,7 @@ pub fn parse(
         return createCall("[]", argFlags | F_OPERATOR, args);
     }
 
-    fn createLeaf(kind: string, value: string): Node
+    fn createLeaf(::kind, value: string): Node
     {
         return make(kind, :value);
     }
@@ -1735,7 +1735,7 @@ pub fn parse(
 
     //
 
-    fn parseJump(kind: string /*"break"|"continue"|"return"*/): Node
+    fn parseJump(::kind/*"break"|"continue"|"return"*/): Node
     {
         _fnDepth > 0 || { _idx--; fail() };
 
@@ -1755,7 +1755,7 @@ pub fn parse(
         createJump(kind: "return", :expr, :flags);
 
     fn createJump(
-        kind!: string/*"break"|"continue"|"return"*/,
+        kind!: ::kind/*"break"|"continue"|"return"*/,
         label!?: string, expr?: Node, flags!?: i32): Node
     {
         return make(kind, value: label, expr && [ expr ], :flags);
@@ -1854,7 +1854,7 @@ pub fn parse(
         return flattenIfSame("and", left, right);
     }
 
-    fn flattenIfSame(kind: string, left: Node, right: Node): Node
+    fn flattenIfSame(::kind, left: Node, right: Node): Node
     {
         let k_left  =  left.kind;
         let k_right = right.kind;

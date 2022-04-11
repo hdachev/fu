@@ -1,0 +1,100 @@
+
+enum kind: i8
+{
+
+    // Lexer: token kinds.
+
+    sof
+
+    id
+    op
+    int
+    real
+    char
+    str
+
+    err
+
+    eof
+
+
+    // Parser: node kinds.
+
+    root
+    block
+    argid
+
+    let
+    call
+    arrlit
+
+    if
+    or
+    and
+
+    loop
+    break
+    return
+    continue
+
+    // int
+    // real
+    // str
+    // char
+    bool
+
+    definit
+
+    import
+    defer
+    try
+
+    typedef
+    typecast
+    typeassert
+    typeparam
+    addroffn
+
+    forfieldsof
+    pragma
+    void
+
+    struct
+    primitive
+    flags
+    enum
+    members
+
+    fn
+    fnbranch
+    pattern
+
+    typeunion
+    typetag
+
+
+    // Solver: extra node kinds.
+
+    jump
+    empty
+    letdef
+    __relaxed
+    __convert
+
+    fndef
+    copy
+    move
+    __far_jump
+
+
+    // Scope: overload types.
+
+    __no_kind_yet
+    type
+    var
+    field
+    enumv
+    template
+    __native
+    inline
+}

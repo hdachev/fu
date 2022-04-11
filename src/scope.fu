@@ -74,7 +74,7 @@ pub fn MODID(implicit module: Module): i32
     module.modid;
 
 pub fn initStruct(implicit module: &mut Module,
-    kind!: string, baseprim!: string,
+    ::kind!, baseprim!: string,
     name: string, flags: i32,
     SELF_TEST!: bool)
 {
@@ -338,7 +338,7 @@ pub fn ==(a: ScopeMemo, b: ScopeMemo) cmp(a, b) == 0;
 
 pub fn Scope_create(
     scope: &mut Scope,
-    kind = "_no_kind_yet_", name!?: string,
+    ::kind = "__no_kind_yet", name!?: string,
     type?: Type, flags!?: i32,
     status?: u32,
     nest!?: i32): Target

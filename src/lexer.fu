@@ -27,13 +27,13 @@ pub fn lex(src: string, fname: string): LexerOutput
 
     mut tokens: Token[];
 
-    fn token(kind: string, value: string, idx0: i32, idx1: i32)
+    fn token(::kind, value: string, idx0: i32, idx1: i32)
     {
         let col = idx0 - lidx;
         token_c(:kind, :value, :idx0, :idx1, :col);
     }
 
-    fn token_c(kind: string, value: string, idx0!: i32, idx1!: i32, col!: i32)
+    fn token_c(::kind, value: string, idx0!: i32, idx1!: i32, col!: i32)
     {
         col >= 0 || assert();
         tokens ~= Token(:kind, :value, :idx0, :idx1, :line, :col);
@@ -44,7 +44,7 @@ pub fn lex(src: string, fname: string): LexerOutput
         "sof", "sof",
         idx, idx);
 
-    fn err_str(kind: string, idx0: i32, reason: string)
+    fn err_str(::kind, idx0: i32, reason: string)
     {
         // exit to nearest whitespace
         while (idx < end && src[idx] > ' ')
@@ -58,7 +58,7 @@ pub fn lex(src: string, fname: string): LexerOutput
             ~ "\n\t" ~ kind ~ ": `" ~ value ~ "`");
     }
 
-    fn err(kind: string, idx0: i32, reason: i32)
+    fn err(::kind, idx0: i32, reason: i32)
     {
         err_str(kind, idx0, "`" ~ src[reason] ~ "`");
     }
@@ -370,17 +370,12 @@ pub fn lex(src: string, fname: string): LexerOutput
                                 : src.slice(idx0 + 1, idx1 - 1);
 
                 let char = c == '\'';
-                let kind = char ? "char" : "str";
-
                 if (char && str.len != 1)
-                {
                     err_str("char", idx0,
                         "Char literal len != 1: " ~ str.len);
-                }
                 else
-                {
-                    token_c(kind, str, :idx0, :idx1, :col);
-                }
+                    token_c(char ? "char" : "str",
+                        str, :idx0, :idx1, :col);
             }
         }
 
@@ -450,7 +445,7 @@ pub fn lex(src: string, fname: string): LexerOutput
         // dunno
         else
         {
-            err("?", idx0, idx0);
+            err("err", idx0, idx0);
         }
     }
 

@@ -1704,7 +1704,7 @@ pub fn cpp_codegen(implicit module: Module, implicit ctx: Context): CodegenOutpu
         ooe_crosscheck == MUSTSEQ_mask || fail(
             "OOE crosscheck failed: codegen sequenced " ~ ooe_crosscheck
                                 ~ ", but solver wants " ~ MUSTSEQ_mask ~ ": "
-                                ~ args.map(.kind).join("|"));
+                                ~ args.map(|x| x.kind.str).join("|"));
 
         fn ooeWrap(src: string)
         {
@@ -2609,7 +2609,7 @@ pub fn cpp_codegen(implicit module: Module, implicit ctx: Context): CodegenOutpu
         return cgMoveOrClone(node.kind, node.type, cgNode(expr, debug: "cgMoveOrClone"));
     }
 
-    fn cgMoveOrClone(kind: string, type: Type, src: string): string
+    fn cgMoveOrClone(::kind, type: Type, src: string): string
     {
         if (kind == "move")
             return cgMove(type, src);

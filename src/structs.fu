@@ -20,7 +20,7 @@ pub fn parseStructCanon(canon: string): StructCanon
 }
 
 pub fn createStructCanon(
-    kind!: string, baseprim!: string,
+    ::kind!, baseprim!: string,
     modid: i32, index: i32, lax name: string): string
 {
     mut res = baseprim || "/";

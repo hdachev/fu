@@ -106,7 +106,8 @@ pub struct CodegenOutput
 
 pub struct Token
 {
-    true kind:  string;
+    true        ::kind;
+
     value:      string;
 
     idx0:       i32;
@@ -120,7 +121,8 @@ pub struct Token
 
 pub struct Node
 {
-    true kind:  string;
+    true        ::kind;
+
     flags?:     i32;
     value:      string;
     items?:     Node[];
@@ -163,7 +165,7 @@ pub struct Helpers
 
 pub struct SolvedNode
 {
-    true kind:  string; // TODO enum, will save so many string copies
+    true        ::kind;
 
     helpers:    Helpers; // TODO not here: I had room for it, but honestly this is not the best place for this.
     flags:      i32;
@@ -297,7 +299,11 @@ pub struct Argument
 
 pub struct Overload
 {
-    true kind:      string;
+    true            ::kind;
+
+    flags:          i32;
+    status?:        u32;
+
     name:           string;
 
     // Previously we appended a fns signature hash to its name,
@@ -309,11 +315,6 @@ pub struct Overload
     sighash:        string;
 
     type:           Type;
-
-    flags:          i32;
-
-    // Solver state.
-    status?:        u32;
 
     solved:         SolvedNode;
 };

@@ -226,7 +226,7 @@ pub fn solve(
 
         shadow let kind = kind == "var" && o.flags & F_ARG
             ? "arg"
-            : kind;
+            : kind.str;
 
         return kind.qKW ~ " " ~ o.name.human.qID;
     }
@@ -402,7 +402,7 @@ pub fn solve(
     //
 
     fn SolvedNode(
-        kind:       string,
+        ::kind,
         type:       Type,
         flags?:     i32,
         value?:     string,
@@ -753,7 +753,7 @@ pub fn solve(
 
     fn qWHAT(n: SolvedNode)
     {
-        mut src = n.kind.qKW;
+        mut src = n.kind.str.qKW;
 
         if (n.kind == "call" || n.kind == "let" || n.kind == "letdef")
             src ~= "(" ~ n.target.qWHAT ~ ")";
@@ -1782,7 +1782,7 @@ pub fn solve(
         return solveNodes([ node ]).only;
     }
 
-    fn unorderedClassify(kind: string): i32
+    fn unorderedClassify(::kind): i32
     {
         if (kind == "fn")
             return 1;
@@ -2529,7 +2529,7 @@ pub fn solve(
         return solved(node, type);
     }
 
-    fn createEmpty(kind = "empty", type = t_void, target?: Target): SolvedNode
+    fn createEmpty(::kind = "empty", type = t_void, target?: Target): SolvedNode
     {
         return SolvedNode(:kind, :type, :target);
     }
@@ -6636,7 +6636,7 @@ pub fn solve(
         {
             let node = SLOW_findByWriteID(write);
             if (node.kind != "call")
-                return "\n\tVia " ~ node.kind.qKW;
+                return "\n\tVia " ~ node.kind.str.qKW;
 
             mut stack: string;
             {
