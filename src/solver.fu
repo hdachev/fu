@@ -3696,6 +3696,20 @@ pub fn solve(
         let origId  = node.value;
         let name    = origId || _current_fn.target && GET(_current_fn.target).name || "Anon";
 
+        let kind        = node.kind;
+        let isPrimDecl  = kind != "struct";
+
+        //
+        mut baseprim: string;
+
+        if (isPrimDecl)
+        {
+            let baseannot   = node.items[STRUCT_BASE];
+            baseprim        = baseannot
+                ? getBasePrimitive(evalTypeAnnot(baseannot))
+                : "i32";
+        }
+
         //
         mut out_target  = into;
         mut out_type: Type;
@@ -3705,7 +3719,7 @@ pub fn solve(
         }
         else
         {
-            out_type    = initStruct(:name, :node.flags, :SELF_TEST);;
+            out_type    = initStruct(:kind, :baseprim, :name, :node.flags, :SELF_TEST);
             out_target  = Scope_Typedef(_scope, id: origId, :name,
                 type: out_type, :node.flags,
                 status: SS_LAZY);
@@ -3746,6 +3760,10 @@ pub fn solve(
 
         mut all_triv = true;
 
+        //
+        let primType = isPrimDecl && (
+            out_type || BUG("Falsy isPrimDecl.out_type"));
+
         // Struct members, pass 0.
         fn solveMember(shadow node: Node)
         {
@@ -3757,7 +3775,7 @@ pub fn solve(
                     ~ " Please remove the initializer of struct member `" ~ node.value ~ "`.");
 
             // Can't continue/return back/fwd compat.
-            return solveLetLike_dontTouchScope(node);
+            return solveLetLike_dontTouchScope(node, specType: primType);
         }
 
         let items = node.items[STRUCT_MEMBERS].items;
@@ -3770,7 +3788,7 @@ pub fn solve(
             {
                 // Dereferencing a struct does not require it
                 //  to have any particular qualities.
-                let args = [ Argument(name: "this",
+                let args = !isPrimDecl && [ Argument(name: "this",
                     type: despeculateStruct(out_type)) ];
 
                 for (mut i = 0; i < members.len; i++)
@@ -3781,18 +3799,23 @@ pub fn solve(
                     let isPredicate = items[i].flags & F_PREDICATE;
 
                     let target = Scope_create(
-                        _scope, "field", name: id || BUG(),
+                        _scope, args ? "field" : "enumv", name: id || BUG(),
                         flags: F_PUB | isPredicate);
 
                     ref ext     = EXT_mut(target);
                     ext.args    = args;
-                    ext.min     = 1;
-                    ext.max     = 1;
+                    ext.min     = args.len;
+                    ext.max     = args.len;
 
                     Scope_set(innerScope, :id, :target, shadows: false);
                 }
 
-                _field_items ~= innerScope;
+                // Again the _field_items thing is really messy -
+                //  I think we originally got it for stuff like `fn fieldname`.
+                if (isPrimDecl)
+                    _scope.items ~= innerScope;
+                else
+                    _field_items ~= innerScope;
             }
 
             // Update field types.

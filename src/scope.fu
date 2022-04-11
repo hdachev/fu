@@ -73,13 +73,13 @@ pub fn target_TODOFIX(ref si: ScopeItem, target: Target)
 pub fn MODID(implicit module: Module): i32
     module.modid;
 
-pub fn initStruct(implicit module: &mut Module, name: string, flags: i32, SELF_TEST!: bool)
+pub fn initStruct(implicit module: &mut Module,
+    kind!: string, baseprim!: string,
+    name: string, flags: i32,
+    SELF_TEST!: bool)
 {
     name[0].u8 - '0'.u8 > 9.u8 || throw (
         "Bad struct name, leading digit: `" ~ name ~ "`.");
-
-    let index = module.out.types.len;
-    let canon = createStructCanon(:module.modid, :index, :name);
 
     if (SELF_TEST)
         for (mut i = 0; i < module.out.types.len; i++)
@@ -87,10 +87,16 @@ pub fn initStruct(implicit module: &mut Module, name: string, flags: i32, SELF_T
                 throw ("initStruct/SELF_TEST duplicate: `" ~ name ~ "`.");
 
     // Alloc a slot.
-    module.out.types ~= Struct(:name);
+    let index = module.out.types.len;
+    module.out.types ~= Struct(:name, base: baseprim);
+
+    //
+    mut canon = createStructCanon(
+        :kind, :baseprim, :module.modid, :index, :name);
 
     // Assume everything, we resolve disappointment.
     let specualtive_quals = !(flags & F_NOCOPY) && q_rx_copy;
+
 
     return Type(ValueType(:canon, quals: specualtive_quals));
 }

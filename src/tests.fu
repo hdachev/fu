@@ -9377,7 +9377,7 @@ pub fn runTests()
         }
     `);
 
-    SKETCH(`
+    ZERO(`
         primitive s32: i32;
 
         fn main() {
@@ -9388,7 +9388,7 @@ pub fn runTests()
         }
     `);
 
-    SKETCH(`
+    ZERO(`
         enum Enum { None };
 
         fn main() {
@@ -9399,7 +9399,7 @@ pub fn runTests()
         }
     `);
 
-    SKETCH(`
+    ZERO(`
         enum Test: i32 { A; B; C };
         fn main()
             <fail - bad call>
@@ -9407,20 +9407,20 @@ pub fn runTests()
             C.i32 - 2;  </fail>
     `);
 
-    SKETCH(`
+    ZERO(`
         <fail bad call to ->
         enum         <pass/>
         primitive    </fail> Test: i32 { A; B };
         fn main() (B - A).i32 - 1;
     `);
 
-    SKETCH(`
+    ZERO(`
         primitive PrimA: i32;
         primitive PrimB: PrimA { Zero; One };
         fn main() (One - 1).i32;
     `);
 
-    SKETCH(`
+    ZERO(`
         enum EnumA: i32;
         enum EnumB: EnumA { Zero };
         fn main() Zero.i32;

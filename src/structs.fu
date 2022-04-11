@@ -5,22 +5,41 @@ pub struct StructCanon { modid: i32; index: i32 };
 
 pub fn parseStructCanon(canon: string): StructCanon
 {
-    canon[0] == '/' || throw(
-        "parseStructCanon: no `/` in " ~ canon ~ "`.");
-
     mut offset = 1;
+    {
+        let c = canon[0];
+        if (c != '/')
+            offset = quals::basePrimPrefixLen(canon);
+    }
+
     let mi = parseMi(offset, canon);
     offset == canon.len || throw(
-        "parseStructCanon: trailing garbage in `" ~ canon ~ "`.");
+        "parseStructCanon: trailing garbage in `" ~ canon ~ "`: " ~ offset ~ "|" ~ canon.len);
 
     return StructCanon(:mi.modid, :mi.index);
 }
 
-pub fn createStructCanon(modid: i32, index: i32, lax name: string): string
+pub fn createStructCanon(
+    kind!: string, baseprim!: string,
+    modid: i32, index: i32, lax name: string): string
 {
-    mut res = "/";
+    mut res = baseprim || "/";
     res.appendMi(:modid, :index);
 
+    //
+    if (baseprim)
+    {
+        ref c = res[0];
+        if (c == 'e' || c == 'm')
+            throw("createStructCanon: bad baseprim: " ~ baseprim);
+
+        if (kind == "enum")
+            c = 'e';
+        else if (kind == "flags")
+            c = 'm';
+    }
+
+    //
     let check = parseStructCanon(res);
     if !(check.modid == modid && check.index == index)
     {
