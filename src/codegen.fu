@@ -398,12 +398,15 @@ pub fn cpp_codegen(implicit module: Module, implicit ctx: Context): CodegenOutpu
 
     fn declarePrimitive(type: Type, id: string, s: Struct): string
     {
-        let baseprim = primAnnotBase(s.base);
-        let scoped = type.canon.starts(with: 'e');
+        let baseprim    = primAnnotBase(s.base);
+        let scoped      = type.canon.starts(with: 'e');
+        let header      = "enum" ~ (scoped && " class") ~ " " ~ id ~ ": " ~ baseprim;
+
+        _tfwd_src ~= header ~ ";\n";
 
         mut def = "\n                                #ifndef DEF_" ~ id
                 ~ "\n                                #define DEF_" ~ id
-                ~ "\nenum" ~ (scoped && " class") ~ " " ~ id ~ ": " ~ baseprim ~ "\n{";
+                ~ "\n" ~ header ~ "\n{";
 
         let members = s.items;
         for (mut i = 0; i < members.len; i++)
