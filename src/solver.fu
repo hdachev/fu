@@ -2380,33 +2380,50 @@ pub fn solve(
 
     //
 
+    fn getBasePrimitive(type: Type): string
+    {
+        mut offset = type.canon.quals::basePrimPrefixLen();
+        if (offset < type.canon.len)
+            return lookupStruct(type).base;
+
+        return type.canon;
+    }
+
     fn solveInt(v: string, type: Type): Type
     {
         shadow let parse = intlit::Intlit(v);
         parse.error && fail(parse.error);
 
-        if (type)
+        if (type && type.is_primitive)
         {
+            let c = type.getBasePrimitive();
+
             fn want(t: Type)
-                type.canon == t.canon;
+                c == t.canon;
 
             if (!parse.unsigned)
             {
-                if (want(t_f32) && parse.minsize_f <= 32) return t_f32;
-                if (want(t_f64) && parse.minsize_f <= 64) return t_f64;
+                if (parse.minsize_f <= 32 && want(t_f32) ||
+                    parse.minsize_f <= 64 && want(t_f64) ||
 
-                if (want(t_i32) && parse.minsize_i <= 32) return t_i32;
-                if (want(t_i64) && parse.minsize_i <= 64) return t_i64;
-                if (want(t_i16) && parse.minsize_i <= 16) return t_i16;
-                if (want(t_i8 ) && parse.minsize_i <= 8 ) return t_i8 ;
+                    parse.minsize_i <= 32 && want(t_i32) ||
+                    parse.minsize_i <= 64 && want(t_i64) ||
+                    parse.minsize_i <= 16 && want(t_i16) ||
+                    parse.minsize_i <= 8  && want(t_i8 ))
+                {
+                    return clear_refs(type);
+                }
             }
 
             if (!parse.signed)
             {
-                if (want(t_u32) && parse.minsize_u <= 32) return t_u32;
-                if (want(t_u64) && parse.minsize_u <= 64) return t_u64;
-                if (want(t_u16) && parse.minsize_u <= 16) return t_u16;
-                if (want(t_u8 ) && parse.minsize_u <= 8 ) return t_u8 ;
+                if (parse.minsize_u <= 32 && want(t_u32) ||
+                    parse.minsize_u <= 64 && want(t_u64) ||
+                    parse.minsize_u <= 16 && want(t_u16) ||
+                    parse.minsize_u <= 8  && want(t_u8 ))
+                {
+                    return clear_refs(type);
+                }
             }
         }
 
