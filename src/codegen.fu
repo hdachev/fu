@@ -337,17 +337,17 @@ pub fn cpp_codegen(implicit module: Module, implicit ctx: Context): CodegenOutpu
         let scp = parseStructCanon(type.canon);
         if (_tfwd.add_once(scp.modid, scp.index))
         {
-            let decl = declareStruct(id, s);
+            let decl = declareStruct(type, id, s);
             _tdef ~= decl;
         }
 
         return id;
     }
 
-    fn declareStruct(id: string, s: Struct): string
+    fn declareStruct(type: Type, id: string, s: Struct): string
     {
         if (s.base)
-            return declarePrimitive(id, s);
+            return declarePrimitive(type, id, s);
 
         _tfwd_src ~= "struct " ~ id ~ ";\n";
 
@@ -396,13 +396,14 @@ pub fn cpp_codegen(implicit module: Module, implicit ctx: Context): CodegenOutpu
         return def ~ "\n};\n                                #endif\n";
     }
 
-    fn declarePrimitive(id: string, s: Struct): string
+    fn declarePrimitive(type: Type, id: string, s: Struct): string
     {
         let baseprim = primAnnotBase(s.base);
+        let scoped = type.canon.starts(with: 'e');
 
         mut def = "\n                                #ifndef DEF_" ~ id
                 ~ "\n                                #define DEF_" ~ id
-                ~ "\nenum " ~ id ~ ": " ~ baseprim ~ "\n{";
+                ~ "\nenum" ~ (scoped && " class") ~ " " ~ id ~ ": " ~ baseprim ~ "\n{";
 
         let members = s.items;
         for (mut i = 0; i < members.len; i++)
@@ -1897,8 +1898,14 @@ pub fn cpp_codegen(implicit module: Module, implicit ctx: Context): CodegenOutpu
 
     fn cgEnumv(type: Type, id: string)
     {
-        typeAnnotBase(type);
-        return ID(id);
+        let base        = typeAnnotBase(type);
+        shadow let id   = ID(id);
+
+        // We won't scope flags enums, cg too messy.
+        if (type.canon.starts(with: 'e'))
+            return base ~ "::" ~ id;
+
+        return id;
     }
 
     fn rootNS(id: string)
