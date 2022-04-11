@@ -249,7 +249,7 @@ pub fn parse(
             ref item = out.items[i];
 
             let k = item.kind;
-            if (k == "fn" || k == "let" || k == "typedef" || k == "struct")
+            if (k == "fn" || k == "let" || k == "typedef" || k == "struct" || k == "enum" || k == "flags" || k == "primitive")
                 if !(item.flags & F_SHADOW)
                     set_PUB(item.flags);
         }
