@@ -2392,6 +2392,14 @@ pub fn solve(
 
     //
 
+    fn lookupStructOrUserPrimitive(type: Type): Struct
+    {
+        if (type.isStruct || type.canon.quals::basePrimPrefixLen() < type.canon.len)
+            return lookupStruct(type);
+
+        fail("Not a struct nor custom primitive: " ~ humanizeType(type));
+    }
+
     fn getBasePrimitive(type: Type): string
     {
         mut offset = type.canon.quals::basePrimPrefixLen();
@@ -4493,22 +4501,21 @@ pub fn solve(
 
         let placeholder     = node.value;
         let body_template   = node.items[1];
-        let fields_of       = evalTypeAnnot(node.items[0]);
-        fields_of.isStruct || fail("[for fieldname]: This is not a struct: `" ~ humanizeType(fields_of) ~ "`.");
 
-        let fields          = lookupStruct(fields_of).items;
+        let fields          = evalTypeAnnot(node.items[0])
+                                .lookupStructOrUserPrimitive()
+                                .items || BUG("Empty struct/enum.");
 
         mut items_ast: Node[];
         for (mut i = 0; i < fields.len; i++)
         {
             let field = fields[i];
-            if (GET(field.target).kind == "field")
             {
                 items_ast ~= astReplace(body_template, |ref item: Node|
                 {
                     if (item.value == placeholder)
                     {
-                        if (item.items.len == 1 && item.kind == "call")
+                        if (item.kind == "call")
                         {
                             // TODO field access syntax disables any kind of scope lookup but fields,
                             //  otherwise we risk miscellaneous stuff randomly breaking templates for no good reason.
@@ -4531,7 +4538,7 @@ pub fn solve(
         // Control flow & deadcode elim.
         //  TODO break & continue.
         let items = solveNodes(items_ast);
-        let type  = items.last.type.is_never ? t_never : t_void;
+        let type  = items.if_last.type.is_never ? t_never : t_void;
 
         return createBlock(type, items);
     }
@@ -5189,6 +5196,9 @@ pub fn solve(
 
         if (tag == "mutref")
             return type.is_mutref;
+
+        if (tag == "enum")
+            return type.is_enum;
 
         return BUG("Unknown type tag: `" ~ tag ~ "`.");
     }

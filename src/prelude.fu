@@ -353,6 +353,14 @@ fn str(n: $T)
     case ($T.is::integral): string __native("<fu/decstr.h>", "fu::i64dec");
     case ($T -> bool):      string __native("<fu/decstr.h>", "fu::booldec");
     case ($T.is::floating_point): string __native("<fu/decstr.h>", "fu::f64dec");
+    case ($T.is::enum)
+{
+    for (fieldname i: n)
+        if (n == "i")
+            return "i";
+
+    return n.i32.str; // TODO FIX use .integer or .arithmetic when we get these
+};
 
 
 // Printifiables = anything that implements print.

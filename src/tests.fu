@@ -9454,6 +9454,29 @@ pub fn runTests()
         fn main() test("bar") - 1;
     `);
 
+    ZERO(`
+        enum Greet { hello; world };
+        fn main()
+            hello ~ " " ~ world == "hello world"
+                ? 0 : 1;
+    `);
+
+    ZERO(`
+        enum Greet { hello; world };
+        fn woot(hi: Greet) hi == "hello";
+        fn main() hello.woot ? 0 : 1;
+    `);
+
+    ZERO([`
+        enum Greet { hello; world };
+        fn h() hello;
+        fn w() world;
+    `,`
+        fn main()
+            _0::h() ~ " " ~ _0::w() == "hello world"
+                ? 0 : 1;
+    `]);
+
     SKETCH(`
         enum Test: i32 { A = 1; };
         fn main() A.i32 - 1;
