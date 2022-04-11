@@ -407,19 +407,17 @@ pub fn parse(
 
     //
 
-    fn parsePrimDecl(enum!: bool): Node
+    fn parsePrimDecl(kind: string): Node
     {
         let name    = tryConsume("id").value;
         let annot   = tryPopTypeAnnot();
         mut items   = tryConsume("op", "{") && parseBlockLike("op", "}", enum: true);
 
-        if (enum)
-            items || fail("`enum` declarations require a non-empty { list of variants }.");
-        else
+        if (kind != "enum" && kind != "flags")
             annot || fail("`primitive` declarations require a base type annotation.");
 
         return make(
-            "struct", flags: enum && F_ENUM, value: name,
+            :kind, value: name,
                 [ annot, items && make("variants", items) ]);
     }
 
@@ -605,8 +603,9 @@ pub fn parse(
                 if (v == "prefix")      return parseFixityDecl(F_PREFIX);
                 if (v == "postfix")     return parseFixityDecl(F_POSTFIX);
 
-                if (v == "primitive")   return parsePrimDecl(enum: false);
-                if (v == "enum")        return parsePrimDecl(enum: true);
+                if (v == "primitive")   return parsePrimDecl(v);
+                if (v == "flags")       return parsePrimDecl(v);
+                if (v == "enum")        return parsePrimDecl(v);
 
                 if (v == "pure")        return parseExoticDecl(F_PURE);
                 if (v == "purectx")     return parseExoticDecl(F_PURE_CTX);

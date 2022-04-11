@@ -36,7 +36,7 @@ let F_SHADOW        = 1 << 23;
                                         ///////////////////
                                         // `true` fields //
 let F_NAMED_ARGS    = 1 << 24;          let F_PREDICATE     = F_NAMED_ARGS;
-let F_OOE_RTL       = 1 << 25;          let F_ENUM          = F_OOE_RTL;
+let F_OOE_RTL       = 1 << 25;
 let F_REST_ARG      = 1 << 26;
 let F_RELAXABLE_REF = 1 << 27;
 
