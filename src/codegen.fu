@@ -337,7 +337,6 @@ pub fn cpp_codegen(implicit module: Module, implicit ctx: Context): CodegenOutpu
         let scp = parseStructCanon(type.canon);
         if (_tfwd.add_once(scp.modid, scp.index))
         {
-            _tfwd_src ~= "struct " ~ id ~ ";\n";
             let decl = declareStruct(id, s);
             _tdef ~= decl;
         }
@@ -347,6 +346,11 @@ pub fn cpp_codegen(implicit module: Module, implicit ctx: Context): CodegenOutpu
 
     fn declareStruct(id: string, s: Struct): string
     {
+        if (s.base)
+            return declarePrimitive(id, s);
+
+        _tfwd_src ~= "struct " ~ id ~ ";\n";
+
         let t = GET(s.target).type;
 
         mut def = "\n                                #ifndef DEF_" ~ id
@@ -388,6 +392,24 @@ pub fn cpp_codegen(implicit module: Module, implicit ctx: Context): CodegenOutpu
 
         def ~= "\n        ;";
         def ~= "\n    }";
+
+        return def ~ "\n};\n                                #endif\n";
+    }
+
+    fn declarePrimitive(id: string, s: Struct): string
+    {
+        let baseprim = primAnnotBase(s.base);
+
+        mut def = "\n                                #ifndef DEF_" ~ id
+                ~ "\n                                #define DEF_" ~ id
+                ~ "\nenum " ~ id ~ ": " ~ baseprim ~ "\n{";
+
+        let members = s.items;
+        for (mut i = 0; i < members.len; i++)
+        {
+            let member = GET(members[i].target);
+            def ~= "\n    " ~ member.name ~ ",";
+        }
 
         return def ~ "\n};\n                                #endif\n";
     }
@@ -1620,7 +1642,7 @@ pub fn cpp_codegen(implicit module: Module, implicit ctx: Context): CodegenOutpu
                 junk = arg.kind == "empty"
                     || arg.kind == "definit"
                     || arg.kind == "fndef"
-                    || arg.kind == "call" && (arg.target.kind == "var" || arg.target.kind == "type" && !arg.items);
+                    || arg.kind == "call" && (arg.target.kind == "var" || arg.target.kind == "type" && !arg.items || arg.target.kind == "enumv");
 
                 if (!junk)
                     fail("Cannot discard ZST arg, kind is `" ~ arg.kind ~ "`.");
@@ -1833,6 +1855,12 @@ pub fn cpp_codegen(implicit module: Module, implicit ctx: Context): CodegenOutpu
 
             if (target.kind == "field")
                 return ARG(0) ~ "." ~ ID(id);
+
+            if (target.kind == "enumv")
+            {
+                typeAnnotBase(target.type);
+                return ID(id);
+            }
 
             if (node.target.isOp)
             {
