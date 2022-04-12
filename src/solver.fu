@@ -1435,22 +1435,14 @@ pub fn solve(
                 return solveInt(node.value, expect);
 
             if (node.kind == "real")
-                return solveNum(node.value, expect);
+                return solveReal(node.value, expect);
         }
 
         if (node.kind == "definit")
             return trySolveDefinit(expect);
 
-        //////////////////////////////////////////////
-        // HACK - Retyping string literals to enums //
-        if (node.kind == "str" && expect.is_enum)
-        {
-            let members = lookupStruct(expect).items;
-            for (mut i = 0; i < members.len; i++)
-                if (members[i].id == node.value)
-                    return clear_refs(expect);
-        }
-        //////////////////////////////////////////////
+        if (node.kind == "str")
+            return solveString(node.value, expect);
 
         return [];
     }
@@ -1736,8 +1728,8 @@ pub fn solve(
         if (k == "continue")    return solveJump(node, kills);
 
         if (k == "int")         return solveInt(node, type);
-        if (k == "real")        return solveNum(node, type);
-        if (k == "str")         return solveStr(node);
+        if (k == "real")        return solveReal(node, type);
+        if (k == "str")         return solveString(node, type);
         if (k == "char")        return solveChar(node);
         if (k == "bool")        return createBool(:node.value);
 
@@ -2461,7 +2453,7 @@ pub fn solve(
         return fail("Bad int literal.");
     }
 
-    fn solveNum(v: string, type: Type): Type
+    fn solveReal(v: string, type: Type): Type
     {
         // TODO `f` suffix
         if (v) {}
@@ -2478,9 +2470,9 @@ pub fn solve(
         solved(node,
              solveInt(node.value, type));
 
-    fn solveNum(node: Node, type: Type): SolvedNode
+    fn solveReal(node: Node, type: Type): SolvedNode
         solved(node,
-             solveNum(node.value, type));
+             solveReal(node.value, type));
 
 
     //
@@ -2490,13 +2482,31 @@ pub fn solve(
         return solved(node, t_byte);
     }
 
-    fn solveStr(node: Node): SolvedNode
+    fn solveString(v: string, type: Type): Type
     {
-        if (!node.value)
+        //////////////////////////////////////////////
+        // HACK - Retyping string literals to enums //
+        if (type && type.is_enum)
+        {
+            let members = lookupStruct(type).items;
+            for (mut i = 0; i < members.len; i++)
+                if (members[i].id == v)
+                    return clear_refs(type);
+        }
+        //////////////////////////////////////////////
+
+        return t_string;
+    }
+
+    fn solveString(node: Node, type: Type): SolvedNode
+    {
+        shadow let type = solveString(node.value, type);
+
+        if (!node.value && t_string.type_isSliceable)
             return createDefinit(
                 add_ref(t_string, Lifetime_temporary));
 
-        return solved(node, t_string);
+        return solved(node, type);
     }
 
     fn createEmpty(kind = "empty", type = t_void, target?: Target): SolvedNode

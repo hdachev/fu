@@ -9523,6 +9523,13 @@ pub fn runTests()
         fn main() "A".test;
     `]);
 
+    ZERO([`
+        enum _0 { A; B };
+    `,`
+        fn test(x: ::_0 = "B") x.i32;
+        fn main() test - _0::B.i32;
+    `]);
+
     SKETCH(`
         enum Test: i32 { A = 1; };
         fn main() A.i32 - 1;
