@@ -95,6 +95,7 @@ pub fn runTests()
     let TODO_relaxer    = fn TODO;
 
     let TODO_Map        = fn TODO;
+    let TODO_rustsemi   = fn TODO;
 
     let SKETCH          = fn TODO;
 
@@ -7876,11 +7877,33 @@ pub fn runTests()
     ZERO(`
         // something complains about no final return
         fn main() {
+            let addret = |a: i32, b: i32| {
+                return a + b;
+            };
+
             let hey = |x: i32| {
                 if !(x & 1)
                     return x;
 
                 // this complains about indentation
+                // TODO should work without the continue
+                <alt>
+                continue "".len     <alt/>
+                "".len.addret(x)    </alt>
+            };
+
+            // and this complains about no match for *(void, void)
+            return hey(0) * hey(1);
+        }
+    `);
+
+    TODO_rustsemi(`
+        // something complains about no final return
+        fn main() {
+            let hey = |x: i32| {
+                if !(x & 1)
+                    return x;
+
                 "".len + x
             };
 
@@ -8512,8 +8535,8 @@ pub fn runTests()
                     if (y[0]) w ~= y;
                     if (w[0] != 17)
                         break :BLOCK w;
-                    x;
-                };
+                    x
+                }
             };
 
             return z[0] + z[z.len - 1];
