@@ -1669,7 +1669,7 @@ pub fn solve(
 
         // Compose error message:
         //  separate pass, so we don't have to worry about unnecessary string concats.
-        error = "Bad call to " ~ id.qID ~ ": ";
+        error = "Bad call to " ~ id.qID ~ " (" ~ args.map(.humanizeType).join(", ") ~ "): ";
 
         let debug = tryMatch__mutargs(:misc_scope, :local_scope, :id, :args, :reorder, :conversions, :flags, :target, :error);
         if (debug)

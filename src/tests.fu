@@ -7873,6 +7873,22 @@ pub fn runTests()
         return sum - 3;
     `);
 
+    ZERO(`
+        // something complains about no final return
+        fn main() {
+            let hey = |x: i32| {
+                if !(x & 1)
+                    return x;
+
+                // this complains about indentation
+                "".len + x
+            };
+
+            // and this complains about no match for *(void, void)
+            return hey(1) * hey(0);
+        }
+    `);
+
 
     // Conversion functions.
 
