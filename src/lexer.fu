@@ -337,7 +337,7 @@ pub fn lex(src: string, fname: string): LexerOutput
             mut esc = false;
             mut ok  = false;
 
-            let col = idx - lidx;
+            let col = idx - lidx - 1/* the quote */;
 
             while (idx < end)
             {
