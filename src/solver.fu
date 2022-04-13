@@ -3934,11 +3934,10 @@ pub fn solve(
             }
 
             //
-            let max = members.len;
             mut min = 0;
             mut args: Argument[];
 
-            for (mut i = 0; i < members.len; i++)
+            if (!isPrimDecl) for (mut i = 0; i < members.len; i++)
             {
                 let member = members[i];
 
@@ -3954,7 +3953,9 @@ pub fn solve(
                 args.push(arg);
             }
 
-            if (max && !min) min++;
+            let max = args.len;
+            if (max && !min)
+                min++;
 
             //
             ref ext         = EXT_mut(out_target);
