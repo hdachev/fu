@@ -1424,7 +1424,8 @@ pub fn solve(
         return node.kind == "int"
             || node.kind == "real"
             || node.kind == "definit"
-            || node.kind == "str";
+            || node.kind == "str"
+            || node.kind == "if" && node.items[1, 3].all(fn couldRetype);
     }
 
     fn tryRetyping(node: SolvedNode, expect: Type): Type
@@ -1444,7 +1445,26 @@ pub fn solve(
         if (node.kind == "str")
             return solveString(node.value, expect);
 
+        if (node.kind == "if")
+        {
+            let left  = tryRetyping(node.items[1], expect);
+            let right = tryRetyping(node.items[2], expect);
+            return left && right
+                && type_trySuper(left, right);
+        }
+
         return [];
+    }
+
+    fn applyRetype(ref node: SolvedNode, retype: Type)
+    {
+        if (node.kind == "if")
+        {
+            applyRetype(node.items[1], retype);
+            applyRetype(node.items[2], retype);
+        }
+
+        node.type = retype;
     }
 
 
@@ -5829,11 +5849,6 @@ pub fn solve(
 
 
     //
-
-    fn applyRetype(ref arg: SolvedNode, retype: Type)
-    {
-        arg.type = retype;
-    }
 
     fn applyConversion(ref arg: SolvedNode, conversion: Target[])
     {

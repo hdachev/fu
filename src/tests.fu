@@ -9530,6 +9530,13 @@ pub fn runTests()
         fn main() test - _0::B.i32;
     `]);
 
+    ZERO(`
+        enum Enum { A; B };
+        fn inner(x: Enum) x.i32;
+        fn outer(x: i32) inner(x & 1 ? "B" : "A");
+        fn main() outer(0);
+    `);
+
     SKETCH(`
         enum Test: i32 { A = 1; };
         fn main() A.i32 - 1;
