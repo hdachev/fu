@@ -417,7 +417,8 @@ pub fn cpp_codegen(implicit module: Module, implicit ctx: Context): CodegenOutpu
         for (mut i = 0; i < members.len; i++)
         {
             let member = GET(members[i].target);
-            def ~= "\n    " ~ id ~ "_" ~ member.name ~ ",";
+            def ~= "\n    " ~ id ~ "_" ~ member.name
+                    ~ " = " ~ cgNode(member.solved, debug: "declarePrimitive") ~ ",";
         }
 
         return def ~ "\n};\n                                #endif\n";

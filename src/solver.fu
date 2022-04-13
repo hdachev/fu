@@ -3810,22 +3810,22 @@ pub fn solve(
 
         mut all_triv = true;
 
-        //
+        // Solve members & check defaults.
         let primType = isPrimDecl && (
             out_type || BUG("Falsy isPrimDecl.out_type"));
 
-        // Struct members, pass 0.
         fn solveMember(shadow node: Node)
         {
             node.kind == "let" || BUG("solveStructMembers_1: " ~ node.kind);
 
-            node.items[LET_INIT] &&
-            node.items[LET_INIT].kind != "definit" &&
-                fail("All structs must be zerofilled by default."
-                    ~ " Please remove the initializer of struct member `" ~ node.value ~ "`.");
+            if (!isPrimDecl)
+                node.items[LET_INIT] &&
+                node.items[LET_INIT].kind != "definit" &&
+                    fail("All structs must be zerofilled by default."
+                        ~ " Please remove the initializer of struct member `" ~ node.value ~ "`.");
 
             // Can't continue/return back/fwd compat.
-            return solveLetLike_dontTouchScope(node, specType: primType);
+            return solveLetLike_dontTouchScope(node, :primType);
         }
 
         let items = node.items[STRUCT_MEMBERS].items;
@@ -3894,6 +3894,70 @@ pub fn solve(
                         structImports.set::add(m);
 
                     structImports.set::add(field.type.lookupTypeImports());
+                }
+            }
+
+            // Primitives - index enum variants & flags.
+            if (isPrimDecl)
+            {
+                let signed      = baseprim[0] == 'i';
+                let unsigned    = baseprim[0] == 'u';
+
+                let size_str    = baseprim[1, baseprim.len];
+                let size: u8    = size_str == "8"   ? 8
+                                : size_str == "16"  ? 16
+                                : size_str == "32"  ? 32
+                                : size_str == "64"  ? 64
+                                : size_str == "128" ? 128
+                                                    : BUG("Enum auto-incrementer: unknown prim size: " ~ size_str);
+
+                mut last: intlit::Intlit;
+                for (mut i = 0; i < innerScope.len; i++)
+                {
+                    ref init = innerScope[i].target.GET_mut.solved;
+
+                    init = members[i].items[LET_INIT];
+                    _here = init.token;
+
+                    // Parse & reinit sequence.
+                    if (init)
+                    {
+                        if (init.kind == "int")
+                        {
+                            last = intlit::Intlit(init.value);
+                            if (last.error)
+                                fail(last.error);
+
+                            continue;
+                        }
+
+                        last.error = "Cannot auto-increment, please provide an explicit value.";
+                    }
+
+                    // Auto-increment.
+                    last.error      && fail(last.error);
+                    last.negative   && fail(
+                        "Previous constant is negative, not sure how to increment, please specify an explicit value.");
+
+                    let next = intlit::Intlit(:signed, :unsigned,
+                        absval: kind == "flags"
+                            ? last.absval << 1
+                            : last.absval  + 1);
+
+                    next.error || next.absval > last.absval || fail(
+                        next.error || "Failed to auto-increment, range exhausted.");
+
+                    let minsize = signed ? next.minsize_i : next.minsize_u;
+                    if (minsize > size)
+                        BUG("Primitive range exhausted: requires " ~ minsize ~ " bits, got " ~ size ~ ".");
+
+                    last = next;
+
+                    //
+                    if (signed || unsigned)
+                        init = SolvedNode(kind: "int", type: primType, value: (next.negative && "-") ~ next.absval);
+                    else
+                        fail("Cannot auto-increment this type: " ~ baseprim);
                 }
             }
         }
@@ -4578,7 +4642,7 @@ pub fn solve(
     //
 
     fn solveLetLike_dontTouchScope(
-        node: Node, specType!?: Type): SolvedNode
+        node: Node, specType!?: Type, primType!?: Type): SolvedNode
     {
         let n_annot = node.items[LET_TYPE];
         let annot   = n_annot && n_annot.kind != "typeunion" && evalTypeAnnot(n_annot);
@@ -4590,7 +4654,7 @@ pub fn solve(
         if (specType.is_mutref && !(flags & F_REF || annot.is_mutref))
             flags  |= F_RELAXABLE_REF;
 
-        shadow let annot = specType || annot;
+        shadow let annot = specType || primType || annot;
 
         shadow let annot =
             annot && node.flags & F_REF

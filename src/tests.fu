@@ -9450,7 +9450,7 @@ pub fn runTests()
     `);
 
     ZERO(`
-        enum Enum { None };
+        enum Enum { None = 0 };
 
         fn main() {
             let e = None;
@@ -9461,11 +9461,21 @@ pub fn runTests()
     `);
 
     ZERO(`
-        enum Test: i32 { A; B; C };
+        enum Test { A = 5; B; C };
         fn main()
             <fail - bad call>
-            C - 2;      <pass/>
-            C.i32 - 2;  </fail>
+            C - 7;      <pass/>
+            C.i32 - 7;  </fail>
+    `);
+
+    ZERO(`
+        <alt>
+        primitive <alt/>
+        enum      </alt> Test: i32 { A1; A2; M5 = 5; A6 };
+
+        fn main()
+            A1.i32 + A2.i32 * 10 + M5.i32 * 100 + A6.i32 * 1000
+                == 6521 ? 0 : 1;
     `);
 
     ZERO(`
@@ -9477,20 +9487,20 @@ pub fn runTests()
 
     ZERO(`
         primitive PrimA: i32;
-        primitive PrimB: PrimA { Zero; One };
+        primitive PrimB: PrimA { Zero = 0; One };
         fn main() (One - 1).i32;
     `);
 
     ZERO(`
         enum EnumA: i32;
-        enum EnumB: EnumA { Zero };
+        enum EnumB: EnumA { Zero = 0 };
         fn main() Zero.i32;
     `);
 
     ZERO(`
-        enum Hey { foo; bar };
+        enum Hey { foo; };
         fn test(hey: Hey) hey.i32;
-        fn main() test("bar") - 1;
+        fn main() test("foo") - 1;
     `);
 
     ZERO(`
@@ -9520,7 +9530,7 @@ pub fn runTests()
         enum _0 { A; B };
     `,`
         fn test(::_0) _0.i32;
-        fn main() "A".test;
+        fn main() "A".test - _0::A.i32;
     `]);
 
     ZERO([`
@@ -9531,25 +9541,10 @@ pub fn runTests()
     `]);
 
     ZERO(`
-        enum Enum { A; B };
+        enum Enum { A = 0; B };
         fn inner(x: Enum) x.i32;
         fn outer(x: i32) inner(x & 1 ? "B" : "A");
         fn main() outer(0);
-    `);
-
-    SKETCH(`
-        enum Test: i32 { A = 1; };
-        fn main() A.i32 - 1;
-    `);
-
-    SKETCH(`
-        enum Test { A = 1; B; };
-        fn main() B.i32 - 2;
-    `);
-
-    SKETCH(`
-        enum Test { A; B = 2; C; };
-        fn main() C.i32 - 3;
     `);
 
     SKETCH(`
