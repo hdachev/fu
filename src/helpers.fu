@@ -1,24 +1,24 @@
 
-pub fn only(s: [$T])
+fn only(s: [$T])
     s.len == 1 ? s[0] : throw (
         "len != 1: " ~ s.len);
 
-pub fn first(s: $T[])
+fn first(s: $T[])
     s.len ? s[0] : throw("len == 0");
 
-pub fn last(s: $T[])
+fn last(s: $T[])
     s.len ? s[s.len - 1] : throw("len == 0");
 
-pub fn if_only(s: $T[])
+fn if_only(s: $T[])
     s.len == 1 && s[0];
 
-pub fn if_first(s: $T[])
+fn if_first(s: $T[])
     s.len && s[0];
 
-pub fn if_last(s: $T[])
+fn if_last(s: $T[])
     s.len && s[s.len - 1];
 
-pub fn grow_if_oob(ref a: $T[], i: i32): &mut $T
+fn grow_if_oob(ref a: $T[], i: i32): &mut $T
 {
     if (a.len <= i)
         a.grow(i + 1);
@@ -26,13 +26,13 @@ pub fn grow_if_oob(ref a: $T[], i: i32): &mut $T
     return a[i];
 }
 
-pub fn grow_oob(ref a: $T[], i: i32): &mut $T
+fn grow_oob(ref a: $T[], i: i32): &mut $T
 {
     a.grow(i + 1);
     return a[i];
 }
 
-pub fn grow_oob(ref a: $T[], i: i32, fill!: $T): &mut $T
+fn grow_oob(ref a: $T[], i: i32, fill!: $T): &mut $T
 {
     mut l0 = a.len;
     if (l0 <= i)
@@ -45,10 +45,10 @@ pub fn grow_oob(ref a: $T[], i: i32, fill!: $T): &mut $T
     return a[i];
 }
 
-pub fn unless_oob(a: [$T], i: i32)
+fn unless_oob(a: [$T], i: i32)
     i < a.len && a[i];
 
-pub fn try_steal(ref a: [$T], i: i32)
+fn try_steal(ref a: [$T], i: i32)
 {
     if (i < a.len)
     {
@@ -60,7 +60,7 @@ pub fn try_steal(ref a: [$T], i: i32)
     return [];
 }
 
-pub fn hasIdentifierChars(id: string)
+fn hasIdentifierChars(id: string)
 {
     for (mut i = 0; i < id.len; i++)
     {
@@ -79,7 +79,7 @@ pub fn hasIdentifierChars(id: string)
 
 //
 
-pub fn map(a: [$T], fn)
+fn map(a: [$T], fn)
 {
     mut res: fn($T, i?: a.len)[];
     res.grow_junk(a.len);
@@ -89,13 +89,34 @@ pub fn map(a: [$T], fn)
     return res;
 }
 
-pub fn each(a: [$T], fn)
+fn each(a: [$T], fn)
 {
     for (mut i = 0; i < a.len; i++)
         fn(a[i], i?: i);
 }
 
-pub fn clone(a: $T)
+fn all(a: [$T], fn)
+{
+    for (mut i = 0; i < a.len; i++)
+        if (!fn(a[i]))
+            return false;
+
+    return true;
+}
+
+fn some(a: [$T], fn)
+{
+    for (mut i = 0; i < a.len; i++)
+        if (fn(a[i]))
+            return true;
+
+    return false;
+}
+
+
+//
+
+fn clone(a: $T)
 case ($T.is::copy) a;
 case ($T -> [$U]) a.map(fn clone);
 case ($T -> $T)
@@ -107,7 +128,7 @@ case ($T -> $T)
     return res;
 }
 
-pub fn steal(a: $T[], start: i32, end: i32)
+fn steal(a: $T[], start: i32, end: i32)
 {
     let size = end - start;
 
@@ -121,7 +142,7 @@ pub fn steal(a: $T[], start: i32, end: i32)
     return ret;
 }
 
-pub fn remove(ref a: $T[], predicate)
+fn remove(ref a: $T[], predicate)
 {
     let size = a.len;
     mut keep = 0;
@@ -144,7 +165,7 @@ pub fn remove(ref a: $T[], predicate)
 
 //
 
-pub fn parse10u32(ref offset: i32, str: string)
+fn parse10u32(ref offset: i32, str: string)
 {
     mut result: u32;
     while (offset < str.len)
@@ -160,7 +181,7 @@ pub fn parse10u32(ref offset: i32, str: string)
     return result;
 }
 
-pub fn parse10s32(ref offset: i32, str: string)
+fn parse10s32(ref offset: i32, str: string)
 {
     if (offset >= str.len)
         return 0;
@@ -177,7 +198,7 @@ pub fn parse10s32(ref offset: i32, str: string)
 
 struct Mi { modid: i32; index: i32 };
 
-pub fn parseMi(ref offset: i32, str: string)
+fn parseMi(ref offset: i32, str: string)
 {
     if (offset >= str.len)
         return [];
@@ -261,7 +282,7 @@ pub fn parseMi(ref offset: i32, str: string)
     return Mi(:modid, :index);
 }
 
-pub fn appendMi(ref str: string, mut modid!: i32, mut index!: i32)
+fn appendMi(ref str: string, mut modid!: i32, mut index!: i32)
 {
     // M
     if (modid < 0)
@@ -300,7 +321,7 @@ pub fn appendMi(ref str: string, mut modid!: i32, mut index!: i32)
 //   I think we start matching the .str autocall too early,
 //    no time now.
 
-pub fn str(arr: [$T]) case (!($T -> byte))
+fn str(arr: [$T]) case (!($T -> byte))
 {
     if (!arr)
         return "[]";
@@ -318,7 +339,7 @@ pub fn str(arr: [$T]) case (!($T -> byte))
 
 // */
 
-pub fn str(arr: [$T]) case ($T.is::arithmetic)
+fn str(arr: [$T]) case ($T.is::arithmetic)
 {
     mut result = "";
     for (mut i = 0; i < arr.len; i++)
