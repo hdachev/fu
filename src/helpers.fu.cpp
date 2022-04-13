@@ -1,9 +1,8 @@
-
-#include <fu/defer.h>
 #include <fu/int.h>
 #include <fu/str.h>
-#include <fu/vec/concat_one.h>
 #include <fu/view.h>
+#include <fu/defer.h>
+#include <fu/vec/concat_one.h>
 
 struct s_Mi;
 
@@ -23,9 +22,9 @@ struct s_Mi
 };
                                 #endif
 
-#ifndef FU_NO_FDEFs
+#ifndef fu_NO_fdefs
 
-bool hasIdentifierChars_85KQkyE0(fu::view<char> id)
+bool hasIdentifierChars_ZCtM7908(fu::view<char> id)
 {
     for (int i = 0; i < id.size(); i++)
     {
@@ -37,7 +36,7 @@ bool hasIdentifierChars_85KQkyE0(fu::view<char> id)
     return false;
 }
 
-unsigned parse10u32_t6R8uPsY(int& offset, fu::view<char> str)
+unsigned parse10u32_mPp6Ulzh(int& offset, fu::view<char> str)
 {
     /*MOV*/ unsigned result {};
     while (offset < str.size())
@@ -52,16 +51,16 @@ unsigned parse10u32_t6R8uPsY(int& offset, fu::view<char> str)
     return /*NRVO*/ result;
 }
 
-int parse10s32_t6R8uPsY(int& offset, fu::view<char> str)
+int parse10s32_mPp6Ulzh(int& offset, fu::view<char> str)
 {
     if ((offset >= str.size()))
         return 0;
 
     const int mul = ((str[offset] == '-') ? ((void)offset++, -1) : +1);
-    return int(parse10u32_t6R8uPsY(offset, str)) * mul;
+    return int(parse10u32_mPp6Ulzh(offset, str)) * mul;
 }
 
-s_Mi parseMi_t6R8uPsY(int& offset, fu::view<char> str)
+s_Mi parseMi_mPp6Ulzh(int& offset, fu::view<char> str)
 {
     if ((offset >= str.size()))
         return s_Mi{};
@@ -132,7 +131,7 @@ s_Mi parseMi_t6R8uPsY(int& offset, fu::view<char> str)
     return s_Mi { int(modid), int(index) };
 }
 
-void appendMi_RIPPDRFZ(fu_STR& str, int modid, int index)
+void appendMi_KujYnsPj(fu_STR& str, int modid, int index)
 {
     if (modid < 0)
     {

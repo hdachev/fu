@@ -1,5 +1,5 @@
 
-#ifndef FU_NO_FDEFs
+#ifndef fu_NO_fdefs
 
 int Fx_Misc_haGyoCZc()
 {

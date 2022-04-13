@@ -1,20 +1,19 @@
-
-#include <fu/default.h>
 #include <fu/str.h>
 #include <fu/vec.h>
+#include <fu/view.h>
+#include <fu/default.h>
 #include <fu/vec/cmp.h>
+#include <fu/vec/slice.h>
 #include <fu/vec/concat.h>
 #include <fu/vec/concat_one.h>
-#include <fu/vec/slice.h>
 #include <fu/vec/view_assign.h>
-#include <fu/view.h>
 
-fu_STR join_lq7BzT61(fu::view<char>, const fu_STR&);
-fu_STR normalize_9EcF53rc(const fu_STR&);
+fu_STR normalize_KqRBcvmh(const fu_STR&);
+fu_STR join_Lfq50XKd(fu::view<char>, const fu_STR&);
 
-#ifndef FU_NO_FDEFs
+#ifndef fu_NO_fdefs
 
-fu_STR ext_9EcF53rc(const fu_STR& path)
+fu_STR ext_KqRBcvmh(const fu_STR& path)
 {
     for (int i = path.size(); i-- > 0; )
     {
@@ -29,7 +28,7 @@ fu_STR ext_9EcF53rc(const fu_STR& path)
     return fu_STR{};
 }
 
-fu_STR noext_9EcF53rc(const fu_STR& path)
+fu_STR noext_KqRBcvmh(const fu_STR& path)
 {
     for (int i = path.size(); i-- > 0; )
     {
@@ -44,7 +43,7 @@ fu_STR noext_9EcF53rc(const fu_STR& path)
     return fu_STR{};
 }
 
-fu_STR dirname_9EcF53rc(const fu_STR& path)
+fu_STR dirname_KqRBcvmh(const fu_STR& path)
 {
     for (int i = (path.size() - 1); i-- > 0; )
     {
@@ -55,7 +54,7 @@ fu_STR dirname_9EcF53rc(const fu_STR& path)
     return "/"_fu;
 }
 
-fu_STR filename_9EcF53rc(const fu_STR& path)
+fu_STR filename_KqRBcvmh(const fu_STR& path)
 {
     for (int i = path.size(); i-- > 0; )
     {
@@ -66,9 +65,9 @@ fu_STR filename_9EcF53rc(const fu_STR& path)
     return fu_STR(path);
 }
 
-                                #ifndef DEFt_find_G4nAwoCx
-                                #define DEFt_find_G4nAwoCx
-inline int find_G4nAwoCx(fu::view<char> a, const char b, int start)
+                                #ifndef DEF_find_yd8BAtiL
+                                #define DEF_find_yd8BAtiL
+inline int find_yd8BAtiL(fu::view<char> a, const char b, int start)
 {
     start = ((start > 0) ? int(start) : 0);
     for (/*MOV*/ int i = start; i < a.size(); i++)
@@ -81,20 +80,24 @@ inline int find_G4nAwoCx(fu::view<char> a, const char b, int start)
 }
                                 #endif
 
-                                #ifndef DEFt_split_01AlOXDY
-                                #define DEFt_split_01AlOXDY
-inline void split_01AlOXDY(const fu_STR& str, const char sep, fu_VEC<fu_STR>& result)
+                                #ifndef DEF_split_hA7qWWMN
+                                #define DEF_split_hA7qWWMN
+inline void split_hA7qWWMN(const fu_STR& str, const char sep, fu_VEC<fu_STR>& result)
 {
     int last = 0;
     int next = 0;
-    while (((next = find_G4nAwoCx(str, sep, int(last))) >= 0))
+    const int N = 1;
+    if (N)
     {
-
+        while (((next = find_yd8BAtiL(str, sep, int(last))) >= 0))
         {
-            fu_STR substr = fu::slice(str, last, next);
-            result += fu_STR(substr);
+
+            {
+                fu_STR substr = fu::slice(str, last, next);
+                result += fu_STR(substr);
+            };
+            last = (next + N);
         };
-        last = (next + 1);
     };
     if (last)
     {
@@ -107,26 +110,27 @@ inline void split_01AlOXDY(const fu_STR& str, const char sep, fu_VEC<fu_STR>& re
 }
                                 #endif
 
-                                #ifndef DEFt_split_3yRdKyg4
-                                #define DEFt_split_3yRdKyg4
-inline fu_VEC<fu_STR> split_3yRdKyg4(const fu_STR& str, const char sep)
+                                #ifndef DEF_split_cnCAmU7Y
+                                #define DEF_split_cnCAmU7Y
+inline fu_VEC<fu_STR> split_cnCAmU7Y(const fu_STR& str, const char sep)
 {
     /*MOV*/ fu_VEC<fu_STR> result {};
-    split_01AlOXDY(str, sep, result);
+    split_hA7qWWMN(str, sep, result);
     return /*NRVO*/ result;
 }
                                 #endif
 
-                                #ifndef DEFt_join_YMBOk1E0
-                                #define DEFt_join_YMBOk1E0
-inline fu_STR join_YMBOk1E0(fu::view<fu_STR> a, const char sep)
+                                #ifndef DEF_join_T10hQzXB
+                                #define DEF_join_T10hQzXB
+inline fu_STR join_T10hQzXB(fu::view<fu_STR> a, const char sep)
 {
     if (a.size() < 2)
         return fu_STR((a.size() ? a[0] : (*(const fu_STR*)fu::NIL)));
 
+    const int N = 1;
     int size = a[0].size();
     for (int i = 1; i < a.size(); i++)
-        size += (1 + a[i].size());
+        size += (N + a[i].size());
 
     /*MOV*/ fu_STR res {};
     res.grow<false>(size);
@@ -137,7 +141,7 @@ inline fu_STR join_YMBOk1E0(fu::view<fu_STR> a, const char sep)
     {
         fu::view<char> range = a[i_1];
         res.mutref(size) = sep;
-        size += 1;
+        size += N;
         fu::view_assign(fu::get_view_mut(res, size, (size + range.size())), range);
         size += range.size();
     };
@@ -145,9 +149,9 @@ inline fu_STR join_YMBOk1E0(fu::view<fu_STR> a, const char sep)
 }
                                 #endif
 
-fu_STR normalize_9EcF53rc(const fu_STR& p)
+fu_STR normalize_KqRBcvmh(const fu_STR& p)
 {
-    fu_VEC<fu_STR> path = split_3yRdKyg4(p, '/');
+    fu_VEC<fu_STR> path = split_cnCAmU7Y(p, '/');
     for (int i = path.size(); i-- > 0; )
     {
         const fu_STR& part = path[i];
@@ -165,10 +169,10 @@ fu_STR normalize_9EcF53rc(const fu_STR& p)
 
         };
     };
-    return join_YMBOk1E0(path, '/');
+    return join_T10hQzXB(path, '/');
 }
 
-fu_STR relative_lq7BzT61(fu::view<char> from, const fu_STR& to)
+fu_STR relative_Lfq50XKd(fu::view<char> from, const fu_STR& to)
 {
     const int min = ((from.size() < to.size()) ? from.size() : to.size());
     int same = 0;
@@ -194,25 +198,25 @@ fu_STR relative_lq7BzT61(fu::view<char> from, const fu_STR& to)
     return /*NRVO*/ res;
 }
 
-                                #ifndef DEFt_starts_3yRdKyg4
-                                #define DEFt_starts_3yRdKyg4
-inline bool starts_3yRdKyg4(fu::view<char> a, const char with)
+                                #ifndef DEF_starts_cnCAmU7Y
+                                #define DEF_starts_cnCAmU7Y
+inline bool starts_cnCAmU7Y(fu::view<char> a, const char with)
 {
     return a.size() && (a[0] == with);
 }
                                 #endif
 
-                                #ifndef DEFt_ends_3yRdKyg4
-                                #define DEFt_ends_3yRdKyg4
-inline bool ends_3yRdKyg4(fu::view<char> a, const char with)
+                                #ifndef DEF_ends_cnCAmU7Y
+                                #define DEF_ends_cnCAmU7Y
+inline bool ends_cnCAmU7Y(fu::view<char> a, const char with)
 {
     return a.size() && (a[(a.size() - 1)] == with);
 }
                                 #endif
 
-fu_STR join_lq7BzT61(fu::view<char> a, const fu_STR& b)
+fu_STR join_Lfq50XKd(fu::view<char> a, const fu_STR& b)
 {
-    return normalize_9EcF53rc((starts_3yRdKyg4(b, '/') ? fu_STR(b) : (ends_3yRdKyg4(a, '/') ? (a + b) : ((a + '/') + b))));
+    return normalize_KqRBcvmh((starts_cnCAmU7Y(b, '/') ? fu_STR(b) : (ends_cnCAmU7Y(a, '/') ? (a + b) : ((a + '/') + b))));
 }
 
 #endif

@@ -1,11 +1,14 @@
-
 #include <fu/str.h>
 #include <fu/vec.h>
+#include <fu/view.h>
+#include <fu/never.h>
+#include <fu/default.h>
+#include <fu/vec/concat.h>
 
-struct s_Lifetime;
-struct s_Region;
 struct s_Type;
 struct s_ValueType;
+struct s_Lifetime;
+struct s_Region;
 
                                 #ifndef DEF_s_ValueType
                                 #define DEF_s_ValueType
@@ -67,18 +70,24 @@ struct s_Type
 };
                                 #endif
 
-#ifndef FU_NO_FDEFs
+#ifndef fu_NO_fdefs
 
 bool is_primitive_oPp5yWwB(const s_Type& t)
 {
     const char c = t.vtype.canon[0];
-    return (c == 'u') || (c == 'i') || (c == 'f') || (c == 'b');
+    return (c == 'u') || (c == 'i') || (c == 'f') || (c == 'b') || (c == 'c') || (c == 'm') || (c == 'e');
 }
 
 bool is_arithmetic_oPp5yWwB(const s_Type& t)
 {
     const char c = t.vtype.canon[0];
     return (c == 'u') || (c == 'i') || (c == 'f');
+}
+
+bool is_bitfield_oPp5yWwB(const s_Type& t)
+{
+    const char c = t.vtype.canon[0];
+    return (c == 'u') || (c == 'i') || (c == 'm');
 }
 
 bool is_integral_oPp5yWwB(const s_Type& t)
@@ -97,6 +106,33 @@ bool is_floating_pt_oPp5yWwB(const s_Type& t)
 {
     const char c = t.vtype.canon[0];
     return c == 'f';
+}
+
+bool is_boolean_oPp5yWwB(const s_Type& t)
+{
+    const char c = t.vtype.canon[0];
+    return c == 'f';
+}
+
+bool is_enum_oPp5yWwB(const s_Type& t)
+{
+    const char c = t.vtype.canon[0];
+    return c == 'e';
+}
+
+int basePrimPrefixLen_d7UAjAhk(fu::view<char> canon)
+{
+    char c = canon[0];
+    if (!((c == 'i') || (c == 'u') || (c == 'f') || (c == 'b') || (c == 'c') || (c == 'e') || (c == 'm')))
+        fu::fail(("basePrimPrefix: bad char0: "_fu + canon));
+
+    for (/*MOV*/ int offset = 1; ; offset++)
+    {
+        c = ((offset < canon.size()) ? canon[offset] : (*(const char*)fu::NIL));
+        if ((c < '0') || (c > '9'))
+            return /*NRVO*/ offset;
+
+    };
 }
 
 #endif

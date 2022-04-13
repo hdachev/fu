@@ -1,12 +1,17 @@
-
 #include <chrono>
 
-#ifndef FU_NO_FDEFs
+#pragma GCC diagnostic push
+#ifdef __clang__
+#pragma GCC diagnostic warning "-Wunknown-warning-option"
+#endif
+#pragma GCC diagnostic ignored "-Wmisleading-indentation"
+
+
+#ifndef fu_NO_fdefs
 
 double hr_CPFg3qvV()
 {
     /*MOV*/ double timestamp {};
-
 
         timestamp =
             std::chrono::duration<double>(
@@ -20,7 +25,6 @@ double utc_CPFg3qvV()
 {
     /*MOV*/ double timestamp {};
 
-
         timestamp =
             std::chrono::duration<double>(
                 std::chrono::system_clock::now().time_since_epoch())
@@ -30,3 +34,5 @@ double utc_CPFg3qvV()
 }
 
 #endif
+
+#pragma GCC diagnostic pop

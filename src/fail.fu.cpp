@@ -1,51 +1,49 @@
-
-#include <fu/decstr.h>
 #include <fu/int.h>
-#include <fu/never.h>
 #include <fu/str.h>
 #include <fu/vec.h>
+#include <fu/view.h>
+#include <fu/never.h>
+#include <fu/decstr.h>
 #include <fu/vec/concat.h>
 #include <fu/vec/concat_one.h>
-#include <fu/view.h>
 
-struct s_Argument;
-struct s_BitSet;
-struct s_CodegenOutput;
+struct s_TokenIdx;
 struct s_Context;
-struct s_Extended;
-struct s_Helpers;
-struct s_LexerOutput;
-struct s_Lifetime;
-struct s_Map_JBAFFW0D;
 struct s_Module;
 struct s_ModuleInputs;
-struct s_ModuleOutputs;
-struct s_ModuleStat;
-struct s_ModuleStats;
-struct s_Node;
-struct s_Overload;
+struct s_LexerOutput;
+struct s_Token;
 struct s_ParserOutput;
-struct s_RWRanges;
-struct s_Region;
-struct s_Scope;
-struct s_ScopeItem;
-struct s_ScopeMemo;
-struct s_ScopeSkip;
-struct s_ScopeSkipMemos;
-struct s_SolvedNode;
-struct s_SolverOutput;
+struct s_Node;
+struct s_ModuleOutputs;
 struct s_Struct;
 struct s_Target;
-struct s_Template;
-struct s_Token;
-struct s_TokenIdx;
+struct s_ScopeItem;
+struct s_SolverOutput;
+struct s_SolvedNode;
+struct s_Helpers;
 struct s_Type;
 struct s_ValueType;
-
-const fu_STR& _fname_GF4X2sQy(const s_TokenIdx&, const s_Context&);
+struct s_Lifetime;
+struct s_Region;
+struct s_RWRanges;
+struct s_Scope;
+struct s_Overload;
+struct s_Extended;
+struct s_Argument;
+struct s_BitSet;
+struct s_Template;
+struct s_ScopeMemo;
+struct s_ScopeSkipMemos;
+struct s_ScopeSkip;
+struct s_CodegenOutput;
+struct s_ModuleStats;
+struct s_ModuleStat;
+struct s_Map_gb6sFwC7;
 const fu_STR& getModuleSrc_7k0snHP1(int, const s_Context&);
 const s_Token& _token_GF4X2sQy(const s_TokenIdx&, const s_Context&);
-fu_STR formatCodeSnippet_tVfuVdgh(const fu_STR&, const s_Token&, const s_Token&, int);
+const fu_STR& _fname_GF4X2sQy(const s_TokenIdx&, const s_Context&);
+fu_STR formatCodeSnippet_2lMUJMMX(const fu_STR&, const s_Token&, const s_Token&, int);
 
                                 #ifndef DEF_s_TokenIdx
                                 #define DEF_s_TokenIdx
@@ -195,6 +193,7 @@ struct s_Struct
     fu_VEC<s_ScopeItem> items;
     fu_VEC<int> imports;
     fu_VEC<s_Target> converts;
+    fu_STR base;
     int flat_cnt;
     bool all_triv;
     explicit operator bool() const noexcept
@@ -205,6 +204,7 @@ struct s_Struct
             || items
             || imports
             || converts
+            || base
             || flat_cnt
             || all_triv
         ;
@@ -577,6 +577,7 @@ struct s_CodegenOutput
     fu_VEC<fu_STR> link;
     fu_VEC<fu_STR> include_dirs;
     fu_VEC<fu_STR> extra_sources;
+    fu_VEC<int> live;
     explicit operator bool() const noexcept
     {
         return false
@@ -584,6 +585,7 @@ struct s_CodegenOutput
             || link
             || include_dirs
             || extra_sources
+            || live
         ;
     }
 };
@@ -679,9 +681,9 @@ struct s_Module
 };
                                 #endif
 
-                                #ifndef DEF_s_Map_JBAFFW0D
-                                #define DEF_s_Map_JBAFFW0D
-struct s_Map_JBAFFW0D
+                                #ifndef DEF_s_Map_gb6sFwC7
+                                #define DEF_s_Map_gb6sFwC7
+struct s_Map_gb6sFwC7
 {
     fu_VEC<fu_STR> keys;
     fu_VEC<fu_STR> vals;
@@ -700,8 +702,8 @@ struct s_Map_JBAFFW0D
 struct s_Context
 {
     fu_VEC<s_Module> modules;
-    s_Map_JBAFFW0D files;
-    s_Map_JBAFFW0D fuzzy;
+    s_Map_gb6sFwC7 files;
+    s_Map_gb6sFwC7 fuzzy;
     s_Context(const s_Context&) = delete;
     s_Context(s_Context&&) = default;
     s_Context& operator=(const s_Context&) = delete;
@@ -717,29 +719,29 @@ struct s_Context
 };
                                 #endif
 
-#ifndef FU_NO_FDEFs
+#ifndef fu_NO_fdefs
 
-                                #ifndef DEFt_x7E_KclJlPSOsdf
-                                #define DEFt_x7E_KclJlPSOsdf
+                                #ifndef DEF_x7E_PEYL9mMAprj
+                                #define DEF_x7E_PEYL9mMAprj
 inline fu_STR x7E(fu::view<char> a, fu::view<char> b)
 {
     return a + b;
 }
                                 #endif
 
-[[noreturn]] fu::never FAIL_1XGXUxQg(fu::view<char> fname, const fu_STR& src, const s_Token& token, fu::view<char> reason)
+[[noreturn]] fu::never FAIL_gktpJKx6(fu::view<char> fname, const fu_STR& src, const s_Token& token, fu::view<char> reason)
 {
     fu_STR addr = x7E((x7E("@"_fu, fu::i64dec(token.line)) + ":"_fu), fu::i64dec(token.col));
-    fu_STR snippet = formatCodeSnippet_tVfuVdgh(src, token, token, 2);
+    fu_STR snippet = formatCodeSnippet_2lMUJMMX(src, token, token, 2);
     fu::fail((((((((fname + ' ') + addr) + ":\n\n"_fu) + snippet) + "\n\t"_fu) + reason) + "\n"_fu));
 }
 
-[[noreturn]] fu::never FAIL_FsVimAHf(fu::view<char> reason, const s_TokenIdx& _here, const s_Context& ctx)
+[[noreturn]] fu::never FAIL_QjCEbuxM(fu::view<char> reason, const s_TokenIdx& _here, const s_Context& ctx)
 {
     const fu_STR& src = getModuleSrc_7k0snHP1(_here.modid, ctx);
     const s_Token& token = _token_GF4X2sQy(_here, ctx);
     fu::view<char> fname = _fname_GF4X2sQy(_here, ctx);
-    FAIL_1XGXUxQg(fname, src, token, reason);
+    FAIL_gktpJKx6(fname, src, token, reason);
 }
 
 void HERE_fVfHq6aR(const s_TokenIdx& node, s_TokenIdx& _here)
@@ -749,9 +751,9 @@ void HERE_fVfHq6aR(const s_TokenIdx& node, s_TokenIdx& _here)
 
 }
 
-[[noreturn]] fu::never BUG_patsWWTe(fu_STR&& reason, const s_TokenIdx& _here, const s_Context& ctx)
+[[noreturn]] fu::never BUG_XksxYQ3i(fu_STR&& reason, const s_TokenIdx& _here, const s_Context& ctx)
 {
-    FAIL_FsVimAHf(("COMPILER BUG:\n\n\t"_fu + (reason ? fu_STR(reason) : "Assertion failed."_fu)), _here, ctx);
+    FAIL_QjCEbuxM(("COMPILER BUG:\n\n\t"_fu + (reason ? fu_STR(reason) : "Assertion failed."_fu)), _here, ctx);
 }
 
 #endif

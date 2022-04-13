@@ -1,10 +1,10 @@
-
 #include <fu/int.h>
 #include <fu/str.h>
 
-#ifndef FU_NO_FDEFs
 
-fu_STR upper_Z2cjwPPO(/*MOV*/ fu_STR&& str)
+#ifndef fu_NO_fdefs
+
+fu_STR upper_FZjKqN6X(/*MOV*/ fu_STR&& str)
 {
     for (int i = 0; i < str.size(); i++)
     {
@@ -16,7 +16,7 @@ fu_STR upper_Z2cjwPPO(/*MOV*/ fu_STR&& str)
     return static_cast<fu_STR&&>(str);
 }
 
-fu_STR lower_Z2cjwPPO(/*MOV*/ fu_STR&& str)
+fu_STR lower_FZjKqN6X(/*MOV*/ fu_STR&& str)
 {
     for (int i = 0; i < str.size(); i++)
     {
@@ -28,12 +28,12 @@ fu_STR lower_Z2cjwPPO(/*MOV*/ fu_STR&& str)
     return static_cast<fu_STR&&>(str);
 }
 
-char upper_uI3peNuh(const char c)
+char upper_3zvN02ND(const char c)
 {
     return (((c >= 'a') && (c <= 'z')) ? char((int(fu::u8(c)) + (int(fu::u8('A')) - int(fu::u8('a'))))) : char(c));
 }
 
-char lower_uI3peNuh(const char c)
+char lower_3zvN02ND(const char c)
 {
     return (((c >= 'A') && (c <= 'Z')) ? char((int(fu::u8(c)) + (int(fu::u8('a')) - int(fu::u8('A'))))) : char(c));
 }

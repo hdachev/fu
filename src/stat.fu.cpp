@@ -1,13 +1,11 @@
-
+#include <fu/str.h>
+#include <fu/view.h>
+#include <fu/print.h>
 #include <fu/decstr.h>
 #include <fu/mem/arc.h>
-#include <fu/print.h>
-#include <fu/str.h>
 #include <fu/vec/concat.h>
-#include <fu/view.h>
 
 struct s_ModuleStat;
-
 double hr_CPFg3qvV();
 
                                 #ifndef DEF_s_ModuleStat
@@ -28,7 +26,7 @@ struct s_ModuleStat
 };
                                 #endif
 
-#ifndef FU_NO_FDEFs
+#ifndef fu_NO_fdefs
 
 s_ModuleStat operator+(const s_ModuleStat& a, const s_ModuleStat& b)
 {
@@ -52,23 +50,23 @@ s_ModuleStat ModuleStat_now_pUbtfzLn()
     return s_ModuleStat { hr_CPFg3qvV(), fu_ARC::ALLOC_STAT_COUNT(), fu_ARC::ALLOC_STAT_BYTES() };
 }
 
-                                #ifndef DEFt_x7E_KclJlPSOsdf
-                                #define DEFt_x7E_KclJlPSOsdf
+                                #ifndef DEF_x7E_PEYL9mMAprj
+                                #define DEF_x7E_PEYL9mMAprj
 inline fu_STR x7E(fu::view<char> a, fu::view<char> b)
 {
     return a + b;
 }
                                 #endif
 
-                                #ifndef DEFt_x7E_KclJlPSOsdf
-                                #define DEFt_x7E_KclJlPSOsdf
+                                #ifndef DEF_x7E_PEYL9mMAprj
+                                #define DEF_x7E_PEYL9mMAprj
 inline fu_STR x7E(fu::view<char> a, fu::view<char> b)
 {
     return a + b;
 }
                                 #endif
 
-void ModuleStat_print_WPxitUbE(const s_ModuleStat& a, const fu_STR& prefix, fu::view<char> suffix)
+void ModuleStat_print_r32T5l7J(const s_ModuleStat& a, const fu_STR& prefix, fu::view<char> suffix)
 {
     // Hoisted:
     fu_STR x;
@@ -84,7 +82,7 @@ void ModuleStat_print_WPxitUbE(const s_ModuleStat& a, const fu_STR& prefix, fu::
         BL_1_v = &(x);
     (void)0;}), *BL_1_v)), fu_STR((__extension__ (
     {
-        x_1 = " s\t"_fu;
+        x_1 = "s\t"_fu;
         BL_2_v = &(x_1);
     (void)0;}), *BL_2_v)), fu_STR((__extension__ (
     {

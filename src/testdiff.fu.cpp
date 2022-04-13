@@ -1,9 +1,8 @@
-
 #include <fu/str.h>
 #include <fu/vec.h>
+#include <fu/view.h>
 #include <fu/vec/concat.h>
 #include <fu/vec/concat_one.h>
-#include <fu/view.h>
 
 struct s_TestDiffs;
 
@@ -23,9 +22,9 @@ struct s_TestDiffs
 };
                                 #endif
 
-#ifndef FU_NO_FDEFs
+#ifndef fu_NO_fdefs
 
-fu_STR serialize_zP1960QX(const s_TestDiffs& diffs)
+fu_STR serialize_Z1U7ENgf(const s_TestDiffs& diffs)
 {
     /*MOV*/ fu_STR res {};
     fu::view<fu_STR> keys = diffs.keys;
@@ -36,10 +35,16 @@ fu_STR serialize_zP1960QX(const s_TestDiffs& diffs)
     return /*NRVO*/ res;
 }
 
-void set_next_I8EoLloc(s_TestDiffs& diffs, const fu_STR& key, const fu_STR& val)
+void set_next_QabTkgdc(s_TestDiffs& diffs, const fu_STR& key, const fu_STR& val)
 {
     diffs.keys += fu_STR(key);
     diffs.vals += fu_STR(val);
+}
+
+void append_4NI6civd(s_TestDiffs& diffs, const s_TestDiffs& other)
+{
+    diffs.keys += other.keys;
+    diffs.vals += other.vals;
 }
 
 #endif

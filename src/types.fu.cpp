@@ -1,56 +1,54 @@
-
-#include <fu/decstr.h>
-#include <fu/default.h>
-#include <fu/init_priority.h>
 #include <fu/int.h>
-#include <fu/never.h>
 #include <fu/str.h>
 #include <fu/vec.h>
-#include <fu/vec/cmp.h>
-#include <fu/vec/concat.h>
-#include <fu/vec/concat_one.h>
-#include <fu/vec/slice.h>
 #include <fu/view.h>
+#include <fu/never.h>
+#include <fu/decstr.h>
+#include <fu/default.h>
+#include <fu/vec/cmp.h>
+#include <fu/vec/slice.h>
+#include <fu/vec/concat.h>
+#include <fu/init_priority.h>
+#include <fu/vec/concat_one.h>
 
-struct s_Argument;
-struct s_BitSet;
-struct s_CodegenOutput;
-struct s_Context;
-struct s_Extended;
-struct s_Helpers;
-struct s_LexerOutput;
+struct s_Target;
+struct s_Region;
 struct s_Lifetime;
-struct s_Map_JBAFFW0D;
+struct s_ValueType;
+struct s_Type;
+struct s_TokenIdx;
+struct s_Context;
 struct s_Module;
 struct s_ModuleInputs;
-struct s_ModuleOutputs;
-struct s_ModuleStat;
-struct s_ModuleStats;
-struct s_Node;
-struct s_Overload;
-struct s_ParserOutput;
-struct s_RWRanges;
-struct s_Region;
-struct s_Scope;
-struct s_ScopeItem;
-struct s_ScopeMemo;
-struct s_ScopeSkip;
-struct s_ScopeSkipMemos;
-struct s_SolvedNode;
-struct s_SolverOutput;
-struct s_Struct;
-struct s_Target;
-struct s_Template;
+struct s_LexerOutput;
 struct s_Token;
-struct s_TokenIdx;
-struct s_Type;
-struct s_ValueType;
-
-[[noreturn]] fu::never BUG_patsWWTe(fu_STR&&, const s_TokenIdx&, const s_Context&);
-inline fu_VEC<s_Region> inter_2hwZIj1v(const fu_VEC<s_Region>&, const fu_VEC<s_Region>&);
+struct s_ParserOutput;
+struct s_Node;
+struct s_ModuleOutputs;
+struct s_Struct;
+struct s_ScopeItem;
+struct s_SolverOutput;
+struct s_SolvedNode;
+struct s_Helpers;
+struct s_RWRanges;
+struct s_Scope;
+struct s_Overload;
+struct s_Extended;
+struct s_Argument;
+struct s_BitSet;
+struct s_Template;
+struct s_ScopeMemo;
+struct s_ScopeSkipMemos;
+struct s_ScopeSkip;
+struct s_CodegenOutput;
+struct s_ModuleStats;
+struct s_ModuleStat;
+struct s_Map_gb6sFwC7;
 inline fu_VEC<s_Region> union_2hwZIj1v(const fu_VEC<s_Region>&, const fu_VEC<s_Region>&);
-unsigned parse10u32_t6R8uPsY(int&, fu::view<char>);
-void appendMi_RIPPDRFZ(fu_STR&, int, int);
+inline fu_VEC<s_Region> inter_2hwZIj1v(const fu_VEC<s_Region>&, const fu_VEC<s_Region>&);
+[[noreturn]] fu::never BUG_XksxYQ3i(fu_STR&&, const s_TokenIdx&, const s_Context&);
+unsigned parse10u32_mPp6Ulzh(int&, fu::view<char>);
+void appendMi_KujYnsPj(fu_STR&, int, int);
 
                                 #ifndef DEF_s_Target
                                 #define DEF_s_Target
@@ -260,6 +258,7 @@ struct s_Struct
     fu_VEC<s_ScopeItem> items;
     fu_VEC<int> imports;
     fu_VEC<s_Target> converts;
+    fu_STR base;
     int flat_cnt;
     bool all_triv;
     explicit operator bool() const noexcept
@@ -270,6 +269,7 @@ struct s_Struct
             || items
             || imports
             || converts
+            || base
             || flat_cnt
             || all_triv
         ;
@@ -582,6 +582,7 @@ struct s_CodegenOutput
     fu_VEC<fu_STR> link;
     fu_VEC<fu_STR> include_dirs;
     fu_VEC<fu_STR> extra_sources;
+    fu_VEC<int> live;
     explicit operator bool() const noexcept
     {
         return false
@@ -589,6 +590,7 @@ struct s_CodegenOutput
             || link
             || include_dirs
             || extra_sources
+            || live
         ;
     }
 };
@@ -684,9 +686,9 @@ struct s_Module
 };
                                 #endif
 
-                                #ifndef DEF_s_Map_JBAFFW0D
-                                #define DEF_s_Map_JBAFFW0D
-struct s_Map_JBAFFW0D
+                                #ifndef DEF_s_Map_gb6sFwC7
+                                #define DEF_s_Map_gb6sFwC7
+struct s_Map_gb6sFwC7
 {
     fu_VEC<fu_STR> keys;
     fu_VEC<fu_STR> vals;
@@ -705,8 +707,8 @@ struct s_Map_JBAFFW0D
 struct s_Context
 {
     fu_VEC<s_Module> modules;
-    s_Map_JBAFFW0D files;
-    s_Map_JBAFFW0D fuzzy;
+    s_Map_gb6sFwC7 files;
+    s_Map_gb6sFwC7 fuzzy;
     s_Context(const s_Context&) = delete;
     s_Context(s_Context&&) = default;
     s_Context& operator=(const s_Context&) = delete;
@@ -722,7 +724,7 @@ struct s_Context
 };
                                 #endif
 
-#ifndef FU_NO_FDEFs
+#ifndef fu_NO_fdefs
 
                                 #ifndef DEF_q_mutref
                                 #define DEF_q_mutref
@@ -819,16 +821,16 @@ int Region_asLocal_MvT8pzW6(const s_Region& r)
     return (((r == Region_TEMP) || (r.index < 0)) ? 0 : int(r.index));
 }
 
-                                #ifndef DEFt_x3Cx3E_gcxVH86X
-                                #define DEFt_x3Cx3E_gcxVH86X
+                                #ifndef DEF_x3Cx3E_gcxVH86X
+                                #define DEF_x3Cx3E_gcxVH86X
 inline int x3Cx3E_gcxVH86X(const int a, const int b)
 {
     return ((a < b) ? -1 : ((a > b) ? +1 : 0));
 }
                                 #endif
 
-                                #ifndef DEFt_x3Cx3E_PsqHNzQD
-                                #define DEFt_x3Cx3E_PsqHNzQD
+                                #ifndef DEF_x3Cx3E_PsqHNzQD
+                                #define DEF_x3Cx3E_PsqHNzQD
 inline int x3Cx3E_PsqHNzQD(const s_Region& a, const s_Region& b)
 {
 
@@ -842,7 +844,7 @@ inline int x3Cx3E_PsqHNzQD(const s_Region& a, const s_Region& b)
 }
                                 #endif
 
-inline static void merge_Hog6J6TH(fu::view<s_Region> l, fu::view<s_Region> r, bool& useResult, fu_VEC<s_Region>& result, fu::view<s_Region> l_1)
+inline static void merge_d6uPbUBU(fu::view<s_Region> l, fu::view<s_Region> r, bool& useResult, fu_VEC<s_Region>& result, fu::view<s_Region> l_1)
 {
     int li = 0;
     int ri = 0;
@@ -884,8 +886,8 @@ inline static void merge_Hog6J6TH(fu::view<s_Region> l, fu::view<s_Region> r, bo
     };
 }
 
-                                #ifndef DEFt_union_2hwZIj1v
-                                #define DEFt_union_2hwZIj1v
+                                #ifndef DEF_union_2hwZIj1v
+                                #define DEF_union_2hwZIj1v
 inline fu_VEC<s_Region> union_2hwZIj1v(const fu_VEC<s_Region>& l, const fu_VEC<s_Region>& r)
 {
     if (r.size() > l.size())
@@ -893,7 +895,7 @@ inline fu_VEC<s_Region> union_2hwZIj1v(const fu_VEC<s_Region>& l, const fu_VEC<s
 
     fu_VEC<s_Region> result {};
     bool useResult = false;
-    merge_Hog6J6TH(l, r, useResult, result, l);
+    merge_d6uPbUBU(l, r, useResult, result, l);
     return fu_VEC<s_Region>((useResult ? result : l));
 }
                                 #endif
@@ -903,7 +905,7 @@ s_Lifetime Lifetime_union_87LkAOV4(const s_Lifetime& a, const s_Lifetime& b)
     return s_Lifetime { union_2hwZIj1v(a.uni0n, b.uni0n) };
 }
 
-inline static void merge_LEXdD2YO(fu::view<s_Region> l, fu::view<s_Region> r, bool& useResult, fu_VEC<s_Region>& result, const fu_VEC<s_Region>& l_1)
+inline static void merge_wFlkVBim(fu::view<s_Region> l, fu::view<s_Region> r, bool& useResult, fu_VEC<s_Region>& result, const fu_VEC<s_Region>& l_1)
 {
     int li = 0;
     int ri = 0;
@@ -952,8 +954,8 @@ inline static void merge_LEXdD2YO(fu::view<s_Region> l, fu::view<s_Region> r, bo
     };
 }
 
-                                #ifndef DEFt_inter_2hwZIj1v
-                                #define DEFt_inter_2hwZIj1v
+                                #ifndef DEF_inter_2hwZIj1v
+                                #define DEF_inter_2hwZIj1v
 inline fu_VEC<s_Region> inter_2hwZIj1v(const fu_VEC<s_Region>& l, const fu_VEC<s_Region>& r)
 {
     if (r.size() < l.size())
@@ -961,7 +963,7 @@ inline fu_VEC<s_Region> inter_2hwZIj1v(const fu_VEC<s_Region>& l, const fu_VEC<s
 
     fu_VEC<s_Region> result {};
     bool useResult = false;
-    merge_LEXdD2YO(l, r, useResult, result, l);
+    merge_wFlkVBim(l, r, useResult, result, l);
     return fu_VEC<s_Region>((useResult ? result : l));
 }
                                 #endif
@@ -1001,89 +1003,89 @@ bool operator==(const s_Type& a, const s_Type& b)
     return (a.vtype == b.vtype) && (a.lifetime == b.lifetime);
 }
 
-s_Type Primitive_9NxG7YOR(const fu_STR& canon)
+s_Type Primitive_pTOG72Sa(const fu_STR& canon)
 {
     return s_Type { s_ValueType { int(q_rx_copy), fu_STR(canon) }, s_Lifetime{} };
 }
 
                                 #ifndef DEF_t_i8
                                 #define DEF_t_i8
-extern const s_Type t_i8 fu_INIT_PRIORITY(1002) = Primitive_9NxG7YOR("i8"_fu);
+extern const s_Type t_i8 fu_INIT_PRIORITY(1002) = Primitive_pTOG72Sa("i8"_fu);
                                 #endif
 
                                 #ifndef DEF_t_i16
                                 #define DEF_t_i16
-extern const s_Type t_i16 fu_INIT_PRIORITY(1002) = Primitive_9NxG7YOR("i16"_fu);
+extern const s_Type t_i16 fu_INIT_PRIORITY(1002) = Primitive_pTOG72Sa("i16"_fu);
                                 #endif
 
                                 #ifndef DEF_t_i32
                                 #define DEF_t_i32
-extern const s_Type t_i32 fu_INIT_PRIORITY(1002) = Primitive_9NxG7YOR("i32"_fu);
+extern const s_Type t_i32 fu_INIT_PRIORITY(1002) = Primitive_pTOG72Sa("i32"_fu);
                                 #endif
 
                                 #ifndef DEF_t_i64
                                 #define DEF_t_i64
-extern const s_Type t_i64 fu_INIT_PRIORITY(1002) = Primitive_9NxG7YOR("i64"_fu);
+extern const s_Type t_i64 fu_INIT_PRIORITY(1002) = Primitive_pTOG72Sa("i64"_fu);
                                 #endif
 
                                 #ifndef DEF_t_u8
                                 #define DEF_t_u8
-extern const s_Type t_u8 fu_INIT_PRIORITY(1002) = Primitive_9NxG7YOR("u8"_fu);
+extern const s_Type t_u8 fu_INIT_PRIORITY(1002) = Primitive_pTOG72Sa("u8"_fu);
                                 #endif
 
                                 #ifndef DEF_t_u16
                                 #define DEF_t_u16
-extern const s_Type t_u16 fu_INIT_PRIORITY(1002) = Primitive_9NxG7YOR("u16"_fu);
+extern const s_Type t_u16 fu_INIT_PRIORITY(1002) = Primitive_pTOG72Sa("u16"_fu);
                                 #endif
 
                                 #ifndef DEF_t_u32
                                 #define DEF_t_u32
-extern const s_Type t_u32 fu_INIT_PRIORITY(1002) = Primitive_9NxG7YOR("u32"_fu);
+extern const s_Type t_u32 fu_INIT_PRIORITY(1002) = Primitive_pTOG72Sa("u32"_fu);
                                 #endif
 
                                 #ifndef DEF_t_u64
                                 #define DEF_t_u64
-extern const s_Type t_u64 fu_INIT_PRIORITY(1002) = Primitive_9NxG7YOR("u64"_fu);
+extern const s_Type t_u64 fu_INIT_PRIORITY(1002) = Primitive_pTOG72Sa("u64"_fu);
                                 #endif
 
                                 #ifndef DEF_t_f32
                                 #define DEF_t_f32
-extern const s_Type t_f32 fu_INIT_PRIORITY(1002) = Primitive_9NxG7YOR("f32"_fu);
+extern const s_Type t_f32 fu_INIT_PRIORITY(1002) = Primitive_pTOG72Sa("f32"_fu);
                                 #endif
 
                                 #ifndef DEF_t_f64
                                 #define DEF_t_f64
-extern const s_Type t_f64 fu_INIT_PRIORITY(1002) = Primitive_9NxG7YOR("f64"_fu);
+extern const s_Type t_f64 fu_INIT_PRIORITY(1002) = Primitive_pTOG72Sa("f64"_fu);
                                 #endif
 
                                 #ifndef DEF_t_bool
                                 #define DEF_t_bool
-extern const s_Type t_bool fu_INIT_PRIORITY(1002) = Primitive_9NxG7YOR("bool"_fu);
+extern const s_Type t_bool fu_INIT_PRIORITY(1002) = Primitive_pTOG72Sa("b8"_fu);
                                 #endif
 
                                 #ifndef DEF_t_byte
                                 #define DEF_t_byte
-extern const s_Type t_byte fu_INIT_PRIORITY(1002) = Primitive_9NxG7YOR("byte"_fu);
+extern const s_Type t_byte fu_INIT_PRIORITY(1002) = Primitive_pTOG72Sa("c8"_fu);
                                 #endif
 
-s_Type NotSure_9NxG7YOR(const fu_STR& canon)
+s_Type NotSure_pTOG72Sa(const fu_STR& canon)
 {
     return s_Type { s_ValueType { 0, fu_STR(canon) }, s_Lifetime{} };
 }
 
                                 #ifndef DEF_t_void
                                 #define DEF_t_void
-extern const s_Type t_void fu_INIT_PRIORITY(1002) = NotSure_9NxG7YOR("void"_fu);
+extern const s_Type t_void fu_INIT_PRIORITY(1002) = NotSure_pTOG72Sa("void"_fu);
                                 #endif
 
                                 #ifndef DEF_t_never
                                 #define DEF_t_never
-extern const s_Type t_never fu_INIT_PRIORITY(1002) = NotSure_9NxG7YOR("never"_fu);
+extern const s_Type t_never fu_INIT_PRIORITY(1002) = NotSure_pTOG72Sa("never"_fu);
                                 #endif
 
                                 #ifndef DEF_t_zeroes
                                 #define DEF_t_zeroes
-extern const s_Type t_zeroes fu_INIT_PRIORITY(1002) = NotSure_9NxG7YOR("zeroes"_fu);
+extern const s_Type t_zeroes fu_INIT_PRIORITY(1002) = NotSure_pTOG72Sa("zeroes"_fu);
                                 #endif
 
 bool is_void_zJCUz9W3(const s_Type& t)
@@ -1111,7 +1113,7 @@ bool is_rx_resize_zJCUz9W3(const s_Type& t)
     return !!(t.vtype.quals & q_rx_resize);
 }
 
-bool isCanonAssignable_l4jAVnLE(fu::view<char> host, fu::view<char> guest)
+bool isCanonAssignable_B0Gh4GVM(fu::view<char> host, fu::view<char> guest)
 {
     return host == guest;
 }
@@ -1131,14 +1133,14 @@ bool isLifetimeAssignable_87LkAOV4(const s_Lifetime& host, const s_Lifetime& gue
 extern const bool CANNOT_definit_mutrefs = true;
                                 #endif
 
-bool isAssignableAsArgument_yRJeU5dj(const s_Type& host, const s_Type& guest)
+bool isAssignableAsArgument_AGveG7WH(const s_Type& host, const s_Type& guest, const bool DONT_match_zeroes)
 {
-    return (areQualsAssignable_enHeEoeE(host.vtype.quals, guest.vtype.quals) && isCanonAssignable_l4jAVnLE(host.vtype.canon, guest.vtype.canon)) || is_never_zJCUz9W3(guest) || (is_zeroes_zJCUz9W3(guest) && !(CANNOT_definit_mutrefs ? (host.vtype.quals & q_mutref) : int{}));
+    return (areQualsAssignable_enHeEoeE(host.vtype.quals, guest.vtype.quals) && isCanonAssignable_B0Gh4GVM(host.vtype.canon, guest.vtype.canon)) || is_never_zJCUz9W3(guest) || (is_zeroes_zJCUz9W3(guest) && !DONT_match_zeroes && !(CANNOT_definit_mutrefs ? (host.vtype.quals & q_mutref) : int{}));
 }
 
-bool isAssignable_yRJeU5dj(const s_Type& host, const s_Type& guest)
+bool isAssignable_0meCKYxP(const s_Type& host, const s_Type& guest, const bool DONT_match_zeroes, const bool asArgument)
 {
-    return isAssignableAsArgument_yRJeU5dj(host, guest) && isLifetimeAssignable_87LkAOV4(host.lifetime, guest.lifetime);
+    return isAssignableAsArgument_AGveG7WH(host, guest, DONT_match_zeroes) && (asArgument || isLifetimeAssignable_87LkAOV4(host.lifetime, guest.lifetime));
 }
 
 bool is_ref_zJCUz9W3(const s_Type& type)
@@ -1151,7 +1153,7 @@ bool is_mutref_zJCUz9W3(const s_Type& type, const s_TokenIdx& _here, const s_Con
     /*MOV*/ const bool a = ((type.vtype.quals & q_mutref) != 0);
     const bool b = is_ref_zJCUz9W3(type);
     if (a && !b)
-        BUG_patsWWTe("MutRef&&!Ref"_fu, _here, ctx);
+        BUG_XksxYQ3i("MutRef&&!Ref"_fu, _here, ctx);
 
     return /*NRVO*/ a;
 }
@@ -1159,7 +1161,7 @@ bool is_mutref_zJCUz9W3(const s_Type& type, const s_TokenIdx& _here, const s_Con
 s_Type add_ref_EgWfyCPW(/*MOV*/ s_Type&& type, const s_Lifetime& lifetime, const s_TokenIdx& _here, const s_Context& ctx)
 {
     s_Lifetime _0 {};
-    type.lifetime = ((_0 = Lifetime_union_87LkAOV4(type.lifetime, lifetime)) ? static_cast<s_Lifetime&&>(_0) : BUG_patsWWTe("add_ref: falsy lifetime"_fu, _here, ctx));
+    type.lifetime = ((_0 = Lifetime_union_87LkAOV4(type.lifetime, lifetime)) ? static_cast<s_Lifetime&&>(_0) : BUG_XksxYQ3i("add_ref: falsy lifetime"_fu, _here, ctx));
     return static_cast<s_Type&&>(type);
 }
 
@@ -1167,12 +1169,12 @@ s_Type add_mutref_EgWfyCPW(/*MOV*/ s_Type&& type, const s_Lifetime& lifetime, co
 {
     type.vtype.quals |= q_mutref;
     s_Lifetime _0 {};
-    type.lifetime = ((_0 = Lifetime_union_87LkAOV4(type.lifetime, lifetime)) ? static_cast<s_Lifetime&&>(_0) : BUG_patsWWTe("add_mutref: falsy lifetime"_fu, _here, ctx));
+    type.lifetime = ((_0 = Lifetime_union_87LkAOV4(type.lifetime, lifetime)) ? static_cast<s_Lifetime&&>(_0) : BUG_XksxYQ3i("add_mutref: falsy lifetime"_fu, _here, ctx));
     return static_cast<s_Type&&>(type);
 }
 
-                                #ifndef DEFt_if_last_tZvRQ2Ac
-                                #define DEFt_if_last_tZvRQ2Ac
+                                #ifndef DEF_if_last_tZvRQ2Ac
+                                #define DEF_if_last_tZvRQ2Ac
 inline const s_Region& if_last_tZvRQ2Ac(fu::view<s_Region> s)
 {
     return s.size() ? s[(s.size() - 1)] : (*(const s_Region*)fu::NIL);
@@ -1181,7 +1183,7 @@ inline const s_Region& if_last_tZvRQ2Ac(fu::view<s_Region> s)
 
 bool is_ref2temp_zJCUz9W3(const s_Type& type, const s_TokenIdx& _here, const s_Context& ctx)
 {
-    return (if_last_tZvRQ2Ac(type.lifetime.uni0n) == Region_TEMP) && (is_ref_zJCUz9W3(type) || BUG_patsWWTe("is_ref2temp: has lts but isnt ref"_fu, _here, ctx));
+    return (if_last_tZvRQ2Ac(type.lifetime.uni0n) == Region_TEMP) && (is_ref_zJCUz9W3(type) || BUG_XksxYQ3i("is_ref2temp: has lts but isnt ref"_fu, _here, ctx));
 }
 
 s_Type clear_refs_zJCUz9W3(/*MOV*/ s_Type&& type)
@@ -1197,19 +1199,19 @@ s_Type clear_mutref_zJCUz9W3(/*MOV*/ s_Type&& type)
     return static_cast<s_Type&&>(type);
 }
 
-s_Type tryClearRefs_TvBBcy0d(const s_Type& type, const bool mutref, const s_TokenIdx& _here, const s_Context& ctx)
+s_Type tryClearRefs_S1kyINNV(const s_Type& type, const bool mutref, const s_TokenIdx& _here, const s_Context& ctx)
 {
     return (mutref ? is_mutref_zJCUz9W3(type, _here, ctx) : is_ref_zJCUz9W3(type)) ? clear_refs_zJCUz9W3(s_Type(type)) : s_Type{};
 }
 
 s_Type tryClear_mutref_zJCUz9W3(const s_Type& type, const s_TokenIdx& _here, const s_Context& ctx)
 {
-    return tryClearRefs_TvBBcy0d(type, true, _here, ctx);
+    return tryClearRefs_S1kyINNV(type, true, _here, ctx);
 }
 
 s_Type tryClear_ref_zJCUz9W3(const s_Type& type, const s_TokenIdx& _here, const s_Context& ctx)
 {
-    return tryClearRefs_TvBBcy0d(type, bool{}, _here, ctx);
+    return tryClearRefs_S1kyINNV(type, bool{}, _here, ctx);
 }
 
 s_Type add_refs_yRJeU5dj(const s_Type& from, /*MOV*/ s_Type&& to)
@@ -1225,24 +1227,24 @@ s_Type make_copyable_zJCUz9W3(/*MOV*/ s_Type&& type)
     return static_cast<s_Type&&>(type);
 }
 
-                                #ifndef DEFt_x7Ex3D_wtS8CFRs
-                                #define DEFt_x7Ex3D_wtS8CFRs
-inline fu_STR& x7Ex3D_wtS8CFRs(fu_STR& a, fu::view<char> b)
+                                #ifndef DEF_x7Ex3D_pN4jXVBE
+                                #define DEF_x7Ex3D_pN4jXVBE
+inline fu_STR& x7Ex3D_pN4jXVBE(fu_STR& a, fu::view<char> b)
 {
     return (a += b);
 }
                                 #endif
 
-fu_STR serializeType_FJyl5kxv(const s_Type& type, fu::view<char> debug, const s_TokenIdx& _here, const s_Context& ctx)
+fu_STR serializeType_CChJJaQk(const s_Type& type, fu::view<char> debug, const s_TokenIdx& _here, const s_Context& ctx)
 {
     if (!(type))
-        BUG_patsWWTe(("serializeType: Falsy type in: "_fu + debug), _here, ctx);
+        BUG_XksxYQ3i(("serializeType: Falsy type in: "_fu + debug), _here, ctx);
 
     fu_STR prefix {};
     if (type.vtype.quals)
-        x7Ex3D_wtS8CFRs(prefix, fu::i64dec(type.vtype.quals));
+        x7Ex3D_pN4jXVBE(prefix, fu::i64dec(type.vtype.quals));
 
-    return prefix + (type.vtype.canon ? type.vtype.canon : BUG_patsWWTe(("serializeType: No type.canon in: "_fu + debug), _here, ctx));
+    return prefix + (type.vtype.canon ? type.vtype.canon : BUG_XksxYQ3i(("serializeType: No type.canon in: "_fu + debug), _here, ctx));
 }
 
 fu_STR humanizeQuals_zJCUz9W3(const s_Type& type)
@@ -1257,17 +1259,17 @@ fu_STR humanizeQuals_zJCUz9W3(const s_Type& type)
     return /*NRVO*/ result;
 }
 
-s_ValueType parseType_9NxG7YOR(const fu_STR& str)
+s_ValueType parseType_pTOG72Sa(const fu_STR& str)
 {
     int offset {};
-    const int quals = int(parse10u32_t6R8uPsY(offset, str));
+    const int quals = int(parse10u32_mPp6Ulzh(offset, str));
     fu_STR canon = fu::slice(str, offset);
     return s_ValueType { int(quals), fu_STR(canon) };
 }
 
-                                #ifndef DEFt_starts_3yRdKyg4
-                                #define DEFt_starts_3yRdKyg4
-inline bool starts_3yRdKyg4(fu::view<char> a, const char with)
+                                #ifndef DEF_starts_cnCAmU7Y
+                                #define DEF_starts_cnCAmU7Y
+inline bool starts_cnCAmU7Y(fu::view<char> a, const char with)
 {
     return a.size() && (a[0] == with);
 }
@@ -1275,12 +1277,12 @@ inline bool starts_3yRdKyg4(fu::view<char> a, const char with)
 
 bool type_isSliceable_zJCUz9W3(const s_Type& type)
 {
-    return starts_3yRdKyg4(type.vtype.canon, '[');
+    return starts_cnCAmU7Y(type.vtype.canon, '[');
 }
 
 s_Type createArray_zJCUz9W3(const s_Type& item, const s_TokenIdx& _here, const s_Context& ctx)
 {
-    fu_STR canon = (("["_fu + serializeType_FJyl5kxv(item, "createArray"_fu, _here, ctx)) + "]"_fu);
+    fu_STR canon = (("["_fu + serializeType_CChJJaQk(item, "createArray"_fu, _here, ctx)) + "]"_fu);
     const int quals = ((item.vtype.quals & q_rx_copy) | q_rx_resize);
     return s_Type { s_ValueType { int(quals), fu_STR(canon) }, s_Lifetime(item.lifetime) };
 }
@@ -1297,14 +1299,14 @@ s_Type tryClear_sliceable_zJCUz9W3(const s_Type& type)
     if (!type_isSliceable_zJCUz9W3(type))
         return s_Type{};
 
-    s_ValueType vtype = parseType_9NxG7YOR(fu::slice(type.vtype.canon, 1, (type.vtype.canon.size() - 1)));
+    s_ValueType vtype = parseType_pTOG72Sa(fu::slice(type.vtype.canon, 1, (type.vtype.canon.size() - 1)));
     return s_Type { s_ValueType(vtype), s_Lifetime{} };
 }
 
 s_Type clear_sliceable_zJCUz9W3(const s_Type& type, const s_TokenIdx& _here, const s_Context& ctx)
 {
     s_Type _0 {};
-    return (_0 = tryClear_sliceable_zJCUz9W3(type)) ? static_cast<s_Type&&>(_0) : BUG_patsWWTe(("Not sliceable: "_fu + type.vtype.canon), _here, ctx);
+    return (_0 = tryClear_sliceable_zJCUz9W3(type)) ? static_cast<s_Type&&>(_0) : BUG_XksxYQ3i(("Not sliceable: "_fu + type.vtype.canon), _here, ctx);
 }
 
 s_Type tryClear_array_zJCUz9W3(const s_Type& type)
@@ -1320,10 +1322,10 @@ bool TODO_FIX_isArray_zJCUz9W3(const s_Type& type)
     return (type.vtype.quals & (q_rx_resize | q_rx_copy)) && type_isSliceable_zJCUz9W3(type);
 }
 
-s_Type type_trySuper_yRJeU5dj(const s_Type& a, const s_Type& b)
+s_Type type_trySuper_AGveG7WH(const s_Type& a, const s_Type& b, const bool DONT_match_zeroes)
 {
     if (a.vtype.canon != b.vtype.canon)
-        return (is_never_zJCUz9W3(a) ? s_Type(b) : (is_never_zJCUz9W3(b) ? s_Type(a) : (is_zeroes_zJCUz9W3(a) ? (CANNOT_definit_mutrefs ? clear_mutref_zJCUz9W3(s_Type(b)) : s_Type(b)) : (is_zeroes_zJCUz9W3(b) ? (CANNOT_definit_mutrefs ? clear_mutref_zJCUz9W3(s_Type(a)) : s_Type(a)) : s_Type{}))));
+        return (is_never_zJCUz9W3(a) ? s_Type(b) : (is_never_zJCUz9W3(b) ? s_Type(a) : ((is_zeroes_zJCUz9W3(a) && !DONT_match_zeroes) ? (CANNOT_definit_mutrefs ? clear_mutref_zJCUz9W3(s_Type(b)) : s_Type(b)) : ((is_zeroes_zJCUz9W3(b) && !DONT_match_zeroes) ? (CANNOT_definit_mutrefs ? clear_mutref_zJCUz9W3(s_Type(a)) : s_Type(a)) : s_Type{}))));
 
     const int quals = (a.vtype.quals & b.vtype.quals);
     s_Lifetime lifetime = (a.lifetime && b.lifetime ? Lifetime_union_87LkAOV4(a.lifetime, b.lifetime) : s_Lifetime{});
@@ -1345,7 +1347,7 @@ s_Type type_tryIntersect_yRJeU5dj(const s_Type& a, const s_Type& b)
 
 bool type_isAddrOfFn_zJCUz9W3(const s_Type& type)
 {
-    return starts_3yRdKyg4(type.vtype.canon, '@');
+    return starts_cnCAmU7Y(type.vtype.canon, '@');
 }
 
 bool type_isZST_zJCUz9W3(const s_Type& type)
@@ -1359,7 +1361,7 @@ fu_STR packAddrOfFn_wA8no8pa(fu::view<s_Target> targets)
     for (int i = 0; i < targets.size(); i++)
     {
         const s_Target& target = targets[i];
-        appendMi_RIPPDRFZ(res, int(target.modid), int(target.index));
+        appendMi_KujYnsPj(res, int(target.modid), int(target.index));
     };
     return /*NRVO*/ res;
 }

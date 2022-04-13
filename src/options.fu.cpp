@@ -1,4 +1,3 @@
-
 struct s_Lint;
 
                                 #ifndef DEF_s_Lint
@@ -15,7 +14,7 @@ struct s_Lint
 };
                                 #endif
 
-#ifndef FU_NO_FDEFs
+#ifndef fu_NO_fdefs
 
                                 #ifndef DEF_DEV_DisableBCK
                                 #define DEF_DEV_DisableBCK

@@ -1,7 +1,7 @@
-
 #include <fu/str.h>
 
-#ifndef FU_NO_FDEFs
+
+#ifndef fu_NO_fdefs
 
 void break_DX6KImTN()
 {

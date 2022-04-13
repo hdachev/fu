@@ -1,17 +1,17 @@
-
-#include <fu/decstr.h>
-#include <fu/init_priority.h>
 #include <fu/str.h>
-#include <fu/vec/concat.h>
-#include <fu/vec/concat_one.h>
 #include <fu/view.h>
+#include <fu/decstr.h>
+#include <fu/vec/concat.h>
+#include <fu/init_priority.h>
+#include <fu/vec/concat_one.h>
 
-#ifndef FU_NO_FDEFs
+
+#ifndef fu_NO_fdefs
 
 static const fu_STR ESC fu_INIT_PRIORITY(1001) = (char(27) + "["_fu);
 
-                                #ifndef DEFt_x7E_KclJlPSOsdf
-                                #define DEFt_x7E_KclJlPSOsdf
+                                #ifndef DEF_x7E_PEYL9mMAprj
+                                #define DEF_x7E_PEYL9mMAprj
 inline fu_STR x7E(fu::view<char> a, fu::view<char> b)
 {
     return a + b;
@@ -54,29 +54,29 @@ static const fu_STR cKW fu_INIT_PRIORITY(1001) = ansi_07w8vJVm(35, 1);
 
 static const fu_STR cLT fu_INIT_PRIORITY(1001) = ansi_07w8vJVm(32, 1);
 
-fu_STR qBAD_HIwg52Ja(const fu_STR& id)
+fu_STR qBAD_HfIK3mvn(const fu_STR& id)
 {
     return (BAD + (id ? fu_STR(id) : "``"_fu)) + RESET;
 }
 
-fu_STR qID_HIwg52Ja(const fu_STR& id)
+fu_STR qID_HfIK3mvn(const fu_STR& id)
 {
     return (cID + (id ? fu_STR(id) : "``"_fu)) + RESET;
 }
 
-fu_STR qKW_HIwg52Ja(const fu_STR& id)
+fu_STR qKW_HfIK3mvn(const fu_STR& id)
 {
     return (cKW + (id ? fu_STR(id) : "``"_fu)) + RESET;
 }
 
-fu_STR qLT_HIwg52Ja(const fu_STR& id)
+fu_STR qLT_HfIK3mvn(const fu_STR& id)
 {
     return (cLT + (id ? fu_STR(id) : "``"_fu)) + RESET;
 }
 
-fu_STR qCODE_HIwg52Ja(const fu_STR& id)
+fu_STR qCODE_HfIK3mvn(const fu_STR& id)
 {
-    return qID_HIwg52Ja(id);
+    return qID_HfIK3mvn(id);
 }
 
 #endif

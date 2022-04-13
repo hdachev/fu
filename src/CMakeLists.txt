@@ -23,6 +23,8 @@ set(FU_INPUTS
     lexer.fu
     ../lib/utf8.fu
     ../lib/ascii.fu
+    flags.fu
+    notes.fu
     hacks.fu
     intlit.fu
     cpp.fu
@@ -31,7 +33,8 @@ set(FU_INPUTS
     ../lib/env.fu
     ../lib/fs.fu
     ../lib/process.fu
-    ../lib/shell.fu
+    ../lib/spawn.fu
+    ../lib/par.fu
     testdiff.fu
     context.fu
     parser.fu
@@ -45,8 +48,9 @@ set(FU_INPUTS
     codegen.fu
     prelude.fu
     compiler.fu
+    cli.fu
     tests.fu
-    cli.fu)
+    test_utils.fu)
 
 set(FU_OUTPUTS
     ${CMAKE_CURRENT_SOURCE_DIR}/cli.fu.unity.cpp)

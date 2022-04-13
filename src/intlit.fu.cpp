@@ -1,9 +1,8 @@
-
 #include <cstdint>
-#include <fu/default.h>
 #include <fu/int.h>
 #include <fu/str.h>
 #include <fu/view.h>
+#include <fu/default.h>
 
 struct s_Intlit;
 
@@ -37,9 +36,9 @@ struct s_Intlit
 };
                                 #endif
 
-#ifndef FU_NO_FDEFs
+#ifndef fu_NO_fdefs
 
-s_Intlit Intlit_hdlyM3zq(fu::view<char> sign_prefix_value_suffix)
+s_Intlit Intlit_IQ08v4Hx(fu::view<char> sign_prefix_value_suffix)
 {
     const char c_sign = sign_prefix_value_suffix[0];
     const char sign = (((c_sign == '-') || (c_sign == '+')) ? c_sign : (*(const char*)fu::NIL));

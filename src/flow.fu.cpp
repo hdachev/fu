@@ -1,52 +1,50 @@
-
-#include <fu/default.h>
+#include <utility>
 #include <fu/int.h>
-#include <fu/never.h>
 #include <fu/str.h>
 #include <fu/vec.h>
-#include <fu/vec/concat.h>
 #include <fu/view.h>
-#include <utility>
+#include <fu/never.h>
+#include <fu/default.h>
+#include <fu/vec/concat.h>
 
-struct s_Argument;
-struct s_BitSet;
-struct s_CodegenOutput;
-struct s_Context;
-struct s_Extended;
 struct s_Flow;
-struct s_Helpers;
-struct s_LexerOutput;
-struct s_Lifetime;
-struct s_Map_JBAFFW0D;
+struct s_BitSet;
+struct s_TokenIdx;
+struct s_Context;
 struct s_Module;
 struct s_ModuleInputs;
-struct s_ModuleOutputs;
-struct s_ModuleStat;
-struct s_ModuleStats;
-struct s_Node;
-struct s_Overload;
+struct s_LexerOutput;
+struct s_Token;
 struct s_ParserOutput;
-struct s_RWRanges;
-struct s_Region;
-struct s_Scope;
-struct s_ScopeItem;
-struct s_ScopeMemo;
-struct s_ScopeSkip;
-struct s_ScopeSkipMemos;
-struct s_SolvedNode;
-struct s_SolverOutput;
+struct s_Node;
+struct s_ModuleOutputs;
 struct s_Struct;
 struct s_Target;
-struct s_Template;
-struct s_Token;
-struct s_TokenIdx;
+struct s_ScopeItem;
+struct s_SolverOutput;
+struct s_SolvedNode;
+struct s_Helpers;
 struct s_Type;
 struct s_ValueType;
-
-[[noreturn]] fu::never BUG_patsWWTe(fu_STR&&, const s_TokenIdx&, const s_Context&);
-bool has_noL0hivx(const s_BitSet&, int);
-int Region_asLocal_MvT8pzW6(const s_Region&);
+struct s_Lifetime;
+struct s_Region;
+struct s_RWRanges;
+struct s_Scope;
+struct s_Overload;
+struct s_Extended;
+struct s_Argument;
+struct s_Template;
+struct s_ScopeMemo;
+struct s_ScopeSkipMemos;
+struct s_ScopeSkip;
+struct s_CodegenOutput;
+struct s_ModuleStats;
+struct s_ModuleStat;
+struct s_Map_gb6sFwC7;
+[[noreturn]] fu::never BUG_XksxYQ3i(fu_STR&&, const s_TokenIdx&, const s_Context&);
 void add_PCSel0xp(s_BitSet&, int);
+int Region_asLocal_MvT8pzW6(const s_Region&);
+bool has_noL0hivx(const s_BitSet&, int);
 
                                 #ifndef DEF_s_BitSet
                                 #define DEF_s_BitSet
@@ -238,6 +236,7 @@ struct s_Struct
     fu_VEC<s_ScopeItem> items;
     fu_VEC<int> imports;
     fu_VEC<s_Target> converts;
+    fu_STR base;
     int flat_cnt;
     bool all_triv;
     explicit operator bool() const noexcept
@@ -248,6 +247,7 @@ struct s_Struct
             || items
             || imports
             || converts
+            || base
             || flat_cnt
             || all_triv
         ;
@@ -606,6 +606,7 @@ struct s_CodegenOutput
     fu_VEC<fu_STR> link;
     fu_VEC<fu_STR> include_dirs;
     fu_VEC<fu_STR> extra_sources;
+    fu_VEC<int> live;
     explicit operator bool() const noexcept
     {
         return false
@@ -613,6 +614,7 @@ struct s_CodegenOutput
             || link
             || include_dirs
             || extra_sources
+            || live
         ;
     }
 };
@@ -708,9 +710,9 @@ struct s_Module
 };
                                 #endif
 
-                                #ifndef DEF_s_Map_JBAFFW0D
-                                #define DEF_s_Map_JBAFFW0D
-struct s_Map_JBAFFW0D
+                                #ifndef DEF_s_Map_gb6sFwC7
+                                #define DEF_s_Map_gb6sFwC7
+struct s_Map_gb6sFwC7
 {
     fu_VEC<fu_STR> keys;
     fu_VEC<fu_STR> vals;
@@ -729,8 +731,8 @@ struct s_Map_JBAFFW0D
 struct s_Context
 {
     fu_VEC<s_Module> modules;
-    s_Map_JBAFFW0D files;
-    s_Map_JBAFFW0D fuzzy;
+    s_Map_gb6sFwC7 files;
+    s_Map_gb6sFwC7 fuzzy;
     s_Context(const s_Context&) = delete;
     s_Context(s_Context&&) = default;
     s_Context& operator=(const s_Context&) = delete;
@@ -746,33 +748,33 @@ struct s_Context
 };
                                 #endif
 
-#ifndef FU_NO_FDEFs
+#ifndef fu_NO_fdefs
 
-void Reference_trackArgument_f7E00fpg(s_Flow& flow, const int target, const int position, const s_TokenIdx& _here, const s_Context& ctx)
+void Reference_trackArgument_FrbWqY8Z(s_Flow& flow, const int target, const int position, const s_TokenIdx& _here, const s_Context& ctx)
 {
     if (!((flow.arg_targets.size() <= position)))
-        BUG_patsWWTe("Reference_trackArgument: positions out of order."_fu, _here, ctx);
+        BUG_XksxYQ3i("Reference_trackArgument: positions out of order."_fu, _here, ctx);
 
     flow.arg_targets.grow((position + 1));
     flow.arg_targets.mutref(position) = target;
     if (!((flow.arg_positions.size() <= target)))
-        BUG_patsWWTe("Reference_trackArgument: targets out of order."_fu, _here, ctx);
+        BUG_XksxYQ3i("Reference_trackArgument: targets out of order."_fu, _here, ctx);
 
     flow.arg_positions.grow((target + 1));
     flow.arg_positions.mutref(target) = (position + 1);
     add_PCSel0xp(flow.is_arg, target);
 }
 
-                                #ifndef DEFt_x3Cx3E_yxV5QT4l
-                                #define DEFt_x3Cx3E_yxV5QT4l
+                                #ifndef DEF_x3Cx3E_yxV5QT4l
+                                #define DEF_x3Cx3E_yxV5QT4l
 inline int x3Cx3E_yxV5QT4l(const int a, const int b)
 {
     return ((a < b) ? -1 : ((a > b) ? +1 : 0));
 }
                                 #endif
 
-                                #ifndef DEFt_add_itJnJlI8
-                                #define DEFt_add_itJnJlI8
+                                #ifndef DEF_add_itJnJlI8
+                                #define DEF_add_itJnJlI8
 inline bool add_itJnJlI8(fu_VEC<int>& keys, const int item)
 {
     int lo = 0;
@@ -796,24 +798,24 @@ inline bool add_itJnJlI8(fu_VEC<int>& keys, const int item)
 }
                                 #endif
 
-                                #ifndef DEFt_unless_oob_4Cjh8wBB
-                                #define DEFt_unless_oob_4Cjh8wBB
+                                #ifndef DEF_unless_oob_4Cjh8wBB
+                                #define DEF_unless_oob_4Cjh8wBB
 inline const fu_VEC<int>& unless_oob_4Cjh8wBB(fu::view<fu_VEC<int>> a, const int i)
 {
     return (i < a.size()) ? a[i] : (*(const fu_VEC<int>*)fu::NIL);
 }
                                 #endif
 
-                                #ifndef DEFt_x3Cx3E_gcxVH86X
-                                #define DEFt_x3Cx3E_gcxVH86X
+                                #ifndef DEF_x3Cx3E_gcxVH86X
+                                #define DEF_x3Cx3E_gcxVH86X
 inline int x3Cx3E_gcxVH86X(const int a, const int b)
 {
     return ((a < b) ? -1 : ((a > b) ? +1 : 0));
 }
                                 #endif
 
-                                #ifndef DEFt_add_N7IVeTyr
-                                #define DEFt_add_N7IVeTyr
+                                #ifndef DEF_add_N7IVeTyr
+                                #define DEF_add_N7IVeTyr
 inline void add_N7IVeTyr(fu_VEC<int>& a, fu::view<int> b)
 {
     int x = 0;
@@ -842,16 +844,16 @@ inline void add_N7IVeTyr(fu_VEC<int>& a, fu::view<int> b)
 }
                                 #endif
 
-                                #ifndef DEFt_unless_oob_8OCWoKZd
-                                #define DEFt_unless_oob_8OCWoKZd
+                                #ifndef DEF_unless_oob_8OCWoKZd
+                                #define DEF_unless_oob_8OCWoKZd
 inline const fu_VEC<int>& unless_oob_8OCWoKZd(fu::view<fu_VEC<int>> a, const int i)
 {
     return (i < a.size()) ? a[i] : (*(const fu_VEC<int>*)fu::NIL);
 }
                                 #endif
 
-                                #ifndef DEFt_rem_itJnJlI8
-                                #define DEFt_rem_itJnJlI8
+                                #ifndef DEF_rem_itJnJlI8
+                                #define DEF_rem_itJnJlI8
 inline bool rem_itJnJlI8(fu_VEC<int>& keys, const int item)
 {
     int lo = 0;
@@ -875,8 +877,8 @@ inline bool rem_itJnJlI8(fu_VEC<int>& keys, const int item)
 }
                                 #endif
 
-                                #ifndef DEFt_grow_if_oob_eq5Lu6Hw
-                                #define DEFt_grow_if_oob_eq5Lu6Hw
+                                #ifndef DEF_grow_if_oob_eq5Lu6Hw
+                                #define DEF_grow_if_oob_eq5Lu6Hw
 inline fu_VEC<int>& grow_if_oob_eq5Lu6Hw(fu_VEC<fu_VEC<int>>& a, const int i)
 {
     if ((a.size() <= i))
@@ -886,8 +888,8 @@ inline fu_VEC<int>& grow_if_oob_eq5Lu6Hw(fu_VEC<fu_VEC<int>>& a, const int i)
 }
                                 #endif
 
-                                #ifndef DEFt_add_KIHP0U19
-                                #define DEFt_add_KIHP0U19
+                                #ifndef DEF_add_KIHP0U19
+                                #define DEF_add_KIHP0U19
 inline void add_KIHP0U19(fu_VEC<int>& a, fu::view<int> b)
 {
     int x = 0;
@@ -916,8 +918,8 @@ inline void add_KIHP0U19(fu_VEC<int>& a, fu::view<int> b)
 }
                                 #endif
 
-                                #ifndef DEFt_grow_if_oob_qOlBkKup
-                                #define DEFt_grow_if_oob_qOlBkKup
+                                #ifndef DEF_grow_if_oob_qOlBkKup
+                                #define DEF_grow_if_oob_qOlBkKup
 inline fu_VEC<int>& grow_if_oob_qOlBkKup(fu_VEC<fu_VEC<int>>& a, const int i)
 {
     if ((a.size() <= i))
@@ -927,7 +929,7 @@ inline fu_VEC<int>& grow_if_oob_qOlBkKup(fu_VEC<fu_VEC<int>>& a, const int i)
 }
                                 #endif
 
-void Reference_trackLocalRef_wvzGTQIs(s_Flow& flow, const int left, const s_Lifetime& right)
+void Reference_trackLocalRef_OIgITfcB(s_Flow& flow, const int left, const s_Lifetime& right)
 {
     fu_VEC<int> parents {};
     for (int i = 0; i < right.uni0n.size(); i++)
@@ -966,8 +968,8 @@ void Reference_trackLocalRef_wvzGTQIs(s_Flow& flow, const int left, const s_Life
     };
 }
 
-                                #ifndef DEFt_try_steal_eq5Lu6Hw
-                                #define DEFt_try_steal_eq5Lu6Hw
+                                #ifndef DEF_try_steal_eq5Lu6Hw
+                                #define DEF_try_steal_eq5Lu6Hw
 inline fu_VEC<int> try_steal_eq5Lu6Hw(fu::view_mut<fu_VEC<int>> a, const int i)
 {
     if (i < a.size())
@@ -980,8 +982,8 @@ inline fu_VEC<int> try_steal_eq5Lu6Hw(fu::view_mut<fu_VEC<int>> a, const int i)
 }
                                 #endif
 
-                                #ifndef DEFt_find_P563x6wB
-                                #define DEFt_find_P563x6wB
+                                #ifndef DEF_find_P563x6wB
+                                #define DEF_find_P563x6wB
 inline int find_P563x6wB(fu::view<int> a, const int b)
 {
     for (/*MOV*/ int i = 0; i < a.size(); i++)
@@ -994,7 +996,7 @@ inline int find_P563x6wB(fu::view<int> a, const int b)
 }
                                 #endif
 
-void Reference_untrackLocalRef_wvzGTQIs(s_Flow& flow, const int left, const s_Lifetime& right)
+void Reference_untrackLocalRef_OIgITfcB(s_Flow& flow, const int left, const s_Lifetime& right)
 {
     for (int i = 0; i < right.uni0n.size(); i++)
     {
@@ -1016,15 +1018,15 @@ void Reference_untrackLocalRef_wvzGTQIs(s_Flow& flow, const int left, const s_Li
     };
 }
 
-                                #ifndef DEFt_unless_oob_MnkZvni5
-                                #define DEFt_unless_oob_MnkZvni5
+                                #ifndef DEF_unless_oob_MnkZvni5
+                                #define DEF_unless_oob_MnkZvni5
 inline int unless_oob_MnkZvni5(fu::view<int> a, const int i)
 {
     return (i < a.size()) ? a[i] : (*(const int*)fu::NIL);
 }
                                 #endif
 
-void ArgsAtRisk_list_nt15hMGe(s_BitSet& out, const s_Flow& flow, const int position, fu::view<fu_VEC<int>> at_risk)
+void ArgsAtRisk_list_KeMhuApY(s_BitSet& out, const s_Flow& flow, const int position, fu::view<fu_VEC<int>> at_risk)
 {
     const int target = unless_oob_MnkZvni5(flow.arg_targets, position);
     fu::view<int> at_risk_from = unless_oob_4Cjh8wBB(at_risk, target);

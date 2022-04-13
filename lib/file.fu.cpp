@@ -1,27 +1,38 @@
-
 #include <cstdint>
 #include <errno.h>
 #include <fcntl.h>
-#include <fu/defer.h>
-#include <fu/str.h>
-#include <fu/vec/concat_one.h>
-#include <fu/view.h>
 #include <stdio.h>
-#include <sys/stat.h>
+#include <fu/str.h>
+#include <limits.h>
 #include <unistd.h>
+#include <fu/view.h>
+#include <fu/defer.h>
+#include <sys/stat.h>
+#include <fu/vec/concat_one.h>
 
-#ifndef FU_NO_FDEFs
+#pragma GCC diagnostic push
+#ifdef __clang__
+#pragma GCC diagnostic warning "-Wunknown-warning-option"
+#endif
+#pragma GCC diagnostic ignored "-Wmisleading-indentation"
+
+
+#ifndef fu_NO_fdefs
 
                                 #ifndef DEF_RW_RW_RW
                                 #define DEF_RW_RW_RW
 inline constexpr unsigned RW_RW_RW = (((0x6u << 6u) | (0x6u << 3u)) | (0x6u << 0u));
                                 #endif
 
-int write_hRROHsch(fu_STR&& path, fu::view<char> data, const unsigned mode)
+                                #ifndef DEF_RWX_RX_RX
+                                #define DEF_RWX_RX_RX
+inline constexpr unsigned RWX_RX_RX = (((0x7u << 6u) | (0x5u << 3u)) | (0x5u << 0u));
+                                #endif
+
+int write_Aym1I4GS(fu_STR&& path, fu::view<char> data, const unsigned mode)
 {
     path += '\x00';
     /*MOV*/ int err {};
-
 
         auto fd = open(path.data(), O_WRONLY | O_CREAT | O_TRUNC, mode_t(mode));
         if (fd == -1)
@@ -51,77 +62,105 @@ int write_hRROHsch(fu_STR&& path, fu::view<char> data, const unsigned mode)
     return /*NRVO*/ err;
 }
 
-int read_rdNIrUmo(fu_STR&& path, fu_STR& output)
+                                #ifndef DEF_MAX_yCmh5aVe
+                                #define DEF_MAX_yCmh5aVe
+inline int MAX_yCmh5aVe(const int)
+{
+    return 2147483647;
+}
+                                #endif
+
+int read_H93z2wTc(fu_STR&& path, fu_STR& output, int64_t size)
 {
     path += '\x00';
     /*MOV*/ int err {};
 
-
-        auto fd = open(path.data(), O_RDONLY);
-        if (fd == -1)
-            return (err = errno);
-
-        fu_DEFER(
-            if (close(fd) && !err)
-                err = errno;
-        );
-
-        const size_t BUF_SIZE = 64 * 1024;
-        fu::byte BUF[BUF_SIZE];
-
-        auto size = output.size();
-
-        for (;;)
+    {
+        if ((size <= 0ll))
         {
-            void*  data = BUF;
-            size_t capa = BUF_SIZE;
 
-            // Write directly onto the string
-            //  if it has more capa than the buffer here.
-            //
-            auto avail = output.capa() - size;
-            if (avail > 0 && size_t(avail) > BUF_SIZE)
-            {
-                data = output.data_mut() + size;
-                capa = size_t(avail);
-            }
+                struct stat sb;
+                if (stat(path.data(), &sb))
+                    return (err = errno);
 
-            auto count = (fu::i) read(fd, data, capa);
-            if (count <= 0)
-            {
-                if (count < 0)
+                size = sb.st_size;
+            ;
+        };
+        int len0 = output.size();
+        const int64_t len1 = (int64_t(len0) + size);
+        if (len1 > (int64_t(MAX_yCmh5aVe(len0)) - 16ll))
+        {
+
+                return (err = EFBIG);
+            ;
+        };
+
+            auto fd = open(path.data(), O_RDONLY);
+            if (fd == -1)
+                return (err = errno);
+        ;
+        fu_DEFER(
+                if (close(fd) && !err)
                     err = errno;
 
-                break;
+                if (len0 != len1)
+                {
+                    output.UNSAFE__WriteSize(len0);
+                    err = ERANGE;
+                }
+            );
+        output.grow(int(len1));
+
+            auto* buf = output.data_mut();
+
+            ssize_t check = output.capa() > len1 ? 1 : 0;
+            ssize_t request;
+            while ((request = len1 - len0) > 0)
+            {
+                request += check;
+                request = request < SSIZE_MAX ? request : SSIZE_MAX;
+
+                auto count = read(fd, buf, size_t(request));
+                if (count <= 0)
+                {
+                    if (count < 0)
+                        err = errno;
+
+                    break;
+                }
+
+                len0 += (decltype(len0)) count;
             }
-
-            size += count;
-
-            // Copy if using the local buffer.
-            if (data == BUF)
-                output.append_copy(fu_ZERO(), BUF, count);
-            else
-                output.UNSAFE__WriteSize(size);
-        }
-    ;
+        ;
+    };
     return /*NRVO*/ err;
 }
 
-fu_STR read_1WaOntvF(fu_STR&& path)
+fu_STR read_ny0gyQ9a(fu_STR&& path)
 {
     /*MOV*/ fu_STR output {};
-    if (read_rdNIrUmo(fu_STR(path), output))
+    if (read_H93z2wTc(fu_STR(path), output, 0ll))
         output.clear();
 
     return /*NRVO*/ output;
 }
 
-int rename_CY1V5t3K(fu_STR&& from, fu_STR&& to)
+int chmod_yDMGZlvP(fu_STR&& path, const unsigned mode)
+{
+    path += '\x00';
+    /*MOV*/ int err {};
+
+        if (chmod(path.data(), mode_t(mode)))
+            err = errno;
+    ;
+    return /*NRVO*/ err;
+}
+
+int rename_PYp4QGaF(fu_STR&& from, fu_STR&& to)
 {
     from += '\x00';
     to += '\x00';
     /*MOV*/ int err {};
-
 
         if (rename(from.data(), to.data()))
             err = errno;
@@ -129,10 +168,9 @@ int rename_CY1V5t3K(fu_STR&& from, fu_STR&& to)
     return /*NRVO*/ err;
 }
 
-int64_t size_1WaOntvF(fu_STR&& path)
+int64_t size_ny0gyQ9a(fu_STR&& path)
 {
     path += '\x00';
-
 
         struct stat sb;
         if (stat(path.data(), &sb) == 0)
@@ -142,3 +180,5 @@ int64_t size_1WaOntvF(fu_STR&& path)
 }
 
 #endif
+
+#pragma GCC diagnostic pop
