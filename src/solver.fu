@@ -2886,7 +2886,7 @@ pub fn solve(
 
         fn setSpec(shadow mangle: string, target: Target, nx?: bool)
         {
-            isInline && BUG("inline.setSpec");
+            isInline && BUG("inline.setSpec: " ~ mangle ~ " = " ~ target.is_SPECFAIL);
 
             ref t = _specs.map::ref(mangle);
 
