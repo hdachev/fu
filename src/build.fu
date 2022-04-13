@@ -105,7 +105,11 @@ pub fn build(
 
     if (shared)
         O_lvl ~= "-fPIC ";
-    if (hotswap)
+
+    // TODO FIX should be just if (hotswap), currently:
+    //  - hotswap builds need a shared fulib;
+    //  - the fulib is shared=true, hotswap=false, but needs to include the fu_HOTSWAP stuff.
+    if (hotswap || shared)
         O_lvl ~= "-Dfu_HOTSWAP ";
 
     let GCChash = "g++ -std=c++1z " ~ O_lvl;
