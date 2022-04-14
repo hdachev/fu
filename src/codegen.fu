@@ -399,29 +399,47 @@ pub fn cpp_codegen(implicit module: Module, implicit ctx: Context): CodegenOutpu
     fn declarePrimitive(id: string, s: Struct): string
     {
         let baseprim    = primAnnotBase(s.base);
-
-        // We won't be using scoped enums (enum class) for now -
-        //  a] They don't work for flags enums & co,
-        //  b] Importantly, they can't have an explicit operator bool,
-        //      so they need verbose boolchecks, not great.
-        //
-        let header      = "enum " ~ id ~ ": " ~ baseprim;
-
-        _tfwd_src ~= header ~ ";\n";
+        let members     = s.items;
 
         mut def = "\n                                #ifndef DEF_" ~ id
-                ~ "\n                                #define DEF_" ~ id
-                ~ "\n" ~ header ~ "\n{";
+                ~ "\n                                #define DEF_" ~ id;
 
-        let members = s.items;
-        for (mut i = 0; i < members.len; i++)
+        if (s.kind == "primitive" || !members)
         {
-            let member = GET(members[i].target);
-            def ~= "\n    " ~ id ~ "_" ~ member.name
-                    ~ " = " ~ cgNode(member.solved, debug: "declarePrimitive") ~ ",";
+            // Non-enum primitives, do simple typedefs,
+            //  the whole point of using enums is for debuggers to provide nice feedback,
+            //   which can't happen for arithmetic primitives,
+            //    unfortunately also true for flags.
+            //
+            _tfwd_src ~= "typedef " ~ baseprim ~ " " ~ id ~ ";\n";
+
+            if (!members)
+                return "";
+
+            members.each: |member.target|
+                def ~= "\ninline constexpr " ~ id ~ " " ~ id ~ "_" ~ member.name
+                        ~ " = " ~ cgNode(member.solved, debug: "declarePrimitive") ~ ";";
+        }
+        else
+        {
+            // We won't be using scoped enums (enum class) for now -
+            //  a] They don't work for flags enums & co,
+            //  b] Importantly, they can't have an explicit operator bool,
+            //      so they need verbose boolchecks, not great.
+            //
+            let header      = "enum " ~ id ~ ": " ~ baseprim;
+
+            _tfwd_src  ~= header ~ ";\n";
+            def ~= "\n" ~ header ~ "\n{";
+
+            members.each: |member.target|
+                def ~= "\n    " ~ id ~ "_" ~ member.name
+                        ~ " = " ~ cgNode(member.solved, debug: "declarePrimitive") ~ ",";
+
+            def ~= "\n};";
         }
 
-        return def ~ "\n};\n                                #endif\n";
+        return def ~ "\n                                #endif\n";
     }
 
 

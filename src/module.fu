@@ -52,6 +52,7 @@ pub struct ModuleStats
 
 pub struct Struct
 {
+    ::kind;
     name:       string;
 
     target?:    Target;
