@@ -3914,14 +3914,16 @@ pub fn solve(
                 mut last: intlit::Intlit;
                 for (mut i = 0; i < innerScope.len; i++)
                 {
-                    ref init = innerScope[i].target.GET_mut.solved;
-
-                    init = members[i].items[LET_INIT];
-                    _here = init.token;
+                    ref init    = innerScope[i].target.GET_mut.solved;
+                    let member  = members[i];
+                    init        = member.items[LET_INIT];
+                    _here       = member.token;
 
                     // Parse & reinit sequence.
                     if (init)
                     {
+                        _here = init.token;
+
                         if (init.kind == "int")
                         {
                             last = intlit::Intlit(init.value);
@@ -3941,8 +3943,8 @@ pub fn solve(
 
                     let next = intlit::Intlit(:signed, :unsigned,
                         absval: kind == "flags"
-                            ? last.absval << 1
-                            : last.absval  + 1);
+                            ? (i ? last.absval << 1 : 1)
+                            :      last.absval  + 1);
 
                     next.error || next.absval > last.absval || fail(
                         next.error || "Failed to auto-increment, range exhausted.");

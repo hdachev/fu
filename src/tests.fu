@@ -9552,6 +9552,15 @@ pub fn runTests()
         fn main() C.i32 - 1;
     `);
 
+    ZERO(`
+        flags Flags { A; B; C; D };
+
+        fn main() {
+            mut flags = A | C;
+            return flags.i32 == 5 ? 0 : 1;
+        }
+    `);
+
     // ZERO(`
     //     enum Thing {
     //         None;
