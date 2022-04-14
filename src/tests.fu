@@ -9486,15 +9486,37 @@ pub fn runTests()
     `);
 
     ZERO(`
+        enum EnumA: i32;
+        enum EnumB: EnumA { Zero = 0 };
+        fn main() Zero.i32;
+    `);
+
+    ZERO(`
         primitive PrimA: i32;
         primitive PrimB: PrimA { Zero = 0; One };
         fn main() (One - 1).i32;
     `);
 
     ZERO(`
-        enum EnumA: i32;
-        enum EnumB: EnumA { Zero = 0 };
-        fn main() Zero.i32;
+        primitive PrimA: i32;
+        primitive PrimB: PrimA { Zero = 0; One };
+
+    <alt>
+        fn and_decr(ref prim: PrimB)
+            prim &&= prim - 1;
+    <alt/>
+        fn and_decr(ref prim: PrimB)
+        {
+            mut res = prim - 1;
+            prim &&= res;
+            return prim;
+        }
+    </alt>
+
+        fn main() {
+            mut r = One;
+            return r.and_decr.i32;
+        }
     `);
 
     ZERO(`
