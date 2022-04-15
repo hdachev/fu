@@ -147,14 +147,15 @@ pub fn isAssignableAsArgument(host: Type, guest: Type, DONT_match_zeroes!?: bool
     return areQualsAssignable(host: host.quals, guest.quals)
         &&  isCanonAssignable(host: host.canon, guest.canon)
 
-        || guest.is_never
         || guest.is_zeroes && !DONT_match_zeroes && !(CANNOT_definit_mutrefs && host.quals & q_mutref);
 }
 
 pub fn isAssignable(host: Type, guest: Type, DONT_match_zeroes!?: bool, asArgument!?: bool): bool
 {
     return isAssignableAsArgument(:host, :guest, :DONT_match_zeroes)
-        && (asArgument || isLifetimeAssignable(host.lifetime, guest.lifetime));
+        && (asArgument || isLifetimeAssignable(host.lifetime, guest.lifetime))
+
+        || guest.is_never;
 }
 
 

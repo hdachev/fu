@@ -2024,6 +2024,17 @@ pub fn runTests()
         return g - 1;
     `);
 
+    ZERO(`
+        fn and_incr(ref x: i32, v: i32)
+            x &&= x + v;
+
+        fn main() {
+            mut x: i32 = 0;
+            and_incr(x, 10);
+            return x;
+        }
+    `);
+
 
     // Lints.
 
