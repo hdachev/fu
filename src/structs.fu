@@ -3,6 +3,8 @@ import module;
 
 pub struct StructCanon { modid: i32; index: i32 };
 
+let ONE_BASED = 1;
+
 pub fn parseStructCanon(canon: string): StructCanon
 {
     mut offset = 1;
@@ -16,7 +18,7 @@ pub fn parseStructCanon(canon: string): StructCanon
     offset == canon.len || throw(
         "parseStructCanon: trailing garbage in `" ~ canon ~ "`: " ~ offset ~ "|" ~ canon.len);
 
-    return StructCanon(:mi.modid, :mi.index);
+    return StructCanon(:mi.modid, :mi.index - ONE_BASED);
 }
 
 pub fn createStructCanon(
@@ -24,7 +26,7 @@ pub fn createStructCanon(
     modid: i32, index: i32, lax name: string): string
 {
     mut res = baseprim || "/";
-    res.appendMi(:modid, :index);
+    res.appendMi(:modid, :index + ONE_BASED);
 
     //
     if (baseprim)
