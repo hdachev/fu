@@ -7,24 +7,12 @@ import module;
 
 //
 
-pub let HM_CanBreak     = 1.i16 << 0;
-pub let HM_CanReturn    = 1.i16 << 1;
-pub let HM_Anon         = 1.i16 << 2;
-pub let HM_Function     = 1.i16 << 3;
-pub let HM_Lambda       = 1.i16 << 4;
-pub let HM_Struct       = 1.i16 << 5;
-pub let HM_LabelUsed    = 1.i16 << 6;
-pub let HM_KeepBlock    = 1.i16 << 7;
-
-
-//
-
 pub struct HelpersData
 {
     target!?:       Target;
 
     id?:            string;
-    mask!?:         i16;
+    mask!?:         HelpersMask;
     local_of!?:     i32;
     kills!?:        i32;
     locals_start!?: i32;

@@ -2185,7 +2185,7 @@ pub fn solve(
         return solveBlock(:items, :helpers_idx, :expr, :mask, :fnbody_of);
     }
 
-    fn solveBlock(items: SolvedNode[], helpers_idx!: i32, expr!: bool, mask!: i16, fnbody_of!: i32)
+    fn solveBlock(items: SolvedNode[], helpers_idx!: i32, expr!: bool, mask!: HelpersMask, fnbody_of!: i32)
     {
         let h = _helpers[helpers_idx];
 
@@ -3644,7 +3644,7 @@ pub fn solve(
                         n_body, type: ret_expect,
                         fnbody_of: target.index,
                         id: n_fn.value,
-                        mask: i16(HM_Function | HM_CanReturn | HM_LabelUsed | (n_fn.flags & F_LAMBDA && HM_Lambda)));
+                        mask: HM_Function | HM_CanReturn | HM_LabelUsed | (n_fn.flags & F_LAMBDA && HM_Lambda));
 
                     let mustBecomeInlineBecause = currentFn_mustBecomeInline;
                     if (mustBecomeInlineBecause)
@@ -4506,7 +4506,7 @@ pub fn solve(
 
             if (!CONTINUE_BELOW)
             {
-                if !(id ? item.id == id : item.mask & HM_Anon != 0)
+                if !(id ? item.id == id : !!(item.mask & HM_Anon))
                     continue;
 
                 if (cont)
@@ -6130,7 +6130,8 @@ pub fn solve(
 
                 mut s_body = solveBlock(
                     n_body, type: ret_expect,
-                    mask: i16(HM_CanReturn | (n_fn.flags & F_LAMBDA && HM_Lambda) | (arg_defs && HM_KeepBlock)),
+                    mask: HM_CanReturn | (n_fn.flags & F_LAMBDA && HM_Lambda)
+                                       | (arg_defs              && HM_KeepBlock),
                     id: n_fn.value,
                     :kills,
                     :locals_start);

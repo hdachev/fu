@@ -16,6 +16,22 @@ flags SolverStatus
 }
 
 
+// Solver helpers.
+
+flags HelpersMask
+{
+    HM_CanBreak
+    HM_CanReturn
+    HM_Anon
+    HM_Function
+
+    HM_Lambda
+    HM_Struct
+    HM_LabelUsed
+    HM_KeepBlock
+}
+
+
 //
 
 let F_METHOD        = 1 << 0;
