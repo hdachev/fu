@@ -64,7 +64,7 @@ let F_COMPOUND_ID   = 1 << 6;
 let     F_PARENS    = 1 << 7;           let F_WRITTEN_TO    = F_PARENS;
 
 
-let F_LAX           = 1 << 8;           let F_EFFECT        = F_LAX;
+let F_LAX           = 1 << 8;
 let F_ARG           = 1 << 9; ///////// TODO get rid of this
 // ...
 let F_MOVED_FROM    = 1 << 11;

@@ -614,10 +614,6 @@ pub fn parse(
                 if (v == "noflow")      return parseExoticDecl(asserts: A_NOFLOW);
                 if (v == "extern")      return parseExoticDecl(F_EXTERN);
                 if (v == "hotswap")     return parseExoticDecl(F_HOTSWAP);
-
-                // SKETCH EFFECTS //////////////////////////////////////////////
-                if (v == "effect")      return parseStructDecl(flags: F_EFFECT);
-                // SKETCH EFFECTS //////////////////////////////////////////////
             }
         }
 

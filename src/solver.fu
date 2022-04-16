@@ -5453,14 +5453,10 @@ pub fn solve(
     {
         if (!_current_fn.items || _current_fn.out.flags & F_EXTERN)
         {
-            // SKETCH EFFECTS //////////////////////////////////////////////
-            if (type.isStruct)
-            {
-                let s = lookupStruct(type);
-                if (s.target.flags & F_EFFECT)
-                    return s.target;
-            }
-            // SKETCH EFFECTS //////////////////////////////////////////////
+            /* SKETCH EFFECTS //////////////////////////////////////////////
+            if (type.isEffect)
+                return lookupStructOrUserPrimitive(type).target || BUG();
+            // SKETCH EFFECTS /*////////////////////////////////////////////
 
             fail("No implicit " ~ id.qBAD ~ " in scope, needed to call " ~ becauseOf.qWHAT ~ ".");
         }
