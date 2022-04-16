@@ -404,7 +404,7 @@ pub fn cpp_codegen(implicit module: Module, implicit ctx: Context): CodegenOutpu
         mut def = "\n                                #ifndef DEF_" ~ id
                 ~ "\n                                #define DEF_" ~ id;
 
-        if (s.kind == "primitive" || !members)
+        if (s.kind != "enum" || !members)
         {
             // Non-enum primitives, do simple typedefs,
             //  the whole point of using enums is for debuggers to provide nice feedback,
@@ -1760,17 +1760,8 @@ pub fn cpp_codegen(implicit module: Module, implicit ctx: Context): CodegenOutpu
 
         fn affectedByIntegerPromotions(type: Type)
         {
-            if (type.is_ref)
+            if (type.is_ref || /* is int or flags: */ !type.is_bitfield)
                 return false;
-
-            if (!type.is_integral)
-            {
-                // Flags enums!
-                if (type.is_bitfield)
-                    return true;
-
-                return false;
-            }
 
             let c = type.canon;
             return c.len == 2 // u8, i8
