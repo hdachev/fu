@@ -2,7 +2,7 @@
 
 // Overload flags.
 
-flags SolverStatus
+flags SolverStatus: u16
 {
     SS_LAZY
     SS_DID_START
@@ -12,7 +12,10 @@ flags SolverStatus
     SS_UPDATED
     SS_TYPE_RECUR
     SS_FN_RECUR
-    // TODO !!! F_UNUSED -> SS_UNUSED
+    // ...
+
+    SS_HOIST
+    SS_UNUSED
 }
 
 
@@ -63,11 +66,11 @@ let     F_PARENS    = 1 << 7;           let F_WRITTEN_TO    = F_PARENS;
 
 let F_LAX           = 1 << 8;           let F_EFFECT        = F_LAX;
 let F_ARG           = 1 << 9; ///////// TODO get rid of this
-let F_UNUSED        = 1 << 10;
+// ...
 let F_MOVED_FROM    = 1 << 11;
 
 let F_NOCOPY        = 1 << 12;
-// let F_PURE          = 1 << 13;
+// ...
 let F_CONVERSION    = 1 << 14;
 let F_OPT_ARG       = 1 << 15;
 
@@ -78,7 +81,7 @@ let F_USING         = 1 << 18;
 let F_MUSTNAME      = 1 << 19;          let F_EXTERN        = F_MUSTNAME;
 
 let F_PUB           = 1 << 20;
-let F_OPERATOR      = 1 << 21;          let F_HOIST         = F_OPERATOR;
+let F_OPERATOR      = 1 << 21;
 let F_REF           = 1 << 22;
 let F_SHADOW        = 1 << 23;
                                         ///////////////////
@@ -91,7 +94,7 @@ let F_RELAXABLE_REF = 1 << 27;
 let F_TEMPLATE      = 1 << 28;
 let F_INLINE        = 1 << 29;
 let F_LAMBDA        = 1 << 30;          let F_SINGLE_STMT   = F_LAMBDA;
-// let F_SINGLE_STMT   = 1 << 31;
+// ...
 
 
 

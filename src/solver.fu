@@ -2272,7 +2272,7 @@ pub fn solve(
             if !(var.flags & F_LAX)
                 warn(:t.solved.token, "Unused variable: " ~ var.name.qBAD ~ ": make it " ~ "lax".qKW ~ " if this is intentional.");
 
-            GET_mut(t).flags |= F_UNUSED;
+            GET_mut(t).status |= SS_UNUSED;
         }
 
         ref o = GET_mut(t);
@@ -7715,7 +7715,7 @@ pub fn solve(
             {
                 ref o = GET_mut(nested(index));
                 if !(o.flags & F_ARG)
-                    o.flags |= F_HOIST;
+                    o.status |= SS_HOIST;
             }
         }
     }

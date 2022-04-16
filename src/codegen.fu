@@ -1196,7 +1196,7 @@ pub fn cpp_codegen(implicit module: Module, implicit ctx: Context): CodegenOutpu
 
     fn F_HOIST_asPtr(target: Target)
     {
-        if !(target.flags & F_HOIST)
+        if !(target.status & SS_HOIST)
             return false;
 
         let t = target.solved.type;
@@ -1219,14 +1219,14 @@ pub fn cpp_codegen(implicit module: Module, implicit ctx: Context): CodegenOutpu
                       | (overload.type.is_mutref && M_MUTVAR)
                       | (overload.flags & F_MOVED_FROM && M_MOVABLE));
 
-        let isUnused = overload.flags & F_UNUSED;
+        let isUnused = overload.status & SS_UNUSED;
         if (isArg && isUnused)
             return annot;
 
         let id      = localID(:target, dedupe: true);
 
         // The new hoisting stuff, obviously comes as a complete afterthought.
-        if (target.flags & F_HOIST)
+        if (target.status & SS_HOIST)
         {
             _current_fn.target || BUG("TODO: hoisting for global variables.");
 
@@ -1266,7 +1266,7 @@ pub fn cpp_codegen(implicit module: Module, implicit ctx: Context): CodegenOutpu
 
         // Hoisted vars: the declaration is elsewhere,
         //  this is an assignment here.
-        if (target.flags & F_HOIST)
+        if (target.status & SS_HOIST)
             head ~= " = ";
 
         // Definit.
@@ -1314,7 +1314,7 @@ pub fn cpp_codegen(implicit module: Module, implicit ctx: Context): CodegenOutpu
             return head ~ " { " ~ expr ~ " }";
 
         // Hoisting.
-        if (target.flags & F_HOIST)
+        if (target.status & SS_HOIST)
         {
             if (target.F_HOIST_asPtr)
                 return head ~ "&(" ~ expr ~ ")";
