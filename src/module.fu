@@ -124,6 +124,7 @@ pub struct Node
 {
     true        ::kind;
     asserts?:   flags::DeclAsserts;
+    syntax?:    flags::ParseSyntax;
 
     flags?:     i32;
     value:      string;

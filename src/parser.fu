@@ -192,14 +192,16 @@ pub fn parse(
 
     fn make(
         ::kind,
-        items?: Node[],
-        flags?: i32,
-        value?: string,
-        asserts?: DeclAsserts)
+        items?:     Node[],
+        flags?:     i32,
+        value?:     string,
+        asserts?:   DeclAsserts,
+        syntax?:    ParseSyntax)
     {
         return Node(
-            :kind, :flags, :asserts, :value, :items,
-                token: TokenIdx(:modid, _loc) );
+            :kind, :value, :items,
+            :flags, :asserts, :syntax,
+            token: TokenIdx(:modid, _loc));
     };
 
     fn miss() Node();
@@ -1269,7 +1271,7 @@ pub fn parse(
         if (op == "&&") return createAnd(left, right);
 
         if (left.kind == "and" || left.kind == "or")
-            left.flags & F_PARENS || warn(
+            left.syntax & PS_PARENS || warn(
                 "Unparenthesized `" ~ left.kind ~ "` on the left side of an `" ~ op ~ "`.");
 
         // Experimental sugar,
@@ -1430,7 +1432,7 @@ pub fn parse(
     fn parseParens(): Node
     {
         mut out = parseExpression(P_RESET);
-        out.flags |= F_PARENS;
+        out.syntax |= PS_PARENS;
 
         consume("op", ")");
         return out;
