@@ -192,12 +192,13 @@ pub fn parse(
 
     fn make(
         ::kind,
-        items: Node[] = [],
-        flags: i32    =  0,
-        value: string = "")
+        items?: Node[],
+        flags?: i32,
+        value?: string,
+        asserts?: DeclAsserts)
     {
         return Node(
-            :kind, :flags, :value, :items,
+            :kind, :flags, :asserts, :value, :items,
                 token: TokenIdx(:modid, _loc) );
     };
 
@@ -361,10 +362,10 @@ pub fn parse(
     {
         consume("id", "struct");
 
-        return parseStructDecl(flags: F_NOCOPY);
+        return parseStructDecl(flags: F_NOCOPY, asserts: A_NOCOPY);
     }
 
-    fn parseStructDecl(flags! = 0): Node
+    fn parseStructDecl(flags!?: i32, asserts!?: DeclAsserts): Node
     {
         let name = tryConsume("id").value;
 
@@ -386,7 +387,7 @@ pub fn parse(
         }
 
         // Items: [ Base type (primitives), items (structs, enums & unions) ]
-        return make("struct", [ [], make("members", items) ], :flags, name);
+        return make("struct", [ [], make("members", items) ], :flags, :asserts, name);
     }
 
     fn parseStructItem(): Node
@@ -607,10 +608,10 @@ pub fn parse(
                 if (v == "flags")       return parsePrimDecl("flags");
                 if (v == "enum")        return parsePrimDecl("enum");
 
-                if (v == "pure")        return parseExoticDecl(F_PURE);
-                if (v == "purectx")     return parseExoticDecl(F_PURE_CTX);
-                if (v == "novec")       return parseExoticDecl(F_NOVEC);
-                if (v == "noflow")      return parseExoticDecl(F_NOFLOW);
+                if (v == "pure")        return parseExoticDecl(asserts: A_PURE);
+                if (v == "purectx")     return parseExoticDecl(asserts: A_PURE_CTX);
+                if (v == "novec")       return parseExoticDecl(asserts: A_NOVEC);
+                if (v == "noflow")      return parseExoticDecl(asserts: A_NOFLOW);
                 if (v == "extern")      return parseExoticDecl(F_EXTERN);
                 if (v == "hotswap")     return parseExoticDecl(F_HOTSWAP);
 
@@ -727,39 +728,45 @@ pub fn parse(
         let flags = F_CONVERSION;
 
         let v = consume("id").value;
-        if (v == "pure")   return parseExoticDecl(flags | F_PURE);
         if (v == "inline") return parseInlineDecl(flags);
         _idx--;
 
         return parseFixityDecl(flags);
     }
 
-    fn parseExoticDecl(mut flags?: i32): Node
+    fn parseExoticDecl(mut flags?: i32, mut asserts?: DeclAsserts): Node
     {
         for (;;)
         {
             let v = consume("id").value;
 
-            fn add(flag: i32) {
+            fn add(flag: i32)
+            {
                 flags  & flag && fail("Duplicate qualifier: " ~ v.qKW);
                 flags |= flag;
             }
 
-            if      (v == "pure")       add(F_PURE);
-            else if (v == "purectx")    add(F_PURE_CTX);
-            else if (v == "novec")      add(F_NOVEC);
-            else if (v == "noflow")     add(F_NOFLOW);
+            fn add(assert?: DeclAsserts)
+            {
+                asserts  & assert && fail("Dulicate assertion: " ~ v.qKW);
+                asserts |= assert;
+            }
+
+            if      (v == "pure")       add(A_PURE);
+            else if (v == "purectx")    add(A_PURE_CTX);
+            else if (v == "novec")      add(A_NOVEC);
+            else if (v == "noflow")     add(A_NOFLOW);
             else if (v == "extern")     add(F_EXTERN);
             else if (v == "hotswap")    add(F_HOTSWAP);
 
             else if (v == "fn")
-                return { _idx--; parseInlineDecl(F: flags) };
+                return { _idx--; parseInlineDecl(F: flags, :asserts) };
             else
                 fail("Unknown qualifier: " ~ v.qKW);
         }
     }
 
-    fn parseInlineDecl(mut flags?: i32, F = F_INLINE): Node
+    fn parseInlineDecl(mut flags?: i32, F = F_INLINE, mut asserts?: DeclAsserts): Node
     {
         flags |= F;
 
@@ -769,17 +776,17 @@ pub fn parse(
         if (v == "postfix") return parseFixityDecl(flags | F_POSTFIX);
         _idx--;
 
-        return parseFixityDecl(flags);
+        return parseFixityDecl(:flags, :asserts);
     }
 
-    fn parseFixityDecl(flags: i32, expr?: bool): Node
+    fn parseFixityDecl(flags: i32, asserts?: DeclAsserts, expr?: bool): Node
     {
         if (flags & F_CONVERSION)
             flags & (F_INFIX | F_PREFIX | F_POSTFIX) &&
                 fail("`implicit` functions can't be operators.");
 
         consume("id", "fn");
-        return parseFnDecl(flags, :expr);
+        return parseFnDecl(flags, :asserts, :expr);
     }
 
 
@@ -796,7 +803,7 @@ pub fn parse(
             flags: F_INLINE | F_LAMBDA, expr: !(mode & M_LAMBDA_STMT_OK), :name);
     }
 
-    fn parseFnDecl(mut flags?: i32, expr!?: bool): Node
+    fn parseFnDecl(mut flags?: i32, asserts?: DeclAsserts, expr!?: bool): Node
     {
         // fn hello(), fn +()
         mut name = tryConsume("id").value;
@@ -839,7 +846,7 @@ pub fn parse(
             consume("op", "=");
         }
 
-        return parseFnDecl_cont(:flags, :name, :expr, :endv);
+        return parseFnDecl_cont(:flags, :asserts, :name, :expr, :endv);
     }
 
     fn createAddrOfFn(name!: string, flags!: i32): Node
@@ -847,7 +854,7 @@ pub fn parse(
         return make(kind: "addroffn", :flags, value: name);
     }
 
-    fn parseFnDecl_cont(name!: string, mut flags!?: i32, expr!?: bool, endv! = ")"): Node
+    fn parseFnDecl_cont(name!: string, mut flags!?: i32, asserts?: DeclAsserts, expr!?: bool, endv! = ")"): Node
     {
         // Opening parens!
         mut items: Node[];
@@ -890,7 +897,7 @@ pub fn parse(
         if (_dollars.len > dollars0)
             flags |= F_TEMPLATE;
 
-        return make("fn", items, flags, name);
+        return make("fn", :items, :flags, :asserts, name);
     }
 
     fn parseFnBodyOrPattern(

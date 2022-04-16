@@ -123,6 +123,7 @@ pub struct Token
 pub struct Node
 {
     true        ::kind;
+    asserts?:   flags::DeclAsserts;
 
     flags?:     i32;
     value:      string;

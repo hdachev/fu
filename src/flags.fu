@@ -34,6 +34,22 @@ flags HelpersMask
 
 //
 
+flags DeclAsserts
+{
+    A_NOCOPY
+
+    A_NOVEC
+    A_NOVEC_MUT
+
+    A_PURE
+    A_PURE_CTX
+
+    A_NOFLOW
+};
+
+
+//
+
 let F_METHOD        = 1 << 0;
 let F_INFIX         = 1 << 1;
 let F_PREFIX        = 1 << 2;
@@ -48,12 +64,12 @@ let     F_PARENS    = 1 << 7;           let F_WRITTEN_TO    = F_PARENS;
 let F_LAX           = 1 << 8;           let F_EFFECT        = F_LAX;
 let F_ARG           = 1 << 9; ///////// TODO get rid of this
 let F_UNUSED        = 1 << 10;
-let F_MOVED_FROM    = 1 << 11;          let F_NOFLOW        = F_MOVED_FROM;
+let F_MOVED_FROM    = 1 << 11;
 
-let F_NOCOPY        = 1 << 12;          let F_NOVEC         = F_NOCOPY;
-let F_PURE          = 1 << 13;
+let F_NOCOPY        = 1 << 12;
+// let F_PURE          = 1 << 13;
 let F_CONVERSION    = 1 << 14;
-let F_OPT_ARG       = 1 << 15;          let F_PURE_CTX      = F_OPT_ARG;
+let F_OPT_ARG       = 1 << 15;
 
 
 let F_MUT           = 1 << 16;
