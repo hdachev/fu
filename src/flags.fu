@@ -1,5 +1,21 @@
 
 
+// Overload flags.
+
+flags SolverStatus
+{
+    SS_LAZY
+    SS_DID_START
+    SS_DIRTY
+    SS_FINALIZED
+
+    SS_UPDATED
+    SS_TYPE_RECUR
+    SS_FN_RECUR
+    // TODO !!! F_UNUSED -> SS_UNUSED
+}
+
+
 //
 
 let F_METHOD        = 1 << 0;

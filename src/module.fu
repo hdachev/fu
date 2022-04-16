@@ -303,7 +303,7 @@ pub struct Overload
     true            ::kind;
 
     flags:          i32;
-    status?:        u32;
+    status?:        flags::SolverStatus;
 
     name:           string;
 

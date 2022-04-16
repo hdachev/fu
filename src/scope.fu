@@ -4,17 +4,8 @@ import structs;
 import helpers;
 import module;
 
-pub let SS_LAZY         = 0x1 << 0;
-pub let SS_DID_START    = 0x1 << 1;
-pub let SS_DIRTY        = 0x1 << 2;
-pub let SS_FINALIZED    = 0x1 << 3;
 
-pub let SS_UPDATED      = 0x1 << 4;
-// ...
-
-pub let SS_TYPE_RECUR   = 0x1 << 16;
-pub let SS_FN_RECUR     = 0x1 << 17;
-// ...
+//
 
 pub let HM_CanBreak     = 1.i16 << 0;
 pub let HM_CanReturn    = 1.i16 << 1;
@@ -340,7 +331,7 @@ pub fn Scope_create(
     scope: &mut Scope,
     ::kind = "__no_kind_yet", name!?: string,
     type?: Type, flags!?: i32,
-    status?: u32,
+    status?: SolverStatus,
     nest!?: i32): Target
 {
     ref overloads = nest
@@ -374,8 +365,9 @@ pub fn Scope_set(ref items: ScopeItem[], id: string, target: Target, shadows!: b
     items.push(ScopeItem( :id, :target, :shadows ));
 }
 
-pub fn Scope_Typedef(scope: &mut Scope, id: string, type: Type, flags = F_PUB, name?: string,
-    status?: u32)
+pub fn Scope_Typedef(scope: &mut Scope,
+    id: string, type: Type, flags = F_PUB, name?: string,
+    status?: SolverStatus)
 {
     let target = Scope_create(:scope, "type", :type, :flags, :name, :status);
 
