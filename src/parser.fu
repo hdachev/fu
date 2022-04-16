@@ -193,7 +193,7 @@ pub fn parse(
     fn make(
         ::kind,
         items?:     Node[],
-        flags?:     i32,
+        flags?:     Flags,
         value?:     string,
         asserts?:   DeclAsserts,
         syntax?:    ParseSyntax)
@@ -367,7 +367,7 @@ pub fn parse(
         return parseStructDecl(asserts: A_NOCOPY);
     }
 
-    fn parseStructDecl(flags!?: i32, asserts!?: DeclAsserts): Node
+    fn parseStructDecl(flags!?: Flags, asserts!?: DeclAsserts): Node
     {
         let name = tryConsume("id").value;
 
@@ -430,7 +430,7 @@ pub fn parse(
         let init    = tryParseLetInit();
         softSemi();
 
-        return createLet(:id, flags: 0, [], :init);
+        return createLet(:id, [], :init);
     }
 
 
@@ -500,7 +500,7 @@ pub fn parse(
 
             // Maybe we should get rid of this.
             expr.kind != "call"
-                || ((expr.flags & (F_ID | F_ACCESS)) == 0)
+                || !(expr.flags & (F_ID | F_ACCESS))
                 || expr.items.len > 1
                 || tokens[_idx].value == endVal
                 || warn("Orphan pure-looking expression.");
@@ -514,7 +514,7 @@ pub fn parse(
 
     // Watch out, we want to not allow pubs & shadows together.
 
-    fn set_PUB(ref flags: i32)
+    fn set_PUB(ref flags: Flags)
     {
         flags |= F_PUB;
         flags & F_SHADOW && fail("Cannot pub a shadow.");
@@ -732,13 +732,13 @@ pub fn parse(
         return parseFixityDecl(flags);
     }
 
-    fn parseExoticDecl(mut flags?: i32, mut asserts?: DeclAsserts): Node
+    fn parseExoticDecl(mut flags?: Flags, mut asserts?: DeclAsserts): Node
     {
         for (;;)
         {
             let v = consume("id").value;
 
-            fn add(flag: i32)
+            fn add(flag: Flags)
             {
                 flags  & flag && fail("Duplicate qualifier: " ~ v.qKW);
                 flags |= flag;
@@ -764,7 +764,7 @@ pub fn parse(
         }
     }
 
-    fn parseInlineDecl(mut flags?: i32, F = F_INLINE, mut asserts?: DeclAsserts): Node
+    fn parseInlineDecl(mut flags?: Flags, F = F_INLINE, mut asserts?: DeclAsserts): Node
     {
         flags |= F;
 
@@ -777,7 +777,7 @@ pub fn parse(
         return parseFixityDecl(:flags, :asserts);
     }
 
-    fn parseFixityDecl(flags: i32, asserts?: DeclAsserts, expr?: bool): Node
+    fn parseFixityDecl(flags: Flags, asserts?: DeclAsserts, expr?: bool): Node
     {
         if (flags & F_CONVERSION)
             flags & (F_INFIX | F_PREFIX | F_POSTFIX) &&
@@ -801,7 +801,7 @@ pub fn parse(
             flags: F_INLINE | F_LAMBDA, expr: !(mode & M_LAMBDA_STMT_OK), :name);
     }
 
-    fn parseFnDecl(mut flags?: i32, asserts?: DeclAsserts, expr!?: bool): Node
+    fn parseFnDecl(mut flags?: Flags, asserts?: DeclAsserts, expr!?: bool): Node
     {
         // fn hello(), fn +()
         mut name = tryConsume("id").value;
@@ -847,12 +847,12 @@ pub fn parse(
         return parseFnDecl_cont(:flags, :asserts, :name, :expr, :endv);
     }
 
-    fn createAddrOfFn(name!: string, flags!: i32): Node
+    fn createAddrOfFn(name!: string, flags!: Flags): Node
     {
         return make(kind: "addroffn", :flags, value: name);
     }
 
-    fn parseFnDecl_cont(name!: string, mut flags!?: i32, asserts?: DeclAsserts, expr!?: bool, endv! = ")"): Node
+    fn parseFnDecl_cont(name!: string, mut flags!?: Flags, asserts?: DeclAsserts, expr!?: bool, endv! = ")"): Node
     {
         // Opening parens!
         mut items: Node[];
@@ -899,10 +899,10 @@ pub fn parse(
     }
 
     fn parseFnBodyOrPattern(
-        ref out_push_body: Node[], expr!: bool): i32
+        ref out_push_body: Node[], expr!: bool): Flags
     {
         //
-        mut flags = 0;
+        mut flags: Flags;
         mut body: Node;
 
         //
@@ -1001,10 +1001,10 @@ pub fn parse(
 
     fn parseArgsDecl(
         ref outArgs: Node[],
-        endk: ::kind, endv: string): i32
+        endk: ::kind, endv: string): Flags
     {
         mut first = true;
-        mut outFlags = 0;
+        mut outFlags: Flags;
 
         mut implicit: Node[];
         mut defaults = false;
@@ -1094,7 +1094,7 @@ pub fn parse(
 
     fn parseLet(xqmark! = false, allowTypeUnions! = false): Node
     {
-        mut flags = 0;
+        mut flags: Flags;
 
         if (tryConsume("id", "using"   ))   flags |= F_USING;
         if (tryConsume("id", "implicit"))   flags |= F_IMPLICIT;
@@ -1173,7 +1173,7 @@ pub fn parse(
             }
         }
 
-        return createLet(id, flags, type, init);
+        return createLet(id, :flags, type, init);
     }
 
     fn tryParseLetInit()
@@ -1181,11 +1181,9 @@ pub fn parse(
         return tryConsume("op", "=") && parseExpression(P_RESET);
     }
 
-    fn createLet(
-        id: string, flags: i32,
-        type: Node, init: Node): Node
+    fn createLet(id: string, type: Node, init: Node, flags!?: Flags): Node
     {
-        return make("let", [ type, init ], flags, id);
+        return make("let", [ type, init ], :flags, id);
     }
 
     fn parseExpression(p1: i32, mode!?: i32): Node
@@ -1561,9 +1559,9 @@ pub fn parse(
     fn parseCallArgs(
         endop: string, ref out_args: Node[],
 
-        experimental_sliceAnnots!?: bool): i32
+        experimental_sliceAnnots!?: bool): Flags
     {
-        mut flags = 0;
+        mut flags: Flags;
 
         mut first = true;
         for (;;)
@@ -1657,7 +1655,7 @@ pub fn parse(
         return fail("Can't :autoname this expression.");
     }
 
-    fn createArgID(id: string, expr: Node, flags?: i32): Node
+    fn createArgID(id: string, expr: Node, flags?: Flags): Node
     {
         return make("argid", [ expr ], :flags, id);
     }
@@ -1704,7 +1702,7 @@ pub fn parse(
         return createArrayLiteral(argFlags, args);
     }
 
-    fn createArrayLiteral(argFlags: i32, items: Node[]): Node
+    fn createArrayLiteral(argFlags: Flags, items: Node[]): Node
     {
         return make("arrlit", items, argFlags);
     }
@@ -1724,12 +1722,12 @@ pub fn parse(
         return make(kind, :value);
     }
 
-    fn createCall(id: string, flags: i32, args: Node[] = []): Node
+    fn createCall(id: string, flags: Flags, args: Node[] = []): Node
     {
         return make("call", args, flags, id);
     }
 
-    fn createRead(id: string, flags?: i32): Node
+    fn createRead(id: string, flags?: Flags): Node
     {
         if (id == "true" || id == "false")
             return make("bool", value: id);
@@ -1756,12 +1754,12 @@ pub fn parse(
         return createJump(:kind, :label, :expr);
     }
 
-    fn createReturn(expr: Node, flags!?: i32): Node =
+    fn createReturn(expr: Node, flags!?: Flags): Node =
         createJump(kind: "return", :expr, :flags);
 
     fn createJump(
         kind!: ::kind/*"break"|"continue"|"return"*/,
-        label!?: string, expr?: Node, flags!?: i32): Node
+        label!?: string, expr?: Node, flags!?: Flags): Node
     {
         return make(kind, value: label, expr && [ expr ], :flags);
     }
@@ -1796,7 +1794,7 @@ pub fn parse(
     fn parseCatchErrvar(): Node
     {
         let id = consume("id").value;
-        return createLet(:id, 0, createRead("string"), Node);
+        return createLet(:id, createRead("string"), Node);
     }
 
 

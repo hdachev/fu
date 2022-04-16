@@ -404,7 +404,7 @@ pub fn solve(
     fn SolvedNode(
         ::kind,
         type:       Type,
-        flags?:     i32,
+        flags?:     Flags,
         value?:     string,
         items?:     SolvedNode[],
         target?:    Target,
@@ -608,7 +608,7 @@ pub fn solve(
         return true;
     }
 
-    fn Binding(id: string, mut type: Type, flags!: i32, ref shadows!: bool)
+    fn Binding(id: string, mut type: Type, flags!: Flags, ref shadows!: bool)
     {
         mut name = id;
 
@@ -909,7 +909,7 @@ pub fn solve(
         local_scope!?: bool,
         misc_scope!?: Scope,
         args?: [SolvedNode],
-        flags!?: i32, target!?: Target): Target
+        flags!?: Flags, target!?: Target): Target
     {
         let error_len0 = error.len;
 
@@ -1671,7 +1671,7 @@ pub fn solve(
         id: string, ref args: SolvedNode[],
         ref reorder: i32[],
         ref conversions: Target[][],
-        flags: i32, target: Target): Target
+        flags: Flags, target: Target): Target
     {
         mut error: string;
 
@@ -3725,7 +3725,7 @@ pub fn solve(
                 && checkStruct(type)
                 || Scope_create(_scope,
                     kind: "type",
-                    name: "$" ~ id, :type, flags: 0);
+                    name: "$" ~ id, :type);
 
             Scope_set(res, name, :target, shadows: false);
         });
@@ -4678,7 +4678,7 @@ pub fn solve(
     }
 
     fn solveLetLike_dontTouchScope(
-        id: string, mut flags: i32,
+        id: string, mut flags: Flags,
         init!: SolvedNode,
         annot!?: Type): SolvedNode
     {
@@ -4853,7 +4853,7 @@ pub fn solve(
         return SolvedNode(kind: "letdef", :target, type: []);
     }
 
-    fn createLet(id: string, flags: i32, init: SolvedNode)
+    fn createLet(id: string, flags: Flags, init: SolvedNode)
     {
         mut out = solveLetLike_dontTouchScope(:flags, :id, :init);
         return solveLet(:out, :id);
@@ -4956,7 +4956,7 @@ pub fn solve(
 
     // TODO we have to get rid of this.
 
-    fn Scope_lookupType(mut id: string, flags: i32 = 0): Type
+    fn Scope_lookupType(mut id: string, flags?: Flags): Type
     {
         mut scope_iterator: i32;
         mut overloadIdx: Target;
@@ -5008,7 +5008,7 @@ pub fn solve(
         return createEmpty(:type);
     }
 
-    fn solveAddrOfFn(id: string, flags = 0): Target[]
+    fn solveAddrOfFn(id: string, flags?: Flags): Target[]
     {
         mut shadow = false;
         mut result: Target[];
@@ -5438,7 +5438,7 @@ pub fn solve(
 
     //
 
-    fn createLet(id: string, type: Type, flags: i32, ref shadows!: bool)
+    fn createLet(id: string, type: Type, flags: Flags, ref shadows!: bool)
     {
         let target  = Binding(id, type, :flags, :shadows);
         let ret     = SolvedNode(
@@ -6147,7 +6147,7 @@ pub fn solve(
 
         //
         let callsite = SolvedNode(
-            "call", flags: 0, value: debug,
+            "call", flags: [], value: debug,
                     :type, args, :target);
 
         // Track deps.

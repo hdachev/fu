@@ -126,7 +126,7 @@ pub struct Node
     asserts?:   flags::DeclAsserts;
     syntax?:    flags::ParseSyntax;
 
-    flags?:     i32;
+    flags?:     flags::Flags;
     value:      string;
     items?:     Node[];
     token:      TokenIdx;
@@ -171,7 +171,7 @@ pub struct SolvedNode
     true        ::kind;
 
     helpers:    Helpers; // TODO not here: I had room for it, but honestly this is not the best place for this.
-    flags:      i32;
+    flags:      flags::Flags;
 
     value:      string;
     items:      SolvedNode[];
@@ -271,7 +271,7 @@ pub struct Argument
 
     using type?:    Type;
     default?:       SolvedNode;
-    flags?:         i32;
+    flags?:         flags::Flags;
     local?:         i32;
 
     // Arguments at risk -
@@ -304,7 +304,7 @@ pub struct Overload
 {
     true            ::kind;
 
-    flags:          i32;
+    flags:          flags::Flags;
     status?:        flags::SolverStatus;
 
     name:           string;

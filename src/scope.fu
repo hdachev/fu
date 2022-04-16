@@ -318,7 +318,7 @@ pub fn ==(a: ScopeMemo, b: ScopeMemo) cmp(a, b) == 0;
 pub fn Scope_create(
     scope: &mut Scope,
     ::kind = "__no_kind_yet", name!?: string,
-    type?: Type, flags!?: i32,
+    type?: Type, flags!?: Flags,
     status?: SolverStatus,
     nest!?: i32): Target
 {
