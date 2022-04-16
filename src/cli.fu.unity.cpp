@@ -24,6 +24,7 @@
 #include "lib/debug.fu.cpp"
 #include "../lib/env.fu.cpp"
 #include "../lib/fs.fu.cpp"
+#include "../lib/exec.fu.cpp"
 #include "../lib/spawn.fu.cpp"
 #include "testdiff.fu.cpp"
 #include "context.fu.cpp"

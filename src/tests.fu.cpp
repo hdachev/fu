@@ -20,6 +20,7 @@ struct s_Module;
 struct s_ModuleInputs;
 struct s_LexerOutput;
 struct s_Token;
+enum s_kind: fu::i8;
 struct s_ParserOutput;
 struct s_Node;
 struct s_TokenIdx;
@@ -48,11 +49,11 @@ struct s_CodegenOutput;
 struct s_ModuleStats;
 struct s_ModuleStat;
 struct s_Map_gb6sFwC7;
-fu_STR serialize_Z1U7ENgf(const s_TestDiffs&);
+fu_STR serialize_FUVdDfvU(const s_TestDiffs&);
 int write_Aym1I4GS(fu_STR&&, fu::view<char>, unsigned);
-s_Context ZERO_1upFFG2G(fu_VEC<fu_STR>&&, const s_Options&, s_TestDiffs&);
-void append_4NI6civd(s_TestDiffs&, const s_TestDiffs&);
-void TODO_aDkuzmyI(const fu_VEC<fu_STR>&, s_TestDiffs&);
+s_Context ZERO_IR4bGBOh(fu_VEC<fu_STR>&&, const s_Options&, s_TestDiffs&);
+void append_CXqPs3bP(s_TestDiffs&, const s_TestDiffs&);
+void TODO_VpwO06E8(const fu_VEC<fu_STR>&, s_TestDiffs&);
 void TODO_lY1zhnoo(const fu_STR&, s_TestDiffs&);
 void ZERO_SAME_XdOzPelb(fu::view<fu_STR>, s_TestDiffs&);
 
@@ -120,11 +121,80 @@ struct s_Options
 };
                                 #endif
 
+                                #ifndef DEF_s_kind
+                                #define DEF_s_kind
+enum s_kind: fu::i8
+{
+    s_kind_sof = 1,
+    s_kind_id = 2,
+    s_kind_op = 3,
+    s_kind_int = 4,
+    s_kind_real = 5,
+    s_kind_char = 6,
+    s_kind_str = 7,
+    s_kind_err = 8,
+    s_kind_eof = 9,
+    s_kind_root = 10,
+    s_kind_block = 11,
+    s_kind_argid = 12,
+    s_kind_let = 13,
+    s_kind_call = 14,
+    s_kind_arrlit = 15,
+    s_kind_if = 16,
+    s_kind_or = 17,
+    s_kind_and = 18,
+    s_kind_loop = 19,
+    s_kind_break = 20,
+    s_kind_return = 21,
+    s_kind_continue = 22,
+    s_kind_bool = 23,
+    s_kind_definit = 24,
+    s_kind_import = 25,
+    s_kind_defer = 26,
+    s_kind_try = 27,
+    s_kind_typedef = 28,
+    s_kind_typecast = 29,
+    s_kind_typeassert = 30,
+    s_kind_typeparam = 31,
+    s_kind_addroffn = 32,
+    s_kind_forfieldsof = 33,
+    s_kind_pragma = 34,
+    s_kind_void = 35,
+    s_kind_struct = 36,
+    s_kind_primitive = 37,
+    s_kind_flags = 38,
+    s_kind_enum = 39,
+    s_kind_members = 40,
+    s_kind_fn = 41,
+    s_kind_fnbranch = 42,
+    s_kind_pattern = 43,
+    s_kind_typeunion = 44,
+    s_kind_typetag = 45,
+    s_kind_jump = 46,
+    s_kind_empty = 47,
+    s_kind_letdef = 48,
+    s_kind___relaxed = 49,
+    s_kind___convert = 50,
+    s_kind_fndef = 51,
+    s_kind_copy = 52,
+    s_kind_move = 53,
+    s_kind___far_jump = 54,
+    s_kind___no_kind_yet = 55,
+    s_kind_type = 56,
+    s_kind_var = 57,
+    s_kind_field = 58,
+    s_kind_enumv = 59,
+    s_kind_template = 60,
+    s_kind___native = 61,
+    s_kind_inline = 62,
+};
+                                #endif
+
                                 #ifndef DEF_s_Token
                                 #define DEF_s_Token
 struct s_Token
 {
-    fu_STR kind;
+    s_kind kind;
     fu_STR value;
     int idx0;
     int idx1;
@@ -173,7 +243,7 @@ struct s_TokenIdx
                                 #define DEF_s_Node
 struct s_Node
 {
-    fu_STR kind;
+    s_kind kind;
     int flags;
     fu_STR value;
     fu_VEC<s_Node> items;
@@ -263,6 +333,7 @@ struct s_ScopeItem
                                 #define DEF_s_Struct
 struct s_Struct
 {
+    s_kind kind;
     fu_STR name;
     s_Target target;
     fu_VEC<s_ScopeItem> items;
@@ -274,6 +345,7 @@ struct s_Struct
     explicit operator bool() const noexcept
     {
         return false
+            || kind
             || name
             || target
             || items
@@ -385,7 +457,7 @@ struct s_RWRanges
                                 #define DEF_s_SolvedNode
 struct s_SolvedNode
 {
-    fu_STR kind;
+    s_kind kind;
     s_Helpers helpers;
     int flags;
     fu_STR value;
@@ -411,12 +483,12 @@ struct s_SolvedNode
                                 #define DEF_s_Overload
 struct s_Overload
 {
-    fu_STR kind;
+    s_kind kind;
+    int flags;
+    unsigned status;
     fu_STR name;
     fu_STR sighash;
     s_Type type;
-    int flags;
-    unsigned status;
     s_SolvedNode solved;
     explicit operator bool() const noexcept
     {
@@ -812,7 +884,7 @@ extern const fu_STR FUDIR;
 inline constexpr unsigned RW_RW_RW = (((0x6u << 6u) | (0x6u << 3u)) | (0x6u << 0u));
                                 #endif
 
-inline static void parallel_for_WGQPjEj0(const int min, int end, fu::view_mut<s_TestResult> result, fu::view<fu_VEC<fu_STR>> arr)
+inline static void parallel_for_SilmelK6(const int min, int end, fu::view_mut<s_TestResult> result, fu::view<fu_VEC<fu_STR>> arr)
 {
     int start = (end & 0);
 
@@ -837,7 +909,7 @@ inline static void parallel_for_WGQPjEj0(const int min, int end, fu::view_mut<s_
 
             try
             {
-                ZERO_1upFFG2G(fu_VEC<fu_STR>(test), s_Options{}, testdiffs);
+                ZERO_IR4bGBOh(fu_VEC<fu_STR>(test), s_Options{}, testdiffs);
             }
             catch (const std::exception& o_0)
             {
@@ -855,13 +927,13 @@ inline static void parallel_for_WGQPjEj0(const int min, int end, fu::view_mut<s_
     ;
 }
 
-                                #ifndef DEF_map_hkGqLujK
-                                #define DEF_map_hkGqLujK
-inline fu_VEC<s_TestResult> map_hkGqLujK(fu::view<fu_VEC<fu_STR>> arr, const int min)
+                                #ifndef DEF_map_h0IO5bBx
+                                #define DEF_map_h0IO5bBx
+inline fu_VEC<s_TestResult> map_h0IO5bBx(fu::view<fu_VEC<fu_STR>> arr, const int min)
 {
     /*MOV*/ fu_VEC<s_TestResult> result {};
     result.grow<false>(arr.size());
-    parallel_for_WGQPjEj0(min, arr.size(), result, arr);
+    parallel_for_SilmelK6(min, arr.size(), result, arr);
     return /*NRVO*/ result;
 }
                                 #endif
@@ -973,11 +1045,11 @@ void runTests_n07RecyR()
 {
     fu_STR TESTDIFFS_FILE = (FUDIR + "testdiff/now.td"_fu);
     s_TestDiffs testdiffs = s_TestDiffs{};
-    fu_DEFER_IF_OK(write_Aym1I4GS(fu_STR(TESTDIFFS_FILE), serialize_Z1U7ENgf(testdiffs), RW_RW_RW));
+    fu_DEFER_IF_OK(write_Aym1I4GS(fu_STR(TESTDIFFS_FILE), serialize_FUVdDfvU(testdiffs), RW_RW_RW));
     fu_VEC<fu_VEC<fu_STR>> PARZERO_queue {};
     fu_DEFER_IF_OK(
     {
-        fu_VEC<s_TestResult> results = map_hkGqLujK(PARZERO_queue, 0);
+        fu_VEC<s_TestResult> results = map_h0IO5bBx(PARZERO_queue, 0);
         fu_STR error {};
         for (int i = 0; i < results.size(); i++)
         {
@@ -985,7 +1057,7 @@ void runTests_n07RecyR()
             if (result.error)
                 error += (result.error + "\n"_fu);
             else
-                append_4NI6civd(testdiffs, result.testdiffs);
+                append_CXqPs3bP(testdiffs, result.testdiffs);
 
         };
         if (error)
@@ -1062,7 +1134,7 @@ void runTests_n07RecyR()
     PARZERO_DB1hH8Vh("\n        let static = 1;\n        fn template(arg) static + arg;\n        let arg = 7;                        // <- template shouldn't see this\n        let result = template(arg / -4);    // <- when specializing here\n        fn main() result;\n    "_fu, PARZERO_queue);
     PARZERO_DB1hH8Vh("\n        fn main() {\n            let static = 1;\n            fn template(arg) static + arg;\n            let arg = 7; // same here, except we're in a fn.\n            return template(arg / -4);\n        }\n    "_fu, PARZERO_queue);
     PARZERO_xmrQ7MED(fu_VEC<fu_STR> { fu::slate<2, fu_STR> { "\n        fn template_add(a, b) a + b;\n    "_fu, "\n        struct HasInt { i: i32 };\n        <split/>\n        fn +(a: HasInt, b: HasInt) HasInt(a.i + b.i);\n        fn main() _0::template_add(HasInt(1), HasInt(2)).i - 3;\n    "_fu } }, PARZERO_queue);
-    TODO_aDkuzmyI(fu_VEC<fu_STR> { fu::slate<2, fu_STR> { "\n        fn template_add(a, b) a + b;\n    "_fu, "\n        struct HasInt { i: i32 };\n        fn main() {\n            infix fn +(a: HasInt, b: HasInt) HasInt(a.i + b.i); // its hard to defend this -\n            _0::template_add(HasInt(1), HasInt(2)).i - 3;       //  the thing above works but this doesn't.\n        }                                                       //   given the autoshadowing, we might just want to allow everything.\n    "_fu } }, testdiffs);
+    TODO_VpwO06E8(fu_VEC<fu_STR> { fu::slate<2, fu_STR> { "\n        fn template_add(a, b) a + b;\n    "_fu, "\n        struct HasInt { i: i32 };\n        fn main() {\n            infix fn +(a: HasInt, b: HasInt) HasInt(a.i + b.i); // its hard to defend this -\n            _0::template_add(HasInt(1), HasInt(2)).i - 3;       //  the thing above works but this doesn't.\n        }                                                       //   given the autoshadowing, we might just want to allow everything.\n    "_fu } }, testdiffs);
     PARZERO_DB1hH8Vh("\n        fn inner(i: i32): i32\n            i > 0 ? outer(i - 1) : 0;\n\n        fn outer(i: i32): i32\n            2 * inner(i);\n\n        return outer(1);\n    "_fu, PARZERO_queue);
     PARZERO_DB1hH8Vh("\n        fn test(one: i32)\n        {\n            let zero = one - 1;\n            let two  = one * 2;\n\n            fn inner(i: i32): i32\n                i > zero ? outer(i - one) : zero;\n\n            fn outer(i: i32): i32\n                two * inner(i);\n\n            return outer(one) + (two - one) * 17;\n        }\n\n        fn main() test(1) - 17;\n    "_fu, PARZERO_queue);
     PARZERO_DB1hH8Vh("\n        fn inner(i: i32): i32\n            outer(i - 1);\n\n        fn outer(implicit x: i32, i: i32): i32\n            i > 0   ? inner(i)\n                    : x + i;\n\n        let implicit x = 7;\n        return outer(1) - 7;\n    "_fu, PARZERO_queue);
@@ -1181,6 +1253,7 @@ void runTests_n07RecyR()
     PARZERO_DB1hH8Vh("\n        mut CHANGE = false;\n        CHANGE ||= true;\n        return CHANGE.i32 - 1;\n    "_fu, PARZERO_queue);
     TODO_lY1zhnoo("\n        mut m: Map(string, string);\n        mut g = 0;\n\n        m[\"hello\"] = \"world\";\n        fn f() {\n            g++;\n            return \"cruel world\";\n        }\n\n        m[\"hello\"] ||= f();\n        return g;\n    "_fu, testdiffs);
     TODO_lY1zhnoo("\n        mut m: Map(string, string);\n        mut g = 0;\n\n        m[\"_not_hello_\"] = \"world\";\n        fn f() {\n            g++;\n            return \"cruel world\";\n        }\n\n        m[\"hello\"] ||= f();\n        return g - 1;\n    "_fu, testdiffs);
+    PARZERO_DB1hH8Vh("\n        fn and_incr(ref x: i32, v: i32)\n            x &&= x + v;\n\n        fn main() {\n            mut x: i32 = 0;\n            and_incr(x, 10);\n            return x;\n        }\n    "_fu, PARZERO_queue);
     PARZERO_DB1hH8Vh("\n        struct Test { x: i32; }\n        fn test(t: &mut Test) t.x++;\n        mut t = Test();\n        <fail orphan>\n        t.test;             <pass/>\n        t.test();           </fail>\n        return t.x - 1;\n    "_fu, PARZERO_queue);
     PARZERO_DB1hH8Vh("\n        {\n            {\n                return 0;\n            }\n        }\n    "_fu, PARZERO_queue);
     PARZERO_DB1hH8Vh("\n        {\n        <fail block>\n        {\n            return 0;\n        }\n        <pass/>\n            {\n                return 0;\n            }\n        </fail>\n        }\n    "_fu, PARZERO_queue);
@@ -1599,7 +1672,7 @@ void runTests_n07RecyR()
     PARZERO_xmrQ7MED(fu_VEC<fu_STR> { fu::slate<3, fu_STR> { "\n        fn find(keys: $T[], item: $T) {\n            for (mut i = 0; i < keys.len; i++) {\n                if (keys[i] >= item) {\n                    if (keys[i] != item)\n                        return -1;\n\n                    return i;\n                }\n            }\n\n            return -1;\n        }\n    "_fu, "\n        fn Set(_: $K) struct { keys: $K[]; };\n\n        fn has(using _, key)\n            _0::find(keys, key) >= 0;\n    "_fu, "\n        fn use_Set(a: string) {\n            mut set: _1::Set(string);\n            set.keys ~= a;\n            return set._1::has(a);\n        }\n\n        fn dont_use_Set(a: string, b: string) {\n            mut keys: string[];\n            keys ~= b;\n            keys ~= a;\n            return keys.find(a);\n        }\n\n        fn main() {\n            if (!use_Set(\"a\"))\n                return -1;\n\n            return dont_use_Set(\"a\", \"b\") - 1;\n        }\n    "_fu } }, PARZERO_queue);
     PARZERO_DB1hH8Vh("\n        fn test(tokens: i32[]) {\n            mut lidx = 0;\n            mut sum  = 0;\n\n            fn token(idx: i32, col!: i32)       = sum += idx * col;\n            fn token(idx: i32)                  = token(:idx, col: lidx - idx);\n\n            for (mut i = 0; i < tokens.len; i++)\n                token(tokens[i]);\n\n            return sum;\n        }\n\n        fn main() [ 1 ].test + 1;\n    "_fu, PARZERO_queue);
     PARZERO_xmrQ7MED(fu_VEC<fu_STR> { fu::slate<2, fu_STR> { "\n        fn sum_each(a, b, each)     a.each + b.each;\n\n        fn hello(x) {\n            if (x & 1) {\n                fn each(y) y    ? y * each(y - 1)\n                                : 100;\n\n                return sum_each(x, x, fn each);\n            }\n            else {\n                fn each(y) y    ? y * each(y - 1)\n                                : 10000;\n\n                return sum_each(x, x, fn each);\n            }\n        }\n    "_fu, "\n        fn each(y) y & 1    ? y\n                            : y / 2 + each(y / 2);\n\n        fn main() _0::hello(1) - 2 * each(100)\n                + _0::hello(2) - 2 * each(20000);\n    "_fu } }, PARZERO_queue);
-    TODO_aDkuzmyI(fu_VEC<fu_STR> { fu::slate<2, fu_STR> { "\n        fn sum_each(a, b)       // Same as above,\n            a.each + b.each;    //  but we don't explicitly pass the fn each in.\n\n        fn hello(x) {\n            if (x & 1) {\n                fn each(a) a    ? a * each(a - 1)   // These get ignored?\n                                : 100;              //  sum_each goes and selects the one from _1.\n\n                return sum_each(x, x);\n            }\n            else {\n                fn each(b) b    ? b * each(b - 1)\n                                : 10000;\n\n                return sum_each(x, x);\n            }\n        }\n    "_fu, "\n        fn each(c) c & 1    ? c\n                            : c / 2 + each(c / 2);\n\n        fn main() _0::hello(1) - 2 * each(100)\n                + _0::hello(2) - 2 * each(20000);\n    "_fu } }, testdiffs);
+    TODO_VpwO06E8(fu_VEC<fu_STR> { fu::slate<2, fu_STR> { "\n        fn sum_each(a, b)       // Same as above,\n            a.each + b.each;    //  but we don't explicitly pass the fn each in.\n\n        fn hello(x) {\n            if (x & 1) {\n                fn each(a) a    ? a * each(a - 1)   // These get ignored?\n                                : 100;              //  sum_each goes and selects the one from _1.\n\n                return sum_each(x, x);\n            }\n            else {\n                fn each(b) b    ? b * each(b - 1)\n                                : 10000;\n\n                return sum_each(x, x);\n            }\n        }\n    "_fu, "\n        fn each(c) c & 1    ? c\n                            : c / 2 + each(c / 2);\n\n        fn main() _0::hello(1) - 2 * each(100)\n                + _0::hello(2) - 2 * each(20000);\n    "_fu } }, testdiffs);
     PARZERO_DB1hH8Vh("\n        fn a        = \"aaa\";\n        fn shorter  = \"bb\";\n        fn greater  = \"aac\";\n\n        return a <> shorter == +1\n            && a <> greater == -1 ? 0 : 101;\n    "_fu, PARZERO_queue);
     PARZERO_xmrQ7MED(fu_VEC<fu_STR> { fu::slate<2, fu_STR> { "\n        fn &(a, b) {\n            mut res = a;\n            for (fieldname i: $a) res.i &= b.i;\n            return res;\n        }\n\n        struct XY  { x: i32; y: i32 };\n        struct UVW { u: i32; v: i32; w: i32 };\n    "_fu, "\n        import _0;\n\n        fn main() {\n            mut xy  =  XY(1, 2)    &  XY(2, 3);\n            mut uvw = UVW(1, 2, 3) & UVW(2, 3, 4);\n            return xy.y - uvw.v;\n        }\n    "_fu } }, PARZERO_queue);
     PARZERO_DB1hH8Vh("\n        pragma emit(\"\n            void ccIncrX2(int& a, int b) {\n                a += b * 2;\n            }\n        \");\n\n        fn main() {\n            mut a = 0;\n            pragma emit(\"ccIncrX2(\", a, \", 5);\");\n            return a - 10;\n        }\n    "_fu, PARZERO_queue);
@@ -1614,22 +1687,22 @@ void runTests_n07RecyR()
     PARZERO_DB1hH8Vh("\n        fn test(ref arr: i32[])\n            arr.par::each: |v, i| v += i;\n\n        fn main() {\n            let N = 1087 * 1091;\n\n            mut orig: i32[];\n            orig.resize(N);\n\n            mut arr = orig;\n            arr.test();\n\n            if (arr.len != N || arr.len != orig.len)\n                return 1;\n\n            for (mut i = 0; i < N; i++)\n                if (orig[i] != 0)\n                    return 2;\n\n            for (mut i = 0; i < N; i++)\n                if (arr[i] != i)\n                    return 3;\n\n            return 0;\n        }\n    "_fu, PARZERO_queue);
     PARZERO_DB1hH8Vh("\n        fn main() {\n            let i: i8 = 0;\n            <fail return type annot>\n            return i;        <pass/>\n            return i.i32;    </fail>\n        }\n    "_fu, PARZERO_queue);
     PARZERO_DB1hH8Vh("\n        primitive s32: i32;\n\n        fn main() {\n            let i: s32 = 0;\n            <fail return type annot>\n            return i;        <pass/>\n            return i.i32;    </fail>\n        }\n    "_fu, PARZERO_queue);
-    PARZERO_DB1hH8Vh("\n        enum Enum { None };\n\n        fn main() {\n            let e = None;\n            <fail return type annot>\n            return e;        <pass/>\n            return e.i32;    </fail>\n        }\n    "_fu, PARZERO_queue);
-    PARZERO_DB1hH8Vh("\n        enum Test: i32 { A; B; C };\n        fn main()\n            <fail - bad call>\n            C - 2;      <pass/>\n            C.i32 - 2;  </fail>\n    "_fu, PARZERO_queue);
+    PARZERO_DB1hH8Vh("\n        enum Enum { None = 0 };\n\n        fn main() {\n            let e = None;\n            <fail return type annot>\n            return e;        <pass/>\n            return e.i32;    </fail>\n        }\n    "_fu, PARZERO_queue);
+    PARZERO_DB1hH8Vh("\n        enum Test { A = 5; B; C };\n        fn main()\n            <fail - bad call>\n            C - 7;      <pass/>\n            C.i32 - 7;  </fail>\n    "_fu, PARZERO_queue);
+    PARZERO_DB1hH8Vh("\n        <alt>\n        primitive <alt/>\n        enum      </alt> Test: i32 { A1; A2; M5 = 5; A6 };\n\n        fn main()\n            A1.i32 + A2.i32 * 10 + M5.i32 * 100 + A6.i32 * 1000\n                == 6521 ? 0 : 1;\n    "_fu, PARZERO_queue);
     PARZERO_DB1hH8Vh("\n        <fail bad call to ->\n        enum         <pass/>\n        primitive    </fail> Test: i32 { A; B };\n        fn main() (B - A).i32 - 1;\n    "_fu, PARZERO_queue);
-    PARZERO_DB1hH8Vh("\n        primitive PrimA: i32;\n        primitive PrimB: PrimA { Zero; One };\n        fn main() (One - 1).i32;\n    "_fu, PARZERO_queue);
-    PARZERO_DB1hH8Vh("\n        enum EnumA: i32;\n        enum EnumB: EnumA { Zero };\n        fn main() Zero.i32;\n    "_fu, PARZERO_queue);
-    PARZERO_DB1hH8Vh("\n        enum Hey { foo; bar };\n        fn test(hey: Hey) hey.i32;\n        fn main() test(\"bar\") - 1;\n    "_fu, PARZERO_queue);
+    PARZERO_DB1hH8Vh("\n        enum EnumA: i32;\n        enum EnumB: EnumA { Zero = 0 };\n        fn main() Zero.i32;\n    "_fu, PARZERO_queue);
+    PARZERO_DB1hH8Vh("\n        primitive PrimA: i32;\n        primitive PrimB: PrimA { Zero = 0; One };\n        fn main() (One - 1).i32;\n    "_fu, PARZERO_queue);
+    PARZERO_DB1hH8Vh("\n        primitive PrimA: i32;\n        primitive PrimB: PrimA { Zero = 0; One };\n\n    <alt>\n        fn and_decr(ref prim: PrimB)\n            prim &&= prim - 1;\n    <alt/>\n        fn and_decr(ref prim: PrimB)\n        {\n            mut res = prim - 1;\n            prim &&= res;\n            return prim;\n        }\n    </alt>\n\n        fn main() {\n            mut r = One;\n            return r.and_decr.i32;\n        }\n    "_fu, PARZERO_queue);
+    PARZERO_DB1hH8Vh("\n        enum Hey { foo; };\n        fn test(hey: Hey) hey.i32;\n        fn main() test(\"foo\") - 1;\n    "_fu, PARZERO_queue);
     PARZERO_DB1hH8Vh("\n        enum Greet { hello; world };\n        fn main()\n            hello ~ \" \" ~ world == \"hello world\"\n                ? 0 : 1;\n    "_fu, PARZERO_queue);
     PARZERO_DB1hH8Vh("\n        enum Greet { hello; world };\n        fn woot(hi: Greet) hi == \"hello\";\n        fn main() hello.woot ? 0 : 1;\n    "_fu, PARZERO_queue);
     PARZERO_xmrQ7MED(fu_VEC<fu_STR> { fu::slate<2, fu_STR> { "\n        enum Greet { hello; world };\n        fn h() hello;\n        fn w() world;\n    "_fu, "\n        fn main()\n            _0::h() ~ \" \" ~ _0::w() == \"hello world\"\n                ? 0 : 1;\n    "_fu } }, PARZERO_queue);
-    PARZERO_xmrQ7MED(fu_VEC<fu_STR> { fu::slate<2, fu_STR> { "\n        enum _0 { A; B };\n    "_fu, "\n        fn test(::_0) _0.i32;\n        fn main() \"A\".test;\n    "_fu } }, PARZERO_queue);
+    PARZERO_xmrQ7MED(fu_VEC<fu_STR> { fu::slate<2, fu_STR> { "\n        enum _0 { A; B };\n    "_fu, "\n        fn test(::_0) _0.i32;\n        fn main() \"A\".test - _0::A.i32;\n    "_fu } }, PARZERO_queue);
     PARZERO_xmrQ7MED(fu_VEC<fu_STR> { fu::slate<2, fu_STR> { "\n        enum _0 { A; B };\n    "_fu, "\n        fn test(x: ::_0 = \"B\") x.i32;\n        fn main() test - _0::B.i32;\n    "_fu } }, PARZERO_queue);
-    PARZERO_DB1hH8Vh("\n        enum Enum { A; B };\n        fn inner(x: Enum) x.i32;\n        fn outer(x: i32) inner(x & 1 ? \"B\" : \"A\");\n        fn main() outer(0);\n    "_fu, PARZERO_queue);
-    TODO_lY1zhnoo("\n        enum Test: i32 { A = 1; };\n        fn main() A.i32 - 1;\n    "_fu, testdiffs);
-    TODO_lY1zhnoo("\n        enum Test { A = 1; B; };\n        fn main() B.i32 - 2;\n    "_fu, testdiffs);
-    TODO_lY1zhnoo("\n        enum Test { A; B = 2; C; };\n        fn main() C.i32 - 3;\n    "_fu, testdiffs);
+    PARZERO_DB1hH8Vh("\n        enum Enum { A = 0; B };\n        fn inner(x: Enum) x.i32;\n        fn outer(x: i32) inner(x & 1 ? \"B\" : \"A\");\n        fn main() outer(0);\n    "_fu, PARZERO_queue);
     TODO_lY1zhnoo("\n        enum Test { A; B = A; C; };\n        fn main() C.i32 - 1;\n    "_fu, testdiffs);
+    PARZERO_DB1hH8Vh("\n        flags Flags { A; B; C; D };\n\n        fn main() {\n            mut flags = A | C;\n            return flags.i32 == 5 ? 0 : 1;\n        }\n    "_fu, PARZERO_queue);
 }
 
 #endif

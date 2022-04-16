@@ -38,6 +38,27 @@ struct s_Intlit
 
 #ifndef fu_NO_fdefs
 
+s_Intlit Intlit_V3Khstyl(const uint64_t absval, const bool negative, fu_STR&& error, const bool uNsigned, const bool sIgned, const uint64_t base)
+{
+
+    {
+        if (!(error))
+            error = (sIgned && uNsigned ? "Ambiguous int literal: cannot decide if signed or unsigned."_fu : fu_STR{});
+
+    };
+    const uint64_t sizeval = ((negative && absval) ? (absval - 1ull) : uint64_t(absval));
+    const int minsize_i = ((sizeval < 0x80ull) ? 8 : ((sizeval < 0x8000ull) ? 16 : ((sizeval < 0x80000000ull) ? 32 : ((sizeval < 0x8000000000000000ull) ? 64 : 128))));
+    const int minsize_u = (negative ? 255 : ((absval < 0x100ull) ? 8 : ((absval < 0x10000ull) ? 16 : ((absval < 0x100000000ull) ? 32 : 64))));
+    const int minsize_f = ((absval < 0x1000000ull) ? 32 : 64);
+
+    {
+        if (!(error))
+            error = (sIgned ? ((minsize_i > 64) ? "Oversized signed int literal."_fu : fu_STR{}) : ((minsize_u > 64) ? "Oversized unsigned int literal."_fu : fu_STR{}));
+
+    };
+    return s_Intlit { fu::u8(base), fu::u8(unsigned(minsize_i)), fu::u8(unsigned(minsize_u)), fu::u8(unsigned(minsize_f)), bool(sIgned), bool(uNsigned), bool(negative), uint64_t(absval), fu_STR(error) };
+}
+
 s_Intlit Intlit_IQ08v4Hx(fu::view<char> sign_prefix_value_suffix)
 {
     const char c_sign = sign_prefix_value_suffix[0];
@@ -69,23 +90,7 @@ s_Intlit Intlit_IQ08v4Hx(fu::view<char> sign_prefix_value_suffix)
     const bool uNsigned = ((suffix == 'u') || (base != 10ull));
     const bool negative = (sign == '-');
     const bool sIgned = (negative || (suffix == 'i'));
-
-    {
-        if (!(error))
-            error = (sIgned && uNsigned ? "Ambiguous int literal: cannot decide if signed or unsigned."_fu : fu_STR{});
-
-    };
-    const uint64_t sizeval = ((negative && absval) ? (absval - 1ull) : uint64_t(absval));
-    const int minsize_i = ((sizeval < 0x80ull) ? 8 : ((sizeval < 0x8000ull) ? 16 : ((sizeval < 0x80000000ull) ? 32 : ((sizeval < 0x8000000000000000ull) ? 64 : 128))));
-    const int minsize_u = (negative ? 255 : ((absval < 0x100ull) ? 8 : ((absval < 0x10000ull) ? 16 : ((absval < 0x100000000ull) ? 32 : 64))));
-    const int minsize_f = ((absval < 0x1000000ull) ? 32 : 64);
-
-    {
-        if (!(error))
-            error = (sIgned ? ((minsize_i > 64) ? "Oversized signed int literal."_fu : fu_STR{}) : ((minsize_u > 64) ? "Oversized unsigned int literal."_fu : fu_STR{}));
-
-    };
-    return s_Intlit { fu::u8(base), fu::u8(unsigned(minsize_i)), fu::u8(unsigned(minsize_u)), fu::u8(unsigned(minsize_f)), bool(sIgned), bool(uNsigned), bool(negative), uint64_t(absval), fu_STR(error) };
+    return Intlit_V3Khstyl(absval, negative, fu_STR(error), uNsigned, sIgned, base);
 }
 
 #endif

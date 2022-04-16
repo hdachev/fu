@@ -15,6 +15,7 @@ struct s_Module;
 struct s_ModuleInputs;
 struct s_LexerOutput;
 struct s_Token;
+enum s_kind: fu::i8;
 struct s_ParserOutput;
 struct s_Node;
 struct s_TokenIdx;
@@ -40,7 +41,7 @@ struct s_ScopeSkip;
 struct s_CodegenOutput;
 struct s_ModuleStats;
 struct s_ModuleStat;
-fu_STR createStructCanon_IlCwMNVe(fu::view<char>, const fu_STR&, int, int, fu::view<char>);
+fu_STR createStructCanon_AFbRJxPd(s_kind, const fu_STR&, int, int, fu::view<char>);
 
                                 #ifndef DEF_s_Target
                                 #define DEF_s_Target
@@ -74,11 +75,80 @@ struct s_ScopeItem
 };
                                 #endif
 
+                                #ifndef DEF_s_kind
+                                #define DEF_s_kind
+enum s_kind: fu::i8
+{
+    s_kind_sof = 1,
+    s_kind_id = 2,
+    s_kind_op = 3,
+    s_kind_int = 4,
+    s_kind_real = 5,
+    s_kind_char = 6,
+    s_kind_str = 7,
+    s_kind_err = 8,
+    s_kind_eof = 9,
+    s_kind_root = 10,
+    s_kind_block = 11,
+    s_kind_argid = 12,
+    s_kind_let = 13,
+    s_kind_call = 14,
+    s_kind_arrlit = 15,
+    s_kind_if = 16,
+    s_kind_or = 17,
+    s_kind_and = 18,
+    s_kind_loop = 19,
+    s_kind_break = 20,
+    s_kind_return = 21,
+    s_kind_continue = 22,
+    s_kind_bool = 23,
+    s_kind_definit = 24,
+    s_kind_import = 25,
+    s_kind_defer = 26,
+    s_kind_try = 27,
+    s_kind_typedef = 28,
+    s_kind_typecast = 29,
+    s_kind_typeassert = 30,
+    s_kind_typeparam = 31,
+    s_kind_addroffn = 32,
+    s_kind_forfieldsof = 33,
+    s_kind_pragma = 34,
+    s_kind_void = 35,
+    s_kind_struct = 36,
+    s_kind_primitive = 37,
+    s_kind_flags = 38,
+    s_kind_enum = 39,
+    s_kind_members = 40,
+    s_kind_fn = 41,
+    s_kind_fnbranch = 42,
+    s_kind_pattern = 43,
+    s_kind_typeunion = 44,
+    s_kind_typetag = 45,
+    s_kind_jump = 46,
+    s_kind_empty = 47,
+    s_kind_letdef = 48,
+    s_kind___relaxed = 49,
+    s_kind___convert = 50,
+    s_kind_fndef = 51,
+    s_kind_copy = 52,
+    s_kind_move = 53,
+    s_kind___far_jump = 54,
+    s_kind___no_kind_yet = 55,
+    s_kind_type = 56,
+    s_kind_var = 57,
+    s_kind_field = 58,
+    s_kind_enumv = 59,
+    s_kind_template = 60,
+    s_kind___native = 61,
+    s_kind_inline = 62,
+};
+                                #endif
+
                                 #ifndef DEF_s_Token
                                 #define DEF_s_Token
 struct s_Token
 {
-    fu_STR kind;
+    s_kind kind;
     fu_STR value;
     int idx0;
     int idx1;
@@ -127,7 +197,7 @@ struct s_TokenIdx
                                 #define DEF_s_Node
 struct s_Node
 {
-    fu_STR kind;
+    s_kind kind;
     int flags;
     fu_STR value;
     fu_VEC<s_Node> items;
@@ -185,6 +255,7 @@ struct s_ModuleInputs
                                 #define DEF_s_Struct
 struct s_Struct
 {
+    s_kind kind;
     fu_STR name;
     s_Target target;
     fu_VEC<s_ScopeItem> items;
@@ -196,6 +267,7 @@ struct s_Struct
     explicit operator bool() const noexcept
     {
         return false
+            || kind
             || name
             || target
             || items
@@ -307,7 +379,7 @@ struct s_RWRanges
                                 #define DEF_s_SolvedNode
 struct s_SolvedNode
 {
-    fu_STR kind;
+    s_kind kind;
     s_Helpers helpers;
     int flags;
     fu_STR value;
@@ -333,12 +405,12 @@ struct s_SolvedNode
                                 #define DEF_s_Overload
 struct s_Overload
 {
-    fu_STR kind;
+    s_kind kind;
+    int flags;
+    unsigned status;
     fu_STR name;
     fu_STR sighash;
     s_Type type;
-    int flags;
-    unsigned status;
     s_SolvedNode solved;
     explicit operator bool() const noexcept
     {
@@ -755,29 +827,29 @@ extern const short HM_LabelUsed = short((short(1) << short(6)));
 extern const short HM_KeepBlock = short((short(1) << short(7)));
                                 #endif
 
-s_Target target_e3eS1o6f(const s_ScopeItem& si)
+s_Target target_wh65lsPu(const s_ScopeItem& si)
 {
     return s_Target { int(si.modid), int((si.packed & ~(0x1u << 31u))) };
 }
 
-bool ScopeItem_shadows_e3eS1o6f(const s_ScopeItem& si)
+bool ScopeItem_shadows_wh65lsPu(const s_ScopeItem& si)
 {
     return !!(si.packed & (0x1u << 31u));
 }
 
-s_ScopeItem ScopeItem_Z57KDnDp(const fu_STR& id, const s_Target& target, const bool shadows)
+s_ScopeItem ScopeItem_QU5YFfTi(const fu_STR& id, const s_Target& target, const bool shadows)
 {
     return s_ScopeItem { fu_STR(id), int(target.modid), (unsigned(target.index) | (shadows ? (0x1u << 31u) : unsigned{})) };
 }
 
-s_ScopeItem& target_TODOFIX_MVBFLiMx(s_ScopeItem& si, const s_Target& target)
+s_ScopeItem& target_TODOFIX_pzhnE2ba(s_ScopeItem& si, const s_Target& target)
 {
     si.modid = target.modid;
     si.packed = unsigned(target.index);
     return si;
 }
 
-int MODID_6iVz8n7c(const s_Module& module)
+int MODID_l8HfNDzr(const s_Module& module)
 {
     return module.modid;
 }
@@ -792,7 +864,7 @@ inline constexpr int F_NOCOPY = (1 << 12);
 inline constexpr int q_rx_copy = (1 << 1);
                                 #endif
 
-s_Type initStruct_hnSpiS3W(fu::view<char> kind, const fu_STR& baseprim, const fu_STR& name, const int flags, const bool SELF_TEST, s_Module& module)
+s_Type initStruct_HW5mhaYe(const s_kind kind, const fu_STR& baseprim, const fu_STR& name, const int flags, const bool SELF_TEST, s_Module& module)
 {
     if (!(fu::u8((fu::u8(fu::u8(name[0])) - fu::u8(fu::u8('0')))) > fu::u8(unsigned(9))))
         fu::fail((("Bad struct name, leading digit: `"_fu + name) + "`."_fu));
@@ -807,13 +879,13 @@ s_Type initStruct_hnSpiS3W(fu::view<char> kind, const fu_STR& baseprim, const fu
         };
     };
     const int index = module.out.types.size();
-    module.out.types += s_Struct { fu_STR(name), s_Target{}, fu_VEC<s_ScopeItem>{}, fu_VEC<int>{}, fu_VEC<s_Target>{}, fu_STR(baseprim), 0, bool{} };
-    fu_STR canon = createStructCanon_IlCwMNVe(kind, baseprim, module.modid, index, name);
+    module.out.types += s_Struct { s_kind(kind), fu_STR(name), s_Target{}, fu_VEC<s_ScopeItem>{}, fu_VEC<int>{}, fu_VEC<s_Target>{}, fu_STR(baseprim), 0, bool{} };
+    fu_STR canon = createStructCanon_AFbRJxPd(kind, baseprim, module.modid, index, name);
     const int specualtive_quals = (!(flags & F_NOCOPY) ? q_rx_copy : (*(const int*)fu::NIL));
     return s_Type { s_ValueType { int(specualtive_quals), fu_STR(canon) }, s_Lifetime{} };
 }
 
-s_Type despeculateStruct_c5L0jVYk(/*MOV*/ s_Type&& type)
+s_Type despeculateStruct_CPSh38G1(/*MOV*/ s_Type&& type)
 {
     type.vtype.quals &= ~q_rx_copy;
     return static_cast<s_Type&&>(type);
@@ -824,7 +896,7 @@ s_Type despeculateStruct_c5L0jVYk(/*MOV*/ s_Type&& type)
 inline constexpr int F_PUB = (1 << 20);
                                 #endif
 
-s_Scope Scope_exports_lbD2qaob(const s_Scope& scope, const int modid, const fu_VEC<s_ScopeItem>& field_items)
+s_Scope Scope_exports_3xUYpXMb(const s_Scope& scope, const int modid, const fu_VEC<s_ScopeItem>& field_items)
 {
     fu_VEC<s_ScopeItem> items { field_items };
     fu_VEC<s_ScopeItem> prv_items {};
@@ -833,9 +905,9 @@ s_Scope Scope_exports_lbD2qaob(const s_Scope& scope, const int modid, const fu_V
     for (int i = 0; i < scope.items.size(); i++)
     {
         const s_ScopeItem& item = scope.items[i];
-        if (target_e3eS1o6f(item).modid == modid)
+        if (target_wh65lsPu(item).modid == modid)
         {
-            const s_Overload& overload = scope.overloads[(target_e3eS1o6f(item).index - 1)];
+            const s_Overload& overload = scope.overloads[(target_wh65lsPu(item).index - 1)];
             ((overload.flags & F_PUB) ? items : prv_items) += s_ScopeItem(item);
         };
     };
@@ -876,7 +948,7 @@ static void nextSkip_3evJgP9V(fu::view<s_ScopeSkip> scope_skip, int& scope_itera
 
 }
 
-s_Target search_hmoY8JT5(fu::view<s_ScopeItem> items, const fu_STR& id, int& scope_iterator, fu::view<s_ScopeSkip> scope_skip, bool& shadows, const s_Target& dont_search_just_return, fu::view<s_Target> extra_items, fu::view<s_ScopeItem> field_items)
+s_Target search_7gDKHCyh(fu::view<s_ScopeItem> items, const fu_STR& id, int& scope_iterator, fu::view<s_ScopeSkip> scope_skip, bool& shadows, const s_Target& dont_search_just_return, fu::view<s_Target> extra_items, fu::view<s_ScopeItem> field_items)
 {
     if (dont_search_just_return)
     {
@@ -905,25 +977,25 @@ s_Target search_hmoY8JT5(fu::view<s_ScopeItem> items, const fu_STR& id, int& sco
         if (scope_iterator == skiptrap)
             nextSkip_3evJgP9V(scope_skip, scope_iterator, skiptrap, items);
 
-        const s_ScopeItem& item = ((scope_iterator >= items.size()) ? ((scope_iterator >= (items.size() + extra_items.size())) ? field_items[((scope_iterator - items.size()) - extra_items.size())] : target_TODOFIX_MVBFLiMx(TODO_FIX, extra_items[(scope_iterator - items.size())])) : items[scope_iterator]);
+        const s_ScopeItem& item = ((scope_iterator >= items.size()) ? ((scope_iterator >= (items.size() + extra_items.size())) ? field_items[((scope_iterator - items.size()) - extra_items.size())] : target_TODOFIX_pzhnE2ba(TODO_FIX, extra_items[(scope_iterator - items.size())])) : items[scope_iterator]);
         if (item.id == id)
         {
             if (!scope_iterator)
                 scope_iterator = -1;
 
-            shadows = ScopeItem_shadows_e3eS1o6f(item);
-            return target_e3eS1o6f(item);
+            shadows = ScopeItem_shadows_wh65lsPu(item);
+            return target_wh65lsPu(item);
         };
     };
     return s_Target{};
 }
 
-s_ScopeMemo Scope_snap_xL8BbLPe(const s_Scope& scope, fu::view<s_Helpers> _helpers)
+s_ScopeMemo Scope_snap_WgJlFXyy(const s_Scope& scope, fu::view<s_Helpers> _helpers)
 {
     return s_ScopeMemo { scope.items.size(), scope.implicits.size(), scope.imports.size(), scope.privates.size(), scope.usings.size(), scope.converts.size(), _helpers.size() };
 }
 
-void Scope_pop_GvGeMzm4(s_Scope& scope, const s_ScopeMemo& memo, fu_VEC<s_Helpers>& _helpers)
+void Scope_pop_pJmZr7lr(s_Scope& scope, const s_ScopeMemo& memo, fu_VEC<s_Helpers>& _helpers)
 {
     scope.items.shrink(memo.items_len);
     scope.implicits.shrink(memo.implicits_len);
@@ -934,7 +1006,7 @@ void Scope_pop_GvGeMzm4(s_Scope& scope, const s_ScopeMemo& memo, fu_VEC<s_Helper
     _helpers.shrink(memo.helpers_len);
 }
 
-int cmp_x94nMfq3(const s_ScopeMemo& a, const s_ScopeMemo& b)
+int cmp_dl5ghMes(const s_ScopeMemo& a, const s_ScopeMemo& b)
 {
     int _0 {};
     return (_0 = (a.items_len - b.items_len)) ? _0 : (_0 = (a.implicits_len - b.implicits_len)) ? _0 : (_0 = (a.imports_len - b.imports_len)) ? _0 : (_0 = (a.privates_len - b.privates_len)) ? _0 : (_0 = (a.usings_len - b.usings_len)) ? _0 : (_0 = (a.converts_len - b.converts_len)) ? _0 : (a.helpers_len - b.helpers_len);
@@ -942,22 +1014,22 @@ int cmp_x94nMfq3(const s_ScopeMemo& a, const s_ScopeMemo& b)
 
 bool operator>(const s_ScopeMemo& a, const s_ScopeMemo& b)
 {
-    return cmp_x94nMfq3(a, b) > 0;
+    return cmp_dl5ghMes(a, b) > 0;
 }
 
 bool operator<(const s_ScopeMemo& a, const s_ScopeMemo& b)
 {
-    return cmp_x94nMfq3(a, b) < 0;
+    return cmp_dl5ghMes(a, b) < 0;
 }
 
 bool operator==(const s_ScopeMemo& a, const s_ScopeMemo& b)
 {
-    return cmp_x94nMfq3(a, b) == 0;
+    return cmp_dl5ghMes(a, b) == 0;
 }
 
-                                #ifndef DEF_grow_if_oob_5lGz9ZEs
-                                #define DEF_grow_if_oob_5lGz9ZEs
-inline s_Extended& grow_if_oob_5lGz9ZEs(fu_VEC<s_Extended>& a, const int i)
+                                #ifndef DEF_grow_if_oob_h4z4Xr0k
+                                #define DEF_grow_if_oob_h4z4Xr0k
+inline s_Extended& grow_if_oob_h4z4Xr0k(fu_VEC<s_Extended>& a, const int i)
 {
     if ((a.size() <= i))
         a.grow((i + 1));
@@ -966,10 +1038,10 @@ inline s_Extended& grow_if_oob_5lGz9ZEs(fu_VEC<s_Extended>& a, const int i)
 }
                                 #endif
 
-s_Target Scope_create_HatolSmJ(s_Scope& scope, const fu_STR& kind, const fu_STR& name, const s_Type& type, const int flags, const unsigned status, const int nest, const s_Module& module)
+s_Target Scope_create_9BFuzCyW(s_Scope& scope, const s_kind kind, const fu_STR& name, const s_Type& type, const int flags, const unsigned status, const int nest, const s_Module& module)
 {
-    fu_VEC<s_Overload>& overloads = (nest ? grow_if_oob_5lGz9ZEs(scope.extended, nest).locals : scope.overloads);
-    /*MOV*/ const s_Target target = s_Target { (nest ? -nest : int(MODID_6iVz8n7c(module))), (overloads.size() + 1) };
+    fu_VEC<s_Overload>& overloads = (nest ? grow_if_oob_h4z4Xr0k(scope.extended, nest).locals : scope.overloads);
+    /*MOV*/ const s_Target target = s_Target { (nest ? -nest : int(MODID_l8HfNDzr(module))), (overloads.size() + 1) };
     s_Overload item {};
     item.name = name;
     item.kind = kind;
@@ -980,14 +1052,14 @@ s_Target Scope_create_HatolSmJ(s_Scope& scope, const fu_STR& kind, const fu_STR&
     return /*NRVO*/ target;
 }
 
-void Scope_set_whuTbqdT(fu_VEC<s_ScopeItem>& items, const fu_STR& id, const s_Target& target, const bool shadows)
+void Scope_set_hPlkl1cj(fu_VEC<s_ScopeItem>& items, const fu_STR& id, const s_Target& target, const bool shadows)
 {
-    items.push(ScopeItem_Z57KDnDp(id, target, shadows));
+    items.push(ScopeItem_QU5YFfTi(id, target, shadows));
 }
 
-void Scope_set_0oYKp7LR(s_Scope& scope, const fu_STR& id, const s_Target& target, const bool shadows)
+void Scope_set_BU3HNW7T(s_Scope& scope, const fu_STR& id, const s_Target& target, const bool shadows)
 {
-    Scope_set_whuTbqdT(scope.items, id, target, shadows);
+    Scope_set_hPlkl1cj(scope.items, id, target, shadows);
 }
 
                                 #ifndef DEF_F_SHADOW
@@ -995,11 +1067,11 @@ void Scope_set_0oYKp7LR(s_Scope& scope, const fu_STR& id, const s_Target& target
 inline constexpr int F_SHADOW = (1 << 23);
                                 #endif
 
-s_Target Scope_Typedef_gRfouvNn(s_Scope& scope, const fu_STR& id, const s_Type& type, const int flags, const fu_STR& name, const unsigned status, const s_Module& module)
+s_Target Scope_Typedef_yn4mwgoC(s_Scope& scope, const fu_STR& id, const s_Type& type, const int flags, const fu_STR& name, const unsigned status, const s_Module& module)
 {
-    /*MOV*/ const s_Target target = Scope_create_HatolSmJ(scope, "type"_fu, name, type, flags, status, 0, module);
+    /*MOV*/ const s_Target target = Scope_create_9BFuzCyW(scope, s_kind_type, name, type, flags, status, 0, module);
     if (id)
-        Scope_set_0oYKp7LR(scope, id, target, !!(flags & F_SHADOW));
+        Scope_set_BU3HNW7T(scope, id, target, !!(flags & F_SHADOW));
 
     return /*NRVO*/ target;
 }
@@ -1074,23 +1146,23 @@ extern const s_Type t_void;
 extern const s_Type t_never;
                                 #endif
 
-s_Scope listGlobals_6iVz8n7c(const s_Module& module)
+s_Scope listGlobals_l8HfNDzr(const s_Module& module)
 {
     /*MOV*/ s_Scope scope {};
-    Scope_Typedef_gRfouvNn(scope, "i8"_fu, t_i8, F_PUB, (*(const fu_STR*)fu::NIL), 0u, module);
-    Scope_Typedef_gRfouvNn(scope, "i16"_fu, t_i16, F_PUB, (*(const fu_STR*)fu::NIL), 0u, module);
-    Scope_Typedef_gRfouvNn(scope, "i32"_fu, t_i32, F_PUB, (*(const fu_STR*)fu::NIL), 0u, module);
-    Scope_Typedef_gRfouvNn(scope, "i64"_fu, t_i64, F_PUB, (*(const fu_STR*)fu::NIL), 0u, module);
-    Scope_Typedef_gRfouvNn(scope, "u8"_fu, t_u8, F_PUB, (*(const fu_STR*)fu::NIL), 0u, module);
-    Scope_Typedef_gRfouvNn(scope, "u16"_fu, t_u16, F_PUB, (*(const fu_STR*)fu::NIL), 0u, module);
-    Scope_Typedef_gRfouvNn(scope, "u32"_fu, t_u32, F_PUB, (*(const fu_STR*)fu::NIL), 0u, module);
-    Scope_Typedef_gRfouvNn(scope, "u64"_fu, t_u64, F_PUB, (*(const fu_STR*)fu::NIL), 0u, module);
-    Scope_Typedef_gRfouvNn(scope, "f32"_fu, t_f32, F_PUB, (*(const fu_STR*)fu::NIL), 0u, module);
-    Scope_Typedef_gRfouvNn(scope, "f64"_fu, t_f64, F_PUB, (*(const fu_STR*)fu::NIL), 0u, module);
-    Scope_Typedef_gRfouvNn(scope, "bool"_fu, t_bool, F_PUB, (*(const fu_STR*)fu::NIL), 0u, module);
-    Scope_Typedef_gRfouvNn(scope, "byte"_fu, t_byte, F_PUB, (*(const fu_STR*)fu::NIL), 0u, module);
-    Scope_Typedef_gRfouvNn(scope, "void"_fu, t_void, F_PUB, (*(const fu_STR*)fu::NIL), 0u, module);
-    Scope_Typedef_gRfouvNn(scope, "never"_fu, t_never, F_PUB, (*(const fu_STR*)fu::NIL), 0u, module);
+    Scope_Typedef_yn4mwgoC(scope, "i8"_fu, t_i8, F_PUB, (*(const fu_STR*)fu::NIL), 0u, module);
+    Scope_Typedef_yn4mwgoC(scope, "i16"_fu, t_i16, F_PUB, (*(const fu_STR*)fu::NIL), 0u, module);
+    Scope_Typedef_yn4mwgoC(scope, "i32"_fu, t_i32, F_PUB, (*(const fu_STR*)fu::NIL), 0u, module);
+    Scope_Typedef_yn4mwgoC(scope, "i64"_fu, t_i64, F_PUB, (*(const fu_STR*)fu::NIL), 0u, module);
+    Scope_Typedef_yn4mwgoC(scope, "u8"_fu, t_u8, F_PUB, (*(const fu_STR*)fu::NIL), 0u, module);
+    Scope_Typedef_yn4mwgoC(scope, "u16"_fu, t_u16, F_PUB, (*(const fu_STR*)fu::NIL), 0u, module);
+    Scope_Typedef_yn4mwgoC(scope, "u32"_fu, t_u32, F_PUB, (*(const fu_STR*)fu::NIL), 0u, module);
+    Scope_Typedef_yn4mwgoC(scope, "u64"_fu, t_u64, F_PUB, (*(const fu_STR*)fu::NIL), 0u, module);
+    Scope_Typedef_yn4mwgoC(scope, "f32"_fu, t_f32, F_PUB, (*(const fu_STR*)fu::NIL), 0u, module);
+    Scope_Typedef_yn4mwgoC(scope, "f64"_fu, t_f64, F_PUB, (*(const fu_STR*)fu::NIL), 0u, module);
+    Scope_Typedef_yn4mwgoC(scope, "bool"_fu, t_bool, F_PUB, (*(const fu_STR*)fu::NIL), 0u, module);
+    Scope_Typedef_yn4mwgoC(scope, "byte"_fu, t_byte, F_PUB, (*(const fu_STR*)fu::NIL), 0u, module);
+    Scope_Typedef_yn4mwgoC(scope, "void"_fu, t_void, F_PUB, (*(const fu_STR*)fu::NIL), 0u, module);
+    Scope_Typedef_yn4mwgoC(scope, "never"_fu, t_never, F_PUB, (*(const fu_STR*)fu::NIL), 0u, module);
     return /*NRVO*/ scope;
 }
 

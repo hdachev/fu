@@ -66,7 +66,7 @@ inline fu_STR x7E(fu::view<char> a, fu::view<char> b)
 }
                                 #endif
 
-void ModuleStat_print_r32T5l7J(const s_ModuleStat& a, const fu_STR& prefix, fu::view<char> suffix)
+void ModuleStat_print_jnmQPH8q(const s_ModuleStat& a, const fu_STR& prefix, fu::view<char> suffix)
 {
     // Hoisted:
     fu_STR x;

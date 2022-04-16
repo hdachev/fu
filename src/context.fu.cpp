@@ -14,6 +14,7 @@
 #include <fu/vec/concat_one.h>
 
 struct s_Token;
+enum s_kind: fu::i8;
 struct s_TokenIdx;
 struct s_Context;
 struct s_Module;
@@ -51,17 +52,86 @@ s_StructCanon parseStructCanon_9u6Vl9O2(fu::view<char>);
 int64_t size_ny0gyQ9a(fu_STR&&);
 fu_STR dirname_KqRBcvmh(const fu_STR&);
 static fu_STR tryResolve_DALprdvw(const fu_STR&, const fu_STR&, const fu_STR&, s_Context&);
-static fu_STR resolveFile_8bFSE4WT(const fu_STR&, const fu_STR&, s_Context&);
-fu_STR resolveFile_Itjm8oks(const fu_STR&, s_Context&);
+static fu_STR resolveFile_RloYOv0n(const fu_STR&, const fu_STR&, s_Context&);
+fu_STR resolveFile_WPdR5TkH(const fu_STR&, s_Context&);
 fu_STR read_ny0gyQ9a(fu_STR&&);
-bool is_primitive_oPp5yWwB(const s_Type&);
-bool isStruct_usAEukhR(const s_Type&);
+bool is_primitive_CbRwLCm2(const s_Type&);
+bool isStruct_ZYIX8afu(const s_Type&);
+
+                                #ifndef DEF_s_kind
+                                #define DEF_s_kind
+enum s_kind: fu::i8
+{
+    s_kind_sof = 1,
+    s_kind_id = 2,
+    s_kind_op = 3,
+    s_kind_int = 4,
+    s_kind_real = 5,
+    s_kind_char = 6,
+    s_kind_str = 7,
+    s_kind_err = 8,
+    s_kind_eof = 9,
+    s_kind_root = 10,
+    s_kind_block = 11,
+    s_kind_argid = 12,
+    s_kind_let = 13,
+    s_kind_call = 14,
+    s_kind_arrlit = 15,
+    s_kind_if = 16,
+    s_kind_or = 17,
+    s_kind_and = 18,
+    s_kind_loop = 19,
+    s_kind_break = 20,
+    s_kind_return = 21,
+    s_kind_continue = 22,
+    s_kind_bool = 23,
+    s_kind_definit = 24,
+    s_kind_import = 25,
+    s_kind_defer = 26,
+    s_kind_try = 27,
+    s_kind_typedef = 28,
+    s_kind_typecast = 29,
+    s_kind_typeassert = 30,
+    s_kind_typeparam = 31,
+    s_kind_addroffn = 32,
+    s_kind_forfieldsof = 33,
+    s_kind_pragma = 34,
+    s_kind_void = 35,
+    s_kind_struct = 36,
+    s_kind_primitive = 37,
+    s_kind_flags = 38,
+    s_kind_enum = 39,
+    s_kind_members = 40,
+    s_kind_fn = 41,
+    s_kind_fnbranch = 42,
+    s_kind_pattern = 43,
+    s_kind_typeunion = 44,
+    s_kind_typetag = 45,
+    s_kind_jump = 46,
+    s_kind_empty = 47,
+    s_kind_letdef = 48,
+    s_kind___relaxed = 49,
+    s_kind___convert = 50,
+    s_kind_fndef = 51,
+    s_kind_copy = 52,
+    s_kind_move = 53,
+    s_kind___far_jump = 54,
+    s_kind___no_kind_yet = 55,
+    s_kind_type = 56,
+    s_kind_var = 57,
+    s_kind_field = 58,
+    s_kind_enumv = 59,
+    s_kind_template = 60,
+    s_kind___native = 61,
+    s_kind_inline = 62,
+};
+                                #endif
 
                                 #ifndef DEF_s_Token
                                 #define DEF_s_Token
 struct s_Token
 {
-    fu_STR kind;
+    s_kind kind;
     fu_STR value;
     int idx0;
     int idx1;
@@ -110,7 +180,7 @@ struct s_LexerOutput
                                 #define DEF_s_Node
 struct s_Node
 {
-    fu_STR kind;
+    s_kind kind;
     int flags;
     fu_STR value;
     fu_VEC<s_Node> items;
@@ -200,6 +270,7 @@ struct s_ScopeItem
                                 #define DEF_s_Struct
 struct s_Struct
 {
+    s_kind kind;
     fu_STR name;
     s_Target target;
     fu_VEC<s_ScopeItem> items;
@@ -211,6 +282,7 @@ struct s_Struct
     explicit operator bool() const noexcept
     {
         return false
+            || kind
             || name
             || target
             || items
@@ -322,7 +394,7 @@ struct s_RWRanges
                                 #define DEF_s_SolvedNode
 struct s_SolvedNode
 {
-    fu_STR kind;
+    s_kind kind;
     s_Helpers helpers;
     int flags;
     fu_STR value;
@@ -348,12 +420,12 @@ struct s_SolvedNode
                                 #define DEF_s_Overload
 struct s_Overload
 {
-    fu_STR kind;
+    s_kind kind;
+    int flags;
+    unsigned status;
     fu_STR name;
     fu_STR sighash;
     s_Type type;
-    int flags;
-    unsigned status;
     s_SolvedNode solved;
     explicit operator bool() const noexcept
     {
@@ -749,12 +821,12 @@ struct s_StructCanon
 
 #ifndef fu_NO_fdefs
 
-const s_Token& _token_GF4X2sQy(const s_TokenIdx& idx, const s_Context& ctx)
+const s_Token& _token_4Uqw4R4P(const s_TokenIdx& idx, const s_Context& ctx)
 {
     return ctx.modules[idx.modid].in.lex.tokens[idx.tokidx];
 }
 
-const fu_STR& _fname_GF4X2sQy(const s_TokenIdx& idx, const s_Context& ctx)
+const fu_STR& _fname_4Uqw4R4P(const s_TokenIdx& idx, const s_Context& ctx)
 {
     return ctx.modules[idx.modid].fname;
 }
@@ -767,7 +839,7 @@ inline fu_STR x7E(fu::view<char> a, fu::view<char> b)
 }
                                 #endif
 
-s_Struct& lookupStruct_mut_WPdR5TkH(fu::view<char> canon, s_Module& module)
+s_Struct& lookupStruct_mut_04KaaAlz(fu::view<char> canon, s_Module& module)
 {
     const s_StructCanon scp = parseStructCanon_9u6Vl9O2(canon);
     if (!(scp.modid == module.modid))
@@ -856,9 +928,9 @@ inline const fu_STR& get_7LmAuB31(fu::view<fu_STR> keys, fu::view<char> item, fu
 }
                                 #endif
 
-                                #ifndef DEF_get_uceRChZe
-                                #define DEF_get_uceRChZe
-inline const fu_STR& get_uceRChZe(const s_Map_gb6sFwC7& _, fu::view<char> key)
+                                #ifndef DEF_get_iA0BsE3V
+                                #define DEF_get_iA0BsE3V
+inline const fu_STR& get_iA0BsE3V(const s_Map_gb6sFwC7& _, fu::view<char> key)
 {
     return get_7LmAuB31(_.keys, key, _.vals);
 }
@@ -936,7 +1008,7 @@ static fu_STR tryResolve_DALprdvw(const fu_STR& path, const fu_STR& from, const 
     if (!fallback || (fallback.size() >= from.size()))
         return fu_STR{};
 
-    return resolveFile_8bFSE4WT(fallback, name, ctx);
+    return resolveFile_RloYOv0n(fallback, name, ctx);
 }
 
                                 #ifndef DEF_x3Cx3E_D0yPwEUc
@@ -986,23 +1058,23 @@ inline bool update_K174c2l7(const fu_STR& item, const fu_STR& extra, s_Map_gb6sF
 }
                                 #endif
 
-                                #ifndef DEF_set_1tnKHtXp
-                                #define DEF_set_1tnKHtXp
-inline bool set_1tnKHtXp(s_Map_gb6sFwC7& _, const fu_STR& key, const fu_STR& value)
+                                #ifndef DEF_set_EPOGiNQc
+                                #define DEF_set_EPOGiNQc
+inline bool set_EPOGiNQc(s_Map_gb6sFwC7& _, const fu_STR& key, const fu_STR& value)
 {
     return update_K174c2l7(key, value, _);
 }
                                 #endif
 
-static fu_STR resolveFile_8bFSE4WT(const fu_STR& from, const fu_STR& name, s_Context& ctx)
+static fu_STR resolveFile_RloYOv0n(const fu_STR& from, const fu_STR& name, s_Context& ctx)
 {
     fu_STR path = (from + name);
-    const fu_STR& cached = get_uceRChZe(ctx.fuzzy, path);
+    const fu_STR& cached = get_iA0BsE3V(ctx.fuzzy, path);
     if (cached)
         return fu_STR(((cached == "\v"_fu) ? (*(const fu_STR*)fu::NIL) : cached));
 
     /*MOV*/ fu_STR resolve = tryResolve_DALprdvw(path, from, name, ctx);
-    set_1tnKHtXp(ctx.fuzzy, path, (resolve ? fu_STR(resolve) : "\v"_fu));
+    set_EPOGiNQc(ctx.fuzzy, path, (resolve ? fu_STR(resolve) : "\v"_fu));
     return /*NRVO*/ resolve;
 }
 
@@ -1030,15 +1102,15 @@ inline bool has_wAuMmv6B(fu::view<fu_STR> keys, fu::view<char> item)
 }
                                 #endif
 
-                                #ifndef DEF_has_emfAmZaH
-                                #define DEF_has_emfAmZaH
-inline bool has_emfAmZaH(const s_Map_gb6sFwC7& _, fu::view<char> key)
+                                #ifndef DEF_has_TlQWGl0X
+                                #define DEF_has_TlQWGl0X
+inline bool has_TlQWGl0X(const s_Map_gb6sFwC7& _, fu::view<char> key)
 {
     return has_wAuMmv6B(_.keys, key);
 }
                                 #endif
 
-fu_STR resolveFile_Itjm8oks(const fu_STR& path, s_Context& ctx)
+fu_STR resolveFile_WPdR5TkH(const fu_STR& path, s_Context& ctx)
 {
     const int fuzzy = find_cnCAmU7Y(path, '\v');
     if (fuzzy > 0)
@@ -1047,12 +1119,12 @@ fu_STR resolveFile_Itjm8oks(const fu_STR& path, s_Context& ctx)
         fu_STR name = fu::slice(path, (fuzzy + 1));
         if (from && name && !has_cnCAmU7Y(name, '\v'))
         {
-            /*MOV*/ fu_STR res = resolveFile_8bFSE4WT(from, name, ctx);
+            /*MOV*/ fu_STR res = resolveFile_RloYOv0n(from, name, ctx);
             if (res)
                 return /*NRVO*/ res;
 
             /*MOV*/ fu_STR prepopulated = (from + name);
-            if (has_emfAmZaH(ctx.files, prepopulated))
+            if (has_TlQWGl0X(ctx.files, prepopulated))
                 return /*NRVO*/ prepopulated;
 
         };
@@ -1117,10 +1189,10 @@ inline fu_STR replace_S3uxuNYS(const fu_STR& str, fu::view<char> all, fu::view<c
 }
                                 #endif
 
-fu_STR resolveFile_x_kdVRozhS(const fu_STR& path, const s_Context& ctx)
+fu_STR resolveFile_x_adz9iQmO(const fu_STR& path, const s_Context& ctx)
 {
     fu_STR clean = replace_S3uxuNYS(path, "\v"_fu, fu::view<char>{});
-    const fu_STR& match = get_uceRChZe(ctx.fuzzy, clean);
+    const fu_STR& match = get_iA0BsE3V(ctx.fuzzy, clean);
     return fu_STR(((match && (match != "\v"_fu)) ? match : clean));
 }
 
@@ -1168,9 +1240,9 @@ inline const fu_STR& get_vxCGVrov(fu::view<fu_STR> keys, fu::view<char> item, fu
 }
                                 #endif
 
-                                #ifndef DEF_get_PDdP9Fgq
-                                #define DEF_get_PDdP9Fgq
-inline const fu_STR& get_PDdP9Fgq(const s_Map_gb6sFwC7& _, fu::view<char> key)
+                                #ifndef DEF_get_9XI9pFZN
+                                #define DEF_get_9XI9pFZN
+inline const fu_STR& get_9XI9pFZN(const s_Map_gb6sFwC7& _, fu::view<char> key)
 {
     return get_vxCGVrov(_.keys, key, _.vals);
 }
@@ -1223,26 +1295,26 @@ inline bool update_NZBcIyrT(const fu_STR& item, const fu_STR& extra, s_Map_gb6sF
 }
                                 #endif
 
-                                #ifndef DEF_set_ROjl9WAs
-                                #define DEF_set_ROjl9WAs
-inline bool set_ROjl9WAs(s_Map_gb6sFwC7& _, const fu_STR& key, const fu_STR& value)
+                                #ifndef DEF_set_CKO6MCnx
+                                #define DEF_set_CKO6MCnx
+inline bool set_CKO6MCnx(s_Map_gb6sFwC7& _, const fu_STR& key, const fu_STR& value)
 {
     return update_NZBcIyrT(key, value, _);
 }
                                 #endif
 
-fu_STR getFile_Itjm8oks(fu_STR&& path, s_Context& ctx)
+fu_STR getFile_WPdR5TkH(fu_STR&& path, s_Context& ctx)
 {
-    const fu_STR& cached = get_PDdP9Fgq(ctx.files, path);
+    const fu_STR& cached = get_9XI9pFZN(ctx.files, path);
     if (cached)
         return fu_STR(((cached == "\v"_fu) ? (*(const fu_STR*)fu::NIL) : cached));
 
     /*MOV*/ fu_STR read = read_ny0gyQ9a(fu_STR(path));
-    set_ROjl9WAs(ctx.files, path, (read ? fu_STR(read) : "\v"_fu));
+    set_CKO6MCnx(ctx.files, path, (read ? fu_STR(read) : "\v"_fu));
     return /*NRVO*/ read;
 }
 
-s_Module& getModule_Itjm8oks(const fu_STR& fname, s_Context& ctx)
+s_Module& getModule_WPdR5TkH(const fu_STR& fname, s_Context& ctx)
 {
     for (int i = 0; i < ctx.modules.size(); i++)
     {
@@ -1271,9 +1343,9 @@ inline const fu_STR& clone_ZCtM7908(const fu_STR& a)
 }
                                 #endif
 
-                                #ifndef DEF_clone_av5PxtCI
-                                #define DEF_clone_av5PxtCI
-inline const s_ModuleInputs& clone_av5PxtCI(const s_ModuleInputs& a)
+                                #ifndef DEF_clone_Ubr1UgJy
+                                #define DEF_clone_Ubr1UgJy
+inline const s_ModuleInputs& clone_Ubr1UgJy(const s_ModuleInputs& a)
 {
     return a;
 }
@@ -1287,25 +1359,17 @@ inline const fu_VEC<int>& clone_krBIyjUl(const fu_VEC<int>& a)
 }
                                 #endif
 
-                                #ifndef DEF_clone_RKBsevnx
-                                #define DEF_clone_RKBsevnx
-inline const fu_VEC<s_Struct>& clone_RKBsevnx(const fu_VEC<s_Struct>& a)
+                                #ifndef DEF_clone_MF84YaF7
+                                #define DEF_clone_MF84YaF7
+inline const fu_VEC<s_Struct>& clone_MF84YaF7(const fu_VEC<s_Struct>& a)
 {
     return a;
 }
                                 #endif
 
-                                #ifndef DEF_clone_qVCYkPgh
-                                #define DEF_clone_qVCYkPgh
-inline const s_SolvedNode& clone_qVCYkPgh(const s_SolvedNode& a)
-{
-    return a;
-}
-                                #endif
-
-                                #ifndef DEF_clone_bjZCjfhl
-                                #define DEF_clone_bjZCjfhl
-inline const fu_VEC<s_Overload>& clone_bjZCjfhl(const fu_VEC<s_Overload>& a)
+                                #ifndef DEF_clone_kUL6NBJb
+                                #define DEF_clone_kUL6NBJb
+inline const s_SolvedNode& clone_kUL6NBJb(const s_SolvedNode& a)
 {
     return a;
 }
@@ -1313,43 +1377,51 @@ inline const fu_VEC<s_Overload>& clone_bjZCjfhl(const fu_VEC<s_Overload>& a)
 
                                 #ifndef DEF_clone_fx1SDBUT
                                 #define DEF_clone_fx1SDBUT
-inline const fu_VEC<s_Extended>& clone_fx1SDBUT(const fu_VEC<s_Extended>& a)
+inline const fu_VEC<s_Overload>& clone_fx1SDBUT(const fu_VEC<s_Overload>& a)
 {
     return a;
 }
                                 #endif
 
-                                #ifndef DEF_clone_vOYHP1IT
-                                #define DEF_clone_vOYHP1IT
-inline const fu_VEC<s_ScopeItem>& clone_vOYHP1IT(const fu_VEC<s_ScopeItem>& a)
+                                #ifndef DEF_clone_pVzH1qAz
+                                #define DEF_clone_pVzH1qAz
+inline const fu_VEC<s_Extended>& clone_pVzH1qAz(const fu_VEC<s_Extended>& a)
 {
     return a;
 }
                                 #endif
 
-                                #ifndef DEF_clone_fnMFgrK3
-                                #define DEF_clone_fnMFgrK3
-inline const fu_VEC<s_Target>& clone_fnMFgrK3(const fu_VEC<s_Target>& a)
+                                #ifndef DEF_clone_wD9DGSZd
+                                #define DEF_clone_wD9DGSZd
+inline const fu_VEC<s_ScopeItem>& clone_wD9DGSZd(const fu_VEC<s_ScopeItem>& a)
 {
     return a;
 }
                                 #endif
 
-                                #ifndef DEF_clone_Aj8LNizZ
-                                #define DEF_clone_Aj8LNizZ
-inline s_Scope clone_Aj8LNizZ(const s_Scope& a)
+                                #ifndef DEF_clone_3cih1E88
+                                #define DEF_clone_3cih1E88
+inline const fu_VEC<s_Target>& clone_3cih1E88(const fu_VEC<s_Target>& a)
+{
+    return a;
+}
+                                #endif
+
+                                #ifndef DEF_clone_rV5C67N4
+                                #define DEF_clone_rV5C67N4
+inline s_Scope clone_rV5C67N4(const s_Scope& a)
 {
     /*MOV*/ s_Scope res {};
 
     {
-        res.overloads = clone_bjZCjfhl(a.overloads);
-        res.extended = clone_fx1SDBUT(a.extended);
-        res.items = clone_vOYHP1IT(a.items);
-        res.implicits = clone_vOYHP1IT(a.implicits);
+        res.overloads = clone_fx1SDBUT(a.overloads);
+        res.extended = clone_pVzH1qAz(a.extended);
+        res.items = clone_wD9DGSZd(a.items);
+        res.implicits = clone_wD9DGSZd(a.implicits);
         res.imports = clone_krBIyjUl(a.imports);
         res.privates = clone_krBIyjUl(a.privates);
-        res.usings = clone_fnMFgrK3(a.usings);
-        res.converts = clone_fnMFgrK3(a.converts);
+        res.usings = clone_3cih1E88(a.usings);
+        res.converts = clone_3cih1E88(a.converts);
         res.pub_items = clone_uFTeeyF6(a.pub_items);
         res.pub_cnvrts = clone_uFTeeyF6(a.pub_cnvrts);
     };
@@ -1357,81 +1429,81 @@ inline s_Scope clone_Aj8LNizZ(const s_Scope& a)
 }
                                 #endif
 
-                                #ifndef DEF_clone_zyxQCvJi
-                                #define DEF_clone_zyxQCvJi
-inline s_SolverOutput clone_zyxQCvJi(const s_SolverOutput& a)
+                                #ifndef DEF_clone_zIb8FcEl
+                                #define DEF_clone_zIb8FcEl
+inline s_SolverOutput clone_zIb8FcEl(const s_SolverOutput& a)
 {
     /*MOV*/ s_SolverOutput res {};
 
     {
-        res.root = clone_qVCYkPgh(a.root);
-        res.scope = clone_Aj8LNizZ(a.scope);
+        res.root = clone_kUL6NBJb(a.root);
+        res.scope = clone_rV5C67N4(a.scope);
         res.notes = clone_uFTeeyF6(a.notes);
     };
     return /*NRVO*/ res;
 }
                                 #endif
 
-                                #ifndef DEF_clone_G6pqsUn1
-                                #define DEF_clone_G6pqsUn1
-inline const s_CodegenOutput& clone_G6pqsUn1(const s_CodegenOutput& a)
+                                #ifndef DEF_clone_j0g5AdEE
+                                #define DEF_clone_j0g5AdEE
+inline const s_CodegenOutput& clone_j0g5AdEE(const s_CodegenOutput& a)
 {
     return a;
 }
                                 #endif
 
-                                #ifndef DEF_clone_M6x1M0Mx
-                                #define DEF_clone_M6x1M0Mx
-inline s_ModuleOutputs clone_M6x1M0Mx(const s_ModuleOutputs& a)
+                                #ifndef DEF_clone_QLNgdnx2
+                                #define DEF_clone_QLNgdnx2
+inline s_ModuleOutputs clone_QLNgdnx2(const s_ModuleOutputs& a)
 {
     /*MOV*/ s_ModuleOutputs res {};
 
     {
         res.deps = clone_krBIyjUl(a.deps);
-        res.types = clone_RKBsevnx(a.types);
-        res.solve = clone_zyxQCvJi(a.solve);
-        res.cpp = clone_G6pqsUn1(a.cpp);
+        res.types = clone_MF84YaF7(a.types);
+        res.solve = clone_zIb8FcEl(a.solve);
+        res.cpp = clone_j0g5AdEE(a.cpp);
         res.init_prio = clone_uFTeeyF6(a.init_prio);
     };
     return /*NRVO*/ res;
 }
                                 #endif
 
-                                #ifndef DEF_clone_plfOxjBD
-                                #define DEF_clone_plfOxjBD
-inline const s_ModuleStats& clone_plfOxjBD(const s_ModuleStats& a)
+                                #ifndef DEF_clone_EDPC0DZC
+                                #define DEF_clone_EDPC0DZC
+inline const s_ModuleStats& clone_EDPC0DZC(const s_ModuleStats& a)
 {
     return a;
 }
                                 #endif
 
-                                #ifndef DEF_clone_eixx2GVS
-                                #define DEF_clone_eixx2GVS
-inline s_Module clone_eixx2GVS(const s_Module& a)
+                                #ifndef DEF_clone_jFwbe1Io
+                                #define DEF_clone_jFwbe1Io
+inline s_Module clone_jFwbe1Io(const s_Module& a)
 {
     /*MOV*/ s_Module res {};
 
     {
         res.modid = clone_uFTeeyF6(a.modid);
         res.fname = clone_ZCtM7908(a.fname);
-        res.in = clone_av5PxtCI(a.in);
-        res.out = clone_M6x1M0Mx(a.out);
-        res.stats = clone_plfOxjBD(a.stats);
+        res.in = clone_Ubr1UgJy(a.in);
+        res.out = clone_QLNgdnx2(a.out);
+        res.stats = clone_EDPC0DZC(a.stats);
     };
     return /*NRVO*/ res;
 }
                                 #endif
 
-void setModule_IgtJxUnL(const s_Module& module, s_Context& ctx)
+void setModule_IqHncgDn(const s_Module& module, s_Context& ctx)
 {
     s_Module& current = ctx.modules.mutref(module.modid);
     if (!(current.fname == module.fname))
         fu_ASSERT();
 
-    current = clone_eixx2GVS(module);
+    current = clone_jFwbe1Io(module);
 }
 
-const s_Struct& lookupStruct_GBXUPXZt(const s_Type& type, const s_Module& module, const s_Context& ctx)
+const s_Struct& lookupStruct_VQxm8oyj(const s_Type& type, const s_Module& module, const s_Context& ctx)
 {
     const s_StructCanon scp = parseStructCanon_9u6Vl9O2(type.vtype.canon);
     if (scp.modid == module.modid)
@@ -1443,27 +1515,27 @@ const s_Struct& lookupStruct_GBXUPXZt(const s_Type& type, const s_Module& module
     return *(_1 = &(ctx.modules[scp.modid].out.types[scp.index])) ? *_1 : fu_ASSERT();
 }
 
-bool is_trivial_JKdxRWxB(const s_Type& type, const s_Module& module, const s_Context& ctx)
+bool is_trivial_K61azC5I(const s_Type& type, const s_Module& module, const s_Context& ctx)
 {
-    return is_primitive_oPp5yWwB(type) || (isStruct_usAEukhR(type) ? lookupStruct_GBXUPXZt(type, module, ctx).all_triv : (*(const bool*)fu::NIL));
+    return is_primitive_CbRwLCm2(type) || (isStruct_ZYIX8afu(type) ? lookupStruct_VQxm8oyj(type, module, ctx).all_triv : (*(const bool*)fu::NIL));
 }
 
-const s_Struct& tryLookupStruct_JKdxRWxB(const s_Type& type, const s_Module& module, const s_Context& ctx)
+const s_Struct& tryLookupStruct_K61azC5I(const s_Type& type, const s_Module& module, const s_Context& ctx)
 {
-    return isStruct_usAEukhR(type) ? lookupStruct_GBXUPXZt(type, module, ctx) : (*(const s_Struct*)fu::NIL);
+    return isStruct_ZYIX8afu(type) ? lookupStruct_VQxm8oyj(type, module, ctx) : (*(const s_Struct*)fu::NIL);
 }
 
-const fu_VEC<int>& lookupTypeImports_JKdxRWxB(const s_Type& type, const s_Module& module, const s_Context& ctx)
+const fu_VEC<int>& lookupTypeImports_K61azC5I(const s_Type& type, const s_Module& module, const s_Context& ctx)
 {
-    return tryLookupStruct_JKdxRWxB(type, module, ctx).imports;
+    return tryLookupStruct_K61azC5I(type, module, ctx).imports;
 }
 
-const fu_VEC<s_Target>& lookupTypeConverts_JKdxRWxB(const s_Type& type, const s_Module& module, const s_Context& ctx)
+const fu_VEC<s_Target>& lookupTypeConverts_K61azC5I(const s_Type& type, const s_Module& module, const s_Context& ctx)
 {
-    return tryLookupStruct_JKdxRWxB(type, module, ctx).converts;
+    return tryLookupStruct_K61azC5I(type, module, ctx).converts;
 }
 
-const fu_STR& getModuleSrc_7k0snHP1(const int modid, const s_Context& ctx)
+const fu_STR& getModuleSrc_i6qog7jy(const int modid, const s_Context& ctx)
 {
     return ctx.modules[modid].in.src;
 }
@@ -1547,7 +1619,7 @@ extern const fu_STR RESET;
 extern const fu_STR BAD;
                                 #endif
 
-fu_STR formatCodeSnippet_2lMUJMMX(const fu_STR& src, const s_Token& start, const s_Token& end, const int extraLines)
+fu_STR formatCodeSnippet_iFC4fEdT(const fu_STR& src, const s_Token& start, const s_Token& end, const int extraLines)
 {
     fu_VEC<fu_STR> lines = split_PEYL9mMA(src, "\n"_fu);
     int l_start = ((start.line - extraLines) - 1);
@@ -1584,12 +1656,12 @@ fu_STR formatCodeSnippet_2lMUJMMX(const fu_STR& src, const s_Token& start, const
     return /*NRVO*/ result;
 }
 
-fu_STR formatCodeSnippet_LnIzFNvj(const s_TokenIdx& to, s_TokenIdx&& from, const s_Context& ctx)
+fu_STR formatCodeSnippet_NTO0WeaM(const s_TokenIdx& to, s_TokenIdx&& from, const s_Context& ctx)
 {
-    const fu_STR& src = getModuleSrc_7k0snHP1(to.modid, ctx);
-    const s_Token& start = _token_GF4X2sQy((from ? from : to), ctx);
-    const s_Token& end = _token_GF4X2sQy(to, ctx);
-    return formatCodeSnippet_2lMUJMMX(src, start, end, 2);
+    const fu_STR& src = getModuleSrc_i6qog7jy(to.modid, ctx);
+    const s_Token& start = _token_4Uqw4R4P((from ? from : to), ctx);
+    const s_Token& end = _token_4Uqw4R4P(to, ctx);
+    return formatCodeSnippet_iFC4fEdT(src, start, end, 2);
 }
 
 fu_STR getShortModuleName_hDYH9Tpk(const fu_STR& fname)

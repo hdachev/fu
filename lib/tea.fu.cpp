@@ -24,7 +24,7 @@ struct s_TEA
 
 #ifndef fu_NO_fdefs
 
-s_TEA& hash_GpLffCRh(s_TEA& res, fu::view<char> u8view)
+s_TEA& hash_DKbiRAVj(s_TEA& res, fu::view<char> u8view)
 {
     const int u32len = (u8view.size() & ~3);
     fu::view<unsigned> u32view = fu::view_of(fu::get_view(u8view, 0, u32len), unsigned{});
@@ -77,7 +77,7 @@ s_TEA& hash_GpLffCRh(s_TEA& res, fu::view<char> u8view)
 s_TEA hash_SvwmPfig(fu::view<char> u8view)
 {
     /*MOV*/ s_TEA res {};
-    hash_GpLffCRh(res, u8view);
+    hash_DKbiRAVj(res, u8view);
     return /*NRVO*/ res;
 }
 
@@ -120,7 +120,7 @@ fu_STR digest16_ymojEvLl(uint64_t v, int chars)
 fu_STR hash62_EhsXBDGJ(fu::view<char> str, const int chars)
 {
     s_TEA res {};
-    hash_GpLffCRh(res, str);
+    hash_DKbiRAVj(res, str);
     uint64_t BL_1_v {};
     return digest62_ymojEvLl((__extension__ (
     {
@@ -132,7 +132,7 @@ fu_STR hash62_EhsXBDGJ(fu::view<char> str, const int chars)
 fu_STR hash16_EhsXBDGJ(fu::view<char> str, const int chars)
 {
     s_TEA res {};
-    hash_GpLffCRh(res, str);
+    hash_DKbiRAVj(res, str);
     uint64_t BL_1_v {};
     return digest16_ymojEvLl((__extension__ (
     {

@@ -13,6 +13,7 @@ struct s_Module;
 struct s_ModuleInputs;
 struct s_LexerOutput;
 struct s_Token;
+enum s_kind: fu::i8;
 struct s_ParserOutput;
 struct s_Node;
 struct s_ModuleOutputs;
@@ -40,10 +41,10 @@ struct s_CodegenOutput;
 struct s_ModuleStats;
 struct s_ModuleStat;
 struct s_Map_gb6sFwC7;
-const fu_STR& getModuleSrc_7k0snHP1(int, const s_Context&);
-const s_Token& _token_GF4X2sQy(const s_TokenIdx&, const s_Context&);
-const fu_STR& _fname_GF4X2sQy(const s_TokenIdx&, const s_Context&);
-fu_STR formatCodeSnippet_2lMUJMMX(const fu_STR&, const s_Token&, const s_Token&, int);
+const fu_STR& getModuleSrc_i6qog7jy(int, const s_Context&);
+const s_Token& _token_4Uqw4R4P(const s_TokenIdx&, const s_Context&);
+const fu_STR& _fname_4Uqw4R4P(const s_TokenIdx&, const s_Context&);
+fu_STR formatCodeSnippet_iFC4fEdT(const fu_STR&, const s_Token&, const s_Token&, int);
 
                                 #ifndef DEF_s_TokenIdx
                                 #define DEF_s_TokenIdx
@@ -61,11 +62,80 @@ struct s_TokenIdx
 };
                                 #endif
 
+                                #ifndef DEF_s_kind
+                                #define DEF_s_kind
+enum s_kind: fu::i8
+{
+    s_kind_sof = 1,
+    s_kind_id = 2,
+    s_kind_op = 3,
+    s_kind_int = 4,
+    s_kind_real = 5,
+    s_kind_char = 6,
+    s_kind_str = 7,
+    s_kind_err = 8,
+    s_kind_eof = 9,
+    s_kind_root = 10,
+    s_kind_block = 11,
+    s_kind_argid = 12,
+    s_kind_let = 13,
+    s_kind_call = 14,
+    s_kind_arrlit = 15,
+    s_kind_if = 16,
+    s_kind_or = 17,
+    s_kind_and = 18,
+    s_kind_loop = 19,
+    s_kind_break = 20,
+    s_kind_return = 21,
+    s_kind_continue = 22,
+    s_kind_bool = 23,
+    s_kind_definit = 24,
+    s_kind_import = 25,
+    s_kind_defer = 26,
+    s_kind_try = 27,
+    s_kind_typedef = 28,
+    s_kind_typecast = 29,
+    s_kind_typeassert = 30,
+    s_kind_typeparam = 31,
+    s_kind_addroffn = 32,
+    s_kind_forfieldsof = 33,
+    s_kind_pragma = 34,
+    s_kind_void = 35,
+    s_kind_struct = 36,
+    s_kind_primitive = 37,
+    s_kind_flags = 38,
+    s_kind_enum = 39,
+    s_kind_members = 40,
+    s_kind_fn = 41,
+    s_kind_fnbranch = 42,
+    s_kind_pattern = 43,
+    s_kind_typeunion = 44,
+    s_kind_typetag = 45,
+    s_kind_jump = 46,
+    s_kind_empty = 47,
+    s_kind_letdef = 48,
+    s_kind___relaxed = 49,
+    s_kind___convert = 50,
+    s_kind_fndef = 51,
+    s_kind_copy = 52,
+    s_kind_move = 53,
+    s_kind___far_jump = 54,
+    s_kind___no_kind_yet = 55,
+    s_kind_type = 56,
+    s_kind_var = 57,
+    s_kind_field = 58,
+    s_kind_enumv = 59,
+    s_kind_template = 60,
+    s_kind___native = 61,
+    s_kind_inline = 62,
+};
+                                #endif
+
                                 #ifndef DEF_s_Token
                                 #define DEF_s_Token
 struct s_Token
 {
-    fu_STR kind;
+    s_kind kind;
     fu_STR value;
     int idx0;
     int idx1;
@@ -98,7 +168,7 @@ struct s_LexerOutput
                                 #define DEF_s_Node
 struct s_Node
 {
-    fu_STR kind;
+    s_kind kind;
     int flags;
     fu_STR value;
     fu_VEC<s_Node> items;
@@ -188,6 +258,7 @@ struct s_ScopeItem
                                 #define DEF_s_Struct
 struct s_Struct
 {
+    s_kind kind;
     fu_STR name;
     s_Target target;
     fu_VEC<s_ScopeItem> items;
@@ -199,6 +270,7 @@ struct s_Struct
     explicit operator bool() const noexcept
     {
         return false
+            || kind
             || name
             || target
             || items
@@ -310,7 +382,7 @@ struct s_RWRanges
                                 #define DEF_s_SolvedNode
 struct s_SolvedNode
 {
-    fu_STR kind;
+    s_kind kind;
     s_Helpers helpers;
     int flags;
     fu_STR value;
@@ -336,12 +408,12 @@ struct s_SolvedNode
                                 #define DEF_s_Overload
 struct s_Overload
 {
-    fu_STR kind;
+    s_kind kind;
+    int flags;
+    unsigned status;
     fu_STR name;
     fu_STR sighash;
     s_Type type;
-    int flags;
-    unsigned status;
     s_SolvedNode solved;
     explicit operator bool() const noexcept
     {
@@ -729,22 +801,22 @@ inline fu_STR x7E(fu::view<char> a, fu::view<char> b)
 }
                                 #endif
 
-[[noreturn]] fu::never FAIL_gktpJKx6(fu::view<char> fname, const fu_STR& src, const s_Token& token, fu::view<char> reason)
+[[noreturn]] fu::never FAIL_g7ph5ZNh(fu::view<char> fname, const fu_STR& src, const s_Token& token, fu::view<char> reason)
 {
     fu_STR addr = x7E((x7E("@"_fu, fu::i64dec(token.line)) + ":"_fu), fu::i64dec(token.col));
-    fu_STR snippet = formatCodeSnippet_2lMUJMMX(src, token, token, 2);
+    fu_STR snippet = formatCodeSnippet_iFC4fEdT(src, token, token, 2);
     fu::fail((((((((fname + ' ') + addr) + ":\n\n"_fu) + snippet) + "\n\t"_fu) + reason) + "\n"_fu));
 }
 
-[[noreturn]] fu::never FAIL_QjCEbuxM(fu::view<char> reason, const s_TokenIdx& _here, const s_Context& ctx)
+[[noreturn]] fu::never FAIL_7jhBtwUh(fu::view<char> reason, const s_TokenIdx& _here, const s_Context& ctx)
 {
-    const fu_STR& src = getModuleSrc_7k0snHP1(_here.modid, ctx);
-    const s_Token& token = _token_GF4X2sQy(_here, ctx);
-    fu::view<char> fname = _fname_GF4X2sQy(_here, ctx);
-    FAIL_gktpJKx6(fname, src, token, reason);
+    const fu_STR& src = getModuleSrc_i6qog7jy(_here.modid, ctx);
+    const s_Token& token = _token_4Uqw4R4P(_here, ctx);
+    fu::view<char> fname = _fname_4Uqw4R4P(_here, ctx);
+    FAIL_g7ph5ZNh(fname, src, token, reason);
 }
 
-void HERE_fVfHq6aR(const s_TokenIdx& node, s_TokenIdx& _here)
+void HERE_Qf4G9n8T(const s_TokenIdx& node, s_TokenIdx& _here)
 {
     if (node)
         _here = node;
@@ -753,7 +825,7 @@ void HERE_fVfHq6aR(const s_TokenIdx& node, s_TokenIdx& _here)
 
 [[noreturn]] fu::never BUG_XksxYQ3i(fu_STR&& reason, const s_TokenIdx& _here, const s_Context& ctx)
 {
-    FAIL_QjCEbuxM(("COMPILER BUG:\n\n\t"_fu + (reason ? fu_STR(reason) : "Assertion failed."_fu)), _here, ctx);
+    FAIL_7jhBtwUh(("COMPILER BUG:\n\n\t"_fu + (reason ? fu_STR(reason) : "Assertion failed."_fu)), _here, ctx);
 }
 
 #endif

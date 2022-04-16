@@ -18,6 +18,7 @@ struct s_Module;
 struct s_ModuleInputs;
 struct s_LexerOutput;
 struct s_Token;
+enum s_kind: fu::i8;
 struct s_ParserOutput;
 struct s_Node;
 struct s_TokenIdx;
@@ -52,16 +53,85 @@ struct s_TestDiffs;
 int compile_5FHmfbMN(const fu_STR&, const fu_STR&, s_Context&, const s_Options&);
 fu_STR lower_FZjKqN6X(fu_STR&&);
 fu_STR qBAD_HfIK3mvn(const fu_STR&);
-void set_next_QabTkgdc(s_TestDiffs&, const fu_STR&, const fu_STR&);
-void build_FI2mnMFN(fu_STR&&, fu::view<char>, fu_STR&&, fu_STR&&, fu_STR&&, fu_STR&&, fu_STR&&, const fu_STR&, fu::view<char>, const fu_STR&, bool, bool, bool, const fu_VEC<fu_STR>&, const fu_VEC<fu_STR>&, const s_Context&);
-s_Context ZERO_1upFFG2G(fu_VEC<fu_STR>&&, const s_Options&, s_TestDiffs&);
+void set_next_Vos5idnT(s_TestDiffs&, const fu_STR&, const fu_STR&);
+void build_XjFu0uX1(fu_STR&&, fu::view<char>, fu_STR&&, fu_STR&&, fu_STR&&, fu_STR&&, fu_STR&&, const fu_STR&, fu::view<char>, const fu_STR&, bool, bool, bool, const fu_VEC<fu_STR>&, const fu_VEC<fu_STR>&, const s_Context&);
+s_Context ZERO_IR4bGBOh(fu_VEC<fu_STR>&&, const s_Options&, s_TestDiffs&);
 s_Context ZERO_lY1zhnoo(const fu_STR&, s_TestDiffs&);
+
+                                #ifndef DEF_s_kind
+                                #define DEF_s_kind
+enum s_kind: fu::i8
+{
+    s_kind_sof = 1,
+    s_kind_id = 2,
+    s_kind_op = 3,
+    s_kind_int = 4,
+    s_kind_real = 5,
+    s_kind_char = 6,
+    s_kind_str = 7,
+    s_kind_err = 8,
+    s_kind_eof = 9,
+    s_kind_root = 10,
+    s_kind_block = 11,
+    s_kind_argid = 12,
+    s_kind_let = 13,
+    s_kind_call = 14,
+    s_kind_arrlit = 15,
+    s_kind_if = 16,
+    s_kind_or = 17,
+    s_kind_and = 18,
+    s_kind_loop = 19,
+    s_kind_break = 20,
+    s_kind_return = 21,
+    s_kind_continue = 22,
+    s_kind_bool = 23,
+    s_kind_definit = 24,
+    s_kind_import = 25,
+    s_kind_defer = 26,
+    s_kind_try = 27,
+    s_kind_typedef = 28,
+    s_kind_typecast = 29,
+    s_kind_typeassert = 30,
+    s_kind_typeparam = 31,
+    s_kind_addroffn = 32,
+    s_kind_forfieldsof = 33,
+    s_kind_pragma = 34,
+    s_kind_void = 35,
+    s_kind_struct = 36,
+    s_kind_primitive = 37,
+    s_kind_flags = 38,
+    s_kind_enum = 39,
+    s_kind_members = 40,
+    s_kind_fn = 41,
+    s_kind_fnbranch = 42,
+    s_kind_pattern = 43,
+    s_kind_typeunion = 44,
+    s_kind_typetag = 45,
+    s_kind_jump = 46,
+    s_kind_empty = 47,
+    s_kind_letdef = 48,
+    s_kind___relaxed = 49,
+    s_kind___convert = 50,
+    s_kind_fndef = 51,
+    s_kind_copy = 52,
+    s_kind_move = 53,
+    s_kind___far_jump = 54,
+    s_kind___no_kind_yet = 55,
+    s_kind_type = 56,
+    s_kind_var = 57,
+    s_kind_field = 58,
+    s_kind_enumv = 59,
+    s_kind_template = 60,
+    s_kind___native = 61,
+    s_kind_inline = 62,
+};
+                                #endif
 
                                 #ifndef DEF_s_Token
                                 #define DEF_s_Token
 struct s_Token
 {
-    fu_STR kind;
+    s_kind kind;
     fu_STR value;
     int idx0;
     int idx1;
@@ -110,7 +180,7 @@ struct s_TokenIdx
                                 #define DEF_s_Node
 struct s_Node
 {
-    fu_STR kind;
+    s_kind kind;
     int flags;
     fu_STR value;
     fu_VEC<s_Node> items;
@@ -200,6 +270,7 @@ struct s_ScopeItem
                                 #define DEF_s_Struct
 struct s_Struct
 {
+    s_kind kind;
     fu_STR name;
     s_Target target;
     fu_VEC<s_ScopeItem> items;
@@ -211,6 +282,7 @@ struct s_Struct
     explicit operator bool() const noexcept
     {
         return false
+            || kind
             || name
             || target
             || items
@@ -322,7 +394,7 @@ struct s_RWRanges
                                 #define DEF_s_SolvedNode
 struct s_SolvedNode
 {
-    fu_STR kind;
+    s_kind kind;
     s_Helpers helpers;
     int flags;
     fu_STR value;
@@ -348,12 +420,12 @@ struct s_SolvedNode
                                 #define DEF_s_Overload
 struct s_Overload
 {
-    fu_STR kind;
+    s_kind kind;
+    int flags;
+    unsigned status;
     fu_STR name;
     fu_STR sighash;
     s_Type type;
-    int flags;
-    unsigned status;
     s_SolvedNode solved;
     explicit operator bool() const noexcept
     {
@@ -802,9 +874,9 @@ inline const fu_STR& clone_ZCtM7908(const fu_STR& a)
 }
                                 #endif
 
-                                #ifndef DEF_clone_av5PxtCI
-                                #define DEF_clone_av5PxtCI
-inline const s_ModuleInputs& clone_av5PxtCI(const s_ModuleInputs& a)
+                                #ifndef DEF_clone_Ubr1UgJy
+                                #define DEF_clone_Ubr1UgJy
+inline const s_ModuleInputs& clone_Ubr1UgJy(const s_ModuleInputs& a)
 {
     return a;
 }
@@ -818,25 +890,17 @@ inline const fu_VEC<int>& clone_krBIyjUl(const fu_VEC<int>& a)
 }
                                 #endif
 
-                                #ifndef DEF_clone_RKBsevnx
-                                #define DEF_clone_RKBsevnx
-inline const fu_VEC<s_Struct>& clone_RKBsevnx(const fu_VEC<s_Struct>& a)
+                                #ifndef DEF_clone_MF84YaF7
+                                #define DEF_clone_MF84YaF7
+inline const fu_VEC<s_Struct>& clone_MF84YaF7(const fu_VEC<s_Struct>& a)
 {
     return a;
 }
                                 #endif
 
-                                #ifndef DEF_clone_qVCYkPgh
-                                #define DEF_clone_qVCYkPgh
-inline const s_SolvedNode& clone_qVCYkPgh(const s_SolvedNode& a)
-{
-    return a;
-}
-                                #endif
-
-                                #ifndef DEF_clone_bjZCjfhl
-                                #define DEF_clone_bjZCjfhl
-inline const fu_VEC<s_Overload>& clone_bjZCjfhl(const fu_VEC<s_Overload>& a)
+                                #ifndef DEF_clone_kUL6NBJb
+                                #define DEF_clone_kUL6NBJb
+inline const s_SolvedNode& clone_kUL6NBJb(const s_SolvedNode& a)
 {
     return a;
 }
@@ -844,43 +908,51 @@ inline const fu_VEC<s_Overload>& clone_bjZCjfhl(const fu_VEC<s_Overload>& a)
 
                                 #ifndef DEF_clone_fx1SDBUT
                                 #define DEF_clone_fx1SDBUT
-inline const fu_VEC<s_Extended>& clone_fx1SDBUT(const fu_VEC<s_Extended>& a)
+inline const fu_VEC<s_Overload>& clone_fx1SDBUT(const fu_VEC<s_Overload>& a)
 {
     return a;
 }
                                 #endif
 
-                                #ifndef DEF_clone_vOYHP1IT
-                                #define DEF_clone_vOYHP1IT
-inline const fu_VEC<s_ScopeItem>& clone_vOYHP1IT(const fu_VEC<s_ScopeItem>& a)
+                                #ifndef DEF_clone_pVzH1qAz
+                                #define DEF_clone_pVzH1qAz
+inline const fu_VEC<s_Extended>& clone_pVzH1qAz(const fu_VEC<s_Extended>& a)
 {
     return a;
 }
                                 #endif
 
-                                #ifndef DEF_clone_fnMFgrK3
-                                #define DEF_clone_fnMFgrK3
-inline const fu_VEC<s_Target>& clone_fnMFgrK3(const fu_VEC<s_Target>& a)
+                                #ifndef DEF_clone_wD9DGSZd
+                                #define DEF_clone_wD9DGSZd
+inline const fu_VEC<s_ScopeItem>& clone_wD9DGSZd(const fu_VEC<s_ScopeItem>& a)
 {
     return a;
 }
                                 #endif
 
-                                #ifndef DEF_clone_Aj8LNizZ
-                                #define DEF_clone_Aj8LNizZ
-inline s_Scope clone_Aj8LNizZ(const s_Scope& a)
+                                #ifndef DEF_clone_3cih1E88
+                                #define DEF_clone_3cih1E88
+inline const fu_VEC<s_Target>& clone_3cih1E88(const fu_VEC<s_Target>& a)
+{
+    return a;
+}
+                                #endif
+
+                                #ifndef DEF_clone_rV5C67N4
+                                #define DEF_clone_rV5C67N4
+inline s_Scope clone_rV5C67N4(const s_Scope& a)
 {
     /*MOV*/ s_Scope res {};
 
     {
-        res.overloads = clone_bjZCjfhl(a.overloads);
-        res.extended = clone_fx1SDBUT(a.extended);
-        res.items = clone_vOYHP1IT(a.items);
-        res.implicits = clone_vOYHP1IT(a.implicits);
+        res.overloads = clone_fx1SDBUT(a.overloads);
+        res.extended = clone_pVzH1qAz(a.extended);
+        res.items = clone_wD9DGSZd(a.items);
+        res.implicits = clone_wD9DGSZd(a.implicits);
         res.imports = clone_krBIyjUl(a.imports);
         res.privates = clone_krBIyjUl(a.privates);
-        res.usings = clone_fnMFgrK3(a.usings);
-        res.converts = clone_fnMFgrK3(a.converts);
+        res.usings = clone_3cih1E88(a.usings);
+        res.converts = clone_3cih1E88(a.converts);
         res.pub_items = clone_uFTeeyF6(a.pub_items);
         res.pub_cnvrts = clone_uFTeeyF6(a.pub_cnvrts);
     };
@@ -888,49 +960,95 @@ inline s_Scope clone_Aj8LNizZ(const s_Scope& a)
 }
                                 #endif
 
-                                #ifndef DEF_clone_zyxQCvJi
-                                #define DEF_clone_zyxQCvJi
-inline s_SolverOutput clone_zyxQCvJi(const s_SolverOutput& a)
+                                #ifndef DEF_clone_zIb8FcEl
+                                #define DEF_clone_zIb8FcEl
+inline s_SolverOutput clone_zIb8FcEl(const s_SolverOutput& a)
 {
     /*MOV*/ s_SolverOutput res {};
 
     {
-        res.root = clone_qVCYkPgh(a.root);
-        res.scope = clone_Aj8LNizZ(a.scope);
+        res.root = clone_kUL6NBJb(a.root);
+        res.scope = clone_rV5C67N4(a.scope);
         res.notes = clone_uFTeeyF6(a.notes);
     };
     return /*NRVO*/ res;
 }
                                 #endif
 
-                                #ifndef DEF_clone_G6pqsUn1
-                                #define DEF_clone_G6pqsUn1
-inline const s_CodegenOutput& clone_G6pqsUn1(const s_CodegenOutput& a)
+                                #ifndef DEF_clone_j0g5AdEE
+                                #define DEF_clone_j0g5AdEE
+inline const s_CodegenOutput& clone_j0g5AdEE(const s_CodegenOutput& a)
 {
     return a;
 }
                                 #endif
 
-                                #ifndef DEF_clone_M6x1M0Mx
-                                #define DEF_clone_M6x1M0Mx
-inline s_ModuleOutputs clone_M6x1M0Mx(const s_ModuleOutputs& a)
+                                #ifndef DEF_clone_QLNgdnx2
+                                #define DEF_clone_QLNgdnx2
+inline s_ModuleOutputs clone_QLNgdnx2(const s_ModuleOutputs& a)
 {
     /*MOV*/ s_ModuleOutputs res {};
 
     {
         res.deps = clone_krBIyjUl(a.deps);
-        res.types = clone_RKBsevnx(a.types);
-        res.solve = clone_zyxQCvJi(a.solve);
-        res.cpp = clone_G6pqsUn1(a.cpp);
+        res.types = clone_MF84YaF7(a.types);
+        res.solve = clone_zIb8FcEl(a.solve);
+        res.cpp = clone_j0g5AdEE(a.cpp);
         res.init_prio = clone_uFTeeyF6(a.init_prio);
     };
     return /*NRVO*/ res;
 }
                                 #endif
 
-                                #ifndef DEF_clone_plfOxjBD
-                                #define DEF_clone_plfOxjBD
-inline const s_ModuleStats& clone_plfOxjBD(const s_ModuleStats& a)
+                                #ifndef DEF_clone_EDPC0DZC
+                                #define DEF_clone_EDPC0DZC
+inline const s_ModuleStats& clone_EDPC0DZC(const s_ModuleStats& a)
+{
+    return a;
+}
+                                #endif
+
+                                #ifndef DEF_clone_jFwbe1Io
+                                #define DEF_clone_jFwbe1Io
+inline s_Module clone_jFwbe1Io(const s_Module& a)
+{
+    /*MOV*/ s_Module res {};
+
+    {
+        res.modid = clone_uFTeeyF6(a.modid);
+        res.fname = clone_ZCtM7908(a.fname);
+        res.in = clone_Ubr1UgJy(a.in);
+        res.out = clone_QLNgdnx2(a.out);
+        res.stats = clone_EDPC0DZC(a.stats);
+    };
+    return /*NRVO*/ res;
+}
+                                #endif
+
+                                #ifndef DEF_map_Y74J2whw
+                                #define DEF_map_Y74J2whw
+inline fu_VEC<s_Module> map_Y74J2whw(fu::view<s_Module> a)
+{
+    /*MOV*/ fu_VEC<s_Module> res {};
+    res.grow<false>(a.size());
+    for (int i = 0; i < a.size(); i++)
+        res.mutref(i) = clone_jFwbe1Io(a[i]);
+
+    return /*NRVO*/ res;
+}
+                                #endif
+
+                                #ifndef DEF_clone_vdfMJdfN
+                                #define DEF_clone_vdfMJdfN
+inline fu_VEC<s_Module> clone_vdfMJdfN(fu::view<s_Module> a)
+{
+    return map_Y74J2whw(a);
+}
+                                #endif
+
+                                #ifndef DEF_clone_6ENKmFqn
+                                #define DEF_clone_6ENKmFqn
+inline const s_Map_gb6sFwC7& clone_6ENKmFqn(const s_Map_gb6sFwC7& a)
 {
     return a;
 }
@@ -938,60 +1056,14 @@ inline const s_ModuleStats& clone_plfOxjBD(const s_ModuleStats& a)
 
                                 #ifndef DEF_clone_eixx2GVS
                                 #define DEF_clone_eixx2GVS
-inline s_Module clone_eixx2GVS(const s_Module& a)
-{
-    /*MOV*/ s_Module res {};
-
-    {
-        res.modid = clone_uFTeeyF6(a.modid);
-        res.fname = clone_ZCtM7908(a.fname);
-        res.in = clone_av5PxtCI(a.in);
-        res.out = clone_M6x1M0Mx(a.out);
-        res.stats = clone_plfOxjBD(a.stats);
-    };
-    return /*NRVO*/ res;
-}
-                                #endif
-
-                                #ifndef DEF_map_wOraaDyR
-                                #define DEF_map_wOraaDyR
-inline fu_VEC<s_Module> map_wOraaDyR(fu::view<s_Module> a)
-{
-    /*MOV*/ fu_VEC<s_Module> res {};
-    res.grow<false>(a.size());
-    for (int i = 0; i < a.size(); i++)
-        res.mutref(i) = clone_eixx2GVS(a[i]);
-
-    return /*NRVO*/ res;
-}
-                                #endif
-
-                                #ifndef DEF_clone_4RNMgCNW
-                                #define DEF_clone_4RNMgCNW
-inline fu_VEC<s_Module> clone_4RNMgCNW(fu::view<s_Module> a)
-{
-    return map_wOraaDyR(a);
-}
-                                #endif
-
-                                #ifndef DEF_clone_Ap8Zdan6
-                                #define DEF_clone_Ap8Zdan6
-inline const s_Map_gb6sFwC7& clone_Ap8Zdan6(const s_Map_gb6sFwC7& a)
-{
-    return a;
-}
-                                #endif
-
-                                #ifndef DEF_clone_5I3jTllN
-                                #define DEF_clone_5I3jTllN
-inline s_Context clone_5I3jTllN(const s_Context& a)
+inline s_Context clone_eixx2GVS(const s_Context& a)
 {
     /*MOV*/ s_Context res {};
 
     {
-        res.modules = clone_4RNMgCNW(a.modules);
-        res.files = clone_Ap8Zdan6(a.files);
-        res.fuzzy = clone_Ap8Zdan6(a.fuzzy);
+        res.modules = clone_vdfMJdfN(a.modules);
+        res.files = clone_6ENKmFqn(a.files);
+        res.fuzzy = clone_6ENKmFqn(a.fuzzy);
     };
     return /*NRVO*/ res;
 }
@@ -1043,9 +1115,9 @@ inline int x3Cx3E_pN4jXVBE(fu::view<char> a, fu::view<char> b)
 }
                                 #endif
 
-                                #ifndef DEF_update_QQTsApVW
-                                #define DEF_update_QQTsApVW
-inline bool update_QQTsApVW(const fu_STR& item, const fu_STR& extra, s_Map_gb6sFwC7& _)
+                                #ifndef DEF_update_l1gOuBzm
+                                #define DEF_update_l1gOuBzm
+inline bool update_l1gOuBzm(const fu_STR& item, const fu_STR& extra, s_Map_gb6sFwC7& _)
 {
     int lo = 0;
     int hi = _.keys.size();
@@ -1070,11 +1142,11 @@ inline bool update_QQTsApVW(const fu_STR& item, const fu_STR& extra, s_Map_gb6sF
 }
                                 #endif
 
-                                #ifndef DEF_set_1tnKHtXp
-                                #define DEF_set_1tnKHtXp
-inline bool set_1tnKHtXp(s_Map_gb6sFwC7& _, const fu_STR& key, const fu_STR& value)
+                                #ifndef DEF_set_EPOGiNQc
+                                #define DEF_set_EPOGiNQc
+inline bool set_EPOGiNQc(s_Map_gb6sFwC7& _, const fu_STR& key, const fu_STR& value)
 {
-    return update_QQTsApVW(key, value, _);
+    return update_l1gOuBzm(key, value, _);
 }
                                 #endif
 
@@ -1083,15 +1155,15 @@ inline bool set_1tnKHtXp(s_Map_gb6sFwC7& _, const fu_STR& key, const fu_STR& val
 extern const fu_VEC<fu_STR> NOTES;
                                 #endif
 
-s_Context compile_snippets_94M9FJ4w(fu::view<fu_STR> sources, fu::view<fu_STR> fnames, fu::view<s_Options> options)
+s_Context compile_snippets_FSacKVxa(fu::view<fu_STR> sources, fu::view<fu_STR> fnames, fu::view<s_Options> options)
 {
-    /*MOV*/ s_Context ctx = clone_5I3jTllN(CTX_PRELUDE);
+    /*MOV*/ s_Context ctx = clone_eixx2GVS(CTX_PRELUDE);
     for (int i = 0; i < sources.size(); i++)
     {
         const fu_STR& snippet = sources[i];
         fu_STR src = ((i == (sources.size() - 1)) ? ensure_main_UtFGlxlR(snippet) : fu_STR(snippet));
         fu_STR fname = ((fnames.size() > i) ? fu_STR(fnames[i]) : (x7E((FUDIR + "__tests__/_"_fu), fu::i64dec(i)) + ".fu"_fu));
-        set_1tnKHtXp(ctx.files, fname, src);
+        set_EPOGiNQc(ctx.files, fname, src);
         compile_5FHmfbMN(fname, (*(const fu_STR*)fu::NIL), ctx, ((options.size() > i) ? options[i] : (*(const s_Options*)fu::NIL)));
     };
     for (int i_1 = 0; i_1 < ctx.modules.size(); i_1++)
@@ -1114,7 +1186,7 @@ s_Context compile_snippets_94M9FJ4w(fu::view<fu_STR> sources, fu::view<fu_STR> f
 fu_STR snippet2cpp_lY1zhnoo(const fu_STR& src)
 {
     fu_STR fname = "/DIR/FILE.fu"_fu;
-    s_Context ctx = compile_snippets_94M9FJ4w((fu::slate<1, fu_STR> { fu_STR(src) }), (fu::slate<1, fu_STR> { fu_STR(fname) }), fu::view<s_Options>{});
+    s_Context ctx = compile_snippets_FSacKVxa((fu::slate<1, fu_STR> { fu_STR(src) }), (fu::slate<1, fu_STR> { fu_STR(fname) }), fu::view<s_Options>{});
     for (int i = 0; i < ctx.modules.size(); i++)
     {
         const s_Module& module = ctx.modules[i];
@@ -1142,9 +1214,9 @@ static int unindent_left_7Aar54Nn(fu::view<char> src, const int i0)
     return int(i0);
 }
 
-                                #ifndef DEF_split_ULVnF5oJ
-                                #define DEF_split_ULVnF5oJ
-inline void split_ULVnF5oJ(const fu_STR& str, fu::view<char> sep, fu_VEC<fu_STR>& result)
+                                #ifndef DEF_split_hcZg2Sc8
+                                #define DEF_split_hcZg2Sc8
+inline void split_hcZg2Sc8(const fu_STR& str, fu::view<char> sep, fu_VEC<fu_STR>& result)
 {
     int last = 0;
     int next = 0;
@@ -1177,14 +1249,14 @@ inline void split_ULVnF5oJ(const fu_STR& str, fu::view<char> sep, fu_VEC<fu_STR>
 inline fu_VEC<fu_STR> split_PEYL9mMA(const fu_STR& str, fu::view<char> sep)
 {
     /*MOV*/ fu_VEC<fu_STR> result {};
-    split_ULVnF5oJ(str, sep, result);
+    split_hcZg2Sc8(str, sep, result);
     return /*NRVO*/ result;
 }
                                 #endif
 
-                                #ifndef DEF_split_uzpTUDZV
-                                #define DEF_split_uzpTUDZV
-inline void split_uzpTUDZV(const fu_STR& str, fu::view<char> sep, fu_VEC<fu_STR>& result)
+                                #ifndef DEF_split_HtDvMkrM
+                                #define DEF_split_HtDvMkrM
+inline void split_HtDvMkrM(const fu_STR& str, fu::view<char> sep, fu_VEC<fu_STR>& result)
 {
     int last = 0;
     int next = 0;
@@ -1217,7 +1289,7 @@ inline void split_uzpTUDZV(const fu_STR& str, fu::view<char> sep, fu_VEC<fu_STR>
 inline fu_VEC<fu_STR> split_pN4jXVBE(const fu_STR& str, fu::view<char> sep)
 {
     /*MOV*/ fu_VEC<fu_STR> result {};
-    split_uzpTUDZV(str, sep, result);
+    split_HtDvMkrM(str, sep, result);
     return /*NRVO*/ result;
 }
                                 #endif
@@ -1321,9 +1393,9 @@ static fu_STR ERR_KEY_XdOzPelb(fu::view<fu_STR> sources)
     return /*NRVO*/ key;
 }
 
-                                #ifndef DEF_map_k1HMuqOm
-                                #define DEF_map_k1HMuqOm
-inline fu_VEC<s_Options> map_k1HMuqOm(fu::view<fu_STR> a, const s_Options& options)
+                                #ifndef DEF_map_lnK4MQtp
+                                #define DEF_map_lnK4MQtp
+inline fu_VEC<s_Options> map_lnK4MQtp(fu::view<fu_STR> a, const s_Options& options)
 {
     /*MOV*/ fu_VEC<s_Options> res {};
     res.grow<false>(a.size());
@@ -1399,7 +1471,7 @@ inline int find_cnCAmU7Y(fu::view<char> a, const char b)
 extern const fu_STR DEFAULT_WORKSPACE;
                                 #endif
 
-s_Context ZERO_1upFFG2G(fu_VEC<fu_STR>&& sources, const s_Options& options, s_TestDiffs& testdiffs)
+s_Context ZERO_IR4bGBOh(fu_VEC<fu_STR>&& sources, const s_Options& options, s_TestDiffs& testdiffs)
 {
     for (int i = 0; i < sources.size(); i++)
     {
@@ -1448,7 +1520,7 @@ s_Context ZERO_1upFFG2G(fu_VEC<fu_STR>&& sources, const s_Options& options, s_Te
 
                 try
                 {
-                    ZERO_1upFFG2G(fu_VEC<fu_STR>(sources), s_Options{}, testdiffs);
+                    ZERO_IR4bGBOh(fu_VEC<fu_STR>(sources), s_Options{}, testdiffs);
                 }
                 catch (const std::exception& o_0)
                 {
@@ -1484,7 +1556,7 @@ s_Context ZERO_1upFFG2G(fu_VEC<fu_STR>&& sources, const s_Options& options, s_Te
                     if (!BUG_ok && fu::has(e_1, "BUG"_fu))
                         fu::fail(("<fail> error message contains BUG:\n\n"_fu + e_1));
 
-                    set_next_QabTkgdc(testdiffs, ERR_KEY_XdOzPelb(sources), e_1);
+                    set_next_Vos5idnT(testdiffs, ERR_KEY_XdOzPelb(sources), e_1);
                     continue;
                 }
                 }
@@ -1524,7 +1596,7 @@ s_Context ZERO_1upFFG2G(fu_VEC<fu_STR>&& sources, const s_Options& options, s_Te
                 const int end = unindent_left_7Aar54Nn(part, part.size());
                 sources.mutref(i_1) = ((prefix + fu::get_view(part, 0, end)) + suffix);
                 if (j)
-                    ZERO_1upFFG2G(fu_VEC<fu_STR>(sources), s_Options{}, testdiffs);
+                    ZERO_IR4bGBOh(fu_VEC<fu_STR>(sources), s_Options{}, testdiffs);
 
             };
         };
@@ -1547,13 +1619,13 @@ s_Context ZERO_1upFFG2G(fu_VEC<fu_STR>&& sources, const s_Options& options, s_Te
             fu_STR moduleB = ((x7E((fu::get_view(src, start0, start00) + "import _"_fu), fu::i64dec(i_2)) + ";"_fu) + fu::get_view(src, start1, src.size()));
             fu_STR without = (fu::get_view(src, 0, start0) + fu::get_view(src, start1, src.size()));
             sources.mutref(i_2) = without;
-            ZERO_1upFFG2G(fu_VEC<fu_STR>(sources), s_Options{}, testdiffs);
+            ZERO_IR4bGBOh(fu_VEC<fu_STR>(sources), s_Options{}, testdiffs);
             sources.mutref(i_2) = moduleA;
             sources.insert((i_2 + 1), fu_STR(moduleB));
         };
     };
     fu_VEC<fu_VEC<fu_STR>> expectations {};
-    fu_VEC<s_Options> options_1 = map_k1HMuqOm(sources, options);
+    fu_VEC<s_Options> options_1 = map_lnK4MQtp(sources, options);
     for (int i_3 = 0; i_3 < sources.size(); i_3++)
     {
         fu_STR& src = sources.mutref(i_3);
@@ -1591,7 +1663,7 @@ s_Context ZERO_1upFFG2G(fu_VEC<fu_STR>&& sources, const s_Options& options, s_Te
         };
         options_1.mutref(i_3).break_notes = break_notes;
     };
-    /*MOV*/ s_Context ctx = compile_snippets_94M9FJ4w(sources, fu::view<fu_STR>{}, options_1);
+    /*MOV*/ s_Context ctx = compile_snippets_FSacKVxa(sources, fu::view<fu_STR>{}, options_1);
     fu_STR testdiff_prepend {};
     for (int i_4 = 0; i_4 < expectations.size(); i_4++)
     {
@@ -1630,8 +1702,8 @@ s_Context ZERO_1upFFG2G(fu_VEC<fu_STR>&& sources, const s_Options& options, s_Te
         };
     };
     const bool run = true;
-    build_FI2mnMFN(fu_STR(DEFAULT_WORKSPACE), FUDIR, fu_STR{}, fu_STR{}, fu_STR{}, fu_STR{}, fu_STR{}, (*(const fu_STR*)fu::NIL), "debug"_fu, "print-src"_fu, run, bool{}, bool{}, (*(const fu_VEC<fu_STR>*)fu::NIL), (*(const fu_VEC<fu_STR>*)fu::NIL), ctx);
-    build_FI2mnMFN(fu_STR(DEFAULT_WORKSPACE), FUDIR, fu_STR{}, fu_STR{}, fu_STR{}, fu_STR{}, fu_STR{}, (*(const fu_STR*)fu::NIL), fu::view<char>{}, "print-src"_fu, run, bool{}, bool{}, (*(const fu_VEC<fu_STR>*)fu::NIL), (*(const fu_VEC<fu_STR>*)fu::NIL), ctx);
+    build_XjFu0uX1(fu_STR(DEFAULT_WORKSPACE), FUDIR, fu_STR{}, fu_STR{}, fu_STR{}, fu_STR{}, fu_STR{}, (*(const fu_STR*)fu::NIL), "debug"_fu, "print-src"_fu, run, bool{}, bool{}, (*(const fu_VEC<fu_STR>*)fu::NIL), (*(const fu_VEC<fu_STR>*)fu::NIL), ctx);
+    build_XjFu0uX1(fu_STR(DEFAULT_WORKSPACE), FUDIR, fu_STR{}, fu_STR{}, fu_STR{}, fu_STR{}, fu_STR{}, (*(const fu_STR*)fu::NIL), fu::view<char>{}, "print-src"_fu, run, bool{}, bool{}, (*(const fu_VEC<fu_STR>*)fu::NIL), (*(const fu_VEC<fu_STR>*)fu::NIL), ctx);
 
     {
         if (testdiff_prepend)
@@ -1642,7 +1714,7 @@ s_Context ZERO_1upFFG2G(fu_VEC<fu_STR>&& sources, const s_Options& options, s_Te
         {
             key += sources[i_5];
             fu::view<char> actual = ctx.modules[((i_5 + ctx.modules.size()) - sources.size())].out.cpp.src;
-            set_next_QabTkgdc(testdiffs, key, (testdiff_prepend + actual));
+            set_next_Vos5idnT(testdiffs, key, (testdiff_prepend + actual));
         };
     };
     return /*NRVO*/ ctx;
@@ -1712,10 +1784,10 @@ static fu_STR indent_8pIVNfHM(const fu_STR& src)
 
 void ZERO_SAME_H0pX9ej3(fu::view<fu_VEC<fu_STR>> alts, s_TestDiffs& testdiffs)
 {
-    fu_VEC<s_Module> expect = ZERO_1upFFG2G(fu_VEC<fu_STR>(alts[0]), s_Options{}, testdiffs).modules;
+    fu_VEC<s_Module> expect = ZERO_IR4bGBOh(fu_VEC<fu_STR>(alts[0]), s_Options{}, testdiffs).modules;
     for (int i = 1; i < alts.size(); i++)
     {
-        fu_VEC<s_Module> actual = compile_snippets_94M9FJ4w(alts[i], fu::view<fu_STR>{}, fu::view<s_Options>{}).modules;
+        fu_VEC<s_Module> actual = compile_snippets_FSacKVxa(alts[i], fu::view<fu_STR>{}, fu::view<s_Options>{}).modules;
         if (expect.size() != actual.size())
             fu::fail("ZERO_SAME: expect/actual len mismatch."_fu);
 
@@ -1759,19 +1831,19 @@ inline fu_STR join_tkmelWjn(fu::view<fu_STR> a, fu::view<char> sep)
 }
                                 #endif
 
-void TODO_aDkuzmyI(const fu_VEC<fu_STR>& sources, s_TestDiffs& testdiffs)
+void TODO_VpwO06E8(const fu_VEC<fu_STR>& sources, s_TestDiffs& testdiffs)
 {
 
     try
     {
-        ZERO_1upFFG2G(fu_VEC<fu_STR>(sources), s_Options{}, testdiffs);
+        ZERO_IR4bGBOh(fu_VEC<fu_STR>(sources), s_Options{}, testdiffs);
     }
     catch (const std::exception& o_0)
     {
         fu_STR e = fu_TO_STR(o_0.what());
 
     {
-        set_next_QabTkgdc(testdiffs, ERR_KEY_XdOzPelb(sources), ("TODO: "_fu + ERR_TRIM_lY1zhnoo(e)));
+        set_next_Vos5idnT(testdiffs, ERR_KEY_XdOzPelb(sources), ("TODO: "_fu + ERR_TRIM_lY1zhnoo(e)));
         return;
     }
     }
@@ -1781,12 +1853,12 @@ void TODO_aDkuzmyI(const fu_VEC<fu_STR>& sources, s_TestDiffs& testdiffs)
 
 s_Context ZERO_lY1zhnoo(const fu_STR& src, s_TestDiffs& testdiffs)
 {
-    return ZERO_1upFFG2G(fu_VEC<fu_STR> { fu::slate<1, fu_STR> { fu_STR(src) } }, s_Options{}, testdiffs);
+    return ZERO_IR4bGBOh(fu_VEC<fu_STR> { fu::slate<1, fu_STR> { fu_STR(src) } }, s_Options{}, testdiffs);
 }
 
 void TODO_lY1zhnoo(const fu_STR& src, s_TestDiffs& testdiffs)
 {
-    TODO_aDkuzmyI(fu_VEC<fu_STR> { fu::slate<1, fu_STR> { fu_STR(src) } }, testdiffs);
+    TODO_VpwO06E8(fu_VEC<fu_STR> { fu::slate<1, fu_STR> { fu_STR(src) } }, testdiffs);
 }
 
 void ZERO_SAME_XdOzPelb(fu::view<fu_STR> alts, s_TestDiffs& testdiffs)

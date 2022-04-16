@@ -15,6 +15,7 @@ struct s_Module;
 struct s_ModuleInputs;
 struct s_LexerOutput;
 struct s_Token;
+enum s_kind: fu::i8;
 struct s_ParserOutput;
 struct s_Node;
 struct s_ModuleOutputs;
@@ -42,9 +43,9 @@ struct s_ModuleStats;
 struct s_ModuleStat;
 struct s_Map_gb6sFwC7;
 [[noreturn]] fu::never BUG_XksxYQ3i(fu_STR&&, const s_TokenIdx&, const s_Context&);
-void add_PCSel0xp(s_BitSet&, int);
-int Region_asLocal_MvT8pzW6(const s_Region&);
-bool has_noL0hivx(const s_BitSet&, int);
+void add_LAyLeT19(s_BitSet&, int);
+int Region_asLocal_L0YJBnz6(const s_Region&);
+bool has_LKCaG69w(const s_BitSet&, int);
 
                                 #ifndef DEF_s_BitSet
                                 #define DEF_s_BitSet
@@ -104,11 +105,80 @@ struct s_TokenIdx
 };
                                 #endif
 
+                                #ifndef DEF_s_kind
+                                #define DEF_s_kind
+enum s_kind: fu::i8
+{
+    s_kind_sof = 1,
+    s_kind_id = 2,
+    s_kind_op = 3,
+    s_kind_int = 4,
+    s_kind_real = 5,
+    s_kind_char = 6,
+    s_kind_str = 7,
+    s_kind_err = 8,
+    s_kind_eof = 9,
+    s_kind_root = 10,
+    s_kind_block = 11,
+    s_kind_argid = 12,
+    s_kind_let = 13,
+    s_kind_call = 14,
+    s_kind_arrlit = 15,
+    s_kind_if = 16,
+    s_kind_or = 17,
+    s_kind_and = 18,
+    s_kind_loop = 19,
+    s_kind_break = 20,
+    s_kind_return = 21,
+    s_kind_continue = 22,
+    s_kind_bool = 23,
+    s_kind_definit = 24,
+    s_kind_import = 25,
+    s_kind_defer = 26,
+    s_kind_try = 27,
+    s_kind_typedef = 28,
+    s_kind_typecast = 29,
+    s_kind_typeassert = 30,
+    s_kind_typeparam = 31,
+    s_kind_addroffn = 32,
+    s_kind_forfieldsof = 33,
+    s_kind_pragma = 34,
+    s_kind_void = 35,
+    s_kind_struct = 36,
+    s_kind_primitive = 37,
+    s_kind_flags = 38,
+    s_kind_enum = 39,
+    s_kind_members = 40,
+    s_kind_fn = 41,
+    s_kind_fnbranch = 42,
+    s_kind_pattern = 43,
+    s_kind_typeunion = 44,
+    s_kind_typetag = 45,
+    s_kind_jump = 46,
+    s_kind_empty = 47,
+    s_kind_letdef = 48,
+    s_kind___relaxed = 49,
+    s_kind___convert = 50,
+    s_kind_fndef = 51,
+    s_kind_copy = 52,
+    s_kind_move = 53,
+    s_kind___far_jump = 54,
+    s_kind___no_kind_yet = 55,
+    s_kind_type = 56,
+    s_kind_var = 57,
+    s_kind_field = 58,
+    s_kind_enumv = 59,
+    s_kind_template = 60,
+    s_kind___native = 61,
+    s_kind_inline = 62,
+};
+                                #endif
+
                                 #ifndef DEF_s_Token
                                 #define DEF_s_Token
 struct s_Token
 {
-    fu_STR kind;
+    s_kind kind;
     fu_STR value;
     int idx0;
     int idx1;
@@ -141,7 +211,7 @@ struct s_LexerOutput
                                 #define DEF_s_Node
 struct s_Node
 {
-    fu_STR kind;
+    s_kind kind;
     int flags;
     fu_STR value;
     fu_VEC<s_Node> items;
@@ -231,6 +301,7 @@ struct s_ScopeItem
                                 #define DEF_s_Struct
 struct s_Struct
 {
+    s_kind kind;
     fu_STR name;
     s_Target target;
     fu_VEC<s_ScopeItem> items;
@@ -242,6 +313,7 @@ struct s_Struct
     explicit operator bool() const noexcept
     {
         return false
+            || kind
             || name
             || target
             || items
@@ -353,7 +425,7 @@ struct s_RWRanges
                                 #define DEF_s_SolvedNode
 struct s_SolvedNode
 {
-    fu_STR kind;
+    s_kind kind;
     s_Helpers helpers;
     int flags;
     fu_STR value;
@@ -379,12 +451,12 @@ struct s_SolvedNode
                                 #define DEF_s_Overload
 struct s_Overload
 {
-    fu_STR kind;
+    s_kind kind;
+    int flags;
+    unsigned status;
     fu_STR name;
     fu_STR sighash;
     s_Type type;
-    int flags;
-    unsigned status;
     s_SolvedNode solved;
     explicit operator bool() const noexcept
     {
@@ -750,7 +822,7 @@ struct s_Context
 
 #ifndef fu_NO_fdefs
 
-void Reference_trackArgument_FrbWqY8Z(s_Flow& flow, const int target, const int position, const s_TokenIdx& _here, const s_Context& ctx)
+void Reference_trackArgument_xxHEkKJS(s_Flow& flow, const int target, const int position, const s_TokenIdx& _here, const s_Context& ctx)
 {
     if (!((flow.arg_targets.size() <= position)))
         BUG_XksxYQ3i("Reference_trackArgument: positions out of order."_fu, _here, ctx);
@@ -762,7 +834,7 @@ void Reference_trackArgument_FrbWqY8Z(s_Flow& flow, const int target, const int 
 
     flow.arg_positions.grow((target + 1));
     flow.arg_positions.mutref(target) = (position + 1);
-    add_PCSel0xp(flow.is_arg, target);
+    add_LAyLeT19(flow.is_arg, target);
 }
 
                                 #ifndef DEF_x3Cx3E_yxV5QT4l
@@ -929,12 +1001,12 @@ inline fu_VEC<int>& grow_if_oob_qOlBkKup(fu_VEC<fu_VEC<int>>& a, const int i)
 }
                                 #endif
 
-void Reference_trackLocalRef_OIgITfcB(s_Flow& flow, const int left, const s_Lifetime& right)
+void Reference_trackLocalRef_FlKnEK9i(s_Flow& flow, const int left, const s_Lifetime& right)
 {
     fu_VEC<int> parents {};
     for (int i = 0; i < right.uni0n.size(); i++)
     {
-        const int right_1 = Region_asLocal_MvT8pzW6(right.uni0n[i]);
+        const int right_1 = Region_asLocal_L0YJBnz6(right.uni0n[i]);
         if (!right_1)
             continue;
 
@@ -953,9 +1025,9 @@ void Reference_trackLocalRef_OIgITfcB(s_Flow& flow, const int left, const s_Life
                 add_itJnJlI8(grow_if_oob_eq5Lu6Hw(flow.invalidates, sibling), left);
             };
         };
-        if (has_noL0hivx(flow.is_arg, right_1))
+        if (has_LKCaG69w(flow.is_arg, right_1))
         {
-            add_PCSel0xp(flow.is_arg, left);
+            add_LAyLeT19(flow.is_arg, left);
             add_itJnJlI8(grow_if_oob_eq5Lu6Hw(flow.arg_parents, left), right_1);
         };
     };
@@ -996,11 +1068,11 @@ inline int find_P563x6wB(fu::view<int> a, const int b)
 }
                                 #endif
 
-void Reference_untrackLocalRef_OIgITfcB(s_Flow& flow, const int left, const s_Lifetime& right)
+void Reference_untrackLocalRef_FlKnEK9i(s_Flow& flow, const int left, const s_Lifetime& right)
 {
     for (int i = 0; i < right.uni0n.size(); i++)
     {
-        const int right_1 = Region_asLocal_MvT8pzW6(right.uni0n[i]);
+        const int right_1 = Region_asLocal_L0YJBnz6(right.uni0n[i]);
         if (!right_1)
             continue;
 
@@ -1026,7 +1098,7 @@ inline int unless_oob_MnkZvni5(fu::view<int> a, const int i)
 }
                                 #endif
 
-void ArgsAtRisk_list_KeMhuApY(s_BitSet& out, const s_Flow& flow, const int position, fu::view<fu_VEC<int>> at_risk)
+void ArgsAtRisk_list_Zw84Hwvf(s_BitSet& out, const s_Flow& flow, const int position, fu::view<fu_VEC<int>> at_risk)
 {
     const int target = unless_oob_MnkZvni5(flow.arg_targets, position);
     fu::view<int> at_risk_from = unless_oob_4Cjh8wBB(at_risk, target);
@@ -1035,7 +1107,7 @@ void ArgsAtRisk_list_KeMhuApY(s_BitSet& out, const s_Flow& flow, const int posit
         const int other = at_risk_from[i];
         const int other_position = (unless_oob_MnkZvni5(flow.arg_positions, other) - 1);
         if ((other_position >= 0))
-            add_PCSel0xp(out, other_position);
+            add_LAyLeT19(out, other_position);
 
     };
 }

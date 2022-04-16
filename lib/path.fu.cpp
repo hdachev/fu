@@ -80,9 +80,9 @@ inline int find_yd8BAtiL(fu::view<char> a, const char b, int start)
 }
                                 #endif
 
-                                #ifndef DEF_split_hA7qWWMN
-                                #define DEF_split_hA7qWWMN
-inline void split_hA7qWWMN(const fu_STR& str, const char sep, fu_VEC<fu_STR>& result)
+                                #ifndef DEF_split_hJ3dBlun
+                                #define DEF_split_hJ3dBlun
+inline void split_hJ3dBlun(const fu_STR& str, const char sep, fu_VEC<fu_STR>& result)
 {
     int last = 0;
     int next = 0;
@@ -115,7 +115,7 @@ inline void split_hA7qWWMN(const fu_STR& str, const char sep, fu_VEC<fu_STR>& re
 inline fu_VEC<fu_STR> split_cnCAmU7Y(const fu_STR& str, const char sep)
 {
     /*MOV*/ fu_VEC<fu_STR> result {};
-    split_hA7qWWMN(str, sep, result);
+    split_hJ3dBlun(str, sep, result);
     return /*NRVO*/ result;
 }
                                 #endif

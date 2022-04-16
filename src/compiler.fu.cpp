@@ -16,6 +16,7 @@ struct s_Module;
 struct s_ModuleInputs;
 struct s_LexerOutput;
 struct s_Token;
+enum s_kind: fu::i8;
 struct s_ParserOutput;
 struct s_Node;
 struct s_TokenIdx;
@@ -46,29 +47,98 @@ struct s_ModuleStat;
 struct s_Map_gb6sFwC7;
 struct s_Options;
 struct s_Lint;
-s_Module& getModule_Itjm8oks(const fu_STR&, s_Context&);
-fu_STR getFile_Itjm8oks(fu_STR&&, s_Context&);
+s_Module& getModule_WPdR5TkH(const fu_STR&, s_Context&);
+fu_STR getFile_WPdR5TkH(fu_STR&&, s_Context&);
 s_ModuleStat ModuleStat_now_pUbtfzLn();
 s_LexerOutput lex_uzLKWC6R(const fu_STR&, fu::view<char>);
-s_ParserOutput parse_J0V9lDrD(int, const fu_STR&, const fu_STR&, fu::view<s_Token>, const s_Options&);
+s_ParserOutput parse_GIHeQIDA(int, const fu_STR&, const fu_STR&, fu::view<s_Token>, const s_Options&);
 s_ModuleStat operator-(const s_ModuleStat&, const s_ModuleStat&);
-void setModule_IgtJxUnL(const s_Module&, s_Context&);
-fu_STR resolveFile_Itjm8oks(const fu_STR&, s_Context&);
-s_SolverOutput solve_j5ptKWox(const s_Context&, s_Module&, const s_Options&);
-s_CodegenOutput cpp_codegen_2xq2c97A(const s_Module&, const s_Context&);
+void setModule_IqHncgDn(const s_Module&, s_Context&);
+fu_STR resolveFile_WPdR5TkH(const fu_STR&, s_Context&);
+s_SolverOutput solve_q50sgajq(const s_Context&, s_Module&, const s_Options&);
+s_CodegenOutput cpp_codegen_NCKyO7IL(const s_Module&, const s_Context&);
 int compile_5FHmfbMN(const fu_STR&, const fu_STR&, s_Context&, const s_Options&);
 fu_STR get_1w6Ekz7Y(fu_STR&&);
 int64_t size_ny0gyQ9a(fu_STR&&);
 double hr_CPFg3qvV();
 void operator+=(s_ModuleStat&, const s_ModuleStat&);
-void ModuleStat_print_r32T5l7J(const s_ModuleStat&, const fu_STR&, fu::view<char>);
-void build_FI2mnMFN(fu_STR&&, fu::view<char>, fu_STR&&, fu_STR&&, fu_STR&&, fu_STR&&, fu_STR&&, const fu_STR&, fu::view<char>, const fu_STR&, bool, bool, bool, const fu_VEC<fu_STR>&, const fu_VEC<fu_STR>&, const s_Context&);
+void ModuleStat_print_jnmQPH8q(const s_ModuleStat&, const fu_STR&, fu::view<char>);
+void build_XjFu0uX1(fu_STR&&, fu::view<char>, fu_STR&&, fu_STR&&, fu_STR&&, fu_STR&&, fu_STR&&, const fu_STR&, fu::view<char>, const fu_STR&, bool, bool, bool, const fu_VEC<fu_STR>&, const fu_VEC<fu_STR>&, const s_Context&);
+
+                                #ifndef DEF_s_kind
+                                #define DEF_s_kind
+enum s_kind: fu::i8
+{
+    s_kind_sof = 1,
+    s_kind_id = 2,
+    s_kind_op = 3,
+    s_kind_int = 4,
+    s_kind_real = 5,
+    s_kind_char = 6,
+    s_kind_str = 7,
+    s_kind_err = 8,
+    s_kind_eof = 9,
+    s_kind_root = 10,
+    s_kind_block = 11,
+    s_kind_argid = 12,
+    s_kind_let = 13,
+    s_kind_call = 14,
+    s_kind_arrlit = 15,
+    s_kind_if = 16,
+    s_kind_or = 17,
+    s_kind_and = 18,
+    s_kind_loop = 19,
+    s_kind_break = 20,
+    s_kind_return = 21,
+    s_kind_continue = 22,
+    s_kind_bool = 23,
+    s_kind_definit = 24,
+    s_kind_import = 25,
+    s_kind_defer = 26,
+    s_kind_try = 27,
+    s_kind_typedef = 28,
+    s_kind_typecast = 29,
+    s_kind_typeassert = 30,
+    s_kind_typeparam = 31,
+    s_kind_addroffn = 32,
+    s_kind_forfieldsof = 33,
+    s_kind_pragma = 34,
+    s_kind_void = 35,
+    s_kind_struct = 36,
+    s_kind_primitive = 37,
+    s_kind_flags = 38,
+    s_kind_enum = 39,
+    s_kind_members = 40,
+    s_kind_fn = 41,
+    s_kind_fnbranch = 42,
+    s_kind_pattern = 43,
+    s_kind_typeunion = 44,
+    s_kind_typetag = 45,
+    s_kind_jump = 46,
+    s_kind_empty = 47,
+    s_kind_letdef = 48,
+    s_kind___relaxed = 49,
+    s_kind___convert = 50,
+    s_kind_fndef = 51,
+    s_kind_copy = 52,
+    s_kind_move = 53,
+    s_kind___far_jump = 54,
+    s_kind___no_kind_yet = 55,
+    s_kind_type = 56,
+    s_kind_var = 57,
+    s_kind_field = 58,
+    s_kind_enumv = 59,
+    s_kind_template = 60,
+    s_kind___native = 61,
+    s_kind_inline = 62,
+};
+                                #endif
 
                                 #ifndef DEF_s_Token
                                 #define DEF_s_Token
 struct s_Token
 {
-    fu_STR kind;
+    s_kind kind;
     fu_STR value;
     int idx0;
     int idx1;
@@ -117,7 +187,7 @@ struct s_TokenIdx
                                 #define DEF_s_Node
 struct s_Node
 {
-    fu_STR kind;
+    s_kind kind;
     int flags;
     fu_STR value;
     fu_VEC<s_Node> items;
@@ -207,6 +277,7 @@ struct s_ScopeItem
                                 #define DEF_s_Struct
 struct s_Struct
 {
+    s_kind kind;
     fu_STR name;
     s_Target target;
     fu_VEC<s_ScopeItem> items;
@@ -218,6 +289,7 @@ struct s_Struct
     explicit operator bool() const noexcept
     {
         return false
+            || kind
             || name
             || target
             || items
@@ -329,7 +401,7 @@ struct s_RWRanges
                                 #define DEF_s_SolvedNode
 struct s_SolvedNode
 {
-    fu_STR kind;
+    s_kind kind;
     s_Helpers helpers;
     int flags;
     fu_STR value;
@@ -355,12 +427,12 @@ struct s_SolvedNode
                                 #define DEF_s_Overload
 struct s_Overload
 {
-    fu_STR kind;
+    s_kind kind;
+    int flags;
+    unsigned status;
     fu_STR name;
     fu_STR sighash;
     s_Type type;
-    int flags;
-    unsigned status;
     s_SolvedNode solved;
     explicit operator bool() const noexcept
     {
@@ -788,9 +860,9 @@ inline const fu_STR& clone_ZCtM7908(const fu_STR& a)
 }
                                 #endif
 
-                                #ifndef DEF_clone_av5PxtCI
-                                #define DEF_clone_av5PxtCI
-inline const s_ModuleInputs& clone_av5PxtCI(const s_ModuleInputs& a)
+                                #ifndef DEF_clone_Ubr1UgJy
+                                #define DEF_clone_Ubr1UgJy
+inline const s_ModuleInputs& clone_Ubr1UgJy(const s_ModuleInputs& a)
 {
     return a;
 }
@@ -804,25 +876,17 @@ inline const fu_VEC<int>& clone_krBIyjUl(const fu_VEC<int>& a)
 }
                                 #endif
 
-                                #ifndef DEF_clone_RKBsevnx
-                                #define DEF_clone_RKBsevnx
-inline const fu_VEC<s_Struct>& clone_RKBsevnx(const fu_VEC<s_Struct>& a)
+                                #ifndef DEF_clone_MF84YaF7
+                                #define DEF_clone_MF84YaF7
+inline const fu_VEC<s_Struct>& clone_MF84YaF7(const fu_VEC<s_Struct>& a)
 {
     return a;
 }
                                 #endif
 
-                                #ifndef DEF_clone_qVCYkPgh
-                                #define DEF_clone_qVCYkPgh
-inline const s_SolvedNode& clone_qVCYkPgh(const s_SolvedNode& a)
-{
-    return a;
-}
-                                #endif
-
-                                #ifndef DEF_clone_bjZCjfhl
-                                #define DEF_clone_bjZCjfhl
-inline const fu_VEC<s_Overload>& clone_bjZCjfhl(const fu_VEC<s_Overload>& a)
+                                #ifndef DEF_clone_kUL6NBJb
+                                #define DEF_clone_kUL6NBJb
+inline const s_SolvedNode& clone_kUL6NBJb(const s_SolvedNode& a)
 {
     return a;
 }
@@ -830,43 +894,51 @@ inline const fu_VEC<s_Overload>& clone_bjZCjfhl(const fu_VEC<s_Overload>& a)
 
                                 #ifndef DEF_clone_fx1SDBUT
                                 #define DEF_clone_fx1SDBUT
-inline const fu_VEC<s_Extended>& clone_fx1SDBUT(const fu_VEC<s_Extended>& a)
+inline const fu_VEC<s_Overload>& clone_fx1SDBUT(const fu_VEC<s_Overload>& a)
 {
     return a;
 }
                                 #endif
 
-                                #ifndef DEF_clone_vOYHP1IT
-                                #define DEF_clone_vOYHP1IT
-inline const fu_VEC<s_ScopeItem>& clone_vOYHP1IT(const fu_VEC<s_ScopeItem>& a)
+                                #ifndef DEF_clone_pVzH1qAz
+                                #define DEF_clone_pVzH1qAz
+inline const fu_VEC<s_Extended>& clone_pVzH1qAz(const fu_VEC<s_Extended>& a)
 {
     return a;
 }
                                 #endif
 
-                                #ifndef DEF_clone_fnMFgrK3
-                                #define DEF_clone_fnMFgrK3
-inline const fu_VEC<s_Target>& clone_fnMFgrK3(const fu_VEC<s_Target>& a)
+                                #ifndef DEF_clone_wD9DGSZd
+                                #define DEF_clone_wD9DGSZd
+inline const fu_VEC<s_ScopeItem>& clone_wD9DGSZd(const fu_VEC<s_ScopeItem>& a)
 {
     return a;
 }
                                 #endif
 
-                                #ifndef DEF_clone_VGha2dKA
-                                #define DEF_clone_VGha2dKA
-inline s_Scope clone_VGha2dKA(const s_Scope& a)
+                                #ifndef DEF_clone_3cih1E88
+                                #define DEF_clone_3cih1E88
+inline const fu_VEC<s_Target>& clone_3cih1E88(const fu_VEC<s_Target>& a)
+{
+    return a;
+}
+                                #endif
+
+                                #ifndef DEF_clone_Nc0C32DI
+                                #define DEF_clone_Nc0C32DI
+inline s_Scope clone_Nc0C32DI(const s_Scope& a)
 {
     /*MOV*/ s_Scope res {};
 
     {
-        res.overloads = clone_bjZCjfhl(a.overloads);
-        res.extended = clone_fx1SDBUT(a.extended);
-        res.items = clone_vOYHP1IT(a.items);
-        res.implicits = clone_vOYHP1IT(a.implicits);
+        res.overloads = clone_fx1SDBUT(a.overloads);
+        res.extended = clone_pVzH1qAz(a.extended);
+        res.items = clone_wD9DGSZd(a.items);
+        res.implicits = clone_wD9DGSZd(a.implicits);
         res.imports = clone_krBIyjUl(a.imports);
         res.privates = clone_krBIyjUl(a.privates);
-        res.usings = clone_fnMFgrK3(a.usings);
-        res.converts = clone_fnMFgrK3(a.converts);
+        res.usings = clone_3cih1E88(a.usings);
+        res.converts = clone_3cih1E88(a.converts);
         res.pub_items = clone_uFTeeyF6(a.pub_items);
         res.pub_cnvrts = clone_uFTeeyF6(a.pub_cnvrts);
     };
@@ -874,66 +946,66 @@ inline s_Scope clone_VGha2dKA(const s_Scope& a)
 }
                                 #endif
 
-                                #ifndef DEF_clone_xQX8ydH9
-                                #define DEF_clone_xQX8ydH9
-inline s_SolverOutput clone_xQX8ydH9(const s_SolverOutput& a)
+                                #ifndef DEF_clone_8eNMSKa2
+                                #define DEF_clone_8eNMSKa2
+inline s_SolverOutput clone_8eNMSKa2(const s_SolverOutput& a)
 {
     /*MOV*/ s_SolverOutput res {};
 
     {
-        res.root = clone_qVCYkPgh(a.root);
-        res.scope = clone_VGha2dKA(a.scope);
+        res.root = clone_kUL6NBJb(a.root);
+        res.scope = clone_Nc0C32DI(a.scope);
         res.notes = clone_uFTeeyF6(a.notes);
     };
     return /*NRVO*/ res;
 }
                                 #endif
 
-                                #ifndef DEF_clone_G6pqsUn1
-                                #define DEF_clone_G6pqsUn1
-inline const s_CodegenOutput& clone_G6pqsUn1(const s_CodegenOutput& a)
+                                #ifndef DEF_clone_j0g5AdEE
+                                #define DEF_clone_j0g5AdEE
+inline const s_CodegenOutput& clone_j0g5AdEE(const s_CodegenOutput& a)
 {
     return a;
 }
                                 #endif
 
-                                #ifndef DEF_clone_aK06JrSd
-                                #define DEF_clone_aK06JrSd
-inline s_ModuleOutputs clone_aK06JrSd(const s_ModuleOutputs& a)
+                                #ifndef DEF_clone_wBO5BTgl
+                                #define DEF_clone_wBO5BTgl
+inline s_ModuleOutputs clone_wBO5BTgl(const s_ModuleOutputs& a)
 {
     /*MOV*/ s_ModuleOutputs res {};
 
     {
         res.deps = clone_krBIyjUl(a.deps);
-        res.types = clone_RKBsevnx(a.types);
-        res.solve = clone_xQX8ydH9(a.solve);
-        res.cpp = clone_G6pqsUn1(a.cpp);
+        res.types = clone_MF84YaF7(a.types);
+        res.solve = clone_8eNMSKa2(a.solve);
+        res.cpp = clone_j0g5AdEE(a.cpp);
         res.init_prio = clone_uFTeeyF6(a.init_prio);
     };
     return /*NRVO*/ res;
 }
                                 #endif
 
-                                #ifndef DEF_clone_plfOxjBD
-                                #define DEF_clone_plfOxjBD
-inline const s_ModuleStats& clone_plfOxjBD(const s_ModuleStats& a)
+                                #ifndef DEF_clone_EDPC0DZC
+                                #define DEF_clone_EDPC0DZC
+inline const s_ModuleStats& clone_EDPC0DZC(const s_ModuleStats& a)
 {
     return a;
 }
                                 #endif
 
-                                #ifndef DEF_clone_MVzrYodk
-                                #define DEF_clone_MVzrYodk
-inline s_Module clone_MVzrYodk(const s_Module& a)
+                                #ifndef DEF_clone_Ik1bp4UZ
+                                #define DEF_clone_Ik1bp4UZ
+inline s_Module clone_Ik1bp4UZ(const s_Module& a)
 {
     /*MOV*/ s_Module res {};
 
     {
         res.modid = clone_uFTeeyF6(a.modid);
         res.fname = clone_ZCtM7908(a.fname);
-        res.in = clone_av5PxtCI(a.in);
-        res.out = clone_aK06JrSd(a.out);
-        res.stats = clone_plfOxjBD(a.stats);
+        res.in = clone_Ubr1UgJy(a.in);
+        res.out = clone_wBO5BTgl(a.out);
+        res.stats = clone_EDPC0DZC(a.stats);
     };
     return /*NRVO*/ res;
 }
@@ -946,21 +1018,21 @@ inline constexpr int N_SD_HasStaticInit = (1 << 30);
 
 int compile_5FHmfbMN(const fu_STR& fname, const fu_STR& via, s_Context& ctx, const s_Options& options)
 {
-    s_Module module = clone_MVzrYodk(getModule_Itjm8oks(fname, ctx));
+    s_Module module = clone_Ik1bp4UZ(getModule_WPdR5TkH(fname, ctx));
     if (!module.in)
     {
         module.out = s_ModuleOutputs{};
         fu_STR _0 {};
-        fu_STR src = ((_0 = getFile_Itjm8oks(fu_STR(fname), ctx)) ? static_cast<fu_STR&&>(_0) : fu::fail(((("import badfile: `"_fu + via) + fname) + "`."_fu)));
+        fu_STR src = ((_0 = getFile_WPdR5TkH(fu_STR(fname), ctx)) ? static_cast<fu_STR&&>(_0) : fu::fail(((("import badfile: `"_fu + via) + fname) + "`."_fu)));
         const s_ModuleStat stat0 = ModuleStat_now_pUbtfzLn();
         s_LexerOutput lexer_result = lex_uzLKWC6R(src, fname);
         const s_ModuleStat stat1 = ModuleStat_now_pUbtfzLn();
-        s_ParserOutput parser_result = parse_J0V9lDrD(module.modid, fname, src, lexer_result.tokens, options);
+        s_ParserOutput parser_result = parse_GIHeQIDA(module.modid, fname, src, lexer_result.tokens, options);
         const s_ModuleStat stat2 = ModuleStat_now_pUbtfzLn();
         module.in = s_ModuleInputs { fu_STR(src), s_LexerOutput(lexer_result), s_ParserOutput(parser_result) };
         module.stats.lex = (stat1 - stat0);
         module.stats.parse = (stat2 - stat1);
-        setModule_IgtJxUnL(module, ctx);
+        setModule_IqHncgDn(module, ctx);
     }
     else
     {
@@ -974,19 +1046,19 @@ int compile_5FHmfbMN(const fu_STR& fname, const fu_STR& via, s_Context& ctx, con
         fu_VEC<fu_STR> fuzimports { module.in.parse.fuzimports };
         for (int i = 0; i < fuzimports.size(); i++)
         {
-            const int prio = compile_5FHmfbMN(resolveFile_Itjm8oks(fuzimports[i], ctx), (fname + (via ? ("\n\t<- "_fu + via) : fu_STR{})), ctx, options);
+            const int prio = compile_5FHmfbMN(resolveFile_WPdR5TkH(fuzimports[i], ctx), (fname + (via ? ("\n\t<- "_fu + via) : fu_STR{})), ctx, options);
             if (module.out.init_prio < prio)
                 module.out.init_prio = prio;
 
         };
         const s_ModuleStat stat0 = ModuleStat_now_pUbtfzLn();
-        module.out.solve = solve_j5ptKWox(ctx, module, options);
+        module.out.solve = solve_q50sgajq(ctx, module, options);
         const s_ModuleStat stat1 = ModuleStat_now_pUbtfzLn();
-        module.out.cpp = cpp_codegen_2xq2c97A(module, ctx);
+        module.out.cpp = cpp_codegen_NCKyO7IL(module, ctx);
         const s_ModuleStat stat2 = ModuleStat_now_pUbtfzLn();
         module.stats.solve = (stat1 - stat0);
         module.stats.codegen = (stat2 - stat1);
-        setModule_IgtJxUnL(module, ctx);
+        setModule_IqHncgDn(module, ctx);
     };
     return module.out.init_prio + ((module.out.solve.notes & N_SD_HasStaticInit) ? 1 : int{});
 }
@@ -1049,21 +1121,21 @@ extern const fu_STR DEFAULT_WORKSPACE fu_INIT_PRIORITY(1006) = (FUDIR + "build-c
 extern const s_Context CTX_PRELUDE;
                                 #endif
 
-                                #ifndef DEF_clone_Aj8LNizZ
-                                #define DEF_clone_Aj8LNizZ
-inline s_Scope clone_Aj8LNizZ(const s_Scope& a)
+                                #ifndef DEF_clone_rV5C67N4
+                                #define DEF_clone_rV5C67N4
+inline s_Scope clone_rV5C67N4(const s_Scope& a)
 {
     /*MOV*/ s_Scope res {};
 
     {
-        res.overloads = clone_bjZCjfhl(a.overloads);
-        res.extended = clone_fx1SDBUT(a.extended);
-        res.items = clone_vOYHP1IT(a.items);
-        res.implicits = clone_vOYHP1IT(a.implicits);
+        res.overloads = clone_fx1SDBUT(a.overloads);
+        res.extended = clone_pVzH1qAz(a.extended);
+        res.items = clone_wD9DGSZd(a.items);
+        res.implicits = clone_wD9DGSZd(a.implicits);
         res.imports = clone_krBIyjUl(a.imports);
         res.privates = clone_krBIyjUl(a.privates);
-        res.usings = clone_fnMFgrK3(a.usings);
-        res.converts = clone_fnMFgrK3(a.converts);
+        res.usings = clone_3cih1E88(a.usings);
+        res.converts = clone_3cih1E88(a.converts);
         res.pub_items = clone_uFTeeyF6(a.pub_items);
         res.pub_cnvrts = clone_uFTeeyF6(a.pub_cnvrts);
     };
@@ -1071,94 +1143,94 @@ inline s_Scope clone_Aj8LNizZ(const s_Scope& a)
 }
                                 #endif
 
-                                #ifndef DEF_clone_zyxQCvJi
-                                #define DEF_clone_zyxQCvJi
-inline s_SolverOutput clone_zyxQCvJi(const s_SolverOutput& a)
+                                #ifndef DEF_clone_zIb8FcEl
+                                #define DEF_clone_zIb8FcEl
+inline s_SolverOutput clone_zIb8FcEl(const s_SolverOutput& a)
 {
     /*MOV*/ s_SolverOutput res {};
 
     {
-        res.root = clone_qVCYkPgh(a.root);
-        res.scope = clone_Aj8LNizZ(a.scope);
+        res.root = clone_kUL6NBJb(a.root);
+        res.scope = clone_rV5C67N4(a.scope);
         res.notes = clone_uFTeeyF6(a.notes);
     };
     return /*NRVO*/ res;
 }
                                 #endif
 
-                                #ifndef DEF_clone_M6x1M0Mx
-                                #define DEF_clone_M6x1M0Mx
-inline s_ModuleOutputs clone_M6x1M0Mx(const s_ModuleOutputs& a)
+                                #ifndef DEF_clone_QLNgdnx2
+                                #define DEF_clone_QLNgdnx2
+inline s_ModuleOutputs clone_QLNgdnx2(const s_ModuleOutputs& a)
 {
     /*MOV*/ s_ModuleOutputs res {};
 
     {
         res.deps = clone_krBIyjUl(a.deps);
-        res.types = clone_RKBsevnx(a.types);
-        res.solve = clone_zyxQCvJi(a.solve);
-        res.cpp = clone_G6pqsUn1(a.cpp);
+        res.types = clone_MF84YaF7(a.types);
+        res.solve = clone_zIb8FcEl(a.solve);
+        res.cpp = clone_j0g5AdEE(a.cpp);
         res.init_prio = clone_uFTeeyF6(a.init_prio);
     };
     return /*NRVO*/ res;
 }
                                 #endif
 
-                                #ifndef DEF_clone_eixx2GVS
-                                #define DEF_clone_eixx2GVS
-inline s_Module clone_eixx2GVS(const s_Module& a)
+                                #ifndef DEF_clone_jFwbe1Io
+                                #define DEF_clone_jFwbe1Io
+inline s_Module clone_jFwbe1Io(const s_Module& a)
 {
     /*MOV*/ s_Module res {};
 
     {
         res.modid = clone_uFTeeyF6(a.modid);
         res.fname = clone_ZCtM7908(a.fname);
-        res.in = clone_av5PxtCI(a.in);
-        res.out = clone_M6x1M0Mx(a.out);
-        res.stats = clone_plfOxjBD(a.stats);
+        res.in = clone_Ubr1UgJy(a.in);
+        res.out = clone_QLNgdnx2(a.out);
+        res.stats = clone_EDPC0DZC(a.stats);
     };
     return /*NRVO*/ res;
 }
                                 #endif
 
-                                #ifndef DEF_map_wOraaDyR
-                                #define DEF_map_wOraaDyR
-inline fu_VEC<s_Module> map_wOraaDyR(fu::view<s_Module> a)
+                                #ifndef DEF_map_Y74J2whw
+                                #define DEF_map_Y74J2whw
+inline fu_VEC<s_Module> map_Y74J2whw(fu::view<s_Module> a)
 {
     /*MOV*/ fu_VEC<s_Module> res {};
     res.grow<false>(a.size());
     for (int i = 0; i < a.size(); i++)
-        res.mutref(i) = clone_eixx2GVS(a[i]);
+        res.mutref(i) = clone_jFwbe1Io(a[i]);
 
     return /*NRVO*/ res;
 }
                                 #endif
 
-                                #ifndef DEF_clone_4RNMgCNW
-                                #define DEF_clone_4RNMgCNW
-inline fu_VEC<s_Module> clone_4RNMgCNW(fu::view<s_Module> a)
+                                #ifndef DEF_clone_vdfMJdfN
+                                #define DEF_clone_vdfMJdfN
+inline fu_VEC<s_Module> clone_vdfMJdfN(fu::view<s_Module> a)
 {
-    return map_wOraaDyR(a);
+    return map_Y74J2whw(a);
 }
                                 #endif
 
-                                #ifndef DEF_clone_Ap8Zdan6
-                                #define DEF_clone_Ap8Zdan6
-inline const s_Map_gb6sFwC7& clone_Ap8Zdan6(const s_Map_gb6sFwC7& a)
+                                #ifndef DEF_clone_6ENKmFqn
+                                #define DEF_clone_6ENKmFqn
+inline const s_Map_gb6sFwC7& clone_6ENKmFqn(const s_Map_gb6sFwC7& a)
 {
     return a;
 }
                                 #endif
 
-                                #ifndef DEF_clone_5I3jTllN
-                                #define DEF_clone_5I3jTllN
-inline s_Context clone_5I3jTllN(const s_Context& a)
+                                #ifndef DEF_clone_eixx2GVS
+                                #define DEF_clone_eixx2GVS
+inline s_Context clone_eixx2GVS(const s_Context& a)
 {
     /*MOV*/ s_Context res {};
 
     {
-        res.modules = clone_4RNMgCNW(a.modules);
-        res.files = clone_Ap8Zdan6(a.files);
-        res.fuzzy = clone_Ap8Zdan6(a.fuzzy);
+        res.modules = clone_vdfMJdfN(a.modules);
+        res.files = clone_6ENKmFqn(a.files);
+        res.fuzzy = clone_6ENKmFqn(a.fuzzy);
     };
     return /*NRVO*/ res;
 }
@@ -1172,7 +1244,7 @@ void compile_and_build_KnN2eIVB(const fu_STR& fname, const fu_STR& dir_wrk, cons
     fu_STR x_2;
     fu_STR x_3;
 
-    s_Context ctx = clone_5I3jTllN(CTX_PRELUDE);
+    s_Context ctx = clone_eixx2GVS(CTX_PRELUDE);
     const s_Options options {};
 
     {
@@ -1200,10 +1272,10 @@ void compile_and_build_KnN2eIVB(const fu_STR& fname, const fu_STR& dir_wrk, cons
                 solve += m[i].stats.solve;
                 codegen += m[i].stats.codegen;
             };
-            ModuleStat_print_r32T5l7J(lex, "\n    lex "_fu, fu::view<char>{});
-            ModuleStat_print_r32T5l7J(parse, "  parse "_fu, fu::view<char>{});
-            ModuleStat_print_r32T5l7J(solve, "  solve "_fu, fu::view<char>{});
-            ModuleStat_print_r32T5l7J(codegen, "codegen "_fu, "\n"_fu);
+            ModuleStat_print_jnmQPH8q(lex, "\n    lex "_fu, fu::view<char>{});
+            ModuleStat_print_jnmQPH8q(parse, "  parse "_fu, fu::view<char>{});
+            ModuleStat_print_jnmQPH8q(solve, "  solve "_fu, fu::view<char>{});
+            ModuleStat_print_jnmQPH8q(codegen, "codegen "_fu, "\n"_fu);
         };
         const fu_STR* BL_6_v;
         const fu_STR* BL_7_v;
@@ -1222,7 +1294,7 @@ void compile_and_build_KnN2eIVB(const fu_STR& fname, const fu_STR& dir_wrk, cons
             BL_8_v = &(x_3);
         (void)0;}), *BL_8_v)) }));
     };
-    build_FI2mnMFN(fu_STR(dir_wrk), FUDIR, fu_STR{}, fu_STR(bin), fu_STR(dir_obj), fu_STR(dir_src), fu_STR(dir_cpp), fname, scheme, (*(const fu_STR*)fu::NIL), run, shared, hotswap, flags_cc, flags_ld, ctx);
+    build_XjFu0uX1(fu_STR(dir_wrk), FUDIR, fu_STR{}, fu_STR(bin), fu_STR(dir_obj), fu_STR(dir_src), fu_STR(dir_cpp), fname, scheme, (*(const fu_STR*)fu::NIL), run, shared, hotswap, flags_cc, flags_ld, ctx);
 }
 
 #endif

@@ -69,7 +69,7 @@ inline fu_STR x7E(fu::view<char> a, fu::view<char> b)
 }
                                 #endif
 
-fu_STR serialize_4oHveNgy(const s_ClosureID& _)
+fu_STR serialize_5msm411l(const s_ClosureID& _)
 {
     return ((_.target.modid < 0) ? x7E((x7E((x7E("`"_fu, fu::i64dec(_.target.index)) + "-"_fu), fu::i64dec(-_.target.modid)) + "-"_fu), fu::i64dec(_.revision)) : fu::fail("Not a local."_fu));
 }

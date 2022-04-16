@@ -72,49 +72,49 @@ struct s_Type
 
 #ifndef fu_NO_fdefs
 
-bool is_primitive_oPp5yWwB(const s_Type& t)
+bool is_primitive_CbRwLCm2(const s_Type& t)
 {
     const char c = t.vtype.canon[0];
     return (c == 'u') || (c == 'i') || (c == 'f') || (c == 'b') || (c == 'c') || (c == 'm') || (c == 'e');
 }
 
-bool is_arithmetic_oPp5yWwB(const s_Type& t)
+bool is_arithmetic_CbRwLCm2(const s_Type& t)
 {
     const char c = t.vtype.canon[0];
     return (c == 'u') || (c == 'i') || (c == 'f');
 }
 
-bool is_bitfield_oPp5yWwB(const s_Type& t)
+bool is_bitfield_CbRwLCm2(const s_Type& t)
 {
     const char c = t.vtype.canon[0];
     return (c == 'u') || (c == 'i') || (c == 'm');
 }
 
-bool is_integral_oPp5yWwB(const s_Type& t)
+bool is_integral_CbRwLCm2(const s_Type& t)
 {
     const char c = t.vtype.canon[0];
     return (c == 'u') || (c == 'i');
 }
 
-bool is_unsigned_oPp5yWwB(const s_Type& t)
+bool is_unsigned_CbRwLCm2(const s_Type& t)
 {
     const char c = t.vtype.canon[0];
     return c == 'u';
 }
 
-bool is_floating_pt_oPp5yWwB(const s_Type& t)
+bool is_floating_pt_CbRwLCm2(const s_Type& t)
 {
     const char c = t.vtype.canon[0];
     return c == 'f';
 }
 
-bool is_boolean_oPp5yWwB(const s_Type& t)
+bool is_boolean_CbRwLCm2(const s_Type& t)
 {
     const char c = t.vtype.canon[0];
     return c == 'f';
 }
 
-bool is_enum_oPp5yWwB(const s_Type& t)
+bool is_enum_CbRwLCm2(const s_Type& t)
 {
     const char c = t.vtype.canon[0];
     return c == 'e';

@@ -10,6 +10,7 @@ struct s_Module;
 struct s_ModuleInputs;
 struct s_LexerOutput;
 struct s_Token;
+enum s_kind: fu::i8;
 struct s_ParserOutput;
 struct s_Node;
 struct s_TokenIdx;
@@ -40,17 +41,86 @@ struct s_ModuleStat;
 struct s_Map_gb6sFwC7;
 struct s_Options;
 struct s_Lint;
-s_Module& getModule_Itjm8oks(const fu_STR&, s_Context&);
+s_Module& getModule_WPdR5TkH(const fu_STR&, s_Context&);
 s_LexerOutput lex_uzLKWC6R(const fu_STR&, fu::view<char>);
-s_ParserOutput parse_J0V9lDrD(int, const fu_STR&, const fu_STR&, fu::view<s_Token>, const s_Options&);
-void setModule_IgtJxUnL(const s_Module&, s_Context&);
-s_SolverOutput solve_j5ptKWox(const s_Context&, s_Module&, const s_Options&);
+s_ParserOutput parse_GIHeQIDA(int, const fu_STR&, const fu_STR&, fu::view<s_Token>, const s_Options&);
+void setModule_IqHncgDn(const s_Module&, s_Context&);
+s_SolverOutput solve_q50sgajq(const s_Context&, s_Module&, const s_Options&);
+
+                                #ifndef DEF_s_kind
+                                #define DEF_s_kind
+enum s_kind: fu::i8
+{
+    s_kind_sof = 1,
+    s_kind_id = 2,
+    s_kind_op = 3,
+    s_kind_int = 4,
+    s_kind_real = 5,
+    s_kind_char = 6,
+    s_kind_str = 7,
+    s_kind_err = 8,
+    s_kind_eof = 9,
+    s_kind_root = 10,
+    s_kind_block = 11,
+    s_kind_argid = 12,
+    s_kind_let = 13,
+    s_kind_call = 14,
+    s_kind_arrlit = 15,
+    s_kind_if = 16,
+    s_kind_or = 17,
+    s_kind_and = 18,
+    s_kind_loop = 19,
+    s_kind_break = 20,
+    s_kind_return = 21,
+    s_kind_continue = 22,
+    s_kind_bool = 23,
+    s_kind_definit = 24,
+    s_kind_import = 25,
+    s_kind_defer = 26,
+    s_kind_try = 27,
+    s_kind_typedef = 28,
+    s_kind_typecast = 29,
+    s_kind_typeassert = 30,
+    s_kind_typeparam = 31,
+    s_kind_addroffn = 32,
+    s_kind_forfieldsof = 33,
+    s_kind_pragma = 34,
+    s_kind_void = 35,
+    s_kind_struct = 36,
+    s_kind_primitive = 37,
+    s_kind_flags = 38,
+    s_kind_enum = 39,
+    s_kind_members = 40,
+    s_kind_fn = 41,
+    s_kind_fnbranch = 42,
+    s_kind_pattern = 43,
+    s_kind_typeunion = 44,
+    s_kind_typetag = 45,
+    s_kind_jump = 46,
+    s_kind_empty = 47,
+    s_kind_letdef = 48,
+    s_kind___relaxed = 49,
+    s_kind___convert = 50,
+    s_kind_fndef = 51,
+    s_kind_copy = 52,
+    s_kind_move = 53,
+    s_kind___far_jump = 54,
+    s_kind___no_kind_yet = 55,
+    s_kind_type = 56,
+    s_kind_var = 57,
+    s_kind_field = 58,
+    s_kind_enumv = 59,
+    s_kind_template = 60,
+    s_kind___native = 61,
+    s_kind_inline = 62,
+};
+                                #endif
 
                                 #ifndef DEF_s_Token
                                 #define DEF_s_Token
 struct s_Token
 {
-    fu_STR kind;
+    s_kind kind;
     fu_STR value;
     int idx0;
     int idx1;
@@ -99,7 +169,7 @@ struct s_TokenIdx
                                 #define DEF_s_Node
 struct s_Node
 {
-    fu_STR kind;
+    s_kind kind;
     int flags;
     fu_STR value;
     fu_VEC<s_Node> items;
@@ -189,6 +259,7 @@ struct s_ScopeItem
                                 #define DEF_s_Struct
 struct s_Struct
 {
+    s_kind kind;
     fu_STR name;
     s_Target target;
     fu_VEC<s_ScopeItem> items;
@@ -200,6 +271,7 @@ struct s_Struct
     explicit operator bool() const noexcept
     {
         return false
+            || kind
             || name
             || target
             || items
@@ -311,7 +383,7 @@ struct s_RWRanges
                                 #define DEF_s_SolvedNode
 struct s_SolvedNode
 {
-    fu_STR kind;
+    s_kind kind;
     s_Helpers helpers;
     int flags;
     fu_STR value;
@@ -337,12 +409,12 @@ struct s_SolvedNode
                                 #define DEF_s_Overload
 struct s_Overload
 {
-    fu_STR kind;
+    s_kind kind;
+    int flags;
+    unsigned status;
     fu_STR name;
     fu_STR sighash;
     s_Type type;
-    int flags;
-    unsigned status;
     s_SolvedNode solved;
     explicit operator bool() const noexcept
     {
@@ -754,7 +826,7 @@ struct s_Options
 
 #ifndef fu_NO_fdefs
 
-static const fu_STR prelude_src fu_INIT_PRIORITY(1005) = "\n\n\n// Arithmetics.\n\nfn +(a: $T) case ($T.is::arithmetic): $T __native;\nfn -(a: $T) case ($T.is::arithmetic): $T __native;\n\nfn +(a: $T, b: $T) case ($T.is::arithmetic): $T __native;\nfn -(a: $T, b: $T) case ($T.is::arithmetic): $T __native;\nfn *(a: $T, b: $T) case ($T.is::arithmetic): $T __native;\nfn /(a: $T, b: $T) case ($T.is::arithmetic): $T __native;\n\nfn %(a: $T, b: $T)\n    case ($T.is::integral): $T __native;\n    case ($T.is::floating_point): $T __native(\"<cmath>\", \"std::fmod\");\n\nfn ++(ref a: $T) case ($T.is::arithmetic): &mut $T __native;\nfn --(ref a: $T) case ($T.is::arithmetic): &mut $T __native;\npostfix fn ++(ref a: $T) case ($T.is::arithmetic): $T __native;\npostfix fn --(ref a: $T) case ($T.is::arithmetic): $T __native;\n\nfn +=(ref a: $T, b: $T) case ($T.is::arithmetic): &mut $T __native;\nfn -=(ref a: $T, b: $T) case ($T.is::arithmetic): &mut $T __native;\nfn *=(ref a: $T, b: $T) case ($T.is::arithmetic): &mut $T __native;\nfn /=(ref a: $T, b: $T) case ($T.is::arithmetic): &mut $T __native;\n\nfn ==(a: $T, b: $T) case ($T.is::primitive): bool __native;\nfn !=(a: $T, b: $T) case ($T.is::primitive): bool __native;\n\nfn > (a: $T, b: $T) case ($T.is::primitive): bool __native;\nfn < (a: $T, b: $T) case ($T.is::primitive): bool __native;\nfn >=(a: $T, b: $T) case ($T.is::primitive): bool __native;\nfn <=(a: $T, b: $T) case ($T.is::primitive): bool __native;\n\n\n// Bitwise.\n\nfn ~(a: $T)        case ($T.is::bitfield): $T __native;\nfn &(a: $T, b: $T) case ($T.is::bitfield): $T __native;\nfn |(a: $T, b: $T) case ($T.is::bitfield): $T __native;\nfn ^(a: $T, b: $T) case ($T.is::bitfield): $T __native;\n\nfn &=(ref a: $T, b: $T) case ($T.is::bitfield): &mut $T __native;\nfn |=(ref a: $T, b: $T) case ($T.is::bitfield): &mut $T __native;\nfn ^=(ref a: $T, b: $T) case ($T.is::bitfield): &mut $T __native;\n\nfn <<(a: $T, b: $T) case ($T.is::integral): $T __native;\nfn >>(a: $T, b: $T) case ($T.is::integral): $T __native;\n\nfn <<=(ref a: $T, b: $T) case ($T.is::integral): &mut $T __native;\nfn >>=(ref a: $T, b: $T) case ($T.is::integral): &mut $T __native;\n\n\n// Numeric conversions.\n\nfn  i8(v: $T) case ($T.is::primitive):  i8 __native(\"/prim/convert\");\nfn i16(v: $T) case ($T.is::primitive): i16 __native(\"/prim/convert\");\nfn i32(v: $T) case ($T.is::primitive): i32 __native(\"/prim/convert\");\nfn i64(v: $T) case ($T.is::primitive): i64 __native(\"/prim/convert\");\n\nfn  u8(v: $T) case ($T.is::primitive):  u8 __native(\"/prim/convert\");\nfn u16(v: $T) case ($T.is::primitive): u16 __native(\"/prim/convert\");\nfn u32(v: $T) case ($T.is::primitive): u32 __native(\"/prim/convert\");\nfn u64(v: $T) case ($T.is::primitive): u64 __native(\"/prim/convert\");\n\nfn f32(v: $T) case ($T.is::primitive): f32 __native(\"/prim/convert\");\nfn f64(v: $T) case ($T.is::primitive): f64 __native(\"/prim/convert\");\n\nfn byte(v: $T) case ($T.is::primitive): byte __native(\"/prim/convert\");\n\n\n// Math.\n\nfn abs(v: $T) case ($T.is::floating_point): $T __native(\"<cmath>\", \"std::abs\");\n\nfn max(a: $T, b: $T)\n    case ($T.is::floating_point) a >= b || b != b ? a : b;\n    case ($T.is::arithmetic)     a >= b           ? a : b;\n\nfn min(a: $T, b: $T)\n    case ($T.is::floating_point) a <= b || b != b ? a : b;\n    case ($T.is::arithmetic)     a <= b           ? a : b;\n\nfn exp  (a: $T, b: $T) case ($T.is::floating_point): $T __native(\"<cmath>\", \"std::exp\");\nfn exp2 (a: $T, b: $T) case ($T.is::floating_point): $T __native(\"<cmath>\", \"std::exp2\");\nfn log  (a: $T, b: $T) case ($T.is::floating_point): $T __native(\"<cmath>\", \"std::log\");\nfn log10(a: $T, b: $T) case ($T.is::floating_point): $T __native(\"<cmath>\", \"std::log10\");\nfn log2 (a: $T, b: $T) case ($T.is::floating_point): $T __native(\"<cmath>\", \"std::log2\");\n\nfn pow  (a: $T, b: $T) case ($T.is::floating_point): $T __native(\"<cmath>\", \"std::pow\");\nfn sqrt (v: $T) case ($T.is::floating_point): $T __native(\"<cmath>\", \"std::sqrt\");\nfn cbrt (v: $T) case ($T.is::floating_point): $T __native(\"<cmath>\", \"std::cbrt\");\nfn hypot(v: $T) case ($T.is::floating_point): $T __native(\"<cmath>\", \"std::hypot\");\n\nfn ceil (v: $T) case ($T.is::floating_point): $T __native(\"<cmath>\", \"std::ceil\");\nfn floor(v: $T) case ($T.is::floating_point): $T __native(\"<cmath>\", \"std::floor\");\nfn trunc(v: $T) case ($T.is::floating_point): $T __native(\"<cmath>\", \"std::trunc\");\nfn round(v: $T) case ($T.is::floating_point): $T __native(\"<cmath>\", \"std::round\");\n\nfn sin(v: $T) case ($T.is::floating_point): $T __native(\"<cmath>\", \"std::sin\");\nfn cos(v: $T) case ($T.is::floating_point): $T __native(\"<cmath>\", \"std::cos\");\nfn tan(v: $T) case ($T.is::floating_point): $T __native(\"<cmath>\", \"std::tan\");\n\nfn asin(v: $T) case ($T.is::floating_point): $T __native(\"<cmath>\", \"std::asin\");\nfn acos(v: $T) case ($T.is::floating_point): $T __native(\"<cmath>\", \"std::acos\");\nfn atan(v: $T) case ($T.is::floating_point): $T __native(\"<cmath>\", \"std::atan\");\n\nfn atan2(y: $T, x: $T) case ($T.is::floating_point): $T __native(\"<cmath>\", \"std::atan2\");\n\nfn PI():  f64 __native(\"<math.h>\", \"M_PI\");\nfn E():   f64 __native(\"<math.h>\", \"M_E\");\nfn INF(): f64 __native(\"<math.h>\", \"INFINITY\");\nfn NAN(): f64 __native(\"<math.h>\", \"NAN\");\n\nfn nan(v: $T) case ($T.is::floating_point): bool __native(\"<cmath>\", \"std::isnan\");\nfn inf(v: $T) case ($T.is::floating_point): bool __native(\"<cmath>\", \"std::isinf\");\nfn finite(v: $T) case ($T.is::floating_point): bool __native(\"<cmath>\", \"std::isfinite\");\n\n\n// Int helpers.\n\ntype  int   = i32; // These may become separate types\ntype uint   = u32; //  with a user-selectable size.\n\nfn MIN(_: $T)\n    case ($T -> i8 )        -128;\n    case ($T -> i16)        -32768;\n    case ($T -> i32)        -2147483648;\n    case ($T -> i64)        -9223372036854775808;\n    case ($T.is::unsigned)  $T(0);\n\nfn MAX(_: $T)\n    case ($T -> i8 )        127;\n    case ($T -> i16)        32767;\n    case ($T -> i32)        2147483647;\n    case ($T -> i64)        9223372036854775807;\n    case ($T.is::unsigned)  $T(-1);\n\n\n// Logic.\n\nfn !(v: $T): bool __native;\n\n\n// Assignment.\n\nfn   =(ref a: $T,    mut b: $T): &mut $T __native;\nfn ||=(ref a: $T, inline b: $T): &mut $T = a || (a = b);\nfn &&=(ref a: $T, inline b: $T): &mut $T = a && (a = b);\n\nfn swap(ref a: $T, ref b: $T): void __native(\n    \"hacks/soft_risk\",\n    \"<utility>\", \"std::swap\");\n\n\n\n// Arrays.\n//\n// TODO mutval .=,\n//  just like the assignments and splice.\n\nnovec fn len (a: [$T;]): int __native(\".size()\");\n\nnovec fn [](a: [$T;], i: int)\n    case ($a -> &mut [$T;]): &mut $T __native(\".mutref\");\n    default                : &    $T __native;\n\nnovec fn [](a: [$T;], start: int, end: int)\n    case ($a -> &mut [$T;]): &mut [$T;] __native(\"<fu/view.h>\", \"fu::get_view_mut\");\n    default                : &    [$T;] __native(\"<fu/view.h>\", \"fu::get_view\");\n\nfn    push(ref a: $T[], mut b: $T): void __native(\".push\");\nfn unshift(ref a: $T[], mut b: $T): void __native(\".unshift\");\nfn  insert(ref a: $T[], i: int, mut b: $T): void __native(\".insert\");\n\nfn  slice(a: $T[], start: int, end: int): $T[] __native(\"<fu/vec/slice.h>\", \"fu::slice\");\nfn  slice(a: $T[], start: int): $T[] __native(\"<fu/vec/slice.h>\", \"fu::slice\");\nfn substr(a: $T[], start: int, end: int): $T[] __native(\"<fu/vec/slice.h>\", \"fu::substr\");\n\nfn splice(ref a: $T[], start: int, count: int): void  __native(\".splice\");\nfn splice(ref a: $T[], start: int, count: int, mut b: $T[]): void  __native(\".splice\");\n\nfn    pop(ref a: $T[]): void __native(\".pop()\");\nfn  shift(ref a: $T[]): void __native(\".shift()\");\n\nfn  clear(ref a: $T[]): void __native(\".clear()\");\nfn shrink(ref a: $T[], len: int): void __native(\".shrink\");\n\nfn resize(ref a: $T[], len: int): void __native(\".resize\");\nfn   grow(ref a: $T[], len: int): void __native(\".grow\");\n\nfn resize_junk(ref a: $T[], len: int): void __native(\".resize<false>\");\nfn   grow_junk(ref a: $T[], len: int): void __native(\".grow<false>\");\n\n\n// Sorts, via std::sort - fnptrs.\n\nfn sort(ref a: [$T;]): void\n{\n    pragma include(\"<algorithm>\");\n    pragma emit(\n    \"\n        auto* data = \"a\".data_mut();\n        std::sort(data, data + \"a\".size());\n    \");\n}\n\nfn sort(ref a: [$T;], less/*: fn(a: $T, b: $T): bool*/): void\n{\n    noflow fn sort()\n    {\n        mut l: $T;\n        mut r: $T;\n        pragma include(\"<algorithm>\");\n        pragma emit(\n        \"\n            (void) \"l\";\n            (void) \"r\";\n            auto* data = \"a\".data_mut();\n            std::sort(data, data + \"a\".size(), [&](auto& \"l\", auto& \"r\")\n            {\n        \");\n\n        mut lt: bool = less(l, r);\n        pragma emit(\n        \"\n                return \"lt\";\n            });\n        \");\n    }\n\n    sort();\n}\n\n\n// String likes.\n\nfn ==(a: [$T;], b: [$T;]) case ($T.is::primitive): bool __native(\"<fu/vec/cmp.h>\", \"==\");\nfn !=(a: [$T;], b: [$T;]) case ($T.is::primitive): bool __native(\"<fu/vec/cmp.h>\", \"!=\");\n\nfn find(a: [$T;], b: [$T;], start: int, end: int) case ($T.is::primitive): int  __native(\"<fu/vec/find.h>\", \"fu::lfind\");\nfn find(a: [$T;], b: [$T;], start: int)           case ($T.is::primitive): int  __native(\"<fu/vec/find.h>\", \"fu::lfind\");\nfn find(a: [$T;], b: [$T;])                       case ($T.is::primitive): int  __native(\"<fu/vec/find.h>\", \"fu::lfind\");\n\nfn has (a: [$T;], b: [$T;]) case ($T.is::primitive): bool __native(\"<fu/vec/find.h>\", \"fu::has\");\n\n\n// Find char.\n\nfn starts(a: [$T;], with: $T): bool\n{\n    return a.len && a[0] == with;\n}\n\nfn ends(a: [$T;], with: $T): bool\n{\n    return a.len && a[a.len - 1] == with;\n}\n\nfn starts(a: [$T;], with: [$T;]): bool\n{\n    return a.len >= with.len\n        && a[0, with.len] == with;\n}\n\nfn ends(a: [$T;], with: [$T;]): bool\n{\n    return a.len >= with.len\n        && a[a.len - with.len, a.len] == with;\n}\n\nfn find(a: [$T;], b: $T, mut start: int): int\n{\n    start = start > 0 ? start : 0;\n    for (mut i = start; i < a.len; i++) // TODO memchr\n        if (a[i] == b)\n            return i;\n\n    return -1;\n}\n\nfn find(a: [$T;], b: $T): int\n{\n    for (mut i = 0; i < a.len; i++) // TODO memchr\n        if (a[i] == b)\n            return i;\n\n    return -1;\n}\n\nfn has(a: [$T;], b: $T): bool\n{\n    for (mut i = 0; i < a.len; i++)\n        if (a[i] == b)\n            return true;\n\n    return false;\n}\n\n\n// Strings.\n\ntype string = byte[];\n\nfn  >(a: string, b: string): bool __native(\"<fu/vec/cmp.h>\",  \">\");\nfn  <(a: string, b: string): bool __native(\"<fu/vec/cmp.h>\",  \"<\");\nfn >=(a: string, b: string): bool __native(\"<fu/vec/cmp.h>\", \">=\");\nfn <=(a: string, b: string): bool __native(\"<fu/vec/cmp.h>\", \"<=\");\n\n\n// D-style concats.\n\nfn ~(a: [$T;], b: [$T;]): $T[] __native(\"<fu/vec/concat.h>\",     \"+\");\nfn ~(a: [$T;], b:  $T  ): $T[] __native(\"<fu/vec/concat_one.h>\", \"+\");\nfn ~(a:  $T  , b: [$T;]): $T[] __native(\"<fu/vec/concat_one.h>\", \"+\");\n\nfn ~=(ref a: $T[],     b: [$T;]): &mut $T[] __native(\"<fu/vec/concat.h>\",     \"+=\");\nfn ~=(ref a: $T[], mut b:  $T  ): &mut $T[] __native(\"<fu/vec/concat_one.h>\", \"+=\");\n\n\n// Fun with views.\n\nfn view(a: [$T;], t: $U)\n    case ($a -> &mut [$T;] && $T.is::trivial && $U.is::trivial): &mut [$U] __native(\"<fu/view.h>\", \"fu::view_of_mut\");\n    case (                    $T.is::trivial && $U.is::trivial):      [$U] __native(\"<fu/view.h>\", \"fu::view_of\");\n\nfn   .=(ref a: [$T;], b: [$T;]) case ($T.is::copy): void __native(\"<fu/vec/view_assign.h>\", \"fu::view_assign\");\n\n// TODO not needed if swap(x, y) alias-ok's its two arguments:\nfn swap(ref a: [$T;], i: int, j: int): void __native(\"<fu/vec/view_swap.h>\", \"fu::view_swap\");\n\n\n// Assertions, bugs & fails.\n//  TODO i dont actually think we want to have nullary stuff in prelude,\n//   so TODO needs to take an arg, same with assert - perhaps a pass-through argument.\n\nfn throw(mut reason: string): never __native(\"<fu/never.h>\", \"fu::fail\");\nfn assert(): never __native(\"<fu/never.h>\", \"fu_ASSERT()\");\n\n\n// Stringifiables.\n\nfn ~ (    a: string, b.str) a ~ b;\nfn ~ (    a.str, b: string) a ~ b;\nfn ~=(ref a: string, b.str) a ~= b;\n\nfn str(n: $T)\n    case ($T.is::unsigned): string __native(\"<fu/decstr.h>\", \"fu::u64dec\");\n    case ($T.is::integral): string __native(\"<fu/decstr.h>\", \"fu::i64dec\");\n    case ($T -> bool):      string __native(\"<fu/decstr.h>\", \"fu::booldec\");\n    case ($T.is::floating_point): string __native(\"<fu/decstr.h>\", \"fu::f64dec\");\n    case ($T.is::enum)\n{\n    for (fieldname i: n)\n        if (n == \"i\")\n            return \"i\";\n\n    return n.i32.str; // TODO FIX use .integer or .arithmetic when we get these\n};\n\n\n// Printifiables = anything that implements print.\n\ninline fn print(x: string): string = x;\ninline fn print(x.str)    : string = x;\n\nfn println(parts.print[]: [string]): void __native(\"<fu/print.h>\", \"fu::println\");\n\n\n// String commons.\n\nfn join(a: $T[][], lax sep?: $T or [$T;] or [])\n{\n    if (a.len < 2)\n        return a.len && a[0];\n\n    let N = sep -> [$T;] ? sep.len\n          : sep ->  $T   ? 1\n                         : 0;\n\n    mut size = a[0].len;\n    for (mut i = 1; i < a.len; i++)\n        size += N + a[i].len;\n\n    mut res: $T[];\n    res.grow_junk(size);\n\n    let head = a[0];\n    size = head.len;\n    res[0, head.len] .= head;\n    for (mut i = 1; i < a.len; i++)\n    {\n        let range = a[i];\n        if (sep -> [$T;])\n            res[size, size + N] .= sep;\n        else if (sep -> $T)\n            res[size] = sep;\n\n        size += N;\n        res[size, size + range.len] .= range;\n        size += range.len;\n    }\n\n    return res;\n}\n\nfn split(str: $T[], sep: $T or [$T;], each)\n{\n    mut last = 0;\n    mut next = 0;\n\n    let N = sep -> [$T;] ? sep.len : 1;\n    if (N) while ((next = str.find(sep, start: last)) >= 0)\n    {\n        each(str.slice(last, next), first?: !last, last?: false);\n        last = next + N;\n    }\n\n    if (last)\n        each(str.slice(last), first?: false, last?: true);\n    else\n        each(str, first?: true, last?: true);\n}\n\nfn split(str: $T[], sep: $T or [$T;])\n{\n    mut result: $T[][];\n    split(str, :sep, |substr| result ~= substr);\n    return result;\n}\n\n\n// TODO: .replace() is a faster impl of .split().join().\n//  How do we express this so that .split.joins are automatically promoted?\n//   This would be generally useful, e.g.\n//    .map.maps and .map.filters could use this to skip allocs.\n\nfn replace(str: $T[], all: $T or [$T;], with: $T or [$T;] or [])\n{\n    mut result: $T[];\n    split(str, sep: all, |substr, first, last|\n    {\n        if (!first)\n            with -> [] ? with() : result ~= with;\n        else if (last)\n            return str;\n\n        result ~= substr;\n    });\n\n    return result;\n}\n\n\n//\n\nfn <>(a: $T, b: $T)\ncase ($T.is::primitive) = a < b ? -1 : a > b ? +1 : 0;\ncase ($T -> [$U]) {\n    mut cmp = a.len <> b.len;\n    for (mut i = 0; i < a.len && !cmp; i++)\n        cmp = a[i] <> b[i];\n\n    return cmp;\n}\ndefault {\n    // TODO this would be better if it went through each member doing the trivial work first -\n    //  only then going through them again and looking at e.g. array contents etc.\n    for (fieldname i: a) {\n        let cmp = a.i <> b.i;\n        if (cmp)\n            return cmp;\n    }\n\n    return 0;\n}\n\n\n"_fu;
+static const fu_STR prelude_src fu_INIT_PRIORITY(1005) = "\n\n\n// Arithmetics.\n\nfn +(a: $T) case ($T.is::arithmetic): $T __native;\nfn -(a: $T) case ($T.is::arithmetic): $T __native;\n\nfn +(a: $T, b: $T) case ($T.is::arithmetic): $T __native;\nfn -(a: $T, b: $T) case ($T.is::arithmetic): $T __native;\nfn *(a: $T, b: $T) case ($T.is::arithmetic): $T __native;\nfn /(a: $T, b: $T) case ($T.is::arithmetic): $T __native;\n\nfn %(a: $T, b: $T)\n    case ($T.is::integral): $T __native;\n    case ($T.is::floating_point): $T __native(\"<cmath>\", \"std::fmod\");\n\nfn ++(ref a: $T) case ($T.is::arithmetic): &mut $T __native;\nfn --(ref a: $T) case ($T.is::arithmetic): &mut $T __native;\npostfix fn ++(ref a: $T) case ($T.is::arithmetic): $T __native;\npostfix fn --(ref a: $T) case ($T.is::arithmetic): $T __native;\n\nfn +=(ref a: $T, b: $T) case ($T.is::arithmetic): &mut $T __native;\nfn -=(ref a: $T, b: $T) case ($T.is::arithmetic): &mut $T __native;\nfn *=(ref a: $T, b: $T) case ($T.is::arithmetic): &mut $T __native;\nfn /=(ref a: $T, b: $T) case ($T.is::arithmetic): &mut $T __native;\n\nfn ==(a: $T, b: $T) case ($T.is::primitive): bool __native;\nfn !=(a: $T, b: $T) case ($T.is::primitive): bool __native;\n\nfn > (a: $T, b: $T) case ($T.is::primitive): bool __native;\nfn < (a: $T, b: $T) case ($T.is::primitive): bool __native;\nfn >=(a: $T, b: $T) case ($T.is::primitive): bool __native;\nfn <=(a: $T, b: $T) case ($T.is::primitive): bool __native;\n\n\n// Bitwise.\n\nfn ~(a: $T)        case ($T.is::bitfield): $T __native;\nfn &(a: $T, b: $T) case ($T.is::bitfield): $T __native;\nfn |(a: $T, b: $T) case ($T.is::bitfield): $T __native;\nfn ^(a: $T, b: $T) case ($T.is::bitfield): $T __native;\n\nfn &=(ref a: $T, b: $T) case ($T.is::bitfield): &mut $T __native;\nfn |=(ref a: $T, b: $T) case ($T.is::bitfield): &mut $T __native;\nfn ^=(ref a: $T, b: $T) case ($T.is::bitfield): &mut $T __native;\n\nfn <<(a: $T, b: $T) case ($T.is::integral): $T __native;\nfn >>(a: $T, b: $T) case ($T.is::integral): $T __native;\n\nfn <<=(ref a: $T, b: $T) case ($T.is::integral): &mut $T __native;\nfn >>=(ref a: $T, b: $T) case ($T.is::integral): &mut $T __native;\n\n\n// Numeric conversions.\n\nfn  i8(v: $T) case ($T.is::primitive):  i8 __native(\"/prim/convert\");\nfn i16(v: $T) case ($T.is::primitive): i16 __native(\"/prim/convert\");\nfn i32(v: $T) case ($T.is::primitive): i32 __native(\"/prim/convert\");\nfn i64(v: $T) case ($T.is::primitive): i64 __native(\"/prim/convert\");\n\nfn  u8(v: $T) case ($T.is::primitive):  u8 __native(\"/prim/convert\");\nfn u16(v: $T) case ($T.is::primitive): u16 __native(\"/prim/convert\");\nfn u32(v: $T) case ($T.is::primitive): u32 __native(\"/prim/convert\");\nfn u64(v: $T) case ($T.is::primitive): u64 __native(\"/prim/convert\");\n\nfn f32(v: $T) case ($T.is::primitive): f32 __native(\"/prim/convert\");\nfn f64(v: $T) case ($T.is::primitive): f64 __native(\"/prim/convert\");\n\nfn byte(v: $T) case ($T.is::primitive): byte __native(\"/prim/convert\");\n\n\n// Math.\n\nfn abs(v: $T) case ($T.is::floating_point): $T __native(\"<cmath>\", \"std::abs\");\n\nfn max(a: $T, b: $T)\n    case ($T.is::floating_point) a >= b || b != b ? a : b;\n    case ($T.is::arithmetic)     a >= b           ? a : b;\n\nfn min(a: $T, b: $T)\n    case ($T.is::floating_point) a <= b || b != b ? a : b;\n    case ($T.is::arithmetic)     a <= b           ? a : b;\n\nfn exp  (a: $T, b: $T) case ($T.is::floating_point): $T __native(\"<cmath>\", \"std::exp\");\nfn exp2 (a: $T, b: $T) case ($T.is::floating_point): $T __native(\"<cmath>\", \"std::exp2\");\nfn log  (a: $T, b: $T) case ($T.is::floating_point): $T __native(\"<cmath>\", \"std::log\");\nfn log10(a: $T, b: $T) case ($T.is::floating_point): $T __native(\"<cmath>\", \"std::log10\");\nfn log2 (a: $T, b: $T) case ($T.is::floating_point): $T __native(\"<cmath>\", \"std::log2\");\n\nfn pow  (a: $T, b: $T) case ($T.is::floating_point): $T __native(\"<cmath>\", \"std::pow\");\nfn sqrt (v: $T) case ($T.is::floating_point): $T __native(\"<cmath>\", \"std::sqrt\");\nfn cbrt (v: $T) case ($T.is::floating_point): $T __native(\"<cmath>\", \"std::cbrt\");\nfn hypot(v: $T) case ($T.is::floating_point): $T __native(\"<cmath>\", \"std::hypot\");\n\nfn ceil (v: $T) case ($T.is::floating_point): $T __native(\"<cmath>\", \"std::ceil\");\nfn floor(v: $T) case ($T.is::floating_point): $T __native(\"<cmath>\", \"std::floor\");\nfn trunc(v: $T) case ($T.is::floating_point): $T __native(\"<cmath>\", \"std::trunc\");\nfn round(v: $T) case ($T.is::floating_point): $T __native(\"<cmath>\", \"std::round\");\n\nfn sin(v: $T) case ($T.is::floating_point): $T __native(\"<cmath>\", \"std::sin\");\nfn cos(v: $T) case ($T.is::floating_point): $T __native(\"<cmath>\", \"std::cos\");\nfn tan(v: $T) case ($T.is::floating_point): $T __native(\"<cmath>\", \"std::tan\");\n\nfn asin(v: $T) case ($T.is::floating_point): $T __native(\"<cmath>\", \"std::asin\");\nfn acos(v: $T) case ($T.is::floating_point): $T __native(\"<cmath>\", \"std::acos\");\nfn atan(v: $T) case ($T.is::floating_point): $T __native(\"<cmath>\", \"std::atan\");\n\nfn atan2(y: $T, x: $T) case ($T.is::floating_point): $T __native(\"<cmath>\", \"std::atan2\");\n\nfn PI():  f64 __native(\"<math.h>\", \"M_PI\");\nfn E():   f64 __native(\"<math.h>\", \"M_E\");\nfn INF(): f64 __native(\"<math.h>\", \"INFINITY\");\nfn NAN(): f64 __native(\"<math.h>\", \"NAN\");\n\nfn nan(v: $T) case ($T.is::floating_point): bool __native(\"<cmath>\", \"std::isnan\");\nfn inf(v: $T) case ($T.is::floating_point): bool __native(\"<cmath>\", \"std::isinf\");\nfn finite(v: $T) case ($T.is::floating_point): bool __native(\"<cmath>\", \"std::isfinite\");\n\n\n// Int helpers.\n\ntype  int   = i32; // These may become separate types\ntype uint   = u32; //  with a user-selectable size.\n\nfn MIN(_: $T)\n    case ($T -> i8 )        -128;\n    case ($T -> i16)        -32768;\n    case ($T -> i32)        -2147483648;\n    case ($T -> i64)        -9223372036854775808;\n    case ($T.is::unsigned)  $T(0);\n\nfn MAX(_: $T)\n    case ($T -> i8 )        127;\n    case ($T -> i16)        32767;\n    case ($T -> i32)        2147483647;\n    case ($T -> i64)        9223372036854775807;\n    case ($T.is::unsigned)  $T(-1);\n\n\n// Logic.\n\nfn !(v: $T): bool __native;\n\n\n// Assignment.\n\nfn   =(ref a: $T,    mut b: $T): &mut $T __native;\nfn ||=(ref a: $T, inline b: $T): &mut $T = a || (a = b);\nfn &&=(ref a: $T, inline b: $T): &mut $T = a && (a = b);\n\nfn swap(ref a: $T, ref b: $T): void __native(\n    \"hacks/soft_risk\",\n    \"<utility>\", \"std::swap\");\n\n\n\n// Arrays.\n//\n// TODO mutval .=,\n//  just like the assignments and splice.\n\nnovec fn len (a: [$T;]): int __native(\".size()\");\n\nnovec fn [](a: [$T;], i: int)\n    case ($a -> &mut [$T;]): &mut $T __native(\".mutref\");\n    default                : &    $T __native;\n\nnovec fn [](a: [$T;], start: int, end: int)\n    case ($a -> &mut [$T;]): &mut [$T;] __native(\"<fu/view.h>\", \"fu::get_view_mut\");\n    default                : &    [$T;] __native(\"<fu/view.h>\", \"fu::get_view\");\n\nfn    push(ref a: $T[], mut b: $T): void __native(\".push\");\nfn unshift(ref a: $T[], mut b: $T): void __native(\".unshift\");\nfn  insert(ref a: $T[], i: int, mut b: $T): void __native(\".insert\");\n\nfn  slice(a: $T[], start: int, end: int): $T[] __native(\"<fu/vec/slice.h>\", \"fu::slice\");\nfn  slice(a: $T[], start: int): $T[] __native(\"<fu/vec/slice.h>\", \"fu::slice\");\nfn substr(a: $T[], start: int, end: int): $T[] __native(\"<fu/vec/slice.h>\", \"fu::substr\");\n\nfn splice(ref a: $T[], start: int, count: int): void  __native(\".splice\");\nfn splice(ref a: $T[], start: int, count: int, mut b: $T[]): void  __native(\".splice\");\n\nfn    pop(ref a: $T[]): void __native(\".pop()\");\nfn  shift(ref a: $T[]): void __native(\".shift()\");\n\nfn  clear(ref a: $T[]): void __native(\".clear()\");\nfn shrink(ref a: $T[], len: int): void __native(\".shrink\");\n\nfn resize(ref a: $T[], len: int): void __native(\".resize\");\nfn   grow(ref a: $T[], len: int): void __native(\".grow\");\n\nfn resize_junk(ref a: $T[], len: int): void __native(\".resize<false>\");\nfn   grow_junk(ref a: $T[], len: int): void __native(\".grow<false>\");\n\n\n// Sorts, via std::sort - fnptrs.\n\nfn sort(ref a: [$T;]): void\n{\n    pragma include(\"<algorithm>\");\n    pragma emit(\n    \"\n        auto* data = \"a\".data_mut();\n        std::sort(data, data + \"a\".size());\n    \");\n}\n\nfn sort(ref a: [$T;], less/*: fn(a: $T, b: $T): bool*/): void\n{\n    noflow fn sort()\n    {\n        mut l: $T;\n        mut r: $T;\n        pragma include(\"<algorithm>\");\n        pragma emit(\n        \"\n            (void) \"l\";\n            (void) \"r\";\n            auto* data = \"a\".data_mut();\n            std::sort(data, data + \"a\".size(), [&](auto& \"l\", auto& \"r\")\n            {\n        \");\n\n        mut lt: bool = less(l, r);\n        pragma emit(\n        \"\n                return \"lt\";\n            });\n        \");\n    }\n\n    sort();\n}\n\n\n// String likes.\n\nfn ==(a: [$T;], b: [$T;]) case ($T.is::primitive): bool __native(\"<fu/vec/cmp.h>\", \"==\");\nfn !=(a: [$T;], b: [$T;]) case ($T.is::primitive): bool __native(\"<fu/vec/cmp.h>\", \"!=\");\n\nfn find(a: [$T;], b: [$T;], start: int, end: int) case ($T.is::primitive): int  __native(\"<fu/vec/find.h>\", \"fu::lfind\");\nfn find(a: [$T;], b: [$T;], start: int)           case ($T.is::primitive): int  __native(\"<fu/vec/find.h>\", \"fu::lfind\");\nfn find(a: [$T;], b: [$T;])                       case ($T.is::primitive): int  __native(\"<fu/vec/find.h>\", \"fu::lfind\");\n\nfn has (a: [$T;], b: [$T;]) case ($T.is::primitive): bool __native(\"<fu/vec/find.h>\", \"fu::has\");\n\n\n// Find char.\n\nfn starts(a: [$T;], with: $T): bool\n{\n    return a.len && a[0] == with;\n}\n\nfn ends(a: [$T;], with: $T): bool\n{\n    return a.len && a[a.len - 1] == with;\n}\n\nfn starts(a: [$T;], with: [$T;]): bool\n{\n    return a.len >= with.len\n        && a[0, with.len] == with;\n}\n\nfn ends(a: [$T;], with: [$T;]): bool\n{\n    return a.len >= with.len\n        && a[a.len - with.len, a.len] == with;\n}\n\nfn find(a: [$T;], b: $T, mut start: int): int\n{\n    start = start > 0 ? start : 0;\n    for (mut i = start; i < a.len; i++) // TODO memchr\n        if (a[i] == b)\n            return i;\n\n    return -1;\n}\n\nfn find(a: [$T;], b: $T): int\n{\n    for (mut i = 0; i < a.len; i++) // TODO memchr\n        if (a[i] == b)\n            return i;\n\n    return -1;\n}\n\nfn has(a: [$T;], b: $T): bool\n{\n    for (mut i = 0; i < a.len; i++)\n        if (a[i] == b)\n            return true;\n\n    return false;\n}\n\n\n// Strings.\n\ntype string = byte[];\n\nfn  >(a: string, b: string): bool __native(\"<fu/vec/cmp.h>\",  \">\");\nfn  <(a: string, b: string): bool __native(\"<fu/vec/cmp.h>\",  \"<\");\nfn >=(a: string, b: string): bool __native(\"<fu/vec/cmp.h>\", \">=\");\nfn <=(a: string, b: string): bool __native(\"<fu/vec/cmp.h>\", \"<=\");\n\n\n// D-style concats.\n\nfn ~(a: [$T;], b: [$T;]): $T[] __native(\"<fu/vec/concat.h>\",     \"+\");\nfn ~(a: [$T;], b:  $T  ): $T[] __native(\"<fu/vec/concat_one.h>\", \"+\");\nfn ~(a:  $T  , b: [$T;]): $T[] __native(\"<fu/vec/concat_one.h>\", \"+\");\n\nfn ~=(ref a: $T[],     b: [$T;]): &mut $T[] __native(\"<fu/vec/concat.h>\",     \"+=\");\nfn ~=(ref a: $T[], mut b:  $T  ): &mut $T[] __native(\"<fu/vec/concat_one.h>\", \"+=\");\n\n\n// Fun with views.\n\nfn view(a: [$T;], t: $U)\n    case ($a -> &mut [$T;] && $T.is::trivial && $U.is::trivial): &mut [$U] __native(\"<fu/view.h>\", \"fu::view_of_mut\");\n    case (                    $T.is::trivial && $U.is::trivial):      [$U] __native(\"<fu/view.h>\", \"fu::view_of\");\n\nfn   .=(ref a: [$T;], b: [$T;]) case ($T.is::copy): void __native(\"<fu/vec/view_assign.h>\", \"fu::view_assign\");\n\n// TODO not needed if swap(x, y) alias-ok's its two arguments:\nfn swap(ref a: [$T;], i: int, j: int): void __native(\"<fu/vec/view_swap.h>\", \"fu::view_swap\");\n\n\n// Assertions, bugs & fails.\n//  TODO i dont actually think we want to have nullary stuff in prelude,\n//   so TODO needs to take an arg, same with assert - perhaps a pass-through argument.\n\nfn throw(mut reason: string): never __native(\"<fu/never.h>\", \"fu::fail\");\nfn assert(): never __native(\"<fu/never.h>\", \"fu_ASSERT()\");\n\n\n// Stringifiables.\n\nfn ~ (    a: string, b.str) a ~ b;\nfn ~ (    a.str, b: string) a ~ b;\nfn ~=(ref a: string, b.str) a ~= b;\n\nfn str(n: $T)\n    case ($T.is::unsigned): string __native(\"<fu/decstr.h>\", \"fu::u64dec\");\n    case ($T.is::bitfield): string __native(\"<fu/decstr.h>\", \"fu::i64dec\");\n    case ($T -> bool):      string __native(\"<fu/decstr.h>\", \"fu::booldec\");\n    case ($T.is::floating_point): string __native(\"<fu/decstr.h>\", \"fu::f64dec\");\n    case ($T.is::enum)\n{\n    for (fieldname i: n)\n        if (n == \"i\")\n            return \"i\";\n\n    return n.i64.str; // TODO FIX use .integer or .arithmetic when we get these\n}\n\n\n// Printifiables = anything that implements print.\n\ninline fn print(x: string): string = x;\ninline fn print(x.str)    : string = x;\n\nfn println(parts.print[]: [string]): void __native(\"<fu/print.h>\", \"fu::println\");\n\n\n// String commons.\n\nfn join(a: $T[][], lax sep?: $T or [$T;] or [])\n{\n    if (a.len < 2)\n        return a.len && a[0];\n\n    let N = sep -> [$T;] ? sep.len\n          : sep ->  $T   ? 1\n                         : 0;\n\n    mut size = a[0].len;\n    for (mut i = 1; i < a.len; i++)\n        size += N + a[i].len;\n\n    mut res: $T[];\n    res.grow_junk(size);\n\n    let head = a[0];\n    size = head.len;\n    res[0, head.len] .= head;\n    for (mut i = 1; i < a.len; i++)\n    {\n        let range = a[i];\n        if (sep -> [$T;])\n            res[size, size + N] .= sep;\n        else if (sep -> $T)\n            res[size] = sep;\n\n        size += N;\n        res[size, size + range.len] .= range;\n        size += range.len;\n    }\n\n    return res;\n}\n\nfn split(str: $T[], sep: $T or [$T;], each)\n{\n    mut last = 0;\n    mut next = 0;\n\n    let N = sep -> [$T;] ? sep.len : 1;\n    if (N) while ((next = str.find(sep, start: last)) >= 0)\n    {\n        each(str.slice(last, next), first?: !last, last?: false);\n        last = next + N;\n    }\n\n    if (last)\n        each(str.slice(last), first?: false, last?: true);\n    else\n        each(str, first?: true, last?: true);\n}\n\nfn split(str: $T[], sep: $T or [$T;])\n{\n    mut result: $T[][];\n    split(str, :sep, |substr| result ~= substr);\n    return result;\n}\n\n\n// TODO: .replace() is a faster impl of .split().join().\n//  How do we express this so that .split.joins are automatically promoted?\n//   This would be generally useful, e.g.\n//    .map.maps and .map.filters could use this to skip allocs.\n\nfn replace(str: $T[], all: $T or [$T;], with: $T or [$T;] or [])\n{\n    mut result: $T[];\n    split(str, sep: all, |substr, first, last|\n    {\n        if (!first)\n            with -> [] ? with() : result ~= with;\n        else if (last)\n            return str;\n\n        result ~= substr;\n    });\n\n    return result;\n}\n\n\n//\n\nfn <>(a: $T, b: $T)\ncase ($T.is::primitive) = a < b ? -1 : a > b ? +1 : 0;\ncase ($T -> [$U]) {\n    mut cmp = a.len <> b.len;\n    for (mut i = 0; i < a.len && !cmp; i++)\n        cmp = a[i] <> b[i];\n\n    return cmp;\n}\ndefault {\n    // TODO this would be better if it went through each member doing the trivial work first -\n    //  only then going through them again and looking at e.g. array contents etc.\n    for (fieldname i: a) {\n        let cmp = a.i <> b.i;\n        if (cmp)\n            return cmp;\n    }\n\n    return 0;\n}\n\n\n"_fu;
 
                                 #ifndef DEF_clone_uFTeeyF6
                                 #define DEF_clone_uFTeeyF6
@@ -772,9 +844,9 @@ inline const fu_STR& clone_ZCtM7908(const fu_STR& a)
 }
                                 #endif
 
-                                #ifndef DEF_clone_av5PxtCI
-                                #define DEF_clone_av5PxtCI
-inline const s_ModuleInputs& clone_av5PxtCI(const s_ModuleInputs& a)
+                                #ifndef DEF_clone_Ubr1UgJy
+                                #define DEF_clone_Ubr1UgJy
+inline const s_ModuleInputs& clone_Ubr1UgJy(const s_ModuleInputs& a)
 {
     return a;
 }
@@ -788,25 +860,17 @@ inline const fu_VEC<int>& clone_krBIyjUl(const fu_VEC<int>& a)
 }
                                 #endif
 
-                                #ifndef DEF_clone_RKBsevnx
-                                #define DEF_clone_RKBsevnx
-inline const fu_VEC<s_Struct>& clone_RKBsevnx(const fu_VEC<s_Struct>& a)
+                                #ifndef DEF_clone_MF84YaF7
+                                #define DEF_clone_MF84YaF7
+inline const fu_VEC<s_Struct>& clone_MF84YaF7(const fu_VEC<s_Struct>& a)
 {
     return a;
 }
                                 #endif
 
-                                #ifndef DEF_clone_qVCYkPgh
-                                #define DEF_clone_qVCYkPgh
-inline const s_SolvedNode& clone_qVCYkPgh(const s_SolvedNode& a)
-{
-    return a;
-}
-                                #endif
-
-                                #ifndef DEF_clone_bjZCjfhl
-                                #define DEF_clone_bjZCjfhl
-inline const fu_VEC<s_Overload>& clone_bjZCjfhl(const fu_VEC<s_Overload>& a)
+                                #ifndef DEF_clone_kUL6NBJb
+                                #define DEF_clone_kUL6NBJb
+inline const s_SolvedNode& clone_kUL6NBJb(const s_SolvedNode& a)
 {
     return a;
 }
@@ -814,43 +878,51 @@ inline const fu_VEC<s_Overload>& clone_bjZCjfhl(const fu_VEC<s_Overload>& a)
 
                                 #ifndef DEF_clone_fx1SDBUT
                                 #define DEF_clone_fx1SDBUT
-inline const fu_VEC<s_Extended>& clone_fx1SDBUT(const fu_VEC<s_Extended>& a)
+inline const fu_VEC<s_Overload>& clone_fx1SDBUT(const fu_VEC<s_Overload>& a)
 {
     return a;
 }
                                 #endif
 
-                                #ifndef DEF_clone_vOYHP1IT
-                                #define DEF_clone_vOYHP1IT
-inline const fu_VEC<s_ScopeItem>& clone_vOYHP1IT(const fu_VEC<s_ScopeItem>& a)
+                                #ifndef DEF_clone_pVzH1qAz
+                                #define DEF_clone_pVzH1qAz
+inline const fu_VEC<s_Extended>& clone_pVzH1qAz(const fu_VEC<s_Extended>& a)
 {
     return a;
 }
                                 #endif
 
-                                #ifndef DEF_clone_fnMFgrK3
-                                #define DEF_clone_fnMFgrK3
-inline const fu_VEC<s_Target>& clone_fnMFgrK3(const fu_VEC<s_Target>& a)
+                                #ifndef DEF_clone_wD9DGSZd
+                                #define DEF_clone_wD9DGSZd
+inline const fu_VEC<s_ScopeItem>& clone_wD9DGSZd(const fu_VEC<s_ScopeItem>& a)
 {
     return a;
 }
                                 #endif
 
-                                #ifndef DEF_clone_VGha2dKA
-                                #define DEF_clone_VGha2dKA
-inline s_Scope clone_VGha2dKA(const s_Scope& a)
+                                #ifndef DEF_clone_3cih1E88
+                                #define DEF_clone_3cih1E88
+inline const fu_VEC<s_Target>& clone_3cih1E88(const fu_VEC<s_Target>& a)
+{
+    return a;
+}
+                                #endif
+
+                                #ifndef DEF_clone_Nc0C32DI
+                                #define DEF_clone_Nc0C32DI
+inline s_Scope clone_Nc0C32DI(const s_Scope& a)
 {
     /*MOV*/ s_Scope res {};
 
     {
-        res.overloads = clone_bjZCjfhl(a.overloads);
-        res.extended = clone_fx1SDBUT(a.extended);
-        res.items = clone_vOYHP1IT(a.items);
-        res.implicits = clone_vOYHP1IT(a.implicits);
+        res.overloads = clone_fx1SDBUT(a.overloads);
+        res.extended = clone_pVzH1qAz(a.extended);
+        res.items = clone_wD9DGSZd(a.items);
+        res.implicits = clone_wD9DGSZd(a.implicits);
         res.imports = clone_krBIyjUl(a.imports);
         res.privates = clone_krBIyjUl(a.privates);
-        res.usings = clone_fnMFgrK3(a.usings);
-        res.converts = clone_fnMFgrK3(a.converts);
+        res.usings = clone_3cih1E88(a.usings);
+        res.converts = clone_3cih1E88(a.converts);
         res.pub_items = clone_uFTeeyF6(a.pub_items);
         res.pub_cnvrts = clone_uFTeeyF6(a.pub_cnvrts);
     };
@@ -858,66 +930,66 @@ inline s_Scope clone_VGha2dKA(const s_Scope& a)
 }
                                 #endif
 
-                                #ifndef DEF_clone_xQX8ydH9
-                                #define DEF_clone_xQX8ydH9
-inline s_SolverOutput clone_xQX8ydH9(const s_SolverOutput& a)
+                                #ifndef DEF_clone_8eNMSKa2
+                                #define DEF_clone_8eNMSKa2
+inline s_SolverOutput clone_8eNMSKa2(const s_SolverOutput& a)
 {
     /*MOV*/ s_SolverOutput res {};
 
     {
-        res.root = clone_qVCYkPgh(a.root);
-        res.scope = clone_VGha2dKA(a.scope);
+        res.root = clone_kUL6NBJb(a.root);
+        res.scope = clone_Nc0C32DI(a.scope);
         res.notes = clone_uFTeeyF6(a.notes);
     };
     return /*NRVO*/ res;
 }
                                 #endif
 
-                                #ifndef DEF_clone_G6pqsUn1
-                                #define DEF_clone_G6pqsUn1
-inline const s_CodegenOutput& clone_G6pqsUn1(const s_CodegenOutput& a)
+                                #ifndef DEF_clone_j0g5AdEE
+                                #define DEF_clone_j0g5AdEE
+inline const s_CodegenOutput& clone_j0g5AdEE(const s_CodegenOutput& a)
 {
     return a;
 }
                                 #endif
 
-                                #ifndef DEF_clone_aK06JrSd
-                                #define DEF_clone_aK06JrSd
-inline s_ModuleOutputs clone_aK06JrSd(const s_ModuleOutputs& a)
+                                #ifndef DEF_clone_wBO5BTgl
+                                #define DEF_clone_wBO5BTgl
+inline s_ModuleOutputs clone_wBO5BTgl(const s_ModuleOutputs& a)
 {
     /*MOV*/ s_ModuleOutputs res {};
 
     {
         res.deps = clone_krBIyjUl(a.deps);
-        res.types = clone_RKBsevnx(a.types);
-        res.solve = clone_xQX8ydH9(a.solve);
-        res.cpp = clone_G6pqsUn1(a.cpp);
+        res.types = clone_MF84YaF7(a.types);
+        res.solve = clone_8eNMSKa2(a.solve);
+        res.cpp = clone_j0g5AdEE(a.cpp);
         res.init_prio = clone_uFTeeyF6(a.init_prio);
     };
     return /*NRVO*/ res;
 }
                                 #endif
 
-                                #ifndef DEF_clone_plfOxjBD
-                                #define DEF_clone_plfOxjBD
-inline const s_ModuleStats& clone_plfOxjBD(const s_ModuleStats& a)
+                                #ifndef DEF_clone_EDPC0DZC
+                                #define DEF_clone_EDPC0DZC
+inline const s_ModuleStats& clone_EDPC0DZC(const s_ModuleStats& a)
 {
     return a;
 }
                                 #endif
 
-                                #ifndef DEF_clone_MVzrYodk
-                                #define DEF_clone_MVzrYodk
-inline s_Module clone_MVzrYodk(const s_Module& a)
+                                #ifndef DEF_clone_Ik1bp4UZ
+                                #define DEF_clone_Ik1bp4UZ
+inline s_Module clone_Ik1bp4UZ(const s_Module& a)
 {
     /*MOV*/ s_Module res {};
 
     {
         res.modid = clone_uFTeeyF6(a.modid);
         res.fname = clone_ZCtM7908(a.fname);
-        res.in = clone_av5PxtCI(a.in);
-        res.out = clone_aK06JrSd(a.out);
-        res.stats = clone_plfOxjBD(a.stats);
+        res.in = clone_Ubr1UgJy(a.in);
+        res.out = clone_wBO5BTgl(a.out);
+        res.stats = clone_EDPC0DZC(a.stats);
     };
     return /*NRVO*/ res;
 }
@@ -926,15 +998,15 @@ inline s_Module clone_MVzrYodk(const s_Module& a)
 s_Context solvePrelude_eRdBm7hX()
 {
     /*MOV*/ s_Context ctx {};
-    s_Module module = clone_MVzrYodk(getModule_Itjm8oks((*(const fu_STR*)fu::NIL), ctx));
+    s_Module module = clone_Ik1bp4UZ(getModule_WPdR5TkH((*(const fu_STR*)fu::NIL), ctx));
     const s_Options options {};
     fu_STR fname = "__prelude"_fu;
     s_LexerOutput lex = lex_uzLKWC6R(prelude_src, fname);
-    s_ParserOutput parse = parse_J0V9lDrD(0, fname, prelude_src, lex.tokens, options);
+    s_ParserOutput parse = parse_GIHeQIDA(0, fname, prelude_src, lex.tokens, options);
     module.in = s_ModuleInputs { fu_STR(prelude_src), s_LexerOutput(lex), s_ParserOutput(parse) };
-    setModule_IgtJxUnL(module, ctx);
-    module.out.solve = solve_j5ptKWox(ctx, module, options);
-    setModule_IgtJxUnL(module, ctx);
+    setModule_IqHncgDn(module, ctx);
+    module.out.solve = solve_q50sgajq(ctx, module, options);
+    setModule_IqHncgDn(module, ctx);
     return /*NRVO*/ ctx;
 }
 
