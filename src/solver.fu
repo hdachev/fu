@@ -3769,7 +3769,7 @@ pub fn solve(
         }
         else
         {
-            out_type    = initStruct(:kind, :baseprim, :name, :node.flags, :SELF_TEST);
+            out_type    = initStruct(:kind, :baseprim, :name, :node.asserts, :SELF_TEST);
             out_target  = Scope_Typedef(_scope, id: origId, :name,
                 type: out_type, :node.flags,
                 status: SS_LAZY);

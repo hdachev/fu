@@ -54,7 +54,7 @@ pub fn MODID(implicit module: Module): i32
 
 pub fn initStruct(implicit module: &mut Module,
     ::kind!, baseprim!: string,
-    name: string, flags: i32,
+    name: string, asserts: DeclAsserts,
     SELF_TEST!: bool)
 {
     name[0].u8 - '0'.u8 > 9.u8 || throw (
@@ -74,7 +74,7 @@ pub fn initStruct(implicit module: &mut Module,
         :kind, :baseprim, :module.modid, :index, :name);
 
     // Assume everything, we resolve disappointment.
-    let specualtive_quals = !(flags & F_NOCOPY) && q_rx_copy;
+    let specualtive_quals = !(asserts & A_NOCOPY) && q_rx_copy;
 
 
     return Type(ValueType(:canon, quals: specualtive_quals));

@@ -362,7 +362,7 @@ pub fn parse(
     {
         consume("id", "struct");
 
-        return parseStructDecl(flags: F_NOCOPY, asserts: A_NOCOPY);
+        return parseStructDecl(asserts: A_NOCOPY);
     }
 
     fn parseStructDecl(flags!?: i32, asserts!?: DeclAsserts): Node
