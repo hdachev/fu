@@ -55,6 +55,8 @@ flags DeclAsserts
 
 flags ParseSyntax
 {
+    PS_ID
+
     PS_PARENS
     PS_SEMI
 };
@@ -70,7 +72,7 @@ flags Flags: u32
     F_POSTFIX
 
     F_ACCESS
-    F_ID            // TODO put in ParseSyntax
+    // ...
     F_COMPOUND_ID
     F_WRITTEN_TO
 

@@ -500,7 +500,7 @@ pub fn parse(
 
             // Maybe we should get rid of this.
             expr.kind != "call"
-                || !(expr.flags & (F_ID | F_ACCESS))
+                || !(expr.flags & F_ACCESS) && !(expr.syntax & PS_ID)
                 || expr.items.len > 1
                 || tokens[_idx].value == endVal
                 || warn("Orphan pure-looking expression.");
@@ -1147,8 +1147,9 @@ pub fn parse(
         //
         let optional    = xqmark && tryConsume("op", "?");
 
-        mut type        = sh_import ? createRead(registerImport(id) ~ '\t' ~ id, flags: F_COMPOUND_ID)
-                        : tryPopTypeAnnot(:allowTypeUnions);
+        mut type        = sh_import
+            ? createRead(registerImport(id) ~ '\t' ~ id, flags: F_COMPOUND_ID)
+            : tryPopTypeAnnot(:allowTypeUnions);
 
         let init        = optional
             ? createDefinit()
@@ -1318,7 +1319,7 @@ pub fn parse(
             return fail("Cannot pipeline: not a call expr.");
 
         left.items.push(right);
-        left.flags &= ~F_ID; // non-orphan-looking
+        left.syntax &= ~PS_ID; // non-orphan-looking
         return left;
     }
 
@@ -1663,10 +1664,10 @@ pub fn parse(
     fn parseCallExpression(expr: Node): Node
     {
         mut args: Node[] = [];
-        let argFlags = parseCallArgs(")", args);
+        let flags = expr.flags | parseCallArgs(")", args);
 
         // Uniform call syntax.
-        if (expr.kind == "call" && (expr.flags & F_ACCESS))
+        if (expr.kind == "call" && flags & F_ACCESS)
         {
             let head = expr.items
                     && expr.items.len == 1
@@ -1676,19 +1677,19 @@ pub fn parse(
 
             return createCall(
                 expr.value || fail(),
-                F_METHOD | argFlags | expr.flags &~ F_ACCESS,
+                flags &~ F_ACCESS | F_METHOD,
                 args);
         }
 
-        if (expr.kind == "call" && (expr.flags & F_ID))
+        if (expr.kind == "call" && expr.syntax & PS_ID)
             return createCall(
                 expr.value || fail(),
-                argFlags | expr.flags &~ F_ID,
+                flags, syntax: expr.syntax &~ PS_ID,
                 args);
 
         if (expr.kind == "typeparam")
             return createCall(
-                "$" ~ (expr.value || fail()), argFlags, args);
+                "$" ~ (expr.value || fail()), :flags, args);
 
         return fail("TODO dynamic call");
     }
@@ -1722,9 +1723,9 @@ pub fn parse(
         return make(kind, :value);
     }
 
-    fn createCall(id: string, flags: Flags, args: Node[] = []): Node
+    fn createCall(id: string, flags: Flags, args?: Node[], syntax?: ParseSyntax): Node
     {
-        return make("call", args, flags, id);
+        return make("call", args, :flags, :syntax, id);
     }
 
     fn createRead(id: string, flags?: Flags): Node
@@ -1732,7 +1733,7 @@ pub fn parse(
         if (id == "true" || id == "false")
             return make("bool", value: id);
 
-        return createCall(id || fail(), F_ID | flags);
+        return createCall(id || fail(), :flags, syntax: PS_ID);
     }
 
 
