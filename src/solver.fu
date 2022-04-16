@@ -3757,7 +3757,7 @@ pub fn solve(
             let baseannot   = node.items[STRUCT_BASE];
             baseprim        = baseannot
                 ? getBasePrimitive(evalTypeAnnot(baseannot))
-                : "i32";
+                : "u8"; // TODO decide later
         }
 
         //

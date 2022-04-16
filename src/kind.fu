@@ -1,5 +1,5 @@
 
-enum kind: i8
+enum kind
 {
 
     // Lexer: token kinds.
