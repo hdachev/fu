@@ -889,6 +889,23 @@ pub fn solve(
         return true;
     }
 
+    fn ERRMSG_findUnmatchedArgName(reorder: int[], names: string[])
+    {
+        mut used: bitset::BitSet;
+        for (mut i = 0; i < reorder.len; i++)
+        {
+            let pos = reorder[i];
+            if (pos >= 0)
+                used.add(pos);
+        }
+
+        for (mut i = 0; i < names.len; i++)
+            if (!used.has(i))
+                return names[i];
+
+        return "[BUG: findUnmatchedArgName]";
+    }
+
     fn findRestStart(ext: Extended)
     {
         for (mut i = ext.args.len; i --> 0; )
@@ -1124,7 +1141,7 @@ pub fn solve(
                     if (!names)
                         reorderByNumUsings(:use_reorder, :reorder, host_args, args.len, :num_usings);
                     else if (!reorderByArgIDs(:use_reorder, :reorder, names, optional, host_args, :num_usings))
-                        matchFail("Argument name mismatch [TODO REPORT]");
+                        matchFail("Unknown argument name: " ~ ERRMSG_findUnmatchedArgName(:reorder, :names));
 
                     // Forbid optional argument ambiguities -
                     //  We should either have all optional args satisfied at the receiver or sender part,

@@ -1706,7 +1706,7 @@ pub fn runTests()
         }
     `);
 
-    TODO_NICE_ERROR(`
+    ZERO(`
         struct Arg { name: string };
         fn main() {
             let arg = Arg(<fail argument name id>id<pass/>name</fail>: "hey");
