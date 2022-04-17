@@ -1804,7 +1804,7 @@ pub fn solve(
         if (kind == "fn")
             return 1;
 
-        if (kind == "struct" || kind == "primitive" || kind == "enum" || kind == "flags")
+        if (kind == "struct" || kind == "union" || kind == "primitive" || kind == "enum" || kind == "flags")
             return 10;
 
         return 0;
@@ -1817,7 +1817,7 @@ pub fn solve(
         if (kind == "fn")
             return uPrepFn_A(node);
 
-        if (kind == "struct" || kind == "primitive" || kind == "enum" || kind == "flags")
+        if (kind == "struct" || kind == "union" || kind == "primitive" || kind == "enum" || kind == "flags")
             return uPrepStruct(node);
 
         BUG("TODO: unorderedPrep_A(" ~ node.kind ~ ").");
@@ -3760,11 +3760,14 @@ pub fn solve(
 
     fn __solveStruct(solve!: bool, node: Node, into!?: Target): SolvedNode
     {
-        let origId  = node.value;
-        let name    = origId || _current_fn.target && GET(_current_fn.target).name || "Anon";
+        let origId      = node.value;
+        let name        = origId || _current_fn.target && GET(_current_fn.target).name || "Anon";
 
         let kind        = node.kind;
-        let isPrimDecl  = kind != "struct";
+
+        let isStruct    = kind == "struct";
+        let isUnion     = !isStruct && kind == "union";
+        let isPrimDecl  = !isStruct && !isUnion;
 
         //
         mut baseprim: string;
@@ -4020,20 +4023,33 @@ pub fn solve(
             mut min = 0;
             mut args: Argument[];
 
-            if (!isPrimDecl) for (mut i = 0; i < members.len; i++)
+            //
+            if (!isPrimDecl)
             {
-                let member = members[i];
+                // We'll do the C89 thing for unions for starters -
+                //  you can only init the first member,
+                //   we'll figure the rest out later.
+                //
+                mut N = members.len;
+                if (N && isUnion)
+                    N = 1;
 
-                let arg = Argument(
-                    name:       member.value || BUG(),
-                    type:       member.type  || BUG(),
-                    default:    member.items[LET_INIT],
-                    flags:      member.flags & F_MUSTNAME);
+                for (mut i = 0; i < N; i++)
+                {
+                    let member = members[i];
 
-                if (!arg.default)
-                    min++;
+                    let arg = Argument(
+                        name:       member.value || BUG(),
+                        type:       member.type  || BUG(),
+                        flags:      member.flags & F_MUSTNAME,
+                        default:    member.items[LET_INIT]
+                            || isUnion && createDefinit(member.type));
 
-                args.push(arg);
+                    if (!arg.default)
+                        min++;
+
+                    args.push(arg);
+                }
             }
 
             let max = args.len;

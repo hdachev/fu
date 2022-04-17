@@ -33,9 +33,13 @@ enum kind
     and
 
     loop
+
+    // enum JumpKind
+    // {
     break
     return
     continue
+    // }
 
     // int
     // real
@@ -59,10 +63,15 @@ enum kind
     pragma
     void
 
+    // enum TypeDeclKind
+    // {
     struct
+    union
     primitive
     flags
     enum
+    // }
+
     members
 
     fn

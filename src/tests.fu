@@ -9594,6 +9594,24 @@ pub fn runTests()
         }
     `);
 
+
+    // Unions, what the hell.
+
+    ZERO(`
+        union union_ui {
+            i: i32;
+            u: u32;
+        }
+
+        fn main() {
+            mut ui = union_ui(i: -1);
+            return (ui.u - 0xffffffff).i32;
+        }
+    `);
+
+
+    //
+
     // ZERO(`
     //     enum Thing {
     //         None;

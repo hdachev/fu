@@ -252,7 +252,7 @@ pub fn parse(
             ref item = out.items[i];
 
             let k = item.kind;
-            if (k == "fn" || k == "let" || k == "typedef" || k == "struct" || k == "enum" || k == "flags" || k == "primitive")
+            if (k == "fn" || k == "let" || k == "typedef" || k == "struct" || k == "union" || k == "enum" || k == "flags" || k == "primitive")
                 if !(item.flags & F_SHADOW)
                     set_PUB(item.flags);
         }
@@ -364,10 +364,10 @@ pub fn parse(
     {
         consume("id", "struct");
 
-        return parseStructDecl(asserts: A_NOCOPY);
+        return parseStructDecl("struct", asserts: A_NOCOPY);
     }
 
-    fn parseStructDecl(flags!?: Flags, asserts!?: DeclAsserts): Node
+    fn parseStructDecl(::kind, flags!?: Flags, asserts!?: DeclAsserts): Node
     {
         let name = tryConsume("id").value;
 
@@ -389,7 +389,7 @@ pub fn parse(
         }
 
         // Items: [ Base type (primitives), items (structs, enums & unions) ]
-        return make("struct", [ [], make("members", items) ], :flags, :asserts, name);
+        return make(:kind, [ [], make("members", items) ], :flags, :asserts, name);
     }
 
     fn parseStructItem(): Node
@@ -576,10 +576,10 @@ pub fn parse(
                 if (v == "try")         return parseTryCatch();
             }
 
-            if (peek.kind == "op")
+            if (peek.kind == "op" && peek.value == "{")
             {
-                if (peek.value == "{" && v == "struct")
-                    return parseStructDecl();
+                if (v == "struct")      return parseStructDecl("struct");
+                if (v == "union")       return parseStructDecl("union");
             }
 
             if (v == "fn" && (peek.kind == "id" || !_fnDepth))
@@ -589,7 +589,9 @@ pub fn parse(
 
             if (peek.kind == "id")
             {
-                if (v == "struct")      return parseStructDecl();
+                if (v == "struct")      return parseStructDecl("struct");
+                if (v == "union")       return parseStructDecl("union");
+
                 if (v == "type")        return parseTypedef();
 
                 if (v == "pub")         return parsePub();
