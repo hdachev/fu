@@ -281,11 +281,14 @@ pub fn parse(
     fn parseBlock(): Node
     {
         return createBlock(
-            parseBlockLike("op", "}", retlast: true));
+            parseBlockLike("op", "}"));
     }
 
-    fn createBlock(items: Node[], label?: string): Node
+    fn createBlock(mut items: Node[], label?: string): Node
     {
+        if (items.if_last.syntax & PS_DISCARD)
+            items ~= make("void");
+
         return make("block", :items, value: label);
     }
 
@@ -432,7 +435,6 @@ pub fn parse(
 
     fn parseBlockLike(
         endKind: ::kind, endVal: string,
-        retlast! = false,
         struct! = false,
         enum! = false): Node[]
     {
@@ -468,9 +470,6 @@ pub fn parse(
                     "Inconsistent indent at closing `" ~ token.value ~ "`: expected " ~ (_col0 - 1)
                         ~ ", got " ~ (col1 - 1)
                         ~ ". Block starts on line " ~ line0 ~ ".");
-
-                if (retlast && items.if_last.syntax & PS_DISCARD)
-                    items ~= make("void");
 
                 break;
             }
@@ -953,20 +952,9 @@ pub fn parse(
         tryConsume("op", "=");
 
         //
-        mut body = expr
+        return expr
             ? parseExpression(_precedence)
             : parseStatement();
-
-        if (body.kind == "block")
-            return body;
-
-        if (body.kind == "return")
-            return createBlock([ body ]);
-
-        if (body.kind == "call" && body.value == "__native")
-            return body;
-
-        return createBlock([ createReturn(body, flags: F_SINGLE_STMT) ]);
     }
 
     fn tryPopTypeAnnot(allowTypeUnions! = false): Node

@@ -2189,20 +2189,19 @@ pub fn solve(
             local_of:       fnbody_of ? fnbody_of : _current_fn.target.index,
             locals_start:   fnbody_of ? +1 : locals_start || GET_next_local_index()));
 
-        let expr        = !fnbody_of && !type.is_void;
         let items       = solveNodes(
             nodes,
             type_all:           t_void,
             type_last:          type,
-            use_type_last:      expr,
+            use_type_last:      !type.is_void,
 
             // Kills is +1 so that kills=0 means noone.
             kills: helpers_idx + 1);
 
-        return solveBlock(:items, :helpers_idx, :expr, :mask, :fnbody_of);
+        return solveBlock(:items, :helpers_idx, :mask, :fnbody_of);
     }
 
-    fn solveBlock(items: SolvedNode[], helpers_idx!: i32, expr!: bool, mask!: HelpersMask, fnbody_of!: i32)
+    fn solveBlock(mut items: SolvedNode[], helpers_idx!: i32, mask!: HelpersMask, fnbody_of!: i32)
     {
         let h = _helpers[helpers_idx];
 
@@ -2211,15 +2210,20 @@ pub fn solve(
             h.ret_expect = [];
 
         // Block tail expressions.
-        if (expr && items && !items.last.is_never)
-                          /////////////////////// we dont seem to be hitting this check at all
-                          ///////////////////////
+        if (items && !items.last.is_never
+                  && !items.last.is_void)
         {
+            ref last = items.last;
+
             // Pretend this is a jump, the jump node itself is never used
             //  but we just go through the stuff below
             //   to make it look like a regular return.
             //
-            createJump(items.last, :h);
+            let jmp = createJump(last, :h);
+
+            // ... unless its a fn, TODO FIX
+            if (fnbody_of)
+                last = jmp;
         }
 
         // This will work ideally in a reverse pass,
@@ -3311,8 +3315,6 @@ pub fn solve(
             n_body || BUG("solveFn: no body.");
 
             let isNative = n_body.isNativeBody;
-            if (!isNative && !isUnspec)
-                n_body.kind == "block" || BUG("solveFn: Body not a block: `" ~ n_body.kind ~ "`.");
 
             // Return type annot.
             let ret_expect = n_ret && evalTypeAnnot(n_ret);
@@ -4375,7 +4377,7 @@ pub fn solve(
     fn solveJump(node: Node, kills: i32): SolvedNode
     {
         let helpers_idx = node.kind == "return"
-            ? Scope_lookupReturn(node.value, lambdaOK: !!(node.flags & F_SINGLE_STMT))
+            ? Scope_lookupReturn(node.value)
             : Scope_lookupLabel (node.value, cont: node.kind == "continue");
 
         return solveJump(:helpers_idx, :node.items, :kills);
@@ -4494,13 +4496,13 @@ pub fn solve(
 
     // Loops.
 
-    fn Scope_lookupReturn(id: string, lambdaOK: bool): i32
+    fn Scope_lookupReturn(id: string): i32
     {
         _helpers.reveach(_ss.helpers, |item, i|
         {
             if !(item.mask & HM_CanReturn)
                 continue;
-            if (item.mask & HM_Lambda && !lambdaOK)
+            if (item.mask & HM_Lambda)
                 continue;
             if (id && item.id != id)
                 continue;

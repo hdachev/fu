@@ -101,15 +101,15 @@ flags Flags: u32
     F_PREDICATE
 
 
-    F_NAMED_ARGS
-    F_OOE_RTL
+    F_NAMED_ARGS    // TODO FIX do we need this really? the ast is self-explanatory
+    F_OOE_RTL       // TODO FIX perhaps we should just flip the arg order of assignments?
     F_REST_ARG
     F_RELAXABLE_REF
 
     F_TEMPLATE
     F_INLINE
     F_LAMBDA
-    F_SINGLE_STMT
+    // ...
 };
 
 
