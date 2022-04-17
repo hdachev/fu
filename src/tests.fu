@@ -7908,7 +7908,7 @@ pub fn runTests()
         }
     `);
 
-    TODO_rustsemi(`
+    ZERO(`
         // something complains about no final return
         fn main() {
             let hey = |x: i32| {

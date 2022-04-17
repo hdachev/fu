@@ -963,15 +963,7 @@ pub fn parse(
             : parseStatement();
 
         if (body.kind == "block")
-        {
-            // Make sure last item doesn't look like a trailing return.
-            //  With this we could probably get rid of F_SINGLE_STMT.
-            //
-            if (body.items && body.items.last.kind != "return")
-                body.items ~= make("void");
-
             return body;
-        }
 
         if (body.kind == "return")
             return createBlock([ body ]);
