@@ -701,7 +701,7 @@ pub fn parse(
 
     fn parseExpressionStatement(): Node
     {
-        let expr = parseExpression(P_RESET);
+        mut expr = parseExpression(P_RESET);
 
         // Pipeline left expriment.
         if (tryConsume("op", ":"))
@@ -714,7 +714,9 @@ pub fn parse(
         }
 
         //
-        softSemi();
+        if (softSemi())
+            expr.syntax |= PS_DISCARD;
+
         return expr;
     }
 
@@ -1836,31 +1838,31 @@ pub fn parse(
                     ~ ". `if` starts on line " ~ token.line ~ ".");
 
             let alt = parseStatement();
-            return createIf(cond, cons, alt);
+            return createIf(cond, cons, alt, syntax: PS_DISCARD);
         }
 
-        return createAnd(cond, cons);
+        return createAnd(cond, cons, syntax: PS_DISCARD);
     }
 
 
     //
 
-    fn createIf(cond: Node, cons: Node, alt: Node): Node
+    fn createIf(cond: Node, cons: Node, alt: Node, syntax?: ParseSyntax): Node
     {
-        return make("if", [ cond, cons, alt ]);
+        return make("if", [ cond, cons, alt ], :syntax);
     }
 
-    fn createOr(left: Node, right: Node): Node
+    fn createOr(left: Node, right: Node, syntax?: ParseSyntax): Node
     {
-        return flattenIfSame("or", left, right);
+        return flattenIfSame("or", left, right, :syntax);
     }
 
-    fn createAnd(left: Node, right: Node): Node
+    fn createAnd(left: Node, right: Node, syntax?: ParseSyntax): Node
     {
-        return flattenIfSame("and", left, right);
+        return flattenIfSame("and", left, right, :syntax);
     }
 
-    fn flattenIfSame(::kind, left: Node, right: Node): Node
+    fn flattenIfSame(::kind, left: Node, right: Node, syntax?: ParseSyntax): Node
     {
         let k_left  =  left.kind;
         let k_right = right.kind;
@@ -1874,7 +1876,7 @@ pub fn parse(
                         ? left ~ right.items
                         : [ left, right ];
 
-        return make(kind, items);
+        return make(kind, items, :syntax);
     }
 
 

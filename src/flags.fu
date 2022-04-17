@@ -59,6 +59,8 @@ flags ParseSyntax
 
     PS_PARENS
     PS_SEMI
+
+    PS_DISCARD
 };
 
 
