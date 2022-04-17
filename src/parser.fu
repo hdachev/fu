@@ -286,7 +286,7 @@ pub fn parse(
     fn parseBlock(): Node
     {
         return createBlock(
-            parseBlockLike("op", "}"));
+            parseBlockLike("op", "}", retlast: true));
     }
 
     fn createBlock(items: Node[], label?: string): Node
@@ -328,11 +328,11 @@ pub fn parse(
         {
             if (peek.value == ";") {
                 _idx++;
-                return;
+                return true;
             }
 
             if (peek.value == "}" || peek.value == ")")
-                return;
+                return false;
         }
 
         // Experimental:
@@ -340,11 +340,10 @@ pub fn parse(
         //   whitespace is completely unambiguous.
         //
         else if (peek.col == _col0)
-        {
-            return;
-        }
+            return false;
 
         warn("Missing semicollon before `" ~ peek.value ~ "`.");
+        return false;
     }
 
     fn parseTypedef(): Node
@@ -438,6 +437,7 @@ pub fn parse(
 
     fn parseBlockLike(
         endKind: ::kind, endVal: string,
+        retlast! = false,
         struct! = false,
         enum! = false): Node[]
     {
@@ -473,6 +473,9 @@ pub fn parse(
                     "Inconsistent indent at closing `" ~ token.value ~ "`: expected " ~ (_col0 - 1)
                         ~ ", got " ~ (col1 - 1)
                         ~ ". Block starts on line " ~ line0 ~ ".");
+
+                if (retlast && items.if_last.syntax & PS_DISCARD)
+                    items ~= make("void");
 
                 break;
             }
@@ -713,7 +716,6 @@ pub fn parse(
             return pipelineLeft(expr, right);
         }
 
-        //
         if (softSemi())
             expr.syntax |= PS_DISCARD;
 

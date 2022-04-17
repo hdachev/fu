@@ -5972,7 +5972,7 @@ pub fn runTests()
                 :BRK {                          ;; !NONTRIV_autocopy
                     if (x & 2) break :BRK c;
                     if (x & 1) break :BRK [ x ]; // a val
-                    a; // a ref
+                    a // a ref
                 }
             };
             return a[0] - b[0] * a[1];
@@ -8531,9 +8531,10 @@ pub fn runTests()
                     if (x == 9) continue :BLOCK 2000;    //   - here
                     if (x == 8) return           300;
                     if (x == 7) break :BLOCK      40;
-                    else                           5;    //   - and here!
-                };
-            }; // -----------------------------------
+
+                    5                                    //   - and here!
+                }
+            }  // -----------------------------------
         }
         fn main() 9.v + 8.v + 7.v + 6.v      - 12345;
     `);
