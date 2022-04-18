@@ -6148,8 +6148,14 @@ pub fn solve(
                 for (mut i = 0; i < args.len; i++)
                 {
                     let slot = host_args[i];
-                    arg_defs ~= createLet(id: slot.name, init: args[i], // TODO__ORIGINAL_ANNOT_OR_TYPE
+
+                    let arg_def = createLet(id: slot.name, init: args[i], // TODO__ORIGINAL_ANNOT_OR_TYPE
                         :slot.flags &~ (F_ARG | F_COMPOUND_ID)); // As if not an arg + no autocall.
+
+                    if (arg_def.kind == "empty")
+                        continue;
+
+                    arg_defs ~= arg_def;
 
                     // INLINE ARGUMENTS ////////////////////////////////////////////
                     if (slot.flags & F_INLINE)
