@@ -7662,6 +7662,8 @@ pub fn solve(
         {
             let n = items[i];
             n.kind || BUG(debug ~ ": No .kind on item[" ~ i ~ "].");
+            n.kind != "empty" || block.kind == "block" && i == items.len - 1 || BUG(
+                debug ~ ": " ~ block.kind ~ " has an empty at #" ~ i ~ "/" ~ items.len ~ ".");
         }
     }
 
