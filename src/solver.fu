@@ -4375,8 +4375,45 @@ pub fn solve(
             return expr;
 
         relinkJumps(:h, :expr);
+        injectJumps(:h, :expr);
 
-        return SolvedNode("jump", type: t_never, items: [ expr ], helpers: h);
+        return expr;
+    }
+
+    fn reportReturnType(h!: Helpers, type: Type, NICEERR_missingReturn!?: bool)
+    {
+        // NOW, IMPORTANTLY:
+        //  If we're about to return a mutref, make sure it doesn't go through an F_MUT.
+        //   There's a bit of a conflict of interest here with F_REFs and templates,
+        //    we can also start with non-F_REF but keep in mind that this worsens
+        //     the problem of const-vs-mut templates, so the rules are a bit blurry here.
+        //      We might be better off with explicit consts than explicit vars,
+        //       or perhaps allow ref vars to bind to constants.
+        //
+        shadow let type = type.is_mutref && !type.lifetime.Lifetime_allowsMutrefReturn(:h.locals_start)
+            ? clear_mutref(type)
+            :              type;
+
+        // TEMP ////////////////////////////////////////////////////////
+        // I'm postponing work on lengthening temporary lifetimes -
+        //  same principle as locals but i need extra stuff i dont have,
+        //   so lets try to get it right without this first.
+        shadow let type = type.is_ref2temp
+            ? clear_refs(type)
+            :            type;
+        ////////////////////////////////////////////////////////////////
+
+        // Regular block expects are best-effort type inference hints,
+        //  whereas fn expects are explicit type annotations that must be enforced.
+        if (h.ret_expect)
+            checkAssignable(host: h.ret_expect, type,
+                "Actual return type does not match annotation");
+
+        h.ret_actual = h.ret_actual
+            ? superType(NICEERR_missingReturn ? "Missing final return: " : "Subsequent return: ", h.ret_actual, type)
+            : type;
+
+        h.ret_actual || BUG("Can't be null past this point.");
     }
 
     fn relinkJumps(h!: Helpers, ref expr: SolvedNode)
@@ -4421,40 +4458,28 @@ pub fn solve(
         }
     }
 
-    fn reportReturnType(h!: Helpers, type: Type, NICEERR_missingReturn!?: bool)
+    fn injectJumps(h!: Helpers, ref expr: SolvedNode)
     {
-        // NOW, IMPORTANTLY:
-        //  If we're about to return a mutref, make sure it doesn't go through an F_MUT.
-        //   There's a bit of a conflict of interest here with F_REFs and templates,
-        //    we can also start with non-F_REF but keep in mind that this worsens
-        //     the problem of const-vs-mut templates, so the rules are a bit blurry here.
-        //      We might be better off with explicit consts than explicit vars,
-        //       or perhaps allow ref vars to bind to constants.
-        //
-        shadow let type = type.is_mutref && !type.lifetime.Lifetime_allowsMutrefReturn(:h.locals_start)
-            ? clear_mutref(type)
-            :              type;
+        if (expr.kind == "block" && expr.items)
+        {
+            shadow ref expr = expr.items.last;
+            if (!expr.type.is_never)
+                injectJumps(:h, expr);
+        }
+        // else if (expr.kind == "if")
+        // {
+        //     injectJumps(:h, expr.items[1]);
+        //     injectJumps(:h, expr.items[2]);
+        // }
+        else
+        {
+            expr = createJump(:h, :expr);
+        }
+    }
 
-        // TEMP ////////////////////////////////////////////////////////
-        // I'm postponing work on lengthening temporary lifetimes -
-        //  same principle as locals but i need extra stuff i dont have,
-        //   so lets try to get it right without this first.
-        shadow let type = type.is_ref2temp
-            ? clear_refs(type)
-            :            type;
-        ////////////////////////////////////////////////////////////////
-
-        // Regular block expects are best-effort type inference hints,
-        //  whereas fn expects are explicit type annotations that must be enforced.
-        if (h.ret_expect)
-            checkAssignable(host: h.ret_expect, type,
-                "Actual return type does not match annotation");
-
-        h.ret_actual = h.ret_actual
-            ? superType(NICEERR_missingReturn ? "Missing final return: " : "Subsequent return: ", h.ret_actual, type)
-            : type;
-
-        h.ret_actual || BUG("Can't be null past this point.");
+    fn createJump(h!: Helpers, expr: SolvedNode)
+    {
+        return SolvedNode("jump", type: t_never, items: [ expr ], helpers: h);
     }
 
 
