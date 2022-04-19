@@ -2174,7 +2174,7 @@ pub fn solve(
 
     fn solveBlock(node: Node, type!: Type, fnbody_of!?: i32, mask! = HM_CanBreak, id!?: string, locals_start!?: i32): SolvedNode
     {
-        let nodes = node.kind == "block"  ? node.items : [ node ];
+        mut nodes = node.kind == "block"  ? node.items : [ node ];
         shadow let id = id || node.kind == "block" && node.value;
 
         ////////////////////////////////
@@ -2191,7 +2191,14 @@ pub fn solve(
 
         let h           = _helpers[helpers_idx];
 
-        mut items       = solveNodes(
+        // TODO FIX adding the trailing return /////////////////////////
+        if (fnbody_of && nodes)
+            nodes.last = Node(kind: "return", value: [], :node.token,
+                items: nodes.last.kind != "void" && [ nodes.last ],
+                flags: F_IMPLICIT);
+        ////////////////////////////////////////////////////////////////
+
+        let items       = solveNodes(
             nodes,
             type_all:           t_void,
             type_last:          type,
@@ -2202,49 +2209,10 @@ pub fn solve(
             h.ret_expect = [];
 
         // Block tail expressions.
-        if (items && !items.last.is_never
-                  && !items.last.is_void)
-        {
-            ref last = items.last;
-
-            // Pretend this is a jump, the jump node itself is never used
-            //  but we just go through the stuff below
-            //   to make it look like a regular return.
-            //
-            let jmp = createJump(last, :h);
-
-            // ... unless its a fn, TODO FIX
-            if (fnbody_of)
-                last = jmp;
-        }
-
-        // This will work ideally in a reverse pass,
-        //  going through all blocks in reverse and relaxing their returns.
-        {
-            // TODO FIX this looks like bullshit,
-            //  there's gotta be a better way to do this.
-            if (items.if_last.type.is_never)
-            {
-                if (!h.ret_actual)
-                    reportReturnType(:h, t_never);
-            }
-            else if (fnbody_of)
-            {
-                // TODO FIX these apply to regular blocks as well,
-                //  decide if you want fns to be like blocks or the other way round,
-                //   but these ifs gotta go.
-                if (h.ret_actual)
-                    isAssignable(host: t_void, h.ret_actual) || fail(
-                        "Non-void returning fn missing a final return.");
-            }
-
-            if (!h.ret_actual)
-                reportReturnType(:h, t_void);
-        }
-
+        reportReturnType(:h, items ? items.last.type : t_void);
+        h.ret_actual || BUG("No ret_actual");
 
         //
-
         mut block = createBlock(:items,
             type: h.ret_actual || BUG(),
             :h);
@@ -4329,19 +4297,19 @@ pub fn solve(
     fn superType(reason: string, a: Type, b: Type, id?: string)
     {
         return type_trySuper(a, b) || fail(
-            (id && "`" ~ id.human ~ "`: ")
+            (id && id.qID ~ ": ")
             ~ reason
-            ~ "No common supertype: `"
-            ~ humanizeType(a) ~ "` | `" ~ humanizeType(b) ~ "`.");
+            ~ "No common supertype: "
+            ~ humanizeType(a) ~ " | " ~ humanizeType(b));
     }
 
     fn intersectionType(reason: string, a: Type, b: Type, id?: string)
     {
         return type_tryIntersect(a, b) || fail(
-            (id && "`" ~ id.human ~ "`: ")
+            (id && id.qID ~ ": ")
             ~ reason
-            ~ "Cannot intersect a common subtype: `"
-            ~ humanizeType(a) ~ "` & `" ~ humanizeType(b) ~ "`.");
+            ~ "Cannot intersect types: "
+            ~ humanizeType(a) ~ " & " ~ humanizeType(b));
     }
 
     fn Lifetime_vs(lifetime: Lifetime, locals_start!?: i32)
@@ -4372,7 +4340,7 @@ pub fn solve(
             ? Scope_lookupReturn(node.value)
             : Scope_lookupLabel (node.value, cont: node.kind == "continue");
 
-        mut h = _helpers[helpers_idx];
+        let h = _helpers[helpers_idx];
 
         // Deal with expression first, might noop the jump.
         let expr = !node.items
@@ -4396,14 +4364,18 @@ pub fn solve(
         // Lazy labels.
         h.mask |= HM_LabelUsed;
 
-        return createJump(:h, expr);
+        reportReturnType(:h, expr.type,
+            NICEERR_missingReturn: node.flags & F_IMPLICIT && !node.items);
+
+        // TODO FIX Don't emit redundant return { void expr } trailing returns, currently emits bs cpp.
+        if (expr.type.is_void && node.flags & F_IMPLICIT)
+            return expr;
+
+        return SolvedNode("jump", type: t_never, items: [ expr ], helpers: h);
     }
 
-    fn createJump(expr: SolvedNode, h: Helpers)
+    fn reportReturnType(h!: Helpers, type: Type, NICEERR_missingReturn!?: bool)
     {
-        let jump = SolvedNode("jump", type: t_never,
-            items: expr && [ expr ], helpers: h);
-
         // NOW, IMPORTANTLY:
         //  If we're about to return a mutref, make sure it doesn't go through an F_MUT.
         //   There's a bit of a conflict of interest here with F_REFs and templates,
@@ -4412,9 +4384,9 @@ pub fn solve(
         //      We might be better off with explicit consts than explicit vars,
         //       or perhaps allow ref vars to bind to constants.
         //
-        let type = expr.type.is_mutref && !expr.type.lifetime.Lifetime_allowsMutrefReturn(:h.locals_start)
-            ? clear_mutref(expr.type)
-            :              expr.type;
+        shadow let type = type.is_mutref && !type.lifetime.Lifetime_allowsMutrefReturn(:h.locals_start)
+            ? clear_mutref(type)
+            :              type;
 
         // TEMP ////////////////////////////////////////////////////////
         // I'm postponing work on lengthening temporary lifetimes -
@@ -4425,13 +4397,6 @@ pub fn solve(
             :            type;
         ////////////////////////////////////////////////////////////////
 
-        reportReturnType(:h, type);
-
-        return jump;
-    }
-
-    fn reportReturnType(h!: Helpers, type: Type)
-    {
         // Regular block expects are best-effort type inference hints,
         //  whereas fn expects are explicit type annotations that must be enforced.
         if (h.ret_expect)
@@ -4439,7 +4404,7 @@ pub fn solve(
                 "Actual return type does not match annotation");
 
         h.ret_actual = h.ret_actual
-            ? superType("Subsequent return: ", h.ret_actual, type)
+            ? superType(NICEERR_missingReturn ? "Missing final return: " : "Subsequent return: ", h.ret_actual, type)
             : type;
 
         h.ret_actual || BUG("Can't be null past this point.");
