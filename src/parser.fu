@@ -265,19 +265,14 @@ pub fn parse(
         let value = consume("id").value;
 
         // Codegen passthrough for direct c++ hacks.
+        mut items: Node[];
         if (value != "break")
         {
-            mut items: Node[];
             consume("op", "(");
             parseCallArgs(")", items);
-
-            return make("pragma", :value, :items);
         }
 
-        //
-        let ret = make("pragma", :value);
-        softSemi();
-        return ret;
+        return make("pragma", :value, :items, syntax: softSemi() && PS_DISCARD);
     }
 
 
