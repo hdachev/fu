@@ -2361,6 +2361,9 @@ pub fn solve(
                     items.splice(i, 1);
         }
 
+        if (h && items.if_last.kind == "block")
+            relinkJumps(:h, items.last);
+
         //////////////////////////////////////////////////////////////////////
         //////////////////////////////////////////////////////////////////////
         if (OPTI_flatten_blocks) while (items.len)
@@ -4343,7 +4346,7 @@ pub fn solve(
         let h = _helpers[helpers_idx];
 
         // Deal with expression first, might noop the jump.
-        let expr = !node.items
+        mut expr = !node.items
             ? createEmpty()
             : solveNode(node.items.only, type: h.ret_actual || h.ret_expect);
 
@@ -4371,7 +4374,51 @@ pub fn solve(
         if (expr.type.is_void && node.flags & F_IMPLICIT)
             return expr;
 
+        relinkJumps(:h, :expr);
+
         return SolvedNode("jump", type: t_never, items: [ expr ], helpers: h);
+    }
+
+    fn relinkJumps(h!: Helpers, ref expr: SolvedNode)
+    {
+        if (expr.kind == "block")
+        {
+            // Relink this block's jumps to point here.
+            let h0 = expr.helpers;
+            if (h0.mask & HM_LabelUsed)
+            {
+                fn visit(ref item: SolvedNode)
+                {
+                    if (item.kind == "jump" && item.helpers == h0)
+                    {
+                        item.helpers = h;
+                        h.mask |= HM_LabelUsed;
+                    }
+
+                    // INDIRECTION !!!!
+                    if (item.kind == "letdef")
+                    {
+                        let target = item.target;
+                        swap      (item, GET_mut(target).solved);
+                        defer swap(item, GET_mut(target).solved);
+
+                        item.items.each(fn visit);
+                    }
+                    // INDIRECTION !!!!
+
+                    item.items.each(fn visit);
+                }
+
+                visit(expr);
+
+                // Clean up trivial leftover blocks.
+                h0.mask &= ~HM_LabelUsed;
+                expr.helpers = [];
+
+                if (expr.items.len == 1)
+                    expr = expr.items.only;
+            }
+        }
     }
 
     fn reportReturnType(h!: Helpers, type: Type, NICEERR_missingReturn!?: bool)
