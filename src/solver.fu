@@ -1741,7 +1741,7 @@ pub fn solve(
 
     //
 
-    fn solveNode(node: Node, type: Type = [], kills!?: i32): SolvedNode
+    fn solveNode(node: Node, type?: Type, kills!?: Helpers): SolvedNode
     {
         HERE(node);
 
@@ -1760,9 +1760,9 @@ pub fn solve(
         if (k == "and")         return solveAnd(node, type);
 
         if (k == "loop")        return solveLoop(node);
-        if (k == "break")       return solveJump(node, kills);
-        if (k == "return")      return solveJump(node, kills);
-        if (k == "continue")    return solveJump(node, kills);
+        if (k == "break")       return solveJump(node, :kills);
+        if (k == "return")      return solveJump(node, :kills);
+        if (k == "continue")    return solveJump(node, :kills);
 
         if (k == "int")         return solveInt(node, type);
         if (k == "real")        return solveReal(node, type);
@@ -2172,7 +2172,7 @@ pub fn solve(
         fail("Noreturn during static init: this program will never finish booting.");
     }
 
-    fn solveBlock(node: Node, type!: Type, fnbody_of!?: i32, mask! = HM_CanBreak, kills!?: i32, id!?: string, locals_start!?: i32): SolvedNode
+    fn solveBlock(node: Node, type!: Type, fnbody_of!?: i32, mask! = HM_CanBreak, id!?: string, locals_start!?: i32, kills!?: Helpers): SolvedNode
     {
         let nodes = node.kind == "block"  ? node.items : [ node ];
         shadow let id = id || node.kind == "block" && node.value;
@@ -2189,21 +2189,14 @@ pub fn solve(
             local_of:       fnbody_of ? fnbody_of : _current_fn.target.index,
             locals_start:   fnbody_of ? +1 : locals_start || GET_next_local_index()));
 
-        let items       = solveNodes(
+        let h           = _helpers[helpers_idx];
+
+        //
+        mut items       = solveNodes( kills: h,
             nodes,
             type_all:           t_void,
             type_last:          type,
-            use_type_last:      !type.is_void,
-
-            // Kills is +1 so that kills=0 means noone.
-            kills: helpers_idx + 1);
-
-        return solveBlock(:items, :helpers_idx, :mask, :fnbody_of);
-    }
-
-    fn solveBlock(mut items: SolvedNode[], helpers_idx!: i32, mask!: HelpersMask, fnbody_of!: i32)
-    {
-        let h = _helpers[helpers_idx];
+            use_type_last:      !type.is_void);
 
         // TODO clean this up, non-return ret-expects
         if !(mask & HM_CanReturn)
@@ -4374,28 +4367,27 @@ pub fn solve(
         return neg == pos ? 0 : neg ? -1 : +1;
     }
 
-    fn solveJump(node: Node, kills: i32): SolvedNode
+    fn solveJump(node: Node, mut kills!: Helpers): SolvedNode
     {
         let helpers_idx = node.kind == "return"
             ? Scope_lookupReturn(node.value)
             : Scope_lookupLabel (node.value, cont: node.kind == "continue");
 
-        return solveJump(:helpers_idx, :node.items, :kills);
-    }
+        mut h = _helpers[helpers_idx];
 
-    fn solveJump(mut helpers_idx!: i32, items: [Node], kills: i32): SolvedNode
-    {
-        fn h = _helpers[helpers_idx];
+        // Jump as far up as we can.
+        let isTrailing = h == kills;
 
-        //
-        let type = h.ret_actual || h.ret_expect;
+        while (h.kills)
+            h = h.kills;
 
         // Deal with expression first, might noop the jump.
-        mut expr = !items ? createEmpty() : solveNode(
-            items.only, :type,
+        let expr = !node.items
+            ? createEmpty()
+            : solveNode(node.items.only, type: h.ret_actual || h.ret_expect,
 
-            // Kills is +1 so that kills=0 means noone.
-            kills: helpers_idx + 1);
+                // The jump target dies together with the jump expression.
+                kills: h);
 
         // Dead code elim.
         if (expr.type.is_never)
@@ -4411,24 +4403,24 @@ pub fn solve(
             return createEmpty(kind: "__far_jump", type: t_never);
         }
 
-        // This kinda does it for return non-expression.
-        let redundant = kills == helpers_idx + 1;
-        if (redundant && expr.type.is_void)
+        reportReturnType(:h, expr.type);
+
+        // TODO FIX Don't emit redundant return { void expr } trailing returns, currently emits bs cpp.
+        if (expr.type.is_void && isTrailing)
             return expr;
 
-        // In { a { b { c }}}, c kills b kills a.
-        while (h.kills)
-            helpers_idx = h.kills - 1;
+        // Avoid redundant jumps.
+        if !(h.mask & HM_Function) while (kills)
+        {
+            if (kills == h)
+                return expr;
 
-        // TODO FIX see how functions are special,
-        //  if we could get rid of the compulsory returns this would clean up nicely.
-        if (redundant && !(h.mask & HM_Function))
-            return expr;
+            kills = kills.kills;
+        }
 
         // Lazy labels.
         h.mask |= HM_LabelUsed;
 
-        //
         return createJump(:h, expr);
     }
 
@@ -5364,7 +5356,7 @@ pub fn solve(
         fail("Qualified " ~ id.qBAD ~ ":: access current module.");
     }
 
-    fn solveCall(node: Node, target!?: Target, kills!?: i32): SolvedNode
+    fn solveCall(node: Node, target!?: Target, kills!?: Helpers): SolvedNode
     {
         // Dead code elim.
         mut args = solveNodes(node.items);
@@ -5387,7 +5379,7 @@ pub fn solve(
             :id, :args, :reorder, :conversions, :node.flags, :target);
 
         //
-        return CallerNode(node.value, callTargIdx, args, :kills, :reorder, :conversions);
+        return CallerNode(node.value, callTargIdx, args, :reorder, :conversions, :kills);
     }
 
     fn deadCall(args: SolvedNode[]): SolvedNode
@@ -5970,7 +5962,7 @@ pub fn solve(
 
     fn CallerNode(
         debug: string,
-        mut target: Target, mut args: SolvedNode[] = [], kills!?: i32, reorder?: i32[], conversions?: Target[][])
+        mut target: Target, mut args: SolvedNode[] = [], reorder?: i32[], conversions?: Target[][], kills!?: Helpers)
             : SolvedNode
     {
         // Do reorder.
@@ -6173,8 +6165,7 @@ pub fn solve(
                     mask: HM_CanReturn | (n_fn.flags & F_LAMBDA && HM_Lambda)
                                        | (arg_defs              && HM_KeepBlock),
                     id: n_fn.value,
-                    :kills,
-                    :locals_start);
+                    :locals_start, :kills);
 
                 s_body.kind || BUG("inline: no s_body.kind");
                 s_body.items.splice(0, 0, arg_defs);
@@ -6326,8 +6317,8 @@ pub fn solve(
         type_all?: Type,
         type_last!?: Type,
         use_type_last!?: bool,
-        static_eval_brk!?: string, // OR breaks on "true", AND breaks on "false"
-        kills!?: i32): SolvedNode[]
+        static_eval_brk!?: string,
+        kills!?: Helpers): SolvedNode[]
     {
         mut result: SolvedNode[];
 

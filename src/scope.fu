@@ -14,8 +14,8 @@ pub struct HelpersData
     id?:            string;
     mask!?:         HelpersMask;
     local_of!?:     i32;
-    kills!?:        i32;
     locals_start!?: i32;
+    kills!?:        Helpers;
 
     ret_expect?:    Type;
     ret_actual?:    Type;
@@ -311,6 +311,8 @@ fn cmp(a: ScopeMemo, b: ScopeMemo)
 pub fn  >(a: ScopeMemo, b: ScopeMemo) cmp(a, b)  > 0;
 pub fn  <(a: ScopeMemo, b: ScopeMemo) cmp(a, b)  < 0;
 pub fn ==(a: ScopeMemo, b: ScopeMemo) cmp(a, b) == 0;
+
+pub fn ==(a: Helpers, b: Helpers) a.index == b.index;
 
 
 ////////////////////////////////
