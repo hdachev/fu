@@ -15,7 +15,6 @@ pub struct HelpersData
     mask!?:         HelpersMask;
     local_of!?:     i32;
     locals_start!?: i32;
-    kills!?:        Helpers;
 
     ret_expect?:    Type;
     ret_actual?:    Type;
