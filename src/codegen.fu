@@ -725,14 +725,15 @@ pub fn cpp_codegen(implicit module: Module, implicit ctx: Context): CodegenOutpu
             {
                 let n = nodes[i];
                 let k = n.kind;
-                if (k == "jump" || k == "loop" || k == "try"
-                    || k == "letdef" || k == "block" // TODO FIX we can handle both of these
-                    || k == "pragma")
+
+                // TODO FIX doing this with a blacklist is mega stupid
+                if (k == "jump" || k == "loop" || k == "try" || k == "defer" ||
+                    k == "letdef" || k == "pragma")
                 {
                     return false;
                 }
 
-                if (k == "and" || k == "or" || k == "if")
+                if (k == "and" || k == "or" || k == "if" || k == "block")
                     if (!n.items.exprOK)
                         return false;
             }
@@ -740,23 +741,8 @@ pub fn cpp_codegen(implicit module: Module, implicit ctx: Context): CodegenOutpu
             return true;
         }
 
-        fn labelUsed(shadow items: [SolvedNode])
-        {
-            for (mut i = 0; i < items.len; i++)
-            {
-                let item = items[i];
-                if (item.kind == "jump" && item.helpers == helpers ||
-                    item.items.labelUsed())
-                {
-                    return true;
-                }
-            }
-
-            return false;
-        }
-
         let expr = !(mode & M_STMT);
-        if (expr && items.exprOK && !labelUsed(items))
+        if (expr && items.exprOK)
             return cgComma(items, debug: debug ~ ".cgBlock");
 
         //
