@@ -357,3 +357,17 @@ fn str(arr: [$T]) case ($T.is::arithmetic)
     result ~= result ? " ]" : "[]";
     return result;
 }
+
+
+//
+
+fn trim(str: string)
+{
+    for (mut first = 0; first < str.len; first++)
+        if (str[first] > ' ')
+            for (mut last = str.len; last-- >= first; )
+                if (str[last] > ' ')
+                    return str.slice(first, last + 1);
+
+    return "";
+}
