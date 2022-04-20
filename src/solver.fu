@@ -2386,6 +2386,17 @@ pub fn solve(
             throw("woot: " ~ _helpers.len);
         }
 
+        // Compact + stress test.
+        for (mut i = items.len; i --> 0; )
+        {
+            let item    = items[i];
+            let k       = item.kind;
+
+            if (k == "empty" || k == "bool")
+                if (i < items.len - 1 || i > 0 && item.is_void && items[i - 1].is_void)
+                    items.splice(i, 1);
+        }
+
         //////////////////////////////////////////////////////////////////////
         //////////////////////////////////////////////////////////////////////
         if (OPTI_flatten_blocks) while (items.len)
@@ -2400,14 +2411,6 @@ pub fn solve(
         }
         //////////////////////////////////////////////////////////////////////
         //////////////////////////////////////////////////////////////////////
-
-        // Compact + stress test.
-        for (mut i = items.len - 1; i --> 0; )
-        {
-            let k = items[i].kind;
-            if (k == "empty" || k == "bool")
-                items.splice(i, 1);
-        }
 
         if (!(h.mask & (HM_LabelUsed | HM_KeepBlock)) && items.len == 1)
             return items.only;
