@@ -93,6 +93,7 @@ pub fn runTests()
     let TODO_fntype     = fn TODO;
     let TODO_specpat    = fn TODO;
     let TODO_relaxer    = fn TODO;
+    let TODO_ambig      = fn TODO;
 
     let TODO_Map        = fn TODO;
     let TODO_rustsemi   = fn TODO;
@@ -7311,6 +7312,19 @@ pub fn runTests()
         let NODEIDX_signmask    = (1 << NODEIDX_signbits) - 1;
     `,`
         fn main() _0::NODEIDX_signmask - 15;
+    `]);
+
+    TODO_ambig([`
+        struct Helpers { index: i32; }
+        fn +(a: Helpers, b: Helpers) a.index - b.index;
+    `,`
+        import _0;
+        fn main() {
+            <fail ambig><pass/> // autoshadowing surprised me here
+            shadow      </fail> //  feels like this override should be explicit
+            infix fn +(a: Helpers, b: Helpers) a.index + b.index;
+            return Helpers(+1) + Helpers(-1);
+        }
     `]);
 
 
