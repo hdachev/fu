@@ -5144,11 +5144,11 @@ pub fn runTests()
         }
     `);
 
-    TODO_NICE_ERROR(`
+    ZERO(`
         fn fails_with_silly_error(ref set, i) {
-            <fail arg not assignable>
-            set  ||= i;       <pass/>   // this BUGged out instead of
-            set   ~= i;       </fail>   //  outputing a decent err msg
+            <fail bad call arg>
+            set  ||= i; <pass/> // this BUGged out instead of
+            set   ~= i; </fail> //  outputing a decent err msg
             return set;
         }
 

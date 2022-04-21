@@ -2892,7 +2892,8 @@ pub fn solve(
 
         fn setSpec(shadow mangle: string, target: Target, nx?: bool)
         {
-            isInline && BUG("inline.setSpec: " ~ mangle ~ " = " ~ target.is_SPECFAIL);
+            isInline && !target.is_SPECFAIL && BUG(
+                "inline.setSpec: " ~ mangle ~ " = " ~ target.is_SPECFAIL);
 
             ref t = _specs.map::ref(mangle);
 
@@ -2900,7 +2901,7 @@ pub fn solve(
                 target.is_SPECFAIL  ? "SPEC_FAIL"
                                     : "`" ~ GET(target).name ~ "`";
 
-            !t && nx || t.is_SPECFAIL && !nx || BUG(
+            !t && (nx || isInline) || t.is_SPECFAIL && !nx || BUG(
                 "About to screw up royally, replacing spec: "
                     ~ t.index ~ " with " ~ target.index
                         ~ ", mangle: " ~ mangle ~ ", that's: "
