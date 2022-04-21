@@ -4480,15 +4480,24 @@ pub fn solve(
     {
         if (expr.kind == "block" && expr.items)
         {
+            // The intent here -
+            //  not wrapping the block means it can unwrap into its parent block
+            //   and inserting the return further in reduces the need
+            //    for statement expressions.
+            //
             shadow ref expr = expr.items.last;
             if (!expr.type.is_never)
                 injectJumps(:h, expr);
         }
-        // else if (expr.kind == "if")
-        // {
-        //     injectJumps(:h, expr.items[1]);
-        //     injectJumps(:h, expr.items[2]);
-        // }
+        else if (expr.kind == "if")
+        {
+            // Experimental,
+            //  not strictly needed for anything.
+            //
+            injectJumps(:h, expr.items[1]);
+            injectJumps(:h, expr.items[2]);
+            expr.type = t_never;
+        }
         else
         {
             expr = createJump(:h, :expr);
