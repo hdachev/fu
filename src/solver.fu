@@ -2379,6 +2379,24 @@ pub fn solve(
         //////////////////////////////////////////////////////////////////////
         //////////////////////////////////////////////////////////////////////
 
+        if (items)
+        {
+            // Skip redundant trailing jumps.
+            ref last = items.last;
+            if (last.kind == "jump" && last.helpers == h
+
+                // TODO FIX don't special case the trailing fn return here,
+                //  just inject trailing return in doTrySpec if needed.
+                && !(h.mask & HM_Function && !last.items.only.is_void))
+            {
+                // TODO FIX this fails to unset HM_LabelUsed on single jump blocks,
+                //  which means the block can't unwrap below,
+                //   etc cleanups can't happen.
+                //
+                last = last.items.only;
+            }
+        }
+
         if (!(h.mask & (HM_LabelUsed | HM_KeepBlock)) && items.len == 1)
             return items.only;
 
