@@ -188,6 +188,16 @@ pub fn lookupTypeConverts(type: Type)
     tryLookupStruct(type).converts;
 
 
+//
+
+pub fn tryLookupStructOrUserPrimitive(type: Type): Struct
+{
+    if (type.isStruct || type.canon.quals::basePrimPrefixLen() < type.canon.len)
+        return lookupStruct(type);
+
+    return [];
+}
+
 
 //
 

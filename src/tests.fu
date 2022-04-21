@@ -9634,6 +9634,16 @@ pub fn runTests()
         }
     `);
 
+    ZERO(`
+        flags Flags: i32 { A; B };
+
+        fn main() {
+            mut hello = 5;
+            mut world = hello.Flags;
+            return world.i32 - 1;
+        }
+    `);
+
 
     // Unions, what the hell.
 

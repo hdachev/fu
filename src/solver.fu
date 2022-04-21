@@ -2411,10 +2411,8 @@ pub fn solve(
 
     fn lookupStructOrUserPrimitive(type: Type): Struct
     {
-        if (type.isStruct || type.canon.quals::basePrimPrefixLen() < type.canon.len)
-            return lookupStruct(type);
-
-        fail("Not a struct nor custom primitive: " ~ humanizeType(type));
+        return tryLookupStructOrUserPrimitive(type)
+            || fail("Not a struct nor custom primitive: " ~ humanizeType(type));
     }
 
     fn getBasePrimitive(type: Type): string
@@ -3756,14 +3754,17 @@ pub fn solve(
         let isPrimDecl  = !isStruct && !isUnion;
 
         //
+        mut basePrimType: Type;
         mut baseprim: string;
 
         if (isPrimDecl)
         {
             let baseannot   = node.items[STRUCT_BASE];
-            baseprim        = baseannot
-                ? getBasePrimitive(evalTypeAnnot(baseannot))
-                : "u8"; // TODO decide later
+            basePrimType    = baseannot
+                ? evalTypeAnnot(baseannot)
+                : t_u8; // TODO decide later
+
+            baseprim        = getBasePrimitive(basePrimType);
         }
 
         //
@@ -4010,7 +4011,16 @@ pub fn solve(
             mut args: Argument[];
 
             //
-            if (!isPrimDecl)
+            if (isPrimDecl)
+            {
+                // TODO also list this as an explicit conversion.
+                //
+                args.push(
+                    Argument(
+                        name: "value",
+                        type: basePrimType));
+            }
+            else
             {
                 // We'll do the C89 thing for unions for starters -
                 //  you can only init the first member,
