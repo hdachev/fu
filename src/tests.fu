@@ -7633,14 +7633,14 @@ pub fn runTests()
         }
     `);
 
-    SKETCH(`
+    ZERO(`
         struct ScopeSkip     { imports:     i32[]; implicits:     i32[]; }
-        struct ScopeSkipMemo { imports_len: i32;   implicits_len: i32[]; }
+        struct ScopeSkipMemo { imports_len: i32;   implicits_len: i32;   }
 
-        fn snap(ss: SS) {
-            mut r: ScopeSkipMemo;       // imports wouldn't work -
-            for (fieldname i: ss)       //  we need to know what to import much earlier.
-                r.i::_len = ss.i.len;   //   <- which frees up this syntax
+        fn snap(ss: ScopeSkip) {
+            mut r: ScopeSkipMemo;
+            for (fieldname i: ss)
+                r.i_len = ss.i.len;
 
             return r;
         }

@@ -4688,6 +4688,10 @@ pub fn solve(
         let placeholder     = node.value;
         let body_template   = node.items[1];
 
+        let prefix          = placeholder ~ "_";
+        let suffix          = "_" ~ placeholder;
+        let inside          = "_" ~ placeholder ~ "_";
+
         let fields          = evalTypeAnnot(node.items[0])
                                 .lookupStructOrUserPrimitive()
                                 .items || BUG("Empty struct/enum.");
@@ -4699,7 +4703,12 @@ pub fn solve(
             {
                 items_ast ~= astReplace(body_template, |ref item: Node|
                 {
-                    if (item.value == placeholder)
+                    let idx = item.value == placeholder        ? 0
+                            : item.value.starts (with: prefix) ? 0
+                            : item.value.ends   (with: suffix) ? item.value.len - placeholder.len
+                            : item.value.find   (inside);
+
+                    if (idx >= 0)
                     {
                         if (item.kind == "call")
                         {
@@ -4709,12 +4718,12 @@ pub fn solve(
                             // if (item.flags & F_ACCESS)
                             //     item.flags |= F_NOSCOPE;
                             //
-                            item.value = field.id;
+                            item.value.splice(idx, placeholder.len, field.id);
                         }
                         else if (item.kind == "str")
                         {
                             // String literals, potentially useful for serialization.
-                            item.value = field.id;
+                            item.value.splice(idx, placeholder.len, field.id);
                         }
                     }
                 });
