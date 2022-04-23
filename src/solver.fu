@@ -202,15 +202,17 @@ pub fn solve(
 
         // What were we currently solving?
         mut callstack = 0;
+        mut pass0: SolverPass;
         for (mut i = _helpers.len; i --> 0; )
         {
             let h = _helpers[i];
             if (h.isFnOrType)
             {
                 if (!callstack++)
-                    reason ~= "\n\n        Solving ";
-                else
-                    reason ~=   "\n                ";
+                    reason ~= "\n";
+
+                let pass = (pass0 != (pass0 = h.pass) || callstack == 1) && h.pass ~ " ";
+                reason ~= "\n                "[0, (17 - pass.len).max(1)] ~ pass;
 
                 let o = GET(h.target);
                 reason ~= o.qWHAT;
@@ -2156,13 +2158,14 @@ pub fn solve(
     fn solveRoot(node: Node): SolvedNode
     {
         // Root vars & such.
+        let helpers = Helpers(_helpers.len);
         push(HelpersData());
 
         //
         let items = solveNodes(node.items, t_void);
         if (!items.last.is_never)
         {
-            mut root = solved(node, t_void, items);
+            mut root = SolvedNode(kind: "root", type: t_void, :items, :helpers);
             runAllPasses(root);
             return root;
         }
@@ -7892,6 +7895,8 @@ pub fn solve(
         if (SELF_TEST) test_node(node, "PASS.0 ");
         ///////////////////////////////
 
+        node.helpers.pass = "RelaxMut";
+
         _current_fn.var_usage = [];
         propagateType(node, node.type, relax_mask: RELAX_before_bck);
 
@@ -7899,17 +7904,23 @@ pub fn solve(
         if (SELF_TEST) test_node(node, "PASS.0.relax ");
         ///////////////////////////////
 
+        node.helpers.pass = "BorrowCheck";
+
         PASS_borrowCheck(node);
 
         ///////////////////////////////
         if (SELF_TEST) test_node(node, "PASS.1 ");
         ///////////////////////////////
 
+        node.helpers.pass = "MaybeCopyOrMove";
+
         mcom_node(node);
 
         ///////////////////////////////
         if (SELF_TEST) test_node(node, "PASS.2 ");
         ///////////////////////////////
+
+        node.helpers.pass = "RelaxCopyResize";
 
         _current_fn.var_usage = [];
         propagateType(node, node.type, relax_mask: RELAX_all);

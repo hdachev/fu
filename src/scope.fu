@@ -7,9 +7,19 @@ import module;
 
 //
 
-pub struct HelpersData
+enum SolverPass
+{
+    Solving = 0
+    RelaxMut
+    BorrowCheck
+    MaybeCopyOrMove
+    RelaxCopyResize
+};
+
+struct HelpersData
 {
     target!?:       Target;
+    pass!?:         SolverPass;
 
     id?:            string;
     mask!?:         HelpersMask;
@@ -20,17 +30,17 @@ pub struct HelpersData
     ret_actual?:    Type;
 };
 
-pub fn target(si: ScopeItem)
+fn target(si: ScopeItem)
     Target(:si.modid, index: (si.packed &~ (0x1 << 31)).i32);
 
-pub fn ScopeItem_shadows(si: ScopeItem)
+fn ScopeItem_shadows(si: ScopeItem)
     !!(si.packed & (0x1 << 31));
 
-pub fn ScopeItem(id: string, target: Target, shadows: bool)
+fn ScopeItem(id: string, target: Target, shadows: bool)
     ScopeItem(:id, :target.modid,
         packed: target.index.u32 | (shadows && (0x1 << 31)));
 
-pub fn target_TODOFIX(ref si: ScopeItem, target: Target)
+fn target_TODOFIX(ref si: ScopeItem, target: Target)
 {
     si.modid  = target.modid;
     si.packed = target.index.u32;
@@ -48,10 +58,10 @@ pub fn target_TODOFIX(ref si: ScopeItem, target: Target)
 ////////
 ////////     Scope.
 
-pub fn MODID(implicit module: Module): i32
+fn MODID(implicit module: Module): i32
     module.modid;
 
-pub fn initStruct(implicit module: &mut Module,
+fn initStruct(implicit module: &mut Module,
     ::kind!, baseprim!: string,
     name: string, asserts: DeclAsserts,
     SELF_TEST!: bool)
@@ -79,7 +89,7 @@ pub fn initStruct(implicit module: &mut Module,
     return Type(ValueType(:canon, quals: specualtive_quals));
 }
 
-pub fn despeculateStruct(mut type: Type)
+fn despeculateStruct(mut type: Type)
 {
     type.quals &= ~q_rx_copy;
     return type;
@@ -97,7 +107,7 @@ pub fn despeculateStruct(mut type: Type)
 ////////
 ////////     Scope.
 
-pub fn Scope_exports(scope: Scope, modid!: i32, field_items: ScopeItem[])
+fn Scope_exports(scope: Scope, modid!: i32, field_items: ScopeItem[])
 {
     mut items:          ScopeItem[] = field_items;
     mut prv_items:      ScopeItem[];
@@ -147,7 +157,7 @@ pub fn Scope_exports(scope: Scope, modid!: i32, field_items: ScopeItem[])
 
 ////////////////////////////////
 
-pub fn each(
+fn each(
     items: [$T],
     scope_skip: ScopeSkip[],
     fn,
@@ -170,7 +180,7 @@ pub fn each(
     }
 }
 
-pub fn reveach(items: [$T], ss: ScopeSkip[], fn)
+fn reveach(items: [$T], ss: ScopeSkip[], fn)
 {
     mut ssi = ss.len - 1;
     mut ssN = ssi >= 0 && ss[ssi].end - 1;
@@ -187,7 +197,7 @@ pub fn reveach(items: [$T], ss: ScopeSkip[], fn)
     }
 }
 
-pub fn search(
+fn search(
     items: [ScopeItem], id: string,
     scope_iterator: &mut i32,
     scope_skip: ScopeSkip[],
@@ -277,7 +287,7 @@ pub fn search(
 
 ////////////////////////////////
 
-pub fn Scope_snap(scope: Scope, implicit _helpers: Helpers[])
+fn Scope_snap(scope: Scope, implicit _helpers: Helpers[])
     ScopeMemo(
         items_len:      scope.items     .len,
         implicits_len:  scope.implicits .len,
@@ -287,7 +297,7 @@ pub fn Scope_snap(scope: Scope, implicit _helpers: Helpers[])
         converts_len:   scope.converts  .len,
         helpers_len:         _helpers   .len);
 
-pub fn Scope_pop(ref scope: Scope, implicit ref _helpers: Helpers[], memo: ScopeMemo)
+fn Scope_pop(ref scope: Scope, implicit ref _helpers: Helpers[], memo: ScopeMemo)
 {
     scope.items     .shrink(memo.items_len);
     scope.implicits .shrink(memo.implicits_len);
@@ -307,16 +317,16 @@ fn cmp(a: ScopeMemo, b: ScopeMemo)
     a.converts_len  - b.converts_len  ||
     a.helpers_len   - b.helpers_len;
 
-pub fn  >(a: ScopeMemo, b: ScopeMemo) cmp(a, b)  > 0;
-pub fn  <(a: ScopeMemo, b: ScopeMemo) cmp(a, b)  < 0;
-pub fn ==(a: ScopeMemo, b: ScopeMemo) cmp(a, b) == 0;
+fn  >(a: ScopeMemo, b: ScopeMemo) cmp(a, b)  > 0;
+fn  <(a: ScopeMemo, b: ScopeMemo) cmp(a, b)  < 0;
+fn ==(a: ScopeMemo, b: ScopeMemo) cmp(a, b) == 0;
 
-pub fn ==(a: Helpers, b: Helpers) a.index == b.index;
+fn ==(a: Helpers, b: Helpers) a.index == b.index;
 
 
 ////////////////////////////////
 
-pub fn Scope_create(
+fn Scope_create(
     scope: &mut Scope,
     ::kind = "__no_kind_yet", name!?: string,
     type?: Type, flags!?: Flags,
@@ -344,17 +354,17 @@ pub fn Scope_create(
     return target;
 }
 
-pub fn Scope_set(ref scope: Scope, id: string, target: Target, shadows!: bool)
+fn Scope_set(ref scope: Scope, id: string, target: Target, shadows!: bool)
 {
     Scope_set(:scope.items, :id, :target, :shadows);
 }
 
-pub fn Scope_set(ref items: ScopeItem[], id: string, target: Target, shadows!: bool)
+fn Scope_set(ref items: ScopeItem[], id: string, target: Target, shadows!: bool)
 {
     items.push(ScopeItem( :id, :target, :shadows ));
 }
 
-pub fn Scope_Typedef(scope: &mut Scope,
+fn Scope_Typedef(scope: &mut Scope,
     id: string, type: Type, flags = F_PUB, name?: string,
     status?: SolverStatus)
 {
@@ -369,7 +379,7 @@ pub fn Scope_Typedef(scope: &mut Scope,
 
 //
 
-pub fn listGlobals(implicit module: Module): Scope
+fn listGlobals(implicit module: Module): Scope
 {
     mut scope: Scope;
 
