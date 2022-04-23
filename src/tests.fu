@@ -5145,7 +5145,7 @@ pub fn runTests()
     `);
 
     ZERO(`
-        fn fails_with_silly_error(ref set, i) {
+        fn fails_with_silly_error(ref set: i32[], i) {
             <fail bad call arg>
             set  ||= i; <pass/> // this BUGged out instead of
             set   ~= i; </fail> //  outputing a decent err msg
@@ -9175,6 +9175,19 @@ pub fn runTests()
         fn main() {
             mut node: Node;
             return node.check ? 0 : 1;
+        }
+    `);
+
+    TODO_relaxer(`
+        fn relaxes_arr_to_slice_and_fails(ref arr) {
+            arr.pop();
+            return arr;
+        }
+
+        fn main() {
+            mut arr = [ 1 ];
+            relaxes_arr_to_slice_and_fails(arr);
+            return arr.len;
         }
     `);
 
