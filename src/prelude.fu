@@ -28,9 +28,6 @@ fn -=(ref a: $T, b: $T) case ($T.is::arithmetic): &mut $T __native;
 fn *=(ref a: $T, b: $T) case ($T.is::arithmetic): &mut $T __native;
 fn /=(ref a: $T, b: $T) case ($T.is::arithmetic): &mut $T __native;
 
-fn ==(a: $T, b: $T) case ($T.is::primitive): bool __native;
-fn !=(a: $T, b: $T) case ($T.is::primitive): bool __native;
-
 fn > (a: $T, b: $T) case ($T.is::primitive): bool __native;
 fn < (a: $T, b: $T) case ($T.is::primitive): bool __native;
 fn >=(a: $T, b: $T) case ($T.is::primitive): bool __native;
@@ -238,9 +235,6 @@ fn sort(ref a: [$T;], less/*: fn(a: $T, b: $T): bool*/): void
 
 
 // String likes.
-
-fn ==(a: [$T;], b: [$T;]) case ($T.is::primitive): bool __native("<fu/vec/cmp.h>", "==");
-fn !=(a: [$T;], b: [$T;]) case ($T.is::primitive): bool __native("<fu/vec/cmp.h>", "!=");
 
 fn find(a: [$T;], b: [$T;], start: int, end: int) case ($T.is::primitive): int  __native("<fu/vec/find.h>", "fu::lfind");
 fn find(a: [$T;], b: [$T;], start: int)           case ($T.is::primitive): int  __native("<fu/vec/find.h>", "fu::lfind");
@@ -478,6 +472,14 @@ default {
 
     return 0;
 }
+
+fn ==(a: $T, b: $T)
+    case ($T.is::primitive): bool __native;
+    default: bool = !(a <> b);
+
+fn !=(a: $T, b: $T)
+    case ($T.is::primitive): bool __native;
+    default: bool = !!(a <> b);
 
 
 `;
