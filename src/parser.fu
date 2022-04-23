@@ -744,7 +744,7 @@ pub fn parse(
                 flags |= flag;
             }
 
-            fn add(assert?: DeclAsserts)
+            fn add(shadow assert?: DeclAsserts)
             {
                 asserts  & assert && fail("Dulicate assertion: " ~ v.qKW);
                 asserts |= assert;

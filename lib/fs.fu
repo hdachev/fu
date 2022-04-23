@@ -66,7 +66,7 @@ fn cwd(): string
         "<unistd.h>",   // getcwd
         "<fu/defer.h>");
 
-    mut cwd: string;
+    shadow mut cwd: string;
 
     pragma emit(`
 
@@ -88,7 +88,7 @@ fn cwd(): string
 
         static const fu_STR value = init();
 
-        `, cwd, ` = value;
+        `cwd` = value;
     `);
 
     return cwd;

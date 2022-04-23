@@ -691,7 +691,7 @@ pub fn runTests()
         fn main() _0::template_add(HasInt(1), HasInt(2)).i - 3;
     `]);
 
-    TODO([`
+    TODO_ambig([`
         fn template_add(a, b) a + b;
     `,`
         struct HasInt { i: i32 };
@@ -7314,7 +7314,7 @@ pub fn runTests()
         fn main() _0::NODEIDX_signmask - 15;
     `]);
 
-    TODO_ambig([`
+    ZERO([`
         struct Helpers { index: i32; }
         fn +(a: Helpers, b: Helpers) a.index - b.index;
     `,`

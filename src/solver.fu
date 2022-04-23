@@ -131,6 +131,7 @@ pub fn solve(
         effects?:       Effects;
         events?:        Events;
         loop_start?:    i32;
+        autoshadow_ok!: i32;
 
         // The replacement for the callsites stuff.
         var_usage?:     Type[];
@@ -593,6 +594,9 @@ pub fn solve(
 
     fn autoshadow(ref shadows: bool, local_of: i32, id: string)
     {
+        if !(_current_fn.autoshadow_ok)
+            return;
+
         if (!shadows && local_of && shouldAutoshadow(id))
             shadows = true;
     }
@@ -3215,7 +3219,9 @@ pub fn solve(
 
             mut out = CurrentFn(:scope0,
                 solved(n_fn,
-                    :target, type: X_addrofTarget(target)));
+                    :target, type: X_addrofTarget(target)),
+                autoshadow_ok:
+                    n_fn.flags & F_TEMPLATE ? 1 : 0);
 
             let root_scope0 = _root_scope;
             if (!root_scope0)
@@ -3746,7 +3752,7 @@ pub fn solve(
         return __solveStruct(solve: false, :node);
     }
 
-    fn __solveStruct(solve!: bool, node: Node, into!?: Target): SolvedNode
+    fn __solveStruct(shadow solve!: bool, node: Node, into!?: Target): SolvedNode
     {
         let origId      = node.value;
         let name        = origId || _current_fn.target && GET(_current_fn.target).name || "Anon";
@@ -6174,16 +6180,21 @@ pub fn solve(
             {
                 let scope0 = Scope_snap(_scope);
                 let ss0 = _ss;
+                let autoshadow_ok0 = _current_fn.autoshadow_ok;
 
                 defer {
                     Scope_pop(_scope, scope0);
                     _ss = ss0;
+                    _current_fn.autoshadow_ok = autoshadow_ok0;
                 }
 
                 let template    = target.template;
 
                 ScopeSkip_setup(:template, :scope0, isInline: true);
                 _scope.items ~= target.extra_items;
+
+                if (template.node.flags & F_TEMPLATE)
+                    _current_fn.autoshadow_ok++;
 
                 //
                 let n_fn        = template.node;
