@@ -63,16 +63,10 @@ fn MODID(implicit module: Module): i32
 
 fn initStruct(implicit module: &mut Module,
     ::kind!, baseprim!: string,
-    name: string, asserts: DeclAsserts,
-    SELF_TEST!: bool)
+    name: string, asserts: DeclAsserts)
 {
     name[0].u8 - '0'.u8 > 9.u8 || throw (
         "Bad struct name, leading digit: `" ~ name ~ "`.");
-
-    if (SELF_TEST)
-        for (mut i = 0; i < module.out.types.len; i++)
-            if (module.out.types[i].name == name)
-                throw ("initStruct/SELF_TEST duplicate: `" ~ name ~ "`.");
 
     // Alloc a slot.
     let index = module.out.types.len;
