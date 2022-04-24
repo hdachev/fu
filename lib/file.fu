@@ -59,7 +59,7 @@ fn write(mut path: string, data: [byte], mode = RW_RW_RW): i32
         // Used by posix open, ignored here.
         (void) `mode`;
 
-        FILE* file = fopen(`path`.data(), "w");
+        FILE* file = fopen(`path`.data(), "wb");
         if (file)
         {
             fu_DEFER( fclose(file) );
@@ -207,7 +207,7 @@ fn read(mut path: string, ref output: string, mut size?: i64): i32
 
     pragma emit(
     `
-        auto file = fopen(`path`.data(), "r");
+        auto file = fopen(`path`.data(), "rb");
         if (!file)
             return (`err` = errno);
 
