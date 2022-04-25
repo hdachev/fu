@@ -3556,6 +3556,23 @@ pub fn solve(
                     overload.status |= SS_UPDATED;
 
                 //
+                if (!isNative && !isInline && !isUnspec)
+                {
+                    // "namespacing" via the sighash hashes.
+                    let sourceModid             = template.node.token.modid;
+                    shadow let shortModuleName  = sourceModid != module.modid
+                        ? sourceModid && module.modid && getShortModuleName(ctx.modules[sourceModid].fname)
+                        : shortModuleName;
+
+                    let sig     = (target.local_of && target.index.str)
+                                ~ shortModuleName
+                                ~ mangleArguments(target.args);
+
+                    overload.sighash = sig
+                        && (tea::hash62(sig) || BUG());
+                }
+
+                //
                 target.solved_set(!isUnspec && out);
 
                 // setSpecs & co.
@@ -3581,24 +3598,6 @@ pub fn solve(
                     //
                     mut name = n_fn.value || fail("TODO anonymous fns");
 
-                    mut sighash: string;
-                    if (!isNative && !isInline && !isUnspec)
-                    {
-                        // "namespacing" via the sighash hashes.
-                        let sourceModid             = template.node.token.modid;
-                        shadow let shortModuleName  = sourceModid != module.modid
-                            ? sourceModid && module.modid && getShortModuleName(ctx.modules[sourceModid].fname)
-                            : shortModuleName;
-
-                        let sig     = (target.local_of && target.index.str)
-                                    ~ shortModuleName
-                                    ~ mangleArguments(target.args);
-                        if (sig)
-                        {
-                            sighash = tea::hash62(sig) || BUG();
-                        }
-                    }
-
                     fn HACK_nativeNameParts() // __native(id) or __native("include", id)
                     {
                         shadow mut name = "";
@@ -3611,7 +3610,6 @@ pub fn solve(
 
                     ref overload        = GET_mut(target);
                     overload.name       = HACK_nativeNameParts || name || BUG();
-                    overload.sighash    = sighash;
 
                     overload.kind       = isUnspec      ? "template"
                                         : isNative      ? "__native"
