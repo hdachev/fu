@@ -2815,7 +2815,7 @@ pub fn solve(
     fn doTrySpecialize(
         into?: Target,
         overloadIdx?: Target, args_in?: SolvedNode[],
-        mut mangle?: string, reorder?: [i32], use_reorder?: bool, conversions?: Target[][],
+        mangle?: string, reorder?: [i32], use_reorder?: bool, conversions?: Target[][],
         REST_START?: i32, REST_TYPE?: Type)
             : Target
     {
@@ -2849,9 +2849,6 @@ pub fn solve(
         //
         let SPECFAIL_RentrySafety =
             Target(modid: 2147483647, index: 0);
-
-        //
-        let mangle00 = mangle;
 
         //
         let original = overloadIdx || into || BUG();
@@ -2914,8 +2911,44 @@ pub fn solve(
             t = target;
         }
 
+        //
+        mut mangles: string[];
+        mut currentSpec = SPECFAIL_RentrySafety;
+
+        fn resetSpec(spec: Target)
+        {
+            currentSpec = spec;
+            for (mut i = 0; i < mangles.len; i++)
+                setSpec(mangles[i], spec, nx: false);
+        }
+
+        let resetMangle = |shadow mangle: string|
+        {
+            if (mangles.set::add(mangle))
+            {
+                let preexisting = _specs.map::get(mangle);
+                if (preexisting)
+                {
+                    mangles.set::rem(mangle);
+                    resetSpec(preexisting);
+                    return preexisting;
+                }
+
+                setSpec(mangle, currentSpec, nx: true);
+            }
+        };
+
+        fn resetMangle(shadow args: [Type] or [Argument])
+        {
+            // TODO FIX
+            let start = mangle.find(' ') + 1 || BUG();
+            shadow let mangle = mangle.slice(0, start) ~ mangleArguments(args);
+            resetMangle(mangle);
+        };
+
+        //
         if (!into && !isInline)
-            setSpec(mangle, SPECFAIL_RentrySafety, nx: true);
+            resetMangle(mangle);
 
         // Scopes & scope skips.
         mut target: Target;
@@ -3074,24 +3107,7 @@ pub fn solve(
                 /////////////////
                 // Literal fixup.
                 if (remangle && !isInline)
-                {
-                    // TODO FIX
-                    let start = mangle.find(' ') + 1 || BUG();
-                    mangle = mangle.slice(0, start) ~ mangleArguments(args);
-
-                    if (mangle00 != mangle)
-                    {
-                        let preexisting = _specs.map::get(mangle);
-                        if (preexisting)
-                        {
-                            setSpec(mangle00, preexisting);
-                            return preexisting;
-                        }
-
-                        if (!into)
-                            setSpec(mangle, SPECFAIL_RentrySafety, nx: true);
-                    }
-                }
+                    resetMangle(args);
                 //        /LITFIX
                 /////////////////
 
@@ -3103,9 +3119,7 @@ pub fn solve(
                     let spec        = Target(
                         modid: SPECFAIL_RentrySafety.modid, :index);
 
-                    setSpec(mangle00, spec);
-                    setSpec(mangle,   spec);
-
+                    resetSpec(spec);
                     return spec;
                 }
 
@@ -3169,9 +3183,6 @@ pub fn solve(
                     }
                 }
             }
-
-            // Populate scope.
-            let mangle0 = mangle;
 
             // Prep reject.
             target = into || Scope_create(_scope, status: SS_DID_START | SS_LAZY);
@@ -3605,26 +3616,8 @@ pub fn solve(
                 // setSpecs & co.
                 if (!into && !isInline)
                 {
-                    let start   = mangle0.find(' ') + 1 || BUG();
-                    mangle      = mangle0.slice(0, start)
-                                ~ mangleArguments(target.args);
-
-                    mut preexisting: Target;
-                    let nx0 = mangle0 != mangle;
-                    if (nx0)
-                    {
-                        preexisting = _specs.map::get(mangle);
-                        setSpec(mangle0, preexisting || target);
-                    }
-
-                    let nx00 = mangle00 != mangle;
-                    if (nx00 && mangle00 != mangle0)
-                        setSpec(mangle00, preexisting || target);
-
-                    if (preexisting)
-                        return preexisting;
-
-                    setSpec(mangle, target, nx: nx0 && nx00);
+                    resetMangle(target.args);
+                    resetSpec(target);
                 }
             }
 
