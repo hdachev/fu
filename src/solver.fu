@@ -2891,7 +2891,7 @@ pub fn solve(
         //
         let isInline = !!(template.node.flags & F_INLINE);
 
-        fn setSpec(shadow mangle: string, target: Target, nx?: bool)
+        fn setSpec(shadow mangle: string, target: Target, nx!: bool, allowReplaceNonSpecfails?: bool)
         {
             isInline && !target.is_SPECFAIL && BUG(
                 "inline.setSpec: " ~ mangle ~ " = " ~ target.is_SPECFAIL);
@@ -2902,7 +2902,7 @@ pub fn solve(
                 target.is_SPECFAIL  ? "SPEC_FAIL"
                                     : "`" ~ GET(target).name ~ "`";
 
-            !t && (nx || isInline) || t.is_SPECFAIL && !nx || BUG(
+            (!isInline || !t) && (!t == nx) && (!t || t.is_SPECFAIL || allowReplaceNonSpecfails) || BUG(
                 "About to screw up royally, replacing spec: "
                     ~ t.index ~ " with " ~ target.index
                         ~ ", mangle: " ~ mangle ~ ", that's: "
@@ -2915,14 +2915,17 @@ pub fn solve(
         mut mangles: string[];
         mut currentSpec = SPECFAIL_RentrySafety;
 
-        fn resetSpec(spec: Target)
+        fn resetSpec(spec: Target, allowReplaceNonSpecfails?: bool)
         {
-            currentSpec = spec;
-            for (mut i = 0; i < mangles.len; i++)
-                setSpec(mangles[i], spec, nx: false);
+            if !(spec == currentSpec)
+            {
+                currentSpec = spec;
+                for (mut i = 0; i < mangles.len; i++)
+                    setSpec(mangles[i], spec, nx: false, :allowReplaceNonSpecfails);
+            }
         }
 
-        let resetMangle = |shadow mangle: string|
+        let resetMangle = |shadow mangle: string, allowReplaceNonSpecfails?: bool|
         {
             if (mangles.set::add(mangle))
             {
@@ -2930,7 +2933,7 @@ pub fn solve(
                 if (preexisting)
                 {
                     mangles.set::rem(mangle);
-                    resetSpec(preexisting);
+                    resetSpec(preexisting, :allowReplaceNonSpecfails);
                     return preexisting;
                 }
 
@@ -2938,12 +2941,12 @@ pub fn solve(
             }
         };
 
-        fn resetMangle(shadow args: [Type] or [Argument])
+        fn resetMangle(shadow args: [Type] or [Argument], allowReplaceNonSpecfails?: bool)
         {
             // TODO FIX
             let start = mangle.find(' ') + 1 || BUG();
             shadow let mangle = mangle.slice(0, start) ~ mangleArguments(args);
-            resetMangle(mangle);
+            resetMangle(mangle, :allowReplaceNonSpecfails);
         };
 
         //
@@ -3554,6 +3557,13 @@ pub fn solve(
 
                 //
                 target.solved_set(!isUnspec && out);
+
+                // setSpecs & co.
+                if (!into && !isInline)
+                {
+                    resetMangle(target.args, allowReplaceNonSpecfails: maybeLast);
+                    resetSpec(target);
+                }
             }
 
             // Enable recursion.
@@ -3611,13 +3621,6 @@ pub fn solve(
                     ref ext             = target.EXT_mut;
                     ext.template        = template;
                     ext.spec_of         = overloadIdx;
-                }
-
-                // setSpecs & co.
-                if (!into && !isInline)
-                {
-                    resetMangle(target.args);
-                    resetSpec(target);
                 }
             }
 
