@@ -375,11 +375,13 @@ fn listGlobals(implicit module: Module): Scope
     Scope_Typedef(scope, "i16",    t_i16   );
     Scope_Typedef(scope, "i32",    t_i32   );
     Scope_Typedef(scope, "i64",    t_i64   );
+    Scope_Typedef(scope, "i128",   t_i128  );
 
     Scope_Typedef(scope,  "u8",    t_u8    );
     Scope_Typedef(scope, "u16",    t_u16   );
     Scope_Typedef(scope, "u32",    t_u32   );
     Scope_Typedef(scope, "u64",    t_u64   );
+    Scope_Typedef(scope, "u128",   t_u128  );
 
     Scope_Typedef(scope, "f32",    t_f32   );
     Scope_Typedef(scope, "f64",    t_f64   );

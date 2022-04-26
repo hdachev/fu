@@ -69,11 +69,13 @@ pub let t_i8        = Primitive("i8");
 pub let t_i16       = Primitive("i16");
 pub let t_i32       = Primitive("i32");
 pub let t_i64       = Primitive("i64");
+pub let t_i128      = Primitive("i128");
 
 pub let t_u8        = Primitive("u8");
 pub let t_u16       = Primitive("u16");
 pub let t_u32       = Primitive("u32");
 pub let t_u64       = Primitive("u64");
+pub let t_u128      = Primitive("u128");
 
 pub let t_f32       = Primitive("f32");
 pub let t_f64       = Primitive("f64");

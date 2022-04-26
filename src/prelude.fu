@@ -54,18 +54,20 @@ fn >>=(ref a: $T, b: $T) case ($T.is::integral): &mut $T __native;
 
 // Numeric conversions.
 
-fn  i8(v: $T) case ($T.is::primitive):  i8 __native("/prim/convert");
-fn i16(v: $T) case ($T.is::primitive): i16 __native("/prim/convert");
-fn i32(v: $T) case ($T.is::primitive): i32 __native("/prim/convert");
-fn i64(v: $T) case ($T.is::primitive): i64 __native("/prim/convert");
+fn   i8(v: $T) case ($T.is::primitive):   i8 __native("/prim/convert");
+fn  i16(v: $T) case ($T.is::primitive):  i16 __native("/prim/convert");
+fn  i32(v: $T) case ($T.is::primitive):  i32 __native("/prim/convert");
+fn  i64(v: $T) case ($T.is::primitive):  i64 __native("/prim/convert");
+fn i128(v: $T) case ($T.is::primitive): i128 __native("/prim/convert");
 
-fn  u8(v: $T) case ($T.is::primitive):  u8 __native("/prim/convert");
-fn u16(v: $T) case ($T.is::primitive): u16 __native("/prim/convert");
-fn u32(v: $T) case ($T.is::primitive): u32 __native("/prim/convert");
-fn u64(v: $T) case ($T.is::primitive): u64 __native("/prim/convert");
+fn   u8(v: $T) case ($T.is::primitive):   u8 __native("/prim/convert");
+fn  u16(v: $T) case ($T.is::primitive):  u16 __native("/prim/convert");
+fn  u32(v: $T) case ($T.is::primitive):  u32 __native("/prim/convert");
+fn  u64(v: $T) case ($T.is::primitive):  u64 __native("/prim/convert");
+fn u128(v: $T) case ($T.is::primitive): u128 __native("/prim/convert");
 
-fn f32(v: $T) case ($T.is::primitive): f32 __native("/prim/convert");
-fn f64(v: $T) case ($T.is::primitive): f64 __native("/prim/convert");
+fn  f32(v: $T) case ($T.is::primitive): f32 __native("/prim/convert");
+fn  f64(v: $T) case ($T.is::primitive): f64 __native("/prim/convert");
 
 fn byte(v: $T) case ($T.is::primitive): byte __native("/prim/convert");
 

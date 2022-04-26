@@ -6975,6 +6975,14 @@ pub fn runTests()
         }
     `);
 
+    ZERO(`
+        fn main() {
+            let hey: u128 = 0x8000000000000000.u128;
+            let res = hey + hey;
+            return res > hey ? 0 : 1;
+        }
+    `);
+
 
     // Imports & pubs.
 

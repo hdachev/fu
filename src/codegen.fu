@@ -282,10 +282,12 @@ pub fn cpp_codegen(implicit module: Module, implicit ctx: Context): CodegenOutpu
         include("<cstdint>");
 
         if (c == "i64")     return "int64_t";
+        if (c == "i128")    return "__int128_t";
 
         if (c == "u16")     return "uint16_t";
         if (c == "u32")     return "uint32_t";
         if (c == "u64")     return "uint64_t";
+        if (c == "u128")    return "__uint128_t";
 
         // Custom primitives.
         fail("Unknown primitive: `" ~ c ~ "`.");
@@ -295,7 +297,7 @@ pub fn cpp_codegen(implicit module: Module, implicit ctx: Context): CodegenOutpu
     {
         let c = type.canon;
 
-        if (type.is_primitive && c.len < 4/*TODO FIX*/)
+        if (type.is_primitive && (c.len < 4 || c.len == 4 && c[1, 4] == "128"))
             return primAnnotBase(c);
 
         if (type.type_isZST)    return annotateZST();
