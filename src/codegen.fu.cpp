@@ -21,9 +21,12 @@ struct s_Module;
 struct s_ModuleInputs;
 struct s_LexerOutput;
 struct s_Token;
-enum s_kind: fu::i8;
+enum s_kind: int;
 struct s_ParserOutput;
 struct s_Node;
+typedef int s_DeclAsserts;
+typedef int s_ParseSyntax;
+typedef unsigned s_Flags;
 struct s_TokenIdx;
 struct s_ModuleOutputs;
 struct s_Struct;
@@ -39,6 +42,7 @@ struct s_Region;
 struct s_RWRanges;
 struct s_Scope;
 struct s_Overload;
+typedef uint16_t s_SolverStatus;
 struct s_Extended;
 struct s_Argument;
 struct s_BitSet;
@@ -62,7 +66,7 @@ struct s_TEMPVAR;
 [[noreturn]] fu::never FAIL_7jhBtwUh(fu::view<char>, const s_TokenIdx&, const s_Context&);
 void HERE_Qf4G9n8T(const s_TokenIdx&, s_TokenIdx&);
 bool type_isZST_4X1iL0ll(const s_Type&);
-static bool isFieldChain_iSy5UEsM(const s_SolvedNode&, const s_Module&, const s_Context&);
+static bool isFieldChain_qtapGc96(const s_SolvedNode&, const s_Module&, const s_Context&);
 bool is_primitive_CbRwLCm2(const s_Type&);
 s_Type tryClear_sliceable_4X1iL0ll(const s_Type&);
 bool TODO_FIX_isArray_4X1iL0ll(const s_Type&);
@@ -71,81 +75,81 @@ bool operator==(const s_Type&, const s_Type&);
 bool is_mutref_4X1iL0ll(const s_Type&, const s_TokenIdx&, const s_Context&);
 const s_Struct& lookupStruct_VQxm8oyj(const s_Type&, const s_Module&, const s_Context&);
 s_StructCanon parseStructCanon_9u6Vl9O2(fu::view<char>);
-bool add_once_LAyLeT19(s_BitSet&, int);
-static bool add_once_xfiUNE08(fu_VEC<s_BitSet>&, int, int);
+bool add_once_sDUBjUzV(s_BitSet&, int);
+static bool add_once_V2s31CdL(fu_VEC<s_BitSet>&, int, int);
 s_Target target_wh65lsPu(const s_ScopeItem&);
-static fu_STR declarePrimitive_waiODoSM(fu::view<char>, const s_Struct&, s_Outputs&, s_TokenIdx&, const s_Context&, const s_Module&, s_cg_CurrentFn&);
+static fu_STR declarePrimitive_YK9WM4zZ(fu::view<char>, const s_Struct&, s_Outputs&, s_TokenIdx&, const s_Context&, const s_Module&, s_cg_CurrentFn&);
 fu_STR ID_LX3QLY5k(const fu_STR&);
 bool is_rx_copy_4X1iL0ll(const s_Type&);
-static fu_STR declareStruct_AhNS7LF5(fu::view<char>, const s_Struct&, s_Outputs&, s_TokenIdx&, const s_Context&, const s_Module&, s_cg_CurrentFn&);
-static fu_STR typeAnnotBase_x4OjwAeo(const s_Type&, int, s_Outputs&, s_TokenIdx&, const s_Context&, const s_Module&, s_cg_CurrentFn&);
+static fu_STR declareStruct_v2fxN2ON(fu::view<char>, const s_Struct&, s_Outputs&, s_TokenIdx&, const s_Context&, const s_Module&, s_cg_CurrentFn&);
+static fu_STR typeAnnotBase_DOcOWqci(const s_Type&, int, s_Outputs&, s_TokenIdx&, const s_Context&, const s_Module&, s_cg_CurrentFn&);
 bool is_trivial_K61azC5I(const s_Type&, const s_Module&, const s_Context&);
-static fu_STR typeAnnot_qLTezMaR(const s_Type&, int, s_Outputs&, s_TokenIdx&, const s_Context&, const s_Module&, s_cg_CurrentFn&);
-static fu_STR cgClone_D5vq7g7V(const s_Type&, fu::view<char>, s_Outputs&, s_TokenIdx&, const s_Context&, const s_Module&, s_cg_CurrentFn&);
-static fu_STR cgMove_25tfwTu6(const s_Type&, fu::view<char>, const s_Module&, const s_Context&, s_Outputs&, s_TokenIdx&, s_cg_CurrentFn&);
+static fu_STR typeAnnot_UXr2rbel(const s_Type&, int, s_Outputs&, s_TokenIdx&, const s_Context&, const s_Module&, s_cg_CurrentFn&);
+static fu_STR cgClone_qAnkxdud(const s_Type&, fu::view<char>, s_Outputs&, s_TokenIdx&, const s_Context&, const s_Module&, s_cg_CurrentFn&);
+static fu_STR cgMove_qUk1PGjF(const s_Type&, fu::view<char>, const s_Module&, const s_Context&, s_Outputs&, s_TokenIdx&, s_cg_CurrentFn&);
 s_NativeHacks NativeHacks_1FBeX0Ih(fu::view<char>);
 bool is_bitfield_CbRwLCm2(const s_Type&);
 bool is_integral_CbRwLCm2(const s_Type&);
 bool is_unsigned_CbRwLCm2(const s_Type&);
-static fu_STR emitBuiltin_vOmjqcK5(fu::view<char>, fu::view<fu_STR>, const s_SolvedNode&, s_Outputs&, s_TokenIdx&, const s_Context&, const s_Module&, s_cg_CurrentFn&);
+static fu_STR emitBuiltin_Hjx3y0Ls(fu::view<char>, fu::view<fu_STR>, const s_SolvedNode&, s_Outputs&, s_TokenIdx&, const s_Context&, const s_Module&, s_cg_CurrentFn&);
 bool hasIdentifierChars_ZCtM7908(fu::view<char>);
 s_Type clear_refs_4X1iL0ll(s_Type&&);
-static fu_STR cgDefault_LHegyzjJ(const s_Type&, s_TokenIdx&, const s_Context&, s_Outputs&, const s_Module&, s_cg_CurrentFn&);
-bool isStruct_ZYIX8afu(const s_Type&);
-static bool add_once_kvt8keVT(fu_VEC<s_BitSet>&, const s_Target&);
+static fu_STR cgDefault_f8sR3SJX(const s_Type&, s_TokenIdx&, const s_Context&, s_Outputs&, const s_Module&, s_cg_CurrentFn&);
+const s_Struct& tryLookupStructOrUserPrimitive_K61azC5I(const s_Type&, const s_Module&, const s_Context&);
+[[noreturn]] fu::never BUG_XksxYQ3i(fu_STR&&, const s_TokenIdx&, const s_Context&);
+static bool add_once_j0TFJFyI(fu_VEC<s_BitSet>&, const s_Target&);
 bool is_never_4X1iL0ll(const s_Type&);
 bool hasBinary_LX3QLY5k(fu::view<char>);
 bool hasPostfix_LX3QLY5k(fu::view<char>);
 bool hasUnary_LX3QLY5k(fu::view<char>);
-static fu_STR cgFnPrototype_3D2f8k3a(const s_Target&, bool, s_cg_CurrentFn&, const s_Module&, const s_Context&, s_TokenIdx&, s_Outputs&);
-static void ensureFwdDecl_JwB4P7aQ(const s_Target&, const s_Module&, const s_Context&, s_Outputs&, s_cg_CurrentFn&, s_TokenIdx&);
+static fu_STR cgFnPrototype_CWtXR61K(const s_Target&, bool, s_cg_CurrentFn&, const s_Module&, const s_Context&, s_TokenIdx&, s_Outputs&);
+static void ensureFwdDecl_RoHiBEHy(const s_Target&, const s_Module&, const s_Context&, s_Outputs&, s_cg_CurrentFn&, s_TokenIdx&);
 s_ClosureID tryParseClosureID_1FBeX0Ih(fu::view<char>);
-[[noreturn]] fu::never BUG_XksxYQ3i(fu_STR&&, const s_TokenIdx&, const s_Context&);
 bool type_isSliceable_4X1iL0ll(const s_Type&);
-static fu_STR binding_NCEyeoyV(const s_Target&, bool, const s_Module&, const s_Context&, s_TokenIdx&, s_Outputs&, s_cg_CurrentFn&);
-static fu_STR binding_g7LrrtOK(const s_Argument&, bool, s_cg_CurrentFn&, const s_Module&, const s_Context&, s_TokenIdx&, s_Outputs&);
-static fu_STR cgFnSignature_At8Dm0Ju(const s_SolvedNode&, const s_Module&, const s_Context&, s_TokenIdx&, s_Outputs&, s_cg_CurrentFn&);
-static bool exprOK_mOHIEP77(fu::view<s_SolvedNode>);
-static bool labelUsed_Ek083Hkf(fu::view<s_SolvedNode>, const s_Helpers&);
+static fu_STR binding_Kd2aQcYt(const s_Target&, bool, const s_Module&, const s_Context&, s_TokenIdx&, s_Outputs&, s_cg_CurrentFn&);
+static fu_STR binding_aUb86xU7(const s_Argument&, bool, s_cg_CurrentFn&, const s_Module&, const s_Context&, s_TokenIdx&, s_Outputs&);
+static fu_STR cgFnSignature_XKij8Asq(const s_SolvedNode&, const s_Module&, const s_Context&, s_TokenIdx&, s_Outputs&, s_cg_CurrentFn&);
+static bool exprOK_TtVbVKQY(fu::view<s_SolvedNode>);
 bool is_void_4X1iL0ll(const s_Type&);
-static fu_VEC<fu_STR> cgNodes_VVNp17yg(fu::view<s_SolvedNode>, int, const fu_STR&, fu::view<char>, s_cg_CurrentFn&, s_TokenIdx&, const s_Context&, const s_Module&, s_Outputs&);
-static fu_STR cgStatements_TuNaxyPa(fu::view<s_SolvedNode>, int&, const fu_STR&, s_cg_CurrentFn&, s_TokenIdx&, const s_Context&, const s_Module&, s_Outputs&);
-static fu_STR cgBlock_HHL3VAk1(fu::view<s_SolvedNode>, bool, bool, const s_Helpers&, const s_Type&, s_cg_CurrentFn&, s_Outputs&, s_TokenIdx&, const s_Context&, const s_Module&);
-static fu_STR cgBlock_3hPEhqj0(const s_SolvedNode&, int, fu::view<char>, s_cg_CurrentFn&, s_TokenIdx&, const s_Context&, const s_Module&, s_Outputs&);
+static fu_VEC<fu_STR> cgNodes_S3yy7EYP(fu::view<s_SolvedNode>, int, const fu_STR&, fu::view<char>, s_cg_CurrentFn&, s_TokenIdx&, const s_Context&, const s_Module&, s_Outputs&);
+static fu_STR cgStatements_4kwE5jRG(fu::view<s_SolvedNode>, int&, const fu_STR&, s_cg_CurrentFn&, s_TokenIdx&, const s_Context&, const s_Module&, s_Outputs&);
+static fu_STR cgBlock_ZSrxdkgb(fu::view<s_SolvedNode>, bool, bool, const s_Helpers&, const s_Type&, s_cg_CurrentFn&, s_Outputs&, s_TokenIdx&, const s_Context&, const s_Module&);
+static fu_STR cgBlock_O5sy7iCr(const s_SolvedNode&, int, fu::view<char>, s_cg_CurrentFn&, s_TokenIdx&, const s_Context&, const s_Module&, s_Outputs&);
 bool type_isAddrOfFn_4X1iL0ll(const s_Type&);
 s_Mi parseMi_mPp6Ulzh(int&, fu::view<char>);
-static fu_STR cgEmpty_NzALUwZC(const s_SolvedNode&, int, const s_Module&, const s_Context&, s_TokenIdx&, s_Outputs&, s_cg_CurrentFn&);
-static fu_STR cgFn_dJMiPFW5(const s_SolvedNode&, int, s_Outputs&, const s_Module&, const s_Context&, s_TokenIdx&, s_cg_CurrentFn&);
-static void ensureFnDef_bzVy7AAK(const s_Target&, const s_Module&, const s_Context&, s_TokenIdx&, s_Outputs&, s_cg_CurrentFn&);
-static void ensureFnUsable_0j7q7xbx(const s_Target&, const s_Module&, const s_Context&, s_Outputs&, s_cg_CurrentFn&, s_TokenIdx&);
+static fu_STR cgEmpty_bzNYcHre(const s_SolvedNode&, int, const s_Module&, const s_Context&, s_TokenIdx&, s_Outputs&, s_cg_CurrentFn&);
+static fu_STR cgFn_dWe6ao2S(const s_SolvedNode&, int, s_Outputs&, const s_Module&, const s_Context&, s_TokenIdx&, s_cg_CurrentFn&);
+static void ensureFnDef_dxDMG7ZZ(const s_Target&, const s_Module&, const s_Context&, s_TokenIdx&, s_Outputs&, s_cg_CurrentFn&);
+static void ensureFnUsable_a7Uwzkw6(const s_Target&, const s_Module&, const s_Context&, s_Outputs&, s_cg_CurrentFn&, s_TokenIdx&);
 bool is_floating_pt_CbRwLCm2(const s_Type&);
-inline static bool isIntegerConstant_MhqsaoGh(const s_SolvedNode&, const s_Module&, const s_Context&);
-static fu_STR binding_AB3VN19N(const s_Target&, const s_SolvedNode&, bool, const s_Module&, const s_Context&, s_TokenIdx&, s_Outputs&, s_cg_CurrentFn&);
-static fu_STR binding_jAQ8qxbu(const s_SolvedNode&, bool, const s_Module&, const s_Context&, s_TokenIdx&, s_Outputs&, s_cg_CurrentFn&);
-static fu_STR cgEnumv_gIiTr91C(const s_Type&, fu::view<char>, s_Outputs&, s_TokenIdx&, const s_Context&, const s_Module&, s_cg_CurrentFn&);
-static fu_STR cgCall_YhxSxs3S(const s_SolvedNode&, int, const s_Module&, const s_Context&, s_TokenIdx&, s_cg_CurrentFn&, s_Outputs&);
+inline static bool isIntegerConstant_DRueWSxV(const s_SolvedNode&, const s_Module&, const s_Context&);
+static fu_STR binding_U4RkNL4B(const s_Target&, const s_SolvedNode&, bool, const s_Module&, const s_Context&, s_TokenIdx&, s_Outputs&, s_cg_CurrentFn&);
+static fu_STR binding_LVchz60W(const s_SolvedNode&, bool, const s_Module&, const s_Context&, s_TokenIdx&, s_Outputs&, s_cg_CurrentFn&);
+static fu_STR cgEnumv_lHKwRwP1(const s_Type&, fu::view<char>, s_Outputs&, s_TokenIdx&, const s_Context&, const s_Module&, s_cg_CurrentFn&);
+static fu_STR cgCall_gNEKUGCh(const s_SolvedNode&, int, const s_Module&, const s_Context&, s_TokenIdx&, s_cg_CurrentFn&, s_Outputs&);
 s_Intlit Intlit_IQ08v4Hx(fu::view<char>);
-static fu_STR cgLiteral_OMqKm8yn(const s_SolvedNode&, s_Outputs&, s_TokenIdx&, const s_Context&, const s_Module&, s_cg_CurrentFn&);
+static fu_STR cgLiteral_I1krZny2(const s_SolvedNode&, s_Outputs&, s_TokenIdx&, const s_Context&, const s_Module&, s_cg_CurrentFn&);
 bool is_enum_CbRwLCm2(const s_Type&);
 s_Type clear_sliceable_4X1iL0ll(const s_Type&, const s_TokenIdx&, const s_Context&);
-static fu_STR cgArrayLiteral_o7SOBpzq(const s_SolvedNode&, int, const s_Type&, const s_Module&, const s_Context&, s_TokenIdx&, s_cg_CurrentFn&, s_Outputs&);
-static fu_STR cgDefinit_wy0Oc9Hv(const s_SolvedNode&, int, const s_Type&, const s_Module&, const s_Context&, s_TokenIdx&, s_cg_CurrentFn&, s_Outputs&);
+static fu_STR cgArrayLiteral_LhMZTdKu(const s_SolvedNode&, int, const s_Type&, const s_Module&, const s_Context&, s_TokenIdx&, s_cg_CurrentFn&, s_Outputs&);
+static fu_STR cgDefinit_fSJBcSYy(const s_SolvedNode&, int, const s_Type&, const s_Module&, const s_Context&, s_TokenIdx&, s_cg_CurrentFn&, s_Outputs&);
 bool Region_isArgPosition_L0YJBnz6(const s_Region&);
-static fu_STR cgMoveOrClone_xTo0Jybs(s_kind, const s_Type&, fu::view<char>, const s_Module&, const s_Context&, s_Outputs&, s_TokenIdx&, s_cg_CurrentFn&);
-static fu_STR cgMoveOrClone_jeJ2Ijgc(const s_SolvedNode&, int, const s_Module&, const s_Context&, s_TokenIdx&, s_cg_CurrentFn&, s_Outputs&);
-static fu_STR blockWrap_unlessIf_5jqeW2i2(const s_SolvedNode&, s_TokenIdx&, const s_Context&, const s_Module&, s_cg_CurrentFn&, s_Outputs&);
-static fu_STR cgIf_GDAfpI97(const s_SolvedNode&, int, s_TokenIdx&, const s_Context&, const s_Module&, s_cg_CurrentFn&, s_Outputs&);
-static void cgAndOr_concat_YJQCE5p5(fu_STR&, fu::view<char>, fu::view<s_SolvedNode>, bool, s_TokenIdx&, const s_Context&, const s_Module&, s_cg_CurrentFn&, s_Outputs&);
+static fu_STR cgMoveOrClone_i8T3JOb9(s_kind, const s_Type&, fu::view<char>, const s_Module&, const s_Context&, s_Outputs&, s_TokenIdx&, s_cg_CurrentFn&);
+static fu_STR cgMoveOrClone_AJC1FJWz(const s_SolvedNode&, int, const s_Module&, const s_Context&, s_TokenIdx&, s_cg_CurrentFn&, s_Outputs&);
+static fu_STR blockWrap_unlessIf_uWrkm0QA(const s_SolvedNode&, s_TokenIdx&, const s_Context&, const s_Module&, s_cg_CurrentFn&, s_Outputs&);
+static fu_STR cgIf_rTvT1ZJj(const s_SolvedNode&, int, s_TokenIdx&, const s_Context&, const s_Module&, s_cg_CurrentFn&, s_Outputs&);
+static void cgAndOr_concat_41bQeVin(fu_STR&, fu::view<char>, fu::view<s_SolvedNode>, bool, s_TokenIdx&, const s_Context&, const s_Module&, s_cg_CurrentFn&, s_Outputs&);
 bool isAssignable_npqyupaA(const s_Type&, const s_Type&, bool, bool);
-static fu_STR via_WannpOoo(s_TEMPVAR&, const s_Type&, fu::view<char>, s_Outputs&, s_TokenIdx&, const s_Context&, const s_Module&, s_cg_CurrentFn&);
-static fu_STR via_JM0FjuZj(s_TEMPVAR&, const s_Type&, const s_SolvedNode&, const s_Module&, const s_Context&, s_TokenIdx&, s_cg_CurrentFn&, s_Outputs&);
-static fu_STR cgOr_sN3pzDys(const s_SolvedNode&, int, s_TokenIdx&, const s_Context&, const s_Module&, s_cg_CurrentFn&, s_Outputs&);
-static fu_STR cgAnd_paGQfFcd(fu::view<s_SolvedNode>, const s_Type&, int, fu::view<char>, s_TokenIdx&, const s_Context&, const s_Module&, s_cg_CurrentFn&, s_Outputs&);
-static fu_STR cgJump_smwBcYMI(const s_SolvedNode&, s_cg_CurrentFn&, s_TokenIdx&, const s_Context&, const s_Module&, s_Outputs&);
-static fu_STR cgLoop_HamjtPBW(const s_SolvedNode&, s_cg_CurrentFn&, s_TokenIdx&, const s_Context&, const s_Module&, s_Outputs&);
-static fu_STR cgDefer_XKij8Asq(const s_SolvedNode&, s_Outputs&, s_TokenIdx&, const s_Context&, const s_Module&, s_cg_CurrentFn&);
-static fu_STR cgCompilerPragma_DrUENYfZ(const s_SolvedNode&, s_TokenIdx&, const s_Context&, const s_Module&, s_cg_CurrentFn&, s_Outputs&);
-static fu_STR cgNode_4Ur0xXU7(const s_SolvedNode&, fu::view<char>, int, const s_Type&, s_TokenIdx&, const s_Context&, const s_Module&, s_cg_CurrentFn&, s_Outputs&);
+static fu_STR via_DkWCVVLW(s_TEMPVAR&, const s_Type&, fu::view<char>, s_Outputs&, s_TokenIdx&, const s_Context&, const s_Module&, s_cg_CurrentFn&);
+static fu_STR via_vdtQQIcx(s_TEMPVAR&, const s_Type&, const s_SolvedNode&, const s_Module&, const s_Context&, s_TokenIdx&, s_cg_CurrentFn&, s_Outputs&);
+static fu_STR cgOr_NzALUwZC(const s_SolvedNode&, int, s_TokenIdx&, const s_Context&, const s_Module&, s_cg_CurrentFn&, s_Outputs&);
+static fu_STR cgAnd_gel1uumA(fu::view<s_SolvedNode>, const s_Type&, int, fu::view<char>, s_TokenIdx&, const s_Context&, const s_Module&, s_cg_CurrentFn&, s_Outputs&);
+bool operator==(const s_Helpers&, const s_Helpers&);
+static fu_STR cgJump_qgRdOV74(const s_SolvedNode&, s_cg_CurrentFn&, s_TokenIdx&, const s_Context&, const s_Module&, s_Outputs&);
+static fu_STR cgLoop_XNYu9eru(const s_SolvedNode&, s_cg_CurrentFn&, s_TokenIdx&, const s_Context&, const s_Module&, s_Outputs&);
+static fu_STR cgDefer_42VvFQ2J(const s_SolvedNode&, s_Outputs&, s_TokenIdx&, const s_Context&, const s_Module&, s_cg_CurrentFn&);
+static fu_STR cgCompilerPragma_CAs32NE9(const s_SolvedNode&, s_TokenIdx&, const s_Context&, const s_Module&, s_cg_CurrentFn&, s_Outputs&);
+static fu_STR cgNode_dsqfXxyo(const s_SolvedNode&, fu::view<char>, int, const s_Type&, s_TokenIdx&, const s_Context&, const s_Module&, s_cg_CurrentFn&, s_Outputs&);
 fu_STR dirname_KqRBcvmh(const fu_STR&);
 fu_STR join_Lfq50XKd(fu::view<char>, const fu_STR&);
 fu_STR read_ny0gyQ9a(fu_STR&&);
@@ -174,7 +178,7 @@ struct s_CodegenOutput
 
                                 #ifndef DEF_s_kind
                                 #define DEF_s_kind
-enum s_kind: fu::i8
+enum s_kind: int
 {
     s_kind_sof = 1,
     s_kind_id = 2,
@@ -212,32 +216,33 @@ enum s_kind: fu::i8
     s_kind_pragma = 34,
     s_kind_void = 35,
     s_kind_struct = 36,
-    s_kind_primitive = 37,
-    s_kind_flags = 38,
-    s_kind_enum = 39,
-    s_kind_members = 40,
-    s_kind_fn = 41,
-    s_kind_fnbranch = 42,
-    s_kind_pattern = 43,
-    s_kind_typeunion = 44,
-    s_kind_typetag = 45,
-    s_kind_jump = 46,
-    s_kind_empty = 47,
-    s_kind_letdef = 48,
-    s_kind___relaxed = 49,
-    s_kind___convert = 50,
-    s_kind_fndef = 51,
-    s_kind_copy = 52,
-    s_kind_move = 53,
-    s_kind___far_jump = 54,
-    s_kind___no_kind_yet = 55,
-    s_kind_type = 56,
-    s_kind_var = 57,
-    s_kind_field = 58,
-    s_kind_enumv = 59,
-    s_kind_template = 60,
-    s_kind___native = 61,
-    s_kind_inline = 62,
+    s_kind_union = 37,
+    s_kind_primitive = 38,
+    s_kind_flags = 39,
+    s_kind_enum = 40,
+    s_kind_members = 41,
+    s_kind_fn = 42,
+    s_kind_fnbranch = 43,
+    s_kind_pattern = 44,
+    s_kind_typeunion = 45,
+    s_kind_typetag = 46,
+    s_kind_jump = 47,
+    s_kind_empty = 48,
+    s_kind_letdef = 49,
+    s_kind___relaxed = 50,
+    s_kind___convert = 51,
+    s_kind_fndef = 52,
+    s_kind_copy = 53,
+    s_kind_move = 54,
+    s_kind___far_jump = 55,
+    s_kind___no_kind_yet = 56,
+    s_kind_type = 57,
+    s_kind_var = 58,
+    s_kind_field = 59,
+    s_kind_enumv = 60,
+    s_kind_template = 61,
+    s_kind___native = 62,
+    s_kind_inline = 63,
 };
                                 #endif
 
@@ -274,6 +279,58 @@ struct s_LexerOutput
 };
                                 #endif
 
+                                #ifndef DEF_s_DeclAsserts
+                                #define DEF_s_DeclAsserts
+inline constexpr s_DeclAsserts s_DeclAsserts_A_NOCOPY = 1;
+inline constexpr s_DeclAsserts s_DeclAsserts_A_NOVEC = 2;
+inline constexpr s_DeclAsserts s_DeclAsserts_A_NOVEC_MUT = 4;
+inline constexpr s_DeclAsserts s_DeclAsserts_A_PURE = 8;
+inline constexpr s_DeclAsserts s_DeclAsserts_A_PURE_CTX = 16;
+inline constexpr s_DeclAsserts s_DeclAsserts_A_NOFLOW = 32;
+                                #endif
+
+                                #ifndef DEF_s_ParseSyntax
+                                #define DEF_s_ParseSyntax
+inline constexpr s_ParseSyntax s_ParseSyntax_PS_ID = 1;
+inline constexpr s_ParseSyntax s_ParseSyntax_PS_PARENS = 2;
+inline constexpr s_ParseSyntax s_ParseSyntax_PS_SEMI = 4;
+inline constexpr s_ParseSyntax s_ParseSyntax_PS_DISCARD = 8;
+                                #endif
+
+                                #ifndef DEF_s_Flags
+                                #define DEF_s_Flags
+inline constexpr s_Flags s_Flags_F_METHOD = 1;
+inline constexpr s_Flags s_Flags_F_INFIX = 2;
+inline constexpr s_Flags s_Flags_F_PREFIX = 4;
+inline constexpr s_Flags s_Flags_F_POSTFIX = 8;
+inline constexpr s_Flags s_Flags_F_ACCESS = 16;
+inline constexpr s_Flags s_Flags_F_COMPOUND_ID = 32;
+inline constexpr s_Flags s_Flags_F_WRITTEN_TO = 64;
+inline constexpr s_Flags s_Flags_F_LAX = 128;
+inline constexpr s_Flags s_Flags_F_ARG = 256;
+inline constexpr s_Flags s_Flags_F_OPERATOR = 512;
+inline constexpr s_Flags s_Flags_F_MOVED_FROM = 1024;
+inline constexpr s_Flags s_Flags_F_CONVERSION = 2048;
+inline constexpr s_Flags s_Flags_F_OPT_ARG = 4096;
+inline constexpr s_Flags s_Flags_F_MUT = 8192;
+inline constexpr s_Flags s_Flags_F_REF = 16384;
+inline constexpr s_Flags s_Flags_F_IMPLICIT = 32768;
+inline constexpr s_Flags s_Flags_F_USING = 65536;
+inline constexpr s_Flags s_Flags_F_MUSTNAME = 131072;
+inline constexpr s_Flags s_Flags_F_SHADOW = 262144;
+inline constexpr s_Flags s_Flags_F_PUB = 524288;
+inline constexpr s_Flags s_Flags_F_EXTERN = 1048576;
+inline constexpr s_Flags s_Flags_F_HOTSWAP = 2097152;
+inline constexpr s_Flags s_Flags_F_PREDICATE = 4194304;
+inline constexpr s_Flags s_Flags_F_NAMED_ARGS = 8388608;
+inline constexpr s_Flags s_Flags_F_OOE_RTL = 16777216;
+inline constexpr s_Flags s_Flags_F_REST_ARG = 33554432;
+inline constexpr s_Flags s_Flags_F_RELAXABLE_REF = 67108864;
+inline constexpr s_Flags s_Flags_F_TEMPLATE = 134217728;
+inline constexpr s_Flags s_Flags_F_INLINE = 268435456;
+inline constexpr s_Flags s_Flags_F_LAMBDA = 536870912;
+                                #endif
+
                                 #ifndef DEF_s_TokenIdx
                                 #define DEF_s_TokenIdx
 struct s_TokenIdx
@@ -295,7 +352,9 @@ struct s_TokenIdx
 struct s_Node
 {
     s_kind kind;
-    int flags;
+    s_DeclAsserts asserts;
+    s_ParseSyntax syntax;
+    s_Flags flags;
     fu_STR value;
     fu_VEC<s_Node> items;
     s_TokenIdx token;
@@ -510,7 +569,7 @@ struct s_SolvedNode
 {
     s_kind kind;
     s_Helpers helpers;
-    int flags;
+    s_Flags flags;
     fu_STR value;
     fu_VEC<s_SolvedNode> items;
     s_TokenIdx token;
@@ -530,13 +589,26 @@ struct s_SolvedNode
 };
                                 #endif
 
+                                #ifndef DEF_s_SolverStatus
+                                #define DEF_s_SolverStatus
+inline constexpr s_SolverStatus s_SolverStatus_SS_LAZY = 1;
+inline constexpr s_SolverStatus s_SolverStatus_SS_DID_START = 2;
+inline constexpr s_SolverStatus s_SolverStatus_SS_DIRTY = 4;
+inline constexpr s_SolverStatus s_SolverStatus_SS_FINALIZED = 8;
+inline constexpr s_SolverStatus s_SolverStatus_SS_UPDATED = 16;
+inline constexpr s_SolverStatus s_SolverStatus_SS_TYPE_RECUR = 32;
+inline constexpr s_SolverStatus s_SolverStatus_SS_FN_RECUR = 64;
+inline constexpr s_SolverStatus s_SolverStatus_SS_HOIST = 128;
+inline constexpr s_SolverStatus s_SolverStatus_SS_UNUSED = 256;
+                                #endif
+
                                 #ifndef DEF_s_Overload
                                 #define DEF_s_Overload
 struct s_Overload
 {
     s_kind kind;
-    int flags;
-    unsigned status;
+    s_Flags flags;
+    s_SolverStatus status;
     fu_STR name;
     fu_STR sighash;
     s_Type type;
@@ -572,7 +644,7 @@ struct s_Argument
     fu_STR autocall;
     s_Type type;
     s_SolvedNode dEfault;
-    int flags;
+    s_Flags flags;
     int local;
     s_BitSet soft_risk;
     s_BitSet hard_risk;
@@ -1200,7 +1272,7 @@ inline constexpr int MAIN_argv = (1 << 1);
 inline constexpr int MAIN_zst = (1 << 2);
                                 #endif
 
-[[noreturn]] static fu::never fail_vAc0TkcF(const fu_STR& reason, const s_TokenIdx& _here, const s_Context& ctx)
+[[noreturn]] static fu::never fail_yKW1jZQa(const fu_STR& reason, const s_TokenIdx& _here, const s_Context& ctx)
 {
     FAIL_7jhBtwUh(("THIS IS A COMPILER BUG.\n\n\tCODEGEN FAIL:\n\n\t"_fu + (reason ? fu_STR(reason) : "Assertion failed."_fu)), _here, ctx);
 }
@@ -1213,7 +1285,7 @@ inline const s_Extended& unless_oob_zhK7J6yd(fu::view<s_Extended> a, const int i
 }
                                 #endif
 
-static const s_Extended& EXT_CWThmWnJ(const s_Target& target, const s_Module& module, const s_Context& ctx)
+static const s_Extended& EXT_2tOGKtmg(const s_Target& target, const s_Module& module, const s_Context& ctx)
 {
     if (target.modid == module.modid)
         return unless_oob_zhK7J6yd(module.out.solve.scope.extended, target.index);
@@ -1224,17 +1296,17 @@ static const s_Extended& EXT_CWThmWnJ(const s_Target& target, const s_Module& mo
     return unless_oob_zhK7J6yd(ctx.modules[target.modid].out.solve.scope.extended, target.index);
 }
 
-static bool isLocal_BbPJiRBG(const s_Target& target)
+static bool isLocal_YQmB0dcG(const s_Target& target)
 {
     return target.modid < 0;
 }
 
-static const s_Overload& GET_e4d90tdy(const s_Target& target, const s_Module& module, const s_Context& ctx)
+static const s_Overload& GET_R9VZCLcJ(const s_Target& target, const s_Module& module, const s_Context& ctx)
 {
     if (!(target.index > 0))
         fu_ASSERT();
 
-    if (isLocal_BbPJiRBG(target))
+    if (isLocal_YQmB0dcG(target))
         return module.out.solve.scope.extended[-target.modid].locals[(target.index - 1)];
 
     const s_Module& m = ((target.modid == module.modid) ? module : ctx.modules[target.modid]);
@@ -1257,9 +1329,9 @@ inline const s_SolvedNode& only_O0vxkflG(fu::view<s_SolvedNode> s)
 }
                                 #endif
 
-                                #ifndef DEF_str_x2XZ9C2m
-                                #define DEF_str_x2XZ9C2m
-inline fu_STR str_x2XZ9C2m(const s_kind n)
+                                #ifndef DEF_str_omkBT2iF
+                                #define DEF_str_omkBT2iF
+inline fu_STR str_omkBT2iF(const s_kind n)
 {
 
     {
@@ -1371,6 +1443,9 @@ inline fu_STR str_x2XZ9C2m(const s_kind n)
         if (n == s_kind_struct)
             return "struct"_fu;
 
+        if (n == s_kind_union)
+            return "union"_fu;
+
         if (n == s_kind_primitive)
             return "primitive"_fu;
 
@@ -1454,14 +1529,14 @@ inline fu_STR str_x2XZ9C2m(const s_kind n)
 }
                                 #endif
 
-static bool isFieldChain_iSy5UEsM(const s_SolvedNode& node, const s_Module& module, const s_Context& ctx)
+static bool isFieldChain_qtapGc96(const s_SolvedNode& node, const s_Module& module, const s_Context& ctx)
 {
     if (node.kind != s_kind_call)
         return false;
 
-    const s_Overload& t = GET_e4d90tdy(node.target, module, ctx);
+    const s_Overload& t = GET_R9VZCLcJ(node.target, module, ctx);
     if (t.kind == s_kind_field)
-        return isFieldChain_iSy5UEsM(only_O0vxkflG(node.items), module, ctx);
+        return isFieldChain_qtapGc96(only_O0vxkflG(node.items), module, ctx);
 
     if (t.kind == s_kind_var)
         return true;
@@ -1522,12 +1597,12 @@ inline bool add_wAuMmv6B(fu_VEC<fu_STR>& keys, const fu_STR& item)
 }
                                 #endif
 
-static void include_OWB5Ob07(const fu_STR& lib, s_Outputs& outputs)
+static void include_mXeF2edC(const fu_STR& lib, s_Outputs& outputs)
 {
     add_wAuMmv6B(outputs._libs, lib);
 }
 
-static fu_STR primAnnotBase_k2rX0sor(fu::view<char> c, s_Outputs& outputs, const s_TokenIdx& _here, const s_Context& ctx)
+static fu_STR primAnnotBase_QXTZigIN(fu::view<char> c, s_Outputs& outputs, const s_TokenIdx& _here, const s_Context& ctx)
 {
     if (c == "i32"_fu)
         return "int"_fu;
@@ -1552,10 +1627,10 @@ static fu_STR primAnnotBase_k2rX0sor(fu::view<char> c, s_Outputs& outputs, const
 
     if ((c == "i8"_fu) || (c == "u8"_fu))
     {
-        include_OWB5Ob07("<fu/int.h>"_fu, outputs);
+        include_mXeF2edC("<fu/int.h>"_fu, outputs);
         return "fu::"_fu + c;
     };
-    include_OWB5Ob07("<cstdint>"_fu, outputs);
+    include_mXeF2edC("<cstdint>"_fu, outputs);
     if (c == "i64"_fu)
         return "int64_t"_fu;
 
@@ -1568,17 +1643,17 @@ static fu_STR primAnnotBase_k2rX0sor(fu::view<char> c, s_Outputs& outputs, const
     if (c == "u64"_fu)
         return "uint64_t"_fu;
 
-    fail_vAc0TkcF((("Unknown primitive: `"_fu + c) + "`."_fu), _here, ctx);
+    fail_yKW1jZQa((("Unknown primitive: `"_fu + c) + "`."_fu), _here, ctx);
 }
 
-static fu_STR annotateZST_wiVUtkCT()
+static fu_STR annotateZST_5AAdxVnS()
 {
     return "void"_fu;
 }
 
-static fu_STR annotateNever_L2rU3UsB(s_Outputs& outputs)
+static fu_STR annotateNever_PEO4vSJ3(s_Outputs& outputs)
 {
-    include_OWB5Ob07("<fu/never.h>"_fu, outputs);
+    include_mXeF2edC("<fu/never.h>"_fu, outputs);
     return "fu::never"_fu;
 }
 
@@ -1587,15 +1662,15 @@ static fu_STR annotateNever_L2rU3UsB(s_Outputs& outputs)
 extern const s_Type t_byte;
                                 #endif
 
-static fu_STR annotateString_LkR5I5c0(s_Outputs& outputs)
+static fu_STR annotateString_0sgif0a7(s_Outputs& outputs)
 {
-    include_OWB5Ob07("<fu/str.h>"_fu, outputs);
+    include_mXeF2edC("<fu/str.h>"_fu, outputs);
     return "fu_STR"_fu;
 }
 
-                                #ifndef DEF_grow_if_oob_jCx4QdCp
-                                #define DEF_grow_if_oob_jCx4QdCp
-inline s_BitSet& grow_if_oob_jCx4QdCp(fu_VEC<s_BitSet>& a, const int i)
+                                #ifndef DEF_grow_if_oob_rEqVG9az
+                                #define DEF_grow_if_oob_rEqVG9az
+inline s_BitSet& grow_if_oob_rEqVG9az(fu_VEC<s_BitSet>& a, const int i)
 {
     if ((a.size() <= i))
         a.grow((i + 1));
@@ -1604,40 +1679,57 @@ inline s_BitSet& grow_if_oob_jCx4QdCp(fu_VEC<s_BitSet>& a, const int i)
 }
                                 #endif
 
-static bool add_once_xfiUNE08(fu_VEC<s_BitSet>& bs, const int i, const int j)
+static bool add_once_V2s31CdL(fu_VEC<s_BitSet>& bs, const int i, const int j)
 {
-    return add_once_LAyLeT19(grow_if_oob_jCx4QdCp(bs, i), j);
+    return add_once_sDUBjUzV(grow_if_oob_rEqVG9az(bs, i), j);
 }
 
-                                #ifndef DEF_each_hpu7QOZS
-                                #define DEF_each_hpu7QOZS
-inline void each_hpu7QOZS(fu::view<s_ScopeItem> a, fu_STR& def, fu::view<char> id, const s_Module& module, const s_Context& ctx, s_TokenIdx& _here, s_cg_CurrentFn& _current_fn, s_Outputs& outputs)
+                                #ifndef DEF_each_0qUW3teX
+                                #define DEF_each_0qUW3teX
+inline void each_0qUW3teX(fu::view<s_ScopeItem> a, fu_STR& def, fu::view<char> id, const s_Module& module, const s_Context& ctx, s_TokenIdx& _here, s_cg_CurrentFn& _current_fn, s_Outputs& outputs)
 {
     for (int i = 0; i < a.size(); i++)
     {
         const s_Target member = target_wh65lsPu(a[i]);
         fu_STR _0 {};
-        def += ((_0 = (((((("\ninline constexpr "_fu + id) + " "_fu) + id) + "_"_fu) + GET_e4d90tdy(member, module, ctx).name) + " = "_fu), (static_cast<fu_STR&&>(_0) + cgNode_4Ur0xXU7(GET_e4d90tdy(member, module, ctx).solved, "declarePrimitive"_fu, 0, (*(const s_Type*)fu::NIL), _here, ctx, module, _current_fn, outputs))) + ";"_fu);
+        def += ((_0 = (((((("\ninline constexpr "_fu + id) + " "_fu) + id) + "_"_fu) + GET_R9VZCLcJ(member, module, ctx).name) + " = "_fu), (static_cast<fu_STR&&>(_0) + cgNode_dsqfXxyo(GET_R9VZCLcJ(member, module, ctx).solved, "declarePrimitive"_fu, 0, (*(const s_Type*)fu::NIL), _here, ctx, module, _current_fn, outputs))) + ";"_fu);
     };
 }
                                 #endif
 
-                                #ifndef DEF_each_tbmSQuHF
-                                #define DEF_each_tbmSQuHF
-inline void each_tbmSQuHF(fu::view<s_ScopeItem> a, fu_STR& def, fu::view<char> id, const s_Module& module, const s_Context& ctx, s_TokenIdx& _here, s_cg_CurrentFn& _current_fn, s_Outputs& outputs)
+                                #ifndef DEF_each_p2PnAGrj
+                                #define DEF_each_p2PnAGrj
+inline void each_p2PnAGrj(fu::view<s_ScopeItem> a, fu_STR& mask, fu::view<char> id, const s_Module& module, const s_Context& ctx)
+{
+    for (int i = 0; i < a.size(); i++)
+    {
+        const s_Target member = target_wh65lsPu(a[i]);
+        if (!mask)
+            mask = (((("\n\ninline constexpr "_fu + id) + " MASK_"_fu) + id) + "\n    = "_fu);
+        else
+            mask += "\n    | "_fu;
+
+        mask += ((id + "_"_fu) + GET_R9VZCLcJ(member, module, ctx).name);
+    };
+}
+                                #endif
+
+                                #ifndef DEF_each_ZJ6GP1Cz
+                                #define DEF_each_ZJ6GP1Cz
+inline void each_ZJ6GP1Cz(fu::view<s_ScopeItem> a, fu_STR& def, fu::view<char> id, const s_Module& module, const s_Context& ctx, s_TokenIdx& _here, s_cg_CurrentFn& _current_fn, s_Outputs& outputs)
 {
     for (int i = 0; i < a.size(); i++)
     {
         const s_Target member = target_wh65lsPu(a[i]);
         fu_STR _0 {};
-        def += ((_0 = (((("\n    "_fu + id) + "_"_fu) + GET_e4d90tdy(member, module, ctx).name) + " = "_fu), (static_cast<fu_STR&&>(_0) + cgNode_4Ur0xXU7(GET_e4d90tdy(member, module, ctx).solved, "declarePrimitive"_fu, 0, (*(const s_Type*)fu::NIL), _here, ctx, module, _current_fn, outputs))) + ","_fu);
+        def += ((_0 = (((("\n    "_fu + id) + "_"_fu) + GET_R9VZCLcJ(member, module, ctx).name) + " = "_fu), (static_cast<fu_STR&&>(_0) + cgNode_dsqfXxyo(GET_R9VZCLcJ(member, module, ctx).solved, "declarePrimitive"_fu, 0, (*(const s_Type*)fu::NIL), _here, ctx, module, _current_fn, outputs))) + ","_fu);
     };
 }
                                 #endif
 
-static fu_STR declarePrimitive_waiODoSM(fu::view<char> id, const s_Struct& s, s_Outputs& outputs, s_TokenIdx& _here, const s_Context& ctx, const s_Module& module, s_cg_CurrentFn& _current_fn)
+static fu_STR declarePrimitive_YK9WM4zZ(fu::view<char> id, const s_Struct& s, s_Outputs& outputs, s_TokenIdx& _here, const s_Context& ctx, const s_Module& module, s_cg_CurrentFn& _current_fn)
 {
-    fu_STR baseprim = primAnnotBase_k2rX0sor(s.base, outputs, _here, ctx);
+    fu_STR baseprim = primAnnotBase_QXTZigIN(s.base, outputs, _here, ctx);
     const fu_VEC<s_ScopeItem>& members = s.items;
     fu_STR def = ((("\n                                #ifndef DEF_"_fu + id) + "\n                                #define DEF_"_fu) + id);
     if ((s.kind != s_kind_enum) || !members)
@@ -1646,51 +1738,60 @@ static fu_STR declarePrimitive_waiODoSM(fu::view<char> id, const s_Struct& s, s_
         if (!members)
             return fu_STR{};
 
-        each_hpu7QOZS(members, def, id, module, ctx, _here, _current_fn, outputs);
+        each_0qUW3teX(members, def, id, module, ctx, _here, _current_fn, outputs);
+        if (s.kind == s_kind_flags)
+        {
+            fu_STR mask {};
+            each_p2PnAGrj(members, mask, id, module, ctx);
+            if (mask)
+            {
+                mask += ";"_fu;
+                def += mask;
+            };
+        };
     }
     else
     {
         fu_STR header = ((("enum "_fu + id) + ": "_fu) + baseprim);
         outputs._tfwd_src += (header + ";\n"_fu);
         def += (("\n"_fu + header) + "\n{"_fu);
-        each_tbmSQuHF(members, def, id, module, ctx, _here, _current_fn, outputs);
+        each_ZJ6GP1Cz(members, def, id, module, ctx, _here, _current_fn, outputs);
         def += "\n};"_fu;
     };
     return def + "\n                                #endif\n"_fu;
 }
 
-static const s_Overload& try_GET_o5MLiU5X(const s_Target& target, const s_Module& module, const s_Context& ctx)
+                                #ifndef DEF_x7E_PEYL9mMAprj
+                                #define DEF_x7E_PEYL9mMAprj
+inline fu_STR x7E(fu::view<char> a, fu::view<char> b)
 {
-    return target ? GET_e4d90tdy(target, module, ctx) : (*(const s_Overload*)fu::NIL);
+    return a + b;
+}
+                                #endif
+
+static const s_Overload& try_GET_LG4MzMpb(const s_Target& target, const s_Module& module, const s_Context& ctx)
+{
+    return target ? GET_R9VZCLcJ(target, module, ctx) : (*(const s_Overload*)fu::NIL);
 }
 
-                                #ifndef DEF_SS_TYPE_RECUR
-                                #define DEF_SS_TYPE_RECUR
-inline constexpr unsigned SS_TYPE_RECUR = (0x1u << 16u);
-                                #endif
-
-                                #ifndef DEF_F_PREDICATE
-                                #define DEF_F_PREDICATE
-extern const int F_PREDICATE;
-                                #endif
-
-static fu_STR declareStruct_AhNS7LF5(fu::view<char> id, const s_Struct& s, s_Outputs& outputs, s_TokenIdx& _here, const s_Context& ctx, const s_Module& module, s_cg_CurrentFn& _current_fn)
+static fu_STR declareStruct_v2fxN2ON(fu::view<char> id, const s_Struct& s, s_Outputs& outputs, s_TokenIdx& _here, const s_Context& ctx, const s_Module& module, s_cg_CurrentFn& _current_fn)
 {
     if (s.base)
-        return declarePrimitive_waiODoSM(id, s, outputs, _here, ctx, module, _current_fn);
+        return declarePrimitive_YK9WM4zZ(id, s, outputs, _here, ctx, module, _current_fn);
 
-    outputs._tfwd_src += (("struct "_fu + id) + ";\n"_fu);
-    const s_Type& t = GET_e4d90tdy(s.target, module, ctx).type;
-    fu_STR def = (((((("\n                                #ifndef DEF_"_fu + id) + "\n                                #define DEF_"_fu) + id) + "\nstruct "_fu) + id) + "\n{"_fu);
+    fu_STR header = (x7E(str_omkBT2iF(s.kind), " "_fu) + id);
+    outputs._tfwd_src += (header + ";\n"_fu);
+    const s_Type& t = GET_R9VZCLcJ(s.target, module, ctx).type;
+    fu_STR def = (((((("\n                                #ifndef DEF_"_fu + id) + "\n                                #define DEF_"_fu) + id) + "\n"_fu) + header) + "\n{"_fu);
     fu_STR indent = "\n    "_fu;
     fu::view<s_ScopeItem> fields = s.items;
     for (int i = 0; i < fields.size(); i++)
     {
-        const s_Overload& field = GET_e4d90tdy(target_wh65lsPu(fields[i]), module, ctx);
+        const s_Overload& field = GET_R9VZCLcJ(target_wh65lsPu(fields[i]), module, ctx);
         if (!(field.kind == s_kind_field))
-            fail_vAc0TkcF(((x7E((("Non-field struct item: "_fu + field.name) + " ("_fu), str_x2XZ9C2m(field.kind)) + ") in "_fu) + t.vtype.canon), _here, ctx);
+            fail_yKW1jZQa(((x7E((("Non-field struct item: "_fu + field.name) + " ("_fu), str_omkBT2iF(field.kind)) + ") in "_fu) + t.vtype.canon), _here, ctx);
 
-        def += ((((indent + typeAnnot_qLTezMaR(field.type, 0, outputs, _here, ctx, module, _current_fn)) + " "_fu) + ID_LX3QLY5k(field.name)) + ";"_fu);
+        def += ((((indent + typeAnnot_UXr2rbel(field.type, 0, outputs, _here, ctx, module, _current_fn)) + " "_fu) + ID_LX3QLY5k(field.name)) + ";"_fu);
     };
     if (!is_rx_copy_4X1iL0ll(t))
     {
@@ -1699,7 +1800,7 @@ static fu_STR declareStruct_AhNS7LF5(fu::view<char> id, const s_Struct& s, s_Out
         def += (((("\n    "_fu + id) + "& operator=(const "_fu) + id) + "&) = delete;"_fu);
         def += (((("\n    "_fu + id) + "& operator=("_fu) + id) + "&&) = default;"_fu);
     }
-    else if (try_GET_o5MLiU5X(s.target, module, ctx).status & SS_TYPE_RECUR)
+    else if (try_GET_LG4MzMpb(s.target, module, ctx).status & s_SolverStatus_SS_TYPE_RECUR)
     {
         def += (((("\n    "_fu + id) + "(const "_fu) + id) + "&) = default;"_fu);
         def += (((("\n    "_fu + id) + "("_fu) + id) + "&&) = default;"_fu);
@@ -1711,7 +1812,7 @@ static fu_STR declareStruct_AhNS7LF5(fu::view<char> id, const s_Struct& s, s_Out
     def += "\n        return false"_fu;
     for (int i_1 = 0; i_1 < fields.size(); i_1++)
     {
-        if (GET_e4d90tdy(target_wh65lsPu(fields[i_1]), module, ctx).flags & F_PREDICATE)
+        if (GET_R9VZCLcJ(target_wh65lsPu(fields[i_1]), module, ctx).flags & s_Flags_F_PREDICATE)
             def += ("\n            || "_fu + ID_LX3QLY5k(fields[i_1].id));
 
     };
@@ -1720,17 +1821,17 @@ static fu_STR declareStruct_AhNS7LF5(fu::view<char> id, const s_Struct& s, s_Out
     return def + "\n};\n                                #endif\n"_fu;
 }
 
-static fu_STR typeAnnotBase_x4OjwAeo(const s_Type& type, const int mode, s_Outputs& outputs, s_TokenIdx& _here, const s_Context& ctx, const s_Module& module, s_cg_CurrentFn& _current_fn)
+static fu_STR typeAnnotBase_DOcOWqci(const s_Type& type, const int mode, s_Outputs& outputs, s_TokenIdx& _here, const s_Context& ctx, const s_Module& module, s_cg_CurrentFn& _current_fn)
 {
     fu::view<char> c = type.vtype.canon;
     if (is_primitive_CbRwLCm2(type) && (c.size() < 4))
-        return primAnnotBase_k2rX0sor(c, outputs, _here, ctx);
+        return primAnnotBase_QXTZigIN(c, outputs, _here, ctx);
 
     if (type_isZST_4X1iL0ll(type))
-        return annotateZST_wiVUtkCT();
+        return annotateZST_5AAdxVnS();
 
     if (c == "never"_fu)
-        return annotateNever_L2rU3UsB(outputs);
+        return annotateNever_PEO4vSJ3(outputs);
 
     s_Type arrayItem = tryClear_sliceable_4X1iL0ll(type);
     if (arrayItem)
@@ -1738,14 +1839,14 @@ static fu_STR typeAnnotBase_x4OjwAeo(const s_Type& type, const int mode, s_Outpu
         if (TODO_FIX_isArray_4X1iL0ll(type) || !is_ref_4X1iL0ll(type))
         {
             if (arrayItem == t_byte)
-                return annotateString_LkR5I5c0(outputs);
+                return annotateString_0sgif0a7(outputs);
 
-            fu_STR itemAnnot = typeAnnot_qLTezMaR(arrayItem, 0, outputs, _here, ctx, module, _current_fn);
-            include_OWB5Ob07("<fu/vec.h>"_fu, outputs);
+            fu_STR itemAnnot = typeAnnot_UXr2rbel(arrayItem, 0, outputs, _here, ctx, module, _current_fn);
+            include_mXeF2edC("<fu/vec.h>"_fu, outputs);
             return ("fu_VEC<"_fu + itemAnnot) + ">"_fu;
         };
-        fu_STR itemAnnot = typeAnnot_qLTezMaR(arrayItem, 0, outputs, _here, ctx, module, _current_fn);
-        include_OWB5Ob07("<fu/view.h>"_fu, outputs);
+        fu_STR itemAnnot = typeAnnot_UXr2rbel(arrayItem, 0, outputs, _here, ctx, module, _current_fn);
+        include_mXeF2edC("<fu/view.h>"_fu, outputs);
         if (is_mutref_4X1iL0ll(type, _here, ctx) || (mode & M_MUTVAR))
             return ("fu::view_mut<"_fu + itemAnnot) + ">"_fu;
         else
@@ -1753,12 +1854,12 @@ static fu_STR typeAnnotBase_x4OjwAeo(const s_Type& type, const int mode, s_Outpu
 
     };
     const s_Struct* _0;
-    const s_Struct& s = (*(_0 = &(lookupStruct_VQxm8oyj(type, module, ctx))) ? *_0 : fail_vAc0TkcF(("TODO: "_fu + type.vtype.canon), _here, ctx));
+    const s_Struct& s = (*(_0 = &(lookupStruct_VQxm8oyj(type, module, ctx))) ? *_0 : fail_yKW1jZQa(("TODO: "_fu + type.vtype.canon), _here, ctx));
     /*MOV*/ fu_STR id = ("s_"_fu + s.name);
     const s_StructCanon scp = parseStructCanon_9u6Vl9O2(type.vtype.canon);
-    if (add_once_xfiUNE08(outputs._tfwd, scp.modid, scp.index))
+    if (add_once_V2s31CdL(outputs._tfwd, scp.modid, scp.index))
     {
-        fu_STR decl = declareStruct_AhNS7LF5(id, s, outputs, _here, ctx, module, _current_fn);
+        fu_STR decl = declareStruct_v2fxN2ON(id, s, outputs, _here, ctx, module, _current_fn);
         outputs._tdef += decl;
     };
     return /*NRVO*/ id;
@@ -1772,9 +1873,9 @@ inline bool starts_PEYL9mMA(fu::view<char> a, fu::view<char> with)
 }
                                 #endif
 
-static fu_STR typeAnnot_qLTezMaR(const s_Type& type, const int mode, s_Outputs& outputs, s_TokenIdx& _here, const s_Context& ctx, const s_Module& module, s_cg_CurrentFn& _current_fn)
+static fu_STR typeAnnot_UXr2rbel(const s_Type& type, const int mode, s_Outputs& outputs, s_TokenIdx& _here, const s_Context& ctx, const s_Module& module, s_cg_CurrentFn& _current_fn)
 {
-    /*MOV*/ fu_STR fwd = typeAnnotBase_x4OjwAeo(type, mode, outputs, _here, ctx, module, _current_fn);
+    /*MOV*/ fu_STR fwd = typeAnnotBase_DOcOWqci(type, mode, outputs, _here, ctx, module, _current_fn);
     if (is_ref_4X1iL0ll(type))
     {
         if (starts_PEYL9mMA(fwd, "fu::view"_fu) || (fwd == "void"_fu))
@@ -1788,7 +1889,7 @@ static fu_STR typeAnnot_qLTezMaR(const s_Type& type, const int mode, s_Outputs& 
 
         if (mode & M_MOVABLE)
         {
-            const s_Type& fnret = GET_e4d90tdy(s_Target { int(module.modid), int(_current_fn.target.index) }, module, ctx).type;
+            const s_Type& fnret = GET_R9VZCLcJ(s_Target { int(module.modid), int(_current_fn.target.index) }, module, ctx).type;
             if (!(is_trivial_K61azC5I(fnret, module, ctx) || is_ref_4X1iL0ll(fnret)))
                 return fwd + "&"_fu;
 
@@ -1804,7 +1905,7 @@ static fu_STR typeAnnot_qLTezMaR(const s_Type& type, const int mode, s_Outputs& 
     return /*NRVO*/ fwd;
 }
 
-static fu_STR emitTEMPVAR_R0z1o01h(fu::view<char> annot, bool& ptrflip, const fu_STR& id, const fu_STR& expr, s_cg_CurrentFn& _current_fn)
+static fu_STR emitTEMPVAR_ZErWCUn1(fu::view<char> annot, bool& ptrflip, const fu_STR& id, const fu_STR& expr, s_cg_CurrentFn& _current_fn)
 {
     ptrflip = (annot[(annot.size() - 1)] == '&');
     /*MOV*/ fu_STR id_1 = (id ? fu_STR(id) : x7E("_"_fu, fu::i64dec(_current_fn.numTEMPVARs++)));
@@ -1812,22 +1913,22 @@ static fu_STR emitTEMPVAR_R0z1o01h(fu::view<char> annot, bool& ptrflip, const fu
     return /*NRVO*/ id_1;
 }
 
-static fu_STR cgClone_D5vq7g7V(const s_Type& type, fu::view<char> src, s_Outputs& outputs, s_TokenIdx& _here, const s_Context& ctx, const s_Module& module, s_cg_CurrentFn& _current_fn)
+static fu_STR cgClone_qAnkxdud(const s_Type& type, fu::view<char> src, s_Outputs& outputs, s_TokenIdx& _here, const s_Context& ctx, const s_Module& module, s_cg_CurrentFn& _current_fn)
 {
-    return ((typeAnnotBase_x4OjwAeo(type, 0, outputs, _here, ctx, module, _current_fn) + "("_fu) + src) + ")"_fu;
+    return ((typeAnnotBase_DOcOWqci(type, 0, outputs, _here, ctx, module, _current_fn) + "("_fu) + src) + ")"_fu;
 }
 
-static fu_STR cgMove_25tfwTu6(const s_Type& type, fu::view<char> src, const s_Module& module, const s_Context& ctx, s_Outputs& outputs, s_TokenIdx& _here, s_cg_CurrentFn& _current_fn)
+static fu_STR cgMove_qUk1PGjF(const s_Type& type, fu::view<char> src, const s_Module& module, const s_Context& ctx, s_Outputs& outputs, s_TokenIdx& _here, s_cg_CurrentFn& _current_fn)
 {
     if (is_trivial_K61azC5I(type, module, ctx) && is_rx_copy_4X1iL0ll(type))
-        return cgClone_D5vq7g7V(type, src, outputs, _here, ctx, module, _current_fn);
+        return cgClone_qAnkxdud(type, src, outputs, _here, ctx, module, _current_fn);
 
-    return ((("static_cast<"_fu + typeAnnotBase_x4OjwAeo(type, 0, outputs, _here, ctx, module, _current_fn)) + "&&>("_fu) + src) + ")"_fu;
+    return ((("static_cast<"_fu + typeAnnotBase_DOcOWqci(type, 0, outputs, _here, ctx, module, _current_fn)) + "&&>("_fu) + src) + ")"_fu;
 }
 
-                                #ifndef DEF_map_mlFNWJmB
-                                #define DEF_map_mlFNWJmB
-inline fu_VEC<fu_STR> map_mlFNWJmB(fu::view<s_SolvedNode> a)
+                                #ifndef DEF_map_PnsqjW13
+                                #define DEF_map_PnsqjW13
+inline fu_VEC<fu_STR> map_PnsqjW13(fu::view<s_SolvedNode> a)
 {
     /*MOV*/ fu_VEC<fu_STR> res {};
     res.grow<false>(a.size());
@@ -1837,7 +1938,7 @@ inline fu_VEC<fu_STR> map_mlFNWJmB(fu::view<s_SolvedNode> a)
         res.mutref(i) = (__extension__ (
         {
             const s_SolvedNode& x = a[i];
-            BL_3_v = (str_x2XZ9C2m(x.kind));
+            BL_3_v = (str_omkBT2iF(x.kind));
         (void)0;}), static_cast<fu_STR&&>(BL_3_v));
     };
     return /*NRVO*/ res;
@@ -1887,12 +1988,12 @@ inline int find_97z4iafs(fu::view<char> a, const char b)
 }
                                 #endif
 
-static fu_STR& ARG_I1YVDH5s(const int i, fu::view_mut<fu_STR> item_src)
+static fu_STR& ARG_ID92DIZl(const int i, fu::view_mut<fu_STR> item_src)
 {
     return item_src.mutref(i);
 }
 
-static fu_STR REST_oM8VI3z2(const int start, fu::view<fu_STR> item_src)
+static fu_STR REST_Wy7jdalN(const int start, fu::view<fu_STR> item_src)
 {
     /*MOV*/ fu_STR src {};
     for (int i = start; i < item_src.size(); i++)
@@ -1909,18 +2010,18 @@ static fu_STR REST_oM8VI3z2(const int start, fu::view<fu_STR> item_src)
     return /*NRVO*/ src;
 }
 
-static fu_STR ooeWrap_mGUL7XFy(const fu_STR& src, const fu_STR& ooe_header)
+static fu_STR ooeWrap_zTDYCsol(const fu_STR& src, const fu_STR& ooe_header)
 {
     return (ooe_header ? (((ooe_header + ", "_fu) + src) + ")"_fu) : fu_STR(src));
 }
 
-static fu_STR emitMethodCall_KsrSXyLu(fu::view<char> id, fu::view_mut<fu_STR> item_src, const fu_STR& ooe_header)
+static fu_STR emitMethodCall_PLMbLcsU(fu::view<char> id, fu::view_mut<fu_STR> item_src, const fu_STR& ooe_header)
 {
     fu_STR _0 {};
-    return ooeWrap_mGUL7XFy(((_0 = ((ARG_I1YVDH5s(0, item_src) + id) + "("_fu), (static_cast<fu_STR&&>(_0) + REST_oM8VI3z2(1, item_src))) + ")"_fu), ooe_header);
+    return ooeWrap_zTDYCsol(((_0 = ((ARG_ID92DIZl(0, item_src) + id) + "("_fu), (static_cast<fu_STR&&>(_0) + REST_Wy7jdalN(1, item_src))) + ")"_fu), ooe_header);
 }
 
-static bool affectedByIntegerPromotions_v1J61t8C(const s_Type& type)
+static bool affectedByIntegerPromotions_BxM0LfVY(const s_Type& type)
 {
     if (is_ref_4X1iL0ll(type) || !is_bitfield_CbRwLCm2(type))
         return false;
@@ -1929,17 +2030,17 @@ static bool affectedByIntegerPromotions_v1J61t8C(const s_Type& type)
     return (c.size() == 2) || ((c.size() == 3) && (fu::get_view(c, 1, 3) == "16"_fu));
 }
 
-static fu_STR unpromote_9BlNiRWE(const fu_STR& expr, const bool isNative, const s_SolvedNode& node, s_Outputs& outputs, s_TokenIdx& _here, const s_Context& ctx, const s_Module& module, s_cg_CurrentFn& _current_fn)
+static fu_STR unpromote_c8tdHyVC(const fu_STR& expr, const bool isNative, const s_SolvedNode& node, s_Outputs& outputs, s_TokenIdx& _here, const s_Context& ctx, const s_Module& module, s_cg_CurrentFn& _current_fn)
 {
-    if (isNative && affectedByIntegerPromotions_v1J61t8C(node.type))
-        return ((typeAnnotBase_x4OjwAeo(node.type, 0, outputs, _here, ctx, module, _current_fn) + "("_fu) + expr) + ")"_fu;
+    if (isNative && affectedByIntegerPromotions_BxM0LfVY(node.type))
+        return ((typeAnnotBase_DOcOWqci(node.type, 0, outputs, _here, ctx, module, _current_fn) + "("_fu) + expr) + ")"_fu;
 
     return fu_STR(expr);
 }
 
-static fu_STR emitPostfixOp_vGnasgPL(fu::view<char> op, fu::view_mut<fu_STR> item_src, const bool isNative, const s_SolvedNode& node, s_Outputs& outputs, s_TokenIdx& _here, const s_Context& ctx, const s_Module& module, s_cg_CurrentFn& _current_fn)
+static fu_STR emitPostfixOp_EVtufgJS(fu::view<char> op, fu::view_mut<fu_STR> item_src, const bool isNative, const s_SolvedNode& node, s_Outputs& outputs, s_TokenIdx& _here, const s_Context& ctx, const s_Module& module, s_cg_CurrentFn& _current_fn)
 {
-    return unpromote_9BlNiRWE((ARG_I1YVDH5s(0, item_src) + op), isNative, node, outputs, _here, ctx, module, _current_fn);
+    return unpromote_c8tdHyVC((ARG_ID92DIZl(0, item_src) + op), isNative, node, outputs, _here, ctx, module, _current_fn);
 }
 
                                 #ifndef DEF_only_3Ycuooso
@@ -1955,39 +2056,39 @@ inline const fu_STR& only_3Ycuooso(fu::view<fu_STR> s)
 extern const s_Type t_u8;
                                 #endif
 
-static fu_STR emitBuiltin_vOmjqcK5(fu::view<char> id, fu::view<fu_STR> args, const s_SolvedNode& node, s_Outputs& outputs, s_TokenIdx& _here, const s_Context& ctx, const s_Module& module, s_cg_CurrentFn& _current_fn)
+static fu_STR emitBuiltin_Hjx3y0Ls(fu::view<char> id, fu::view<fu_STR> args, const s_SolvedNode& node, s_Outputs& outputs, s_TokenIdx& _here, const s_Context& ctx, const s_Module& module, s_cg_CurrentFn& _current_fn)
 {
     if (id == "/prim/convert"_fu)
     {
         const s_Type& output = node.type;
         const s_Type& input = only_O0vxkflG(node.items).type;
-        fu_STR cast = typeAnnotBase_x4OjwAeo(output, 0, outputs, _here, ctx, module, _current_fn);
+        fu_STR cast = typeAnnotBase_DOcOWqci(output, 0, outputs, _here, ctx, module, _current_fn);
         if (is_integral_CbRwLCm2(input) && is_integral_CbRwLCm2(output) && (is_unsigned_CbRwLCm2(input) != is_unsigned_CbRwLCm2(output)))
         {
             s_Type mid_t { (is_unsigned_CbRwLCm2(input) ? output : input) };
             if (!(mid_t.vtype.canon[0] == 'i'))
-                fail_vAc0TkcF((*(const fu_STR*)fu::NIL), _here, ctx);
+                fail_yKW1jZQa((*(const fu_STR*)fu::NIL), _here, ctx);
 
             mid_t.vtype.canon.mutref(0) = 'u';
             if ((mid_t.vtype.canon != output.vtype.canon) && (mid_t.vtype.canon != input.vtype.canon))
             {
-                fu_STR inner = typeAnnotBase_x4OjwAeo(mid_t, 0, outputs, _here, ctx, module, _current_fn);
+                fu_STR inner = typeAnnotBase_DOcOWqci(mid_t, 0, outputs, _here, ctx, module, _current_fn);
                 return ((((cast + '(') + inner) + '(') + only_3Ycuooso(args)) + "))"_fu;
             };
         }
         else if ((input.vtype.canon == t_byte.vtype.canon) && (output.vtype.canon != t_byte.vtype.canon))
         {
-            fu_STR inner = typeAnnotBase_x4OjwAeo(t_u8, 0, outputs, _here, ctx, module, _current_fn);
+            fu_STR inner = typeAnnotBase_DOcOWqci(t_u8, 0, outputs, _here, ctx, module, _current_fn);
             return ((((cast + '(') + inner) + '(') + only_3Ycuooso(args)) + "))"_fu;
         };
         return ((cast + '(') + only_3Ycuooso(args)) + ')';
     };
-    fail_vAc0TkcF(("Unknown builtin: "_fu + id), _here, ctx);
+    fail_yKW1jZQa(("Unknown builtin: "_fu + id), _here, ctx);
 }
 
-static fu_STR emitFunctionCall_2t9pqLgq(fu::view<char> id, fu::view<char> open, fu::view<char> close, fu::view<fu_STR> item_src, const fu_STR& ooe_header)
+static fu_STR emitFunctionCall_WbTSClRc(fu::view<char> id, fu::view<char> open, fu::view<char> close, fu::view<fu_STR> item_src, const fu_STR& ooe_header)
 {
-    return ooeWrap_mGUL7XFy((((id + open) + REST_oM8VI3z2(0, item_src)) + close), ooe_header);
+    return ooeWrap_zTDYCsol((((id + open) + REST_Wy7jdalN(0, item_src)) + close), ooe_header);
 }
 
                                 #ifndef DEF_last_ZCtM7908
@@ -1998,7 +2099,7 @@ inline char last_ZCtM7908(fu::view<char> s)
 }
                                 #endif
 
-static bool binSkipParens_XsJxoa9a(fu::view<char> id, const int mode)
+static bool binSkipParens_JwptPODq(fu::view<char> id, const int mode)
 {
     if (mode & M_STMT)
         return true;
@@ -2017,112 +2118,82 @@ static bool binSkipParens_XsJxoa9a(fu::view<char> id, const int mode)
     return false;
 }
 
-static fu_STR emitBinaryOp_okkKnHw8(fu::view<char> op, fu::view<s_SolvedNode> args, s_TokenIdx& _here, const s_Context& ctx, const int mode, const fu_STR& ooe_header, fu::view_mut<fu_STR> item_src, const bool isNative, const s_SolvedNode& node, s_Outputs& outputs, const s_Module& module, s_cg_CurrentFn& _current_fn)
+static fu_STR emitBinaryOp_ICzKTrZ2(fu::view<char> op, fu::view<s_SolvedNode> args, s_TokenIdx& _here, const s_Context& ctx, const int mode, const fu_STR& ooe_header, fu::view_mut<fu_STR> item_src, const bool isNative, const s_SolvedNode& node, s_Outputs& outputs, const s_Module& module, s_cg_CurrentFn& _current_fn)
 {
     if (!(args.size() == 2))
-        fail_vAc0TkcF("args.len != 2"_fu, _here, ctx);
+        fail_yKW1jZQa("args.len != 2"_fu, _here, ctx);
 
-    if (binSkipParens_XsJxoa9a(op, mode) && !ooe_header)
+    if (binSkipParens_JwptPODq(op, mode) && !ooe_header)
     {
         fu_STR _0 {};
-        return (_0 = (((ARG_I1YVDH5s(0, item_src) + " "_fu) + op) + " "_fu), (static_cast<fu_STR&&>(_0) + ARG_I1YVDH5s(1, item_src)));
+        return (_0 = (((ARG_ID92DIZl(0, item_src) + " "_fu) + op) + " "_fu), (static_cast<fu_STR&&>(_0) + ARG_ID92DIZl(1, item_src)));
     };
     fu_STR _1 {};
-    return ooeWrap_mGUL7XFy(unpromote_9BlNiRWE(((_1 = (((("("_fu + ARG_I1YVDH5s(0, item_src)) + " "_fu) + op) + " "_fu), (static_cast<fu_STR&&>(_1) + ARG_I1YVDH5s(1, item_src))) + ")"_fu), isNative, node, outputs, _here, ctx, module, _current_fn), ooe_header);
+    return ooeWrap_zTDYCsol(unpromote_c8tdHyVC(((_1 = (((("("_fu + ARG_ID92DIZl(0, item_src)) + " "_fu) + op) + " "_fu), (static_cast<fu_STR&&>(_1) + ARG_ID92DIZl(1, item_src))) + ")"_fu), isNative, node, outputs, _here, ctx, module, _current_fn), ooe_header);
 }
 
-static fu_STR cgDefault_LHegyzjJ(const s_Type& type, s_TokenIdx& _here, const s_Context& ctx, s_Outputs& outputs, const s_Module& module, s_cg_CurrentFn& _current_fn)
+static fu_STR cgDefault_f8sR3SJX(const s_Type& type, s_TokenIdx& _here, const s_Context& ctx, s_Outputs& outputs, const s_Module& module, s_cg_CurrentFn& _current_fn)
 {
     if (is_mutref_4X1iL0ll(type, _here, ctx))
-        fail_vAc0TkcF("Cannot definit mutrefs."_fu, _here, ctx);
+        fail_yKW1jZQa("Cannot definit mutrefs."_fu, _here, ctx);
 
     if (type_isZST_4X1iL0ll(type))
         return "void()"_fu;
 
     if (is_ref_4X1iL0ll(type))
     {
-        fu_STR annot = typeAnnot_qLTezMaR(type, 0, outputs, _here, ctx, module, _current_fn);
+        fu_STR annot = typeAnnot_UXr2rbel(type, 0, outputs, _here, ctx, module, _current_fn);
         if (starts_PEYL9mMA(annot, "fu::view"_fu))
             return annot + "{}"_fu;
 
-        include_OWB5Ob07("<fu/default.h>"_fu, outputs);
-        return ("(*(const "_fu + typeAnnot_qLTezMaR(clear_refs_4X1iL0ll(s_Type(type)), 0, outputs, _here, ctx, module, _current_fn)) + "*)fu::NIL)"_fu;
+        include_mXeF2edC("<fu/default.h>"_fu, outputs);
+        return ("(*(const "_fu + typeAnnot_UXr2rbel(clear_refs_4X1iL0ll(s_Type(type)), 0, outputs, _here, ctx, module, _current_fn)) + "*)fu::NIL)"_fu;
     };
-    return typeAnnot_qLTezMaR(type, 0, outputs, _here, ctx, module, _current_fn) + "{}"_fu;
+    return typeAnnot_UXr2rbel(type, 0, outputs, _here, ctx, module, _current_fn) + "{}"_fu;
 }
 
-static bool add_once_kvt8keVT(fu_VEC<s_BitSet>& bs, const s_Target& target)
+static bool add_once_j0TFJFyI(fu_VEC<s_BitSet>& bs, const s_Target& target)
 {
-    return add_once_xfiUNE08(bs, target.modid, target.index);
+    return add_once_V2s31CdL(bs, target.modid, target.index);
 }
 
-                                #ifndef DEF_F_TEMPLATE
-                                #define DEF_F_TEMPLATE
-inline constexpr int F_TEMPLATE = (1 << 28);
-                                #endif
-
-                                #ifndef DEF_F_PUB
-                                #define DEF_F_PUB
-inline constexpr int F_PUB = (1 << 20);
-                                #endif
-
-                                #ifndef DEF_F_EXTERN
-                                #define DEF_F_EXTERN
-extern const int F_EXTERN;
-                                #endif
-
-static int isExtLinked_cLSktIVF(const s_Overload& overload)
+static s_Flags isExtLinked_LJ4ozhqN(const s_Overload& overload)
 {
-    return overload.flags & (F_PUB | F_EXTERN);
+    return overload.flags & (s_Flags_F_PUB | s_Flags_F_EXTERN);
 }
 
-static fu_STR fnLinkage_qOJJTxRO(const s_Overload& overload)
+static fu_STR fnLinkage_X1R9VViv(const s_Overload& overload)
 {
-    return ((is_never_4X1iL0ll(overload.type) ? "[[noreturn]] "_fu : fu_STR{}) + ((overload.flags & F_TEMPLATE) ? "inline "_fu : fu_STR{})) + (!isExtLinked_cLSktIVF(overload) ? "static "_fu : fu_STR{});
+    return ((is_never_4X1iL0ll(overload.type) ? "[[noreturn]] "_fu : fu_STR{}) + ((overload.flags & s_Flags_F_TEMPLATE) ? "inline "_fu : fu_STR{})) + (!isExtLinked_LJ4ozhqN(overload) ? "static "_fu : fu_STR{});
 }
 
-                                #ifndef DEF_F_OOE_RTL
-                                #define DEF_F_OOE_RTL
-inline constexpr int F_OOE_RTL = (1 << 25);
-                                #endif
-
-                                #ifndef DEF_F_OPERATOR
-                                #define DEF_F_OPERATOR
-inline constexpr int F_OPERATOR = (1 << 21);
-                                #endif
-
-                                #ifndef DEF_F_POSTFIX
-                                #define DEF_F_POSTFIX
-inline constexpr int F_POSTFIX = (1 << 3);
-                                #endif
-
-static bool isOp_KzmHAgGj(const s_Target& target, const s_Module& module, const s_Context& ctx)
+static bool isOp_zVvcE3BI(const s_Target& target, const s_Module& module, const s_Context& ctx)
 {
-    const int flags = GET_e4d90tdy(target, module, ctx).flags;
-    if (flags & F_OOE_RTL)
+    const s_Flags flags = GET_R9VZCLcJ(target, module, ctx).flags;
+    if (flags & s_Flags_F_OOE_RTL)
         return true;
 
-    if (!(flags & F_OPERATOR))
+    if (!(flags & s_Flags_F_OPERATOR))
         return false;
 
-    fu::view<s_Argument> args = EXT_CWThmWnJ(target, module, ctx).args;
+    fu::view<s_Argument> args = EXT_2tOGKtmg(target, module, ctx).args;
     if (args.size() > 2)
         return false;
 
-    if (GET_e4d90tdy(target, module, ctx).kind == s_kind___native)
+    if (GET_R9VZCLcJ(target, module, ctx).kind == s_kind___native)
         return true;
 
-    fu::view<char> name = GET_e4d90tdy(target, module, ctx).name;
+    fu::view<char> name = GET_R9VZCLcJ(target, module, ctx).name;
     if (args.size() > 1)
         return hasBinary_LX3QLY5k(name);
 
-    if (flags & F_POSTFIX)
+    if (flags & s_Flags_F_POSTFIX)
         return hasPostfix_LX3QLY5k(name);
 
     return hasUnary_LX3QLY5k(name);
 }
 
-static fu_STR valid_operator_vfuw1B15(const fu_STR& str)
+static fu_STR valid_operator_k2rX0sor(const fu_STR& str)
 {
     int start = 0;
     bool some = false;
@@ -2144,17 +2215,17 @@ static fu_STR valid_operator_vfuw1B15(const fu_STR& str)
     return (start ? fu::slice(str, start) : fu_STR(str));
 }
 
-static char hex_mtW5p6Ur(const unsigned x)
+static char hex_Qe1vqa8t(const unsigned x)
 {
     return ((x < 10u) ? char((unsigned(fu::u8('0')) + x)) : char((unsigned(fu::u8('A')) + (x - 10u))));
 }
 
-static fu_STR xHH_gyFRpmHc(const unsigned c)
+static fu_STR xHH_BDfBCCi2(const unsigned c)
 {
-    return ("x"_fu + hex_mtW5p6Ur(((c >> 4u) & 0xfu))) + hex_mtW5p6Ur(((c >> 0u) & 0xfu));
+    return ("x"_fu + hex_Qe1vqa8t(((c >> 4u) & 0xfu))) + hex_Qe1vqa8t(((c >> 0u) & 0xfu));
 }
 
-static fu_STR valid_identifier_9dZldJIf(fu_STR&& str)
+static fu_STR valid_identifier_DlVnWb66(fu_STR&& str)
 {
     for (int i = str.size(); i-- > 0; )
     {
@@ -2162,45 +2233,52 @@ static fu_STR valid_identifier_9dZldJIf(fu_STR&& str)
         if (((c >= 'a') && (c <= 'z')) || ((c >= 'A') && (c <= 'Z')) || ((c >= '0') && (c <= '9')) || (c == '_'))
             continue;
 
-        str = ((fu::get_view(str, 0, i) + xHH_gyFRpmHc(unsigned(fu::u8(c)))) + fu::get_view(str, (i + 1), str.size()));
+        str = ((fu::get_view(str, 0, i) + xHH_BDfBCCi2(unsigned(fu::u8(c)))) + fu::get_view(str, (i + 1), str.size()));
     };
     return ID_LX3QLY5k(str);
 }
 
-static fu_STR fnID_RoHiBEHy(const s_Target& target, const s_Module& module, const s_Context& ctx, const s_TokenIdx& _here)
+static fu_STR fnID_LtbqgMhW(const s_Target& target, const s_Module& module, const s_Context& ctx, const s_TokenIdx& _here)
 {
-    const s_Overload& overload = GET_e4d90tdy(target, module, ctx);
-    const fu_STR& id = (overload.name ? overload.name : fail_vAc0TkcF((*(const fu_STR*)fu::NIL), _here, ctx));
-    return (isOp_KzmHAgGj(target, module, ctx) ? ("operator"_fu + valid_operator_vfuw1B15(id)) : valid_identifier_9dZldJIf(fu_STR(id)));
+    const s_Overload& overload = GET_R9VZCLcJ(target, module, ctx);
+    const fu_STR& id = (overload.name ? overload.name : fail_yKW1jZQa((*(const fu_STR*)fu::NIL), _here, ctx));
+    if (isOp_zVvcE3BI(target, module, ctx))
+        return "operator"_fu + valid_operator_k2rX0sor(id);
+
+    /*MOV*/ fu_STR ret = valid_identifier_DlVnWb66(fu_STR(id));
+    if (GET_R9VZCLcJ(target, module, ctx).sighash)
+        ret += ("_"_fu + fu::get_view(GET_R9VZCLcJ(target, module, ctx).sighash, 0, 8));
+
+    return /*NRVO*/ ret;
 }
 
-static fu_STR cgFnPrototype_3D2f8k3a(const s_Target& target, const bool fnptr, s_cg_CurrentFn& _current_fn, const s_Module& module, const s_Context& ctx, s_TokenIdx& _here, s_Outputs& outputs)
+static fu_STR cgFnPrototype_CWtXR61K(const s_Target& target, const bool fnptr, s_cg_CurrentFn& _current_fn, const s_Module& module, const s_Context& ctx, s_TokenIdx& _here, s_Outputs& outputs)
 {
     s_cg_CurrentFn current_fn0 = s_cg_CurrentFn { s_Target(target), 0, fu_VEC<fu_STR>{}, fu_VEC<s_cg_Block>{}, 0, s_Helpers{}, s_Helpers{}, s_Helpers{}, fu_VEC<fu_STR>{}, fu_VEC<int>{}, fu_VEC<fu_STR>{} };
     fu_DEFER(std::swap(_current_fn, current_fn0));
     std::swap(_current_fn, current_fn0);
     /*MOV*/ fu_STR src {};
-    const s_Overload& overload = GET_e4d90tdy(target, module, ctx);
+    const s_Overload& overload = GET_R9VZCLcJ(target, module, ctx);
     if (!fnptr)
     {
-        fu_STR linkage = fnLinkage_qOJJTxRO(overload);
+        fu_STR linkage = fnLinkage_X1R9VViv(overload);
         src += linkage;
     };
 
     {
-        const s_Type& ret = (overload.type ? overload.type : fail_vAc0TkcF((*(const fu_STR*)fu::NIL), _here, ctx));
-        fu_STR annot = typeAnnot_qLTezMaR(ret, M_RETVAL, outputs, _here, ctx, module, _current_fn);
+        const s_Type& ret = (overload.type ? overload.type : fail_yKW1jZQa((*(const fu_STR*)fu::NIL), _here, ctx));
+        fu_STR annot = typeAnnot_UXr2rbel(ret, M_RETVAL, outputs, _here, ctx, module, _current_fn);
         src += (annot + " "_fu);
     };
 
     {
-        fu_STR name = fnID_RoHiBEHy(target, module, ctx, _here);
+        fu_STR name = fnID_LtbqgMhW(target, module, ctx, _here);
         src += (fnptr ? (("(*"_fu + name) + ")"_fu) : fu_STR(name));
     };
 
     {
         src += "("_fu;
-        fu::view<s_Argument> args = EXT_CWThmWnJ(target, module, ctx).args;
+        fu::view<s_Argument> args = EXT_2tOGKtmg(target, module, ctx).args;
         bool first = true;
         for (int i = 0; i < args.size(); i++)
         {
@@ -2213,11 +2291,11 @@ static fu_STR cgFnPrototype_3D2f8k3a(const s_Target& target, const bool fnptr, s
             else
                 src += ", "_fu;
 
-            src += typeAnnot_qLTezMaR(arg, (M_ARGUMENT | M_FWDECL), outputs, _here, ctx, module, _current_fn);
+            src += typeAnnot_UXr2rbel(arg, (M_ARGUMENT | M_FWDECL), outputs, _here, ctx, module, _current_fn);
         };
-        if (overload.flags & F_POSTFIX)
+        if (overload.flags & s_Flags_F_POSTFIX)
         {
-            if (!(overload.flags & F_OPERATOR))
+            if (!(overload.flags & s_Flags_F_OPERATOR))
                 fu_ASSERT();
 
             src += ", /*postfix*/int"_fu;
@@ -2227,24 +2305,19 @@ static fu_STR cgFnPrototype_3D2f8k3a(const s_Target& target, const bool fnptr, s
     return /*NRVO*/ src;
 }
 
-                                #ifndef DEF_F_HOTSWAP
-                                #define DEF_F_HOTSWAP
-extern const int F_HOTSWAP;
-                                #endif
-
-static void ensureFwdDecl_JwB4P7aQ(const s_Target& target, const s_Module& module, const s_Context& ctx, s_Outputs& outputs, s_cg_CurrentFn& _current_fn, s_TokenIdx& _here)
+static void ensureFwdDecl_RoHiBEHy(const s_Target& target, const s_Module& module, const s_Context& ctx, s_Outputs& outputs, s_cg_CurrentFn& _current_fn, s_TokenIdx& _here)
 {
-    const s_Overload& overload = GET_e4d90tdy(target, module, ctx);
+    const s_Overload& overload = GET_R9VZCLcJ(target, module, ctx);
     if ((overload.kind != s_kind_fn) || (overload.name == "main"_fu))
         return;
 
-    if (!add_once_kvt8keVT(outputs._ffwd, target))
+    if (!add_once_j0TFJFyI(outputs._ffwd, target))
         return;
 
-    fu_STR fwdDecl = (cgFnPrototype_3D2f8k3a(target, bool{}, _current_fn, module, ctx, _here, outputs) + ";\n"_fu);
-    if (overload.flags & F_HOTSWAP)
+    fu_STR fwdDecl = (cgFnPrototype_CWtXR61K(target, bool{}, _current_fn, module, ctx, _here, outputs) + ";\n"_fu);
+    if (overload.flags & s_Flags_F_HOTSWAP)
     {
-        fu_STR fnPtr = (("extern "_fu + cgFnPrototype_3D2f8k3a(target, true, _current_fn, module, ctx, _here, outputs)) + ";\n"_fu);
+        fu_STR fnPtr = (("extern "_fu + cgFnPrototype_CWtXR61K(target, true, _current_fn, module, ctx, _here, outputs)) + ";\n"_fu);
         outputs._ffwd_live_client += fnPtr;
         outputs._ffwd_live_nclient += fwdDecl;
     }
@@ -2258,37 +2331,17 @@ static void ensureFwdDecl_JwB4P7aQ(const s_Target& target, const s_Module& modul
 inline constexpr int FN_BODY_BACK = -1;
                                 #endif
 
-                                #ifndef DEF_SS_FINALIZED
-                                #define DEF_SS_FINALIZED
-inline constexpr unsigned SS_FINALIZED = (0x1u << 3u);
-                                #endif
-
-static s_Target nested_WZh50iUF(const int index, const s_cg_CurrentFn& _current_fn)
+static s_Target nested_l1V2NcKO(const int index, const s_cg_CurrentFn& _current_fn)
 {
     return index ? s_Target { -_current_fn.target.index, int(index) } : s_Target{};
 }
 
-                                #ifndef DEF_F_ARG
-                                #define DEF_F_ARG
-inline constexpr int F_ARG = (1 << 9);
-                                #endif
-
-                                #ifndef DEF_F_MOVED_FROM
-                                #define DEF_F_MOVED_FROM
-inline constexpr int F_MOVED_FROM = (1 << 11);
-                                #endif
-
-                                #ifndef DEF_F_UNUSED
-                                #define DEF_F_UNUSED
-inline constexpr int F_UNUSED = (1 << 10);
-                                #endif
-
-static fu_VEC<fu_STR>& _ids_used_84RqOONt(s_cg_CurrentFn& _current_fn)
+static fu_VEC<fu_STR>& _ids_used_4jpzyfh0(s_cg_CurrentFn& _current_fn)
 {
     return _current_fn._ids_used;
 }
 
-static fu_VEC<int>& _ids_dedupe_W9yo7NRY(s_cg_CurrentFn& _current_fn)
+static fu_VEC<int>& _ids_dedupe_p4Riv5e0(s_cg_CurrentFn& _current_fn)
 {
     return _current_fn._ids_dedupe;
 }
@@ -2304,16 +2357,16 @@ inline int& grow_if_oob_SiQlapRF(fu_VEC<int>& a, const int i)
 }
                                 #endif
 
-static fu_STR localID_11mH3rWx(const s_Target& target, const bool dedupe, const s_Module& module, const s_Context& ctx, s_cg_CurrentFn& _current_fn)
+static fu_STR localID_ErBtbPnG(const s_Target& target, const bool dedupe, const s_Module& module, const s_Context& ctx, s_cg_CurrentFn& _current_fn)
 {
-    const s_Overload& o = GET_e4d90tdy(target, module, ctx);
+    const s_Overload& o = GET_R9VZCLcJ(target, module, ctx);
     /*MOV*/ fu_STR id { o.name };
     const s_ClosureID cid = tryParseClosureID_1FBeX0Ih(id);
     if (cid.target)
-        id = GET_e4d90tdy(cid.target, module, ctx).name;
+        id = GET_R9VZCLcJ(cid.target, module, ctx).name;
 
     id = ID_LX3QLY5k(id);
-    if (isLocal_BbPJiRBG(target))
+    if (isLocal_YQmB0dcG(target))
     {
         if (dedupe)
         {
@@ -2321,23 +2374,23 @@ static fu_STR localID_11mH3rWx(const s_Target& target, const bool dedupe, const 
             for (; ; )
             { {
                 fu_STR candidate = (dupes ? x7E((id + '_'), fu::i64dec(dupes)) : fu_STR(id));
-                for (int i = 0; i < _ids_used_84RqOONt(_current_fn).size(); i++)
+                for (int i = 0; i < _ids_used_4jpzyfh0(_current_fn).size(); i++)
                 {
-                    if (_ids_used_84RqOONt(_current_fn)[i] == candidate)
+                    if (_ids_used_4jpzyfh0(_current_fn)[i] == candidate)
                     {
                         dupes++;
                         goto BL_5;
                     };
                 };
-                _ids_used_84RqOONt(_current_fn) += fu_STR(candidate);
+                _ids_used_4jpzyfh0(_current_fn) += fu_STR(candidate);
                 break;
               } BL_5:;
             };
             if (dupes)
-                grow_if_oob_SiQlapRF(_ids_dedupe_W9yo7NRY(_current_fn), target.index) = dupes;
+                grow_if_oob_SiQlapRF(_ids_dedupe_p4Riv5e0(_current_fn), target.index) = dupes;
 
         };
-        const int dupes = ((_ids_dedupe_W9yo7NRY(_current_fn).size() > target.index) ? _ids_dedupe_W9yo7NRY(_current_fn)[target.index] : (*(const int*)fu::NIL));
+        const int dupes = ((_ids_dedupe_p4Riv5e0(_current_fn).size() > target.index) ? _ids_dedupe_p4Riv5e0(_current_fn)[target.index] : (*(const int*)fu::NIL));
         if (dupes)
             return x7E((id + '_'), fu::i64dec(dupes));
 
@@ -2345,39 +2398,34 @@ static fu_STR localID_11mH3rWx(const s_Target& target, const bool dedupe, const 
     return /*NRVO*/ id;
 }
 
-                                #ifndef DEF_F_HOIST
-                                #define DEF_F_HOIST
-extern const int F_HOIST;
-                                #endif
-
-static bool F_HOIST_asPtr_Iskt398F(const s_Target& target, const s_Module& module, const s_Context& ctx)
+static bool F_HOIST_asPtr_JwB4P7aQ(const s_Target& target, const s_Module& module, const s_Context& ctx)
 {
-    if (!(GET_e4d90tdy(target, module, ctx).flags & F_HOIST))
+    if (!(GET_R9VZCLcJ(target, module, ctx).status & s_SolverStatus_SS_HOIST))
         return false;
 
-    const s_Type& t = GET_e4d90tdy(target, module, ctx).solved.type;
+    const s_Type& t = GET_R9VZCLcJ(target, module, ctx).solved.type;
     return is_ref_4X1iL0ll(t) && (!type_isSliceable_4X1iL0ll(t) || TODO_FIX_isArray_4X1iL0ll(t));
 }
 
-static fu_STR binding_NCEyeoyV(const s_Target& target, const bool forceValue, const s_Module& module, const s_Context& ctx, s_TokenIdx& _here, s_Outputs& outputs, s_cg_CurrentFn& _current_fn)
+static fu_STR binding_Kd2aQcYt(const s_Target& target, const bool forceValue, const s_Module& module, const s_Context& ctx, s_TokenIdx& _here, s_Outputs& outputs, s_cg_CurrentFn& _current_fn)
 {
-    const s_Overload& overload = GET_e4d90tdy(target, module, ctx);
+    const s_Overload& overload = GET_R9VZCLcJ(target, module, ctx);
     const s_Type& place_type = overload.solved.type;
-    const int isArg = (overload.flags & F_ARG);
+    const s_Flags isArg = (overload.flags & s_Flags_F_ARG);
     s_Type place_type_1 = (forceValue ? clear_refs_4X1iL0ll(s_Type(place_type)) : s_Type(place_type));
-    /*MOV*/ fu_STR annot = typeAnnot_qLTezMaR(place_type_1, ((((!is_mutref_4X1iL0ll(overload.type, _here, ctx) ? M_CONST : (*(const int*)fu::NIL)) | (isArg ? M_ARGUMENT : (*(const int*)fu::NIL))) | (is_mutref_4X1iL0ll(overload.type, _here, ctx) ? M_MUTVAR : (*(const int*)fu::NIL))) | ((overload.flags & F_MOVED_FROM) ? M_MOVABLE : (*(const int*)fu::NIL))), outputs, _here, ctx, module, _current_fn);
-    const int isUnused = (overload.flags & F_UNUSED);
+    /*MOV*/ fu_STR annot = typeAnnot_UXr2rbel(place_type_1, ((((!is_mutref_4X1iL0ll(overload.type, _here, ctx) ? M_CONST : (*(const int*)fu::NIL)) | (isArg ? M_ARGUMENT : (*(const int*)fu::NIL))) | (is_mutref_4X1iL0ll(overload.type, _here, ctx) ? M_MUTVAR : (*(const int*)fu::NIL))) | ((overload.flags & s_Flags_F_MOVED_FROM) ? M_MOVABLE : (*(const int*)fu::NIL))), outputs, _here, ctx, module, _current_fn);
+    const s_SolverStatus isUnused = (overload.status & s_SolverStatus_SS_UNUSED);
     if (isArg && isUnused)
         return /*NRVO*/ annot;
 
-    /*MOV*/ fu_STR id = localID_11mH3rWx(target, true, module, ctx, _current_fn);
-    if (GET_e4d90tdy(target, module, ctx).flags & F_HOIST)
+    /*MOV*/ fu_STR id = localID_ErBtbPnG(target, true, module, ctx, _current_fn);
+    if (GET_R9VZCLcJ(target, module, ctx).status & s_SolverStatus_SS_HOIST)
     {
         if (!(_current_fn.target))
             BUG_XksxYQ3i("TODO: hoisting for global variables."_fu, _here, ctx);
 
         fu_STR hoistDecl = (starts_PEYL9mMA(annot, "const "_fu) ? fu::slice(annot, 6) : fu_STR(annot));
-        if (F_HOIST_asPtr_Iskt398F(target, module, ctx))
+        if (F_HOIST_asPtr_JwB4P7aQ(target, module, ctx))
         {
             if (!(hoistDecl[(hoistDecl.size() - 1)] == '&'))
                 BUG_XksxYQ3i(("F_HOIST_asPtr: Decl not a ref: "_fu + hoistDecl), _here, ctx);
@@ -2387,29 +2435,29 @@ static fu_STR binding_NCEyeoyV(const s_Target& target, const bool forceValue, co
         _current_fn._hoist += ((hoistDecl + " "_fu) + id);
         return /*NRVO*/ id;
     };
-    /*MOV*/ fu_STR head { (annot ? annot : fail_vAc0TkcF((*(const fu_STR*)fu::NIL), _here, ctx)) };
+    /*MOV*/ fu_STR head { (annot ? annot : fail_yKW1jZQa((*(const fu_STR*)fu::NIL), _here, ctx)) };
     head += (" "_fu + id);
     if (isUnused)
         head = ("[[maybe_unused]] "_fu + head);
 
-    if (GET_e4d90tdy(target, module, ctx).flags & F_MOVED_FROM)
+    if (GET_R9VZCLcJ(target, module, ctx).flags & s_Flags_F_MOVED_FROM)
         head = ("/*MOV*/ "_fu + head);
 
     return /*NRVO*/ head;
 }
 
-static fu_STR binding_g7LrrtOK(const s_Argument& arg, const bool forceValue, s_cg_CurrentFn& _current_fn, const s_Module& module, const s_Context& ctx, s_TokenIdx& _here, s_Outputs& outputs)
+static fu_STR binding_aUb86xU7(const s_Argument& arg, const bool forceValue, s_cg_CurrentFn& _current_fn, const s_Module& module, const s_Context& ctx, s_TokenIdx& _here, s_Outputs& outputs)
 {
-    const s_Target target = nested_WZh50iUF(arg.local, _current_fn);
-    return binding_NCEyeoyV(target, forceValue, module, ctx, _here, outputs, _current_fn);
+    const s_Target target = nested_l1V2NcKO(arg.local, _current_fn);
+    return binding_Kd2aQcYt(target, forceValue, module, ctx, _here, outputs, _current_fn);
 }
 
-static fu_STR cgFnSignature_At8Dm0Ju(const s_SolvedNode& fn, const s_Module& module, const s_Context& ctx, s_TokenIdx& _here, s_Outputs& outputs, s_cg_CurrentFn& _current_fn)
+static fu_STR cgFnSignature_XKij8Asq(const s_SolvedNode& fn, const s_Module& module, const s_Context& ctx, s_TokenIdx& _here, s_Outputs& outputs, s_cg_CurrentFn& _current_fn)
 {
     const s_Target& target = fn.target;
-    const s_Overload& overload = GET_e4d90tdy(target, module, ctx);
-    const fu_VEC<s_Argument>& host_args = EXT_CWThmWnJ(target, module, ctx).args;
-    fu_STR annot = typeAnnot_qLTezMaR((overload.type ? overload.type : fail_vAc0TkcF((*(const fu_STR*)fu::NIL), _here, ctx)), M_RETVAL, outputs, _here, ctx, module, _current_fn);
+    const s_Overload& overload = GET_R9VZCLcJ(target, module, ctx);
+    const fu_VEC<s_Argument>& host_args = EXT_2tOGKtmg(target, module, ctx).args;
+    fu_STR annot = typeAnnot_UXr2rbel((overload.type ? overload.type : fail_yKW1jZQa((*(const fu_STR*)fu::NIL), _here, ctx)), M_RETVAL, outputs, _here, ctx, module, _current_fn);
     fu_STR id { overload.name };
     if (id == "main"_fu)
     {
@@ -2423,9 +2471,9 @@ static fu_STR cgFnSignature_At8Dm0Ju(const s_SolvedNode& fn, const s_Module& mod
 
     }
     else
-        id = fnID_RoHiBEHy(fn.target, module, ctx, _here);
+        id = fnID_LtbqgMhW(fn.target, module, ctx, _here);
 
-    /*MOV*/ fu_STR src = ((((fnLinkage_qOJJTxRO(overload) + annot) + " "_fu) + id) + "("_fu);
+    /*MOV*/ fu_STR src = ((((fnLinkage_X1R9VViv(overload) + annot) + " "_fu) + id) + "("_fu);
     bool some = false;
     for (int i = 0; i < host_args.size(); i++)
     {
@@ -2436,11 +2484,11 @@ static fu_STR cgFnSignature_At8Dm0Ju(const s_SolvedNode& fn, const s_Module& mod
             src += ", "_fu;
 
         some = true;
-        src += binding_g7LrrtOK(host_args[i], bool{}, _current_fn, module, ctx, _here, outputs);
+        src += binding_aUb86xU7(host_args[i], bool{}, _current_fn, module, ctx, _here, outputs);
     };
-    if (overload.flags & F_POSTFIX)
+    if (overload.flags & s_Flags_F_POSTFIX)
     {
-        if (!(overload.flags & F_OPERATOR))
+        if (!(overload.flags & s_Flags_F_OPERATOR))
             fu_ASSERT();
 
         src += ", /*postfix*/int "_fu;
@@ -2449,40 +2497,23 @@ static fu_STR cgFnSignature_At8Dm0Ju(const s_SolvedNode& fn, const s_Module& mod
     return /*NRVO*/ src;
 }
 
-static bool exprOK_mOHIEP77(fu::view<s_SolvedNode> nodes)
+static bool exprOK_TtVbVKQY(fu::view<s_SolvedNode> nodes)
 {
     for (int i = 0; i < nodes.size(); i++)
     {
         const s_SolvedNode& n = nodes[i];
         const s_kind k = n.kind;
-        if ((k == s_kind_jump) || (k == s_kind_loop) || (k == s_kind_try) || (k == s_kind_letdef) || (k == s_kind_block))
+        if ((k == s_kind_jump) || (k == s_kind_loop) || (k == s_kind_try) || (k == s_kind_defer) || (k == s_kind_letdef) || (k == s_kind_pragma))
             return false;
 
-        if (((k == s_kind_and) || (k == s_kind_or) || (k == s_kind_if)) && !exprOK_mOHIEP77(n.items))
+        if (((k == s_kind_and) || (k == s_kind_or) || (k == s_kind_if) || (k == s_kind_block)) && !exprOK_TtVbVKQY(n.items))
             return false;
 
     };
     return true;
 }
 
-static bool operator==(const s_Helpers& a, const s_Helpers& b)
-{
-    return a.index == b.index;
-}
-
-static bool labelUsed_Ek083Hkf(fu::view<s_SolvedNode> items, const s_Helpers& helpers)
-{
-    for (int i = 0; i < items.size(); i++)
-    {
-        const s_SolvedNode& item = items[i];
-        if (((item.kind == s_kind_jump) && (item.helpers == helpers)) || labelUsed_Ek083Hkf(item.items, helpers))
-            return true;
-
-    };
-    return false;
-}
-
-static fu_VEC<fu_STR> cgNodes_VVNp17yg(fu::view<s_SolvedNode> nodes, const int mode, const fu_STR& trail, fu::view<char> debug, s_cg_CurrentFn& _current_fn, s_TokenIdx& _here, const s_Context& ctx, const s_Module& module, s_Outputs& outputs)
+static fu_VEC<fu_STR> cgNodes_S3yy7EYP(fu::view<s_SolvedNode> nodes, const int mode, const fu_STR& trail, fu::view<char> debug, s_cg_CurrentFn& _current_fn, s_TokenIdx& _here, const s_Context& ctx, const s_Module& module, s_Outputs& outputs)
 {
     /*MOV*/ fu_VEC<fu_STR> result {};
     fu_VEC<fu_STR> _tv0 {};
@@ -2495,9 +2526,9 @@ static fu_VEC<fu_STR> cgNodes_VVNp17yg(fu::view<s_SolvedNode> nodes, const int m
     {
         const s_SolvedNode& node = nodes[i];
         const bool isTrail = (trail && (i == (nodes.size() - 1)) && !is_never_4X1iL0ll(node.type) && !is_void_4X1iL0ll(node.type));
-        fu_STR src = (node ? cgNode_4Ur0xXU7(node, (debug + ".cgNodes"_fu), (isTrail ? (mode & ~M_STMT) : int(mode)), (*(const s_Type*)fu::NIL), _here, ctx, module, _current_fn, outputs) : fu_STR{});
+        fu_STR src = (node ? cgNode_dsqfXxyo(node, (debug + ".cgNodes"_fu), (isTrail ? (mode & ~M_STMT) : int(mode)), (*(const s_Type*)fu::NIL), _here, ctx, module, _current_fn, outputs) : fu_STR{});
         if (!(src || (mode & M_STMT)))
-            fail_vAc0TkcF((((x7E("cgNodes: empty output for Node(kind=`"_fu, str_x2XZ9C2m(node.kind)) + "` value=`"_fu) + node.value) + "`)."_fu), _here, ctx);
+            fail_yKW1jZQa((((x7E("cgNodes: empty output for Node(kind=`"_fu, str_omkBT2iF(node.kind)) + "` value=`"_fu) + node.value) + "`)."_fu), _here, ctx);
 
         if ((mode & M_STMT) && _current_fn.TEMPVARs)
         {
@@ -2512,9 +2543,9 @@ static fu_VEC<fu_STR> cgNodes_VVNp17yg(fu::view<s_SolvedNode> nodes, const int m
     return /*NRVO*/ result;
 }
 
-static fu_STR cgComma_4boXVUVA(fu::view<s_SolvedNode> nodes, fu::view<char> debug, s_cg_CurrentFn& _current_fn, s_TokenIdx& _here, const s_Context& ctx, const s_Module& module, s_Outputs& outputs)
+static fu_STR cgComma_CKYjHEIt(fu::view<s_SolvedNode> nodes, fu::view<char> debug, s_cg_CurrentFn& _current_fn, s_TokenIdx& _here, const s_Context& ctx, const s_Module& module, s_Outputs& outputs)
 {
-    fu_VEC<fu_STR> items = cgNodes_VVNp17yg(nodes, 0, (*(const fu_STR*)fu::NIL), (debug + ".cgComma"_fu), _current_fn, _here, ctx, module, outputs);
+    fu_VEC<fu_STR> items = cgNodes_S3yy7EYP(nodes, 0, (*(const fu_STR*)fu::NIL), (debug + ".cgComma"_fu), _current_fn, _here, ctx, module, outputs);
     if (!items.size())
         return "(false /*empty parens*/)"_fu;
 
@@ -2551,9 +2582,9 @@ inline char if_last_ZCtM7908(fu::view<char> s)
 }
                                 #endif
 
-static fu_STR cgStatements_TuNaxyPa(fu::view<s_SolvedNode> nodes, int& count, const fu_STR& trail, s_cg_CurrentFn& _current_fn, s_TokenIdx& _here, const s_Context& ctx, const s_Module& module, s_Outputs& outputs)
+static fu_STR cgStatements_4kwE5jRG(fu::view<s_SolvedNode> nodes, int& count, const fu_STR& trail, s_cg_CurrentFn& _current_fn, s_TokenIdx& _here, const s_Context& ctx, const s_Module& module, s_Outputs& outputs)
 {
-    fu_VEC<fu_STR> lines = cgNodes_VVNp17yg(nodes, M_STMT, trail, "cgStatements"_fu, _current_fn, _here, ctx, module, outputs);
+    fu_VEC<fu_STR> lines = cgNodes_S3yy7EYP(nodes, M_STMT, trail, "cgStatements"_fu, _current_fn, _here, ctx, module, outputs);
     count = lines.size();
     /*MOV*/ fu_STR src {};
     for (int i = 0; i < lines.size(); i++)
@@ -2566,7 +2597,7 @@ static fu_STR cgStatements_TuNaxyPa(fu::view<s_SolvedNode> nodes, int& count, co
     return /*NRVO*/ src;
 }
 
-static fu_STR cgBlock_HHL3VAk1(fu::view<s_SolvedNode> nodes, const bool skipCurlies, const bool gnuStmtExpr, const s_Helpers& helpers, const s_Type& type, s_cg_CurrentFn& _current_fn, s_Outputs& outputs, s_TokenIdx& _here, const s_Context& ctx, const s_Module& module)
+static fu_STR cgBlock_ZSrxdkgb(fu::view<s_SolvedNode> nodes, const bool skipCurlies, const bool gnuStmtExpr, const s_Helpers& helpers, const s_Type& type, s_cg_CurrentFn& _current_fn, s_Outputs& outputs, s_TokenIdx& _here, const s_Context& ctx, const s_Module& module)
 {
     const int _ids_used0 = _current_fn._ids_used.size();
     fu_DEFER(if (!_current_fn._hoist)
@@ -2583,9 +2614,9 @@ static fu_STR cgBlock_HHL3VAk1(fu::view<s_SolvedNode> nodes, const bool skipCurl
     bool ptrflip = false;
     if (has_val)
     {
-        fu_STR annot = typeAnnot_qLTezMaR(type, 0, outputs, _here, ctx, module, _current_fn);
-        fu_STR id = emitTEMPVAR_R0z1o01h(annot, ptrflip, (name ? (name + "_v"_fu) : fu_STR{}), (*(const fu_STR*)fu::NIL), _current_fn);
-        fu_STR out = (ptrflip ? ("*"_fu + id) : cgMove_25tfwTu6(type, id, module, ctx, outputs, _here, _current_fn));
+        fu_STR annot = typeAnnot_UXr2rbel(type, 0, outputs, _here, ctx, module, _current_fn);
+        fu_STR id = emitTEMPVAR_ZErWCUn1(annot, ptrflip, (name ? (name + "_v"_fu) : fu_STR{}), (*(const fu_STR*)fu::NIL), _current_fn);
+        fu_STR out = (ptrflip ? ("*"_fu + id) : cgMove_qUk1PGjF(type, id, module, ctx, outputs, _here, _current_fn));
         close = (("(void)0;}), "_fu + out) + ")"_fu);
         trail = (id + " = "_fu);
         if (ptrflip)
@@ -2596,7 +2627,7 @@ static fu_STR cgBlock_HHL3VAk1(fu::view<s_SolvedNode> nodes, const bool skipCurl
     fu_DEFER(_current_fn.blocks.shrink(blocks0));
     _current_fn.blocks += s_cg_Block { fu_STR(name), s_Helpers(helpers), bool(has_val), bool(ptrflip) };
     int count {};
-    /*MOV*/ fu_STR src = cgStatements_TuNaxyPa(nodes, count, trail, _current_fn, _here, ctx, module, outputs);
+    /*MOV*/ fu_STR src = cgStatements_4kwE5jRG(nodes, count, trail, _current_fn, _here, ctx, module, outputs);
     const bool labelUsed = fu::has(src, (("goto "_fu + name) + ";"_fu));
     if (labelUsed)
     {
@@ -2609,7 +2640,7 @@ static fu_STR cgBlock_HHL3VAk1(fu::view<s_SolvedNode> nodes, const bool skipCurl
     return /*NRVO*/ src;
 }
 
-static fu_STR cgBlock_3hPEhqj0(const s_SolvedNode& node, const int mode, fu::view<char> debug, s_cg_CurrentFn& _current_fn, s_TokenIdx& _here, const s_Context& ctx, const s_Module& module, s_Outputs& outputs)
+static fu_STR cgBlock_O5sy7iCr(const s_SolvedNode& node, const int mode, fu::view<char> debug, s_cg_CurrentFn& _current_fn, s_TokenIdx& _here, const s_Context& ctx, const s_Module& module, s_Outputs& outputs)
 {
     fu_VEC<s_SolvedNode> items = ((node.kind == s_kind_block) ? fu_VEC<s_SolvedNode>(node.items) : fu_VEC<s_SolvedNode> { fu::slate<1, s_SolvedNode> { s_SolvedNode(node) } });
     const s_Helpers& helpers = ((node.kind == s_kind_block) ? node.helpers : (*(const s_Helpers*)fu::NIL));
@@ -2617,25 +2648,15 @@ static fu_STR cgBlock_3hPEhqj0(const s_SolvedNode& node, const int mode, fu::vie
         _current_fn.can_cont = helpers;
 
     const bool expr = !(mode & M_STMT);
-    if (expr && exprOK_mOHIEP77(items) && !labelUsed_Ek083Hkf(items, helpers))
-        return cgComma_4boXVUVA(items, (debug + ".cgBlock"_fu), _current_fn, _here, ctx, module, outputs);
+    if (expr && exprOK_TtVbVKQY(items))
+        return cgComma_CKYjHEIt(items, (debug + ".cgBlock"_fu), _current_fn, _here, ctx, module, outputs);
 
-    return cgBlock_HHL3VAk1(items, !!(mode & M_OPT_CURLIES), expr, helpers, (expr ? node.type : (*(const s_Type*)fu::NIL)), _current_fn, outputs, _here, ctx, module);
+    return cgBlock_ZSrxdkgb(items, !!(mode & M_OPT_CURLIES), expr, helpers, (expr ? node.type : (*(const s_Type*)fu::NIL)), _current_fn, outputs, _here, ctx, module);
 }
 
-                                #ifndef DEF_SS_FN_RECUR
-                                #define DEF_SS_FN_RECUR
-inline constexpr unsigned SS_FN_RECUR = (0x1u << 17u);
-                                #endif
-
-                                #ifndef DEF_F_IMPLICIT
-                                #define DEF_F_IMPLICIT
-inline constexpr int F_IMPLICIT = (1 << 17);
-                                #endif
-
-                                #ifndef DEF_unpackAddrOfFn_M1XmIYV6
-                                #define DEF_unpackAddrOfFn_M1XmIYV6
-inline void unpackAddrOfFn_M1XmIYV6(fu::view<char> canon, s_Target& last, const s_Module& module, const s_Context& ctx, s_TokenIdx& _here, s_Outputs& outputs, s_cg_CurrentFn& _current_fn)
+                                #ifndef DEF_unpackAddrOfFn_5aYZqehi
+                                #define DEF_unpackAddrOfFn_5aYZqehi
+inline void unpackAddrOfFn_5aYZqehi(fu::view<char> canon, s_Target& last, const s_Module& module, const s_Context& ctx, s_TokenIdx& _here, s_Outputs& outputs, s_cg_CurrentFn& _current_fn)
 {
     if (!(canon[0] == '@'))
         fu::fail((("unpackAddrOfFn: No leading @ in `"_fu + canon) + "`."_fu));
@@ -2646,25 +2667,25 @@ inline void unpackAddrOfFn_M1XmIYV6(fu::view<char> canon, s_Target& last, const 
         const s_Mi mi = parseMi_mPp6Ulzh(offset, canon);
         const s_Target target = s_Target { int(mi.modid), int(mi.index) };
         if (last)
-            fail_vAc0TkcF(((("Codegen cannot decine which fn to pass as a c++ lambda at __native callsite: "_fu + GET_e4d90tdy(last, module, ctx).name) + " vs "_fu) + GET_e4d90tdy(target, module, ctx).name), _here, ctx);
+            fail_yKW1jZQa(((("Codegen cannot decine which fn to pass as a c++ lambda at __native callsite: "_fu + GET_R9VZCLcJ(last, module, ctx).name) + " vs "_fu) + GET_R9VZCLcJ(target, module, ctx).name), _here, ctx);
 
         last = target;
-        if (!(GET_e4d90tdy(target, module, ctx).kind == s_kind_fn))
-            fail_vAc0TkcF(((x7E("Cannot codegen a non-fn: "_fu, str_x2XZ9C2m(GET_e4d90tdy(target, module, ctx).kind)) + " "_fu) + GET_e4d90tdy(target, module, ctx).name), _here, ctx);
+        if (!(GET_R9VZCLcJ(target, module, ctx).kind == s_kind_fn))
+            fail_yKW1jZQa(((x7E("Cannot codegen a non-fn: "_fu, str_omkBT2iF(GET_R9VZCLcJ(target, module, ctx).kind)) + " "_fu) + GET_R9VZCLcJ(target, module, ctx).name), _here, ctx);
 
-        fu::view<s_Argument> args = EXT_CWThmWnJ(target, module, ctx).args;
+        fu::view<s_Argument> args = EXT_2tOGKtmg(target, module, ctx).args;
         for (int i = 0; i < args.size(); i++)
         {
-            if (args[i].flags & F_IMPLICIT)
-                fail_vAc0TkcF("How do we codegen F_IMPLICIT arguments through lambdas?"_fu, _here, ctx);
+            if (args[i].flags & s_Flags_F_IMPLICIT)
+                fail_yKW1jZQa("How do we codegen F_IMPLICIT arguments through lambdas?"_fu, _here, ctx);
 
         };
-        ensureFnUsable_0j7q7xbx(target, module, ctx, outputs, _current_fn, _here);
+        ensureFnUsable_a7Uwzkw6(target, module, ctx, outputs, _current_fn, _here);
     };
 }
                                 #endif
 
-static fu_STR cgEmpty_NzALUwZC(const s_SolvedNode& node, const int mode, const s_Module& module, const s_Context& ctx, s_TokenIdx& _here, s_Outputs& outputs, s_cg_CurrentFn& _current_fn)
+static fu_STR cgEmpty_bzNYcHre(const s_SolvedNode& node, const int mode, const s_Module& module, const s_Context& ctx, s_TokenIdx& _here, s_Outputs& outputs, s_cg_CurrentFn& _current_fn)
 {
     if (mode & M_STMT)
         return fu_STR{};
@@ -2672,31 +2693,31 @@ static fu_STR cgEmpty_NzALUwZC(const s_SolvedNode& node, const int mode, const s
     if ((mode & M_ARG_TO_NATIVE) && type_isAddrOfFn_4X1iL0ll(node.type))
     {
         s_Target last {};
-        unpackAddrOfFn_M1XmIYV6(node.type.vtype.canon, last, module, ctx, _here, outputs, _current_fn);
-        return "&"_fu + fnID_RoHiBEHy(last, module, ctx, _here);
+        unpackAddrOfFn_5aYZqehi(node.type.vtype.canon, last, module, ctx, _here, outputs, _current_fn);
+        return "&"_fu + fnID_LtbqgMhW(last, module, ctx, _here);
     };
     if (!node.type)
         return "0"_fu;
 
-    return cgDefault_LHegyzjJ(node.type, _here, ctx, outputs, module, _current_fn);
+    return cgDefault_f8sR3SJX(node.type, _here, ctx, outputs, module, _current_fn);
 }
 
-static fu_STR cgFn_dJMiPFW5(const s_SolvedNode& fn, const int mode, s_Outputs& outputs, const s_Module& module, const s_Context& ctx, s_TokenIdx& _here, s_cg_CurrentFn& _current_fn)
+static fu_STR cgFn_dWe6ao2S(const s_SolvedNode& fn, const int mode, s_Outputs& outputs, const s_Module& module, const s_Context& ctx, s_TokenIdx& _here, s_cg_CurrentFn& _current_fn)
 {
     fu_STR indent0 { outputs._indent };
     fu_DEFER(outputs._indent = indent0);
     fu::view<s_SolvedNode> items = fn.items;
     const s_SolvedNode& body = items[(items.size() + FN_BODY_BACK)];
     const s_Target& target = fn.target;
-    const s_Overload& overload = GET_e4d90tdy(target, module, ctx);
+    const s_Overload& overload = GET_R9VZCLcJ(target, module, ctx);
     fu::view<char> id = overload.name;
-    if (!(overload.status & SS_FINALIZED))
-        fail_vAc0TkcF(("cgFn: fn not finalized: "_fu + id), _here, ctx);
+    if (!(overload.status & s_SolverStatus_SS_FINALIZED))
+        fail_yKW1jZQa(("cgFn: fn not finalized: "_fu + id), _here, ctx);
 
     if (!body)
     {
         if (!(overload.kind == s_kind___native))
-            fail_vAc0TkcF(((x7E("cgFn: no body on non-native: "_fu, str_x2XZ9C2m(overload.kind)) + " "_fu) + id), _here, ctx);
+            fail_yKW1jZQa(((x7E("cgFn: no body on non-native: "_fu, str_omkBT2iF(overload.kind)) + " "_fu) + id), _here, ctx);
 
         return ((mode & M_STMT) ? fu_STR{} : "0"_fu);
     };
@@ -2708,8 +2729,8 @@ static fu_STR cgFn_dJMiPFW5(const s_SolvedNode& fn, const int mode, s_Outputs& o
         fu_DEFER(std::swap(_current_fn, current_fn0));
         std::swap(_current_fn, current_fn0);
         _current_fn.can_return = body.helpers;
-        src += cgFnSignature_At8Dm0Ju(fn, module, ctx, _here, outputs, _current_fn);
-        fu_STR body_src = cgBlock_3hPEhqj0(body, M_STMT, (("cgFn("_fu + id) + ")"_fu), _current_fn, _here, ctx, module, outputs);
+        src += cgFnSignature_XKij8Asq(fn, module, ctx, _here, outputs, _current_fn);
+        fu_STR body_src = cgBlock_O5sy7iCr(body, M_STMT, (("cgFn("_fu + id) + ")"_fu), _current_fn, _here, ctx, module, outputs);
         if (_current_fn._hoist)
         {
             fu_STR hoist = "\n    // Hoisted:"_fu;
@@ -2723,22 +2744,22 @@ static fu_STR cgFn_dJMiPFW5(const s_SolvedNode& fn, const int mode, s_Outputs& o
         };
         src += body_src;
     };
-    if (overload.status & SS_FN_RECUR)
-        ensureFwdDecl_JwB4P7aQ(fn.target, module, ctx, outputs, _current_fn, _here);
+    if (overload.status & s_SolverStatus_SS_FN_RECUR)
+        ensureFwdDecl_RoHiBEHy(fn.target, module, ctx, outputs, _current_fn, _here);
 
-    fu_STR dedupe = ((overload.flags & F_PUB) && (overload.flags & F_TEMPLATE) ? valid_identifier_9dZldJIf(fu_STR(overload.name)) : fu_STR{});
+    fu_STR dedupe = ((overload.flags & s_Flags_F_PUB) && (overload.flags & s_Flags_F_TEMPLATE) ? valid_identifier_DlVnWb66(fu_STR(overload.name)) : fu_STR{});
     fu_STR dedupe_1 = ((dedupe && overload.sighash) ? ((dedupe + '_') + overload.sighash) : fu_STR(dedupe));
-    if (overload.flags & F_HOTSWAP)
+    if (overload.flags & s_Flags_F_HOTSWAP)
     {
         if (!(target.modid == module.modid))
             fu_ASSERT();
 
         outputs._live_targets += int(target.index);
-        fu_STR fnID = fnID_RoHiBEHy(target, module, ctx, _here);
+        fu_STR fnID = fnID_LtbqgMhW(target, module, ctx, _here);
         fu_STR fnID_local = (fnID + "_local"_fu);
-        fu_STR fnPtrAnnot = cgFnPrototype_3D2f8k3a(target, true, _current_fn, module, ctx, _here, outputs);
-        include_OWB5Ob07("<dl/hotswap.hpp>"_fu, outputs);
-        ensureFwdDecl_JwB4P7aQ(target, module, ctx, outputs, _current_fn, _here);
+        fu_STR fnPtrAnnot = cgFnPrototype_CWtXR61K(target, true, _current_fn, module, ctx, _here, outputs);
+        include_mXeF2edC("<dl/hotswap.hpp>"_fu, outputs);
+        ensureFwdDecl_RoHiBEHy(target, module, ctx, outputs, _current_fn, _here);
         src = (((((((((((((((((((((("                                #ifdef fu_HOTSWAP\n"_fu + "                                #define "_fu) + fnID) + " "_fu) + fnID_local) + "\n"_fu) + "extern \"C\" fu_EXPORT\n"_fu) + "                                #endif\n"_fu) + src) + "\n"_fu) + "                                #ifdef fu_HOTSWAP\n"_fu) + "                                #undef "_fu) + fnID) + "\n"_fu) + fnPtrAnnot) + " =\n    fu::hotswap(\""_fu) + fnID_local) + "\",\n                 "_fu) + fnID) + ",\n                &"_fu) + fnID_local) + ");\n"_fu) + "                                #endif"_fu);
     };
     if (dedupe_1)
@@ -2748,30 +2769,30 @@ static fu_STR cgFn_dJMiPFW5(const s_SolvedNode& fn, const int mode, s_Outputs& o
     if (dedupe_1)
         outputs._fdef += "                                #endif\n"_fu;
 
-    return cgEmpty_NzALUwZC(fn, mode, module, ctx, _here, outputs, _current_fn);
+    return cgEmpty_bzNYcHre(fn, mode, module, ctx, _here, outputs, _current_fn);
 }
 
-static void ensureFnDef_bzVy7AAK(const s_Target& target, const s_Module& module, const s_Context& ctx, s_TokenIdx& _here, s_Outputs& outputs, s_cg_CurrentFn& _current_fn)
+static void ensureFnDef_dxDMG7ZZ(const s_Target& target, const s_Module& module, const s_Context& ctx, s_TokenIdx& _here, s_Outputs& outputs, s_cg_CurrentFn& _current_fn)
 {
     if (!(target.modid == module.modid))
-        fail_vAc0TkcF((((x7E((x7E((x7E("ensureFnDef: fndef is needed outside of its original scope: "_fu, fu::i64dec(target.modid)) + " vs "_fu), fu::i64dec(module.modid)) + ": `"_fu), str_x2XZ9C2m(GET_e4d90tdy(target, module, ctx).kind)) + " "_fu) + GET_e4d90tdy(target, module, ctx).name) + "`."_fu), _here, ctx);
+        fail_yKW1jZQa((((x7E((x7E((x7E("ensureFnDef: fndef is needed outside of its original scope: "_fu, fu::i64dec(target.modid)) + " vs "_fu), fu::i64dec(module.modid)) + ": `"_fu), str_omkBT2iF(GET_R9VZCLcJ(target, module, ctx).kind)) + " "_fu) + GET_R9VZCLcJ(target, module, ctx).name) + "`."_fu), _here, ctx);
 
-    if (!add_once_LAyLeT19(outputs._idef, target.index))
+    if (!add_once_sDUBjUzV(outputs._idef, target.index))
         return;
 
-    const s_SolvedNode& node = GET_e4d90tdy(target, module, ctx).solved;
+    const s_SolvedNode& node = GET_R9VZCLcJ(target, module, ctx).solved;
     if (!(node.kind == s_kind_fn))
-        fail_vAc0TkcF("ensureFnDef non-fn"_fu, _here, ctx);
+        fail_yKW1jZQa("ensureFnDef non-fn"_fu, _here, ctx);
 
-    cgFn_dJMiPFW5(node, M_STMT, outputs, module, ctx, _here, _current_fn);
+    cgFn_dWe6ao2S(node, M_STMT, outputs, module, ctx, _here, _current_fn);
 }
 
-static void ensureFnUsable_0j7q7xbx(const s_Target& target, const s_Module& module, const s_Context& ctx, s_Outputs& outputs, s_cg_CurrentFn& _current_fn, s_TokenIdx& _here)
+static void ensureFnUsable_a7Uwzkw6(const s_Target& target, const s_Module& module, const s_Context& ctx, s_Outputs& outputs, s_cg_CurrentFn& _current_fn, s_TokenIdx& _here)
 {
     if (target.modid != module.modid)
-        ensureFwdDecl_JwB4P7aQ(target, module, ctx, outputs, _current_fn, _here);
+        ensureFwdDecl_RoHiBEHy(target, module, ctx, outputs, _current_fn, _here);
     else
-        ensureFnDef_bzVy7AAK(target, module, ctx, _here, outputs, _current_fn);
+        ensureFnDef_dxDMG7ZZ(target, module, ctx, _here, outputs, _current_fn);
 
 }
 
@@ -2780,19 +2801,19 @@ static void ensureFnUsable_0j7q7xbx(const s_Target& target, const s_Module& modu
 inline constexpr int LET_INIT = 1;
                                 #endif
 
-inline static bool isIntegerConstant_MhqsaoGh(const s_SolvedNode& expr, const s_Module& module, const s_Context& ctx)
+inline static bool isIntegerConstant_DRueWSxV(const s_SolvedNode& expr, const s_Module& module, const s_Context& ctx)
 {
     if (expr.kind == s_kind_int)
         return true;
 
     if (expr.kind == s_kind_call)
     {
-        const s_Overload& t = GET_e4d90tdy(expr.target, module, ctx);
-        if ((t.kind == s_kind___native) && (t.flags & F_OPERATOR))
+        const s_Overload& t = GET_R9VZCLcJ(expr.target, module, ctx);
+        if ((t.kind == s_kind___native) && (t.flags & s_Flags_F_OPERATOR))
         {
             for (int i = 0; i < expr.items.size(); i++)
             {
-                if (!isIntegerConstant_MhqsaoGh(expr.items[i], module, ctx))
+                if (!isIntegerConstant_DRueWSxV(expr.items[i], module, ctx))
                     return false;
 
             };
@@ -2831,38 +2852,38 @@ inline fu_STR join_xAlmFa4a(fu::view<fu_STR> a, fu::view<char> sep)
 }
                                 #endif
 
-static fu_STR binding_AB3VN19N(const s_Target& target, const s_SolvedNode& init, const bool doInit, const s_Module& module, const s_Context& ctx, s_TokenIdx& _here, s_Outputs& outputs, s_cg_CurrentFn& _current_fn)
+static fu_STR binding_U4RkNL4B(const s_Target& target, const s_SolvedNode& init, const bool doInit, const s_Module& module, const s_Context& ctx, s_TokenIdx& _here, s_Outputs& outputs, s_cg_CurrentFn& _current_fn)
 {
-    /*MOV*/ fu_STR head = binding_NCEyeoyV(target, bool{}, module, ctx, _here, outputs, _current_fn);
+    /*MOV*/ fu_STR head = binding_Kd2aQcYt(target, bool{}, module, ctx, _here, outputs, _current_fn);
     if (!doInit)
         return /*NRVO*/ head;
 
-    if (GET_e4d90tdy(target, module, ctx).flags & F_HOIST)
+    if (GET_R9VZCLcJ(target, module, ctx).status & s_SolverStatus_SS_HOIST)
         head += " = "_fu;
 
     if (!init || ((init.kind == s_kind_definit) && !is_ref_4X1iL0ll(init.type)))
         return head + " {}"_fu;
 
-    const bool isCopy = ((init.kind == s_kind_copy) && !is_ref_4X1iL0ll(GET_e4d90tdy(target, module, ctx).solved.type));
+    const bool isCopy = ((init.kind == s_kind_copy) && !is_ref_4X1iL0ll(GET_R9VZCLcJ(target, module, ctx).solved.type));
     const s_SolvedNode& init_1 = (isCopy ? only_O0vxkflG(init.items) : init);
     const bool use_initTEMPVARs = !_current_fn.target.index;
     fu_VEC<fu_STR> initTEMPVARs {};
     if (use_initTEMPVARs)
         std::swap(initTEMPVARs, _current_fn.TEMPVARs);
 
-    fu_STR expr = cgNode_4Ur0xXU7(init_1, "binding"_fu, 0, (*(const s_Type*)fu::NIL), _here, ctx, module, _current_fn, outputs);
+    fu_STR expr = cgNode_dsqfXxyo(init_1, "binding"_fu, 0, (*(const s_Type*)fu::NIL), _here, ctx, module, _current_fn, outputs);
     if (use_initTEMPVARs)
         std::swap(initTEMPVARs, _current_fn.TEMPVARs);
 
     if (initTEMPVARs)
-        expr = (((((("[]() -> "_fu + typeAnnot_qLTezMaR(init_1.type, 0, outputs, _here, ctx, module, _current_fn)) + " {\n    "_fu) + join_xAlmFa4a(initTEMPVARs, ";\n    "_fu)) + ";\n    return "_fu) + expr) + ";\n}()"_fu);
+        expr = (((((("[]() -> "_fu + typeAnnot_UXr2rbel(init_1.type, 0, outputs, _here, ctx, module, _current_fn)) + " {\n    "_fu) + join_xAlmFa4a(initTEMPVARs, ";\n    "_fu)) + ";\n    return "_fu) + expr) + ";\n}()"_fu);
 
     if (isCopy && !is_primitive_CbRwLCm2(init_1.type))
         return ((head + " { "_fu) + expr) + " }"_fu;
 
-    if (GET_e4d90tdy(target, module, ctx).flags & F_HOIST)
+    if (GET_R9VZCLcJ(target, module, ctx).status & s_SolverStatus_SS_HOIST)
     {
-        if (F_HOIST_asPtr_Iskt398F(target, module, ctx))
+        if (F_HOIST_asPtr_JwB4P7aQ(target, module, ctx))
             return ((head + "&("_fu) + expr) + ")"_fu;
 
         return head + expr;
@@ -2870,11 +2891,11 @@ static fu_STR binding_AB3VN19N(const s_Target& target, const s_SolvedNode& init,
     return (head + " = "_fu) + expr;
 }
 
-static fu_STR binding_jAQ8qxbu(const s_SolvedNode& node, const bool doInit, const s_Module& module, const s_Context& ctx, s_TokenIdx& _here, s_Outputs& outputs, s_cg_CurrentFn& _current_fn)
+static fu_STR binding_LVchz60W(const s_SolvedNode& node, const bool doInit, const s_Module& module, const s_Context& ctx, s_TokenIdx& _here, s_Outputs& outputs, s_cg_CurrentFn& _current_fn)
 {
     const s_Target& target = node.target;
     const s_SolvedNode& init = (doInit && node.items ? node.items[LET_INIT] : (*(const s_SolvedNode*)fu::NIL));
-    return binding_AB3VN19N(target, init, doInit, module, ctx, _here, outputs, _current_fn);
+    return binding_U4RkNL4B(target, init, doInit, module, ctx, _here, outputs, _current_fn);
 }
 
                                 #ifndef DEF_starts_pN4jXVBE
@@ -2885,13 +2906,13 @@ inline bool starts_pN4jXVBE(fu::view<char> a, fu::view<char> with)
 }
                                 #endif
 
-static fu_STR cgLet_VlW1Apu7(const s_SolvedNode& node, const bool global, const bool foreign, const s_Module& module, const s_Context& ctx, s_TokenIdx& _here, s_Outputs& outputs, s_cg_CurrentFn& _current_fn)
+static fu_STR cgLet_RxcvqonR(const s_SolvedNode& node, const bool global, const bool foreign, const s_Module& module, const s_Context& ctx, s_TokenIdx& _here, s_Outputs& outputs, s_cg_CurrentFn& _current_fn)
 {
     if (type_isZST_4X1iL0ll(node.type))
         return fu_STR{};
 
-    const bool intconst = (global && is_primitive_CbRwLCm2(node.type) && !is_floating_pt_CbRwLCm2(node.type) && isIntegerConstant_MhqsaoGh(node.items[LET_INIT], module, ctx));
-    /*MOV*/ fu_STR src = binding_jAQ8qxbu(node, (!foreign || intconst), module, ctx, _here, outputs, _current_fn);
+    const bool intconst = (global && is_primitive_CbRwLCm2(node.type) && !is_floating_pt_CbRwLCm2(node.type) && isIntegerConstant_DRueWSxV(node.items[LET_INIT], module, ctx));
+    /*MOV*/ fu_STR src = binding_LVchz60W(node, (!foreign || intconst), module, ctx, _here, outputs, _current_fn);
     if (!global)
         return /*NRVO*/ src;
 
@@ -2906,19 +2927,19 @@ static fu_STR cgLet_VlW1Apu7(const s_SolvedNode& node, const bool global, const 
     const int prio = (is_primitive_CbRwLCm2(node.type) ? 0 : int(((node.target.modid == module.modid) ? module.out.init_prio : ctx.modules[node.target.modid].out.init_prio)));
     if (prio)
     {
-        include_OWB5Ob07("<fu/init_priority.h>"_fu, outputs);
+        include_mXeF2edC("<fu/init_priority.h>"_fu, outputs);
         fu_STR attr = (x7E("fu_INIT_PRIORITY("_fu, fu::i64dec((1000 + prio))) + ")"_fu);
         const int eq = find_97z4iafs(src, '=');
         if (eq > 0)
             src = (((fu::get_view(src, 0, eq) + attr) + " "_fu) + fu::get_view(src, eq, src.size()));
 
     };
-    if (!isExtLinked_cLSktIVF(GET_e4d90tdy(node.target, module, ctx)))
+    if (!isExtLinked_LJ4ozhqN(GET_R9VZCLcJ(node.target, module, ctx)))
     {
         if (!foreign)
             outputs._fdef += (("\nstatic const "_fu + src) + ";\n"_fu);
         else
-            fail_vAc0TkcF(("Cannot codegen, relies on an external static: "_fu + GET_e4d90tdy(node.target, module, ctx).name), _here, ctx);
+            fail_yKW1jZQa(("Cannot codegen, relies on an external static: "_fu + GET_R9VZCLcJ(node.target, module, ctx).name), _here, ctx);
 
     }
     else
@@ -2927,12 +2948,12 @@ static fu_STR cgLet_VlW1Apu7(const s_SolvedNode& node, const bool global, const 
     return fu_STR{};
 }
 
-static void cgForeignGlobal_j9812gxb(const s_Target& target, s_Outputs& outputs, const s_Module& module, const s_Context& ctx, s_TokenIdx& _here, s_cg_CurrentFn& _current_fn)
+static void cgForeignGlobal_zP6CWMO5(const s_Target& target, s_Outputs& outputs, const s_Module& module, const s_Context& ctx, s_TokenIdx& _here, s_cg_CurrentFn& _current_fn)
 {
-    if (!add_once_kvt8keVT(outputs._ffwd, target))
+    if (!add_once_j0TFJFyI(outputs._ffwd, target))
         return;
 
-    cgLet_VlW1Apu7(GET_e4d90tdy(target, module, ctx).solved, true, true, module, ctx, _here, outputs, _current_fn);
+    cgLet_RxcvqonR(GET_R9VZCLcJ(target, module, ctx).solved, true, true, module, ctx, _here, outputs, _current_fn);
 }
 
                                 #ifndef DEF_has_xAlmFa4a
@@ -2949,7 +2970,7 @@ inline bool has_xAlmFa4a(fu::view<fu_STR> a, fu::view<char> b)
 }
                                 #endif
 
-static fu_STR rootNS_xQqDz96E(const fu_STR& id, const s_cg_CurrentFn& _current_fn)
+static fu_STR rootNS_Zb8WXg5C(const fu_STR& id, const s_cg_CurrentFn& _current_fn)
 {
     if (has_xAlmFa4a(_current_fn._ids_used, id))
         return "::"_fu + id;
@@ -2957,22 +2978,22 @@ static fu_STR rootNS_xQqDz96E(const fu_STR& id, const s_cg_CurrentFn& _current_f
     return fu_STR(id);
 }
 
-static fu_STR cgEnumv_gIiTr91C(const s_Type& type, fu::view<char> id, s_Outputs& outputs, s_TokenIdx& _here, const s_Context& ctx, const s_Module& module, s_cg_CurrentFn& _current_fn)
+static fu_STR cgEnumv_lHKwRwP1(const s_Type& type, fu::view<char> id, s_Outputs& outputs, s_TokenIdx& _here, const s_Context& ctx, const s_Module& module, s_cg_CurrentFn& _current_fn)
 {
-    fu_STR base = typeAnnotBase_x4OjwAeo(type, 0, outputs, _here, ctx, module, _current_fn);
+    fu_STR base = typeAnnotBase_DOcOWqci(type, 0, outputs, _here, ctx, module, _current_fn);
     return (base + "_"_fu) + id;
 }
 
-static fu_STR emitPrefixOp_fQAnUa9Y(fu::view<char> op, fu::view_mut<fu_STR> item_src, const bool isNative, const s_SolvedNode& node, s_Outputs& outputs, s_TokenIdx& _here, const s_Context& ctx, const s_Module& module, s_cg_CurrentFn& _current_fn)
+static fu_STR emitPrefixOp_XthD9CZt(fu::view<char> op, fu::view_mut<fu_STR> item_src, const bool isNative, const s_SolvedNode& node, s_Outputs& outputs, s_TokenIdx& _here, const s_Context& ctx, const s_Module& module, s_cg_CurrentFn& _current_fn)
 {
-    return unpromote_9BlNiRWE((op + ARG_I1YVDH5s(0, item_src)), isNative, node, outputs, _here, ctx, module, _current_fn);
+    return unpromote_c8tdHyVC((op + ARG_ID92DIZl(0, item_src)), isNative, node, outputs, _here, ctx, module, _current_fn);
 }
 
-static fu_STR cgCall_YhxSxs3S(const s_SolvedNode& node, const int mode, const s_Module& module, const s_Context& ctx, s_TokenIdx& _here, s_cg_CurrentFn& _current_fn, s_Outputs& outputs)
+static fu_STR cgCall_gNEKUGCh(const s_SolvedNode& node, const int mode, const s_Module& module, const s_Context& ctx, s_TokenIdx& _here, s_cg_CurrentFn& _current_fn, s_Outputs& outputs)
 {
-    const s_Extended& ext = EXT_CWThmWnJ(node.target, module, ctx);
+    const s_Extended& ext = EXT_2tOGKtmg(node.target, module, ctx);
     const s_Overload* _0;
-    const s_Overload& target = (*(_0 = &(GET_e4d90tdy(node.target, module, ctx))) ? *_0 : fail_vAc0TkcF((*(const fu_STR*)fu::NIL), _here, ctx));
+    const s_Overload& target = (*(_0 = &(GET_R9VZCLcJ(node.target, module, ctx))) ? *_0 : fail_yKW1jZQa((*(const fu_STR*)fu::NIL), _here, ctx));
     const fu_VEC<s_SolvedNode>& args = node.items;
     const bool isNative = (target.kind == s_kind___native);
     const bool isCpyMovAssign = ((args.size() == 2) && isNative && (target.name == "="_fu));
@@ -2987,21 +3008,21 @@ static fu_STR cgCall_YhxSxs3S(const s_SolvedNode& node, const int mode, const s_
         bool junk = false;
         if (type_isZST_4X1iL0ll(arg_1.type))
         {
-            junk = ((arg_1.kind == s_kind_empty) || (arg_1.kind == s_kind_definit) || (arg_1.kind == s_kind_fndef) || ((arg_1.kind == s_kind_call) && ((GET_e4d90tdy(arg_1.target, module, ctx).kind == s_kind_var) || ((GET_e4d90tdy(arg_1.target, module, ctx).kind == s_kind_type) && !arg_1.items) || (GET_e4d90tdy(arg_1.target, module, ctx).kind == s_kind_enumv))));
+            junk = ((arg_1.kind == s_kind_empty) || (arg_1.kind == s_kind_definit) || (arg_1.kind == s_kind_fndef) || ((arg_1.kind == s_kind_call) && ((GET_R9VZCLcJ(arg_1.target, module, ctx).kind == s_kind_var) || ((GET_R9VZCLcJ(arg_1.target, module, ctx).kind == s_kind_type) && !arg_1.items) || (GET_R9VZCLcJ(arg_1.target, module, ctx).kind == s_kind_enumv))));
             if (!junk)
-                fail_vAc0TkcF((x7E("Cannot discard ZST arg, kind is `"_fu, str_x2XZ9C2m(arg_1.kind)) + "`."_fu), _here, ctx);
+                fail_yKW1jZQa((x7E("Cannot discard ZST arg, kind is `"_fu, str_omkBT2iF(arg_1.kind)) + "`."_fu), _here, ctx);
 
         };
         fu_STR _1 {};
-        fu_STR src = (junk ? fu_STR{} : ((_1 = cgNode_4Ur0xXU7(arg_1, (x7E((("cgCall("_fu + node.value) + ").ARG("_fu), fu::i64dec(i)) + ")"_fu), (isNative ? M_ARG_TO_NATIVE : (*(const int*)fu::NIL)), ext.args[i].type, _here, ctx, module, _current_fn, outputs)) ? static_cast<fu_STR&&>(_1) : fail_vAc0TkcF("Empty arg src."_fu, _here, ctx)));
+        fu_STR src = (junk ? fu_STR{} : ((_1 = cgNode_dsqfXxyo(arg_1, (x7E((("cgCall("_fu + node.value) + ").ARG("_fu), fu::i64dec(i)) + ")"_fu), (isNative ? M_ARG_TO_NATIVE : (*(const int*)fu::NIL)), ext.args[i].type, _here, ctx, module, _current_fn, outputs)) ? static_cast<fu_STR&&>(_1) : fail_yKW1jZQa("Empty arg src."_fu, _here, ctx)));
         const int MUSTSEQ_bit = (1 << (i & 31));
         if (MUSTSEQ_mask & MUSTSEQ_bit)
         {
             if (junk)
-                fail_vAc0TkcF("Trying to MUSTSEQ a discarded argument, shouldnt happen."_fu, _here, ctx);
+                fail_yKW1jZQa("Trying to MUSTSEQ a discarded argument, shouldnt happen."_fu, _here, ctx);
 
             ooe_crosscheck |= MUSTSEQ_bit;
-            if (!isFieldChain_iSy5UEsM(arg_1, module, ctx))
+            if (!isFieldChain_qtapGc96(arg_1, module, ctx))
             {
                 if (ooe_header)
                     ooe_header += ", "_fu;
@@ -3009,18 +3030,18 @@ static fu_STR cgCall_YhxSxs3S(const s_SolvedNode& node, const int mode, const s_
                     ooe_header = "("_fu;
 
                 bool ptrflip = false;
-                fu_STR annot = typeAnnot_qLTezMaR(arg_1.type, 0, outputs, _here, ctx, module, _current_fn);
-                fu_STR id = emitTEMPVAR_R0z1o01h(annot, ptrflip, (*(const fu_STR*)fu::NIL), (*(const fu_STR*)fu::NIL), _current_fn);
+                fu_STR annot = typeAnnot_UXr2rbel(arg_1.type, 0, outputs, _here, ctx, module, _current_fn);
+                fu_STR id = emitTEMPVAR_ZErWCUn1(annot, ptrflip, (*(const fu_STR*)fu::NIL), (*(const fu_STR*)fu::NIL), _current_fn);
                 ooe_header += id;
                 ooe_header += " = "_fu;
                 ooe_header += (ptrflip ? (("&("_fu + src) + ")"_fu) : fu_STR(src));
-                src = (ptrflip ? ("*"_fu + id) : cgMove_25tfwTu6(arg_1.type, id, module, ctx, outputs, _here, _current_fn));
+                src = (ptrflip ? ("*"_fu + id) : cgMove_qUk1PGjF(arg_1.type, id, module, ctx, outputs, _here, _current_fn));
             };
         };
         item_src += fu_STR(src);
     };
     if (!(ooe_crosscheck == MUSTSEQ_mask))
-        fail_vAc0TkcF(((x7E((x7E("OOE crosscheck failed: codegen sequenced "_fu, fu::i64dec(ooe_crosscheck)) + ", but solver wants "_fu), fu::i64dec(MUSTSEQ_mask)) + ": "_fu) + join_tkmelWjn(map_mlFNWJmB(args), "|"_fu)), _here, ctx);
+        fail_yKW1jZQa(((x7E((x7E("OOE crosscheck failed: codegen sequenced "_fu, fu::i64dec(ooe_crosscheck)) + ", but solver wants "_fu), fu::i64dec(MUSTSEQ_mask)) + ": "_fu) + join_tkmelWjn(map_PnsqjW13(args), "|"_fu)), _here, ctx);
 
     if (isNative && (target.name[0] == '\n'))
     {
@@ -3028,72 +3049,81 @@ static fu_STR cgCall_YhxSxs3S(const s_SolvedNode& node, const int mode, const s_
         const int idx = find_97z4iafs(id, '\n');
         if (idx > -1)
         {
-            include_OWB5Ob07(fu::slice(id, 0, idx), outputs);
+            include_mXeF2edC(fu::slice(id, 0, idx), outputs);
             id = fu::slice(id, (idx + 1));
         };
         if (id[0] == '.')
         {
             if (args.size() > 1)
-                return emitMethodCall_KsrSXyLu(id, item_src, ooe_header);
+                return emitMethodCall_PLMbLcsU(id, item_src, ooe_header);
 
-            return emitPostfixOp_vGnasgPL(id, item_src, isNative, node, outputs, _here, ctx, module, _current_fn);
+            return emitPostfixOp_EVtufgJS(id, item_src, isNative, node, outputs, _here, ctx, module, _current_fn);
         };
         if (id[0] == '/')
-            return ooeWrap_mGUL7XFy(emitBuiltin_vOmjqcK5(id, item_src, node, outputs, _here, ctx, module, _current_fn), ooe_header);
+            return ooeWrap_zTDYCsol(emitBuiltin_Hjx3y0Ls(id, item_src, node, outputs, _here, ctx, module, _current_fn), ooe_header);
 
         if (args)
         {
             if (hasIdentifierChars_ZCtM7908(id))
-                return emitFunctionCall_2t9pqLgq(id, "("_fu, ")"_fu, item_src, ooe_header);
+                return emitFunctionCall_WbTSClRc(id, "("_fu, ")"_fu, item_src, ooe_header);
 
-            return emitBinaryOp_okkKnHw8(id, args, _here, ctx, mode, ooe_header, item_src, isNative, node, outputs, module, _current_fn);
+            return emitBinaryOp_ICzKTrZ2(id, args, _here, ctx, mode, ooe_header, item_src, isNative, node, outputs, module, _current_fn);
         };
         return /*NRVO*/ id;
     };
     if (target.kind == s_kind_type)
     {
         if (!args)
-            return cgDefault_LHegyzjJ(target.type, _here, ctx, outputs, module, _current_fn);
+            return cgDefault_f8sR3SJX(target.type, _here, ctx, outputs, module, _current_fn);
 
-        if (!(isStruct_ZYIX8afu(target.type)))
-            fail_vAc0TkcF("cgCall: defctor/type not a struct."_fu, _here, ctx);
+        const s_Struct* _2;
+        const s_Struct& t = (*(_2 = &(tryLookupStructOrUserPrimitive_K61azC5I(target.type, module, ctx))) ? *_2 : fail_yKW1jZQa("cgCall: defctor/type not a struct nor a user primitive."_fu, _here, ctx));
+        fu_STR base = typeAnnotBase_DOcOWqci(target.type, 0, outputs, _here, ctx, module, _current_fn);
+        if (t.kind == s_kind_flags)
+            return emitFunctionCall_WbTSClRc(base, "(("_fu, ((") & MASK_"_fu + base) + ")"_fu), item_src, ooe_header);
 
-        return emitFunctionCall_2t9pqLgq(typeAnnotBase_x4OjwAeo(target.type, 0, outputs, _here, ctx, module, _current_fn), " { "_fu, " }"_fu, item_src, ooe_header);
+        if ((t.kind == s_kind_primitive) || (t.kind == s_kind_enum))
+            return emitFunctionCall_WbTSClRc(base, "("_fu, ")"_fu, item_src, ooe_header);
+
+        if ((t.kind == s_kind_struct) || (t.kind == s_kind_union))
+            return emitFunctionCall_WbTSClRc(base, " { "_fu, " }"_fu, item_src, ooe_header);
+
+        BUG_XksxYQ3i(x7E("Unknown usertype kind: "_fu, str_omkBT2iF(t.kind)), _here, ctx);
     };
     if (node.target.modid && (target.kind == s_kind_fn))
-        ensureFnUsable_0j7q7xbx(node.target, module, ctx, outputs, _current_fn, _here);
+        ensureFnUsable_a7Uwzkw6(node.target, module, ctx, outputs, _current_fn, _here);
 
-    const fu_STR& id = (target.name ? target.name : fail_vAc0TkcF((*(const fu_STR*)fu::NIL), _here, ctx));
+    const fu_STR& id = (target.name ? target.name : fail_yKW1jZQa((*(const fu_STR*)fu::NIL), _here, ctx));
     if ((args.size() <= 2))
     {
         if (target.kind == s_kind_var)
         {
             if (type_isZST_4X1iL0ll(target.type))
-                return cgDefault_LHegyzjJ(target.type, _here, ctx, outputs, module, _current_fn);
+                return cgDefault_f8sR3SJX(target.type, _here, ctx, outputs, module, _current_fn);
 
-            if (!isLocal_BbPJiRBG(node.target))
+            if (!isLocal_YQmB0dcG(node.target))
             {
                 if (node.target.modid != module.modid)
-                    cgForeignGlobal_j9812gxb(node.target, outputs, module, ctx, _here, _current_fn);
+                    cgForeignGlobal_zP6CWMO5(node.target, outputs, module, ctx, _here, _current_fn);
 
-                return rootNS_xQqDz96E(ID_LX3QLY5k(id), _current_fn);
+                return rootNS_Zb8WXg5C(ID_LX3QLY5k(id), _current_fn);
             };
-            /*MOV*/ fu_STR id_1 = localID_11mH3rWx(node.target, bool{}, module, ctx, _current_fn);
-            if (F_HOIST_asPtr_Iskt398F(node.target, module, ctx))
+            /*MOV*/ fu_STR id_1 = localID_ErBtbPnG(node.target, bool{}, module, ctx, _current_fn);
+            if (F_HOIST_asPtr_JwB4P7aQ(node.target, module, ctx))
                 return ("(*"_fu + id_1) + ")"_fu;
 
             return /*NRVO*/ id_1;
         };
         if (target.kind == s_kind_field)
-            return (ARG_I1YVDH5s(0, item_src) + "."_fu) + ID_LX3QLY5k(id);
+            return (ARG_ID92DIZl(0, item_src) + "."_fu) + ID_LX3QLY5k(id);
 
         if (target.kind == s_kind_enumv)
-            return cgEnumv_gIiTr91C(target.type, id, outputs, _here, ctx, module, _current_fn);
+            return cgEnumv_lHKwRwP1(target.type, id, outputs, _here, ctx, module, _current_fn);
 
-        if (isOp_KzmHAgGj(node.target, module, ctx))
+        if (isOp_zVvcE3BI(node.target, module, ctx))
         {
             if (args.size() == 1)
-                return ((target.flags & F_POSTFIX) ? emitPostfixOp_vGnasgPL(valid_operator_vfuw1B15(id), item_src, isNative, node, outputs, _here, ctx, module, _current_fn) : emitPrefixOp_fQAnUa9Y(valid_operator_vfuw1B15(id), item_src, isNative, node, outputs, _here, ctx, module, _current_fn));
+                return ((target.flags & s_Flags_F_POSTFIX) ? emitPostfixOp_EVtufgJS(valid_operator_k2rX0sor(id), item_src, isNative, node, outputs, _here, ctx, module, _current_fn) : emitPrefixOp_XthD9CZt(valid_operator_k2rX0sor(id), item_src, isNative, node, outputs, _here, ctx, module, _current_fn));
 
             if (args.size() == 2)
             {
@@ -3101,23 +3131,23 @@ static fu_STR cgCall_YhxSxs3S(const s_SolvedNode& node, const int mode, const s_
                 {
                     if (mode & M_MOVE)
                     {
-                        fu_STR _2 {};
-                        return (_2 = (ARG_I1YVDH5s(0, item_src) + ".try_steal("_fu), (static_cast<fu_STR&&>(_2) + ARG_I1YVDH5s(1, item_src))) + ")"_fu;
+                        fu_STR _3 {};
+                        return (_3 = (ARG_ID92DIZl(0, item_src) + ".try_steal("_fu), (static_cast<fu_STR&&>(_3) + ARG_ID92DIZl(1, item_src))) + ")"_fu;
                     };
-                    fu_STR _3 {};
-                    return (_3 = (ARG_I1YVDH5s(0, item_src) + "["_fu), (static_cast<fu_STR&&>(_3) + ARG_I1YVDH5s(1, item_src))) + "]"_fu;
+                    fu_STR _4 {};
+                    return (_4 = (ARG_ID92DIZl(0, item_src) + "["_fu), (static_cast<fu_STR&&>(_4) + ARG_ID92DIZl(1, item_src))) + "]"_fu;
                 };
-                return emitBinaryOp_okkKnHw8(valid_operator_vfuw1B15(id), args, _here, ctx, mode, ooe_header, item_src, isNative, node, outputs, module, _current_fn);
+                return emitBinaryOp_ICzKTrZ2(valid_operator_k2rX0sor(id), args, _here, ctx, mode, ooe_header, item_src, isNative, node, outputs, module, _current_fn);
             };
         };
         if ((id == "STEAL"_fu) && (args.size() == 1))
-            return cgMove_25tfwTu6(node.type, ARG_I1YVDH5s(0, item_src), module, ctx, outputs, _here, _current_fn);
+            return cgMove_qUk1PGjF(node.type, ARG_ID92DIZl(0, item_src), module, ctx, outputs, _here, _current_fn);
 
     };
     if (isNative)
-        fail_vAc0TkcF((("Unknown __native: `"_fu + id) + "`."_fu), _here, ctx);
+        fail_yKW1jZQa((("Unknown __native: `"_fu + id) + "`."_fu), _here, ctx);
 
-    return emitFunctionCall_2t9pqLgq(rootNS_xQqDz96E(valid_identifier_9dZldJIf(fu_STR(id)), _current_fn), "("_fu, ")"_fu, item_src, ooe_header);
+    return emitFunctionCall_WbTSClRc(rootNS_Zb8WXg5C(fnID_LtbqgMhW(node.target, module, ctx, _here), _current_fn), "("_fu, ")"_fu, item_src, ooe_header);
 }
 
                                 #ifndef DEF_has_97z4iafs
@@ -3149,7 +3179,7 @@ inline int find_EAsImrjz(fu::view<char> a, const char b, int start)
 }
                                 #endif
 
-static fu_STR cgLiteral_OMqKm8yn(const s_SolvedNode& node, s_Outputs& outputs, s_TokenIdx& _here, const s_Context& ctx, const s_Module& module, s_cg_CurrentFn& _current_fn)
+static fu_STR cgLiteral_I1krZny2(const s_SolvedNode& node, s_Outputs& outputs, s_TokenIdx& _here, const s_Context& ctx, const s_Module& module, s_cg_CurrentFn& _current_fn)
 {
     /*MOV*/ fu_STR src { node.value };
     if (is_unsigned_CbRwLCm2(node.type) && !has_97z4iafs(src, 'u'))
@@ -3191,7 +3221,7 @@ static fu_STR cgLiteral_OMqKm8yn(const s_SolvedNode& node, s_Outputs& outputs, s
 
         }
         else
-            return ((typeAnnotBase_x4OjwAeo(node.type, 0, outputs, _here, ctx, module, _current_fn) + "("_fu) + src) + ")"_fu;
+            return ((typeAnnotBase_DOcOWqci(node.type, 0, outputs, _here, ctx, module, _current_fn) + "("_fu) + src) + ")"_fu;
 
     };
     int idx {};
@@ -3201,7 +3231,7 @@ static fu_STR cgLiteral_OMqKm8yn(const s_SolvedNode& node, s_Outputs& outputs, s
     return /*NRVO*/ src;
 }
 
-static fu_STR escapeStringLiteral_UPAgDlDC(fu::view<char> str, const char quot)
+static fu_STR escapeStringLiteral_bVDlywOf(fu::view<char> str, const char quot)
 {
     /*MOV*/ fu_STR esc = fu_STR { fu::slate<1, char> { char(quot) } };
     for (int i = 0; i < str.size(); i++)
@@ -3218,7 +3248,7 @@ static fu_STR escapeStringLiteral_UPAgDlDC(fu::view<char> str, const char quot)
         else if (c == '\\')
             esc += "\\\\"_fu;
         else if (fu::i8(fu::u8(c)) < fu::i8(32))
-            esc += ("\\"_fu + xHH_gyFRpmHc(unsigned(fu::u8(c))));
+            esc += ("\\"_fu + xHH_BDfBCCi2(unsigned(fu::u8(c))));
         else
         {
             if (c == quot)
@@ -3231,53 +3261,53 @@ static fu_STR escapeStringLiteral_UPAgDlDC(fu::view<char> str, const char quot)
     return /*NRVO*/ esc;
 }
 
-static fu_STR cgCharLiteral_zbdyWvID(const s_SolvedNode& node)
+static fu_STR cgCharLiteral_gVWMdpkb(const s_SolvedNode& node)
 {
-    return escapeStringLiteral_UPAgDlDC(node.value, '\'');
+    return escapeStringLiteral_bVDlywOf(node.value, '\'');
 }
 
-static fu_STR cgStringLiteral_GfN9Oovf(const s_SolvedNode& node, s_Outputs& outputs, s_TokenIdx& _here, const s_Context& ctx, const s_Module& module, s_cg_CurrentFn& _current_fn)
+static fu_STR cgStringLiteral_psJ63fCx(const s_SolvedNode& node, s_Outputs& outputs, s_TokenIdx& _here, const s_Context& ctx, const s_Module& module, s_cg_CurrentFn& _current_fn)
 {
     if (is_enum_CbRwLCm2(node.type))
-        return cgEnumv_gIiTr91C(node.type, node.value, outputs, _here, ctx, module, _current_fn);
+        return cgEnumv_lHKwRwP1(node.type, node.value, outputs, _here, ctx, module, _current_fn);
 
-    annotateString_LkR5I5c0(outputs);
-    /*MOV*/ fu_STR esc = escapeStringLiteral_UPAgDlDC(node.value, '"');
+    annotateString_0sgif0a7(outputs);
+    /*MOV*/ fu_STR esc = escapeStringLiteral_bVDlywOf(node.value, '"');
     esc += "_fu"_fu;
     return /*NRVO*/ esc;
 }
 
-static fu_STR cgArrayLiteral_o7SOBpzq(const s_SolvedNode& node, const int mode, const s_Type& callarg, const s_Module& module, const s_Context& ctx, s_TokenIdx& _here, s_cg_CurrentFn& _current_fn, s_Outputs& outputs)
+static fu_STR cgArrayLiteral_LhMZTdKu(const s_SolvedNode& node, const int mode, const s_Type& callarg, const s_Module& module, const s_Context& ctx, s_TokenIdx& _here, s_cg_CurrentFn& _current_fn, s_Outputs& outputs)
 {
     if (node.target)
-        return cgCall_YhxSxs3S(node, mode, module, ctx, _here, _current_fn, outputs);
+        return cgCall_gNEKUGCh(node, mode, module, ctx, _here, _current_fn, outputs);
 
-    fu_VEC<fu_STR> items = cgNodes_VVNp17yg(node.items, 0, (*(const fu_STR*)fu::NIL), "cgArrayLiteral"_fu, _current_fn, _here, ctx, module, outputs);
+    fu_VEC<fu_STR> items = cgNodes_S3yy7EYP(node.items, 0, (*(const fu_STR*)fu::NIL), "cgArrayLiteral"_fu, _current_fn, _here, ctx, module, outputs);
     if (!items.size())
-        return cgDefault_LHegyzjJ(node.type, _here, ctx, outputs, module, _current_fn);
+        return cgDefault_f8sR3SJX(node.type, _here, ctx, outputs, module, _current_fn);
 
     fu_STR curly = (("{ "_fu + join_tkmelWjn(items, ", "_fu)) + " }"_fu);
-    fu_STR itemT = typeAnnotBase_x4OjwAeo(clear_sliceable_4X1iL0ll(node.type, _here, ctx), 0, outputs, _here, ctx, module, _current_fn);
+    fu_STR itemT = typeAnnotBase_DOcOWqci(clear_sliceable_4X1iL0ll(node.type, _here, ctx), 0, outputs, _here, ctx, module, _current_fn);
     fu_STR slate = ((((x7E("fu::slate<"_fu, fu::i64dec(items.size())) + ", "_fu) + itemT) + "> "_fu) + curly);
     if (is_ref_4X1iL0ll(callarg) && !TODO_FIX_isArray_4X1iL0ll(callarg))
     {
-        include_OWB5Ob07("<fu/view.h>"_fu, outputs);
+        include_mXeF2edC("<fu/view.h>"_fu, outputs);
         return ("("_fu + slate) + ")"_fu;
     };
-    return ((typeAnnotBase_x4OjwAeo(node.type, 0, outputs, _here, ctx, module, _current_fn) + " { "_fu) + slate) + " }"_fu;
+    return ((typeAnnotBase_DOcOWqci(node.type, 0, outputs, _here, ctx, module, _current_fn) + " { "_fu) + slate) + " }"_fu;
 }
 
-static fu_STR cgDefinit_wy0Oc9Hv(const s_SolvedNode& node, const int mode, const s_Type& callarg, const s_Module& module, const s_Context& ctx, s_TokenIdx& _here, s_cg_CurrentFn& _current_fn, s_Outputs& outputs)
+static fu_STR cgDefinit_fSJBcSYy(const s_SolvedNode& node, const int mode, const s_Type& callarg, const s_Module& module, const s_Context& ctx, s_TokenIdx& _here, s_cg_CurrentFn& _current_fn, s_Outputs& outputs)
 {
-    return cgArrayLiteral_o7SOBpzq(node, mode, callarg, module, ctx, _here, _current_fn, outputs);
+    return cgArrayLiteral_LhMZTdKu(node, mode, callarg, module, ctx, _here, _current_fn, outputs);
 }
 
-static bool supportsNRVO_xV9Wiyw8(const s_Target& t, const s_Module& module, const s_Context& ctx)
+static bool supportsNRVO_4qRF9TJZ(const s_Target& t, const s_Module& module, const s_Context& ctx)
 {
-    return (GET_e4d90tdy(t, module, ctx).kind == s_kind_var) && !(GET_e4d90tdy(t, module, ctx).flags & F_ARG) && !is_ref_4X1iL0ll(GET_e4d90tdy(t, module, ctx).solved.type);
+    return (GET_R9VZCLcJ(t, module, ctx).kind == s_kind_var) && !(GET_R9VZCLcJ(t, module, ctx).flags & s_Flags_F_ARG) && !is_ref_4X1iL0ll(GET_R9VZCLcJ(t, module, ctx).solved.type);
 }
 
-static bool Lifetime_hasArgPositions_zqsVJQ94(const s_Lifetime& lifetime)
+static bool Lifetime_hasArgPositions_hhfVnS0A(const s_Lifetime& lifetime)
 {
     for (int i = 0; i < lifetime.uni0n.size(); i++)
     {
@@ -3288,73 +3318,73 @@ static bool Lifetime_hasArgPositions_zqsVJQ94(const s_Lifetime& lifetime)
     return false;
 }
 
-static fu_STR cgMoveOrClone_xTo0Jybs(const s_kind kind, const s_Type& type, fu::view<char> src, const s_Module& module, const s_Context& ctx, s_Outputs& outputs, s_TokenIdx& _here, s_cg_CurrentFn& _current_fn)
+static fu_STR cgMoveOrClone_i8T3JOb9(const s_kind kind, const s_Type& type, fu::view<char> src, const s_Module& module, const s_Context& ctx, s_Outputs& outputs, s_TokenIdx& _here, s_cg_CurrentFn& _current_fn)
 {
     if (kind == s_kind_move)
-        return cgMove_25tfwTu6(type, src, module, ctx, outputs, _here, _current_fn);
+        return cgMove_qUk1PGjF(type, src, module, ctx, outputs, _here, _current_fn);
 
-    return cgClone_D5vq7g7V(type, src, outputs, _here, ctx, module, _current_fn);
+    return cgClone_qAnkxdud(type, src, outputs, _here, ctx, module, _current_fn);
 }
 
-static fu_STR cgMoveOrClone_jeJ2Ijgc(const s_SolvedNode& node, const int mode, const s_Module& module, const s_Context& ctx, s_TokenIdx& _here, s_cg_CurrentFn& _current_fn, s_Outputs& outputs)
+static fu_STR cgMoveOrClone_AJC1FJWz(const s_SolvedNode& node, const int mode, const s_Module& module, const s_Context& ctx, s_TokenIdx& _here, s_cg_CurrentFn& _current_fn, s_Outputs& outputs)
 {
     const s_SolvedNode& expr = only_O0vxkflG(node.items);
     if (node.kind == s_kind_move)
     {
         if (mode & M_RETURN)
         {
-            const bool nrvo = ((expr.kind == s_kind_call) && (expr.items.size() == 0) && supportsNRVO_xV9Wiyw8(expr.target, module, ctx));
+            const bool nrvo = ((expr.kind == s_kind_call) && (expr.items.size() == 0) && supportsNRVO_4qRF9TJZ(expr.target, module, ctx));
             if (nrvo)
-                return "/*NRVO*/ "_fu + cgNode_4Ur0xXU7(expr, "NRVO"_fu, 0, (*(const s_Type*)fu::NIL), _here, ctx, module, _current_fn, outputs);
+                return "/*NRVO*/ "_fu + cgNode_dsqfXxyo(expr, "NRVO"_fu, 0, (*(const s_Type*)fu::NIL), _here, ctx, module, _current_fn, outputs);
 
         };
         if (!is_trivial_K61azC5I(node.type, module, ctx))
         {
             if (expr.kind == s_kind_call)
             {
-                const s_Overload& o = GET_e4d90tdy(expr.target, module, ctx);
+                const s_Overload& o = GET_R9VZCLcJ(expr.target, module, ctx);
                 if ((o.kind == s_kind___native) && (o.name == "[]"_fu))
-                    return cgNode_4Ur0xXU7(expr, "cgMoveOperator[]"_fu, M_MOVE, (*(const s_Type*)fu::NIL), _here, ctx, module, _current_fn, outputs);
+                    return cgNode_dsqfXxyo(expr, "cgMoveOperator[]"_fu, M_MOVE, (*(const s_Type*)fu::NIL), _here, ctx, module, _current_fn, outputs);
 
-                if (!is_mutref_4X1iL0ll(o.type, _here, ctx) && Lifetime_hasArgPositions_zqsVJQ94(o.type.lifetime))
+                if (!is_mutref_4X1iL0ll(o.type, _here, ctx) && Lifetime_hasArgPositions_hhfVnS0A(o.type.lifetime))
                 {
                     fu_STR _0 {};
                     fu_STR _1 {};
-                    return (_1 = ((_0 = (("/* MOVE_FROM_CONST_REF */static_cast<"_fu + typeAnnotBase_x4OjwAeo(o.type, 0, outputs, _here, ctx, module, _current_fn)) + "&&>(const_cast<"_fu), (static_cast<fu_STR&&>(_0) + typeAnnotBase_x4OjwAeo(o.type, 0, outputs, _here, ctx, module, _current_fn))) + "&>("_fu), (static_cast<fu_STR&&>(_1) + cgNode_4Ur0xXU7(expr, "cgMoveFromConstRefHelper"_fu, 0, (*(const s_Type*)fu::NIL), _here, ctx, module, _current_fn, outputs))) + "))"_fu;
+                    return (_1 = ((_0 = (("/* MOVE_FROM_CONST_REF */static_cast<"_fu + typeAnnotBase_DOcOWqci(o.type, 0, outputs, _here, ctx, module, _current_fn)) + "&&>(const_cast<"_fu), (static_cast<fu_STR&&>(_0) + typeAnnotBase_DOcOWqci(o.type, 0, outputs, _here, ctx, module, _current_fn))) + "&>("_fu), (static_cast<fu_STR&&>(_1) + cgNode_dsqfXxyo(expr, "cgMoveFromConstRefHelper"_fu, 0, (*(const s_Type*)fu::NIL), _here, ctx, module, _current_fn, outputs))) + "))"_fu;
                 };
             };
         };
     };
     fu_STR _2 {};
-    return (_2 = cgNode_4Ur0xXU7(expr, "cgMoveOrClone"_fu, 0, (*(const s_Type*)fu::NIL), _here, ctx, module, _current_fn, outputs), cgMoveOrClone_xTo0Jybs(node.kind, node.type, static_cast<fu_STR&&>(_2), module, ctx, outputs, _here, _current_fn));
+    return (_2 = cgNode_dsqfXxyo(expr, "cgMoveOrClone"_fu, 0, (*(const s_Type*)fu::NIL), _here, ctx, module, _current_fn, outputs), cgMoveOrClone_i8T3JOb9(node.kind, node.type, static_cast<fu_STR&&>(_2), module, ctx, outputs, _here, _current_fn));
 }
 
-static fu_STR blockWrapSubstatement_0c4p2Mql(const s_SolvedNode& node, const int mode, s_cg_CurrentFn& _current_fn, s_TokenIdx& _here, const s_Context& ctx, const s_Module& module, s_Outputs& outputs)
+static fu_STR blockWrapSubstatement_XLVwaodX(const s_SolvedNode& node, const int mode, s_cg_CurrentFn& _current_fn, s_TokenIdx& _here, const s_Context& ctx, const s_Module& module, s_Outputs& outputs)
 {
-    return cgBlock_3hPEhqj0(node, ((M_STMT | M_OPT_CURLIES) | mode), "blockWrapSubstatement"_fu, _current_fn, _here, ctx, module, outputs);
+    return cgBlock_O5sy7iCr(node, ((M_STMT | M_OPT_CURLIES) | mode), "blockWrapSubstatement"_fu, _current_fn, _here, ctx, module, outputs);
 }
 
-static fu_STR blockWrap_unlessIf_5jqeW2i2(const s_SolvedNode& node, s_TokenIdx& _here, const s_Context& ctx, const s_Module& module, s_cg_CurrentFn& _current_fn, s_Outputs& outputs)
+static fu_STR blockWrap_unlessIf_uWrkm0QA(const s_SolvedNode& node, s_TokenIdx& _here, const s_Context& ctx, const s_Module& module, s_cg_CurrentFn& _current_fn, s_Outputs& outputs)
 {
-    return (((node.kind == s_kind_if) || (node.kind == s_kind_and)) ? (" "_fu + cgNode_4Ur0xXU7(node, "cgIf.blockWrap_unlessIf"_fu, M_STMT, (*(const s_Type*)fu::NIL), _here, ctx, module, _current_fn, outputs)) : blockWrapSubstatement_0c4p2Mql(node, 0, _current_fn, _here, ctx, module, outputs));
+    return (((node.kind == s_kind_if) || (node.kind == s_kind_and)) ? (" "_fu + cgNode_dsqfXxyo(node, "cgIf.blockWrap_unlessIf"_fu, M_STMT, (*(const s_Type*)fu::NIL), _here, ctx, module, _current_fn, outputs)) : blockWrapSubstatement_XLVwaodX(node, 0, _current_fn, _here, ctx, module, outputs));
 }
 
-static fu_STR cgIf_GDAfpI97(const s_SolvedNode& node, const int mode, s_TokenIdx& _here, const s_Context& ctx, const s_Module& module, s_cg_CurrentFn& _current_fn, s_Outputs& outputs)
+static fu_STR cgIf_rTvT1ZJj(const s_SolvedNode& node, const int mode, s_TokenIdx& _here, const s_Context& ctx, const s_Module& module, s_cg_CurrentFn& _current_fn, s_Outputs& outputs)
 {
     const s_SolvedNode& n0 = node.items[0];
     const s_SolvedNode& n1 = node.items[1];
     const s_SolvedNode& n2 = node.items[2];
     const bool stmt = !!(mode & M_STMT);
-    fu_STR cond = (n0 ? cgNode_4Ur0xXU7(n0, "cgIf[cond]"_fu, (M_RETBOOL | (stmt ? M_PARENS : (*(const int*)fu::NIL))), (*(const s_Type*)fu::NIL), _here, ctx, module, _current_fn, outputs) : fu_STR{});
-    fu_STR cons = (n1 ? (stmt ? blockWrapSubstatement_0c4p2Mql(n1, 0, _current_fn, _here, ctx, module, outputs) : cgNode_4Ur0xXU7(n1, "cgIf[cons]"_fu, 0, (*(const s_Type*)fu::NIL), _here, ctx, module, _current_fn, outputs)) : fu_STR{});
-    fu_STR alt = (n2 ? (stmt ? blockWrap_unlessIf_5jqeW2i2(n2, _here, ctx, module, _current_fn, outputs) : cgNode_4Ur0xXU7(n2, "cgIf[alt]"_fu, 0, (*(const s_Type*)fu::NIL), _here, ctx, module, _current_fn, outputs)) : fu_STR{});
+    fu_STR cond = (n0 ? cgNode_dsqfXxyo(n0, "cgIf[cond]"_fu, (M_RETBOOL | (stmt ? M_PARENS : (*(const int*)fu::NIL))), (*(const s_Type*)fu::NIL), _here, ctx, module, _current_fn, outputs) : fu_STR{});
+    fu_STR cons = (n1 ? (stmt ? blockWrapSubstatement_XLVwaodX(n1, 0, _current_fn, _here, ctx, module, outputs) : cgNode_dsqfXxyo(n1, "cgIf[cons]"_fu, 0, (*(const s_Type*)fu::NIL), _here, ctx, module, _current_fn, outputs)) : fu_STR{});
+    fu_STR alt = (n2 ? (stmt ? blockWrap_unlessIf_uWrkm0QA(n2, _here, ctx, module, _current_fn, outputs) : cgNode_dsqfXxyo(n2, "cgIf[alt]"_fu, 0, (*(const s_Type*)fu::NIL), _here, ctx, module, _current_fn, outputs)) : fu_STR{});
     if (stmt)
         return ((("if ("_fu + cond) + ")"_fu) + cons) + (alt ? ((outputs._indent + "else"_fu) + alt) : fu_STR{});
 
     return ((((("("_fu + cond) + " ? "_fu) + cons) + " : "_fu) + alt) + ")"_fu;
 }
 
-static void cgAndOr_concat_YJQCE5p5(fu_STR& src, fu::view<char> op, fu::view<s_SolvedNode> items, const bool parens, s_TokenIdx& _here, const s_Context& ctx, const s_Module& module, s_cg_CurrentFn& _current_fn, s_Outputs& outputs)
+static void cgAndOr_concat_41bQeVin(fu_STR& src, fu::view<char> op, fu::view<s_SolvedNode> items, const bool parens, s_TokenIdx& _here, const s_Context& ctx, const s_Module& module, s_cg_CurrentFn& _current_fn, s_Outputs& outputs)
 {
     const int mode = (M_RETBOOL | (parens && (items.size() == 1) ? M_PARENS : (*(const int*)fu::NIL)));
     for (int i = 0; i < items.size(); i++)
@@ -3363,7 +3393,7 @@ static void cgAndOr_concat_YJQCE5p5(fu_STR& src, fu::view<char> op, fu::view<s_S
             src += op;
 
         const s_SolvedNode& item = items[i];
-        fu_STR term = cgNode_4Ur0xXU7(item, (x7E("cgAndOr_concat["_fu, fu::i64dec(i)) + "]"_fu), mode, (*(const s_Type*)fu::NIL), _here, ctx, module, _current_fn, outputs);
+        fu_STR term = cgNode_dsqfXxyo(item, (x7E("cgAndOr_concat["_fu, fu::i64dec(i)) + "]"_fu), mode, (*(const s_Type*)fu::NIL), _here, ctx, module, _current_fn, outputs);
         if (is_void_4X1iL0ll(item.type))
             src += (("("_fu + term) + ", 0)"_fu);
         else
@@ -3377,17 +3407,17 @@ static void cgAndOr_concat_YJQCE5p5(fu_STR& src, fu::view<char> op, fu::view<s_S
 extern const s_Type t_bool;
                                 #endif
 
-static bool acceptsBool_bRTo9HWC(const s_Type& type)
+static bool acceptsBool_TPFwjvIl(const s_Type& type)
 {
     return isAssignable_npqyupaA(type, t_bool, bool{}, bool{});
 }
 
-static fu_STR via_WannpOoo(s_TEMPVAR& tv, const s_Type& type, fu::view<char> expr, s_Outputs& outputs, s_TokenIdx& _here, const s_Context& ctx, const s_Module& module, s_cg_CurrentFn& _current_fn)
+static fu_STR via_DkWCVVLW(s_TEMPVAR& tv, const s_Type& type, fu::view<char> expr, s_Outputs& outputs, s_TokenIdx& _here, const s_Context& ctx, const s_Module& module, s_cg_CurrentFn& _current_fn)
 {
     if (!tv.id)
     {
         fu_STR _0 {};
-        tv.id = (_0 = fu_STR((tv.annot = typeAnnot_qLTezMaR(type, 0, outputs, _here, ctx, module, _current_fn))), emitTEMPVAR_R0z1o01h(static_cast<fu_STR&&>(_0), tv.ptrflip, (*(const fu_STR*)fu::NIL), (*(const fu_STR*)fu::NIL), _current_fn));
+        tv.id = (_0 = fu_STR((tv.annot = typeAnnot_UXr2rbel(type, 0, outputs, _here, ctx, module, _current_fn))), emitTEMPVAR_ZErWCUn1(static_cast<fu_STR&&>(_0), tv.ptrflip, (*(const fu_STR*)fu::NIL), (*(const fu_STR*)fu::NIL), _current_fn));
     };
     if (tv.ptrflip)
         return ((((("*("_fu + tv.id) + " = &("_fu) + expr) + ")) ? *"_fu) + tv.id) + " : "_fu;
@@ -3398,28 +3428,28 @@ static fu_STR via_WannpOoo(s_TEMPVAR& tv, const s_Type& type, fu::view<char> exp
     return ((((((("("_fu + tv.id) + " = "_fu) + expr) + ") ? static_cast<"_fu) + tv.annot) + "&&>("_fu) + tv.id) + ") : "_fu;
 }
 
-static fu_STR via_JM0FjuZj(s_TEMPVAR& tv, const s_Type& type, const s_SolvedNode& expr, const s_Module& module, const s_Context& ctx, s_TokenIdx& _here, s_cg_CurrentFn& _current_fn, s_Outputs& outputs)
+static fu_STR via_vdtQQIcx(s_TEMPVAR& tv, const s_Type& type, const s_SolvedNode& expr, const s_Module& module, const s_Context& ctx, s_TokenIdx& _here, s_cg_CurrentFn& _current_fn, s_Outputs& outputs)
 {
-    if (isFieldChain_iSy5UEsM(expr, module, ctx))
+    if (isFieldChain_qtapGc96(expr, module, ctx))
     {
-        fu_STR trivial = cgNode_4Ur0xXU7(expr, "TEMPVAR[fieldChain]"_fu, 0, (*(const s_Type*)fu::NIL), _here, ctx, module, _current_fn, outputs);
+        fu_STR trivial = cgNode_dsqfXxyo(expr, "TEMPVAR[fieldChain]"_fu, 0, (*(const s_Type*)fu::NIL), _here, ctx, module, _current_fn, outputs);
         return ((trivial + " ? "_fu) + trivial) + " : "_fu;
     };
     if ((expr.kind == s_kind_copy) || (expr.kind == s_kind_move))
     {
         const s_kind kind = expr.kind;
         const s_SolvedNode& expr_1 = only_O0vxkflG(expr.items);
-        if (isFieldChain_iSy5UEsM(expr_1, module, ctx))
+        if (isFieldChain_qtapGc96(expr_1, module, ctx))
         {
-            fu_STR trivial = cgNode_4Ur0xXU7(expr_1, "TEMPVAR[copymov/fieldChain]"_fu, 0, (*(const s_Type*)fu::NIL), _here, ctx, module, _current_fn, outputs);
-            return ((trivial + " ? "_fu) + cgMoveOrClone_xTo0Jybs(kind, type, trivial, module, ctx, outputs, _here, _current_fn)) + " : "_fu;
+            fu_STR trivial = cgNode_dsqfXxyo(expr_1, "TEMPVAR[copymov/fieldChain]"_fu, 0, (*(const s_Type*)fu::NIL), _here, ctx, module, _current_fn, outputs);
+            return ((trivial + " ? "_fu) + cgMoveOrClone_i8T3JOb9(kind, type, trivial, module, ctx, outputs, _here, _current_fn)) + " : "_fu;
         };
     };
     fu_STR _0 {};
-    return (_0 = cgNode_4Ur0xXU7(expr, "TEMPVAR[usual]"_fu, 0, (*(const s_Type*)fu::NIL), _here, ctx, module, _current_fn, outputs), via_WannpOoo(tv, type, static_cast<fu_STR&&>(_0), outputs, _here, ctx, module, _current_fn));
+    return (_0 = cgNode_dsqfXxyo(expr, "TEMPVAR[usual]"_fu, 0, (*(const s_Type*)fu::NIL), _here, ctx, module, _current_fn, outputs), via_DkWCVVLW(tv, type, static_cast<fu_STR&&>(_0), outputs, _here, ctx, module, _current_fn));
 }
 
-static fu_STR cgOr_sN3pzDys(const s_SolvedNode& node, const int mode, s_TokenIdx& _here, const s_Context& ctx, const s_Module& module, s_cg_CurrentFn& _current_fn, s_Outputs& outputs)
+static fu_STR cgOr_NzALUwZC(const s_SolvedNode& node, const int mode, s_TokenIdx& _here, const s_Context& ctx, const s_Module& module, s_cg_CurrentFn& _current_fn, s_Outputs& outputs)
 {
     const s_Type& type = node.type;
     fu::view<s_SolvedNode> items = node.items;
@@ -3427,35 +3457,35 @@ static fu_STR cgOr_sN3pzDys(const s_SolvedNode& node, const int mode, s_TokenIdx
     if (stmt)
     {
         /*MOV*/ fu_STR src = "if (!("_fu;
-        cgAndOr_concat_YJQCE5p5(src, " || "_fu, fu::get_view(items, 0, (items.size() - 1)), true, _here, ctx, module, _current_fn, outputs);
+        cgAndOr_concat_41bQeVin(src, " || "_fu, fu::get_view(items, 0, (items.size() - 1)), true, _here, ctx, module, _current_fn, outputs);
         src += "))"_fu;
-        src += blockWrapSubstatement_0c4p2Mql(items[(items.size() - 1)], 0, _current_fn, _here, ctx, module, outputs);
+        src += blockWrapSubstatement_XLVwaodX(items[(items.size() - 1)], 0, _current_fn, _here, ctx, module, outputs);
         return /*NRVO*/ src;
     };
     /*MOV*/ fu_STR src = (!(mode & M_PARENS) ? "("_fu : fu_STR{});
-    if (acceptsBool_bRTo9HWC(type))
-        cgAndOr_concat_YJQCE5p5(src, " || "_fu, items, true, _here, ctx, module, _current_fn, outputs);
+    if (acceptsBool_TPFwjvIl(type))
+        cgAndOr_concat_41bQeVin(src, " || "_fu, items, true, _here, ctx, module, _current_fn, outputs);
     else
     {
         s_TEMPVAR tv {};
         for (int i = 0; i < (items.size() - 1); i++)
         {
             const s_SolvedNode* _0;
-            const s_SolvedNode& item = (*(_0 = &(items[i])) ? *_0 : fail_vAc0TkcF((*(const fu_STR*)fu::NIL), _here, ctx));
+            const s_SolvedNode& item = (*(_0 = &(items[i])) ? *_0 : fail_yKW1jZQa((*(const fu_STR*)fu::NIL), _here, ctx));
             s_SolvedNode tail { item };
             if (item.kind == s_kind_and)
             {
                 fu::view<s_SolvedNode> items_1 = item.items;
                 const s_SolvedNode* _1;
-                tail = (*(_1 = &(items_1[(items_1.size() - 1)])) ? *_1 : fail_vAc0TkcF((*(const fu_STR*)fu::NIL), _here, ctx));
-                cgAndOr_concat_YJQCE5p5(src, " && "_fu, fu::get_view(items_1, 0, (items_1.size() - 1)), bool{}, _here, ctx, module, _current_fn, outputs);
+                tail = (*(_1 = &(items_1[(items_1.size() - 1)])) ? *_1 : fail_yKW1jZQa((*(const fu_STR*)fu::NIL), _here, ctx));
+                cgAndOr_concat_41bQeVin(src, " && "_fu, fu::get_view(items_1, 0, (items_1.size() - 1)), bool{}, _here, ctx, module, _current_fn, outputs);
                 src += " && "_fu;
             };
-            src += via_JM0FjuZj(tv, type, tail, module, ctx, _here, _current_fn, outputs);
+            src += via_vdtQQIcx(tv, type, tail, module, ctx, _here, _current_fn, outputs);
         };
         const s_SolvedNode* _2;
-        const s_SolvedNode& tail = (*(_2 = &(items[(items.size() - 1)])) ? *_2 : fail_vAc0TkcF((*(const fu_STR*)fu::NIL), _here, ctx));
-        src += cgNode_4Ur0xXU7(tail, "cgOr"_fu, 0, (*(const s_Type*)fu::NIL), _here, ctx, module, _current_fn, outputs);
+        const s_SolvedNode& tail = (*(_2 = &(items[(items.size() - 1)])) ? *_2 : fail_yKW1jZQa((*(const fu_STR*)fu::NIL), _here, ctx));
+        src += cgNode_dsqfXxyo(tail, "cgOr"_fu, 0, (*(const s_Type*)fu::NIL), _here, ctx, module, _current_fn, outputs);
     };
     if (!(mode & M_PARENS))
         src += ")"_fu;
@@ -3463,20 +3493,20 @@ static fu_STR cgOr_sN3pzDys(const s_SolvedNode& node, const int mode, s_TokenIdx
     return /*NRVO*/ src;
 }
 
-static fu_STR cgAnd_paGQfFcd(fu::view<s_SolvedNode> items, const s_Type& type, const int mode, fu::view<char> debug, s_TokenIdx& _here, const s_Context& ctx, const s_Module& module, s_cg_CurrentFn& _current_fn, s_Outputs& outputs)
+static fu_STR cgAnd_gel1uumA(fu::view<s_SolvedNode> items, const s_Type& type, const int mode, fu::view<char> debug, s_TokenIdx& _here, const s_Context& ctx, const s_Module& module, s_cg_CurrentFn& _current_fn, s_Outputs& outputs)
 {
     const bool stmt = !!(mode & M_STMT);
     if (stmt)
     {
         /*MOV*/ fu_STR src = "if ("_fu;
-        cgAndOr_concat_YJQCE5p5(src, " && "_fu, fu::get_view(items, 0, (items.size() - 1)), true, _here, ctx, module, _current_fn, outputs);
+        cgAndOr_concat_41bQeVin(src, " && "_fu, fu::get_view(items, 0, (items.size() - 1)), true, _here, ctx, module, _current_fn, outputs);
         src += ")"_fu;
-        src += blockWrapSubstatement_0c4p2Mql(items[(items.size() - 1)], 0, _current_fn, _here, ctx, module, outputs);
+        src += blockWrapSubstatement_XLVwaodX(items[(items.size() - 1)], 0, _current_fn, _here, ctx, module, outputs);
         return /*NRVO*/ src;
     };
     /*MOV*/ fu_STR src = (!(mode & M_PARENS) ? "("_fu : fu_STR{});
-    if (acceptsBool_bRTo9HWC(type))
-        cgAndOr_concat_YJQCE5p5(src, " && "_fu, items, true, _here, ctx, module, _current_fn, outputs);
+    if (acceptsBool_TPFwjvIl(type))
+        cgAndOr_concat_41bQeVin(src, " && "_fu, items, true, _here, ctx, module, _current_fn, outputs);
     else
     {
         s_TEMPVAR tv {};
@@ -3486,9 +3516,9 @@ static fu_STR cgAnd_paGQfFcd(fu::view<s_SolvedNode> items, const s_Type& type, c
             {
                 const s_SolvedNode& item = items[i];
                 if (i < (items.size() - 1))
-                    src += ("!"_fu + via_JM0FjuZj(tv, type, item, module, ctx, _here, _current_fn, outputs));
+                    src += ("!"_fu + via_vdtQQIcx(tv, type, item, module, ctx, _here, _current_fn, outputs));
                 else
-                    src += cgNode_4Ur0xXU7(item, (x7E((debug + ".cgAnd[mutref "_fu), fu::i64dec(i)) + "]"_fu), 0, (*(const s_Type*)fu::NIL), _here, ctx, module, _current_fn, outputs);
+                    src += cgNode_dsqfXxyo(item, (x7E((debug + ".cgAnd[mutref "_fu), fu::i64dec(i)) + "]"_fu), 0, (*(const s_Type*)fu::NIL), _here, ctx, module, _current_fn, outputs);
 
             };
         }
@@ -3497,19 +3527,19 @@ static fu_STR cgAnd_paGQfFcd(fu::view<s_SolvedNode> items, const s_Type& type, c
             const int N = items.size();
             const bool retSecondLast = is_never_4X1iL0ll(items[(N - 1)].type);
             const int condEnd = (retSecondLast ? (N - 2) : (N - 1));
-            cgAndOr_concat_YJQCE5p5(src, " && "_fu, fu::get_view(items, 0, condEnd), bool{}, _here, ctx, module, _current_fn, outputs);
+            cgAndOr_concat_41bQeVin(src, " && "_fu, fu::get_view(items, 0, condEnd), bool{}, _here, ctx, module, _current_fn, outputs);
             if (retSecondLast)
             {
                 if (condEnd)
                     src += " && "_fu;
 
-                src += ("!"_fu + via_JM0FjuZj(tv, type, items[(N - 2)], module, ctx, _here, _current_fn, outputs));
-                src += cgNode_4Ur0xXU7(items[(N - 1)], (debug + ".cgAnd[retSecondLast]"_fu), 0, (*(const s_Type*)fu::NIL), _here, ctx, module, _current_fn, outputs);
+                src += ("!"_fu + via_vdtQQIcx(tv, type, items[(N - 2)], module, ctx, _here, _current_fn, outputs));
+                src += cgNode_dsqfXxyo(items[(N - 1)], (debug + ".cgAnd[retSecondLast]"_fu), 0, (*(const s_Type*)fu::NIL), _here, ctx, module, _current_fn, outputs);
             }
             else
             {
-                src += (" ? "_fu + cgNode_4Ur0xXU7(items[(N - 1)], (debug + ".cgAnd[usual]"_fu), 0, (*(const s_Type*)fu::NIL), _here, ctx, module, _current_fn, outputs));
-                src += (" : "_fu + cgDefault_LHegyzjJ(type, _here, ctx, outputs, module, _current_fn));
+                src += (" ? "_fu + cgNode_dsqfXxyo(items[(N - 1)], (debug + ".cgAnd[usual]"_fu), 0, (*(const s_Type*)fu::NIL), _here, ctx, module, _current_fn, outputs));
+                src += (" : "_fu + cgDefault_f8sR3SJX(type, _here, ctx, outputs, module, _current_fn));
             };
         };
     };
@@ -3519,17 +3549,17 @@ static fu_STR cgAnd_paGQfFcd(fu::view<s_SolvedNode> items, const s_Type& type, c
     return /*NRVO*/ src;
 }
 
-static fu_STR cgAnd_4dFPKtOP(const s_SolvedNode& node, const int mode, fu::view<char> debug, s_TokenIdx& _here, const s_Context& ctx, const s_Module& module, s_cg_CurrentFn& _current_fn, s_Outputs& outputs)
+static fu_STR cgAnd_CdRSNKtb(const s_SolvedNode& node, const int mode, fu::view<char> debug, s_TokenIdx& _here, const s_Context& ctx, const s_Module& module, s_cg_CurrentFn& _current_fn, s_Outputs& outputs)
 {
-    return cgAnd_paGQfFcd(node.items, node.type, mode, debug, _here, ctx, module, _current_fn, outputs);
+    return cgAnd_gel1uumA(node.items, node.type, mode, debug, _here, ctx, module, _current_fn, outputs);
 }
 
-static fu_STR cgLetDef_OIF87ZLY(const s_SolvedNode& node, const s_Module& module, const s_Context& ctx, s_cg_CurrentFn& _current_fn, s_TokenIdx& _here, s_Outputs& outputs)
+static fu_STR cgLetDef_Jf1Rlggv(const s_SolvedNode& node, const s_Module& module, const s_Context& ctx, s_cg_CurrentFn& _current_fn, s_TokenIdx& _here, s_Outputs& outputs)
 {
-    return cgLet_VlW1Apu7(GET_e4d90tdy(node.target, module, ctx).solved, !_current_fn.target.index, bool{}, module, ctx, _here, outputs, _current_fn);
+    return cgLet_RxcvqonR(GET_R9VZCLcJ(node.target, module, ctx).solved, !_current_fn.target.index, bool{}, module, ctx, _here, outputs, _current_fn);
 }
 
-static fu_STR cgMain_usDrimyh(s_Outputs& outputs)
+static fu_STR cgMain_YhZ9WLzx(s_Outputs& outputs)
 {
     if (!outputs._hasMain)
         return fu_STR{};
@@ -3541,14 +3571,14 @@ static fu_STR cgMain_usDrimyh(s_Outputs& outputs)
     /*MOV*/ fu_STR src = (("\nint main() { return fu_MAIN()"_fu + zst) + "; }"_fu);
     if (outputs._hasMain & MAIN_argv)
     {
-        annotateString_LkR5I5c0(outputs);
+        annotateString_0sgif0a7(outputs);
         src = ((((((((((("\nint main(int argc, char* argv[])"_fu + "\n{"_fu) + "\n    fu_VEC<fu_STR> args;"_fu) + "\n    args.reserve(argc);"_fu) + "\n"_fu) + "\n    for (int i = 0; i < argc; i++)"_fu) + "\n        args.push(fu_TO_STR(argv[i]));"_fu) + "\n"_fu) + "\n    return fu_MAIN(static_cast<fu_VEC<fu_STR>&&>(args))"_fu) + zst) + ";"_fu) + "\n}"_fu);
     };
     src += "\n"_fu;
     return /*NRVO*/ src;
 }
 
-static fu_STR collectDedupes_KPyYztPl(fu_VEC<fu_STR>&& values, fu::view<char> prefix, fu::view<char> suffix, fu::view<char> header, fu::view<char> footer)
+static fu_STR collectDedupes_f1e7ZP4i(fu_VEC<fu_STR>&& values, fu::view<char> prefix, fu::view<char> suffix, fu::view<char> header, fu::view<char> footer)
 {
     /*MOV*/ fu_STR out {};
     if (values)
@@ -3563,34 +3593,26 @@ static fu_STR collectDedupes_KPyYztPl(fu_VEC<fu_STR>&& values, fu::view<char> pr
     return /*NRVO*/ out;
 }
 
-static fu_STR cgRoot_BhF3gzcy(const s_SolvedNode& root, s_cg_CurrentFn& _current_fn, s_TokenIdx& _here, const s_Context& ctx, const s_Module& module, s_Outputs& outputs)
+static fu_STR cgRoot_0uanpPoI(const s_SolvedNode& root, s_cg_CurrentFn& _current_fn, s_TokenIdx& _here, const s_Context& ctx, const s_Module& module, s_Outputs& outputs)
 {
     int count {};
-    fu_STR src = cgStatements_TuNaxyPa(root.items, count, (*(const fu_STR*)fu::NIL), _current_fn, _here, ctx, module, outputs);
-    fu_STR main = cgMain_usDrimyh(outputs);
-    return (((((((((((((((collectDedupes_KPyYztPl(fu_VEC<fu_STR>(outputs._libs), "#include "_fu, "\n"_fu, fu::view<char>{}, "\n"_fu) + outputs._tfwd_src) + outputs._ffwd_src) + (outputs._ffwd_live_client ? "\n                                #ifdef fu_HOTSWAP\n"_fu : fu_STR{})) + outputs._ffwd_live_client) + (outputs._ffwd_live_client ? "                                #else\n"_fu : fu_STR{})) + outputs._ffwd_live_nclient) + (outputs._ffwd_live_client ? "                                #endif\n"_fu : fu_STR{})) + outputs._tdef) + collectDedupes_KPyYztPl(fu_VEC<fu_STR>(outputs._gcc_ignore), "#pragma GCC diagnostic ignored \""_fu, "\"\n"_fu, "#pragma GCC diagnostic push\n#ifdef __clang__\n#pragma GCC diagnostic warning \"-Wunknown-warning-option\"\n#endif\n"_fu, "\n"_fu)) + outputs._top_emits) + (outputs._fdef ? "\n#ifndef fu_NO_fdefs\n"_fu : fu_STR{})) + outputs._fdef) + (outputs._fdef ? "\n#endif\n"_fu : fu_STR{})) + src) + main) + (outputs._gcc_ignore ? "\n#pragma GCC diagnostic pop\n"_fu : fu_STR{});
+    fu_STR src = cgStatements_4kwE5jRG(root.items, count, (*(const fu_STR*)fu::NIL), _current_fn, _here, ctx, module, outputs);
+    fu_STR main = cgMain_YhZ9WLzx(outputs);
+    return (((((((((((((((collectDedupes_f1e7ZP4i(fu_VEC<fu_STR>(outputs._libs), "#include "_fu, "\n"_fu, fu::view<char>{}, "\n"_fu) + outputs._tfwd_src) + outputs._ffwd_src) + (outputs._ffwd_live_client ? "\n                                #ifdef fu_HOTSWAP\n"_fu : fu_STR{})) + outputs._ffwd_live_client) + (outputs._ffwd_live_client ? "                                #else\n"_fu : fu_STR{})) + outputs._ffwd_live_nclient) + (outputs._ffwd_live_client ? "                                #endif\n"_fu : fu_STR{})) + outputs._tdef) + collectDedupes_f1e7ZP4i(fu_VEC<fu_STR>(outputs._gcc_ignore), "#pragma GCC diagnostic ignored \""_fu, "\"\n"_fu, "#pragma GCC diagnostic push\n#ifdef __clang__\n#pragma GCC diagnostic warning \"-Wunknown-warning-option\"\n#endif\n"_fu, "\n"_fu)) + outputs._top_emits) + (outputs._fdef ? "\n#ifndef fu_NO_fdefs\n"_fu : fu_STR{})) + outputs._fdef) + (outputs._fdef ? "\n#endif\n"_fu : fu_STR{})) + src) + main) + (outputs._gcc_ignore ? "\n#pragma GCC diagnostic pop\n"_fu : fu_STR{});
 }
 
-static fu_STR cgFnDef_v7kt63rP(const s_SolvedNode& fndef, const int mode, const s_Module& module, const s_Context& ctx, s_TokenIdx& _here, s_Outputs& outputs, s_cg_CurrentFn& _current_fn)
+static fu_STR cgFnDef_FVdOx0ei(const s_SolvedNode& fndef, const int mode, const s_Module& module, const s_Context& ctx, s_TokenIdx& _here, s_Outputs& outputs, s_cg_CurrentFn& _current_fn)
 {
     const s_Target& target = fndef.target;
-    const s_Overload& o = GET_e4d90tdy(target, module, ctx);
-    const s_SolvedNode& n = GET_e4d90tdy(target, module, ctx).solved;
-    if (n && isExtLinked_cLSktIVF(o))
-        ensureFnDef_bzVy7AAK(target, module, ctx, _here, outputs, _current_fn);
+    const s_Overload& o = GET_R9VZCLcJ(target, module, ctx);
+    const s_SolvedNode& n = GET_R9VZCLcJ(target, module, ctx).solved;
+    if (n && isExtLinked_LJ4ozhqN(o))
+        ensureFnDef_dxDMG7ZZ(target, module, ctx, _here, outputs, _current_fn);
 
-    return cgEmpty_NzALUwZC(n, mode, module, ctx, _here, outputs, _current_fn);
+    return cgEmpty_bzNYcHre(n, mode, module, ctx, _here, outputs, _current_fn);
 }
 
-                                #ifndef DEF_x7E_PEYL9mMAprj
-                                #define DEF_x7E_PEYL9mMAprj
-inline fu_STR x7E(fu::view<char> a, fu::view<char> b)
-{
-    return a + b;
-}
-                                #endif
-
-static const s_cg_Block& findBlock_DvdzwcXQ(const s_cg_CurrentFn& _current_fn, const s_Helpers& helpers, const s_TokenIdx& _here, const s_Context& ctx)
+static const s_cg_Block& findBlock_gux5zf7h(const s_cg_CurrentFn& _current_fn, const s_Helpers& helpers, const s_TokenIdx& _here, const s_Context& ctx)
 {
     for (int i = _current_fn.blocks.size(); i-- > 0; )
     {
@@ -3599,10 +3621,10 @@ static const s_cg_Block& findBlock_DvdzwcXQ(const s_cg_CurrentFn& _current_fn, c
             return block;
 
     };
-    fail_vAc0TkcF(x7E("No such block in scope: "_fu, fu::i64dec(helpers.index)), _here, ctx);
+    fail_yKW1jZQa(x7E("No such block in scope: "_fu, fu::i64dec(helpers.index)), _here, ctx);
 }
 
-static bool hasNonIdentifierChars_alisHiTN(fu::view<char> id)
+static bool hasNonIdentifierChars_XfrfL86S(fu::view<char> id)
 {
     for (int i = 0; i < id.size(); i++)
     {
@@ -3617,27 +3639,27 @@ static bool hasNonIdentifierChars_alisHiTN(fu::view<char> id)
     return false;
 }
 
-static fu_STR cgJump_smwBcYMI(const s_SolvedNode& node, s_cg_CurrentFn& _current_fn, s_TokenIdx& _here, const s_Context& ctx, const s_Module& module, s_Outputs& outputs)
+static fu_STR cgJump_qgRdOV74(const s_SolvedNode& node, s_cg_CurrentFn& _current_fn, s_TokenIdx& _here, const s_Context& ctx, const s_Module& module, s_Outputs& outputs)
 {
     const s_Helpers& helpers = node.helpers;
     const bool use_return = (helpers == _current_fn.can_return);
-    s_cg_Block block { (!use_return ? findBlock_DvdzwcXQ(_current_fn, helpers, _here, ctx) : (*(const s_cg_Block*)fu::NIL)) };
+    s_cg_Block block { (!use_return ? findBlock_gux5zf7h(_current_fn, helpers, _here, ctx) : (*(const s_cg_Block*)fu::NIL)) };
     const s_SolvedNode& expr = only_O0vxkflG(node.items);
     if ((expr.kind != s_kind_empty) || !is_void_4X1iL0ll(expr.type))
     {
         if (!use_return)
         {
             fu_STR assign = (block.has_val ? (block.name + "_v = "_fu) : fu_STR{});
-            fu_STR value = cgNode_4Ur0xXU7(expr, "cgJump[val.break]"_fu, (!assign ? M_STMT : (*(const int*)fu::NIL)), (*(const s_Type*)fu::NIL), _here, ctx, module, _current_fn, outputs);
+            fu_STR value = cgNode_dsqfXxyo(expr, "cgJump[val.break]"_fu, (!assign ? M_STMT : (*(const int*)fu::NIL)), (*(const s_Type*)fu::NIL), _here, ctx, module, _current_fn, outputs);
             if (block.ptrflip)
                 value = (("&("_fu + value) + ")"_fu);
 
-            if (!(assign || hasNonIdentifierChars_alisHiTN(value)))
+            if (!(assign || hasNonIdentifierChars_XfrfL86S(value)))
                 value = (("/* TODO FIX UNUSED VAL "_fu + value) + " */"_fu);
 
             return (((("{ "_fu + assign) + value) + "; goto "_fu) + block.name) + "; }"_fu;
         };
-        return "return "_fu + cgNode_4Ur0xXU7(expr, "cgJump[val.return]"_fu, (M_PARENS | M_RETURN), (*(const s_Type*)fu::NIL), _here, ctx, module, _current_fn, outputs);
+        return "return "_fu + cgNode_dsqfXxyo(expr, "cgJump[val.return]"_fu, (M_PARENS | M_RETURN), (*(const s_Type*)fu::NIL), _here, ctx, module, _current_fn, outputs);
     };
     if (use_return)
         return "return"_fu;
@@ -3676,7 +3698,7 @@ inline constexpr int LOOP_POST_COND = 3;
 inline constexpr int LOOP_POST = 4;
                                 #endif
 
-static fu_STR cgLoop_HamjtPBW(const s_SolvedNode& node, s_cg_CurrentFn& _current_fn, s_TokenIdx& _here, const s_Context& ctx, const s_Module& module, s_Outputs& outputs)
+static fu_STR cgLoop_XNYu9eru(const s_SolvedNode& node, s_cg_CurrentFn& _current_fn, s_TokenIdx& _here, const s_Context& ctx, const s_Module& module, s_Outputs& outputs)
 {
     const s_Helpers can_cont0 { _current_fn.can_cont };
     const s_Helpers can_break0 { _current_fn.can_break };
@@ -3693,23 +3715,23 @@ static fu_STR cgLoop_HamjtPBW(const s_SolvedNode& node, s_cg_CurrentFn& _current
     const s_SolvedNode& n_body = items[LOOP_BODY];
     const s_SolvedNode& n_pcnd = items[LOOP_POST_COND];
     const s_SolvedNode& n_post = items[LOOP_POST];
-    fu_STR init = (n_init ? cgNode_4Ur0xXU7(n_init, "cgLoop[init]"_fu, M_STMT, (*(const s_Type*)fu::NIL), _here, ctx, module, _current_fn, outputs) : fu_STR{});
-    fu_STR cond = (n_cond ? cgNode_4Ur0xXU7(n_cond, "cgLoop[cond]"_fu, (M_RETBOOL | M_PARENS), (*(const s_Type*)fu::NIL), _here, ctx, module, _current_fn, outputs) : fu_STR{});
-    fu_STR pcnd = (n_pcnd ? cgNode_4Ur0xXU7(n_pcnd, "cgLoop[pcnd]"_fu, M_RETBOOL, (*(const s_Type*)fu::NIL), _here, ctx, module, _current_fn, outputs) : fu_STR{});
-    fu_STR post = (n_post ? cgNode_4Ur0xXU7(n_post, "cgLoop[post]"_fu, M_STMT, (*(const s_Type*)fu::NIL), _here, ctx, module, _current_fn, outputs) : fu_STR{});
+    fu_STR init = (n_init ? cgNode_dsqfXxyo(n_init, "cgLoop[init]"_fu, M_STMT, (*(const s_Type*)fu::NIL), _here, ctx, module, _current_fn, outputs) : fu_STR{});
+    fu_STR cond = (n_cond ? cgNode_dsqfXxyo(n_cond, "cgLoop[cond]"_fu, (M_RETBOOL | M_PARENS), (*(const s_Type*)fu::NIL), _here, ctx, module, _current_fn, outputs) : fu_STR{});
+    fu_STR pcnd = (n_pcnd ? cgNode_dsqfXxyo(n_pcnd, "cgLoop[pcnd]"_fu, M_RETBOOL, (*(const s_Type*)fu::NIL), _here, ctx, module, _current_fn, outputs) : fu_STR{});
+    fu_STR post = (n_post ? cgNode_dsqfXxyo(n_post, "cgLoop[post]"_fu, M_STMT, (*(const s_Type*)fu::NIL), _here, ctx, module, _current_fn, outputs) : fu_STR{});
     fu_STR name = x7E("LL_"_fu, fu::i64dec(_current_fn.num_labels++));
     const s_Helpers& helpers = node.helpers;
     _current_fn.can_break = helpers;
     const int blocks0 = _current_fn.blocks.size();
     fu_DEFER(_current_fn.blocks.shrink(blocks0));
     _current_fn.blocks += s_cg_Block { fu_STR(name), s_Helpers(helpers), false, false };
-    fu_STR body = (n_body ? blockWrapSubstatement_0c4p2Mql(n_body, M_LOOP_BODY, _current_fn, _here, ctx, module, outputs) : fu_STR{});
+    fu_STR body = (n_body ? blockWrapSubstatement_XLVwaodX(n_body, M_LOOP_BODY, _current_fn, _here, ctx, module, outputs) : fu_STR{});
     const bool labelUsed = fu::has(body, (("goto "_fu + name) + ";"_fu));
     fu_STR breakLabel = (labelUsed ? ((" "_fu + name) + ":;"_fu) : fu_STR{});
     if (pcnd)
     {
         if (init || post || cond)
-            fail_vAc0TkcF("TODO extended loop."_fu, _here, ctx);
+            fail_yKW1jZQa("TODO extended loop."_fu, _here, ctx);
 
         return ((((("do"_fu + body) + outputs._indent) + "while ("_fu) + pcnd) + ")"_fu) + breakLabel;
     };
@@ -3719,20 +3741,20 @@ static fu_STR cgLoop_HamjtPBW(const s_SolvedNode& node, s_cg_CurrentFn& _current
     return ((("while ("_fu + cond) + ")"_fu) + body) + breakLabel;
 }
 
-static fu_STR cgTryCatch_SroJJIlI(const s_SolvedNode& node, s_cg_CurrentFn& _current_fn, s_TokenIdx& _here, const s_Context& ctx, const s_Module& module, s_Outputs& outputs)
+static fu_STR cgTryCatch_iSy5UEsM(const s_SolvedNode& node, s_cg_CurrentFn& _current_fn, s_TokenIdx& _here, const s_Context& ctx, const s_Module& module, s_Outputs& outputs)
 {
     fu::view<s_SolvedNode> items = node.items;
-    fu_STR tRy = blockWrapSubstatement_0c4p2Mql(items[0], 0, _current_fn, _here, ctx, module, outputs);
-    fu_STR err = localID_11mH3rWx(items[1].target, true, module, ctx, _current_fn);
-    fu_STR cAtch = blockWrapSubstatement_0c4p2Mql(items[2], 0, _current_fn, _here, ctx, module, outputs);
+    fu_STR tRy = blockWrapSubstatement_XLVwaodX(items[0], 0, _current_fn, _here, ctx, module, outputs);
+    fu_STR err = localID_ErBtbPnG(items[1].target, true, module, ctx, _current_fn);
+    fu_STR cAtch = blockWrapSubstatement_XLVwaodX(items[2], 0, _current_fn, _here, ctx, module, outputs);
     return ((((((((((((((((outputs._indent + "try"_fu) + outputs._indent) + "{"_fu) + tRy) + outputs._indent) + "}"_fu) + outputs._indent) + "catch (const std::exception& o_0)"_fu) + outputs._indent) + "{"_fu) + outputs._indent) + "    fu_STR "_fu) + err) + " = fu_TO_STR(o_0.what());\n"_fu) + cAtch) + outputs._indent) + "}\n"_fu;
 }
 
-static fu_STR cgDefer_XKij8Asq(const s_SolvedNode& node, s_Outputs& outputs, s_TokenIdx& _here, const s_Context& ctx, const s_Module& module, s_cg_CurrentFn& _current_fn)
+static fu_STR cgDefer_42VvFQ2J(const s_SolvedNode& node, s_Outputs& outputs, s_TokenIdx& _here, const s_Context& ctx, const s_Module& module, s_cg_CurrentFn& _current_fn)
 {
-    include_OWB5Ob07("<fu/defer.h>"_fu, outputs);
+    include_mXeF2edC("<fu/defer.h>"_fu, outputs);
     fu_STR which = ((node.value == "err"_fu) ? "fu_DEFER_IF_ERR"_fu : ((node.value == "ok"_fu) ? "fu_DEFER_IF_OK"_fu : "fu_DEFER"_fu));
-    return ((which + "("_fu) + cgNode_4Ur0xXU7(only_O0vxkflG(node.items), "defer"_fu, M_STMT, (*(const s_Type*)fu::NIL), _here, ctx, module, _current_fn, outputs)) + ")"_fu;
+    return ((which + "("_fu) + cgNode_dsqfXxyo(only_O0vxkflG(node.items), "defer"_fu, M_STMT, (*(const s_Type*)fu::NIL), _here, ctx, module, _current_fn, outputs)) + ")"_fu;
 }
 
                                 #ifndef DEF_starts_cnCAmU7Y
@@ -3743,7 +3765,7 @@ inline bool starts_cnCAmU7Y(fu::view<char> a, const char with)
 }
                                 #endif
 
-static fu_STR cgCompilerPragma_DrUENYfZ(const s_SolvedNode& node, s_TokenIdx& _here, const s_Context& ctx, const s_Module& module, s_cg_CurrentFn& _current_fn, s_Outputs& outputs)
+static fu_STR cgCompilerPragma_CAs32NE9(const s_SolvedNode& node, s_TokenIdx& _here, const s_Context& ctx, const s_Module& module, s_cg_CurrentFn& _current_fn, s_Outputs& outputs)
 {
     fu::view<char> cmd = node.value;
     if (cmd == "emit"_fu)
@@ -3755,7 +3777,7 @@ static fu_STR cgCompilerPragma_DrUENYfZ(const s_SolvedNode& node, s_TokenIdx& _h
             if (node_1.kind == s_kind_str)
                 result += node_1.value;
             else
-                result += cgNode_4Ur0xXU7(node_1, "compiler:emit"_fu, 0, (*(const s_Type*)fu::NIL), _here, ctx, module, _current_fn, outputs);
+                result += cgNode_dsqfXxyo(node_1, "compiler:emit"_fu, 0, (*(const s_Type*)fu::NIL), _here, ctx, module, _current_fn, outputs);
 
         };
         add_wAuMmv6B(outputs._gcc_ignore, "-Wmisleading-indentation"_fu);
@@ -3771,7 +3793,7 @@ static fu_STR cgCompilerPragma_DrUENYfZ(const s_SolvedNode& node, s_TokenIdx& _h
         {
             const s_SolvedNode& item = node.items[i];
             if (item.kind != s_kind_str)
-                fail_vAc0TkcF((x7E("compiler link: All arguments must be string literals, got a `"_fu, str_x2XZ9C2m(item.kind)) + "`."_fu), _here, ctx);
+                fail_yKW1jZQa((x7E("compiler link: All arguments must be string literals, got a `"_fu, str_omkBT2iF(item.kind)) + "`."_fu), _here, ctx);
 
             const fu_STR& i_1 = item.value;
             add_wAuMmv6B(outputs.HACK_link, i_1);
@@ -3784,7 +3806,7 @@ static fu_STR cgCompilerPragma_DrUENYfZ(const s_SolvedNode& node, s_TokenIdx& _h
         {
             const s_SolvedNode& item = node.items[i];
             if (item.kind != s_kind_str)
-                fail_vAc0TkcF((x7E("compiler link: All arguments must be string literals, got a `"_fu, str_x2XZ9C2m(item.kind)) + "`."_fu), _here, ctx);
+                fail_yKW1jZQa((x7E("compiler link: All arguments must be string literals, got a `"_fu, str_omkBT2iF(item.kind)) + "`."_fu), _here, ctx);
 
             const fu_STR& i_1 = item.value;
             add_wAuMmv6B(outputs.HACK_include_dirs, i_1);
@@ -3797,7 +3819,7 @@ static fu_STR cgCompilerPragma_DrUENYfZ(const s_SolvedNode& node, s_TokenIdx& _h
         {
             const s_SolvedNode& item = node.items[i];
             if (item.kind != s_kind_str)
-                fail_vAc0TkcF((x7E("compiler link: All arguments must be string literals, got a `"_fu, str_x2XZ9C2m(item.kind)) + "`."_fu), _here, ctx);
+                fail_yKW1jZQa((x7E("compiler link: All arguments must be string literals, got a `"_fu, str_omkBT2iF(item.kind)) + "`."_fu), _here, ctx);
 
             const fu_STR& i_1 = item.value;
             add_wAuMmv6B(outputs.HACK_extra_sources, i_1);
@@ -3810,99 +3832,99 @@ static fu_STR cgCompilerPragma_DrUENYfZ(const s_SolvedNode& node, s_TokenIdx& _h
         {
             const s_SolvedNode& item = node.items[i];
             if (item.kind != s_kind_str)
-                fail_vAc0TkcF((x7E("compiler link: All arguments must be string literals, got a `"_fu, str_x2XZ9C2m(item.kind)) + "`."_fu), _here, ctx);
+                fail_yKW1jZQa((x7E("compiler link: All arguments must be string literals, got a `"_fu, str_omkBT2iF(item.kind)) + "`."_fu), _here, ctx);
 
             const fu_STR& i_1 = item.value;
-            include_OWB5Ob07((starts_cnCAmU7Y(i_1, '<') ? fu_STR(i_1) : (('"' + i_1) + '"')), outputs);
+            include_mXeF2edC((starts_cnCAmU7Y(i_1, '<') ? fu_STR(i_1) : (('"' + i_1) + '"')), outputs);
         };
         return fu_STR{};
     };
     BUG_XksxYQ3i(("Unknown compiler pragma: "_fu + cmd), _here, ctx);
 }
 
-static fu_STR cgNode_4Ur0xXU7(const s_SolvedNode& node, fu::view<char> debug, const int mode, const s_Type& callarg, s_TokenIdx& _here, const s_Context& ctx, const s_Module& module, s_cg_CurrentFn& _current_fn, s_Outputs& outputs)
+static fu_STR cgNode_dsqfXxyo(const s_SolvedNode& node, fu::view<char> debug, const int mode, const s_Type& callarg, s_TokenIdx& _here, const s_Context& ctx, const s_Module& module, s_cg_CurrentFn& _current_fn, s_Outputs& outputs)
 {
-    const s_kind k = (node.kind ? node.kind : fail_vAc0TkcF(("cgNode: No node.kind: "_fu + debug), _here, ctx));
+    const s_kind k = (node.kind ? node.kind : fail_yKW1jZQa(("cgNode: No node.kind: "_fu + debug), _here, ctx));
     HERE_Qf4G9n8T(node.token, _here);
     if (k == s_kind_call)
-        return cgCall_YhxSxs3S(node, mode, module, ctx, _here, _current_fn, outputs);
+        return cgCall_gNEKUGCh(node, mode, module, ctx, _here, _current_fn, outputs);
 
     if (k == s_kind_int)
-        return cgLiteral_OMqKm8yn(node, outputs, _here, ctx, module, _current_fn);
+        return cgLiteral_I1krZny2(node, outputs, _here, ctx, module, _current_fn);
 
     if (k == s_kind_real)
-        return cgLiteral_OMqKm8yn(node, outputs, _here, ctx, module, _current_fn);
+        return cgLiteral_I1krZny2(node, outputs, _here, ctx, module, _current_fn);
 
     if (k == s_kind_char)
-        return cgCharLiteral_zbdyWvID(node);
+        return cgCharLiteral_gVWMdpkb(node);
 
     if (k == s_kind_str)
-        return cgStringLiteral_GfN9Oovf(node, outputs, _here, ctx, module, _current_fn);
+        return cgStringLiteral_psJ63fCx(node, outputs, _here, ctx, module, _current_fn);
 
     if (k == s_kind_arrlit)
-        return cgArrayLiteral_o7SOBpzq(node, mode, callarg, module, ctx, _here, _current_fn, outputs);
+        return cgArrayLiteral_LhMZTdKu(node, mode, callarg, module, ctx, _here, _current_fn, outputs);
 
     if (k == s_kind_definit)
-        return cgDefinit_wy0Oc9Hv(node, mode, callarg, module, ctx, _here, _current_fn, outputs);
+        return cgDefinit_fSJBcSYy(node, mode, callarg, module, ctx, _here, _current_fn, outputs);
 
     if (k == s_kind_bool)
         return fu_STR(node.value);
 
     if (k == s_kind_copy)
-        return cgMoveOrClone_jeJ2Ijgc(node, mode, module, ctx, _here, _current_fn, outputs);
+        return cgMoveOrClone_AJC1FJWz(node, mode, module, ctx, _here, _current_fn, outputs);
 
     if (k == s_kind_move)
-        return cgMoveOrClone_jeJ2Ijgc(node, mode, module, ctx, _here, _current_fn, outputs);
+        return cgMoveOrClone_AJC1FJWz(node, mode, module, ctx, _here, _current_fn, outputs);
 
     if (k == s_kind_if)
-        return cgIf_GDAfpI97(node, mode, _here, ctx, module, _current_fn, outputs);
+        return cgIf_rTvT1ZJj(node, mode, _here, ctx, module, _current_fn, outputs);
 
     if (k == s_kind_or)
-        return cgOr_sN3pzDys(node, mode, _here, ctx, module, _current_fn, outputs);
+        return cgOr_NzALUwZC(node, mode, _here, ctx, module, _current_fn, outputs);
 
     if (k == s_kind_and)
-        return cgAnd_4dFPKtOP(node, mode, debug, _here, ctx, module, _current_fn, outputs);
+        return cgAnd_CdRSNKtb(node, mode, debug, _here, ctx, module, _current_fn, outputs);
 
     if (k == s_kind_letdef)
-        return cgLetDef_OIF87ZLY(node, module, ctx, _current_fn, _here, outputs);
+        return cgLetDef_Jf1Rlggv(node, module, ctx, _current_fn, _here, outputs);
 
     if (k == s_kind_root)
-        return cgRoot_BhF3gzcy(node, _current_fn, _here, ctx, module, outputs);
+        return cgRoot_0uanpPoI(node, _current_fn, _here, ctx, module, outputs);
 
     if (k == s_kind_block)
-        return cgBlock_3hPEhqj0(node, mode, "block"_fu, _current_fn, _here, ctx, module, outputs);
+        return cgBlock_O5sy7iCr(node, mode, "block"_fu, _current_fn, _here, ctx, module, outputs);
 
     if (k == s_kind_argid)
-        return cgComma_4boXVUVA(node.items, "argid"_fu, _current_fn, _here, ctx, module, outputs);
+        return cgComma_CKYjHEIt(node.items, "argid"_fu, _current_fn, _here, ctx, module, outputs);
 
     if (k == s_kind_fndef)
-        return cgFnDef_v7kt63rP(node, mode, module, ctx, _here, outputs, _current_fn);
+        return cgFnDef_FVdOx0ei(node, mode, module, ctx, _here, outputs, _current_fn);
 
     if (k == s_kind_empty)
-        return cgEmpty_NzALUwZC(node, mode, module, ctx, _here, outputs, _current_fn);
+        return cgEmpty_bzNYcHre(node, mode, module, ctx, _here, outputs, _current_fn);
 
     if (!(mode & M_STMT))
-        return cgBlock_3hPEhqj0(node, mode, x7E(str_x2XZ9C2m(k), "!M_STMT"_fu), _current_fn, _here, ctx, module, outputs);
+        return cgBlock_O5sy7iCr(node, mode, x7E(str_omkBT2iF(k), "!M_STMT"_fu), _current_fn, _here, ctx, module, outputs);
 
     if (k == s_kind_jump)
-        return cgJump_smwBcYMI(node, _current_fn, _here, ctx, module, outputs);
+        return cgJump_qgRdOV74(node, _current_fn, _here, ctx, module, outputs);
 
     if (k == s_kind_loop)
-        return cgLoop_HamjtPBW(node, _current_fn, _here, ctx, module, outputs);
+        return cgLoop_XNYu9eru(node, _current_fn, _here, ctx, module, outputs);
 
     if (k == s_kind_try)
-        return cgTryCatch_SroJJIlI(node, _current_fn, _here, ctx, module, outputs);
+        return cgTryCatch_iSy5UEsM(node, _current_fn, _here, ctx, module, outputs);
 
     if (k == s_kind_defer)
-        return cgDefer_XKij8Asq(node, outputs, _here, ctx, module, _current_fn);
+        return cgDefer_42VvFQ2J(node, outputs, _here, ctx, module, _current_fn);
 
     if (k == s_kind_pragma)
-        return cgCompilerPragma_DrUENYfZ(node, _here, ctx, module, _current_fn, outputs);
+        return cgCompilerPragma_CAs32NE9(node, _here, ctx, module, _current_fn, outputs);
 
-    fail_vAc0TkcF(x7E("TODO: "_fu, str_x2XZ9C2m(k)), _here, ctx);
+    fail_yKW1jZQa(x7E("TODO: "_fu, str_omkBT2iF(k)), _here, ctx);
 }
 
-static fu_STR localPath_AV3fLj8y(const fu_STR& path, const s_Module& module)
+static fu_STR localPath_eI8Z1HUu(const fu_STR& path, const s_Module& module)
 {
     return (starts_cnCAmU7Y(path, '.') ? join_Lfq50XKd(dirname_KqRBcvmh(module.fname), path) : fu_STR(path));
 }
@@ -3915,13 +3937,13 @@ s_CodegenOutput cpp_codegen_NCKyO7IL(const s_Module& module, const s_Context& ct
     s_cg_CurrentFn _current_fn {};
     const s_SolvedNode& root = module.out.solve.root;
     if (!(root.kind == s_kind_root))
-        fail_vAc0TkcF((*(const fu_STR*)fu::NIL), _here, ctx);
+        fail_yKW1jZQa((*(const fu_STR*)fu::NIL), _here, ctx);
 
-    fu_STR src = cgNode_4Ur0xXU7(root, "cgRoot"_fu, 0, (*(const s_Type*)fu::NIL), _here, ctx, module, _current_fn, outputs);
+    fu_STR src = cgNode_dsqfXxyo(root, "cgRoot"_fu, 0, (*(const s_Type*)fu::NIL), _here, ctx, module, _current_fn, outputs);
     for (int i = 0; i < outputs.HACK_extra_sources.size(); i++)
     {
         const fu_STR& orig = outputs.HACK_extra_sources[i];
-        fu_STR file = localPath_AV3fLj8y(orig, module);
+        fu_STR file = localPath_eI8Z1HUu(orig, module);
         src += (("\n// "_fu + orig) + "\n"_fu);
         src += read_ny0gyQ9a(fu_STR(file));
     };

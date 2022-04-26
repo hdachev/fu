@@ -1,3 +1,4 @@
+#include <cstdint>
 #include <fu/int.h>
 #include <fu/str.h>
 #include <fu/vec.h>
@@ -15,9 +16,12 @@ struct s_Module;
 struct s_ModuleInputs;
 struct s_LexerOutput;
 struct s_Token;
-enum s_kind: fu::i8;
+enum s_kind: int;
 struct s_ParserOutput;
 struct s_Node;
+typedef int s_DeclAsserts;
+typedef int s_ParseSyntax;
+typedef unsigned s_Flags;
 struct s_TokenIdx;
 struct s_ModuleOutputs;
 struct s_Struct;
@@ -31,6 +35,7 @@ struct s_Region;
 struct s_RWRanges;
 struct s_Scope;
 struct s_Overload;
+typedef uint16_t s_SolverStatus;
 struct s_Extended;
 struct s_Argument;
 struct s_BitSet;
@@ -41,7 +46,7 @@ struct s_ScopeSkip;
 struct s_CodegenOutput;
 struct s_ModuleStats;
 struct s_ModuleStat;
-fu_STR createStructCanon_AFbRJxPd(s_kind, const fu_STR&, int, int, fu::view<char>);
+fu_STR createStructCanon_ku8KcJ4A(s_kind, const fu_STR&, int, int, fu::view<char>);
 
                                 #ifndef DEF_s_Target
                                 #define DEF_s_Target
@@ -77,7 +82,7 @@ struct s_ScopeItem
 
                                 #ifndef DEF_s_kind
                                 #define DEF_s_kind
-enum s_kind: fu::i8
+enum s_kind: int
 {
     s_kind_sof = 1,
     s_kind_id = 2,
@@ -115,32 +120,33 @@ enum s_kind: fu::i8
     s_kind_pragma = 34,
     s_kind_void = 35,
     s_kind_struct = 36,
-    s_kind_primitive = 37,
-    s_kind_flags = 38,
-    s_kind_enum = 39,
-    s_kind_members = 40,
-    s_kind_fn = 41,
-    s_kind_fnbranch = 42,
-    s_kind_pattern = 43,
-    s_kind_typeunion = 44,
-    s_kind_typetag = 45,
-    s_kind_jump = 46,
-    s_kind_empty = 47,
-    s_kind_letdef = 48,
-    s_kind___relaxed = 49,
-    s_kind___convert = 50,
-    s_kind_fndef = 51,
-    s_kind_copy = 52,
-    s_kind_move = 53,
-    s_kind___far_jump = 54,
-    s_kind___no_kind_yet = 55,
-    s_kind_type = 56,
-    s_kind_var = 57,
-    s_kind_field = 58,
-    s_kind_enumv = 59,
-    s_kind_template = 60,
-    s_kind___native = 61,
-    s_kind_inline = 62,
+    s_kind_union = 37,
+    s_kind_primitive = 38,
+    s_kind_flags = 39,
+    s_kind_enum = 40,
+    s_kind_members = 41,
+    s_kind_fn = 42,
+    s_kind_fnbranch = 43,
+    s_kind_pattern = 44,
+    s_kind_typeunion = 45,
+    s_kind_typetag = 46,
+    s_kind_jump = 47,
+    s_kind_empty = 48,
+    s_kind_letdef = 49,
+    s_kind___relaxed = 50,
+    s_kind___convert = 51,
+    s_kind_fndef = 52,
+    s_kind_copy = 53,
+    s_kind_move = 54,
+    s_kind___far_jump = 55,
+    s_kind___no_kind_yet = 56,
+    s_kind_type = 57,
+    s_kind_var = 58,
+    s_kind_field = 59,
+    s_kind_enumv = 60,
+    s_kind_template = 61,
+    s_kind___native = 62,
+    s_kind_inline = 63,
 };
                                 #endif
 
@@ -177,6 +183,58 @@ struct s_LexerOutput
 };
                                 #endif
 
+                                #ifndef DEF_s_DeclAsserts
+                                #define DEF_s_DeclAsserts
+inline constexpr s_DeclAsserts s_DeclAsserts_A_NOCOPY = 1;
+inline constexpr s_DeclAsserts s_DeclAsserts_A_NOVEC = 2;
+inline constexpr s_DeclAsserts s_DeclAsserts_A_NOVEC_MUT = 4;
+inline constexpr s_DeclAsserts s_DeclAsserts_A_PURE = 8;
+inline constexpr s_DeclAsserts s_DeclAsserts_A_PURE_CTX = 16;
+inline constexpr s_DeclAsserts s_DeclAsserts_A_NOFLOW = 32;
+                                #endif
+
+                                #ifndef DEF_s_ParseSyntax
+                                #define DEF_s_ParseSyntax
+inline constexpr s_ParseSyntax s_ParseSyntax_PS_ID = 1;
+inline constexpr s_ParseSyntax s_ParseSyntax_PS_PARENS = 2;
+inline constexpr s_ParseSyntax s_ParseSyntax_PS_SEMI = 4;
+inline constexpr s_ParseSyntax s_ParseSyntax_PS_DISCARD = 8;
+                                #endif
+
+                                #ifndef DEF_s_Flags
+                                #define DEF_s_Flags
+inline constexpr s_Flags s_Flags_F_METHOD = 1;
+inline constexpr s_Flags s_Flags_F_INFIX = 2;
+inline constexpr s_Flags s_Flags_F_PREFIX = 4;
+inline constexpr s_Flags s_Flags_F_POSTFIX = 8;
+inline constexpr s_Flags s_Flags_F_ACCESS = 16;
+inline constexpr s_Flags s_Flags_F_COMPOUND_ID = 32;
+inline constexpr s_Flags s_Flags_F_WRITTEN_TO = 64;
+inline constexpr s_Flags s_Flags_F_LAX = 128;
+inline constexpr s_Flags s_Flags_F_ARG = 256;
+inline constexpr s_Flags s_Flags_F_OPERATOR = 512;
+inline constexpr s_Flags s_Flags_F_MOVED_FROM = 1024;
+inline constexpr s_Flags s_Flags_F_CONVERSION = 2048;
+inline constexpr s_Flags s_Flags_F_OPT_ARG = 4096;
+inline constexpr s_Flags s_Flags_F_MUT = 8192;
+inline constexpr s_Flags s_Flags_F_REF = 16384;
+inline constexpr s_Flags s_Flags_F_IMPLICIT = 32768;
+inline constexpr s_Flags s_Flags_F_USING = 65536;
+inline constexpr s_Flags s_Flags_F_MUSTNAME = 131072;
+inline constexpr s_Flags s_Flags_F_SHADOW = 262144;
+inline constexpr s_Flags s_Flags_F_PUB = 524288;
+inline constexpr s_Flags s_Flags_F_EXTERN = 1048576;
+inline constexpr s_Flags s_Flags_F_HOTSWAP = 2097152;
+inline constexpr s_Flags s_Flags_F_PREDICATE = 4194304;
+inline constexpr s_Flags s_Flags_F_NAMED_ARGS = 8388608;
+inline constexpr s_Flags s_Flags_F_OOE_RTL = 16777216;
+inline constexpr s_Flags s_Flags_F_REST_ARG = 33554432;
+inline constexpr s_Flags s_Flags_F_RELAXABLE_REF = 67108864;
+inline constexpr s_Flags s_Flags_F_TEMPLATE = 134217728;
+inline constexpr s_Flags s_Flags_F_INLINE = 268435456;
+inline constexpr s_Flags s_Flags_F_LAMBDA = 536870912;
+                                #endif
+
                                 #ifndef DEF_s_TokenIdx
                                 #define DEF_s_TokenIdx
 struct s_TokenIdx
@@ -198,7 +256,9 @@ struct s_TokenIdx
 struct s_Node
 {
     s_kind kind;
-    int flags;
+    s_DeclAsserts asserts;
+    s_ParseSyntax syntax;
+    s_Flags flags;
     fu_STR value;
     fu_VEC<s_Node> items;
     s_TokenIdx token;
@@ -381,7 +441,7 @@ struct s_SolvedNode
 {
     s_kind kind;
     s_Helpers helpers;
-    int flags;
+    s_Flags flags;
     fu_STR value;
     fu_VEC<s_SolvedNode> items;
     s_TokenIdx token;
@@ -401,13 +461,26 @@ struct s_SolvedNode
 };
                                 #endif
 
+                                #ifndef DEF_s_SolverStatus
+                                #define DEF_s_SolverStatus
+inline constexpr s_SolverStatus s_SolverStatus_SS_LAZY = 1;
+inline constexpr s_SolverStatus s_SolverStatus_SS_DID_START = 2;
+inline constexpr s_SolverStatus s_SolverStatus_SS_DIRTY = 4;
+inline constexpr s_SolverStatus s_SolverStatus_SS_FINALIZED = 8;
+inline constexpr s_SolverStatus s_SolverStatus_SS_UPDATED = 16;
+inline constexpr s_SolverStatus s_SolverStatus_SS_TYPE_RECUR = 32;
+inline constexpr s_SolverStatus s_SolverStatus_SS_FN_RECUR = 64;
+inline constexpr s_SolverStatus s_SolverStatus_SS_HOIST = 128;
+inline constexpr s_SolverStatus s_SolverStatus_SS_UNUSED = 256;
+                                #endif
+
                                 #ifndef DEF_s_Overload
                                 #define DEF_s_Overload
 struct s_Overload
 {
     s_kind kind;
-    int flags;
-    unsigned status;
+    s_Flags flags;
+    s_SolverStatus status;
     fu_STR name;
     fu_STR sighash;
     s_Type type;
@@ -443,7 +516,7 @@ struct s_Argument
     fu_STR autocall;
     s_Type type;
     s_SolvedNode dEfault;
-    int flags;
+    s_Flags flags;
     int local;
     s_BitSet soft_risk;
     s_BitSet hard_risk;
@@ -752,81 +825,6 @@ struct s_Module
 
 #ifndef fu_NO_fdefs
 
-                                #ifndef DEF_SS_LAZY
-                                #define DEF_SS_LAZY
-inline constexpr unsigned SS_LAZY = (0x1u << 0u);
-                                #endif
-
-                                #ifndef DEF_SS_DID_START
-                                #define DEF_SS_DID_START
-inline constexpr unsigned SS_DID_START = (0x1u << 1u);
-                                #endif
-
-                                #ifndef DEF_SS_DIRTY
-                                #define DEF_SS_DIRTY
-inline constexpr unsigned SS_DIRTY = (0x1u << 2u);
-                                #endif
-
-                                #ifndef DEF_SS_FINALIZED
-                                #define DEF_SS_FINALIZED
-inline constexpr unsigned SS_FINALIZED = (0x1u << 3u);
-                                #endif
-
-                                #ifndef DEF_SS_UPDATED
-                                #define DEF_SS_UPDATED
-inline constexpr unsigned SS_UPDATED = (0x1u << 4u);
-                                #endif
-
-                                #ifndef DEF_SS_TYPE_RECUR
-                                #define DEF_SS_TYPE_RECUR
-inline constexpr unsigned SS_TYPE_RECUR = (0x1u << 16u);
-                                #endif
-
-                                #ifndef DEF_SS_FN_RECUR
-                                #define DEF_SS_FN_RECUR
-inline constexpr unsigned SS_FN_RECUR = (0x1u << 17u);
-                                #endif
-
-                                #ifndef DEF_HM_CanBreak
-                                #define DEF_HM_CanBreak
-extern const short HM_CanBreak = short((short(1) << short(0)));
-                                #endif
-
-                                #ifndef DEF_HM_CanReturn
-                                #define DEF_HM_CanReturn
-extern const short HM_CanReturn = short((short(1) << short(1)));
-                                #endif
-
-                                #ifndef DEF_HM_Anon
-                                #define DEF_HM_Anon
-extern const short HM_Anon = short((short(1) << short(2)));
-                                #endif
-
-                                #ifndef DEF_HM_Function
-                                #define DEF_HM_Function
-extern const short HM_Function = short((short(1) << short(3)));
-                                #endif
-
-                                #ifndef DEF_HM_Lambda
-                                #define DEF_HM_Lambda
-extern const short HM_Lambda = short((short(1) << short(4)));
-                                #endif
-
-                                #ifndef DEF_HM_Struct
-                                #define DEF_HM_Struct
-extern const short HM_Struct = short((short(1) << short(5)));
-                                #endif
-
-                                #ifndef DEF_HM_LabelUsed
-                                #define DEF_HM_LabelUsed
-extern const short HM_LabelUsed = short((short(1) << short(6)));
-                                #endif
-
-                                #ifndef DEF_HM_KeepBlock
-                                #define DEF_HM_KeepBlock
-extern const short HM_KeepBlock = short((short(1) << short(7)));
-                                #endif
-
 s_Target target_wh65lsPu(const s_ScopeItem& si)
 {
     return s_Target { int(si.modid), int((si.packed & ~(0x1u << 31u))) };
@@ -854,34 +852,20 @@ int MODID_l8HfNDzr(const s_Module& module)
     return module.modid;
 }
 
-                                #ifndef DEF_F_NOCOPY
-                                #define DEF_F_NOCOPY
-inline constexpr int F_NOCOPY = (1 << 12);
-                                #endif
-
                                 #ifndef DEF_q_rx_copy
                                 #define DEF_q_rx_copy
 inline constexpr int q_rx_copy = (1 << 1);
                                 #endif
 
-s_Type initStruct_HW5mhaYe(const s_kind kind, const fu_STR& baseprim, const fu_STR& name, const int flags, const bool SELF_TEST, s_Module& module)
+s_Type initStruct_2K4k4ce4(const s_kind kind, const fu_STR& baseprim, const fu_STR& name, const s_DeclAsserts asserts, s_Module& module)
 {
     if (!(fu::u8((fu::u8(fu::u8(name[0])) - fu::u8(fu::u8('0')))) > fu::u8(unsigned(9))))
         fu::fail((("Bad struct name, leading digit: `"_fu + name) + "`."_fu));
 
-    if (SELF_TEST)
-    {
-        for (int i = 0; i < module.out.types.size(); i++)
-        {
-            if (module.out.types[i].name == name)
-                fu::fail((("initStruct/SELF_TEST duplicate: `"_fu + name) + "`."_fu));
-
-        };
-    };
     const int index = module.out.types.size();
     module.out.types += s_Struct { s_kind(kind), fu_STR(name), s_Target{}, fu_VEC<s_ScopeItem>{}, fu_VEC<int>{}, fu_VEC<s_Target>{}, fu_STR(baseprim), 0, bool{} };
-    fu_STR canon = createStructCanon_AFbRJxPd(kind, baseprim, module.modid, index, name);
-    const int specualtive_quals = (!(flags & F_NOCOPY) ? q_rx_copy : (*(const int*)fu::NIL));
+    fu_STR canon = createStructCanon_ku8KcJ4A(kind, baseprim, module.modid, index, name);
+    const int specualtive_quals = (!(asserts & s_DeclAsserts_A_NOCOPY) ? q_rx_copy : (*(const int*)fu::NIL));
     return s_Type { s_ValueType { int(specualtive_quals), fu_STR(canon) }, s_Lifetime{} };
 }
 
@@ -890,11 +874,6 @@ s_Type despeculateStruct_CPSh38G1(/*MOV*/ s_Type&& type)
     type.vtype.quals &= ~q_rx_copy;
     return static_cast<s_Type&&>(type);
 }
-
-                                #ifndef DEF_F_PUB
-                                #define DEF_F_PUB
-inline constexpr int F_PUB = (1 << 20);
-                                #endif
 
 s_Scope Scope_exports_3xUYpXMb(const s_Scope& scope, const int modid, const fu_VEC<s_ScopeItem>& field_items)
 {
@@ -908,7 +887,7 @@ s_Scope Scope_exports_3xUYpXMb(const s_Scope& scope, const int modid, const fu_V
         if (target_wh65lsPu(item).modid == modid)
         {
             const s_Overload& overload = scope.overloads[(target_wh65lsPu(item).index - 1)];
-            ((overload.flags & F_PUB) ? items : prv_items) += s_ScopeItem(item);
+            ((overload.flags & s_Flags_F_PUB) ? items : prv_items) += s_ScopeItem(item);
         };
     };
     for (int i_1 = 0; i_1 < scope.converts.size(); i_1++)
@@ -917,7 +896,7 @@ s_Scope Scope_exports_3xUYpXMb(const s_Scope& scope, const int modid, const fu_V
         if (item.modid == modid)
         {
             const s_Overload& overload = scope.overloads[(item.index - 1)];
-            ((overload.flags & F_PUB) ? converts : prv_converts) += s_Target(item);
+            ((overload.flags & s_Flags_F_PUB) ? converts : prv_converts) += s_Target(item);
         };
     };
     const int pub_items = items.size();
@@ -927,7 +906,7 @@ s_Scope Scope_exports_3xUYpXMb(const s_Scope& scope, const int modid, const fu_V
     return s_Scope { fu_VEC<s_Overload>(scope.overloads), fu_VEC<s_Extended>(scope.extended), fu_VEC<s_ScopeItem>(items), fu_VEC<s_ScopeItem>{}, fu_VEC<int>{}, fu_VEC<int>{}, fu_VEC<s_Target>{}, fu_VEC<s_Target>(converts), int(pub_items), int(pub_cnvrts) };
 }
 
-static void nextSkip_3evJgP9V(fu::view<s_ScopeSkip> scope_skip, int& scope_iterator, int& skiptrap, fu::view<s_ScopeItem> items)
+static void nextSkip_ym6ttuuT(fu::view<s_ScopeSkip> scope_skip, int& scope_iterator, int& skiptrap, fu::view<s_ScopeItem> items)
 {
     for (int i = scope_skip.size(); i-- > 0; )
     {
@@ -966,7 +945,7 @@ s_Target search_7gDKHCyh(fu::view<s_ScopeItem> items, const fu_STR& id, int& sco
 
     int skiptrap = -1;
     scope_iterator--;
-    nextSkip_3evJgP9V(scope_skip, scope_iterator, skiptrap, items);
+    nextSkip_ym6ttuuT(scope_skip, scope_iterator, skiptrap, items);
     scope_iterator++;
     s_ScopeItem TODO_FIX = s_ScopeItem{};
     if (extra_items)
@@ -975,7 +954,7 @@ s_Target search_7gDKHCyh(fu::view<s_ScopeItem> items, const fu_STR& id, int& sco
     while (scope_iterator-- > 0)
     {
         if (scope_iterator == skiptrap)
-            nextSkip_3evJgP9V(scope_skip, scope_iterator, skiptrap, items);
+            nextSkip_ym6ttuuT(scope_skip, scope_iterator, skiptrap, items);
 
         const s_ScopeItem& item = ((scope_iterator >= items.size()) ? ((scope_iterator >= (items.size() + extra_items.size())) ? field_items[((scope_iterator - items.size()) - extra_items.size())] : target_TODOFIX_pzhnE2ba(TODO_FIX, extra_items[(scope_iterator - items.size())])) : items[scope_iterator]);
         if (item.id == id)
@@ -1027,6 +1006,11 @@ bool operator==(const s_ScopeMemo& a, const s_ScopeMemo& b)
     return cmp_dl5ghMes(a, b) == 0;
 }
 
+bool operator==(const s_Helpers& a, const s_Helpers& b)
+{
+    return a.index == b.index;
+}
+
                                 #ifndef DEF_grow_if_oob_h4z4Xr0k
                                 #define DEF_grow_if_oob_h4z4Xr0k
 inline s_Extended& grow_if_oob_h4z4Xr0k(fu_VEC<s_Extended>& a, const int i)
@@ -1038,7 +1022,7 @@ inline s_Extended& grow_if_oob_h4z4Xr0k(fu_VEC<s_Extended>& a, const int i)
 }
                                 #endif
 
-s_Target Scope_create_9BFuzCyW(s_Scope& scope, const s_kind kind, const fu_STR& name, const s_Type& type, const int flags, const unsigned status, const int nest, const s_Module& module)
+s_Target Scope_create_8vkRC1Ki(s_Scope& scope, const s_kind kind, const fu_STR& name, const s_Type& type, const s_Flags flags, const s_SolverStatus status, const int nest, const s_Module& module)
 {
     fu_VEC<s_Overload>& overloads = (nest ? grow_if_oob_h4z4Xr0k(scope.extended, nest).locals : scope.overloads);
     /*MOV*/ const s_Target target = s_Target { (nest ? -nest : int(MODID_l8HfNDzr(module))), (overloads.size() + 1) };
@@ -1062,16 +1046,11 @@ void Scope_set_BU3HNW7T(s_Scope& scope, const fu_STR& id, const s_Target& target
     Scope_set_hPlkl1cj(scope.items, id, target, shadows);
 }
 
-                                #ifndef DEF_F_SHADOW
-                                #define DEF_F_SHADOW
-inline constexpr int F_SHADOW = (1 << 23);
-                                #endif
-
-s_Target Scope_Typedef_yn4mwgoC(s_Scope& scope, const fu_STR& id, const s_Type& type, const int flags, const fu_STR& name, const unsigned status, const s_Module& module)
+s_Target Scope_Typedef_gq0kpTD8(s_Scope& scope, const fu_STR& id, const s_Type& type, const s_Flags flags, const fu_STR& name, const s_SolverStatus status, const s_Module& module)
 {
-    /*MOV*/ const s_Target target = Scope_create_9BFuzCyW(scope, s_kind_type, name, type, flags, status, 0, module);
+    /*MOV*/ const s_Target target = Scope_create_8vkRC1Ki(scope, s_kind_type, name, type, flags, status, 0, module);
     if (id)
-        Scope_set_BU3HNW7T(scope, id, target, !!(flags & F_SHADOW));
+        Scope_set_BU3HNW7T(scope, id, target, !!(flags & s_Flags_F_SHADOW));
 
     return /*NRVO*/ target;
 }
@@ -1149,20 +1128,20 @@ extern const s_Type t_never;
 s_Scope listGlobals_l8HfNDzr(const s_Module& module)
 {
     /*MOV*/ s_Scope scope {};
-    Scope_Typedef_yn4mwgoC(scope, "i8"_fu, t_i8, F_PUB, (*(const fu_STR*)fu::NIL), 0u, module);
-    Scope_Typedef_yn4mwgoC(scope, "i16"_fu, t_i16, F_PUB, (*(const fu_STR*)fu::NIL), 0u, module);
-    Scope_Typedef_yn4mwgoC(scope, "i32"_fu, t_i32, F_PUB, (*(const fu_STR*)fu::NIL), 0u, module);
-    Scope_Typedef_yn4mwgoC(scope, "i64"_fu, t_i64, F_PUB, (*(const fu_STR*)fu::NIL), 0u, module);
-    Scope_Typedef_yn4mwgoC(scope, "u8"_fu, t_u8, F_PUB, (*(const fu_STR*)fu::NIL), 0u, module);
-    Scope_Typedef_yn4mwgoC(scope, "u16"_fu, t_u16, F_PUB, (*(const fu_STR*)fu::NIL), 0u, module);
-    Scope_Typedef_yn4mwgoC(scope, "u32"_fu, t_u32, F_PUB, (*(const fu_STR*)fu::NIL), 0u, module);
-    Scope_Typedef_yn4mwgoC(scope, "u64"_fu, t_u64, F_PUB, (*(const fu_STR*)fu::NIL), 0u, module);
-    Scope_Typedef_yn4mwgoC(scope, "f32"_fu, t_f32, F_PUB, (*(const fu_STR*)fu::NIL), 0u, module);
-    Scope_Typedef_yn4mwgoC(scope, "f64"_fu, t_f64, F_PUB, (*(const fu_STR*)fu::NIL), 0u, module);
-    Scope_Typedef_yn4mwgoC(scope, "bool"_fu, t_bool, F_PUB, (*(const fu_STR*)fu::NIL), 0u, module);
-    Scope_Typedef_yn4mwgoC(scope, "byte"_fu, t_byte, F_PUB, (*(const fu_STR*)fu::NIL), 0u, module);
-    Scope_Typedef_yn4mwgoC(scope, "void"_fu, t_void, F_PUB, (*(const fu_STR*)fu::NIL), 0u, module);
-    Scope_Typedef_yn4mwgoC(scope, "never"_fu, t_never, F_PUB, (*(const fu_STR*)fu::NIL), 0u, module);
+    Scope_Typedef_gq0kpTD8(scope, "i8"_fu, t_i8, s_Flags_F_PUB, (*(const fu_STR*)fu::NIL), s_SolverStatus{}, module);
+    Scope_Typedef_gq0kpTD8(scope, "i16"_fu, t_i16, s_Flags_F_PUB, (*(const fu_STR*)fu::NIL), s_SolverStatus{}, module);
+    Scope_Typedef_gq0kpTD8(scope, "i32"_fu, t_i32, s_Flags_F_PUB, (*(const fu_STR*)fu::NIL), s_SolverStatus{}, module);
+    Scope_Typedef_gq0kpTD8(scope, "i64"_fu, t_i64, s_Flags_F_PUB, (*(const fu_STR*)fu::NIL), s_SolverStatus{}, module);
+    Scope_Typedef_gq0kpTD8(scope, "u8"_fu, t_u8, s_Flags_F_PUB, (*(const fu_STR*)fu::NIL), s_SolverStatus{}, module);
+    Scope_Typedef_gq0kpTD8(scope, "u16"_fu, t_u16, s_Flags_F_PUB, (*(const fu_STR*)fu::NIL), s_SolverStatus{}, module);
+    Scope_Typedef_gq0kpTD8(scope, "u32"_fu, t_u32, s_Flags_F_PUB, (*(const fu_STR*)fu::NIL), s_SolverStatus{}, module);
+    Scope_Typedef_gq0kpTD8(scope, "u64"_fu, t_u64, s_Flags_F_PUB, (*(const fu_STR*)fu::NIL), s_SolverStatus{}, module);
+    Scope_Typedef_gq0kpTD8(scope, "f32"_fu, t_f32, s_Flags_F_PUB, (*(const fu_STR*)fu::NIL), s_SolverStatus{}, module);
+    Scope_Typedef_gq0kpTD8(scope, "f64"_fu, t_f64, s_Flags_F_PUB, (*(const fu_STR*)fu::NIL), s_SolverStatus{}, module);
+    Scope_Typedef_gq0kpTD8(scope, "bool"_fu, t_bool, s_Flags_F_PUB, (*(const fu_STR*)fu::NIL), s_SolverStatus{}, module);
+    Scope_Typedef_gq0kpTD8(scope, "byte"_fu, t_byte, s_Flags_F_PUB, (*(const fu_STR*)fu::NIL), s_SolverStatus{}, module);
+    Scope_Typedef_gq0kpTD8(scope, "void"_fu, t_void, s_Flags_F_PUB, (*(const fu_STR*)fu::NIL), s_SolverStatus{}, module);
+    Scope_Typedef_gq0kpTD8(scope, "never"_fu, t_never, s_Flags_F_PUB, (*(const fu_STR*)fu::NIL), s_SolverStatus{}, module);
     return /*NRVO*/ scope;
 }
 

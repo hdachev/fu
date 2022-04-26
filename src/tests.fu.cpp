@@ -1,3 +1,4 @@
+#include <cstdint>
 #include <fu/int.h>
 #include <fu/str.h>
 #include <fu/vec.h>
@@ -20,9 +21,12 @@ struct s_Module;
 struct s_ModuleInputs;
 struct s_LexerOutput;
 struct s_Token;
-enum s_kind: fu::i8;
+enum s_kind: int;
 struct s_ParserOutput;
 struct s_Node;
+typedef int s_DeclAsserts;
+typedef int s_ParseSyntax;
+typedef unsigned s_Flags;
 struct s_TokenIdx;
 struct s_ModuleOutputs;
 struct s_Struct;
@@ -38,6 +42,7 @@ struct s_Region;
 struct s_RWRanges;
 struct s_Scope;
 struct s_Overload;
+typedef uint16_t s_SolverStatus;
 struct s_Extended;
 struct s_Argument;
 struct s_BitSet;
@@ -51,7 +56,7 @@ struct s_ModuleStat;
 struct s_Map_gb6sFwC7;
 fu_STR serialize_FUVdDfvU(const s_TestDiffs&);
 int write_Aym1I4GS(fu_STR&&, fu::view<char>, unsigned);
-s_Context ZERO_IR4bGBOh(fu_VEC<fu_STR>&&, const s_Options&, s_TestDiffs&);
+s_Context ZERO_6DokMNA4(fu_VEC<fu_STR>&&, const s_Options&, s_TestDiffs&);
 void append_CXqPs3bP(s_TestDiffs&, const s_TestDiffs&);
 void TODO_VpwO06E8(const fu_VEC<fu_STR>&, s_TestDiffs&);
 void TODO_lY1zhnoo(const fu_STR&, s_TestDiffs&);
@@ -123,7 +128,7 @@ struct s_Options
 
                                 #ifndef DEF_s_kind
                                 #define DEF_s_kind
-enum s_kind: fu::i8
+enum s_kind: int
 {
     s_kind_sof = 1,
     s_kind_id = 2,
@@ -161,32 +166,33 @@ enum s_kind: fu::i8
     s_kind_pragma = 34,
     s_kind_void = 35,
     s_kind_struct = 36,
-    s_kind_primitive = 37,
-    s_kind_flags = 38,
-    s_kind_enum = 39,
-    s_kind_members = 40,
-    s_kind_fn = 41,
-    s_kind_fnbranch = 42,
-    s_kind_pattern = 43,
-    s_kind_typeunion = 44,
-    s_kind_typetag = 45,
-    s_kind_jump = 46,
-    s_kind_empty = 47,
-    s_kind_letdef = 48,
-    s_kind___relaxed = 49,
-    s_kind___convert = 50,
-    s_kind_fndef = 51,
-    s_kind_copy = 52,
-    s_kind_move = 53,
-    s_kind___far_jump = 54,
-    s_kind___no_kind_yet = 55,
-    s_kind_type = 56,
-    s_kind_var = 57,
-    s_kind_field = 58,
-    s_kind_enumv = 59,
-    s_kind_template = 60,
-    s_kind___native = 61,
-    s_kind_inline = 62,
+    s_kind_union = 37,
+    s_kind_primitive = 38,
+    s_kind_flags = 39,
+    s_kind_enum = 40,
+    s_kind_members = 41,
+    s_kind_fn = 42,
+    s_kind_fnbranch = 43,
+    s_kind_pattern = 44,
+    s_kind_typeunion = 45,
+    s_kind_typetag = 46,
+    s_kind_jump = 47,
+    s_kind_empty = 48,
+    s_kind_letdef = 49,
+    s_kind___relaxed = 50,
+    s_kind___convert = 51,
+    s_kind_fndef = 52,
+    s_kind_copy = 53,
+    s_kind_move = 54,
+    s_kind___far_jump = 55,
+    s_kind___no_kind_yet = 56,
+    s_kind_type = 57,
+    s_kind_var = 58,
+    s_kind_field = 59,
+    s_kind_enumv = 60,
+    s_kind_template = 61,
+    s_kind___native = 62,
+    s_kind_inline = 63,
 };
                                 #endif
 
@@ -223,6 +229,58 @@ struct s_LexerOutput
 };
                                 #endif
 
+                                #ifndef DEF_s_DeclAsserts
+                                #define DEF_s_DeclAsserts
+inline constexpr s_DeclAsserts s_DeclAsserts_A_NOCOPY = 1;
+inline constexpr s_DeclAsserts s_DeclAsserts_A_NOVEC = 2;
+inline constexpr s_DeclAsserts s_DeclAsserts_A_NOVEC_MUT = 4;
+inline constexpr s_DeclAsserts s_DeclAsserts_A_PURE = 8;
+inline constexpr s_DeclAsserts s_DeclAsserts_A_PURE_CTX = 16;
+inline constexpr s_DeclAsserts s_DeclAsserts_A_NOFLOW = 32;
+                                #endif
+
+                                #ifndef DEF_s_ParseSyntax
+                                #define DEF_s_ParseSyntax
+inline constexpr s_ParseSyntax s_ParseSyntax_PS_ID = 1;
+inline constexpr s_ParseSyntax s_ParseSyntax_PS_PARENS = 2;
+inline constexpr s_ParseSyntax s_ParseSyntax_PS_SEMI = 4;
+inline constexpr s_ParseSyntax s_ParseSyntax_PS_DISCARD = 8;
+                                #endif
+
+                                #ifndef DEF_s_Flags
+                                #define DEF_s_Flags
+inline constexpr s_Flags s_Flags_F_METHOD = 1;
+inline constexpr s_Flags s_Flags_F_INFIX = 2;
+inline constexpr s_Flags s_Flags_F_PREFIX = 4;
+inline constexpr s_Flags s_Flags_F_POSTFIX = 8;
+inline constexpr s_Flags s_Flags_F_ACCESS = 16;
+inline constexpr s_Flags s_Flags_F_COMPOUND_ID = 32;
+inline constexpr s_Flags s_Flags_F_WRITTEN_TO = 64;
+inline constexpr s_Flags s_Flags_F_LAX = 128;
+inline constexpr s_Flags s_Flags_F_ARG = 256;
+inline constexpr s_Flags s_Flags_F_OPERATOR = 512;
+inline constexpr s_Flags s_Flags_F_MOVED_FROM = 1024;
+inline constexpr s_Flags s_Flags_F_CONVERSION = 2048;
+inline constexpr s_Flags s_Flags_F_OPT_ARG = 4096;
+inline constexpr s_Flags s_Flags_F_MUT = 8192;
+inline constexpr s_Flags s_Flags_F_REF = 16384;
+inline constexpr s_Flags s_Flags_F_IMPLICIT = 32768;
+inline constexpr s_Flags s_Flags_F_USING = 65536;
+inline constexpr s_Flags s_Flags_F_MUSTNAME = 131072;
+inline constexpr s_Flags s_Flags_F_SHADOW = 262144;
+inline constexpr s_Flags s_Flags_F_PUB = 524288;
+inline constexpr s_Flags s_Flags_F_EXTERN = 1048576;
+inline constexpr s_Flags s_Flags_F_HOTSWAP = 2097152;
+inline constexpr s_Flags s_Flags_F_PREDICATE = 4194304;
+inline constexpr s_Flags s_Flags_F_NAMED_ARGS = 8388608;
+inline constexpr s_Flags s_Flags_F_OOE_RTL = 16777216;
+inline constexpr s_Flags s_Flags_F_REST_ARG = 33554432;
+inline constexpr s_Flags s_Flags_F_RELAXABLE_REF = 67108864;
+inline constexpr s_Flags s_Flags_F_TEMPLATE = 134217728;
+inline constexpr s_Flags s_Flags_F_INLINE = 268435456;
+inline constexpr s_Flags s_Flags_F_LAMBDA = 536870912;
+                                #endif
+
                                 #ifndef DEF_s_TokenIdx
                                 #define DEF_s_TokenIdx
 struct s_TokenIdx
@@ -244,7 +302,9 @@ struct s_TokenIdx
 struct s_Node
 {
     s_kind kind;
-    int flags;
+    s_DeclAsserts asserts;
+    s_ParseSyntax syntax;
+    s_Flags flags;
     fu_STR value;
     fu_VEC<s_Node> items;
     s_TokenIdx token;
@@ -459,7 +519,7 @@ struct s_SolvedNode
 {
     s_kind kind;
     s_Helpers helpers;
-    int flags;
+    s_Flags flags;
     fu_STR value;
     fu_VEC<s_SolvedNode> items;
     s_TokenIdx token;
@@ -479,13 +539,26 @@ struct s_SolvedNode
 };
                                 #endif
 
+                                #ifndef DEF_s_SolverStatus
+                                #define DEF_s_SolverStatus
+inline constexpr s_SolverStatus s_SolverStatus_SS_LAZY = 1;
+inline constexpr s_SolverStatus s_SolverStatus_SS_DID_START = 2;
+inline constexpr s_SolverStatus s_SolverStatus_SS_DIRTY = 4;
+inline constexpr s_SolverStatus s_SolverStatus_SS_FINALIZED = 8;
+inline constexpr s_SolverStatus s_SolverStatus_SS_UPDATED = 16;
+inline constexpr s_SolverStatus s_SolverStatus_SS_TYPE_RECUR = 32;
+inline constexpr s_SolverStatus s_SolverStatus_SS_FN_RECUR = 64;
+inline constexpr s_SolverStatus s_SolverStatus_SS_HOIST = 128;
+inline constexpr s_SolverStatus s_SolverStatus_SS_UNUSED = 256;
+                                #endif
+
                                 #ifndef DEF_s_Overload
                                 #define DEF_s_Overload
 struct s_Overload
 {
     s_kind kind;
-    int flags;
-    unsigned status;
+    s_Flags flags;
+    s_SolverStatus status;
     fu_STR name;
     fu_STR sighash;
     s_Type type;
@@ -521,7 +594,7 @@ struct s_Argument
     fu_STR autocall;
     s_Type type;
     s_SolvedNode dEfault;
-    int flags;
+    s_Flags flags;
     int local;
     s_BitSet soft_risk;
     s_BitSet hard_risk;
@@ -909,7 +982,7 @@ inline static void parallel_for_SilmelK6(const int min, int end, fu::view_mut<s_
 
             try
             {
-                ZERO_IR4bGBOh(fu_VEC<fu_STR>(test), s_Options{}, testdiffs);
+                ZERO_6DokMNA4(fu_VEC<fu_STR>(test), s_Options{}, testdiffs);
             }
             catch (const std::exception& o_0)
             {
@@ -1223,7 +1296,7 @@ void runTests_n07RecyR()
     PARZERO_DB1hH8Vh("\n        <fail bad call>\n        fn test(a = \"hello\") a.len;     <pass/>\n        fn test(a = 0) a + 1;           </fail>\n        fn main() test(-1);\n    "_fu, PARZERO_queue);
     TODO_lY1zhnoo("\n        fn test(a = 3, b = a * 2) a + b;\n        fn main() test + test(a: -1) * 3;\n    "_fu, testdiffs);
     TODO_lY1zhnoo("\n        fn test(ref a: i32, mut incr: i32) {\n            fn woot(ref x, ref b = a) { // 'a' closes over here!\n                if (x & 1) {\n                    x /= 2;\n                    return test(x, b);\n                }\n                return b += x;\n            }\n\n            return woot(incr<alt>, a</alt>);\n        }\n\n        fn main() {\n            mut x = 10;\n            return test(x, 5) - 12;\n        }\n    "_fu, testdiffs);
-    TODO_lY1zhnoo("\n        struct Arg { name: string };\n        fn main() {\n            let arg = Arg(<fail argument name id>id<pass/>name</fail>: \"hey\");\n            return arg.name.len - 3;\n        }\n    "_fu, testdiffs);
+    PARZERO_DB1hH8Vh("\n        struct Arg { name: string };\n        fn main() {\n            let arg = Arg(<fail argument name id>id<pass/>name</fail>: \"hey\");\n            return arg.name.len - 3;\n        }\n    "_fu, PARZERO_queue);
     PARZERO_DB1hH8Vh("\n        let s = 7;\n        return s ? 0 : 1;\n    "_fu, PARZERO_queue);
     PARZERO_DB1hH8Vh("\n        let s = 0;\n        return s ? 1 : 0;\n    "_fu, PARZERO_queue);
     PARZERO_DB1hH8Vh("\n        let s = \"hello\";\n        return s ? 0 : 1;\n    "_fu, PARZERO_queue);
@@ -1400,7 +1473,7 @@ void runTests_n07RecyR()
     PARZERO_DB1hH8Vh("\n        fn withPrefixed(b: byte, view: [byte], fn) {\n            mut tmp: string;\n            return fn(view.len > 1 ? view : tmp = b ~ view);\n        }\n\n        fn main() withPrefixed('a', \"b\"): |ab| return ab.len - 2;\n    "_fu, PARZERO_queue);
     PARZERO_DB1hH8Vh("\n        fn tryIntersect(left: [byte], right: [byte], withMatch) {\n            let l =  left[0];\n            let r = right[0];\n            let lq = l > '0' && l < '8';\n            let rq = r > '0' && r < '8';\n\n            if (left[lq && 1, left.len] != right[rq && 1, right.len])\n                return false;\n\n            let ll = lq && l.i32 - '0'.i32;\n            let rr = rq && r.i32 - '0'.i32;\n            let qq = ll | rr;\n\n            <alt>\n            mut tmp: string;\n            return withMatch(qq == ll ? left\n                           : qq == rr ? right\n                           : tmp = (qq.byte ~ left[lq && 1, left.len]),\n            <alt/>\n            return withMatch(qq == ll ? left\n                           : qq == rr ? right\n                           : qq.byte ~ left[lq && 1, left.len],\n            </alt>\n                left?:  qq == ll,\n                right?: qq == rr);\n        }\n\n        fn main() {\n            tryIntersect(\"7a012345678900123456789001234567890\"\n                       , \"5a012345678900123456789001234567890\"): |m, left!|\n            {\n                return m == \"7a012345678900123456789001234567890\" && left ? 0 : 100;\n            }\n\n            return 101;\n        }\n    "_fu, PARZERO_queue);
     TODO_lY1zhnoo("\n        fn tryIntersect(left: [byte], right: [byte], ifLeft, ifNotLeft) {\n            let l =  left[0];\n            let r = right[0];\n            let lq = l > '0' && l < '8';\n            let rq = r > '0' && r < '8';\n\n            if (left[lq && 1, left.len] != right[rq && 1, right.len])\n                return false;\n\n            let ll = lq && l.i32 - '0'.i32;\n            let rr = rq && r.i32 - '0'.i32;\n            let qq = ll | rr;\n\n            if (qq == ll)   ifLeft();\n            else            ifNotLeft(qq == rr ? right : right[rq && 1, right.len]);\n\n            return true;\n        }\n\n        fn TP_upsert(ref typeParams!: string, id!: string, canon: string) {\n            let start = TP_get(:typeParams, :id);\n            if (start < 0) {\n                typeParams ~= id;\n                typeParams ~= canon;\n                typeParams ~= '\t';\n                return true;\n            }\n\n            let end = typeParams.find('\t', :start);\n            return tryIntersect(typeParams[start, end], canon,\n                ifLeft: ||\n                {\n                    return true;\n                },                  // <- Lint complained about the nested curlies here ...\n                ifNotLeft: |inter|\n                {\n                    typeParams.splice(start, end - start, inter);\n                    return true;\n                }); // <-  ... and here.\n\n            return false;\n        }\n\n        fn main() {\n            mut typeParams = \"$T 3hey\t\";\n            return TP_upsert(:typeParams, \"$T\", \"4hey\")\n                && typeParams == \"$T 7hey\t\" ? 0 : 101;\n        }\n    "_fu, testdiffs);
-    TODO_lY1zhnoo("\n        fn fails_with_silly_error(ref set, i) {\n            <fail arg not assignable>\n            set  ||= i;       <pass/>   // this BUGged out instead of\n            set   ~= i;       </fail>   //  outputing a decent err msg\n            return set;\n        }\n\n        fn main() {\n            mut set = [ 0 ];\n            fails_with_silly_error(set, 2);\n\n            mut sum = 0;\n            for (mut i = 0; i < set.len; i++) sum += set[i];\n            return sum - 2;\n        }\n    "_fu, testdiffs);
+    PARZERO_DB1hH8Vh("\n        fn fails_with_silly_error(ref set: i32[], i) {\n            <fail bad call arg>\n            set  ||= i; <pass/> // this BUGged out instead of\n            set   ~= i; </fail> //  outputing a decent err msg\n            return set;\n        }\n\n        fn main() {\n            mut set = [ 0 ];\n            fails_with_silly_error(set, 2);\n\n            mut sum = 0;\n            for (mut i = 0; i < set.len; i++) sum += set[i];\n            return sum - 2;\n        }\n    "_fu, PARZERO_queue);
     PARZERO_DB1hH8Vh("\n        fn solve(ref output: i32[], input: i32[])\n        {\n            fn SLOW_traverse(visit)\n                for (mut i = 0; i < input.len; i++)\n                    visit(input[i]);\n\n            fn qSTACK(id: i32, implicit _current_fnort: i32) {\n                SLOW_traverse: |x|\n                    if (id == x)\n                        return id || _current_fnort;\n\n                return 0;\n            }\n\n            fn doTrySpecialize(target: i32)\n            {\n                fn updateScope(result: i32)\n                    output ~= result || qSTACK(result + 1);\n\n                if (target & 1) {\n                    updateScope(target); // 1 - 1\n                    return;\n                }\n\n                let implicit _current_fnort = target;\n                updateScope(target / 2); // 4 - 2, 2 - 1, 0 - 0\n            }\n\n            let implicit _current_fnort = 1;\n\n            doTrySpecialize(1);\n            for (mut i = 0; i < input.len; i++)\n                doTrySpecialize(input[i]);\n        }\n\n        fn main() {\n            mut output: i32[];\n            solve(output, input: [ 0, 3 ]);\n\n            return output[0] == 1\n                && output[1] == 0\n                && output[2] == 3 ? 0 : 1;\n        }\n    "_fu, PARZERO_queue);
     PARZERO_DB1hH8Vh("\n        let a = 7;\n        let b = a && 3;\n        return b - 3;\n    "_fu, PARZERO_queue);
     PARZERO_DB1hH8Vh("\n        struct S { i: i32; }\n\n        let a = S(0);\n        let b = S(3);\n\n        return a.i\n            || (b || S(4)).i * 2 - (a || S(6)).i\n            && throw(\"woot\");\n    "_fu, PARZERO_queue);
@@ -1446,7 +1519,7 @@ void runTests_n07RecyR()
     PARZERO_DB1hH8Vh("\n        nocopy struct NoCopy { i: i32; };\n\n        fn      retarg(a) a;                    // <- now templates\n        fn  retargs_if(a, b) a.i ? b : a;\n        fn  retargs_or(a, b) a || b;\n        fn retargs_and(a, b) a && b;\n\n        fn main() {\n            mut a: NoCopy;                      // <- now muts\n            mut b: NoCopy;\n            retarg(retargs_if(a, retargs_and(a, retargs_or(a, b)))).i++;\n            return a.i + b.i - 1;\n        }\n    "_fu, PARZERO_queue);
     PARZERO_DB1hH8Vh("\n        fn as_blocks_after(x: i32) {\n            mut zero = 0;\n            if (x > 2) // a broken stmt emit lifted the loop out of the conditional\n                for (mut i = 0; i < x; i++)\n                    zero = i + i*zero;\n\n            return zero;\n        }\n\n        fn main() 2.as_blocks_after;\n    "_fu, PARZERO_queue);
     PARZERO_DB1hH8Vh("\n        struct Lifetime { woot: Lifetime[]; };\n\n        // We could codegen this as a cpp template!\n        //  We'd need to auto& all inner locals too.\n        //\n        fn Lifetime_test(x: Lifetime) {\n            x.woot.len & 1 && throw(\"This is very important.\");\n            for (mut i = 0; i < x.woot.len; i++) Lifetime_test(x.woot[i]);\n            return x;\n        }\n\n        fn Lifetime_fromBinding(x: i32) {\n            mut woot: Lifetime[];\n            for (mut i = 0; i < x; i++) woot[i] = Lifetime();\n\n            // Or we can just add const_casts at such callsites,\n            //  so that things end up working as if the call was inlined,\n            //   which weakens the validation we get but is way cleaner.\n            //\n            // TODO: needs to track uniqueness for that to work.\n            //\n            return Lifetime_test(Lifetime(:woot));\n        }\n\n        fn main() 0.Lifetime_fromBinding.woot.len;\n    "_fu, PARZERO_queue);
-    PARZERO_DB1hH8Vh("\n        fn test(x: i32) {                       // none of these need vecs\n            let c = [10007];                    ;; TODO fu::slate<1, int> c\n            let a = [7, 11];                    ;; TODO fu::slate<2, int> a\n            let b = {                           ;; TODO fu::slate<1, int> b\n                :BRK {                          ;; !NONTRIV_autocopy\n                    if (x & 2) break :BRK c;\n                    if (x & 1) break :BRK [ x ]; // a val\n                    a; // a ref\n                }\n            };\n            return a[0] - b[0] * a[1];\n        }\n\n        fn main() 1.test + 4;\n    "_fu, PARZERO_queue);
+    PARZERO_DB1hH8Vh("\n        fn test(x: i32) {                       // none of these need vecs\n            let c = [10007];                    ;; TODO fu::slate<1, int> c\n            let a = [7, 11];                    ;; TODO fu::slate<2, int> a\n            let b = {                           ;; TODO fu::slate<1, int> b\n                :BRK {                          ;; !NONTRIV_autocopy\n                    if (x & 2) break :BRK c;\n                    if (x & 1) break :BRK [ x ]; // a val\n                    a // a ref\n                }\n            };\n            return a[0] - b[0] * a[1];\n        }\n\n        fn main() 1.test + 4;\n    "_fu, PARZERO_queue);
     PARZERO_DB1hH8Vh("\n        struct Test { i: i32[]; };\n\n        fn test(mut x: Test) {\n            x.i[0] += x.i[1];\n            return x;\n        }\n\n        fn main() {\n            let s = Test([ 1, 2 ]);\n            return test(s).i[0] - s.i[0] * 3;\n        }\n    "_fu, PARZERO_queue);
     PARZERO_DB1hH8Vh("\n        struct Test { i: i32[]; };\n\n        fn test(mut x: Test): Test {\n            x.i[0] += x.i[1];\n            return x;\n        }\n\n        fn main() {\n            let s = Test([ 1, 2 ]);\n            return test(s).i[0] - s.i[0] * 3;\n        }\n    "_fu, PARZERO_queue);
     PARZERO_DB1hH8Vh("\n        fn compile_snippets(x0: string) x0.find('a') && throw(\"throw#1\");\n        fn ZERO(x1: string) x1.find('b') && throw(\"throw#2\");\n\n        fn FAIL(x2: string): string {                   ;; EXPECT fu::view<char> x2\n            try {\n                let ctx = compile_snippets(x2) && \"hey\";\n                return ctx;\n            }\n            catch (e) {\n                return ZERO(x2) && e;\n            }\n        }\n\n        fn main() FAIL(\"a\").len;\n    "_fu, PARZERO_queue);
@@ -1553,6 +1626,7 @@ void runTests_n07RecyR()
     PARZERO_xmrQ7MED(fu_VEC<fu_STR> { fu::slate<2, fu_STR> { "\n        let OPTOKENS = \"{}[]()!?~@#$%^&*/-+<=>,.;:|\";   // nowadays problem is OPTOKENS cgs to static in first translation unit\n\n        pub fn lex(src) // <- template\n        {\n            let end = src.len;\n            mut idx = 0;\n\n            while (idx < end) {\n                let c = src[idx++];\n                if (OPTOKENS.has(c)) // <- originally, no OPTOKENS in scope ...\n                    return idx - 1;\n            }\n\n            return src.len;\n        }\n    "_fu, "\n        fn main() _0::lex(\"3 - 3\") - 2; // <- from here\n    "_fu } }, PARZERO_queue);
     PARZERO_xmrQ7MED(fu_VEC<fu_STR> { fu::slate<2, fu_STR> { "\n        pub fn pubbed(a: i32) a * 2;\n        <fail not_pubbed not defined><pass/>\n        pub                          </fail>\n        fn not_pubbed(b: i32) b * 3;\n    "_fu, "\n        fn main() 1._0::pubbed._0::not_pubbed - 6;\n    "_fu } }, PARZERO_queue);
     PARZERO_xmrQ7MED(fu_VEC<fu_STR> { fu::slate<2, fu_STR> { "\n        let SELF_TEST           = true;\n        let NODEIDX_signbits    = SELF_TEST && 4;\n        let NODEIDX_signmask    = (1 << NODEIDX_signbits) - 1;\n    "_fu, "\n        fn main() _0::NODEIDX_signmask - 15;\n    "_fu } }, PARZERO_queue);
+    PARZERO_xmrQ7MED(fu_VEC<fu_STR> { fu::slate<2, fu_STR> { "\n        struct Helpers { index: i32; }\n        fn +(a: Helpers, b: Helpers) a.index - b.index;\n    "_fu, "\n        import _0;\n        fn main() {\n            <fail ambig><pass/> // autoshadowing surprised me here\n            shadow      </fail> //  feels like this override should be explicit\n            infix fn +(a: Helpers, b: Helpers) a.index + b.index;\n            return Helpers(+1) + Helpers(-1);\n        }\n    "_fu } }, PARZERO_queue);
     PARZERO_DB1hH8Vh("\n        let a = 1;\n        shadow let a = a + 1;\n        return a - 2;\n    "_fu, PARZERO_queue);
     PARZERO_DB1hH8Vh("\n        inline fn outer() inner(); // <- this reset root-scope\n        inline fn inner() {\n            // <- so main::i was visible here\n            for (mut i = 0; i < 10; i++) return i;\n            return 1;\n        }\n        fn main() {\n            for (mut i = 0; i < 10; i++) return outer();\n            return 1;\n        }\n    "_fu, PARZERO_queue);
     PARZERO_DB1hH8Vh("\n        pub struct Target { modid: i32; packed: u32; };\n\n        pub fn index(t: Target) i32(t.packed & 0x7fffffff);\n\n        pub fn local_eq(t: Target, index: i32, implicit modid: i32)\n            modid - t.modid || index - t.index;\n\n        fn main() {\n            let implicit modid = 1;\n            return local_eq(Target(1, 0x80000002), 7) - 5;\n        }\n    "_fu, PARZERO_queue);
@@ -1574,7 +1648,7 @@ void runTests_n07RecyR()
     PARZERO_DB1hH8Vh("\n        fn throws()         { throw(\"WHAT!\");   }\n        fn myfn(a = throws) { return a;         } // never in default argument position!\n        fn main() {\n            try             { return myfn();                }\n            catch (e)       { return e == \"WHAT!\" ? 0 : 1;  }\n        }\n    "_fu, PARZERO_queue);
     PARZERO_DB1hH8Vh("\n        struct X { i: i32; };\n\n        fn         ++(using x: &mut X) ++i;\n        postfix fn ++(using x: &mut X) i++;\n\n        fn main() {\n            mut x: X;\n            let a = x++;\n            let b = ++x;\n            return a || b - 2;\n        }\n    "_fu, PARZERO_queue);
     PARZERO_DB1hH8Vh("\n        fn test(s: $T) {\n            mut sum = 0;\n            for (fieldname i: $T) sum += s.i;\n            return sum;\n        }\n\n        struct XY { x: i32; y: i32; };\n\n        fn main() {\n            let thing = XY(1, 2);\n            let sum = test(thing);\n            return sum - 3;\n        }\n    "_fu, PARZERO_queue);
-    TODO_lY1zhnoo("\n        struct ScopeSkip     { imports:     i32[]; implicits:     i32[]; }\n        struct ScopeSkipMemo { imports_len: i32;   implicits_len: i32[]; }\n\n        fn snap(ss: SS) {\n            mut r: ScopeSkipMemo;       // imports wouldn't work -\n            for (fieldname i: ss)       //  we need to know what to import much earlier.\n                r.i::_len = ss.i.len;   //   <- which frees up this syntax\n\n            return r;\n        }\n\n        fn check(v) {\n            mut sum = 0; mut mul = 1;\n            for (fieldname i: v) {\n                sum += v.i * mul; mul *= 10;\n            }\n\n            return sum;\n        }\n\n        fn main() check(snap(ScopeSkip([ 1 ], [ 2, 2 ]))) - 21;\n    "_fu, testdiffs);
+    PARZERO_DB1hH8Vh("\n        struct ScopeSkip     { imports:     i32[]; implicits:     i32[]; }\n        struct ScopeSkipMemo { imports_len: i32;   implicits_len: i32;   }\n\n        fn snap(ss: ScopeSkip) {\n            mut r: ScopeSkipMemo;\n            for (fieldname i: ss)\n                r.i_len = ss.i.len;\n\n            return r;\n        }\n\n        fn check(v) {\n            mut sum = 0; mut mul = 1;\n            for (fieldname i: v) {\n                sum += v.i * mul; mul *= 10;\n            }\n\n            return sum;\n        }\n\n        fn main() check(snap(ScopeSkip([ 1 ], [ 2, 2 ]))) - 21;\n    "_fu, PARZERO_queue);
     PARZERO_DB1hH8Vh("\n        fn test() [] => i32;\n        fn main() test;\n    "_fu, PARZERO_queue);
     PARZERO_DB1hH8Vh("\n        fn test(a) {\n            if (a -> [any;])\n                return a.len;\n\n            return a * 10;\n        }\n\n        fn main() {\n            let A = [ 0, 1 ].test;\n            let B = 4.test;\n            return A + B == 42 ? 0 : 1;\n        }\n    "_fu, PARZERO_queue);
     PARZERO_DB1hH8Vh("\n        fn staticIfSymmetry(\n            <fail $T is not defined>\n            ref a: $U[], b)  <pass/>\n            ref a: $T[], b)  </fail>\n        {\n            let N = b ->  $T   ? 1 : 2;\n            let M = b -> [$T;] ? 2 : 1;\n            a ~= b;\n            return N == M ? 0 : 1;\n        }\n\n        fn main() {\n            mut arr = [ 0 ];\n            return staticIfSymmetry(arr, 0)\n                 + staticIfSymmetry(arr, [ 0, 0 ])\n                 + arr.len * 10 - 40;\n        }\n    "_fu, PARZERO_queue);
@@ -1593,7 +1667,7 @@ void runTests_n07RecyR()
     PARZERO_DB1hH8Vh("\n        fn each(items: $T[], fn) {\n            for (mut i = 0; i < items.len; i++) // <- one i\n                fn(items[i]);\n        }\n\n        fn main() {\n            mut i = 0;                  // <- another i, i got them to shadow each other\n            [1, 2].each: |x| i += x;    //      in the everything-a-free-function\n            return i - 3;               //      impl of closures\n        }\n    "_fu, PARZERO_queue);
     PARZERO_DB1hH8Vh("\n        mut sum = 2;\n\n        fn FnDecl_update(parent_idx: i32) {\n            fn each(fn) fn();\n            each(|| makeDirty(:parent_idx));\n        }\n\n        fn makeDirty(parent_idx: i32): void {\n            sum += parent_idx;\n        }\n\n        FnDecl_update(1);\n\n        return sum - 3;\n    "_fu, PARZERO_queue);
     PARZERO_DB1hH8Vh("\n        // something complains about no final return\n        fn main() {\n            let addret = |a: i32, b: i32| {\n                return a + b;\n            };\n\n            let hey = |x: i32| {\n                if !(x & 1)\n                    return x;\n\n                // this complains about indentation\n                // TODO should work without the continue\n                <alt>\n                continue \"\".len     <alt/>\n                \"\".len.addret(x)    </alt>\n            };\n\n            // and this complains about no match for *(void, void)\n            return hey(0) * hey(1);\n        }\n    "_fu, PARZERO_queue);
-    TODO_lY1zhnoo("\n        // something complains about no final return\n        fn main() {\n            let hey = |x: i32| {\n                if !(x & 1)\n                    return x;\n\n                \"\".len + x\n            };\n\n            // and this complains about no match for *(void, void)\n            return hey(1) * hey(0);\n        }\n    "_fu, testdiffs);
+    PARZERO_DB1hH8Vh("\n        // something complains about no final return\n        fn main() {\n            let hey = |x: i32| {\n                if !(x & 1)\n                    return x;\n\n                \"\".len + x\n            };\n\n            // and this complains about no match for *(void, void)\n            return hey(1) * hey(0);\n        }\n    "_fu, PARZERO_queue);
     PARZERO_DB1hH8Vh("\n        struct A { a: i32; };\n        struct B { b: i32; };\n        using fn bananas(a: A) B(a.a * 2);\n\n        <split/>\n        fn main() 1.A.b - 2;\n    "_fu, PARZERO_queue);
     PARZERO_DB1hH8Vh("\n        struct A { a: i32; };\n        struct B { b: i32; };\n        using fn bananas(a) B(a.a * 2); // <- template\n\n        <split/>\n        fn main() 1.A.b - 2;\n    "_fu, PARZERO_queue);
     PARZERO_DB1hH8Vh("\n        fn sqr(a: i32) a * a;\n        fn woot(a.sqr) a + 1;\n        fn main() 2.woot - 5;\n    "_fu, PARZERO_queue);
@@ -1638,8 +1712,10 @@ void runTests_n07RecyR()
     TODO_lY1zhnoo("\n        fn setupOperators(i: i32) {\n            fn sB(_: $T) struct { hey: $T; }; // same as above\n            struct BINOP { i: sB(i32); };     //  but template\n            return BINOP([ i ]);\n        }\n\n        fn main() setupOperators(0).i.hey;\n    "_fu, testdiffs);
     PARZERO_DB1hH8Vh("\n        fn test(x: i32) {\n            :OUTER {\n                :INNER {\n                    if (x > 1) break :OUTER;\n                    if (x > 0) break :INNER;\n                    return 2;\n                }\n                return 1;\n            }\n            return 0;\n        }\n\n        fn main() 2.test * 11 + (1.test - 1) * 13 + (0.test - 2) * 17;\n    "_fu, PARZERO_queue);
     PARZERO_DB1hH8Vh("\n        fn test(x: i32) {\n            return {\n                :BLOCK {\n                    if (x & 1) break :BLOCK 1;\n                    if (x & 2) return 2;\n                    3\n                }\n            };\n        }\n\n        fn main() 4.test - 5.test - 6.test; // 3-1-2\n    "_fu, PARZERO_queue);
+    PARZERO_DB1hH8Vh("\n        fn brkif(mut x: i32)\n        {\n            :WOOT\n            if (x & 1) {\n                if (x & 2) x++;\n                if (x & 4) break :WOOT;\n                x *= x;\n            }\n\n            return x;\n        }\n\n        fn main()\n            brkif(1) + brkif(3) * 10 + brkif(5) * 100 + brkif(9) * 1000\n                == 81541 ? 0 : 1;\n    "_fu, PARZERO_queue);
     PARZERO_DB1hH8Vh("\n        fn test(a: i32) {\n            mut w = 3;\n            :OUTER w += {\n                :INNER {\n                    if (a & 1)  break :INNER;\n                    else        break :OUTER;\n                };\n                5\n            };\n            return w;\n        }\n        fn main() 0.test + 1.test - 11;\n    "_fu, PARZERO_queue);
-    PARZERO_DB1hH8Vh("\n        fn v(x: i32) {\n            return {\n                :BLOCK                          5000 + { // *2:\n                    if (x == 9) continue :BLOCK 2000;    //   - here\n                    if (x == 8) return           300;\n                    if (x == 7) break :BLOCK      40;\n                    else                           5;    //   - and here!\n                };\n            }; // -----------------------------------\n        }\n        fn main() 9.v + 8.v + 7.v + 6.v      - 12345;\n    "_fu, PARZERO_queue);
+    PARZERO_DB1hH8Vh("\n        fn ifbrk(a: i32) {\n            mut x = 0;\n            if (a & 3) {\n                x += a;\n\n                :IF_LABEL\n                if (a & 1) {\n                    mut incr    = a & 4 ? a * 2\n                                : a & 2 ? { break :IF_LABEL; }\n                                        : a;\n                    x += incr;\n                }\n            }\n\n            return x;\n        }\n\n        fn main() 1.ifbrk + 3.ifbrk * 10 + 5.ifbrk * 100 - 1532;\n    "_fu, PARZERO_queue);
+    PARZERO_DB1hH8Vh("\n        fn v(x: i32) {\n            return {\n                :BLOCK                          5000 + { // *2:\n                    if (x == 9) continue :BLOCK 2000;    //   - here\n                    if (x == 8) return           300;\n                    if (x == 7) break :BLOCK      40;\n\n                    5                                    //   - and here!\n                }\n            }  // -----------------------------------\n        }\n        fn main() 9.v + 8.v + 7.v + 6.v      - 12345;\n    "_fu, PARZERO_queue);
     PARZERO_DB1hH8Vh("\n        pub fn test(x: i32[], y: i32[]) {\n            let z = {\n                :BLOCK {\n                    mut w: i32[] = x;\n                    if (y[0]) w ~= y;\n                    if (w[0] != 17)\n                        break :BLOCK w;\n                    x\n                }\n            };\n\n            return z[0] + z[z.len - 1];\n        }\n\n        fn main() test([ 1 ], [ 2 ]) - 3;\n    "_fu, PARZERO_queue);
     PARZERO_DB1hH8Vh("\n        fn test(mut x: i32) {\n            {\n                x++;\n                :CANT_FLATTEN { // naive block flattening\n                                //  can damage this label\n                    if (x & 1) break :CANT_FLATTEN;\n                    return x;\n                }\n            }\n            return x * 2;\n        }\n\n        fn main() test(1) + test(2) - 8;\n    "_fu, PARZERO_queue);
     PARZERO_DB1hH8Vh("\n        fn each(arr, fn)\n            for (mut i = 0; i < arr.len; i++)\n                fn(arr[i]);\n\n        fn some(arr, fn) {\n            arr.each: |x| if (fn(x)) return x;\n\n            return 0;\n        }\n\n        fn main() [ 1, 2, 3 ].some(|v| v & 1 == 0) - 2;\n\n        ;; EXPECT (fu::slate<3, int> { 1, 2, 3 })\n    "_fu, PARZERO_queue);
@@ -1668,6 +1744,7 @@ void runTests_n07RecyR()
     TODO_lY1zhnoo("\n        fn useless_ref_lambda(ref sources: string[]) {\n            fn src = sources[sources.len / 2]; // didn't relax the ref, failed bck\n            return src[1, src.len] ~ src[0, 1];\n        }\n        fn main() {\n            mut sources = [ \"ab\" ];\n            return useless_ref_lambda(sources) == \"ba\" ? 0 : 1;\n        }\n    "_fu, testdiffs);
     TODO_lY1zhnoo("\n        struct Node { items: Node[]; };\n\n        pure fn rec_useless_ref(ref n: Node) {\n            mut ret = n.items.len;\n            for (mut i = 0; i < n.items.len; i++)\n                ret += rec_useless_ref(n.items[i]);\n\n            return ret;\n        }\n\n        fn main() {\n            mut tree = Node([ Node(), Node() ]);\n            return rec_useless_ref(tree) - 2;\n        }\n    "_fu, testdiffs);
     PARZERO_DB1hH8Vh("\n        fn last(s: $T[])\n            s.len ? s[s.len - 1] : throw(\"len == 0\");\n\n        struct Node { kind: string; items: Node[] }\n\n        pure fn check(ref node: Node)\n            node.kind != \"block\" ||\n            node.items.last.kind == \"return\";\n\n        fn main() {\n            mut node: Node;\n            return node.check ? 0 : 1;\n        }\n    "_fu, PARZERO_queue);
+    TODO_lY1zhnoo("\n        fn relaxes_arr_to_slice_and_fails(ref arr) {\n            arr.pop();\n            return arr;\n        }\n\n        fn main() {\n            mut arr = [ 1 ];\n            relaxes_arr_to_slice_and_fails(arr);\n            return arr.len;\n        }\n    "_fu, testdiffs);
     PARZERO_xmrQ7MED(fu_VEC<fu_STR> { fu::slate<3, fu_STR> { "\n        fn each(y<alt>: i32</alt>)\n            y & 1   ? y\n                    : y / 2 + each(y / 2);\n    "_fu, "\n        fn each(y<alt>: i32</alt>)\n            y & 1   ? y / 2\n                    : y / 2 + each(y / 2);\n    "_fu, "\n        fn main() {\n            let a = _0::each(100);\n            let b = _1::each(8);\n\n            return a+b - 107;\n        }\n    "_fu } }, PARZERO_queue);
     PARZERO_xmrQ7MED(fu_VEC<fu_STR> { fu::slate<3, fu_STR> { "\n        fn find(keys: $T[], item: $T) {\n            for (mut i = 0; i < keys.len; i++) {\n                if (keys[i] >= item) {\n                    if (keys[i] != item)\n                        return -1;\n\n                    return i;\n                }\n            }\n\n            return -1;\n        }\n    "_fu, "\n        fn Set(_: $K) struct { keys: $K[]; };\n\n        fn has(using _, key)\n            _0::find(keys, key) >= 0;\n    "_fu, "\n        fn use_Set(a: string) {\n            mut set: _1::Set(string);\n            set.keys ~= a;\n            return set._1::has(a);\n        }\n\n        fn dont_use_Set(a: string, b: string) {\n            mut keys: string[];\n            keys ~= b;\n            keys ~= a;\n            return keys.find(a);\n        }\n\n        fn main() {\n            if (!use_Set(\"a\"))\n                return -1;\n\n            return dont_use_Set(\"a\", \"b\") - 1;\n        }\n    "_fu } }, PARZERO_queue);
     PARZERO_DB1hH8Vh("\n        fn test(tokens: i32[]) {\n            mut lidx = 0;\n            mut sum  = 0;\n\n            fn token(idx: i32, col!: i32)       = sum += idx * col;\n            fn token(idx: i32)                  = token(:idx, col: lidx - idx);\n\n            for (mut i = 0; i < tokens.len; i++)\n                token(tokens[i]);\n\n            return sum;\n        }\n\n        fn main() [ 1 ].test + 1;\n    "_fu, PARZERO_queue);
@@ -1703,6 +1780,8 @@ void runTests_n07RecyR()
     PARZERO_DB1hH8Vh("\n        enum Enum { A = 0; B };\n        fn inner(x: Enum) x.i32;\n        fn outer(x: i32) inner(x & 1 ? \"B\" : \"A\");\n        fn main() outer(0);\n    "_fu, PARZERO_queue);
     TODO_lY1zhnoo("\n        enum Test { A; B = A; C; };\n        fn main() C.i32 - 1;\n    "_fu, testdiffs);
     PARZERO_DB1hH8Vh("\n        flags Flags { A; B; C; D };\n\n        fn main() {\n            mut flags = A | C;\n            return flags.i32 == 5 ? 0 : 1;\n        }\n    "_fu, PARZERO_queue);
+    PARZERO_DB1hH8Vh("\n        flags Flags: i32 { A; B };\n\n        fn main() {\n            mut hello = 5;\n            mut world = hello.Flags;\n            return world.i32 - 1;\n        }\n    "_fu, PARZERO_queue);
+    PARZERO_DB1hH8Vh("\n        union union_ui {\n            i: i32;\n            u: u32;\n        }\n\n        fn main() {\n            mut ui = union_ui(i: -1);\n            return (ui.u - 0xffffffff).i32;\n        }\n    "_fu, PARZERO_queue);
 }
 
 #endif

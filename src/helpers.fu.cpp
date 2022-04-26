@@ -2,6 +2,7 @@
 #include <fu/str.h>
 #include <fu/view.h>
 #include <fu/defer.h>
+#include <fu/vec/slice.h>
 #include <fu/vec/concat_one.h>
 
 struct s_Mi;
@@ -159,6 +160,23 @@ void appendMi_KujYnsPj(fu_STR& str, int modid, int index)
         str += ((c >= 10) ? char(((c - 10) + int(fu::u8('a')))) : char((c + int(fu::u8('0')))));
     }
     while (index);
+}
+
+fu_STR trim_ZCtM7908(const fu_STR& str)
+{
+    for (int first = 0; first < str.size(); first++)
+    {
+        if (str[first] > ' ')
+        {
+            for (int last = str.size(); (last-- >= first); )
+            {
+                if (str[last] > ' ')
+                    return fu::slice(str, first, (last + 1));
+
+            };
+        };
+    };
+    return fu_STR{};
 }
 
 #endif

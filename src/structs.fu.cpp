@@ -1,4 +1,3 @@
-#include <fu/int.h>
 #include <fu/str.h>
 #include <fu/vec.h>
 #include <fu/view.h>
@@ -9,7 +8,7 @@
 
 struct s_StructCanon;
 struct s_Mi;
-enum s_kind: fu::i8;
+enum s_kind: int;
 struct s_Type;
 struct s_ValueType;
 struct s_Lifetime;
@@ -52,7 +51,7 @@ struct s_Mi
 
                                 #ifndef DEF_s_kind
                                 #define DEF_s_kind
-enum s_kind: fu::i8
+enum s_kind: int
 {
     s_kind_sof = 1,
     s_kind_id = 2,
@@ -90,32 +89,33 @@ enum s_kind: fu::i8
     s_kind_pragma = 34,
     s_kind_void = 35,
     s_kind_struct = 36,
-    s_kind_primitive = 37,
-    s_kind_flags = 38,
-    s_kind_enum = 39,
-    s_kind_members = 40,
-    s_kind_fn = 41,
-    s_kind_fnbranch = 42,
-    s_kind_pattern = 43,
-    s_kind_typeunion = 44,
-    s_kind_typetag = 45,
-    s_kind_jump = 46,
-    s_kind_empty = 47,
-    s_kind_letdef = 48,
-    s_kind___relaxed = 49,
-    s_kind___convert = 50,
-    s_kind_fndef = 51,
-    s_kind_copy = 52,
-    s_kind_move = 53,
-    s_kind___far_jump = 54,
-    s_kind___no_kind_yet = 55,
-    s_kind_type = 56,
-    s_kind_var = 57,
-    s_kind_field = 58,
-    s_kind_enumv = 59,
-    s_kind_template = 60,
-    s_kind___native = 61,
-    s_kind_inline = 62,
+    s_kind_union = 37,
+    s_kind_primitive = 38,
+    s_kind_flags = 39,
+    s_kind_enum = 40,
+    s_kind_members = 41,
+    s_kind_fn = 42,
+    s_kind_fnbranch = 43,
+    s_kind_pattern = 44,
+    s_kind_typeunion = 45,
+    s_kind_typetag = 46,
+    s_kind_jump = 47,
+    s_kind_empty = 48,
+    s_kind_letdef = 49,
+    s_kind___relaxed = 50,
+    s_kind___convert = 51,
+    s_kind_fndef = 52,
+    s_kind_copy = 53,
+    s_kind_move = 54,
+    s_kind___far_jump = 55,
+    s_kind___no_kind_yet = 56,
+    s_kind_type = 57,
+    s_kind_var = 58,
+    s_kind_field = 59,
+    s_kind_enumv = 60,
+    s_kind_template = 61,
+    s_kind___native = 62,
+    s_kind_inline = 63,
 };
                                 #endif
 
@@ -211,7 +211,7 @@ s_StructCanon parseStructCanon_9u6Vl9O2(fu::view<char> canon)
     return s_StructCanon { int(mi.modid), (mi.index - ONE_BASED) };
 }
 
-fu_STR createStructCanon_AFbRJxPd(const s_kind kind, const fu_STR& baseprim, const int modid, const int index, fu::view<char>)
+fu_STR createStructCanon_ku8KcJ4A(const s_kind kind, const fu_STR& baseprim, const int modid, const int index, fu::view<char>)
 {
     // Hoisted:
     fu_STR x;

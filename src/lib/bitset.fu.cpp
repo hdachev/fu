@@ -21,7 +21,7 @@ struct s_BitSet
 
 #ifndef fu_NO_fdefs
 
-int size_xcprpItt(const s_BitSet& _)
+int size_msUNRW3q(const s_BitSet& _)
 {
     return _._data.size() * 8;
 }
@@ -45,7 +45,7 @@ inline fu::u8& grow_if_oob_S61HT2sA(fu_VEC<fu::u8>& a, const int i)
 }
                                 #endif
 
-bool add_once_LAyLeT19(s_BitSet& _, const int idx)
+bool add_once_sDUBjUzV(s_BitSet& _, const int idx)
 {
     const int no_neg = (idx & MIN_7pYptBq7(int{}));
     const int bucket = ((idx >> 3) | no_neg);
@@ -60,7 +60,7 @@ bool add_once_LAyLeT19(s_BitSet& _, const int idx)
     return false;
 }
 
-void add_LAyLeT19(s_BitSet& _, const int idx)
+void add_sDUBjUzV(s_BitSet& _, const int idx)
 {
     const int no_neg = (idx & MIN_7pYptBq7(int{}));
     const int bucket = ((idx >> 3) | no_neg);
@@ -69,7 +69,7 @@ void add_LAyLeT19(s_BitSet& _, const int idx)
     grow_if_oob_S61HT2sA(_._data, bucket) |= mask;
 }
 
-void add_Womx3Txy(s_BitSet& _, const s_BitSet& other)
+void add_KQfktl8z(s_BitSet& _, const s_BitSet& other)
 {
     const int N = other._data.size();
     if (_._data.size() < N)
@@ -80,7 +80,7 @@ void add_Womx3Txy(s_BitSet& _, const s_BitSet& other)
 
 }
 
-bool has_LKCaG69w(const s_BitSet& _, const int idx)
+bool has_ur5UoMYg(const s_BitSet& _, const int idx)
 {
     const int no_neg = (idx & MIN_7pYptBq7(int{}));
     const int bucket = ((idx >> 3) | no_neg);
@@ -89,7 +89,7 @@ bool has_LKCaG69w(const s_BitSet& _, const int idx)
     return (_._data.size() > bucket) && (fu::u8((_._data[bucket] & mask)) != fu::u8(0u));
 }
 
-bool rem_LAyLeT19(s_BitSet& _, const int idx)
+bool rem_sDUBjUzV(s_BitSet& _, const int idx)
 {
     const int no_neg = (idx & MIN_7pYptBq7(int{}));
     const int bucket = ((idx >> 3) | no_neg);
@@ -118,7 +118,7 @@ bool rem_LAyLeT19(s_BitSet& _, const int idx)
     return false;
 }
 
-void add_range_LAyLeT19(s_BitSet& _, const int end)
+void add_range_sDUBjUzV(s_BitSet& _, const int end)
 {
     const int no_neg = (end & MIN_7pYptBq7(int{}));
     const int floorBytes = ((end >> 3) | no_neg);
@@ -138,7 +138,7 @@ void add_range_LAyLeT19(s_BitSet& _, const int end)
     };
 }
 
-int popcount_xcprpItt(const s_BitSet& _)
+int popcount_msUNRW3q(const s_BitSet& _)
 {
     /*MOV*/ int sum = 0;
     const int N = (_._data.size() >> 3);
@@ -164,7 +164,7 @@ inline int min_gcxVH86X(const int a, const int b)
 }
                                 #endif
 
-s_BitSet& and_not_assign_Womx3Txy(s_BitSet& a, const s_BitSet& b)
+s_BitSet& and_not_assign_KQfktl8z(s_BitSet& a, const s_BitSet& b)
 {
     const int N = min_gcxVH86X(a._data.size(), b._data.size());
     for (int i = 0; i < N; i++)

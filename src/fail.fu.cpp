@@ -1,3 +1,4 @@
+#include <cstdint>
 #include <fu/int.h>
 #include <fu/str.h>
 #include <fu/vec.h>
@@ -13,9 +14,12 @@ struct s_Module;
 struct s_ModuleInputs;
 struct s_LexerOutput;
 struct s_Token;
-enum s_kind: fu::i8;
+enum s_kind: int;
 struct s_ParserOutput;
 struct s_Node;
+typedef int s_DeclAsserts;
+typedef int s_ParseSyntax;
+typedef unsigned s_Flags;
 struct s_ModuleOutputs;
 struct s_Struct;
 struct s_Target;
@@ -30,6 +34,7 @@ struct s_Region;
 struct s_RWRanges;
 struct s_Scope;
 struct s_Overload;
+typedef uint16_t s_SolverStatus;
 struct s_Extended;
 struct s_Argument;
 struct s_BitSet;
@@ -64,7 +69,7 @@ struct s_TokenIdx
 
                                 #ifndef DEF_s_kind
                                 #define DEF_s_kind
-enum s_kind: fu::i8
+enum s_kind: int
 {
     s_kind_sof = 1,
     s_kind_id = 2,
@@ -102,32 +107,33 @@ enum s_kind: fu::i8
     s_kind_pragma = 34,
     s_kind_void = 35,
     s_kind_struct = 36,
-    s_kind_primitive = 37,
-    s_kind_flags = 38,
-    s_kind_enum = 39,
-    s_kind_members = 40,
-    s_kind_fn = 41,
-    s_kind_fnbranch = 42,
-    s_kind_pattern = 43,
-    s_kind_typeunion = 44,
-    s_kind_typetag = 45,
-    s_kind_jump = 46,
-    s_kind_empty = 47,
-    s_kind_letdef = 48,
-    s_kind___relaxed = 49,
-    s_kind___convert = 50,
-    s_kind_fndef = 51,
-    s_kind_copy = 52,
-    s_kind_move = 53,
-    s_kind___far_jump = 54,
-    s_kind___no_kind_yet = 55,
-    s_kind_type = 56,
-    s_kind_var = 57,
-    s_kind_field = 58,
-    s_kind_enumv = 59,
-    s_kind_template = 60,
-    s_kind___native = 61,
-    s_kind_inline = 62,
+    s_kind_union = 37,
+    s_kind_primitive = 38,
+    s_kind_flags = 39,
+    s_kind_enum = 40,
+    s_kind_members = 41,
+    s_kind_fn = 42,
+    s_kind_fnbranch = 43,
+    s_kind_pattern = 44,
+    s_kind_typeunion = 45,
+    s_kind_typetag = 46,
+    s_kind_jump = 47,
+    s_kind_empty = 48,
+    s_kind_letdef = 49,
+    s_kind___relaxed = 50,
+    s_kind___convert = 51,
+    s_kind_fndef = 52,
+    s_kind_copy = 53,
+    s_kind_move = 54,
+    s_kind___far_jump = 55,
+    s_kind___no_kind_yet = 56,
+    s_kind_type = 57,
+    s_kind_var = 58,
+    s_kind_field = 59,
+    s_kind_enumv = 60,
+    s_kind_template = 61,
+    s_kind___native = 62,
+    s_kind_inline = 63,
 };
                                 #endif
 
@@ -164,12 +170,66 @@ struct s_LexerOutput
 };
                                 #endif
 
+                                #ifndef DEF_s_DeclAsserts
+                                #define DEF_s_DeclAsserts
+inline constexpr s_DeclAsserts s_DeclAsserts_A_NOCOPY = 1;
+inline constexpr s_DeclAsserts s_DeclAsserts_A_NOVEC = 2;
+inline constexpr s_DeclAsserts s_DeclAsserts_A_NOVEC_MUT = 4;
+inline constexpr s_DeclAsserts s_DeclAsserts_A_PURE = 8;
+inline constexpr s_DeclAsserts s_DeclAsserts_A_PURE_CTX = 16;
+inline constexpr s_DeclAsserts s_DeclAsserts_A_NOFLOW = 32;
+                                #endif
+
+                                #ifndef DEF_s_ParseSyntax
+                                #define DEF_s_ParseSyntax
+inline constexpr s_ParseSyntax s_ParseSyntax_PS_ID = 1;
+inline constexpr s_ParseSyntax s_ParseSyntax_PS_PARENS = 2;
+inline constexpr s_ParseSyntax s_ParseSyntax_PS_SEMI = 4;
+inline constexpr s_ParseSyntax s_ParseSyntax_PS_DISCARD = 8;
+                                #endif
+
+                                #ifndef DEF_s_Flags
+                                #define DEF_s_Flags
+inline constexpr s_Flags s_Flags_F_METHOD = 1;
+inline constexpr s_Flags s_Flags_F_INFIX = 2;
+inline constexpr s_Flags s_Flags_F_PREFIX = 4;
+inline constexpr s_Flags s_Flags_F_POSTFIX = 8;
+inline constexpr s_Flags s_Flags_F_ACCESS = 16;
+inline constexpr s_Flags s_Flags_F_COMPOUND_ID = 32;
+inline constexpr s_Flags s_Flags_F_WRITTEN_TO = 64;
+inline constexpr s_Flags s_Flags_F_LAX = 128;
+inline constexpr s_Flags s_Flags_F_ARG = 256;
+inline constexpr s_Flags s_Flags_F_OPERATOR = 512;
+inline constexpr s_Flags s_Flags_F_MOVED_FROM = 1024;
+inline constexpr s_Flags s_Flags_F_CONVERSION = 2048;
+inline constexpr s_Flags s_Flags_F_OPT_ARG = 4096;
+inline constexpr s_Flags s_Flags_F_MUT = 8192;
+inline constexpr s_Flags s_Flags_F_REF = 16384;
+inline constexpr s_Flags s_Flags_F_IMPLICIT = 32768;
+inline constexpr s_Flags s_Flags_F_USING = 65536;
+inline constexpr s_Flags s_Flags_F_MUSTNAME = 131072;
+inline constexpr s_Flags s_Flags_F_SHADOW = 262144;
+inline constexpr s_Flags s_Flags_F_PUB = 524288;
+inline constexpr s_Flags s_Flags_F_EXTERN = 1048576;
+inline constexpr s_Flags s_Flags_F_HOTSWAP = 2097152;
+inline constexpr s_Flags s_Flags_F_PREDICATE = 4194304;
+inline constexpr s_Flags s_Flags_F_NAMED_ARGS = 8388608;
+inline constexpr s_Flags s_Flags_F_OOE_RTL = 16777216;
+inline constexpr s_Flags s_Flags_F_REST_ARG = 33554432;
+inline constexpr s_Flags s_Flags_F_RELAXABLE_REF = 67108864;
+inline constexpr s_Flags s_Flags_F_TEMPLATE = 134217728;
+inline constexpr s_Flags s_Flags_F_INLINE = 268435456;
+inline constexpr s_Flags s_Flags_F_LAMBDA = 536870912;
+                                #endif
+
                                 #ifndef DEF_s_Node
                                 #define DEF_s_Node
 struct s_Node
 {
     s_kind kind;
-    int flags;
+    s_DeclAsserts asserts;
+    s_ParseSyntax syntax;
+    s_Flags flags;
     fu_STR value;
     fu_VEC<s_Node> items;
     s_TokenIdx token;
@@ -384,7 +444,7 @@ struct s_SolvedNode
 {
     s_kind kind;
     s_Helpers helpers;
-    int flags;
+    s_Flags flags;
     fu_STR value;
     fu_VEC<s_SolvedNode> items;
     s_TokenIdx token;
@@ -404,13 +464,26 @@ struct s_SolvedNode
 };
                                 #endif
 
+                                #ifndef DEF_s_SolverStatus
+                                #define DEF_s_SolverStatus
+inline constexpr s_SolverStatus s_SolverStatus_SS_LAZY = 1;
+inline constexpr s_SolverStatus s_SolverStatus_SS_DID_START = 2;
+inline constexpr s_SolverStatus s_SolverStatus_SS_DIRTY = 4;
+inline constexpr s_SolverStatus s_SolverStatus_SS_FINALIZED = 8;
+inline constexpr s_SolverStatus s_SolverStatus_SS_UPDATED = 16;
+inline constexpr s_SolverStatus s_SolverStatus_SS_TYPE_RECUR = 32;
+inline constexpr s_SolverStatus s_SolverStatus_SS_FN_RECUR = 64;
+inline constexpr s_SolverStatus s_SolverStatus_SS_HOIST = 128;
+inline constexpr s_SolverStatus s_SolverStatus_SS_UNUSED = 256;
+                                #endif
+
                                 #ifndef DEF_s_Overload
                                 #define DEF_s_Overload
 struct s_Overload
 {
     s_kind kind;
-    int flags;
-    unsigned status;
+    s_Flags flags;
+    s_SolverStatus status;
     fu_STR name;
     fu_STR sighash;
     s_Type type;
@@ -446,7 +519,7 @@ struct s_Argument
     fu_STR autocall;
     s_Type type;
     s_SolvedNode dEfault;
-    int flags;
+    s_Flags flags;
     int local;
     s_BitSet soft_risk;
     s_BitSet hard_risk;
