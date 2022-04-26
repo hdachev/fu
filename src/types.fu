@@ -21,17 +21,7 @@ pub let RELAX_before_bck    = q_mutref;
 pub let RELAX_all           = q_mutref | q_rx_copy | q_rx_resize;
 
 
-//
-
-pub fn ==(a: Target, b: Target)
-    a.modid == b.modid &&
-    a.index == b.index;
-
-
 // Lifetimes.
-
-pub fn !=(a: Region, b: Region) a.index != b.index;
-pub fn ==(a: Region, b: Region) a.index == b.index;
 
 pub fn Region_toLocal(region: Region) region.index;
 pub fn Region_fromLocal(index: i32) Region(:index);
@@ -68,20 +58,6 @@ pub fn Lifetime_static(): Lifetime =
 
 pub fn Lifetime_temporary(): Lifetime =
     Lifetime(uni0n: [ Region_TEMP ]);
-
-
-//
-
-fn ==(a: ValueType, b: ValueType)
-    a.quals == b.quals &&
-    a.canon == b.canon;
-
-pub fn ==(a: Lifetime, b: Lifetime)
-    a.uni0n.view(i32) == b.uni0n.view(i32);
-
-pub fn ==(a: Type, b: Type)
-    a.vtype    == b.vtype    &&
-    a.lifetime == b.lifetime;
 
 
 //

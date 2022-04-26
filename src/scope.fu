@@ -311,12 +311,6 @@ fn cmp(a: ScopeMemo, b: ScopeMemo)
     a.converts_len  - b.converts_len  ||
     a.helpers_len   - b.helpers_len;
 
-fn  >(a: ScopeMemo, b: ScopeMemo) cmp(a, b)  > 0;
-fn  <(a: ScopeMemo, b: ScopeMemo) cmp(a, b)  < 0;
-fn ==(a: ScopeMemo, b: ScopeMemo) cmp(a, b) == 0;
-
-fn ==(a: Helpers, b: Helpers) a.index == b.index;
-
 
 ////////////////////////////////
 
