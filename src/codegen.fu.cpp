@@ -2027,7 +2027,8 @@ static bool affectedByIntegerPromotions_BxM0LfVY(const s_Type& type)
         return false;
 
     fu::view<char> c = type.vtype.canon;
-    return (c.size() == 2) || ((c.size() == 3) && (fu::get_view(c, 1, 3) == "16"_fu));
+    return c.size() >= 2 && c[1] == '8'
+        || c.size() >= 3 && c[1] == '1';
 }
 
 static fu_STR unpromote_c8tdHyVC(const fu_STR& expr, const bool isNative, const s_SolvedNode& node, s_Outputs& outputs, s_TokenIdx& _here, const s_Context& ctx, const s_Module& module, s_cg_CurrentFn& _current_fn)

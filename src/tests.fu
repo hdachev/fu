@@ -9671,6 +9671,15 @@ pub fn runTests()
         }
     `);
 
+    ZERO(`
+        flags Hey: u8 { A; B };
+        fn main() {
+            mut flags = A | B;
+            flags &= ~B;
+            return flags.i32 - 1;
+        }
+    `);
+
 
     // Unions, what the hell.
 

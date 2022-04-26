@@ -1776,8 +1776,8 @@ pub fn cpp_codegen(implicit module: Module, implicit ctx: Context): CodegenOutpu
                 return false;
 
             let c = type.canon;
-            return c.len == 2 // u8, i8
-                || c.len == 3 && c[1, 3] == "16";
+            return c.len >= 2 && c[1] == '8'
+                || c.len >= 3 && c[1, 3] == "16";
         }
 
         fn unpromote(expr: string)
