@@ -37,7 +37,7 @@ pub fn compile_snippets(sources: string[], fnames?: string[], options?: Options[
         mut notes = module.out.solve.notes;
         for (mut bit = 0; bit < NOTES.len && notes; bit++)
         {
-            let mask  = 1 << bit;
+            let mask  = SolverNotes(1 << bit);
             let isset = notes & mask;
             notes &= ~mask;
             if (isset)
@@ -365,7 +365,7 @@ pub fn ZERO(
         }
 
         // Collect ;; TODO and ;; EXPECTs.
-        mut break_notes: i32;
+        mut break_notes: SolverNotes;
 
         mut start = 0;
         while ((start = src.find(" ;; ", :start)) >= 0)
@@ -379,7 +379,7 @@ pub fn ZERO(
             {
                 let idx = NOTES.find(annot.slice(1, annot.len));
                 idx >= 0 || throw("Bad break_note: `;; " ~ annot ~ "`.");
-                break_notes |= 1 << idx;
+                break_notes |= SolverNotes(1 << idx);
             }
             else
             {
@@ -418,7 +418,7 @@ pub fn ZERO(
             let noteBit = NOTES.find(x);
             if (noteBit >= 0)
             {
-                out.solve.notes & (1 << noteBit) || throw("Expected note not listed: `" ~ x ~ "` in:\n" ~ src ~ "\n\nOutput is:\n\n" ~ cpp.src);
+                out.solve.notes & SolverNotes(1 << noteBit) || throw("Expected note not listed: `" ~ x ~ "` in:\n" ~ src ~ "\n\nOutput is:\n\n" ~ cpp.src);
                 continue;
             }
 

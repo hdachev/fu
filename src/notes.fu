@@ -2,31 +2,34 @@
 
 // Solver notes.
 
-let N_FnRecursion       = 1 << 0;
-let N_FnResolve         = 1 << 1;
-let N_FnReopen          = 1 << 2;
+flags SolverNotes: i32
+{
+    N_FnRecursion
+    N_FnResolve
+    N_FnReopen
 
-let N_TypeRecursion     = 1 << 3;
-let N_TypeResolve       = 1 << 4;
-let N_TypeReopen        = 1 << 5;
+    N_TypeRecursion
+    N_TypeResolve
+    N_TypeReopen
 
-let N_DeadCode          = 1 << 6;
-let N_DeadCall          = 1 << 7;
-let N_DeadLet           = 1 << 8;
-let N_DeadIfCond        = 1 << 9;
-let N_DeadIfCons        = 1 << 10;
-let N_DeadArrlit        = 1 << 11;
-let N_DeadLoopInit      = 1 << 12;
+    N_DeadCode
+    N_DeadCall
+    N_DeadLet
+    N_DeadIfCond
+    N_DeadIfCons
+    N_DeadArrlit
+    N_DeadLoopInit
 
-let N_NonTrivAutoCopy   = 1 << 13;
+    N_NonTrivAutoCopy
 
-let N_RelaxRespec       = 1 << 14;
+    N_RelaxRespec
 
-let N_BckSoftRisk       = 1 << 15;
-let N_BckMustSeq        = 1 << 16;
+    N_BckSoftRisk
+    N_BckMustSeq
 
-let N_SD_HasStaticInit  = 1 << 30;
-let N_SD_ExternPrivates = 1 << 31;
+    N_SD_HasStaticInit
+    N_SD_ExternPrivates
+}
 
 
 // Same thing.

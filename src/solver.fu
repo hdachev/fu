@@ -67,7 +67,7 @@ pub fn solve(
     mut _root_scope:    ScopeMemo;
     mut _ss:            ScopeSkipMemos;
     mut _field_items:   ScopeItem[];
-    mut _notes:         i32;
+    mut _notes:         SolverNotes;
 
     struct RWEvent
     {
@@ -248,7 +248,7 @@ pub fn solve(
         return GET(t.parent).name ~ ":" ~ GET(t).name;
     }
 
-    fn makeNote(note: i32)
+    fn makeNote(note: SolverNotes)
     {
         if (note & options.break_notes)
             fail("`break_notes`: Unwanted event: `" ~ note ~ "`.");
