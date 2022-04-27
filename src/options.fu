@@ -12,7 +12,7 @@ pub struct Lint
 pub struct Options
 {
     using lint?: Lint;
-    break_notes?: notes::SolverNotes;
+    break_notes?: flags::SolverNotes;
 
     dev?: u32;
 };

@@ -538,7 +538,7 @@ pub fn runTests()
     `);
 
     ZERO(`
-        fn self_rec_template(x: $T): $T                     ;; !FN_resolve
+        fn self_rec_template(x: $T): $T                     ;; !N_FnResolve
             x > 0 ? self_rec_template(x / 2 - 5) : x;
 
         fn main()
@@ -560,7 +560,7 @@ pub fn runTests()
     `);
 
     ZERO(`
-        pub fn map(a: [$T], fn) {               ;; !DEAD_code
+        pub fn map(a: [$T], fn) {               ;; !N_DeadCode
             mut res: fn($T)[];
             res.grow_junk(a.len);
             for (mut i = 0; i < a.len; i++) res[i] = fn(a[i]);
@@ -2216,10 +2216,10 @@ pub fn runTests()
 
     ZERO(`
         fn test(ref a: i32, ref b: i32) {
-            return (++a) + 10 * (++b);              ;; BCK_must_seq
+            return (++a) + 10 * (++b);              ;; N_BckMustSeq
         }
 
-        fn main() {                                 ;; BCK_soft_risk
+        fn main() {                                 ;; N_BckSoftRisk
             mut x = 0;
         <alt>
             let z = test(x, x);
@@ -2233,12 +2233,12 @@ pub fn runTests()
 
     ZERO(`
         pub fn test_inner(ref a: i32, ref b: i32)
-            (++a) + 10 * (++b);                     ;; BCK_must_seq
+            (++a) + 10 * (++b);                     ;; N_BckMustSeq
 
         pub fn test_outer(ref a: i32, ref b: i32)
             test_inner(a, b);
 
-        fn main() {                                 ;; BCK_soft_risk
+        fn main() {                                 ;; N_BckSoftRisk
             mut x = 0;
         <alt>
             let z = test_outer(x, x);
@@ -2531,7 +2531,7 @@ pub fn runTests()
         }
 
         fn main() {
-            mut a = 0;                          ;; BCK_soft_risk
+            mut a = 0;                          ;; N_BckSoftRisk
 
             <alt>
             incr_a_or_b_and_b_or_a(a, a);
@@ -3019,7 +3019,7 @@ pub fn runTests()
     ZERO(`
         fn test(ref a: i32[], ref b: i32[]) {
             <alt>
-            if (a[0]++ == 1)            ;; BCK_soft_risk
+            if (a[0]++ == 1)            ;; N_BckSoftRisk
             <alt/>
             if (a[0] == 1)
             </alt>
@@ -5970,7 +5970,7 @@ pub fn runTests()
             let c = [10007];                    ;; TODO fu::slate<1, int> c
             let a = [7, 11];                    ;; TODO fu::slate<2, int> a
             let b = {                           ;; TODO fu::slate<1, int> b
-                :BRK {                          ;; !NONTRIV_autocopy
+                :BRK {                          ;; !N_NonTrivAutoCopy
                     if (x & 2) break :BRK c;
                     if (x & 1) break :BRK [ x ]; // a val
                     a // a ref
@@ -6058,7 +6058,7 @@ pub fn runTests()
     `);
 
     ZERO(`
-        pub fn test(x: i32): i32[] { ;; !NONTRIV_autocopy
+        pub fn test(x: i32): i32[] { ;; !N_NonTrivAutoCopy
             mut a = [ 4 ];
             mut b = [ 5 ];
             mut c = [ 6 ];
@@ -8686,7 +8686,7 @@ pub fn runTests()
             return sum - 6;
         }
 
-        ;; !NONTRIV_autocopy
+        ;; !N_NonTrivAutoCopy
     `);
 
     ZERO(`

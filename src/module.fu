@@ -86,7 +86,7 @@ pub struct SolverOutput
     scope:      Scope;
 
     // Important solver events for testing.
-    notes:      notes::SolverNotes;
+    notes:      flags::SolverNotes;
 };
 
 pub struct CodegenOutput

@@ -9,7 +9,6 @@ import structs;
 import flow;
 import effects;
 import module;
-import notes;
 import fail;
 
 
@@ -5381,6 +5380,9 @@ pub fn solve(
 
         if (tag == "enum")
             return type.is_enum;
+
+        if (tag == "flags")
+            return type.is_flags;
 
         return BUG("Unknown type tag: `" ~ tag ~ "`.");
     }

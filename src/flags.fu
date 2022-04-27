@@ -132,3 +132,35 @@ let LOOP_POST       = 4;
 
 let STRUCT_BASE     = 0;
 let STRUCT_MEMBERS  = 1;
+
+
+// Solver notes.
+
+flags SolverNotes: i32
+{
+    N_FnRecursion
+    N_FnResolve
+    N_FnReopen
+
+    N_TypeRecursion
+    N_TypeResolve
+    N_TypeReopen
+
+    N_DeadCode
+    N_DeadCall
+    N_DeadLet
+    N_DeadIfCond
+    N_DeadIfCons
+    N_DeadArrlit
+    N_DeadLoopInit
+
+    N_NonTrivAutoCopy
+
+    N_RelaxRespec
+
+    N_BckSoftRisk
+    N_BckMustSeq
+
+    N_SD_HasStaticInit
+    N_SD_ExternPrivates
+}

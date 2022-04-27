@@ -371,3 +371,16 @@ fn trim(str: string)
 
     return "";
 }
+
+
+//
+
+fn parse(v: [byte], lax as!: $T)
+    case ($T.is::enum || $T.is::bitfield /*TODO .is::flags*/ )
+{
+    for (fieldname i: $T)
+        if (v == "i")
+            return i; // TODO why does the string trick not work here?
+
+    return [];
+}

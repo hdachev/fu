@@ -2,7 +2,7 @@ import compiler;
 import options;
 import helpers;
 import module;
-import notes;
+import flags;
 
 
 // Test running infra.
@@ -35,13 +35,13 @@ pub fn compile_snippets(sources: string[], fnames?: string[], options?: Options[
     {
         ref module = ctx.modules[i];
         mut notes = module.out.solve.notes;
-        for (mut bit = 0; bit < NOTES.len && notes; bit++)
+        for (mut bit = 0; notes; bit++)
         {
             let mask  = SolverNotes(1 << bit);
             let isset = notes & mask;
             notes &= ~mask;
             if (isset)
-                module.out.cpp.src ~= "// " ~ NOTES[bit] ~ "\n";
+                module.out.cpp.src ~= "// " ~ bit ~ "\n";
         }
     }
 
@@ -376,15 +376,10 @@ pub fn ZERO(
 
             let annot = src.slice(start + 4, end);
             if (annot[0] == '!')
-            {
-                let idx = NOTES.find(annot.slice(1, annot.len));
-                idx >= 0 || throw("Bad break_note: `;; " ~ annot ~ "`.");
-                break_notes |= SolverNotes(1 << idx);
-            }
+                break_notes |= parse(annot.slice(1, annot.len), as: SolverNotes)
+                            || throw("Bad break_note: `;; " ~ annot ~ "`.");
             else
-            {
                 expectations.grow_if_oob(i) ~= annot;
-            }
 
             // Turn ;; commands into // comments and hop over.
             src[start + 1]  = '/';
@@ -415,10 +410,10 @@ pub fn ZERO(
         {
             let x = arr[i];
 
-            let noteBit = NOTES.find(x);
-            if (noteBit >= 0)
+            let note = parse(x, as: SolverNotes);
+            if (note)
             {
-                out.solve.notes & SolverNotes(1 << noteBit) || throw("Expected note not listed: `" ~ x ~ "` in:\n" ~ src ~ "\n\nOutput is:\n\n" ~ cpp.src);
+                out.solve.notes & note || throw("Expected note not listed: `" ~ x ~ "` in:\n" ~ src ~ "\n\nOutput is:\n\n" ~ cpp.src);
                 continue;
             }
 
