@@ -316,28 +316,7 @@ fn appendMi(ref str: string, mut modid!: i32, mut index!: i32)
 }
 
 
-/* TODO this needs a failcase -
-//  breaks other stuff that's not string-related for some reason,
-//   I think we start matching the .str autocall too early,
-//    no time now.
-
-fn str(arr: [$T]) case (!($T -> byte))
-{
-    if (!arr)
-        return "[]";
-
-    mut result = "[ ";
-    for (mut i = 0; i < arr.len; i++)
-    {
-        result ~= (i ? ", " : "[ ");
-        result ~= arr[i];
-    }
-
-    result ~= " ]";
-    return result;
-}
-
-// */
+//
 
 fn str(arr: [$T]) case ($T.is::arithmetic)
 {
@@ -380,7 +359,7 @@ fn parse(v: [byte], lax as!: $T)
 {
     for (fieldname i: $T)
         if (v == "i")
-            return i; // TODO why does the string trick not work here?
+            return i; // TODO "i", was only allowed for enums
 
     return [];
 }

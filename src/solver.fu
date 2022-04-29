@@ -2515,9 +2515,9 @@ pub fn solve(
     {
         //////////////////////////////////////////////
         // HACK - Retyping string literals to enums //
-        if (type && type.is_enum)
+        if (type && type.is_primitive)
         {
-            let members = lookupStruct(type).items;
+            let members = tryLookupStructOrUserPrimitive(type).items;
             for (mut i = 0; i < members.len; i++)
                 if (members[i].id == v)
                     return clear_refs(type);
