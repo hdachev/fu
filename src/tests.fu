@@ -7799,6 +7799,14 @@ pub fn runTests()
         }
     `);
 
+    ZERO(`
+        fn main() {
+            mut res = 1;            // single statement blocks unwrap
+            { defer res--; }        //  fix by unwraping tailing defers
+            return res;
+        }
+    `);
+
 
     // Conversions / ctors.
 
