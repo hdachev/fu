@@ -7807,6 +7807,18 @@ pub fn runTests()
         }
     `);
 
+    ZERO(`
+        inline fn unwraps_defer(ref x: i32) unwrap {
+            defer x++;
+        }
+
+        fn main() {
+            mut x = 0;
+            unwraps_defer(x);
+            return x;
+        }
+    `);
+
 
     // Conversions / ctors.
 

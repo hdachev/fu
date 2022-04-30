@@ -577,6 +577,8 @@ pub fn parse(
             {
                 if (v == "struct")      return parseStructDecl("struct");
                 if (v == "union")       return parseStructDecl("union");
+
+                if (v == "unwrap")      return parseUnwrap();
             }
 
             if (v == "fn" && (peek.kind == "id" || !_fnDepth))
@@ -688,12 +690,20 @@ pub fn parse(
         mut stmt = parseStatement();
         if (stmt.kind == "loop" || stmt.kind == "block")
         {
-            stmt.value && fail("Label `" ~ label ~ "`: statement already labeled as `" ~ stmt.value ~ "`.");
+            stmt.value && fail("Label " ~ label.qID ~ ": statement already labeled as " ~ stmt.value.qID ~ ".");
             stmt.value = label;
             return stmt;
         }
 
         return createBlock([ stmt ], :label);
+    }
+
+    fn parseUnwrap(): Node
+    {
+        mut stmt = parseStatement();
+        stmt.kind == "block" || fail("Unwrap only works for blocks, this is a " ~ stmt.kind.str.qKW ~ ".");
+        stmt.items ~= make("unwrap");
+        return stmt;
     }
 
     fn parseExpressionStatement(): Node

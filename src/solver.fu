@@ -1791,6 +1791,7 @@ pub fn solve(
         if (k == "forfieldsof") return solveForFieldsOf(node);
         if (k == "pragma")      return executeCompilerPragma(node);
         if (k == "void")        return createEmpty();
+        if (k == "unwrap")      return createUnwrap();
 
         if (unorderedClassify(k))
             return solveDeclExpr(node);
@@ -2359,12 +2360,22 @@ pub fn solve(
         // Compact + stress test.
         for (mut i = items.len; i --> 0; )
         {
-            let item    = items[i];
+            ref item    = items[i];
             let k       = item.kind;
 
-            if (k == "empty" || k == "bool")
+            if (k == "block")
+            {
+                if (item.items.if_last.kind == "unwrap")
+                {
+                    relinkJumps(:h, item);
+                    items.splice(i, 1, item.items.slice(0, i - 1));
+                }
+            }
+            else if (k == "empty" || k == "bool")
+            {
                 if (i < items.len - 1 || i > 0 && item.is_void && items[i - 1].is_void)
                     items.splice(i, 1);
+            }
         }
 
         if (h && items.if_last.kind == "block")
@@ -4749,6 +4760,11 @@ pub fn solve(
         let type  = items.if_last.type.is_never ? t_never : t_void;
 
         return createBlock(type, items);
+    }
+
+    fn createUnwrap()
+    {
+        return SolvedNode(kind: "unwrap", type: t_void);
     }
 
 

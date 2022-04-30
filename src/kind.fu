@@ -59,6 +59,7 @@ enum kind
     typeparam
     addroffn
 
+    unwrap
     forfieldsof
     pragma
     void
