@@ -2403,6 +2403,33 @@ pub fn solve(
             }
         }
 
+        // Unwrap a trailing defer.
+        //
+        // TODO do this after relax,
+        //  which is also after we'd have done post-bck dead code elim,
+        //   such as discarding unused pure computations, etc.
+        //
+        // On a side note, when we decide to deal with this,
+        //  we gotta start tracking if things can throw,
+        //   and removing & simplifying the defer:err and defer:ok stuff.
+        //
+        for (mut i = items.len; i --> 0; )
+        {
+            let k = items[i].kind;
+            if (k == "empty" || k == "bool")
+                continue;
+
+            if (k == "defer")
+            {
+                ref item = items[i];
+                item = item.items.only;
+                if !(item.is_void && i < items.len - 1)
+                    items ~= createEmpty();
+            }
+
+            break;
+        }
+
         if (!(h.mask & (HM_LabelUsed | HM_KeepBlock)) && items.len == 1)
             return items.only;
 
