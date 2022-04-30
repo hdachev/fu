@@ -1,7 +1,22 @@
 #!/bin/bash
 set -e
 
+echo ""
+echo "        ================================"
+echo ""
+echo "        Starting over ..."
+echo ""
+
 ./bin/fu.works self
+
+echo "        --------------------------------"
+
 ./bin/fu self
+
+echo "        --------------------------------"
+
 ./bin/fu self
+
+echo "        --------------------------------"
+
 ./bin/fu self

@@ -101,8 +101,6 @@ pub fn locate_FUDIR(): string
     let fn = dir  ~ "src/compiler.fu";
     let fs = file::size(fn);
     fs > 1000 || throw("Bad compiler.fu: " ~ fn ~ ": " ~ fs);
-
-    println("FUDIR: " ~ dir);
     return dir;
 }
 

@@ -27,9 +27,15 @@ fn cli_handle(argv: string[], cwd = fs::cwd()): i32
     // Full test suite.
     if (argv.len == 2 && argv[1] == "self")
     {
-        println("\n\tRunning test suite and rebuilding self ...\n");
+        println("\n\tRunning tests ...\n");
+        runTests();
 
-        runTestsAndBuildCompiler();
+        println("\n\tRebuilding self ...\n");
+        cli_handle(
+            cwd: FUDIR,
+            [ "fu", "--bin", "bin/fu", "-c", "src/cli.fu" ]);
+
+        println("\n\tRebuilt self.\n");
         return 0;
     }
 
@@ -186,15 +192,3 @@ fn cli_handle(argv: string[], cwd = fs::cwd()): i32
 
 fn main(argv: string[])
     cli_handle(argv);
-
-
-//
-
-fn runTestsAndBuildCompiler()
-{
-    runTests();
-
-    cli_handle(
-        cwd: FUDIR,
-        [ "fu", "--bin", "bin/fu", "-c", "src/cli.fu" ]);
-}
