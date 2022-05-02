@@ -302,15 +302,6 @@ fn Scope_pop(ref scope: Scope, implicit ref _helpers: Helpers[], memo: ScopeMemo
     _helpers        .shrink(memo.helpers_len);
 }
 
-fn cmp(a: ScopeMemo, b: ScopeMemo)
-    a.items_len     - b.items_len     ||
-    a.implicits_len - b.implicits_len ||
-    a.imports_len   - b.imports_len   ||
-    a.privates_len  - b.privates_len  ||
-    a.usings_len    - b.usings_len    ||
-    a.converts_len  - b.converts_len  ||
-    a.helpers_len   - b.helpers_len;
-
 
 ////////////////////////////////
 
