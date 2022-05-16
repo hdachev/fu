@@ -307,7 +307,13 @@ pub fn solve(
     using fn GET(target: Target)
     {
         if (target.isLocal)
-            return _scope.extended[-target.modid].locals[target.index - 1];
+        {
+            let locals = _scope.extended[-target.modid].locals;
+            locals.len >= target.index || fail(
+                "Out of range local target from: " ~ GET(target.parent).qWHAT);
+
+            return locals[target.index - 1];
+        }
 
         if (target.modid == module.modid)
             return _scope.overloads[target.index - 1];
