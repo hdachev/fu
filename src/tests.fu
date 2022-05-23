@@ -3778,6 +3778,55 @@ pub fn runTests()
         }
     `);
 
+    ZERO([`
+        struct Context {
+            modules:    Module[];
+        };
+
+        nocopy struct Module {
+            in?:        string;
+            fname:      string;
+        };
+
+        fn getFile(implicit ref ctx: Context, fname: string) {
+            for (mut i = 0; i < ctx.modules.len; i++)
+                if (ctx.modules[i].fname == fname)
+                    return ctx.modules[i].in;
+
+            ctx.modules ~= Module(:fname, in: fname ~ '\\n' ~ fname ~ '\\n');
+            return ctx.modules[ctx.modules.len - 1].in;
+        }
+
+        fn getModule(implicit ref ctx: Context, fname: string) {
+            for (mut i = 0; i < ctx.modules.len; i++)
+                if (ctx.modules[i].fname == fname)
+                    return ctx.modules[i];
+
+            return [];
+        }
+    `,
+    `
+        import _0;
+
+        fn ensureParsed(fname: string) {
+            let module = getModule(fname);
+            if (!module.in)
+                return getFile(fname).len
+                <fail module invalidated by write to ctx>
+                    || module.in.len;
+                <pass/>
+                    || throw(fname);
+                </fail>
+
+            return module.in.len;
+        }
+
+        fn main() {
+            let implicit mut ctx: Context;
+            return ensureParsed("a") - 4;
+        }
+    `]);
+
     // /Borrow checker
 
 
