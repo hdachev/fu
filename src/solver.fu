@@ -304,6 +304,25 @@ pub fn solve(
         return target.modid < 0;
     }
 
+    fn GET_crossmodule(target: Target, implicit _current_fnort: Target)
+    {
+        // When generating errors we can start traversing locals of other modules,
+        //  this isn't super clean and probably should just go into GET,
+        //   but it just feels kinda off to add extra implicit args there.
+        //
+        if (target.isLocal && _current_fnort.modid != module.modid)
+        {
+            shadow let module = ctx.modules[_current_fnort.modid];
+            let locals = module.out.solve.scope.extended[-target.modid].locals;
+            locals.len >= target.index || fail(
+                "Out of range local target from: " ~ GET(target.parent).qWHAT);
+
+            return locals[target.index - 1];
+        }
+
+        return GET(target);
+    }
+
     using fn GET(target: Target)
     {
         if (target.isLocal)
@@ -4284,7 +4303,7 @@ pub fn solve(
     {
         Lifetime_each(:lifetime, :locals_start, visit: |t, i, shadow lifetime|
         {
-            let init = t.Lifetime_climbType;
+            let init = GET_crossmodule(t).Lifetime_climbType;
             if !(init.is_ref)
                 continue;
 
@@ -6000,7 +6019,7 @@ pub fn solve(
 
             // INDIRECTION !!!!
             shadow let node = node.kind == "letdef"
-                ? node.target.solved
+                ? GET_crossmodule(node.target).solved
                 : node;
             // INDIRECTION !!!!
 
