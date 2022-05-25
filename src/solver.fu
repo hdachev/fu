@@ -2466,6 +2466,57 @@ pub fn solve(
             break;
         }
 
+        // Convert:
+        //
+        //  { a && b.never; c... }
+        //  { a || c.never; b... }
+        //
+        // ... into:
+        //
+        //  { if (a) b; else c }
+        //
+        // This helps bck better figure out some patterns down the line.
+        {
+            mut i = items.len;
+
+            while (i --> 0)
+            {
+                let k = items[i].kind;
+                if (k != "empty" && k != "bool")
+                    break;
+            }
+
+            while (i --> 0)
+            {
+                let k = items[i].kind;
+                if (k == "and" || k == "or")
+                {
+                    ref n = items[i];
+                    if (n.items.last.is_never)
+                    {
+                        let cond = n.items.slice(0, n.items.len - 1);
+                        let cons = n.items[n.items.len - 1];
+                        let alt  = items.slice(i + 1);
+
+                        shadow let cond = k == "and"
+                            ? createAnd(cond, t_bool)
+                            : createOr (cond, t_bool);
+
+                        shadow let alt = createBlock(alt, :alt.last.type);
+
+                        //
+                        let replacement = createIf(:cond,
+                            k == "and" ? cons : alt,
+                            k == "and" ? alt : cons);
+
+                        items.shrink(i + 1);
+                        items.last = replacement;
+                    }
+                }
+            }
+        }
+
+        //
         if (!(h.mask & (HM_LabelUsed | HM_KeepBlock)) && items.len == 1)
             return items.only;
 
