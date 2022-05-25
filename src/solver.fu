@@ -5749,7 +5749,7 @@ pub fn solve(
             ~ b.humanizeType);
     }
 
-    fn solveIf(node: Node, mut type: Type): SolvedNode
+    fn solveIf(node: Node, type: Type): SolvedNode
     {
         mut cond    = solveNode(node.items[0], t_bool);
 
@@ -5774,12 +5774,17 @@ pub fn solve(
         }
 
         // `a && THROWS ? b : c` is the same as `a ? THROWS : c`
-        mut cons    = cond.kind == "and" && cond.items.last.type.is_never
+        let cons    = cond.kind == "and" && cond.items.last.type.is_never
             ? if_A_and_NEVER_then_B_else_C
             : solveBlock(node.items[1], :type);
 
-        mut alt     = solveBlock(node.items[2], :type);
+        let alt     = solveBlock(node.items[2], :type);
 
+        return createIf(cond, cons, alt, :type);
+    }
+
+    fn createIf(cond: SolvedNode, mut cons: SolvedNode, mut alt: SolvedNode, mut type?: Type): SolvedNode
+    {
         if (!type.is_void)
             type = convertToSuperType("if/else", cons, alt);
 
@@ -5787,7 +5792,7 @@ pub fn solve(
         if (cons.type.is_never && alt.type.is_never)
             type = t_never;
 
-        return solved(node, type || BUG(), [ cond, cons, alt ]);
+        return SolvedNode("if", type || BUG(), items: [ cond, cons, alt ]);
     }
 
 
@@ -5795,14 +5800,19 @@ pub fn solve(
     // Logic                  .                     //
     //////////////////////////////////////////////////
 
-    fn solveOr(node: Node, mut type: Type): SolvedNode
+    fn solveOr(node: Node, type: Type): SolvedNode
     {
-        mut items = solveNodes(node.items,
+        let items = solveNodes(node.items,
             type_last: type,
             use_type_last: true,
             static_eval_brk: "true",
             type_all: type.is_void ? t_bool : type);
 
+        return createOr(items, type);
+    }
+
+    fn createOr(mut items: SolvedNode[], mut type: Type): SolvedNode
+    {
         if (items.len < 2)
             return items.only;
 
@@ -5854,10 +5864,10 @@ pub fn solve(
                 type = sumType;
         }
 
-        return solved(node, type, items);
+        return SolvedNode("or", type, :items);
     }
 
-    fn solveAnd(node: Node, mut type: Type): SolvedNode
+    fn solveAnd(node: Node, type: Type): SolvedNode
     {
         let items = solveNodes(node.items,
             type_last: type,
@@ -5865,6 +5875,11 @@ pub fn solve(
             static_eval_brk: "false",
             type_all: type.is_void ? t_bool : type);
 
+        return createAnd(items, :type);
+    }
+
+    fn createAnd(items: SolvedNode[], mut type: Type): SolvedNode
+    {
         if (items.len < 2)
             return items.only;
 
@@ -5927,7 +5942,7 @@ pub fn solve(
 
         // Because values remain values and refs remain refs,
         //  there's no copying/moving involved in an && chain.
-        return solved(node, type, items);
+        return SolvedNode("and", type, :items);
     }
 
     fn popAndOr(ref node: SolvedNode)
