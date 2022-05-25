@@ -5003,7 +5003,7 @@ pub fn solve(
 
     fn createLetDef(target: Target)
     {
-        return SolvedNode(kind: "letdef", :target, type: []);
+        return SolvedNode(kind: "letdef", :target, type: t_void);
     }
 
     fn createLet(id: string, flags: Flags, init: SolvedNode)
