@@ -5208,6 +5208,18 @@ pub fn runTests()
         }
     `);
 
+    ZERO(`
+        fn noop_let_lax(ref x: i32) {
+            let lax y = x;
+        }
+
+        fn main() {
+            mut x = 0;
+            noop_let_lax(x);
+            return x;
+        }
+    `);
+
     // /quite right
 
 
