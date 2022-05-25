@@ -4264,8 +4264,8 @@ pub fn solve(
             if (r.Region_isTemp)
                 continue;
 
-            ref o = GET_mut(nested(r.Region_toLocal()));
-            visit(:o, i?: i, lifetime?: lifetime);
+            let t = nested(r.Region_toLocal());
+            visit(:t, i?: i, lifetime?: lifetime);
         }
     }
 
@@ -4282,9 +4282,9 @@ pub fn solve(
 
     fn Lifetime_unwind(mut lifetime: Lifetime, locals_start!?: i32): Lifetime
     {
-        Lifetime_each(:lifetime, :locals_start, visit: |o, i, shadow lifetime|
+        Lifetime_each(:lifetime, :locals_start, visit: |t, i, shadow lifetime|
         {
-            let init = o.Lifetime_climbType;
+            let init = t.Lifetime_climbType;
             if !(init.is_ref)
                 continue;
 
@@ -4326,8 +4326,9 @@ pub fn solve(
 
     fn Lifetime_F_MOVED_FROM(lifetime: Lifetime)
     {
-        Lifetime_each(:lifetime, visit: |o|
+        Lifetime_each(:lifetime, visit: |t|
         {
+            ref o = GET_mut(t);
             if (o.flags & F_MOVED_FROM)
                 continue;
 
@@ -4343,15 +4344,15 @@ pub fn solve(
 
     fn Lifetime_allowsMutrefReturn(lifetime: Lifetime, locals_start!?: i32): bool
     {
-        Lifetime_each(:lifetime, :locals_start, visit: |o|
+        Lifetime_each(:lifetime, :locals_start, visit: |t|
         {
-            o.type.is_mutref || BUG(
-                "Checking for mutref-return-ok found non-mutref: " ~ o.qWHAT);
+            t.type.is_mutref || BUG(
+                "Checking for mutref-return-ok found non-mutref: " ~ t.qWHAT);
 
-            if (o.kind == "var" && !(o.flags & F_REF))
+            if (t.kind == "var" && !(t.flags & F_REF))
                 return false;
 
-            let init = o.Lifetime_climbType;
+            let init = t.Lifetime_climbType;
             if (!Lifetime_allowsMutrefReturn(init.lifetime, :locals_start))
                 return false;
         });
