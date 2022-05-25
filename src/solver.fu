@@ -2789,7 +2789,7 @@ pub fn solve(
     }
 
     fn trySpecialize(
-        overloadIdx: Target, args: SolvedNode[], ref args_mangled: string,
+        overloadIdx: Target, args: [SolvedNode], ref args_mangled: string,
         REST_START: i32, REST_TYPE?: Type,
         reorder?: [i32], use_reorder?: bool, conversions?: Target[][])
             : Target
@@ -2876,7 +2876,7 @@ pub fn solve(
 
     fn doTrySpecialize(
         into?: Target,
-        overloadIdx?: Target, args_in?: SolvedNode[],
+        overloadIdx?: Target, args_in?: [SolvedNode],
         mangle?: string, reorder?: [i32], use_reorder?: bool, conversions?: Target[][],
         REST_START?: i32, REST_TYPE?: Type)
             : Target
