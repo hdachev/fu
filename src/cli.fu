@@ -31,9 +31,7 @@ fn cli_handle(argv: string[], cwd = fs::cwd()): i32
         runTests();
 
         println("\n\tRebuilding self ...\n");
-        cli_handle(
-            cwd: FUDIR,
-            [ "fu", "--bin", "bin/fu", "-c", "src/cli.fu" ]);
+        buildCompiler();
 
         println("\n\tRebuilt self.\n");
         return 0;
@@ -192,3 +190,8 @@ fn cli_handle(argv: string[], cwd = fs::cwd()): i32
 
 fn main(argv: string[])
     cli_handle(argv);
+
+pub extern fn buildCompiler()
+    cli_handle(
+        cwd: FUDIR,
+        [ "fu", "--bin", "bin/fu", "-c", "src/cli.fu" ]);

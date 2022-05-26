@@ -4,7 +4,7 @@ import test_utils;
 
 // Run the whole battery & build self.
 
-pub fn runTests()
+pub extern fn runTests()
 {
     ////////////////////////////////////////////////
     let TESTDIFFS_FILE = FUDIR ~ "testdiff/now.td";

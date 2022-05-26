@@ -890,7 +890,7 @@ pub fn cpp_codegen(implicit module: Module, implicit ctx: Context): CodegenOutpu
             return "operator" ~ id.valid_operator;
 
         mut ret = id.valid_identifier;
-        if (target.sighash)
+        if (target.sighash && !(target.flags & F_EXTERN))
             ret ~= "_" ~ target.sighash[0, 8];
 
         return ret;
