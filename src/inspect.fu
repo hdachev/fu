@@ -1,0 +1,74 @@
+import module;
+import helpers;
+
+fn inspect(module: Module)
+{
+    inspect(module, module.out.solve.root);
+}
+
+fn inspect(module: Module, root: SolvedNode)
+{
+    mut src = "Your /*PRINT*/:";
+
+    let modid  = module.modid;
+
+    fn inspect(n: SolvedNode, indent: string)
+    {
+        src ~= indent ~ "(";
+
+        if (n)
+        {
+            if (n.kind == "call")
+                src ~= n.kind.str.ansi::qID;
+            else if (n.kind == "block" || n.kind == "jump" || n.kind == "defer")
+                src ~= n.kind.str.ansi::qLT;
+            else if (n.kind == "if" || n.kind == "and" || n.kind == "or" || n.kind == "loop")
+                src ~= n.kind.str.ansi::qKW;
+            else if (n.kind == "empty")
+                src ~= n.kind.str.ansi::qBAD;
+            else
+                src ~= n.kind;
+
+            if (n.value)
+                src ~= " v:" ~ n.value;
+            if (n.helpers)
+                src ~= " h:" ~ n.helpers.index;
+            if (n.flags)
+                src ~= " f:" ~ n.flags;
+
+            if (n.items)
+            {
+                shadow let indent = indent ~ (n.kind == "block" ? ". ".ansi::qLT : "  ");
+                for (shadow mut i = 0; i < n.items.len; i++)
+                    inspect(n.items[i], indent);
+            }
+
+            if (n.target.modid == modid || n.target.modid < 0)
+            {
+                let overloads = n.target.modid < 0
+                    ? module.out.solve.scope.extended[-n.target.modid].locals
+                    : module.out.solve.scope.overloads;
+
+                let o = overloads[n.target.index - 1];
+
+                if (o.name)
+                    src ~= " n:" ~ o.name.trim();
+
+                if (n.kind == "fndef" || n.kind == "letdef")
+                {
+                    shadow let indent = indent ~ ". ".ansi::qID;
+                    inspect(o.solved, indent);
+                }
+            }
+        }
+
+        if (n.items)
+            src ~= indent;
+
+        src ~= ")";
+    }
+
+    inspect(root, "\n    ");
+
+    println(src);
+}

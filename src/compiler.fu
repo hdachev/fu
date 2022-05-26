@@ -7,7 +7,9 @@ import module;
 
 //
 
-pub fn compile(fname: string, via: string = "")
+pub fn compile(
+    implicit options: Options,
+    fname: string, via: string = "")
 {
     let implicit mut module = getModule(fname).clone();
 
@@ -69,6 +71,9 @@ pub fn compile(fname: string, via: string = "")
         //
         let stat0 = ModuleStat_now();
         module.out.solve = solver::solve();
+
+        if (options.dev & DEV_PrintAST)
+            ::inspect(module);
 
         let stat1 = ModuleStat_now();
         module.out.cpp = codegen::cpp_codegen();

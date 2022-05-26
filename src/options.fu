@@ -1,5 +1,6 @@
 
-pub let DEV_DisableBCK = 0x1 << 0;
+pub let DEV_DisableBCK  = 0x1 << 0;
+pub let DEV_PrintAST    = 0x1 << 1;
 
 
 // Zeroinit = default build options.
