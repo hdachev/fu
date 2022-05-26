@@ -2478,12 +2478,15 @@ pub fn solve(
         // This helps bck better figure out some patterns down the line.
         {
             mut i = items.len;
+            mut empties = 0;
 
             while (i --> 0)
             {
                 let k = items[i].kind;
                 if (k != "empty" && k != "bool")
                     break;
+
+                empties++;
             }
 
             while (i --> 0)
@@ -2496,7 +2499,9 @@ pub fn solve(
                     {
                         let cond = n.items.slice(0, n.items.len - 1);
                         let cons = n.items[n.items.len - 1];
-                        let alt  = items.slice(i + 1);
+                        let alt  = items.slice(i + 1, items.len - empties);
+
+                        items.splice(i + 1, alt.len);
 
                         shadow let cond = k == "and"
                             ? createAnd(cond, t_bool)
@@ -2505,12 +2510,11 @@ pub fn solve(
                         shadow let alt = createBlock(alt, :alt.last.type);
 
                         //
-                        let replacement = createIf(:cond,
+                        let replacement = createIf(:cond, type: empties && t_void,
                             k == "and" ? cons : alt,
                             k == "and" ? alt : cons);
 
-                        items.shrink(i + 1);
-                        items.last = replacement;
+                        items[i] = replacement;
                     }
                 }
             }
