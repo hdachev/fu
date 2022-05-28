@@ -4,11 +4,12 @@
 
 pub nocopy struct Context
 {
-    modules: Module[];
+    modules:    Module[];
+    dep_order:  i32[];
 
     // FS facts.
-    files: map::Map(string, string);
-    fuzzy: map::Map(string, string);
+    files:      map::Map(string, string);
+    fuzzy:      map::Map(string, string);
 };
 
 pub struct Module
@@ -17,6 +18,7 @@ pub struct Module
     fname:      string;
 
     in?:        ModuleInputs;
+    order?:     ModuleOrder;
     out?:       ModuleOutputs;
     stats?:     ModuleStats;
 };
@@ -28,15 +30,17 @@ pub struct ModuleInputs
     parse:      ParserOutput;
 };
 
+pub struct ModuleOrder
+{
+    dep_depth:  i32;
+};
+
 pub struct ModuleOutputs
 {
     deps:       i32[];
     types:      Struct[];
     solve:      SolverOutput;
     cpp:        CodegenOutput;
-
-    // Static init depth.
-    init_prio:  i32;
 };
 
 pub struct ModuleStats

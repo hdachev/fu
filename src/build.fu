@@ -158,17 +158,9 @@ pub fn build(
 
     shadow let modules =
     {
-        mut buckets: ModuleSortHelper[][];
-        for (mut i = 0; i < modules.len; i++)
-        {
-            let module = modules[i];
-            buckets.grow_if_oob(module.out.init_prio) ~= ModuleSortHelper(i);
-        }
-
-        //
         mut result: ModuleSortHelper[];
-        for (mut i = 0; i < buckets.len; i++)
-            result ~= buckets[i];
+        for (mut i = 0; i < ctx.dep_order.len; i++)
+            result ~= ModuleSortHelper(ctx.dep_order[i]);
 
         result
     };

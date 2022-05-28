@@ -7,66 +7,103 @@ import module;
 
 //
 
-pub fn compile(
-    implicit options: Options,
-    fname: string, via: string = "")
+fn compile_lexParseDeps(fname: string, via: string = "")
 {
-    let implicit mut module = getModule(fname).clone();
-
-    // Inputs are only dependent on the one file in question.
-    if (!module.in)
-    {
-        // Invalidate outputs.
-        module.out = ModuleOutputs;
-
-        let src = getFile(fname) || throw (
-            "import badfile: `" ~ via ~ fname ~ "`.");
-
-        let stat0 = ModuleStat_now();
-        let lexer_result = lexer::lex(:fname, :src);
-
-        let stat1 = ModuleStat_now();
-        let parser_result = parser::parse(
-            :module.modid, :fname, :src, :lexer_result.tokens);
-
-        let stat2 = ModuleStat_now();
-
-        module.in = ModuleInputs(
-            :src, lex: lexer_result,
-            parse: parser_result);
-
-        // Stat.
-        module.stats.lex   = stat1 - stat0;
-        module.stats.parse = stat2 - stat1;
-
-        // Prevent module circles.
-        setModule(module);
-    }
-    else
+    let module = getModule(fname);
+    if (module.in)
     {
         // Having input stuff solved but no output stuff means circular import -
         //  module.out is currently being worked on the stack above us somewhere.
-        module.out || throw (
+        module.order || throw(
             "import circle: `" ~ fname ~ "\n\t<- " ~ via ~ "`.");
+
+        return module.order || throw("BUG: !module.order");
     }
 
-    // We're good to go here.
-    if (!module.out)
+    shadow let implicit mut module = module.clone();
+
+    module.out && throw("BUG: !!module.out");
+
+    //
+    let src = getFile(fname) || throw(
+        "import badfile: `" ~ via ~ fname ~ "`.");
+
+    let stat0 = ModuleStat_now();
+    let lexer_result = lexer::lex(:fname, :src);
+
+    let stat1 = ModuleStat_now();
+    let parser_result = parser::parse(
+        :module.modid, :fname, :src, :lexer_result.tokens);
+
+    let stat2 = ModuleStat_now();
+
+    module.in = ModuleInputs(
+        :src, lex: lexer_result,
+        parse: parser_result);
+
+    // Stat.
+    module.stats.lex   = stat1 - stat0;
+    module.stats.parse = stat2 - stat1;
+
+    // Prevent module circles.
+    setModule(module);
+
+    // Process deps.
+    if (!module.order || throw("BUG: !!module.order"))
     {
-        module.out.init_prio = 1;
+        module.order.dep_depth = 1;
 
         // Ensure dependencies.
         let fuzimports = module.in.parse.fuzimports;
         for (mut i = 0; i < fuzimports.len; i++)
         {
-            let prio =
-                compile(
+            let order =
+                compile_lexParseDeps(
                     fname: resolveFile(fuzimports[i]),
                       via: fname ~ (via && "\n\t<- " ~ via));
 
-            if (module.out.init_prio < prio)
-                module.out.init_prio = prio;
+            if (module.order.dep_depth <= order.dep_depth)
+                module.order.dep_depth  = order.dep_depth + 1;
         }
+
+        //
+        setModule(module);
+    }
+
+    return module.order;
+}
+
+
+//
+
+pub fn compile(
+    implicit ref ctx: Context,
+    implicit options: Options,
+    fname: string, via: string = "")
+{
+    compile_lexParseDeps(:fname, :via);
+
+    // Sort the dep order.
+    {
+        mut dep_order: i32[][];
+        for (mut i = 0; i < ctx.modules.len; i++)
+        {
+            let module = ctx.modules[i];
+            dep_order.grow_if_oob(module.order.dep_depth) ~= module.modid;
+        }
+
+        ctx.dep_order = dep_order.join();
+    }
+
+    //
+    for (mut i = 0; i < ctx.dep_order.len; i++)
+    {
+        let modid  = ctx.dep_order[i];
+        let module = ctx.modules[modid];
+        if (module.out)
+            continue;
+
+        shadow let implicit mut module = module.clone();
 
         //
         let stat0 = ModuleStat_now();
@@ -83,13 +120,9 @@ pub fn compile(
         module.stats.solve   = stat1 - stat0;
         module.stats.codegen = stat2 - stat1;
 
-        // Final repersist.
+        //
         setModule(module);
     }
-
-    //
-    return module.out.init_prio
-        + (module.out.solve.notes & flags::N_SD_HasStaticInit && 1);
 }
 
 

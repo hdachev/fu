@@ -1411,8 +1411,8 @@ pub fn cpp_codegen(implicit module: Module, implicit ctx: Context): CodegenOutpu
 
         // Static init prio.
         let prio    = node.type.is_primitive                ? 0
-                    : node.target.modid == module.modid     ? module.out.init_prio
-                                                            : ctx.modules[node.target.modid].out.init_prio;
+                    : node.target.modid == module.modid     ? module.order.dep_depth
+                                                            : ctx.modules[node.target.modid].order.dep_depth;
         if (prio)
         {
             include("<fu/init_priority.h>");
