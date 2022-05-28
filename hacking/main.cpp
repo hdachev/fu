@@ -1,5 +1,7 @@
 //#define ISOLATE_FAILING_TESTCASE
 
+#define fu_NUM_WORKER_THREADS 0
+
 #ifdef ISOLATE_FAILING_TESTCASE
 #include "../build-cpp/failing-testcase.cpp"
 #endif

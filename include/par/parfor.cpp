@@ -148,7 +148,13 @@ namespace fu
     {
         size_t workers = std::thread::hardware_concurrency();
 
-        // TODO getenv("MAX_THREADS") here
+    #ifdef fu_NUM_WORKER_THREADS
+
+        workers = fu_NUM_WORKER_THREADS;
+
+    #else
+
+        // TODO getenv("fu_NUM_WORKER_THREADS") here
         // TODO all of this in a cpp, not here
 
         workers = workers >= 64 ? workers - 4   // leave three cores to the OS, ~ 5% breathing room
@@ -157,6 +163,8 @@ namespace fu
                 : workers >=  8 ? workers - 1   // there's also the main thread here, so threads=cores
                 : workers >=  1 ? workers       // oversubscribe 1 core
                 : 1;
+
+    #endif
 
 
         // Number of threads = workers + 1 main thread.
