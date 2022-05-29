@@ -920,7 +920,6 @@ static void nextSkip_ym6ttuuT(fu::view<s_ScopeSkip> scope_skip, int& scope_itera
         const int s0 = (ss.start - 1);
         if (scope_iterator > s0)
             scope_iterator = s0;
-
     };
     if ((skiptrap >= items.size()))
         fu::fail("Scope/search: scope_skip will jump past end of items."_fu);
@@ -954,7 +953,11 @@ s_Target search_7gDKHCyh(fu::view<s_ScopeItem> items, const fu_STR& id, int& sco
     while (scope_iterator-- > 0)
     {
         if (scope_iterator == skiptrap)
+        {
             nextSkip_ym6ttuuT(scope_skip, scope_iterator, skiptrap, items);
+            if (scope_iterator == -1)
+                break;
+        }
 
         const s_ScopeItem& item = ((scope_iterator >= items.size()) ? ((scope_iterator >= (items.size() + extra_items.size())) ? field_items[((scope_iterator - items.size()) - extra_items.size())] : target_TODOFIX_pzhnE2ba(TODO_FIX, extra_items[(scope_iterator - items.size())])) : items[scope_iterator]);
         if (item.id == id)

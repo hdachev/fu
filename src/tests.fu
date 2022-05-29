@@ -5269,6 +5269,30 @@ pub extern fn runTests()
         }
     `);
 
+    ZERO([`
+        fn compile_begin(mul: i32) {
+            let id = mul * 10;
+            let implicit options = getModule(:id);
+            return compile(:id);
+        }
+
+        fn compile(implicit options: i32, id: i32) {
+            return getModule(id) + options;
+        }
+
+        fn getModule(id: i32, implicit ctx: i32) {
+            return ctx + id;
+        }
+    `,
+    `
+        import _0;
+
+        fn main() {
+            let implicit ctx = 2;
+            return compile_begin(3) - 64;
+        }
+    `]);
+
     // /quite right
 
 

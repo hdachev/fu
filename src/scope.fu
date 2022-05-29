@@ -255,7 +255,11 @@ fn search(
     while (scope_iterator --> 0)
     {
         if (scope_iterator == skiptrap)
+        {
             nextSkip();
+            if (scope_iterator == -1)
+                throw("\n\n\tHERE WE GO - scope-skipped to -1.\n");
+        }
 
         let item = scope_iterator >= items.len
             ? scope_iterator >= items.len + extra_items.len
