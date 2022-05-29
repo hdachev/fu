@@ -7420,6 +7420,26 @@ pub extern fn runTests()
         }
     `]);
 
+    ZERO([`
+        struct Options { v: i32; };
+    `,
+    `
+        fn compile(o: _0::Options) = o.v;
+    `,
+    `
+        // Won't find Options if solving in reverse modid order.
+        fn compile_snippets(o: _0::Options) = o.v;
+    `,
+    `
+        import _1;
+        import _2;
+
+        fn main() {
+            let o = _0::Options(0);
+            return compile(o) + compile_snippets(o);
+        }
+    `]);
+
 
     // Explicit shadowing.
 
