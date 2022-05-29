@@ -258,7 +258,7 @@ fn search(
         {
             nextSkip();
             if (scope_iterator == -1)
-                throw("\n\n\tHERE WE GO - scope-skipped to -1.\n");
+                break;
         }
 
         let item = scope_iterator >= items.len
