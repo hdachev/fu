@@ -3827,6 +3827,13 @@ pub extern fn runTests()
         }
     `]);
 
+    TODO_move(`
+        nocopy struct Val { x: i32 };
+        struct Out { v: Val };
+        fn move_Val_into_Out(mut v: Val)    = Out(:v);
+        fn main()                           = move_Val_into_Out(Val(0)).v.x;
+    `);
+
     // /Borrow checker
 
 
