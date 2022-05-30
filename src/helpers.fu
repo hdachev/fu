@@ -79,35 +79,19 @@ fn hasIdentifierChars(id: string)
 
 //
 
-fn map(a: [$T], fn)
+fn all(a: [$T], pred)
 {
-    mut res: fn($T, i?: a.len)[];
-    res.grow_junk(a.len);
-    for (mut i = 0; i < a.len; i++)
-        res[i] = fn(a[i], i?: i);
-
-    return res;
-}
-
-fn each(a: [$T], fn)
-{
-    for (mut i = 0; i < a.len; i++)
-        fn(a[i], i?: i);
-}
-
-fn all(a: [$T], fn)
-{
-    for (mut i = 0; i < a.len; i++)
-        if (!fn(a[i]))
+    a.each: |item|
+        if !(pred(item))
             return false;
 
     return true;
 }
 
-fn some(a: [$T], fn)
+fn some(a: [$T], pred)
 {
-    for (mut i = 0; i < a.len; i++)
-        if (fn(a[i]))
+    a.each: |item|
+        if (pred(item))
             return true;
 
     return false;

@@ -484,6 +484,23 @@ fn !=(a: $T, b: $T)
     default: bool = !!(a <> b);
 
 
+//
+
+fn map(a: [$T], fn)
+{
+    mut res: fn($T, i?: a.len)[];
+    res.grow_junk(a.len);
+    for (mut i = 0; i < a.len; i++)
+        res[i] = fn(a[i], i?: i);
+
+    return res;
+}
+
+fn each(a: [$T], fn)
+    for (mut i = 0; i < a.len; i++)
+        fn(a[i], i?: i);
+
+
 `;
 
 
