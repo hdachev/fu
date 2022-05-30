@@ -560,7 +560,7 @@ pub extern fn runTests()
     `);
 
     ZERO(`
-        pub fn map(a: [$T], fn) {               ;; !N_DeadCode
+        pub fn MAP(a: [$T], fn) {               ;; !N_DeadCode
             mut res: fn($T)[];
             res.grow_junk(a.len);
             for (mut i = 0; i < a.len; i++) res[i] = fn(a[i]);
@@ -569,7 +569,7 @@ pub extern fn runTests()
 
         pub fn clone(a: $T)
         case ($T.is::copy) a;
-        case ($T -> [$U]) a.map(fn clone);
+        case ($T -> [$U]) a.MAP(fn clone);
         default {
             mut res: $T;
             for (fieldname i: $T) res.i = a.i.clone();
@@ -7971,7 +7971,7 @@ pub extern fn runTests()
     `);
 
     ZERO(`
-        fn map(items: $T[], fn) {
+        fn MAP(items: $T[], fn) {
             mut result: fn(items[0])[];
             for (mut i = 0; i < items.len; i++)
                 result.push(fn(items[i]));
@@ -7981,7 +7981,7 @@ pub extern fn runTests()
 
         fn sqr(x) x*x;
 
-        fn main() [2].map(fn sqr)[0] - 4;
+        fn main() [2].MAP(fn sqr)[0] - 4;
 
         ;; EXPECT (fu::slate<1, int> { 2 })
         //  During the propagateType rework
