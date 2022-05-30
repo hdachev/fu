@@ -4867,7 +4867,7 @@ pub fn solve(
         isAssignable(:asArgument,
             :host   || BUG("Bad host type."),
             :guest  || BUG("Bad guest type."))
-                    || fail(err ~ (id && " `" ~ id ~ "`") ~ ": "
+                    || fail(err ~ (id && " " ~ id.qID) ~ ": "
                                 ~ host .humanizeType() ~ (sep || " <- ")
                                 ~ guest.humanizeType());
     }
@@ -5118,8 +5118,7 @@ pub fn solve(
 
         if (annot && init.type)
             checkAssignable(host: annot, init.type, asArgument: !!(flags & F_ARG),
-                "Type annotation does not match init expression",
-                    id, "=");
+                "Type annotation does not match init expression", :id, " <- ");
 
         // Lose refs to temporaries.
         let t_init = init.type;

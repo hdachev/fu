@@ -17,7 +17,7 @@ fn compile_lexParseDeps(fname: string, via: string = "")
         module.order || throw(
             "import circle: `" ~ fname ~ "\n\t<- " ~ via ~ "`.");
 
-        return module.order || throw("BUG: !module.order");
+        return module.order || throw("BUG: !!module.in but !module.order");
     }
 
     shadow let implicit mut module = module.clone();
@@ -70,7 +70,27 @@ fn compile_lexParseDeps(fname: string, via: string = "")
         setModule(module);
     }
 
-    return module.order;
+    return module.order || throw("BUG: !module.order after lexParseDeps.");
+}
+
+fn compile_solveCodegen(implicit ref module: Module, implicit options: Options)
+{
+    module.out && throw("compile_solveCodegen: !!module.out");
+
+    //
+    let stat0 = ModuleStat_now();
+    module.out.solve = solver::solve();
+
+    if (options.dev & DEV_PrintAST)
+        ::inspect(module);
+
+    let stat1 = ModuleStat_now();
+    module.out.cpp = codegen::cpp_codegen();
+
+    let stat2 = ModuleStat_now();
+
+    module.stats.solve   = stat1 - stat0;
+    module.stats.codegen = stat2 - stat1;
 }
 
 
@@ -78,50 +98,72 @@ fn compile_lexParseDeps(fname: string, via: string = "")
 
 pub fn compile(
     implicit ref ctx: Context,
-    implicit options: Options,
     fname: string, via: string = "")
 {
     compile_lexParseDeps(:fname, :via);
 
     // Sort the dep order.
+    mut dep_order: i32[][];
+    for (mut i = 0; i < ctx.modules.len; i++)
     {
-        mut dep_order: i32[][];
-        for (mut i = 0; i < ctx.modules.len; i++)
-        {
-            let module = ctx.modules[i];
-            dep_order.grow_if_oob(module.order.dep_depth) ~= module.modid;
-        }
-
-        ctx.dep_order = dep_order.join();
+        let module = ctx.modules[i];
+        dep_order.grow_if_oob(module.order.dep_depth) ~= module.modid;
     }
 
+    ctx.dep_order = dep_order.join();
+
     //
-    for (mut i = 0; i < ctx.dep_order.len; i++)
+    for (mut i = 0; i < dep_order.len; i++)
     {
-        let modid  = ctx.dep_order[i];
-        let module = ctx.modules[modid];
-        if (module.out)
-            continue;
+        let modids = dep_order[i];
 
-        shadow let implicit mut module = module.clone();
+        //*
 
-        //
-        let stat0 = ModuleStat_now();
-        module.out.solve = solver::solve();
+        modids.each: |modid|
+        {
+            let module = ctx.modules[modid];
+            if (!module.out)
+            {
+                shadow let implicit mut module = module.clone();
+                compile_solveCodegen();
+                setModule(module);
+            }
+        }
 
-        if (options.dev & DEV_PrintAST)
-            ::inspect(module);
+        /*/
+        struct Result {
+            module?:    Module;
+            error?:     string;
+        };
 
-        let stat1 = ModuleStat_now();
-        module.out.cpp = codegen::cpp_codegen();
+        let results: Result[] = modids.par::map(|modid|
+        {
+            try
+            {
+                let module = ctx.modules[modid];
+                if (module.out)
+                    continue Result();
 
-        let stat2 = ModuleStat_now();
+                shadow let implicit mut module = module.clone();
+                compile_solveCodegen();
+                continue Result(:module);
+            }
+            catch (error)
+            {
+                continue Result(:error ||
+                    "COMPILER BUG: Empty error string, modid=" ~ modid);
+            }
+        });
 
-        module.stats.solve   = stat1 - stat0;
-        module.stats.codegen = stat2 - stat1;
+        results.each: |result|
+        {
+            if (result.error)
+                throw(result.error);
+            else if (result.module.out)
+                setModule(result.module);
+        }
 
-        //
-        setModule(module);
+        //*/
     }
 }
 

@@ -37,7 +37,6 @@ pub struct ModuleOrder
 
 pub struct ModuleOutputs
 {
-    deps:       i32[];
     types:      Struct[];
     solve:      SolverOutput;
     cpp:        CodegenOutput;
