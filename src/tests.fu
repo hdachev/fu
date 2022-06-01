@@ -3834,6 +3834,22 @@ pub extern fn runTests()
         fn main()                           = move_Val_into_Out(Val(0)).v.x;
     `);
 
+    ZERO(`
+        fn must_not_move_mystr(n: i32) {
+            mut mystr = "";
+            for (mut i = 0; i < n; i++)
+                mystr ~= "!";
+
+            mut result: string[];
+            for (mut i = 0; i < n; i++)
+                result ~= mystr;
+
+            return result.join();
+        }
+
+        fn main() = must_not_move_mystr(3).len - 9;
+    `);
+
     // /Borrow checker
 
 
