@@ -222,6 +222,11 @@ pub fn solve(
         return FAIL(reason);
     }
 
+    shadow fn BUG(mut reason?: string)
+    {
+        fail("COMPILER BUG:\n\n\t" ~ (reason || "Assertion failed."));
+    }
+
     fn qWHAT(o: Overload)
     {
         let kind = o.kind;
