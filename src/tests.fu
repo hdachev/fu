@@ -123,14 +123,14 @@ pub extern fn runTests()
     `);
 
     ZERO(`
-        return <fail EXIT CODE 3>
+        return <fail COMPILER BUG or INCORRECT TESTCASE exit code 3>
                         3 <pass/>
                         0 </fail>
     `);
 
     ZERO(`
         return 0
-        <fail EXIT CODE>
+        <fail COMPILER BUG or INCORRECT TESTCASE exit code>
             || throw("TESTERR")
                  <pass/></fail>
     `);

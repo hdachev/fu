@@ -259,7 +259,7 @@ pub fn build(
         mut explain = "";
         if (onfail)
         {
-            explain = "\nFailing testcase:\n\n";
+            explain = "\n\n\tCOMPILER BUG or INCORRECT TESTCASE:\n\n";
             for (mut i = 1; i < modules.len; i++)
                 explain ~= onfail == "print-src"
                     ? modules[i].in.src
@@ -267,7 +267,7 @@ pub fn build(
 
             if (onfail == "print-src")
             {
-                explain ~= "\nSources:\n";
+                explain ~= "\n\n\tGenerated code:\n\n";
                 for (mut i = 1; i < modules.len; i++)
                     explain ~= modules[i].out.cpp.src;
             }
