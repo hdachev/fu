@@ -3245,6 +3245,30 @@ pub extern fn runTests()
     `);
 
     ZERO(`
+        <fail explicit>
+        nocopy <pass/></fail>
+        struct NC { x: i32; y: i32 };
+
+        fn wants_val(mut a: NC) {
+            a.x++;
+            a.y++;
+            return a;
+        }
+
+        fn incr_by(mut a: NC, b: NC) {
+            a.x += b.x;
+            a.y += b.y;
+            return a;
+        }
+
+        fn main() {
+            mut v = NC(-1, -1);
+            mut w = wants_val(v);
+            return (w || v).x + 1;
+        }
+    `);
+
+    ZERO(`
         nocopy struct SolvedNode {
             items: SolvedNode[];
         };

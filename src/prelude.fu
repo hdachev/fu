@@ -309,7 +309,10 @@ fn <=(a: string, b: string): bool __native("<fu/vec/cmp.h>", "<=");
 
 
 // D-style concats.
-
+//
+// TODO FIX these concats hide copies
+//  which also means they dont work correctly for nocopy stuff
+//
 fn ~(a: [$T;], b: [$T;]): $T[] __native("<fu/vec/concat.h>",     "+");
 fn ~(a: [$T;], b:  $T  ): $T[] __native("<fu/vec/concat_one.h>", "+");
 fn ~(a:  $T  , b: [$T;]): $T[] __native("<fu/vec/concat_one.h>", "+");
