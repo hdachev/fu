@@ -2060,12 +2060,22 @@ pub fn solve(
         }
         else if (k == "copy" || k == "move")
         {
-            propagateType(node.items.only, :relax_mask,
+            ref item = node.items.only;
+
+            //
+            if (k == "copy")
+            {
+                if (!item.type.is_rx_copy)
+                    fail("Needs an explicit STEAL or CLONE: " ~ humanizeType(item.type));
+            }
+
+            //
+            propagateType(item, :relax_mask,
                 slot: k == "copy"
                     ? make_copyable(slot)
                     : slot);
 
-            node.items.only.is_ref || fail(
+            item.is_ref || fail(
                 "TODO: Relaxed a copy/move to a value, no point in keeping the outer node.");
         }
         else if (k == "arrlit")
@@ -6487,9 +6497,6 @@ pub fn solve(
 
     fn createCopy(node: SolvedNode): SolvedNode
     {
-        if (!node.type.is_rx_copy)
-            fail("Needs an explicit STEAL or CLONE: " ~ humanizeType(node.type));
-
         if (!node.type.is_trivial)
         {
             USE_nontriv_autocopy || fail("Non-trivial implicit copy.");
