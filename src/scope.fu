@@ -257,8 +257,8 @@ fn search(
         if (scope_iterator == skiptrap)
         {
             nextSkip();
-            if (scope_iterator == -1)
-                break;
+            scope_iterator++;
+            continue;
         }
 
         let item = scope_iterator >= items.len
