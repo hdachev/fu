@@ -231,17 +231,8 @@ pub fn cpp_codegen(implicit module: Module, implicit ctx: Context): CodegenOutpu
             //  let b = a.b;    // B& b = a.b;      // const B& wouldn't allow move
             //  return b;       // return move(b);  // here
             //
-            if (mode & M_MOVABLE)
-            {
-                // Only useful if current fn returns a nontriv value.
-                //  We could notice current fn does a move-return.
-                //   Ideally we would actually know the dependecy chain
-                //    so we'll only do this if really needed for this variable.
-                //
-                let fnret = GET(Target(:module.modid, index: _current_fn.index)).type;
-                if !(fnret.is_trivial || fnret.is_ref)
-                    return fwd ~ "&";
-            }
+            if (mode & M_MOVABLE && !type.is_trivial)
+                return fwd ~ "&";
 
             return "const " ~ fwd ~ "&";
         }
@@ -799,7 +790,19 @@ pub fn cpp_codegen(implicit module: Module, implicit ctx: Context): CodegenOutpu
 
         if (has_val)
         {
-            let annot   = typeAnnot(type);
+            mut force_mut = type.is_ref;
+            type.lifetime.uni0n.each: |r|
+            {
+                let local = Region_asLocal(r);
+                if (!local || !(nested(local).flags & F_MOVED_FROM))
+                {
+                    force_mut = false;
+                    break;
+                }
+            }
+
+            //
+            let annot   = typeAnnot(type, force_mut && M_MOVABLE);
             let id      = emitTEMPVAR(annot, :ptrflip, name && name ~ "_v");
 
             let out     = ptrflip ? "*" ~ id : cgMove(:type, id);
