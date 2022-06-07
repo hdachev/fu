@@ -3856,7 +3856,7 @@ pub extern fn runTests()
 
     // Move on last use
 
-    TODO_move(`
+    ZERO(`
         nocopy struct Val { x: i32 };
         struct Out { v: Val };
         fn move_Val_into_Out(mut v: Val)    = Out(:v);

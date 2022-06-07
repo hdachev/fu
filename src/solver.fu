@@ -19,8 +19,6 @@ let OPTI_dedupe_vars        = true;
 let OPTI_flatten_blocks     = true;
 let OPTI_bck                = true;
 
-let USE_nontriv_autocopy    = true;
-
 let SELF_TEST               = true;
 
 
@@ -134,6 +132,9 @@ pub fn solve(
 
         // The replacement for the callsites stuff.
         var_usage?:     Type[];
+
+        //
+        used_again?:    bitset::BitSet;
     };
 
     mut _current_fn:                CurrentFn;
@@ -1914,6 +1915,52 @@ pub fn solve(
         ////////////////////////////
 
         //
+        fn tryTrackLastUse(lt: Lifetime)
+        {
+            if (relax_mask != RELAX_all)
+                return false;
+
+            // TODO FIX just flat out disabling move-on-last-use in loops
+            mut canMove = _current_fn.loop_start == 0;
+
+            for (mut i = 0; i < lt.uni0n.len; i++)
+            {
+                let r = lt.uni0n[i];
+                let local = Region_asLocal(r);
+                if !(local && tryTrackLastUse(nested(local)))
+                {
+                    // Can't break early,
+                    //  needs to flag all lifetimes underneath.
+                    canMove = false;
+                }
+            }
+
+            return canMove;
+        }
+
+        fn tryTrackLastUse(t: Target)
+        {
+            if (relax_mask != RELAX_all)
+                return false;
+
+            if !(t.isNested && _current_fn.used_again.add_once(t.index))
+                return false;
+
+            let o = GET(t);
+            let letNode = o.solved;
+            if (letNode.is_ref)
+            {
+                if (o.flags & F_ARG)
+                    return false;
+
+                if (!tryTrackLastUse(Lifetime_climbType(o).lifetime))
+                    return false;
+            }
+
+            return true;
+        }
+
+        //
         node.type.try_relax(:slot, :relax_mask);
         shadow let slot = node.type;
 
@@ -1939,9 +1986,30 @@ pub fn solve(
         }
         else if (k == "if")
         {
+            // MOVE ON LAST USE ////////////////////////////////////////////
+            mut used_again0 = _current_fn.used_again;
+            mut used_again1: bitset::BitSet;
+            // MOVE ON LAST USE ////////////////////////////////////////////
+
             for (mut i = node.items.len; i --> 0; )
+            {
+                // MOVE ON LAST USE ////////////////////////////////////////////
+                if (i == 1)
+                {
+                    // Cons branch, alt already solved.
+                    swap(used_again1, _current_fn.used_again);
+                    swap(_current_fn.used_again, used_again0);
+                }
+                else if (i == 0)
+                {
+                    // Finally the cond, cons and alt already solved.
+                    _current_fn.used_again.add(used_again1);
+                }
+                // MOVE ON LAST USE ////////////////////////////////////////////
+
                 propagateType(node.items[i], :relax_mask,
                     i != 0 ? slot : t_bool);
+            }
         }
 
         //
@@ -1967,10 +2035,23 @@ pub fn solve(
                         usage = type_tryIntersect(usage, slot) || fail(
                             t.qWHAT ~ ": Usage intersection failure: `"
                                     ~ humanizeType(usage) ~ "` & `" ~ humanizeType(slot) ~ "`.");
+
+                    // MOVE ON LAST USE ////////////////////////////////////////////
+                    tryTrackLastUse(t);
+                    // MOVE ON LAST USE ////////////////////////////////////////////
                 }
 
                 return;
             }
+
+            // MOVE ON LAST USE ////////////////////////////////////////////
+            {
+                let host_args = t.args;
+                for (mut i = 0; i < host_args.len; i++)
+                    if (host_args[i].is_ref)
+                        tryTrackLastUse(node.items[i].lifetime);
+            }
+            // MOVE ON LAST USE ////////////////////////////////////////////
 
             if (t.spec_of && t.type.is_ref)
             {
@@ -2060,25 +2141,56 @@ pub fn solve(
             // What do we do here? //
             /////////////////////////
         }
-        else if (k == "copy" || k == "move")
+        else if (k == "move")
         {
-            ref item = node.items.only;
-
+            // TEMP this is just for the maybeCopyOrMove(isReturn) stuff,
+            //  nothing else can emit a move before the last propagateType.
             //
-            if (k == "copy")
+            propagateType(node.items.only, :relax_mask, :slot);
+        }
+        else if (k == "copy")
+        {
+            if (relax_mask != RELAX_all)
+                fail("Found a `copy` node during first relax.");
+
+            ref item = node.items.only;
+            mut isCopy = true;
             {
-                if (!item.type.is_rx_copy)
-                    fail("Needs an explicit STEAL or CLONE: " ~ humanizeType(item.type));
+                // Move on last use.
+                if (tryTrackLastUse(item.type.lifetime))
+                {
+                    isCopy = false;
+                }
+                else
+                {
+                    // ... or fail if non-copyable.
+                    if (!item.type.is_rx_copy)
+                        fail("Needs an explicit STEAL or CLONE: " ~ humanizeType(item.type));
+
+                    if (!node.type.is_trivial)
+                        makeNote(N_NonTrivAutoCopy);
+                }
             }
 
             //
             propagateType(item, :relax_mask,
-                slot: k == "copy"
+                slot: isCopy
                     ? make_copyable(slot)
                     : slot);
 
             item.is_ref || fail(
                 "TODO: Relaxed a copy/move to a value, no point in keeping the outer node.");
+
+            //
+            if (!isCopy)
+            {
+                // TODO FIX C++ codegen uses the F_MOVED_FROM flag
+                //  to remove `const` annotations on locals & refs to locals.
+                //
+                Lifetime_F_MOVED_FROM(item.type.lifetime);
+
+                node.kind = "move";
+            }
         }
         else if (k == "arrlit")
         {
@@ -2136,11 +2248,24 @@ pub fn solve(
             fn post_cond    = node.items[LOOP_POST_COND];
             fn post         = node.items[LOOP_POST];
 
+            // TODO FIX ////////////////////////////////////////////////////
+            // MOVE ON LAST USE ////////////////////////////////////////////
+            _current_fn.loop_start++;
+            // MOVE ON LAST USE ////////////////////////////////////////////
+            // TODO FIX ////////////////////////////////////////////////////
+
             // Relax in reverse.
             if (post)       propagateType(post, t_void, :relax_mask);
             if (post_cond)  propagateType(post_cond, t_bool, :relax_mask);
             if (body)       propagateType(body, t_void, :relax_mask);
             if (pre_cond)   propagateType(pre_cond, t_bool, :relax_mask);
+
+            // TODO FIX ////////////////////////////////////////////////////
+            // MOVE ON LAST USE ////////////////////////////////////////////
+            _current_fn.loop_start--;
+            // MOVE ON LAST USE ////////////////////////////////////////////
+            // TODO FIX ////////////////////////////////////////////////////
+
             if (init)       propagateType(init, t_void, :relax_mask);
         }
         else if (k == "try")
@@ -6490,36 +6615,20 @@ pub fn solve(
             return;
         }
 
-        // Copy or move.
-        let canMove = isReturn && node.type.lifetime.Lifetime_unwind()
-                                                    .Lifetime_vs() > 0;
-
-        node = canMove ? createMove(node) : createCopy(node);
-    }
-
-    fn createCopy(node: SolvedNode): SolvedNode
-    {
-        if (!node.type.is_trivial)
+        // TODO FIX move on last use should take care of this later,
+        //  currently gets confused around block returns
+        //   which it mistakes for preceding uses.
+        //
+        mut kind = kind::copy;
+        if (isReturn && node.type.lifetime.Lifetime_unwind().Lifetime_vs() > 0)
         {
-            USE_nontriv_autocopy || fail("Non-trivial implicit copy.");
-            makeNote(N_NonTrivAutoCopy);
+            kind = "move";
+            Lifetime_F_MOVED_FROM(node.type.lifetime);
         }
 
-        return SolvedNode(
-            kind:   "copy",
-            items:  [ node ],
-            type:   clear_refs(node.type));
-    }
-
-    fn createMove(node: SolvedNode): SolvedNode
-    {
-        // C++ codegen uses the F_MOVED_FROM flag
-        //  to remove `const` annotations on locals & refs to locals.
-        //
-        Lifetime_F_MOVED_FROM(node.type.lifetime);
-
-        return SolvedNode(
-            kind:   "move",
+        // This may convert to a move during relaxAll.
+        node = SolvedNode(
+            :kind,
             items:  [ node ],
             type:   clear_refs(node.type));
     }
