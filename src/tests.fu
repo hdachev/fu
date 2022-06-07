@@ -3851,6 +3851,11 @@ pub extern fn runTests()
         }
     `]);
 
+    // /Borrow checker
+
+
+    // Move on last use
+
     TODO_move(`
         nocopy struct Val { x: i32 };
         struct Out { v: Val };
@@ -3874,7 +3879,36 @@ pub extern fn runTests()
         fn main() = must_not_move_mystr(3).len - 9;
     `);
 
-    // /Borrow checker
+    ZERO(`
+        struct Type {
+            canon: string;
+            quals: int;
+        };
+
+        fn takes_two_strings(mut a: Type, mut b: Type) {
+            b.canon ~= a.canon;
+            a.canon ~= b.canon;
+            a.quals |= b.quals;
+            return a;
+        }
+
+        fn move_on_last_use_OOE(mut canon: string, quals: int) {
+            canon ~= canon;
+            return takes_two_strings(
+                Type(:canon, :quals),
+                Type(:canon, :quals));  // out of order move-into-struct will break this
+        }
+
+        fn main() {
+            let res = move_on_last_use_OOE(
+                "1234567890abcdef1234567890abcdef" // len=32, *2 = 64, *3 = 192
+                    1000);
+
+            return res.canon.len + res.quals - 1192;
+        }
+    `);
+
+    // /Move on last use
 
 
     // Stuff that isn't working out quite right -
