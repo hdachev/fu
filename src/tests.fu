@@ -3927,6 +3927,37 @@ pub extern fn runTests()
         }
     `);
 
+    ZERO(`
+        struct Type {
+            canon: string;
+            quals: int;
+        };
+
+        fn takes_two_strings_and_an_int(mut a: Type, mut b: Type, c: int) {
+            b.canon ~= a.canon;
+            a.canon ~= b.canon;
+            a.quals |= b.quals;
+            a.quals += c;
+            return a;
+        }
+
+        fn moves_reordered_by_bck_OOE(mut canon: string, mut quals: int) {
+            canon ~= canon;
+            return takes_two_strings_and_an_int(
+                Type(:canon, 0),
+                Type(:canon, quals++), // quals++ triggered bck MUSTSEQ
+                             quals  ); //  which reordered arg b BEFORE arg a,
+        }                              //   which broke move-on-last-use.
+
+        fn main() {
+            let res = moves_reordered_by_bck_OOE(
+                "1234567890abcdef1234567890abcdef" // len=32, *2 = 64, *3 = 192
+                    0);
+
+            return res.canon.len + res.quals - 193;
+        }
+    `);
+
     // /Move on last use
 
 
