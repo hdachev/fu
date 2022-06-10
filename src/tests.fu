@@ -3958,6 +3958,34 @@ pub extern fn runTests()
         }
     `);
 
+    ZERO(`
+        fn track_last_loop_confusion(mut a: string, mut b: string)
+        {
+            for (mut i = 0; i < 6; i++) {
+                a ~= a; // foil smallstring opti
+                b ~= b; //  both are 64 chars long
+            }
+
+            ref x = a.len == 64 ? b : a;
+            ref y = b.len == 64 ? x : a; // y points to b two refs deep
+
+            mut result = b; // <-- BROKEN MOVE FROM b HERE
+
+            // once
+            for (mut i = result.len / 64; i --> 0; ) {
+                y ~= y;         // now 128, ensures y not a view
+                result ~= y;    // for a total of 192
+            }
+
+            return result;
+        }
+
+        fn main() {
+            mut res = track_last_loop_confusion("a", "b");
+            return res.len == 192 ? 0 : 1;
+        }
+    `);
+
     // /Move on last use
 
 
