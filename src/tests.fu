@@ -3913,7 +3913,7 @@ pub extern fn runTests()
 
         fn move_on_last_use_OOE(mut canon: string, quals: int) {
             canon ~= canon;
-            return takes_two_strings(
+            return takes_two_strings(   ;; N_MoveMustSeq
                 Type(:canon, :quals),
                 Type(:canon, :quals));  // out of order move-into-struct will break this
         }
@@ -3943,7 +3943,7 @@ pub extern fn runTests()
 
         fn moves_reordered_by_bck_OOE(mut canon: string, mut quals: int) {
             canon ~= canon;
-            return takes_two_strings_and_an_int(
+            return takes_two_strings_and_an_int(    ;; N_MoveMustSeq
                 Type(:canon, 0),
                 Type(:canon, quals++), // quals++ triggered bck MUSTSEQ
                              quals  ); //  which reordered arg b BEFORE arg a,

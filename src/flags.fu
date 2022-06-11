@@ -161,6 +161,8 @@ flags SolverNotes: i32
     N_BckSoftRisk
     N_BckMustSeq
 
+    N_MoveMustSeq
+
     N_SD_HasStaticInit
     N_SD_ExternPrivates
 }

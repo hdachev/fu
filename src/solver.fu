@@ -116,6 +116,17 @@ pub fn solve(
             events.i.Events_merge(snap.i);
     }
 
+    struct Moves
+    {
+        used_again:     bitset::BitSet;
+        just_moved:     bitset::BitSet;
+        just_used:      bitset::BitSet;
+    };
+
+    fn add(ref dest: Moves, src: Moves)
+        for (fieldname i: dest)
+            dest.i.add(src.i);
+
     struct CurrentFn
     {
         using out:      SolvedNode;
@@ -134,7 +145,7 @@ pub fn solve(
         var_usage?:     Type[];
 
         //
-        used_again?:    bitset::BitSet;
+        using moves?:   Moves;
     };
 
     mut _current_fn:                CurrentFn;
@@ -1915,49 +1926,68 @@ pub fn solve(
         ////////////////////////////
 
         //
-        fn tryTrackLastUse(lt: Lifetime)
+        inline fn PASS_MoveOnLastUse = relax_mask == RELAX_all;
+
+        fn trackUse(lt: Lifetime, ref bitset: bitset::BitSet)
         {
-            if (relax_mask != RELAX_all)
-                return false;
+            fn trackUse(t: Target)
+            {
+                if (!bitset.add_once(t.index))
+                    return false;
 
-            // TODO FIX just flat out disabling move-on-last-use in loops
-            mut canMove = _current_fn.loop_start == 0;
+                let o = GET(t);
+                let letNode = o.solved;
+                if (letNode.is_ref)
+                {
+                    if (o.flags & F_ARG)
+                        return false;
 
+                    if (!trackUse(Lifetime_climbType(o).lifetime, :bitset))
+                        return false;
+                }
+
+                return true;
+            }
+
+            mut allTrue = true;
             for (mut i = 0; i < lt.uni0n.len; i++)
             {
                 let r = lt.uni0n[i];
                 let local = Region_asLocal(r);
-                if !(local && tryTrackLastUse(nested(local)))
+                if !(local && trackUse(nested(local)))
                 {
                     // Can't break early,
                     //  needs to flag all lifetimes underneath.
-                    canMove = false;
+                    allTrue = false;
                 }
             }
 
-            return canMove;
+            return allTrue;
         }
 
-        fn tryTrackLastUse(t: Target)
+        fn tryTrackLastUse(lt: Lifetime)
         {
-            if (relax_mask != RELAX_all)
-                return false;
+            return PASS_MoveOnLastUse
+                && trackUse(:lt, _current_fn.used_again)
 
-            if !(t.isNested && _current_fn.used_again.add_once(t.index))
-                return false;
+                // TODO FIX just flat out disabling move-on-last-use in loops
+                && _current_fn.loop_start == 0;
+        }
 
-            let o = GET(t);
-            let letNode = o.solved;
-            if (letNode.is_ref)
+        fn trackJustMoved(lt: Lifetime)
+        {
+            for (mut i = 0; i < lt.uni0n.len; i++)
             {
-                if (o.flags & F_ARG)
-                    return false;
+                let r = lt.uni0n[i];
+                let local = Region_asLocal(r) || BUG(
+                    "trackJustMoved: found a non-local.");
 
-                if (!tryTrackLastUse(Lifetime_climbType(o).lifetime))
-                    return false;
+                let target = nested(local);
+                _current_fn.just_moved.add_once(target.index) || BUG(
+                    "trackJustMoved: already moved.");
+
+                trackJustMoved(Lifetime_climbType(target).lifetime);
             }
-
-            return true;
         }
 
         //
@@ -1987,8 +2017,8 @@ pub fn solve(
         else if (k == "if")
         {
             // MOVE ON LAST USE ////////////////////////////////////////////
-            mut used_again0 = _current_fn.used_again;
-            mut used_again1: bitset::BitSet;
+            mut moves0 = _current_fn.moves;
+            mut moves1: Moves;
             // MOVE ON LAST USE ////////////////////////////////////////////
 
             for (mut i = node.items.len; i --> 0; )
@@ -1997,13 +2027,13 @@ pub fn solve(
                 if (i == 1)
                 {
                     // Cons branch, alt already solved.
-                    swap(used_again1, _current_fn.used_again);
-                    swap(_current_fn.used_again, used_again0);
+                    swap(moves1, _current_fn.moves);
+                    swap(_current_fn.moves, moves0);
                 }
                 else if (i == 0)
                 {
                     // Finally the cond, cons and alt already solved.
-                    _current_fn.used_again.add(used_again1);
+                    _current_fn.moves.add(moves1);
                 }
                 // MOVE ON LAST USE ////////////////////////////////////////////
 
@@ -2037,7 +2067,21 @@ pub fn solve(
                                     ~ humanizeType(usage) ~ "` & `" ~ humanizeType(slot) ~ "`.");
 
                     // MOVE ON LAST USE ////////////////////////////////////////////
-                    tryTrackLastUse(t);
+                    {
+                        tryTrackLastUse(node.lifetime);
+
+                        // MOVE ON LAST USE OOE ////////////////////////////////////////
+                        {
+                            // The problem with OOE is with callsite arguments -
+                            //  we only need to track var reads for this to work,
+                            //   lts passing through fns shouldn't affect this,
+                            //    because the lack of sequence points occurs between
+                            //     the individual callarg expressions.
+                            //
+                            trackUse(node.lifetime, _current_fn.just_used);
+                        }
+                        // MOVE ON LAST USE OOE ////////////////////////////////////////
+                    }
                     // MOVE ON LAST USE ////////////////////////////////////////////
                 }
 
@@ -2096,10 +2140,6 @@ pub fn solve(
                         checkAssignable(host: node.type, spec.type,
                             "Relaxed specialization does not return a subtype");
 
-                        //////////////////////////
-                        // TODO rewire callsite //
-                        //////////////////////////
-
                         if (node.type.is_ref)
                             node.type.lifetime = Lifetime_test(
                                 Lifetime_replaceArgsAtCallsite(spec, relaxed),
@@ -2116,6 +2156,7 @@ pub fn solve(
             {
                 let host_args   = node.target.args;
                 let rtl         = node.target.isRTL;
+                let ooe_isUndef = !rtl && node.items.len > 1;
 
                 // Here we're visiting stuff in reverse order of execution -
                 //  so RTL means visit left to right and vice versa, watch it.
@@ -2125,8 +2166,61 @@ pub fn solve(
                 let end         = rtl ? N : 0 - 1;
                 let incr        = rtl ? +1  :  -1;
 
+                // MOVE ON LAST USE OOE ////////////////////////////////////////
+                //  We'll empty the just_used bitset before solving each argument,
+                //   and merge the results at the end in case someone above needs them.
+                //    Also, snapshot moves so we can detect them in subsequent arguments.
+                //
+                mut just_used1: bitset::BitSet;
+                //
+                swap      (_current_fn.just_used, just_used1);
+                defer swap(_current_fn.just_used, just_used1);
+                //
+                mut just_moved00 = ooe_isUndef && _current_fn.just_moved;
+                mut MUSTSEQ_mask = 0;
+                // MOVE ON LAST USE OOE ////////////////////////////////////////
+
                 for (mut i = start; i != end; i += incr)
-                    node.items[i].propagateType(host_args[i].type, :relax_mask);
+                {
+                    ref arg = node.items[i];
+
+                    // MOVE ON LAST USE OOE ////////////////////////////////////////
+                    shadow let ooe_isUndef  = ooe_isUndef && i != start;
+                    mut just_moved0         = ooe_isUndef && _current_fn.just_moved;
+                    // MOVE ON LAST USE OOE ////////////////////////////////////////
+
+                    arg.propagateType(host_args[i].type, :relax_mask);
+
+                    // MOVE ON LAST USE OOE ////////////////////////////////////////
+                    if (ooe_isUndef)
+                    {
+                        let mustSeq = i;
+
+                        // Now we care about things that were moved during this call,
+                        //  but not within this argument,
+                        //   that concern lifetimes used here.
+                        //
+                        _current_fn.just_used.each: |index|
+                        {
+                            if (just_moved0.has(index) && !just_moved00.has(index))
+                            {
+                                // An argument that follows moves something we use here,
+                                //  so we must strictly evaluate before them.
+                                //
+                                MUSTSEQ_mask |= 1 << (mustSeq & 31);
+                                makeNote(N_MoveMustSeq);
+                                break;
+                            }
+                        }
+
+                        just_used1.add(_current_fn.just_used);
+                        _current_fn.just_used.clear();
+                    }
+                    // MOVE ON LAST USE OOE ////////////////////////////////////////
+                }
+
+                // Flush seqmask.
+                node.helpers.index |= MUSTSEQ_mask;
             }
         }
         else if (k == "int" || k == "real" || k == "char" || k == "str" || k == "definit" || k == "bool")
@@ -2187,7 +2281,12 @@ pub fn solve(
                 // TODO FIX C++ codegen uses the F_MOVED_FROM flag
                 //  to remove `const` annotations on locals & refs to locals.
                 //
-                Lifetime_F_MOVED_FROM(item.type.lifetime);
+                Lifetime_F_MOVED_FROM(item.lifetime);
+
+                // This is the move event bitmask,
+                //  currently only used for ensuring correct OOE.
+                //
+                trackJustMoved(item.lifetime);
 
                 node.kind = "move";
             }
@@ -7283,6 +7382,7 @@ pub fn solve(
                 mut ooe_writes: i32[];
 
                 let ooe_isRTL   = target.isRTL;
+                let ooe_isUndef = !ooe_isRTL;
 
                 ///////////////////////////////////////////////
                 let ooe_START   = ooe_isRTL ? args.len -1 : 0;
@@ -7679,7 +7779,7 @@ pub fn solve(
                                         // TODO FIX: have codegen disregard the mask
                                         //  when cpp guarantees the order - it's call-syntax related.
                                         //
-                                        if !(ooe_isRTL)
+                                        if (ooe_isUndef)
                                         {
                                             // Flag the arg that needs to eval first for explicit sequencing.
                                             //  This mask thing is kinda stupid, calls with more than 32 args

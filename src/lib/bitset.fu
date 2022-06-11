@@ -10,6 +10,11 @@ pub fn size(using _: BitSet)
     return _data.len * 8;
 }
 
+pub fn clear(using _: &mut BitSet)
+{
+    _data.clear();
+}
+
 pub fn add_once(using _: &mut BitSet, idx: int): bool
 {
     let no_neg = idx & int.MIN;
@@ -47,6 +52,30 @@ pub fn add(using _: &mut BitSet, other: BitSet)
     // TODO zip over in u64s first.
     for (mut i = 0; i < N; i++)
         _data[i] |= other._data[i];
+}
+
+pub fn rem(using _: &mut BitSet, other: BitSet)
+{
+    mut N = other._data.len;
+    if (N > _data.len)
+        N = _data.len;
+
+    // TODO zip over in u64s first.
+    for (mut i = 0; i < N; i++)
+        _data[i] &= ~other._data[i];
+
+    // Shrink to fit.
+    if (N == _data.len)
+    {
+        mut end = N;
+        while (end --> 0)
+            if (_data[end])
+                break;
+
+        _data.shrink(end + 1);
+    }
+
+    throw("NOT TESTED");
 }
 
 pub fn has(using _: BitSet, idx: int)
