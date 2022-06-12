@@ -3986,6 +3986,27 @@ pub extern fn runTests()
         }
     `);
 
+    TODO_move(`
+        nocopy struct NCItem { x: i32 };
+
+        fn unshift_odds_push_evens(n: i32) {
+            mut arr: NCItem[];
+            for (mut i = 0; i < n; i++) {
+                let item = NCItem(i);
+                if (i & 1)  arr.unshift(item);
+                else        arr.push(item);
+            }
+            return arr;
+        }
+
+        fn main() {
+            let arr = unshift_odds_push_evens(3);
+            return arr[0].x == 1
+                && arr[1].x == 0
+                && arr[2].x == 2 ? 0 : 1;
+        }
+    `);
+
     // /Move on last use
 
 
