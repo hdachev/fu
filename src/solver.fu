@@ -1946,7 +1946,7 @@ pub fn solve(
                         return false;
                 }
 
-                return true;
+                return t.index >= _current_fn.loop_start;
             }
 
             mut allTrue = true;
@@ -1968,10 +1968,7 @@ pub fn solve(
         fn tryTrackLastUse(lt: Lifetime)
         {
             return PASS_MoveOnLastUse
-                && trackUse(:lt, _current_fn.used_again)
-
-                // TODO FIX just flat out disabling move-on-last-use in loops
-                && _current_fn.loop_start == 0;
+                && trackUse(:lt, _current_fn.used_again);
         }
 
         fn trackJustMoved(lt: Lifetime)
@@ -2347,11 +2344,10 @@ pub fn solve(
             fn post_cond    = node.items[LOOP_POST_COND];
             fn post         = node.items[LOOP_POST];
 
-            // TODO FIX ////////////////////////////////////////////////////
             // MOVE ON LAST USE ////////////////////////////////////////////
-            _current_fn.loop_start++;
+            let loop_start0         = _current_fn.loop_start;
+            _current_fn.loop_start  = node.helpers.locals_start || BUG();
             // MOVE ON LAST USE ////////////////////////////////////////////
-            // TODO FIX ////////////////////////////////////////////////////
 
             // Relax in reverse.
             if (post)       propagateType(post, t_void, :relax_mask);
@@ -2359,11 +2355,9 @@ pub fn solve(
             if (body)       propagateType(body, t_void, :relax_mask);
             if (pre_cond)   propagateType(pre_cond, t_bool, :relax_mask);
 
-            // TODO FIX ////////////////////////////////////////////////////
             // MOVE ON LAST USE ////////////////////////////////////////////
-            _current_fn.loop_start--;
+            _current_fn.loop_start  = loop_start0;
             // MOVE ON LAST USE ////////////////////////////////////////////
-            // TODO FIX ////////////////////////////////////////////////////
 
             if (init)       propagateType(init, t_void, :relax_mask);
         }
@@ -4170,7 +4164,7 @@ pub fn solve(
         mut structImports:  i32[];
         mut flat_cnt:       i32;
 
-        mut all_triv = true;
+        mut all_triv = !!(out_type.is_rx_copy);
 
         // Solve members & check defaults.
         let primType = isPrimDecl && (
@@ -7313,8 +7307,6 @@ pub fn solve(
             if (!index)
                 return;
 
-            // println("bck_trackInit " ~ target.index ~ " " ~ target.name);
-
             // Clear invalidation event -
             //  we mistakenly collect these for writes to vars we depend on before init event.
             //   But this same technique can also be used for ref reassignment later on.
@@ -7324,11 +7316,6 @@ pub fn solve(
             // if (events.invalidated_by.unless_oob(index))         //
             //     events.invalidated_by[index] = WriteID();        //
             //////////////////////////////////////////////////////////
-
-            // The GET_next_local_index() thing doesn't work with LATE_BCK,
-            //  but this kinda fixes it.
-            if (_current_fn.loop_start > index)
-                _current_fn.loop_start = index;
         }
 
 
@@ -7826,20 +7813,18 @@ pub fn solve(
             bck_node(items[0]);
 
             // BORROWCK ////////////////////////////////////////////////////////////
-            let loop_start0                     = _current_fn.loop_start;
-            let loop_start                      = GET_next_local_index(); // TODO FIX patched up in bck_let but doesn't work
             let events0                         = _current_fn.events.used_in_a_loop;
+            let loop_start0                     = _current_fn.loop_start;
+            _current_fn.loop_start              = node.helpers.locals_start || BUG();
 
-            _current_fn.loop_start              = loop_start;
-            defer _current_fn.loop_start        = loop_start0;
+            defer {
+                _current_fn.loop_start              = loop_start0;
+                _current_fn.events.used_in_a_loop   = events0;
+            }
             ////////////////////////////////////////////////////////////////////////
 
             for (mut i = 1; i < items.len; i++)
                 bck_node(items[i]);
-
-            // BORROWCK ////////////////////////////////////////////////////////////
-            _current_fn.events.used_in_a_loop   = events0;
-            ////////////////////////////////////////////////////////////////////////
         }
 
         fn bck_if(ref node: SolvedNode)

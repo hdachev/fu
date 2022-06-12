@@ -3986,7 +3986,7 @@ pub extern fn runTests()
         }
     `);
 
-    TODO_move(`
+    ZERO(`
         nocopy struct NCItem { x: i32 };
 
         fn unshift_odds_push_evens(n: i32) {
