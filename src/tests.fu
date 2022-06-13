@@ -8483,6 +8483,50 @@ pub extern fn runTests()
         fn main() = (sRGB(r: 3) => linearRGB).r - 21;
     `);
 
+    TODO_conv(`
+        struct Overload     { name: string; };
+        struct Target       { o_index: i32; };
+
+        struct Helpers      { hd_index: i32; };
+        struct HelpersData  { target: Target; };
+
+        fn solve(ref overloads: Overload[], ref helpers: HelpersData[])
+        {
+            using fn GET(h: Helpers)
+                helpers[h.hd_index];
+
+            fn qWHAT(o: Overload)
+                o.name;
+
+            using fn GET(t: Target) {
+                ref o = overloads[t.o_index];
+
+                // The qWHAT here tried to (pointlessly) solve qWHAT below,
+                //  but GET hadn't solved yet so it wasn't available.
+                return o.qWHAT ? o : GET(Target(t.o_index + 1));
+            }
+
+            fn qWHAT(hd: HelpersData)
+                hd.target.qWHAT;
+
+            return Helpers(0).qWHAT;
+        }
+
+        fn main() {
+            mut overloads: Overload[];
+            mut helpers: HelpersData[];
+
+            for (mut i = 0; i < 2; i++) {
+                overloads ~= Overload(i && "o=" ~ i);
+                helpers ~= HelpersData(Target(i));
+            }
+
+            return solve(overloads, helpers) == "o=1" ? 0 : 1;
+        }
+    `);
+
+    // /Conversion functions.
+
 
     // Autocall, varargs & rest params.
 
