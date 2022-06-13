@@ -48,8 +48,6 @@ pub fn solve(
     implicit ref module: Module,
     implicit options: options::Options): SolverOutput
 {
-    let parse = module.in.parse.root;
-
     let shortModuleName = module.modid && getShortModuleName(module.fname);
 
 
@@ -157,9 +155,6 @@ pub fn solve(
         _helpers       ~= Helpers(index: _helpers_data.len);
         _helpers_data  ~= data;
     }
-
-    mut _anons:         i32;
-    fn ANON(): string = "0" ~ _anons++;
 
 
     // Setup the module globals helper.
@@ -3547,11 +3542,6 @@ pub fn solve(
             let extra_items = into
                 ? original.extra_items
                 : (target.EXT_mut.extra_items = typeParams.intoScopeItems());
-
-            /////////////////////////////////////
-            // Reset anon counters //////////////
-            if (!_current_fn_or_type) _anons = 0;
-            /////////////////////////////////////
 
             //////////////////////////////////////////////////
             let current_fn_or_type0     = _current_fn_or_type;
@@ -8400,7 +8390,7 @@ pub fn solve(
 
         let implicit _current_fnort = Target(:module.modid, 0);
 
-        let root = solveNode(parse);
+        let root = solveNode(module.in.parse.root);
 
         _current_fn.out && BUG("non-empty _current_fn.");
 
