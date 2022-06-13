@@ -322,6 +322,11 @@ pub fn solve(
         return target.modid < 0;
     }
 
+    fn parent(target: Target)
+    {
+        return Target(:module.modid, target.localOf);
+    }
+
     fn GET_crossmodule(target: Target, implicit _current_fnort: Target)
     {
         // When generating errors we can start traversing locals of other modules,
@@ -385,11 +390,6 @@ pub fn solve(
             return -target.modid;
 
         return target.local_of;
-    }
-
-    fn parent(target: Target)
-    {
-        return Target(:module.modid, target.localOf);
     }
 
     fn EXT_mut(target: Target)
@@ -1584,9 +1584,12 @@ pub fn solve(
                     // Enforce strict ordering of conversion functions -
                     //  they can still solve out of order, but you can't use the syntax sugar
                     //   before the `using` declaration. Makes everything way simpler.
-                    let here = _current_fn.target.index;
-                    if (here && t.index > here && t.modid == module.modid && t.local_of != here)
-                        return;
+                    //
+                    // Obsoleted by Decidability [C] below.
+                    //
+                    // let here = _current_fn.target.index;
+                    // if (here && t.index > here && t.modid == module.modid && t.local_of != here)
+                    //     return;
 
                     if (root && retype)
                         TODO_FIX_convert_args[0] = retype;
@@ -2987,17 +2990,19 @@ pub fn solve(
             kind: "fn", name: "__prep__",
             :node.flags, :status);
 
+        //
+        mut shadows     = !!(node.flags & F_SHADOW);
+        autoshadow(:shadows, :local_of, :id);
+
+        Scope_set(_scope, :target, :id, :shadows);
+
+        //
         ref ext         = target.EXT_mut;
         ext.local_of    = local_of;
 
         ext.template    = createTemplate(node);
         ext.min         = 0x7fffffff.i32;
         ext.max         = 0;
-
-        mut shadows     = !!(node.flags & F_SHADOW);
-        autoshadow(:shadows, :local_of, :id);
-
-        Scope_set(_scope, :target, :id, :shadows);
 
         // Experimental conversion functions.
         if (node.flags & F_CONVERSION)
@@ -3009,7 +3014,15 @@ pub fn solve(
     fn uPrepFn_B(target: Target)
     {
         ref template = target.EXT_mut.template;
-        if (template.scope_memo)
+
+        // Decidability [C]:
+        //
+        // Conversion fns don't see below their declaration,
+        //  otherwise we start running into conversion loop drama.
+        //
+        // This obsoletes Decidability [A] above.
+        //
+        if (template.scope_memo && !(template.node.flags & F_CONVERSION))
             template.scope_memo = Scope_snap(_scope);
     }
 

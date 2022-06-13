@@ -8483,7 +8483,7 @@ pub extern fn runTests()
         fn main() = (sRGB(r: 3) => linearRGB).r - 21;
     `);
 
-    TODO_conv(`
+    ZERO(`
         struct Overload     { name: string; };
         struct Target       { o_index: i32; };
 
