@@ -5205,8 +5205,6 @@ pub fn solve(
 
         if (out.flags & F_COMPOUND_ID)
         {
-            isArg || BUG("solveLet: F_COMPOUND_ID on a non-F_ARG.");
-
             let start   = id.find('!') + 1;
             let end     = id.find('.', start: start > 0 ? start : 0);
 
@@ -6582,8 +6580,10 @@ pub fn solve(
                 {
                     let slot = host_args[i];
 
-                    let arg_def = createLet(id: slot.name, init: args[i], // TODO__ORIGINAL_ANNOT_OR_TYPE
-                        :slot.flags &~ (F_ARG | F_COMPOUND_ID)); // As if not an arg + no autocall.
+                    let arg_def = createLet(
+                        id: n_fn.items[i].value,
+                        init: args[i],          // TODO__ORIGINAL_ANNOT_OR_TYPE
+                        :slot.flags &~ F_ARG);  // As if not an arg
 
                     if (arg_def.kind == "empty")
                         continue;

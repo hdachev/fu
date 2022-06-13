@@ -96,7 +96,6 @@ pub extern fn runTests()
     let TODO_ambig      = fn TODO;
 
     let TODO_Map        = fn TODO;
-    let TODO_rustsemi   = fn TODO;
 
     let SKETCH          = fn TODO;
 
@@ -7044,7 +7043,7 @@ pub extern fn runTests()
         fn main()                           greet(with: "Hello!") - 6;
     `);
 
-    TODO_args(`
+    ZERO(`
         fn Each(arr: $T[], visit)
             for (mut i = 0; i < arr.len; i++)
                 visit(arr[i], i?: i);
