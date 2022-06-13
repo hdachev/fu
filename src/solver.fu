@@ -162,8 +162,6 @@ pub fn solve(
     _scope.extended ~= Extended();  // global nodes and such
     push(HelpersData());            // not sure why this is needed
 
-    mut _current_fn_or_type = Target(:module.modid, index: 0); // root!
-
 
     // Can't we just list them all and scan through?
     //  Do we need the mangling nonsense?
@@ -181,7 +179,15 @@ pub fn solve(
         message:    string;
     };
 
-    mut _warnings: Warning[];
+    //////////////////////////////////////////////////////////////////////
+    // COMPILE SELF PERF                                                //
+    //  This closeover slows down compile self by ~300ms:               //
+    //   my interpretation is that this is a superexotic                //
+    //    that ends up used when everything else is kinda done,         //
+    //     and it just thrashes a lot of work.                          //
+    //                                                                  //
+    mut _warnings: Warning[];                                           //
+    //////////////////////////////////////////////////////////////////////
 
 
     //
@@ -3544,10 +3550,6 @@ pub fn solve(
                 : (target.EXT_mut.extra_items = typeParams.intoScopeItems());
 
             //////////////////////////////////////////////////
-            let current_fn_or_type0     = _current_fn_or_type;
-            defer _current_fn_or_type   = current_fn_or_type0;
-            _current_fn_or_type         = target;
-            //////////////////////////////////////////////////
             let implicit _current_fnort = target;
             //////////////////////////////////////////////////
 
@@ -4127,10 +4129,6 @@ pub fn solve(
         if (!solve)
             return createEmpty(target: out_target, type: out_type);
 
-        //////////////////////////////////////////////////
-        let current_fn_or_type0     = _current_fn_or_type;
-        defer _current_fn_or_type   = current_fn_or_type0;
-        _current_fn_or_type         = out_target;
         //////////////////////////////////////////////////
         let implicit _current_fnort = out_target;
         //////////////////////////////////////////////////
@@ -6382,7 +6380,7 @@ pub fn solve(
     }
 
     fn CallerNode(
-        debug: string,
+        debug: string, implicit _current_fnort: Target,
         mut target: Target, mut args: SolvedNode[] = [], reorder?: i32[], conversions?: Target[][])
             : SolvedNode
     {
@@ -6619,7 +6617,7 @@ pub fn solve(
             // Tracking call graph & type annotations.
             if (k == "fn" || k == "type")
             {
-                EXT_mut(target).callers.set::add(_current_fn_or_type.index);
+                EXT_mut(target).callers.set::add(_current_fnort.index);
                 detectRecursion(target);
             }
         }
