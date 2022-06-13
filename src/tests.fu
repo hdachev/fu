@@ -448,6 +448,17 @@ pub extern fn runTests()
         }
     `);
 
+    TODO_conv(`
+        struct Stuff { name: string };
+
+        fn shadowsStructMember(using stuff: Stuff, other: string) {
+            shadow let name = other || name;
+            return name;
+        }
+
+        fn main() = shadowsStructMember(Stuff("a"), "bb").len - 2;
+    `);
+
 
     // Templating checks.
 
