@@ -1696,6 +1696,25 @@ pub extern fn runTests()
     `);
 
     TODO_args(`
+        fn woot(ref a: i32, ref b: i32) {
+            ref c = a || b;
+            fn arg_defaulted_to_closure(ref x = c)
+                x *= 2;
+
+            arg_defaulted_to_closure( );
+            arg_defaulted_to_closure(a);
+            arg_defaulted_to_closure(b);
+        }
+
+        fn main() {
+            mut a = 1;
+            mut b = 1;
+            woot(a, b);
+            return a * 10 + b - 42;
+        }
+    `);
+
+    TODO_args(`
         fn test(ref a: i32, mut incr: i32) {
             fn woot(ref x, ref b = a) { // 'a' closes over here!
                 if (x & 1) {
