@@ -40,13 +40,6 @@ fn ScopeItem(id: string, target: Target, shadows: bool)
     ScopeItem(:id, :target.modid,
         packed: target.index.u32 | (shadows && (0x1 << 31)));
 
-fn target_TODOFIX(ref si: ScopeItem, target: Target)
-{
-    si.modid  = target.modid;
-    si.packed = target.index.u32;
-    return si;
-}
-
 
 
 ///////////////////////////////////////
@@ -200,6 +193,8 @@ fn search(
     extra_items?: [Target],
     field_items?: [ScopeItem]): Target
 {
+    shadows = false;
+
     // Searching & forcing results the same way.
     if (dont_search_just_return)
     {
@@ -217,7 +212,36 @@ fn search(
     else if (scope_iterator >= START)
         throw ("Scope/search: items shrunk while we iterated.");
 
-    // Scope skip.
+    // Prevent re-entry, otherwise we loop forever
+    //  if we're matching the very first item in scope.
+    defer if (!scope_iterator)
+        scope_iterator = -1;
+
+    // Field & extra items are simpler to deal with.
+    let extra_items_start = items.len;
+
+    {
+        let field_items_start = extra_items_start + extra_items.len;
+        while (scope_iterator --> field_items_start)
+        {
+            let item = field_items[scope_iterator - field_items_start];
+            if (item.id == id)
+                return item.target;
+        }
+
+        scope_iterator++;
+    }
+
+    if (scope_iterator > extra_items_start)
+    {
+        while (scope_iterator --> extra_items_start)
+            return extra_items[scope_iterator - extra_items_start];
+
+        scope_iterator++;
+    }
+
+    // Actual scope items,
+    //  this is the only stuff we need to scope-skip through.
     mut skiptrap = -1;
 
     fn nextSkip()
@@ -242,16 +266,11 @@ fn search(
             throw ("Scope/search: scope_skip will jump past end of items.");
     }
 
+    // Go.
     scope_iterator--;
     nextSkip();
     scope_iterator++;
 
-    // TODO clean this up
-    mut TODO_FIX = ScopeItem;
-    if (extra_items) TODO_FIX.id = id;
-
-    // TODO unroll into three loops,
-    //  for each kind of thing we're searching.
     while (scope_iterator --> 0)
     {
         if (scope_iterator == skiptrap)
@@ -261,19 +280,9 @@ fn search(
             continue;
         }
 
-        let item = scope_iterator >= items.len
-            ? scope_iterator >= items.len + extra_items.len
-                ? field_items[scope_iterator - items.len - extra_items.len]
-                : TODO_FIX.target_TODOFIX(extra_items[scope_iterator - items.len])
-            : items[scope_iterator];
-
+        let item = items[scope_iterator];
         if (item.id == id)
         {
-            // Prevent re-entry, otherwise we loop forever
-            //  if we're matching the very first item in scope.
-            if (!scope_iterator)
-                scope_iterator = -1;
-
             shadows = ScopeItem_shadows(item);
             return item.target;
         }
