@@ -6640,9 +6640,9 @@ pub extern fn runTests()
                || 123_456.789.i32 - 123456.789.i32;
     `);
 
-    TODO_conv(`                             // litfix through && /////
+    ZERO(`                                  // litfix through && /////
         fn test(a: u32, shadows: bool)      (a << 1) | (shadows && 1);
-        fn main()                           1.test.i32 - 2;
+        fn main()                           test(1, true).i32 - 3;
     `);
 
     ZERO([`
