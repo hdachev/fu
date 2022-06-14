@@ -5347,9 +5347,26 @@ pub extern fn runTests()
             let qq = ll | rr;
 
             if (qq == ll)   ifLeft();
-            else            ifNotLeft(qq == rr ? right : right[rq && 1, right.len]);
+            else            ifNotLeft(qq == rr ? right : qq ~ right[rq && 1, right.len]);
 
             return true;
+        }
+
+        fn TP_get(typeParams!: string, id!: string)
+        {
+            id || assert();
+
+            mut start = 0;
+            for (;;)
+            {
+                let idx = typeParams.find(id, :start);
+                if (idx < 0)
+                    return -1;
+
+                start = id.len;
+                if (typeParams[start] == ' ')
+                    return start + 1;
+            }
         }
 
         fn TP_upsert(ref typeParams!: string, id!: string, canon: string) {
@@ -5378,7 +5395,7 @@ pub extern fn runTests()
 
         fn main() {
             mut typeParams = "$T 3hey\t";
-            return TP_upsert(:typeParams, "$T", "4hey")
+            return TP_upsert(:typeParams, id: "$T", "4hey")
                 && typeParams == "$T 7hey\t" ? 0 : 101;
         }
     `);

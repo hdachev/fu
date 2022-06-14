@@ -181,7 +181,7 @@ fn  slice(a: $T[], start: int): $T[] __native("<fu/vec/slice.h>", "fu::slice");
 fn substr(a: $T[], start: int, end: int): $T[] __native("<fu/vec/slice.h>", "fu::substr");
 
 fn splice(ref a: $T[], start: int, count: int): void  __native(".splice");
-fn splice(ref a: $T[], start: int, count: int, mut b: $T[]): void  __native(".splice");
+fn splice(ref a: $T[], start: int, count: int, /*TODO FIX*/b: [$T]): void  __native(".splice");
 
 fn    pop(ref a: $T[]): void __native(".pop()");
 fn  shift(ref a: $T[]): void __native(".shift()");
@@ -343,8 +343,8 @@ fn assert(): never __native("<fu/never.h>", "fu_ASSERT()");
 
 // Stringifiables.
 
-fn ~ (    a: string, b.str) a ~ b;
-fn ~ (    a.str, b: string) a ~ b;
+fn ~ (    a: [byte], b.str) a ~ b;
+fn ~ (    a.str, b: [byte]) a ~ b;
 fn ~=(ref a: string, b.str) a ~= b;
 
 fn str(n: $T)
