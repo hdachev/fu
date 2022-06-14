@@ -1191,10 +1191,9 @@ pub fn parse(
         //  Expression tails cannot continue at or above current statement indent.
         let col00 = _col0;
 
-        if (mode & M_LINT_ENSURE_INDENT)
-            tokens[_idx].col > _col0 || warn(
-                "Ambiguous indent at `" ~ tokens[_idx].value
-                    ~ "`: expected more than " ~ _col0 ~ ", got " ~ tokens[_idx].col);
+        tokens[_idx].col >= _col0 + (mode & M_LINT_ENSURE_INDENT ? 1 : 0) || warn(
+            "Ambiguous indent at `" ~ tokens[_idx].value
+                ~ "`: expected more than " ~ _col0 ~ ", got " ~ tokens[_idx].col);
 
         //
         mut head = parseExpressionHead(:mode);
@@ -1555,6 +1554,10 @@ pub fn parse(
     {
         mut flags: Flags;
 
+        //////////////////
+        let col00 = _col0;
+        //////////////////
+
         mut first = true;
         for (;;)
         {
@@ -1584,6 +1587,13 @@ pub fn parse(
             mut optional = false;
 
             let tok0 = tokens[_idx];
+
+            // Whitespace lint.
+            _col0 = tok0.line > tokens[_idx - 1].line
+                  ? tok0.col.max(col00)
+                  : col00;
+
+            //
             if (tok0.kind == "op" && tok0.value == ":")
             {
                 autoName = true;
@@ -1622,6 +1632,10 @@ pub fn parse(
                 name    ? createArgID(name, expr, flags: optional && F_OPT_ARG)
                         : expr);
         }
+
+        //////////////
+        _col0 = col00;
+        //////////////
 
         return flags;
     }

@@ -4680,18 +4680,18 @@ pub fn solve(
     {
         return type_trySuper(a, b) || fail(
             (id && id.qID ~ ": ")
-            ~ reason
-            ~ "No common supertype: "
-            ~ humanizeType(a) ~ " | " ~ humanizeType(b));
+                ~ reason
+                ~ "No common supertype: "
+                ~ humanizeType(a) ~ " | " ~ humanizeType(b));
     }
 
     fn intersectionType(reason: string, a: Type, b: Type, id?: string)
     {
         return type_tryIntersect(a, b) || fail(
             (id && id.qID ~ ": ")
-            ~ reason
-            ~ "Cannot intersect types: "
-            ~ humanizeType(a) ~ " & " ~ humanizeType(b));
+                ~ reason
+                ~ "Cannot intersect types: "
+                ~ humanizeType(a) ~ " & " ~ humanizeType(b));
     }
 
     fn Lifetime_vs(lifetime: Lifetime, locals_start!?: i32)
@@ -7268,11 +7268,11 @@ pub fn solve(
                         else
                             RESOLVE_byMutvar(read) || fail(
                                 "Write to " ~ target.bck_name.qBAD
-                                ~ " at call to " ~ callsite.target.qWHAT
-                                ~ " invalidates the use of " ~ read.bck_name.qBAD ~ " at "
-                                ~ SLOW_findByReadID(readID).token.addr_and_snippet
-                                ~ "\n\t... on next loop iteration.\n\n\tWritten"
-                                ~ qSTACK(callsite.target, :position)); // TODO loop starts at x:x!
+                                    ~ " at call to " ~ callsite.target.qWHAT
+                                    ~ " invalidates the use of " ~ read.bck_name.qBAD ~ " at "
+                                    ~ SLOW_findByReadID(readID).token.addr_and_snippet
+                                    ~ "\n\t... on next loop iteration.\n\n\tWritten"
+                                    ~ qSTACK(callsite.target, :position)); // TODO loop starts at x:x!
                     }
                 }
 

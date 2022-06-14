@@ -87,7 +87,6 @@ pub extern fn runTests()
     let TODO_move       = fn TODO;
     let TODO_unique     = fn TODO;
     let TODO_inline     = fn TODO;
-    let TODO_lint       = fn TODO;
     let TODO_args       = fn TODO;
     let TODO_conv       = fn TODO;
     let TODO_fntype     = fn TODO;
@@ -98,8 +97,6 @@ pub extern fn runTests()
     let TODO_Map        = fn TODO;
 
     let SKETCH          = fn TODO;
-
-    let TODO_NICE_ERROR = fn TODO;
 
 
     //
@@ -2219,6 +2216,18 @@ pub extern fn runTests()
                 .abs;
 
         fn main() test ? 0 : 7;
+    `);
+
+    ZERO(`
+        fn id(x) = x;
+        fn main() {
+            return id(
+                0 +
+            <fail ambig indent>
+               0  <pass/>
+                0 </fail>
+            );
+        }
     `);
 
 
@@ -5332,7 +5341,7 @@ pub extern fn runTests()
         }
     `);
 
-    TODO_lint(`
+    ZERO(`
         fn tryIntersect(left: [byte], right: [byte], ifLeft, ifNotLeft) {
             let l =  left[0];
             let r = right[0];
@@ -5380,15 +5389,14 @@ pub extern fn runTests()
 
             let end = typeParams.find('\t', :start);
             return tryIntersect(typeParams[start, end], canon,
-                ifLeft: ||
-                {
+                ifLeft: || { /* egyptian */
                     return true;
                 },                  // <- Lint complained about the nested curlies here ...
                 ifNotLeft: |inter|
-                {
+                { /* pedantic */
                     typeParams.splice(start, end - start, inter);
                     return true;
-                }); // <-  ... and here.
+                });                 // <-  ... and here.
 
             return false;
         }
@@ -5808,17 +5816,17 @@ pub extern fn runTests()
                 i_mx, i_my, i_mz,
 
                 vec3( // point3
-                      mo.x * -i_mx.x
-                    + mo.y * -i_my.x
-                    + mo.z * -i_mz.x,
+                      mo.x * -i_mx.x +
+                      mo.y * -i_my.x +
+                      mo.z * -i_mz.x,
 
-                      mo.x * -i_mx.y
-                    + mo.y * -i_my.y
-                    + mo.z * -i_mz.y,
+                      mo.x * -i_mx.y +
+                      mo.y * -i_my.y +
+                      mo.z * -i_mz.y,
 
-                      mo.x * -i_mx.z
-                    + mo.y * -i_my.z
-                    + mo.z * -i_mz.z));
+                      mo.x * -i_mx.z +
+                      mo.y * -i_my.z +
+                      mo.z * -i_mz.z));
         }
 
         fn main() i32 <|
