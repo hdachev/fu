@@ -8645,13 +8645,13 @@ pub extern fn runTests()
         fn main()                                   inl_println('a', 'b') - 2;
     `);
 
-    TODO_conv(`
+    ZERO(`
         struct My { i: i32 };
 
         fn test(oh: My)
         {
             // autocall(): never
-            let str = |my: My|: never {
+            let str = |my: My|: never {             ;; N_DeadConv
                 return my.i; // exits test() here
             };
 

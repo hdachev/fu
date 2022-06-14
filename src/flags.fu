@@ -153,6 +153,7 @@ flags SolverNotes: i32
     N_DeadIfCons
     N_DeadArrlit
     N_DeadLoopInit
+    N_DeadConv
 
     N_NonTrivAutoCopy
 

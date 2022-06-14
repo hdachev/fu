@@ -1132,6 +1132,7 @@ pub fn solve(
                 shadow let args = args;
 
                 mut TODO_FIX_skip_autocalls = false;
+                mut TODO_FIX_dontBotherSpecializing = false;
                 ///////////////////////////////////
 
                 :TEST_AGAIN while (true)
@@ -1337,6 +1338,11 @@ pub fn solve(
 
                                 conversions.grow_if_oob(i) ~= t;
                                 autocall_reorder.len < 2 || BUG("autocall: reorder");
+
+                                // Converting to never means no point in going further,
+                                //  the caller node will never call this.
+                                if (t.type.is_never)
+                                    TODO_FIX_dontBotherSpecializing = true;
                             }
 
                             // Actual arg type.
@@ -1416,7 +1422,7 @@ pub fn solve(
                     }
 
                     // Specialize.
-                    if (kind == "template")
+                    if (kind == "template" && !TODO_FIX_dontBotherSpecializing)
                     {
                         mut cant_reuse: string;
 
@@ -6380,7 +6386,7 @@ pub fn solve(
 
     //
 
-    fn applyConversion(ref arg: SolvedNode, conversion: Target[])
+    fn applyConversion(ref arg: SolvedNode, conversion: Target[]): bool
     {
         for (mut i = 0; i < conversion.len; i++)
         {
@@ -6388,13 +6394,19 @@ pub fn solve(
             if (t.min || t.max && arg)
             {
                 arg = CallerNode("__using.a", t, [ arg ]);
-                continue;
+            }
+            else
+            {
+                i   && fail("Bad conversion chain, non-leading nullary: `" ~ t.name ~ "`.");
+                arg && fail("Bad conversion chain, about to throw away an argnode.");
+                arg = CallerNode("__using.b", t);
             }
 
-            i && fail("Bad conversion chain, non-leading nullary: `" ~ t.name ~ "`.");
-            arg && fail("Bad conversion chain, about to throw away an argnode.");
-            arg = CallerNode("__using.b", t);
+            if (arg.is_never)
+                return true; // N_DeadConv!
         }
+
+        return false;
     }
 
     fn CallerNode(
@@ -6422,7 +6434,18 @@ pub fn solve(
         for (mut argIdx = 0; argIdx < conversions.len; argIdx++)
         {
             let conversion = conversions[argIdx];
-            applyConversion(args[argIdx], :conversion);
+
+            // Dead code elim.
+            if (applyConversion(args[argIdx], :conversion))
+            {
+                // This is a bit dangerous -
+                //  we're discarding these args after the fact.
+                args.shrink(argIdx + 1);
+
+                //
+                makeNote(N_DeadConv);
+                return createBlock(t_never, args);
+            }
         }
 
         // Rest params.
