@@ -447,7 +447,7 @@ pub extern fn runTests()
         }
     `);
 
-    TODO_conv(`
+    ZERO(`
         struct Stuff { name: string };
 
         fn shadowsStructMember(using stuff: Stuff, other: string) {
