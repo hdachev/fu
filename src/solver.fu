@@ -192,8 +192,6 @@ pub fn solve(
 
     //
 
-    let t_string = createArray(t_byte);
-
     struct TypeParam {
         matched:  Type;
         consumed: Type;

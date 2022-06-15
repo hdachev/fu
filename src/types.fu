@@ -226,14 +226,14 @@ pub fn make_copyable(mut type: Type)
 
 pub fn serializeType(type: Type, debug!: string)
 {
-    type || BUG("serializeType: Falsy type in: " ~ debug);
+    type || throw("COMPILER BUG: serializeType: Falsy type in: " ~ debug);
 
     mut prefix: string;
 
     if (type.quals)
         prefix ~= type.quals;
 
-    return prefix ~ (type.canon || BUG("serializeType: No type.canon in: " ~ debug));
+    return prefix ~ (type.canon || throw("COMPILER BUG: serializeType: No type.canon in: " ~ debug));
 }
 
 pub fn humanizeQuals(type: Type)
@@ -318,6 +318,8 @@ pub fn TODO_FIX_isArray(type: Type): bool
     return type.quals & (q_rx_resize | q_rx_copy)
         && type.type_isSliceable();
 }
+
+pub let t_string = createArray(t_byte);
 
 
 //
