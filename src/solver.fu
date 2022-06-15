@@ -48,20 +48,47 @@ pub fn solve(
     implicit ref module: Module,
     implicit options: options::Options): SolverOutput
 {
-    let shortModuleName = module.modid && getShortModuleName(module.fname);
-
-
-    //
-
     let implicit mut _here: TokenIdx;
 
 
     //
 
-    mut _scope:         Scope;
-    mut _root_scope:    ScopeMemo;
-    mut _ss:            ScopeSkipMemos;
-    mut _field_items:   ScopeItem[];
+    struct Warning {
+        token:      TokenIdx;
+        message:    string;
+    };
+
+    struct SolverState
+    {
+        _scope:         Scope;
+        _root_scope:    ScopeMemo;
+        _ss:            ScopeSkipMemos;
+        _field_items:   ScopeItem[];
+
+        // Can't we just list them all and scan through?
+        //  Do we need the mangling nonsense?
+        //   We can bucket however many times we want here,
+        //    its append only and trivial to maintain.
+        _specs:         map::Map(string, Target); // mangle -> spec
+        _spec_errors:   string[];
+
+        //
+        _warnings:      Warning[];
+
+        // TODO FIX
+        TODO_FIX_convert_args:  SolvedNode[];
+        shortModuleName:        string;
+    };
+
+    let using mut ss: SolverState;
+
+    ss.shortModuleName          = module.modid && getShortModuleName(module.fname);
+    ss._spec_errors             = [ "BUG: Specializer reentry." ];
+    ss.TODO_FIX_convert_args    = [ SolvedNode ];
+
+
+    //
+
     mut _notes:         SolverNotes;
 
     struct RWEvent
@@ -161,33 +188,6 @@ pub fn solve(
 
     _scope.extended ~= Extended();  // global nodes and such
     push(HelpersData());            // not sure why this is needed
-
-
-    // Can't we just list them all and scan through?
-    //  Do we need the mangling nonsense?
-    //   We can bucket however many times we want here,
-    //    its append only and trivial to maintain.
-
-    mut _specs: map::Map(string, Target); // mangle -> spec
-    mut _spec_errors = [ "BUG: Specializer reentry." ];
-
-
-    //
-
-    struct Warning {
-        token:      TokenIdx;
-        message:    string;
-    };
-
-    //////////////////////////////////////////////////////////////////////
-    // COMPILE SELF PERF                                                //
-    //  This closeover slows down compile self by ~300ms:               //
-    //   my interpretation is that this is a superexotic                //
-    //    that ends up used when everything else is kinda done,         //
-    //     and it just thrashes a lot of work.                          //
-    //                                                                  //
-    mut _warnings: Warning[];                                           //
-    //////////////////////////////////////////////////////////////////////
 
 
     //
@@ -463,10 +463,6 @@ pub fn solve(
             :type, :target, token: _here,
             :helpers);
     }
-
-    // TODO FIX /////////////////////////////////
-    mut TODO_FIX_convert_args = [ SolvedNode(kind: "", type: Type()) ];
-    /////////////////////////////////////////////
 
 
     //
