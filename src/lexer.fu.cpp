@@ -6,7 +6,6 @@
 #include <fu/never.h>
 #include <fu/decstr.h>
 #include <fu/default.h>
-#include <fu/vec/cmp.h>
 #include <fu/vec/slice.h>
 #include <fu/vec/concat.h>
 #include <fu/init_priority.h>
@@ -14,13 +13,13 @@
 
 struct s_LexerOutput;
 struct s_Token;
-enum s_kind: int;
+enum s_kind: fu::u8;
 fu_STR lower_FZjKqN6X(fu_STR&&);
 fu_STR bytes_BKZeX3f7(unsigned);
 
                                 #ifndef DEF_s_kind
                                 #define DEF_s_kind
-enum s_kind: int
+enum s_kind: fu::u8
 {
     s_kind_sof = 1,
     s_kind_id = 2,
@@ -54,37 +53,38 @@ enum s_kind: int
     s_kind_typeassert = 30,
     s_kind_typeparam = 31,
     s_kind_addroffn = 32,
-    s_kind_forfieldsof = 33,
-    s_kind_pragma = 34,
-    s_kind_void = 35,
-    s_kind_struct = 36,
-    s_kind_union = 37,
-    s_kind_primitive = 38,
-    s_kind_flags = 39,
-    s_kind_enum = 40,
-    s_kind_members = 41,
-    s_kind_fn = 42,
-    s_kind_fnbranch = 43,
-    s_kind_pattern = 44,
-    s_kind_typeunion = 45,
-    s_kind_typetag = 46,
-    s_kind_jump = 47,
-    s_kind_empty = 48,
-    s_kind_letdef = 49,
-    s_kind___relaxed = 50,
-    s_kind___convert = 51,
-    s_kind_fndef = 52,
-    s_kind_copy = 53,
-    s_kind_move = 54,
-    s_kind___far_jump = 55,
-    s_kind___no_kind_yet = 56,
-    s_kind_type = 57,
-    s_kind_var = 58,
-    s_kind_field = 59,
-    s_kind_enumv = 60,
-    s_kind_template = 61,
-    s_kind___native = 62,
-    s_kind_inline = 63,
+    s_kind_unwrap = 33,
+    s_kind_forfieldsof = 34,
+    s_kind_pragma = 35,
+    s_kind_void = 36,
+    s_kind_struct = 37,
+    s_kind_union = 38,
+    s_kind_primitive = 39,
+    s_kind_flags = 40,
+    s_kind_enum = 41,
+    s_kind_members = 42,
+    s_kind_fn = 43,
+    s_kind_fnbranch = 44,
+    s_kind_pattern = 45,
+    s_kind_typeunion = 46,
+    s_kind_typetag = 47,
+    s_kind_jump = 48,
+    s_kind_empty = 49,
+    s_kind_letdef = 50,
+    s_kind___relaxed = 51,
+    s_kind___convert = 52,
+    s_kind_fndef = 53,
+    s_kind_copy = 54,
+    s_kind_move = 55,
+    s_kind___far_jump = 56,
+    s_kind___no_kind_yet = 57,
+    s_kind_type = 58,
+    s_kind_var = 59,
+    s_kind_field = 60,
+    s_kind_enumv = 61,
+    s_kind_template = 62,
+    s_kind___native = 63,
+    s_kind_inline = 64,
 };
                                 #endif
 
@@ -123,254 +123,204 @@ struct s_LexerOutput
 
 #ifndef fu_NO_fdefs
 
-static const fu_STR OPTOKENS fu_INIT_PRIORITY(1002) = "{}[]()!?~@#$%^&*/-+<=>,.;:|"_fu;
+static const fu_STR OPTOKENS fu_INIT_PRIORITY(1004) = "{}[]()!?~@#$%^&*/-+<=>,.;:|"_fu;
 
-static const fu_VEC<fu_STR> MBOPS fu_INIT_PRIORITY(1002) = fu_VEC<fu_STR> { fu::slate<41, fu_STR> { "++"_fu, "--"_fu, "**"_fu, "<<"_fu, "<<<"_fu, ">>"_fu, ">>>"_fu, "==="_fu, "=="_fu, "!="_fu, "!=="_fu, "<="_fu, ">="_fu, "<=>"_fu, "<>"_fu, "=>"_fu, "->"_fu, "|>"_fu, "<|"_fu, "??"_fu, ".."_fu, "..."_fu, "::"_fu, "&&"_fu, "||"_fu, "[]"_fu, "+="_fu, "-="_fu, "*="_fu, "**="_fu, "/="_fu, "%="_fu, "&="_fu, "|="_fu, "^="_fu, "<<="_fu, ">>="_fu, "~="_fu, "&&="_fu, "||="_fu, ".="_fu } };
+static const fu_VEC<fu_STR> MBOPS fu_INIT_PRIORITY(1004) = fu_VEC<fu_STR> { fu::slate<41, fu_STR> { "++"_fu, "--"_fu, "**"_fu, "<<"_fu, "<<<"_fu, ">>"_fu, ">>>"_fu, "==="_fu, "=="_fu, "!="_fu, "!=="_fu, "<="_fu, ">="_fu, "<=>"_fu, "<>"_fu, "=>"_fu, "->"_fu, "|>"_fu, "<|"_fu, "??"_fu, ".."_fu, "..."_fu, "::"_fu, "&&"_fu, "||"_fu, "[]"_fu, "+="_fu, "-="_fu, "*="_fu, "**="_fu, "/="_fu, "%="_fu, "&="_fu, "|="_fu, "^="_fu, "<<="_fu, ">>="_fu, "~="_fu, "&&="_fu, "||="_fu, ".="_fu } };
 
-static void token_c_hEWa2JK9(const s_kind kind, const fu_STR& value, const int idx0, const int idx1, const int col, fu_VEC<s_Token>& tokens, const int line)
+static void token_c_mYCRTpDV(const s_kind kind, const fu_STR& value, const int idx0, const int idx1, const int col, fu_VEC<s_Token>& tokens, const int line)
 {
-    if (!((col >= 0)))
+    if ((col >= 0))
+    {
+        tokens += s_Token { s_kind(kind), fu_STR(value), int(idx0), int(idx1), int(line), int(col) };
+    }
+    else
         fu_ASSERT();
 
-    tokens += s_Token { s_kind(kind), fu_STR(value), int(idx0), int(idx1), int(line), int(col) };
 }
 
-static void token_l3tPsVR1(const s_kind kind, const fu_STR& value, const int idx0, const int idx1, const int lidx, fu_VEC<s_Token>& tokens, const int line)
+static void token_tVDymypQ(const s_kind kind, const fu_STR& value, const int idx0, const int idx1, const int lidx, fu_VEC<s_Token>& tokens, const int line)
 {
     const int col = (idx0 - lidx);
-    token_c_hEWa2JK9(kind, value, idx0, idx1, col, tokens, line);
+    token_c_mYCRTpDV(kind, value, idx0, idx1, col, tokens, line);
 }
 
-                                #ifndef DEF_x7E_PEYL9mMAprj
-                                #define DEF_x7E_PEYL9mMAprj
-inline fu_STR x7E(fu::view<char> a, fu::view<char> b)
+                                #ifndef DEF_x7E_YP7BiSZZZOd
+                                #define DEF_x7E_YP7BiSZZZOd
+inline fu_STR x7E_YP7BiSZZ(fu::view<char> a, fu::view<char> b)
 {
     return a + b;
 }
                                 #endif
 
-                                #ifndef DEF_str_omkBT2iF
-                                #define DEF_str_omkBT2iF
-inline fu_STR str_omkBT2iF(const s_kind n)
+                                #ifndef DEF_str_x2XZ9C2mr79
+                                #define DEF_str_x2XZ9C2mr79
+inline fu_STR str_x2XZ9C2m(const s_kind n)
 {
-
+    if (n == s_kind_sof)
+        return "sof"_fu;
+    else if (n == s_kind_id)
+        return "id"_fu;
+    else if (n == s_kind_op)
+        return "op"_fu;
+    else if (n == s_kind_int)
+        return "int"_fu;
+    else if (n == s_kind_real)
+        return "real"_fu;
+    else if (n == s_kind_char)
+        return "char"_fu;
+    else if (n == s_kind_str)
+        return "str"_fu;
+    else if (n == s_kind_err)
+        return "err"_fu;
+    else if (n == s_kind_eof)
+        return "eof"_fu;
+    else if (n == s_kind_root)
+        return "root"_fu;
+    else if (n == s_kind_block)
+        return "block"_fu;
+    else if (n == s_kind_argid)
+        return "argid"_fu;
+    else if (n == s_kind_let)
+        return "let"_fu;
+    else if (n == s_kind_call)
+        return "call"_fu;
+    else if (n == s_kind_arrlit)
+        return "arrlit"_fu;
+    else if (n == s_kind_if)
     {
-        if (n == s_kind_sof)
-            return "sof"_fu;
+        return "if"_fu;
+    }
+    else if (n == s_kind_or)
+        return "or"_fu;
+    else if (n == s_kind_and)
+        return "and"_fu;
+    else if (n == s_kind_loop)
+        return "loop"_fu;
+    else if (n == s_kind_break)
+        return "break"_fu;
+    else if (n == s_kind_return)
+        return "return"_fu;
+    else if (n == s_kind_continue)
+        return "continue"_fu;
+    else if (n == s_kind_bool)
+        return "bool"_fu;
+    else if (n == s_kind_definit)
+        return "definit"_fu;
+    else if (n == s_kind_import)
+        return "import"_fu;
+    else if (n == s_kind_defer)
+        return "defer"_fu;
+    else if (n == s_kind_try)
+        return "try"_fu;
+    else if (n == s_kind_typedef)
+        return "typedef"_fu;
+    else if (n == s_kind_typecast)
+        return "typecast"_fu;
+    else if (n == s_kind_typeassert)
+        return "typeassert"_fu;
+    else if (n == s_kind_typeparam)
+        return "typeparam"_fu;
+    else if (n == s_kind_addroffn)
+        return "addroffn"_fu;
+    else if (n == s_kind_unwrap)
+        return "unwrap"_fu;
+    else if (n == s_kind_forfieldsof)
+        return "forfieldsof"_fu;
+    else if (n == s_kind_pragma)
+        return "pragma"_fu;
+    else if (n == s_kind_void)
+        return "void"_fu;
+    else if (n == s_kind_struct)
+        return "struct"_fu;
+    else if (n == s_kind_union)
+        return "union"_fu;
+    else if (n == s_kind_primitive)
+        return "primitive"_fu;
+    else if (n == s_kind_flags)
+        return "flags"_fu;
+    else if (n == s_kind_enum)
+        return "enum"_fu;
+    else if (n == s_kind_members)
+        return "members"_fu;
+    else if (n == s_kind_fn)
+        return "fn"_fu;
+    else if (n == s_kind_fnbranch)
+        return "fnbranch"_fu;
+    else if (n == s_kind_pattern)
+        return "pattern"_fu;
+    else if (n == s_kind_typeunion)
+        return "typeunion"_fu;
+    else if (n == s_kind_typetag)
+        return "typetag"_fu;
+    else if (n == s_kind_jump)
+        return "jump"_fu;
+    else if (n == s_kind_empty)
+        return "empty"_fu;
+    else if (n == s_kind_letdef)
+        return "letdef"_fu;
+    else if (n == s_kind___relaxed)
+        return "__relaxed"_fu;
+    else if (n == s_kind___convert)
+        return "__convert"_fu;
+    else if (n == s_kind_fndef)
+        return "fndef"_fu;
+    else if (n == s_kind_copy)
+        return "copy"_fu;
+    else if (n == s_kind_move)
+        return "move"_fu;
+    else if (n == s_kind___far_jump)
+        return "__far_jump"_fu;
+    else if (n == s_kind___no_kind_yet)
+        return "__no_kind_yet"_fu;
+    else if (n == s_kind_type)
+        return "type"_fu;
+    else if (n == s_kind_var)
+        return "var"_fu;
+    else if (n == s_kind_field)
+        return "field"_fu;
+    else if (n == s_kind_enumv)
+        return "enumv"_fu;
+    else if (n == s_kind_template)
+        return "template"_fu;
+    else if (n == s_kind___native)
+        return "__native"_fu;
+    else if (n == s_kind_inline)
+        return "inline"_fu;
 
-        if (n == s_kind_id)
-            return "id"_fu;
-
-        if (n == s_kind_op)
-            return "op"_fu;
-
-        if (n == s_kind_int)
-            return "int"_fu;
-
-        if (n == s_kind_real)
-            return "real"_fu;
-
-        if (n == s_kind_char)
-            return "char"_fu;
-
-        if (n == s_kind_str)
-            return "str"_fu;
-
-        if (n == s_kind_err)
-            return "err"_fu;
-
-        if (n == s_kind_eof)
-            return "eof"_fu;
-
-        if (n == s_kind_root)
-            return "root"_fu;
-
-        if (n == s_kind_block)
-            return "block"_fu;
-
-        if (n == s_kind_argid)
-            return "argid"_fu;
-
-        if (n == s_kind_let)
-            return "let"_fu;
-
-        if (n == s_kind_call)
-            return "call"_fu;
-
-        if (n == s_kind_arrlit)
-            return "arrlit"_fu;
-
-        if (n == s_kind_if)
-            return "if"_fu;
-
-        if (n == s_kind_or)
-            return "or"_fu;
-
-        if (n == s_kind_and)
-            return "and"_fu;
-
-        if (n == s_kind_loop)
-            return "loop"_fu;
-
-        if (n == s_kind_break)
-            return "break"_fu;
-
-        if (n == s_kind_return)
-            return "return"_fu;
-
-        if (n == s_kind_continue)
-            return "continue"_fu;
-
-        if (n == s_kind_bool)
-            return "bool"_fu;
-
-        if (n == s_kind_definit)
-            return "definit"_fu;
-
-        if (n == s_kind_import)
-            return "import"_fu;
-
-        if (n == s_kind_defer)
-            return "defer"_fu;
-
-        if (n == s_kind_try)
-            return "try"_fu;
-
-        if (n == s_kind_typedef)
-            return "typedef"_fu;
-
-        if (n == s_kind_typecast)
-            return "typecast"_fu;
-
-        if (n == s_kind_typeassert)
-            return "typeassert"_fu;
-
-        if (n == s_kind_typeparam)
-            return "typeparam"_fu;
-
-        if (n == s_kind_addroffn)
-            return "addroffn"_fu;
-
-        if (n == s_kind_forfieldsof)
-            return "forfieldsof"_fu;
-
-        if (n == s_kind_pragma)
-            return "pragma"_fu;
-
-        if (n == s_kind_void)
-            return "void"_fu;
-
-        if (n == s_kind_struct)
-            return "struct"_fu;
-
-        if (n == s_kind_union)
-            return "union"_fu;
-
-        if (n == s_kind_primitive)
-            return "primitive"_fu;
-
-        if (n == s_kind_flags)
-            return "flags"_fu;
-
-        if (n == s_kind_enum)
-            return "enum"_fu;
-
-        if (n == s_kind_members)
-            return "members"_fu;
-
-        if (n == s_kind_fn)
-            return "fn"_fu;
-
-        if (n == s_kind_fnbranch)
-            return "fnbranch"_fu;
-
-        if (n == s_kind_pattern)
-            return "pattern"_fu;
-
-        if (n == s_kind_typeunion)
-            return "typeunion"_fu;
-
-        if (n == s_kind_typetag)
-            return "typetag"_fu;
-
-        if (n == s_kind_jump)
-            return "jump"_fu;
-
-        if (n == s_kind_empty)
-            return "empty"_fu;
-
-        if (n == s_kind_letdef)
-            return "letdef"_fu;
-
-        if (n == s_kind___relaxed)
-            return "__relaxed"_fu;
-
-        if (n == s_kind___convert)
-            return "__convert"_fu;
-
-        if (n == s_kind_fndef)
-            return "fndef"_fu;
-
-        if (n == s_kind_copy)
-            return "copy"_fu;
-
-        if (n == s_kind_move)
-            return "move"_fu;
-
-        if (n == s_kind___far_jump)
-            return "__far_jump"_fu;
-
-        if (n == s_kind___no_kind_yet)
-            return "__no_kind_yet"_fu;
-
-        if (n == s_kind_type)
-            return "type"_fu;
-
-        if (n == s_kind_var)
-            return "var"_fu;
-
-        if (n == s_kind_field)
-            return "field"_fu;
-
-        if (n == s_kind_enumv)
-            return "enumv"_fu;
-
-        if (n == s_kind_template)
-            return "template"_fu;
-
-        if (n == s_kind___native)
-            return "__native"_fu;
-
-        if (n == s_kind_inline)
-            return "inline"_fu;
-
-    };
     return fu::i64dec(int64_t(n));
 }
                                 #endif
 
-[[noreturn]] static fu::never err_str_xNyPM2Hd(const s_kind kind, const int idx0, fu::view<char> reason, int& idx, const int end, const fu_STR& src, const int lidx, fu::view<char> fname, const int line)
+[[noreturn]] static fu::never err_str_c5VmVzzr(const s_kind kind, const int idx0, fu::view<char> reason, int& idx, const int end, const fu_STR& src, const int lidx, fu::view<char> fname, const int line)
 {
     while ((idx < end) && (src[idx] > ' '))
         idx++;
 
     const int col = (idx0 - lidx);
     fu_STR value = fu::slice(src, idx0, idx);
-    fu::fail((((x7E((((x7E((x7E((("LEX ERROR: "_fu + fname) + "@"_fu), fu::i64dec(line)) + ":"_fu), fu::i64dec(col)) + ":\n\t"_fu) + reason) + "\n\t"_fu), str_omkBT2iF(kind)) + ": `"_fu) + value) + "`"_fu));
+    fu::fail((((x7E_YP7BiSZZ((((x7E_YP7BiSZZ((x7E_YP7BiSZZ((("LEX ERROR: "_fu + fname) + "@"_fu), fu::i64dec(line)) + ":"_fu), fu::i64dec(col)) + ":\n\t"_fu) + reason) + "\n\t"_fu), str_x2XZ9C2m(kind)) + ": `"_fu) + value) + "`"_fu));
 }
 
-[[noreturn]] static fu::never err_8dcwg0Xq(const s_kind kind, const int idx0, const int reason, const fu_STR& src, int& idx, const int end, const int lidx, fu::view<char> fname, const int line)
+[[noreturn]] static fu::never err_xMbFCKxv(const s_kind kind, const int idx0, const int reason, const fu_STR& src, int& idx, const int end, const int lidx, fu::view<char> fname, const int line)
 {
-    err_str_xNyPM2Hd(kind, idx0, (("`"_fu + src[reason]) + "`"_fu), idx, end, src, lidx, fname, line);
+    err_str_c5VmVzzr(kind, idx0, (("`"_fu + src[reason]) + "`"_fu), idx, end, src, lidx, fname, line);
 }
 
-static unsigned parseHex_Bg1ItGXc(fu::view<char> topic, fu::view<char> esc, int& i, int& idx, const int end, const fu_STR& src, const int lidx, fu::view<char> fname, const int line)
+static unsigned parseHex_I6qr6TOE(fu::view<char> topic, fu::view<char> esc, int& i, int& idx, const int end, const fu_STR& src, const int lidx, fu::view<char> fname, const int line)
 {
     const char c = esc[++i];
-    return (((c >= '0') && (c <= '9')) ? (unsigned(fu::u8(c)) - unsigned(fu::u8('0'))) : (((c >= 'A') && (c <= 'F')) ? ((unsigned(fu::u8(c)) - unsigned(fu::u8('A'))) + 10u) : (((c >= 'a') && (c <= 'f')) ? ((unsigned(fu::u8(c)) - unsigned(fu::u8('a'))) + 10u) : err_str_xNyPM2Hd(s_kind_str, (i - 1), (((("Non hexadecimal character in "_fu + topic) + ": `"_fu) + c) + "`."_fu), idx, end, src, lidx, fname, line))));
+    if ((c >= '0') && (c <= '9'))
+        return unsigned(fu::u8(c)) - unsigned(fu::u8('0'));
+    else if ((c >= 'A') && (c <= 'F'))
+        return (unsigned(fu::u8(c)) - unsigned(fu::u8('A'))) + 10u;
+    else if ((c >= 'a') && (c <= 'f'))
+        return (unsigned(fu::u8(c)) - unsigned(fu::u8('a'))) + 10u;
+    else
+        return err_str_c5VmVzzr(s_kind_str, (i - 1), (((("Non hexadecimal character in "_fu + topic) + ": `"_fu) + c) + "`."_fu), idx, end, src, lidx, fname, line);
+
 }
 
-static fu_STR UNSAFE_unescapeStr_5LF9vqP6(fu::view<char> esc, const int idx0, const int idx1, const char quot, int& idx, const int end, const fu_STR& src, const int lidx, fu::view<char> fname, const int line)
+static fu_STR UNSAFE_unescapeStr_f93ergEh(fu::view<char> esc, const int idx0, const int idx1, const char quot, int& idx, const int end, const fu_STR& src, const int lidx, fu::view<char> fname, const int line)
 {
     /*MOV*/ fu_STR out {};
     const int n = (idx1 - 1);
@@ -405,55 +355,64 @@ static fu_STR UNSAFE_unescapeStr_5LF9vqP6(fu::view<char> esc, const int idx0, co
             else if (c1 == 'x')
             {
                 if ((i >= (n - 2)))
-                    err_str_xNyPM2Hd(s_kind_str, (i - 1), "Incomplete \\x-escape sequence."_fu, idx, end, src, lidx, fname, line);
-
-                unsigned _0 {};
-                out += char((_0 = (parseHex_Bg1ItGXc("\\x-escape sequence"_fu, esc, i, idx, end, src, lidx, fname, line) << 4u), (unsigned(_0) | parseHex_Bg1ItGXc("\\x-escape sequence"_fu, esc, i, idx, end, src, lidx, fname, line))));
+                    err_str_c5VmVzzr(s_kind_str, (i - 1), "Incomplete \\x-escape sequence."_fu, idx, end, src, lidx, fname, line);
+                else
+                {
+                    unsigned _0 {};
+                    out += char((_0 = (parseHex_I6qr6TOE("\\x-escape sequence"_fu, esc, i, idx, end, src, lidx, fname, line) << 4u), (unsigned(_0) | parseHex_I6qr6TOE("\\x-escape sequence"_fu, esc, i, idx, end, src, lidx, fname, line))));
+                };
             }
             else if (c1 == 'u')
             {
                 if ((i == n) || (esc[++i] != '{'))
-                    err_str_xNyPM2Hd(s_kind_str, (i - 1), "Invalid \\u-escape: no opening `{`."_fu, idx, end, src, lidx, fname, line);
+                {
+                    err_str_c5VmVzzr(s_kind_str, (i - 1), "Invalid \\u-escape: no opening `{`."_fu, idx, end, src, lidx, fname, line);
+                }
+                else
+                {
+                    unsigned unicode {};
+                    int digits = 0;
 
-                unsigned unicode {};
-                int digits = 0;
+                    { {
+                        while (++i < n)
+                        {
+                            if (esc[i] == '}')
+                                goto BL_21;
+                            else if (digits == 6)
+                                err_str_c5VmVzzr(s_kind_str, (i - 1), "Invalid \\u-escape: no closing `}` after 6 digits."_fu, idx, end, src, lidx, fname, line);
 
-                { {
-                    while (++i < n)
-                    {
-                        if (esc[i] == '}')
-                            goto BL_19;
-                        else if (digits == 6)
-                            err_str_xNyPM2Hd(s_kind_str, (i - 1), "Invalid \\u-escape: no closing `}` after 6 digits."_fu, idx, end, src, lidx, fname, line);
-
-                        digits++;
-                        unicode <<= 4u;
-                        i--;
-                        unicode |= parseHex_Bg1ItGXc("\\u-escape sequence"_fu, esc, i, idx, end, src, lidx, fname, line);
+                            digits++;
+                            unicode <<= 4u;
+                            i--;
+                            unicode |= parseHex_I6qr6TOE("\\u-escape sequence"_fu, esc, i, idx, end, src, lidx, fname, line);
+                        };
+                        err_str_c5VmVzzr(s_kind_str, (i - 1), "Incomplete \\u-escape: no closing `}`."_fu, idx, end, src, lidx, fname, line);
+                      } BL_21:;
                     };
-                    err_str_xNyPM2Hd(s_kind_str, (i - 1), "Incomplete \\u-escape: no closing `}`."_fu, idx, end, src, lidx, fname, line);
-                  } BL_19:;
+                    if (!digits)
+                        err_str_c5VmVzzr(s_kind_str, (i - 1), "Empty \\u-escape."_fu, idx, end, src, lidx, fname, line);
+                    else
+                    {
+                        fu_STR _1 {};
+                        out += ((_1 = bytes_BKZeX3f7(unicode)) ? static_cast<fu_STR&&>(_1) : err_str_c5VmVzzr(s_kind_str, (i - 1), "Invalid \\u-escape: bad code point."_fu, idx, end, src, lidx, fname, line));
+                    };
                 };
-                if (!digits)
-                    err_str_xNyPM2Hd(s_kind_str, (i - 1), "Empty \\u-escape."_fu, idx, end, src, lidx, fname, line);
-
-                fu_STR _1 {};
-                out += ((_1 = bytes_BKZeX3f7(unicode)) ? static_cast<fu_STR&&>(_1) : err_str_xNyPM2Hd(s_kind_str, (i - 1), "Invalid \\u-escape: bad code point."_fu, idx, end, src, lidx, fname, line));
             }
             else
-                err_str_xNyPM2Hd(s_kind_str, (i - 1), "Unknown escape sequence."_fu, idx, end, src, lidx, fname, line);
+                err_str_c5VmVzzr(s_kind_str, (i - 1), "Unknown escape sequence."_fu, idx, end, src, lidx, fname, line);
 
         }
         else
+        {
             out += char(c);
-
+        };
     };
     return /*NRVO*/ out;
 }
 
-                                #ifndef DEF_has_cnCAmU7Y
-                                #define DEF_has_cnCAmU7Y
-inline bool has_cnCAmU7Y(fu::view<char> a, const char b)
+                                #ifndef DEF_has_8ObANk7rz5k
+                                #define DEF_has_8ObANk7rz5k
+inline bool has_8ObANk7r(fu::view<char> a, const char b)
 {
     for (int i = 0; i < a.size(); i++)
     {
@@ -465,9 +424,57 @@ inline bool has_cnCAmU7Y(fu::view<char> a, const char b)
 }
                                 #endif
 
-                                #ifndef DEF_has_tkmelWjn
-                                #define DEF_has_tkmelWjn
-inline bool has_tkmelWjn(fu::view<fu_STR> a, fu::view<char> b)
+                                #ifndef DEF_x3Cx3E_gcxVH86XFM7
+                                #define DEF_x3Cx3E_gcxVH86XFM7
+inline int x3Cx3E_gcxVH86X(const int a, const int b)
+{
+    if (a < b)
+        return -1;
+    else if (a > b)
+        return +1;
+    else
+        return 0;
+
+}
+                                #endif
+
+                                #ifndef DEF_x3Cx3E_hvR4gqODwpa
+                                #define DEF_x3Cx3E_hvR4gqODwpa
+inline int x3Cx3E_hvR4gqOD(const char a, const char b)
+{
+    if (a < b)
+        return -1;
+    else if (a > b)
+        return +1;
+    else
+        return 0;
+
+}
+                                #endif
+
+                                #ifndef DEF_x3Cx3E_YP7BiSZZZOd
+                                #define DEF_x3Cx3E_YP7BiSZZZOd
+inline int x3Cx3E_YP7BiSZZ(fu::view<char> a, fu::view<char> b)
+{
+    /*MOV*/ int cmp = x3Cx3E_gcxVH86X(a.size(), b.size());
+    for (int i = 0; (i < a.size()) && !cmp; i++)
+        cmp = x3Cx3E_hvR4gqOD(a[i], b[i]);
+
+    return /*NRVO*/ cmp;
+}
+                                #endif
+
+                                #ifndef DEF_x3Dx3D_YP7BiSZZZOd
+                                #define DEF_x3Dx3D_YP7BiSZZZOd
+inline bool operator==(fu::view<char> a, fu::view<char> b)
+{
+    return !x3Cx3E_YP7BiSZZ(a, b);
+}
+                                #endif
+
+                                #ifndef DEF_has_NaazSXrklU3
+                                #define DEF_has_NaazSXrklU3
+inline bool has_NaazSXrk(fu::view<fu_STR> a, fu::view<char> b)
 {
     for (int i = 0; i < a.size(); i++)
     {
@@ -479,14 +486,14 @@ inline bool has_tkmelWjn(fu::view<fu_STR> a, fu::view<char> b)
 }
                                 #endif
 
-s_LexerOutput lex_uzLKWC6R(const fu_STR& src, fu::view<char> fname)
+s_LexerOutput lex_3z7oWPeJ(const fu_STR& src, fu::view<char> fname)
 {
     const int end = src.size();
     int line = 1;
     int lidx = -1;
     int idx = 0;
-    fu_VEC<s_Token> tokens {};
-    token_l3tPsVR1(s_kind_sof, "sof"_fu, idx, idx, lidx, tokens, line);
+    /*MOV*/ fu_VEC<s_Token> tokens {};
+    token_tVDymypQ(s_kind_sof, "sof"_fu, idx, idx, lidx, tokens, line);
     while (idx < end)
     {
         const int idx0 = idx;
@@ -514,7 +521,7 @@ s_LexerOutput lex_uzLKWC6R(const fu_STR& src, fu::view<char> fname)
                 };
             };
             const int idx1 = idx;
-            token_l3tPsVR1(s_kind_id, fu::slice(src, idx0, idx1), idx0, idx1, lidx, tokens, line);
+            token_tVDymypQ(s_kind_id, fu::slice(src, idx0, idx1), idx0, idx1, lidx, tokens, line);
         }
         else if ((c >= '0') && (c <= '9'))
         {
@@ -544,7 +551,7 @@ s_LexerOutput lex_uzLKWC6R(const fu_STR& src, fu::view<char> fname)
                     idx++;
                 }
                 else if ((c_1 >= '0') && (c_1 <= '9'))
-                    err_str_xNyPM2Hd(s_kind_real, idx0, ("Leading `0` in numeric literal,"_fu + " perhaps you meant `0x`, `0b` or `0o`."_fu), idx, end, src, lidx, fname, line);
+                    err_str_c5VmVzzr(s_kind_real, idx0, ("Leading `0` in numeric literal,"_fu + " perhaps you meant `0x`, `0b` or `0o`."_fu), idx, end, src, lidx, fname, line);
 
             };
             while (idx < end)
@@ -565,21 +572,24 @@ s_LexerOutput lex_uzLKWC6R(const fu_STR& src, fu::view<char> fname)
                     {
                         idx--;
                         break;
-                    };
-                    if (dot || exp)
-                        err_8dcwg0Xq(s_kind_real, idx0, (idx - 1), src, idx, end, lidx, fname, line);
+                    }
+                    else if (dot || exp)
+                        err_xMbFCKxv(s_kind_real, idx0, (idx - 1), src, idx, end, lidx, fname, line);
+                    else
+                        dot = true;
 
-                    dot = true;
                 }
                 else if ((hex ? ((c_1 == 'p') || (c_1 == 'P')) : ((c_1 == 'e') || (c_1 == 'E'))))
                 {
                     if (exp)
-                        err_8dcwg0Xq(s_kind_real, idx0, (idx - 1), src, idx, end, lidx, fname, line);
+                        err_xMbFCKxv(s_kind_real, idx0, (idx - 1), src, idx, end, lidx, fname, line);
+                    else
+                    {
+                        if ((idx < end) && ((src[idx] == '-') || (src[idx] == '+')))
+                            idx++;
 
-                    if ((idx < end) && ((src[idx] == '-') || (src[idx] == '+')))
-                        idx++;
-
-                    exp = true;
+                        exp = true;
+                    };
                 }
                 else if (c_1 == '_')
                 {
@@ -598,15 +608,15 @@ s_LexerOutput lex_uzLKWC6R(const fu_STR& src, fu::view<char> fname)
             };
             const char trail = src[(idx - 1)];
             if (!((trail >= '0') && (trail <= '9')) && !(hex && (((trail >= 'a') && (trail <= 'f')) || ((trail >= 'A') && (trail <= 'F')))))
-                err_8dcwg0Xq(s_kind_real, idx0, (idx - 1), src, idx, end, lidx, fname, line);
+                err_xMbFCKxv(s_kind_real, idx0, (idx - 1), src, idx, end, lidx, fname, line);
             else
             {
                 const int idx1 = idx;
-                fu_STR str = fu::slice(src, idx0, idx1);
+                /*MOV*/ fu_STR str = fu::slice(src, idx0, idx1);
                 if (hex && dot && !exp)
-                    err_str_xNyPM2Hd(s_kind_real, idx0, ("The exponent is never optional"_fu + " for hexadecimal floating-point literals."_fu), idx, end, src, lidx, fname, line);
+                    err_str_c5VmVzzr(s_kind_real, idx0, ("The exponent is never optional"_fu + " for hexadecimal floating-point literals."_fu), idx, end, src, lidx, fname, line);
                 else
-                    token_l3tPsVR1(((dot || exp) ? s_kind_real : s_kind_int), lower_FZjKqN6X(fu_STR(str)), idx0, idx1, lidx, tokens, line);
+                    token_tVDymypQ(((dot || exp) ? s_kind_real : s_kind_int), lower_FZjKqN6X(static_cast<fu_STR&&>(str)), idx0, idx1, lidx, tokens, line);
 
             };
         }
@@ -635,16 +645,16 @@ s_LexerOutput lex_uzLKWC6R(const fu_STR& src, fu::view<char> fname)
                 };
             };
             if (!ok)
-                err_str_xNyPM2Hd(s_kind_str, idx0, "Unterminated string literal."_fu, idx, end, src, lidx, fname, line);
+                err_str_c5VmVzzr(s_kind_str, idx0, "Unterminated string literal."_fu, idx, end, src, lidx, fname, line);
             else
             {
                 const int idx1 = idx;
-                fu_STR str = (esc ? UNSAFE_unescapeStr_5LF9vqP6(src, idx0, idx1, c, idx, end, src, lidx, fname, line) : fu::slice(src, (idx0 + 1), (idx1 - 1)));
+                fu_STR str = (esc ? UNSAFE_unescapeStr_f93ergEh(src, idx0, idx1, c, idx, end, src, lidx, fname, line) : fu::slice(src, (idx0 + 1), (idx1 - 1)));
                 const bool cHar = (c == '\'');
                 if (cHar && (str.size() != 1))
-                    err_str_xNyPM2Hd(s_kind_char, idx0, x7E("Char literal len != 1: "_fu, fu::i64dec(str.size())), idx, end, src, lidx, fname, line);
+                    err_str_c5VmVzzr(s_kind_char, idx0, x7E_YP7BiSZZ("Char literal len != 1: "_fu, fu::i64dec(str.size())), idx, end, src, lidx, fname, line);
                 else
-                    token_c_hEWa2JK9((cHar ? s_kind_char : s_kind_str), str, idx0, idx1, col, tokens, line);
+                    token_c_mYCRTpDV((cHar ? s_kind_char : s_kind_str), str, idx0, idx1, col, tokens, line);
 
             };
         }
@@ -680,34 +690,34 @@ s_LexerOutput lex_uzLKWC6R(const fu_STR& src, fu::view<char> fname)
                 };
             };
         }
-        else if (has_cnCAmU7Y(OPTOKENS, c))
+        else if (has_8ObANk7r(OPTOKENS, c))
         {
             fu_STR candidate = fu_STR { fu::slate<1, char> { char(c) } };
             while (idx < end)
             {
                 const char c_1 = src[idx++];
-                if (has_cnCAmU7Y(OPTOKENS, c_1))
+                if (has_8ObANk7r(OPTOKENS, c_1))
                 {
-                    fu_STR c1 = (candidate + c_1);
-                    if (has_tkmelWjn(MBOPS, c1))
+                    /*MOV*/ fu_STR c1 = (candidate + c_1);
+                    if (has_NaazSXrk(MBOPS, c1))
                     {
-                        candidate = c1;
+                        candidate = static_cast<fu_STR&&>(c1);
                         continue;
                     };
                 };
                 idx--;
                 break;
             };
-            token_l3tPsVR1(s_kind_op, candidate, idx0, idx, lidx, tokens, line);
+            token_tVDymypQ(s_kind_op, candidate, idx0, idx, lidx, tokens, line);
         }
         else
-            err_8dcwg0Xq(s_kind_err, idx0, idx0, src, idx, end, lidx, fname, line);
+            err_xMbFCKxv(s_kind_err, idx0, idx0, src, idx, end, lidx, fname, line);
 
     };
     line++;
     lidx = (idx + 0);
-    token_l3tPsVR1(s_kind_eof, "eof"_fu, idx, idx, lidx, tokens, line);
-    return s_LexerOutput { fu_VEC<s_Token>(tokens) };
+    token_tVDymypQ(s_kind_eof, "eof"_fu, idx, idx, lidx, tokens, line);
+    return s_LexerOutput { static_cast<fu_VEC<s_Token>&&>(tokens) };
 }
 
 #endif

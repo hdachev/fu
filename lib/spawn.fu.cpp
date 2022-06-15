@@ -146,9 +146,10 @@ int spawn_oC1HzM4Z(fu_VEC<fu_STR>&& argv, int& status)
 {
     if (!argv)
         return -1;
-
-    /*MOV*/ int err = 0;
-    int pid {};
+    else
+    {
+        /*MOV*/ int err = 0;
+        int pid {};
 
         err =
             fu_spawn(
@@ -156,25 +157,29 @@ int spawn_oC1HzM4Z(fu_VEC<fu_STR>&& argv, int& status)
                 /*stdout*/ nullptr,
                 /*stderr*/ nullptr)
     ;
-    if (err)
-        return /*NRVO*/ err;
-
+        if (err)
+            return /*NRVO*/ err;
+        else
+        {
 
         err =
             fu_waitpid(
                 pid, status);
     ;
-    return /*NRVO*/ err;
+            return /*NRVO*/ err;
+        };
+    };
 }
 
 int spawn_udHzgmR4(fu_VEC<fu_STR>&& argv, fu_STR& stdout, fu_STR& stderr, int& status)
 {
     if (!argv)
         return -1;
-
-    /*MOV*/ int err = 0;
-
+    else
     {
+        /*MOV*/ int err = 0;
+
+        {
 
             const auto& Close = [&](int& fd)
             {
@@ -193,7 +198,7 @@ int spawn_udHzgmR4(fu_VEC<fu_STR>&& argv, fu_STR& stdout, fu_STR& stderr, int& s
             if (pipe(stdout_pipe))
                 return errno;
         ;
-        fu_DEFER(
+            fu_DEFER(
             Close(stdout_pipe[0]);
             Close(stdout_pipe[1]);
         );
@@ -202,14 +207,15 @@ int spawn_udHzgmR4(fu_VEC<fu_STR>&& argv, fu_STR& stdout, fu_STR& stderr, int& s
             if (pipe(stderr_pipe))
                 return errno;
         ;
-        fu_DEFER(
+            fu_DEFER(
             Close(stderr_pipe[0]);
             Close(stderr_pipe[1]);
         );
-        if (err)
-            return /*NRVO*/ err;
-
-        int pid {};
+            if (err)
+                return /*NRVO*/ err;
+            else
+            {
+                int pid {};
 
             err =
                 fu_spawn(
@@ -217,10 +223,11 @@ int spawn_udHzgmR4(fu_VEC<fu_STR>&& argv, fu_STR& stdout, fu_STR& stderr, int& s
                     &stdout_pipe,
                     &stderr_pipe)
         ;
-        if (err)
-            return /*NRVO*/ err;
-
-        fu_DEFER(
+                if (err)
+                    return /*NRVO*/ err;
+                else
+                {
+                    fu_DEFER(
                 auto e =
                     fu_waitpid(
                         pid, status);
@@ -232,9 +239,10 @@ int spawn_udHzgmR4(fu_VEC<fu_STR>&& argv, fu_STR& stdout, fu_STR& stderr, int& s
             Close(stdout_pipe[1]);
             Close(stderr_pipe[1]);
         ;
-        if (err)
-            return /*NRVO*/ err;
-
+                    if (err)
+                        return /*NRVO*/ err;
+                    else
+                    {
 
             const size_t BUF_SIZE = 64 * 1024;
             fu::byte BUF[BUF_SIZE];
@@ -315,8 +323,12 @@ int spawn_udHzgmR4(fu_VEC<fu_STR>&& argv, fu_STR& stdout, fu_STR& stderr, int& s
                 }
             }
         ;
+                    };
+                };
+            };
+        };
+        return /*NRVO*/ err;
     };
-    return /*NRVO*/ err;
 }
 
 #endif

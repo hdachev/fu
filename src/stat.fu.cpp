@@ -50,43 +50,43 @@ s_ModuleStat ModuleStat_now_pUbtfzLn()
     return s_ModuleStat { hr_CPFg3qvV(), fu_ARC::ALLOC_STAT_COUNT(), fu_ARC::ALLOC_STAT_BYTES() };
 }
 
-                                #ifndef DEF_x7E_PEYL9mMAprj
-                                #define DEF_x7E_PEYL9mMAprj
-inline fu_STR x7E(fu::view<char> a, fu::view<char> b)
+                                #ifndef DEF_x7E_YP7BiSZZZOd
+                                #define DEF_x7E_YP7BiSZZZOd
+inline fu_STR x7E_YP7BiSZZ(fu::view<char> a, fu::view<char> b)
 {
     return a + b;
 }
                                 #endif
 
-                                #ifndef DEF_x7E_PEYL9mMAprj
-                                #define DEF_x7E_PEYL9mMAprj
-inline fu_STR x7E(fu::view<char> a, fu::view<char> b)
+                                #ifndef DEF_x7E_YP7BiSZZZOd
+                                #define DEF_x7E_YP7BiSZZZOd
+inline fu_STR x7E_YP7BiSZZ(fu::view<char> a, fu::view<char> b)
 {
     return a + b;
 }
                                 #endif
 
-void ModuleStat_print_jnmQPH8q(const s_ModuleStat& a, const fu_STR& prefix, fu::view<char> suffix)
+void ModuleStat_print_Juw13ven(const s_ModuleStat& a, const fu_STR& prefix, fu::view<char> suffix)
 {
     // Hoisted:
     fu_STR x;
     fu_STR x_1;
     fu_STR x_2;
 
-    const fu_STR* BL_1_v;
-    const fu_STR* BL_2_v;
-    const fu_STR* BL_3_v;
-    fu::println((fu::slate<4, fu_STR> { fu_STR(((void)void(), prefix)), fu_STR((__extension__ (
+    fu_STR* BL_1_v;
+    fu_STR* BL_2_v;
+    fu_STR* BL_3_v;
+    fu::println((fu::slate<4, fu_STR> { fu_STR(prefix), static_cast<fu_STR&&>((__extension__ (
     {
         x = fu::f64dec(a.time);
         BL_1_v = &(x);
-    (void)0;}), *BL_1_v)), fu_STR((__extension__ (
+    (void)0;}), *BL_1_v)), static_cast<fu_STR&&>((__extension__ (
     {
         x_1 = "s\t"_fu;
         BL_2_v = &(x_1);
-    (void)0;}), *BL_2_v)), fu_STR((__extension__ (
+    (void)0;}), *BL_2_v)), static_cast<fu_STR&&>((__extension__ (
     {
-        x_2 = (a.alloc_count ? ((x7E(x7E(fu::i64dec(a.alloc_count), " allocs\t"_fu), fu::i64dec(a.alloc_bytes)) + " bytes"_fu) + suffix) : fu_STR{});
+        x_2 = (a.alloc_count ? ((x7E_YP7BiSZZ(x7E_YP7BiSZZ(fu::i64dec(a.alloc_count), " allocs\t"_fu), fu::i64dec(a.alloc_bytes)) + " bytes"_fu) + suffix) : fu_STR{});
         BL_3_v = &(x_2);
     (void)0;}), *BL_3_v)) }));
 }

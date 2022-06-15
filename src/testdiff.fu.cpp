@@ -24,7 +24,7 @@ struct s_TestDiffs
 
 #ifndef fu_NO_fdefs
 
-fu_STR serialize_FUVdDfvU(const s_TestDiffs& diffs)
+fu_STR serialize_7aF2nvPs(const s_TestDiffs& diffs)
 {
     /*MOV*/ fu_STR res {};
     fu::view<fu_STR> keys = diffs.keys;
@@ -41,7 +41,7 @@ void set_next_Vos5idnT(s_TestDiffs& diffs, const fu_STR& key, const fu_STR& val)
     diffs.vals += fu_STR(val);
 }
 
-void append_CXqPs3bP(s_TestDiffs& diffs, const s_TestDiffs& other)
+void append_rLzOBzpL(s_TestDiffs& diffs, const s_TestDiffs& other)
 {
     diffs.keys += other.keys;
     diffs.vals += other.vals;

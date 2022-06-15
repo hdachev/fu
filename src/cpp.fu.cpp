@@ -1,7 +1,6 @@
 #include <fu/str.h>
 #include <fu/vec.h>
 #include <fu/view.h>
-#include <fu/vec/cmp.h>
 #include <fu/vec/find.h>
 #include <fu/init_priority.h>
 
@@ -9,11 +8,59 @@ char upper_3zvN02ND(char);
 
 #ifndef fu_NO_fdefs
 
-static const fu_VEC<fu_VEC<fu_STR>> KEYWORDS fu_INIT_PRIORITY(1001) = fu_VEC<fu_VEC<fu_STR>> { fu::slate<17, fu_VEC<fu_STR>> { fu_VEC<fu_STR>{}, fu_VEC<fu_STR>{}, fu_VEC<fu_STR> { fu::slate<3, fu_STR> { "do"_fu, "if"_fu, "or"_fu } }, fu_VEC<fu_STR> { fu::slate<8, fu_STR> { "and"_fu, "asm"_fu, "for"_fu, "int"_fu, "new"_fu, "not"_fu, "try"_fu, "xor"_fu } }, fu_VEC<fu_STR> { fu::slate<11, fu_STR> { "auto"_fu, "bool"_fu, "case"_fu, "char"_fu, "else"_fu, "enum"_fu, "goto"_fu, "long"_fu, "this"_fu, "true"_fu, "void"_fu } }, fu_VEC<fu_STR> { fu::slate<14, fu_STR> { "bitor"_fu, "break"_fu, "catch"_fu, "class"_fu, "compl"_fu, "const"_fu, "false"_fu, "float"_fu, "or_eq"_fu, "short"_fu, "throw"_fu, "union"_fu, "using"_fu, "while"_fu } }, fu_VEC<fu_STR> { fu::slate<18, fu_STR> { "and_eq"_fu, "bitand"_fu, "delete"_fu, "double"_fu, "export"_fu, "extern"_fu, "friend"_fu, "inline"_fu, "not_eq"_fu, "public"_fu, "return"_fu, "signed"_fu, "sizeof"_fu, "static"_fu, "struct"_fu, "switch"_fu, "typeid"_fu, "xor_eq"_fu } }, fu_VEC<fu_STR> { fu::slate<11, fu_STR> { "alignas"_fu, "alignof"_fu, "char8_t"_fu, "concept"_fu, "default"_fu, "mutable"_fu, "nullptr"_fu, "private"_fu, "typedef"_fu, "virtual"_fu, "wchar_t"_fu } }, fu_VEC<fu_STR> { fu::slate<16, fu_STR> { "char16_t"_fu, "char32_t"_fu, "continue"_fu, "co_await"_fu, "co_yield"_fu, "decltype"_fu, "explicit"_fu, "noexcept"_fu, "operator"_fu, "reflexpr"_fu, "register"_fu, "requires"_fu, "template"_fu, "typename"_fu, "unsigned"_fu, "volatile"_fu } }, fu_VEC<fu_STR> { fu::slate<6, fu_STR> { "consteval"_fu, "constexpr"_fu, "constinit"_fu, "co_return"_fu, "namespace"_fu, "protected"_fu } }, fu_VEC<fu_STR> { fu::slate<1, fu_STR> { "const_cast"_fu } }, fu_VEC<fu_STR> { fu::slate<1, fu_STR> { "static_cast"_fu } }, fu_VEC<fu_STR> { fu::slate<3, fu_STR> { "dynamic_cast"_fu, "synchronized"_fu, "thread_local"_fu } }, fu_VEC<fu_STR> { fu::slate<3, fu_STR> { "atomic_cancel"_fu, "atomic_commit"_fu, "static_assert"_fu } }, fu_VEC<fu_STR>{}, fu_VEC<fu_STR> { fu::slate<1, fu_STR> { "atomic_noexcept"_fu } }, fu_VEC<fu_STR> { fu::slate<1, fu_STR> { "reinterpret_cast"_fu } } } };
+static const fu_VEC<fu_VEC<fu_STR>> KEYWORDS fu_INIT_PRIORITY(1002) = fu_VEC<fu_VEC<fu_STR>> { fu::slate<17, fu_VEC<fu_STR>> { fu_VEC<fu_STR>{}, fu_VEC<fu_STR>{}, fu_VEC<fu_STR> { fu::slate<3, fu_STR> { "do"_fu, "if"_fu, "or"_fu } }, fu_VEC<fu_STR> { fu::slate<8, fu_STR> { "and"_fu, "asm"_fu, "for"_fu, "int"_fu, "new"_fu, "not"_fu, "try"_fu, "xor"_fu } }, fu_VEC<fu_STR> { fu::slate<11, fu_STR> { "auto"_fu, "bool"_fu, "case"_fu, "char"_fu, "else"_fu, "enum"_fu, "goto"_fu, "long"_fu, "this"_fu, "true"_fu, "void"_fu } }, fu_VEC<fu_STR> { fu::slate<14, fu_STR> { "bitor"_fu, "break"_fu, "catch"_fu, "class"_fu, "compl"_fu, "const"_fu, "false"_fu, "float"_fu, "or_eq"_fu, "short"_fu, "throw"_fu, "union"_fu, "using"_fu, "while"_fu } }, fu_VEC<fu_STR> { fu::slate<18, fu_STR> { "and_eq"_fu, "bitand"_fu, "delete"_fu, "double"_fu, "export"_fu, "extern"_fu, "friend"_fu, "inline"_fu, "not_eq"_fu, "public"_fu, "return"_fu, "signed"_fu, "sizeof"_fu, "static"_fu, "struct"_fu, "switch"_fu, "typeid"_fu, "xor_eq"_fu } }, fu_VEC<fu_STR> { fu::slate<11, fu_STR> { "alignas"_fu, "alignof"_fu, "char8_t"_fu, "concept"_fu, "default"_fu, "mutable"_fu, "nullptr"_fu, "private"_fu, "typedef"_fu, "virtual"_fu, "wchar_t"_fu } }, fu_VEC<fu_STR> { fu::slate<16, fu_STR> { "char16_t"_fu, "char32_t"_fu, "continue"_fu, "co_await"_fu, "co_yield"_fu, "decltype"_fu, "explicit"_fu, "noexcept"_fu, "operator"_fu, "reflexpr"_fu, "register"_fu, "requires"_fu, "template"_fu, "typename"_fu, "unsigned"_fu, "volatile"_fu } }, fu_VEC<fu_STR> { fu::slate<6, fu_STR> { "consteval"_fu, "constexpr"_fu, "constinit"_fu, "co_return"_fu, "namespace"_fu, "protected"_fu } }, fu_VEC<fu_STR> { fu::slate<1, fu_STR> { "const_cast"_fu } }, fu_VEC<fu_STR> { fu::slate<1, fu_STR> { "static_cast"_fu } }, fu_VEC<fu_STR> { fu::slate<3, fu_STR> { "dynamic_cast"_fu, "synchronized"_fu, "thread_local"_fu } }, fu_VEC<fu_STR> { fu::slate<3, fu_STR> { "atomic_cancel"_fu, "atomic_commit"_fu, "static_assert"_fu } }, fu_VEC<fu_STR>{}, fu_VEC<fu_STR> { fu::slate<1, fu_STR> { "atomic_noexcept"_fu } }, fu_VEC<fu_STR> { fu::slate<1, fu_STR> { "reinterpret_cast"_fu } } } };
 
-                                #ifndef DEF_find_tkmelWjn
-                                #define DEF_find_tkmelWjn
-inline int find_tkmelWjn(fu::view<fu_STR> a, fu::view<char> b)
+                                #ifndef DEF_x3Cx3E_gcxVH86XFM7
+                                #define DEF_x3Cx3E_gcxVH86XFM7
+inline int x3Cx3E_gcxVH86X(const int a, const int b)
+{
+    if (a < b)
+        return -1;
+    else if (a > b)
+        return +1;
+    else
+        return 0;
+
+}
+                                #endif
+
+                                #ifndef DEF_x3Cx3E_hvR4gqODwpa
+                                #define DEF_x3Cx3E_hvR4gqODwpa
+inline int x3Cx3E_hvR4gqOD(const char a, const char b)
+{
+    if (a < b)
+        return -1;
+    else if (a > b)
+        return +1;
+    else
+        return 0;
+
+}
+                                #endif
+
+                                #ifndef DEF_x3Cx3E_YP7BiSZZZOd
+                                #define DEF_x3Cx3E_YP7BiSZZZOd
+inline int x3Cx3E_YP7BiSZZ(fu::view<char> a, fu::view<char> b)
+{
+    /*MOV*/ int cmp = x3Cx3E_gcxVH86X(a.size(), b.size());
+    for (int i = 0; (i < a.size()) && !cmp; i++)
+        cmp = x3Cx3E_hvR4gqOD(a[i], b[i]);
+
+    return /*NRVO*/ cmp;
+}
+                                #endif
+
+                                #ifndef DEF_x3Dx3D_YP7BiSZZZOd
+                                #define DEF_x3Dx3D_YP7BiSZZZOd
+inline bool operator==(fu::view<char> a, fu::view<char> b)
+{
+    return !x3Cx3E_YP7BiSZZ(a, b);
+}
+                                #endif
+
+                                #ifndef DEF_find_NaazSXrklU3
+                                #define DEF_find_NaazSXrklU3
+inline int find_NaazSXrk(fu::view<fu_STR> a, fu::view<char> b)
 {
     for (/*MOV*/ int i = 0; i < a.size(); i++)
     {
@@ -29,7 +76,7 @@ fu_STR ID_LX3QLY5k(const fu_STR& id)
 {
     if (id.size() < KEYWORDS.size())
     {
-        const int idx = find_tkmelWjn(KEYWORDS[id.size()], id);
+        const int idx = find_NaazSXrk(KEYWORDS[id.size()], id);
         if ((idx >= 0))
         {
             /*MOV*/ fu_STR cpy { id };
@@ -40,40 +87,41 @@ fu_STR ID_LX3QLY5k(const fu_STR& id)
     return fu_STR(id);
 }
 
-static const fu_STR UNARY fu_INIT_PRIORITY(1001) = "++--!*&~"_fu;
+static const fu_STR UNARY fu_INIT_PRIORITY(1002) = "++--!*&~"_fu;
 
-static const fu_STR BINARY fu_INIT_PRIORITY(1001) = "+=-=*=/=%=&=|=^=<<=>>==!=&&||"_fu;
+static const fu_STR BINARY fu_INIT_PRIORITY(1002) = "+=-=*=/=%=&=|=^=<<=>>==!=&&||"_fu;
 
-static const fu_STR ASSIGN2 fu_INIT_PRIORITY(1001) = "+=-=*=/=%=&=|=^="_fu;
+static const fu_STR ASSIGN2 fu_INIT_PRIORITY(1002) = "+=-=*=/=%=&=|=^="_fu;
 
-static const fu_STR ASSIGN3 fu_INIT_PRIORITY(1001) = "<<=>>="_fu;
+static const fu_STR ASSIGN3 fu_INIT_PRIORITY(1002) = "<<=>>="_fu;
 
-bool hasAssignment_LX3QLY5k(fu::view<char> op)
+bool hasAssignment_3qRoPKdA(fu::view<char> op)
 {
     return (op == "="_fu) || ((op.size() == 2) && fu::has(ASSIGN2, op)) || ((op.size() == 3) && fu::has(ASSIGN3, op));
 }
 
-bool hasBinary_LX3QLY5k(fu::view<char> op)
+bool hasBinary_3qRoPKdA(fu::view<char> op)
 {
     return fu::has(BINARY, op);
 }
 
-bool hasPostfix_LX3QLY5k(fu::view<char> op)
+bool hasPostfix_3qRoPKdA(fu::view<char> op)
 {
     return (op == "postfix++"_fu) || (op == "postfix--"_fu);
 }
 
-bool hasUnary_LX3QLY5k(fu::view<char> op)
+bool hasUnary_3qRoPKdA(fu::view<char> op)
 {
     if (op.size() > 2)
-        return hasPostfix_LX3QLY5k(op);
+        return hasPostfix_3qRoPKdA(op);
+    else
+        return fu::has(UNARY, op);
 
-    return fu::has(UNARY, op);
 }
 
-bool hasOperator_LX3QLY5k(fu::view<char> op)
+bool hasOperator_3qRoPKdA(fu::view<char> op)
 {
-    return hasBinary_LX3QLY5k(op) || hasUnary_LX3QLY5k(op);
+    return hasBinary_3qRoPKdA(op) || hasUnary_3qRoPKdA(op);
 }
 
 #endif

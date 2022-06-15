@@ -30,12 +30,20 @@ fu_STR lower_FZjKqN6X(/*MOV*/ fu_STR&& str)
 
 char upper_3zvN02ND(const char c)
 {
-    return (((c >= 'a') && (c <= 'z')) ? char((int(fu::u8(c)) + (int(fu::u8('A')) - int(fu::u8('a'))))) : char(c));
+    if ((c >= 'a') && (c <= 'z'))
+        return char((int(fu::u8(c)) + (int(fu::u8('A')) - int(fu::u8('a')))));
+    else
+        return char(c);
+
 }
 
 char lower_3zvN02ND(const char c)
 {
-    return (((c >= 'A') && (c <= 'Z')) ? char((int(fu::u8(c)) + (int(fu::u8('a')) - int(fu::u8('A'))))) : char(c));
+    if ((c >= 'A') && (c <= 'Z'))
+        return char((int(fu::u8(c)) + (int(fu::u8('a')) - int(fu::u8('A')))));
+    else
+        return char(c);
+
 }
 
 #endif

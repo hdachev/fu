@@ -1,7 +1,9 @@
 #include <cstdint>
 #include <fu/int.h>
+#include <fu/str.h>
 #include <fu/vec.h>
 #include <fu/view.h>
+#include <fu/never.h>
 
 struct s_BitSet;
 
@@ -21,21 +23,26 @@ struct s_BitSet
 
 #ifndef fu_NO_fdefs
 
-int size_msUNRW3q(const s_BitSet& _)
+int size_lrBoAoRV(const s_BitSet& _)
 {
     return _._data.size() * 8;
 }
 
-                                #ifndef DEF_MIN_7pYptBq7
-                                #define DEF_MIN_7pYptBq7
-inline int MIN_7pYptBq7(const int)
+void clear_pjZ6yXGF(s_BitSet& _)
+{
+    _._data.clear();
+}
+
+                                #ifndef DEF_MIN_K8KxoYxA7Xl
+                                #define DEF_MIN_K8KxoYxA7Xl
+inline int MIN_K8KxoYxA(const int)
 {
     return -2147483648;
 }
                                 #endif
 
-                                #ifndef DEF_grow_if_oob_S61HT2sA
-                                #define DEF_grow_if_oob_S61HT2sA
+                                #ifndef DEF_grow_if_oob_S61HT2sAYc8
+                                #define DEF_grow_if_oob_S61HT2sAYc8
 inline fu::u8& grow_if_oob_S61HT2sA(fu_VEC<fu::u8>& a, const int i)
 {
     if ((a.size() <= i))
@@ -47,7 +54,7 @@ inline fu::u8& grow_if_oob_S61HT2sA(fu_VEC<fu::u8>& a, const int i)
 
 bool add_once_sDUBjUzV(s_BitSet& _, const int idx)
 {
-    const int no_neg = (idx & MIN_7pYptBq7(int{}));
+    const int no_neg = (idx & MIN_K8KxoYxA(int{}));
     const int bucket = ((idx >> 3) | no_neg);
     const int bit = (idx & 7);
     const fu::u8 mask = fu::u8((fu::u8(1u) << fu::u8(unsigned(bit))));
@@ -56,20 +63,22 @@ bool add_once_sDUBjUzV(s_BitSet& _, const int idx)
     {
         entry |= mask;
         return true;
-    };
-    return false;
+    }
+    else
+        return false;
+
 }
 
 void add_sDUBjUzV(s_BitSet& _, const int idx)
 {
-    const int no_neg = (idx & MIN_7pYptBq7(int{}));
+    const int no_neg = (idx & MIN_K8KxoYxA(int{}));
     const int bucket = ((idx >> 3) | no_neg);
     const int bit = (idx & 7);
     const fu::u8 mask = fu::u8((fu::u8(1u) << fu::u8(unsigned(bit))));
     grow_if_oob_S61HT2sA(_._data, bucket) |= mask;
 }
 
-void add_KQfktl8z(s_BitSet& _, const s_BitSet& other)
+void add_GKz57Mnx(s_BitSet& _, const s_BitSet& other)
 {
     const int N = other._data.size();
     if (_._data.size() < N)
@@ -80,9 +89,32 @@ void add_KQfktl8z(s_BitSet& _, const s_BitSet& other)
 
 }
 
-bool has_ur5UoMYg(const s_BitSet& _, const int idx)
+[[noreturn]] fu::never rem_GKz57Mnx(s_BitSet& _, const s_BitSet& other)
 {
-    const int no_neg = (idx & MIN_7pYptBq7(int{}));
+    /*MOV*/ int N = other._data.size();
+    if (N > _._data.size())
+        N = _._data.size();
+
+    for (int i = 0; i < N; i++)
+        _._data.mutref(i) &= fu::u8(~other._data[i]);
+
+    if (N == _._data.size())
+    {
+        int end = int(N);
+        while (end-- > 0)
+        {
+            if (_._data[end])
+                break;
+
+        };
+        _._data.shrink((end + 1));
+    };
+    fu::fail("NOT TESTED"_fu);
+}
+
+bool has_VM1JQhgd(const s_BitSet& _, const int idx)
+{
+    const int no_neg = (idx & MIN_K8KxoYxA(int{}));
     const int bucket = ((idx >> 3) | no_neg);
     const int bit = (idx & 7);
     const fu::u8 mask = fu::u8((fu::u8(1u) << fu::u8(unsigned(bit))));
@@ -91,8 +123,8 @@ bool has_ur5UoMYg(const s_BitSet& _, const int idx)
 
 bool rem_sDUBjUzV(s_BitSet& _, const int idx)
 {
-    const int no_neg = (idx & MIN_7pYptBq7(int{}));
-    const int bucket = ((idx >> 3) | no_neg);
+    const int no_neg = (idx & MIN_K8KxoYxA(int{}));
+    /*MOV*/ const int bucket = ((idx >> 3) | no_neg);
     const int bit = (idx & 7);
     const fu::u8 mask = fu::u8((fu::u8(1u) << fu::u8(unsigned(bit))));
     if (_._data.size() > bucket)
@@ -103,7 +135,7 @@ bool rem_sDUBjUzV(s_BitSet& _, const int idx)
             _._data.mutref(bucket) &= fu::u8(~mask);
             if ((item == mask) && (_._data.size() == (bucket + 1)))
             {
-                int end = bucket;
+                int end = int(bucket);
                 while (end-- > 0)
                 {
                     if (_._data[end])
@@ -120,7 +152,7 @@ bool rem_sDUBjUzV(s_BitSet& _, const int idx)
 
 void add_range_sDUBjUzV(s_BitSet& _, const int end)
 {
-    const int no_neg = (end & MIN_7pYptBq7(int{}));
+    const int no_neg = (end & MIN_K8KxoYxA(int{}));
     const int floorBytes = ((end >> 3) | no_neg);
     const int ceilBytes = (((end + 7) >> 3) | no_neg);
     _._data.grow(ceilBytes);
@@ -129,16 +161,16 @@ void add_range_sDUBjUzV(s_BitSet& _, const int end)
 
     if (ceilBytes > floorBytes)
     {
-        fu::u8 tail {};
+        /*MOV*/ fu::u8 tail {};
         int i_1 = (floorBytes << 3);
         do
             tail |= fu::u8((fu::u8(1u) << fu::u8(unsigned((i_1 & 7)))));
         while ((i_1++ < end));
-        _._data.mutref(floorBytes) = tail;
+        _._data.mutref(floorBytes) = fu::u8(tail);
     };
 }
 
-int popcount_msUNRW3q(const s_BitSet& _)
+int popcount_lrBoAoRV(const s_BitSet& _)
 {
     /*MOV*/ int sum = 0;
     const int N = (_._data.size() >> 3);
@@ -156,15 +188,19 @@ int popcount_msUNRW3q(const s_BitSet& _)
     return /*NRVO*/ sum;
 }
 
-                                #ifndef DEF_min_gcxVH86X
-                                #define DEF_min_gcxVH86X
+                                #ifndef DEF_min_gcxVH86XFM7
+                                #define DEF_min_gcxVH86XFM7
 inline int min_gcxVH86X(const int a, const int b)
 {
-    return ((a <= b) ? a : b);
+    if ((a <= b))
+        return a;
+    else
+        return b;
+
 }
                                 #endif
 
-s_BitSet& and_not_assign_KQfktl8z(s_BitSet& a, const s_BitSet& b)
+s_BitSet& and_not_assign_GKz57Mnx(s_BitSet& a, const s_BitSet& b)
 {
     const int N = min_gcxVH86X(a._data.size(), b._data.size());
     for (int i = 0; i < N; i++)

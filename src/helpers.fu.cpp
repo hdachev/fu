@@ -25,7 +25,7 @@ struct s_Mi
 
 #ifndef fu_NO_fdefs
 
-bool hasIdentifierChars_ZCtM7908(fu::view<char> id)
+bool hasIdentifierChars_XKihkJM1(fu::view<char> id)
 {
     for (int i = 0; i < id.size(); i++)
     {
@@ -37,7 +37,7 @@ bool hasIdentifierChars_ZCtM7908(fu::view<char> id)
     return false;
 }
 
-unsigned parse10u32_mPp6Ulzh(int& offset, fu::view<char> str)
+unsigned parse10u32_0HRwKgGk(int& offset, fu::view<char> str)
 {
     /*MOV*/ unsigned result {};
     while (offset < str.size())
@@ -45,91 +45,114 @@ unsigned parse10u32_mPp6Ulzh(int& offset, fu::view<char> str)
         const char c = str[offset];
         if ((c < '0') || (c > '9'))
             break;
-
-        offset++;
-        result = ((result * 10u) + (unsigned(fu::u8(c)) - unsigned(fu::u8('0'))));
+        else
+        {
+            offset++;
+            result = ((result * 10u) + (unsigned(fu::u8(c)) - unsigned(fu::u8('0'))));
+        };
     };
     return /*NRVO*/ result;
 }
 
-int parse10s32_mPp6Ulzh(int& offset, fu::view<char> str)
+int parse10s32_0HRwKgGk(int& offset, fu::view<char> str)
 {
     if ((offset >= str.size()))
         return 0;
-
-    const int mul = ((str[offset] == '-') ? ((void)offset++, -1) : +1);
-    return int(parse10u32_mPp6Ulzh(offset, str)) * mul;
+    else
+    {
+        const int mul = ((str[offset] == '-') ? ((void)offset++, -1) : +1);
+        return int(parse10u32_0HRwKgGk(offset, str)) * mul;
+    };
 }
 
-s_Mi parseMi_mPp6Ulzh(int& offset, fu::view<char> str)
+s_Mi parseMi_0HRwKgGk(int& offset, fu::view<char> str)
 {
     if ((offset >= str.size()))
+    {
         return s_Mi{};
+    }
+    else
+    {
+        /*MOV*/ int modid = 0;
+        /*MOV*/ int index = 0;
+        char c = str[offset++];
 
-    int modid = 0;
-    int index = 0;
-    char c = str[offset++];
-
-    { {
-        if ((c >= 'G') && (c <= 'V'))
-        {
-            fu_DEFER(modid *= -1);
-            modid = (int(fu::u8(c)) - int(fu::u8('G')));
-            int shift = 4;
-            for (; ; )
+        { {
+            if ((c >= 'G') && (c <= 'V'))
             {
-                if (offset == str.size())
-                    goto BL_2;
-
-                c = str[offset++];
-                if ((c < 'G') || (c > 'V'))
-                    break;
-
-                modid |= ((int(fu::u8(c)) - int(fu::u8('G'))) << shift);
-                shift += 4;
-            };
-        }
-        else if ((c >= 'g') && (c <= 'v'))
-        {
-            modid = (int(fu::u8(c)) - int(fu::u8('g')));
-            int shift = 4;
-            for (; ; )
+                fu_DEFER(modid *= -1);
+                modid = (int(fu::u8(c)) - int(fu::u8('G')));
+                int shift = 4;
+                for (; ; )
+                {
+                    if (offset == str.size())
+                        goto BL_3;
+                    else
+                    {
+                        c = str[offset++];
+                        if ((c < 'G') || (c > 'V'))
+                            break;
+                        else
+                        {
+                            modid |= ((int(fu::u8(c)) - int(fu::u8('G'))) << shift);
+                            shift += 4;
+                        };
+                    };
+                };
+            }
+            else if ((c >= 'g') && (c <= 'v'))
             {
-                if (offset == str.size())
-                    goto BL_2;
-
-                c = str[offset++];
-                if ((c < 'g') || (c > 'v'))
-                    break;
-
-                modid |= ((int(fu::u8(c)) - int(fu::u8('g'))) << shift);
-                shift += 4;
+                modid = (int(fu::u8(c)) - int(fu::u8('g')));
+                int shift = 4;
+                for (; ; )
+                {
+                    if (offset == str.size())
+                        goto BL_3;
+                    else
+                    {
+                        c = str[offset++];
+                        if ((c < 'g') || (c > 'v'))
+                            break;
+                        else
+                        {
+                            modid |= ((int(fu::u8(c)) - int(fu::u8('g'))) << shift);
+                            shift += 4;
+                        };
+                    };
+                };
             };
+            if (((c >= '0') && (c <= '9')) || ((c >= 'a') && (c <= 'f')))
+            {
+                index = ((c >= 'a') ? ((int(fu::u8(c)) - int(fu::u8('a'))) + 10) : (int(fu::u8(c)) - int(fu::u8('0'))));
+                int shift = 4;
+                for (; ; )
+                {
+                    if (offset == str.size())
+                        goto BL_3;
+                    else
+                    {
+                        c = str[offset++];
+                        if ((c >= '0') && (c <= '9'))
+                        {
+                            index |= ((int(fu::u8(c)) - int(fu::u8('0'))) << shift);
+                        }
+                        else if ((c >= 'a') && (c <= 'f'))
+                        {
+                            index |= (((int(fu::u8(c)) - int(fu::u8('a'))) + 10) << shift);
+                        }
+                        else
+                            break;
+
+                        shift += 4;
+                    };
+                };
+            };
+            offset--;
+          } BL_3:;
         };
-        if (((c >= '0') && (c <= '9')) || ((c >= 'a') && (c <= 'f')))
-        {
-            index = ((c >= 'a') ? ((int(fu::u8(c)) - int(fu::u8('a'))) + 10) : (int(fu::u8(c)) - int(fu::u8('0'))));
-            int shift = 4;
-            for (; ; )
-            {
-                if (offset == str.size())
-                    goto BL_2;
-
-                c = str[offset++];
-                if ((c >= '0') && (c <= '9'))
-                    index |= ((int(fu::u8(c)) - int(fu::u8('0'))) << shift);
-                else if ((c >= 'a') && (c <= 'f'))
-                    index |= (((int(fu::u8(c)) - int(fu::u8('a'))) + 10) << shift);
-                else
-                    break;
-
-                shift += 4;
-            };
-        };
-        offset--;
-      } BL_2:;
+        int _0 {};
+        return (_0 = int(modid), s_Mi { int(_0), int(index) });
     };
-    return s_Mi { int(modid), int(index) };
 }
 
 void appendMi_KujYnsPj(fu_STR& str, int modid, int index)

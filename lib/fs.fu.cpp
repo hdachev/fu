@@ -7,7 +7,7 @@
 #include <sys/stat.h>
 #include <fu/vec/concat_one.h>
 
-static int visit_MKeUQDzz(fu::view_mut<char>, unsigned);
+static int visit_CNjDOShc(fu::view_mut<char>, unsigned);
 #pragma GCC diagnostic push
 #ifdef __clang__
 #pragma GCC diagnostic warning "-Wunknown-warning-option"
@@ -22,17 +22,17 @@ static int visit_MKeUQDzz(fu::view_mut<char>, unsigned);
 inline constexpr unsigned RWX_RWX_RWX = (((0x7u << 6u) | (0x7u << 3u)) | (0x7u << 0u));
                                 #endif
 
-                                #ifndef DEF_ends_97z4iafs
-                                #define DEF_ends_97z4iafs
-inline bool ends_97z4iafs(fu::view<char> a, const char with)
+                                #ifndef DEF_ends_8ObANk7rz5k
+                                #define DEF_ends_8ObANk7rz5k
+inline bool ends_8ObANk7r(fu::view<char> a, const char with)
 {
     return a.size() && (a[(a.size() - 1)] == with);
 }
                                 #endif
 
-static int visit_MKeUQDzz(fu::view_mut<char> path, const unsigned mode)
+static int visit_CNjDOShc(fu::view_mut<char> path, const unsigned mode)
 {
-    const int N = (path.size() - 1);
+    /*MOV*/ const int N = (path.size() - 1);
     path.mutref(N) = '\x00';
     fu_DEFER(path.mutref(N) = '/');
     /*MOV*/ int err {};
@@ -43,21 +43,23 @@ static int visit_MKeUQDzz(fu::view_mut<char> path, const unsigned mode)
         ;
     if (is_ENOENT)
     {
-        for (int i = N; i-- > 1; )
+        for (int i = int(N); i-- > 1; )
         {
             if (path[i] != '/')
                 continue;
-
-            fu::view_mut<char> parent = fu::get_view_mut(path, 0, (i + 1));
-            if (visit_MKeUQDzz(parent, mode) == 0)
+            else
             {
+                fu::view_mut<char> parent = fu::get_view_mut(path, 0, (i + 1));
+                if (visit_CNjDOShc(parent, mode) == 0)
+                {
 
 
                     if (mkdir(path.data(), mode_t(mode)))
                         err = errno;
                 ;
+                };
+                break;
             };
-            break;
         };
     };
     return /*NRVO*/ err;
@@ -65,10 +67,10 @@ static int visit_MKeUQDzz(fu::view_mut<char> path, const unsigned mode)
 
 int mkdir_p_dj7lmmQl(fu_STR&& path, const unsigned mode)
 {
-    if (!ends_97z4iafs(path, '/'))
+    if (!ends_8ObANk7r(path, '/'))
         path += '/';
 
-    return visit_MKeUQDzz(path, mode);
+    return visit_CNjDOShc(path, mode);
 }
 
 fu_STR cwd_OvAHpuKu()

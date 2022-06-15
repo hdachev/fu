@@ -62,9 +62,9 @@ int write_Aym1I4GS(fu_STR&& path, fu::view<char> data, const unsigned mode)
     return /*NRVO*/ err;
 }
 
-                                #ifndef DEF_MAX_yCmh5aVe
-                                #define DEF_MAX_yCmh5aVe
-inline int MAX_yCmh5aVe(const int)
+                                #ifndef DEF_MAX_K8KxoYxA7Xl
+                                #define DEF_MAX_K8KxoYxA7Xl
+inline int MAX_K8KxoYxA(const int)
 {
     return 2147483647;
 }
@@ -88,12 +88,11 @@ int read_H93z2wTc(fu_STR&& path, fu_STR& output, int64_t size)
         };
         int len0 = output.size();
         const int64_t len1 = (int64_t(len0) + size);
-        if (len1 > (int64_t(MAX_yCmh5aVe(len0)) - 16ll))
-        {
+        if (len1 > (int64_t(MAX_K8KxoYxA(len0)) - 16ll))
 
                 return (err = EFBIG);
             ;
-        };
+
 
             auto fd = open(path.data(), O_RDONLY);
             if (fd == -1)
@@ -136,10 +135,10 @@ int read_H93z2wTc(fu_STR&& path, fu_STR& output, int64_t size)
     return /*NRVO*/ err;
 }
 
-fu_STR read_ny0gyQ9a(fu_STR&& path)
+fu_STR read_ny0gyQ9a(/*MOV*/ fu_STR&& path)
 {
     /*MOV*/ fu_STR output {};
-    if (read_H93z2wTc(fu_STR(path), output, 0ll))
+    if (read_H93z2wTc(static_cast<fu_STR&&>(path), output, 0ll))
         output.clear();
 
     return /*NRVO*/ output;

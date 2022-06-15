@@ -3,16 +3,10 @@
 #include <fu/str.h>
 #include <fu/vec.h>
 #include <fu/view.h>
-#include <fu/never.h>
 #include <fu/print.h>
 #include <fu/decstr.h>
-#include <fu/default.h>
 #include <fu/vec/concat.h>
-#include <fu/init_priority.h>
-#include <fu/vec/concat_one.h>
-#include <fu/vec/view_assign.h>
 
-struct s_Context;
 struct s_Module;
 struct s_ModuleInputs;
 struct s_LexerOutput;
@@ -51,27 +45,12 @@ typedef int s_SolverNotes;
 struct s_CodegenOutput;
 struct s_ModuleStats;
 struct s_ModuleStat;
-struct s_Map_gb6sFwC7IKi;
-struct s_Options;
-struct s_Lint;
-s_Module& getModule_WPdR5TkH(const fu_STR&, s_Context&);
-fu_STR getFile_WPdR5TkH(fu_STR&&, s_Context&);
-s_ModuleStat ModuleStat_now_pUbtfzLn();
-s_LexerOutput lex_3z7oWPeJ(const fu_STR&, fu::view<char>);
-s_ParserOutput parse_s7vuAgZz(int, const fu_STR&, const fu_STR&, fu::view<s_Token>, const s_Options&);
-s_ModuleStat operator-(const s_ModuleStat&, const s_ModuleStat&);
-void setModule_IqHncgDn(const s_Module&, s_Context&);
-fu_STR resolveFile_WPdR5TkH(const fu_STR&, s_Context&);
-static s_ModuleOrder compile_lexParseDeps_rasidNMT(const fu_STR&, const fu_STR&, s_Context&, const s_Options&);
-s_SolverOutput solve_88f7wJ3Z(const s_Context&, s_Module&, const s_Options&);
-void inspect_ccjqvemK(const s_Module&);
-s_CodegenOutput cpp_codegen_NCKyO7IL(const s_Module&, const s_Context&);
-fu_STR get_1w6Ekz7Y(fu_STR&&);
-int64_t size_ny0gyQ9a(fu_STR&&);
-double hr_CPFg3qvV();
-void operator+=(s_ModuleStat&, const s_ModuleStat&);
-void ModuleStat_print_Juw13ven(const s_ModuleStat&, const fu_STR&, fu::view<char>);
-void build_E7FDvIUS(fu_STR&&, fu::view<char>, fu_STR&&, fu_STR&&, fu_STR&&, fu_STR&&, fu_STR&&, const fu_STR&, fu::view<char>, const fu_STR&, bool, bool, bool, const fu_VEC<fu_STR>&, const fu_VEC<fu_STR>&, const s_Context&);
+fu_STR qID_ThvlUeXJ(const fu_STR&);
+fu_STR qLT_ThvlUeXJ(const fu_STR&);
+fu_STR qKW_ThvlUeXJ(const fu_STR&);
+fu_STR qBAD_ThvlUeXJ(const fu_STR&);
+fu_STR trim_ZCtM7908(const fu_STR&);
+static void inspect_B4xKuDxS(const s_SolvedNode&, fu::view<char>, fu_STR&, int, const s_Module&);
 
                                 #ifndef DEF_s_kind
                                 #define DEF_s_kind
@@ -966,428 +945,154 @@ struct s_Module
 };
                                 #endif
 
-                                #ifndef DEF_s_Map_gb6sFwC7IKi
-                                #define DEF_s_Map_gb6sFwC7IKi
-struct s_Map_gb6sFwC7IKi
-{
-    fu_VEC<fu_STR> keys;
-    fu_VEC<fu_STR> vals;
-    explicit operator bool() const noexcept
-    {
-        return false
-            || keys
-            || vals
-        ;
-    }
-};
-                                #endif
-
-                                #ifndef DEF_s_Context
-                                #define DEF_s_Context
-struct s_Context
-{
-    fu_VEC<s_Module> modules;
-    fu_VEC<int> dep_order;
-    s_Map_gb6sFwC7IKi files;
-    s_Map_gb6sFwC7IKi fuzzy;
-    s_Context(const s_Context&) = delete;
-    s_Context(s_Context&&) = default;
-    s_Context& operator=(const s_Context&) = delete;
-    s_Context& operator=(s_Context&&) = default;
-    explicit operator bool() const noexcept
-    {
-        return false
-            || modules
-            || dep_order
-            || files
-            || fuzzy
-        ;
-    }
-};
-                                #endif
-
-                                #ifndef DEF_s_Lint
-                                #define DEF_s_Lint
-struct s_Lint
-{
-    int maxwarn;
-    explicit operator bool() const noexcept
-    {
-        return false
-            || maxwarn
-        ;
-    }
-};
-                                #endif
-
-                                #ifndef DEF_s_Options
-                                #define DEF_s_Options
-struct s_Options
-{
-    s_Lint lint;
-    s_SolverNotes break_notes;
-    unsigned dev;
-    explicit operator bool() const noexcept
-    {
-        return false
-            || lint
-            || break_notes
-            || dev
-        ;
-    }
-};
-                                #endif
-
 #ifndef fu_NO_fdefs
 
-                                #ifndef DEF_clone_uFTeeyF6178
-                                #define DEF_clone_uFTeeyF6178
-inline int clone_uFTeeyF6(const int a)
+                                #ifndef DEF_str_x2XZ9C2mr79
+                                #define DEF_str_x2XZ9C2mr79
+inline fu_STR str_x2XZ9C2m(const s_kind n)
 {
-    return a;
-}
-                                #endif
-
-                                #ifndef DEF_clone_ZCtM7908em2
-                                #define DEF_clone_ZCtM7908em2
-inline const fu_STR& clone_ZCtM7908(const fu_STR& a)
-{
-    return a;
-}
-                                #endif
-
-                                #ifndef DEF_clone_Ubr1UgJywL7
-                                #define DEF_clone_Ubr1UgJywL7
-inline const s_ModuleInputs& clone_Ubr1UgJy(const s_ModuleInputs& a)
-{
-    return a;
-}
-                                #endif
-
-                                #ifndef DEF_clone_plfOxjBDXu6
-                                #define DEF_clone_plfOxjBDXu6
-inline const s_ModuleOrder& clone_plfOxjBD(const s_ModuleOrder& a)
-{
-    return a;
-}
-                                #endif
-
-                                #ifndef DEF_clone_uhFEw1JYsb6
-                                #define DEF_clone_uhFEw1JYsb6
-inline const fu_VEC<s_Struct>& clone_uhFEw1JY(const fu_VEC<s_Struct>& a)
-{
-    return a;
-}
-                                #endif
-
-                                #ifndef DEF_clone_5SroIQL7AMc
-                                #define DEF_clone_5SroIQL7AMc
-inline const s_SolvedNode& clone_5SroIQL7(const s_SolvedNode& a)
-{
-    return a;
-}
-                                #endif
-
-                                #ifndef DEF_clone_pVzH1qAze10
-                                #define DEF_clone_pVzH1qAze10
-inline const fu_VEC<s_Overload>& clone_pVzH1qAz(const fu_VEC<s_Overload>& a)
-{
-    return a;
-}
-                                #endif
-
-                                #ifndef DEF_clone_589ji8xIkwc
-                                #define DEF_clone_589ji8xIkwc
-inline const fu_VEC<s_Extended>& clone_589ji8xI(const fu_VEC<s_Extended>& a)
-{
-    return a;
-}
-                                #endif
-
-                                #ifndef DEF_clone_L1OynXoo4W8
-                                #define DEF_clone_L1OynXoo4W8
-inline const fu_VEC<s_ScopeItem>& clone_L1OynXoo(const fu_VEC<s_ScopeItem>& a)
-{
-    return a;
-}
-                                #endif
-
-                                #ifndef DEF_clone_krBIyjUlm12
-                                #define DEF_clone_krBIyjUlm12
-inline const fu_VEC<int>& clone_krBIyjUl(const fu_VEC<int>& a)
-{
-    return a;
-}
-                                #endif
-
-                                #ifndef DEF_clone_fjWGI0vCJl7
-                                #define DEF_clone_fjWGI0vCJl7
-inline const fu_VEC<s_Target>& clone_fjWGI0vC(const fu_VEC<s_Target>& a)
-{
-    return a;
-}
-                                #endif
-
-                                #ifndef DEF_clone_qN0pIGaTWq8
-                                #define DEF_clone_qN0pIGaTWq8
-inline s_Scope clone_qN0pIGaT(const s_Scope& a)
-{
-    /*MOV*/ s_Scope res {};
-
+    if (n == s_kind_sof)
+        return "sof"_fu;
+    else if (n == s_kind_id)
+        return "id"_fu;
+    else if (n == s_kind_op)
+        return "op"_fu;
+    else if (n == s_kind_int)
+        return "int"_fu;
+    else if (n == s_kind_real)
+        return "real"_fu;
+    else if (n == s_kind_char)
+        return "char"_fu;
+    else if (n == s_kind_str)
+        return "str"_fu;
+    else if (n == s_kind_err)
+        return "err"_fu;
+    else if (n == s_kind_eof)
+        return "eof"_fu;
+    else if (n == s_kind_root)
+        return "root"_fu;
+    else if (n == s_kind_block)
+        return "block"_fu;
+    else if (n == s_kind_argid)
+        return "argid"_fu;
+    else if (n == s_kind_let)
+        return "let"_fu;
+    else if (n == s_kind_call)
+        return "call"_fu;
+    else if (n == s_kind_arrlit)
+        return "arrlit"_fu;
+    else if (n == s_kind_if)
     {
-        res.overloads = clone_pVzH1qAz(a.overloads);
-        res.extended = clone_589ji8xI(a.extended);
-        res.items = clone_L1OynXoo(a.items);
-        res.implicits = clone_L1OynXoo(a.implicits);
-        res.imports = clone_krBIyjUl(a.imports);
-        res.privates = clone_krBIyjUl(a.privates);
-        res.usings = clone_fjWGI0vC(a.usings);
-        res.converts = clone_fjWGI0vC(a.converts);
-        res.pub_items = clone_uFTeeyF6(a.pub_items);
-        res.pub_cnvrts = clone_uFTeeyF6(a.pub_cnvrts);
-    };
-    return /*NRVO*/ res;
-}
-                                #endif
-
-                                #ifndef DEF_clone_78p1SrmO3Wk
-                                #define DEF_clone_78p1SrmO3Wk
-inline s_SolverNotes clone_78p1SrmO(const s_SolverNotes a)
-{
-    return a;
-}
-                                #endif
-
-                                #ifndef DEF_clone_vUXrtzZvhGl
-                                #define DEF_clone_vUXrtzZvhGl
-inline s_SolverOutput clone_vUXrtzZv(const s_SolverOutput& a)
-{
-    /*MOV*/ s_SolverOutput res {};
-
-    {
-        res.root = clone_5SroIQL7(a.root);
-        res.scope = clone_qN0pIGaT(a.scope);
-        res.notes = clone_78p1SrmO(a.notes);
-    };
-    return /*NRVO*/ res;
-}
-                                #endif
-
-                                #ifndef DEF_clone_mRxGHiSsdK0
-                                #define DEF_clone_mRxGHiSsdK0
-inline const s_CodegenOutput& clone_mRxGHiSs(const s_CodegenOutput& a)
-{
-    return a;
-}
-                                #endif
-
-                                #ifndef DEF_clone_Tzsta5ldyWc
-                                #define DEF_clone_Tzsta5ldyWc
-inline s_ModuleOutputs clone_Tzsta5ld(const s_ModuleOutputs& a)
-{
-    /*MOV*/ s_ModuleOutputs res {};
-
-    {
-        res.types = clone_uhFEw1JY(a.types);
-        res.solve = clone_vUXrtzZv(a.solve);
-        res.cpp = clone_mRxGHiSs(a.cpp);
-    };
-    return /*NRVO*/ res;
-}
-                                #endif
-
-                                #ifndef DEF_clone_ncaVWBO3C8d
-                                #define DEF_clone_ncaVWBO3C8d
-inline const s_ModuleStats& clone_ncaVWBO3(const s_ModuleStats& a)
-{
-    return a;
-}
-                                #endif
-
-                                #ifndef DEF_clone_jFwbe1Ionzd
-                                #define DEF_clone_jFwbe1Ionzd
-inline s_Module clone_jFwbe1Io(const s_Module& a)
-{
-    /*MOV*/ s_Module res {};
-
-    {
-        res.modid = clone_uFTeeyF6(a.modid);
-        res.fname = clone_ZCtM7908(a.fname);
-        res.in = clone_Ubr1UgJy(a.in);
-        res.order = clone_plfOxjBD(a.order);
-        res.out = clone_Tzsta5ld(a.out);
-        res.stats = clone_ncaVWBO3(a.stats);
-    };
-    return /*NRVO*/ res;
-}
-                                #endif
-
-static s_ModuleOrder compile_lexParseDeps_rasidNMT(const fu_STR& fname, const fu_STR& via, s_Context& ctx, const s_Options& options)
-{
-    const s_Module& module = getModule_WPdR5TkH(fname, ctx);
-    if (module.in)
-    {
-        if (module.order)
-            return s_ModuleOrder((module.order ? module.order : fu::fail("BUG: !!module.in but !module.order"_fu)));
-        else
-            fu::fail((((("import circle: `"_fu + fname) + "\n\t<- "_fu) + via) + "`."_fu));
-
+        return "if"_fu;
     }
-    else
-    {
-        /*MOV*/ s_Module module_1 = clone_jFwbe1Io(module);
-        if (module_1.out)
-            fu::fail("BUG: !!module.out"_fu);
-        else
-        {
-            fu_STR _0 {};
-            /*MOV*/ fu_STR src = ((_0 = getFile_WPdR5TkH(fu_STR(fname), ctx)) ? static_cast<fu_STR&&>(_0) : fu::fail(((("import badfile: `"_fu + via) + fname) + "`."_fu)));
-            const s_ModuleStat stat0 = ModuleStat_now_pUbtfzLn();
-            /*MOV*/ s_LexerOutput lexer_result = lex_3z7oWPeJ(src, fname);
-            const s_ModuleStat stat1 = ModuleStat_now_pUbtfzLn();
-            /*MOV*/ s_ParserOutput parser_result = parse_s7vuAgZz(module_1.modid, fname, src, lexer_result.tokens, options);
-            const s_ModuleStat stat2 = ModuleStat_now_pUbtfzLn();
-            s_LexerOutput _1 {};
-            module_1.in = (_1 = static_cast<s_LexerOutput&&>(lexer_result), s_ModuleInputs { static_cast<fu_STR&&>(src), static_cast<s_LexerOutput&&>(_1), static_cast<s_ParserOutput&&>(parser_result) });
-            module_1.stats.lex = (stat1 - stat0);
-            module_1.stats.parse = (stat2 - stat1);
-            setModule_IqHncgDn(module_1, ctx);
-            if (!module_1.order || fu::fail("BUG: !!module.order"_fu))
-            {
-                module_1.order.dep_depth = 1;
-                fu_VEC<fu_STR> fuzimports { module_1.in.parse.fuzimports };
-                for (int i = 0; i < fuzimports.size(); i++)
-                {
-                    const s_ModuleOrder order = compile_lexParseDeps_rasidNMT(resolveFile_WPdR5TkH(fuzimports[i], ctx), (fname + (via ? ("\n\t<- "_fu + via) : fu_STR{})), ctx, options);
-                    if ((module_1.order.dep_depth <= order.dep_depth))
-                        module_1.order.dep_depth = (order.dep_depth + 1);
+    else if (n == s_kind_or)
+        return "or"_fu;
+    else if (n == s_kind_and)
+        return "and"_fu;
+    else if (n == s_kind_loop)
+        return "loop"_fu;
+    else if (n == s_kind_break)
+        return "break"_fu;
+    else if (n == s_kind_return)
+        return "return"_fu;
+    else if (n == s_kind_continue)
+        return "continue"_fu;
+    else if (n == s_kind_bool)
+        return "bool"_fu;
+    else if (n == s_kind_definit)
+        return "definit"_fu;
+    else if (n == s_kind_import)
+        return "import"_fu;
+    else if (n == s_kind_defer)
+        return "defer"_fu;
+    else if (n == s_kind_try)
+        return "try"_fu;
+    else if (n == s_kind_typedef)
+        return "typedef"_fu;
+    else if (n == s_kind_typecast)
+        return "typecast"_fu;
+    else if (n == s_kind_typeassert)
+        return "typeassert"_fu;
+    else if (n == s_kind_typeparam)
+        return "typeparam"_fu;
+    else if (n == s_kind_addroffn)
+        return "addroffn"_fu;
+    else if (n == s_kind_unwrap)
+        return "unwrap"_fu;
+    else if (n == s_kind_forfieldsof)
+        return "forfieldsof"_fu;
+    else if (n == s_kind_pragma)
+        return "pragma"_fu;
+    else if (n == s_kind_void)
+        return "void"_fu;
+    else if (n == s_kind_struct)
+        return "struct"_fu;
+    else if (n == s_kind_union)
+        return "union"_fu;
+    else if (n == s_kind_primitive)
+        return "primitive"_fu;
+    else if (n == s_kind_flags)
+        return "flags"_fu;
+    else if (n == s_kind_enum)
+        return "enum"_fu;
+    else if (n == s_kind_members)
+        return "members"_fu;
+    else if (n == s_kind_fn)
+        return "fn"_fu;
+    else if (n == s_kind_fnbranch)
+        return "fnbranch"_fu;
+    else if (n == s_kind_pattern)
+        return "pattern"_fu;
+    else if (n == s_kind_typeunion)
+        return "typeunion"_fu;
+    else if (n == s_kind_typetag)
+        return "typetag"_fu;
+    else if (n == s_kind_jump)
+        return "jump"_fu;
+    else if (n == s_kind_empty)
+        return "empty"_fu;
+    else if (n == s_kind_letdef)
+        return "letdef"_fu;
+    else if (n == s_kind___relaxed)
+        return "__relaxed"_fu;
+    else if (n == s_kind___convert)
+        return "__convert"_fu;
+    else if (n == s_kind_fndef)
+        return "fndef"_fu;
+    else if (n == s_kind_copy)
+        return "copy"_fu;
+    else if (n == s_kind_move)
+        return "move"_fu;
+    else if (n == s_kind___far_jump)
+        return "__far_jump"_fu;
+    else if (n == s_kind___no_kind_yet)
+        return "__no_kind_yet"_fu;
+    else if (n == s_kind_type)
+        return "type"_fu;
+    else if (n == s_kind_var)
+        return "var"_fu;
+    else if (n == s_kind_field)
+        return "field"_fu;
+    else if (n == s_kind_enumv)
+        return "enumv"_fu;
+    else if (n == s_kind_template)
+        return "template"_fu;
+    else if (n == s_kind___native)
+        return "__native"_fu;
+    else if (n == s_kind_inline)
+        return "inline"_fu;
 
-                };
-                setModule_IqHncgDn(module_1, ctx);
-            };
-            return s_ModuleOrder((module_1.order ? module_1.order : fu::fail("BUG: !module.order after lexParseDeps."_fu)));
-        };
-    };
-}
-
-                                #ifndef DEF_grow_if_oob_eq5Lu6Hwt31
-                                #define DEF_grow_if_oob_eq5Lu6Hwt31
-inline fu_VEC<int>& grow_if_oob_eq5Lu6Hw(fu_VEC<fu_VEC<int>>& a, const int i)
-{
-    if ((a.size() <= i))
-        a.grow((i + 1));
-
-    return a.mutref(i);
-}
-                                #endif
-
-                                #ifndef DEF_join_6nodBuv9xv9
-                                #define DEF_join_6nodBuv9xv9
-inline fu_VEC<int> join_6nodBuv9(fu::view<fu_VEC<int>> a)
-{
-    if (a.size() < 2)
-        return fu_VEC<int>((a.size() ? a[0] : (*(const fu_VEC<int>*)fu::NIL)));
-    else
-    {
-        const int N = 0;
-        int size = a[0].size();
-        for (int i = 1; i < a.size(); i++)
-            size += (N + a[i].size());
-
-        /*MOV*/ fu_VEC<int> res {};
-        res.grow<false>(size);
-        fu::view<int> head = a[0];
-        size = head.size();
-        fu::view_assign(fu::get_view_mut(res, 0, head.size()), head);
-        for (int i_1 = 1; i_1 < a.size(); i_1++)
-        {
-            fu::view<int> range = a[i_1];
-            size += N;
-            fu::view_assign(fu::get_view_mut(res, size, (size + range.size())), range);
-            size += range.size();
-        };
-        return /*NRVO*/ res;
-    };
-}
-                                #endif
-
-                                #ifndef DEF_DEV_PrintAST
-                                #define DEF_DEV_PrintAST
-inline constexpr unsigned DEV_PrintAST = (0x1u << 1u);
-                                #endif
-
-static void compile_solveCodegen_wyDw9c3y(s_Module& module, const s_Options& options, const s_Context& ctx)
-{
-    if (module.out)
-        fu::fail("compile_solveCodegen: !!module.out"_fu);
-    else
-    {
-        const s_ModuleStat stat0 = ModuleStat_now_pUbtfzLn();
-        module.out.solve = solve_88f7wJ3Z(ctx, module, options);
-        if (options.dev & DEV_PrintAST)
-            inspect_ccjqvemK(module);
-
-        const s_ModuleStat stat1 = ModuleStat_now_pUbtfzLn();
-        module.out.cpp = cpp_codegen_NCKyO7IL(module, ctx);
-        const s_ModuleStat stat2 = ModuleStat_now_pUbtfzLn();
-        module.stats.solve = (stat1 - stat0);
-        module.stats.codegen = (stat2 - stat1);
-    };
-}
-
-                                #ifndef DEF_each_AzKegufdVAk
-                                #define DEF_each_AzKegufdVAk
-inline void each_AzKegufd(fu::view<int> a, s_Context& ctx, const s_Options& options)
-{
-    for (int i = 0; i < a.size(); i++)
-    {
-        const int modid = a[i];
-        const s_Module& module = ctx.modules[modid];
-        if (!module.out)
-        {
-            s_Module module_1 = clone_jFwbe1Io(module);
-            compile_solveCodegen_wyDw9c3y(module_1, options, ctx);
-            setModule_IqHncgDn(module_1, ctx);
-        };
-    };
+    return fu::i64dec(int64_t(n));
 }
                                 #endif
 
-void compile_rasidNMT(const fu_STR& fname, const fu_STR& via, s_Context& ctx, const s_Options& options)
+                                #ifndef DEF_x7Ex3D_qlVazLihZ2i
+                                #define DEF_x7Ex3D_qlVazLihZ2i
+inline fu_STR& x7Ex3D_qlVazLih(fu_STR& a, fu::view<char> b)
 {
-    compile_lexParseDeps_rasidNMT(fname, via, ctx, options);
-    fu_VEC<fu_VEC<int>> dep_order {};
-    for (int i = 0; i < ctx.modules.size(); i++)
-    {
-        const s_Module& module = ctx.modules[i];
-        grow_if_oob_eq5Lu6Hw(dep_order, module.order.dep_depth) += int(module.modid);
-    };
-    ctx.dep_order = join_6nodBuv9(dep_order);
-    for (int i_1 = 0; i_1 < dep_order.size(); i_1++)
-    {
-        fu::view<int> modids = dep_order[i_1];
-        each_AzKegufd(modids, ctx, options);
-    };
-}
-
-                                #ifndef DEF_if_last_XKihkJM18Pe
-                                #define DEF_if_last_XKihkJM18Pe
-inline char if_last_XKihkJM1(fu::view<char> s)
-{
-    return s.size() ? s[(s.size() - 1)] : (*(const char*)fu::NIL);
+    return (a += b);
 }
                                 #endif
-
-static fu_STR absdir_0ex5iJt8(const fu_STR& a)
-{
-    if (if_last_XKihkJM1(a) == '/')
-        return fu_STR(a);
-    else
-        return a + '/';
-
-}
-
-static const fu_STR HOME fu_INIT_PRIORITY(1012) = absdir_0ex5iJt8(get_1w6Ekz7Y("HOME"_fu));
 
                                 #ifndef DEF_x7E_YP7BiSZZZOd
                                 #define DEF_x7E_YP7BiSZZZOd
@@ -1397,137 +1102,179 @@ inline fu_STR x7E_YP7BiSZZ(fu::view<char> a, fu::view<char> b)
 }
                                 #endif
 
-fu_STR locate_FUDIR_LI96RGZs()
+                                #ifndef DEF_str_KY0ysfdU8Pc
+                                #define DEF_str_KY0ysfdU8Pc
+inline fu_STR str_KY0ysfdU(const s_Flags n)
 {
-    /*MOV*/ fu_STR dir = (HOME + "fu/"_fu);
-    fu_STR fn = (dir + "src/compiler.fu"_fu);
-    const int64_t fs = size_ny0gyQ9a(fu_STR(fn));
-    if (fs > 1000ll)
-        return /*NRVO*/ dir;
-    else
-        fu::fail(x7E_YP7BiSZZ((("Bad compiler.fu: "_fu + fn) + ": "_fu), fu::i64dec(fs)));
-
-}
-
-                                #ifndef DEF_FUDIR
-                                #define DEF_FUDIR
-extern const fu_STR FUDIR fu_INIT_PRIORITY(1012) = locate_FUDIR_LI96RGZs();
-                                #endif
-
-                                #ifndef DEF_DEFAULT_WORKSPACE
-                                #define DEF_DEFAULT_WORKSPACE
-extern const fu_STR DEFAULT_WORKSPACE fu_INIT_PRIORITY(1012) = (FUDIR + "build-cpp/"_fu);
-                                #endif
-
-                                #ifndef DEF_CTX_PRELUDE
-                                #define DEF_CTX_PRELUDE
-extern const s_Context CTX_PRELUDE;
-                                #endif
-
-                                #ifndef DEF_map_IjFmPwRP6ck
-                                #define DEF_map_IjFmPwRP6ck
-inline fu_VEC<s_Module> map_IjFmPwRP(fu::view<s_Module> a)
-{
-    /*MOV*/ fu_VEC<s_Module> res {};
-    res.grow<false>(a.size());
-    for (int i = 0; i < a.size(); i++)
-        res.mutref(i) = clone_jFwbe1Io(a[i]);
-
-    return /*NRVO*/ res;
-}
-                                #endif
-
-                                #ifndef DEF_clone_LU0aFJvTaB1
-                                #define DEF_clone_LU0aFJvTaB1
-inline fu_VEC<s_Module> clone_LU0aFJvT(fu::view<s_Module> a)
-{
-    return map_IjFmPwRP(a);
-}
-                                #endif
-
-                                #ifndef DEF_clone_KBgi0Tm8es5
-                                #define DEF_clone_KBgi0Tm8es5
-inline const s_Map_gb6sFwC7IKi& clone_KBgi0Tm8(const s_Map_gb6sFwC7IKi& a)
-{
-    return a;
-}
-                                #endif
-
-                                #ifndef DEF_clone_eixx2GVSM9a
-                                #define DEF_clone_eixx2GVSM9a
-inline s_Context clone_eixx2GVS(const s_Context& a)
-{
-    /*MOV*/ s_Context res {};
+    /*MOV*/ fu_STR res {};
 
     {
-        res.modules = clone_LU0aFJvT(a.modules);
-        res.dep_order = clone_krBIyjUl(a.dep_order);
-        res.files = clone_KBgi0Tm8(a.files);
-        res.fuzzy = clone_KBgi0Tm8(a.fuzzy);
+        if (n & s_Flags_F_METHOD)
+            res += ("F_METHOD"_fu + ", "_fu);
+
+        if (n & s_Flags_F_INFIX)
+            res += ("F_INFIX"_fu + ", "_fu);
+
+        if (n & s_Flags_F_PREFIX)
+            res += ("F_PREFIX"_fu + ", "_fu);
+
+        if (n & s_Flags_F_POSTFIX)
+            res += ("F_POSTFIX"_fu + ", "_fu);
+
+        if (n & s_Flags_F_ACCESS)
+            res += ("F_ACCESS"_fu + ", "_fu);
+
+        if (n & s_Flags_F_COMPOUND_ID)
+            res += ("F_COMPOUND_ID"_fu + ", "_fu);
+
+        if (n & s_Flags_F_WRITTEN_TO)
+            res += ("F_WRITTEN_TO"_fu + ", "_fu);
+
+        if (n & s_Flags_F_LAX)
+            res += ("F_LAX"_fu + ", "_fu);
+
+        if (n & s_Flags_F_ARG)
+            res += ("F_ARG"_fu + ", "_fu);
+
+        if (n & s_Flags_F_OPERATOR)
+            res += ("F_OPERATOR"_fu + ", "_fu);
+
+        if (n & s_Flags_F_MOVED_FROM)
+            res += ("F_MOVED_FROM"_fu + ", "_fu);
+
+        if (n & s_Flags_F_CONVERSION)
+            res += ("F_CONVERSION"_fu + ", "_fu);
+
+        if (n & s_Flags_F_OPT_ARG)
+            res += ("F_OPT_ARG"_fu + ", "_fu);
+
+        if (n & s_Flags_F_MUT)
+            res += ("F_MUT"_fu + ", "_fu);
+
+        if (n & s_Flags_F_REF)
+            res += ("F_REF"_fu + ", "_fu);
+
+        if (n & s_Flags_F_IMPLICIT)
+            res += ("F_IMPLICIT"_fu + ", "_fu);
+
+        if (n & s_Flags_F_USING)
+            res += ("F_USING"_fu + ", "_fu);
+
+        if (n & s_Flags_F_MUSTNAME)
+            res += ("F_MUSTNAME"_fu + ", "_fu);
+
+        if (n & s_Flags_F_SHADOW)
+            res += ("F_SHADOW"_fu + ", "_fu);
+
+        if (n & s_Flags_F_PUB)
+            res += ("F_PUB"_fu + ", "_fu);
+
+        if (n & s_Flags_F_EXTERN)
+            res += ("F_EXTERN"_fu + ", "_fu);
+
+        if (n & s_Flags_F_HOTSWAP)
+            res += ("F_HOTSWAP"_fu + ", "_fu);
+
+        if (n & s_Flags_F_PREDICATE)
+            res += ("F_PREDICATE"_fu + ", "_fu);
+
+        if (n & s_Flags_F_NAMED_ARGS)
+            res += ("F_NAMED_ARGS"_fu + ", "_fu);
+
+        if (n & s_Flags_F_OOE_RTL)
+            res += ("F_OOE_RTL"_fu + ", "_fu);
+
+        if (n & s_Flags_F_REST_ARG)
+            res += ("F_REST_ARG"_fu + ", "_fu);
+
+        if (n & s_Flags_F_RELAXABLE_REF)
+            res += ("F_RELAXABLE_REF"_fu + ", "_fu);
+
+        if (n & s_Flags_F_TEMPLATE)
+            res += ("F_TEMPLATE"_fu + ", "_fu);
+
+        if (n & s_Flags_F_INLINE)
+            res += ("F_INLINE"_fu + ", "_fu);
+
+        if (n & s_Flags_F_LAMBDA)
+            res += ("F_LAMBDA"_fu + ", "_fu);
+
     };
+    if (res)
+        res.shrink((res.size() - 2));
+
     return /*NRVO*/ res;
 }
                                 #endif
 
-void compile_and_build_iVxREEwY(const fu_STR& fname, const fu_STR& dir_wrk, const fu_STR& bin, const fu_STR& dir_obj, const fu_STR& dir_src, const fu_STR& dir_cpp, fu::view<char> scheme, const bool run, const bool shared, const bool hotswap, const fu_VEC<fu_STR>& flags_cc, const fu_VEC<fu_STR>& flags_ld)
+static void inspect_B4xKuDxS(const s_SolvedNode& n, fu::view<char> indent, fu_STR& src, const int modid, const s_Module& module)
 {
-    // Hoisted:
-    fu_STR x;
-    fu_STR x_1;
-    fu_STR x_2;
-    fu_STR x_3;
-
-    s_Context ctx = clone_eixx2GVS(CTX_PRELUDE);
-    const s_Options options {};
-
+    src += (indent + "("_fu);
+    if (n)
     {
-        fu_STR* BL_2_v;
-        fu::println((fu::slate<2, fu_STR> { static_cast<fu_STR&&>((__extension__ (
+        if (n.kind == s_kind_call)
+            src += qID_ThvlUeXJ(str_x2XZ9C2m(n.kind));
+        else if ((n.kind == s_kind_block) || (n.kind == s_kind_jump) || (n.kind == s_kind_defer))
+            src += qLT_ThvlUeXJ(str_x2XZ9C2m(n.kind));
+        else if ((n.kind == s_kind_if) || (n.kind == s_kind_and) || (n.kind == s_kind_or) || (n.kind == s_kind_loop))
+            src += qKW_ThvlUeXJ(str_x2XZ9C2m(n.kind));
+        else if (n.kind == s_kind_empty)
+            src += qBAD_ThvlUeXJ(str_x2XZ9C2m(n.kind));
+        else
+            x7Ex3D_qlVazLih(src, str_x2XZ9C2m(n.kind));
+
+        if (n.value)
+            src += (" v:"_fu + n.value);
+
+        if (n.helpers)
+            src += x7E_YP7BiSZZ(" h:"_fu, fu::i64dec(n.helpers.index));
+
+        if (n.flags)
+            src += x7E_YP7BiSZZ(" f:"_fu, str_KY0ysfdU(n.flags));
+
+        if (n.items)
         {
-            x = "COMPILE "_fu;
-            BL_2_v = &(x);
-        (void)0;}), *BL_2_v)), fu_STR(fname) }));
-        const double t0 = hr_CPFg3qvV();
-        compile_rasidNMT(fname, (*(const fu_STR*)fu::NIL), ctx, options);
-        const double t1 = hr_CPFg3qvV();
-        const double tt = (t1 - t0);
-        if ((t1 - t0) > 0.025)
-        {
-            s_ModuleStat lex {};
-            s_ModuleStat parse {};
-            s_ModuleStat solve {};
-            s_ModuleStat codegen {};
-            fu::view<s_Module> m = ctx.modules;
-            for (int i = 0; i < m.size(); i++)
-            {
-                lex += m[i].stats.lex;
-                parse += m[i].stats.parse;
-                solve += m[i].stats.solve;
-                codegen += m[i].stats.codegen;
-            };
-            ModuleStat_print_Juw13ven(lex, "\n    lex "_fu, fu::view<char>{});
-            ModuleStat_print_Juw13ven(parse, "  parse "_fu, fu::view<char>{});
-            ModuleStat_print_Juw13ven(solve, "  solve "_fu, fu::view<char>{});
-            ModuleStat_print_Juw13ven(codegen, "codegen "_fu, "\n"_fu);
+            fu_STR indent_1 = (indent + ((n.kind == s_kind_block) ? qLT_ThvlUeXJ(". "_fu) : "  "_fu));
+            for (int i = 0; i < n.items.size(); i++)
+                inspect_B4xKuDxS(n.items[i], indent_1, src, modid, module);
+
         };
-        fu_STR* BL_6_v;
-        fu_STR* BL_7_v;
-        fu_STR* BL_8_v;
-        fu::println((fu::slate<3, fu_STR> { static_cast<fu_STR&&>((__extension__ (
+        if ((n.target.modid == modid) || (n.target.modid < 0))
         {
-            x_1 = "        "_fu;
-            BL_6_v = &(x_1);
-        (void)0;}), *BL_6_v)), static_cast<fu_STR&&>((__extension__ (
-        {
-            x_2 = fu::f64dec(tt);
-            BL_7_v = &(x_2);
-        (void)0;}), *BL_7_v)), static_cast<fu_STR&&>((__extension__ (
-        {
-            x_3 = "s\n"_fu;
-            BL_8_v = &(x_3);
-        (void)0;}), *BL_8_v)) }));
+            fu::view<s_Overload> overloads = ((n.target.modid < 0) ? module.out.solve.scope.extended[-n.target.modid].locals : module.out.solve.scope.overloads);
+            const s_Overload& o = overloads[(n.target.index - 1)];
+            if (o.name)
+                src += (" n:"_fu + trim_ZCtM7908(o.name));
+
+            if ((n.kind == s_kind_fndef) || (n.kind == s_kind_letdef))
+            {
+                fu_STR indent_1 = (indent + qID_ThvlUeXJ(". "_fu));
+                inspect_B4xKuDxS(o.solved, indent_1, src, modid, module);
+            };
+        };
     };
-    build_E7FDvIUS(fu_STR(dir_wrk), FUDIR, fu_STR{}, fu_STR(bin), fu_STR(dir_obj), fu_STR(dir_src), fu_STR(dir_cpp), fname, scheme, (*(const fu_STR*)fu::NIL), run, shared, hotswap, flags_cc, flags_ld, ctx);
+    if (n.items)
+        src += indent;
+
+    src += ")"_fu;
+}
+
+void inspect_lNPhrd2S(const s_Module& module, const s_SolvedNode& root)
+{
+    /*MOV*/ fu_STR src = "Your /*PRINT*/:"_fu;
+    const int modid = module.modid;
+    inspect_B4xKuDxS(root, "\n    "_fu, src, modid, module);
+    fu_STR* BL_1_v;
+    fu::println((fu::slate<1, fu_STR> { static_cast<fu_STR&&>((__extension__ (
+    {
+        /*MOV*/ fu_STR& x = src;
+        BL_1_v = &(x);
+    (void)0;}), *BL_1_v)) }));
+}
+
+void inspect_ccjqvemK(const s_Module& module)
+{
+    inspect_lNPhrd2S(module, module.out.solve.root);
 }
 
 #endif

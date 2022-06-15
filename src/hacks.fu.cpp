@@ -3,13 +3,12 @@
 #include <fu/defer.h>
 #include <fu/never.h>
 #include <fu/decstr.h>
-#include <fu/vec/cmp.h>
 #include <fu/vec/concat.h>
 
 struct s_ClosureID;
 struct s_Target;
 struct s_NativeHacks;
-unsigned parse10u32_mPp6Ulzh(int&, fu::view<char>);
+unsigned parse10u32_0HRwKgGk(int&, fu::view<char>);
 
                                 #ifndef DEF_s_Target
                                 #define DEF_s_Target
@@ -61,54 +60,121 @@ struct s_NativeHacks
 
 #ifndef fu_NO_fdefs
 
-                                #ifndef DEF_x7E_PEYL9mMAprj
-                                #define DEF_x7E_PEYL9mMAprj
-inline fu_STR x7E(fu::view<char> a, fu::view<char> b)
+                                #ifndef DEF_x7E_YP7BiSZZZOd
+                                #define DEF_x7E_YP7BiSZZZOd
+inline fu_STR x7E_YP7BiSZZ(fu::view<char> a, fu::view<char> b)
 {
     return a + b;
 }
                                 #endif
 
-fu_STR serialize_5msm411l(const s_ClosureID& _)
+fu_STR serialize_NMBClXQY(const s_ClosureID& _)
 {
-    return ((_.target.modid < 0) ? x7E((x7E((x7E("`"_fu, fu::i64dec(_.target.index)) + "-"_fu), fu::i64dec(-_.target.modid)) + "-"_fu), fu::i64dec(_.revision)) : fu::fail("Not a local."_fu));
+    if (_.target.modid < 0)
+        return x7E_YP7BiSZZ((x7E_YP7BiSZZ((x7E_YP7BiSZZ("`"_fu, fu::i64dec(_.target.index)) + "-"_fu), fu::i64dec(-_.target.modid)) + "-"_fu), fu::i64dec(_.revision));
+    else
+        return fu::fail("Not a local."_fu);
+
 }
 
-s_ClosureID tryParseClosureID_1FBeX0Ih(fu::view<char> id)
+s_ClosureID tryParseClosureID_QYk3NQTZ(fu::view<char> id)
 {
     if ((id.size() > 5) && (id[0] == '`'))
     {
         int offset = 1;
         fu_DEFER(if (!(offset == id.size()))
             fu::fail("Bad ClosureID: trailing stuff."_fu););
-        const int index = int(parse10u32_mPp6Ulzh(offset, id));
-        if (!(id[offset++] == '-'))
+        /*MOV*/ const int index = int(parse10u32_0HRwKgGk(offset, id));
+        if (id[offset++] == '-')
+        {
+            /*MOV*/ const int modid = -int(parse10u32_0HRwKgGk(offset, id));
+            if (id[offset++] == '-')
+            {
+                /*MOV*/ const int revision = int(parse10u32_0HRwKgGk(offset, id));
+                int _0 {};
+                s_Target _1 {};
+                return (_1 = (_0 = int(modid), s_Target { int(_0), int(index) }), s_ClosureID { s_Target(_1), int(revision) });
+            }
+            else
+                fu::fail("Bad ClosureID: no rev-dash."_fu);
+
+        }
+        else
             fu::fail("Bad ClosureID: no modid-dash."_fu);
 
-        const int modid = -int(parse10u32_mPp6Ulzh(offset, id));
-        if (!(id[offset++] == '-'))
-            fu::fail("Bad ClosureID: no rev-dash."_fu);
-
-        const int revision = int(parse10u32_mPp6Ulzh(offset, id));
-        return s_ClosureID { s_Target { int(modid), int(index) }, int(revision) };
+    }
+    else
+    {
+        return s_ClosureID{};
     };
-    return s_ClosureID{};
 }
 
-                                #ifndef DEF_starts_PEYL9mMA
-                                #define DEF_starts_PEYL9mMA
-inline bool starts_PEYL9mMA(fu::view<char> a, fu::view<char> with)
+                                #ifndef DEF_x3Cx3E_gcxVH86XFM7
+                                #define DEF_x3Cx3E_gcxVH86XFM7
+inline int x3Cx3E_gcxVH86X(const int a, const int b)
+{
+    if (a < b)
+        return -1;
+    else if (a > b)
+        return +1;
+    else
+        return 0;
+
+}
+                                #endif
+
+                                #ifndef DEF_x3Cx3E_hvR4gqODwpa
+                                #define DEF_x3Cx3E_hvR4gqODwpa
+inline int x3Cx3E_hvR4gqOD(const char a, const char b)
+{
+    if (a < b)
+        return -1;
+    else if (a > b)
+        return +1;
+    else
+        return 0;
+
+}
+                                #endif
+
+                                #ifndef DEF_x3Cx3E_YP7BiSZZZOd
+                                #define DEF_x3Cx3E_YP7BiSZZZOd
+inline int x3Cx3E_YP7BiSZZ(fu::view<char> a, fu::view<char> b)
+{
+    /*MOV*/ int cmp = x3Cx3E_gcxVH86X(a.size(), b.size());
+    for (int i = 0; (i < a.size()) && !cmp; i++)
+        cmp = x3Cx3E_hvR4gqOD(a[i], b[i]);
+
+    return /*NRVO*/ cmp;
+}
+                                #endif
+
+                                #ifndef DEF_x3Dx3D_YP7BiSZZZOd
+                                #define DEF_x3Dx3D_YP7BiSZZZOd
+inline bool operator==(fu::view<char> a, fu::view<char> b)
+{
+    return !x3Cx3E_YP7BiSZZ(a, b);
+}
+                                #endif
+
+                                #ifndef DEF_starts_YP7BiSZZZOd
+                                #define DEF_starts_YP7BiSZZZOd
+inline bool starts_YP7BiSZZ(fu::view<char> a, fu::view<char> with)
 {
     return (a.size() >= with.size()) && (fu::get_view(a, 0, with.size()) == with);
 }
                                 #endif
 
-s_NativeHacks NativeHacks_1FBeX0Ih(fu::view<char> name)
+s_NativeHacks NativeHacks_QYk3NQTZ(fu::view<char> name)
 {
-    if (starts_PEYL9mMA(name, "\nhacks/soft_risk"_fu))
+    if (starts_YP7BiSZZ(name, "\nhacks/soft_risk"_fu))
+    {
         return s_NativeHacks { 16, true };
-
-    return s_NativeHacks{};
+    }
+    else
+    {
+        return s_NativeHacks{};
+    };
 }
 
 #endif

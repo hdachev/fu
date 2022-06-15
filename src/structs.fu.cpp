@@ -1,3 +1,4 @@
+#include <fu/int.h>
 #include <fu/str.h>
 #include <fu/vec.h>
 #include <fu/view.h>
@@ -8,13 +9,13 @@
 
 struct s_StructCanon;
 struct s_Mi;
-enum s_kind: int;
+enum s_kind: fu::u8;
 struct s_Type;
 struct s_ValueType;
 struct s_Lifetime;
 struct s_Region;
-int basePrimPrefixLen_d7UAjAhk(fu::view<char>);
-s_Mi parseMi_mPp6Ulzh(int&, fu::view<char>);
+int basePrimPrefixLen_1NgzHTh0(fu::view<char>);
+s_Mi parseMi_0HRwKgGk(int&, fu::view<char>);
 void appendMi_KujYnsPj(fu_STR&, int, int);
 
                                 #ifndef DEF_s_StructCanon
@@ -51,7 +52,7 @@ struct s_Mi
 
                                 #ifndef DEF_s_kind
                                 #define DEF_s_kind
-enum s_kind: int
+enum s_kind: fu::u8
 {
     s_kind_sof = 1,
     s_kind_id = 2,
@@ -85,37 +86,38 @@ enum s_kind: int
     s_kind_typeassert = 30,
     s_kind_typeparam = 31,
     s_kind_addroffn = 32,
-    s_kind_forfieldsof = 33,
-    s_kind_pragma = 34,
-    s_kind_void = 35,
-    s_kind_struct = 36,
-    s_kind_union = 37,
-    s_kind_primitive = 38,
-    s_kind_flags = 39,
-    s_kind_enum = 40,
-    s_kind_members = 41,
-    s_kind_fn = 42,
-    s_kind_fnbranch = 43,
-    s_kind_pattern = 44,
-    s_kind_typeunion = 45,
-    s_kind_typetag = 46,
-    s_kind_jump = 47,
-    s_kind_empty = 48,
-    s_kind_letdef = 49,
-    s_kind___relaxed = 50,
-    s_kind___convert = 51,
-    s_kind_fndef = 52,
-    s_kind_copy = 53,
-    s_kind_move = 54,
-    s_kind___far_jump = 55,
-    s_kind___no_kind_yet = 56,
-    s_kind_type = 57,
-    s_kind_var = 58,
-    s_kind_field = 59,
-    s_kind_enumv = 60,
-    s_kind_template = 61,
-    s_kind___native = 62,
-    s_kind_inline = 63,
+    s_kind_unwrap = 33,
+    s_kind_forfieldsof = 34,
+    s_kind_pragma = 35,
+    s_kind_void = 36,
+    s_kind_struct = 37,
+    s_kind_union = 38,
+    s_kind_primitive = 39,
+    s_kind_flags = 40,
+    s_kind_enum = 41,
+    s_kind_members = 42,
+    s_kind_fn = 43,
+    s_kind_fnbranch = 44,
+    s_kind_pattern = 45,
+    s_kind_typeunion = 46,
+    s_kind_typetag = 47,
+    s_kind_jump = 48,
+    s_kind_empty = 49,
+    s_kind_letdef = 50,
+    s_kind___relaxed = 51,
+    s_kind___convert = 52,
+    s_kind_fndef = 53,
+    s_kind_copy = 54,
+    s_kind_move = 55,
+    s_kind___far_jump = 56,
+    s_kind___no_kind_yet = 57,
+    s_kind_type = 58,
+    s_kind_var = 59,
+    s_kind_field = 60,
+    s_kind_enumv = 61,
+    s_kind_template = 62,
+    s_kind___native = 63,
+    s_kind_inline = 64,
 };
                                 #endif
 
@@ -186,32 +188,35 @@ struct s_Type
 inline constexpr int ONE_BASED = 1;
                                 #endif
 
-                                #ifndef DEF_x7E_PEYL9mMAprj
-                                #define DEF_x7E_PEYL9mMAprj
-inline fu_STR x7E(fu::view<char> a, fu::view<char> b)
+                                #ifndef DEF_x7E_YP7BiSZZZOd
+                                #define DEF_x7E_YP7BiSZZZOd
+inline fu_STR x7E_YP7BiSZZ(fu::view<char> a, fu::view<char> b)
 {
     return a + b;
 }
                                 #endif
 
-s_StructCanon parseStructCanon_9u6Vl9O2(fu::view<char> canon)
+s_StructCanon parseStructCanon_axp26pRU(fu::view<char> canon)
 {
     int offset = 1;
 
     {
         const char c = canon[0];
         if (c != '/')
-            offset = basePrimPrefixLen_d7UAjAhk(canon);
+            offset = basePrimPrefixLen_1NgzHTh0(canon);
 
     };
-    const s_Mi mi = parseMi_mPp6Ulzh(offset, canon);
-    if (!(offset == canon.size()))
-        fu::fail(x7E((x7E((("parseStructCanon: trailing garbage in `"_fu + canon) + "`: "_fu), fu::i64dec(offset)) + "|"_fu), fu::i64dec(canon.size())));
+    const s_Mi mi = parseMi_0HRwKgGk(offset, canon);
+    if (offset == canon.size())
+    {
+        return s_StructCanon { int(mi.modid), (mi.index - ONE_BASED) };
+    }
+    else
+        fu::fail(x7E_YP7BiSZZ((x7E_YP7BiSZZ((("parseStructCanon: trailing garbage in `"_fu + canon) + "`: "_fu), fu::i64dec(offset)) + "|"_fu), fu::i64dec(canon.size())));
 
-    return s_StructCanon { int(mi.modid), (mi.index - ONE_BASED) };
 }
 
-fu_STR createStructCanon_ku8KcJ4A(const s_kind kind, const fu_STR& baseprim, const int modid, const int index, fu::view<char>)
+fu_STR createStructCanon_0LDjwux2(const s_kind kind, const fu_STR& baseprim, const int modid, const int index, fu::view<char>)
 {
     // Hoisted:
     fu_STR x;
@@ -223,49 +228,52 @@ fu_STR createStructCanon_ku8KcJ4A(const s_kind kind, const fu_STR& baseprim, con
         char& c = res.mutref(0);
         if ((c == 'e') || (c == 'm'))
             fu::fail(("createStructCanon: bad baseprim: "_fu + baseprim));
-
-        if (kind == s_kind_enum)
+        else if (kind == s_kind_enum)
             c = 'e';
         else if (kind == s_kind_flags)
             c = 'm';
 
     };
-    const s_StructCanon check = parseStructCanon_9u6Vl9O2(res);
+    const s_StructCanon check = parseStructCanon_axp26pRU(res);
     if (!((check.modid == modid) && (check.index == index)))
     {
-        const fu_STR* BL_6_v;
-        fu::println((fu::slate<1, fu_STR> { fu_STR((__extension__ (
+        fu_STR* BL_6_v;
+        fu::println((fu::slate<1, fu_STR> { static_cast<fu_STR&&>((__extension__ (
         {
             x = "NOPE!!!!!"_fu;
             BL_6_v = &(x);
         (void)0;}), *BL_6_v)) }));
-        parseStructCanon_9u6Vl9O2(res);
+        parseStructCanon_axp26pRU(res);
         fu::fail("Nope!"_fu);
-    };
-    return /*NRVO*/ res;
+    }
+    else
+        return /*NRVO*/ res;
+
 }
 
-                                #ifndef DEF_starts_cnCAmU7Y
-                                #define DEF_starts_cnCAmU7Y
-inline bool starts_cnCAmU7Y(fu::view<char> a, const char with)
+                                #ifndef DEF_starts_8ObANk7rz5k
+                                #define DEF_starts_8ObANk7rz5k
+inline bool starts_8ObANk7r(fu::view<char> a, const char with)
 {
     return a.size() && (a[0] == with);
 }
                                 #endif
 
-bool isStruct_ZYIX8afu(const s_Type& type)
+bool isStruct_jHe6RDpE(const s_Type& type)
 {
-    return starts_cnCAmU7Y(type.vtype.canon, '/');
+    return starts_8ObANk7r(type.vtype.canon, '/');
 }
 
-int modidOfOrigin_ZYIX8afu(const s_Type& type)
+int modidOfOrigin_jHe6RDpE(const s_Type& type)
 {
     if (type.vtype.canon[0] == '/')
     {
-        /*MOV*/ const s_StructCanon scp = parseStructCanon_9u6Vl9O2(type.vtype.canon);
+        /*MOV*/ const s_StructCanon scp = parseStructCanon_axp26pRU(type.vtype.canon);
         return int(scp.modid);
-    };
-    return 0;
+    }
+    else
+        return 0;
+
 }
 
 #endif

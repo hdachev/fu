@@ -16,12 +16,13 @@ struct s_Module;
 struct s_ModuleInputs;
 struct s_LexerOutput;
 struct s_Token;
-enum s_kind: int;
+enum s_kind: fu::u8;
 struct s_ParserOutput;
 struct s_Node;
-typedef int s_DeclAsserts;
-typedef int s_ParseSyntax;
+typedef fu::u8 s_DeclAsserts;
+typedef fu::u8 s_ParseSyntax;
 typedef unsigned s_Flags;
+struct s_ModuleOrder;
 struct s_ModuleOutputs;
 struct s_Struct;
 struct s_Target;
@@ -43,14 +44,15 @@ struct s_Template;
 struct s_ScopeMemo;
 struct s_ScopeSkipMemos;
 struct s_ScopeSkip;
+typedef int s_SolverNotes;
 struct s_CodegenOutput;
 struct s_ModuleStats;
 struct s_ModuleStat;
-struct s_Map_gb6sFwC7;
-[[noreturn]] fu::never BUG_XksxYQ3i(fu_STR&&, const s_TokenIdx&, const s_Context&);
+struct s_Map_gb6sFwC7IKi;
 void add_sDUBjUzV(s_BitSet&, int);
-int Region_asLocal_L0YJBnz6(const s_Region&);
-bool has_ur5UoMYg(const s_BitSet&, int);
+[[noreturn]] fu::never BUG_MO9c1jyS(fu_STR&&, const s_TokenIdx&, const s_Context&);
+int Region_asLocal_RvC5USpz(const s_Region&);
+bool has_VM1JQhgd(const s_BitSet&, int);
 
                                 #ifndef DEF_s_BitSet
                                 #define DEF_s_BitSet
@@ -112,7 +114,7 @@ struct s_TokenIdx
 
                                 #ifndef DEF_s_kind
                                 #define DEF_s_kind
-enum s_kind: int
+enum s_kind: fu::u8
 {
     s_kind_sof = 1,
     s_kind_id = 2,
@@ -146,37 +148,38 @@ enum s_kind: int
     s_kind_typeassert = 30,
     s_kind_typeparam = 31,
     s_kind_addroffn = 32,
-    s_kind_forfieldsof = 33,
-    s_kind_pragma = 34,
-    s_kind_void = 35,
-    s_kind_struct = 36,
-    s_kind_union = 37,
-    s_kind_primitive = 38,
-    s_kind_flags = 39,
-    s_kind_enum = 40,
-    s_kind_members = 41,
-    s_kind_fn = 42,
-    s_kind_fnbranch = 43,
-    s_kind_pattern = 44,
-    s_kind_typeunion = 45,
-    s_kind_typetag = 46,
-    s_kind_jump = 47,
-    s_kind_empty = 48,
-    s_kind_letdef = 49,
-    s_kind___relaxed = 50,
-    s_kind___convert = 51,
-    s_kind_fndef = 52,
-    s_kind_copy = 53,
-    s_kind_move = 54,
-    s_kind___far_jump = 55,
-    s_kind___no_kind_yet = 56,
-    s_kind_type = 57,
-    s_kind_var = 58,
-    s_kind_field = 59,
-    s_kind_enumv = 60,
-    s_kind_template = 61,
-    s_kind___native = 62,
-    s_kind_inline = 63,
+    s_kind_unwrap = 33,
+    s_kind_forfieldsof = 34,
+    s_kind_pragma = 35,
+    s_kind_void = 36,
+    s_kind_struct = 37,
+    s_kind_union = 38,
+    s_kind_primitive = 39,
+    s_kind_flags = 40,
+    s_kind_enum = 41,
+    s_kind_members = 42,
+    s_kind_fn = 43,
+    s_kind_fnbranch = 44,
+    s_kind_pattern = 45,
+    s_kind_typeunion = 46,
+    s_kind_typetag = 47,
+    s_kind_jump = 48,
+    s_kind_empty = 49,
+    s_kind_letdef = 50,
+    s_kind___relaxed = 51,
+    s_kind___convert = 52,
+    s_kind_fndef = 53,
+    s_kind_copy = 54,
+    s_kind_move = 55,
+    s_kind___far_jump = 56,
+    s_kind___no_kind_yet = 57,
+    s_kind_type = 58,
+    s_kind_var = 59,
+    s_kind_field = 60,
+    s_kind_enumv = 61,
+    s_kind_template = 62,
+    s_kind___native = 63,
+    s_kind_inline = 64,
 };
                                 #endif
 
@@ -221,6 +224,14 @@ inline constexpr s_DeclAsserts s_DeclAsserts_A_NOVEC_MUT = 4;
 inline constexpr s_DeclAsserts s_DeclAsserts_A_PURE = 8;
 inline constexpr s_DeclAsserts s_DeclAsserts_A_PURE_CTX = 16;
 inline constexpr s_DeclAsserts s_DeclAsserts_A_NOFLOW = 32;
+
+inline constexpr s_DeclAsserts MASK_s_DeclAsserts
+    = s_DeclAsserts_A_NOCOPY
+    | s_DeclAsserts_A_NOVEC
+    | s_DeclAsserts_A_NOVEC_MUT
+    | s_DeclAsserts_A_PURE
+    | s_DeclAsserts_A_PURE_CTX
+    | s_DeclAsserts_A_NOFLOW;
                                 #endif
 
                                 #ifndef DEF_s_ParseSyntax
@@ -229,6 +240,12 @@ inline constexpr s_ParseSyntax s_ParseSyntax_PS_ID = 1;
 inline constexpr s_ParseSyntax s_ParseSyntax_PS_PARENS = 2;
 inline constexpr s_ParseSyntax s_ParseSyntax_PS_SEMI = 4;
 inline constexpr s_ParseSyntax s_ParseSyntax_PS_DISCARD = 8;
+
+inline constexpr s_ParseSyntax MASK_s_ParseSyntax
+    = s_ParseSyntax_PS_ID
+    | s_ParseSyntax_PS_PARENS
+    | s_ParseSyntax_PS_SEMI
+    | s_ParseSyntax_PS_DISCARD;
                                 #endif
 
                                 #ifndef DEF_s_Flags
@@ -263,6 +280,38 @@ inline constexpr s_Flags s_Flags_F_RELAXABLE_REF = 67108864;
 inline constexpr s_Flags s_Flags_F_TEMPLATE = 134217728;
 inline constexpr s_Flags s_Flags_F_INLINE = 268435456;
 inline constexpr s_Flags s_Flags_F_LAMBDA = 536870912;
+
+inline constexpr s_Flags MASK_s_Flags
+    = s_Flags_F_METHOD
+    | s_Flags_F_INFIX
+    | s_Flags_F_PREFIX
+    | s_Flags_F_POSTFIX
+    | s_Flags_F_ACCESS
+    | s_Flags_F_COMPOUND_ID
+    | s_Flags_F_WRITTEN_TO
+    | s_Flags_F_LAX
+    | s_Flags_F_ARG
+    | s_Flags_F_OPERATOR
+    | s_Flags_F_MOVED_FROM
+    | s_Flags_F_CONVERSION
+    | s_Flags_F_OPT_ARG
+    | s_Flags_F_MUT
+    | s_Flags_F_REF
+    | s_Flags_F_IMPLICIT
+    | s_Flags_F_USING
+    | s_Flags_F_MUSTNAME
+    | s_Flags_F_SHADOW
+    | s_Flags_F_PUB
+    | s_Flags_F_EXTERN
+    | s_Flags_F_HOTSWAP
+    | s_Flags_F_PREDICATE
+    | s_Flags_F_NAMED_ARGS
+    | s_Flags_F_OOE_RTL
+    | s_Flags_F_REST_ARG
+    | s_Flags_F_RELAXABLE_REF
+    | s_Flags_F_TEMPLATE
+    | s_Flags_F_INLINE
+    | s_Flags_F_LAMBDA;
                                 #endif
 
                                 #ifndef DEF_s_Node
@@ -320,6 +369,20 @@ struct s_ModuleInputs
             || src
             || lex
             || parse
+        ;
+    }
+};
+                                #endif
+
+                                #ifndef DEF_s_ModuleOrder
+                                #define DEF_s_ModuleOrder
+struct s_ModuleOrder
+{
+    int dep_depth;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || dep_depth
         ;
     }
 };
@@ -518,6 +581,17 @@ inline constexpr s_SolverStatus s_SolverStatus_SS_TYPE_RECUR = 32;
 inline constexpr s_SolverStatus s_SolverStatus_SS_FN_RECUR = 64;
 inline constexpr s_SolverStatus s_SolverStatus_SS_HOIST = 128;
 inline constexpr s_SolverStatus s_SolverStatus_SS_UNUSED = 256;
+
+inline constexpr s_SolverStatus MASK_s_SolverStatus
+    = s_SolverStatus_SS_LAZY
+    | s_SolverStatus_SS_DID_START
+    | s_SolverStatus_SS_DIRTY
+    | s_SolverStatus_SS_FINALIZED
+    | s_SolverStatus_SS_UPDATED
+    | s_SolverStatus_SS_TYPE_RECUR
+    | s_SolverStatus_SS_FN_RECUR
+    | s_SolverStatus_SS_HOIST
+    | s_SolverStatus_SS_UNUSED;
                                 #endif
 
                                 #ifndef DEF_s_Overload
@@ -721,13 +795,61 @@ struct s_Scope
 };
                                 #endif
 
+                                #ifndef DEF_s_SolverNotes
+                                #define DEF_s_SolverNotes
+inline constexpr s_SolverNotes s_SolverNotes_N_FnRecursion = 1;
+inline constexpr s_SolverNotes s_SolverNotes_N_FnResolve = 2;
+inline constexpr s_SolverNotes s_SolverNotes_N_FnReopen = 4;
+inline constexpr s_SolverNotes s_SolverNotes_N_TypeRecursion = 8;
+inline constexpr s_SolverNotes s_SolverNotes_N_TypeResolve = 16;
+inline constexpr s_SolverNotes s_SolverNotes_N_TypeReopen = 32;
+inline constexpr s_SolverNotes s_SolverNotes_N_DeadCode = 64;
+inline constexpr s_SolverNotes s_SolverNotes_N_DeadCall = 128;
+inline constexpr s_SolverNotes s_SolverNotes_N_DeadLet = 256;
+inline constexpr s_SolverNotes s_SolverNotes_N_DeadIfCond = 512;
+inline constexpr s_SolverNotes s_SolverNotes_N_DeadIfCons = 1024;
+inline constexpr s_SolverNotes s_SolverNotes_N_DeadArrlit = 2048;
+inline constexpr s_SolverNotes s_SolverNotes_N_DeadLoopInit = 4096;
+inline constexpr s_SolverNotes s_SolverNotes_N_DeadConv = 8192;
+inline constexpr s_SolverNotes s_SolverNotes_N_NonTrivAutoCopy = 16384;
+inline constexpr s_SolverNotes s_SolverNotes_N_RelaxRespec = 32768;
+inline constexpr s_SolverNotes s_SolverNotes_N_BckSoftRisk = 65536;
+inline constexpr s_SolverNotes s_SolverNotes_N_BckMustSeq = 131072;
+inline constexpr s_SolverNotes s_SolverNotes_N_MoveMustSeq = 262144;
+inline constexpr s_SolverNotes s_SolverNotes_N_SD_HasStaticInit = 524288;
+inline constexpr s_SolverNotes s_SolverNotes_N_SD_ExternPrivates = 1048576;
+
+inline constexpr s_SolverNotes MASK_s_SolverNotes
+    = s_SolverNotes_N_FnRecursion
+    | s_SolverNotes_N_FnResolve
+    | s_SolverNotes_N_FnReopen
+    | s_SolverNotes_N_TypeRecursion
+    | s_SolverNotes_N_TypeResolve
+    | s_SolverNotes_N_TypeReopen
+    | s_SolverNotes_N_DeadCode
+    | s_SolverNotes_N_DeadCall
+    | s_SolverNotes_N_DeadLet
+    | s_SolverNotes_N_DeadIfCond
+    | s_SolverNotes_N_DeadIfCons
+    | s_SolverNotes_N_DeadArrlit
+    | s_SolverNotes_N_DeadLoopInit
+    | s_SolverNotes_N_DeadConv
+    | s_SolverNotes_N_NonTrivAutoCopy
+    | s_SolverNotes_N_RelaxRespec
+    | s_SolverNotes_N_BckSoftRisk
+    | s_SolverNotes_N_BckMustSeq
+    | s_SolverNotes_N_MoveMustSeq
+    | s_SolverNotes_N_SD_HasStaticInit
+    | s_SolverNotes_N_SD_ExternPrivates;
+                                #endif
+
                                 #ifndef DEF_s_SolverOutput
                                 #define DEF_s_SolverOutput
 struct s_SolverOutput
 {
     s_SolvedNode root;
     s_Scope scope;
-    int notes;
+    s_SolverNotes notes;
     s_SolverOutput(const s_SolverOutput&) = delete;
     s_SolverOutput(s_SolverOutput&&) = default;
     s_SolverOutput& operator=(const s_SolverOutput&) = delete;
@@ -769,11 +891,9 @@ struct s_CodegenOutput
                                 #define DEF_s_ModuleOutputs
 struct s_ModuleOutputs
 {
-    fu_VEC<int> deps;
     fu_VEC<s_Struct> types;
     s_SolverOutput solve;
     s_CodegenOutput cpp;
-    int init_prio;
     s_ModuleOutputs(const s_ModuleOutputs&) = delete;
     s_ModuleOutputs(s_ModuleOutputs&&) = default;
     s_ModuleOutputs& operator=(const s_ModuleOutputs&) = delete;
@@ -781,11 +901,9 @@ struct s_ModuleOutputs
     explicit operator bool() const noexcept
     {
         return false
-            || deps
             || types
             || solve
             || cpp
-            || init_prio
         ;
     }
 };
@@ -836,6 +954,7 @@ struct s_Module
     int modid;
     fu_STR fname;
     s_ModuleInputs in;
+    s_ModuleOrder order;
     s_ModuleOutputs out;
     s_ModuleStats stats;
     s_Module(const s_Module&) = delete;
@@ -848,6 +967,7 @@ struct s_Module
             || modid
             || fname
             || in
+            || order
             || out
             || stats
         ;
@@ -855,9 +975,9 @@ struct s_Module
 };
                                 #endif
 
-                                #ifndef DEF_s_Map_gb6sFwC7
-                                #define DEF_s_Map_gb6sFwC7
-struct s_Map_gb6sFwC7
+                                #ifndef DEF_s_Map_gb6sFwC7IKi
+                                #define DEF_s_Map_gb6sFwC7IKi
+struct s_Map_gb6sFwC7IKi
 {
     fu_VEC<fu_STR> keys;
     fu_VEC<fu_STR> vals;
@@ -876,8 +996,9 @@ struct s_Map_gb6sFwC7
 struct s_Context
 {
     fu_VEC<s_Module> modules;
-    s_Map_gb6sFwC7 files;
-    s_Map_gb6sFwC7 fuzzy;
+    fu_VEC<int> dep_order;
+    s_Map_gb6sFwC7IKi files;
+    s_Map_gb6sFwC7IKi fuzzy;
     s_Context(const s_Context&) = delete;
     s_Context(s_Context&&) = default;
     s_Context& operator=(const s_Context&) = delete;
@@ -886,6 +1007,7 @@ struct s_Context
     {
         return false
             || modules
+            || dep_order
             || files
             || fuzzy
         ;
@@ -895,47 +1017,57 @@ struct s_Context
 
 #ifndef fu_NO_fdefs
 
-void Reference_trackArgument_xxHEkKJS(s_Flow& flow, const int target, const int position, const s_TokenIdx& _here, const s_Context& ctx)
+void Reference_trackArgument_P8K1ktk8(s_Flow& flow, const int target, const int position, const s_TokenIdx& _here, const s_Context& ctx)
 {
-    if (!((flow.arg_targets.size() <= position)))
-        BUG_XksxYQ3i("Reference_trackArgument: positions out of order."_fu, _here, ctx);
+    if ((flow.arg_targets.size() <= position))
+    {
+        flow.arg_targets.grow((position + 1));
+        flow.arg_targets.mutref(position) = target;
+        if ((flow.arg_positions.size() <= target))
+        {
+            flow.arg_positions.grow((target + 1));
+            flow.arg_positions.mutref(target) = (position + 1);
+            add_sDUBjUzV(flow.is_arg, target);
+        }
+        else
+            BUG_MO9c1jyS("Reference_trackArgument: targets out of order."_fu, _here, ctx);
 
-    flow.arg_targets.grow((position + 1));
-    flow.arg_targets.mutref(position) = target;
-    if (!((flow.arg_positions.size() <= target)))
-        BUG_XksxYQ3i("Reference_trackArgument: targets out of order."_fu, _here, ctx);
+    }
+    else
+        BUG_MO9c1jyS("Reference_trackArgument: positions out of order."_fu, _here, ctx);
 
-    flow.arg_positions.grow((target + 1));
-    flow.arg_positions.mutref(target) = (position + 1);
-    add_sDUBjUzV(flow.is_arg, target);
 }
 
-                                #ifndef DEF_x3Cx3E_yxV5QT4l
-                                #define DEF_x3Cx3E_yxV5QT4l
-inline int x3Cx3E_yxV5QT4l(const int a, const int b)
+                                #ifndef DEF_x3Cx3E_gcxVH86XFM7
+                                #define DEF_x3Cx3E_gcxVH86XFM7
+inline int x3Cx3E_gcxVH86X(const int a, const int b)
 {
-    return ((a < b) ? -1 : ((a > b) ? +1 : 0));
+    if (a < b)
+        return -1;
+    else if (a > b)
+        return +1;
+    else
+        return 0;
+
 }
                                 #endif
 
-                                #ifndef DEF_add_itJnJlI8
-                                #define DEF_add_itJnJlI8
+                                #ifndef DEF_add_itJnJlI8Hy7
+                                #define DEF_add_itJnJlI8Hy7
 inline bool add_itJnJlI8(fu_VEC<int>& keys, const int item)
 {
     int lo = 0;
     int hi = keys.size();
     while (lo < hi)
     {
-        const int i = ((hi + lo) >> 1);
-        const int cmp = x3Cx3E_yxV5QT4l(keys[i], item);
+        /*MOV*/ const int i = ((hi + lo) >> 1);
+        const int cmp = x3Cx3E_gcxVH86X(keys[i], item);
         if (cmp == 0)
-        {
             return false;
-        };
-        if (cmp < 0)
+        else if (cmp < 0)
             lo = (i + 1);
         else
-            hi = i;
+            hi = int(i);
 
     };
     keys.insert(lo, int(item));
@@ -943,25 +1075,17 @@ inline bool add_itJnJlI8(fu_VEC<int>& keys, const int item)
 }
                                 #endif
 
-                                #ifndef DEF_unless_oob_4Cjh8wBB
-                                #define DEF_unless_oob_4Cjh8wBB
+                                #ifndef DEF_unless_oob_4Cjh8wBBFy2
+                                #define DEF_unless_oob_4Cjh8wBBFy2
 inline const fu_VEC<int>& unless_oob_4Cjh8wBB(fu::view<fu_VEC<int>> a, const int i)
 {
     return (i < a.size()) ? a[i] : (*(const fu_VEC<int>*)fu::NIL);
 }
                                 #endif
 
-                                #ifndef DEF_x3Cx3E_gcxVH86X
-                                #define DEF_x3Cx3E_gcxVH86X
-inline int x3Cx3E_gcxVH86X(const int a, const int b)
-{
-    return ((a < b) ? -1 : ((a > b) ? +1 : 0));
-}
-                                #endif
-
-                                #ifndef DEF_add_N7IVeTyr
-                                #define DEF_add_N7IVeTyr
-inline void add_N7IVeTyr(fu_VEC<int>& a, fu::view<int> b)
+                                #ifndef DEF_add_Lh1Id3Vs6rg
+                                #define DEF_add_Lh1Id3Vs6rg
+inline void add_Lh1Id3Vs(fu_VEC<int>& a, fu::view<int> b)
 {
     int x = 0;
     int y = 0;
@@ -978,8 +1102,9 @@ inline void add_N7IVeTyr(fu_VEC<int>& a, fu::view<int> b)
                 y++;
             }
             else
+            {
                 y++;
-
+            };
         };
         x++;
     };
@@ -989,41 +1114,33 @@ inline void add_N7IVeTyr(fu_VEC<int>& a, fu::view<int> b)
 }
                                 #endif
 
-                                #ifndef DEF_unless_oob_8OCWoKZd
-                                #define DEF_unless_oob_8OCWoKZd
-inline const fu_VEC<int>& unless_oob_8OCWoKZd(fu::view<fu_VEC<int>> a, const int i)
-{
-    return (i < a.size()) ? a[i] : (*(const fu_VEC<int>*)fu::NIL);
-}
-                                #endif
-
-                                #ifndef DEF_rem_itJnJlI8
-                                #define DEF_rem_itJnJlI8
+                                #ifndef DEF_rem_itJnJlI8Hy7
+                                #define DEF_rem_itJnJlI8Hy7
 inline bool rem_itJnJlI8(fu_VEC<int>& keys, const int item)
 {
     int lo = 0;
     int hi = keys.size();
     while (lo < hi)
     {
-        const int i = ((hi + lo) >> 1);
-        const int cmp = x3Cx3E_yxV5QT4l(keys[i], item);
+        /*MOV*/ const int i = ((hi + lo) >> 1);
+        const int cmp = x3Cx3E_gcxVH86X(keys[i], item);
         if (cmp == 0)
         {
             keys.splice(i, 1);
             return true;
-        };
-        if (cmp < 0)
+        }
+        else if (cmp < 0)
             lo = (i + 1);
         else
-            hi = i;
+            hi = int(i);
 
     };
     return false;
 }
                                 #endif
 
-                                #ifndef DEF_grow_if_oob_eq5Lu6Hw
-                                #define DEF_grow_if_oob_eq5Lu6Hw
+                                #ifndef DEF_grow_if_oob_eq5Lu6Hwt31
+                                #define DEF_grow_if_oob_eq5Lu6Hwt31
 inline fu_VEC<int>& grow_if_oob_eq5Lu6Hw(fu_VEC<fu_VEC<int>>& a, const int i)
 {
     if ((a.size() <= i))
@@ -1033,103 +1150,71 @@ inline fu_VEC<int>& grow_if_oob_eq5Lu6Hw(fu_VEC<fu_VEC<int>>& a, const int i)
 }
                                 #endif
 
-                                #ifndef DEF_add_KIHP0U19
-                                #define DEF_add_KIHP0U19
-inline void add_KIHP0U19(fu_VEC<int>& a, fu::view<int> b)
+void Reference_trackLocalRef_b5wNsTR7(s_Flow& flow, const int left, const s_Lifetime& right)
 {
-    int x = 0;
-    int y = 0;
-    while ((x < a.size()) && (y < b.size()))
-    {
-        const int X = a[x];
-        const int Y = b[y];
-        const int cmp = x3Cx3E_gcxVH86X(X, Y);
-        if ((cmp >= 0))
-        {
-            if (cmp != 0)
-            {
-                a.insert(x, int(Y));
-                y++;
-            }
-            else
-                y++;
-
-        };
-        x++;
-    };
-    if (y < b.size())
-        a += fu::get_view(b, y, b.size());
-
-}
-                                #endif
-
-                                #ifndef DEF_grow_if_oob_qOlBkKup
-                                #define DEF_grow_if_oob_qOlBkKup
-inline fu_VEC<int>& grow_if_oob_qOlBkKup(fu_VEC<fu_VEC<int>>& a, const int i)
-{
-    if ((a.size() <= i))
-        a.grow((i + 1));
-
-    return a.mutref(i);
-}
-                                #endif
-
-void Reference_trackLocalRef_FlKnEK9i(s_Flow& flow, const int left, const s_Lifetime& right)
-{
-    fu_VEC<int> parents {};
+    /*MOV*/ fu_VEC<int> parents {};
     for (int i = 0; i < right.uni0n.size(); i++)
     {
-        const int right_1 = Region_asLocal_L0YJBnz6(right.uni0n[i]);
+        const int right_1 = Region_asLocal_RvC5USpz(right.uni0n[i]);
         if (!right_1)
             continue;
-
-        add_itJnJlI8(parents, right_1);
-        add_N7IVeTyr(parents, unless_oob_4Cjh8wBB(flow.parents, right_1));
-        fu_VEC<int> siblings { unless_oob_8OCWoKZd(flow.invalidates, right_1) };
-        if (!(!rem_itJnJlI8(siblings, left) || (i > 0)))
-            fu_ASSERT();
-
-        if (siblings)
+        else
         {
-            add_KIHP0U19(grow_if_oob_eq5Lu6Hw(flow.invalidates, left), siblings);
-            for (int i_1 = 0; i_1 < siblings.size(); i_1++)
+            add_itJnJlI8(parents, right_1);
+            add_Lh1Id3Vs(parents, unless_oob_4Cjh8wBB(flow.parents, right_1));
+            fu_VEC<int> siblings { unless_oob_4Cjh8wBB(flow.invalidates, right_1) };
+            if (!rem_itJnJlI8(siblings, left) || (i > 0))
             {
-                const int sibling = siblings[i_1];
-                add_itJnJlI8(grow_if_oob_eq5Lu6Hw(flow.invalidates, sibling), left);
-            };
-        };
-        if (has_ur5UoMYg(flow.is_arg, right_1))
-        {
-            add_sDUBjUzV(flow.is_arg, left);
-            add_itJnJlI8(grow_if_oob_eq5Lu6Hw(flow.arg_parents, left), right_1);
+                if (siblings)
+                {
+                    add_Lh1Id3Vs(grow_if_oob_eq5Lu6Hw(flow.invalidates, left), siblings);
+                    for (int i_1 = 0; i_1 < siblings.size(); i_1++)
+                    {
+                        const int sibling = siblings[i_1];
+                        add_itJnJlI8(grow_if_oob_eq5Lu6Hw(flow.invalidates, sibling), left);
+                    };
+                };
+                if (has_VM1JQhgd(flow.is_arg, right_1))
+                {
+                    add_sDUBjUzV(flow.is_arg, left);
+                    add_itJnJlI8(grow_if_oob_eq5Lu6Hw(flow.arg_parents, left), right_1);
+                };
+            }
+            else
+                fu_ASSERT();
+
         };
     };
     if (parents)
     {
         for (int i_1 = 0; i_1 < parents.size(); i_1++)
-            add_itJnJlI8(grow_if_oob_qOlBkKup(flow.invalidates, parents[i_1]), left);
-
-        grow_if_oob_eq5Lu6Hw(flow.parents, left) = parents;
+        {
+            add_itJnJlI8(grow_if_oob_eq5Lu6Hw(flow.invalidates, parents[i_1]), left);
+        };
+        grow_if_oob_eq5Lu6Hw(flow.parents, left) = static_cast<fu_VEC<int>&&>(parents);
     };
 }
 
-                                #ifndef DEF_try_steal_eq5Lu6Hw
-                                #define DEF_try_steal_eq5Lu6Hw
-inline fu_VEC<int> try_steal_eq5Lu6Hw(fu::view_mut<fu_VEC<int>> a, const int i)
+                                #ifndef DEF_try_steal_xJLrONnJn09
+                                #define DEF_try_steal_xJLrONnJn09
+inline fu_VEC<int> try_steal_xJLrONnJ(fu::view_mut<fu_VEC<int>> a, const int i)
 {
     if (i < a.size())
     {
         /*MOV*/ fu_VEC<int> slot {};
         std::swap(slot, a.mutref(i));
         return /*NRVO*/ slot;
+    }
+    else
+    {
+        return fu_VEC<int>{};
     };
-    return fu_VEC<int>{};
 }
                                 #endif
 
-                                #ifndef DEF_find_P563x6wB
-                                #define DEF_find_P563x6wB
-inline int find_P563x6wB(fu::view<int> a, const int b)
+                                #ifndef DEF_find_8IyOUe0U0hi
+                                #define DEF_find_8IyOUe0U0hi
+inline int find_8IyOUe0U(fu::view<int> a, const int b)
 {
     for (/*MOV*/ int i = 0; i < a.size(); i++)
     {
@@ -1141,44 +1226,46 @@ inline int find_P563x6wB(fu::view<int> a, const int b)
 }
                                 #endif
 
-void Reference_untrackLocalRef_FlKnEK9i(s_Flow& flow, const int left, const s_Lifetime& right)
+void Reference_untrackLocalRef_i2O4IAbd(s_Flow& flow, const int left, const s_Lifetime& right)
 {
     for (int i = 0; i < right.uni0n.size(); i++)
     {
-        const int right_1 = Region_asLocal_L0YJBnz6(right.uni0n[i]);
+        const int right_1 = Region_asLocal_RvC5USpz(right.uni0n[i]);
         if (!right_1)
             continue;
+        else
+        {
+            if (!(rem_itJnJlI8(flow.invalidates.mutref(right_1), left)))
+                fu_ASSERT();
 
-        if (!(rem_itJnJlI8(flow.invalidates.mutref(right_1), left)))
-            fu_ASSERT();
-
+        };
     };
-    fu_VEC<int> invals = try_steal_eq5Lu6Hw(flow.invalidates, left);
+    fu_VEC<int> invals = try_steal_xJLrONnJ(flow.invalidates, left);
     for (int i_1 = 0; i_1 < invals.size(); i_1++)
     {
-        const int idx = find_P563x6wB(unless_oob_4Cjh8wBB(flow.invalidates, invals[i_1]), left);
+        const int idx = find_8IyOUe0U(unless_oob_4Cjh8wBB(flow.invalidates, invals[i_1]), left);
         if ((idx >= 0))
             flow.invalidates.mutref(invals[i_1]).splice(idx, 1);
 
     };
 }
 
-                                #ifndef DEF_unless_oob_MnkZvni5
-                                #define DEF_unless_oob_MnkZvni5
-inline int unless_oob_MnkZvni5(fu::view<int> a, const int i)
+                                #ifndef DEF_unless_oob_jN6vlpyYqBg
+                                #define DEF_unless_oob_jN6vlpyYqBg
+inline int unless_oob_jN6vlpyY(fu::view<int> a, const int i)
 {
     return (i < a.size()) ? a[i] : (*(const int*)fu::NIL);
 }
                                 #endif
 
-void ArgsAtRisk_list_BERt8JVr(s_BitSet& out, const s_Flow& flow, const int position, fu::view<fu_VEC<int>> at_risk)
+void ArgsAtRisk_list_rTp4tlti(s_BitSet& out, const s_Flow& flow, const int position, fu::view<fu_VEC<int>> at_risk)
 {
-    const int target = unless_oob_MnkZvni5(flow.arg_targets, position);
+    const int target = unless_oob_jN6vlpyY(flow.arg_targets, position);
     fu::view<int> at_risk_from = unless_oob_4Cjh8wBB(at_risk, target);
     for (int i = 0; i < at_risk_from.size(); i++)
     {
         const int other = at_risk_from[i];
-        const int other_position = (unless_oob_MnkZvni5(flow.arg_positions, other) - 1);
+        const int other_position = (unless_oob_jN6vlpyY(flow.arg_positions, other) - 1);
         if ((other_position >= 0))
             add_sDUBjUzV(out, other_position);
 
