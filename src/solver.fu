@@ -53,51 +53,16 @@ pub fn solve(
 
     //
 
-    struct Warning {
-        token:      TokenIdx;
-        message:    string;
-    };
-
-    struct SolverState
+    struct Warning
     {
-        _scope:         Scope;
-        _root_scope:    ScopeMemo;
-        _ss:            ScopeSkipMemos;
-        _field_items:   ScopeItem[];
-
-        // Can't we just list them all and scan through?
-        //  Do we need the mangling nonsense?
-        //   We can bucket however many times we want here,
-        //    its append only and trivial to maintain.
-        _specs:         map::Map(string, Target); // mangle -> spec
-        _spec_errors:   string[];
-
-        //
-        _warnings:      Warning[];
-
-        // TODO FIX
-        TODO_FIX_convert_args:  SolvedNode[];
-        shortModuleName:        string;
+        token:              TokenIdx;
+        message:            string;
     };
 
-    let using mut ss: SolverState;
+    struct RWEvent          { rw_target: i32 };
 
-    ss.shortModuleName          = module.modid && getShortModuleName(module.fname);
-    ss._spec_errors             = [ "BUG: Specializer reentry." ];
-    ss.TODO_FIX_convert_args    = [ SolvedNode ];
-
-
-    //
-
-    mut _notes:         SolverNotes;
-
-    struct RWEvent
-    {
-        rw_target:      i32;
-    };
-
-    struct ReadID  { id: i32 };
-    struct WriteID { id: i32 };
+    struct ReadID           { id: i32 };
+    struct WriteID          { id: i32 };
 
     struct EventsSnap
     {
@@ -143,48 +108,80 @@ pub fn solve(
 
     struct Moves
     {
-        used_again:     bitset::BitSet;
-        just_moved:     bitset::BitSet;
-        just_used:      bitset::BitSet;
+        used_again:         bitset::BitSet;
+        just_moved:         bitset::BitSet;
+        just_used:          bitset::BitSet;
     };
 
     fn add(ref dest: Moves, src: Moves)
+    {
         for (fieldname i: dest)
             dest.i.add(src.i);
+    }
 
     struct CurrentFn
     {
-        using out:      SolvedNode;
+        using out:          SolvedNode;
 
         // Start-of-func scope0 for implicit scopeskip.
-        scope0:         ScopeMemo;
+        scope0:             ScopeMemo;
 
-        using flow?:    Flow;
+        using flow?:        Flow;
 
-        effects?:       Effects;
-        events?:        Events;
-        loop_start?:    i32;
-        autoshadow_ok!: i32;
+        effects?:           Effects;
+        events?:            Events;
+        loop_start?:        i32;
+        autoshadow_ok!:     i32;
 
         // The replacement for the callsites stuff.
-        var_usage?:     Type[];
+        var_usage?:         Type[];
 
         //
-        using moves?:   Moves;
+        using moves?:       Moves;
     };
 
-    mut _current_fn:                CurrentFn;
-    let implicit mut _helpers:      Helpers[];      // TODO rename, this is the block helpers stack, unwinds during solve
-    let implicit mut _helpers_data: HelpersData[];  // TODO rename, this is the block helpers repo, survives till end of function
+    struct SolverState
+    {
+        _scope:             Scope;
+        _root_scope:        ScopeMemo;
+        _ss:                ScopeSkipMemos;
+        _field_items:       ScopeItem[];
+
+        // Can't we just list them all and scan through?
+        //  Do we need the mangling nonsense?
+        //   We can bucket however many times we want here,
+        //    its append only and trivial to maintain.
+        _specs:             map::Map(string, Target); // mangle -> spec
+        _spec_errors:       string[];
+
+        //
+        _warnings:          Warning[];
+        shortModuleName:    string;
+
+        TODO_FIX_convert_args:  SolvedNode[];
+    };
+
+
+    // The solver state.
+
+    let using mut ss:                   SolverState;
+    mut _notes:                         SolverNotes;    // TODO DISJOINT move all these in the SolverState
+    mut _current_fn:                    CurrentFn;
+    let implicit mut _helpers:          Helpers[];      // TODO rename, this is the block helpers stack, unwinds during solve
+    let implicit mut _helpers_data:     HelpersData[];  // TODO rename, this is the block helpers repo, survives till end of function
+
+
+    // Prep.
+
+    ss.shortModuleName          = module.modid && getShortModuleName(module.fname);
+    ss._spec_errors             = [ "BUG: Specializer reentry." ];
+    ss.TODO_FIX_convert_args    = [ SolvedNode ];
 
     fn push(data: HelpersData)
     {
         _helpers       ~= Helpers(index: _helpers_data.len);
         _helpers_data  ~= data;
     }
-
-
-    // Setup the module globals helper.
 
     _scope.extended ~= Extended();  // global nodes and such
     push(HelpersData());            // not sure why this is needed
