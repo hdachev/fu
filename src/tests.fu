@@ -1183,6 +1183,33 @@ pub extern fn runTests()
         fn main() = here;
     `);
 
+    ZERO(`
+        fn main() {
+            mut x = +1;
+            mut y: x = -x;
+            return x + y;
+        }
+    `);
+
+    ZERO(`
+        fn dont_inject_my_implicit_args(implicit unused_implicit_arg: i32) {
+            return unused_implicit_arg;
+        }
+
+        fn not_extern() {
+            mut x: dont_inject_my_implicit_args = 2;
+            return x;
+        }
+
+        fn not_extern(mut x: dont_inject_my_implicit_args) {
+            return x;
+        }
+
+        fn main() {
+            return not_extern_fn(-2);
+        }
+    `);
+
 
     //
 
