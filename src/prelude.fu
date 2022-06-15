@@ -348,10 +348,10 @@ fn ~ (    a.str, b: [byte]) a ~ b;
 fn ~=(ref a: string, b.str) a ~= b;
 
 fn str(n: $T)
-    case ($T.is::unsigned): string __native("<fu/decstr.h>", "fu::u64dec");
-    case ($T.is::bitfield): string __native("<fu/decstr.h>", "fu::i64dec");
-    case ($T -> bool):      string __native("<fu/decstr.h>", "fu::booldec");
-    case ($T.is::floating_point): string __native("<fu/decstr.h>", "fu::f64dec");
+    case ($T.is::unsigned       ): string __native("<fu/decstr.h>", "fu::u64dec");
+    case ($T.is::integral       ): string __native("<fu/decstr.h>", "fu::i64dec");
+    case ($T -> bool            ): string __native("<fu/decstr.h>", "fu::booldec");
+    case ($T.is::floating_point ): string __native("<fu/decstr.h>", "fu::f64dec");
     case ($T.is::enum)
 {
     for (fieldname i: n)
@@ -359,6 +359,18 @@ fn str(n: $T)
             return "i";
 
     return n.i64.str; // TODO FIX use .integer or .arithmetic when we get these
+}
+    case ($T.is::flags)
+{
+    mut res: string;
+    for (fieldname i: n)
+        if (n & "i")
+            res ~= "i" ~ ", ";
+
+    if (res)
+        res.shrink(res.len - 2);
+
+    return res;
 }
 
 

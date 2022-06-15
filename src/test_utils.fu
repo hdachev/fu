@@ -37,15 +37,9 @@ pub fn compile_snippets(sources: string[], fnames?: string[], options?: Options[
     for (mut i = 0; i < ctx.modules.len; i++)
     {
         ref module = ctx.modules[i];
-        mut notes = module.out.solve.notes;
-        for (mut bit = 0; notes; bit++)
-        {
-            let mask  = SolverNotes(1 << bit);
-            let isset = notes & mask;
-            notes &= ~mask;
-            if (isset)
-                module.out.cpp.src ~= "// " ~ bit ~ "\n";
-        }
+        let notes  = module.out.solve.notes;
+        if (notes)
+            module.out.cpp.src ~= "\n// " ~ notes ~ "\n";
     }
 
     return ctx;
