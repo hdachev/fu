@@ -5533,7 +5533,7 @@ pub fn solve(
             //  it's completely insane, we don't call this that often,
             //   and there's just an extra if/else cascade there.
             //
-            return solveCall(node).type;
+            return clear_refs(solveCall(node).type);
         }
         else if (node.kind == "typeparam")
         {
@@ -5545,7 +5545,7 @@ pub fn solve(
             return createSlice(T, Lifetime_temporary);
         }
 
-        return solveNode(node).type;
+        return clear_refs(solveNode(node).type);
     }
 
     fn trySolveTypeParams(
