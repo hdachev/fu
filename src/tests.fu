@@ -1192,6 +1192,7 @@ pub extern fn runTests()
     `);
 
     ZERO(`
+        ;; N_UnusedImplicit
         fn dont_inject_my_implicit_args(implicit unused_implicit_arg: i32) {
             return unused_implicit_arg;
         }
@@ -1206,7 +1207,7 @@ pub extern fn runTests()
         }
 
         fn main() {
-            return not_extern_fn(-2);
+            return not_extern() + not_extern(-2);
         }
     `);
 

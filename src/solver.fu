@@ -1894,21 +1894,19 @@ pub fn solve(
 
     fn _current_fn_eachArg_BACK(visit)
     {
-        let sig = _current_fn.items;
-        for (mut i = sig.len + FN_ARGS_BACK; i --> 0; )
+        for (mut i = _current_fn.items.len + FN_ARGS_BACK; i --> 0; )
         {
-            let t = sig[i].target;
+            let t = _current_fn.items[i].target;
             if (t && t.flags & F_ARG)
-                visit(t);
+                visit(t, position?: i);
         }
     }
 
     fn _current_fn_eachArg_FWD(visit)
     {
-        let sig = _current_fn.items;
-        for (mut i = 0; i < sig.len + FN_ARGS_BACK; i++)
+        for (mut i = 0; i < _current_fn.items.len + FN_ARGS_BACK; i++)
         {
-            let t = sig[i].target;
+            let t = _current_fn.items[i].target;
             if (t && t.flags & F_ARG)
                 visit(t, position?: i);
         }
@@ -2342,8 +2340,22 @@ pub fn solve(
 
             // TODO FIX args need extra iteration here.
             if (h.target == _current_fn.target)
-                _current_fn_eachArg_BACK: |t|
+            {
+                _current_fn_eachArg_BACK: |t, position|
+                {
                     relaxBlockVar(t, :relax_mask);
+
+                    // Cleanup unused implicits that got injected and ended up.
+                    if (t.status & SS_UNUSED && t.flags & F_IMPLICIT)
+                    {
+                        // println("\n\tREMOVE UNUSED IMPLICIT " t.qWHAT "\n");
+                        makeNote(N_UnusedImplicit);
+
+                        _current_fn.items[position].target == t || BUG();
+                        _current_fn.items.splice(position, 1);
+                    }
+                }
+            }
         }
         else if (k == "loop")
         {
@@ -2524,15 +2536,17 @@ pub fn solve(
 
         //
         let usage = _current_fn.var_usage.unless_oob(t.index);
-        if (!usage && relax_mask == RELAX_all)
-        {
+        let isUnused = !usage;
+        if (isUnused && relax_mask == RELAX_all)
             if !(var.flags & F_LAX)
                 warn(:t.solved.token, "Unused variable: " ~ var.name.qBAD ~ ": make it " ~ "lax".qKW ~ " if this is intentional.");
 
-            GET_mut(t).status |= SS_UNUSED;
-        }
-
+        //
         ref o = GET_mut(t);
+        if (isUnused)
+            o.status |= SS_UNUSED;
+        else
+            o.status & SS_UNUSED && BUG("relaxBlockVar: previously SS_UNUSED " ~ o.qWHAT ~ " now used as " ~ humanizeType(usage));
 
         //////////////////////////////////////////////
         // TODO one of these two is redundant       //
@@ -3224,6 +3238,9 @@ pub fn solve(
         //
         let original = overloadIdx || into || BUG();
         mut template = original.template;
+
+        // println    ("\n  BEGIN " template.node.value.qID);
+        // defer println("    END " template.node.value.qID "\n");
 
         ////////////////////
         let here0   = _here;
@@ -5939,7 +5956,7 @@ pub fn solve(
 
         // We'll be adding a new thing here.
         mut shadows: bool;
-        mut flags = F_IMPLICIT | F_ARG;
+        mut flags = F_IMPLICIT | F_ARG | F_LAX/* might get removed, dont want warnings */;
 
         if (type.is_mutref)
             flags |= F_REF | F_RELAXABLE_REF;
@@ -7974,7 +7991,12 @@ pub fn solve(
         // This feels like its no longer relevant -
 
         _current_fn_eachArg_FWD: |target, position|
+        {
+            target.modid == -_current_fn.target.index || BUG(
+                "Arg target not local to current-fn: " ~ target.qWHAT);
+
             Reference_trackArgument(flow, target.index, :position);
+        }
 
 
         // BCK PASS 1: Local analysis & resolve-by-copy.

@@ -158,6 +158,7 @@ flags SolverNotes: i32
     N_NonTrivAutoCopy
 
     N_RelaxRespec
+    N_UnusedImplicit
 
     N_BckSoftRisk
     N_BckMustSeq
