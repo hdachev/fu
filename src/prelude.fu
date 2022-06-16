@@ -384,7 +384,7 @@ fn println(parts.print[]: [string]): void __native("<fu/print.h>", "fu::println"
 
 // String commons.
 
-fn join(a: $T[][], lax sep?: $T or [$T;] or [])
+fn join(a: [$T[];], lax sep?: $T or [$T;] or [])
 {
     if (a.len < 2)
         return a.len && a[0];
