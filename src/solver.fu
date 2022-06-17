@@ -4637,7 +4637,7 @@ pub fn solve(
 
         let node = o.solved;
 
-        return node.is_ref
+        return node.is_ref && !(o.flags & F_ARG)
             && node.items
             && node.items[LET_INIT].type;
     }
