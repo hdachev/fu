@@ -209,10 +209,12 @@ pub fn compile_and_build(
     //////////////////////////////////////////////
 
     flags_cc!?: string[],
-    flags_ld!?: string[])
+    flags_ld!?: string[],
+
+    shuffle!?: u32)
 {
     let implicit mut ctx = prelude::CTX_PRELUDE.clone();
-    let implicit options: Options;
+    let implicit options = Options(:shuffle);
 
     {
         println("COMPILE ", fname);

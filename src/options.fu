@@ -12,10 +12,11 @@ pub struct Lint
 
 pub struct Options
 {
-    using lint?: Lint;
-    break_notes?: flags::SolverNotes;
+    using lint?:    Lint;
+    break_notes?:   flags::SolverNotes;
 
-    dev?: u32;
+    dev?:           u32;
+    shuffle?:       u32;
 };
 
 pub fn Lint_lax() =

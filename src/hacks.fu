@@ -1,8 +1,9 @@
 import module;
 
-struct ClosureID {
+struct ClosureID
+{
     target: Target;
-    revision: i32;
+    revision: u32;
 };
 
 fn serialize(using _: ClosureID)
@@ -22,7 +23,7 @@ fn tryParseClosureID(id!: string): ClosureID
         let modid = -helpers::parse10u32(offset, id).i32;
 
         id[offset++] == '-' || throw("Bad ClosureID: no rev-dash.");
-        let revision = helpers::parse10u32(offset, id).i32;
+        let revision = helpers::parse10u32(offset, id);
 
         return ClosureID(Target(:modid, :index), :revision);
     }

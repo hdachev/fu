@@ -4514,11 +4514,14 @@ pub fn solve(
             o.status &= ~SS_UPDATED;
 
             let callers = t.callers;
+            let shuffle = t.revision + options.shuffle;
 
             :NEXT_USER
             for (mut i = 0; i < callers.len; i++)
             {
-                mut index = callers[i];
+                // The shuffle here is to help stress test things better
+                //  and hopefully help avoid nasty resolver patterns & worst cases.
+                mut index = callers[((i.u32 + shuffle) % callers.len.u32).i32];
 
                 :GO_UP
                 for (;;)
