@@ -8695,6 +8695,41 @@ pub extern fn runTests()
         }
     `);
 
+    ZERO(`
+        fn printlike(topic: string, stuff.print[]: [string], implicit ref out: string) {
+            out ~= topic ~ ": " ~ stuff.join() ~ '\\n';
+        }
+
+        fn main() {
+            let topic = "A";
+            let implicit mut out: string;
+            printlike(:topic, "Hello, ", "World", "!");
+            return out == "A: Hello, World!\\n" ? 0 : 1
+        }
+    `);
+
+    ZERO(`
+        fn main() {
+            mut out: string;
+            fn lazywarn(prefix: string, inline stuff.print[]: [string]) {
+                out ||= prefix ~ stuff.join();
+            }
+
+            mut once = 0;
+            fn once(str: string) {
+                once++;
+                return str;
+            }
+
+            lazywarn(once("Hello"), ", ", "World", "!", prefix: "X: ");
+            lazywarn(prefix: "Y: ", once("Hello"), "!");
+
+            return out == "X: Hello, World!" && once == 1 ? 0 : 1
+        }
+    `);
+
+    // /Autocall, varargs & rest params.
+
 
     // Addrofns of struct fields.
 
