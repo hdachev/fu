@@ -1248,11 +1248,20 @@ pub fn solve(
                                 overloadIdx.name
                                     ~ ": Rest argument annotation is not an array: "
                                     ~ humanizeType(expect));
+
+                        // TODO FIX the two reorder fns don't deal correctly with rest args,
+                        //  this seems to fix it but honestly I'm not sure
+                        //   if it can deal with the rest of the arg-related stuff.
+                        //
+                        if (reorder && reorder.len < args.len)
+                            for (mut i = 0; i < args.len; i++)
+                                if (!optional.has(i) && !reorder.has(i))
+                                    reorder ~= i;
                     }
 
                     if (N)
                     {
-                        reorder.len >= args.len || !reorder || optional || BUG("reorder < args.");
+                        reorder.len >= args.len || !reorder || optional || BUG("reorder < args:\n\t\treorder=" ~ reorder ~ "\n\t\t#args=" ~ args.len);
 
                         :ARG_OK
                         for (mut i = 0; i < N; i++)
