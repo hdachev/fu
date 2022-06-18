@@ -1891,11 +1891,43 @@ pub fn solve(
         BUG("TODO: unorderedPrep_A(" ~ node.kind ~ ").");
     }
 
-    fn unorderedPrep_B(node: Node, into: Target)
+    fn unorderedPrep_B(nodes: [Node], results: [SolvedNode], unorderedClass: i32)
     {
-        let k = node.kind;
-        if (k == "fn")
-            uPrepFn_B(into);
+        if (unorderedClass != 1)
+            return;
+
+        mut hasSnap = false;
+        mut lastSnap: ScopeMemo;
+
+        for (mut i = nodes.len; i --> 0; )
+        {
+            let node = nodes[i];
+            let target = results[i].target;
+            ref template = target.EXT_mut.template;
+
+            // Decidability [C]:
+            //
+            // Conversion fns don't see below their declaration,
+            //  otherwise we start running into conversion loop drama.
+            //
+            // This obsoletes Decidability [A] above.
+            //
+            if (node.flags & F_CONVERSION)
+                hasSnap = false;
+
+            if (template.scope_memo)
+            {
+                if (!hasSnap)
+                {
+                    hasSnap = true;
+                    lastSnap = template.scope_memo;
+                }
+                else
+                {
+                    template.scope_memo = lastSnap;
+                }
+            }
+        }
     }
 
 
@@ -3037,21 +3069,6 @@ pub fn solve(
             _scope.converts.push(target);
 
         return createFnDef(:target, type: X_addrofTarget(target));
-    }
-
-    fn uPrepFn_B(target: Target)
-    {
-        ref template = target.EXT_mut.template;
-
-        // Decidability [C]:
-        //
-        // Conversion fns don't see below their declaration,
-        //  otherwise we start running into conversion loop drama.
-        //
-        // This obsoletes Decidability [A] above.
-        //
-        if (template.scope_memo && !(template.node.flags & F_CONVERSION))
-            template.scope_memo = Scope_snap(_scope);
     }
 
     fn createFnDef(type: Type, target: Target): SolvedNode
@@ -6867,12 +6884,10 @@ pub fn solve(
             // Second prep pass, limit access to scope
             //  of all newly generated entries to what we have right now.
             //
-            for (shadow mut i = i0; i < i1; i++)
-            {
-                shadow let node = nodes[i] || BUG("solveNodes, prep-b: falsy node");
-                HERE(node);
-                unorderedPrep_B(:node, result[i + offset].target);
-            }
+            unorderedPrep_B(
+                nodes[i0, i1],
+                result[i0 + offset, i1 + offset],
+                unorderedClass);
 
             // TODO REMOVE, solve all.
             mut repeat = true;
