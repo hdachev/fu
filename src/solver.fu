@@ -204,6 +204,16 @@ pub fn solve(
         return _helpers_data[h.index];
     }
 
+    using fn EXT(target: Target)
+    {
+        if (target.modid == module.modid)
+            return _scope.extended.unless_oob(target.index);
+
+        return target.modid >= 0
+            && ctx.modules[target.modid].out.solve
+                   .scope.extended.unless_oob(target.index);
+    }
+
     fn fail(mut reason: string): never
     {
         reason || BUG();
@@ -317,6 +327,14 @@ pub fn solve(
         return target.modid < 0;
     }
 
+    fn localOf(target: Target)
+    {
+        if (target.isLocal)
+            return -target.modid;
+
+        return target.EXT.local_of;
+    }
+
     fn parent(target: Target)
     {
         return Target(:module.modid, target.localOf);
@@ -341,6 +359,9 @@ pub fn solve(
 
         return GET(target);
     }
+
+    fn isFnOrType(h: Helpers): bool
+        !!(h.mask & (HM_Function | HM_Struct));
 
     using fn GET(target: Target)
     {
@@ -368,23 +389,6 @@ pub fn solve(
 
         target.index > 0 && target.modid == module.modid || assert();
         return _scope.overloads[target.index - 1];
-    }
-
-    using fn EXT(target: Target)
-    {
-        if (target.modid == module.modid)
-            return _scope.extended.unless_oob(target.index);
-
-        return target.modid >= 0
-            && ctx.modules[target.modid].out.solve.scope.extended.unless_oob(target.index);
-    }
-
-    fn localOf(target: Target)
-    {
-        if (target.isLocal)
-            return -target.modid;
-
-        return target.local_of;
     }
 
     fn EXT_mut(target: Target)
@@ -417,9 +421,6 @@ pub fn solve(
     {
         return target.modid == -_current_fn.target.index;
     }
-
-    fn isFnOrType(h: Helpers): bool
-        !!(h.mask & (HM_Function | HM_Struct));
 
 
     //
@@ -568,6 +569,34 @@ pub fn solve(
         return Lifetime_test(Lifetime(uni0n: [ region ]));
     }
 
+
+    //
+
+    using fn Region_GET(r: Region)
+    {
+        return GET(nested(Region_toLocal(r)));
+    }
+
+    fn qWHAT(l: Lifetime)
+    {
+        mut str = "";
+        for (mut i = 0; i < l.uni0n.len; i++)
+        {
+            if (i)
+                str ~= "|";
+
+            let r = l.uni0n[i];
+            if (r.Region_isStatic)
+                str ~= "static";
+            else if (r.Region_isTemp)
+                str ~= "temp";
+            else
+                str ~= r.qWHAT();
+        }
+
+        return str;
+    }
+
     fn Lifetime_replaceArgsAtCallsite(target: Target, argNodes: [SolvedNode]): Lifetime
     {
         mut keep:       Lifetime;
@@ -597,31 +626,6 @@ pub fn solve(
              ? keep ? Lifetime_union(keep, replace)
                     : replace
              : returned;
-    }
-
-    using fn Region_GET(r: Region)
-    {
-        return GET(nested(Region_toLocal(r)));
-    }
-
-    fn qWHAT(l: Lifetime)
-    {
-        mut str = "";
-        for (mut i = 0; i < l.uni0n.len; i++)
-        {
-            if (i)
-                str ~= "|";
-
-            let r = l.uni0n[i];
-            if (r.Region_isStatic)
-                str ~= "static";
-            else if (r.Region_isTemp)
-                str ~= "temp";
-            else
-                str ~= r.qWHAT();
-        }
-
-        return str;
     }
 
 
@@ -6940,6 +6944,31 @@ pub fn solve(
 
         //
 
+        fn acceptsTempCopies(arg: Argument)
+        {
+            return !(arg.flags & (F_IMPLICIT | F_REF));
+        }
+
+        fn acceptsTempCopies(o: Overload)
+        {
+            return   o.kind == "var"
+                && !(o.flags & (F_IMPLICIT | F_REF))
+                &&  !o.type.is_mutref;
+        }
+
+        fn acceptsSoftRisk(arg: Argument)
+        {
+            return !arg.acceptsTempCopies();
+        }
+
+        fn acceptsSoftRisk(o: Overload)
+        {
+            return o.flags & F_ARG && !o.acceptsTempCopies();
+        }
+
+
+        //
+
         fn RESOLVE_byAAR(read!: i32, write!: i32, trySoft!: bool)
         {
             AAR || BUG();
@@ -7135,28 +7164,6 @@ pub fn solve(
 
 
         //
-
-        fn acceptsTempCopies(arg: Argument)
-        {
-            return !(arg.flags & (F_IMPLICIT | F_REF));
-        }
-
-        fn acceptsTempCopies(o: Overload)
-        {
-            return   o.kind == "var"
-                && !(o.flags & (F_IMPLICIT | F_REF))
-                &&  !o.type.is_mutref;
-        }
-
-        fn acceptsSoftRisk(arg: Argument)
-        {
-            return !arg.acceptsTempCopies();
-        }
-
-        fn acceptsSoftRisk(o: Overload)
-        {
-            return o.flags & F_ARG && !o.acceptsTempCopies();
-        }
 
         fn isInvalidatedBy(read: Region[], write: Region[])
         {
