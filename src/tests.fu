@@ -8607,6 +8607,55 @@ pub extern fn runTests()
         }
     `);
 
+    ZERO(`
+        struct Target       { index: int };
+        struct Overload     { name: string; };
+
+        fn solve(_overloads: Overload[], _targets: Target[]) {
+            fn fail(mut reason: string): never {
+                for (mut i = _targets.len; i --> 0; ) {
+                    let t = _targets[i];
+                    if (t)
+                        reason ~= GET(t).qWHAT;
+                }
+
+                return throw(reason);
+            }
+
+            fn qWHAT(o: Overload)
+                o.name;
+
+            using fn GET(target: Target) {
+                _overloads.len >= target.index || fail(
+                    GET(Target(_overloads.len - 1)).qWHAT);
+
+                return _overloads[target.index];
+            }
+
+            fn qWHAT(n: Target[]) {
+            <alt>
+                mut res = "";
+                for (mut i = 0; i < n.len; i++)
+                    res ~= n[i].qWHAT;
+
+                return res;
+            <alt/>
+                return n.map(|t| t.qWHAT).join();
+            </alt>
+            }
+
+            return _targets.qWHAT;
+        }
+
+        fn main() {
+            mut res = solve(
+                [ Overload("Hello"), Overload(", "), Overload("! "), Overload("World!") ],
+                [ Target(0), Target(1), Target(3) ]);
+
+            return res == "Hello, World!" ? 0 : 1;
+        }
+    `);
+
     // /Conversion functions.
 
 
