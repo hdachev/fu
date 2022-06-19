@@ -2,80 +2,95 @@
 enum kind
 {
 
-    // Lexer: token kinds.
-
+    // -- -- -- -- Lexeme:
+    // LexerOnly:
     sof
+    err
+    eof
 
     id
     op
+    // /LexerOnly
+
+    // AffineExpression:
+    // -- LinearExpression:
+    // -- -- ValueExpression:
+    // -- -- -- Literal:
     int
     real
     char
     str
+    bool
+    // -- -- -- -- /Lexeme
+    // -- -- -- /Literal
 
-    err
+    copy
+    move
+    arrlit
+    definit
 
-    eof
+    empty
+    void
+    // -- -- /ValueExpression
 
-
-    // Parser: node kinds.
+    call
+    argid
+    // -- /LinearExpression
 
     root
     block
-    argid
 
-    let
-    call
-    arrlit
-
+    // -- ControlFlow:
     if
     or
     and
+    // /AffineExpression
 
     loop
 
-    // enum JumpKind
-    // {
-    break
-    return
-    continue
-    // }
+    jump
+    __far_jump
 
-    // int
-    // real
-    // str
-    // char
-    bool
-
-    definit
-
-    import
     defer
     try
+    // -- /ControlFlow
+
+    let
+    letdef
 
     typedef
     typecast
     typeassert
     typeparam
-    addroffn
 
     unwrap
-    forfieldsof
     pragma
-    void
 
-    // enum TypeDeclKind
-    // {
+    // ParseOnly_JumpKind:
+    break
+    return
+    continue
+    // /ParseOnly_JumpKind
+
+    // ParseOnly_Placeholder:
+    import
+    addroffn
+    forfieldsof
+    // /ParseOnly_Placeholder
+
+    // TypeDecl:
     struct
     union
     primitive
     flags
     enum
-    // }
+    // /TypeDecl
 
     members
 
+    fndef
     fn
+
     fnbranch
     pattern
 
@@ -85,16 +100,8 @@ enum kind
 
     // Solver: extra node kinds.
 
-    jump
-    empty
-    letdef
     __relaxed
     __convert
-
-    fndef
-    copy
-    move
-    __far_jump
 
 
     // Scope: overload types.
