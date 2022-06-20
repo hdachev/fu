@@ -4890,7 +4890,7 @@ pub extern fn runTests()
         struct S { i: i32; };
 
         fn hello(ref s: S, w: i32) {
-            infix fn |=(<fail ambig><pass/>shadow </fail>ref s: S, v: i32)
+            infix fn |=(<fail ambig 6:17><pass/>shadow </fail>ref s: S, v: i32)
                 s.i |= v << w;
 
             s |= 2;
@@ -5485,7 +5485,7 @@ pub extern fn runTests()
 
     ZERO(`
         fn fails_with_silly_error(ref set: i32[], i) {
-            <fail bad call arg>
+            <fail bad call arg 4:18>
             set  ||= i; <pass/> // this BUGged out instead of
             set   ~= i; </fail> //  outputing a decent err msg
             return set;
@@ -5638,7 +5638,7 @@ pub extern fn runTests()
 
     ZERO(`
         struct ScopeIdx { raw: i32; };
-        <fail bad call>
+        <fail bad call to = 12:27>
         fn thing(x: i32) x;             <pass/>
         fn thing(x: i32) ScopeIdx(x);   </fail>
         mut _return_scope: ScopeIdx;
@@ -5840,7 +5840,7 @@ pub extern fn runTests()
             skip.end - skip.start;
 
         pub fn main()
-            <fail bad call>
+            <fail bad call to ScopeSkip 12:22>
             ScopeSkip(min: -1, max: +1)     <pass/>
             ScopeSkip(start: -1, end: +1)   </fail>
                 .end - 1;
@@ -6205,7 +6205,7 @@ pub extern fn runTests()
     `);
 
     ZERO(`
-        <fail explicit>
+        <fail explicit clone 8:21>
         nocopy <pass/></fail>
         struct Copied { x: i32; };
 
@@ -7036,7 +7036,7 @@ pub extern fn runTests()
 
     ZERO(`
         struct Test {
-        <fail expects 2 arg>
+        <fail bad call to Test expects 2 arg 11:20>
             a: i32;  <pass/>
             a?: i32; </fail>
             b: i32;
@@ -7048,7 +7048,7 @@ pub extern fn runTests()
     ZERO(`
         struct Test {
             b: i32;
-        <fail expects 2 arg>
+        <fail bad call to Test expects 2 arg 11:20>
             a: i32;  <pass/>
             a?: i32; </fail>
         };
@@ -7088,7 +7088,7 @@ pub extern fn runTests()
 
     ZERO(`
         fn test(a: i32, b!: i32 = 1) a + b;
-        <fail bad call>
+        <fail bad call to test arg b explicit name 7:20>
         return test(-2, +2);    <pass/>
         return test(-2, b: +2); </fail>
     `);
@@ -7096,7 +7096,7 @@ pub extern fn runTests()
     ZERO(`
         struct Test { a: i32; b!: i32; };
         fn test(t: Test) t.a + t.b;
-        <fail bad call>
+        <fail bad call to Test arg b explicit name 8:20>
         return Test(-2, +2).test;    <pass/>
         return Test(-2, b: +2).test; </fail>
     `);
@@ -7104,7 +7104,7 @@ pub extern fn runTests()
     ZERO(`
         struct Test { a?: i32; b!?: i32; };
         fn test(t: Test) t.a + t.b;
-        <fail bad call>
+        <fail bad call to Test arg b explicit name 8:20>
         return Test(-2, +2).test;    <pass/>
         return Test(b: +2).test - 2; </fail>
     `);
