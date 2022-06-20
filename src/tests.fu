@@ -4073,6 +4073,34 @@ pub extern fn runTests()
         }
     `);
 
+    TODO_move(`
+        nocopy struct NCThing { x: i32 };
+
+        fn last_used_before_break(mut nc: NCThing, N: i32) {
+            mut res: NCThing;
+            for (mut i = 0; i < N; i++) {
+                nc.x *= 2;
+                if (nc.x > 10) {
+                    if (nc.x > 20) return nc;
+                    res = nc; // <- should move here ...
+                    break;
+                }
+            }
+
+            <fail needs explicit steal or clone 10:25>
+            if (nc.x > 15) return nc; // <- ... unless used here.
+            <pass/></fail>
+
+            res.x *= 10;
+            return res;
+        }
+
+        fn main() {
+            let res = last_used_before_break(NCThing(3), 10);
+            return res.x - 120;
+        }
+    `);
+
     // /Move on last use
 
 
