@@ -6203,6 +6203,11 @@ pub fn solve(
                     && item.kind == "and"
                     && item.items && item.items[item.items.len - 1];
 
+                //////////////////////////////////////////////////////////
+                // TODO canonicalize `a && never || b` to an if         //
+                //  so that bck & propagate can better do their thing   //
+                //////////////////////////////////////////////////////////
+
                 let itemType = andLast && !andLast.type.is_never
                     ? (item.type = andLast.type)
                     :  item.type;
