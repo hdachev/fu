@@ -2394,13 +2394,6 @@ pub fn solve(
             // What do we do here? //
             /////////////////////////
         }
-        else if (k == "move")
-        {
-            // TEMP this is just for the maybeCopyOrMove(isReturn) stuff,
-            //  nothing else can emit a move before the last propagateType.
-            //
-            propagateType(node.items.only, :relax_mask, :slot);
-        }
         else if (k == "copy")
         {
             if (relax_mask != RELAX_all)
@@ -6824,7 +6817,7 @@ pub fn solve(
             ]);
     }
 
-    fn maybeCopyOrMove(ref node: SolvedNode, slot: Type, isArgument! = false, isReturn! = false): void
+    fn maybeCopyOrMove(ref node: SolvedNode, slot: Type, isArgument! = false): void
     {
         if (slot.canon != node.canon && !node.is_never)
         {
@@ -6879,20 +6872,9 @@ pub fn solve(
             return;
         }
 
-        // TODO FIX move on last use should take care of this later,
-        //  currently gets confused around block returns
-        //   which it mistakes for preceding uses.
-        //
-        mut kind = kind::copy;
-        if (isReturn && node.type.lifetime.Lifetime_unwind().Lifetime_vs() > 0)
-        {
-            kind = "move";
-            Lifetime_F_MOVED_FROM(node.type.lifetime);
-        }
-
         // This may convert to a move during relaxAll.
         node = SolvedNode(
-            :kind,
+            kind:   "copy",
             items:  [ node ],
             type:   clear_refs(node.type));
     }
@@ -8374,7 +8356,7 @@ pub fn solve(
         {
             let h = node.helpers;
             if (h.ret_actual && !h.ret_actual.is_void && !h.ret_actual.is_never)
-                maybeCopyOrMove(node.items.last, h.ret_actual, isReturn: true);
+                maybeCopyOrMove(node.items.last, h.ret_actual);
         }
         else if (k == "letdef")
         {
