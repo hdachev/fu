@@ -2458,20 +2458,27 @@ pub fn solve(
             trackFlowOnBreak();
             ///////////////////
 
-            //
-            mut isLast = true;
-            for (mut i = node.items.len; i --> 0; )
+            if (node.items) // TODO FIX: why are we seeing empty blocks?
             {
-                shadow ref node = node.items[i];
+                // Defers first - in reverse order of evaluation,
+                //  which is FORWARD order in the AST, hence the ++ here.
+                for (mut i = 0; i < node.items.len - 1; i++)
+                {
+                    shadow ref node = node.items[i];
+                    if (node.kind == "defer")
+                        propagateType(node.items.only, :relax_mask, t_void);
+                }
 
-                // Removing propagateType(defer) and handling here:
-                //  this validates we don't get stray defers outside of blocks.
-                shadow ref node = node.kind == "defer"
-                    ? node.items.only
-                    : node;
+                // Tail item.
+                propagateType(node.items.last, :relax_mask, slot);
 
-                propagateType(node, :relax_mask,
-                    isLast ? { isLast = false; slot } : t_void);
+                // Regular items - in reverse order of eval.
+                for (mut i = node.items.len - 1; i --> 0; )
+                {
+                    shadow ref node = node.items[i];
+                    if (node.kind != "defer")
+                        propagateType(node, :relax_mask, t_void);
+                }
             }
 
             // TODO FIX args need extra iteration here.
