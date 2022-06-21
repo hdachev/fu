@@ -171,19 +171,20 @@ pub struct Helpers
 
 pub struct SolvedNode
 {
-    true        ::kind;
+    true            ::kind;
 
-    helpers:    Helpers; // TODO not here: I had room for it, but honestly this is not the best place for this.
-    flags:      flags::Flags;
+    helpers:        Helpers; // TODO not here: I had room for it, but honestly this is not the best place for this.
+    flags:          flags::Flags;
+    _loop_start?:   i32;
 
-    value:      string;
-    items:      SolvedNode[];
-    token:      TokenIdx;
+    value:          string;
+    items:          SolvedNode[];
+    token:          TokenIdx;
 
-    using type: Type;
-    target:     Target;
+    using type:     Type;
+    target:         Target;
 
-    using rwr?: RWRanges;
+    using rwr?:     RWRanges;
 }
 
 

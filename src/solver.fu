@@ -2174,6 +2174,10 @@ pub fn solve(
         //
         else if (k == "call")
         {
+            //////////////////////////////////////////
+            node._loop_start = _current_fn.loop_start;
+            //////////////////////////////////////////
+
             let t = node.target;
             if (t.kind == "field")
                 return node.items.only.propagateType(slot, :relax_mask);
@@ -7322,7 +7326,7 @@ pub fn solve(
             _here           = callsite.token;
 
             let regions     = callsite.type.lifetime.uni0n;
-            let loop_start  = _current_fn.loop_start;
+            let loop_start  = callsite._loop_start || BUG("bck_trackRead: loop_start not set on callsite.");
 
             // Writes invalidate subsequent reads.
             for (mut i = 0; i < regions.len; i++)
@@ -7941,16 +7945,10 @@ pub fn solve(
 
             bck_node(items[0]);
 
-            // BORROWCK ////////////////////////////////////////////////////////////
-            let events0                         = _current_fn.events.used_in_a_loop;
-            let loop_start0                     = _current_fn.loop_start;
-            _current_fn.loop_start              = node.helpers.locals_start || BUG();
-
-            defer {
-                _current_fn.loop_start              = loop_start0;
-                _current_fn.events.used_in_a_loop   = events0;
-            }
-            ////////////////////////////////////////////////////////////////////////
+            // BORROWCK //////////////////////////////////////
+            let   events0 = _current_fn.events.used_in_a_loop;
+            defer _current_fn.events.used_in_a_loop = events0;
+            //////////////////////////////////////////////////
 
             for (mut i = 1; i < items.len; i++)
                 bck_node(items[i]);
