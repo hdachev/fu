@@ -8368,7 +8368,9 @@ pub fn solve(
 
         node.helpers.pass = "RelaxMut";
 
-        _current_fn.var_usage = [];
+        _current_fn.var_usage  && BUG("_current_fn.var_usage not empty before propagateType.");
+        _current_fn.loop_start && BUG("_current_fn.loop_start != 0 before propagateType.");
+        _current_fn.loop_start = 1;
         propagateType(node, node.type, relax_mask: RELAX_before_bck);
 
         ///////////////////////////////
@@ -8394,6 +8396,7 @@ pub fn solve(
         node.helpers.pass = "RelaxCopyResize";
 
         _current_fn.var_usage = [];
+        _current_fn.loop_start == 1 || BUG("_current_fn.loop_start leak: " ~ _current_fn.loop_start);
         propagateType(node, node.type, relax_mask: RELAX_all);
 
         ///////////////////////////////
