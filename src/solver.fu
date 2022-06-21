@@ -124,7 +124,9 @@ pub fn solve(
         for (fieldname i: dest.moves)
             dest.moves.i.add(src.moves.i);
 
-        dest.loop_start = max(dest.loop_start, src.loop_start);
+        dest.loop_start = max(
+            dest.loop_start || BUG(),
+             src.loop_start || BUG());
     }
 
     struct CurrentFn
@@ -166,6 +168,22 @@ pub fn solve(
         shortModuleName:    string;
 
         TODO_FIX_convert_args:  SolvedNode[];
+    };
+
+    struct HelpersData
+    {
+        target!?:       Target;
+        pass!?:         SolverPass;
+
+        id?:            string;
+        mask!?:         HelpersMask;
+        local_of!?:     i32;
+        locals_start!?: i32;
+
+        ret_expect?:    Type;
+        ret_actual?:    Type;
+
+        postdom?:       Postdom;
     };
 
 
@@ -2046,11 +2064,19 @@ pub fn solve(
             }
         }
 
-        fn trackFlowOnBreak()
+
+        //
+
+        fn Breakable_begin()
         {
-            // This is how we know where we'll end up when jumping.
             if (node.helpers)
-                node.helpers.loop_start = _current_fn.loop_start;
+                node.helpers.postdom = _current_fn.postdom;
+        }
+
+        fn Breakable_end()
+        {
+            if (node.helpers)
+                _current_fn.postdom.branch(node.helpers.postdom);
         }
 
 
@@ -2142,12 +2168,9 @@ pub fn solve(
             fn post_cond    = node.items[LOOP_POST_COND];
             fn post         = node.items[LOOP_POST];
 
-            ///////////////////
-            trackFlowOnBreak();
-            ///////////////////
-
             // MOVE ON LAST USE ////////////////////////////////////////////
-            let loop_start0         = _current_fn.loop_start;
+            Breakable_begin();
+            let loop_start0         = _current_fn.loop_start    || BUG();
             _current_fn.loop_start  = node.helpers.locals_start || BUG();
             // MOVE ON LAST USE ////////////////////////////////////////////
 
@@ -2159,6 +2182,8 @@ pub fn solve(
 
             // MOVE ON LAST USE ////////////////////////////////////////////
             _current_fn.loop_start  = loop_start0;
+            Breakable_end();
+            _current_fn.loop_start == loop_start0 || BUG();
             // MOVE ON LAST USE ////////////////////////////////////////////
 
             if (init)       propagateType(init, t_void, :relax_mask);
@@ -2436,7 +2461,7 @@ pub fn solve(
             h.ret_actual || BUG(
                 "propagateType(jump): h.ret_actual not available.");
 
-            _current_fn.loop_start = h.loop_start || BUG(
+            _current_fn.postdom = h.postdom || BUG(
                 "propagateType(jump): h.loop_start not available.");
 
             propagateType(node.items.only, :relax_mask, h.ret_actual);
@@ -2447,9 +2472,10 @@ pub fn solve(
 
             h.ret_actual.try_relax(:slot, :relax_mask);
 
-            ///////////////////
-            trackFlowOnBreak();
-            ///////////////////
+            //////////////////////
+            Breakable_begin();
+            defer Breakable_end();
+            //////////////////////
 
             if (node.items) // TODO FIX: why are we seeing empty blocks?
             {

@@ -16,21 +16,6 @@ enum SolverPass
     RelaxCopyResize
 };
 
-struct HelpersData
-{
-    target!?:       Target;
-    pass!?:         SolverPass;
-
-    id?:            string;
-    mask!?:         HelpersMask;
-    local_of!?:     i32;
-    locals_start!?: i32;
-    loop_start!?:   i32;
-
-    ret_expect?:    Type;
-    ret_actual?:    Type;
-};
-
 fn target(si: ScopeItem)
     Target(:si.modid, index: (si.packed &~ (0x1 << 31)).i32);
 
