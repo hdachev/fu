@@ -2039,7 +2039,16 @@ pub fn solve(
             }
         }
 
+        fn trackFlowOnBreak()
+        {
+            // This is how we know where we'll end up when jumping.
+            if (node.helpers)
+                node.helpers.loop_start = _current_fn.loop_start;
+        }
+
+
         //
+
         node.type.try_relax(:slot, :relax_mask);
         shadow let slot = node.type;
 
@@ -2139,6 +2148,10 @@ pub fn solve(
             fn body         = node.items[LOOP_BODY];
             fn post_cond    = node.items[LOOP_POST_COND];
             fn post         = node.items[LOOP_POST];
+
+            ///////////////////
+            trackFlowOnBreak();
+            ///////////////////
 
             // MOVE ON LAST USE ////////////////////////////////////////////
             let loop_start0         = _current_fn.loop_start;
@@ -2433,6 +2446,10 @@ pub fn solve(
             let h = node.helpers;
 
             h.ret_actual.try_relax(:slot, :relax_mask);
+
+            ///////////////////
+            trackFlowOnBreak();
+            ///////////////////
 
             //
             mut isLast = true;
