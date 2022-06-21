@@ -2046,29 +2046,41 @@ pub fn solve(
         //
         let LAST = node.items.len - 1;
 
-        // Logic.
+        // Control flow.
         if (k == "and")
         {
             let rest    = slot.is_mutref && CANNOT_definit_mutrefs
                         ? slot
                         : t_bool;
 
+            let loop_start0 = _current_fn.loop_start;
+
             for (mut i = node.items.len; i --> 0; )
+            {
                 propagateType(node.items[i], :relax_mask,
                     i == LAST ? slot : rest);
+
+                // Conditional - tail exprs are skippable.
+                if (i) _current_fn.loop_start = loop_start0;
+            }
         }
         else if (k == "or")
         {
+            let loop_start0 = _current_fn.loop_start;
+
             for (mut i = node.items.len; i --> 0; )
+            {
                 propagateType(node.items[i], :relax_mask,
                     :slot);
+
+                // Conditional - tail exprs are skippable.
+                if (i) _current_fn.loop_start = loop_start0;
+            }
         }
         else if (k == "if")
         {
-            // MOVE ON LAST USE ////////////////////////////////////////////
-            mut moves0 = _current_fn.moves;
-            mut moves1: Moves;
-            // MOVE ON LAST USE ////////////////////////////////////////////
+            mut loop_start0 = _current_fn.loop_start;
+            mut moves0      = _current_fn.moves;
 
             for (mut i = node.items.len; i --> 0; )
             {
@@ -2076,19 +2088,74 @@ pub fn solve(
                 if (i == 1)
                 {
                     // Cons branch, alt already solved.
-                    swap(moves1, _current_fn.moves);
-                    swap(_current_fn.moves, moves0);
+                    swap(moves0, _current_fn.moves);
                 }
                 else if (i == 0)
                 {
                     // Finally the cond, cons and alt already solved.
-                    _current_fn.moves.add(moves1);
+                    _current_fn.moves.add(moves0);
                 }
                 // MOVE ON LAST USE ////////////////////////////////////////////
 
                 propagateType(node.items[i], :relax_mask,
                     i != 0 ? slot : t_bool);
+
+                // Either-or: we'll unconditionally break to the nearer
+                //  break target from the alt and cons branches.
+                if (i == 2)
+                {
+                    swap(loop_start0, _current_fn.loop_start);
+                }
+                else if (i == 1)
+                {
+                    _current_fn.loop_start = max(
+                        _current_fn.loop_start,
+                        loop_start0);
+                }
             }
+        }
+        else if (k == "try")
+        {
+            fn attempt      = node.items[0]; // TODO FIX the laxness due to rec solve
+            fn error        = node.items[1]; // TODO FIX the laxness due to rec solve
+            fn recover      = node.items[2];
+
+            // Relax in reverse, catch goes first.
+            let loop_start0 = _current_fn.loop_start;
+
+            propagateType(recover, t_void, :relax_mask);
+
+            // The catch is conditional -
+            //  obviously not guaranteed to execute.
+            _current_fn.loop_start = loop_start0;
+
+            propagateType(error, t_string, :relax_mask);
+            propagateType(attempt, t_void, :relax_mask);
+        }
+        else if (k == "loop")
+        {
+            fn init         = node.items[LOOP_INIT];
+            fn pre_cond     = node.items[LOOP_COND];
+            fn body         = node.items[LOOP_BODY];
+            fn post_cond    = node.items[LOOP_POST_COND];
+            fn post         = node.items[LOOP_POST];
+
+            // MOVE ON LAST USE ////////////////////////////////////////////
+            let loop_start0         = _current_fn.loop_start;
+            _current_fn.loop_start  = node.helpers.locals_start || BUG();
+            // MOVE ON LAST USE ////////////////////////////////////////////
+
+            // Relax in reverse.
+            if (post)       propagateType(post, t_void, :relax_mask);
+            if (post_cond)  propagateType(post_cond, t_bool, :relax_mask);
+            if (body)       propagateType(body, t_void, :relax_mask);
+            if (pre_cond)   propagateType(pre_cond, t_bool, :relax_mask);
+
+            // MOVE ON LAST USE ////////////////////////////////////////////
+            _current_fn.loop_start  = loop_start0;
+            // MOVE ON LAST USE ////////////////////////////////////////////
+
+            if (init)       propagateType(init, t_void, :relax_mask);
         }
 
         //
@@ -2401,42 +2468,6 @@ pub fn solve(
                     }
                 }
             }
-        }
-        else if (k == "loop")
-        {
-            fn init         = node.items[LOOP_INIT];
-            fn pre_cond     = node.items[LOOP_COND];
-            fn body         = node.items[LOOP_BODY];
-            fn post_cond    = node.items[LOOP_POST_COND];
-            fn post         = node.items[LOOP_POST];
-
-            // MOVE ON LAST USE ////////////////////////////////////////////
-            let loop_start0         = _current_fn.loop_start;
-            _current_fn.loop_start  = node.helpers.locals_start || BUG();
-            // MOVE ON LAST USE ////////////////////////////////////////////
-
-            // Relax in reverse.
-            if (post)       propagateType(post, t_void, :relax_mask);
-            if (post_cond)  propagateType(post_cond, t_bool, :relax_mask);
-            if (body)       propagateType(body, t_void, :relax_mask);
-            if (pre_cond)   propagateType(pre_cond, t_bool, :relax_mask);
-
-            // MOVE ON LAST USE ////////////////////////////////////////////
-            _current_fn.loop_start  = loop_start0;
-            // MOVE ON LAST USE ////////////////////////////////////////////
-
-            if (init)       propagateType(init, t_void, :relax_mask);
-        }
-        else if (k == "try")
-        {
-            fn attempt      = node.items[0]; // TODO FIX the laxness due to rec solve
-            fn error        = node.items[1]; // TODO FIX the laxness due to rec solve
-            fn recover      = node.items[2];
-
-            // Relax in reverse.
-            propagateType(recover, t_void, :relax_mask);
-            propagateType(error, t_string, :relax_mask);
-            propagateType(attempt, t_void, :relax_mask);
         }
         else if (k == "root")
         {
