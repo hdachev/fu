@@ -93,6 +93,7 @@ pub extern fn runTests()
     let TODO_specpat    = fn TODO;
     let TODO_relaxer    = fn TODO;
     let TODO_ambig      = fn TODO;
+    let TODO_unwrap     = fn TODO;
 
     let TODO_Map        = fn TODO;
 
@@ -8258,15 +8259,17 @@ pub extern fn runTests()
         }
     `);
 
-    ZERO(`
+    TODO_unwrap(`
         inline fn unwraps_defer(ref x: i32) unwrap {
             defer x++;
         }
 
         fn main() {
+            mut y = 0;
+            { unwraps_defer(y); }
             mut x = 0;
             unwraps_defer(x);
-            return x;
+            return y == 1 && x == 0 ? 0 : 1;
         }
     `);
 
