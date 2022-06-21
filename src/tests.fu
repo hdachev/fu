@@ -3917,7 +3917,7 @@ pub extern fn runTests()
         }
     `]);
 
-    TODO_borrowck(`
+    ZERO(`
         nocopy struct NCThing {
             items: i32[];
         };
