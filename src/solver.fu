@@ -32,6 +32,8 @@ let SELF_TEST               = true;
 //
 let DONT_match_zeroes       = true;
 
+let MOVE_from_temp          = true;
+
 
 
 ///////////////////////////////////////
@@ -2030,6 +2032,9 @@ pub fn solve(
             for (mut i = 0; i < lt.uni0n.len; i++)
             {
                 let r = lt.uni0n[i];
+                if (MOVE_from_temp && Region_isTemp(r))
+                    continue;
+
                 let local = Region_asLocal(r);
                 if !(local && trackUse(nested(local)))
                 {
@@ -2053,6 +2058,9 @@ pub fn solve(
             for (mut i = 0; i < lt.uni0n.len; i++)
             {
                 let r = lt.uni0n[i];
+                if (MOVE_from_temp && Region_isTemp(r))
+                    continue;
+
                 let local = Region_asLocal(r) || BUG(
                     "trackJustMoved: found a non-local.");
 
