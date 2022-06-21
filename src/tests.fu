@@ -6371,9 +6371,6 @@ pub extern fn runTests()
     ZERO(`
         struct Lifetime { woot: Lifetime[]; };
 
-        // We could codegen this as a cpp template!
-        //  We'd need to auto& all inner locals too.
-        //
         fn Lifetime_test(x: Lifetime) {
             x.woot.len & 1 && throw("This is very important.");
             for (mut i = 0; i < x.woot.len; i++) Lifetime_test(x.woot[i]);
@@ -6382,15 +6379,18 @@ pub extern fn runTests()
 
         fn Lifetime_fromBinding(x: i32) {
             mut woot: Lifetime[];
-            for (mut i = 0; i < x; i++) woot[i] = Lifetime();
+            for (mut i = 0; i < x; i++)
+                woot[i] = Lifetime();
 
-            // Or we can just add const_casts at such callsites,
-            //  so that things end up working as if the call was inlined,
-            //   which weakens the validation we get but is way cleaner.
+            ;; !N_NonTrivAutoCopy
             //
-            // TODO: needs to track uniqueness for that to work.
-            //
+            //  1. Move 'woot' into Lifetime
+            //      instead of naively copying it.
+            //                             ....
             return Lifetime_test(Lifetime(:woot));
+            //     ....
+            //  2. Move the result out even though
+            //      Lifetime_test takes and returns refs.
         }
 
         fn main() 0.Lifetime_fromBinding.woot.len;
@@ -8401,6 +8401,9 @@ pub extern fn runTests()
             // and this complains about no match for *(void, void)
             return hey(0) * hey(1);
         }
+
+        // misfired during the removal of maybeCopyOrMove(isReturn)
+        ;; !N_MoveMustSeq
     `);
 
     ZERO(`
