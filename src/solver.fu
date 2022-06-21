@@ -2400,6 +2400,10 @@ pub fn solve(
 
             ref item = node.items.only;
             mut isCopy = true;
+
+            // No longer doing this for trivials -
+            //  it can trigger a bullshit MoveMustSeq.
+            if (!item.is_trivial)
             {
                 // Move on last use.
                 if (tryTrackLastUse(item.type.lifetime))
