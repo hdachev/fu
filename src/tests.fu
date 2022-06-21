@@ -4137,6 +4137,26 @@ pub extern fn runTests()
         }
     `);
 
+    TODO_move(`
+        nocopy struct NCThing { str: string };
+
+        fn last_used_in_defer(mut nc: NCThing, ref other: NCThing) {
+            defer other = nc; // last use, move here!
+            while (nc.str.len < 64)
+                nc.str ~= nc.str;
+
+            <fail explicit steal or clone 5:25>
+            return nc;                  <pass/>
+            return nc.str.len;          </fail>
+        }
+
+        fn main() {
+            mut other: NCThing;
+            last_used_in_defer(NCThing("Hello!"), other);
+            return other.str.len - 66;
+        }
+    `);
+
     // /Move on last use
 
 
