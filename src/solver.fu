@@ -2436,8 +2436,11 @@ pub fn solve(
         {
             let h = node.helpers;
 
-            h.ret_actual || fail(
+            h.ret_actual || BUG(
                 "propagateType(jump): h.ret_actual not available.");
+
+            _current_fn.loop_start = h.loop_start || BUG(
+                "propagateType(jump): h.loop_start not available.");
 
             propagateType(node.items.only, :relax_mask, h.ret_actual);
         }

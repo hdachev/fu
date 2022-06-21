@@ -4073,7 +4073,7 @@ pub extern fn runTests()
         }
     `);
 
-    TODO_move(`
+    ZERO(`
         nocopy struct NCThing { x: i32 };
 
         fn last_used_before_break(mut nc: NCThing, N: i32) {
