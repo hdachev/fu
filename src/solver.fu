@@ -2751,7 +2751,8 @@ pub fn solve(
                 if (item.items.if_last.kind == "unwrap")
                 {
                     relinkJumps(:h, item);
-                    items.splice(i, 1, item.items.slice(0, i - 1));
+                    items.splice(i, 1,
+                        item.items.slice(0, item.items.len - 1));
                 }
             }
             else if (k == "empty" || k == "bool")
