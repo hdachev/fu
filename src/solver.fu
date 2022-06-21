@@ -113,10 +113,18 @@ pub fn solve(
         just_used:          bitset::BitSet;
     };
 
-    fn add(ref dest: Moves, src: Moves)
+    struct Postdom
     {
-        for (fieldname i: dest)
-            dest.i.add(src.i);
+        using moves:        Moves;
+        loop_start:         i32;
+    };
+
+    fn branch(ref dest: Postdom, src: Postdom)
+    {
+        for (fieldname i: dest.moves)
+            dest.moves.i.add(src.moves.i);
+
+        dest.loop_start = max(dest.loop_start, src.loop_start);
     }
 
     struct CurrentFn
@@ -130,14 +138,13 @@ pub fn solve(
 
         effects?:           Effects;
         events?:            Events;
-        loop_start?:        i32;
         autoshadow_ok!:     i32;
 
         // The replacement for the callsites stuff.
         var_usage?:         Type[];
 
         //
-        using moves?:       Moves;
+        using postdom?:     Postdom;
     };
 
     struct SolverState
@@ -2062,7 +2069,7 @@ pub fn solve(
                         ? slot
                         : t_bool;
 
-            let loop_start0 = _current_fn.loop_start;
+            let postdom0    = _current_fn.postdom;
 
             for (mut i = node.items.len; i --> 0; )
             {
@@ -2070,12 +2077,12 @@ pub fn solve(
                     i == LAST ? slot : rest);
 
                 // Conditional - tail exprs are skippable.
-                if (i) _current_fn.loop_start = loop_start0;
+                if (i) _current_fn.postdom.branch(postdom0);
             }
         }
         else if (k == "or")
         {
-            let loop_start0 = _current_fn.loop_start;
+            let postdom0    = _current_fn.postdom;
 
             for (mut i = node.items.len; i --> 0; )
             {
@@ -2083,13 +2090,12 @@ pub fn solve(
                     :slot);
 
                 // Conditional - tail exprs are skippable.
-                if (i) _current_fn.loop_start = loop_start0;
+                if (i) _current_fn.postdom.branch(postdom0);
             }
         }
         else if (k == "if")
         {
-            mut loop_start0 = _current_fn.loop_start;
-            mut moves0      = _current_fn.moves;
+            mut postdom0    = _current_fn.postdom;
 
             for (mut i = node.items.len; i --> 0; )
             {
@@ -2097,30 +2103,17 @@ pub fn solve(
                 if (i == 1)
                 {
                     // Cons branch, alt already solved.
-                    swap(moves0, _current_fn.moves);
+                    swap(postdom0, _current_fn.postdom);
                 }
                 else if (i == 0)
                 {
                     // Finally the cond, cons and alt already solved.
-                    _current_fn.moves.add(moves0);
+                    _current_fn.postdom.branch(postdom0);
                 }
                 // MOVE ON LAST USE ////////////////////////////////////////////
 
                 propagateType(node.items[i], :relax_mask,
                     i != 0 ? slot : t_bool);
-
-                // Either-or: we'll unconditionally break to the nearer
-                //  break target from the alt and cons branches.
-                if (i == 2)
-                {
-                    swap(loop_start0, _current_fn.loop_start);
-                }
-                else if (i == 1)
-                {
-                    _current_fn.loop_start = max(
-                        _current_fn.loop_start,
-                        loop_start0);
-                }
             }
         }
         else if (k == "try")
@@ -2130,13 +2123,13 @@ pub fn solve(
             fn recover      = node.items[2];
 
             // Relax in reverse, catch goes first.
-            let loop_start0 = _current_fn.loop_start;
+            let postdom0    = _current_fn.postdom;
 
             propagateType(recover, t_void, :relax_mask);
 
             // The catch is conditional -
             //  obviously not guaranteed to execute.
-            _current_fn.loop_start = loop_start0;
+            _current_fn.postdom.branch(postdom0);
 
             propagateType(error, t_string, :relax_mask);
             propagateType(attempt, t_void, :relax_mask);
