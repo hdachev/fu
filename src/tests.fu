@@ -3917,6 +3917,42 @@ pub extern fn runTests()
         }
     `]);
 
+    TODO_borrowck(`
+        nocopy struct NCThing {
+            items: i32[];
+        };
+
+        fn mut_in_loop_before_break(ref thing: NCThing) {
+            mut sum = 0;
+
+            ref items = thing.items;
+            for (mut i = 0; i < items.len; i++)
+            {
+                sum += items[i];
+                if (sum > 10)
+                {
+                    thing = NCThing();
+                    <fail write 15:27 inval use items next loop iter 10:33>
+                    if (sum > 20)                                   <pass/>
+                    if (true)                                       </fail>
+                        break;
+                }
+
+                items[i] *= 2;
+            }
+
+            return sum;
+        }
+
+        fn main() {
+            mut thing = NCThing([ 10 ]);
+            return mut_in_loop_before_break(thing)
+                 + mut_in_loop_before_break(thing)
+                 - 30
+                 + thing.items.len;
+        }
+    `);
+
     // /Borrow checker
 
 
