@@ -7415,7 +7415,7 @@ pub fn solve(
             _here           = callsite.token;
 
             let loop_start  = callsite._loop_start || BUG("bck_trackWrites: _loop_start not set on callsite.");
-            let isLoop      = loop_start != 1;
+            let OPTI_isLoop = loop_start != 1 && events.used_in_a_loop.len > 0;
 
             //
             for (mut i = 0; i < regions.len; i++)
@@ -7431,22 +7431,25 @@ pub fn solve(
                 let invalidates = flow.invalidates.unless_oob(target);
 
                 // Writes in a loop invalidate preceding reads.
-                if (isLoop && events.used_in_a_loop) for (shadow mut i = 0; i < invalidates.len; i++)
+                if (OPTI_isLoop) for (shadow mut i = 0; i < invalidates.len; i++)
                 {
-                    let read    = invalidates[i];
-                    let readID  = events.used_in_a_loop.unless_oob(read);
-                    if (readID)
+                    let read = invalidates[i];
+                    if (read < loop_start)
                     {
-                        if (AAR)
-                            RESOLVE_byAAR(:read, write: target, trySoft: true);
-                        else
-                            RESOLVE_byMutvar(read) || fail(
-                                "Write to " ~ target.bck_name.qBAD
-                                    ~ " at call to " ~ callsite.target.qWHAT
-                                    ~ " invalidates the use of " ~ read.bck_name.qBAD ~ " at "
-                                    ~ SLOW_findByReadID(readID).token.addr_and_snippet
-                                    ~ "\n\t... on next loop iteration.\n\n\tWritten"
-                                    ~ qSTACK(callsite.target, :position)); // TODO loop starts at x:x!
+                        let readID  = events.used_in_a_loop.unless_oob(read);
+                        if (readID)
+                        {
+                            if (AAR)
+                                RESOLVE_byAAR(:read, write: target, trySoft: true);
+                            else
+                                RESOLVE_byMutvar(read) || fail(
+                                    "Write to " ~ target.bck_name.qBAD
+                                        ~ " at call to " ~ callsite.target.qWHAT
+                                        ~ " invalidates the use of " ~ read.bck_name.qBAD ~ " at "
+                                        ~ SLOW_findByReadID(readID).token.addr_and_snippet
+                                        ~ "\n\t... on next loop iteration.\n\n\tWritten"
+                                        ~ qSTACK(callsite.target, :position)); // TODO loop starts at x:x!
+                        }
                     }
                 }
 
