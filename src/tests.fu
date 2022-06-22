@@ -1887,7 +1887,7 @@ pub extern fn runTests()
     `);
 
 
-    // Logical selectors.
+    // Logic and selectors.
 
     ZERO(`
         let x = "hello";
@@ -2020,6 +2020,22 @@ pub extern fn runTests()
             return a.i + b.i - 4;
         }
     `);
+
+    TODO_ambig(`
+        fn ambig_or(x: i32, y: f32)
+            "Hello: " ~
+                <fail ambig operand non bool context>       // So it happened that at some point I had an 'a || b'
+                    (x || y)                  <pass/>       //  where a and b were of the same type used in string concat like this,
+                    (x || y.i32)              </fail>       //   and then later when the types no longer matched this fell back silently to a '!!a || !!b'
+                ;                                           //    which was is not the intent but compiled fine because str concat also accepts bool.
+
+        fn main() {
+            mut res = ambig_or(1, 2);
+            return res == "Hello: 1" ? 0 : 1;
+        }
+    `);
+
+    // /Logic and selectors.
 
 
     // Short-circuit assignment, esp. useful for maps
