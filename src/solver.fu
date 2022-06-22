@@ -1856,6 +1856,7 @@ pub fn solve(
         if (k == "call")        return solveCall(node);
         if (k == "arrlit")      return solveArrlit(node, type);
 
+        if (k == "not")         return solveNot(node);
         if (k == "if")          return solveIf(node, type);
         if (k == "or")          return solveOr(node, type);
         if (k == "and")         return solveAnd(node, type);
@@ -2201,6 +2202,10 @@ pub fn solve(
         }
 
         //
+        else if (k == "not")
+        {
+            return node.items.only.propagateType(t_bool, :relax_mask);
+        }
         else if (k == "call")
         {
             //////////////////////////////////////////
@@ -6319,9 +6324,16 @@ pub fn solve(
                 //
                 if (sumType)
                 {
-                    sumType = type_trySuper(sumType, itemType);
-                    if (!sumType)
+                    // Helps avoid the ambig || error below.
+                    if ((itemType.canon == t_bool.canon) != (sumType.canon == t_bool.canon))
+                    {
+                        sumType = t_bool;
                         break;
+                    }
+
+                    sumType = superType(
+                        "Ambiguous ||, incompatible operands in a non-bool context: ",
+                            sumType, itemType);
                 }
                 else
                 {
@@ -6344,7 +6356,7 @@ pub fn solve(
             type_last: type,
             use_type_last: true,
             static_eval_brk: "false",
-            type_all: type.is_void ? t_bool : type);
+            type_all: t_bool);
 
         return createAnd(items, :type);
     }
@@ -6430,6 +6442,12 @@ pub fn solve(
         }
 
         return pop;
+    }
+
+    fn solveNot(node: Node)
+    {
+        let item = solveNode(node.items.only, type: t_bool);
+        return SolvedNode("not", type: t_bool, items: [ item ]);
     }
 
 
@@ -8093,7 +8111,7 @@ pub fn solve(
                 bck_block(node);
             }
             else if (k == "root"
-                  || k == "and"  || k == "or"
+                  || k == "and"  || k == "or" || k == "not"
                   || k == "jump"
                   || k == "try"
 

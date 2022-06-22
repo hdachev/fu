@@ -33,6 +33,7 @@ enum kind
     void
     // -- -- /ValueExpression
 
+    not
     call
     argid
     // -- /LinearExpression

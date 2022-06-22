@@ -1657,6 +1657,11 @@ pub fn cpp_codegen(implicit module: Module, implicit ctx: Context): CodegenOutpu
         return false;
     }
 
+    fn cgNot(node: SolvedNode): string
+    {
+        return "!" ~ cgNode(node.items.only, debug: "not");
+    }
+
     fn cgCall(node: SolvedNode, mode: i32): string
     {
         let ext             = node.target.EXT;
@@ -2539,6 +2544,7 @@ pub fn cpp_codegen(implicit module: Module, implicit ctx: Context): CodegenOutpu
         let k = node.kind || fail("cgNode: No node.kind: " ~ debug);
         HERE(node);
 
+        if (k == "not")         return cgNot(node);
         if (k == "call")        return cgCall(node, mode);
 
         if (k == "int")         return cgLiteral(node);

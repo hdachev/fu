@@ -140,11 +140,6 @@ fn MAX(_: $T)
     case ($T.is::unsigned)  $T(-1);
 
 
-// Logic.
-
-fn !(v: $T): bool __native;
-
-
 // Assignment.
 
 fn   =(ref a: $T,    mut b: $T): &mut $T __native;

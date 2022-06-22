@@ -2021,7 +2021,7 @@ pub extern fn runTests()
         }
     `);
 
-    TODO_ambig(`
+    ZERO(`
         fn ambig_or(x: i32, y: f32)
             "Hello: " ~
                 <fail ambig operand non bool context>       // So it happened that at some point I had an 'a || b'

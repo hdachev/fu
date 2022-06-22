@@ -209,7 +209,7 @@ pub fn parse(
 
     //
 
-    fn consume(::kind, value?: [byte], err?: string): Token
+    fn consume(::kind, value?: string): Token
     {
         let token = tokens[_idx];
         if (token.kind == kind && (!value || token.value == value))
@@ -218,8 +218,10 @@ pub fn parse(
             return token;
         }
 
-        return fail((err || "Expected") ~
-            " `" ~ (value || kind) ~ "`, got `" ~ token.value ~ "`.");
+        return fail("Expected " ~ kind.str.qKW
+            ~ (value && kind == token.kind && " " ~ value.qID)
+            ~ "\n\t     got " ~ token.kind.str.qKW
+            ~ (value && kind == token.kind && " " ~ token.value.qID));
     }
 
     fn tryConsume(::kind, value?: [byte]): Token
@@ -1479,6 +1481,9 @@ pub fn parse(
 
             return expr;
         }
+
+        if (op == "!")
+            return make("not", items: [ expr ]);
 
         return createCall(op, F_PREFIX | F_OPERATOR, [ expr ]);
     }
