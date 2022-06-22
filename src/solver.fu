@@ -147,6 +147,9 @@ pub fn solve(
         // The replacement for the callsites stuff.
         var_usage?:         Type[];
 
+        // The new flow-on-jump idiom doesn't handle defers correctly.
+        TODO_FIX_defers?:   i32;
+
         //
         using postdom?:     Postdom;
     };
@@ -2466,8 +2469,9 @@ pub fn solve(
             h.ret_actual || BUG(
                 "propagateType(jump): h.ret_actual not available.");
 
-            _current_fn.postdom = h.postdom || BUG(
-                "propagateType(jump): h.loop_start not available.");
+            if (!_current_fn.TODO_FIX_defers)
+                _current_fn.postdom = h.postdom || BUG(
+                    "propagateType(jump): h.loop_start not available.");
 
             propagateType(node.items.only, :relax_mask, h.ret_actual);
         }
@@ -2484,14 +2488,23 @@ pub fn solve(
 
             if (node.items) // TODO FIX: why are we seeing empty blocks?
             {
+                mut TODO_FIX_defers = 0;
+
                 // Defers first - in reverse order of evaluation,
                 //  which is FORWARD order in the AST, hence the ++ here.
                 for (mut i = 0; i < node.items.len - 1; i++)
                 {
                     shadow ref node = node.items[i];
                     if (node.kind == "defer")
+                    {
+                        TODO_FIX_defers++;
                         propagateType(node.items.only, :relax_mask, t_void);
+                    }
                 }
+
+                ///////////////////////////////////////////////
+                _current_fn.TODO_FIX_defers += TODO_FIX_defers;
+                ///////////////////////////////////////////////
 
                 // Tail item.
                 propagateType(node.items.last, :relax_mask, slot);
@@ -2503,6 +2516,10 @@ pub fn solve(
                     if (node.kind != "defer")
                         propagateType(node, :relax_mask, t_void);
                 }
+
+                ///////////////////////////////////////////////
+                _current_fn.TODO_FIX_defers -= TODO_FIX_defers;
+                ///////////////////////////////////////////////
             }
 
             // TODO FIX args need extra iteration here.
