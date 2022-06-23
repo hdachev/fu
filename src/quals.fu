@@ -34,7 +34,7 @@ fn is_floating_pt(t: Type) {
 
 fn is_boolean(t: Type) {
     let c = t.canon[0];
-    return c == 'f';
+    return c == 'b';
 }
 
 fn is_enum(t: Type) {

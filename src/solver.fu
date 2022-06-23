@@ -6455,7 +6455,15 @@ pub fn solve(
 
     fn solveNot(node: Node)
     {
-        let item = solveNode(node.items.only, type: t_bool);
+        return createNot(solveNode(node.items.only, type: t_bool));
+    }
+
+    fn createNot(item: SolvedNode)
+    {
+        // Static eval.
+        if (item.kind == "bool")
+            return createBool(item.value == "true");
+
         return SolvedNode("not", type: t_bool, items: [ item ]);
     }
 
