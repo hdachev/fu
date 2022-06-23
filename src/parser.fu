@@ -1371,10 +1371,8 @@ pub fn parse(
                 let peek = tokens[_idx];
                 if (peek.kind == "id")
                 {
-                    if (v == "fn")          return parseFnDecl(expr: true);
-                    if (v == "infix")       return parseFixityDecl(F_INFIX, expr: true);
-                    if (v == "prefix")      return parseFixityDecl(F_PREFIX, expr: true);
-                    if (v == "postfix")     return parseFixityDecl(F_POSTFIX, expr: true);
+                    if (v == "fn")
+                        return parseFnDecl(expr: true);
                 }
 
                 return createRead(v);
