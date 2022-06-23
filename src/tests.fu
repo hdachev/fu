@@ -2035,6 +2035,14 @@ pub extern fn runTests()
         }
     `);
 
+    ZERO(`
+        fn unambig_or(b: bool, i: i32, f: f32)  <alt>
+            b || i || f;                        <alt/>      // But currently the thinking is that so long as one operand is a bool
+            i || f || b;                        </alt>      //  the whole thing should weaken to (!!a || !!b) instead of erroring out.
+
+        fn main() = unambig_or(false, 0, 0).i32;
+    `);
+
     // /Logic and selectors.
 
 
