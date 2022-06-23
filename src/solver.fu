@@ -6292,7 +6292,7 @@ pub fn solve(
             type = t_bool;
 
         // Unless this is an explicit bool context:
-        if !(type == t_bool)
+        if !(type == t_bool) :RESOLVE_SUPERTYPE
         {
             mut sumType: Type;
             mut hasNever = false;
@@ -6324,16 +6324,25 @@ pub fn solve(
                 //
                 if (sumType)
                 {
-                    // Helps avoid the ambig || error below.
-                    if ((itemType.canon == t_bool.canon) != (sumType.canon == t_bool.canon))
-                    {
-                        sumType = t_bool;
-                        break;
-                    }
+                    sumType = type_trySuper(sumType, itemType);
 
-                    sumType = superType(
-                        "Ambiguous ||, incompatible operands in a non-bool context: ",
-                            sumType, itemType);
+                    // EXPERIMENTAL & doesnt feel really robust:
+                    //  Allow incompatible types so long as one of the operands is a bool.
+                    //
+                    if (!sumType)
+                    {
+                        items.each: |shadow item|
+                        {
+                            if (item.type.canon == t_bool.canon)
+                            {
+                                type = t_bool;
+                                break :RESOLVE_SUPERTYPE;
+                            }
+                        }
+
+                        fail("Ambiguous ||, incompatible operands in a non-bool context: "
+                            ~ humanizeType(itemType) ~ " || " ~ humanizeType(sumType));
+                    }
                 }
                 else
                 {
