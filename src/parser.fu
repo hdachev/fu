@@ -416,7 +416,7 @@ pub fn parse(
         mut items   = tryConsume("op", "{") && parseBlockLike("op", "}", enum: true);
 
         if (kind != "enum" && kind != "flags")
-            annot || fail("`primitive` declarations require a base type annotation.");
+            annot || fail("primitive".qKW ~ " declarations require a base type annotation.");
 
         return make(
             :kind, value: name,
@@ -515,15 +515,16 @@ pub fn parse(
 
     fn set_PUB(ref flags: Flags)
     {
-        flags |= F_PUB;
-        flags & F_SHADOW && fail("Cannot pub a shadow.");
+        flags & F_SHADOW && fail("Cannot " ~ "pub".qBAD ~ " a " ~ "shadow".qKW ~ ".");
 
+        flags |= F_PUB;
         _hasPUB = true;
     }
 
     fn parsePub(): Node
     {
-        _fnDepth && fail("Cannot pub from within a fn.");
+        _fnDepth && fail("Cannot " ~ "pub".qBAD ~ " from within a " ~ "fn".qKW ~ ".");
+
         mut out = parseStatement();
         set_PUB(out.flags);
         return out;
@@ -532,8 +533,25 @@ pub fn parse(
     fn parseShadow(): Node
     {
         mut out = parseStatement();
+        out.flags & F_PUB && fail("Cannot " ~ "shadow".qBAD ~ " a " ~ "pub".qKW ~ ".");
+
         out.flags |= F_SHADOW;
-        out.flags & F_PUB && fail("Cannot shadow a pub.");
+        return out;
+    }
+
+    fn parseUsing(): Node
+    {
+        mut out = parseStatement();
+        if (out.kind == "fn")
+            out.flags |= F_CONVERSION;
+        else if (out.kind == "let")
+            out.flags |= F_USING;
+        else
+            fail("using".qBAD ~ " cannot be used here.");
+
+        if (out.flags & (F_INFIX | F_PREFIX | F_POSTFIX))
+            fail("using".qBAD ~ " cannot be used on operator functions.");
+
         return out;
     }
 
@@ -597,7 +615,7 @@ pub fn parse(
 
                 if (v == "pub")         return parsePub();
                 if (v == "shadow")      return parseShadow();
-                if (v == "using")       return parseConversionDecl();
+                if (v == "using")       return parseUsing();
 
                 if (v == "nocopy")      return parseNoCopy();
                 if (v == "import")      return parseImport();
@@ -734,17 +752,6 @@ pub fn parse(
     //  fn keyword comes last to disambiguate operators from anonymous functions,
     //   which makes the parse a bit problematic but whatever.
 
-    fn parseConversionDecl(): Node
-    {
-        let flags = F_CONVERSION;
-
-        let v = consume("id").value;
-        if (v == "inline") return parseInlineDecl(flags);
-        _idx--;
-
-        return parseFixityDecl(flags);
-    }
-
     fn parseExoticDecl(mut flags?: Flags, mut asserts?: DeclAsserts): Node
     {
         for (;;)
@@ -792,10 +799,6 @@ pub fn parse(
 
     fn parseFixityDecl(flags: Flags, asserts?: DeclAsserts, expr?: bool): Node
     {
-        if (flags & F_CONVERSION)
-            flags & (F_INFIX | F_PREFIX | F_POSTFIX) &&
-                fail("`implicit` functions can't be operators.");
-
         consume("id", "fn");
         return parseFnDecl(flags, :asserts, :expr);
     }
