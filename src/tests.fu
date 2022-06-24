@@ -1036,7 +1036,7 @@ pub extern fn runTests()
         fn impl(implicit ref _impl: i32) _impl;
         fn arg_or_impl(ref arg: i32) arg || impl;
         fn main() {
-            let implicit mut _impl: i32;
+            implicit mut _impl: i32;
             mut arg: i32;
             ref ref = arg_or_impl(arg);
             return arg - ref;
@@ -1067,7 +1067,7 @@ pub extern fn runTests()
         }
 
         fn main() {
-            let implicit mut sum = 0;
+            implicit mut sum = 0;
             ZERO(4);
             return sum - 11;
         }
@@ -1084,7 +1084,7 @@ pub extern fn runTests()
         }
 
         fn main() {
-            let implicit mut sum = 0;
+            implicit mut sum = 0;
             ZERO(4);
             return sum - 12;
         }
@@ -1144,7 +1144,7 @@ pub extern fn runTests()
         }
 
         fn main() {
-            let implicit mut next = 0;
+            implicit mut next = 0;
 
             let solve = solve(Node([
                 Node([ Node ]),
@@ -3222,7 +3222,7 @@ pub extern fn runTests()
         }
 
         fn main() {
-            let implicit mut out: SolvedNode[];
+            implicit mut out: SolvedNode[];
             let annot = evalTypeAnnot([ "a", "b" ]);
             return out.len == 10101 && annot.type.canon.len == 2 ? 0 : 1;
         }
@@ -3936,7 +3936,7 @@ pub extern fn runTests()
         }
 
         fn main() {
-            let implicit mut ctx: Context;
+            implicit mut ctx: Context;
             return ensureParsed("a") - 4;
         }
     `]);
@@ -4538,7 +4538,7 @@ pub extern fn runTests()
 
         fn main()
         {
-            let implicit mut _target = 0;
+            implicit mut _target = 0;
 
             return __solveStruct(1) - 4;
         }
@@ -4558,7 +4558,7 @@ pub extern fn runTests()
 
         fn main()
         {
-            let implicit mut _itarg = 0;
+            implicit mut _itarg = 0;
             fn GET_mut(ref x: i32) x || GET_mut(target += 1);
             return GET_mut(target) - 1;
         }
@@ -4570,7 +4570,7 @@ pub extern fn runTests()
 
         fn main()
         {
-            let implicit mut _itarg = 0;
+            implicit mut _itarg = 0;
             return GET_mut(target) - 1;
         }
     `);
@@ -4618,7 +4618,7 @@ pub extern fn runTests()
             fn Each(cond, cons) cond && cons();
             fn arg(implicit ref __arg: i32) __arg;
             fn __solveStruct(x = 3) Each(arg, || arg += x);
-            let implicit mut __arg = 1;
+            implicit mut __arg = 1;
             return __solveStruct - 4;
         }
     `);
@@ -4961,7 +4961,7 @@ pub extern fn runTests()
         }
 
         fn main() {
-            let implicit mut ctx: Context;
+            implicit mut ctx: Context;
             return resolveFile("a").len - 1;
         }
     `);
@@ -5034,7 +5034,7 @@ pub extern fn runTests()
         }
 
         fn main() {
-            let implicit mut sum: i32;
+            implicit mut sum: i32;
 
             ZERO( "AAAA|BB[split/]CC".split("|") );
             let expect = 4+2+2 + 4+2+2 + 10; // 10 = "import _0;"
@@ -8602,7 +8602,7 @@ pub extern fn runTests()
             fn try_GET(target: Target)
                 target && GET(target);
 
-            let implicit mut overloads: Overload[];
+            implicit mut overloads: Overload[];
             overloads ~= Overload("What");
             return try_GET(Target(0, 1)).kind.len - 4;
         }
@@ -8864,7 +8864,7 @@ pub extern fn runTests()
 
         fn main() {
             let topic = "A";
-            let implicit mut out: string;
+            implicit mut out: string;
             printlike(:topic, "Hello, ", "World", "!");
             return out == "A: Hello, World!\\n" ? 0 : 1
         }
@@ -9428,7 +9428,7 @@ pub extern fn runTests()
 
         fn main() {
             let lifetime = [ 1, 2 ];
-            let implicit mut sum = 0;
+            implicit mut sum = 0;
             Lifetime_F_TODO_FIX_RRET(lifetime, locals_start: 1);
             return sum - 4;
         }
@@ -9704,7 +9704,7 @@ pub extern fn runTests()
             !!(h.mask & (HM_Function | HM_Struct));         //////////////////
 
         fn main() {
-            let implicit mut _helpers_data = [ HelpersData(mask: 0) ];
+            implicit mut _helpers_data = [ HelpersData(mask: 0) ];
             return Helpers(0).isFnOrType.i32;
         }
     `);
@@ -9717,7 +9717,7 @@ pub extern fn runTests()
         let HM_Struct       = 1.i16 << 5;
 
         fn main() {
-            let implicit mut _helpers_data = [ HelpersData(mask: 0) ];
+            implicit mut _helpers_data = [ HelpersData(mask: 0) ];
 
             using inline fn GET(h: Helpers): HelpersData
                 _helpers_data[h.index];
