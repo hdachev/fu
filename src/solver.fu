@@ -133,7 +133,7 @@ pub fn solve(
 
     struct CurrentFn
     {
-        using out:          SolvedNode;
+        true using out:     SolvedNode;
 
         // Start-of-func scope0 for implicit scopeskip.
         scope0:             ScopeMemo;
@@ -8616,7 +8616,7 @@ pub fn solve(
 
         let root = solveNode(module.in.parse.root);
 
-        _current_fn.out && BUG("non-empty _current_fn.");
+        _current_fn && BUG("non-empty _current_fn.");
 
         _helpers_data[0] && BUG("non-empty _helpers_data[0].");
 
