@@ -25,7 +25,8 @@
 int main(int argc, const char * argv[])
 {
     cow_vec_tests();
-    runTestsAndBuildCompiler_6GAg88gF();
+    runTests();
+    buildCompiler();
 
     // TaskStack_Test();
 
