@@ -12,11 +12,11 @@ let use_AUTOPUB     = true;
 
 // Operator precedence table.
 
-let P_RESET           = 1000;
-let P_PREFIX_UNARY    = 1   ;
+let P_RESET         = 1000;
+let P_PREFIX_UNARY  = 1   ;
 
-let PREFIX:  string[] = [ "++", "+", "--", "-", "!", "~", "?", "*", "&", "&mut" ];
-let POSTFIX: string[] = [ "++", "--", "[]" ];
+let PREFIX          = [ "++", "+", "--", "-", "!", "~", "?", "*", "&", "&mut" ];
+let POSTFIX         = [ "++", "--", "[]" ];
 
 fn setupOperators()
 {
@@ -152,7 +152,7 @@ pub fn parse(
 
     //
 
-    fn fail(mut reason: string = "")
+    fn fail(mut reason?: string)
     {
         let token = tokens[_idx];
         if (!reason)
@@ -446,7 +446,7 @@ pub fn parse(
         mut colNN   = -1;
         mut lineNN  = line0;
 
-        mut items: Node[] = [];
+        mut items: Node[];
         for (;;)
         {
             let token = tokens[_idx];
@@ -924,7 +924,7 @@ pub fn parse(
         //
         if (!expr && tryConsume("id", "case"))
         {
-            mut branches: Node[] = [];
+            mut branches: Node[];
 
             fn parseBranch(noCond?: bool)
             {
@@ -1464,7 +1464,7 @@ pub fn parse(
             op, parseUnaryExpression(:mode));
     }
 
-    fn parseUnaryExpression(mode!: i32 = 0): Node
+    fn parseUnaryExpression(mode!?: i32): Node
     {
         return parseExpression(P_PREFIX_UNARY, :mode);
     }
@@ -1675,7 +1675,7 @@ pub fn parse(
 
     fn parseCallExpression(expr: Node): Node
     {
-        mut args: Node[] = [];
+        mut args: Node[];
         let flags = expr.flags | parseCallArgs(")", args);
 
         // Uniform call syntax.
@@ -1708,7 +1708,7 @@ pub fn parse(
 
     fn parseArrayLiteral(): Node
     {
-        mut args: Node[] = [];
+        mut args: Node[];
         let argFlags = parseCallArgs("]", args,
             experimental_sliceAnnots: true);
 
@@ -1722,7 +1722,7 @@ pub fn parse(
 
     fn parseIndexExpression(expr: Node): Node
     {
-        mut args: Node[] = [];
+        mut args: Node[];
         let argFlags = parseCallArgs("]", args);
 
         args.unshift(expr);

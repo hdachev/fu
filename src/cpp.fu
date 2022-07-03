@@ -3,7 +3,7 @@
 // How do we make this superfast?
 //  What's the fastest algo on the planet?
 
-let KEYWORDS: string[][] =
+let KEYWORDS =
 [
     [],
     [],

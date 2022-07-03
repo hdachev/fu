@@ -7,7 +7,7 @@ import module;
 
 //
 
-fn compile_lexParseDeps(fname: string, via: string = "")
+fn compile_lexParseDeps(fname: string, via?: string)
 {
     let module = getModule(fname);
     if (module.in)
@@ -98,7 +98,7 @@ fn compile_solveCodegen(implicit ref module: Module, implicit options: Options)
 
 pub fn compile(
     implicit ref ctx: Context,
-    fname: string, via: string = "")
+    fname: string, via?: string)
 {
     compile_lexParseDeps(:fname, :via);
 

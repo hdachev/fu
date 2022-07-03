@@ -238,7 +238,7 @@ pub fn build(
     mut code:   i32;
     mut stdout: string;
 
-    fn ERR(mut cpp: string = "")
+    fn ERR(mut cpp?: string)
     {
         if (!cpp)
             for (mut i = Fs.len; i --> 0; )

@@ -540,4 +540,4 @@ pub fn solvePrelude(): Context
     return ctx;
 }
 
-pub let CTX_PRELUDE: Context = solvePrelude();
+pub let CTX_PRELUDE = solvePrelude();
