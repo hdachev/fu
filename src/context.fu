@@ -12,10 +12,10 @@ pub fn _token(implicit ctx: Context, idx: TokenIdx): Token
 pub fn _fname(implicit ctx: Context, idx: TokenIdx): string
     ctx.modules[idx.modid].fname;
 
-pub fn lookupStruct_mut(implicit module: &mut Module, canon: string): &mut Struct
+pub fn lookupUserType_mut(implicit ref module: Module, canon: string)
 {
     let scp = parseStructCanon(canon);
-    scp.modid == module.modid || throw("lookupStruct_mut: Not from this module (" ~ module.modid ~ ": " ~ canon ~ ")");
+    scp.modid == module.modid || throw("lookupUserType_mut: Not from this module (" ~ module.modid ~ ": " ~ canon ~ ")");
     return module.out.types[scp.index];
 }
 
@@ -23,7 +23,7 @@ pub fn lookupStruct_mut(implicit module: &mut Module, canon: string): &mut Struc
 //
 
 fn resolveFile(
-    implicit ctx: &mut Context,
+    implicit ref ctx: Context,
     from: string, name: string): string
 {
     let path    = from ~ name;
@@ -81,7 +81,7 @@ fn resolveFile(
 }
 
 pub fn resolveFile(
-    implicit ctx: &mut Context,
+    implicit ref ctx: Context,
     path: string): string
 {
     let fuzzy = path.find('\v');
@@ -123,7 +123,7 @@ pub fn resolveFile_x(
 //
 
 pub fn getFile(
-    implicit ctx: &mut Context,
+    implicit ref ctx: Context,
     mut path: string): string
 {
     let cached = ctx.files.map::get(path);
@@ -136,7 +136,7 @@ pub fn getFile(
 }
 
 pub fn getModule(
-    implicit ctx: &mut Context,
+    implicit ref ctx: Context,
     fname: string)
 {
     for (mut i = 0; i < ctx.modules.len; i++)
@@ -149,7 +149,7 @@ pub fn getModule(
 }
 
 pub fn setModule(
-    implicit ctx: &mut Context,
+    implicit ref ctx: Context,
     module: Module)
 {
     ref current = ctx.modules[module.modid];
@@ -160,7 +160,7 @@ pub fn setModule(
 
 //
 
-pub fn lookupStruct(
+pub fn lookupUserType(
     implicit module: Module,
     implicit ctx: Context,
     type: Type)
@@ -176,10 +176,10 @@ pub fn lookupStruct(
 }
 
 pub fn is_trivial(type: Type)
-    type.is_primitive || type.isStruct && lookupStruct(type).all_triv;
+    type.is_primitive || type.isStruct && lookupUserType(type).all_triv;
 
 pub fn tryLookupStruct(type: Type)
-    type.isStruct && lookupStruct(type);
+    type.isStruct && lookupUserType(type);
 
 pub fn lookupTypeImports(type: Type)
     tryLookupStruct(type).imports;
@@ -190,10 +190,10 @@ pub fn lookupTypeConverts(type: Type)
 
 //
 
-pub fn tryLookupStructOrUserPrimitive(type: Type): Struct
+pub fn tryLookupUserType(type: Type): Struct
 {
-    if (type.isStruct || type.canon.quals::basePrimPrefixLen() < type.canon.len)
-        return lookupStruct(type);
+    if (type.isStruct || type.is_primitive && type.canon.quals::basePrimPrefixLen() < type.canon.len)
+        return lookupUserType(type);
 
     return [];
 }

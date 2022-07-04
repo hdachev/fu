@@ -808,7 +808,7 @@ pub fn solve(
     fn humanizeType(type: Type)
     {
         mut result: string = type.isStruct
-            ? lookupStruct(type).name
+            ? lookupUserType(type).name
             : type.canon;
 
         if (type.quals)
@@ -1756,7 +1756,7 @@ pub fn solve(
             {
                 if (isStruct)
                 {
-                    let inner = lookupStruct(from).converts;
+                    let inner = lookupUserType(from).converts;
 
                     // TODO no need to for the outer isAssignableAsArgument check.
                     // TODO can we split these into incoming and outgoing converts,
@@ -2945,9 +2945,9 @@ pub fn solve(
 
     //
 
-    fn lookupStructOrUserPrimitive(type: Type): Struct
+    shadow fn lookupUserType(type: Type): Struct
     {
-        return tryLookupStructOrUserPrimitive(type)
+        return tryLookupUserType(type)
             || fail("Not a struct nor custom primitive: " ~ humanizeType(type));
     }
 
@@ -2955,7 +2955,7 @@ pub fn solve(
     {
         mut offset = type.canon.quals::basePrimPrefixLen();
         if (offset < type.canon.len)
-            return lookupStruct(type).base;
+            return lookupUserType(type).base;
 
         return type.canon;
     }
@@ -3047,7 +3047,7 @@ pub fn solve(
         // HACK - Retyping string literals to enums //
         if (type && type.is_primitive)
         {
-            let members = tryLookupStructOrUserPrimitive(type).items;
+            let members = tryLookupUserType(type).items;
             for (mut i = 0; i < members.len; i++)
                 if (members[i].id == v)
                     return clear_refs(type);
@@ -4226,7 +4226,7 @@ pub fn solve(
                 //
                 // See solveTypedef below.
                 //
-                let t = lookupStruct(type).target;
+                let t = lookupUserType(type).target;
                 return GET(t).type == type && t;
             }
 
@@ -4351,7 +4351,7 @@ pub fn solve(
 
         // (Re)poplate fields.
         {
-            ref innerScope = lookupStruct_mut(out_type.canon).items;
+            ref innerScope = lookupUserType_mut(out_type.canon).items;
             if (!innerScope && members)
             {
                 // Dereferencing a struct does not require it
@@ -4500,7 +4500,7 @@ pub fn solve(
 
             //
             {
-                ref s       = lookupStruct_mut(out_type.canon);
+                ref s       = lookupUserType_mut(out_type.canon);
                 s.target    = out_target || BUG("No struct/out_target.");
                 s.converts  = structConverts;
                 s.imports   = structImports;
@@ -5198,7 +5198,7 @@ pub fn solve(
         let inside          = "_" ~ placeholder ~ "_";
 
         let fields          = evalTypeAnnot(node.items[0])
-                                .lookupStructOrUserPrimitive()
+                                .lookupUserType()
                                 .items || BUG("Empty struct/enum.");
 
         mut items_ast: Node[];
@@ -5477,7 +5477,7 @@ pub fn solve(
         //    or perhaps if the original is assignable to this annot or something?
         //
         if (annot.isStruct)
-            Scope_set(_scope, node.value, lookupStruct(annot).target, shadows: false);
+            Scope_set(_scope, node.value, lookupUserType(annot).target, shadows: false);
         else
             Scope_Typedef(_scope, node.value, annot, node.flags);
 
@@ -5986,7 +5986,7 @@ pub fn solve(
         // Default constructor calls.
         if (!itemType && type.isStruct)
             return solveCall(node,
-                target: lookupStruct(type).target);
+                target: lookupUserType(type).target);
 
         // Dead code elim.
         mut args = solveNodes(node.items, itemType);  // TODO FIX retype here, Or maybe this should really just go through trymatch.
