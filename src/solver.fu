@@ -2100,6 +2100,46 @@ pub fn solve(
 
         //
 
+        fn isDiscardable(t: Target): bool
+        {
+            if (t.fx_mask & Fx_NotDeadCode)
+                return false;
+
+            let host_args = t.args;
+            for (mut i = 0; i < host_args.len; i++)
+                if (host_args[i].is_mutref)
+                    return false;
+
+            return true;
+        }
+
+        fn isShallowLiteral(::kind)
+        {
+            return kind == "int" || kind == "real" || kind == "char"
+                || kind == "str" || kind == "bool"
+                || kind == "definit";
+        }
+
+        fn isDiscardable(shadow node: SolvedNode): bool
+        {
+            if (node.items)
+                return false;
+
+            // Discardable calls degrade into blocks.
+            if (node.kind == "call" || node.kind == "letdef" || node.kind == "fndef")
+                return false;
+
+            if (node.kind == "empty" || node.kind == /*empty*/"block" || node.kind.isShallowLiteral)
+                return true;
+
+            BUG("TODO: isDiscardable(" ~ node.kind ~ ")");
+        }
+
+
+        //
+
+        let canDiscard = slot.is_void;
+
         node.type.try_relax(:slot, :relax_mask);
         shadow let slot = node.type;
 
@@ -2220,10 +2260,24 @@ pub fn solve(
 
             let t = node.target;
             if (t.kind == "field")
+            {
+                if (canDiscard)
+                {
+                    node = node.items.only;
+                    return node.propagateType(slot, :relax_mask);
+                }
+
                 return node.items.only.propagateType(slot, :relax_mask);
+            }
 
             if (t.kind == "var")
             {
+                if (canDiscard)
+                {
+                    node = createEmpty();
+                    return;
+                }
+
                 // This is the old relaxBlockVars callsite loop -
                 //  Now we just collect usage while propagating types,
                 //   this means we're automatically ignoring type annotations etc.
@@ -2260,15 +2314,6 @@ pub fn solve(
 
                 return;
             }
-
-            // MOVE ON LAST USE ////////////////////////////////////////////
-            {
-                let host_args = t.args;
-                for (mut i = 0; i < host_args.len; i++)
-                    if (host_args[i].is_ref)
-                        tryTrackLastUse(node.items[i].lifetime);
-            }
-            // MOVE ON LAST USE ////////////////////////////////////////////
 
             if (t.spec_of && t.type.is_ref)
             {
@@ -2323,6 +2368,26 @@ pub fn solve(
                     }
                 }
             }
+
+            // Discard unused total computations.
+            if (canDiscard && node.target.isDiscardable)
+            {
+                makeNote(N_UnusedCall);
+                node = createBlock(:node.items, t_void);
+                return propagateType(:slot, node, :relax_mask);
+            }
+
+            // So this call stays.
+            _current_fn.fx_mask |= node.target.fx_mask;
+
+            // MOVE ON LAST USE ////////////////////////////////////////////
+            {
+                let host_args = t.args;
+                for (mut i = 0; i < host_args.len; i++)
+                    if (host_args[i].is_ref)
+                        tryTrackLastUse(node.items[i].lifetime);
+            }
+            // MOVE ON LAST USE ////////////////////////////////////////////
 
             // Relax arguments.
             if (node.items)
@@ -2497,19 +2562,28 @@ pub fn solve(
             defer Breakable_end();
             //////////////////////
 
-            if (node.items) // TODO FIX: why are we seeing empty blocks?
+            ref items = node.items;
             {
                 mut TODO_FIX_defers = 0;
 
                 // Defers first - in reverse order of evaluation,
                 //  which is FORWARD order in the AST, hence the ++ here.
-                for (mut i = 0; i < node.items.len - 1; i++)
+                for (mut i = 0; i < items.len - 1; i++)
                 {
-                    shadow ref node = node.items[i];
-                    if (node.kind == "defer")
+                    ref item = items[i];
+                    if (item.kind == "defer")
                     {
                         TODO_FIX_defers++;
-                        propagateType(node.items.only, :relax_mask, t_void);
+
+                        ref expr = item.items.only;
+                        propagateType(expr, :relax_mask, t_void);
+
+                        //
+                        if (expr.isDiscardable)
+                        {
+                            makeNote(N_UnusedDefer);
+                            items.splice(i--, 1);
+                        }
                     }
                 }
 
@@ -2518,14 +2592,35 @@ pub fn solve(
                 ///////////////////////////////////////////////
 
                 // Tail item.
-                propagateType(node.items.last, :relax_mask, slot);
+                while (items)
+                {
+                    ref expr = items.last;
+                    propagateType(expr, :relax_mask, slot);
+
+                    if (!canDiscard || !expr.isDiscardable)
+                        break;
+
+                    items.pop();
+
+                    // This can orphan defers.
+                    if (items.if_last.kind == "defer")
+                        items.last = items.last.items.only;
+                }
 
                 // Regular items - in reverse order of eval.
-                for (mut i = node.items.len - 1; i --> 0; )
+                for (mut i = items.len - 1; i --> 0; )
                 {
-                    shadow ref node = node.items[i];
-                    if (node.kind != "defer")
-                        propagateType(node, :relax_mask, t_void);
+                    ref expr = items[i];
+                    if (expr.kind != "defer")
+                    {
+                        propagateType(expr, :relax_mask, t_void);
+
+                        if (expr.isDiscardable)
+                        {
+                            makeNote(N_UnusedStmt);
+                            items.splice(i, 1);
+                        }
+                    }
                 }
 
                 ///////////////////////////////////////////////
