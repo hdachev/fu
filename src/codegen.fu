@@ -207,6 +207,11 @@ pub fn cpp_codegen(implicit module: Module, implicit ctx: Context): CodegenOutpu
 
     //
 
+    fn type_isZST(type: Type): bool
+    {
+        return type.is_void  || type.is_zeroes || type.isAddrOfFn;
+    }
+
     fn typeAnnot(type: Type, mode?: i32): string
     {
         let fwd = typeAnnotBase(type, :mode);
@@ -2101,7 +2106,7 @@ pub fn cpp_codegen(implicit module: Module, implicit ctx: Context): CodegenOutpu
         if (mode & M_STMT)
             return "";
 
-        if (mode & M_ARG_TO_NATIVE && node.type.type_isAddrOfFn)
+        if (mode & M_ARG_TO_NATIVE && node.type.isAddrOfFn)
         {
             mut last: Target;
             unpackAddrOfFn(node.type.canon, |target|
@@ -2486,7 +2491,7 @@ pub fn cpp_codegen(implicit module: Module, implicit ctx: Context): CodegenOutpu
                 shadow let node = node.items[i];
                 if (node.kind == "str")
                     result ~= node.value;
-                else
+                else if !(node.type_isZST)
                     result ~= cgNode(:node, debug: "compiler:emit");
             }
 

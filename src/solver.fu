@@ -1902,12 +1902,18 @@ pub fn solve(
         return solveNodes([ node ]).only;
     }
 
+    fn isTypeDecl(::kind)
+    {
+        return kind == "struct"    || kind == "union"
+            || kind == "primitive" || kind == "enum"  || kind == "flags";
+    }
+
     fn unorderedClassify(::kind): i32
     {
         if (kind == "fn")
             return 1;
 
-        if (kind == "struct" || kind == "union" || kind == "primitive" || kind == "enum" || kind == "flags")
+        if (kind.isTypeDecl)
             return 10;
 
         return 0;
@@ -1920,7 +1926,7 @@ pub fn solve(
         if (kind == "fn")
             return uPrepFn_A(node);
 
-        if (kind == "struct" || kind == "union" || kind == "primitive" || kind == "enum" || kind == "flags")
+        if (kind.isTypeDecl)
             return uPrepStruct(node);
 
         BUG("TODO: unorderedPrep_A(" ~ node.kind ~ ").");
@@ -3400,7 +3406,7 @@ pub fn solve(
             for (mut i = 0; i < args.len; i++)
             {
                 let arg_t = args[i];
-                if (type_isAddrOfFn(arg_t))
+                if (arg_t.isAddrOfFn)
                 {
                     unpackAddrOfFn(arg_t.canon, |target|
                     {
@@ -3959,7 +3965,7 @@ pub fn solve(
                             ~ qSTACK(:target, Region_fromLocal(argTarget.index),
                                         node: out.out));
 
-                    if (isPureCtx && written_via && isImplicit)
+                    if (isPureCtx && isImplicit && written_via)
                         fail(target.qWHAT   ~ " is not purectx, writes to implicit argument " ~ name.human.qID ~ ":\n"
                             ~ qSTACK(:target, Region_fromLocal(argTarget.index),
                                         node: out.out));
@@ -4265,7 +4271,8 @@ pub fn solve(
         let kind        = node.kind;
 
         let isStruct    = kind == "struct";
-        let isUnion     = !isStruct && kind == "union";
+        let isUnion     = kind == "union";
+
         let isPrimDecl  = !isStruct && !isUnion;
 
         //
@@ -4346,7 +4353,7 @@ pub fn solve(
             return solveLetLike_dontTouchScope(node, :primType);
         }
 
-        let items = node.items[STRUCT_MEMBERS].items;
+        let items   = node.items && node.items[STRUCT_MEMBERS].items;
         let members = items.map(fn solveMember);
 
         // (Re)poplate fields.
@@ -5382,7 +5389,7 @@ pub fn solve(
         shadow let id   = cleanID || id;
         ////////////////////////////////////////////////////////////////
 
-        if (out.type.type_isAddrOfFn)
+        if (out.type.isAddrOfFn)
         {
             // Shadowing & addroffns are broken,
             //  we'll just get rid of addroffns,
@@ -6060,14 +6067,7 @@ pub fn solve(
     fn injectImplicitArg(id: string, type: Type, becauseOf!: Target): Target
     {
         if (!_current_fn.items || _current_fn.out.flags & F_EXTERN)
-        {
-            /* SKETCH EFFECTS //////////////////////////////////////////////
-            if (type.isEffect)
-                return lookupStructOrUserPrimitive(type).target || BUG();
-            // SKETCH EFFECTS /*////////////////////////////////////////////
-
             fail("No implicit " ~ id.qBAD ~ " in scope, needed to call " ~ becauseOf.qWHAT ~ ".");
-        }
 
         // Reuse existing or add new argnode.
         for (mut i = 0; i < _current_fn.items.len + FN_ARGS_BACK; i++)

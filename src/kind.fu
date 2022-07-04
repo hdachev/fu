@@ -82,6 +82,7 @@ enum kind
     // TypeDecl:
     struct
     union
+
     primitive
     flags
     enum

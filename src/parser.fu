@@ -255,8 +255,7 @@ pub fn parse(
 
             let k = item.kind;
             if (k == "fn" || k == "let" || k == "typedef" || k == "struct" || k == "union" || k == "enum" || k == "flags" || k == "primitive")
-                if !(item.flags & F_SHADOW)
-                    set_PUB(item.flags);
+                set_PUB(item.flags, "Module has no pubs, pubbing everything.");
         }
 
         return out;
@@ -513,9 +512,10 @@ pub fn parse(
 
     // Watch out, we want to not allow pubs & shadows together.
 
-    fn set_PUB(ref flags: Flags)
+    fn set_PUB(ref flags: Flags, extra?: string)
     {
-        flags & F_SHADOW && fail("Cannot " ~ "pub".qBAD ~ " a " ~ "shadow".qKW ~ ".");
+        flags & F_SHADOW && fail("Cannot " ~ "pub".qBAD ~ " a " ~ "shadow".qKW ~
+            (extra ? ": " ~ extra : "."));
 
         flags |= F_PUB;
         _hasPUB = true;
