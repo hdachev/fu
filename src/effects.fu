@@ -1,30 +1,68 @@
-import helpers;
-import module;
-import types;
 
 
 // Sketch.
 
-pub fn Fx_Misc                  = 1 <<  0; // unknown: but can't purecode-eliminate, e.g. debug print
+flags FxMask: u16
+{
+    Fx_NotDeadCode          // cannot dead-code eliminate,  e.g. debug::print().
+    Fx_NonDeterministic     // cannot sub-expression eliminate, e.g. now::hr().
 
-pub fn Fx_Exits                 = 1 <<  1; // can crash/exit program,   `noexit` tests for these defects
-pub fn Fx_Blocks                = 1 <<  2; // can block exection,       `realtime` tests for these defects
-// ...
+    Fx_DontMoveUp
+    Fx_DontMoveDown
 
-pub fn Fx_Exits_Div0            = 1 <<  4; // risks int/0
-pub fn Fx_Exits_Segv            = 1 <<  5; // risks oob
-// ...
-// ...
+    Fx_Input
+    Fx_Output
 
-pub fn Fx_Blocks_Alloc          = 1 <<  8; // allocates, might lock on allocator, `no alloc` tests for this defect
-pub fn Fx_Blocks_Await          = 1 <<  9; // might wait on async work join
-pub fn Fx_Blocks_Syscall        = 1 << 10; // might wait on a syscall, probably every Fx_Blocks is a due to a syscall?
 
+    // Better served as list of types thrown.
+
+    Fx_Throws               // a surrounding catch is not pointless.
+
+
+    // The stuff that follows doesn't affect optis for now.
+
+    Fx_Crashes              // could exit unrecoverably -
+
+    // ElimOk:
+    Fx_Crashes_Div0         // could attempt to divide by 0.
+    Fx_Crashes_OOB          // could index out of bounds.
+
+    // NotDeadCode:
+    Fx_Crashes_Assert       // could assert false (contains unproven assertion).
+
+    Fx_Crashes_Exit         // exit(0) should qualify as a crash,
+                            //  since it doesn't run destructors on stack.
+
+
+    // Performance & realtime proofing.
+
+    Fx_Syscall              // could context switch,
+                            //  not necessarily blocking.
+
+    Fx_Blocks               // could block execution            - not realtime
+                            //  blocking syscall, spinlock, inf loops etc.
+
+    Fx_Blocks_Alloc         // could allocate dynamic memory    - not realtime
+    Fx_Blocks_Await         // could join/await jobs or threads - not realtime
+}
+
+
+// Non-blocking time & position sensitive reads -
+//  profiling, allocation counters, etc.
+let EFFECTS_clock           = Fx_Input          | Fx_NonDeterministic
+                                                | Fx_DontMoveDown   | Fx_DontMoveUp;
+// IO reads.
+let EFFECTS_input           = Fx_Input          | Fx_NonDeterministic
+                                                | Fx_Blocks;
+// IO writes.
+let EFFECTS_output          = EFFECTS_input     | Fx_Output         | Fx_NotDeadCode
+                                                | Fx_DontMoveDown   | Fx_DontMoveUp
+                                                | Fx_Blocks;
 
 // Function effects -
 //  Things not well expressed by its arg & return signature.
 
-pub struct Effects
+struct Effects
 {
     // Non-local jumps -
     //  So we know what needs to get inlined into what,
@@ -33,19 +71,25 @@ pub struct Effects
     //
     far_jumps:      i32[];
 
-    // Types thrown -
-    //
-    //
-    // throws:         Type[];
+    // Builtin effects.
+    fx_mask:        FxMask;
 
-    // Anti-deadlock?
-    //  Honestly, I don't want locks at all, but if we do get them, there must be some anti-deadlock thing going on.
-    //
-    // locks:       What?
+    // throws:         Types;       - union or some such
+    // fx_user:        Types;       - union of usereffects
 
     // Complexity and computational expense?
     //  This is interesting for automatic parallelization.
     //
-    // loopdepth:   What?
-    // est_cost:    What?
+    // loop_depth:     What?
+    // est_cost:       What?       // Perhaps +1 for every "instruction"
+    //                             //  and *10 for every unbounded loop?
+    //
+    // ser_loop_depth: What?       // Perhaps reset on automatic parallelizaton?
+    // ser_est_cost:   What?
+
+    // Anti-deadlock?
+    //  Honestly, I don't want locks at all,
+    //   but if we do get them, there must be some anti-deadlock thing going on.
+    //
+    // locks:          What?
 }

@@ -4192,7 +4192,8 @@ inline bool starts_8ObANk7r(fu::view<char> a, const char with)
 static fu_STR cgCompilerPragma_qteLR1mg(const s_SolvedNode& node, s_TokenIdx& _here, const s_Context& ctx, const s_Module& module, s_cg_CurrentFn& _current_fn, s_Outputs& outputs)
 {
     fu::view<char> cmd = node.value;
-    if (cmd == "emit"_fu)
+    if (cmd == "emit"_fu  ||
+        cmd == "input"_fu || cmd == "output"_fu || cmd == "clock"_fu)
     {
         /*MOV*/ fu_STR result {};
         for (int i = 0; i < node.items.size(); i++)

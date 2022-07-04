@@ -140,7 +140,7 @@ pub fn solve(
 
         using flow?:        Flow;
 
-        effects?:           Effects;
+        using effects?:     Effects;
         events?:            Events;
         autoshadow_ok!:     i32;
 
@@ -2577,6 +2577,14 @@ pub fn solve(
             //
             for (mut i = 0; i < node.items.len; i++)
                 node.items[i].propagateType(node.items[i].type, :relax_mask);
+
+            // Effect pragmas.
+            if (node.value == "clock")
+                _current_fn.fx_mask |= EFFECTS_clock;
+            else if (node.value == "input")
+                _current_fn.fx_mask |= EFFECTS_input;
+            else if (node.value == "output")
+                _current_fn.fx_mask |= EFFECTS_output;
         }
         else
         {
@@ -2681,7 +2689,7 @@ pub fn solve(
 
     fn currentFn_mustBecomeInline()
     {
-        return _current_fn.effects.far_jumps.len > 0 && "Contains non-local control flow.";
+        return _current_fn.far_jumps && "Contains non-local control flow.";
     }
 
     fn warn(token: TokenIdx, inline message: string)
@@ -4040,6 +4048,9 @@ pub fn solve(
                 ext.max     = max;
                 ext.args    = args;
 
+                if (!isNative)
+                    ext.fx_mask = out.fx_mask;
+
                 shadow ref overload = GET_mut(target);
                 overload.type       = retval;
 
@@ -4112,38 +4123,39 @@ pub fn solve(
             {
                 updateScope(_current_fn, retval: isInline ? ret_expect : ret_seed, maybeLast: false);
 
-                // Previously initScope:
+                mut name = "";
+                mut fx_mask: FxMask;
+
+                // __native(id) or __native("include", id)
+                if (isNative && n_body.items)
                 {
-                    // Let's consider: hashing all fns,
-                    //  including the module name and directory in the sighash,
-                    //   and potentially extending the hashlen to 6 or 8 chars.
-                    //
-                    // Perhaps we should do this mangling in the codegen?
-                    //
-                    mut name = n_fn.value || fail("TODO anonymous fns");
-
-                    fn HACK_nativeNameParts() // __native(id) or __native("include", id)
+                    for (mut i = 0; i < n_body.items.len; i++)
                     {
-                        shadow mut name = "";
-                        if (isNative && n_body.items)
-                            for (mut i = 0; i < n_body.items.len; i++)
-                                name ~= "\n" ~ n_body.items[i].value;
-
-                        return name;
+                        let item = n_body.items[i].value;
+                        if (item.starts(with: '|'))
+                            fx_mask |= "|output"
+                                ? EFFECTS_output
+                                : parse(item[1, item.len], as: FxMask) || fail("Invalid |Fx mask: " ~ item.qBAD);
+                        else
+                            name ~= "\n" ~ item;
                     }
-
-                    ref overload        = GET_mut(target);
-                    overload.name       = HACK_nativeNameParts || name || BUG();
-
-                    overload.kind       = isUnspec      ? "template"
-                                        : isNative      ? "__native"
-                                        : isInline      ? "inline"
-                                                        : "fn";
-
-                    ref ext             = target.EXT_mut;
-                    ext.template        = template;
-                    ext.spec_of         = overloadIdx;
                 }
+
+                name ||= n_fn.value || fail("TODO anonymous fns");
+
+                //
+                ref overload        = GET_mut(target);
+                overload.name       = name;
+
+                overload.kind       = isUnspec      ? "template"
+                                    : isNative      ? "__native"
+                                    : isInline      ? "inline"
+                                                    : "fn";
+
+                ref ext             = target.EXT_mut;
+                ext.template        = template;
+                ext.spec_of         = overloadIdx;
+                ext.fx_mask         = fx_mask;
             }
 
             mut didSetBody = false;
@@ -4907,7 +4919,7 @@ pub fn solve(
         // Detect & shim non-local jumps.
         if (h.local_of != _current_fn.target.index)
         {
-            _current_fn.effects.far_jumps.set::add(h.local_of);
+            _current_fn.far_jumps.set::add(h.local_of);
 
             // The fn will solve again as inline,
             //  return a shim here that looks jumpy.
@@ -8492,8 +8504,11 @@ pub fn solve(
 
         node.helpers.pass = "RelaxCopyResize";
 
+        _current_fn.fx_mask = [];
         _current_fn.var_usage = [];
-        _current_fn.loop_start == 1 || BUG("_current_fn.loop_start leak: " ~ _current_fn.loop_start);
+        _current_fn.loop_start == 1 || BUG(
+            "_current_fn.loop_start leak: " ~ _current_fn.loop_start);
+
         propagateType(node, node.type, relax_mask: RELAX_all);
 
         ///////////////////////////////

@@ -54,6 +54,13 @@ fn inspect(module: Module, root: SolvedNode)
                 if (o.name)
                     src ~= " n:" ~ o.name.trim();
 
+                if (o.kind == "fn")
+                {
+                    let x = module.out.solve.scope.extended[n.target.index];
+                    if (x.fx_mask)
+                        src ~= " fx:" ~ x.fx_mask;
+                }
+
                 if (n.kind == "fndef" || n.kind == "letdef")
                 {
                     shadow let indent = indent ~ ". ".ansi::qID;

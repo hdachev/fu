@@ -328,14 +328,6 @@ fn   .=(ref a: [$T;], b: [$T;]) case ($T.is::copy): void __native("<fu/vec/view_
 fn swap(ref a: [$T;], i: int, j: int): void __native("<fu/vec/view_swap.h>", "fu::view_swap");
 
 
-// Assertions, bugs & fails.
-//  TODO i dont actually think we want to have nullary stuff in prelude,
-//   so TODO needs to take an arg, same with assert - perhaps a pass-through argument.
-
-fn throw(mut reason: string): never __native("<fu/never.h>", "fu::fail");
-fn assert(): never __native("<fu/never.h>", "fu_ASSERT()");
-
-
 // Stringifiables.
 
 fn ~ (    a: [byte], b.str) a ~ b;
@@ -369,12 +361,24 @@ fn str(n: $T)
 }
 
 
+// Assertions, bugs & fails.
+//  TODO i dont actually think we want to have nullary stuff in prelude,
+//   so TODO needs to take an arg, same with assert - perhaps a pass-through argument.
+
+fn throw(mut reason: string): never __native("<fu/never.h>", "fu::fail",
+    "|Fx_NotDeadCode", "|Fx_DontMoveDown", "|Fx_Throws");
+
+fn assert(): never __native("<fu/never.h>", "fu_ASSERT()",
+    "|Fx_NotDeadCode", "|Fx_DontMoveDown", "|Fx_Crashes");
+
+
 // Printifiables = anything that implements print.
 
 inline fn print(x: string): string = x;
 inline fn print(x.str)    : string = x;
 
-fn println(parts.print[]: [string]): void __native("<fu/print.h>", "fu::println");
+fn println(parts.print[]: [string]): void __native("<fu/print.h>", "fu::println",
+    "|output");
 
 
 // String commons.

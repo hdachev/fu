@@ -2482,7 +2482,8 @@ pub fn cpp_codegen(implicit module: Module, implicit ctx: Context): CodegenOutpu
         let cmd = node.value;
 
         // Verbatim cpp nonsense.
-        if (cmd == "emit")
+        if (cmd == "emit"  ||
+            cmd == "input" || cmd == "output" || cmd == "clock")
         {
             mut result = "";
 

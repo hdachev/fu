@@ -347,6 +347,9 @@ pub struct Extended
     // These are single-module-solve-only, no need to keep them here.
     extra_items?:   ScopeItem[];
     callers?:       i32[];
+
+    //
+    fx_mask?:       effects::FxMask;
 };
 
 
