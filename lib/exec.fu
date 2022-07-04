@@ -11,7 +11,7 @@ fn exec(mut cmd: string, ref stdout: string): i32
     // c-str ok
     cmd ~= '\0';
 
-    pragma emit(
+    pragma output(
     `
         const auto pipe = popen(`cmd`.data(), "rb");
         if (!pipe)

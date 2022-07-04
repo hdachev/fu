@@ -20,7 +20,7 @@ fn write(mut path: string, data: [byte], mode = RW_RW_RW): i32
         "<fcntl.h>",
         "<unistd.h>");
 
-    pragma emit(
+    pragma output(
     `
         auto fd = open(`path`.data(), O_WRONLY | O_CREAT | O_TRUNC, mode_t(`mode`));
         if (fd == -1)
@@ -54,7 +54,7 @@ fn write(mut path: string, data: [byte], mode = RW_RW_RW): i32
         "<errno.h>",
         "<fu/defer.h>");
 
-    pragma emit(
+    pragma output(
     `
         // Used by posix open, ignored here.
         (void) `mode`;
@@ -115,7 +115,7 @@ fn read(mut path: string, ref output: string, mut size?: i64): i32
         //
         if (size <= 0)
         {
-            pragma emit(
+            pragma input(
             `
                 struct stat sb;
                 if (stat(`path`.data(), &sb))
@@ -174,7 +174,7 @@ fn read(mut path: string, ref output: string, mut size?: i64): i32
         //  so the OS can confirm the file size by stopping one byte early,
         //   this is intended to detect concurrent file writes.
         //
-        pragma emit(
+        pragma input(
         `
             auto* buf = `output`.data_mut();
 
@@ -205,7 +205,7 @@ fn read(mut path: string, ref output: string, mut size?: i64): i32
         "<errno.h>",
         "<fu/defer.h>");
 
-    pragma emit(
+    pragma input(
     `
         auto file = fopen(`path`.data(), "rb");
         if (!file)
@@ -262,7 +262,7 @@ fn chmod(mut path: string, mode: u32): i32
 
     mut err: i32;
 
-    pragma emit(
+    pragma output(
     `
         if (chmod(`path`.data(), mode_t(`mode`)))
             `err` = errno;
@@ -283,7 +283,7 @@ fn rename(mut from: string, mut to: string): i32
 
     mut err: i32;
 
-    pragma emit(
+    pragma output(
     `
         if (rename(`from`.data(), `to`.data()))
             `err` = errno;
@@ -299,7 +299,7 @@ fn size(mut path: string): i64
 
     pragma include("<sys/stat.h>")
 
-    pragma emit(
+    pragma input(
     `
         struct stat sb;
         if (stat(`path`.data(), &sb) == 0)

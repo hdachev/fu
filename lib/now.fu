@@ -5,7 +5,7 @@ fn hr()
 
     pragma include("<chrono>");
 
-    pragma emit(
+    pragma clock(
     `
         `timestamp` =
             std::chrono::duration<double>(
@@ -22,7 +22,7 @@ fn utc()
 
     pragma include("<chrono>");
 
-    pragma emit(
+    pragma clock(
     `
         `timestamp` =
             std::chrono::duration<double>(
