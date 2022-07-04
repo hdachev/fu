@@ -2685,17 +2685,17 @@ pub fn solve(
 
     fn relaxBlockVar(t: Target, relax_mask!: i32)
     {
-        let var = GET(t);
+        let o = GET(t);
 
         //
         let usage = _current_fn.var_usage.unless_oob(t.index);
         let isUnused = !usage;
-        if (isUnused && relax_mask == RELAX_all)
-            if !(var.flags & F_LAX)
-                warn(:t.solved.token, "Unused variable: " ~ var.name.qBAD ~ ": make it " ~ "lax".qKW ~ " if this is intentional.");
+        if (isUnused)
+            if !(o.flags & F_LAX || o.type.is_zeroes)
+                warn(:o.solved.token, "Unused variable: " ~ o.name.qBAD ~ ": make it " ~ "lax".qKW ~ " if this is intentional.");
 
         //
-        ref o = GET_mut(t);
+        shadow ref o = GET_mut(t);
         if (isUnused)
             o.status |= SS_UNUSED;
         else
