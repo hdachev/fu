@@ -13,7 +13,7 @@ fn exec(mut cmd: string, ref stdout: string): i32
 
     pragma emit(
     `
-        const auto pipe = popen(`cmd`.data(), "r");
+        const auto pipe = popen(`cmd`.data(), "rb");
         if (!pipe)
         {
             `status` = errno;
