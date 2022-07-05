@@ -633,8 +633,15 @@ pub fn parse(
 
                 if (v == "pure")        return parseExoticDecl(asserts: A_PURE);
                 if (v == "purectx")     return parseExoticDecl(asserts: A_PURE_CTX);
+                if (v == "purefx")      return parseExoticDecl(asserts: A_PURE_FX);
+
                 if (v == "novec")       return parseExoticDecl(asserts: A_NOVEC);
                 if (v == "noflow")      return parseExoticDecl(asserts: A_NOFLOW);
+
+                if (v == "nothrow")     return parseExoticDecl(asserts: A_NOTHROW);
+                if (v == "nocrash")     return parseExoticDecl(asserts: A_NOCRASH);
+                if (v == "noio")        return parseExoticDecl(asserts: A_NOIO);
+
                 if (v == "extern")      return parseExoticDecl(F_EXTERN);
                 if (v == "hotswap")     return parseExoticDecl(F_HOTSWAP);
             }
@@ -772,8 +779,15 @@ pub fn parse(
 
             if      (v == "pure")       add(A_PURE);
             else if (v == "purectx")    add(A_PURE_CTX);
+            else if (v == "purefx")     add(A_PURE_FX);
+
             else if (v == "novec")      add(A_NOVEC);
             else if (v == "noflow")     add(A_NOFLOW);
+
+            else if (v == "nothrow")    add(A_NOTHROW);
+            else if (v == "nocrash")    add(A_NOCRASH);
+            else if (v == "noio")       add(A_NOIO);
+
             else if (v == "extern")     add(F_EXTERN);
             else if (v == "hotswap")    add(F_HOTSWAP);
 

@@ -10,8 +10,8 @@ flags FxMask: u16
     Fx_DontMoveUp
     Fx_DontMoveDown
 
-    Fx_Input
-    Fx_Output
+    Fx_Input                // fails pure & noio
+    Fx_Output               // fails pure, purefx & noio
 
 
     // Better served as list of types thrown.

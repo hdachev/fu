@@ -37,17 +37,27 @@ flags HelpersMask
 
 //
 
-flags DeclAsserts
+flags DeclAsserts: u16
 {
     A_NOCOPY
     A_NOVEC
-    A_NOVEC_MUT
+    // ...
     // ...
 
     A_PURE
     A_PURE_CTX
+    A_PURE_FX
     // ...
+
     A_NOFLOW
+    A_NOTHROW
+    A_NOCRASH
+    // ...
+
+    A_NOIO
+    // ...
+    // ...
+    // ...
 };
 
 
