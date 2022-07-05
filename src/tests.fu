@@ -10347,7 +10347,31 @@ pub extern fn runTests()
     `);
 
 
-    //
+    // Validate the nothrow effect.
+
+    ZERO(`
+        fn does_throw(mut x: i32) {
+            if (x & 1)          return x;
+            mut str = "";
+            while (x--)         str ~= x;
+            throw(str);
+        }
+
+        nothrow fn does_catch(mut y: i32) {
+            try                 return does_throw(y);
+            catch (e)           return e.len;
+        }
+
+        <fail does_throw throws>
+        nothrow <pass/></fail>
+        fn doesnt_catch(mut z: i32) {
+            if (z & 2)          return does_throw(z);
+            else                return does_catch(z);
+        }
+
+        fn main() = doesnt_catch(1) - 1;
+    `);
+
 
     // ZERO(`
     //     enum Thing {
