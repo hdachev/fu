@@ -2216,7 +2216,26 @@ pub fn solve(
             _current_fn.postdom.branch(postdom0);
 
             propagateType(error, t_string, :relax_mask);
+
+            //////////////////////////////////////////////
+            let throws0 = _current_fn.fx_mask & Fx_Throws;
+            _current_fn.fx_mask &= ~Fx_Throws;
+            //////////////////////////////////////////////
+
             propagateType(attempt, t_void, :relax_mask);
+
+            // Drop the whole catch if possible,
+            // TODO FIX this defeats relaxing the catch & err parts first.
+            // if !(_current_fn.fx_mask & Fx_Throws)
+            // {
+            //     makeNote(N_UnusedTry);
+            //     node = attempt;
+            // }
+
+            //////////////////////////////////////////////
+            _current_fn.fx_mask &= ~Fx_Throws;
+            _current_fn.fx_mask |= throws0;
+            //////////////////////////////////////////////
         }
         else if (k == "loop")
         {
@@ -3889,10 +3908,7 @@ pub fn solve(
             let isSpec      = isTemplate && (!into || !isFirst); // TODO FIX this looks really flaky
             let isUnspec    = isTemplate && !isSpec;
 
-            let isPure      = template.node.asserts & A_PURE;
-            let isNovec     = template.node.asserts & A_NOVEC;
-            let isPureCtx   = template.node.asserts & A_PURE_CTX;
-            let isNoFlow    = template.node.asserts & A_NOFLOW;
+            let asserts     = template.node.asserts;
 
             for (mut i = 0; i < inItems.len + FN_ARGS_BACK; i++)
             {
@@ -4063,18 +4079,19 @@ pub fn solve(
                     /////////////////////////////////////////////
 
                     // Validate `pure` asserts.
-                    if (isPure && written_via)
+                    if (asserts & A_PURE && written_via)
                         fail(target.qWHAT   ~ " is not pure, writes to argument " ~ name.human.qID ~ ":\n"
                             ~ qSTACK(:target, Region_fromLocal(argTarget.index),
                                         node: out.out));
 
-                    if (isPureCtx && isImplicit && written_via)
+                    if (asserts & A_PURE_CTX && isImplicit && written_via)
                         fail(target.qWHAT   ~ " is not purectx, writes to implicit argument " ~ name.human.qID ~ ":\n"
                             ~ qSTACK(:target, Region_fromLocal(argTarget.index),
                                         node: out.out));
 
-                    if (maybeLast && isNovec && !(argNode.type.is_trivial) && (argNode.type.is_rx_copy || argNode.type.is_rx_resize))
-                        fail(target.qWHAT ~ " is not novec, argument " ~ name.human.qID ~ " is " ~ humanizeType(argNode.type));
+                    if (maybeLast && asserts & A_NOVEC && !argNode.type.is_trivial)
+                        if (argNode.type.is_rx_copy || argNode.type.is_rx_resize)
+                            fail(target.qWHAT ~ " is not novec, argument " ~ name.human.qID ~ " is " ~ humanizeType(argNode.type));
 
                     //
                     let arg = Argument(
@@ -4146,6 +4163,24 @@ pub fn solve(
                 if (!isNative)
                     ext.fx_mask = out.fx_mask;
 
+                //
+                asserts & A_NOTHROW && ext.fx_mask & Fx_Throws && fail(
+                    target.qWHAT ~ " is not nothrow, throws here:\n"
+                        ~ qSTACK(:target, Fx_Throws, node: out.out));
+
+                asserts & A_NOCRASH && ext.fx_mask & Fx_Crashes && fail(
+                    target.qWHAT ~ " is not nocrash, can crash here:\n"
+                        ~ qSTACK(:target, Fx_Crashes, node: out.out));
+
+                asserts & A_NOIO && ext.fx_mask & (Fx_Input|Fx_Output) && fail(
+                    target.qWHAT ~ " is not noio, performs I/O here:\n"
+                        ~ qSTACK(:target, Fx_Input|Fx_Output, node: out.out));
+
+                asserts & A_PURE_FX && ext.fx_mask & Fx_Output && fail(
+                    target.qWHAT ~ " is not purefx, outputs here:\n"
+                        ~ qSTACK(:target, Fx_Output, node: out.out));
+
+                //
                 shadow ref overload = GET_mut(target);
                 overload.type       = retval;
 
@@ -4222,13 +4257,13 @@ pub fn solve(
                 mut fx_mask: FxMask;
 
                 // __native(id) or __native("include", id)
-                if (isNative && n_body.items)
+                if (isNative)
                 {
                     for (mut i = 0; i < n_body.items.len; i++)
                     {
                         let item = n_body.items[i].value;
                         if (item.starts(with: '|'))
-                            fx_mask |= "|output"
+                            fx_mask |= item == "|output"
                                 ? EFFECTS_output
                                 : parse(item[1, item.len], as: FxMask) || fail("Invalid |Fx mask: " ~ item.qBAD);
                         else
@@ -4275,7 +4310,7 @@ pub fn solve(
                         isFirst || fail(
                             "Function wants to become inline on after first solve.");
 
-                        isNoFlow && fail(
+                        asserts & A_NOFLOW && fail(
                             "Function is not noflow: " ~ mustBecomeInlineBecause.qBAD);
 
                         // Unfortunately we have to throw away
@@ -6631,15 +6666,15 @@ pub fn solve(
 
     fn qSTACK(target: Target, region: Region, seen!?: Target[])
     {
-        //////////////////////////////////////////////////
-        let implicit _current_fnort = target;
-        //////////////////////////////////////////////////
-
         return qSTACK(target, target.solved, :region, :seen);
     }
 
     fn qSTACK(target: Target, node: SolvedNode, region: Region, seen!?: Target[])
     {
+        //////////////////////////////////////////////////
+        let implicit _current_fnort = target;
+        //////////////////////////////////////////////////
+
         mut src = "\n            ";
 
         let rec = seen.has(target);
@@ -6670,6 +6705,38 @@ pub fn solve(
 
                 break :SEARCH;
             }
+        }
+
+        return src;
+    }
+
+    fn qSTACK(target: Target, node: SolvedNode, fx_mask: FxMask, seen!?: Target[])
+    {
+        //////////////////////////////////////////////////
+        let implicit _current_fnort = target;
+        //////////////////////////////////////////////////
+
+        mut src = "\n            ";
+
+        let rec = seen.has(target);
+        if (rec)
+            src ~= "recursively ";
+
+        :SEARCH
+        SLOW_traverse(node): |callsite|
+        {
+            if (callsite.kind != "call" || callsite.target.isLocal)
+                continue;
+
+            if !(callsite.target.fx_mask & fx_mask)
+                continue;
+
+            src ~= "via " ~ callsite.target.qWHAT ~ " at ";
+            src ~= callsite.token.addr_and_snippet;
+            if (!rec && seen.len < 8)
+                src ~= qSTACK(callsite.target, callsite.target.solved, :fx_mask, seen: seen ~ target);
+
+            break :SEARCH;
         }
 
         return src;
