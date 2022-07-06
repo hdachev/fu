@@ -2107,7 +2107,7 @@ pub fn solve(
 
             let host_args = t.args;
             for (mut i = 0; i < host_args.len; i++)
-                if (host_args[i].is_mutref)
+                if (host_args[i].flags & F_WRITTEN_TO)
                     return false;
 
             return true;
@@ -7638,7 +7638,7 @@ pub fn solve(
                 if (!target)
                     continue;
 
-                let position    = positions[i];
+                fn position     = positions[i];
 
                 // println("bck_trackWrite " ~ target ~ " " ~ callsite.value);
 
@@ -7662,7 +7662,7 @@ pub fn solve(
                                         ~ " invalidates the use of " ~ read.bck_name.qBAD ~ " at "
                                         ~ SLOW_findByReadID(readID).token.addr_and_snippet
                                         ~ "\n\t... on next loop iteration.\n\n\tWritten"
-                                        ~ qSTACK(callsite.target, :position)); // TODO loop starts at x:x!
+                                        ~ (positions && qSTACK(callsite.target, :position)));
                         }
                     }
                 }
@@ -8319,7 +8319,15 @@ pub fn solve(
             }
             else if (k == "pragma")
             {
-                // Noop.
+                // Without this we fail to notice all the writes in pragma emits etc,
+                //  caught this thanks to the new isDiscardable stuff.
+                for (mut i = 0; i < node.items.len; i++)
+                {
+                    let item = node.items[i];
+                    if (item.is_mutref)
+                        bck_trackWrites(item, item.lifetime.uni0n,
+                            positions: []);
+                }
             }
             else if (node.items)
             {
