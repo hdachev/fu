@@ -1211,6 +1211,21 @@ pub extern fn runTests()
         }
     `);
 
+    ZERO(`
+        fn mustwarn_unused_implicit(implicit forgot_to_use: i32, ref x: i32) {
+            <fail unused forgot_to_use>
+            x *= 3;             <pass/>
+            x *= forgot_to_use; </fail>
+        }
+
+        fn main() {
+            mut x = 7;
+            implicit forgot_to_use = 3;
+            mustwarn_unused_implicit(x);
+            return x == forgot_to_use * 7 ? 0 : 1;
+        }
+    `);
+
 
     //
 
