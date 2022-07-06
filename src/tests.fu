@@ -93,6 +93,7 @@ pub extern fn runTests()
     let TODO_specpat    = fn TODO;
     let TODO_relaxer    = fn TODO;
     let TODO_ambig      = fn TODO;
+    let TODO_dead       = fn TODO;
 
     let TODO_Map        = fn TODO;
 
@@ -6222,7 +6223,7 @@ pub extern fn runTests()
             <alt>
             // This is an aside, managed to lose the copy qual when working structs
             //  Initially noticed it because visitNodes tried to change its sighash
-            mut cpy = tree; if (cpy) {} // <- but this fails cleanly when tree is nocopy
+            mut cpy = tree; cpy = tree; // <- but this fails cleanly when tree is nocopy
             </alt>
 
             mut myVisitor: Visitor;
@@ -10457,6 +10458,25 @@ pub extern fn runTests()
             not_dead_mutually_rec_b(2); </alt>
             return has_fx() - 2;
         }
+    `);
+
+    TODO_dead(`
+        fn no_fx() {
+            mut res = 0;
+            pragma clock("
+                static int counter;
+                "res"  = counter++;
+            ");
+            return res;
+        }
+
+        fn test(x: i32) {
+            x & 1 && no_fx();
+            x & 2 || no_fx();
+            return   no_fx();
+        }
+
+        fn main() = test(1);
     `);
 
 

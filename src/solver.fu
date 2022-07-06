@@ -546,10 +546,6 @@ pub fn solve(
     {
         if (SELF_TEST)
         {
-            let current_fn  = _current_fn.target;
-            let debug_2     = current_fn && GET(current_fn);
-            if (debug_2) {}
-
             if !(lifetime.uni0n.len)
                 BUG("Lifetime_test: no region set.");
 
@@ -2143,39 +2139,67 @@ pub fn solve(
         node.type.try_relax(:slot, :relax_mask);
         shadow let slot = node.type;
 
-        //
-        let LAST = node.items.len - 1;
-
         // Control flow.
         if (k == "and")
         {
-            let rest    = slot.is_mutref && CANNOT_definit_mutrefs
-                        ? slot
-                        : t_bool;
+            let rest = slot.is_mutref && CANNOT_definit_mutrefs
+                ? slot
+                : t_bool;
 
-            let postdom0    = _current_fn.postdom;
+            let postdom0 = _current_fn.postdom;
 
-            for (mut i = node.items.len; i --> 0; )
+            ref items = node.items;
+            for (mut i = items.len; i --> 0; )
             {
-                propagateType(node.items[i], :relax_mask,
-                    i == LAST ? slot : rest);
+                ref item = items[i];
+                propagateType(item, :relax_mask, i == items.len - 1 ? slot : rest);
+
+                ////////////////////////////////////////////////////////////////
+                if (canDiscard && i == items.len - 1 && item.isDiscardable)
+                {
+                    makeNote(N_UnusedAnd);
+                    items.pop();
+                    _current_fn.postdom == postdom0 || BUG();
+                }
+                ////////////////////////////////////////////////////////////////
 
                 // Conditional - tail exprs are skippable.
                 if (i) _current_fn.postdom.branch(postdom0);
             }
+
+            ////////////////////////////////////////////////////////////////
+            if (items.len < 2)
+                node = items.if_only || createEmpty();
+            ////////////////////////////////////////////////////////////////
         }
         else if (k == "or")
         {
-            let postdom0    = _current_fn.postdom;
+            let postdom0 = _current_fn.postdom;
 
-            for (mut i = node.items.len; i --> 0; )
+            ref items = node.items;
+            for (mut i = items.len; i --> 0; )
             {
-                propagateType(node.items[i], :relax_mask,
-                    :slot);
+                ref item = items[i];
+                propagateType(item, :relax_mask, :slot);
+
+                ////////////////////////////////////////////////////////////////
+                if (canDiscard && i == items.len - 1 && item.isDiscardable)
+                {
+                    makeNote(N_UnusedOr);
+                    items.pop();
+                    _current_fn.postdom == postdom0 || BUG();
+                    BUG("NOT TESTED discard(or)");
+                }
+                ////////////////////////////////////////////////////////////////
 
                 // Conditional - tail exprs are skippable.
                 if (i) _current_fn.postdom.branch(postdom0);
             }
+
+            ////////////////////////////////////////////////////////////////
+            if (items.len < 2)
+                node = items.if_only || createEmpty();
+            ////////////////////////////////////////////////////////////////
         }
         else if (k == "if")
         {
@@ -3140,11 +3164,10 @@ pub fn solve(
         return fail("Bad int literal.");
     }
 
-    fn solveReal(v: string, type: Type): Type
+    fn solveReal(
+        /*TODO `f` suffix*/lax v: string,
+        type: Type): Type
     {
-        // TODO `f` suffix
-        if (v) {}
-
         if (type.canon == t_f32.canon) return t_f32;
 
         return t_f64;
