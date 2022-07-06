@@ -4270,6 +4270,11 @@ pub fn solve(
                             name ~= "\n" ~ item;
                     }
                 }
+                else
+                {
+                    // Make sure mutually recursive fns don't dump each other.
+                    fx_mask |= Fx_NotDeadCode;
+                }
 
                 name ||= n_fn.value || fail("TODO anonymous fns");
 
