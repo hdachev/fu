@@ -3992,6 +3992,61 @@ pub extern fn runTests()
         }
     `);
 
+    ZERO(`
+        struct XY { x: i32; y: i32 };
+
+        fn main() {
+            mut xy: XY;
+            <fail by pragma write to xy>
+            ref x = xy.x;        <pass/>
+            fn  x = xy.x;        </fail>
+
+            pragma emit("
+                "xy".x++;
+            ");
+
+            return x - 1;
+        }
+    `);
+
+    ZERO(`
+        struct XY { x: i32; y: i32 };
+
+        fn main() {
+            mut xy: XY;
+            <fail 11:22 inval next loop iter 9:21>
+            ref x = xy.x;                  <pass/>
+            fn  x = xy.x;                  </fail>
+
+            while (!x)
+                pragma emit("
+                    "xy".x++;
+                ");
+
+            return xy.x - 1;
+        }
+    `);
+
+    ZERO(`
+        struct XY { x: i32; y: i32 };
+
+        fn bckErr_fromPragmaEmit(ref xy: XY) {
+            pragma emit("
+                "xy".x++;
+            ");
+        }
+
+        fn main() {
+            mut xy: XY;
+            <fail bckErr_fromPragmaEmit>
+            ref x = xy.x;        <pass/>
+            fn  x = xy.x;        </fail>
+
+            bckErr_fromPragmaEmit(xy);
+            return x - 1;
+        }
+    `);
+
     // /Borrow checker
 
 
