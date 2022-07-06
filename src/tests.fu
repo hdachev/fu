@@ -10372,6 +10372,38 @@ pub extern fn runTests()
         fn main() = doesnt_catch(1) - 1;
     `);
 
+    ZERO(`
+        fn has_fx() {
+            mut res = 0;
+            pragma output("
+                static int counter;
+                "res"    = counter++;
+            ");
+            return res;
+        }
+
+        fn not_dead_mutually_rec_a(x: i32) {
+            if (x > 0) {
+                not_dead_mutually_rec_b(x - 1);
+                has_fx();
+            }
+        }
+
+        fn not_dead_mutually_rec_b(x: i32) {
+            if (x > 0) {
+                not_dead_mutually_rec_a(x - 1);
+                has_fx();
+            }
+        }
+
+        fn main() {
+            <alt>
+            not_dead_mutually_rec_a(2); <alt/>
+            not_dead_mutually_rec_b(2); </alt>
+            return has_fx() - 2;
+        }
+    `);
+
 
     // ZERO(`
     //     enum Thing {
