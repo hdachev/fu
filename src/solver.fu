@@ -2141,9 +2141,9 @@ pub fn solve(
 
         // Control flow.
 
-        if (k == "and")
+        if (k == "and" || k == "or")
         {
-            let rest = !canDiscard && slot.is_mutref && CANNOT_definit_mutrefs
+            let rest = !canDiscard && (k == "or" || slot.is_mutref && CANNOT_definit_mutrefs)
                 ? slot
                 : t_bool;
 
@@ -2158,39 +2158,7 @@ pub fn solve(
                 ////////////////////////////////////////////////////////////////
                 if (canDiscard && i == items.len - 1 && item.isDiscardable)
                 {
-                    makeNote(N_UnusedAnd);
-                    items.pop();
-                    _current_fn.postdom == postdom0 || BUG();
-                }
-                ////////////////////////////////////////////////////////////////
-
-                // Conditional - tail exprs are skippable.
-                if (i) _current_fn.postdom.branch(postdom0);
-            }
-
-            ////////////////////////////////////////////////////////////////
-            if (items.len < 2)
-                node = items.if_only || createEmpty();
-            ////////////////////////////////////////////////////////////////
-        }
-        else if (k == "or")
-        {
-            let rest = !canDiscard
-                ? slot
-                : t_bool;
-
-            let postdom0 = _current_fn.postdom;
-
-            ref items = node.items;
-            for (mut i = items.len; i --> 0; )
-            {
-                ref item = items[i];
-                propagateType(item, :relax_mask, i == items.len - 1 ? slot : rest);
-
-                ////////////////////////////////////////////////////////////////
-                if (canDiscard && i == items.len - 1 && item.isDiscardable)
-                {
-                    makeNote(N_UnusedOr);
+                    makeNote(N_UnusedAndOr);
                     items.pop();
                     _current_fn.postdom == postdom0 || BUG();
                 }
