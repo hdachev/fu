@@ -2222,11 +2222,11 @@ pub fn solve(
 
             // Drop the whole catch if possible,
             // TODO FIX this defeats relaxing the catch & err parts first.
-            // if !(_current_fn.fx_mask & Fx_Throws)
-            // {
-            //     makeNote(N_UnusedTry);
-            //     node = attempt;
-            // }
+            if !(_current_fn.fx_mask & Fx_Throws)
+            {
+                makeNote(N_UnusedTry);
+                node = attempt;
+            }
 
             //////////////////////////////////////////////
             _current_fn.fx_mask &= ~Fx_Throws;
@@ -4271,7 +4271,7 @@ pub fn solve(
                 else
                 {
                     // Make sure mutually recursive fns don't dump each other.
-                    fx_mask |= Fx_NotDeadCode;
+                    fx_mask |= Fx_NotDeadCode | Fx_Throws;
                 }
 
                 name ||= n_fn.value || fail("TODO anonymous fns");
