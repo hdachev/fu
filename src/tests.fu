@@ -10460,7 +10460,7 @@ pub extern fn runTests()
         }
     `);
 
-    TODO_dead(`
+    ZERO(`
         fn no_fx() {
             mut res = 0;
             pragma clock("
@@ -10470,7 +10470,7 @@ pub extern fn runTests()
             return res;
         }
 
-        fn test(x: i32) {
+        fn test(lax x: i32) {
             x & 1 && no_fx();
             x & 2 || no_fx();
             return   no_fx();
