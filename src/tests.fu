@@ -10403,7 +10403,7 @@ pub extern fn runTests()
     `);
 
 
-    // Validate the nothrow effect.
+    // Effects & discard.
 
     ZERO(`
         fn does_throw(mut x: i32) {
@@ -10473,10 +10473,31 @@ pub extern fn runTests()
         fn test(lax x: i32) {
             x & 1 && no_fx();
             x & 2 || no_fx();
+            if (!no_fx) no_fx(); else no_fx();
             return   no_fx();
         }
 
         fn main() = test(1);
+    `);
+
+    ZERO(`
+        fn lex(src: string) {
+            mut idx = 0;
+            let end = src.len;
+            while (idx < end) {
+                let c = src[idx++]; // bug in discard(if) unused this var
+                if (c >= 'A' && c <= 'Z' || c >= 'a' && c <= 'z' || c == '_' || c >= '0' && c <= '9') {
+                    //
+                }
+                else {
+                    idx--;
+                    break;
+                }
+            }
+            return idx;
+        }
+
+        fn main() = "hello!".lex - 5;
     `);
 
 

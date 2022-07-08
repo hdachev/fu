@@ -2195,6 +2195,22 @@ pub fn solve(
                 propagateType(node.items[i], :relax_mask,
                     i != 0 ? slot : t_bool);
             }
+
+            if (canDiscard)
+            {
+                if (node.items[1].isDiscardable)
+                {
+                    makeNote(N_UnusedIfElse);
+                    node = node.items[2].isDiscardable
+                        ? node.items[0]
+                        : createOr([ node.items[0], node.items[2] ], t_void);
+                }
+                else if (node.items[2].isDiscardable)
+                {
+                    makeNote(N_UnusedIfElse);
+                    node = createAnd(node.items.slice(0, 2), t_void);
+                }
+            }
         }
         else if (k == "try")
         {
@@ -2265,6 +2281,12 @@ pub fn solve(
         //
         else if (k == "not")
         {
+            if (canDiscard)
+            {
+                node = node.items.only;
+                return node.propagateType(t_void, :relax_mask);
+            }
+
             return node.items.only.propagateType(t_bool, :relax_mask);
         }
         else if (k == "call")
