@@ -10474,7 +10474,8 @@ pub extern fn runTests()
             x & 1 && no_fx();
             x & 2 || no_fx();
             if (!no_fx) no_fx(); else no_fx();
-            return   no_fx();
+            for (mut i = 1; i--> 0; no_fx()) no_fx();
+            return no_fx();
         }
 
         fn main() = test(1);
