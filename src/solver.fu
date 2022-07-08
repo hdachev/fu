@@ -2264,10 +2264,27 @@ pub fn solve(
             // MOVE ON LAST USE ////////////////////////////////////////////
 
             // Relax in reverse.
-            if (post)       propagateType(post, t_void, :relax_mask);
-            if (post_cond)  propagateType(post_cond, t_bool, :relax_mask);
-            if (body)       propagateType(body, t_void, :relax_mask);
-            if (pre_cond)   propagateType(pre_cond, t_bool, :relax_mask);
+            if (post)
+            {
+                if (post.isDiscardable)
+                    post = [];
+                else
+                    propagateType(post, t_void, :relax_mask);
+            }
+
+            if (post_cond)
+                propagateType(post_cond, t_bool, :relax_mask);
+
+            if (body)
+            {
+                if (body.isDiscardable)
+                    body = [];
+                else
+                    propagateType(body, t_void, :relax_mask);
+            }
+
+            if (pre_cond)
+                propagateType(pre_cond, t_bool, :relax_mask);
 
             // MOVE ON LAST USE ////////////////////////////////////////////
             _current_fn.loop_start  = loop_start0;

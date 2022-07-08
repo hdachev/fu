@@ -10475,6 +10475,9 @@ pub extern fn runTests()
             x & 2 || no_fx();
             if (!no_fx) no_fx(); else no_fx();
             for (mut i = 1; i--> 0; no_fx()) no_fx();
+
+            // the idea is that everything above should go,
+            //  and just this one call to no_fx will remain.
             return no_fx();
         }
 

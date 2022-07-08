@@ -2423,7 +2423,7 @@ pub fn cpp_codegen(implicit module: Module, implicit ctx: Context): CodegenOutpu
         let init = n_init && cgNode(n_init, M_STMT, debug: "cgLoop[init]");
         let cond = n_cond && cgNode(n_cond, M_RETBOOL | M_PARENS, debug: "cgLoop[cond]");
         let pcnd = n_pcnd && cgNode(n_pcnd, M_RETBOOL, debug: "cgLoop[pcnd]");
-        let post = n_post && cgNode(n_post, M_STMT, debug: "cgLoop[post]");
+        let post = n_post && cgNode(n_post, debug: "cgLoop[post]");
 
         //
         let name = "LL_" ~ _current_fn.num_labels++;
