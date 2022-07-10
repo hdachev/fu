@@ -356,7 +356,7 @@ fn Scope_Typedef(scope: &mut Scope,
     id: string, type: Type, flags = F_PUB, name?: string,
     status?: SolverStatus)
 {
-    let target = Scope_create(:scope, "type", :type, :flags, :name, :status);
+    let target = Scope_create(:scope, "type", :type, :flags, name: name || id, :status);
 
     if (id)
         Scope_set(:scope, :id, :target, shadows: !!(flags & F_SHADOW));

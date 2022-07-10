@@ -10395,6 +10395,18 @@ pub extern fn runTests()
         }
     `);
 
+    TODO_ambig(`
+        enum thing {
+            i32;
+            int;
+            bool;
+        }
+
+        fn isInt (k: thing) k == "i32" || k == "int";
+        fn isBool(k: thing) k == "bool";
+        fn main() isInt("i32") && isBool("bool") ? 0 : 1;
+    `);
+
 
     // Unions, what the hell.
 
