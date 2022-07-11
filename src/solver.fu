@@ -2593,7 +2593,8 @@ pub fn solve(
         }
         else if (k == "argid")
         {
-            propagateType(node.items.only, :relax_mask, :slot);
+            node = node.items.only;
+            node.propagateType(:relax_mask, :slot);
         }
         else if (k == "jump")
         {

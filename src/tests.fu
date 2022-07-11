@@ -7310,6 +7310,14 @@ pub extern fn runTests()
         }
     `);
 
+    ZERO(`
+        struct Lifetime { using regions: i32[] };
+        fn isInvalidatedBy(write: i32[]) write.len * write[0];
+
+        // This blew up with a TODO: bck_node(non-empty argid).
+        fn main() isInvalidatedBy(write: Lifetime([ 3, 5 ])) - 6;
+    `);
+
 
     // Optional arguments.
 
