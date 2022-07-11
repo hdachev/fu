@@ -10396,12 +10396,21 @@ pub extern fn runTests()
     `);
 
     TODO_ambig(`
-        enum thing {
-            i32;
-            int;
-            bool;
-        }
+        enum thing { i32; int; bool }
 
+        // So the problem is the retval annotation for fn ==(template): bool
+        //  fails to resolve as it conflicts with enumv from thing here.
+        //
+        // I'm not terribly sure what we want to do about it,
+        //  it's the ambiguity thing again - template sees the enum on expansion,
+        //   so it does kinda make sense for thing not to compile,
+        //    otherwise imagine the original bool goes away,
+        //     it'd fallback to the enumv here, which is exactly not what we want.
+        //
+        // Perhaps the scoping rules for templates don't make so much sense,
+        //  if we didn't make everything from local scope visible
+        //   they'll also compile faster.
+        //
         fn isInt (k: thing) k == "i32" || k == "int";
         fn isBool(k: thing) k == "bool";
         fn main() isInt("i32") && isBool("bool") ? 0 : 1;
