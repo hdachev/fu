@@ -5372,7 +5372,10 @@ static void propagateType_8TxqwKMZ(s_SolvedNode& node, const s_Type& slot, const
 
         }
         else if (k == s_kind_argid)
-            propagateType_8TxqwKMZ(only_sQklljcv(node.items), slot_1, relax_mask, _scope, module, ctx, _helpers, _helpers_data, _here, _current_fn, _warnings, _current_fnort, _specs, _ss, _root_scope, t_string, _spec_errors, TODO_FIX_convert_args, options, _notes, shortModuleName, _field_items);
+        {
+            node = only_sQklljcv(node.items);
+            propagateType_8TxqwKMZ(node, slot_1, relax_mask, _scope, module, ctx, _helpers, _helpers_data, _here, _current_fn, _warnings, _current_fnort, _specs, _ss, _root_scope, t_string, _spec_errors, TODO_FIX_convert_args, options, _notes, shortModuleName, _field_items);
+        }
         else if (k == s_kind_jump)
         {
             const s_Helpers h { node.helpers };

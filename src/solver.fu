@@ -7964,8 +7964,8 @@ pub fn solve(
                                 if (!host_arg0.hard_risk.has(i1) &&
                                     !host_arg1.hard_risk.has(i0))
                                 {
-                                    if ((!host_arg0.soft_risk.has(i1) || arg1.softRiskSafe && !shallow1.uni0n.isInvalidatedBy(write: shallow0.uni0n)) &&
-                                        (!host_arg1.soft_risk.has(i0) || arg0.softRiskSafe && !shallow0.uni0n.isInvalidatedBy(write: shallow1.uni0n)))
+                                    if ((!host_arg0.soft_risk.has(i1) || arg1.softRiskSafe && !shallow1.isInvalidatedBy(write: shallow0)) &&
+                                        (!host_arg1.soft_risk.has(i0) || arg0.softRiskSafe && !shallow0.isInvalidatedBy(write: shallow1)))
                                     {
                                         // Soft risk ok -
                                         //  this is the new thing, further relaxing the bck.

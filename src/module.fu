@@ -367,6 +367,6 @@ pub struct Type
     lifetime?:      Lifetime; // Excluding this from the truth check feels dangerous
 };
 
-pub struct Lifetime { uni0n!: Region[]; };
+pub struct Lifetime { using uni0n!: Region[]; };
 
 pub struct Region { index!: i32; };
