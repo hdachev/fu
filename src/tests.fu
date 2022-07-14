@@ -5736,6 +5736,20 @@ pub extern fn runTests()
         }
     `]);
 
+    ZERO([
+    `
+        // An empty file.
+    `,
+    `
+        fn sqr(x: i32) x * x;
+    `,
+    `
+        import _0;
+        import _1;
+
+        fn main() = 0.sqr;
+    `]);
+
     // /quite right
 
 

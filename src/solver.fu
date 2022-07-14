@@ -2768,7 +2768,7 @@ pub fn solve(
 
         //
         let items = solveNodes(node.items, t_void);
-        if (!items.last.is_never)
+        if (!items.if_last.is_never)
         {
             mut root = SolvedNode(kind: "root", type: t_void, :items, :helpers);
             runAllPasses(root);
