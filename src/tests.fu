@@ -5699,6 +5699,8 @@ pub extern fn runTests()
     `);
 
     ZERO(`
+        <fail does nothing><pass/>
+        lax                </fail>
         fn noop_let_lax(ref x: i32) {
             let lax y = x;
         }
@@ -7353,7 +7355,7 @@ pub extern fn runTests()
     `);
 
     ZERO(`
-        pub fn noop() 0;
+        pub lax fn noop() 0;
         pub fn woot(ref i: i32, fn) i += fn(i?: i += 1); // Will not add 1.
 
         fn main() {
@@ -7522,7 +7524,7 @@ pub extern fn runTests()
 
     ZERO([
     `
-        pub fn noop() {} // AUTOPUB
+        pub lax fn noop() {} // AUTOPUB
         <fail hello is not defined><pass/>
         pub
         </fail>

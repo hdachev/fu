@@ -4047,6 +4047,8 @@ pub fn solve(
                 let NativeHacks =
                     isNative && hacks::NativeHacks(target.name);
 
+                mut numArgsWritten = 0;
+
                 shadow mut args: Argument[];
                 for (mut i = 0; i < N; i++)
                 {
@@ -4077,6 +4079,8 @@ pub fn solve(
                     mut hard_risk: bitset::BitSet;
                     if (written_via)
                     {
+                        numArgsWritten++;
+
                         if (!isNative)
                         {
                             soft_risk.ArgsAtRisk_list(out.flow, position: i, out.flow.at_soft_risk);
@@ -4217,6 +4221,10 @@ pub fn solve(
                 asserts & A_PURE_FX && ext.fx_mask & Fx_Output && fail(
                     target.qWHAT ~ " is not purefx, outputs here:\n"
                         ~ qSTACK(:target, Fx_Output, node: out.out));
+
+                if (maybeLast)
+                    numArgsWritten || ext.fx_mask || !retval.is_void || overload.flags & F_LAX || warn(out.token,
+                        target.qWHAT ~ " does nothing: returns void and has no effects. Make it " ~ "lax".qKW ~ " if this is intentional.");
 
                 //
                 shadow ref overload = GET_mut(target);

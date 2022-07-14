@@ -555,6 +555,16 @@ pub fn parse(
         return out;
     }
 
+    fn parseLax(): Node
+    {
+        mut out = parseStatement();
+        out.kind == "let" || out.kind == "fn" || fail(
+            "lax".qBAD ~ " cannot be used here.");
+
+        out.flags |= F_LAX;
+        return out;
+    }
+
 
     //
 
@@ -616,6 +626,7 @@ pub fn parse(
                 if (v == "pub")         return parsePub();
                 if (v == "shadow")      return parseShadow();
                 if (v == "using")       return parseUsing();
+                if (v == "lax")         return parseLax();
 
                 if (v == "nocopy")      return parseNoCopy();
                 if (v == "import")      return parseImport();
@@ -661,7 +672,6 @@ pub fn parse(
         {
             let v = token.value;
             if (v == "let")         return parseLetStmt();
-            if (v == "lax")         return { _idx--; parseLetStmt() };
             if (v == "mut")         return { _idx--; parseLetStmt() };
             if (v == "ref")         return { _idx--; parseLetStmt() };
             if (v == "implicit")    return { _idx--; parseLetStmt() };
