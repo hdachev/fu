@@ -43,11 +43,15 @@ fn update_file(
 
 fn exec(cmd: string, ref stdout: string)
 {
-    if (cmd.has("$("))
-        return ::exec(cmd, stdout);
-
     mut status = 0;
-    return ::spawn(cmd.split(' '), :status, :stdout, stderr: stdout) || status;
+    mut err: i32;
+
+    if (cmd.has("$(") || 2 > 1)
+        err = ::exec(cmd, :status, stdout);
+    else
+        err = ::spawn(cmd.split(' '), :status, :stdout, stderr: stdout);
+
+    return err || status;
 }
 
 

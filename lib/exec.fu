@@ -1,26 +1,32 @@
 
-fn exec(mut cmd: string, ref stdout: string): i32
+fn exec(mut cmd: string, ref status: i32, ref stdout: string): i32
 {
     pragma include(
         "<errno.h>",
         "<stdio.h>",
         "<fu/defer.h>");
 
-    mut status = -1;
+    mut err = 0;
+    status = -1;
 
     // c-str ok
     cmd ~= '\0';
 
     pragma output(
     `
-        const auto pipe = popen(`cmd`.data(), "rb");
+        const auto pipe = popen(`cmd`.data(), /*rb triggers EINVAL*/"r");
         if (!pipe)
         {
-            `status` = errno;
+            `err` = `err` ? `err` : errno;
         }
         else
         {
-            fu_DEFER( `status` = pclose(pipe); );
+            fu_DEFER(
+            {
+                `status` = pclose(pipe);
+                if (`status` == -1)
+                    `err` = `err` ? `err` : errno;
+            });
 
             const size_t BUF_SIZE = 64 * 1024;
             fu::byte BUF[BUF_SIZE];
@@ -57,5 +63,5 @@ fn exec(mut cmd: string, ref stdout: string): i32
         }
     `);
 
-    return status;
+    return err;
 }
