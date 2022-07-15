@@ -318,7 +318,7 @@ fn ~=(ref a: $T[], mut b:  $T  ): &mut $T[] __native("<fu/vec/concat_one.h>", "+
 
 // Fun with views.
 
-fn view(a: [$T;], t: $U)
+fn view(a: [$T;], of: $U)
     case ($a -> &mut [$T;] && $T.is::trivial && $U.is::trivial): &mut [$U] __native("<fu/view.h>", "fu::view_of_mut");
     case (                    $T.is::trivial && $U.is::trivial):      [$U] __native("<fu/view.h>", "fu::view_of");
 
