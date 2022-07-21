@@ -24,6 +24,7 @@ let M_MUTVAR            = 1 << 10;
 let M_MOVABLE           = 1 << 11;
 let M_MOVE              = 1 << 12;
 let M_ARG_TO_NATIVE     = 1 << 13;
+let M_ENUM_DECL         = 1 << 14;
 
 let MAIN_needed         = 1 << 0;
 let MAIN_argv           = 1 << 1;
@@ -451,7 +452,7 @@ pub fn cpp_codegen(implicit module: Module, implicit ctx: Context): CodegenOutpu
 
             members.each: |member.target|
                 def ~= "\n    " ~ id ~ "_" ~ member.name
-                        ~ " = " ~ cgNode(member.solved, debug: "declarePrimitive") ~ ",";
+                        ~ " = " ~ cgNode(member.solved, debug: "declarePrimitive", mode: M_ENUM_DECL) ~ ",";
 
             def ~= "\n};";
         }
@@ -2043,7 +2044,7 @@ pub fn cpp_codegen(implicit module: Module, implicit ctx: Context): CodegenOutpu
         return "void";
     }
 
-    fn cgLiteral(node: SolvedNode): string
+    fn cgLiteral(node: SolvedNode, mode: i32): string
     {
         mut src = node.value;
 
@@ -2052,23 +2053,25 @@ pub fn cpp_codegen(implicit module: Module, implicit ctx: Context): CodegenOutpu
         while ((idx = src.find('_', start: idx)) >= 0)
             src.splice(idx, 1);
 
-        if (node.type.is_unsigned)
+        let base = tryLookupUserType(node.type).base || node.type.canon;
+
+        if (base.starts(with: 'u'))
             if (!src.has('u'))
                 src ~= 'u';
 
-        if (node.type.is_floating_pt)
+        if (base.starts(with: 'f'))
         {
             if (!src.has('.'))
                 src ~= ".0";
 
-            if (node.type.canon == "f32")
+            if (base == "f32")
             {
                 if (src.has('x'))
                     src = "float(" ~ src ~ ")";
                 else
                     src ~= "f";
             }
-            else if (node.type.canon != "f64")
+            else if (base != "f64")
             {
                 assert();
             }
@@ -2077,23 +2080,26 @@ pub fn cpp_codegen(implicit module: Module, implicit ctx: Context): CodegenOutpu
         if (src.starts(with: "0o"))
             src.splice(1, 1);
 
-        // One of those paradoxes.
-        if (src.len > 16)
+        if (base.starts(with: 'i') || base.starts(with: 'u'))
         {
-            let parse = intlit::Intlit(src);
-            if (parse.negative && parse.absval == 0x8000000000000000)
-                return "(-9223372036854775807-1)";
-        }
+            // One of those paradoxes.
+            if (src.len > 16)
+            {
+                let parse = intlit::Intlit(src);
+                if (parse.negative && parse.absval == 0x8000000000000000)
+                    return "(-9223372036854775807-1)";
+            }
 
-        if (node.type.is_integral &&
-            node.type.canon != "u32" && node.type.canon != "i32")
-        {
-            if (node.type.canon == "u64" || node.type.canon == "i64") {
+            if (base == "u64" || base == "i64") {
                 if (!src.has('l'))
                     return src ~ "ll";
             }
-            else {
-                return typeAnnotBase(node.type) ~ "(" ~ src ~ ")";
+            else if (base != "u32" && base != "i32")
+            {
+                // Don't do this for enums,
+                //  the type declaration ends up with casts to itself.
+                if !(mode & M_ENUM_DECL)
+                    return typeAnnotBase(node.type) ~ "(" ~ src ~ ")";
             }
         }
 
@@ -2553,8 +2559,8 @@ pub fn cpp_codegen(implicit module: Module, implicit ctx: Context): CodegenOutpu
         if (k == "not")         return cgNot(node);
         if (k == "call")        return cgCall(node, mode);
 
-        if (k == "int")         return cgLiteral(node);
-        if (k == "real")        return cgLiteral(node);
+        if (k == "int")         return cgLiteral(node, mode);
+        if (k == "real")        return cgLiteral(node, mode);
         if (k == "char")        return cgCharLiteral(node);
         if (k == "str")         return cgStringLiteral(node);
         if (k == "arrlit")      return cgArrayLiteral(node, mode, :callarg);
