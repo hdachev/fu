@@ -10432,6 +10432,20 @@ pub extern fn runTests()
         fn main() isInt("i32") && isBool("bool") ? 0 : 1;
     `);
 
+    ZERO(`
+        enum ID: u64 {
+            // clang warned with -Wimplicitly-unsigned-literal
+            CustomIDs = 0x8000_0000_0000_0000;
+            BitmapFontAtlas;
+        };
+
+        fn main() {
+            mut id: u64 = BitmapFontAtlas.u64;
+            // meawhile this outputted the underscores
+            return id == 0x8000_0000_0000_0001 ? 0 : 1;
+        }
+    `);
+
 
     // Unions, what the hell.
 
