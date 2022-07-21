@@ -2047,6 +2047,11 @@ pub fn cpp_codegen(implicit module: Module, implicit ctx: Context): CodegenOutpu
     {
         mut src = node.value;
 
+        // Remove underscores, if any.
+        mut idx: int;
+        while ((idx = src.find('_', start: idx)) >= 0)
+            src.splice(idx, 1);
+
         if (node.type.is_unsigned)
             if (!src.has('u'))
                 src ~= 'u';
@@ -2091,11 +2096,6 @@ pub fn cpp_codegen(implicit module: Module, implicit ctx: Context): CodegenOutpu
                 return typeAnnotBase(node.type) ~ "(" ~ src ~ ")";
             }
         }
-
-        // Remove underscores, if any.
-        mut idx: int;
-        while ((idx = src.find('_', start: idx)) >= 0)
-            src.splice(idx, 1);
 
         //
         return src;
