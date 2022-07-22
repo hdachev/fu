@@ -32,3 +32,71 @@ fn bytes(unicode: u32)
 
     return [];
 }
+
+fn codepoints(text: [byte], each, error)
+{
+    for (mut i = 0; i < text.len; i++)
+    {
+        let lax i0 = i;
+
+        :BREAK_ON_ERROR
+        {
+            mut c = text[i].u32;
+            if (c >= 128)
+            {
+                mut bytes = 0;
+
+                if      (c & 224 == 192) // Starts with 0b110.
+                    bytes = 2;
+                else if (c & 240 == 224) // Starts with 0b1110.
+                    bytes = 3;
+                else if (c & 248 == 240) // Starts with 0b11110.
+                    bytes = 4;
+                else
+                    break :BREAK_ON_ERROR;
+
+                //
+                let i1 = i + bytes;
+                if (text.len < i1)
+                    break :BREAK_ON_ERROR;
+
+                c <<= (bytes + 1).u32; // The +1 is the disambig zero.
+                c  &= 0xff;
+
+                //
+                while (++i < i1)
+                {
+                    mut b = text[i].u32;
+                    if (b & 0x192 != 128) // Must start with 0b10.
+                    {
+                        // Step back on byte,
+                        //  so this next thing will parse anew.
+                        i--;
+                        break :BREAK_ON_ERROR;
+                    }
+
+                    c <<= 6;
+                    c  |= b & ~0x192;
+                }
+            }
+
+            // Only called once,
+            //  so the each-codepoint block can inline uniquely.
+            //
+            each(c, i?: i);
+            continue;
+        }
+
+        // BREAK_ON_ERROR:
+        //
+        // Again, only called once,
+        //  so the each-error block can inline uniquely.
+        //
+        error(i?: i0);
+    }
+}
+
+fn codepoints(text: [byte], each)
+    text.codepoints(
+        each:   fn each,
+        error:  || {});
