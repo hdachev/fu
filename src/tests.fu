@@ -5750,6 +5750,25 @@ pub extern fn runTests()
         fn main() = 0.sqr;
     `]);
 
+    ZERO(`
+        struct vec2 {
+            x?: f32;
+            y?: f32;
+        };
+
+        inline fn *=(ref a: vec2, b: f32) {
+            a.x *= b;
+            a.y *= b;
+            return a;
+        }
+
+        fn main() {
+            mut v = vec2(1, 1);
+            v *= 0.5; // BUG: Considering copy or move for incompatible types: vec2: copy <- f32: copy
+            return v.x.i32;
+        }
+    `);
+
     // /quite right
 
 
