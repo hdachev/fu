@@ -2612,8 +2612,13 @@ pub fn solve(
         else if (k == "block")
         {
             let h = node.helpers;
-
-            h.ret_actual.try_relax(:slot, :relax_mask);
+            if (h.ret_actual)
+            {
+                if (canDiscard)
+                    h.ret_actual = t_void;
+                else
+                    h.ret_actual.try_relax(:slot, :relax_mask);
+            }
 
             //////////////////////
             Breakable_begin();
