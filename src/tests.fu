@@ -94,6 +94,7 @@ pub extern fn runTests()
     let TODO_relaxer    = fn TODO;
     let TODO_ambig      = fn TODO;
     let TODO_dead       = fn TODO;
+    let TODO_enum       = fn TODO;
 
     let TODO_Map        = fn TODO;
 
@@ -10462,6 +10463,32 @@ pub extern fn runTests()
             mut id: u64 = BitmapFontAtlas.u64;
             // meawhile this outputted the underscores
             return id == 0x8000_0000_0000_0001 ? 0 : 1;
+        }
+    `);
+
+    TODO_enum(`
+        enum ID: u32 {
+            SecondLast = 0xffff_fffe;
+            Last;
+            <fail exhaust range>
+            NoRoom; <pass/></fail>
+        };
+
+        fn main() {
+            return Last.u32 == 0xffff_ffff ? 0 : 1;
+        }
+    `);
+
+    TODO_enum(`
+        enum ID: u64 {
+            SecondLast = 0xffff_ffff_ffff_fffe;
+            Last;
+            <fail exhaust range>
+            NoRoom; <pass/></fail>
+        };
+
+        fn main() {
+            return Last.u64 == 0xffff_ffff_ffff_ffff ? 0 : 1;
         }
     `);
 
