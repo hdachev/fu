@@ -10106,6 +10106,20 @@ pub extern fn runTests()
         }
     `]);
 
+    ZERO([`
+        struct Projection { x: i32; y: i32 };
+        fn Projection(a: i32, b: i32) = Projection(x: a*a, y: b*b);
+        fn Projection(c: i32, d: i32) = Projection(x: c+c, y: d+d);
+    `,`
+        import _0;
+
+        fn main() {
+            let p0 = Projection(a: 3,  4);
+            let p1 = Projection(c: 20, 30);
+            return p0.x + p1.x - 49;
+        }
+    `]);
+
 
     // C++ hacks.
 
