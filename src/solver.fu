@@ -3363,13 +3363,29 @@ pub fn solve(
 
     //
 
-    fn mangleArguments(args: [$T]): string
+    fn mangleSignature(args: [Argument]): string
     {
         mut mangle = "";
         for (mut i = 0; i < args.len; i++)
         {
             if (i)
-                mangle ~= ",";
+                mangle ~= ", ";
+
+            mangle ~= args[i].name;
+            mangle ~= ':';
+            mangle ~= serializeType(args[i], debug: "mangleSignature");
+        }
+
+        return mangle;
+    }
+
+    fn mangleArgTypes(args: [$T]): string
+    {
+        mut mangle = "";
+        for (mut i = 0; i < args.len; i++)
+        {
+            if (i)
+                mangle ~= ',';
 
             mangle ~= serializeType(args[i], debug: "mangle[$T]");
         }
@@ -3377,7 +3393,7 @@ pub fn solve(
         return mangle;
     }
 
-    fn mangleArguments(
+    fn mangleArgTypes(
         args: [SolvedNode], reorder: [i32],
         use_reorder: bool, conversions: Target[][],
         REST_START: i32, REST_TYPE: Type): string
@@ -3389,7 +3405,7 @@ pub fn solve(
         for (mut i = 0; i < N; i++)
         {
             if (i)
-                mangle ~= ",";
+                mangle ~= ',';
 
             let callsiteIndex = use_reorder ? reorder[i] : i;
 
@@ -3405,7 +3421,7 @@ pub fn solve(
         if (REST_START < REST_END)
         {
             if (REST_START)
-                mangle ~= ",";
+                mangle ~= ',';
 
             mangle ~= serializeType(REST_TYPE, debug: "mangle[Nodes].rest");
         }
@@ -3427,7 +3443,7 @@ pub fn solve(
         reorder?: [i32], use_reorder?: bool, conversions?: Target[][])
             : Target
     {
-        args_mangled ||= mangleArguments(
+        args_mangled ||= mangleArgTypes(
                 :args, :reorder, :use_reorder, :conversions,
                 :REST_START, :REST_TYPE);
 
@@ -3643,7 +3659,7 @@ pub fn solve(
         {
             // TODO FIX
             let start = mangle.find(' ') + 1 || BUG();
-            shadow let mangle = mangle.slice(0, start) ~ mangleArguments(args);
+            shadow let mangle = mangle.slice(0, start) ~ mangleArgTypes(args);
             resetMangle(mangle, :allowReplaceNonSpecfails);
         };
 
@@ -4282,7 +4298,7 @@ pub fn solve(
 
                     let sig     = (target.local_of && target.index.str)
                                 ~ shortModuleName
-                                ~ mangleArguments(target.args);
+                                ~ mangleSignature(target.args);
 
                     overload.sighash = sig
                         && (tea::hash62(sig) || BUG());
@@ -8497,7 +8513,7 @@ pub fn solve(
 
         host_args.len == args.len || err(
             "host_args.len (" ~ host_args.len ~ ") != args.len (" ~ args.len ~ "):"
-                ~ "\n\t\t" ~ mangleArguments(args)
+                ~ "\n\t\t" ~ mangleArgTypes(args)
                 ~ "\n\t\t" ~ explainWhichFn(callsite.target));
 
         for (mut i = 0; i < host_args.len; i++)
