@@ -523,15 +523,22 @@ pub fn build(
                 //  if for some reason we already did this and tried to run the 4-byte exe,
                 //   it obviously breaks and here we'd persist the broken result forever.
                 //
-                // We can notice the exe has shrunk to 4 bytes though,
-                //  and discard the result of our run with the one
-                //   that was just cached by a parallel run.
-                //
                 let new_size = file::size(F_exe);
-                if (new_size > 4)
-                    WRITE_StatusCode(code);
-                else if (new_size == 4)
+                if (new_size == 4)
+                {
+                    // We can notice the exe has shrunk to 4 bytes though,
+                    //  and discard the result of our run with the one
+                    //   that was just cached by a parallel run.
+                    //
                     code = READ_StatusCode();
+                }
+                else
+                {
+                    // Don't cache suprious failure codes.
+                    //
+                    if (code != 32512)
+                        WRITE_StatusCode(code);
+                }
             }
         }
     }
