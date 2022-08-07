@@ -8884,6 +8884,16 @@ pub extern fn runTests()
         }
     `);
 
+    ZERO(`
+        fn a_slash_b(a: f32, b: f32) {
+            return a ~ "/" ~ b;
+        }
+
+        fn main() {
+            return a_slash_b(1, 2) == "1.000000/2.000000" ? 0 : 1;
+        }
+    `);
+
     // /Conversion functions.
 
 
