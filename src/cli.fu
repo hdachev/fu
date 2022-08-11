@@ -57,6 +57,7 @@ fn cli_handle(argv: string[], cwd = fs::cwd()): i32
     mut run:        bool;
     mut shared:     bool;
     mut hotswap:    bool;
+    mut nocache:    bool;
 
     mut flags_cc:   string[];
     mut flags_ld:   string[];
@@ -110,13 +111,18 @@ fn cli_handle(argv: string[], cwd = fs::cwd()): i32
             continue;
         }
 
-        if (opt == "--hotswap" || opt == "h") {
+        if (opt == "--hotswap") {
             hotswap = true;
             continue;
         }
 
-        if (opt == "--shared" || opt == "s") {
+        if (opt == "--shared") {
             shared = true;
+            continue;
+        }
+
+        if (opt == "--nocache") {
+            nocache = true;
             continue;
         }
 
@@ -180,7 +186,7 @@ fn cli_handle(argv: string[], cwd = fs::cwd()): i32
     // Go.
     compile_and_build(
         :fname, :bin,
-        :run, :shared, :hotswap,
+        :run, :shared, :hotswap, :nocache,
         :dir_wrk, :dir_src, :dir_cpp, :dir_obj,
         :scheme,
         :flags_cc, :flags_ld);

@@ -206,6 +206,7 @@ pub fn compile_and_build(
     run     !?: bool,
     shared  !?: bool,
     hotswap !?: bool,
+    nocache !?: bool,
     //////////////////////////////////////////////
 
     flags_cc!?: string[],
@@ -250,7 +251,7 @@ pub fn compile_and_build(
     }
 
     return ::build(
-        :ctx, :run, :shared, :hotswap, :bin, :scheme,
+        :ctx, :run, :shared, :hotswap, :nocache, :bin, :scheme,
         :dir_wrk, :dir_obj, :dir_src, :dir_cpp,
         :flags_cc, :flags_ld,
         unity: fname,

@@ -77,6 +77,7 @@ pub fn build(
         run     !?: bool,
         shared  !?: bool,
         hotswap !?: bool,
+        nocache !?: bool,
         //////////////////////////////////////////////
 
         flags_cc!?: string[],
@@ -367,7 +368,7 @@ pub fn build(
             fn CACHE_objFileAvailable()
                 file::size(F_obj) > 0;
 
-            if (CACHE_objFileAvailable())
+            if (CACHE_objFileAvailable() && !nocache)
                 return [];
 
             let original_fname = i && modules[i].fname;
