@@ -129,17 +129,49 @@ namespace
 
     Hotswap& get_inst();
 
-    extern "C" void onSIGUSR1_reloadLibs(int /*signal*/)
+    void doReload()
     {
-        if (VERBOSE)
-            printf("HOTSWAP Received SIGUSR1, reloading.\n");
-
         Hotswap& h = get_inst();
 
         for (auto& lib: h.libs.mut())
             if (try_reload(lib))
                 for (auto& item: h.items.mut())
                     try_reload(item, lib);
+    }
+
+    volatile bool manual_reload_mode    = false;
+    volatile bool manual_reload_needed  = false;
+
+    void onManualReload()
+    {
+        manual_reload_mode = true;
+
+        if (manual_reload_needed)
+        {
+            if (VERBOSE)
+                printf("HOTSWAP hotswap::here() called, reloading.\n");
+
+            manual_reload_needed = false;
+            doReload();
+        }
+    }
+
+    extern "C" void onSIGUSR1_reloadLibs(int /*signal*/)
+    {
+        if (manual_reload_mode)
+        {
+            if (VERBOSE)
+                printf("HOTSWAP Received SIGUSR1, awaiting next call to hotswap::here().\n");
+
+            manual_reload_needed = true;
+        }
+        else
+        {
+            if (VERBOSE)
+                printf("HOTSWAP Received SIGUSR1, reloading.\n");
+
+            doReload();
+        }
     }
 
     bool attach_onSIGUSR1_reloadLibs()
@@ -250,6 +282,11 @@ namespace
     h.items.push(item);
 
     return ret;
+}
+
+/*export*/ void fu::hotswap_here()
+{
+    onManualReload();
 }
 
 #endif

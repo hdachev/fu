@@ -17,8 +17,18 @@ namespace fu
         return (T*) hotswap_init(id, (void*&) fnptr, (void*) fallback);
     }
 
+    extern "C"
+        fu_EXPORT
+            void hotswap_here();
+
 
 } // namespace
 
+#else
+
+inline void hotswap_here()
+{
+    // Noop.
+}
 
 #endif

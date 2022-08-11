@@ -1,0 +1,10 @@
+
+pragma include("<dl/hotswap.hpp>");
+
+fn here(): void
+{
+    pragma output(
+    `
+        fu::hotswap_here();
+    `);
+}
