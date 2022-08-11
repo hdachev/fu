@@ -109,8 +109,11 @@ namespace
             if (VERBOSE)
                 printf("HOTSWAP Reloaded `%s`\n", ld.filename);
 
-            if (ld.handle_old)
-                dlclose(ld.handle_old);
+            // TODO FIX crashes once every two/three reloads,
+            //  will leak them for now.
+            //
+            // if (ld.handle_old)
+            //     dlclose(ld.handle_old);
 
             ld.handle_old   = ld.handle;
             ld.handle       = new_handle;
