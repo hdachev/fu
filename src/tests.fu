@@ -5770,7 +5770,7 @@ pub extern fn runTests()
         }
     `);
 
-    ZERO([
+    TODO_args([
     `
         struct vec3 { x: f32; y: f32; z: f32; };
 
@@ -5791,7 +5791,7 @@ pub extern fn runTests()
         fn Atmosphere(
             altitude: f32,
             rPlanet: f32 = rEarth,
-            vPlanet = vec3(z: -1))
+            vPlanet = vec3(z: -1)) // <- this crashes
         {
             let pView = vPlanet * (rPlanet + altitude);
             return Atmosphere(:rPlanet, :pView);

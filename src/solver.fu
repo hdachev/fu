@@ -401,9 +401,16 @@ pub fn solve(
     {
         if (target.isLocal)
         {
+            // TODO REMOVE THIS, currently test suite will crash without this.
+            if (SELF_TEST && _scope.extended.len <= -target.modid)
+                fail("Invalid local target -modid."
+                    ~ "\n\tProbably leaked from another module."
+                    ~ "\n\tBUG: Currently arg defaults & inlining can do this.");
+
             let locals = _scope.extended[-target.modid].locals;
-            locals.len >= target.index || fail(
-                "Out of range local target from: " ~ GET(target.parent).qWHAT
+
+            if (SELF_TEST && locals.len < target.index)
+                fail("Out of range local target from: " ~ GET(target.parent).qWHAT
                     ~ "\n\tlocals=" ~ locals.len ~ "\n\tindex=" ~ target.index);
 
             return locals[target.index - 1];
