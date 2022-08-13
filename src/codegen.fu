@@ -1454,17 +1454,23 @@ pub fn cpp_codegen(implicit module: Module, implicit ctx: Context): CodegenOutpu
         return "";
     }
 
-    fn cgForeignGlobal(target: Target): void
+    fn cgGlobal(target: Target)
     {
         if !(_ffwd.add_once(target))
-            return;
+            return "";
 
-        cgLet(target.solved, global: true, foreign: true);
+        return cgLet(target.solved,
+            global: true,
+            foreign: target.modid != module.modid);
     }
 
     fn cgLetDef(node: SolvedNode)
     {
-        return cgLet(node.target.solved, global: !_current_fn.index);
+        if (!_current_fn.index)
+            return node.target.isExtLinked
+                && cgGlobal(node.target);
+
+        return cgLet(node.target.solved, global: false);
     }
 
 
@@ -1909,8 +1915,7 @@ pub fn cpp_codegen(implicit module: Module, implicit ctx: Context): CodegenOutpu
 
                 if (!node.target.isLocal)
                 {
-                    if (node.target.modid != module.modid)
-                        cgForeignGlobal(node.target);
+                    cgGlobal(node.target);
 
                     return rootNS(ID(id)); // TODO ensure const emit.
                 }
