@@ -5770,6 +5770,44 @@ pub extern fn runTests()
         }
     `);
 
+    ZERO([
+    `
+        struct vec3 { x: f32; y: f32; z: f32; };
+
+        inline fn vec3(fill!: f32) vec3(fill, fill, fill);
+        inline fn vec3(x!: f32, y!?: f32, z!?: f32) vec3(x, y, z);
+        inline fn vec3(y!: f32, x!?: f32, z!?: f32) vec3(x, y, z);
+        inline fn vec3(z!: f32, x!?: f32, y!?: f32) vec3(x, y, z);
+
+        inline fn *(a: vec3, b: f32) vec3(a.x * b, a.y * b, a.z * b);
+    `,
+    `
+        import _0;
+
+        struct Atmosphere { pView: vec3; rPlanet: f32; };
+
+        let rEarth: f32 = 1e3;
+
+        fn Atmosphere(
+            altitude: f32,
+            rPlanet: f32 = rEarth,
+            vPlanet = vec3(z: -1))
+        {
+            let pView = vPlanet * (rPlanet + altitude);
+            return Atmosphere(:rPlanet, :pView);
+        }
+    `,
+    `
+        import _0;
+        import _1;
+
+        fn main() {
+            let atmo = Atmosphere(altitude: 1e2);
+            return atmo.pView.z == 11e2 ? 0 : 1;
+        }
+    `]);
+
+
     // /quite right
 
 
