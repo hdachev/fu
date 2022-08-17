@@ -84,11 +84,11 @@ fn min(a: $T, b: $T)
     case ($T.is::floating_point) a <= b || b != b ? a : b;
     case ($T.is::arithmetic)     a <= b           ? a : b;
 
-fn exp  (a: $T, b: $T) case ($T.is::floating_point): $T __native("<cmath>", "std::exp");
-fn exp2 (a: $T, b: $T) case ($T.is::floating_point): $T __native("<cmath>", "std::exp2");
-fn log  (a: $T, b: $T) case ($T.is::floating_point): $T __native("<cmath>", "std::log");
-fn log10(a: $T, b: $T) case ($T.is::floating_point): $T __native("<cmath>", "std::log10");
-fn log2 (a: $T, b: $T) case ($T.is::floating_point): $T __native("<cmath>", "std::log2");
+fn exp  (a: $T) case ($T.is::floating_point): $T __native("<cmath>", "std::exp");
+fn exp2 (a: $T) case ($T.is::floating_point): $T __native("<cmath>", "std::exp2");
+fn log  (a: $T) case ($T.is::floating_point): $T __native("<cmath>", "std::log");
+fn log10(a: $T) case ($T.is::floating_point): $T __native("<cmath>", "std::log10");
+fn log2 (a: $T) case ($T.is::floating_point): $T __native("<cmath>", "std::log2");
 
 fn pow  (a: $T, b: $T) case ($T.is::floating_point): $T __native("<cmath>", "std::pow");
 fn sqrt (v: $T) case ($T.is::floating_point): $T __native("<cmath>", "std::sqrt");
