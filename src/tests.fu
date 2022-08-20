@@ -10554,6 +10554,16 @@ pub extern fn runTests()
         }
     `);
 
+    TODO_enum([
+    `
+        enum ID { A = 1 };
+        enum IDOffset { B = 10 };
+        fn offset(a: ID, b: IDOffset) = a.i32 + b.i32;
+    `,
+    `
+        fn main() = _0::A.offset(_0::B) - 11;
+    `]);
+
 
     // Unions, what the hell.
 
