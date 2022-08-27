@@ -914,20 +914,29 @@ pub fn solve(
         reorder.clear();
 
         //
-        mut used   = 0;
-        mut offset = num_usings;
+        mut used = 0;
+        mut offset = 0;
+        mut usings_left = num_usings;
+
         for (mut i = 0; i < host_args.len; i++)
         {
             mut idx = names.find(host_args[i].name);
             if (idx < 0)
             {
-                for (shadow mut i = offset; i < names.len; i++)
+                if (usings_left > 0)
                 {
-                    offset++;
-                    if (!names[i])
+                    usings_left--;
+                }
+                else
+                {
+                    for (shadow mut i = offset; i < names.len; i++)
                     {
-                        idx = i;
-                        break;
+                        offset++;
+                        if (!names[i])
+                        {
+                            idx = i;
+                            break;
+                        }
                     }
                 }
             }
@@ -939,6 +948,8 @@ pub fn solve(
 
             reorder.push(idx);
         }
+
+        usings_left && BUG("reorderByArgIDs: usings_left != 0");
 
         // Fail if some name ended up unused.
         //  TODO FIX THIS MESS
