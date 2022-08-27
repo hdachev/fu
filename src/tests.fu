@@ -457,6 +457,24 @@ pub extern fn runTests()
         fn main() = shadowsStructMember(Stuff("a"), "bb").len - 2;
     `);
 
+    ZERO(`
+        fn call_with_using_and_explicit_arg(x: i32, y: i32) = x + 7*y;
+        fn main () {
+            using let y = 1;
+            return call_with_using_and_explicit_arg(x: 2) - 9;
+        }
+    `);
+
+    ZERO(`
+        fn call_with_using_explicit_and_trailing(x: i32, y: i32, m: i32) = (x + 7*y) * m;
+        fn main () {
+            using let x = 1;
+            return call_with_using_explicit_and_trailing(y: 2, 3) - 45;
+        }
+    `);
+
+    // /using
+
 
     // Templating checks.
 
@@ -5806,6 +5824,25 @@ pub extern fn runTests()
             return atmo.pView.z == 11e2 ? 0 : 1;
         }
     `]);
+
+    ZERO(`
+        struct Loop { l: i32 };
+        struct Ring { r: i32 };
+        struct Mesh { m: i32 };
+
+        fn op(ref m: Mesh, x: i32, l: Loop) m.m += l.l + x;
+        fn op(ref m: Mesh, r: Ring, x: i32) m.m *= r.r + x;
+        fn op(using ref m: Mesh, l: Loop, r: Ring, x: i32) {
+            l.op(:x);
+            r.op(:x);
+        }
+
+        fn main() {
+            mut m = Mesh(1);
+            m.op(Loop(2), Ring(7), x: 1);
+            return m.m == 32 ? 0 : 1;
+        }
+    `);
 
 
     // /quite right
