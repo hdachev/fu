@@ -5844,6 +5844,30 @@ pub extern fn runTests()
         }
     `);
 
+    ZERO([`
+        pub struct MultiDraw { id: i32; }
+    `,
+    `
+        import _0;
+        type ViewQuads = MultiDraw;
+
+        fn ViewQuads(id!: i32, populate!): ViewQuads {
+            mut vq = ViewQuads(:id);
+            populate(vq);
+            return vq;
+        }
+    `,
+    `
+        import _1;
+        fn ViewQuads(id!: i32, camera!: i32): ViewQuads {
+            return ViewQuads(:id, populate: |vq| vq.id += camera);
+        }
+
+        fn main() {
+            return ViewQuads(id: 2, camera: 5).id - 7;
+        }
+    `]);
+
 
     // /quite right
 
