@@ -5737,17 +5737,23 @@ pub fn solve(
 
     fn solveTypedef(node: Node): SolvedNode
     {
-        let annot = evalTypeAnnot(node.items.only);
+        let annot   = evalTypeAnnot(node.items.only);
+        let target  = Scope_Typedef(_scope, node.value, annot, node.flags);
 
-        // TODO FIX see the typeparams stuff, its the same mess.
-        //  The original typedef is setup to work as a constructor, which the Scope_Typedef here won't do.
-        //   Perhaps this is fine but we only want to do it if the annot is exactly the same as the original,
-        //    or perhaps if the original is assignable to this annot or something?
-        //
-        if (annot.isStruct)
-            Scope_set(_scope, node.value, lookupUserType(annot).target, shadows: false);
-        else
-            Scope_Typedef(_scope, node.value, annot, node.flags);
+        let s = tryLookupUserType(annot);
+        if (s.target)
+        {
+            // TODO FIX this is a horrible fix that's gonna bite back.
+            //  The problem is with how pubs work & default constructors work.
+            //
+            // 1. Previously we just Scope_set the old target,
+            //     but it didn't PUB correctly because its modid is foreign.
+            //
+            // 2. Alternatively, without this, the default constructor doesn't work.
+            //
+            GET_mut(target) = GET(s.target);
+            EXT_mut(target) = EXT(s.target);
+        }
 
         return createEmpty();
     }
