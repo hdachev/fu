@@ -181,12 +181,6 @@ pub fn is_trivial(type: Type)
 pub fn tryLookupStruct(type: Type)
     type.isStruct && lookupUserType(type);
 
-pub fn lookupTypeImports(type: Type)
-    tryLookupStruct(type).imports;
-
-pub fn lookupTypeConverts(type: Type)
-    tryLookupStruct(type).converts;
-
 
 //
 
@@ -197,6 +191,12 @@ pub fn tryLookupUserType(type: Type): Struct
 
     return [];
 }
+
+pub fn lookupTypeImports(type: Type)
+    tryLookupUserType(type).imports;
+
+pub fn lookupTypeConverts(type: Type)
+    tryLookupUserType(type).converts;
 
 
 //
