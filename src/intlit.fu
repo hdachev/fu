@@ -52,14 +52,15 @@ fn Intlit(sign_prefix_value_suffix: [byte]): Intlit
         if (c == '_')
             continue;
 
-        let ci = c.u64 - (c < 'a' ? '0'.u64 : 'a'.u64);
+        let ci = c < 'a' ? c.u64 - '0'.u64
+                         : c.u64 - 'a'.u64 + 10;
 
         let last = absval;
         absval *= base;
         absval += ci;
 
-        error ||= last != absval / base &&
-            "Integer literal overflows a u64.";
+        if (last != absval / base)
+            error ||= "Integer literal overflows a u64.";
     }
 
     // Decide on signededness.

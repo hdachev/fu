@@ -4737,7 +4737,7 @@ pub fn solve(
 
                     let minsize = signed ? next.minsize_i : next.minsize_u;
                     if (minsize > size)
-                        BUG("Primitive range exhausted: requires " ~ minsize ~ " bits, got " ~ size ~ ".");
+                        fail("Primitive range exhausted: requires " ~ minsize ~ " bits, got " ~ size ~ ".");
 
                     last = next;
 

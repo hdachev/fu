@@ -10589,7 +10589,7 @@ pub extern fn runTests()
         }
     `);
 
-    TODO_enum(`
+    ZERO(`
         enum ID: u32 {
             SecondLast = 0xffff_fffe;
             Last;
@@ -10602,7 +10602,7 @@ pub extern fn runTests()
         }
     `);
 
-    TODO_enum(`
+    ZERO(`
         enum ID: u64 {
             SecondLast = 0xffff_ffff_ffff_fffe;
             Last;
