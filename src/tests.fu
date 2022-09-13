@@ -4066,6 +4066,28 @@ pub extern fn runTests()
         }
     `);
 
+    ZERO(`
+        struct Ext { ext: Ext[] };
+
+        fn EXT(implicit ext: Ext[], a: i32) ext[a];
+
+        fn EXT_insert(implicit ref ext: Ext[], a: i32) {
+            ext.insert(a, Ext());
+            return ext[a];
+        }
+
+        fn solveTypedef(a: i32, b: i32) EXT_insert(a) = EXT(b);
+
+        fn main() {
+            implicit mut ext = [ Ext([ Ext, Ext ]) ];
+
+            for (mut i = 0; i < 128; i++)
+                solveTypedef(0, 0);
+
+            return ext[0].ext.len == 2 ? 0 : 1;
+        }
+    `);
+
     // /Borrow checker
 
 
