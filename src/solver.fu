@@ -3217,7 +3217,7 @@ pub fn solve(
             }
         }
 
-        if (parse.unsigned)
+        if (parse.unsigned || !parse.signed && parse.base != 10)
         {
             if (parse.minsize_u <= 32) return t_u32;
             if (parse.minsize_u <= 64) return t_u64;

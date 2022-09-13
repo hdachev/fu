@@ -5,6 +5,11 @@ struct TEA
     v1: u32;
 }
 
+inline fn TEA(v: u64)
+{
+    return TEA(v.u32, (v >> 32).u32);
+}
+
 inline fn r4(using ref _: TEA, ref sum: u32)
 {
     mut delta: u32 = 0x9e3779b9;

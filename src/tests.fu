@@ -7010,6 +7010,18 @@ pub extern fn runTests()
         }
     `]);
 
+    ZERO(`
+        fn sub15(x: i32) x - 15;
+        fn main() 0xf.sub15;
+    `);
+
+    ZERO(`
+        fn pick(albedo: i32 = 0x12345678, shift = 16)
+            albedo >> shift & 0xf;
+        fn main()
+            pick() == 4 ? 0 : 1;
+    `);
+
 
     // Typedefs.
 

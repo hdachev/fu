@@ -64,7 +64,7 @@ fn Intlit(sign_prefix_value_suffix: [byte]): Intlit
     }
 
     // Decide on signededness.
-    let unsigned    = suffix == 'u' || base != 10;
+    let unsigned    = suffix == 'u';
     let negative    = sign == '-';
     let signed      = negative || suffix == 'i';
 
