@@ -1681,7 +1681,17 @@ pub fn cpp_codegen(implicit module: Module, implicit ctx: Context): CodegenOutpu
         let args            = node.items;
 
         let isNative        = target.kind == "__native";
-        let isCpyMovAssign  = args.len == 2 && isNative && target.name == "=";
+
+        // So this originally skipped all left-hand side copies
+        //  which obviously led to a bug, see the EXT_insert testcase,
+        //   which just shows how stupid this is -
+        //    not sure what the ideal way to do this,
+        //     should it be done in solver? Should we check lifetimes here?
+        //      Obviously cg-ing redundant copies is pointless and harmful.
+        //
+        let isSimpleCpyMovAssign =
+            args.len == 2 && isNative && target.name == "="
+                && args[0].isFieldChain;
 
 
         //
@@ -1696,7 +1706,7 @@ pub fn cpp_codegen(implicit module: Module, implicit ctx: Context): CodegenOutpu
             let arg = args[i];
 
             // Skip explicit copies on assignment, pointless.
-            shadow let arg = isCpyMovAssign && i == 1 && arg.kind == "copy"
+            shadow let arg = isSimpleCpyMovAssign && i == 1 && arg.kind == "copy"
                 ? arg.items.only
                 : arg;
 
