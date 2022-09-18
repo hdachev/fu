@@ -80,7 +80,9 @@ fn despeculateStruct(mut type: Type)
 ////////
 ////////     Scope.
 
-fn Scope_exports(scope: Scope, modid!: i32, field_items: ScopeItem[])
+fn Scope_exports(scope: Scope, modid!: i32,
+    field_items: ScopeItem[],
+    pub_imports: i32[])
 {
     mut items:          ScopeItem[] = field_items;
     mut prv_items:      ScopeItem[];
@@ -122,7 +124,7 @@ fn Scope_exports(scope: Scope, modid!: i32, field_items: ScopeItem[])
         :scope.extended,
 
         implicits:  [],
-        imports:    [],
+        imports:    pub_imports,
         privates:   [],
         usings:     []);
 }

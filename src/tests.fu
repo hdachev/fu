@@ -7686,7 +7686,7 @@ pub extern fn runTests()
     `);
 
 
-    // Imports & pubs.
+    // Modules, imports & pubs.
 
     ZERO([
     `
@@ -8056,6 +8056,18 @@ pub extern fn runTests()
             return compile(o) + compile_snippets(o);
         }
     `]);
+
+    ZERO([`
+        let x: i32 = 2;
+    `,`
+        pub import _0;
+        let y: i32 = 3;
+    `,`
+        import _1;
+        fn main() x + y - 5;
+    `]);
+
+    // /imports & pubs.
 
 
     // Explicit shadowing.

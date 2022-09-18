@@ -111,7 +111,7 @@ pub fn parse(
 
     mut _anonFns    = 0;
 
-    mut _hasPUB     = false;
+    mut _autopub    = true;
 
 
     // TODO FIX So the $T thing backfired -
@@ -248,8 +248,12 @@ pub fn parse(
         mut out = make("root",
             parseBlockLike("eof", "eof"));
 
+        // STEP BACK FROM EOF //
+        _idx--;               //
+        ////////////////////////
+
         // Autopub.
-        if (use_AUTOPUB && !_hasPUB) for (mut i = 0; i < out.items.len; i++)
+        if (use_AUTOPUB && _autopub) for (mut i = 0; i < out.items.len; i++)
         {
             ref item = out.items[i];
 
@@ -512,13 +516,15 @@ pub fn parse(
 
     // Watch out, we want to not allow pubs & shadows together.
 
-    fn set_PUB(ref flags: Flags, extra?: string)
+    fn set_PUB(ref flags: Flags, extra?: string, autopub_ok!?: bool)
     {
         flags & F_SHADOW && fail("Cannot " ~ "pub".qBAD ~ " a " ~ "shadow".qKW ~
             (extra ? ": " ~ extra : "."));
 
         flags |= F_PUB;
-        _hasPUB = true;
+
+        if (!autopub_ok)
+            _autopub = false;
     }
 
     fn parsePub(): Node
@@ -526,7 +532,8 @@ pub fn parse(
         _fnDepth && fail("Cannot " ~ "pub".qBAD ~ " from within a " ~ "fn".qKW ~ ".");
 
         mut out = parseStatement();
-        set_PUB(out.flags);
+        set_PUB(out.flags, autopub_ok: out.kind == "import");
+
         return out;
     }
 

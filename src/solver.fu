@@ -160,6 +160,7 @@ pub fn solve(
         _root_scope:        ScopeMemo;
         _ss:                ScopeSkipMemos;
         _field_items:       ScopeItem[];
+        _pub_imports:       i32[];
 
         // Can't we just list them all and scan through?
         //  Do we need the mangling nonsense?
@@ -331,15 +332,16 @@ pub fn solve(
         _scope.converts ~= s.converts[s.pub_cnvrts, s.converts.len];
     }
 
-    fn Scope_import(modid: i32): void
+    fn Scope_import(modid: i32)
     {
         _scope.imports.each(_ss.imports): |m|
             if (m == modid)
-                return;
+                return false;
 
         modid || BUG("Attempting to import modid-0.");
         _scope.imports ~= modid;
         _Scope_import__forceCopy(modid);
+        return true;
     }
 
     fn Scope_import_privates(modid: i32): void
@@ -5815,8 +5817,27 @@ pub fn solve(
 
     fn solveImport(node: Node): SolvedNode
     {
+        fn visit(modid: i32)
+        {
+            if (!Scope_import(modid))
+                return;
+
+            // Follow pubs imports.
+            let s = ctx.modules[modid].out.solve.scope;
+            for (mut i = 0; i < s.imports.len; i++)
+                visit(s.imports[i]);
+        }
+
         let m = findModule(fuzimport: node.value);
-        Scope_import(m.modid);
+
+        visit(m.modid);
+
+        // Pub imports.
+        if (node.flags & F_PUB)
+        {
+            _current_fn.scope0 && fail("Cannot pub import from here.");
+            _pub_imports.set::add(m.modid);
+        }
 
         //
         return createEmpty();
@@ -8949,7 +8970,7 @@ pub fn solve(
         // Exports.
         return SolverOutput(
             root:  root,
-            scope: Scope_exports(_scope, :module.modid, _field_items),
+            scope: Scope_exports(_scope, :module.modid, _field_items, _pub_imports),
             notes: _notes);
     }
 }
