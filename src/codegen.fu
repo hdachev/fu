@@ -33,6 +33,11 @@ let MAIN_zst            = 1 << 2;
 
 //
 
+let RESOLVE_report      = false;
+
+
+//
+
 type BitSet2D = bitset::BitSet[];
 
 fn add_once(ref bs: BitSet2D, i: int, j: int): bool
@@ -1208,6 +1213,25 @@ pub fn cpp_codegen(implicit module: Module, implicit ctx: Context): CodegenOutpu
 
         if (dedupe)
             _fdef ~= "                                #endif\n";
+
+        if (RESOLVE_report)
+        {
+            let REV = target.revision.i32;
+            if (REV > 5)
+            {
+                fn Indent()
+                {
+                    mut str = "";
+                    for (mut i = 0; i < REV; i++) str ~= " ";
+                    return str;
+                }
+
+                println("RESOLVE "
+                    ~ Indent
+                    ~ overload.name ~ " :: "
+                    ~ target.revision);
+            }
+        }
 
         //
         return cgEmpty(fn, mode);
