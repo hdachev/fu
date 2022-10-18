@@ -125,6 +125,7 @@ pub fn parse(
     // The upside is this frees up the dollar sigil.
 
     mut _TODO_FIX_dollarOk  = false;
+    mut _expectedTypeParams: string[];
 
 
     //
@@ -881,6 +882,14 @@ pub fn parse(
             fail("Not an operator: `" ~ name ~ "`.");
         }
 
+        /////////////////////////
+        mut expectedTypedParams0: string[];
+        swap      (expectedTypedParams0, _expectedTypeParams);
+        defer swap(expectedTypedParams0, _expectedTypeParams);
+
+        tryParseTypeParamsDecl();
+        /////////////////////////
+
         //
         let endv = tryConsume("op", "(") && ")";
         if (!endv)
@@ -892,6 +901,29 @@ pub fn parse(
         }
 
         return parseFnDecl_cont(:flags, :asserts, :name, :expr, :endv);
+    }
+
+    fn tryParseTypeParamsDecl()
+    {
+        if (tryConsume("op", "<"))
+        {
+            mut first = true;
+
+            for (;;)
+            {
+                if (tryConsume("op", ">"))
+                    break;
+
+                if (!first)
+                    consume("op", ",");
+
+                first = false;
+
+                // TODO HERE
+                let id = consume("id").value;
+                _expectedTypeParams ~= id;
+            }
+        }
     }
 
     fn createAddrOfFn(name!: string, flags!: Flags): Node
@@ -1410,6 +1442,10 @@ pub fn parse(
                         return parseFnDecl(expr: true);
                 }
 
+                if (_TODO_FIX_dollarOk)
+                    if (_expectedTypeParams.has(v))
+                        return createTypeParam(v);
+
                 return createRead(v);
             }
 
@@ -1466,17 +1502,17 @@ pub fn parse(
     {
         let value = "$" ~ consume("id").value;
 
+        return createTypeParam(value);
+    }
+
+    fn createTypeParam(value: string): Node
+    {
         if (!_TODO_FIX_dollarOk)
             return createRead(value);
 
         if (!_dollars.has(value) && _dollarAuto)
             _dollars.push(value);
 
-        return createTypeParam(value);
-    }
-
-    fn createTypeParam(value: string): Node
-    {
         return make("typeparam", :value);
     }
 
