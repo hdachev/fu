@@ -1464,10 +1464,10 @@ pub fn parse(
 
     fn parseTypeParam(): Node
     {
-        let value = consume("id").value;
+        let value = "$" ~ consume("id").value;
 
         if (!_TODO_FIX_dollarOk)
-            return createRead("$" ~ value);
+            return createRead(value);
 
         if (!_dollars.has(value) && _dollarAuto)
             _dollars.push(value);
@@ -1732,7 +1732,7 @@ pub fn parse(
 
         if (expr.kind == "typeparam")
             return createCall(
-                "$" ~ (expr.value || fail()), :flags, args);
+                (expr.value || fail()), :flags, args);
 
         return fail("TODO dynamic call");
     }

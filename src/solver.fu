@@ -3845,7 +3845,7 @@ pub fn solve(
                             let argName = argNode.value || BUG();
 
                             // Same pattern - grabs a mutref.
-                            ref argName_typeParam = typeParams.map::ref(argName);
+                            ref argName_typeParam = typeParams.map::ref("$" ~ argName);
 
                             // Values vs refs.
                             inType = add_ref(inType, Lifetime_temporary);
@@ -3942,7 +3942,7 @@ pub fn solve(
                     for (shadow mut i = 0; i < numArgs; i++)
                     {
                         let argNode = items[i] || BUG();
-                        let id = argNode.value;
+                        let id = "$" ~ argNode.value;
 
                         typeParams.map::if_ref(id): |tp|
                             tp.matched = tp.consumed // TODO failcase: || BUG("nope, aint gonna work");
@@ -4485,7 +4485,7 @@ pub fn solve(
 
         typeParams.map::pairs(|id, tp|
         {
-            let name = "$" ~ id;
+            let name = id;
 
             fn checkStruct(shadow type: Type)
             {
@@ -4504,7 +4504,7 @@ pub fn solve(
                 && checkStruct(type)
                 || Scope_create(_scope,
                     kind: "type",
-                    name: "$" ~ id, :type);
+                    name: id, :type);
 
             Scope_set(res, name, :target, shadows: false);
         });
@@ -5889,9 +5889,9 @@ pub fn solve(
 
     fn evalTypeParam(id: string, typeParams?: TypeParams): Type
     {
-        return typeParams.map::get(id).matched || Scope_lookupType(
-                            "$" ~ (id || fail("Falsy type param id.")))
-                                      || fail("No type param `$" ~ id ~ "` in scope.");
+        return typeParams.map::get(id).matched
+            || Scope_lookupType(id || fail("Falsy type param id."))
+            || fail("No type param " ~ id.qID ~ " in scope.");
     }
 
     fn solveTypeParam(node: Node): SolvedNode
@@ -6119,9 +6119,11 @@ pub fn solve(
             //  Perhaps when we have an `any` type,
             //   we could subtype it with the desired quals.
             if (left.kind  == "typeparam" && right.kind == "typetag")
+            {
                 return type_has(
                     evalTypeParam(left.value, typeParams),
                     right.value || fail("Falsy type tag."));
+            }
             else
             {
                 let actual = evalTypeAnnot(left, typeParams);
