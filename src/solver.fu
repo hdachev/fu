@@ -629,6 +629,8 @@ pub fn solve(
                 str ~= "static";
             else if (r.Region_isTemp)
                 str ~= "temp";
+            else if (r.Region_isArgPosition)
+                str ~= "arg#" ~ Region_toArgPosition(r);
             else
                 str ~= r.qWHAT();
         }
