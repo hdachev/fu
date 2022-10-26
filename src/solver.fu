@@ -945,7 +945,7 @@ pub fn solve(
             else
             {
                 used++;
-                optional.rem(i);
+                optional.rem(idx);
             }
 
             reorder.push(idx);

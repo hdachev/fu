@@ -7531,6 +7531,17 @@ pub extern fn runTests()
         }
     `);
 
+    ZERO(`
+        fn takesFns(x, f)
+            f(x * 2, optAndUnused?: x * 3);
+
+        fn hasUnusedOptArg(x: int, alt = 7, lax optAndUnused?: int)
+            x + alt;
+
+        fn main()
+            takesFns(2, fn hasUnusedOptArg) - 11;
+    `);
+
 
     // Intlit sizechecks.
     //

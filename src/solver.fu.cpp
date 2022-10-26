@@ -8222,7 +8222,7 @@ static bool reorderByArgIDs_uOpqiR1I(bool& use_reorder, fu_VEC<int>& reorder, fu
         else
         {
             used++;
-            rem_sDUBjUzV(optional, i);
+            rem_sDUBjUzV(optional, idx);
         };
         reorder.push(int(idx));
     };
