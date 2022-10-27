@@ -18,6 +18,7 @@ let OPTI_autoshadow         = true;
 let OPTI_dedupe_vars        = true;
 let OPTI_flatten_blocks     = true;
 let OPTI_bck                = true;
+let OPTI_ignoreLocalLts     = true;
 
 let SELF_TEST               = true;
 
@@ -4262,7 +4263,16 @@ pub fn solve(
                     {
                         let a = args[i];
                         let b = ext.args[i];
-                        if !(a.name == b.name && a.type == b.type)
+
+                        fn ignoreLocalLts(mut type: Type)
+                        {
+                            if (OPTI_ignoreLocalLts && Region_asLocal(a.type.lifetime.uni0n.if_only))
+                                type.lifetime = Lifetime_temporary;
+
+                            return type;
+                        }
+
+                        if !(a.name == b.name && a.type.ignoreLocalLts == b.type.ignoreLocalLts)
                         {
                             change = true;
                             break;
