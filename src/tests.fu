@@ -32,7 +32,7 @@ pub extern fn runTests()
     // Parallel mode,
     //  comment it out to set breakpoints & such.
 
-    //*
+    /*
     mut PARZERO_queue: string[][];
 
     fn PARZERO(src: string[])

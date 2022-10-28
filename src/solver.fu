@@ -2894,7 +2894,10 @@ pub fn solve(
             //
             let status = Target(:module.modid, fnbody_of).status;
             if (!(status & SS_DIRTY) && !currentFn_mustBecomeInline())
+            {
+                sortInjectedArguments();
                 runAllPasses(block);
+            }
         }
 
         return block;
@@ -4489,6 +4492,52 @@ pub fn solve(
         // Go!
         lazySolveEnd(target);
         return target;
+    }
+
+
+    //
+
+    fn sortInjectedArguments()
+    {
+        fn compare(a: SolvedNode, b: SolvedNode)
+        {
+            shadow let a = GET(a.target);
+            shadow let b = GET(b.target);
+
+            let an = a.name;
+            let bn = b.name;
+            let acid = hacks::tryParseClosureID(id: an);
+            let bcid = hacks::tryParseClosureID(id: bn);
+
+            if (acid)
+            {
+                if (bcid)
+                {
+                    let cmp = acid.target.modid - bcid.target.modid
+                           || acid.target.index - bcid.target.index;
+
+                    return cmp < 0;
+                }
+
+                return true;
+            }
+            else if (bcid)
+            {
+                return false;
+            }
+
+            return an < bn;
+        }
+
+        // Find first injected.
+        ref args = _current_fn.items[0, _current_fn.items.len + FN_ARGS_BACK];
+
+        for (mut i = 0; i < args.len; i++)
+        {
+            let arg = args[i];
+            if (arg.target && arg.target.flags & F_INJECTED)
+                return args[i, args.len].sort(fn compare);
+        }
     }
 
 
@@ -6403,7 +6452,8 @@ pub fn solve(
 
         // We'll be adding a new thing here.
         mut shadows: bool;
-        mut flags = F_IMPLICIT | F_ARG | F_LAX/* might get removed, dont want warnings */;
+        mut flags = F_INJECTED | F_IMPLICIT
+                  | F_ARG | F_LAX/* might get removed, dont want warnings */;
 
         if (type.is_mutref)
             flags |= F_REF | F_RELAXABLE_REF;
@@ -8503,6 +8553,7 @@ pub fn solve(
             ////////////////////////////////////////////
         }
 
+
         // This feels like its no longer relevant -
 
         _current_fn_eachArg_FWD: |target, position|
@@ -8530,23 +8581,38 @@ pub fn solve(
             mut consts: i32[];
             mut refs:   i32[];
 
+            mut outOfOrderArgTargets = false;
+
             // We only need to seed invalidations from mutref arguments.
             {
                 mut last = 0;
                 _current_fn_eachArg_FWD: |target|
                 {
                     target.modid == -_current_fn.target.index || BUG();
-                    last < (last = target.index) || BUG();
 
-                    if (target.solved.type.is_mutref)
-                        refs    ~= target.index;
-                    else if (target.solved.type.is_ref)
-                        consts  ~= target.index;
+                    let t = target.index;
+                    last == t && BUG();
+                    if (last < (last = t))
+                        outOfOrderArgTargets = true;
+
+                    let type = target.solved.type;
+                    if (type.is_mutref)
+                        refs    ~= t;
+                    else if (type.is_ref)
+                        consts  ~= t;
                 }
             }
 
             if !(refs)
                 break :SOLVE_AAR;
+
+            if (outOfOrderArgTargets)
+            {
+                // sortInjectedArguments() shuffles targets,
+                //  so these need to be sorted before you can use them as sets.
+                refs.sort();
+                consts.sort();
+            }
 
             // Setup the AAR invalidation matrix -
             //  we assume that each ref argument invalidates EVERY other argument.

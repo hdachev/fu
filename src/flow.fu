@@ -28,9 +28,7 @@ pub fn Reference_trackArgument(ref flow: Flow, target: i32, position: i32)
     flow.arg_targets.grow(position + 1);
     flow.arg_targets[position] = target;
 
-    flow.arg_positions.len <= target || BUG("Reference_trackArgument: targets out of order.");
-    flow.arg_positions.grow(target + 1);
-    flow.arg_positions[target] = position + 1;
+    flow.arg_positions.grow_if_oob(target) = position + 1;
 
     // Speed up memberships checks.
     flow.is_arg.add(target);
