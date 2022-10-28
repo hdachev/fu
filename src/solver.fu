@@ -817,7 +817,7 @@ pub fn solve(
         return fname[start, end];
     }
 
-    fn humanizeType(type: Type)
+    fn humanizeType(type: Type, lt?: bool, lax i?: int)
     {
         mut result: string = type.isStruct
             ? lookupUserType(type).name
@@ -834,6 +834,9 @@ pub fn solve(
         //             : r.Region_isStatic ? "static".qKW
         //                                 : nested(Region_asIndex(r)).qWHAT;
         // }
+
+        if (lt && type.lifetime)
+            result ~= "`" ~ type.lifetime.qWHAT;
 
         return result;
     }
