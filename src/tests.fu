@@ -4088,6 +4088,31 @@ pub extern fn runTests()
         }
     `);
 
+    ZERO(`
+        fn ints(implicit ref _ints: i32[]) _ints;
+        fn sum (implicit ref _sum:  i32)   _sum;
+
+        // while trying to sort implicit args i noticed tests didnt catch
+        //  args getting reordered but AAR masks not updating
+        //   this tries to reproduce the same thing
+        fn flippedInjectedArgsWithBrokenAARMasks()
+            if (sum) // the point of this is to inject _sum before _ints
+                for (mut i = ints.len; i --> 0; )
+                    ints.push(sum);
+
+        fn main() {
+            implicit mut _ints: i32[] = [ 0 ];
+            <fail alias _ints>
+            implicit ref _sum = _ints[0];
+            <pass/>
+            implicit mut _sum = 0;
+            </fail>
+
+            flippedInjectedArgsWithBrokenAARMasks();
+            return ints[0];
+        }
+    `);
+
     // /Borrow checker
 
 
