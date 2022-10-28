@@ -1624,6 +1624,15 @@ pub extern fn runTests()
             ;
     `);
 
+    ZERO(`
+        fn main() {
+            mut hello = "hello";
+            mut olleh = hello;
+            olleh.reverse();
+            return olleh == "olleh" ? 0 : 1;
+        }
+    `);
+
 
     // String opti checkers.
 
