@@ -5914,6 +5914,47 @@ pub extern fn runTests()
         }
     `]);
 
+    ZERO(`
+        fn setupOperators()
+        {
+            struct Maplike {
+                keys: string[];
+                vals: i32[];
+            };
+
+            fn set(ref m: Maplike, k: string, v: i32) {
+                m.keys ~= k;
+                m.vals ~= v;
+            }
+
+            struct BINOP {
+                PRECEDENCE: Maplike;
+                RIGHT_TO_LEFT: bool[];
+            };
+
+            mut out: BINOP;
+            mut precedence: i32 = -1;
+            mut rightToLeft = false;
+
+            fn binop(ops: string[]) {
+                precedence++;
+                out.RIGHT_TO_LEFT ~= rightToLeft;
+                for (mut i = 0; i < ops.len; i++)
+                    out.PRECEDENCE.set(ops[i], precedence);
+            }
+
+            rightToLeft = false;
+            binop([ "*", "/", "%" ]);
+
+            rightToLeft = true;
+            binop([ "*=", "/=", "%=" ]);
+
+            return out;
+        }
+
+        let BINOP = setupOperators();
+        fn main() BINOP.RIGHT_TO_LEFT[1] && BINOP.PRECEDENCE.vals[3] == 1 ? 0 : 1;
+    `);
 
     // /quite right
 
