@@ -7789,6 +7789,9 @@ pub fn solve(
 
                 let invalidates = flow.invalidates.unless_oob(target);
 
+                if (SELF_TEST && invalidates.has(target))
+                    BUG("flow.invalidates[target].has(target): " ~ GET(nested(target)).qWHAT);
+
                 // Writes in a loop invalidate preceding reads.
                 if (OPTI_isLoop) for (shadow mut i = 0; i < invalidates.len; i++)
                 {
