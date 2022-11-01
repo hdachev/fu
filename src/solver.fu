@@ -6023,12 +6023,14 @@ pub fn solve(
 
     fn evalTypeAnnot(node: Node, typeParams?: TypeParams): Type
     {
-        // Each T() call should invalidate the results from previous T() calls -
-        //  for some reason that's not what's happening here,
-        //   and we're happily using the refs.
+        // TODO FIX typeof fwd compat
+        shadow let node =
+            node.kind == "call" && node.value == "typeof" && node.items.len == 1
+                ? node.items.only
+                : node;
+
         //
-        fn T =
-            evalTypeAnnot(node.items.only, typeParams);
+        fn T = evalTypeAnnot(node.items.only, typeParams);
 
         if (node.kind == "call")
         {

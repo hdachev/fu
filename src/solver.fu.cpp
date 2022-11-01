@@ -9642,8 +9642,10 @@ static s_SolvedNode solveCall_4PPXPXkI(const s_Node& node, const s_Target& targe
     };
 }
 
-static s_Type evalTypeAnnot_Rs0Ayhy7(const s_Node& node, const s_Map_087aZo54YWi& typeParams, s_TokenIdx& _here, const s_Context& ctx, fu_VEC<s_Helpers>& _helpers, fu_VEC<s_HelpersData>& _helpers_data, s_Module& module, s_Scope& _scope, s_CurrentFn& _current_fn, fu_VEC<s_Warning>& _warnings, const s_Target& _current_fnort, s_Map_RnDv9VM4mhf& _specs, s_ScopeSkipMemos& _ss, s_ScopeMemo& _root_scope, const s_Type& t_string, fu_VEC<fu_STR>& _spec_errors, fu_VEC<s_SolvedNode>& TODO_FIX_convert_args, const s_Options& options, s_SolverNotes& _notes, const fu_STR& shortModuleName, fu_VEC<s_ScopeItem>& _field_items)
+static s_Type evalTypeAnnot_Rs0Ayhy7(const s_Node& _node, const s_Map_087aZo54YWi& typeParams, s_TokenIdx& _here, const s_Context& ctx, fu_VEC<s_Helpers>& _helpers, fu_VEC<s_HelpersData>& _helpers_data, s_Module& module, s_Scope& _scope, s_CurrentFn& _current_fn, fu_VEC<s_Warning>& _warnings, const s_Target& _current_fnort, s_Map_RnDv9VM4mhf& _specs, s_ScopeSkipMemos& _ss, s_ScopeMemo& _root_scope, const s_Type& t_string, fu_VEC<fu_STR>& _spec_errors, fu_VEC<s_SolvedNode>& TODO_FIX_convert_args, const s_Options& options, s_SolverNotes& _notes, const fu_STR& shortModuleName, fu_VEC<s_ScopeItem>& _field_items)
 {
+    const s_Node& node = (((_node.kind == s_kind_call) && (_node.value == "typeof"_fu) && (_node.items.size() == 1)) ? _node.items[0] : _node);
+
     if (node.kind == s_kind_call)
     {
         fu::view<s_Node> items = node.items;
