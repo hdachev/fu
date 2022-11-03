@@ -342,7 +342,7 @@ fn str<T>(n: T)
     case (T -> f64             ): string __native("<fu/decstr.h>", "fu::f64dec");
     case (T.is::enum)
 {
-    for (fieldname i: n)
+    for (fieldname i: T)
         if (n == "i")
             return "i";
 
@@ -351,7 +351,7 @@ fn str<T>(n: T)
     case (T.is::flags)
 {
     mut res: string;
-    for (fieldname i: n)
+    for (fieldname i: T)
         if (n & "i")
             res ~= "i" ~ ", ";
 
@@ -389,9 +389,9 @@ fn join<T>(a: [T[];], sep?: T or [T;] or [])
     if (a.len < 2)
         return a.len && a[0];
 
-    let N = sep -> [T;] ? sep.len
-          : sep ->  T   ? 1
-                         : 0;
+    let N = typeof(sep) -> [T;] ? sep.len
+          : typeof(sep) ->  T   ? 1
+                                : 0;
 
     mut size = a[0].len;
     for (mut i = 1; i < a.len; i++)
@@ -406,9 +406,9 @@ fn join<T>(a: [T[];], sep?: T or [T;] or [])
     for (mut i = 1; i < a.len; i++)
     {
         let range = a[i];
-        if (sep -> [T;])
+        if (typeof(sep) -> [T;])
             res[size, size + N] .= sep;
-        else if (sep -> T)
+        else if (typeof(sep) -> T)
             res[size] = sep;
 
         size += N;
@@ -424,7 +424,7 @@ fn split<T>(str: T[], sep: T or [T;], each)
     mut last = 0;
     mut next = 0;
 
-    let N = sep -> [T;] ? sep.len : 1;
+    let N = typeof(sep) -> [T;] ? sep.len : 1;
     if (N) while ((next = str.find(sep, start: last)) >= 0)
     {
         each(str.slice(last, next), first?: !last, last?: false);
@@ -456,7 +456,7 @@ fn replace<T>(str: T[], all: T or [T;], with: T or [T;] or [])
     split(str, sep: all, |substr, first, last|
     {
         if (!first)
-            with -> [] ? with() : result ~= with;
+            typeof(with) -> [] ? with() : result ~= with;
         else if (last)
             return str;
 
@@ -481,7 +481,7 @@ case (T -> [U;]) {
 default {
     // TODO this would be better if it went through each member doing the trivial work first -
     //  only then going through them again and looking at e.g. array contents etc.
-    for (fieldname i: a) {
+    for (fieldname i: T) {
         let cmp = a.i <> b.i;
         if (cmp)
             return cmp;
@@ -503,7 +503,7 @@ fn !=<T>(a: T, b: T)
 
 fn map<T>(a: [T;], fn)
 {
-    mut res: fn(T, i?: a.len)[];
+    mut res: typeof( fn(T, i?: a.len) )[];
     res.grow_junk(a.len);
     for (mut i = 0; i < a.len; i++)
         res[i] = fn(a[i], i?: i);

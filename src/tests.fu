@@ -598,7 +598,7 @@ pub extern fn runTests()
 
     ZERO(`
         pub fn MAP(a: [$T], fn) {               ;; !N_DeadCode
-            mut res: fn($T)[];
+            mut res: typeof( fn($T) )[];
             res.grow_junk(a.len);
             for (mut i = 0; i < a.len; i++) res[i] = fn(a[i]);
             return res;
@@ -1216,7 +1216,7 @@ pub extern fn runTests()
     ZERO(`
         fn main() {
             mut x = +1;
-            mut y: x = -x;
+            mut y: typeof(x) = -x;
             return x + y;
         }
     `);
@@ -1228,11 +1228,11 @@ pub extern fn runTests()
         }
 
         fn not_extern() {
-            mut x: dont_inject_my_implicit_args = 2;
+            mut x: typeof(dont_inject_my_implicit_args) = 2;
             return x;
         }
 
-        fn not_extern(mut x: dont_inject_my_implicit_args) {
+        fn not_extern(mut x: typeof(dont_inject_my_implicit_args)) {
             return x;
         }
 
@@ -7332,14 +7332,14 @@ pub extern fn runTests()
     `);
 
     ZERO(`
-        fn Join(a: $T[][], lax sep = [])    // The sep is of type any-init.
-        {                                   //
-            if (a.len < 2)                  //
-                return a.len && a[0];       // NOT SURE WHAT'S 100% IDEAL, BUT:
-                                            //
-            let N = sep -> [$T;] ? sep.len  // should either match here,
-                  : sep ->  $T   ? 1        //                                    but currently matches here, which is just wrong.
-                                 : 0;       //                           or here,
+        fn Join(a: $T[][], lax sep = [])            // The sep is of type any-init.
+        {                                           //
+            if (a.len < 2)                          //
+                return a.len && a[0];               // NOT SURE WHAT'S 100% IDEAL, BUT:
+                                                    //
+            let N = typeof(sep) -> [$T;] ? sep.len  // should either match here,
+                  : typeof(sep) ->  $T   ? 1        //                                    but currently matches here, which is just wrong.
+                                 : 0;               //                           or here,
 
             mut size = a[0].len;
             for (mut i = 1; i < a.len; i++)
@@ -7354,9 +7354,9 @@ pub extern fn runTests()
             for (mut i = 1; i < a.len; i++)
             {
                 let range = a[i];
-                if (sep -> [$T;])
+                if (typeof(sep) -> [$T;])
                     res[size, size + N] .= sep;
-                else if (sep -> $T)
+                else if (typeof(sep) -> $T)
                     res[size] = sep;
 
                 size += N;
@@ -7378,7 +7378,7 @@ pub extern fn runTests()
         fn Join(a: $T, b: $T, lax sep: $S = [])
             case ($S -> $T || $S -> [$T;] || $S -> [])
         {
-            return sep -> $T || sep -> [$T;]
+            return typeof(sep) -> $T || typeof(sep) -> [$T;]
                  ? a ~ sep ~ b
                  : a ~ b;
         }
@@ -7393,7 +7393,7 @@ pub extern fn runTests()
         // This is the initial type union concept
         fn Join(a: $T, b: $T, lax sep?: $T or [$T;] or [])
         {
-            return sep -> $T || sep -> [$T;]
+            return typeof(sep) -> $T || typeof(sep) -> [$T;]
                  ? a ~ sep ~ b
                  : a ~ b;
         }
@@ -8478,7 +8478,7 @@ pub extern fn runTests()
 
         fn snap(ss: ScopeSkip) {
             mut r: ScopeSkipMemo;
-            for (fieldname i: ss)
+            for (fieldname i: typeof(ss))
                 r.i_len = ss.i.len;
 
             return r;
@@ -8486,7 +8486,7 @@ pub extern fn runTests()
 
         fn check(v) {
             mut sum = 0; mut mul = 1;
-            for (fieldname i: v) {
+            for (fieldname i: typeof(v)) {
                 sum += v.i * mul; mul *= 10;
             }
 
@@ -8506,7 +8506,7 @@ pub extern fn runTests()
 
     ZERO(`
         fn test(a) {
-            if (a -> [any;])
+            if (typeof(a) -> [any;])
                 return a.len;
 
             return a * 10;
@@ -8525,8 +8525,8 @@ pub extern fn runTests()
             ref a: $U[], b)  <pass/>
             ref a: $T[], b)  </fail>
         {
-            let N = b ->  $T   ? 1 : 2;
-            let M = b -> [$T;] ? 2 : 1;
+            let N = typeof(b) ->  $T   ? 1 : 2;
+            let M = typeof(b) -> [$T;] ? 2 : 1;
             a ~= b;
             return N == M ? 0 : 1;
         }
@@ -8700,7 +8700,7 @@ pub extern fn runTests()
 
     ZERO(`
         fn MAP(items: $T[], fn) {
-            mut result: fn(items[0])[];
+            mut result: typeof( fn(items[0]) )[];
             for (mut i = 0; i < items.len; i++)
                 result.push(fn(items[i]));
 
@@ -9399,14 +9399,14 @@ pub extern fn runTests()
     ZERO(`
         fn sA(_: $T) struct { hey: $T; };
 
-        fn fA(a: $T): sA($T) = [ a + 2 ];
+        fn fA(a: $T): typeof( sA($T) ) = [ a + 2 ];
         fn main() 1.fA.hey - 3;
     `);
 
     ZERO(`
         fn sB(_: $T) struct { hey: $T; };
 
-        fn fB(a: $T): sB($T) = [ a + 2 ];
+        fn fB(a: $T): typeof( sB($T) ) = [ a + 2 ];
         fn main() 1.fB.hey - 1.u32.fB.hey <fail bad call><pass/> .i32 </fail> ;
     `);
 
@@ -9417,7 +9417,7 @@ pub extern fn runTests()
         fn test(x) x.hey - 1;
 
         // 'a' must be callable.
-        type a = sB(i32);
+        type a = typeof( sB(i32) );
         fn main() a(1).test;
     `);
 
@@ -9434,8 +9434,8 @@ pub extern fn runTests()
         fn sB(_: $T) struct { hey: $T; };
 
         fn setupOperators(i: i32) {
-            struct BINOP { i: sB(i32); };
-            mut s: sB(i32) = [ i ];
+            struct BINOP { i: typeof( sB(i32) ); };
+            mut s: typeof( sB(i32) ) = [ i ];
             return BINOP(s);
         }
 
@@ -9444,10 +9444,10 @@ pub extern fn runTests()
 
     ZERO([`
         fn Hey = struct { i: i32 }; // fn Hey generated nonsense code
-        fn get(s: Hey) s.i;
+        fn get(s: typeof( Hey() )) s.i;
     `,`
         fn main() {
-            mut s: _0::Hey();
+            mut s: typeof( _0::Hey() );
             return s.get();
         }
     `]);
@@ -9457,7 +9457,7 @@ pub extern fn runTests()
         fn get(s) s.i;
     `,`
         fn main() {
-            mut s: _0::Hey(i32);
+            mut s: typeof( _0::Hey(i32) );
             return s.get(); // get(): wasn't visible, the struct didnt remember its template origin module.
         }
     `]);
@@ -10125,7 +10125,7 @@ pub extern fn runTests()
     `,
     `
         fn main() {
-            mut _map: _1::Map(string, string);
+            mut _map: typeof( _1::Map(string, string) );
 
             fn upsert(k: string, v: string) _map._1::ref(k) = v;
             upsert("hello", "world");
@@ -10239,7 +10239,7 @@ pub extern fn runTests()
     `,
     `
         fn use_Set(a: string) {
-            mut set: _1::Set(string);
+            mut set: typeof( _1::Set(string) );
             set.keys ~= a;
             return set._1::has(a);
         }

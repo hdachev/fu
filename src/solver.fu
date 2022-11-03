@@ -105,7 +105,7 @@ pub fn solve(
             }
         }
 
-        for (fieldname i: snap)
+        for (fieldname i: EventsSnap)
             events.i.Events_merge(snap.i);
     }
 
@@ -124,7 +124,7 @@ pub fn solve(
 
     fn branch(ref dest: Postdom, src: Postdom)
     {
-        for (fieldname i: dest.moves)
+        for (fieldname i: Moves)
             dest.moves.i.add(src.moves.i);
 
         dest.loop_start = max(
@@ -169,7 +169,7 @@ pub fn solve(
         //  Do we need the mangling nonsense?
         //   We can bucket however many times we want here,
         //    its append only and trivial to maintain.
-        _specs:             map::Map(string, Target); // mangle -> spec
+        _specs:             typeof( map::Map(string, Target) ); // mangle -> spec
         _spec_errors:       string[];
 
         //
@@ -228,7 +228,7 @@ pub fn solve(
         consumed: Type;
     };
 
-    type TypeParams = map::Map(string, TypeParam);
+    type TypeParams = typeof( map::Map(string, TypeParam) );
 
 
     //
@@ -6005,18 +6005,15 @@ pub fn solve(
 
     fn evalTypeAnnot(node: Node, typeParams?: TypeParams): Type
     {
-        // TODO FIX typeof fwd compat
-        shadow let node =
-            node.kind == "call" && node.value == "typeof" && node.items.len == 1
-                ? node.items.only
-                : node;
-
-        //
         fn T = evalTypeAnnot(node.items.only, typeParams);
 
         if (node.kind == "call")
         {
             let items = node.items;
+
+            if (!items.len)
+                return Scope_lookupType(node);
+
             if (items.len == 1)
             {
                 if (node.value == "&")
@@ -6027,15 +6024,11 @@ pub fn solve(
 
                 if (node.value == "[]")
                     return createArray(T);
-            }
 
-            // TODO RESEARCH:
-            //
-            // Falling through to the solveNode() below slows down the compiler by 20% -
-            //  it's completely insane, we don't call this that often,
-            //   and there's just an extra if/else cascade there.
-            //
-            return clear_refs(solveCall(node).type);
+                if (node.value == "typeof")
+                    return clear_refs(
+                        solveNode(node.items.only).type);
+            }
         }
         else if (node.kind == "typeparam")
         {
@@ -6046,8 +6039,12 @@ pub fn solve(
             // Slice.
             return createSlice(T, Lifetime_temporary);
         }
+        else if (node.kind == "definit")
+        {
+            return t_zeroes;
+        }
 
-        return clear_refs(solveNode(node).type);
+        fail("Invalid type annotation: " ~ node.kind ~ " " ~ node.value);
     }
 
     fn trySolveTypeParams(
