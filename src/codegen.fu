@@ -889,9 +889,6 @@ pub fn cpp_codegen(implicit module: Module, implicit ctx: Context): CodegenOutpu
         if (args.len > 1)
             return cpp::hasBinary(name);
 
-        if (flags & F_POSTFIX)
-            return cpp::hasPostfix(name);
-
         return cpp::hasUnary(name);
     }
 
@@ -964,11 +961,8 @@ pub fn cpp_codegen(implicit module: Module, implicit ctx: Context): CodegenOutpu
             src ~= binding(host_args[i]);
         }
 
-        if (overload.flags & F_POSTFIX)
-        {
-            overload.flags & F_OPERATOR || assert();
-            src ~= ", /*postfix*/int ";
-        }
+        if (overload.flags & F_OPERATOR && cpp::hasPostfix(overload.name))
+            src ~= ", /*postfix*/int";
 
         src ~= ")";
 
@@ -1030,11 +1024,8 @@ pub fn cpp_codegen(implicit module: Module, implicit ctx: Context): CodegenOutpu
                 src ~= typeAnnot(arg, M_ARGUMENT | M_FWDECL);
             }
 
-            if (overload.flags & F_POSTFIX)
-            {
-                overload.flags & F_OPERATOR || assert();
+            if (overload.flags & F_OPERATOR && cpp::hasPostfix(overload.name))
                 src ~= ", /*postfix*/int";
-            }
 
             src ~= ")";
         }
@@ -1971,8 +1962,8 @@ pub fn cpp_codegen(implicit module: Module, implicit ctx: Context): CodegenOutpu
             if (node.target.isOp)
             {
                 if (args.len == 1)
-                    return target.flags & F_POSTFIX ? emitPostfixOp(id.valid_operator)
-                                                    : emitPrefixOp (id.valid_operator);
+                    return cpp::hasPostfix(id)  ? emitPostfixOp(id.valid_operator)
+                                                : emitPrefixOp (id.valid_operator);
 
                 if (args.len == 2)
                 {

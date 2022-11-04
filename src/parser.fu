@@ -95,6 +95,15 @@ let M_LAMBDA_STMT_OK        = 1 << 2;
 
 //
 
+enum Fixity {
+    Infix
+    Prefix
+    Postfix
+};
+
+
+//
+
 pub fn parse(
     modid!: i32,
     fname!: string, src!: string, tokens!: Token[],
@@ -557,7 +566,7 @@ pub fn parse(
         else
             fail("using".qBAD ~ " cannot be used here.");
 
-        if (out.flags & (F_INFIX | F_PREFIX | F_POSTFIX))
+        if (out.flags & F_OPERATOR)
             fail("using".qBAD ~ " cannot be used on operator functions.");
 
         return out;
@@ -641,9 +650,9 @@ pub fn parse(
                 if (v == "pragma")      return parseCompilerPragma();
 
                 if (v == "inline")      return parseInlineDecl();
-                if (v == "infix")       return parseFixityDecl(F_INFIX);
-                if (v == "prefix")      return parseFixityDecl(F_PREFIX);
-                if (v == "postfix")     return parseFixityDecl(F_POSTFIX);
+                if (v == "infix")       return parseOperatorDecl(Infix);
+                if (v == "prefix")      return parseOperatorDecl(Prefix);
+                if (v == "postfix")     return parseOperatorDecl(Postfix);
 
                 if (v == "primitive")   return parsePrimDecl("primitive");
                 if (v == "flags")       return parsePrimDecl("flags");
@@ -823,18 +832,24 @@ pub fn parse(
         flags |= F;
 
         let v = consume("id").value;
-        if (v == "infix")   return parseFixityDecl(flags | F_INFIX);
-        if (v == "prefix")  return parseFixityDecl(flags | F_PREFIX);
-        if (v == "postfix") return parseFixityDecl(flags | F_POSTFIX);
+        if (v == "infix")   return parseOperatorDecl(:flags, Infix);
+        if (v == "prefix")  return parseOperatorDecl(:flags, Prefix);
+        if (v == "postfix") return parseOperatorDecl(:flags, Postfix);
         _idx--;
 
         return parseFixityDecl(:flags, :asserts);
     }
 
-    fn parseFixityDecl(flags: Flags, asserts?: DeclAsserts, expr?: bool): Node
+    fn parseOperatorDecl(fixity: Fixity, flags?: Flags)
+    {
+        fixity || fail("Falsy fixity.");
+        return parseFixityDecl(flags, :fixity);
+    }
+
+    fn parseFixityDecl(flags: Flags, fixity?: Fixity, asserts?: DeclAsserts, expr?: bool): Node
     {
         consume("id", "fn");
-        return parseFnDecl(flags, :asserts, :expr);
+        return parseFnDecl(flags, :fixity, :asserts, :expr);
     }
 
 
@@ -851,35 +866,33 @@ pub fn parse(
             flags: F_INLINE | F_LAMBDA, expr: !(mode & M_LAMBDA_STMT_OK), :name);
     }
 
-    fn parseFnDecl(mut flags?: Flags, asserts?: DeclAsserts, expr!?: bool): Node
+    fn parseFnDecl(mut flags?: Flags, fixity?: Fixity, asserts?: DeclAsserts, expr!?: bool): Node
     {
         // fn hello(), fn +()
         mut name = tryConsume("id").value;
         if (!name)
         {
-            let postfix = flags & F_POSTFIX;
             name = consume("op").value;
 
-            if (postfix)
+            if (fixity == Postfix)
             {
                 name == "++" || name == "--"
                     || fail("No such postfix operator: `" ~ name ~ "`.");
 
                 name = "postfix" ~ name;
             }
-            else if (flags & F_INFIX)
+            else if (fixity == Infix)
             {
                 BINOP.PRECEDENCE.map::has(name) || fail("No such infix operator: `" ~ name ~ "`.");
             }
-            else if (flags & F_PREFIX)
+            else if (fixity == Prefix)
             {
                 PREFIX.has(name) || fail("No such prefix operator: `" ~ name ~ "`.");
             }
 
-            flags &= ~(F_INFIX | F_PREFIX);
             flags |= F_OPERATOR;
         }
-        else if (flags & (F_INFIX | F_PREFIX | F_POSTFIX))
+        else if (flags & F_OPERATOR || fixity)
         {
             fail("Not an operator: `" ~ name ~ "`.");
         }
@@ -1345,7 +1358,7 @@ pub fn parse(
 
         //
         return createCall(
-            op, F_INFIX | F_OPERATOR, [ left, right ]);
+            op, F_OPERATOR, [ left, right ]);
     }
 
     fn typeCheck(actual: Node, expect: Node): Node
@@ -1410,7 +1423,7 @@ pub fn parse(
             if (POSTFIX.has(v))
                 return createCall(
                     v == "++" || v == "--" ? "postfix" ~ v : v,
-                        F_POSTFIX | F_OPERATOR, [ head ]);
+                        F_OPERATOR, [ head ]);
 
             if (v == "::")
                 return parseQualifierChain(head);
@@ -1556,7 +1569,7 @@ pub fn parse(
         if (op == "!")
             return make("not", items: [ expr ]);
 
-        return createCall(op, F_PREFIX | F_OPERATOR, [ expr ]);
+        return createCall(op, F_OPERATOR, [ expr ]);
     }
 
     fn parseAccessExpression(expr: Node): Node

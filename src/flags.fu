@@ -79,9 +79,9 @@ flags ParseSyntax
 flags Flags: u32
 {
     F_METHOD
-    F_INFIX
-    F_PREFIX
-    F_POSTFIX
+    // ...
+    // ...
+    F_OPERATOR
 
     F_ACCESS
     // ...
@@ -91,7 +91,7 @@ flags Flags: u32
 
     F_LAX
     F_ARG           // TODO get rid of this
-    F_OPERATOR
+    // ...
     F_MOVED_FROM
 
     F_CONVERSION
