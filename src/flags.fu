@@ -41,7 +41,7 @@ flags DeclAsserts: u16
 {
     A_NOCOPY
     A_NOVEC
-    // ...
+    A_TRIVIAL
     // ...
 
     A_PURE

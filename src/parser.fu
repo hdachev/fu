@@ -363,11 +363,11 @@ pub fn parse(
 
     //
 
-    fn parseNoCopy(): Node
+    fn parseNoCopy(asserts = A_NOCOPY): Node
     {
         consume("id", "struct");
 
-        return parseStructDecl("struct", asserts: A_NOCOPY);
+        return parseStructDecl("struct", :asserts);
     }
 
     fn parseStructDecl(::kind, flags!?: Flags, asserts!?: DeclAsserts): Node
@@ -636,7 +636,6 @@ pub fn parse(
                 if (v == "using")       return parseUsing();
                 if (v == "lax")         return parseLax();
 
-                if (v == "nocopy")      return parseNoCopy();
                 if (v == "import")      return parseImport();
 
                 if (v == "pragma")      return parseCompilerPragma();
@@ -660,6 +659,9 @@ pub fn parse(
                 if (v == "nothrow")     return parseExoticDecl(asserts: A_NOTHROW);
                 if (v == "nocrash")     return parseExoticDecl(asserts: A_NOCRASH);
                 if (v == "noio")        return parseExoticDecl(asserts: A_NOIO);
+
+                if (v == "nocopy")      return parseNoCopy();
+                if (v == "trivial")     return parseNoCopy(A_TRIVIAL);
 
                 if (v == "extern")      return parseExoticDecl(F_EXTERN);
                 if (v == "hotswap")     return parseExoticDecl(F_HOTSWAP);

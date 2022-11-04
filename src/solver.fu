@@ -4617,6 +4617,8 @@ pub fn solve(
         }
 
         //
+        let asserts = node.asserts;
+
         mut out_target  = into;
         mut out_type: Type;
         if (out_target)
@@ -4625,7 +4627,7 @@ pub fn solve(
         }
         else
         {
-            out_type    = initStruct(:kind, :baseprim, :name, :node.asserts);
+            out_type    = initStruct(:kind, :baseprim, :name, :asserts);
             out_target  = Scope_Typedef(_scope, id: origId, :name,
                 type: out_type, :node.flags,
                 status: SS_LAZY);
@@ -4660,7 +4662,7 @@ pub fn solve(
         mut structImports:  i32[];
         mut flat_cnt:       i32;
 
-        mut all_triv = !!(out_type.is_rx_copy);
+        mut non_triv = !out_type.is_rx_copy && -1;
 
         // Solve members & check defaults.
         let primType = isPrimDecl && (
@@ -4734,8 +4736,8 @@ pub fn solve(
                 field.type = member.type;
 
                 flat_cnt += tryLookupStruct(member.type).flat_cnt || 1;
-                if (all_triv)
-                    all_triv = member.type.is_trivial;
+                if (!non_triv && !member.type.is_trivial)
+                    non_triv = i + 1;
 
                 if (member.flags & F_USING)
                 {
@@ -4816,6 +4818,14 @@ pub fn solve(
             }
         }
 
+        //
+        shadow let non_triv = non_triv;
+
+        if (non_triv && asserts & A_TRIVIAL)
+            fail("Struct is not " ~ "trivial".qKW ~ (
+                non_triv < 0    ? " because it is " ~ "nocopy".qKW ~ "."
+                                : " because of non-trivial member " ~ items.unless_oob(non_triv - 1).value.qID));
+
         // List imports in scope.
         _scope.imports.each(_ss.imports,
             |import| structImports.set::add(import));
@@ -4843,9 +4853,9 @@ pub fn solve(
                 let triv0   = s.all_triv;
 
                 s.flat_cnt  = flat_cnt;
-                s.all_triv  = all_triv;
+                s.all_triv  = !non_triv;
 
-                CHANGE    ||= flat0 != flat_cnt || triv0 != all_triv;
+                CHANGE    ||= flat0 != s.flat_cnt || triv0 != s.all_triv;
 
                 GET(s.target).status & SS_DID_START || BUG(
                     "Setting stuff but missing SS_DID_START.");

@@ -472,6 +472,17 @@ pub extern fn runTests()
         }
     `);
 
+    ZERO(`
+        <fail items not trivial>
+        trivial<pass/></fail>
+        struct Node { items: Node[]; };
+
+        fn main() {
+            mut n: Node;
+            return n.items.len;
+        }
+    `);
+
     // /using
 
 
