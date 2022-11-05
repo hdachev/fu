@@ -1046,8 +1046,8 @@ pub fn solve(
 
     fn tryMatch__mutargs(
         mut id: string,
-        ref reorder: i32[],
-        ref conversions: Target[][],
+        ref reorder!reorder_out: i32[],
+        ref conversions!conversions_out: Target[][],
         ref error!: string,
         local_scope!?: bool,
         misc_scope!?: Scope,
@@ -1165,9 +1165,11 @@ pub fn solve(
 
         // TODO the whole field_items thing is a mess,
         //  we really need a cleaner way to put these things up.
-        let field_items = local_scope && (flags & F_ACCESS || !minArity)
-            && minArity <= 1 && maxArity
-            && _field_items;
+        let considerFieldItems = local_scope
+            && (flags & F_ACCESS || !minArity)
+            && minArity <= 1 && maxArity;
+
+        fn field_items = considerFieldItems && _field_items;
 
         //
         mut alternate_ids: string[];
@@ -1181,6 +1183,11 @@ pub fn solve(
         inline fn _SSKIP_ITEMS =
             local_scope &&
                 (flags & F_IMPLICIT ? _ss.implicits : _ss.items);
+
+        ///////////////////////////////////
+        mut conversions: Target[][];
+        mut reorder: i32[];
+        ///////////////////////////////////
 
         //
         for (;;)
@@ -1197,45 +1204,39 @@ pub fn solve(
                         dont_search_just_return: target, :extra_items, :field_items, :shadows))
             {
                 mut DEBUG_mustMatch = false;
-
-                ///////////////////////////////////
-                ref conversions_out = conversions;
-                shadow mut conversions: Target[][];
-
-                ref reorder_out = reorder;
-                shadow mut reorder: i32[];
-
-                shadow let args = args;
-
                 mut TODO_FIX_skip_autocalls = false;
                 mut TODO_FIX_dontBotherSpecializing = false;
+
                 ///////////////////////////////////
+                conversions.clear();
+                reorder.clear();
+                ///////////////////////////////////
+
+                fn matchFail(inline err: string)
+                {
+                    if (DEBUG_mustMatch || error)
+                    {
+                        shadow let err = overloadIdx.qWHAT ~ ": " ~ err;
+
+                        if (DEBUG_mustMatch)
+                            BUG("mustMatch.matchFail: " ~ err);
+                        else
+                            error ~= "\n\n\t" ~ err;
+                    }
+
+                    continue :MATCH_FAIL;
+                }
 
                 :TEST_AGAIN while (true)
                 {
-                    let overload = GET(overloadIdx);
-
-                    fn matchFail(inline err: string)
-                    {
-                        if (DEBUG_mustMatch || error)
-                        {
-                            shadow let err = overload.qWHAT ~ ": " ~ err;
-
-                            if (DEBUG_mustMatch)
-                                BUG("mustMatch.matchFail: " ~ err);
-                            else
-                                error ~= "\n\n\t" ~ err;
-                        }
-
-                        continue :MATCH_FAIL;
-                    }
-
                     // Make sure we know what this is.
-                    if (lazySolveStart(overloadIdx, overload))
+                    if (lazySolveStart(overloadIdx))
                         continue :TEST_AGAIN;
 
                     ////////////////////////////////////////////
                     // Conversions / typename aliases.
+                    let overload = GET(overloadIdx);
+
                     let kind    = overload.kind;
                     let isType  = kind == "type";
                     if (minArity && isType && !target)
@@ -4933,15 +4934,15 @@ pub fn solve(
 
     //
 
-    fn lazySolveStart(target: Target, overload: Overload): bool
+    fn lazySolveStart(target: Target): bool
     {
         // Isn't lazy-started?
-        if (overload.status & (SS_DID_START | SS_LAZY) != SS_LAZY)
+        if (target.status & (SS_DID_START | SS_LAZY) != SS_LAZY)
             return false;
 
         {
             ref o = GET_mut(target);
-            o.status & (SS_FINALIZED | SS_DID_START | SS_DIRTY) && BUG("SS_DID_START: non-zero solver status: " ~ overload.status);
+            o.status & (SS_FINALIZED | SS_DID_START | SS_DIRTY) && BUG("SS_DID_START: non-zero solver status: " ~ o.status);
             o.status |= SS_DID_START;
 
             if (o.kind == "fn")
@@ -5035,7 +5036,7 @@ pub fn solve(
         for (mut i = 0; i < reopen.len; i++)
         {
             shadow let t = Target(:module.modid, index: reopen[i]);
-            lazySolveStart(t, GET(t));
+            lazySolveStart(t);
         }
     }
 
@@ -7055,7 +7056,7 @@ pub fn solve(
         if (!isZeroInit)
         {
             // Defaults & implicit argument injection.
-            mut host_args = target.args;
+            let host_args = target.args;
             args.resize(host_args.len);
             for (mut i = 0; i < args.len; i++)
             {
@@ -7441,7 +7442,7 @@ pub fn solve(
 
                     // TODO do this while listing exports instead, expect trouble with prelude.
                     let into = result[i + offset].target;
-                    if (lazySolveStart(into, GET(into)))
+                    if (lazySolveStart(into))
                         repeat = true;
                 }
             }
