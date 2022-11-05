@@ -6311,17 +6311,22 @@ pub fn solve(
 
     fn solveCall(node: Node, target!?: Target): SolvedNode
     {
+        let args = solveNodes(node.items);
+        return solveCall(id: node.value, args, :node.flags, :target);
+    }
+
+    fn solveCall(
+        mut id: string, mut args: SolvedNode[],
+        flags!?: Flags, target!?: Target): SolvedNode
+    {
+        id || target || BUG("solveCall: No id, no target.");
+
         // Dead code elim.
-        mut args = solveNodes(node.items);
         if (args.if_last.type.is_never)
             return deadCall(args);
 
-        //
-        mut id = node.value;
-        if (!id) target || BUG();
-
         // Qualified?
-        let qualified = node.flags & F_COMPOUND_ID;
+        let qualified = flags & F_COMPOUND_ID;
         let misc_scope = qualified && dequalify_andGetScope(id);
 
         //
@@ -6329,10 +6334,10 @@ pub fn solve(
         mut conversions: Target[][];
         let callTargIdx = match__mutargs(
             :misc_scope, local_scope: !qualified,
-            :id, :args, :reorder, :conversions, :node.flags, :target);
+            :id, :args, :reorder, :conversions, :flags, :target);
 
         //
-        return CallerNode(node.value, callTargIdx, args, :reorder, :conversions);
+        return CallerNode(id, callTargIdx, args, :reorder, :conversions);
     }
 
     fn deadCall(args: SolvedNode[]): SolvedNode
