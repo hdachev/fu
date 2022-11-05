@@ -10696,7 +10696,7 @@ pub extern fn runTests()
         }
     `);
 
-    TODO_ambig(`
+    ZERO(`
         enum thing { i32; int; bool }
 
         // So the problem is the retval annotation for fn ==(template): bool
