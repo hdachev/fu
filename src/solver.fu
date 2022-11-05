@@ -5928,36 +5928,6 @@ pub fn solve(
     }
 
 
-    // TODO we have to get rid of this.
-
-    fn Scope_lookupType(mut id: string, flags?: Flags): Type
-    {
-        mut scope_iterator: i32;
-        mut overloadIdx: Target;
-        mut shadows: bool;
-
-        let qualified = flags & F_COMPOUND_ID;
-        let qscope = qualified && dequalify_andGetScope(id);
-
-        while (overloadIdx =
-            qualified
-                ? qscope.items.search(id, scope_iterator)
-                : _scope.items.search(id, scope_iterator, scope_skip: _ss.items, :shadows))
-        {
-            let maybe = GET(overloadIdx);
-            if (maybe.kind == "type")
-                return maybe.type || BUG();
-        }
-
-        return fail("No type `" ~ id ~ "` in scope.");
-    }
-
-    fn Scope_lookupType(annot: Node): Type
-    {
-        return Scope_lookupType(annot.value, :annot.flags);
-    }
-
-
     //
 
     fn evalTypeParam(id: string, typeParams?: TypeParams): Type
@@ -6316,7 +6286,7 @@ pub fn solve(
     }
 
     fn solveCall(
-        mut id: string, mut args: SolvedNode[],
+        mut id: string, mut args?: SolvedNode[],
         flags!?: Flags, target!?: Target): SolvedNode
     {
         id || target || BUG("solveCall: No id, no target.");
@@ -6353,6 +6323,26 @@ pub fn solve(
         //
         makeNote(N_DeadCall);
         return createBlock(t_never, args);
+    }
+
+
+    // TODO we have to get rid of this.
+
+    fn Scope_lookupType(mut id: string, flags?: Flags): Type
+    {
+        let callsite = solveCall(id, :flags);
+        if (callsite.target.kind != "type")
+            return fail("No type `" ~ id ~ "` in scope.");
+
+        if (callsite.items)
+            return fail("Scope_lookupType: Wasting time setting up callargs.");
+
+        return callsite.target.type;
+    }
+
+    fn Scope_lookupType(annot: Node): Type
+    {
+        return Scope_lookupType(annot.value, :annot.flags);
     }
 
 
