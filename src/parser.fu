@@ -668,6 +668,7 @@ pub fn parse(
                 if (v == "nothrow")     return parseExoticDecl(asserts: A_NOTHROW);
                 if (v == "nocrash")     return parseExoticDecl(asserts: A_NOCRASH);
                 if (v == "noio")        return parseExoticDecl(asserts: A_NOIO);
+                if (v == "fast")        return parseExoticDecl(asserts: A_FAST);
 
                 if (v == "nocopy")      return parseNoCopy();
                 if (v == "trivial")     return parseNoCopy(A_TRIVIAL);

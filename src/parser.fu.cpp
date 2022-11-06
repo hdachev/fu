@@ -1810,6 +1810,10 @@ static s_Node parseStatement_bJMCpw6H(int& _loc, fu::view<s_Token> tokens, int& 
             {
                 return parseExoticDecl_P1O0ZTm8(s_Flags{}, s_DeclAsserts_A_NOFLOW, tokens, _idx, fname, src, modid, _loc, _fnDepth, _dollars, _TODO_FIX_dollarOk, _dollarAuto, fuzimports, _precedence, _col0, warnings, options, _hasPUB, _anonFns);
             }
+            else if (v == "fast"_fu)
+            {
+                return parseExoticDecl_P1O0ZTm8(s_Flags{}, s_DeclAsserts{}, tokens, _idx, fname, src, modid, _loc, _fnDepth, _dollars, _TODO_FIX_dollarOk, _dollarAuto, fuzimports, _precedence, _col0, warnings, options, _hasPUB, _anonFns);
+            }
             else if (v == "extern"_fu)
             {
                 return parseExoticDecl_P1O0ZTm8(s_Flags_F_EXTERN, s_DeclAsserts{}, tokens, _idx, fname, src, modid, _loc, _fnDepth, _dollars, _TODO_FIX_dollarOk, _dollarAuto, fuzimports, _precedence, _col0, warnings, options, _hasPUB, _anonFns);

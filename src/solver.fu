@@ -139,6 +139,8 @@ pub fn solve(
         // Start-of-func scope0 for implicit scopeskip.
         scope0:             ScopeMemo;
 
+        asserts:            DeclAsserts;
+
         using flow?:        Flow;
 
         using effects?:     Effects;
@@ -3996,7 +3998,9 @@ pub fn solve(
             defer TODO_FIX_convert_args = TODO_FIX_convert_args0;
             /////////////////////////////////////////////////////////////////////
 
-            mut out = CurrentFn(:scope0,
+            let asserts     = template.node.asserts;
+
+            mut out = CurrentFn(:scope0, :asserts,
                 solved(n_fn,
                     :target, type: X_addrofTarget(target)),
                 autoshadow_ok:
@@ -4026,8 +4030,6 @@ pub fn solve(
             let isTemplate  = template.node.flags & F_TEMPLATE;
             let isSpec      = isTemplate && (!into || !isFirst); // TODO FIX this looks really flaky
             let isUnspec    = isTemplate && !isSpec;
-
-            let asserts     = template.node.asserts;
 
             for (mut i = 0; i < inItems.len + FN_ARGS_BACK; i++)
             {
@@ -7655,6 +7657,10 @@ pub fn solve(
         fn RESOLVE_byTempCopy(ref callsite: SolvedNode, position: i32)
         {
             AAR && BUG();
+
+            // No copy injection in fast fns.
+            if (_current_fn.asserts & A_FAST)
+                return false;
 
             fn RESOLVE_byTempCopy(ref node: SolvedNode, slot: Type)
             {
