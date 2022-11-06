@@ -1281,75 +1281,35 @@ pub fn solve(
                         if (reorder.len < args.len && reorder.len < arity.max)
                             matchFail("Optional argument ambiguity, not all optional arguments provided, and not all callsite arguments used. Cannot distinguish from a typo. [TODO LIST MISSING ARGS]");
 
-                    fn disambig()
-                    {
-                        if (matchIdx)
-                        {
-                            fn GETfn(idx: i32) Target(modid: module.modid, index: idx);
-
-                            fn fnName(idx: i32) idx
-                                ? "`" ~ GETfn(idx).name ~ "`"
-                                : "global scope";
-
-                            let PREV        = matchIdx;
-                            let NEXT        = overloadIdx;
-
-                            let inner       = PREV.localOf;             // first to match is innermost scope
-                            let outer       = NEXT.localOf;             //  what we're currently looking is upscope
-                            let callsite    = _current_fn.target.index; //   as seen from where we currently are
-
-                            if (SELF_TEST && PREV.kind != "field" /* the field_items connundrum, this is the easiest fix */)
-                            {
-                                mut _c = callsite;
-                                while (_c > inner) _c = GETfn(_c).localOf;
-                                _c == inner || BUG(
-                                    "Leaking `" ~ id ~ "` between functions [inner/callsite]: "
-                                        ~ inner.fnName ~ "::" ~ PREV.qWHAT
-                                        ~ " is seen from " ~ callsite.fnName);
-
-                                mut _i = inner;
-                                while (_i > outer) _i = GETfn(_i).localOf;
-                                _i == outer || BUG(
-                                    "Leaking `" ~ id ~ "` between functions [inner/outer]: "
-                                        ~ inner.fnName ~ "::" ~ PREV.qWHAT ~ " and "
-                                        ~ outer.fnName ~ "::" ~ NEXT.qWHAT
-                                        ~ " as seen from " ~ callsite.fnName);
-                            }
-
-                            fail("Ambiguous callsite, matches multiple items in scope:"
-                                ~ "\n\n\t" ~ explainWhichFn(PREV, conversions_out) ~ " from " ~ inner.fnName ~ " and "
-                                ~ "\n\n\t" ~ explainWhichFn(NEXT, conversions    ) ~ " from " ~ outer.fnName ~ ", as seen from " ~ callsite.fnName ~ ".");
-                        }
-                    }
-
                     mut REST_TYPE: Type;
-                    mut REST_EXPECT: Type;
                     let REST_START = arity.findRestStart();
 
                     let N = (use_reorder ? reorder.len : args.len)
                         .max(!isZeroInit && arity.min);
 
-                    if (REST_START < N)
-                    {
-                        let expect = host_args[REST_START].type;
-                        if (expect)
-                            REST_EXPECT = tryClear_sliceable(expect) || fail(
-                                overloadIdx.name
-                                    ~ ": Rest argument annotation is not an array: "
-                                    ~ humanizeType(expect));
-
-                        // TODO FIX the two reorder fns don't deal correctly with rest args,
-                        //  this seems to fix it but honestly I'm not sure
-                        //   if it can deal with the rest of the arg-related stuff.
-                        //
-                        if (reorder && reorder.len < args.len)
-                            for (mut i = 0; i < args.len; i++)
-                                if (!optional.has(i) && !reorder.has(i))
-                                    reorder ~= i;
-                    }
-
                     if (N)
                     {
+                        mut REST_EXPECT: Type;
+
+                        if (REST_START < N)
+                        {
+                            let expect = host_args[REST_START].type;
+                            if (expect)
+                                REST_EXPECT = tryClear_sliceable(expect) || fail(
+                                    overloadIdx.name
+                                        ~ ": Rest argument annotation is not an array: "
+                                        ~ humanizeType(expect));
+
+                            // TODO FIX the two reorder fns don't deal correctly with rest args,
+                            //  this seems to fix it but honestly I'm not sure
+                            //   if it can deal with the rest of the arg-related stuff.
+                            //
+                            if (reorder && reorder.len < args.len)
+                                for (mut i = 0; i < args.len; i++)
+                                    if (!optional.has(i) && !reorder.has(i))
+                                        reorder ~= i;
+                        }
+
                         reorder.len >= args.len || !reorder || optional || BUG("reorder < args:\n\t\treorder=" ~ reorder ~ "\n\t\t#args=" ~ args.len);
 
                         :ARG_OK
@@ -1487,27 +1447,27 @@ pub fn solve(
                                     ~ " expects " ~ humanizeType(expect)
                                     ~ ", got "    ~ humanizeType(actual));
                         }
-                    }
 
-                    if (REST_START < N)
-                    {
-                        for (mut i = REST_START; i < N; i++)
+                        if (REST_START < N)
                         {
-                            let hasConv         = conversions.len > i && conversions[i].len;
-                            let callsiteIndex   = use_reorder ? reorder[i] : i;
-                            let actual          = hasConv
-                                ? GET(conversions[i].last).type
-                                : args[callsiteIndex].type;
+                            for (mut i = REST_START; i < N; i++)
+                            {
+                                let hasConv         = conversions.len > i && conversions[i].len;
+                                let callsiteIndex   = use_reorder ? reorder[i] : i;
+                                let actual          = hasConv
+                                    ? GET(conversions[i].last).type
+                                    : args[callsiteIndex].type;
 
-                            REST_TYPE = i == REST_START
-                                ? solveArrlit_itemType_init(head: actual)
-                                : type_trySuper(REST_TYPE, actual)
-                                    || matchFail("Rest arguments have no common supertype: "
-                                                             ~ humanizeType(REST_TYPE)
-                                                    ~ " <- " ~ humanizeType(actual));
+                                REST_TYPE = i == REST_START
+                                    ? solveArrlit_itemType_init(head: actual)
+                                    : type_trySuper(REST_TYPE, actual)
+                                        || matchFail("Rest arguments have no common supertype: "
+                                                                 ~ humanizeType(REST_TYPE)
+                                                        ~ " <- " ~ humanizeType(actual));
+                            }
+
+                            REST_TYPE = solveArrlit_done(itemType: REST_TYPE);
                         }
-
-                        REST_TYPE = solveArrlit_done(itemType: REST_TYPE);
                     }
 
                     // Specialize.
@@ -1542,15 +1502,51 @@ pub fn solve(
                     }
 
                     // Forbid ambiguity.
-                    disambig();
+                    if (matchIdx)
+                    {
+                        fn GETfn(idx: i32) Target(modid: module.modid, index: idx);
+
+                        fn fnName(idx: i32) idx
+                            ? "`" ~ GETfn(idx).name ~ "`"
+                            : "global scope";
+
+                        let PREV        = matchIdx;
+                        let NEXT        = overloadIdx;
+
+                        let inner       = PREV.localOf;             // first to match is innermost scope
+                        let outer       = NEXT.localOf;             //  what we're currently looking is upscope
+                        let callsite    = _current_fn.target.index; //   as seen from where we currently are
+
+                        if (SELF_TEST && PREV.kind != "field" /* the field_items connundrum, this is the easiest fix */)
+                        {
+                            mut _c = callsite;
+                            while (_c > inner) _c = GETfn(_c).localOf;
+                            _c == inner || BUG(
+                                "Leaking `" ~ id ~ "` between functions [inner/callsite]: "
+                                    ~ inner.fnName ~ "::" ~ PREV.qWHAT
+                                    ~ " is seen from " ~ callsite.fnName);
+
+                            mut _i = inner;
+                            while (_i > outer) _i = GETfn(_i).localOf;
+                            _i == outer || BUG(
+                                "Leaking `" ~ id ~ "` between functions [inner/outer]: "
+                                    ~ inner.fnName ~ "::" ~ PREV.qWHAT ~ " and "
+                                    ~ outer.fnName ~ "::" ~ NEXT.qWHAT
+                                    ~ " as seen from " ~ callsite.fnName);
+                        }
+
+                        fail("Ambiguous callsite, matches multiple items in scope:"
+                            ~ "\n\n\t" ~ explainWhichFn(PREV, conversions_out) ~ " from " ~ inner.fnName ~ " and "
+                            ~ "\n\n\t" ~ explainWhichFn(NEXT, conversions    ) ~ " from " ~ outer.fnName ~ ", as seen from " ~ callsite.fnName ~ ".");
+                    }
+
+                    // Done!
+                    matchIdx = overloadIdx;
 
                     // Output conversions /////////////
                     swap(reorder,     reorder_out    );
                     swap(conversions, conversions_out);
                     ///////////////////////////////////
-
-                    // Done!
-                    matchIdx = overloadIdx;
 
                     // Arity 0 auto-shadows.
                     if (shadows)
