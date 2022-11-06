@@ -17,14 +17,20 @@ enum SolverPass
 };
 
 fn target(si: ScopeItem)
-    Target(:si.modid, index: (si.packed &~ (0x1 << 31)).i32);
+    Target(:si.modid, index: (si.packed & 0x3fffffff).i32);
 
 fn ScopeItem_shadows(si: ScopeItem)
     !!(si.packed & (0x1 << 31));
 
+fn ScopeItem_canSkipRest(si: ScopeItem)
+    !!(si.packed & (0x1 << 30));
+
+fn ScopeItem_canSkipRest_set(ref si: ScopeItem)
+    si.packed |= (0x1 << 30);
+
 fn ScopeItem(id: string, target: Target, shadows: bool)
     ScopeItem(:id, :target.modid,
-        packed: target.index.u32 | (shadows && (0x1 << 31)));
+        packed: target.index.u32 & 0x3fffffff | (shadows && (0x1 << 31)));
 
 
 
@@ -173,25 +179,14 @@ fn reveach(items: [$T], ss: ScopeSkip[], fn)
 }
 
 fn search(
-    items: [ScopeItem], id: string,
+    ref items: [ScopeItem], id: string,
     scope_iterator: &mut i32,
     scope_skip: ScopeSkip[],
     ref shadows: bool,
-    dont_search_just_return?: Target,
     extra_items?: [Target],
     field_items?: [ScopeItem]): Target
 {
     shadows = false;
-
-    // Searching & forcing results the same way.
-    if (dont_search_just_return)
-    {
-        if (scope_iterator)
-            return Target;
-
-        scope_iterator--;
-        return dont_search_just_return;
-    }
 
     // Search.
     let NUM_EXTRAS      = extra_items.len;
@@ -241,6 +236,9 @@ fn search(
         }
 
         // Go.
+
+        let scope_iterator0 = scope_iterator;
+
         scope_iterator--;
         nextSkip();
         scope_iterator++;
@@ -258,9 +256,26 @@ fn search(
             if (item.id == id)
             {
                 shadows = ScopeItem_shadows(item);
+
+                ////////////////////////////////
+                if (ScopeItem_canSkipRest(item))
+                {
+                    // println("     SKIP " id " " scope_iterator);
+                    scope_iterator = 0;
+                }
+                ////////////////////////////////
+
                 return item.target;
             }
         }
+
+        ////////////////////////////////////////////////////////
+        if (scope_iterator0 >= 0 && scope_iterator0 < items.len)
+        {
+            // println("WILL SKIP " id " " scope_iterator0);
+            ScopeItem_canSkipRest_set(items[scope_iterator0]);
+        }
+        ////////////////////////////////////////////////////////
     }
 
     // Field items, the next batch.
@@ -284,6 +299,44 @@ fn search(
     {
         while (scope_iterator --> 0)
             return extra_items[scope_iterator];
+    }
+
+    return Target;
+}
+
+
+//
+
+fn search(
+    dont_search_just_return!: Target,
+    scope_iterator: &mut i32)
+{
+    // Searching & forcing results the same way.
+    if (scope_iterator)
+        return Target;
+
+    scope_iterator--;
+    return dont_search_just_return;
+}
+
+fn search(
+    items: [ScopeItem], id: string,
+    scope_iterator: &mut i32): Target
+{
+    let START = items.len;
+
+    if (!scope_iterator)
+        scope_iterator = START;
+    else if (scope_iterator >= START)
+        throw ("Scope/search: items shrunk while we iterated.");
+
+    defer scope_iterator ||= -1;
+
+    while (scope_iterator --> 0)
+    {
+        let item = items[scope_iterator];
+        if (item.id == id)
+            return item.target;
     }
 
     return Target;

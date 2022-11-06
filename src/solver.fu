@@ -1174,16 +1174,6 @@ pub fn solve(
         //
         mut alternate_ids: string[];
 
-        // This got kinda messy.
-        inline fn _SCOPE_ITEMS =
-            local_scope
-                ? flags & F_IMPLICIT ? _scope.implicits : _scope.items
-                : misc_scope.items[0, misc_scope.pub_items];
-
-        inline fn _SSKIP_ITEMS =
-            local_scope &&
-                (flags & F_IMPLICIT ? _ss.implicits : _ss.items);
-
         ///////////////////////////////////
         mut conversions: Target[][];
         mut reorder: i32[];
@@ -1196,13 +1186,24 @@ pub fn solve(
             mut overloadIdx: Target;
 
             //
+            inline fn _SCOPE = flags & F_IMPLICIT ? _scope.implicits : _scope.items;
+            inline fn _SSKIP = flags & F_IMPLICIT ? _ss.implicits    : _ss.items;
+
+            !local_scope && (extra_items || field_items) && BUG(
+                "!local_scope but extra_items or field_items");
+
+            //
             mut shadows: bool;
             :MATCH_FAIL while (overloadIdx =
-                _SCOPE_ITEMS
-                    .search(id, scope_iterator,
-                        scope_skip: _SSKIP_ITEMS,
-                        dont_search_just_return: target, :extra_items, :field_items, :shadows))
+                target
+                    ? search(dont_search_just_return: target, scope_iterator)
+                    : local_scope
+                        ? _SCOPE.search(id, scope_iterator, scope_skip: _SSKIP, :extra_items, :field_items, :shadows)
+                        : misc_scope.items[0, misc_scope.pub_items].search(id, scope_iterator))
             {
+                !local_scope && shadows && BUG("!local_scope but shadows");
+
+                //
                 mut DEBUG_mustMatch = false;
                 mut TODO_FIX_skip_autocalls = false;
                 mut TODO_FIX_dontBotherSpecializing = false;
@@ -5938,13 +5939,12 @@ pub fn solve(
         mut shadows: bool;
 
         let qualified = flags & F_COMPOUND_ID;
-        let scope = qualified
-            ? dequalify_andGetScope(id)
-            : _scope;
+        let qscope = qualified && dequalify_andGetScope(id);
 
         while (overloadIdx =
-            scope.items.search(id, scope_iterator,
-                scope_skip: !qualified && _ss.items, :shadows))
+            qualified
+                ? qscope.items.search(id, scope_iterator)
+                : _scope.items.search(id, scope_iterator, scope_skip: _ss.items, :shadows))
         {
             let maybe = GET(overloadIdx);
             if (maybe.kind == "type")
@@ -5989,13 +5989,15 @@ pub fn solve(
         mut result: Target[];
 
         // Visit local scope.
-        fn visitScope(items: [ScopeItem])
+        fn visitScope(local_scope!: bool, items?: [ScopeItem])
         {
             mut scope_iterator: i32;
             mut target: Target;
             mut shadows: bool;
-            while (!shadow && (target = items.search(
-                :id, :scope_iterator, scope_skip: _ss.items, :shadows)))
+            while (!shadow && (target =
+                local_scope
+                    ? _scope.items.search(:id, :scope_iterator, scope_skip: _ss.items, :shadows)
+                    :        items.search(:id, :scope_iterator)))
             {
                 // Can't shadow here -
                 //  shadowing works per signature,
@@ -6004,7 +6006,7 @@ pub fn solve(
             }
         }
 
-        visitScope(_scope.items);
+        visitScope(local_scope: true);
 
         // TODO FIX:
         //  emit a regular lambda instead.
@@ -6015,7 +6017,8 @@ pub fn solve(
             //   module root scope but that'd slow everything else down.
             fn visitTypes(shadow module: Module)
                 module.out.types.each(
-                    |struct| visitScope(struct.items));
+                    |struct| visitScope(
+                        local_scope: false, struct.items));
 
             // From this module ...
             visitTypes(module);
