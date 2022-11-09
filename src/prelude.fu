@@ -6,118 +6,118 @@ let prelude_src = `
 
 // Arithmetics.
 
-fn +<T>(a: T) case (T.is::arithmetic): T __native;
-fn -<T>(a: T) case (T.is::arithmetic): T __native;
+fn + !T(a: T) case (T.is::arithmetic): T __native;
+fn - !T(a: T) case (T.is::arithmetic): T __native;
 
-fn +<T>(a: T, b: T) case (T.is::arithmetic): T __native;
-fn -<T>(a: T, b: T) case (T.is::arithmetic): T __native;
-fn *<T>(a: T, b: T) case (T.is::arithmetic): T __native;
-fn /<T>(a: T, b: T) case (T.is::arithmetic): T __native;
+fn + !T(a: T, b: T) case (T.is::arithmetic): T __native;
+fn - !T(a: T, b: T) case (T.is::arithmetic): T __native;
+fn * !T(a: T, b: T) case (T.is::arithmetic): T __native;
+fn / !T(a: T, b: T) case (T.is::arithmetic): T __native;
 
-fn %<T>(a: T, b: T)
+fn % !T(a: T, b: T)
     case (T.is::integral): T __native;
     case (T.is::floating_point): T __native("<cmath>", "std::fmod");
 
-fn ++<T>(ref a: T) case (T.is::arithmetic): &mut T __native;
-fn --<T>(ref a: T) case (T.is::arithmetic): &mut T __native;
-postfix fn ++<T>(ref a: T) case (T.is::arithmetic): T __native;
-postfix fn --<T>(ref a: T) case (T.is::arithmetic): T __native;
+fn ++ !T(ref a: T) case (T.is::arithmetic): &mut T __native;
+fn -- !T(ref a: T) case (T.is::arithmetic): &mut T __native;
+postfix fn ++ !T(ref a: T) case (T.is::arithmetic): T __native;
+postfix fn -- !T(ref a: T) case (T.is::arithmetic): T __native;
 
-fn +=<T>(ref a: T, b: T) case (T.is::arithmetic): &mut T __native;
-fn -=<T>(ref a: T, b: T) case (T.is::arithmetic): &mut T __native;
-fn *=<T>(ref a: T, b: T) case (T.is::arithmetic): &mut T __native;
-fn /=<T>(ref a: T, b: T) case (T.is::arithmetic): &mut T __native;
+fn += !T(ref a: T, b: T) case (T.is::arithmetic): &mut T __native;
+fn -= !T(ref a: T, b: T) case (T.is::arithmetic): &mut T __native;
+fn *= !T(ref a: T, b: T) case (T.is::arithmetic): &mut T __native;
+fn /= !T(ref a: T, b: T) case (T.is::arithmetic): &mut T __native;
 
-fn > <T>(a: T, b: T) case (T.is::primitive): bool __native;
-fn < <T>(a: T, b: T) case (T.is::primitive): bool __native;
-fn >=<T>(a: T, b: T) case (T.is::primitive): bool __native;
-fn <=<T>(a: T, b: T) case (T.is::primitive): bool __native;
+fn >  !T(a: T, b: T) case (T.is::primitive): bool __native;
+fn <  !T(a: T, b: T) case (T.is::primitive): bool __native;
+fn >= !T(a: T, b: T) case (T.is::primitive): bool __native;
+fn <= !T(a: T, b: T) case (T.is::primitive): bool __native;
 
 
 // Bitwise.
 
-fn ~<T>(a: T)       case (T.is::bitfield): T __native;
-fn &<T>(a: T, b: T) case (T.is::bitfield): T __native;
-fn |<T>(a: T, b: T) case (T.is::bitfield): T __native;
-fn ^<T>(a: T, b: T) case (T.is::bitfield): T __native;
+fn ~ !T(a: T)       case (T.is::bitfield): T __native;
+fn & !T(a: T, b: T) case (T.is::bitfield): T __native;
+fn | !T(a: T, b: T) case (T.is::bitfield): T __native;
+fn ^ !T(a: T, b: T) case (T.is::bitfield): T __native;
 
-fn &=<T>(ref a: T, b: T) case (T.is::bitfield): &mut T __native;
-fn |=<T>(ref a: T, b: T) case (T.is::bitfield): &mut T __native;
-fn ^=<T>(ref a: T, b: T) case (T.is::bitfield): &mut T __native;
+fn &= !T(ref a: T, b: T) case (T.is::bitfield): &mut T __native;
+fn |= !T(ref a: T, b: T) case (T.is::bitfield): &mut T __native;
+fn ^= !T(ref a: T, b: T) case (T.is::bitfield): &mut T __native;
 
-fn << <T>(a: T, b: T) case (T.is::integral): T __native;
-fn >> <T>(a: T, b: T) case (T.is::integral): T __native;
+fn <<  !T(a: T, b: T) case (T.is::integral): T __native;
+fn >>  !T(a: T, b: T) case (T.is::integral): T __native;
 
-fn <<=<T>(ref a: T, b: T) case (T.is::integral): &mut T __native;
-fn >>=<T>(ref a: T, b: T) case (T.is::integral): &mut T __native;
+fn <<= !T(ref a: T, b: T) case (T.is::integral): &mut T __native;
+fn >>= !T(ref a: T, b: T) case (T.is::integral): &mut T __native;
 
 
 // Numeric conversions.
 
-fn   i8<T>(v: T) case (T.is::primitive):   i8 __native("/prim/convert");
-fn  i16<T>(v: T) case (T.is::primitive):  i16 __native("/prim/convert");
-fn  i32<T>(v: T) case (T.is::primitive):  i32 __native("/prim/convert");
-fn  i64<T>(v: T) case (T.is::primitive):  i64 __native("/prim/convert");
-fn i128<T>(v: T) case (T.is::primitive): i128 __native("/prim/convert");
+fn   i8 !T(v: T) case (T.is::primitive):   i8 __native("/prim/convert");
+fn  i16 !T(v: T) case (T.is::primitive):  i16 __native("/prim/convert");
+fn  i32 !T(v: T) case (T.is::primitive):  i32 __native("/prim/convert");
+fn  i64 !T(v: T) case (T.is::primitive):  i64 __native("/prim/convert");
+fn i128 !T(v: T) case (T.is::primitive): i128 __native("/prim/convert");
 
-fn   u8<T>(v: T) case (T.is::primitive):   u8 __native("/prim/convert");
-fn  u16<T>(v: T) case (T.is::primitive):  u16 __native("/prim/convert");
-fn  u32<T>(v: T) case (T.is::primitive):  u32 __native("/prim/convert");
-fn  u64<T>(v: T) case (T.is::primitive):  u64 __native("/prim/convert");
-fn u128<T>(v: T) case (T.is::primitive): u128 __native("/prim/convert");
+fn   u8 !T(v: T) case (T.is::primitive):   u8 __native("/prim/convert");
+fn  u16 !T(v: T) case (T.is::primitive):  u16 __native("/prim/convert");
+fn  u32 !T(v: T) case (T.is::primitive):  u32 __native("/prim/convert");
+fn  u64 !T(v: T) case (T.is::primitive):  u64 __native("/prim/convert");
+fn u128 !T(v: T) case (T.is::primitive): u128 __native("/prim/convert");
 
-fn  f32<T>(v: T) case (T.is::primitive): f32 __native("/prim/convert");
-fn  f64<T>(v: T) case (T.is::primitive): f64 __native("/prim/convert");
+fn  f32 !T(v: T) case (T.is::primitive): f32 __native("/prim/convert");
+fn  f64 !T(v: T) case (T.is::primitive): f64 __native("/prim/convert");
 
-fn byte<T>(v: T) case (T.is::primitive): byte __native("/prim/convert");
+fn byte !T(v: T) case (T.is::primitive): byte __native("/prim/convert");
 
 
 // Math.
 
-fn abs<T>(v: T) case (T.is::floating_point): T __native("<cmath>", "std::abs");
+fn abs !T(v: T) case (T.is::floating_point): T __native("<cmath>", "std::abs");
 
-fn max<T>(a: T, b: T)
+fn max !T(a: T, b: T)
     case (T.is::floating_point) a >= b || b != b ? a : b;
     case (T.is::arithmetic)     a >= b           ? a : b;
 
-fn min<T>(a: T, b: T)
+fn min !T(a: T, b: T)
     case (T.is::floating_point) a <= b || b != b ? a : b;
     case (T.is::arithmetic)     a <= b           ? a : b;
 
-fn exp  <T>(a: T) case (T.is::floating_point): T __native("<cmath>", "std::exp");
-fn exp2 <T>(a: T) case (T.is::floating_point): T __native("<cmath>", "std::exp2");
-fn log  <T>(a: T) case (T.is::floating_point): T __native("<cmath>", "std::log");
-fn log10<T>(a: T) case (T.is::floating_point): T __native("<cmath>", "std::log10");
-fn log2 <T>(a: T) case (T.is::floating_point): T __native("<cmath>", "std::log2");
+fn exp   !T(a: T) case (T.is::floating_point): T __native("<cmath>", "std::exp");
+fn exp2  !T(a: T) case (T.is::floating_point): T __native("<cmath>", "std::exp2");
+fn log   !T(a: T) case (T.is::floating_point): T __native("<cmath>", "std::log");
+fn log10 !T(a: T) case (T.is::floating_point): T __native("<cmath>", "std::log10");
+fn log2  !T(a: T) case (T.is::floating_point): T __native("<cmath>", "std::log2");
 
-fn pow  <T>(a: T, b: T) case (T.is::floating_point): T __native("<cmath>", "std::pow");
-fn sqrt <T>(v: T) case (T.is::floating_point): T __native("<cmath>", "std::sqrt");
-fn cbrt <T>(v: T) case (T.is::floating_point): T __native("<cmath>", "std::cbrt");
-fn hypot<T>(v: T) case (T.is::floating_point): T __native("<cmath>", "std::hypot");
+fn pow   !T(a: T, b: T) case (T.is::floating_point): T __native("<cmath>", "std::pow");
+fn sqrt  !T(v: T) case (T.is::floating_point): T __native("<cmath>", "std::sqrt");
+fn cbrt  !T(v: T) case (T.is::floating_point): T __native("<cmath>", "std::cbrt");
+fn hypot !T(v: T) case (T.is::floating_point): T __native("<cmath>", "std::hypot");
 
-fn ceil <T>(v: T) case (T.is::floating_point): T __native("<cmath>", "std::ceil");
-fn floor<T>(v: T) case (T.is::floating_point): T __native("<cmath>", "std::floor");
-fn trunc<T>(v: T) case (T.is::floating_point): T __native("<cmath>", "std::trunc");
-fn round<T>(v: T) case (T.is::floating_point): T __native("<cmath>", "std::round");
+fn ceil  !T(v: T) case (T.is::floating_point): T __native("<cmath>", "std::ceil");
+fn floor !T(v: T) case (T.is::floating_point): T __native("<cmath>", "std::floor");
+fn trunc !T(v: T) case (T.is::floating_point): T __native("<cmath>", "std::trunc");
+fn round !T(v: T) case (T.is::floating_point): T __native("<cmath>", "std::round");
 
-fn sin<T>(v: T) case (T.is::floating_point): T __native("<cmath>", "std::sin");
-fn cos<T>(v: T) case (T.is::floating_point): T __native("<cmath>", "std::cos");
-fn tan<T>(v: T) case (T.is::floating_point): T __native("<cmath>", "std::tan");
+fn sin !T(v: T) case (T.is::floating_point): T __native("<cmath>", "std::sin");
+fn cos !T(v: T) case (T.is::floating_point): T __native("<cmath>", "std::cos");
+fn tan !T(v: T) case (T.is::floating_point): T __native("<cmath>", "std::tan");
 
-fn asin<T>(v: T) case (T.is::floating_point): T __native("<cmath>", "std::asin");
-fn acos<T>(v: T) case (T.is::floating_point): T __native("<cmath>", "std::acos");
-fn atan<T>(v: T) case (T.is::floating_point): T __native("<cmath>", "std::atan");
+fn asin !T(v: T) case (T.is::floating_point): T __native("<cmath>", "std::asin");
+fn acos !T(v: T) case (T.is::floating_point): T __native("<cmath>", "std::acos");
+fn atan !T(v: T) case (T.is::floating_point): T __native("<cmath>", "std::atan");
 
-fn atan2<T>(y: T, x: T) case (T.is::floating_point): T __native("<cmath>", "std::atan2");
+fn atan2 !T(y: T, x: T) case (T.is::floating_point): T __native("<cmath>", "std::atan2");
 
 fn PI():  f64 __native("<math.h>", "M_PI");
 fn E():   f64 __native("<math.h>", "M_E");
 fn INF(): f64 __native("<math.h>", "INFINITY");
 fn NAN(): f64 __native("<math.h>", "NAN");
 
-fn nan   <T>(v: T) case (T.is::floating_point): bool __native("<cmath>", "std::isnan");
-fn inf   <T>(v: T) case (T.is::floating_point): bool __native("<cmath>", "std::isinf");
-fn finite<T>(v: T) case (T.is::floating_point): bool __native("<cmath>", "std::isfinite");
+fn nan    !T(v: T) case (T.is::floating_point): bool __native("<cmath>", "std::isnan");
+fn inf    !T(v: T) case (T.is::floating_point): bool __native("<cmath>", "std::isinf");
+fn finite !T(v: T) case (T.is::floating_point): bool __native("<cmath>", "std::isfinite");
 
 
 // Int helpers.
@@ -125,14 +125,14 @@ fn finite<T>(v: T) case (T.is::floating_point): bool __native("<cmath>", "std::i
 type  int   = i32; // These may become separate types
 type uint   = u32; //  with a user-selectable size.
 
-fn MIN<T>(_: T)
+fn MIN !T(_: T)
     case (T -> i8 )        -128;
     case (T -> i16)        -32768;
     case (T -> i32)        -2147483648;
     case (T -> i64)        -9223372036854775808;
     case (T.is::unsigned)  T(0);
 
-fn MAX<T>(_: T)
+fn MAX !T(_: T)
     case (T -> i8 )        127;
     case (T -> i16)        32767;
     case (T -> i32)        2147483647;
@@ -142,11 +142,11 @@ fn MAX<T>(_: T)
 
 // Assignment.
 
-fn   =<T>(ref a: T,    mut b: T): &mut T __native;
-fn ||=<T>(ref a: T, inline b: T): &mut T = a || (a = b);
-fn &&=<T>(ref a: T, inline b: T): &mut T = a && (a = b);
+fn   = !T(ref a: T,    mut b: T): &mut T __native;
+fn ||= !T(ref a: T, inline b: T): &mut T = a || (a = b);
+fn &&= !T(ref a: T, inline b: T): &mut T = a && (a = b);
 
-fn swap<T>(ref a: T, ref b: T): void __native(
+fn swap !T(ref a: T, ref b: T): void __native(
     "hacks/soft_risk",
     "<utility>", "std::swap");
 
@@ -157,43 +157,43 @@ fn swap<T>(ref a: T, ref b: T): void __native(
 // TODO mutval .=,
 //  just like the assignments and splice.
 
-novec fn len<T>(a: [T;]): int __native(".size()");
+novec fn len !T(a: [T;]): int __native(".size()");
 
-novec fn []<T>(a: [T;], i: int)
+novec fn [] !T(a: [T;], i: int)
     case ($a -> &mut [T;]): &mut T __native(".mutref");
     default                : &    T __native;
 
-novec fn []<T>(a: [T;], start: int, end: int)
+novec fn [] !T(a: [T;], start: int, end: int)
     case ($a -> &mut [T;]): &mut [T;] __native("<fu/view.h>", "fu::get_view_mut");
     default                : &    [T;] __native("<fu/view.h>", "fu::get_view");
 
-fn    push<T>(ref a: T[], mut b: T): void __native(".push");
-fn unshift<T>(ref a: T[], mut b: T): void __native(".unshift");
-fn  insert<T>(ref a: T[], i: int, mut b: T): void __native(".insert");
+fn    push !T(ref a: T[], mut b: T): void __native(".push");
+fn unshift !T(ref a: T[], mut b: T): void __native(".unshift");
+fn  insert !T(ref a: T[], i: int, mut b: T): void __native(".insert");
 
-fn  slice<T>(a: T[], start: int, end: int): T[] __native("<fu/vec/slice.h>", "fu::slice");
-fn  slice<T>(a: T[], start: int): T[] __native("<fu/vec/slice.h>", "fu::slice");
-fn substr<T>(a: T[], start: int, end: int): T[] __native("<fu/vec/slice.h>", "fu::substr");
+fn  slice !T(a: T[], start: int, end: int): T[] __native("<fu/vec/slice.h>", "fu::slice");
+fn  slice !T(a: T[], start: int): T[] __native("<fu/vec/slice.h>", "fu::slice");
+fn substr !T(a: T[], start: int, end: int): T[] __native("<fu/vec/slice.h>", "fu::substr");
 
-fn splice<T>(ref a: T[], start: int, count: int): void  __native(".splice");
-fn splice<T>(ref a: T[], start: int, count: int, /*TODO FIX*/b: [T]): void  __native(".splice");
+fn splice !T(ref a: T[], start: int, count: int): void  __native(".splice");
+fn splice !T(ref a: T[], start: int, count: int, /*TODO FIX*/b: [T]): void  __native(".splice");
 
-fn    pop<T>(ref a: T[]): void __native(".pop()");
-fn  shift<T>(ref a: T[]): void __native(".shift()");
+fn    pop !T(ref a: T[]): void __native(".pop()");
+fn  shift !T(ref a: T[]): void __native(".shift()");
 
-fn  clear<T>(ref a: T[]): void __native(".clear()");
-fn shrink<T>(ref a: T[], len: int): void __native(".shrink");
+fn  clear !T(ref a: T[]): void __native(".clear()");
+fn shrink !T(ref a: T[], len: int): void __native(".shrink");
 
-fn resize<T>(ref a: T[], len: int): void __native(".resize");
-fn   grow<T>(ref a: T[], len: int): void __native(".grow");
+fn resize !T(ref a: T[], len: int): void __native(".resize");
+fn   grow !T(ref a: T[], len: int): void __native(".grow");
 
-fn resize_junk<T>(ref a: T[], len: int): void __native(".resize<false>");
-fn   grow_junk<T>(ref a: T[], len: int): void __native(".grow<false>");
+fn resize_junk !T(ref a: T[], len: int): void __native(".resize<false>");
+fn   grow_junk !T(ref a: T[], len: int): void __native(".grow<false>");
 
 
 // Sorts, via std::sort - fnptrs.
 
-fn sort<T>(ref a: [T;]): void
+fn sort !T(ref a: [T;]): void
 {
     pragma include("<algorithm>");
     pragma emit(
@@ -203,7 +203,7 @@ fn sort<T>(ref a: [T;]): void
     ");
 }
 
-fn sort<T>(ref a: [T;], less/*: fn(a: T, b: T): bool*/): void
+fn sort !T(ref a: [T;], less/*: fn(a: T, b: T): bool*/): void
 {
     noflow fn sort()
     {
@@ -233,38 +233,38 @@ fn sort<T>(ref a: [T;], less/*: fn(a: T, b: T): bool*/): void
 
 // String likes.
 
-fn find<T>(a: [T;], b: [T;], start: int, end: int) case (T.is::primitive): int  __native("<fu/vec/find.h>", "fu::lfind");
-fn find<T>(a: [T;], b: [T;], start: int)           case (T.is::primitive): int  __native("<fu/vec/find.h>", "fu::lfind");
-fn find<T>(a: [T;], b: [T;])                       case (T.is::primitive): int  __native("<fu/vec/find.h>", "fu::lfind");
+fn find !T(a: [T;], b: [T;], start: int, end: int) case (T.is::primitive): int  __native("<fu/vec/find.h>", "fu::lfind");
+fn find !T(a: [T;], b: [T;], start: int)           case (T.is::primitive): int  __native("<fu/vec/find.h>", "fu::lfind");
+fn find !T(a: [T;], b: [T;])                       case (T.is::primitive): int  __native("<fu/vec/find.h>", "fu::lfind");
 
-fn has <T>(a: [T;], b: [T;]) case (T.is::primitive): bool __native("<fu/vec/find.h>", "fu::has");
+fn has  !T(a: [T;], b: [T;]) case (T.is::primitive): bool __native("<fu/vec/find.h>", "fu::has");
 
 
 // Find char.
 
-fn starts<T>(a: [T;], with: T): bool
+fn starts !T(a: [T;], with: T): bool
 {
     return a.len && a[0] == with;
 }
 
-fn ends<T>(a: [T;], with: T): bool
+fn ends !T(a: [T;], with: T): bool
 {
     return a.len && a[a.len - 1] == with;
 }
 
-fn starts<T>(a: [T;], with: [T;]): bool
+fn starts !T(a: [T;], with: [T;]): bool
 {
     return a.len >= with.len
         && a[0, with.len] == with;
 }
 
-fn ends<T>(a: [T;], with: [T;]): bool
+fn ends !T(a: [T;], with: [T;]): bool
 {
     return a.len >= with.len
         && a[a.len - with.len, a.len] == with;
 }
 
-fn find<T>(a: [T;], b: T, mut start: int): int
+fn find !T(a: [T;], b: T, mut start: int): int
 {
     start = start > 0 ? start : 0;
     for (mut i = start; i < a.len; i++) // TODO memchr
@@ -274,7 +274,7 @@ fn find<T>(a: [T;], b: T, mut start: int): int
     return -1;
 }
 
-fn find<T>(a: [T;], b: T): int
+fn find !T(a: [T;], b: T): int
 {
     for (mut i = 0; i < a.len; i++) // TODO memchr
         if (a[i] == b)
@@ -283,7 +283,7 @@ fn find<T>(a: [T;], b: T): int
     return -1;
 }
 
-fn has<T>(a: [T;], b: T): bool
+fn has !T(a: [T;], b: T): bool
 {
     for (mut i = 0; i < a.len; i++)
         if (a[i] == b)
@@ -308,33 +308,33 @@ fn <=(a: string, b: string): bool __native("<fu/vec/cmp.h>", "<=");
 // TODO FIX these concats hide copies
 //  which also means they dont work correctly for nocopy stuff
 //
-fn ~<T>(a: [T;], b: [T;]): T[] __native("<fu/vec/concat.h>",     "+");
-fn ~<T>(a: [T;], b:  T  ): T[] __native("<fu/vec/concat_one.h>", "+");
-fn ~<T>(a:  T  , b: [T;]): T[] __native("<fu/vec/concat_one.h>", "+");
+fn ~ !T(a: [T;], b: [T;]): T[] __native("<fu/vec/concat.h>",     "+");
+fn ~ !T(a: [T;], b:  T  ): T[] __native("<fu/vec/concat_one.h>", "+");
+fn ~ !T(a:  T  , b: [T;]): T[] __native("<fu/vec/concat_one.h>", "+");
 
-fn ~=<T>(ref a: T[],     b: [T;]): &mut T[] __native("<fu/vec/concat.h>",     "+=");
-fn ~=<T>(ref a: T[], mut b:  T  ): &mut T[] __native("<fu/vec/concat_one.h>", "+=");
+fn ~= !T(ref a: T[],     b: [T;]): &mut T[] __native("<fu/vec/concat.h>",     "+=");
+fn ~= !T(ref a: T[], mut b:  T  ): &mut T[] __native("<fu/vec/concat_one.h>", "+=");
 
 
 // Fun with views.
 
-fn view<T, U>(a: [T;], of: U)
+fn view!<T, U>(a: [T;], of: U)
     case ($a -> &mut [T;] && T.is::trivial && U.is::trivial): &mut [U] __native("<fu/view.h>", "fu::view_of_mut");
     case (                    T.is::trivial && U.is::trivial):      [U] __native("<fu/view.h>", "fu::view_of");
 
-fn .=<T>(ref a: [T;], b: [T;]) case (T.is::copy): void __native("<fu/vec/view_assign.h>", "fu::view_assign");
+fn .= !T(ref a: [T;], b: [T;]) case (T.is::copy): void __native("<fu/vec/view_assign.h>", "fu::view_assign");
 
 // TODO not needed if swap(x, y) alias-ok's its two arguments:
-fn swap<T>(ref a: [T;], i: int, j: int): void __native("<fu/vec/view_swap.h>", "fu::view_swap");
+fn swap !T(ref a: [T;], i: int, j: int): void __native("<fu/vec/view_swap.h>", "fu::view_swap");
 
 
 // Stringifiables.
 
-fn ~ <T>(    a: [byte], b.str) a ~ b;
-fn ~ <T>(    a.str, b: [byte]) a ~ b;
-fn ~=<T>(ref a: string, b.str) a ~= b;
+fn ~  !T(    a: [byte], b.str) a ~ b;
+fn ~  !T(    a.str, b: [byte]) a ~ b;
+fn ~= !T(ref a: string, b.str) a ~= b;
 
-fn str<T>(n: T)
+fn str !T(n: T)
     case (T.is::unsigned       ): string __native("<fu/decstr.h>", "fu::u64dec");
     case (T.is::integral       ): string __native("<fu/decstr.h>", "fu::i64dec");
     case (T -> bool            ): string __native("<fu/decstr.h>", "fu::booldec");
@@ -384,7 +384,7 @@ fn println(parts.print[]: [string]): void __native("<fu/print.h>", "fu::println"
 
 // String commons.
 
-fn join<T>(a: [T[];], sep?: T or [T;] or [])
+fn join !T(a: [T[];], sep?: T or [T;] or [])
 {
     if (a.len < 2)
         return a.len && a[0];
@@ -419,7 +419,7 @@ fn join<T>(a: [T[];], sep?: T or [T;] or [])
     return res;
 }
 
-fn split<T>(str: T[], sep: T or [T;], each)
+fn split !T(str: T[], sep: T or [T;], each)
 {
     mut last = 0;
     mut next = 0;
@@ -437,7 +437,7 @@ fn split<T>(str: T[], sep: T or [T;], each)
         each(str, first?: true, last?: true);
 }
 
-fn split<T>(str: T[], sep: T or [T;])
+fn split !T(str: T[], sep: T or [T;])
 {
     mut result: T[][];
     split(str, :sep, |substr| result ~= substr);
@@ -450,7 +450,7 @@ fn split<T>(str: T[], sep: T or [T;])
 //   This would be generally useful, e.g.
 //    .map.maps and .map.filters could use this to skip allocs.
 
-fn replace<T>(str: T[], all: T or [T;], with: T or [T;] or [])
+fn replace !T(str: T[], all: T or [T;], with: T or [T;] or [])
 {
     mut result: T[];
     split(str, sep: all, |substr, first, last|
@@ -469,7 +469,7 @@ fn replace<T>(str: T[], all: T or [T;], with: T or [T;] or [])
 
 //
 
-fn <> <T, U>(a: T, b: T)
+fn <> !<T, U>(a: T, b: T)
 case (T.is::primitive) = a < b ? -1 : a > b ? +1 : 0;
 case (T -> [U;]) {
     mut cmp = a.len <> b.len;
@@ -490,18 +490,18 @@ default {
     return 0;
 }
 
-fn ==<T>(a: T, b: T)
+fn == !T(a: T, b: T)
     case (T.is::primitive): bool __native;
     default: bool = !(a <> b);
 
-fn !=<T>(a: T, b: T)
+fn != !T(a: T, b: T)
     case (T.is::primitive): bool __native;
     default: bool = !!(a <> b);
 
 
 //
 
-fn map<T>(a: [T;], fn)
+fn map !T(a: [T;], fn)
 {
     mut res: typeof( fn(T, i?: a.len) )[];
     res.grow_junk(a.len);
@@ -511,11 +511,11 @@ fn map<T>(a: [T;], fn)
     return res;
 }
 
-fn each<T>(a: [T;], fn)
+fn each !T(a: [T;], fn)
     for (mut i = 0; i < a.len; i++)
         fn(a[i], i?: i);
 
-fn reverse<T>(ref a: [T;])
+fn reverse !T(ref a: [T;])
 {
     let n1 = a.len - 1;
     let n2 = a.len >> 1;

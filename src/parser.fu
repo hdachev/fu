@@ -921,21 +921,29 @@ pub fn parse(
 
     fn tryParseTypeParamsDecl()
     {
-        if (tryConsume("op", "<"))
+        if (tryConsume("op", "!"))
         {
-            mut first = true;
-
-            for (;;)
+            if (tryConsume("op", "<"))
             {
-                if (tryConsume("op", ">"))
-                    break;
+                mut first = true;
 
-                if (!first)
-                    consume("op", ",");
+                for (;;)
+                {
+                    if (tryConsume("op", ">"))
+                        break;
 
-                first = false;
+                    if (!first)
+                        consume("op", ",");
 
-                // TODO HERE
+                    first = false;
+
+                    // TODO HERE
+                    let id = consume("id").value;
+                    _expectedTypeParams ~= id;
+                }
+            }
+            else
+            {
                 let id = consume("id").value;
                 _expectedTypeParams ~= id;
             }
