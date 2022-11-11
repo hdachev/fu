@@ -248,10 +248,8 @@ pub fn solve(
                    .scope.extended.unless_oob(target.index);
     }
 
-    fn fail(mut reason: string): never
+    fn fail_appendStack(mut reason: string)
     {
-        reason || BUG();
-
         // What were we currently solving?
         mut callstack = 0;
         mut pass0: SolverPass;
@@ -275,7 +273,13 @@ pub fn solve(
             }
         }
 
-        return FAIL(reason);
+        return reason;
+    }
+
+    fn fail(mut reason: string): never
+    {
+        reason || BUG();
+        return FAIL(reason.fail_appendStack());
     }
 
     shadow fn BUG(mut reason?: string)
@@ -2914,7 +2918,7 @@ pub fn solve(
 
     fn warn(token: TokenIdx, inline message: string)
     {
-        _warnings.grow_if_oob(_current_fn.target.index) ||= Warning(:token, :message);
+        _warnings.grow_if_oob(_current_fn.target.index) ||= Warning(:token, message: message.fail_appendStack);
     }
 
     fn relaxBlockVar(t: Target, relax_mask!: i32)
