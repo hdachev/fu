@@ -5986,6 +5986,46 @@ pub extern fn runTests()
         fn main() BINOP.RIGHT_TO_LEFT[1] && BINOP.PRECEDENCE.vals[3] == 1 ? 0 : 1;
     `);
 
+    ZERO(`
+        fn Split !T(str: T[], sep: T or [T;], each) {
+            mut last_idx = 0;
+            mut next_idx = 0;
+
+            let N = typeof(sep) -> [T;] ? sep.len : 1;
+            if (N) while ((next_idx = str.find(sep, start: last_idx)) >= 0) {
+                each(str.slice(last_idx, next_idx), first?: !last_idx, last?: false);
+                last_idx = next_idx + N;
+            }
+
+            if (last_idx)
+                each(str.slice(last_idx), first?: false, last?: true);
+            else
+                each(str, first?: true, last?: true);
+        }
+
+        fn Replace !T(str: T[], all: T or [T;], with: T or [T;] or []) {
+            mut result: T[];
+            Split(str, sep: all, |substr, lax first, lax last| {
+                if !(first) {
+                    if !(typeof(with) -> [])
+                        result ~= with;
+                }
+                else if (last) {
+                    return str;
+                }
+
+                result ~= substr;
+            });
+
+            return result;
+        }
+
+        fn main() {
+            let res = "hello".Replace(all: "ll", with: []);
+            return res == "heo" ? 0 : 1;
+        }
+    `);
+
     // /quite right
 
 
