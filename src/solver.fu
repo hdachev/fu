@@ -195,6 +195,12 @@ pub fn solve(
         postdom?:       Postdom;
     };
 
+    enum StaticEval {
+        SE_Unknown = 0
+        SE_False
+        SE_True
+    };
+
 
     // The solver state.
 
@@ -2940,7 +2946,7 @@ pub fn solve(
         let usage = _current_fn.var_usage.unless_oob(t.index);
         let isUnused = !usage;
         if (isUnused)
-            if !(o.flags & F_LAX || o.type.is_zeroes)
+            if !(o.flags & F_LAX || o.status & SS_USED_BY_STATIC_EVAL || o.type.is_zeroes)
                 warn(:o.solved.token, "Unused variable: " ~ o.name.qBAD ~ ": make it " ~ "lax".qKW ~ " if this is intentional.");
 
         //
@@ -6547,6 +6553,44 @@ pub fn solve(
 
     //
 
+    fn tryStaticEvalAsBool(node: SolvedNode): StaticEval
+    {
+        if (node.kind == "bool")
+        {
+            if (node.value == "true")   return SE_True;
+            if (node.value == "false")  return SE_False;
+        }
+
+        else if (node.kind == "call")
+        {
+            let o = GET(node.target);
+            if (o.kind == "var" && !(o.flags & F_ARG) && !o.type.is_mutref)
+            {
+                let se = tryStaticEvalAsBool(
+                    o.solved.items[LET_INIT]);
+
+                // No unused warnings on static evals.
+                if (se && !(o.flags & F_PUB))
+                    GET_mut(node.target).status |= SS_USED_BY_STATIC_EVAL;
+
+                return se;
+            }
+        }
+
+        else if (node.kind == "not")
+        {
+            let se = tryStaticEvalAsBool(node.items.only);
+            return se == SE_True  ? SE_False
+                 : se == SE_False ? SE_True
+                 : se;
+        }
+
+        return SE_Unknown;
+    }
+
+
+    //
+
     fn convertToSuperType(topic: string, ref a: SolvedNode, ref b: SolvedNode): Type
     {
         {
@@ -6620,8 +6664,9 @@ pub fn solve(
 
         // Static eval - first pass on static ifs,
         //  immediately discard one of the branches.
-        if (cond.kind == "bool")
-            return solveNode(node.items[cond.value == "true" ? 1 : 2], :type);
+        let se_cond = tryStaticEvalAsBool(cond);
+        if (se_cond)
+            return solveNode(node.items[se_cond == SE_True ? 1 : 2], :type);
 
         // Dead code elim.
         if (cond.type.is_never)
@@ -6670,7 +6715,7 @@ pub fn solve(
         let items = solveNodes(node.items,
             type_last: type,
             use_type_last: true,
-            static_eval_brk: "true",
+            static_eval_brk: SE_True,
             type_all: type.is_void ? t_bool : type);
 
         return createOr(items, type);
@@ -6758,7 +6803,7 @@ pub fn solve(
         let items = solveNodes(node.items,
             type_last: type,
             use_type_last: true,
-            static_eval_brk: "false",
+            static_eval_brk: SE_False,
             type_all: t_bool);
 
         return createAnd(items, :type);
@@ -7370,7 +7415,7 @@ pub fn solve(
         type_all?: Type,
         type_last!?: Type,
         use_type_last!?: bool,
-        static_eval_brk!?: string): SolvedNode[]
+        static_eval_brk!?: StaticEval): SolvedNode[]
     {
         mut result: SolvedNode[];
 
@@ -7409,13 +7454,17 @@ pub fn solve(
                 }
 
                 // Static eval.
-                if (static_eval_brk && solved.kind == "bool")
+                if (static_eval_brk)
                 {
-                    if (solved.value == static_eval_brk)
-                        break;
+                    let se_item = tryStaticEvalAsBool(solved);
+                    if (se_item)
+                    {
+                        if (static_eval_brk == se_item)
+                            break;
 
-                    if (i < nodes.len - 1)
-                        result.pop();
+                        if (i < nodes.len - 1)
+                            result.pop();
+                    }
                 }
 
                 continue;

@@ -94,6 +94,7 @@ pub extern fn runTests()
     let TODO_relaxer    = fn TODO;
     let TODO_ambig      = fn TODO;
     let TODO_dead       = fn TODO;
+    let TODO_StaticEval = fn TODO;
 
     let TODO_Map        = fn TODO;
 
@@ -10975,6 +10976,59 @@ pub extern fn runTests()
         }
 
         fn main() = "hello!".lex - 5;
+    `);
+
+
+    // Static eval.
+
+    ZERO(`
+        let se_global_false = false;
+        fn main() {
+            if (se_global_false) return THIS_DOESNT_EXIST();
+            return 0;
+        }
+    `);
+
+    ZERO(`
+        let se_global_true = true;
+        fn main() {
+            if (!se_global_true) return THIS_DOESNT_EXIST();
+            return 0;
+        }
+    `);
+
+    ZERO(`
+        let se_global_let_from_closure = false;
+        fn main() {
+            fn test() {
+                if (se_global_let_from_closure) return THIS_DOESNT_EXIST();
+                return 0;
+            }
+            return test();
+        }
+    `);
+
+    ZERO(`
+        fn main() {
+            <fail not defined>
+            mut <pass/>
+            let </fail> se_local_let = false;
+            if (se_local_let) return THIS_DOESNT_EXIST();
+            return 0;
+        }
+    `);
+
+    TODO_StaticEval(`
+        fn main() {
+            <fail not defined>
+            mut <pass/>
+            let </fail> se_closure_let = false;
+            fn test() {
+                if (se_closure_let) return THIS_DOESNT_EXIST();
+                return 0;
+            }
+            return test();
+        }
     `);
 
 
