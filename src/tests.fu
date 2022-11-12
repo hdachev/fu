@@ -7404,6 +7404,15 @@ pub extern fn runTests()
         }
     `);
 
+    ZERO(`
+        fn Replace(str: $T[], all: $T or [$T;], with: $T or [$T;] or [])
+            str.len + (typeof(all)  -> $T ? 1 : all.len)
+                    + (typeof(with) -> [] ? 0 : typeof(with) -> $T ? 1 : with.len);
+
+        fn main()
+            "Hello".Replace(all: "ll", with: []) == 7 ? 0 : 1;
+    `);
+
 
     // Don't repeat yourself ctors.
 
