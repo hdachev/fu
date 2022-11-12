@@ -1644,6 +1644,16 @@ pub extern fn runTests()
         }
     `);
 
+    ZERO(`
+        fn main()
+            "hello".replace(all: "h", with: "H") == "Hello" &&
+            "hello".replace(all: 'e', with: 'E') == "hEllo" &&
+            "hello".replace(all: "l", with: 'L') == "heLLo" &&
+            "hello".replace(all: 'o', with: "O") == "hellO" &&
+            "hello".replace(all: "l", with:  []) == "heo"
+                ? 0 : 1;
+    `);
+
 
     // String opti checkers.
 
