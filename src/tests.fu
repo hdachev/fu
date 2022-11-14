@@ -20,7 +20,7 @@ pub extern fn runTests()
     /*
     let SOLO            = fn ZERO;
 
-    fn SOLO_muteRest (lax a) {}
+    lax fn SOLO_muteRest (lax a) {}
     let ZERO            = fn SOLO_muteRest;
     let TODO            = fn SOLO_muteRest;
     let ZERO_SAME       = fn SOLO_muteRest;
@@ -49,7 +49,7 @@ pub extern fn runTests()
             testdiffs:  testdiff::TestDiffs;
         };
 
-        let results = PARZERO_queue.par::map(|test|
+        let results = PARZERO_queue.par::map(|lax test|
         {
             mut error: string;
             let implicit shadow mut testdiffs: testdiff::TestDiffs;
@@ -1366,7 +1366,7 @@ pub extern fn runTests()
     //  that can be flipped around for making sure
     //   e.g. copy-on-write behaves as expected.
 
-    fn ARROPS(
+    lax fn ARROPS(
         literal: string,
         operation: string,
         mut assertion: string)
