@@ -8439,6 +8439,28 @@ pub extern fn runTests()
         }
     `);
 
+    ZERO(`
+        fn printus(parts: string[], implicit ref out: i32)
+            parts.each(|part| part.each(|c| out += c.i32 ));
+
+        <alt>inline</alt>
+        fn silent(lax parts) {}
+
+        fn main() {
+            implicit mut out: i32;
+
+            printus([ "Hel","lo" ]);
+            if (out != 500)
+                return 1;
+
+            // Tries to test dead array literals.
+            shadow let printus = fn silent;
+
+            printus([ "Hel","lo" ]);
+            return out == 500 ? 0 : 1;
+        }
+    `);
+
 
     // Let's start having fun.
 
