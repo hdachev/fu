@@ -2201,6 +2201,12 @@ pub fn solve(
 
         node.type.try_relax(:slot, :relax_mask);
 
+        fn discardIntoBlock()
+        {
+            node = createBlock(:node.items, t_void);
+            return propagateType(:slot, node, :relax_mask);
+        }
+
 
         // Control flow.
 
@@ -2493,8 +2499,7 @@ pub fn solve(
             if (canDiscard && node.target.isDiscardable)
             {
                 makeNote(N_UnusedCall);
-                node = createBlock(:node.items, t_void);
-                return propagateType(:slot, node, :relax_mask);
+                return discardIntoBlock();
             }
 
             // So this call stays.
@@ -2648,6 +2653,12 @@ pub fn solve(
         }
         else if (k == "arrlit")
         {
+            if (canDiscard)
+            {
+                makeNote(N_UnusedArrlit);
+                return discardIntoBlock();
+            }
+
             let itemSlot = clear_sliceable(slot);
 
             for (mut i = 0; i < node.items.len; i++)

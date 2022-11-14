@@ -8443,7 +8443,9 @@ pub extern fn runTests()
         fn printus(parts: string[], implicit ref out: i32)
             parts.each(|part| part.each(|c| out += c.i32 ));
 
-        <alt>inline</alt>
+        <alt>
+        inline  <alt/>
+        lax     </alt>
         fn silent(lax parts) {}
 
         fn main() {
