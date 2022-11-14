@@ -3854,6 +3854,18 @@ pub fn solve(
                         //        /LITFIX
                         /////////////////
 
+                        //////////////////////////////////////////////////////////////////////////////////////////////
+                        // TODO FIX type unions can mess up when other args get defered and they get served first.  //
+                        //  I think we should go quantum here, basically figure out everything this could be        //
+                        //   and collapse along the way.                                                            //
+                        if (!pass_retype && annot.kind == "typeunion")
+                        {
+                            retypeIndices.push(i);
+                            continue;
+                        }
+                        //////////////////////////////////////////////////////////////////////////////////////////////
+
+                        //
                         argNode.kind == "let"  || BUG();
 
                         //
