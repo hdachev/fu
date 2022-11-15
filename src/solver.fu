@@ -6844,7 +6844,12 @@ pub fn solve(
     {
         // Static eval.
         if (item.kind == "bool")
-            return createBool(item.value == "true");
+        {
+            if (item.value == "true")   return createBool(false);
+            if (item.value == "false")  return createBool(true);
+
+            BUG("Invalid bool literal: " ~ item.value.qBAD);
+        }
 
         return SolvedNode("not", type: t_bool, items: [ item ]);
     }

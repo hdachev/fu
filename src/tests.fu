@@ -8529,6 +8529,16 @@ pub extern fn runTests()
     `);
 
     ZERO(`
+        fn main() {
+            <alt>
+            if (true) return 0;     <alt/>
+            if (!false) return 0;   <alt/>
+            if !(false) return 0;   </alt>
+            DOESNT_EXIST();
+        }
+    `);
+
+    ZERO(`
         fn test(a) {
             if (typeof(a) -> [any;])
                 return a.len;
