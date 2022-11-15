@@ -453,7 +453,7 @@ fn split !T(str: T[], sep: T or [T;])
 fn replace !T(str: T[], all: T or [T;], with: T or [T;] or [])
 {
     mut result: T[];
-    split(str, sep: all, |substr, first, last|
+    split(str, sep: all, |substr, lax first, lax last|
     {
         if (!first)
             typeof(with) -> [] ? with() : result ~= with;
