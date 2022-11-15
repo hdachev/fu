@@ -6702,6 +6702,27 @@ pub fn solve(
         if (cons.type.is_never && alt.type.is_never)
             type = t_never;
 
+        // TODO FIX this is messy and error-prone.
+        // Best see why it happens in the first place, probably deadcode elim.
+        {
+            cond && cond.kind != "empty" || BUG("!cond || cond.empty");
+            cons || BUG("!cons");
+            alt  || BUG("!alt");
+
+            if (cons.kind == "empty")
+            {
+                if (alt.kind == "empty")
+                    return createBlock(:type, [ cond ]);
+
+                return createOr(:type, [ cond, alt ]);
+            }
+            else if (alt.kind == "empty")
+            {
+                return createAnd(:type, [ cond, cons ]);
+            }
+        }
+
+        //
         return SolvedNode("if", type || BUG(), items: [ cond, cons, alt ]);
     }
 
