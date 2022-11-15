@@ -14,9 +14,9 @@ struct s_Type;
 struct s_ValueType;
 struct s_Lifetime;
 struct s_Region;
-int basePrimPrefixLen_1NgzHTh0(fu::view<char>);
-s_Mi parseMi_0HRwKgGk(int&, fu::view<char>);
-void appendMi_KujYnsPj(fu_STR&, int, int);
+int basePrimPrefixLen_9ycokehR(fu::view<char>);
+s_Mi parseMi_Tv0KZM6O(int&, fu::view<char>);
+void appendMi_bivPeQcS(fu_STR&, int, int);
 
                                 #ifndef DEF_s_StructCanon
                                 #define DEF_s_StructCanon
@@ -54,70 +54,71 @@ struct s_Mi
                                 #define DEF_s_kind
 enum s_kind: fu::u8
 {
-    s_kind_sof = 1,
-    s_kind_id = 2,
-    s_kind_op = 3,
-    s_kind_int = 4,
-    s_kind_real = 5,
-    s_kind_char = 6,
-    s_kind_str = 7,
-    s_kind_err = 8,
-    s_kind_eof = 9,
-    s_kind_root = 10,
-    s_kind_block = 11,
-    s_kind_argid = 12,
-    s_kind_let = 13,
-    s_kind_call = 14,
-    s_kind_arrlit = 15,
-    s_kind_if = 16,
-    s_kind_or = 17,
-    s_kind_and = 18,
-    s_kind_loop = 19,
-    s_kind_break = 20,
-    s_kind_return = 21,
-    s_kind_continue = 22,
-    s_kind_bool = 23,
-    s_kind_definit = 24,
-    s_kind_import = 25,
-    s_kind_defer = 26,
-    s_kind_try = 27,
-    s_kind_typedef = 28,
-    s_kind_typecast = 29,
-    s_kind_typeassert = 30,
-    s_kind_typeparam = 31,
-    s_kind_addroffn = 32,
-    s_kind_unwrap = 33,
-    s_kind_forfieldsof = 34,
-    s_kind_pragma = 35,
-    s_kind_void = 36,
-    s_kind_struct = 37,
-    s_kind_union = 38,
-    s_kind_primitive = 39,
-    s_kind_flags = 40,
-    s_kind_enum = 41,
-    s_kind_members = 42,
-    s_kind_fn = 43,
-    s_kind_fnbranch = 44,
-    s_kind_pattern = 45,
-    s_kind_typeunion = 46,
-    s_kind_typetag = 47,
-    s_kind_jump = 48,
-    s_kind_empty = 49,
-    s_kind_letdef = 50,
-    s_kind___relaxed = 51,
-    s_kind___convert = 52,
-    s_kind_fndef = 53,
-    s_kind_copy = 54,
-    s_kind_move = 55,
-    s_kind___far_jump = 56,
-    s_kind___no_kind_yet = 57,
-    s_kind_type = 58,
-    s_kind_var = 59,
-    s_kind_field = 60,
-    s_kind_enumv = 61,
-    s_kind_template = 62,
-    s_kind___native = 63,
-    s_kind_inline = 64,
+    s_kind_sof = 1u,
+    s_kind_err = 2u,
+    s_kind_eof = 3u,
+    s_kind_id = 4u,
+    s_kind_op = 5u,
+    s_kind_int = 6u,
+    s_kind_real = 7u,
+    s_kind_char = 8u,
+    s_kind_str = 9u,
+    s_kind_bool = 10u,
+    s_kind_copy = 11u,
+    s_kind_move = 12u,
+    s_kind_arrlit = 13u,
+    s_kind_definit = 14u,
+    s_kind_empty = 15u,
+    s_kind_void = 16u,
+    s_kind_not = 17u,
+    s_kind_call = 18u,
+    s_kind_argid = 19u,
+    s_kind_root = 20u,
+    s_kind_block = 21u,
+    s_kind_if = 22u,
+    s_kind_or = 23u,
+    s_kind_and = 24u,
+    s_kind_loop = 25u,
+    s_kind_jump = 26u,
+    s_kind___far_jump = 27u,
+    s_kind_defer = 28u,
+    s_kind_try = 29u,
+    s_kind_let = 30u,
+    s_kind_letdef = 31u,
+    s_kind_typedef = 32u,
+    s_kind_typecast = 33u,
+    s_kind_typeassert = 34u,
+    s_kind_typeparam = 35u,
+    s_kind_unwrap = 36u,
+    s_kind_pragma = 37u,
+    s_kind_break = 38u,
+    s_kind_return = 39u,
+    s_kind_continue = 40u,
+    s_kind_import = 41u,
+    s_kind_addroffn = 42u,
+    s_kind_forfieldsof = 43u,
+    s_kind_struct = 44u,
+    s_kind_union = 45u,
+    s_kind_primitive = 46u,
+    s_kind_flags = 47u,
+    s_kind_enum = 48u,
+    s_kind_members = 49u,
+    s_kind_fndef = 50u,
+    s_kind_fn = 51u,
+    s_kind_fnbranch = 52u,
+    s_kind_pattern = 53u,
+    s_kind_typeunion = 54u,
+    s_kind_typetag = 55u,
+    s_kind___relaxed = 56u,
+    s_kind___convert = 57u,
+    s_kind___no_kind_yet = 58u,
+    s_kind_type = 59u,
+    s_kind_var = 60u,
+    s_kind_field = 61u,
+    s_kind_enumv = 62u,
+    s_kind_template = 63u,
+    s_kind___native = 64u,
+    s_kind_inline = 65u,
 };
                                 #endif
 
@@ -188,41 +189,41 @@ struct s_Type
 inline constexpr int ONE_BASED = 1;
                                 #endif
 
-                                #ifndef DEF_x7E_YP7BiSZZZOd
-                                #define DEF_x7E_YP7BiSZZZOd
-inline fu_STR x7E_YP7BiSZZ(fu::view<char> a, fu::view<char> b)
+                                #ifndef DEF_x7E_sTZRmMq1BYf
+                                #define DEF_x7E_sTZRmMq1BYf
+inline fu_STR x7E_sTZRmMq1(fu::view<char> a, fu::view<char> b)
 {
     return a + b;
 }
                                 #endif
 
-s_StructCanon parseStructCanon_axp26pRU(fu::view<char> canon)
+s_StructCanon parseStructCanon_1RM6wwlO(fu::view<char> canon)
 {
     int offset = 1;
 
     {
         const char c = canon[0];
         if (c != '/')
-            offset = basePrimPrefixLen_1NgzHTh0(canon);
+            offset = basePrimPrefixLen_9ycokehR(canon);
 
     };
-    const s_Mi mi = parseMi_0HRwKgGk(offset, canon);
+    const s_Mi mi = parseMi_Tv0KZM6O(offset, canon);
     if (offset == canon.size())
     {
         return s_StructCanon { int(mi.modid), (mi.index - ONE_BASED) };
     }
     else
-        fu::fail(x7E_YP7BiSZZ((x7E_YP7BiSZZ((("parseStructCanon: trailing garbage in `"_fu + canon) + "`: "_fu), fu::i64dec(offset)) + "|"_fu), fu::i64dec(canon.size())));
+        fu::fail(x7E_sTZRmMq1((x7E_sTZRmMq1((("parseStructCanon: trailing garbage in `"_fu + canon) + "`: "_fu), fu::i64dec(offset)) + "|"_fu), fu::i64dec(canon.size())));
 
 }
 
-fu_STR createStructCanon_0LDjwux2(const s_kind kind, const fu_STR& baseprim, const int modid, const int index, fu::view<char>)
+fu_STR createStructCanon_hZI0W5mG(const s_kind kind, const fu_STR& baseprim, const int modid, const int index, fu::view<char>)
 {
     // Hoisted:
     fu_STR x;
 
     /*MOV*/ fu_STR res = (baseprim ? fu_STR(baseprim) : "/"_fu);
-    appendMi_KujYnsPj(res, int(modid), (index + ONE_BASED));
+    appendMi_bivPeQcS(res, int(modid), (index + ONE_BASED));
     if (baseprim)
     {
         char& c = res.mutref(0);
@@ -234,7 +235,7 @@ fu_STR createStructCanon_0LDjwux2(const s_kind kind, const fu_STR& baseprim, con
             c = 'm';
 
     };
-    const s_StructCanon check = parseStructCanon_axp26pRU(res);
+    const s_StructCanon check = parseStructCanon_1RM6wwlO(res);
     if (!((check.modid == modid) && (check.index == index)))
     {
         fu_STR* BL_6_v;
@@ -243,7 +244,7 @@ fu_STR createStructCanon_0LDjwux2(const s_kind kind, const fu_STR& baseprim, con
             x = "NOPE!!!!!"_fu;
             BL_6_v = &(x);
         (void)0;}), *BL_6_v)) }));
-        parseStructCanon_axp26pRU(res);
+        parseStructCanon_1RM6wwlO(res);
         fu::fail("Nope!"_fu);
     }
     else
@@ -251,25 +252,25 @@ fu_STR createStructCanon_0LDjwux2(const s_kind kind, const fu_STR& baseprim, con
 
 }
 
-                                #ifndef DEF_starts_8ObANk7rz5k
-                                #define DEF_starts_8ObANk7rz5k
-inline bool starts_8ObANk7r(fu::view<char> a, const char with)
+                                #ifndef DEF_starts_fjBQS6rrsUk
+                                #define DEF_starts_fjBQS6rrsUk
+inline bool starts_fjBQS6rr(fu::view<char> a, const char with)
 {
     return a.size() && (a[0] == with);
 }
                                 #endif
 
-bool isStruct_jHe6RDpE(const s_Type& type)
+bool isStruct_FNWlOhLB(const s_Type& type)
 {
-    return starts_8ObANk7r(type.vtype.canon, '/');
+    return starts_fjBQS6rr(type.vtype.canon, '/');
 }
 
-int modidOfOrigin_jHe6RDpE(const s_Type& type)
+int modidOfOrigin_FNWlOhLB(const s_Type& type)
 {
     if (type.vtype.canon[0] == '/')
     {
-        /*MOV*/ const s_StructCanon scp = parseStructCanon_axp26pRU(type.vtype.canon);
-        return int(scp.modid);
+        const s_StructCanon scp = parseStructCanon_1RM6wwlO(type.vtype.canon);
+        return scp.modid;
     }
     else
         return 0;

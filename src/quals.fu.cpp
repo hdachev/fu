@@ -72,70 +72,70 @@ struct s_Type
 
 #ifndef fu_NO_fdefs
 
-bool is_primitive_VS9ogqN5(const s_Type& t)
+bool is_primitive_XeFsC3zb(const s_Type& t)
 {
     const char c = t.vtype.canon[0];
     return (c == 'u') || (c == 'i') || (c == 'f') || (c == 'b') || (c == 'c') || (c == 'm') || (c == 'e');
 }
 
-bool is_arithmetic_VS9ogqN5(const s_Type& t)
+bool is_arithmetic_XeFsC3zb(const s_Type& t)
 {
     const char c = t.vtype.canon[0];
     return (c == 'u') || (c == 'i') || (c == 'f');
 }
 
-bool is_bitfield_VS9ogqN5(const s_Type& t)
+bool is_bitfield_XeFsC3zb(const s_Type& t)
 {
     const char c = t.vtype.canon[0];
     return (c == 'u') || (c == 'i') || (c == 'm');
 }
 
-bool is_integral_VS9ogqN5(const s_Type& t)
+bool is_integral_XeFsC3zb(const s_Type& t)
 {
     const char c = t.vtype.canon[0];
     return (c == 'u') || (c == 'i');
 }
 
-bool is_unsigned_VS9ogqN5(const s_Type& t)
+bool is_unsigned_XeFsC3zb(const s_Type& t)
 {
     const char c = t.vtype.canon[0];
     return c == 'u';
 }
 
-bool is_floating_pt_VS9ogqN5(const s_Type& t)
+bool is_floating_pt_XeFsC3zb(const s_Type& t)
 {
     const char c = t.vtype.canon[0];
     return c == 'f';
 }
 
-bool is_boolean_VS9ogqN5(const s_Type& t)
+bool is_boolean_XeFsC3zb(const s_Type& t)
 {
     const char c = t.vtype.canon[0];
-    return c == 'f';
+    return c == 'b';
 }
 
-bool is_enum_VS9ogqN5(const s_Type& t)
+bool is_enum_XeFsC3zb(const s_Type& t)
 {
     const char c = t.vtype.canon[0];
     return c == 'e';
 }
 
-bool is_flags_VS9ogqN5(const s_Type& t)
+bool is_flags_XeFsC3zb(const s_Type& t)
 {
     const char c = t.vtype.canon[0];
     return c == 'm';
 }
 
-int basePrimPrefixLen_1NgzHTh0(fu::view<char> canon)
+int basePrimPrefixLen_9ycokehR(fu::view<char> canon)
 {
     char c = canon[0];
     if ((c == 'i') || (c == 'u') || (c == 'f') || (c == 'b') || (c == 'c') || (c == 'e') || (c == 'm'))
     {
-        for (/*MOV*/ int offset = 1; ; offset++)
+        for (int offset = 1; ; offset++)
         {
             c = ((offset < canon.size()) ? canon[offset] : (*(const char*)fu::NIL));
             if ((c < '0') || (c > '9'))
-                return /*NRVO*/ offset;
+                return offset;
 
         };
     }

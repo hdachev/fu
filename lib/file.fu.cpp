@@ -29,10 +29,10 @@ inline constexpr unsigned RW_RW_RW = (((0x6u << 6u) | (0x6u << 3u)) | (0x6u << 0
 inline constexpr unsigned RWX_RX_RX = (((0x7u << 6u) | (0x5u << 3u)) | (0x5u << 0u));
                                 #endif
 
-int write_Aym1I4GS(fu_STR&& path, fu::view<char> data, const unsigned mode)
+int write_SQvf1PoP(fu_STR&& path, fu::view<char> data, const unsigned mode)
 {
     path += '\x00';
-    /*MOV*/ int err {};
+    int err {};
 
         auto fd = open(path.data(), O_WRONLY | O_CREAT | O_TRUNC, mode_t(mode));
         if (fd == -1)
@@ -59,21 +59,21 @@ int write_Aym1I4GS(fu_STR&& path, fu::view<char> data, const unsigned mode)
         if (close(fd) && !err)
             err = errno;
     ;
-    return /*NRVO*/ err;
+    return err;
 }
 
-                                #ifndef DEF_MAX_K8KxoYxA7Xl
-                                #define DEF_MAX_K8KxoYxA7Xl
-inline int MAX_K8KxoYxA(const int)
+                                #ifndef DEF_MAX_bROiNhN5YRb
+                                #define DEF_MAX_bROiNhN5YRb
+inline int MAX_bROiNhN5(const int)
 {
     return 2147483647;
 }
                                 #endif
 
-int read_H93z2wTc(fu_STR&& path, fu_STR& output, int64_t size)
+int read_mhFOcCXt(fu_STR&& path, fu_STR& output, int64_t size)
 {
     path += '\x00';
-    /*MOV*/ int err {};
+    int err {};
 
     {
         if ((size <= 0ll))
@@ -88,7 +88,7 @@ int read_H93z2wTc(fu_STR&& path, fu_STR& output, int64_t size)
         };
         int len0 = output.size();
         const int64_t len1 = (int64_t(len0) + size);
-        if (len1 > (int64_t(MAX_K8KxoYxA(len0)) - 16ll))
+        if (len1 > (int64_t(MAX_bROiNhN5(len0)) - 16ll))
 
                 return (err = EFBIG);
             ;
@@ -132,42 +132,42 @@ int read_H93z2wTc(fu_STR&& path, fu_STR& output, int64_t size)
             }
         ;
     };
-    return /*NRVO*/ err;
+    return err;
 }
 
-fu_STR read_ny0gyQ9a(/*MOV*/ fu_STR&& path)
+fu_STR read_1HHdbYe3(/*MOV*/ fu_STR&& path)
 {
     /*MOV*/ fu_STR output {};
-    if (read_H93z2wTc(static_cast<fu_STR&&>(path), output, 0ll))
+    if (read_mhFOcCXt(static_cast<fu_STR&&>(path), output, 0ll))
         output.clear();
 
     return /*NRVO*/ output;
 }
 
-int chmod_yDMGZlvP(fu_STR&& path, const unsigned mode)
+int chmod_YYl2ahoS(fu_STR&& path, const unsigned mode)
 {
     path += '\x00';
-    /*MOV*/ int err {};
+    int err {};
 
         if (chmod(path.data(), mode_t(mode)))
             err = errno;
     ;
-    return /*NRVO*/ err;
+    return err;
 }
 
-int rename_PYp4QGaF(fu_STR&& from, fu_STR&& to)
+int rename_83dyYaFh(fu_STR&& from, fu_STR&& to)
 {
     from += '\x00';
     to += '\x00';
-    /*MOV*/ int err {};
+    int err {};
 
         if (rename(from.data(), to.data()))
             err = errno;
     ;
-    return /*NRVO*/ err;
+    return err;
 }
 
-int64_t size_ny0gyQ9a(fu_STR&& path)
+int64_t size_1HHdbYe3(fu_STR&& path)
 {
     path += '\x00';
 

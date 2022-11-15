@@ -38,7 +38,7 @@ struct s_Intlit
 
 #ifndef fu_NO_fdefs
 
-s_Intlit Intlit_V3Khstyl(const uint64_t absval, const bool negative, /*MOV*/ fu_STR&& error, const bool uNsigned, const bool sIgned, const uint64_t base)
+s_Intlit Intlit_kulaZEKB(const uint64_t absval, const bool negative, /*MOV*/ fu_STR&& error, const bool uNsigned, const bool sIgned, const uint64_t base)
 {
     if (!(error))
     {
@@ -56,7 +56,7 @@ s_Intlit Intlit_V3Khstyl(const uint64_t absval, const bool negative, /*MOV*/ fu_
     return (_0 = uint64_t(absval), s_Intlit { fu::u8(base), fu::u8(unsigned(minsize_i)), fu::u8(unsigned(minsize_u)), fu::u8(unsigned(minsize_f)), bool(sIgned), bool(uNsigned), bool(negative), uint64_t(_0), static_cast<fu_STR&&>(error) });
 }
 
-s_Intlit Intlit_IQ08v4Hx(fu::view<char> sign_prefix_value_suffix)
+s_Intlit Intlit_eSPjJZjJ(fu::view<char> sign_prefix_value_suffix)
 {
     const char c_sign = sign_prefix_value_suffix[0];
     const char sign = (((c_sign == '-') || (c_sign == '+')) ? c_sign : (*(const char*)fu::NIL));
@@ -77,20 +77,22 @@ s_Intlit Intlit_IQ08v4Hx(fu::view<char> sign_prefix_value_suffix)
             continue;
         else
         {
-            const uint64_t ci = (uint64_t(fu::u8(c)) - ((c < 'a') ? uint64_t(fu::u8('0')) : uint64_t(fu::u8('a'))));
+            const uint64_t ci = ((c < 'a') ? (uint64_t(fu::u8(c)) - uint64_t(fu::u8('0'))) : ((uint64_t(fu::u8(c)) - uint64_t(fu::u8('a'))) + 10ull));
             const uint64_t last = absval;
             absval *= base;
             absval += ci;
-            if (!(error))
+            if (last != (absval / base))
             {
-                error = ((last != (absval / base)) ? "Integer literal overflows a u64."_fu : fu_STR{});
+                if (!(error))
+                    error = "Integer literal overflows a u64."_fu;
+
             };
         };
     };
-    const bool uNsigned = ((suffix == 'u') || (base != 10ull));
+    const bool uNsigned = (suffix == 'u');
     const bool negative = (sign == '-');
     const bool sIgned = (negative || (suffix == 'i'));
-    return Intlit_V3Khstyl(absval, negative, static_cast<fu_STR&&>(error), uNsigned, sIgned, base);
+    return Intlit_kulaZEKB(absval, negative, static_cast<fu_STR&&>(error), uNsigned, sIgned, base);
 }
 
 #endif

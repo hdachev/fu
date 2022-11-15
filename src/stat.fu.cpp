@@ -50,23 +50,23 @@ s_ModuleStat ModuleStat_now_pUbtfzLn()
     return s_ModuleStat { hr_CPFg3qvV(), fu_ARC::ALLOC_STAT_COUNT(), fu_ARC::ALLOC_STAT_BYTES() };
 }
 
-                                #ifndef DEF_x7E_YP7BiSZZZOd
-                                #define DEF_x7E_YP7BiSZZZOd
-inline fu_STR x7E_YP7BiSZZ(fu::view<char> a, fu::view<char> b)
+                                #ifndef DEF_x7E_sTZRmMq1BYf
+                                #define DEF_x7E_sTZRmMq1BYf
+inline fu_STR x7E_sTZRmMq1(fu::view<char> a, fu::view<char> b)
 {
     return a + b;
 }
                                 #endif
 
-                                #ifndef DEF_x7E_YP7BiSZZZOd
-                                #define DEF_x7E_YP7BiSZZZOd
-inline fu_STR x7E_YP7BiSZZ(fu::view<char> a, fu::view<char> b)
+                                #ifndef DEF_x7E_sTZRmMq1BYf
+                                #define DEF_x7E_sTZRmMq1BYf
+inline fu_STR x7E_sTZRmMq1(fu::view<char> a, fu::view<char> b)
 {
     return a + b;
 }
                                 #endif
 
-void ModuleStat_print_Juw13ven(const s_ModuleStat& a, const fu_STR& prefix, fu::view<char> suffix)
+void ModuleStat_print_RpGSEiSe(const s_ModuleStat& a, const fu_STR& prefix, fu::view<char> suffix)
 {
     // Hoisted:
     fu_STR x;
@@ -86,7 +86,7 @@ void ModuleStat_print_Juw13ven(const s_ModuleStat& a, const fu_STR& prefix, fu::
         BL_2_v = &(x_1);
     (void)0;}), *BL_2_v)), static_cast<fu_STR&&>((__extension__ (
     {
-        x_2 = (a.alloc_count ? ((x7E_YP7BiSZZ(x7E_YP7BiSZZ(fu::i64dec(a.alloc_count), " allocs\t"_fu), fu::i64dec(a.alloc_bytes)) + " bytes"_fu) + suffix) : fu_STR{});
+        x_2 = (a.alloc_count ? ((x7E_sTZRmMq1(x7E_sTZRmMq1(fu::i64dec(a.alloc_count), " allocs\t"_fu), fu::i64dec(a.alloc_bytes)) + " bytes"_fu) + suffix) : fu_STR{});
         BL_3_v = &(x_2);
     (void)0;}), *BL_3_v)) }));
 }

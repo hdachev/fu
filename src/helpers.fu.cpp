@@ -25,7 +25,7 @@ struct s_Mi
 
 #ifndef fu_NO_fdefs
 
-bool hasIdentifierChars_XKihkJM1(fu::view<char> id)
+bool hasIdentifierChars_LDOhpoIo(fu::view<char> id)
 {
     for (int i = 0; i < id.size(); i++)
     {
@@ -37,9 +37,9 @@ bool hasIdentifierChars_XKihkJM1(fu::view<char> id)
     return false;
 }
 
-unsigned parse10u32_0HRwKgGk(int& offset, fu::view<char> str)
+unsigned parse10u32_Tv0KZM6O(int& offset, fu::view<char> str)
 {
-    /*MOV*/ unsigned result {};
+    unsigned result {};
     while (offset < str.size())
     {
         const char c = str[offset];
@@ -51,21 +51,21 @@ unsigned parse10u32_0HRwKgGk(int& offset, fu::view<char> str)
             result = ((result * 10u) + (unsigned(fu::u8(c)) - unsigned(fu::u8('0'))));
         };
     };
-    return /*NRVO*/ result;
+    return result;
 }
 
-int parse10s32_0HRwKgGk(int& offset, fu::view<char> str)
+int parse10s32_Tv0KZM6O(int& offset, fu::view<char> str)
 {
     if ((offset >= str.size()))
         return 0;
     else
     {
         const int mul = ((str[offset] == '-') ? ((void)offset++, -1) : +1);
-        return int(parse10u32_0HRwKgGk(offset, str)) * mul;
+        return int(parse10u32_Tv0KZM6O(offset, str)) * mul;
     };
 }
 
-s_Mi parseMi_0HRwKgGk(int& offset, fu::view<char> str)
+s_Mi parseMi_Tv0KZM6O(int& offset, fu::view<char> str)
 {
     if ((offset >= str.size()))
     {
@@ -73,8 +73,8 @@ s_Mi parseMi_0HRwKgGk(int& offset, fu::view<char> str)
     }
     else
     {
-        /*MOV*/ int modid = 0;
-        /*MOV*/ int index = 0;
+        int modid = 0;
+        int index = 0;
         char c = str[offset++];
 
         { {
@@ -150,12 +150,11 @@ s_Mi parseMi_0HRwKgGk(int& offset, fu::view<char> str)
             offset--;
           } BL_3:;
         };
-        int _0 {};
-        return (_0 = int(modid), s_Mi { int(_0), int(index) });
+        return s_Mi { int(modid), int(index) };
     };
 }
 
-void appendMi_KujYnsPj(fu_STR& str, int modid, int index)
+void appendMi_bivPeQcS(fu_STR& str, int modid, int index)
 {
     if (modid < 0)
     {
@@ -185,7 +184,7 @@ void appendMi_KujYnsPj(fu_STR& str, int modid, int index)
     while (index);
 }
 
-fu_STR trim_ZCtM7908(const fu_STR& str)
+fu_STR trim_obCJYZMU(const fu_STR& str)
 {
     for (int first = 0; first < str.size(); first++)
     {

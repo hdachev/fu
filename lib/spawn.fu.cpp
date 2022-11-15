@@ -142,13 +142,13 @@ static Errno fu_waitpid(
 
 #ifndef fu_NO_fdefs
 
-int spawn_oC1HzM4Z(fu_VEC<fu_STR>&& argv, int& status)
+int spawn_xnquH5p0(fu_VEC<fu_STR>&& argv, int& status)
 {
     if (!argv)
         return -1;
     else
     {
-        /*MOV*/ int err = 0;
+        int err = 0;
         int pid {};
 
         err =
@@ -158,7 +158,7 @@ int spawn_oC1HzM4Z(fu_VEC<fu_STR>&& argv, int& status)
                 /*stderr*/ nullptr)
     ;
         if (err)
-            return /*NRVO*/ err;
+            return err;
         else
         {
 
@@ -166,18 +166,18 @@ int spawn_oC1HzM4Z(fu_VEC<fu_STR>&& argv, int& status)
             fu_waitpid(
                 pid, status);
     ;
-            return /*NRVO*/ err;
+            return err;
         };
     };
 }
 
-int spawn_udHzgmR4(fu_VEC<fu_STR>&& argv, fu_STR& stdout, fu_STR& stderr, int& status)
+int spawn_a5g2vbyH(fu_VEC<fu_STR>&& argv, fu_STR& stdout, fu_STR& stderr, int& status)
 {
     if (!argv)
         return -1;
     else
     {
-        /*MOV*/ int err = 0;
+        int err = 0;
 
         {
 
@@ -212,7 +212,7 @@ int spawn_udHzgmR4(fu_VEC<fu_STR>&& argv, fu_STR& stdout, fu_STR& stderr, int& s
             Close(stderr_pipe[1]);
         );
             if (err)
-                return /*NRVO*/ err;
+                return err;
             else
             {
                 int pid {};
@@ -224,7 +224,7 @@ int spawn_udHzgmR4(fu_VEC<fu_STR>&& argv, fu_STR& stdout, fu_STR& stderr, int& s
                     &stderr_pipe)
         ;
                 if (err)
-                    return /*NRVO*/ err;
+                    return err;
                 else
                 {
                     fu_DEFER(
@@ -240,7 +240,7 @@ int spawn_udHzgmR4(fu_VEC<fu_STR>&& argv, fu_STR& stdout, fu_STR& stderr, int& s
             Close(stderr_pipe[1]);
         ;
                     if (err)
-                        return /*NRVO*/ err;
+                        return err;
                     else
                     {
 
@@ -327,7 +327,7 @@ int spawn_udHzgmR4(fu_VEC<fu_STR>&& argv, fu_STR& stdout, fu_STR& stderr, int& s
                 };
             };
         };
-        return /*NRVO*/ err;
+        return err;
     };
 }
 

@@ -11,7 +11,7 @@
 
 #ifndef fu_NO_fdefs
 
-fu_STR get_1w6Ekz7Y(/*MOV*/ fu_STR&& name)
+fu_STR get_yEUO0yQI(/*MOV*/ fu_STR&& name)
 {
     name += '\x00';
 

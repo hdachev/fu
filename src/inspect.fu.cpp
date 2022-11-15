@@ -14,7 +14,7 @@ struct s_Token;
 enum s_kind: fu::u8;
 struct s_ParserOutput;
 struct s_Node;
-typedef fu::u8 s_DeclAsserts;
+typedef uint16_t s_DeclAsserts;
 typedef fu::u8 s_ParseSyntax;
 typedef unsigned s_Flags;
 struct s_TokenIdx;
@@ -41,85 +41,87 @@ struct s_Template;
 struct s_ScopeMemo;
 struct s_ScopeSkipMemos;
 struct s_ScopeSkip;
+typedef uint16_t s_FxMask;
 typedef int s_SolverNotes;
 struct s_CodegenOutput;
 struct s_ModuleStats;
 struct s_ModuleStat;
-fu_STR qID_ThvlUeXJ(const fu_STR&);
-fu_STR qLT_ThvlUeXJ(const fu_STR&);
-fu_STR qKW_ThvlUeXJ(const fu_STR&);
-fu_STR qBAD_ThvlUeXJ(const fu_STR&);
-fu_STR trim_ZCtM7908(const fu_STR&);
-static void inspect_B4xKuDxS(const s_SolvedNode&, fu::view<char>, fu_STR&, int, const s_Module&);
+fu_STR qID_9QQZAztz(const fu_STR&);
+fu_STR qLT_9QQZAztz(const fu_STR&);
+fu_STR qKW_9QQZAztz(const fu_STR&);
+fu_STR qBAD_9QQZAztz(const fu_STR&);
+fu_STR trim_obCJYZMU(const fu_STR&);
+static void inspect_VB10aF0a(const s_SolvedNode&, fu::view<char>, const s_Module&, fu_STR&, int);
 
                                 #ifndef DEF_s_kind
                                 #define DEF_s_kind
 enum s_kind: fu::u8
 {
-    s_kind_sof = 1,
-    s_kind_id = 2,
-    s_kind_op = 3,
-    s_kind_int = 4,
-    s_kind_real = 5,
-    s_kind_char = 6,
-    s_kind_str = 7,
-    s_kind_err = 8,
-    s_kind_eof = 9,
-    s_kind_root = 10,
-    s_kind_block = 11,
-    s_kind_argid = 12,
-    s_kind_let = 13,
-    s_kind_call = 14,
-    s_kind_arrlit = 15,
-    s_kind_if = 16,
-    s_kind_or = 17,
-    s_kind_and = 18,
-    s_kind_loop = 19,
-    s_kind_break = 20,
-    s_kind_return = 21,
-    s_kind_continue = 22,
-    s_kind_bool = 23,
-    s_kind_definit = 24,
-    s_kind_import = 25,
-    s_kind_defer = 26,
-    s_kind_try = 27,
-    s_kind_typedef = 28,
-    s_kind_typecast = 29,
-    s_kind_typeassert = 30,
-    s_kind_typeparam = 31,
-    s_kind_addroffn = 32,
-    s_kind_unwrap = 33,
-    s_kind_forfieldsof = 34,
-    s_kind_pragma = 35,
-    s_kind_void = 36,
-    s_kind_struct = 37,
-    s_kind_union = 38,
-    s_kind_primitive = 39,
-    s_kind_flags = 40,
-    s_kind_enum = 41,
-    s_kind_members = 42,
-    s_kind_fn = 43,
-    s_kind_fnbranch = 44,
-    s_kind_pattern = 45,
-    s_kind_typeunion = 46,
-    s_kind_typetag = 47,
-    s_kind_jump = 48,
-    s_kind_empty = 49,
-    s_kind_letdef = 50,
-    s_kind___relaxed = 51,
-    s_kind___convert = 52,
-    s_kind_fndef = 53,
-    s_kind_copy = 54,
-    s_kind_move = 55,
-    s_kind___far_jump = 56,
-    s_kind___no_kind_yet = 57,
-    s_kind_type = 58,
-    s_kind_var = 59,
-    s_kind_field = 60,
-    s_kind_enumv = 61,
-    s_kind_template = 62,
-    s_kind___native = 63,
-    s_kind_inline = 64,
+    s_kind_sof = 1u,
+    s_kind_err = 2u,
+    s_kind_eof = 3u,
+    s_kind_id = 4u,
+    s_kind_op = 5u,
+    s_kind_int = 6u,
+    s_kind_real = 7u,
+    s_kind_char = 8u,
+    s_kind_str = 9u,
+    s_kind_bool = 10u,
+    s_kind_copy = 11u,
+    s_kind_move = 12u,
+    s_kind_arrlit = 13u,
+    s_kind_definit = 14u,
+    s_kind_empty = 15u,
+    s_kind_void = 16u,
+    s_kind_not = 17u,
+    s_kind_call = 18u,
+    s_kind_argid = 19u,
+    s_kind_root = 20u,
+    s_kind_block = 21u,
+    s_kind_if = 22u,
+    s_kind_or = 23u,
+    s_kind_and = 24u,
+    s_kind_loop = 25u,
+    s_kind_jump = 26u,
+    s_kind___far_jump = 27u,
+    s_kind_defer = 28u,
+    s_kind_try = 29u,
+    s_kind_let = 30u,
+    s_kind_letdef = 31u,
+    s_kind_typedef = 32u,
+    s_kind_typecast = 33u,
+    s_kind_typeassert = 34u,
+    s_kind_typeparam = 35u,
+    s_kind_unwrap = 36u,
+    s_kind_pragma = 37u,
+    s_kind_break = 38u,
+    s_kind_return = 39u,
+    s_kind_continue = 40u,
+    s_kind_import = 41u,
+    s_kind_addroffn = 42u,
+    s_kind_forfieldsof = 43u,
+    s_kind_struct = 44u,
+    s_kind_union = 45u,
+    s_kind_primitive = 46u,
+    s_kind_flags = 47u,
+    s_kind_enum = 48u,
+    s_kind_members = 49u,
+    s_kind_fndef = 50u,
+    s_kind_fn = 51u,
+    s_kind_fnbranch = 52u,
+    s_kind_pattern = 53u,
+    s_kind_typeunion = 54u,
+    s_kind_typetag = 55u,
+    s_kind___relaxed = 56u,
+    s_kind___convert = 57u,
+    s_kind___no_kind_yet = 58u,
+    s_kind_type = 59u,
+    s_kind_var = 60u,
+    s_kind_field = 61u,
+    s_kind_enumv = 62u,
+    s_kind_template = 63u,
+    s_kind___native = 64u,
+    s_kind_inline = 65u,
 };
                                 #endif
 
@@ -158,28 +160,38 @@ struct s_LexerOutput
 
                                 #ifndef DEF_s_DeclAsserts
                                 #define DEF_s_DeclAsserts
-inline constexpr s_DeclAsserts s_DeclAsserts_A_NOCOPY = 1;
-inline constexpr s_DeclAsserts s_DeclAsserts_A_NOVEC = 2;
-inline constexpr s_DeclAsserts s_DeclAsserts_A_NOVEC_MUT = 4;
-inline constexpr s_DeclAsserts s_DeclAsserts_A_PURE = 8;
-inline constexpr s_DeclAsserts s_DeclAsserts_A_PURE_CTX = 16;
-inline constexpr s_DeclAsserts s_DeclAsserts_A_NOFLOW = 32;
+inline constexpr s_DeclAsserts s_DeclAsserts_A_NOCOPY = s_DeclAsserts(1u);
+inline constexpr s_DeclAsserts s_DeclAsserts_A_NOVEC = s_DeclAsserts(2u);
+inline constexpr s_DeclAsserts s_DeclAsserts_A_TRIVIAL = s_DeclAsserts(4u);
+inline constexpr s_DeclAsserts s_DeclAsserts_A_PURE = s_DeclAsserts(8u);
+inline constexpr s_DeclAsserts s_DeclAsserts_A_PURE_CTX = s_DeclAsserts(16u);
+inline constexpr s_DeclAsserts s_DeclAsserts_A_PURE_FX = s_DeclAsserts(32u);
+inline constexpr s_DeclAsserts s_DeclAsserts_A_NOFLOW = s_DeclAsserts(64u);
+inline constexpr s_DeclAsserts s_DeclAsserts_A_NOTHROW = s_DeclAsserts(128u);
+inline constexpr s_DeclAsserts s_DeclAsserts_A_NOCRASH = s_DeclAsserts(256u);
+inline constexpr s_DeclAsserts s_DeclAsserts_A_NOIO = s_DeclAsserts(512u);
+inline constexpr s_DeclAsserts s_DeclAsserts_A_FAST = s_DeclAsserts(1024u);
 
 inline constexpr s_DeclAsserts MASK_s_DeclAsserts
     = s_DeclAsserts_A_NOCOPY
     | s_DeclAsserts_A_NOVEC
-    | s_DeclAsserts_A_NOVEC_MUT
+    | s_DeclAsserts_A_TRIVIAL
     | s_DeclAsserts_A_PURE
     | s_DeclAsserts_A_PURE_CTX
-    | s_DeclAsserts_A_NOFLOW;
+    | s_DeclAsserts_A_PURE_FX
+    | s_DeclAsserts_A_NOFLOW
+    | s_DeclAsserts_A_NOTHROW
+    | s_DeclAsserts_A_NOCRASH
+    | s_DeclAsserts_A_NOIO
+    | s_DeclAsserts_A_FAST;
                                 #endif
 
                                 #ifndef DEF_s_ParseSyntax
                                 #define DEF_s_ParseSyntax
-inline constexpr s_ParseSyntax s_ParseSyntax_PS_ID = 1;
-inline constexpr s_ParseSyntax s_ParseSyntax_PS_PARENS = 2;
-inline constexpr s_ParseSyntax s_ParseSyntax_PS_SEMI = 4;
-inline constexpr s_ParseSyntax s_ParseSyntax_PS_DISCARD = 8;
+inline constexpr s_ParseSyntax s_ParseSyntax_PS_ID = s_ParseSyntax(1u);
+inline constexpr s_ParseSyntax s_ParseSyntax_PS_PARENS = s_ParseSyntax(2u);
+inline constexpr s_ParseSyntax s_ParseSyntax_PS_SEMI = s_ParseSyntax(4u);
+inline constexpr s_ParseSyntax s_ParseSyntax_PS_DISCARD = s_ParseSyntax(8u);
 
 inline constexpr s_ParseSyntax MASK_s_ParseSyntax
     = s_ParseSyntax_PS_ID
@@ -190,48 +202,43 @@ inline constexpr s_ParseSyntax MASK_s_ParseSyntax
 
                                 #ifndef DEF_s_Flags
                                 #define DEF_s_Flags
-inline constexpr s_Flags s_Flags_F_METHOD = 1;
-inline constexpr s_Flags s_Flags_F_INFIX = 2;
-inline constexpr s_Flags s_Flags_F_PREFIX = 4;
-inline constexpr s_Flags s_Flags_F_POSTFIX = 8;
-inline constexpr s_Flags s_Flags_F_ACCESS = 16;
-inline constexpr s_Flags s_Flags_F_COMPOUND_ID = 32;
-inline constexpr s_Flags s_Flags_F_WRITTEN_TO = 64;
-inline constexpr s_Flags s_Flags_F_LAX = 128;
-inline constexpr s_Flags s_Flags_F_ARG = 256;
-inline constexpr s_Flags s_Flags_F_OPERATOR = 512;
-inline constexpr s_Flags s_Flags_F_MOVED_FROM = 1024;
-inline constexpr s_Flags s_Flags_F_CONVERSION = 2048;
-inline constexpr s_Flags s_Flags_F_OPT_ARG = 4096;
-inline constexpr s_Flags s_Flags_F_MUT = 8192;
-inline constexpr s_Flags s_Flags_F_REF = 16384;
-inline constexpr s_Flags s_Flags_F_IMPLICIT = 32768;
-inline constexpr s_Flags s_Flags_F_USING = 65536;
-inline constexpr s_Flags s_Flags_F_MUSTNAME = 131072;
-inline constexpr s_Flags s_Flags_F_SHADOW = 262144;
-inline constexpr s_Flags s_Flags_F_PUB = 524288;
-inline constexpr s_Flags s_Flags_F_EXTERN = 1048576;
-inline constexpr s_Flags s_Flags_F_HOTSWAP = 2097152;
-inline constexpr s_Flags s_Flags_F_PREDICATE = 4194304;
-inline constexpr s_Flags s_Flags_F_NAMED_ARGS = 8388608;
-inline constexpr s_Flags s_Flags_F_OOE_RTL = 16777216;
-inline constexpr s_Flags s_Flags_F_REST_ARG = 33554432;
-inline constexpr s_Flags s_Flags_F_RELAXABLE_REF = 67108864;
-inline constexpr s_Flags s_Flags_F_TEMPLATE = 134217728;
-inline constexpr s_Flags s_Flags_F_INLINE = 268435456;
-inline constexpr s_Flags s_Flags_F_LAMBDA = 536870912;
+inline constexpr s_Flags s_Flags_F_METHOD = 1u;
+inline constexpr s_Flags s_Flags_F_OPERATOR = 2u;
+inline constexpr s_Flags s_Flags_F_ACCESS = 4u;
+inline constexpr s_Flags s_Flags_F_COMPOUND_ID = 8u;
+inline constexpr s_Flags s_Flags_F_WRITTEN_TO = 16u;
+inline constexpr s_Flags s_Flags_F_LAX = 32u;
+inline constexpr s_Flags s_Flags_F_ARG = 64u;
+inline constexpr s_Flags s_Flags_F_MOVED_FROM = 128u;
+inline constexpr s_Flags s_Flags_F_CONVERSION = 256u;
+inline constexpr s_Flags s_Flags_F_OPT_ARG = 512u;
+inline constexpr s_Flags s_Flags_F_MUT = 1024u;
+inline constexpr s_Flags s_Flags_F_REF = 2048u;
+inline constexpr s_Flags s_Flags_F_IMPLICIT = 4096u;
+inline constexpr s_Flags s_Flags_F_USING = 8192u;
+inline constexpr s_Flags s_Flags_F_MUSTNAME = 16384u;
+inline constexpr s_Flags s_Flags_F_SHADOW = 32768u;
+inline constexpr s_Flags s_Flags_F_PUB = 65536u;
+inline constexpr s_Flags s_Flags_F_EXTERN = 131072u;
+inline constexpr s_Flags s_Flags_F_HOTSWAP = 262144u;
+inline constexpr s_Flags s_Flags_F_PREDICATE = 524288u;
+inline constexpr s_Flags s_Flags_F_NAMED_ARGS = 1048576u;
+inline constexpr s_Flags s_Flags_F_OOE_RTL = 2097152u;
+inline constexpr s_Flags s_Flags_F_REST_ARG = 4194304u;
+inline constexpr s_Flags s_Flags_F_RELAXABLE_REF = 8388608u;
+inline constexpr s_Flags s_Flags_F_TEMPLATE = 16777216u;
+inline constexpr s_Flags s_Flags_F_INLINE = 33554432u;
+inline constexpr s_Flags s_Flags_F_LAMBDA = 67108864u;
+inline constexpr s_Flags s_Flags_F_INJECTED = 134217728u;
 
 inline constexpr s_Flags MASK_s_Flags
     = s_Flags_F_METHOD
-    | s_Flags_F_INFIX
-    | s_Flags_F_PREFIX
-    | s_Flags_F_POSTFIX
+    | s_Flags_F_OPERATOR
     | s_Flags_F_ACCESS
     | s_Flags_F_COMPOUND_ID
     | s_Flags_F_WRITTEN_TO
     | s_Flags_F_LAX
     | s_Flags_F_ARG
-    | s_Flags_F_OPERATOR
     | s_Flags_F_MOVED_FROM
     | s_Flags_F_CONVERSION
     | s_Flags_F_OPT_ARG
@@ -251,7 +258,8 @@ inline constexpr s_Flags MASK_s_Flags
     | s_Flags_F_RELAXABLE_REF
     | s_Flags_F_TEMPLATE
     | s_Flags_F_INLINE
-    | s_Flags_F_LAMBDA;
+    | s_Flags_F_LAMBDA
+    | s_Flags_F_INJECTED;
                                 #endif
 
                                 #ifndef DEF_s_TokenIdx
@@ -507,6 +515,7 @@ struct s_SolvedNode
     s_kind kind;
     s_Helpers helpers;
     s_Flags flags;
+    int _loop_start;
     fu_STR value;
     fu_VEC<s_SolvedNode> items;
     s_TokenIdx token;
@@ -528,15 +537,15 @@ struct s_SolvedNode
 
                                 #ifndef DEF_s_SolverStatus
                                 #define DEF_s_SolverStatus
-inline constexpr s_SolverStatus s_SolverStatus_SS_LAZY = 1;
-inline constexpr s_SolverStatus s_SolverStatus_SS_DID_START = 2;
-inline constexpr s_SolverStatus s_SolverStatus_SS_DIRTY = 4;
-inline constexpr s_SolverStatus s_SolverStatus_SS_FINALIZED = 8;
-inline constexpr s_SolverStatus s_SolverStatus_SS_UPDATED = 16;
-inline constexpr s_SolverStatus s_SolverStatus_SS_TYPE_RECUR = 32;
-inline constexpr s_SolverStatus s_SolverStatus_SS_FN_RECUR = 64;
-inline constexpr s_SolverStatus s_SolverStatus_SS_HOIST = 128;
-inline constexpr s_SolverStatus s_SolverStatus_SS_UNUSED = 256;
+inline constexpr s_SolverStatus s_SolverStatus_SS_LAZY = s_SolverStatus(1u);
+inline constexpr s_SolverStatus s_SolverStatus_SS_DID_START = s_SolverStatus(2u);
+inline constexpr s_SolverStatus s_SolverStatus_SS_DIRTY = s_SolverStatus(4u);
+inline constexpr s_SolverStatus s_SolverStatus_SS_FINALIZED = s_SolverStatus(8u);
+inline constexpr s_SolverStatus s_SolverStatus_SS_UPDATED = s_SolverStatus(16u);
+inline constexpr s_SolverStatus s_SolverStatus_SS_TYPE_RECUR = s_SolverStatus(32u);
+inline constexpr s_SolverStatus s_SolverStatus_SS_FN_RECUR = s_SolverStatus(64u);
+inline constexpr s_SolverStatus s_SolverStatus_SS_HOIST = s_SolverStatus(128u);
+inline constexpr s_SolverStatus s_SolverStatus_SS_UNUSED = s_SolverStatus(256u);
 
 inline constexpr s_SolverStatus MASK_s_SolverStatus
     = s_SolverStatus_SS_LAZY
@@ -697,12 +706,50 @@ struct s_Template
 };
                                 #endif
 
+                                #ifndef DEF_s_FxMask
+                                #define DEF_s_FxMask
+inline constexpr s_FxMask s_FxMask_Fx_NotDeadCode = s_FxMask(1u);
+inline constexpr s_FxMask s_FxMask_Fx_NonDeterministic = s_FxMask(2u);
+inline constexpr s_FxMask s_FxMask_Fx_DontMoveUp = s_FxMask(4u);
+inline constexpr s_FxMask s_FxMask_Fx_DontMoveDown = s_FxMask(8u);
+inline constexpr s_FxMask s_FxMask_Fx_Input = s_FxMask(16u);
+inline constexpr s_FxMask s_FxMask_Fx_Output = s_FxMask(32u);
+inline constexpr s_FxMask s_FxMask_Fx_Throws = s_FxMask(64u);
+inline constexpr s_FxMask s_FxMask_Fx_Crashes = s_FxMask(128u);
+inline constexpr s_FxMask s_FxMask_Fx_Crashes_Div0 = s_FxMask(256u);
+inline constexpr s_FxMask s_FxMask_Fx_Crashes_OOB = s_FxMask(512u);
+inline constexpr s_FxMask s_FxMask_Fx_Crashes_Assert = s_FxMask(1024u);
+inline constexpr s_FxMask s_FxMask_Fx_Crashes_Exit = s_FxMask(2048u);
+inline constexpr s_FxMask s_FxMask_Fx_Syscall = s_FxMask(4096u);
+inline constexpr s_FxMask s_FxMask_Fx_Blocks = s_FxMask(8192u);
+inline constexpr s_FxMask s_FxMask_Fx_Blocks_Alloc = s_FxMask(16384u);
+inline constexpr s_FxMask s_FxMask_Fx_Blocks_Await = s_FxMask(32768u);
+
+inline constexpr s_FxMask MASK_s_FxMask
+    = s_FxMask_Fx_NotDeadCode
+    | s_FxMask_Fx_NonDeterministic
+    | s_FxMask_Fx_DontMoveUp
+    | s_FxMask_Fx_DontMoveDown
+    | s_FxMask_Fx_Input
+    | s_FxMask_Fx_Output
+    | s_FxMask_Fx_Throws
+    | s_FxMask_Fx_Crashes
+    | s_FxMask_Fx_Crashes_Div0
+    | s_FxMask_Fx_Crashes_OOB
+    | s_FxMask_Fx_Crashes_Assert
+    | s_FxMask_Fx_Crashes_Exit
+    | s_FxMask_Fx_Syscall
+    | s_FxMask_Fx_Blocks
+    | s_FxMask_Fx_Blocks_Alloc
+    | s_FxMask_Fx_Blocks_Await;
+                                #endif
+
                                 #ifndef DEF_s_Extended
                                 #define DEF_s_Extended
 struct s_Extended
 {
     int local_of;
-    int revision;
+    unsigned revision;
     int min;
     int max;
     fu_VEC<s_Argument> args;
@@ -711,6 +758,7 @@ struct s_Extended
     fu_VEC<s_Overload> locals;
     fu_VEC<s_ScopeItem> extra_items;
     fu_VEC<int> callers;
+    s_FxMask fx_mask;
     explicit operator bool() const noexcept
     {
         return false
@@ -724,6 +772,7 @@ struct s_Extended
             || locals
             || extra_items
             || callers
+            || fx_mask
         ;
     }
 };
@@ -783,11 +832,19 @@ inline constexpr s_SolverNotes s_SolverNotes_N_DeadLoopInit = 4096;
 inline constexpr s_SolverNotes s_SolverNotes_N_DeadConv = 8192;
 inline constexpr s_SolverNotes s_SolverNotes_N_NonTrivAutoCopy = 16384;
 inline constexpr s_SolverNotes s_SolverNotes_N_RelaxRespec = 32768;
-inline constexpr s_SolverNotes s_SolverNotes_N_BckSoftRisk = 65536;
-inline constexpr s_SolverNotes s_SolverNotes_N_BckMustSeq = 131072;
-inline constexpr s_SolverNotes s_SolverNotes_N_MoveMustSeq = 262144;
-inline constexpr s_SolverNotes s_SolverNotes_N_SD_HasStaticInit = 524288;
-inline constexpr s_SolverNotes s_SolverNotes_N_SD_ExternPrivates = 1048576;
+inline constexpr s_SolverNotes s_SolverNotes_N_UnusedImplicit = 65536;
+inline constexpr s_SolverNotes s_SolverNotes_N_UnusedCall = 131072;
+inline constexpr s_SolverNotes s_SolverNotes_N_UnusedDefer = 262144;
+inline constexpr s_SolverNotes s_SolverNotes_N_UnusedStmt = 524288;
+inline constexpr s_SolverNotes s_SolverNotes_N_UnusedTry = 1048576;
+inline constexpr s_SolverNotes s_SolverNotes_N_UnusedAndOr = 2097152;
+inline constexpr s_SolverNotes s_SolverNotes_N_UnusedIfElse = 4194304;
+inline constexpr s_SolverNotes s_SolverNotes_N_UnusedArrlit = 8388608;
+inline constexpr s_SolverNotes s_SolverNotes_N_BckSoftRisk = 16777216;
+inline constexpr s_SolverNotes s_SolverNotes_N_BckMustSeq = 33554432;
+inline constexpr s_SolverNotes s_SolverNotes_N_MoveMustSeq = 67108864;
+inline constexpr s_SolverNotes s_SolverNotes_N_SD_HasStaticInit = 134217728;
+inline constexpr s_SolverNotes s_SolverNotes_N_SD_ExternPrivates = 268435456;
 
 inline constexpr s_SolverNotes MASK_s_SolverNotes
     = s_SolverNotes_N_FnRecursion
@@ -806,6 +863,14 @@ inline constexpr s_SolverNotes MASK_s_SolverNotes
     | s_SolverNotes_N_DeadConv
     | s_SolverNotes_N_NonTrivAutoCopy
     | s_SolverNotes_N_RelaxRespec
+    | s_SolverNotes_N_UnusedImplicit
+    | s_SolverNotes_N_UnusedCall
+    | s_SolverNotes_N_UnusedDefer
+    | s_SolverNotes_N_UnusedStmt
+    | s_SolverNotes_N_UnusedTry
+    | s_SolverNotes_N_UnusedAndOr
+    | s_SolverNotes_N_UnusedIfElse
+    | s_SolverNotes_N_UnusedArrlit
     | s_SolverNotes_N_BckSoftRisk
     | s_SolverNotes_N_BckMustSeq
     | s_SolverNotes_N_MoveMustSeq
@@ -947,12 +1012,16 @@ struct s_Module
 
 #ifndef fu_NO_fdefs
 
-                                #ifndef DEF_str_x2XZ9C2mr79
-                                #define DEF_str_x2XZ9C2mr79
-inline fu_STR str_x2XZ9C2m(const s_kind n)
+                                #ifndef DEF_str_v3b7EcLtghl
+                                #define DEF_str_v3b7EcLtghl
+inline fu_STR str_v3b7EcLt(const s_kind n)
 {
     if (n == s_kind_sof)
         return "sof"_fu;
+    else if (n == s_kind_err)
+        return "err"_fu;
+    else if (n == s_kind_eof)
+        return "eof"_fu;
     else if (n == s_kind_id)
         return "id"_fu;
     else if (n == s_kind_op)
@@ -965,22 +1034,30 @@ inline fu_STR str_x2XZ9C2m(const s_kind n)
         return "char"_fu;
     else if (n == s_kind_str)
         return "str"_fu;
-    else if (n == s_kind_err)
-        return "err"_fu;
-    else if (n == s_kind_eof)
-        return "eof"_fu;
+    else if (n == s_kind_bool)
+        return "bool"_fu;
+    else if (n == s_kind_copy)
+        return "copy"_fu;
+    else if (n == s_kind_move)
+        return "move"_fu;
+    else if (n == s_kind_arrlit)
+        return "arrlit"_fu;
+    else if (n == s_kind_definit)
+        return "definit"_fu;
+    else if (n == s_kind_empty)
+        return "empty"_fu;
+    else if (n == s_kind_void)
+        return "void"_fu;
+    else if (n == s_kind_not)
+        return "not"_fu;
+    else if (n == s_kind_call)
+        return "call"_fu;
+    else if (n == s_kind_argid)
+        return "argid"_fu;
     else if (n == s_kind_root)
         return "root"_fu;
     else if (n == s_kind_block)
         return "block"_fu;
-    else if (n == s_kind_argid)
-        return "argid"_fu;
-    else if (n == s_kind_let)
-        return "let"_fu;
-    else if (n == s_kind_call)
-        return "call"_fu;
-    else if (n == s_kind_arrlit)
-        return "arrlit"_fu;
     else if (n == s_kind_if)
     {
         return "if"_fu;
@@ -991,22 +1068,18 @@ inline fu_STR str_x2XZ9C2m(const s_kind n)
         return "and"_fu;
     else if (n == s_kind_loop)
         return "loop"_fu;
-    else if (n == s_kind_break)
-        return "break"_fu;
-    else if (n == s_kind_return)
-        return "return"_fu;
-    else if (n == s_kind_continue)
-        return "continue"_fu;
-    else if (n == s_kind_bool)
-        return "bool"_fu;
-    else if (n == s_kind_definit)
-        return "definit"_fu;
-    else if (n == s_kind_import)
-        return "import"_fu;
+    else if (n == s_kind_jump)
+        return "jump"_fu;
+    else if (n == s_kind___far_jump)
+        return "__far_jump"_fu;
     else if (n == s_kind_defer)
         return "defer"_fu;
     else if (n == s_kind_try)
         return "try"_fu;
+    else if (n == s_kind_let)
+        return "let"_fu;
+    else if (n == s_kind_letdef)
+        return "letdef"_fu;
     else if (n == s_kind_typedef)
         return "typedef"_fu;
     else if (n == s_kind_typecast)
@@ -1015,16 +1088,22 @@ inline fu_STR str_x2XZ9C2m(const s_kind n)
         return "typeassert"_fu;
     else if (n == s_kind_typeparam)
         return "typeparam"_fu;
-    else if (n == s_kind_addroffn)
-        return "addroffn"_fu;
     else if (n == s_kind_unwrap)
         return "unwrap"_fu;
-    else if (n == s_kind_forfieldsof)
-        return "forfieldsof"_fu;
     else if (n == s_kind_pragma)
         return "pragma"_fu;
-    else if (n == s_kind_void)
-        return "void"_fu;
+    else if (n == s_kind_break)
+        return "break"_fu;
+    else if (n == s_kind_return)
+        return "return"_fu;
+    else if (n == s_kind_continue)
+        return "continue"_fu;
+    else if (n == s_kind_import)
+        return "import"_fu;
+    else if (n == s_kind_addroffn)
+        return "addroffn"_fu;
+    else if (n == s_kind_forfieldsof)
+        return "forfieldsof"_fu;
     else if (n == s_kind_struct)
         return "struct"_fu;
     else if (n == s_kind_union)
@@ -1037,6 +1116,8 @@ inline fu_STR str_x2XZ9C2m(const s_kind n)
         return "enum"_fu;
     else if (n == s_kind_members)
         return "members"_fu;
+    else if (n == s_kind_fndef)
+        return "fndef"_fu;
     else if (n == s_kind_fn)
         return "fn"_fu;
     else if (n == s_kind_fnbranch)
@@ -1047,24 +1128,10 @@ inline fu_STR str_x2XZ9C2m(const s_kind n)
         return "typeunion"_fu;
     else if (n == s_kind_typetag)
         return "typetag"_fu;
-    else if (n == s_kind_jump)
-        return "jump"_fu;
-    else if (n == s_kind_empty)
-        return "empty"_fu;
-    else if (n == s_kind_letdef)
-        return "letdef"_fu;
     else if (n == s_kind___relaxed)
         return "__relaxed"_fu;
     else if (n == s_kind___convert)
         return "__convert"_fu;
-    else if (n == s_kind_fndef)
-        return "fndef"_fu;
-    else if (n == s_kind_copy)
-        return "copy"_fu;
-    else if (n == s_kind_move)
-        return "move"_fu;
-    else if (n == s_kind___far_jump)
-        return "__far_jump"_fu;
     else if (n == s_kind___no_kind_yet)
         return "__no_kind_yet"_fu;
     else if (n == s_kind_type)
@@ -1086,25 +1153,25 @@ inline fu_STR str_x2XZ9C2m(const s_kind n)
 }
                                 #endif
 
-                                #ifndef DEF_x7Ex3D_qlVazLihZ2i
-                                #define DEF_x7Ex3D_qlVazLihZ2i
-inline fu_STR& x7Ex3D_qlVazLih(fu_STR& a, fu::view<char> b)
+                                #ifndef DEF_x7Ex3D_EHZEiPh81F6
+                                #define DEF_x7Ex3D_EHZEiPh81F6
+inline fu_STR& x7Ex3D_EHZEiPh8(fu_STR& a, fu::view<char> b)
 {
     return (a += b);
 }
                                 #endif
 
-                                #ifndef DEF_x7E_YP7BiSZZZOd
-                                #define DEF_x7E_YP7BiSZZZOd
-inline fu_STR x7E_YP7BiSZZ(fu::view<char> a, fu::view<char> b)
+                                #ifndef DEF_x7E_sTZRmMq1BYf
+                                #define DEF_x7E_sTZRmMq1BYf
+inline fu_STR x7E_sTZRmMq1(fu::view<char> a, fu::view<char> b)
 {
     return a + b;
 }
                                 #endif
 
-                                #ifndef DEF_str_KY0ysfdU8Pc
-                                #define DEF_str_KY0ysfdU8Pc
-inline fu_STR str_KY0ysfdU(const s_Flags n)
+                                #ifndef DEF_str_R3y6Vzkzez1
+                                #define DEF_str_R3y6Vzkzez1
+inline fu_STR str_R3y6Vzkz(const s_Flags n)
 {
     /*MOV*/ fu_STR res {};
 
@@ -1112,14 +1179,8 @@ inline fu_STR str_KY0ysfdU(const s_Flags n)
         if (n & s_Flags_F_METHOD)
             res += ("F_METHOD"_fu + ", "_fu);
 
-        if (n & s_Flags_F_INFIX)
-            res += ("F_INFIX"_fu + ", "_fu);
-
-        if (n & s_Flags_F_PREFIX)
-            res += ("F_PREFIX"_fu + ", "_fu);
-
-        if (n & s_Flags_F_POSTFIX)
-            res += ("F_POSTFIX"_fu + ", "_fu);
+        if (n & s_Flags_F_OPERATOR)
+            res += ("F_OPERATOR"_fu + ", "_fu);
 
         if (n & s_Flags_F_ACCESS)
             res += ("F_ACCESS"_fu + ", "_fu);
@@ -1135,9 +1196,6 @@ inline fu_STR str_KY0ysfdU(const s_Flags n)
 
         if (n & s_Flags_F_ARG)
             res += ("F_ARG"_fu + ", "_fu);
-
-        if (n & s_Flags_F_OPERATOR)
-            res += ("F_OPERATOR"_fu + ", "_fu);
 
         if (n & s_Flags_F_MOVED_FROM)
             res += ("F_MOVED_FROM"_fu + ", "_fu);
@@ -1199,6 +1257,9 @@ inline fu_STR str_KY0ysfdU(const s_Flags n)
         if (n & s_Flags_F_LAMBDA)
             res += ("F_LAMBDA"_fu + ", "_fu);
 
+        if (n & s_Flags_F_INJECTED)
+            res += ("F_INJECTED"_fu + ", "_fu);
+
     };
     if (res)
         res.shrink((res.size() - 2));
@@ -1207,36 +1268,99 @@ inline fu_STR str_KY0ysfdU(const s_Flags n)
 }
                                 #endif
 
-static void inspect_B4xKuDxS(const s_SolvedNode& n, fu::view<char> indent, fu_STR& src, const int modid, const s_Module& module)
+                                #ifndef DEF_str_8ZvNBYdapb6
+                                #define DEF_str_8ZvNBYdapb6
+inline fu_STR str_8ZvNBYda(const s_FxMask n)
+{
+    /*MOV*/ fu_STR res {};
+
+    {
+        if (n & s_FxMask_Fx_NotDeadCode)
+            res += ("Fx_NotDeadCode"_fu + ", "_fu);
+
+        if (n & s_FxMask_Fx_NonDeterministic)
+            res += ("Fx_NonDeterministic"_fu + ", "_fu);
+
+        if (n & s_FxMask_Fx_DontMoveUp)
+            res += ("Fx_DontMoveUp"_fu + ", "_fu);
+
+        if (n & s_FxMask_Fx_DontMoveDown)
+            res += ("Fx_DontMoveDown"_fu + ", "_fu);
+
+        if (n & s_FxMask_Fx_Input)
+            res += ("Fx_Input"_fu + ", "_fu);
+
+        if (n & s_FxMask_Fx_Output)
+            res += ("Fx_Output"_fu + ", "_fu);
+
+        if (n & s_FxMask_Fx_Throws)
+            res += ("Fx_Throws"_fu + ", "_fu);
+
+        if (n & s_FxMask_Fx_Crashes)
+            res += ("Fx_Crashes"_fu + ", "_fu);
+
+        if (n & s_FxMask_Fx_Crashes_Div0)
+            res += ("Fx_Crashes_Div0"_fu + ", "_fu);
+
+        if (n & s_FxMask_Fx_Crashes_OOB)
+            res += ("Fx_Crashes_OOB"_fu + ", "_fu);
+
+        if (n & s_FxMask_Fx_Crashes_Assert)
+            res += ("Fx_Crashes_Assert"_fu + ", "_fu);
+
+        if (n & s_FxMask_Fx_Crashes_Exit)
+            res += ("Fx_Crashes_Exit"_fu + ", "_fu);
+
+        if (n & s_FxMask_Fx_Syscall)
+            res += ("Fx_Syscall"_fu + ", "_fu);
+
+        if (n & s_FxMask_Fx_Blocks)
+            res += ("Fx_Blocks"_fu + ", "_fu);
+
+        if (n & s_FxMask_Fx_Blocks_Alloc)
+            res += ("Fx_Blocks_Alloc"_fu + ", "_fu);
+
+        if (n & s_FxMask_Fx_Blocks_Await)
+            res += ("Fx_Blocks_Await"_fu + ", "_fu);
+
+    };
+    if (res)
+        res.shrink((res.size() - 2));
+
+    return /*NRVO*/ res;
+}
+                                #endif
+
+static void inspect_VB10aF0a(const s_SolvedNode& n, fu::view<char> indent, const s_Module& module, fu_STR& src, const int modid)
 {
     src += (indent + "("_fu);
     if (n)
     {
         if (n.kind == s_kind_call)
-            src += qID_ThvlUeXJ(str_x2XZ9C2m(n.kind));
+            src += qID_9QQZAztz(str_v3b7EcLt(n.kind));
         else if ((n.kind == s_kind_block) || (n.kind == s_kind_jump) || (n.kind == s_kind_defer))
-            src += qLT_ThvlUeXJ(str_x2XZ9C2m(n.kind));
+            src += qLT_9QQZAztz(str_v3b7EcLt(n.kind));
         else if ((n.kind == s_kind_if) || (n.kind == s_kind_and) || (n.kind == s_kind_or) || (n.kind == s_kind_loop))
-            src += qKW_ThvlUeXJ(str_x2XZ9C2m(n.kind));
+            src += qKW_9QQZAztz(str_v3b7EcLt(n.kind));
         else if (n.kind == s_kind_empty)
-            src += qBAD_ThvlUeXJ(str_x2XZ9C2m(n.kind));
+            src += qBAD_9QQZAztz(str_v3b7EcLt(n.kind));
         else
-            x7Ex3D_qlVazLih(src, str_x2XZ9C2m(n.kind));
+            x7Ex3D_EHZEiPh8(src, str_v3b7EcLt(n.kind));
 
         if (n.value)
             src += (" v:"_fu + n.value);
 
         if (n.helpers)
-            src += x7E_YP7BiSZZ(" h:"_fu, fu::i64dec(n.helpers.index));
+            src += x7E_sTZRmMq1(" h:"_fu, fu::i64dec(n.helpers.index));
 
         if (n.flags)
-            src += x7E_YP7BiSZZ(" f:"_fu, str_KY0ysfdU(n.flags));
+            src += x7E_sTZRmMq1(" f:"_fu, str_R3y6Vzkz(n.flags));
 
         if (n.items)
         {
-            fu_STR indent_1 = (indent + ((n.kind == s_kind_block) ? qLT_ThvlUeXJ(". "_fu) : "  "_fu));
+            fu_STR indent_1 = (indent + ((n.kind == s_kind_block) ? qLT_9QQZAztz(". "_fu) : "  "_fu));
             for (int i = 0; i < n.items.size(); i++)
-                inspect_B4xKuDxS(n.items[i], indent_1, src, modid, module);
+                inspect_VB10aF0a(n.items[i], indent_1, module, src, modid);
 
         };
         if ((n.target.modid == modid) || (n.target.modid < 0))
@@ -1244,12 +1368,19 @@ static void inspect_B4xKuDxS(const s_SolvedNode& n, fu::view<char> indent, fu_ST
             fu::view<s_Overload> overloads = ((n.target.modid < 0) ? module.out.solve.scope.extended[-n.target.modid].locals : module.out.solve.scope.overloads);
             const s_Overload& o = overloads[(n.target.index - 1)];
             if (o.name)
-                src += (" n:"_fu + trim_ZCtM7908(o.name));
+                src += (" n:"_fu + trim_obCJYZMU(o.name));
 
+            if (o.kind == s_kind_fn)
+            {
+                const s_Extended& x = module.out.solve.scope.extended[n.target.index];
+                if (x.fx_mask)
+                    src += x7E_sTZRmMq1(" fx:"_fu, str_8ZvNBYda(x.fx_mask));
+
+            };
             if ((n.kind == s_kind_fndef) || (n.kind == s_kind_letdef))
             {
-                fu_STR indent_1 = (indent + qID_ThvlUeXJ(". "_fu));
-                inspect_B4xKuDxS(o.solved, indent_1, src, modid, module);
+                fu_STR indent_1 = (indent + qID_9QQZAztz(". "_fu));
+                inspect_VB10aF0a(o.solved, indent_1, module, src, modid);
             };
         };
     };
@@ -1259,11 +1390,11 @@ static void inspect_B4xKuDxS(const s_SolvedNode& n, fu::view<char> indent, fu_ST
     src += ")"_fu;
 }
 
-void inspect_lNPhrd2S(const s_Module& module, const s_SolvedNode& root)
+void inspect_e6aN47vV(const s_Module& module, const s_SolvedNode& root)
 {
     /*MOV*/ fu_STR src = "Your /*PRINT*/:"_fu;
     const int modid = module.modid;
-    inspect_B4xKuDxS(root, "\n    "_fu, src, modid, module);
+    inspect_VB10aF0a(root, "\n    "_fu, module, src, modid);
     fu_STR* BL_1_v;
     fu::println((fu::slate<1, fu_STR> { static_cast<fu_STR&&>((__extension__ (
     {
@@ -1272,9 +1403,9 @@ void inspect_lNPhrd2S(const s_Module& module, const s_SolvedNode& root)
     (void)0;}), *BL_1_v)) }));
 }
 
-void inspect_ccjqvemK(const s_Module& module)
+void inspect_CGb0XXzf(const s_Module& module)
 {
-    inspect_lNPhrd2S(module, module.out.solve.root);
+    inspect_e6aN47vV(module, module.out.solve.root);
 }
 
 #endif

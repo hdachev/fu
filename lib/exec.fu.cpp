@@ -13,19 +13,25 @@
 
 #ifndef fu_NO_fdefs
 
-int exec_WBO0XoUO(fu_STR&& cmd, fu_STR& stdout)
+int exec_MSgvjrdj(fu_STR&& cmd, int& status, fu_STR& stdout)
 {
-    /*MOV*/ int status = -1;
+    int err = 0;
+    status = -1;
     cmd += '\x00';
 
-        const auto pipe = popen(cmd.data(), "r");
+        const auto pipe = popen(cmd.data(), /*rb triggers EINVAL*/"r");
         if (!pipe)
         {
-            status = errno;
+            err = err ? err : errno;
         }
         else
         {
-            fu_DEFER( status = pclose(pipe); );
+            fu_DEFER(
+            {
+                status = pclose(pipe);
+                if (status == -1)
+                    err = err ? err : errno;
+            });
 
             const size_t BUF_SIZE = 64 * 1024;
             fu::byte BUF[BUF_SIZE];
@@ -61,7 +67,7 @@ int exec_WBO0XoUO(fu_STR&& cmd, fu_STR& stdout)
             }
         }
     ;
-    return /*NRVO*/ status;
+    return err;
 }
 
 #endif
