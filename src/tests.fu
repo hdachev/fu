@@ -5797,7 +5797,7 @@ pub extern fn runTests()
     ZERO(`
         <fail does nothing><pass/>
         lax                </fail>
-        fn noop_let_lax(ref x: i32) {
+        fn noop_let_lax(lax ref x: i32) {
             let lax y = x;
         }
 

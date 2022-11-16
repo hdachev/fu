@@ -179,6 +179,7 @@ flags SolverNotes: i32
     N_UnusedAndOr
     N_UnusedIfElse
     N_UnusedArrlit
+    N_UnusedLet
 
     N_BckSoftRisk
     N_BckMustSeq

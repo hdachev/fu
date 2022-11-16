@@ -2063,16 +2063,6 @@ pub fn solve(
     {
         let k = node.kind;
 
-        // Shortcutting lets, they source the slot from usage.
-        if (k == "let" || k == "letdef")
-        {
-            // Addrofn & co.
-            if (!node.target)
-                return;
-
-            return relaxBlockVar(node.target, :relax_mask);
-        }
-
         ////////////////////////////
         let here0   = _here;
         _here       = node.token;
@@ -2204,6 +2194,27 @@ pub fn solve(
         //
 
         let canDiscard = slot.is_void;
+
+        // Shortcutting lets, they source the slot from usage.
+        if (k == "let" || k == "letdef")
+        {
+            // Addrofn & co.
+            if (!node.target)
+                return;
+
+            relaxBlockVar(node.target, :relax_mask, :canDiscard);
+
+            k == "letdef" || BUG("Unexpected let node.");
+
+            // Discarding unused variables.
+            if (node.target.status & SS_UNUSED)
+            {
+                makeNote(N_UnusedLet);
+                node = node.target.solved.items[LET_INIT];
+            }
+
+            return;
+        }
 
         node.type.try_relax(:slot, :relax_mask);
 
@@ -2938,7 +2949,7 @@ pub fn solve(
         _warnings.grow_if_oob(_current_fn.target.index) ||= Warning(:token, message: message.fail_appendStack);
     }
 
-    fn relaxBlockVar(t: Target, relax_mask!: i32)
+    fn relaxBlockVar(t: Target, relax_mask!: i32, canDiscard!?: bool)
     {
         let o = GET(t);
 
@@ -2955,6 +2966,9 @@ pub fn solve(
             o.status |= SS_UNUSED;
         else
             o.status & SS_UNUSED && BUG("relaxBlockVar: previously SS_UNUSED " ~ o.qWHAT ~ " now used as " ~ humanizeType(usage));
+
+        if (isUnused && canDiscard)
+            o.solved.type = t_void;
 
         //////////////////////////////////////////////
         // TODO one of these two is redundant       //
