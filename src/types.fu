@@ -333,13 +333,15 @@ pub fn type_trySuper(a: Type, b: Type, DONT_match_zeroes!?: bool)
              : b.is_zeroes && !DONT_match_zeroes ? CANNOT_definit_mutrefs ? clear_mutref(a) : a
              : [];
 
-    let quals = a.quals & b.quals;
+    let quals   = a.quals  & b.quals;
+    let vfacts  = a.vfacts & b.vfacts;
+
     let lifetime = a.lifetime && b.lifetime
                 && Lifetime_union(a.lifetime, b.lifetime);
 
     return Type(
         ValueType(:a.canon, :quals),
-        :lifetime);
+        :lifetime, :vfacts);
 }
 
 pub fn type_tryIntersect(a: Type, b: Type)
@@ -349,7 +351,8 @@ pub fn type_tryIntersect(a: Type, b: Type)
     if (a.canon != b.canon)
         return [];
 
-    let quals = a.quals | b.quals;
+    let quals   = a.quals  | b.quals;
+    let vfacts  = a.vfacts | b.vfacts;
 
     // TODO FIX what is this, what's the principle here?
     //  I think we should just lose the lifetime
@@ -362,7 +365,7 @@ pub fn type_tryIntersect(a: Type, b: Type)
     //
     return Type(
         ValueType(:a.canon, :quals),
-        :lifetime);
+        :lifetime, :vfacts);
 }
 
 

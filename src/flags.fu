@@ -16,7 +16,7 @@ flags SolverStatus: u16
 
     SS_HOIST
     SS_UNUSED
-    SS_USED_BY_STATIC_EVAL
+    SS_MATCHED
     // ...
 }
 

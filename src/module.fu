@@ -365,8 +365,20 @@ pub struct Type
 {
     using vtype:    ValueType;
     lifetime?:      Lifetime; // Excluding this from the truth check feels dangerous
+    vfacts?:        VFacts;
 };
 
 pub struct Lifetime { using uni0n!: Region[]; };
 
 pub struct Region { index!: i32; };
+
+
+// Instead of this we'd have a string listing qualities,
+//  known value ranges, etc, but this should be enough to get the basics set it.
+
+pub flags VFacts
+{
+    AlwaysTrue
+    AlwaysFalse
+    COWUnique
+};

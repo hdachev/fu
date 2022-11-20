@@ -751,6 +751,11 @@ pub fn solve(
             overload.type = flags & F_MUT
                 ? add_mutref(type, lifetime)
                 : add_ref   (type, lifetime);
+
+            // TODO FIX VFACTS //////////////////////////
+            if (overload.type.is_mutref || flags & F_ARG)
+                overload.type.vfacts = [];
+            // TODO FIX VFACTS //////////////////////////
         }
 
         return target;
@@ -2963,7 +2968,7 @@ pub fn solve(
         let usage = _current_fn.var_usage.unless_oob(t.index);
         let isUnused = !usage;
         if (isUnused)
-            if !(o.flags & F_LAX || o.status & SS_USED_BY_STATIC_EVAL || o.type.is_zeroes)
+            if !(o.flags & F_LAX || o.status & SS_MATCHED || o.type.is_zeroes)
                 warn(:o.solved.token, "Unused variable: " ~ o.name.qBAD ~ ": make it " ~ "lax".qKW ~ " if this is intentional.");
 
         //
@@ -3215,6 +3220,11 @@ pub fn solve(
             helpers: h);
     }
 
+    fn createBlock(a: SolvedNode, b: SolvedNode)
+    {
+        return createBlock(type: b.type, [ a, b ]);
+    }
+
 
     //
 
@@ -3358,14 +3368,24 @@ pub fn solve(
 
     //
 
+    fn createBool(value: StaticEval): SolvedNode
+    {
+        return createBool(value == SE_True  ? "true"
+                        : value == SE_False ? "false"
+                        : BUG());
+    }
+
     fn createBool(value: bool): SolvedNode
     {
         return createBool(value ? "true" : "false");
     }
 
-    fn createBool(value: string, type = t_bool): SolvedNode
+    fn createBool(value: string, mut type = t_bool): SolvedNode
     {
-        value == "true" || value == "false" || BUG();
+        type.vfacts = value == "true"   ? AlwaysTrue
+                    : value == "false"  ? AlwaysFalse
+                    : BUG();
+
         return SolvedNode(kind: "bool", :value, :type);
     }
 
@@ -4733,8 +4753,14 @@ pub fn solve(
                     fail("All structs must be zerofilled by default."
                         ~ " Please remove the initializer of struct member `" ~ node.value ~ "`.");
 
+            mut ret = solveLetLike_dontTouchScope(node, :primType);
+
+            // TODO FIX VFACTS //
+            ret.type.vfacts = [];
+            // TODO FIX VFACTS //
+
             // Can't continue/return back/fwd compat.
-            return solveLetLike_dontTouchScope(node, :primType);
+            return ret;
         }
 
         let items   = node.items && node.items[STRUCT_MEMBERS].items;
@@ -6587,44 +6613,6 @@ pub fn solve(
 
     //
 
-    fn tryStaticEvalAsBool(node: SolvedNode): StaticEval
-    {
-        if (node.kind == "bool")
-        {
-            if (node.value == "true")   return SE_True;
-            if (node.value == "false")  return SE_False;
-        }
-
-        else if (node.kind == "call")
-        {
-            let o = GET(node.target);
-            if (o.kind == "var" && !(o.flags & F_ARG) && !o.type.is_mutref)
-            {
-                let se = tryStaticEvalAsBool(
-                    o.solved.items[LET_INIT]);
-
-                // No unused warnings on static evals.
-                if (se && !(o.flags & F_PUB))
-                    GET_mut(node.target).status |= SS_USED_BY_STATIC_EVAL;
-
-                return se;
-            }
-        }
-
-        else if (node.kind == "not")
-        {
-            let se = tryStaticEvalAsBool(node.items.only);
-            return se == SE_True  ? SE_False
-                 : se == SE_False ? SE_True
-                 : se;
-        }
-
-        return SE_Unknown;
-    }
-
-
-    //
-
     fn convertToSuperType(topic: string, ref a: SolvedNode, ref b: SolvedNode): Type
     {
         {
@@ -6692,15 +6680,19 @@ pub fn solve(
             ~ b.humanizeType);
     }
 
+    fn tryAbstractEvalAsBool(cond: SolvedNode): StaticEval
+    {
+        if (cond.vfacts & (AlwaysTrue | AlwaysFalse))
+            return !(cond.vfacts & AlwaysTrue)  ? SE_False
+                 : !(cond.vfacts & AlwaysFalse) ? SE_True
+                 : BUG("Expression both AlwaysTrue and AlwaysFalse.");
+
+        return SE_Unknown;
+    }
+
     fn solveIf(node: Node, type: Type): SolvedNode
     {
         mut cond    = solveNode(node.items[0], t_bool);
-
-        // Static eval - first pass on static ifs,
-        //  immediately discard one of the branches.
-        let se_cond = tryStaticEvalAsBool(cond);
-        if (se_cond)
-            return solveNode(node.items[se_cond == SE_True ? 1 : 2], :type);
 
         // Dead code elim.
         if (cond.type.is_never)
@@ -6708,6 +6700,12 @@ pub fn solve(
             makeNote(N_DeadIfCond);
             return cond;
         }
+
+        // Abstract eval.
+        let ae_cond = tryAbstractEvalAsBool(cond);
+        if (ae_cond)
+            return createBlock(cond,
+                solveNode(node.items[ae_cond == SE_True ? 1 : 2], :type));
 
         fn if_A_and_NEVER_then_B_else_C()
         {
@@ -6954,7 +6952,8 @@ pub fn solve(
 
     fn createNot(item: SolvedNode)
     {
-        // Static eval.
+        // TODO we shouldn't need this kind of stuff
+        //  when we get the hang of vfacts.
         if (item.kind == "bool")
         {
             if (item.value == "true")   return createBool(false);
@@ -6963,7 +6962,14 @@ pub fn solve(
             BUG("Invalid bool literal: " ~ item.value.qBAD);
         }
 
-        return SolvedNode("not", type: t_bool, items: [ item ]);
+        mut type = t_bool;
+        let ae = tryAbstractEvalAsBool(item);
+        if (ae)
+            type.vfacts = ae == SE_True
+                        ? AlwaysFalse
+                        : AlwaysTrue;
+
+        return SolvedNode("not", :type, items: [ item ]);
     }
 
 
@@ -7379,6 +7385,10 @@ pub fn solve(
                 EXT_mut(target).callers.set::add(_current_fnort.index);
                 detectRecursion(target);
             }
+            else if (k == "var" && !(target.flags & F_PUB))
+            {
+                GET_mut(target).status |= SS_MATCHED;
+            }
         }
 
         return callsite;
@@ -7479,6 +7489,8 @@ pub fn solve(
         defer _here = here0;
         ////////////////////
 
+        mut ae_first = 0x7fffffff.i32;
+
         for (mut i = 0; i < nodes.len; i++)
         {
             let node = nodes[i];
@@ -7511,14 +7523,14 @@ pub fn solve(
                 // Static eval.
                 if (static_eval_brk)
                 {
-                    let se_item = tryStaticEvalAsBool(solved);
-                    if (se_item)
+                    let ae_item = tryAbstractEvalAsBool(solved);
+                    if (ae_item)
                     {
-                        if (static_eval_brk == se_item)
+                        if (static_eval_brk == ae_item)
                             break;
 
-                        if (i < nodes.len - 1)
-                            result.pop();
+                        if (ae_first > result.len)
+                            ae_first = result.len - 1;
                     }
                 }
 
@@ -7579,6 +7591,28 @@ pub fn solve(
                     let into = result[i + offset].target;
                     if (lazySolveStart(into))
                         repeat = true;
+                }
+            }
+        }
+
+        // TODO this should probably be done in createAnd/createOr & co,
+        //  too bad we'll need to tryAbstractEvalAsBool twice,
+        //   wonder if there's a cheaper way around this.
+        //
+        if (static_eval_brk)
+        {
+            for (mut i = result.len - 1; i --> ae_first; )
+            {
+                if (tryAbstractEvalAsBool(result[i]))
+                {
+                    let cond = result[i];
+                    result.splice(i, 1);
+
+                    ref cons = result[i];
+                    if (cons.kind != "block")
+                        cons = createBlock(cond, cons);
+                    else
+                        cons.items.unshift(cond);
                 }
             }
         }
