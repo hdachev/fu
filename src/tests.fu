@@ -6027,6 +6027,42 @@ pub extern fn runTests()
         }
     `);
 
+    ZERO([`
+        struct Type {
+            quals: i32;
+            canon: string;
+        };
+
+        fn is_never (t: Type) t.canon == "never";
+        fn is_zeroes(t: Type) t.canon == "zeroes";
+
+        let CANNOT_definit_mutrefs = true;
+
+        fn clear_mutref(mut t: Type) {
+            t.quals &= ~1;
+            return t;
+        }
+
+        fn union(a: Type, b: Type, DONT_match_zeroes!?: bool) {
+            if (a.canon != b.canon)
+                return a.is_never  ? b
+                     : b.is_never  ? a
+                     : a.is_zeroes && !DONT_match_zeroes ? CANNOT_definit_mutrefs ? clear_mutref(b) : b
+                     : b.is_zeroes && !DONT_match_zeroes ? CANNOT_definit_mutrefs ? clear_mutref(a) : a
+                     : [];
+
+            return Type(:a.canon, a.quals | b.quals);
+        }
+    `,`
+        import _0;
+        fn main() {
+            let Hey1    = Type(1, "hey");
+            let Zeroes  = Type(0, "zeroes");
+            let res     = union(Hey1, Zeroes);
+            return res.canon == "hey" && res.quals == 0 ? 0 : 1;
+        }
+    `]);
+
     // /quite right
 
 
