@@ -3049,19 +3049,6 @@ pub fn solve(
             if (!items[x].kind)
                 throw("createBlock.before-flatten.items: no kind on item #" ~ x);
 
-        if (_here && _helpers.len > 10000001)
-        {
-            // Comment out this line and gcc breaks under opti,
-            //  something is getting reordered or otherwise broken,
-            //   it's a heizenbug.
-            //
-            // I guess next part of the research is to
-            //  start toggling optimization options one by one,
-            //   I need to do this efficiently somehow.
-            //
-            throw("woot: " ~ _helpers.len);
-        }
-
         // Compact + stress test.
         for (mut i = items.len; i --> 0; )
         {
