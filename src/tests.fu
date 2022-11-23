@@ -11018,6 +11018,29 @@ pub extern fn runTests()
         }
     `);
 
+    ZERO(`
+        // 'v' got mistagged as VFacts.AlwaysFalse
+        struct Hello { v?: bool; }
+        fn main() = Hello(true).v ? 0 : 1;
+    `);
+
+    ZERO(`
+        // 'v' got mistagged as VFacts.AlwaysFalse
+        struct Hello { v?: bool; }
+
+        fn main() {
+            let yes = Hello(true);
+            let no  = Hello(false);
+
+            let expect_true = yes.v;
+            let expect_false = no.v;
+
+            if (!expect_true) return 20;
+            if (expect_false) return 10;
+            return 0;
+        }
+    `);
+
     TODO_StaticEval(`
         fn main() {
             <fail not defined>
