@@ -8857,7 +8857,15 @@ pub fn solve(
                 node.items.len > 1 || BUG(debug ~ ".len: " ~ node.items.len);
 
             if (k == "if")
+            {
                 node.items.len == 3 || BUG(debug ~ ".len: " ~ node.items.len);
+
+                if (node.type.is_never)
+                {
+                    node.items[1].is_never || BUG(debug ~ " never.cons not never: " ~ node.items[1].qWHAT);
+                    node.items[2].is_never || BUG(debug  ~ " never.alt not never: " ~ node.items[2].qWHAT);
+                }
+            }
 
             return test_Statements(node, :debug);
         }
