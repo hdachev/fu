@@ -5385,16 +5385,24 @@ pub fn solve(
 
     fn injectJumps(h!: Helpers, ref expr: SolvedNode)
     {
-        if (expr.kind == "block" && expr.items)
+        if (expr.kind == "block")
         {
             // The intent here -
             //  not wrapping the block means it can unwrap into its parent block
             //   and inserting the return further in reduces the need
             //    for statement expressions.
             //
-            shadow ref expr = expr.items.last;
-            if (!expr.type.is_never)
-                injectJumps(:h, expr);
+            ref tail = expr.items.last;
+            if (!tail.is_never)
+                injectJumps(:h, tail);
+
+            {
+                expr.helpers.mask & HM_LabelUsed && BUG("Block still uses its label"
+                    ~ ", consider looping tryRelinkJumpsAndUnwrap in injectJumps"
+                    ~ ", otherwise we're about to lie about its return type.");
+
+                expr.type = t_never;
+            }
         }
         else if (expr.kind == "if")
         {
