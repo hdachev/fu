@@ -9943,6 +9943,24 @@ pub extern fn runTests()
         }
     `);
 
+    ZERO(`
+        fn test(x: i32, ref odds: i32) {
+            return x & 1 ? { odds++; x } : x + 1;
+        }
+
+        fn main() {
+            let nums = [ 1, 2, 3 ];
+            mut odds = 0;
+            mut sum  = 0;
+            for (mut i = 0; i < nums.len; i++)
+                sum += test(nums[i], :odds);
+
+            return odds != 2 ? 100
+                 : sum  != 7 ? 200
+                 : 0;
+        }
+    `);
+
 
     // Relaxer.
 
