@@ -9710,6 +9710,19 @@ pub extern fn runTests()
     `);
 
     ZERO(`
+        fn test(x: i32) {
+            return {
+                :BLOCK 2 * {
+                    if (x) break :BLOCK 3;
+                    1
+                }
+            };
+        }
+
+        fn main() = test(0) == 2 ? 0 : 1;
+    `);
+
+    ZERO(`
         fn v(x: i32) {
             return {
                 :BLOCK                          5000 + { // *2:
