@@ -1602,7 +1602,8 @@ pub fn solve(
             || node.kind == "definit"
             || node.kind == "str"
             || node.kind == "if"  && node.items[1, 3].all(fn couldRetype)
-            || node.kind == "and" && node.items.last.couldRetype;
+            || node.kind == "and" && node.items.last.couldRetype
+            || node.kind == "block" && !(node.helpers.mask & HM_LabelUsed) && node.items.last.couldRetype;
     }
 
     fn tryRetyping(node: SolvedNode, expect: Type): Type
@@ -1633,6 +1634,10 @@ pub fn solve(
         if (node.kind == "and")
             return tryRetyping(node.items.last, expect);
 
+        if (node.kind == "block")
+            return !(node.helpers.mask & HM_LabelUsed)
+                && tryRetyping(node.items.last, expect);
+
         return [];
     }
 
@@ -1645,6 +1650,13 @@ pub fn solve(
         }
         else if (node.kind == "and")
         {
+            applyRetype(node.items.last, retype);
+        }
+        else if (node.kind == "block")
+        {
+            node.helpers.mask & HM_LabelUsed && BUG(
+                "Trying to retype a labelled block, we cant do this still.");
+
             applyRetype(node.items.last, retype);
         }
 
