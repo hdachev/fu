@@ -2788,6 +2788,10 @@ pub fn solve(
                     }
                 }
 
+                // Unwrap single item blocks.
+                if (items.len == 1 && !(h.mask & HM_LabelUsed))
+                    node = items.only;
+
                 ///////////////////////////////////////////////
                 _current_fn.TODO_FIX_defers -= TODO_FIX_defers;
                 ///////////////////////////////////////////////
