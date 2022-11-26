@@ -33,7 +33,7 @@ flags HelpersMask
     HM_Lambda
     HM_Struct
     HM_LabelUsed
-    HM_KeepBlock
+    // ...
 }
 
 

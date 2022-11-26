@@ -3211,10 +3211,6 @@ pub fn solve(
         }
 
         //
-        if (!(h.mask & (HM_LabelUsed | HM_KeepBlock)) && items.len == 1)
-            return items.only;
-
-        //
         return SolvedNode(
             kind: "block", :type, :items,
             helpers: h);
@@ -7341,8 +7337,7 @@ pub fn solve(
 
                 mut s_body = solveBlock(
                     n_body, type: ret_expect,
-                    mask: HM_CanReturn | (n_fn.flags & F_LAMBDA && HM_Lambda)
-                                       | (arg_defs              && HM_KeepBlock),
+                    mask: HM_CanReturn | (n_fn.flags & F_LAMBDA && HM_Lambda),
                     id: n_fn.value,
                     :locals_start);
 
