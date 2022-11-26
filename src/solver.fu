@@ -201,12 +201,6 @@ pub fn solve(
         SE_True
     };
 
-    enum RelinkJumps {
-        DidNotRelink                = 0
-        Relinked_but_DidNotUnwrap   = 1
-        Relinked_and_Unwrapped      = 2
-    };
-
 
     // The solver state.
 
@@ -3074,17 +3068,7 @@ pub fn solve(
             {
                 if (item.items.if_last.kind == "unwrap")
                 {
-                    let didWhat = tryRelinkJumpsAndUnwrap(:h, item);
-
-                    // TODO FIX this reveals an ambiguity in the AST,
-                    //  if we get an empty block with a single unwrap in it,
-                    //   it's gonna trigger this.
-                    //
-                    !didWhat || didWhat == Relinked_but_DidNotUnwrap || BUG(
-                        "createBlock, handle `unwrap`:"
-                            ~ " tryRelink DidUnwrap on its own, which shouldnt happen because"
-                            ~ " there's the extra 'unwrap' stub in the end of the block"
-                            ~ " after whatever we do want to unwrap manually here.");
+                    relinkJumps(:h, item);
 
                     items.splice(i, 1,
                         item.items.slice(0, item.items.len - 1));
@@ -3098,7 +3082,7 @@ pub fn solve(
         }
 
         if (h && items.if_last.kind == "block")
-            tryRelinkJumpsAndUnwrap(:h, items.last);
+            relinkJumps(:h, items.last);
 
         //////////////////////////////////////////////////////////////////////
         //////////////////////////////////////////////////////////////////////
@@ -5387,7 +5371,7 @@ pub fn solve(
         h.ret_actual || BUG("Can't be null past this point.");
     }
 
-    fn tryRelinkJumpsAndUnwrap(h!: Helpers, ref expr: SolvedNode): RelinkJumps
+    fn relinkJumps(h!: Helpers, ref expr: SolvedNode)
     {
         if (expr.kind == "block")
         {
@@ -5422,23 +5406,13 @@ pub fn solve(
                 // Clean up trivial leftover blocks.
                 h0.mask &= ~HM_LabelUsed;
                 expr.helpers = [];
-
-                if (expr.items.len == 1)
-                {
-                    expr = expr.items.only;
-                    return Relinked_and_Unwrapped;
-                }
-
-                return Relinked_but_DidNotUnwrap;
             }
         }
-
-        return DidNotRelink;
     }
 
     fn injectJumps(h!: Helpers, ref expr: SolvedNode)
     {
-        tryRelinkJumpsAndUnwrap(:h, :expr);
+        relinkJumps(:h, :expr);
 
         if (expr.kind == "block")
         {
@@ -5453,7 +5427,7 @@ pub fn solve(
 
             {
                 expr.helpers.mask & HM_LabelUsed && BUG("Block still uses its label"
-                    ~ ", consider looping tryRelinkJumpsAndUnwrap in injectJumps"
+                    ~ ", consider looping relinkJumps in injectJumps"
                     ~ ", otherwise we're about to lie about its return type.");
 
                 expr.type = t_never;
