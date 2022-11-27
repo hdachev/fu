@@ -386,7 +386,8 @@ pub fn solve(
 
     fn parent(target: Target)
     {
-        return Target(:module.modid, target.localOf);
+        let index = target.localOf;
+        return index && Target(:module.modid, index);
     }
 
     fn GET_crossmodule(target: Target, implicit _current_fnort: Target)
@@ -6516,6 +6517,9 @@ pub fn solve(
 
     fn injectClosureArg(target: Target): Target
     {
+        target.kind == "var" || BUG(
+            "injectClosureArg: trying to inject a non-var: " ~ target.qWHAT);
+
         // CLOSURE-ID-HACK
         // TODO perhaps forbid ClosureIDs here, and hunt down the source of the problem -
         //  complicated close-over schemes do this but its really confusing so not exactly sure why,
@@ -7139,6 +7143,62 @@ pub fn solve(
         return false;
     }
 
+    fn inlineExpression(from: Target, mut expr: SolvedNode)
+    {
+        if (from && from != _current_fn.target)
+        {
+            // TODO it'd be nice if we can skip this by looking at the expr node flags,
+            //  something like F_NO_LOCALS or something that tells us
+            //   there's nothing here that needs relinking.
+            //
+            fn visit(shadow ref expr: SolvedNode)
+            {
+                // Replace references to foreign locals with implicit closure args.
+                if (expr.kind == "call" && expr.target.isLocal)
+                {
+                    let local   = injectClosureArg(expr.target);
+
+                    // println("inlineExpression: CALL.REPLACE " expr.target.qWHAT " with " local.qWHAT);
+
+                    expr.target = local;
+                }
+
+                // Replace foreign lifetimes with lifetimes to implicit closure args.
+                ref regions = expr.type.lifetime.uni0n;
+                mut replacements: Region[] = [];
+                for (mut i = 0; i < regions.len; i++)
+                {
+                    let index   = Region_asLocal(regions[i]);
+                    if (index)
+                    {
+                        let target  = nested(:index, :from);
+                        let local   = injectClosureArg(target);
+
+                        // println("inlineExpression: LT.REPLACE " target.qWHAT " with " local.qWHAT);
+
+                        // We'll add the replacements back in at the end,
+                        //  don't want to deal with the offset juggle here.
+                        replacements.set::add(
+                            Region_fromLocal(local.index));
+
+                        regions.splice(i, 1);
+                        i--;
+                    }
+                }
+
+                regions.set::add(replacements);
+
+                // Descend.
+                for (mut i = 0; i < expr.items.len; i++)
+                    visit(expr.items[i]);
+            }
+
+            visit(expr);
+        }
+
+        return expr;
+    }
+
     fn CallerNode(
         debug: string, implicit _current_fnort: Target,
         mut target: Target, mut args?: SolvedNode[], reorder?: i32[], conversions?: Target[][])
@@ -7209,15 +7269,22 @@ pub fn solve(
                 {
                     let host_arg = host_args[i];
 
-                    args[i] = host_arg.default ||
+                    if (host_arg.default)
+                    {
+                        args[i] = inlineExpression(
+                            expr: host_arg.default,
+                            from: target);
+                    }
+                    else
                     {
                         host_arg.flags & F_IMPLICIT || fail(
                             "tryMatch: about to implicit-bind a non-implicit argument: `"
                                 ~ host_arg.name ~ ": " ~ humanizeType(host_arg.type) ~ "`.");
 
-                        bindImplicitArg(:host_arg.name,
-                                        :host_arg.type, becauseOf: target)
-                    };
+                        args[i] = bindImplicitArg(
+                            :host_arg.name,
+                            :host_arg.type, becauseOf: target);
+                    }
 
                     // This can result in a dead call too.
                     if (args[i].is_never)
@@ -7245,7 +7312,9 @@ pub fn solve(
         {
             // INLINE ARGUMENTS ////////////////////////////////////////////
             if (target.flags & F_INLINE)
-                return target.solved.items[LET_INIT];
+                return inlineExpression(
+                    from: target.parent,
+                    target.solved.items[LET_INIT]);
             // INLINE ARGUMENTS ////////////////////////////////////////////
 
             //
