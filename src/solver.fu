@@ -6509,6 +6509,23 @@ pub fn solve(
         return target;
     }
 
+    fn injectClosureArg(target: Target): Target
+    {
+        // CLOSURE-ID-HACK
+        // TODO perhaps forbid ClosureIDs here, and hunt down the source of the problem -
+        //  complicated close-over schemes do this but its really confusing so not exactly sure why,
+        //   there's a good test for it.
+        let clID = hacks::tryParseClosureID(id: target.name)
+                || hacks::ClosureID(:target, target.parent.revision || BUG(
+                    "ClosureID: about to serialize at rev 0: "
+                        ~ target.qWHAT));
+
+        return injectImplicitArg(
+            id:     clID.serialize(),
+            type:   target.type, becauseOf: target);
+        // CLOSURE-ID-HACK
+    }
+
     fn injectImplicitArg(id: string, type: Type, becauseOf!: Target): Target
     {
         if (!_current_fn.items || _current_fn.out.flags & F_EXTERN)
@@ -7233,19 +7250,7 @@ pub fn solve(
             if (target.isLocal &&
                 target.localOf != _current_fn.target.index)
             {
-                // CLOSURE-ID-HACK
-                // TODO perhaps forbid ClosureIDs here, and hunt down the source of the problem -
-                //  complicated close-over schemes do this but its really confusing so not exactly sure why,
-                //   there's a good test for it.
-                let clID = hacks::tryParseClosureID(id: target.name)
-                        || hacks::ClosureID(:target, target.parent.revision || BUG(
-                            "ClosureID: about to serialize at rev 0: "
-                                ~ target.qWHAT));
-
-                target = injectImplicitArg(
-                    id:     clID.serialize(),
-                    type:   target.type, becauseOf: target);
-                // CLOSURE-ID-HACK
+                target = injectClosureArg(target);
 
                 type = GET(target).type || BUG("CallerNode: !type on var " ~ target.name);
             }
