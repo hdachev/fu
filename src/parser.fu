@@ -650,6 +650,7 @@ pub fn parse(
                 if (v == "pragma")      return parseCompilerPragma();
 
                 if (v == "inline")      return parseInlineDecl();
+                if (v == "noinline")    return parseNoInlineDecl();
                 if (v == "infix")       return parseOperatorDecl(Infix);
                 if (v == "prefix")      return parseOperatorDecl(Prefix);
                 if (v == "postfix")     return parseOperatorDecl(Postfix);
@@ -826,6 +827,11 @@ pub fn parse(
             else
                 fail("Unknown qualifier: " ~ v.qKW);
         }
+    }
+
+    fn parseNoInlineDecl(): Node
+    {
+        return parseInlineDecl(F: [], asserts: A_NOINLINE);
     }
 
     fn parseInlineDecl(mut flags?: Flags, F = F_INLINE, mut asserts?: DeclAsserts): Node
