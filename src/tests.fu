@@ -6062,6 +6062,28 @@ pub extern fn runTests()
         }
     `]);
 
+    ZERO(`
+        fn inline_args_and_closures(inline nums: i32[]) {
+            mut sum: i32;
+            noinline fn woot(z: i32)
+                for (mut i = 0; i < nums.len; i++)
+                    sum += nums[i] & z;
+
+            for (mut i = 0; i < nums.len; i++) {
+                if (i > 0) woot(nums[i] & nums[i - 1]);
+                if (i > 1) woot(nums[i] & nums[i - 2]);
+            }
+
+            return sum;
+        }
+
+        fn main() {
+            mut x = 0;
+            let res = inline_args_and_closures([ x++, x++, x++ ]);
+            return x == 93 && res == 290 ? 0 : 1;
+        }
+    `);
+
     // /quite right
 
 
