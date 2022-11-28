@@ -5774,10 +5774,10 @@ pub fn solve(
     {
         mut out = solveLetLike_dontTouchScope(node, :specType);
         let id  = out.value;
-        return solveLet(:out, :id);
+        return solveLet_setScopeAndGetLetdef(:out, :id);
     }
 
-    fn solveLet(ref out!: SolvedNode, id!: string): SolvedNode
+    fn solveLet_setScopeAndGetLetdef(mut out!: SolvedNode, id!: string): SolvedNode
     {
         // Dead code elim.
         if (out.kind != "let")
@@ -5888,7 +5888,7 @@ pub fn solve(
     fn createLet(id: string, flags: Flags, init: SolvedNode)
     {
         mut out = solveLetLike_dontTouchScope(:flags, :id, :init);
-        return solveLet(:out, :id);
+        return solveLet_setScopeAndGetLetdef(:out, :id);
     }
 
 
