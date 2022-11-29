@@ -4439,7 +4439,7 @@ pub fn solve(
                                 ~ shortModuleName
                                 ~ mangleSignature(target.args);
 
-                    overload.sighash = sig
+                    EXT_mut(target).sighash = sig
                         && (tea::hash62(sig) || BUG());
                 }
 
