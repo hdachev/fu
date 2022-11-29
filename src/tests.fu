@@ -93,7 +93,6 @@ pub extern fn runTests()
     let TODO_specpat    = fn TODO;
     let TODO_relaxer    = fn TODO;
     let TODO_ambig      = fn TODO;
-    let TODO_dead       = fn TODO;
     let TODO_StaticEval = fn TODO;
 
     let TODO_Map        = fn TODO;
@@ -1803,7 +1802,7 @@ pub extern fn runTests()
             mut a = 1;
             mut b = 1;
             woot(a, b);
-            return a * 10 + b - 42;
+            return a == 4 && b == 2 ? 0 : 1;
         }
     `);
 
@@ -1822,7 +1821,7 @@ pub extern fn runTests()
 
         fn main() {
             mut x = 10;
-            return test(x, 5) - 12;
+            return test(x, 5) == 12 ? 0 : 1;
         }
     `);
 
@@ -5886,9 +5885,9 @@ pub extern fn runTests()
         fn Atmosphere(
             altitude: f32,
             rPlanet: f32 = rEarth,
-            vPlanet = vec3(z: -1)) // <- this crashes
+            vUp = vec3(z: 1)) // <- this crashes
         {
-            let pView = vPlanet * (rPlanet + altitude);
+            let pView = vUp * (rPlanet + altitude);
             return Atmosphere(:rPlanet, :pView);
         }
     `,

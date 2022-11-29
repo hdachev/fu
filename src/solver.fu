@@ -459,9 +459,14 @@ pub fn solve(
             && _scope.extended[_current_fnort.index].locals.len + 1;
     }
 
+    fn nested(index: i32, from!: Target)
+    {
+        return Target(modid: -from.index || module.modid, :index);
+    }
+
     fn nested(index: i32, implicit _current_fnort: Target)
     {
-        return Target(modid: -_current_fnort.index || module.modid, :index);
+        return nested(:index, from: _current_fnort);
     }
 
     // TODO failcase: uncommenting this leads to conversion resolution issues,
