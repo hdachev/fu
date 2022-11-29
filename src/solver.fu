@@ -400,7 +400,7 @@ pub fn solve(
         {
             shadow let module = ctx.modules[_current_fnort.modid];
             let locals = module.out.solve.scope.extended[-target.modid].locals;
-            locals.len >= target.index || fail(
+            locals.len >= target.index || BUG(
                 "Out of range local target from: " ~ GET(target.parent).qWHAT
                     ~ "\n\tlocals=" ~ locals.len ~ "\n\tindex=" ~ target.index);
 
@@ -419,14 +419,14 @@ pub fn solve(
         {
             // TODO REMOVE THIS, currently test suite will crash without this.
             if (SELF_TEST && _scope.extended.len <= -target.modid)
-                fail("Invalid local target -modid."
+                BUG("Invalid local target -modid."
                     ~ "\n\tProbably leaked from another module."
                     ~ "\n\tBUG: Currently arg defaults & inlining can do this.");
 
             let locals = _scope.extended[-target.modid].locals;
 
             if (SELF_TEST && locals.len < target.index)
-                fail("Out of range local target from: " ~ GET(target.parent).qWHAT
+                BUG("Out of range local target from: " ~ GET(target.parent).qWHAT
                     ~ "\n\tlocals=" ~ locals.len ~ "\n\tindex=" ~ target.index);
 
             return locals[target.index - 1];
@@ -6515,19 +6515,41 @@ pub fn solve(
         return target;
     }
 
-    fn injectClosureArg(target: Target): Target
+    fn injectForeignLocal(target: Target): Target
     {
         target.kind == "var" || BUG(
-            "injectClosureArg: trying to inject a non-var: " ~ target.qWHAT);
+            "injectForeignLocal: trying to inject a non-var: " ~ target.qWHAT);
+
+        // println("injectForeignLocal " target.qWHAT " within " _current_fn.qWHAT);
 
         // CLOSURE-ID-HACK
-        // TODO perhaps forbid ClosureIDs here, and hunt down the source of the problem -
-        //  complicated close-over schemes do this but its really confusing so not exactly sure why,
-        //   there's a good test for it.
-        let clID = hacks::tryParseClosureID(id: target.name)
-                || hacks::ClosureID(:target, target.parent.revision || BUG(
-                    "ClosureID: about to serialize at rev 0: "
-                        ~ target.qWHAT));
+        let clID = hacks::tryParseClosureID(id: target.name);
+        if (clID)
+        {
+            // When inlining argument defaults
+            //  we can end up wanting to inject a local of the current fn.
+            //   This is an artifact of how argument defaults are implemented,
+            //    they solve within the scope of the child fn, which is not ideal but currently works around other problems.
+            //
+            if (clID.target.parent == _current_fn.target)
+            {
+                clID.revision == _current_fn.target.revision || BUG(
+                    "injectForeignLocal closureID revision mismatch.");
+
+                return clID.target;
+            }
+
+            BUG("HERE [A]: Doesnt currently happen in known code,"
+                ~ " I think this can happen in an argument default inside a double closure,"
+                ~ " needs a test to prove it.");
+
+            // TODO perhaps forbid ClosureIDs here, and hunt down the source of the problem -
+            //  complicated close-over schemes do this but its really confusing so not exactly sure why,
+            //   there's a good test for it.
+        }
+
+        shadow let clID = clID || hacks::ClosureID(:target,
+            target.parent.revision || BUG( "ClosureID: about to serialize at rev 0: " ~ target.qWHAT));
 
         return injectImplicitArg(
             id:     clID.serialize(),
@@ -7145,8 +7167,12 @@ pub fn solve(
 
     fn inlineExpression(from: Target, mut expr: SolvedNode)
     {
+        // println("inlineExpression " ~ expr.kind ":" ~ expr.value " in " _current_fn.qWHAT);
+
         if (from && from != _current_fn.target)
         {
+            // println("    from " from.qWHAT);
+
             // TODO it'd be nice if we can skip this by looking at the expr node flags,
             //  something like F_NO_LOCALS or something that tells us
             //   there's nothing here that needs relinking.
@@ -7156,7 +7182,7 @@ pub fn solve(
                 // Replace references to foreign locals with implicit closure args.
                 if (expr.kind == "call" && expr.target.isLocal)
                 {
-                    let local   = injectClosureArg(expr.target);
+                    let local   = injectForeignLocal(expr.target);
 
                     // println("inlineExpression: CALL.REPLACE " expr.target.qWHAT " with " local.qWHAT);
 
@@ -7172,7 +7198,7 @@ pub fn solve(
                     if (index)
                     {
                         let target  = nested(:index, :from);
-                        let local   = injectClosureArg(target);
+                        let local   = injectForeignLocal(target);
 
                         // println("inlineExpression: LT.REPLACE " target.qWHAT " with " local.qWHAT);
 
@@ -7324,7 +7350,7 @@ pub fn solve(
             if (target.isLocal &&
                 target.localOf != _current_fn.target.index)
             {
-                target = injectClosureArg(target);
+                target = injectForeignLocal(target);
 
                 type = GET(target).type || BUG("CallerNode: !type on var " ~ target.name);
             }

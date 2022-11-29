@@ -1787,7 +1787,7 @@ pub extern fn runTests()
         fn main() test + test(a: -1) * 3;
     `);
 
-    TODO_args(`
+    ZERO(`
         fn woot(ref a: i32, ref b: i32) {
             ref c = a || b;
             fn arg_defaulted_to_closure(ref x = c)
@@ -1806,7 +1806,7 @@ pub extern fn runTests()
         }
     `);
 
-    TODO_args(`
+    ZERO(`
         fn test(ref a: i32, mut incr: i32) {
             fn woot(ref x, ref b = a) { // 'a' closes over here!
                 if (x & 1) {
