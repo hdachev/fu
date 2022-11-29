@@ -220,8 +220,10 @@ pub fn solve(
 
     fn push(data: HelpersData)
     {
-        _helpers       ~= Helpers(index: _helpers_data.len);
+        let ret         = Helpers(index: _helpers_data.len);
+        _helpers       ~= ret;
         _helpers_data  ~= data;
+        return ret;
     }
 
     _scope.extended ~= Extended();  // global nodes and such
@@ -7169,8 +7171,25 @@ pub fn solve(
     {
         // println("inlineExpression " ~ expr.kind ":" ~ expr.value " in " _current_fn.qWHAT);
 
-        if (from && from != _current_fn.target)
+        let self = _current_fn.target;
+        if (from && from != self)
         {
+            let helpers0 = _helpers.len;
+            defer _helpers.shrink(helpers0);
+
+            //
+            let letdefExpect = -from.index;
+
+            //
+            mut letdefReplicas:     typeof( map::Map(Target, Target)   );
+            mut helpersReplicas:    typeof( map::Map(Helpers, Helpers) );
+
+            fn matchReplicaOrInjectForeignLocal(target: Target)
+            {
+                return letdefReplicas.map::get(target)
+                    || injectForeignLocal(target);
+            }
+
             // println("    from " from.qWHAT);
 
             // TODO it'd be nice if we can skip this by looking at the expr node flags,
@@ -7179,14 +7198,91 @@ pub fn solve(
             //
             fn visit(shadow ref expr: SolvedNode)
             {
-                // Replace references to foreign locals with implicit closure args.
-                if (expr.kind == "call" && expr.target.isLocal)
+                // This is unpleasant -
+                //  when inlining expressions we can encouter new let definitions,
+                //   potentially cross-module.
+                //
+                // What we need to do here is to maintain a clone these bindings in the local fn,
+                //  and keep a mapping of the targets that need to be replaced down the line.
+                //
+                if (expr.kind == "letdef")
                 {
-                    let local   = injectForeignLocal(expr.target);
+                    if (expr.target.modid != letdefExpect)
+                        BUG("inlineExpression: letdef doesn't match letdefExpect");
 
-                    // println("inlineExpression: CALL.REPLACE " expr.target.qWHAT " with " local.qWHAT);
+                    //
+                    let foreign = GET_crossmodule(expr.target, :from);
+                    let local   = Scope_create(_scope, nest: self.index);
+
+                    letdefReplicas.map::set(expr.target, local);
+
+                    //
+                    mut type = foreign.type;
+                    type.lifetime == Lifetime_fromBinding(expr.target) || BUG();
+                    type.lifetime  = Lifetime_fromBinding(local);
+
+                    mut solved = foreign.solved;
+                    solved.kind == "let" && solved.target == expr.target || BUG();
+                    solved.target = local;
+
+                    visit(solved);
+
+                    GET_mut(local) = Overload(
+                        :foreign.kind,
+                        :foreign.name,
+                        :type,
+                        :solved,
+
+                        // Untested: not sure what this implies / entails,
+                        //  and if this is the only flag that needs juggling here.
+                        flags: foreign.flags &~ F_ARG);
+
+                    // println("inlineExpression: introducing a letdef: " ~ local.qWHAT " <- " ~ foreign.qWHAT);
 
                     expr.target = local;
+                }
+                else if (expr.kind == "call")
+                {
+                    // Replace references to foreign locals with implicit closure args.
+                    if (expr.target.isLocal)
+                    {
+                        let local = matchReplicaOrInjectForeignLocal(expr.target);
+
+                        // println("inlineExpression: CALL.REPLACE " expr.target.qWHAT " with " local.qWHAT);
+
+                        expr.target = local;
+                    }
+                }
+
+                //
+                else if (expr.kind == "block" || expr.kind == "loop")
+                {
+                    let foreign = expr.helpers;
+                    if (foreign)
+                    {
+                        let local = push(
+                            HelpersData(
+                                local_of: _current_fn.target.index,
+                                locals_start: GET_next_local_index(),
+                            ));
+
+                        helpersReplicas.map::set(foreign, local);
+
+                        expr.helpers = local;
+                    }
+                }
+                else if (expr.kind == "jump")
+                {
+                    let foreign = expr.helpers;
+                    let local = helpersReplicas.map::get(foreign) || BUG("Can't replicate jump.");
+
+                    expr.helpers = local;
+
+                    local.mask |= HM_LabelUsed;
+                }
+                else if (expr.helpers)
+                {
+                    BUG("inlineExpression: TODO handle .helpers on a " ~ expr.kind);
                 }
 
                 // Replace foreign lifetimes with lifetimes to implicit closure args.
@@ -7198,7 +7294,7 @@ pub fn solve(
                     if (index)
                     {
                         let target  = nested(:index, :from);
-                        let local   = injectForeignLocal(target);
+                        let local   = matchReplicaOrInjectForeignLocal(target);
 
                         // println("inlineExpression: LT.REPLACE " target.qWHAT " with " local.qWHAT);
 

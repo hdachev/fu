@@ -5864,7 +5864,7 @@ pub extern fn runTests()
         }
     `);
 
-    TODO_args([
+    ZERO([
     `
         struct vec3 { x: f32; y: f32; z: f32; };
 
