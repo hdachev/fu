@@ -618,19 +618,19 @@ pub fn solve(
         return lifetime;
     }
 
-    fn Lifetime_fromBinding(target: Target, local_of!: i32): Lifetime
+    fn Lifetime_fromBinding(target: Target): Lifetime
     {
         target.modid < 0 || target.modid < 0 || target.modid == module.modid || BUG("not from this module");
 
         // Globals?
-        if (!local_of)
+        if (!target.isLocal)
             return Lifetime_static();
 
         // Argument?
         let index       = target.index;
         let region      = Region_fromLocal(index);
 
-        return Lifetime_test(Lifetime(uni0n: [ region ]));
+        return Lifetime(uni0n: [ region ]);
     }
 
 
@@ -745,7 +745,7 @@ pub fn solve(
         // Setup the lifetime for references to this binding.
         ref overload = GET_mut(target);
         {
-            let lifetime = Lifetime_fromBinding(target, :local_of);
+            let lifetime = Lifetime_fromBinding(target);
 
             ///////////////////////////////////////////////////////////////
             // Throw away argument lifetime, union below will fix it up. //
