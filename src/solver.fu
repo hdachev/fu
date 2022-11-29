@@ -216,6 +216,7 @@ pub fn solve(
     ss.shortModuleName          = module.modid && getShortModuleName(module.fname);
     ss._spec_errors             = [ "BUG: Specializer reentry." ];
     ss.TODO_FIX_convert_args    = [ SolvedNode ];
+    ss.TODO_FIX_convert_args[0].kind = "__convert";
 
     fn push(data: HelpersData)
     {
@@ -4064,12 +4065,6 @@ pub fn solve(
                         _warnings[target.index] = Warning();
                 }
             }
-
-            /////////////////////////////////////////////////////////////////////
-            let TODO_FIX_convert_args0  = TODO_FIX_convert_args;
-            TODO_FIX_convert_args[0]    = SolvedNode(kind: "__convert", type: Type());
-            defer TODO_FIX_convert_args = TODO_FIX_convert_args0;
-            /////////////////////////////////////////////////////////////////////
 
             let asserts     = template.node.asserts;
 
