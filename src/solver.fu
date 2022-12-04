@@ -7186,8 +7186,15 @@ pub fn solve(
 
             fn matchReplicaOrInjectForeignLocal(target: Target)
             {
-                return letdefReplicas.map::get(target)
-                    || injectForeignLocal(target);
+                let replica = letdefReplicas.map::get(target);
+                if (replica)
+                    return replica;
+
+                let o = GET_crossmodule(target, :from);
+                if (o.flags & F_IMPLICIT)
+                    return bindImplicitArg(o.name, :o.type, becauseOf: from).target;
+
+                return injectForeignLocal(target);
             }
 
             // println("    from " from.qWHAT);
