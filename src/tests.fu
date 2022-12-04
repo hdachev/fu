@@ -1849,6 +1849,26 @@ pub extern fn runTests()
         }
     `);
 
+    ZERO(`
+        inline fn uses_implicit_inside() {
+            inline fn uses_implicit(implicit ref sum: i32) {
+                return sum++;
+            }
+
+            return uses_implicit;
+        }
+
+        fn inline_implicit_from_defarg(hello: i32, defaulted_argument: i32 = uses_implicit_inside) {
+            return hello * defaulted_argument;
+        }
+
+        fn main() {
+            implicit mut sum = 3;
+            let res = inline_implicit_from_defarg(sum);
+            return sum == 4 && res == 9 ? 0 : 1;
+        }
+    `);
+
 
     // Truth tests.
 
