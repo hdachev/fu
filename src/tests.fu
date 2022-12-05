@@ -10135,6 +10135,45 @@ pub extern fn runTests()
         }
     `);
 
+    ZERO_SAME([
+    `
+        fn test(x: i32)
+        {
+            fn mayExitTest() {
+                return x & 1 ? { return :test x * x; }          ;; GNUStmtExpr
+                             : x * 2;
+            }
+
+            fn mayExitTestFromDefarg(y: i32 = mayExitTest) {
+                return y * x;
+            }
+
+            return x & 2 ? mayExitTestFromDefarg()
+                         : mayExitTestFromDefarg(x * 2);
+        }
+
+        fn main() {
+            return test(3) == 9 && test(4) == 32 ? 0 : 1;
+        }
+    `,
+    `
+        fn test(x: i32)
+        {
+            fn mayExitTest()
+                x & 1   ? { return :test x * x; }
+                        : x * 2;
+
+            fn mayExitTestFromDefarg(y: i32 = mayExitTest)
+                y * x;
+
+            return x & 2 ? mayExitTestFromDefarg()
+                         : mayExitTestFromDefarg(x * 2);
+        }
+
+        fn main()
+            test(3) == 9 && test(4) == 32 ? 0 : 1;
+    `]);
+
 
     // Relaxer.
 
