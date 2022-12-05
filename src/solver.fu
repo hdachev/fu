@@ -6519,39 +6519,19 @@ pub fn solve(
 
     fn injectForeignLocal(target: Target): Target
     {
-        target.kind == "var" || BUG(
-            "injectForeignLocal: trying to inject a non-var: " ~ target.qWHAT);
-
-        // println("injectForeignLocal " target.qWHAT " within " _current_fn.qWHAT);
-
         // CLOSURE-ID-HACK
-        let clID = hacks::tryParseClosureID(id: target.name);
-        if (clID)
+        if (SELF_TEST)
         {
-            // When inlining argument defaults
-            //  we can end up wanting to inject a local of the current fn.
-            //   This is an artifact of how argument defaults are implemented,
-            //    they solve within the scope of the child fn, which is not ideal but currently works around other problems.
-            //
-            if (clID.target.parent == _current_fn.target)
-            {
-                clID.revision == _current_fn.target.revision || BUG(
-                    "injectForeignLocal closureID revision mismatch.");
+            target.kind == "var" || BUG(
+                "injectForeignLocal: trying to inject a non-var: " ~ target.qWHAT);
 
-                return clID.target;
-            }
-
-            BUG("HERE [A]: Doesnt currently happen in known code,"
-                ~ " I think this can happen in an argument default inside a double closure,"
-                ~ " needs a test to prove it.");
-
-            // TODO perhaps forbid ClosureIDs here, and hunt down the source of the problem -
-            //  complicated close-over schemes do this but its really confusing so not exactly sure why,
-            //   there's a good test for it.
+            let noClID = hacks::tryParseClosureID(id: target.name);
+            if (noClID)
+                BUG("injectForeignLocal: Unexpected closure-id: " ~ noClID.target.qWHAT);
         }
 
-        shadow let clID = clID || hacks::ClosureID(:target,
-            target.parent.revision || BUG( "ClosureID: about to serialize at rev 0: " ~ target.qWHAT));
+        let clID = hacks::ClosureID(:target,
+            target.parent.revision || BUG("injectForeignLocal: About to serialize at rev 0: " ~ target.qWHAT));
 
         return injectImplicitArg(
             id:     clID.serialize(),
@@ -7193,6 +7173,9 @@ pub fn solve(
                 let o = GET_crossmodule(target, :from);
                 if (o.flags & F_IMPLICIT)
                     return bindImplicitArg(o.name, :o.type, becauseOf: from).target;
+
+                if (from.modid != module.modid)
+                    BUG("inlineExpression: about to use injectForeignLocal with an off-module target: " ~ o.qWHAT);
 
                 return injectForeignLocal(target);
             }
