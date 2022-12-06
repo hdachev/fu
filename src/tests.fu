@@ -5760,6 +5760,13 @@ pub extern fn runTests()
 
         fn main() {
             mut typeParams = "$T 3hey\t";
+
+            // I was fiddling with jumps, and broke return type reporting,
+            //  so that TP_upsert here was always assumed to return true (tryIntersect can return false above),
+            //   adding this because the test didn't care.
+            if (TP_upsert(:typeParams, id: "$T", "x4x"))
+                return 202;
+
             return TP_upsert(:typeParams, id: "$T", "4hey")
                 && typeParams == "$T 7hey\t" ? 0 : 101;
         }
