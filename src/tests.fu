@@ -10026,6 +10026,22 @@ pub extern fn runTests()
     `);
 
     ZERO(`
+        fn test(ref x: i32) {
+            return {
+                :BLOCK {
+                    if (x & 1)  break :BLOCK x++;
+                    else        break :BLOCK x * 2;
+                }
+            };
+        }
+
+        fn main() {
+            mut x = 1;
+            return test(x) == 1 && test(x) == 4 ? 0 : 1;
+        }
+    `);
+
+    ZERO(`
         fn PASS_borrowCheck(ref x: i32[]) {
             fn bck_node(add: i32) {
                 for (mut i = 0; i < x.len; i++) {
