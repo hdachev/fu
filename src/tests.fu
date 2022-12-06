@@ -10018,6 +10018,37 @@ pub extern fn runTests()
         }
     `);
 
+    ZERO(`
+        fn PASS_borrowCheck(ref x: i32[]) {
+            fn bck_node(add: i32) {
+                for (mut i = 0; i < x.len; i++) {
+                    x[i] *= x[i];
+                    x[i] += add;
+                }
+            }
+
+            bck_node(1);
+
+            :SOLVE_AAR {
+                if (x.len & 2)
+                    bck_node(2);
+
+                if (x.len & 1)
+                    break :SOLVE_AAR;
+
+                bck_node(3);
+            }
+        }
+
+        fn main() {
+            mut a = [ 1, 2, 3 ];
+            mut b = [ 1, 2 ];
+            PASS_borrowCheck(a);
+            PASS_borrowCheck(b);
+            return a[2] == 102 && b[1] == 732 ? 0 : 1;
+        }
+    `);
+
 
     // Relaxer.
 
