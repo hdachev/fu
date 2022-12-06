@@ -5342,10 +5342,6 @@ pub fn solve(
         reportReturnType(:h, expr.type,
             NICEERR_missingReturn: node.flags & F_IMPLICIT && !node.items);
 
-        // TODO FIX Don't emit redundant return { void expr } trailing returns, currently emits bs cpp.
-        if (expr.type.is_void && node.flags & F_IMPLICIT)
-            return expr;
-
         injectJumps(:h, :expr);
 
         return expr;
@@ -5428,6 +5424,12 @@ pub fn solve(
 
     fn injectJumps(h!: Helpers, ref expr: SolvedNode)
     {
+        // Consider return (a ? b : c): if b is return x,
+        //  naively we'd inject to a ? return (return x) : return c,
+        //
+        if (expr.type.is_never)
+            return;
+
         relinkJumps(:h, :expr);
 
         if (expr.kind == "block")
@@ -5460,21 +5462,9 @@ pub fn solve(
         }
         else
         {
-            expr = createJump(:h, :expr);
+            // Previously fn createJump(h!: Helpers, expr: SolvedNode):
+            expr = SolvedNode("jump", type: t_never, items: [ expr ], helpers: h);
         }
-    }
-
-    fn createJump(h!: Helpers, expr: SolvedNode)
-    {
-        if (SELF_TEST)
-        {
-            if (expr.is_never)
-                BUG("createJump: expr.type is never: " ~ expr.qWHAT);
-            if (expr.kind == "jump")
-                BUG("createJump: expr is a jump: " ~ expr.qWHAT);
-        }
-
-        return SolvedNode("jump", type: t_never, items: [ expr ], helpers: h);
     }
 
 
