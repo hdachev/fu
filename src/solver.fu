@@ -2934,7 +2934,7 @@ pub fn solve(
         if (fnbody_of && nodes)
             nodes.last = Node(kind: "return", value: [], :node.token,
                 items: nodes.last.kind != "void" && [ nodes.last ],
-                flags: F_IMPLICIT);
+                flags: nodes.last.kind == "void" && F_IMPLICIT);
         ////////////////////////////////////////////////////////////////
 
         let items       = solveNodes(
@@ -5340,7 +5340,7 @@ pub fn solve(
         h.mask |= HM_LabelUsed;
 
         reportReturnType(:h, expr.type,
-            NICEERR_missingReturn: node.flags & F_IMPLICIT && !node.items);
+            NICEERR_missingReturn: !!(node.flags & F_IMPLICIT));
 
         injectJumps(:h, :expr);
 
