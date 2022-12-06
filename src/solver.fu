@@ -5466,6 +5466,14 @@ pub fn solve(
 
     fn createJump(h!: Helpers, expr: SolvedNode)
     {
+        if (SELF_TEST)
+        {
+            if (expr.is_never)
+                BUG("createJump: expr.type is never: " ~ expr.qWHAT);
+            if (expr.kind == "jump")
+                BUG("createJump: expr is a jump: " ~ expr.qWHAT);
+        }
+
         return SolvedNode("jump", type: t_never, items: [ expr ], helpers: h);
     }
 
