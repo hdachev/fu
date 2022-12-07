@@ -2723,11 +2723,11 @@ pub fn solve(
             let h = node.helpers;
 
             h.ret_actual || BUG(
-                "propagateType(jump): h.ret_actual not available.");
+                "propagateType(jump): h.ret_actual not available: #" ~ h.index);
 
             if (!_current_fn.TODO_FIX_defers)
                 _current_fn.postdom = h.postdom || BUG(
-                    "propagateType(jump): h.loop_start not available.");
+                    "propagateType(jump): h.loop_start not available: #" ~ h.index);
 
             propagateType(node.items.only, :relax_mask, h.ret_actual);
         }
@@ -5329,18 +5329,28 @@ pub fn solve(
         // Detect & shim non-local jumps.
         if (h.local_of != _current_fn.target.index)
         {
+            // println("Setting up a __far_jump from " ~ _current_fn.target.qWHAT ~ " to " ~ Target(:module.modid, index: h.local_of).qWHAT);
+
+            // TODO FIX this forces fns with jumps in defaulted arguments
+            //  into becoming inline funcs, not necessary,
+            //   far jumps can be taken into account during later passes.
             _current_fn.far_jumps.set::add(h.local_of);
 
             // The fn will solve again as inline,
             //  return a shim here that looks jumpy.
-            return createEmpty(kind: "__far_jump", type: t_never);
+            return SolvedNode("__far_jump", type: t_never, :node.flags, items: [ expr ], helpers: h);
         }
 
+        return solveJump_finish(:node.flags, :expr, :h);
+    }
+
+    fn solveJump_finish(flags: Flags, ref expr: SolvedNode, h!: Helpers)
+    {
         // Lazy labels.
         h.mask |= HM_LabelUsed;
 
         reportReturnType(:h, expr.type,
-            NICEERR_missingReturn: !!(node.flags & F_IMPLICIT));
+            NICEERR_missingReturn: !!(flags & F_IMPLICIT));
 
         injectJumps(:h, :expr);
 
@@ -7250,11 +7260,14 @@ pub fn solve(
                     {
                         let local = push(
                             HelpersData(
-                                local_of: _current_fn.target.index,
-                                locals_start: GET_next_local_index(),
+                                local_of:       _current_fn.target.index,
+                                locals_start:   GET_next_local_index(),
+                                ret_actual:     expr.type,
                             ));
 
                         helpersReplicas.map::set(foreign, local);
+
+                        // println("inlineExpression: REPLICATE block/loop #" foreign.index " -> #" local.index);
 
                         expr.helpers = local;
                     }
@@ -7264,9 +7277,26 @@ pub fn solve(
                     let foreign = expr.helpers;
                     let local = helpersReplicas.map::get(foreign) || BUG("Can't replicate jump.");
 
+                    // println("inlineExpression: REPLICATE jump #" foreign.index " -> #" local.index);
+
                     expr.helpers = local;
 
                     local.mask |= HM_LabelUsed;
+                }
+                else if (expr.kind == "__far_jump")
+                {
+                    // println("Found a __far_jump: " ~ expr.qWHAT);
+
+                    if (expr.helpers.local_of == _current_fn.target.index)
+                    {
+                        // println("Fixing up a __far_jump: " ~ expr.qWHAT);
+                        expr = solveJump_finish(:expr.flags, h: expr.helpers, expr: expr.items.only);
+                    }
+                    else
+                    {
+                        // TODO FIX these should be collected in later passes
+                        _current_fn.far_jumps.set::add(expr.helpers.local_of);
+                    }
                 }
                 else if (expr.helpers)
                 {
