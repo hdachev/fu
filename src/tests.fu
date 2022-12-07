@@ -10072,6 +10072,16 @@ pub extern fn runTests()
         }
     `);
 
+    ZERO(`
+        fn main() {
+            fn exit(code: i32) { return :main code; }
+
+            fn exitViaArgdef(what: i32 = exit(0)) = what;
+
+            exitViaArgdef();
+        }
+    `);
+
 
     // Relaxer.
 
