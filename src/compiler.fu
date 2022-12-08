@@ -82,7 +82,7 @@ fn compile_solveCodegen(implicit ref module: Module, implicit options: Options)
     module.out.solve = solver::solve();
 
     if (options.dev & DEV_PrintAST)
-        ::inspect(module);
+        println(::inspect(module));
 
     let stat1 = ModuleStat_now();
     module.out.cpp = codegen::cpp_codegen();

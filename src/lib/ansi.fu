@@ -43,3 +43,33 @@ pub fn qLT(id: string) =
     cLT ~ (id || "``") ~ RESET;
 
 pub fn qCODE(id: string) = id.qID;
+
+
+//
+
+pub fn strip(str: string)
+{
+    mut out = "";
+
+    for (mut i = 0; i < str.len - 1; i++)
+    {
+        let c = str[i];
+        if (c == 27.byte && str[i + 1] == '[')
+        {
+            i += 2;
+            while (i < str.len)
+            {
+                if (str[i] == 'm')
+                    break;
+
+                i++;
+            }
+        }
+        else
+        {
+            out ~= c;
+        }
+    }
+
+    return out;
+}

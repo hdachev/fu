@@ -515,11 +515,16 @@ pub fn ZERO_SAME(alts: string[][])
                 src.replace(all: "\n", with: "\n\t");
 
             if (x != a)
+            {
+                file::write(path: FUDIR ~ "expect.diff", ansi::strip(::inspect(expect[m])) ~ "\n\n----------------\n\n" ~ x);
+                file::write(path: FUDIR ~ "actual.diff", ansi::strip(::inspect(actual[m])) ~ "\n\n----------------\n\n" ~ a);
+
                 throw(
                     "ZERO_SAME: alts[" ~ i ~ "] mismatch at:\n"
                         ~ "\nexpect[" ~ m ~ "]:\n\t" ~ x.indent
                         ~ "\nactual[" ~ m ~ "]:\n\t" ~ a.indent
                         ~ "\n");
+            }
         }
     }
 }

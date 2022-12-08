@@ -1,12 +1,12 @@
 import module;
 import helpers;
 
-fn inspect(module: Module)
+fn inspect(module: Module): string
 {
-    inspect(module, module.out.solve.root);
+    return inspect(module, module.out.solve.root);
 }
 
-fn inspect(module: Module, root: SolvedNode)
+fn inspect(module: Module, root: SolvedNode): string
 {
     mut src = "Your /*PRINT*/:";
 
@@ -77,5 +77,5 @@ fn inspect(module: Module, root: SolvedNode)
 
     inspect(root, "\n    ");
 
-    println(src);
+    return src;
 }
