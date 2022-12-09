@@ -2730,6 +2730,8 @@ pub fn solve(
                     "propagateType(jump): h.loop_start not available: #" ~ h.index);
 
             propagateType(node.items.only, :relax_mask, h.ret_actual);
+
+            h.mask |= HM_LabelUsed;
         }
         else if (k == "block")
         {
@@ -2741,6 +2743,9 @@ pub fn solve(
                 else
                     h.ret_actual.try_relax(:slot, :relax_mask);
             }
+
+            if (h.mask)
+                h.mask &= ~HM_LabelUsed;
 
             //////////////////////
             Breakable_begin();
@@ -2808,10 +2813,6 @@ pub fn solve(
                     }
                 }
 
-                // Unwrap single item blocks.
-                if (items.len == 1 && !(h.mask & HM_LabelUsed))
-                    node = items.only;
-
                 ///////////////////////////////////////////////
                 _current_fn.TODO_FIX_defers -= TODO_FIX_defers;
                 ///////////////////////////////////////////////
@@ -2835,6 +2836,10 @@ pub fn solve(
                     }
                 }
             }
+
+            // Unwrap single item blocks.
+            if (items.len == 1 && !(h.mask & (HM_LabelUsed | HM_Function)))
+                node = items.only;
         }
         else if (k == "root")
         {
