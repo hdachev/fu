@@ -1861,17 +1861,7 @@ pub fn parse(
             softSemi();
         }
 
-        return createJump(:kind, :label, :expr);
-    }
-
-    fn createReturn(expr: Node, flags!?: Flags): Node =
-        createJump(kind: "return", :expr, :flags);
-
-    fn createJump(
-        kind!: ::kind/*"break"|"continue"|"return"*/,
-        label!?: string, expr?: Node, flags!?: Flags): Node
-    {
-        return make(kind, value: label, expr && [ expr ], :flags);
+        return make(kind, value: label, expr && [ expr ]);
     }
 
     fn parseDefer(): Node
