@@ -3099,7 +3099,12 @@ pub fn solve(
             {
                 if (item.items.if_last.kind == "unwrap")
                 {
-                    relinkJumps(:h, item);
+                    // Was this an interesting feature?
+                    //  Not sure how you'd use it even, it's really out there.
+                    //
+                    // relinkJumps(:h, item);
+                    item.kind == "block" && !(item.helpers.mask & HM_LabelUsed) ||
+                        fail("`unwrap` doesn't currently support early returns.");
 
                     items.splice(i, 1,
                         item.items.slice(0, item.items.len - 1));
