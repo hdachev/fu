@@ -6127,6 +6127,32 @@ pub extern fn runTests()
         }
     `);
 
+    ZERO(`
+        nocopy struct SolverOutput {
+            content?: SolverOutput[];
+        };
+
+        fn test(ref _helpers_data: i32[], mut content: SolverOutput[])
+        {
+            _helpers_data.len & 1 && _helpers_data.pop();
+            {
+                _helpers_data && throw("non-empty _helpers_data.");
+                {
+                    content.len & 1 && content.pop();
+                    {
+                        return SolverOutput(:content);
+                    }
+                }
+            }
+        }
+
+        fn main() {
+            mut _helpers_data: i32[];
+            mut content: SolverOutput[];
+            return test(_helpers_data, content).content.len;
+        }
+    `);
+
     // /quite right
 
 
