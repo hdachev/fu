@@ -5311,11 +5311,9 @@ pub fn solve(
 
     fn solveJump(node: Node): SolvedNode
     {
-        let helpers_idx = node.kind == "return"
+        let h = node.kind == "return"
             ? Scope_lookupReturn(node.value)
             : Scope_lookupLabel (node.value, cont: node.kind == "continue");
-
-        let h = _helpers[helpers_idx];
 
         // Deal with expression first, might noop the jump.
         mut expr = !node.items
@@ -5495,7 +5493,7 @@ pub fn solve(
 
     // Loops.
 
-    fn Scope_lookupReturn(id: string): i32
+    fn Scope_lookupReturn(id: string): Helpers
     {
         _helpers.reveach(_ss.helpers, |item, i|
         {
@@ -5506,13 +5504,13 @@ pub fn solve(
             if (id && item.id != id)
                 continue;
 
-            return i;
+            return item;
         });
 
         fail("No return `" ~ id ~ "` in scope.");
     }
 
-    fn Scope_lookupLabel(id: string, cont!: bool): i32
+    fn Scope_lookupLabel(id: string, cont!: bool): Helpers
     {
         mut CONTINUE_BELOW: i32;
 
@@ -5537,11 +5535,8 @@ pub fn solve(
                         continue;
                     }
                 }
-
-                return i;
             }
-
-            if (!CONTINUE_BELOW)
+            else if (!CONTINUE_BELOW)
             {
                 if !(id ? item.id == id : !!(item.mask & HM_Anon))
                     continue;
@@ -5553,7 +5548,7 @@ pub fn solve(
                 }
             }
 
-            return i;
+            return _helpers[i];
         });
 
         fail("No label `" ~ id ~ "` in scope.");
