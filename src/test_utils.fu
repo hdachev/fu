@@ -291,7 +291,8 @@ pub fn ZERO(
         }
 
         // Collect ;; TODO and ;; EXPECTs.
-        mut break_notes: SolverNotes;
+        mut break_notes:    SolverNotes;
+        mut ok_defects:     CGDefects;
 
         mut start = 0;
         while ((start = src.find(" ;; ", :start)) >= 0)
@@ -302,10 +303,18 @@ pub fn ZERO(
 
             let annot = src.slice(start + 4, end);
             if (annot[0] == '!')
+            {
                 break_notes |= parse(annot.slice(1, annot.len), as: SolverNotes)
                             || throw("Bad break_note: `;; " ~ annot ~ "`.");
+            }
             else
-                expectations.grow_if_oob(i) ~= annot;
+            {
+                let defect = parse(annot, as: CGDefects);
+                if (defect)
+                    ok_defects |= defect;
+                else
+                    expectations.grow_if_oob(i) ~= annot;
+            }
 
             // Turn ;; commands into // comments and hop over.
             src[start + 1]  = '/';
@@ -313,7 +322,8 @@ pub fn ZERO(
             start           = end;
         }
 
-        options[i].break_notes = break_notes;
+        options[i].break_notes      = break_notes;
+        options[i].break_defects    = ~ok_defects;
     }
 
     // We can now safely do the nowrites second -
@@ -365,6 +375,22 @@ pub fn ZERO(
 
     ::build(:ctx, :run, :fudir, :dir_wrk, scheme: "debug"   , onfail: "print-src");
     ::build(:ctx, :run, :fudir, :dir_wrk                    , onfail: "print-src");
+
+    // Check codegen.
+    for (mut i = 0; i < options.len; i++)
+    {
+        let src = sources[i];
+        let opt = options[i];
+        let cpp = ctx.modules[i + 1].out.cpp;
+
+        let unexpected  =  cpp.defects &  opt.break_defects;
+        let unnecessary = ~cpp.defects & ~opt.break_defects;
+
+        if (unexpected)
+            throw("Unwanted CGDefect: " ~ unexpected.str.ansi::qBAD ~ " in:\n" ~ src ~ "\n\nOutput is:\n\n" ~ cpp.src);
+        if (unnecessary)
+            throw("Unnecessary CGDefect annotation: " ~ unnecessary.str.ansi::qID ~ " in:\n" ~ src ~ "\n\nOutput is:\n\n" ~ cpp.src);
+    }
 
     // OK so it works, let's see if test output actually matches -
     //  this also allows us to perhaps defer all nowrite fails till all tests clear.

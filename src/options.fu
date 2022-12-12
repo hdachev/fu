@@ -14,6 +14,7 @@ pub struct Options
 {
     using lint?:    Lint;
     break_notes?:   flags::SolverNotes;
+    break_defects?: flags::CGDefects;
 
     dev?:           u32;
     shuffle?:       u32;
