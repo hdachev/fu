@@ -100,6 +100,9 @@ pub fn cpp_codegen(implicit module: Module, implicit ctx: Context): CodegenOutpu
 
         // live
         _live_targets:      i32[];
+
+        // testing
+        _defects:           CGDefects;
     };
 
     let using mut outputs: Outputs;
@@ -789,7 +792,6 @@ pub fn cpp_codegen(implicit module: Module, implicit ctx: Context): CodegenOutpu
         //////////////////////
         _indent ~= "    ";
 
-        let gnuOpen = gnuStmtExpr && "(__extension__ (";
         mut open    = "{";
         mut close   = gnuStmtExpr ? "}))" : "}";
         mut trail   = "";
@@ -844,7 +846,16 @@ pub fn cpp_codegen(implicit module: Module, implicit ctx: Context): CodegenOutpu
 
         //
         if (!skipCurlies || nodes.len != 1 || count != 1 || labelUsed || src.has('{') || src.has("if"))
+        {
+            mut gnuOpen = "";
+            if (gnuStmtExpr)
+            {
+                _defects |= GNUStmtExpr;
+                gnuOpen = "(__extension__ (";
+            }
+
             src = gnuOpen ~ indent0 ~ open ~ src ~ indent0 ~ close;
+        }
 
         return src;
     }
@@ -1492,6 +1503,12 @@ pub fn cpp_codegen(implicit module: Module, implicit ctx: Context): CodegenOutpu
 
     //
 
+    fn cgGoto(block: cg_Block)
+    {
+        _defects |= Goto;
+        return "goto " ~ block.name;
+    }
+
     fn cgJump(node: SolvedNode): string
     {
         let helpers     = node.helpers;
@@ -1528,7 +1545,7 @@ pub fn cpp_codegen(implicit module: Module, implicit ctx: Context): CodegenOutpu
                     value   = "/* TODO FIX UNUSED VAL " ~ value ~ " */";
 
                 return "{ " ~ assign ~ value
-                     ~ "; goto " ~ block.name ~ "; }";
+                     ~ "; " ~ cgGoto(block) ~ "; }";
             }
 
             // I think the prefix keywords beat everything re: precedence.
@@ -1544,7 +1561,7 @@ pub fn cpp_codegen(implicit module: Module, implicit ctx: Context): CodegenOutpu
         if (helpers == _current_fn.can_cont)
             return "continue";
 
-        return "goto " ~ block.name;
+        return cgGoto(block);
     }
 
 
@@ -2805,5 +2822,6 @@ pub fn cpp_codegen(implicit module: Module, implicit ctx: Context): CodegenOutpu
     return CodegenOutput(:src,
         link:           HACK_link,
         include_dirs:   HACK_include_dirs,
-        extra_sources:  HACK_extra_sources);
+        extra_sources:  HACK_extra_sources,
+        defects:        _defects);
 }
