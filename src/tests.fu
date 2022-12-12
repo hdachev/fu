@@ -10096,6 +10096,36 @@ pub extern fn runTests()
     `);
 
     ZERO(`
+        fn rev(arr, fn) {
+            for (mut i = arr.len; i --> 0; ) {
+                if (!arr[i])
+                    break;
+                <alt>
+                else
+                    fn(arr[i], i?: i);                          ;; Goto
+                <alt/>
+                fn(arr[i], i?: i);
+                </alt>
+            }
+        }
+
+        fn test(arr) {
+            mut sum = 0;
+            arr.rev: |x| {
+                if (x & 1) continue;
+                sum += x;
+            }
+            return sum;
+        }
+
+        fn main() {
+            return test([2, 4, 6, 8]) == 20
+                && test([2, 4, 7, 8]) == 14
+                && test([2, 4, 0, 8]) ==  8 ? 0 : 1;
+        }
+    `);
+
+    ZERO(`
         fn main() {
             fn exit(code: i32) { return :main code; }
 
