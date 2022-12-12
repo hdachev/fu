@@ -649,7 +649,7 @@ pub extern fn runTests()
 
     ZERO(`
         inline fn inl_lies(x: u32)<fail actual return match annot>: i32<pass/></fail> = x;
-        fn main() 0.inl_lies ? 1 : 0;
+        fn main() 0.inl_lies ? 1 : 0;                           ;; GNUStmtExpr
     `);
 
     ZERO(`
@@ -699,7 +699,7 @@ pub extern fn runTests()
     ZERO(`
         pub inline fn inl_id_leak(dont_leak_me) dont_leak_me;
         let dont_leak_me = 1;
-        fn main() inl_id_leak(dont_leak_me * 2) - 2;
+        fn main() inl_id_leak(dont_leak_me * 2) - 2;            ;; GNUStmtExpr
     `);
 
     ZERO(`
@@ -1844,7 +1844,7 @@ pub extern fn runTests()
         <split/>
         fn main() {
             implicit mut sum = 3;
-            let res = inline_implicit_from_defarg(sum);
+            let res = inline_implicit_from_defarg(sum);         ;; GNUStmtExpr
             return sum == 4 && res == 9 ? 0 : 1;
         }
     `);
@@ -1864,7 +1864,7 @@ pub extern fn runTests()
 
         fn main() {
             implicit mut sum = 3;
-            let res = inline_implicit_from_defarg(sum);
+            let res = inline_implicit_from_defarg(sum);         ;; GNUStmtExpr
             return sum == 4 && res == 9 ? 0 : 1;
         }
     `);
@@ -1926,7 +1926,7 @@ pub extern fn runTests()
             for (mut x = 1; x < 10; x++)
             {
                 sum += x; // 1, 1, 2
-                if (y == 1) continue :OUTER;
+                if (y == 1) continue :OUTER;                    ;; Goto
                 if (x == 2) break    :OUTER;
             }
         }
@@ -1939,7 +1939,7 @@ pub extern fn runTests()
         :OUTER for (mut x = 0;; x++) {
             for (mut y = 0; y < x; y++) {
                 if (y & 1 && !(x & 1))
-                    continue :OUTER;
+                    continue :OUTER;                            ;; Goto
 
                 sum += x;
             }
@@ -1961,7 +1961,7 @@ pub extern fn runTests()
             :FIRST {
                 if (sum & 1)
                     break:
-                        FIRST;
+                        FIRST;                                  ;; Goto
                 sum++;
             }
             :SECOND {
@@ -3681,16 +3681,17 @@ pub extern fn runTests()
             mut arr: i32[][];
             arr.grow(101);
             arr[100] = [ 7 ]
-            return arr.must_not_return_ref_or_view()[0] - 7;
+            return arr.must_not_return_ref_or_view()[0] - 7;    ;; GNUStmtExpr
         }
     `);
 
     ZERO(`
         struct HasVec { x: i32[] };
-        inline fn last(x: i32[]) x[x.len - 1];
+        inline fn last(x: i32[]) x[x.len - 1];                  ;; GNUStmtExpr
 
         <alt>
-        inline
+                                                                ;; Goto
+        inline                                                  ;; GNUStmtExpr
         </alt>
         fn will_return_value(ref x: HasVec) {
             let bck_will_cpy = x;
@@ -4612,7 +4613,7 @@ pub extern fn runTests()
                     items.Each: |item|
                         if (item.kind == "let")
                             if (item.flags & F_PREDICATE)
-                                break :F_PREDICATE;
+                                break :F_PREDICATE;             ;; Goto
 
                     items.Each: |item|
                         if (item.kind == "let")
@@ -5495,8 +5496,8 @@ pub extern fn runTests()
     ZERO(`
         inline fn test(ref a: i32[]) {
             if ((a[0] + a[2]) & 1) {
-                shadow ref a = a[0, 2];
-                return a;
+                shadow ref a = a[0, 2];                         ;; GNUStmtExpr
+                return a;                                       ;; Goto
             }
             else {
                 shadow ref a = a[2, 4];
@@ -5535,8 +5536,8 @@ pub extern fn runTests()
 
         fn main() {
             mut a = [ 1, 2 ];
-            mut b = [ 3, 4 ];
-            return sum(test(a, b))[0] - 7;
+            mut b = [ 3, 4 ];                                   ;; Goto
+            return sum(test(a, b))[0] - 7;                      ;; GNUStmtExpr
         }
     `);
 
@@ -5552,7 +5553,7 @@ pub extern fn runTests()
             if (a & 1) {
                 arr.grow_if_oob(a)++;
                 <alt>
-                return arr[0, a + 1];
+                return arr[0, a + 1];                           ;; Goto
                 </alt>
             }
 
@@ -5561,7 +5562,7 @@ pub extern fn runTests()
 
         fn main() {
             mut a = [ 1 ];
-            return a[0] - hey(a, 1)[1];
+            return a[0] - hey(a, 1)[1];                         ;; GNUStmtExpr
         }
     `);
 
@@ -5596,8 +5597,8 @@ pub extern fn runTests()
 
         struct Cmd { self: string; options: i32 };
 
-        inline fn unlessHasExt(str: string) {
-            let idx = str.find('.');
+        inline fn unlessHasExt(str: string) {                   ;; Goto
+            let idx = str.find('.');                            ;; GNUStmtExpr
             if (idx > 0)
                 return [];
 
@@ -5667,7 +5668,7 @@ pub extern fn runTests()
             let rq = r > '0' && r < '8';
 
             if (left[lq && 1, left.len] != right[rq && 1, right.len])
-                return false;
+                return false;                                   ;; Goto
 
             let ll = lq && l.i32 - '0'.i32;
             let rr = rq && r.i32 - '0'.i32;
@@ -5931,7 +5932,7 @@ pub extern fn runTests()
             vUp = vec3(z: 1)) // <- this crashes
         {
             let pView = vUp * (rPlanet + altitude);
-            return Atmosphere(:rPlanet, :pView);
+            return Atmosphere(:rPlanet, :pView);                ;; GNUStmtExpr
         }
     `,
     `
@@ -5940,7 +5941,7 @@ pub extern fn runTests()
 
         fn main() {
             let atmo = Atmosphere(altitude: 1e2);
-            return atmo.pView.z == 11e2 ? 0 : 1;
+            return atmo.pView.z == 11e2 ? 0 : 1;                ;; GNUStmtExpr
         }
     `]);
 
@@ -6106,7 +6107,7 @@ pub extern fn runTests()
     `]);
 
     ZERO(`
-        fn inline_args_and_closures(inline nums: i32[]) {
+        fn inline_args_and_closures(inline nums: i32[]) {       ;; GNUStmtExpr
             mut sum: i32;
             noinline fn woot(z: i32)
                 for (mut i = 0; i < nums.len; i++)
@@ -6314,7 +6315,7 @@ pub extern fn runTests()
                 fail(str);
             };
 
-            return x & 1 || fail("even");
+            return x & 1 || fail("even");                       ;; GNUStmtExpr
         }
 
         fn main() {
@@ -6475,7 +6476,7 @@ pub extern fn runTests()
         }
 
         fn main() i32 <|
-            mat34_identity.inverse.determinant - 1;
+            mat34_identity.inverse.determinant - 1;             ;; GNUStmtExpr
     `);
 
     ZERO(`
@@ -6916,8 +6917,8 @@ pub extern fn runTests()
             let a = [7, 11, 9, 21, x, x, x, x]; ;; TODO fu::slate<2, int> a
             let b = {                           ;; TODO fu::slate<1, int> b
                 :BRK {                          // !N_NonTrivAutoCopy
-                    if (x & 2) break :BRK c;
-                    if (x & 1) break :BRK [ x ]; // a val
+                    if (x & 2) break :BRK c;                    ;; Goto
+                    if (x & 1) break :BRK [ x ]; // a val       ;; GNUStmtExpr
                     a // a ref
                 }
             };
@@ -7164,7 +7165,7 @@ pub extern fn runTests()
     ZERO(`
         struct vec3 { x?: f32; y?: f32; z?: f32; };
 
-        inline fn /(a: f32, b: vec3)
+        inline fn /(a: f32, b: vec3)                            ;; GNUStmtExpr
             vec3(a / b.x, a / b.y, a / b.z);
 
         fn main() i32 <|
@@ -7285,7 +7286,7 @@ pub extern fn runTests()
         }
     `,`
         inline fn test(ref v) {
-            v = v.norm();
+            v = v.norm();                                       ;; GNUStmtExpr
             return v.len;
         }
 
@@ -8004,7 +8005,7 @@ pub extern fn runTests()
     `,
     `
         import _1;
-        fn main() 1._0::Hey.test - 3;
+        fn main() 1._0::Hey.test - 3;                           ;; GNUStmtExpr
     `
     ]);
 
@@ -8017,7 +8018,7 @@ pub extern fn runTests()
     `,
     `
         import _1;
-        fn main() 1._0::Hey.test - 3;
+        fn main() 1._0::Hey.test - 3;                           ;; GNUStmtExpr
     `
     ]);
 
@@ -8029,7 +8030,7 @@ pub extern fn runTests()
         pub inline fn test(h: _0::Hey) h.i + 2;
     `,
     `
-        fn main() 1._0::Hey._1::test - 3;
+        fn main() 1._0::Hey._1::test - 3;                       ;; GNUStmtExpr
     `
     ]);
 
@@ -8045,7 +8046,7 @@ pub extern fn runTests()
         pub inline fn test(using h = _1::init3) i + 7;
     `,
     `
-        fn main() _2::test - 10;
+        fn main() _2::test - 10;                                ;; GNUStmtExpr
     `
     ]);
 
@@ -8892,7 +8893,7 @@ pub extern fn runTests()
     // First stab at higher-order functions.
 
     ZERO(`
-        let x = { mut z = 0; z++; z };
+        let x = { mut z = 0; z++; z };                          ;; GNUStmtExpr
         return x - 1;
     `);
 
@@ -8942,7 +8943,7 @@ pub extern fn runTests()
         fn reduce(items: $T[], fn, init?: $T) {
             mut result = init;
             for (mut i = 0; i < items.len; i++)
-                result = fn(result, items[i]);
+                result = fn(result, items[i]);                  ;; GNUStmtExpr
 
             return result;
         }
@@ -8994,8 +8995,10 @@ pub extern fn runTests()
                 // this complains about indentation
                 // TODO should work without the continue
                 <alt>
-                continue "".len     <alt/>
-                "".len.addret(x)    </alt>
+                continue "".len                                 ;; GNUStmtExpr
+                <alt/>
+                "".len.addret(x)
+                </alt>
             };
 
             // and this complains about no match for *(void, void)
@@ -9011,7 +9014,7 @@ pub extern fn runTests()
         fn main() {
             let hey = |x: i32| {
                 if !(x & 1)
-                    return x;
+                    return x;                                   ;; GNUStmtExpr
 
                 "".len + x
             };
@@ -9114,7 +9117,7 @@ pub extern fn runTests()
         fn to_debug_str(a: i32) X("i" ~ a);
 
         fn main() {
-            let hey = X("Hey! ") ~ 5;
+            let hey = X("Hey! ") ~ 5;                           ;; GNUStmtExpr
             return hey.str == "Hey! i5" ? 0 : 1;
         }
     `);
@@ -9123,20 +9126,14 @@ pub extern fn runTests()
         struct vec32  { x: f32; };
         struct conv32 { v: f32; };
 
+        <alt>
         using inline fn convert(v: i32): conv32 = [ v.f32 ]; // no litfix
-        inline fn /(a: conv32, b: vec32) vec32(a.v / b.x);
-
-        fn main() i32 <| (1/vec32(1)).x - 1;
-    `);
-
-    ZERO(`
-        struct vec32  { x: f32; };
-        struct conv32 { v: f32; };
-
+        <alt/>
         using inline fn convert(v: f32): conv32 = [ v ]; // litfix in a conv: i32 -> f32
-        inline fn /(a: conv32, b: vec32) vec32(a.v / b.x);
+        </alt>
 
-        fn main() i32 <| (1/vec32(1)).x - 1;
+        inline fn /(a: conv32, b: vec32) vec32(a.v / b.x);
+        fn main() i32 <| (1/vec32(1)).x - 1;                    ;; GNUStmtExpr
     `);
 
     ZERO(`
@@ -9156,7 +9153,7 @@ pub extern fn runTests()
         inline fn /(a: conv32, b: vec32) vec32(a.v / b.x);
         inline fn /(a: conv64, b: vec64) vec64(a.v / b.x);
 
-        fn main() i32 <| (1/vec32(1)).x - 1;
+        fn main() i32 <| (1/vec32(1)).x - 1;                    ;; GNUStmtExpr
     `);
 
     ZERO(`
@@ -9329,7 +9326,7 @@ pub extern fn runTests()
 
                 return res;
             <alt/>
-                return n.map(|t| t.qWHAT).join();
+                return n.map(|t| t.qWHAT).join();               ;; GNUStmtExpr
             </alt>
             }
 
@@ -9370,7 +9367,7 @@ pub extern fn runTests()
         fn to_debug_str(b: u32) b.i32 * 3;
 
         <alt>
-        inline
+        inline                                                  ;; GNUStmtExpr
         </alt>
         fn inspect(items.to_debug_str[]) // <- varargs!
         {
@@ -9397,7 +9394,7 @@ pub extern fn runTests()
     ZERO(`
         fn Stringy(i: i32) "i:" ~ i;
 
-        inline fn Printy(x: string): string = x;
+        inline fn Printy(x: string): string = x;                ;; GNUStmtExpr
         inline fn Printy(x.Stringy): string = x;
 
         fn Println(parts.Printy[]<alt>: [string]</alt>) {
@@ -9451,7 +9448,7 @@ pub extern fn runTests()
         fn main() {
             let topic = "A";
             implicit mut out: string;
-            printlike(:topic, "Hello, ", "World", "!");
+            printlike(:topic, "Hello, ", "World", "!");         ;; GNUStmtExpr
             return out == "A: Hello, World!\\n" ? 0 : 1
         }
     `);
@@ -9460,7 +9457,7 @@ pub extern fn runTests()
         fn main() {
             mut out: string;
             fn lazywarn(prefix: string, inline stuff.print[]: [string]) {
-                out ||= prefix ~ stuff.join();
+                out ||= prefix ~ stuff.join();                  ;; GNUStmtExpr
             }
 
             mut once = 0;
@@ -9719,7 +9716,7 @@ pub extern fn runTests()
         fn test(x: i32) {
             :OUTER {
                 :INNER {
-                    if (x > 1) break :OUTER;
+                    if (x > 1) break :OUTER;                    ;; Goto
                     if (x > 0) break :INNER;
                     return 2;
                 }
@@ -9751,7 +9748,7 @@ pub extern fn runTests()
             :WOOT
             if (x & 1) {
                 if (x & 2) x++;
-                if (x & 4) break :WOOT;
+                if (x & 4) break :WOOT;                         ;; Goto
                 x *= x;
             }
 
@@ -9766,10 +9763,10 @@ pub extern fn runTests()
     ZERO(`
         fn test(a: i32) {
             mut w = 3;
-            :OUTER w += {
+            :OUTER w += {                                       ;; GNUStmtExpr
                 :INNER {
                     if (a & 1)  break :INNER;
-                    else        break :OUTER;
+                    else        break :OUTER;                   ;; Goto
                 };
                 5
             };
@@ -9787,8 +9784,8 @@ pub extern fn runTests()
                 :IF_LABEL
                 if (a & 1) {
                     mut incr    = a & 4 ? a * 2
-                                : a & 2 ? { break :IF_LABEL; }
-                                        : a;
+                                : a & 2 ? { break :IF_LABEL; }  ;; Goto
+                                        : a;                    ;; GNUStmtExpr
                     x += incr;
                 }
             }
@@ -9803,18 +9800,18 @@ pub extern fn runTests()
         fn test(x: i32) {
             return {
                 :BLOCK 2 * {
-                    if (x) break :BLOCK 3;
+                    if (x) break :BLOCK 3;                      ;; GNUStmtExpr
                     1
                 }
             };
         }
 
-        fn main() = test(0) == 2 ? 0 : 1;
+        fn main() = test(0) == 2 && test(1) == 3 ? 0 : 1;
     `);
 
     ZERO(`
-        fn v(x: i32) {
-            return {
+        fn v(x: i32) {                                          ;; GNUStmtExpr
+            return {                                            ;; Goto
                 :BLOCK                          5000 + { // *2:
                     if (x == 9) continue :BLOCK 2000;    //   - here
                     if (x == 8) return           300;
@@ -9830,11 +9827,11 @@ pub extern fn runTests()
     ZERO(`
         pub fn test(x: i32[], y: i32[]) {
             let z = {
-                :BLOCK {
+                :BLOCK {                                        ;; GNUStmtExpr
                     mut w: i32[] = x;
                     if (y[0]) w ~= y;
                     if (w[0] != 17)
-                        break :BLOCK w;
+                        break :BLOCK w;                         ;; Goto
                     x
                 }
             };
@@ -9851,7 +9848,7 @@ pub extern fn runTests()
                 x++;
                 :CANT_FLATTEN { // naive block flattening
                                 //  can damage this label
-                    if (x & 1) break :CANT_FLATTEN;
+                    if (x & 1) break :CANT_FLATTEN;             ;; Goto
                     return x;
                 }
             }
@@ -9881,7 +9878,7 @@ pub extern fn runTests()
         fn outer() {
             mut sum = 0;
 
-            inline fn inner(v: i32) {
+            inline fn inner(v: i32) {                           ;; GNUStmtExpr
                 for (mut i = 0; i < 10; i++) {
                     sum += v;
                     if (sum > 40)
@@ -9908,7 +9905,7 @@ pub extern fn runTests()
             :OUTER [1, 2, 3, 4].Each(|x| {
                 sum += x;
                 for (mut i = 1; i--; ) // once
-                    if (sum == 6) break :OUTER;
+                    if (sum == 6) break :OUTER;                 ;; Goto
             });
             return sum - 6;
         }
@@ -10372,7 +10369,7 @@ pub extern fn runTests()
         let HM_Struct       = 1.i16 << 5;
 
         using inline fn GET(h: Helpers, implicit ref _helpers_data: HelpersData[]): HelpersData
-            _helpers_data[h.index];
+            _helpers_data[h.index];                             ;; GNUStmtExpr
                                                             //////////////////
         fn isFnOrType(h: Helpers): bool                     ;; EXPECT fu::view
             !!(h.mask & (HM_Function | HM_Struct));         //////////////////
@@ -10717,7 +10714,7 @@ pub extern fn runTests()
     ZERO(`
         fn main() {
             mut vals = [ 1, 2 ];
-            vals.sort(|a: i32, b: i32| b < a);
+            vals.sort(|a: i32, b: i32| b < a);                  ;; GNUStmtExpr
             return vals[0] - 2;
         }
     `);
@@ -10734,7 +10731,7 @@ pub extern fn runTests()
         fn test(ref vals: i32[], xor: i32)
             vals.sort(
                 |a: i32, b: i32|
-                    a^xor < b^xor);
+                    a^xor < b^xor);                             ;; GNUStmtExpr
 
         fn main() {
             mut vals = [ 1, 2 ];
