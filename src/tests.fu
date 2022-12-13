@@ -1961,7 +1961,7 @@ pub extern fn runTests()
             :FIRST {
                 if (sum & 1)
                     break:
-                        FIRST;                                  ;; Goto
+                        FIRST;
                 sum++;
             }
             :SECOND {
@@ -3690,7 +3690,6 @@ pub extern fn runTests()
         inline fn last(x: i32[]) x[x.len - 1];                  ;; GNUStmtExpr
 
         <alt>
-                                                                ;; Goto
         inline                                                  ;; GNUStmtExpr
         </alt>
         fn will_return_value(ref x: HasVec) {
@@ -5497,7 +5496,7 @@ pub extern fn runTests()
         inline fn test(ref a: i32[]) {
             if ((a[0] + a[2]) & 1) {
                 shadow ref a = a[0, 2];                         ;; GNUStmtExpr
-                return a;                                       ;; Goto
+                return a;
             }
             else {
                 shadow ref a = a[2, 4];
@@ -5536,7 +5535,7 @@ pub extern fn runTests()
 
         fn main() {
             mut a = [ 1, 2 ];
-            mut b = [ 3, 4 ];                                   ;; Goto
+            mut b = [ 3, 4 ];
             return sum(test(a, b))[0] - 7;                      ;; GNUStmtExpr
         }
     `);
@@ -5553,7 +5552,7 @@ pub extern fn runTests()
             if (a & 1) {
                 arr.grow_if_oob(a)++;
                 <alt>
-                return arr[0, a + 1];                           ;; Goto
+                return arr[0, a + 1];
                 </alt>
             }
 
@@ -5597,7 +5596,7 @@ pub extern fn runTests()
 
         struct Cmd { self: string; options: i32 };
 
-        inline fn unlessHasExt(str: string) {                   ;; Goto
+        inline fn unlessHasExt(str: string) {
             let idx = str.find('.');                            ;; GNUStmtExpr
             if (idx > 0)
                 return [];
@@ -5668,7 +5667,7 @@ pub extern fn runTests()
             let rq = r > '0' && r < '8';
 
             if (left[lq && 1, left.len] != right[rq && 1, right.len])
-                return false;                                   ;; Goto
+                return false;
 
             let ll = lq && l.i32 - '0'.i32;
             let rr = rq && r.i32 - '0'.i32;
@@ -6917,8 +6916,8 @@ pub extern fn runTests()
             let a = [7, 11, 9, 21, x, x, x, x]; ;; TODO fu::slate<2, int> a
             let b = {                           ;; TODO fu::slate<1, int> b
                 :BRK {                          // !N_NonTrivAutoCopy
-                    if (x & 2) break :BRK c;                    ;; Goto
-                    if (x & 1) break :BRK [ x ]; // a val       ;; GNUStmtExpr
+                    if (x & 2) break :BRK c;
+                    if (x & 1) break :BRK [ x ]; // a val
                     a // a ref
                 }
             };
@@ -9811,7 +9810,7 @@ pub extern fn runTests()
 
     ZERO(`
         fn v(x: i32) {                                          ;; GNUStmtExpr
-            return {                                            ;; Goto
+            return {
                 :BLOCK                          5000 + { // *2:
                     if (x == 9) continue :BLOCK 2000;    //   - here
                     if (x == 8) return           300;
@@ -9831,7 +9830,7 @@ pub extern fn runTests()
                     mut w: i32[] = x;
                     if (y[0]) w ~= y;
                     if (w[0] != 17)
-                        break :BLOCK w;                         ;; Goto
+                        break :BLOCK w;
                     x
                 }
             };
@@ -9848,7 +9847,7 @@ pub extern fn runTests()
                 x++;
                 :CANT_FLATTEN { // naive block flattening
                                 //  can damage this label
-                    if (x & 1) break :CANT_FLATTEN;             ;; Goto
+                    if (x & 1) break :CANT_FLATTEN;
                     return x;
                 }
             }
@@ -10102,7 +10101,7 @@ pub extern fn runTests()
                     break;
                 <alt>
                 else
-                    fn(arr[i], i?: i);                          ;; Goto
+                    fn(arr[i], i?: i);
                 <alt/>
                 fn(arr[i], i?: i);
                 </alt>

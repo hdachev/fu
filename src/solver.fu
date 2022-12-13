@@ -193,6 +193,8 @@ pub fn solve(
         ret_actual?:    Type;
 
         postdom?:       Postdom;
+
+        kills!?:        Helpers;
     };
 
     enum StaticEval {
@@ -2090,7 +2092,7 @@ pub fn solve(
         }
     }
 
-    fn propagateType(ref node: SolvedNode, slot: Type, relax_mask!: i32)
+    fn propagateType(ref node: SolvedNode, slot: Type, relax_mask!: i32, kills!?: Helpers)
     {
         let k = node.kind;
 
@@ -2310,7 +2312,14 @@ pub fn solve(
                 // MOVE ON LAST USE ////////////////////////////////////////////
 
                 propagateType(node.items[i], :relax_mask,
-                    i != 0 ? slot : t_bool);
+                    slot:  i != 0 ? slot : t_bool,
+
+                    // CAN AFFECT cons/alt.type (see `if (kills)` below):
+                    //  If all assumptions check out,
+                    //   the slot will either accept this value or will retype itself,
+                    //    e.g. a block retval can be affected when this is in tail position.
+                    //
+                    kills: i != 0 && kills);
             }
 
             if (canDiscard)
@@ -2327,6 +2336,17 @@ pub fn solve(
                     makeNote(N_UnusedIfElse);
                     node = createAnd(node.items.slice(0, 2), t_void);
                 }
+                else
+                {
+                    node.type = t_void;
+                }
+            }
+            else if (kills)
+            {
+                // Control flow simplification can affect node.type, see above.
+                node.type = superType(
+                    "`if` cons/alt after control flow simplification:",
+                    node.items[1], node.items[2]);
             }
         }
         else if (k == "try")
@@ -2720,7 +2740,9 @@ pub fn solve(
         }
         else if (k == "jump")
         {
-            let h = node.helpers;
+            mut h = node.helpers;
+            while (h.kills)
+                h = node.helpers = h.kills;
 
             h.ret_actual || BUG(
                 "propagateType(jump): h.ret_actual not available: #" ~ h.index);
@@ -2729,9 +2751,16 @@ pub fn solve(
                 _current_fn.postdom = h.postdom || BUG(
                     "propagateType(jump): h.loop_start not available: #" ~ h.index);
 
-            propagateType(node.items.only, :relax_mask, h.ret_actual);
+            let redundant       = kills && kills.index <= h.index;
+            shadow let kills    = redundant ? kills : h;
 
-            h.mask |= HM_LabelUsed;
+            propagateType(node.items.only, :relax_mask, h.ret_actual, :kills);
+
+            // Remove redundant jumps.
+            if (redundant)
+                node = node.items.only;
+            else
+                h.mask |= HM_LabelUsed;
         }
         else if (k == "block")
         {
@@ -2744,8 +2773,11 @@ pub fn solve(
                     h.ret_actual.try_relax(:slot, :relax_mask);
             }
 
-            if (h.mask)
+            if (h)
+            {
                 h.mask &= ~HM_LabelUsed;
+                h.kills = kills;
+            }
 
             //////////////////////
             Breakable_begin();
@@ -2785,7 +2817,15 @@ pub fn solve(
                 while (items)
                 {
                     ref expr = items.last;
-                    propagateType(expr, :relax_mask, slot);
+
+                    // TODO FIX: preserving explicit returns for fns,
+                    //  ideally we'll just inject one at the end of doTrySpec.
+                    shadow let kills = !(h.mask & HM_Function && !h.ret_actual.is_void) && (kills || h);
+
+                    propagateType(expr, :relax_mask, slot,
+
+                        // CAN AFFECT tail.type / h.ret_actual (see `if (kills)` below):
+                        :kills);
 
                     if (!canDiscard || !expr.isDiscardable)
                         break;
@@ -2837,9 +2877,36 @@ pub fn solve(
                 }
             }
 
-            // Unwrap single item blocks.
             if (items.len == 1 && !(h.mask & (HM_LabelUsed | HM_Function)))
+            {
+                // Unwrap single item blocks.
                 node = items.only;
+            }
+            else if (canDiscard)
+            {
+                // Discard return value.
+                node.type = t_void;
+            }
+            else if (kills)
+            {
+                // Control flow simplification can affect the return value of the block
+                //  by replacing a redundant jump in tail position.
+                //   The slot is supposed to fix itself up in the same manner.
+                //
+                if (items)
+                {
+                    let tail = items.last;
+                    if (h.ret_actual)
+                    {
+                        reportReturnType(:h, :tail.type);
+                        node.type = h.ret_actual;
+                    }
+                    else
+                    {
+                        node.type = tail.type;
+                    }
+                }
+            }
         }
         else if (k == "root")
         {
