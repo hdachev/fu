@@ -2933,29 +2933,43 @@ pub fn solve(
                 // Unwrap single item blocks.
                 node = items.only;
             }
-            else if (canDiscard)
+            else
             {
-                // Discard return value.
-                node.type = t_void;
-            }
-            else if (kills)
-            {
-                // Control flow simplification can affect the return value of the block
-                //  by replacing a redundant jump in tail position.
-                //   The slot is supposed to fix itself up in the same manner.
-                //
-                if (items)
+                if (canDiscard)
                 {
-                    let tail = items.last;
-                    if (h.ret_actual)
+                    // Discard return value.
+                    node.type = t_void;
+                }
+                else if (kills)
+                {
+                    // Control flow simplification can affect the return value of the block
+                    //  by replacing a redundant jump in tail position.
+                    //   The slot is supposed to fix itself up in the same manner.
+                    //
+                    if (items)
                     {
-                        reportReturnType(:h, :tail.type);
-                        node.type = h.ret_actual;
+                        let tail = items.last;
+                        if (h.ret_actual)
+                        {
+                            reportReturnType(:h, :tail.type);
+                            node.type = h.ret_actual;
+                        }
+                        else
+                        {
+                            node.type = tail.type;
+                        }
                     }
-                    else
-                    {
-                        node.type = tail.type;
-                    }
+                }
+
+                let tail = node.items.if_last;
+                if (tail.kind == "block" && !(tail.helpers.mask & HM_LabelUsed))
+                {
+                    // Cleanup -
+                    //
+                    // If the tail item is an unlabelled block,
+                    //  just unwrap it here, the extra scope is redundant.
+                    //
+                    node.items.splice(node.items.len - 1, 1, tail.items);
                 }
             }
         }
