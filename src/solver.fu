@@ -16,7 +16,6 @@ import fail;
 
 let OPTI_autoshadow         = true;
 let OPTI_dedupe_vars        = true;
-let OPTI_flatten_blocks     = true;
 let OPTI_bck                = true;
 let OPTI_ignoreLocalLts     = true;
 
@@ -3206,21 +3205,6 @@ pub fn solve(
     fn createBlock(
         type: Type, mut items: SolvedNode[], h?: Helpers): SolvedNode
     {
-        // TODO INVESTIGATE potential gcc bug
-        //
-        //  Replace the `fail` here with a throw and the !kind bug on gcc stops to repro.
-        //   It's outright bizarre.
-        //
-        //  Happens for "inline"s, if the check is lifted in the outer fun it also doesn't repro.
-        //   Potentially we want to try this out with another gcc version or something,
-        //    its very, very fishy, and is only apparent in optimized builds.
-
-        // Also notice with this here,
-        //  there's barely any difference between the two things in cg output, all args are the same.
-        for (mut x = 0; x < items.len; x++)
-            if (!items[x].kind)
-                throw("createBlock.before-flatten.items: no kind on item #" ~ x);
-
         // Compact + stress test.
         for (mut i = items.len; i --> 0; )
         {
@@ -3246,39 +3230,6 @@ pub fn solve(
             {
                 if (i < items.len - 1 || i > 0 && item.is_void && items[i - 1].is_void)
                     items.splice(i, 1);
-            }
-        }
-
-        //////////////////////////////////////////////////////////////////////
-        //////////////////////////////////////////////////////////////////////
-        if (OPTI_flatten_blocks) while (items.len)
-        {
-            let tail = items.last;
-            if (tail.kind != "block" || tail.helpers && tail.helpers.mask & HM_LabelUsed)
-                break;
-
-            let unwrap = tail.items;
-            items.pop();
-            items ~= unwrap;
-        }
-        //////////////////////////////////////////////////////////////////////
-        //////////////////////////////////////////////////////////////////////
-
-        if (items)
-        {
-            // Skip redundant trailing jumps.
-            ref last = items.last;
-            if (last.kind == "jump" && last.helpers == h
-
-                // TODO FIX don't special case the trailing fn return here,
-                //  just inject trailing return in doTrySpec if needed.
-                && !(h.mask & HM_Function && !last.items.only.is_void))
-            {
-                // TODO FIX this fails to unset HM_LabelUsed on single jump blocks,
-                //  which means the block can't unwrap below,
-                //   etc cleanups can't happen.
-                //
-                last = last.items.only;
             }
         }
 
