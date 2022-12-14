@@ -3249,9 +3249,6 @@ pub fn solve(
             }
         }
 
-        if (h && items.if_last.kind == "block")
-            relinkJumps(:h, items.last);
-
         //////////////////////////////////////////////////////////////////////
         //////////////////////////////////////////////////////////////////////
         if (OPTI_flatten_blocks) while (items.len)
@@ -5484,7 +5481,7 @@ pub fn solve(
         return solveJump_finish(:node.flags, :expr, :h);
     }
 
-    fn solveJump_finish(flags: Flags, ref expr: SolvedNode, h!: Helpers)
+    fn solveJump_finish(flags: Flags, expr: SolvedNode, h!: Helpers)
     {
         // Lazy labels.
         h.mask |= HM_LabelUsed;
@@ -5492,9 +5489,12 @@ pub fn solve(
         reportReturnType(:h, expr.type,
             NICEERR_missingReturn: !!(flags & F_IMPLICIT));
 
-        injectJumps(:h, :expr);
+        return createJump(:h, :expr);
+    }
 
-        return expr;
+    fn createJump(h!: Helpers, expr: SolvedNode)
+    {
+        return SolvedNode("jump", type: t_never, items: [ expr ], helpers: h);
     }
 
     fn reportReturnType(h!: Helpers, type: Type, NICEERR_missingReturn!?: bool)
@@ -5531,94 +5531,6 @@ pub fn solve(
             : type;
 
         h.ret_actual || BUG("Can't be null past this point.");
-    }
-
-    fn relinkJumps(h!: Helpers, ref expr: SolvedNode)
-    {
-        if (expr.kind == "block")
-        {
-            // Relink this block's jumps to point here.
-            let h0 = expr.helpers;
-            if (h0.mask & HM_LabelUsed)
-            {
-                fn visit(ref item: SolvedNode)
-                {
-                    if (item.kind == "jump" && item.helpers == h0)
-                    {
-                        item.helpers = h;
-                        h.mask |= HM_LabelUsed;
-                    }
-
-                    // INDIRECTION !!!!
-                    if (item.kind == "letdef")
-                    {
-                        let target = item.target;
-                        swap      (item, GET_mut(target).solved);
-                        defer swap(item, GET_mut(target).solved);
-
-                        item.items.each(fn visit);
-                    }
-                    // INDIRECTION !!!!
-
-                    item.items.each(fn visit);
-                }
-
-                visit(expr);
-
-                // Clean up trivial leftover blocks.
-                h0.mask &= ~HM_LabelUsed;
-                expr.helpers = [];
-            }
-        }
-    }
-
-    fn injectJumps(h!: Helpers, ref expr: SolvedNode)
-    {
-        // Consider return (a ? b : c): if b is return x,
-        //  naively we'd inject to a ? return (return x) : return c,
-        //
-        if (expr.type.is_never)
-            return;
-
-        relinkJumps(:h, :expr);
-
-        if (expr.kind == "block")
-        {
-            // The intent here -
-            //  not wrapping the block means it can unwrap into its parent block
-            //   and inserting the return further in reduces the need
-            //    for statement expressions.
-            //
-            ref tail = expr.items.last;
-            if (!tail.is_never)
-                injectJumps(:h, tail);
-
-            {
-                expr.helpers.mask & HM_LabelUsed && BUG("Block still uses its label"
-                    ~ ", consider looping relinkJumps in injectJumps"
-                    ~ ", otherwise we're about to lie about its return type.");
-
-                expr.type = t_never;
-            }
-        }
-        else if (expr.kind == "if")
-        {
-            // Experimental,
-            //  not strictly needed for anything.
-            //
-            injectJumps(:h, expr.items[1]);
-            injectJumps(:h, expr.items[2]);
-            expr.type = t_never;
-        }
-        else
-        {
-            expr = createJump(:h, expr);
-        }
-    }
-
-    fn createJump(h!: Helpers, expr: SolvedNode)
-    {
-        return SolvedNode("jump", type: t_never, items: [ expr ], helpers: h);
     }
 
 
