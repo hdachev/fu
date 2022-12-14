@@ -2754,13 +2754,64 @@ pub fn solve(
             let redundant       = kills && kills.index <= h.index;
             shadow let kills    = redundant ? kills : h;
 
-            propagateType(node.items.only, :relax_mask, h.ret_actual, :kills);
+            ref expr            = node.items.only;
+
+            propagateType(expr, :relax_mask, h.ret_actual, :kills);
 
             // Remove redundant jumps.
             if (redundant)
-                node = node.items.only;
+            {
+                node = expr;
+            }
             else
+            {
                 h.mask |= HM_LabelUsed;
+
+                // Code cleanup -
+                //
+                // If the jump expression is a block,
+                //  and the block doesn't use its label (so only returns via its tail expression),
+                //   replace self with the block and wrap the tail in this jump.
+                //
+                fn tryInjectJumps(shadow ref expr: SolvedNode)
+                {
+                    fn injectJumps(shadow ref expr: SolvedNode)
+                    {
+                        if (!tryInjectJumps(expr))
+                            expr = createJump(:h, expr);
+                    }
+
+                    if (expr.is_never)
+                    {
+                        // Nothing to do = success.
+                        return true;
+                    }
+                    else if (expr.kind == "block"
+                            && expr.items
+                            && !(expr.helpers.mask & HM_LabelUsed))
+                    {
+                        // Unlablled block = inject into tail.
+                        injectJumps(expr.items.last);
+
+                        expr.type = t_never;
+                        return true;
+                    }
+                    else if (expr.kind == "if")
+                    {
+                        // If = inject into cons & alt.
+                        for (mut i = 1; i < expr.items.len; i++)
+                            injectJumps(expr.items[i]);
+
+                        expr.type = t_never;
+                        return true;
+                    }
+
+                    return false;
+                }
+
+                if (tryInjectJumps(expr))
+                    node = expr;
+            }
         }
         else if (k == "block")
         {
@@ -5547,9 +5598,13 @@ pub fn solve(
         }
         else
         {
-            // Previously fn createJump(h!: Helpers, expr: SolvedNode):
-            expr = SolvedNode("jump", type: t_never, items: [ expr ], helpers: h);
+            expr = createJump(:h, expr);
         }
+    }
+
+    fn createJump(h!: Helpers, expr: SolvedNode)
+    {
+        return SolvedNode("jump", type: t_never, items: [ expr ], helpers: h);
     }
 
 
