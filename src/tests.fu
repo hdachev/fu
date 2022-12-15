@@ -1858,6 +1858,11 @@ pub extern fn runTests()
             return uses_implicit;
         }
 
+        <alt>
+        inline
+        <alt/>
+        ;; N_BckMustSeq
+        </alt>
         fn inline_implicit_from_defarg(hello: i32, defaulted_argument: i32 = uses_implicit_inside) {
             return hello * defaulted_argument;
         }
@@ -1866,6 +1871,25 @@ pub extern fn runTests()
             implicit mut sum = 3;
             let res = inline_implicit_from_defarg(sum);         ;; GNUStmtExpr
             return sum == 4 && res == 9 ? 0 : 1;
+        }
+    `);
+
+    ZERO(`
+        inline fn uses_implicit(implicit ref sum: i32) = sum++;
+        inline fn uses_implicit_inside() = uses_implicit;
+
+        <alt>
+        inline
+        <alt/>
+        ;; N_BckMustSeq
+        </alt>
+        fn inline_implicit_from_defarg(defaulted_argument: i32 = uses_implicit_inside, hello: i32 = 0)
+            hello * defaulted_argument;
+
+        fn main() {
+            implicit mut sum = 3;
+            let res = inline_implicit_from_defarg(hello: sum);  ;; GNUStmtExpr
+            return sum == 4 && res == 12 ? 0 : 1;
         }
     `);
 
