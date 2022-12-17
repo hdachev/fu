@@ -1850,6 +1850,31 @@ pub extern fn runTests()
     `);
 
     ZERO(`
+        // reduct: inline_implicit_from_defarg ooe bug
+        fn main() {
+            <alt>
+            return ooe_block_arg(z: 0, a: 3);
+        }
+
+        fn ooe_block_arg(mut z: i32, mut a: i32) {
+            <alt/>
+            mut z = 0;
+            mut a = 3;
+            return ooe_block_arg(:z, :a);
+        }
+
+        fn ooe_block_arg(ref z: i32, ref a: i32) {
+            <alt/>
+            mut z = 0;
+            mut a = 3;
+            </alt>
+                        ;; N_BckMustSeq
+            let res = a * { ref x = z || a; x++ };              ;; GNUStmtExpr
+            return a == 4 && res == 9 ? 0 : 1;
+        }
+    `);
+
+    ZERO(`
         inline fn uses_implicit_inside() {
             inline fn uses_implicit(implicit ref sum: i32) {
                 return sum++;
