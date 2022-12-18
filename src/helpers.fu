@@ -341,6 +341,12 @@ fn trim(str: string)
 fn parse(v: [byte], lax as!: $T)
     case ($T.is::enum || $T.is::bitfield /*TODO .is::flags*/ )
 {
+    // TODO failcase
+    // if ($T.is::bitfield)
+    //     for (mut i = 1; i < v.len; i++)
+    //         if (v[i] == "|")
+    //             return parse(v[0, i]) | parse(v[i + 1, v.len]);
+
     for (fieldname i: $T)
         if (v == "i")
             return i; // TODO "i", was only allowed for enums

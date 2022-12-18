@@ -4321,8 +4321,8 @@ pub extern fn runTests()
             mut arr: NCItem[];
             for (mut i = 0; i < n; i++) {
                 let item = NCItem(i);
-                if (i & 1)  arr.unshift(item);
-                else        arr.push(item);
+                if (i & 1)  arr.unshift(item);                  ;; !N_BckMustSeq
+                else        arr.push(item);                     ;; !N_MoveMustSeq
             }
             return arr;
         }
@@ -6148,8 +6148,8 @@ pub extern fn runTests()
 
         fn main() {
             mut _helpers_data: i32[];
-            mut content: SolverOutput[];
-            return test(_helpers_data, content).content.len;
+            mut content: SolverOutput[];                        ;; !N_BckMustSeq
+            return test(_helpers_data, content).content.len;    ;; !N_MoveMustSeq
         }
     `);
 
