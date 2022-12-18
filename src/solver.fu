@@ -2615,8 +2615,9 @@ pub fn solve(
                     ref arg = node.items[i];
 
                     // MOVE ON LAST USE OOE ////////////////////////////////////////
-                    shadow let ooe_isUndef  = ooe_isUndef && i != start;
-                    mut just_moved0         = ooe_isUndef && _current_fn.just_moved;
+                    let just_moved0 = ooe_isUndef
+                        && i != start // No point in testing last argument, no args move after it.
+                        && _current_fn.just_moved;
                     // MOVE ON LAST USE OOE ////////////////////////////////////////
 
                     arg.propagateType(host_args[i].type, :relax_mask);
@@ -2624,22 +2625,27 @@ pub fn solve(
                     // MOVE ON LAST USE OOE ////////////////////////////////////////
                     if (ooe_isUndef)
                     {
-                        let mustSeq = i;
-
-                        // Now we care about things that were moved during this call,
-                        //  but not within this argument,
-                        //   that concern lifetimes used here.
-                        //
-                        _current_fn.just_used.each: |index|
+                        if (just_moved0)
                         {
-                            if (just_moved0.has(index) && !just_moved00.has(index))
+                            let mustSeq = i;
+
+                            // Now we care about things that were moved during this call,
+                            //  but not within this argument,
+                            //   that concern lifetimes used here.
+                            //
+                            _current_fn.just_used.each: |index|
                             {
-                                // An argument that follows moves something we use here,
-                                //  so we must strictly evaluate before them.
-                                //
-                                MUSTSEQ_mask |= 1 << (mustSeq & 31);
-                                makeNote(N_MoveMustSeq);
-                                break;
+                                if (just_moved0.has(index) && !just_moved00.has(index))
+                                {
+                                    // println("N_MoveMustSeq: " ~ arg.qWHAT ~ "\n\t\tbecause " ~ nested(index).qWHAT " was moved by a coarg.");
+
+                                    // An argument that follows moves something we use here,
+                                    //  so we must strictly evaluate before them.
+                                    //
+                                    MUSTSEQ_mask |= 1 << (mustSeq & 31);
+                                    makeNote(N_MoveMustSeq);
+                                    break;
+                                }
                             }
                         }
 
