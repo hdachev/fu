@@ -2843,6 +2843,7 @@ pub extern fn runTests()
 
             ref bb = b[0]; a ~= 1; // Invalidates 'aa' if ref.
             return either(bb, aa); // For completeness.
+                   ;; PointlessMustSeq
         }
 
         fn main() { mut a = [ 0 ]; mut b = [ 0 ]; return test(a, b); }

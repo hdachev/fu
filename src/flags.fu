@@ -202,4 +202,5 @@ flags CGDefects
 {
     GNUStmtExpr;
     Goto;
+    PointlessMustSeq;
 };

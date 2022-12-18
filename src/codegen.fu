@@ -1771,7 +1771,18 @@ pub fn cpp_codegen(implicit module: Module, implicit ctx: Context): CodegenOutpu
 
                 ooe_crosscheck |= MUSTSEQ_bit;
 
-                if !(arg.isFieldChain)
+                if (arg.isFieldChain)
+                {
+                    _defects |= PointlessMustSeq;
+
+                    // These are worth investigating:
+                    //  - Found a MOLU bug where the just_used mask wasn't cleared
+                    //     after the first argument traversed (last arg in eval order).
+                    //  - AAR currently sequences stuff that's already in the hard/soft mask,
+                    //     ideally the sequencing should go just once after BCK and AAR have finished.
+                    //  - There's probably more coming, this shit is impenetrable.
+                }
+                else
                 {
                     if (ooe_header)
                         ooe_header ~= ", ";
