@@ -2406,10 +2406,10 @@ pub extern fn runTests()
 
     ZERO(`
         fn test(ref a: i32, ref b: i32) {
-            return (++a) + 10 * (++b);              ;; N_BckMustSeq
+            return (++a) + 10 * (++b);                          ;; N_AARMustSeq
         }
 
-        fn main() {                                 ;; N_BckSoftRisk
+        fn main() {                                             ;; N_AARSoftRisk
             mut x = 0;
         <alt>
             let z = test(x, x);
@@ -2423,12 +2423,12 @@ pub extern fn runTests()
 
     ZERO(`
         pub fn test_inner(ref a: i32, ref b: i32)
-            (++a) + 10 * (++b);                     ;; N_BckMustSeq
+            (++a) + 10 * (++b);                                 ;; N_AARMustSeq
 
         pub fn test_outer(ref a: i32, ref b: i32)
             test_inner(a, b);
 
-        fn main() {                                 ;; N_BckSoftRisk
+        fn main() {                                             ;; N_AARSoftRisk
             mut x = 0;
         <alt>
             let z = test_outer(x, x);
@@ -2717,11 +2717,11 @@ pub extern fn runTests()
     ZERO(`
         pub fn incr_a_or_b_and_b_or_a(ref a: i32, ref b: i32) {
             ref x = a || b; ++x;
-            ref y = b || a; ++y;
+            ref y = b || a; ++y;                                ;; N_AARSoftRisk
         }
 
         fn main() {
-            mut a = 0;                          ;; N_BckSoftRisk
+            mut a = 0;
 
             <alt>
             incr_a_or_b_and_b_or_a(a, a);
@@ -3210,7 +3210,7 @@ pub extern fn runTests()
     ZERO(`
         fn test(ref a: i32[], ref b: i32[]) {
             <alt>
-            if (a[0]++ == 1)            ;; N_BckSoftRisk
+            if (a[0]++ == 1)                                    ;; N_AARSoftRisk
             <alt/>
             if (a[0] == 1)
             </alt>
@@ -3881,8 +3881,9 @@ pub extern fn runTests()
         fn assign(ref to: i32, ref what: i32) to = what;
 
         fn two_writes_in_an_arg(ref x: i32, ref arr: i32[], ref brr: i32[])
-            assign( to: x,  what: arr.grow_if_oob(10)
-                               || brr.grow_if_oob(10));
+            assign( to: x,  what: arr.grow_if_oob(10)           ;; !N_BckMustSeq
+                               || brr.grow_if_oob(10));         ;; !N_MoveMustSeq
+                                                                ;; PointlessMustSeq
 
         fn test(ref x: i32, ref arr: i32[], ref brr: i32[]) {
             two_writes_in_an_arg(
@@ -4322,8 +4323,8 @@ pub extern fn runTests()
             mut arr: NCItem[];
             for (mut i = 0; i < n; i++) {
                 let item = NCItem(i);
-                if (i & 1)  arr.unshift(item);                  ;; !N_BckMustSeq
-                else        arr.push(item);                     ;; !N_MoveMustSeq
+                if (i & 1)  arr.unshift(item);                  ;; !*MustSeq
+                else        arr.push(item);
             }
             return arr;
         }
@@ -4626,9 +4627,9 @@ pub extern fn runTests()
             fn parseBlockLike(endToken: byte): Node[] {
                 mut items: Node[] = [];
                 for (;;) {
-                    let token = tokens[_idx++];
-                    if (token == endToken)
-                        break;
+                    let token = tokens[_idx++];                 ;; !N_BckMustSeq
+                    if (token == endToken)                      ;; !N_MoveMustSeq
+                        break;                                  ;; PointlessMustSeq
 
                     items ~= Node("let", [], flags: token == '+' && F_PREDICATE);
                 }
@@ -6149,8 +6150,8 @@ pub extern fn runTests()
 
         fn main() {
             mut _helpers_data: i32[];
-            mut content: SolverOutput[];                        ;; !N_BckMustSeq
-            return test(_helpers_data, content).content.len;    ;; !N_MoveMustSeq
+            mut content: SolverOutput[];
+            return test(_helpers_data, content).content.len;    ;; !*MustSeq
         }
     `);
 
@@ -9062,7 +9063,7 @@ pub extern fn runTests()
         }
 
         // misfired during the removal of maybeCopyOrMove(isReturn)
-        ;; !N_MoveMustSeq
+        ;; !*MustSeq
     `);
 
     ZERO(`

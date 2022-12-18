@@ -8542,7 +8542,7 @@ pub fn solve(
                                     {
                                         // Soft risk ok -
                                         //  this is the new thing, further relaxing the bck.
-                                        return makeNote(N_BckSoftRisk);
+                                        return makeNote(N_AARSoftRisk);
                                     }
                                 }
 
@@ -8777,7 +8777,7 @@ pub fn solve(
                                             //
                                             let mustSeq = ooe_ir_evalsBefore_iw ? r : w;
                                             MUSTSEQ_mask |= 1 << (mustSeq & 31);
-                                            makeNote(N_BckMustSeq);
+                                            makeNote(AAR ? N_AARMustSeq : N_BckMustSeq);
                                         }
 
                                         break;

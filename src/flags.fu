@@ -186,8 +186,10 @@ flags SolverNotes: i32
     N_UnusedArrlit
     N_UnusedLet
 
-    N_BckSoftRisk
     N_BckMustSeq
+
+    N_AARMustSeq
+    N_AARSoftRisk
 
     N_MoveMustSeq
 

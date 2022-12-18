@@ -353,3 +353,27 @@ fn parse(v: [byte], lax as!: $T)
 
     return [];
 }
+
+fn parseWild(v: [byte], lax as!: $T)
+{
+    mut result: $T;
+    for (mut i = 0; i < v.len; i++)
+    {
+        if (v[i] == '*')
+        {
+            let prefix = v[0, i];
+            let suffix = v[i + 1, v.len]
+
+            for (fieldname i: $T)
+            {
+                let opt = "i";
+                if (opt.starts(with: prefix) && opt.ends(with: suffix))
+                    result |= i;
+            }
+
+            return result;
+        }
+    }
+
+    return parse(:v, :as);
+}

@@ -304,12 +304,12 @@ pub fn ZERO(
             let annot = src.slice(start + 4, end);
             if (annot[0] == '!')
             {
-                break_notes |= parse(annot.slice(1, annot.len), as: SolverNotes)
+                break_notes |= parseWild(annot.slice(1, annot.len), as: SolverNotes)
                             || throw("Bad break_note: `;; " ~ annot ~ "`.");
             }
             else
             {
-                let defect = parse(annot, as: CGDefects);
+                let defect = parseWild(annot, as: CGDefects);
                 if (defect)
                     ok_defects |= defect;
                 else
@@ -346,7 +346,7 @@ pub fn ZERO(
         {
             let x = arr[i];
 
-            let note = parse(x, as: SolverNotes);
+            let note = parseWild(x, as: SolverNotes);
             if (note)
             {
                 out.solve.notes & note || throw("Expected note not listed: `" ~ x ~ "` in:\n" ~ src ~ "\n\nOutput is:\n\n" ~ cpp.src);
