@@ -8665,18 +8665,35 @@ pub fn solve(
                             // RTL indexing is reversed, so 0 always means first.
                             let iw_evalsFirst = ooe_iw == 0;
 
-                            let just_the_write = [ Region_fromLocal(write) ];
+                            mut all_written = [ Region_fromLocal(write) ];
+                            {
+                                // The write may not invalidate its parents,
+                                //  but it might still change their value.
+                                //   Search tests for:
+                                //
+                                //      a * { ref x = z || a; x++ }
+                                //
+                                // Doing it for all args, including the first arg.
+                                //  Search tests for:
+                                //
+                                //      { ref x = z || a; x++ } * a
+                                //
+                                // In both cases we need to sequence the order of eval of `a` and `x++`.
+                                //
+                                let parents = flow.parents.unless_oob(write);
+                                all_written.set::add(parents.view(Region));
+                            }
 
-                            mut written_and_invalidated: Region[];
+                            mut all_written_and_invalidated: Region[];
                             if (!iw_evalsFirst)
                             {
-                                written_and_invalidated = just_the_write;
+                                all_written_and_invalidated = all_written;
 
                                 // Deep expansion only useful on non-first arg,
                                 //  we only use it for preceding args in OOE.
                                 //
                                 let invalidates = flow.invalidates.unless_oob(write);
-                                written_and_invalidated.set::add(invalidates.view(Region));
+                                all_written_and_invalidated.set::add(invalidates.view(Region));
                             }
 
                             ////////////////////////////////////////////////////
@@ -8696,8 +8713,8 @@ pub fn solve(
                                     let ooe_ir_evalsBefore_iw = ooe_ir < ooe_iw;
 
                                     let written = ooe_ir_evalsBefore_iw
-                                        ? written_and_invalidated
-                                        : just_the_write;
+                                        ? all_written_and_invalidated
+                                        : all_written;
 
                                     written || BUG();
 
@@ -8758,7 +8775,7 @@ pub fn solve(
                                                         ~ host_args[r].name.human.qBAD ~ " (arg #" ~ r ~ ") at "
                                                         ~ arg.token.addr_and_snippet
                                                         ~ "\n\t... invalidated by subsequent write to "
-                                                        ~ just_the_write.first.qWHAT ~ " upon evaluation of argument "
+                                                        ~ all_written.last.qWHAT ~ " upon evaluation of argument "
                                                         ~ host_args[w].name.human.qBAD ~ " (arg #" ~ w ~ ") at "
                                                         ~ RWEvent_stack(writeID));
                                                 }
