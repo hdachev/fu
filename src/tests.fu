@@ -1880,6 +1880,34 @@ pub extern fn runTests()
     `);
 
     ZERO(`
+        // gcc doesn't cg RTL with just * for this testcase, but this breaks it
+        noinline fn mul(a: i32, b: i32) = a * b;
+
+        // reduct: inline_implicit_from_defarg
+        fn test(ref a: i32, ref z: i32) {
+            <alt>
+            inline                                              ;; N_BckMustSeq
+            <alt/>
+            noinline                                            ;; N_AARMustSeq
+            </alt>
+            fn ooe_closure(ref hello<alt>: i32</alt>) {
+                let res = mul({ ref x = z || a; x++ }, hello);  ;; GNUStmtExpr
+                hello += 10;
+                return res;
+            }
+
+            let res = ooe_closure(a);
+            return a == 14 && res == 12 ? 0 : 1;
+        }
+
+        fn main() {
+            mut a = 3;
+            mut z = 0;
+            return test(:a, :z);
+        }
+    `);
+
+    ZERO(`
         inline fn uses_implicit_inside() {
             inline fn uses_implicit(implicit ref sum: i32) {
                 return sum++;
