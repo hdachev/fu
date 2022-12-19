@@ -1869,8 +1869,13 @@ pub extern fn runTests()
             mut a = 3;
             </alt>
                         ;; N_BckMustSeq
+            <alt>
             let res = a * { ref x = z || a; x++ };              ;; GNUStmtExpr
             return a == 4 && res == 9 ? 0 : 1;
+            <alt/>
+            let res = { ref x = z || a; x++ } * a;              ;; GNUStmtExpr
+            return a == 4 && res == 12 ? 0 : 1;
+            </alt>
         }
     `);
 
