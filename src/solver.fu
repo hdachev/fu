@@ -9059,6 +9059,21 @@ pub fn solve(
 
                 if (refs)
                     flow.invalidates.grow_if_oob(target).set::add(refs);
+
+                // OOE/AAR:
+                // Search tests for:
+                //
+                //      mul({ ref x = z || a; x++ }, hello)
+                //
+                // Also see comment above on:
+                //
+                //      a * { ref x = z || a; x++ }
+                //
+                // Basically for all_written_BUT_NOT_invalidated to consider other arguments,
+                //  we list them as if they were parents to each ref argument.
+                let invalidates = flow.invalidates.unless_oob(target);
+                if (invalidates)
+                    (flow.parents.grow_if_oob(target) && BUG("AAR: arg already has parents.")) = invalidates;
             }
 
             // Go.
