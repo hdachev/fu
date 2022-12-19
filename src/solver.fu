@@ -2603,6 +2603,10 @@ pub fn solve(
                 //
                 mut just_used1: bitset::BitSet;
                 //
+                // TODO FAILCASE
+                // TODO FAILCASE this can't be right, for non-RTL arguments we're discarding just_used stuff this way, see below
+                // TODO FAILCASE
+                //
                 swap      (_current_fn.just_used, just_used1);
                 defer swap(_current_fn.just_used, just_used1);
                 //
