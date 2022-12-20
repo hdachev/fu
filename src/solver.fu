@@ -9051,6 +9051,7 @@ pub fn solve(
             shadow ref flow = _current_fn.flow;
 
             // Reset these, here we use them for the speculative aliasing.
+            flow.parents.clear();
             flow.invalidates.clear();
 
             for (mut i = 0; i < refs.len; i++)
@@ -9059,16 +9060,17 @@ pub fn solve(
 
                 // First, ref -> const relationships, cheaper setup.
                 if (consts)
-                    flow.invalidates.grow_if_oob(target) = consts;
+                    (flow.invalidates.grow_if_oob(target) && BUG("AAR: ref arg already has invalidates."))
+                        = consts;
 
                 // Finally set up the ref <-> ref relationships,
                 //  which are symmetric.
-                //
-                shadow mut refs = refs;
-                refs.set::rem(target);
-
-                if (refs)
+                if (refs.len > 1)
+                {
+                    shadow mut refs = refs;
+                    refs.set::rem(target);
                     flow.invalidates.grow_if_oob(target).set::add(refs);
+                }
 
                 // OOE/AAR:
                 // Search tests for:
@@ -9081,13 +9083,22 @@ pub fn solve(
                 //
                 // Basically for all_written_BUT_NOT_invalidated to consider other arguments,
                 //  we list them as if they were parents to each ref argument.
-                let invalidates = flow.invalidates.unless_oob(target);
-                if (invalidates)
-                    (flow.parents.grow_if_oob(target) && BUG("AAR: arg already has parents.")) = invalidates;
+                if (refs.len > 1 || consts)
+                    (flow.parents.grow_if_oob(target) && BUG("AAR: ref arg already has parents."))
+                        = flow.invalidates.unless_oob(target) || BUG("AAR: (refs.len > 1 || consts), but no invalidates.");
             }
+
+            // TODO FAILCASE
+            // TODO FAILCASE Commenting this does nothing - might be extraneous, not sure if i'm missing something
+            // TODO FAILCASE
+            for (mut i = 0; i < consts.len; i++)
+                (flow.parents.grow_if_oob(consts[i]) && BUG("AAR: const arg already has parents."))
+                    = refs;
 
             // Go.
             {
+                refs || BUG("Wasting time on AAR without ref args.");
+
                 AAR = true;
                 _current_fn.events = Events();
                 bck_node(root);
