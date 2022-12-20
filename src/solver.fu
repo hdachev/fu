@@ -8758,7 +8758,13 @@ pub fn solve(
                                         shadow let r = ooe_isRTL ? ooe_START - ooe_ir : ooe_ir;
                                         shadow let w = ooe_isRTL ? ooe_START - ooe_iw : ooe_iw;
 
-                                        if (ooe_ir_evalsBefore_iw)
+                                        if (ooe_ir_evalsBefore_iw &&
+
+                                            // No need to do anything if the host_arg wants a value -
+                                            //  in case the value is a ref we'll copy/move during mcom,
+                                            //   and we only need to sequence before, which is done below.
+                                            //
+                                            host_args[r].is_ref)
                                         {
                                             let arg     = args[r];
                                             let bound   = arg.type.lifetime.uni0n;
