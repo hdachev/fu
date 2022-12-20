@@ -6781,7 +6781,7 @@ pub extern fn runTests()
         fn astReplace(node: Node, mutate): Node {
             fn walk(shadow ref node: Node) {
                 for (mut i = 0; i < node.items.len; i++)
-                    walk(node.items[i]);
+                    walk(node.items[i]);                        ;; !*MustSeq
 
                 mutate(node);
             }
@@ -10530,7 +10530,7 @@ pub extern fn runTests()
         fn add_once(ref bs: BitSet2D, i: i32, j: i32): bool {
             return bs
                 .grow_if_oob(i)
-                .add_once(j);
+                .add_once(j);                                   ;; !*MustSeq
         }
 
         fn main() {
