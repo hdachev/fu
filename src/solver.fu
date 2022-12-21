@@ -9021,15 +9021,29 @@ pub fn solve(
                         outOfOrderArgTargets = true;
 
                     let type = target.solved.type;
-                    if (type.is_mutref)
-                        refs    ~= t;
+
+                    // Notice we don't consider refs we don't write to as mutrefs for AAR.
+                    //  This is meant as an opti, but also tests we've tagged everything correctly.
+                    if (type.is_mutref && _current_fn.events.ever_written.has(target.index))
+                        refs ~= t;
                     else if (type.is_ref)
-                        consts  ~= t;
+                        consts ~= t;
                 }
             }
 
-            if !(refs)
+            // No point in doing AAR if there are no mutref arguments,
+            //  or if there's just one mutref argument and no constref args.
+            if (!refs || refs.len == 1 && !consts)
+            {
+                // TODO we can do better -
+                //  we can skip AAR if we can observe that none of the
+                //   mutref/mutref and mutref/constref pairs are aliasable type-wise.
+                //
+                // Ideally, even when we can't skip AAR,
+                //  we wouldn't add invalidation edges between non-aliasable arguments.
+                //
                 break :SOLVE_AAR;
+            }
 
             if (outOfOrderArgTargets)
             {
