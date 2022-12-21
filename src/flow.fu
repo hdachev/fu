@@ -20,6 +20,10 @@ pub struct Flow
     arg_positions:  i32[];          // arguments (position + 1) at each target.
 };
 
+pub fn clear(ref flow: Flow)
+    for (fieldname i: Flow)
+        flow.i.clear();
+
 pub fn Reference_trackArgument(ref flow: Flow, target: i32, position: i32)
 {
     // Argument position -> target,

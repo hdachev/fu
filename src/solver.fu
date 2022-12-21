@@ -90,6 +90,15 @@ pub fn solve(
         writes:             RWEvent[];
     };
 
+    fn clear(ref events: Events)
+    {
+        // TODO FAILCASE doesnt work
+        // for (fieldname i: Events)
+        //     events.i.clear();
+        //
+        events = [];
+    }
+
     fn Events_merge(ref events: Events, snap: EventsSnap)
     {
         fn Events_merge(ref dest: $T[], src: $T[])
@@ -8981,17 +8990,6 @@ pub fn solve(
         }
 
 
-        // This feels like its no longer relevant -
-
-        _current_fn_eachArg_FWD: |target, position|
-        {
-            target.modid == -_current_fn.target.index || BUG(
-                "Arg target not local to current-fn: " ~ target.qWHAT);
-
-            Reference_trackArgument(flow, target.index, :position);
-        }
-
-
         // BCK PASS 1: Local analysis & resolve-by-copy.
 
         bck_node(root);
@@ -9041,6 +9039,19 @@ pub fn solve(
                 consts.sort();
             }
 
+            // Reset these, here we use them for the speculative aliasing.
+            _current_fn.flow.clear();
+            _current_fn.events.clear();
+
+            // Index arguments.
+            _current_fn_eachArg_FWD: |target, position|
+            {
+                target.modid == -_current_fn.target.index || BUG(
+                    "Arg target not local to current-fn: " ~ target.qWHAT);
+
+                Reference_trackArgument(_current_fn.flow, target.index, :position);
+            }
+
             // Setup the AAR invalidation matrix -
             //  we assume that each ref argument invalidates EVERY other argument.
             //
@@ -9049,10 +9060,6 @@ pub fn solve(
             //   and this becomes our hard_risks/soft_risks solution.
             //
             shadow ref flow = _current_fn.flow;
-
-            // Reset these, here we use them for the speculative aliasing.
-            flow.parents.clear();
-            flow.invalidates.clear();
 
             for (mut i = 0; i < refs.len; i++)
             {
