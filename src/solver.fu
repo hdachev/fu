@@ -8215,7 +8215,7 @@ pub fn solve(
                     let u = events.invalidated_by[target];
                     if (u)
                     {
-                        if (AAR ? !RESOLVE_byAAR(read: target, writes: u, trySoft: true)
+                        if (AAR ? !RESOLVE_byAAR(read: target, writes: u, trySoft: true /* F_REF check inside */)
                                 : !RESOLVE_byMutvar(target))
                         {
                             fail("Cannot access"
@@ -8771,13 +8771,15 @@ pub fn solve(
                                         shadow let r = ooe_isRTL ? ooe_START - ooe_ir : ooe_ir;
                                         shadow let w = ooe_isRTL ? ooe_START - ooe_iw : ooe_iw;
 
+                                        let host_arg = host_args[r];
+
                                         if (ooe_ir_evalsBefore_iw &&
 
                                             // No need to do anything if the host_arg wants a value -
                                             //  in case the value is a ref we'll copy/move during mcom,
                                             //   and we only need to sequence before, which is done below.
                                             //
-                                            host_args[r].is_ref)
+                                            host_arg.is_ref)
                                         {
                                             let arg     = args[r];
                                             let bound   = arg.type.lifetime.uni0n;
@@ -8785,7 +8787,27 @@ pub fn solve(
                                             if (inter)
                                             {
                                                 // We'll have to inject a copy here.
-                                                if (AAR ? !RESOLVE_byAAR(:write, reads: inter, trySoft: true)
+                                                if (AAR ? !RESOLVE_byAAR(:write, reads: inter,
+
+                                                            // Considered making this host_arg.acceptsSoftRisk,
+                                                            //  which would work (should it though?) if:
+                                                            //
+                                                            //      ref arg_binding = read;
+                                                            //
+                                                            // But this could also be:
+                                                            //
+                                                            //      ref arg_binding = read[something];
+                                                            //
+                                                            // So the succeeding write to another argument
+                                                            //  can invalidate the binding.
+                                                            //
+                                                            // Could revisit this when we have some notion of reference stability,
+                                                            //  but currently the rule is soft-risk only applies to
+                                                            //   direct use of arguments without intermediate bindings,
+                                                            //    and here we're introducing an intermedite binding - the callee argument.
+                                                            //
+                                                            trySoft: false)
+
                                                         : !RESOLVE_byTempCopy(:callsite, r))
                                                 {
                                                     _here = callsite.token;
