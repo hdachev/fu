@@ -4263,6 +4263,43 @@ pub extern fn runTests()
         }
     `);
 
+    ZERO(`
+        struct Node {
+            nodes: Node[];
+        };
+
+        noinline fn append_a_onto_b_100_times(ref willPush: Node, ref pushWhat: Node) {
+            for (mut i = 0; i < 100; i++)
+                willPush.nodes ~= pushWhat;
+        }
+
+        noinline fn clear_and_return_ref_to_self(ref node: Node) {
+            node.nodes.clear();
+            return node;
+        }
+
+        noinline fn crash_if_b_refs_into_a(ref willEmpty: Node, ref willPush: Node) {
+            return append_a_onto_b_100_times(
+                // indexes inside, should crash
+                willPush.nodes[0],
+                // empties the nodes
+                clear_and_return_ref_to_self(willEmpty));
+        }
+
+        fn main() {
+            mut willEmpty: Node = [[ Node() ]];
+
+            <fail both alias willEmpty>
+            crash_if_b_refs_into_a(willEmpty, willEmpty);
+            <pass/>
+            mut willPush = willEmpty;
+            crash_if_b_refs_into_a(willEmpty, willPush);
+            </fail>
+
+            return willEmpty.nodes.len == 0 ? 0 : 1;
+        }
+    `);
+
     // /Borrow checker
 
 
