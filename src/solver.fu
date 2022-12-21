@@ -4403,7 +4403,7 @@ pub fn solve(
                             fail(target.qWHAT ~ " is not novec, argument " ~ name.human.qID ~ " is " ~ humanizeType(argNode.type));
 
                     //
-                    let arg = Argument(
+                    mut arg = Argument(
                         :name,
                         :autocall,
                         :argNode.flags | (written_via && F_WRITTEN_TO),
@@ -4415,7 +4415,6 @@ pub fn solve(
                         :soft_risk, :hard_risk);
 
                     arg.type || isUnspec || BUG("updateScope: Unexpected untyped argument: `" ~ name ~ "`.");
-                    args.push(arg);
 
                     if (!isImplicit)
                     {
@@ -4430,16 +4429,16 @@ pub fn solve(
 
                     // Finally, replace arg target in retval
                     //  with the argument position.
-                    if (retval.is_ref && argNode.is_ref)
+                    if (argNode.is_ref)
                     {
-                        let region      = Region_fromLocal(argTarget.index);
-                        let idx         = retval.lifetime.uni0n.find(region);
-                        if (idx >= 0)
-                        {
-                            retval.lifetime.uni0n.splice(idx, 1);
+                        let region = Region_fromLocal(argTarget.index);
+                        if (retval.is_ref && retval.lifetime.uni0n.set::rem(region))
                             retval.lifetime.uni0n.set::add(Region_fromArgPosition(i));
-                        }
+                        else if (arg.acceptsTempCopies && arg.type.isPassByValue)
+                            arg.type = clear_refs(arg.type);
                     }
+
+                    args.push(arg);
                 }
 
                 // Unconditionally replacing the stuff.
@@ -7856,6 +7855,29 @@ pub fn solve(
     // Borrow checker, runs. after relaxer, but before AAR (ideally) -
     //  This means everything solved, fully relaxed, a lot of mutrefs now refs, etc.
 
+    fn acceptsTempCopies(arg: Argument)
+    {
+        return !(arg.flags & (F_IMPLICIT | F_REF))
+            &&  !arg.type.is_mutref;
+    }
+
+    fn acceptsTempCopies(o: Overload)
+    {
+        return   o.kind == "var"
+            && !(o.flags & (F_IMPLICIT | F_REF))
+            &&  !o.type.is_mutref;
+    }
+
+    fn acceptsSoftRisk(arg: Argument)
+    {
+        return !arg.acceptsTempCopies();
+    }
+
+    fn acceptsSoftRisk(o: Overload)
+    {
+        return o.flags & F_ARG && !o.acceptsTempCopies();
+    }
+
     fn PASS_borrowCheck(ref root: SolvedNode)
     {
         // Now bck does two passes:
@@ -7872,31 +7894,6 @@ pub fn solve(
         }
 
         shadow let fail = fn AAR_cannotFail;
-
-
-        //
-
-        fn acceptsTempCopies(arg: Argument)
-        {
-            return !(arg.flags & (F_IMPLICIT | F_REF));
-        }
-
-        fn acceptsTempCopies(o: Overload)
-        {
-            return   o.kind == "var"
-                && !(o.flags & (F_IMPLICIT | F_REF))
-                &&  !o.type.is_mutref;
-        }
-
-        fn acceptsSoftRisk(arg: Argument)
-        {
-            return !arg.acceptsTempCopies();
-        }
-
-        fn acceptsSoftRisk(o: Overload)
-        {
-            return o.flags & F_ARG && !o.acceptsTempCopies();
-        }
 
 
         //
