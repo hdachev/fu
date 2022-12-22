@@ -52,7 +52,10 @@ fn add_once(ref bs: BitSet2D, target: Target): bool
     return bs.add_once(target.modid, target.index);
 }
 
-pub fn cpp_codegen(implicit module: Module, implicit ctx: Context): CodegenOutput
+pub fn cpp_codegen(
+    implicit module: Module,
+    implicit ctx: Context,
+    implicit options: options::Options): CodegenOutput
 {
 
     //
@@ -196,6 +199,14 @@ pub fn cpp_codegen(implicit module: Module, implicit ctx: Context): CodegenOutpu
     fn fail(mut reason = "")
     {
         FAIL("THIS IS A COMPILER BUG.\n\n\tCODEGEN FAIL:\n\n\t" ~ (reason || "Assertion failed."));
+    }
+
+    fn noteDefect(defects: CGDefects)
+    {
+        if (defects & options.break_defects)
+            fail("CGDefect break: " ~ defects.str.ansi::qBAD);
+
+        _defects |= defects;
     }
 
 
@@ -850,7 +861,7 @@ pub fn cpp_codegen(implicit module: Module, implicit ctx: Context): CodegenOutpu
             mut gnuOpen = "";
             if (gnuStmtExpr)
             {
-                _defects |= GNUStmtExpr;
+                noteDefect(GNUStmtExpr);
                 gnuOpen = "(__extension__ (";
             }
 
@@ -1071,6 +1082,9 @@ pub fn cpp_codegen(implicit module: Module, implicit ctx: Context): CodegenOutpu
 
     fn ensureFnUsable(target: Target)
     {
+        let here0 = _here;
+        defer _here = here0;
+
         if (target.modid != module.modid)
             ensureFwdDecl(target);
         else
@@ -1505,7 +1519,7 @@ pub fn cpp_codegen(implicit module: Module, implicit ctx: Context): CodegenOutpu
 
     fn cgGoto(block: cg_Block)
     {
-        _defects |= Goto;
+        noteDefect(Goto);
         return "goto " ~ block.name;
     }
 
@@ -1773,7 +1787,7 @@ pub fn cpp_codegen(implicit module: Module, implicit ctx: Context): CodegenOutpu
 
                 if (arg.isFieldChain)
                 {
-                    _defects |= PointlessMustSeq;
+                    noteDefect(PointlessMustSeq);
 
                     // These are worth investigating:
                     //  - Found a MOLU bug where the just_used mask wasn't cleared

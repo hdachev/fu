@@ -274,6 +274,7 @@ pub fn ZERO(
     }
 
     //
+    mut ok_defects_by_insrc: CGDefects[];
     mut expectations: string[][];
     shadow mut options = sources.map(|_| options);
     for (mut i = 0; i < sources.len; i++)
@@ -292,6 +293,7 @@ pub fn ZERO(
 
         // Collect ;; TODO and ;; EXPECTs.
         mut break_notes:    SolverNotes;
+        mut break_defects:  CGDefects;
         mut ok_defects:     CGDefects;
 
         mut start = 0;
@@ -301,11 +303,28 @@ pub fn ZERO(
             if (end < 0)
                 end = src.len;
 
+            // TODO FAILCASE: replace with `src[start + 4, end]`
             let annot = src.slice(start + 4, end);
             if (annot[0] == '!')
             {
-                break_notes |= parseWild(annot.slice(1, annot.len), as: SolverNotes)
-                            || throw("Bad break_note: `;; " ~ annot ~ "`.");
+                shadow let annot = annot[1, annot.len];
+                let notes = parseWild(annot, as: SolverNotes);
+                if (notes)
+                {
+                    break_notes |= notes;
+                }
+                else
+                {
+                    let defects = parseWild(annot, as: CGDefects);
+                    if (defects)
+                    {
+                        break_defects |= defects;
+                    }
+                    else
+                    {
+                        throw("Bad break_note/defect: `;; " ~ annot ~ "`.")
+                    }
+                }
             }
             else
             {
@@ -323,7 +342,10 @@ pub fn ZERO(
         }
 
         options[i].break_notes      = break_notes;
-        options[i].break_defects    = ~ok_defects;
+        options[i].break_defects    = break_defects;
+
+        if (ok_defects)
+            ok_defects_by_insrc.grow_if_oob(i) = ok_defects;
     }
 
     // We can now safely do the nowrites second -
@@ -377,14 +399,14 @@ pub fn ZERO(
     ::build(:ctx, :run, :fudir, :dir_wrk                    , onfail: "print-src");
 
     // Check codegen.
-    for (mut i = 0; i < options.len; i++)
+    for (mut i = 0; i < sources.len; i++)
     {
-        let src = sources[i];
-        let opt = options[i];
-        let cpp = ctx.modules[i + 1].out.cpp;
+        let src         = sources[i];
+        let ok_defects  = ok_defects_by_insrc.unless_oob(i);
 
-        let unexpected  =  cpp.defects &  opt.break_defects;
-        let unnecessary = ~cpp.defects & ~opt.break_defects;
+        let cpp         = ctx.modules[i + 1].out.cpp;
+        let unexpected  =  cpp.defects & ~ok_defects;
+        let unnecessary = ~cpp.defects &  ok_defects;
 
         if (unexpected)
             throw("Unwanted CGDefect: " ~ unexpected.str.ansi::qBAD ~ " in:\n" ~ src ~ "\n\nOutput is:\n\n" ~ cpp.src);
