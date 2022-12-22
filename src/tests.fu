@@ -6153,6 +6153,62 @@ pub extern fn runTests()
         }
     `);
 
+    ZERO(`
+        fn parse !T(v: [byte], lax as!: T) {
+            mut result: T;
+
+            if (T.is::bitfield) {
+                for (mut i = 1; i < v.len; i++) {
+                    if (v[i] == '|') {
+                        return parse(v[0, i], :as) | parse(v[i + 1, v.len], :as);
+                    }
+                }
+            }
+
+            for (mut i = 0; i < v.len; i++) {
+                if (v[i] == '*') {
+                    let prefix = v[0, i];
+                    let suffix = v[i + 1, v.len]
+
+                    for (fieldname i: T) {
+                        let opt = "i";
+                        if (opt.starts(with: prefix) && opt.ends(with: suffix))
+                            result |= i;
+                    }
+
+                    return result;
+                }
+                else if (i > 0 && v[i] == '|') {
+                    return parse(v[0, i], :as) | parse(v[i + 1, v.len], :as);
+                }
+            }
+
+            for (fieldname i: T)
+                if (v == "i")
+                    return i;
+
+            return [];
+        }
+
+        flags UpperCase { Hello = 1; World = 2; Cruel = 4; CruelWorld = 8 };
+        flags LowerCase { hello = 16; world = 32; cruel = 64; cruel_world = 128 };
+
+        fn parseUpperOrLower(str: string) {
+            if (let upper = parse(str, as: UpperCase))
+                return upper.i32;
+            else if (let lower = parse(str, as: LowerCase))
+                return lower.i32;
+            else
+                return 0;
+        }
+
+        fn main() {
+            if (parseUpperOrLower("World|Cruel*") != 2|4|8) return 1;
+            if (parseUpperOrLower("*world|hello") != 16|32|128) return 2;
+            return 0;
+        }
+    `);
+
     // /quite right
 
 

@@ -6272,10 +6272,10 @@ pub fn solve(
             // We'll have to figure out the type tag nonsense at some point.
             //  Perhaps when we have an `any` type,
             //   we could subtype it with the desired quals.
-            if (left.kind  == "typeparam" && right.kind == "typetag")
+            if (right.kind == "typetag")
             {
                 return type_has(
-                    evalTypeParam(left.value, typeParams),
+                    evalTypeAnnot(left, typeParams),
                     right.value || fail("Falsy type tag."));
             }
             else

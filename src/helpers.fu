@@ -341,7 +341,7 @@ fn trim(str: string)
 fn parse(v: [byte], lax as!: $T)
     case ($T.is::enum || $T.is::bitfield /*TODO .is::flags*/ )
 {
-    // TODO failcase
+    // now supported, there's a test for it, this parser is wrong though
     // if ($T.is::bitfield)
     //     for (mut i = 1; i < v.len; i++)
     //         if (v[i] == "|")
