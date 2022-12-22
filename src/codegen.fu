@@ -1785,7 +1785,9 @@ pub fn cpp_codegen(
 
                 ooe_crosscheck |= MUSTSEQ_bit;
 
-                if (arg.isFieldChain)
+                if (arg.isFieldChain
+                        || MUSTSEQ_mask &~ MUSTSEQ_bit < MUSTSEQ_mask
+                            && args[i + 1, args.len].all(.isFieldChain))
                 {
                     noteDefect(PointlessMustSeq);
 

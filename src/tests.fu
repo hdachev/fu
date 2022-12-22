@@ -3418,13 +3418,13 @@ pub extern fn runTests()
 
         fn evalTypeAnnot(nodes: string[]): SolvedNode
         {
-            // Each T() call should invalidate the results from previous T() calls -
-            //  so this shouldn't compile if Type is nocopy.
             fn T(i: i32)
                 evalTypeAnnot([ nodes[i] ]).type;
 
+            // Each T() call should invalidate the results from previous T() calls -
+            //  so this shouldn't compile if Type is nocopy.
             if (nodes.len > 1)
-                return solved(createMap(T(0), T(1))); // <<< HERE >>>
+                return solved(createMap(T(0), T(1)));           ;; PointlessMustSeq
 
             return solved(Type(nodes[0]));
         }
@@ -3855,7 +3855,7 @@ pub extern fn runTests()
 
         fn main() {
             mut arr = [ 9 ];
-            PASS_borrowCheck_reduct(arr[0], arr);
+            PASS_borrowCheck_reduct(arr[0], arr);               ;; PointlessMustSeq
             return arr[0] - arr[1];
         }
     `);
@@ -3869,8 +3869,7 @@ pub extern fn runTests()
                 traverse(node.items[i], fn visit);
         }
 
-        fn PASS_borrowCheck(ref root: Node)
-        {
+        fn PASS_borrowCheck(ref root: Node) {
             mut n: i32;
             fn count(id: i32)
                 traverse(root): |i|
@@ -3880,7 +3879,7 @@ pub extern fn runTests()
             fn check(ref node: Node) {
                 if (node.items)
                     for (mut i = 0; i < node.items.len; i++)
-                        check(node.items[i]);
+                        check(node.items[i]);                   ;; PointlessMustSeq
                 else
                     count(node.id++);
             }
@@ -3949,7 +3948,7 @@ pub extern fn runTests()
 
         fn two_writes_in_an_arg(ref arr: i32[], ref brr: i32[], ref x: i32)
             assign( what: x ? arr.grow_if_oob(10)
-                            : brr.grow_if_oob(10), to: x );
+                            : brr.grow_if_oob(10), to: x );     ;; PointlessMustSeq
 
         fn main() {
             mut arr = [ 0, 1, 2, 3 ];
@@ -4884,19 +4883,16 @@ pub extern fn runTests()
 
         fn checkRecursions(ref o: i32, incr: i32): void { GET_mut(o) += incr; }
 
-        fn main()
-        {
+        fn main() {
             implicit mut _target = 0;
-
             return __solveStruct(1) - 4;
         }
     `);
 
     ZERO(`
-        fn main()
-        {
+        fn main() {
             mut target = 0;
-            fn GET_mut(ref x: i32) x || GET_mut(target += 1);
+            fn GET_mut(ref x: i32) x || GET_mut(target += 1);   ;; PointlessMustSeq
             return GET_mut(target) - 1;
         }
     `);
@@ -4904,44 +4900,42 @@ pub extern fn runTests()
     ZERO(`
         fn target(implicit ref _itarg: i32) _itarg;
 
-        fn main()
-        {
+        fn main() {
             implicit mut _itarg = 0;
-            fn GET_mut(ref x: i32) x || GET_mut(target += 1);
+            fn GET_mut(ref x: i32) x || GET_mut(target += 1);   ;; PointlessMustSeq
             return GET_mut(target) - 1;
         }
     `);
 
     ZERO(`
         fn target(implicit ref _itarg: i32) _itarg;
-        fn GET_mut(ref x: i32) x || GET_mut(target += 1);
+        fn GET_mut(ref x: i32) x || GET_mut(target += 1);       ;; PointlessMustSeq
 
-        fn main()
-        {
+        fn main() {
             implicit mut _itarg = 0;
             return GET_mut(target) - 1;
         }
     `);
 
     ZERO(`
-        fn main()
-        {
+        fn main() {
             mut target = 0;
-            fn GET_mut(ref x: i32) x || GET_mut(++target);
+            fn GET_mut(ref x: i32) x || GET_mut(++target);      ;; PointlessMustSeq
             return GET_mut(target) - 1;
         }
     `);
 
     ZERO(`
-        fn main()
-        {
+        fn main() {
             mut target = 0;
             fn __solveStruct(mut arg: i32): i32 {
                 ref o = GET_mut(arg); o += target;
                 return target;
             }
 
-            fn GET_mut(ref x: i32) x || (target = __solveStruct(target += 1));
+            fn GET_mut(ref x: i32)
+                x || (target = __solveStruct(target += 1));     ;; PointlessMustSeq
+
             return __solveStruct(0) - 2;
         }
     `);
@@ -6259,7 +6253,7 @@ pub extern fn runTests()
                     sum += nums[i] & z;
 
             for (mut i = 0; i < nums.len; i++) {
-                if (i > 0) woot(nums[i] & nums[i - 1]);
+                if (i > 0) woot(nums[i] & nums[i - 1]);         ;; PointlessMustSeq
                 if (i > 1) woot(nums[i] & nums[i - 2]);
             }
 
@@ -9478,7 +9472,7 @@ pub extern fn runTests()
             fn qWHAT(hd: HelpersData)
                 hd.target.qWHAT;
 
-            return Helpers(0).qWHAT;
+            return Helpers(0).qWHAT;                            ;; PointlessMustSeq
         }
 
         fn main() {
