@@ -4313,7 +4313,7 @@ pub extern fn runTests()
         fn main() {
             mut willEmpty: Node = [[ Node() ]];
 
-            <fail both alias willEmpty>
+            <fail both alias willEmpty 28:47>
             crash_if_b_refs_into_a(willEmpty, willEmpty);
             <pass/>
             mut willPush = willEmpty;
@@ -4321,6 +4321,28 @@ pub extern fn runTests()
             </fail>
 
             return willEmpty.nodes.len == 0 ? 0 : 1;
+        }
+    `);
+
+    ZERO(`
+        struct Node { nodes: Node[] };
+
+        noinline fn soft_risk_inner(ref a: Node, ref b: Node)
+            for (mut i = 0; i < 100; i++)
+                a.nodes ~= b;
+
+        noinline fn soft_risk_outer(ref a: Node, ref b: Node)
+            soft_risk_inner(a, b.nodes[0]);
+
+        fn main() {
+            mut root = Node([ Node ]);
+
+            <fail both alias root>
+            soft_risk_outer(root, root);    <pass/>
+            mut cpy = root;
+            soft_risk_outer(root, cpy);     </fail>
+
+            return root.nodes.len == 101 ? 0 : 1;
         }
     `);
 
