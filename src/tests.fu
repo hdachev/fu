@@ -4950,6 +4950,10 @@ pub extern fn runTests()
     `);
 
     ZERO(`
+        // TODO use something like pragma lax to opt-out of cc warnings.
+        // Output looks fine & works on gcc/clang but gcc warns and breaks build.
+        pragma emit(\`#pragma GCC diagnostic ignored "-Wsequence-point"\`);
+
         fn main() {
             mut target = 0;
             fn __solveStruct(mut arg: i32): i32 {
