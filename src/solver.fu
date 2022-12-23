@@ -484,14 +484,10 @@ pub fn solve(
         return nested(:index, from: _current_fnort);
     }
 
-    // TODO failcase: uncommenting this leads to conversion resolution issues,
-    //  i can't narrow it down and gotta work on smth else right now,
-    //   so TODO bisect this here and minimize a test.
-    //
-    // using fn nested(local: Local)
-    // {
-    //     return nested(local.index);
-    // }
+    using fn nested(local: Local) // TODO start using these, they look cool!
+    {
+        return nested(local.index);
+    }
 
     fn isNested(target: Target)
     {
@@ -4140,7 +4136,7 @@ pub fn solve(
                         let id = "$" ~ argNode.value;
 
                         typeParams.map::if_ref(id): |tp|
-                            tp.matched = tp.consumed // TODO failcase: || BUG("nope, aint gonna work");
+                            tp.matched = tp.consumed;
                     }
                 }
             }
@@ -9124,12 +9120,14 @@ pub fn solve(
                         = flow.invalidates.unless_oob(target) || BUG("AAR: (refs.len > 1 || consts), but no invalidates.");
             }
 
-            // TODO FAILCASE
-            // TODO FAILCASE Commenting this does nothing - might be extraneous, not sure if i'm missing something
-            // TODO FAILCASE
-            for (mut i = 0; i < consts.len; i++)
-                (flow.parents.grow_if_oob(consts[i]) && BUG("AAR: const arg already has parents."))
-                    = refs;
+            // No point in doing this - we're never ascending .parents for reads.
+            //  The thing above appears to be sufficient:
+            //   - listing consts as .parents of refs takes care of refs pointing into consts.
+            //   - listing consts as .invalidates for refs takes care of consts point into refs.
+            //
+            // for (mut i = 0; i < consts.len; i++)
+            //     (flow.parents.grow_if_oob(consts[i]) && BUG("AAR: const arg already has parents."))
+            //         = refs;
 
             // Go.
             {

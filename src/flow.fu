@@ -85,8 +85,6 @@ pub fn Reference_trackLocalRef(ref flow: Flow, left: i32, right: Lifetime)
             for (shadow mut i = 0; i < siblings.len; i++)
             {
                 shadow let sibling = siblings[i];
-
-                // TODO failcase without the grow_if_oobs, suite doesn't catch it
                 flow.invalidates .grow_if_oob(sibling).set::add(left);
             }
         }
