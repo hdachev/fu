@@ -92,10 +92,6 @@ pub fn solve(
 
     fn clear(ref events: Events)
     {
-        // TODO FAILCASE doesnt work
-        // for (fieldname i: Events)
-        //     events.i.clear();
-        //
         events = [];
     }
 
@@ -2612,12 +2608,8 @@ pub fn solve(
                 //
                 mut just_used1: bitset::BitSet;
                 //
-                // TODO FAILCASE
-                // TODO FAILCASE this can't be right, for non-RTL arguments we're discarding just_used stuff this way, see below
-                // TODO FAILCASE
-                //
-                swap      (_current_fn.just_used, just_used1);
-                defer swap(_current_fn.just_used, just_used1);
+                if (ooe_isUndef)       swap(_current_fn.just_used, just_used1);
+                defer if (ooe_isUndef) swap(_current_fn.just_used, just_used1);
                 //
                 mut just_moved00 = ooe_isUndef && _current_fn.just_moved;
                 mut MUSTSEQ_mask = 0;
