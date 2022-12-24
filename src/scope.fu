@@ -12,6 +12,7 @@ enum SolverPass
     Solving = 0
     RelaxMut
     BorrowCheck
+    ArgumentsAtRisk
     MaybeCopyOrMove
     RelaxCopyResize
 };

@@ -207,6 +207,12 @@ pub fn solve(
         SE_True
     };
 
+    enum BorrowCheckPass {
+        BCK_bck
+        BCK_aar
+        BCK_ooe
+    };
+
 
     // The solver state.
 
@@ -7866,22 +7872,21 @@ pub fn solve(
         return o.flags & F_ARG && !o.acceptsTempCopies();
     }
 
-    fn PASS_borrowCheck(ref root: SolvedNode)
+    fn PASS_borrowCheck(ref root: SolvedNode, pass: BorrowCheckPass)
     {
         // Now bck does two passes:
         //
         //  - AAR = false:  this is the fn-local first bck pass.
         //  - AAR = true:   this is the second ARGUMENTS AT RISK pass.
         //
-        mut AAR = false;
+        inline fn AAR = pass == BCK_aar;
+        inline fn BCK = pass == BCK_bck;
 
-        fn AAR_cannotFail(reason: string)
-        {
-            if (AAR)    BUG("AAR PASS is trying to emit an error:\n\n\t" ~ reason);
-            else        fail(reason);
-        }
+        fn cannotFailAfterBCK(reason: string)
+            BCK && fail(reason)
+                || BUG(pass ~ " is trying to emit an error:\n\n\t" ~ reason);
 
-        shadow let fail = fn AAR_cannotFail;
+        shadow let fail = fn cannotFailAfterBCK;
 
 
         //
@@ -7998,7 +8003,7 @@ pub fn solve(
 
         fn RESOLVE_byMutvar(target: i32)
         {
-            AAR && BUG();
+            BCK || BUG();
 
             let t = nested(target);
             ref o = GET_mut(t);
@@ -8032,7 +8037,7 @@ pub fn solve(
 
         fn RESOLVE_byTempCopy(ref callsite: SolvedNode, position: i32)
         {
-            AAR && BUG();
+            BCK || BUG();
 
             // No copy injection in fast fns.
             if (_current_fn.asserts & A_FAST)
@@ -9007,7 +9012,7 @@ pub fn solve(
 
         // BCK PASS 1: Local analysis & resolve-by-copy.
 
-        bck_node(root);
+        // Nothing special, just run.
 
 
         // BCK PASS 2: ARGUMENTS AT RISK
@@ -9016,7 +9021,7 @@ pub fn solve(
         //  now we're trying to piggy back on the regular bck stuff as much as possible,
         //   and only handle things differently when we would otherwise emit an error.
         //
-        :SOLVE_AAR
+        if (AAR)
         {
             mut consts: i32[];
             mut refs:   i32[];
@@ -9057,7 +9062,7 @@ pub fn solve(
                 // Ideally, even when we can't skip AAR,
                 //  we wouldn't add invalidation edges between non-aliasable arguments.
                 //
-                break :SOLVE_AAR;
+                return;
             }
 
             if (outOfOrderArgTargets)
@@ -9134,14 +9139,11 @@ pub fn solve(
             //         = refs;
 
             // Go.
-            {
-                refs || BUG("Wasting time on AAR without ref args.");
-
-                AAR = true;
-                _current_fn.events = Events();
-                bck_node(root);
-            }
+            refs || BUG("Wasting time on AAR without ref args.");
+            _current_fn.events = Events();
         }
+
+        bck_node(root);
     }
 
 
@@ -9389,7 +9391,11 @@ pub fn solve(
 
         node.helpers.pass = "BorrowCheck";
 
-        PASS_borrowCheck(node);
+        PASS_borrowCheck(node, BCK_bck);
+
+        node.helpers.pass = "ArgumentsAtRisk";
+
+        PASS_borrowCheck(node, BCK_aar);
 
         ///////////////////////////////
         if (SELF_TEST) test_node(node, "PASS.1 ");
