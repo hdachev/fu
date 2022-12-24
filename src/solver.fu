@@ -333,10 +333,18 @@ pub fn solve(
         return GET(t.parent).name ~ ":" ~ GET(t).name;
     }
 
-    fn makeNote(note: SolverNotes)
+    fn makeNote(note: SolverNotes, inline reason?: string)
     {
         if (note & options.break_notes)
-            fail("`break_notes`: Unwanted event: `" ~ note ~ "`.");
+        {
+            // TODO what i really want here is `lazy reason`,
+            //  not `inline reason`, works but needs this workaround
+            //   because i dont want the expression inlined twice.
+            shadow let reason = reason;
+
+            fail("`break_notes`: Unwanted event: " ~ note.str.qBAD
+                ~ (reason ? "\n\t\t" ~ reason : "."));
+        }
 
         _notes |= note;
     }
@@ -8833,7 +8841,8 @@ pub fn solve(
                                             //
                                             let mustSeq = ooe_ir_evalsBefore_iw ? r : w;
                                             MUSTSEQ_mask |= 1 << (mustSeq & 31);
-                                            makeNote(AAR ? N_AARMustSeq : N_BckMustSeq);
+                                            makeNote(AAR ? N_AARMustSeq : N_BckMustSeq,
+                                                " read: " ~ args[r].qWHAT ~ "\n\t\twrite: " ~ args[w].qWHAT);
                                         }
 
                                         break;
