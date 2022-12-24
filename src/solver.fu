@@ -8263,7 +8263,7 @@ pub fn solve(
                         if (readID)
                         {
                             if (AAR)
-                                RESOLVE_byAAR(:read, write: target, trySoft: true);
+                                RESOLVE_byAAR(:read, write: target, trySoft: true /* F_REF check inside */);
                             else
                                 RESOLVE_byMutvar(read) || fail(
                                     "Write to " ~ target.bck_name.qBAD
@@ -8511,11 +8511,11 @@ pub fn solve(
                                                         //
                                                         if (host_arg0.is_mutref)
                                                             RESOLVE_byAAR(write: region0, read: region1,
-                                                                trySoft: !host_arg0.hard_risk.has(i1));
+                                                                trySoft: !host_arg0.hard_risk.has(i1) && arg1.softRiskSafe);
 
                                                         if (host_arg1.is_mutref)
                                                             RESOLVE_byAAR(read: region0, write: region1,
-                                                                trySoft: !host_arg1.hard_risk.has(i0));
+                                                                trySoft: !host_arg1.hard_risk.has(i0) && arg0.softRiskSafe);
                                                     }
                                                 }
                                             }
