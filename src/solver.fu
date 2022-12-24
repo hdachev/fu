@@ -4436,7 +4436,7 @@ pub fn solve(
                         let region = Region_fromLocal(argTarget.index);
                         if (retval.is_ref && retval.lifetime.uni0n.set::rem(region))
                             retval.lifetime.uni0n.set::add(Region_fromArgPosition(i));
-                        else if (arg.acceptsTempCopies && arg.type.isPassByValue)
+                        else if (arg.willPassByValue)
                             arg.type = clear_refs(arg.type);
                     }
 
@@ -7857,6 +7857,18 @@ pub fn solve(
     // Borrow checker, runs. after relaxer, but before AAR (ideally) -
     //  This means everything solved, fully relaxed, a lot of mutrefs now refs, etc.
 
+    fn willPassByValue(arg: Argument)
+    {
+        return arg.acceptsTempCopies()
+            && arg.type.isPassByValue();
+    }
+
+    fn willPassByValue(o: Overload)
+    {
+        return o.acceptsTempCopies()
+            && o.type.isPassByValue();
+    }
+
     fn acceptsTempCopies(arg: Argument)
     {
         return !(arg.flags & (F_IMPLICIT | F_REF))
@@ -9055,7 +9067,7 @@ pub fn solve(
                     //  This is meant as an opti, but also tests we've tagged everything correctly.
                     if (type.is_mutref && _current_fn.events.ever_written.has(target.index))
                         refs ~= t;
-                    else if (type.is_ref)
+                    else if (type.is_ref && !target.willPassByValue())
                         consts ~= t;
                 }
             }
