@@ -8109,7 +8109,11 @@ pub fn solve(
             //  it's kinda easy for vars but what do we do with arg exprs here,
             //   it's that we don't really have any way to tell what's what.
             //
-            return arg.kind == "call" && arg.target.kind == "var";
+            if (arg.kind != "call")
+                return false;
+
+            let t = arg.target.kind;
+            return t == "var" || t == "field" && softRiskSafe(arg.items.only);
         }
 
 
