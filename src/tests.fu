@@ -6424,6 +6424,41 @@ pub extern fn runTests()
         }
     `);
 
+    ZERO(`
+        fn runSolver(
+            implicit ref notes: i32,
+            break_notes: i32,
+            implicit ref value: i32)
+        {
+            fn makeNote(note: i32, inline reason: string) {
+                if (break_notes & note)
+                    throw("#" ~ note ~ ": " ~ reason);
+
+                notes |= note;
+            }
+
+            if (value > 0) {
+                if (value++ & 1) return makeNote(1, "A: " ~ value);
+                if (value++ & 2) return makeNote(2, "B: " ~ value);
+            }
+            else {
+                if (value++ & 4) return makeNote(4, "C: " ~ value);
+                if (value++ & 8) return makeNote(8, "D: " ~ value);
+            }
+        }
+
+        fn main() {
+            implicit mut notes: i32;
+            <fail unused print>
+            implicit mut print: string; <pass/></fail>
+            implicit mut value = 0;
+
+            runSolver(1|2);
+            runSolver(4|8);
+            return value == 4 && notes == 2 ? 0 : 1;
+        }
+    `);
+
     // /quite right
 
 
@@ -10443,6 +10478,8 @@ pub extern fn runTests()
         fn main()
             test(3) == 9 && test(4) == 32 ? 0 : 1;
     `]);
+
+    // /Macros & loops.
 
 
     // Relaxer.
