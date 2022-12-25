@@ -1256,6 +1256,31 @@ pub extern fn runTests()
         }
     `);
 
+    ZERO(`
+        fn log_append(implicit ref log_out: string, str: string)
+            log_out ~= str;
+
+        let VERBOSE = false;
+
+        fn verbose(implicit ref log_events: i32, inline stuff: string)
+        {
+            if (VERBOSE) log_append(stuff);
+            log_events++;
+        }
+
+        fn main() {
+            <fail unused log_out 15:13>
+            implicit     mut log_out: string; <pass/>
+            implicit lax mut log_out: string; </fail>
+
+            implicit mut log_events: i32;
+            verbose("Hello!");
+            verbose("World!");
+
+            return log_events == 2 ? 0 : 1;
+        }
+    `);
+
 
     //
 

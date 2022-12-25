@@ -2257,7 +2257,7 @@ pub fn solve(
             if (node.target.status & SS_UNUSED)
             {
                 makeNote(N_UnusedLet);
-                node = node.target.solved.items[LET_INIT];
+                node = node.target.solved.items[LET_INIT] || createEmpty();
             }
 
             return;
