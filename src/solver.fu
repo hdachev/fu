@@ -2806,7 +2806,22 @@ pub fn solve(
                         // Nothing to do = success.
                         return true;
                     }
-                    else if (expr.kind == "block"
+
+                    // This is unfortunate, injecting a discarding jump.
+                    h.ret_actual || BUG("tryInjectJumps: no h.ret_actual on #" ~ h.index);
+                    if (h.ret_actual.is_void && !expr.is_void)
+                    {
+                        if (expr.kind != "block")
+                            expr = createBlock(t_void, items: [ expr ]);
+
+                        expr.items.if_last.is_void && BUG(
+                            "tryInjectJumps: Block tail is void, but block.type isn't: " ~ expr.type.humanizeType);
+
+                        expr.items ~= createEmpty();
+                    }
+
+                    //
+                    if (expr.kind == "block"
                             && expr.items
                             && !(expr.helpers.mask & HM_LabelUsed))
                     {
@@ -9237,16 +9252,15 @@ pub fn solve(
         //
         let k = node.kind;
         if (k == "call")
-            return test_CallSignature(node, :debug);
-
-        if (k == "let")
+        {
+            test_CallSignature(node, :debug);
+        }
+        else if (k == "let")
         {
             node.items.len == 2 || BUG("let.items.len: " ~ node.items.len);
             node.items[0] && BUG("let.items[0] not empty: " ~ node.items[0].kind);
-            return;
         }
-
-        if (k == "block" || k == "and" || k == "or" || k == "if")
+        else if (k == "block" || k == "and" || k == "or" || k == "if")
         {
             if (k == "and" || k == "or")
                 node.items.len > 1 || BUG(debug ~ ".len: " ~ node.items.len);
@@ -9262,8 +9276,25 @@ pub fn solve(
                 }
             }
 
-            return test_Statements(node, :debug);
+            test_Statements(node, :debug);
         }
+
+        // TODO During solve we collect jump expression types via superType,
+        //  so none of the jumps actually has access to the final block ret_actual.
+        //   So, we either have to ignore this before first propagate type,
+        //    or maybe even address this during mcom, not sure.
+        //
+        // else if (k == "jump")
+        // {
+        //     let h       = node.helpers;
+        //     let expr    = node.items.only;
+        //
+        //     h.ret_actual.isAssignable(expr)
+        //         || BUG("BROKEN JUMP TYPE"
+        //             ~ "\n\t\tret_actual: " ~ (h.ret_actual ? h.ret_actual.humanizeType : "N/A".qBAD)
+        //             ~ "\n\t\tret_expect: " ~ (h.ret_expect ? h.ret_expect.humanizeType : "N/A".qBAD)
+        //             ~ "\n\t\texpr: " ~ expr.qWHAT);
+        // }
     }
 
 
