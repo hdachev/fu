@@ -483,6 +483,22 @@ pub extern fn runTests()
         }
     `);
 
+    ZERO(`
+        struct Other { using w: Node };
+
+        struct Node {
+            <fail self recursive Node>
+            v: Node;           <fail/>
+            v: Other;          <pass/>
+            v: i32;            </fail>
+        };
+
+        fn main() {
+            mut node: Node;
+            return node.v ? 1 : 0;
+        }
+    `);
+
     // /using
 
 
