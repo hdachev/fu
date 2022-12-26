@@ -4831,7 +4831,10 @@ pub fn solve(
         }
         else
         {
-            out_type    = initStruct(:kind, :baseprim, :name, :asserts);
+            // Detect self-recursion [A].
+            let flat_cnt = -1;
+
+            out_type    = initStruct(:kind, :baseprim, :name, :asserts, :flat_cnt);
             out_target  = Scope_Typedef(_scope, id: origId, :name,
                 type: out_type, :node.flags,
                 status: SS_LAZY);
@@ -4945,7 +4948,12 @@ pub fn solve(
                 ref field = GET_mut(item.target);
                 field.type = member.type;
 
-                flat_cnt += tryLookupStruct(member.type).flat_cnt || 1;
+                let memberFlatCount = tryLookupStruct(member.type).flat_cnt || 1;
+                if (memberFlatCount < 0)
+                    fail("Type " ~ name.qBAD ~ " is self-recursive via " ~ field.qWHAT);
+
+                // Detect self-recursion [B].
+                flat_cnt += memberFlatCount;
                 if (!non_triv && !member.type.is_trivial)
                     non_triv = i + 1;
 

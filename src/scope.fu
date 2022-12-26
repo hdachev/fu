@@ -49,14 +49,15 @@ fn MODID(implicit module: Module): i32
 
 fn initStruct(implicit module: &mut Module,
     ::kind!, baseprim!: string,
-    name: string, asserts: DeclAsserts)
+    name: string, asserts: DeclAsserts,
+    flat_cnt!: i32)
 {
     name[0].u8 - '0'.u8 > 9.u8 || throw (
         "Bad struct name, leading digit: `" ~ name ~ "`.");
 
     // Alloc a slot.
     let index = module.out.types.len;
-    module.out.types ~= Struct(:kind, :name, base: baseprim);
+    module.out.types ~= Struct(:kind, :name, base: baseprim, :flat_cnt);
 
     //
     mut canon = createStructCanon(
