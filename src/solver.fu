@@ -4641,6 +4641,22 @@ pub fn solve(
                 mut retval = ret_seed;
                 if (!isNative)
                 {
+                    // RECURSIVE RELAX //////////////////////////////////
+                    // This makes it possible to relax functions
+                    //  that overconstrain recursive arguments,
+                    //   e.g. take a ref, pass it to themselves,
+                    //    and do nothing else with it.
+                    //
+                    let args0 = target.args;
+                    if (isFirst)
+                    {
+                        ref ext = EXT_mut(target);
+                        if (!isNative && !isInline && !isUnspec)
+                            for (mut i = 0; i < ext.args.len; i++)
+                                ext.args[i].type.quals &= ~RELAX_all;
+                    }
+                    // RECURSIVE RELAX //////////////////////////////////
+
                     let s_body = solveBlock(
                         n_body, type: ret_expect,
                         fnbody_of: target.index,
@@ -4650,6 +4666,12 @@ pub fn solve(
                     let mustBecomeInlineBecause = currentFn_mustBecomeInline;
                     if (mustBecomeInlineBecause)
                     {
+                        // RECURSIVE RELAX //////////////////////////////////
+                        // TODO FAILCASE do this out of the mustBecomeInlineBecause block.
+                        if (isFirst)
+                            EXT_mut(target).args = args0;
+                        // RECURSIVE RELAX //////////////////////////////////
+
                         isFirst || fail(
                             "Function wants to become inline on after first solve.");
 

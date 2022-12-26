@@ -591,7 +591,7 @@ pub extern fn runTests()
     `);
 
     ZERO(`
-        fn self_rec_template(x: $T): $T                     ;; !N_FnResolve
+        fn self_rec_template(x: $T): $T
             x > 0 ? self_rec_template(x / 2 - 5) : x;
 
         fn main()
@@ -10844,7 +10844,21 @@ pub extern fn runTests()
         }
     `);
 
-    TODO_relaxer(`
+    ZERO(`
+        struct Node { items: Node[] };
+
+        pure fn rec_useless_ref_simple(ref n: Node, offset: i32)
+            offset < n.items.len
+                ? rec_useless_ref_simple(:n, offset + 1)
+                : offset;
+
+        fn main() {
+            mut n = Node([ Node(), Node() ]);
+            return rec_useless_ref_simple(:n, 0) - 2;
+        }
+    `);
+
+    ZERO(`
         struct Node { items: Node[]; };
 
         pure fn rec_useless_ref(ref n: Node) {
@@ -10858,6 +10872,35 @@ pub extern fn runTests()
         fn main() {
             mut tree = Node([ Node(), Node() ]);
             return rec_useless_ref(tree) - 2;
+        }
+    `);
+
+    ZERO(`
+        struct Node { items: Node[]; };
+
+        fn mrec_useless_ref_A(ref n: Node) {
+            mut ret = n.items.len;
+            for (mut i = 0; i < n.items.len; i++)
+                ret += i & 1
+                    ?      mrec_useless_ref_A(n.items[i])
+                    : 50 * mrec_useless_ref_B(n.items[i]);
+
+            return ret;
+        }
+
+        pure fn mrec_useless_ref_B(ref n: Node) {
+            mut ret = n.items.len;
+            for (mut i = 0; i < n.items.len; i++)
+                ret += i & 1
+                    ? 10 * mrec_useless_ref_A(n.items[i])
+                    :      mrec_useless_ref_B(n.items[i]);
+
+            return ret;
+        }
+
+        fn main() {
+            mut tree = Node([ Node([ Node, Node ]), Node([ Node ]) ]);
+            return mrec_useless_ref_A(tree) - 103;
         }
     `);
 
