@@ -346,7 +346,18 @@ namespace fu
             t.start     =  i      * per_batch;
             t.end       = (i + 1) * per_batch;
 
+            //*
+            // Originally,
+            //  but clang's thread sanitizer complains:
+            //
             t.next_task = &t + 1;
+            /*/
+            // This silences the error but looks pointless,
+            //  haven't looked at resulting code [might be the same].
+            //
+            ((std::atomic<Task*>&) t.next_task)
+                .store(&t + 1, std::memory_order_relaxed);
+            //*/
         }
 
         auto& last = tasks[batches - 1];
