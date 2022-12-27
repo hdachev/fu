@@ -3146,6 +3146,39 @@ pub extern fn runTests()
     `);
 
     ZERO(`
+        noinline fn inner(ref x: i32, n: i32) {
+            return outer(x, n);
+        }
+
+        noinline fn report_write_here(ref x: i32, n: i32) {
+            <fail outer 24:25 report_write_here 16:45 += 8:22>
+            return x += n;                             <pass/>
+            return x + n;                              </fail>
+        }
+
+        noinline fn outer(ref x: i32, n: i32) {
+            if (n & 3) {
+                if (n & 2)
+                    return inner(x, n / 2);
+                else
+                    return report_write_here(x, n);
+            }
+            else {
+                return inner(x, n + 1);
+            }
+        }
+
+        pure fn not_pure(ref x: i32, n: i32) {
+            return outer(x, n);
+        }
+
+        fn main() {
+            mut x = 0;
+            return not_pure(x, 0) == 1 ? 0 : 1;
+        }
+    `);
+
+    ZERO(`
         fn main() {
             mut _info: string[];
 
