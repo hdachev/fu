@@ -69,9 +69,8 @@ namespace lockfree
 
             Retry:
             {
-                last->next.store(untag(state0), //////////////
-                    std::memory_order_release); //// sync ////
-                                                //////////////
+                last->next.store(untag(state0),
+                    std::memory_order_relaxed);
 
                 const u64 state1 = tag(first, tagof(state0));
 
@@ -79,7 +78,7 @@ namespace lockfree
 
                 if (!head.compare_exchange_weak(
                     state0, state1,
-                        std::memory_order_relaxed,
+                        std::memory_order_release,
                         std::memory_order_relaxed))
                 {
                     goto Retry;
@@ -98,13 +97,13 @@ namespace lockfree
                 if (node)
                 {
                     const u64 state1 = tag(
-                        node->next.load(                //////////////
-                            std::memory_order_acquire), //// sync ////
-                                tagof(state0));         //////////////
+                        node->next.load(
+                            std::memory_order_relaxed),
+                                tagof(state0));
 
                     if (!head.compare_exchange_weak(
                         state0, state1,
-                            std::memory_order_relaxed,
+                            std::memory_order_acquire,
                             std::memory_order_relaxed))
                     {
                         goto Retry;
