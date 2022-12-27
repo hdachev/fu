@@ -6508,6 +6508,71 @@ pub extern fn runTests()
         }
     `);
 
+    ZERO(`
+        struct Module { events: i32; };
+
+        <alt>
+        inline   <alt/>
+        noinline </alt>
+        fn profile(implicit ref module: Module, id: i32, op) {
+            let events0 = module.events;
+            op();
+            module.events += (events0 + id);
+        }
+
+        <alt>
+        inline   <alt/>
+        noinline </alt>
+        fn propagateType(implicit ref module: Module) {
+            profile(2, || module.events = 1);
+        }
+
+        <alt>
+        inline   <alt/>
+        noinline </alt>
+        fn runAllPasses() {
+            profile(3, fn propagateType);
+        }
+
+        fn main() {
+            implicit mut module: Module;
+            runAllPasses();
+            return module.events == 1 + 2 + 3 ? 0 : 1;
+        }
+    `);
+
+    ZERO(`
+        struct Module { events: i32; };
+
+        // Same as above but uses unwrap.
+        inline fn profile(implicit ref module: Module, id: i32) unwrap {
+            let events0 = module.events;
+            defer module.events += (events0 + id);
+        }
+
+        <alt>
+        inline   <alt/>
+        noinline </alt>
+        fn propagateType(implicit ref module: Module) {
+            profile(2);
+            module.events = 1;
+        }
+
+        <alt>
+        inline   <alt/>
+        noinline </alt>
+        fn runAllPasses() {
+            profile(3);
+            propagateType();
+        }
+
+        fn main() {
+            implicit mut module: Module;
+            runAllPasses();
+            return module.events == 1 + 2 + 3 ? 0 : 1;
+        }
+    `);
+
     // /quite right
 
 
