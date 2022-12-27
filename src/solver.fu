@@ -7131,16 +7131,13 @@ pub fn solve(
         let implicit _current_fnort = target;
         //////////////////////////////////////////////////
 
-        mut src = "\n            ";
-
-        let rec = seen.has(target);
-        if (rec)
-            src ~= "recursively ";
-
-        :SEARCH
+        shadow let seen = seen ~ target;
         SLOW_traverse(node): |callsite|
         {
             if (callsite.kind != "call")
+                continue;
+
+            if (seen.has(callsite.target))
                 continue;
 
             let host_args = callsite.target.args;
@@ -7154,16 +7151,18 @@ pub fn solve(
                 if !(Lifetime_unwind(arg.type.lifetime).uni0n.has(region))
                     continue;
 
-                src ~= "via " ~ callsite.target.qWHAT ~ " at ";
-                src ~= callsite.token.addr_and_snippet;
-                if (!rec && seen.len < 8)
-                    src ~= qSTACK(callsite.target, position: i, seen: seen ~ target);
+                let peek = qSTACK(callsite.target, position: i, :seen);
+                if (!peek && callsite.target.kind == "fn")
+                    continue;
 
-                break :SEARCH;
+                return "\n            "
+                     ~ "via " ~ callsite.target.qWHAT
+                     ~ " at " ~ callsite.token.addr_and_snippet
+                     ~ peek;
             }
         }
 
-        return src;
+        return "";
     }
 
     fn qSTACK(target: Target, node: SolvedNode, fx_mask: FxMask, seen!?: Target[])
@@ -7172,30 +7171,29 @@ pub fn solve(
         let implicit _current_fnort = target;
         //////////////////////////////////////////////////
 
-        mut src = "\n            ";
-
-        let rec = seen.has(target);
-        if (rec)
-            src ~= "recursively ";
-
-        :SEARCH
+        shadow let seen = seen ~ target;
         SLOW_traverse(node): |callsite|
         {
             if (callsite.kind != "call" || callsite.target.isLocal)
                 continue;
 
+            if (seen.has(callsite.target))
+                continue;
+
             if !(callsite.target.fx_mask & fx_mask)
                 continue;
 
-            src ~= "via " ~ callsite.target.qWHAT ~ " at ";
-            src ~= callsite.token.addr_and_snippet;
-            if (!rec && seen.len < 8)
-                src ~= qSTACK(callsite.target, callsite.target.solved, :fx_mask, seen: seen ~ target);
+            let peek = qSTACK(callsite.target, callsite.target.solved, :fx_mask, :seen);
+            if (!peek && callsite.target.kind == "fn")
+                continue;
 
-            break :SEARCH;
+            return "\n            "
+                 ~ "via " ~ callsite.target.qWHAT
+                 ~ " at " ~ callsite.token.addr_and_snippet
+                 ~ peek;
         }
 
-        return src;
+        return "";
     }
 
 
