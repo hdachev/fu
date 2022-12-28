@@ -31,16 +31,16 @@ let cLT         = ansi(32,1);
 //
 
 pub fn qBAD(id: string) =
-    BAD ~ (id || "``") ~ RESET;
+    id && BAD ~ id ~ RESET;
 
 pub fn qID(id: string) =
-    cID ~ (id || "``") ~ RESET;
+    id && cID ~ id ~ RESET;
 
 pub fn qKW(id: string) =
-    cKW ~ (id || "``") ~ RESET;
+    id && cKW ~ id ~ RESET;
 
 pub fn qLT(id: string) =
-    cLT ~ (id || "``") ~ RESET;
+    id && cLT ~ id ~ RESET;
 
 pub fn qCODE(id: string) = id.qID;
 

@@ -310,18 +310,32 @@ pub fn solve(
 
     fn qWHAT(o: Overload)
     {
-        let kind = o.kind;
+        let kind    = o.kind;
+        mut prefix  = kind.str;
+        if (kind == "var")
+        {
+            prefix = (o.flags & F_INJECTED && "injected ")
+                   ~ (o.flags & F_IMPLICIT && "implicit ")
+                   ~ (o.flags & F_REF && "ref ")
+                   ~ (o.flags & F_ARG && "arg ")
+                        || "var ";
 
-        shadow let kind = kind == "var" && o.flags & F_ARG
-            ? "arg"
-            : kind.str;
+            prefix.pop();
+        }
 
-        return kind.qKW ~ " " ~ o.name.human.qID;
+        return prefix.qKW ~ " " ~ o.name.human.qID;
     }
 
     fn qWHAT(arg: Argument)
     {
-        return "arg".qKW ~ " " ~ arg.name.human.qID;
+        mut prefix = (arg.flags & F_INJECTED && "injected ")
+                   ~ (arg.flags & F_IMPLICIT && "implicit ")
+                   ~ (arg.flags & F_REF && "ref ");
+
+        if (prefix)
+            prefix.pop();
+
+        return prefix.qKW ~ (prefix && " ") ~ arg.name.human.qID;
     }
 
     fn human(id: string)
@@ -1555,7 +1569,7 @@ pub fn solve(
                         fn GETfn(idx: i32) Target(modid: module.modid, index: idx);
 
                         fn fnName(idx: i32) idx
-                            ? "`" ~ GETfn(idx).name ~ "`"
+                            ? GETfn(idx).qWHAT
                             : "global scope";
 
                         let PREV        = matchIdx;
@@ -8646,9 +8660,9 @@ pub fn solve(
 
                                     err ~= host_args.len == 2 && target.flags & F_OPERATOR
                                         ?   ": Both operands alias:\n"
-                                        :   ": Arguments " ~ host_arg0.name.human.qBAD
-                                            ~      " and " ~ host_arg1.name.human.qBAD
-                                            ~      " (args #" ~ i0 ~ " and #" ~ i1 ~ ") both alias:\n";
+                                        :   ": Arguments:\n\n\t    " ~ (i0 + 1) ~ ":\t" ~ host_arg0.qWHAT
+                                            ~         " and\n\t    " ~ (i1 + 1) ~ ":\t" ~ host_arg1.qWHAT
+                                            ~           "\n\n\t    both alias:\n";
 
                                     for (shadow mut i = 0; i < inter.uni0n.len; i++)
                                     {

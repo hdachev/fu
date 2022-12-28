@@ -4028,9 +4028,9 @@ pub extern fn runTests()
             mut arr = [ 0, 1, 2, 3 ];
             mut brr = [ 0, 2, 4, 6 ];
 
-            <fail args x both alias>
-            ref x = brr[0];  <pass/>
-            mut x = 0;       </fail>
+            <fail arg 3 x 2 brr both alias 20:51>
+            ref x = brr[0];               <pass/>
+            mut x = 0;                    </fail>
 
             return two_writes_in_an_arg(arr, brr, x);
         }
@@ -4067,9 +4067,9 @@ pub extern fn runTests()
 
         fn test(ref x: i32, ref arr: i32[], ref brr: i32[]) {
             two_writes_in_an_arg(
-                <fail args x both alias>
-                    x || arr[0],    <pass/>
-                    x,              </fail>
+                <fail arg 2 arr 1 x both alias 18:22>
+                    x || arr[0],              <pass/>
+                    x,                        </fail>
                     :arr, :brr);
 
             return x;
