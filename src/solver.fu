@@ -8636,26 +8636,12 @@ pub fn solve(
                                 }
 
                                 // Try to resolve by injecting a copy -
+                                //  notice this is an either or, no need to pick one,
+                                //   one is a writing mutref so only one could accept a temporary.
+                                if (!RESOLVE_byTempCopy(:callsite, i0) &&
+                                    !RESOLVE_byTempCopy(:callsite, i1))
                                 {
-                                    mut which = -1;
-
-                                    // It's either or, there's no case
-                                    //  where you can copy either (at least one is a ref).
-                                    if !(host_arg0.is_mutref)
-                                        which = i0;
-                                    else if !(host_arg1.is_mutref)
-                                        which = i1;
-
-                                    if (which >= 0)
-                                    {
-                                        if (RESOLVE_byTempCopy(:callsite, which))
-                                            return;
-                                    }
-                                }
-
-                                // BORROWCK Error message.
-                                if !(options.dev & options::DEV_DisableBCK)
-                                {
+                                    // Else emit an args-cannot-alias error.
                                     mut err = target.qWHAT;
 
                                     err ~= host_args.len == 2 && target.flags & F_OPERATOR

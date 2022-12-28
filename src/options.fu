@@ -1,24 +1,25 @@
 
-pub let DEV_DisableBCK  = 0x1 << 0;
-pub let DEV_PrintAST    = 0x1 << 1;
+flags DevOptions {
+    DEV_PrintAST
+};
 
 
 // Zeroinit = default build options.
 
-pub struct Lint
+struct Lint
 {
     maxwarn: i32;
 };
 
-pub struct Options
+struct Options
 {
     using lint?:    Lint;
     break_notes?:   flags::SolverNotes;
     break_defects?: flags::CGDefects;
 
-    dev?:           u32;
+    dev?:           DevOptions;
     shuffle?:       u32;
 };
 
-pub fn Lint_lax() =
+fn Lint_lax() =
     Lint(maxwarn: 10);
