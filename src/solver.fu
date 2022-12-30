@@ -7623,7 +7623,14 @@ pub fn solve(
                     let arg_def = createLet(
                         id: n_fn.items[i].value,
                         init: args[i],          // TODO__ORIGINAL_ANNOT_OR_TYPE
-                        :slot.flags &~ F_ARG);  // As if not an arg
+                        :slot.flags &~ F_ARG    // As if not an arg
+
+                            // TODO FIX all of this needs to go when we get rid of this inliner,
+                            //  but this is here so that an implicit arg x,
+                            //   that binds to another implicit arg x in host fn,
+                            //    don't become mutually ambiguous.
+                            //
+                            | (slot.flags & F_IMPLICIT && F_SHADOW));
 
                     if (arg_def.kind == "empty")
                         continue;
