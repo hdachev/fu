@@ -1983,7 +1983,7 @@ pub extern fn runTests()
         }
 
         <alt>
-        inline
+        inline                                                  ;; GNUStmtExpr
         <alt/>
         ;; N_BckMustSeq
         </alt>
@@ -1993,7 +1993,7 @@ pub extern fn runTests()
 
         fn main() {
             implicit mut sum = 3;
-            let res = inline_implicit_from_defarg(sum);         ;; GNUStmtExpr
+            let res = inline_implicit_from_defarg(sum);
             return sum == 4 && res == 9 ? 0 : 1;
         }
     `);
@@ -2003,7 +2003,7 @@ pub extern fn runTests()
         inline fn uses_implicit_inside() = uses_implicit;
 
         <alt>
-        inline
+        inline                                                  ;; GNUStmtExpr
         <alt/>
         ;; N_BckMustSeq
         </alt>
@@ -2012,7 +2012,7 @@ pub extern fn runTests()
 
         fn main() {
             implicit mut sum = 3;
-            let res = inline_implicit_from_defarg(hello: sum);  ;; GNUStmtExpr
+            let res = inline_implicit_from_defarg(hello: sum);
             return sum == 4 && res == 12 ? 0 : 1;
         }
     `);
@@ -10794,7 +10794,7 @@ pub extern fn runTests()
         let HM_Struct       = 1.i16 << 5;
 
         using inline fn GET(h: Helpers, implicit ref _helpers_data: HelpersData[]): HelpersData
-            _helpers_data[h.index];                             ;; GNUStmtExpr
+            _helpers_data[h.index];
                                                             //////////////////
         fn isFnOrType(h: Helpers): bool                     ;; EXPECT fu::view
             !!(h.mask & (HM_Function | HM_Struct));         //////////////////

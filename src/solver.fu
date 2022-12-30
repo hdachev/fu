@@ -5907,12 +5907,23 @@ pub fn solve(
         }
         else
         {
+            fn Scope_set(target: Target)
+            {
+                Scope_set(_scope, :id, :target, :shadows);
+
+                if (out.flags & F_IMPLICIT)
+                    Scope_set(_scope.implicits, :id, :target, :shadows);
+
+                if (out.flags & F_USING)
+                    _scope.usings.push(target);
+            }
+
             ////////////////////////////////////////////////////////////////
             // TODO we need this to happen at a much later stage.
             //  Can we keep this var here and then just codegen it
             //   as a ref to the original?
             //
-            if (OPTI_dedupe_vars && !isArg && !(out.flags & (F_PUB|F_IMPLICIT|F_MUT)))
+            if (OPTI_dedupe_vars && !isArg && !(out.flags & (F_PUB|F_MUT)))
             {
                 let init = out.items[LET_INIT];
                 if (init.kind == "call" && !init.items)
@@ -5927,9 +5938,7 @@ pub fn solve(
                             // println("VARFOLD " ~ id ~ ": " ~ humanizeType(out.type)
                             //                    ~ " := " ~ other.name ~ ": " ~ humanizeType(other.type));
 
-                            Scope_set(_scope, :id, :target, :shadows);
-                            if (out.flags & F_USING)
-                                _scope.usings.push(target);
+                            Scope_set(:target);
 
                             out = createEmpty();
                             return out;
@@ -5943,13 +5952,7 @@ pub fn solve(
             target.solved_set(out);
 
             // List.
-            Scope_set(_scope, :id, :target, :shadows);
-
-            if (out.flags & F_IMPLICIT)
-                Scope_set(_scope.implicits, :id, :target, :shadows);
-
-            if (out.flags & F_USING)
-                _scope.usings.push(target);
+            Scope_set(:target);
 
             //
             return createLetDef(:target);
@@ -6695,8 +6698,6 @@ pub fn solve(
             || BUG();
 
         let o = GET(target);
-        o.flags & F_IMPLICIT || fail(
-            "Matching a non-implicit item in scope: `" ~ name ~ "`, binds to call to `" ~ GET(becauseOf).name ~ "`.");
 
         checkAssignable(host: type, o.type, "Implicit `" ~ name ~ "` type mismatch", asArgument: true);
 
