@@ -8409,7 +8409,7 @@ pub fn solve(
             bck_nodes(node.items);
 
             // Track references.
-            if (node.is_ref)
+            if (node.is_ref && !node.target.willPassByValue())
             {
                 node.flags & F_ARG && BUG("bck_let: Found an argument!");
 
