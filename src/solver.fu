@@ -6161,31 +6161,11 @@ pub fn solve(
 
         let qualified = flags & F_COMPOUND_ID;
 
+        // TODO FAILCASE forgot to limit qualified lookup to public items
         visitScope(
             local_scope: !qualified,
             items: qualified && dequalify_andGetScope(id).items);
 
-        // TODO FIX:
-        //  emit a regular lambda instead.
-        if (flags & F_ACCESS && !qualified)
-        {
-            // Iterate all visible types, this is slow.
-            //  Alternatively we could just unwrap all of these things in
-            //   module root scope but that'd slow everything else down.
-            fn visitTypes(shadow module: Module)
-                module.out.types.each(
-                    |struct| visitScope(
-                        local_scope: false, struct.items));
-
-            // From this module ...
-            visitTypes(module);
-
-            // ... and all visible imports.
-            _scope.imports.each(_ss.imports,
-                |import| visitTypes(ctx.modules[import]));
-        }
-
-        //
         return result || fail("No `fn " ~ id ~ "` in scope.");
     }
 

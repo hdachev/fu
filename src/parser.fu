@@ -442,7 +442,7 @@ pub fn parse(
         let init    = tryParseLetInit();
         softSemi();
 
-        return createLet(:id, [], :init);
+        return createLet(:id, :init);
     }
 
 
@@ -862,15 +862,16 @@ pub fn parse(
 
     //
 
-    fn parseLambda(noArgs_noClosingPipe!?: bool, mode!?: i32): Node
+    fn parseLambda(noClosingPipe!?: bool, leadingDot!?: bool, mode!?: i32): Node
     {
-        if (noArgs_noClosingPipe && _precedence > P_RESET && _precedence < P_PREFIX_UNARY)
+        if (noClosingPipe && _precedence > P_RESET && _precedence < P_PREFIX_UNARY)
             warn("Unparenthesized `|| lambda` within a binary expression.");
 
         let name = "l_" ~ modid ~ "_" ~ _anonFns++;
 
-        return parseFnDecl_cont(endv: !noArgs_noClosingPipe && "|",
-            flags: F_INLINE | F_LAMBDA, expr: !(mode & M_LAMBDA_STMT_OK), :name);
+        return parseFnDecl_cont(endv: !noClosingPipe && "|",
+            flags: F_INLINE | F_LAMBDA, expr: !(mode & M_LAMBDA_STMT_OK),
+                :name, :leadingDot);
     }
 
     fn parseFnDecl(mut flags?: Flags, fixity?: Fixity, asserts?: DeclAsserts, expr!?: bool): Node
@@ -961,7 +962,9 @@ pub fn parse(
         return make(kind: "addroffn", :flags, value: name);
     }
 
-    fn parseFnDecl_cont(name!: string, mut flags!?: Flags, asserts?: DeclAsserts, expr!?: bool, endv! = ")"): Node
+    fn parseFnDecl_cont(
+        name!: string, mut flags!?: Flags, asserts?: DeclAsserts,
+        expr!?: bool, leadingDot!?: bool, endv! = ")"): Node
     {
         // Opening parens!
         mut items: Node[];
@@ -978,33 +981,61 @@ pub fn parse(
         }
         ////////////////////////////////
 
-        flags |= endv && parseArgsDecl(items, "op", :endv);
-
-        // Return type annot.
-        mut type = tryPopTypeAnnot();
-        let retIdx = items.len;
-        items.push(type);
-
-        // Body or pattern (case/case).
-        flags |= parseFnBodyOrPattern(items, :expr);
-
-        // Ensure main: i32, kinda lame doing it here.
-        if (name == "main" && _fnDepth == 1)
+        if (leadingDot)
         {
-            if (!type)
-                items[retIdx] = type = createRead("i32");
-            else if (type.kind != "call" || type.value != "i32" || type.items.len)
-                fail("fn main() must return i32.");
+            flags |= parseLeadingDot(items, :name);
+        }
+        else
+        {
+            flags |= endv && parseArgsDecl(items, "op", :endv);
 
-            set_PUB(flags);
-            flags |= F_EXTERN;
+            // Return type annot.
+            mut type = tryPopTypeAnnot();
+            let retIdx = items.len;
+            items.push(type);
+
+            // Body or pattern (case/case).
+            flags |= parseFnBodyOrPattern(items, :expr);
+
+            // Ensure main: i32, kinda lame doing it here.
+            if (name == "main" && _fnDepth == 1)
+            {
+                if (!type)
+                    items[retIdx] = type = createRead("i32");
+                else if (type.kind != "call" || type.value != "i32" || type.items.len)
+                    fail("fn main() must return i32.");
+
+                set_PUB(flags);
+                flags |= F_EXTERN;
+            }
+
+            //
+            if (_dollars.len > dollars0)
+                flags |= F_TEMPLATE;
         }
 
-        //
-        if (_dollars.len > dollars0)
-            flags |= F_TEMPLATE;
-
         return make("fn", :items, :flags, :asserts, name);
+    }
+
+    fn parseLeadingDot(
+        ref out_push_arg_and_body: Node[], name!: string): Flags
+    {
+        // A single argument, named after the lambda.
+        let singleArg = createLet(
+            id: name,
+            flags: F_ARG | F_TEMPLATE);
+
+        // We back off one token, so we can re-parse the leading dot.
+        let singleExpression = parseExpression(
+            p1: _precedence,
+            parseHead: { _idx--; createRead(id: name) });
+
+        //
+        out_push_arg_and_body.push(singleArg);
+        out_push_arg_and_body.push(/*retval annot*/ []);
+        out_push_arg_and_body.push(singleExpression);
+
+        return F_TEMPLATE;
     }
 
     fn parseFnBodyOrPattern(
@@ -1053,7 +1084,7 @@ pub fn parse(
         return flags;
     }
 
-    fn parseFnBodyBranch(expr?: bool): Node
+    fn parseFnBodyBranch(expr!?: bool): Node
     {
         // Allow a leading `=` before body.
         //  We'll transition to this thing fulltime
@@ -1264,7 +1295,7 @@ pub fn parse(
             }
         }
 
-        return createLet(id, :flags, type, init);
+        return createLet(id, :flags, :type, :init);
     }
 
     fn tryParseLetInit()
@@ -1272,12 +1303,14 @@ pub fn parse(
         return tryConsume("op", "=") && parseExpression(P_RESET);
     }
 
-    fn createLet(id: string, type: Node, init: Node, flags!?: Flags): Node
+    fn createLet(id: string, type!?: Node, init!?: Node, flags!?: Flags): Node
     {
         return make("let", [ type, init ], :flags, id);
     }
 
-    fn parseExpression(p1: i32, mode!?: i32): Node
+    fn parseExpression !ParseHead(
+        p1: i32, mode!?: i32,
+        parseHead: ParseHead = fn parseExpressionHead): Node
     {
         //////////////////////////////
         let p0 = _precedence;
@@ -1295,7 +1328,7 @@ pub fn parse(
                 ~ "`: expected more than " ~ _col0 ~ ", got " ~ tokens[_idx].col);
 
         //
-        mut head = parseExpressionHead(:mode);
+        mut head = parseHead(mode?: mode);
         {
             //////////////////////////////////////////////
             // Lint, this looks crazy but its fine really,
@@ -1412,7 +1445,7 @@ pub fn parse(
         return left;
     }
 
-    fn tryParseExpressionTail(head: Node, mode: i32): Node
+    fn tryParseExpressionTail(head: Node, mode!?: i32): Node
     {
         // Consume.
         let token = tokens[_idx++];
@@ -1486,8 +1519,11 @@ pub fn parse(
                 if (v ==  "{") return parseBlock();
                 if (v ==  "[") return parseArrayLiteral();
                 if (v ==  "$") return parseTypeParam();
+
                 if (v ==  "|") return parseLambda(:mode);
-                if (v == "||") return parseLambda(noArgs_noClosingPipe: true, :mode);
+                if (v == "||") return parseLambda(noClosingPipe: true, :mode);
+                if (v ==  ".") return parseLambda(noClosingPipe: true, leadingDot: true);
+
                 if (v == "[]") return createDefinit();
 
                 if (v == "::")
@@ -1495,12 +1531,6 @@ pub fn parse(
                     let id = consume("id").value;
                     _idx--;
                     return parseQualifierChain(createRead(id));
-                }
-
-                if (v == ".")
-                {
-                    let id = consume("id").value;
-                    return createAddrOfFn(name: id, flags: F_ACCESS);
                 }
 
                 return parsePrefix(v);
@@ -1898,7 +1928,7 @@ pub fn parse(
     fn parseCatchErrvar(): Node
     {
         let id = consume("id").value;
-        return createLet(:id, createRead("string"), Node);
+        return createLet(:id, type: createRead("string"));
     }
 
 
