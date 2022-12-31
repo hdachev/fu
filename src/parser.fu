@@ -1609,12 +1609,16 @@ pub fn parse(
 
     fn parseQualifierChain(mut expr: Node): Node
     {
-        if (expr.kind != "call" ||
-            expr.items && (expr.items.len != 1 || !(expr.flags & F_ACCESS)) ||
-            expr.flags & F_COMPOUND_ID)
+        if (expr.kind != "addroffn")
         {
-            _idx--;
-            fail();
+            if (expr.kind != "call"
+                || expr.items && (expr.items.len != 1
+                || !(expr.flags & F_ACCESS))
+                || expr.flags & F_COMPOUND_ID)
+            {
+                _idx--;
+                fail();
+            }
         }
 
         expr.flags |= F_COMPOUND_ID;

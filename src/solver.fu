@@ -6136,7 +6136,7 @@ pub fn solve(
         return createEmpty(:type);
     }
 
-    fn solveAddrOfFn(id: string, flags?: Flags): Target[]
+    fn solveAddrOfFn(mut id: string, flags?: Flags): Target[]
     {
         mut shadow = false;
         mut result: Target[];
@@ -6159,11 +6159,15 @@ pub fn solve(
             }
         }
 
-        visitScope(local_scope: true);
+        let qualified = flags & F_COMPOUND_ID;
+
+        visitScope(
+            local_scope: !qualified,
+            items: qualified && dequalify_andGetScope(id).items);
 
         // TODO FIX:
         //  emit a regular lambda instead.
-        if (flags & F_ACCESS)
+        if (flags & F_ACCESS && !qualified)
         {
             // Iterate all visible types, this is slow.
             //  Alternatively we could just unwrap all of these things in
