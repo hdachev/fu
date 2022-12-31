@@ -8770,6 +8770,30 @@ pub extern fn runTests()
         fn main() x + y - 5;
     `]);
 
+    ZERO([`
+        struct Profile {
+            a: i32;
+            b: i32;
+            c: i32;
+        };
+
+        fn incr(implicit ref p: Profile, which) {
+            p.which++;
+        }
+    `,`
+        fn main() {
+            implicit mut p: _0::Profile;
+
+            _0::incr(fn _0::a);
+            _0::incr(|i| i._0::b);
+            _0::incr(|i| i.b);
+            _0::incr(._0::c);
+            _0::incr(.c);
+
+            return p._0::a + p.b * 10 + p.c * 100 == 221 ? 0 : 1;
+        }
+    `]);
+
     // /imports & pubs.
 
 
