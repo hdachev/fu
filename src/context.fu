@@ -178,9 +178,6 @@ pub fn lookupUserType(
 pub fn is_trivial(type: Type)
     type.is_primitive || type.isStruct && lookupUserType(type).all_triv;
 
-pub fn tryLookupStruct(type: Type)
-    type.isStruct && lookupUserType(type);
-
 
 //
 
