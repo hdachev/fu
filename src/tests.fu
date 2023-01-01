@@ -9150,6 +9150,39 @@ pub extern fn runTests()
         fn main() check(snap(ScopeSkip([ 1 ], [ 2, 2 ]))) - 21;
     `);
 
+    ZERO(`
+        fn Lazy(getValue) {
+            struct Lazy {
+                evaluated?: bool;
+                value?:     typeof(getValue());
+                getValue?:  typeof(fn getValue);
+            };
+
+            return Lazy();
+        }
+
+        fn get(ref lazy) {
+            if (!lazy.evaluated) {
+                lazy.evaluated  = true;
+
+                // This is just exploratory stuff,
+                //  don't feel obliged to keep this working.
+                let getValue    = lazy.getValue;
+                lazy.value      = getValue();
+            }
+
+            return lazy.value;
+        }
+
+        fn main() {
+            mut calls   = 0;
+            mut lazy    = Lazy(|| calls++);
+            mut res     = lazy.get() + lazy.get();
+
+            return res == 0 && calls == 1 ? 0 : 1;
+        }
+    `);
+
 
     // Type assert.
 

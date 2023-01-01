@@ -374,13 +374,21 @@ pub fn cpp_codegen(
                 ~ "\n" ~ header ~ "\n{";
 
         mut indent = "\n    ";
+        mut xOpBool = "";
 
         let fields = s.items;
         for (mut i = 0; i < fields.len; i++)
         {
             let field = GET(fields[i].target);
             field.kind == "field" || fail("Non-field struct item: " ~ field.name ~ " (" ~ field.kind ~ ") in " ~ t.canon);
-            def ~= indent ~ typeAnnot(field.type) ~ " " ~ ID(field.name) ~ ";";
+            let annot = typeAnnot(field.type);
+            if (annot != "void")
+            {
+                shadow let id = ID(field.name);
+                def ~= indent ~ annot ~ " " ~ id ~ ";";
+                if (field.flags & F_PREDICATE)
+                    xOpBool ~= "\n            || " ~ id;
+            }
         }
 
         if !(t.is_rx_copy)
@@ -401,11 +409,7 @@ pub fn cpp_codegen(
         def ~= "\n    explicit operator bool() const noexcept";
         def ~= "\n    {";
         def ~= "\n        return false";
-
-        for (mut i = 0; i < fields.len; i++)
-            if (fields[i].target.flags & F_PREDICATE)
-                def ~= "\n            || " ~ ID(fields[i].id);
-
+        def ~= xOpBool;
         def ~= "\n        ;";
         def ~= "\n    }";
 
