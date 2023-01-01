@@ -5318,7 +5318,6 @@ pub fn solve(
             if !(h.isFnOrType)
                 continue;
 
-            h.mask & HM_Lambda && BUG("Recursive lambda, what happened here?");
             GET_mut(h.target).status |= status;
             makeNote(note);
 

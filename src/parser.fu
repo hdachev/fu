@@ -869,9 +869,13 @@ pub fn parse(
 
         let name = "l_" ~ modid ~ "_" ~ _anonFns++;
 
+        // TODO FIX: re: F_LAX, otherwise we get complaints for no effects/returns void,
+        //  also there's no way to add the annotation manually, feels sloppy though.
+        let flags = F_LAX | F_LAMBDA;
+
         return parseFnDecl_cont(endv: !noClosingPipe && "|",
-            flags: F_INLINE | F_LAMBDA, expr: !(mode & M_LAMBDA_STMT_OK),
-                :name, :leadingDot);
+            expr: !(mode & M_LAMBDA_STMT_OK),
+                :flags, :name, :leadingDot);
     }
 
     fn parseFnDecl(mut flags?: Flags, fixity?: Fixity, asserts?: DeclAsserts, expr!?: bool): Node

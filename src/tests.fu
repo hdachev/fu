@@ -6785,7 +6785,7 @@ pub extern fn runTests()
                 fail(str);
             };
 
-            return x & 1 || fail("even");                       ;; GNUStmtExpr
+            return x & 1 || fail("even");
         }
 
         fn main() {
