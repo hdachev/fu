@@ -3117,7 +3117,7 @@ pub fn solve(
         let h           = _helpers[helpers_idx];
 
         // TODO FIX adding the trailing return /////////////////////////
-        if (fnbody_of && nodes)
+        if (fnbody_of && nodes && nodes.last.kind != "unwrap")
             nodes.last = Node(kind: "return", value: [], :node.token,
                 items: nodes.last.kind != "void" && [ nodes.last ],
                 flags: nodes.last.kind == "void" && F_IMPLICIT);
@@ -3150,7 +3150,7 @@ pub fn solve(
             //    just finish up asap.
             //
             let status = Target(:module.modid, fnbody_of).status;
-            if (!(status & SS_DIRTY) && !currentFn_mustBecomeInline())
+            if (!(status & SS_DIRTY) && !currentFn_mustBecomeInline(block))
             {
                 sortInjectedArguments();
                 runAllPasses(block);
@@ -3160,9 +3160,13 @@ pub fn solve(
         return block;
     }
 
-    fn currentFn_mustBecomeInline()
+    fn currentFn_mustBecomeInline(body: SolvedNode)
     {
-        return _current_fn.far_jumps && "Contains non-local control flow.";
+        if (body.kind == "block" && body.items.if_last.kind == "unwrap")
+            return "Has an unwrapping block for a body.";
+
+        return _current_fn.far_jumps
+            && "Contains non-local control flow.";
     }
 
     fn warn(token: TokenIdx, inline message: string)
@@ -4677,7 +4681,7 @@ pub fn solve(
                         id: n_fn.value,
                         mask: HM_Function | HM_CanReturn | HM_LabelUsed | (n_fn.flags & F_LAMBDA && HM_Lambda));
 
-                    let mustBecomeInlineBecause = currentFn_mustBecomeInline;
+                    let mustBecomeInlineBecause = currentFn_mustBecomeInline(s_body);
                     if (mustBecomeInlineBecause)
                     {
                         // RECURSIVE RELAX //////////////////////////////////

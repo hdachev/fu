@@ -6596,7 +6596,7 @@ pub extern fn runTests()
         struct Module { events: i32; };
 
         // Same as above but uses unwrap.
-        inline fn profile(implicit ref module: Module, id: i32) unwrap {
+        fn profile(implicit ref module: Module, id: i32) unwrap {
             let events0 = module.events;
             defer module.events += (events0 + id);
         }
@@ -9387,7 +9387,7 @@ pub extern fn runTests()
     `);
 
     ZERO(`
-        inline fn unwraps_defer(ref x: i32) unwrap {
+        fn unwraps_defer(ref x: i32) unwrap {
             defer x++;
         }
 
