@@ -157,6 +157,9 @@ pub fn solve(
         // The new flow-on-jump idiom doesn't handle defers correctly.
         TODO_FIX_defers?:   i32;
 
+        // So we can pass the F_INLINE flag onto mustBecomeInline
+        TODO_FIX_isInline?: bool;
+
         //
         using postdom?:     Postdom;
     };
@@ -3162,6 +3165,9 @@ pub fn solve(
 
     fn currentFn_mustBecomeInline(body: SolvedNode)
     {
+        if (_current_fn.TODO_FIX_isInline)
+            return "Explicitly marked inline.";
+
         if (body.kind == "block" && body.items.if_last.kind == "unwrap")
             return "Has an unwrapping block for a body.";
 
@@ -3878,20 +3884,15 @@ pub fn solve(
         }
 
         //
-        let isInline = !!(template.node.flags & F_INLINE);
-
         fn setSpec(shadow mangle: string, target: Target, nx!: bool, allowReplaceNonSpecfails?: bool)
         {
-            isInline && !target.is_SPECFAIL && BUG(
-                "inline.setSpec: " ~ mangle ~ " = " ~ target.is_SPECFAIL);
-
             ref t = _specs.map::ref(mangle);
 
             fn id(shadow target)
                 target.is_SPECFAIL  ? "SPEC_FAIL"
                                     : "`" ~ GET(target).name ~ "`";
 
-            (!isInline || !t) && (!t == nx) && (!t || t.is_SPECFAIL || allowReplaceNonSpecfails) || BUG(
+            (!t == nx) && (!t || t.is_SPECFAIL || allowReplaceNonSpecfails) || BUG(
                 "About to screw up royally, replacing spec: "
                     ~ t.index ~ " with " ~ target.index
                         ~ ", mangle: " ~ mangle ~ ", that's: "
@@ -3939,6 +3940,7 @@ pub fn solve(
         };
 
         //
+        let isInline = !!(template.node.flags & F_INLINE);
         if (!into && !isInline)
             resetMangle(mangle);
 
@@ -4220,6 +4222,7 @@ pub fn solve(
             let asserts     = template.node.asserts;
 
             mut out = CurrentFn(:scope0, :asserts,
+                TODO_FIX_isInline: isInline,
                 solved(n_fn,
                     :target, type: X_addrofTarget(target)),
                 autoshadow_ok:
@@ -4577,7 +4580,7 @@ pub fn solve(
                     overload.status |= SS_UPDATED;
 
                 //
-                if (!isNative && !isInline && !isUnspec)
+                if (!isNative && !isUnspec)
                 {
                     // "namespacing" via the sighash hashes.
                     let sourceModid             = template.node.token.modid;
@@ -4597,7 +4600,7 @@ pub fn solve(
                 target.solved_set(!isUnspec && out);
 
                 // setSpecs & co.
-                if (!into && !isInline)
+                if (!into)
                 {
                     resetMangle(target.args, allowReplaceNonSpecfails: maybeLast);
                     resetSpec(target);
@@ -4690,11 +4693,12 @@ pub fn solve(
                             EXT_mut(target).args = args0;
                         // RECURSIVE RELAX //////////////////////////////////
 
+                        if (asserts & A_NOFLOW && _current_fn.far_jumps)
+                            fail(target.qWHAT ~ " is not noflow: contains non-local control flow, jumping out to "
+                                ~ Target(:module.modid, _current_fn.far_jumps[0]).qWHAT ~ ".");
+
                         isFirst || fail(
                             "Function wants to become inline on after first solve.");
-
-                        asserts & A_NOFLOW && fail(
-                            "Function is not noflow: " ~ mustBecomeInlineBecause.qBAD);
 
                         // Unfortunately we have to throw away
                         //  all this work and start over.
