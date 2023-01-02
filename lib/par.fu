@@ -23,9 +23,7 @@ pub purectx fn map(arr: [$T], visit, min!?: int)
 //  This is way to hacky for comfort but it's the best we can do
 //   without function types with noflow & purectx assertions.
 
-// TODO nothrow - can't deal with exceptions here, we need a check for this
-
-novec noflow fn parallel_for(min!, mut end!, visit)
+novec noflow nothrow fn parallel_for(min!, mut end!, visit)
 {
     mut start = end & 0;
 
