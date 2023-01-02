@@ -4420,6 +4420,39 @@ pub extern fn runTests()
         }
     `);
 
+    ZERO(`
+        struct ScopeItem { k: string; v: i32 };
+
+        fn dequalify_andGetScope(ref id: string, implicit locals: ScopeItem[], implicit globals: ScopeItem[]) {
+            if (id.ends(with: "g")) {
+                id.pop();
+                return globals;
+            }
+
+            return locals;
+        }
+
+        fn solveAddrOfFn(mut id: string) {
+            fn visitScope(items: ScopeItem[]) {
+                items.each: |item|
+                    if (item.k == id)
+                        return item.v;
+
+                return -1;
+            }
+
+            // on gcc visitScope:id bound to a slice before mutation
+            return visitScope(dequalify_andGetScope(id));       ;; N_BckMustSeq
+        }
+
+        fn main() {
+            let implicit locals  = [ ScopeItem("a", 1), ScopeItem("b", 2), ScopeItem("c", 3) ];
+            let implicit globals = [ ScopeItem("a", 10), ScopeItem("b", 20), ScopeItem("c", 30) ];
+            let result = solveAddrOfFn("a") + solveAddrOfFn("bg");
+            return result == 21 ? 0 : 1;
+        }
+    `);
+
     // /Borrow checker
 
 
