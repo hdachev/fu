@@ -1108,7 +1108,7 @@ pub fn cpp_codegen(
         // Go!
         let node = target.solved;
         node.kind == "fn" || fail("ensureFnDef non-fn");
-        cgFn(node, M_STMT);
+        cgFn(node);
     }
 
 
@@ -1126,7 +1126,7 @@ pub fn cpp_codegen(
         return cgEmpty(n, mode);
     }
 
-    fn cgFn(fn: SolvedNode, mode: i32): string
+    fn cgFn(fn: SolvedNode)
     {
         //////////////////////
         let indent0 = _indent;
@@ -1144,8 +1144,10 @@ pub fn cpp_codegen(
         // Custom __natives.
         if (!body)
         {
-            overload.kind == "__native" || fail("cgFn: no body on non-native: " ~ overload.kind ~ " " ~ id);
-            return mode & M_STMT ? "" : "0";
+            overload.kind == "__native" || overload.kind == "inline" || fail(
+                "cgFn: no body on non-native: " ~ overload.kind ~ " " ~ id);
+
+            return;
         }
 
         _indent = "\n";
@@ -1253,9 +1255,6 @@ pub fn cpp_codegen(
                     ~ target.revision);
             }
         }
-
-        //
-        return cgEmpty(fn, mode);
     }
 
 
