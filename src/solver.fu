@@ -4487,7 +4487,8 @@ pub fn solve(
 
                 mut change      = false;
 
-                if (ext.callers)
+                let hasCallers  = !!ext.callers;
+                if (hasCallers)
                 {
                     change = args.len != ext.args.len
                         || !(overload.type == retval);
@@ -4545,6 +4546,19 @@ pub fn solve(
                 shadow ref overload = GET_mut(target);
                 overload.type       = retval;
 
+                {
+                    shadow let isInline = currentFn_mustBecomeInline();
+
+                    let kind0       = overload.kind;
+                    overload.kind   = isUnspec  ? "template"
+                                    : isNative  ? "__native"
+                                    : isInline  ? "inline"
+                                                : "fn";
+
+                    if (overload.kind != kind0)
+                        change = true;
+                }
+
                 if (isInline)
                     return;
 
@@ -4578,7 +4592,7 @@ pub fn solve(
                 }
 
                 //
-                if (change)
+                if (change && hasCallers)
                     overload.status |= SS_UPDATED;
 
                 //
@@ -4624,21 +4638,17 @@ pub fn solve(
                         if (item.starts(with: '|'))
                             fx_mask |= item == "|output"
                                 ? EFFECTS_output
-                                : parse(item[1, item.len], as: FxMask) || fail("Invalid |Fx mask: " ~ item.qBAD);
+                                : parse(item[1, item.len], as: FxMask) || BUG("Invalid |Fx mask: " ~ item.qBAD);
                         else
                             name ~= "\n" ~ item;
                     }
                 }
 
                 //
-                name ||= n_fn.value || fail("TODO anonymous fns");
+                name ||= n_fn.value || BUG("TODO anonymous fns");
 
                 ref overload        = GET_mut(target);
                 overload.name       = name;
-                overload.kind       = isUnspec      ? "template"
-                                    : isNative      ? "__native"
-                                    : isInline      ? "inline"
-                                                    : "fn";
 
                 ref ext             = target.EXT_mut;
                 ext.template        = template;
