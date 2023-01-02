@@ -9949,6 +9949,18 @@ pub extern fn runTests()
         }
     `);
 
+    TODO_inline(`
+        fn ifThenElse(inline cond, inline cons, inline alt)
+            cond ? cons : alt;
+
+        fn main() {
+            mut cond = 0;
+            ifThenElse(cond++,
+                { return 10; },
+                { return cond == 1 ? 0 : 100; });
+        }
+    `);
+
     // /Autocall, varargs & rest params.
 
 
