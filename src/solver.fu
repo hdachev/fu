@@ -4610,8 +4610,6 @@ pub fn solve(
             // Enable recursion.
             if (isFirst)
             {
-                updateScope(_current_fn, retval: isInline ? ret_expect : ret_seed, maybeLast: false);
-
                 mut name = "";
                 mut fx_mask: FxMask;
 
@@ -4629,18 +4627,12 @@ pub fn solve(
                             name ~= "\n" ~ item;
                     }
                 }
-                else
-                {
-                    // Make sure mutually recursive fns don't dump each other.
-                    fx_mask |= Fx_NotDeadCode | Fx_Throws;
-                }
-
-                name ||= n_fn.value || fail("TODO anonymous fns");
 
                 //
+                name ||= n_fn.value || fail("TODO anonymous fns");
+
                 ref overload        = GET_mut(target);
                 overload.name       = name;
-
                 overload.kind       = isUnspec      ? "template"
                                     : isNative      ? "__native"
                                     : isInline      ? "inline"
@@ -4650,80 +4642,84 @@ pub fn solve(
                 ext.template        = template;
                 ext.spec_of         = overloadIdx;
                 ext.fx_mask         = fx_mask;
+
+                //
+                updateScope(_current_fn,
+                    retval:    isInline ? ret_expect : ret_seed,
+                    maybeLast: isNative && !isUnspec);
             }
 
             mut didSetBody = false;
 
             // Regular fns again.
             :NOT_INLINE
-            if (!isInline && !isUnspec)
+            if (!isInline && !isUnspec && !isNative)
             {
-                // The usual.
                 mut retval = ret_seed;
-                if (!isNative)
+
+                // RECURSIVE RELAX //////////////////////////////////
+                // This makes it possible to relax functions
+                //  that overconstrain recursive arguments,
+                //   e.g. take a ref, pass it to themselves,
+                //    and do nothing else with it.
+                //
+                let args0 = target.args;
+                if (isFirst)
+                {
+                    ref ext = EXT_mut(target);
+                    for (mut i = 0; i < ext.args.len; i++)
+                        ext.args[i].type.quals &= ~RELAX_all;
+
+                    // Make sure mutually recursive fns don't dump each other.
+                    ext.fx_mask |= Fx_NotDeadCode | Fx_Throws;
+                }
+                // RECURSIVE RELAX //////////////////////////////////
+
+                let s_body = solveBlock(
+                    n_body, type: ret_expect,
+                    fnbody_of: target.index,
+                    id: n_fn.value,
+                    mask: HM_Function | HM_CanReturn | HM_LabelUsed | (n_fn.flags & F_LAMBDA && HM_Lambda));
+
+                let mustBecomeInlineBecause = currentFn_mustBecomeInline(s_body);
+                if (mustBecomeInlineBecause)
                 {
                     // RECURSIVE RELAX //////////////////////////////////
-                    // This makes it possible to relax functions
-                    //  that overconstrain recursive arguments,
-                    //   e.g. take a ref, pass it to themselves,
-                    //    and do nothing else with it.
-                    //
-                    let args0 = target.args;
+                    // TODO FAILCASE do this out of the mustBecomeInlineBecause block.
                     if (isFirst)
-                    {
-                        ref ext = EXT_mut(target);
-                        if (!isNative && !isInline && !isUnspec)
-                            for (mut i = 0; i < ext.args.len; i++)
-                                ext.args[i].type.quals &= ~RELAX_all;
-                    }
+                        EXT_mut(target).args = args0;
                     // RECURSIVE RELAX //////////////////////////////////
 
-                    let s_body = solveBlock(
-                        n_body, type: ret_expect,
-                        fnbody_of: target.index,
-                        id: n_fn.value,
-                        mask: HM_Function | HM_CanReturn | HM_LabelUsed | (n_fn.flags & F_LAMBDA && HM_Lambda));
+                    if (asserts & A_NOFLOW && _current_fn.far_jumps)
+                        fail(target.qWHAT ~ " is not noflow: contains non-local control flow, jumping out to "
+                            ~ Target(:module.modid, _current_fn.far_jumps[0]).qWHAT ~ ".");
 
-                    let mustBecomeInlineBecause = currentFn_mustBecomeInline(s_body);
-                    if (mustBecomeInlineBecause)
-                    {
-                        // RECURSIVE RELAX //////////////////////////////////
-                        // TODO FAILCASE do this out of the mustBecomeInlineBecause block.
-                        if (isFirst)
-                            EXT_mut(target).args = args0;
-                        // RECURSIVE RELAX //////////////////////////////////
+                    isFirst || fail(
+                        "Function wants to become inline on after first solve.");
 
-                        if (asserts & A_NOFLOW && _current_fn.far_jumps)
-                            fail(target.qWHAT ~ " is not noflow: contains non-local control flow, jumping out to "
-                                ~ Target(:module.modid, _current_fn.far_jumps[0]).qWHAT ~ ".");
-
-                        isFirst || fail(
-                            "Function wants to become inline on after first solve.");
-
-                        // Unfortunately we have to throw away
-                        //  all this work and start over.
-                        //
-                        // Unless we make the inliner do something different,
-                        //  just move all the newly solved stuff into the parent fn,
-                        //   so that no effort is lost at this point.
-                        //
-                        ref o  = GET_mut(target);
-                        o.kind = "inline";
-                        o.type = ret_expect;
-
-                        break :NOT_INLINE;
-                    }
-
+                    // Unfortunately we have to throw away
+                    //  all this work and start over.
                     //
-                    retval = s_body.helpers.ret_actual;
-                    checkAssignable(host: retval, s_body.type, "reval after runAllPasses");
+                    // Unless we make the inliner do something different,
+                    //  just move all the newly solved stuff into the parent fn,
+                    //   so that no effort is lost at this point.
+                    //
+                    ref o  = GET_mut(target);
+                    o.kind = "inline";
+                    o.type = ret_expect;
 
-                    // MUT DURING SOLVE,
-                    //  implicit args splice in
-                    let idx_body = outItems.len + FN_BODY_BACK;
-                    outItems[idx_body] = s_body || BUG("falsy body");
-                    didSetBody = true;
+                    break :NOT_INLINE;
                 }
+
+                //
+                retval = s_body.helpers.ret_actual;
+                checkAssignable(host: retval, s_body.type, "reval after runAllPasses");
+
+                // MUT DURING SOLVE,
+                //  implicit args splice in
+                let idx_body = outItems.len + FN_BODY_BACK;
+                outItems[idx_body] = s_body || BUG("falsy body");
+                didSetBody = true;
 
                 //
                 updateScope(_current_fn, :retval, maybeLast: true);
