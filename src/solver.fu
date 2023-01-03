@@ -168,6 +168,7 @@ pub fn solve(
         _ss:                ScopeSkipMemos;
         _field_items:       ScopeItem[];
         _pub_imports:       i32[];
+        _helpers_data:      HelpersData[];
 
         // Can't we just list them all and scan through?
         //  Do we need the mangling nonsense?
@@ -220,7 +221,6 @@ pub fn solve(
     mut _notes:                         SolverNotes;    // TODO DISJOINT move all these in the SolverState
     mut _current_fn:                    CurrentFn;
     let implicit mut _helpers:          Helpers[];      // TODO rename, this is the block helpers stack, unwinds during solve
-    let implicit mut _helpers_data:     HelpersData[];  // TODO rename, this is the block helpers repo, survives till end of function
 
 
     // Prep.
