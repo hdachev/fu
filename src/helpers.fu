@@ -81,8 +81,8 @@ fn hasIdentifierChars(id: string)
 
 fn all(a: [$T], pred)
 {
-    a.each: |item|
-        if !(pred(item))
+    a.each: |item, i|
+        if !(pred(item, i?: i))
             return false;
 
     return true;
@@ -90,11 +90,30 @@ fn all(a: [$T], pred)
 
 fn some(a: [$T], pred)
 {
-    a.each: |item|
-        if (pred(item))
+    a.each: |item, i|
+        if (pred(item, i?: i))
             return true;
 
     return false;
+}
+
+
+//
+
+fn zip_each(a: [$T;], b: [$U;], fn)
+{
+    a.len == b.len || throw("a.len != b.len");
+    for (mut i = 0; i < a.len; i++)
+        fn(a[i], b[i], i?: i);
+}
+
+fn zip_all(a: [$T;], b: [$U;], pred)
+{
+    zip_each(a, b): |shadow a, shadow b, i|
+        if !(pred(a, b, i?: i))
+            return false;
+
+    return true;
 }
 
 

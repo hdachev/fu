@@ -1788,9 +1788,12 @@ pub fn cpp_codegen(
 
                 ooe_crosscheck |= MUSTSEQ_bit;
 
-                if (arg.isFieldChain
+                if (arg.isPointlessMustSeq(ext.args[i])
                         || MUSTSEQ_mask &~ MUSTSEQ_bit < MUSTSEQ_mask
-                            && args[i + 1, args.len].all(.isFieldChain))
+                            && zip_all( args    [i + 1,     args.len],
+                                        ext.args[i + 1, ext.args.len],
+                                        |shadow arg, host_arg|
+                                            arg.isPointlessMustSeq(host_arg)))
                 {
                     noteDefect(PointlessMustSeq);
 
@@ -2018,9 +2021,9 @@ pub fn cpp_codegen(
                     if (id == "[]")
                     {
                         if (mode & M_MOVE)
-                            return ARG(0) ~ ".try_steal(" ~ ARG(1) ~ ")";
+                            return ooeWrap(ARG(0) ~ ".try_steal(" ~ ARG(1) ~ ")");
 
-                        return ARG(0) ~ "[" ~ ARG(1) ~ "]";
+                        return ooeWrap(ARG(0) ~ "[" ~ ARG(1) ~ "]");
                     }
 
                     // Skip some of the ridiculous parens.
@@ -2426,6 +2429,18 @@ pub fn cpp_codegen(
             return true;
 
         return false;
+    }
+
+    fn isPointlessMustSeq(arg: SolvedNode, host_arg: Argument): bool
+    {
+        ////////////////////////////////////////////////////////////////
+        // TODO FIX the implicit conversion from vec to view we do in c++
+        //  is not visible in the AST but is seq-sensitive
+        if (host_arg.type_isSliceable && !host_arg.TODO_FIX_isArray)
+            return false;
+        ////////////////////////////////////////////////////////////////
+
+        return isFieldChain(arg);
     }
 
     fn cgAndOr_concat(ref src: string, op: string, items: [SolvedNode], parens!?: bool)

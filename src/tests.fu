@@ -4925,7 +4925,7 @@ pub extern fn runTests()
                 for (;;) {
                     let token = tokens[_idx++];                 ;; !N_BckMustSeq
                     if (token == endToken)                      ;; !N_MoveMustSeq
-                        break;                                  ;; PointlessMustSeq
+                        break;
 
                     items ~= Node("let", [], flags: token == '+' && F_PREDICATE);
                 }
@@ -7032,7 +7032,7 @@ pub extern fn runTests()
         fn astReplace(node: Node, mutate): Node {
             fn walk(shadow ref node: Node) {
                 for (mut i = 0; i < node.items.len; i++)
-                    walk(node.items[i]);                        ;; PointlessMustSeq
+                    walk(node.items[i]);
 
                 mutate(node);
             }
@@ -9786,7 +9786,7 @@ pub extern fn runTests()
             fn qWHAT(hd: HelpersData)
                 hd.target.qWHAT;
 
-            return Helpers(0).qWHAT;                            ;; PointlessMustSeq
+            return Helpers(0).qWHAT;
         }
 
         fn main() {
