@@ -1,7 +1,13 @@
 #!/bin/bash
 set -e
 
-./reset
+if [ -f ./bin/fu.works ]; then
+    rm ./bin/fu.works
+fi
+
+git reset
+git checkout *.fu.cpp *.fu.unity.cpp *akeLists.txt *.td
+
 ./bootstrap
 mv ./bin/fu ./bin/fu.works
 ./cycle

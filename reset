@@ -1,9 +1,0 @@
-#!/bin/bash
-set -e
-
-if [ -f ./bin/fu.works ]; then
-    rm ./bin/fu.works
-fi
-
-git reset
-git checkout *.fu.cpp *.fu.unity.cpp *akeLists.txt *.td
