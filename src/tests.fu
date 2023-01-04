@@ -499,6 +499,23 @@ pub extern fn runTests()
         }
     `);
 
+    ZERO(`
+        fn sqr(implicit ref b: i32) {
+            return b *= b;
+        }
+        <split/>
+        fn main() {
+            struct Hey {
+                implicit a: i32;
+                implicit b: i32;
+            };
+
+            using mut hey = Hey(10, 20);
+            sqr();
+            return hey.a == 10 && hey.b == 400 ? 0 : 1;
+        }
+    `);
+
     // /using
 
 

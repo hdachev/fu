@@ -6698,11 +6698,9 @@ pub fn solve(
             || injectImplicitArg(:id, :type, :becauseOf)
             || BUG();
 
-        let o = GET(target);
-
-        checkAssignable(host: type, o.type, "Implicit `" ~ name ~ "` type mismatch", asArgument: true);
-
-        return CallerNode("__implicit", :target, :reorder, :conversions);
+        let call = CallerNode("__implicit", :target, :reorder, :conversions);
+        checkAssignable(host: type, call.type, "Implicit " ~ name.qBAD ~ " type mismatch", asArgument: true);
+        return call;
     }
 
 
