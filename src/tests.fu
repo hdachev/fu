@@ -94,6 +94,7 @@ pub extern fn runTests()
     let TODO_relaxer    = fn TODO;
     let TODO_ambig      = fn TODO;
     let TODO_StaticEval = fn TODO;
+    let TODO_slices     = fn TODO;
 
     let TODO_Map        = fn TODO;
 
@@ -11147,6 +11148,75 @@ pub extern fn runTests()
             mut arr = [ 1 ];
             relaxes_arr_to_slice_and_fails(arr);
             return arr.len;
+        }
+    `);
+
+    ZERO(`
+        type Context = string[];
+
+        fn compile_snippets(sources: string[], fnames?: string[]): Context {
+            return sources ~ fnames;
+        }
+
+        fn ZERO(implicit ref output: string, mut sources: string[]): Context {
+            for (mut i = 0; i < sources.len; i++) {
+                ref src = sources[i];
+                let idx = src.find('X');
+                if (idx >= 0) {
+                    let moduleA = src.slice(0, idx);
+                    let moduleB = src[idx, idx] ~ src[idx + 1, src.len];
+                    let without = src[0, idx] ~ src[idx + 1, src.len];
+
+                    sources[i]  = without;
+                    ZERO(:sources);
+
+                    sources[i]  = moduleA;
+                    sources.insert(i + 1, moduleB);
+                    i--;
+                }
+            }
+
+            let ctx = compile_snippets(:sources);
+            output ~= sources.join(',') ~ ";";
+            return ctx;
+        }
+
+        fn ZERO(src: string) ZERO(sources: [ src ]);
+
+        fn main() {
+            implicit mut output: string;
+            ZERO("aXbXc");
+            return output == "abc;ab,c;a,bc;a,b,c;" ? 0 : 1;
+        }
+    `);
+
+    TODO_slices(`
+        fn ZERO(mut sources: string[], implicit ref output: string) {
+            for (mut i = 0; i < sources.len; i++) {
+                ref src = sources[i];
+                mut idx = 0;
+                while ((idx = src.find("X")) > 0) {
+                    let sources1 = sources[0, i]
+                        ~ src[0, idx]
+                        ~ src[idx + 1, src.len]
+                        ~ sources[i + 1, sources.len];
+
+                    ZERO(sources1);
+                    src = src[0, idx] ~ src[idx + 1, src.len];
+                }
+            }
+
+            output ~= sources.join(",") ~ ";";
+        }
+
+        fn ZERO(src: string) {
+            return ZERO([ src ]);
+        }
+
+        fn main() {
+            implicit mut output: string;
+            ZERO("aXbXc");
+            return output == "a,b,c;a,bc;ab,c;abc;" ? 0 : 1;
         }
     `);
 
