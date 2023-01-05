@@ -444,7 +444,7 @@ pub fn cpp_codegen(
             if (s.kind == "flags")
             {
                 mut mask = "";
-                members.each: |member.target, i|
+                members.each: |member.target|
                 {
                     if (!mask)
                         mask = "\n\ninline constexpr " ~ id ~ " MASK_" ~ id ~ "\n    = ";

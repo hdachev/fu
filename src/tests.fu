@@ -4904,7 +4904,7 @@ pub extern fn runTests()
 
         fn main() {
             mut a = [ 1 ];
-            a.novec_each: |i| i *= 2;
+            a.novec_each: |ref i| i *= 2;
             return a[0] - 2;
         }
     `);
@@ -4930,7 +4930,7 @@ pub extern fn runTests()
                             if (item.flags & F_PREDICATE)
                                 break :F_PREDICATE;             ;; Goto
 
-                    items.Each: |item|
+                    items.Each: |ref item|
                         if (item.kind == "let")
                             item.flags |= F_PREDICATE;
                 }
@@ -6294,7 +6294,7 @@ pub extern fn runTests()
     `
         import _1;
         fn ViewQuads(id!: i32, camera!: i32): ViewQuads {
-            return ViewQuads(:id, populate: |vq| vq.id += camera);
+            return ViewQuads(:id, populate: |ref vq| vq.id += camera);
         }
 
         fn main() {
@@ -9470,7 +9470,7 @@ pub extern fn runTests()
         fn reduce(items: $T[], fn, init?: $T) {
             mut result = init;
             for (mut i = 0; i < items.len; i++)
-                result = fn(result, items[i]);                  ;; GNUStmtExpr
+                result = fn(result, items[i]);
 
             return result;
         }
@@ -9853,7 +9853,7 @@ pub extern fn runTests()
 
                 return res;
             <alt/>
-                return n.map(|t| t.qWHAT).join();               ;; GNUStmtExpr
+                return n.map(|t| t.qWHAT).join();
             </alt>
             }
 
@@ -11436,7 +11436,7 @@ pub extern fn runTests()
     ZERO(`
         fn main() {
             mut vals = [ 1, 2 ];
-            vals.sort(|a: i32, b: i32| b < a);                  ;; GNUStmtExpr
+            vals.sort(|a: i32, b: i32| b < a);
             return vals[0] - 2;
         }
     `);
@@ -11453,7 +11453,7 @@ pub extern fn runTests()
         fn test(ref vals: i32[], xor: i32)
             vals.sort(
                 |a: i32, b: i32|
-                    a^xor < b^xor);                             ;; GNUStmtExpr
+                    a^xor < b^xor);
 
         fn main() {
             mut vals = [ 1, 2 ];
@@ -11491,7 +11491,7 @@ pub extern fn runTests()
             <fail purectx writes to implicit sum>
             arr.par::each: |it| <pass/>
             arr.seq__each: |it| </fail>
-                sum += it *= 2;
+                sum += it *= 2;                                 ;; PointlessMustSeq
 
             return sum - 2 - 4 - 6 - 8;
         }

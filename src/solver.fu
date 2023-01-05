@@ -4186,7 +4186,7 @@ pub fn solve(
                         let argNode = items[i] || BUG();
                         let id = "$" ~ argNode.value;
 
-                        typeParams.map::if_ref(id): |tp|
+                        typeParams.map::if_ref(id): |ref tp|
                             tp.matched = tp.consumed;
                     }
                 }

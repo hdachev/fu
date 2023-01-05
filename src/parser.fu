@@ -395,7 +395,7 @@ pub fn parse(
                         break :F_PREDICATE;
 
             //  ... then every field is a predicate.
-            items.each: |item|
+            items.each: |ref item|
                 if (item.kind == "let")
                     item.flags |= F_PREDICATE;
         }
