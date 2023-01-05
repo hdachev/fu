@@ -3127,7 +3127,7 @@ pub fn solve(
             else
                 nodes.last = Node(kind: "return", value: [], :node.token,
                     items: nodes.last.kind != "void" && [ nodes.last ],
-                    flags: nodes.last.kind == "void" && F_IMPLICIT);
+                    flags: F_IMPLICIT);
         }
         ////////////////////////////////////////////////////////////////
 
@@ -5499,7 +5499,7 @@ pub fn solve(
     fn solveJump(node: Node): SolvedNode
     {
         let h = node.kind == "return"
-            ? Scope_lookupReturn(node.value)
+            ? Scope_lookupReturn(node.value, lambdaOK: !!(node.flags & F_IMPLICIT))
             : Scope_lookupLabel (node.value, cont: node.kind == "continue");
 
         // Deal with expression first, might noop the jump.
@@ -5599,13 +5599,13 @@ pub fn solve(
 
     // Loops.
 
-    fn Scope_lookupReturn(id: string): Helpers
+    fn Scope_lookupReturn(id: string, lambdaOK: bool): Helpers
     {
         _helpers.reveach(_ss.helpers, |item, i|
         {
             if !(item.mask & HM_CanReturn)
                 continue;
-            if (item.mask & HM_Lambda)
+            if (item.mask & HM_Lambda && !lambdaOK)
                 continue;
             if (id && item.id != id)
                 continue;
