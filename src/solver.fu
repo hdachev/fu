@@ -7558,7 +7558,7 @@ pub fn solve(
         else if (target.kind == "var")
         {
             // INLINE ARGUMENTS ////////////////////////////////////////////
-            if (target.flags & F_INLINE)
+            if (target.flags & F_INLINE && !(target.flags & F_ARG))
                 return inlineExpression(
                     from: target.parent,
                     target.solved.items[LET_INIT]);
@@ -7644,12 +7644,14 @@ pub fn solve(
                 for (mut i = 0; i < args.len; i++)
                 {
                     let slot = host_args[i];
+                    if (slot.flags & F_INJECTED)
+                        continue;
 
                     let arg_def = createLet(
-                        id: n_fn.items[i].value,
+                        id: host_args[i].name,
                         init: args[i],          // TODO__ORIGINAL_ANNOT_OR_TYPE
                         :slot.flags &~ F_ARG    // As if not an arg
-
+                                    &~ F_COMPOUND_ID
                             // TODO FIX all of this needs to go when we get rid of this inliner,
                             //  but this is here so that an implicit arg x,
                             //   that binds to another implicit arg x in host fn,
