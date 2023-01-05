@@ -3120,10 +3120,15 @@ pub fn solve(
         let h           = _helpers[helpers_idx];
 
         // TODO FIX adding the trailing return /////////////////////////
-        if (fnbody_of && nodes && nodes.last.kind != "unwrap")
-            nodes.last = Node(kind: "return", value: [], :node.token,
-                items: nodes.last.kind != "void" && [ nodes.last ],
-                flags: nodes.last.kind == "void" && F_IMPLICIT);
+        if (fnbody_of && nodes)
+        {
+            if (nodes.last.kind == "unwrap")
+                _current_fn.TODO_FIX_isInline = true;
+            else
+                nodes.last = Node(kind: "return", value: [], :node.token,
+                    items: nodes.last.kind != "void" && [ nodes.last ],
+                    flags: nodes.last.kind == "void" && F_IMPLICIT);
+        }
         ////////////////////////////////////////////////////////////////
 
         let items       = solveNodes(
@@ -3153,7 +3158,7 @@ pub fn solve(
             //    just finish up asap.
             //
             let status = Target(:module.modid, fnbody_of).status;
-            if (!(status & SS_DIRTY) && !currentFn_mustBecomeInline(block))
+            if (!(status & SS_DIRTY) && !currentFn_mustBecomeInline())
             {
                 sortInjectedArguments();
                 runAllPasses(block);
@@ -3163,13 +3168,10 @@ pub fn solve(
         return block;
     }
 
-    fn currentFn_mustBecomeInline(body: SolvedNode)
+    fn currentFn_mustBecomeInline()
     {
         if (_current_fn.TODO_FIX_isInline)
             return "Explicitly marked inline.";
-
-        if (body.kind == "block" && body.items.if_last.kind == "unwrap")
-            return "Has an unwrapping block for a body.";
 
         return _current_fn.far_jumps
             && "Contains non-local control flow.";
@@ -4681,7 +4683,7 @@ pub fn solve(
                     id: n_fn.value,
                     mask: HM_Function | HM_CanReturn | HM_LabelUsed | (n_fn.flags & F_LAMBDA && HM_Lambda));
 
-                let mustBecomeInlineBecause = currentFn_mustBecomeInline(s_body);
+                let mustBecomeInlineBecause = currentFn_mustBecomeInline();
                 if (mustBecomeInlineBecause)
                 {
                     // RECURSIVE RELAX //////////////////////////////////
