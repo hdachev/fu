@@ -217,6 +217,10 @@ pub fn solve(
         BCK_ooe
     };
 
+    enum ArgQuery {
+        AQ_WhyNotNovec
+    };
+
 
     // The solver state.
 
@@ -4438,9 +4442,11 @@ pub fn solve(
                             ~ qSTACK(:target, Region_fromLocal(argTarget.index),
                                         node: out.out));
 
-                    if (maybeLast && asserts & A_NOVEC && !argNode.type.is_trivial)
-                        if (argNode.type.is_rx_copy || argNode.type.is_rx_resize)
-                            fail(target.qWHAT ~ " is not novec, argument " ~ name.human.qID ~ " is " ~ humanizeType(argNode.type));
+                    if (maybeLast && asserts & A_NOVEC && !argNode.isNoVec())
+                        fail(target.qWHAT   ~ " is not novec, argument " ~ name.human.qID ~ " is " ~ humanizeType(argNode.type) ~ ":\n"
+                            ~ qSTACK(:target, Region_fromLocal(argTarget.index),
+                                        node: out.out,
+                                       query: AQ_WhyNotNovec));
 
                     //
                     mut arg = Argument(
@@ -7101,6 +7107,9 @@ pub fn solve(
 
     //
 
+    fn isNoVec(t: Type)
+        t.is_trivial || !(t.is_rx_copy || t.is_rx_resize);
+
     fn SLOW_traverse(node: SolvedNode, visit)
     {
         mut stack = [ node ];
@@ -7130,17 +7139,17 @@ pub fn solve(
         }
     }
 
-    fn qSTACK(target: Target, position!: i32, seen!?: Target[])
+    fn qSTACK(target: Target, position!: i32, seen!?: Target[], query!?: ArgQuery)
     {
-        return qSTACK(:target, Region_fromLocal(target.args[position].local), :seen);
+        return qSTACK(:target, Region_fromLocal(target.args[position].local), :seen, :query);
     }
 
-    fn qSTACK(target: Target, region: Region, seen!?: Target[])
+    fn qSTACK(target: Target, region: Region, seen!?: Target[], query!?: ArgQuery)
     {
-        return qSTACK(target, target.solved, :region, :seen);
+        return qSTACK(target, target.solved, :region, :seen, :query);
     }
 
-    fn qSTACK(target: Target, node: SolvedNode, region: Region, seen!?: Target[])
+    fn qSTACK(target: Target, node: SolvedNode, region: Region, seen!?: Target[], query!?: ArgQuery)
     {
         //////////////////////////////////////////////////
         let implicit _current_fnort = target;
@@ -7159,14 +7168,23 @@ pub fn solve(
             for (shadow mut i = 0; i < host_args.len; i++)
             {
                 let host_arg = host_args[i];
-                if !(host_arg.flags & F_WRITTEN_TO)
-                    continue;
+
+                if (query == AQ_WhyNotNovec)
+                {
+                    if (host_arg.isNoVec())
+                        continue;
+                }
+                else
+                {
+                    if !(host_arg.flags & F_WRITTEN_TO)
+                        continue;
+                }
 
                 let arg = callsite.items[i];
                 if !(Lifetime_unwind(arg.type.lifetime).uni0n.has(region))
                     continue;
 
-                let peek = qSTACK(callsite.target, position: i, :seen);
+                let peek = qSTACK(callsite.target, position: i, :seen, :query);
                 if (!peek && callsite.target.kind == "fn")
                     continue;
 
