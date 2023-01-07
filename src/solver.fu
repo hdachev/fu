@@ -9528,6 +9528,9 @@ pub fn solve(
         ///////////////////////////////
         if (SELF_TEST) test_node(node, "PASS.2.relax ");
         ///////////////////////////////
+
+        if (currentFn_mustBecomeInline)
+            BUG("runAllPasses: currentFn_mustBecomeInline after all.");
     }
 
 
