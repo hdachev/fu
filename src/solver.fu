@@ -4693,6 +4693,8 @@ pub fn solve(
                 }
                 // RECURSIVE RELAX //////////////////////////////////
 
+                target.GET_mut.status &= ~SS_Debug_AllPassesComplete;
+
                 let s_body = solveBlock(
                     n_body, type: ret_expect,
                     fnbody_of: target.index,
@@ -9481,6 +9483,15 @@ pub fn solve(
 
     fn runAllPasses(ref node: SolvedNode)
     {
+        if (_current_fn)
+        {
+            if (currentFn_mustBecomeInline)
+                return;
+
+            if (_current_fn.target.status & SS_Debug_AllPassesComplete)
+                BUG("runAllPasses: All passes already complete.");
+        }
+
         ///////////////////////////////
         if (SELF_TEST) test_node(node, "PASS.0 ");
         ///////////////////////////////
@@ -9529,8 +9540,13 @@ pub fn solve(
         if (SELF_TEST) test_node(node, "PASS.2.relax ");
         ///////////////////////////////
 
-        if (currentFn_mustBecomeInline)
-            BUG("runAllPasses: currentFn_mustBecomeInline after all.");
+        if (_current_fn)
+        {
+            if (currentFn_mustBecomeInline)
+                BUG("runAllPasses: currentFn_mustBecomeInline after all.");
+
+            _current_fn.target.GET_mut.status |= SS_Debug_AllPassesComplete;
+        }
     }
 
 
