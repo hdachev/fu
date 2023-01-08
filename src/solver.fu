@@ -2880,6 +2880,11 @@ pub fn solve(
                     h.ret_actual.try_relax(:slot, :relax_mask);
             }
 
+            // Discard type annotations at this point,
+            //  rewiring jumps and such can change things up.
+            if (h.ret_expect)
+                h.ret_expect = [];
+
             if (h)
             {
                 h.mask &= ~HM_LabelUsed;
