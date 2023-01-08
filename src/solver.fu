@@ -3996,7 +3996,7 @@ pub fn solve(
             scope_skip ~= ScopeSkip(:start, :end);
     }
 
-    fn ScopeSkip_setup(original: Target, scope0: ScopeMemo, isInline!?: bool)
+    fn ScopeSkip_setup(original: Target, scope0: ScopeMemo)
     {
         if (_root_scope)
         {
@@ -4005,20 +4005,7 @@ pub fn solve(
             _ss         = eph.scope_skip;
 
             ScopeSkip_push(_ss.items,       start: start.items_len,     end: scope0.items_len);
-
-            ScopeSkip_push(_ss.implicits,
-
-                // Not sure about this, the whole thing is a mess -
-                //  not sure what's happening here and why this is needed,
-                //   but it helps with the qSTACK/updateScope testcase thing.
-                start: isInline && start.implicits_len > _current_fn.scope0.implicits_len
-                    ? _current_fn.scope0.implicits_len
-                    : start.implicits_len,
-
-                end: isInline
-                    ? _current_fn.scope0.implicits_len
-                    :             scope0.implicits_len);
-
+            ScopeSkip_push(_ss.implicits,   start: start.implicits_len, end: scope0.implicits_len);
             ScopeSkip_push(_ss.imports,     start: start.imports_len,   end: scope0.imports_len);
             ScopeSkip_push(_ss.privates,    start: start.privates_len,  end: scope0.privates_len);
             ScopeSkip_push(_ss.usings,      start: start.usings_len,    end: scope0.usings_len);
@@ -4708,8 +4695,8 @@ pub fn solve(
                 let hasCallers  = !!target.callers;
                 if (hasCallers)
                 {
-                    change = args.len != ext.args.len
-                        || !(overload.type == retval);
+                    change ||= args.len != ext.args.len
+                           || !(overload.type == retval);
 
                     if (!change) for (mut i = 0; i < args.len; i++)
                     {
@@ -4770,17 +4757,17 @@ pub fn solve(
                 shadow ref overload = GET_mut(target);
                 overload.type       = retval;
 
-                {
-                    let kind0       = overload.kind;
-                    overload.kind   = isUnspec          ? "template"
+                let kind: ::kind    = isUnspec          ? "template"
                                     : isNative          ? "__native"
                                     : mustBecomeInline  ? "inline"
                                                         : "fn";
-
-                    if (overload.kind != kind0)
-                        change = true;
+                if (kind != overload.kind)
+                {
+                    overload.kind   = kind;
+                    change          = true;
                 }
 
+                //
                 retval || BUG("updateScope: no return type.");
                 if (retval.is_ref)
                     Lifetime_test(retval.lifetime);
@@ -4811,8 +4798,32 @@ pub fn solve(
                 }
 
                 //
-                if (change && hasCallers)
-                    overload.status |= SS_UPDATED;
+                let solved = !isUnspec && out.out;
+
+                if (hasCallers)
+                {
+                    if (!change && kind == "inline")
+                    {
+                        fn astChange(a: SolvedNode, b: SolvedNode)
+                        {
+                            if (a.kind != b.kind || a.items.len != b.items.len)
+                                return true;
+
+                            for (mut i = a.items.len; i --> 0; )
+                                if (astChange(a.items[i], b.items[i]))
+                                    return true;
+
+                            return false;
+                        }
+
+                        change = astChange(overload.solved, solved);
+                    }
+
+                    if (change)
+                        overload.status |= SS_UPDATED;
+                }
+
+                overload.solved = solved;
 
                 //
                 if (!isNative && !isUnspec)
@@ -4830,9 +4841,6 @@ pub fn solve(
                     EXT_mut(target).sighash = sig
                         && (tea::hash62(sig) || BUG());
                 }
-
-                //
-                target.solved_set(!isUnspec && out);
 
                 // setSpecs & co.
                 if (!into)
@@ -5805,7 +5813,7 @@ pub fn solve(
                 reason: NICEERR_missingReturn ? "Missing final return: " : "Subsequent return: ")
             : type;
 
-        h.ret_actual || BUG("Can't be null past this point.");
+        h.ret_actual || BUG("reportReturnType: no ret_actual.");
     }
 
 
@@ -6119,10 +6127,11 @@ pub fn solve(
     {
         mut out = solveLetLike_dontTouchScope(node, :specType);
         let id  = out.value;
-        return solveLet_setScopeAndGetLetdef(:out, :id);
+        return solveLet_createBindingAndGetLetdef(:out, :id, setScope: true);
     }
 
-    fn solveLet_setScopeAndGetLetdef(mut out!: SolvedNode, id!: string): SolvedNode
+    fn solveLet_createBindingAndGetLetdef(
+        mut out!: SolvedNode, id!: string, setScope!: bool): SolvedNode
     {
         // Dead code elim.
         if (out.kind != "let")
@@ -6162,13 +6171,17 @@ pub fn solve(
             //
             shadow let shadows = true;
 
-            unpackAddrOfFn(out.type.canon, |target|
-                Scope_set(_scope.items, :id, :target, :shadows));
+            if (setScope)
+                unpackAddrOfFn(out.type.canon, |target|
+                    Scope_set(_scope.items, :id, :target, :shadows));
         }
         else
         {
             fn Scope_set(target: Target)
             {
+                if (!setScope)
+                    return;
+
                 Scope_set(_scope, :id, :target, :shadows);
 
                 if (out.flags & F_IMPLICIT)
@@ -6199,8 +6212,7 @@ pub fn solve(
                             //                    ~ " := " ~ other.name ~ ": " ~ humanizeType(other.type));
 
                             Scope_set(:target);
-
-                            out = createEmpty();
+                            out = createEmpty(:target); // Inliner: needed to put argdefs into letdefReplicas
                             return out;
                         }
                     }
@@ -6233,10 +6245,10 @@ pub fn solve(
         return SolvedNode(kind: "letdef", :target, type: t_void);
     }
 
-    fn createLet(id: string, flags: Flags, init: SolvedNode)
+    fn createLet(id: string, flags: Flags, init: SolvedNode, setScope!: bool)
     {
         mut out = solveLetLike_dontTouchScope(:flags, :id, :init);
-        return solveLet_setScopeAndGetLetdef(:out, :id);
+        return solveLet_createBindingAndGetLetdef(:out, :id, :setScope);
     }
 
 
@@ -7490,12 +7502,20 @@ pub fn solve(
         return false;
     }
 
-    fn inlineExpression(from: Target, mut expr: SolvedNode)
+    fn inlineExpression(
+        from: Target,
+        mut expr: SolvedNode,
+        mut letdefReplicas?: i32[],
+        locals_start!?: i32,
+        must_not_call!?: Target)
     {
         from || BUG("TODO inlining from global scope, never happened before, might work, remove assert as needed.");
 
         // println("inlineExpression " ~ expr.kind ":" ~ expr.value " in " _current_fn.qWHAT);
 
+        // TODO FAILCASE: used to do nothing if from == self,
+        //  which breaks jumps, references to locals, etc.
+        //
         let self = _current_fn.target;
         {
             let helpers0 = _helpers.len;
@@ -7505,9 +7525,9 @@ pub fn solve(
             let letdefExpect = -from.index;
             let minLocalIdx  = GET_next_local_index();
 
-            mut letdefReplicas:     i32[];
-            mut helpersReplicas:    Helpers[];
+            mut helpersReplicas: Helpers[];
 
+            //
             fn matchReplicaOrInjectForeignLocal(target: Target)
             {
                 if (target.modid != letdefExpect)
@@ -7541,7 +7561,7 @@ pub fn solve(
             //  something like F_NO_LOCALS or something that tells us
             //   there's nothing here that needs relinking.
             //
-            fn visitNode(shadow ref expr: SolvedNode)
+            fn visitNode(shadow ref expr: SolvedNode, shadow locals_start!?: i32)
             {
                 // We need to setup _helpers & co before we visit the jump nodes inside.
                 if (expr.kind == "block" || expr.kind == "loop")
@@ -7552,7 +7572,7 @@ pub fn solve(
                         let local = push(
                             HelpersData(
                                 local_of:       _current_fn.target.index,
-                                locals_start:   GET_next_local_index(),
+                                locals_start:   locals_start || GET_next_local_index(),
                                 ret_actual:     expr.type,
                             ));
 
@@ -7638,6 +7658,10 @@ pub fn solve(
                         expr.type.vfacts = local.type.vfacts;
                         // TODO FIX VFACTS /////////////////////////////////////////////
                     }
+                    else if (expr.target == must_not_call)
+                    {
+                        fail("Cannot inline self-recursive fns: " ~ expr.target.qWHAT);
+                    }
                 }
                 else if (expr.kind == "jump" || expr.kind == "__far_jump") :REPLICATE_JUMP
                 {
@@ -7675,7 +7699,15 @@ pub fn solve(
                 // Replace foreign lifetimes with lifetimes to implicit closure args.
                 visitType(expr.type);
 
-                if (expr.helpers)
+                if (expr.kind == "call")
+                {
+                    // INLINE ARGUMENTS ////////////////////////////////////////////
+                    if (expr.target.isLocal && expr.target.flags & F_INLINE)
+                        expr = expr.target.solved.items[LET_INIT] || BUG(
+                            "inlineExpression: F_INLINE local has no LET_INIT.");
+                    // INLINE ARGUMENTS ////////////////////////////////////////////
+                }
+                else if (expr.helpers)
                 {
                     if (expr.kind == "block" || expr.kind == "loop")
                     {
@@ -7693,7 +7725,7 @@ pub fn solve(
                             swap(ret_actual, expr.helpers.ret_actual);
                         }
                     }
-                    else if (expr.kind != "call" && expr.kind != "jump" && expr.kind != "__far_jump")
+                    else if (expr.kind != "jump" && expr.kind != "__far_jump")
                     {
                         BUG("inlineExpression: TODO handle .helpers on a " ~ expr.kind);
                     }
@@ -7712,12 +7744,26 @@ pub fn solve(
                         let target  = nested(:index, :from);
                         let local   = matchReplicaOrInjectForeignLocal(target);
 
-                        // println("inlineExpression: LT.REPLACE " target.qWHAT " with " local.qWHAT);
+                        // INLINE ARGUMENTS ////////////////////////////////////////////
+                        if (local.flags & F_INLINE)
+                        {
+                            let init = local.solved.items[LET_INIT] || BUG(
+                                "inlineExpression: F_INLINE local has no LET_INIT.");
 
-                        // We'll add the replacements back in at the end,
-                        //  don't want to deal with the offset juggle here.
-                        replacements.set::add(
-                            Region_fromLocal(local.index));
+                            replacements.set::add(
+                                (init.type.lifetime || Lifetime_temporary())
+                                    .uni0n);
+                        }
+                        // INLINE ARGUMENTS ////////////////////////////////////////////
+                        else
+                        {
+                            // println("inlineExpression: LT.REPLACE " target.qWHAT " with " local.qWHAT);
+
+                            // We'll add the replacements back in at the end,
+                            //  don't want to deal with the offset juggle here.
+                            replacements.set::add(
+                                Region_fromLocal(local.index));
+                        }
 
                         regions.splice(i, 1);
                         i--;
@@ -7727,7 +7773,7 @@ pub fn solve(
                 regions.set::add(replacements);
             }
 
-            visitNode(expr);
+            visitNode(expr, :locals_start);
         }
 
         return expr;
@@ -7846,14 +7892,6 @@ pub fn solve(
         //  previously we tracked them separately but we're making everything more samey.
         else if (kind == "var")
         {
-            // INLINE ARGUMENTS ////////////////////////////////////////////
-            if (target.flags & F_INLINE && !(target.flags & F_ARG))
-                return inlineExpression(
-                    from: target.parent,
-                    target.solved.items[LET_INIT]);
-            // INLINE ARGUMENTS ////////////////////////////////////////////
-
-            //
             type.lifetime.uni0n.len == 1 || BUG(
                 "CallerNode: var " ~ target.name ~ " type.lifetime.len != 1");
 
@@ -7921,90 +7959,87 @@ pub fn solve(
             }
 
             // Inliner.
-            if (kind == "inline")
+            if (kind == "inline") :INLINE_ATTEMPT
             {
-                let scope0 = Scope_snap(_scope);
-                let ss0 = _ss;
-                let autoshadow_ok0 = _current_fn.autoshadow_ok;
+                target.revision > 0 || BUG("Inlining " ~ target.qWHAT ~ " at revision 0.");
 
-                _current_fn.now_inlining.set::add(target) || fail(
-                    "Cannot inline self-recursive functions: " ~ target.qWHAT);
-
+                //
                 if (SELF_TEST) TODO_FIX_inline_safety++ < 24 || BUG(
                     "Inliner recursion, something is off: " ~ target.qWHAT);
 
-                defer {
-                    if (SELF_TEST) TODO_FIX_inline_safety--;
-
-                    Scope_pop(_scope, scope0);
-                    _ss = ss0;
-                    _current_fn.autoshadow_ok = autoshadow_ok0;
-                    _current_fn.now_inlining.set::rem(target) || BUG();
-                }
-
-                let template    = target.template;
-
-                ScopeSkip_setup(target, :scope0, isInline: true);
-                _scope.items ~= target.extra_items;
-
-                if (template.node.flags & F_TEMPLATE)
-                    _current_fn.autoshadow_ok++;
+                defer if (SELF_TEST) TODO_FIX_inline_safety--;
 
                 //
-                let n_fn        = template.node;
-                let n_body      = n_fn.items.last;
-                let ret_expect  = target.type;
-                let host_args   = target.args;
+                if (target.status & (SS_DID_START | SS_FINALIZED) == SS_DID_START)
+                    break :INLINE_ATTEMPT;
 
-                mut arg_defs: SolvedNode[];
+                // For each argument, we collect:
+                //  - letdefs we can unshift them in the inlined expression,
+                //  - the letdef mapping for ref replacement.
+                mut argdefs: SolvedNode[];
+                mut letdefReplicas: i32[];
+                let locals_start = GET_next_local_index();
+
+                let host_args = target.args;
                 host_args.len == args.len || BUG("inline: arglen mismatch");
-
-                let locals_start = args && GET_next_local_index();
                 for (mut i = 0; i < args.len; i++)
                 {
-                    let slot = host_args[i];
-                    if (slot.flags & F_INJECTED)
+                    let host_arg = host_args[i];
+
+                    // TODO FIX the let vs letdef mess
+                    if (!host_arg.local)
                         continue;
 
-                    let arg_def = createLet(
-                        id: host_args[i].name,
-                        init: args[i],          // TODO__ORIGINAL_ANNOT_OR_TYPE
-                        :slot.flags &~ F_ARG    // As if not an arg
-                                    &~ F_COMPOUND_ID
-                            // TODO FIX all of this needs to go when we get rid of this inliner,
-                            //  but this is here so that an implicit arg x,
-                            //   that binds to another implicit arg x in host fn,
-                            //    don't become mutually ambiguous.
-                            //
-                            | (slot.flags & F_IMPLICIT && F_SHADOW));
+                    let argdef = createLet(
+                        id:     host_args[i].name,
+                        init:   args[i],
+                        flags:  host_arg.flags  &~ F_ARG
+                                                &~ F_COMPOUND_ID
 
-                    if (arg_def.kind == "empty")
-                        continue;
+                                                // TODO FIX mutrefs lost in translation
+                                                | (host_arg.flags & F_INJECTED && host_arg.is_mutref && F_REF)
+                                                ,
+                        setScope: false);
 
                     if (SELF_TEST)
                     {
-                        arg_def.kind == "empty" || arg_def.kind == "letdef" || BUG(
-                            "Inliner: arg_def neither letdef nor empty: " ~ arg_def.qWHAT);
-                        arg_def.target || BUG(
-                            "Inliner: no arg_def.target: " ~ arg_def.qWHAT);
+                        argdef.kind == "empty" || argdef.kind == "letdef" || BUG(
+                            "Inliner: argdef neither letdef nor empty: " ~ argdef.qWHAT);
+                        argdef.target || BUG(
+                            "Inliner: no argdef.target: " ~ argdef.qWHAT);
                     }
 
-                    arg_defs ~= arg_def;
+                    if (argdef.kind != "empty" && !(argdef.target.flags & F_INLINE))
+                        argdefs ~= argdef;
 
-                    // INLINE ARGUMENTS ////////////////////////////////////////////
-                    if (slot.flags & F_INLINE)
-                        arg_defs.pop();
-                    // INLINE ARGUMENTS ////////////////////////////////////////////
+                    // Watch it, cross-module locals.
+                    let foreign         = nested(from: target, host_arg.local);
+                    letdefReplicas.grow_if_oob(foreign.index) = argdef.target.index || BUG();
+                    shadow let foreign  = GET_crossmodule(foreign, from: target);
+
+                    if (SELF_TEST)
+                        isAssignable(host: foreign.type, argdef.target.type) || BUG(
+                            "Inliner botching the argdef type of " ~ foreign.qWHAT ~ ":\n"
+                                ~ "\n\t\tExpect: " ~       foreign.type.humanizeType
+                                ~ "\n\t\tActual: " ~ argdef.target.type.humanizeType);
+
+                    // println("inline: ARGDEF.REPLACE " foreign.qWHAT " with " argdef.qWHAT);
                 }
 
-                mut s_body = solveBlock(
-                    n_body, type: ret_expect,
-                    mask: HM_CanReturn | (n_fn.flags & F_LAMBDA && HM_Lambda),
-                    id: n_fn.value,
-                    :locals_start);
+                //
+                let n_body = target.solved.items.last;
+                mut s_body = inlineExpression(
+                    from: target, expr: n_body, :letdefReplicas, :locals_start,
+                    must_not_call: target);
 
-                s_body.kind || BUG("inline: no s_body.kind");
-                s_body.items.splice(0, 0, arg_defs);
+                if (argdefs)
+                {
+                    s_body.kind || BUG("inline: no s_body.kind");
+                    if (s_body.kind != "block")
+                        s_body = createBlock(argdefs ~ s_body, type: s_body.type);
+                    else
+                        s_body.items.splice(0, 0, argdefs);
+                }
 
                 return s_body;
             }
@@ -9645,9 +9680,19 @@ pub fn solve(
             BUG(debug ~ " " ~ callsite.target.qWHAT ~ ": " ~ reason);
 
         let k = callsite.target.kind;
-        k == "field" || k == "enumv" || k == "type" || k == "__native" || k == "var" || k == "fn" || err(
-            "Bad target.kind: " ~ explainWhichFn(callsite.target));
 
+        // TODO FAILCASE enable this, allowing non-inline callsites to inline fns
+        //  helps us navigate some nasty inline-recursions,
+        //   but there's no guarantee that the recursion will converge,
+        //    if the inline fn finishes solving with no-change,
+        //     the callsite could stay as-is.
+        //
+        // This problem will go away if we move inlining to a later global pass,
+        //  where everything is solved and can get recursively relaxed & inlined.
+        //
+        // k == "field" || k == "enumv" || k == "type" || k == "__native" || k == "var" || k == "fn" || err(
+        //     "Bad target.kind: " ~ explainWhichFn(callsite.target));
+        //
         host_args.len == args.len || k == "type" && !args.len || err(
             "host_args.len (" ~ host_args.len ~ ") != args.len (" ~ args.len ~ "):"
                 ~ "\n\t\t" ~ mangleArgTypes(args)
