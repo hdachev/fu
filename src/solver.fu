@@ -3208,7 +3208,17 @@ pub fn solve(
             dead_brk:           true);
 
         // TODO clean this up, non-return ret-expects
-        if !(mask & HM_CanReturn)
+        //
+        // PREVIOUSLY STRONGER
+        //
+        // if !(mask & HM_CanReturn)
+        //  Running into issues with recursions through inlines,
+        //   the return value might not be exact.
+        //
+        // This note is obsolete if we stop inlining via solveBlock,
+        //  e.g. use inlineExpression for all inline fns.
+        //
+        if (!fnbody_of)
             h.ret_expect = [];
 
         // Block tail expressions.
@@ -3235,10 +3245,14 @@ pub fn solve(
             //    just finish up asap.
             //
             let status = Target(:module.modid, fnbody_of).status;
-            if (!(status & SS_DIRTY) && !currentFn_mustBecomeInline())
+            if (!(status & SS_DIRTY))
             {
                 sortInjectedArguments();
-                runAllPasses(block);
+
+                if (!currentFn_mustBecomeInline())
+                    runAllPasses(block);
+                else
+                    mcom_BlockReturns_CopyOrMoveDecision(:h);
             }
         }
 
@@ -4042,8 +4056,7 @@ pub fn solve(
         };
 
         //
-        let isInline = !!(template.node.flags & F_INLINE);
-        if (!into && !isInline)
+        if (!into)
             resetMangle(mangle);
 
         // Scopes & scope skips.
@@ -4214,7 +4227,7 @@ pub fn solve(
 
                 /////////////////
                 // Literal fixup.
-                if (remangle && !isInline)
+                if (remangle)
                     resetMangle(args);
                 //        /LITFIX
                 /////////////////
@@ -4331,7 +4344,6 @@ pub fn solve(
             let asserts     = template.node.asserts;
 
             mut out = CurrentFn(:scope0, :asserts,
-                TODO_FIX_isInline: isInline,
                 solved(n_fn,
                     :target, type: X_addrofTarget(target)),
                 autoshadow_ok:
@@ -4453,6 +4465,7 @@ pub fn solve(
                 ///////////////////////////////
 
                 shadow let items = out.items;
+                shadow let mustBecomeInline = currentFn_mustBecomeInline();
 
                 let N = items.len + FN_ARGS_BACK;
                 mut min = 0;
@@ -4535,6 +4548,9 @@ pub fn solve(
                     /////////////////////////////////////////////
 
                     // Validate `pure` asserts.
+                    // TODO FAILCASE
+                    // TODO FAILCASE these dont work for inline fns
+                    // TODO FAILCASE
                     if (asserts & A_PURE && written_via)
                         fail(target.qWHAT   ~ " is not pure, writes to argument " ~ name.human.qID ~ ":\n"
                             ~ qSTACK(:target, Region_fromLocal(argTarget.index),
@@ -4545,7 +4561,7 @@ pub fn solve(
                             ~ qSTACK(:target, Region_fromLocal(argTarget.index),
                                         node: out.out));
 
-                    if (maybeLast && asserts & A_NOVEC && !argNode.isNoVec())
+                    if (maybeLast && asserts & A_NOVEC && !argNode.isNoVec() && !mustBecomeInline)
                         fail(target.qWHAT   ~ " is not novec, argument " ~ name.human.qID ~ " is " ~ humanizeType(argNode.type) ~ ":\n"
                             ~ qSTACK(:target, Region_fromLocal(argTarget.index),
                                         node: out.out,
@@ -4630,7 +4646,9 @@ pub fn solve(
                 if (!isNative)
                     ext.fx_mask = out.fx_mask;
 
-                //
+                // TODO FAILCASE
+                // TODO FAILCASE these dont work for inline fns
+                // TODO FAILCASE
                 asserts & A_NOTHROW && ext.fx_mask & Fx_Throws && fail(
                     target.qWHAT ~ " is not nothrow, throws here:\n"
                         ~ qSTACK(:target, Fx_Throws, node: out.out));
@@ -4647,7 +4665,11 @@ pub fn solve(
                     target.qWHAT ~ " is not purefx, outputs here:\n"
                         ~ qSTACK(:target, Fx_Output, node: out.out));
 
-                if (maybeLast)
+                asserts & A_NOFLOW && _current_fn.far_jumps && fail(
+                    target.qWHAT ~ " is not noflow: contains non-local control flow, jumping out to "
+                        ~ Target(:module.modid, _current_fn.far_jumps[0]).qWHAT ~ ".");
+
+                if (maybeLast && !mustBecomeInline)
                     numArgsWritten || ext.fx_mask || !retval.is_void || overload.flags & F_LAX || warn(out.token,
                         target.qWHAT ~ " does nothing: returns void and has no effects. Make it " ~ "lax".qKW ~ " if this is intentional.");
 
@@ -4656,20 +4678,15 @@ pub fn solve(
                 overload.type       = retval;
 
                 {
-                    shadow let isInline = currentFn_mustBecomeInline();
-
                     let kind0       = overload.kind;
-                    overload.kind   = isUnspec  ? "template"
-                                    : isNative  ? "__native"
-                                    : isInline  ? "inline"
-                                                : "fn";
+                    overload.kind   = isUnspec          ? "template"
+                                    : isNative          ? "__native"
+                                    : mustBecomeInline  ? "inline"
+                                                        : "fn";
 
                     if (overload.kind != kind0)
                         change = true;
                 }
-
-                if (isInline)
-                    return;
 
                 retval || BUG("updateScope: no return type.");
                 if (retval.is_ref)
@@ -4766,25 +4783,21 @@ pub fn solve(
 
                 //
                 updateScope(_current_fn,
-                    retval:    isInline ? ret_expect : ret_seed,
+                    retval:    ret_seed,
                     maybeLast: isNative && !isUnspec);
             }
 
             mut didSetBody = false;
 
             // Regular fns again.
-            :NOT_INLINE
-            if (!isInline && !isUnspec && !isNative)
+            if (!isUnspec && !isNative)
             {
-                mut retval = ret_seed;
-
                 // RECURSIVE RELAX //////////////////////////////////
                 // This makes it possible to relax functions
                 //  that overconstrain recursive arguments,
                 //   e.g. take a ref, pass it to themselves,
                 //    and do nothing else with it.
                 //
-                let args0 = target.args;
                 if (isFirst)
                 {
                     ref ext = EXT_mut(target);
@@ -4820,6 +4833,9 @@ pub fn solve(
                 if (status & (SS_DIRTY | SS_FINALIZED | SS_DID_START) != SS_DID_START)
                     BUG(target.qWHAT ~ " is not SS_DID_START just before solve: " ~ status);
 
+                // This got defered here to avoid inline-recursions before first solve.
+                _current_fn.TODO_FIX_isInline = !!(template.node.flags & F_INLINE);
+
                 //
                 let s_body = solveBlock(
                     n_body, type: ret_expect,
@@ -4827,39 +4843,8 @@ pub fn solve(
                     id: n_fn.value,
                     mask: HM_Function | HM_CanReturn | HM_LabelUsed | (n_fn.flags & F_LAMBDA && HM_Lambda));
 
-                let mustBecomeInlineBecause = currentFn_mustBecomeInline();
-                if (mustBecomeInlineBecause)
-                {
-                    // RECURSIVE RELAX //////////////////////////////////
-                    // TODO FAILCASE do this out of the mustBecomeInlineBecause block.
-                    if (isFirst)
-                        EXT_mut(target).args = args0;
-                    // RECURSIVE RELAX //////////////////////////////////
-
-                    if (asserts & A_NOFLOW && _current_fn.far_jumps)
-                        fail(target.qWHAT ~ " is not noflow: contains non-local control flow, jumping out to "
-                            ~ Target(:module.modid, _current_fn.far_jumps[0]).qWHAT ~ ".");
-
-                    isFirst || fail(
-                        "Function wants to become inline on after first solve.");
-
-                    // Unfortunately we have to throw away
-                    //  all this work and start over.
-                    //
-                    // Unless we make the inliner do something different,
-                    //  just move all the newly solved stuff into the parent fn,
-                    //   so that no effort is lost at this point.
-                    //
-                    ref o  = GET_mut(target);
-                    o.kind = "inline";
-                    o.type = ret_expect;
-
-                    break :NOT_INLINE;
-                }
-
                 //
-                retval = s_body.helpers.ret_actual;
-                checkAssignable(host: retval, s_body.type, "reval after runAllPasses");
+                let retval = s_body.helpers.ret_actual || BUG("doTrySpec: no body.ret_actual");
 
                 // MUT DURING SOLVE,
                 //  implicit args splice in
@@ -5351,7 +5336,7 @@ pub fn solve(
             o.status & (SS_FINALIZED | SS_DID_START | SS_DIRTY) && BUG("SS_DID_START: non-zero solver status: " ~ o.status);
             o.status |= SS_DID_START;
 
-            if (o.kind == "fn")
+            if (o.kind == "fn" || o.kind == "inline")
                 doTrySpecialize(into: target, parent_idx: target.local_of);
             else if (o.kind == "type")
                 __solveStruct(solve: true, :target.template.node, into: target);

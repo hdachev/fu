@@ -936,7 +936,8 @@ pub fn cpp_codegen(
 
     fn isExtLinked(overload: Overload)
     {
-        return overload.flags & (F_PUB | F_EXTERN);
+        return overload.flags & (F_PUB | F_EXTERN)
+            && overload.kind != "inline";
     }
 
     fn fnLinkage(overload: Overload)
