@@ -7445,8 +7445,33 @@ pub fn solve(
             //  something like F_NO_LOCALS or something that tells us
             //   there's nothing here that needs relinking.
             //
-            fn visit(shadow ref expr: SolvedNode)
+            fn visitNode(shadow ref expr: SolvedNode)
             {
+                // We need to setup _helpers & co before we visit the jump nodes inside.
+                if (expr.kind == "block" || expr.kind == "loop")
+                {
+                    let foreign = expr.helpers;
+                    if (foreign)
+                    {
+                        let local = push(
+                            HelpersData(
+                                local_of:       _current_fn.target.index,
+                                locals_start:   GET_next_local_index(),
+                                ret_actual:     expr.type,
+                            ));
+
+                        helpersReplicas.map::set(foreign, local);
+
+                        // println("inlineExpression: REPLICATE block/loop #" foreign.index " -> #" local.index);
+
+                        expr.helpers = local;
+                    }
+                }
+
+                // Descend.
+                for (mut i = 0; i < expr.items.len; i++)
+                    visitNode(expr.items[i]);
+
                 // This is unpleasant -
                 //  when inlining expressions we can encouter new let definitions,
                 //   potentially cross-module.
@@ -7474,7 +7499,7 @@ pub fn solve(
                     solved.kind == "let" && solved.target == expr.target || BUG();
                     solved.target = local;
 
-                    visit(solved);
+                    visitNode(solved);
 
                     GET_mut(local) = Overload(
                         :foreign.kind,
@@ -7500,27 +7525,6 @@ pub fn solve(
                         // println("inlineExpression: CALL.REPLACE " expr.target.qWHAT " with " local.qWHAT);
 
                         expr.target = local;
-                    }
-                }
-
-                //
-                else if (expr.kind == "block" || expr.kind == "loop")
-                {
-                    let foreign = expr.helpers;
-                    if (foreign)
-                    {
-                        let local = push(
-                            HelpersData(
-                                local_of:       _current_fn.target.index,
-                                locals_start:   GET_next_local_index(),
-                                ret_actual:     expr.type,
-                            ));
-
-                        helpersReplicas.map::set(foreign, local);
-
-                        // println("inlineExpression: REPLICATE block/loop #" foreign.index " -> #" local.index);
-
-                        expr.helpers = local;
                     }
                 }
                 else if (expr.kind == "jump")
@@ -7549,13 +7553,38 @@ pub fn solve(
                         _current_fn.far_jumps.set::add(expr.helpers.local_of);
                     }
                 }
-                else if (expr.helpers)
-                {
-                    BUG("inlineExpression: TODO handle .helpers on a " ~ expr.kind);
-                }
 
                 // Replace foreign lifetimes with lifetimes to implicit closure args.
-                ref regions = expr.type.lifetime.uni0n;
+                visitType(expr.type);
+
+                if (expr.helpers)
+                {
+                    if (expr.kind == "block" || expr.kind == "loop")
+                    {
+                        if (expr.helpers.ret_actual)
+                        {
+                            mut ret_actual: Type;
+
+                            // TODO FAILCASE
+                            // TODO FAILCASE test_node & co didn't notice this was missing, so ret_actuals had rogue lifetimes.
+                            // TODO FAILCASE
+
+                            // Appeasing bck.
+                            swap(ret_actual, expr.helpers.ret_actual);
+                            visitType(ret_actual);
+                            swap(ret_actual, expr.helpers.ret_actual);
+                        }
+                    }
+                    else if (expr.kind != "call" && expr.kind != "jump" && expr.kind != "__far_jump")
+                    {
+                        BUG("inlineExpression: TODO handle .helpers on a " ~ expr.kind);
+                    }
+                }
+            }
+
+            fn visitType(ref type: Type)
+            {
+                ref regions = type.lifetime.uni0n;
                 mut replacements: Region[] = [];
                 for (mut i = 0; i < regions.len; i++)
                 {
@@ -7578,13 +7607,9 @@ pub fn solve(
                 }
 
                 regions.set::add(replacements);
-
-                // Descend.
-                for (mut i = 0; i < expr.items.len; i++)
-                    visit(expr.items[i]);
             }
 
-            visit(expr);
+            visitNode(expr);
         }
 
         return expr;
