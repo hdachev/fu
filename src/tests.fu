@@ -6040,7 +6040,12 @@ pub extern fn runTests()
     `);
 
     ZERO(`
-        fn tryIntersect(left: [byte], right: [byte], ifLeft, ifNotLeft) {
+        // Added this while replacing the inliner, used to compile with a [byte].
+        <fail can neither copy nor move from 20:50><TODO/>
+        type Right = [byte]; <pass/>
+        type Right = byte[]; </fail>
+
+        fn tryIntersect(left: [byte], right: Right, ifLeft, ifNotLeft) {
             let l =  left[0];
             let r = right[0];
             let lq = l > '0' && l < '8';
