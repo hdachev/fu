@@ -3636,7 +3636,7 @@ pub extern fn runTests()
     `);
 
     ZERO(`
-        <fail explicit>
+        <fail can neither copy nor move 20:31>
         nocopy <pass/></fail>
         struct NC { x: i32; y: i32 };
 
@@ -4642,7 +4642,7 @@ pub extern fn runTests()
                 }
             }
 
-            <fail needs explicit steal or clone 10:25>
+            <fail can neither copy nor move 10:27>
             if (nc.x > 15) return nc; // <- ... unless used here.
             <pass/></fail>
 
@@ -4664,9 +4664,9 @@ pub extern fn runTests()
             while (nc.str.len < 64)
                 nc.str ~= nc.str;
 
-            <fail explicit steal or clone 10:20>
-            return nc;                   <pass/>
-            return nc.str.len;           </fail>
+            <fail can neither copy nor move 10:20>
+            return nc;                     <pass/>
+            return nc.str.len;             </fail>
         }
 
         fn main() {
@@ -7247,7 +7247,7 @@ pub extern fn runTests()
     `);
 
     ZERO(`
-        <fail explicit clone 8:21>
+        <fail can neither copy nor move 8:21>
         nocopy <pass/></fail>
         struct Copied { x: i32; };
 
