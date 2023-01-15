@@ -1347,37 +1347,36 @@ pub fn solve(
                     // Forbid optional argument ambiguities -
                     //  We should either have all optional args satisfied at the receiver or sender part,
                     //   we shouldn't allow dangling cables on both ends because that's super typo-prone.
+                    //
                     if (optional && reorder)
                         if (reorder.len < args.len && reorder.len < arity.max)
                             matchFail("Optional argument ambiguity, not all optional arguments provided, and not all callsite arguments used. Cannot distinguish from a typo. [TODO LIST MISSING ARGS]");
 
+                    // TODO FIX the two reorder fns don't deal correctly with rest args,
+                    //  this seems to fix it but honestly I'm not sure
+                    //   if it can deal with the rest of the arg-related stuff.
+                    //
                     mut REST_TYPE: Type;
                     let REST_START = arity.findRestStart();
+                    if (REST_START < host_args.len)
+                        if (use_reorder && reorder.len < args.len)
+                            for (mut i = 0; i < args.len; i++)
+                                if (!optional.has(i) && !reorder.has(i))
+                                    reorder ~= i;
 
                     let N = (use_reorder ? reorder.len : args.len)
                         .max(!isZeroInit && arity.min);
 
                     if (N)
                     {
-                        mut REST_EXPECT: Type;
-
                         if (REST_START < N)
                         {
                             let expect = host_args[REST_START].type;
                             if (expect)
-                                REST_EXPECT = tryClear_sliceable(expect) || fail(
+                                REST_TYPE = tryClear_sliceable(expect) || fail(
                                     overloadIdx.name
                                         ~ ": Rest argument annotation is not an array: "
                                         ~ humanizeType(expect));
-
-                            // TODO FIX the two reorder fns don't deal correctly with rest args,
-                            //  this seems to fix it but honestly I'm not sure
-                            //   if it can deal with the rest of the arg-related stuff.
-                            //
-                            if (reorder && reorder.len < args.len)
-                                for (mut i = 0; i < args.len; i++)
-                                    if (!optional.has(i) && !reorder.has(i))
-                                        reorder ~= i;
                         }
 
                         reorder.len >= args.len || !reorder || optional || BUG("reorder < args:\n\t\treorder=" ~ reorder ~ "\n\t\t#args=" ~ args.len);
@@ -1387,7 +1386,7 @@ pub fn solve(
                         {
                             let rest        = i >= REST_START;
                             let host_arg    = host_args[rest ? REST_START : i];
-                            let expect      = rest ? REST_EXPECT : host_arg.type;
+                            let expect      = rest ? REST_TYPE : host_arg.type;
 
                             // Its either reorder or args, asserted above [^].
                             let callsiteIndex   = use_reorder   ? reorder[i]
@@ -1400,6 +1399,7 @@ pub fn solve(
                                 //  we might be supplying defaults via names
                                 //   before we've actually exhausted
                                 //    all the non-defaulted stuff.
+                                //
                                 if (host_arg.default || host_arg.flags & F_IMPLICIT)
                                     continue :ARG_OK;
 
