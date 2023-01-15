@@ -10014,6 +10014,39 @@ pub extern fn runTests()
     `);
 
     ZERO(`
+        fn not_ambig !T(ref sum!: i32,
+            <alt>
+            inline                                              ;; GNUStmtExpr
+            </alt>
+            v[]: T[])
+        {
+            fn acc(inline x: string)    sum += x.len;
+            fn acc(inline x: i32)       sum += x;
+
+            for (mut i = 0; i < v.len; i++) acc(v[i]);
+            return sum;
+        }
+
+        fn not_ambig !T(ref sum: i32, a: i32, b: string) sum += (a + b.len);
+        fn not_ambig !T(ref sum: i32, a: string, b: i32) sum += (a.len + b);
+
+        fn main() {
+            mut sum = 0;
+
+            let a = not_ambig(:sum, 1, "ab");
+            let b = not_ambig(:sum, "bc", 2);
+            let c = not_ambig(:sum, "abc", "de");
+            let d = not_ambig(:sum, 3, 3);
+            let e = not_ambig(:sum, "abcdef",
+                <fail bad call to not_ambig 23:30>
+                                     'g'); <pass/>
+                                     "g"); </fail>
+
+            return a == 3 && b == 7 && c == 12 && d == 18 && e == 25 ? 0 : 1;
+        }
+    `);
+
+    ZERO(`
         inline fn descend_a(ref data: i32[], offset: i32, implicit ref TWO: i32) {
             return TWO * will_relax_args_a(data, offset + 1);
         }
