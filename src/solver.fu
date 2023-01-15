@@ -1275,8 +1275,6 @@ pub fn solve(
                 !local_scope && shadows && BUG("!local_scope but shadows");
 
                 //
-                mut DEBUG_mustMatch = false;
-                mut TODO_FIX_skip_autocalls = false;
                 mut TODO_FIX_dontBotherSpecializing = false;
 
                 ///////////////////////////////////
@@ -1286,24 +1284,24 @@ pub fn solve(
 
                 fn matchFail(inline err: string)
                 {
-                    if (DEBUG_mustMatch || error)
-                    {
-                        shadow let err = overloadIdx.qWHAT ~ ": " ~ err;
-
-                        if (DEBUG_mustMatch)
-                            BUG("mustMatch.matchFail: " ~ err);
-                        else
-                            error ~= "\n\n\t" ~ err;
-                    }
+                    if (error)
+                        error ~= "\n\n\t" ~ overloadIdx.qWHAT ~ ": " ~ err;
 
                     continue :MATCH_FAIL;
+                }
+
+                inline fn ensureLazySolved()
+                {
+                    mut repeats = 0;
+                    while (lazySolveStart(overloadIdx))
+                        repeats++ > 1000 && BUG(
+                            "Repeat-solved too many times: " ~ overloadIdx.qWHAT);
                 }
 
                 :TEST_AGAIN while (true)
                 {
                     // Make sure we know what this is.
-                    if (lazySolveStart(overloadIdx))
-                        continue :TEST_AGAIN;
+                    ensureLazySolved();
 
                     let overload = GET(overloadIdx);
 
@@ -1391,10 +1389,6 @@ pub fn solve(
                             let host_arg    = host_args[rest ? REST_START : i];
                             let expect      = rest ? REST_EXPECT : host_arg.type;
 
-                            // TODO FIX!
-                            if (TODO_FIX_skip_autocalls && rest)
-                                continue :ARG_OK;
-
                             // Its either reorder or args, asserted above [^].
                             let callsiteIndex   = use_reorder   ? reorder[i]
                                                 : i < args.len  ? i
@@ -1438,7 +1432,7 @@ pub fn solve(
                             }
 
                             // Autocall.
-                            if (host_arg.autocall && !TODO_FIX_skip_autocalls)
+                            if (host_arg.autocall)
                             {
                                 mut autocall_args:          SolvedNode[];
                                 mut autocall_reorder:       i32[];
@@ -1559,18 +1553,8 @@ pub fn solve(
                         if (specIdx.is_SPECFAIL)
                             matchFail("Could not specialize: " ~ _spec_errors[specIdx.index]);
 
-                        // Repeat arity checks and such.
-                        //
-                        // TODO doesn't seem necessary anymore.
-                        //  It's crazy to think that we'd specialize an inline
-                        //   and end up not using it.
-                        //
-                        overloadIdx         = specIdx;
-                        DEBUG_mustMatch     = true;
-
-                        TODO_FIX_skip_autocalls = true;
-
-                        continue :TEST_AGAIN;
+                        overloadIdx = specIdx;
+                        ensureLazySolved();
                     }
 
                     // Forbid ambiguity.
