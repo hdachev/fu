@@ -87,6 +87,7 @@ pub extern fn runTests()
     let TODO_move       = fn TODO;
     let TODO_unique     = fn TODO;
     let TODO_inline     = fn TODO;
+    let TODO_varargs    = fn TODO;
     let TODO_args       = fn TODO;
     let TODO_conv       = fn TODO;
     let TODO_fntype     = fn TODO;
@@ -10044,6 +10045,20 @@ pub extern fn runTests()
 
             return a == 3 && b == 7 && c == 12 && d == 18 && e == 25 ? 0 : 1;
         }
+    `);
+
+    TODO_varargs(`
+        fn count_args!T (
+            <alt>
+            inline
+            </alt>
+            v[]: T[]) = v.len;
+
+        fn main() = count_args(
+            hello?: "ignore me",
+            1, 2, 3,
+            world?: "ignore me too")
+                == 3 ? 0 : 1;
     `);
 
     ZERO(`
