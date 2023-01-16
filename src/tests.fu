@@ -684,7 +684,7 @@ pub extern fn runTests()
 
     ZERO(`
         inline fn inl_lies(x: u32)<fail actual return match annot>: i32<pass/></fail> = x;
-        fn main() 0.inl_lies ? 1 : 0;                           ;; GNUStmtExpr
+        fn main() 0.inl_lies ? 1 : 0;
     `);
 
     ZERO(`
@@ -734,7 +734,7 @@ pub extern fn runTests()
     ZERO(`
         pub inline fn inl_id_leak(dont_leak_me) dont_leak_me;
         let dont_leak_me = 1;
-        fn main() inl_id_leak(dont_leak_me * 2) - 2;            ;; GNUStmtExpr
+        fn main() inl_id_leak(dont_leak_me * 2) - 2;
     `);
 
     ZERO(`
@@ -3883,7 +3883,7 @@ pub extern fn runTests()
             mut arr: i32[][];
             arr.grow(101);
             arr[100] = [ 7 ]
-            return arr.must_not_return_ref_or_view()[0] - 7;    ;; GNUStmtExpr
+            return arr.must_not_return_ref_or_view()[0] - 7;
         }
     `);
 
@@ -9565,7 +9565,7 @@ pub extern fn runTests()
     // First stab at higher-order functions.
 
     ZERO(`
-        let x = { mut z = 0; z++; z };                          ;; GNUStmtExpr
+        let x = { mut z = 0; z++; z };
         return x - 1;
     `);
 
@@ -10066,7 +10066,7 @@ pub extern fn runTests()
     ZERO(`
         fn Stringy(i: i32) "i:" ~ i;
 
-        inline fn Printy(x: string): string = x;                ;; GNUStmtExpr
+        inline fn Printy(x: string): string = x;
         inline fn Printy(x.Stringy): string = x;
 
         fn Println(parts.Printy[]<alt>: [string]</alt>) {
@@ -10120,7 +10120,7 @@ pub extern fn runTests()
         fn main() {
             let topic = "A";
             implicit mut out: string;
-            printlike(:topic, "Hello, ", "World", "!");         ;; GNUStmtExpr
+            printlike(:topic, "Hello, ", "World", "!");
             return out == "A: Hello, World!\\n" ? 0 : 1
         }
     `);
@@ -10129,7 +10129,7 @@ pub extern fn runTests()
         fn main() {
             mut out: string;
             fn lazywarn(prefix: string, inline stuff.print[]: [string]) {
-                out ||= prefix ~ stuff.join();                  ;; GNUStmtExpr
+                out ||= prefix ~ stuff.join();
             }
 
             mut once = 0;
@@ -10607,7 +10607,7 @@ pub extern fn runTests()
     ZERO(`
         pub fn test(x: i32[], y: i32[]) {
             let z = {
-                :BLOCK {                                        ;; GNUStmtExpr
+                :BLOCK {
                     mut w: i32[] = x;
                     if (y[0]) w ~= y;
                     if (w[0] != 17)

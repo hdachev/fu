@@ -767,11 +767,12 @@ pub fn cpp_codegen(
                 let k = n.kind;
 
                 // TODO FIX doing this with a blacklist is mega stupid
-                if (k == "jump" || k == "loop" || k == "try" || k == "defer" ||
-                    k == "letdef" || k == "pragma")
-                {
+                if (k == "jump" || k == "loop" || k == "try" || k == "defer" || k == "pragma")
                     return false;
-                }
+
+                // SS_HOISTed letdefs currently just emit an assignment expr
+                if (k == "letdef" && !(n.target.status & SS_HOIST))
+                    return false;
 
                 if (!n.items.exprOK)
                     return false;
