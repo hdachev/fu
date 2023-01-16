@@ -3075,7 +3075,8 @@ pub fn solve(
             //   - finally there's the problem with F_PUB templates:
             //     - they can see private stuff from module scope, so can't relax those either.
             //
-            // propagateType(node.items, t_void, :relax_mask);
+            for (mut i = node.items.len; i --> 0; )
+                propagateType(node.items[i], t_void, :relax_mask);
         }
         else if (k == "pragma")
         {
@@ -3123,16 +3124,15 @@ pub fn solve(
 
         //
         let items = solveNodes(node.items, t_void);
-        if (!items.if_last.is_never)
+        if (items.if_last.is_never)
         {
-            mut root = SolvedNode(kind: "root", type: t_void, :items, :helpers);
-            runAllPasses(root);
-            return root;
+            _here = items.last.token;
+            fail("Noreturn during static init: this program will never finish booting.");
         }
 
-        //
-        _here = items.last.token;
-        fail("Noreturn during static init: this program will never finish booting.");
+        mut root = SolvedNode(kind: "root", type: t_void, :items, :helpers);
+        runAllPasses(root);
+        return root;
     }
 
     fn solveBlock(node: Node, type!: Type, fnbody_of!?: i32, mask! = HM_CanBreak, id!?: string, locals_start!?: i32): SolvedNode
@@ -3228,81 +3228,81 @@ pub fn solve(
     {
         let o = GET(t);
 
-        //
-        let usage = _current_fn.var_usage.unless_oob(t.index);
-        let isUnused = !usage;
-        if (isUnused)
-            if !(o.flags & F_LAX || o.status & SS_MATCHED || o.type.is_zeroes)
-                warn(:o.solved.token, "Unused variable: " ~ o.name.qBAD ~ ": make it " ~ "lax".qKW ~ " if this is intentional.");
-
-        //
-        shadow ref o = GET_mut(t);
-        if (isUnused)
-            o.status |= SS_UNUSED;
-        else
-            o.status & SS_UNUSED && BUG("relaxBlockVar: previously SS_UNUSED " ~ o.qWHAT ~ " now used as " ~ humanizeType(usage));
-
-        if (isUnused && canDiscard)
-            o.solved.type = t_void;
-
-        //////////////////////////////////////////////
-        // TODO one of these two is redundant       //
-        o.type.try_relax(slot: usage, :relax_mask); //
-        //////////////////////////////////////////////
-
-        // Either way, try to relax.
-
+        // ROOT: Don't relax public globals.
+        //  Can't do much even if we're exporting a single template, it's a shame.
+        if (_current_fn)
         {
-            ref node = o.solved;
+            let usage = _current_fn.var_usage.unless_oob(t.index);
+            let isUnused = !usage;
+            if (isUnused)
+                if !(o.flags & F_LAX || o.status & SS_MATCHED || o.type.is_zeroes)
+                    warn(:o.solved.token, "Unused variable: " ~ o.name.qBAD ~ ": make it " ~ "lax".qKW ~ " if this is intentional.");
 
+            //
+            shadow ref o = GET_mut(t);
+            if (isUnused)
+                o.status |= SS_UNUSED;
+            else
+                o.status & SS_UNUSED && BUG("relaxBlockVar: previously SS_UNUSED " ~ o.qWHAT ~ " now used as " ~ humanizeType(usage));
+
+            if (isUnused && canDiscard)
+                o.solved.type = t_void;
+
+            //////////////////////////////////////////////
+            // TODO one of these two is redundant       //
+            o.type.try_relax(slot: usage, :relax_mask); //
+            //////////////////////////////////////////////
+
+            ref node = o.solved;
             node.type || BUG("relaxBlockVar: !var.solved.type, can`t propagateType");
             node.type.try_relax(slot: usage, :relax_mask);
 
-            // Steal init expression for processing.
-            if (node.items && node.items[LET_INIT])
+            // Lose the F_MUT annots on values that don't need them.
+            if (o.flags & F_MUT)
             {
-                mut init: SolvedNode;
-                swap(init, node.items[LET_INIT]);
+                if (usage.is_mutref)
+                {
+                    let type = clear_refs(node.type);
+                    node.type = type;
+                }
+                else
+                {
+                    o.flags &= ~F_MUT;
+                }
+            }
 
-                init.propagateType(node.type, :relax_mask);
+            // Decide on relaxable refs.
+            shadow ref o = GET_mut(t);
+            if (o.flags & F_RELAXABLE_REF)
+            {
+                let strip = F_RELAXABLE_REF | (!usage.is_mutref && F_REF);
 
-                shadow ref o    = GET_mut(t);
-                shadow ref node = o.solved;
-
-                // TODO FIX Codegen helper, this is for the `fu_STR& src = sources[i]` case.
-                //  Ideally we should do without this, otherwise we can rerun the solveLet crap.
-                if (node.type.is_ref && !(node.flags & F_ARG))
-                    node.type.lifetime = init.type.lifetime;
-
-                // Done, put it back.
-                swap(init, node.items[LET_INIT]);
+                o.flags             &= ~strip;
+                o.solved.flags      &= ~strip;
             }
         }
 
-        // Lose the F_MUT annots on values that don't need them.
-        shadow ref o = GET_mut(t);
-        if (o.flags & F_MUT)
-        {
-            if (usage.is_mutref)
-            {
-                ref node = GET_mut(t).solved;
-                let type = clear_refs(node.type);
-                node.type = type;
-            }
-            else
-            {
-                o.flags &= ~F_MUT;
-            }
-        }
+        // Either way, try to relax.
+        ref node = GET_mut(t).solved;
 
-        // Decide on relaxable refs.
-        shadow ref o = GET_mut(t);
-        if (o.flags & F_RELAXABLE_REF)
+        // Steal init expression for processing.
+        if (node.items && node.items[LET_INIT])
         {
-            let strip = F_RELAXABLE_REF | (!usage.is_mutref && F_REF);
+            mut init: SolvedNode;
+            swap(init, node.items[LET_INIT]);
 
-            o.flags             &= ~strip;
-            o.solved.flags      &= ~strip;
+            init.propagateType(node.type, :relax_mask);
+
+            shadow ref o = GET_mut(t);
+            shadow ref node = o.solved;
+
+            // TODO FIX Codegen helper, this is for the `fu_STR& src = sources[i]` case.
+            //  Ideally we should do without this, otherwise we can rerun the solveLet crap.
+            if (node.type.is_ref && !(node.flags & F_ARG))
+                node.type.lifetime = init.type.lifetime;
+
+            // Done, put it back.
+            swap(init, node.items[LET_INIT]);
         }
     }
 
