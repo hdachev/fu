@@ -730,8 +730,6 @@ pub fn cpp_codegen(
         {
             if (i)
                 src ~= ", ";
-            if (i < items.len - 1)
-                src ~= "(void)";
 
             src ~= items[i];
         }
