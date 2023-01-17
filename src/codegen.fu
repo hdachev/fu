@@ -1285,6 +1285,14 @@ pub fn cpp_codegen(
             return false;
 
         let t = target.solved.type;
+
+        // TODO FAILCASE
+        // TODO FAILCASE the isPassByValue stuff here was outright missing
+        // TODO FAILCASE forgot the is_mutref here, we'd need a test with a write against a hoisted mutref
+        // TODO FAILCASE
+        if (!t.is_mutref && t.isPassByValue)
+            return false;
+
         return t.is_ref && (!t.type_isSliceable || t.TODO_FIX_isArray);
     }
 
