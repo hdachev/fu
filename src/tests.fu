@@ -10358,16 +10358,16 @@ pub extern fn runTests()
         fn main() Println("str", 10) - 7; // 'stri:10'.len
     `);
 
-    TODO_inline(` // inline fn empty retval on autocall
+    ZERO(` // inline fn empty retval on autocall                ;; GNUStmtExpr
         inline fn concatable(a: bool)               a ? "yes" : "no";
-        inline fn concat(a.concatable, b: string)   a.concatable ~ b;
-        fn main()                                   concat(true, "!").len - 4;
+        inline fn concat(a.concatable, b: string)   a ~ b;
+        fn main()                                   concat(true, "!") == "yes!" ? 0 : 1;
     `);
 
-    TODO_inline(` // inline fn empty retval on autocall
+    ZERO(` // inline fn empty retval on autocall
         inline fn inl_print(a: byte)                a;
-        fn inl_println(a.inl_print[]: [string])     a.len;
-        fn main()                                   inl_println('a', 'b') - 2;
+        fn inl_println(a.inl_print[]: string)       a.len;
+        fn main()                                   inl_println('a', 'b') == 2 ? 0 : 1;
     `);
 
     ZERO(`
