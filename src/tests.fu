@@ -6650,6 +6650,24 @@ pub extern fn runTests()
         }
     `);
 
+    ZERO(`
+        struct Target { template: string; };
+        fn BUG(what?: string) throw(what || "Assertion failed.");
+
+        fn assign_WOOT(ref into: Target) {
+            mut name = "";
+            mut what = "WOOT";
+            name ||= what || BUG(); // arg inliner out of range local
+            into.template = name;
+        }
+
+        fn main() {
+            mut t = Target();
+            assign_WOOT(into: t);
+            return t.template == "WOOT" ? 0 : 1;
+        }
+    `);
+
     // /quite right
 
 
