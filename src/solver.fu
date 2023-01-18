@@ -9265,18 +9265,17 @@ pub fn solve(
             let host_arg = host_args[i];
             let arg      = args[i];
 
-            isAssignableAsArgument(host: host_arg.type, arg.type)
-                || err("Arg #" ~ i ~ ", " ~ host_arg.name.human.qID
-                        ~ " not assignable to host_arg: "
-                        ~ humanizeType(host_arg.type, lt: true) ~ " <- "
-                        ~ humanizeType(     arg.type, lt: true));
+            isAssignableAsArgument(host: host_arg.type, arg.type) || err(
+                "Arg #" ~ i ~ ", " ~ host_arg.name.human.qID ~ " not assignable to host_arg: "
+                    ~ "\n\t" ~ humanizeType(host_arg.type, lt: true) ~ " <- "
+                    ~ "\n\t" ~ humanizeType(     arg.type, lt: true));
         }
 
         if (callsite.target.kind != "field")
             isAssignable(host: callsite.type, callsite.target.type) || err(
                 "Return value of " ~ callsite.qWHAT ~ " not assignable to callsite.type: "
-                    ~ humanizeType(callsite       .type, lt: true) ~ " <- "
-                    ~ humanizeType(callsite.target.type, lt: true));
+                    ~ "\n\t" ~ humanizeType(callsite       .type, lt: true) ~ " <- "
+                    ~ "\n\t" ~ humanizeType(callsite.target.type, lt: true));
     }
 
     fn test_Statements(block: SolvedNode, debug: string)
