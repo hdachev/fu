@@ -2053,7 +2053,7 @@ pub fn solve(
 
     fn solveDeclExpr(node: Node): SolvedNode
     {
-        return solveNodes([ node ]).only;
+        return solveNodes([ node ], dead_brk: false).only;
     }
 
     fn isTypeDecl(::kind)
@@ -3123,7 +3123,7 @@ pub fn solve(
         push(HelpersData());
 
         //
-        let items = solveNodes(node.items, t_void);
+        let items = solveNodes(node.items, t_void, dead_brk: true);
         if (items.if_last.is_never)
         {
             _here = items.last.token;
@@ -3170,7 +3170,8 @@ pub fn solve(
             nodes,
             type_all:           t_void,
             type_last:          type,
-            use_type_last:      !type.is_void);
+            use_type_last:      !type.is_void,
+            dead_brk:           true);
 
         // TODO clean this up, non-return ret-expects
         if !(mask & HM_CanReturn)
@@ -3573,7 +3574,8 @@ pub fn solve(
     {
         if (node.value != "break")
             return SolvedNode("pragma", :node.value,
-                items: solveNodes(node.items), type: t_void);
+                items: solveNodes(node.items,
+                    dead_brk: false /* I think? */), type: t_void);
 
         compilerBreak();
         return createEmpty();
@@ -5891,7 +5893,7 @@ pub fn solve(
 
         // Control flow & deadcode elim.
         //  TODO break & continue.
-        let items = solveNodes(items_ast);
+        let items = solveNodes(items_ast, dead_brk: true);
         let type  = items.if_last.type.is_never ? t_never : t_void;
 
         return createBlock(type, items);
@@ -6576,7 +6578,12 @@ pub fn solve(
 
     fn solveCall(node: Node, target!?: Target): SolvedNode
     {
-        let args = solveNodes(node.items);
+        let args = solveNodes(node.items,
+
+            // A] Order of eval depends on target right now, can't be assumed here.
+            // B] Fns with inline arguments can sink nevers inside their bodies.
+            dead_brk: true);
+
         return solveCall(id: node.value, args, :node.flags, :target);
     }
 
@@ -6656,7 +6663,7 @@ pub fn solve(
                 target: lookupUserType(type).target);
 
         // Dead code elim.
-        mut args = solveNodes(node.items, itemType);  // TODO FIX retype here, Or maybe this should really just go through trymatch.
+        mut args = solveNodes(node.items, itemType, dead_brk: true);
         if (args.if_last.type.is_never)
         {
             makeNote(N_DeadArrlit);
@@ -6991,13 +6998,15 @@ pub fn solve(
 
     fn solveOr(node: Node, type: Type): SolvedNode
     {
-        let items = solveNodes(node.items,
-            type_last: type,
-            use_type_last: true,
-            static_eval_brk: SE_True,
-            type_all: type.is_void ? t_bool : type);
+        let items = solveNodes(
+            node.items,
+            type_last:          type,
+            use_type_last:      true,
+            static_eval_brk:    SE_True,
+            type_all:           type.is_void ? t_bool : type,
+            dead_brk:           true);
 
-        return createOr(items, type);
+        return createOr(items, :type);
     }
 
     fn createOr(mut items: SolvedNode[], mut type: Type): SolvedNode
@@ -7079,11 +7088,13 @@ pub fn solve(
 
     fn solveAnd(node: Node, type: Type): SolvedNode
     {
-        let items = solveNodes(node.items,
-            type_last: type,
-            use_type_last: true,
-            static_eval_brk: SE_False,
-            type_all: t_bool);
+        let items = solveNodes(
+            node.items,
+            type_last:          type,
+            use_type_last:      true,
+            static_eval_brk:    SE_False,
+            type_all:           t_bool,
+            dead_brk:           true);
 
         return createAnd(items, :type);
     }
@@ -7913,6 +7924,7 @@ pub fn solve(
 
     fn solveNodes(
         nodes: Node[],
+        dead_brk!: bool,
         type_all?: Type,
         type_last!?: Type,
         use_type_last!?: bool,
@@ -7948,7 +7960,7 @@ pub fn solve(
                 result ~= solved;
 
                 // Dead code elim.
-                if (solved.type.is_never)
+                if (solved.type.is_never && dead_brk)
                 {
                     if (i < nodes.len - 1)
                         makeNote(N_DeadCode);
