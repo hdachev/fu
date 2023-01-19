@@ -6668,6 +6668,60 @@ pub extern fn runTests()
         }
     `);
 
+    ZERO(`
+        struct Overload { type: Type; }
+        struct Type     { lifetime: i32[]; }
+
+        fn BUG(implicit _here: i32, reason: string)
+            throw(_here ~ ": " ~ reason);
+
+        fn is_even(type: Type) {
+            let a = !(type.lifetime.len & 1);
+            let b =   type.lifetime.len < 4;
+            a && !b && BUG("THROW-1");
+            return a;
+        }
+
+        fn solve(check: Type) {
+            let implicit mut _here: i32;
+
+            using fn GET(implicit overloads: Overload[], target: i32)
+                target < 0 || target >= overloads.len
+                    ? BUG("THROW-2")
+                    : overloads[target];
+
+            fn Lifetime_each(type, visit)
+                for (mut i = type.lifetime.len; i --> 0; )
+                    visit(t: type.lifetime[i]);
+
+            fn Lifetime_allEven(type: Type): bool {
+                Lifetime_each(:type, visit: |t| {
+                    if (!t.type.is_even)                return false;
+                    if (!Lifetime_allEven(t.type))      return false;
+                    _here = t;
+                });
+
+                return true;
+            }
+
+            return Lifetime_allEven(check);
+        }
+
+        fn main() {
+            let implicit overloads = [
+                Overload(),             // 0] even
+                Overload(Type([0])),    // 1] odd
+                Overload(Type([0, 0])), // 2] even
+                Overload(Type([0, 2])), // 3] even
+            ];
+
+            if !(solve(Type()))         return 1;
+            if  (solve(Type([ 1, 2 ]))) return 2;
+            if !(solve(Type([ 2, 3 ]))) return 3;
+            return 0;
+        }
+    `);
+
     // /quite right
 
 
