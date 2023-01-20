@@ -6769,6 +6769,56 @@ pub extern fn runTests()
         }
     `);
 
+    ZERO(`
+        struct Overload { name: string; args?: Argument[]; }
+        struct Argument { name: string; }
+        struct Target   { index: i32; }
+
+        fn solve(overloads: Overload[], check: Target, from?: Target)
+        {
+            fn fail(mut reason: string) {
+                if (from)
+                    reason ~= GET(from).qWHAT;
+
+                return throw(reason);
+            }
+
+            fn qWHAT(o: Overload) o.name.human;
+            fn qWHAT(a: Argument) a.name.human;
+
+            fn tryParse(id: string)
+                id.len == 1 && id[0] >= '0' && id[0] <= '9'
+                    && Target(index: id[0].i32 - '0'.i32);
+
+            fn human(id: string) {
+                let t = tryParse(:id);
+                return t ? GET(t).name : id;
+            }
+
+            fn parent(target: Target)
+                target.index > 0
+                    && Target(target.index - 1);
+
+            using fn GET(target: Target) {
+                if (overloads.len < target.index)
+                    fail("Parent: " ~ (target.parent ? GET(target.parent).name : "-"));
+
+                return overloads[target.index - 1];
+            }
+
+            return check.qWHAT;
+        }
+
+        fn main() {
+            let overloads = [
+                Overload("hello"),
+                Overload("1"),
+            ];
+
+            return solve(overloads, check: Target(2)) == "hello" ? 0 : 1;
+        }
+    `);
+
     // /quite right
 
 
