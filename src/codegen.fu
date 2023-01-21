@@ -1365,6 +1365,9 @@ pub fn cpp_codegen(
             ? init.items.only
             : init;
 
+        if (init.kind == "bool" && !(target.flags & F_PUB) && !target.type.is_mutref)
+            noteDefect(LocalConstBool);
+
         /////////////////////////////////////////////
         /////////////////////////////////////////////
         /////////////////////////////////////////////

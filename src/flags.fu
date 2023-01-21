@@ -210,4 +210,5 @@ flags CGDefects
     GNUStmtExpr;
     Goto;
     PointlessMustSeq;
+    LocalConstBool;
 };
