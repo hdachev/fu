@@ -3380,8 +3380,18 @@ pub fn solve(
             helpers: h);
     }
 
-    fn createBlock(a: SolvedNode, b: SolvedNode)
+    fn createBlock(mut a: SolvedNode, mut b: SolvedNode)
     {
+        // TODO FAILCASE this is a nice testcase for ensuring no copies are made of a & b -
+        //  both are unconditionally & fully copied, so both fnargs, however annotated,
+        //   should become vals, and only moves should remain here.
+        //
+        if (b.kind == "block")
+        {
+            b.items.unshift(a);
+            return b;
+        }
+
         return createBlock(type: b.type, [ a, b ]);
     }
 
@@ -7926,10 +7936,7 @@ pub fn solve(
                     result.splice(i, 1);
 
                     ref cons = result[i];
-                    if (cons.kind != "block")
-                        cons = createBlock(cond, cons);
-                    else
-                        cons.items.unshift(cond);
+                    cons = createBlock(cond, cons);
                 }
             }
         }
