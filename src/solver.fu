@@ -906,6 +906,9 @@ pub fn solve(
         if (lt && type.lifetime)
             result ~= "`" ~ type.lifetime.qWHAT;
 
+        if (type.vfacts)
+            result ~= " " ~ type.vfacts;
+
         return result;
     }
 
@@ -2709,8 +2712,11 @@ pub fn solve(
         }
         else if (k == "copy")
         {
+            if (canDiscard)
+                BUG("Trying to discard a copy: " ~ node.qWHAT);
+
             if (relax_mask != RELAX_all)
-                fail("Found a `copy` node during first relax.");
+                BUG("Found a copy node during first relax: " ~ node.qWHAT);
 
             ref item = node.items.only;
             mut isCopy = true;
@@ -2741,8 +2747,7 @@ pub fn solve(
                     ? make_copyable(slot)
                     : slot);
 
-            item.is_ref || fail(
-                "TODO: Relaxed a copy/move to a value, no point in keeping the outer node.");
+            item.is_ref || BUG("Nothing to copy, item is not a ref: " ~ item.qWHAT);
 
             //
             if (!isCopy)
