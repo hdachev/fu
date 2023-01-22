@@ -786,11 +786,12 @@ pub extern fn runTests()
     `);
 
     ZERO(`
-        fn test(one: i32)
-        {
+        fn test(one: i32) {
             let zero = one - 1;
             let two  = one * 2;
 
+            <alt>
+            inline </alt>
             fn inner(i: i32): i32
                 i > zero ? outer(i - one) : zero;
 
