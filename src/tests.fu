@@ -10021,7 +10021,10 @@ pub extern fn runTests()
             if (offset < data.len) {
                 if (offset & 1)
                     return descend_b(data, offset);
-
+        <alt>
+                if (offset & 2)
+                    return 2 * will_relax_args_a(data, offset + 1);
+        </alt>
                 return descend_a(:data, :offset);
             }
 
@@ -10032,7 +10035,10 @@ pub extern fn runTests()
             if (offset < data.len) {
                 if (offset & 1)
                     return descend_a(data, offset);
-
+        <alt>
+                if (offset & 2)
+                    return 5 * will_relax_args_b(data, offset + 1);
+        </alt>
                 return descend_b(:data, :offset);
             }
 
