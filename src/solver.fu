@@ -7676,7 +7676,8 @@ pub fn solve(
 
         // This was previously part of tryMatch,
         //  but we can just as easily do it here.
-        let isZeroInit = target.kind == "type" && !args.len;
+        let kind = target.kind;
+        let isZeroInit = kind == "type" && !args.len;
         if (!isZeroInit)
         {
             // Defaults & implicit argument injection.
@@ -7720,14 +7721,14 @@ pub fn solve(
         // HACK -
         //  TBD how we make this stuff work in real life.
         //   OR alternatively, do this for arrays too.
-        if (target.kind == "field")
+        if (kind == "field")
         {
             type = add_refs(from: args.only.type || BUG(), to: target.type);
         }
 
         // So we're turning closeovers into implicit arguments -
         //  previously we tracked them separately but we're making everything more samey.
-        else if (target.kind == "var")
+        else if (kind == "var")
         {
             // INLINE ARGUMENTS ////////////////////////////////////////////
             if (target.flags & F_INLINE && !(target.flags & F_ARG))
@@ -7744,14 +7745,35 @@ pub fn solve(
                 target.localOf != _current_fn.target.index)
             {
                 target = injectForeignLocal(target);
-
                 type = GET(target).type || BUG("CallerNode: !type on var " ~ target.name);
+            }
+
+            // Track deps.
+            if (target.modid < 0 ||
+                target.modid == module.modid && !(target.flags & F_PUB))
+            {
+                // Suppress unused warnings,
+                //  even if we end up throwing out this piece of code.
+                GET_mut(target).status |= SS_MATCHED;
             }
         }
 
         // Funcs & co.
         else
         {
+            // Track deps.
+            if (target.modid == module.modid)
+            {
+                // Tracking call graph & type annotations.
+                if (kind == "fn" || kind == "type" || kind == "inline")
+                {
+                    if (EPH_mut(target).callers.set::add(_current_fnort.index))
+                        EPH_mut(_current_fnort).calls.set::add(target.index);
+
+                    detectRecursion(target);
+                }
+            }
+
             // Tag copies and moves.
             if (args)
             {
@@ -7783,7 +7805,7 @@ pub fn solve(
             }
 
             // Inliner.
-            if (target.kind == "inline")
+            if (kind == "inline")
             {
                 let scope0 = Scope_snap(_scope);
                 let ss0 = _ss;
@@ -7878,31 +7900,9 @@ pub fn solve(
                     tempsOK: true);
         }
 
-        //
-        let callsite = SolvedNode(
+        return SolvedNode(
             "call", flags: [], value: debug,
                     :type, args, :target);
-
-        // Track deps.
-        if (target.modid < 0 || target.modid == module.modid)
-        {
-            let k = target.kind;
-
-            // Tracking call graph & type annotations.
-            if (k == "fn" || k == "type")
-            {
-                if (EPH_mut(target).callers.set::add(_current_fnort.index))
-                    EPH_mut(_current_fnort).calls.set::add(target.index);
-
-                detectRecursion(target);
-            }
-            else if (k == "var" && !(target.flags & F_PUB))
-            {
-                GET_mut(target).status |= SS_MATCHED;
-            }
-        }
-
-        return callsite;
     }
 
     fn definitWrap(ref node: SolvedNode, slot: Type)
