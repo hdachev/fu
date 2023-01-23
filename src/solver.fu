@@ -7419,15 +7419,18 @@ pub fn solve(
             //
             let letdefExpect = -from.index;
 
-            //
-            mut letdefReplicas:     typeof( map::Map(Target, Target)   );
-            mut helpersReplicas:    typeof( map::Map(Helpers, Helpers) );
+            mut letdefReplicas:     i32[];
+            mut helpersReplicas:    Helpers[];
 
             fn matchReplicaOrInjectForeignLocal(target: Target)
             {
-                let replica = letdefReplicas.map::get(target);
+                if (target.modid != letdefExpect)
+                    BUG("matchReplicaOrInjectForeignLocal: target.modid != letdefExpect"
+                        ~ ", will mess up the letdefReplicas minimap.");
+
+                let replica = letdefReplicas.unless_oob(target.index);
                 if (replica)
-                    return replica;
+                    return nested(replica);
 
                 let o = GET_crossmodule(target, :from);
                 if (o.flags & F_IMPLICIT)
@@ -7460,7 +7463,7 @@ pub fn solve(
                                 ret_actual:     expr.type,
                             ));
 
-                        helpersReplicas.map::set(foreign, local);
+                        helpersReplicas.grow_if_oob(foreign.index) = local || BUG();
 
                         // println("inlineExpression: REPLICATE block/loop #" foreign.index " -> #" local.index);
 
@@ -7488,7 +7491,7 @@ pub fn solve(
                     let foreign = GET_crossmodule(expr.target, :from);
                     let local   = Scope_create(_scope, nest: self.index);
 
-                    letdefReplicas.map::set(expr.target, local);
+                    letdefReplicas.grow_if_oob(expr.target.index) = local.index || BUG();
 
                     //
                     mut type = foreign.type;
@@ -7530,7 +7533,7 @@ pub fn solve(
                 else if (expr.kind == "jump")
                 {
                     let foreign = expr.helpers;
-                    let local = helpersReplicas.map::get(foreign) || BUG("Can't replicate jump.");
+                    let local = helpersReplicas.unless_oob(foreign.index) || BUG("Can't replicate jump.");
 
                     // println("inlineExpression: REPLICATE jump #" foreign.index " -> #" local.index);
 
