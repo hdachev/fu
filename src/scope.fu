@@ -17,6 +17,36 @@ enum SolverPass
     RelaxCopyResize
 };
 
+struct ScopeMemo {
+    items_len:      i32;
+    implicits_len:  i32;
+    imports_len:    i32;
+    privates_len:   i32;
+    usings_len:     i32;
+    converts_len:   i32;
+    helpers_len:    i32;
+};
+
+struct ScopeSkip
+{
+    start:          i32;
+    end:            i32;
+};
+
+struct ScopeSkipMemos
+{
+    items:          ScopeSkip[];
+    implicits:      ScopeSkip[];
+    imports:        ScopeSkip[];
+    privates:       ScopeSkip[];
+    usings:         ScopeSkip[];
+    converts:       ScopeSkip[];
+    helpers:        ScopeSkip[];
+};
+
+
+//
+
 fn target(si: ScopeItem)
     Target(:si.modid, index: (si.packed & 0x3fffffff).i32);
 
