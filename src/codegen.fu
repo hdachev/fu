@@ -89,7 +89,8 @@ pub fn cpp_codegen(
         _tdef:              string;
 
         // fn definitions
-        _idef:              bitset::BitSet;
+        _fdef_started:      bitset::BitSet;
+        _fdef_complete:     bitset::BitSet;
         _fdef:              string;
 
         // misc garbage
@@ -1060,6 +1061,9 @@ pub fn cpp_codegen(
         return src;
     }
 
+
+    //
+
     fn ensureFwdDecl(target: Target)
     {
         let overload = GET(target);
@@ -1102,13 +1106,28 @@ pub fn cpp_codegen(
                 ~ target.modid ~ " vs " ~ module.modid ~ ": `"
                 ~ target.kind ~ " " ~ target.name ~ "`.");
 
-        if !(_idef.add_once(target.index))
+        // Do this just once.
+        if (!_fdef_started.add_once(target.index))
+        {
+            // Add a fwd decl if recursive.
+            if (!_fdef_complete.has(target.index))
+            {
+                if !(target.status & SS_FN_RECUR)
+                    BUG("ensureFnDef: Function without SS_FN_RECUR appears to be recursive.");
+
+                ensureFwdDecl(target);
+            }
+
             return;
+        }
 
         // Go!
         let node = target.solved;
         node.kind == "fn" || fail("ensureFnDef non-fn");
         cgFn(node);
+
+        _fdef_complete.add_once(target.index) || BUG(
+            "ensureFnDef: _fdef_complete twice: " ~ target.name);
     }
 
 
@@ -1187,11 +1206,6 @@ pub fn cpp_codegen(
 
             src ~= body_src;
         }
-
-        // Consider a fwdannot after outputting body,
-        //  it could itself have written to _fdef.
-        if (overload.status & SS_FN_RECUR)
-            ensureFwdDecl(fn.target);
 
         let dedupe = overload.flags & F_PUB
                   && overload.flags & F_TEMPLATE
