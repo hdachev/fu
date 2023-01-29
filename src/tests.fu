@@ -6562,6 +6562,30 @@ pub extern fn runTests()
     `);
 
     ZERO(`
+        struct Target { x: i32; };
+
+        fn ScopeSkip_push_bad_args(targets: Target[], ref sum: i32) {
+            fn descend(acc?: bool) {
+                fn foreach(t: Target) {
+                    if (acc)    sum += t.x;
+                    else        descend(true);
+                }
+
+                targets.each(|u| foreach(u));
+            }
+
+            descend();
+        }
+
+        fn main() {
+            mut targets = [ Target(1), Target(2) ];
+            mut sum = 0;
+            ScopeSkip_push_bad_args(:targets, :sum);
+            return sum == 6 ? 0 : 1;
+        }
+    `);
+
+    ZERO(`
         struct Module { events: i32; };
 
         <alt>
