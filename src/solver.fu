@@ -4220,6 +4220,9 @@ pub fn solve(
 
                 if (o.revision++ > 0)
                 {
+                    if (o.revision >= 1024)
+                        BUG("Looping forever: " ~ target.qWHAT ~ ".revision >= 1024");
+
                     o.locals.clear();
 
                     // This looks horrible but hope is
