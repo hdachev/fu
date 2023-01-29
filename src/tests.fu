@@ -6495,6 +6495,29 @@ pub extern fn runTests()
     `);
 
     ZERO(`
+        struct Type { quals: i32; };
+        struct Node { type: Type; };
+
+        fn unusedLetExprOrBlock(args_in: [Node], default: Node) {
+            mut inType: Type;
+            for (mut i = 0; i < args_in.len; i++) {
+                // got this while auto-reducing smth else,
+                //  nonsense but currently bugs mcom
+                lax let inValue = args_in[i] || {
+                    inType = default.type;  //      <- then, mcom tries to copy here
+                    default                 // <- first this gets discarded
+                };
+            }
+
+            return inType;
+        }
+
+        fn main() {
+            return unusedLetExprOrBlock([ Node() ], Node(Type(1))).quals - 1;
+        }
+    `);
+
+    ZERO(`
         fn parse !T(v: [byte], lax as!: T) {
             mut result: T;
 
