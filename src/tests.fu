@@ -6445,6 +6445,30 @@ pub extern fn runTests()
     `);
 
     ZERO(`
+        <fail inline recursi>
+        inline <pass/></fail>
+        fn inlineSelfRecursion(x: int)
+            x > 10  ? inlineSelfRecursion(x / 2)
+                    : x;
+
+        fn main() inlineSelfRecursion(15) == 7 ? 0 : 1;
+    `);
+
+    ZERO(`
+        <fail inline recursi>
+        inline <pass/></fail>
+        fn inlineMutualRecursion_a(x: int)
+            x > 10  ? inlineMutualRecursion_b(x / 2)
+                    : x;
+
+        inline fn inlineMutualRecursion_b(x: int)
+            x > 5   ? inlineMutualRecursion_a(x / 2)
+                    : x;
+
+        fn main() inlineMutualRecursion_a(15) == 3 ? 0 : 1;
+    `);
+
+    ZERO(`
         nocopy struct SolverOutput {
             content?: SolverOutput[];
         };
