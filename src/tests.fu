@@ -10012,6 +10012,49 @@ pub extern fn runTests()
         }
     `);
 
+    ZERO(`
+        inline fn descend_a(ref data: i32[], offset: i32, implicit ref TWO: i32) {
+            return TWO * will_relax_args_a(data, offset + 1);
+        }
+
+        noinline fn will_relax_args_a(ref data: i32[], offset: i32, implicit ref THREE: i32) {
+            if (offset < data.len) {
+                if (offset & 1)
+                    return descend_b(data, offset);
+
+                return descend_a(:data, :offset);
+            }
+
+            return THREE * offset;
+        }
+
+        noinline fn will_relax_args_b(ref data: i32[], offset: i32, implicit ref FOUR: i32) {
+            if (offset < data.len) {
+                if (offset & 1)
+                    return descend_a(data, offset);
+
+                return descend_b(:data, :offset);
+            }
+
+            return FOUR * offset;
+        }
+
+        inline fn descend_b(ref data: i32[], offset: i32, implicit ref FIVE: i32) {
+            return FIVE * will_relax_args_b(data, offset + 1);
+        }
+
+        fn main() {
+            implicit mut TWO    = 2;
+            implicit mut THREE  = 3;
+            implicit mut FOUR   = 4;
+            implicit mut FIVE   = 5;
+
+            mut data = [ 0, 0, 0, 0, 0 ];
+            let res = descend_b(data, 0);                       ;; GNUStmtExpr
+            return res == 10000 ? 0 : 1;
+        }
+    `);
+
     // /Autocall, varargs & rest params.
 
 
