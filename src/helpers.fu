@@ -396,3 +396,9 @@ fn parseWild(v: [byte], lax as!: $T)
 
     return parse(:v, :as);
 }
+
+fn steal !T(ref v: T) {
+    mut ret: T;
+    swap(v, ret);
+    return ret;
+}

@@ -18,6 +18,7 @@ let OPTI_autoshadow         = true;
 let OPTI_dedupe_vars        = true;
 let OPTI_bck                = true;
 let OPTI_ignoreLocalLts     = true;
+let OPTI_unlist_callers     = true;
 
 let SELF_TEST               = true;
 
@@ -174,6 +175,7 @@ pub fn solve(
 
         extra_items?:       ScopeItem[];
         callers?:           i32[];
+        calls?:             i32[];
     };
 
     struct SolverState
@@ -4735,6 +4737,25 @@ pub fn solve(
 
                 target.GET_mut.status &= ~SS_Debug_AllPassesComplete;
 
+                // This is a build speed opti -
+                //  the idea being, on subsequent solves,
+                //   we unlist ourselves as a caller before we start solving,
+                //    so that if we indirectly invalidate a some function by calling another,
+                //     it won't invalidate us unless we've called it during this solve.
+                //
+                if (OPTI_unlist_callers)
+                {
+                    let self = target.index;
+                    let calls = steal(target.EPH_mut.calls);
+                    for (mut i = 0; i < calls.len; i++)
+                    {
+                        let call = Target(:module.modid, index: calls[i]);
+                        call.EPH_mut.callers.set::rem(self) || BUG(
+                            "doTrySpec: " ~ target.qWHAT ~ " not listed as a caller of " ~ call.qWHAT);
+                    }
+                }
+
+                //
                 let s_body = solveBlock(
                     n_body, type: ret_expect,
                     fnbody_of: target.index,
@@ -7741,7 +7762,9 @@ pub fn solve(
             // Tracking call graph & type annotations.
             if (k == "fn" || k == "type")
             {
-                EPH_mut(target).callers.set::add(_current_fnort.index);
+                if (EPH_mut(target).callers.set::add(_current_fnort.index))
+                    EPH_mut(_current_fnort).calls.set::add(target.index);
+
                 detectRecursion(target);
             }
             else if (k == "var" && !(target.flags & F_PUB))
