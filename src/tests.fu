@@ -10195,7 +10195,7 @@ pub extern fn runTests()
         }
     `);
 
-    TODO_inline(`
+    ZERO(`
         fn ifThenElse(inline cond, inline cons, inline alt)
             cond ? cons : alt;
 

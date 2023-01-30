@@ -1164,6 +1164,7 @@ pub fn solve(
                     BUG("Falsy arg.kind!");
 
         mut matchIdx: Target;
+        mut ambigOkIdx: Target;
 
         fn countUsings()
         {
@@ -1484,11 +1485,6 @@ pub fn solve(
 
                                 conversions.grow_if_oob(i) ~= t;
                                 autocall_reorder.len < 2 || BUG("autocall: reorder");
-
-                                // Converting to never means no point in going further,
-                                //  the caller node will never call this.
-                                if (t.type.is_never)
-                                    TODO_FIX_dontBotherSpecializing = true;
                             }
 
                             // Actual arg type.
@@ -1496,6 +1492,16 @@ pub fn solve(
                             let actual = hasConv
                                 ? GET(conversions[i].last).type
                                 : args[callsiteIndex].type;
+
+                            if (actual.is_never)
+                            {
+                                // Converting to never means no point in going further,
+                                //  the caller node will never call this.
+                                if !(host_arg.flags & F_INLINE)
+                                    TODO_FIX_dontBotherSpecializing = true;
+
+                                continue :ARG_OK;
+                            }
 
                             // Templates arguments.
                             if (!expect)
@@ -1591,6 +1597,11 @@ pub fn solve(
                         ensureLazySolved();
                     }
 
+                    // TODO FIX: we allow ambig among overloads that will be dead-code eliminated by the callsite,
+                    //  but we don't ignore them when we're about to match something for real.
+                    if (ambigOkIdx && !TODO_FIX_dontBotherSpecializing)
+                        matchIdx = ambigOkIdx;
+
                     // Forbid ambiguity.
                     if (matchIdx)
                     {
@@ -1631,7 +1642,10 @@ pub fn solve(
                     }
 
                     // Done!
-                    matchIdx = overloadIdx;
+                    if (TODO_FIX_dontBotherSpecializing)
+                        ambigOkIdx = overloadIdx;
+                    else
+                        matchIdx = overloadIdx;
 
                     // Output conversions /////////////
                     swap(reorder,     reorder_out    );
@@ -1661,7 +1675,7 @@ pub fn solve(
         if (error && error.len == error_len0 && !matchIdx)
             error ~= id.qID ~ " is not defined here.";
 
-        return matchIdx;
+        return matchIdx || ambigOkIdx;
     }
 
 
@@ -5951,7 +5965,7 @@ pub fn solve(
 
         // Dead code elim.
         let init_isNever = init.type.is_never;
-        if (init_isNever && !(flags & F_ARG))
+        if (init_isNever && !(flags & (F_ARG | F_INLINE)))
         {
             makeNote(N_DeadLet);
             return init;
@@ -6580,9 +6594,10 @@ pub fn solve(
     {
         let args = solveNodes(node.items,
 
-            // A] Order of eval depends on target right now, can't be assumed here.
-            // B] Fns with inline arguments can sink nevers inside their bodies.
-            dead_brk: true);
+            // Can't dead code elim naively -
+            //  A] Order of eval depends on target right now, can't be assumed here.
+            //  B] Fns with inline arguments can sink nevers inside their bodies.
+            dead_brk: false);
 
         return solveCall(id: node.value, args, :node.flags, :target);
     }
@@ -6593,10 +6608,6 @@ pub fn solve(
         type_annot!?: bool): SolvedNode
     {
         id || target || BUG("solveCall: No id, no target.");
-
-        // Dead code elim.
-        if (args.if_last.type.is_never)
-            return deadCall(args);
 
         // Qualified?
         let qualified = flags & F_COMPOUND_ID;
@@ -7628,10 +7639,10 @@ pub fn solve(
             args.resize(host_args.len);
             for (mut i = 0; i < args.len; i++)
             {
+                let host_arg = host_args[i];
+
                 if (!args[i])
                 {
-                    let host_arg = host_args[i];
-
                     if (host_arg.default)
                     {
                         args[i] = inlineExpression(
@@ -7648,13 +7659,13 @@ pub fn solve(
                             :host_arg.name,
                             :host_arg.type, becauseOf: target);
                     }
+                }
 
-                    // This can result in a dead call too.
-                    if (args[i].is_never)
-                    {
-                        args.shrink(i + 1);
-                        return deadCall(args);
-                    }
+                // Dead code elim.
+                if (args[i].is_never && !(host_arg.flags & F_INLINE))
+                {
+                    args.shrink(i + 1);
+                    return deadCall(args);
                 }
             }
         }
@@ -7781,6 +7792,14 @@ pub fn solve(
 
                     if (arg_def.kind == "empty")
                         continue;
+
+                    if (SELF_TEST)
+                    {
+                        arg_def.kind == "empty" || arg_def.kind == "letdef" || BUG(
+                            "Inliner: arg_def neither letdef nor empty: " ~ arg_def.qWHAT);
+                        arg_def.target || BUG(
+                            "Inliner: no arg_def.target: " ~ arg_def.qWHAT);
+                    }
 
                     arg_defs ~= arg_def;
 
