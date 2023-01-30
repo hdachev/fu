@@ -167,6 +167,15 @@ pub fn solve(
         using postdom?:     Postdom;
     };
 
+    struct Ephemeral
+    {
+        scope_memo?:        ScopeMemo;
+        scope_skip?:        ScopeSkipMemos;
+
+        extra_items?:       ScopeItem[];
+        callers?:           i32[];
+    };
+
     struct SolverState
     {
         _scope:             Scope;
@@ -175,6 +184,7 @@ pub fn solve(
         _field_items:       ScopeItem[];
         _pub_imports:       i32[];
         _helpers_data:      HelpersData[];
+        _ephemeral:         Ephemeral[];
 
         // Can't we just list them all and scan through?
         //  Do we need the mangling nonsense?
@@ -532,6 +542,18 @@ pub fn solve(
         return target.modid == -_current_fn.target.index;
     }
 
+    using fn EPH(target: Target)
+    {
+        return target.modid == module.modid
+            && _ephemeral.unless_oob(target.index);
+    }
+
+    fn EPH_mut(target: Target)
+    {
+        target.modid == module.modid || assert();
+        return _ephemeral.grow_if_oob(target.index);
+    }
+
 
     //
 
@@ -813,9 +835,7 @@ pub fn solve(
     {
         return Template(
             node,
-            imports:   !_current_fn && _scope.imports,
-            scope_memo: _current_fn && Scope_snap(_scope),
-            scope_skip: _current_fn && _ss);
+            imports:   !_current_fn && _scope.imports);
     }
 
 
@@ -2065,10 +2085,6 @@ pub fn solve(
 
         for (mut i = nodes.len; i --> 0; )
         {
-            let node = nodes[i];
-            let target = results[i].target;
-            ref template = target.EXT_mut.template;
-
             // Decidability [C]:
             //
             // Conversion fns don't see below their declaration,
@@ -2076,19 +2092,23 @@ pub fn solve(
             //
             // This obsoletes Decidability [A] above.
             //
+            let node    = nodes[i];
             if (node.flags & F_CONVERSION)
                 hasSnap = false;
 
-            if (template.scope_memo)
+            // Everyone in this group sees everyone else.
+            let target  = results[i].target;
+            ref eph     = target.EPH_mut;
+            if (eph.scope_memo)
             {
                 if (!hasSnap)
                 {
                     hasSnap = true;
-                    lastSnap = template.scope_memo;
+                    lastSnap = eph.scope_memo;
                 }
                 else
                 {
-                    template.scope_memo = lastSnap;
+                    eph.scope_memo = lastSnap;
                 }
             }
         }
@@ -3642,6 +3662,10 @@ pub fn solve(
         ext.min         = 0x7fffffff.i32;
         ext.max         = 0;
 
+        ref eph         = target.EPH_mut;
+        eph.scope_memo  = _current_fn && Scope_snap(_scope);
+        eph.scope_skip  = _current_fn && _ss;
+
         // Experimental conversion functions.
         if (node.flags & F_CONVERSION)
             _scope.converts.push(target);
@@ -3775,12 +3799,13 @@ pub fn solve(
             scope_skip ~= ScopeSkip(:start, :end);
     }
 
-    fn ScopeSkip_setup(template: Template, scope0: ScopeMemo, isInline!?: bool)
+    fn ScopeSkip_setup(original: Target, scope0: ScopeMemo, isInline!?: bool)
     {
         if (_root_scope)
         {
-            let start = template.scope_memo || _root_scope;
-            _ss = template.scope_skip;
+            let eph     = original.EPH;
+            let start   = eph.scope_memo || _root_scope;
+            _ss         = eph.scope_skip;
 
             ScopeSkip_push(_ss.items,       start: start.items_len,     end: scope0.items_len);
 
@@ -3806,11 +3831,12 @@ pub fn solve(
 
         // We'll need the original imports in scope
         //  in order to solve type params & pattern match below.
-        for (mut i = 0; i < template.imports.len; i++)
+        let imports = original.template.imports;
+        for (mut i = 0; i < imports.len; i++)
         {
-            Scope_import(template.imports[i]);
+            Scope_import(imports[i]);
             if (i == 0)
-                Scope_import_privates(template.imports[i]);
+                Scope_import_privates(imports[i]);
         }
     }
 
@@ -3972,7 +3998,7 @@ pub fn solve(
                 _helpers_data.shrink(helpers_data0);
             }
 
-            ScopeSkip_setup(:template, :scope0);
+            ScopeSkip_setup(:original, :scope0);
 
             //
             let items = template.node.items;
@@ -4210,7 +4236,7 @@ pub fn solve(
             //
             let extra_items = into
                 ? original.extra_items
-                : (target.EXT_mut.extra_items = typeParams.intoScopeItems());
+                : (target.EPH_mut.extra_items = typeParams.intoScopeItems());
 
             //////////////////////////////////////////////////
             let implicit _current_fnort = target;
@@ -4503,7 +4529,7 @@ pub fn solve(
 
                 mut change      = false;
 
-                let hasCallers  = !!ext.callers;
+                let hasCallers  = !!target.callers;
                 if (hasCallers)
                 {
                     change = args.len != ext.args.len
@@ -4670,6 +4696,10 @@ pub fn solve(
                 ext.template        = template;
                 ext.spec_of         = overloadIdx;
                 ext.fx_mask         = fx_mask;
+
+                ref eph             = target.EPH_mut;
+                eph.scope_skip      = original.scope_skip;
+                eph.scope_memo      = original.scope_memo;
 
                 //
                 updateScope(_current_fn,
@@ -5204,7 +5234,7 @@ pub fn solve(
             ext.max         = max;
             ext.args        = args;
 
-            let mustUpdate  = CHANGE && ext.callers.len;
+            let mustUpdate  = CHANGE && out_target.callers.len;
 
             //
             ref overload    = GET_mut(out_target);
@@ -7634,7 +7664,7 @@ pub fn solve(
 
                 let template    = target.template;
 
-                ScopeSkip_setup(:template, :scope0, isInline: true);
+                ScopeSkip_setup(target, :scope0, isInline: true);
                 _scope.items ~= target.extra_items;
 
                 if (template.node.flags & F_TEMPLATE)
@@ -7711,7 +7741,7 @@ pub fn solve(
             // Tracking call graph & type annotations.
             if (k == "fn" || k == "type")
             {
-                EXT_mut(target).callers.set::add(_current_fnort.index);
+                EPH_mut(target).callers.set::add(_current_fnort.index);
                 detectRecursion(target);
             }
             else if (k == "var" && !(target.flags & F_PUB))

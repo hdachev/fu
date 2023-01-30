@@ -195,25 +195,25 @@ pub struct SolvedNode
 
 pub struct ScopeItem
 {
-    true id:    string;
-    modid:      i32;
-    packed:     u32;
+    true id:        string;
+    modid:          i32;
+    packed:         u32;
 };
 
 pub nocopy struct Scope
 {
-    overloads:  Overload[];
-    extended:   Extended[];
+    overloads:      Overload[];
+    extended:       Extended[];
 
-    items:      ScopeItem[];
-    implicits:  ScopeItem[];
-    imports:    i32[];
-    privates:   i32[];
-    usings:     Target[];
-    converts:   Target[];
+    items:          ScopeItem[];
+    implicits:      ScopeItem[];
+    imports:        i32[];
+    privates:       i32[];
+    usings:         Target[];
+    converts:       Target[];
 
-    pub_items:  i32;
-    pub_cnvrts: i32;
+    pub_items:      i32;
+    pub_cnvrts:     i32;
 };
 
 
@@ -221,11 +221,8 @@ pub nocopy struct Scope
 
 pub struct Template
 {
-    true node:  Node;
-    imports:    i32[];
-
-    scope_memo: ScopeMemo;
-    scope_skip: ScopeSkipMemos;
+    true node:      Node;
+    imports:        i32[];
 };
 
 pub struct ScopeMemo
@@ -334,14 +331,10 @@ pub struct Extended
 
     // The scopeskips here aren't needed in global scope (e.g. anything imported).
     spec_of?:       Target;
-    template:       Template;
+    true template:  Template;
 
     // The new nodelists.
     locals?:        Overload[];
-
-    // These are single-module-solve-only, no need to keep them here.
-    extra_items?:   ScopeItem[];
-    callers?:       i32[];
 
     // Previously we appended a fns signature hash to its name,
     //  now we'll do this in the codegen.
