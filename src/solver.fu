@@ -160,6 +160,9 @@ pub fn solve(
         // So we can pass the F_INLINE flag onto mustBecomeInline
         TODO_FIX_isInline?: bool;
 
+        // Tempfix, securing old inliner against recursive inlining.
+        now_inlining?:      Target[];
+
         //
         using postdom?:     Postdom;
     };
@@ -7619,10 +7622,14 @@ pub fn solve(
                 let ss0 = _ss;
                 let autoshadow_ok0 = _current_fn.autoshadow_ok;
 
+                _current_fn.now_inlining.set::add(target) || fail(
+                    "Cannot inline self-recursive functions: " ~ target.qWHAT);
+
                 defer {
                     Scope_pop(_scope, scope0);
                     _ss = ss0;
                     _current_fn.autoshadow_ok = autoshadow_ok0;
+                    _current_fn.now_inlining.set::rem(target) || BUG();
                 }
 
                 let template    = target.template;
