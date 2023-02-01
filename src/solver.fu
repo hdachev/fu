@@ -2347,6 +2347,9 @@ pub fn solve(
             if (items.len < 2)
                 node = items.if_only || createEmpty();
             ////////////////////////////////////////////////////////////////
+
+            if (canDiscard)
+                node.type = t_bool;
         }
         else if (k == "if")
         {
