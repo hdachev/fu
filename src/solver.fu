@@ -2270,10 +2270,10 @@ pub fn solve(
                 return false;
 
             // Discardable calls degrade into blocks.
-            if (node.kind == "call" || node.kind == "letdef" || node.kind == "fndef")
+            if (node.kind == "call" || node.kind == "letdef")
                 return false;
 
-            if (node.kind == "empty" || node.kind == /*empty*/"block" || node.kind.isShallowLiteral)
+            if (node.kind == "empty" || node.kind == /*empty*/"block" || node.kind == "fndef" || node.kind.isShallowLiteral)
                 return true;
 
             BUG("TODO: isDiscardable(" ~ node.kind ~ ")");
