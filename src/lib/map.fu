@@ -60,3 +60,13 @@ fn if_ref(using ref _, key, visit)
     set::if_ref(
         || keys, key,
         || vals, fn visit);
+
+// TODO FIX - this is real funny -
+//  because i can't limit this to the templated struct above
+//   what's happening is naming this 'clear' makes it try spec
+//    for the keys & val arrays and obviously blows up.
+//
+fn clr(using ref _) {
+    keys.clear();
+    vals.clear();
+}

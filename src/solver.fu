@@ -176,6 +176,8 @@ pub fn solve(
         extra_items?:       ScopeItem[];
         callers?:           i32[];
         calls?:             i32[];
+
+        specs?:             typeof( map::Map(string, Target) ); // mangle -> spec;
     };
 
     struct SolverState
@@ -192,7 +194,6 @@ pub fn solve(
         //  Do we need the mangling nonsense?
         //   We can bucket however many times we want here,
         //    its append only and trivial to maintain.
-        _specs:             typeof( map::Map(string, Target) ); // mangle -> spec
         _spec_errors:       string[];
 
         //
@@ -550,10 +551,15 @@ pub fn solve(
             && _ephemeral.unless_oob(target.index);
     }
 
+    fn EPH_mut(index: i32)
+    {
+        return _ephemeral.grow_if_oob(index);
+    }
+
     fn EPH_mut(target: Target)
     {
         target.modid == module.modid || assert();
-        return _ephemeral.grow_if_oob(target.index);
+        return EPH_mut(target.index);
     }
 
 
@@ -3757,6 +3763,11 @@ pub fn solve(
         return target.modid == 2147483647;
     }
 
+    fn getSpecs(parent_idx: i32)
+    {
+        return EPH_mut(parent_idx).specs;
+    }
+
     fn trySpecialize(
         overloadIdx: Target, args: [SolvedNode], ref args_mangled: string,
         REST_START: i32, REST_TYPE?: Type,
@@ -3767,6 +3778,35 @@ pub fn solve(
                 :args, :reorder, :use_reorder, :conversions,
                 :REST_START, :REST_TYPE);
 
+        //
+        mut parent_idx = overloadIdx.local_of;
+        {
+            // If we're taking a closure as an argument,
+            //  we're becoming a closure ourselves of whatever that closure is closing over -
+            //   so that e.g. lifetime reasoning can have an easier time etc.
+            //
+            // TODO all of these must form up a common shadowing group -
+            //  So nothing by the same name should come in from outer scope,
+            //   and yet none of these things shadow each other.
+            //
+            for (mut i = 0; i < args.len; i++)
+            {
+                let arg_t = args[i];
+                if (arg_t.isAddrOfFn)
+                {
+                    unpackAddrOfFn(arg_t.canon, |target|
+                    {
+                        if (target.modid < 0 || target.modid == module.modid)
+                        {
+                            let local_of = target.localOf;
+                            if (parent_idx < local_of)
+                                parent_idx = local_of;
+                        }
+                    });
+                }
+            }
+        }
+
         // TODO memoize the whole mangle.
         //  Or use a hash here, perhaps nest them per template or smth.
         //   Also this prefix is nasty, unless we can reuse between modules.
@@ -3775,7 +3815,7 @@ pub fn solve(
         //  Would make the prefix stuff more meaningful.
         //
         let mangle = overloadIdx.modid ~ "#" ~ overloadIdx.index ~ " " ~ args_mangled;
-        return _specs.map::get(mangle) || doTrySpecialize(
+        return getSpecs(:parent_idx).map::get(mangle) || doTrySpecialize(:parent_idx,
             :overloadIdx, args_in:args, :mangle,
             :reorder, :use_reorder, :conversions,
             :REST_START, :REST_TYPE)
@@ -3846,7 +3886,7 @@ pub fn solve(
     //
 
     fn doTrySpecialize(
-        into?: Target,
+        parent_idx!: i32, into?: Target,
         overloadIdx?: Target, args_in?: [SolvedNode],
         mangle?: string, reorder?: [i32], use_reorder?: bool, conversions?: Target[][],
         REST_START?: i32, REST_TYPE?: Type)
@@ -3896,38 +3936,10 @@ pub fn solve(
         _here       = original.template.node.token;
         ////////////////////
 
-        mut parent_idx = original.local_of;
-        {
-            // If we're taking a closure as an argument,
-            //  we're becoming a closure ourselves of whatever that closure is closing over -
-            //   so that e.g. lifetime reasoning can have an easier time etc.
-            //
-            // TODO all of these must form up a common shadowing group -
-            //  So nothing by the same name should come in from outer scope,
-            //   and yet none of these things shadow each other.
-            //
-            for (mut i = 0; i < args.len; i++)
-            {
-                let arg_t = args[i];
-                if (arg_t.isAddrOfFn)
-                {
-                    unpackAddrOfFn(arg_t.canon, |target|
-                    {
-                        if (target.modid < 0 || target.modid == module.modid)
-                        {
-                            let local_of = target.localOf;
-                            if (parent_idx < local_of)
-                                parent_idx = local_of;
-                        }
-                    });
-                }
-            }
-        }
-
         //
         fn setSpec(shadow mangle: string, target: Target, nx!: bool, allowReplaceNonSpecfails?: bool)
         {
-            ref t = _specs.map::ref(mangle);
+            ref t = getSpecs(:parent_idx).map::ref(mangle);
 
             fn id(shadow target)
                 target.is_SPECFAIL  ? "SPEC_FAIL"
@@ -3960,7 +3972,7 @@ pub fn solve(
         {
             if (mangles.set::add(mangle))
             {
-                let preexisting = _specs.map::get(mangle);
+                let preexisting = getSpecs(:parent_idx).map::get(mangle);
                 if (preexisting)
                 {
                     mangles.set::rem(mangle);
@@ -4260,6 +4272,10 @@ pub fn solve(
                     //   otherwise we'll likely emit an error on solved.
                     if (_warnings.len > target.index)
                         _warnings[target.index] = Warning();
+
+                    //
+                    ref eph = EPH_mut(target);
+                    eph.specs.map::clr();
                 }
             }
 
@@ -5291,7 +5307,7 @@ pub fn solve(
             o.status |= SS_DID_START;
 
             if (o.kind == "fn")
-                doTrySpecialize(into: target);
+                doTrySpecialize(into: target, parent_idx: target.local_of);
             else if (o.kind == "type")
                 __solveStruct(solve: true, :target.template.node, into: target);
             else
