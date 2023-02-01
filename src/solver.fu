@@ -1555,6 +1555,9 @@ pub fn solve(
                                     ? GET(conversions[i].last).type
                                     : args[callsiteIndex].type;
 
+                                // TODO FAILCASE
+                                // TODO FAILCASE no coverage for never items here,
+                                // TODO FAILCASE  trivial to fix, replace with superType_neverOK
                                 REST_TYPE = i == REST_START
                                     ? solveArrlit_itemType_init(head: actual)
                                     : type_trySuper(REST_TYPE, actual)
@@ -2397,9 +2400,9 @@ pub fn solve(
             else if (kills)
             {
                 // Control flow simplification can affect node.type, see above.
-                node.type = superType(
-                    "`if` cons/alt after control flow simplification:",
-                    node.items[1], node.items[2]);
+                node.type = superType_neverOK(
+                    "if/else after control flow simplification: ",
+                        node.items[1], node.items[2]);
             }
         }
         else if (k == "try")
@@ -3171,7 +3174,14 @@ pub fn solve(
             h.ret_expect = [];
 
         // Block tail expressions.
-        reportReturnType(:h, items ? items.last.type : t_void);
+        {
+            let tail = items ? items.last.type : t_void;
+            if (!tail.is_never)
+                reportReturnType(:h, items ? items.last.type : t_void);
+            else if (!h.ret_actual)
+                h.ret_actual = t_never;
+        }
+
         h.ret_actual || BUG("No ret_actual");
 
         //
@@ -5545,6 +5555,13 @@ pub fn solve(
     //  we want to re-iterate all the return statements,
     //   because that can change our copy/move decision.
 
+    fn superType_neverOK(reason: string, a: Type, b: Type)
+    {
+        return a.is_never ? b
+             : b.is_never ? a
+             : superType(:reason, :a, :b);
+    }
+
     fn superType(reason: string, a: Type, b: Type, id?: string)
     {
         return type_trySuper(a, b) || fail(
@@ -5664,7 +5681,8 @@ pub fn solve(
                 "Actual return type does not match annotation");
 
         h.ret_actual = h.ret_actual
-            ? superType(NICEERR_missingReturn ? "Missing final return: " : "Subsequent return: ", h.ret_actual, type)
+            ? superType_neverOK(h.ret_actual, type,
+                reason: NICEERR_missingReturn ? "Missing final return: " : "Subsequent return: ")
             : type;
 
         h.ret_actual || BUG("Can't be null past this point.");
@@ -5926,7 +5944,15 @@ pub fn solve(
         annot || init.type || fail(
             "Variable declarations without type annotations must be initialized: `" ~ id ~ "`.");
 
-        if (annot && init.type)
+        // Dead code elim.
+        let init_isNever = init.type.is_never;
+        if (init_isNever && !(flags & F_ARG))
+        {
+            makeNote(N_DeadLet);
+            return init;
+        }
+
+        if (annot && init.type && !init_isNever)
             checkAssignable(host: annot, init.type, asArgument: !!(flags & F_ARG),
                 "Type annotation does not match init expression", :id, " <- ");
 
@@ -5936,13 +5962,6 @@ pub fn solve(
         shadow let t_init = t_init.is_ref2temp
             ? clear_refs(t_init)
             : t_init;
-
-        // Dead code elim.
-        if (!(flags & F_ARG) && t_init.is_never)
-        {
-            makeNote(N_DeadLet);
-            return init;
-        }
 
         // Trying to unify &muts and refs.
         if (annot.is_mutref)
@@ -6924,12 +6943,19 @@ pub fn solve(
 
     fn createIf(cond: SolvedNode, mut cons: SolvedNode, mut alt: SolvedNode, mut type?: Type): SolvedNode
     {
-        if (!type.is_void)
-            type = convertToSuperType("if/else", cons, alt);
-
         // Control flow.
-        if (cons.type.is_never && alt.type.is_never)
+        if (SELF_TEST)
+            cond.type.is_never && BUG("createIf: cond.is_never");
+
+        let cons_isNever = cons.type.is_never;
+        let  alt_isNever =  alt.type.is_never;
+
+        if (cons_isNever && alt_isNever)
             type = t_never;
+        else if (!type.is_void)
+            type = cons_isNever ?  alt.type
+                 :  alt_isNever ? cons.type
+                 : convertToSuperType("if/else", cons, alt);
 
         // TODO FIX this is messy and error-prone.
         // Best see why it happens in the first place, probably deadcode elim.
