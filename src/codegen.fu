@@ -25,6 +25,7 @@ let M_MOVABLE           = 1 << 11;
 let M_MOVE              = 1 << 12;
 let M_ARG_TO_NATIVE     = 1 << 13;
 let M_ENUM_DECL         = 1 << 14;
+let M_CHECK_NEVER_LTR   = 1 << 15;
 
 let MAIN_needed         = 1 << 0;
 let MAIN_argv           = 1 << 1;
@@ -700,7 +701,7 @@ pub fn cpp_codegen(
 
     fn cgStatements(nodes: SolvedNode[], ref count!: int, trail!?: string): string
     {
-        let lines = cgNodes(nodes, M_STMT, :trail, debug: "cgStatements");
+        let lines = cgNodes(nodes, M_STMT | M_CHECK_NEVER_LTR, :trail, debug: "cgStatements");
         count = lines.len;
 
         mut src = "";
@@ -717,7 +718,7 @@ pub fn cpp_codegen(
 
     fn cgComma(nodes: SolvedNode[], debug!: string): string
     {
-        shadow let items = cgNodes(nodes, debug: debug ~ ".cgComma");
+        shadow let items = cgNodes(nodes, debug: debug ~ ".cgComma", mode: M_CHECK_NEVER_LTR);
         if (!items.len)
             return "(false /*empty parens*/)";
 
@@ -1671,7 +1672,7 @@ pub fn cpp_codegen(
         if (node.target)
             return cgCall(node, mode);
 
-        let items = cgNodes(node.items, debug: "cgArrayLiteral");
+        let items = cgNodes(node.items, debug: "cgArrayLiteral", mode: M_CHECK_NEVER_LTR);
         if (!items.len)
             return cgDefault(node.type);
 
@@ -1795,6 +1796,10 @@ pub fn cpp_codegen(
 
                 if (!junk)
                     fail("Cannot discard ZST arg, kind is `" ~ arg.kind ~ "`.");
+            }
+            else if (arg.is_never)
+            {
+                BUG("cgCall: arg.is_never");
             }
 
             mut src = junk ? "" : cgNode(
@@ -2256,6 +2261,9 @@ pub fn cpp_codegen(
     fn cgIf(node: SolvedNode, mode: i32): string
     {
         let n0 = node.items[0];
+        if (n0.is_never)
+            BUG("cgIf: cond.is_never");
+
         let n1 = node.items[1];
         let n2 = node.items[2];
 
@@ -2296,7 +2304,7 @@ pub fn cpp_codegen(
         mut src = !(mode & M_PARENS) && "(";
         if (type.acceptsBool)
         {
-            cgAndOr_concat(src, " && ", items, parens: true);
+            cgAndOr_concat(src, " && ", items, parens: true, last_never_ok: true);
         }
         else
         {
@@ -2357,7 +2365,7 @@ pub fn cpp_codegen(
         mut src = !(mode & M_PARENS) && "(";
         if (type.acceptsBool)
         {
-            cgAndOr_concat(src, " || ", items, parens: true);
+            cgAndOr_concat(src, " || ", items, parens: true, last_never_ok: true);
         }
         else
         {
@@ -2465,7 +2473,7 @@ pub fn cpp_codegen(
         return isFieldChain(arg);
     }
 
-    fn cgAndOr_concat(ref src: string, op: string, items: [SolvedNode], parens!?: bool)
+    fn cgAndOr_concat(ref src: string, op: string, items: [SolvedNode], parens!?: bool, last_never_ok!?: bool)
     {
         let mode = M_RETBOOL | (parens && items.len == 1 && M_PARENS);
         for (mut i = 0; i < items.len; i++)
@@ -2474,6 +2482,9 @@ pub fn cpp_codegen(
                 src ~= op;
 
             let item = items[i];
+            if (item.is_never && !(last_never_ok && i == items.len - 1))
+                BUG("cgAndOr_concat: item.is_never");
+
             let term = cgNode(item, :mode, debug: "cgAndOr_concat[" ~ i ~ "]");
 
             if (item.is_void)
@@ -2844,6 +2855,11 @@ pub fn cpp_codegen(
         for (mut i = 0; i < nodes.len; i++)
         {
             let node    = nodes[i];
+
+            if (mode & M_CHECK_NEVER_LTR)
+                if (node.type.is_never && i < nodes.len - 1)
+                    BUG(debug ~ ": node.is_never");
+
             let isTrail = trail && i == nodes.len - 1 && !node.is_never && !node.is_void;
 
             mut src     = node && cgNode(node, isTrail ? mode &~ M_STMT : mode, debug: debug ~ ".cgNodes");
