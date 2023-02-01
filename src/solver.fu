@@ -4735,8 +4735,6 @@ pub fn solve(
                 }
                 // RECURSIVE RELAX //////////////////////////////////
 
-                target.GET_mut.status &= ~SS_Debug_AllPassesComplete;
-
                 // This is a build speed opti -
                 //  the idea being, on subsequent solves,
                 //   we unlist ourselves as a caller before we start solving,
@@ -4754,6 +4752,12 @@ pub fn solve(
                             "doTrySpec: " ~ target.qWHAT ~ " not listed as a caller of " ~ call.qWHAT);
                     }
                 }
+
+                // Sanity check / document the status stuff,
+                //  I tend to forget how these flags work.
+                let status = target.GET_mut.status &= ~SS_Debug_AllPassesComplete;
+                if (status & (SS_DIRTY | SS_FINALIZED | SS_DID_START) != SS_DID_START)
+                    BUG(target.qWHAT ~ " is not SS_DID_START just before solve: " ~ status);
 
                 //
                 let s_body = solveBlock(
