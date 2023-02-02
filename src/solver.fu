@@ -713,15 +713,15 @@ pub fn solve(
         return GET(nested(Region_toLocal(r)));
     }
 
-    fn qWHAT(l: Lifetime)
+    fn qWHAT(regions: [Region])
     {
         mut str = "";
-        for (mut i = 0; i < l.uni0n.len; i++)
+        for (mut i = 0; i < regions.len; i++)
         {
             if (i)
                 str ~= "|";
 
-            let r = l.uni0n[i];
+            let r = regions[i];
             if (r.Region_isStatic)
                 str ~= "static";
             else if (r.Region_isTemp)
@@ -9481,6 +9481,43 @@ pub fn solve(
                     node.items[1].is_never || BUG(debug ~ " never.cons not never: " ~ node.items[1].qWHAT);
                     node.items[2].is_never || BUG(debug  ~ " never.alt not never: " ~ node.items[2].qWHAT);
                 }
+            }
+
+            fn checkLt(actual: Type,
+                       actualCopy: string,
+                       expect: SolvedNode = node,
+                       expectCopy: string = node.kind ~ ".type")
+            {
+                if (!expect.type.is_ref)
+                    return;
+
+                mut tail = actual.lifetime.uni0n;
+                tail.set::rem(node.type.lifetime.uni0n);
+                if (tail)
+                    BUG(debug ~ ": " ~ actualCopy ~ " mentions a lifetime not listed in " ~ expectCopy ~ ": " ~ tail.qWHAT
+                              ~ "\n\n\t\t" ~ actualCopy ~ ":\t" ~ actual.humanizeType(lt: true)
+                              ~ "\n\n\t\t" ~ expectCopy ~ ":\t" ~ expect.humanizeType(lt: true));
+            }
+
+            if (k == "block")
+            {
+                checkLt(node.items.if_last, "block.tail");
+
+                if (node.helpers.ret_actual /*TODO FIX: */&& !(node.helpers.mask & HM_Function))
+                    checkLt(node.helpers.ret_actual, "helpers.ret_actual");
+            }
+
+            if (k == "and" || k == "or")
+            {
+                let start = k == "and" && !node.is_mutref && node.items.len - 1;
+                for (mut i = start; i < node.items.len; i++)
+                    checkLt(node.items[i], k ~ ".items[" ~ i ~ "]");
+            }
+
+            if (k == "if")
+            {
+                checkLt(node.items[1], "if.then");
+                checkLt(node.items[2], "if.else");
             }
 
             test_Statements(node, :debug);
