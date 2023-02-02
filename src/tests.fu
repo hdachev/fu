@@ -11004,6 +11004,34 @@ pub extern fn runTests()
             test(3) == 9 && test(4) == 32 ? 0 : 1;
     `]);
 
+    ZERO(`
+        <alt>
+        inline                                                  ;; Goto
+        </alt>
+        fn test(mut x: i32) {
+            fn loopInsideInlineArg(inline theLoop = {
+                while (x) {
+                    if (x & 1)  return x;
+                    if (x & 2)  break;
+                    if (x & 8)  return :test x * 100;
+                    x /= 2;
+                }
+            }) {
+                theLoop();
+                return x * 10;
+            }
+
+            return loopInsideInlineArg() * 3;                   ;; GNUStmtExpr
+        }
+
+        fn main() {
+            let a = test(5);
+            let b = test(4);
+            let c = test(16);
+            return a == 5 && b == 60 && c == 800 ? 0 : 1;
+        }
+    `);
+
     // /Macros & loops.
 
 
