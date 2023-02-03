@@ -171,8 +171,12 @@ pub fn add_mutref(mut type: Type, lifetime: Lifetime): Type
 
 pub fn is_ref2temp(type: Type): bool
 {
-    return type.lifetime.uni0n.if_last == Region_TEMP
-        && (type.is_ref || BUG("is_ref2temp: has lts but isnt ref"));
+    return type.lifetime.uni0n.if_last == Region_TEMP;
+}
+
+pub fn is_ref2static(type: Type): bool
+{
+    return type.lifetime.uni0n.if_first == Region_STATIC;
 }
 
 
@@ -188,6 +192,21 @@ pub fn clear_refs(mut type: Type): Type
 pub fn clear_mutref(mut type: Type)
 {
     type.quals &= ~q_mutref;
+    return type;
+}
+
+pub fn definitType(mut type: Type)
+{
+    if (!type)
+        type = t_zeroes;
+
+    if (CANNOT_definit_mutrefs)
+        type.quals &= ~q_mutref;
+
+    if (type.is_ref)
+        type.lifetime = Lifetime_static;
+
+    type.vfacts = AlwaysFalse;
     return type;
 }
 
@@ -330,8 +349,8 @@ pub let t_string = createArray(t_byte);
 pub fn type_trySuper(a: Type, b: Type, DONT_match_zeroes!?: bool)
 {
     if (a.canon != b.canon)
-        return a.is_zeroes && !DONT_match_zeroes ? CANNOT_definit_mutrefs ? clear_mutref(b) : b
-             : b.is_zeroes && !DONT_match_zeroes ? CANNOT_definit_mutrefs ? clear_mutref(a) : a
+        return a.is_zeroes && !DONT_match_zeroes ? type_trySuper(definitType(b), b)
+             : b.is_zeroes && !DONT_match_zeroes ? type_trySuper(definitType(a), a)
              : [];
 
     let quals   = a.quals  & b.quals;

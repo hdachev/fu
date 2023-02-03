@@ -817,7 +817,13 @@ pub fn solve(
         // Setup the lifetime for references to this binding.
         ref overload = GET_mut(target);
         {
-            let lifetime = Lifetime_fromBinding(target);
+            let lifetime = type.is_zeroes       // TODO FIX: deals with passing t_zeroes args
+                ? Lifetime_static               //  not sure if we care to support these,
+                : Lifetime_fromBinding(target); //   perhaps we can have a type.is_definit
+                                                //    which checks for both is_zeroes && is_static.
+                                                //
+                                                // This means that within a template fn you can use
+                                                //  t_zeroes as a sentinel for optional arguments.
 
             ///////////////////////////////////////////////////////////////
             // Throw away argument lifetime, union below will fix it up. //
@@ -849,10 +855,22 @@ pub fn solve(
 
     //
 
-    fn createDefinit(mut type: Type): SolvedNode
+    fn createDefinit(type: Type): SolvedNode
     {
         if (type.is_ref)
-            type.lifetime = Lifetime_static();
+        {
+            if (CANNOT_definit_mutrefs && type.is_mutref)
+                BUG("createDefinit: Cannot definit a mutref: " ~ type.humanizeType(lt: true));
+            if (!type.is_ref2static)
+                BUG("createDefinit: Cannot definit a non-static reference: " ~ type.humanizeType(lt: true));
+        }
+
+        // TODO FIX several issues, most trivial,
+        //  importantly we have to start adding AlwaysTrue/AlwaysFalse to numeric literals,
+        //   so there's a bit of fiddling i'm leaving for later
+        //
+        // if !(type.vfacts & AlwaysFalse)
+        //     BUG("createDefinit: Missing vfacts.AlwaysFalse: " ~ type.humanizeType(lt: true));
 
         // TODO FIX this is backwards, its not always practical -
         //  tryRetype just switches the type but doesn't switch from definit to int/real lit.
@@ -870,19 +888,9 @@ pub fn solve(
         return SolvedNode(kind: "definit", :type);
     }
 
-    fn trySolveDefinit(type: Type): Type
-    {
-        if (!type)
-            return t_zeroes;
-
-        return type_trySuper(t_zeroes, type);
-    }
-
     fn solveDefinit(type: Type): SolvedNode
     {
-        return createDefinit(
-            trySolveDefinit(:type) || fail(
-                "Cannot definit type: " ~ humanizeType(type)));
+        return createDefinit(definitType(:type));
     }
 
     fn getModule(modid!: i32)
@@ -1704,7 +1712,7 @@ pub fn solve(
         }
 
         if (node.kind == "definit")
-            return trySolveDefinit(expect);
+            return definitType(expect);
 
         if (node.kind == "str")
             return solveString(node.value, expect);
@@ -3574,7 +3582,7 @@ pub fn solve(
 
         if (!node.value && t_string.type_isSliceable)
             return createDefinit(
-                add_ref(t_string, Lifetime_temporary));
+                add_ref(t_string, Lifetime_static));
 
         return solved(node, type);
     }
@@ -5587,7 +5595,7 @@ pub fn solve(
             (id && id.qID ~ ": ")
                 ~ reason
                 ~ "No common supertype: "
-                ~ humanizeType(a) ~ " | " ~ humanizeType(b));
+                ~ humanizeType(a, lt: true) ~ " | " ~ humanizeType(b, lt: true));
     }
 
     fn intersectionType(reason: string, a: Type, b: Type, id?: string)
@@ -5596,7 +5604,7 @@ pub fn solve(
             (id && id.qID ~ ": ")
                 ~ reason
                 ~ "Cannot intersect types: "
-                ~ humanizeType(a) ~ " & " ~ humanizeType(b));
+                ~ humanizeType(a, lt: true) ~ " & " ~ humanizeType(b, lt: true));
     }
 
     fn Lifetime_vs(lifetime: Lifetime, locals_start!?: i32)
@@ -7857,18 +7865,16 @@ pub fn solve(
 
     fn definitWrap(ref node: SolvedNode, slot: Type)
     {
-        slot.is_mutref && CANNOT_definit_mutrefs && BUG(
-            "Trying to definitWrap a mutref.");
+        CANNOT_definit_mutrefs && slot.is_mutref && BUG(
+            "Trying to definitWrap a mutref: " ~ slot.humanizeType(lt: true));
+
+        slot.is_ref && !slot.is_ref2static && BUG(
+            "Trying to definitWrap a non-static reference: " ~ slot.humanizeType(lt: true))
 
         if (node.kind == "definit")
-            node.type = slot.is_ref
-                ? slot.clear_refs.add_ref(Lifetime_static)
-                : slot;
+            node.type = slot;
         else
-            node = createBlock(type: slot, [
-                node,
-                createDefinit(type: slot),
-            ]);
+            node = createBlock(node, createDefinit(slot));
     }
 
     fn maybeCopyOrMove(ref node: SolvedNode, slot: Type, isArgument! = false): void
