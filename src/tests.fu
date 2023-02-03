@@ -6819,6 +6819,33 @@ pub extern fn runTests()
         }
     `);
 
+    ZERO(`
+        struct Type { quals: i32; lifet: i32 };
+
+        fn tryInter(a: Type, b: Type) {
+            let quals = a.quals & b.quals;
+            let lifet = a.lifet & b.lifet;
+            if (!lifet && (a.lifet || b.lifet))
+                return [];
+
+            return quals;
+        }
+
+        fn fail(reason: string) {
+            return 101 + reason.len;
+        }
+
+        fn intersect(reason: string, a: Type, b: Type) {
+            return tryInter(a, b) || fail(reason);
+        }
+
+        fn main() {
+            let a = Type(quals: 1, lifet: 1);
+            let b = Type(quals: 3, lifet: 3);
+            return intersect("Hello!", a, b) == 1 ? 0 : 1;
+        }
+    `);
+
     // /quite right
 
 
