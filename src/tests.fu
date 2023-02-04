@@ -11648,6 +11648,22 @@ pub extern fn runTests()
         }
     `);
 
+    ZERO(`
+        <alt>
+        fn test(str: [byte]) { <alt/>
+        fn test(str: string) { </alt>
+            mut res = 1;
+            str.split('/'): |piece| res *= piece.len;
+            return res;
+        }
+
+        fn main() {
+            let res = test("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa/bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb/cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc");
+            if (mem::ALLOC_STAT_COUNT() != 0) return 101;
+            return res == 196608 ? 0 : 1;
+        }
+    `);
+
     // /Relaxer.
 
 
