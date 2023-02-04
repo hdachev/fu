@@ -161,18 +161,24 @@ novec fn len !T(a: [T;]): int __native(".size()");
 
 novec fn [] !T(a: [T;], i: int)
     case ($a -> &mut [T;]): &mut T __native(".mutref");
-    default                : &    T __native;
+    default               : &    T __native;
 
 novec fn [] !T(a: [T;], start: int, end: int)
     case ($a -> &mut [T;]): &mut [T;] __native("<fu/view.h>", "fu::get_view_mut");
-    default                : &    [T;] __native("<fu/view.h>", "fu::get_view");
+    default               : &    [T;] __native("<fu/view.h>", "fu::get_view");
 
 fn    push !T(ref a: T[], mut b: T): void __native(".push");
 fn unshift !T(ref a: T[], mut b: T): void __native(".unshift");
 fn  insert !T(ref a: T[], i: int, mut b: T): void __native(".insert");
 
-fn  slice !T(a: T[], start: int, end: int): T[] __native("<fu/vec/slice.h>", "fu::slice");
-fn  slice !T(a: T[], start: int): T[] __native("<fu/vec/slice.h>", "fu::slice");
+fn slice !T(a: [T;], start: int, end: int)
+    case ($a -> T[]):  T[] __native("<fu/vec/slice.h>", "fu::slice");
+    default         : [T;] __native("<fu/view.h>", "fu::get_view");
+
+fn slice !T(a: [T;], start: int)
+    case ($a -> T[]):  T[] __native("<fu/vec/slice.h>", "fu::slice");
+    default         : [T;] __native("<fu/view.h>", "fu::get_view");
+
 fn substr !T(a: T[], start: int, end: int): T[] __native("<fu/vec/slice.h>", "fu::substr");
 
 fn splice !T(ref a: T[], start: int, count: int): void  __native(".splice");
@@ -419,7 +425,7 @@ fn join !T(a: [T[];], sep?: T or [T;] or [])
     return res;
 }
 
-fn split !T(str: T[], sep: T or [T;], each)
+fn split !T(str: T[] or [T;], sep: T or [T;], each)
 {
     mut last = 0;
     mut next = 0;

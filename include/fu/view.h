@@ -239,6 +239,20 @@ struct slate
 // Slice api -
 
 template <typename V, typename T = typename V::value_type>
+view<T> get_view(const V& v, fu::i start) noexcept
+{
+    auto end = v.size();
+    assert(start >= 0 && start <= end);
+
+    start   = start > 0   ? start : 0;
+    start   = start < end ? start : end;
+
+    return view<T>(
+        v.data() + start,
+        end - start);
+}
+
+template <typename V, typename T = typename V::value_type>
 view<T> get_view(const V& v, fu::i start, fu::i end) noexcept
 {
     auto size = v.size();
