@@ -11112,6 +11112,18 @@ pub extern fn runTests()
     `);
 
     ZERO(`
+        lax fn doNothing(pointlessArg: i32) {
+            if (pointlessArg == 1)
+                return;
+        }
+
+        fn main() {
+            doNothing(1);
+            return 0;
+        }
+    `);
+
+    ZERO(`
         struct Overload     { args: Argument[]; };
         struct SolvedNode   { x: i32; };
         struct Argument     { default: SolvedNode; };
