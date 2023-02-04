@@ -168,6 +168,13 @@ pub fn solve(
         using postdom?:     Postdom;
     };
 
+    struct ChildTarget
+    {
+        token:              TokenIdx;
+        parent_rev:         u32;
+        target:             Target;
+    }
+
     struct Ephemeral
     {
         scope_memo?:        ScopeMemo;
@@ -177,6 +184,7 @@ pub fn solve(
         callers?:           i32[];
         calls?:             i32[];
 
+        children?:          ChildTarget[];
         specs?:             typeof( map::Map(string, Target) ); // mangle -> spec;
     };
 
@@ -3706,15 +3714,109 @@ pub fn solve(
         return [];
     }
 
+    fn getOrCreateChild(lax node: Node, onReuse, onCreate)
+    {
+        let parent = _current_fn.target;
+
+        if (parent)
+        {
+            let parent_rev  = parent.revision;
+            ref children    = parent.EPH_mut.children;
+
+            for (mut i = 0; i < children.len; i++)
+            {
+                ref child   = children[i];
+                if (child.token != node.token || child.parent_rev == parent_rev)
+                    continue;
+
+                child.parent_rev = parent_rev;
+
+                let target = child.target;
+                onReuse(target);
+                return target;
+            }
+        }
+
+        let target = Scope_create(_scope);
+        onCreate(target);
+
+        if (parent)
+        {
+            let parent_rev  = parent.revision;
+            ref children    = parent.EPH_mut.children;
+
+            children       ~= ChildTarget(:node.token, :parent_rev, target);
+        }
+
+        return target;
+    }
+
+    fn resetChild(target: Target)
+    {
+        if (target.is_SPECFAIL || target.kind == "template")
+            return;
+
+        ref status = GET_mut(target).status;
+        status & SS_LAZY || BUG("resetChild: not SS_LAZY: " ~ target.qWHAT);
+        status &= ~(SS_DID_START | SS_FINALIZED | SS_DIRTY);
+
+        // Disconnect.
+        let calls = steal(target.EPH_mut.calls);
+        for (mut i = 0; i < calls.len; i++)
+        {
+            let callee = Target(:module.modid, calls[i]);
+            callee.EPH_mut.callers.set::rem(target.index)
+                || BUG("resetChild: Missing in callers on " ~ callee.qWHAT);
+        }
+
+        let callers = steal(target.EPH_mut.callers);
+        for (mut i = 0; i < callers.len; i++)
+        {
+            let caller = Target(:module.modid, callers[i]);
+            caller.EPH_mut.calls.set::rem(target.index)
+                || BUG("resetChild: Missing in calls on " ~ caller.qWHAT);
+        }
+
+        // Without this recursive closures start feeding
+        //  historical revisions of closed-over arguments
+        //   back into the current solve.
+        //
+        ref args = EXT_mut(target).args;
+        for (mut i = args.len; i --> 0; )
+            if (args[i].flags & F_INJECTED)
+                args.splice(i, 1);
+
+        //
+        target.calls && BUG();
+    }
+
     fn uPrepFn_A(node: Node): SolvedNode
     {
         let id          = node.value;
         let local_of    = _current_fn.target.index;
         let status      = SS_LAZY; // Actual template fns are eager.
 
-        let target      = Scope_create(_scope,
-            kind: "fn", name: "__prep__",
-            :node.flags, :status);
+        let target      = getOrCreateChild(node,
+
+        onCreate: |target|
+        {
+            ref o           = GET_mut(target);
+            o.kind          = "fn";
+            o.name          = "prep " ~ node.value;
+            o.flags         = node.flags;
+            o.status        = status;
+
+            ref ext         = target.EXT_mut;
+            ext.local_of    = local_of;
+            ext.template    = createTemplate(node);
+            ext.min         = 0x7fffffff.i32;
+            ext.max         = 0;
+        },
+
+        onReuse: |target|
+        {
+            resetChild(target);
+        });
 
         //
         mut shadows     = !!(node.flags & F_SHADOW);
@@ -3723,13 +3825,6 @@ pub fn solve(
         Scope_set(_scope, :target, :id, :shadows);
 
         //
-        ref ext         = target.EXT_mut;
-        ext.local_of    = local_of;
-
-        ext.template    = createTemplate(node);
-        ext.min         = 0x7fffffff.i32;
-        ext.max         = 0;
-
         ref eph         = target.EPH_mut;
         eph.scope_memo  = _current_fn && Scope_snap(_scope);
         eph.scope_skip  = _current_fn && _ss;
@@ -4333,8 +4428,9 @@ pub fn solve(
                         _warnings[target.index] = Warning();
 
                     //
-                    ref eph = EPH_mut(target);
-                    eph.specs.map::clr();
+                    let specs = target.specs.vals;
+                    for (mut i = 0; i < specs.len; i++)
+                        resetChild(specs[i]);
                 }
             }
 
@@ -6827,7 +6923,7 @@ pub fn solve(
             let using _ = hacks::tryParseClosureID(:id);
             if (target.isLocal && target.localOf == _current_fn.target.index)
             {
-                revision == _current_fn.target.revision || fail(
+                revision == _current_fn.target.revision || BUG(
                     "ClosureID.revision mismatch: " ~ target.qWHAT
                         ~ "\n\tCaptured at: " ~ revision
                         ~ "\n\tCurrent rev: " ~ _current_fn.target.revision);
