@@ -3891,7 +3891,7 @@ pub fn solve(
     {
         if (_root_scope)
         {
-            let eph     = original.EPH;
+            let eph     = (original.spec_of || original).EPH;
             let start   = eph.scope_memo || _root_scope;
             _ss         = eph.scope_skip;
 
@@ -4295,7 +4295,7 @@ pub fn solve(
 
             //
             let extra_items = into
-                ? original.extra_items
+                ? into.extra_items
                 : (target.EPH_mut.extra_items = typeParams.intoScopeItems());
 
             //////////////////////////////////////////////////
@@ -4760,10 +4760,6 @@ pub fn solve(
                 ext.template        = template;
                 ext.spec_of         = overloadIdx;
                 ext.fx_mask         = fx_mask;
-
-                ref eph             = target.EPH_mut;
-                eph.scope_skip      = original.scope_skip;
-                eph.scope_memo      = original.scope_memo;
 
                 //
                 updateScope(_current_fn,
