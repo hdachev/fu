@@ -5776,6 +5776,30 @@ pub extern fn runTests()
     `);
 
     ZERO(`
+        struct SolvedNode { items: SolvedNode[] };
+
+        fn solve(node: SolvedNode) {
+            mut events = 0;
+
+            fn propagateType(shadow node: SolvedNode) {
+                fn tryTrackLastUse() !(node.items.len & 1);
+                let canDiscard = node.items.len != 0;
+                fn discardIntoBlock() tryTrackLastUse();
+
+                if (canDiscard && discardIntoBlock)
+                    propagateType(node.items[0]);
+
+                events++;
+            }
+
+            propagateType(node);
+            return events;
+        }
+
+        fn main() solve(SolvedNode([ SolvedNode(), SolvedNode() ])) == 2 ? 0 : 1;
+    `);
+
+    ZERO(`
         fn path_relative(from: string, to: string): string {
             let min = from.len < to.len ? from.len : to.len;
 
