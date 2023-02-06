@@ -22,19 +22,21 @@ _current = _current.replace(/\/\/[^\n]*/g, '');
 // Strip multiline comments.
 _current = _current.replace(/\/\*[^*]+\*\//g, '');
 
-function collapseMultilineWhitespace()
+function collapseMultilineWhitespace(src)
 {
     // Whitespace.
-    _current = _current.replace(/ *\n( *\n)+/g, '\n\n');
-    _current = _current.replace(/\{\s+\n/g, '{\n');
+    src = src.replace(/ *\n( *\n)+/g, '\n\n');
+    src = src.replace(/\{\s+\n/g, '{\n');
 
     // Cleanup empty blocks.
-    _current = _current.replace(/;\s*\{\s*\}/g, ';');
-    _current = _current.replace(/\{\s*\{\s*\}/g, '{');
-    _current = _current.replace(/\}\s*\{\s*\}/g, '}');
+    src = src.replace(/;\s*\{\s*\}/g, ';');
+    src = src.replace(/\{\s*\{\s*\}/g, '{');
+    src = src.replace(/\}\s*\{\s*\}/g, '}');
+
+    return src;
 }
 
-collapseMultilineWhitespace();
+_current = collapseMultilineWhitespace(_current);
 
 // Multiline declarations & calls.
 _current = _current.replace(/\(\n\s*/g, '(');
@@ -68,8 +70,12 @@ function execCompiler()
 
 let _dontRetry = {};
 
+let _successes = 0;
+
 function tryReproduceWithMutation(next)
 {
+    next = collapseMultilineWhitespace(next);
+
     // Don't waste time doing the same thing over and over.
     if (_dontRetry[next])
         return false;
@@ -92,7 +98,6 @@ function tryReproduceWithMutation(next)
     //    and go on iterating.
     //
     _current = next;
-    collapseMultilineWhitespace();
 
     // Collect some garb.
     for (const key in _dontRetry)
@@ -100,6 +105,14 @@ function tryReproduceWithMutation(next)
             delete _dontRetry[key];
 
     fs.writeFileSync(REDUCT, _current);
+
+    //
+    if (_successes++ > 100)
+    {
+        _successes = 0;
+        cp.execSync('git reset && git add -Av src/*.reduct && git commit -m auto-reduct-wip');
+    }
+
     return true;
 }
 
