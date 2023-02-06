@@ -6598,6 +6598,31 @@ pub extern fn runTests()
     `);
 
     ZERO(`
+        struct Type { items: Type[]; }
+
+        fn solve(root: Type) {
+            mut out = 0;
+            fn test_node(node: Type) {
+                for (mut i = 0; i < node.items.len; i++)
+                    test_node(node.items[i]);
+
+                fn checkLt(actual: Type) {
+                    out += node.items.len;
+                    for (mut i = 0; i < actual.items.len; i++)
+                        checkLt(actual.items[i]);
+                }
+
+                checkLt(node);
+            }
+
+            test_node(root);
+            return out;
+        }
+
+        fn main() solve(Type([ Type([ Type, Type ]), Type([ Type, Type, Type ]) ])) == 34 ? 0 : 1;
+    `);
+
+    ZERO(`
         fn runSolver(
             implicit ref notes: i32,
             break_notes: i32,
