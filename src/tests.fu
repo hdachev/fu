@@ -11124,6 +11124,27 @@ pub extern fn runTests()
     `);
 
     ZERO(`
+        struct Target   { index: i32 };
+        struct Overload { uni0n: i32[] };
+
+        fn solve(all: Overload[], check: Target) {
+            fn GET(t: Target) {
+                if (t.index < 1 || t.index > all.len) throw("nope");
+                return all[t.index - 1];
+            }
+
+            fn propagateType(t: Target) {
+                if (t.GET.uni0n.has(t.index)) {}
+                return t.index;
+            }
+
+            return propagateType(check);
+        }
+
+        fn main() solve([ Overload([ 1, 2, 3 ])], Target(1)) - 1;
+    `);
+
+    ZERO(`
         struct Overload     { args: Argument[]; };
         struct SolvedNode   { x: i32; };
         struct Argument     { default: SolvedNode; };
