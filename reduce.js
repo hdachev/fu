@@ -33,6 +33,9 @@ function collapseMultilineWhitespace(src)
     src = src.replace(/\{\s*\{\s*\}/g, '{');
     src = src.replace(/\}\s*\{\s*\}/g, '}');
 
+    // Cleanup trailing lines before bracket.
+    src = src.replace(/\s*(\n *\})/g, '$1');
+
     return src;
 }
 
@@ -234,6 +237,71 @@ function tryCutLines(src)
 
 //
 
+function tryCutLineGroup(src)
+{
+    const lines = src.split('\n');
+
+    const rand = Math.random() * lines.length |0;
+
+    function indentOf(line) {
+        const  indent = /^\s*/.exec(line);
+        return indent && indent[0];
+    }
+
+    const expect = indentOf(lines[rand]);
+    if (!expect)
+        return false;
+
+    let start = rand;
+    if (Math.random() > 0.5)
+    {
+        const gteq = Math.random() > 0.5
+
+        for (let i = start; i --> 0; )
+        {
+            const line = lines[i];
+            if (!line && Math.random() > 0.5)
+                continue;
+
+            const actual = indentOf(line);
+            if (gteq ? actual >= expect : actual === expect)
+                start = i;
+            else
+                break;
+        }
+    }
+
+    let end = rand;
+    if (Math.random() > 0.5)
+    {
+        const gteq = Math.random() > 0.5
+
+        for (let i = end; i < lines.length; i++)
+        {
+            const line = lines[i];
+            if (!line && Math.random() > 0.5)
+                continue;
+
+            const actual = indentOf(line);
+            if (gteq ? actual >= expect : actual === expect)
+                end = i;
+            else
+                break;
+        }
+    }
+
+    end++;
+
+    const cut = lines.splice(start, end - start);
+
+    console.log("\nCUT LINE GROUP\n<<<" + cut.join('\n') + ">>>");
+
+    return lines.join('\n');
+}
+
+
+//
+
 const _strategies =
 [
     tryRemoveFn,
@@ -243,6 +311,7 @@ const _strategies =
 
     tryPopElse,
     tryCutLines,
+    tryCutLineGroup,
 ];
 
 function main()
