@@ -7408,16 +7408,18 @@ pub fn solve(
 
     fn inlineExpression(from: Target, mut expr: SolvedNode)
     {
+        from || BUG("TODO inlining from global scope, never happened before, might work, remove assert as needed.");
+
         // println("inlineExpression " ~ expr.kind ":" ~ expr.value " in " _current_fn.qWHAT);
 
         let self = _current_fn.target;
-        if (from && from != self)
         {
             let helpers0 = _helpers.len;
             defer _helpers.shrink(helpers0);
 
             //
             let letdefExpect = -from.index;
+            let minLocalIdx  = GET_next_local_index();
 
             mut letdefReplicas:     i32[];
             mut helpersReplicas:    Helpers[];
@@ -7431,6 +7433,13 @@ pub fn solve(
                 let replica = letdefReplicas.unless_oob(target.index);
                 if (replica)
                     return nested(replica);
+
+                // Local of self?
+                if (from == self)
+                {
+                    target.index < minLocalIdx || BUG("Missing a local replica for: " ~ target.qWHAT);
+                    return target;
+                }
 
                 let o = GET_crossmodule(target, :from);
                 if (o.flags & F_IMPLICIT)
@@ -7530,19 +7539,25 @@ pub fn solve(
                         expr.target = local;
                     }
                 }
-                else if (expr.kind == "jump")
+                else if (expr.kind == "jump" || expr.kind == "__far_jump") :REPLICATE_JUMP
                 {
-                    let foreign = expr.helpers;
-                    let local = helpersReplicas.unless_oob(foreign.index) || BUG("Can't replicate jump.");
+                    if (expr.kind == "jump")
+                    {
+                        let foreign = expr.helpers;
+                        let local   = helpersReplicas.unless_oob(foreign.index);
+                        if (local)
+                        {
+                            // println("inlineExpression: REPLICATE jump #" foreign.index " -> #" local.index);
 
-                    // println("inlineExpression: REPLICATE jump #" foreign.index " -> #" local.index);
+                            expr.helpers = local;
+                            local.mask |= HM_LabelUsed;
 
-                    expr.helpers = local;
+                            break :REPLICATE_JUMP;
+                        }
 
-                    local.mask |= HM_LabelUsed;
-                }
-                else if (expr.kind == "__far_jump")
-                {
+                        expr.kind = "__far_jump";
+                    }
+
                     // println("Found a __far_jump: " ~ expr.qWHAT);
 
                     if (expr.helpers.local_of == _current_fn.target.index)
