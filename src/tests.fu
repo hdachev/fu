@@ -6410,6 +6410,55 @@ pub extern fn runTests()
         }
     `);
 
+    ZERO(`
+        struct BitSet { _data: u8[] };
+
+        fn add(using _: &mut BitSet, idx: int) {
+            let no_neg = idx & int.MIN;
+            let bucket = idx >> 3 | no_neg;
+            let bit    = idx & 7;
+            let mask   = 1 << bit.u8;
+
+            if (_data.len <= bucket)
+                _data.grow(bucket + 1);
+
+            _data[bucket] |= mask;
+        }
+
+        fn each(using _: BitSet, visit) {
+            for (mut i = 0; i < _data.len; i++) {
+                let item = _data[i];
+                if (item) for (mut b = 0; b < 8; b++) {
+                    let mask = 1 << b.u8;
+                    if (item & mask)
+                        visit(i << 3 | b.int);
+                }
+            }
+        }
+
+        struct Node { items: Node[] }
+
+        fn each(using n: Node, visit)
+            for (mut i = 0; i < n.items.len; i++)
+                visit(n.items[i]);
+
+        fn traverse(ref node: Node, ref bitset: BitSet) {
+            bitset.add(node.items.len);
+            node.each(.traverse(:bitset));
+
+            mut res = 0;
+            bitset.each: |index|
+                res += index;
+
+            return res;
+        }
+
+        fn main() {
+            mut bitset: BitSet;
+            return traverse(Node([ Node([ Node, Node, Node ]), Node ]), :bitset) == 5 ? 0 : 1;
+        }
+    `);
+
     ZERO([`
         struct Type {
             quals: i32;
