@@ -2679,6 +2679,9 @@ pub fn solve(
                 let rtl         = node.target.isRTL;
                 let ooe_isUndef = !rtl && node.items.len > 1;
 
+                host_args.len == node.items.len || BUG(
+                    "propagateType(call) args.len != host_args.len at call to " ~ node.target.qWHAT);
+
                 // Here we're visiting stuff in reverse order of execution -
                 //  so RTL means visit left to right and vice versa, watch it.
                 let N           = node.items.len;

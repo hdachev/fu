@@ -6944,6 +6944,40 @@ pub extern fn runTests()
         }
     `);
 
+    ZERO(`
+        struct Item { val: i32 };
+
+        fn Each !T(a: [T;], fn)
+            for (mut i = 0; i < a.len; i++)
+                fn(a[i], i?: i);
+
+        fn parseStructDecl(ref items: [Item], ref sum: i32) {
+            if (items.len & 2)
+                parseStructDecl(items[1, items.len], sum);      ;; PointlessMustSeq
+
+            :BLOCK {
+                items.Each: |item|
+                    if ((sum += item.val) & 2)
+                        break :BLOCK;                           ;; Goto
+
+                items.Each: |ref item|
+                    item.val += sum;
+            }
+
+            items.Each: |ref item|
+                item.val++;
+        }
+
+        fn main() {
+            mut sum = 0;
+            mut items = [ Item(0), Item(1) ];
+            parseStructDecl(items, sum);
+            return sum == 4
+                && items[0].val == 5
+                && items[1].val == 8 ? 0 : 1;
+        }
+    `);
+
     // /quite right
 
 
