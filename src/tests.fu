@@ -6978,6 +6978,43 @@ pub extern fn runTests()
         }
     `);
 
+    ZERO(`
+        struct Node {
+            value?: string;
+            items?: Node[];
+        };
+
+        fn SLOW_traverse(node: Node, visit) {
+            mut stack = [ node ];
+            while (stack) {
+                shadow mut node = stack[stack.len - 1];
+                stack.pop();
+                visit(node);
+                for (mut i = node.items.len; i --> 0; )
+                    stack ~= node.items[i];
+            }
+        }
+
+        fn qSTACK(node: Node) {
+            SLOW_traverse(node): |n| {
+                if (n.value && n.items)
+                    return n.value ~ ", " ~ qSTACK(n.items[0]);
+            }
+
+            return node.value ~ "!";
+        }
+
+        fn main() {
+            let res = qSTACK(
+                Node(items: [
+                    Node("Ignore me"),
+                    Node("Hello", [ Node("World") ]),
+                ]));
+
+            return res == "Hello, World!" ? 0 : 1;
+        }
+    `);
+
     // /quite right
 
 
