@@ -1331,18 +1331,10 @@ pub fn solve(
                     continue :MATCH_FAIL;
                 }
 
-                inline fn ensureLazySolved()
-                {
-                    mut repeats = 0;
-                    while (lazySolveStart(overloadIdx))
-                        repeats++ > 1000 && BUG(
-                            "Repeat-solved too many times: " ~ overloadIdx.qWHAT);
-                }
-
                 :TEST_AGAIN while (true)
                 {
                     // Make sure we know what this is.
-                    ensureLazySolved();
+                    ensureLazySolved(overloadIdx);
 
                     let overload = GET(overloadIdx);
 
@@ -1602,8 +1594,7 @@ pub fn solve(
                         if (specIdx.is_SPECFAIL)
                             matchFail("Could not specialize: " ~ _spec_errors[specIdx.index]);
 
-                        overloadIdx = specIdx;
-                        ensureLazySolved();
+                        ensureLazySolved(overloadIdx = specIdx);
                     }
 
                     // TODO FIX: we allow ambig among overloads that will be dead-code eliminated by the callsite,
@@ -2640,6 +2631,11 @@ pub fn solve(
 
                     if (!spec.is_SPECFAIL && !(spec == t))
                     {
+                        ensureLazySolved(spec);
+
+                        spec.args.len == t.args.len || BUG(
+                            "Relaxed spec.args.len != original.args.len");
+
                         checkAssignable(host: node.type, spec.type,
                             "Relaxed specialization does not return a subtype");
 
@@ -5326,6 +5322,14 @@ pub fn solve(
 
     //
 
+    fn ensureLazySolved(target: Target)
+    {
+        mut repeats = 0;
+        while (lazySolveStart(target))
+            repeats++ > 1000 && BUG(
+                "Repeat-solved too many times: " ~ target.qWHAT);
+    }
+
     fn lazySolveStart(target: Target): bool
     {
         // Isn't lazy-started?
@@ -7642,13 +7646,14 @@ pub fn solve(
         if (reorder)
         {
             // TODO FIX this can be done in place, a neat little algo with swaps
-            mut args_out: SolvedNode[]; args_out.resize(reorder.len);
+            mut args_out: SolvedNode[];
+            args_out.resize(reorder.len);
 
             for (mut i = 0; i < reorder.len; i++)
             {
                 let idx = reorder[i];
                 if (idx >= 0)
-                    args_out[i] = args[idx];
+                    args_out[i] = steal(args[idx]);
             }
 
             args = args_out;
@@ -7793,7 +7798,7 @@ pub fn solve(
             if (args)
             {
                 let host_args = target.args || BUG("CallerNode: no host args: " ~ target.qWHAT);
-                host_args.len >= args.len || BUG("CallerNode: host_arg.len mismatch: " ~ target.qWHAT);
+                host_args.len == args.len || BUG("CallerNode: host_arg.len mismatch: " ~ target.qWHAT);
 
                 for (mut i0 = 0; i0 < args.len; i0++)
                 {
