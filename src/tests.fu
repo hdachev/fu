@@ -9274,6 +9274,40 @@ pub extern fn runTests()
         }
     `);
 
+    ZERO(`
+        nocopy struct P { secs: P[] };
+
+        fn matchImplicitArgByName_closuresAndShadowing(prims: P[]) {
+            struct Helper { idx: i32; };
+
+            using fn GET(using _: Helper) prims[idx];
+
+            shadow mut prims = {
+                mut res: Helper[];
+                for (mut i = 0; i < prims.len; i++)
+                    res ~= Helper(i);
+                res                                             ;; GNUStmtExpr
+            };
+
+            prims.sort(|a, b| a.secs.len < b.secs.len);
+
+            mut res = 101;
+            for (mut i = 0; i < prims.len; i++) {
+                let m = prims[i];
+                res += m.secs.len;
+                res *= m.secs.len;
+            }
+
+            return res;
+        }
+
+        fn main() {
+            let prims = [ P([ P, P, P ]), P, P([ P ]), P([ P, P ]) ];
+            let res = matchImplicitArgByName_closuresAndShadowing(prims);
+            return res == 27 ? 0 : 1;
+        }
+    `);
+
 
     // Return inference.
 
