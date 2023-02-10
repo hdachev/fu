@@ -132,6 +132,9 @@ pub fn ZERO(
             {
                 let fail    = fails[j];
 
+                let isTODO  = fail.starts(with: "<TODO/>");
+                shadow let fail = isTODO ? fail.slice(7) : fail;
+
                 let end     = fail.unindent_left(fail.len);
                 sources[i]  = prefix ~ fail[0, end] ~ suffix;
 
@@ -184,10 +187,14 @@ pub fn ZERO(
                     testdiffs.set_next(
                         sources.ERR_KEY, e/*.ERR_TRIM*/);
 
+                    if (isTODO)
+                        throw("<fail><todo/> is actually passing:\n\n" ~ e);
+
                     continue;
                 }
 
-                throw("<fail> does not throw:\n" ~ sources[i]);
+                if (!isTODO)
+                    throw("<fail> does not throw:\n" ~ sources[i]);
             }
 
             // Finally, this should run fine,
