@@ -201,6 +201,7 @@ pub fn solve(
         shortModuleName:    string;
 
         TODO_FIX_convert_args:  SolvedNode[];
+        TODO_FIX_inline_safety: i32;
     };
 
     struct HelpersData
@@ -7791,7 +7792,12 @@ pub fn solve(
                 _current_fn.now_inlining.set::add(target) || fail(
                     "Cannot inline self-recursive functions: " ~ target.qWHAT);
 
+                if (SELF_TEST) TODO_FIX_inline_safety++ < 24 || BUG(
+                    "Inliner recursion, something is off: " ~ target.qWHAT);
+
                 defer {
+                    if (SELF_TEST) TODO_FIX_inline_safety--;
+
                     Scope_pop(_scope, scope0);
                     _ss = ss0;
                     _current_fn.autoshadow_ok = autoshadow_ok0;

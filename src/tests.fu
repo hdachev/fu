@@ -10634,21 +10634,40 @@ pub extern fn runTests()
         fn main() test(0);
     `);
 
-    ZERO(`
+    TODO_inline(`
+        inline fn parseStuff(x: i32) descend(x);                ;; GNUStmtExpr
+
+        inline fn descend(x: i32) {
+            fn inner() x & 1 ? parseStuff(x / 2) : x;
+            return inner();
+        }
+
+        fn main() parseStuff(5) == 2 ? 0 : 1;
+    `);
+
+    TODO_inline(`
         fn use_a(implicit a: i32) a * a;
         fn use_b(implicit b: i32) b * b;
         fn use_c(implicit c: i32) c * c;
 
+        <alt>
+        inline                                                  ;; GNUStmtExpr
+        </alt>
         fn parseStuff(x: i32) {
             fn doStuff(y: i32) doSomething(y * y);
             return doStuff(x * x);
         }
 
+        <alt>
+        inline </alt>
         fn doSomething(x: i32) {
             fn doSomething_inner(y: i32) y * use_a * descend(y * y);
             return doSomething_inner(x * x);
         }
 
+        <alt>
+        inline                                                  ;; GNUStmtExpr
+        </alt>
         fn descend(x: i32) { // <- x here
             fn descend_inner(y: i32)
                 y & 1 ? parseStuff(y / 2) * parseStuff(x) // x not defined here?
@@ -10657,6 +10676,9 @@ pub extern fn runTests()
             return descend_inner(x * x);
         }
 
+        <alt>
+        inline                                                  ;; GNUStmtExpr
+        </alt>
         fn doSomethingElse(x: i32) {
             fn doSomethingElse_inner(y: i32) y * use_b;
             return doSomethingElse_inner(x * x);
