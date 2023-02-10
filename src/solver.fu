@@ -7519,9 +7519,25 @@ pub fn solve(
                     {
                         let local = matchReplicaOrInjectForeignLocal(expr.target);
 
-                        // println("inlineExpression: CALL.REPLACE " expr.target.qWHAT " with " local.qWHAT);
+                        if (SELF_TEST)
+                        {
+                            let foreign = GET_crossmodule(expr.target, :from);
+
+                            isAssignable(host: foreign.type, local.type) || BUG(
+                                "matchReplicaOrInjectForeignLocal botched the type of " ~ foreign.qWHAT ~ ":\n"
+                                    ~ "\n\t\tExpect: " ~ foreign.type.humanizeType
+                                    ~ "\n\t\tActual: " ~   local.type.humanizeType);
+
+                            // println("inlineExpression: CALL.REPLACE " foreign.qWHAT " with " local.qWHAT);
+                        }
 
                         expr.target = local;
+
+                        local.GET_mut.status |= SS_MATCHED;
+
+                        // TODO FIX VFACTS /////////////////////////////////////////////
+                        expr.type.vfacts = local.type.vfacts;
+                        // TODO FIX VFACTS /////////////////////////////////////////////
                     }
                 }
                 else if (expr.kind == "jump" || expr.kind == "__far_jump") :REPLICATE_JUMP
@@ -9170,7 +9186,18 @@ pub fn solve(
             ref items = node.items;
 
             // Cond.
-            bck_node(items[0]);
+            ref cond = items[0];
+            bck_node(cond);
+
+            let ae_cond = tryAbstractEvalAsBool(cond);
+            if (ae_cond)
+            {
+                ref cons = items[ae_cond == SE_True ? 1 : 2];
+                bck_node(cons);
+
+                node = createBlock(items[0], cons);
+                return;
+            }
 
             // Cons //////////////////////////////////////////////
             let e_Restore_AfterCond     = _current_fn.events.snap;
@@ -9190,6 +9217,51 @@ pub fn solve(
             //////////////////////////////////////////////////////
         }
 
+        fn bck_and_or(ref node: SolvedNode)
+        {
+            ref items = node.items;
+            for (mut i = 0; i < items.len; i++)
+            {
+                ref expr = items[i];
+                bck_node(expr);
+
+                let ae_expr = tryAbstractEvalAsBool(expr);
+                if (ae_expr)
+                {
+                    let isAnd = node.kind == "and";
+                    if (isAnd == (ae_expr == SE_False))
+                    {
+                        items.shrink(i + 1);
+                        node.vfacts |= isAnd ? AlwaysFalse : AlwaysTrue;
+                        break;
+                    }
+                    else if (i < items.len - 1)
+                    {
+                        let cond = expr;
+                        items.splice(i, 1);
+
+                        ref cons = items[i--];
+                        cons = createBlock(cond, cons);
+                    }
+                }
+            }
+
+            if (node.items.len < 2)
+                node = node.items.only;
+        }
+
+        fn bck_not(ref node: SolvedNode)
+        {
+            ref expr = node.items.only;
+            bck_node(expr);
+
+            let ae_expr = tryAbstractEvalAsBool(expr);
+            if (ae_expr)
+                node.vfacts |= ae_expr == SE_True
+                    ? AlwaysFalse
+                    : AlwaysTrue;
+        }
+
         fn bck_block(ref node: SolvedNode)
         {
             mut defers: SolvedNode[];
@@ -9198,11 +9270,28 @@ pub fn solve(
             ref items = node.items;
             for (mut i = 0; i < items.len; i++)
             {
-                shadow ref node = items[i];
-                if (node.kind == "defer")
-                    defers ~= node.items.only;
+                ref stmt = items[i];
+                if (stmt.kind == "defer")
+                    defers ~= stmt.items.only;
                 else
-                    bck_node(node);
+                    bck_node(stmt);
+
+                // #tryAbstractEval #tryAbstractEvalAsBool:
+                //  Abstract eval needs to do these too unfortunately,
+                //   so if it's gonna happen during bck
+                //    i guess this is where it's gonna happen.
+                //
+                if (stmt.type.is_never)
+                {
+                    if (SELF_TEST && stmt.kind == "defer")
+                        BUG("bck, block: defer.is_never");
+
+                    items.shrink(i + 1);
+                    if !(node.helpers.mask & HM_LabelUsed)
+                        node.type = t_never;
+
+                    break;
+                }
             }
 
             // Defers in reverse.
@@ -9254,13 +9343,22 @@ pub fn solve(
                 // Isolate cons from alt and combine effects on exit.
                 bck_if(node);
             }
+            else if (k == "and" || k == "or")
+            {
+                // Previously below with blocks, now also abstract eval.
+                bck_and_or(node);
+            }
+            else if (k == "not")
+            {
+                // Previously below with blocks, now also abstract eval.
+                bck_not(node);
+            }
             else if (k == "block")
             {
                 // TODO If broken-from, hide effects and append to jumped-to.
                 bck_block(node);
             }
             else if (k == "root"
-                  || k == "and"  || k == "or" || k == "not"
                   || k == "jump"
                   || k == "try"
 
