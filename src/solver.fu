@@ -9641,19 +9641,19 @@ pub fn solve(
         let host_args = callsite.target.args;
         let args      = callsite.items;
 
-        // Zero init.
-        if (args.len == 0 && callsite.target.kind == "type")
-            return;
-
         fn err(reason: string)
             BUG(debug ~ " " ~ callsite.target.qWHAT ~ ": " ~ reason);
 
-        host_args.len == args.len || err(
+        let k = callsite.target.kind;
+        k == "field" || k == "enumv" || k == "type" || k == "__native" || k == "var" || k == "fn" || err(
+            "Bad target.kind: " ~ explainWhichFn(callsite.target));
+
+        host_args.len == args.len || k == "type" && !args.len || err(
             "host_args.len (" ~ host_args.len ~ ") != args.len (" ~ args.len ~ "):"
                 ~ "\n\t\t" ~ mangleArgTypes(args)
                 ~ "\n\t\t" ~ explainWhichFn(callsite.target));
 
-        for (mut i = 0; i < host_args.len; i++)
+        for (mut i = 0; i < args.len; i++)
         {
             let host_arg = host_args[i];
             let arg      = args[i];
