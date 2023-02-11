@@ -6041,7 +6041,7 @@ pub extern fn runTests()
 
     ZERO(`
         // Added this while replacing the inliner, used to compile with a [byte].
-        <fail can neither copy nor move from 20:50><TODO/>
+        <fail can neither copy nor move from 20:50>
         type Right = [byte]; <pass/>
         type Right = byte[]; </fail>
 
@@ -6500,7 +6500,7 @@ pub extern fn runTests()
         }
     `]);
 
-    ZERO(`
+    TODO_inline(`
         fn inline_args_and_closures(inline nums: i32[]) {       ;; GNUStmtExpr
             mut sum: i32;
             noinline fn woot(z: i32)
@@ -10650,7 +10650,7 @@ pub extern fn runTests()
         fn main() parseStuff(5) == 2 ? 0 : 1;
     `);
 
-    TODO_inline(`
+    ZERO(`
         fn use_a(implicit a: i32) a * a;
         fn use_b(implicit b: i32) b * b;
         fn use_c(implicit c: i32) c * c;
