@@ -4288,9 +4288,9 @@ pub extern fn runTests()
             ref x = xy.x;        <pass/>
             fn  x = xy.x;        </fail>
 
-            pragma emit("
-                "xy".x++;
-            ");
+            pragma emit(\`
+                \`xy\`.x++;
+            \`);
 
             return x - 1;
         }
@@ -4306,9 +4306,9 @@ pub extern fn runTests()
             fn  x = xy.x;                  </fail>
 
             while (!x)
-                pragma emit("
-                    "xy".x++;
-                ");
+                pragma emit(\`
+                    \`xy\`.x++;
+                \`);
 
             return xy.x - 1;
         }
@@ -4318,9 +4318,9 @@ pub extern fn runTests()
         struct XY { x: i32; y: i32 };
 
         fn bckErr_fromPragmaEmit(ref xy: XY) {
-            pragma emit("
-                "xy".x++;
-            ");
+            pragma emit(\`
+                \`xy\`.x++;
+            \`);
         }
 
         fn main() {
@@ -12039,11 +12039,11 @@ pub extern fn runTests()
     // C++ hacks.
 
     ZERO(`
-        pragma emit("
+        pragma emit(\`
             void ccIncrX2(int& a, int b) {
                 a += b * 2;
             }
-        ");
+        \`);
 
         fn main() {
             mut a = 0;
@@ -12475,10 +12475,10 @@ pub extern fn runTests()
     ZERO(`
         fn has_fx() {
             mut res = 0;
-            pragma output("
+            pragma output(\`
                 static int counter;
-                "res"    = counter++;
-            ");
+                \`res\`  = counter++;
+            \`);
             return res;
         }
 
@@ -12507,10 +12507,10 @@ pub extern fn runTests()
     ZERO(`
         fn no_fx() {
             mut res = 0;
-            pragma clock("
+            pragma clock(\`
                 static int counter;
-                "res"  = counter++;
-            ");
+                \`res\`  = counter++;
+            \`);
             return res;
         }
 

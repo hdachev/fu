@@ -203,10 +203,10 @@ fn sort !T(ref a: [T;]): void
 {
     pragma include("<algorithm>");
     pragma emit(
-    "
-        auto* data = "a".data_mut();
-        std::sort(data, data + "a".size());
-    ");
+    \`
+        auto* data = \`a\`.data_mut();
+        std::sort(data, data + \`a\`.size());
+    \`);
 }
 
 fn sort !T(ref a: [T;], less/*: fn(a: T, b: T): bool*/): void
@@ -217,20 +217,20 @@ fn sort !T(ref a: [T;], less/*: fn(a: T, b: T): bool*/): void
         mut r: T;
         pragma include("<algorithm>");
         pragma emit(
-        "
-            (void) "l";
-            (void) "r";
-            auto* data = "a".data_mut();
-            std::sort(data, data + "a".size(), [&](auto& "l", auto& "r")
+        \`
+            (void) \`l\`;
+            (void) \`r\`;
+            auto* data = \`a\`.data_mut();
+            std::sort(data, data + \`a\`.size(), [&](auto& \`l\`, auto& \`r\`)
             {
-        ");
+        \`);
 
         mut lt: bool = less(l, r);
         pragma emit(
-        "
-                return "lt";
+        \`
+                return \`lt\`;
             });
-        ");
+        \`);
     }
 
     sort();
