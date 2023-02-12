@@ -318,7 +318,7 @@ pub fn solve(
                 reason ~= "\n                "[0, (17 - pass.len).max(1)] ~ pass;
 
                 let o = GET(h.target);
-                reason ~= o.qWHAT;
+                reason ~= o;
 
                 let token = o.solved.token;
                 if (token)
@@ -340,7 +340,7 @@ pub fn solve(
         fail("COMPILER BUG:\n\n\t" ~ (reason || "Assertion failed."));
     }
 
-    fn qWHAT(o: Overload)
+    fn str(o: Overload)
     {
         let kind    = o.kind;
         mut prefix  = kind.str;
@@ -358,7 +358,7 @@ pub fn solve(
         return prefix.qKW ~ " " ~ o.name.human.qID;
     }
 
-    fn qWHAT(arg: Argument)
+    fn str(arg: Argument)
     {
         mut prefix = (arg.flags & F_INJECTED && "injected ")
                    ~ (arg.flags & F_IMPLICIT && "implicit ")
@@ -470,7 +470,7 @@ pub fn solve(
             shadow let module = ctx.modules[from.modid];
             let locals = module.out.solve.scope.extended[-target.modid].locals;
             locals.len >= target.index || BUG(
-                "Out of range local target from: " ~ GET(target.parent).qWHAT
+                "Out of range local target from: " ~ GET(target.parent)
                     ~ "\n\tlocals=" ~ locals.len ~ "\n\tindex=" ~ target.index);
 
             return locals[target.index - 1];
@@ -500,7 +500,7 @@ pub fn solve(
             let locals = _scope.extended[-target.modid].locals;
 
             if (SELF_TEST && locals.len < target.index)
-                BUG("Out of range local target from: " ~ GET(target.parent).qWHAT
+                BUG("Out of range local target from: " ~ GET(target.parent)
                     ~ "\n\tlocals=" ~ locals.len ~ "\n\tindex=" ~ target.index);
 
             return locals[target.index - 1];
@@ -722,7 +722,7 @@ pub fn solve(
         return GET(nested(Region_toLocal(r)));
     }
 
-    fn qWHAT(regions: [Region])
+    fn str(regions: [Region])
     {
         mut str = "";
         for (mut i = 0; i < regions.len; i++)
@@ -738,7 +738,7 @@ pub fn solve(
             else if (r.Region_isArgPosition)
                 str ~= "arg#" ~ Region_toArgPosition(r);
             else
-                str ~= r.qWHAT();
+                str ~= r;
         }
 
         return str;
@@ -759,7 +759,7 @@ pub fn solve(
                 continue;
             }
 
-            region.Region_isTemp && BUG("Lifetime_replaceArgsAtCallsite: found a temp lt in: " ~ target.type.lifetime.qWHAT);
+            region.Region_isTemp && BUG("Lifetime_replaceArgsAtCallsite: found a temp lt in: " ~ target.type.lifetime);
 
             let argNode = argNodes[region.Region_toArgPosition];
             let argLt   = argNode.type.is_ref
@@ -948,11 +948,11 @@ pub fn solve(
         //     result ~= " ref:".qLT;
         //     result ~= r.Region_isTemp() ? "temp".qKW
         //             : r.Region_isStatic ? "static".qKW
-        //                                 : nested(Region_asIndex(r)).qWHAT;
+        //                                 : nested(Region_asIndex(r));
         // }
 
         if (lt && type.lifetime)
-            result ~= "`" ~ type.lifetime.qWHAT;
+            result ~= "`" ~ type.lifetime;
 
         if (type.vfacts)
             result ~= " " ~ type.vfacts;
@@ -960,12 +960,12 @@ pub fn solve(
         return result;
     }
 
-    fn qWHAT(n: SolvedNode)
+    fn str(n: SolvedNode)
     {
         mut src = n.kind.str.qKW;
 
         if (n.kind == "call" || n.kind == "let" || n.kind == "letdef")
-            src ~= "(" ~ n.target.qWHAT ~ ")";
+            src ~= "(" ~ n.target ~ ")";
         else if (n.value)
             src ~= "(" ~ n.value.qID ~ ")";
 
@@ -973,7 +973,7 @@ pub fn solve(
             src ~= " -> " ~ humanizeType(n.type);
 
         if (n.items.len == 1)
-            src ~= " { " ~ n.items.only.qWHAT ~ " }";
+            src ~= " { " ~ n.items.only ~ " }";
         else if (n.items.len > 0)
             src ~= " { " ~ n.items.len ~ " }";
 
@@ -1334,7 +1334,7 @@ pub fn solve(
                 fn matchFail(inline err: string)
                 {
                     if (error)
-                        error ~= "\n\n\t" ~ overloadIdx.qWHAT ~ ": " ~ err;
+                        error ~= "\n\n\t" ~ overloadIdx ~ ": " ~ err;
 
                     continue :MATCH_FAIL;
                 }
@@ -1462,14 +1462,14 @@ pub fn solve(
                                     }
                                 }
 
-                                matchFail("Cannot infer missing argument " ~ host_arg.qWHAT);
+                                matchFail("Cannot infer missing argument " ~ host_arg);
                             }
 
                             // Explicit argname requirements.
                             if (host_arg.flags & F_MUSTNAME)
                             {
                                 if (names.len <= callsiteIndex || !names[callsiteIndex])
-                                    matchFail("Argument must be :explicitly named " ~ host_arg.qWHAT);
+                                    matchFail("Argument must be :explicitly named " ~ host_arg);
                             }
 
                             // Autocall.
@@ -1483,7 +1483,7 @@ pub fn solve(
                                 autocall_args[0] = args[callsiteIndex];
 
                                 mut autocall_error = error
-                                    && "Cannot match argument " ~ host_arg.qWHAT ~ " autocall " ~ host_arg.autocall.qCODE ~ ": ";
+                                    && "Cannot match argument " ~ host_arg ~ " autocall " ~ host_arg.autocall.qCODE ~ ": ";
 
                                 let t = tryMatch__mutargs(:misc_scope, :local_scope, id: host_arg.autocall, args: autocall_args, reorder: autocall_reorder, conversions: autocall_conversions, error: autocall_error);
                                 if (!t)
@@ -1518,7 +1518,7 @@ pub fn solve(
                                 // TODO FIX Check that ref args are mutrefs,
                                 //  otherwise we get mustMatch fails after a spec-ok.
                                 if (host_arg.flags & F_REF && !actual.is_mutref)
-                                    matchFail("Argument " ~ host_arg.qWHAT
+                                    matchFail("Argument " ~ host_arg
                                             ~ " expects a mutref, got " ~ humanizeType(actual));
 
                                 continue :ARG_OK;
@@ -1555,7 +1555,7 @@ pub fn solve(
                             }
 
                             // Nope, args fail.
-                            matchFail("Argument " ~ host_arg.qWHAT
+                            matchFail("Argument " ~ host_arg
                                     ~ " expects " ~ humanizeType(expect)
                                     ~ ", got "    ~ humanizeType(actual));
                         }
@@ -1616,7 +1616,7 @@ pub fn solve(
                         fn GETfn(idx: i32) Target(modid: module.modid, index: idx);
 
                         fn fnName(idx: i32) idx
-                            ? GETfn(idx).qWHAT
+                            ? GETfn(idx).str
                             : "global scope";
 
                         let PREV        = matchIdx;
@@ -1632,15 +1632,15 @@ pub fn solve(
                             while (_c > inner) _c = GETfn(_c).localOf;
                             _c == inner || BUG(
                                 "Leaking `" ~ id ~ "` between functions [inner/callsite]: "
-                                    ~ inner.fnName ~ "::" ~ PREV.qWHAT
+                                    ~ inner.fnName ~ "::" ~ PREV
                                     ~ " is seen from " ~ callsite.fnName);
 
                             mut _i = inner;
                             while (_i > outer) _i = GETfn(_i).localOf;
                             _i == outer || BUG(
                                 "Leaking `" ~ id ~ "` between functions [inner/outer]: "
-                                    ~ inner.fnName ~ "::" ~ PREV.qWHAT ~ " and "
-                                    ~ outer.fnName ~ "::" ~ NEXT.qWHAT
+                                    ~ inner.fnName ~ "::" ~ PREV ~ " and "
+                                    ~ outer.fnName ~ "::" ~ NEXT
                                     ~ " as seen from " ~ callsite.fnName);
                         }
 
@@ -1768,7 +1768,7 @@ pub fn solve(
             if (i) res ~= " -> ";
 
             let o = GET(path[i]);
-            res ~= o.qWHAT;
+            res ~= o;
 
             if (i < path.len - 1)
                 res ~= ": " ~ humanizeType(o.type);
@@ -1842,7 +1842,7 @@ pub fn solve(
                     shadow let t = nullary ? t : candidate;
 
                     let convert = GET(t);
-                    convert.type || fail("No convert.type, perhaps a `using inline fn` without a return type annotation: `" ~ convert.qWHAT ~ "`.");
+                    convert.type || fail("No convert.type, perhaps a `using inline fn` without a return type annotation: `" ~ convert ~ "`.");
 
                     let convertType = convert.kind == "field"
                         ? add_refs(from: from || BUG(), to: convert.type)
@@ -1899,10 +1899,10 @@ pub fn solve(
                                             err ~= "\n\t    ";
 
                                             shadow let convert = GET(path[i]);
-                                            err ~= convert.qWHAT ~ ": " ~ humanizeType(convertType) ~ " ->";
+                                            err ~= convert ~ ": " ~ humanizeType(convertType) ~ " ->";
                                         }
 
-                                        err ~= "\n\t        " ~ convert.qWHAT;
+                                        err ~= "\n\t        " ~ convert;
                                         fail(err);
                                     }
                                 }
@@ -1979,14 +1979,14 @@ pub fn solve(
 
         let debug = tryMatch__mutargs(:misc_scope, :local_scope, :type_annot, :id, :args, :reorder, :conversions, :flags, :target, :error);
         if (debug)
-            BUG("Did match on second pass: " ~ debug.qWHAT);
+            BUG("Did match on second pass: " ~ debug);
 
         fail(error);
     }
 
     fn explainWhichFn(overload: Target, conversions?: Target[][])
     {
-        mut result = overload.qWHAT;
+        mut result = overload.str;
 
         if (overload.args)
         {
@@ -2574,7 +2574,7 @@ pub fn solve(
                         usage = slot;
                     else
                         usage = type_tryIntersect(usage, slot) || fail(
-                            t.qWHAT ~ ": Usage intersection failure: `"
+                            t ~ ": Usage intersection failure: `"
                                     ~ humanizeType(usage) ~ "` & `" ~ humanizeType(slot) ~ "`.");
 
                     // MOVE ON LAST USE ////////////////////////////////////////////
@@ -2685,7 +2685,7 @@ pub fn solve(
                 let ooe_isUndef = !rtl && node.items.len > 1;
 
                 host_args.len == node.items.len || BUG(
-                    "propagateType(call) args.len != host_args.len at call to " ~ node.target.qWHAT);
+                    "propagateType(call) args.len != host_args.len at call to " ~ node.target);
 
                 // Here we're visiting stuff in reverse order of execution -
                 //  so RTL means visit left to right and vice versa, watch it.
@@ -2736,7 +2736,7 @@ pub fn solve(
                             {
                                 if (just_moved0.has(index) && !just_moved00.has(index))
                                 {
-                                    // println("N_MoveMustSeq: " ~ arg.qWHAT ~ "\n\t\tbecause " ~ nested(index).qWHAT " was moved by a coarg.");
+                                    // println("N_MoveMustSeq: " ~ arg ~ "\n\t\tbecause " ~ nested(index) " was moved by a coarg.");
 
                                     // An argument that follows moves something we use here,
                                     //  so we must strictly evaluate before them.
@@ -2773,10 +2773,10 @@ pub fn solve(
         else if (k == "copy")
         {
             if (canDiscard)
-                BUG("Trying to discard a copy: " ~ node.qWHAT);
+                BUG("Trying to discard a copy: " ~ node);
 
             if (relax_mask != RELAX_all)
-                BUG("Found a copy node during first relax: " ~ node.qWHAT);
+                BUG("Found a copy node during first relax: " ~ node);
 
             ref item = node.items.only;
             mut isCopy = true;
@@ -2794,7 +2794,7 @@ pub fn solve(
                 {
                     // ... or fail if non-copyable.
                     if (!item.type.is_rx_copy)
-                        fail("A value is needed, but can neither copy nor move from: " ~ item.qWHAT);
+                        fail("A value is needed, but can neither copy nor move from: " ~ item);
 
                     if (!node.type.is_trivial)
                         makeNote(N_NonTrivAutoCopy);
@@ -2807,7 +2807,7 @@ pub fn solve(
                     ? make_copyable(slot)
                     : slot);
 
-            item.is_ref || BUG("Nothing to copy, item is not a ref: " ~ item.qWHAT);
+            item.is_ref || BUG("Nothing to copy, item is not a ref: " ~ item);
 
             //
             if (!isCopy)
@@ -3045,7 +3045,7 @@ pub fn solve(
                     // Cleanup unused implicits that got injected and ended up.
                     if (t.status & SS_UNUSED && t.flags & F_IMPLICIT)
                     {
-                        // println("\n\tREMOVE UNUSED IMPLICIT " t.qWHAT "\n");
+                        // println("\n\tREMOVE UNUSED IMPLICIT " t "\n");
                         makeNote(N_UnusedImplicit);
 
                         _current_fn.items[position].target == t || BUG();
@@ -3297,7 +3297,7 @@ pub fn solve(
             if (isUnused)
                 o.status |= SS_UNUSED;
             else
-                o.status & SS_UNUSED && BUG("relaxBlockVar: previously SS_UNUSED " ~ o.qWHAT ~ " now used as " ~ humanizeType(usage));
+                o.status & SS_UNUSED && BUG("relaxBlockVar: previously SS_UNUSED " ~ o ~ " now used as " ~ humanizeType(usage));
 
             if (isUnused && canDiscard)
                 o.solved.type = t_void;
@@ -3757,7 +3757,7 @@ pub fn solve(
             return;
 
         ref status = GET_mut(target).status;
-        status & SS_LAZY || BUG("resetChild: not SS_LAZY: " ~ target.qWHAT);
+        status & SS_LAZY || BUG("resetChild: not SS_LAZY: " ~ target);
         status &= ~(SS_DID_START | SS_FINALIZED | SS_DIRTY);
 
         // Disconnect.
@@ -3766,7 +3766,7 @@ pub fn solve(
         {
             let callee = Target(:module.modid, calls[i]);
             callee.EPH_mut.callers.set::rem(target.index)
-                || BUG("resetChild: Missing in callers on " ~ callee.qWHAT);
+                || BUG("resetChild: Missing in callers on " ~ callee);
         }
 
         let callers = steal(target.EPH_mut.callers);
@@ -3774,7 +3774,7 @@ pub fn solve(
         {
             let caller = Target(:module.modid, callers[i]);
             caller.EPH_mut.calls.set::rem(target.index)
-                || BUG("resetChild: Missing in calls on " ~ caller.qWHAT);
+                || BUG("resetChild: Missing in calls on " ~ caller);
         }
 
         // Without this recursive closures start feeding
@@ -4404,7 +4404,7 @@ pub fn solve(
                 if (o.revision++ > 0)
                 {
                     if (o.revision >= 1024)
-                        BUG("Looping forever: " ~ target.qWHAT ~ ".revision >= 1024");
+                        BUG("Looping forever: " ~ target ~ ".revision >= 1024");
 
                     o.locals.clear();
 
@@ -4563,7 +4563,7 @@ pub fn solve(
 
                     argNode.kind == "letdef" || argNode.target
                         && BUG("Argnode is not letdef, but has a target: "
-                                ~ argNode.target.qWHAT);
+                                ~ argNode.target);
 
                     shadow let argNode = argNode.kind == "letdef"
                         ? argNode.target.solved
@@ -4632,17 +4632,17 @@ pub fn solve(
                     // TODO FAILCASE these dont work for inline fns
                     // TODO FAILCASE
                     if (asserts & A_PURE && written_via)
-                        fail(target.qWHAT   ~ " is not pure, writes to argument " ~ name.human.qID ~ ":\n"
+                        fail(target ~ " is not pure, writes to argument " ~ name.human.qID ~ ":\n"
                             ~ qSTACK(:target, Region_fromLocal(argTarget.index),
                                         node: out.out));
 
                     if (asserts & A_PURE_CTX && isImplicit && written_via)
-                        fail(target.qWHAT   ~ " is not purectx, writes to implicit argument " ~ name.human.qID ~ ":\n"
+                        fail(target ~ " is not purectx, writes to implicit argument " ~ name.human.qID ~ ":\n"
                             ~ qSTACK(:target, Region_fromLocal(argTarget.index),
                                         node: out.out));
 
                     if (maybeLast && asserts & A_NOVEC && !argNode.isNoVec() && !mustBecomeInline)
-                        fail(target.qWHAT   ~ " is not novec, argument " ~ name.human.qID ~ " is " ~ humanizeType(argNode.type) ~ ":\n"
+                        fail(target ~ " is not novec, argument " ~ name.human.qID ~ " is " ~ humanizeType(argNode.type) ~ ":\n"
                             ~ qSTACK(:target, Region_fromLocal(argTarget.index),
                                         node: out.out,
                                        query: AQ_WhyNotNovec));
@@ -4730,28 +4730,28 @@ pub fn solve(
                 // TODO FAILCASE these dont work for inline fns
                 // TODO FAILCASE
                 asserts & A_NOTHROW && ext.fx_mask & Fx_Throws && fail(
-                    target.qWHAT ~ " is not nothrow, throws here:\n"
+                    target ~ " is not nothrow, throws here:\n"
                         ~ qSTACK(:target, Fx_Throws, node: out.out));
 
                 asserts & A_NOCRASH && ext.fx_mask & Fx_Crashes && fail(
-                    target.qWHAT ~ " is not nocrash, can crash here:\n"
+                    target ~ " is not nocrash, can crash here:\n"
                         ~ qSTACK(:target, Fx_Crashes, node: out.out));
 
                 asserts & A_NOIO && ext.fx_mask & (Fx_Input|Fx_Output) && fail(
-                    target.qWHAT ~ " is not noio, performs I/O here:\n"
+                    target ~ " is not noio, performs I/O here:\n"
                         ~ qSTACK(:target, Fx_Input|Fx_Output, node: out.out));
 
                 asserts & A_PURE_FX && ext.fx_mask & Fx_Output && fail(
-                    target.qWHAT ~ " is not purefx, outputs here:\n"
+                    target ~ " is not purefx, outputs here:\n"
                         ~ qSTACK(:target, Fx_Output, node: out.out));
 
                 asserts & A_NOFLOW && _current_fn.far_jumps && fail(
-                    target.qWHAT ~ " is not noflow: contains non-local control flow, jumping out to "
-                        ~ Target(:module.modid, _current_fn.far_jumps[0]).qWHAT ~ ".");
+                    target ~ " is not noflow: contains non-local control flow, jumping out to "
+                        ~ Target(:module.modid, _current_fn.far_jumps[0]) ~ ".");
 
                 if (maybeLast && !mustBecomeInline)
                     numArgsWritten || ext.fx_mask || !retval.is_void || overload.flags & F_LAX || warn(out.token,
-                        target.qWHAT ~ " does nothing: returns void and has no effects. Make it " ~ "lax".qKW ~ " if this is intentional.");
+                        target ~ " does nothing: returns void and has no effects. Make it " ~ "lax".qKW ~ " if this is intentional.");
 
                 //
                 shadow ref overload = GET_mut(target);
@@ -4774,7 +4774,7 @@ pub fn solve(
 
                 retval.lifetime.uni0n.each: |r|
                     r.Region_isArgPosition() || r.Region_isStatic() || BUG(
-                        "updateScope: Non-static/non-arg leaked:\n\t" ~ r.qWHAT ~ "\n\n\tIn retval lifetime:\n\t" ~ retval.lifetime.qWHAT);
+                        "updateScope: Non-static/non-arg leaked:\n\t" ~ r ~ "\n\n\tIn retval lifetime:\n\t" ~ retval.lifetime);
 
                 overload.flags  = out.flags;
 
@@ -4924,7 +4924,7 @@ pub fn solve(
                     {
                         let call = Target(:module.modid, index: calls[i]);
                         call.EPH_mut.callers.set::rem(self) || BUG(
-                            "doTrySpec: " ~ target.qWHAT ~ " not listed as a caller of " ~ call.qWHAT);
+                            "doTrySpec: " ~ target ~ " not listed as a caller of " ~ call);
                     }
                 }
 
@@ -4932,7 +4932,7 @@ pub fn solve(
                 //  I tend to forget how these flags work.
                 let status = target.GET_mut.status &= ~SS_Debug_AllPassesComplete;
                 if (status & (SS_DIRTY | SS_FINALIZED | SS_DID_START) != SS_DID_START)
-                    BUG(target.qWHAT ~ " is not SS_DID_START just before solve: " ~ status);
+                    BUG(target ~ " is not SS_DID_START just before solve: " ~ status);
 
                 // This got defered here to avoid inline-recursions before first solve.
                 _current_fn.TODO_FIX_isInline = !!(template.node.flags & F_INLINE);
@@ -4961,7 +4961,7 @@ pub fn solve(
             {
                 let o = GET(target);
                 o.kind != "fn" || BUG(
-                    "did not set body on " ~ o.qWHAT ~ ": " ~ humanizeType(o.type));
+                    "did not set body on " ~ o ~ ": " ~ humanizeType(o.type));
             }
         }
 
@@ -5225,7 +5225,7 @@ pub fn solve(
                     : 1;
 
                 if (memberFlatCount < 0)
-                    fail("Type " ~ name.qBAD ~ " is self-recursive via " ~ field.qWHAT);
+                    fail("Type " ~ name.qBAD ~ " is self-recursive via " ~ field);
 
                 // Detect self-recursion [B].
                 flat_cnt += memberFlatCount;
@@ -5431,7 +5431,7 @@ pub fn solve(
         mut repeats = 0;
         while (lazySolveStart(target))
             repeats++ > 1000 && BUG(
-                "Repeat-solved too many times: " ~ target.qWHAT);
+                "Repeat-solved too many times: " ~ target);
     }
 
     fn lazySolveStart(target: Target): bool
@@ -5588,7 +5588,7 @@ pub fn solve(
 
     fn Lifetime_climbType(o: Overload)
     {
-        o.kind == "var" || BUG("Lifetime_climbType: not a `var`: " ~ o.qWHAT);
+        o.kind == "var" || BUG("Lifetime_climbType: not a `var`: " ~ o);
 
         let node = o.solved;
 
@@ -5664,7 +5664,7 @@ pub fn solve(
         Lifetime_each(:lifetime, :locals_start, visit: |t|
         {
             t.type.is_mutref || BUG(
-                "Checking for mutref-return-ok found non-mutref: " ~ t.qWHAT);
+                "Checking for mutref-return-ok found non-mutref: " ~ t);
 
             if (t.kind == "var" && !(t.flags & F_REF))
                 return false;
@@ -5748,7 +5748,7 @@ pub fn solve(
         // Detect & shim non-local jumps.
         if (h.local_of != _current_fn.target.index)
         {
-            // println("Setting up a __far_jump from " ~ _current_fn.target.qWHAT ~ " to " ~ Target(:module.modid, index: h.local_of).qWHAT);
+            // println("Setting up a __far_jump from " ~ _current_fn.target ~ " to " ~ Target(:module.modid, index: h.local_of));
 
             // TODO FIX this forces fns with jumps in defaulted arguments
             //  into becoming inline funcs, not necessary,
@@ -6861,15 +6861,15 @@ pub fn solve(
         if (SELF_TEST)
         {
             target.kind == "var" || BUG(
-                "injectForeignLocal: trying to inject a non-var: " ~ target.qWHAT);
+                "injectForeignLocal: trying to inject a non-var: " ~ target);
 
             let noClID = hacks::tryParseClosureID(id: target.name);
             if (noClID)
-                BUG("injectForeignLocal: Unexpected closure-id: " ~ noClID.target.qWHAT);
+                BUG("injectForeignLocal: Unexpected closure-id: " ~ noClID.target);
         }
 
         let clID = hacks::ClosureID(:target,
-            target.parent.revision || BUG("injectForeignLocal: About to serialize at rev 0: " ~ target.qWHAT));
+            target.parent.revision || BUG("injectForeignLocal: About to serialize at rev 0: " ~ target));
 
         return injectImplicitArg(
             id:     clID.serialize(),
@@ -6880,7 +6880,7 @@ pub fn solve(
     fn injectImplicitArg(id: string, type: Type, becauseOf!: Target): Target
     {
         if (!_current_fn.items || _current_fn.out.flags & F_EXTERN)
-            fail("No implicit " ~ id.qBAD ~ " in scope, needed to call " ~ becauseOf.qWHAT ~ ".");
+            fail("No implicit " ~ id.qBAD ~ " in scope, needed to call " ~ becauseOf ~ ".");
 
         // Reuse existing or add new argnode.
         for (mut i = 0; i < _current_fn.items.len + FN_ARGS_BACK; i++)
@@ -6936,12 +6936,12 @@ pub fn solve(
             if (target.isLocal && target.localOf == _current_fn.target.index)
             {
                 revision == _current_fn.target.revision || BUG(
-                    "ClosureID.revision mismatch: " ~ target.qWHAT
+                    "ClosureID.revision mismatch: " ~ target
                         ~ "\n\tCaptured at: " ~ revision
                         ~ "\n\tCurrent rev: " ~ _current_fn.target.revision);
 
                 target.kind == "var" || BUG(
-                    "ClosureID.target is not a var: " ~ target.qWHAT);
+                    "ClosureID.target is not a var: " ~ target);
 
                 return CallerNode("__closure", target);
             }
@@ -7436,7 +7436,7 @@ pub fn solve(
                     continue;
 
                 return "\n            "
-                     ~ "via " ~ callsite.target.qWHAT
+                     ~ "via " ~ callsite.target
                      ~ " at " ~ callsite.token.addr_and_snippet
                      ~ peek;
             }
@@ -7468,7 +7468,7 @@ pub fn solve(
                 continue;
 
             return "\n            "
-                 ~ "via " ~ callsite.target.qWHAT
+                 ~ "via " ~ callsite.target
                  ~ " at " ~ callsite.token.addr_and_snippet
                  ~ peek;
         }
@@ -7511,7 +7511,7 @@ pub fn solve(
     {
         from || BUG("TODO inlining from global scope, never happened before, might work, remove assert as needed.");
 
-        // println("inlineExpression " ~ expr.kind ":" ~ expr.value " in " _current_fn.qWHAT);
+        // println("inlineExpression " ~ expr.kind ":" ~ expr.value " in " _current_fn);
 
         // TODO FAILCASE: used to do nothing if from == self,
         //  which breaks jumps, references to locals, etc.
@@ -7541,7 +7541,7 @@ pub fn solve(
                 // Local of self?
                 if (from == self)
                 {
-                    target.index < minLocalIdx || BUG("Missing a local replica for: " ~ target.qWHAT);
+                    target.index < minLocalIdx || BUG("Missing a local replica for: " ~ target);
                     return target;
                 }
 
@@ -7550,12 +7550,12 @@ pub fn solve(
                     return bindImplicitArg(o.name, :o.type, becauseOf: from).target;
 
                 if (from.modid != module.modid)
-                    BUG("inlineExpression: about to use injectForeignLocal with an off-module target: " ~ o.qWHAT);
+                    BUG("inlineExpression: about to use injectForeignLocal with an off-module target: " ~ o);
 
                 return injectForeignLocal(target);
             }
 
-            // println("    from " from.qWHAT);
+            // println("    from " from);
 
             // TODO it'd be nice if we can skip this by looking at the expr node flags,
             //  something like F_NO_LOCALS or something that tells us
@@ -7627,7 +7627,7 @@ pub fn solve(
                         //  and if this is the only flag that needs juggling here.
                         flags: foreign.flags &~ F_ARG);
 
-                    // println("inlineExpression: introducing a letdef: " ~ local.qWHAT " <- " ~ foreign.qWHAT);
+                    // println("inlineExpression: introducing a letdef: " ~ local " <- " ~ foreign);
 
                     expr.target = local;
                 }
@@ -7643,11 +7643,11 @@ pub fn solve(
                             let foreign = GET_crossmodule(expr.target, :from);
 
                             isAssignable(host: foreign.type, local.type) || BUG(
-                                "matchReplicaOrInjectForeignLocal botched the type of " ~ foreign.qWHAT ~ ":\n"
+                                "matchReplicaOrInjectForeignLocal botched the type of " ~ foreign ~ ":\n"
                                     ~ "\n\t\tExpect: " ~ foreign.type.humanizeType
                                     ~ "\n\t\tActual: " ~   local.type.humanizeType);
 
-                            // println("inlineExpression: CALL.REPLACE " foreign.qWHAT " with " local.qWHAT);
+                            // println("inlineExpression: CALL.REPLACE " foreign " with " local);
                         }
 
                         expr.target = local;
@@ -7660,7 +7660,7 @@ pub fn solve(
                     }
                     else if (expr.target == must_not_call)
                     {
-                        fail("Cannot inline self-recursive fns: " ~ expr.target.qWHAT);
+                        fail("Cannot inline self-recursive fns: " ~ expr.target);
                     }
                 }
                 else if (expr.kind == "jump" || expr.kind == "__far_jump") :REPLICATE_JUMP
@@ -7682,11 +7682,11 @@ pub fn solve(
                         expr.kind = "__far_jump";
                     }
 
-                    // println("Found a __far_jump: " ~ expr.qWHAT);
+                    // println("Found a __far_jump: " ~ expr);
 
                     if (expr.helpers.local_of == _current_fn.target.index)
                     {
-                        // println("Fixing up a __far_jump: " ~ expr.qWHAT);
+                        // println("Fixing up a __far_jump: " ~ expr);
                         expr = solveJump_finish(:expr.flags, h: expr.helpers, expr: expr.items.only);
                     }
                     else
@@ -7757,7 +7757,7 @@ pub fn solve(
                         // INLINE ARGUMENTS ////////////////////////////////////////////
                         else
                         {
-                            // println("inlineExpression: LT.REPLACE " target.qWHAT " with " local.qWHAT);
+                            // println("inlineExpression: LT.REPLACE " target " with " local);
 
                             // We'll add the replacements back in at the end,
                             //  don't want to deal with the offset juggle here.
@@ -7931,8 +7931,8 @@ pub fn solve(
             // Tag copies and moves.
             if (args)
             {
-                let host_args = target.args || BUG("CallerNode: no host args: " ~ target.qWHAT);
-                host_args.len == args.len || BUG("CallerNode: host_arg.len mismatch: " ~ target.qWHAT);
+                let host_args = target.args || BUG("CallerNode: no host args: " ~ target);
+                host_args.len == args.len || BUG("CallerNode: host_arg.len mismatch: " ~ target);
 
                 for (mut i0 = 0; i0 < args.len; i0++)
                 {
@@ -7961,11 +7961,11 @@ pub fn solve(
             // Inliner.
             if (kind == "inline") :INLINE_ATTEMPT
             {
-                target.revision > 0 || BUG("Inlining " ~ target.qWHAT ~ " at revision 0.");
+                target.revision > 0 || BUG("Inlining " ~ target ~ " at revision 0.");
 
                 //
                 if (SELF_TEST) TODO_FIX_inline_safety++ < 24 || BUG(
-                    "Inliner recursion, something is off: " ~ target.qWHAT);
+                    "Inliner recursion, something is off: " ~ target);
 
                 defer if (SELF_TEST) TODO_FIX_inline_safety--;
 
@@ -8004,9 +8004,9 @@ pub fn solve(
                     if (SELF_TEST)
                     {
                         argdef.kind == "empty" || argdef.kind == "letdef" || BUG(
-                            "Inliner: argdef neither letdef nor empty: " ~ argdef.qWHAT);
+                            "Inliner: argdef neither letdef nor empty: " ~ argdef);
                         argdef.target || BUG(
-                            "Inliner: no argdef.target: " ~ argdef.qWHAT);
+                            "Inliner: no argdef.target: " ~ argdef);
                     }
 
                     if (argdef.kind != "empty" && !(argdef.target.flags & F_INLINE))
@@ -8019,11 +8019,11 @@ pub fn solve(
 
                     if (SELF_TEST)
                         isAssignable(host: foreign.type, argdef.target.type) || BUG(
-                            "Inliner botching the argdef type of " ~ foreign.qWHAT ~ ":\n"
+                            "Inliner botching the argdef type of " ~ foreign ~ ":\n"
                                 ~ "\n\t\tExpect: " ~       foreign.type.humanizeType
                                 ~ "\n\t\tActual: " ~ argdef.target.type.humanizeType);
 
-                    // println("inline: ARGDEF.REPLACE " foreign.qWHAT " with " argdef.qWHAT);
+                    // println("inline: ARGDEF.REPLACE " foreign " with " argdef);
                 }
 
                 //
@@ -8467,7 +8467,7 @@ pub fn solve(
                 return false;
 
             o.type.is_mutref && BUG(
-                o.qWHAT ~ ": Not F_REF but type.is_mutref"
+                o ~ ": Not F_REF but type.is_mutref"
                         ~ " in RESOLVE_byMutvar: is this a problem?");
 
             o.kind == "var"                 || BUG("RESOLVE_byMutvar: Not a variable.");
@@ -8663,8 +8663,8 @@ pub fn solve(
                                 : !RESOLVE_byMutvar(target))
                         {
                             fail("Cannot access"
-                                ~ " " ~            target.nested.qWHAT ~ ", reference invalidated by write to"
-                                ~ " " ~ u.first.rw_target.nested.qWHAT ~ " at "
+                                ~ " " ~            target.nested ~ ", reference invalidated by write to"
+                                ~ " " ~ u.first.rw_target.nested ~ " at "
                                 ~ RWEvent_stack(u.first));
                         }
 
@@ -8710,7 +8710,7 @@ pub fn solve(
                 let invalidates = flow.invalidates.unless_oob(target);
 
                 if (SELF_TEST && invalidates.has(target))
-                    BUG("flow.invalidates[target].has(target): " ~ GET(nested(target)).qWHAT);
+                    BUG("flow.invalidates[target].has(target): " ~ GET(nested(target)));
 
                 // Writes in a loop invalidate preceding reads.
                 if (OPTI_isLoop) for (shadow mut i = 0; i < invalidates.len; i++)
@@ -8725,9 +8725,9 @@ pub fn solve(
                                 RESOLVE_byAAR(:read, write: target, trySoft: true /* F_REF check inside */);
                             else
                                 RESOLVE_byMutvar(read) || fail(
-                                    "Write to " ~ target.nested.qWHAT
-                                        ~ " at call to " ~ callsite.target.qWHAT
-                                        ~ " invalidates the use of " ~ read.nested.qWHAT ~ " at "
+                                    "Write to " ~ target.nested
+                                        ~ " at call to " ~ callsite.target
+                                        ~ " invalidates the use of " ~ read.nested ~ " at "
                                         ~ SLOW_findByReadID(readID).token.addr_and_snippet
                                         ~ "\n\t... on next loop iteration.\n\n\tWritten"
                                         ~ (positions && qSTACK(callsite.target, :position)));
@@ -9014,12 +9014,12 @@ pub fn solve(
                                     !RESOLVE_byTempCopy(:callsite, i1))
                                 {
                                     // Else emit an args-cannot-alias error.
-                                    mut err = target.qWHAT;
+                                    mut err = target.str;
 
                                     err ~= host_args.len == 2 && target.flags & F_OPERATOR
                                         ?   ": Both operands alias:\n"
-                                        :   ": Arguments:\n\n\t    " ~ (i0 + 1) ~ ":\t" ~ host_arg0.qWHAT
-                                            ~         " and\n\t    " ~ (i1 + 1) ~ ":\t" ~ host_arg1.qWHAT
+                                        :   ": Arguments:\n\n\t    " ~ (i0 + 1) ~ ":\t" ~ host_arg0
+                                            ~         " and\n\t    " ~ (i1 + 1) ~ ":\t" ~ host_arg1
                                             ~           "\n\n\t    both alias:\n";
 
                                     for (shadow mut i = 0; i < inter.uni0n.len; i++)
@@ -9027,7 +9027,7 @@ pub fn solve(
                                         let o = inter.uni0n[i];
 
                                         err ~=   "\n                ";
-                                        err ~= o.qWHAT;
+                                        err ~= o;
                                     }
 
                                     _here = args[i0].token;
@@ -9246,11 +9246,11 @@ pub fn solve(
                                                 {
                                                     _here = callsite.token;
 
-                                                    fail("At call to " ~ target.qWHAT ~ ", argument binding "
+                                                    fail("At call to " ~ target ~ ", argument binding "
                                                         ~ host_args[r].name.human.qBAD ~ " (arg #" ~ r ~ ") at "
                                                         ~ arg.token.addr_and_snippet
                                                         ~ "\n\t... invalidated by subsequent write to "
-                                                        ~ all_written.last.qWHAT ~ " upon evaluation of argument "
+                                                        ~ all_written.last ~ " upon evaluation of argument "
                                                         ~ host_args[w].name.human.qBAD ~ " (arg #" ~ w ~ ") at "
                                                         ~ RWEvent_stack(writeID));
                                                 }
@@ -9270,7 +9270,7 @@ pub fn solve(
                                             let mustSeq = ooe_ir_evalsBefore_iw ? r : w;
                                             MUSTSEQ_mask |= 1 << (mustSeq & 31);
                                             makeNote(AAR ? N_AARMustSeq : N_BckMustSeq,
-                                                " read: " ~ args[r].qWHAT ~ "\n\t\twrite: " ~ args[w].qWHAT);
+                                                " read: " ~ args[r] ~ "\n\t\twrite: " ~ args[w]);
                                         }
 
                                         break;
@@ -9600,7 +9600,7 @@ pub fn solve(
             _current_fn_eachArg_FWD: |target, position|
             {
                 target.modid == -_current_fn.target.index || BUG(
-                    "Arg target not local to current-fn: " ~ target.qWHAT);
+                    "Arg target not local to current-fn: " ~ target);
 
                 Reference_trackArgument(_current_fn.flow, target.index, :position);
             }
@@ -9677,7 +9677,7 @@ pub fn solve(
         let args      = callsite.items;
 
         fn err(reason: string)
-            BUG(debug ~ " " ~ callsite.target.qWHAT ~ ": " ~ reason);
+            BUG(debug ~ " " ~ callsite.target ~ ": " ~ reason);
 
         let k = callsite.target.kind;
 
@@ -9711,7 +9711,7 @@ pub fn solve(
 
         if (callsite.target.kind != "field")
             isAssignable(host: callsite.type, callsite.target.type) || err(
-                "Return value of " ~ callsite.qWHAT ~ " not assignable to callsite.type: "
+                "Return value of " ~ callsite ~ " not assignable to callsite.type: "
                     ~ "\n\t" ~ humanizeType(callsite       .type, lt: true) ~ " <- "
                     ~ "\n\t" ~ humanizeType(callsite.target.type, lt: true));
     }
@@ -9769,8 +9769,8 @@ pub fn solve(
 
                 if (node.type.is_never)
                 {
-                    node.items[1].is_never || BUG(debug ~ " never.cons not never: " ~ node.items[1].qWHAT);
-                    node.items[2].is_never || BUG(debug  ~ " never.alt not never: " ~ node.items[2].qWHAT);
+                    node.items[1].is_never || BUG(debug ~ " never.cons not never: " ~ node.items[1]);
+                    node.items[2].is_never || BUG(debug  ~ " never.alt not never: " ~ node.items[2]);
                 }
             }
 
@@ -9785,7 +9785,7 @@ pub fn solve(
                 mut tail = actual.lifetime.uni0n;
                 tail.set::rem(node.type.lifetime.uni0n);
                 if (tail)
-                    BUG(debug ~ ": " ~ actualCopy ~ " mentions a lifetime not listed in " ~ expectCopy ~ ": " ~ tail.qWHAT
+                    BUG(debug ~ ": " ~ actualCopy ~ " mentions a lifetime not listed in " ~ expectCopy ~ ": " ~ tail
                               ~ "\n\n\t\t" ~ actualCopy ~ ":\t" ~ actual.humanizeType(lt: true)
                               ~ "\n\n\t\t" ~ expectCopy ~ ":\t" ~ expect.humanizeType(lt: true));
             }
@@ -9828,7 +9828,7 @@ pub fn solve(
         //         || BUG("BROKEN JUMP TYPE"
         //             ~ "\n\t\tret_actual: " ~ (h.ret_actual ? h.ret_actual.humanizeType : "N/A".qBAD)
         //             ~ "\n\t\tret_expect: " ~ (h.ret_expect ? h.ret_expect.humanizeType : "N/A".qBAD)
-        //             ~ "\n\t\texpr: " ~ expr.qWHAT);
+        //             ~ "\n\t\texpr: " ~ expr);
         // }
     }
 
@@ -10040,13 +10040,13 @@ pub fn solve(
         if (_current_fn.target)
         {
             let t  = _current_fn.target;
-            debug ~= "\n    Current fn: " ~ t.qWHAT() ~ " at (" ~ t.modid ~ ", " ~ t.index ~ "):";
+            debug ~= "\n    Current fn: " ~ t ~ " at (" ~ t.modid ~ ", " ~ t.index ~ "):";
 
             let locals = t.locals;
             for (mut i = 0; i < locals.len; i++)
             {
                 let item = locals[i];
-                debug ~= "\n        " ~ item.qWHAT();
+                debug ~= "\n        " ~ item;
             }
         }
 
