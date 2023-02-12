@@ -4864,14 +4864,6 @@ pub extern fn runTests()
     `);
 
     ZERO(`
-        return 0b101.i32 - 5;
-    `);
-
-    ZERO(`
-        return 0o101.i32 - 65;
-    `);
-
-    ZERO(`
         fn path_normalize(p: string): string {
             mut path = p.split("/");
 
@@ -7970,6 +7962,20 @@ pub extern fn runTests()
 
 
     // Usability of numeric literals.
+
+    ZERO(`
+        fn main()   <fail leading zero in numeric literal 3:13+1>
+            010     <pass/>
+            0o10    </fail>
+                == 8 ? 0 : 1;
+    `);
+
+    ZERO(`
+        <alt>
+        fn main() 0b101 ==   5 ? 0 : 1; <alt/>
+        fn main() 0o101 ==  65 ? 0 : 1; <alt/>
+        fn main() 0x101 == 257 ? 0 : 1; </alt>
+    `);
 
     ZERO(`
         fn main()

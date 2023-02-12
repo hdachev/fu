@@ -232,8 +232,8 @@ pub fn lex(src: string, fname: string): LexerOutput
                 else if (c >= '0' && c <= '9')
                 {
                     err_str(:idx0,
-                        "Leading `0` in numeric literal,"
-                            ~ " perhaps you meant `0x`, `0b` or `0o`.");
+                        "Leading zero in numeric literal,"
+                            ~ " perhaps you meant 0x, 0b or 0o.");
                 }
             }
 
