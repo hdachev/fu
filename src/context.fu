@@ -212,7 +212,7 @@ pub fn formatCodeSnippet(to: TokenIdx, mut from?: TokenIdx): string
     return formatCodeSnippet(:src, :start, :end);
 }
 
-pub fn formatCodeSnippet(src!: string, start!: Token, end!: Token, extraLines! = 2)
+pub fn formatCodeSnippet(src!: string, start!: LineColChars, end!: LineColChars, extraLines! = 2)
 {
     let lines   = src.split("\n");
 
@@ -245,13 +245,11 @@ pub fn formatCodeSnippet(src!: string, start!: Token, end!: Token, extraLines! =
 
         mut line = lines[i];
 
-        // Highlight error token -
-        //  note this will break for string literals with escapes but whatever,
-        //   I guess we do need the end column coordinate.
+        // Highlight error token.
         if (i == end.line - 1)
         {
             let c0 = (end.col - 1       ).max(0       );
-            let c1 = (c0 + end.value.len).min(line.len);
+            let c1 = (c0 + end.chars    ).min(line.len);
 
             line.splice(c1, 0, ansi::RESET);
             line.splice(c0, 0, ansi::BAD);

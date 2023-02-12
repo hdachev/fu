@@ -251,12 +251,12 @@ pub fn parse(
 
     fn parseRoot(): Node
     {
-        consume("sof", "sof");
+        consume("sof", "");
 
         _loc = _idx;
 
         mut out = make("root",
-            parseBlockLike("eof", "eof"));
+            parseBlockLike("eof", ""));
 
         // STEP BACK FROM EOF //
         _idx--;               //

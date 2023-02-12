@@ -12,7 +12,7 @@ pub fn FAIL(implicit _here: TokenIdx, reason: string): never
 
 pub fn FAIL(
     fname!: string, src!: string,
-    token!: Token, reason!: string): never
+    token!: LineColChars, reason!: string): never
 {
     let addr    = "@" ~ token.line ~ ":" ~ token.col;
     let snippet = formatCodeSnippet(
