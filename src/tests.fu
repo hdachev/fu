@@ -1690,7 +1690,33 @@ pub extern fn runTests()
     `);
 
     ZERO(`
-        fn main()                           <fail invalid code point>
+        fn main()   <fail unterminated char literal 3:13+2>
+            'c      <fail/>  // '
+            'c
+            '       <pass/>
+            'c'     </fail>
+                .i32 - 99;
+    `);
+
+    ZERO(`
+        fn main()   <fail invalid char literal 3:13+4>
+            'cb'    <pass/>
+            'c'     </fail>
+                .i32 - 99;
+    `);
+
+    ZERO(`
+        fn main()   <fail unterminated string use backticks 3:13+2>
+            "c      <fail/>  // "
+            "c
+            "       <pass/>
+            \`c
+            \`      </fail>
+                [0].i32 - 99;
+    `);
+
+    ZERO(`
+        fn main()                           <fail invalid code point 3:14+10>
             "\\u{ffffff}".u32               <pass/>
             "\\u{042e}" == "Ю"  ? 0 : 1     </fail>
             ;
