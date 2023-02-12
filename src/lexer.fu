@@ -1,4 +1,6 @@
 import module;
+import ansi;
+import fail;
 
 let OPTOKENS = "{}[]()!?~@#$%^&*/-+<=>,.;:|";
 
@@ -45,23 +47,23 @@ pub fn lex(src: string, fname: string): LexerOutput
         "sof", "",
         idx, idx);
 
-    fn err_str(::kind, idx0: i32, reason: string)
+    fn err_str(idx0!: i32, idx1!: i32, reason: string)
     {
-        // exit to nearest whitespace
-        while (idx < end && src[idx] > ' ')
-            idx++;
-
         let col = idx0 - lidx;
-        let value = src.slice(idx0, idx);
+        let chars = idx1 - idx0;
 
-        throw("LEX ERROR: " ~ fname ~ "@" ~ line ~ ":" ~ col
-            ~ ":\n\t" ~ reason
-            ~ "\n\t" ~ kind ~ ": `" ~ value ~ "`");
+        FAIL(:fname, :src, :reason, token:
+            LineColChars(:col, :line, :chars));
+    }
+
+    fn err_str(idx0!: i32, reason: string)
+    {
+        err_str(:idx0, idx1: idx, :reason);
     }
 
     fn err(::kind, idx0: i32, reason: i32)
     {
-        err_str(kind, idx0, "`" ~ src[reason] ~ "`");
+        err_str(:idx0, kind ~ ": Unexpected " ~ [src[reason]].qBAD ~ ".");
     }
 
     fn UNSAFE_unescapeStr(esc: string, idx0: i32, idx1: i32, quot: byte): string
@@ -74,7 +76,8 @@ pub fn lex(src: string, fname: string): LexerOutput
             let c = esc[i];
             if (c == '\\')
             {
-                // UNSAFE: string must not end in backslash
+                shadow let idx0 = i;
+
                 let c1 = esc[++i];
 
                 fn parseHex(topic = "\\x-escape sequence")
@@ -84,7 +87,8 @@ pub fn lex(src: string, fname: string): LexerOutput
                     return c >= '0' && c <= '9' ? c.u32 - '0'.u32
                          : c >= 'A' && c <= 'F' ? c.u32 - 'A'.u32 + 10
                          : c >= 'a' && c <= 'f' ? c.u32 - 'a'.u32 + 10
-                         : err_str("str", i - 1, "Non hexadecimal character in " ~ topic ~ ": `" ~ c ~ "`.");
+                         : err_str(:idx0, idx1: i + 1,
+                            "Non hexadecimal character in " ~ topic ~ ": `" ~ c ~ "`.");
                 }
 
                 if      (c1 == '\\') out ~= '\\';
@@ -105,7 +109,7 @@ pub fn lex(src: string, fname: string): LexerOutput
                 else if (c1 ==  'x')
                 {
                     if (i >= n - 2)
-                        err_str("str", i - 1, "Incomplete \\x-escape sequence.");
+                        err_str(:idx0, idx1: n, "Incomplete \\x-escape sequence.");
 
                     out ~= byte((parseHex() << 4) | parseHex());
                 }
@@ -113,7 +117,7 @@ pub fn lex(src: string, fname: string): LexerOutput
                 else if (c1 ==  'u')
                 {
                     if (i == n || esc[++i] != '{')
-                        err_str("str", i - 1, "Invalid \\u-escape: no opening `{`.");
+                        err_str(:idx0, idx1: i, "Invalid \\u-escape: no opening `{`.");
 
                     mut unicode: u32;
                     mut digits = 0;
@@ -125,7 +129,7 @@ pub fn lex(src: string, fname: string): LexerOutput
                             if (esc[i] == '}')
                                 break: HEX;
                             else if (digits == 6)
-                                err_str("str", i - 1, "Invalid \\u-escape: no closing `}` after 6 digits.");
+                                err_str(:idx0, idx1: i, "Invalid \\u-escape: no closing `}` after 6 hex digits.");
 
                             digits++;
                             unicode <<= 4;
@@ -134,18 +138,18 @@ pub fn lex(src: string, fname: string): LexerOutput
                             unicode |= parseHex("\\u-escape sequence");
                         }
 
-                        err_str("str", i - 1, "Incomplete \\u-escape: no closing `}`.");
+                        err_str(:idx0, idx1: n, "Incomplete \\u-escape: no closing `}`.");
                     }
 
                     if (!digits)
-                        err_str("str", i - 1, "Empty \\u-escape.");
+                        err_str(:idx0, idx1: i + 1, "Empty \\u-escape.");
 
                     // Append the code point.
-                    out ~= utf8::bytes(:unicode) || err_str(
-                        "str", i - 1, "Invalid \\u-escape: bad code point.");
+                    out ~= utf8::bytes(:unicode) || err_str(:idx0, idx1: i + 1,
+                        "Invalid \\u-escape: bad code point.");
                 }
 
-                else err_str("str", i - 1, "Unknown escape sequence.");
+                else err_str(:idx0, idx1: i + 1, "Unknown escape sequence.");
             }
             else
             {
@@ -227,7 +231,7 @@ pub fn lex(src: string, fname: string): LexerOutput
                 }
                 else if (c >= '0' && c <= '9')
                 {
-                    err_str("real", idx0,
+                    err_str(:idx0,
                         "Leading `0` in numeric literal,"
                             ~ " perhaps you meant `0x`, `0b` or `0o`.");
                 }
@@ -318,7 +322,7 @@ pub fn lex(src: string, fname: string): LexerOutput
 
                 if (hex && dot && !exp)
                 {
-                    err_str("real", idx0,
+                    err_str(:idx0,
                         "The exponent is never optional"
                             ~ " for hexadecimal floating-point literals.");
                 }
@@ -355,6 +359,18 @@ pub fn lex(src: string, fname: string): LexerOutput
                 }
                 else if (c1 == '\n')
                 {
+                    if (c != '`')
+                    {
+                        // Ignore the newline & trailing whitespace
+                        //  when complaining about unterminated char/string literals.
+                        while (src[--idx] <= ' ') {}
+                        idx++;
+
+                        err_str(:idx0, c == '\''
+                            ? "Unterminated char literal."
+                            : "Unterminated double-quote string literal.\n\n\tUse backticks around multiline strings.");
+                    }
+
                     line++;
                     lidx = idx - 1;
                 }
@@ -362,7 +378,7 @@ pub fn lex(src: string, fname: string): LexerOutput
 
             if (!ok)
             {
-                err_str("str", idx0, "Unterminated string literal.");
+                err_str(:idx0, "Unterminated string literal.");
             }
             else
             {
@@ -372,8 +388,7 @@ pub fn lex(src: string, fname: string): LexerOutput
 
                 let char = c == '\'';
                 if (char && str.len != 1)
-                    err_str("char", idx0,
-                        "Char literal len != 1: " ~ str.len);
+                    err_str(:idx0, "Invalid char literal, not single byte: " ~ str.len ~ " bytes long.");
                 else
                     token_c(char ? "char" : "str",
                         str, :idx0, :idx1, :col);

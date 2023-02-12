@@ -14,11 +14,11 @@ pub fn FAIL(
     fname!: string, src!: string,
     token!: LineColChars, reason!: string): never
 {
-    let addr    = "@" ~ token.line ~ ":" ~ token.col;
+    let addr    = formatTokenCoord(:fname, :token);
     let snippet = formatCodeSnippet(
         :src, start: token, end: token);
 
-    return throw(fname ~ ' ' ~ addr ~ ":\n\n" ~ snippet ~ "\n\t" ~ reason ~ "\n");
+    return throw(addr ~ ":\n\n" ~ snippet ~ "\n\t" ~ reason ~ "\n");
 }
 
 pub fn HERE(implicit ref _here: TokenIdx, node.token: TokenIdx)
