@@ -413,7 +413,7 @@ pub extern fn runTests()
         struct A { x: i32; y: i32; };
         struct B { x: i32; z: i32; };
         fn test(using left: A, using right: B)
-            <fail ambig x 2:20+1 via left 4:23+4 3:20+1 using right 4:38+5>
+            <fail ambig x 2:20+1 using left 4:17+5 3:20+1 using right 4:32+5>
             x + z; <pass/>
             y + z; </fail>
 
@@ -3565,8 +3565,8 @@ pub extern fn runTests()
     `);
 
     ZERO(`
-        <fail arg inval subsequent write 14:23 14:25 14:33 8:16>
-        nocopy                                    <pass/></fail>
+        <fail arg inval subsequent write 14:23 14:26+4 14:34+4 8:16+2>
+        nocopy <pass/></fail>
         struct X { x: i32; }
         fn sum(a: X, b: X) a.x + b.x;
 
@@ -3582,8 +3582,8 @@ pub extern fn runTests()
     `);
 
     ZERO(`
-        <fail arg inval subsequent write 23:23 23:25 23:33 16:18>
-        nocopy                                     <pass/></fail>
+        <fail arg inval subsequent write 23:23 23:26+4 23:34+4 16:18+2>
+        nocopy <pass/></fail>
         struct X { x: i32; }
         struct Y { y: X;   }
 
@@ -3608,8 +3608,8 @@ pub extern fn runTests()
     `);
 
     ZERO(`
-        <fail arg inval subsequent write 19:27 19:32 19:21 7:16>
-        nocopy                                    <pass/></fail>
+        <fail arg inval subsequent write 19:27+2 19:33+4 19:22+4 7:16+2>
+        nocopy <pass/></fail>
         struct X { x: i32; };
 
         fn incr(ref x: X) {
@@ -8577,6 +8577,13 @@ pub extern fn runTests()
     `);
 
     ZERO(`
+        fn test(hey!: i32) hey * 2;
+        <fail arg hey explicit name 4:25+4>
+        fn main() = (0).test;       <pass/>
+        fn main() = test(hey: 0);   </fail>
+    `);
+
+    ZERO(`
         fn test(a: i32, b!: i32 = 1) a + b;
         <fail bad call to test arg b explicit name 7:20>
         return test(-2, +2);    <pass/>
@@ -10210,7 +10217,7 @@ pub extern fn runTests()
         struct linearRGB    { r: i32; };
         struct sRGB         { r: i32; };
 
-        <fail ambig conversion 14:18+1 lin2srgb 7:12+8 srgb2lin 10:12+8>
+        <fail ambig conversion 14:18+1 lin2srgb 6:9+5 srgb2lin 9:9+5>
         using    <pass/></fail>
         fn lin2srgb(c: linearRGB): sRGB = [ c.r / 3 ];
 
@@ -10361,7 +10368,7 @@ pub extern fn runTests()
         using fn toMidB(start: Start) MidB(start.s * 3);
         using fn toEnd(mida: MidA) End(mida.a * 5);
 
-        <fail 18:25+1 ambig conversion Start into End toMidA 7:18+6 toEnd 9:18+5 toMidB 8:18+6>
+        <fail 18:26+1 multiple ways to conv Start into End toMidA 7:9+5 toEnd 9:9+5 toMidB 8:9+5 toEnd 12:9+5>
         using <pass/></fail>
         fn toEnd(midb: MidB) End(midb.b * 7);
         <split/>
@@ -10370,6 +10377,20 @@ pub extern fn runTests()
             let start = Start(1);
             return start.e - 2*5;
         }
+    `);
+
+    ZERO(`
+        struct vec3 { x: i32 };
+        fn woot(
+            using a: vec3,
+            <fail ambig using multiple ways to obtain vec3 9:20+1 4:13+5 6:13+5>
+            using <pass/></fail>
+            b: vec3)
+        {
+            return x + b.x;
+        }
+
+        fn main() vec3(1).woot(vec3(-1));
     `);
 
     // /Conversion functions.

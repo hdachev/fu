@@ -329,24 +329,26 @@ pub fn solve(
         return reason;
     }
 
+    fn tryBacktrack(from: TokenIdx, v: string, k: ::kind = "id"): TokenIdx
+    {
+        mut here = from;
+        while (here.tokidx --> 0)
+        {
+            let token = here._token;
+            if (token.kind != k)
+                break;
+
+            if (token.value == v)
+                return here;
+        }
+
+        return [];
+    }
+
     fn fail(mut reason: string, backtrack!?: string): never
     {
         if (backtrack)
-        {
-            mut here = _here;
-            while (here.tokidx --> 0)
-            {
-                let token = here._token;
-                if (token.kind != "id")
-                    break;
-
-                if (token.value == backtrack)
-                {
-                    _here = here;
-                    break;
-                }
-            }
-        }
+            _here = _here.tryBacktrack(backtrack) || _here;
 
         reason || BUG();
         return FAIL(reason.fail_appendStack());
@@ -363,8 +365,7 @@ pub fn solve(
         mut prefix  = kind.str;
         if (kind == "var")
         {
-            prefix = (o.flags & F_USING && "using ")
-                   ~ (o.flags & F_INJECTED && "injected ")
+            prefix = (o.flags & F_INJECTED && "injected ")
                    ~ (o.flags & F_IMPLICIT && "implicit ")
                    ~ (o.flags & F_REF && "ref ")
                    ~ (o.flags & F_ARG && "arg ")
@@ -382,8 +383,7 @@ pub fn solve(
                    ~ (arg.flags & F_IMPLICIT && "implicit ")
                    ~ (arg.flags & F_REF && "ref ");
 
-        if (prefix)
-            prefix.pop();
+        prefix ~= "arg";
 
         return prefix.qKW ~ (prefix && " ") ~ arg.name.human.qID;
     }
@@ -1480,14 +1480,14 @@ pub fn solve(
                                     }
                                 }
 
-                                matchFail("Cannot infer missing argument " ~ host_arg);
+                                matchFail("Cannot infer missing " ~ host_arg);
                             }
 
                             // Explicit argname requirements.
                             if (host_arg.flags & F_MUSTNAME)
                             {
                                 if (names.len <= callsiteIndex || !names[callsiteIndex])
-                                    matchFail("Argument must be :explicitly named " ~ host_arg);
+                                    matchFail(host_arg ~ " must be :explicitly named.");
                             }
 
                             // Autocall.
@@ -1501,7 +1501,7 @@ pub fn solve(
                                 autocall_args[0] = args[callsiteIndex];
 
                                 mut autocall_error = error
-                                    && "Cannot match argument " ~ host_arg ~ " autocall " ~ host_arg.autocall.qCODE ~ ": ";
+                                    && "Cannot match " ~ host_arg ~ " autocall " ~ host_arg.autocall.qCODE ~ ": ";
 
                                 let t = tryMatch__mutargs(:misc_scope, :local_scope, id: host_arg.autocall, args: autocall_args, reorder: autocall_reorder, conversions: autocall_conversions, error: autocall_error);
                                 if (!t)
@@ -1536,8 +1536,7 @@ pub fn solve(
                                 // TODO FIX Check that ref args are mutrefs,
                                 //  otherwise we get mustMatch fails after a spec-ok.
                                 if (host_arg.flags & F_REF && !actual.is_mutref)
-                                    matchFail("Argument " ~ host_arg
-                                            ~ " expects a mutref, got " ~ humanizeType(actual));
+                                    matchFail(host_arg ~ " expects a mutref, got " ~ humanizeType(actual));
 
                                 continue :ARG_OK;
                             }
@@ -1573,9 +1572,8 @@ pub fn solve(
                             }
 
                             // Nope, args fail.
-                            matchFail("Argument " ~ host_arg
-                                    ~ " expects " ~ humanizeType(expect)
-                                    ~ ", got "    ~ humanizeType(actual));
+                            matchFail(host_arg  ~ " expects " ~ humanizeType(expect)
+                                                ~ ", got "    ~ humanizeType(actual));
                         }
 
                         if (REST_START < N)
@@ -1784,9 +1782,9 @@ pub fn solve(
             || target.solved.token;
     }
 
-    fn explainWhichFn(t: Target, conversions?: Target[][])
+    fn explainWhichFn(t: Target, conversions?: Target[][], backtrack!?: string)
     {
-        mut result = t ~ " at " ~ t.token.addr_and_snippet(NoContext);
+        mut result = t ~ " at " ~ t.token.addr_and_snippet(NoContext, :backtrack);
 
         for (mut i = 0; i < conversions.len; i++)
         {
@@ -1807,8 +1805,8 @@ pub fn solve(
             if (!i) res ~= "\n";
             res ~= "\t    ";
             if (!i && prefix) res ~= prefix;
-            res ~= "via ";
-            res ~= path[i].explainWhichFn();
+            res ~= "using".qKW ~ " ";
+            res ~= path[i].explainWhichFn(backtrack: "using");
         }
 
         return res;
@@ -1905,17 +1903,16 @@ pub fn solve(
                         //  this means we've got a conversion edge that works.
                         if (match)
                         {
-                            mut suffix  = explainConversion(match)
-                                        ~ "\n\tand:\n"
-                                        ~ explainConversion(path ~ t);
+                            mut suffix  = "\n"          ~ explainConversion(match)
+                                        ~ "\n\tand:\n"  ~ explainConversion(path ~ t);
 
                             if (actual)
                                 fail("Conversion ambiguity, multiple ways to convert "
                                     ~ humanizeType(actual) ~ " into "
-                                    ~ humanizeType(expect) ~ ":\n" ~ suffix);
+                                    ~ humanizeType(expect) ~ ":" ~ suffix);
                             else
-                                fail("`using` ambiguity, multiple ways to obtain a `"
-                                    ~ humanizeType(expect) ~ "` in this scope: " ~ suffix);
+                                fail("using".qBAD ~ " ambiguity, multiple ways to obtain a "
+                                    ~ humanizeType(expect) ~ " in this scope:" ~ suffix);
                         }
 
                         match = path ~ t;
@@ -4299,7 +4296,7 @@ pub fn solve(
 
                             //
                             (argName_typeParam && fail(
-                                "Type param name collision with argument " ~ argName.qID ~ "."))
+                                "Type param name collision with " ~ host_arg ~ "."))
                                     .matched = inType;
 
                             // Type check.
@@ -4650,17 +4647,17 @@ pub fn solve(
                     // TODO FAILCASE these dont work for inline fns
                     // TODO FAILCASE
                     if (asserts & A_PURE && written_via)
-                        fail(backtrack: "pure", target ~ " is not pure, writes to argument " ~ name.human.qID ~ ":\n"
+                        fail(backtrack: "pure", target ~ " is not pure, writes to " ~ argTarget ~ ":\n"
                             ~ qSTACK(:target, Region_fromLocal(argTarget.index),
                                         node: out.out));
 
                     if (asserts & A_PURE_CTX && isImplicit && written_via)
-                        fail(backtrack: "purectx", target ~ " is not purectx, writes to implicit argument " ~ name.human.qID ~ ":\n"
+                        fail(backtrack: "purectx", target ~ " is not purectx, writes to " ~ argTarget ~ ":\n"
                             ~ qSTACK(:target, Region_fromLocal(argTarget.index),
                                         node: out.out));
 
                     if (maybeLast && asserts & A_NOVEC && !argNode.isNoVec() && !mustBecomeInline)
-                        fail(backtrack: "novec", target ~ " is not novec, argument " ~ name.human.qID ~ " is " ~ humanizeType(argNode.type) ~ ":\n"
+                        fail(backtrack: "novec", target ~ " is not novec, " ~ argTarget ~ " is " ~ humanizeType(argNode.type) ~ ":\n"
                             ~ qSTACK(:target, Region_fromLocal(argTarget.index),
                                         node: out.out,
                                        query: AQ_WhyNotNovec));
@@ -7387,9 +7384,17 @@ pub fn solve(
 
     //
 
-    fn addr_and_snippet(using token: TokenIdx, fmt?: CodeFmt)
+    fn addr_and_snippet(using token: TokenIdx, fmt?: CodeFmt, backtrack!?: string)
     {
-        return formatCodeSnippet([ token ], from: module.modid, :fmt);
+        mut tokens = [ token ];
+        if (backtrack)
+        {
+            let other = tryBacktrack(token, backtrack);
+            if (other)
+                tokens.unshift(other);
+        }
+
+        return formatCodeSnippet(:tokens, from: module.modid, :fmt);
     }
 
 
@@ -9287,12 +9292,12 @@ pub fn solve(
                                                 {
                                                     _here = callsite.token;
 
-                                                    fail("At call to " ~ target ~ ", argument binding "
-                                                        ~ host_args[r].name.human.qBAD ~ " (arg #" ~ r ~ ") at "
+                                                    fail("At call to " ~ target ~ ", binding for "
+                                                        ~ host_args[r] ~ " (arg #" ~ r ~ ") at "
                                                         ~ arg.token.addr_and_snippet
                                                         ~ "\n\t... invalidated by subsequent write to "
-                                                        ~ all_written.last ~ " upon evaluation of argument "
-                                                        ~ host_args[w].name.human.qBAD ~ " (arg #" ~ w ~ ") at "
+                                                        ~ all_written.last ~ " upon evaluation of "
+                                                        ~ host_args[w] ~ " (arg #" ~ w ~ ") at "
                                                         ~ RWEvent_stack(writeID));
                                                 }
                                             }

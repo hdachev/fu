@@ -1633,6 +1633,8 @@ pub fn parse(
 
     fn parseAccessExpression(expr: Node): Node
     {
+        _loc = _idx;
+
         mut id = tryConsume("id");
         if (!id)
         {
