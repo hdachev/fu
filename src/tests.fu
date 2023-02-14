@@ -10351,6 +10351,27 @@ pub extern fn runTests()
         }
     `);
 
+    ZERO(`
+        struct Start { s: i32 };
+        struct MidA { a: i32 };
+        struct MidB { b: i32 };
+        struct End { e: i32 };
+
+        using fn toMidA(start: Start) MidA(start.s * 2);
+        using fn toMidB(start: Start) MidB(start.s * 3);
+        using fn toEnd(mida: MidA) End(mida.a * 5);
+
+        <fail 18:25+1 ambig conversion Start into End toMidA 7:18+6 toEnd 9:18+5 toMidB 8:18+6>
+        using <pass/></fail>
+        fn toEnd(midb: MidB) End(midb.b * 7);
+        <split/>
+
+        fn main() {
+            let start = Start(1);
+            return start.e - 2*5;
+        }
+    `);
+
     // /Conversion functions.
 
 

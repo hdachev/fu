@@ -1792,26 +1792,22 @@ pub fn solve(
         {
             let c = conversions[i];
             if (c)
-            {
-                result ~= "\n\t    ";
-                if (t.args.len > 1)
-                    result ~= t.args[i] ~ " ";
-
-                result ~= "via " ~ explainConversion(c);
-            }
+                result ~= explainConversion(c,
+                    prefix: t.args.len > 1 && t.args[i] ~ ": ");
         }
 
         return result;
     }
 
-    fn explainConversion(shadow path: [Target])
+    fn explainConversion(shadow path: [Target], prefix!?: string)
     {
         mut res = "";
         for (mut i = 0; i < path.len; i++)
         {
-            if (i)
-                res ~= "\n\t\tvia ";
-
+            if (!i) res ~= "\n";
+            res ~= "\t    ";
+            if (!i && prefix) res ~= prefix;
+            res ~= "via ";
             res ~= path[i].explainWhichFn();
         }
 
@@ -1909,13 +1905,14 @@ pub fn solve(
                         //  this means we've got a conversion edge that works.
                         if (match)
                         {
-                            mut suffix  = "\n\t\t" ~ explainConversion(match) ~ "\n\tand:"
-                                        ~ "\n\t\t" ~ explainConversion(path ~ t);
+                            mut suffix  = explainConversion(match)
+                                        ~ "\n\tand:\n"
+                                        ~ explainConversion(path ~ t);
 
                             if (actual)
-                                fail("Conversion ambiguity, multiple ways to convert `"
-                                    ~ humanizeType(actual) ~ "` into `"
-                                    ~ humanizeType(expect) ~ "`: " ~ suffix);
+                                fail("Conversion ambiguity, multiple ways to convert "
+                                    ~ humanizeType(actual) ~ " into "
+                                    ~ humanizeType(expect) ~ ":\n" ~ suffix);
                             else
                                 fail("`using` ambiguity, multiple ways to obtain a `"
                                     ~ humanizeType(expect) ~ "` in this scope: " ~ suffix);
@@ -7058,8 +7055,8 @@ pub fn solve(
                     mut error = topic ~ ": Type ambiguity, conversions exist both ways:\n";
 
                     fn explain(shadow a: Type, shadow b: Type, chain: Target[])
-                        error ~= "\n\t" ~ explainTypeDiff(a, b, "->")
-                            ~ ":\n\n\t    via " ~ explainConversion(chain);
+                        error ~= "\n\t" ~ explainTypeDiff(a, b, "->") ~ ":"
+                                        ~ explainConversion(chain);
 
                     explain(a, b, aConv);
                     explain(b, a, bConv);
