@@ -880,6 +880,10 @@ pub fn parse(
 
     fn parseFnDecl(mut flags?: Flags, fixity?: Fixity, asserts?: DeclAsserts, expr!?: bool): Node
     {
+        let loc0    = _loc;
+        _loc        = _idx;
+        defer _loc  = loc0;
+
         // fn hello(), fn +()
         mut name = tryConsume("id").value;
         if (!name)
@@ -1221,6 +1225,7 @@ pub fn parse(
     {
         mut flags: Flags;
 
+        //
         if (tryConsume("id", "using"   ))   flags |= F_USING;
         if (tryConsume("id", "implicit"))   flags |= F_IMPLICIT;
         if (tryConsume("id", "lax"     ))   flags |= F_LAX;
@@ -1235,6 +1240,11 @@ pub fn parse(
         //  fn name(::kind, ...)                the new thing, shorter
         //
         let sh_import = tryConsume("op", "::");
+
+        //
+        let loc0    = _loc;
+        _loc        = _idx;
+        defer _loc  = loc0;
 
         //
         mut id = consume("id").value;

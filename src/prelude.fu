@@ -1,7 +1,4 @@
-import module;
-import context;
-
-let prelude_src = `
+let PRELUDE_SRC = `
 
 
 // Arithmetics.
@@ -535,18 +532,22 @@ fn reverse !T(ref a: [T;])
 
 //
 
+import module;
+import context;
+
 pub fn solvePrelude(): Context
 {
+    let fname   = "prelude";
+
     // In order to keep the prelude around,
     //  I"m thinking we"ll just prep a ready-to-copy template,
     //   with prelude solved at modid 0.
     let implicit mut ctx: Context;
-    let implicit mut module = getModule("").helpers::clone();
+    let implicit mut module = getModule(fname).helpers::clone();
 
     let implicit options: options::Options;
 
-    let src     = prelude_src;
-    let fname   = "__prelude";
+    let src     = PRELUDE_SRC;
     let lex     = lexer::lex(:src, :fname);
     let parse   = parser::parse(modid: 0, :fname, :src, :lex.tokens);
 

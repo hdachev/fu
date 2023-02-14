@@ -412,8 +412,8 @@ pub extern fn runTests()
     ZERO(`
         struct A { x: i32; y: i32; };
         struct B { x: i32; z: i32; };
-        fn test(using a: A, using b: B)
-            <fail ambig>
+        fn test(using left: A, using right: B)
+            <fail ambig x 2:20+1 via left 4:23+4 3:20+1 using right 4:38+5>
             x + z; <pass/>
             y + z; </fail>
 
@@ -1305,7 +1305,7 @@ pub extern fn runTests()
         }
 
         fn main() {
-            <fail unused log_out 15:13>
+            <fail unused log_out 15:30+7>
             implicit     mut log_out: string; <pass/>
             implicit lax mut log_out: string; </fail>
 
@@ -10210,7 +10210,7 @@ pub extern fn runTests()
         struct linearRGB    { r: i32; };
         struct sRGB         { r: i32; };
 
-        <fail ambig conversion>
+        <fail ambig conversion 14:18+1 lin2srgb 7:12+8 srgb2lin 10:12+8>
         using    <pass/></fail>
         fn lin2srgb(c: linearRGB): sRGB = [ c.r / 3 ];
 
@@ -10338,6 +10338,16 @@ pub extern fn runTests()
 
         fn main() {
             return a_slash_b(1, 2) == "1.000000/2.000000" ? 0 : 1;
+        }
+    `);
+
+    ZERO(`
+        fn main() {
+            let s: i32 = -3;
+            let u: u32 =  3;
+            <fail 6:22 4+1 T: incompatible types i32 u32>
+            return s + u;             <pass/>
+            return s + u.i32;         </fail>
         }
     `);
 

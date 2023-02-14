@@ -29,7 +29,7 @@ fn dirname(path: string): string
         if (path[i] == '/')
             return path.slice(0, i + 1);
 
-    return "/";
+    return "";
 }
 
 fn filename(path: string): string

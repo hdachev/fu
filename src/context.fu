@@ -203,8 +203,19 @@ pub fn getModuleSrc(implicit ctx: Context, modid!: i32)
     return ctx.modules[modid].in.src;
 }
 
+pub fn formatTokenCoord(token: TokenIdx, from!: i32)
+{
+    return formatTokenCoord(
+        fname: from != token.modid && token._fname,
+        token: token._token);
+}
+
 pub fn formatTokenCoord(fname!: string, token: LineColChars)
 {
+    let lcc     = token.line ~ ":" ~ token.col ~ "+" ~ token.chars;
+    if (!fname)
+        return ansi::DIM ~ lcc ~ ansi::RESET;
+
     let dir     = path::dirname(fname);
     let file    = fname.slice(dir.len, fname.len);
     let ext     = path::ext(file);
@@ -212,72 +223,157 @@ pub fn formatTokenCoord(fname!: string, token: LineColChars)
 
     return ansi::DIM ~ dir ~ ansi::RESET
          ~ noext
-         ~ ansi::DIM ~ ext ~ ansi::RESET
-         ~ " @" ~ token.line ~ ":" ~ token.col
-         ~ ansi::DIM ~ "+" ~ token.chars ~ ansi::RESET;
+         ~ ansi::DIM
+         ~ ext ~ " " ~ lcc
+         ~ ansi::RESET;
 }
 
-pub fn formatCodeSnippet(to: TokenIdx, mut from?: TokenIdx): string
+pub flags CodeFmt
 {
-    let src     = getModuleSrc(:to.modid);
-    let start   = (from || to)._token;
-    let end     = to._token;
+    NoLeadContext
+    NoTailContext
+    NoContext
+};
 
-    return formatCodeSnippet(:src, :start, :end);
+pub fn formatCodeSnippet(src!: string, token: LineColChars, fmt?: CodeFmt): string
+{
+    return formatCodeSnippet(:src, :fmt, highlight: [ token ]);
 }
 
-pub fn formatCodeSnippet(src!: string, start!: LineColChars, end!: LineColChars, extraLines! = 2)
+pub fn formatCodeSnippet(src!: string, fmt?: CodeFmt, mut highlight!: LineColChars[])
 {
+    // TODO should be able to sort without the < 0, moronic
+    highlight.sort(
+        |a, b| (a.line - b.line || a.col - b.col) < 0);
+
+    for (mut i = highlight.len - 1; i --> 0; )
+    {
+        let a = highlight[i];
+        let b = highlight[i + 1];
+
+        if (a.line != b.line)
+        {
+            a.line < b.line || assert();
+            continue;
+        }
+
+        // Discard duplicate / overlapping tokens.
+        if (a.col + a.chars > b.col)
+            highlight.splice(i, 1);
+    }
+
+    if (!highlight)
+        return "";
+
+    //
     let lines   = src.split("\n");
 
-    mut l_start = start.line - extraLines - 1;  // lines are 1 based.
-    mut l_end   =   end.line + extraLines;
+    let start   = highlight.first;
+    let end     = highlight.last;
 
-    l_start     = l_start.max(0);
-    l_end       = l_end  .min(lines.len);
+    mut l_start = start.line - 1;  // lines are 1 based.
+    mut l_end   =   end.line;
 
-    // TODO use color to highlight the offending line & token
-    //
-    // FUN syntax highlight the thing!
-    //  Could use the lexer to re-lex
-    //   and add colors to each token value.
+    l_start     = l_start.min(lines.len).max(0);
+    l_end       = l_end  .min(lines.len).max(0);
 
     mut result  = "";
+
+    let leadContext = fmt & (NoContext | NoLeadContext) ? 0 : 2;
+    let tailContext = fmt & (NoContext | NoTailContext) ? 0 : 2;
+
+    // Leading context lines.
+    for (mut i = max(0, l_start - leadContext); i < l_start; i++)
+    {
+        result ~= ansi::DIM ~ "      | ";
+        result ~= lines[i];
+        result ~= ansi::RESET ~ "\n";
+    }
+
+    // Highlighted lines.
     for (mut i = l_start; i < l_end; i++)
     {
-        // Extra lines: dim color, no line number
-        if (i < start.line - 1 || i >= end.line) {
-            result ~= ansi::DIM ~ "      | ";
-        }
-        else {
-            mut margin = (i + 1) ~ " | ";
+        mut line = lines[i];
+        let line_no = i + 1;
+
+        // Numbered line margins.
+        {
+            mut margin = line_no ~ " | ";
             while (margin.len < 8)
                 margin = " " ~ margin;
 
-            result ~= margin;
+            result ~= ansi::DIM ~ margin ~ ansi::RESET;
         }
 
-        mut line = lines[i];
-
-        // Highlight error token.
-        if (i == end.line - 1)
+        // Highlight error tokens on this line.
+        for (shadow mut i = highlight.len; i --> 0; )
         {
-            let c0 = (end.col - 1       ).max(0       );
-            let c1 = (c0 + end.chars    ).min(line.len);
+            let token = highlight[i];
+            if (token.line == line_no)
+            {
+                let c0 = (token.col - 1     ).max(0       );
+                let c1 = (c0 + token.chars  ).min(line.len);
 
-            line.splice(c1, 0, ansi::RESET);
-            line.splice(c0, 0, ansi::BAD);
+                line.splice(c1, 0, ansi::RESET);
+                line.splice(c0, 0, ansi::BAD);
+            }
         }
 
-        result ~= line;
-
-        // Reset ansi coloring.
-        if (i < start.line - 1 || i >= end.line)
-            result ~= ansi::RESET;
-
-        result ~= "\n";
+        result ~= line ~ "\n";
     }
 
+    // Trailing context lines.
+    for (mut i = l_end; i < min(lines.len, l_end + tailContext); i++)
+    {
+        result ~= ansi::DIM ~ "      | ";
+        result ~= lines[i];
+        result ~= ansi::RESET ~ "\n";
+    }
+
+    return result;
+}
+
+pub fn formatCodeSnippet(mut tokens: TokenIdx[], from!: i32, fmt?: CodeFmt)
+{
+    tokens.sort(|a, b| a.modid < b.modid);
+
+    mut append = "";
+    for (mut i = 0; i < tokens.len - 1; i++)
+    {
+        let a = tokens[i];
+        let b = tokens[i + 1];
+
+        if (a.modid != b.modid)
+        {
+            append ~= "\n";
+            append ~= formatCodeSnippet(tokens.slice(i + 1), :from);
+            tokens.shrink(i + 1);
+            break;
+        }
+    }
+
+    let head = tokens.if_first;
+    if (!head)
+        return append;
+
+    //
+    mut result = "";
+    result ~= formatTokenCoord(head, :from);
+    result ~= ":\n";
+
+    if !(fmt & (NoContext | NoLeadContext))
+        result ~= "\n";
+
+    //
+    mut highlight: LineColChars[] = [];
+    for (mut i = 0; i < tokens.len; i++)
+        highlight.push(tokens[i]._token.lcc);
+
+    let src = getModuleSrc(:head.modid);
+    result ~= formatCodeSnippet(:src, :fmt, :highlight);
+
+    //
+    result ~= append;
     return result;
 }
 

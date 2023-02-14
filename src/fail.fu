@@ -15,8 +15,7 @@ pub fn FAIL(
     token!: LineColChars, reason!: string): never
 {
     let addr    = formatTokenCoord(:fname, :token);
-    let snippet = formatCodeSnippet(
-        :src, start: token, end: token);
+    let snippet = formatCodeSnippet(:src, :token);
 
     return throw(addr ~ ":\n\n" ~ snippet ~ "\n\t" ~ reason ~ "\n");
 }

@@ -329,8 +329,25 @@ pub fn solve(
         return reason;
     }
 
-    fn fail(mut reason: string): never
+    fn fail(mut reason: string, backtrack!?: string): never
     {
+        if (backtrack)
+        {
+            mut here = _here;
+            while (here.tokidx --> 0)
+            {
+                let token = here._token;
+                if (token.kind != "id")
+                    break;
+
+                if (token.value == backtrack)
+                {
+                    _here = here;
+                    break;
+                }
+            }
+        }
+
         reason || BUG();
         return FAIL(reason.fail_appendStack());
     }
@@ -346,7 +363,8 @@ pub fn solve(
         mut prefix  = kind.str;
         if (kind == "var")
         {
-            prefix = (o.flags & F_INJECTED && "injected ")
+            prefix = (o.flags & F_USING && "using ")
+                   ~ (o.flags & F_INJECTED && "injected ")
                    ~ (o.flags & F_IMPLICIT && "implicit ")
                    ~ (o.flags & F_REF && "ref ")
                    ~ (o.flags & F_ARG && "arg ")
@@ -1334,7 +1352,7 @@ pub fn solve(
                 fn matchFail(inline err: string)
                 {
                     if (error)
-                        error ~= "\n\n\t" ~ overloadIdx ~ ": " ~ err;
+                        error ~= "\n\n\t" ~ overloadIdx.explainWhichFn ~ "\n\t    " ~ err;
 
                     continue :MATCH_FAIL;
                 }
@@ -1600,7 +1618,7 @@ pub fn solve(
                             :REST_START, :REST_TYPE);
 
                         if (specIdx.is_SPECFAIL)
-                            matchFail("Could not specialize: " ~ _spec_errors[specIdx.index]);
+                            matchFail(_spec_errors[specIdx.index] || "Could not specialize.");
 
                         ensureLazySolved(overloadIdx = specIdx);
                     }
@@ -1644,9 +1662,9 @@ pub fn solve(
                                     ~ " as seen from " ~ callsite.fnName);
                         }
 
-                        fail("Ambiguous callsite, matches multiple items in scope:"
-                            ~ "\n\n\t" ~ explainWhichFn(PREV, conversions_out) ~ " from " ~ inner.fnName ~ " and "
-                            ~ "\n\n\t" ~ explainWhichFn(NEXT, conversions    ) ~ " from " ~ outer.fnName ~ ", as seen from " ~ callsite.fnName ~ ".");
+                        fail("Ambiguous callsite, matches multiple items in scope:\n"
+                            ~ "\n\t" ~ explainWhichFn(PREV, conversions_out)
+                            ~ "\n\t" ~ explainWhichFn(NEXT, conversions    ));
                     }
 
                     // Done!
@@ -1760,22 +1778,48 @@ pub fn solve(
 
     //
 
+    fn token(target: Target)
+    {
+        return target.template.node.token
+            || target.solved.token;
+    }
+
+    fn explainWhichFn(t: Target, conversions?: Target[][])
+    {
+        mut result = t ~ " at " ~ t.token.addr_and_snippet(NoContext);
+
+        for (mut i = 0; i < conversions.len; i++)
+        {
+            let c = conversions[i];
+            if (c)
+            {
+                result ~= "\n\t    ";
+                if (t.args.len > 1)
+                    result ~= t.args[i] ~ " ";
+
+                result ~= "via " ~ explainConversion(c);
+            }
+        }
+
+        return result;
+    }
+
     fn explainConversion(shadow path: [Target])
     {
         mut res = "";
         for (mut i = 0; i < path.len; i++)
         {
-            if (i) res ~= " -> ";
+            if (i)
+                res ~= "\n\t\tvia ";
 
-            let o = GET(path[i]);
-            res ~= o;
-
-            if (i < path.len - 1)
-                res ~= ": " ~ humanizeType(o.type);
+            res ~= path[i].explainWhichFn();
         }
 
         return res;
     }
+
+
+    //
 
     fn tryConvert(
         expect: Type, actual?: Type, retype?: SolvedNode,
@@ -1982,37 +2026,6 @@ pub fn solve(
             BUG("Did match on second pass: " ~ debug);
 
         fail(error);
-    }
-
-    fn explainWhichFn(overload: Target, conversions?: Target[][])
-    {
-        mut result = overload.str;
-
-        if (overload.args)
-        {
-            result ~= "(";
-
-            for (shadow mut i = 0; i < overload.args.len; i++)
-            {
-                let arg = overload.args[i];
-                if (i)
-                    result ~= ",";
-
-                result ~= "\n\t    "
-                        ~  arg.name.human.qID
-                        ~ (arg.flags & F_MUSTNAME ? "!" : "")
-                        ~ (arg.default ? "?: " : ": ")
-                        ~ (arg.type ? humanizeType(arg.type) : "$");
-
-                let c = conversions.len > i && conversions[i];
-                if (c)
-                    result ~= "\n\t        via " ~ explainConversion(c);
-            }
-
-            result ~= ")";
-        }
-
-        return result;
     }
 
 
@@ -4180,6 +4193,9 @@ pub fn solve(
                 // Literal fixup.
                 mut retypeIndices: i32[];
 
+                //
+                mut errout = [ Warning ];
+
                 // First off, solve type params.
                 for (   mut pass_retype  = 0;
                             pass_retype == 0 || pass_retype == 1 && retypeIndices;
@@ -4292,10 +4308,14 @@ pub fn solve(
                             // Type check.
                             if (annot)
                             {
-                                let argOk = trySolveTypeParams(annot, inType, typeParams);
+                                let argOk = trySolveTypeParams(annot, inType, typeParams, :errout);
 
                                 if (!error && !argOk)
-                                    error = "Cannot solve argument " ~ argName.qID ~ " pattern for " ~ humanizeType(inType);
+                                {
+                                    error = "arg".qKW ~ " " ~ argName.qID ~ ":";
+                                    for (shadow mut i = 1; i < errout.len; i++)
+                                        error ~= "\n\t    " ~ errout[i].message;
+                                }
 
                                 if (error && !remangle)
                                     break;
@@ -4477,6 +4497,7 @@ pub fn solve(
                 }
 
                 let n_arg       = inItems[i];
+                _here           = n_arg.token;
 
                 // TODO FIX Template prep: mock up free parameters.
                 //          Super unclean but at least its contained here.
@@ -4632,17 +4653,17 @@ pub fn solve(
                     // TODO FAILCASE these dont work for inline fns
                     // TODO FAILCASE
                     if (asserts & A_PURE && written_via)
-                        fail(target ~ " is not pure, writes to argument " ~ name.human.qID ~ ":\n"
+                        fail(backtrack: "pure", target ~ " is not pure, writes to argument " ~ name.human.qID ~ ":\n"
                             ~ qSTACK(:target, Region_fromLocal(argTarget.index),
                                         node: out.out));
 
                     if (asserts & A_PURE_CTX && isImplicit && written_via)
-                        fail(target ~ " is not purectx, writes to implicit argument " ~ name.human.qID ~ ":\n"
+                        fail(backtrack: "purectx", target ~ " is not purectx, writes to implicit argument " ~ name.human.qID ~ ":\n"
                             ~ qSTACK(:target, Region_fromLocal(argTarget.index),
                                         node: out.out));
 
                     if (maybeLast && asserts & A_NOVEC && !argNode.isNoVec() && !mustBecomeInline)
-                        fail(target ~ " is not novec, argument " ~ name.human.qID ~ " is " ~ humanizeType(argNode.type) ~ ":\n"
+                        fail(backtrack: "novec", target ~ " is not novec, argument " ~ name.human.qID ~ " is " ~ humanizeType(argNode.type) ~ ":\n"
                             ~ qSTACK(:target, Region_fromLocal(argTarget.index),
                                         node: out.out,
                                        query: AQ_WhyNotNovec));
@@ -5195,6 +5216,9 @@ pub fn solve(
                     ext.args    = args;
                     ext.min     = args.len;
                     ext.max     = args.len;
+
+                    // For snippets -
+                    ext.template.node.token = items[i].token;
 
                     Scope_set(innerScope, :id, :target, shadows: false);
                 }
@@ -6474,9 +6498,22 @@ pub fn solve(
         fail("Invalid type annotation: " ~ node.kind ~ " " ~ node.value);
     }
 
-    fn trySolveTypeParams(
-        node: Node, mut type: Type, ref typeParams: TypeParams): bool
+    fn explainTypeDiff(a: Type, b: Type, sep = "<->")
     {
+        return humanizeType(a) ~ " " ~ sep ~ " " ~ humanizeType(b);
+    }
+
+    fn trySolveTypeParams(
+        node: Node, mut type: Type, ref typeParams: TypeParams, ref errout: Warning[]): bool
+    {
+        fn matchFail(inline err: string)
+        {
+            if (errout)
+                errout ~= Warning(node.token, err);
+
+            return :trySolveTypeParams false;
+        }
+
         if (node.kind == "call")
         {
             let items = node.items;
@@ -6491,16 +6528,15 @@ pub fn solve(
             :UNARY
             if (items.len == 1)
             {
-                mut t   = node.value == "&"    ? tryClear_ref(type)
-                        : node.value == "&mut" ? tryClear_mutref(type)
-                        : node.value == "[]"   ? tryClear_array(type)
+                mut t   = node.value == "&"    ? tryClear_ref(type)     || matchFail("Not a reference:  " ~ type.humanizeType)
+                        : node.value == "&mut" ? tryClear_mutref(type)  || matchFail("Not a mutref:     " ~ type.humanizeType)
+                        : node.value == "[]"   ? tryClear_array(type)   || matchFail("Not an array:     " ~ type.humanizeType)
                         : { break :UNARY; };
 
-                if (!t)
-                    return false;
+                t || BUG();
 
                 return trySolveTypeParams(
-                    items[0] || BUG(), t, typeParams);
+                    items[0] || BUG(), t, typeParams, :errout);
             }
         }
         else if (node.kind == "typeparam")
@@ -6514,7 +6550,7 @@ pub fn solve(
             {
                 let union = type_trySuper(_param.matched, type, :DONT_match_zeroes);
                 if (!union)
-                    return false;
+                    matchFail("Incompatible types for " ~ id.qBAD ~ ": " ~ explainTypeDiff(_param.matched, type));
 
                 type = union;
             }
@@ -6538,17 +6574,22 @@ pub fn solve(
             // Slice.
             let t = tryClear_sliceable(type);
             return t && trySolveTypeParams(
-                node.items[0] || BUG(), t, typeParams);
+                node.items[0] || BUG(), t, typeParams, :errout);
         }
         else if (node.kind == "typeunion")
         {
-            mut undo = typeParams;
+            let errout0     = errout.len;
+            mut typeParams0 = typeParams;
+
             for (mut i = 0; i < node.items.len; i++)
             {
-                if (trySolveTypeParams(node.items[i], :type, :typeParams))
+                if (trySolveTypeParams(node.items[i], :type, :typeParams, :errout))
+                {
+                    errout.shrink(errout0);
                     return true;
+                }
 
-                typeParams = undo;
+                typeParams = typeParams0;
             }
 
             return false;
@@ -6600,9 +6641,12 @@ pub fn solve(
             {
                 let actual = evalTypeAnnot(left, typeParams);
 
+                mut errout: Warning[];
                 let ok = trySolveTypeParams(
                     type: actual, node: right,
-                        :typeParams);
+                        :typeParams, :errout);
+
+                errout && BUG("Inefficient: trySolveTypeParams pushing errors when told not to (falsy errout).");
 
                 ////////////////////////////////////
                 // NATIVE RELAXER                 //
@@ -7010,9 +7054,18 @@ pub fn solve(
             if (aConv)
             {
                 if (bConv)
-                    fail(topic ~ ": Type ambiguity, conversions exist both ways: "
-                        ~ a.humanizeType ~ " <-> "
-                        ~ b.humanizeType);
+                {
+                    mut error = topic ~ ": Type ambiguity, conversions exist both ways:\n";
+
+                    fn explain(shadow a: Type, shadow b: Type, chain: Target[])
+                        error ~= "\n\t" ~ explainTypeDiff(a, b, "->")
+                            ~ ":\n\n\t    via " ~ explainConversion(chain);
+
+                    explain(a, b, aConv);
+                    explain(b, a, bConv);
+
+                    fail(error);
+                }
 
                 applyConversion(a, aConv);
                 return b.type;
@@ -7072,6 +7125,7 @@ pub fn solve(
 
         let alt     = solveBlock(node.items[2], :type);
 
+        _here       = node.token;
         return createIf(cond, cons, alt, :type);
     }
 
@@ -7336,19 +7390,9 @@ pub fn solve(
 
     //
 
-    fn addr(using token: TokenIdx)
+    fn addr_and_snippet(using token: TokenIdx, fmt?: CodeFmt)
     {
-        let using t = token._token;
-
-        if (modid != module.modid)
-            return _fname ~ "@" ~ line ~ ":" ~ col;
-
-        return line ~ ":" ~ col;
-    }
-
-    fn addr_and_snippet(using token: TokenIdx)
-    {
-        return token.addr ~ ":\n\n" ~ formatCodeSnippet(token);
+        return formatCodeSnippet([ token ], from: module.modid, :fmt);
     }
 
 
