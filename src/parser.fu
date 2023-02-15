@@ -1136,8 +1136,7 @@ pub fn parse(
         mut outFlags: Flags;
 
         mut implicit: Node[];
-        mut defaults = false;
-        mut firstDefault = -1;
+        mut firstDefaulted = -1;
 
         //////////////
         _dollarAuto++;
@@ -1173,16 +1172,16 @@ pub fn parse(
                 if (arg.flags & F_IMPLICIT)
                     fail("TODO default implicit arguments");
 
-                defaults        = true;
-                firstDefault    = outArgs.len;
+                if (firstDefaulted < 0)
+                    firstDefaulted = outArgs.len;
             }
-            else if (defaults)
+            else if (firstDefaulted >= 0)
             {
                 if !(arg.flags & F_MUSTNAME)
-                    fail("TODO non-trailing default arguments");
+                    fail("Non-optional arguments without a bang! cannot follow optional arguments.");
 
-                insertAt    = firstDefault;
-                firstDefault++;
+                insertAt = firstDefaulted;
+                firstDefaulted++;
             }
             else if (!arg.items[LET_TYPE])
             {
@@ -1194,7 +1193,7 @@ pub fn parse(
 
             if (arg.flags & F_IMPLICIT)
                 implicit.push(arg);
-            else if (insertAt > 0)
+            else if (insertAt >= 0)
                 outArgs.insert(insertAt, arg);
             else
                 outArgs.push(arg);

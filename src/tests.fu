@@ -8664,6 +8664,27 @@ pub extern fn runTests()
         fn main() isInvalidatedBy(write: Lifetime([ 3, 5 ])) - 6;
     `);
 
+    ZERO(`
+        struct Node { a: i32; b: i32; c: i32; d: i32 };
+
+        fn make(a: i32, b?: i32, c?: i32)
+            Node(a, :b, :c, d: 10);
+
+        fn make(a: i32, b?: i32, c?: i32, d!: i32)
+            Node(a, :b, :c, :d);
+
+        fn res(using n: Node)
+            return a + 10 * b + 100 * c + 1000 * d;
+
+        fn main()
+            make(4, 5).res      == 10054 &&
+            make(3, b: 4).res   == 10043 &&
+            make(2, c: 3).res   == 10302 &&
+            make(1, d: 2).res   == 2001 ? 0 : 1;
+    `);
+
+    // /Explicit arguments.
+
 
     // Optional arguments.
 

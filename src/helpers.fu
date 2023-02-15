@@ -340,6 +340,10 @@ fn str(arr: [$T]) case ($T.is::arithmetic)
     return result;
 }
 
+fn str(arr: [string]) {
+    return arr ? "[ \"" ~ arr.join("\", \"") ~ "\" ]" : "[]";
+}
+
 
 //
 
