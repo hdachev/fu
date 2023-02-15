@@ -413,3 +413,15 @@ pub fn union(l: $T[], r: $T[])
 
     return useResult ? result : l;
 }
+
+
+//
+
+pub fn misses_some(l: [$T], from!: [$T])
+{
+    merge(l, from,
+        left: |_| {}, right: |_| { return true; },
+        both: |_| {});
+
+    return false;
+}
