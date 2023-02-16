@@ -22,10 +22,9 @@ let M_OPT_CURLIES       = 1 << 8;
 let M_LOOP_BODY         = 1 << 9;
 let M_MUTVAR            = 1 << 10;
 let M_MOVABLE           = 1 << 11;
-let M_MOVE              = 1 << 12;
-let M_ARG_TO_NATIVE     = 1 << 13;
-let M_ENUM_DECL         = 1 << 14;
-let M_CHECK_NEVER_LTR   = 1 << 15;
+let M_ARG_TO_NATIVE     = 1 << 12;
+let M_ENUM_DECL         = 1 << 13;
+let M_CHECK_NEVER_LTR   = 1 << 14;
 
 let MAIN_needed         = 1 << 0;
 let MAIN_argv           = 1 << 1;
@@ -2030,12 +2029,7 @@ pub fn cpp_codegen(
                 if (args.len == 2)
                 {
                     if (id == "[]")
-                    {
-                        if (mode & M_MOVE)
-                            return ooeWrap(ARG(0) ~ ".try_steal(" ~ ARG(1) ~ ")");
-
                         return ooeWrap(ARG(0) ~ "[" ~ ARG(1) ~ "]");
-                    }
 
                     // Skip some of the ridiculous parens.
                     return emitBinaryOp(id.valid_operator);
@@ -2765,14 +2759,8 @@ pub fn cpp_codegen(
                         return false;
                     }
 
-                    //
-                    let o = GET(expr.target);
-
                     // Special handling for stealing form arrays.
-                    if (o.kind == "__native" && o.name == "[]")
-                        return cgNode(expr, debug: "cgMoveOperator[]", mode: M_MOVE);
-
-                    //
+                    let o = GET(expr.target);
                     if (!o.type.is_mutref && o.type.lifetime.Lifetime_hasArgPositions)
                     {
                         noteDefect(ConstCast);

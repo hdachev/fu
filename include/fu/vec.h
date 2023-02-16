@@ -213,23 +213,6 @@ struct fu_VEC
 
     /////////////////////////////////////////////
 
-    fu_INL fu::i unique_size() const noexcept
-    {
-        if constexpr (!SHAREABLE)
-            return size();
-
-        if constexpr (HAS_SMALL) {
-            fu::i small_size  = UNSAFE__ReadSmallSize();
-            fu::i capa        = UNSAFE__Unpack(big.PACK);
-            return small()  ? small_size
-                            : big.size | (capa & SIGN_BIT);
-        }
-
-        return big.size;
-    }
-
-    /////////////////////////////////////////////
-
     fu_INL const T* data() const noexcept {
         if constexpr (HAS_SMALL) {
             return small() ? (T*)this : big.data;
@@ -1167,47 +1150,6 @@ struct fu_VEC
              : *((T*)1);
 
         #endif
-    }
-
-    fu_INL T& unique(fu::i idx) noexcept
-    {
-        T* ok = (T*) data() + idx;
-
-        #ifndef NDEBUG
-        assert((fu::u) idx < (fu::u) unique_size());
-        return *ok;
-        #endif
-
-        #if fu_RETAIL
-        return *ok;             // Assert unique + bounds check.
-                                // This is where this differs from the two above.
-        #else                   //   ___________
-        return (fu::u) idx < (fu::u) unique_size()
-             ? *ok
-             : *((T*)1);
-
-        #endif
-    }
-
-    fu_INL T try_steal(fu::i idx) noexcept
-    {
-        if constexpr (SHAREABLE)
-        {
-            if constexpr (!TRIVIAL)
-            {
-                if ((fu::u) idx < (fu::u) unique_size())
-                {
-                    T* ok = (T*) data() + idx;
-                    return static_cast<T&&>(*ok);
-                }
-            }
-
-            return T((*this)[idx]);
-        }
-        else
-        {
-            return static_cast<T&&>(mutref(idx));
-        }
     }
 
 
