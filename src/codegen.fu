@@ -2719,14 +2719,19 @@ pub fn cpp_codegen(
 
         if (node.kind == "move")
         {
-            // Sanity check.
-            let lt = expr.type.lifetime.uni0n;
-            for (mut i = 0; i < lt.len; i++)
+            fn sanityCheck(lt: [Region])
             {
-                let r = lt[i];
-                r.Region_asLocal || r.Region_isTemp || BUG(
-                    "cgMoveOrClone: Considering a move from non-local lifetime.");
+                lt || BUG("cgMoveOrClone: Considering a move from an empty lifetime.");
+
+                for (mut i = 0; i < lt.len; i++)
+                {
+                    let r = lt[i];
+                    r.Region_asLocal || r.Region_isTemp || BUG(
+                        "cgMoveOrClone: Considering a move from non-local lifetime.");
+                }
             }
+
+            sanityCheck(expr.type.lifetime.uni0n);
 
             // NRVO now here, solver doesn't care.
             if (mode & M_RETURN)
@@ -2746,42 +2751,91 @@ pub fn cpp_codegen(
 
             if (!node.type.is_trivial)
             {
-                // Moving from a constref return,
-                //  it's an expressiveness problem in cpp,
-                //   easiest way to work around it is with a const_cast:
-                //
-                //   struct X;
-                //
-                //   const X& func(const X& val) {
-                //       return val;
-                //   }
-                //
-                //   X&& func(X&& val) {            // Alternatively:
-                //       return (X&&)func(val);     //  return static_cast<X&&>(const_cast<X&>(func(val)))
-                //   }
-                //
-                if (expr.kind == "call")
+                fn mayNeedConstCast(shadow expr: SolvedNode)
                 {
-                    fn Lifetime_hasArgPositions(lifetime: Lifetime)
+                    if (expr.is_mutref || !expr.is_ref)
+                        return false;
+
+                    fn mayNeedConstCast(items: [SolvedNode])
                     {
-                        for (mut i = 0; i < lifetime.uni0n.len; i++)
-                            if (lifetime.uni0n[i].Region_isArgPosition)
+                        for (mut i = 0; i < items.len; i++)
+                            if (items[i].mayNeedConstCast)
                                 return true;
 
                         return false;
                     }
 
-                    //
-                    let o = GET(expr.target);
-                    if (!o.type.is_mutref && o.type.lifetime.Lifetime_hasArgPositions)
-                    {
-                        noteDefect(ConstCast);
+                    if (expr.kind == "and" || expr.kind == "or")
+                        return expr.items.mayNeedConstCast;
 
-                        return "static_cast<"
-                             ~ typeAnnotBase(o.type) ~ "&&>(const_cast<"
-                             ~ typeAnnotBase(o.type)  ~ "&>("
-                             ~ cgNode(expr, debug: "cgMoveFromConstRefHelper") ~ "))";
+                    if (expr.kind == "if")
+                        return expr.items[1, 3].mayNeedConstCast;
+
+                    if (expr.kind == "block")
+                        return expr.items.len > 0
+                            && expr.items[expr.items.len - 1].mayNeedConstCast;
+
+                    if (expr.kind == "call")
+                    {
+                        let k = expr.target.kind;
+                        if (k == "field")
+                            return expr.items.mayNeedConstCast;
+
+                        if (k == "var")
+                        {
+                            // Currently -
+                            return false;
+
+                            // let place = expr.target.solved.type;
+                            // return place.is_ref && !place.is_mutref;
+                        }
+
+                        let t = expr.target.type;
+                        let mayNeedConstCast = t.is_ref && !t.is_mutref;
+                        if (mayNeedConstCast)
+                        {
+                            // Sanity check expr types.
+                            sanityCheck(expr.type.lifetime);
+
+                            // Sanity check signature, can't return e.g. statics or whatever.
+                            let lt = t.lifetime.uni0n;
+                            for (mut i = 0; i < lt.len; i++)
+                            {
+                                let r = lt[i];
+                                if !(r.Region_isArgPosition || r.Region_isTemp)
+                                    BUG("About to return mayNeedConstCast, but fn returns non-arg refs.");
+                            }
+                        }
+
+                        return mayNeedConstCast;
                     }
+
+                    // Dunno what this is.
+                    return true;
+                }
+
+                if (mayNeedConstCast(expr))
+                {
+                    // Moving from a constref return,
+                    //  it's an expressiveness problem in cpp,
+                    //   easiest way to work around it is with a const_cast:
+                    //
+                    //   struct X;
+                    //
+                    //   const X& func(const X& val) {
+                    //       return val;
+                    //   }
+                    //
+                    //   X&& func(X&& val) {            // Alternatively:
+                    //       return (X&&)func(val);     //  return static_cast<X&&>(const_cast<X&>(func(val)))
+                    //   }
+                    //
+                    noteDefect(ConstCast);
+
+                    return "static_cast<"
+                         ~ typeAnnotBase(node.type) ~ "&&>(const_cast<"
+                         ~ typeAnnotBase(node.type)  ~ "&>("
+                         ~ cgNode(expr, debug: "cgMoveFromConstRefHelper") ~ "))";
                 }
             }
         }
