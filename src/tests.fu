@@ -1165,12 +1165,10 @@ pub extern fn runTests()
         {
             fn solveBlock(node: Node) {
                 let items = solveNodes(node.items);
-                //*
-                return solveBlock(items);
+                return solveBlock(items);                       ;; ConstCast
             }
 
             fn solveBlock(items: i32[]) {
-                //*/
                 if (!Lifetime_allowsMutrefReturn(items))
                     throw("Nope!");
 
@@ -7786,7 +7784,7 @@ pub extern fn runTests()
             //  1. Move 'woot' into Lifetime
             //      instead of naively copying it.
             //                             ....
-            return Lifetime_test(Lifetime(:woot));
+            return Lifetime_test(Lifetime(:woot));              ;; ConstCast
             //     ....
             //  2. Move the result out even though
             //      Lifetime_test takes and returns refs.
@@ -9133,10 +9131,10 @@ pub extern fn runTests()
         fn createShader(src: string) = src;
 
         // inits a public let
-        pub let GEOMETRY_PASS_TEST = createShader("source code");
+        pub let GEOMETRY_PASS_TEST = createShader("src");       ;; ConstCast
     `,
     `
-        pub fn main() _0::GEOMETRY_PASS_TEST.len - 11;
+        pub fn main() _0::GEOMETRY_PASS_TEST.len - 3;
     `]);
 
     ZERO([`
@@ -10525,7 +10523,7 @@ pub extern fn runTests()
             mut once = 0;
             fn once(str: string) {
                 once++;
-                return str;
+                return str;                                     ;; ConstCast
             }
 
             lazywarn(once("Hello"), ", ", "World", "!", prefix: "X: ");

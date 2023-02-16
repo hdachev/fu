@@ -1588,11 +1588,6 @@ pub fn cpp_codegen(
                 if (block.ptrflip)
                     value   = "&(" ~ value ~ ")";
 
-                // TODO FIX: this is a lame way to deal with -Werror=unused-value,
-                //  we need some kind of dead code elim so we don't need crap like this
-                if !(assign || value.hasNonIdentifierChars)
-                    value   = "/* TODO FIX UNUSED VAL " ~ value ~ " */";
-
                 return "{ " ~ assign ~ value
                      ~ "; " ~ cgGoto(block) ~ "; }";
             }
@@ -1705,26 +1700,6 @@ pub fn cpp_codegen(
     fn cgDefinit(node: SolvedNode, mode: i32, callarg: Type): string
     {
         return cgArrayLiteral(node, mode, callarg);
-    }
-
-    fn hasNonIdentifierChars(id: string)
-    {
-        for (mut i = 0; i < id.len; i++)
-        {
-            let c = id[i];
-            if (c == '_' || c >= 'a' && c <= 'z'
-                         || c >= 'A' && c <= 'Z'
-                         || c >= '0' && c <= '9')
-            {
-                //
-            }
-            else
-            {
-                return true;
-            }
-        }
-
-        return false;
     }
 
     fn binSkipParens(id: string, mode: i32)
@@ -2799,10 +2774,14 @@ pub fn cpp_codegen(
 
                     //
                     if (!o.type.is_mutref && o.type.lifetime.Lifetime_hasArgPositions)
-                        return "/* MOVE_FROM_CONST_REF */static_cast<"
+                    {
+                        noteDefect(ConstCast);
+
+                        return "static_cast<"
                              ~ typeAnnotBase(o.type) ~ "&&>(const_cast<"
                              ~ typeAnnotBase(o.type)  ~ "&>("
                              ~ cgNode(expr, debug: "cgMoveFromConstRefHelper") ~ "))";
+                    }
                 }
             }
         }

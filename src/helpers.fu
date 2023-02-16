@@ -60,6 +60,9 @@ fn try_steal(ref a: [$T], i: i32)
     return [];
 }
 
+
+//
+
 fn hasIdentifierChars(id: string)
 {
     for (mut i = 0; i < id.len; i++)
@@ -68,6 +71,26 @@ fn hasIdentifierChars(id: string)
         if (c == '_' || c >= 'a' && c <= 'z'
                      || c >= 'A' && c <= 'Z'
                      || c >= '0' && c <= '9')
+        {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+fn hasNonIdentifierChars(id: string)
+{
+    for (mut i = 0; i < id.len; i++)
+    {
+        let c = id[i];
+        if (c == '_' || c >= 'a' && c <= 'z'
+                     || c >= 'A' && c <= 'Z'
+                     || c >= '0' && c <= '9')
+        {
+            //
+        }
+        else
         {
             return true;
         }
