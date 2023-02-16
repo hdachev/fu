@@ -212,4 +212,5 @@ flags CGDefects
     PointlessMustSeq;
     LocalConstBool;
     ConstCast;
+    PointlessLocal;
 };

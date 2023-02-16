@@ -684,7 +684,7 @@ pub extern fn runTests()
 
     ZERO(`
         inline fn inl_lies(x: u32)<fail actual return match annot>: i32<pass/></fail> = x;
-        fn main() 0.inl_lies ? 1 : 0;
+        fn main() 0.inl_lies ? 1 : 0;                           ;; PointlessLocal
     `);
 
     ZERO(`
@@ -734,7 +734,7 @@ pub extern fn runTests()
     ZERO(`
         pub inline fn inl_id_leak(dont_leak_me) dont_leak_me;
         let dont_leak_me = 1;
-        fn main() inl_id_leak(dont_leak_me * 2) - 2;
+        fn main() inl_id_leak(dont_leak_me * 2) - 2;            ;; PointlessLocal
     `);
 
     ZERO(`
@@ -3917,6 +3917,7 @@ pub extern fn runTests()
 
         <alt>
         inline                                                  ;; GNUStmtExpr
+                                                                ;; PointlessLocal
         </alt>
         fn will_return_value(ref x: HasVec) {
             let bck_will_cpy = x;
@@ -5856,7 +5857,7 @@ pub extern fn runTests()
                 return a;
             }
             else {
-                shadow ref a = a[2, 4];
+                shadow ref a = a[2, 4];                         ;; PointlessLocal
                 return a;
             }
         }
@@ -10454,7 +10455,7 @@ pub extern fn runTests()
     ZERO(`
         fn Stringy(i: i32) "i:" ~ i;
 
-        inline fn Printy(x: string): string = x;
+        inline fn Printy(x: string): string = x;                ;; PointlessLocal
         inline fn Printy(x.Stringy): string = x;
 
         fn Println(parts.Printy[]<alt>: [string]</alt>) {
@@ -10473,7 +10474,7 @@ pub extern fn runTests()
     `);
 
     ZERO(` // inline fn empty retval on autocall
-        inline fn inl_print(a: byte)                a;
+        inline fn inl_print(a: byte)                a;          ;; PointlessLocal
         fn inl_println(a.inl_print[]: string)       a.len;
         fn main()                                   inl_println('a', 'b') == 2 ? 0 : 1;
     `);
@@ -10508,14 +10509,14 @@ pub extern fn runTests()
         fn main() {
             let topic = "A";
             implicit mut out: string;
-            printlike(:topic, "Hello, ", "World", "!");
+            printlike(:topic, "Hello, ", "World", "!");         ;; PointlessLocal
             return out == "A: Hello, World!\\n" ? 0 : 1
         }
     `);
 
     ZERO(`
         fn main() {
-            mut out: string;
+            mut out: string;                                    ;; PointlessLocal
             fn lazywarn(prefix: string, inline stuff.print[]: [string]) {
                 out ||= prefix ~ stuff.join();
             }

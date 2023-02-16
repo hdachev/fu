@@ -752,6 +752,29 @@ pub fn cpp_codegen(
             _current_fn.can_cont = helpers;
         ///////////////////////////////////////////
 
+        if !(mode & M_STMT)
+        {
+            // Report instances of immediately returned local variables:
+            //
+            //      { let x = ...; x }
+            //
+            if (items.len >= 2)
+            {
+                let last = items[items.len - 1];
+                let expr = last.kind == "return" && last.items
+                    ? last.items[0]
+                    : last;
+
+                if (expr.kind == "call")
+                {
+                    let target = expr.target;
+                    let prev = items[items.len - 2];
+                    if (prev.kind == "letdef" && prev.target == target)
+                        noteDefect(PointlessLocal);
+                }
+            }
+        }
+
         // We'll try to avoid block expressions as much as we can.
         //  Instead of these loops it'd be nice if we knew all this stuff
         //   as node flags or something, or a jumpset or something:
