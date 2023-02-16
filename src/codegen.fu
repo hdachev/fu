@@ -2710,12 +2710,24 @@ pub fn cpp_codegen(
     {
         let expr = node.items.only;
 
+        // Sanity check.
+        expr.is_ref || BUG("cgMoveOrClone: !expr.is_ref");
+
         // Less verbose trivial value returns.
         if (mode & M_RETURN && node.type.is_trivial)
             return cgNode(expr, debug: "retTrivCpy");
 
         if (node.kind == "move")
         {
+            // Sanity check.
+            let lt = expr.type.lifetime.uni0n;
+            for (mut i = 0; i < lt.len; i++)
+            {
+                let r = lt[i];
+                r.Region_asLocal || r.Region_isTemp || BUG(
+                    "cgMoveOrClone: Considering a move from non-local lifetime.");
+            }
+
             // NRVO now here, solver doesn't care.
             if (mode & M_RETURN)
             {
@@ -2759,7 +2771,7 @@ pub fn cpp_codegen(
                         return false;
                     }
 
-                    // Special handling for stealing form arrays.
+                    //
                     let o = GET(expr.target);
                     if (!o.type.is_mutref && o.type.lifetime.Lifetime_hasArgPositions)
                     {
