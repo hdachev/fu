@@ -2832,10 +2832,9 @@ pub fn cpp_codegen(
                     //
                     noteDefect(ConstCast);
 
-                    return "static_cast<"
-                         ~ typeAnnotBase(node.type) ~ "&&>(const_cast<"
-                         ~ typeAnnotBase(node.type)  ~ "&>("
-                         ~ cgNode(expr, debug: "cgMoveFromConstRefHelper") ~ "))";
+                    return "("  ~ typeAnnotBase(node.type) ~ "&&) ("
+                                ~ cgNode(expr, debug: "cgMoveByConstCast")
+                                ~ ")";
                 }
             }
         }
