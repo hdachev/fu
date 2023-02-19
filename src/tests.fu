@@ -9832,6 +9832,38 @@ pub extern fn runTests()
     `);
 
     ZERO(`
+        fn test(ref x: i32) {
+            x++;
+            <alt>
+            defer x++;      <alt/>
+            defer:ok x++;   </alt>
+        }
+
+        fn main() {
+            mut x = 0;
+            test(x);
+            return x == 2 ? 0 : 1;
+        }
+    `);
+
+    ZERO(`
+        fn test(ref x: i32) {
+            <fail missing final return 8:13+5>
+            if (x & 1)              // ------ currently highlights the defer
+                return x;           //         probably should highlight the semicollon
+            <pass/></fail>
+            x++;
+            defer:err x++;
+        }
+
+        fn main() {
+            mut x = 0;
+            test(x);
+            return x == 1 ? 0 : 1;
+        }
+    `);
+
+    ZERO(`
         fn sum_amulb(a: i32[], b: i32[], ref sum: i32)
             for (mut i = 0; i < a.len; i++)
                 sum += a[i] * b[i];

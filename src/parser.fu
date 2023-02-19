@@ -206,12 +206,13 @@ pub fn parse(
         flags?:     Flags,
         value?:     string,
         asserts?:   DeclAsserts,
-        syntax?:    ParseSyntax)
+        syntax?:    ParseSyntax,
+        token?:     TokenIdx)
     {
         return Node(
             :kind, :value, :items,
             :flags, :asserts, :syntax,
-            token: TokenIdx(:modid, _loc));
+            token: token || TokenIdx(:modid, _loc));
     };
 
     fn miss() Node();
@@ -302,7 +303,7 @@ pub fn parse(
     fn createBlock(mut items: Node[], label?: string): Node
     {
         if (items.if_last.syntax & PS_DISCARD)
-            items ~= make("void");
+            items ~= make("void", :items.last.token);
 
         return make("block", :items, value: label);
     }
@@ -508,7 +509,7 @@ pub fn parse(
             //
             let expr    = struct    ? parseStructItem()
                         : enum      ? parseEnumItem()
-                                    : parseStatementOrDefer();
+                                    : parseDeferOrStatement();
 
             // Maybe we should get rid of this.
             expr.kind != "call"
@@ -710,9 +711,13 @@ pub fn parse(
         return parseExpressionStatement();
     }
 
-    fn parseStatementOrDefer()
+    fn parseDeferOrStatement()
     {
-        let peek = tokens[_idx];
+        ///////////////////////////////////////////////
+        let loc0 = _loc;
+        defer _loc = loc0;
+        let peek = tokens[_loc = _idx] || fail();
+        ///////////////////////////////////////////////
 
         if (peek.kind == "id")
         {
@@ -1919,7 +1924,7 @@ pub fn parse(
                 && (tryConsume("id", "err") || consume("id", "ok")).value;
 
         _fnDepth > 0 || { _idx--; fail() };
-        return make("defer", :value, [ parseStatement() ]);
+        return make("defer", :value, [ parseStatement() ], syntax: PS_DISCARD);
     }
 
     fn parseTryCatch(): Node

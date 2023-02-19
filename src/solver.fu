@@ -3023,29 +3023,30 @@ pub fn solve(
                 // Tail item.
                 while (items)
                 {
-                    ref expr = items.last;
+                    ref tail = items.last;
 
                     // Unwrap trailing defer.
-                    if (expr.kind == "defer")
-                        expr = expr.items.only;
+                    if (tail.kind == "defer")
+                    {
+                        // Discard trailing defer:err.
+                        tail = tail.value == "err"
+                            ? createEmpty()
+                            : tail.items.only;
+                    }
 
                     // TODO FIX: preserving explicit returns for fns,
                     //  ideally we'll just inject one at the end of doTrySpec.
                     shadow let kills = !(h.mask & HM_Function && !h.ret_actual.is_void) && (kills || h);
 
-                    propagateType(expr, :relax_mask, slot,
+                    propagateType(tail, :relax_mask, slot,
 
                         // CAN AFFECT tail.type / h.ret_actual (see `if (kills)` below):
                         :kills);
 
-                    if (!canDiscard || !expr.isDiscardable)
+                    if (!canDiscard || !tail.isDiscardable)
                         break;
 
                     items.pop();
-
-                    // This can orphan defers.
-                    if (items.if_last.kind == "defer")
-                        items.last = items.last.items.only;
                 }
 
                 // Regular items - in reverse order of eval.
@@ -3227,10 +3228,11 @@ pub fn solve(
         // TODO FIX adding the trailing return /////////////////////////
         if (fnbody_of && nodes)
         {
-            if (nodes.last.kind == "unwrap")
+            let k = nodes.last.kind;
+            if (k == "unwrap")
                 _current_fn.TODO_FIX_isInline = true;
             else
-                nodes.last = Node(kind: "return", value: [], :node.token,
+                nodes.last = Node(kind: "return", value: [], :nodes.last.token,
                     items: nodes.last.kind != "void" && [ nodes.last ],
                     flags: F_IMPLICIT);
         }
