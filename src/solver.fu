@@ -9824,20 +9824,6 @@ pub fn solve(
         }
         else if (k == "block" || k == "and" || k == "or" || k == "if")
         {
-            if (k == "and" || k == "or")
-                node.items.len > 1 || BUG(debug ~ ".len: " ~ node.items.len);
-
-            if (k == "if")
-            {
-                node.items.len == 3 || BUG(debug ~ ".len: " ~ node.items.len);
-
-                if (node.type.is_never)
-                {
-                    node.items[1].is_never || BUG(debug ~ " never.cons not never: " ~ node.items[1]);
-                    node.items[2].is_never || BUG(debug  ~ " never.alt not never: " ~ node.items[2]);
-                }
-            }
-
             fn checkLt(actual: Type,
                        actualCopy: string,
                        expect: SolvedNode = node,
@@ -9856,21 +9842,31 @@ pub fn solve(
 
             if (k == "block")
             {
+                // node.items || BUG(debug ~ " is empty");
+
                 checkLt(node.items.if_last, "block.tail");
 
                 if (node.helpers.ret_actual /*TODO FIX: */&& !(node.helpers.mask & HM_Function))
                     checkLt(node.helpers.ret_actual, "helpers.ret_actual");
             }
-
-            if (k == "and" || k == "or")
+            else if (k == "and" || k == "or")
             {
+                node.items.len >= 2 || BUG(debug ~ ".len: " ~ node.items.len);
+
                 let start = k == "and" && !node.is_mutref && node.items.len - 1;
                 for (mut i = start; i < node.items.len; i++)
                     checkLt(node.items[i], k ~ ".items[" ~ i ~ "]");
             }
-
-            if (k == "if")
+            else if (k == "if")
             {
+                node.items.len == 3 || BUG(debug ~ ".len: " ~ node.items.len);
+
+                if (node.type.is_never)
+                {
+                    node.items[1].is_never || BUG(debug ~ " never.cons not never: " ~ node.items[1]);
+                    node.items[2].is_never || BUG(debug  ~ " never.alt not never: " ~ node.items[2]);
+                }
+
                 checkLt(node.items[1], "if.then");
                 checkLt(node.items[2], "if.else");
             }
