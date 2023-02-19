@@ -1011,15 +1011,7 @@ pub fn solve(
         mut actual = solveNode(left, expect);
 
         //
-        if (isAssignable(host: expect, actual.type))
-            return actual;
-
-        let conv = tryConvert(actual, :expect, local_scope: true);
-        if !(conv)
-            fail("Cannot convert: " ~ expect.humanizeType
-                           ~ " <- " ~ actual.humanizeType);
-
-        applyConversion(actual, conv);
+        convertIfNeeded(:actual, :expect, "Cannot convert: ");
         return actual;
     }
 
@@ -5838,8 +5830,9 @@ pub fn solve(
     //////////////////////////////////////////////////////////
 
     fn checkAssignable(
-        host: Type, guest: Type, err: string,
-        id?: string, sep?: string, asArgument!?: bool)
+        host: Type, guest: Type,
+        err: string, id?: string, sep?: string,
+        asArgument!?: bool)
     {
         isAssignable(:asArgument,
             :host   || BUG("Bad host type."),
@@ -5847,6 +5840,23 @@ pub fn solve(
                     || fail(err ~ (id && " " ~ id.qID) ~ ": "
                                 ~ host .humanizeType() ~ (sep || " <- ")
                                 ~ guest.humanizeType());
+    }
+
+    fn convertIfNeeded(
+        ref actual: SolvedNode, expect: Type,
+        err: string, id?: string, sep?: string,
+        asArgument!?: bool)
+    {
+        if (isAssignable(host: expect, actual.type, :asArgument))
+            return;
+
+        let conv = tryConvert(actual, :expect, local_scope: true);
+        if !(conv)
+            fail(err ~ (id && " " ~ id.qID) ~ ": "
+                                ~ expect.humanizeType() ~ (sep || " <- ")
+                                ~ actual.humanizeType());
+
+        applyConversion(actual, conv);
     }
 
 
@@ -6084,7 +6094,7 @@ pub fn solve(
 
     fn solveLetLike_dontTouchScope(
         id: string, mut flags: Flags,
-        init!: SolvedNode,
+        mut init!: SolvedNode,
         annot!?: Type): SolvedNode
     {
         annot || init.type || fail(
@@ -6099,7 +6109,7 @@ pub fn solve(
         }
 
         if (annot && init.type && !init_isNever)
-            checkAssignable(host: annot, init.type, asArgument: !!(flags & F_ARG),
+            convertIfNeeded(init, expect: annot, asArgument: !!(flags & F_ARG),
                 "Type annotation does not match init expression", :id, " <- ");
 
         // Lose refs to temporaries.
