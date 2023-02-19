@@ -2945,11 +2945,6 @@ pub fn solve(
                     h.ret_actual.try_relax(:slot, :relax_mask);
             }
 
-            // Discard type annotations at this point,
-            //  rewiring jumps and such can change things up.
-            if (h.ret_expect)
-                h.ret_expect = [];
-
             if (h)
             {
                 h.mask &= ~HM_LabelUsed;
@@ -2969,12 +2964,14 @@ pub fn solve(
                 //  which is FORWARD order in the AST, hence the ++ here.
                 for (mut i = 0; i < items.len - 1; i++)
                 {
-                    ref item = items[i];
-                    if (item.kind == "defer")
+                    shadow ref node = items[i];
+                    shadow let k = node.kind;
+
+                    if (k == "defer")
                     {
                         TODO_FIX_defers++;
 
-                        ref expr = item.items.only;
+                        ref expr = node.items.only;
                         propagateType(expr, :relax_mask, t_void);
 
                         //
@@ -2982,6 +2979,41 @@ pub fn solve(
                         {
                             makeNote(N_UnusedDefer);
                             items.splice(i--, 1);
+                        }
+                    }
+                    else if (k == "and" || k == "or")
+                    {
+                        // Convert:
+                        //
+                        //  { a && b.never; c... }
+                        //  { a || c.never; b... }
+                        //
+                        // ... into:
+                        //
+                        //  { if (a) b; else c }
+                        //
+                        // This helps bck better figure out some patterns down the line.
+                        //
+                        if (node.items.last.is_never)
+                        {
+                            let cond = node.items.slice(0, node.items.len - 1);
+                            let cons = node.items[node.items.len - 1];
+                            let alt  = items.slice(i + 1, items.len);
+
+                            items.splice(i + 1, alt.len);
+
+                            shadow let cond = k == "and"
+                                ? createAnd(cond, t_bool)
+                                : createOr (cond, t_bool);
+
+                            shadow let alt = createBlock(alt, :alt.last.type);
+
+                            //
+                            let replacement = createIf(:cond,
+                                k == "and" ? cons : alt,
+                                k == "and" ? alt : cons);
+
+                            items[i] = replacement;
                         }
                     }
                 }
@@ -3383,49 +3415,6 @@ pub fn solve(
 
                     items.splice(i, 1,
                         item.items.slice(0, item.items.len - 1));
-                }
-            }
-        }
-
-        // Convert:
-        //
-        //  { a && b.never; c... }
-        //  { a || c.never; b... }
-        //
-        // ... into:
-        //
-        //  { if (a) b; else c }
-        //
-        // This helps bck better figure out some patterns down the line.
-        if (items)
-        {
-            for (mut i = items.len - 1; i --> 0; )
-            {
-                let k = items[i].kind;
-                if (k == "and" || k == "or")
-                {
-                    ref n = items[i];
-                    if (n.items.last.is_never)
-                    {
-                        let cond = n.items.slice(0, n.items.len - 1);
-                        let cons = n.items[n.items.len - 1];
-                        let alt  = items.slice(i + 1, items.len);
-
-                        items.splice(i + 1, alt.len);
-
-                        shadow let cond = k == "and"
-                            ? createAnd(cond, t_bool)
-                            : createOr (cond, t_bool);
-
-                        shadow let alt = createBlock(alt, :alt.last.type);
-
-                        //
-                        let replacement = createIf(:cond,
-                            k == "and" ? cons : alt,
-                            k == "and" ? alt : cons);
-
-                        items[i] = replacement;
-                    }
                 }
             }
         }
