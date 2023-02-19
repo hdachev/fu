@@ -2413,16 +2413,17 @@ pub fn solve(
 
             if (canDiscard)
             {
-                if (node.items[1].isDiscardable)
+                if (canDiscard_cond)
                 {
                     makeNote(N_UnusedIfElse);
-                    node = node.items[2].isDiscardable
-                        ? node.items[0]
-                        : createOr([ node.items[0], node.items[2] ], t_void);
+                    node = node.items[0];
+                }
+                else if (node.items[1].isDiscardable)
+                {
+                    node = createOr([ node.items[0], node.items[2] ], t_void);
                 }
                 else if (node.items[2].isDiscardable)
                 {
-                    makeNote(N_UnusedIfElse);
                     node = createAnd(node.items.slice(0, 2), t_void);
                 }
                 else
@@ -3396,20 +3397,9 @@ pub fn solve(
         //  { if (a) b; else c }
         //
         // This helps bck better figure out some patterns down the line.
+        if (items)
         {
-            mut i = items.len;
-            mut empties = 0;
-
-            while (i --> 0)
-            {
-                let k = items[i].kind;
-                if (k != "empty" && k != "bool")
-                    break;
-
-                empties++;
-            }
-
-            while (i --> 0)
+            for (mut i = items.len - 1; i --> 0; )
             {
                 let k = items[i].kind;
                 if (k == "and" || k == "or")
@@ -3419,7 +3409,7 @@ pub fn solve(
                     {
                         let cond = n.items.slice(0, n.items.len - 1);
                         let cons = n.items[n.items.len - 1];
-                        let alt  = items.slice(i + 1, items.len - empties);
+                        let alt  = items.slice(i + 1, items.len);
 
                         items.splice(i + 1, alt.len);
 
@@ -3430,7 +3420,7 @@ pub fn solve(
                         shadow let alt = createBlock(alt, :alt.last.type);
 
                         //
-                        let replacement = createIf(:cond, type: empties && t_void,
+                        let replacement = createIf(:cond,
                             k == "and" ? cons : alt,
                             k == "and" ? alt : cons);
 
