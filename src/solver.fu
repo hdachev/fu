@@ -487,8 +487,9 @@ pub fn solve(
         {
             shadow let module = ctx.modules[from.modid];
             let locals = module.out.solve.scope.extended[-target.modid].locals;
-            locals.len >= target.index || BUG(
-                "Out of range local target from: " ~ GET(target.parent)
+
+            if (SELF_TEST && locals.len < target.index)
+                BUG("Out of range local target from: " ~ GET(target.parent)
                     ~ "\n\tlocals=" ~ locals.len ~ "\n\tindex=" ~ target.index);
 
             return locals[target.index - 1];
@@ -509,11 +510,8 @@ pub fn solve(
     {
         if (target.isLocal)
         {
-            // TODO REMOVE THIS, currently test suite will crash without this.
             if (SELF_TEST && _scope.extended.len <= -target.modid)
-                BUG("Invalid local target -modid."
-                    ~ "\n\tProbably leaked from another module."
-                    ~ "\n\tBUG: Currently arg defaults & inlining can do this.");
+                BUG("Invalid local target -modid.");
 
             let locals = _scope.extended[-target.modid].locals;
 
