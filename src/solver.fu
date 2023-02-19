@@ -8823,489 +8823,489 @@ pub fn solve(
             fn target   = callsite.target;
             fn args     = callsite.items;
 
-            if (args)
+            if (!args)
             {
-                let host_args = target.args;
+                if (target.kind == "var")
+                    bck_trackRead(callsite);
 
-                // Unless c++ guarantees some order of eval,
-                //  we'll keep track of reads and writes,
-                //   we add sequencing tags last thing here.
-                //
-                let ooe_read0   = _current_fn.events.reads.len;
-                let ooe_write0  = _current_fn.events.writes.len;
-
-                mut ooe_reads:  i32[];
-                mut ooe_writes: i32[];
-
-                let ooe_isRTL   = target.isRTL;
-                let ooe_isUndef = !ooe_isRTL;
-
-                ///////////////////////////////////////////////
-                let ooe_START   = ooe_isRTL ? args.len -1 : 0;
-                {
-                    shadow lax mut ooe_read0  = ooe_read0;
-                    shadow lax mut ooe_write0 = ooe_write0;
-
-                    for (mut ooe_i = 0; ooe_i < args.len; ooe_i++)
-                    {
-                        bck_node(args[ooe_isRTL ? ooe_START - ooe_i : ooe_i]);
-
-                        let r1 = _current_fn.events.reads.len;
-                        let w1 = _current_fn.events.writes.len;
-
-                        if (r1 > ooe_read0)  ooe_reads .grow_oob(ooe_i, fill: ooe_read0) = r1;
-                        if (w1 > ooe_write0) ooe_writes.grow_oob(ooe_i, fill: ooe_write0) = w1;
-
-                        ooe_read0 = r1;
-                        ooe_write0 = w1;
-                    }
-                }
-                ///////////////////////////////////////////////
-
-                // BORROWCK ////////////////
-                mut bck_writes: Region[];
-                mut bck_positions: i32[];
-
-                mut mutref_first    = -1;
-                mut mutref_last     = -1;
-                mut ref_first       = -1;
-                mut ref_last        = -1;
-
-                //
-                mut bck_unwound: Lifetime[];
-
-                mut arg_first       = -1;
-                mut arg_last        = -1;
-                ////////////////////////////
-
-
-                for (mut i0 = 0; i0 < args.len; i0++)
-                {
-                    let host_arg0   = host_args[i0];
-                    let expect      = host_arg0.type;
-
-                    // BORROWCK: multiple mutrefs error,
-                    //  this is the only thing we can't workaround by copying.
-                    if (expect.is_ref)
-                    {
-                        // Lazy init unwound lifetimes.
-                        if !(bck_unwound)
-                        {
-                            if (mutref_first >= 0 || ref_first >= 0 && expect.is_mutref)
-                            {
-                                bck_unwound.resize(args.len);
-                                for (shadow mut i0 = ref_first; i0 <= ref_last; i0++)
-                                {
-                                    let unwound = bck_unwound[i0] = Lifetime_unwind_noStatic(args[i0].type.lifetime);
-
-                                    // Locate first and last callsite arguments
-                                    //  that refer to caller arguments,
-                                    //   so we can later on loop over them faster.
-                                    //
-                                    // TODO: args at risk: ignore closures & implicits,
-                                    //  they are disjoint by definition.
-                                    //   But are they? You can totally have
-                                    //    an implicit ref a = implicit b.
-                                    //
-                                    // TODO: args at risk: ignore non-aliasable types.
-                                    //
-                                    for (mut i = 0; i < unwound.uni0n.len; i++)
-                                    {
-                                        if (unwound.uni0n[i].Region_asLocal)
-                                        {
-                                            arg_first   = arg_first < 0 ? i0 : arg_first;
-                                            arg_last    = i0;
-                                            continue;
-                                        }
-                                    }
-                                }
-                            }
-                        }
-
-                        // Validate aliasing.
-                        if (bck_unwound)
-                        {
-                            let arg0     = args[i0];
-                            let shallow0 = arg0.type.lifetime;
-                            let unwound0 = bck_unwound[i0] = Lifetime_unwind_noStatic(shallow0);
-
-                            // Keep track of caller arguments.
-                            for (mut i = 0; i < unwound0.uni0n.len; i++)
-                            {
-                                if (unwound0.uni0n[i].Region_asLocal)
-                                {
-                                    arg_first   = arg_first < 0 ? i0 : arg_first;
-                                    arg_last    = i0;
-                                    continue;
-                                }
-                            }
-
-                            //
-                            fn validate(i1: i32)
-                            {
-                                let host_arg1 = host_args[i1];
-
-                                // Can the fn handle aliasing here?
-                                if (!host_arg0.soft_risk.has(i1) && !host_arg1.soft_risk.has(i0))
-                                    return;
-
-                                let arg1     = args[i1];
-                                let shallow1 = arg1.type.lifetime;
-
-                                // A note on something that's non-obvious -
-                                //  the AAR stuff here DOESNT CARE ABOUT ALIASING -
-                                //   we've already dealt with aliasing by the time this runs.
-                                //
-                                // Also the invalidates/invalidators AAR stuff doesn't affect parenting,
-                                //  so we don't get intersections in unwound0 and unwound1.
-                                //
-                                if (AAR)
-                                {
-                                    if (i0 >= arg_first && i0 <= arg_last &&
-                                        i1 >= arg_first && i1 <= arg_last)
-                                    {
-                                        for (mut r0 = 0; r0 < shallow0.uni0n.len; r0++)
-                                        {
-                                            let region0 = Region_asLocal(shallow0.uni0n[r0]);
-                                            if (region0)
-                                            {
-                                                for (mut r1 = 0; r1 < shallow1.uni0n.len; r1++)
-                                                {
-                                                    let region1 = Region_asLocal(shallow1.uni0n[r1]);
-                                                    if (region1 && region0 != region1)
-                                                    {
-                                                        //
-                                                        // TODO FAILCASE these can't be correct,
-                                                        //  see the notes on OOE AAR below.
-                                                        //
-                                                        if (host_arg0.is_mutref)
-                                                            RESOLVE_byAAR(write: region0, read: region1,
-                                                                trySoft: !host_arg0.hard_risk.has(i1) && arg1.softRiskSafe);
-
-                                                        if (host_arg1.is_mutref)
-                                                            RESOLVE_byAAR(read: region0, write: region1,
-                                                                trySoft: !host_arg1.hard_risk.has(i0) && arg0.softRiskSafe);
-                                                    }
-                                                }
-                                            }
-                                        }
-                                    }
-
-                                    // AAR ends here, inters are not relevant, etc.
-                                    return;
-                                }
-
-                                // Do we see any aliasing here?
-                                let unwound1 = bck_unwound[i1];
-
-                                let inter = Lifetime_inter(unwound0, unwound1);
-                                if !(inter)
-                                    return;
-
-                                // Soft risk check -
-                                //  If neither is listed as a hard risk,
-                                //   and neither invalidates the other, then we should be good.
-                                if (!host_arg0.hard_risk.has(i1) &&
-                                    !host_arg1.hard_risk.has(i0))
-                                {
-                                    if ((!host_arg0.soft_risk.has(i1) || arg1.softRiskSafe && !shallow1.isInvalidatedBy(write: shallow0)) &&
-                                        (!host_arg1.soft_risk.has(i0) || arg0.softRiskSafe && !shallow0.isInvalidatedBy(write: shallow1)))
-                                    {
-                                        // Soft risk ok -
-                                        //  this is the new thing, further relaxing the bck.
-                                        return makeNote(N_AARSoftRisk);
-                                    }
-                                }
-
-                                // Try to resolve by injecting a copy -
-                                //  notice this is an either or, no need to pick one,
-                                //   one is a writing mutref so only one could accept a temporary.
-                                if (!RESOLVE_byTempCopy(:callsite, i0) &&
-                                    !RESOLVE_byTempCopy(:callsite, i1))
-                                {
-                                    // Else emit an args-cannot-alias error.
-                                    mut err = target.str;
-
-                                    err ~= host_args.len == 2 && target.flags & F_OPERATOR
-                                        ?   ": Both operands alias:\n"
-                                        :   ": Arguments:\n\n\t    " ~ (i0 + 1) ~ ":\t" ~ host_arg0
-                                            ~         " and\n\t    " ~ (i1 + 1) ~ ":\t" ~ host_arg1
-                                            ~           "\n\n\t    both alias:\n";
-
-                                    for (shadow mut i = 0; i < inter.uni0n.len; i++)
-                                    {
-                                        let o = inter.uni0n[i];
-
-                                        err ~=   "\n                ";
-                                        err ~= o;
-                                    }
-
-                                    _here = args[i0].token;
-                                    fail(err);
-                                }
-                            }
-
-                            // If we have a mutref, go over all refs.
-                            if (expect.is_mutref) {
-                                for (mut i = ref_first; i <= ref_last; i++)
-                                    if (host_args[i].is_ref)
-                                        validate(i);
-                            }
-
-                            // Else we only care about mutrefs here.
-                            else {
-                                for (mut i = mutref_first; i <= mutref_last; i++)
-                                    if (host_args[i].is_mutref)
-                                        validate(i);
-                            }
-                        }
-
-                        // Track the two lists.
-                        {
-                            if (ref_first < 0)
-                                ref_first = i0;
-
-                            ref_last = i0;
-                        }
-
-                        if (expect.is_mutref)
-                        {
-                            if (mutref_first < 0)
-                                mutref_first = i0;
-
-                            mutref_last = i0;
-
-                            // We'll batch all writes together in a bit.
-                            if (host_arg0.flags & F_WRITTEN_TO)
-                            {
-                                let arg0 = args[i0];
-
-                                host_arg0.is_mutref || BUG(host_arg0.name.human.qID ~ ": host_arg0.written but !host_arg0.is_mutref");
-                                arg0.is_mutref      || BUG(host_arg0.name.human.qID ~ ": host_arg0.written but !arg.is_mutref");
-
-                                bck_writes.set::add(arg0.lifetime.uni0n,
-                                    extras: bck_positions, extra: i0);
-                            }
-                        }
-                    }
-                }
-
-                // BORROWCK /////////////////////////////////////////////////////
-                // Track all writes at once, not important for reads,
-                //  but tracking args one by one would prevent args-at-risk.
-                if (bck_writes)
-                {
-                    bck_positions.len == bck_writes.len || BUG("bck_position.len is off");
-                    bck_trackWrites(:callsite, bck_writes, positions: bck_positions);
-                }
-                /////////////////////////////////////////////////////////////////
-
-                mut MUSTSEQ_mask = 0;
-
-                // We've injected copies and such,
-                //  so now all that's left is to add some explicit sequencing.
-                {
-                    shadow mut ooe_write0 = ooe_write0;
-
-                    for (mut ooe_iw = 0; ooe_iw < ooe_writes.len; ooe_iw++)
-                    {
-                        let ooe_write1 = ooe_writes[ooe_iw];
-                        if (ooe_write1 == ooe_write0)
-                            continue;
-
-                        //
-                        for (mut w = ooe_write0; w < ooe_write1; w++)
-                        {
-                            let writeID = WriteID(w + 1);
-                            let write   = RWEvent(writeID).rw_target;
-
-                            // RTL indexing is reversed, so 0 always means first.
-                            let iw_evalsFirst = ooe_iw == 0;
-
-                            mut all_written = [ Region_fromLocal(write) ];
-                            {
-                                // The write may not invalidate its parents,
-                                //  but it might still change their value.
-                                //   Search tests for:
-                                //
-                                //      a * { ref x = z || a; x++ }
-                                //
-                                // Doing it for all args, including the first arg.
-                                //  Search tests for:
-                                //
-                                //      { ref x = z || a; x++ } * a
-                                //
-                                // In both cases we need to sequence the order of eval of `a` and `x++`.
-                                //
-                                let parents = flow.parents.unless_oob(write);
-                                all_written.set::add(parents.view(Region));
-                            }
-
-                            mut all_written_and_invalidated: Region[];
-                            if (!iw_evalsFirst)
-                            {
-                                all_written_and_invalidated = all_written;
-
-                                // Deep expansion only useful on non-first arg,
-                                //  we only use it for preceding args in OOE.
-                                //
-                                let invalidates = flow.invalidates.unless_oob(write);
-                                all_written_and_invalidated.set::add(invalidates.view(Region));
-                            }
-
-                            ////////////////////////////////////////////////////
-                            // TODO we need written to be the full set        //
-                            //  of written which is a superset of invalidated //
-                            ////////////////////////////////////////////////////
-
-                            // Check remaining arguments.
-                            shadow mut ooe_read0 = ooe_read0;
-
-                            for (mut ooe_ir = 0; ooe_ir < ooe_reads.len; ooe_ir++)
-                            {
-                                let ooe_read1 = ooe_reads[ooe_ir];
-
-                                if (ooe_ir != ooe_iw)
-                                {
-                                    let ooe_ir_evalsBefore_iw = ooe_ir < ooe_iw;
-
-                                    let written = ooe_ir_evalsBefore_iw
-                                        ? all_written_and_invalidated
-                                        : all_written;
-
-                                    written || BUG();
-
-                                    for (mut r = ooe_read0; r < ooe_read1; r++)
-                                    {
-                                        let read    = _current_fn.events.reads[r];
-                                        let regions = read.rw_target.nested.type.lifetime.uni0n;
-
-                                        // TODO: set::has_inter,
-                                        //  how can this optimization work automatically?
-                                        //   !!set::inter -> set::has_inter?
-                                        if !(regions.set::has_inter(written))
-                                            continue;
-
-                                        // At this point, we've detected an order-of-eval issue.
-                                        //  It's either just that, in which case F_MUSTSEQ is fine,
-                                        //   or it might be that an arg invalidates a previously evaluated arg
-                                        //    (if you imagine that each arg is a let arg0 = xxx, let arg1 = yyy),
-                                        //     in which case we'll have to resolve-by-copy.
-
-                                        // Now this is important:
-                                        //  If this argument ooe-precedes the writes,
-                                        //   we need to check the writes don't garble it's value.
-                                        //
-                                        // This is not about invalidation -
-                                        //  in ++x + ++x nothing gets invalidated,
-                                        //   yet you want the first ++x arg to bind to the value of its init,
-                                        //    just like any other var, and not get thrashed by the other arg.
-                                        //
-                                        // If needed, we'll inject a write,
-                                        //  if not possible, we'll error out.
-
-                                        // DANGER ZONE:
-                                        //
-                                        //  RTL methods have these indices flipped,
-                                        //   here we index in ORDER OF EVALUATION, not order in AST.
-                                        //
-                                        //  Wonder if we shouldn't just order things correctly
-                                        //   in the AST and avoid this altogether?
-                                        //
-                                        shadow let r = ooe_isRTL ? ooe_START - ooe_ir : ooe_ir;
-                                        shadow let w = ooe_isRTL ? ooe_START - ooe_iw : ooe_iw;
-
-                                        let host_arg = host_args[r];
-
-                                        if (ooe_ir_evalsBefore_iw &&
-
-                                            // No need to do anything if the host_arg wants a value -
-                                            //  in case the value is a ref we'll copy/move during mcom,
-                                            //   and we only need to sequence before, which is done below.
-                                            //
-                                            host_arg.is_ref)
-                                        {
-                                            let arg     = args[r];
-                                            let bound   = arg.type.lifetime.uni0n;
-                                            let inter   = bound.set::inter(written);
-                                            if (inter)
-                                            {
-                                                // We'll have to inject a copy here.
-                                                if (AAR ? !RESOLVE_byAAR(:write, reads: inter,
-
-                                                            // Considered making this host_arg.acceptsSoftRisk,
-                                                            //  which would work (should it though?) if:
-                                                            //
-                                                            //      ref arg_binding = read;
-                                                            //
-                                                            // But this could also be:
-                                                            //
-                                                            //      ref arg_binding = read[something];
-                                                            //
-                                                            // So the succeeding write to another argument
-                                                            //  can invalidate the binding.
-                                                            //
-                                                            // Could revisit this when we have some notion of reference stability,
-                                                            //  but currently the rule is soft-risk only applies to
-                                                            //   direct use of arguments without intermediate bindings,
-                                                            //    and here we're introducing an intermedite binding - the callee argument.
-                                                            //
-                                                            trySoft: false)
-
-                                                        : !RESOLVE_byTempCopy(:callsite, r))
-                                                {
-                                                    _here = callsite.token;
-
-                                                    fail("At call to " ~ target ~ ", binding for "
-                                                        ~ host_args[r] ~ " (arg #" ~ r ~ ") at "
-                                                        ~ arg.token.addr_and_snippet
-                                                        ~ "\n\t... invalidated by subsequent write to "
-                                                        ~ all_written.last ~ " upon evaluation of "
-                                                        ~ host_args[w] ~ " (arg #" ~ w ~ ") at "
-                                                        ~ RWEvent_stack(writeID));
-                                                }
-                                            }
-                                        }
-
-                                        // TODO FIX: have codegen disregard the mask
-                                        //  when cpp guarantees the order - it's call-syntax related.
-                                        //
-                                        if (ooe_isUndef)
-                                        {
-                                            // Flag the arg that needs to eval first for explicit sequencing.
-                                            //  This mask thing is kinda stupid, calls with more than 32 args
-                                            //   could needlessly sequence some of their args,
-                                            //    but it's safe.
-                                            //
-                                            let mustSeq = ooe_ir_evalsBefore_iw ? r : w;
-                                            MUSTSEQ_mask |= 1 << (mustSeq & 31);
-                                            makeNote(AAR ? N_AARMustSeq : N_BckMustSeq,
-                                                " read: " ~ args[r] ~ "\n\t\twrite: " ~ args[w]);
-                                        }
-
-                                        break;
-                                    }
-                                }
-
-                                ooe_read0 = ooe_read1;
-                            }
-                        }
-
-                        ooe_write0 = ooe_write1;
-                    }
-                }
-
-                // The sequencing fingerprint, just in case.
-                ref helpers = callsite.helpers;
-                !helpers || AAR || BUG("MUSTSEQ_mask: helpers already contain something");
-                helpers = Helpers(MUSTSEQ_mask | helpers.index);
+                return;
             }
 
             //
-            else if (target.kind == "var")
+            let host_args = target.args;
+
+            // Unless c++ guarantees some order of eval,
+            //  we'll keep track of reads and writes,
+            //   we add sequencing tags last thing here.
+            //
+            let ooe_read0   = _current_fn.events.reads.len;
+            let ooe_write0  = _current_fn.events.writes.len;
+
+            mut ooe_reads:  i32[];
+            mut ooe_writes: i32[];
+
+            let ooe_isRTL   = target.isRTL;
+            let ooe_isUndef = !ooe_isRTL;
+
+            ///////////////////////////////////////////////
+            let ooe_START   = ooe_isRTL ? args.len -1 : 0;
             {
-                bck_trackRead(callsite);
+                shadow lax mut ooe_read0  = ooe_read0;
+                shadow lax mut ooe_write0 = ooe_write0;
+
+                for (mut ooe_i = 0; ooe_i < args.len; ooe_i++)
+                {
+                    bck_node(args[ooe_isRTL ? ooe_START - ooe_i : ooe_i]);
+
+                    let r1 = _current_fn.events.reads.len;
+                    let w1 = _current_fn.events.writes.len;
+
+                    if (r1 > ooe_read0)  ooe_reads .grow_oob(ooe_i, fill: ooe_read0) = r1;
+                    if (w1 > ooe_write0) ooe_writes.grow_oob(ooe_i, fill: ooe_write0) = w1;
+
+                    ooe_read0 = r1;
+                    ooe_write0 = w1;
+                }
             }
+            ///////////////////////////////////////////////
+
+            // BORROWCK ////////////////
+            mut bck_writes: Region[];
+            mut bck_positions: i32[];
+
+            mut mutref_first    = -1;
+            mut mutref_last     = -1;
+            mut ref_first       = -1;
+            mut ref_last        = -1;
+
+            //
+            mut bck_unwound: Lifetime[];
+
+            mut arg_first       = -1;
+            mut arg_last        = -1;
+            ////////////////////////////
+
+
+            for (mut i0 = 0; i0 < args.len; i0++)
+            {
+                let host_arg0   = host_args[i0];
+                let expect      = host_arg0.type;
+
+                // BORROWCK: multiple mutrefs error,
+                //  this is the only thing we can't workaround by copying.
+                if (expect.is_ref)
+                {
+                    // Lazy init unwound lifetimes.
+                    if !(bck_unwound)
+                    {
+                        if (mutref_first >= 0 || ref_first >= 0 && expect.is_mutref)
+                        {
+                            bck_unwound.resize(args.len);
+                            for (shadow mut i0 = ref_first; i0 <= ref_last; i0++)
+                            {
+                                let unwound = bck_unwound[i0] = Lifetime_unwind_noStatic(args[i0].type.lifetime);
+
+                                // Locate first and last callsite arguments
+                                //  that refer to caller arguments,
+                                //   so we can later on loop over them faster.
+                                //
+                                // TODO: args at risk: ignore closures & implicits,
+                                //  they are disjoint by definition.
+                                //   But are they? You can totally have
+                                //    an implicit ref a = implicit b.
+                                //
+                                // TODO: args at risk: ignore non-aliasable types.
+                                //
+                                for (mut i = 0; i < unwound.uni0n.len; i++)
+                                {
+                                    if (unwound.uni0n[i].Region_asLocal)
+                                    {
+                                        arg_first   = arg_first < 0 ? i0 : arg_first;
+                                        arg_last    = i0;
+                                        continue;
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    // Validate aliasing.
+                    if (bck_unwound)
+                    {
+                        let arg0     = args[i0];
+                        let shallow0 = arg0.type.lifetime;
+                        let unwound0 = bck_unwound[i0] = Lifetime_unwind_noStatic(shallow0);
+
+                        // Keep track of caller arguments.
+                        for (mut i = 0; i < unwound0.uni0n.len; i++)
+                        {
+                            if (unwound0.uni0n[i].Region_asLocal)
+                            {
+                                arg_first   = arg_first < 0 ? i0 : arg_first;
+                                arg_last    = i0;
+                                continue;
+                            }
+                        }
+
+                        //
+                        fn validate(i1: i32)
+                        {
+                            let host_arg1 = host_args[i1];
+
+                            // Can the fn handle aliasing here?
+                            if (!host_arg0.soft_risk.has(i1) && !host_arg1.soft_risk.has(i0))
+                                return;
+
+                            let arg1     = args[i1];
+                            let shallow1 = arg1.type.lifetime;
+
+                            // A note on something that's non-obvious -
+                            //  the AAR stuff here DOESNT CARE ABOUT ALIASING -
+                            //   we've already dealt with aliasing by the time this runs.
+                            //
+                            // Also the invalidates/invalidators AAR stuff doesn't affect parenting,
+                            //  so we don't get intersections in unwound0 and unwound1.
+                            //
+                            if (AAR)
+                            {
+                                if (i0 >= arg_first && i0 <= arg_last &&
+                                    i1 >= arg_first && i1 <= arg_last)
+                                {
+                                    for (mut r0 = 0; r0 < shallow0.uni0n.len; r0++)
+                                    {
+                                        let region0 = Region_asLocal(shallow0.uni0n[r0]);
+                                        if (region0)
+                                        {
+                                            for (mut r1 = 0; r1 < shallow1.uni0n.len; r1++)
+                                            {
+                                                let region1 = Region_asLocal(shallow1.uni0n[r1]);
+                                                if (region1 && region0 != region1)
+                                                {
+                                                    //
+                                                    // TODO FAILCASE these can't be correct,
+                                                    //  see the notes on OOE AAR below.
+                                                    //
+                                                    if (host_arg0.is_mutref)
+                                                        RESOLVE_byAAR(write: region0, read: region1,
+                                                            trySoft: !host_arg0.hard_risk.has(i1) && arg1.softRiskSafe);
+
+                                                    if (host_arg1.is_mutref)
+                                                        RESOLVE_byAAR(read: region0, write: region1,
+                                                            trySoft: !host_arg1.hard_risk.has(i0) && arg0.softRiskSafe);
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+
+                                // AAR ends here, inters are not relevant, etc.
+                                return;
+                            }
+
+                            // Do we see any aliasing here?
+                            let unwound1 = bck_unwound[i1];
+
+                            let inter = Lifetime_inter(unwound0, unwound1);
+                            if !(inter)
+                                return;
+
+                            // Soft risk check -
+                            //  If neither is listed as a hard risk,
+                            //   and neither invalidates the other, then we should be good.
+                            if (!host_arg0.hard_risk.has(i1) &&
+                                !host_arg1.hard_risk.has(i0))
+                            {
+                                if ((!host_arg0.soft_risk.has(i1) || arg1.softRiskSafe && !shallow1.isInvalidatedBy(write: shallow0)) &&
+                                    (!host_arg1.soft_risk.has(i0) || arg0.softRiskSafe && !shallow0.isInvalidatedBy(write: shallow1)))
+                                {
+                                    // Soft risk ok -
+                                    //  this is the new thing, further relaxing the bck.
+                                    return makeNote(N_AARSoftRisk);
+                                }
+                            }
+
+                            // Try to resolve by injecting a copy -
+                            //  notice this is an either or, no need to pick one,
+                            //   one is a writing mutref so only one could accept a temporary.
+                            if (!RESOLVE_byTempCopy(:callsite, i0) &&
+                                !RESOLVE_byTempCopy(:callsite, i1))
+                            {
+                                // Else emit an args-cannot-alias error.
+                                mut err = target.str;
+
+                                err ~= host_args.len == 2 && target.flags & F_OPERATOR
+                                    ?   ": Both operands alias:\n"
+                                    :   ": Arguments:\n\n\t    " ~ (i0 + 1) ~ ":\t" ~ host_arg0
+                                        ~         " and\n\t    " ~ (i1 + 1) ~ ":\t" ~ host_arg1
+                                        ~           "\n\n\t    both alias:\n";
+
+                                for (shadow mut i = 0; i < inter.uni0n.len; i++)
+                                {
+                                    let o = inter.uni0n[i];
+
+                                    err ~=   "\n                ";
+                                    err ~= o;
+                                }
+
+                                _here = args[i0].token;
+                                fail(err);
+                            }
+                        }
+
+                        // If we have a mutref, go over all refs.
+                        if (expect.is_mutref) {
+                            for (mut i = ref_first; i <= ref_last; i++)
+                                if (host_args[i].is_ref)
+                                    validate(i);
+                        }
+
+                        // Else we only care about mutrefs here.
+                        else {
+                            for (mut i = mutref_first; i <= mutref_last; i++)
+                                if (host_args[i].is_mutref)
+                                    validate(i);
+                        }
+                    }
+
+                    // Track the two lists.
+                    {
+                        if (ref_first < 0)
+                            ref_first = i0;
+
+                        ref_last = i0;
+                    }
+
+                    if (expect.is_mutref)
+                    {
+                        if (mutref_first < 0)
+                            mutref_first = i0;
+
+                        mutref_last = i0;
+
+                        // We'll batch all writes together in a bit.
+                        if (host_arg0.flags & F_WRITTEN_TO)
+                        {
+                            let arg0 = args[i0];
+
+                            host_arg0.is_mutref || BUG(host_arg0.name.human.qID ~ ": host_arg0.written but !host_arg0.is_mutref");
+                            arg0.is_mutref      || BUG(host_arg0.name.human.qID ~ ": host_arg0.written but !arg.is_mutref");
+
+                            bck_writes.set::add(arg0.lifetime.uni0n,
+                                extras: bck_positions, extra: i0);
+                        }
+                    }
+                }
+            }
+
+            // BORROWCK /////////////////////////////////////////////////////
+            // Track all writes at once, not important for reads,
+            //  but tracking args one by one would prevent args-at-risk.
+            if (bck_writes)
+            {
+                bck_positions.len == bck_writes.len || BUG("bck_position.len is off");
+                bck_trackWrites(:callsite, bck_writes, positions: bck_positions);
+            }
+            /////////////////////////////////////////////////////////////////
+
+            mut MUSTSEQ_mask = 0;
+
+            // We've injected copies and such,
+            //  so now all that's left is to add some explicit sequencing.
+            {
+                shadow mut ooe_write0 = ooe_write0;
+
+                for (mut ooe_iw = 0; ooe_iw < ooe_writes.len; ooe_iw++)
+                {
+                    let ooe_write1 = ooe_writes[ooe_iw];
+                    if (ooe_write1 == ooe_write0)
+                        continue;
+
+                    //
+                    for (mut w = ooe_write0; w < ooe_write1; w++)
+                    {
+                        let writeID = WriteID(w + 1);
+                        let write   = RWEvent(writeID).rw_target;
+
+                        // RTL indexing is reversed, so 0 always means first.
+                        let iw_evalsFirst = ooe_iw == 0;
+
+                        mut all_written = [ Region_fromLocal(write) ];
+                        {
+                            // The write may not invalidate its parents,
+                            //  but it might still change their value.
+                            //   Search tests for:
+                            //
+                            //      a * { ref x = z || a; x++ }
+                            //
+                            // Doing it for all args, including the first arg.
+                            //  Search tests for:
+                            //
+                            //      { ref x = z || a; x++ } * a
+                            //
+                            // In both cases we need to sequence the order of eval of `a` and `x++`.
+                            //
+                            let parents = flow.parents.unless_oob(write);
+                            all_written.set::add(parents.view(Region));
+                        }
+
+                        mut all_written_and_invalidated: Region[];
+                        if (!iw_evalsFirst)
+                        {
+                            all_written_and_invalidated = all_written;
+
+                            // Deep expansion only useful on non-first arg,
+                            //  we only use it for preceding args in OOE.
+                            //
+                            let invalidates = flow.invalidates.unless_oob(write);
+                            all_written_and_invalidated.set::add(invalidates.view(Region));
+                        }
+
+                        ////////////////////////////////////////////////////
+                        // TODO we need written to be the full set        //
+                        //  of written which is a superset of invalidated //
+                        ////////////////////////////////////////////////////
+
+                        // Check remaining arguments.
+                        shadow mut ooe_read0 = ooe_read0;
+
+                        for (mut ooe_ir = 0; ooe_ir < ooe_reads.len; ooe_ir++)
+                        {
+                            let ooe_read1 = ooe_reads[ooe_ir];
+
+                            if (ooe_ir != ooe_iw)
+                            {
+                                let ooe_ir_evalsBefore_iw = ooe_ir < ooe_iw;
+
+                                let written = ooe_ir_evalsBefore_iw
+                                    ? all_written_and_invalidated
+                                    : all_written;
+
+                                written || BUG();
+
+                                for (mut r = ooe_read0; r < ooe_read1; r++)
+                                {
+                                    let read    = _current_fn.events.reads[r];
+                                    let regions = read.rw_target.nested.type.lifetime.uni0n;
+
+                                    // TODO: set::has_inter,
+                                    //  how can this optimization work automatically?
+                                    //   !!set::inter -> set::has_inter?
+                                    if !(regions.set::has_inter(written))
+                                        continue;
+
+                                    // At this point, we've detected an order-of-eval issue.
+                                    //  It's either just that, in which case F_MUSTSEQ is fine,
+                                    //   or it might be that an arg invalidates a previously evaluated arg
+                                    //    (if you imagine that each arg is a let arg0 = xxx, let arg1 = yyy),
+                                    //     in which case we'll have to resolve-by-copy.
+
+                                    // Now this is important:
+                                    //  If this argument ooe-precedes the writes,
+                                    //   we need to check the writes don't garble it's value.
+                                    //
+                                    // This is not about invalidation -
+                                    //  in ++x + ++x nothing gets invalidated,
+                                    //   yet you want the first ++x arg to bind to the value of its init,
+                                    //    just like any other var, and not get thrashed by the other arg.
+                                    //
+                                    // If needed, we'll inject a write,
+                                    //  if not possible, we'll error out.
+
+                                    // DANGER ZONE:
+                                    //
+                                    //  RTL methods have these indices flipped,
+                                    //   here we index in ORDER OF EVALUATION, not order in AST.
+                                    //
+                                    //  Wonder if we shouldn't just order things correctly
+                                    //   in the AST and avoid this altogether?
+                                    //
+                                    shadow let r = ooe_isRTL ? ooe_START - ooe_ir : ooe_ir;
+                                    shadow let w = ooe_isRTL ? ooe_START - ooe_iw : ooe_iw;
+
+                                    let host_arg = host_args[r];
+
+                                    if (ooe_ir_evalsBefore_iw &&
+
+                                        // No need to do anything if the host_arg wants a value -
+                                        //  in case the value is a ref we'll copy/move during mcom,
+                                        //   and we only need to sequence before, which is done below.
+                                        //
+                                        host_arg.is_ref)
+                                    {
+                                        let arg     = args[r];
+                                        let bound   = arg.type.lifetime.uni0n;
+                                        let inter   = bound.set::inter(written);
+                                        if (inter)
+                                        {
+                                            // We'll have to inject a copy here.
+                                            if (AAR ? !RESOLVE_byAAR(:write, reads: inter,
+
+                                                        // Considered making this host_arg.acceptsSoftRisk,
+                                                        //  which would work (should it though?) if:
+                                                        //
+                                                        //      ref arg_binding = read;
+                                                        //
+                                                        // But this could also be:
+                                                        //
+                                                        //      ref arg_binding = read[something];
+                                                        //
+                                                        // So the succeeding write to another argument
+                                                        //  can invalidate the binding.
+                                                        //
+                                                        // Could revisit this when we have some notion of reference stability,
+                                                        //  but currently the rule is soft-risk only applies to
+                                                        //   direct use of arguments without intermediate bindings,
+                                                        //    and here we're introducing an intermedite binding - the callee argument.
+                                                        //
+                                                        trySoft: false)
+
+                                                    : !RESOLVE_byTempCopy(:callsite, r))
+                                            {
+                                                _here = callsite.token;
+
+                                                fail("At call to " ~ target ~ ", binding for "
+                                                    ~ host_args[r] ~ " (arg #" ~ r ~ ") at "
+                                                    ~ arg.token.addr_and_snippet
+                                                    ~ "\n\t... invalidated by subsequent write to "
+                                                    ~ all_written.last ~ " upon evaluation of "
+                                                    ~ host_args[w] ~ " (arg #" ~ w ~ ") at "
+                                                    ~ RWEvent_stack(writeID));
+                                            }
+                                        }
+                                    }
+
+                                    // TODO FIX: have codegen disregard the mask
+                                    //  when cpp guarantees the order - it's call-syntax related.
+                                    //
+                                    if (ooe_isUndef)
+                                    {
+                                        // Flag the arg that needs to eval first for explicit sequencing.
+                                        //  This mask thing is kinda stupid, calls with more than 32 args
+                                        //   could needlessly sequence some of their args,
+                                        //    but it's safe.
+                                        //
+                                        let mustSeq = ooe_ir_evalsBefore_iw ? r : w;
+                                        MUSTSEQ_mask |= 1 << (mustSeq & 31);
+                                        makeNote(AAR ? N_AARMustSeq : N_BckMustSeq,
+                                            " read: " ~ args[r] ~ "\n\t\twrite: " ~ args[w]);
+                                    }
+
+                                    break;
+                                }
+                            }
+
+                            ooe_read0 = ooe_read1;
+                        }
+                    }
+
+                    ooe_write0 = ooe_write1;
+                }
+            }
+
+            // The sequencing fingerprint, just in case.
+            ref helpers = callsite.helpers;
+            !helpers || AAR || BUG("MUSTSEQ_mask: helpers already contain something");
+            helpers = Helpers(MUSTSEQ_mask | helpers.index);
         }
 
 
