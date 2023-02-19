@@ -5755,6 +5755,12 @@ pub fn solve(
         if (expr.type.is_never)
             return expr;
 
+        // Conversions.
+        // TODO FIX: this error duplicates with the error in reportReturnType.
+        if (h.ret_expect)
+            convertIfNeeded(expr, h.ret_expect,
+                "Actual return type does not match annotation");
+
         // Detect & shim non-local jumps.
         if (h.local_of != _current_fn.target.index)
         {
@@ -5814,6 +5820,8 @@ pub fn solve(
 
         // Regular block expects are best-effort type inference hints,
         //  whereas fn expects are explicit type annotations that must be enforced.
+        //
+        // TODO FIX: this error duplicates with the error in solveJump.
         if (h.ret_expect)
             checkAssignable(host: h.ret_expect, type,
                 "Actual return type does not match annotation");
