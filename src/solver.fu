@@ -3022,10 +3022,7 @@ pub fn solve(
                         propagateType(expr, :relax_mask, t_void);
 
                         if (expr.isDiscardable)
-                        {
-                            makeNote(N_UnusedStmt);
                             items.splice(i, 1);
-                        }
                     }
                 }
 
@@ -3382,11 +3379,6 @@ pub fn solve(
                     items.splice(i, 1,
                         item.items.slice(0, item.items.len - 1));
                 }
-            }
-            else if (k == "empty" || k == "bool")
-            {
-                if (i < items.len - 1 || i > 0 && item.is_void && items[i - 1].is_void)
-                    items.splice(i, 1);
             }
         }
 
@@ -9780,18 +9772,6 @@ pub fn solve(
                     ~ "\n\t" ~ humanizeType(callsite.target.type, lt: true));
     }
 
-    fn test_Statements(block: SolvedNode, debug: string)
-    {
-        let items = block.items;
-        for (mut i = 0; i < items.len; i++)
-        {
-            let n = items[i];
-            n.kind || BUG(debug ~ ": No .kind on item[" ~ i ~ "].");
-            n.kind != "empty" || block.kind == "block" && i == items.len - 1 || BUG(
-                debug ~ ": " ~ block.kind ~ " has an empty at #" ~ i ~ "/" ~ items.len ~ ".");
-        }
-    }
-
 
     // AST validation router.
 
@@ -9871,7 +9851,9 @@ pub fn solve(
                 checkLt(node.items[2], "if.else");
             }
 
-            test_Statements(node, :debug);
+            let items = node.items;
+            for (mut i = 0; i < items.len; i++)
+                items[i].kind || BUG(debug ~ ": No .kind on item[" ~ i ~ "].");
         }
 
         // TODO During solve we collect jump expression types via superType,
