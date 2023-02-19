@@ -10413,6 +10413,41 @@ pub extern fn runTests()
         fn main() vec3(1).woot(vec3(-1));
     `);
 
+    ZERO(`
+        struct B { v: i32 };
+        struct C { v: i32 };
+
+        <fail ambig 7:31+1 6:20+1 3:20+1 using fn AC 8:9+5>
+        struct A { v: i32 };
+        using fn AB(a: A) B(a.v * 2);
+        using fn AC(a: A) C(a.v * 3);
+        <pass/>
+        struct A { a: i32 };
+        using fn AB(a: A) B(a.a * 2);
+        using fn AC(a: A) C(a.a * 3);
+        </fail>
+
+        fn main() {
+            let a = A(1);
+            let b: B = a;
+            let c: C = a;
+            return b.v * c.v - 6;
+        }
+    `);
+
+    ZERO(`
+        struct A1 { v: i32 };
+        struct A2 { v: i32 };
+        struct B { v: i32 };
+
+        using fn A1B(a: A1) B(a.v * 2);
+        using fn A2B(a: A2) B(a.v * 3);
+
+        fn test(a): B = a;
+
+        fn main() A1(1).test.v * A2(1).test.v - 6;
+    `);
+
     // /Conversion functions.
 
 
