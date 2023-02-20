@@ -96,6 +96,7 @@ pub extern fn runTests()
     let TODO_ambig      = fn TODO;
     let TODO_StaticEval = fn TODO;
     let TODO_slices     = fn TODO;
+    let TODO_licm       = fn TODO;
 
     let TODO_Map        = fn TODO;
 
@@ -12793,6 +12794,71 @@ pub extern fn runTests()
             }
             return test();
         }
+    `);
+
+
+    // CSE & LICM.
+
+    ZERO(`
+        fn pretend_pure(mut res = 0) {
+            pragma emit(\`
+                static int counter = 100;
+                \`res\` += counter++;
+            \`);
+            return res;
+        }
+
+        fn validate_looks_pure() {
+            pretend_pure(1);
+            return pretend_pure(2);
+        }
+
+        fn main() validate_looks_pure() == 102 ? 0 : 1;
+    `);
+
+    TODO_licm(`
+        fn pretend_pure(mut res = 0) {
+            pragma emit(\`
+                static int counter = 100;
+                \`res\` += counter++;
+            \`);
+            return res;
+        }
+
+        fn licm_loop_preheader(n: i32) {
+            mut res = 0;
+            for (mut i = 0; i < n; i++)
+            on enter {
+                let must_hoist = pretend_pure(n);
+            }
+            then {
+                res += must_hoist;
+            }
+            return res;
+        }
+
+        fn main() licm_loop_preheader(2) == 204 ? 0 : 1;
+    `);
+
+    TODO_licm(`
+        fn pretend_pure(mut res = 0) {
+            pragma emit(\`
+                static int counter = 100;
+                \`res\` += counter++;
+            \`);
+            return res;
+        }
+
+        fn licm_hoist_var(n: i32) {
+            mut res = 0;
+            for (mut i = 0; i < n; i++) {
+                let must_hoist = pretend_pure(n);
+                res += must_hoist;
+            }
+            return res;
+        }
+
+        fn main() licm_hoist_var(2) == 204 ? 0 : 1;
     `);
 
 
