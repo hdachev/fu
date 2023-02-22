@@ -2056,14 +2056,33 @@ pub fn parse(
 
         let pre_cond = !tryConsume("op", ";") && parseLetOrExpressionStatement();
 
-        let token = tokens[_idx];
-        let post = !(token.kind == "op" && token.value == ")")
+        let token   = tokens[_idx];
+        let post    = !(token.kind == "op" && token.value == ")")
             ? parseParens()
             : consume("op", ")") && [];
 
-        let body = parseStatement();
+        let pre     = tryParseLoopPreheader();
+        let body    = parseStatement();
 
-        return createLoop(:init, :pre_cond, :post, :body);
+        return createLoop(:init, :pre_cond, :pre, :post, :body);
+    }
+
+    fn tryParseLoopPreheader()
+    {
+        let peek = tokens[_idx];
+        if (peek.kind == "id" && peek.value == "on")
+        {
+            shadow let peek = tokens[_idx + 1];
+            if (peek.kind == "id" && peek.value == "enter")
+            {
+                _idx += 2;
+                let ret = parseStatement();
+                consume("id", "then");
+                return ret;
+            }
+        }
+
+        return [];
     }
 
     fn parseWhile(): Node
@@ -2088,9 +2107,9 @@ pub fn parse(
         return createLoop(:body, :post_cond);
     }
 
-    fn createLoop(init!?: Node, pre_cond!?: Node, body!?: Node, post_cond!?: Node, post!?: Node): Node
+    fn createLoop(init!?: Node, pre_cond!?: Node, pre!?: Node, body!?: Node, post!?: Node, post_cond!?: Node): Node
     {
-        return make("loop", [ init, pre_cond, body, post_cond, post ]);
+        return make("loop", [ init, pre_cond, pre, body, post, post_cond ]);
     }
 
     // -------------------------------

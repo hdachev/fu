@@ -39,6 +39,11 @@ flags HelpersMask
     HM_Struct
     HM_LabelUsed
     // ...
+
+    HM_LoopPreheader
+    // ...
+    // ...
+    // ...
 }
 
 
@@ -147,10 +152,11 @@ let FN_ARGS_BACK    = FN_RET_BACK;
 let TYPECTOR_BACK   = -1;
 
 let LOOP_INIT       = 0;
-let LOOP_COND       = 1;
-let LOOP_BODY       = 2;
-let LOOP_POST_COND  = 3;
+let LOOP_PRE_COND   = 1;
+let LOOP_PRE        = 2;
+let LOOP_BODY       = 3;
 let LOOP_POST       = 4;
+let LOOP_POST_COND  = 5;
 
 let STRUCT_BASE     = 0;
 let STRUCT_MEMBERS  = 1;

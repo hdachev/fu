@@ -2533,6 +2533,67 @@ pub fn cpp_codegen(
 
     fn cgLoop(node: SolvedNode): string
     {
+
+        // Preheaders don't map cleanly to anything.
+
+        let n_pre = node.items[LOOP_PRE];
+        if (n_pre)
+        {
+            // Convert preheader into block.
+            mut pre = n_pre;
+            if (pre.kind != "block")
+            {
+                pre.kind        = "block";
+                pre.items       = [ n_pre ];
+            }
+
+            // Ok, so this will get nasty.
+            mut loop = node;
+
+            // We'll prepend the init at the end.
+            loop.items[LOOP_INIT] = [];
+
+            // Flip the loop precondition,
+            //  and append it to the preheader block.
+            loop.items[LOOP_PRE] = [];
+
+            let n_pre_cond = loop.items[LOOP_PRE_COND];
+            if (n_pre_cond)
+            {
+                if (loop.items[LOOP_POST_COND])
+                    BUG("TODO: cgLoop with pre, pre_cond & post_cond.");
+
+                loop.items[LOOP_POST_COND]  = n_pre_cond;
+                loop.items[LOOP_PRE_COND]   = [];
+            }
+
+            pre.items      ~= loop;
+
+            if (n_pre_cond)
+            {
+                mut guard       = n_pre;
+                guard.kind      = "and";
+                guard.items     = [
+                    n_pre_cond,
+                    pre,
+                ];
+
+                pre             = n_pre;
+                pre.kind        = "block";
+                pre.items       = [ guard ];
+            }
+
+            // Move the init bit of the loop to the top of the pre.
+            let n_init = node.items[LOOP_INIT];
+            if (n_init)
+                pre.items.unshift(n_init);
+
+            return cgNode(pre, debug: "cgLoop[pre]", mode: M_STMT);
+        }
+
+
+        //
+
         let can_cont0 = _current_fn.can_cont;
         let can_break0 = _current_fn.can_break;
 
@@ -2545,18 +2606,18 @@ pub fn cpp_codegen(
         _current_fn.can_break = [];
 
         //
-        let items = node.items;
+        let items       = node.items;
 
-        let n_init = items[LOOP_INIT];
-        let n_cond = items[LOOP_COND];
-        let n_body = items[LOOP_BODY];
-        let n_pcnd = items[LOOP_POST_COND];
-        let n_post = items[LOOP_POST];
+        let n_init      = items[LOOP_INIT];
+        let n_pre_cond  = items[LOOP_PRE_COND];
+        let n_body      = items[LOOP_BODY];
+        let n_post      = items[LOOP_POST];
+        let n_post_cond = items[LOOP_POST_COND];
 
-        let init = n_init && cgNode(n_init, M_STMT, debug: "cgLoop[init]");
-        let cond = n_cond && cgNode(n_cond, M_RETBOOL | M_PARENS, debug: "cgLoop[cond]");
-        let pcnd = n_pcnd && cgNode(n_pcnd, M_RETBOOL, debug: "cgLoop[pcnd]");
-        let post = n_post && cgNode(n_post, debug: "cgLoop[post]");
+        let init        = n_init        && cgNode(n_init, M_STMT, debug: "cgLoop[init]");
+        let pre_cond    = n_pre_cond    && cgNode(n_pre_cond,  M_RETBOOL | M_PARENS, debug: "cgLoop[pre_cond]");
+        let post        = n_post        && cgNode(n_post, debug: "cgLoop[post]");
+        let post_cond   = n_post_cond   && cgNode(n_post_cond, M_RETBOOL, debug: "cgLoop[post_cond]");
 
         //
         let name = "LL_" ~ _current_fn.num_labels++;
@@ -2578,18 +2639,22 @@ pub fn cpp_codegen(
         let breakLabel = labelUsed && " " ~ name ~ ":;";
 
         //
-        if (pcnd)
+        if (post_cond)
         {
-            if (init || post || cond)
-                fail("TODO extended loop.");
+            if (init || pre_cond)
+                BUG("TODO: cgLoop with post_cond & init/pre_cond.");
 
-            return "do" ~ body ~ _indent ~ "while (" ~ pcnd ~ ")" ~ breakLabel;
+            shadow let post_cond = post
+                ? post ~ ", " ~ post_cond
+                : post_cond;
+
+            return "do" ~ body ~ _indent ~ "while (" ~ post_cond ~ ")" ~ breakLabel;
         }
 
-        if (init || post || !cond)
-            return "for (" ~ init ~ "; " ~ cond ~ "; " ~ post ~ ")" ~ body ~ breakLabel;
+        if (init || post || !pre_cond)
+            return "for (" ~ init ~ "; " ~ pre_cond ~ "; " ~ post ~ ")" ~ body ~ breakLabel;
 
-        return "while (" ~ cond ~ ")" ~ body ~ breakLabel;
+        return "while (" ~ pre_cond ~ ")" ~ body ~ breakLabel;
     }
 
     fn cgTryCatch(node: SolvedNode): string

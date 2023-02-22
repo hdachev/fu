@@ -2449,7 +2449,7 @@ pub fn solve(
             propagateType(recover, t_void, :relax_mask);
 
             // The catch is conditional -
-            //  obviously not guaranteed to execute.
+            //  only executes if try block throws.
             _current_fn.postdom.branch(postdom0);
 
             propagateType(error, t_string, :relax_mask);
@@ -2477,10 +2477,11 @@ pub fn solve(
         else if (k == "loop")
         {
             fn init         = node.items[LOOP_INIT];
-            fn pre_cond     = node.items[LOOP_COND];
+            fn pre_cond     = node.items[LOOP_PRE_COND];
+            fn pre          = node.items[LOOP_PRE];
             fn body         = node.items[LOOP_BODY];
-            fn post_cond    = node.items[LOOP_POST_COND];
             fn post         = node.items[LOOP_POST];
+            fn post_cond    = node.items[LOOP_POST_COND];
 
             // MOVE ON LAST USE ////////////////////////////////////////////
             Breakable_begin();
@@ -2489,6 +2490,9 @@ pub fn solve(
             // MOVE ON LAST USE ////////////////////////////////////////////
 
             // Relax in reverse.
+            if (post_cond)
+                propagateType(post_cond, t_bool, :relax_mask);
+
             if (post)
             {
                 if (post.isDiscardable)
@@ -2497,15 +2501,26 @@ pub fn solve(
                     propagateType(post, t_void, :relax_mask);
             }
 
-            if (post_cond)
-                propagateType(post_cond, t_bool, :relax_mask);
-
             if (body)
             {
                 if (body.isDiscardable)
                     body = [];
                 else
                     propagateType(body, t_void, :relax_mask);
+            }
+
+            if (pre)
+            {
+                let postdom0 = _current_fn.postdom;
+
+                if (pre.isDiscardable)
+                    pre = [];
+                else
+                    propagateType(pre, t_void, :relax_mask);
+
+                // The preheader is conditional -
+                //  only executes before first entry to loop body.
+                _current_fn.postdom.branch(postdom0);
             }
 
             if (pre_cond)
@@ -3213,7 +3228,7 @@ pub fn solve(
 
         ////////////////////////////////
         let scope0 = Scope_snap(_scope);
-        defer Scope_pop(_scope, scope0);
+        defer if !(mask & HM_LoopPreheader) Scope_pop(_scope, scope0);
         ////////////////////////////////
 
         let helpers_idx = _helpers.len;
@@ -5904,22 +5919,24 @@ pub fn solve(
             ret_actual:     t_void));
 
         let n_init      = node.items[LOOP_INIT];
-        let n_pre_cond  = node.items[LOOP_COND];
+        let n_pre_cond  = node.items[LOOP_PRE_COND];
+        let n_pre       = node.items[LOOP_PRE];
         let n_body      = node.items[LOOP_BODY];
-        let n_post_cond = node.items[LOOP_POST_COND];
         let n_post      = node.items[LOOP_POST];
+        let n_post_cond = node.items[LOOP_POST_COND];
 
-        let init        = n_init      && solveLetStatement(n_init);
+        let init        = n_init        && solveLetStatement(n_init);
         if (init.type.is_never)
         {
             makeNote(N_DeadLoopInit);
             return init;
         }
 
-        let pre_cond    = n_pre_cond  && solveNode(n_pre_cond,  t_bool);    // TODO deadcode noloop
-        let body        = n_body      && solveBlock(n_body, type: t_void);  // TODO deadcode noloop
-        let post_cond   = n_post_cond && solveNode(n_post_cond, t_bool);    // TODO deadcode noloop
-        let post        = n_post      && solveNode(n_post,      t_void);    // TODO deadcode noloop
+        let pre_cond    = n_pre_cond    && solveNode(n_pre_cond,  t_bool);        // TODO deadcode noloop
+        let pre         = n_pre         && solveBlock(n_pre, type: t_void, mask: HM_LoopPreheader);
+        let body        = n_body        && solveBlock(n_body, type: t_void);      // TODO deadcode noloop
+        let post        = n_post        && solveBlock(n_post, type: t_void); // TODO deadcode noloop
+        let post_cond   = n_post_cond   && solveNode(n_post_cond, t_bool);        // TODO deadcode noloop
 
         // Control flow.
         let h           = _helpers[brk_idx];
@@ -5929,7 +5946,7 @@ pub fn solve(
 
         return SolvedNode(
             kind: "loop", :type,
-            items: [ init, pre_cond, body, post_cond, post ],
+            items: [ init, pre_cond, pre, body, post, post_cond ],
             helpers: h);
     }
 

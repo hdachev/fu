@@ -12816,7 +12816,7 @@ pub extern fn runTests()
         fn main() validate_looks_pure() == 102 ? 0 : 1;
     `);
 
-    TODO_licm(`
+    ZERO(`
         fn pretend_pure(mut res = 0) {
             pragma emit(\`
                 static int counter = 100;
