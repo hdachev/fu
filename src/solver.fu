@@ -8832,7 +8832,7 @@ pub fn solve(
         fn bck_let(ref node: SolvedNode)
         {
             // Solve init expr.
-            bck_nodes(node.items);
+            bck_node(node.items[LET_INIT]);
 
             // Track references.
             if (node.is_ref && !node.target.willPassByValue())
@@ -9486,10 +9486,6 @@ pub fn solve(
 
         // Borrow check router.
 
-        fn bck_nodes(ref items: SolvedNode[])
-            for (mut i = 0; i < items.len; i++)
-                bck_node(items[i]);
-
         fn bck_node(ref node: SolvedNode)
         {
             let k = node.kind;
@@ -9550,7 +9546,9 @@ pub fn solve(
                   || k == "arrlit")             // TODO get rid of arrlits
             {
                 // The default - descend recursively.
-                bck_nodes(node.items);
+                ref items = node.items;
+                for (mut i = 0; i < items.len; i++)
+                    bck_node(items[i]);
             }
             else if (k == "pragma")
             {
