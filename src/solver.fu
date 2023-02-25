@@ -225,6 +225,8 @@ pub fn solve(
         ret_expect?:    Type;
         ret_actual?:    Type;
 
+        usage?:         Type[];
+
         postdom?:       Postdom;
 
         kills!?:        Helpers;
@@ -2332,6 +2334,17 @@ pub fn solve(
             return propagateType(:slot, node, :relax_mask);
         }
 
+        fn trackVarUsage(ref usage: Type[], index: i32, shadow slot: Type)
+        {
+            shadow ref usage = usage.grow_if_oob(index);
+            if (!usage)
+                usage = slot;
+            else
+                usage = type_tryIntersect(usage, slot) || BUG(
+                    nested(index) ~ ": Usage intersection failure: "
+                                  ~ explainTypeDiff(usage, slot, " & "));
+        }
+
 
         // Control flow.
 
@@ -2487,6 +2500,9 @@ pub fn solve(
             Breakable_begin();
             let loop_start0         = _current_fn.loop_start    || BUG();
             _current_fn.loop_start  = node.helpers.locals_start || BUG();
+
+            mut var_usage0: Type[];
+            swap(_current_fn.var_usage, var_usage0);
             // MOVE ON LAST USE ////////////////////////////////////////////
 
             // Relax in reverse.
@@ -2511,6 +2527,8 @@ pub fn solve(
 
             if (pre)
             {
+                // TODO FIX Fails to recognize the preheader is not actually part of the loop.
+                //  Not sure how to approach this exactly.
                 let postdom0 = _current_fn.postdom;
 
                 if (pre.isDiscardable)
@@ -2530,6 +2548,18 @@ pub fn solve(
             _current_fn.loop_start  = loop_start0;
             Breakable_end();
             _current_fn.loop_start == loop_start0 || BUG();
+
+            ref fn_usage = _current_fn.var_usage;
+            swap(fn_usage, var_usage0);
+
+            for (mut i = 0; i < var_usage0.len; i++)
+            {
+                shadow let slot = var_usage0[i];
+                if (slot)
+                    trackVarUsage(fn_usage, i, slot);
+            }
+
+            node.helpers.usage = var_usage0;
             // MOVE ON LAST USE ////////////////////////////////////////////
 
             if (init)       propagateType(init, t_void, :relax_mask);
@@ -2578,17 +2608,7 @@ pub fn solve(
                 //
                 if (t.isNested)
                 {
-                    ref usage = _current_fn.var_usage.grow_if_oob(t.index);
-
-                    // TODO FIX using the actual slot messes with lifetimes. //////
-                    shadow let slot = node.type; //////////////////////////////////
-
-                    if (!usage)
-                        usage = slot;
-                    else
-                        usage = type_tryIntersect(usage, slot) || fail(
-                            t ~ ": Usage intersection failure: `"
-                                    ~ humanizeType(usage) ~ "` & `" ~ humanizeType(slot) ~ "`.");
+                    trackVarUsage(_current_fn.var_usage, :t.index, node.type);
 
                     // MOVE ON LAST USE ////////////////////////////////////////////
                     {
