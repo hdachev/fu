@@ -95,8 +95,8 @@ pub extern fn runTests()
     let TODO_relaxer    = fn TODO;
     let TODO_ambig      = fn TODO;
     let TODO_StaticEval = fn TODO;
-    let TODO_slices     = fn TODO;
     let TODO_licm       = fn TODO;
+    let TODO_slices     = fn TODO;
 
     let TODO_Map        = fn TODO;
 
@@ -8282,6 +8282,27 @@ pub extern fn runTests()
     `);
 
     ZERO(`
+        fn main() {
+            let str = "hello world";
+            let s10 = str[:5] ~ str[6:];
+            return s10.len - 10;
+        }
+    `);
+
+    ZERO(`
+        fn main() {
+            mut strs = [ "hello", "world" ];
+            let hello = strs[0];
+            strs.insert(1,
+                <fail bad call>
+                hello[0:5] /* should work too, but currently expected to mismatch */ <pass/>
+                hello.slice(0, 5)</fail>
+            );
+            return strs.len - 3;
+        }
+    `);
+
+    ZERO(`
         fn test(hey: [i32])
             hey[0] + hey[1];
 
@@ -8398,24 +8419,18 @@ pub extern fn runTests()
     `);
 
     ZERO(`
-        // When we spec find(), the second arg is a view, not an array, so the $T specs to a less than array:
-        //  next thing that happens is that the first argument, which is $T[] specs to an array of views except they're not even refs for some reason.
-        //   so then we try to use the spec but quals matching doesn't descend through the type cannon, so they mismatch with:
-        //
-        // First arg of find(), the $T[] to search:
-        //
-        // ACTUAL CANON: []+1028[]+28byte
-        //                        ^^^^^^^ of bytes
-        //                 ^^^^^^^ of arrays (resize + copy)
-        //               ^^ view of
-        //
-        // EXPECT CANON: [][]+28byte
-        //                   ^^^^^^^ of bytes
-        //                 ^^ not a view (not a ref), nor an array - no resize/copy
-        //               ^^ view of
+        let NOTES = [ "AAA", "BBB", "CCC" ];
+        fn what(annot: string) NOTES.find(annot.slice(1, annot.len));
+        fn main() what("!BBB") - 1;
+    `);
+
+    TODO_slices(`
+        // When you pass this, delete the test above, they're the same.
+        //  The slice() should relax to a get_view, which doesnt need annot to be a string.
+        //   We generally want to remove the distinction between slice(a,b) and [a:b] altogether.
         //
         let NOTES = [ "AAA", "BBB", "CCC" ];
-        fn what(annot: string) NOTES.find(annot[1, annot.len]);
+        novec fn what(annot: string) NOTES.find(annot.slice(1, annot.len));
         fn main() what("!BBB") - 1;
     `);
 
@@ -11983,15 +11998,15 @@ pub extern fn runTests()
         }
     `);
 
-    TODO_slices(`
+    ZERO(`
         fn ZERO(mut sources: string[], implicit ref output: string) {
             for (mut i = 0; i < sources.len; i++) {
                 ref src = sources[i];
                 mut idx = 0;
                 while ((idx = src.find("X")) > 0) {
                     let sources1 = sources[0, i]
-                        ~ src[0, idx]
-                        ~ src[idx + 1, src.len]
+                        ~ src.slice(0, idx)
+                        ~ src.slice(idx + 1, src.len)
                         ~ sources[i + 1, sources.len];
 
                     ZERO(sources1);
