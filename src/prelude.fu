@@ -160,6 +160,14 @@ novec fn [] !T(a: [T;], i: int)
     case ($a -> &mut [T;]): &mut T __native(".mutref");
     default               : &    T __native;
 
+novec fn [] !T(a: [T;], start!: int)
+    case ($a -> &mut [T;]): &mut [T;] __native("<fu/view.h>", "fu::get_view_mut");
+    default               : &    [T;] __native("<fu/view.h>", "fu::get_view");
+
+novec fn [] !T(a: [T;], end!: int)
+    case ($a -> &mut [T;]): &mut [T;] __native("<fu/view.h>", "fu::get_view_start0_mut");
+    default               : &    [T;] __native("<fu/view.h>", "fu::get_view_start0");
+
 novec fn [] !T(a: [T;], start: int, end: int)
     case ($a -> &mut [T;]): &mut [T;] __native("<fu/view.h>", "fu::get_view_mut");
     default               : &    [T;] __native("<fu/view.h>", "fu::get_view");

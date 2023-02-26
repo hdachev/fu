@@ -8270,6 +8270,18 @@ pub extern fn runTests()
     // Slices.
 
     ZERO(`
+        fn main() {
+            mut a = [ 1, 2, 3, 4 ];
+            mut b = a[1: ];
+            mut c = a[ :3];
+            mut d = a[1:3];
+
+            mut res = b ~ c ~ d;
+            return res <> [ 2, 3, 4,  1, 2, 3,  2, 3 ];
+        }
+    `);
+
+    ZERO(`
         fn test(hey: [i32])
             hey[0] + hey[1];
 

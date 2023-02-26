@@ -253,6 +253,20 @@ view<T> get_view(const V& v, fu::i start) noexcept
 }
 
 template <typename V, typename T = typename V::value_type>
+view<T> get_view_start0(const V& v, fu::i end) noexcept
+{
+    auto size = v.size();
+    assert(end >= 0 && (size_t)end <= (size_t)size);
+
+    end     = end > 0 ? end : 0;
+    end     = (fu::u)end <= (fu::u)size ? end : size;
+
+    return view<T>(
+        v.data(),
+        end);
+}
+
+template <typename V, typename T = typename V::value_type>
 view<T> get_view(const V& v, fu::i start, fu::i end) noexcept
 {
     auto size = v.size();
@@ -270,6 +284,34 @@ view<T> get_view(const V& v, fu::i start, fu::i end) noexcept
 }
 
 template <typename V, typename T = typename V::value_type>
+view_mut<T> get_view_mut(V& v, fu::i start) noexcept
+{
+    auto end = v.size();
+    assert(start >= 0 && start <= end);
+
+    start   = start > 0   ? start : 0;
+    start   = start < end ? start : end;
+
+    return view_mut<T>(
+        v.data_mut() + start,
+        end - start);
+}
+
+template <typename V, typename T = typename V::value_type>
+view_mut<T> get_view_start0_mut(V& v, fu::i end) noexcept
+{
+    auto size = v.size();
+    assert(end >= 0 && (size_t)end <= (size_t)size);
+
+    end     = end > 0 ? end : 0;
+    end     = (fu::u)end <= (fu::u)size ? end : size;
+
+    return view_mut<T>(
+        v.data_mut(),
+        end);
+}
+
+template <typename V, typename T = typename V::value_type>
 view_mut<T> get_view_mut(V& v, fu::i start, fu::i end) noexcept
 {
     auto size = v.size();
@@ -284,6 +326,12 @@ view_mut<T> get_view_mut(V& v, fu::i start, fu::i end) noexcept
     return view_mut<T>(
         v.data_mut() + start,
         end - start);
+}
+
+template <typename T>
+fu_INL view_mut<T> get_view_mut(view_mut<T>&& v, fu::i start) noexcept
+{
+    return get_view_mut(v, start);
 }
 
 template <typename T>

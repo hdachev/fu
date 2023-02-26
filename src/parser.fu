@@ -1708,6 +1708,7 @@ pub fn parse(
     fn parseCallArgs(
         endop: string, ref out_args: Node[],
 
+        mut sliceSyntax!?: bool,
         experimental_sliceAnnots!?: bool): Flags
     {
         mut flags: Flags;
@@ -1729,15 +1730,23 @@ pub fn parse(
             //////////////////////////////////////////////////////////
 
             // Comma juggle.
-            if (!first)
+            if (!first) :COMMA
+            {
+                if (sliceSyntax)
+                {
+                    // TODO FIX bolting on slice syntax in a backward compatible way
+                    let peek = tokens[_idx];
+                    if (peek.kind == "op" && peek.value == ":")
+                        break :COMMA;
+                }
+
                 softComma(:endop);
+            }
 
             // Trailing comma -
             //  array literals, fncalls, etc.
             if (tryConsume("op", endop))
                 break;
-
-            first = false;
 
             // Named arguments.
             mut name = "";
@@ -1756,8 +1765,20 @@ pub fn parse(
             {
                 autoName = true;
                 _idx += 1;
+
+                if (sliceSyntax && !first && !(flags & F_NAMED_ARGS))
+                {
+                    // Open-ended slice syntax alla [start:]
+                    if (tryConsume("op", endop))
+                    {
+                        ref last = out_args.last;
+                        last = createArgID("start", last);
+                        flags |= F_NAMED_ARGS;
+                        break;
+                    }
+                }
             }
-            else if (tok0.kind == "id")
+            else if (tok0.kind == "id" && !sliceSyntax)
             {
                 let tok1 = tokens[_idx + 1];
                 if (tok1.kind == "op")
@@ -1781,14 +1802,28 @@ pub fn parse(
             }
 
             let expr = parseExpression(P_RESET);
+
             if (autoName)
-                name = getAutoName(expr);
+            {
+                if (sliceSyntax)
+                {
+                    name = "end";
+                    sliceSyntax = false;
+                }
+                else
+                {
+                    name = getAutoName(expr);
+                }
+            }
+
             if (name)
                 flags |= F_NAMED_ARGS;
 
             out_args.push(
                 name    ? createArgID(name, expr, flags: optional && F_OPT_ARG)
                         : expr);
+
+            first = false;
         }
 
         //////////////
@@ -1874,7 +1909,7 @@ pub fn parse(
     fn parseIndexExpression(expr: Node): Node
     {
         mut args: Node[];
-        let argFlags = parseCallArgs("]", args);
+        let argFlags = parseCallArgs("]", args, sliceSyntax: true);
 
         args.unshift(expr);
 
