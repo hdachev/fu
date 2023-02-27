@@ -279,8 +279,9 @@ pub fn solve(
     //
 
     struct TypeParam {
-        matched:  Type;
-        consumed: Type;
+        matched:        Type;
+        invariant:      Type;
+        consumed:       Type;
     };
 
     type TypeParams = typeof( map::Map(string, TypeParam) );
@@ -4277,7 +4278,9 @@ pub fn solve(
                             // Type check.
                             if (annot)
                             {
-                                let argOk = trySolveTypeParams(annot, inType, typeParams, :errout);
+                                let argOk = trySolveTypeParams(
+                                    annot, inType, typeParams, :errout,
+                                    invariant: false);
 
                                 if (!error && !argOk)
                                 {
@@ -6504,7 +6507,7 @@ pub fn solve(
     }
 
     fn trySolveTypeParams(
-        node: Node, mut type: Type, ref typeParams: TypeParams, ref errout: Warning[]): bool
+        node: Node, mut type: Type, ref typeParams: TypeParams, ref errout: Warning[], mut invariant!: bool): bool
     {
         fn matchFail(inline err: string)
         {
@@ -6535,46 +6538,58 @@ pub fn solve(
 
                 t || BUG();
 
+                if (node.value == "[]")
+                    invariant = true;
+
                 return trySolveTypeParams(
-                    items[0] || BUG(), t, typeParams, :errout);
+                    items[0] || BUG(), t, typeParams, :errout,
+                    :invariant);
             }
         }
         else if (node.kind == "typeparam")
         {
             let id = node.value || BUG();
 
-            // What is happening here?
-            // This is crazy, no?
-            ref _param = typeParams.map::ref(id);
-            if (_param)
-            {
-                let union = type_trySuper(_param.matched, type, :DONT_match_zeroes);
-                if (!union)
-                    matchFail("Incompatible types for " ~ id.qBAD ~ ": " ~ explainTypeDiff(_param.matched, type));
+            type = relax_typeParam(type);
 
-                type = union;
+            ref param = typeParams.map::ref(id);
+            if (param)
+            {
+                if (invariant)
+                {
+                    if (!isAssignable(host: type, param.matched, :DONT_match_zeroes))
+                        matchFail("Incompatible types for " ~ id.qBAD ~ ": " ~ explainTypeDiff(param.matched, type, "->"));
+                }
+                else
+                {
+                    let union = type_trySuper(param.matched, type, :DONT_match_zeroes);
+                    if (!union)
+                        matchFail("Incompatible types for " ~ id.qBAD ~ ": " ~ explainTypeDiff(param.matched, type, "<->"));
+
+                    type = union;
+                }
+
+                if (param.invariant)
+                    if (!isAssignable(host: param.invariant, type, :DONT_match_zeroes))
+                        matchFail("Incompatible types for " ~ id.qBAD ~ ": " ~ explainTypeDiff(param.invariant, type, "<-"));
             }
 
-            // TODO not here:
-            //  we want to clear everything non-canonical from
-            //   type params AFTER we solve & match the args,
-            //    during the matching it shouldn't be necessary.
-            //
-            // After the match we need this to e.g. lift `non_zero`
-            //  from integral results, etc.
-            //
-            shadow let type = relax_typeParam(type);
+            param.matched = type;
 
-            _param.matched = relax_typeParam(type);
+            if (invariant)
+                param.invariant = type;
 
             return true;
         }
         else if (node.kind == "arrlit" && node.items.len == 1)
         {
+            invariant = true;
+
             // Slice.
             let t = tryClear_sliceable(type);
             return t && trySolveTypeParams(
-                node.items[0] || BUG(), t, typeParams, :errout);
+                node.items[0] || BUG(), t, typeParams, :errout,
+                :invariant);
         }
         else if (node.kind == "typeunion")
         {
@@ -6583,7 +6598,7 @@ pub fn solve(
 
             for (mut i = 0; i < node.items.len; i++)
             {
-                if (trySolveTypeParams(node.items[i], :type, :typeParams, :errout))
+                if (trySolveTypeParams(node.items[i], :type, :typeParams, :errout, :invariant))
                 {
                     errout.shrink(errout0);
                     return true;
@@ -6644,7 +6659,8 @@ pub fn solve(
                 mut errout: Warning[];
                 let ok = trySolveTypeParams(
                     type: actual, node: right,
-                        :typeParams, :errout);
+                    :typeParams, :errout,
+                    invariant: false);
 
                 errout && BUG("Inefficient: trySolveTypeParams pushing errors when told not to (falsy errout).");
 
