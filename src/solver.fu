@@ -2342,7 +2342,7 @@ pub fn solve(
             else
                 usage = type_tryIntersect(usage, slot) || BUG(
                     nested(index) ~ ": Usage intersection failure: "
-                                  ~ explainTypeDiff(usage, slot, " & "));
+                                  ~ explainTypeDiff(usage, slot, "&"));
         }
 
 
@@ -4458,7 +4458,7 @@ pub fn solve(
                                 "tryGetArgSpecType: Not a typeparam: `"
                                     ~ o.kind ~ ":" ~ param ~ "(" ~ m.target.max ~ ")`.");
 
-                            return o.type;
+                            return o.type || BUG("tryGetArgSpecType: no type on " ~ o);
                         }
                     }
 
@@ -5030,6 +5030,9 @@ pub fn solve(
             }
 
             let type = tp.matched;
+            if (!type)
+                continue;
+
             let target = type.isStruct
                 && checkStruct(type)
                 || Scope_create(_scope,
@@ -9752,15 +9755,13 @@ pub fn solve(
 
             isAssignableAsArgument(host: host_arg.type, arg.type) || err(
                 "Arg #" ~ i ~ ", " ~ host_arg.name.human.qID ~ " not assignable to host_arg: "
-                    ~ "\n\t" ~ humanizeType(host_arg.type, lt: true) ~ " <- "
-                    ~ "\n\t" ~ humanizeType(     arg.type, lt: true));
+                    ~ explainTypeDiff(host_arg.type, arg.type, "<-"));
         }
 
         if (callsite.target.kind != "field")
             isAssignable(host: callsite.type, callsite.target.type) || err(
                 "Return value of " ~ callsite ~ " not assignable to callsite.type: "
-                    ~ "\n\t" ~ humanizeType(callsite       .type, lt: true) ~ " <- "
-                    ~ "\n\t" ~ humanizeType(callsite.target.type, lt: true));
+                    ~ explainTypeDiff(callsite.type, callsite.target.type, "<-"));
     }
 
 
