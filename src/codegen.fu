@@ -2502,13 +2502,14 @@ pub fn cpp_codegen(
         if (type.type_isZST)
             return "void()";
 
-        if (type.is_ref)
+        if (type.is_ref && !type.isPassByValue)
         {
             let annot = typeAnnot(type);
             if (annot.starts(with: "fu::view"))
                 return annot ~ "{}";
 
             include("<fu/default.h>");
+            type.is_primitive && BUG("cgDefault: Genering NIL refs to primitives.");
             return "(*(const " ~ typeAnnot(clear_refs(type)) ~ "*)fu::NIL)";
         }
 
