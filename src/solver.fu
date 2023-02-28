@@ -3979,34 +3979,6 @@ pub fn solve(
             scope_skip ~= ScopeSkip(:start, :end);
     }
 
-    fn ScopeSkip_setup(original: Target, scope0: ScopeMemo)
-    {
-        if (_root_scope)
-        {
-            let eph     = (original.spec_of || original).EPH;
-            let start   = eph.scope_memo || _root_scope;
-            _ss         = eph.scope_skip;
-
-            ScopeSkip_push(_ss.items,       start: start.items_len,     end: scope0.items_len);
-            ScopeSkip_push(_ss.implicits,   start: start.implicits_len, end: scope0.implicits_len);
-            ScopeSkip_push(_ss.imports,     start: start.imports_len,   end: scope0.imports_len);
-            ScopeSkip_push(_ss.privates,    start: start.privates_len,  end: scope0.privates_len);
-            ScopeSkip_push(_ss.usings,      start: start.usings_len,    end: scope0.usings_len);
-            ScopeSkip_push(_ss.converts,    start: start.converts_len,  end: scope0.converts_len);
-            ScopeSkip_push(_ss.helpers,     start: start.helpers_len,   end: scope0.helpers_len);
-        }
-
-        // We'll need the original imports in scope
-        //  in order to solve type params & pattern match below.
-        let imports = original.template.imports;
-        for (mut i = 0; i < imports.len; i++)
-        {
-            Scope_import(imports[i]);
-            if (i == 0)
-                Scope_import_privates(imports[i]);
-        }
-    }
-
 
     //
 
@@ -4136,7 +4108,39 @@ pub fn solve(
                 _helpers_data.shrink(helpers_data0);
             }
 
-            ScopeSkip_setup(:original, :scope0);
+            //
+            let isFirst     = !into || !into.solved;
+            let isTemplate  = template.node.flags & F_TEMPLATE;
+            let isSpec      = isTemplate && (!into || !isFirst); // TODO FIX this looks really flaky
+            let isUnspec    = isTemplate && !isSpec;
+
+            // Previously fn ScopeSkip_setup(original: Target, scope0: ScopeMemo)
+            {
+                if (_root_scope)
+                {
+                    let eph     = (original.spec_of || original).EPH;
+                    let start   = eph.scope_memo || _root_scope;
+                    _ss         = eph.scope_skip;
+
+                    ScopeSkip_push(_ss.items,       start: start.items_len,     end: scope0.items_len);
+                    ScopeSkip_push(_ss.implicits,   start: start.implicits_len, end: scope0.implicits_len);
+                    ScopeSkip_push(_ss.imports,     start: start.imports_len,   end: scope0.imports_len);
+                    ScopeSkip_push(_ss.privates,    start: start.privates_len,  end: scope0.privates_len);
+                    ScopeSkip_push(_ss.usings,      start: start.usings_len,    end: scope0.usings_len);
+                    ScopeSkip_push(_ss.converts,    start: start.converts_len,  end: scope0.converts_len);
+                    ScopeSkip_push(_ss.helpers,     start: start.helpers_len,   end: scope0.helpers_len);
+                }
+
+                // We'll need the original imports in scope
+                //  in order to solve type params & pattern match below.
+                let imports = template.imports;
+                for (mut i = 0; i < imports.len; i++)
+                {
+                    Scope_import(imports[i]);
+                    if (i == 0)
+                        Scope_import_privates(imports[i]);
+                }
+            }
 
             //
             let items = template.node.items;
@@ -4440,11 +4444,6 @@ pub fn solve(
 
             // Arg decls.
             _scope.items ~= extra_items;
-
-            let isFirst     = !target.solved;
-            let isTemplate  = template.node.flags & F_TEMPLATE;
-            let isSpec      = isTemplate && (!into || !isFirst); // TODO FIX this looks really flaky
-            let isUnspec    = isTemplate && !isSpec;
 
             for (mut i = 0; i < inItems.len + FN_ARGS_BACK; i++)
             {
