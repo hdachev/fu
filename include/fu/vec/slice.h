@@ -31,8 +31,8 @@ namespace fu {
     fu_VEC<T> slice(const fu_VEC<T>& v, fu::i start, fu::i end) noexcept
     {
         // Avoid-alloc for slice(0) strings.
-        if constexpr (fu_CONFIG<T>::TRIVIAL)
-            if (!start && end > fu_CONFIG<T>::SMALL_CAPA)
+        if constexpr (fu_VEC<T>::TRIVIAL)
+            if (!start && end > fu_VEC<T>::SMALL_CAPA)
                 return slice(
                     fu_VEC<T>(v), 0, end);
 

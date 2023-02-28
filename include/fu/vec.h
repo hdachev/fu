@@ -13,13 +13,20 @@
 // TODO remove these, perhaps switch them to intv and uintv.
 
 template <typename T>
-struct fu_CONFIG
+struct fu_VEC
 {
+    typedef T value_type;
+    typedef T fu_ANY_value_type;
+
+    /////////////////////////////////////////////
+
     static constexpr bool TRIVIAL =
         std::is_trivially_destructible<T>::value;
 
     static constexpr bool COPIABLE =
         std::is_copy_constructible<T>::value;
+
+    static constexpr bool SHAREABLE = COPIABLE;
 
     static constexpr fu::i VEC_SIZE = 16;
 
@@ -28,6 +35,7 @@ struct fu_CONFIG
             ? (VEC_SIZE - 1) / sizeof(T)
             : 0;
 
+    static constexpr bool HAS_SMALL = SMALL_CAPA != 0;
 
     // On little endian, we need the least significant capacity byte
     //  to be the rightmost byte of our struct,
@@ -38,26 +46,8 @@ struct fu_CONFIG
 
     static constexpr fu::i IS_BIG_MASK       = PACK_CAPA ? 0xf << 24 : 0xf;
     static constexpr fu::i SMALL_SIZE_OFFSET = PACK_CAPA ? 24 + 4 : 4;
-};
-
-template <typename T>
-struct fu_VEC
-{
-    typedef T value_type;
-    typedef T fu_ANY_value_type;
 
     /////////////////////////////////////////////
-
-    #define COPIABLE            (fu_CONFIG<T>::COPIABLE)
-    #define SHAREABLE           (COPIABLE)
-    #define TRIVIAL             (fu_CONFIG<T>::TRIVIAL)
-    #define VEC_SIZE            (fu_CONFIG<T>::VEC_SIZE)
-    #define SMALL_CAPA          (fu_CONFIG<T>::SMALL_CAPA)
-    #define HAS_SMALL           (SMALL_CAPA != 0)
-
-    #define PACK_CAPA           (fu_CONFIG<T>::PACK_CAPA)
-    #define IS_BIG_MASK         (fu_CONFIG<T>::IS_BIG_MASK)
-    #define SMALL_SIZE_OFFSET   (fu_CONFIG<T>::SMALL_SIZE_OFFSET)
 
     static constexpr fu::i SMALL_SIZE_MASK = 0xf;
 
@@ -1171,6 +1161,8 @@ struct fu_VEC
 
 //
 
+#undef UNSAFE__arc
+
 #undef MOV_ctor
 #undef CPY_ctor
 
@@ -1184,18 +1176,4 @@ struct fu_VEC
 #undef MUT_trim
 #undef MUT_init
 #undef MUT_clear
-
-//
-
-#undef TRIVIAL
-#undef COPIABLE
-#undef SHAREABLE
-#undef VEC_SIZE
-#undef SMALL_CAPA
-#undef HAS_SMALL
-
-#undef PACK_CAPA
-#undef IS_BIG_MASK
-#undef SMALL_SIZE_OFFSET
-
-//
+#undef MUT_reserve
