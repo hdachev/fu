@@ -4289,6 +4289,7 @@ pub fn solve(
                                 if (!error && !argOk)
                                 {
                                     error = "arg".qKW ~ " " ~ argName.qID ~ ":";
+                                    errout.len > 1 || BUG("BUG trySolveTypeParams did not provide an explanation.");
                                     for (shadow mut i = 1; i < errout.len; i++)
                                         error ~= "\n\t    " ~ errout[i].message;
                                 }
@@ -6530,9 +6531,9 @@ pub fn solve(
             :UNARY
             if (items.len == 1)
             {
-                mut t   = node.value == "&"    ? tryClear_ref(type)     || matchFail("Not a reference:  " ~ type.humanizeType)
-                        : node.value == "&mut" ? tryClear_mutref(type)  || matchFail("Not a mutref:     " ~ type.humanizeType)
-                        : node.value == "[]"   ? tryClear_array(type)   || matchFail("Not an array:     " ~ type.humanizeType)
+                mut t   = node.value == "&"    ? tryClear_ref(type)     || matchFail("Not a reference: " ~ type.humanizeType)
+                        : node.value == "&mut" ? tryClear_mutref(type)  || matchFail("Not a mutref: " ~ type.humanizeType)
+                        : node.value == "[]"   ? tryClear_array(type)   || matchFail("Not an array: " ~ type.humanizeType)
                         : { break :UNARY; };
 
                 t || BUG();
@@ -6585,8 +6586,8 @@ pub fn solve(
             invariant = true;
 
             // Slice.
-            let t = tryClear_sliceable(type);
-            return t && trySolveTypeParams(
+            let t = tryClear_sliceable(type) || matchFail("Not sliceable: " ~ type.humanizeType);
+            return trySolveTypeParams(
                 node.items[0] || BUG(), t, typeParams, :errout,
                 :invariant);
         }
@@ -6610,8 +6611,11 @@ pub fn solve(
         }
 
         // Everything else is a regular type annotation.
-        return isAssignable(
-            evalTypeAnnot(node), type, :DONT_match_zeroes);
+        let expect = evalTypeAnnot(node);
+        if (!isAssignable(expect, type, :DONT_match_zeroes))
+            matchFail("Incompatible types: " ~ explainTypeDiff(expect, type, "<-"));
+
+        return true;
     }
 
     fn evalTypePattern(node: Node, ref typeParams: TypeParams): bool

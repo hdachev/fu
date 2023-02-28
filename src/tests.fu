@@ -7410,6 +7410,16 @@ pub extern fn runTests()
         }
     `);
 
+    TODO_conv(`
+        fn setupOperators(i: i32) {
+            struct sB { hey: i32; };
+            struct BINOP { i: sB; };
+            return BINOP([ i ]); // Inference fail.
+        }
+
+        fn main() setupOperators(0).i.hey;
+    `);
+
     ZERO(`
         // Same as below, but avoids the $T call, which is also broken somehow.
         //  DONT DELETE ME after you fix the $T, its a great example of stupid codegen -
@@ -10973,16 +10983,6 @@ pub extern fn runTests()
 
         type a = sB(i32);
         fn main() a(1).test;
-    `);
-
-    TODO_specpat(`
-        fn setupOperators(i: i32) {
-            struct sB { hey: i32; }; // same as below
-            struct BINOP { i: sB; }; //  but no templates
-            return BINOP([ i ]);
-        }
-
-        fn main() setupOperators(0).i.hey;
     `);
 
     TODO_specpat(`
