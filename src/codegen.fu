@@ -239,7 +239,7 @@ pub fn cpp_codegen(
 
         if (type.is_ref)
         {
-            if (fwd.starts(with: "fu::view") || fwd == "void")
+            if (type.type_isSliceable && !type.arrayType_annotateAsVec || fwd == "void")
                 return fwd;
 
             if (type.is_mutref)
@@ -310,6 +310,11 @@ pub fn cpp_codegen(
         fail("Unknown primitive: `" ~ c ~ "`.");
     }
 
+    fn arrayType_annotateAsVec(type: Type)
+    {
+        return !type.is_ref || type.TODO_FIX_isArray;
+    }
+
     fn typeAnnotBase(type: Type, mode?: i32): string
     {
         let c = type.canon;
@@ -325,7 +330,7 @@ pub fn cpp_codegen(
         if (arrayItem)
         {
             // Arrays & strings.
-            if (type.TODO_FIX_isArray || !type.is_ref)
+            if (type.arrayType_annotateAsVec)
             {
                 if (arrayItem == t_byte)
                     return annotateString();
@@ -1316,7 +1321,7 @@ pub fn cpp_codegen(
         if (!t.is_mutref && t.isPassByValue)
             return false;
 
-        return t.is_ref && (!t.type_isSliceable || t.TODO_FIX_isArray);
+        return t.is_ref && (!t.type_isSliceable || t.arrayType_annotateAsVec);
     }
 
     fn binding(target!: Target, forceValue!?: bool)
@@ -1707,7 +1712,7 @@ pub fn cpp_codegen(
         let slate = "fu::slate<" ~ items.len ~ ", " ~ itemT ~ "> " ~ curly;
 
         // fu::slate literals
-        if (callarg.is_ref && !callarg.TODO_FIX_isArray)
+        if (callarg.is_ref && !callarg.arrayType_annotateAsVec)
         {
             include("<fu/view.h>");
 
@@ -2467,7 +2472,7 @@ pub fn cpp_codegen(
         ////////////////////////////////////////////////////////////////
         // TODO FIX the implicit conversion from vec to view we do in c++
         //  is not visible in the AST but is seq-sensitive
-        if (host_arg.type_isSliceable && !host_arg.TODO_FIX_isArray)
+        if (host_arg.type_isSliceable && !host_arg.arrayType_annotateAsVec)
             return false;
         ////////////////////////////////////////////////////////////////
 
@@ -2504,13 +2509,12 @@ pub fn cpp_codegen(
 
         if (type.is_ref && !type.isPassByValue)
         {
-            let annot = typeAnnot(type);
-            if (annot.starts(with: "fu::view"))
-                return annot ~ "{}";
-
-            include("<fu/default.h>");
-            type.is_primitive && BUG("cgDefault: Genering NIL refs to primitives.");
-            return "(*(const " ~ typeAnnot(clear_refs(type)) ~ "*)fu::NIL)";
+            if (!type.type_isSliceable || type.arrayType_annotateAsVec)
+            {
+                include("<fu/default.h>");
+                type.is_primitive && BUG("cgDefault: Genering NIL refs to primitives.");
+                return "(*(const " ~ typeAnnot(clear_refs(type)) ~ "*)fu::NIL)";
+            }
         }
 
         return typeAnnot(type) ~ "{}";
