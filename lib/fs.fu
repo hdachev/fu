@@ -83,10 +83,10 @@ fn cwd(): string
             char* cstr_cwd  = getcwd(/*buf*/NULL, /*size*/0);
             fu_DEFER( free(cstr_cwd); );
 
-            return fu_TO_STR(cstr_cwd);
+            return fu::to_str(cstr_cwd);
         };
 
-        static const fu_STR value = init();
+        static const fu::str value = init();
 
         `cwd` = value;
     `);

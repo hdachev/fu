@@ -5,6 +5,6 @@
 
 namespace fu {
 
-void println(fu::view<fu_STR> parts);
+void println(fu::view<fu::str> parts);
 
 } // namespace

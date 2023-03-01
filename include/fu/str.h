@@ -4,11 +4,21 @@
 #include "./int.h"
 
 
-// Strings.
+// BACKCOMPAT.
 
 typedef fu::vec<fu::byte> fu_STR;
 
-inline fu_STR fu_TO_STR(const char* cstr) noexcept
+#define fu_TO_STR fu::to_str
+#define fu_STRLIT fu::strlit
+
+
+//
+
+namespace fu {
+
+typedef fu_STR str;
+
+inline fu_STR to_str(const char* cstr) noexcept
 {
     cstr = cstr ? cstr : "";
     fu_STR vec;
@@ -16,10 +26,7 @@ inline fu_STR fu_TO_STR(const char* cstr) noexcept
     return vec;
 }
 
-
-//
-
-struct fu_STRLIT
+struct strlit
 {
     typedef fu::byte value_type;
     typedef fu::byte fu_VIEW_value_type;
@@ -55,8 +62,10 @@ struct fu_STRLIT
     }
 };
 
-fu_INL constexpr fu_STRLIT operator ""_fu(const char* cstr, size_t len) noexcept {
-    return fu_STRLIT { cstr, (int) len };
+} // namespace
+
+fu_INL constexpr fu::strlit operator ""_fu(const char* cstr, size_t len) noexcept {
+    return fu::strlit { cstr, (int) len };
 }
 
 
@@ -73,7 +82,7 @@ auto operator<<(OStream& stream, const fu_STR& str)
 }
 
 template <typename OStream>
-auto operator<<(OStream& stream, const fu_STRLIT& str)
+auto operator<<(OStream& stream, const fu::strlit& str)
     -> decltype(
         stream.write((const char*)str.data(), size_t(str.size())),
         stream << *(const char*)str.data())

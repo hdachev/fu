@@ -4,12 +4,12 @@
 
 namespace fu {
 
-fu_STR u64dec(uint64_t num);
-fu_STR i64dec(int64_t num);
+fu::str u64dec(uint64_t num);
+fu::str i64dec(int64_t num);
 
-fu_STR f64dec(double num);
-fu_STR booldec(bool num);
+fu::str f64dec(double num);
+fu::str booldec(bool num);
 
-inline fu_STR f32dec(float num) { return f64dec(double(num)); }
+inline fu::str f32dec(float num) { return f64dec(double(num)); }
 
 }
