@@ -333,7 +333,7 @@ pub fn cpp_codegen(
                 let itemAnnot = typeAnnot(arrayItem);
 
                 include("<fu/vec.h>");
-                return "fu_VEC<" ~ itemAnnot ~ ">";
+                return "fu::vec<" ~ itemAnnot ~ ">";
             }
 
             //
@@ -622,13 +622,13 @@ pub fn cpp_codegen(
 
             src = "\nint main(int argc, char* argv[])"
                 ~ "\n{"
-                ~ "\n    fu_VEC<fu_STR> args;"
+                ~ "\n    fu::vec<fu_STR> args;"
                 ~ "\n    args.reserve(argc);"
                 ~ "\n"
                 ~ "\n    for (int i = 0; i < argc; i++)"
                 ~ "\n        args.push(fu_TO_STR(argv[i]));"
                 ~ "\n"
-                ~ "\n    return fu_MAIN(static_cast<fu_VEC<fu_STR>&&>(args))" ~ zst ~ ";"
+                ~ "\n    return fu_MAIN(static_cast<fu::vec<fu_STR>&&>(args))" ~ zst ~ ";"
                 ~ "\n}";
         }
 

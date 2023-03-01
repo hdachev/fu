@@ -18,7 +18,7 @@ typedef int PosixPipe[2];
 typedef int Errno;
 
 static Errno fu_spawn(
-    fu_VEC<fu_STR>&  argv, int& pid,
+    fu::vec<fu_STR>&  argv, int& pid,
     const PosixPipe* stdout,
     const PosixPipe* stderr)
 {

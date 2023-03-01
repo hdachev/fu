@@ -10,7 +10,9 @@
 #include "./mem/endian.h"
 #include "./vec/maybe_pos.h"
 
-// TODO remove these, perhaps switch them to intv and uintv.
+namespace fu {
+
+#define fu_VEC vec
 
 template <typename T>
 struct fu_VEC
@@ -1158,8 +1160,9 @@ struct fu_VEC
     }
 };
 
+} // namespace
 
-//
+#undef fu_VEC
 
 #undef UNSAFE__arc
 
@@ -1177,3 +1180,7 @@ struct fu_VEC
 #undef MUT_init
 #undef MUT_clear
 #undef MUT_reserve
+
+// Backcompat.
+
+#define fu_VEC fu::vec

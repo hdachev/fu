@@ -37,8 +37,8 @@ namespace
 
     struct Hotswap
     {
-        fu_VEC<Loader>  libs        {};
-        fu_VEC<Item>    items       {};
+        fu::vec<Loader> libs        {};
+        fu::vec<Item>   items       {};
     };
 
 

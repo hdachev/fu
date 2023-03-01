@@ -6,7 +6,7 @@
 
 // Strings.
 
-typedef fu_VEC<fu::byte> fu_STR;
+typedef fu::vec<fu::byte> fu_STR;
 
 inline fu_STR fu_TO_STR(const char* cstr) noexcept
 {

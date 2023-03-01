@@ -8,39 +8,39 @@ namespace fu {
     // Moving.
 
     template <typename T>
-    fu_VEC<T> slice(fu_VEC<T>&& v, fu::i start) noexcept {
+    fu::vec<T> slice(fu::vec<T>&& v, fu::i start) noexcept {
         v.shift(start);
-        return static_cast<fu_VEC<T>&&>(v);
+        return static_cast<fu::vec<T>&&>(v);
     }
 
     template <typename T>
-    fu_VEC<T> slice(fu_VEC<T>&& v, fu::i start, fu::i end) noexcept {
+    fu::vec<T> slice(fu::vec<T>&& v, fu::i start, fu::i end) noexcept {
         v.shift_pop(start, v.size() - end);
-        return static_cast<fu_VEC<T>&&>(v);
+        return static_cast<fu::vec<T>&&>(v);
     }
 
     template <typename T>
-    fu_INL fu_VEC<T> substr(fu_VEC<T>&& v, fu::i start, fu::i count) noexcept {
-        return slice(static_cast<fu_VEC<T>&&>(v), start, start + count);
+    fu_INL fu::vec<T> substr(fu::vec<T>&& v, fu::i start, fu::i count) noexcept {
+        return slice(static_cast<fu::vec<T>&&>(v), start, start + count);
     }
 
 
     // Copying.
 
     template <typename T>
-    fu_VEC<T> slice(const fu_VEC<T>& v, fu::i start, fu::i end) noexcept
+    fu::vec<T> slice(const fu::vec<T>& v, fu::i start, fu::i end) noexcept
     {
         // Avoid-alloc for slice(0) strings.
-        if constexpr (fu_VEC<T>::TRIVIAL)
-            if (!start && end > fu_VEC<T>::SMALL_CAPA)
+        if constexpr (fu::vec<T>::TRIVIAL)
+            if (!start && end > fu::vec<T>::SMALL_CAPA)
                 return slice(
-                    fu_VEC<T>(v), 0, end);
+                    fu::vec<T>(v), 0, end);
 
         // The usual.
         fu::i s = v.size();
         assert(start >= 0 && start <= end && end <= s);
 
-        fu_VEC<T> result;
+        fu::vec<T> result;
 
         end         = end < s ? end : s;
         start       = start > 0 ? start : 0;
@@ -54,12 +54,12 @@ namespace fu {
     }
 
     template <typename T>
-    fu_INL fu_VEC<T> slice(const fu_VEC<T>& v, fu::i start) noexcept {
+    fu_INL fu::vec<T> slice(const fu::vec<T>& v, fu::i start) noexcept {
         return slice(v, start, v.size());
     }
 
     template <typename T>
-    fu_INL fu_VEC<T> substr(const fu_VEC<T>& v, fu::i start, fu::i count) noexcept {
+    fu_INL fu::vec<T> substr(const fu::vec<T>& v, fu::i start, fu::i count) noexcept {
         return slice(v, start, start + count);
     }
 
