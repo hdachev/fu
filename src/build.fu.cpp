@@ -1962,7 +1962,7 @@ void build_HnsWULq2(fu_STR&& dir_wrk, fu::view<char> fudir, /*MOV*/ fu_STR&& ful
                     code = READ_StatusCode_MyLi5Dux(F_exe);
                 else
                 {
-                    if (code != 32512)
+                    if (code != 32512 && code != 35584)
                         WRITE_StatusCode_JMBXcIqo(code, F_exe);
 
                 };

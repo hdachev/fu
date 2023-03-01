@@ -535,9 +535,9 @@ pub fn build(
                 }
                 else
                 {
-                    // Don't cache suprious failure codes.
+                    // Don't cache spurious failure codes.
                     //
-                    if (code != 32512)
+                    if (code != 32512 && code != 35584)
                         WRITE_StatusCode(code);
                 }
             }
