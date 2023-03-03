@@ -33,7 +33,7 @@ struct strlit
     typedef fu::byte fu_ANY_value_type;
 
     const char* m_data;
-    int m_size;
+    fu::i m_size;
 
     operator fu_STR() const noexcept {
         fu_STR vec;
@@ -45,7 +45,7 @@ struct strlit
         return (const fu::byte*)m_data;
     }
 
-    fu_INL int size() const noexcept {
+    fu_INL fu::i size() const noexcept {
         return m_size;
     }
 
@@ -65,7 +65,7 @@ struct strlit
 } // namespace
 
 fu_INL constexpr fu::strlit operator ""_fu(const char* cstr, size_t len) noexcept {
-    return fu::strlit { cstr, (int) len };
+    return fu::strlit { cstr, (fu::i) len };
 }
 
 
