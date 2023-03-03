@@ -97,6 +97,7 @@ pub extern fn runTests()
     let TODO_StaticEval = fn TODO;
     let TODO_licm       = fn TODO;
     let TODO_slices     = fn TODO;
+    let TODO_cow        = fn TODO;
 
     let TODO_Map        = fn TODO;
 
@@ -1420,6 +1421,227 @@ pub extern fn runTests()
         }
         return other.len;
     `);
+
+    TODO_cow(`
+        fn main() {
+            mut nums: i32[];
+            for (mut i = 0; i < 100; i++)
+                nums ~= 1;
+
+            ref zero    = nums[nums.len / 2];
+            let allOnes = nums;
+
+            zero = 0;
+
+            mut o = 0;
+            for (mut i = 0; i < allOnes.len; i++)
+                if (allOnes[i] == 1)
+                    o++;
+
+            return zero == 0 && o == 100 ? 0 : 1;
+        }
+    `);
+
+    TODO_cow(`
+        <alt>
+        noinline fn cow_after_ref_indirect(ref zero: i32, allOnes: i32[]) cow_after_ref(:zero, :allOnes);
+        noinline fn cow_after_ref(ref zero: i32, allOnes: i32[])
+        <alt/>
+        noinline fn cow_after_ref_indirect(allOnes: i32[], ref zero: i32) cow_after_ref(:allOnes, :zero);
+        noinline fn cow_after_ref(allOnes: i32[], ref zero: i32)
+        </alt>
+        {
+            zero = 0;
+
+            mut o = 0;
+            for (mut i = 0; i < allOnes.len; i++)
+                if (allOnes[i] == 1)
+                    o++;
+
+            return zero == 0 && o == 100 ? 0 : 1;
+        }
+
+        fn main() {
+            mut nums: i32[];
+            for (mut i = 0; i < 100; i++)
+                nums ~= 1;
+
+            <alt>
+            return cow_after_ref(           <alt/>
+            return cow_after_ref_indirect(  </alt>
+                zero: nums[nums.len / 2], allOnes: nums);
+        }
+    `);
+
+    TODO_cow(`
+        fn main() {
+            mut nums: i32[];
+            for (mut i = 0; i < 100; i++)
+                nums ~= 1;
+
+            ref zeroes  = nums[10:20];
+            let allOnes = nums;
+
+            for (mut i = 0; i < zeroes.len; i++)
+                zeroes[i] = 0;
+
+            mut o = 0;
+            for (mut i = 0; i < allOnes.len; i++)
+                if (allOnes[i] == 1)
+                    o++;
+
+            mut z = 0;
+            for (mut i = 0; i < zeroes.len; i++)
+                if (!zeroes[i])
+                    z++;
+
+            return z == 10 && o == 100 ? 0 : 1;
+        }
+    `);
+
+    TODO_cow(`
+        <alt>
+        noinline fn cow_after_ref_indirect(ref zeroes: [i32], allOnes: i32[]) cow_after_ref(:zeroes, :allOnes);
+        noinline fn cow_after_ref(ref zeroes: [i32], allOnes: i32[])
+        <alt/>
+        noinline fn cow_after_ref_indirect(allOnes: i32[], ref zeroes: [i32]) cow_after_ref(:allOnes, :zeroes);
+        noinline fn cow_after_ref(allOnes: i32[], ref zeroes: [i32])
+        </alt>
+        {
+            for (mut i = 0; i < zeroes.len; i++)
+                zeroes[i] = 0;
+
+            mut o = 0;
+            for (mut i = 0; i < allOnes.len; i++)
+                if (allOnes[i] == 1)
+                    o++;
+
+            mut z = 0;
+            for (mut i = 0; i < zeroes.len; i++)
+                if (!zeroes[i])
+                    z++;
+
+            return z == 10 && o == 100 ? 0 : 1;
+        }
+
+        fn main() {
+            mut nums: i32[];
+            for (mut i = 0; i < 100; i++)
+                nums ~= 1;
+
+            <alt>
+            return cow_after_ref(           <alt/>
+            return cow_after_ref_indirect(  </alt>
+                zeroes: nums[10:20], allOnes: nums);
+        }
+    `);
+
+    TODO_cow(`
+        fn test(ref nums: i32[][]) {
+            ref zeroes  = nums[nums.len / 2];
+            mut allOnes = nums[nums.len / 2];
+
+            for (mut i = 0; i < zeroes.len; i++)
+                zeroes[i] = 0;
+
+            mut o = 0;
+            for (mut i = 0; i < allOnes.len; i++)
+                if (allOnes[i] == 1)
+                    o++;
+
+            mut z = 0;
+            for (mut i = 0; i < zeroes.len; i++)
+                if (!zeroes[i])
+                    z++;
+
+            return o == 10 && z == 10 ? 0 : 10;
+        }
+
+        fn main() {
+            mut nums: i32[][];
+            for (mut i = 0; i < 4; i++)
+                nums ~= [ 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 ];
+
+            return test(nums);
+        }
+    `);
+
+    TODO_cow(`
+        struct TwoVecs {
+            ones: i32[];
+            twos: i32[];
+        };
+
+        fn main() {
+            mut orig: TwoVecs;
+            for (mut i = 0; i < 100; i++) {
+                orig.ones ~= 1;
+                orig.twos ~= 2;
+            }
+
+            ref zero    = orig.ones[orig.ones.len / 2];
+            let all     = orig;
+
+            zero = 0;
+
+            mut o = 0;
+            for (mut i = 0; i < all.ones.len; i++)
+                if (all.ones[i] == 1)
+                    o++;
+
+            mut t = 0;
+            for (mut i = 0; i < all.twos.len; i++)
+                if (all.twos[i] == 2)
+                    t++;
+
+            return zero == 0 && o == 100 && t == 100 ? 0 : 1;
+        }
+    `);
+
+    TODO_cow(`
+        struct TwoVecs {
+            ones: i32[];
+            twos: i32[];
+        };
+
+        <alt>
+        noinline fn cow_after_ref_indirect(ref zero: i32, all: TwoVecs) cow_after_ref(:zero, :all);
+        noinline fn cow_after_ref(ref zero: i32, all: TwoVecs)
+        <alt/>
+        noinline fn cow_after_ref_indirect(all: TwoVecs, ref zero: i32) cow_after_ref(:all, :zero);
+        noinline fn cow_after_ref(all: TwoVecs, ref zero: i32)
+        </alt>
+        {
+            zero = 0;
+
+            mut o = 0;
+            for (mut i = 0; i < all.ones.len; i++)
+                if (all.ones[i] == 1)
+                    o++;
+
+            mut t = 0;
+            for (mut i = 0; i < all.twos.len; i++)
+                if (all.twos[i] == 2)
+                    t++;
+
+            return zero == 0 && o == 100 && t == 100 ? 0 : 1;
+        }
+
+        fn main() {
+            mut orig: TwoVecs;
+            for (mut i = 0; i < 100; i++) {
+                orig.ones ~= 1;
+                orig.twos ~= 2;
+            }
+
+            <alt>
+            return cow_after_ref(           <alt/>
+            return cow_after_ref_indirect(  </alt>
+                zero: orig.ones[orig.ones.len / 2], all: orig);
+        }
+    `);
+
+    // /Arrays.
 
 
     // A basic testing setup for array ops,
