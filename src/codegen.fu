@@ -315,6 +315,11 @@ pub fn cpp_codegen(
         return !type.is_ref || type.TODO_FIX_isArray;
     }
 
+    fn arrayType_annotateAsView(type: Type)
+    {
+        return type.is_ref && !(type.is_rx_copy || type.is_rx_resize);
+    }
+
     fn typeAnnotBase(type: Type, mode?: i32): string
     {
         let c = type.canon;
@@ -1712,7 +1717,7 @@ pub fn cpp_codegen(
         let slate = "fu::slate<" ~ items.len ~ ", " ~ itemT ~ "> " ~ curly;
 
         // fu::slate literals
-        if (callarg.is_ref && !callarg.arrayType_annotateAsVec)
+        if (callarg.arrayType_annotateAsView)
         {
             include("<fu/view.h>");
 
