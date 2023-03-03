@@ -12056,6 +12056,19 @@ pub extern fn runTests()
         }
     `);
 
+    TODO_relaxer(`
+        novec fn doesnt_copy_arg(arg: string, suffix: byte)
+            arg && arg ~ suffix;
+
+        fn main() {
+            mut share = "01234567abcdefghABCDEFGH01234567abcdefghABCDEFGH";
+            mut a = doesnt_copy_arg(a, '!');
+            mut b = doesnt_copy_arg(b, '?');
+            mut c = doesnt_copy_arg("", '.');
+            return a.len == b.len && a.len == 49 && c.len == 0 ? 0 : 1;
+        }
+    `);
+
     // /Relaxer.
 
 
