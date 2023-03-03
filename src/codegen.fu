@@ -2925,9 +2925,11 @@ pub fn cpp_codegen(
                     //
                     noteDefect(ConstCast);
 
-                    return "("  ~ typeAnnotBase(node.type) ~ "&&) ("
+                    let annot = typeAnnotBase(node.type);
+
+                    return "static_cast<" ~ annot ~ "&&>(const_cast<" ~ annot ~ "&>("
                                 ~ cgNode(expr, debug: "cgMoveByConstCast")
-                                ~ ")";
+                                ~ "))";
                 }
             }
         }
