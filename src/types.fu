@@ -242,6 +242,12 @@ pub fn make_copyable(mut type: Type)
     return type;
 }
 
+pub fn make_non_copyable(mut type: Type)
+{
+    type.quals &= ~q_rx_copy;
+    return type;
+}
+
 
 // Type serialization:
 //  `modid` `+quals` `canon`: a very compact repr.
@@ -260,8 +266,7 @@ pub fn serializeType(type: Type, debug!: string)
 
 pub fn humanizeQuals(type: Type)
 {
-    mut result = ":";
-
+    mut result: string;
     for (mut i = 0; i < TAGS.len; i++)
         if (type.quals & (1 << i))
             result ~= " " ~ TAGS[i];

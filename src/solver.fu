@@ -958,8 +958,7 @@ pub fn solve(
             ? lookupUserType(type).name
             : type.canon;
 
-        if (type.quals)
-            result ~= humanizeQuals(type);
+        result ~= humanizeQuals(type);
 
         // NOT SAFE! nested here blows up on return types
         // type.lifetime.uni0n.each: |r|
@@ -3726,10 +3725,11 @@ pub fn solve(
             :value, token: _here || BUG());
     }
 
+    fn X_addrofTarget(targets: [Target])
+        Type(ValueType(canon: packAddrOfFn(targets)));
+
     fn X_addrofTarget(target: Target)
-    {
-        return Type(ValueType(quals: 0, canon: packAddrOfFn([ target ])));
-    }
+        X_addrofTarget([ target ]);
 
 
     //
@@ -5402,13 +5402,12 @@ pub fn solve(
         {
             mut CHANGE = false;
 
-            mut commonQuals = -1;
-            for (mut i = 0; i < members.len; i++)
-                commonQuals &= members[i].type.quals;
-
-            let quals0 = out_type.quals;
-            let quals1 = out_type.quals &= commonQuals;
-            CHANGE   ||= quals0 != quals1;
+            if (out_type.is_rx_copy &&
+                members.some(|member| !member.type.is_rx_copy))
+            {
+                CHANGE = true;
+                out_type = make_non_copyable(out_type);
+            }
 
             //
             {
@@ -6490,10 +6489,8 @@ pub fn solve(
 
     fn solveAddrOfFn(node: Node): SolvedNode
     {
-        let id = node.value;
-        let result = solveAddrOfFn(:id, :node.flags);
-
-        let type = Type(ValueType(quals: 0, canon: packAddrOfFn(result)));
+        let id   = node.value;
+        let type = X_addrofTarget(targets: solveAddrOfFn(:id, :node.flags));
         return createEmpty(:type);
     }
 
