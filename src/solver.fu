@@ -680,7 +680,7 @@ pub fn solve(
         return res.lifetime;
     }
 
-    fn Lifetime_test(lifetime: Lifetime, tempsOK!?: bool): Lifetime
+    fn Lifetime_test(lifetime: Lifetime, lax tempsOK!?: bool): Lifetime
     {
         if (SELF_TEST)
         {
@@ -1631,12 +1631,12 @@ pub fn solve(
                         let PREV        = matchIdx;
                         let NEXT        = overloadIdx;
 
-                        let inner       = PREV.localOf;             // first to match is innermost scope
-                        let outer       = NEXT.localOf;             //  what we're currently looking is upscope
-                        let callsite    = _current_fn.target.index; //   as seen from where we currently are
-
                         if (SELF_TEST && PREV.kind != "field" /* the field_items connundrum, this is the easiest fix */)
                         {
+                            let inner       = PREV.localOf;             // first to match is innermost scope
+                            let outer       = NEXT.localOf;             //  what we're currently looking is upscope
+                            let callsite    = _current_fn.target.index; //   as seen from where we currently are
+
                             mut _c = callsite;
                             while (_c > inner) _c = GETfn(_c).localOf;
                             _c == inner || BUG(
@@ -8084,9 +8084,9 @@ pub fn solve(
                         argdefs ~= argdef;
 
                     // Watch it, cross-module locals.
-                    let foreign         = nested(from: target, host_arg.local);
+                    let foreign = nested(from: target, host_arg.local);
                     letdefReplicas.grow_if_oob(foreign.index) = argdef.target.index || BUG();
-                    shadow let foreign  = GET_crossmodule(foreign, from: target);
+                    lax shadow let foreign = GET_crossmodule(foreign, from: target);
 
                     if (SELF_TEST)
                         isAssignable(host: foreign.type, argdef.target.type) || BUG(
