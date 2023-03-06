@@ -2421,7 +2421,7 @@ pub fn solve(
         {
             let rest = !canDiscard && (k == "or" || slot.is_mutref && CANNOT_definit_mutrefs)
                 ? slot
-                : t_bool;
+                : t_proposition;
 
             let postdom0 = _current_fn.postdom;
 
@@ -2473,7 +2473,7 @@ pub fn solve(
                 // MOVE ON LAST USE ////////////////////////////////////////////
 
                 propagateType(node.items[i], :relax_mask,
-                    slot:  i != 0 || canDiscard_cond ? slot : t_bool,
+                    slot:  i != 0 || canDiscard_cond ? slot : t_proposition,
 
                     // CAN AFFECT cons/alt.type (see `if (kills)` below):
                     //  If all assumptions check out,
@@ -2576,7 +2576,7 @@ pub fn solve(
 
             // Relax in reverse.
             if (post_cond)
-                propagateType(post_cond, t_bool, :relax_mask);
+                propagateType(post_cond, t_proposition, :relax_mask);
 
             if (post)
             {
@@ -2611,7 +2611,7 @@ pub fn solve(
             }
 
             if (pre_cond)
-                propagateType(pre_cond, t_bool, :relax_mask);
+                propagateType(pre_cond, t_proposition, :relax_mask);
 
             // MOVE ON LAST USE ////////////////////////////////////////////
             _current_fn.loop_start  = loop_start0;
@@ -2643,7 +2643,7 @@ pub fn solve(
                 return node.propagateType(t_void, :relax_mask);
             }
 
-            return node.items.only.propagateType(t_bool, :relax_mask);
+            return node.items.only.propagateType(t_proposition, :relax_mask);
         }
         else if (k == "call")
         {

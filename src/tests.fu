@@ -12278,16 +12278,49 @@ pub extern fn runTests()
         }
     `);
 
-    TODO_relaxer(`
-        novec fn doesnt_copy_arg(arg: string, suffix: byte)
-            arg && arg ~ suffix;
+    ZERO(`
+        novec fn doesnt_copy_arg(arg: string, suffix: byte) <alt>
+            arg     && arg ~ suffix;                        <alt/>
+            arg      ? arg ~ suffix : "";                   <alt/>
+            arg.len && arg ~ suffix;                        <alt/>
+            arg.len  ? arg ~ suffix : "";                   <alt/>
+            !!arg   && arg ~ suffix;                        <alt/>
+            !!arg    ? arg ~ suffix : "";                   </alt>
 
         fn main() {
             mut share = "01234567abcdefghABCDEFGH01234567abcdefghABCDEFGH";
-            mut a = doesnt_copy_arg(a, '!');
-            mut b = doesnt_copy_arg(b, '?');
+            mut a = doesnt_copy_arg(share, '!');
+            mut b = doesnt_copy_arg(share, '?');
             mut c = doesnt_copy_arg("", '.');
             return a.len == b.len && a.len == 49 && c.len == 0 ? 0 : 1;
+        }
+    `);
+
+    ZERO(`
+        fn loop(cond, body)         <alt>
+            while (cond) body();    <alt/>
+            do body();
+            while (cond);           </alt>
+
+        novec fn doesnt_copy_arg(ref nums: i32[]) {
+            loop(nums): || {
+                mut sum = 0;
+                for (mut i = 0; i < nums.len; i++)
+                    sum += nums[i]++;
+                if (sum >= 10)
+                    return sum;
+            }
+            return 0;
+        }
+
+        fn main() {
+            mut nums: i32[];
+            mut a = doesnt_copy_arg(nums);
+            nums ~= 1;
+            mut b = doesnt_copy_arg(nums);
+            nums ~= 2;
+            mut c = doesnt_copy_arg(nums);
+            return a == 0 && b == 10 && c == 13 ? 0 : 1;
         }
     `);
 

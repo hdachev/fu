@@ -84,6 +84,13 @@ pub let t_bool      = Primitive("b8");
 pub let t_byte      = Primitive("c8");
 
 
+// The type required by if (...), while(...) and co,
+//  trying to distinguish it from bools by making it non-copiable,
+//   also using it for relax, which helps relax if (vec) into if (view).
+
+pub let t_proposition   = Type(ValueType(quals: 0, canon: t_bool.canon));
+
+
 // I think these should also be non-refereable?
 
 fn NotSure(canon: string)
