@@ -11986,7 +11986,7 @@ pub extern fn runTests()
         }
     `);
 
-    TODO(`
+    TODO_relaxer(`
         struct Overload { items: string[]; };
 
         // This is a bit borderline -
@@ -12433,7 +12433,7 @@ pub extern fn runTests()
                 + _0::hello(2) - 2 * Each(20000);
     `]);
 
-    TODO([`
+    TODO_ambig([`
         fn sum_each(a, b)       // Same as above,
             a.Each + b.Each;    //  but we don't explicitly pass the fn Each in.
 
