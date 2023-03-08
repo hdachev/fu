@@ -9813,73 +9813,65 @@ pub fn solve(
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    fn test_CallSignature(callsite: SolvedNode, debug: string)
+    lax fn test_node(lax node: SolvedNode)
     {
-        let host_args = callsite.target.args;
-        let args      = callsite.items;
+        if (!SELF_TEST)
+            return;
 
-        fn err(reason: string)
-            BUG(debug ~ " " ~ callsite.target ~ ": " ~ reason);
+        for (mut i = 0; i < node.items.len; i++)
+            test_node(node.items[i]);
 
-        let k = callsite.target.kind;
-
-        // TODO FAILCASE enable this, allowing non-inline callsites to inline fns
-        //  helps us navigate some nasty inline-recursions,
-        //   but there's no guarantee that the recursion will converge,
-        //    if the inline fn finishes solving with no-change,
-        //     the callsite could stay as-is.
-        //
-        // This problem will go away if we move inlining to a later global pass,
-        //  where everything is solved and can get recursively relaxed & inlined.
-        //
-        // k == "field" || k == "enumv" || k == "type" || k == "__native" || k == "var" || k == "fn" || err(
-        //     "Bad target.kind: " ~ explainWhichFn(callsite.target));
-        //
-        host_args.len == args.len || k == "type" && !args.len || err(
-            "host_args.len (" ~ host_args.len ~ ") != args.len (" ~ args.len ~ "):"
-                ~ "\n\t\t" ~ mangleArgTypes(args)
-                ~ "\n\t\t" ~ explainWhichFn(callsite.target));
-
-        for (mut i = 0; i < args.len; i++)
-        {
-            let host_arg = host_args[i];
-            let arg      = args[i];
-
-            isAssignableAsArgument(host: host_arg.type, arg.type) || err(
-                "Arg #" ~ i ~ ", " ~ host_arg.name.human.qID ~ " not assignable to host_arg: "
-                    ~ explainTypeDiff(host_arg.type, arg.type, "<-"));
-        }
-
-        if (callsite.target.kind != "field")
-            isAssignable(host: callsite.type, callsite.target.type) || err(
-                "Return value of " ~ callsite ~ " not assignable to callsite.type: "
-                    ~ explainTypeDiff(callsite.type, callsite.target.type, "<-"));
-    }
-
-
-    // AST validation router.
-
-    fn test_nodes(nodes: SolvedNode[], debug: string)
-        for (mut i = 0; i < nodes.len; i++)
-            test_node(nodes[i], debug ~ "[" ~ i ~ "]");
-
-    fn test_node(node: SolvedNode, mut debug: string)
-    {
-        debug ~= "/" ~ node.kind;
-        if (node.value)
-            debug ~= "[" ~ node.value ~ "]";
-
-        test_nodes(node.items, :debug); _here = node.token;
-
-        // General invariants.
-        !node.is_ref == !node.lifetime || BUG(
-            debug ~ ": !!ref != !!lt: " ~ humanizeType(node.type));
+        _here = node.token;
 
         //
         let k = node.kind;
+
+        !node.is_ref == !node.lifetime || BUG(
+            node ~ ": !!ref != !!lt: " ~ humanizeType(node.type));
+
+        //
         if (k == "call")
         {
-            test_CallSignature(node, :debug);
+            let o           = GET(node.target);
+            shadow let k    = o.kind;
+
+            let host_args   = node.target.args;
+            let args        = node.items;
+
+            fn err(reason: string)
+                BUG(node ~ " " ~ o ~ ": " ~ reason);
+
+            // TODO FAILCASE enable this, allowing non-inline callsites to inline fns
+            //  helps us navigate some nasty inline-recursions,
+            //   but there's no guarantee that the recursion will converge,
+            //    if the inline fn finishes solving with no-change,
+            //     the callsite could stay as-is.
+            //
+            // This problem will go away if we move inlining to a later global pass,
+            //  where everything is solved and can get recursively relaxed & inlined.
+            //
+            // k == "field" || k == "enumv" || k == "type" || k == "__native" || k == "var" || k == "fn" || err(
+            //     "Bad target.kind: " ~ explainWhichFn(o));
+            //
+            host_args.len == args.len || k == "type" && !args.len || err(
+                "host_args.len (" ~ host_args.len ~ ") != args.len (" ~ args.len ~ "):"
+                    ~ "\n\t\t" ~ mangleArgTypes(args)
+                    ~ "\n\t\t" ~ explainWhichFn(node.target));
+
+            for (mut i = 0; i < args.len; i++)
+            {
+                let host_arg = host_args[i];
+                let arg      = args[i];
+
+                isAssignableAsArgument(host: host_arg.type, arg.type) || err(
+                    "Arg #" ~ i ~ ", " ~ host_arg.name.human.qID ~ " not assignable to host_arg: "
+                        ~ explainTypeDiff(host_arg.type, arg.type, "<-"));
+            }
+
+            if (o.kind != "field")
+                isAssignable(host: node.type, o.type) || err(
+                    "Return value of " ~ node ~ " not assignable to node.type: "
+                        ~ explainTypeDiff(node.type, o.type, "<-"));
         }
         else if (k == "let")
         {
@@ -9899,7 +9891,7 @@ pub fn solve(
                 mut tail = actual.lifetime.uni0n;
                 tail.set::rem(node.type.lifetime.uni0n);
                 if (tail)
-                    BUG(debug ~ ": " ~ actualCopy ~ " mentions a lifetime not listed in " ~ expectCopy ~ ": " ~ tail
+                    BUG(node ~ ": " ~ actualCopy ~ " mentions a lifetime not listed in " ~ expectCopy ~ ": " ~ tail
                               ~ "\n\n\t\t" ~ actualCopy ~ ":\t" ~ actual.humanizeType(lt: true)
                               ~ "\n\n\t\t" ~ expectCopy ~ ":\t" ~ expect.humanizeType(lt: true));
             }
@@ -9915,7 +9907,7 @@ pub fn solve(
             }
             else if (k == "and" || k == "or")
             {
-                node.items.len >= 2 || BUG(debug ~ ".len: " ~ node.items.len);
+                node.items.len >= 2 || BUG(node ~ ".len: " ~ node.items.len);
 
                 let start = k == "and" && !node.is_mutref && node.items.len - 1;
                 for (mut i = start; i < node.items.len; i++)
@@ -9923,12 +9915,12 @@ pub fn solve(
             }
             else if (k == "if")
             {
-                node.items.len == 3 || BUG(debug ~ ".len: " ~ node.items.len);
+                node.items.len == 3 || BUG(node ~ ".len: " ~ node.items.len);
 
                 if (node.type.is_never)
                 {
-                    node.items[1].is_never || BUG(debug ~ " never.cons not never: " ~ node.items[1]);
-                    node.items[2].is_never || BUG(debug  ~ " never.alt not never: " ~ node.items[2]);
+                    node.items[1].is_never || BUG(node ~ " never.cons not never: " ~ node.items[1]);
+                    node.items[2].is_never || BUG(node  ~ " never.alt not never: " ~ node.items[2]);
                 }
 
                 checkLt(node.items[1], "if.then");
@@ -9937,7 +9929,7 @@ pub fn solve(
 
             let items = node.items;
             for (mut i = 0; i < items.len; i++)
-                items[i].kind || BUG(debug ~ ": No .kind on item[" ~ i ~ "].");
+                items[i].kind || BUG(node ~ ": No .kind on item[" ~ i ~ "].");
         }
 
         // TODO During solve we collect jump expression types via superType,
@@ -10015,9 +10007,9 @@ pub fn solve(
                 BUG("runAllPasses: All passes already complete.");
         }
 
-        ///////////////////////////////
-        if (SELF_TEST) test_node(node, "TypeCheck ");
-        ///////////////////////////////
+        ////////////////
+        test_node(node);
+        ////////////////
 
         node.helpers.pass = "RelaxMut";
 
@@ -10026,9 +10018,9 @@ pub fn solve(
         _current_fn.loop_start = 1;
         propagateType(node, node.type, relax_mask: RELAX_before_bck);
 
-        ///////////////////////////////
-        if (SELF_TEST) test_node(node, "RelaxMut ");
-        ///////////////////////////////
+        ////////////////
+        test_node(node);
+        ////////////////
 
         node.helpers.pass = "BorrowCheck";
 
@@ -10038,9 +10030,9 @@ pub fn solve(
 
         PASS_borrowCheck(node, BCK_aar);
 
-        ///////////////////////////////
-        if (SELF_TEST) test_node(node, "BCK & AAR ");
-        ///////////////////////////////
+        ////////////////
+        test_node(node);
+        ////////////////
 
         node.helpers.pass = "RelaxCopyResize";
 
@@ -10051,9 +10043,9 @@ pub fn solve(
 
         propagateType(node, node.type, relax_mask: RELAX_all);
 
-        ///////////////////////////////
-        if (SELF_TEST) test_node(node, "RelaxCopyResize ");
-        ///////////////////////////////
+        ////////////////
+        test_node(node);
+        ////////////////
 
         if (_current_fn)
         {
