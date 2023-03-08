@@ -253,7 +253,26 @@ namespace fu
 
                 pbc.cv.notify_one();
             #else
-                pbc.pending.notify_one();
+
+                // Previously -
+                // pbc.pending.notify_one();
+
+                // See this here -
+                // https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2022/p2616r0.html
+                std::atomic_notify_one(&pbc.pending);
+
+                // The original mutex/cv impl had this problem,
+                //  where you'd occassionally try to notify_one on a cv/mutex that were just destroyed -
+                //
+                //  (1) worker would decrement the wait-count here,
+                //  (2) the master thread (not waiting) would arrive at the wait-count check and see a zero-wait-count,
+                //  (3) the master thread would destroy the cv/mutex pair,
+                //  (4) worker would try to notify_one on the destroyed ct/mutex.
+
+                // The problem wasn't observable with atomic-waits,
+                //  probably because of how they implement them with a global fixed-length array of mutexes,
+                //   where they only use the address of the atomic as an integer in notify_one.
+
             #endif
         }
     }
