@@ -449,7 +449,7 @@ pub fn cpp_codegen(
 
             members.each: |member.target|
                 def ~= "\ninline constexpr " ~ id ~ " " ~ id ~ "_" ~ member.name
-                        ~ " = " ~ cgNode(member.solved, debug: "declarePrimitive") ~ ";";
+                        ~ " = " ~ cgNode(member.solved) ~ ";";
 
             // Flags cast.
             if (s.kind == "flags")
@@ -486,7 +486,7 @@ pub fn cpp_codegen(
 
             members.each: |member.target|
                 def ~= "\n    " ~ id ~ "_" ~ member.name
-                        ~ " = " ~ cgNode(member.solved, debug: "declarePrimitive", mode: M_ENUM_DECL) ~ ",";
+                        ~ " = " ~ cgNode(member.solved, mode: M_ENUM_DECL) ~ ",";
 
             def ~= "\n};";
         }
@@ -710,7 +710,7 @@ pub fn cpp_codegen(
 
     fn cgStatements(nodes: SolvedNode[], ref count!: int, trail!?: string): string
     {
-        let lines = cgNodes(nodes, M_STMT | M_CHECK_NEVER_LTR, :trail, debug: "cgStatements");
+        let lines = cgNodes(nodes, M_STMT | M_CHECK_NEVER_LTR, :trail);
         count = lines.len;
 
         mut src = "";
@@ -725,9 +725,9 @@ pub fn cpp_codegen(
         return src;
     }
 
-    fn cgComma(nodes: SolvedNode[], debug!: string): string
+    fn cgComma(nodes: SolvedNode[]): string
     {
-        shadow let items = cgNodes(nodes, debug: debug ~ ".cgComma", mode: M_CHECK_NEVER_LTR);
+        shadow let items = cgNodes(nodes, mode: M_CHECK_NEVER_LTR);
         if (!items.len)
             return "(false /*empty parens*/)";
 
@@ -750,9 +750,9 @@ pub fn cpp_codegen(
     //
 
     fn blockWrapSubstatement(node: SolvedNode, mode?: i32): string
-        cgBlock(node, mode: M_STMT | M_OPT_CURLIES | mode, debug: "blockWrapSubstatement");
+        cgBlock(node, mode: M_STMT | M_OPT_CURLIES | mode);
 
-    fn cgBlock(node: SolvedNode, mode: i32, debug!: string): string
+    fn cgBlock(node: SolvedNode, mode: i32): string
     {
         let items   = node.kind == "block"  ? node.items : [ node ];
         let helpers = node.kind == "block" && node.helpers;
@@ -815,7 +815,7 @@ pub fn cpp_codegen(
 
         let expr = !(mode & M_STMT);
         if (expr && items.exprOK)
-            return cgComma(items, debug: debug ~ ".cgBlock");
+            return cgComma(items);
 
         //
         return cgBlock(items, skipCurlies: !!(mode & M_OPT_CURLIES), gnuStmtExpr: expr,
@@ -916,7 +916,7 @@ pub fn cpp_codegen(
                   : node.value == "ok"  ? "fu_DEFER_IF_OK"
                                         : "fu_DEFER";
 
-        return which ~ "(" ~ cgNode(node.items.only, M_STMT, debug: "defer") ~ ")";
+        return which ~ "(" ~ cgNode(node.items.only, M_STMT) ~ ")";
     }
 
 
@@ -1224,7 +1224,7 @@ pub fn cpp_codegen(
 
             src ~= cgFnSignature(fn);
 
-            mut body_src = cgBlock(body, M_STMT, debug: "cgFn(" ~ id ~ ")");
+            mut body_src = cgBlock(body, M_STMT);
 
             if (_current_fn._hoist)
             {
@@ -1420,7 +1420,7 @@ pub fn cpp_codegen(
             swap(initTEMPVARs, _current_fn.TEMPVARs);
         /////////////////////////////////////////////
         ///
-        mut expr = cgNode(debug: "binding", init);
+        mut expr = cgNode(init);
         ///
         /////////////////////////////////////////////
         if (use_initTEMPVARs)
@@ -1616,7 +1616,7 @@ pub fn cpp_codegen(
             if (!use_return)
             {
                 let assign  = block.has_val && block.name ~ "_v = ";
-                mut value   = cgNode(expr, !assign && M_STMT, debug: "cgJump[val.break]");
+                mut value   = cgNode(expr, !assign && M_STMT);
                 if (block.ptrflip)
                     value   = "&(" ~ value ~ ")";
 
@@ -1625,7 +1625,7 @@ pub fn cpp_codegen(
             }
 
             // I think the prefix keywords beat everything re: precedence.
-            return "return " ~ cgNode(expr, M_PARENS|M_RETURN, debug: "cgJump[val.return]");
+            return "return " ~ cgNode(expr, M_PARENS|M_RETURN);
         }
 
         //
@@ -1708,7 +1708,7 @@ pub fn cpp_codegen(
         if (node.target)
             return cgCall(node, mode);
 
-        let items = cgNodes(node.items, debug: "cgArrayLiteral", mode: M_CHECK_NEVER_LTR);
+        let items = cgNodes(node.items, mode: M_CHECK_NEVER_LTR);
         if (!items.len)
             return cgDefault(node.type);
 
@@ -1760,7 +1760,7 @@ pub fn cpp_codegen(
 
     fn cgNot(node: SolvedNode): string
     {
-        return "!" ~ cgNode(node.items.only, debug: "not");
+        return "!" ~ cgNode(node.items.only);
     }
 
     fn cgCall(node: SolvedNode, mode: i32): string
@@ -1820,7 +1820,6 @@ pub fn cpp_codegen(
 
             mut src = junk ? "" : cgNode(
                 arg, callarg: ext.args[i].type,
-                debug: "cgCall(" ~ node.value ~ ").ARG(" ~ i ~ ")",
                 mode: isNative && M_ARG_TO_NATIVE) || fail("Empty arg src.");
 
             // Explicit sequencing.
@@ -2282,12 +2281,12 @@ pub fn cpp_codegen(
 
         fn blockWrap_unlessIf(shadow node: SolvedNode)
             node.kind == "if" || node.kind == "and"
-                ? " " ~ cgNode(node, M_STMT, debug: "cgIf.blockWrap_unlessIf")
+                ? " " ~ cgNode(node, M_STMT)
                 : blockWrapSubstatement(node);
 
-        let cond = n0 && cgNode(n0, M_RETBOOL | (stmt && M_PARENS), debug: "cgIf[cond]");
-        let cons = n1 && (stmt ? blockWrapSubstatement(n1) : cgNode(n1, debug: "cgIf[cons]"));
-        let alt  = n2 && (stmt ? blockWrap_unlessIf   (n2) : cgNode(n2, debug: "cgIf[alt]"));
+        let cond = n0 && cgNode(n0, M_RETBOOL | (stmt && M_PARENS));
+        let cons = n1 && (stmt ? blockWrapSubstatement(n1) : cgNode(n1));
+        let alt  = n2 && (stmt ? blockWrap_unlessIf   (n2) : cgNode(n2));
 
         if (stmt)
             return "if (" ~ cond ~ ")" ~ cons ~ (alt ? _indent ~ "else" ~ alt : "");
@@ -2295,12 +2294,12 @@ pub fn cpp_codegen(
         return "(" ~ cond ~ " ? " ~ cons ~ " : " ~ alt ~ ")";
     }
 
-    fn cgAnd(node: SolvedNode, mode: i32, debug!: string): string
+    fn cgAnd(node: SolvedNode, mode: i32): string
     {
-        return cgAnd(:node.items, :node.type, :mode, :debug);
+        return cgAnd(:node.items, :node.type, :mode);
     }
 
-    fn cgAnd(items: [SolvedNode], type: Type, mode: i32, debug!: string): string
+    fn cgAnd(items: [SolvedNode], type: Type, mode: i32): string
     {
         let stmt = !!(mode & M_STMT);
         if (stmt)
@@ -2329,7 +2328,7 @@ pub fn cpp_codegen(
                     if (i < items.len - 1)
                         src ~= "!" ~ via(:tv, :type, item);
                     else
-                        src ~= cgNode(item, debug: debug ~ ".cgAnd[mutref " ~ i ~ "]");
+                        src ~= cgNode(item);
                 }
             }
             else
@@ -2344,11 +2343,11 @@ pub fn cpp_codegen(
                 {
                     if (condEnd) src ~= " && ";
                     src ~= "!" ~ via(:tv, :type, items[N - 2]);
-                    src ~= cgNode(items[N - 1], debug: debug ~ ".cgAnd[retSecondLast]"); // FAIL
+                    src ~= cgNode(items[N - 1]); // FAIL
                 }
                 else
                 {
-                    src ~= " ? " ~ cgNode(items[N - 1], debug: debug ~ ".cgAnd[usual]");
+                    src ~= " ? " ~ cgNode(items[N - 1]);
                     src ~= " : " ~ cgDefault(type);
                 }
             }
@@ -2403,7 +2402,7 @@ pub fn cpp_codegen(
             }
 
             let tail = items[items.len - 1] || fail();
-            src ~= cgNode(tail, debug: "cgOr");
+            src ~= cgNode(tail);
         }
 
         if !(mode & M_PARENS) src ~= ")";
@@ -2414,7 +2413,7 @@ pub fn cpp_codegen(
     {
         if (expr.isFieldChain)
         {
-            let trivial = cgNode(expr, debug: "TEMPVAR[fieldChain]");
+            let trivial = cgNode(expr);
             return trivial ~ " ? " ~ trivial ~ " : ";
         }
 
@@ -2424,7 +2423,7 @@ pub fn cpp_codegen(
             shadow let expr = expr.items.only;
             if (expr.isFieldChain)
             {
-                let trivial = cgNode(expr, debug: "TEMPVAR[copymov/fieldChain]");
+                let trivial = cgNode(expr);
                 return trivial ~ " ? " ~ cgMoveOrClone(:kind, :type, trivial) ~ " : ";
             }
 
@@ -2439,7 +2438,7 @@ pub fn cpp_codegen(
             // But copies are the worst.
         }
 
-        return via(:tv, :type, expr: cgNode(expr, debug: "TEMPVAR[usual]"));
+        return via(:tv, :type, expr: cgNode(expr));
     }
 
     fn via(ref tv: TEMPVAR, type: Type, expr!: string): string
@@ -2496,7 +2495,7 @@ pub fn cpp_codegen(
             if (item.is_never && !(last_never_ok && i == items.len - 1))
                 BUG("cgAndOr_concat: item.is_never");
 
-            let term = cgNode(item, :mode, debug: "cgAndOr_concat[" ~ i ~ "]");
+            let term = cgNode(item, :mode);
 
             if (item.is_void)
                 src ~= "(" ~ term ~ ", 0)";
@@ -2598,7 +2597,7 @@ pub fn cpp_codegen(
             if (n_init)
                 pre.items.unshift(n_init);
 
-            return cgNode(pre, debug: "cgLoop[pre]", mode: M_STMT);
+            return cgNode(pre, mode: M_STMT);
         }
 
 
@@ -2624,10 +2623,10 @@ pub fn cpp_codegen(
         let n_post      = items[LOOP_POST];
         let n_post_cond = items[LOOP_POST_COND];
 
-        let init        = n_init        && cgNode(n_init, M_STMT, debug: "cgLoop[init]");
-        let pre_cond    = n_pre_cond    && cgNode(n_pre_cond,  M_RETBOOL | M_PARENS, debug: "cgLoop[pre_cond]");
-        let post        = n_post        && cgNode(n_post, debug: "cgLoop[post]");
-        let post_cond   = n_post_cond   && cgNode(n_post_cond, M_RETBOOL, debug: "cgLoop[post_cond]");
+        let init        = n_init        && cgNode(n_init, M_STMT);
+        let pre_cond    = n_pre_cond    && cgNode(n_pre_cond,  M_RETBOOL | M_PARENS);
+        let post        = n_post        && cgNode(n_post);
+        let post_cond   = n_post_cond   && cgNode(n_post_cond, M_RETBOOL);
 
         //
         let name = "LL_" ~ _current_fn.num_labels++;
@@ -2701,7 +2700,7 @@ pub fn cpp_codegen(
                 if (node.kind == "str")
                     result ~= node.value;
                 else if !(node.type_isZST)
-                    result ~= cgNode(:node, debug: "compiler:emit");
+                    result ~= cgNode(:node);
             }
 
             // TODO FIX the arbitrary indentation of emit blocks gets flagged by gcc.
@@ -2753,9 +2752,9 @@ pub fn cpp_codegen(
 
     //
 
-    fn cgNode(node: SolvedNode, debug!: string, mode?: i32, callarg?: Type): string
+    fn cgNode(node: SolvedNode, mode?: i32, callarg?: Type): string
     {
-        let k = node.kind || fail("cgNode: No node.kind: " ~ debug);
+        let k = node.kind || fail("cgNode: No node.kind.");
         HERE(node);
 
         if (k == "not")         return cgNot(node);
@@ -2774,13 +2773,13 @@ pub fn cpp_codegen(
 
         if (k == "if")          return cgIf(node, mode);
         if (k == "or")          return cgOr(node, mode);
-        if (k == "and")         return cgAnd(node, mode, :debug);
+        if (k == "and")         return cgAnd(node, mode);
 
         if (k == "letdef")      return cgLetDef(node);
 
         if (k == "root")        return cgRoot(node);
-        if (k == "block")       return cgBlock(node, mode, debug: "block");
-        if (k == "argid")       return cgComma(node.items, debug: "argid");
+        if (k == "block")       return cgBlock(node, mode);
+        if (k == "argid")       return cgComma(node.items);
 
         // Empties.
         if (k == "fndef")       return cgFnDef(node, mode); // TODO no point in this here
@@ -2788,7 +2787,7 @@ pub fn cpp_codegen(
 
         // Stuff that we can't cg as expressions.
         if !(mode & M_STMT)
-            return cgBlock(node, :mode, debug: k ~ "!M_STMT");
+            return cgBlock(node, :mode);
 
         if (k == "jump")        return cgJump(node);
 
@@ -2813,7 +2812,7 @@ pub fn cpp_codegen(
 
         // Less verbose trivial value returns.
         if (mode & M_RETURN && node.type.is_trivial)
-            return cgNode(expr, debug: "retTrivCpy");
+            return cgNode(expr);
 
         if (node.kind == "move")
         {
@@ -2844,7 +2843,7 @@ pub fn cpp_codegen(
                         && expr.target.supportsNRVO;
 
                 if (nrvo)
-                    return "/*NRVO*/ " ~ cgNode(expr, debug: "NRVO");
+                    return "/*NRVO*/ " ~ cgNode(expr);
             }
 
             if (!node.type.is_trivial)
@@ -2933,13 +2932,13 @@ pub fn cpp_codegen(
                     let annot = typeAnnotBase(node.type);
 
                     return "static_cast<" ~ annot ~ "&&>(const_cast<" ~ annot ~ "&>("
-                                ~ cgNode(expr, debug: "cgMoveByConstCast")
+                                ~ cgNode(expr)
                                 ~ "))";
                 }
             }
         }
 
-        return cgMoveOrClone(node.kind, node.type, cgNode(expr, debug: "cgMoveOrClone"));
+        return cgMoveOrClone(node.kind, node.type, cgNode(expr));
     }
 
     fn cgMoveOrClone(::kind, type: Type, src: string): string
@@ -2981,7 +2980,7 @@ pub fn cpp_codegen(
         return id;
     }
 
-    fn cgNodes(nodes: SolvedNode[], mode?: i32, trail!?: string, debug!?: string): string[]
+    fn cgNodes(nodes: SolvedNode[], mode?: i32, trail!?: string): string[]
     {
         mut result: string[];
 
@@ -2999,11 +2998,11 @@ pub fn cpp_codegen(
 
             if (mode & M_CHECK_NEVER_LTR)
                 if (node.type.is_never && i < nodes.len - 1)
-                    BUG(debug ~ ": node.is_never");
+                    BUG("M_CHECK_NEVER_LTR: non-trailing node.is_never");
 
             let isTrail = trail && i == nodes.len - 1 && !node.is_never && !node.is_void;
 
-            mut src     = node && cgNode(node, isTrail ? mode &~ M_STMT : mode, debug: debug ~ ".cgNodes");
+            mut src     = node && cgNode(node, isTrail ? mode &~ M_STMT : mode);
 
             src || mode & M_STMT || fail("cgNodes: empty output for Node(kind=`" ~ node.kind ~ "` value=`" ~ node.value ~ "`).");
 
@@ -3028,7 +3027,7 @@ pub fn cpp_codegen(
     let root = module.out.solve.root;
     root.kind == "root" || fail();
 
-    mut src = cgNode(root, debug: "cgRoot");
+    mut src = cgNode(root);
 
 
     // TODO FIX just add these as translation units,
