@@ -40,15 +40,23 @@ namespace fu
     //  - a pointer to the next task,
     //  - and a fnptr to how this task is supposed to run.
 
-    struct alignas(64) TaskStack
+    struct alignas(128) PBC_MCV
+    {
+        std::mutex mutex;
+        std::condition_variable cv;
+    };
+
+    struct alignas(128) TaskStack
     {
         lockfree::stack< 3/* = alignof 8*/ > stack;
 
         #ifndef use_cpp20_ATOMIC_FLAG_WAIT
-            char mutex_ANTISHARE[64 - sizeof(stack)];
 
-            std::mutex mutex;
-            std::condition_variable cv;
+        PBC_MCV stack_MCV;
+
+        #define PBC_MCV_len 99
+        PBC_MCV PBC_MCV_array[PBC_MCV_len];
+
         #endif
     };
 
@@ -60,6 +68,28 @@ namespace fu
 
     static TaskStack_NoDtor s_Tasks {};
     #define Tasks (*(TaskStack*)(&s_Tasks))
+
+
+    //
+
+    #ifndef use_cpp20_ATOMIC_FLAG_WAIT
+
+    static_assert(  sizeof(PBC_MCV)   >= 128, "PBC_MCV size < 128");
+    static_assert( alignof(PBC_MCV)   >= 128, "PBC_MCV alignment < 128");
+    static_assert( alignof(TaskStack) >= 128, "TaskStack alignment < 128");
+
+    static_assert(
+        sizeof(TaskStack) == 128 + sizeof(PBC_MCV) * (PBC_MCV_len + 1),
+        "TaskStack: something doesn't align right.");
+
+    static inline PBC_MCV& PBC_MCV_get(std::atomic_int& pending)
+    {
+        return Tasks.PBC_MCV_array[((uintptr_t) &pending) % PBC_MCV_len];
+    }
+
+    #undef PBC_MCV_len
+
+    #endif
 
 
 
@@ -75,7 +105,7 @@ namespace fu
         //  we totally can fail to wake up a worker.
         //
         #ifndef use_cpp20_ATOMIC_FLAG_WAIT
-            Tasks.cv.notify_one();
+            Tasks.stack_MCV.cv.notify_one();
         #else
             Tasks.stack.head.notify_one();
         #endif
@@ -99,8 +129,8 @@ namespace fu
                 //  we could wake up for no reason or not wake up at all.
                 //
                 #ifndef use_cpp20_ATOMIC_FLAG_WAIT
-                    std::unique_lock<std::mutex> lock(Tasks.mutex);
-                    Tasks.cv.wait(lock);
+                    std::unique_lock<std::mutex> lock(Tasks.stack_MCV.mutex);
+                    Tasks.stack_MCV.cv.wait(lock);
                 #else
                     auto head = Task.stack.head.load(std::memory_order_relaxed);
                     if (Task.stack.untag(head) == nullptr)
@@ -196,19 +226,13 @@ namespace fu
 
     struct PendingBatchCount
     {
-        std::atomic_int                 pending;
-
-        #ifndef use_cpp20_ATOMIC_FLAG_WAIT
-            char mutex_ANTISHARE[64 - sizeof(std::atomic_int)]  {};
-
-            std::mutex                  mutex                   {};
-            std::condition_variable     cv                      {};
-        #endif
+        std::atomic_int pending;
 
         PendingBatchCount(size_t batches)
             : pending { (int) batches }
         {}
     };
+
 
     /*export*/ void PBC_Decrement(PendingBatchCount& pbc)
     {
@@ -216,42 +240,28 @@ namespace fu
         {
             #ifndef use_cpp20_ATOMIC_FLAG_WAIT
 
-                // We don't hit the mutex for every decrement
-                //  so without this the following can happen:
+                auto& mcv = PBC_MCV_get(pbc.pending);
+
+                // Without this the following can happen:
                 //
-                //  THREAD A            THREAD B
-                //
-                //                      check counter
-                //  decrement
-                //  notify
-                //                      wait
-                //
-                // This is why PBC_Wait does the final check
-                //  inside the mutex, and we also hit the mutex here.
-                //
-                // We don't need to hold the lock during the notify,
-                //  we just need to make sure the decr+notify
-                //   can't squeeze in between the check and the wait there.
+                //  (1) Master checks counter, sees it has to wait.
+                //  (2) Last worker decrements counter.
+                //  (3) Last worker notifies.
+                //  (4) Master waits, will never wake up.
                 {
-                    std::unique_lock<std::mutex> lock(pbc.mutex);
-
-                    // Previously used .unlock(),
-                    //  but hit an assertion on Apple clang 11.0.0,
-                    //   (clang-1100.0.33.8):
+                    // We don't need to hold the lock during the notify,
+                    //  we just need to make sure the decr+notify in PBC_Wait
+                    //   can't squeeze in between the check and the wait in PBC_Wait.
                     //
-                    // Assertion failed: (ec == 0), function unlock,
-                    //  file .../libcxx/libcxx-400.9.4/src/mutex.cpp, line 48.
-                    //
-                    // It looks like pthread_mutex_unlock returns non-zero, see:
-                    //  https://linux.die.net/man/3/pthread_mutex_unlock
-                    //
-                    // Anyway, with the scope here I'm just relying
-                    //  on the destructor to do this,
-                    //   the .unlock() was redundant.
+                    std::unique_lock<std::mutex> lock(mcv.mutex);
                 }
-                // We don't have these problems with the atomic variant.
 
-                pbc.cv.notify_one();
+                // Can't be notify_one -
+                //  we're reusing a fixed size array of PBC_MCV mutex/cv pairs,
+                //   so it's possible for two unrelated threads to be waiting on the same cv.
+                //
+                mcv.cv.notify_all();
+
             #else
 
                 // Previously -
@@ -285,7 +295,9 @@ namespace fu
             {
                 #ifndef use_cpp20_ATOMIC_FLAG_WAIT
 
-                    std::unique_lock<std::mutex> lock(pbc.mutex);
+                    auto& mcv = PBC_MCV_get(pbc.pending);
+
+                    std::unique_lock<std::mutex> lock(mcv.mutex);
 
                     // Repeat the check while holding the mutex.
                     //
@@ -298,7 +310,7 @@ namespace fu
                     if (!pbc.pending.load(std::memory_order_acquire))
                         return;
 
-                    pbc.cv.wait(lock);
+                    mcv.cv.wait(lock);
                 #else
                     pbc.pending.wait(expect, std::memory_order_acquire);
                 #endif
