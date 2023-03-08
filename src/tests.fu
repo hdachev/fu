@@ -54,8 +54,10 @@ pub extern fn runTests()
             mut error: string;
             let implicit shadow mut testdiffs: testdiff::TestDiffs;
 
+            let options = options::Options(dev: "DEV_Parallel");
+
             try
-                ZERO(test);
+                ZERO(test, :options);
             catch (e)
                 error = e;
 

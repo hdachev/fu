@@ -98,6 +98,7 @@ fn compile_solveCodegen(implicit ref module: Module, implicit options: Options)
 
 pub fn compile(
     implicit ref ctx: Context,
+    implicit options: Options,
     fname: string, via?: string)
 {
     compile_lexParseDeps(:fname, :via);
@@ -118,52 +119,54 @@ pub fn compile(
         let modids = dep_order[i];
 
         //*
-
-        modids.each: |modid|
+        if (options.dev & DEV_Parallel)
         {
-            let module = ctx.modules[modid];
-            if (!module.out)
+            struct Result {
+                module?:    Module;
+                error?:     string;
+            };
+
+            let results: Result[] = modids.par::map(|modid|
             {
-                shadow let implicit mut module = module.clone();
-                compile_solveCodegen();
-                setModule(module);
+                try
+                {
+                    let module = ctx.modules[modid];
+                    if (module.out)
+                        continue Result();
+
+                    shadow let implicit mut module = module.clone();
+                    compile_solveCodegen();
+                    continue Result(:module);
+                }
+                catch (error)
+                {
+                    continue Result(:error ||
+                        "COMPILER BUG: Empty error string, modid=" ~ modid);
+                }
+            });
+
+            results.each: |result|
+            {
+                if (result.error)
+                    throw(result.error);
+                else if (result.module.out)
+                    setModule(result.module);
             }
         }
-
-        /*/
-        struct Result {
-            module?:    Module;
-            error?:     string;
-        };
-
-        let results: Result[] = modids.par::map(|modid|
+        else
+        //*/
         {
-            try
+            modids.each: |modid|
             {
                 let module = ctx.modules[modid];
-                if (module.out)
-                    continue Result();
-
-                shadow let implicit mut module = module.clone();
-                compile_solveCodegen();
-                continue Result(:module);
+                if (!module.out)
+                {
+                    shadow let implicit mut module = module.clone();
+                    compile_solveCodegen();
+                    setModule(module);
+                }
             }
-            catch (error)
-            {
-                continue Result(:error ||
-                    "COMPILER BUG: Empty error string, modid=" ~ modid);
-            }
-        });
-
-        results.each: |result|
-        {
-            if (result.error)
-                throw(result.error);
-            else if (result.module.out)
-                setModule(result.module);
         }
-
-        //*/
     }
 }
 
@@ -215,7 +218,7 @@ pub fn compile_and_build(
     shuffle!?: u32)
 {
     let implicit mut ctx = prelude::CTX_PRELUDE.clone();
-    let implicit options = Options(:shuffle);
+    let implicit options = Options(:shuffle, dev: DEV_Parallel);
 
     {
         println("COMPILE ", fname);

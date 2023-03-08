@@ -1,6 +1,7 @@
 
 flags DevOptions {
     DEV_PrintAST
+    DEV_Parallel
 };
 
 
