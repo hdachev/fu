@@ -2,6 +2,10 @@
 
 #include <par/parfor.hpp>
 
+#ifdef __APPLE__
+#define use_PTHREAD
+#endif
+
 
 // The task stack -
 
@@ -11,6 +15,11 @@
 // The worker pool -
 
 #include <thread>
+
+#ifdef use_PTHREAD
+#include <pthread.h>
+#include <stdio.h>
+#endif
 
 
 // Wait & notify -
@@ -116,7 +125,11 @@ namespace fu
         Tasks.stack.push((char*) first, (char*) last);
     }
 
+    #ifdef use_PTHREAD
+    static void* TaskStack_Worker_Loop(void*)
+    #else
     static void TaskStack_Worker_Loop()
+    #endif
     {
         bool notify_another = false;
 
@@ -151,6 +164,8 @@ namespace fu
             // Finally, do the work.
             task->run(task);
         }
+
+        return nullptr;
     }
 
     static bool TaskStack_TryWork()
@@ -176,13 +191,14 @@ namespace fu
 
     static size_t WorkerSet_Create()
     {
-        size_t workers = std::thread::hardware_concurrency();
 
     #ifdef fu_NUM_WORKER_THREADS
 
-        workers = fu_NUM_WORKER_THREADS;
+        size_t workers = fu_NUM_WORKER_THREADS;
 
     #else
+
+        size_t workers = std::thread::hardware_concurrency();
 
         // TODO getenv("fu_NUM_WORKER_THREADS") here
         // TODO all of this in a cpp, not here
@@ -196,15 +212,61 @@ namespace fu
 
     #endif
 
+        if (!workers)
+            return 0;
+
+    #ifdef use_PTHREAD
+
+        pthread_attr_t tattr;
+
+        int error = pthread_attr_init(&tattr);
+        if (error)
+        {
+            puts("  ERROR pthread_attr_init failed.");
+            return 0;
+        }
+
+        // Ignore error here.
+        error = pthread_attr_setdetachstate(&tattr, PTHREAD_CREATE_DETACHED);
+        if (error)
+            puts("  ERROR pthread_attr_setdetachstate failed.");
+
+        size_t stacksize = 8 * 1024 * 1024;
+               stacksize = stacksize > PTHREAD_STACK_MIN
+                         ? stacksize : PTHREAD_STACK_MIN;
+
+        // Ignore error here.
+        error = pthread_attr_setstacksize(&tattr, stacksize);
+        if (error)
+            puts("  ERROR pthread_attr_setstacksize failed.");
+
+        for (size_t i = workers; i --> 0; )
+        {
+            pthread_t thread;
+            error = pthread_create(&thread, &tattr, TaskStack_Worker_Loop, nullptr);
+            if (error)
+            {
+                puts("  ERROR pthread_create failed.");
+                workers--;
+            }
+        }
+
+        error = pthread_attr_destroy(&tattr);
+        if (error)
+            puts("  ERROR pthread_attr_destroy failed.");
+
+    #else
 
         // Number of threads = workers + 1 main thread.
         //
         // printf("Spawning %i worker threads, for a total of %i threads ...\n",
         //        int(workers), int(workers + 1));
         //
-        for (size_t i = 0; i < workers; i++)
+        for (size_t i = workers; i --> 0; )
             std::thread { TaskStack_Worker_Loop }
                 .detach();
+
+    #endif
 
         return workers;
     }
