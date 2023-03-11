@@ -2684,6 +2684,21 @@ pub fn cpp_codegen(
              ~ _indent ~ "}\n";
     }
 
+    fn inferIndentation(v: string)
+    {
+        if (v.if_first == '\n')
+        {
+            for (mut i = 1; i < v.len; i++)
+            {
+                let c = v[i];
+                if (c != ' ' && c != '\t')
+                    return v.slice(0, i);
+            }
+        }
+
+        return "";
+    }
+
     fn cgCompilerPragma(node: SolvedNode): string
     {
         let cmd = node.value;
@@ -2693,20 +2708,44 @@ pub fn cpp_codegen(
             cmd == "input" || cmd == "output" || cmd == "clock")
         {
             mut result = "";
+            mut indent = "";
+
+            // Determine source indentation.
+            if (node.items)
+            {
+                shadow let node = node.items[0];
+                if (node.kind == "str")
+                    indent = inferIndentation(node.value);
+            }
 
             for (mut i = 0; i < node.items.len; i++)
             {
                 shadow let node = node.items[i];
                 if (node.kind == "str")
-                    result ~= node.value;
+                    result ~= node.value
+                        .slice(i == 0 ? indent.len : 0)
+                        .replace(all: indent, with: _indent);
                 else if !(node.type_isZST)
                     result ~= cgNode(:node);
             }
 
-            // TODO FIX the arbitrary indentation of emit blocks gets flagged by gcc.
-            //  I guess the legit fix here would be to reindent the snippet.
+            for (mut i = result.len; i --> 0; )
+            {
+                let c = result[i];
+                if (c > ' ')
+                {
+                    if (c != ';')
+                        i++;
+
+                    result.shrink(i);
+                    break;
+                }
+            }
+
+            // No longer needed, leaving it as an example,
+            //  it was the only thing using the _gcc_ignore thing.
             //
-            _gcc_ignore.set::add("-Wmisleading-indentation");
+            // _gcc_ignore.set::add("-Wmisleading-indentation");
 
             if (_current_fn)
                 return result;
