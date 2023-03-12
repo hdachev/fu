@@ -8781,21 +8781,19 @@ pub fn solve(
 
         fn bck_trackRead(callsite: SolvedNode)
         {
-            if (!callsite.type.is_ref || !_current_fn.target.index)
+            if (!callsite.target.isLocal)
                 return;
 
             _here           = callsite.token;
-
-            let regions     = callsite.type.lifetime.uni0n;
+            let target      = callsite.target.index;
             let loop_start  = callsite._loop_start || BUG("bck_trackRead: loop_start not set on callsite.");
 
-            // Writes invalidate subsequent reads.
-            for (mut i = 0; i < regions.len; i++)
-            {
-                let target = Region_asLocal(regions[i]);
-                if (!target)
-                    continue;
+            // TODO FIX: complains about t_zeroes, otherwise correct
+            // callsite.type.lifetime.uni0n.if_only.Region_asLocal == target || BUG(
+            //     "Nope, something is off: " ~ callsite.type.humanizeType(lt: true));
 
+            // Writes invalidate subsequent reads.
+            {
                 // println("bck_trackRead " ~ target ~ " " ~ callsite.value);
 
                 if (events.invalidated_by.len > target)
