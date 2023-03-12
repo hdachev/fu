@@ -62,7 +62,7 @@ pub fn solve(
         message:            string;
     };
 
-    struct RWEvent          { rw_target: i32 };
+    struct RWEvent          { rw_target: i32; token: TokenIdx };
 
     struct ReadID           { id: i32 };
     struct WriteID          { id: i32 };
@@ -8723,7 +8723,7 @@ pub fn solve(
 
         //
 
-        fn SLOW_find(test, miss): SolvedNode
+        fn SLOW_find(test): SolvedNode
         {
             mut result: SolvedNode;
 
@@ -8735,12 +8735,18 @@ pub fn solve(
         }
 
         fn SLOW_findByReadID(read: ReadID)
-            SLOW_find(|node| node.reads0 < read.id && node.reads1 >= read.id,
-                          || BUG("Cannot find ReadID(" ~ read.id ~ ")."));
+        {
+            let r = RWEvent(read);
+            return SLOW_find(|node|
+                node.target.isLocal &&
+                node.target.index == r.rw_target &&
+                node.token == r.token)
+                    || BUG("Cannot find ReadID(" ~ read.id ~ ").");
+        }
 
         fn SLOW_findByWriteID(write: WriteID)
-            SLOW_find(|node| node.writes0 < write.id && node.writes1 >= write.id,
-                          || BUG("Cannot find WriteID(" ~ write.id ~ ")."));
+            SLOW_find(|node| node.writes0 < write.id && node.writes1 >= write.id)
+                    || BUG("Cannot find WriteID(" ~ write.id ~ ").");
 
 
         //
@@ -8819,7 +8825,7 @@ pub fn solve(
                 //  OPTIMIZABLE we don't need the read nodeidx here,
                 //   we only need the target int.
                 //
-                events.reads ~= RWEvent(target);
+                events.reads ~= RWEvent(target, :callsite.token);
                 let readID = ReadID(events.reads.len);
 
                 // Track reads in a loop.
@@ -8878,7 +8884,7 @@ pub fn solve(
                 }
 
                 // Order of eval.
-                events.writes ~= RWEvent(target);
+                events.writes ~= RWEvent(target, :callsite.token);
                 let writeID = WriteID(events.writes.len);
 
                 // Track writes, easy.
@@ -9585,7 +9591,6 @@ pub fn solve(
 
             ////////////////////////////////////////////
             mut rwr: RWRanges;
-            rwr.reads0 = _current_fn.events.reads.len;
             rwr.writes0 = _current_fn.events.writes.len;
             ////////////////////////////////////////////
 
@@ -9661,9 +9666,8 @@ pub fn solve(
             }
 
             ////////////////////////////////////////////
-            rwr.reads1 = _current_fn.events.reads.len;
             rwr.writes1 = _current_fn.events.writes.len;
-            if (rwr.reads1 > rwr.reads0 || rwr.writes1 > rwr.writes0)
+            if (rwr.writes1 > rwr.writes0)
                 node.rwr = rwr;
             ////////////////////////////////////////////
         }

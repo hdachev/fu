@@ -163,8 +163,6 @@ struct Local
 
 struct RWRanges
 {
-    reads0:     i32;
-    reads1:     i32;
     writes0:    i32;
     writes1:    i32;
 }
