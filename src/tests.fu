@@ -11373,13 +11373,12 @@ pub extern fn runTests()
             for (mut i = 0; i < arr.len; i++)
                 fn(arr[i]);
 
-        fn some(arr, fn) {
+        fn Some(arr, fn) {
             arr.Each: |x| if (fn(x)) return x;
-
             return 0;
         }
 
-        fn main() [ 1, 2, 3 ].some(|v| v & 1 == 0) - 2;
+        fn main() [ 1, 2, 3 ].Some(|v| v & 1 == 0) - 2;
 
         ;; EXPECT (fu::slate<3, int> { 1, 2, 3 })
     `);

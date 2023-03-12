@@ -534,6 +534,23 @@ fn reverse !T(ref a: [T;])
         a.swap(i, n1 - i);
 }
 
+fn all !T(a: [T;], pred)
+{
+    a.each: |item, i|
+        if !(pred(item, i?: i))
+            return false;
+
+    return true;
+}
+
+fn some !T(a: [T;], pred)
+{
+    a.each: |item, i|
+        if (pred(item, i?: i))
+            return true;
+
+    return false;
+}
 
 `;
 

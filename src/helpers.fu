@@ -102,27 +102,6 @@ fn hasNonIdentifierChars(id: string)
 
 //
 
-fn all(a: [$T], pred)
-{
-    a.each: |item, i|
-        if !(pred(item, i?: i))
-            return false;
-
-    return true;
-}
-
-fn some(a: [$T], pred)
-{
-    a.each: |item, i|
-        if (pred(item, i?: i))
-            return true;
-
-    return false;
-}
-
-
-//
-
 fn zip_each(a: [$T;], b: [$U;], fn)
 {
     a.len == b.len || throw("a.len != b.len");
