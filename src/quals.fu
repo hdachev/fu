@@ -50,6 +50,10 @@ fn is_flags(t: Type) {
 
 //
 
+fn isPassByValue(t: Type) {
+    return t.is_primitive;
+}
+
 fn basePrimPrefixLen(canon: string): int
 {
     mut c = canon[0];

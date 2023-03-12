@@ -3566,7 +3566,7 @@ pub fn solve(
 
     fn getBasePrimitive(type: Type): string
     {
-        mut offset = type.canon.quals::basePrimPrefixLen();
+        mut offset = type.canon.basePrimPrefixLen();
         if (offset < type.canon.len)
             return lookupUserType(type).base;
 
@@ -4979,7 +4979,7 @@ pub fn solve(
                 {
                     ref ext = EXT_mut(target);
                     for (mut i = 0; i < ext.args.len; i++)
-                        ext.args[i].type.quals &= ~RELAX_all;
+                        ext.args[i].type.force_relax(relax_mask: RELAX_all);
 
                     // Make sure mutually recursive fns don't dump each other.
                     ext.fx_mask |= Fx_NotDeadCode | Fx_Throws;

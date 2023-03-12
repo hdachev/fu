@@ -1,10 +1,9 @@
 import helpers;
 import module;
 import fail;
-import quals;
 
 let q_mutref            = 1 << 0;
-pub let q_rx_copy       = 1 << 1;
+let q_rx_copy           = 1 << 1;
 let q_rx_resize         = 1 << 2;
 
 let TAGS =
@@ -109,11 +108,6 @@ pub fn is_zeroes(t: Type) t.canon == t_zeroes.canon;
 
 pub fn is_rx_copy   (t: Type) !!(t.quals & q_rx_copy);
 pub fn is_rx_resize (t: Type) !!(t.quals & q_rx_resize);
-
-
-//
-
-pub fn isPassByValue(t: Type)   = t.is_primitive;
 
 
 //
@@ -433,18 +427,38 @@ pub fn unpackAddrOfFn(canon: string, fn)
 
 //
 
-pub fn will_relax(ref type: Type, slot!: Type, mut relax_mask!: i32): bool
+pub fn speculateStruct(asserts: flags::DeclAsserts)
+{
+    return !(asserts & flags::A_NOCOPY) && q_rx_copy;
+}
+
+pub fn despeculateStruct(mut type: Type)
+{
+    type.quals &= ~q_rx_copy;
+    return type;
+}
+
+
+
+//
+
+pub fn will_relax(ref type: Type, slot!: Type, relax_mask!: i32): bool
 {
     return (type.quals &~ slot.quals) & relax_mask != 0;
 }
 
-pub fn try_relax(ref type: Type, slot!: Type, mut relax_mask!: i32): bool
+pub fn try_relax(ref type: Type, slot!: Type, relax_mask!: i32): bool
 {
     if (!will_relax(type, :slot, :relax_mask))
         return false;
 
     type.quals &= slot.quals | ~relax_mask;
     return true;
+}
+
+pub fn force_relax(ref type: Type, relax_mask!: i32)
+{
+    type.quals &= ~relax_mask;
 }
 
 pub fn relax_typeParam(mut type: Type)

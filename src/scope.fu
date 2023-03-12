@@ -94,16 +94,7 @@ fn initStruct(implicit module: &mut Module,
         :kind, :baseprim, :module.modid, :index, :name);
 
     // Assume everything, we resolve disappointment.
-    let specualtive_quals = !(asserts & A_NOCOPY) && q_rx_copy;
-
-
-    return Type(ValueType(:canon, quals: specualtive_quals));
-}
-
-fn despeculateStruct(mut type: Type)
-{
-    type.quals &= ~q_rx_copy;
-    return type;
+    return Type(ValueType(:canon, quals: speculateStruct(:asserts)));
 }
 
 
