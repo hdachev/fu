@@ -21,6 +21,7 @@ let OPTI_ignoreLocalLts     = true;
 let OPTI_unlist_callers     = true;
 
 let SELF_TEST               = true;
+let RESOLVE_report          = false;
 
 
 // When you have an if (a -> $T) somewhere,
@@ -177,6 +178,9 @@ pub fn solve(
 
     struct Ephemeral
     {
+        local_of:           i32;
+        revision:           u32;
+
         scope_memo?:        ScopeMemo;
         scope_skip?:        ScopeSkipMemos;
 
@@ -466,18 +470,10 @@ pub fn solve(
         return target.modid < 0;
     }
 
-    fn localOf(target: Target)
-    {
-        if (target.isLocal)
-            return -target.modid;
-
-        return target.EXT.local_of;
-    }
-
     fn parent(target: Target)
     {
-        let index = target.localOf;
-        return index && Target(:module.modid, index);
+        target.isLocal || BUG("Using .parent with a fn");
+        return Target(:module.modid, -target.modid);
     }
 
     fn GET_crossmodule(target: Target, from!: Target)
@@ -588,6 +584,14 @@ pub fn solve(
     {
         target.modid == module.modid || assert();
         return EPH_mut(target.index);
+    }
+
+    fn localOf(target: Target)
+    {
+        if (target.isLocal)
+            return -target.modid;
+
+        return target.local_of;
     }
 
 
@@ -3866,7 +3870,6 @@ pub fn solve(
             o.status        = status;
 
             ref ext         = target.EXT_mut;
-            ext.local_of    = local_of;
             ext.template    = createTemplate(node);
             ext.min         = 0x7fffffff.i32;
             ext.max         = 0;
@@ -3885,6 +3888,7 @@ pub fn solve(
 
         //
         ref eph         = target.EPH_mut;
+        eph.local_of    = local_of;
         eph.scope_memo  = _current_fn && Scope_snap(_scope);
         eph.scope_skip  = _current_fn && _ss;
 
@@ -4459,7 +4463,9 @@ pub fn solve(
 
             // Prep reject.
             target = into || Scope_create(_scope, status: SS_DID_START | SS_LAZY);
-            target.EXT_mut.local_of = parent_idx;
+
+            ref eph = target.EPH_mut;
+            eph.local_of = parent_idx;
 
             //
             let extra_items = into
@@ -4472,13 +4478,14 @@ pub fn solve(
 
             // Go!
             {
-                ref o = EXT_mut(target);
-
-                if (o.revision++ > 0)
+                shadow ref eph = target.EPH_mut;
+                let rev0 = eph.revision++;
+                if (rev0)
                 {
-                    if (o.revision >= 1024)
+                    if (rev0 >= 1024)
                         BUG("Looping forever: " ~ target ~ ".revision >= 1024");
 
+                    ref o = EXT_mut(target);
                     o.locals.clear();
 
                     // This looks horrible but hope is
@@ -8105,11 +8112,14 @@ pub fn solve(
             // Inliner.
             if (kind == "inline") :INLINE_ATTEMPT
             {
-                target.revision > 0 || BUG("Inlining " ~ target ~ " at revision 0.");
+                if (SELF_TEST)
+                {
+                    target.modid != module.modid || target.revision > 0 || BUG(
+                        "Inlining " ~ target ~ " at revision 0.");
 
-                //
-                if (SELF_TEST) TODO_FIX_inline_safety++ < 24 || BUG(
-                    "Inliner recursion, something is off: " ~ target);
+                    TODO_FIX_inline_safety++ < 24 || BUG(
+                        "Inliner recursion, something is off: " ~ target);
+                }
 
                 defer if (SELF_TEST) TODO_FIX_inline_safety--;
 
@@ -10195,6 +10205,29 @@ pub fn solve(
             {
                 _here = w.token;
                 fail(w.message);
+            }
+        }
+
+        //
+        if (RESOLVE_report) for (mut i = 0; i < _ephemeral.len; i++)
+        {
+            let target  = Target(:module.modid, index: i);
+            let REV     = target.revision.i32;
+            if (REV > 5)
+            {
+                fn Indent()
+                {
+                    mut str = "";
+                    for (shadow mut i = 0; i < REV; i++)
+                        str ~= " ";
+
+                    return str;
+                }
+
+                println("RESOLVE "
+                    ~ Indent
+                    ~ target.name ~ " :: "
+                    ~ target.revision);
             }
         }
 

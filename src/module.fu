@@ -272,10 +272,6 @@ struct Overload
 
 struct Extended
 {
-    // For locals, if non-zero, index of enclosing fn, obviously same modid.
-    local_of:       i32;
-    revision:       u32;
-
     // Arity.
     min:            i32;
     max:            i32;
