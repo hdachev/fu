@@ -62,7 +62,7 @@ pub fn solve(
         message:            string;
     };
 
-    struct RWEvent          { rw_target: i32; token: TokenIdx };
+    struct RWEvent          { rw_target: i32; token: TokenIdx; position?: i32 };
 
     struct ReadID           { id: i32 };
     struct WriteID          { id: i32 };
@@ -8738,6 +8738,7 @@ pub fn solve(
         {
             let r = RWEvent(read);
             return SLOW_find(|node|
+                node.kind == "call" &&
                 node.target.isLocal &&
                 node.target.index == r.rw_target &&
                 node.token == r.token)
@@ -8745,8 +8746,23 @@ pub fn solve(
         }
 
         fn SLOW_findByWriteID(write: WriteID)
-            SLOW_find(|node| node.writes0 < write.id && node.writes1 >= write.id)
+        {
+            // TODO FIX: position -1 comes from pragmas,
+            //  and the node could be anything, it's not a biggie
+            //   but it's what makes for the sloppier position < 0 stuff.
+            //
+            let w = RWEvent(write);
+            return SLOW_find(|node|
+               (node.kind == "call" || w.position < 0) &&
+                node.items.len > w.position &&
+                node.token == w.token &&
+            {
+                let arg = w.position < 0 ? node : node.items[w.position];
+                arg.is_mutref && arg.lifetime.uni0n.has(
+                    Region_fromLocal(index: w.rw_target))
+            })
                     || BUG("Cannot find WriteID(" ~ write.id ~ ").");
+        }
 
 
         //
@@ -8851,7 +8867,7 @@ pub fn solve(
                 if (!target)
                     continue;
 
-                fn position     = positions[i];
+                fn position     = positions ? positions[i] : -1;
 
                 // println("bck_trackWrite " ~ target ~ " " ~ callsite.value);
 
@@ -8884,7 +8900,7 @@ pub fn solve(
                 }
 
                 // Order of eval.
-                events.writes ~= RWEvent(target, :callsite.token);
+                events.writes ~= RWEvent(target, :callsite.token, :position);
                 let writeID = WriteID(events.writes.len);
 
                 // Track writes, easy.
@@ -9589,11 +9605,6 @@ pub fn solve(
         {
             let k = node.kind;
 
-            ////////////////////////////////////////////
-            mut rwr: RWRanges;
-            rwr.writes0 = _current_fn.events.writes.len;
-            ////////////////////////////////////////////
-
             if (k == "call")
             {
                 // This is the only place where reads & writes actually happen.
@@ -9664,12 +9675,6 @@ pub fn solve(
             {
                 fail("TODO: bck_node(non-empty " ~ k ~ ").");
             }
-
-            ////////////////////////////////////////////
-            rwr.writes1 = _current_fn.events.writes.len;
-            if (rwr.writes1 > rwr.writes0)
-                node.rwr = rwr;
-            ////////////////////////////////////////////
         }
 
 

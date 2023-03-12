@@ -161,12 +161,6 @@ struct Local
     index:      i32;
 }
 
-struct RWRanges
-{
-    writes0:    i32;
-    writes1:    i32;
-}
-
 struct Helpers
 {
     index:      i32;
@@ -186,8 +180,6 @@ struct SolvedNode
 
     using type:     Type;
     target:         Target;
-
-    using rwr?:     RWRanges;
 }
 
 

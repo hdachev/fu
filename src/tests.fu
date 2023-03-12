@@ -4534,9 +4534,9 @@ pub extern fn runTests()
 
         fn main() {
             mut xy: XY;
-            <fail by pragma write to xy>
-            ref x = xy.x;        <pass/>
-            fn  x = xy.x;        </fail>
+            <fail ref x 13:20+1 invalidated by write to xy 10:18+2>
+            ref x = xy.x;                                   <pass/>
+            fn  x = xy.x;                                   </fail>
 
             pragma emit(\`
                 \`xy\`.x++;
