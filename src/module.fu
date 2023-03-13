@@ -1,4 +1,6 @@
 
+type Quals = u32;
+
 
 //
 
@@ -301,7 +303,7 @@ struct Extended
 
 struct ValueType
 {
-    quals?:         i32;
+    quals?:         Quals;
     canon:          string;
 };
 

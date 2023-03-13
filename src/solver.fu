@@ -2173,7 +2173,7 @@ pub fn solve(
         }
     }
 
-    fn propagateType(ref node: SolvedNode, slot: Type, relax_mask!: i32, kills!?: Helpers)
+    fn propagateType(ref node: SolvedNode, slot: Type, relax_mask!: Quals, kills!?: Helpers)
     {
         let k = node.kind;
 
@@ -3419,7 +3419,7 @@ pub fn solve(
         _warnings.grow_if_oob(_current_fn.target.index) ||= Warning(:token, message: message.fail_appendStack);
     }
 
-    fn relaxBlockVar(t: Target, relax_mask!: i32, canDiscard!?: bool)
+    fn relaxBlockVar(t: Target, relax_mask!: Quals, canDiscard!?: bool)
     {
         let o = GET(t);
 
