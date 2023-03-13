@@ -164,8 +164,6 @@ namespace fu
             // Finally, do the work.
             task->run(task);
         }
-
-        return nullptr;
     }
 
     static bool TaskStack_TryWork()
