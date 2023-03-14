@@ -2710,10 +2710,7 @@ pub fn cpp_codegen(
                 let c = result[i];
                 if (c > ' ')
                 {
-                    if (c != ';')
-                        i++;
-
-                    result.shrink(i);
+                    result.shrink(i + 1);
                     break;
                 }
             }
