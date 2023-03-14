@@ -1,14 +1,9 @@
-node_modules
 bin
 build
 build-cpp
 build-cpp-alt
 build-cpp-back
-package-lock.json
 *.sublime-workspace
 .DS_Store
 .vscode
 *.tmp
-
-# the xcode setup
-fulang/fulang.xcodeproj
