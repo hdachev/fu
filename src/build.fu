@@ -16,6 +16,34 @@ fn ensure_local_fname(fname: string, dir_src: string): string
     return foreign ~ rel;
 }
 
+fn tmpfile(mut fname: string)
+{
+    fname ~= '-';
+
+    mut r = rand::u64();
+    for (mut i = 0; i < 8; i++)
+    {
+        let v = r & 0x1f;
+        fname ~= byte(
+            v < 10  ? '0'.i32 + v.i32
+                    : 'a'.i32 + v.i32 - 10);
+        r >>= 5;
+    }
+
+    return fname;
+}
+
+fn atomic_write(fname!: string, data: string)
+{
+    let tmp = tmpfile(fname);
+
+    let err = file::write(tmp, data) || file::rename(tmp, fname);
+    if (err)
+        file::unlink(tmp);
+
+    return err;
+}
+
 fn update_file(
     fname   !: string,
     data    !: string,
@@ -28,7 +56,7 @@ fn update_file(
     shadow let fname = dir_out ~ fname.slice(dir_src.len);
     if (file::read(fname) != data)
     {
-        let err = file::write(fname, data);
+        let err = atomic_write(:fname, data);
         if (err)
             throw("Failed to write `" ~ fname ~ "`, error: #" ~ err);
 
@@ -252,7 +280,7 @@ pub fn build(
 
         let fname = dir_wrk ~ "failing-testcase.cpp";
         println("  WRITE " ~ fname);
-        file::write(fname, cpp);
+        atomic_write(:fname, cpp);
 
         // Print exit code.
         if (stdout)
@@ -362,8 +390,8 @@ pub fn build(
                 return [];
 
             let F_cpp = F ~ ".cpp";
-            let F_tmp = F ~ ".o.tmp";
             let F_obj = F ~ ".o";
+            let F_tmp = tmpfile(F_obj);
 
             fn CACHE_objFileAvailable()
                 file::size(F_obj) > 0;
@@ -379,7 +407,7 @@ pub fn build(
                       : "fulib runtime";
 
             let cpp = units[i];
-            file::write(F_cpp, cpp);
+            atomic_write(fname: F_cpp, cpp);
 
             println("  BUILD ", human, " ", F_cpp);
 
@@ -435,7 +463,7 @@ pub fn build(
         }
 
         // Link.
-        let F_tmp = F_exe ~ ".tmp";
+        let F_tmp = tmpfile(F_exe);
 
         mut cmd = GCC_CMD ~ "-o " ~ F_tmp;
 
@@ -500,7 +528,7 @@ pub fn build(
             file::read(F_exe).view(i32).only;
 
         fn WRITE_StatusCode(shadow code: i32)
-            file::write(F_exe, [ code ].view(byte));
+            atomic_write(fname: F_exe, [ code ].view(byte));
 
         //
         if (OPTI_StatusCode && old_size == 4)
