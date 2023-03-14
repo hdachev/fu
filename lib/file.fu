@@ -271,6 +271,26 @@ fn chmod(mut path: string, mode: u32): i32
     return err;
 }
 
+fn unlink(mut path: string): i32
+{
+    // C-str ok.
+    path ~= '\0';
+
+    pragma include(
+        "<unistd.h>",
+        "<errno.h>");
+
+    mut err: i32;
+
+    pragma output(
+    `
+        if (unlink(`path`.data()))
+            `err` = errno;
+    `);
+
+    return err;
+}
+
 fn rename(mut from: string, mut to: string): i32
 {
     // C-str ok.
