@@ -268,7 +268,7 @@ pub fn ZERO(
 
             // We'll test with and without a module split here.
             let moduleA = src.slice(0, start0);
-            let moduleB = src[start0, start00] ~ "import _" ~ i ~ ";" ~ src[start1, src.len];
+            let moduleB = src[start0, start00] ~ "pub import _" ~ i ~ ";" ~ src[start1, src.len];
             let without = src[0, start0] ~ src[start1, src.len];
 
             sources[i]  = without;

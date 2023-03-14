@@ -6532,6 +6532,30 @@ pub extern fn runTests()
         }
     `]);
 
+    ZERO([
+    `
+        inline fn vec3(fill!: f32) fill;
+
+        let kMie_min: f32 = 3e-6;
+        inline fn Atmo(kMie = vec3(fill: kMie_min)) = kMie;     ;; PointlessLocal
+
+        fn main() Atmo == 3e-6 ? 0 : 1;                         ;; GNUStmtExpr
+    `]);
+
+    ZERO([
+    `
+        struct vec3 { x: f32; y: f32; z: f32; };
+        inline fn vec3(fill!: f32) vec3(fill, fill, fill);
+        inline fn *(a: vec3, b: f32) vec3(a.x * b, a.y * b, a.z * b);
+
+        <split/>
+        let kMie_min: f32 = 3e-6;
+        inline fn Atmosphere(kMie = vec3(fill: kMie_min)) = kMie.y * 2;
+
+        <split/>
+        fn main() Atmosphere == 6e-6 ? 0 : 1;                   ;; GNUStmtExpr
+    `]);
+
     ZERO(`
         struct Loop { l: i32 };
         struct Ring { r: i32 };
