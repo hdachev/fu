@@ -7656,7 +7656,7 @@ pub fn solve(
     fn inlineExpression(
         from: Target,
         mut expr: SolvedNode,
-        mut letdefReplicas?: i32[],
+        mut letdefReplicas?: Target[],
         locals_start!?: i32,
         must_not_call!?: Target)
     {
@@ -7667,7 +7667,6 @@ pub fn solve(
         // TODO FAILCASE: used to do nothing if from == self,
         //  which breaks jumps, references to locals, etc.
         //
-        let self = _current_fn.target;
         {
             let helpers0 = _helpers.len;
             defer _helpers.shrink(helpers0);
@@ -7687,10 +7686,10 @@ pub fn solve(
 
                 let replica = letdefReplicas.unless_oob(target.index);
                 if (replica)
-                    return nested(replica);
+                    return replica;
 
                 // Local of self?
-                if (from == self)
+                if (from == _current_fn.target)
                 {
                     target.index < minLocalIdx || BUG("Missing a local replica for: " ~ target);
                     return target;
@@ -7753,9 +7752,9 @@ pub fn solve(
 
                     //
                     let foreign = GET_crossmodule(expr.target, :from);
-                    let local   = Scope_create(_scope, nest: self.index);
+                    let local   = Scope_create(_scope, nest: _current_fn.target.index);
 
-                    letdefReplicas.grow_if_oob(expr.target.index) = local.index || BUG();
+                    letdefReplicas.grow_if_oob(expr.target.index) = local || BUG();
 
                     //
                     mut type = foreign.type;
@@ -7910,10 +7909,19 @@ pub fn solve(
                         {
                             // println("inlineExpression: LT.REPLACE " target " with " local);
 
+                            mut r = Region_STATIC;
+                            if (local.isLocal)
+                            {
+                                if (SELF_TEST)
+                                    local.modid == -_current_fn.target.index || BUG(
+                                        "visitTypes: cant express lifetime to out-of-frame locals: " ~ local);
+
+                                r = Region_fromLocal(local.index);
+                            }
+
                             // We'll add the replacements back in at the end,
                             //  don't want to deal with the offset juggle here.
-                            replacements.set::add(
-                                Region_fromLocal(local.index));
+                            replacements.set::add(r);
                         }
 
                         regions.splice(i, 1);
@@ -8131,7 +8139,7 @@ pub fn solve(
                 //  - letdefs we can unshift them in the inlined expression,
                 //  - the letdef mapping for ref replacement.
                 mut argdefs: SolvedNode[];
-                mut letdefReplicas: i32[];
+                mut letdefReplicas: Target[];
                 let locals_start = GET_next_local_index();
 
                 let host_args = target.args;
@@ -8168,7 +8176,7 @@ pub fn solve(
 
                     // Watch it, cross-module locals.
                     let foreign = nested(from: target, host_arg.local);
-                    letdefReplicas.grow_if_oob(foreign.index) = argdef.target.index || BUG();
+                    letdefReplicas.grow_if_oob(foreign.index) = argdef.target || BUG();
                     lax shadow let foreign = GET_crossmodule(foreign, from: target);
 
                     if (SELF_TEST)

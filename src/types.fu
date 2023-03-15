@@ -25,8 +25,8 @@ pub let RELAX_all           = q_mutref | q_rx_copy | q_rx_resize;
 pub fn Region_toLocal(region: Region) region.index;
 pub fn Region_fromLocal(index: i32) Region(:index);
 
-let Region_TEMP     = Region_fromLocal(0x7fffffff.i32);
-let Region_STATIC   = Region_fromLocal(0x80000001.i32); // not 0x80000000, overflows when negated
+pub let Region_TEMP     = Region(index: 0x7fffffff.i32);
+pub let Region_STATIC   = Region(index: 0x80000001.i32); // not 0x80000000, overflows when negated
 
 pub fn Region_isTemp(region: Region)    region == Region_TEMP;
 pub fn Region_isStatic(region: Region)  region == Region_STATIC;
