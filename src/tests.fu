@@ -12544,6 +12544,15 @@ pub extern fn runTests()
         }
     `);
 
+    ZERO(`
+        pragma emit("// needs newline");
+        pragma emit(\`
+            namespace {
+            }
+        \`);
+        fn main() 0;
+    `);
+
 
     // Function types sketch.
 
