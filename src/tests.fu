@@ -10062,6 +10062,60 @@ pub extern fn runTests()
         }
     `);
 
+    ZERO(`
+        fn main() {
+            let a: <fail bad call unsigned 4:23+8>f32<pass/>i32</fail> = 1;
+            let b = a.unsigned;
+            let c = a.signed;
+            if (typeof(a) -> u32) return 1;
+            if (typeof(a) -> i32) {
+                if (typeof(b) -> i32) return 2;
+                if (typeof(b) -> u32) {
+                    if (typeof(c) -> i32) {
+                        if (typeof(0.i8.unsigned)   -> u8  &&
+                            typeof(0.i16.unsigned)  -> u16 &&
+                            typeof(0.i32.unsigned)  -> u32 &&
+                            typeof(0.i64.unsigned)  -> u64 &&
+                            typeof(0.i128.unsigned) -> u128)
+                        {
+                            return 0;
+                        }
+                        return 3;
+                    }
+                    return 4;
+                }
+            }
+            return 5;
+        }
+    `);
+
+    ZERO(`
+        fn main() {
+            let a: <fail bad call signed 4:23+6>f64<pass/>u64</fail> = 1;
+            let b = a.signed;
+            let c = a.unsigned;
+            if (typeof(a) -> i64) return 1;
+            if (typeof(a) -> u64) {
+                if (typeof(b) -> u64) return 2;
+                if (typeof(b) -> i64) {
+                    if (typeof(c) -> u64) {
+                        if (typeof(0.u8.signed)   -> i8  &&
+                            typeof(0.u16.signed)  -> i16 &&
+                            typeof(0.u32.signed)  -> i32 &&
+                            typeof(0.u64.signed)  -> i64 &&
+                            typeof(0.u128.signed) -> i128)
+                        {
+                            return 0;
+                        }
+                        return 3;
+                    }
+                    return 4;
+                }
+            }
+            return 5;
+        }
+    `);
+
 
     // Defer.
 

@@ -6768,14 +6768,9 @@ pub fn solve(
                 return ok;
             }
         }
-        else if (node.kind == "call")
+        else if (node.kind == "not")
         {
-            let fn = node.value;
-            if (node.items.len == 1)
-            {
-                if (fn == "!")
-                    return !evalTypePattern(node.items[0], typeParams);
-            }
+            return !evalTypePattern(node.items.only, typeParams);
         }
 
         return fail("TODO evalTypePattern fallthrough: "

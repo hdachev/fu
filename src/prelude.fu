@@ -68,6 +68,39 @@ fn  f64 !T(v: T) case (T.is::primitive): f64 __native("/prim/convert");
 
 fn byte !T(v: T) case (T.is::primitive): byte __native("/prim/convert");
 
+fn unsigned !T(v: T)
+    case (T -> i8)     v.u8;
+    case (T -> i16)    v.u16;
+    case (T -> i32)    v.u32;
+    case (T -> i64)    v.u64;
+    case (T -> i128)   v.u128;
+    case (T.is::integral && T.is::unsigned) v;
+
+fn signed !T(v: T)
+    case (T -> u8)     v.i8;
+    case (T -> u16)    v.i16;
+    case (T -> u32)    v.i32;
+    case (T -> u64)    v.i64;
+    case (T -> u128)   v.i128;
+    case (T.is::integral && !T.is::unsigned) v;
+
+fn MIN !T(_: T)
+    case (T -> i8 )        -128;
+    case (T -> i16)        -32768;
+    case (T -> i32)        -2147483648;
+    case (T -> i64)        -9223372036854775808;
+    case (T.is::unsigned)  T(0);
+
+fn MAX !T(_: T)
+    case (T -> i8 )        127;
+    case (T -> i16)        32767;
+    case (T -> i32)        2147483647;
+    case (T -> i64)        9223372036854775807;
+    case (T.is::unsigned)  T(-1);
+
+type  int   = i32; // These may become separate types
+type uint   = u32; //  with a user-selectable size.
+
 
 // Math.
 
@@ -115,26 +148,6 @@ fn NAN(): f64 __native("<math.h>", "NAN");
 fn nan    !T(v: T) case (T.is::floating_point): bool __native("<cmath>", "std::isnan");
 fn inf    !T(v: T) case (T.is::floating_point): bool __native("<cmath>", "std::isinf");
 fn finite !T(v: T) case (T.is::floating_point): bool __native("<cmath>", "std::isfinite");
-
-
-// Int helpers.
-
-type  int   = i32; // These may become separate types
-type uint   = u32; //  with a user-selectable size.
-
-fn MIN !T(_: T)
-    case (T -> i8 )        -128;
-    case (T -> i16)        -32768;
-    case (T -> i32)        -2147483648;
-    case (T -> i64)        -9223372036854775808;
-    case (T.is::unsigned)  T(0);
-
-fn MAX !T(_: T)
-    case (T -> i8 )        127;
-    case (T -> i16)        32767;
-    case (T -> i32)        2147483647;
-    case (T -> i64)        9223372036854775807;
-    case (T.is::unsigned)  T(-1);
 
 
 // Assignment.
