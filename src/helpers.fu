@@ -320,6 +320,39 @@ fn appendMi(ref str: string, mut modid!: i32, mut index!: i32)
     while (index);
 }
 
+fn parse09AV(ref offset: i32, str: string)
+{
+    mut shift: u32;
+    mut result: u32;
+    while (offset < str.len)
+    {
+        let c = str[offset];
+        let v = c >= '0' && c <= '9' ? c.u32 - '0'.u32
+              : c >= 'A' && c <= 'V' ? c.u32 - 'A'.u32 + 10
+              : { break; };
+
+        result |= v << shift;
+        shift += 5;
+        offset++;
+    }
+
+    return result;
+}
+
+fn append09AV(ref str: string, mut v: u32)
+{
+    do
+    {
+        let c = v & 31;
+        v >>= 5;
+
+        str ~= c >= 10
+             ? (c - 10 + 'A'.u32).byte
+             : (c      + '0'.u32).byte;
+    }
+    while (v);
+}
+
 
 //
 
