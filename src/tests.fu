@@ -12403,6 +12403,36 @@ pub extern fn runTests()
         }
     `);
 
+    ZERO(`
+        fn grow_if_oob !T(ref a: T[], i: i32) {
+            if (a.len <= i) a.grow(i + 1);
+            return a[i];
+        }
+
+        struct Target { modid: i32; index: i32 }
+        struct Scope { overloads: Overload[]; extended: Extended[] };
+        struct Overload { modid: i32 };
+        struct Extended { min: i32; locals: Overload[] };
+
+        fn create(ref scope: Scope, modid: i32): Target {
+            ref overloads = modid
+                ? scope.extended.grow_if_oob(modid).locals
+                : scope.overloads;
+
+            let target = Target(:modid, index: overloads.len + 1);
+            overloads.push(Overload(:modid));
+            return target;
+        }
+
+        fn main() {
+            mut scope: Scope;
+            scope.create(0);
+            scope.create(1);
+            return scope.overloads.len == 1
+                && scope.extended .len == 2 ? 0 : 1;
+        }
+    `);
+
     // /Relaxer.
 
 
