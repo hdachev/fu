@@ -6,6 +6,14 @@ let q_mutref            = Quals(1) << 0;
 let q_rx_copy           = Quals(1) << 1;
 let q_rx_resize         = Quals(1) << 2;
 
+pub let q_TAGS          = q_mutref | q_rx_copy | q_rx_resize;
+pub let q_USAGE         = ~q_TAGS;
+
+let q_TAGS_bitsize      = 3;
+let q_USAGE_bitsize     = Quals_bitsize - q_TAGS_bitsize;
+
+let q_non_compund       = Quals(1) << Quals(q_TAGS_bitsize);
+
 let TAGS =
 [
     "mutref",
@@ -16,8 +24,8 @@ let TAGS =
 
 //
 
-pub let RELAX_before_bck    = q_mutref;
-pub let RELAX_all           = q_mutref | q_rx_copy | q_rx_resize;
+pub let RELAX_before_bck    = q_mutref  | q_USAGE;
+pub let RELAX_all           = q_TAGS    | q_USAGE;
 
 
 // Lifetimes.
@@ -62,7 +70,7 @@ pub fn Lifetime_temporary(): Lifetime =
 //
 
 fn Primitive(canon: string)
-    Type(ValueType(:canon, quals: q_rx_copy));
+    Type(ValueType(:canon, quals: q_rx_copy | q_non_compund));
 
 pub let t_i8        = Primitive("i8");
 pub let t_i16       = Primitive("i16");
@@ -87,7 +95,7 @@ pub let t_byte      = Primitive("c8");
 //  trying to distinguish it from bools by making it non-copiable,
 //   also using it for relax, which helps relax if (vec) into if (view).
 
-pub let t_proposition   = Type(ValueType(quals: 0, canon: t_bool.canon));
+pub let t_proposition   = Type(ValueType(quals: q_USAGE, canon: t_bool.canon));
 
 
 // I think these should also be non-refereable?
@@ -265,11 +273,11 @@ pub fn serializeType(type: Type, debug!: string)
     return prefix ~ (type.canon || throw("COMPILER BUG: serializeType: No type.canon in: " ~ debug));
 }
 
-pub fn humanizeQuals(type: Type)
+pub fn humanizeQuals(quals: Quals)
 {
     mut result: string;
     for (mut i = 0; i < TAGS.len; i++)
-        if (type.quals & (1 << Quals(i)))
+        if (quals & (1 << Quals(i)))
             result ~= " " ~ TAGS[i];
 
     return result;
@@ -322,7 +330,7 @@ pub fn clear_sliceable(type: Type): Type
 pub fn createArray(item: Type): Type
 {
     let canon = "[" ~ serializeType(item, debug: "createArray") ~ "]";
-    let quals = (item.quals & q_rx_copy) | q_rx_resize;
+    let quals = (item.quals & q_rx_copy) | q_rx_resize | q_non_compund;
 
     return Type(
         ValueType(:canon, :quals),
@@ -427,14 +435,15 @@ pub fn unpackAddrOfFn(canon: string, fn)
 
 //
 
-pub fn speculateStruct(asserts: flags::DeclAsserts)
+pub fn speculateStruct(asserts: flags::DeclAsserts, flat_cnt!: i32)
 {
-    return !(asserts & flags::A_NOCOPY) && q_rx_copy;
+    return (!(asserts & flags::A_NOCOPY) && q_rx_copy)
+         | (flat_cnt != -1 && q_non_compund);
 }
 
 pub fn despeculateStruct(mut type: Type)
 {
-    type.quals &= ~q_rx_copy;
+    type.quals &= ~(q_rx_copy | q_USAGE);
     return type;
 }
 
@@ -464,4 +473,63 @@ pub fn force_relax(ref type: Type, relax_mask!: Quals)
 pub fn relax_typeParam(mut type: Type)
 {
     return clear_refs(type);
+}
+
+
+//
+
+fn USAGE_shiftRight(quals: Quals, mut memberFlatOffset!offset: i32): Quals
+{
+    let keep    = quals & q_TAGS;
+    mut usage   = quals & q_USAGE;
+
+    while (offset >= q_USAGE_bitsize)
+        offset -= q_USAGE_bitsize;
+
+    usage = usage >>                    offset .Quals
+          | usage << (q_USAGE_bitsize - offset).Quals;
+
+    return keep | (usage & q_USAGE);
+}
+
+fn USAGE_shiftLeft(quals: Quals, mut memberFlatOffset!offset: i32): Quals
+{
+    let keep    = quals & q_TAGS;
+    mut usage   = quals & q_USAGE;
+
+    while (offset >= q_USAGE_bitsize)
+        offset -= q_USAGE_bitsize;
+
+    usage = usage <<                    offset .Quals
+          | usage >> (q_USAGE_bitsize - offset).Quals;
+
+    return keep | (usage & q_USAGE);
+}
+
+pub fn USAGE_structUsageFromFieldUsage(mut slot: Type, memberFlatOffset!: i32): Type
+{
+    slot.quals = USAGE_shiftLeft(:slot.quals, :memberFlatOffset);
+    return slot;
+}
+
+pub fn USAGE_setMaxUsageForStruct(ref type: Type, memberFlatCount: i32)
+{
+    mut usage: Quals;
+    if (memberFlatCount < q_USAGE_bitsize)
+    {
+        for (mut i = 0; i < memberFlatCount; i++)
+            usage |= 1 << Quals(q_TAGS_bitsize + i);
+    }
+    else
+    {
+        usage = q_USAGE;
+    }
+
+    if (type.quals & q_USAGE != usage)
+    {
+        type.quals = type.quals & q_TAGS | usage;
+        return true;
+    }
+
+    return false;
 }

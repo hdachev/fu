@@ -94,7 +94,7 @@ fn initStruct(implicit module: &mut Module,
         :kind, :baseprim, :module.modid, :index, :name);
 
     // Assume everything, we resolve disappointment.
-    return Type(ValueType(:canon, quals: speculateStruct(:asserts)));
+    return Type(ValueType(:canon, quals: speculateStruct(:asserts, :flat_cnt)));
 }
 
 

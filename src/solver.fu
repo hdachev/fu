@@ -956,22 +956,31 @@ pub fn solve(
         return fname[start, end];
     }
 
-    fn humanizeType(type: Type, lt?: bool, lax i?: int)
+    fn humanizeType(type: Type, lt!?: bool, no_quals!?: bool, usage!?: bool, lax i!?: int)
     {
         mut result: string = type.isStruct
             ? lookupUserType(type).name
             : type.canon;
 
-        result ~= humanizeQuals(type);
+        if (!no_quals)
+            result ~= humanizeQuals(type.quals);
 
-        // NOT SAFE! nested here blows up on return types
-        // type.lifetime.uni0n.each: |r|
-        // {
-        //     result ~= " ref:".qLT;
-        //     result ~= r.Region_isTemp() ? "temp".qKW
-        //             : r.Region_isStatic ? "static".qKW
-        //                                 : nested(Region_asIndex(r));
-        // }
+        if (usage)
+        {
+            shadow mut usage = type.quals & q_USAGE;
+            mut offset = -3;
+
+            result ~= " { ";
+            while (usage)
+            {
+                if (usage & 1)
+                    result ~= "#" ~ offset ~ " ";
+
+                usage >>= 1;
+                offset++;
+            }
+            result ~= "}";
+        }
 
         if (lt && type.lifetime)
             result ~= "`" ~ type.lifetime;
@@ -980,6 +989,14 @@ pub fn solve(
             result ~= " " ~ type.vfacts;
 
         return result;
+    }
+
+    fn explainTypeDiff(a: Type, b: Type, sep = "<->")
+    {
+        let no_quals    = (a.quals & q_TAGS ) != (b.quals & q_TAGS );
+        let usage       = (a.quals & q_USAGE) != (b.quals & q_USAGE);
+
+        return humanizeType(a, :no_quals, :usage) ~ " " ~ sep ~ " " ~ humanizeType(b, :no_quals, :usage);
     }
 
     fn str(n: SolvedNode)
@@ -2658,6 +2675,10 @@ pub fn solve(
             let t = node.target;
             if (t.kind == "field")
             {
+                let memberFlatOffset = t.field_unpackOffset;
+
+                shadow let slot = USAGE_structUsageFromFieldUsage(:slot, :memberFlatOffset);
+
                 if (canDiscard)
                 {
                     node = node.items.only;
@@ -2722,6 +2743,10 @@ pub fn solve(
                     //
                     if (t.type.lifetime.uni0n.has(Region_fromArgPosition(i)))
                     {
+                        // TODO fix this relaxer can't scale up to q_USAGE,
+                        //  we gotta replace it with the backwards design.
+                        shadow let relax_mask = relax_mask &~ q_USAGE;
+
                         mut type = orig.type;
                         if (type.try_relax(:slot, :relax_mask))
                         {
@@ -5132,6 +5157,30 @@ pub fn solve(
     }
 
 
+    // :(
+
+    fn field_packOffset(ref o: Overload, memberFlatOffset!: i32)
+    {
+        if (SELF_TEST)
+        {
+            o.kind == "field" || BUG(
+                "field_unpackOffset: Not a field.");
+            !o.solved.helpers || o.solved.helpers.index == memberFlatOffset || BUG(
+                "field_unpackOffset: Helpers already set to something else.");
+        }
+
+        o.solved.helpers = Helpers(memberFlatOffset);
+    }
+
+    fn field_unpackOffset(o: Overload)
+    {
+        if (SELF_TEST) o.kind == "field" || BUG(
+            "field_unpackOffset: Not a field.");
+
+        return o.solved.helpers.index;
+    }
+
+
     //
 
     fn uPrepStruct(node: Node): SolvedNode
@@ -5183,7 +5232,7 @@ pub fn solve(
         else
         {
             // Detect self-recursion [A].
-            let flat_cnt = -1;
+            let flat_cnt = isPrimDecl ? +1 : -1;
 
             out_type    = initStruct(:kind, :baseprim, :name, :asserts, :flat_cnt);
             out_target  = Scope_Typedef(_scope, id: origId, :name,
@@ -5218,7 +5267,7 @@ pub fn solve(
         // Struct fields only.
         mut structConverts: Target[];
         mut structImports:  i32[];
-        mut flat_cnt:       i32;
+        mut flat_cnt:       i32 = isPrimDecl && 1;
 
         mut non_triv = !out_type.is_rx_copy && -1;
 
@@ -5299,21 +5348,27 @@ pub fn solve(
                 shadow let member = members[i];
                 item.id == member.value || BUG("solveStructMembers_4: field id mismatch.");
 
-                ref field = GET_mut(item.target);
+                let field_target = item.target;
+                ref field = GET_mut(field_target);
                 field.type = member.type;
 
                 let memberFlatCount = member.type.isStruct
                     ? lookupUserType(member.type).flat_cnt
                     : 1;
 
+                // Detect self-recursion [B].
                 if (memberFlatCount < 0)
                     fail("Type " ~ name.qBAD ~ " is self-recursive via " ~ field);
 
-                // Detect self-recursion [B].
-                flat_cnt += memberFlatCount;
+                let memberFlatOffset = !isPrimDecl && flat_cnt;
+
+                if (!isPrimDecl)
+                    flat_cnt += memberFlatCount;
+
                 if (!non_triv && !member.type.is_trivial)
                     non_triv = i + 1;
 
+                //
                 if (member.flags & F_USING)
                 {
                     structConverts.push(item.target);
@@ -5324,6 +5379,10 @@ pub fn solve(
 
                     structImports.set::add(field.type.lookupTypeImports());
                 }
+
+                //
+                if (!isPrimDecl)
+                    field.field_packOffset(:memberFlatOffset);
             }
 
             // Primitives - index enum variants & flags.
@@ -5412,9 +5471,16 @@ pub fn solve(
             if (out_type.is_rx_copy &&
                 members.some(|member| !member.type.is_rx_copy))
             {
-                CHANGE = true;
-                out_type = make_non_copyable(out_type);
+                CHANGE      = true;
+                out_type    = make_non_copyable(out_type);
             }
+
+            //
+            if (!isStruct && !isUnion)
+                flat_cnt == 1 || BUG("Bad flat count: " ~ kind ~ " " ~ name ~ " flat_cnt=" ~ flat_cnt);
+
+            if (out_type.USAGE_setMaxUsageForStruct(memberFlatCount: flat_cnt))
+                CHANGE      = true;
 
             //
             {
@@ -6579,11 +6645,6 @@ pub fn solve(
         }
 
         fail("Invalid type annotation: " ~ node.kind ~ " " ~ node.value);
-    }
-
-    fn explainTypeDiff(a: Type, b: Type, sep = "<->")
-    {
-        return humanizeType(a) ~ " " ~ sep ~ " " ~ humanizeType(b);
     }
 
     fn trySolveTypeParams(

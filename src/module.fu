@@ -1,5 +1,6 @@
 
-type Quals = u32;
+type Quals = u32; // cant use 64 now because of parseType
+let Quals_bitsize = 32;
 
 
 //
