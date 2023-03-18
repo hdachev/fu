@@ -7286,6 +7286,77 @@ pub extern fn runTests()
         }
     `);
 
+    ZERO(`
+        fn merge !T(l: [T], r: [T], left, right, both) {
+            mut li = 0;
+            mut ri = 0;
+            for (;;) {
+                inline fn L = l[li];
+                inline fn R = r[ri];
+                let l_done = li == l.len;
+                let r_done = ri == r.len;
+
+                let cmp = l_done ? r_done ? { return; } : +1
+                                 : r_done ? -1
+                                 : L <> R;
+                if (cmp == 0) {
+                    both(L, left?: li, right?: ri);
+                    li++;
+                    ri++;
+                }
+                else if (cmp < 0) {
+                    left(L, left?: li, right?: ri);
+                    li++;
+                }
+                else {
+                    right(R, left?: li, right?: ri);
+                    ri++;
+                }
+            }
+        }
+
+        fn inter !T(l: T[], r: T[]) {
+            if (r.len < l.len)
+                return inter(r, l);
+
+            mut result: T[];
+            mut useResult = false;
+
+            merge(l, r,
+
+            left: |_, left| {
+                if (!useResult) {
+                    useResult = true;
+                    result = l.slice(0, left);
+                }
+            },
+
+            right: |_| {},
+
+            both: |item| {
+                if (useResult)
+                    result ~= item;
+            });
+
+            return useResult ? result : l;
+        }
+
+        <split/>
+        struct Region { index: i32 };
+        struct Lifetime { uni0n: i32[]; };
+
+        fn Lifetime_inter(a: Lifetime, b: Lifetime): Lifetime = // nested { return } in merge
+            Lifetime(uni0n: inter(a.uni0n, b.uni0n));           ;; GNUStmtExpr
+
+        <split/>
+        fn main() {
+            mut a = Lifetime([ 1, 2, 3 ]);
+            mut b = Lifetime([ 2, 3, 4 ]);
+            mut c = Lifetime_inter(a, b);
+            return c.uni0n == [ 2, 3 ] ? 0 : 1;
+        }
+    `);
+
     // /quite right
 
 
