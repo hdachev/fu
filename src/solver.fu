@@ -2368,7 +2368,7 @@ pub fn solve(
             else if (k == "block" || k == "jump")
             {
                 let h = node.helpers;
-                if (h.ret_actual && !h.ret_actual.is_void && !h.ret_actual.is_never)
+                if (h.ret_actual && !h.ret_actual.isIrrelevant && !h.ret_actual.is_never)
                     maybeCopyOrMove(items.last, h.ret_actual);
             }
             else if (k == "letdef")
@@ -2404,7 +2404,7 @@ pub fn solve(
 
         //
 
-        let canDiscard = slot.is_void;
+        let canDiscard = slot.isIrrelevant;
 
         // Shortcutting lets, they source the slot from usage.
         if (k == "let" || k == "letdef")
@@ -2437,6 +2437,9 @@ pub fn solve(
 
         fn trackVarUsage(ref usage: Type[], index: i32, shadow slot: Type)
         {
+            if (SELF_TEST && slot.is_rx_copy && slot.isIrrelevant)
+                BUG(nested(index) ~ ", trackVarUsage: slot is both copy & irrelevant: " ~ slot.humanizeType);
+
             shadow ref usage = usage.grow_if_oob(index);
             if (!usage)
                 usage = slot;
@@ -3080,12 +3083,7 @@ pub fn solve(
         {
             let h = node.helpers;
             if (h.ret_actual)
-            {
-                if (canDiscard)
-                    h.ret_actual = t_void;
-                else
-                    h.ret_actual.try_relax(:slot, :relax_mask);
-            }
+                h.ret_actual.try_relax(:slot, :relax_mask);
 
             if (h)
             {
@@ -3468,6 +3466,10 @@ pub fn solve(
             if (isUnused)
                 if !(o.flags & F_LAX || o.status & SS_MATCHED || o.type.is_zeroes)
                     warn(:o.solved.token, "Unused variable: " ~ o.name.qBAD ~ ": make it " ~ "lax".qKW ~ " if this is intentional.");
+
+            //
+            if (SELF_TEST && usage.is_rx_copy && usage.isIrrelevant)
+                BUG(t ~ ": Usage is copy but no usage bits set: " ~ usage.humanizeType);
 
             //
             shadow ref o = GET_mut(t);
@@ -5015,7 +5017,8 @@ pub fn solve(
                 {
                     ref ext = EXT_mut(target);
                     for (mut i = 0; i < ext.args.len; i++)
-                        ext.args[i].type.force_relax(relax_mask: RELAX_all);
+                        ext.args[i].type.force_relax(
+                            relax_mask: RELAX_all &~ q_USAGE);
 
                     // Make sure mutually recursive fns don't dump each other.
                     ext.fx_mask |= Fx_NotDeadCode | Fx_Throws;
@@ -8301,6 +8304,9 @@ pub fn solve(
 
     fn maybeCopyOrMove(ref node: SolvedNode, slot: Type, isArgument! = false): void
     {
+        if (slot.isIrrelevant)
+            return;
+
         if (slot.canon != node.canon && !node.is_never)
         {
             if (node.type.is_zeroes && !(slot.is_mutref && CANNOT_definit_mutrefs))
@@ -9954,6 +9960,9 @@ pub fn solve(
             {
                 let host_arg = host_args[i];
                 let arg      = args[i];
+
+                if (host_arg.isIrrelevant)
+                    continue;
 
                 isAssignableAsArgument(host: host_arg.type, arg.type) || err(
                     "Arg #" ~ i ~ ", " ~ host_arg.name.human.qID ~ " not assignable to host_arg: "
