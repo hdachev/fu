@@ -2095,7 +2095,18 @@ pub fn solve(
 
     fn solveDeclExpr(node: Node): SolvedNode
     {
-        return solveNodes([ node ], dead_brk: false).only;
+        mut res = solveNodes([ node ], dead_brk: false).only;
+
+        // Anonymous structs & co.
+        //
+        // TODO it'd be neat if this could double as a construction expr,
+        //  so that you could x = struct { z = non-zero-stuff, w = whatever },
+        //   so you both get the anonymous type AND also get an instance constructed.
+        //
+        if (res.target && res.target.kind == "type")
+            res.type = res.target.type;
+
+        return res;
     }
 
     fn isTypeDecl(::kind)
@@ -5244,7 +5255,7 @@ pub fn solve(
 
         // Trying to push this down now.
         if (!solve)
-            return createEmpty(target: out_target, type: out_type);
+            return createEmpty(target: out_target);
 
         //////////////////////////////////////////////////
         let implicit _current_fnort = out_target;
