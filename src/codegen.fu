@@ -223,11 +223,6 @@ pub fn cpp_codegen(
 
     //
 
-    fn type_isZST(type: Type): bool
-    {
-        return type.is_void  || type.is_zeroes || type.isAddrOfFn;
-    }
-
     fn typeAnnot(type: Type, mode?: i32): string
     {
         let fwd = typeAnnotBase(type, :mode);
@@ -322,8 +317,8 @@ pub fn cpp_codegen(
         if (type.is_primitive && (c.len < 4 || c.len == 4 && c[1, 4] == "128"))
             return primAnnotBase(c);
 
-        if (type.type_isZST)    return annotateZST();
         if (c == "never")       return annotateNever();
+        if (type.isIrrelevant)  return annotateZST();
 
         // TODO FIX slice definit - (arg?: [byte]) somehow manages to drop ref on definit.
         let arrayItem = tryClear_sliceable(type);
@@ -724,7 +719,7 @@ pub fn cpp_codegen(
     {
         shadow let items = cgNodes(nodes, mode: M_CHECK_NEVER_LTR);
         if (!items.len)
-            return "(false /*empty parens*/)";
+            return "void()";
 
         if (items.len == 1)
             return items[0];
@@ -841,7 +836,7 @@ pub fn cpp_codegen(
 
         let name    = "BL_" ~ _current_fn.num_labels++;
 
-        mut has_val     = type && !type.is_void;
+        mut has_val     = !type.isIrrelevant;
         mut ptrflip     = false;
 
         if (has_val)
@@ -991,7 +986,7 @@ pub fn cpp_codegen(
 
             if (host_args)
                 _hasMain |= MAIN_argv;
-            if (overload.type.type_isZST)
+            if (overload.type.isIrrelevant)
                 _hasMain |= MAIN_zst;
         }
         else
@@ -1006,7 +1001,7 @@ pub fn cpp_codegen(
 
         for (mut i = 0; i < host_args.len; i++)
         {
-            if (host_args[i].type_isZST)
+            if (host_args[i].isIrrelevant)
                 continue;
 
             if (some)
@@ -1068,7 +1063,7 @@ pub fn cpp_codegen(
             for (mut i = 0; i < args.len; i++)
             {
                 let arg = args[i].type;
-                if (arg.type_isZST)
+                if (arg.isIrrelevant)
                     continue;
 
                 if (first)
@@ -1454,7 +1449,7 @@ pub fn cpp_codegen(
 
     fn cgLet(node: SolvedNode, global!: bool, foreign?: bool): string
     {
-        if (node.type.type_isZST)
+        if (node.type.isIrrelevant)
             return "";
 
         // GLOBALS ///////////////////////////////////////////////
@@ -1586,7 +1581,7 @@ pub fn cpp_codegen(
         let block       = !use_return && findBlock();
         let expr        = node.items.only;
 
-        if (expr.kind != "empty" || !expr.type.is_void)
+        if (expr.kind != "empty" || !expr.type.isIrrelevant)
         {
             // Break with value.
             if (!use_return)
@@ -1776,18 +1771,17 @@ pub fn cpp_codegen(
                 : arg;
 
             mut junk = false;
-
-            if (arg.type_isZST)
+            mut mustDiscard = arg.isIrrelevant;
+            if (mustDiscard)
             {
-                // Thinking is - solver can move non-discardable expressions out of the way,
-                //  so we're left with these stubs we can trivially throw away here.
+                // TODO cleanup, the call / fndef / definit & co shouldn't be needed here,
+                //  the only thing we should probably handle is the empty,
+                //   or we can leave it to cg a `0` and discard that.
+                //
                 junk = arg.kind == "empty"
                     || arg.kind == "definit"
                     || arg.kind == "fndef"
                     || arg.kind == "call" && (arg.target.kind == "var" || arg.target.kind == "type" && !arg.items || arg.target.kind == "enumv");
-
-                if (!junk)
-                    fail("Cannot discard ZST arg, kind is `" ~ arg.kind ~ "`.");
             }
             else if (arg.is_never)
             {
@@ -1798,8 +1792,22 @@ pub fn cpp_codegen(
                 arg, callarg: ext.args[i].type,
                 mode: isNative && M_ARG_TO_NATIVE) || fail("Empty arg src.");
 
-            // Explicit sequencing.
+            //
             let MUSTSEQ_bit = 1 << (i & 31);
+
+            if (mustDiscard && src)
+            {
+                ooe_crosscheck |= MUSTSEQ_bit;
+
+                if (ooe_header)
+                    ooe_header ~= ", ";
+
+                ooe_header ~= "(void) ";
+                ooe_header ~= src;
+                src = "";
+            }
+
+            // Explicit sequencing.
             if (MUSTSEQ_mask & MUSTSEQ_bit)
             {
                 junk && fail("Trying to MUSTSEQ a discarded argument, shouldnt happen.");
@@ -1826,8 +1834,6 @@ pub fn cpp_codegen(
                 {
                     if (ooe_header)
                         ooe_header ~= ", ";
-                    else
-                        ooe_header = "(";
 
                     //
                     mut ptrflip = false;
@@ -1847,7 +1853,7 @@ pub fn cpp_codegen(
             item_src ~= src;
         }
 
-        ooe_crosscheck == MUSTSEQ_mask || fail(
+        (ooe_crosscheck & MUSTSEQ_mask) == MUSTSEQ_mask || fail(
             "OOE crosscheck failed: codegen sequenced " ~ ooe_crosscheck
                                 ~ ", but solver wants " ~ MUSTSEQ_mask ~ ": "
                                 ~ args.map(|x| x.kind.str).join("|"));
@@ -1855,7 +1861,7 @@ pub fn cpp_codegen(
         fn ooeWrap(src: string)
         {
             return ooe_header
-                 ? ooe_header ~ ", " ~ src ~ ")"
+                 ? "(" ~ ooe_header ~ ", " ~ src ~ ")"
                  : src;
         }
 
@@ -2004,7 +2010,7 @@ pub fn cpp_codegen(
             if (target.kind == "var")
             {
                 // So we don't look for variables that aren't there.
-                if (target.type.type_isZST)
+                if (target.type.isIrrelevant)
                     return cgDefault(target.type);
 
                 if (!node.target.isLocal)
@@ -2261,8 +2267,8 @@ pub fn cpp_codegen(
                 : blockWrapSubstatement(node);
 
         let cond = n0 && cgNode(n0, M_RETBOOL | (stmt && M_PARENS));
-        let cons = n1 && (stmt ? blockWrapSubstatement(n1) : cgNode(n1));
-        let alt  = n2 && (stmt ? blockWrap_unlessIf   (n2) : cgNode(n2));
+        mut cons = n1 && (stmt ? blockWrapSubstatement(n1) : cgNode(n1));
+        mut alt  = n2 && (stmt ? blockWrap_unlessIf   (n2) : cgNode(n2));
 
         if (stmt)
             return "if (" ~ cond ~ ")" ~ cons ~ (alt ? _indent ~ "else" ~ alt : "");
@@ -2473,7 +2479,7 @@ pub fn cpp_codegen(
 
             let term = cgNode(item, :mode);
 
-            if (item.is_void)
+            if (item.isIrrelevant)
                 src ~= "(" ~ term ~ ", 0)";
             else
                 src ~= term;
@@ -2484,7 +2490,7 @@ pub fn cpp_codegen(
     {
         type.is_mutref && fail("Cannot definit mutrefs.");
 
-        if (type.type_isZST)
+        if (type.isIrrelevant)
             return "void()";
 
         if (type.is_ref && !type.isPassByValue)
@@ -2701,7 +2707,7 @@ pub fn cpp_codegen(
                     result ~= node.value
                         .slice(i == 0 ? indent.len : 0)
                         .replace(all: indent, with: _indent);
-                else if !(node.type_isZST)
+                else if !(node.isIrrelevant)
                     result ~= cgNode(:node);
             }
 
@@ -3014,7 +3020,7 @@ pub fn cpp_codegen(
                 if (node.type.is_never && i < nodes.len - 1)
                     BUG("M_CHECK_NEVER_LTR: non-trailing node.is_never");
 
-            let isTrail = trail && i == nodes.len - 1 && !node.is_never && !node.is_void;
+            let isTrail = trail && i == nodes.len - 1 && !node.is_never && !node.isIrrelevant;
 
             mut src     = node && cgNode(node, isTrail ? mode &~ M_STMT : mode);
 

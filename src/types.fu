@@ -533,3 +533,27 @@ pub fn USAGE_setMaxUsageForStruct(ref type: Type, memberFlatCount: i32)
 
     return false;
 }
+
+pub fn isIrrelevant(type: Type)
+{
+    return !(type.quals & q_USAGE)
+
+        ////////////////////
+        && !type.is_never // TODO should be workable without this
+        ////////////////////
+        //
+        // Two things that currently fail:
+        //
+        //  (1) propagateType(block)
+        //        if (h.ret_actual)
+        //          if (canDiscard)
+        //            h.ret_actual = t_void;    // <- discards nevers
+        //          else
+        //            h.ret_actual.try_relax(...)
+        //
+        //    > Ideally the if (canDiscard) should not be necessary,
+        //       and we could only go for try_relax, which should always discard types.
+        //
+        //  (2) cpp codegen emits noreturn stmt expressions
+        //        that infer void instead of fu::never.
+}
