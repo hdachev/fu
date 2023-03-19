@@ -54,12 +54,12 @@ pub fn createStructCanon(
     return res;
 }
 
-pub fn isStruct(type: Type): bool
+pub fn isStruct(type: ValueType): bool
 {
     return type.canon.starts(with: '/');
 }
 
-pub fn isStructOrUnion(type: Type): bool
+pub fn isStructOrUnion(type: ValueType): bool
 {
     // TODO FIX createStructCanon gives both the '/' prefix.
     return type.isStruct;

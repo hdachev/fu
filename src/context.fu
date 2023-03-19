@@ -163,7 +163,7 @@ pub fn setModule(
 pub fn lookupUserType(
     implicit module: Module,
     implicit ctx: Context,
-    type: Type)
+    type: ValueType)
 {
     let scp = parseStructCanon(type.canon);
 
@@ -175,13 +175,13 @@ pub fn lookupUserType(
         || assert();
 }
 
-pub fn is_trivial(type: Type)
+pub fn is_trivial(type: ValueType)
     type.is_primitive || type.isStruct && lookupUserType(type).all_triv;
 
 
 //
 
-pub fn tryLookupUserType(type: Type): Struct
+pub fn tryLookupUserType(type: ValueType): Struct
 {
     if (type.isStruct || type.is_primitive && type.canon.quals::basePrimPrefixLen() < type.canon.len)
         return lookupUserType(type);
@@ -189,16 +189,16 @@ pub fn tryLookupUserType(type: Type): Struct
     return [];
 }
 
-pub fn lookupTypeImports(type: Type)
+pub fn lookupTypeImports(type: ValueType)
     tryLookupUserType(type).imports;
 
-pub fn lookupTypeConverts(type: Type)
+pub fn lookupTypeConverts(type: ValueType)
     tryLookupUserType(type).converts;
 
 
 //
 
-pub fn getFlatCount(type: Type): i32
+pub fn getFlatCount(type: ValueType): i32
 {
     if (!type.isStructOrUnion)
         return 1;

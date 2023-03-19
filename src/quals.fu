@@ -1,48 +1,48 @@
 import module;
 
-fn is_primitive(t: Type) {
+fn is_primitive(t: ValueType) {
     let c = t.canon[0];
     return c == 'u' || c == 'i' || c == 'f' || c == 'b' || c == 'c'
                     || c == 'm' || c == 'e';
 }
 
-fn is_arithmetic(t: Type) {
+fn is_arithmetic(t: ValueType) {
     let c = t.canon[0];
     return c == 'u' || c == 'i' || c == 'f';
 }
 
-fn is_bitfield(t: Type) {
+fn is_bitfield(t: ValueType) {
     let c = t.canon[0];
     return c == 'u' || c == 'i'
                     || c == 'm';
 }
 
-fn is_integral(t: Type) {
+fn is_integral(t: ValueType) {
     let c = t.canon[0];
     return c == 'u' || c == 'i';
 }
 
-fn is_unsigned(t: Type) {
+fn is_unsigned(t: ValueType) {
     let c = t.canon[0];
     return c == 'u';
 }
 
-fn is_floating_pt(t: Type) {
+fn is_floating_pt(t: ValueType) {
     let c = t.canon[0];
     return c == 'f';
 }
 
-fn is_boolean(t: Type) {
+fn is_boolean(t: ValueType) {
     let c = t.canon[0];
     return c == 'b';
 }
 
-fn is_enum(t: Type) {
+fn is_enum(t: ValueType) {
     let c = t.canon[0];
     return c == 'e';
 }
 
-fn is_flags(t: Type) {
+fn is_flags(t: ValueType) {
     let c = t.canon[0];
     return c == 'm';
 }
@@ -50,7 +50,7 @@ fn is_flags(t: Type) {
 
 //
 
-fn isPassByValue(t: Type) {
+fn isPassByValue(t: ValueType) {
     return t.is_primitive;
 }
 
