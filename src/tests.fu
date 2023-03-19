@@ -7357,6 +7357,29 @@ pub extern fn runTests()
         }
     `);
 
+    ZERO(`
+        struct Type { canon: string; quals: i32 };
+        struct Node { type: Type; value: string };
+
+        let t_f32 = Type("f32", 2);
+        let t_f64 = Type("f32", 2);
+
+        fn solveReal(lax v: string, type: Type): Type {
+            if (type.canon == t_f32.canon) return t_f32;
+            return t_f64;
+        }
+
+        fn tryRetype(node: Node, expect: Type): Type {
+            return solveReal(node.value, expect);
+        }
+
+        fn main() {
+            let a = Node(t_f64, "0.0");
+            let b = tryRetype(a, t_f32);
+            return b.canon == "f32" ? 0 : 1;
+        }
+    `)
+
     // /quite right
 
 
