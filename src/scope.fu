@@ -80,21 +80,21 @@ fn MODID(implicit module: Module): i32
 fn initStruct(implicit module: &mut Module,
     ::kind!, baseprim!: string,
     name: string, asserts: DeclAsserts,
-    flat_cnt!: i32)
+    flatCount!: i32)
 {
     name[0].u8 - '0'.u8 > 9.u8 || throw (
         "Bad struct name, leading digit: `" ~ name ~ "`.");
 
     // Alloc a slot.
     let index = module.out.types.len;
-    module.out.types ~= Struct(:kind, :name, base: baseprim, :flat_cnt);
+    module.out.types ~= Struct(:kind, :name, base: baseprim, :flatCount);
 
     //
     mut canon = createStructCanon(
         :kind, :baseprim, :module.modid, :index, :name);
 
     // Assume everything, we resolve disappointment.
-    return Type(ValueType(:canon, quals: speculateStruct(:asserts, :flat_cnt)));
+    return Type(ValueType(:canon, quals: speculateStruct(:asserts, :flatCount)));
 }
 
 

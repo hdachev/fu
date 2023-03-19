@@ -198,6 +198,17 @@ pub fn lookupTypeConverts(type: Type)
 
 //
 
+pub fn getFlatCount(type: Type): i32
+{
+    if (!type.isStructOrUnion)
+        return 1;
+
+    return tryLookupUserType(type).flatCount;
+}
+
+
+//
+
 pub fn getModuleSrc(implicit ctx: Context, modid!: i32)
 {
     return ctx.modules[modid].in.src;

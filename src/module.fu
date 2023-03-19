@@ -67,7 +67,7 @@ struct Struct
     converts?:  Target[];
 
     base?:      string;
-    flat_cnt?:  i32;
+    flatCount?: i32;
     all_triv?:  bool;
 };
 

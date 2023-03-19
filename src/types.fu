@@ -435,10 +435,10 @@ pub fn unpackAddrOfFn(canon: string, fn)
 
 //
 
-pub fn speculateStruct(asserts: flags::DeclAsserts, flat_cnt!: i32)
+pub fn speculateStruct(asserts: flags::DeclAsserts, flatCount!: i32)
 {
     return (!(asserts & flags::A_NOCOPY) && q_rx_copy)
-         | (flat_cnt != -1 && q_non_compund);
+         | (flatCount != -1 && q_non_compund);
 }
 
 pub fn despeculateStruct(mut type: Type)
@@ -512,12 +512,12 @@ pub fn USAGE_structUsageFromFieldUsage(mut slot: Type, memberFlatOffset!: i32): 
     return slot;
 }
 
-pub fn USAGE_setMaxUsageForStruct(ref type: Type, memberFlatCount: i32)
+pub fn USAGE_setMaxUsage(ref type: Type, flatCount: i32)
 {
     mut usage: Quals;
-    if (memberFlatCount < q_USAGE_bitsize)
+    if (flatCount < q_USAGE_bitsize)
     {
-        for (mut i = 0; i < memberFlatCount; i++)
+        for (mut i = 0; i < flatCount; i++)
             usage |= 1 << Quals(q_TAGS_bitsize + i);
     }
     else
@@ -525,13 +525,7 @@ pub fn USAGE_setMaxUsageForStruct(ref type: Type, memberFlatCount: i32)
         usage = q_USAGE;
     }
 
-    if (type.quals & q_USAGE != usage)
-    {
-        type.quals = type.quals & q_TAGS | usage;
-        return true;
-    }
-
-    return false;
+    type.quals = type.quals & q_TAGS | usage;
 }
 
 pub fn isIrrelevant(type: Type)
