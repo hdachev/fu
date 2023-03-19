@@ -2905,11 +2905,17 @@ pub fn solve(
         }
         else if (k == "int" || k == "real" || k == "char" || k == "str" || k == "definit" || k == "bool")
         {
-            //////////////
-            // Nothing! //
-            //////////////
+            // Something alla discard.
+            if (canDiscard)
+            {
+                if (SELF_TEST)
+                    node.items && BUG("propagateType canDiscard(" ~ k ~ ") has items.");
+
+                node.kind   = "empty";
+                node.value  = "";
+            }
         }
-        else if (k == "typeparam" || k == "empty" || k == "fndef")
+        else if (k == "empty" || k == "fndef")
         {
             /////////////////////////
             // What do we do here? //
