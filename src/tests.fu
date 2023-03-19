@@ -7411,6 +7411,38 @@ pub extern fn runTests()
         fn main() _0::fun(0) == 2 ? 0 : 1;                      ;; GNUStmtExpr
     `]);
 
+    ZERO(`
+        fn main() {
+            nocopy struct Nc { items: Nc[]; };
+
+            fn rem_odd(ref items: Nc[])
+                for (mut i = items.len; i --> 0; )
+                    if (i & 1)
+                        items.splice(i, 1);
+
+            mut items: Nc[];
+            for (mut i = 0; i < 11; i++)
+                items ~= Nc(i & 1 ? [ Nc ] : [ Nc, Nc ]);
+
+            rem_odd(items);
+
+            mut sum = 0;
+            fn visit(shadow items: [Nc])
+            {
+                fn visit(nc: Nc) {
+                    sum++;
+                    visit(nc.items);
+                }
+
+                for (mut i = 0; i < items.len; i++)
+                    visit(items[i]);
+            }
+
+            visit(items);
+            return sum == 18 ? 0 : 1;
+        }
+    `);
+
     // /quite right
 
 
