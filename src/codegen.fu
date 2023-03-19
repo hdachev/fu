@@ -160,7 +160,7 @@ pub fn cpp_codegen(
 
     using fn GET(target: Target)
     {
-        target.index > 0 || assert();
+        target.index > 0 || BUG();
 
         if (target.isLocal)
             return module.out.solve.scope.extended[-target.modid].locals[target.index - 1];
@@ -192,7 +192,7 @@ pub fn cpp_codegen(
 
     //
 
-    fn fail(mut reason = "")
+    shadow fn BUG(reason?: string)
     {
         FAIL("THIS IS A COMPILER BUG.\n\n\tCODEGEN FAIL:\n\n\t" ~ (reason || "Assertion failed."));
     }
@@ -200,7 +200,7 @@ pub fn cpp_codegen(
     fn noteDefect(defects: CGDefects)
     {
         if (defects & options.break_defects)
-            fail("CGDefect break: " ~ defects.str.ansi::qBAD);
+            BUG("CGDefect break: " ~ defects.str.ansi::qBAD);
 
         _defects |= defects;
     }
@@ -297,7 +297,7 @@ pub fn cpp_codegen(
         if (c == "u128")    return "__uint128_t";
 
         // Custom primitives.
-        fail("Unknown primitive: `" ~ c ~ "`.");
+        BUG("Unknown primitive: `" ~ c ~ "`.");
     }
 
     fn arrayType_annotateAsVec(type: Type)
@@ -347,7 +347,7 @@ pub fn cpp_codegen(
         }
 
         //
-        let s   = lookupUserType(type) || fail("TODO: " ~ type.canon);
+        let s   = lookupUserType(type) || BUG("TODO: " ~ type.canon);
         let id  = "s_" ~ s.name;
 
         let scp = parseStructCanon(type.canon);
@@ -381,7 +381,7 @@ pub fn cpp_codegen(
         for (mut i = 0; i < fields.len; i++)
         {
             let field = GET(fields[i].target);
-            field.kind == "field" || fail("Non-field struct item: " ~ field.name ~ " (" ~ field.kind ~ ") in " ~ t.canon);
+            field.kind == "field" || BUG("Non-field struct item: " ~ field.name ~ " (" ~ field.kind ~ ") in " ~ t.canon);
             let annot = typeAnnot(field.type);
             if (annot != "void")
             {
@@ -947,7 +947,7 @@ pub fn cpp_codegen(
     fn fnID(target: Target)
     {
         let overload    = GET(target);
-        let id          = overload.name || fail();
+        let id          = overload.name || BUG();
 
         if (target.isOp)
             return "operator" ~ id.valid_operator;
@@ -978,7 +978,7 @@ pub fn cpp_codegen(
         let overload    = GET(target);
 
         let host_args   = target.args;
-        let annot       = typeAnnot(overload.type || fail(), M_RETVAL);
+        let annot       = typeAnnot(overload.type || BUG(), M_RETVAL);
 
         //
         mut id          = overload.name;
@@ -1043,7 +1043,7 @@ pub fn cpp_codegen(
 
         // Retval.
         {
-            let ret     = overload.type || fail();
+            let ret     = overload.type || BUG();
             let annot   = typeAnnot(ret, M_RETVAL);
 
             src ~= annot ~ " ";
@@ -1127,7 +1127,7 @@ pub fn cpp_codegen(
 
     fn ensureFnDef(target: Target)
     {
-        target.modid == module.modid || fail(
+        target.modid == module.modid || BUG(
             "ensureFnDef: fndef is needed outside of its original scope: "
                 ~ target.modid ~ " vs " ~ module.modid ~ ": `"
                 ~ target.kind ~ " " ~ target.name ~ "`.");
@@ -1149,7 +1149,7 @@ pub fn cpp_codegen(
 
         // Go!
         let node = target.solved;
-        node.kind == "fn" || fail("ensureFnDef non-fn");
+        node.kind == "fn" || BUG("ensureFnDef non-fn");
         cgFn(node);
 
         _fdef_complete.add_once(target.index) || BUG(
@@ -1185,19 +1185,19 @@ pub fn cpp_codegen(
         let overload = GET(target);
         let id = overload.name;
 
-        overload.status & SS_FINALIZED || fail(
+        overload.status & SS_FINALIZED || BUG(
             "cgFn: SS_FINALIZED not set: " ~ id);
 
         // Custom __natives.
         if (!body)
         {
-            overload.kind == "__native" || overload.kind == "inline" || fail(
+            overload.kind == "__native" || overload.kind == "inline" || BUG(
                 "cgFn: no body on non-native: " ~ overload.kind ~ " " ~ id);
 
             return;
         }
 
-        overload.status & SS_Debug_AllPassesComplete || fail(
+        overload.status & SS_Debug_AllPassesComplete || BUG(
             "cgFn: SS_Debug_AllPassesComplete not set: " ~ id)
 
         _indent = "\n";
@@ -1246,7 +1246,7 @@ pub fn cpp_codegen(
         // LIVE ////////////////////////
         if (overload.flags & F_HOTSWAP)
         {
-            target.modid == module.modid || assert();
+            target.modid == module.modid || BUG();
             _live_targets ~= target.index;
 
             //
@@ -1349,7 +1349,7 @@ pub fn cpp_codegen(
         }
 
         //
-        mut head    = annot || fail();
+        mut head    = annot || BUG();
         head       ~= " " ~ id;
         if (isUnused)
             head    = "[[maybe_unused]] " ~ head;
@@ -1523,7 +1523,7 @@ pub fn cpp_codegen(
 
             // But we can unity-build ourselves with them.
             else
-                fail("Cannot codegen, relies on an external static: " ~ node.target.name);
+                BUG("Cannot codegen, relies on an external static: " ~ node.target.name);
         }
         else
         {
@@ -1578,7 +1578,7 @@ pub fn cpp_codegen(
                     return block;
             }
 
-            fail("No such block in scope: " ~ helpers.index);
+            BUG("No such block in scope: " ~ helpers.index);
         }
 
         let block       = !use_return && findBlock();
@@ -1749,7 +1749,7 @@ pub fn cpp_codegen(
     fn cgCall(node: SolvedNode, mode: i32): string
     {
         let ext             = node.target.EXT;
-        let target          = GET(node.target) || fail();
+        let target          = GET(node.target) || BUG();
         let args            = node.items;
 
         let isNative        = target.kind == "__native";
@@ -1802,7 +1802,7 @@ pub fn cpp_codegen(
 
             mut src = junk ? "" : cgNode(
                 arg, callarg: ext.args[i].type,
-                mode: isNative && M_ARG_TO_NATIVE) || fail("Empty arg src.");
+                mode: isNative && M_ARG_TO_NATIVE) || BUG("Empty arg src.");
 
             //
             let MUSTSEQ_bit = 1 << (i & 31);
@@ -1822,7 +1822,7 @@ pub fn cpp_codegen(
             // Explicit sequencing.
             if (MUSTSEQ_mask & MUSTSEQ_bit)
             {
-                junk && fail("Trying to MUSTSEQ a discarded argument, shouldnt happen.");
+                junk && BUG("Trying to MUSTSEQ a discarded argument, shouldnt happen.");
 
                 ooe_crosscheck |= MUSTSEQ_bit;
 
@@ -1865,7 +1865,7 @@ pub fn cpp_codegen(
             item_src ~= src;
         }
 
-        (ooe_crosscheck & MUSTSEQ_mask) == MUSTSEQ_mask || fail(
+        (ooe_crosscheck & MUSTSEQ_mask) == MUSTSEQ_mask || BUG(
             "OOE crosscheck failed: codegen sequenced " ~ ooe_crosscheck
                                 ~ ", but solver wants " ~ MUSTSEQ_mask ~ ": "
                                 ~ args.map(|x| x.kind.str).join("|"));
@@ -1933,7 +1933,7 @@ pub fn cpp_codegen(
 
         fn emitBinaryOp(op: string)
         {
-            args.len == 2 || fail("args.len != 2");
+            args.len == 2 || BUG("args.len != 2");
 
             if (binSkipParens(op, mode) && !ooe_header)
                 return ARG(0) ~ " " ~ op ~ " " ~ ARG(1);
@@ -1995,7 +1995,7 @@ pub fn cpp_codegen(
             if (!args)
                 return cgDefault(target.type);
 
-            let t = tryLookupUserType(target.type) || fail(
+            let t = tryLookupUserType(target.type) || BUG(
                 "cgCall: defctor/type not a struct nor a user primitive.");
 
             let base = typeAnnotBase(target.type);
@@ -2015,7 +2015,7 @@ pub fn cpp_codegen(
         if (node.target.modid && target.kind == "fn")
             ensureFnUsable(node.target);
 
-        let id = target.name || fail();
+        let id = target.name || BUG();
 
         if (args.len <= 2)
         {
@@ -2066,7 +2066,7 @@ pub fn cpp_codegen(
                 return cgMove(node.type, ARG(0));
         }
 
-        isNative && fail("Unknown __native: `" ~ id ~ "`.");
+        isNative && BUG("Unknown __native: `" ~ id ~ "`.");
 
         return emitFunctionCall(rootNS(node.target.fnID));
     }
@@ -2111,7 +2111,7 @@ pub fn cpp_codegen(
                 //  when casting between signed types.
                 //
                 mut mid_t       = input.is_unsigned ? output : input;
-                mid_t.canon[0] == 'i' || fail();
+                mid_t.canon[0] == 'i' || BUG();
                 mid_t.canon[0]  = 'u';
 
                 if (mid_t.canon != output.canon &&
@@ -2134,7 +2134,7 @@ pub fn cpp_codegen(
             return cast ~ '(' ~ args.only ~ ')';
         }
 
-        fail("Unknown builtin: " ~ id);
+        BUG("Unknown builtin: " ~ id);
     }
 
     fn annotateString(): string
@@ -2188,7 +2188,7 @@ pub fn cpp_codegen(
             }
             else if (base != "f64")
             {
-                assert();
+                BUG();
             }
         }
 
@@ -2232,15 +2232,15 @@ pub fn cpp_codegen(
             mut last: Target;
             unpackAddrOfFn(node.type.canon, |target|
             {
-                last && fail("Codegen cannot decine which fn to pass as a c++ lambda at __native callsite: " ~ last.name ~ " vs " ~ target.name);
+                last && BUG("Codegen cannot decine which fn to pass as a c++ lambda at __native callsite: " ~ last.name ~ " vs " ~ target.name);
                 last = target;
 
-                target.kind == "fn" || fail("Cannot codegen a non-fn: " ~ target.kind ~ " " ~ target.name);
+                target.kind == "fn" || BUG("Cannot codegen a non-fn: " ~ target.kind ~ " " ~ target.name);
 
                 let args = target.args;
                 for (mut i = 0; i < args.len; i++)
                     if (args[i].flags & F_IMPLICIT)
-                        fail("How do we codegen F_IMPLICIT arguments through lambdas?");
+                        BUG("How do we codegen F_IMPLICIT arguments through lambdas?");
 
                 ensureFnUsable(target);
             });
@@ -2380,7 +2380,7 @@ pub fn cpp_codegen(
 
             for (mut i = 0; i < items.len - 1; i++)
             {
-                let item = items[i] || fail();
+                let item = items[i] || BUG();
                 mut tail = item;
 
                 // Here's the `a && b || c` pattern,
@@ -2388,7 +2388,7 @@ pub fn cpp_codegen(
                 if (item.kind == "and")
                 {
                     shadow let items = item.items;
-                    tail = items[items.len - 1] || fail();
+                    tail = items[items.len - 1] || BUG();
 
                     cgAndOr_concat(src, " && ", items[0, items.len - 1]);
                     src ~= " && ";
@@ -2398,7 +2398,7 @@ pub fn cpp_codegen(
                 src ~= via(:tv, :type, tail);
             }
 
-            let tail = items[items.len - 1] || fail();
+            let tail = items[items.len - 1] || BUG();
             src ~= cgNode(tail);
         }
 
@@ -2503,7 +2503,7 @@ pub fn cpp_codegen(
 
     fn cgDefault(type: Type): string
     {
-        type.is_mutref && fail("Cannot definit mutrefs.");
+        type.is_mutref && BUG("Cannot definit mutrefs.");
 
         if (type.isIrrelevant)
         {
@@ -2532,7 +2532,7 @@ pub fn cpp_codegen(
         mut end = src.len - 1;
 
         // :(
-        src[end] == '}' || fail();
+        src[end] == '}' || BUG();
         if (postfix.if_first == '\n')
             for (mut i = end; i --> 0 && src[i] == ' '; )
                 end--;
@@ -2760,7 +2760,7 @@ pub fn cpp_codegen(
             {
                 let item = node.items[i];
                 if (item.kind != "str")
-                    fail("compiler link: All arguments must be string literals, got a `" ~ item.kind ~ "`.");
+                    BUG("compiler link: All arguments must be string literals, got a `" ~ item.kind ~ "`.");
 
                 visit(item.value);
             }
@@ -2792,7 +2792,7 @@ pub fn cpp_codegen(
 
     fn cgNode(node: SolvedNode, mode?: i32, callarg?: Type): string
     {
-        let k = node.kind || fail("cgNode: No node.kind.");
+        let k = node.kind || BUG("cgNode: No node.kind.");
         HERE(node);
 
         if (k == "not")         return cgNot(node);
@@ -2835,7 +2835,7 @@ pub fn cpp_codegen(
 
         if (k == "pragma")      return cgCompilerPragma(node);
 
-        return fail("TODO: " ~ k);
+        return BUG("TODO: " ~ k);
     }
 
 
@@ -3042,7 +3042,7 @@ pub fn cpp_codegen(
 
             mut src     = node && cgNode(node, isTrail ? mode &~ M_STMT : mode);
 
-            src || mode & M_STMT || fail("cgNodes: empty output for Node(kind=`" ~ node.kind ~ "` value=`" ~ node.value ~ "`).");
+            src || mode & M_STMT || BUG("cgNodes: empty output for Node(kind=`" ~ node.kind ~ "` value=`" ~ node.value ~ "`).");
 
             if (mode & M_STMT && _current_fn.TEMPVARs)
             {
@@ -3063,7 +3063,7 @@ pub fn cpp_codegen(
     //
 
     let root = module.out.solve.root;
-    root.kind == "root" || fail();
+    root.kind == "root" || BUG();
 
     mut src = cgNode(root);
 
