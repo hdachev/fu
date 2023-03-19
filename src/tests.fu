@@ -7402,6 +7402,15 @@ pub extern fn runTests()
         fn main() = "/a"._2::getFlatCount() == 3 ? 0 : 1;
     `]);
 
+    ZERO([`
+        noinline fn recA(x) x & 1 ? recB(x) : x;
+        noinline fn recB(x) recA(x + 1);
+
+        pub inline fn fun(x: i32) recB(x);
+    `,`
+        fn main() _0::fun(0) == 2 ? 0 : 1;                      ;; GNUStmtExpr
+    `]);
+
     // /quite right
 
 
