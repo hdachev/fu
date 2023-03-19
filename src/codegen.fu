@@ -163,7 +163,15 @@ pub fn cpp_codegen(
         target.index > 0 || BUG();
 
         if (target.isLocal)
-            return module.out.solve.scope.extended[-target.modid].locals[target.index - 1];
+        {
+            let from = _current_fn.target;
+
+            let m = !from || from.modid == module.modid
+                ? module
+                : ctx.modules[from.modid];
+
+            return m.out.solve.scope.extended[-target.modid].locals[target.index - 1];
+        }
 
         let m = target.modid == module.modid
             ? module
@@ -965,11 +973,16 @@ pub fn cpp_codegen(
             && overload.kind != "inline";
     }
 
+    fn isInlLinked(overload: Overload)
+    {
+        return !!(overload.flags & F_TEMPLATE);
+    }
+
     fn fnLinkage(overload: Overload)
     {
-        return    (  overload.type.is_never         && "[[noreturn]] ")
-                ~ (  overload.flags & F_TEMPLATE    && "inline "      )
-                ~ (!(overload.isExtLinked)          && "static "      );
+        return    (  overload.type.is_never  && "[[noreturn]] ")
+                ~ (  overload.isInlLinked    && "inline "      )
+                ~ (!(overload.isExtLinked)   && "static "      );
     }
 
     fn cgFnSignature(fn: SolvedNode): string
@@ -1119,21 +1132,23 @@ pub fn cpp_codegen(
         let here0 = _here;
         defer _here = here0;
 
-        if (target.modid != module.modid)
+        let offtarget = target.modid != module.modid;
+
+        if (offtarget && !target.isInlLinked)
             ensureFwdDecl(target);
         else
-            ensureFnDef(target);
+            ensureFnDef(target, :offtarget);
     }
 
-    fn ensureFnDef(target: Target)
+    fn ensureFnDef(target: Target, offtarget!?: bool)
     {
-        target.modid == module.modid || BUG(
+        target.modid == module.modid || offtarget || BUG(
             "ensureFnDef: fndef is needed outside of its original scope: "
                 ~ target.modid ~ " vs " ~ module.modid ~ ": `"
                 ~ target.kind ~ " " ~ target.name ~ "`.");
 
         // Do this just once.
-        if (!_fdef_started.add_once(target.index))
+        if (!_fdef_started.add_once(target.index) && !offtarget)
         {
             // Add a fwd decl if recursive.
             if (!_fdef_complete.has(target.index))

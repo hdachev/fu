@@ -7378,7 +7378,29 @@ pub extern fn runTests()
             let b = tryRetype(a, t_f32);
             return b.canon == "f32" ? 0 : 1;
         }
-    `)
+    `);
+
+    ZERO([
+    `
+        inline fn isStruct(type: string) =
+            type.starts(with: '/');
+
+        inline fn isStructOrUnion(type: string) =
+            type.isStruct;
+    `,`
+        fn lookupUserType(type: string) =
+            "<" ~ type.len ~ ">";
+
+        fn tryLookupUserType(type: string) =
+            type._0::isStruct && lookupUserType(type);
+    `,`
+        fn getFlatCount(type: string) =
+            type._0::isStructOrUnion
+                ? _1::tryLookupUserType(type).len
+                : 1;
+    `,`
+        fn main() = "/a"._2::getFlatCount() == 3 ? 0 : 1;
+    `]);
 
     // /quite right
 
