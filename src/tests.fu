@@ -13232,6 +13232,7 @@ pub extern fn runTests()
 
     ZERO(`
         let se_global_false = false;
+        <split/>
         fn main() {
             if (se_global_false) return THIS_DOESNT_EXIST();
             return 0;
@@ -13240,6 +13241,7 @@ pub extern fn runTests()
 
     ZERO(`
         let se_global_true = true;
+        <split/>
         fn main() {
             if (!se_global_true) return THIS_DOESNT_EXIST();
             return 0;
@@ -13248,6 +13250,7 @@ pub extern fn runTests()
 
     ZERO(`
         let se_global_let_from_closure = false;
+        <split/>
         fn main() {
             fn test() {
                 if (se_global_let_from_closure) return THIS_DOESNT_EXIST();
