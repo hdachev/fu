@@ -218,4 +218,5 @@ flags CGDefects
     LocalConstBool;
     ConstCast;
     PointlessLocal;
+    IrrelevantLiteral;
 };

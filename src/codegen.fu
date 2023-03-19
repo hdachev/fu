@@ -719,7 +719,10 @@ pub fn cpp_codegen(
     {
         shadow let items = cgNodes(nodes, mode: M_CHECK_NEVER_LTR);
         if (!items.len)
+        {
+            noteDefect(IrrelevantLiteral);
             return "void()";
+        }
 
         if (items.len == 1)
             return items[0];
@@ -1648,6 +1651,9 @@ pub fn cpp_codegen(
 
     fn cgStringLiteral(node: SolvedNode): string
     {
+        if (node.isIrrelevant)
+            noteDefect(IrrelevantLiteral);
+
         //////////////////////////////////////////////
         // HACK - Retyping string literals to enums //
         if (node.type.is_enum || node.type.is_flags)
@@ -1663,6 +1669,9 @@ pub fn cpp_codegen(
 
     fn cgCharLiteral(node: SolvedNode): string
     {
+        if (node.isIrrelevant)
+            noteDefect(IrrelevantLiteral);
+
         /*
         include("<fu/int.h>");
         return "fu::byte(" ~ escapeStringLiteral(node.value, '\'') ~ ")";
@@ -1676,6 +1685,9 @@ pub fn cpp_codegen(
 
     fn cgArrayLiteral(node: SolvedNode, mode: i32, callarg: Type): string
     {
+        if (node.isIrrelevant)
+            noteDefect(IrrelevantLiteral);
+
         if (node.target)
             return cgCall(node, mode);
 
@@ -2146,6 +2158,9 @@ pub fn cpp_codegen(
 
     fn cgLiteral(node: SolvedNode, mode: i32): string
     {
+        if (node.isIrrelevant)
+            noteDefect(IrrelevantLiteral);
+
         mut src = node.value;
 
         // Remove underscores, if any.
@@ -2491,7 +2506,10 @@ pub fn cpp_codegen(
         type.is_mutref && fail("Cannot definit mutrefs.");
 
         if (type.isIrrelevant)
+        {
+            noteDefect(IrrelevantLiteral);
             return "void()";
+        }
 
         if (type.is_ref && !type.isPassByValue)
         {
