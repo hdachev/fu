@@ -87,6 +87,9 @@ fn compile_solveCodegen(implicit ref module: Module, implicit options: Options)
     let stat1 = ModuleStat_now();
     module.out.cpp = codegen::cpp_codegen();
 
+    if (options.dev & DEV_PrintCG)
+        println(module.out.cpp);
+
     let stat2 = ModuleStat_now();
 
     module.stats.solve   = stat1 - stat0;

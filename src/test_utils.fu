@@ -28,7 +28,7 @@ pub fn compile_snippets(sources: string[], fnames?: string[], options?: Options[
 
         shadow mut options = options.len > i && options[i];
         if (src.has("/*PRINT*/"))
-            options.dev |= DEV_PrintAST;
+            options.dev |= DEV_PrintAST | DEV_PrintCG;
 
         ctx.files.map::set(fname, src);
         compile(:fname, :options);
