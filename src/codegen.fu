@@ -33,20 +33,6 @@ let MAIN_zst            = 1 << 2;
 
 //
 
-type BitSet2D = bitset::BitSet[];
-
-fn add_once(ref bs: BitSet2D, i: int, j: int): bool
-{
-    return bs
-        .grow_if_oob(i)
-        .add_once(j);
-}
-
-fn add_once(ref bs: BitSet2D, target: Target): bool
-{
-    return bs.add_once(target.modid, target.index);
-}
-
 pub fn cpp_codegen(
     implicit module: Module,
     implicit ctx: Context,
@@ -69,11 +55,11 @@ pub fn cpp_codegen(
         _top_emits:         string;
 
         // struct fwd decls
-        _tfwd:              BitSet2D;
+        _tfwd:              StructCanon[];
         _tfwd_src:          string;
 
         // fn fwd decls
-        _ffwd:              BitSet2D;
+        _ffwd:              Target[];
         _ffwd_src:          string;
 
         _ffwd_live_client:  string;
@@ -359,7 +345,7 @@ pub fn cpp_codegen(
         let id  = "s_" ~ s.name;
 
         let scp = parseStructCanon(type.canon);
-        if (_tfwd.add_once(scp.modid, scp.index))
+        if (_tfwd.set::add(scp))
         {
             let decl = declareStruct(id, s);
             _tdef ~= decl;
@@ -1109,7 +1095,7 @@ pub fn cpp_codegen(
         if (overload.kind != "fn" || overload.name == "main")
             return;
 
-        if !(_ffwd.add_once(target))
+        if !(_ffwd.set::add(target))
             return;
 
         let fwdDecl = target.cgFnPrototype() ~ ";\n";
@@ -1553,7 +1539,7 @@ pub fn cpp_codegen(
 
     fn cgGlobal(target: Target)
     {
-        if !(_ffwd.add_once(target))
+        if !(_ffwd.set::add(target))
             return "";
 
         return cgLet(target.solved,
