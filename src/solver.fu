@@ -3234,7 +3234,15 @@ pub fn solve(
                 }
             }
 
-            if (items.len == 1 && !(h.mask & (HM_LabelUsed | HM_Function)))
+            if (!items && !(h.mask & HM_Function))
+            {
+                if (SELF_TEST && !canDiscard)
+                    BUG("Empty block type is relevant: " ~ node.type.humanizeType);
+
+                node.kind = "empty";
+                node.helpers = [];
+            }
+            else if (items.len == 1 && !(h.mask & (HM_LabelUsed | HM_Function)))
             {
                 // Unwrap single item blocks.
                 node = items.only;
