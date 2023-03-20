@@ -100,6 +100,7 @@ pub extern fn runTests()
     let TODO_licm       = fn TODO;
     let TODO_slices     = fn TODO;
     let TODO_cow        = fn TODO;
+    let TODO_mangle     = fn TODO;
 
     let TODO_Map        = fn TODO;
 
@@ -12767,6 +12768,28 @@ pub extern fn runTests()
             return p0.x + p1.x - 49;
         }
     `]);
+
+    TODO_mangle([`
+        struct Woot { i: i32 };
+        fn sqr(v) = mul(v, v);
+    `,`
+        import _0;
+        noinline fn mul(x: Woot, y: Woot) = x.i * y.i;
+        inline fn use_sqr(a: Woot) = sqr(a);
+    `,`
+        import _0;
+        noinline fn mul(x: Woot, y: Woot) = 2 * x.i * y.i;
+        inline fn use_sqr(a: Woot) = sqr(a);
+    `,`
+        fn main() {
+            let x = _0::Woot(2);
+            let a = _1::use_sqr(x);
+            let b = _2::use_sqr(x);
+            return a == 4 && b == 8 ? 0 : 1;
+        }
+    `]);
+
+    // /Mangling.
 
 
     // C++ hacks.
