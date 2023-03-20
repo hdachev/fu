@@ -7380,37 +7380,6 @@ pub extern fn runTests()
         }
     `);
 
-    ZERO([
-    `
-        inline fn isStruct(type: string) =
-            type.starts(with: '/');
-
-        inline fn isStructOrUnion(type: string) =
-            type.isStruct;
-    `,`
-        fn lookupUserType(type: string) =
-            "<" ~ type.len ~ ">";
-
-        fn tryLookupUserType(type: string) =
-            type._0::isStruct && lookupUserType(type);
-    `,`
-        fn getFlatCount(type: string) =
-            type._0::isStructOrUnion
-                ? _1::tryLookupUserType(type).len
-                : 1;
-    `,`
-        fn main() = "/a"._2::getFlatCount() == 3 ? 0 : 1;
-    `]);
-
-    ZERO([`
-        noinline fn recA(x) x & 1 ? recB(x) : x;
-        noinline fn recB(x) recA(x + 1);
-
-        pub inline fn fun(x: i32) recB(x);
-    `,`
-        fn main() _0::fun(0) == 2 ? 0 : 1;                      ;; GNUStmtExpr
-    `]);
-
     ZERO(`
         fn main() {
             nocopy struct Nc { items: Nc[]; };
@@ -9338,7 +9307,7 @@ pub extern fn runTests()
     `);
 
 
-    // Modules, imports & pubs.
+    // Pubs & imports.
 
     ZERO([
     `
@@ -9743,7 +9712,38 @@ pub extern fn runTests()
         }
     `]);
 
-    // /imports & pubs.
+    ZERO([
+    `
+        inline fn isStruct(type: string) =
+            type.starts(with: '/');
+
+        inline fn isStructOrUnion(type: string) =
+            type.isStruct;
+    `,`
+        fn lookupUserType(type: string) =
+            "<" ~ type.len ~ ">";
+
+        fn tryLookupUserType(type: string) =
+            type._0::isStruct && lookupUserType(type);
+    `,`
+        fn getFlatCount(type: string) =
+            type._0::isStructOrUnion
+                ? _1::tryLookupUserType(type).len
+                : 1;
+    `,`
+        fn main() = "/a"._2::getFlatCount() == 3 ? 0 : 1;
+    `]);
+
+    ZERO([`
+        noinline fn recA(x) x & 1 ? recB(x) : x;
+        noinline fn recB(x) recA(x + 1);
+
+        pub inline fn fun(x: i32) recB(x);
+    `,`
+        fn main() _0::fun(0) == 2 ? 0 : 1;                      ;; GNUStmtExpr
+    `]);
+
+    // /Pubs & imports.
 
 
     // Explicit shadowing.
