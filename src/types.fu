@@ -478,6 +478,11 @@ pub fn relax_typeParam(mut type: Type)
 
 //
 
+pub inline fn usage(type: Type): Quals
+{
+    return type.quals & q_USAGE;
+}
+
 fn USAGE_shiftRight(quals: Quals, mut memberFlatOffset!offset: i32): Quals
 {
     let keep    = quals & q_TAGS;
@@ -512,25 +517,36 @@ pub fn USAGE_structUsageFromFieldUsage(mut slot: Type, memberFlatOffset!: i32): 
     return slot;
 }
 
+pub fn USAGE_fieldUsageFromStructUsage(mut fieldType!slot: Type, structUsage: Quals, memberFlatOffset!: i32, memberFlatCount!: i32): Type
+{
+    slot.quals &= ~q_USAGE;
+    slot.quals |=  structUsage;
+    slot.quals  =  USAGE_shiftRight(:slot.quals, :memberFlatOffset);
+    slot.quals &=  q_TAGS | getMaxUsage(memberFlatCount);
+
+    return slot;
+}
+
+pub fn getMaxUsage(flatCount: i32)
+{
+    if (flatCount >= q_USAGE_bitsize)
+        return q_USAGE;
+
+    mut usage: Quals;
+    for (mut i = 0; i < flatCount; i++)
+        usage |= 1 << Quals(q_TAGS_bitsize + i);
+
+    return usage;
+}
+
 pub fn USAGE_setMaxUsage(ref type: Type, flatCount: i32)
 {
-    mut usage: Quals;
-    if (flatCount < q_USAGE_bitsize)
-    {
-        for (mut i = 0; i < flatCount; i++)
-            usage |= 1 << Quals(q_TAGS_bitsize + i);
-    }
-    else
-    {
-        usage = q_USAGE;
-    }
-
-    type.quals = type.quals & q_TAGS | usage;
+    type.quals = type.quals & q_TAGS | getMaxUsage(:flatCount);
 }
 
 pub fn isIrrelevant(type: Type)
 {
-    return !(type.quals & q_USAGE)
+    return !type.usage
 
         ////////////////////
         && !type.is_never // TODO should be workable without this
