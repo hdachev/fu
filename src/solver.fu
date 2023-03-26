@@ -2361,8 +2361,20 @@ pub fn solve(
                 if (target.kind != "field")
                 {
                     let host_args = target.args;
-                    for (mut i = 0; i < items.len; i++)
-                        maybeCopyOrMove(items[i], host_args[i].type, isArgument: true);
+                    if (target.kind == "type")
+                    {
+                        // TODO FIX partially unused structs,
+                        //  getting a <- void errors
+                        //
+                        for (mut i = 0; i < items.len; i++)
+                            if (!items[i].isIrrelevant)
+                                maybeCopyOrMove(items[i], host_args[i].type, isArgument: true);
+                    }
+                    else
+                    {
+                        for (mut i = 0; i < items.len; i++)
+                            maybeCopyOrMove(items[i], host_args[i].type, isArgument: true);
+                    }
                 }
             }
             else if (k == "block" || k == "jump")
@@ -2826,8 +2838,40 @@ pub fn solve(
             // MOVE ON LAST USE ////////////////////////////////////////////
 
             // Relax arguments.
-            if (node.items)
+            if (node.items) :ARGUMENTS
             {
+                if (t.kind == "type") :STRUCT_INIT
+                {
+                    // Since we don't relax constructors we need to deal with them separately,
+                    //  good thing it's simpler because they have a guaranteed LTR order of eval.
+                    //
+                    let s = t.type.tryLookupUserType();
+                    if (s.kind != "struct")
+                        break :STRUCT_INIT;
+
+                    s.items.len == node.items.len || BUG(
+                        "Call(type): struct.items.len != call.items.len");
+
+                    for (mut i = node.items.len; i --> 0; )
+                    {
+                        let field   = GET(s.items[i].target);
+                        ref arg     = node.items[i];
+
+                        using let _ = field.field_unpackOffset();
+
+                        shadow mut slot = USAGE_fieldUsageFromStructUsage(
+                            fieldType: field.type,
+                            structUsage: slot.usage,
+                            :memberFlatOffset,
+                            :memberFlatCount);
+
+                        arg.propagateType(:slot, :relax_mask);
+                    }
+
+                    break :ARGUMENTS;
+                }
+
+                //
                 let host_args   = node.target.args;
                 let rtl         = node.target.isRTL;
                 let ooe_isUndef = !rtl && node.items.len > 1;
@@ -9992,7 +10036,14 @@ pub fn solve(
                     ~ "\n\t\t" ~ mangleArgTypes(args)
                     ~ "\n\t\t" ~ explainWhichFn(node.target));
 
-            for (mut i = 0; i < args.len; i++)
+
+            if (o.kind == "type" && o.type.tryLookupUserType.kind == "struct")
+            {
+                // TODO FIX skipping constructors
+                //  because of partial usage,
+                //   gotta make the stuff below work.
+            }
+            else for (mut i = 0; i < args.len; i++)
             {
                 let host_arg = host_args[i];
                 let arg      = args[i];

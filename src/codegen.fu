@@ -1820,6 +1820,13 @@ pub fn cpp_codegen(
                 src = "";
             }
 
+            if (mustDiscard && target.kind == "type")
+            {
+                // TODO FIX - unused struct members,
+                //  we cant skip args in struct initializers
+                src = "{}";
+            }
+
             // Explicit sequencing.
             if (MUSTSEQ_mask & MUSTSEQ_bit)
             {

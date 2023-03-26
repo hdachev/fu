@@ -12644,6 +12644,35 @@ pub extern fn runTests()
     // /Relaxer.
 
 
+    // Usage.
+
+    ZERO(`
+        fn no_fx() {
+            mut res = 0;
+            pragma clock(\`
+                static int counter;
+                \`res\`  = counter++;
+            \`);
+            return res;
+        }
+
+        struct X { a: i32[]; b: i32[] };
+        fn test(x: X, ref y: i32[])
+            y ~= x.a;
+
+        fn main() {
+            mut x = X(
+                [ no_fx(), 2, 3, 4, 5, 6, 7, 8 ],
+                [ no_fx(), 3, 4, 5, 6, 7, 8, 9 ]);
+
+            test(x, x.a);
+            return x.a.len + no_fx * 1000 - 1016;
+        }
+    `);
+
+    // /Usage.
+
+
     // Mangling.
 
     ZERO([`
