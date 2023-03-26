@@ -2689,8 +2689,11 @@ pub fn solve(
             let t = node.target;
             if (t.kind == "field")
             {
-                let memberFlatOffset = t.field_unpackOffset;
-
+                // TODO just using t.field_unpackOffset -
+                //  could be dealt with during parse,
+                //   just syntax sugar for an anonymous let.
+                //
+                using let _ = t.field_unpackOffset;
                 shadow let slot = USAGE_structUsageFromFieldUsage(:slot, :memberFlatOffset);
 
                 if (canDiscard)
@@ -5187,17 +5190,19 @@ pub fn solve(
 
     // :(
 
-    fn field_packOffset(ref o: Overload, memberFlatOffset!: i32)
+    fn field_packOffset(ref o: Overload, memberFlatOffset!: i32, memberFlatCount!: i32)
     {
+        let packed = memberFlatOffset | memberFlatCount << 16;
+
         if (SELF_TEST)
         {
             o.kind == "field" || BUG(
-                "field_unpackOffset: Not a field.");
-            !o.solved.helpers || o.solved.helpers.index == memberFlatOffset || BUG(
-                "field_unpackOffset: Helpers already set to something else.");
+                "field_packOffset: Not a field.");
+            !o.solved.helpers || o.solved.helpers.index == packed || BUG(
+                "field_packOffset: Helpers already set to something else.");
         }
 
-        o.solved.helpers = Helpers(memberFlatOffset);
+        o.solved.helpers = Helpers(packed);
     }
 
     fn field_unpackOffset(o: Overload)
@@ -5205,7 +5210,16 @@ pub fn solve(
         if (SELF_TEST) o.kind == "field" || BUG(
             "field_unpackOffset: Not a field.");
 
-        return o.solved.helpers.index;
+        struct UnpackedOffset {
+            memberFlatOffset: i32;
+            memberFlatCount:  i32;
+        };
+
+        let packed = o.solved.helpers.index;
+
+        return UnpackedOffset(
+            memberFlatOffset: packed & 0xffff,
+            memberFlatCount:  packed >> 16);
     }
 
 
@@ -5410,7 +5424,7 @@ pub fn solve(
 
                 //
                 if (!isPrimDecl)
-                    field.field_packOffset(:memberFlatOffset);
+                    field.field_packOffset(:memberFlatOffset, :memberFlatCount);
             }
 
             // Primitives - index enum variants & flags.
