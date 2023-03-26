@@ -563,3 +563,9 @@ pub fn isIrrelevant(type: Type)
         //  (2) cpp codegen emits noreturn stmt expressions
         //        that infer void instead of fu::never.
 }
+
+pub fn USAGE_justOneThing(usage: Quals, flatCount!: i32)
+{
+    return flatCount <= q_USAGE_bitsize
+        && usage.bit::popcount == 1;
+}

@@ -2990,6 +2990,85 @@ pub fn solve(
                 }
                 else
                 {
+                    // Partial copy.
+                    let usage       = node.type.usage;
+                    let flatCount   = node.type.getFlatCount();
+                    let maxUsage    = getMaxUsage(:flatCount);
+                    if (usage != maxUsage) :PARTIAL_COPY
+                    {
+                        let s       = tryLookupUserType(node.type);
+                        if (s.kind != "struct")
+                            break :PARTIAL_COPY;
+
+                        // So we'll break down the copy(a) into a
+                        //  A(copy(a.x), [], copy(a.y)).
+                        //
+                        // If `a` is not a trivial expression, we'll need to go through a helper var
+                        //  to make sure we don't repeat its effects / expenses.
+                        //
+                        if (!usage.USAGE_justOneThing(:flatCount) && !item.isFieldChain)
+                        {
+                            // So this returns a { let a = ...; A(copy(a.x), [], copy(a.y)) }
+                            //
+                            let letdef = createLet(setScope: false,
+                                "__partcopy_ref", init: item, flags: []);
+
+                            node.items.only = CallerNode("__partcopy_ref", :letdef.target || BUG());
+                            node            = createBlock(letdef, node);
+                        }
+
+                        // This is the copy(a) -> A(copy(a.x), ...) conversion.
+                        //
+                        else
+                        {
+                            mut args: SolvedNode[];
+                            for (mut i = 0; i < s.items.len; i++)
+                            {
+                                let fieldTarget = s.items[i].target;
+                                let field       = GET(fieldTarget);
+                                using let _     = field.field_unpackOffset();
+
+                                let usedFieldType = USAGE_fieldUsageFromStructUsage(
+                                    structUsage: usage,
+                                    fieldType:   field.type,
+                                    :memberFlatOffset,
+                                    :memberFlatCount);
+
+                                if (usedFieldType.isIrrelevant)
+                                {
+                                    args ~= createDefinit(field.type);
+                                }
+                                else
+                                {
+                                    mut copy    = node;
+                                    copy.type   = usedFieldType;
+                                    copy.items  = [
+                                        CallerNode(
+                                            debug: "__partcopy_field",
+                                            target: fieldTarget,
+                                            args: /*there's only one*/ [ item ])
+                                    ];
+
+                                    args ~= copy;
+                                }
+                            }
+
+                            let type0   = node.type;
+                            node        = CallerNode(
+                                debug: "__partcopy_struct",
+                                target: s.target,
+                                :args);
+
+                            node.type   = type0;
+                        }
+
+                        return propagateType(:slot, :node, :relax_mask, :kills);
+                    }
+                    // /Partial copy.
+
+                    // TODO FIX bck doesnt see the `return propagateType` above //
+                    shadow ref item = node.items.only; ///////////////////////////
+
                     // ... or fail if non-copyable.
                     if (!item.type.is_rx_copy)
                         fail("A value is needed, but can neither copy nor move from: " ~ item);
@@ -2998,6 +3077,9 @@ pub fn solve(
                         makeNote(N_NonTrivAutoCopy);
                 }
             }
+
+            // TODO FIX bck doesnt see the `return propagateType` above //
+            shadow ref item = node.items.only; ///////////////////////////
 
             //
             propagateType(item, :relax_mask,

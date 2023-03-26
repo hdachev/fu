@@ -12681,7 +12681,7 @@ pub extern fn runTests()
         }
 
         fn DUPE(implicit ref x: X[], idx: int) {
-            let src = GET(idx);
+            let src = GET(idx);                                 ;; GNUStmtExpr
             let idx1 = x.len;
 
             x.grow(idx1 + 1)
