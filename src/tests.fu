@@ -4724,6 +4724,40 @@ pub extern fn runTests()
         }
     `);
 
+    ZERO(`
+        fn cmp_ooe(mut stuff: i32[], ref needSort: bool) {
+            mut result: i32[] = [];
+            mut last = -1;
+            for (mut i = 0; i < stuff.len; i++) {
+                let t = stuff[i];
+                if !(t & 1) continue;
+                if (last > (last = t)) needSort = true;
+                result ~= t;
+            }
+
+            if (needSort) result.sort();
+            return result;
+        }
+
+        fn checksum(stuff: i32[]) {
+            mut result = 0;
+            for (mut i = 0; i < stuff.len; i++) {
+                result *= stuff[i];
+                result += stuff[i];
+            }
+            return result;
+        }
+
+        fn main() {
+            mut needSort = false;
+            let aa = checksum(cmp_ooe([1, 2, 3, 4, 5], :needSort));
+            let bb = !needSort
+                  && checksum(cmp_ooe([7, 4, 3, 2, 1], :needSort));
+
+            return needSort ? aa * 100 + bb - 3549 : 1;
+        }
+    `);
+
     // /Borrow checker
 
 

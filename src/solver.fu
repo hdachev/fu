@@ -9818,7 +9818,7 @@ pub fn solve(
 
                     let t = target.index;
                     last == t && BUG();
-                    if (last < (last = t))
+                    if (last > (last = t))
                         outOfOrderArgTargets = true;
 
                     let type = target.solved.type;
