@@ -4986,6 +4986,22 @@ pub extern fn runTests()
         }
     `);
 
+    ZERO(`
+        nocopy struct NC { ncs: NC[] };
+
+        struct Foreign { name: NC; kind: i32; flags: i32 };
+        struct Local   { kind: i32; flags: i32; name: NC };
+
+        fn intoLocal(using mut f: Foreign) = Local(:kind, :flags, :name);
+
+        <split/>
+        fn main() {
+            let foreign = Foreign(NC([ NC(), NC() ]), 0, 0);
+            let local = intoLocal(foreign);
+            return local.name.ncs.len - 2;
+        }
+    `);
+
     // /Move on last use
 
 
