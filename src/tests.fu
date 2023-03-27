@@ -12670,6 +12670,40 @@ pub extern fn runTests()
         }
     `);
 
+    ZERO(`
+        struct A { a: X[] };
+        struct B { b: X[] };
+        struct C { c: X[] };
+        struct X { a: A[]; b: B[]; c?: C[]; };
+
+        fn GET(implicit ref x: X[], idx: int) {
+            return x[idx];
+        }
+
+        fn DUPE(implicit ref x: X[], idx: int) {
+            let src = GET(idx);
+            let idx1 = x.len;
+
+            x.grow(idx1 + 1)
+            ref dest = x[idx1];
+            dest.a = src.a;
+            dest.b = src.b;
+        }
+
+        fn main() {
+            implicit mut x = [ X([ A(), A() ], [ B(), B(), B() ], [ C(), C(), C(), C(), C() ]) ];
+            DUPE(0);
+            mut sum = 0;
+            for (mut i = 0; i < x.len; i++) {
+                shadow let x = x[i];
+                sum *= x.a.len || 1; sum += x.a.len;
+                sum *= x.b.len || 1; sum += x.b.len;
+                sum *= x.c.len || 1; sum += x.c.len;
+            }
+            return sum - 309;
+        }
+    `);
+
     // /Usage.
 
 
