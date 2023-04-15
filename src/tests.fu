@@ -7463,6 +7463,25 @@ pub extern fn runTests()
         }
     `);
 
+    ZERO(`
+        let SMTH = false;
+
+        fn FAIL(reason: string, implicit ref log: string)
+            log ~= reason ~ '\\n';
+
+        fn fail_appendStack(lax mut reason: string)
+            SMTH ? reason : [];
+
+        fn fail(mut reason: string)
+            FAIL(reason.fail_appendStack());
+
+        fn main() {
+            implicit mut log = "";
+            fail("Hello!");
+            return log.len - 1;
+        }
+    `);
+
     // /quite right
 
 

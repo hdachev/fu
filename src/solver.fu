@@ -8455,8 +8455,15 @@ pub fn solve(
         CANNOT_definit_mutrefs && slot.is_mutref && BUG(
             "Trying to definitWrap a mutref: " ~ slot.humanizeType(lt: true));
 
-        slot.is_ref && !slot.is_ref2static && BUG(
-            "Trying to definitWrap a non-static reference: " ~ slot.humanizeType(lt: true))
+        if (slot.is_ref && !slot.is_ref2static)
+        {
+            // TODO FIX this is questionable stuff,
+            //  should get resolved by createTemporary
+            if (slot.is_ref2temp)
+                return definitWrap(node, clear_refs(slot));
+
+            BUG("Trying to definitWrap a non-static reference: " ~ slot.humanizeType(lt: true))
+        }
 
         if (node.kind == "definit")
             node.type = slot;
