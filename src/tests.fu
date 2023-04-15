@@ -7482,6 +7482,18 @@ pub extern fn runTests()
         }
     `);
 
+    ZERO(`
+        struct Type { quals: i32 };
+        pub fn tryLookupUserType(type: Type) = type;
+        fn propagateType(type: Type) {
+            let s = tryLookupUserType(type);
+            if (s.quals != 13 || true) return 17;
+            return 19;
+        }
+
+        fn main = 1.Type.propagateType - 17;
+    `);
+
     // /quite right
 
 
