@@ -255,7 +255,7 @@ function tryCutLineGroup(src)
     let start = rand;
     if (Math.random() > 0.5)
     {
-        const gteq = Math.random() > 0.5
+        const gteq = Math.random() > 0.5;
 
         for (let i = start; i --> 0; )
         {
@@ -274,7 +274,7 @@ function tryCutLineGroup(src)
     let end = rand;
     if (Math.random() > 0.5)
     {
-        const gteq = Math.random() > 0.5
+        const gteq = Math.random() > 0.5;
 
         for (let i = end; i < lines.length; i++)
         {
@@ -302,6 +302,25 @@ function tryCutLineGroup(src)
 
 //
 
+const re_UNWRAP_BLOCK = /(\s+)\{\s*([^;{}]+);\s*\}/g;
+
+function tryUnwrapSingleStmtBlock(src)
+{
+    const match = randExec(src, re_UNWRAP_BLOCK);
+    if (!match)
+        return false;
+
+    console.log("\nUNWRAP SINGLE STMT BLOCK\n<<<" + match[0] + ">>>");
+
+    return (
+        src.slice(0, match.index) +
+        match[1] + match[2] + ';' +
+        src.slice(match.index + match[0].length));
+}
+
+
+//
+
 const _strategies =
 [
     tryRemoveFn,
@@ -312,6 +331,8 @@ const _strategies =
     tryPopElse,
     tryCutLines,
     tryCutLineGroup,
+
+    tryUnwrapSingleStmtBlock,
 ];
 
 function main()
