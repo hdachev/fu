@@ -532,11 +532,7 @@ pub fn getMaxUsage(flatCount: i32)
     if (flatCount >= q_USAGE_bitsize)
         return q_USAGE;
 
-    mut usage: Quals;
-    for (mut i = 0; i < flatCount; i++)
-        usage |= 1 << Quals(q_TAGS_bitsize + i);
-
-    return usage;
+    return Quals(q_USAGE >> (q_USAGE_bitsize - flatCount).u32) & q_USAGE;
 }
 
 pub fn USAGE_setMaxUsage(ref type: Type, flatCount: i32)
