@@ -8642,6 +8642,15 @@ pub fn solve(
         return o.flags & F_ARG && !o.acceptsTempCopies();
     }
 
+    fn isFieldChain(arg: SolvedNode)
+    {
+        if (arg.kind != "call")
+            return false;
+
+        let t = arg.target.kind;
+        return t == "var" || t == "field" && isFieldChain(arg.items.only);
+    }
+
     fn PASS_borrowCheck(ref root: SolvedNode, pass: BorrowCheckPass)
     {
         // Now bck does two passes:
@@ -8884,11 +8893,7 @@ pub fn solve(
             //  it's kinda easy for vars but what do we do with arg exprs here,
             //   it's that we don't really have any way to tell what's what.
             //
-            if (arg.kind != "call")
-                return false;
-
-            let t = arg.target.kind;
-            return t == "var" || t == "field" && softRiskSafe(arg.items.only);
+            return isFieldChain(arg);
         }
 
 
