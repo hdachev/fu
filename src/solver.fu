@@ -2334,50 +2334,6 @@ pub fn solve(
         }
 
 
-        // Previously fn mcom_node(ref node: SolvedNode):
-
-        if (PASS_MaybeCopyOrMove)
-        {
-            let t = node.type;
-
-            ///////////////////
-            _here = node.token;
-            ///////////////////
-
-            if (k == "block")
-            {
-                // We need this before mcom -
-                //  and without the .returns listing, this is as late as we can do this.
-                if (node.helpers)
-                    mcom_BlockReturns_CopyOrMoveDecision(
-                        node.helpers);
-            }
-
-            //
-            ref items = node.items;
-
-            if (k == "block" || k == "jump")
-            {
-                let h = node.helpers;
-                if (h.ret_actual && !h.ret_actual.isIrrelevant && !h.ret_actual.is_never)
-                    maybeCopyOrMove(items.last, h.ret_actual);
-            }
-            else if (k == "letdef")
-            {
-                shadow ref node = GET_mut(node.target).solved;
-                ref init = node.items[LET_INIT];
-                if (init)
-                    maybeCopyOrMove(init, node.type);
-            }
-            else if (k == "or")
-            {
-                if !(t == t_bool)
-                    for (mut i = 0; i < items.len; i++)
-                        maybeCopyOrMove(items[i], t);
-            }
-        }
-
-
         //
 
         let canDiscard = slot.isIrrelevant;
@@ -2388,6 +2344,14 @@ pub fn solve(
             // Addrofn & co.
             if (!node.target)
                 return;
+
+            if (PASS_MaybeCopyOrMove)
+            {
+                shadow ref node = GET_mut(node.target).solved;
+                ref init = node.items[LET_INIT];
+                if (init)
+                    maybeCopyOrMove(init, node.type);
+            }
 
             relaxBlockVar(node.target, :relax_mask, :canDiscard);
 
@@ -2436,10 +2400,19 @@ pub fn solve(
 
             let postdom0 = _current_fn.postdom;
 
+            let mcomOrItems = k == "or"
+                && PASS_MaybeCopyOrMove
+                && !canDiscard
+                && !node.type.is_boolean;
+
             ref items = node.items;
             for (mut i = items.len; i --> 0; )
             {
                 ref item = items[i];
+
+                if (mcomOrItems)
+                    maybeCopyOrMove(item, node.type);
+
                 propagateType(item, :relax_mask, i == items.len - 1 ? slot : rest);
 
                 ////////////////////////////////////////////////////////////////
@@ -2927,7 +2900,7 @@ pub fn solve(
                 node.helpers.index |= MUSTSEQ_mask;
             }
         }
-        else if (k == "int" || k == "real" || k == "char" || k == "str" || k == "definit" || k == "bool")
+        else if (k.isShallowLiteral)
         {
             // Something alla discard.
             if (canDiscard)
@@ -3124,6 +3097,9 @@ pub fn solve(
 
             ref expr            = node.items.only;
 
+            if (PASS_MaybeCopyOrMove)
+                maybeCopyOrMove(expr, h.ret_actual);
+
             propagateType(expr, :relax_mask, h.ret_actual, :kills);
 
             // Remove redundant jumps.
@@ -3200,7 +3176,17 @@ pub fn solve(
         {
             let h = node.helpers;
             if (h.ret_actual)
+            {
+                // MCOM [A]
+                if (PASS_MaybeCopyOrMove)
+                    mcom_BlockReturns_CopyOrMoveDecision(h);
+
                 h.ret_actual.try_relax(:slot, :relax_mask);
+
+                // MCOM [B]
+                if (PASS_MaybeCopyOrMove && !canDiscard && !h.ret_actual.is_never)
+                    maybeCopyOrMove(node.items.last, h.ret_actual);
+            }
 
             if (h)
             {
