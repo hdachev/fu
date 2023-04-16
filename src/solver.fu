@@ -2212,7 +2212,8 @@ pub fn solve(
         ////////////////////////////
 
         //
-        inline fn PASS_MoveOnLastUse = relax_mask == RELAX_all;
+        inline fn PASS_MoveOnLastUse    = relax_mask == RELAX_all;
+        inline fn PASS_MaybeCopyOrMove  = relax_mask == RELAX_all;
 
         fn trackUse(lt: Lifetime, ref bitset: bitset::BitSet)
         {
@@ -2335,7 +2336,7 @@ pub fn solve(
 
         // Previously fn mcom_node(ref node: SolvedNode):
 
-        if (relax_mask == RELAX_all)
+        if (PASS_MaybeCopyOrMove)
         {
             let t = node.type;
 
@@ -2355,29 +2356,7 @@ pub fn solve(
             //
             ref items = node.items;
 
-            if (k == "call")
-            {
-                let target = node.target;
-                if (target.kind != "field")
-                {
-                    let host_args = target.args;
-                    if (target.kind == "type")
-                    {
-                        // TODO FIX partially unused structs,
-                        //  getting a <- void errors
-                        //
-                        for (mut i = 0; i < items.len; i++)
-                            if (!items[i].isIrrelevant)
-                                maybeCopyOrMove(items[i], host_args[i].type, isArgument: true);
-                    }
-                    else
-                    {
-                        for (mut i = 0; i < items.len; i++)
-                            maybeCopyOrMove(items[i], host_args[i].type, isArgument: true);
-                    }
-                }
-            }
-            else if (k == "block" || k == "jump")
+            if (k == "block" || k == "jump")
             {
                 let h = node.helpers;
                 if (h.ret_actual && !h.ret_actual.isIrrelevant && !h.ret_actual.is_never)
@@ -2390,26 +2369,11 @@ pub fn solve(
                 if (init)
                     maybeCopyOrMove(init, node.type);
             }
-            else if (k == "if")
-            {
-                if !(t.is_void)
-                {
-                    maybeCopyOrMove(items[1], t);
-                    maybeCopyOrMove(items[2], t);
-                }
-            }
             else if (k == "or")
             {
                 if !(t == t_bool)
                     for (mut i = 0; i < items.len; i++)
                         maybeCopyOrMove(items[i], t);
-            }
-            else if (k == "arrlit")
-            {
-                shadow let t = clear_sliceable(t);
-
-                for (mut i = 0; i < items.len; i++)
-                    maybeCopyOrMove(items[i], t);
             }
         }
 
@@ -2500,11 +2464,16 @@ pub fn solve(
         }
         else if (k == "if")
         {
-            mut postdom0    = _current_fn.postdom;
+            ref items = node.items;
 
+            if (PASS_MaybeCopyOrMove && !canDiscard)
+                for (mut i = items.len; i --> 1; )
+                    maybeCopyOrMove(items[i], node.type);
+
+            //
+            mut postdom0 = _current_fn.postdom;
             mut canDiscard_cond = canDiscard;
-
-            for (mut i = node.items.len; i --> 0; )
+            for (mut i = items.len; i --> 0; )
             {
                 // MOVE ON LAST USE ////////////////////////////////////////////
                 if (i == 1)
@@ -2519,7 +2488,7 @@ pub fn solve(
                 }
                 // MOVE ON LAST USE ////////////////////////////////////////////
 
-                propagateType(node.items[i], :relax_mask,
+                propagateType(items[i], :relax_mask,
                     slot:  i != 0 || canDiscard_cond ? slot : t_proposition,
 
                     // CAN AFFECT cons/alt.type (see `if (kills)` below):
@@ -2534,7 +2503,7 @@ pub fn solve(
                 //   caught by a copy generated for the first operand to the ==
                 //    getting discarded on second relax.
                 //     BTW it's crazy that we generate copy nodes for arithmetic operands.
-                if (canDiscard_cond && i && !node.items[i].isDiscardable)
+                if (canDiscard_cond && i && !items[i].isDiscardable)
                     canDiscard_cond = false;
             }
 
@@ -2543,15 +2512,15 @@ pub fn solve(
                 if (canDiscard_cond)
                 {
                     makeNote(N_UnusedIfElse);
-                    node = node.items[0];
+                    node = items[0];
                 }
-                else if (node.items[1].isDiscardable)
+                else if (items[1].isDiscardable)
                 {
-                    node = createOr([ node.items[0], node.items[2] ], t_void);
+                    node = createOr([ items[0], items[2] ], t_void);
                 }
-                else if (node.items[2].isDiscardable)
+                else if (items[2].isDiscardable)
                 {
-                    node = createAnd(node.items.slice(0, 2), t_void);
+                    node = createAnd(items.slice(0, 2), t_void);
                 }
                 else
                 {
@@ -2563,7 +2532,7 @@ pub fn solve(
                 // Control flow simplification can affect node.type, see above.
                 node.type = superType_neverOK(
                     "if/else after control flow simplification: ",
-                        node.items[1], node.items[2]);
+                        items[1], items[2]);
             }
         }
         else if (k == "try")
@@ -2865,6 +2834,9 @@ pub fn solve(
                             :memberFlatOffset,
                             :memberFlatCount);
 
+                        if (PASS_MaybeCopyOrMove && !slot.isIrrelevant)
+                            maybeCopyOrMove(arg, slot, isArgument: true);
+
                         arg.propagateType(:slot, :relax_mask);
                     }
 
@@ -2911,7 +2883,12 @@ pub fn solve(
                         && _current_fn.just_moved;
                     // MOVE ON LAST USE OOE ////////////////////////////////////////
 
-                    arg.propagateType(host_args[i].type, :relax_mask);
+                    let host_arg = host_args[i];
+
+                    if (PASS_MaybeCopyOrMove)
+                        maybeCopyOrMove(arg, host_arg, isArgument: true);
+
+                    arg.propagateType(host_arg, :relax_mask);
 
                     // MOVE ON LAST USE OOE ////////////////////////////////////////
                     if (ooe_isUndef)
@@ -3113,10 +3090,15 @@ pub fn solve(
                 return discardIntoBlock();
             }
 
+            ref items = node.items;
             let itemSlot = clear_sliceable(slot);
 
-            for (mut i = 0; i < node.items.len; i++)
-                propagateType(node.items[i], :relax_mask,
+            if (PASS_MaybeCopyOrMove)
+                for (mut i = 0; i < items.len; i++)
+                    maybeCopyOrMove(items[i], itemSlot);
+
+            for (mut i = 0; i < items.len; i++)
+                propagateType(items[i], :relax_mask,
                     slot: itemSlot);
         }
         else if (k == "argid")
