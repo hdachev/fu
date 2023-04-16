@@ -2807,7 +2807,7 @@ pub fn solve(
                             :memberFlatOffset,
                             :memberFlatCount);
 
-                        if (PASS_MaybeCopyOrMove && !slot.isIrrelevant)
+                        if (PASS_MaybeCopyOrMove)
                             maybeCopyOrMove(arg, slot, isArgument: true);
 
                         arg.propagateType(:slot, :relax_mask);
@@ -4813,7 +4813,16 @@ pub fn solve(
                     {
                         numArgsWritten++;
 
-                        if (!isNative)
+                        if (isNative)
+                        {
+                            // Natives: we can't see inside, assume everything restricted.
+                            soft_risk.add_range(end: N);
+                            soft_risk.rem(i);
+
+                            if (!NativeHacks.soft_risk)
+                                hard_risk = soft_risk;
+                        }
+                        else
                         {
                             soft_risk.ArgsAtRisk_list(out.flow, position: i, out.flow.at_soft_risk);
                             hard_risk.ArgsAtRisk_list(out.flow, position: i, out.flow.at_hard_risk);
@@ -4839,15 +4848,6 @@ pub fn solve(
                                         hard_risk.add(index);
                                 }
                             }
-                        }
-                        else
-                        {
-                            // Natives: we can't see inside, assume everything restricted.
-                            soft_risk.add_range(end: N);
-                            soft_risk.rem(i);
-
-                            if (!NativeHacks.soft_risk)
-                                hard_risk = soft_risk;
                         }
                     }
                     /////////////////////////////////////////////
@@ -8444,19 +8444,17 @@ pub fn solve(
         if (slot.isIrrelevant)
             return;
 
+        if (SELF_TEST && slot.is_never && slot.usage)
+            BUG("maybeCopyOrMove: slot.is_never but some usage bits set");
+
         if (slot.canon != node.canon && !node.is_never)
         {
             if (node.type.is_zeroes && !(slot.is_mutref && CANNOT_definit_mutrefs))
-            {
-                definitWrap(node, slot);
-                return;
-            }
-            else
-            {
-                BUG("Considering copy or move for incompatible types: "
-                    ~ humanizeType(slot) ~ " <- "
-                    ~ humanizeType(node));
-            }
+                return definitWrap(node, slot);
+
+            BUG("Considering copy or move for incompatible types: "
+                ~ humanizeType(slot) ~ " <- "
+                ~ humanizeType(node));
         }
 
         // No copy needed when the slot is a reference.
@@ -8492,10 +8490,7 @@ pub fn solve(
 
         // Getting messier by the minute.
         if (node.is_zeroes)
-        {
-            definitWrap(node, slot);
-            return;
-        }
+            return definitWrap(node, slot);
 
         // Copy line:col attrib.
         let here0   = _here;
@@ -10062,6 +10057,9 @@ pub fn solve(
             test_node(node.items[i]);
 
         _here = node.token;
+
+        if (node.is_never && node.usage)
+            BUG("node.is_never but some usage bits set");
 
         //
         let k = node.kind;
