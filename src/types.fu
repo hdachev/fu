@@ -1,6 +1,7 @@
 import helpers;
 import module;
 import fail;
+import quals;
 
 let q_mutref            = Quals(1) << 0;
 let q_rx_copy           = Quals(1) << 1;
@@ -297,11 +298,6 @@ pub fn parseType(str: string): ValueType
 //  Slices are refs to arrays,
 //   with revoked copy & resize priviledges.
 
-pub fn type_isSliceable(type: Type): bool
-{
-    return type.canon.starts(with: '[');
-}
-
 pub fn createSlice(item: Type, lifetime: Lifetime): Type
 {
     mut out = createArray(item);
@@ -311,7 +307,7 @@ pub fn createSlice(item: Type, lifetime: Lifetime): Type
 
 pub fn tryClear_sliceable(type: Type): Type
 {
-    if (!type_isSliceable(type))
+    if (!is_sliceable(type))
         return Type();
 
     let vtype = parseType(type.canon.slice(1, type.canon.len - 1));
@@ -352,7 +348,7 @@ pub fn TODO_FIX_isArray(type: Type): bool
     //  this is only used in cg, which is post-relax so perhaps we should just move it over there,
     //   naming it impossibly right now to disambiguate
     return type.quals & (q_rx_resize | q_rx_copy)
-        && type.type_isSliceable();
+        && type.is_sliceable();
 }
 
 pub let t_string = createArray(t_byte);

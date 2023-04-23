@@ -47,6 +47,11 @@ fn is_flags(t: ValueType) {
     return c == 'm';
 }
 
+fn is_sliceable(t: ValueType) {
+    let c = t.canon[0];
+    return c == '[';
+}
+
 
 //
 

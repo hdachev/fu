@@ -3822,7 +3822,7 @@ pub fn solve(
     {
         shadow let type = solveString(node.value, type);
 
-        if (!node.value && t_string.type_isSliceable)
+        if (!node.value && t_string.is_sliceable)
             return createDefinit(
                 add_ref(t_string, Lifetime_static));
 

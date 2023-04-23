@@ -223,7 +223,7 @@ pub fn cpp_codegen(
 
         if (type.is_ref)
         {
-            if (type.type_isSliceable && !type.arrayType_annotateAsVec || fwd == "void")
+            if (type.is_sliceable && !type.arrayType_annotateAsVec || fwd == "void")
                 return fwd;
 
             if (type.is_mutref)
@@ -1301,7 +1301,7 @@ pub fn cpp_codegen(
         if (!t.is_mutref && t.isPassByValue)
             return false;
 
-        return t.is_ref && (!t.type_isSliceable || t.arrayType_annotateAsVec);
+        return t.is_ref && (!t.is_sliceable || t.arrayType_annotateAsVec);
     }
 
     fn binding(target!: Target, forceValue!?: bool)
@@ -2481,7 +2481,7 @@ pub fn cpp_codegen(
         ////////////////////////////////////////////////////////////////
         // TODO FIX the implicit conversion from vec to view we do in c++
         //  is not visible in the AST but is seq-sensitive
-        if (host_arg.type_isSliceable && !host_arg.arrayType_annotateAsVec)
+        if (host_arg.is_sliceable && !host_arg.arrayType_annotateAsVec)
             return false;
         ////////////////////////////////////////////////////////////////
 
@@ -2521,7 +2521,7 @@ pub fn cpp_codegen(
 
         if (type.is_ref && !type.isPassByValue)
         {
-            if (!type.type_isSliceable || type.arrayType_annotateAsVec)
+            if (!type.is_sliceable || type.arrayType_annotateAsVec)
             {
                 include("<fu/default.h>");
                 type.is_primitive && BUG("cgDefault: Genering NIL refs to primitives.");
