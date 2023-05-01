@@ -78,6 +78,49 @@ fn unindent_left(src: string, i0: int): int
     return i0;
 }
 
+fn verify_errmsg(topic: string, e!: string, msg!: string)
+{
+    mut actual = e
+        .ERR_TRIM
+        .ERR_STRIP_ANSI
+        .ERR_STRIP_SNIPPETS
+        .ascii::lower();
+
+    mut BUG_ok = false;
+
+    // Verify error message.
+    mut m0 = -1;
+    for (mut m1 = 0; m1 <= msg.len; m1++)
+    {
+        let c = m1 < msg.len ? msg[m1] : ' ';
+        if (c.i32 <= 32)
+        {
+            if (m0 >= 0)
+            {
+                let exact = msg.slice(m0, m1);
+                if (exact == "BUG")
+                    BUG_ok = true;
+
+                let expect = exact.ascii::lower();
+                if (!actual.has(expect))
+                    throw(topic ~ " mismatch:\n\n    Expected error keyword:\n        "
+                        ~ expect.ansi::qBAD ~ " from pattern <fail" ~ msg.ansi::qBAD ~ ">"
+                        ~ "\n\n    ... not present in error message:\n\n"
+                        ~ e);
+            }
+
+            m0 = -1;
+        }
+        else if (m0 < 0)
+        {
+            m0 = m1;
+        }
+    }
+
+    if (!BUG_ok && e.has("BUG"))
+        throw(topic ~ " error message contains BUG:\n\n" ~ e);
+}
+
 pub fn ZERO(
     implicit ref testdiffs: testdiff::TestDiffs,
     mut sources: string[],
@@ -142,46 +185,7 @@ pub fn ZERO(
                 try ZERO(:sources);
                 catch (e)
                 {
-                    shadow let e    = e.ERR_TRIM;
-
-                    mut actual      = e
-                        .ERR_STRIP_ANSI
-                        .ERR_STRIP_SNIPPETS
-                        .ascii::lower();
-
-                    mut BUG_ok = false;
-
-                    // Verify error message.
-                    mut m0 = -1;
-                    for (mut m1 = 0; m1 <= msg.len; m1++)
-                    {
-                        let c = m1 < msg.len ? msg[m1] : ' ';
-                        if (c.i32 <= 32)
-                        {
-                            if (m0 >= 0)
-                            {
-                                let exact = msg.slice(m0, m1);
-                                if (exact == "BUG")
-                                    BUG_ok = true;
-
-                                let expect = exact.ascii::lower();
-                                if (!actual.has(expect))
-                                    throw("<fail> mismatch:\n\n    Expected error keyword:\n        "
-                                        ~ expect.ansi::qBAD ~ " from pattern <fail" ~ msg.ansi::qBAD ~ ">"
-                                        ~ "\n\n    ... not present in error message:\n\n"
-                                        ~ e);
-                            }
-
-                            m0 = -1;
-                        }
-                        else if (m0 < 0)
-                        {
-                            m0 = m1;
-                        }
-                    }
-
-                    if (!BUG_ok && e.has("BUG"))
-                        throw("<fail> error message contains BUG:\n\n" ~ e);
+                    verify_errmsg("<fail>", :e, :msg);
 
                     //
                     testdiffs.set_next(
