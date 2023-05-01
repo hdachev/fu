@@ -590,12 +590,16 @@ pub fn ZERO_SAME(alts: string[][])
 
 pub fn TODO(
     implicit ref testdiffs: testdiff::TestDiffs,
-    sources: string[])
+    sources: string[],
+    currently!?: string)
 {
     try {
         ZERO(:sources);
     }
     catch (e) {
+        if (currently)
+            verify_errmsg("(TODO)", :e, msg: currently);
+
         testdiffs.set_next(
             sources.ERR_KEY, "TODO: " ~ e.ERR_TRIM);
 
@@ -607,7 +611,7 @@ pub fn TODO(
 
 
 pub fn ZERO(src: string) ZERO(sources: [ src ]);
-pub fn TODO(src: string) TODO(sources: [ src ]);
+pub fn TODO(src: string, currently!?: string) TODO(sources: [ src ], :currently);
 
 pub fn ZERO_SAME(alts: string[])
 {

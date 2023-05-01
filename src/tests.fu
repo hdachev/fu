@@ -3914,7 +3914,7 @@ pub extern fn runTests()
         }
     `);
 
-    TODO_move(`
+    TODO_move(currently: "can neither copy nor move 6:38+1", `
         <alt>
         nocopy
         </alt>
@@ -4146,7 +4146,7 @@ pub extern fn runTests()
         }
     `);
 
-    TODO_unique(`
+    TODO_unique(currently: "both alias 3:25+1", `
         fn Swap(ref a: i32[], x: i32, y: i32)
             swap(a[x], a[y]);
 
@@ -8945,7 +8945,7 @@ pub extern fn runTests()
         fn main() what("!BBB") - 1;
     `);
 
-    TODO_slices(`
+    TODO_slices(currently: "fn what arg annot is not novec 7:9+5", `
         // When you pass this, delete the test above, they're the same.
         //  The slice() should relax to a get_view, which doesnt need annot to be a string.
         //   We generally want to remove the distinction between slice(a,b) and [a:b] altogether.
@@ -11280,7 +11280,7 @@ pub extern fn runTests()
         }
     `);
 
-    TODO_varargs(`
+    TODO_varargs(currently: "optional argument ambiguity 6:31+1", `
         fn count_args!T (
             <alt>
             inline
@@ -13578,7 +13578,7 @@ pub extern fn runTests()
         }
     `);
 
-    TODO_StaticEval(`
+    TODO_StaticEval(currently: "THIS_DOESNT_EXIST is not defined here 6:61+1", `
         fn main() {
             <fail not defined>
             mut <pass/>
