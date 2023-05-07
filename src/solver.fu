@@ -564,11 +564,6 @@ pub fn solve(
         return nested(local.index);
     }
 
-    fn isNested(target: Target)
-    {
-        return target.modid == -_current_fn.target.index;
-    }
-
     using fn EPH(target: Target)
     {
         return target.modid == module.modid
@@ -2671,7 +2666,7 @@ pub fn solve(
                 //  Now we just collect usage while propagating types,
                 //   this means we're automatically ignoring type annotations etc.
                 //
-                if (t.isNested)
+                if (t.isLocal)
                 {
                     trackVarUsage(_current_fn.var_usage, :t.index, node.type);
 
