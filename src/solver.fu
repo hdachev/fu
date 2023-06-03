@@ -124,7 +124,7 @@ pub fn solve(
 
     struct Postdom
     {
-        using moves:        Moves;
+        moves:              Moves;
         loop_start:         i32;
     };
 
@@ -2253,7 +2253,7 @@ pub fn solve(
         fn tryTrackLastUse(lt: Lifetime)
         {
             return PASS_MoveOnLastUse
-                && trackUse(:lt, _current_fn.used_again);
+                && trackUse(:lt, _current_fn.moves.used_again);
         }
 
         fn trackJustMoved(lt: Lifetime)
@@ -2268,7 +2268,7 @@ pub fn solve(
                     "trackJustMoved: found a non-local.");
 
                 let target = nested(local);
-                _current_fn.just_moved.add_once(target.index) || BUG(
+                _current_fn.moves.just_moved.add_once(target.index) || BUG(
                     "trackJustMoved: already moved.");
 
                 trackJustMoved(Lifetime_climbType(target).lifetime);
@@ -2682,7 +2682,7 @@ pub fn solve(
                             //    because the lack of sequence points occurs between
                             //     the individual callarg expressions.
                             //
-                            trackUse(node.lifetime, _current_fn.just_used);
+                            trackUse(node.lifetime, _current_fn.moves.just_used);
                         }
                         // MOVE ON LAST USE OOE ////////////////////////////////////////
                     }
@@ -2834,10 +2834,10 @@ pub fn solve(
                 //
                 mut just_used1: bitset::BitSet;
                 //
-                if (ooe_isUndef)       swap(_current_fn.just_used, just_used1);
-                defer if (ooe_isUndef) swap(_current_fn.just_used, just_used1);
+                if (ooe_isUndef)       swap(_current_fn.moves.just_used, just_used1);
+                defer if (ooe_isUndef) swap(_current_fn.moves.just_used, just_used1);
                 //
-                mut just_moved00 = ooe_isUndef && _current_fn.just_moved;
+                mut just_moved00 = ooe_isUndef && _current_fn.moves.just_moved;
                 mut MUSTSEQ_mask = 0;
                 // MOVE ON LAST USE OOE ////////////////////////////////////////
 
@@ -2848,7 +2848,7 @@ pub fn solve(
                     // MOVE ON LAST USE OOE ////////////////////////////////////////
                     let just_moved0 = ooe_isUndef
                         && i != start // No point in testing last argument, no args move after it.
-                        && _current_fn.just_moved;
+                        && _current_fn.moves.just_moved;
                     // MOVE ON LAST USE OOE ////////////////////////////////////////
 
                     let host_arg = host_args[i];
@@ -2869,7 +2869,7 @@ pub fn solve(
                             //  but not within this argument,
                             //   that concern lifetimes used here.
                             //
-                            _current_fn.just_used.each: |index|
+                            _current_fn.moves.just_used.each: |index|
                             {
                                 if (just_moved0.has(index) && !just_moved00.has(index))
                                 {
@@ -2885,8 +2885,8 @@ pub fn solve(
                             }
                         }
 
-                        just_used1.add(_current_fn.just_used);
-                        _current_fn.just_used.clear();
+                        just_used1.add(_current_fn.moves.just_used);
+                        _current_fn.moves.just_used.clear();
                     }
                     // MOVE ON LAST USE OOE ////////////////////////////////////////
                 }
