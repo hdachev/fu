@@ -84,6 +84,7 @@ pub extern fn runTests()
 
     // Categorizing what doesn't work and why -
 
+    let TODO_snippet    = fn TODO;
     let TODO_borrowck   = fn TODO;
     let TODO_disjoint   = fn TODO;
     let TODO_move       = fn TODO;
@@ -2018,6 +2019,18 @@ pub extern fn runTests()
             "hello".replace(all: 'o', with: "O") == "hellO" &&
             "hello".replace(all: "l", with:  []) == "heo"
                 ? 0 : 1;
+    `);
+
+    TODO_snippet(`
+        fn cnct(a: string, b: string) a ~ b;
+
+        fn main()
+            cnct( <fail smth>
+                a: "hello, "\`world!
+\` <pass/>
+                a: "hello, ", \`world!
+\` </fail>
+            ).len - 14;
     `);
 
 
