@@ -18,6 +18,10 @@ pub struct Flow
     is_arg:         bitset::BitSet; // acceleration structure.
     arg_targets:    i32[];          // argument targets at each position.
     arg_positions:  i32[];          // arguments (position + 1) at each target.
+
+    // TODO FIX redundant
+    // COW - direct children.
+    children:       i32[][];
 };
 
 pub fn clear(ref flow: Flow)
@@ -57,6 +61,8 @@ pub fn Reference_trackLocalRef(ref flow: Flow, left: i32, right: Lifetime)
         shadow let right = Region_asLocal(right.uni0n[i]);
         if !(right)
             continue;
+
+        flow.children.grow_if_oob(right).set::add(left);
 
         //
         parents.set::add(right);

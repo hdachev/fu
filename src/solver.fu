@@ -138,6 +138,12 @@ pub fn solve(
              src.loop_start || BUG());
     }
 
+    struct Usage
+    {
+        done_relaxing:      bitset::BitSet;
+        var_usage:          Type[];
+    };
+
     struct CurrentFn
     {
         true using out:     SolvedNode;
@@ -154,7 +160,7 @@ pub fn solve(
         autoshadow_ok!:     i32;
 
         // The replacement for the callsites stuff.
-        var_usage?:         Type[];
+        using relaxed?:     Usage;
 
         // The new flow-on-jump idiom doesn't handle defers correctly.
         TODO_FIX_defers?:   i32;
@@ -167,6 +173,9 @@ pub fn solve(
 
         //
         using postdom?:     Postdom;
+
+        //
+        TODO_FIX_children?: i32[][];
     };
 
     struct ChildTarget
@@ -2935,6 +2944,82 @@ pub fn solve(
                 }
                 else
                 {
+                    // TODO_COW ////////////////////////////////////////////////////
+                    if (!item.type.is_trivial)
+                    {
+                        // Prevents revisiting parents
+                        //  during grandparent's descendChildren.
+                        mut seen: bitset::BitSet;
+
+                        // Step 1:
+                        // Climb parents, collecting all preexisting refs
+                        //  that could possibly be used after the COW "copy" is made
+                        //   to mutate the original as-if-unique,
+                        //    breaking value semantics on the copy.
+                        fn cannotCOW_climbParents(lifetime: Lifetime)
+                        {
+                            for (mut i = 0; i < lifetime.uni0n.len; i++)
+                            {
+                                let index = Region_asLocal(lifetime.uni0n[i]);
+                                if (index)
+                                {
+                                    if (!seen.add_once(index))
+                                        continue;
+
+                                    let o = GET(nested(index));
+                                    o.kind == "var" || BUG("cannotCOW_climbParents found a non-var: " ~ o);
+
+                                    // Climb parents.
+                                    if (!(o.flags & (F_MUT | F_ARG)))
+                                    {
+                                        let init = o.solved.items[LET_INIT];
+                                        cannotCOW_climbParents(init.type.lifetime);
+                                    }
+
+                                    // Check children.
+                                    cannotCOW_descendChildren(index);
+                                }
+                            }
+                        }
+
+                        // Step 2:
+                        // At this point we haven't folded var_usage up parent refs,
+                        //  so we gotta descend the invalidation chain manually.
+                        fn cannotCOW_descendChildren(index: i32)
+                        {
+                            let children = _current_fn.TODO_FIX_children.unless_oob(index);
+
+                            for (mut i = 0; i < children.len; i++)
+                            {
+                                let child = children[i];
+
+                                if (!seen.add_once(child))
+                                    continue;
+
+                                // Might have been copied during bck.
+                                // TODO reflect that in RESOLVE_byMutvar.
+                                let o = GET(nested(child));
+                                if (o.flags & F_MUT)
+                                    continue;
+
+                                // Skip if we've already seen the declaration for this var,
+                                //  which means ref is taken after the copy is made.
+                                if (!_current_fn.done_relaxing.has(child))
+                                {
+                                    let usage = _current_fn.var_usage.unless_oob(child);
+                                    if (usage.is_mutref)
+                                        fail("A copy is needed, but COW will break due to pre-existing mutref: " ~ nested(child));
+                                }
+
+                                // Continue.
+                                cannotCOW_descendChildren(child);
+                            }
+                        }
+
+                        cannotCOW_climbParents(item.type.lifetime);
+                    }
+                    // TODO_COW ////////////////////////////////////////////////////
+
                     // Partial copy.
                     let usage       = node.type.usage;
                     let flatCount   = node.type.getFlatCount();
@@ -3650,6 +3735,9 @@ pub fn solve(
             // Done, put it back.
             swap(init, node.items[LET_INIT]);
         }
+
+        // All good.
+        _current_fn.done_relaxing.add(t.index);
     }
 
     fn createBlock(
@@ -4030,11 +4118,14 @@ pub fn solve(
 
         Scope_set(_scope, :target, :id, :shadows);
 
+        // TODO DISJOINT cannotCOW false positive
+        let scope_skip  = _current_fn && _ss;
+
         //
         ref eph         = target.EPH_mut;
         eph.local_of    = local_of;
         eph.scope_memo  = _current_fn && Scope_snap(_scope);
-        eph.scope_skip  = _current_fn && _ss;
+        eph.scope_skip  = scope_skip;
 
         // Experimental conversion functions.
         if (node.flags & F_CONVERSION)
@@ -10271,6 +10362,8 @@ pub fn solve(
 
         node.helpers.pass = "ArgumentsAtRisk";
 
+        _current_fn.TODO_FIX_children = _current_fn.flow.children;
+
         PASS_borrowCheck(node, BCK_aar);
 
         ////////////////
@@ -10280,7 +10373,7 @@ pub fn solve(
         node.helpers.pass = "RelaxCopyResize";
 
         _current_fn.fx_mask = [];
-        _current_fn.var_usage = [];
+        _current_fn.relaxed = [];
         _current_fn.loop_start == 1 || BUG(
             "_current_fn.loop_start leak: " ~ _current_fn.loop_start);
 
