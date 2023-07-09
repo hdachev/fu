@@ -20,7 +20,7 @@ pub extern fn runTests()
     /*
     let SOLO            = fn ZERO;
 
-    lax fn SOLO_muteRest (lax a) {}
+    lax fn SOLO_muteRest (lax a, lax currently?: string, lax options?: options::Options) {}
     let ZERO            = fn SOLO_muteRest;
     let TODO            = fn SOLO_muteRest;
     let ZERO_SAME       = fn SOLO_muteRest;
@@ -54,7 +54,7 @@ pub extern fn runTests()
             mut error: string;
             let implicit shadow mut testdiffs: testdiff::TestDiffs;
 
-            let options = options::Options(dev: "DEV_Parallel");
+            lax let options = options::Options(dev: "DEV_Parallel");
 
             try
                 ZERO(test, :options);
