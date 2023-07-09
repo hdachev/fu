@@ -5070,6 +5070,38 @@ pub extern fn runTests()
         }
     `);
 
+    ZERO(`
+        struct A { items: i32[] };
+        struct B { items: i32[] };
+
+        <alt>
+        fn takesRef_OOE(ref a: A, b: B) <alt/>
+        fn takesRef_OOE(b: B, ref a: A) </alt>
+            a.items ~= b.items;
+
+        struct C { items: i32[] };
+
+        fn C2B(mut c: C) B(c.items);
+
+        fn selectA(mut c: C, ref a0: A, ref a1: A) {
+            ref a   = c.items.len & 1 ? a0 : a1;
+            a.items = c.items;
+            return a;
+        }
+
+        fn main() {
+            mut c = C([ 1, 2, 3, 4, 5, 6, 7 ]);
+            mut a0: A;
+            mut a1: A;
+
+            takesRef_OOE(                                       ;; N_MoveMustSeq
+                a: selectA(:c, :a0, :a1),
+                b: C2B(:c));
+
+            return a0.items.len - 14;
+        }
+    `);
+
     // /Move on last use
 
 
