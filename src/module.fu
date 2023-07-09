@@ -329,3 +329,102 @@ flags VFacts
     AlwaysFalse
     COWUnique
 };
+
+
+// Argument OOE, here for sharing in solver & cg.
+
+fn isRTL(o: Overload): bool
+    !!(o.flags & flags::F_OOE_RTL);
+
+fn isRTL_set(ref o: Overload, rtl: bool)
+    if (rtl)    o.flags |=  flags::F_OOE_RTL;
+    else        o.flags &= ~flags::F_OOE_RTL;
+
+
+// New argument order of evaluation rules -
+//  1. everything left-to-right,
+//  2. but all mutrefs after all non-mutrefs.
+//
+// Why:
+//  1. generalizes the usual LTR vs RTL rules in c-like languages,
+//      e.g. everything LTR, except assignments and arr[i] RTL, etc;
+//  2. ensures that if some constref arg needs a temp copy,
+//      we'll only copy the thing needed instead of everything it depends on;
+//  3. will help with the COW crisis by making more copies happen
+//      before new mutrefs are taken, which should help compile more stuff
+//       if we need to forbid copies during borrows.
+
+fn argsForward(lax RTL: bool, host_args: [Argument], fn,
+    seqIdx_start = 0)
+{
+/*
+    mut seqIdx = 0;
+
+    mut lastPass = 1;
+    for (mut pass = 0; pass < lastPass; pass++)
+    {
+        for (mut i = 0; i < host_args.len; i++)
+        {
+            let host_arg = host_args[i];
+            if (!!pass != !!host_arg.type.is_mutref)
+            {
+                lastPass = 2;
+                continue;
+            }
+
+            if (seqIdx_start <= seqIdx)
+                fn(:i, host_arg?: host_arg, seqIdx?: seqIdx);
+
+            seqIdx++;
+        }
+    }
+/*/
+    mut seqIdx = 0;
+
+    let N           = host_args.len;
+
+    let start       = !RTL ? 0 : N - 1;
+    let end         = !RTL ? N : 0 - 1;
+    let incr        = !RTL ? +1  :  -1;
+
+    for (mut i = start; i != end; i += incr)
+    {
+        if (seqIdx_start <= seqIdx)
+            fn(:i, host_arg?: host_args[i], seqIdx?: seqIdx);
+
+        seqIdx++;
+    }
+//*/
+}
+
+fn argsReverse(lax RTL: bool, host_args: [Argument], fn)
+{
+/*
+    mut lastPass = 1;
+    mut ooe_isLast = true;
+    for (mut pass = 2; pass --> lastPass; )
+    {
+        for (mut i = host_args.len; i --> 0; )
+        {
+            let host_arg = host_args[i];
+            if (!!pass != !!host_arg.type.is_mutref)
+            {
+                lastPass = 0;
+                continue;
+            }
+
+            fn(:i, :host_arg, ooe_isLast?: ooe_isLast);
+            ooe_isLast = false;
+        }
+    }
+/*/
+    let N           = host_args.len;
+
+    let start       = RTL ? 0 : N - 1;
+    let end         = RTL ? N : 0 - 1;
+    let incr        = RTL ? +1  :  -1;
+
+    for (mut i = start; i != end; i += incr)
+        fn(:i, host_arg: host_args[i], ooe_isLast?: i == start);
+//*/
+}

@@ -604,13 +604,6 @@ pub fn solve(
     fn isRefArg(o: Overload): bool
         o.flags & F_ARG && o.kind == "var" && o.solved.type.is_ref;
 
-    fn isRTL(o: Overload): bool
-        !!(o.flags & F_OOE_RTL);
-
-    fn isRTL_set(ref o: Overload, rtl: bool)
-        if (rtl)    o.flags |=  F_OOE_RTL;
-        else        o.flags &= ~F_OOE_RTL;
-
 
     // RemoteNode nonsense
 
@@ -2831,19 +2824,11 @@ pub fn solve(
 
                 //
                 let host_args   = node.target.args;
-                let rtl         = node.target.isRTL;
-                let ooe_isUndef = !rtl && node.items.len > 1;
+                let RTL         = node.target.isRTL;
+                let ooe_isUndef = !RTL && node.items.len > 1;
 
                 host_args.len == node.items.len || BUG(
                     "propagateType(call) args.len != host_args.len at call to " ~ node.target);
-
-                // Here we're visiting stuff in reverse order of execution -
-                //  so RTL means visit left to right and vice versa, watch it.
-                let N           = node.items.len;
-
-                let start       = rtl ? 0 : N - 1;
-                let end         = rtl ? N : 0 - 1;
-                let incr        = rtl ? +1  :  -1;
 
                 // MOVE ON LAST USE OOE ////////////////////////////////////////
                 //  We'll empty the just_used bitset before solving each argument,
@@ -2859,17 +2844,15 @@ pub fn solve(
                 mut MUSTSEQ_mask = 0;
                 // MOVE ON LAST USE OOE ////////////////////////////////////////
 
-                for (mut i = start; i != end; i += incr)
+                argsReverse(:RTL, :host_args): |i, host_arg, ooe_isLast|
                 {
                     ref arg = node.items[i];
 
                     // MOVE ON LAST USE OOE ////////////////////////////////////////
-                    let just_moved0 = ooe_isUndef
-                        && i != start // No point in testing last argument, no args move after it.
+                    lax let just_moved0 = ooe_isUndef
+                        && !ooe_isLast
                         && _current_fn.moves.just_moved;
                     // MOVE ON LAST USE OOE ////////////////////////////////////////
-
-                    let host_arg = host_args[i];
 
                     if (PASS_MaybeCopyOrMove)
                         maybeCopyOrMove(arg, host_arg, isArgument: true);
