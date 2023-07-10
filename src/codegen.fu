@@ -1768,13 +1768,19 @@ pub fn cpp_codegen(
 
 
         //
-
         let MUSTSEQ_mask    = node.helpers.index;
         mut ooe_crosscheck  = 0;
         mut ooe_header      = "";
 
+        //
         mut item_src: string[];
-        for (mut i = 0; i < args.len; i++)
+        item_src.resize(args.len);
+
+        // We'll CG these in OOE,
+        //  so that the ooe_header comes out in the right order.
+        let RTL             = target.isRTL;
+        let host_args       = ext.args;
+        if (args) argsForward(:RTL, :host_args, |i, host_arg|
         {
             let arg = args[i];
 
@@ -1802,7 +1808,7 @@ pub fn cpp_codegen(
             }
 
             mut src = junk ? "" : cgNode(
-                arg, callarg: ext.args[i].type,
+                arg, callarg: host_arg.type,
                 mode: isNative && M_ARG_TO_NATIVE) || BUG("Empty arg src.");
 
             //
@@ -1838,7 +1844,7 @@ pub fn cpp_codegen(
                         || MUSTSEQ_mask &~ MUSTSEQ_bit < MUSTSEQ_mask
                             && zip_all( args    [i + 1,     args.len],
                                         ext.args[i + 1, ext.args.len],
-                                        |shadow arg, host_arg|
+                                        |shadow arg, shadow host_arg|
                                             arg.isPointlessMustSeq(host_arg)))
                 {
                     noteDefect(PointlessMustSeq);
@@ -1870,8 +1876,8 @@ pub fn cpp_codegen(
                 }
             }
 
-            item_src ~= src;
-        }
+            item_src[i] = src;
+        });
 
         (ooe_crosscheck & MUSTSEQ_mask) == MUSTSEQ_mask || BUG(
             "OOE crosscheck failed: codegen sequenced " ~ ooe_crosscheck
