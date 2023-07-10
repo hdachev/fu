@@ -5020,6 +5020,24 @@ pub extern fn runTests()
         }
     `);
 
+    ZERO(`
+        fn clearAndReturn(ref a: i32[]) {
+            a.clear();
+            return a;
+        }
+
+        <alt>
+        fn refOOE(ref a: i32[], b: i32[]) <alt/>
+        fn refOOE(b: i32[], ref a: i32[]) </alt>
+            a ~= b;
+
+        fn main() {
+            mut ints = [ 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 ];
+            refOOE(a: clearAndReturn(ints), b: ints);
+            return ints.len - 10;
+        }
+    `);
+
     // /Borrow checker
 
 
