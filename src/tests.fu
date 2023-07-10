@@ -1501,7 +1501,7 @@ pub extern fn runTests()
         }
     `);
 
-    TODO_cow(`
+    ZERO(`
         <alt>
         noinline fn cow_after_ref_indirect(ref zero: i32, allOnes: i32[]) cow_after_ref(:zero, :allOnes);
         noinline fn cow_after_ref(ref zero: i32, allOnes: i32[])
@@ -1558,7 +1558,7 @@ pub extern fn runTests()
         }
     `);
 
-    TODO_cow(`
+    ZERO(`
         <alt>
         noinline fn cow_after_ref_indirect(ref zeroes: [i32], allOnes: i32[]) cow_after_ref(:zeroes, :allOnes);
         noinline fn cow_after_ref(ref zeroes: [i32], allOnes: i32[])
@@ -1657,7 +1657,7 @@ pub extern fn runTests()
         }
     `);
 
-    TODO_cow(`
+    ZERO(`
         struct TwoVecs {
             ones: i32[];
             twos: i32[];

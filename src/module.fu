@@ -357,7 +357,7 @@ fn isRTL_set(ref o: Overload, rtl: bool)
 fn argsForward(lax RTL: bool, host_args: [Argument], fn,
     seqIdx_start = 0)
 {
-/*
+//*
     mut seqIdx = 0;
 
     mut lastPass = 1;
@@ -366,7 +366,7 @@ fn argsForward(lax RTL: bool, host_args: [Argument], fn,
         for (mut i = 0; i < host_args.len; i++)
         {
             let host_arg = host_args[i];
-            if (!!pass != !!host_arg.type.is_mutref)
+            if (!!pass != (RTL ? !i : !!(host_arg.flags & F_IMPLICIT || host_arg.type.is_mutref)))
             {
                 lastPass = 2;
                 continue;
@@ -399,7 +399,7 @@ fn argsForward(lax RTL: bool, host_args: [Argument], fn,
 
 fn argsReverse(lax RTL: bool, host_args: [Argument], fn)
 {
-/*
+//*
     mut lastPass = 1;
     mut ooe_isLast = true;
     for (mut pass = 2; pass --> lastPass; )
@@ -407,7 +407,7 @@ fn argsReverse(lax RTL: bool, host_args: [Argument], fn)
         for (mut i = host_args.len; i --> 0; )
         {
             let host_arg = host_args[i];
-            if (!!pass != !!host_arg.type.is_mutref)
+            if (!!pass != (RTL ? !i : !!(host_arg.flags & F_IMPLICIT || host_arg.type.is_mutref)))
             {
                 lastPass = 0;
                 continue;

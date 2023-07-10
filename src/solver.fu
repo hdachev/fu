@@ -2443,11 +2443,13 @@ pub fn solve(
         }
         else if (k == "if")
         {
+            mut type = node.type; // TODO DISJOINT
+
             ref items = node.items;
 
             if (PASS_MaybeCopyOrMove && !canDiscard)
                 for (mut i = items.len; i --> 1; )
-                    maybeCopyOrMove(items[i], node.type);
+                    maybeCopyOrMove(items[i], type);
 
             //
             mut postdom0 = _current_fn.postdom;
