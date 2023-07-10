@@ -4414,6 +4414,54 @@ pub extern fn runTests()
     `);
 
     ZERO(`
+        fn check(implicit root: i32[], node: i32[])
+            root.len - node.len;
+
+        fn PASS_borrowCheck(        <fail because of 2:27+4 NOT implicit arg root 6:22+4>
+                     root: i32[])   <pass/>
+            implicit root: i32[])   </fail>
+                check(root);
+
+        fn main()
+            [ 1, 2, 3 ].PASS_borrowCheck();
+    `);
+
+    ZERO(`
+        struct Node { id: i32; items?: Node[]; };
+
+        fn traverse(node: Node, visit) {
+            visit(node);
+            for (mut i = 0; i < node.items.len; i++)
+                traverse(node.items[i], fn visit);
+        }
+
+        // Same as above, but not a closure.
+        fn count(id: i32, implicit root: Node, implicit ref n: i32)
+            traverse(root): |i|
+                if (i.id == id)
+                    n++;
+
+        fn check(ref node: Node) {
+            if (node.items)
+                for (mut i = 0; i < node.items.len; i++)
+                    check(node.items[i]);                   ;; PointlessMustSeq
+            else
+                count(node.id++);
+        }
+
+        fn PASS_borrowCheck(implicit ref root: Node) {
+            implicit mut n: i32;
+            check(root); // <- Usage intersection failure: Node & Node
+            return n;
+        }
+
+        fn main() {
+            mut tree = Node(0, [ Node(2), Node(2) ]);
+            return PASS_borrowCheck(tree) - 1;
+        }
+    `);
+
+    ZERO(`
         pub fn grow_if_oob(ref a: $T[], i: i32) {
             if (a.len <= i) a.grow(i + 1);
             return a[i];
