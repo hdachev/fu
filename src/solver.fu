@@ -9416,29 +9416,32 @@ pub fn solve(
 
             mut ooe_reads:  i32[];
             mut ooe_writes: i32[];
+            mut ooe_argIdx: i32[];
 
-            let ooe_isRTL   = target.isRTL;
-            let ooe_isUndef = !ooe_isRTL;
+            let RTL         = target.isRTL;
+            let ooe_isUndef = !RTL;
 
             ///////////////////////////////////////////////
-            let ooe_START   = ooe_isRTL ? args.len -1 : 0;
             {
                 shadow lax mut ooe_read0  = ooe_read0;
                 shadow lax mut ooe_write0 = ooe_write0;
 
-                for (mut ooe_i = 0; ooe_i < args.len; ooe_i++)
+                argsForward(:RTL, :host_args, |i, seqIdx|
                 {
-                    bck_node(args[ooe_isRTL ? ooe_START - ooe_i : ooe_i]);
+                    ooe_argIdx ~= i;
+
+                    //
+                    bck_node(args[i]);
 
                     let r1 = _current_fn.events.reads.len;
                     let w1 = _current_fn.events.writes.len;
 
-                    if (r1 > ooe_read0)  ooe_reads .grow_oob(ooe_i, fill: ooe_read0) = r1;
-                    if (w1 > ooe_write0) ooe_writes.grow_oob(ooe_i, fill: ooe_write0) = w1;
+                    if (r1 > ooe_read0)  ooe_reads .grow_oob(seqIdx, fill: ooe_read0) = r1;
+                    if (w1 > ooe_write0) ooe_writes.grow_oob(seqIdx, fill: ooe_write0) = w1;
 
                     ooe_read0 = r1;
                     ooe_write0 = w1;
-                }
+                });
             }
             ///////////////////////////////////////////////
 
@@ -9792,8 +9795,8 @@ pub fn solve(
                                     //  Wonder if we shouldn't just order things correctly
                                     //   in the AST and avoid this altogether?
                                     //
-                                    shadow let r = ooe_isRTL ? ooe_START - ooe_ir : ooe_ir;
-                                    shadow let w = ooe_isRTL ? ooe_START - ooe_iw : ooe_iw;
+                                    shadow let r = ooe_argIdx[ooe_ir];
+                                    shadow let w = ooe_argIdx[ooe_iw];
 
                                     let host_arg = host_args[r];
 
