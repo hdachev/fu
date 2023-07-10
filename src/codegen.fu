@@ -1780,7 +1780,7 @@ pub fn cpp_codegen(
         //  so that the ooe_header comes out in the right order.
         let RTL             = target.isRTL;
         let host_args       = ext.args;
-        if (args) argsForward(:RTL, :host_args, |i, host_arg|
+        if (args) argsForward(:RTL, :host_args, |i, host_arg, seqIdx|
         {
             let arg = args[i];
 
@@ -1840,12 +1840,24 @@ pub fn cpp_codegen(
 
                 ooe_crosscheck |= MUSTSEQ_bit;
 
+                fn rest_isPointlessMustSeq()
+                {
+                    argsForward(
+                        :RTL, :host_args,
+                        seqIdx_start: seqIdx + 1,
+                        |shadow i, shadow host_arg|
+                        {
+                            shadow let arg = args[i];
+                            if (!arg.isPointlessMustSeq(host_arg))
+                                return false;
+                        });
+
+                    return true;
+                }
+
                 if (arg.isPointlessMustSeq(ext.args[i])
                         || MUSTSEQ_mask &~ MUSTSEQ_bit < MUSTSEQ_mask
-                            && zip_all( args    [i + 1,     args.len],
-                                        ext.args[i + 1, ext.args.len],
-                                        |shadow arg, shadow host_arg|
-                                            arg.isPointlessMustSeq(host_arg)))
+                            && rest_isPointlessMustSeq)
                 {
                     noteDefect(PointlessMustSeq);
 
