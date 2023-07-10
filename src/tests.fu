@@ -1321,6 +1321,8 @@ pub extern fn runTests()
         }
     `);
 
+    // /Recursion, closures & implicit arguments.
+
 
     //
 
@@ -12125,6 +12127,23 @@ pub extern fn runTests()
             let b = test(4);
             let c = test(16);
             return a == 5 && b == 60 && c == 800 ? 0 : 1;
+        }
+    `);
+
+    ZERO(`
+        fn UnusedArgError(arr: i32[], fn)
+            for (mut i = 0; i < arr.len; i++)
+                fn(hello: arr[i], i?: i);
+
+        fn main() {
+            mut sum = 0;
+            let arr = [ 1, 2, -3 ];
+            arr.UnusedArgError: |lax i, hello|
+                <fail unused arg hello 9:41+5>
+                sum += arr[i];         <pass/>
+                sum += hello;          </fail>
+
+            return sum;
         }
     `);
 
