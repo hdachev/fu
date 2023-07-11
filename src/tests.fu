@@ -84,6 +84,7 @@ pub extern fn runTests()
 
     // Categorizing what doesn't work and why -
 
+    let TODO_aar        = fn TODO;
     let TODO_borrowck   = fn TODO;
     let TODO_disjoint   = fn TODO;
     let TODO_move       = fn TODO;
@@ -4452,6 +4453,45 @@ pub extern fn runTests()
         fn PASS_borrowCheck(implicit ref root: Node) {
             implicit mut n: i32;
             check(root); // <- Usage intersection failure: Node & Node
+            return n;
+        }
+
+        fn main() {
+            mut tree = Node(0, [ Node(2), Node(2) ]);
+            return PASS_borrowCheck(tree) - 1;
+        }
+    `);
+
+    TODO_aar(`
+        struct Node { id: i32; items?: Node[]; };
+
+        fn traverse(node: Node, visit) {
+            visit(node);
+            for (mut i = 0; i < node.items.len; i++)
+                traverse(node.items[i], fn visit);
+        }
+
+        // Same as above, but no implicits.
+        fn count(id: i32, ref root: Node, implicit ref n: i32)
+            traverse(root): |i|
+                if (i.id == id)
+                    n++;
+
+        // AAR: check(ref node, ref root) accepted,
+        //       but (ref root, ref node) rejected.
+        <alt>
+        fn check(ref root: Node, ref node: Node) { <alt/>
+        fn check(ref node: Node, ref root: Node) { </alt>
+            if (node.items)
+                for (mut i = 0; i < node.items.len; i++)
+                    check(:root, node.items[i]);                ;; PointlessMustSeq
+            else
+                count(:root, node.id++);
+        }
+
+        fn PASS_borrowCheck(ref root: Node) {
+            implicit mut n: i32;
+            check(:root, root);
             return n;
         }
 
