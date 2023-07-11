@@ -4895,6 +4895,7 @@ pub fn solve(
                     mut name        = argNode.value;
                     let autocall    = argNode.flags & F_COMPOUND_ID && CompoundArgID_outerSplice(name);
                     let isImplicit  = !!(argNode.flags & F_IMPLICIT);
+                    let isInjected  = !!(argNode.flags & F_INJECTED);
 
                     // ARGUMENTS AT RISK ////////////////////////
                     let argTarget   = argNode.target;
@@ -4981,11 +4982,21 @@ pub fn solve(
 
                     arg.type || isUnspec || BUG("updateScope: Unexpected untyped argument: `" ~ name ~ "`.");
 
-                    if (!isImplicit)
+                    // Previously this was `if (!isImplicit)`,
+                    //  but consider a `fn f(implicit a)`:
+                    //   it's nice to be able to pass `a` as usual, e.g. `f(something)`,
+                    //    when you don't want a `let implicit a = something;` outside,
+                    //     esp given that `implicit` in an arg decl does two things -
+                    //      a] enables implicit defaulting, and
+                    //      b] whitelists the argument for implicit binding downstream.
+                    //
+                    // So, when you only need b], this allows you not to pay for a].
+                    //
+                    if (!isInjected)
                     {
                         if (max != 0x7fffffff.i32)
                             max++;
-                        if (!arg.default)
+                        if (!arg.default && !isImplicit)
                             min++;
                     }
 
