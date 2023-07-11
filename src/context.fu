@@ -322,8 +322,8 @@ pub fn formatCodeSnippet(src!: string, fmt?: CodeFmt, mut highlight!: LineColCha
             let token = highlight[i];
             if (token.line == line_no)
             {
-                let c0 = (token.col - 1     ).max(0       );
-                let c1 = (c0 + token.chars  ).min(line.len);
+                let c0 = (token.col - 1   ).min(line.len).max(0);
+                let c1 = (c0 + token.chars).min(line.len);
 
                 line.splice(c1, 0, ansi::RESET);
                 line.splice(c0, 0, ansi::BAD);

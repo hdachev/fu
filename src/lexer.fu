@@ -32,10 +32,11 @@ pub fn lex(src: string, fname: string): LexerOutput
     fn token(::kind, value: string, idx0: i32, idx1: i32)
     {
         let col = idx0 - lidx;
-        token_c(:kind, :value, :idx0, :idx1, :col);
+        token_lc(:kind, :value, :idx0, :idx1, :line, :col);
     }
 
-    fn token_c(::kind, value: string, idx0!: i32, idx1!: i32, col!: i32)
+    fn token_lc(::kind, value: string, idx0!: i32, idx1!: i32,
+        shadow line!: i32, col!: i32)
     {
         let chars = idx1 - idx0;
         col >= 0 && idx1 >= idx0 && chars >= value.len || assert();
@@ -343,6 +344,7 @@ pub fn lex(src: string, fname: string): LexerOutput
             mut ok  = false;
 
             let col = idx - lidx - 1/* the quote */;
+            let line0 = line;
 
             while (idx < end)
             {
@@ -390,8 +392,8 @@ pub fn lex(src: string, fname: string): LexerOutput
                 if (char && str.len != 1)
                     err_str(:idx0, "Invalid char literal, not single byte: " ~ str.len ~ " bytes long.");
                 else
-                    token_c(char ? "char" : "str",
-                        str, :idx0, :idx1, :col);
+                    token_lc(char ? "char" : "str",
+                        str, :idx0, :idx1, :col, line: line0);
             }
         }
 
