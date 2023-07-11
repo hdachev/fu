@@ -1802,9 +1802,9 @@ pub fn solve(
             || target.solved.token;
     }
 
-    fn explainWhichFn(t: Target, conversions?: Target[][], backtrack!?: string)
+    fn explainWhichFn(t: Target, conversions?: Target[][], backtrack!?: string, fmt = NoContext)
     {
-        mut result = t ~ " at " ~ t.token.addr_and_snippet(NoContext, :backtrack);
+        mut result = t ~ " at " ~ t.token.addr_and_snippet(:fmt, :backtrack);
 
         for (mut i = 0; i < conversions.len; i++)
         {
@@ -7336,7 +7336,9 @@ pub fn solve(
     fn injectImplicitArg(id: string, type: Type, becauseOf!: Target): Target
     {
         if (!_current_fn.items || _current_fn.out.flags & F_EXTERN)
-            fail("No implicit " ~ id.qBAD ~ " in scope, needed to call " ~ becauseOf ~ ".");
+            fail("No implicit " ~ id.qBAD ~ ": " ~ humanizeType(type) ~ " in scope, needed to call " ~ becauseOf ~ ":\n"
+                ~ qSTACK_implicit(target: becauseOf,
+                        :id, :type, node: becauseOf.solved));
 
         // Reuse existing or add new argnode.
         for (mut i = 0; i < _current_fn.items.len + FN_ARGS_BACK; i++)
@@ -7949,6 +7951,87 @@ pub fn solve(
                  ~ peek;
         }
 
+        return "";
+    }
+
+    fn qSTACK_implicit(target: Target, node: SolvedNode, id: string, type: Type, seen!?: Target[])
+    {
+        //////////////////////////////////////////////////
+        let implicit _current_fnort = target;
+        //////////////////////////////////////////////////
+
+        mut candidates = "";
+
+        shadow let seen = seen ~ target;
+        SLOW_traverse(node): |callsite|
+        {
+            // Try to report places where you might be
+            //  missing an `implicit` or some such.
+            //
+            if (callsite.kind == "let")
+            {
+                let candidate = callsite.target;
+                if ( !(candidate.flags & F_INJECTED)
+                    && candidate.name == id
+                    && isAssignableAsArgument(host: type, candidate.type))
+                {
+                    candidates ~= "\n        Possible candidate in " ~ target ~ ": ";
+                    if !(candidate.flags & F_IMPLICIT)
+                        candidates ~= "NOT implicit ".qBAD;
+
+                    candidates ~= explainWhichFn(candidate, fmt: FullContext);
+                }
+            }
+
+            if (callsite.kind != "call" || callsite.target.isLocal)
+                continue;
+
+            if (seen.has(callsite.target))
+                continue;
+
+            :TRY_FIND_IMPLICIT_ARG
+            {
+                let host_args = callsite.target.args;
+                for (mut i = 0; i < host_args.len; i++)
+                {
+                    let host_arg = host_args[i];
+                    if (host_arg.flags & F_IMPLICIT &&
+                        host_arg.name == id &&
+                        isAssignableAsArgument(host: host_arg.type, type))
+                    {
+                        break :TRY_FIND_IMPLICIT_ARG;
+                    }
+                }
+
+                continue;
+            }
+
+            let peek = qSTACK_implicit(callsite.target, callsite.target.solved, :id, :type, :seen);
+
+            return "\n            "
+                 ~ "because of call to " ~ callsite.target
+                 ~ " at " ~ callsite.token.addr_and_snippet
+                 ~ peek
+                 ~ candidates;
+        }
+
+        // Alternatively, output the declaration.
+        let host_args = target.args;
+        for (mut i = 0; i < host_args.len; i++)
+        {
+            let host_arg = host_args[i];
+            if (host_arg.flags & F_IMPLICIT &&
+                host_arg.name == id &&
+                isAssignableAsArgument(host: host_arg.type, type))
+            {
+                let local = nested(host_arg.local);
+
+                return "\n            "
+                     ~ "because of " ~ explainWhichFn(local, fmt: FullContext);
+            }
+        }
+
+        //
         return "";
     }
 

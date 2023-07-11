@@ -241,6 +241,7 @@ pub fn formatTokenCoord(fname!: string, token: LineColChars)
 
 pub flags CodeFmt
 {
+    FullContext
     NoLeadContext
     NoTailContext
     NoContext
