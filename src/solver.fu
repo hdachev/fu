@@ -997,10 +997,13 @@ pub fn solve(
 
     fn explainTypeDiff(a: Type, b: Type, sep = "<->")
     {
-        let no_quals    = (a.quals & q_TAGS ) != (b.quals & q_TAGS );
+        let no_quals    = (a.quals & q_TAGS) == (b.quals & q_TAGS);
         let usage       = (a.quals & q_USAGE) != (b.quals & q_USAGE);
+        let lt          = a.lifetime != b.lifetime;
 
-        return humanizeType(a, :no_quals, :usage) ~ " " ~ sep ~ " " ~ humanizeType(b, :no_quals, :usage);
+        return humanizeType(a, :no_quals, :usage, :lt)
+             ~ " " ~ sep ~ " "
+             ~ humanizeType(b, :no_quals, :usage, :lt);
     }
 
     fn str(n: SolvedNode)
@@ -2381,8 +2384,14 @@ pub fn solve(
 
         fn trackVarUsage(ref usage: Type[], index: i32, shadow slot: Type)
         {
-            if (SELF_TEST && slot.is_rx_copy && slot.isIrrelevant)
-                BUG(nested(index) ~ ", trackVarUsage: slot is both copy & irrelevant: " ~ slot.humanizeType);
+            if (SELF_TEST)
+            {
+                if (slot.is_rx_copy && slot.isIrrelevant)
+                    BUG(nested(index) ~ ", trackVarUsage: slot is both copy & irrelevant: " ~ slot.humanizeType);
+
+                if (slot.is_ref2temp)
+                    BUG(nested(index) ~ ", trackVarUsage: slot is ref2temp: " ~ slot.humanizeType(lt: true));
+            }
 
             shadow ref usage = usage.grow_if_oob(index);
             if (!usage)
@@ -6626,6 +6635,13 @@ pub fn solve(
             ////////////////////////////////////////////////////////////////
 
             let target = out.target = Binding(:id, :out.flags, :out.type, :shadows);
+
+            //
+            if (SELF_TEST)
+                !out.type.is_ref2temp || isArg || BUG(
+                    "solveLet_createBindingAndGetLetdef: Non-argument is_ref2temp");
+
+            //
             target.solved_set(out);
 
             // List.
@@ -6639,7 +6655,7 @@ pub fn solve(
         //  which aren't runtime arguments, we need them cleaned up during spec
         //   so we don't have to deal with them all over the place like this
         //
-        if (out.flags & F_ARG)
+        if (isArg)
             return out;
 
         return createEmpty();
@@ -7321,8 +7337,20 @@ pub fn solve(
                 ? target.GET_mut.solved
                 : arg;
 
-            if (arg.value == id)
+            if (arg.flags & F_IMPLICIT &&
+                arg.value == id)
             {
+                if (SELF_TEST)
+                {
+                    // Got this when there was a missing F_IMPLICIT check here,
+                    //  and we started matching regular arguments which were ref2temps on the out.solved,
+                    //   same thing for implicits, but they match from scope where they get the ref2binding.
+                    //
+                    arg.type == target.type || BUG(
+                        "injectImplicitArg: arg.type != target.type:\n\n\t    "
+                            ~ explainTypeDiff(arg.type, target.type));
+                }
+
                 mut super = intersectionType(
                     :id, "Implicit argument collision: ",
                     add_ref(type, arg.type.lifetime), arg.type);
@@ -8304,7 +8332,7 @@ pub fn solve(
                     }
                     else
                     {
-                        host_arg.flags & F_IMPLICIT || fail(
+                        host_arg.flags & F_IMPLICIT || BUG(
                             "tryMatch: about to implicit-bind a non-implicit argument: `"
                                 ~ host_arg.name ~ ": " ~ humanizeType(host_arg.type) ~ "`.");
 
