@@ -254,6 +254,58 @@ pub fn ZERO(
         }
     }
 
+    // <flip><flip/></flip>
+    for (mut i = 0; i < sources.len; i++)
+    {
+        for (;;)
+        {
+            ref src = sources[i];
+
+            mut start0 = src.find("<flip>");
+            if (start0 < 0)
+                break;
+
+            mut end0 = src.find("</flip>", start: start0);
+            end0 >= 0 || throw("No closing `</flip>` for `<flip>`.");
+
+            // Avoid trailing spaces.
+            let start1 = start0 + 6;
+            let end1   = end0   + 7;
+
+            start0 = src.unindent_left(start0);
+            end0   = src.unindent_left(end0);
+
+            let prefix = src.slice(0, start0);
+            let suffix = src.slice(end1, src.len);
+
+            mut split  = src.slice(start1, end0).split("<flip/>");
+
+            if (split.len != 2)
+                throw("We expect exactly one `<flip/>` in a `<flip></flip>`.");
+
+            // Unindent them all.
+            split.each(|ref part|
+                part.shrink(
+                    part.unindent_left(part.len)));
+
+            for (mut j = split.len; j --> 0; )
+            {
+                mut a = split[0];
+                mut b = split[1];
+
+                if (j)
+                    swap(a, b);
+
+                sources[i] = prefix ~ a ~ b ~ suffix;
+
+                // Re-run everything but the last alt,
+                //  which is gonna run anyway below.
+                if (j)
+                    ZERO(:sources);
+            }
+        }
+    }
+
     // <split/>
     for (mut i = 0; i < sources.len; i++)
     {
