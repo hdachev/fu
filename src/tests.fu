@@ -2998,7 +2998,7 @@ pub extern fn runTests()
     // Borrow checker.
 
     ZERO(`
-        fn test(ref a: i32, ref b: i32) {
+        noinline fn test(ref a: i32, ref b: i32) {
             return (++a) + 10 * (++b);                          ;; N_AARMustSeq
         }
 
@@ -3015,10 +3015,10 @@ pub extern fn runTests()
     `);
 
     ZERO(`
-        pub fn test_inner(ref a: i32, ref b: i32)
+        noinline fn test_inner(ref a: i32, ref b: i32)
             (++a) + 10 * (++b);                                 ;; N_AARMustSeq
 
-        pub fn test_outer(ref a: i32, ref b: i32)
+        noinline fn test_outer(ref a: i32, ref b: i32)
             test_inner(a, b);
 
         fn main() {                                             ;; N_AARSoftRisk
@@ -3034,7 +3034,7 @@ pub extern fn runTests()
     `);
 
     ZERO(`
-        fn test(ref a: i32[]) {
+        noinline fn test(ref a: i32[]) {
             ref b = a[0];
             if (a.len & 1) {
                 <fail invalidate 9:13 6:19>
@@ -3057,7 +3057,7 @@ pub extern fn runTests()
     ZERO(`
         nocopy struct nci32 { i: i32; };
 
-        fn test(ref a: nci32, b: nci32) a.i++ || b.i;
+        noinline fn test(ref a: nci32, b: nci32) a.i++ || b.i;
         fn main() {
             mut x = nci32(0);
             <fail arguments b and a both alias var x 6:17+1>
@@ -3069,7 +3069,7 @@ pub extern fn runTests()
     `);
 
     ZERO(`
-        fn test(ref a: i32[]) {
+        noinline fn test(ref a: i32[]) {
             ref b = a[0];
             if (a.len & 1) { // Lets be extra sure here.
                 <fail invalidate 7:17 6:19>
@@ -3091,7 +3091,7 @@ pub extern fn runTests()
     `);
 
     ZERO(`
-        fn test(ref a: i32[]) {
+        noinline fn test(ref a: i32[]) {
             ref b = a[0];
             for (mut i = 2; i --> 0; )
             {
@@ -3116,7 +3116,7 @@ pub extern fn runTests()
     `);
 
     ZERO(`
-        fn test(ref a: i32[]) {
+        noinline fn test(ref a: i32[]) {
             ref b = a[0];
             for (mut i = 2; i --> 0; )
             {
@@ -3144,7 +3144,7 @@ pub extern fn runTests()
 
     ZERO(`
         // both args alias, but there's no risk of inval.
-        fn incr_a_or_b(ref a: i32, ref b: i32)
+        noinline fn incr_a_or_b(ref a: i32, ref b: i32)
             (a || b)++;
 
         fn main() {
@@ -3210,7 +3210,7 @@ pub extern fn runTests()
     ZERO(`
         // a can alias b
         // c can alias d
-        pub fn ab_cd (ref a: i32, ref b: i32, ref c: i32, ref d: i32) {
+        noinline fn ab_cd(ref a: i32, ref b: i32, ref c: i32, ref d: i32) {
             ref ab = a || b;
             ref cd = c || d;
             ++++ab;
@@ -3233,7 +3233,7 @@ pub extern fn runTests()
         struct X { i: i32; j: i32; };
         // a can alias b
         // c can alias d
-        pub fn ab_cd_defer(ref a: X, ref b: X, ref c: X, ref d: X, j?: bool) {
+        noinline fn ab_cd_defer(ref a: X, ref b: X, ref c: X, ref d: X, j?: bool) {
             ref ab = a || b;
             defer {
                 ref abi = j ? ab.j : ab.i;
@@ -3259,14 +3259,14 @@ pub extern fn runTests()
     ZERO(`
         // a can alias b
         // c can alias d
-        pub fn ab_cd_inner (ref a: i32, ref b: i32, ref c: i32, ref d: i32) {
+        noinline fn ab_cd_inner(ref a: i32, ref b: i32, ref c: i32, ref d: i32) {
             ref ab = a || b;
             ref cd = c || d;
             ++++ab;
             ++++cd;
         }
 
-        pub fn ab_cd_outer (ref a: i32, ref b: i32, ref c: i32, ref d: i32)
+        noinline fn ab_cd_outer(ref a: i32, ref b: i32, ref c: i32, ref d: i32)
             ab_cd_inner(a, b, c, d);
 
         fn main() {
@@ -3286,8 +3286,9 @@ pub extern fn runTests()
         // c can alias d
         // e can alias f
         // g can alias h
-        pub fn abcd_efgh(ref a: i32, ref b: i32, ref c: i32, ref d: i32,
-                         ref e: i32, ref f: i32, ref g: i32, ref h: i32)
+        noinline fn abcd_efgh(
+            ref a: i32, ref b: i32, ref c: i32, ref d: i32,
+            ref e: i32, ref f: i32, ref g: i32, ref h: i32)
         {
             ref ab = a || b; ref cd = c || d; ref abcd = ab || cd;
             ref ef = e || f; ref gh = g || h; ref efgh = ef || gh;
@@ -3299,7 +3300,7 @@ pub extern fn runTests()
             mut ab = 0; mut cd = 0;
             mut ef = 0; mut gh = 0;
 
-            <fail alias>
+            <fail alias var cd 17:29+2>
             abcd_efgh(ab, ab, cd, gh, ef, ef, cd, gh); <pass/>
             abcd_efgh(ab, ab, cd, cd, ef, ef, gh, gh); </fail>
 
@@ -3308,7 +3309,7 @@ pub extern fn runTests()
     `);
 
     ZERO(`
-        pub fn incr_a_or_b_and_b_or_a(ref a: i32, ref b: i32) {
+        noinline fn incr_a_or_b_and_b_or_a(ref a: i32, ref b: i32) {
             ref x = a || b; ++x;
             ref y = b || a; ++y;                                ;; N_AARSoftRisk
         }
@@ -3331,7 +3332,7 @@ pub extern fn runTests()
         // same as below -
         //  but using a helper variable
         //   which provides a "name" for the outcome of a|b.
-        fn incr_a_or_b_by2_via_x(ref a: i32, ref b: i32) {
+        noinline fn incr_a_or_b_by2_via_x(ref a: i32, ref b: i32) {
             ref x = a || b;
             ++++x;
         }
@@ -3352,7 +3353,7 @@ pub extern fn runTests()
     ZERO(`
         // same as above -
         //  but notice we increment twice, which breaks current setup.
-        fn incr_a_or_b_by2(ref a: i32, ref b: i32)
+        noinline fn incr_a_or_b_by2(ref a: i32, ref b: i32)
             ++++(a || b);
 
         fn main() {
@@ -3369,7 +3370,7 @@ pub extern fn runTests()
     `);
 
     ZERO(`
-        fn alias(ref arr: i32[], ref item: i32) {
+        noinline fn alias(ref arr: i32[], ref item: i32) {
             arr ~= 1;
             return item;
         }
@@ -3387,7 +3388,7 @@ pub extern fn runTests()
     `);
 
     ZERO(`
-        fn test(ref a: i32[], ref b: i32[]) {
+        noinline fn test(ref a: i32[], ref b: i32[]) {
             <fail invalidate 7:28 6:30>
             ref aa = a[0]; <pass/>
             fn  aa() a[0]; </fail>
@@ -3401,7 +3402,7 @@ pub extern fn runTests()
     `);
 
     ZERO(`
-        fn test(ref a: i32[], ref b: i32[]) {
+        noinline fn test(ref a: i32[], ref b: i32[]) {
             <fail invalidate 7:26 6:30>
             ref aa = a[0]; <pass/>
             fn  aa() a[0]; </fail>
@@ -3414,8 +3415,8 @@ pub extern fn runTests()
     `);
 
     ZERO(`
-        fn noop(x) x;
-        fn test(ref a: i32[], ref b: i32[]) {
+        noinline fn noop(x) x;
+        noinline fn test(ref a: i32[], ref b: i32[]) {
             <fail invalidate 8:31 7:30>
             ref aa = a[0]; <pass/>
             fn  aa() a[0]; </fail>
@@ -3428,8 +3429,8 @@ pub extern fn runTests()
     `);
 
     ZERO(`
-        fn either(a, b) a || b;
-        fn test(ref a: i32[], ref b: i32[]) {
+        noinline fn either(a, b) a || b;
+        noinline fn test(ref a: i32[], ref b: i32[]) {
             <fail invalidate 8:31 7:30>
             ref aa = a[0]; <pass/>
             fn aa()  a[0]; </fail>
@@ -3443,7 +3444,7 @@ pub extern fn runTests()
     `);
 
     ZERO(`
-        fn what(ref cond: i32, ref cons: i32)
+        noinline fn what(ref cond: i32, ref cons: i32)
             cond && (cons += 1);
 
         fn main() {
@@ -3458,7 +3459,7 @@ pub extern fn runTests()
             extended: i32[];
         };
 
-        fn which(ref t: Target, i: i32) i & 1
+        noinline fn which(ref t: Target, i: i32) i & 1
             ? t.overload
             : t.extended;
 
