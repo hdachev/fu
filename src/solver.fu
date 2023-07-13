@@ -6469,6 +6469,8 @@ pub fn solve(
             ? SolvedNode
             : init;
 
+        _here = node.token;
+
         return solveLetLike_dontTouchScope(
             node.value, :flags,
             :annot, :init);
@@ -9622,10 +9624,9 @@ pub fn solve(
 
                                 for (shadow mut i = 0; i < inter.uni0n.len; i++)
                                 {
-                                    let o = inter.uni0n[i];
+                                    let t = nested(inter.uni0n[i].index);
 
-                                    err ~=   "\n                ";
-                                    err ~= o;
+                                    err ~= "\n            " ~ explainWhichFn(t, fmt: FullContext);
                                 }
 
                                 _here = args[i0].token;

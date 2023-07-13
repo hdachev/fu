@@ -3060,7 +3060,7 @@ pub extern fn runTests()
         fn test(ref a: nci32, b: nci32) a.i++ || b.i;
         fn main() {
             mut x = nci32(0);
-            <fail arguments b and a both alias var x>
+            <fail arguments b and a both alias var x 6:17+1>
             ref y = x;                        <pass/>
             let y = nci32(0);                 </fail>
 
@@ -4536,7 +4536,7 @@ pub extern fn runTests()
         fn main() {
             mut arr = [ 1 ];
 
-            <fail both alias arr>
+            <fail both alias arr 15:17+3>
             ref barr = arr; <pass/>
             mut barr = arr; </fail>
 
@@ -4699,7 +4699,7 @@ pub extern fn runTests()
                 }
             }
 
-            arr.veach: |i| sum += <fail both alias arr>
+            arr.veach: |i| sum += <fail both alias arr 3:17+3>
                             (i *= 2)            <pass/>
                             (i  * 2)            </fail>;
 
@@ -4944,7 +4944,7 @@ pub extern fn runTests()
         fn main() {
             mut root = Node([ Node ]);
 
-            <fail both alias root>
+            <fail both alias root 12:17+4>
             soft_risk_outer(root, root);    <pass/>
             mut cpy = root;
             soft_risk_outer(root, cpy);     </fail>
