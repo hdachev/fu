@@ -9128,15 +9128,18 @@ pub fn solve(
 
         fn softRiskSafe(arg: SolvedNode)
         {
-            // TODO FIX this is idiotic, the problem is that
-            //  when we have value with lt'x, we don't know if
-            //   - this points directly to the bytes of x
+            // TODO FIX REFERENCE STABILITY: the problem is that
+            //  when we have a ref with some lt, we don't know if
+            //   - it points directly to the bytes of x
             //   - or is some kind of computed thing,
-            //      e.g. ptr to rellocatable mem or smth.
+            //      e.g. ptr to some rellocatable mem it owns.
             //
-            // This is the major complication to getting disjoint stuff working,
-            //  it's kinda easy for vars but what do we do with arg exprs here,
-            //   it's that we don't really have any way to tell what's what.
+            // TODO FIX this can't be currently correct for views,
+            //  where an argument that evaluates later can easily
+            //   invalidate the view.
+            //
+            // Currently appears to be addressed
+            //  by the TODO_FIX_isArray in updateScope.
             //
             return isFieldChain(arg);
         }
@@ -9835,7 +9838,7 @@ pub fn solve(
                                                         //   direct use of arguments without intermediate bindings,
                                                         //    and here we're introducing an intermedite binding - the callee argument.
                                                         //
-                                                        trySoft: false)
+                                                        trySoft: softRiskSafe(arg))
 
                                                     : !RESOLVE_byTempCopy(:callsite, r))
                                             {
