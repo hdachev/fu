@@ -2964,11 +2964,7 @@ pub fn solve(
                                     o.kind == "var" || BUG("cannotCOW_climbParents found a non-var: " ~ o);
 
                                     // Climb parents.
-                                    if (!(o.flags & (F_MUT | F_ARG)))
-                                    {
-                                        let init = o.solved.items[LET_INIT];
-                                        cannotCOW_climbParents(init.type.lifetime);
-                                    }
+                                    cannotCOW_climbParents(Lifetime_climbType(o).lifetime);
 
                                     // Check children.
                                     cannotCOW_descendChildren(index);
@@ -5975,7 +5971,6 @@ pub fn solve(
         let node = o.solved;
 
         return node.is_ref && !(o.flags & F_ARG)
-            && node.items
             && node.items[LET_INIT].type;
     }
 
