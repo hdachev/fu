@@ -1726,7 +1726,7 @@ pub extern fn runTests()
         }
     `);
 
-    TODO_cow(`
+    TODO_cow(currently: "both alias arr 24:17+3", `
         noinline fn test(ref barr: i32[][], ref x: i32[]) {
             for (mut i = 0; i < x.len; i++)
                 x[i] += 2;

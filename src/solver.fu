@@ -2348,9 +2348,12 @@ pub fn solve(
             if (PASS_MaybeCopyOrMove)
             {
                 shadow ref node = GET_mut(node.target).solved;
+
+                mut type = node.type; // TODO DISJOINT
+
                 ref init = node.items[LET_INIT];
                 if (init)
-                    maybeCopyOrMove(init, node.type);
+                    maybeCopyOrMove(init, type);
             }
 
             relaxBlockVar(node.target, :relax_mask, :canDiscard);
@@ -2400,6 +2403,8 @@ pub fn solve(
 
         if (k == "and" || k == "or")
         {
+            let type = node.type; // TODO DISJOINT
+
             let rest = !canDiscard && (k == "or" || slot.is_mutref && CANNOT_definit_mutrefs)
                 ? slot
                 : t_proposition;
@@ -2409,7 +2414,7 @@ pub fn solve(
             let mcomOrItems = k == "or"
                 && PASS_MaybeCopyOrMove
                 && !canDiscard
-                && !node.type.is_boolean;
+                && !type.is_boolean;
 
             ref items = node.items;
             for (mut i = items.len; i --> 0; )
@@ -2417,7 +2422,7 @@ pub fn solve(
                 ref item = items[i];
 
                 if (mcomOrItems)
-                    maybeCopyOrMove(item, node.type);
+                    maybeCopyOrMove(item, type);
 
                 propagateType(item, :relax_mask, i == items.len - 1 ? slot : rest);
 
@@ -2443,7 +2448,7 @@ pub fn solve(
         }
         else if (k == "if")
         {
-            mut type = node.type; // TODO DISJOINT
+            let type = node.type; // TODO DISJOINT
 
             ref items = node.items;
 
@@ -2968,6 +2973,33 @@ pub fn solve(
 
                                     // Check children.
                                     cannotCOW_descendChildren(index);
+
+                                    // GLOBAL COMPONENT
+                                    // Here we're adding stuff to the arguments-at-risk bitmasks,
+                                    //  to prevent COW copies to be created while there are outstanding
+                                    //   writeable refs to their contents, but indirectly,
+                                    //    via aliased function arguments.
+                                    ref flow = _current_fn.flow;
+                                    let arg_position = flow.arg_positions.unless_oob(index);
+                                    if (arg_position)
+                                    {
+                                        // Let's just hard risk all mutref arguments for starters,
+                                        //  we'll be relaxing this later as more practical examples become available.
+                                        let arg_targets = flow.arg_targets;
+                                        for (shadow mut i = 0; i < arg_targets.len; i++)
+                                        {
+                                            let t = arg_targets[i];
+                                            if (!t)
+                                                continue;
+
+                                            shadow let o = GET(nested(t));
+                                            if (o.solved.type.is_mutref)
+                                            {
+                                                flow.at_soft_risk.grow_if_oob(t).set::add(index);
+                                                flow.at_hard_risk.grow_if_oob(t).set::add(index);
+                                            }
+                                        }
+                                    }
                                 }
                             }
                         }
