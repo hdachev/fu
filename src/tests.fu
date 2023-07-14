@@ -84,6 +84,7 @@ pub extern fn runTests()
 
     // Categorizing what doesn't work and why -
 
+    let TODO_structs    = fn TODO;
     let TODO_aar        = fn TODO;
     let TODO_borrowck   = fn TODO;
     let TODO_disjoint   = fn TODO;
@@ -1779,6 +1780,45 @@ pub extern fn runTests()
             );
 
             return snap(:s, 0).scope_skip.len - 3;
+        }
+    `);
+
+    TODO_structs(`
+        // This one unrelated to COW but variation of test above.
+        <flip>
+        struct Ephemeral { // When first, we cg declarations in the wrong order
+            id:             i32;
+            scope_skip?:    ScopeSkip;
+        };
+        <flip/>
+        struct ScopeSkip { // When first, we complain about recursive types
+            left:           Ephemeral[];
+            right:          Ephemeral[];
+        };
+        </flip>
+
+        struct SolverState {
+            _scope_skip:    ScopeSkip;
+            _ephs:          Ephemeral[];
+        };
+
+        fn snap(i: i32, ref s: SolverState) {
+            mut scope_skip  = s._scope_skip;
+            ref eph         = s._ephs[i];
+            eph.scope_skip  = scope_skip;
+            return eph;
+        }
+
+        fn main() {
+            mut s = SolverState(
+                _scope_skip: ScopeSkip(
+                    [ Ephemeral(1), Ephemeral(2), Ephemeral(3) ],
+                    [ Ephemeral(4), Ephemeral(5) ]
+                ),
+                _ephs:       [ Ephemeral(4) ],
+            );
+
+            return snap(:s, 0).scope_skip.left.len - 3;
         }
     `);
 
