@@ -181,8 +181,12 @@ pub fn ZERO(
                 let end     = fail.unindent_left(fail.len);
                 sources[i]  = prefix ~ fail[0, end] ~ suffix;
 
+                // Don't print errors here, we expect them.
+                shadow mut options = options;
+                options.dev |= DEV_ExpectFail;
+
                 // Each fail variant must throw.
-                try ZERO(:sources);
+                try ZERO(:sources, :options);
                 catch (e)
                 {
                     verify_errmsg("<fail>", :e, :msg);
@@ -249,7 +253,7 @@ pub fn ZERO(
                 // Re-run everything but the last alt,
                 //  which is gonna run anyway below.
                 if (j)
-                    ZERO(:sources);
+                    ZERO(:sources, :options);
             }
         }
     }
@@ -301,7 +305,7 @@ pub fn ZERO(
                 // Re-run everything but the last alt,
                 //  which is gonna run anyway below.
                 if (j)
-                    ZERO(:sources);
+                    ZERO(:sources, :options);
             }
         }
     }
@@ -328,7 +332,7 @@ pub fn ZERO(
             let without = src[0, start0] ~ src[start1, src.len];
 
             sources[i]  = without;
-            ZERO(:sources);
+            ZERO(:sources, :options);
 
             // Continue with the greater modules count here.
             sources[i]  = moduleA;
@@ -337,6 +341,9 @@ pub fn ZERO(
     }
 
     //
+    defer:err if !(options.dev & DEV_ExpectFail)
+        println("\nFAILING TESTCASE:\n" ~ sources.join("\n"));
+
     mut ok_defects_by_insrc: CGDefects[];
     mut expectations: string[][];
     shadow mut options = sources.map(|_| options);
@@ -646,7 +653,7 @@ pub fn TODO(
     currently!?: string)
 {
     try {
-        ZERO(:sources);
+        ZERO(:sources, options: Options(dev: DEV_ExpectFail));
     }
     catch (e) {
         if (currently)
