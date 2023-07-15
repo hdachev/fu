@@ -1742,7 +1742,7 @@ pub extern fn runTests()
 
         noinline fn outer(ref a: i32[][], ref b: i32[][]) {
             ref x = a[0];
-            mut barr = b;
+            mut barr = b;           ;; N_COWRestrict
             test(:barr, x);
 
             return barr;

@@ -205,6 +205,8 @@ flags SolverNotes: i32
 
     N_SD_HasStaticInit
     N_SD_ExternPrivates
+
+    N_COWRestrict
 }
 
 

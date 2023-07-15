@@ -2995,6 +2995,8 @@ pub fn solve(
                                             shadow let o = GET(nested(t));
                                             if (o.solved.type.is_mutref)
                                             {
+                                                makeNote(N_COWRestrict);
+
                                                 flow.at_soft_risk.grow_if_oob(t).set::add(index);
                                                 flow.at_hard_risk.grow_if_oob(t).set::add(index);
                                             }
