@@ -1434,14 +1434,14 @@ pub extern fn runTests()
 
     // COW
 
-    TODO_cow(currently: "COW will break 8:27+4", `
+    TODO_cow(currently: "COW will break (8:27+4|8:41+4)", `
         fn main() {
             mut nums: i32[];
             for (mut i = 0; i < 100; i++)
                 nums ~= 1;
 
             ref zero    = nums[nums.len / 2];
-            let allOnes = nums;
+            let allOnes = <alt>nums<alt/>indirect_copy(nums)</alt>;
 
             zero = 0;
 
@@ -1452,9 +1452,14 @@ pub extern fn runTests()
 
             return zero == 0 && o == 100 ? 0 : 1;
         }
+
+        noinline fn indirect_copy(arr: i32[])
+            arr.len & 1
+                ? arr[0, arr.len / 2] ~ arr[arr.len / 2, arr.len]
+                : arr; // <- we take this branch
     `);
 
-    TODO_cow(currently: "COW will break 11:34+2", `
+    TODO_cow(currently: "COW will break (11:34+2|11:48+2)", `
         fn main() {
             mut nums: i32[];
             for (mut i = 0; i < 100; i++)
@@ -1464,7 +1469,7 @@ pub extern fn runTests()
 
             let OPAQUE  = nums.len == 100*zero;
             let woot    = OPAQUE && nums;
-            let allOnes = OPAQUE && woot;
+            let allOnes = <alt>OPAQUE && woot<alt/>indirect_copy(OPAQUE && woot)</alt>;
 
             zero = 0;
 
@@ -1475,9 +1480,14 @@ pub extern fn runTests()
 
             return zero == 0 && o == 100 ? 0 : 1;
         }
+
+        noinline fn indirect_copy(arr: i32[])
+            arr.len & 1
+                ? arr[0, arr.len / 2] ~ arr[arr.len / 2, arr.len]
+                : arr; // <- we take this branch
     `);
 
-    TODO_cow(currently: "COW will break 13:27+4", `
+    TODO_cow(currently: "COW will break (13:27+4|13:41+4)", `
         fn main() {
             mut nums: i32[];
             for (mut i = 0; i < 100; i++)
@@ -1489,7 +1499,7 @@ pub extern fn runTests()
             mut other   = 0;
             ref zero    = OPAQUE ? woot : other;
 
-            let allOnes = nums;
+            let allOnes = <alt>nums<alt/>indirect_copy(nums)</alt>;
 
             zero = 0;
 
@@ -1500,6 +1510,11 @@ pub extern fn runTests()
 
             return zero == 0 && o == 100 ? 0 : 1;
         }
+
+        noinline fn indirect_copy(arr: i32[])
+            arr.len & 1
+                ? arr[0, arr.len / 2] ~ arr[arr.len / 2, arr.len]
+                : arr; // <- we take this branch
     `);
 
     ZERO(`
@@ -1529,18 +1544,23 @@ pub extern fn runTests()
             <alt>
             return cow_after_ref(           <alt/>
             return cow_after_ref_indirect(  </alt>
-                zero: nums[nums.len / 2], allOnes: nums);
+                zero: nums[nums.len / 2], allOnes: <alt>nums<alt/>indirect_copy(nums)</alt>);
         }
+
+        noinline fn indirect_copy(arr: i32[])
+            arr.len & 1
+                ? arr[0, arr.len / 2] ~ arr[arr.len / 2, arr.len]
+                : arr; // <- we take this branch
     `);
 
-    TODO_cow(currently: "COW will break 8:27+4", `
+    TODO_cow(currently: "COW will break (8:27+4|8:41+4)", `
         fn main() {
             mut nums: i32[];
             for (mut i = 0; i < 100; i++)
                 nums ~= 1;
 
             ref zeroes  = nums[10:20];
-            let allOnes = nums;
+            let allOnes = <alt>nums<alt/>indirect_copy(nums)</alt>;
 
             for (mut i = 0; i < zeroes.len; i++)
                 zeroes[i] = 0;
@@ -1557,6 +1577,11 @@ pub extern fn runTests()
 
             return z == 10 && o == 100 ? 0 : 1;
         }
+
+        noinline fn indirect_copy(arr: i32[])
+            arr.len & 1
+                ? arr[0, arr.len / 2] ~ arr[arr.len / 2, arr.len]
+                : arr; // <- we take this branch
     `);
 
     ZERO(`
@@ -1592,14 +1617,19 @@ pub extern fn runTests()
             <alt>
             return cow_after_ref(           <alt/>
             return cow_after_ref_indirect(  </alt>
-                zeroes: nums[10:20], allOnes: nums);
+                zeroes: nums[10:20], allOnes: <alt>nums<alt/>indirect_copy(nums)</alt>);
         }
+
+        noinline fn indirect_copy(arr: i32[])
+            arr.len & 1
+                ? arr[0, arr.len / 2] ~ arr[arr.len / 2, arr.len]
+                : arr; // <- we take this branch
     `);
 
-    TODO_cow(currently: "COW will break 4:31+1", `
+    TODO_cow(currently: "COW will break (4:31+1|4:45+1)", `
         fn test(ref nums: i32[][]) {
             ref zeroes  = nums[nums.len / 2];
-            mut allOnes = nums[nums.len / 2];
+            mut allOnes = <alt>nums[nums.len / 2]<alt/>indirect_copy(nums[nums.len / 2])</alt>;
 
             for (mut i = 0; i < zeroes.len; i++)
                 zeroes[i] = 0;
@@ -1624,9 +1654,14 @@ pub extern fn runTests()
 
             return test(nums);
         }
+
+        noinline fn indirect_copy(arr: i32[])
+            arr.len & 1
+                ? arr[0, arr.len / 2] ~ arr[arr.len / 2, arr.len]
+                : arr; // <- we take this branch
     `);
 
-    TODO_cow(currently: "COW will break 15:27+4", `
+    TODO_cow(currently: "COW will break (15:27+4|15:41+4)", `
         struct TwoVecs {
             ones: i32[];
             twos: i32[];
@@ -1640,7 +1675,7 @@ pub extern fn runTests()
             }
 
             ref zero    = orig.ones[orig.ones.len / 2];
-            let all     = orig;
+            let all     = <alt>orig<alt/>indirect_copy(orig)</alt>;
 
             zero = 0;
 
@@ -1656,6 +1691,15 @@ pub extern fn runTests()
 
             return zero == 0 && o == 100 && t == 100 ? 0 : 1;
         }
+
+        noinline fn indirect_copy(tv: TwoVecs)
+            TwoVecs(ones: indirect_copy(tv.ones),
+                    twos: indirect_copy(tv.twos));
+
+        noinline fn indirect_copy(arr: i32[])
+            arr.len & 1
+                ? arr[0, arr.len / 2] ~ arr[arr.len / 2, arr.len]
+                : arr; // <- we take this branch
     `);
 
     ZERO(`
@@ -1697,11 +1741,20 @@ pub extern fn runTests()
             <alt>
             return cow_after_ref(           <alt/>
             return cow_after_ref_indirect(  </alt>
-                zero: orig.ones[orig.ones.len / 2], all: orig);
+                zero: orig.ones[orig.ones.len / 2], all: <alt>orig<alt/>indirect_copy(orig)</alt>);
         }
+
+        noinline fn indirect_copy(tv: TwoVecs)
+            TwoVecs(ones: indirect_copy(tv.ones),
+                    twos: indirect_copy(tv.twos));
+
+        noinline fn indirect_copy(arr: i32[])
+            arr.len & 1
+                ? arr[0, arr.len / 2] ~ arr[arr.len / 2, arr.len]
+                : arr; // <- we take this branch
     `);
 
-    TODO_cow(currently: "COW will break 19:24+3", `
+    TODO_cow(currently: "COW will break (19:24+3|19:38+3)", `
         noinline fn test(ref barr: i32[][], ref x: i32[]) {
             for (mut i = 0; i < x.len; i++)
                 x[i] += 2;
@@ -1719,14 +1772,19 @@ pub extern fn runTests()
             mut arr: i32[][] = [ [0,1,2,3,4,5,6,7], [8,9,10,11,12,13,14,15] ];
 
             ref x = arr[0];
-            mut barr = arr;
+            mut barr = <alt>arr<alt/>indirect_copy(arr)</alt>;
             test(:barr, x);
 
             return barr == [ [1,2,3,4,5,6,7,8], [9,10,11,12,13,14,15,16], [0] ] ? 0 : 1;
         }
+
+        noinline fn indirect_copy(arr: i32[][])
+            arr.len & 1
+                ? arr[0, arr.len / 2] ~ arr[arr.len / 2, arr.len]
+                : arr; // <- we take this branch
     `);
 
-    TODO_cow(currently: "both alias arr 24:17+3", `
+    TODO_cow(currently: "both alias arr (24:17+3|24:31+3)", `
         noinline fn test(ref barr: i32[][], ref x: i32[]) {
             for (mut i = 0; i < x.len; i++)
                 x[i] += 2;
@@ -1742,7 +1800,7 @@ pub extern fn runTests()
 
         noinline fn outer(ref a: i32[][], ref b: i32[][]) {
             ref x = a[0];
-            mut barr = b;           ;; N_COWRestrict
+            mut barr = <alt>b<alt/>indirect_copy(b)</alt>;      ;; N_COWRestrict
             test(:barr, x);
 
             return barr;
@@ -1754,9 +1812,14 @@ pub extern fn runTests()
             let barr = outer(arr, arr);
             return barr == [ [1,2,3,4,5,6,7,8], [9,10,11,12,13,14,15,16], [0] ] ? 0 : 1;
         }
+
+        noinline fn indirect_copy(arr: i32[][])
+            arr.len & 1
+                ? arr[0, arr.len / 2] ~ arr[arr.len / 2, arr.len]
+                : arr; // <- we take this branch
     `);
 
-    TODO_disjoint(currently: "COW will break 14:32+11", `
+    TODO_disjoint(currently: "COW will break (14:32+11|14:46+11)", `
         struct Ephemeral {
             id:             i32;
             scope_skip?:    Ephemeral[];
@@ -1768,9 +1831,9 @@ pub extern fn runTests()
         };
 
         fn snap(i: i32, ref s: SolverState) {
-            ref eph        = s._ephs[i];    // cannotCOW false positive
-            eph.scope_skip = s._scope_skip; //  copy(s._scope_skip) <- ref eph
-            return eph;                     //   but they're disjoint
+            ref eph        = s._ephs[i]; // cannotCOW false positive, copy(s._scope_skip) <- ref eph, but they're disjoint
+            eph.scope_skip = <alt>s._scope_skip<alt/>indirect_copy(s._scope_skip)</alt>;
+            return eph;
         }
 
         fn main() {
@@ -1781,6 +1844,11 @@ pub extern fn runTests()
 
             return snap(:s, 0).scope_skip.len - 3;
         }
+
+        noinline fn indirect_copy!<T>(arr: T[])
+            arr.len & 1
+                ? arr[0, arr.len / 2] ~ arr[arr.len / 2, arr.len]
+                : arr; // <- we take this branch
     `);
 
     TODO_structs(`
