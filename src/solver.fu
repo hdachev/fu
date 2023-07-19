@@ -2201,6 +2201,105 @@ pub fn solve(
         }
     }
 
+    fn validateCOW(item: SolvedNode)
+    {
+        // Prevents revisiting parents
+        //  during grandparent's descendChildren.
+        mut seen: bitset::BitSet;
+
+        // Step 1:
+        // Climb parents, collecting all preexisting refs
+        //  that could possibly be used after the COW "copy" is made
+        //   to mutate the original as-if-unique,
+        //    breaking value semantics on the copy.
+        fn cannotCOW_climbParents(lifetime: Lifetime)
+        {
+            for (mut i = 0; i < lifetime.uni0n.len; i++)
+            {
+                let index = Region_asLocal(lifetime.uni0n[i]);
+                if (index)
+                {
+                    if (!seen.add_once(index))
+                        continue;
+
+                    let o = GET(nested(index));
+                    o.kind == "var" || BUG("cannotCOW_climbParents found a non-var: " ~ o);
+
+                    // Climb parents.
+                    cannotCOW_climbParents(Lifetime_climbType(o).lifetime);
+
+                    // Check children.
+                    cannotCOW_descendChildren(index);
+
+                    // GLOBAL COMPONENT
+                    // Here we're adding stuff to the arguments-at-risk bitmasks,
+                    //  to prevent COW copies to be created while there are outstanding
+                    //   writeable refs to their contents, but indirectly,
+                    //    via aliased function arguments.
+                    ref flow = _current_fn.flow;
+                    let arg_position = flow.arg_positions.unless_oob(index);
+                    if (arg_position)
+                    {
+                        // Let's just hard risk all mutref arguments for starters,
+                        //  we'll be relaxing this later as more practical examples become available.
+                        let arg_targets = flow.arg_targets;
+                        for (shadow mut i = 0; i < arg_targets.len; i++)
+                        {
+                            let t = arg_targets[i];
+                            if (!t)
+                                continue;
+
+                            shadow let o = GET(nested(t));
+                            if (o.solved.type.is_mutref)
+                            {
+                                makeNote(N_COWRestrict);
+
+                                flow.at_soft_risk.grow_if_oob(t).set::add(index);
+                                flow.at_hard_risk.grow_if_oob(t).set::add(index);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // Step 2:
+        // At this point we haven't folded var_usage up parent refs,
+        //  so we gotta descend the invalidation chain manually.
+        fn cannotCOW_descendChildren(index: i32)
+        {
+            let children = _current_fn.TODO_FIX_children.unless_oob(index);
+
+            for (mut i = 0; i < children.len; i++)
+            {
+                let child = children[i];
+
+                if (!seen.add_once(child))
+                    continue;
+
+                // Might have been copied during bck.
+                // TODO reflect that in RESOLVE_byMutvar.
+                let o = GET(nested(child));
+                if (o.flags & F_MUT)
+                    continue;
+
+                // Skip if we've already seen the declaration for this var,
+                //  which means ref is taken after the copy is made.
+                if (!_current_fn.done_relaxing.has(child))
+                {
+                    let usage = _current_fn.var_usage.unless_oob(child);
+                    if (usage.is_mutref)
+                        fail("A copy is needed, but COW will break due to pre-existing mutref: " ~ nested(child));
+                }
+
+                // Continue.
+                cannotCOW_descendChildren(child);
+            }
+        }
+
+        cannotCOW_climbParents(item.type.lifetime);
+    }
+
     fn propagateType(ref node: SolvedNode, slot: Type, relax_mask!: Quals, kills!?: Helpers)
     {
         let k = node.kind;
@@ -2943,106 +3042,8 @@ pub fn solve(
                 }
                 else
                 {
-                    // TODO_COW ////////////////////////////////////////////////////
                     if (!item.type.is_trivial)
-                    {
-                        // Prevents revisiting parents
-                        //  during grandparent's descendChildren.
-                        mut seen: bitset::BitSet;
-
-                        // Step 1:
-                        // Climb parents, collecting all preexisting refs
-                        //  that could possibly be used after the COW "copy" is made
-                        //   to mutate the original as-if-unique,
-                        //    breaking value semantics on the copy.
-                        fn cannotCOW_climbParents(lifetime: Lifetime)
-                        {
-                            for (mut i = 0; i < lifetime.uni0n.len; i++)
-                            {
-                                let index = Region_asLocal(lifetime.uni0n[i]);
-                                if (index)
-                                {
-                                    if (!seen.add_once(index))
-                                        continue;
-
-                                    let o = GET(nested(index));
-                                    o.kind == "var" || BUG("cannotCOW_climbParents found a non-var: " ~ o);
-
-                                    // Climb parents.
-                                    cannotCOW_climbParents(Lifetime_climbType(o).lifetime);
-
-                                    // Check children.
-                                    cannotCOW_descendChildren(index);
-
-                                    // GLOBAL COMPONENT
-                                    // Here we're adding stuff to the arguments-at-risk bitmasks,
-                                    //  to prevent COW copies to be created while there are outstanding
-                                    //   writeable refs to their contents, but indirectly,
-                                    //    via aliased function arguments.
-                                    ref flow = _current_fn.flow;
-                                    let arg_position = flow.arg_positions.unless_oob(index);
-                                    if (arg_position)
-                                    {
-                                        // Let's just hard risk all mutref arguments for starters,
-                                        //  we'll be relaxing this later as more practical examples become available.
-                                        let arg_targets = flow.arg_targets;
-                                        for (shadow mut i = 0; i < arg_targets.len; i++)
-                                        {
-                                            let t = arg_targets[i];
-                                            if (!t)
-                                                continue;
-
-                                            shadow let o = GET(nested(t));
-                                            if (o.solved.type.is_mutref)
-                                            {
-                                                makeNote(N_COWRestrict);
-
-                                                flow.at_soft_risk.grow_if_oob(t).set::add(index);
-                                                flow.at_hard_risk.grow_if_oob(t).set::add(index);
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
-
-                        // Step 2:
-                        // At this point we haven't folded var_usage up parent refs,
-                        //  so we gotta descend the invalidation chain manually.
-                        fn cannotCOW_descendChildren(index: i32)
-                        {
-                            let children = _current_fn.TODO_FIX_children.unless_oob(index);
-
-                            for (mut i = 0; i < children.len; i++)
-                            {
-                                let child = children[i];
-
-                                if (!seen.add_once(child))
-                                    continue;
-
-                                // Might have been copied during bck.
-                                // TODO reflect that in RESOLVE_byMutvar.
-                                let o = GET(nested(child));
-                                if (o.flags & F_MUT)
-                                    continue;
-
-                                // Skip if we've already seen the declaration for this var,
-                                //  which means ref is taken after the copy is made.
-                                if (!_current_fn.done_relaxing.has(child))
-                                {
-                                    let usage = _current_fn.var_usage.unless_oob(child);
-                                    if (usage.is_mutref)
-                                        fail("A copy is needed, but COW will break due to pre-existing mutref: " ~ nested(child));
-                                }
-
-                                // Continue.
-                                cannotCOW_descendChildren(child);
-                            }
-                        }
-
-                        cannotCOW_climbParents(item.type.lifetime);
-                    }
-                    // TODO_COW ////////////////////////////////////////////////////
+                        validateCOW(item);
 
                     // Partial copy.
                     let usage       = node.type.usage;
