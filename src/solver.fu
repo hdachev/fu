@@ -2209,8 +2209,14 @@ pub fn solve(
         }
     }
 
-    fn validateCOW(item: SolvedNode, token = _here, here! = _here)
+    fn validateCOW(item: SolvedNode,
+        here! = _here,
+        callee?: Target, host_arg?: Argument)
     {
+        let token = host_arg
+            ? host_arg.cow_inside
+            : _here;
+
         // Prevents revisiting parents
         //  during grandparent's descendChildren.
         mut seen: bitset::BitSet;
@@ -2300,9 +2306,11 @@ pub fn solve(
                 {
                     if (_current_fn.snap.written_directly.has(child))
                     {
-                        mut err = token == here
+                        mut err = !callee
                             ? "A copy is needed, but "
-                            : "Callsite argument copied here " ~ token.addr_and_snippet ~ "\n\t... but "
+                            : host_arg ~ " to " ~ callee ~ " is indirectly copied from:\n"
+                                ~ qSTACK_cow_inside(callee, callee.solved, :host_arg)
+                                ~ "\n\t... but "
 
                         err ~= "COW will break due to pre-existing mutref: " ~ explainWhichFn(t, fmt: FullContext);
 
@@ -2914,7 +2922,9 @@ pub fn solve(
                         tryTrackLastUse(arg.lifetime);
 
                     if (host_arg.cow_inside)
-                        validateCOW(arg, host_arg.cow_inside, here: arg.token);
+                        validateCOW(arg, :host_arg,
+                            callee: node.target,
+                            here: arg.token);
                 }
             }
             // MOVE ON LAST USE ////////////////////////////////////////////
@@ -8097,6 +8107,55 @@ pub fn solve(
 
                 return "\n            "
                      ~ "because of " ~ explainWhichFn(local, fmt: FullContext);
+            }
+        }
+
+        //
+        return "";
+    }
+
+    fn qSTACK_cow_inside(target: Target, node: SolvedNode, host_arg: Argument, seen!?: Target[])
+    {
+        //////////////////////////////////////////////////
+        let implicit _current_fnort = target;
+        //////////////////////////////////////////////////
+
+        let cow_inside = host_arg.cow_inside;
+        let arg_region = Region_fromLocal(host_arg.local);
+
+        mut candidates = "";
+
+        shadow let seen = seen ~ target;
+        SLOW_traverse(node): |callsite|
+        {
+            if (callsite.kind == "copy" && callsite.items.only.token == cow_inside)
+                return "\n            "
+                     ~ "in " ~ target ~ " at " ~ cow_inside.addr_and_snippet;
+
+            if (callsite.kind != "call" || !callsite.items)
+                continue;
+
+            if (seen.has(callsite.target))
+                continue;
+
+            let host_args = callsite.target.args;
+            for (mut i = 0; i < host_args.len; i++)
+            {
+                shadow let host_arg = host_args[i];
+                if (host_arg.cow_inside == cow_inside &&
+                    Lifetime_unwind(callsite.items[i].lifetime)
+                        .uni0n.has(arg_region))
+                {
+                    let peek = qSTACK_cow_inside(
+                        callsite.target, callsite.target.solved,
+                        :host_arg, :seen);
+
+                    return "\n            "
+                         ~ "in " ~ target ~ " via " ~ callsite.target
+                         ~ " at " ~ callsite.token.addr_and_snippet
+                         ~ peek
+                         ~ candidates;
+                }
             }
         }
 
