@@ -97,16 +97,34 @@ fn verify_errmsg(topic: string, e!: string, msg!: string)
         {
             if (m0 >= 0)
             {
+                fn check(word: string)
+                {
+                    let pipe = word.find('|');
+                    if (pipe > 1 && word.starts(with: '(') && word.ends(with: ')'))
+                    {
+                        let alternatives = word.slice(1, word.len - 1).split('|');
+                        for (mut i = 0; i < alternatives.len; i++)
+                            if (check(alternatives[i]))
+                                return true;
+
+                        return false;
+                    }
+
+                    let expect = word.ascii::lower();
+                    return actual.has(expect);
+                }
+
                 let exact = msg.slice(m0, m1);
                 if (exact == "BUG")
                     BUG_ok = true;
 
-                let expect = exact.ascii::lower();
-                if (!actual.has(expect))
+                if (!check(exact))
+                {
                     throw(topic ~ " mismatch:\n\n    Expected error keyword:\n        "
-                        ~ expect.ansi::qBAD ~ " from pattern <fail" ~ msg.ansi::qBAD ~ ">"
+                        ~ exact.ansi::qBAD ~ " from pattern <fail" ~ msg.ansi::qBAD ~ ">"
                         ~ "\n\n    ... not present in error message:\n\n"
                         ~ e);
+                }
             }
 
             m0 = -1;
