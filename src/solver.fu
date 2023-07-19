@@ -84,6 +84,9 @@ pub fn solve(
         // The arguments at risk aparata.
         ever_written:       bitset::BitSet;
 
+        // COW validation, indirect copies behind callsites.
+        cows_inside:        TokenIdx[];
+
         // The read/write journal, for checking order of eval.
         //  I think unordered access should be super strict,
         //   everything that's not disjoint must error out.
@@ -2206,7 +2209,7 @@ pub fn solve(
         }
     }
 
-    fn validateCOW(item: SolvedNode)
+    fn validateCOW(item: SolvedNode, token = _here, here! = _here)
     {
         // Prevents revisiting parents
         //  during grandparent's descendChildren.
@@ -2242,8 +2245,7 @@ pub fn solve(
                     //   writeable refs to their contents, but indirectly,
                     //    via aliased function arguments.
                     ref flow = _current_fn.flow;
-                    let arg_position = flow.arg_positions.unless_oob(index);
-                    if (arg_position)
+                    if (o.flags & F_ARG)
                     {
                         // Let's just hard risk all mutref arguments for starters,
                         //  we'll be relaxing this later as more practical examples become available.
@@ -2263,6 +2265,9 @@ pub fn solve(
                                 flow.at_hard_risk.grow_if_oob(t).set::add(index);
                             }
                         }
+
+                        // Remember this copy, we'll propagate along.
+                        _current_fn.events.cows_inside.grow_if_oob(index) ||= token;
                     }
                 }
             }
@@ -2284,7 +2289,8 @@ pub fn solve(
 
                 // Might have been copied during bck.
                 // TODO reflect that in RESOLVE_byMutvar.
-                let o = GET(nested(child));
+                let t = nested(child);
+                let o = GET(t);
                 if (o.flags & F_MUT)
                     continue;
 
@@ -2293,7 +2299,16 @@ pub fn solve(
                 if (!_current_fn.done_relaxing.has(child))
                 {
                     if (_current_fn.snap.written_directly.has(child))
-                        fail("A copy is needed, but COW will break due to pre-existing mutref: " ~ nested(child));
+                    {
+                        mut err = token == here
+                            ? "A copy is needed, but "
+                            : "Callsite argument copied here " ~ token.addr_and_snippet ~ "\n\t... but "
+
+                        err ~= "COW will break due to pre-existing mutref: " ~ explainWhichFn(t, fmt: FullContext);
+
+                        _here = here;
+                        fail(err);
+                    }
                 }
 
                 // Continue.
@@ -2887,11 +2902,20 @@ pub fn solve(
             _current_fn.fx_mask |= node.target.fx_mask;
 
             // MOVE ON LAST USE ////////////////////////////////////////////
+            if (PASS_MoveOnLastUse && node.items)
             {
                 let host_args = t.args;
                 for (mut i = 0; i < host_args.len; i++)
-                    if (host_args[i].is_ref)
-                        tryTrackLastUse(node.items[i].lifetime);
+                {
+                    let arg = node.items[i];
+
+                    let host_arg = host_args[i];
+                    if (host_arg.is_ref)
+                        tryTrackLastUse(arg.lifetime);
+
+                    if (host_arg.cow_inside)
+                        validateCOW(arg, host_arg.cow_inside, here: arg.token);
+                }
             }
             // MOVE ON LAST USE ////////////////////////////////////////////
 
@@ -5009,6 +5033,9 @@ pub fn solve(
                                        query: AQ_WhyNotNovec));
 
                     //
+                    let cow_inside = out.events.cows_inside.unless_oob(argTarget.index);
+
+                    //
                     mut arg = Argument(
                         :name,
                         :autocall,
@@ -5018,7 +5045,8 @@ pub fn solve(
                         local: argTarget.index,
 
                         // ARGUMENTS AT RISK //
-                        :soft_risk, :hard_risk);
+                        :soft_risk, :hard_risk,
+                        :cow_inside);
 
                     arg.type || isUnspec || BUG("updateScope: Unexpected untyped argument: `" ~ name ~ "`.");
 

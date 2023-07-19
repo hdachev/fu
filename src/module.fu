@@ -257,6 +257,10 @@ struct Argument
     //       this means that we only need to flag the mutrefs.
     //
     hard_risk?:     bitset::BitSet;
+
+    // TODO this could grow into an array of types,
+    //  or a usage mask, or a mix thereof.
+    cow_inside?:    TokenIdx;
 };
 
 struct Overload
