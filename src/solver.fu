@@ -2278,6 +2278,28 @@ pub fn solve(
             }
         }
 
+        fn eachLiveChildMutref(index: i32, visit)
+        {
+            let children = _current_fn.TODO_FIX_children.unless_oob(index);
+            for (mut i = 0; i < children.len; i++)
+            {
+                let child = children[i];
+
+                // We only care about mutref children.
+                let t = nested(child);
+                let o = GET(t);
+                if (!o.solved.type.is_mutref)
+                    continue;
+
+                // Skip if we've already seen the declaration for this var,
+                //  which means ref is taken after the copy is made.
+                if (_current_fn.done_relaxing.has(child))
+                    continue;
+
+                visit(child?: child, t?: t, o?: o);
+            }
+        }
+
         // Prevents revisiting parents
         //  during grandparent's descendChildren.
         mut seen: bitset::BitSet;
@@ -2357,24 +2379,9 @@ pub fn solve(
         //  so we gotta descend the invalidation chain manually.
         fn cannotCOW_descendChildren(index: i32)
         {
-            let children = _current_fn.TODO_FIX_children.unless_oob(index);
-
-            for (mut i = 0; i < children.len; i++)
+            index.eachLiveChildMutref: |child, t, o|
             {
-                let child = children[i];
                 if (!seen.add_once(child))
-                    continue;
-
-                // Might have been copied during bck.
-                // TODO reflect that in RESOLVE_byMutvar.
-                let t = nested(child);
-                let o = GET(t);
-                if (o.flags & F_MUT)
-                    continue;
-
-                // Skip if we've already seen the declaration for this var,
-                //  which means ref is taken after the copy is made.
-                if (_current_fn.done_relaxing.has(child))
                     continue;
 
                 if (_current_fn.snap.written_directly.has(child))
