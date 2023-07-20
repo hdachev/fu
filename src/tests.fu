@@ -1847,6 +1847,52 @@ pub extern fn runTests()
         }
     `);
 
+    ZERO(`
+        noinline fn conditionalCopyOrWrite(ref a: i32[][], ref b: i32[][]) {
+            ref either = (a || b)[0];
+            <alt>
+            if (either.len & 1)
+                b = a;              // <- no issue here
+            else                    //  either only written to
+                either ~= 1;        //   if copy never created.
+            <alt/>
+            if (either.len & 1 == 0)
+                either ~= 1;
+            else
+                b = a;
+            </alt>
+        }
+
+        fn arr(n: i32) {
+            mut arr: i32[];
+            for (mut i = 1; i <= n; i++) arr ~= i;
+            return arr;
+        }
+
+        fn check(arr: i32[]) {
+            mut sum = 0;
+            for (mut i = 0; i < arr.len; i++) sum += arr[i];
+            return sum;
+        }
+
+        fn check(arr: i32[][]) {
+            mut sum = 0;
+            for (mut i = 0; i < arr.len; i++) sum = sum * 100 + check(arr[i]);
+            return sum;
+        }
+
+        fn main() {
+            mut a = [ arr( 8), arr( 9) ];
+            mut b = [ arr(10), arr(11) ];
+
+            conditionalCopyOrWrite(:a, :b);
+
+            return check(a) == 3600 + 45 + 100
+                && check(b) == 5500 + 66
+                    ? 0 : 1;
+        }
+    `);
+
     // /COW
 
 
