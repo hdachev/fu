@@ -115,23 +115,28 @@ pub fn solve(
             events.i.Events_merge(snap.i);
     }
 
-    struct Moves
+    struct PostdomSnap
     {
+        // Moves.
         used_again:         bitset::BitSet;
         just_moved:         bitset::BitSet;
         just_used:          bitset::BitSet;
+
+        // COW.
+        written_directly:   bitset::BitSet;
+        // written_indirectly - prebake parents - add this when needed
     };
 
     struct Postdom
     {
-        moves:              Moves;
+        snap:               PostdomSnap;
         loop_start:         i32;
     };
 
     fn branch(ref dest: Postdom, src: Postdom)
     {
-        for (fieldname i: Moves)
-            dest.moves.i.add(src.moves.i);
+        for (fieldname i: PostdomSnap)
+            dest.snap.i.add(src.snap.i);
 
         dest.loop_start = max(
             dest.loop_start || BUG(),
@@ -2287,8 +2292,7 @@ pub fn solve(
                 //  which means ref is taken after the copy is made.
                 if (!_current_fn.done_relaxing.has(child))
                 {
-                    let usage = _current_fn.var_usage.unless_oob(child);
-                    if (usage.is_mutref)
+                    if (_current_fn.snap.written_directly.has(child))
                         fail("A copy is needed, but COW will break due to pre-existing mutref: " ~ nested(child));
                 }
 
@@ -2357,7 +2361,7 @@ pub fn solve(
         fn tryTrackLastUse(lt: Lifetime)
         {
             return PASS_MoveOnLastUse
-                && trackUse(:lt, _current_fn.moves.used_again);
+                && trackUse(:lt, _current_fn.snap.used_again);
         }
 
         fn trackJustMoved(lt: Lifetime)
@@ -2372,7 +2376,7 @@ pub fn solve(
                     "trackJustMoved: found a non-local.");
 
                 let target = nested(local);
-                _current_fn.moves.just_moved.add_once(target.index) || BUG(
+                _current_fn.snap.just_moved.add_once(target.index) || BUG(
                     "trackJustMoved: already moved.");
 
                 trackJustMoved(Lifetime_climbType(target).lifetime);
@@ -2799,7 +2803,7 @@ pub fn solve(
                             //    because the lack of sequence points occurs between
                             //     the individual callarg expressions.
                             //
-                            trackUse(node.lifetime, _current_fn.moves.just_used);
+                            trackUse(node.lifetime, _current_fn.snap.just_used);
                         }
                         // MOVE ON LAST USE OOE ////////////////////////////////////////
                     }
@@ -2943,10 +2947,10 @@ pub fn solve(
                 //
                 mut just_used1: bitset::BitSet;
                 //
-                if (ooe_isUndef)       swap(_current_fn.moves.just_used, just_used1);
-                defer if (ooe_isUndef) swap(_current_fn.moves.just_used, just_used1);
+                if (ooe_isUndef)       swap(_current_fn.snap.just_used, just_used1);
+                defer if (ooe_isUndef) swap(_current_fn.snap.just_used, just_used1);
                 //
-                mut just_moved00 = ooe_isUndef && _current_fn.moves.just_moved;
+                mut just_moved00 = ooe_isUndef && _current_fn.snap.just_moved;
                 mut MUSTSEQ_mask = 0;
                 // MOVE ON LAST USE OOE ////////////////////////////////////////
 
@@ -2957,13 +2961,33 @@ pub fn solve(
                     // MOVE ON LAST USE OOE ////////////////////////////////////////
                     lax let just_moved0 = ooe_isUndef
                         && !ooe_isLast
-                        && _current_fn.moves.just_moved;
+                        && _current_fn.snap.just_moved;
                     // MOVE ON LAST USE OOE ////////////////////////////////////////
 
                     if (PASS_MaybeCopyOrMove)
                         maybeCopyOrMove(arg, host_arg, isArgument: true);
 
                     arg.propagateType(host_arg, :relax_mask);
+
+                    // Tracking writes alla bck,
+                    //  will now use this in cannotCOW which was relying on var usage,
+                    //   which A] is not flow-sensitive
+                    //     and B] seems to be messed around with by propagateType(loop)
+                    fn callarg_trackWrites(lt: Lifetime)
+                    {
+                        for (shadow mut i = 0; i < lt.uni0n.len; i++)
+                        {
+                            let index = Region_asLocal(lt.uni0n[i]);
+                            if (index && _current_fn.snap.written_directly.add_once(index))
+                            {
+                                // TODO, but add it to written_indirectly
+                                // callarg_trackWrites(Lifetime_climbType(nested(index)).lifetime);
+                            }
+                        }
+                    }
+
+                    if (host_arg.flags & F_WRITTEN_TO)
+                        callarg_trackWrites(arg.type.lifetime);
 
                     // MOVE ON LAST USE OOE ////////////////////////////////////////
                     if (ooe_isUndef)
@@ -2976,7 +3000,7 @@ pub fn solve(
                             //  but not within this argument,
                             //   that concern lifetimes used here.
                             //
-                            _current_fn.moves.just_used.each: |index|
+                            _current_fn.snap.just_used.each: |index|
                             {
                                 if (just_moved0.has(index) && !just_moved00.has(index))
                                 {
@@ -2992,8 +3016,8 @@ pub fn solve(
                             }
                         }
 
-                        just_used1.add(_current_fn.moves.just_used);
-                        _current_fn.moves.just_used.clear();
+                        just_used1.add(_current_fn.snap.just_used);
+                        _current_fn.snap.just_used.clear();
                     }
                     // MOVE ON LAST USE OOE ////////////////////////////////////////
                 }
@@ -10518,8 +10542,12 @@ pub fn solve(
 
         _current_fn.fx_mask = [];
         _current_fn.relaxed = [];
-        _current_fn.loop_start == 1 || BUG(
-            "_current_fn.loop_start leak: " ~ _current_fn.loop_start);
+
+        _current_fn.loop_start == 1 || BUG("_current_fn.loop_start leak: " ~ _current_fn.loop_start);
+        _current_fn.postdom = [];
+
+        _current_fn.loop_start && BUG("_current_fn.loop_start != 0 before propagateType.");
+        _current_fn.loop_start = 1;
 
         propagateType(node, node.type, relax_mask: RELAX_all);
 
