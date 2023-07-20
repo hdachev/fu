@@ -2269,12 +2269,12 @@ pub fn solve(
                 {
                     let callee_cow = callee_cows[i];
                     if (callee_cow.argTarget == host_arg.local)
-                        visit(:callee_cow.vtype, :callee_cow.token);
+                        visit(:callee_cow.vtype, token?: callee_cow.token);
                 }
             }
             else
             {
-                visit(:item.type.vtype, token: _here);
+                visit(:item.type.vtype, token?: _here);
             }
         }
 
@@ -2345,8 +2345,32 @@ pub fn solve(
                             if (!t)
                                 continue;
 
+                            // Mutrefs only.
                             shadow let o = GET(nested(t));
-                            if (o.solved.type.is_mutref)
+                            if (!o.solved.type.is_mutref)
+                                continue;
+
+                            // Nothing to do if already hard-risked.
+                            if (flow.at_hard_risk.unless_oob(t).set::has(index))
+                                continue;
+
+                            fn needsHardRisk(shadow index: i32)
+                            {
+                                eachCOWInside: |vtype| {
+                                    shadow mut seen: StructCanon[];
+                                    if (type_maybeInside(host: vtype, o.type, :seen))
+                                        return true;
+                                }
+
+                                eachLiveChildMutref(index): |child| {
+                                    if (needsHardRisk(child))
+                                        return true;
+                                }
+
+                                return false;
+                            }
+
+                            if (needsHardRisk(t))
                             {
                                 makeNote(N_COWRestrict);
 
