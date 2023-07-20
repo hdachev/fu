@@ -85,7 +85,7 @@ pub fn solve(
         ever_written:       bitset::BitSet;
 
         // COW validation, indirect copies behind callsites.
-        cows_inside:        TokenIdx[];
+        cows_inside:        COWInside[];
 
         // The read/write journal, for checking order of eval.
         //  I think unordered access should be super strict,
@@ -2209,13 +2209,74 @@ pub fn solve(
         }
     }
 
+
+    //
+
+    fn type_maybeInside(
+        host: ValueType, guest: ValueType,
+        ref seen: StructCanon[])
+    {
+        if (host.canon == guest.canon)
+            return true;
+
+        if (let itemType = tryClear_sliceable(host))
+            return type_maybeInside(host: itemType.vtype, :guest, :seen);
+
+        if (host.isStruct)
+        {
+            let scp = parseStructCanon(host.canon);
+            let s   = lookupUserType(scp);
+
+            if ((!s.all_triv || guest.is_trivial)
+                && seen.set::add(scp))
+            {
+                for (mut i = 0; i < s.items.len; i++)
+                {
+                    let f = s.items[i].target;
+                    if (type_maybeInside(host: f.type, guest, :seen))
+                        return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    fn type_maybeAliasInside(host: ValueType, guest: ValueType)
+    {
+        if (guest.is_primitive)
+            return true; // TODO check size
+
+        mut seen: StructCanon[];
+        return type_maybeInside(:host, :guest, :seen);
+    }
+
+
+    //
+
     fn validateCOW(item: SolvedNode,
         here! = _here,
         callee?: Target, host_arg?: Argument)
     {
-        let token = host_arg
-            ? host_arg.cow_inside
-            : _here;
+        // validateCOW is used for 'copy' nodes but also for callargs,
+        //  where the copy-inside list has many vtype/token pairs.
+        fn eachCOWInside(visit)
+        {
+            if (callee)
+            {
+                let callee_cows = callee.cows_inside;
+                for (shadow mut i = 0; i < callee_cows.len; i++)
+                {
+                    let callee_cow = callee_cows[i];
+                    if (callee_cow.argTarget == host_arg.local)
+                        visit(:callee_cow.vtype, :callee_cow.token);
+                }
+            }
+            else
+            {
+                visit(:item.type.vtype, token: _here);
+            }
+        }
 
         // Prevents revisiting parents
         //  during grandparent's descendChildren.
@@ -2273,7 +2334,19 @@ pub fn solve(
                         }
 
                         // Remember this copy, we'll propagate along.
-                        _current_fn.events.cows_inside.grow_if_oob(index) ||= token;
+                        eachCOWInside: |vtype, token|
+                        {
+                            ref my_cows = _current_fn.events.cows_inside;
+                            for (shadow mut i = 0; i < my_cows.len; i++)
+                            {
+                                ref my_cow = my_cows[i];
+                                if (my_cow.argTarget == index && my_cow.vtype == vtype)
+                                    return;
+                            }
+
+                            // Nope, couldn't insert, add a new one.
+                            my_cows ~= COWInside(:vtype, :token, argTarget: index);
+                        }
                     }
                 }
             }
@@ -2289,7 +2362,6 @@ pub fn solve(
             for (mut i = 0; i < children.len; i++)
             {
                 let child = children[i];
-
                 if (!seen.add_once(child))
                     continue;
 
@@ -2302,20 +2374,33 @@ pub fn solve(
 
                 // Skip if we've already seen the declaration for this var,
                 //  which means ref is taken after the copy is made.
-                if (!_current_fn.done_relaxing.has(child))
+                if (_current_fn.done_relaxing.has(child))
+                    continue;
+
+                if (_current_fn.snap.written_directly.has(child))
                 {
-                    if (_current_fn.snap.written_directly.has(child))
+                    // For a ref to clobber a COW copy,
+                    //  the thing it points to must fit inside the COW type -
+                    //   e.g. ref i32 into an cow(i32[]).
+                    eachCOWInside: |vtype, token|
                     {
-                        mut err = !callee
-                            ? "A copy is needed, but "
-                            : host_arg ~ " to " ~ callee ~ " is indirectly copied from:\n"
-                                ~ qSTACK_cow_inside(callee, callee.solved, :host_arg)
-                                ~ "\n\t... but "
+                        shadow mut seen: StructCanon[];
+                        if (type_maybeInside(host: vtype, o.type, :seen))
+                        {
+                            let cow_inside = token;
 
-                        err ~= "COW will break due to pre-existing mutref: " ~ explainWhichFn(t, fmt: FullContext);
+                            mut err = !callee
+                                ? "A copy is needed, but "
+                                : host_arg ~ " to " ~ callee ~ " is indirectly copied from:\n"
+                                    ~ qSTACK_cow_inside(callee, callee.solved, :host_arg, :cow_inside)
+                                    ~ "\n\t... but "
 
-                        _here = here;
-                        fail(err);
+                            err ~= "COW will break due to pre-existing mutref: "
+                                    ~ explainWhichFn(t, fmt: FullContext);
+
+                            _here = here;
+                            fail(err);
+                        }
                     }
                 }
 
@@ -2921,7 +3006,7 @@ pub fn solve(
                     if (host_arg.is_ref)
                         tryTrackLastUse(arg.lifetime);
 
-                    if (host_arg.cow_inside)
+                    if (host_arg.flags & F_COW_INSIDE)
                         validateCOW(arg, :host_arg,
                             callee: node.target,
                             here: arg.token);
@@ -5043,20 +5128,21 @@ pub fn solve(
                                        query: AQ_WhyNotNovec));
 
                     //
-                    let cow_inside = out.events.cows_inside.unless_oob(argTarget.index);
+                    let cow_inside = out.events.cows_inside.some(
+                        |cow| cow.argTarget == argTarget.index);
 
                     //
                     mut arg = Argument(
                         :name,
                         :autocall,
-                        :argNode.flags | (written_via && F_WRITTEN_TO),
+                        :argNode.flags | (written_via && F_WRITTEN_TO)
+                                       | (cow_inside  && F_COW_INSIDE),
                         :argNode.type,
                         default: !isImplicit && argNode.items[LET_INIT],
                         local: argTarget.index,
 
                         // ARGUMENTS AT RISK //
-                        :soft_risk, :hard_risk,
-                        :cow_inside);
+                        :soft_risk, :hard_risk);
 
                     arg.type || isUnspec || BUG("updateScope: Unexpected untyped argument: `" ~ name ~ "`.");
 
@@ -5134,6 +5220,8 @@ pub fn solve(
 
                 if (!isNative)
                     ext.fx_mask = out.fx_mask;
+
+                ext.cows_inside = out.events.cows_inside;
 
                 // TODO FAILCASE
                 // TODO FAILCASE these dont work for inline fns
@@ -8114,13 +8202,12 @@ pub fn solve(
         return "";
     }
 
-    fn qSTACK_cow_inside(target: Target, node: SolvedNode, host_arg: Argument, seen!?: Target[])
+    fn qSTACK_cow_inside(target: Target, node: SolvedNode, host_arg: Argument, cow_inside: TokenIdx, seen!?: Target[])
     {
         //////////////////////////////////////////////////
         let implicit _current_fnort = target;
         //////////////////////////////////////////////////
 
-        let cow_inside = host_arg.cow_inside;
         let arg_region = Region_fromLocal(host_arg.local);
 
         mut candidates = "";
@@ -8142,13 +8229,16 @@ pub fn solve(
             for (mut i = 0; i < host_args.len; i++)
             {
                 shadow let host_arg = host_args[i];
-                if (host_arg.cow_inside == cow_inside &&
-                    Lifetime_unwind(callsite.items[i].lifetime)
-                        .uni0n.has(arg_region))
+                if (host_arg.flags & F_COW_INSIDE
+                     && callsite.target.cows_inside.some(
+                        |cow| cow.argTarget == host_arg.local
+                               && cow.token == cow_inside)
+                     && Lifetime_unwind(callsite.items[i].lifetime)
+                            .uni0n.has(arg_region))
                 {
                     let peek = qSTACK_cow_inside(
                         callsite.target, callsite.target.solved,
-                        :host_arg, :seen);
+                        :host_arg, :cow_inside, :seen);
 
                     return "\n            "
                          ~ "in " ~ target ~ " via " ~ callsite.target

@@ -305,7 +305,7 @@ pub fn createSlice(item: Type, lifetime: Lifetime): Type
     return add_ref(out, lifetime);
 }
 
-pub fn tryClear_sliceable(type: Type): Type
+pub fn tryClear_sliceable(type: ValueType): Type
 {
     if (!is_sliceable(type))
         return Type();

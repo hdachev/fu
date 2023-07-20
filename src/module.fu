@@ -257,10 +257,14 @@ struct Argument
     //       this means that we only need to flag the mutrefs.
     //
     hard_risk?:     bitset::BitSet;
+};
 
-    // TODO this could grow into an array of types,
-    //  or a usage mask, or a mix thereof.
-    cow_inside?:    TokenIdx;
+struct COWInside
+{
+    vtype:          ValueType;
+    token:          TokenIdx;
+    argTarget:      i32;
+    // ... one more i32 i guess?
 };
 
 struct Overload
@@ -283,6 +287,8 @@ struct Extended
     min:            i32;
     max:            i32;
     args:           Argument[];
+
+    cows_inside:    COWInside[];
 
     // The scopeskips here aren't needed in global scope (e.g. anything imported).
     spec_of?:       Target;
@@ -309,6 +315,7 @@ struct Extended
 struct ValueType
 {
     quals?:         Quals;
+    // TODO FIX wasting an i32 here until quals/usage goes u64
     canon:          string;
 };
 

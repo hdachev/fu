@@ -163,16 +163,19 @@ pub fn setModule(
 pub fn lookupUserType(
     implicit module: Module,
     implicit ctx: Context,
-    type: ValueType)
+    scp: StructCanon)
 {
-    let scp = parseStructCanon(type.canon);
-
     if (scp.modid == module.modid)
         return module.out.types[scp.index]
             || assert();
 
     return ctx.modules[scp.modid].out.types[scp.index]
         || assert();
+}
+
+pub fn lookupUserType(type: ValueType)
+{
+    return lookupUserType(parseStructCanon(type.canon));
 }
 
 pub fn is_trivial(type: ValueType)
