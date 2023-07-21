@@ -1966,6 +1966,31 @@ pub extern fn runTests()
             items: SolvedNode[];
         };
 
+        fn mutateThenCopy(ref callsite: SolvedNode, ref root: SolvedNode) {
+            callsite.items ~= callsite;
+            mut result = root;
+            result.items ~= root;
+            return result;
+        }
+
+        fn main() {
+            fn count(node: SolvedNode) {
+                mut c = 1;
+                node.items.each: |item| c += count(item);
+                return c;
+            }
+
+            mut a: SolvedNode;
+            mut b = mutateThenCopy(a, a);
+            return 1000 * a.count + b.count - 2004;
+        }
+    `);
+
+    ZERO(`
+        struct SolvedNode {
+            items: SolvedNode[];
+        };
+
         fn mutateThenCopy(ref root: SolvedNode) {
             fn copyRoot() {
                 mut result = root;
@@ -1983,16 +2008,72 @@ pub extern fn runTests()
 
         fn main() {
             fn count(node: SolvedNode) {
-                mut result = 1;
-                for (mut i = 0; i < node.items.len; i++)
-                    result += count(node.items[i]);
-
-                return result;
+                mut c = 1;
+                node.items.each: |item| c += count(item);
+                return c;
             }
 
             mut a: SolvedNode;
             mut b = a.mutateThenCopy();
             return 1000 * a.count + b.count - 2004;
+        }
+    `);
+
+    ZERO(`
+        struct SolvedNode {
+            items: SolvedNode[];
+        };
+
+        fn mutateCopyMutate(ref callsite: SolvedNode, ref root: SolvedNode) {
+            callsite.items ~= callsite;
+            mut result = root;
+            root.items ~= root;
+            return result;
+        }
+
+        fn main() {
+            fn count(node: SolvedNode) {
+                mut c = 1;
+                node.items.each: |item| c += count(item);
+                return c;
+            }
+
+            mut a: SolvedNode;
+            mut b = mutateCopyMutate(a, a);
+            return 1000 * a.count + b.count - 4002;
+        }
+    `);
+
+    ZERO(`
+        struct SolvedNode {
+            items: SolvedNode[];
+        };
+
+        fn mutateCopyMutate(ref root: SolvedNode) {
+            fn copyRoot() {
+                mut result = root;
+                root.items ~= root;
+                return result;
+            }
+
+            fn bck_call(ref callsite: SolvedNode) {
+                callsite.items ~= callsite; // mutation
+                return copyRoot();          // copy inside
+            }
+
+            return bck_call(root);
+        }
+
+        fn main() {
+            fn count(node: SolvedNode) {
+                mut c = 1;
+                node.items.each: |item| c += count(item);
+                return c;
+            }
+
+            mut a: SolvedNode;
+            mut b = a.mutateCopyMutate();
+            return 1000 * a.count + b.count - 4002;
         }
     `);
 
