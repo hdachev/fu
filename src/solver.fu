@@ -2356,10 +2356,12 @@ pub fn solve(
 
                             fn needsHardRisk(shadow index: i32)
                             {
-                                eachCOWInside: |vtype| {
-                                    shadow mut seen: StructCanon[];
-                                    if (type_maybeInside(host: vtype, o.type, :seen))
-                                        return true;
+                                if (_current_fn.snap.written_directly.has(index)) {
+                                    eachCOWInside: |vtype| {
+                                        shadow mut seen: StructCanon[];
+                                        if (type_maybeInside(host: vtype, o.type, :seen))
+                                            return true;
+                                    }
                                 }
 
                                 eachLiveChildMutref(index): |child| {
