@@ -1893,6 +1893,41 @@ pub extern fn runTests()
         }
     `);
 
+    ZERO(`
+        struct SolvedNode {
+            items: SolvedNode[];
+        };
+
+        fn mutateThenCopy(ref root: SolvedNode) {
+            fn copyRoot() {
+                mut result = root;
+                result.items ~= root;
+                return result;
+            }
+
+            fn bck_call(ref callsite: SolvedNode) {
+                callsite.items ~= callsite; // mutation
+                return copyRoot();          // copy inside
+            }
+
+            return bck_call(root);
+        }
+
+        fn main() {
+            fn count(node: SolvedNode) {
+                mut result = 1;
+                for (mut i = 0; i < node.items.len; i++)
+                    result += count(node.items[i]);
+
+                return result;
+            }
+
+            mut a: SolvedNode;
+            mut b = a.mutateThenCopy();
+            return 1000 * a.count + b.count - 2004;
+        }
+    `);
+
     // /COW
 
 
