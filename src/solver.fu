@@ -2342,7 +2342,7 @@ pub fn solve(
                         for (shadow mut i = 0; i < arg_targets.len; i++)
                         {
                             let t = arg_targets[i];
-                            if (!t)
+                            if (!t || t == index)
                                 continue;
 
                             // Mutrefs only.
@@ -2360,24 +2360,28 @@ pub fn solve(
                                     eachCOWInside: |vtype| {
                                         shadow mut seen: StructCanon[];
                                         if (type_maybeInside(host: vtype, o.type, :seen))
-                                            return true;
+                                            return index;
                                     }
                                 }
 
                                 eachLiveChildMutref(index): |child| {
-                                    if (needsHardRisk(child))
-                                        return true;
+                                    let reason = needsHardRisk(child);
+                                    if (reason)
+                                        return reason;
                                 }
 
-                                return false;
+                                return 0;
                             }
 
-                            if (needsHardRisk(t))
+                            let reason = needsHardRisk(t);
+                            if (reason)
                             {
-                                makeNote(N_COWRestrict);
+                                makeNote(N_COWRestrict, nested(index) ~ " at risk from " ~ nested(t) ~ " via " ~ nested(reason));
 
                                 flow.at_soft_risk.grow_if_oob(t).set::add(index);
-                                flow.at_hard_risk.grow_if_oob(t).set::add(index);
+
+                                if (reason != t)
+                                    flow.at_hard_risk.grow_if_oob(t).set::add(index);
                             }
                         }
 
@@ -5163,6 +5167,12 @@ pub fn solve(
                     //
                     let cow_inside = out.events.cows_inside.some(
                         |cow| cow.argTarget == argTarget.index);
+
+                    //
+                    if (SELF_TEST) {
+                        if (soft_risk.has(i)) BUG("updateScope: " ~ argTarget ~ " soft_risk lists self");
+                        if (hard_risk.has(i)) BUG("updateScope: " ~ argTarget ~ " hard_risk lists self");
+                    }
 
                     //
                     mut arg = Argument(
