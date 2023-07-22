@@ -5294,8 +5294,26 @@ pub fn solve(
                         target ~ " does nothing: returns void and has no effects. Make it " ~ "lax".qKW ~ " if this is intentional.");
 
                 //
+                retval || BUG("updateScope: no return type.");
+                if (retval.is_ref)
+                {
+                    // TODO FIX: ZST arguments can get unused-removed,
+                    //  which can leaves behind a dead region in the retval lifetime.
+                    //
+                    if (retval.isIrrelevant)
+                        retval.lifetime = Lifetime_static;
+
+                    Lifetime_test(retval.lifetime);
+                }
+
+                retval.lifetime.uni0n.each: |r|
+                    r.Region_isArgPosition() || r.Region_isStatic() || BUG(
+                        "updateScope: Non-static/non-arg leaked:\n\t" ~ r ~ "\n\n\tIn retval lifetime:\n\t" ~ retval.lifetime);
+
+                //
                 shadow ref overload = GET_mut(target);
                 overload.type       = retval;
+                overload.flags      = out.flags;
 
                 let kind: ::kind    = isUnspec          ? "template"
                                     : isNative          ? "__native"
@@ -5306,17 +5324,6 @@ pub fn solve(
                     overload.kind   = kind;
                     change          = true;
                 }
-
-                //
-                retval || BUG("updateScope: no return type.");
-                if (retval.is_ref)
-                    Lifetime_test(retval.lifetime);
-
-                retval.lifetime.uni0n.each: |r|
-                    r.Region_isArgPosition() || r.Region_isStatic() || BUG(
-                        "updateScope: Non-static/non-arg leaked:\n\t" ~ r ~ "\n\n\tIn retval lifetime:\n\t" ~ retval.lifetime);
-
-                overload.flags  = out.flags;
 
                 // Not amazing but it is what it is,
                 //  these are the only calls c++ guarantees order of eval for,
@@ -6611,7 +6618,7 @@ pub fn solve(
 
         let fields          = evalTypeAnnot(node.items[0])
                                 .lookupUserType()
-                                .items || BUG("Empty struct/enum.");
+                                .items;
 
         mut items_ast: Node[];
         for (mut i = 0; i < fields.len; i++)

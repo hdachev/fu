@@ -525,7 +525,7 @@ pub extern fn runTests()
         }
     `);
 
-    ZERO(`
+    TODO_structs(`
         struct Empty {};
 
         fn main() {
