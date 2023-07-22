@@ -525,6 +525,16 @@ pub extern fn runTests()
         }
     `);
 
+    ZERO(`
+        struct Empty {};
+
+        fn main() {
+            mut e = [ Empty(), Empty() ];
+            fn GET(idx: i32) e.len > idx && e[idx];
+            return GET(0) == GET(1) ? 0 : 1;
+        }
+    `);
+
     // /using
 
 
