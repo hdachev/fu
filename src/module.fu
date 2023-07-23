@@ -264,7 +264,7 @@ struct COWInside
     vtype:          ValueType;
     token:          TokenIdx;
     argTarget:      i32;
-    // ... one more i32 i guess?
+    mayEscapeVia:   i32;
 };
 
 struct Overload

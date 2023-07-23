@@ -127,7 +127,8 @@ pub fn solve(
 
         // COW.
         written_directly:   bitset::BitSet;
-        // written_indirectly - prebake parents - add this when needed
+        written_indirectly: bitset::BitSet;
+        mayEscapeVia:       i32;
     };
 
     struct Postdom
@@ -139,7 +140,7 @@ pub fn solve(
     fn branch(ref dest: Postdom, src: Postdom)
     {
         for (fieldname i: PostdomSnap)
-            dest.snap.i.add(src.snap.i);
+            dest.snap.i |= src.snap.i;
 
         dest.loop_start = max(
             dest.loop_start || BUG(),
@@ -2256,7 +2257,8 @@ pub fn solve(
 
     fn validateCOW(item: SolvedNode,
         here! = _here,
-        callee?: Target, host_arg?: Argument)
+        callee?: Target, host_arg?: Argument,
+        calleeReturnDiscarded!?: bool)
     {
         // validateCOW is used for 'copy' nodes but also for callargs,
         //  where the copy-inside list has many vtype/token pairs.
@@ -2268,6 +2270,21 @@ pub fn solve(
                 for (shadow mut i = 0; i < callee_cows.len; i++)
                 {
                     let callee_cow = callee_cows[i];
+
+                    // TODO FIX: first naive attempt at some escape-analysis-like thing,
+                    //  very limited but I need this to get closer to a bootstrap.
+                    //
+                    // Basically - if the COWInside is produced after all arguments
+                    //  have finished writing, and if the return value here is discarded,
+                    //   ignore them and don't propagate them upward.
+                    //
+                    // TODO FIX: this ignores the possiblity for values
+                    //  to escape via throw / exceptions,
+                    //   although that's not currently possible.
+                    //
+                    if (calleeReturnDiscarded && !callee_cow.mayEscapeVia)
+                        continue;
+
                     if (callee_cow.argTarget == host_arg.local)
                         visit(:callee_cow.vtype, token?: callee_cow.token);
                 }
@@ -2388,16 +2405,26 @@ pub fn solve(
                         // Remember this copy, we'll propagate along.
                         eachCOWInside: |vtype, token|
                         {
+                            let mayEscapeVia = _current_fn.snap.mayEscapeVia;
+
+                            //
                             ref my_cows = _current_fn.events.cows_inside;
                             for (shadow mut i = 0; i < my_cows.len; i++)
                             {
                                 ref my_cow = my_cows[i];
-                                if (my_cow.argTarget == index && my_cow.vtype == vtype)
+                                if (my_cow.argTarget    == index &&
+                                    my_cow.vtype.canon  == vtype.canon)
+                                {
+                                    my_cow.vtype.quals  |= vtype.quals;
+                                    my_cow.mayEscapeVia |= mayEscapeVia;
                                     return;
+                                }
                             }
 
                             // Nope, couldn't insert, add a new one.
-                            my_cows ~= COWInside(:vtype, :token, argTarget: index);
+                            my_cows ~= COWInside(
+                                :vtype, :token, argTarget: index,
+                                :mayEscapeVia);
                         }
                     }
                 }
@@ -3046,7 +3073,8 @@ pub fn solve(
                     if (host_arg.flags & F_COW_INSIDE)
                         validateCOW(arg, :host_arg,
                             callee: node.target,
-                            here: arg.token);
+                            here: arg.token,
+                            calleeReturnDiscarded: canDiscard);
                 }
             }
             // MOVE ON LAST USE ////////////////////////////////////////////
@@ -3135,10 +3163,25 @@ pub fn solve(
                         {
                             let index = Region_asLocal(lt.uni0n[i]);
                             if (index && _current_fn.snap.written_directly.add_once(index))
+                                callarg_trackWriteIndirect(index);
+                        }
+                    }
+
+                    fn callarg_trackWriteIndirect(index: i32)
+                    {
+                        if (_current_fn.snap.written_indirectly.add_once(index))
+                        {
+                            shadow let t = nested(index);
+                            shadow let lt = Lifetime_climbType(t).lifetime.uni0n;
+                            for (shadow mut i = 0; i < lt.len; i++)
                             {
-                                // TODO, but add it to written_indirectly
-                                // callarg_trackWrites(Lifetime_climbType(nested(index)).lifetime);
+                                let parent = Region_asLocal(lt[i]);
+                                if (parent)
+                                    callarg_trackWriteIndirect(parent);
                             }
+
+                            if (t.flags & F_ARG)
+                                _current_fn.snap.mayEscapeVia |= 1 << (index % 32);
                         }
                     }
 

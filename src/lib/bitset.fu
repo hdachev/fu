@@ -54,6 +54,12 @@ pub fn add(using _: &mut BitSet, other: BitSet)
         _data[i] |= other._data[i];
 }
 
+pub fn |=(using left: &mut BitSet, other: BitSet)
+{
+    left.add(:other);
+    return left;
+}
+
 pub fn rem(using _: &mut BitSet, other: BitSet)
 {
     mut N = other._data.len;
