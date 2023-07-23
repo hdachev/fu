@@ -2087,6 +2087,53 @@ pub extern fn runTests()
         }
     `);
 
+    ZERO(`
+        struct SolvedNode {
+            items: SolvedNode[];
+        };
+
+        fn mutateThenCopyAfterRecursion(ref root: SolvedNode) {
+            fn mutateThenCopy(ref callsite: SolvedNode) {
+                callsite.items ~= callsite;
+
+                mut result = root;
+                result.items ~= root;
+                return result;
+            }
+
+            fn indirectRecursion(ref node: SolvedNode) {
+                ref items = node.items;
+
+                // The root copies made at the end of each bck_node call
+                //  would indeed be invalid if they survived,
+                //   but they get return-discarded here.
+                for (mut i = items.len; i --> 1; )
+                    bck_node(items[i]);                         ;; !N_COWRestrict
+                                                                ;; PointlessMustSeq
+                return items && bck_node(items[0]);
+            }
+
+            fn bck_node(ref node: SolvedNode)
+                node.items
+                    ? indirectRecursion(node)
+                    : mutateThenCopy(node);
+
+            return bck_node(root);
+        }
+
+        fn main() {
+            fn count(node: SolvedNode) {
+                mut c = 1;
+                node.items.each: |item| c += count(item);
+                return c;
+            }
+
+            mut a: SolvedNode;
+            mut b = a.mutateThenCopyAfterRecursion();
+            return 1000 * a.count + b.count - 2004;
+        }
+    `);
+
     // /COW
 
 
