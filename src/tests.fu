@@ -2134,6 +2134,48 @@ pub extern fn runTests()
         }
     `);
 
+    ZERO(`
+        struct Node {
+            items?: Node[];
+        };
+
+        fn obtuseEscapeOnNextLoopIter(ref node: Node, ref root: Node) {
+            mut escape: Node;
+            <fail both alias root 26:17+4>
+            ref <pass/>
+            fn  </fail> items = node.items;
+
+            for (mut i = items.len; i --> 0; ) {
+                <alt>
+                if (i)      escape = root;
+                else        items[i].items ~= escape;
+                <alt/>
+                if (i == 0) items[i].items ~= escape;
+                else        escape = root;
+                </alt>
+            }
+        }
+
+        fn main() {
+            fn count(node: Node) {
+                mut c = 1;
+                node.items.each: |item| c += count(item);
+                return c;
+            }
+
+            mut root = Node([ Node, Node ]);
+            obtuseEscapeOnNextLoopIter(root, root);
+
+            // Now root should be:
+            // Node([ Node([ Node([ Node, Node ]) ]), Node ])
+            //
+            // If COW breaks this can get self-recursive,
+            //  currently blows up with a segfault if 'ref items'.
+            //
+            return root.count - 6;
+        }
+    `);
+
     // /COW
 
 
