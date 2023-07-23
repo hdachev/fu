@@ -250,6 +250,7 @@ pub fn solve(
         usage?:         Type[];
 
         postdom?:       Postdom;
+        loop_PREVITER?: Postdom;
 
         kills!?:        Helpers;
     };
@@ -2558,14 +2559,39 @@ pub fn solve(
 
         //
 
-        fn Breakable_begin()
+        fn Breakable_begin(loop_PREVITER?: bool)
         {
             if (node.helpers)
                 node.helpers.postdom = _current_fn.postdom;
+
+            // This only works during the second propagateType pass -
+            //  basically we're reusing the events collected during RelaxMut,
+            //   to pre-seed what's gonna happen on next/prev loop iteration during MaybeCopyOrMove.
+            if (loop_PREVITER && PASS_MaybeCopyOrMove)
+                _current_fn.postdom.branch(node.helpers.loop_PREVITER);
         }
 
-        fn Breakable_end()
+        fn Breakable_end(loop_PREVITER?: bool)
         {
+            // We only collect loop_PREVITER stuff in RelaxMut,
+            //  no point in doing it during MCOM because nothing comes after it.
+            if (loop_PREVITER && !PASS_MaybeCopyOrMove)
+            {
+                ref previter    = node.helpers.loop_PREVITER;
+                previter        = _current_fn.postdom;
+
+                // We want to forget about all events
+                //  for stuff that's local to the loop,
+                //   otherwise we see writes to local variables
+                //    past their last use.
+                //
+                let loop_start  = node.helpers.locals_start;
+
+                for (fieldname i: PostdomSnap)
+                    if !(typeof (previter.i) -> i32)
+                        previter.i.clear(start: loop_start);
+            }
+
             if (node.helpers)
                 _current_fn.postdom.branch(node.helpers.postdom);
         }
@@ -2843,7 +2869,7 @@ pub fn solve(
             fn post_cond    = node.items[LOOP_POST_COND];
 
             // MOVE ON LAST USE ////////////////////////////////////////////
-            Breakable_begin();
+            Breakable_begin(loop_PREVITER: true);
             let loop_start0         = _current_fn.loop_start    || BUG();
             _current_fn.loop_start  = node.helpers.locals_start || BUG();
 
@@ -2892,7 +2918,7 @@ pub fn solve(
 
             // MOVE ON LAST USE ////////////////////////////////////////////
             _current_fn.loop_start  = loop_start0;
-            Breakable_end();
+            Breakable_end(loop_PREVITER: true);
             _current_fn.loop_start == loop_start0 || BUG();
 
             ref fn_usage = _current_fn.var_usage;

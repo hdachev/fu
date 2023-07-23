@@ -15,6 +15,23 @@ pub fn clear(using _: &mut BitSet)
     _data.clear();
 }
 
+pub fn clear(using _: &mut BitSet, start!idx: i32)
+{
+    let no_neg  = idx & int.MIN;
+    let bucket  = idx >> 3 | no_neg;
+    let idx_flr = bucket << 3;
+
+    let shrink  = idx > idx_flr ? bucket + 1 : bucket;
+    if (_data.len > shrink)
+        _data.resize(shrink);
+
+    if (_data.len > bucket)
+    {
+        let rem = idx - idx_flr;
+        _data[bucket] &= ~(0xff.u8 << rem.u8);
+    }
+}
+
 pub fn add_once(using _: &mut BitSet, idx: int): bool
 {
     let no_neg = idx & int.MIN;
