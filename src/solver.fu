@@ -133,7 +133,7 @@ pub fn solve(
 
     struct Postdom
     {
-        snap:               PostdomSnap;
+        using snap:         PostdomSnap;
         loop_start:         i32;
     };
 
@@ -2373,7 +2373,7 @@ pub fn solve(
 
                             fn needsHardRisk(shadow index: i32)
                             {
-                                if (_current_fn.snap.written_directly.has(index)) {
+                                if (_current_fn.postdom.written_directly.has(index)) {
                                     eachCOWInside: |vtype| {
                                         shadow mut seen: StructCanon[];
                                         if (type_maybeInside(host: vtype, o.type, :seen))
@@ -2405,7 +2405,7 @@ pub fn solve(
                         // Remember this copy, we'll propagate along.
                         eachCOWInside: |vtype, token|
                         {
-                            let mayEscapeVia = _current_fn.snap.mayEscapeVia;
+                            let mayEscapeVia = _current_fn.postdom.mayEscapeVia;
 
                             //
                             ref my_cows = _current_fn.events.cows_inside;
@@ -2441,7 +2441,7 @@ pub fn solve(
                 if (!seen.add_once(child))
                     continue;
 
-                if (_current_fn.snap.written_directly.has(child))
+                if (_current_fn.postdom.written_directly.has(child))
                 {
                     // For a ref to clobber a COW copy,
                     //  the thing it points to must fit inside the COW type -
@@ -2533,7 +2533,7 @@ pub fn solve(
         fn tryTrackLastUse(lt: Lifetime)
         {
             return PASS_MoveOnLastUse
-                && trackUse(:lt, _current_fn.snap.used_again);
+                && trackUse(:lt, _current_fn.postdom.used_again);
         }
 
         fn trackJustMoved(lt: Lifetime)
@@ -2548,7 +2548,7 @@ pub fn solve(
                     "trackJustMoved: found a non-local.");
 
                 let target = nested(local);
-                _current_fn.snap.just_moved.add_once(target.index) || BUG(
+                _current_fn.postdom.just_moved.add_once(target.index) || BUG(
                     "trackJustMoved: already moved.");
 
                 trackJustMoved(Lifetime_climbType(target).lifetime);
@@ -2975,7 +2975,7 @@ pub fn solve(
                             //    because the lack of sequence points occurs between
                             //     the individual callarg expressions.
                             //
-                            trackUse(node.lifetime, _current_fn.snap.just_used);
+                            trackUse(node.lifetime, _current_fn.postdom.just_used);
                         }
                         // MOVE ON LAST USE OOE ////////////////////////////////////////
                     }
@@ -3131,10 +3131,10 @@ pub fn solve(
                 //
                 mut just_used1: bitset::BitSet;
                 //
-                if (ooe_isUndef)       swap(_current_fn.snap.just_used, just_used1);
-                defer if (ooe_isUndef) swap(_current_fn.snap.just_used, just_used1);
+                if (ooe_isUndef)       swap(_current_fn.postdom.just_used, just_used1);
+                defer if (ooe_isUndef) swap(_current_fn.postdom.just_used, just_used1);
                 //
-                mut just_moved00 = ooe_isUndef && _current_fn.snap.just_moved;
+                mut just_moved00 = ooe_isUndef && _current_fn.postdom.just_moved;
                 mut MUSTSEQ_mask = 0;
                 // MOVE ON LAST USE OOE ////////////////////////////////////////
 
@@ -3145,7 +3145,7 @@ pub fn solve(
                     // MOVE ON LAST USE OOE ////////////////////////////////////////
                     lax let just_moved0 = ooe_isUndef
                         && !ooe_isLast
-                        && _current_fn.snap.just_moved;
+                        && _current_fn.postdom.just_moved;
                     // MOVE ON LAST USE OOE ////////////////////////////////////////
 
                     if (PASS_MaybeCopyOrMove)
@@ -3162,14 +3162,14 @@ pub fn solve(
                         for (shadow mut i = 0; i < lt.uni0n.len; i++)
                         {
                             let index = Region_asLocal(lt.uni0n[i]);
-                            if (index && _current_fn.snap.written_directly.add_once(index))
+                            if (index && _current_fn.postdom.written_directly.add_once(index))
                                 callarg_trackWriteIndirect(index);
                         }
                     }
 
                     fn callarg_trackWriteIndirect(index: i32)
                     {
-                        if (_current_fn.snap.written_indirectly.add_once(index))
+                        if (_current_fn.postdom.written_indirectly.add_once(index))
                         {
                             shadow let t = nested(index);
                             shadow let lt = Lifetime_climbType(t).lifetime.uni0n;
@@ -3181,7 +3181,7 @@ pub fn solve(
                             }
 
                             if (t.flags & F_ARG)
-                                _current_fn.snap.mayEscapeVia |= 1 << (index % 32);
+                                _current_fn.postdom.mayEscapeVia |= 1 << (index % 32);
                         }
                     }
 
@@ -3199,7 +3199,7 @@ pub fn solve(
                             //  but not within this argument,
                             //   that concern lifetimes used here.
                             //
-                            _current_fn.snap.just_used.each: |index|
+                            _current_fn.postdom.just_used.each: |index|
                             {
                                 if (just_moved0.has(index) && !just_moved00.has(index))
                                 {
@@ -3215,8 +3215,8 @@ pub fn solve(
                             }
                         }
 
-                        just_used1.add(_current_fn.snap.just_used);
-                        _current_fn.snap.just_used.clear();
+                        just_used1.add(_current_fn.postdom.just_used);
+                        _current_fn.postdom.just_used.clear();
                     }
                     // MOVE ON LAST USE OOE ////////////////////////////////////////
                 }
