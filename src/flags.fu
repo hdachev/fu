@@ -140,6 +140,15 @@ flags Flags: u32
 };
 
 
+//
+
+flags ExitPaths {
+    XP_NonEmptyReturn
+    XP_EmptyReturn
+    XP_NoReturn
+};
+
+
 // Commons.
 
 let LET_TYPE        = 0;

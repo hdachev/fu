@@ -129,6 +129,7 @@ pub fn solve(
         written_directly:   bitset::BitSet;
         written_indirectly: bitset::BitSet;
         mayEscapeVia:       i32;
+        exitPaths:          ExitPaths;
     };
 
     struct Postdom
@@ -136,6 +137,13 @@ pub fn solve(
         using snap:         PostdomSnap;
         loop_start:         i32;
     };
+
+    fn Postdom_resetAtFnEnd(ref postdom: Postdom)
+    {
+        postdom             = [];
+        postdom.loop_start  = 1;
+        postdom.exitPaths   = XP_EmptyReturn;
+    }
 
     fn branch(ref dest: Postdom, src: Postdom)
     {
@@ -176,6 +184,9 @@ pub fn solve(
 
         // So we can pass the F_INLINE flag onto mustBecomeInline
         TODO_FIX_isInline?: bool;
+
+        //
+        TODO_FIX_catches?:  i32;
 
         // Tempfix, securing old inliner against recursive inlining.
         now_inlining?:      Target[];
@@ -2287,12 +2298,18 @@ pub fn solve(
                         continue;
 
                     if (callee_cow.argTarget == host_arg.local)
-                        visit(:callee_cow.vtype, token?: callee_cow.token);
+                    {
+                        visit(:callee_cow.vtype, token?: callee_cow.token,
+                            uncaughtThrowOnly?:
+                                callee_cow.exitPaths == XP_NoReturn
+                                    && !_current_fn.TODO_FIX_catches);
+                    }
                 }
             }
             else
             {
-                visit(:item.type.vtype, token?: _here);
+                visit(:item.type.vtype, token?: _here,
+                    uncaughtThrowOnly?: false);
             }
         }
 
@@ -2386,7 +2403,13 @@ pub fn solve(
                                 }
 
                                 if (_current_fn.postdom.written_directly.has(index)) {
-                                    eachCOWInside: |vtype| {
+                                    eachCOWInside: |vtype, uncaughtThrowOnly| {
+
+                                        // If COW only occurs via a throw route,
+                                        //  no writes that follow this call can clobber it.
+                                        if (uncaughtThrowOnly)
+                                            continue;
+
                                         shadow mut seen: StructCanon[];
                                         if (type_maybeInside(host: vtype, o.type, :seen))
                                             return index;
@@ -2409,9 +2432,13 @@ pub fn solve(
                         }
 
                         // Remember this copy, we'll propagate along.
-                        eachCOWInside: |vtype, token|
+                        eachCOWInside: |vtype, token, uncaughtThrowOnly|
                         {
                             let mayEscapeVia = _current_fn.postdom.mayEscapeVia;
+                            let exitPaths    =
+                                uncaughtThrowOnly
+                                    ? XP_NoReturn
+                                    : _current_fn.postdom.exitPaths || BUG("No current_fn.exitPaths");
 
                             //
                             ref my_cows = _current_fn.events.cows_inside;
@@ -2423,6 +2450,7 @@ pub fn solve(
                                 {
                                     my_cow.vtype.quals  |= vtype.quals;
                                     my_cow.mayEscapeVia |= mayEscapeVia;
+                                    my_cow.exitPaths    |= exitPaths;
                                     return;
                                 }
                             }
@@ -2430,7 +2458,8 @@ pub fn solve(
                             // Nope, couldn't insert, add a new one.
                             my_cows ~= COWInside(
                                 :vtype, :token, argTarget: index,
-                                :mayEscapeVia);
+                                :mayEscapeVia,
+                                :exitPaths);
                         }
                     }
                 }
@@ -2593,7 +2622,7 @@ pub fn solve(
                 let loop_start  = node.helpers.locals_start;
 
                 for (fieldname i: PostdomSnap)
-                    if !(typeof (previter.i) -> i32)
+                    if (typeof (previter.i) -> bitset::BitSet)
                         previter.i.clear(start: loop_start);
             }
 
@@ -2849,7 +2878,9 @@ pub fn solve(
             _current_fn.fx_mask &= ~Fx_Throws;
             //////////////////////////////////////////////
 
+            _current_fn.TODO_FIX_catches++;
             propagateType(attempt, t_void, :relax_mask);
+            _current_fn.TODO_FIX_catches--;
 
             // Drop the whole catch if possible,
             // TODO FIX this defeats relaxing the catch & err parts first.
@@ -3085,6 +3116,22 @@ pub fn solve(
                 makeNote(N_UnusedCall);
                 return discardIntoBlock();
             }
+
+            ////////////////////////////////////////////////////////////////
+            ////////////////////////////////////////////////////////////////
+            //
+            // Returns never? No effects follow,
+            //  this is the last thing that's gonna happen.
+            //   TODO clear loop_start too, basically clear Postdom here.
+            //
+            if (node.target.type.is_never && !_current_fn.TODO_FIX_catches)
+            {
+                _current_fn.postdom.snap        = [];
+                _current_fn.postdom.exitPaths   = XP_NoReturn;
+            }
+            //
+            ////////////////////////////////////////////////////////////////
+            ////////////////////////////////////////////////////////////////
 
             // So this call stays.
             _current_fn.fx_mask |= node.target.fx_mask;
@@ -3447,14 +3494,30 @@ pub fn solve(
             h.ret_actual || BUG(
                 "propagateType(jump): h.ret_actual not available: #" ~ h.index);
 
+            ref expr            = node.items.only;
+
             if (!_current_fn.TODO_FIX_defers)
+            {
                 _current_fn.postdom = h.postdom || BUG(
                     "propagateType(jump): h.loop_start not available: #" ~ h.index);
 
+                // Adding this nonsense for COWsInside,
+                //  basically for the compiler to accept its own code right now,
+                //   we need to recognize exitpath=throws, so that we know those cows don't occur
+                //    unless a callee unwinds, so no worries about loops etc.
+                if (h.mask & HM_Function)
+                {
+                    let kind = expr.kind;
+
+                    _current_fn.postdom.exitPaths =
+                        kind == "empty" || kind == "definit"
+                            ? XP_EmptyReturn
+                            : XP_NonEmptyReturn;
+                }
+            }
+
             let redundant       = kills && kills.index <= h.index;
             shadow let kills    = redundant ? kills : h;
-
-            ref expr            = node.items.only;
 
             if (PASS_MaybeCopyOrMove)
                 maybeCopyOrMove(expr, h.ret_actual);
@@ -10817,8 +10880,8 @@ pub fn solve(
         node.helpers.pass = "RelaxMut";
 
         _current_fn.var_usage  && BUG("_current_fn.var_usage not empty before propagateType.");
-        _current_fn.loop_start && BUG("_current_fn.loop_start != 0 before propagateType.");
-        _current_fn.loop_start = 1;
+        _current_fn.postdom    && BUG("_current_fn.postdom not empty before propagateType.");
+        Postdom_resetAtFnEnd(_current_fn);
         propagateType(node, node.type, relax_mask: RELAX_before_bck);
 
         ////////////////
@@ -10845,10 +10908,7 @@ pub fn solve(
         _current_fn.relaxed = [];
 
         _current_fn.loop_start == 1 || BUG("_current_fn.loop_start leak: " ~ _current_fn.loop_start);
-        _current_fn.postdom = [];
-
-        _current_fn.loop_start && BUG("_current_fn.loop_start != 0 before propagateType.");
-        _current_fn.loop_start = 1;
+        Postdom_resetAtFnEnd(_current_fn);
 
         propagateType(node, node.type, relax_mask: RELAX_all);
 

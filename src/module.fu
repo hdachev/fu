@@ -265,6 +265,7 @@ struct COWInside
     token:          TokenIdx;
     argTarget:      i32;
     mayEscapeVia:   i32;
+    exitPaths:      flags::ExitPaths;
 };
 
 struct Overload
