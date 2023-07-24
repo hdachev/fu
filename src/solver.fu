@@ -2374,18 +2374,23 @@ pub fn solve(
 
                             fn needsHardRisk(shadow index: i32)
                             {
+                                // Gotta visit children first -
+                                //  otherwise a direct match on the parent
+                                //   exits early and fails to hard-risk the argument,
+                                //    see cowAfterConditionalWithLoop testcase.
+                                //
+                                eachLiveChildMutref(index): |child| {
+                                    let reason = needsHardRisk(child);
+                                    if (reason)
+                                        return reason;
+                                }
+
                                 if (_current_fn.postdom.written_directly.has(index)) {
                                     eachCOWInside: |vtype| {
                                         shadow mut seen: StructCanon[];
                                         if (type_maybeInside(host: vtype, o.type, :seen))
                                             return index;
                                     }
-                                }
-
-                                eachLiveChildMutref(index): |child| {
-                                    let reason = needsHardRisk(child);
-                                    if (reason)
-                                        return reason;
                                 }
 
                                 return 0;
