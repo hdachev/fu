@@ -2208,6 +2208,65 @@ pub extern fn runTests()
         }
     `);
 
+    ZERO(`
+        struct SolvedNode {
+            items: SolvedNode[];
+        };
+
+        fn copiesRootBeforeThrow(ref root: SolvedNode, ref escape: SolvedNode)
+        {
+            fn bck_node(ref node: SolvedNode) {
+                ref items = node.items;
+                for (mut i = 0; i < items.len; i++) {
+                    ref item = items[i];
+                    bck_node(item);
+
+                    if (item.items.len > 1) {
+                        escape = root;
+                        <fail both alias root 25:21+1>
+                        if (escape.items.len > 3)       <pass/>
+                        if (true)                       </fail>
+                            throw("#" ~ escape.items.len);
+                    }
+                }
+
+                node.items ~= node;
+            }
+
+            bck_node(root);
+        }
+
+        fn main() {
+            fn count(node: SolvedNode) {
+                mut c = 1;
+                node.items.each: |item| c += count(item);
+                return c;
+            }
+
+            mut escape: SolvedNode;
+            mut a = SolvedNode([ SolvedNode ]);
+            a.copiesRootBeforeThrow(:escape);
+
+            let C0 = a.count;
+            if (C0 != 6)            return 1;
+
+            try {
+                a.copiesRootBeforeThrow(:escape);
+            }
+            catch (e) {
+                a.items ~= SolvedNode(); // escape !== a
+                let C1 = a.count;
+                let C2 = escape.count;
+                if (C1 != 11)           return 2;
+                if (C2 != 10)           return 3;
+                else if (e != "#2")     return 4;
+                else                    return 0;
+            }
+
+            return 5;
+        }
+    `);
+
     // /COW
 
 
