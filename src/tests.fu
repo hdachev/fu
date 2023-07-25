@@ -2176,6 +2176,38 @@ pub extern fn runTests()
         }
     `);
 
+    ZERO(`
+        struct SolvedNode {
+            items: SolvedNode[];
+        };
+
+        fn cowAfterConditionalWithLoop(ref a: SolvedNode, ref b: SolvedNode) {
+            if (a.items.len & 1) {
+                ref items = a.items;
+                for (mut i = 0; i < items.len; i++)
+                    cowAfterConditionalWithLoop(items[i], b);
+            }
+
+            a.items ~= b;
+        }
+
+        fn main() {
+            mut x = SolvedNode([ SolvedNode ]);
+            <fail both alias x>
+            ref y = x;  <pass/>
+            mut y = x;  </fail>
+            cowAfterConditionalWithLoop(x, y);                  ;; N_COWRestrict
+
+            fn count(node: SolvedNode) {
+                mut c = 1;
+                node.items.each: |item| c += count(item);
+                return c;
+            }
+
+            return x.count == 6 ? 0 : 1;                        ;; PointlessMustSeq
+        }
+    `);
+
     // /COW
 
 
