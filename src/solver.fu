@@ -6488,7 +6488,10 @@ pub fn solve(
         // Deal with expression first, might noop the jump.
         mut expr = !node.items
             ? createEmpty()
-            : solveNode(node.items.only, type: h.ret_actual || h.ret_expect);
+            : solveNode(node.items.only,
+                type: h.ret_actual
+                        ? clear_vfacts(h.ret_actual)
+                        : h.ret_expect);
 
         // Dead code elim.
         if (expr.type.is_never)

@@ -192,6 +192,12 @@ pub fn is_ref2static(type: Type): bool
 
 //
 
+pub fn clear_vfacts(mut type: Type): Type
+{
+    type.vfacts = [];
+    return type;
+}
+
 pub fn clear_refs(mut type: Type): Type
 {
     type.quals &= ~q_mutref;
@@ -225,9 +231,6 @@ fn tryClearRefs(type: Type, mutref?: bool): Type
     return (mutref ? type.is_mutref : type.is_ref)
         && clear_refs(type);
 }
-
-
-//
 
 pub fn tryClear_mutref(type: Type)
 {
