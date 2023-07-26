@@ -3200,6 +3200,27 @@ pub extern fn runTests()
         fn main() = unambig_or(false, 0, 0).i32;
     `);
 
+    ZERO(`
+        struct Node { items: Node[] };
+
+        fn isFieldChain(arg: Node) {
+            if (arg.items.len > 1)
+                return false;
+
+            return !arg.items || isFieldChain(arg.items[0]);
+        }
+
+        fn main() {
+            let empty       = Node();
+            let chain       = Node([ Node ]);
+            let not_chain   = Node([ Node, Node ]);
+
+            return empty.isFieldChain
+                && chain.isFieldChain
+                && !not_chain.isFieldChain ? 0 : 1;
+        }
+    `);
+
     // /Logic and selectors.
 
 
