@@ -8041,6 +8041,10 @@ pub fn solve(
                 type = sumType;
         }
 
+        //
+        if (items.last.is_never)
+            type.vfacts = AlwaysTrue;
+
         return SolvedNode("or", type, :items);
     }
 
@@ -8118,6 +8122,10 @@ pub fn solve(
                 type = sumType;
             }
         }
+
+        //
+        if (items.last.is_never)
+            type.vfacts = AlwaysFalse;
 
         // Because values remain values and refs remain refs,
         //  there's no copying/moving involved in an && chain.

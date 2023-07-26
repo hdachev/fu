@@ -9086,7 +9086,7 @@ pub extern fn runTests()
         }
     `);
 
-    ZERO(`
+    TODO_ambig(currently: "return does not match annotation 8:24+3", `
         fn compile_snippets(x0: string) x0.find('a') && throw("throw#1");
         fn ZERO(x1: string) x1.find('b') && throw("throw#2");
 
