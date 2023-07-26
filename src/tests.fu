@@ -2215,6 +2215,10 @@ pub extern fn runTests()
 
         fn copiesRootBeforeThrow(ref root: SolvedNode, ref escape: SolvedNode)
         {
+            fn fail(reason: string)
+                reason.len & 1 && throw("odd: " ~ reason)
+                               || throw(reason);
+
             fn bck_node(ref node: SolvedNode) {
                 ref items = node.items;
                 for (mut i = 0; i < items.len; i++) {
@@ -2223,10 +2227,10 @@ pub extern fn runTests()
 
                     if (item.items.len > 1) {
                         escape = root;
-                        <fail both alias root 25:21+1>
+                        <fail both alias root 29:21+1>
                         if (escape.items.len > 3)       <pass/>
                         if (true)                       </fail>
-                            throw("#" ~ escape.items.len);
+                            fail("#" ~ escape.items.len);
                     }
                 }
 
@@ -14324,6 +14328,19 @@ pub extern fn runTests()
             }
             return test();
         }
+    `);
+
+    ZERO(`
+        fn test(x: i32) {
+            let val =                                       <alt>
+                x & 1 ? { return 0 } : { return 1 };        <alt/>
+                x & 1 && { return 0 } || { return 1 };      <alt/>
+                (x & 1 || { return 1 }) && { return 0 };    </alt>
+
+            return UNREACHABLE(val);
+        }
+
+        fn main() test(1);
     `);
 
 
