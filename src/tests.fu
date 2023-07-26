@@ -3221,6 +3221,23 @@ pub extern fn runTests()
         }
     `);
 
+    ZERO(`
+        fn underconcat(dedupe: string, sighash: string)
+            dedupe && sighash
+                ? dedupe ~ '_' ~ sighash
+                : dedupe || sighash;
+
+        fn main() {
+            let a   = underconcat("a", "");
+            let b   = underconcat("", "b");
+            let c   = underconcat("", "");
+            let ab  = underconcat("a", "b");
+
+            let res = a ~ "," ~ b ~ "," ~ c ~ "," ~ ab;
+            return res == "a,b,,a_b" ? 0 : 1;
+        }
+    `);
+
     // /Logic and selectors.
 
 
