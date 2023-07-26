@@ -7980,7 +7980,7 @@ pub fn solve(
             type = t_bool;
 
         // Unless this is an explicit bool context:
-        if !(type == t_bool) :RESOLVE_SUPERTYPE
+        if !(type.propositionOK) :RESOLVE_SUPERTYPE
         {
             mut sumType: Type;
             mut hasNever = false;
@@ -8074,7 +8074,7 @@ pub fn solve(
             type = t_bool;
 
         // Unless this is an explicit bool context:
-        if !(type == t_bool)
+        if !(type.propositionOK)
         {
             mut sumType: Type;
 

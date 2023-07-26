@@ -98,6 +98,12 @@ pub let t_byte      = Primitive("c8");
 
 pub let t_proposition   = Type(ValueType(quals: q_USAGE, canon: t_bool.canon));
 
+pub fn propositionOK(type: Type) {
+    return  !type.lifetime
+        && (!type.vfacts || BUG("propositionOK seeing vfacts: " ~ type.vfacts))
+        &&   type.canon == t_bool.canon;
+}
+
 
 // I think these should also be non-refereable?
 
