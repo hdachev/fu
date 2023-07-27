@@ -3668,8 +3668,8 @@ pub fn solve(
                             items.splice(i + 1, alt.len);
 
                             shadow let cond = k == "and"
-                                ? createAnd(cond, t_bool)
-                                : createOr (cond, t_bool);
+                                ? createAnd(cond, t_proposition)
+                                : createOr (cond, t_proposition);
 
                             shadow let alt = createBlock(alt, :alt.last.type);
 
@@ -6711,11 +6711,12 @@ pub fn solve(
             return init;
         }
 
-        let pre_cond    = n_pre_cond    && solveNode(n_pre_cond,  t_bool);        // TODO deadcode noloop
+        // TODO handle deadcode everywhere
+        let pre_cond    = n_pre_cond    && solveNode(n_pre_cond,  t_proposition);
         let pre         = n_pre         && solveBlock(n_pre, type: t_void, mask: HM_LoopPreheader);
-        let body        = n_body        && solveBlock(n_body, type: t_void);      // TODO deadcode noloop
-        let post        = n_post        && solveBlock(n_post, type: t_void); // TODO deadcode noloop
-        let post_cond   = n_post_cond   && solveNode(n_post_cond, t_bool);        // TODO deadcode noloop
+        let body        = n_body        && solveBlock(n_body, type: t_void);
+        let post        = n_post        && solveBlock(n_post, type: t_void);
+        let post_cond   = n_post_cond   && solveNode(n_post_cond, t_proposition);
 
         // Control flow.
         let h           = _helpers[brk_idx];
@@ -7878,7 +7879,7 @@ pub fn solve(
 
     fn solveIf(node: Node, type: Type): SolvedNode
     {
-        mut cond    = solveNode(node.items[0], t_bool);
+        mut cond    = solveNode(node.items[0], t_proposition);
 
         // Dead code elim.
         if (cond.type.is_never)
@@ -7964,7 +7965,7 @@ pub fn solve(
             type_last:          type,
             use_type_last:      true,
             static_eval_brk:    SE_True,
-            type_all:           type.is_void ? t_bool : type,
+            type_all:           type.is_void ? t_proposition : type,
             dead_brk:           true);
 
         return createOr(items, :type);
@@ -7975,12 +7976,8 @@ pub fn solve(
         if (items.len < 2)
             return items.only;
 
-        // Statement mode.
-        if (type.is_void)
-            type = t_bool;
-
         // Unless this is an explicit bool context:
-        if !(type.propositionOK) :RESOLVE_SUPERTYPE
+        if !(type.propositionOK || type.is_void) :RESOLVE_SUPERTYPE
         {
             mut sumType: Type;
             mut hasNever = false;
@@ -8043,6 +8040,10 @@ pub fn solve(
             else
                 type = sumType;
         }
+        else
+        {
+            type = t_bool;
+        }
 
         //
         if (items.last.is_never)
@@ -8058,7 +8059,7 @@ pub fn solve(
             type_last:          type,
             use_type_last:      true,
             static_eval_brk:    SE_False,
-            type_all:           t_bool,
+            type_all:           t_proposition,
             dead_brk:           true);
 
         return createAnd(items, :type);
@@ -8069,12 +8070,8 @@ pub fn solve(
         if (items.len < 2)
             return items.only;
 
-        // Statement mode.
-        if (type.is_void)
-            type = t_bool;
-
         // Unless this is an explicit bool context:
-        if !(type.propositionOK)
+        if !(type.propositionOK || type.is_void)
         {
             mut sumType: Type;
 
@@ -8125,6 +8122,10 @@ pub fn solve(
                 type = sumType;
             }
         }
+        else
+        {
+            type = t_bool;
+        }
 
         //
         if (items.last.is_never)
@@ -8153,7 +8154,7 @@ pub fn solve(
 
     fn solveNot(node: Node)
     {
-        return createNot(solveNode(node.items.only, type: t_bool));
+        return createNot(solveNode(node.items.only, type: t_proposition));
     }
 
     fn createNot(item: SolvedNode)
