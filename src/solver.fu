@@ -2104,7 +2104,7 @@ pub fn solve(
         // Exotics.
         if (k == "forfieldsof") return solveForFieldsOf(node);
         if (k == "pragma")      return executeCompilerPragma(node);
-        if (k == "void")        return createEmpty();
+        if (k == "empty")       return createEmpty();
         if (k == "unwrap")      return createUnwrap();
 
         if (unorderedClassify(k))
@@ -3908,7 +3908,7 @@ pub fn solve(
                 _current_fn.TODO_FIX_isInline = true;
             else
                 nodes.last = Node(kind: "return", value: [], :nodes.last.token,
-                    items: nodes.last.kind != "void" && [ nodes.last ],
+                    items: nodes.last.kind != "empty" && [ nodes.last ],
                     flags: F_IMPLICIT);
         }
         ////////////////////////////////////////////////////////////////

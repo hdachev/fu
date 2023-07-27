@@ -30,7 +30,6 @@ enum kind
     definit
 
     empty
-    void
     // -- -- /ValueExpression
 
     not

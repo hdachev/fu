@@ -303,7 +303,7 @@ pub fn parse(
     fn createBlock(mut items: Node[], label?: string): Node
     {
         if (items.if_last.syntax & PS_DISCARD)
-            items ~= make("void", :items.last.token);
+            items ~= make("empty", :items.last.token);
 
         return make("block", :items, value: label);
     }
