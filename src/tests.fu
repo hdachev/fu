@@ -8309,6 +8309,30 @@ pub extern fn runTests()
         fn main = 1.Type.propagateType - 17;
     `);
 
+    ZERO(`
+        <alt>
+        inline          <alt/>
+        noinline        </alt>
+        fn voidfn(ref a: i32) { a += 100; }
+
+        <alt>
+        inline   ;; Goto<alt/>
+        noinline        </alt>
+        fn returnVoidExpr(ref a: i32, ref b: i32) {
+            while (b --> 0) {
+                a++;        // bad cg emitted just 'return;'
+                if (a & 1)  return voidfn(a);
+            }
+        }
+
+        fn main() {
+            mut a = 0;
+            mut b = 10;
+            returnVoidExpr(a, b);
+            return a == 101 && b == 9 ? 0 : 1;
+        }
+    `);
+
     // /quite right
 
 
