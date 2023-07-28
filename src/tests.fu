@@ -3239,6 +3239,20 @@ pub extern fn runTests()
         }
     `);
 
+    ZERO(`
+        <alt>
+        noinline                <alt/>
+        inline    ;; GNUStmtExpr</alt>
+        fn twiceUnlessEmpty(x) {
+            return x && [ x, x ];
+        }
+
+        fn main() {
+            return  twiceUnlessEmpty(2)
+                && !twiceUnlessEmpty(0) ? 0 : 1;
+        }
+    `);
+
     // /Logic and selectors.
 
 
