@@ -8119,17 +8119,8 @@ pub fn solve(
             {
                 // We'll use the type of the last operand,
                 //  and generate a falsy default for the rest.
-                if (type.is_ref)
-                {
-                    // We can generate falsy values and refs,
-                    //  but not mutrefs - can't allocate
-                    //   a static mut and expect it to remain falsy.
-                    if (CANNOT_definit_mutrefs)
-                        type = clear_mutref(type);
-
-                    // Default zerofills are static.
-                    type.lifetime = Lifetime_makeShared(type.lifetime);
-                }
+                type = type_trySuper(type, definitType(type))
+                    || BUG("createAnd: definit union fail");
             }
             else
             {
