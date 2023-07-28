@@ -7649,16 +7649,24 @@ pub fn solve(
         return itemType;
     }
 
-    fn solveArrlit_done(itemType!: Type)
+    fn solveArrlit_done(itemType!: Type, itemCount! = -1)
     {
-        return createArray(itemType);
+        mut arrayType = createArray(itemType);
+
+        if (itemCount >= 0 && !(options.dev & options::DEV_DontFoldLiterals))
+            arrayType.vfacts = itemCount
+                ? AlwaysTrue
+                : AlwaysFalse;
+
+        return arrayType;
     }
 
     fn createArrlit(mut items: SolvedNode[], itemType?: Type)
     {
         shadow let itemType = solveArrlit_itemType(items, itemType);
 
-        return SolvedNode("arrlit", :items, type: solveArrlit_done(:itemType));
+        return SolvedNode("arrlit", :items, type:
+            solveArrlit_done(:itemType, itemCount: items.len));
     }
 
 

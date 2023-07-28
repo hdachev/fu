@@ -4,6 +4,8 @@ flags DevOptions {
     DEV_PrintCG
     DEV_Parallel
     DEV_ExpectFail
+
+    DEV_DontFoldLiterals
 };
 
 
