@@ -14417,6 +14417,11 @@ pub extern fn runTests()
         fn main() test(1);
     `);
 
+    ZERO(`
+        noinline fn alwaysFalse() false;
+        fn main() alwaysFalse.i32;
+    `);
+
 
     // CSE & LICM.
 
