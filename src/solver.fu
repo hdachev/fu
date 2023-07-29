@@ -974,8 +974,18 @@ pub fn solve(
         return fname[start, end];
     }
 
-    fn humanizeType(type: Type, lt!?: bool, no_quals!?: bool, usage!?: bool, lax i!?: int)
+    fn humanizeType(type: Type, mut lt!?: bool, mut no_quals!?: bool, mut usage!?: bool, lax i!?: int, diff!?: Type)
     {
+        if (diff)
+        {
+            // TODO now that we're taking the comparison type
+            //  these can become more granular,
+            //   and we can emphasize the exact differences
+            no_quals    = (type.quals & q_TAGS)  == (diff.quals & q_TAGS);
+            usage       = (type.quals & q_USAGE) != (diff.quals & q_USAGE);
+            lt          =  type.lifetime         !=  diff.lifetime;
+        }
+
         mut result: string = type.isStruct
             ? lookupUserType(type).name
             : type.canon;
@@ -1011,13 +1021,9 @@ pub fn solve(
 
     fn explainTypeDiff(a: Type, b: Type, sep = "<->")
     {
-        let no_quals    = (a.quals & q_TAGS) == (b.quals & q_TAGS);
-        let usage       = (a.quals & q_USAGE) != (b.quals & q_USAGE);
-        let lt          = a.lifetime != b.lifetime;
-
-        return humanizeType(a, :no_quals, :usage, :lt)
+        return humanizeType(a, diff: b)
              ~ " " ~ sep ~ " "
-             ~ humanizeType(b, :no_quals, :usage, :lt);
+             ~ humanizeType(b, diff: a);
     }
 
     fn str(n: SolvedNode)
