@@ -5556,6 +5556,55 @@ pub extern fn runTests()
         }
     `);
 
+    ZERO(`
+        struct Type { nontriv: Type[] };
+        struct Node { type: Type };
+
+        let zero    = Type();
+        let one     = Type([ Type ]);
+        let two     = Type([ Type, Type ]);
+
+        noinline fn solve(ref nodes: Node[])
+        {
+            noinline fn propagateType(ref node: Node, slot: Type) {
+                shadow let slot =
+                    node.type.nontriv.len == 2 ? two : slot;
+
+            <alt>
+                for (mut i = 0; i < nodes.len; i++)
+                    nodes[i].type = zero;
+            <alt/>
+                nodes = nodes.map(|lax n| Node(zero));
+            </alt>
+
+                nodes ~= Node(slot);
+            }
+
+            for (mut i = nodes.len; i --> 0; ) {
+                ref node = nodes[i];
+
+                propagateType(node,
+                <alt>
+                    node.type.nontriv.len == 0 ? zero : node.type
+                    //              missing copy around ^^^^^^^^^
+                    //      alt-1: wrong result, alt-2: segfault
+                <alt/>
+                    node.type
+                </alt>);
+            }
+        }
+
+        fn main() {
+            mut nodes = [ Node(one) ];
+            solve(nodes);
+
+            return nodes.len == 2
+                && nodes[0].type == zero
+                && nodes[1].type == one
+                    ? 0 : 1;
+        }
+    `);
+
     // /Borrow checker
 
 
