@@ -3475,8 +3475,8 @@ pub fn solve(
                 return discardIntoBlock();
             }
 
-            ref items = node.items;
-            let itemSlot = clear_sliceable(slot);
+            ref items       = node.items;
+            let itemSlot    = clear_sliceable(node.type);
 
             if (PASS_MaybeCopyOrMove)
                 for (mut i = 0; i < items.len; i++)
