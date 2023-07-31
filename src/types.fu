@@ -477,7 +477,7 @@ pub fn force_relax(ref type: Type, relax_mask!: Quals)
 
 pub fn relax_typeParam(mut type: Type)
 {
-    return clear_refs(type);
+    return clear_vfacts(clear_refs(type));
 }
 
 
