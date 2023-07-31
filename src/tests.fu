@@ -14485,6 +14485,19 @@ pub extern fn runTests()
         fn main() alwaysFalse.i32;
     `);
 
+    ZERO(`
+        fn typeParamsMusntPickUpVFacts(x: i32) {
+            let y = x || throw("x == 0"); // Now y is always true.
+            if (y & 1) // & 1 is not always true though.
+                return y * 10;
+            else
+                return y * 100;
+        }
+
+        fn main() typeParamsMusntPickUpVFacts(3)
+                + typeParamsMusntPickUpVFacts(2) == 230 ? 0 : 1;
+    `);
+
 
     // CSE & LICM.
 
