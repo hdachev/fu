@@ -10413,13 +10413,24 @@ pub fn solve(
                     let isAnd = node.kind == "and";
                     if (isAnd == (ae_expr == SE_False))
                     {
+                        // Ands can be heterogenous,
+                        //  without this we can emit nonsense.
+                        //
+                        // TODO FIX: we gotta simplify "and"s,
+                        //  basically we want `a && b` to emit `a ? b : []`
+                        //   if a && b don't sum, solveOr can still do its magic
+                        //    by handling conditionals with an AlwaysFalse cons or alt.
+                        //
+                        if (isAnd && !expr.type.isAssignable(host: node.type))
+                            expr = createBlock(expr, createDefinit(node.type));
+
                         items.shrink(i + 1);
                         node.vfacts |= isAnd ? AlwaysFalse : AlwaysTrue;
                         break;
                     }
                     else if (i < items.len - 1)
                     {
-                        let cond = expr;
+                        let cond = steal(expr);
                         items.splice(i, 1);
 
                         ref cons = items[i--];
