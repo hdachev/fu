@@ -358,6 +358,11 @@ pub fn ZERO(
         }
     }
 
+    // Try running this without some of
+    //  the most code-change inducing optimizations.
+    if (!options)
+        ZERO(:sources, options: Options(dev: DEV_DontFoldLiterals));
+
     //
     defer:err if !(options.dev & DEV_ExpectFail)
         println("\nFAILING TESTCASE:\n" ~ sources.join("\n"));
