@@ -3065,7 +3065,7 @@ pub extern fn runTests()
 
     ZERO(`
         let x = "hello";
-        let y = "world";
+        lax let y = "world";
         let w = 3 && x || y;
 
         return w == "hello" ? 0 : 1;
