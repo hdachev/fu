@@ -1,6 +1,6 @@
 
 pub fn break()
 {
-    let a = "Breakpoint here";
+    let a = 2 > 1 && "Breakpoint here";
     a || assert();
 }

@@ -4246,7 +4246,14 @@ pub fn solve(
         }
         //////////////////////////////////////////////
 
-        return t_string;
+        mut ret = t_string;
+
+        if !(options.dev & options::DEV_DontFoldLiterals)
+            ret.vfacts = v.len
+                ? AlwaysTrue
+                : AlwaysFalse;
+
+        return ret;
     }
 
     fn solveString(node: Node, type: Type): SolvedNode
