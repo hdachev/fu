@@ -10661,6 +10661,16 @@ pub fn solve(
                         = flow.invalidates.unless_oob(target) || BUG("AAR: (refs.len > 1 || consts), but no invalidates.");
             }
 
+            // trackReferences uses flow.invalidates to locate siblings,
+            //  so we gotta add them here for constants too.
+            if (refs) for (mut i = 0; i < consts.len; i++)
+            {
+                // Same as above but flipped.
+                (flow.invalidates.grow_if_oob(consts[i]) && BUG(
+                    "AAR: const arg already has invalidates."))
+                        = refs;
+            }
+
             // No point in doing this - we're never ascending .parents for reads.
             //  The thing above appears to be sufficient:
             //   - listing consts as .parents of refs takes care of refs pointing into consts.
