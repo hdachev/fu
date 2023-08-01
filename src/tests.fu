@@ -8420,18 +8420,14 @@ pub extern fn runTests()
     `);
 
     ZERO(`
-        struct TrueStory { kind: string; value: string; };
+        struct KindValue { kind: string; value: string; };
 
-        mut specialized = TrueStory(kind: "fn", value: "val");
+        mut spec = KindValue(kind: "fn", value: "val");
+        spec.kind == "fn" && spec.value || throw("nope");
+        ref v = spec.kind == "fn" ? spec.value : throw("nope");
 
-        specialized.kind == "fn" && specialized.value || throw("nope");
-
-        let v: &mut string = specialized.kind == "fn"
-                          && specialized.value
-                          || throw("nope");
         v ~= "ue";
-
-        return specialized.value == "value" ? 0 : 1;
+        return spec.value == "value" ? 0 : 1;
     `);
 
     ZERO(`

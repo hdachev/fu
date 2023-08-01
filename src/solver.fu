@@ -8015,24 +8015,10 @@ pub fn solve(
                     continue;
                 }
 
-                // a && b || never: b can be mutref!
-                let andLast = hasNever
-                    && item.kind == "and"
-                    && item.items && item.items[item.items.len - 1];
-
-                //////////////////////////////////////////////////////////
-                // TODO canonicalize `a && never || b` to an if         //
-                //  so that bck & propagate can better do their thing   //
-                //////////////////////////////////////////////////////////
-
-                let itemType = andLast && !andLast.type.is_never
-                    ? (item.type = andLast.type)
-                    :  item.type;
-
                 //
                 if (sumType)
                 {
-                    sumType = type_trySuper(sumType, itemType);
+                    sumType = type_trySuper(sumType, item.type);
 
                     // EXPERIMENTAL & doesnt feel really robust:
                     //  Allow incompatible types so long as one of the operands is a bool.
@@ -8049,12 +8035,12 @@ pub fn solve(
                         }
 
                         fail("Ambiguous ||, incompatible operands in a non-bool context: "
-                            ~ humanizeType(itemType) ~ " || " ~ humanizeType(sumType));
+                            ~ humanizeType(item.type) ~ " || " ~ humanizeType(sumType));
                     }
                 }
                 else
                 {
-                    sumType = itemType;
+                    sumType = item.type;
                 }
             }
 
