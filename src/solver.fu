@@ -1752,7 +1752,6 @@ pub fn solve(
             || node.kind == "definit"
             || node.kind == "str"
             || node.kind == "if"  && node.items[1, 3].all(fn couldRetype)
-            || node.kind == "and" && node.items.last.couldRetype
             || node.kind == "block" && !(node.helpers.mask & HM_LabelUsed) && node.items.last.couldRetype;
     }
 
@@ -1781,9 +1780,6 @@ pub fn solve(
                 && type_trySuper(left, right);
         }
 
-        if (node.kind == "and")
-            return tryRetyping(node.items.last, expect);
-
         if (node.kind == "block")
             return !(node.helpers.mask & HM_LabelUsed)
                 && tryRetyping(node.items.last, expect);
@@ -1797,10 +1793,6 @@ pub fn solve(
         {
             applyRetype(node.items[1], retype);
             applyRetype(node.items[2], retype);
-        }
-        else if (node.kind == "and")
-        {
-            applyRetype(node.items.last, retype);
         }
         else if (node.kind == "block")
         {
@@ -8112,10 +8104,15 @@ pub fn solve(
 
             if (!sumType.is_ref)
             {
+                let cond = items.slice(0, items.len - 1);
+                let cons = items.last;
+
                 // We'll use the type of the last operand,
                 //  and generate a falsy default for the rest.
-                type = type_trySuper(type, definitType(type))
-                    || BUG("createAnd: definit union fail");
+                return createIf(
+                    cond: createAnd(cond, t_bool),
+                    :cons,
+                    alt: solveDefinit(type));
             }
             else
             {
@@ -10388,17 +10385,6 @@ pub fn solve(
                     let isAnd = node.kind == "and";
                     if (isAnd == (ae_expr == SE_False))
                     {
-                        // Ands can be heterogenous,
-                        //  without this we can emit nonsense.
-                        //
-                        // TODO FIX: we gotta simplify "and"s,
-                        //  basically we want `a && b` to emit `a ? b : []`
-                        //   if a && b don't sum, solveOr can still do its magic
-                        //    by handling conditionals with an AlwaysFalse cons or alt.
-                        //
-                        if (isAnd && !expr.type.isAssignable(host: node.type))
-                            expr = createBlock(expr, createDefinit(node.type));
-
                         items.shrink(i + 1);
                         node.vfacts |= isAnd ? AlwaysFalse : AlwaysTrue;
                         break;
