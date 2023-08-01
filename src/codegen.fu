@@ -2343,36 +2343,13 @@ pub fn cpp_codegen(
         {
             mut tv: TEMPVAR;
 
-            if (type.is_mutref)
+            for (mut i = 0; i < items.len; i++)
             {
-                for (mut i = 0; i < items.len; i++)
-                {
-                    let item = items[i];
-                    if (i < items.len - 1)
-                        src ~= "!" ~ via(:tv, :type, item);
-                    else
-                        src ~= cgNode(item);
-                }
-            }
-            else
-            {
-                let N = items.len;
-                let retSecondLast = items[N - 1].type.is_never;
-
-                let condEnd = retSecondLast ? N - 2 : N - 1;
-                cgAndOr_concat(src, " && ", items[0, condEnd]);
-
-                if (retSecondLast)
-                {
-                    if (condEnd) src ~= " && ";
-                    src ~= "!" ~ via(:tv, :type, items[N - 2]);
-                    src ~= cgNode(items[N - 1]); // FAIL
-                }
+                let item = items[i];
+                if (i < items.len - 1)
+                    src ~= "!" ~ via(:tv, :type, item);
                 else
-                {
-                    src ~= " ? " ~ cgNode(items[N - 1]);
-                    src ~= " : " ~ cgDefault(type);
-                }
+                    src ~= cgNode(item);
             }
         }
 
