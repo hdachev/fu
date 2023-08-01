@@ -7928,19 +7928,8 @@ pub fn solve(
             return createBlock(cond,
                 solveNode(node.items[ae_cond == SE_True ? 1 : 2], :type));
 
-        fn if_A_and_NEVER_then_B_else_C()
-        {
-            // The same as if-A-then-NEVER-else-C,
-            //  which means we drop the cons immediately.
-            makeNote(N_DeadIfCons);
-            return cond.popAndOr();
-        }
-
         // `a && THROWS ? b : c` is the same as `a ? THROWS : c`
-        let cons    = cond.kind == "and" && cond.items.last.type.is_never
-            ? if_A_and_NEVER_then_B_else_C
-            : solveBlock(node.items[1], :type);
-
+        let cons    = solveBlock(node.items[1], :type);
         let alt     = solveBlock(node.items[2], :type);
 
         _here       = node.token;
