@@ -4789,34 +4789,6 @@ pub fn solve(
             let isSpec      = isTemplate && (!into || !isFirst); // TODO FIX this looks really flaky
             let isUnspec    = isTemplate && !isSpec;
 
-            // Previously fn ScopeSkip_setup(original: Target, scope0: ScopeMemo)
-            {
-                if (_root_scope)
-                {
-                    let eph     = (original.spec_of || original).EPH;
-                    let start   = eph.scope_memo || _root_scope;
-                    _ss         = eph.scope_skip;
-
-                    ScopeSkip_push(_ss.items,       start: start.items_len,     end: scope0.items_len);
-                    ScopeSkip_push(_ss.implicits,   start: start.implicits_len, end: scope0.implicits_len);
-                    ScopeSkip_push(_ss.imports,     start: start.imports_len,   end: scope0.imports_len);
-                    ScopeSkip_push(_ss.privates,    start: start.privates_len,  end: scope0.privates_len);
-                    ScopeSkip_push(_ss.usings,      start: start.usings_len,    end: scope0.usings_len);
-                    ScopeSkip_push(_ss.converts,    start: start.converts_len,  end: scope0.converts_len);
-                    ScopeSkip_push(_ss.helpers,     start: start.helpers_len,   end: scope0.helpers_len);
-                }
-
-                // We'll need the original imports in scope
-                //  in order to solve type params & pattern match below.
-                let imports = template.imports;
-                for (mut i = 0; i < imports.len; i++)
-                {
-                    Scope_import(imports[i]);
-                    if (i == 0)
-                        Scope_import_privates(imports[i]);
-                }
-            }
-
             //
             let items = template.node.items;
             ref n_fn = template.node;
@@ -5052,6 +5024,34 @@ pub fn solve(
                         typeParams.map::if_ref(id): |ref tp|
                             tp.matched = tp.consumed;
                     }
+                }
+            }
+
+            // Previously fn ScopeSkip_setup(original: Target, scope0: ScopeMemo)
+            {
+                if (_root_scope)
+                {
+                    let eph     = (original.spec_of || original).EPH;
+                    let start   = eph.scope_memo || _root_scope;
+                    _ss         = eph.scope_skip;
+
+                    ScopeSkip_push(_ss.items,       start: start.items_len,     end: scope0.items_len);
+                    ScopeSkip_push(_ss.implicits,   start: start.implicits_len, end: scope0.implicits_len);
+                    ScopeSkip_push(_ss.imports,     start: start.imports_len,   end: scope0.imports_len);
+                    ScopeSkip_push(_ss.privates,    start: start.privates_len,  end: scope0.privates_len);
+                    ScopeSkip_push(_ss.usings,      start: start.usings_len,    end: scope0.usings_len);
+                    ScopeSkip_push(_ss.converts,    start: start.converts_len,  end: scope0.converts_len);
+                    ScopeSkip_push(_ss.helpers,     start: start.helpers_len,   end: scope0.helpers_len);
+                }
+
+                // We'll need the original imports in scope
+                //  in order to solve type params & pattern match below.
+                let imports = template.imports;
+                for (mut i = 0; i < imports.len; i++)
+                {
+                    Scope_import(imports[i]);
+                    if (i == 0)
+                        Scope_import_privates(imports[i]);
                 }
             }
 
