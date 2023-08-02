@@ -4744,18 +4744,6 @@ pub fn solve(
         mut target: Target;
 
         {
-            let scope0 = Scope_snap(_scope);
-            let ss0 = _ss;
-            let helpers_data0 = _helpers_data.len;
-
-            defer {
-                Scope_pop(_scope, scope0);
-                _ss = ss0;
-
-                _helpers_data.shrink(helpers_data0);
-            }
-
-            //
             let items = template.node.items;
             ref n_fn = template.node;
             n_fn.kind == "fn" || BUG("n_fn not a `fn`.");
@@ -5019,6 +5007,18 @@ pub fn solve(
                             tp.matched = tp.consumed;
                     }
                 }
+            }
+
+            ////////////////////////////////////////////////////////////////
+            let scope0          = Scope_snap(_scope);
+            let ss0             = _ss;
+            let helpers_data0   = _helpers_data.len;
+
+            defer {
+                Scope_pop(_scope, scope0);
+                _ss             = ss0;
+
+                _helpers_data.shrink(helpers_data0);
             }
 
             // Previously fn ScopeSkip_setup(original: Target, scope0: ScopeMemo)
