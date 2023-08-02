@@ -4883,6 +4883,12 @@ pub fn solve(
                         // Literal fixup.
                         if (couldRetype(inValue))
                         {
+                            if (!pass_retype)
+                            {
+                                retypeIndices.push(i);
+                                continue;
+                            }
+
                             let paramType =
                                 annot.kind == "typeparam"
                                     ? typeParams.map::ref(annot.value).matched
@@ -4901,13 +4907,6 @@ pub fn solve(
 
                                     remangle = true;
                                 }
-                            }
-
-                            // Defer for second pass.
-                            else if (!pass_retype)
-                            {
-                                retypeIndices.push(i);
-                                continue;
                             }
                         }
                         //        /LITFIX
