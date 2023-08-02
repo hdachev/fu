@@ -4664,34 +4664,6 @@ pub fn solve(
         REST_START?: i32, REST_TYPE?: Type)
             : Target
     {
-        mut args: Type[];
-        if (use_reorder)
-        {
-            for (mut i = 0; i < reorder.len; i++)
-            {
-                let callsiteIndex = reorder[i];
-                args.push(
-                    callsiteIndex >= 0 && callsiteIndex < args_in.len
-                        && args_in[callsiteIndex].type);
-            }
-        }
-        else
-        {
-            for (mut i = 0; i < args_in.len; i++)
-                args.push(args_in[i].type);
-        }
-
-        for (mut i = 0; i < conversions.len; i++)
-        {
-            let c = conversions[i];
-            if (c)
-                args[i] = GET(c.last).type;
-        }
-
-        if (REST_TYPE)
-            args[REST_START] = REST_TYPE;
-
-        //
         let SPECFAIL_RentrySafety =
             Target(modid: 2147483647, index: 0);
 
@@ -4784,12 +4756,6 @@ pub fn solve(
             }
 
             //
-            let isFirst     = !into || !into.solved;
-            let isTemplate  = template.node.flags & F_TEMPLATE;
-            let isSpec      = isTemplate && (!into || !isFirst); // TODO FIX this looks really flaky
-            let isUnspec    = isTemplate && !isSpec;
-
-            //
             let items = template.node.items;
             ref n_fn = template.node;
             n_fn.kind == "fn" || BUG("n_fn not a `fn`.");
@@ -4806,9 +4772,37 @@ pub fn solve(
 
             if (!into)
             {
-                let kind    = template.node.kind;
-                let numArgs = kind == "fn" ? items.len + FN_ARGS_BACK
-                            : fail("TODO numArgs for template:" ~ kind);
+                mut args: Type[];
+                if (use_reorder)
+                {
+                    for (mut i = 0; i < reorder.len; i++)
+                    {
+                        let callsiteIndex = reorder[i];
+                        args.push(
+                            callsiteIndex >= 0 && callsiteIndex < args_in.len
+                                && args_in[callsiteIndex].type);
+                    }
+                }
+                else
+                {
+                    for (mut i = 0; i < args_in.len; i++)
+                        args.push(args_in[i].type);
+                }
+
+                for (mut i = 0; i < conversions.len; i++)
+                {
+                    let c = conversions[i];
+                    if (c)
+                        args[i] = GET(c.last).type;
+                }
+
+                if (REST_TYPE)
+                    args[REST_START] = REST_TYPE;
+
+                //
+                let numArgs = template.node.kind == "fn"
+                    ? items.len + FN_ARGS_BACK
+                    : BUG("template.node.kind != `fn`");
 
                 /////////////////
                 // Literal fixup.
@@ -5122,6 +5116,12 @@ pub fn solve(
 
             // Arg decls.
             _scope.items ~= extra_items;
+
+            //
+            let isFirst     = !into || !into.solved;
+            let isTemplate  = template.node.flags & F_TEMPLATE;
+            let isSpec      = isTemplate && (!into || !isFirst); // TODO FIX this looks really flaky
+            let isUnspec    = isTemplate && !isSpec;
 
             for (mut i = 0; i < inItems.len + FN_ARGS_BACK; i++)
             {
