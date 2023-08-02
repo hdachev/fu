@@ -4740,275 +4740,276 @@ pub fn solve(
         if (!into)
             resetMangle(mangle);
 
-        // Scopes & scope skips.
-        mut target: Target;
+        //
+        let items = template.node.items;
+        ref n_fn = template.node;
+        n_fn.kind == "fn" || BUG("n_fn not a `fn`.");
 
+        // println("  doTrySpec " ~ n_fn.value);
+
+        //
+        mut error = "";
+        mut remangle = false;
+        mut typeParams: TypeParams;
+
+        fn isNativeBody(n_body: Node)
+            n_body.kind == "call" && n_body.value == "__native";
+
+        if (!into)
         {
-            let items = template.node.items;
-            ref n_fn = template.node;
-            n_fn.kind == "fn" || BUG("n_fn not a `fn`.");
+            mut args: Type[];
+            if (use_reorder)
+            {
+                for (mut i = 0; i < reorder.len; i++)
+                {
+                    let callsiteIndex = reorder[i];
+                    args.push(
+                        callsiteIndex >= 0 && callsiteIndex < args_in.len
+                            && args_in[callsiteIndex].type);
+                }
+            }
+            else
+            {
+                for (mut i = 0; i < args_in.len; i++)
+                    args.push(args_in[i].type);
+            }
 
-            // println("  doTrySpec " ~ n_fn.value);
+            for (mut i = 0; i < conversions.len; i++)
+            {
+                let c = conversions[i];
+                if (c)
+                    args[i] = GET(c.last).type;
+            }
+
+            if (REST_TYPE)
+                args[REST_START] = REST_TYPE;
 
             //
-            mut error = "";
-            mut remangle = false;
-            mut typeParams: TypeParams;
+            let numArgs = template.node.kind == "fn"
+                ? items.len + FN_ARGS_BACK
+                : BUG("template.node.kind != `fn`");
 
-            fn isNativeBody(n_body: Node)
-                n_body.kind == "call" && n_body.value == "__native";
+            /////////////////
+            // Literal fixup.
+            mut retypeIndices: i32[];
 
-            if (!into)
+            //
+            mut errout = [ Warning ];
+
+            // First off, solve type params.
+            for (   mut pass_retype  = 0;
+                        pass_retype == 0 || pass_retype == 1 && retypeIndices;
+                        pass_retype++)
             {
-                mut args: Type[];
-                if (use_reorder)
+            //        /LITFIX
+            /////////////////
+
+                for (mut i = 0; i < numArgs; i++)
                 {
-                    for (mut i = 0; i < reorder.len; i++)
+                    if (pass_retype)
                     {
-                        let callsiteIndex = reorder[i];
-                        args.push(
-                            callsiteIndex >= 0 && callsiteIndex < args_in.len
-                                && args_in[callsiteIndex].type);
+                        // TODO fix, .try_shift instead.
+                        if (!retypeIndices.has(i))
+                            continue;
                     }
-                }
-                else
-                {
-                    for (mut i = 0; i < args_in.len; i++)
-                        args.push(args_in[i].type);
-                }
 
-                for (mut i = 0; i < conversions.len; i++)
-                {
-                    let c = conversions[i];
-                    if (c)
-                        args[i] = GET(c.last).type;
-                }
+                    mut inType  = args.len > i && args[i];
+                    let inValue = reorder
+                        ? reorder.len > i && reorder[i] >= 0 && args_in[reorder[i]]
+                        : args_in.len > i && args_in[i];
 
-                if (REST_TYPE)
-                    args[REST_START] = REST_TYPE;
+                    let argNode = items[i] || BUG();
+                    let annot   = argNode.items[LET_TYPE];
 
-                //
-                let numArgs = template.node.kind == "fn"
-                    ? items.len + FN_ARGS_BACK
-                    : BUG("template.node.kind != `fn`");
+                    // Use previously solved argument defaults
+                    //  to let all type params solve normally.
+                    let host_arg = original.args[i];
 
-                /////////////////
-                // Literal fixup.
-                mut retypeIndices: i32[];
+                    shadow let inValue = inValue || {
+                        inType = host_arg.default.type;
+                        host_arg.default
+                    };
 
-                //
-                mut errout = [ Warning ];
-
-                // First off, solve type params.
-                for (   mut pass_retype  = 0;
-                            pass_retype == 0 || pass_retype == 1 && retypeIndices;
-                            pass_retype++)
-                {
-                //        /LITFIX
-                /////////////////
-
-                    for (mut i = 0; i < numArgs; i++)
+                    /////////////////
+                    // Literal fixup.
+                    if (couldRetype(inValue))
                     {
-                        if (pass_retype)
-                        {
-                            // TODO fix, .try_shift instead.
-                            if (!retypeIndices.has(i))
-                                continue;
-                        }
-
-                        mut inType  = args.len > i && args[i];
-                        let inValue = reorder
-                            ? reorder.len > i && reorder[i] >= 0 && args_in[reorder[i]]
-                            : args_in.len > i && args_in[i];
-
-                        let argNode = items[i] || BUG();
-                        let annot   = argNode.items[LET_TYPE];
-
-                        // Use previously solved argument defaults
-                        //  to let all type params solve normally.
-                        let host_arg = original.args[i];
-
-                        shadow let inValue = inValue || {
-                            inType = host_arg.default.type;
-                            host_arg.default
-                        };
-
-                        /////////////////
-                        // Literal fixup.
-                        if (couldRetype(inValue))
-                        {
-                            if (!pass_retype)
-                            {
-                                retypeIndices.push(i);
-                                continue;
-                            }
-
-                            let paramType =
-                                annot.kind == "typeparam"
-                                    ? typeParams.map::ref(annot.value).matched
-                                    : annot.kind == "call" && !annot.items
-                                        && Scope_lookupType(annot);
-
-                            // Ignore literals if possible.
-                            if (paramType)
-                            {
-                                let retype = tryRetyping(inValue, paramType);
-                                if (retype && retype.canon != inType.canon)
-                                {
-                                    inType = retype;
-                                    if (args.len > i)
-                                        args[i] = inType;
-
-                                    remangle = true;
-                                }
-                            }
-                        }
-                        //        /LITFIX
-                        /////////////////
-
-                        //////////////////////////////////////////////////////////////////////////////////////////////
-                        // TODO FIX type unions can mess up when other args get defered and they get served first.  //
-                        //  I think we should go quantum here, basically figure out everything this could be        //
-                        //   and collapse along the way.                                                            //
-                        if (!pass_retype && annot.kind == "typeunion")
+                        if (!pass_retype)
                         {
                             retypeIndices.push(i);
                             continue;
                         }
-                        //////////////////////////////////////////////////////////////////////////////////////////////
 
-                        //
-                        argNode.kind == "let"  || BUG();
+                        let paramType =
+                            annot.kind == "typeparam"
+                                ? typeParams.map::ref(annot.value).matched
+                                : annot.kind == "call" && !annot.items
+                                    && Scope_lookupType(annot);
 
-                        //
-                        if (inType)
+                        // Ignore literals if possible.
+                        if (paramType)
                         {
-                            // Enable conversions on fully typed arguments.
-                            let exactType = host_arg.type;
-                            if (exactType)
+                            let retype = tryRetyping(inValue, paramType);
+                            if (retype && retype.canon != inType.canon)
                             {
+                                inType = retype;
                                 if (args.len > i)
-                                    args[i] = exactType;
+                                    args[i] = inType;
 
-                                continue;
-                            }
-
-                            //
-                            let argName = argNode.value || BUG();
-
-                            // Same pattern - grabs a mutref.
-                            ref argName_typeParam = typeParams.map::ref("$" ~ argName);
-
-                            // Values vs refs.
-                            inType = add_ref(inType, Lifetime_temporary);
-
-                            //
-                            (argName_typeParam && fail(
-                                "Type param name collision with " ~ host_arg ~ "."))
-                                    .matched = inType;
-
-                            // Type check.
-                            if (annot)
-                            {
-                                let argOk = trySolveTypeParams(
-                                    annot, inType, typeParams, :errout,
-                                    invariant: false);
-
-                                if (!error && !argOk)
-                                {
-                                    error = "arg".qKW ~ " " ~ argName.qID ~ ":";
-                                    errout.len > 1 || BUG("BUG trySolveTypeParams did not provide an explanation.");
-                                    for (shadow mut i = 1; i < errout.len; i++)
-                                        error ~= "\n\t    " ~ errout[i].message;
-                                }
-
-                                if (error && !remangle)
-                                    break;
+                                remangle = true;
                             }
                         }
                     }
-                }
+                    //        /LITFIX
+                    /////////////////
 
-                /////////////////
-                // Literal fixup.
-                if (remangle)
-                    resetMangle(args);
-                //        /LITFIX
-                /////////////////
-
-                fn SPECFAIL(reason: string)
-                {
-                    let index       = _spec_errors.len;
-                    _spec_errors   ~= reason;
-
-                    let spec        = Target(
-                        modid: SPECFAIL_RentrySafety.modid, :index);
-
-                    resetSpec(spec);
-                    return spec;
-                }
-
-                // Match pattern arm here.
-                if (error)
-                    return SPECFAIL(error);
-
-                // Pattern matching.
-                let body = items[items.len + FN_BODY_BACK] || BUG();
-                if (body.kind == "pattern")
-                {
-                    let undo = typeParams;
-                    let branches = body.items;
-
-                    mut did_match = false;
-                    for (mut i = 0; i < branches.len; i++)
+                    //////////////////////////////////////////////////////////////////////////////////////////////
+                    // TODO FIX type unions can mess up when other args get defered and they get served first.  //
+                    //  I think we should go quantum here, basically figure out everything this could be        //
+                    //   and collapse along the way.                                                            //
+                    if (!pass_retype && annot.kind == "typeunion")
                     {
-                        // Fails cond if any?
-                        let cond = branches[i].items[0];
-                        if (cond && !evalTypePattern(cond, typeParams))
+                        retypeIndices.push(i);
+                        continue;
+                    }
+                    //////////////////////////////////////////////////////////////////////////////////////////////
+
+                    //
+                    argNode.kind == "let"  || BUG();
+
+                    //
+                    if (inType)
+                    {
+                        // Enable conversions on fully typed arguments.
+                        let exactType = host_arg.type;
+                        if (exactType)
                         {
-                            typeParams = undo;
+                            if (args.len > i)
+                                args[i] = exactType;
+
                             continue;
                         }
 
-                        // Pass.
-                        let cons = branches[i].items;
-                        ref sig = n_fn.items;
+                        //
+                        let argName = argNode.value || BUG();
+
+                        // Same pattern - grabs a mutref.
+                        ref argName_typeParam = typeParams.map::ref("$" ~ argName);
+
+                        // Values vs refs.
+                        inType = add_ref(inType, Lifetime_temporary);
+
+                        //
+                        (argName_typeParam && fail(
+                            "Type param name collision with " ~ host_arg ~ "."))
+                                .matched = inType;
+
+                        // Type check.
+                        if (annot)
                         {
-                            let n_ret = cons[cons.len + FN_RET_BACK];
-                            if (n_ret) sig[sig.len + FN_RET_BACK] = n_ret;
+                            let argOk = trySolveTypeParams(
+                                annot, inType, typeParams, :errout,
+                                invariant: false);
 
-                            let n_body = cons[cons.len + FN_BODY_BACK];
-                            sig[sig.len + FN_BODY_BACK] = n_body || BUG("doTrySpec: no case/body.");
+                            if (!error && !argOk)
+                            {
+                                error = "arg".qKW ~ " " ~ argName.qID ~ ":";
+                                errout.len > 1 || BUG("BUG trySolveTypeParams did not provide an explanation.");
+                                for (shadow mut i = 1; i < errout.len; i++)
+                                    error ~= "\n\t    " ~ errout[i].message;
+                            }
+
+                            if (error && !remangle)
+                                break;
                         }
-
-                        did_match = true;
-                        break;
-                    }
-
-                    // All branches mismatch?
-                    //  Can't return, faking RAII here.
-                    if (!did_match)
-                        return SPECFAIL("No body pattern matched.");
-                }
-
-                // Native relaxer.
-                //  We can't reason about the code of "native" fns,
-                //   so we relax based on type assertions here.
-                //
-                let n_body = n_fn.items[n_fn.items.len + FN_BODY_BACK];
-                if (n_body.isNativeBody)
-                {
-                    for (shadow mut i = 0; i < numArgs; i++)
-                    {
-                        let argNode = items[i] || BUG();
-                        let id = "$" ~ argNode.value;
-
-                        typeParams.map::if_ref(id): |ref tp|
-                            tp.matched = tp.consumed;
                     }
                 }
             }
 
+            /////////////////
+            // Literal fixup.
+            if (remangle)
+                resetMangle(args);
+            //        /LITFIX
+            /////////////////
+
+            fn SPECFAIL(reason: string)
+            {
+                let index       = _spec_errors.len;
+                _spec_errors   ~= reason;
+
+                let spec        = Target(
+                    modid: SPECFAIL_RentrySafety.modid, :index);
+
+                resetSpec(spec);
+                return spec;
+            }
+
+            // Match pattern arm here.
+            if (error)
+                return SPECFAIL(error);
+
+            // Pattern matching.
+            let body = items[items.len + FN_BODY_BACK] || BUG();
+            if (body.kind == "pattern")
+            {
+                let undo = typeParams;
+                let branches = body.items;
+
+                mut did_match = false;
+                for (mut i = 0; i < branches.len; i++)
+                {
+                    // Fails cond if any?
+                    let cond = branches[i].items[0];
+                    if (cond && !evalTypePattern(cond, typeParams))
+                    {
+                        typeParams = undo;
+                        continue;
+                    }
+
+                    // Pass.
+                    let cons = branches[i].items;
+                    ref sig = n_fn.items;
+                    {
+                        let n_ret = cons[cons.len + FN_RET_BACK];
+                        if (n_ret) sig[sig.len + FN_RET_BACK] = n_ret;
+
+                        let n_body = cons[cons.len + FN_BODY_BACK];
+                        sig[sig.len + FN_BODY_BACK] = n_body || BUG("doTrySpec: no case/body.");
+                    }
+
+                    did_match = true;
+                    break;
+                }
+
+                // All branches mismatch?
+                //  Can't return, faking RAII here.
+                if (!did_match)
+                    return SPECFAIL("No body pattern matched.");
+            }
+
+            // Native relaxer.
+            //  We can't reason about the code of "native" fns,
+            //   so we relax based on type assertions here.
+            //
+            let n_body = n_fn.items[n_fn.items.len + FN_BODY_BACK];
+            if (n_body.isNativeBody)
+            {
+                for (shadow mut i = 0; i < numArgs; i++)
+                {
+                    let argNode = items[i] || BUG();
+                    let id = "$" ~ argNode.value;
+
+                    typeParams.map::if_ref(id): |ref tp|
+                        tp.matched = tp.consumed;
+                }
+            }
+        }
+
+        // Scopes & scope skips.
+        mut target: Target;
+
+        {
             ////////////////////////////////////////////////////////////////
             let scope0          = Scope_snap(_scope);
             let ss0             = _ss;
