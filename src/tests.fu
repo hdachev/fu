@@ -11882,7 +11882,7 @@ pub extern fn runTests()
         fn main() {
             let s: i32 = -3;
             let u: u32 =  3;
-            <fail 6:22 4+1 T: incompatible types i32 u32>
+            <fail 6:22+1 9:10+1 T: incompatible types i32 u32>
             return s + u;             <pass/>
             return s + u.i32;         </fail>
         }
