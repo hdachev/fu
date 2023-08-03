@@ -4526,7 +4526,9 @@ pub fn solve(
             if (i)
                 mangle ~= ',';
 
-            mangle ~= serializeType(args[i], debug: "mangle[$T]");
+            let argType = args[i] => Type;
+            if (argType)
+                mangle ~= serializeType(argType, debug: "mangle[$T]");
         }
 
         return mangle;
@@ -4749,10 +4751,6 @@ pub fn solve(
         }
 
         //
-        if (!into)
-            resetMangle(mangle);
-
-        //
         let items   = template.node.items;
         let numArgs = template.node.kind == "fn"
             ? items.len + FN_ARGS_BACK
@@ -4765,7 +4763,6 @@ pub fn solve(
         if (!into)
         {
             mut error = "";
-            mut remangle = false;
 
             mut args: Type[];
             if (use_reorder)
@@ -4860,8 +4857,6 @@ pub fn solve(
                                 inType = retype;
                                 if (args.len > i)
                                     args[i] = inType;
-
-                                remangle = true;
                             }
                         }
                     }
@@ -4924,7 +4919,7 @@ pub fn solve(
                                     error ~= "\n\t    " ~ errout[i].message;
                             }
 
-                            if (error && !remangle)
+                            if (error)
                                 break;
                         }
                     }
@@ -4933,8 +4928,7 @@ pub fn solve(
 
             /////////////////
             // Literal fixup.
-            if (remangle)
-                resetMangle(args);
+            resetMangle(args);
             //        /LITFIX
             /////////////////
 

@@ -84,7 +84,6 @@ pub extern fn runTests()
 
     // Categorizing what doesn't work and why -
 
-    let TODO_enums      = fn TODO;
     let TODO_structs    = fn TODO;
     let TODO_aar        = fn TODO;
     let TODO_borrowck   = fn TODO;
@@ -14290,11 +14289,11 @@ pub extern fn runTests()
         fn main() = _0::A.offset(_0::B) - 11;
     `]);
 
-    TODO_enums(currently: "COMPILER BUG #1 not assignable to host_arg", `
+    ZERO(`
         enum ABC { A; B; C };
 
         fn isAorB(x: ABC)
-            x == "A" ||     <fail fn == expects ABC got X:X>
+            x == "A" ||     <fail 6:15+2 incompatible types for T>
             x == "b";       <pass/>
             x == "B";       </fail>
 
