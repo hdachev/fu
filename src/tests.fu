@@ -85,7 +85,6 @@ pub extern fn runTests()
     // Categorizing what doesn't work and why -
 
     let TODO_structs    = fn TODO;
-    let TODO_aar        = fn TODO;
     let TODO_borrowck   = fn TODO;
     let TODO_disjoint   = fn TODO;
     let TODO_move       = fn TODO;
@@ -13253,7 +13252,7 @@ pub extern fn runTests()
         }
     `);
 
-    TODO_relaxer(`
+    TODO_slices(currently: "bad call to last 12:63+4 not an array", `
         struct Overload { items: string[]; };
 
         // This is a bit borderline -
@@ -13348,7 +13347,7 @@ pub extern fn runTests()
         }
     `]);
 
-    TODO_relaxer(`
+    TODO_relaxer(currently: "binding arg 4:20+3 invalidated by subsequent write 4:27+3", `
         fn useless_ref_lambda(ref sources: string[]) {
             fn src = sources[sources.len / 2]; // didn't relax the ref, failed bck
             return src[1, src.len] ~ src[0, 1];
@@ -13435,7 +13434,7 @@ pub extern fn runTests()
         }
     `);
 
-    TODO_relaxer(`
+    TODO_relaxer(currently: "bad call to pop 3:20+1 not an array", `
         fn relaxes_arr_to_slice_and_fails(ref arr) {
             arr.pop();
             return arr;
@@ -13531,7 +13530,7 @@ pub extern fn runTests()
         }
     `);
 
-    TODO_relaxer(`
+    TODO_slices(currently: "BUG incorrect exit code", `
         fn test(str: string) {
             mut res = 1;
             str.split('/'): |piece| res *= piece.len;
