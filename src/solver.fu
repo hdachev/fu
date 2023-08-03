@@ -4736,27 +4736,37 @@ pub fn solve(
             resetMangle(mangle, :allowReplaceNonSpecfails);
         };
 
+        fn SPECFAIL(reason: string)
+        {
+            let index       = _spec_errors.len;
+            _spec_errors   ~= reason;
+
+            let spec        = Target(
+                modid: SPECFAIL_RentrySafety.modid, :index);
+
+            resetSpec(spec);
+            return spec;
+        }
+
         //
         if (!into)
             resetMangle(mangle);
 
         //
-        let items = template.node.items;
-        ref n_fn = template.node;
-        n_fn.kind == "fn" || BUG("n_fn not a `fn`.");
+        let items   = template.node.items;
+        let numArgs = template.node.kind == "fn"
+            ? items.len + FN_ARGS_BACK
+            : BUG("template.node.kind != `fn`");
 
-        // println("  doTrySpec " ~ n_fn.value);
 
-        //
-        mut error = "";
-        mut remangle = false;
+        // Arguments - type params.
+
         mut typeParams: TypeParams;
-
-        fn isNativeBody(n_body: Node)
-            n_body.kind == "call" && n_body.value == "__native";
-
         if (!into)
         {
+            mut error = "";
+            mut remangle = false;
+
             mut args: Type[];
             if (use_reorder)
             {
@@ -4783,11 +4793,6 @@ pub fn solve(
 
             if (REST_TYPE)
                 args[REST_START] = REST_TYPE;
-
-            //
-            let numArgs = template.node.kind == "fn"
-                ? items.len + FN_ARGS_BACK
-                : BUG("template.node.kind != `fn`");
 
             /////////////////
             // Literal fixup.
@@ -4933,22 +4938,21 @@ pub fn solve(
             //        /LITFIX
             /////////////////
 
-            fn SPECFAIL(reason: string)
-            {
-                let index       = _spec_errors.len;
-                _spec_errors   ~= reason;
-
-                let spec        = Target(
-                    modid: SPECFAIL_RentrySafety.modid, :index);
-
-                resetSpec(spec);
-                return spec;
-            }
-
             // Match pattern arm here.
             if (error)
                 return SPECFAIL(error);
+        }
 
+
+        // Body pattern.
+
+        fn isNativeBody(n_body: Node)
+            n_body.kind == "call" && n_body.value == "__native";
+
+        ref n_fn = template.node;
+
+        if (!into)
+        {
             // Pattern matching.
             let body = items[items.len + FN_BODY_BACK] || BUG();
             if (body.kind == "pattern")
