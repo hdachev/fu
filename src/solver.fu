@@ -5767,8 +5767,10 @@ pub fn solve(
         {
             o.kind == "field" || BUG(
                 "field_packOffset: Not a field.");
-            !o.solved.helpers || o.solved.helpers.index == packed || BUG(
-                "field_packOffset: Helpers already set to something else.");
+
+            // TODO FIX: this doesn't work with recursion.
+            // !o.solved.helpers || o.solved.helpers.index == packed || BUG(
+            //     "field_packOffset: Helpers already set to something else.");
         }
 
         o.solved.helpers = Helpers(packed);
@@ -5836,15 +5838,15 @@ pub fn solve(
 
         mut out_target  = into;
         mut out_type: Type;
+
+        mut flatCount = isPrimDecl && 1;
+
         if (out_target)
         {
             out_type    = out_target.type;
         }
         else
         {
-            // Detect self-recursion [A].
-            let flatCount = isPrimDecl ? +1 : -1;
-
             out_type    = initStruct(:kind, :baseprim, :name, :asserts, :flatCount);
             out_target  = Scope_Typedef(_scope, id: origId, :name,
                 type: out_type, :node.flags,
@@ -5878,7 +5880,6 @@ pub fn solve(
         // Struct fields only.
         mut structConverts: Target[];
         mut structImports:  i32[];
-        mut flatCount:      i32 = isPrimDecl && 1;
 
         mut non_triv = !out_type.is_rx_copy && -1;
 
@@ -5963,14 +5964,41 @@ pub fn solve(
                 ref field = GET_mut(field_target);
                 field.type = member.type;
 
-                let memberFlatCount = member.type.isStruct
-                    ? lookupUserType(member.type).flatCount
+                //
+                let member_isStruct = member.type.isStruct;
+                let member_userType = member_isStruct && lookupUserType(member.type);
+                let memberFlatCount = member_isStruct
+                    ? member_userType.flatCount
                     : 1;
 
-                // Detect self-recursion [B].
-                if (memberFlatCount < 0)
-                    fail("Type " ~ name.qBAD ~ " is self-recursive via " ~ field);
+                // TODO FIX no point in doing this if struct is off-module,
+                //  also no point in doing it if other struct is already checked?
+                //
+                // Probably this along with sizeof/alignof/flatCount & company
+                //  can all be done in one pass.
+                //
+                fn getRecursionError(s: Struct)
+                {
+                    for (shadow mut i = 0; i < s.items.len; i++)
+                    {
+                        shadow let item = s.items[i].target;
+                        let itemType = item.type;
+                        if (itemType.isStruct)
+                        {
+                            mut rec = "";
+                            if (itemType == out_type || (rec = getRecursionError(lookupUserType(itemType))))
+                                return "\n\t\tvia " ~ item.explainWhichFn(fmt: FullContext) ~ rec;
+                        }
+                    }
 
+                    return "";
+                }
+
+                let recursionError = member_isStruct && getRecursionError(member_userType);
+                if (recursionError)
+                    fail("Type " ~ name.qBAD ~ " is self-recursive:\n" ~ recursionError)
+
+                //
                 let memberFlatOffset = !isPrimDecl && flatCount;
 
                 if (!isPrimDecl)

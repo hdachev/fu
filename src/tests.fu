@@ -495,7 +495,7 @@ pub extern fn runTests()
         struct Other { using w: Node };
 
         struct Node {
-            <fail self recursive Node>
+            <fail self recursive (Node|Other) (2:30+1|6:13+1)>
             v: Node;           <fail/>
             v: Other;          <pass/>
             v: i32;            </fail>
@@ -1860,7 +1860,7 @@ pub extern fn runTests()
                 : arr; // <- we take this branch
     `);
 
-    TODO_structs(`
+    ZERO(`
         // This one unrelated to COW but variation of test above.
         <flip>
         struct Ephemeral { // When first, we cg declarations in the wrong order
