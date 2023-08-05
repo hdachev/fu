@@ -340,7 +340,7 @@ flags VFacts
 {
     AlwaysTrue
     AlwaysFalse
-    COWUnique
+    Typename
 };
 
 

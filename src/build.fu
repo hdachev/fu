@@ -20,7 +20,7 @@ fn tmpfile(mut fname: string)
 {
     fname ~= '-';
 
-    mut r = rand::u64();
+    mut r = rand::next_u64();
     for (mut i = 0; i < 8; i++)
     {
         let v = r & 0x1f;

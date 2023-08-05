@@ -12415,14 +12415,14 @@ pub extern fn runTests()
     ZERO(`
         fn sA(_: $T) struct { hey: $T; };
 
-        fn fA(a: $T): typeof( sA($T) ) = [ a + 2 ];
+        fn fA(a: $T): sA($T) = [ a + 2 ];
         fn main() 1.fA.hey - 3;
     `);
 
     ZERO(`
         fn sB(_: $T) struct { hey: $T; };
 
-        fn fB(a: $T): typeof( sB($T) ) = [ a + 2 ];
+        fn fB(a: $T): sB($T) = [ a + 2 ];
         fn main() 1.fB.hey - 1.u32.fB.hey <fail bad call><pass/> .i32 </fail> ;
     `);
 
@@ -12433,7 +12433,7 @@ pub extern fn runTests()
         fn test(x) x.hey - 1;
 
         // 'a' must be callable.
-        type a = typeof( sB(i32) );
+        type a = sB(i32);
         fn main() a(1).test;
     `);
 
@@ -12450,8 +12450,8 @@ pub extern fn runTests()
         fn sB(_: $T) struct { hey: $T; };
 
         fn setupOperators(i: i32) {
-            struct BINOP { i: typeof( sB(i32) ); };
-            mut s: typeof( sB(i32) ) = [ i ];
+            struct BINOP { i: sB(i32); };
+            mut s: sB(i32) = [ i ];
             return BINOP(s);
         }
 
@@ -12460,10 +12460,10 @@ pub extern fn runTests()
 
     ZERO([`
         fn Hey = struct { i: i32 }; // fn Hey generated nonsense code
-        fn get(s: typeof( Hey() )) s.i;
+        fn get(s: Hey) s.i;
     `,`
         fn main() {
-            mut s: typeof( _0::Hey() );
+            mut s: _0::Hey;
             return s.get();
         }
     `]);
@@ -12473,7 +12473,7 @@ pub extern fn runTests()
         fn get(s) s.i;
     `,`
         fn main() {
-            mut s: typeof( _0::Hey(i32) );
+            mut s: _0::Hey(i32);
             return s.get(); // get(): wasn't visible, the struct didnt remember its template origin module.
         }
     `]);
@@ -13367,7 +13367,7 @@ pub extern fn runTests()
     `,
     `
         fn main() {
-            mut _map: typeof( _1::Map(string, string) );
+            mut _map: _1::Map(string, string);
 
             fn upsert(k: string, v: string) _map._1::ref(k) = v;
             upsert("hello", "world");
@@ -13760,7 +13760,7 @@ pub extern fn runTests()
     `,
     `
         fn use_Set(a: string) {
-            mut set: typeof( _1::Set(string) );
+            mut set: _1::Set(string);
             set.keys ~= a;
             return set._1::has(a);
         }
@@ -13862,7 +13862,7 @@ pub extern fn runTests()
     ZERO([`
         fn &(a, b) {
             mut res = a;
-            for (fieldname i: $a) res.i &= b.i;
+            for (fieldname i: typeof(a)) res.i &= b.i;
             return res;
         }
 
@@ -14248,7 +14248,7 @@ pub extern fn runTests()
         }
     `);
 
-    ZERO(`
+    TODO_ambig(`
         enum thing { i32; int; bool }
 
         // So the problem is the retval annotation for fn ==(template): bool

@@ -475,9 +475,16 @@ pub fn force_relax(ref type: Type, relax_mask!: Quals)
     type.quals &= ~relax_mask;
 }
 
+pub fn into_Typename(mut type: Type)
+{
+    type = clear_refs(type);
+    type.vfacts = Typename;
+    return type;
+}
+
 pub fn relax_typeParam(mut type: Type)
 {
-    return clear_vfacts(clear_refs(type));
+    return into_Typename(type);
 }
 
 

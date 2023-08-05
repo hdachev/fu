@@ -28,7 +28,7 @@ pragma emit(
     static std::atomic_uint64_t rand_u64_state { rand_u64_seed() };
 `);
 
-fn u64()
+fn next_u64()
 {
     mut next: u64;
     pragma input(

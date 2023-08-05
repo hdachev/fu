@@ -5990,7 +5990,7 @@ pub fn solve(
                         if (itemType.isStruct)
                         {
                             mut rec = "";
-                            if (itemType == out_type || (rec = getRecursionError(lookupUserType(itemType))))
+                            if (itemType.canon == out_type.canon || (rec = getRecursionError(lookupUserType(itemType))))
                                 return "\n\t\tvia " ~ item.explainWhichFn(fmt: FullContext) ~ rec;
                         }
                     }
@@ -7285,12 +7285,15 @@ pub fn solve(
     {
         fn T = evalTypeAnnot(node.items.only, typeParams);
 
+        /////////////////////////
+        let here0   = _here;
+        defer _here = here0;
+        _here       = node.token;
+        /////////////////////////
+
         if (node.kind == "call")
         {
             let items = node.items;
-
-            if (!items.len)
-                return Scope_lookupType(node);
 
             if (items.len == 1)
             {
@@ -7304,7 +7307,7 @@ pub fn solve(
                     return createArray(T);
 
                 if (node.value == "typeof")
-                    return clear_refs(
+                    return relax_typeParam(
                         solveNode(node.items.only).type);
             }
         }
@@ -7322,7 +7325,17 @@ pub fn solve(
             return t_zeroes;
         }
 
-        fail("Invalid type annotation: " ~ node.kind ~ " " ~ node.value);
+        //
+        mut exprType = solveNode(node).type;
+        {
+            if !(exprType.vfacts & Typename)
+                fail("Invalid type annotation: evaluates to a value, not a type."
+                    ~ " Consider wrapping it in typeof().");
+
+            exprType.vfacts &= ~Typename;
+        }
+
+        return exprType;
     }
 
     fn trySolveTypeParams(
@@ -8957,6 +8970,11 @@ pub fn solve(
             // Tag copies and moves.
             if (args)
             {
+                // Non-zero-filled type-inits.
+                if (kind == "type")
+                    type.vfacts &= ~Typename;
+
+                //
                 let host_args = target.args || BUG("CallerNode: no host args: " ~ target);
                 host_args.len == args.len || BUG("CallerNode: host_arg.len mismatch: " ~ target);
 
