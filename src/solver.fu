@@ -5839,7 +5839,8 @@ pub fn solve(
         mut out_target  = into;
         mut out_type: Type;
 
-        mut flatCount = isPrimDecl && 1;
+        mut flatCount   = isPrimDecl && 1;
+        mut declDepth   = 0;
 
         if (out_target)
         {
@@ -5970,6 +5971,9 @@ pub fn solve(
                 let memberFlatCount = member_isStruct
                     ? member_userType.flatCount
                     : 1;
+
+                if (member.type.isStruct)
+                    declDepth = max(declDepth, member_userType.declDepth + 1);
 
                 // TODO FIX no point in doing this if struct is off-module,
                 //  also no point in doing it if other struct is already checked?
@@ -6129,6 +6133,7 @@ pub fn solve(
                 let triv0   = s.all_triv;
 
                 s.flatCount = flatCount;
+                s.declDepth = declDepth;
                 s.all_triv  = !non_triv;
 
                 CHANGE    ||= flat0 != s.flatCount || triv0 != s.all_triv;

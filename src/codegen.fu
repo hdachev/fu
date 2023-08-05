@@ -33,6 +33,15 @@ let MAIN_zst            = 1 << 2;
 
 //
 
+struct StructDecl
+{
+    def:        string;
+    declDepth:  i32;
+}
+
+
+//
+
 pub fn cpp_codegen(
     implicit module: Module,
     implicit ctx: Context,
@@ -68,6 +77,8 @@ pub fn cpp_codegen(
         // type definitions
         // TODO track separately, we dont need all types defined
         _tdef:              string;
+
+        _tdef_stack:        StructDecl[];
 
         // fn definitions
         _fdef_started:      Target[];
@@ -346,19 +357,22 @@ pub fn cpp_codegen(
 
         let scp = parseStructCanon(type.canon);
         if (_tfwd.set::add(scp))
-        {
-            let decl = declareStruct(id, s);
-            _tdef ~= decl;
-        }
+            declareStruct(id, s);
 
         return id;
     }
 
-    fn declareStruct(id: string, s: Struct): string
+    fn declareStruct(id: string, s: Struct)
     {
         if (s.base)
             return declarePrimitive(id, s);
 
+        //
+        let tdef_stack0 = _tdef_stack.len;
+
+        _tdef_stack ~= StructDecl();
+
+        //
         let header  = s.kind ~ " " ~ id;
         _tfwd_src  ~= header ~ ";\n";
 
@@ -408,10 +422,26 @@ pub fn cpp_codegen(
         def ~= "\n        ;";
         def ~= "\n    }";
 
-        return def ~ "\n};\n                                #endif\n";
+        def ~= "\n};\n                                #endif\n";
+
+        // Sort and output all struct decls ordered by dep depth.
+        _tdef_stack[tdef_stack0] =
+            StructDecl(:def, :s.declDepth);
+
+        if (!tdef_stack0)
+        {
+            _tdef_stack.sort(|a, b|
+                a.declDepth < b.declDepth
+                    || a.declDepth == b.declDepth && a.def <> b.def < 0);
+
+            for (mut i = 0; i < _tdef_stack.len; i++)
+                _tdef ~= _tdef_stack[i].def;
+
+            _tdef_stack.clear();
+        }
     }
 
-    fn declarePrimitive(id: string, s: Struct): string
+    fn declarePrimitive(id: string, s: Struct)
     {
         let baseprim    = primAnnotBase(s.base);
         let members     = s.items;
@@ -427,9 +457,6 @@ pub fn cpp_codegen(
             //    unfortunately also true for flags.
             //
             _tfwd_src ~= "typedef " ~ baseprim ~ " " ~ id ~ ";\n";
-
-            if (!members)
-                return "";
 
             members.each: |member.target|
                 def ~= "\ninline constexpr " ~ id ~ " " ~ id ~ "_" ~ member.name
@@ -475,7 +502,10 @@ pub fn cpp_codegen(
             def ~= "\n};";
         }
 
-        return def ~ "\n                                #endif\n";
+        def ~= "\n                                #endif\n";
+
+        //
+        _tdef ~= def;
     }
 
 

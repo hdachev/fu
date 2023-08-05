@@ -68,6 +68,7 @@ struct Struct
 
     base?:      string;
     flatCount?: i32;
+    declDepth?: i32;
     all_triv?:  bool;
 };
 
