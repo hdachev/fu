@@ -537,6 +537,37 @@ pub extern fn runTests()
     // /using
 
 
+    // Type annotations.
+
+    ZERO(`
+        fn test(x: i32) {
+            <fail annotation not a type 4:20+1>
+            mut y: x;                   <pass/>
+            mut y = x;                  </fail>
+            y += x;
+            return y;
+        }
+
+        fn main() test(2) - 4;
+    `);
+
+    ZERO(`
+        struct Hey { v: i32 }
+
+        fn test(x: Hey) {
+            <fail annotation not a type 6:23+1>
+            mut y: Hey(1);              <pass/>
+            mut y = Hey(1);             </fail>
+            y.v += x.v;
+            return y;
+        }
+
+        fn main() test(Hey(2)).v - 3;
+    `);
+
+    // /Type Annotations
+
+
     // Templating checks.
 
     ZERO(`
