@@ -1,4 +1,6 @@
+import fail;
 import module;
+import helpers;
 
 struct ClosureID
 {
@@ -7,23 +9,34 @@ struct ClosureID
 };
 
 fn serialize(using _: ClosureID)
-    target.modid < 0
-        ? "`" ~ target.index ~ "-" ~ -target.modid ~ "-" ~ revision
-        : throw("Not a local.");
+{
+    mut result = "`";
+
+    if (target.modid >= 0 || target.index < 0)
+        BUG("ClosureID: target.modid >= 0 || target.index < 0");
+
+    result.append09AV(target.index.u32);
+    result ~= "-";
+    result.append09AV((-target.modid).u32);
+    result ~= "-";
+    result.append09AV(revision);
+
+    return result;
+}
 
 fn tryParseClosureID(id!: string): ClosureID
 {
     if (id.len > 5 /* "`0-0-0".len == 6 */ && id[0] == '`')
     {
         mut   offset = 1;
-        defer offset == id.len || throw("Bad ClosureID: trailing stuff.");
-        let index = helpers::parse10u32(offset, id).i32;
+        defer offset == id.len || BUG("Bad ClosureID: trailing stuff.");
+        let index = parse09AV(offset, id).i32;
 
-        id[offset++] == '-' || throw("Bad ClosureID: no modid-dash.");
-        let modid = -helpers::parse10u32(offset, id).i32;
+        id[offset++] == '-' || BUG("Bad ClosureID: no modid-dash.");
+        let modid = -parse09AV(offset, id).i32;
 
-        id[offset++] == '-' || throw("Bad ClosureID: no rev-dash.");
-        let revision = helpers::parse10u32(offset, id);
+        id[offset++] == '-' || BUG("Bad ClosureID: no rev-dash.");
+        let revision = parse09AV(offset, id);
 
         return ClosureID(Target(:modid, :index), :revision);
     }
