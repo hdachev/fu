@@ -11478,6 +11478,16 @@ pub extern fn runTests()
         fn main() i8(-1).test(+1);
     `);
 
+    ZERO(`
+        struct Test { v: u32 };
+        fn test(v   <fail bad call type Test expect u32 got i32 5:23+1 2:9+6>
+                        <pass/>
+                 : u32  </fail>
+            ): Test = [ v ];
+
+        fn main() test(2).v == 2 ? 0 : 1;
+    `);
+
 
     // First stab at higher-order functions.
 

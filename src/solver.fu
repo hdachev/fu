@@ -2045,7 +2045,9 @@ pub fn solve(
 
         // Compose error message:
         //  separate pass, so we don't have to worry about unnecessary string concats.
-        error = "Bad call to " ~ id.qID ~ " (" ~ args.map(.humanizeType).join(", ") ~ "): ";
+        error = "Bad call to " ~ (target ? target.str : id.qID)
+                ~ (args && " with args (" ~ args.map(.humanizeType).join(", ") ~ ")")
+                ~ ": ";
 
         let debug = tryMatch__mutargs(:misc_scope, :local_scope, :type_annot, :id, :args, :reorder, :conversions, :flags, :target, :error);
         if (debug)

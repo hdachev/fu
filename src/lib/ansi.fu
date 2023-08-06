@@ -31,16 +31,16 @@ let cLT         = ansi(32,1);
 //
 
 pub fn qBAD(id: string) =
-    id && BAD ~ id ~ RESET;
+    id ? BAD ~ id ~ RESET : throw("COMPILER BUG: empty qBAD(id)");
 
 pub fn qID(id: string) =
-    id && cID ~ id ~ RESET;
+    id ? cID ~ id ~ RESET : throw("COMPILER BUG: empty qID(id)");
 
 pub fn qKW(id: string) =
-    id && cKW ~ id ~ RESET;
+    id ? cKW ~ id ~ RESET : throw("COMPILER BUG: empty qKW(id)");
 
 pub fn qLT(id: string) =
-    id && cLT ~ id ~ RESET;
+    id ? cLT ~ id ~ RESET : throw("COMPILER BUG: empty qLT(id)");
 
 pub fn qCODE(id: string) = id.qID;
 
