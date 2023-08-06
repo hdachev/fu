@@ -12410,7 +12410,7 @@ pub extern fn runTests()
     `);
 
 
-    // Template structs / generics.
+    // Generics.
 
     ZERO(`
         fn sA(_: $T) struct { hey: $T; };
@@ -12497,6 +12497,39 @@ pub extern fn runTests()
 
         fn main() setupOperators(0).i.hey;
     `);
+
+    TODO_specpat(`
+        fn M(lax k: $K, lax v: $V) =
+            struct { k: $K; v: $V };
+        <split/>
+
+        <alt>
+        fn add(a: M($K, $V), b: M($K, $V)): M($K, $V) = <alt/>
+        type Mu32 = M(u32, u32);
+        fn add(a: Mu32, b: Mu32): Mu32 =                </alt>
+            [ a.k + b.k, a.v + b.v ];
+
+        fn incr_by(ref a: $T, b: $T) =
+            a = add(a, b);
+
+        fn K(_: $K) = M($K, u32);
+        fn KK(k: $K, v): K($K) = [ k, v ];
+        <split/>
+        fn V(_: $V) = M(u32, $V);
+        fn VV(k, v: $V): V($V) = [ k, v ];
+        <split/>
+
+        fn main() {
+            mut a = KK(1, 2);
+            mut b = VV(3, 4);
+
+            a.incr_by(b);
+            b.incr_by(a);
+            return b.k * 100 + b.v == 710 ? 0 : 1;
+        }
+    `);
+
+    // /Generics.
 
 
     // Macros & loops.
