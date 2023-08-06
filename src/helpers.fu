@@ -320,6 +320,9 @@ fn appendMi(ref str: string, mut modid!: i32, mut index!: i32)
     while (index);
 }
 
+
+// 5bit encoding that can be interleaved with _ap
+
 fn parse09AV(ref offset: i32, str: string)
 {
     mut shift: u32;
@@ -349,6 +352,39 @@ fn append09AV(ref str: string, mut v: u32)
         str ~= c >= 10
              ? (c - 10 + 'A'.u32).byte
              : (c      + '0'.u32).byte;
+    }
+    while (v);
+}
+
+
+// 4bit encoding that can be interleaved with 09AV
+
+fn parse_ap(ref offset: i32, str: string)
+{
+    mut shift: u32;
+    mut result: u32;
+    while (offset < str.len)
+    {
+        let c = str[offset];
+        let v = c >= 'a' && c <= 'p' ? c.u32 - 'a'.u32
+              : { break; };
+
+        result |= v << shift;
+        shift += 4;
+        offset++;
+    }
+
+    return result;
+}
+
+fn append_ap(ref str: string, mut v: u32)
+{
+    do
+    {
+        let c = v & 15;
+        v >>= 4;
+
+        str ~= (c + 'a'.u32).byte;
     }
     while (v);
 }
