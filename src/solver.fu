@@ -4523,15 +4523,30 @@ pub fn solve(
     fn mangleArgTypes(args: [$T]): string
     {
         mut mangle = "";
+        mut numNonInjected = 0;
         for (mut i = 0; i < args.len; i++)
         {
-            if (i)
+            let arg = args[i];
+
+            // Injected arguments shouldn't affect the mangle,
+            //  it doesn't affect the template matching.
+            //
+            // Uncomment the if (mangle.len > 15) below
+            //  to observe the trash that this filters out.
+            //
+            if (typeof(arg) -> Argument && arg.flags & F_INJECTED)
+                continue;
+
+            if (numNonInjected++)
                 mangle ~= ',';
 
-            let argType = args[i] => Type;
+            let argType: Type = arg;
             if (argType)
                 mangle ~= serializeType(argType, debug: "mangle[$T]");
         }
+
+        // if (mangle.len > 15)
+        //     println("MANGLE: ", mangle);
 
         return mangle;
     }
