@@ -16,27 +16,23 @@ fn serialize(using _: ClosureID)
         BUG("ClosureID: target.modid >= 0 || target.index < 0");
 
     result.append09AV(target.index.u32);
-    result ~= "-";
+    result.append_ap(revision);
     result.append09AV((-target.modid).u32);
-    result ~= "-";
-    result.append09AV(revision);
 
     return result;
 }
 
 fn tryParseClosureID(id!: string): ClosureID
 {
-    if (id.len > 5 /* "`0-0-0".len == 6 */ && id[0] == '`')
+    if (id.len > 3 /* "`0a0".len == 6 */ && id[0] == '`')
     {
         mut   offset = 1;
-        defer offset == id.len || BUG("Bad ClosureID: trailing stuff.");
-        let index = parse09AV(offset, id).i32;
+        defer offset == id.len || BUG(
+            "Bad ClosureID: trailing stuff.");
 
-        id[offset++] == '-' || BUG("Bad ClosureID: no modid-dash.");
-        let modid = -parse09AV(offset, id).i32;
-
-        id[offset++] == '-' || BUG("Bad ClosureID: no rev-dash.");
-        let revision = parse09AV(offset, id);
+        let index    =  parse09AV(offset, id).i32;
+        let revision =   parse_ap(offset, id);
+        let modid    = -parse09AV(offset, id).i32;
 
         return ClosureID(Target(:modid, :index), :revision);
     }
