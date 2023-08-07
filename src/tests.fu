@@ -568,7 +568,7 @@ pub extern fn runTests()
     // /Type Annotations
 
 
-    // Templating checks.
+    // Template args.
 
     ZERO(`
         let x = 3;
@@ -762,6 +762,8 @@ pub extern fn runTests()
         fn either(a, b) a ? a : b;
         fn main() either(0, []);
     `);
+
+    // /Template args
 
 
     // Lexical vs dynamically scoped templates -
@@ -12420,7 +12422,7 @@ pub extern fn runTests()
     `);
 
 
-    // Generics.
+    // Template types.
 
     ZERO(`
         fn sA(_: $T) struct { hey: $T; };
@@ -12488,7 +12490,7 @@ pub extern fn runTests()
         }
     `]);
 
-    TODO_specpat(`
+    TODO_specpat(currently: "$T is not defined 5:23+1", `
         fn sB(_: $T) struct { hey: $T; };
 
         // Pattern & partial spec, how?
@@ -12498,7 +12500,7 @@ pub extern fn runTests()
         fn main() a(1).test;
     `);
 
-    TODO_specpat(`
+    TODO_specpat(currently: "bad call to BINOP 5:25+1", `
         fn setupOperators(i: i32) {
             fn sB(_: $T) struct { hey: $T; }; // same as above
             struct BINOP { i: sB(i32); };     //  but template
@@ -12508,7 +12510,7 @@ pub extern fn runTests()
         fn main() setupOperators(0).i.hey;
     `);
 
-    TODO_specpat(`
+    TODO_specpat(currently: "bad call to add 8:12+3", `
         fn M(lax k: $K, lax v: $V) =
             struct { k: $K; v: $V };
         <split/>
@@ -12523,15 +12525,15 @@ pub extern fn runTests()
             a = add(a, b);
 
         fn K(_: $K) = M($K, u32);
-        fn KK(k: $K, v): K($K) = [ k, v ];
+        fn KK(k: $K, v: u32): K($K) = [ k, v ];
         <split/>
         fn V(_: $V) = M(u32, $V);
-        fn VV(k, v: $V): V($V) = [ k, v ];
+        fn VV(k: u32, v: $V): V($V) = [ k, v ];
         <split/>
 
         fn main() {
-            mut a = KK(1, 2);
-            mut b = VV(3, 4);
+            mut a = KK(0x1, 2);
+            mut b = VV(3, 0x4);
 
             a.incr_by(b);
             b.incr_by(a);
@@ -12539,7 +12541,7 @@ pub extern fn runTests()
         }
     `);
 
-    // /Generics.
+    // /Template types
 
 
     // Macros & loops.
