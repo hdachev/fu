@@ -12520,7 +12520,7 @@ pub extern fn runTests()
         fn main() setupOperators(0).i.hey;
     `);
 
-    TODO_specpat(currently: "bad call to add 8:12+3", `
+    TODO_specpat(currently: "ambig call multiple field k 3:22+1", `
         fn M(lax k: $K, lax v: $V) =
             struct { k: $K; v: $V };
         <split/>

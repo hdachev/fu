@@ -365,7 +365,8 @@ pub let t_string = createArray(t_byte);
 
 pub fn type_trySuper(a: Type, b: Type, DONT_match_zeroes!?: bool)
 {
-    if (a.canon != b.canon)
+    let canon = canon_trySuper(a.canon, b.canon);
+    if (!canon)
         return a.is_zeroes && !DONT_match_zeroes ? type_trySuper(definitType(b), b)
              : b.is_zeroes && !DONT_match_zeroes ? type_trySuper(definitType(a), a)
              : [];
@@ -377,7 +378,7 @@ pub fn type_trySuper(a: Type, b: Type, DONT_match_zeroes!?: bool)
                 && Lifetime_union(a.lifetime, b.lifetime);
 
     return Type(
-        ValueType(:a.canon, :quals),
+        ValueType(:canon, :quals),
         :lifetime, :vfacts);
 }
 
@@ -385,7 +386,8 @@ pub fn type_tryIntersect(a: Type, b: Type)
 {
     // Can't intersect with never or any -
     //  you can't use a value as `never` or `any`.
-    if (a.canon != b.canon)
+    let canon = canon_tryIntersect(a.canon, b.canon);
+    if (!canon)
         return [];
 
     let quals   = a.quals  | b.quals;
@@ -401,7 +403,7 @@ pub fn type_tryIntersect(a: Type, b: Type)
 
     //
     return Type(
-        ValueType(:a.canon, :quals),
+        ValueType(:canon, :quals),
         :lifetime, :vfacts);
 }
 

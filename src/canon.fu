@@ -1,5 +1,27 @@
 import helpers;
 
+
+// TODO FIX Approximating unions & intersections.
+
+fn canon_tryIntersect(a: string, b: string)
+{
+    if (a.len < b.len)
+        return canon_tryIntersect(b, a);
+
+    return isCanonAssignable(host: a, b) && a;
+}
+
+fn canon_trySuper(a: string, b: string)
+{
+    if (a.len > b.len)
+        return canon_trySuper(b, a);
+
+    return isCanonAssignable(host: a, b) && a;
+}
+
+
+//
+
 fn isCanonAssignable(host: [byte], guest: [byte])
 {
     let guestHasPatterns = guest.ends(with: ')');
