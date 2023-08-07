@@ -12490,7 +12490,7 @@ pub extern fn runTests()
         }
     `]);
 
-    TODO_specpat(currently: "bad to call to unwrap 2:31+1", [`
+    ZERO([`
         fn Hey(_: $T) = struct { v: $T };
     `,`
         fn unwrap(h: _0::Hey(i32)) = h.v * 10;

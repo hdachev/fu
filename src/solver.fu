@@ -5813,6 +5813,39 @@ pub fn solve(
 
     //
 
+    fn TODO_FIX_getSpecPat(): string
+    {
+        let spec_of = _current_fn.target && _current_fn.target.spec_of;
+        if (!spec_of)
+            return "";
+
+        mut specPat = "";
+        for (mut i = 0; i < _current_fn.out.items.len + FN_ARGS_BACK; i++)
+        {
+            let arg = _current_fn.out.items[i];
+
+            shadow let arg = arg.kind == "letdef"
+                ? arg.target.solved
+                : arg;
+
+            if (!specPat) {
+                specPat = "(";
+                specPat.appendMi(:spec_of.modid, :spec_of.index);
+            }
+
+            specPat ~= ":";
+            specPat ~= serializeType(arg.type, debug: "TODO_FIX_getSpecPat");
+        }
+
+        if (specPat)
+            specPat ~= ")";
+
+        return specPat;
+    }
+
+
+    //
+
     fn uPrepStruct(node: Node): SolvedNode
     {
         return __solveStruct(solve: false, :node);
@@ -5865,7 +5898,10 @@ pub fn solve(
         }
         else
         {
-            out_type    = initStruct(:kind, :baseprim, :name, :asserts, :flatCount);
+            let specPat = !origId && TODO_FIX_getSpecPat();
+
+            //
+            out_type    = initStruct(:kind, :baseprim, :name, :asserts, :flatCount, :specPat);
             out_target  = Scope_Typedef(_scope, id: origId, :name,
                 type: out_type, :node.flags,
                 status: SS_LAZY);
@@ -9149,7 +9185,8 @@ pub fn solve(
         if (SELF_TEST && slot.is_never && slot.usage)
             BUG("maybeCopyOrMove: slot.is_never but some usage bits set");
 
-        if (slot.canon != node.canon && !node.is_never)
+        if (!node.canon.canon::isCanonAssignable(host: slot.canon)
+                && !node.is_never)
         {
             if (node.type.is_zeroes && !(slot.is_mutref && CANNOT_definit_mutrefs))
                 return definitWrap(node, slot);

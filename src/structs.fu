@@ -15,8 +15,9 @@ pub fn parseStructCanon(canon: string): StructCanon
     }
 
     let mi = parseMi(offset, canon);
-    offset == canon.len || throw(
-        "parseStructCanon: trailing garbage in `" ~ canon ~ "`: " ~ offset ~ "|" ~ canon.len);
+    offset == canon.len
+        || canon[offset] == '(' // TODO FIX SPECPATs
+        || throw("parseStructCanon: trailing garbage in `" ~ canon ~ "`: " ~ offset ~ "|" ~ canon.len);
 
     return StructCanon(:mi.modid, :mi.index - ONE_BASED);
 }

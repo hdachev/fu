@@ -80,7 +80,7 @@ fn MODID(implicit module: Module): i32
 fn initStruct(implicit module: &mut Module,
     ::kind!, baseprim!: string,
     name: string, asserts: DeclAsserts,
-    flatCount!: i32)
+    flatCount!: i32, specPat!: string)
 {
     name[0].u8 - '0'.u8 > 9.u8 || throw (
         "Bad struct name, leading digit: `" ~ name ~ "`.");
@@ -90,8 +90,11 @@ fn initStruct(implicit module: &mut Module,
     module.out.types ~= Struct(:kind, :name, base: baseprim, :flatCount);
 
     //
-    mut canon = createStructCanon(
-        :kind, :baseprim, :module.modid, :index, :name);
+    let canon = createStructCanon(
+        :kind, :baseprim, :module.modid, :index, :name)
+            ~ specPat;
+
+    // if (specPat) println("SPECPAT " specPat);
 
     // Assume everything, we resolve disappointment.
     return Type(ValueType(:canon, quals: speculateStruct(:asserts, :flatCount)));
