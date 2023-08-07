@@ -2,6 +2,7 @@ import helpers;
 import module;
 import fail;
 import quals;
+import canon;
 
 let q_mutref            = Quals(1) << 0;
 let q_rx_copy           = Quals(1) << 1;
@@ -126,9 +127,6 @@ pub fn is_rx_resize (t: Type) !!(t.quals & q_rx_resize);
 
 
 //
-
-fn isCanonAssignable(host: string, guest: string)
-    host == guest;
 
 fn areQualsAssignable(host: Quals, guest: Quals)
     host & guest == host;
