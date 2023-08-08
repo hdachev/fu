@@ -1425,7 +1425,7 @@ pub fn solve(
                     if (!isZeroInit && (arity.max < minArity || arity.min > maxArity))
                     {
                         fn str(min: i32, max: i32)
-                            min != max  ? "[" ~ min ~ ", " ~ max ~ "]"
+                            min != max  ? "[" ~ min ~ " upto " ~ max ~ "]"
                                         : min.str;
 
                         matchFail("Wrong number of arguments: expects " ~ str(:arity.min, :arity.max)
@@ -1478,7 +1478,7 @@ pub fn solve(
                                         ~ humanizeType(expect));
                         }
 
-                        reorder.len >= args.len || !reorder || optional || BUG("reorder < args:\n\t\treorder=" ~ reorder ~ "\n\t\t#args=" ~ args.len);
+                        reorder.len >= args.len || !reorder || optional || BUG("reorder < args:\n\t\treorder=" ~ reorder.len ~ "\n\t\t#args=" ~ args.len);
 
                         :ARG_OK
                         for (mut i = 0; i < N; i++)

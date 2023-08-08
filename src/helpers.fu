@@ -300,7 +300,7 @@ fn append_ap(ref str: string, mut v: u32)
 
 //
 
-fn str(arr: [$T]) case ($T.is::arithmetic)
+fn print(arr: [$T]) case ($T.is::arithmetic)
 {
     mut result = "";
     for (mut i = 0; i < arr.len; i++)
@@ -319,7 +319,7 @@ fn str(arr: [$T]) case ($T.is::arithmetic)
     return result;
 }
 
-fn str(arr: [string]) {
+fn print(arr: [string]) {
     return arr ? "[ \"" ~ arr.join("\", \"") ~ "\" ]" : "[]";
 }
 
