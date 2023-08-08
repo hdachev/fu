@@ -12551,6 +12551,19 @@ pub extern fn runTests()
         }
     `);
 
+    TODO_specpat(currently: "$T is not defined 6:25+1", `
+        fn Hey(_: $T) struct { hey: $T; };
+
+        fn hello(x: i32) x * 10;
+        fn hello(x: Hey(i32)) x.hey * 100;
+        fn hello(x: Hey($T)) case ($T.is::unsigned) x.hey * 1000;
+
+        fn main() hello(1)
+                + hello([ 1 ]   => Hey(i32))
+                + hello([ 0x1 ] => Hey(u32)).i32
+                    - 1110;
+    `);
+
     // /Template types
 
 
