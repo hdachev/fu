@@ -12500,7 +12500,7 @@ pub extern fn runTests()
         fn main() = _1::unwrap(_2::wrap(4)) - 70;
     `]);
 
-    TODO_specpat(currently: "$T is not defined 5:23+1", `
+    ZERO(`
         fn sB(_: $T) struct { hey: $T; };
 
         // Pattern & partial spec, how?

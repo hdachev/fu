@@ -291,12 +291,13 @@ pub fn humanizeQuals(quals: Quals)
     return result;
 }
 
-pub fn parseType(str: string): ValueType
+pub fn parseType(str: [byte]): ValueType
 {
     mut offset: i32;
 
     let quals = parse09AV(offset, str).Quals;
-    let canon = str.slice(offset);
+    let canon = clone(str.slice(offset)); // TODO FIX SLICES the clone here
+
     return ValueType(:canon, :quals);
 }
 

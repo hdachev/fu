@@ -7495,6 +7495,46 @@ pub fn solve(
             return false;
         }
 
+        // This actually doesn't seem half bad.
+        let pattern = node.kind == "call" && type.canon.canon::tryGetPattern();
+        if (pattern)
+        {
+            fn matchByPattern()
+            {
+                let targets = solveAddrOfFn(node.value);
+                pattern.canon::eachSubPattern(|shadow pattern, mi|
+                {
+                    if (!targets.has(Target(:mi.modid, :mi.index)))
+                        continue;
+
+                    // TODO FIX can't continue outer, see for_fn failcase.
+                    :EACH_ARG
+                    {
+                        mut numArgs = 0;
+                        pattern.canon::eachArgSpecType: |argSpecType|
+                        {
+                            let argIdx = numArgs++;
+                            if (argIdx >= node.items.len)
+                                break :EACH_ARG;
+
+                            shadow let node = node.items[argIdx];
+                            shadow let type = Type(parseType(argSpecType));
+
+                            if (!trySolveTypeParams(:node, :type, :typeParams, :errout, invariant: true))
+                                break :EACH_ARG;
+                        }
+
+                        if (numArgs == node.items.len)
+                            return true;
+                    }
+                });
+
+                return false;
+            }
+
+            return matchByPattern();
+        }
+
         // Everything else is a regular type annotation.
         let expect = evalTypeAnnot(node);
         if (!isAssignable(expect, type, :DONT_match_zeroes))

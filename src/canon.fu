@@ -80,6 +80,30 @@ pub fn eachSubPattern(pattern: [byte], visit)
     }
 }
 
+pub fn eachArgSpecType(subPattern: [byte], visit)
+{
+    mut offset  = 1; // first arg starts on :
+    for (;;)
+    {
+        let start   = offset;
+
+        mut isLastArgSpecType: bool;
+        lax let isDeep = subPattern.scan(':',
+            :offset, isLastArgSpecType);
+
+        visit(subPattern[start : offset],
+            isDeep?: isDeep, isLast?: isLastArgSpecType);
+
+        if (isLastArgSpecType)
+            break;
+
+        offset++;
+    }
+}
+
+
+//
+
 pub fn tryGetPattern(canon: [byte])
 {
     return canon.ends(with: ')') // Same as below
