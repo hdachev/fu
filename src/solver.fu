@@ -1737,11 +1737,13 @@ pub fn solve(
 
         // Not defined msg.
         if (error && error.len == error_len0 && !matchIdx)
-            error ~= id.qID ~ " is not defined here.";
+            error ~= id.isNotDefinedHere;
 
         return matchIdx || ambigOkIdx;
     }
 
+    fn isNotDefinedHere(id: string)
+        id.qID ~ " is not defined here.";
 
     //
 
@@ -7496,43 +7498,60 @@ pub fn solve(
         }
 
         // This actually doesn't seem half bad.
-        let pattern = node.kind == "call" && type.canon.canon::tryGetPattern();
-        if (pattern)
+        if (node.kind == "call" && node.flags & F_TEMPLATE)
         {
-            fn matchByPattern()
+            mut targets = solveAddrOfFn(node.value);
+            if (!targets)
+                matchFail(node.value.isNotDefinedHere);
+
+            let pattern = type.canon.canon::tryGetPattern();
+            pattern.canon::eachSubPattern(|shadow pattern, mi|
             {
-                let targets = solveAddrOfFn(node.value);
-                pattern.canon::eachSubPattern(|shadow pattern, mi|
+                // TODO FIX can't continue outer, see for_fn failcase.
+                :CHECK_PATTERN
                 {
-                    if (!targets.has(Target(:mi.modid, :mi.index)))
+                    fn patternFail(inline err: string)
+                    {
+                        if (errout)
+                            errout ~= Warning(node.token, err);
+
+                        break :CHECK_PATTERN;
+                    }
+
+                    let target = Target(:mi.modid, :mi.index);
+                    let targetsIdx = targets.find(target);
+                    if (targetsIdx < 0)
                         continue;
 
-                    // TODO FIX can't continue outer, see for_fn failcase.
-                    :EACH_ARG
+                    targets.splice(targetsIdx, 1);
+
+                    mut numArgs = 0;
+                    pattern.canon::eachArgSpecType: |argSpecType|
                     {
-                        mut numArgs = 0;
-                        pattern.canon::eachArgSpecType: |argSpecType|
-                        {
-                            let argIdx = numArgs++;
-                            if (argIdx >= node.items.len)
-                                break :EACH_ARG;
+                        let argIdx = numArgs++;
+                        if (argIdx >= node.items.len)
+                            patternFail("Missing type argument for " ~ target ~ ": " ~ target.args[argIdx]);
 
-                            shadow let node = node.items[argIdx];
-                            shadow let type = Type(parseType(argSpecType));
+                        shadow let node = node.items[argIdx];
+                        shadow let type = Type(parseType(argSpecType));
 
-                            if (!trySolveTypeParams(:node, :type, :typeParams, :errout, invariant: true))
-                                break :EACH_ARG;
-                        }
-
-                        if (numArgs == node.items.len)
-                            return true;
+                        if (!trySolveTypeParams(:node, :type, :typeParams, :errout, invariant: true))
+                            break :CHECK_PATTERN;
                     }
-                });
 
-                return false;
-            }
+                    if (numArgs != node.items.len)
+                        patternFail("Too many type arguments for " ~ target ~ ".");
 
-            return matchByPattern();
+                    // It's a match! We're done here.
+                    return true;
+                }
+            });
+
+            if (errout && targets)
+                for (mut i = 0; i < targets.len; i++)
+                    errout ~= Warning(node.token, "Not produced by " ~ targets[i] ~ ": " ~ humanizeType(type));
+
+            return false;
         }
 
         // Everything else is a regular type annotation.

@@ -1866,7 +1866,17 @@ pub fn parse(
     fn parseCallExpression(expr: Node): Node
     {
         mut args: Node[];
-        let flags = expr.flags | parseCallArgs(")", args);
+
+        ////////////////////////////////
+        let numDollars0 = _numDollars;
+        ////////////////////////////////
+
+        mut flags = expr.flags | parseCallArgs(")", args);
+
+        ////////////////////////////////
+        if (_numDollars > numDollars0)
+            flags |= F_TEMPLATE;
+        ////////////////////////////////
 
         // Uniform call syntax.
         if (expr.kind == "call" && flags & F_ACCESS)

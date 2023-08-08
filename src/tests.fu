@@ -12560,7 +12560,7 @@ pub extern fn runTests()
         }
     `);
 
-    TODO_specpat(currently: "$T is not defined 6:25+1", `
+    ZERO(`
         fn Hey(_: $T) struct { hey: $T; };
 
         fn hello(x: i32) x * 10;
