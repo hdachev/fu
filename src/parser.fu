@@ -115,9 +115,6 @@ pub fn parse(
     mut _precedence = P_RESET;
     mut _fnDepth    = 0;
 
-    mut _dollarAuto = 0;
-    mut _dollars    : string[];
-
     mut _anonFns    = 0;
 
     mut _autopub    = true;
@@ -132,9 +129,12 @@ pub fn parse(
     //  In the meantime, we forbid the introduction of new type params halfway through a function.
     //
     // The upside is this frees up the dollar sigil.
-
+    //
     mut _TODO_FIX_dollarOk  = false;
+
+    mut _numDollars         = 0;
     mut _expectedTypeParams: string[];
+    mut _upstreamTypeParams: string[];
 
 
     //
@@ -943,10 +943,16 @@ pub fn parse(
     {
         if (tryConsume("op", "!"))
         {
+            fn parseAndAdd()
+            {
+                let id = consume("id").value;
+                if (_upstreamTypeParams.has(id) || !_expectedTypeParams.set::add(id))
+                    fail("Duplicate type parameter: " ~ id.qBAD ~ ".");
+            }
+
             if (tryConsume("op", "<"))
             {
                 mut first = true;
-
                 for (;;)
                 {
                     if (tryConsume("op", ">"))
@@ -956,16 +962,12 @@ pub fn parse(
                         consume("op", ",");
 
                     first = false;
-
-                    // TODO HERE
-                    let id = consume("id").value;
-                    _expectedTypeParams ~= id;
+                    parseAndAdd();
                 }
             }
             else
             {
-                let id = consume("id").value;
-                _expectedTypeParams ~= id;
+                parseAndAdd();
             }
         }
     }
@@ -984,13 +986,11 @@ pub fn parse(
 
         ////////////////////////////////
         _fnDepth++;
-        let dollars0 = _dollars.len;
-        let dollarsOk0 = _TODO_FIX_dollarOk;
+        let numDollars0 = _numDollars;
 
         defer {
             _fnDepth--;
-            _dollars.shrink(dollars0);
-            _TODO_FIX_dollarOk = dollarsOk0;
+            _numDollars = numDollars0;
         }
         ////////////////////////////////
 
@@ -1095,6 +1095,17 @@ pub fn parse(
 
     fn parseFnBodyBranch(expr!?: bool): Node
     {
+        ////////////////////////////////////////////////////////////////
+        mut upstreamTypeParams0 = set::union(
+            _upstreamTypeParams, _expectedTypeParams);
+
+        swap(_upstreamTypeParams, upstreamTypeParams0);
+        mut expectedTypeParams0 = steal(_expectedTypeParams);
+
+        defer swap(_upstreamTypeParams, upstreamTypeParams0);
+        defer swap(_expectedTypeParams, expectedTypeParams0);
+        ////////////////////////////////////////////////////////////////
+
         // Allow a leading `=` before body.
         //  We'll transition to this thing fulltime
         //   in the presence of type annots.
@@ -1139,12 +1150,7 @@ pub fn parse(
         mut implicit: Node[];
         mut firstDefaulted = -1;
 
-        //////////////
-        _dollarAuto++;
-        _TODO_FIX_dollarOk = true;
-        //////////////
-
-        let dollars0 = _dollars.len;
+        let numDollars0 = _numDollars;
         for (;;)
         {
             if (tryConsume(endk, endv))
@@ -1158,8 +1164,10 @@ pub fn parse(
             let isInline = !!tryConsume("id", "inline");
 
             mut insertAt = -1;
-            mut arg = parseLet(xqmark: true, allowTypeUnions: true);
-            if (_dollars.len > dollars0 || arg.items[LET_TYPE].kind == "typeunion")
+            mut arg = parseLet(xqmark: true, allowTypeUnions: true, allowTypeParams: true);
+
+            let NEW = _numDollars > numDollars0;
+            if (NEW || arg.items[LET_TYPE].kind == "typeunion")
                 arg.flags |= F_TEMPLATE;
 
             if (isInline)
@@ -1200,11 +1208,6 @@ pub fn parse(
                 outArgs.push(arg);
         }
 
-        //////////////
-        _dollarAuto--;
-        _TODO_FIX_dollarOk = false;
-        //////////////
-
         // Ensures implicit arguments always come last.
         if (implicit)
             for (mut i = 0; i < implicit.len; i++)
@@ -1221,7 +1224,7 @@ pub fn parse(
         return ret;
     }
 
-    fn parseLet(xqmark! = false, allowTypeUnions! = false): Node
+    fn parseLet(xqmark! = false, allowTypeUnions! = false, allowTypeParams! = false): Node
     {
         mut flags: Flags;
 
@@ -1282,9 +1285,13 @@ pub fn parse(
         //
         let optional    = xqmark && tryConsume("op", "?");
 
+        _TODO_FIX_dollarOk = allowTypeParams;
+
         mut type        = sh_import
             ? createRead(registerImport(id) ~ '\t' ~ id, flags: F_COMPOUND_ID)
             : tryPopTypeAnnot(:allowTypeUnions);
+
+        _TODO_FIX_dollarOk = false;
 
         let init        = optional
             ? createDefinit()
@@ -1581,12 +1588,13 @@ pub fn parse(
 
     fn createTypeParam(value: string): Node
     {
-        if (!_TODO_FIX_dollarOk)
+        if (!_TODO_FIX_dollarOk || _upstreamTypeParams.has(value))
             return createRead(value);
 
-        if (!_dollars.has(value) && _dollarAuto)
-            _dollars.push(value);
+        if (_TODO_FIX_dollarOk && value.starts(with: '$'))
+            _expectedTypeParams.set::add(value);
 
+        _numDollars++;
         return make("typeparam", :value);
     }
 
