@@ -763,6 +763,15 @@ pub extern fn runTests()
         fn main() either(0, []);
     `);
 
+    ZERO(`
+        fn both_same_type(_<fail $T is not defined><pass/>: $T</fail>, y) =
+            typeof(y) -> $T;
+
+        fn main()   = both_same_type(1.u32, 1.i32) ? 1
+                    : both_same_type(1.i32, 1.i32) ? 0
+                    : 2;
+    `);
+
     // /Template args
 
 
