@@ -3,7 +3,7 @@ import helpers;
 
 // TODO FIX Approximating unions & intersections.
 
-fn canon_tryIntersect(a: string, b: string)
+pub fn canon_tryIntersect(a: string, b: string)
 {
     if (a.len < b.len)
         return canon_tryIntersect(b, a);
@@ -11,7 +11,7 @@ fn canon_tryIntersect(a: string, b: string)
     return isCanonAssignable(host: a, b) && a;
 }
 
-fn canon_trySuper(a: string, b: string)
+pub fn canon_trySuper(a: string, b: string)
 {
     if (a.len > b.len)
         return canon_trySuper(b, a);
@@ -20,9 +20,73 @@ fn canon_trySuper(a: string, b: string)
 }
 
 
-//
+// This is like string.find,
+//  but skips over parenthesized groups,
+//   however deeply nested. We use it to scan for '|' and ':' below.
 
-fn isCanonAssignable(host: [byte], guest: [byte])
+fn scan(str: [byte], sep: byte,
+    ref offset: i32,
+    ref isLast: bool): bool
+{
+    mut isDeep = false;
+    mut depth = 0;
+
+    :SCAN
+    {
+        for (; offset < str.len; offset++)
+        {
+            let c = str[offset];
+            if (c == '(') {
+                depth++;
+                isDeep = true;
+            }
+            else if (c == ')') {
+                depth--;
+            }
+            else if (c == sep && !depth) {
+                break :SCAN;
+            }
+        }
+
+        isLast = true;
+    }
+
+    return isDeep;
+}
+
+
+// This parses (a|b|c) patterns,
+//  invoking visit with each a, b and c subpattern.
+
+pub fn eachSubPattern(pattern: [byte], visit)
+{
+    mut offset  = 0;
+    for (;;)
+    {
+        let mi      = pattern.parseMi(:offset);
+        let start   = offset;
+
+        mut isLastSubPattern: bool;
+        lax let isDeep = pattern.scan('|',
+            :offset, isLastSubPattern);
+
+        visit(pattern[start : offset], :mi,
+            isDeep?: isDeep, isLast?: isLastSubPattern);
+
+        if (isLastSubPattern)
+            break;
+
+        offset++;
+    }
+}
+
+pub fn tryGetPattern(canon: [byte])
+{
+    return canon.ends(with: ')') // Same as below
+        && canon[canon.find('(') + 1 : canon.len - 1];
+}
+
+pub fn isCanonAssignable(host: [byte], guest: [byte])
 {
     let guestHasPatterns = guest.ends(with: ')');
 
@@ -53,85 +117,19 @@ fn isCanonAssignable(host: [byte], guest: [byte])
     if (host[0] != guest[0])
         return false;
 
-
-    // This is like string.find,
-    //  but skips over parenthesized groups,
-    //   however deeply nested. We use it to scan for '|' and ':' below.
-
-    fn scan(str: [byte], sep: byte,
-        ref offset: i32,
-        ref isLast: bool): bool
-    {
-        mut isDeep = false;
-        mut depth = 0;
-
-        :SCAN
-        {
-            for (; offset < str.len; offset++)
-            {
-                let c = str[offset];
-                if (c == '(') {
-                    depth++;
-                    isDeep = true;
-                }
-                else if (c == ')') {
-                    depth--;
-                }
-                else if (c == sep && !depth) {
-                    break :SCAN;
-                }
-            }
-
-            isLast = true;
-        }
-
-        return isDeep;
-    }
-
-
-    // This parses (a|b|c) patterns,
-    //  invoking visit with each a, b and c subpattern.
-
-    fn eachSubPattern(pattern: [byte], visit)
-    {
-        mut offset  = 0;
-        for (;;)
-        {
-            let start = offset;
-
-            mut isLastSubPattern: bool;
-            mut isDeep: bool = pattern.scan('|',
-                :offset, isLastSubPattern);
-
-            visit(pattern[start : offset], :isDeep);
-
-            if (isLastSubPattern)
-                break;
-
-            offset++;
-        }
-    }
-
-
     // For each host subpattern,
     //  ensure there's at least one matching guest subpattern.
-
-    eachSubPattern(host[h0 : h1]): |shadow host, isDeep!hostDeep|
+    //
+    eachSubPattern(host[h0 : h1]): |shadow host, isDeep!hostDeep, mi!hostTemplateId|
     {
-        shadow mut h1 = 0;
-        let hostTemplateId = parseMi(host, offset: h1);
-
         // TODO replace this with continue :NEXT_HOST_PAIR -
         //  currently continues don't appear to work for nested lambdas,
         //   see `for_fn` failcase.
         //
         :HOST_PAIR_OK
         {
-            eachSubPattern(guest[g0 : g1]): |shadow guest, isDeep!guestDeep|
+            eachSubPattern(guest[g0 : g1]): |shadow guest, isDeep!guestDeep, mi!guestTemplateId|
             {
-                shadow mut g1 = 0;
-                let guestTemplateId = parseMi(guest, offset: g1);
-
                 // Both need to be specs of the same template.
                 if (guestTemplateId != hostTemplateId)
                     continue;
@@ -147,6 +145,9 @@ fn isCanonAssignable(host: [byte], guest: [byte])
                 // Else we gotta canon-compare each spec-arg pair individually.
                 else if (hostDeep && guestDeep)
                 {
+                    shadow mut h1 = 0;
+                    shadow mut g1 = 0;
+
                     // We split-zip the two spec-arg sequences here.
                     for (;;)
                     {
