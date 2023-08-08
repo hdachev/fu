@@ -3014,6 +3014,20 @@ pub extern fn runTests()
     `);
 
     ZERO(`
+        fn twice(what)
+            for (mut i = 0; i < 2; i++)
+                what(i);
+
+        mut x = 0;
+        :TWICE twice: |i<alt>: int</alt>| {
+            x += i;
+            if (!x++) continue :TWICE;
+        }
+
+        return x - 3;
+    `);
+
+    ZERO(`
         mut sum = 0;
         :OUTER for (mut x = 0;; x++) {
             for (mut y = 0; y < x; y++) {
