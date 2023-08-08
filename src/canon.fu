@@ -110,6 +110,16 @@ pub fn tryGetPattern(canon: [byte])
         && canon[canon.find('(') + 1 : canon.len - 1];
 }
 
+pub fn trimPattern(ref canon: string)
+{
+    let x = canon.find('(');
+    if (x >= 0)
+        canon.shrink(x);
+}
+
+
+//
+
 pub fn isCanonAssignable(host: [byte], guest: [byte])
 {
     let guestHasPatterns = guest.ends(with: ')');
@@ -130,7 +140,7 @@ pub fn isCanonAssignable(host: [byte], guest: [byte])
     //
     let hostHasPatterns = host.ends(with: ')');
     if (!hostHasPatterns)
-        return host == guest[0 : g0];
+        return host == guest[0 : g0 - 1];
 
     let h0 = host.find('(') + 1;
     let h1 = host.len - 1;

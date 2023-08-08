@@ -94,7 +94,6 @@ pub extern fn runTests()
     let TODO_args       = fn TODO;
     let TODO_conv       = fn TODO;
     let TODO_fntype     = fn TODO;
-    let TODO_specpat    = fn TODO;
     let TODO_relaxer    = fn TODO;
     let TODO_ambig      = fn TODO;
     let TODO_StaticEval = fn TODO;
@@ -12519,7 +12518,7 @@ pub extern fn runTests()
         fn main() a(1).test;
     `);
 
-    TODO_specpat(currently: "bad call to BINOP 5:25+1", `
+    TODO_conv(currently: "bad call to BINOP 5:25+1", `
         fn setupOperators(i: i32) {
             fn sB(_: $T) struct { hey: $T; }; // same as above
             struct BINOP { i: sB(i32); };     //  but template
@@ -12529,7 +12528,7 @@ pub extern fn runTests()
         fn main() setupOperators(0).i.hey;
     `);
 
-    TODO_specpat(currently: "ambig call multiple field k 3:22+1", `
+    ZERO(`
         fn M(lax k: $K, lax v: $V) =
             struct { k: $K; v: $V };
         <split/>

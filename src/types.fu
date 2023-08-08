@@ -450,6 +450,14 @@ pub fn speculateStruct(asserts: flags::DeclAsserts, flatCount!: i32)
 pub fn despeculateStruct(mut type: Type)
 {
     type.quals &= ~(q_rx_copy | q_USAGE);
+
+    // TODO FIX SPECPAT removing generic labels -
+    //  currently we dump every struct's fields in field_items,
+    //   which can accumulate fields for the same template struct
+    //    BUT FROM DIFFERENT MODULES - which messes us up pretty badly
+    //
+    canon::trimPattern(type.canon);
+
     return type;
 }
 
