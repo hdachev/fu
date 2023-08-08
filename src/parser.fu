@@ -1021,10 +1021,6 @@ pub fn parse(
                 set_PUB(flags);
                 flags |= F_EXTERN;
             }
-
-            //
-            if (_dollars.len > dollars0)
-                flags |= F_TEMPLATE;
         }
 
         return make("fn", :items, :flags, :asserts, name);
