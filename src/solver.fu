@@ -2068,7 +2068,7 @@ pub fn solve(
         if (k == "block")       return solveBlock(node, :type);
         if (k == "argid")       return solveArgID(node, :type);
 
-        if (k == "let")         return solveLet(node);
+        if (k == "let")         return solveLet(node, letdefType: type);
         if (k == "call")        return solveCall(node);
         if (k == "arrlit")      return solveArrlit(node, type);
 
@@ -3980,7 +3980,7 @@ pub fn solve(
             && "Contains non-local control flow.";
     }
 
-    fn warn(token: TokenIdx, inline message: string)
+    fn warn(inline message: string, token!: TokenIdx = _here)
     {
         _warnings.grow_if_oob(_current_fn.target.index) ||= Warning(:token, message: message.fail_appendStack);
     }
@@ -5476,7 +5476,7 @@ pub fn solve(
                         ~ Target(:module.modid, _current_fn.far_jumps[0]) ~ ".");
 
                 if (maybeLast && !mustBecomeInline)
-                    numArgsWritten || ext.fx_mask || !retval.is_void || overload.flags & F_LAX || warn(out.token,
+                    numArgsWritten || ext.fx_mask || !retval.is_void || overload.flags & F_LAX || warn(:out.token,
                         target ~ " does nothing: returns void and has no effects. Make it " ~ "lax".qKW ~ " if this is intentional.");
 
                 //
@@ -7021,15 +7021,15 @@ pub fn solve(
             type: t_let, items: [ SolvedNode, init ]);
     }
 
-    fn solveLet(node: Node, specType!?: Type): SolvedNode
+    fn solveLet(node: Node, specType!?: Type, letdefType!?: Type): SolvedNode
     {
         mut out = solveLetLike_dontTouchScope(node, :specType);
         let id  = out.value;
-        return solveLet_createBindingAndGetLetdef(:out, :id, setScope: true);
+        return solveLet_createBindingAndGetLetdef(:out, :id, setScope: true, :letdefType);
     }
 
     fn solveLet_createBindingAndGetLetdef(
-        mut out!: SolvedNode, id!: string, setScope!: bool): SolvedNode
+        mut out!: SolvedNode, id!: string, setScope!: bool, letdefType!?: Type): SolvedNode
     {
         // Dead code elim.
         if (out.kind != "let")
@@ -7132,7 +7132,7 @@ pub fn solve(
             Scope_set(:target);
 
             //
-            return createLetDef(:target);
+            return createLetDef(:target, :letdefType);
         }
 
         // TODO FIX: these are the addrofn target-less lets,
@@ -7145,9 +7145,15 @@ pub fn solve(
         return createEmpty();
     }
 
-    fn createLetDef(target: Target)
+    fn createLetDef(target: Target, letdefType?: Type)
     {
-        return SolvedNode(kind: "letdef", :target, type: t_void);
+        return SolvedNode(kind: "letdef", :target,
+
+            // TODO FIX if (lets ) started complaining about the t_void here,
+            //  which is totally legit, this needs to be formalized.
+            type: letdefType.propositionOK
+                ? t_bool
+                : t_void);
     }
 
     fn createLet(id: string, flags: Flags, init: SolvedNode, setScope!: bool)
@@ -8056,12 +8062,22 @@ pub fn solve(
             ~ b.humanizeType);
     }
 
-    fn tryAbstractEvalAsBool(cond: SolvedNode): StaticEval
+    fn tryAbstractEvalAsBool(cond: SolvedNode, voidOk!?: bool): StaticEval
     {
         if (cond.vfacts & (AlwaysTrue | AlwaysFalse))
             return !(cond.vfacts & AlwaysTrue)  ? SE_False
                  : !(cond.vfacts & AlwaysFalse) ? SE_True
                  : BUG("Expression both AlwaysTrue and AlwaysFalse.");
+
+        if (cond.type.isIrrelevant)
+        {
+            voidOk || warn("Condition is " ~ humanizeType(cond.type)
+                ~ (cond.kind == "call"
+                    ? ", returned from " ~ cond.target.explainWhichFn(fmt: FullContext)
+                    : ", not meaningful in a boolean context."));
+
+            return SE_False;
+        }
 
         return SE_Unknown;
     }
@@ -8314,7 +8330,11 @@ pub fn solve(
 
     fn solveNot(node: Node)
     {
-        return createNot(solveNode(node.items.only, type: t_proposition));
+        let item = solveNode(
+            node.items.only, type: t_proposition);
+
+        _here = node.token;
+        return createNot(item);
     }
 
     fn createNot(item: SolvedNode)
@@ -9347,7 +9367,7 @@ pub fn solve(
                 // Static eval.
                 if (static_eval_brk)
                 {
-                    let ae_item = tryAbstractEvalAsBool(solved);
+                    let ae_item = tryAbstractEvalAsBool(solved, voidOk: i == nodes.len - 1);
                     if (ae_item)
                     {
                         if (static_eval_brk == ae_item)
@@ -10548,7 +10568,7 @@ pub fn solve(
                 ref expr = items[i];
                 bck_node(expr);
 
-                let ae_expr = tryAbstractEvalAsBool(expr);
+                let ae_expr = tryAbstractEvalAsBool(expr, voidOk: i == items.len - 1);
                 if (ae_expr)
                 {
                     let isAnd = node.kind == "and";

@@ -3327,6 +3327,20 @@ pub extern fn runTests()
         }
     `);
 
+    ZERO(`
+        fn hello(ref str) {
+            str ~= "world";
+            <fail condition is void 9:17+1 2:12+5>  <pass/>
+            return str.len & 1;                     </fail>
+        }
+
+        fn main() {
+            mut str = "hello, ";
+            if (!hello(str)) str ~= "!";
+            return str.len - 13;
+        }
+    `);
+
     // /Logic and selectors.
 
 
