@@ -6,7 +6,7 @@
 
 void bReak_DX6KImTN()
 {
-    fu_STR a = "Breakpoint here"_fu;
+    fu::str a = ((2 > 1) ? "Breakpoint here"_fu : fu::str{});
     if (!(a))
         fu_ASSERT();
 

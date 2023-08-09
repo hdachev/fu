@@ -50,45 +50,30 @@ s_ModuleStat ModuleStat_now_pUbtfzLn()
     return s_ModuleStat { hr_CPFg3qvV(), fu_ARC::ALLOC_STAT_COUNT(), fu_ARC::ALLOC_STAT_BYTES() };
 }
 
-                                #ifndef DEF_x7E_sTZRmMq1BYf
-                                #define DEF_x7E_sTZRmMq1BYf
-inline fu_STR x7E_sTZRmMq1(fu::view<char> a, fu::view<char> b)
+                                #ifndef DEF_x7E_r7bhmB7DrQ0
+                                #define DEF_x7E_r7bhmB7DrQ0
+inline fu::str x7E_r7bhmB7D(fu::view<char> a, fu::view<char> b)
 {
     return a + b;
 }
                                 #endif
 
-                                #ifndef DEF_x7E_sTZRmMq1BYf
-                                #define DEF_x7E_sTZRmMq1BYf
-inline fu_STR x7E_sTZRmMq1(fu::view<char> a, fu::view<char> b)
+                                #ifndef DEF_x7E_r7bhmB7DrQ0
+                                #define DEF_x7E_r7bhmB7DrQ0
+inline fu::str x7E_r7bhmB7D(fu::view<char> a, fu::view<char> b)
 {
     return a + b;
 }
                                 #endif
 
-void ModuleStat_print_RpGSEiSe(const s_ModuleStat& a, const fu_STR& prefix, fu::view<char> suffix)
+void ModuleStat_print_6JjvJ5tS(const s_ModuleStat& a, const fu::str& prefix, fu::view<char> suffix)
 {
     // Hoisted:
-    fu_STR x;
-    fu_STR x_1;
-    fu_STR x_2;
+    fu::str x {};
+    fu::str x_1 {};
+    fu::str x_2 {};
 
-    fu_STR* BL_1_v;
-    fu_STR* BL_2_v;
-    fu_STR* BL_3_v;
-    fu::println((fu::slate<4, fu_STR> { fu_STR(prefix), static_cast<fu_STR&&>((__extension__ (
-    {
-        x = fu::f64dec(a.time);
-        BL_1_v = &(x);
-    (void)0;}), *BL_1_v)), static_cast<fu_STR&&>((__extension__ (
-    {
-        x_1 = "s\t"_fu;
-        BL_2_v = &(x_1);
-    (void)0;}), *BL_2_v)), static_cast<fu_STR&&>((__extension__ (
-    {
-        x_2 = (a.alloc_count ? ((x7E_sTZRmMq1(x7E_sTZRmMq1(fu::i64dec(a.alloc_count), " allocs\t"_fu), fu::i64dec(a.alloc_bytes)) + " bytes"_fu) + suffix) : fu_STR{});
-        BL_3_v = &(x_2);
-    (void)0;}), *BL_3_v)) }));
+    fu::println((fu::slate<4, fu::str> { fu::str(prefix), static_cast<fu::str&&>((x = fu::f64dec(a.time), x)), static_cast<fu::str&&>((x_1 = "s\t"_fu, x_1)), static_cast<fu::str&&>((x_2 = (a.alloc_count ? ((x7E_r7bhmB7D(x7E_r7bhmB7D(fu::i64dec(a.alloc_count), " allocs\t"_fu), fu::i64dec(a.alloc_bytes)) + " bytes"_fu) + suffix) : fu::str{}), x_2)) }));
 }
 
 #endif

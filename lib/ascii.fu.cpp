@@ -4,7 +4,7 @@
 
 #ifndef fu_NO_fdefs
 
-fu_STR upper_hmGcUNDy(/*MOV*/ fu_STR&& str)
+fu::str upper_0ZAZU2Wn(/*MOV*/ fu::str&& str)
 {
     for (int i = 0; i < str.size(); i++)
     {
@@ -13,10 +13,10 @@ fu_STR upper_hmGcUNDy(/*MOV*/ fu_STR&& str)
             str.mutref(i) = char((int(fu::u8(c)) + (int(fu::u8('A')) - int(fu::u8('a')))));
 
     };
-    return static_cast<fu_STR&&>(str);
+    return static_cast<fu::str&&>(str);
 }
 
-fu_STR lower_hmGcUNDy(/*MOV*/ fu_STR&& str)
+fu::str lower_0ZAZU2Wn(/*MOV*/ fu::str&& str)
 {
     for (int i = 0; i < str.size(); i++)
     {
@@ -25,10 +25,10 @@ fu_STR lower_hmGcUNDy(/*MOV*/ fu_STR&& str)
             str.mutref(i) = char((int(fu::u8(c)) + (int(fu::u8('a')) - int(fu::u8('A')))));
 
     };
-    return static_cast<fu_STR&&>(str);
+    return static_cast<fu::str&&>(str);
 }
 
-char upper_3TwX2gmA(const char c)
+char upper_vtlSJUEf(const char c)
 {
     if ((c >= 'a') && (c <= 'z'))
         return char((int(fu::u8(c)) + (int(fu::u8('A')) - int(fu::u8('a')))));
@@ -37,7 +37,7 @@ char upper_3TwX2gmA(const char c)
 
 }
 
-char lower_3TwX2gmA(const char c)
+char lower_vtlSJUEf(const char c)
 {
     if ((c >= 'A') && (c <= 'Z'))
         return char((int(fu::u8(c)) + (int(fu::u8('a')) - int(fu::u8('A')))));

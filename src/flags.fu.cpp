@@ -36,24 +36,29 @@ inline constexpr int TYPECTOR_BACK = -1;
 inline constexpr int LOOP_INIT = 0;
                                 #endif
 
-                                #ifndef DEF_LOOP_COND
-                                #define DEF_LOOP_COND
-inline constexpr int LOOP_COND = 1;
+                                #ifndef DEF_LOOP_PRE_COND
+                                #define DEF_LOOP_PRE_COND
+inline constexpr int LOOP_PRE_COND = 1;
+                                #endif
+
+                                #ifndef DEF_LOOP_PRE
+                                #define DEF_LOOP_PRE
+inline constexpr int LOOP_PRE = 2;
                                 #endif
 
                                 #ifndef DEF_LOOP_BODY
                                 #define DEF_LOOP_BODY
-inline constexpr int LOOP_BODY = 2;
-                                #endif
-
-                                #ifndef DEF_LOOP_POST_COND
-                                #define DEF_LOOP_POST_COND
-inline constexpr int LOOP_POST_COND = 3;
+inline constexpr int LOOP_BODY = 3;
                                 #endif
 
                                 #ifndef DEF_LOOP_POST
                                 #define DEF_LOOP_POST
 inline constexpr int LOOP_POST = 4;
+                                #endif
+
+                                #ifndef DEF_LOOP_POST_COND
+                                #define DEF_LOOP_POST_COND
+inline constexpr int LOOP_POST_COND = 5;
                                 #endif
 
                                 #ifndef DEF_STRUCT_BASE

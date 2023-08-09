@@ -9,13 +9,6 @@
 #include <fu/defer.h>
 #include <sys/wait.h>
 
-#pragma GCC diagnostic push
-#ifdef __clang__
-#pragma GCC diagnostic warning "-Wunknown-warning-option"
-#endif
-#pragma GCC diagnostic ignored "-Wmisleading-indentation"
-
-
 
 extern char **environ;
 
@@ -24,7 +17,7 @@ typedef int PosixPipe[2];
 typedef int Errno;
 
 static Errno fu_spawn(
-    fu_VEC<fu_STR>&  argv, int& pid,
+    fu::vec<fu::str>& argv, int& pid,
     const PosixPipe* stdout,
     const PosixPipe* stderr)
 {
@@ -139,10 +132,9 @@ static Errno fu_waitpid(
     }
 }
 
-
 #ifndef fu_NO_fdefs
 
-int spawn_xnquH5p0(fu_VEC<fu_STR>&& argv, int& status)
+int spawn_HAbk5FLX(fu::vec<fu::str>&& argv, int& status)
 {
     if (!argv)
         return -1;
@@ -155,8 +147,7 @@ int spawn_xnquH5p0(fu_VEC<fu_STR>&& argv, int& status)
             fu_spawn(
                 argv, pid,
                 /*stdout*/ nullptr,
-                /*stderr*/ nullptr)
-    ;
+                /*stderr*/ nullptr);
         if (err)
             return err;
         else
@@ -165,13 +156,13 @@ int spawn_xnquH5p0(fu_VEC<fu_STR>&& argv, int& status)
         err =
             fu_waitpid(
                 pid, status);
-    ;
+
             return err;
         };
     };
 }
 
-int spawn_a5g2vbyH(fu_VEC<fu_STR>&& argv, fu_STR& stdout, fu_STR& stderr, int& status)
+int spawn_wqubrwFR(fu::vec<fu::str>&& argv, fu::str& stdout, fu::str& stderr, int& status)
 {
     if (!argv)
         return -1;
@@ -180,7 +171,6 @@ int spawn_a5g2vbyH(fu_VEC<fu_STR>&& argv, fu_STR& stdout, fu_STR& stderr, int& s
         int err = 0;
 
         {
-
             const auto& Close = [&](int& fd)
             {
                 const int DID_CLOSE = -1;
@@ -192,25 +182,19 @@ int spawn_a5g2vbyH(fu_VEC<fu_STR>&& argv, fu_STR& stdout, fu_STR& stderr, int& s
 
                 fd = DID_CLOSE;
             };
-        ;
 
             PosixPipe stdout_pipe;
             if (pipe(stdout_pipe))
                 return errno;
-        ;
-            fu_DEFER(
-            Close(stdout_pipe[0]);
-            Close(stdout_pipe[1]);
-        );
 
+            fu_DEFER(Close(stdout_pipe[0]);
+            Close(stdout_pipe[1]););
             PosixPipe stderr_pipe;
             if (pipe(stderr_pipe))
                 return errno;
-        ;
-            fu_DEFER(
-            Close(stderr_pipe[0]);
-            Close(stderr_pipe[1]);
-        );
+
+            fu_DEFER(Close(stderr_pipe[0]);
+            Close(stderr_pipe[1]););
             if (err)
                 return err;
             else
@@ -221,108 +205,102 @@ int spawn_a5g2vbyH(fu_VEC<fu_STR>&& argv, fu_STR& stdout, fu_STR& stderr, int& s
                 fu_spawn(
                     argv, pid,
                     &stdout_pipe,
-                    &stderr_pipe)
-        ;
+                    &stderr_pipe);
                 if (err)
                     return err;
                 else
                 {
-                    fu_DEFER(
-                auto e =
-                    fu_waitpid(
-                        pid, status);
+                    fu_DEFER(auto e =
+                        fu_waitpid(
+                            pid, status);
 
-                if (!err)
-                    err = e;
-            );
+                    if (!err)
+                        err = e;);
+                    Close(stdout_pipe[1]);
+                    Close(stderr_pipe[1]);
 
-            Close(stdout_pipe[1]);
-            Close(stderr_pipe[1]);
-        ;
                     if (err)
                         return err;
                     else
                     {
+                        const size_t BUF_SIZE = 64 * 1024;
+                        fu::byte BUF[BUF_SIZE];
 
-            const size_t BUF_SIZE = 64 * 1024;
-            fu::byte BUF[BUF_SIZE];
+                        const auto& ReadFD = [&](int fd, fu::str& out)
+                        {
+                            void*  data = BUF;
+                            size_t capa = BUF_SIZE;
 
-            const auto& ReadFD = [&](int fd, fu_STR& out)
-            {
-                void*  data = BUF;
-                size_t capa = BUF_SIZE;
+                            // Write directly into the string
+                            //  if it has more capa than the buffer here.
+                            //
+                            auto size   = out.size();
+                            auto avail  = out.capa() - size;
 
-                // Write directly into the string
-                //  if it has more capa than the buffer here.
-                //
-                auto size   = out.size();
-                auto avail  = out.capa() - size;
+                            if (avail > 0 && size_t(avail) > BUF_SIZE)
+                            {
+                                data = out.data_mut() + size;
+                                capa = size_t(avail);
+                            }
 
-                if (avail > 0 && size_t(avail) > BUF_SIZE)
-                {
-                    data = out.data_mut() + size;
-                    capa = size_t(avail);
-                }
+                            //
+                            auto bytes  = read(fd, data, size_t(capa));
 
-                //
-                auto bytes  = read(fd, data, size_t(capa));
+                            if (bytes < 0 && !err)
+                            {
+                                err = errno;
+                            }
+                            else if (bytes > 0)
+                            {
+                                auto count  = (decltype(size)) bytes;
+                                size += count;
 
-                if (bytes < 0 && !err)
-                {
-                    err = errno;
-                }
-                else if (bytes > 0)
-                {
-                    auto count  = (decltype(size)) bytes;
-                    size += count;
+                                // Copy if using the local buffer.
+                                if (data == BUF)
+                                    out.append_copy(fu_ZERO(), BUF, count);
+                                else
+                                    out.UNSAFE__WriteSize(size);
 
-                    // Copy if using the local buffer.
-                    if (data == BUF)
-                        out.append_copy(fu_ZERO(), BUF, count);
-                    else
-                        out.UNSAFE__WriteSize(size);
+                                return true;
+                            }
 
-                    return true;
-                }
+                            //
+                            return false;
+                        };
 
-                //
-                return false;
-            };
+                        const auto& ReadPollFD = [&](pollfd& pfd, fu::str& out)
+                        {
+                            return pfd.revents & POLLIN
+                                && ReadFD(pfd.fd, out);
+                        };
 
-            const auto& ReadPollFD = [&](pollfd& pfd, fu_STR& out)
-            {
-                return pfd.revents & POLLIN
-                    && ReadFD(pfd.fd, out);
-            };
+                        const size_t N = 2;
+                        pollfd poll_fds[N] =
+                        {
+                            { stdout_pipe[0], POLLIN, {/* revents */} },
+                            { stderr_pipe[0], POLLIN, {/* revents */} },
+                        };
 
-            const size_t N = 2;
-            pollfd poll_fds[N] =
-            {
-                { stdout_pipe[0], POLLIN, {/* revents */} },
-                { stderr_pipe[0], POLLIN, {/* revents */} },
-            };
+                        int poll_ret;
+                        while (!err && (poll_ret = poll(&poll_fds[0], N, /*timeout*/-1)))
+                        {
+                            if (poll_ret < 0)
+                            {
+                                auto e = errno;
+                                if (e == EINTR || e == EAGAIN)
+                                    continue;
 
-            int poll_ret;
-            while (!err && (poll_ret = poll(&poll_fds[0], N, /*timeout*/-1)))
-            {
-                if (poll_ret < 0)
-                {
-                    auto e = errno;
-                    if (e == EINTR || e == EAGAIN)
-                        continue;
+                                err = e;
+                                break;
+                            }
 
-                    err = e;
-                    break;
-                }
-
-                // Don't short circuit here.
-                if (  !ReadPollFD(poll_fds[0], stdout)
-                    & !ReadPollFD(poll_fds[1], stderr))
-                {
-                    break;
-                }
-            }
-        ;
+                            // Don't short circuit here.
+                            if (  !ReadPollFD(poll_fds[0], stdout)
+                                & !ReadPollFD(poll_fds[1], stderr))
+                            {
+                                break;
+                            }
+                        };
                     };
                 };
             };
@@ -332,5 +310,3 @@ int spawn_a5g2vbyH(fu_VEC<fu_STR>&& argv, fu_STR& stdout, fu_STR& stderr, int& s
 }
 
 #endif
-
-#pragma GCC diagnostic pop

@@ -16,16 +16,6 @@ struct s_Lint
 
 #ifndef fu_NO_fdefs
 
-                                #ifndef DEF_DEV_DisableBCK
-                                #define DEF_DEV_DisableBCK
-inline constexpr unsigned DEV_DisableBCK = (0x1u << 0u);
-                                #endif
-
-                                #ifndef DEF_DEV_PrintAST
-                                #define DEF_DEV_PrintAST
-inline constexpr unsigned DEV_PrintAST = (0x1u << 1u);
-                                #endif
-
 s_Lint Lint_lax_KjUu65ky()
 {
     return s_Lint { 10 };

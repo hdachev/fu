@@ -1,18 +1,15 @@
 #include <fu/str.h>
 #include <fu/vec.h>
 #include <fu/view.h>
-#include <fu/default.h>
 #include <fu/vec/slice.h>
 #include <fu/vec/concat.h>
 #include <fu/vec/concat_one.h>
 #include <fu/vec/view_assign.h>
 
-fu_STR normalize_YiIVoncC(const fu_STR&);
-fu_STR join_rMAWYyxW(fu::view<char>, const fu_STR&);
 
 #ifndef fu_NO_fdefs
 
-fu_STR ext_hNtHZ3HE(const fu_STR& path)
+fu::str ext_BWbYsL34(const fu::str& path)
 {
     for (int i = path.size(); i-- > 0; )
     {
@@ -23,10 +20,10 @@ fu_STR ext_hNtHZ3HE(const fu_STR& path)
             break;
 
     };
-    return fu_STR{};
+    return fu::str{};
 }
 
-fu_STR noext_hNtHZ3HE(const fu_STR& path)
+fu::str noext_BWbYsL34(const fu::str& path)
 {
     for (int i = path.size(); i-- > 0; )
     {
@@ -37,10 +34,10 @@ fu_STR noext_hNtHZ3HE(const fu_STR& path)
             break;
 
     };
-    return fu_STR{};
+    return fu::str{};
 }
 
-fu_STR dirname_hNtHZ3HE(const fu_STR& path)
+fu::str dirname_BWbYsL34(const fu::str& path)
 {
     for (int i = (path.size() - 1); i-- > 0; )
     {
@@ -48,10 +45,10 @@ fu_STR dirname_hNtHZ3HE(const fu_STR& path)
             return fu::slice(path, 0, (i + 1));
 
     };
-    return "/"_fu;
+    return fu::str{};
 }
 
-fu_STR filename_hNtHZ3HE(const fu_STR& path)
+fu::str filename_BWbYsL34(const fu::str& path)
 {
     for (int i = path.size(); i-- > 0; )
     {
@@ -59,14 +56,14 @@ fu_STR filename_hNtHZ3HE(const fu_STR& path)
             return fu::slice(path, (i + 1));
 
     };
-    return fu_STR(path);
+    return fu::str(path);
 }
 
-                                #ifndef DEF_find_mimv437E658
-                                #define DEF_find_mimv437E658
-inline int find_mimv437E(fu::view<char> a, const char b, int start)
+                                #ifndef DEF_find_OIHcVRad6D9
+                                #define DEF_find_OIHcVRad6D9
+inline int find_OIHcVRad(fu::view<char> a, const char b, int start)
 {
-    start = ((start > 0) ? int(start) : 0);
+    start = ((start > 0) ? start : 0);
     for (int i = start; i < a.size(); i++)
     {
         if (a[i] == b)
@@ -77,49 +74,44 @@ inline int find_mimv437E(fu::view<char> a, const char b, int start)
 }
                                 #endif
 
-                                #ifndef DEF_split_8diwrsDV66c
-                                #define DEF_split_8diwrsDV66c
-inline void split_8diwrsDV(const fu_STR& str, const char sep, fu_VEC<fu_STR>& result)
+inline static fu::vec<fu::str>& l_0_0_OhcX1T4I(const fu::str& substr, fu::vec<fu::str>& result)
+{
+    return (result += fu::str(substr));
+}
+
+                                #ifndef DEF_split_ctAUHAHEaL4
+                                #define DEF_split_ctAUHAHEaL4
+inline void split_ctAUHAHE(const fu::str& str, const char sep, fu::vec<fu::str>& result)
 {
     int last = 0;
     int next = 0;
     const int N = 1;
-    if (N)
+    while (((next = find_OIHcVRad(str, sep, last)) >= 0))
     {
-        while (((next = find_mimv437E(str, sep, int(last))) >= 0))
-        {
-
-            {
-                /*MOV*/ fu_STR substr = fu::slice(str, last, next);
-                result += static_cast<fu_STR&&>(substr);
-            };
-            last = (next + N);
-        };
+        l_0_0_OhcX1T4I(fu::slice(str, last, next), result);
+        last = (next + N);
     };
     if (last)
-    {
-        /*MOV*/ fu_STR substr = fu::slice(str, last);
-        result += static_cast<fu_STR&&>(substr);
-    }
+        l_0_0_OhcX1T4I(fu::slice(str, last), result);
     else
-        result += fu_STR(str);
+        l_0_0_OhcX1T4I(str, result);
 
 }
                                 #endif
 
-                                #ifndef DEF_split_Wy9CSIhD9Ng
-                                #define DEF_split_Wy9CSIhD9Ng
-inline fu_VEC<fu_STR> split_Wy9CSIhD(const fu_STR& str, const char sep)
+                                #ifndef DEF_split_yF8Ik9LFRBa
+                                #define DEF_split_yF8Ik9LFRBa
+inline fu::vec<fu::str> split_yF8Ik9LF(const fu::str& str, const char sep)
 {
-    /*MOV*/ fu_VEC<fu_STR> result {};
-    split_8diwrsDV(str, sep, result);
+    /*MOV*/ fu::vec<fu::str> result {};
+    split_ctAUHAHE(str, sep, result);
     return /*NRVO*/ result;
 }
                                 #endif
 
-                                #ifndef DEF_x3Cx3E_F7KakSWb5Tl
-                                #define DEF_x3Cx3E_F7KakSWb5Tl
-inline int x3Cx3E_F7KakSWb(const int a, const int b)
+                                #ifndef DEF_x3Cx3E_AsFD7H8Nlu6
+                                #define DEF_x3Cx3E_AsFD7H8Nlu6
+inline int x3Cx3E_AsFD7H8N(const int a, const int b)
 {
     if (a < b)
         return -1;
@@ -131,9 +123,9 @@ inline int x3Cx3E_F7KakSWb(const int a, const int b)
 }
                                 #endif
 
-                                #ifndef DEF_x3Cx3E_ed1A1fZavVf
-                                #define DEF_x3Cx3E_ed1A1fZavVf
-inline int x3Cx3E_ed1A1fZa(const char a, const char b)
+                                #ifndef DEF_x3Cx3E_f0RieKMU2n0
+                                #define DEF_x3Cx3E_f0RieKMU2n0
+inline int x3Cx3E_f0RieKMU(const char a, const char b)
 {
     if (a < b)
         return -1;
@@ -145,32 +137,39 @@ inline int x3Cx3E_ed1A1fZa(const char a, const char b)
 }
                                 #endif
 
-                                #ifndef DEF_x3Cx3E_sTZRmMq1BYf
-                                #define DEF_x3Cx3E_sTZRmMq1BYf
-inline int x3Cx3E_sTZRmMq1(fu::view<char> a, fu::view<char> b)
+                                #ifndef DEF_x3Cx3E_r7bhmB7DrQ0
+                                #define DEF_x3Cx3E_r7bhmB7DrQ0
+inline int x3Cx3E_r7bhmB7D(fu::view<char> a, fu::view<char> b)
 {
-    int cmp = x3Cx3E_F7KakSWb(a.size(), b.size());
+    int cmp = x3Cx3E_AsFD7H8N(a.size(), b.size());
     for (int i = 0; (i < a.size()) && !cmp; i++)
-        cmp = x3Cx3E_ed1A1fZa(a[i], b[i]);
+        cmp = x3Cx3E_f0RieKMU(a[i], b[i]);
 
     return cmp;
 }
                                 #endif
 
-                                #ifndef DEF_x3Dx3D_sTZRmMq1BYf
-                                #define DEF_x3Dx3D_sTZRmMq1BYf
+                                #ifndef DEF_x3Dx3D_r7bhmB7DrQ0
+                                #define DEF_x3Dx3D_r7bhmB7DrQ0
 inline bool operator==(fu::view<char> a, fu::view<char> b)
 {
-    return !x3Cx3E_sTZRmMq1(a, b);
+    return !x3Cx3E_r7bhmB7D(a, b);
 }
                                 #endif
 
-                                #ifndef DEF_join_0nUSGWJqzb5
-                                #define DEF_join_0nUSGWJqzb5
-inline fu_STR join_0nUSGWJq(fu::view<fu_STR> a, const char sep)
+                                #ifndef DEF_join_00JgDCHCEE2
+                                #define DEF_join_00JgDCHCEE2
+inline fu::str join_00JgDCHC(fu::view<fu::str> a, const char sep)
 {
     if (a.size() < 2)
-        return fu_STR((a.size() ? a[0] : (*(const fu_STR*)fu::NIL)));
+    {
+        if (a.size())
+            return fu::str(a[0]);
+        else
+        {
+            return fu::str{};
+        };
+    }
     else
     {
         const int N = 1;
@@ -178,7 +177,7 @@ inline fu_STR join_0nUSGWJq(fu::view<fu_STR> a, const char sep)
         for (int i = 1; i < a.size(); i++)
             size += (N + a[i].size());
 
-        /*MOV*/ fu_STR res {};
+        /*MOV*/ fu::str res {};
         res.grow<false>(size);
         fu::view<char> head = a[0];
         size = head.size();
@@ -186,7 +185,7 @@ inline fu_STR join_0nUSGWJq(fu::view<fu_STR> a, const char sep)
         for (int i_1 = 1; i_1 < a.size(); i_1++)
         {
             fu::view<char> range = a[i_1];
-            res.mutref(size) = char(sep);
+            res.mutref(size) = sep;
             size += N;
             fu::view_assign(fu::get_view_mut(res, size, (size + range.size())), range);
             size += range.size();
@@ -196,12 +195,12 @@ inline fu_STR join_0nUSGWJq(fu::view<fu_STR> a, const char sep)
 }
                                 #endif
 
-fu_STR normalize_YiIVoncC(const fu_STR& p)
+fu::str normalize_0HadKtoW(const fu::str& p)
 {
-    fu_VEC<fu_STR> path = split_Wy9CSIhD(p, '/');
+    fu::vec<fu::str> path = split_yF8Ik9LF(p, '/');
     for (int i = path.size(); i-- > 0; )
     {
-        const fu_STR& part = path[i];
+        fu::view<char> part = path[i];
         if ((part == "."_fu) || (!part && (i > 0) && (i < (path.size() - 1))))
             path.splice(i, 1);
 
@@ -216,10 +215,10 @@ fu_STR normalize_YiIVoncC(const fu_STR& p)
 
         };
     };
-    return join_0nUSGWJq(path, '/');
+    return join_00JgDCHC(path, '/');
 }
 
-fu_STR relative_KBBrMR7Q(fu::view<char> from, const fu_STR& to)
+fu::str relative_BXjxjqDS(fu::view<char> from, const fu::str& to)
 {
     const int min = ((from.size() < to.size()) ? from.size() : to.size());
     int same = 0;
@@ -233,7 +232,7 @@ fu_STR relative_KBBrMR7Q(fu::view<char> from, const fu_STR& to)
             same = (i + 1);
 
     };
-    /*MOV*/ fu_STR res {};
+    /*MOV*/ fu::str res {};
     for (int i_1 = same; i_1 < from.size(); i_1++)
     {
         if (from[i_1] == '/')
@@ -244,25 +243,25 @@ fu_STR relative_KBBrMR7Q(fu::view<char> from, const fu_STR& to)
     return /*NRVO*/ res;
 }
 
-                                #ifndef DEF_starts_fjBQS6rrsUk
-                                #define DEF_starts_fjBQS6rrsUk
-inline bool starts_fjBQS6rr(fu::view<char> a, const char with)
+                                #ifndef DEF_starts_90iSu77lC9e
+                                #define DEF_starts_90iSu77lC9e
+inline bool starts_90iSu77l(fu::view<char> a, const char with)
 {
     return a.size() && (a[0] == with);
 }
                                 #endif
 
-                                #ifndef DEF_ends_fjBQS6rrsUk
-                                #define DEF_ends_fjBQS6rrsUk
-inline bool ends_fjBQS6rr(fu::view<char> a, const char with)
+                                #ifndef DEF_ends_90iSu77lC9e
+                                #define DEF_ends_90iSu77lC9e
+inline bool ends_90iSu77l(fu::view<char> a, const char with)
 {
     return a.size() && (a[(a.size() - 1)] == with);
 }
                                 #endif
 
-fu_STR join_rMAWYyxW(fu::view<char> a, const fu_STR& b)
+fu::str join_By06Vz3F(fu::view<char> a, const fu::str& b)
 {
-    return normalize_YiIVoncC((starts_fjBQS6rr(b, '/') ? fu_STR(b) : (ends_fjBQS6rr(a, '/') ? (a + b) : ((a + '/') + b))));
+    return normalize_0HadKtoW((starts_90iSu77l(b, '/') ? fu::str(b) : (ends_90iSu77l(a, '/') ? (a + b) : ((a + '/') + b))));
 }
 
 #endif

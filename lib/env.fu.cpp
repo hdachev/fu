@@ -2,25 +2,16 @@
 #include <stdlib.h>
 #include <fu/vec/concat_one.h>
 
-#pragma GCC diagnostic push
-#ifdef __clang__
-#pragma GCC diagnostic warning "-Wunknown-warning-option"
-#endif
-#pragma GCC diagnostic ignored "-Wmisleading-indentation"
-
 
 #ifndef fu_NO_fdefs
 
-fu_STR get_yEUO0yQI(/*MOV*/ fu_STR&& name)
+fu::str get_iZKxiafi(/*MOV*/ fu::str&& name)
 {
     name += '\x00';
+    const char* value = getenv(name.data());
+    return fu::strlit { value, value ? (fu::i) strlen(value) : 0 };
 
-        const char* value = getenv(name.data());
-        return fu_STRLIT { value, value ? (fu::i) strlen(value) : 0 };
-    ;
-    return static_cast<fu_STR&&>(name);
+    return static_cast<fu::str&&>(name);
 }
 
 #endif
-
-#pragma GCC diagnostic pop

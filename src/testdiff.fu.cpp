@@ -10,8 +10,8 @@ struct s_TestDiffs;
                                 #define DEF_s_TestDiffs
 struct s_TestDiffs
 {
-    fu_VEC<fu_STR> keys;
-    fu_VEC<fu_STR> vals;
+    fu::vec<fu::str> keys;
+    fu::vec<fu::str> vals;
     explicit operator bool() const noexcept
     {
         return false
@@ -24,24 +24,24 @@ struct s_TestDiffs
 
 #ifndef fu_NO_fdefs
 
-fu_STR serialize_phcZ2JSq(const s_TestDiffs& diffs)
+fu::str serialize_J7SaJDMr(const s_TestDiffs& diffs)
 {
-    /*MOV*/ fu_STR res {};
-    fu::view<fu_STR> keys = diffs.keys;
-    fu::view<fu_STR> vals = diffs.vals;
+    /*MOV*/ fu::str res {};
+    fu::view<fu::str> keys = diffs.keys;
+    fu::view<fu::str> vals = diffs.vals;
     for (int i = 0; i < keys.size(); i++)
         res += (((keys[i] + "\n-----\n"_fu) + vals[i]) + "\n-----\n"_fu);
 
     return /*NRVO*/ res;
 }
 
-void set_next_oJ8TkZcV(s_TestDiffs& diffs, const fu_STR& key, const fu_STR& val)
+void set_next_XReNAHMs(s_TestDiffs& diffs, const fu::str& key, const fu::str& val)
 {
-    diffs.keys += fu_STR(key);
-    diffs.vals += fu_STR(val);
+    diffs.keys += fu::str(key);
+    diffs.vals += fu::str(val);
 }
 
-void append_qDxDC9ao(s_TestDiffs& diffs, const s_TestDiffs& other)
+void append_vG7l8GIy(s_TestDiffs& diffs, const s_TestDiffs& other)
 {
     diffs.keys += other.keys;
     diffs.vals += other.vals;

@@ -3,7 +3,6 @@
 #include <fu/str.h>
 #include <fu/vec.h>
 #include <fu/view.h>
-#include <fu/print.h>
 #include <fu/decstr.h>
 #include <fu/vec/concat.h>
 
@@ -12,6 +11,7 @@ struct s_ModuleInputs;
 struct s_LexerOutput;
 struct s_Token;
 enum s_kind: fu::u8;
+struct s_LineColChars;
 struct s_ParserOutput;
 struct s_Node;
 typedef uint16_t s_DeclAsserts;
@@ -30,28 +30,28 @@ struct s_Type;
 struct s_ValueType;
 struct s_Lifetime;
 struct s_Region;
-struct s_RWRanges;
+typedef fu::u8 s_VFacts;
 struct s_Scope;
 struct s_Overload;
 typedef uint16_t s_SolverStatus;
 struct s_Extended;
 struct s_Argument;
 struct s_BitSet;
+struct s_COWInside;
+typedef fu::u8 s_ExitPaths;
 struct s_Template;
-struct s_ScopeMemo;
-struct s_ScopeSkipMemos;
-struct s_ScopeSkip;
 typedef uint16_t s_FxMask;
 typedef int s_SolverNotes;
 struct s_CodegenOutput;
+typedef fu::u8 s_CGDefects;
 struct s_ModuleStats;
 struct s_ModuleStat;
-fu_STR qID_9QQZAztz(const fu_STR&);
-fu_STR qLT_9QQZAztz(const fu_STR&);
-fu_STR qKW_9QQZAztz(const fu_STR&);
-fu_STR qBAD_9QQZAztz(const fu_STR&);
-fu_STR trim_obCJYZMU(const fu_STR&);
-static void inspect_VB10aF0a(const s_SolvedNode&, fu::view<char>, const s_Module&, fu_STR&, int);
+fu::str qID_bF2G8fJR(fu::view<char>);
+fu::str qLT_bF2G8fJR(fu::view<char>);
+fu::str qKW_bF2G8fJR(fu::view<char>);
+fu::str qBAD_bF2G8fJR(fu::view<char>);
+static void inspect_rDbbCcMW(const s_SolvedNode&, fu::view<char>, const s_Module&, fu::str&, int);
+fu::str trim_UiSEgboz(const fu::str&);
 
                                 #ifndef DEF_s_kind
                                 #define DEF_s_kind
@@ -72,89 +72,55 @@ enum s_kind: fu::u8
     s_kind_arrlit = 13u,
     s_kind_definit = 14u,
     s_kind_empty = 15u,
-    s_kind_void = 16u,
-    s_kind_not = 17u,
-    s_kind_call = 18u,
-    s_kind_argid = 19u,
-    s_kind_root = 20u,
-    s_kind_block = 21u,
-    s_kind_if = 22u,
-    s_kind_or = 23u,
-    s_kind_and = 24u,
-    s_kind_loop = 25u,
-    s_kind_jump = 26u,
-    s_kind___far_jump = 27u,
-    s_kind_defer = 28u,
-    s_kind_try = 29u,
-    s_kind_let = 30u,
-    s_kind_letdef = 31u,
-    s_kind_typedef = 32u,
-    s_kind_typecast = 33u,
-    s_kind_typeassert = 34u,
-    s_kind_typeparam = 35u,
-    s_kind_unwrap = 36u,
-    s_kind_pragma = 37u,
-    s_kind_break = 38u,
-    s_kind_return = 39u,
-    s_kind_continue = 40u,
-    s_kind_import = 41u,
-    s_kind_addroffn = 42u,
-    s_kind_forfieldsof = 43u,
-    s_kind_struct = 44u,
-    s_kind_union = 45u,
-    s_kind_primitive = 46u,
-    s_kind_flags = 47u,
-    s_kind_enum = 48u,
-    s_kind_members = 49u,
-    s_kind_fndef = 50u,
-    s_kind_fn = 51u,
-    s_kind_fnbranch = 52u,
-    s_kind_pattern = 53u,
-    s_kind_typeunion = 54u,
-    s_kind_typetag = 55u,
-    s_kind___relaxed = 56u,
-    s_kind___convert = 57u,
-    s_kind___no_kind_yet = 58u,
-    s_kind_type = 59u,
-    s_kind_var = 60u,
-    s_kind_field = 61u,
-    s_kind_enumv = 62u,
-    s_kind_template = 63u,
-    s_kind___native = 64u,
-    s_kind_inline = 65u,
-};
-                                #endif
-
-                                #ifndef DEF_s_Token
-                                #define DEF_s_Token
-struct s_Token
-{
-    s_kind kind;
-    fu_STR value;
-    int idx0;
-    int idx1;
-    int line;
-    int col;
-    explicit operator bool() const noexcept
-    {
-        return false
-            || kind
-        ;
-    }
-};
-                                #endif
-
-                                #ifndef DEF_s_LexerOutput
-                                #define DEF_s_LexerOutput
-struct s_LexerOutput
-{
-    fu_VEC<s_Token> tokens;
-    explicit operator bool() const noexcept
-    {
-        return false
-            || tokens
-        ;
-    }
+    s_kind_not = 16u,
+    s_kind_call = 17u,
+    s_kind_argid = 18u,
+    s_kind_root = 19u,
+    s_kind_block = 20u,
+    s_kind_if = 21u,
+    s_kind_or = 22u,
+    s_kind_and = 23u,
+    s_kind_loop = 24u,
+    s_kind_jump = 25u,
+    s_kind___far_jump = 26u,
+    s_kind_defer = 27u,
+    s_kind_try = 28u,
+    s_kind_let = 29u,
+    s_kind_letdef = 30u,
+    s_kind_typedef = 31u,
+    s_kind_typecast = 32u,
+    s_kind_typeassert = 33u,
+    s_kind_typeparam = 34u,
+    s_kind_unwrap = 35u,
+    s_kind_pragma = 36u,
+    s_kind_break = 37u,
+    s_kind_return = 38u,
+    s_kind_continue = 39u,
+    s_kind_import = 40u,
+    s_kind_addroffn = 41u,
+    s_kind_forfieldsof = 42u,
+    s_kind_struct = 43u,
+    s_kind_union = 44u,
+    s_kind_primitive = 45u,
+    s_kind_flags = 46u,
+    s_kind_enum = 47u,
+    s_kind_members = 48u,
+    s_kind_fndef = 49u,
+    s_kind_fn = 50u,
+    s_kind_fnbranch = 51u,
+    s_kind_pattern = 52u,
+    s_kind_typeunion = 53u,
+    s_kind_typetag = 54u,
+    s_kind___relaxed = 55u,
+    s_kind___convert = 56u,
+    s_kind___no_kind_yet = 57u,
+    s_kind_type = 58u,
+    s_kind_var = 59u,
+    s_kind_field = 60u,
+    s_kind_enumv = 61u,
+    s_kind_template = 62u,
+    s_kind___native = 63u,
+    s_kind_inline = 64u,
 };
                                 #endif
 
@@ -171,6 +137,7 @@ inline constexpr s_DeclAsserts s_DeclAsserts_A_NOTHROW = s_DeclAsserts(128u);
 inline constexpr s_DeclAsserts s_DeclAsserts_A_NOCRASH = s_DeclAsserts(256u);
 inline constexpr s_DeclAsserts s_DeclAsserts_A_NOIO = s_DeclAsserts(512u);
 inline constexpr s_DeclAsserts s_DeclAsserts_A_FAST = s_DeclAsserts(1024u);
+inline constexpr s_DeclAsserts s_DeclAsserts_A_NOINLINE = s_DeclAsserts(2048u);
 
 inline constexpr s_DeclAsserts MASK_s_DeclAsserts
     = s_DeclAsserts_A_NOCOPY
@@ -183,7 +150,8 @@ inline constexpr s_DeclAsserts MASK_s_DeclAsserts
     | s_DeclAsserts_A_NOTHROW
     | s_DeclAsserts_A_NOCRASH
     | s_DeclAsserts_A_NOIO
-    | s_DeclAsserts_A_FAST;
+    | s_DeclAsserts_A_FAST
+    | s_DeclAsserts_A_NOINLINE;
                                 #endif
 
                                 #ifndef DEF_s_ParseSyntax
@@ -209,27 +177,28 @@ inline constexpr s_Flags s_Flags_F_COMPOUND_ID = 8u;
 inline constexpr s_Flags s_Flags_F_WRITTEN_TO = 16u;
 inline constexpr s_Flags s_Flags_F_LAX = 32u;
 inline constexpr s_Flags s_Flags_F_ARG = 64u;
-inline constexpr s_Flags s_Flags_F_MOVED_FROM = 128u;
-inline constexpr s_Flags s_Flags_F_CONVERSION = 256u;
-inline constexpr s_Flags s_Flags_F_OPT_ARG = 512u;
-inline constexpr s_Flags s_Flags_F_MUT = 1024u;
-inline constexpr s_Flags s_Flags_F_REF = 2048u;
-inline constexpr s_Flags s_Flags_F_IMPLICIT = 4096u;
-inline constexpr s_Flags s_Flags_F_USING = 8192u;
-inline constexpr s_Flags s_Flags_F_MUSTNAME = 16384u;
-inline constexpr s_Flags s_Flags_F_SHADOW = 32768u;
-inline constexpr s_Flags s_Flags_F_PUB = 65536u;
-inline constexpr s_Flags s_Flags_F_EXTERN = 131072u;
-inline constexpr s_Flags s_Flags_F_HOTSWAP = 262144u;
-inline constexpr s_Flags s_Flags_F_PREDICATE = 524288u;
-inline constexpr s_Flags s_Flags_F_NAMED_ARGS = 1048576u;
-inline constexpr s_Flags s_Flags_F_OOE_RTL = 2097152u;
-inline constexpr s_Flags s_Flags_F_REST_ARG = 4194304u;
-inline constexpr s_Flags s_Flags_F_RELAXABLE_REF = 8388608u;
-inline constexpr s_Flags s_Flags_F_TEMPLATE = 16777216u;
-inline constexpr s_Flags s_Flags_F_INLINE = 33554432u;
-inline constexpr s_Flags s_Flags_F_LAMBDA = 67108864u;
-inline constexpr s_Flags s_Flags_F_INJECTED = 134217728u;
+inline constexpr s_Flags s_Flags_F_COW_INSIDE = 128u;
+inline constexpr s_Flags s_Flags_F_MOVED_FROM = 256u;
+inline constexpr s_Flags s_Flags_F_CONVERSION = 512u;
+inline constexpr s_Flags s_Flags_F_OPT_ARG = 1024u;
+inline constexpr s_Flags s_Flags_F_MUT = 2048u;
+inline constexpr s_Flags s_Flags_F_REF = 4096u;
+inline constexpr s_Flags s_Flags_F_IMPLICIT = 8192u;
+inline constexpr s_Flags s_Flags_F_USING = 16384u;
+inline constexpr s_Flags s_Flags_F_MUSTNAME = 32768u;
+inline constexpr s_Flags s_Flags_F_SHADOW = 65536u;
+inline constexpr s_Flags s_Flags_F_PUB = 131072u;
+inline constexpr s_Flags s_Flags_F_EXTERN = 262144u;
+inline constexpr s_Flags s_Flags_F_HOTSWAP = 524288u;
+inline constexpr s_Flags s_Flags_F_PREDICATE = 1048576u;
+inline constexpr s_Flags s_Flags_F_NAMED_ARGS = 2097152u;
+inline constexpr s_Flags s_Flags_F_OOE_RTL = 4194304u;
+inline constexpr s_Flags s_Flags_F_REST_ARG = 8388608u;
+inline constexpr s_Flags s_Flags_F_RELAXABLE_REF = 16777216u;
+inline constexpr s_Flags s_Flags_F_TEMPLATE = 33554432u;
+inline constexpr s_Flags s_Flags_F_INLINE = 67108864u;
+inline constexpr s_Flags s_Flags_F_LAMBDA = 134217728u;
+inline constexpr s_Flags s_Flags_F_INJECTED = 268435456u;
 
 inline constexpr s_Flags MASK_s_Flags
     = s_Flags_F_METHOD
@@ -239,6 +208,7 @@ inline constexpr s_Flags MASK_s_Flags
     | s_Flags_F_WRITTEN_TO
     | s_Flags_F_LAX
     | s_Flags_F_ARG
+    | s_Flags_F_COW_INSIDE
     | s_Flags_F_MOVED_FROM
     | s_Flags_F_CONVERSION
     | s_Flags_F_OPT_ARG
@@ -262,277 +232,16 @@ inline constexpr s_Flags MASK_s_Flags
     | s_Flags_F_INJECTED;
                                 #endif
 
-                                #ifndef DEF_s_TokenIdx
-                                #define DEF_s_TokenIdx
-struct s_TokenIdx
-{
-    int modid;
-    int tokidx;
-    explicit operator bool() const noexcept
-    {
-        return false
-            || modid
-            || tokidx
-        ;
-    }
-};
-                                #endif
+                                #ifndef DEF_s_VFacts
+                                #define DEF_s_VFacts
+inline constexpr s_VFacts s_VFacts_AlwaysTrue = s_VFacts(1u);
+inline constexpr s_VFacts s_VFacts_AlwaysFalse = s_VFacts(2u);
+inline constexpr s_VFacts s_VFacts_Typename = s_VFacts(4u);
 
-                                #ifndef DEF_s_Node
-                                #define DEF_s_Node
-struct s_Node
-{
-    s_kind kind;
-    s_DeclAsserts asserts;
-    s_ParseSyntax syntax;
-    s_Flags flags;
-    fu_STR value;
-    fu_VEC<s_Node> items;
-    s_TokenIdx token;
-    s_Node(const s_Node&) = default;
-    s_Node(s_Node&&) = default;
-    s_Node& operator=(s_Node&&) = default;
-    s_Node& operator=(const s_Node& selfrec) { return *this = s_Node(selfrec); }
-    explicit operator bool() const noexcept
-    {
-        return false
-            || kind
-        ;
-    }
-};
-                                #endif
-
-                                #ifndef DEF_s_ParserOutput
-                                #define DEF_s_ParserOutput
-struct s_ParserOutput
-{
-    s_Node root;
-    fu_VEC<fu_STR> fuzimports;
-    fu_VEC<fu_STR> warnings;
-    explicit operator bool() const noexcept
-    {
-        return false
-            || root
-            || fuzimports
-            || warnings
-        ;
-    }
-};
-                                #endif
-
-                                #ifndef DEF_s_ModuleInputs
-                                #define DEF_s_ModuleInputs
-struct s_ModuleInputs
-{
-    fu_STR src;
-    s_LexerOutput lex;
-    s_ParserOutput parse;
-    explicit operator bool() const noexcept
-    {
-        return false
-            || src
-            || lex
-            || parse
-        ;
-    }
-};
-                                #endif
-
-                                #ifndef DEF_s_ModuleOrder
-                                #define DEF_s_ModuleOrder
-struct s_ModuleOrder
-{
-    int dep_depth;
-    explicit operator bool() const noexcept
-    {
-        return false
-            || dep_depth
-        ;
-    }
-};
-                                #endif
-
-                                #ifndef DEF_s_Target
-                                #define DEF_s_Target
-struct s_Target
-{
-    int modid;
-    int index;
-    explicit operator bool() const noexcept
-    {
-        return false
-            || modid
-            || index
-        ;
-    }
-};
-                                #endif
-
-                                #ifndef DEF_s_ScopeItem
-                                #define DEF_s_ScopeItem
-struct s_ScopeItem
-{
-    fu_STR id;
-    int modid;
-    unsigned packed;
-    explicit operator bool() const noexcept
-    {
-        return false
-            || id
-        ;
-    }
-};
-                                #endif
-
-                                #ifndef DEF_s_Struct
-                                #define DEF_s_Struct
-struct s_Struct
-{
-    s_kind kind;
-    fu_STR name;
-    s_Target target;
-    fu_VEC<s_ScopeItem> items;
-    fu_VEC<int> imports;
-    fu_VEC<s_Target> converts;
-    fu_STR base;
-    int flat_cnt;
-    bool all_triv;
-    explicit operator bool() const noexcept
-    {
-        return false
-            || kind
-            || name
-            || target
-            || items
-            || imports
-            || converts
-            || base
-            || flat_cnt
-            || all_triv
-        ;
-    }
-};
-                                #endif
-
-                                #ifndef DEF_s_Helpers
-                                #define DEF_s_Helpers
-struct s_Helpers
-{
-    int index;
-    explicit operator bool() const noexcept
-    {
-        return false
-            || index
-        ;
-    }
-};
-                                #endif
-
-                                #ifndef DEF_s_ValueType
-                                #define DEF_s_ValueType
-struct s_ValueType
-{
-    int quals;
-    fu_STR canon;
-    explicit operator bool() const noexcept
-    {
-        return false
-            || quals
-            || canon
-        ;
-    }
-};
-                                #endif
-
-                                #ifndef DEF_s_Region
-                                #define DEF_s_Region
-struct s_Region
-{
-    int index;
-    explicit operator bool() const noexcept
-    {
-        return false
-            || index
-        ;
-    }
-};
-                                #endif
-
-                                #ifndef DEF_s_Lifetime
-                                #define DEF_s_Lifetime
-struct s_Lifetime
-{
-    fu_VEC<s_Region> uni0n;
-    explicit operator bool() const noexcept
-    {
-        return false
-            || uni0n
-        ;
-    }
-};
-                                #endif
-
-                                #ifndef DEF_s_Type
-                                #define DEF_s_Type
-struct s_Type
-{
-    s_ValueType vtype;
-    s_Lifetime lifetime;
-    explicit operator bool() const noexcept
-    {
-        return false
-            || vtype
-            || lifetime
-        ;
-    }
-};
-                                #endif
-
-                                #ifndef DEF_s_RWRanges
-                                #define DEF_s_RWRanges
-struct s_RWRanges
-{
-    int reads0;
-    int reads1;
-    int writes0;
-    int writes1;
-    explicit operator bool() const noexcept
-    {
-        return false
-            || reads0
-            || reads1
-            || writes0
-            || writes1
-        ;
-    }
-};
-                                #endif
-
-                                #ifndef DEF_s_SolvedNode
-                                #define DEF_s_SolvedNode
-struct s_SolvedNode
-{
-    s_kind kind;
-    s_Helpers helpers;
-    s_Flags flags;
-    int _loop_start;
-    fu_STR value;
-    fu_VEC<s_SolvedNode> items;
-    s_TokenIdx token;
-    s_Type type;
-    s_Target target;
-    s_RWRanges rwr;
-    s_SolvedNode(const s_SolvedNode&) = default;
-    s_SolvedNode(s_SolvedNode&&) = default;
-    s_SolvedNode& operator=(s_SolvedNode&&) = default;
-    s_SolvedNode& operator=(const s_SolvedNode& selfrec) { return *this = s_SolvedNode(selfrec); }
-    explicit operator bool() const noexcept
-    {
-        return false
-            || kind
-        ;
-    }
-};
+inline constexpr s_VFacts MASK_s_VFacts
+    = s_VFacts_AlwaysTrue
+    | s_VFacts_AlwaysFalse
+    | s_VFacts_Typename;
                                 #endif
 
                                 #ifndef DEF_s_SolverStatus
@@ -546,6 +255,8 @@ inline constexpr s_SolverStatus s_SolverStatus_SS_TYPE_RECUR = s_SolverStatus(32
 inline constexpr s_SolverStatus s_SolverStatus_SS_FN_RECUR = s_SolverStatus(64u);
 inline constexpr s_SolverStatus s_SolverStatus_SS_HOIST = s_SolverStatus(128u);
 inline constexpr s_SolverStatus s_SolverStatus_SS_UNUSED = s_SolverStatus(256u);
+inline constexpr s_SolverStatus s_SolverStatus_SS_MATCHED = s_SolverStatus(512u);
+inline constexpr s_SolverStatus s_SolverStatus_SS_Debug_AllPassesComplete = s_SolverStatus(1024u);
 
 inline constexpr s_SolverStatus MASK_s_SolverStatus
     = s_SolverStatus_SS_LAZY
@@ -556,154 +267,21 @@ inline constexpr s_SolverStatus MASK_s_SolverStatus
     | s_SolverStatus_SS_TYPE_RECUR
     | s_SolverStatus_SS_FN_RECUR
     | s_SolverStatus_SS_HOIST
-    | s_SolverStatus_SS_UNUSED;
+    | s_SolverStatus_SS_UNUSED
+    | s_SolverStatus_SS_MATCHED
+    | s_SolverStatus_SS_Debug_AllPassesComplete;
                                 #endif
 
-                                #ifndef DEF_s_Overload
-                                #define DEF_s_Overload
-struct s_Overload
-{
-    s_kind kind;
-    s_Flags flags;
-    s_SolverStatus status;
-    fu_STR name;
-    fu_STR sighash;
-    s_Type type;
-    s_SolvedNode solved;
-    explicit operator bool() const noexcept
-    {
-        return false
-            || kind
-        ;
-    }
-};
-                                #endif
+                                #ifndef DEF_s_ExitPaths
+                                #define DEF_s_ExitPaths
+inline constexpr s_ExitPaths s_ExitPaths_XP_NonEmptyReturn = s_ExitPaths(1u);
+inline constexpr s_ExitPaths s_ExitPaths_XP_EmptyReturn = s_ExitPaths(2u);
+inline constexpr s_ExitPaths s_ExitPaths_XP_NoReturn = s_ExitPaths(4u);
 
-                                #ifndef DEF_s_BitSet
-                                #define DEF_s_BitSet
-struct s_BitSet
-{
-    fu_VEC<fu::u8> _data;
-    explicit operator bool() const noexcept
-    {
-        return false
-            || _data
-        ;
-    }
-};
-                                #endif
-
-                                #ifndef DEF_s_Argument
-                                #define DEF_s_Argument
-struct s_Argument
-{
-    fu_STR name;
-    fu_STR autocall;
-    s_Type type;
-    s_SolvedNode dEfault;
-    s_Flags flags;
-    int local;
-    s_BitSet soft_risk;
-    s_BitSet hard_risk;
-    explicit operator bool() const noexcept
-    {
-        return false
-            || name
-            || autocall
-            || type
-            || dEfault
-            || flags
-            || local
-            || soft_risk
-            || hard_risk
-        ;
-    }
-};
-                                #endif
-
-                                #ifndef DEF_s_ScopeMemo
-                                #define DEF_s_ScopeMemo
-struct s_ScopeMemo
-{
-    int items_len;
-    int implicits_len;
-    int imports_len;
-    int privates_len;
-    int usings_len;
-    int converts_len;
-    int helpers_len;
-    explicit operator bool() const noexcept
-    {
-        return false
-            || items_len
-            || implicits_len
-            || imports_len
-            || privates_len
-            || usings_len
-            || converts_len
-            || helpers_len
-        ;
-    }
-};
-                                #endif
-
-                                #ifndef DEF_s_ScopeSkip
-                                #define DEF_s_ScopeSkip
-struct s_ScopeSkip
-{
-    int start;
-    int end;
-    explicit operator bool() const noexcept
-    {
-        return false
-            || start
-            || end
-        ;
-    }
-};
-                                #endif
-
-                                #ifndef DEF_s_ScopeSkipMemos
-                                #define DEF_s_ScopeSkipMemos
-struct s_ScopeSkipMemos
-{
-    fu_VEC<s_ScopeSkip> items;
-    fu_VEC<s_ScopeSkip> implicits;
-    fu_VEC<s_ScopeSkip> imports;
-    fu_VEC<s_ScopeSkip> privates;
-    fu_VEC<s_ScopeSkip> usings;
-    fu_VEC<s_ScopeSkip> converts;
-    fu_VEC<s_ScopeSkip> helpers;
-    explicit operator bool() const noexcept
-    {
-        return false
-            || items
-            || implicits
-            || imports
-            || privates
-            || usings
-            || converts
-            || helpers
-        ;
-    }
-};
-                                #endif
-
-                                #ifndef DEF_s_Template
-                                #define DEF_s_Template
-struct s_Template
-{
-    s_Node node;
-    fu_VEC<int> imports;
-    s_ScopeMemo scope_memo;
-    s_ScopeSkipMemos scope_skip;
-    explicit operator bool() const noexcept
-    {
-        return false
-            || node
-        ;
-    }
-};
+inline constexpr s_ExitPaths MASK_s_ExitPaths
+    = s_ExitPaths_XP_NonEmptyReturn
+    | s_ExitPaths_XP_EmptyReturn
+    | s_ExitPaths_XP_NoReturn;
                                 #endif
 
                                 #ifndef DEF_s_FxMask
@@ -744,35 +322,297 @@ inline constexpr s_FxMask MASK_s_FxMask
     | s_FxMask_Fx_Blocks_Await;
                                 #endif
 
-                                #ifndef DEF_s_Extended
-                                #define DEF_s_Extended
-struct s_Extended
+                                #ifndef DEF_s_SolverNotes
+                                #define DEF_s_SolverNotes
+inline constexpr s_SolverNotes s_SolverNotes_N_FnRecursion = 1;
+inline constexpr s_SolverNotes s_SolverNotes_N_FnResolve = 2;
+inline constexpr s_SolverNotes s_SolverNotes_N_FnReopen = 4;
+inline constexpr s_SolverNotes s_SolverNotes_N_TypeRecursion = 8;
+inline constexpr s_SolverNotes s_SolverNotes_N_TypeResolve = 16;
+inline constexpr s_SolverNotes s_SolverNotes_N_TypeReopen = 32;
+inline constexpr s_SolverNotes s_SolverNotes_N_DeadCode = 64;
+inline constexpr s_SolverNotes s_SolverNotes_N_DeadCall = 128;
+inline constexpr s_SolverNotes s_SolverNotes_N_DeadLet = 256;
+inline constexpr s_SolverNotes s_SolverNotes_N_DeadIfCond = 512;
+inline constexpr s_SolverNotes s_SolverNotes_N_DeadIfCons = 1024;
+inline constexpr s_SolverNotes s_SolverNotes_N_DeadArrlit = 2048;
+inline constexpr s_SolverNotes s_SolverNotes_N_DeadLoopInit = 4096;
+inline constexpr s_SolverNotes s_SolverNotes_N_DeadConv = 8192;
+inline constexpr s_SolverNotes s_SolverNotes_N_NonTrivAutoCopy = 16384;
+inline constexpr s_SolverNotes s_SolverNotes_N_RelaxRespec = 32768;
+inline constexpr s_SolverNotes s_SolverNotes_N_UnusedImplicit = 65536;
+inline constexpr s_SolverNotes s_SolverNotes_N_UnusedCall = 131072;
+inline constexpr s_SolverNotes s_SolverNotes_N_UnusedDefer = 262144;
+inline constexpr s_SolverNotes s_SolverNotes_N_UnusedTry = 524288;
+inline constexpr s_SolverNotes s_SolverNotes_N_UnusedAndOr = 1048576;
+inline constexpr s_SolverNotes s_SolverNotes_N_UnusedIfElse = 2097152;
+inline constexpr s_SolverNotes s_SolverNotes_N_UnusedArrlit = 4194304;
+inline constexpr s_SolverNotes s_SolverNotes_N_UnusedLet = 8388608;
+inline constexpr s_SolverNotes s_SolverNotes_N_BckMustSeq = 16777216;
+inline constexpr s_SolverNotes s_SolverNotes_N_AARMustSeq = 33554432;
+inline constexpr s_SolverNotes s_SolverNotes_N_AARSoftRisk = 67108864;
+inline constexpr s_SolverNotes s_SolverNotes_N_MoveMustSeq = 134217728;
+inline constexpr s_SolverNotes s_SolverNotes_N_SD_HasStaticInit = 268435456;
+inline constexpr s_SolverNotes s_SolverNotes_N_SD_ExternPrivates = 536870912;
+inline constexpr s_SolverNotes s_SolverNotes_N_COWRestrict = 1073741824;
+
+inline constexpr s_SolverNotes MASK_s_SolverNotes
+    = s_SolverNotes_N_FnRecursion
+    | s_SolverNotes_N_FnResolve
+    | s_SolverNotes_N_FnReopen
+    | s_SolverNotes_N_TypeRecursion
+    | s_SolverNotes_N_TypeResolve
+    | s_SolverNotes_N_TypeReopen
+    | s_SolverNotes_N_DeadCode
+    | s_SolverNotes_N_DeadCall
+    | s_SolverNotes_N_DeadLet
+    | s_SolverNotes_N_DeadIfCond
+    | s_SolverNotes_N_DeadIfCons
+    | s_SolverNotes_N_DeadArrlit
+    | s_SolverNotes_N_DeadLoopInit
+    | s_SolverNotes_N_DeadConv
+    | s_SolverNotes_N_NonTrivAutoCopy
+    | s_SolverNotes_N_RelaxRespec
+    | s_SolverNotes_N_UnusedImplicit
+    | s_SolverNotes_N_UnusedCall
+    | s_SolverNotes_N_UnusedDefer
+    | s_SolverNotes_N_UnusedTry
+    | s_SolverNotes_N_UnusedAndOr
+    | s_SolverNotes_N_UnusedIfElse
+    | s_SolverNotes_N_UnusedArrlit
+    | s_SolverNotes_N_UnusedLet
+    | s_SolverNotes_N_BckMustSeq
+    | s_SolverNotes_N_AARMustSeq
+    | s_SolverNotes_N_AARSoftRisk
+    | s_SolverNotes_N_MoveMustSeq
+    | s_SolverNotes_N_SD_HasStaticInit
+    | s_SolverNotes_N_SD_ExternPrivates
+    | s_SolverNotes_N_COWRestrict;
+                                #endif
+
+                                #ifndef DEF_s_CGDefects
+                                #define DEF_s_CGDefects
+inline constexpr s_CGDefects s_CGDefects_GNUStmtExpr = s_CGDefects(1u);
+inline constexpr s_CGDefects s_CGDefects_Goto = s_CGDefects(2u);
+inline constexpr s_CGDefects s_CGDefects_PointlessMustSeq = s_CGDefects(4u);
+inline constexpr s_CGDefects s_CGDefects_LocalConstBool = s_CGDefects(8u);
+inline constexpr s_CGDefects s_CGDefects_ConstCast = s_CGDefects(16u);
+inline constexpr s_CGDefects s_CGDefects_PointlessLocal = s_CGDefects(32u);
+inline constexpr s_CGDefects s_CGDefects_IrrelevantLiteral = s_CGDefects(64u);
+
+inline constexpr s_CGDefects MASK_s_CGDefects
+    = s_CGDefects_GNUStmtExpr
+    | s_CGDefects_Goto
+    | s_CGDefects_PointlessMustSeq
+    | s_CGDefects_LocalConstBool
+    | s_CGDefects_ConstCast
+    | s_CGDefects_PointlessLocal
+    | s_CGDefects_IrrelevantLiteral;
+                                #endif
+
+                                #ifndef DEF_s_Region
+                                #define DEF_s_Region
+struct s_Region
 {
-    int local_of;
-    unsigned revision;
-    int min;
-    int max;
-    fu_VEC<s_Argument> args;
-    s_Target spec_of;
-    s_Template tEmplate;
-    fu_VEC<s_Overload> locals;
-    fu_VEC<s_ScopeItem> extra_items;
-    fu_VEC<int> callers;
-    s_FxMask fx_mask;
+    int index;
     explicit operator bool() const noexcept
     {
         return false
-            || local_of
-            || revision
-            || min
-            || max
-            || args
-            || spec_of
-            || tEmplate
-            || locals
-            || extra_items
-            || callers
-            || fx_mask
+            || index
+        ;
+    }
+};
+                                #endif
+
+                                #ifndef DEF_s_Helpers
+                                #define DEF_s_Helpers
+struct s_Helpers
+{
+    int index;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || index
+        ;
+    }
+};
+                                #endif
+
+                                #ifndef DEF_s_BitSet
+                                #define DEF_s_BitSet
+struct s_BitSet
+{
+    fu::vec<fu::u8> _data;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || _data
+        ;
+    }
+};
+                                #endif
+
+                                #ifndef DEF_s_Lifetime
+                                #define DEF_s_Lifetime
+struct s_Lifetime
+{
+    fu::vec<s_Region> uni0n;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || uni0n
+        ;
+    }
+};
+                                #endif
+
+                                #ifndef DEF_s_ModuleOrder
+                                #define DEF_s_ModuleOrder
+struct s_ModuleOrder
+{
+    int dep_depth;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || dep_depth
+        ;
+    }
+};
+                                #endif
+
+                                #ifndef DEF_s_LexerOutput
+                                #define DEF_s_LexerOutput
+struct s_LexerOutput
+{
+    fu::vec<s_Token> tokens;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || tokens
+        ;
+    }
+};
+                                #endif
+
+                                #ifndef DEF_s_Target
+                                #define DEF_s_Target
+struct s_Target
+{
+    int modid;
+    int index;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || modid
+            || index
+        ;
+    }
+};
+                                #endif
+
+                                #ifndef DEF_s_ScopeItem
+                                #define DEF_s_ScopeItem
+struct s_ScopeItem
+{
+    fu::str id;
+    int modid;
+    unsigned packed;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || id
+        ;
+    }
+};
+                                #endif
+
+                                #ifndef DEF_s_TokenIdx
+                                #define DEF_s_TokenIdx
+struct s_TokenIdx
+{
+    int modid;
+    int tokidx;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || modid
+            || tokidx
+        ;
+    }
+};
+                                #endif
+
+                                #ifndef DEF_s_ValueType
+                                #define DEF_s_ValueType
+struct s_ValueType
+{
+    unsigned quals;
+    fu::str canon;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || quals
+            || canon
+        ;
+    }
+};
+                                #endif
+
+                                #ifndef DEF_s_LineColChars
+                                #define DEF_s_LineColChars
+struct s_LineColChars
+{
+    int line;
+    int col;
+    int chars;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || line
+            || col
+            || chars
+        ;
+    }
+};
+                                #endif
+
+                                #ifndef DEF_s_ModuleStat
+                                #define DEF_s_ModuleStat
+struct s_ModuleStat
+{
+    double time;
+    int alloc_count;
+    int alloc_bytes;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || time
+            || alloc_count
+            || alloc_bytes
+        ;
+    }
+};
+                                #endif
+
+                                #ifndef DEF_s_CodegenOutput
+                                #define DEF_s_CodegenOutput
+struct s_CodegenOutput
+{
+    fu::str src;
+    fu::vec<fu::str> link;
+    fu::vec<fu::str> include_dirs;
+    fu::vec<fu::str> extra_sources;
+    fu::vec<int> live;
+    s_CGDefects defects;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || src
+            || link
+            || include_dirs
+            || extra_sources
+            || live
+            || defects
         ;
     }
 };
@@ -782,14 +622,14 @@ struct s_Extended
                                 #define DEF_s_Scope
 struct s_Scope
 {
-    fu_VEC<s_Overload> overloads;
-    fu_VEC<s_Extended> extended;
-    fu_VEC<s_ScopeItem> items;
-    fu_VEC<s_ScopeItem> implicits;
-    fu_VEC<int> imports;
-    fu_VEC<int> privates;
-    fu_VEC<s_Target> usings;
-    fu_VEC<s_Target> converts;
+    fu::vec<s_Overload> overloads;
+    fu::vec<s_Extended> extended;
+    fu::vec<s_ScopeItem> items;
+    fu::vec<s_ScopeItem> implicits;
+    fu::vec<int> imports;
+    fu::vec<int> privates;
+    fu::vec<s_Target> usings;
+    fu::vec<s_Target> converts;
     int pub_items;
     int pub_cnvrts;
     s_Scope(const s_Scope&) = delete;
@@ -814,149 +654,35 @@ struct s_Scope
 };
                                 #endif
 
-                                #ifndef DEF_s_SolverNotes
-                                #define DEF_s_SolverNotes
-inline constexpr s_SolverNotes s_SolverNotes_N_FnRecursion = 1;
-inline constexpr s_SolverNotes s_SolverNotes_N_FnResolve = 2;
-inline constexpr s_SolverNotes s_SolverNotes_N_FnReopen = 4;
-inline constexpr s_SolverNotes s_SolverNotes_N_TypeRecursion = 8;
-inline constexpr s_SolverNotes s_SolverNotes_N_TypeResolve = 16;
-inline constexpr s_SolverNotes s_SolverNotes_N_TypeReopen = 32;
-inline constexpr s_SolverNotes s_SolverNotes_N_DeadCode = 64;
-inline constexpr s_SolverNotes s_SolverNotes_N_DeadCall = 128;
-inline constexpr s_SolverNotes s_SolverNotes_N_DeadLet = 256;
-inline constexpr s_SolverNotes s_SolverNotes_N_DeadIfCond = 512;
-inline constexpr s_SolverNotes s_SolverNotes_N_DeadIfCons = 1024;
-inline constexpr s_SolverNotes s_SolverNotes_N_DeadArrlit = 2048;
-inline constexpr s_SolverNotes s_SolverNotes_N_DeadLoopInit = 4096;
-inline constexpr s_SolverNotes s_SolverNotes_N_DeadConv = 8192;
-inline constexpr s_SolverNotes s_SolverNotes_N_NonTrivAutoCopy = 16384;
-inline constexpr s_SolverNotes s_SolverNotes_N_RelaxRespec = 32768;
-inline constexpr s_SolverNotes s_SolverNotes_N_UnusedImplicit = 65536;
-inline constexpr s_SolverNotes s_SolverNotes_N_UnusedCall = 131072;
-inline constexpr s_SolverNotes s_SolverNotes_N_UnusedDefer = 262144;
-inline constexpr s_SolverNotes s_SolverNotes_N_UnusedStmt = 524288;
-inline constexpr s_SolverNotes s_SolverNotes_N_UnusedTry = 1048576;
-inline constexpr s_SolverNotes s_SolverNotes_N_UnusedAndOr = 2097152;
-inline constexpr s_SolverNotes s_SolverNotes_N_UnusedIfElse = 4194304;
-inline constexpr s_SolverNotes s_SolverNotes_N_UnusedArrlit = 8388608;
-inline constexpr s_SolverNotes s_SolverNotes_N_BckSoftRisk = 16777216;
-inline constexpr s_SolverNotes s_SolverNotes_N_BckMustSeq = 33554432;
-inline constexpr s_SolverNotes s_SolverNotes_N_MoveMustSeq = 67108864;
-inline constexpr s_SolverNotes s_SolverNotes_N_SD_HasStaticInit = 134217728;
-inline constexpr s_SolverNotes s_SolverNotes_N_SD_ExternPrivates = 268435456;
-
-inline constexpr s_SolverNotes MASK_s_SolverNotes
-    = s_SolverNotes_N_FnRecursion
-    | s_SolverNotes_N_FnResolve
-    | s_SolverNotes_N_FnReopen
-    | s_SolverNotes_N_TypeRecursion
-    | s_SolverNotes_N_TypeResolve
-    | s_SolverNotes_N_TypeReopen
-    | s_SolverNotes_N_DeadCode
-    | s_SolverNotes_N_DeadCall
-    | s_SolverNotes_N_DeadLet
-    | s_SolverNotes_N_DeadIfCond
-    | s_SolverNotes_N_DeadIfCons
-    | s_SolverNotes_N_DeadArrlit
-    | s_SolverNotes_N_DeadLoopInit
-    | s_SolverNotes_N_DeadConv
-    | s_SolverNotes_N_NonTrivAutoCopy
-    | s_SolverNotes_N_RelaxRespec
-    | s_SolverNotes_N_UnusedImplicit
-    | s_SolverNotes_N_UnusedCall
-    | s_SolverNotes_N_UnusedDefer
-    | s_SolverNotes_N_UnusedStmt
-    | s_SolverNotes_N_UnusedTry
-    | s_SolverNotes_N_UnusedAndOr
-    | s_SolverNotes_N_UnusedIfElse
-    | s_SolverNotes_N_UnusedArrlit
-    | s_SolverNotes_N_BckSoftRisk
-    | s_SolverNotes_N_BckMustSeq
-    | s_SolverNotes_N_MoveMustSeq
-    | s_SolverNotes_N_SD_HasStaticInit
-    | s_SolverNotes_N_SD_ExternPrivates;
-                                #endif
-
-                                #ifndef DEF_s_SolverOutput
-                                #define DEF_s_SolverOutput
-struct s_SolverOutput
+                                #ifndef DEF_s_Token
+                                #define DEF_s_Token
+struct s_Token
 {
-    s_SolvedNode root;
-    s_Scope scope;
-    s_SolverNotes notes;
-    s_SolverOutput(const s_SolverOutput&) = delete;
-    s_SolverOutput(s_SolverOutput&&) = default;
-    s_SolverOutput& operator=(const s_SolverOutput&) = delete;
-    s_SolverOutput& operator=(s_SolverOutput&&) = default;
+    s_kind kind;
+    s_LineColChars lcc;
+    fu::str value;
     explicit operator bool() const noexcept
     {
         return false
-            || root
-            || scope
-            || notes
+            || kind
         ;
     }
 };
                                 #endif
 
-                                #ifndef DEF_s_CodegenOutput
-                                #define DEF_s_CodegenOutput
-struct s_CodegenOutput
+                                #ifndef DEF_s_Type
+                                #define DEF_s_Type
+struct s_Type
 {
-    fu_STR src;
-    fu_VEC<fu_STR> link;
-    fu_VEC<fu_STR> include_dirs;
-    fu_VEC<fu_STR> extra_sources;
-    fu_VEC<int> live;
+    s_ValueType vtype;
+    s_Lifetime lifetime;
+    s_VFacts vfacts;
     explicit operator bool() const noexcept
     {
         return false
-            || src
-            || link
-            || include_dirs
-            || extra_sources
-            || live
-        ;
-    }
-};
-                                #endif
-
-                                #ifndef DEF_s_ModuleOutputs
-                                #define DEF_s_ModuleOutputs
-struct s_ModuleOutputs
-{
-    fu_VEC<s_Struct> types;
-    s_SolverOutput solve;
-    s_CodegenOutput cpp;
-    s_ModuleOutputs(const s_ModuleOutputs&) = delete;
-    s_ModuleOutputs(s_ModuleOutputs&&) = default;
-    s_ModuleOutputs& operator=(const s_ModuleOutputs&) = delete;
-    s_ModuleOutputs& operator=(s_ModuleOutputs&&) = default;
-    explicit operator bool() const noexcept
-    {
-        return false
-            || types
-            || solve
-            || cpp
-        ;
-    }
-};
-                                #endif
-
-                                #ifndef DEF_s_ModuleStat
-                                #define DEF_s_ModuleStat
-struct s_ModuleStat
-{
-    double time;
-    int alloc_count;
-    int alloc_bytes;
-    explicit operator bool() const noexcept
-    {
-        return false
-            || time
-            || alloc_count
-            || alloc_bytes
+            || vtype
+            || lifetime
+            || vfacts
         ;
     }
 };
@@ -982,12 +708,280 @@ struct s_ModuleStats
 };
                                 #endif
 
+                                #ifndef DEF_s_COWInside
+                                #define DEF_s_COWInside
+struct s_COWInside
+{
+    s_ValueType vtype;
+    s_TokenIdx token;
+    int argTarget;
+    int mayEscapeVia;
+    s_ExitPaths exitPaths;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || vtype
+            || token
+            || argTarget
+            || mayEscapeVia
+            || exitPaths
+        ;
+    }
+};
+                                #endif
+
+                                #ifndef DEF_s_Node
+                                #define DEF_s_Node
+struct s_Node
+{
+    s_kind kind;
+    s_DeclAsserts asserts;
+    s_ParseSyntax syntax;
+    s_Flags flags;
+    fu::str value;
+    fu::vec<s_Node> items;
+    s_TokenIdx token;
+    s_Node(const s_Node&) = default;
+    s_Node(s_Node&&) = default;
+    s_Node& operator=(s_Node&&) = default;
+    s_Node& operator=(const s_Node& selfrec) { return *this = s_Node(selfrec); }
+    explicit operator bool() const noexcept
+    {
+        return false
+            || kind
+        ;
+    }
+};
+                                #endif
+
+                                #ifndef DEF_s_Struct
+                                #define DEF_s_Struct
+struct s_Struct
+{
+    s_kind kind;
+    fu::str name;
+    s_Target target;
+    fu::vec<s_ScopeItem> items;
+    fu::vec<int> imports;
+    fu::vec<s_Target> converts;
+    fu::str base;
+    int flatCount;
+    int declDepth;
+    bool all_triv;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || kind
+            || name
+            || target
+            || items
+            || imports
+            || converts
+            || base
+            || flatCount
+            || declDepth
+            || all_triv
+        ;
+    }
+};
+                                #endif
+
+                                #ifndef DEF_s_Template
+                                #define DEF_s_Template
+struct s_Template
+{
+    s_Node node;
+    fu::vec<int> imports;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || node
+        ;
+    }
+};
+                                #endif
+
+                                #ifndef DEF_s_ParserOutput
+                                #define DEF_s_ParserOutput
+struct s_ParserOutput
+{
+    s_Node root;
+    fu::vec<fu::str> fuzimports;
+    fu::vec<fu::str> warnings;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || root
+            || fuzimports
+            || warnings
+        ;
+    }
+};
+                                #endif
+
+                                #ifndef DEF_s_SolvedNode
+                                #define DEF_s_SolvedNode
+struct s_SolvedNode
+{
+    s_kind kind;
+    s_Helpers helpers;
+    s_Flags flags;
+    int _loop_start;
+    fu::str value;
+    fu::vec<s_SolvedNode> items;
+    s_TokenIdx token;
+    s_Type type;
+    s_Target target;
+    s_SolvedNode(const s_SolvedNode&) = default;
+    s_SolvedNode(s_SolvedNode&&) = default;
+    s_SolvedNode& operator=(s_SolvedNode&&) = default;
+    s_SolvedNode& operator=(const s_SolvedNode& selfrec) { return *this = s_SolvedNode(selfrec); }
+    explicit operator bool() const noexcept
+    {
+        return false
+            || kind
+        ;
+    }
+};
+                                #endif
+
+                                #ifndef DEF_s_ModuleInputs
+                                #define DEF_s_ModuleInputs
+struct s_ModuleInputs
+{
+    fu::str src;
+    s_LexerOutput lex;
+    s_ParserOutput parse;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || src
+            || lex
+            || parse
+        ;
+    }
+};
+                                #endif
+
+                                #ifndef DEF_s_Overload
+                                #define DEF_s_Overload
+struct s_Overload
+{
+    s_kind kind;
+    s_Flags flags;
+    s_SolverStatus status;
+    fu::str name;
+    s_Type type;
+    s_SolvedNode solved;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || kind
+        ;
+    }
+};
+                                #endif
+
+                                #ifndef DEF_s_Extended
+                                #define DEF_s_Extended
+struct s_Extended
+{
+    int min;
+    int max;
+    fu::vec<s_Argument> args;
+    fu::vec<s_COWInside> cows_inside;
+    s_Target spec_of;
+    s_Template tEmplate;
+    fu::vec<s_Overload> locals;
+    fu::str sighash;
+    s_FxMask fx_mask;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || tEmplate
+        ;
+    }
+};
+                                #endif
+
+                                #ifndef DEF_s_Argument
+                                #define DEF_s_Argument
+struct s_Argument
+{
+    fu::str name;
+    fu::str autocall;
+    s_Type type;
+    s_SolvedNode dEfault;
+    s_Flags flags;
+    int local;
+    s_BitSet soft_risk;
+    s_BitSet hard_risk;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || name
+            || autocall
+            || type
+            || dEfault
+            || flags
+            || local
+            || soft_risk
+            || hard_risk
+        ;
+    }
+};
+                                #endif
+
+                                #ifndef DEF_s_SolverOutput
+                                #define DEF_s_SolverOutput
+struct s_SolverOutput
+{
+    s_SolvedNode root;
+    s_Scope scope;
+    s_SolverNotes notes;
+    s_SolverOutput(const s_SolverOutput&) = delete;
+    s_SolverOutput(s_SolverOutput&&) = default;
+    s_SolverOutput& operator=(const s_SolverOutput&) = delete;
+    s_SolverOutput& operator=(s_SolverOutput&&) = default;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || root
+            || scope
+            || notes
+        ;
+    }
+};
+                                #endif
+
+                                #ifndef DEF_s_ModuleOutputs
+                                #define DEF_s_ModuleOutputs
+struct s_ModuleOutputs
+{
+    fu::vec<s_Struct> types;
+    s_SolverOutput solve;
+    s_CodegenOutput cpp;
+    s_ModuleOutputs(const s_ModuleOutputs&) = delete;
+    s_ModuleOutputs(s_ModuleOutputs&&) = default;
+    s_ModuleOutputs& operator=(const s_ModuleOutputs&) = delete;
+    s_ModuleOutputs& operator=(s_ModuleOutputs&&) = default;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || types
+            || solve
+            || cpp
+        ;
+    }
+};
+                                #endif
+
                                 #ifndef DEF_s_Module
                                 #define DEF_s_Module
 struct s_Module
 {
     int modid;
-    fu_STR fname;
+    fu::str fname;
     s_ModuleInputs in;
     s_ModuleOrder order;
     s_ModuleOutputs out;
@@ -1012,9 +1006,9 @@ struct s_Module
 
 #ifndef fu_NO_fdefs
 
-                                #ifndef DEF_str_v3b7EcLtghl
-                                #define DEF_str_v3b7EcLtghl
-inline fu_STR str_v3b7EcLt(const s_kind n)
+                                #ifndef DEF_str_k2hK9UHjiD5
+                                #define DEF_str_k2hK9UHjiD5
+inline fu::str str_k2hK9UHj(const s_kind n)
 {
     if (n == s_kind_sof)
         return "sof"_fu;
@@ -1046,8 +1040,6 @@ inline fu_STR str_v3b7EcLt(const s_kind n)
         return "definit"_fu;
     else if (n == s_kind_empty)
         return "empty"_fu;
-    else if (n == s_kind_void)
-        return "void"_fu;
     else if (n == s_kind_not)
         return "not"_fu;
     else if (n == s_kind_call)
@@ -1153,27 +1145,27 @@ inline fu_STR str_v3b7EcLt(const s_kind n)
 }
                                 #endif
 
-                                #ifndef DEF_x7Ex3D_EHZEiPh81F6
-                                #define DEF_x7Ex3D_EHZEiPh81F6
-inline fu_STR& x7Ex3D_EHZEiPh8(fu_STR& a, fu::view<char> b)
+                                #ifndef DEF_x7Ex3D_ljOD9ybkNH8
+                                #define DEF_x7Ex3D_ljOD9ybkNH8
+inline fu::str& x7Ex3D_ljOD9ybk(fu::str& a, fu::view<char> b)
 {
     return (a += b);
 }
                                 #endif
 
-                                #ifndef DEF_x7E_sTZRmMq1BYf
-                                #define DEF_x7E_sTZRmMq1BYf
-inline fu_STR x7E_sTZRmMq1(fu::view<char> a, fu::view<char> b)
+                                #ifndef DEF_x7E_r7bhmB7DrQ0
+                                #define DEF_x7E_r7bhmB7DrQ0
+inline fu::str x7E_r7bhmB7D(fu::view<char> a, fu::view<char> b)
 {
     return a + b;
 }
                                 #endif
 
-                                #ifndef DEF_str_R3y6Vzkzez1
-                                #define DEF_str_R3y6Vzkzez1
-inline fu_STR str_R3y6Vzkz(const s_Flags n)
+                                #ifndef DEF_str_croM9CQTKs0
+                                #define DEF_str_croM9CQTKs0
+inline fu::str str_croM9CQT(const s_Flags n)
 {
-    /*MOV*/ fu_STR res {};
+    /*MOV*/ fu::str res {};
 
     {
         if (n & s_Flags_F_METHOD)
@@ -1196,6 +1188,9 @@ inline fu_STR str_R3y6Vzkz(const s_Flags n)
 
         if (n & s_Flags_F_ARG)
             res += ("F_ARG"_fu + ", "_fu);
+
+        if (n & s_Flags_F_COW_INSIDE)
+            res += ("F_COW_INSIDE"_fu + ", "_fu);
 
         if (n & s_Flags_F_MOVED_FROM)
             res += ("F_MOVED_FROM"_fu + ", "_fu);
@@ -1268,11 +1263,11 @@ inline fu_STR str_R3y6Vzkz(const s_Flags n)
 }
                                 #endif
 
-                                #ifndef DEF_str_8ZvNBYdapb6
-                                #define DEF_str_8ZvNBYdapb6
-inline fu_STR str_8ZvNBYda(const s_FxMask n)
+                                #ifndef DEF_str_hhQd2ioBQxd
+                                #define DEF_str_hhQd2ioBQxd
+inline fu::str str_hhQd2ioB(const s_FxMask n)
 {
-    /*MOV*/ fu_STR res {};
+    /*MOV*/ fu::str res {};
 
     {
         if (n & s_FxMask_Fx_NotDeadCode)
@@ -1331,36 +1326,36 @@ inline fu_STR str_8ZvNBYda(const s_FxMask n)
 }
                                 #endif
 
-static void inspect_VB10aF0a(const s_SolvedNode& n, fu::view<char> indent, const s_Module& module, fu_STR& src, const int modid)
+static void inspect_rDbbCcMW(const s_SolvedNode& n, fu::view<char> indent, const s_Module& module, fu::str& src, const int modid)
 {
     src += (indent + "("_fu);
     if (n)
     {
         if (n.kind == s_kind_call)
-            src += qID_9QQZAztz(str_v3b7EcLt(n.kind));
+            src += qID_bF2G8fJR(str_k2hK9UHj(n.kind));
         else if ((n.kind == s_kind_block) || (n.kind == s_kind_jump) || (n.kind == s_kind_defer))
-            src += qLT_9QQZAztz(str_v3b7EcLt(n.kind));
+            src += qLT_bF2G8fJR(str_k2hK9UHj(n.kind));
         else if ((n.kind == s_kind_if) || (n.kind == s_kind_and) || (n.kind == s_kind_or) || (n.kind == s_kind_loop))
-            src += qKW_9QQZAztz(str_v3b7EcLt(n.kind));
+            src += qKW_bF2G8fJR(str_k2hK9UHj(n.kind));
         else if (n.kind == s_kind_empty)
-            src += qBAD_9QQZAztz(str_v3b7EcLt(n.kind));
+            src += qBAD_bF2G8fJR(str_k2hK9UHj(n.kind));
         else
-            x7Ex3D_EHZEiPh8(src, str_v3b7EcLt(n.kind));
+            x7Ex3D_ljOD9ybk(src, str_k2hK9UHj(n.kind));
 
         if (n.value)
             src += (" v:"_fu + n.value);
 
         if (n.helpers)
-            src += x7E_sTZRmMq1(" h:"_fu, fu::i64dec(n.helpers.index));
+            src += x7E_r7bhmB7D(" h:"_fu, fu::i64dec(n.helpers.index));
 
         if (n.flags)
-            src += x7E_sTZRmMq1(" f:"_fu, str_R3y6Vzkz(n.flags));
+            src += x7E_r7bhmB7D(" f:"_fu, str_croM9CQT(n.flags));
 
         if (n.items)
         {
-            fu_STR indent_1 = (indent + ((n.kind == s_kind_block) ? qLT_9QQZAztz(". "_fu) : "  "_fu));
+            fu::str indent_1 = (indent + ((n.kind == s_kind_block) ? qLT_bF2G8fJR(". "_fu) : "  "_fu));
             for (int i = 0; i < n.items.size(); i++)
-                inspect_VB10aF0a(n.items[i], indent_1, module, src, modid);
+                inspect_rDbbCcMW(n.items[i], indent_1, module, src, modid);
 
         };
         if ((n.target.modid == modid) || (n.target.modid < 0))
@@ -1368,19 +1363,19 @@ static void inspect_VB10aF0a(const s_SolvedNode& n, fu::view<char> indent, const
             fu::view<s_Overload> overloads = ((n.target.modid < 0) ? module.out.solve.scope.extended[-n.target.modid].locals : module.out.solve.scope.overloads);
             const s_Overload& o = overloads[(n.target.index - 1)];
             if (o.name)
-                src += (" n:"_fu + trim_obCJYZMU(o.name));
+                src += (" n:"_fu + trim_UiSEgboz(o.name));
 
             if (o.kind == s_kind_fn)
             {
                 const s_Extended& x = module.out.solve.scope.extended[n.target.index];
                 if (x.fx_mask)
-                    src += x7E_sTZRmMq1(" fx:"_fu, str_8ZvNBYda(x.fx_mask));
+                    src += x7E_r7bhmB7D(" fx:"_fu, str_hhQd2ioB(x.fx_mask));
 
             };
             if ((n.kind == s_kind_fndef) || (n.kind == s_kind_letdef))
             {
-                fu_STR indent_1 = (indent + qID_9QQZAztz(". "_fu));
-                inspect_VB10aF0a(o.solved, indent_1, module, src, modid);
+                fu::str indent_1 = (indent + qID_bF2G8fJR(". "_fu));
+                inspect_rDbbCcMW(o.solved, indent_1, module, src, modid);
             };
         };
     };
@@ -1390,22 +1385,17 @@ static void inspect_VB10aF0a(const s_SolvedNode& n, fu::view<char> indent, const
     src += ")"_fu;
 }
 
-void inspect_e6aN47vV(const s_Module& module, const s_SolvedNode& root)
+fu::str inspect_ertqniSK(const s_Module& module, const s_SolvedNode& root)
 {
-    /*MOV*/ fu_STR src = "Your /*PRINT*/:"_fu;
+    /*MOV*/ fu::str src = "Your /*PRINT*/:"_fu;
     const int modid = module.modid;
-    inspect_VB10aF0a(root, "\n    "_fu, module, src, modid);
-    fu_STR* BL_1_v;
-    fu::println((fu::slate<1, fu_STR> { static_cast<fu_STR&&>((__extension__ (
-    {
-        /*MOV*/ fu_STR& x = src;
-        BL_1_v = &(x);
-    (void)0;}), *BL_1_v)) }));
+    inspect_rDbbCcMW(root, "\n    "_fu, module, src, modid);
+    return /*NRVO*/ src;
 }
 
-void inspect_CGb0XXzf(const s_Module& module)
+fu::str inspect_66vMeR0m(const s_Module& module)
 {
-    inspect_e6aN47vV(module, module.out.solve.root);
+    return inspect_ertqniSK(module, module.out.solve.root);
 }
 
 #endif
