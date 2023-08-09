@@ -1686,7 +1686,7 @@ pub fn solve(
                         let PREV        = matchIdx;
                         let NEXT        = overloadIdx;
 
-                        if (SELF_TEST && PREV.kind != "field" /* the field_items connundrum, this is the easiest fix */)
+                        if (SELF_TEST)
                         {
                             let inner       = PREV.localOf;             // first to match is innermost scope
                             let outer       = NEXT.localOf;             //  what we're currently looking is upscope
