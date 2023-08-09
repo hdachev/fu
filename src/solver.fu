@@ -6681,7 +6681,21 @@ pub fn solve(
                 if (cont)
                 {
                     i++;
-                    i < _helpers.len || fail("Cannot continue to label `" ~ id ~ "` from here, did you mean to `break`?");
+                    //
+                    // I had forgotten to enforce scopeSkip.helpers here,
+                    //  so, depending on fn solve order,
+                    //   a continue for a labelled lambda could end up
+                    //    returning from the function it was passed into,
+                    //     see the for_fn & :TWICE twice testcases.
+                    //
+                    _ss.helpers.each: |skip| {
+                        if (i == skip.start)
+                            i = skip.end;
+                        else if (i < skip.start)
+                            break;
+                    }
+
+                    i < _helpers.len || fail("Cannot " ~ ("continue :" ~ id).qBAD ~ " from here, did you mean to " ~ "break".qKW ~ "?");
                 }
             }
 
