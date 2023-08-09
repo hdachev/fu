@@ -154,66 +154,60 @@ pub fn isCanonAssignable(host: [byte], guest: [byte])
     // For each host subpattern,
     //  ensure there's at least one matching guest subpattern.
     //
+    :NEXT_HOST_PAIR
     eachSubPattern(host[h0 : h1]): |shadow host, isDeep!hostDeep, mi!hostTemplateId|
     {
-        // TODO replace this with continue :NEXT_HOST_PAIR -
-        //  currently continues don't appear to work for nested lambdas,
-        //   see `for_fn` failcase.
-        //
-        :HOST_PAIR_OK
+        eachSubPattern(guest[g0 : g1]): |shadow guest, isDeep!guestDeep, mi!guestTemplateId|
         {
-            eachSubPattern(guest[g0 : g1]): |shadow guest, isDeep!guestDeep, mi!guestTemplateId|
+            // Both need to be specs of the same template.
+            if (guestTemplateId != hostTemplateId)
+                continue;
+
+            // We can speed this up if there are no nested patterns ...
+            if (!hostDeep && !guestDeep)
             {
-                // Both need to be specs of the same template.
-                if (guestTemplateId != hostTemplateId)
-                    continue;
-
-                // We can speed this up if there are no nested patterns ...
-                if (!hostDeep && !guestDeep)
-                {
-                    // ... in which case spec-args must be exactly the same.
-                    if (host == guest)
-                        break :HOST_PAIR_OK;
-                }
-
-                // Else we gotta canon-compare each spec-arg pair individually.
-                else if (hostDeep && guestDeep)
-                {
-                    shadow mut h1 = 0;
-                    shadow mut g1 = 0;
-
-                    // We split-zip the two spec-arg sequences here.
-                    for (;;)
-                    {
-                        // First spec-args begins on a : after the template-id,
-                        //  that's why we increment this on the first loop iter.
-                        h1++;
-                        g1++;
-
-                        shadow let h0 = h1;
-                        shadow let g0 = g1;
-
-                        mut isLastHostPair:  bool;
-                        mut isLastGuestPair: bool;
-
-                        host .scan(':', h1, isLastHostPair);
-                        guest.scan(':', g1, isLastGuestPair);
-
-                        // The two spec-arg-sets must be equal-length.
-                        if (isLastHostPair != isLastGuestPair)
-                            break;
-
-                        let hostItem  = host [h0 : h1];
-                        let guestItem = guest[g0 : g1];
-                        if (isCanonAssignable(hostItem, guestItem))
-                            break :HOST_PAIR_OK;
-                    }
-                }
+                // ... in which case spec-args must be exactly the same.
+                if (host == guest)
+                    continue :NEXT_HOST_PAIR;
             }
 
-            // Unless you break :HOST_PAIR_OK -
-            return false;
+            // Else we gotta canon-compare each spec-arg pair individually.
+            else if (hostDeep && guestDeep)
+            {
+                shadow mut h1 = 0;
+                shadow mut g1 = 0;
+
+                // We split-zip the two spec-arg sequences here.
+                for (;;)
+                {
+                    // First spec-args begins on a : after the template-id,
+                    //  that's why we increment this on the first loop iter.
+                    h1++;
+                    g1++;
+
+                    shadow let h0 = h1;
+                    shadow let g0 = g1;
+
+                    mut isLastHostPair:  bool;
+                    mut isLastGuestPair: bool;
+
+                    host .scan(':', h1, isLastHostPair);
+                    guest.scan(':', g1, isLastGuestPair);
+
+                    // The two spec-arg-sets must be equal-length.
+                    if (isLastHostPair != isLastGuestPair)
+                        break;
+
+                    let hostItem  = host [h0 : h1];
+                    let guestItem = guest[g0 : g1];
+                    if (isCanonAssignable(hostItem, guestItem))
+                        continue :NEXT_HOST_PAIR;
+                }
+            }
         }
+
+        // Unless you continue :NEXT_HOST_PAIR -
+        return false;
     }
 
     // All host pairs matched.

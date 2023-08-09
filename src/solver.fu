@@ -7502,46 +7502,44 @@ pub fn solve(
                 matchFail(node.value.isNotDefinedHere);
 
             let pattern = type.canon.canon::tryGetPattern();
+
+            :NEXT_SUB_PATTERN
             pattern.canon::eachSubPattern(|shadow pattern, mi|
             {
-                // TODO FIX can't continue outer, see for_fn failcase.
-                :CHECK_PATTERN
+                fn patternFail(inline err: string)
                 {
-                    fn patternFail(inline err: string)
-                    {
-                        if (errout)
-                            errout ~= Warning(node.token, err);
+                    if (errout)
+                        errout ~= Warning(node.token, err);
 
-                        break :CHECK_PATTERN;
-                    }
-
-                    let target = Target(:mi.modid, :mi.index);
-                    let targetsIdx = targets.find(target);
-                    if (targetsIdx < 0)
-                        continue;
-
-                    targets.splice(targetsIdx, 1);
-
-                    mut numArgs = 0;
-                    pattern.canon::eachArgSpecType: |argSpecType|
-                    {
-                        let argIdx = numArgs++;
-                        if (argIdx >= node.items.len)
-                            patternFail("Missing type argument for " ~ target ~ ": " ~ target.args[argIdx]);
-
-                        shadow let node = node.items[argIdx];
-                        shadow let type = Type(parseType(argSpecType));
-
-                        if (!trySolveTypeParams(:node, :type, :typeParams, :errout, invariant: true))
-                            break :CHECK_PATTERN;
-                    }
-
-                    if (numArgs != node.items.len)
-                        patternFail("Too many type arguments for " ~ target ~ ".");
-
-                    // It's a match! We're done here.
-                    return true;
+                    continue :NEXT_SUB_PATTERN;
                 }
+
+                let target = Target(:mi.modid, :mi.index);
+                let targetsIdx = targets.find(target);
+                if (targetsIdx < 0)
+                    continue :NEXT_SUB_PATTERN;
+
+                targets.splice(targetsIdx, 1);
+
+                mut numArgs = 0;
+                pattern.canon::eachArgSpecType: |argSpecType|
+                {
+                    let argIdx = numArgs++;
+                    if (argIdx >= node.items.len)
+                        patternFail("Missing type argument for " ~ target ~ ": " ~ target.args[argIdx]);
+
+                    shadow let node = node.items[argIdx];
+                    shadow let type = Type(parseType(argSpecType));
+
+                    if (!trySolveTypeParams(:node, :type, :typeParams, :errout, invariant: true))
+                        continue :NEXT_SUB_PATTERN;
+                }
+
+                if (numArgs != node.items.len)
+                    patternFail("Too many type arguments for " ~ target ~ ".");
+
+                // It's a match! We're done here.
+                return true;
             });
 
             if (errout && targets)
