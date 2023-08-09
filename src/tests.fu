@@ -84,6 +84,7 @@ pub extern fn runTests()
 
     // Categorizing what doesn't work and why -
 
+    let TODO_enums      = fn TODO;
     let TODO_structs    = fn TODO;
     let TODO_borrowck   = fn TODO;
     let TODO_disjoint   = fn TODO;
@@ -523,7 +524,7 @@ pub extern fn runTests()
         }
     `);
 
-    TODO_structs(`
+    TODO_structs(currently: "fn <> unused var b prelude :27+1", `
         struct Empty {};
 
         fn main() {
@@ -820,7 +821,7 @@ pub extern fn runTests()
         fn main() _0::template_add(HasInt(1), HasInt(2)).i - 3;
     `]);
 
-    TODO_ambig([`
+    TODO_ambig(currently: "Bad call to + 2:33+1", [`
         fn template_add(a, b) a + b;
     `,`
         struct HasInt { i: i32 };
@@ -2673,7 +2674,7 @@ pub extern fn runTests()
 
     // Maps.
 
-    TODO_Map(`
+    TODO_Map(currently: "Map is not defined", `
         mut x: Map(string, i32);
 
         x["hello"] = 1;
@@ -2682,7 +2683,7 @@ pub extern fn runTests()
         return x["hello"] - x["world"] + 1;
     `);
 
-    TODO_Map(`
+    TODO_Map(currently: "Map is not defined", `
         mut x: Map(string, i32);
 
         x["hello"] = 1;
@@ -3358,7 +3359,7 @@ pub extern fn runTests()
         return CHANGE.i32 - 1;
     `);
 
-    TODO_Map(`
+    TODO_Map(currently: "Map is not defined", `
         mut m: Map(string, string);
         mut g = 0;
 
@@ -3372,7 +3373,7 @@ pub extern fn runTests()
         return g;
     `);
 
-    TODO_Map(`
+    TODO_Map(currently: "Map is not defined", `
         mut m: Map(string, string);
         mut g = 0;
 
@@ -5961,7 +5962,7 @@ pub extern fn runTests()
     //  Keep those around, there's no principle to these tests,
     //   they just stressed our stuff in weird ways.
 
-    TODO_Map(`
+    TODO_Map(currently: "Map is not defined", `
         struct BINOP {
             P: Map(string, i32);
         };
@@ -6463,7 +6464,7 @@ pub extern fn runTests()
         }
     `);
 
-    TODO_Map(`
+    TODO_Map(currently: "Map is not defined", `
         struct ValueType { modid: i32; };
         struct Type { using vtype: ValueType; };
         struct Target { modid: i32; index: i32; };
@@ -6524,7 +6525,7 @@ pub extern fn runTests()
         pub fn main() test();
     `);
 
-    TODO_Map(`
+    TODO_Map(currently: "Map is not defined", `
         fn setupOperators(P_PREFIX_UNARY) // <- template
         {
             struct BINOP {
@@ -6668,7 +6669,7 @@ pub extern fn runTests()
         }
     `);
 
-    TODO_Map(`
+    TODO_Map(currently: "Map is not defined", `
         struct Context
         {
             fuzzy: Map(string, string);
@@ -8586,7 +8587,7 @@ pub extern fn runTests()
         fn main() what(RELAX_mutref_only);
     `]);
 
-    TODO_Map(`
+    TODO_Map(currently: "Map is not defined", `
         pub fn pairs(a: Map($K, $V), fn) {
             let k = a.keys;
             let v = a.values;
@@ -8824,7 +8825,7 @@ pub extern fn runTests()
         }
     `);
 
-    TODO_conv(`
+    TODO_conv(currently: "Incompatible types for T 9:41+1", `
         struct ScopeSkip {
             min: i32;
             max: i32;
@@ -8838,10 +8839,15 @@ pub extern fn runTests()
         }
     `);
 
-    TODO_conv(`
+    TODO_conv(currently: "Bad call to BINOP 7:25+1", `
         fn setupOperators(i: i32) {
+            <alt>
             struct sB { hey: i32; };
             struct BINOP { i: sB; };
+            <alt/>
+            fn sB(_: $T) struct { hey: $T; };
+            struct BINOP { i: sB(i32); };
+            </alt>
             return BINOP([ i ]); // Inference fail.
         }
 
@@ -11806,13 +11812,13 @@ pub extern fn runTests()
         }
     `);
 
-    TODO_conv(`
+    TODO_conv(currently: "Bad call to a_len 4:24+5", `
         fn a_len(a: [$T]) a.len; // a conversion could navigate this here
         struct Test { using a: i32[]; };
         fn main() Test.a_len;
     `);
 
-    TODO_conv(`
+    TODO_conv(currently: "Bad call to ~ 6:24+1", `
         struct CodegenOutput { using src: string; };
 
         fn test(ref str: string, out: CodegenOutput) {
@@ -12516,16 +12522,6 @@ pub extern fn runTests()
 
         type a = sB(i32);
         fn main() a(1).test;
-    `);
-
-    TODO_conv(currently: "bad call to BINOP 5:25+1", `
-        fn setupOperators(i: i32) {
-            fn sB(_: $T) struct { hey: $T; }; // same as above
-            struct BINOP { i: sB(i32); };     //  but template
-            return BINOP([ i ]);
-        }
-
-        fn main() setupOperators(0).i.hey;
     `);
 
     ZERO(`
@@ -13899,7 +13895,7 @@ pub extern fn runTests()
                 + _0::hello(2) - 2 * Each(20000);
     `]);
 
-    TODO_ambig([`
+    TODO_ambig(currently: "BUG exit code", [`
         fn sum_each(a, b)       // Same as above,
             a.Each + b.Each;    //  but we don't explicitly pass the fn Each in.
 
@@ -13968,7 +13964,7 @@ pub extern fn runTests()
         }
     `]);
 
-    TODO_mangle([`
+    TODO_mangle(currently: "BUG exit code", [`
         struct Woot { i: i32 };
         fn sqr(v) = mul(v, v);
     `,`
@@ -14019,7 +14015,7 @@ pub extern fn runTests()
 
     // Function types sketch.
 
-    TODO_fntype(`
+    TODO_fntype(currently: "expected , got . 2:42+1", `
         fn apply(num: i32, func: fn (i32): i32) = func(num);
         fn main()                               = apply([1], |i| i - 1);
     `);
@@ -14291,7 +14287,7 @@ pub extern fn runTests()
         fn main() outer(0);
     `);
 
-    SKETCH(`
+    TODO_enums(currently: "A is not defined here 2:28+1", `
         enum Test { A; B = A; C; };
         fn main() C.i32 - 1;
     `);
@@ -14324,7 +14320,7 @@ pub extern fn runTests()
         }
     `);
 
-    TODO_ambig(`
+    TODO_ambig(currently: "Ambig call enumv bool 2:9+4 prelude :29+4", `
         enum thing { i32; int; bool }
 
         // So the problem is the retval annotation for fn ==(template): bool
@@ -14677,7 +14673,7 @@ pub extern fn runTests()
         fn main() licm_loop_preheader(2) == 204 ? 0 : 1;
     `);
 
-    TODO_licm(`
+    TODO_licm(currently: "BUG exit code", `
         fn pretend_pure(mut res = 0) {
             pragma emit(\`
                 static int counter = 100;

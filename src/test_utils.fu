@@ -679,8 +679,8 @@ pub fn TODO(
         ZERO(:sources, options: Options(dev: DEV_ExpectFail));
     }
     catch (e) {
-        if (currently)
-            verify_errmsg("(TODO)", :e, msg: currently);
+        verify_errmsg("TODO()", :e, msg:
+            currently || "keywords line:col+chars");
 
         testdiffs.set_next(
             sources.ERR_KEY, "TODO: " ~ e.ERR_TRIM);
