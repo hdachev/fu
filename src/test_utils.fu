@@ -364,9 +364,14 @@ pub fn ZERO(
         ZERO(:sources, options: Options(dev: DEV_DontFoldLiterals));
 
     //
+    mut onfail = build::OnFail_PrintOutput;
+    if !(options.dev & DEV_ExpectFail)
+        onfail |= build::OnFail_WriteRepro;
+
     defer:err if !(options.dev & DEV_ExpectFail)
         println("\nFAILING TESTCASE:\n" ~ sources.join("\n"));
 
+    //
     mut ok_defects_by_insrc: CGDefects[];
     mut expectations: string[][];
     shadow mut options = sources.map(|_| options);
@@ -488,8 +493,8 @@ pub fn ZERO(
     let fudir = FUDIR;
     let dir_wrk = DEFAULT_WORKSPACE;
 
-    ::build(:ctx, :run, :fudir, :dir_wrk, scheme: "debug"   , onfail: "print-src");
-    ::build(:ctx, :run, :fudir, :dir_wrk                    , onfail: "print-src");
+    ::build(:ctx, :run, :fudir, :dir_wrk, :onfail, scheme: "debug");
+    ::build(:ctx, :run, :fudir, :dir_wrk, :onfail);
 
     // Check codegen.
     for (mut i = 0; i < sources.len; i++)

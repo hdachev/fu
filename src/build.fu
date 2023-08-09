@@ -85,6 +85,13 @@ fn exec(cmd: string, ref stdout: string)
 
 //
 
+flags DEV_OnFail
+{
+    OnFail_PrintInput
+    OnFail_PrintOutput
+    OnFail_WriteRepro
+};
+
 pub fn build(
     implicit ctx: Context,
 
@@ -99,7 +106,7 @@ pub fn build(
     mut dir_cpp !?: string,
         unity   !?: string,
         scheme  !?: string,
-        onfail  !?: string,
+        onfail  !?: DEV_OnFail,
 
         // TODO clean these up, this makes NO SENSE //
         run     !?: bool,
@@ -273,14 +280,17 @@ pub fn build(
 
     fn ERR(mut cpp?: string)
     {
-        if (!cpp)
-            for (mut i = Fs.len; i --> 0; )
-                if (Fs[i])
-                    cpp ~= "#include \"" ~ Fs[i] ~ ".cpp\"\n";
+        if (onfail & OnFail_WriteRepro)
+        {
+            if (!cpp)
+                for (mut i = Fs.len; i --> 0; )
+                    if (Fs[i])
+                        cpp ~= "#include \"" ~ Fs[i] ~ ".cpp\"\n";
 
-        let fname = dir_wrk ~ "failing-testcase.cpp";
-        println("  WRITE " ~ fname);
-        atomic_write(:fname, cpp);
+            let fname = dir_wrk ~ "failing-testcase.cpp";
+            println("  WRITE " ~ fname);
+            atomic_write(:fname, cpp);
+        }
 
         // Print exit code.
         if (stdout)
@@ -293,12 +303,13 @@ pub fn build(
         if (onfail)
         {
             explain = "\n\n\tCOMPILER BUG or INCORRECT TESTCASE:\n\n";
+
             for (mut i = 1; i < modules.len; i++)
-                explain ~= onfail == "print-src"
+                explain ~= onfail & OnFail_PrintInput
                     ? modules[i].in.src
                     : modules[i].fname ~ "\n";
 
-            if (onfail == "print-src")
+            if (onfail & OnFail_PrintOutput)
             {
                 explain ~= "\n\n\tGenerated code:\n\n";
                 for (mut i = 1; i < modules.len; i++)
