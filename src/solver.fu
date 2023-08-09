@@ -1226,7 +1226,7 @@ pub fn solve(
         ref reorder!reorder_out: i32[],
         ref conversions!conversions_out: Target[][],
         ref error!: string,
-        local_scope!?: bool, type_annot!?: bool,
+        local_scope!?: bool,
         misc_scope!?: Scope,
         args?: [SolvedNode],
         flags!?: Flags, target!?: Target): Target
@@ -1253,7 +1253,7 @@ pub fn solve(
         }
 
         mut minArity        = args.len;
-        let numUsings       = !type_annot && countUsings();
+        let numUsings       = countUsings();
         let explicitArity   = minArity;
         let maxArity        = explicitArity + numUsings;
 
@@ -1291,7 +1291,7 @@ pub fn solve(
         //   and we could possibly further filter them by arity.
         //
         mut extra_items: Target[];
-        if (local_scope && !target && !type_annot)
+        if (local_scope && !target)
         {
             mut seen: bitset::BitSet;
 
@@ -1343,7 +1343,7 @@ pub fn solve(
 
         // TODO the whole field_items thing is a mess,
         //  we really need a cleaner way to put these things up.
-        let considerFieldItems = local_scope && !target && !type_annot
+        let considerFieldItems = local_scope && !target
             && (flags & F_ACCESS || !minArity)
             && minArity <= 1 && maxArity;
 
@@ -1406,8 +1406,6 @@ pub fn solve(
 
                     let kind    = overload.kind;
                     let isType  = kind == "type";
-                    if (!isType && type_annot)
-                        matchFail("Not a type.");
 
                     ////////////////////////////////////////////
                     // Conversions / typename aliases.
@@ -2036,12 +2034,11 @@ pub fn solve(
         id: string, ref args: SolvedNode[],
         ref reorder: i32[],
         ref conversions: Target[][],
-        flags: Flags, target: Target,
-        type_annot!?: bool): Target
+        flags: Flags, target: Target): Target
     {
         mut error: string;
 
-        let ret = tryMatch__mutargs(:misc_scope, :local_scope, :type_annot, :id, :args, :reorder, :conversions, :flags, :target, :error);
+        let ret = tryMatch__mutargs(:misc_scope, :local_scope, :id, :args, :reorder, :conversions, :flags, :target, :error);
         if (ret)
             return ret;
 
@@ -2051,7 +2048,7 @@ pub fn solve(
                 ~ (args && " with args (" ~ args.map(.humanizeType).join(", ") ~ ")")
                 ~ ": ";
 
-        let debug = tryMatch__mutargs(:misc_scope, :local_scope, :type_annot, :id, :args, :reorder, :conversions, :flags, :target, :error);
+        let debug = tryMatch__mutargs(:misc_scope, :local_scope, :id, :args, :reorder, :conversions, :flags, :target, :error);
         if (debug)
             BUG("Did match on second pass: " ~ debug);
 
@@ -7719,8 +7716,7 @@ pub fn solve(
 
     fn solveCall(
         mut id: string, mut args?: SolvedNode[],
-        flags!?: Flags, target!?: Target,
-        type_annot!?: bool): SolvedNode
+        flags!?: Flags, target!?: Target): SolvedNode
     {
         id || target || BUG("solveCall: No id, no target.");
 
@@ -7733,8 +7729,7 @@ pub fn solve(
         mut conversions: Target[][];
         let callTargIdx = match__mutargs(
             :misc_scope, local_scope: !qualified,
-            :id, :args, :reorder, :conversions, :flags, :target,
-            :type_annot);
+            :id, :args, :reorder, :conversions, :flags, :target);
 
         //
         return CallerNode(id, callTargIdx, args, :reorder, :conversions);
@@ -7760,7 +7755,7 @@ pub fn solve(
 
     fn Scope_lookupType(mut id: string, flags?: Flags): Type
     {
-        let callsite = solveCall(id, :flags, type_annot: true);
+        let callsite = solveCall(id, :flags);
         if (callsite.target.kind != "type")
             return fail("No type `" ~ id ~ "` in scope.");
 
