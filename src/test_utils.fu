@@ -7,13 +7,18 @@ import flags;
 
 // Test running infra.
 
-pub fn compile_snippets(sources: string[], fnames?: string[], options?: Options[]): Context
+pub fn compile_snippets(sources: string[], mut fnames?: string[], options?: Options[]): Context
 {
     fn ensure_main(src: string)
         src.has("fn main")
             ? src
             : "\n\nfn main(): i32 {\n" ~ src ~ "\n}\n";
 
+    // Ensure fnames.
+    while (fnames.len < sources.len)
+        fnames.push(FUDIR ~ "__tests__/_" ~ fnames.len ~ ".fu");
+
+    // Preprocess & "cache" sources.
     let implicit mut ctx = prelude::CTX_PRELUDE.clone();
     for (mut i = 0; i < sources.len; i++)
     {
@@ -22,18 +27,24 @@ pub fn compile_snippets(sources: string[], fnames?: string[], options?: Options[
                     ? ensure_main(snippet)
                     : snippet;
 
-        let fname   = fnames.len > i
-                    ? fnames[i]
-                    : FUDIR ~ "__tests__/_" ~ i ~ ".fu";
+        ctx.files.map::set(fnames[i], src);
+    }
+
+    // Compile everything once all sources populated,
+    //  allows for testing import circles & such.
+    for (mut i = 0; i < sources.len; i++)
+    {
+        let snippet = sources[i];
+        let fname   = fnames[i];
 
         shadow mut options = options.len > i && options[i];
-        if (src.has("/*PRINT*/"))
+        if (snippet.has("/*PRINT*/"))
             options.dev |= DEV_PrintAST | DEV_PrintCG;
 
-        ctx.files.map::set(fname, src);
         compile(:fname, :options);
     }
 
+    // Append some diagnostics.
     for (mut i = 0; i < ctx.modules.len; i++)
     {
         ref module = ctx.modules[i];
