@@ -1541,7 +1541,11 @@ pub fn solve(
                                 mut autocall_error = error
                                     && "Cannot match " ~ host_arg ~ " autocall " ~ host_arg.autocall.qCODE ~ ": ";
 
-                                let t = tryMatch__mutargs(:misc_scope, :local_scope, id: host_arg.autocall, args: autocall_args, reorder: autocall_reorder, conversions: autocall_conversions, error: autocall_error);
+                                let t = tryMatch__mutargs(:misc_scope, :local_scope,
+                                    id: host_arg.autocall, args: autocall_args, flags: F_ACCESS,
+                                    reorder: autocall_reorder, conversions: autocall_conversions,
+                                    error: autocall_error);
+
                                 if (!t)
                                     matchFail(autocall_error.replace("\t", "\t\t"));
 
