@@ -139,7 +139,7 @@ pub fn parse(
 
     //
 
-    mut fuzimports: string[];
+    mut imports:    Import[];
     mut warnings:   string[];
 
     fn registerImport(mut value: string): string
@@ -153,8 +153,15 @@ pub fn parse(
                 ? path::join(dir, value)
                 : dir ~ '\v' ~ value;
 
-        if (!fuzimports.has(value))
-            fuzimports.push(value);
+        :ADD
+        {
+            imports.each: |import|
+                if (import.value == value)
+                    break :ADD;
+
+            imports ~= Import(:value,
+                token: TokenIdx(:modid, tokidx: _loc));
+        }
 
         return value;
     }
@@ -2174,5 +2181,5 @@ pub fn parse(
     let root = parseRoot();
 
     return ParserOutput(
-        :root, :fuzimports, :warnings);
+        :root, :imports, :warnings);
 }

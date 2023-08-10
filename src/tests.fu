@@ -8488,7 +8488,7 @@ pub extern fn runTests()
     // /quite right
 
 
-    // Let's move on to some cooler quality of life shit.
+    // Quality of life.
 
     ZERO(`
         let a = 7;
@@ -8536,7 +8536,7 @@ pub extern fn runTests()
 
     ZERO(`
         struct ScopeIdx { raw: i32; };
-        <fail bad call to = 12:27>
+        <fail bad call = 12:27+1 incompatible types for T>
         fn thing(x: i32) x;             <pass/>
         fn thing(x: i32) ScopeIdx(x);   </fail>
         mut _return_scope: ScopeIdx;
@@ -10815,6 +10815,21 @@ pub extern fn runTests()
         pub inline fn fun(x: i32) recB(x);
     `,`
         fn main() _0::fun(0) == 2 ? 0 : 1;                      ;; GNUStmtExpr
+    `]);
+
+    ZERO([`
+        fn add2(x: i32) x + 2;
+        fn times10(x: i32)
+            <fail import circ 2:9+6 5:23+2>
+                x * _1::add5(5)     <pass/>
+                x * 10              </fail>;
+    `,
+    `
+        import _0;
+        fn add5(x: i32) add2(x) + 3;
+    `,
+    `
+        fn main() _0::times10(_1::add5(8)) - 130;
     `]);
 
     // /Pubs & imports.

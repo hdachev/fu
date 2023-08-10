@@ -1,23 +1,35 @@
 import module;
 import context;
 
+pub fn FAIL_text(token: TokenIdx, reason: string): string
+{
+    let src = getModuleSrc(:token.modid);
+
+    return FAIL_text(:src, :reason,
+        fname: token._fname,
+        token: token._token);
+}
+
+pub fn FAIL_text(
+    fname!: string, src!: string,
+    token!: LineColChars, reason!: string): string
+{
+    let addr    = formatTokenCoord(:fname, :token);
+    let snippet = formatCodeSnippet(:src, :token);
+
+    return addr ~ ":\n\n" ~ snippet ~ "\n\t" ~ reason ~ "\n";
+}
+
 pub fn FAIL(implicit _here: TokenIdx, reason: string): never
 {
-    let src     = getModuleSrc(:_here.modid);
-    let token   = _here._token;
-    let fname   = _here._fname;
-
-    return FAIL(:fname, :src, :token, :reason);
+    throw (FAIL_text(token: _here, :reason));
 }
 
 pub fn FAIL(
     fname!: string, src!: string,
     token!: LineColChars, reason!: string): never
 {
-    let addr    = formatTokenCoord(:fname, :token);
-    let snippet = formatCodeSnippet(:src, :token);
-
-    return throw(addr ~ ":\n\n" ~ snippet ~ "\n\t" ~ reason ~ "\n");
+    throw (FAIL_text(:fname, :src, :token, :reason));
 }
 
 pub fn HERE(implicit ref _here: TokenIdx, node.token: TokenIdx)

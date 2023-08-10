@@ -3,21 +3,28 @@ import context;
 import stat;
 import options;
 import module;
+import fail;
 
 
 //
 
-fn compile_lexParseDeps(fname: string, via?: string)
+fn compile_lexParseDeps(fname: string, via?: TokenIdx[])
 {
     let module = getModule(fname);
     if (module.in)
     {
+        if (module.order)
+            return module.order;
+
         // Having input stuff solved but no output stuff means circular import -
         //  module.out is currently being worked on the stack above us somewhere.
-        module.order || throw(
-            "import circle: `" ~ fname ~ "\n\t<- " ~ via ~ "`.");
+        mut error = "";
+        via.each: |token, i|
+            error ~= FAIL_text(:token, i == via.len - 1
+                ? "Resulting in an import circle, not currently supported."
+                : "Imports:\n");
 
-        return module.order || throw("BUG: !!module.in but !module.order");
+        throw(error);
     }
 
     shadow let implicit mut module = module.clone();
@@ -26,7 +33,7 @@ fn compile_lexParseDeps(fname: string, via?: string)
 
     //
     let src = getFile(fname) || throw(
-        "import badfile: `" ~ via ~ fname ~ "`.");
+        "import badfile: `" ~ via.len ~ fname ~ "`.");
 
     let stat0 = ModuleStat_now();
     let lexer_result = lexer::lex(:fname, :src);
@@ -54,13 +61,12 @@ fn compile_lexParseDeps(fname: string, via?: string)
         module.order.dep_depth = 1;
 
         // Ensure dependencies.
-        let fuzimports = module.in.parse.fuzimports;
-        for (mut i = 0; i < fuzimports.len; i++)
+        module.in.parse.imports.each: |import|
         {
             let order =
                 compile_lexParseDeps(
-                    fname: resolveFile(fuzimports[i]),
-                      via: fname ~ (via && "\n\t<- " ~ via));
+                    fname: resolveFile(import.value),
+                      via:       via ~ import.token);
 
             if (module.order.dep_depth <= order.dep_depth)
                 module.order.dep_depth  = order.dep_depth + 1;
@@ -102,9 +108,9 @@ fn compile_solveCodegen(implicit ref module: Module, implicit options: Options)
 pub fn compile(
     implicit ref ctx: Context,
     implicit options: Options,
-    fname: string, via?: string)
+    fname: string)
 {
-    compile_lexParseDeps(:fname, :via);
+    compile_lexParseDeps(:fname);
 
     // Sort the dep order.
     mut dep_order: i32[][];

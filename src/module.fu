@@ -80,10 +80,16 @@ struct LexerOutput
     tokens:     Token[];
 };
 
+struct Import
+{
+    token:      TokenIdx;
+    value:      string;
+};
+
 struct ParserOutput
 {
     root:       Node;
-    fuzimports: string[];
+    imports:    Import[];
     warnings:   string[];
 }
 

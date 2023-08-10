@@ -7250,7 +7250,7 @@ pub fn solve(
                 return m;
         }
 
-        fail("Cannot locate: " ~ fname);
+        BUG("findModule: cannot locate: " ~ fname);
     }
 
     fn solveImport(node: Node): SolvedNode
