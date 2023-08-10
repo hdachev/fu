@@ -1541,7 +1541,13 @@ pub fn solve(
                                 mut autocall_error = error
                                     && "Cannot match " ~ host_arg ~ " autocall " ~ host_arg.autocall.qCODE ~ ": ";
 
-                                let t = tryMatch__mutargs(:misc_scope, :local_scope,
+                                let t = tryMatch__mutargs(
+
+                                    // TODO allow autocalls to be fully::qualified,
+                                    //  in which case we'd be doing `local_scope: false`, and
+                                    //   `misc_scope: modules[autocall_modid].items` here instead
+                                    local_scope: true,
+
                                     id: host_arg.autocall, args: autocall_args, flags: F_ACCESS,
                                     reorder: autocall_reorder, conversions: autocall_conversions,
                                     error: autocall_error);
