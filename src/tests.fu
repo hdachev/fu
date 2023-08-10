@@ -12290,6 +12290,24 @@ pub extern fn runTests()
         }
     `);
 
+    ZERO(`
+        struct Token { index: i32 };
+        struct Node  { token: Token };
+        <split/>
+        fn HERE(t.token<alt>: Token</alt>) t.index * 11;
+        <split/>
+        fn main = HERE(Node(Token(3))) - 33;
+    `);
+
+    ZERO([`
+        struct Token { index: i32 };
+        struct Node  { token: Token };
+    `,`
+        fn HERE(t.token<alt>: _0::Token</alt>) t.index * 11;
+    `,`
+        fn main = _1::HERE(_0::Node(_0::Token(3))) - 33;
+    `]);
+
     // /Autocall, varargs & rest params.
 
 
