@@ -10832,6 +10832,16 @@ pub extern fn runTests()
         fn main() _0::times10(_1::add5(8)) - 130;
     `]);
 
+    ZERO([`
+        fn hello(x: i32) x * 3;
+    `,
+    `
+        <fail could not resolve import _2 3:9+6>
+        import _2;                       <pass/>
+        import _0;                       </fail>
+        fn main() hello(4) - 12;
+    `]);
+
     // /Pubs & imports.
 
 

@@ -4,6 +4,7 @@ import stat;
 import options;
 import module;
 import fail;
+import ansi;
 
 
 //
@@ -32,8 +33,26 @@ fn compile_lexParseDeps(fname: string, via?: TokenIdx[])
     module.out && throw("BUG: !!module.out");
 
     //
-    let src = getFile(fname) || throw(
-        "import badfile: `" ~ via.len ~ fname ~ "`.");
+    let src = getFile(fname);
+
+    if (!src)
+    {
+        let token = via.if_last;
+        if (token)
+        {
+            mut err = "Could not resolve this import.";
+            mut dirEnd = fname.find('\v');
+            if (dirEnd > 0)
+            {
+                err ~= "\n\n\tSearched relative to:    \t" ~ fname.slice(0, dirEnd).qBAD;
+                err ~=   "\n\tLooking for a file named:\t" ~ fname.slice(dirEnd + 1).qBAD;
+            }
+
+            FAIL(_here: token, err);
+        }
+
+        throw("Could not load " ~ fname.qBAD ~ ": file does not exist or is empty.");
+    }
 
     let stat0 = ModuleStat_now();
     let lexer_result = lexer::lex(:fname, :src);
