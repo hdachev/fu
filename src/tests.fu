@@ -1391,6 +1391,18 @@ pub extern fn runTests()
         fn main() infRec(1);
     `);
 
+    ZERO([`
+        struct NeverImported { x: i32 };
+        fn wrap(x: i32) NeverImported(x * 10);
+    `,
+    `
+        fn rec(y: i32)
+            if (y < 0)  return _0::wrap(rec(y + 7).x);
+            else        return _0::wrap(y);
+
+        fn main() rec(-2).x - 500;
+    `])
+
     // /Recursion, closures & implicit arguments.
 
 
