@@ -282,6 +282,12 @@ pub fn solve(
         AQ_WhyNotNovec
     };
 
+    enum DeadBreak {
+        DeadBreak_Dont = 0
+        DeadBreak_Always
+        DeadBreak_Only_WhileSolvingRecursion
+    };
+
 
     // The solver state.
 
@@ -2125,7 +2131,7 @@ pub fn solve(
 
     fn solveDeclExpr(node: Node): SolvedNode
     {
-        mut res = solveNodes([ node ], dead_brk: false).only;
+        mut res = solveNodes([ node ], DeadBreak_Dont).only;
 
         // Anonymous structs & co.
         //
@@ -3878,7 +3884,7 @@ pub fn solve(
         push(HelpersData());
 
         //
-        let items = solveNodes(node.items, t_void, dead_brk: true);
+        let items = solveNodes(node.items, DeadBreak_Always, t_void);
         if (items.if_last.is_never)
         {
             _here = items.last.token;
@@ -3927,7 +3933,7 @@ pub fn solve(
             type_all:           t_void,
             type_last:          type,
             use_type_last:      !type.is_void,
-            dead_brk:           true);
+            DeadBreak_Always);
 
         // TODO clean this up, non-return ret-expects
         //
@@ -4292,8 +4298,8 @@ pub fn solve(
     {
         if (node.value != "break")
             return SolvedNode("pragma", :node.value,
-                items: solveNodes(node.items,
-                    dead_brk: false /* I think? */), type: t_void);
+                items: solveNodes(node.items, DeadBreak_Dont),
+                 type: t_void);
 
         compilerBreak();
         return createEmpty();
@@ -5206,7 +5212,7 @@ pub fn solve(
 
             // Seed return value.
             mut ret_seed = n_ret    ? ret_expect || BUG("falsy ret_expect: " ~ n_fn.value)
-                                    : t_never;
+                                    : t_AssumeNever_WhileSolvingRecursion;
 
             if (ret_seed.lifetime)
             {
@@ -6922,7 +6928,7 @@ pub fn solve(
 
         // Control flow & deadcode elim.
         //  TODO break & continue.
-        let items = solveNodes(items_ast, dead_brk: true);
+        let items = solveNodes(items_ast, DeadBreak_Always);
         let type  = items.if_last.type.is_never ? t_never : t_void;
 
         return createBlock(type, items);
@@ -7723,8 +7729,12 @@ pub fn solve(
             // Can't dead code elim naively -
             //  A] Order of eval depends on target right now, can't be assumed here.
             //  B] Fns with inline arguments can sink nevers inside their bodies.
-            dead_brk: false);
+            DeadBreak_Only_WhileSolvingRecursion);
 
+        if (args.if_last.is_AssumeNever_WhileSolvingRecursion)
+            return args.last;
+
+        //
         return solveCall(id: node.value, args, :node.flags, :target);
     }
 
@@ -7798,7 +7808,7 @@ pub fn solve(
                 target: lookupUserType(type).target);
 
         // Dead code elim.
-        mut args = solveNodes(node.items, itemType, dead_brk: true);
+        mut args = solveNodes(node.items, DeadBreak_Always, itemType);
         if (args.if_last.type.is_never)
         {
             makeNote(N_DeadArrlit);
@@ -8170,7 +8180,7 @@ pub fn solve(
             use_type_last:      true,
             static_eval_brk:    SE_True,
             type_all:           type.is_void ? t_proposition : type,
-            dead_brk:           true);
+            DeadBreak_Always);
 
         return createOr(items, :type);
     }
@@ -8250,7 +8260,7 @@ pub fn solve(
             use_type_last:      true,
             static_eval_brk:    SE_False,
             type_all:           t_proposition,
-            dead_brk:           true);
+            DeadBreak_Always);
 
         return createAnd(items, :type);
     }
@@ -9330,7 +9340,7 @@ pub fn solve(
 
     fn solveNodes(
         nodes: Node[],
-        dead_brk!: bool,
+        dead_brk: DeadBreak,
         type_all?: Type,
         type_last!?: Type,
         use_type_last!?: bool,
@@ -9366,7 +9376,9 @@ pub fn solve(
                 result ~= solved;
 
                 // Dead code elim.
-                if (solved.type.is_never && dead_brk)
+                if (solved.type.is_never && dead_brk
+                        && (dead_brk != DeadBreak_Only_WhileSolvingRecursion ||
+                            solved.type.is_AssumeNever_WhileSolvingRecursion))
                 {
                     if (i < nodes.len - 1)
                         makeNote(N_DeadCode);

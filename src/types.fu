@@ -108,8 +108,8 @@ pub fn propositionOK(type: Type) {
 
 // I think these should also be non-refereable?
 
-fn NotSure(canon: string)
-    Type(ValueType(:canon, quals: 0));
+fn NotSure(canon: string, quals?: Quals)
+    Type(ValueType(:canon, :quals));
 
 pub let t_void      = NotSure("void");
 pub let t_never     = NotSure("never");
@@ -118,6 +118,15 @@ pub let t_zeroes    = NotSure("zeroes");
 pub fn is_void  (t: Type) t.canon == t_void  .canon;
 pub fn is_never (t: Type) t.canon == t_never .canon;
 pub fn is_zeroes(t: Type) t.canon == t_zeroes.canon;
+
+
+//
+
+pub let t_AssumeNever_WhileSolvingRecursion =
+    NotSure("never", q_rx_resize);
+
+pub fn is_AssumeNever_WhileSolvingRecursion(t: Type) =
+    t.canon == "never" && t.quals & q_rx_resize;
 
 
 //
