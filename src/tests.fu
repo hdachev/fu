@@ -84,6 +84,7 @@ pub extern fn runTests()
 
     // Categorizing what doesn't work and why -
 
+    let TODO_recursion  = fn TODO;
     let TODO_enums      = fn TODO;
     let TODO_structs    = fn TODO;
     let TODO_borrowck   = fn TODO;
@@ -1371,6 +1372,23 @@ pub extern fn runTests()
 
             return log_events == 2 ? 0 : 1;
         }
+    `);
+
+    TODO_recursion(currently: "BUG exit code", `
+
+        // TODO remove this, currently gets repeatedly
+        //  rebuilt & rejected because of -Werror
+        pragma emit(\`#pragma GCC diagnostic ignored "-Winfinite-recursion"\`);
+
+        fn infRec(x: i32) {
+            if (x > 1)
+                return infRec(x - 1);
+            else                        <fail infinite recur X:X>
+                return infRec(x + 1);   <pass/>
+                return x;               </fail>
+        }
+
+        fn main() infRec(1);
     `);
 
     // /Recursion, closures & implicit arguments.
