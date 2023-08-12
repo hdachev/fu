@@ -1963,7 +1963,13 @@ pub fn solve(
                                     ~ humanizeType(expect) ~ " in this scope:" ~ suffix);
                         }
 
-                        match = path ~ t;
+                        match = path;
+
+                        // AUTOCALL /////////////
+                        if (TODO_FIX_conversions)
+                            match ~= TODO_FIX_conversions.only;
+
+                        match ~= t;
                     }
                     else
                     {
@@ -1995,7 +2001,15 @@ pub fn solve(
                             }
 
                             ///////////////////////////////
-                            path.push(t); defer path.pop();
+                            let path0 = path.len;
+                            defer path.shrink(path0);
+
+                            // AUTOCALL /////////////
+                            if (TODO_FIX_conversions)
+                                path ~= TODO_FIX_conversions.only;
+
+                            path ~= t;
+
                             ///////////////////////////////
                             descend(convertType, nullary: false, :isStruct);
                             ///////////////////////////////
