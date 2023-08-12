@@ -11714,16 +11714,11 @@ pub extern fn runTests()
     ZERO(`
         struct A { a: i32; };
         struct B { b: i32; };
-        using fn bananas(a: A) B(a.a * 2);
 
-        <split/>
-        fn main() 1.A.b - 2;
-    `);
-
-    ZERO(`
-        struct A { a: i32; };
-        struct B { b: i32; };
-        using fn bananas(a) B(a.a * 2); // <- template
+        <alt>
+        using fn bananas(a: A)  B(a.a * 2); <alt/>
+        using fn bananas(a)     B(a.a * 2); <alt/>
+        using fn bananas(a.a)   B(  a * 2); </alt>
 
         <split/>
         fn main() 1.A.b - 2;
