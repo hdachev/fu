@@ -12596,6 +12596,16 @@ pub extern fn runTests()
         fn main() = _1::unwrap(_2::wrap(4)) - 70;
     `]);
 
+    ZERO([`
+        fn Hello(_: $T) struct { world: $T }
+    `,`
+        fn getHello(x: i32): _0::Hello(i32) = [ x * x ];
+    `,`
+        fn hello(x: i32) _1::getHello(x + 3);
+    `,`
+        fn main() _2::hello(2).world - 25;
+    `]);
+
     ZERO(`
         fn sB(_: $T) struct { hey: $T; };
 
