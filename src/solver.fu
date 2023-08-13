@@ -1378,7 +1378,7 @@ pub fn solve(
 
             //
             mut shadows: bool;
-            :MATCH_FAIL while (overloadIdx =
+            :SHADOWING_GROUP while (overloadIdx =
                 target
                     ? search(dont_search_just_return: target, scope_iterator)
                     : local_scope
@@ -1400,343 +1400,337 @@ pub fn solve(
                     if (error)
                         error ~= "\n\n\t" ~ overloadIdx.explainWhichFn ~ "\n\t    " ~ err;
 
-                    continue :MATCH_FAIL;
+                    continue :SHADOWING_GROUP;
                 }
 
-                :TEST_AGAIN while (true)
+                // Make sure we know what this is.
+                ensureLazySolved(overloadIdx);
+
+                let overload = GET(overloadIdx);
+
+                let kind    = overload.kind;
+                let isType  = kind == "type";
+
+                ////////////////////////////////////////////
+                // Conversions / typename aliases.
+                if (minArity && isType && !target)
                 {
-                    // Make sure we know what this is.
-                    ensureLazySolved(overloadIdx);
+                    let alt = overload.type.canon;
+                    if (alt != id) // e.g. i32
+                        alternate_ids.push(alt);
+                }
+                ////////////////////////////////////////////
 
-                    let overload = GET(overloadIdx);
+                // Arity check.
+                let arity = overloadIdx.EXT;
+                let isZeroInit = isType && !explicitArity;
+                if (!isZeroInit && (arity.max < minArity || arity.min > maxArity))
+                {
+                    fn str(min: i32, max: i32)
+                        min != max  ? "[" ~ min ~ " upto " ~ max ~ "]"
+                                    : min.str;
 
-                    let kind    = overload.kind;
-                    let isType  = kind == "type";
+                    matchFail("Wrong number of arguments: expects " ~ str(:arity.min, :arity.max)
+                            ~ ", got " ~ str(minArity, maxArity) ~ ".");
+                }
 
-                    ////////////////////////////////////////////
-                    // Conversions / typename aliases.
-                    if (minArity && isType && !target)
+                // Reorder by argument names or number of implicit `using` args.
+                let host_args   = arity.args;
+                let num_usings  = !isZeroInit && arity.min > explicitArity
+                                && arity.min - explicitArity;
+
+                mut use_reorder = false;
+                if (!names)
+                    reorderByNumUsings(:use_reorder, :reorder, host_args, args.len, :num_usings);
+                else if (!reorderByArgIDs(:use_reorder, :reorder, names, optional, host_args, :num_usings))
+                    matchFail("Unknown argument name: " ~ ERRMSG_findUnmatchedArgName(:reorder, :names));
+
+                // Forbid optional argument ambiguities -
+                //  We should either have all optional args satisfied at the receiver or sender part,
+                //   we shouldn't allow dangling cables on both ends because that's super typo-prone.
+                //
+                if (optional && reorder)
+                    if (reorder.len < args.len && reorder.len < arity.max)
+                        matchFail("Optional argument ambiguity, not all optional arguments provided, and not all callsite arguments used. Cannot distinguish from a typo. [TODO LIST MISSING ARGS]");
+
+                // TODO FIX the two reorder fns don't deal correctly with rest args,
+                //  this seems to fix it but honestly I'm not sure
+                //   if it can deal with the rest of the arg-related stuff.
+                //
+                mut REST_TYPE: Type;
+                let REST_START = arity.findRestStart();
+                if (REST_START < host_args.len)
+                    if (use_reorder && reorder.len < args.len)
+                        for (mut i = 0; i < args.len; i++)
+                            if (!optional.has(i) && !reorder.has(i))
+                                reorder ~= i;
+
+                let N = (use_reorder ? reorder.len : args.len)
+                    .max(!isZeroInit && arity.min);
+
+                if (N)
+                {
+                    if (REST_START < N)
                     {
-                        let alt = overload.type.canon;
-                        if (alt != id) // e.g. i32
-                            alternate_ids.push(alt);
+                        let expect = host_args[REST_START].type;
+                        if (expect)
+                            REST_TYPE = tryClear_sliceable(expect) || fail(
+                                overloadIdx.name
+                                    ~ ": Rest argument annotation is not an array: "
+                                    ~ humanizeType(expect));
                     }
-                    ////////////////////////////////////////////
 
-                    // Arity check.
-                    let arity = overloadIdx.EXT;
-                    let isZeroInit = isType && !explicitArity;
-                    if (!isZeroInit && (arity.max < minArity || arity.min > maxArity))
+                    reorder.len >= args.len || !reorder || optional || BUG("reorder < args:\n\t\treorder=" ~ reorder.len ~ "\n\t\t#args=" ~ args.len);
+
+                    :ARG_OK
+                    for (mut i = 0; i < N; i++)
                     {
-                        fn str(min: i32, max: i32)
-                            min != max  ? "[" ~ min ~ " upto " ~ max ~ "]"
-                                        : min.str;
+                        let rest        = i >= REST_START;
+                        let host_arg    = host_args[rest ? REST_START : i];
+                        let expect      = rest ? REST_TYPE : host_arg.type;
 
-                        matchFail("Wrong number of arguments: expects " ~ str(:arity.min, :arity.max)
-                                ~ ", got " ~ str(minArity, maxArity) ~ ".");
-                    }
+                        // Its either reorder or args, asserted above [^].
+                        let callsiteIndex   = use_reorder   ? reorder[i]
+                                            : i < args.len  ? i
+                                            : /*using*/ -1;
 
-                    // Reorder by argument names or number of implicit `using` args.
-                    let host_args   = arity.args;
-                    let num_usings  = !isZeroInit && arity.min > explicitArity
-                                    && arity.min - explicitArity;
-
-                    mut use_reorder = false;
-                    if (!names)
-                        reorderByNumUsings(:use_reorder, :reorder, host_args, args.len, :num_usings);
-                    else if (!reorderByArgIDs(:use_reorder, :reorder, names, optional, host_args, :num_usings))
-                        matchFail("Unknown argument name: " ~ ERRMSG_findUnmatchedArgName(:reorder, :names));
-
-                    // Forbid optional argument ambiguities -
-                    //  We should either have all optional args satisfied at the receiver or sender part,
-                    //   we shouldn't allow dangling cables on both ends because that's super typo-prone.
-                    //
-                    if (optional && reorder)
-                        if (reorder.len < args.len && reorder.len < arity.max)
-                            matchFail("Optional argument ambiguity, not all optional arguments provided, and not all callsite arguments used. Cannot distinguish from a typo. [TODO LIST MISSING ARGS]");
-
-                    // TODO FIX the two reorder fns don't deal correctly with rest args,
-                    //  this seems to fix it but honestly I'm not sure
-                    //   if it can deal with the rest of the arg-related stuff.
-                    //
-                    mut REST_TYPE: Type;
-                    let REST_START = arity.findRestStart();
-                    if (REST_START < host_args.len)
-                        if (use_reorder && reorder.len < args.len)
-                            for (mut i = 0; i < args.len; i++)
-                                if (!optional.has(i) && !reorder.has(i))
-                                    reorder ~= i;
-
-                    let N = (use_reorder ? reorder.len : args.len)
-                        .max(!isZeroInit && arity.min);
-
-                    if (N)
-                    {
-                        if (REST_START < N)
+                        if (callsiteIndex < 0)
                         {
-                            let expect = host_args[REST_START].type;
-                            if (expect)
-                                REST_TYPE = tryClear_sliceable(expect) || fail(
-                                    overloadIdx.name
-                                        ~ ": Rest argument annotation is not an array: "
-                                        ~ humanizeType(expect));
-                        }
+                            // Argument may not be defaulted -
+                            //  we might be supplying defaults via names
+                            //   before we've actually exhausted
+                            //    all the non-defaulted stuff.
+                            //
+                            if (host_arg.default || host_arg.flags & F_IMPLICIT)
+                                continue :ARG_OK;
 
-                        reorder.len >= args.len || !reorder || optional || BUG("reorder < args:\n\t\treorder=" ~ reorder.len ~ "\n\t\t#args=" ~ args.len);
-
-                        :ARG_OK
-                        for (mut i = 0; i < N; i++)
-                        {
-                            let rest        = i >= REST_START;
-                            let host_arg    = host_args[rest ? REST_START : i];
-                            let expect      = rest ? REST_TYPE : host_arg.type;
-
-                            // Its either reorder or args, asserted above [^].
-                            let callsiteIndex   = use_reorder   ? reorder[i]
-                                                : i < args.len  ? i
-                                                : /*using*/ -1;
-
-                            if (callsiteIndex < 0)
+                            // Usings - can't match on explicitly named arguments.
+                            if !(host_arg.flags & F_MUSTNAME || flags & F_CONVERSION)
                             {
-                                // Argument may not be defaulted -
-                                //  we might be supplying defaults via names
-                                //   before we've actually exhausted
-                                //    all the non-defaulted stuff.
+                                // Can't proceed if we don't know what we're looking for.
+                                //  If we decide to not support more than a single using,
+                                //   we could simply assume it's a match here.
                                 //
-                                if (host_arg.default || host_arg.flags & F_IMPLICIT)
-                                    continue :ARG_OK;
-
-                                // Usings - can't match on explicitly named arguments.
-                                if !(host_arg.flags & F_MUSTNAME || flags & F_CONVERSION)
+                                if (expect)
                                 {
-                                    // Can't proceed if we don't know what we're looking for.
-                                    //  If we decide to not support more than a single using,
-                                    //   we could simply assume it's a match here.
-                                    //
-                                    if (expect)
+                                    let conversion = tryConvert(:misc_scope, :local_scope, :expect);
+                                    if (conversion)
                                     {
-                                        let conversion = tryConvert(:misc_scope, :local_scope, :expect);
-                                        if (conversion)
-                                        {
-                                            conversions.grow_if_oob(i) = conversion;
-                                            continue :ARG_OK;
-                                        }
+                                        conversions.grow_if_oob(i) = conversion;
+                                        continue :ARG_OK;
                                     }
                                 }
-
-                                matchFail("Cannot infer missing " ~ host_arg);
                             }
 
-                            // Explicit argname requirements.
-                            if (host_arg.flags & F_MUSTNAME)
+                            matchFail("Cannot infer missing " ~ host_arg);
+                        }
+
+                        // Explicit argname requirements.
+                        if (host_arg.flags & F_MUSTNAME)
+                        {
+                            if (names.len <= callsiteIndex || !names[callsiteIndex])
+                                matchFail(host_arg ~ " must be :explicitly named.");
+                        }
+
+                        // Autocall.
+                        if (host_arg.autocall)
+                        {
+                            mut autocall_args:          SolvedNode[];
+                            mut autocall_reorder:       i32[];
+                            mut autocall_conversions:   Target[][];
+
+                            autocall_args.resize(1);
+                            autocall_args[0] = args[callsiteIndex];
+
+                            mut autocall_error = error
+                                && "Cannot match " ~ host_arg ~ " autocall " ~ host_arg.autocall.qCODE ~ ": ";
+
+                            let t = tryMatch__mutargs(
+
+                                // TODO allow autocalls to be fully::qualified,
+                                //  in which case we'd be doing `local_scope: false`, and
+                                //   `misc_scope: modules[autocall_modid].items` here instead
+                                local_scope: true,
+
+                                id: host_arg.autocall, args: autocall_args, flags: F_ACCESS,
+                                reorder: autocall_reorder, conversions: autocall_conversions,
+                                error: autocall_error);
+
+                            if (!t)
+                                matchFail(autocall_error.replace("\t", "\t\t"));
+
+                            if (autocall_conversions)
+                                conversions.grow_if_oob(i) ~= autocall_conversions.only;
+
+                            conversions.grow_if_oob(i) ~= t;
+                            autocall_reorder.len < 2 || BUG("autocall: reorder");
+                        }
+
+                        // Actual arg type.
+                        let hasConv = conversions.len > i && conversions[i].len;
+                        let actual = hasConv
+                            ? GET(conversions[i].last).type
+                            : args[callsiteIndex].type;
+
+                        if (actual.is_never)
+                        {
+                            // Converting to never means no point in going further,
+                            //  the caller node will never call this.
+                            if !(host_arg.flags & F_INLINE)
+                                TODO_FIX_dontBotherSpecializing = true;
+
+                            continue :ARG_OK;
+                        }
+
+                        // Templates arguments.
+                        if (!expect)
+                        {
+                            // TODO FIX Check that ref args are mutrefs,
+                            //  otherwise we get mustMatch fails after a spec-ok.
+                            if (host_arg.flags & F_REF && !actual.is_mutref)
+                                matchFail(host_arg ~ " expects a mutref, got " ~ humanizeType(actual));
+
+                            continue :ARG_OK;
+                        }
+
+                        if (isAssignableAsArgument(expect, actual || BUG("tryMatch: !actual")))
+                            continue :ARG_OK;
+
+                        /////////////////
+                        // Literal fixup.
+                        if (!hasConv)
+                        {
+                            let        arg = args[callsiteIndex];
+                            shadow let arg = arg.kind == "argid"
+                                ? arg.items.only
+                                : arg;
+
+                            let retype = tryRetyping(arg, expect);
+                            if (retype && isAssignableAsArgument(expect, retype))
+                                continue :ARG_OK;
+                        }
+                        //        /LITFIX
+                        /////////////////
+
+                        // Go through conversions here.
+                        if !(flags & F_CONVERSION)
+                        {
+                            let conversion = tryConvert(:misc_scope, :local_scope, :expect, :actual, retype: !hasConv && args[callsiteIndex]);
+                            if (conversion)
                             {
-                                if (names.len <= callsiteIndex || !names[callsiteIndex])
-                                    matchFail(host_arg ~ " must be :explicitly named.");
+                                conversions.grow_if_oob(i) ~= conversion;
+                                continue :ARG_OK;
                             }
+                        }
 
-                            // Autocall.
-                            if (host_arg.autocall)
-                            {
-                                mut autocall_args:          SolvedNode[];
-                                mut autocall_reorder:       i32[];
-                                mut autocall_conversions:   Target[][];
+                        // Nope, args fail.
+                        matchFail(host_arg  ~ " expects " ~ humanizeType(expect)
+                                            ~ ", got "    ~ humanizeType(actual));
+                    }
 
-                                autocall_args.resize(1);
-                                autocall_args[0] = args[callsiteIndex];
-
-                                mut autocall_error = error
-                                    && "Cannot match " ~ host_arg ~ " autocall " ~ host_arg.autocall.qCODE ~ ": ";
-
-                                let t = tryMatch__mutargs(
-
-                                    // TODO allow autocalls to be fully::qualified,
-                                    //  in which case we'd be doing `local_scope: false`, and
-                                    //   `misc_scope: modules[autocall_modid].items` here instead
-                                    local_scope: true,
-
-                                    id: host_arg.autocall, args: autocall_args, flags: F_ACCESS,
-                                    reorder: autocall_reorder, conversions: autocall_conversions,
-                                    error: autocall_error);
-
-                                if (!t)
-                                    matchFail(autocall_error.replace("\t", "\t\t"));
-
-                                if (autocall_conversions)
-                                    conversions.grow_if_oob(i) ~= autocall_conversions.only;
-
-                                conversions.grow_if_oob(i) ~= t;
-                                autocall_reorder.len < 2 || BUG("autocall: reorder");
-                            }
-
-                            // Actual arg type.
-                            let hasConv = conversions.len > i && conversions[i].len;
-                            let actual = hasConv
+                    if (REST_START < N)
+                    {
+                        for (mut i = REST_START; i < N; i++)
+                        {
+                            let hasConv         = conversions.len > i && conversions[i].len;
+                            let callsiteIndex   = use_reorder ? reorder[i] : i;
+                            let actual          = hasConv
                                 ? GET(conversions[i].last).type
                                 : args[callsiteIndex].type;
 
-                            if (actual.is_never)
-                            {
-                                // Converting to never means no point in going further,
-                                //  the caller node will never call this.
-                                if !(host_arg.flags & F_INLINE)
-                                    TODO_FIX_dontBotherSpecializing = true;
-
-                                continue :ARG_OK;
-                            }
-
-                            // Templates arguments.
-                            if (!expect)
-                            {
-                                // TODO FIX Check that ref args are mutrefs,
-                                //  otherwise we get mustMatch fails after a spec-ok.
-                                if (host_arg.flags & F_REF && !actual.is_mutref)
-                                    matchFail(host_arg ~ " expects a mutref, got " ~ humanizeType(actual));
-
-                                continue :ARG_OK;
-                            }
-
-                            if (isAssignableAsArgument(expect, actual || BUG("tryMatch: !actual")))
-                                continue :ARG_OK;
-
-                            /////////////////
-                            // Literal fixup.
-                            if (!hasConv)
-                            {
-                                let        arg = args[callsiteIndex];
-                                shadow let arg = arg.kind == "argid"
-                                    ? arg.items.only
-                                    : arg;
-
-                                let retype = tryRetyping(arg, expect);
-                                if (retype && isAssignableAsArgument(expect, retype))
-                                    continue :ARG_OK;
-                            }
-                            //        /LITFIX
-                            /////////////////
-
-                            // Go through conversions here.
-                            if !(flags & F_CONVERSION)
-                            {
-                                let conversion = tryConvert(:misc_scope, :local_scope, :expect, :actual, retype: !hasConv && args[callsiteIndex]);
-                                if (conversion)
-                                {
-                                    conversions.grow_if_oob(i) ~= conversion;
-                                    continue :ARG_OK;
-                                }
-                            }
-
-                            // Nope, args fail.
-                            matchFail(host_arg  ~ " expects " ~ humanizeType(expect)
-                                                ~ ", got "    ~ humanizeType(actual));
+                            // TODO FAILCASE
+                            // TODO FAILCASE no coverage for never items here,
+                            // TODO FAILCASE  trivial to fix, replace with superType_neverOK
+                            REST_TYPE = i == REST_START
+                                ? solveArrlit_itemType_init(head: actual)
+                                : type_trySuper(REST_TYPE, actual)
+                                    || matchFail("Rest arguments have no common supertype: "
+                                                             ~ humanizeType(REST_TYPE)
+                                                    ~ " <- " ~ humanizeType(actual));
                         }
 
-                        if (REST_START < N)
-                        {
-                            for (mut i = REST_START; i < N; i++)
-                            {
-                                let hasConv         = conversions.len > i && conversions[i].len;
-                                let callsiteIndex   = use_reorder ? reorder[i] : i;
-                                let actual          = hasConv
-                                    ? GET(conversions[i].last).type
-                                    : args[callsiteIndex].type;
-
-                                // TODO FAILCASE
-                                // TODO FAILCASE no coverage for never items here,
-                                // TODO FAILCASE  trivial to fix, replace with superType_neverOK
-                                REST_TYPE = i == REST_START
-                                    ? solveArrlit_itemType_init(head: actual)
-                                    : type_trySuper(REST_TYPE, actual)
-                                        || matchFail("Rest arguments have no common supertype: "
-                                                                 ~ humanizeType(REST_TYPE)
-                                                        ~ " <- " ~ humanizeType(actual));
-                            }
-
-                            REST_TYPE = solveArrlit_done(itemType: REST_TYPE);
-                        }
+                        REST_TYPE = solveArrlit_done(itemType: REST_TYPE);
                     }
-
-                    // Specialize.
-                    if (kind == "template" && !TODO_FIX_dontBotherSpecializing)
-                    {
-                        mut cant_reuse: string;
-
-                        shadow ref args_mangled =
-                            (use_reorder || conversions
-                                ? cant_reuse : reusable_mangle);
-
-                        let specIdx = trySpecialize(
-                            :overloadIdx, :args, :reorder, :use_reorder,
-                            :conversions, :args_mangled,
-                            :REST_START, :REST_TYPE);
-
-                        if (specIdx.is_SPECFAIL)
-                            matchFail(_spec_errors[specIdx.index] || "Could not specialize.");
-
-                        ensureLazySolved(overloadIdx = specIdx);
-                    }
-
-                    // TODO FIX: we allow ambig among overloads that will be dead-code eliminated by the callsite,
-                    //  but we don't ignore them when we're about to match something for real.
-                    if (ambigOkIdx && !TODO_FIX_dontBotherSpecializing)
-                        matchIdx = ambigOkIdx;
-
-                    // Forbid ambiguity.
-                    if (matchIdx)
-                    {
-                        fn GETfn(idx: i32) Target(modid: module.modid, index: idx);
-
-                        fn fnName(idx: i32) idx
-                            ? GETfn(idx).str
-                            : "global scope";
-
-                        let PREV        = matchIdx;
-                        let NEXT        = overloadIdx;
-
-                        if (SELF_TEST)
-                        {
-                            let inner       = PREV.localOf;             // first to match is innermost scope
-                            let outer       = NEXT.localOf;             //  what we're currently looking is upscope
-                            let callsite    = _current_fn.target.index; //   as seen from where we currently are
-
-                            mut _c = callsite;
-                            while (_c > inner) _c = GETfn(_c).localOf;
-                            _c == inner || BUG(
-                                "Leaking `" ~ id ~ "` between functions [inner/callsite]: "
-                                    ~ inner.fnName ~ "::" ~ PREV
-                                    ~ " is seen from " ~ callsite.fnName);
-
-                            mut _i = inner;
-                            while (_i > outer) _i = GETfn(_i).localOf;
-                            _i == outer || BUG(
-                                "Leaking `" ~ id ~ "` between functions [inner/outer]: "
-                                    ~ inner.fnName ~ "::" ~ PREV ~ " and "
-                                    ~ outer.fnName ~ "::" ~ NEXT
-                                    ~ " as seen from " ~ callsite.fnName);
-                        }
-
-                        fail("Ambiguous callsite, matches multiple items in scope:\n"
-                            ~ "\n\t" ~ explainWhichFn(PREV, conversions_out)
-                            ~ "\n\t" ~ explainWhichFn(NEXT, conversions    ));
-                    }
-
-                    // Done!
-                    if (TODO_FIX_dontBotherSpecializing)
-                        ambigOkIdx = overloadIdx;
-                    else
-                        matchIdx = overloadIdx;
-
-                    // Output conversions /////////////
-                    swap(reorder,     reorder_out    );
-                    swap(conversions, conversions_out);
-                    ///////////////////////////////////
-
-                    // Arity 0 auto-shadows.
-                    if (shadows)
-                        break :MATCH_FAIL;
-
-                    // Done here.
-                    break :TEST_AGAIN;
                 }
+
+                // Specialize.
+                if (kind == "template" && !TODO_FIX_dontBotherSpecializing)
+                {
+                    mut cant_reuse: string;
+
+                    shadow ref args_mangled =
+                        (use_reorder || conversions
+                            ? cant_reuse : reusable_mangle);
+
+                    let specIdx = trySpecialize(
+                        :overloadIdx, :args, :reorder, :use_reorder,
+                        :conversions, :args_mangled,
+                        :REST_START, :REST_TYPE);
+
+                    if (specIdx.is_SPECFAIL)
+                        matchFail(_spec_errors[specIdx.index] || "Could not specialize.");
+
+                    ensureLazySolved(overloadIdx = specIdx);
+                }
+
+                // TODO FIX: we allow ambig among overloads that will be dead-code eliminated by the callsite,
+                //  but we don't ignore them when we're about to match something for real.
+                if (ambigOkIdx && !TODO_FIX_dontBotherSpecializing)
+                    matchIdx = ambigOkIdx;
+
+                // Forbid ambiguity.
+                if (matchIdx)
+                {
+                    fn GETfn(idx: i32) Target(modid: module.modid, index: idx);
+
+                    fn fnName(idx: i32) idx
+                        ? GETfn(idx).str
+                        : "global scope";
+
+                    let PREV        = matchIdx;
+                    let NEXT        = overloadIdx;
+
+                    if (SELF_TEST)
+                    {
+                        let inner       = PREV.localOf;             // first to match is innermost scope
+                        let outer       = NEXT.localOf;             //  what we're currently looking is upscope
+                        let callsite    = _current_fn.target.index; //   as seen from where we currently are
+
+                        mut _c = callsite;
+                        while (_c > inner) _c = GETfn(_c).localOf;
+                        _c == inner || BUG(
+                            "Leaking `" ~ id ~ "` between functions [inner/callsite]: "
+                                ~ inner.fnName ~ "::" ~ PREV
+                                ~ " is seen from " ~ callsite.fnName);
+
+                        mut _i = inner;
+                        while (_i > outer) _i = GETfn(_i).localOf;
+                        _i == outer || BUG(
+                            "Leaking `" ~ id ~ "` between functions [inner/outer]: "
+                                ~ inner.fnName ~ "::" ~ PREV ~ " and "
+                                ~ outer.fnName ~ "::" ~ NEXT
+                                ~ " as seen from " ~ callsite.fnName);
+                    }
+
+                    fail("Ambiguous callsite, matches multiple items in scope:\n"
+                        ~ "\n\t" ~ explainWhichFn(PREV, conversions_out)
+                        ~ "\n\t" ~ explainWhichFn(NEXT, conversions    ));
+                }
+
+                // Done!
+                if (TODO_FIX_dontBotherSpecializing)
+                    ambigOkIdx = overloadIdx;
+                else
+                    matchIdx = overloadIdx;
+
+                // Output conversions /////////////
+                swap(reorder,     reorder_out    );
+                swap(conversions, conversions_out);
+                ///////////////////////////////////
+
+                // Arity 0 auto-shadows.
+                if (shadows)
+                    break :SHADOWING_GROUP;
             }
 
             //////////////////////////////////
