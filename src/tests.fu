@@ -10872,6 +10872,16 @@ pub extern fn runTests()
         fn main() hello(4) - 12;
     `]);
 
+    ZERO([`
+        pub struct What { thing: i32 };
+
+        <fail must_be_public not defined 2:33+14><pass/>
+        pub </fail>
+        fn must_be_public(x: What) = x.thing * 11;
+    `,`
+        fn main() = _0::What(3).must_be_public - 33;
+    `]);
+
     // /Pubs & imports.
 
 
