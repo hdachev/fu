@@ -1326,10 +1326,10 @@ pub fn solve(
                         continue;
 
                     //
-                    let items = ctx.modules[modid].out.solve.scope.items;
-                    for (shadow mut i = 0; i < items.len; i++)
-                        if (items[i].id == id)
-                            extra_items.push(items[i].target);
+                    let s = ctx.modules[modid].out.solve.scope;
+                    for (shadow mut i = 0; i < s.pub_items; i++)
+                        if (s.items[i].id == id)
+                            extra_items.push(s.items[i].target);
                 }
             }
 
