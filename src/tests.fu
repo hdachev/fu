@@ -12671,6 +12671,15 @@ pub extern fn runTests()
                     - 1110;
     `);
 
+    ZERO(`
+        fn Hey(_: $T) struct { hey: $T };
+
+        fn main() {
+            using let _ = Hey(i32[]);
+            return hey.len;
+        }
+    `);
+
     // /Template types
 
 

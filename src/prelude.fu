@@ -169,6 +169,10 @@ fn swap !T(ref a: T, ref b: T): void __native(
 // TODO mutval .=,
 //  just like the assignments and splice.
 
+fn typeof !T(lax _: T) = T;
+
+fn [] !T(/*TODO type*/lax _: T) = typeof([] => T[]);
+
 novec fn len !T(a: [T;]): int __native(".size()");
 
 novec fn [] !T(a: [T;], i: int)
