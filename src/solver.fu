@@ -8202,17 +8202,13 @@ pub fn solve(
         if !(type.propositionOK || type.is_void) :RESOLVE_SUPERTYPE
         {
             mut sumType: Type;
-            mut hasNever = false;
 
             // Sum types, ignoring never.
             for (mut i = items.len; i --> 0; )
             {
                 ref item = items[i];
                 if (item.type.is_never)
-                {
-                    hasNever = true;
                     continue;
-                }
 
                 //
                 if (sumType)
