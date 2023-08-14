@@ -1378,6 +1378,7 @@ pub extern fn runTests()
 
         // TODO remove this, currently gets repeatedly
         //  rebuilt & rejected because of -Werror
+        pragma emit(\`#pragma GCC diagnostic ignored "-Wpragmas"\`);
         pragma emit(\`#pragma GCC diagnostic ignored "-Winfinite-recursion"\`);
 
         fn infRec(x: i32) {
