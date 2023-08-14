@@ -242,10 +242,38 @@ pub fn parse(
             ~ (value && kind == token.kind && " " ~ token.value.qID));
     }
 
-    fn tryConsume(::kind, value?: [byte]): Token
+
+    //
+
+    fn tryConsume(::kind): Token
     {
         let token = tokens[_idx];
-        if (token.kind == kind && (!value || token.value == value))
+        if (token.kind == kind)
+        {
+            _idx++;
+            return token;
+        }
+
+        return [];
+    }
+
+    fn tryConsume(::kind, value: [byte]): Token
+    {
+        let token = tokens[_idx];
+        if (token.kind == kind && token.value == value)
+        {
+            _idx++;
+            return token;
+        }
+
+        return [];
+    }
+
+    fn tryConsume(::kind, value: [byte], peek: ::kind): Token
+    {
+        let token = tokens[_idx];
+        if (token.kind == kind && token.value == value
+                               && tokens[_idx + 1].kind == peek)
         {
             _idx++;
             return token;
@@ -1236,12 +1264,12 @@ pub fn parse(
         mut flags: Flags;
 
         //
-        if (tryConsume("id", "using"   ))   flags |= F_USING;
-        if (tryConsume("id", "implicit"))   flags |= F_IMPLICIT;
-        if (tryConsume("id", "lax"     ))   flags |= F_LAX;
-        if (tryConsume("id", "shadow"  ))   flags |= F_SHADOW;
-        if (tryConsume("id", "mut"     ))   flags |= F_MUT;
-        if (tryConsume("id", "ref"     ))   flags |= F_REF;
+        if (tryConsume("id", "using"    , peek: "id")) flags |= F_USING;
+        if (tryConsume("id", "implicit" , peek: "id")) flags |= F_IMPLICIT;
+        if (tryConsume("id", "lax"      , peek: "id")) flags |= F_LAX;
+        if (tryConsume("id", "shadow"   , peek: "id")) flags |= F_SHADOW;
+        if (tryConsume("id", "mut"      , peek: "id")) flags |= F_MUT;
+        if (tryConsume("id", "ref"      , peek: "id")) flags |= F_REF;
 
         // Experimental shorthand, meant for fn arguments -
         //

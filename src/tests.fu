@@ -8516,6 +8516,11 @@ pub extern fn runTests()
         }
     `);
 
+    ZERO(`
+        fn hello(implicit<alt>: i32</alt>) = implicit;
+        fn main() = 0.hello;
+    `);
+
     // /quite right
 
 
