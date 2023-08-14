@@ -2118,7 +2118,6 @@ pub fn solve(
         if (k == "defer")       return solveDefer(node);
         if (k == "try")         return solveTryCatch(node);
 
-        if (k == "typedef")     return solveTypedef(node);
         if (k == "typecast")    return solveTypeCast(node);
         if (k == "typeassert")  return solveTypeAssert(node);
         if (k == "typeparam")   return solveTypeParam(node);
@@ -7047,6 +7046,9 @@ pub fn solve(
 
     fn solveLet(node: Node, specType!?: Type, letdefType!?: Type): SolvedNode
     {
+        if (node.flags & F_TYPENAME)
+            return solveTypedef(node);
+
         mut out = solveLetLike_dontTouchScope(node, :specType);
         let id  = out.value;
         return solveLet_createBindingAndGetLetdef(:out, :id, setScope: true, :letdefType);
@@ -7191,7 +7193,18 @@ pub fn solve(
 
     fn solveTypedef(node: Node): SolvedNode
     {
-        let annot   = evalTypeAnnot(node.items.only);
+        if (node.items[LET_TYPE])
+        {
+            _here = node.items[LET_TYPE].token;
+            fail("Currently type annotations on type aliases have no meaning.");
+        }
+
+        let init = node.items[LET_INIT];
+        if (!init)
+            fail("Type aliases must be initialized.");
+
+        //
+        let annot   = evalTypeAnnot(init);
         let target  = Scope_Typedef(_scope, node.value, annot, node.flags);
 
         let s = tryLookupUserType(annot);

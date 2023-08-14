@@ -58,7 +58,6 @@ enum kind
     let
     letdef
 
-    typedef
     typecast
     typeassert
     typeparam

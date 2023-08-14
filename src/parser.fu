@@ -304,7 +304,7 @@ pub fn parse(
             ref item = out.items[i];
 
             let k = item.kind;
-            if (k == "fn" || k == "let" || k == "typedef" || k == "struct" || k == "union" || k == "enum" || k == "flags" || k == "primitive")
+            if (k == "fn" || k == "let" || k == "struct" || k == "union" || k == "enum" || k == "flags" || k == "primitive")
                 set_PUB(item.flags, "Module has no pubs, pubbing everything.");
         }
 
@@ -393,16 +393,6 @@ pub fn parse(
 
         warn("Missing semicollon before `" ~ peek.value ~ "`.");
         return false;
-    }
-
-    fn parseTypedef(): Node
-    {
-        let name = consume("id").value;
-        consume("op", "=");
-        let annot = parseTypeAnnot();
-        softSemi();
-
-        return make("typedef", value: name, items: [ annot ]);
     }
 
 
@@ -674,8 +664,6 @@ pub fn parse(
                 if (v == "struct")      return parseStructDecl("struct");
                 if (v == "union")       return parseStructDecl("union");
 
-                if (v == "type")        return parseTypedef();
-
                 if (v == "pub")         return parsePub();
                 if (v == "shadow")      return parseShadow();
                 if (v == "using")       return parseUsing();
@@ -732,6 +720,7 @@ pub fn parse(
             if (v == "mut")         return { _idx--; parseLetStmt() };
             if (v == "ref")         return { _idx--; parseLetStmt() };
             if (v == "implicit")    return { _idx--; parseLetStmt() };
+            if (v == "type")        return { _idx--; parseLetStmt() };
         }
 
         ////////////
@@ -1270,6 +1259,7 @@ pub fn parse(
         if (tryConsume("id", "shadow"   , peek: "id")) flags |= F_SHADOW;
         if (tryConsume("id", "mut"      , peek: "id")) flags |= F_MUT;
         if (tryConsume("id", "ref"      , peek: "id")) flags |= F_REF;
+        if (tryConsume("id", "type"     , peek: "id")) flags |= F_TYPENAME;
 
         // Experimental shorthand, meant for fn arguments -
         //

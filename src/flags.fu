@@ -101,7 +101,7 @@ flags Flags: u32
     F_OPERATOR
 
     F_ACCESS
-    // ...
+    F_TYPENAME
     F_COMPOUND_ID
     F_WRITTEN_TO
 
