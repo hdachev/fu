@@ -322,6 +322,7 @@ pub fn solve(
         matched:        Type;
         invariant:      Type;
         consumed:       Type;
+        isArgSpecType:  bool;
     };
 
     type TypeParams = typeof( map::Map(string, TypeParam) );
@@ -4933,7 +4934,7 @@ pub fn solve(
                         let argName = argNode.value || BUG();
 
                         // Same pattern - grabs a mutref.
-                        ref argName_typeParam = typeParams.map::ref("$" ~ argName);
+                        ref argName_typeParam = typeParams.map::ref(argName);
 
                         // Values vs refs.
                         inType = add_ref(inType, Lifetime_temporary);
@@ -4942,6 +4943,8 @@ pub fn solve(
                         (argName_typeParam && fail(
                             "Type param name collision with " ~ host_arg ~ "."))
                                 .matched = inType;
+
+                        argName_typeParam.isArgSpecType = true;
 
                         // Type check.
                         if (annot)
@@ -5035,7 +5038,7 @@ pub fn solve(
                 for (shadow mut i = 0; i < numArgs; i++)
                 {
                     let argNode = items[i] || BUG();
-                    let id = "$" ~ argNode.value;
+                    let id = argNode.value;
 
                     typeParams.map::if_ref(id): |ref tp|
                         tp.matched = tp.consumed;
@@ -5153,7 +5156,14 @@ pub fn solve(
             outItems.resize(inItems.len);
 
             // Arg decls.
-            _scope.items ~= extra_items;
+            for (mut i = 0; i < extra_items.len; i++)
+            {
+                let item = extra_items[i];
+
+                // HACK we use the shadows bit to tell argument specTypes from regular type params
+                if (!item.ScopeItem_shadows)
+                    _scope.items ~= item;
+            }
 
             //
             let isFirst     = !into || !into.solved;
@@ -5165,7 +5175,7 @@ pub fn solve(
             {
                 fn tryGetArgSpecType(id: string): Type
                 {
-                    let param = "$" ~ id;
+                    let param = id;
                     for (shadow mut i = 0; i < extra_items.len; i++)
                     {
                         let m = extra_items[i];
@@ -5789,7 +5799,10 @@ pub fn solve(
                     kind: "type",
                     name: id, :type);
 
-            Scope_set(res, name, :target, shadows: false);
+            Scope_set(res, name, :target,
+
+                // HACK we use the shadows bit to differentiate arg specTypes from regular type params
+                shadows: tp.isArgSpecType);
         });
 
         return res;

@@ -8705,8 +8705,8 @@ pub extern fn runTests()
 
     ZERO(`
         fn ARR_LAST(a: $T[])
-            case ($a -> &mut $T[]): &mut $T a[a.len - 1];
-            case ($a -> &    $T[]): &    $T a[a.len - 1];
+            case (a -> &mut $T[]): &mut $T a[a.len - 1];
+            case (a -> &    $T[]): &    $T a[a.len - 1];
 
         fn main()
         {
@@ -8720,8 +8720,8 @@ pub extern fn runTests()
 
     ZERO(`
         fn ARR_LAST(a: $T[])
-            case ($a -> &mut $T[]): &mut $T a[a.len - 1];
-            case ($a -> &    $T[]): &    $T a[a.len - 1];
+            case (a -> &mut $T[]): &mut $T a[a.len - 1];
+            case (a -> &    $T[]): &    $T a[a.len - 1];
 
         let a = [1];
         mut b = [2];

@@ -176,32 +176,32 @@ fn [] !T(/*TODO type*/lax _: T) = typeof([] => T[]);
 novec fn len !T(a: [T;]): int __native(".size()");
 
 novec fn [] !T(a: [T;], i: int)
-    case ($a -> &mut [T;]): &mut T __native(".mutref");
-    default               : &    T __native;
+    case (a -> &mut [T;]): &mut T __native(".mutref");
+    default              : &    T __native;
 
 novec fn [] !T(a: [T;], start!: int)
-    case ($a -> &mut [T;]): &mut [T;] __native("<fu/view.h>", "fu::get_view_mut");
-    default               : &    [T;] __native("<fu/view.h>", "fu::get_view");
+    case (a -> &mut [T;]): &mut [T;] __native("<fu/view.h>", "fu::get_view_mut");
+    default              : &    [T;] __native("<fu/view.h>", "fu::get_view");
 
 novec fn [] !T(a: [T;], end!: int)
-    case ($a -> &mut [T;]): &mut [T;] __native("<fu/view.h>", "fu::get_view_start0_mut");
-    default               : &    [T;] __native("<fu/view.h>", "fu::get_view_start0");
+    case (a -> &mut [T;]): &mut [T;] __native("<fu/view.h>", "fu::get_view_start0_mut");
+    default              : &    [T;] __native("<fu/view.h>", "fu::get_view_start0");
 
 novec fn [] !T(a: [T;], start: int, end: int)
-    case ($a -> &mut [T;]): &mut [T;] __native("<fu/view.h>", "fu::get_view_mut");
-    default               : &    [T;] __native("<fu/view.h>", "fu::get_view");
+    case (a -> &mut [T;]): &mut [T;] __native("<fu/view.h>", "fu::get_view_mut");
+    default              : &    [T;] __native("<fu/view.h>", "fu::get_view");
 
 fn    push !T(ref a: T[], mut b: T): void __native(".push");
 fn unshift !T(ref a: T[], mut b: T): void __native(".unshift");
 fn  insert !T(ref a: T[], i: int, mut b: T): void __native(".insert");
 
 fn slice !T(a: [T;], start: int, end: int)
-    case ($a -> T[]):  T[] __native("<fu/vec/slice.h>", "fu::slice");
-    default         : [T;] __native("<fu/view.h>", "fu::get_view");
+    case (a -> T[]):  T[] __native("<fu/vec/slice.h>", "fu::slice");
+    default        : [T;] __native("<fu/view.h>", "fu::get_view");
 
 fn slice !T(a: [T;], start: int)
-    case ($a -> T[]):  T[] __native("<fu/vec/slice.h>", "fu::slice");
-    default         : [T;] __native("<fu/view.h>", "fu::get_view");
+    case (a -> T[]):  T[] __native("<fu/vec/slice.h>", "fu::slice");
+    default        : [T;] __native("<fu/view.h>", "fu::get_view");
 
 fn substr !T(a: T[], start: int, end: int): T[] __native("<fu/vec/slice.h>", "fu::substr");
 
@@ -349,8 +349,8 @@ infix fn ~= !T(ref a: T[], mut b:  T  ): &mut T[] __native("<fu/vec/concat_one.h
 // Fun with views.
 
 fn view!<T, U>(a: [T;], of: U)
-    case ($a -> &mut [T;] && T.is::trivial && U.is::trivial): &mut [U] __native("<fu/view.h>", "fu::view_of_mut");
-    case (                    T.is::trivial && U.is::trivial):      [U] __native("<fu/view.h>", "fu::view_of");
+    case (a -> &mut [T;] && T.is::trivial && U.is::trivial): &mut [U] __native("<fu/view.h>", "fu::view_of_mut");
+    case (                  T.is::trivial && U.is::trivial):      [U] __native("<fu/view.h>", "fu::view_of");
 
 infix fn .= !T(ref a: [T;], b: [T;]) case (T.is::copy): void __native("<fu/vec/view_assign.h>", "fu::view_assign");
 

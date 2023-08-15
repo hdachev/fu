@@ -1079,15 +1079,41 @@ pub fn parse(
         mut body: Node;
 
         //
+        mut TODO_FIX_didInitArgTypeParams = false;
+        mut withArgTypeParams: string[];
+
+        //
         if (!expr && tryConsume("id", "case"))
         {
             mut branches: Node[];
 
             fn parseBranch(noCond?: bool)
             {
+                if (!noCond)
+                {
+                    if (!TODO_FIX_didInitArgTypeParams)
+                    {
+                        TODO_FIX_didInitArgTypeParams   = true;
+                        withArgTypeParams               = _expectedTypeParams;
+
+                        for (mut i = out_push_body.len - 1; i --> 0; )
+                        {
+                            let arg         = out_push_body[i];
+                            let argName     = arg.kind == "let" && arg.value;
+                            if (argName && argName != "_")
+                                withArgTypeParams.set::add(argName);
+                        }
+                    }
+
+                    swap(_expectedTypeParams, withArgTypeParams);
+                }
+
                 _TODO_FIX_dollarOk = true;
                 let cond = !noCond && parseUnaryExpression();
                 _TODO_FIX_dollarOk = false;
+
+                if (!noCond)
+                    swap(_expectedTypeParams, withArgTypeParams);
 
                 let type = tryPopTypeAnnot();
                 let cons = parseFnBodyBranch();
