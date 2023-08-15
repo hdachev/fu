@@ -84,6 +84,7 @@ pub extern fn runTests()
 
     // Categorizing what doesn't work and why -
 
+    let TODO_specpat    = fn TODO;
     let TODO_recursion  = fn TODO;
     let TODO_enums      = fn TODO;
     let TODO_structs    = fn TODO;
@@ -12718,6 +12719,14 @@ pub extern fn runTests()
             using let _b = Hey(i32[]);
             return hello + world.len;
         }
+    `);
+
+    TODO_specpat(currently: "<fail> does not throw", `
+        fn new(type T): T = [];
+        fn main() =
+            <fail not a type X:X>
+            new(0)   <pass/>
+            new(i32) </fail>;
     `);
 
     // /Template types
