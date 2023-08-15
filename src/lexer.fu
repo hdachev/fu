@@ -13,12 +13,14 @@ let MBOPS =
     "=>", "->", "|>", "<|",
     "??",
     "..", "...", "::",
-    "&&", "||", "[]",
+    "&&", "||", "[]", "[:]",
     "+=", "-=", "*=", "**=", "/=", "%=",
     "&=", "|=", "^=", "<<=", ">>=", "~=",
     "&&=", "||=",
     ".=",
 ];
+
+let MBOPS_maxLen = 3;
 
 pub fn lex(src: string, fname: string): LexerOutput
 {
@@ -436,28 +438,34 @@ pub fn lex(src: string, fname: string): LexerOutput
         // operators
         else if (OPTOKENS.has(c))
         {
-            mut candidate: string = [ c ];
+            mut maxLookahead = idx0 + MBOPS_maxLen;
+            if (maxLookahead > end)
+                maxLookahead = end;
 
-            while (idx < end)
+            while (idx < maxLookahead)
             {
                 shadow let c = src[idx++];
-                if (OPTOKENS.has(c))
+                if (!OPTOKENS.has(c))
                 {
-                    let c1 = candidate ~ c;
-                    if (MBOPS.has(c1))
-                    {
-                        candidate = c1;
-                        continue;
-                    }
+                    idx--;
+                    break;
+                }
+            }
+
+            for (;;)
+            {
+                let candidate = src.slice(idx0, idx);
+                if (candidate.len == 1 || MBOPS.has(candidate))
+                {
+                    token(
+                        "op", candidate,
+                        idx0, idx);
+
+                    break;
                 }
 
                 idx--;
-                break;
             }
-
-            token(
-                "op", candidate,
-                idx0, idx);
         }
 
         // dunno

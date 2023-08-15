@@ -16,7 +16,7 @@ let P_RESET         = 1000;
 let P_PREFIX_UNARY  = 1   ;
 
 let PREFIX          = [ "++", "+", "--", "-", "!", "~", "?", "*", "&", "&mut" ];
-let POSTFIX         = [ "++", "--", "[]" ];
+let POSTFIX         = [ "++", "--", "[]", "[:]" ];
 
 fn setupOperators()
 {

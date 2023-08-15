@@ -315,7 +315,7 @@ pub fn parseType(str: [byte]): ValueType
 //  Slices are refs to arrays,
 //   with revoked copy & resize priviledges.
 
-pub fn createSlice(item: Type, lifetime: Lifetime): Type
+pub fn createSlice(item: Type, lifetime = Lifetime_temporary): Type
 {
     mut out = createArray(item);
     out.quals &= ~(q_rx_copy | q_rx_resize);

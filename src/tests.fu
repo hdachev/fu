@@ -7691,11 +7691,11 @@ pub extern fn runTests()
     `);
 
     ZERO(`
-        fn Split !T(str: T[], sep: T or [T;], each) {
+        fn Split !T(str: T[], sep: T or T[:], each) {
             mut last_idx = 0;
             mut next_idx = 0;
 
-            let N = typeof(sep) -> [T;] ? sep.len : 1;
+            let N = typeof(sep) -> T[:] ? sep.len : 1;
             if (N) while ((next_idx = str.find(sep, start: last_idx)) >= 0) {
                 each(str.slice(last_idx, next_idx), first?: !last_idx, last?: false);
                 last_idx = next_idx + N;
@@ -7707,7 +7707,7 @@ pub extern fn runTests()
                 each(str, first?: true, last?: true);
         }
 
-        fn Replace !T(str: T[], all: T or [T;], with: T or [T;] or []) {
+        fn Replace !T(str: T[], all: T or T[:], with: T or T[:] or []) {
             mut result: T[];
             Split(str, sep: all, |substr, lax first, lax last| {
                 if !(first) {
@@ -8267,7 +8267,7 @@ pub extern fn runTests()
     ZERO(`
         struct Item { val: i32 };
 
-        fn Each !T(a: [T;], fn)
+        fn Each !T(a: T[:], fn)
             for (mut i = 0; i < a.len; i++)
                 fn(a[i], i?: i);
 
@@ -11331,7 +11331,7 @@ pub extern fn runTests()
 
     ZERO(`
         fn test(a) {
-            if (typeof(a) -> [any;])
+            if (typeof(a) -> any[:])
                 return a.len;
 
             return a * 10;
