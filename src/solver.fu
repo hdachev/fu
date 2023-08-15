@@ -7235,6 +7235,31 @@ pub fn solve(
             EXT_mut(target) = EXT(s.target);
         }
 
+        if (node.flags & F_ARG)
+        {
+            // TODO FIX adding this for the benefit of the arguments mangler,
+            //  making the type fully unused so it gets eliminated by codegen,
+            //   this is total lolcode.
+            //
+            // TODO consider reverting this along with the typedefs stuff,
+            //  and just parse `type T` arguments as `lax _: type T` annotations,
+            //   along with declaring the type argument, I think we're gonna end up
+            //    with something more robust, this is stupid.
+            //
+            // Aside from this block these are the hashes we want reverted:
+            // commit 8a4c6fdbdee697c601b1f2c81920b88525bf0d31 F_TYPENAME args
+            // commit bbe551348384451d1172fdfa095c0228ffdfd2dd F_TYPENAME instead of typedef
+            //
+            // ALTERNATIVELY -
+            //  This might be obsoleted by mangle-and-deduplicate-by-content instead of signature -
+            //   after the initial signature mangle, we should mangle by the code we got,
+            //    and merge functions that end up emitting the same stuff.
+            //
+            mut relaxed = annot;
+            relaxed.quals &= ~q_USAGE;          // otherwise cg starts picking them up :(
+            return createEmpty(type: relaxed);
+        }
+
         return createEmpty();
     }
 
