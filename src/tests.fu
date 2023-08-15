@@ -12613,7 +12613,7 @@ pub extern fn runTests()
     `]);
 
     ZERO([`
-        fn Hello(_: $T) struct { world: $T }
+        fn Hello(_: $T) struct { world: $T };
     `,`
         fn getHello(x: i32): _0::Hello(i32) = [ x * x ];
     `,`
@@ -12696,7 +12696,7 @@ pub extern fn runTests()
 
     ZERO(`
         fn Hey !T(<alt>lax _: T<alt/>type T</alt>)
-            case (T.is::arithmetic) = struct { hello: T }<alt>;</alt>
+            case (T.is::arithmetic) = struct { hello: T };
             default                 = struct { world: T };
 
         fn main() {

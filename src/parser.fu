@@ -648,9 +648,6 @@ pub fn parse(
 
             if (peek.kind == "op" && peek.value == "{")
             {
-                if (v == "struct")      return parseStructDecl("struct");
-                if (v == "union")       return parseStructDecl("union");
-
                 if (v == "unwrap")      return parseUnwrap();
             }
 
@@ -1575,6 +1572,12 @@ pub fn parse(
                 {
                     if (v == "fn")
                         return parseFnDecl(expr: true);
+                }
+
+                if (peek.kind == "op" && peek.value == "{")
+                {
+                    if (v == "struct")      return parseStructDecl("struct");
+                    if (v == "union")       return parseStructDecl("union");
                 }
 
                 if (_TODO_FIX_dollarOk)
