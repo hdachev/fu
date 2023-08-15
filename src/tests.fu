@@ -103,6 +103,7 @@ pub extern fn runTests()
     let TODO_slices     = fn TODO;
     let TODO_cow        = fn TODO;
     let TODO_mangle     = fn TODO;
+    let TODO_semis      = fn TODO;
 
     let TODO_Map        = fn TODO;
 
@@ -8519,6 +8520,19 @@ pub extern fn runTests()
     ZERO(`
         fn hello(implicit<alt>: i32</alt>) = implicit;
         fn main() = 0.hello;
+    `);
+
+    TODO_semis(currently: "if/else no common supertype 3:13+2", `
+        fn voidIf(ref a: i32, ref b: u32)
+            if (a)  a++;
+            else    b++;
+
+        fn main() {
+            mut a: i32;
+            mut b: i32;
+            voidIf(:a, :b);
+            return !a && b ? 0 : 1;
+        }
     `);
 
     // /quite right
