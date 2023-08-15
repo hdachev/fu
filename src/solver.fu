@@ -5277,7 +5277,7 @@ pub fn solve(
                         ? argNode.target.solved
                         : argNode;
 
-                    argNode.kind == "let" || BUG();
+                    argNode.kind == "let" || argNode.kind == "empty" || BUG();
 
                     //
                     mut name        = argNode.value;
@@ -5373,7 +5373,7 @@ pub fn solve(
                         :argNode.flags | (written_via && F_WRITTEN_TO)
                                        | (cow_inside  && F_COW_INSIDE),
                         :argNode.type,
-                        default: !isImplicit && argNode.items[LET_INIT],
+                        default: !isImplicit && argNode.items && argNode.items[LET_INIT],
                         local: argTarget.index,
 
                         // ARGUMENTS AT RISK //
@@ -7047,7 +7047,7 @@ pub fn solve(
     fn solveLet(node: Node, specType!?: Type, letdefType!?: Type): SolvedNode
     {
         if (node.flags & F_TYPENAME)
-            return solveTypedef(node);
+            return solveTypedef(node, :specType);
 
         mut out = solveLetLike_dontTouchScope(node, :specType);
         let id  = out.value;
@@ -7191,7 +7191,7 @@ pub fn solve(
 
     //
 
-    fn solveTypedef(node: Node): SolvedNode
+    fn solveTypedef(node: Node, specType!?: Type): SolvedNode
     {
         if (node.items[LET_TYPE])
         {
@@ -7199,12 +7199,10 @@ pub fn solve(
             fail("Currently type annotations on type aliases have no meaning.");
         }
 
-        let init = node.items[LET_INIT];
-        if (!init)
-            fail("Type aliases must be initialized.");
+        let init    = node.items[LET_INIT];
 
         //
-        let annot   = evalTypeAnnot(init);
+        let annot   = specType || evalTypeAnnot(init || fail("Type aliases must be initialized."));
         let target  = Scope_Typedef(_scope, node.value, annot, node.flags);
 
         let s = tryLookupUserType(annot);
