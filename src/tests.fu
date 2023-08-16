@@ -12721,10 +12721,10 @@ pub extern fn runTests()
         }
     `);
 
-    TODO_specpat(currently: "<fail> does not throw", `
+    ZERO(`
         fn new(type T): T = [];
         fn main() =
-            <fail not a type X:X>
+            <fail arg T expects a type, got a value 2:12+3>
             new(0)   <pass/>
             new(i32) </fail>;
     `);

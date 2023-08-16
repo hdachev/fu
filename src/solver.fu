@@ -1585,13 +1585,17 @@ pub fn solve(
                             continue :ARG_OK;
                         }
 
-                        // Templates arguments.
+                        // Template arguments.
                         if (!expect)
                         {
                             // TODO FIX Check that ref args are mutrefs,
                             //  otherwise we get mustMatch fails after a spec-ok.
                             if (host_arg.flags & F_REF && !actual.is_mutref)
                                 matchFail(host_arg ~ " expects a mutref, got " ~ humanizeType(actual));
+
+                            // Might as well do the exact same thing here.
+                            if (host_arg.flags & F_TYPENAME && !(actual.vfacts & Typename))
+                                matchFail(host_arg ~ " expects a type, got a value: " ~ humanizeType(actual));
 
                             continue :ARG_OK;
                         }
