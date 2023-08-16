@@ -2002,8 +2002,31 @@ pub fn cpp_codegen(
             return ooeWrap(ARG(0) ~ id ~ "(" ~ REST(1) ~ ")");
         }
 
-        fn emitFunctionCall(id: string, open = "(", close = ")")
+        fn emitFunctionCall(mut id: string, open = "(", close = ")")
         {
+            // Passing type parameters into cpp templates,
+            //  added this for prelude view<U>(a: T[:], type U),
+            //   which becomes a fu::view_of<U>(a).
+            //
+            if (id.ends(with: "<>"))
+            {
+                mut angle_brackets = "";
+                argsForward(:RTL, :host_args): |lax i, host_arg|
+                {
+                    if (host_arg.type.isIrrelevant)
+                    {
+                        if (angle_brackets)
+                            angle_brackets ~= ", ";
+
+                        mut slot = host_args[i].type;
+                        slot.quals |= q_USAGE;
+                        angle_brackets ~= typeAnnotBase(slot);
+                    }
+                };
+
+                id = id[0 : id.len - 2] ~ '<' ~ angle_brackets ~ '>';
+            }
+
             return ooeWrap(id ~ open ~ REST ~ close);
         }
 

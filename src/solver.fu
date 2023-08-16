@@ -318,11 +318,16 @@ pub fn solve(
 
     //
 
+    flags TypeParamFlags {
+        TP_isArgSpec;
+        TP_isTypenameArgSpec;
+    };
+
     struct TypeParam {
         matched:        Type;
         invariant:      Type;
         consumed:       Type;
-        isArgSpecType:  bool;
+        flags:          TypeParamFlags;
     };
 
     type TypeParams = typeof( map::Map(string, TypeParam) );
@@ -4950,7 +4955,11 @@ pub fn solve(
                             "Type param name collision with " ~ host_arg ~ "."))
                                 .matched = inType;
 
-                        argName_typeParam.isArgSpecType = true;
+                        ////////////////////////////////////////
+                        argName_typeParam.flags |= TP_isArgSpec;
+
+                        if (argNode.flags & F_TYPENAME)
+                            argName_typeParam.flags |= TP_isTypenameArgSpec;
 
                         // Type check.
                         if (annot)
@@ -5047,7 +5056,8 @@ pub fn solve(
                     let id = argNode.value;
 
                     typeParams.map::if_ref(id): |ref tp|
-                        tp.matched = tp.consumed;
+                        if !(tp.flags & TP_isTypenameArgSpec)
+                            tp.matched = tp.consumed;
                 }
             }
         }
@@ -5808,7 +5818,7 @@ pub fn solve(
             Scope_set(res, name, :target,
 
                 // HACK we use the shadows bit to differentiate arg specTypes from regular type params
-                shadows: tp.isArgSpecType);
+                shadows: !!(tp.flags & TP_isArgSpec));
         });
 
         return res;

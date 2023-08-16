@@ -348,9 +348,9 @@ infix fn ~= !T(ref a: T[], mut b:  T  ): &mut T[] __native("<fu/vec/concat_one.h
 
 // Fun with views.
 
-fn view!<T, U>(a: T[:], of: U)
-    case (a -> &mut T[:] && T.is::trivial && U.is::trivial): &mut [U] __native("<fu/view.h>", "fu::view_of_mut");
-    case (                  T.is::trivial && U.is::trivial):      [U] __native("<fu/view.h>", "fu::view_of");
+fn view!<T>(a: T[:], type U)
+    case (a -> &mut T[:] && T.is::trivial && U.is::trivial): &mut [U] __native("<fu/view.h>", "fu::view_of_mut<>");
+    case (                  T.is::trivial && U.is::trivial):      [U] __native("<fu/view.h>", "fu::view_of<>");
 
 infix fn .= !T(ref a: T[:], b: T[:]) case (T.is::copy): void __native("<fu/vec/view_assign.h>", "fu::view_assign");
 
