@@ -7504,8 +7504,10 @@ pub fn solve(
             let items = node.items;
             if !(items.len)
             {
-                // TODO FIX any: should just-work with an `any` type when we get it,
-                //  alternatively use an `_` as a special purpose notation here.
+                // any-HACK-1: this is usable whenever the parser did not
+                //  introduce a new any:\d type param (see any-HACK-2),
+                //   this just matches whatever and ignores it.
+                //
                 if (node.value == "any")
                     return true;
             }

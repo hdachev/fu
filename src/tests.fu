@@ -527,7 +527,7 @@ pub extern fn runTests()
         }
     `);
 
-    TODO_structs(currently: "fn <> unused var b prelude :27+1", `
+    TODO_structs(currently: "fn <> unused var b prelude :22+1", `
         struct Empty {};
 
         fn main() {
