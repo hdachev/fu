@@ -12765,6 +12765,18 @@ pub extern fn runTests()
         }
     `);
 
+    ZERO(`
+        <fail not a type X:X>
+        let  X = i32; <pass/>
+        type X = i32; </fail>
+        struct Y { x: X };
+
+        fn main() {
+            mut y = Y(1 + 2);
+            return y.x - 3;
+        }
+    `);
+
     // /Template types
 
 
