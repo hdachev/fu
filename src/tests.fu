@@ -12740,6 +12740,31 @@ pub extern fn runTests()
             new(i32) </fail>;
     `);
 
+    ZERO(`
+        fn Hey(type T) {
+            <alt>
+            struct A { a: T };
+            struct B { b: T };
+            <alt/>
+            type A = struct { a: T };
+            type B = struct { b: T };
+            </alt>
+            return struct { a: A; b: B };
+        }
+
+        fn fill(s, ref v: i32)
+            for (fieldname i: typeof(s))
+                if (typeof(s.i) -> i32)     s.i = v++;
+                else                        fill(s.i, v);
+
+        fn main() {
+            mut ab = Hey(i32);
+            mut v = 11;
+            fill(ab, v);
+            return ab.a.a + ab.b.b - 23;
+        }
+    `);
+
     // /Template types
 
 
