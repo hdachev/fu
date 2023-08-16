@@ -775,6 +775,17 @@ pub extern fn runTests()
                     : 2;
     `);
 
+    ZERO(`
+        fn arrof !T(lax _: T[], type U)
+            case (T -> U)   true;
+            default         false;
+
+        fn main() {
+            mut a: i32[];
+            return arrof(a, i32) && !arrof(a, u32) ? 0 : 1;
+        }
+    `);
+
     // /Template args
 
 
