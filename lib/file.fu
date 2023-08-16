@@ -130,7 +130,7 @@ fn read(mut path: string, ref output: string, mut size?: i64): i32
         // Smallvecs should fit up to (2GB - 16b),
         //  but this is vec size-type agnostic.
         let len1 = len0.i64 + size;
-        if (len1 > len0.MAX.i64 - 16)
+        if (len1 > typeof(len0).MAX.i64 - 16)
         {
             // Try to return a meaningful error code.
             pragma emit(

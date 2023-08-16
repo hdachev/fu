@@ -86,14 +86,14 @@ fn signed !T(v: T)
     case (T -> u128)   v.i128;
     case (T.is::integral && !T.is::unsigned) v;
 
-fn MIN !T(_: T)
+fn MIN(type T)
     case (T -> i8 )        -128;
     case (T -> i16)        -32768;
     case (T -> i32)        -2147483648;
     case (T -> i64)        -9223372036854775808;
     case (T.is::unsigned)  T(0);
 
-fn MAX !T(_: T)
+fn MAX(type T)
     case (T -> i8 )        127;
     case (T -> i16)        32767;
     case (T -> i32)        2147483647;
@@ -171,7 +171,7 @@ fn swap !T(ref a: T, ref b: T): void __native(
 
 fn typeof !T(lax _: T) = T;
 
-fn [] !T(/*TODO type*/lax _: T) = typeof([] => T[]);
+fn [] (type T) = typeof([] => T[]);
 
 novec fn len !T(a: T[:]): int __native(".size()");
 
