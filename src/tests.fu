@@ -12766,7 +12766,7 @@ pub extern fn runTests()
     `);
 
     ZERO(`
-        <fail not a type X:X>
+        <fail not a type 4:23+1>
         let  X = i32; <pass/>
         type X = i32; </fail>
         struct Y { x: X };

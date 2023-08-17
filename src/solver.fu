@@ -859,6 +859,22 @@ pub fn solve(
     {
         mut name = id;
 
+        // TYPES vs VALUES //////
+        // To avoid ambiguity, currently we draw a line between:
+        //
+        //  let X = i32
+        //   call(X) gives a const-ref to a defailt-initialized i32, and:
+        //
+        //  type X = i32
+        //   call(X) gives the Typename(i32), usable in a type annot.
+        //
+        // What we end up with is not amazing because there's a bit
+        //  of a function coloring situation, fns that operate on types
+        //   vs fns that operate on values, except its not fns but bindings.
+        //
+        type.vfacts &= ~Typename;
+        // TYPES vs VALUES //////
+
         //
         let local_of = _current_fn.target.index;
 
