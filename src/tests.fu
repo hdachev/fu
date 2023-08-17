@@ -12799,10 +12799,32 @@ pub extern fn runTests()
             return struct { a: A; b: B };
         }
 
+        <alt>
         fn fill(s, ref v: i32)
             for (fieldname i: typeof(s))
                 if (typeof(s.i) -> i32)     s.i = v++;
                 else                        fill(s.i, v);
+        <alt/>
+        fn fill(ref s, ref v: i32) {
+            if (typeof(s) -> Hey(any)) {
+                fill(s.a, v);
+                fill(s.b, v);
+            }
+            else for (fieldname i: typeof(s)) {
+                s.i = v++;
+            }
+        }
+        <alt/>
+        fn fill(ref s, ref v: i32)
+        case (s -> Hey(any)) {
+            fill(s.a, v);
+            fill(s.b, v);
+        }
+        default {
+            for (fieldname i: typeof(s))
+                s.i = v++;
+        }
+        </alt>
 
         fn main() {
             mut ab = Hey(i32);
