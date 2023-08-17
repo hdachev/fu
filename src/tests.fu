@@ -12741,6 +12741,16 @@ pub extern fn runTests()
     `);
 
     ZERO(`
+        type A = struct { x: i32 };
+        type B = struct { y: i32 };
+        fn main() {
+            mut a: A;
+            mut b: B;
+            return a.x + b.y;
+        }
+    `);
+
+    ZERO(`
         fn Hey(type T) {
             <alt>
             struct A { a: T };

@@ -196,6 +196,9 @@ pub fn solve(
 
         //
         TODO_FIX_children?: i32[][];
+
+        //
+        TODO_FIX_unique?:   i32;
     };
 
     struct ChildTarget
@@ -5925,9 +5928,10 @@ pub fn solve(
         // TODO FIX the sighash here etc,
         //  we need a design for this,
         //   not sure what we want.
-        let name        = origId || _current_fn.target
-            && (_current_fn.target.name || "Anon")
-             ~ (_current_fn.target.sighash && "_" ~ _current_fn.target.sighash);
+        let name        = origId ||
+            ((_current_fn.target && _current_fn.target.name) || "Anon")
+                ~ (_current_fn.target.sighash && "_" ~ _current_fn.target.sighash)
+                ~ (_current_fn.TODO_FIX_unique++ && "_" ~ _current_fn.TODO_FIX_unique++);
 
         let kind        = node.kind;
 
