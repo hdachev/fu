@@ -8722,6 +8722,43 @@ pub extern fn runTests()
         }
     `);
 
+    ZERO(`
+        // The Cats&Dogs example from
+        //  JuliaCon 2019: The Unreasonable Effectiveness of Multiple Dispatch
+        //   https://www.youtube.com/watch?v=kc9HwsxE1OY
+        //
+        fn encounter(a, b) {
+            let verb = meets(a, b);
+            return a.name ~ " meets " ~ b.name ~ " and " ~ verb ~ "\\n";
+        }
+
+        struct Dog { name: string };
+        struct Cat { name: string };
+
+        fn meets(lax a: Dog, lax b: Dog) "sniffs";
+        fn meets(lax a: Dog, lax b: Cat) "chases";
+        fn meets(lax a: Cat, lax b: Dog) "hisses";
+        fn meets(lax a: Cat, lax b: Cat) "slinks";
+
+        fn main() {
+            let fido        = Dog("Fido");
+            let rex         = Dog("Rex");
+            let whiskers    = Cat("Whiskers");
+            let spots       = Cat("Spots");
+
+            mut res = encounter(fido, rex)
+                    ~ encounter(fido, whiskers)
+                    ~ encounter(whiskers, rex)
+                    ~ encounter(whiskers, spots);
+
+            return res == "Fido meets Rex and sniffs\\n"
+                        ~ "Fido meets Whiskers and chases\\n"
+                        ~ "Whiskers meets Rex and hisses\\n"
+                        ~ "Whiskers meets Spots and slinks\\n"
+                            ? 0 : 1;
+        }
+    `);
+
 
     // Various templating fallacies.
     //
