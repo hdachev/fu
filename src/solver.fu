@@ -354,6 +354,13 @@ pub fn solve(
                    .scope.extended.unless_oob(target.index);
     }
 
+    fn humanizeTypeName(type: Type)
+    {
+        return type.isStruct
+            ? lookupUserType(type).name
+            : type.canon;
+    }
+
     fn fail_appendStack(mut reason: string)
     {
         // What were we currently solving?
@@ -372,6 +379,24 @@ pub fn solve(
 
                 let o = GET(h.target);
                 reason ~= o;
+
+                {
+                    mut argsOut = "";
+
+                    let args = EXT(h.target).args;
+                    for (shadow mut i = 0; i < args.len; i++)
+                    {
+                        if (!argsOut)
+                            argsOut ~= "(";
+                        else
+                            argsOut ~= ", ";
+
+                        argsOut ~= humanizeTypeName(args[i].type);
+                    }
+
+                    if (argsOut)
+                        reason ~= argsOut ~= ")";
+                }
 
                 let token = o.solved.token;
                 if (token)
@@ -1020,9 +1045,7 @@ pub fn solve(
             lt          =  type.lifetime         !=  diff.lifetime;
         }
 
-        mut result: string = type.isStruct
-            ? lookupUserType(type).name
-            : type.canon;
+        mut result = humanizeTypeName(type);
 
         if (!no_quals)
             result ~= humanizeQuals(type.quals);
