@@ -11394,7 +11394,7 @@ pub extern fn runTests()
 
     ZERO(`
         fn test(a) {
-            if (typeof(a) -> any[:])
+            if (typeof(a) -> _[:])
                 return a.len;
 
             return a * 10;
@@ -12806,7 +12806,7 @@ pub extern fn runTests()
                 else                        fill(s.i, v);
         <alt/>
         fn fill(ref s, ref v: i32) {
-            if (typeof(s) -> Hey(any)) {
+            if (typeof(s) -> Hey(_)) {
                 fill(s.a, v);
                 fill(s.b, v);
             }
@@ -12816,7 +12816,7 @@ pub extern fn runTests()
         }
         <alt/>
         fn fill(ref s, ref v: i32)
-        case (s -> Hey(any)) {
+        case (s -> Hey(_)) {
             fill(s.a, v);
             fill(s.b, v);
         }

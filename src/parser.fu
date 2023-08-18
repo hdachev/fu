@@ -1581,17 +1581,15 @@ pub fn parse(
                 }
 
                 if (_TODO_FIX_dollarOk)
-                {
                     if (_expectedTypeParams.has(v))
                         return createTypeParam(v);
 
-                    // any-HACK-2: introduce a new ... 'anonymous' type param,
-                    //  this also allows you to later eval the type annotation back
-                    //   into whatever was matched from typeParams.
-                    //
-                    if (v == "any")
-                        return createTypeParam("any:" ~ _expectedTypeParams.len);
-                }
+                // any-HACK-2: introduce a new ... 'anonymous' type param,
+                //  this also allows you to later eval the type annotation back
+                //   into whatever was matched from typeParams.
+                //
+                if (v == "_")
+                    return createTypeParam("anon:" ~ _expectedTypeParams.len);
 
                 return createRead(v);
             }
@@ -1651,10 +1649,12 @@ pub fn parse(
 
     fn createTypeParam(value: string): Node
     {
-        if (!_TODO_FIX_dollarOk || _upstreamTypeParams.has(value))
+        let isDollar = value.starts(with: '$');
+
+        if (!_TODO_FIX_dollarOk && isDollar || _upstreamTypeParams.has(value))
             return createRead(value);
 
-        if (_TODO_FIX_dollarOk && value.starts(with: '$'))
+        if (_TODO_FIX_dollarOk && isDollar)
             _expectedTypeParams.set::add(value);
 
         _numDollars++;

@@ -501,7 +501,7 @@ fn replace !T(str: T[], all: T or T[:], with: T or T[:] or [])
 
 infix fn <> !T(a: T, b: T)
 case (T.is::primitive) = a < b ? -1 : a > b ? +1 : 0;
-case (T -> any[:]) {
+case (T -> _[:]) {
     mut cmp = a.len <> b.len;
     for (mut i = 0; i < a.len && !cmp; i++)
         cmp = a[i] <> b[i];
