@@ -63,7 +63,7 @@ function execCompiler()
 {
     try {
         return cp.execSync(
-            './bin/fu.works --bin bin/fu -c src/cli.fu', { timeout: 10000 })
+            './bin/fu.works --bin bin/fu -c ' + FILE, { timeout: 10000 })
                 .toString();
     }
     catch (e) {
