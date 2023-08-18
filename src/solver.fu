@@ -2191,16 +2191,12 @@ pub fn solve(
         return fail("TODO: solveNode(" ~ k ~ ").");
     }
 
-    fn solveDeclExpr(node: Node): SolvedNode
+    fn solveDeclExpr(node: Node, TODO_FIX_useSpecPath!?: bool): SolvedNode
     {
-        mut res = solveNodes([ node ], DeadBreak_Dont).only;
+        mut res = solveNodes([ node ], DeadBreak_Dont,
+            :TODO_FIX_useSpecPath).only;
 
         // Anonymous structs & co.
-        //
-        // TODO it'd be neat if this could double as a construction expr,
-        //  so that you could x = struct { z = non-zero-stuff, w = whatever },
-        //   so you both get the anonymous type AND also get an instance constructed.
-        //
         if (res.target && res.target.kind == "type")
             res.type = res.target.type;
 
@@ -2224,7 +2220,7 @@ pub fn solve(
         return 0;
     }
 
-    fn unorderedPrep_A(node: Node): SolvedNode
+    fn unorderedPrep_A(node: Node, TODO_FIX_useSpecPath!?: bool): SolvedNode
     {
         let kind = node.kind;
 
@@ -2232,7 +2228,7 @@ pub fn solve(
             return uPrepFn_A(node);
 
         if (kind.isTypeDecl)
-            return uPrepStruct(node);
+            return uPrepStruct(node, :TODO_FIX_useSpecPath);
 
         BUG("TODO: unorderedPrep_A(" ~ node.kind ~ ").");
     }
@@ -5952,12 +5948,13 @@ pub fn solve(
 
     //
 
-    fn uPrepStruct(node: Node): SolvedNode
+    fn uPrepStruct(node: Node, TODO_FIX_useSpecPath!?: bool): SolvedNode
     {
-        return __solveStruct(solve: false, :node);
+        return __solveStruct(solve: false, :node, :TODO_FIX_useSpecPath);
     }
 
-    fn __solveStruct(shadow solve!: bool, node: Node, into!?: Target): SolvedNode
+    fn __solveStruct(shadow solve!: bool, node: Node, into!?: Target,
+        TODO_FIX_useSpecPath!?: bool): SolvedNode
     {
         let origId      = node.value;
 
@@ -6005,7 +6002,9 @@ pub fn solve(
         }
         else
         {
-            let specPat = !origId && TODO_FIX_getSpecPat();
+            let specPat = !origId
+                && TODO_FIX_useSpecPath
+                && TODO_FIX_getSpecPat();
 
             //
             out_type    = initStruct(:kind, :baseprim, :name, :asserts, :flatCount, :specPat);
@@ -6695,9 +6694,18 @@ pub fn solve(
             : Scope_lookupLabel (node.value, cont: node.kind == "continue");
 
         // Deal with expression first, might noop the jump.
-        mut expr = !node.items
+        let n_expr = node.items.if_only;
+
+        mut expr = !n_expr
             ? createEmpty()
-            : solveNode(node.items.only,
+
+            // TODO FIX SPECPAT //
+            : unorderedClassify(n_expr.kind)
+                ? solveDeclExpr(n_expr,
+                    TODO_FIX_useSpecPath: h.target == _current_fn.target)
+            // TODO FIX SPECPAT //
+
+            : solveNode(n_expr,
                 type: h.ret_actual
                         ? clear_vfacts(h.ret_actual)
                         : h.ret_expect);
@@ -9472,7 +9480,8 @@ pub fn solve(
         type_all?: Type,
         type_last!?: Type,
         use_type_last!?: bool,
-        static_eval_brk!?: StaticEval): SolvedNode[]
+        static_eval_brk!?: StaticEval,
+        TODO_FIX_useSpecPath!?: bool): SolvedNode[]
     {
         mut result: SolvedNode[];
 
@@ -9555,7 +9564,7 @@ pub fn solve(
                 }
 
                 HERE(node);
-                result ~= unorderedPrep_A(node);
+                result ~= unorderedPrep_A(node, :TODO_FIX_useSpecPath);
             }
 
             // Later we'll continue from group end.
