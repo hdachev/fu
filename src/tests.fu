@@ -14001,6 +14001,38 @@ pub extern fn runTests()
         }
     `);
 
+    TODO_relaxer(currently: "Bad call to useConsumedType 11:24+15", `
+        flags TPFlags { ArgSpec; Typename; NeedsConsumed };
+
+        struct TP { flags: TPFlags };
+
+        fn doTrySpec(ref typeParams: TP[]) {
+            fn useConsumedType(tp<alt>: TP</alt>)
+                tp.flags & (ArgSpec | Typename) == ArgSpec;
+
+            typeParams.each: |ref tp|
+                if (tp.useConsumedType)
+                    tp.flags |= NeedsConsumed;
+        }
+
+        fn main() {
+            mut typeParams: TP[] = [
+                [ ArgSpec ],
+                [ ArgSpec | Typename ],
+                [ Typename ],
+            ];
+
+            doTrySpec(typeParams);
+
+            mut count = 0;
+            typeParams.each: |tp|
+                if (tp.flags & NeedsConsumed)
+                    count++;
+
+            return count - 1;
+        }
+    `);
+
     // /Relaxer.
 
 

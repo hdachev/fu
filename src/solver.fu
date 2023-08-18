@@ -5039,7 +5039,7 @@ pub fn solve(
         fn isNativeBody(n_body: Node)
             n_body.kind == "call" && n_body.value == "__native";
 
-        fn useConsumedType_ifNative(tp) // TODO FAILCASE (tp: TypeParam) blows up
+        fn useConsumedType_ifNative(tp) // TODO (tp: TypeParam) test:useConsumedType
             tp.flags & (TP_isArgSpec | TP_isTypenameArgSpec) == TP_isArgSpec;
 
         ref n_fn = template.node;
