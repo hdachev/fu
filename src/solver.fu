@@ -375,7 +375,7 @@ pub fn solve(
 
                 let token = o.solved.token;
                 if (token)
-                    reason ~= " " ~ token._fname ~ ":" ~ token._token.line ~ ":" ~ token._token.col;
+                    reason ~= " at " ~ formatTokenCoord(token, from: module.modid);
             }
         }
 
