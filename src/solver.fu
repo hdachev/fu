@@ -324,6 +324,7 @@ pub fn solve(
     flags TypeParamFlags {
         TP_isArgSpec;
         TP_isTypenameArgSpec;
+        TP_needsConsumedTypes;
     };
 
     struct TypeParam {
@@ -5019,6 +5020,9 @@ pub fn solve(
         fn isNativeBody(n_body: Node)
             n_body.kind == "call" && n_body.value == "__native";
 
+        fn useConsumedType_ifNative(tp) // TODO FAILCASE (tp: TypeParam) blows up
+            tp.flags & (TP_isArgSpec | TP_isTypenameArgSpec) == TP_isArgSpec;
+
         ref n_fn = template.node;
 
         if (!into)
@@ -5033,6 +5037,18 @@ pub fn solve(
                 mut did_match = false;
                 for (mut i = 0; i < branches.len; i++)
                 {
+                    let branch = branches[i].items;
+                    let n_body = branch[branch.len + FN_BODY_BACK];
+
+                    ////////////////////////////////////
+                    // NATIVE RELAXER             [0] //
+                    //  Tag all arg tps we want .consumed types on,
+                    //   the flag is used by evalTypePattern.
+                    if (n_body.isNativeBody)
+                        typeParams.each: |ref tp|
+                            if (tp.useConsumedType_ifNative)
+                                tp.flags |= TP_needsConsumedTypes;
+
                     // Fails cond if any?
                     let cond = branches[i].items[0];
                     if (cond && !evalTypePattern(cond, typeParams))
@@ -5042,13 +5058,11 @@ pub fn solve(
                     }
 
                     // Pass.
-                    let cons = branches[i].items;
                     ref sig = n_fn.items;
                     {
-                        let n_ret = cons[cons.len + FN_RET_BACK];
+                        let n_ret = branch[branch.len + FN_RET_BACK];
                         if (n_ret) sig[sig.len + FN_RET_BACK] = n_ret;
 
-                        let n_body = cons[cons.len + FN_BODY_BACK];
                         sig[sig.len + FN_BODY_BACK] = n_body || BUG("doTrySpec: no case/body.");
                     }
 
@@ -5062,23 +5076,22 @@ pub fn solve(
                     return SPECFAIL("No body pattern matched.");
             }
 
-            // Native relaxer.
+            ////////////////////////////////////
+            // NATIVE RELAXER             [2] //
             //  We can't reason about the code of "native" fns,
             //   so we relax based on type assertions here.
             //
             let n_body = n_fn.items[n_fn.items.len + FN_BODY_BACK];
             if (n_body.isNativeBody)
             {
-                for (shadow mut i = 0; i < numArgs; i++)
-                {
-                    let argNode = items[i] || BUG();
-                    let id = argNode.value;
-
-                    typeParams.map::if_ref(id): |ref tp|
-                        if !(tp.flags & TP_isTypenameArgSpec)
-                            tp.matched = tp.consumed;
-                }
+                // Can't use TP_needsConsumedTypes -
+                //  only set when fn has patterns.
+                typeParams.each: |ref tp|
+                    if (tp.useConsumedType_ifNative)
+                        tp.matched = tp.consumed;
             }
+            // NATIVE RELAXER                 //
+            ////////////////////////////////////
         }
 
         // Scopes & scope skips.
@@ -7727,20 +7740,27 @@ pub fn solve(
                 errout && BUG("Inefficient: trySolveTypeParams pushing errors when told not to (falsy errout).");
 
                 ////////////////////////////////////
-                // NATIVE RELAXER                 //
-                // TODO dont bother unless native //
+                // NATIVE RELAXER             [1] //
+                //  if the TP_needsConsumedType is set
+                //   in NATIVE RELAXER [0] -
+                //
+                // We "relax" arg types
+                //  based on whatever you match in type patterns,
+                //   which is a hack but the only thing we can really do
+                //    given that we don't see the fn body.
+                //
                 if (ok && left.kind == "typeparam")
                 {
-                    let expect = evalTypeAnnot(right, :typeParams);
-
                     let id = left.value;
                     ref tp = typeParams.map::ref(id);
-
-                    tp.consumed = tp.consumed
-                        ? type_tryIntersect(tp.consumed, expect) || fail("typeassert intersect fail.")
-                        : expect;
+                    if (tp.flags & TP_needsConsumedTypes)
+                    {
+                        let expect  = evalTypeAnnot(right, :typeParams);
+                        tp.consumed = tp.consumed
+                            ? type_tryIntersect(tp.consumed, expect) || fail("typeassert intersect fail.")
+                            : expect;
+                    }
                 }
-                // TODO dont bother unless native //
                 // NATIVE RELAXER                 //
                 ////////////////////////////////////
 
