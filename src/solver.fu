@@ -4940,7 +4940,7 @@ pub fn solve(
                             annot.kind == "typeparam"
                                 ? _typeParams.map::ref(annot.value).matched
                                 : annot.kind == "call" && !annot.items
-                                    && Scope_lookupType(annot);
+                                    && Scope_lookupType(annot.value);
 
                         // Ignore literals if possible.
                         if (paramType)
@@ -7919,21 +7919,16 @@ pub fn solve(
 
     // TODO we have to get rid of this.
 
-    fn Scope_lookupType(mut id: string, flags?: Flags): Type
+    fn Scope_lookupType(id: string): Type
     {
-        let callsite = solveCall(id, :flags);
+        let callsite = solveCall(id);
         if (callsite.target.kind != "type")
-            return fail("No type `" ~ id ~ "` in scope.");
+            return fail("No type " ~ id.qBAD ~ " in scope.");
 
         if (callsite.items)
             return fail("Scope_lookupType: Wasting time setting up callargs.");
 
         return callsite.target.type;
-    }
-
-    fn Scope_lookupType(annot: Node): Type
-    {
-        return Scope_lookupType(annot.value, :annot.flags);
     }
 
 
