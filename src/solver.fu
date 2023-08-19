@@ -5257,7 +5257,7 @@ pub fn solve(
                                 "tryGetArgSpecType: Not a typeparam: `"
                                     ~ o.kind ~ ":" ~ param ~ "(" ~ m.target.max ~ ")`.");
 
-                            return o.type || BUG("tryGetArgSpecType: no type on " ~ o);
+                            return clear_Typename(o.type || BUG("tryGetArgSpecType: no type on " ~ o));
                         }
                     }
 
@@ -7544,16 +7544,13 @@ pub fn solve(
         }
 
         //
-        mut exprType = solveNode(node).type;
-        {
-            if !(exprType.vfacts & Typename)
-                fail("Invalid type annotation: evaluates to a value, not a type."
-                    ~ " Consider wrapping it in typeof().");
+        let exprType = solveNode(node).type;
 
-            exprType.vfacts &= ~Typename;
-        }
+        if !(exprType.vfacts & Typename)
+            fail("Invalid type annotation: evaluates to a value, not a type."
+                ~ " Consider wrapping it in typeof().");
 
-        return exprType;
+        return clear_Typename(exprType);
     }
 
     fn trySolveTypeParams(

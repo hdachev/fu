@@ -505,6 +505,12 @@ pub fn relax_typeParam(mut type: Type)
     return into_Typename(type);
 }
 
+pub fn clear_Typename(mut type: Type)
+{
+    type.vfacts &= ~Typename;
+    return type;
+}
+
 
 //
 
