@@ -5244,16 +5244,6 @@ pub fn solve(
 
             for (mut i = 0; i < inItems.len + FN_ARGS_BACK; i++)
             {
-                fn tryGetArgSpecType(id: string): Type
-                {
-                    let param   = id;
-                    let type    = spec_extras.arg_spec_types.map::get(id);
-                    if (type)
-                        return clear_Typename(type);
-
-                    return Type;
-                }
-
                 let n_arg       = inItems[i];
                 _here           = n_arg.token;
 
@@ -5271,7 +5261,9 @@ pub fn solve(
                     continue;
                 }
 
-                let specType    = isSpec && tryGetArgSpecType(n_arg.value);
+                let specType    = isSpec && spec_extras
+                    .arg_spec_types.map::get(n_arg.value);
+
                 let arg         = solveLet(n_arg, :specType);
                 outItems[i]     = arg;
             }
@@ -7288,14 +7280,18 @@ pub fn solve(
         if (node.items[LET_TYPE])
         {
             _here = node.items[LET_TYPE].token;
-            fail("Currently type annotations on type aliases have no meaning.");
+            fail("Type annotations on type aliases are not supported.");
         }
 
-        let init    = node.items[LET_INIT];
+        if (specType && !(specType.vfacts & Typename))
+            BUG("solveTypedef: specType is not a Typename");
 
-        //
-        let annot   = specType || evalTypeAnnot(init || fail("Type aliases must be initialized."));
-        let target  = Scope_Typedef(_scope, node.value, annot, node.flags);
+        let annot = specType || evalTypeAnnot(
+            node.items[LET_INIT] || fail(
+                "Type aliases must be initialized."));
+
+        let target = Scope_Typedef(
+            _scope, node.value, annot, node.flags);
 
         let s = tryLookupUserType(annot);
         if (s.target)
