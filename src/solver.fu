@@ -7774,17 +7774,30 @@ pub fn solve(
                 //   which is a hack but the only thing we can really do
                 //    given that we don't see the fn body.
                 //
-                if (ok && left.kind == "typeparam")
+                if (ok)
                 {
-                    let id = left.value;
-                    if (_typeParams.map::get(id).flags & TP_needsConsumedTypes)
-                    {
-                        let expect  = evalTypeAnnot(right);
+                    // TODO FIX this used to work without the case(typeof(a) -> ...)
+                    //  that's around everything in prelude right now,
+                    //   and now having this here goes to show that
+                    //    this just doesn't make any sense at all.
+                    //
+                    shadow let left =
+                        left.kind  == "call"    &&
+                        left.value == "typeof"  &&
+                        left.items.if_only      || left;
 
-                        ref tp      = _typeParams.map::ref(id);
-                        tp.consumed = tp.consumed
-                            ? type_tryIntersect(tp.consumed, expect) || fail("typeassert intersect fail.")
-                            : expect;
+                    if (left.kind == "typeparam")
+                    {
+                        let id = left.value;
+                        if (_typeParams.map::get(id).flags & TP_needsConsumedTypes)
+                        {
+                            let expect  = evalTypeAnnot(right);
+
+                            ref tp      = _typeParams.map::ref(id);
+                            tp.consumed = tp.consumed
+                                ? type_tryIntersect(tp.consumed, expect) || fail("typeassert intersect fail.")
+                                : expect;
+                        }
                     }
                 }
                 // NATIVE RELAXER                 //
