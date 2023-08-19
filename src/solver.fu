@@ -7537,10 +7537,6 @@ pub fn solve(
                 }
             }
         }
-        else if (node.kind == "typeparam")
-        {
-            return evalTypeParam(node.value);
-        }
         else if (node.kind == "arrlit" && node.items.len == 1)
         {
             // TODO FIX REMOVE OLD SLICE SYNTAX
@@ -7552,7 +7548,9 @@ pub fn solve(
         }
 
         //
-        let exprType = solveNode(node).type;
+        let exprType = node.kind == "typeparam"
+            ? evalTypeParam(node.value)
+            : solveNode(node).type;
 
         if !(exprType.vfacts & Typename)
             fail("Invalid type annotation: evaluates to a value, not a type."
