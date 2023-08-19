@@ -7487,7 +7487,7 @@ pub fn solve(
 
     //
 
-    fn evalTypeAnnot(node: Node): Type
+    fn evalTypeAnnot(node: Node, TODO_FIX_typeof_dontStripRefs!?: bool): Type
     {
         fn T = evalTypeAnnot(node.items.only);
 
@@ -7516,8 +7516,14 @@ pub fn solve(
                     return createSlice(T);
 
                 if (node.value == "typeof")
-                    return relax_typeParam(
-                        solveNode(node.items.only).type);
+                {
+                    mut type = solveNode(node.items.only).type;
+
+                    if (!TODO_FIX_typeof_dontStripRefs)
+                        type = relax_typeParam(type);
+
+                    return type;
+                }
             }
         }
         else if (node.kind == "typeparam")
@@ -7732,19 +7738,24 @@ pub fn solve(
             let left  = node.items[0] || BUG();
             let right = node.items[1] || BUG();
 
+            let actual  = evalTypeAnnot(left,
+
+                // We don't want refs to seep through into type params and such,
+                //  but for simple type asserts it just makes no sense for
+                //   (x -> ref i32) not to report if x is a mutref.
+                //
+                TODO_FIX_typeof_dontStripRefs: true);
+
             // We'll have to figure out the type tag nonsense at some point.
             //  Perhaps when we have an `any` type,
             //   we could subtype it with the desired quals.
             if (right.kind == "typetag")
             {
-                return type_has(
-                    evalTypeAnnot(left),
+                return actual.type_has(
                     right.value || fail("Falsy type tag."));
             }
             else
             {
-                let actual = evalTypeAnnot(left);
-
                 mut errout: Warning[];
                 let ok = trySolveTypeParams(
                     type: actual, node: right,
@@ -7787,8 +7798,7 @@ pub fn solve(
             return !evalTypePattern(node.items.only);
         }
 
-        return fail("TODO evalTypePattern fallthrough: "
-                    ~ node.kind ~ "(" ~ node.items.len ~ ")");
+        return fail("Invalid type pattern.");
     }
 
     fn type_has(type: Type, tag: string)

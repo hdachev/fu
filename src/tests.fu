@@ -786,6 +786,13 @@ pub extern fn runTests()
         }
     `);
 
+    ZERO(`
+        fn main() {
+            mut x: i32 = 0;
+            return (typeof(x) -> &mut i32).i32 - 1;
+        }
+    `);
+
     // /Template args
 
 
