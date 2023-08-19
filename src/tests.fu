@@ -8775,8 +8775,8 @@ pub extern fn runTests()
 
     ZERO(`
         fn ARR_LAST(a: $T[])
-            case (a -> &mut $T[]): &mut $T a[a.len - 1];
-            case (a -> &    $T[]): &    $T a[a.len - 1];
+            case (typeof(a) -> &mut $T[]): &mut $T a[a.len - 1];
+            case (typeof(a) -> &    $T[]): &    $T a[a.len - 1];
 
         fn main()
         {
@@ -8790,8 +8790,8 @@ pub extern fn runTests()
 
     ZERO(`
         fn ARR_LAST(a: $T[])
-            case (a -> &mut $T[]): &mut $T a[a.len - 1];
-            case (a -> &    $T[]): &    $T a[a.len - 1];
+            case (typeof(a) -> &mut $T[]): &mut $T a[a.len - 1];
+            case (typeof(a) -> &    $T[]): &    $T a[a.len - 1];
 
         let a = [1];
         mut b = [2];
@@ -12823,7 +12823,7 @@ pub extern fn runTests()
         }
         <alt/>
         fn fill(ref s, ref v: i32)
-        case (s -> Hey(_)) {
+        case (typeof(s) -> Hey(_)) {
             fill(s.a, v);
             fill(s.b, v);
         }
