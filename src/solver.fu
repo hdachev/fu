@@ -7130,6 +7130,10 @@ pub fn solve(
         if (flags & F_ARG && !(flags & F_MUT))
             t_let = add_ref(t_let, Lifetime_temporary);
 
+        if (SELF_TEST)
+            t_let.vfacts & Typename && BUG(
+                "solveLetLike_dontTouchScope: Ended up with a Typename");
+
         // TODO clean this up, annots not needed.
         //  We could move init out of here?
         //   So we can edit out of order maybe?
@@ -7242,8 +7246,13 @@ pub fn solve(
 
             //
             if (SELF_TEST)
+            {
                 !out.type.is_ref2temp || isArg || BUG(
                     "solveLet_createBindingAndGetLetdef: Non-argument is_ref2temp");
+
+                out.type.vfacts & Typename && BUG(
+                    "solveLet_createBindingAndGetLetdef: Ended up with a Typename");
+            }
 
             //
             target.solved_set(out);
