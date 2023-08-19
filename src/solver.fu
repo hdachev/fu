@@ -208,6 +208,12 @@ pub fn solve(
         target:             Target;
     }
 
+    struct SpecExtras
+    {
+        scope_items:        ScopeItem[];
+        arg_spec_types:     typeof( map::Map(string, Type) );
+    };
+
     struct Ephemeral
     {
         local_of:           i32;
@@ -216,7 +222,8 @@ pub fn solve(
         scope_memo?:        ScopeMemo;
         scope_skip?:        ScopeSkipMemos;
 
-        extra_items?:       ScopeItem[];
+        spec_extras?:       SpecExtras;
+
         callers?:           i32[];
         calls?:             i32[];
 
@@ -5168,9 +5175,9 @@ pub fn solve(
             eph.local_of = parent_idx;
 
             //
-            let extra_items = into
-                ? into.extra_items
-                : (target.EPH_mut.extra_items = _typeParams.intoScopeItems());
+            let spec_extras = into
+                ? into.spec_extras
+                : (target.EPH_mut.spec_extras = _typeParams.intoSpecExtras());
 
             //////////////////////////////////////////////////
             let implicit _current_fnort = target;
@@ -5227,14 +5234,7 @@ pub fn solve(
             outItems.resize(inItems.len);
 
             // Arg decls.
-            for (mut i = 0; i < extra_items.len; i++)
-            {
-                let item = extra_items[i];
-
-                // HACK we use the shadows bit to tell argument specTypes from regular type params
-                if (!item.ScopeItem_shadows)
-                    _scope.items ~= item;
-            }
+            _scope.items ~= spec_extras.scope_items;
 
             //
             let isFirst     = !into || !into.solved;
@@ -5246,20 +5246,10 @@ pub fn solve(
             {
                 fn tryGetArgSpecType(id: string): Type
                 {
-                    let param = id;
-                    for (shadow mut i = 0; i < extra_items.len; i++)
-                    {
-                        let m = extra_items[i];
-                        if (m.id == param)
-                        {
-                            let o = GET(m.target);
-                            o.kind == "type"/* && o.max == 0*/ || fail(
-                                "tryGetArgSpecType: Not a typeparam: `"
-                                    ~ o.kind ~ ":" ~ param ~ "(" ~ m.target.max ~ ")`.");
-
-                            return clear_Typename(o.type || BUG("tryGetArgSpecType: no type on " ~ o));
-                        }
-                    }
+                    let param   = id;
+                    let type    = spec_extras.arg_spec_types.map::get(id);
+                    if (type)
+                        return clear_Typename(type);
 
                     return Type;
                 }
@@ -5840,9 +5830,9 @@ pub fn solve(
 
     //
 
-    fn intoScopeItems(typeParams: TypeParams): ScopeItem[]
+    fn intoSpecExtras(typeParams: TypeParams): SpecExtras
     {
-        mut res: ScopeItem[];
+        mut res: SpecExtras;
 
         typeParams.map::pairs(|id, tp|
         {
@@ -5864,16 +5854,21 @@ pub fn solve(
             if (!type)
                 continue;
 
+            // Argument spectypes.
+            if (tp.flags & TP_isArgSpec)
+            {
+                res.arg_spec_types.map::set(id, type);
+                continue;
+            }
+
+            // Actual typedefs.
             let target = type.isStruct
                 && checkStruct(type)
                 || Scope_create(_scope,
                     kind: "type",
                     name: id, :type);
 
-            Scope_set(res, name, :target,
-
-                // HACK we use the shadows bit to differentiate arg specTypes from regular type params
-                shadows: !!(tp.flags & TP_isArgSpec));
+            Scope_set(res.scope_items, name, :target, shadows: false);
         });
 
         return res;
