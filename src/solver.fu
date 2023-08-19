@@ -224,6 +224,21 @@ pub fn solve(
         specs?:             typeof( map::Map(string, Target) ); // mangle -> spec;
     };
 
+    flags TypeParamFlags {
+        TP_isArgSpec;
+        TP_isTypenameArgSpec;
+        TP_needsConsumedTypes;
+    };
+
+    struct TypeParam {
+        matched:        Type;
+        invariant:      Type;
+        consumed:       Type;
+        flags:          TypeParamFlags;
+    };
+
+    type TypeParams = typeof( map::Map(string, TypeParam) );
+
     struct SolverState
     {
         _scope:             Scope;
@@ -246,6 +261,9 @@ pub fn solve(
 
         TODO_FIX_convert_args:  SolvedNode[];
         TODO_FIX_inline_safety: i32;
+
+        //
+        _typeParams:        TypeParams;
     };
 
     struct HelpersData
@@ -317,24 +335,6 @@ pub fn solve(
 
     _scope.extended ~= Extended();  // global nodes and such
     push(HelpersData());            // not sure why this is needed
-
-
-    //
-
-    flags TypeParamFlags {
-        TP_isArgSpec;
-        TP_isTypenameArgSpec;
-        TP_needsConsumedTypes;
-    };
-
-    struct TypeParam {
-        matched:        Type;
-        invariant:      Type;
-        consumed:       Type;
-        flags:          TypeParamFlags;
-    };
-
-    type TypeParams = typeof( map::Map(string, TypeParam) );
 
 
     //
@@ -1122,8 +1122,10 @@ pub fn solve(
 
     fn solveTypeAssert(node: Node): SolvedNode
     {
-        mut typeParams: TypeParams;
-        return createBool(evalTypePattern(node, typeParams));
+        mut typeParams0 = steal(_typeParams);
+        defer swap(_typeParams, typeParams0);
+
+        return createBool(evalTypePattern(node));
     }
 
 
@@ -4849,7 +4851,9 @@ pub fn solve(
 
         // Arguments - type params.
 
-        mut typeParams: TypeParams;
+        mut typeParams0 = steal(_typeParams);
+        defer swap(_typeParams, typeParams0);
+
         if (!into)
         {
             mut error = "";
@@ -4934,7 +4938,7 @@ pub fn solve(
 
                         let paramType =
                             annot.kind == "typeparam"
-                                ? typeParams.map::ref(annot.value).matched
+                                ? _typeParams.map::ref(annot.value).matched
                                 : annot.kind == "call" && !annot.items
                                     && Scope_lookupType(annot);
 
@@ -4984,7 +4988,7 @@ pub fn solve(
                         let argName = argNode.value || BUG();
 
                         // Same pattern - grabs a mutref.
-                        ref argName_typeParam = typeParams.map::ref(argName);
+                        ref argName_typeParam = _typeParams.map::ref(argName);
 
                         // Values vs refs.
                         inType = add_ref(inType, Lifetime_temporary);
@@ -5004,7 +5008,7 @@ pub fn solve(
                         if (annot)
                         {
                             let argOk = trySolveTypeParams(
-                                annot, inType, typeParams, :errout,
+                                annot, inType, :errout,
                                 invariant: false);
 
                             if (!error && !argOk)
@@ -5050,7 +5054,7 @@ pub fn solve(
             let body = items[items.len + FN_BODY_BACK] || BUG();
             if (body.kind == "pattern")
             {
-                let undo = typeParams;
+                let undo = _typeParams;
                 let branches = body.items;
 
                 mut did_match = false;
@@ -5064,15 +5068,15 @@ pub fn solve(
                     //  Tag all arg tps we want .consumed types on,
                     //   the flag is used by evalTypePattern.
                     if (n_body.isNativeBody)
-                        typeParams.each: |ref tp|
+                        _typeParams.each: |ref tp|
                             if (tp.useConsumedType_ifNative)
                                 tp.flags |= TP_needsConsumedTypes;
 
                     // Fails cond if any?
                     let cond = branches[i].items[0];
-                    if (cond && !evalTypePattern(cond, typeParams))
+                    if (cond && !evalTypePattern(cond))
                     {
-                        typeParams = undo;
+                        _typeParams = undo;
                         continue;
                     }
 
@@ -5105,7 +5109,7 @@ pub fn solve(
             {
                 // Can't use TP_needsConsumedTypes -
                 //  only set when fn has patterns.
-                typeParams.each: |ref tp|
+                _typeParams.each: |ref tp|
                     if (tp.useConsumedType_ifNative)
                         tp.matched = tp.consumed;
             }
@@ -5166,7 +5170,7 @@ pub fn solve(
             //
             let extra_items = into
                 ? into.extra_items
-                : (target.EPH_mut.extra_items = typeParams.intoScopeItems());
+                : (target.EPH_mut.extra_items = _typeParams.intoScopeItems());
 
             //////////////////////////////////////////////////
             let implicit _current_fnort = target;
@@ -7437,9 +7441,9 @@ pub fn solve(
 
     //
 
-    fn evalTypeParam(id: string, typeParams?: TypeParams): Type
+    fn evalTypeParam(id: string): Type
     {
-        return typeParams.map::get(id).matched
+        return _typeParams.map::get(id).matched
             || Scope_lookupType(id || fail("Falsy type param id."))
             || fail("No type param " ~ id.qID ~ " in scope.");
     }
@@ -7492,9 +7496,9 @@ pub fn solve(
 
     //
 
-    fn evalTypeAnnot(node: Node, typeParams?: TypeParams): Type
+    fn evalTypeAnnot(node: Node): Type
     {
-        fn T = evalTypeAnnot(node.items.only, typeParams);
+        fn T = evalTypeAnnot(node.items.only);
 
         /////////////////////////
         let here0   = _here;
@@ -7527,7 +7531,7 @@ pub fn solve(
         }
         else if (node.kind == "typeparam")
         {
-            return evalTypeParam(node.value, typeParams);
+            return evalTypeParam(node.value);
         }
         else if (node.kind == "arrlit" && node.items.len == 1)
         {
@@ -7553,7 +7557,7 @@ pub fn solve(
     }
 
     fn trySolveTypeParams(
-        node: Node, mut type: Type, ref typeParams: TypeParams, ref errout: Warning[], mut invariant!: bool): bool
+        node: Node, mut type: Type, ref errout: Warning[], mut invariant!: bool): bool
     {
         fn matchFail(inline err: string)
         {
@@ -7580,7 +7584,7 @@ pub fn solve(
                     invariant = true;
 
                 return trySolveTypeParams(
-                    node.items[0] || BUG(), t || BUG(), typeParams, :errout,
+                    node.items[0] || BUG(), t || BUG(), :errout,
                     :invariant);
             }
         }
@@ -7590,7 +7594,7 @@ pub fn solve(
 
             type = relax_typeParam(type);
 
-            ref param = typeParams.map::ref(id);
+            ref param = _typeParams.map::ref(id);
             if (param)
             {
                 if (invariant)
@@ -7627,23 +7631,23 @@ pub fn solve(
             // Slice.
             let t = tryClear_sliceable(type) || matchFail("Not sliceable: " ~ type.humanizeType);
             return trySolveTypeParams(
-                node.items[0] || BUG(), t, typeParams, :errout,
+                node.items[0] || BUG(), t, :errout,
                 :invariant);
         }
         else if (node.kind == "typeunion")
         {
             let errout0     = errout.len;
-            mut typeParams0 = typeParams;
+            mut typeParams0 = _typeParams;
 
             for (mut i = 0; i < node.items.len; i++)
             {
-                if (trySolveTypeParams(node.items[i], :type, :typeParams, :errout, :invariant))
+                if (trySolveTypeParams(node.items[i], :type, :errout, :invariant))
                 {
                     errout.shrink(errout0);
                     return true;
                 }
 
-                typeParams = typeParams0;
+                _typeParams = typeParams0;
             }
 
             return false;
@@ -7686,7 +7690,7 @@ pub fn solve(
                     shadow let node = node.items[argIdx];
                     shadow let type = Type(parseType(argSpecType));
 
-                    if (!trySolveTypeParams(:node, :type, :typeParams, :errout, invariant: true))
+                    if (!trySolveTypeParams(:node, :type, :errout, invariant: true))
                         continue :NEXT_SUB_PATTERN;
                 }
 
@@ -7712,25 +7716,25 @@ pub fn solve(
         return true;
     }
 
-    fn evalTypePattern(node: Node, ref typeParams: TypeParams): bool
+    fn evalTypePattern(node: Node): bool
     {
         if (node.kind == "and")
         {
             for (mut i = 0; i < node.items.len; i++)
-                if (!evalTypePattern(node.items[i], typeParams))
+                if (!evalTypePattern(node.items[i]))
                     return false;
 
             return true;
         }
         else if (node.kind == "or")
         {
-            mut undo = typeParams;
+            mut undo = _typeParams;
             for (mut i = 0; i < node.items.len; i++)
             {
-                if (evalTypePattern(node.items[i], typeParams))
+                if (evalTypePattern(node.items[i]))
                     return true;
 
-                typeParams = undo;
+                _typeParams = undo;
             }
 
             return false;
@@ -7746,17 +7750,17 @@ pub fn solve(
             if (right.kind == "typetag")
             {
                 return type_has(
-                    evalTypeAnnot(left, typeParams),
+                    evalTypeAnnot(left),
                     right.value || fail("Falsy type tag."));
             }
             else
             {
-                let actual = evalTypeAnnot(left, typeParams);
+                let actual = evalTypeAnnot(left);
 
                 mut errout: Warning[];
                 let ok = trySolveTypeParams(
                     type: actual, node: right,
-                    :typeParams, :errout,
+                    :errout,
                     invariant: false);
 
                 errout && BUG("Inefficient: trySolveTypeParams pushing errors when told not to (falsy errout).");
@@ -7774,10 +7778,11 @@ pub fn solve(
                 if (ok && left.kind == "typeparam")
                 {
                     let id = left.value;
-                    ref tp = typeParams.map::ref(id);
-                    if (tp.flags & TP_needsConsumedTypes)
+                    if (_typeParams.map::get(id).flags & TP_needsConsumedTypes)
                     {
-                        let expect  = evalTypeAnnot(right, :typeParams);
+                        let expect  = evalTypeAnnot(right);
+
+                        ref tp      = _typeParams.map::ref(id);
                         tp.consumed = tp.consumed
                             ? type_tryIntersect(tp.consumed, expect) || fail("typeassert intersect fail.")
                             : expect;
@@ -7791,7 +7796,7 @@ pub fn solve(
         }
         else if (node.kind == "not")
         {
-            return !evalTypePattern(node.items.only, typeParams);
+            return !evalTypePattern(node.items.only);
         }
 
         return fail("TODO evalTypePattern fallthrough: "
