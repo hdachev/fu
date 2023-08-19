@@ -171,7 +171,8 @@ fn swap !T(ref a: T, ref b: T): void __native(
 
 fn typeof !T(lax _: T) = T;
 
-fn [] (type T) = typeof([] => T[]);
+fn  [] (type T) = typeof([] => T []);
+fn [:] (type T) = typeof([] => T[:]);
 
 novec fn len !T(a: T[:]): int __native(".size()");
 
