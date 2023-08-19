@@ -14563,7 +14563,7 @@ pub extern fn runTests()
     `);
 
 
-    // Custom primitives, enums & flags.
+    // Enums, flags & custom primitives.
 
     ZERO(`
         fn main() {
@@ -14589,7 +14589,7 @@ pub extern fn runTests()
         enum Enum { None = 0 };
 
         fn main() {
-            let e = None;
+            let e = Enum.None;
             <fail return type annot>
             return e;        <pass/>
             return e.i32;    </fail>
@@ -14819,6 +14819,8 @@ pub extern fn runTests()
 
         fn main() isAorB("A") && isAorB("B") && !isAorB("C") ? 0 : 1;
     `);
+
+    // /Enums
 
 
     // Unions, what the hell.

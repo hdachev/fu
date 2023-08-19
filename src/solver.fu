@@ -6072,10 +6072,17 @@ pub fn solve(
             ref innerScope = lookupUserType_mut(out_type.canon).items;
             if (!innerScope && members)
             {
+                let BACK_COMPAT = true;
+
                 // Dereferencing a struct does not require it
                 //  to have any particular qualities.
-                let args = !isPrimDecl && [ Argument(name: "this",
-                    type: despeculateStruct(out_type)) ];
+                let args = !isPrimDecl
+                    ? [ Argument(name: "this",
+                                 type: despeculateStruct(out_type)) ]
+                    : [ Argument(name: "This",
+                                 type: into_Typename(out_type),
+                              default: BACK_COMPAT
+                                    && createEmpty(type: into_Typename(out_type))) ];
 
                 for (mut i = 0; i < members.len; i++)
                 {
@@ -6085,12 +6092,12 @@ pub fn solve(
                     let isPredicate = items[i].flags & F_PREDICATE;
 
                     let target = Scope_create(
-                        _scope, args ? "field" : "enumv", name: id || BUG(),
+                        _scope, !isPrimDecl ? "field" : "enumv", name: id || BUG(),
                         flags: F_PUB | isPredicate);
 
                     ref ext     = EXT_mut(target);
                     ext.args    = args;
-                    ext.min     = args.len;
+                    ext.min     = BACK_COMPAT && isPrimDecl ? 0 : args.len;
                     ext.max     = args.len;
 
                     // For snippets -
