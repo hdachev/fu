@@ -4997,8 +4997,14 @@ pub fn solve(
                         // Same pattern - grabs a mutref.
                         ref argName_typeParam = _typeParams.map::ref(argName);
 
+                        let isTypedef = !!(argNode.flags & F_TYPENAME);
+
                         // Values vs refs.
-                        inType = add_ref(inType, Lifetime_temporary);
+                        if (isTypedef)
+                            inType.vfacts & Typename || BUG(
+                                argName ~ " not a typename: " ~ humanizeType(inType));
+                        else
+                            inType = add_ref(inType, Lifetime_temporary);
 
                         //
                         (argName_typeParam && fail(
@@ -5008,7 +5014,7 @@ pub fn solve(
                         ////////////////////////////////////////
                         argName_typeParam.flags |= TP_isArgSpec;
 
-                        if (argNode.flags & F_TYPENAME)
+                        if (isTypedef)
                             argName_typeParam.flags |= TP_isTypenameArgSpec;
 
                         // Type check.
