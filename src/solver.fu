@@ -7666,8 +7666,11 @@ pub fn solve(
             return false;
         }
 
-        // This actually doesn't seem half bad.
-        if (node.kind == "call" && node.flags & F_TEMPLATE)
+        // TODO FIX the branch on F_TEMPLATE here,
+        //  already having problems with typeof().
+        //
+        if (node.kind == "call" && node.flags & F_TEMPLATE
+                                && node.value != "typeof")
         {
             mut targets = solveAddrOfFn(node.value);
             if (!targets)
