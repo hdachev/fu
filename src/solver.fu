@@ -893,26 +893,8 @@ pub fn solve(
 
     fn Binding(id: string, mut type: Type, flags!: Flags, ref shadows!: bool)
     {
-        mut name = id;
-
-        // TYPES vs VALUES //////
-        // To avoid ambiguity, currently we draw a line between:
-        //
-        //  let X = i32
-        //   call(X) gives a const-ref to a defailt-initialized i32, and:
-        //
-        //  type X = i32
-        //   call(X) gives the Typename(i32), usable in a type annot.
-        //
-        // What we end up with is not amazing because there's a bit
-        //  of a function coloring situation, fns that operate on types
-        //   vs fns that operate on values, except its not fns but bindings.
-        //
-        type.vfacts &= ~Typename;
-        // TYPES vs VALUES //////
-
-        //
-        let local_of = _current_fn.target.index;
+        mut name        = id;
+        let local_of    = _current_fn.target.index;
 
         // Unique identifiers.
         if (_root_scope)
@@ -5004,12 +4986,15 @@ pub fn solve(
 
                         let isTypedef = !!(argNode.flags & F_TYPENAME);
 
-                        // Values vs refs.
+                        // TYPES vs VALUES //////
                         if (isTypedef)
                             inType.vfacts & Typename || BUG(
                                 argName ~ " not a typename: " ~ humanizeType(inType));
                         else
-                            inType = add_ref(inType, Lifetime_temporary);
+                            inType = add_ref(
+                                clear_Typename(inType), // See solveLetLike_dontTouchScope: t_init = clear_Typename
+                                Lifetime_temporary);
+                        // TYPES vs VALUES //////
 
                         //
                         (argName_typeParam && fail(
@@ -7100,9 +7085,23 @@ pub fn solve(
             convertIfNeeded(init, expect: annot, asArgument: !!(flags & F_ARG),
                 "Type annotation does not match init expression", :id, " <- ");
 
-        // Lose refs to temporaries.
-        let t_init = init.type;
+        // TYPES vs VALUES //////
+        // To avoid ambiguity, currently we draw a line between:
+        //
+        //  let X = i32
+        //   call(X) gives a const-ref to a defailt-initialized i32, and:
+        //
+        //  type X = i32
+        //   call(X) gives the Typename(i32), usable in a type annot.
+        //
+        // What we end up with is not amazing because there's a bit
+        //  of a function coloring situation, fns that operate on types
+        //   vs fns that operate on values, except its not fns but bindings.
+        //
+        let t_init = clear_Typename(init.type);
+        // TYPES vs VALUES //////
 
+        // Lose refs to temporaries.
         shadow let t_init = t_init.is_ref2temp
             ? clear_refs(t_init)
             : t_init;
