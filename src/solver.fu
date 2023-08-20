@@ -2791,7 +2791,12 @@ pub fn solve(
 
         fn discardIntoBlock()
         {
-            node = createBlock(:node.items, t_void);
+            node = createBlock(:node.items, slot);
+            // Keeping the slot type intact ^^^^ here,
+            //  otherwise spec-relax later tries to specialize with voids,
+            //   caught this because F_TYPENAME args ended up bound to t_voids
+            //    during relax(spec_of) below.
+
             return propagateType(:slot, node, :relax_mask);
         }
 
