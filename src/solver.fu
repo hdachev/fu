@@ -6031,7 +6031,7 @@ pub fn solve(
         mut non_triv = !out_type.is_rx_copy && -1;
 
         // Solve members & check defaults.
-        let primType = isPrimDecl && (
+        let primType = isPrimDecl && clear_Typename(
             out_type || BUG("Falsy isPrimDecl.out_type"));
 
         fn solveMember(shadow node: Node)
