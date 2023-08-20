@@ -11,8 +11,8 @@ nocopy struct Context
     dep_order:  i32[];
 
     // FS facts.
-    files:      typeof( map::Map(string, string) );
-    fuzzy:      typeof( map::Map(string, string) );
+    files:      map::Map(string, string);
+    fuzzy:      map::Map(string, string);
 };
 
 struct Module

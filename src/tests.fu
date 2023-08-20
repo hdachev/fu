@@ -9062,6 +9062,17 @@ pub extern fn runTests()
         }
     `);
 
+    ZERO(`
+        fn main() {
+            mut x:  <fail redundant typeof not a value 4:28+3>
+                    typeof(i32)     <pass/>
+                    i32             </fail> = 0;
+            return x;
+        }
+    `);
+
+    // /case
+
 
     // Let's try something new.
 

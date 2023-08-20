@@ -211,7 +211,7 @@ pub fn solve(
     struct SpecExtras
     {
         scope_items:        ScopeItem[];
-        arg_spec_types:     typeof( map::Map(string, Type) );
+        arg_spec_types:     map::Map(string, Type);
     };
 
     struct Ephemeral
@@ -228,7 +228,7 @@ pub fn solve(
         calls?:             i32[];
 
         children?:          ChildTarget[];
-        specs?:             typeof( map::Map(string, Target) ); // mangle -> spec;
+        specs?:             map::Map(string, Target); // mangle -> spec;
     };
 
     flags TypeParamFlags {
@@ -244,7 +244,7 @@ pub fn solve(
         flags:          TypeParamFlags;
     };
 
-    type TypeParams = typeof( map::Map(string, TypeParam) );
+    type TypeParams = map::Map(string, TypeParam);
 
     struct SolverState
     {
@@ -7529,8 +7529,18 @@ pub fn solve(
                 {
                     mut type = solveNode(node.items.only).type;
 
+                    if (type.vfacts & Typename)
+                    {
+                        _here = node.items.only.token;
+                        fail("Redundant " ~ "typeof".qBAD  ~ ", this is a type, not a value: " ~ humanizeType(type));
+                    }
+
                     if (!TODO_FIX_typeof_dontStripRefs)
-                        type = relax_typeParam(type);
+                    {
+                        // This looks really stupid & redundant, but it's kinda sorta future-proof,
+                        //   clears refs, vfacts, etc, consistently with type parameter matching.
+                        type = relax_typeParam(type).clear_Typename();
+                    }
 
                     return type;
                 }

@@ -21,7 +21,7 @@ let POSTFIX         = [ "++", "--", "[]", "[:]" ];
 fn setupOperators()
 {
     struct BINOP {
-        PRECEDENCE:     typeof( map::Map(string, i32) );
+        PRECEDENCE:     map::Map(string, i32);
         RIGHT_TO_LEFT:  bool[];
     };
 
