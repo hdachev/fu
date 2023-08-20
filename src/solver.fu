@@ -7593,7 +7593,7 @@ pub fn solve(
                     :invariant);
             }
         }
-        else if (node.kind == "typeparam")
+        else if (node.kind == "typeparam") :TYPEPARAM
         {
             let id = node.value || BUG();
 
@@ -7602,6 +7602,14 @@ pub fn solve(
             ref param = _typeParams.map::ref(id);
             if (param)
             {
+                // TODO FIX arg spec types are not Typenames,
+                //  and we can let them just fall through to the evalTypeAnnot below:
+                //   - we don't want to change their .matched type here,
+                //   - we want a typeof(x) around them for consistency.
+                if (param.flags & TP_isArgSpec)
+                    break :TYPEPARAM;
+
+                //
                 if (invariant)
                 {
                     if (!isAssignable(host: type, param.matched, :DONT_match_zeroes))
