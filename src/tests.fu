@@ -12495,7 +12495,7 @@ pub extern fn runTests()
     `);
 
 
-    // Let's try to break scope-skips.
+    // Inliner.
 
     ZERO(`
         fn identity(x) x;
@@ -12642,6 +12642,30 @@ pub extern fn runTests()
             </alt>
         }
     `);
+
+    TODO_inline(currently: "BUG visitNode Lifetime_assertEqual 10:26+1", `
+        fn nested(ref index: i32)
+            return index++ && [];
+
+        fn Lifetime_each(ref lifetime: i32[], visit)
+            for (mut i = lifetime.len; i --> 0; )
+                visit(nested(lifetime[i]));
+
+        fn Lifetime_allowsMutrefReturn(ref lifetime: i32[])
+            Lifetime_each(:lifetime): |t|
+                return t;
+
+        fn main() {
+            mut arr: i32[] = [ 5, -2 ];
+            Lifetime_allowsMutrefReturn(arr);
+
+            mut sum = 0;
+            for (mut i = 0; i < arr.len; i++) sum += arr[i];
+            return sum - 4;
+        }
+    `);
+
+    // /Inliner.
 
 
     // Template types.

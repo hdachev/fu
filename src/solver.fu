@@ -8989,10 +8989,30 @@ pub fn solve(
                     letdefReplicas.grow_if_oob(expr.target.index) = local || BUG();
 
                     //
-                    mut type = foreign.type;
-                    type.lifetime == Lifetime_fromBinding(expr.target) || BUG();
-                    type.lifetime  = Lifetime_fromBinding(local);
+                    fn Lifetime_assertEqual(
+                        lax a: Lifetime, lax aa: string,
+                        lax b: Lifetime, lax bb: string)
+                    {
+                        if (!SELF_TEST || a == b)
+                            return;
 
+                        fn printLt(lt: Lifetime) =
+                            "(" ~ lt.uni0n.map(.index.str).join("|") ~ ")";
+
+                        BUG("visitNode Lifetime_assertEqual:"
+                            ~ "\n\n\t    " ~ aa ~ ":\t" ~ printLt(a)
+                            ~ "\n\n\t    " ~ bb ~ ":\t" ~ printLt(b));
+                    }
+
+                    //
+                    mut type = foreign.type;
+                    Lifetime_assertEqual(
+                        type.lifetime,                      "foreign.type.lifetime",
+                        Lifetime_fromBinding(expr.target),  "Lifetime_fromBinding");
+
+                    type.lifetime = Lifetime_fromBinding(local);
+
+                    //
                     mut solved = foreign.solved;
                     solved.kind == "let" && solved.target == expr.target || BUG();
                     solved.target = local;
