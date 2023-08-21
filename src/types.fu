@@ -468,6 +468,7 @@ pub fn speculateStruct(asserts: flags::DeclAsserts, flatCount!: i32)
 pub fn despeculateStruct(mut type: Type)
 {
     type.quals &= ~(q_rx_copy | q_USAGE);
+    type.vfacts = [];
 
     // TODO FIX SPECPAT removing generic labels -
     //  currently we dump every struct's fields in field_items,
