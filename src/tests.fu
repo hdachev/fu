@@ -14888,7 +14888,7 @@ pub extern fn runTests()
 
     ZERO(`
         fn main() {
-            <fail not defined>
+            <fail not defined 5:55+1>
             mut <pass/>
             let </fail> se_local_let = false;
             if (se_local_let) return THIS_DOESNT_EXIST();
@@ -14919,9 +14919,9 @@ pub extern fn runTests()
         }
     `);
 
-    TODO_StaticEval(currently: "THIS_DOESNT_EXIST is not defined here 6:61+1", `
+    ZERO(`
         fn main() {
-            <fail not defined>
+            <fail not defined 6:61+1>
             mut <pass/>
             let </fail> se_closure_let = false;
             fn test() {
