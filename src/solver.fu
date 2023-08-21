@@ -5438,7 +5438,16 @@ pub fn solve(
                         // ARGUMENTS AT RISK //
                         :soft_risk, :hard_risk);
 
-                    arg.type || isUnspec || BUG("updateScope: Unexpected untyped argument: `" ~ name ~ "`.");
+                    if (SELF_TEST)
+                    {
+                        arg.type || isUnspec || BUG(
+                            "updateScope: Unexpected untyped argument.");
+
+                        arg.type.vfacts & (AlwaysTrue | AlwaysFalse)
+                            && arg.type.usage
+                            && !hacks::tryParseClosureID(id: arg.name)
+                            && BUG("updateScope: arg.type is AlwaysTrue/False.");
+                    }
 
                     // Previously this was `if (!isImplicit)`,
                     //  but consider a `fn f(implicit a)`:
@@ -7131,8 +7140,14 @@ pub fn solve(
             t_let = add_ref(t_let, Lifetime_temporary);
 
         if (SELF_TEST)
+        {
             t_let.vfacts & Typename && BUG(
                 "solveLetLike_dontTouchScope: Ended up with a Typename");
+
+            if (flags & F_ARG || flags & F_MUT)
+                t_let.vfacts & (AlwaysTrue | AlwaysFalse) && t_let.usage && BUG(
+                    "solveLetLike_dontTouchScope: Ended up with an AlwaysTrue/False");
+        }
 
         // TODO clean this up, annots not needed.
         //  We could move init out of here?
