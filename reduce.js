@@ -321,6 +321,25 @@ function tryUnwrapSingleStmtBlock(src)
 
 //
 
+const re_RETURN_DEFINIT = /return\s*[^[;\s][^;{}]+;/g;
+
+function tryReturnDefinit(src)
+{
+    const match = randExec(src, re_RETURN_DEFINIT);
+    if (!match)
+        return false;
+
+    console.log("\nDEFAULT RETURN\n<<<" + match[0] + ">>>");
+
+    return (
+        src.slice(0, match.index) +
+        'return [];' +
+        src.slice(match.index + match[0].length));
+}
+
+
+//
+
 const _strategies =
 [
     tryRemoveFn,
@@ -329,6 +348,8 @@ const _strategies =
     tryRemoveMisc,
 
     tryPopElse,
+    tryReturnDefinit,
+
     tryCutLines,
     tryCutLineGroup,
 
