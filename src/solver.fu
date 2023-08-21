@@ -4061,8 +4061,10 @@ pub fn solve(
             let usage = _current_fn.var_usage.unless_oob(t.index);
             let isUnused = !usage;
             if (isUnused)
+            {
                 if !(o.flags & F_LAX || o.status & SS_MATCHED || o.type.is_zeroes)
-                    warn(:o.solved.token, "Unused variable: " ~ o.name.qBAD ~ ": make it " ~ "lax".qKW ~ " if this is intentional.");
+                    warn(:o.solved.token, "Unused variable: " ~ o ~ ": make it " ~ "lax".qKW ~ " if this is intentional.");
+            }
 
             //
             if (SELF_TEST && usage.is_rx_copy && usage.isIrrelevant)
@@ -9284,13 +9286,6 @@ pub fn solve(
             type.lifetime.uni0n.len == 1 || BUG(
                 "CallerNode: var " ~ target.name ~ " type.lifetime.len != 1");
 
-            if (target.isLocal &&
-                target.localOf != _current_fn.target.index)
-            {
-                target = injectForeignLocal(target);
-                type = GET(target).type || BUG("CallerNode: !type on var " ~ target.name);
-            }
-
             // Track deps.
             if (target.modid < 0 ||
                 target.modid == module.modid && !(target.flags & F_PUB))
@@ -9298,6 +9293,15 @@ pub fn solve(
                 // Suppress unused warnings,
                 //  even if we end up throwing out this piece of code.
                 GET_mut(target).status |= SS_MATCHED;
+            }
+
+            //
+            if (target.isLocal &&
+                target.localOf != _current_fn.target.index)
+            {
+                target  = injectForeignLocal(target);
+                type    = GET(target).type || BUG(
+                    "CallerNode: !type on var " ~ target.name);
             }
         }
 
