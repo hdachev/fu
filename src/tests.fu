@@ -12620,6 +12620,29 @@ pub extern fn runTests()
         }
     `);
 
+    TODO_inline(currently: "BUG botching type of inline arg reason never 13:30+1", `
+        fn main() {
+            mut stuff = "";
+            fn doThing(thing)
+                try         stuff = "continue " ~ thing();
+                catch (e)   stuff = "throw " ~ e;
+
+            :DO_THING doThing: ||
+            {
+                fn cannotDoThing(inline reason: string)
+                    continue :DO_THING reason;
+            <alt>
+                cannotDoThing(throw("Reason"));
+            };
+            return stuff.len - 12; // "throw Reason"
+            <alt/>
+                cannotDoThing("Reason");
+            };
+            return stuff.len - 15; // "continue Reason"
+            </alt>
+        }
+    `);
+
 
     // Template types.
 
