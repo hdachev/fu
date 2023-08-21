@@ -933,11 +933,6 @@ pub fn solve(
             overload.type = flags & F_MUT
                 ? add_mutref(type, lifetime)
                 : add_ref   (type, lifetime);
-
-            // TODO FIX VFACTS //////////////////////////
-            if (overload.type.is_mutref || flags & F_ARG)
-                overload.type.vfacts = [];
-            // TODO FIX VFACTS //////////////////////////
         }
 
         return target;
@@ -4996,6 +4991,11 @@ pub fn solve(
                                 Lifetime_temporary);
                         // TYPES vs VALUES //////
 
+                        // TODO FIX VFACTS //////////////////////////
+                        // Discard everything but typename.
+                        inType.vfacts = isTypedef && Typename;
+                        // TODO FIX VFACTS //////////////////////////
+
                         //
                         (argName_typeParam && fail(
                             "Type param name collision with " ~ host_arg ~ "."))
@@ -7107,8 +7107,13 @@ pub fn solve(
         //  of a function coloring situation, fns that operate on types
         //   vs fns that operate on values, except its not fns but bindings.
         //
-        let t_init = clear_Typename(init.type);
+        mut t_init = clear_Typename(init.type);
         // TYPES vs VALUES //////
+
+        // TODO FIX VFACTS //////////////////////////
+        if (flags & (F_ARG | F_MUT))
+            t_init.vfacts = [];
+        // TODO FIX VFACTS //////////////////////////
 
         // Lose refs to temporaries.
         shadow let t_init = t_init.is_ref2temp
