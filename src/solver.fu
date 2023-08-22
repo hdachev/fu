@@ -8315,6 +8315,11 @@ pub fn solve(
 
     fn solveIf(node: Node, type: Type): SolvedNode
     {
+        ////////////////////////////////
+        let scope0 = Scope_snap(_scope);
+        defer Scope_pop(_scope, scope0);
+        ////////////////////////////////
+
         mut cond    = solveNode(node.items[0], t_proposition);
 
         // Dead code elim.
@@ -8331,8 +8336,15 @@ pub fn solve(
                 solveNode(node.items[ae_cond == SE_True ? 1 : 2], :type));
 
         // `a && THROWS ? b : c` is the same as `a ? THROWS : c`
-        let cons    = solveBlock(node.items[1], :type);
-        let alt     = solveBlock(node.items[2], :type);
+        let cons    = solveNode(node.items[1], :type);
+
+        ////////////////////////////////
+        // Can't use anything introduced
+        //  in the cond or cons.
+        defer Scope_pop(_scope, scope0);
+        ////////////////////////////////
+
+        let alt     = solveNode(node.items[2], :type);
 
         _here       = node.token;
         return createIf(cond, cons, alt, :type);
@@ -8385,6 +8397,11 @@ pub fn solve(
 
     fn solveOr(node: Node, type: Type): SolvedNode
     {
+        ////////////////////////////////
+        let scope0 = Scope_snap(_scope);
+        defer Scope_pop(_scope, scope0);
+        ////////////////////////////////
+
         let items = solveNodes(
             node.items,
             type_last:          type,
@@ -8461,6 +8478,11 @@ pub fn solve(
 
     fn solveAnd(node: Node, type: Type): SolvedNode
     {
+        ////////////////////////////////
+        let scope0 = Scope_snap(_scope);
+        defer Scope_pop(_scope, scope0);
+        ////////////////////////////////
+
         let items = solveNodes(
             node.items,
             type_last:          type,
