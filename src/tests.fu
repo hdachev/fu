@@ -15058,6 +15058,62 @@ pub extern fn runTests()
         }
     `);
 
+    ZERO(`
+        fn checkPalindrome(host: string, guest: string)
+            return host == guest || throw(":(");
+
+        fn palindrome(value: string) {
+            mut rev = value;
+            rev.reverse();
+            <alt>
+            checkPalindrome(value, rev);
+            return rev;
+            <alt/>
+            return checkPalindrome(value, rev)
+                && rev;
+            </alt>
+        }
+
+        fn main() {
+            mut n = "opera-arepo";
+            return n.palindrome.len - 11;
+        }
+    `);
+
+    ZERO(`
+        struct Node         { value: string };
+        struct Target       { index: i32    };
+        struct SolvedNode   { value: string };
+
+        fn solve(n_root: Node)
+        {
+            fn solveNode(node: Node)
+                return CallerNode(node.value);
+
+            fn checkAssignable(host: string, guest: string)
+                return host == guest || throw(":(");
+
+            fn CallerNode(value: string) {
+                <alt>
+                checkAssignable(value, n_root.value);
+                return SolvedNode(:value);
+                <alt/>
+                return checkAssignable(value, n_root.value)
+                    && SolvedNode(:value);
+                </alt>
+            }
+
+            return solveNode(n_root);
+        }
+
+        fn main() {
+            mut n = Node("hello!");
+            return n.solve.value.len - 6;
+        }
+    `);
+
+    // /StaticEval
+
 
     // CSE & LICM.
 
