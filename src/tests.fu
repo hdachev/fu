@@ -84,6 +84,7 @@ pub extern fn runTests()
 
     // Categorizing what doesn't work and why -
 
+    let TODO_qSTACK     = fn TODO;
     let TODO_specpat    = fn TODO;
     let TODO_recursion  = fn TODO;
     let TODO_enums      = fn TODO;
@@ -1424,6 +1425,16 @@ pub extern fn runTests()
 
         fn main() rec(-2).x - 500;
     `])
+
+    TODO_qSTACK(currently: "BUG out of range local", [`
+        fn wantsImplicit(implicit ref x: i32) = x++;
+    `,`
+        fn main() {
+            <fail X:X>               <pass/>
+            implicit mut x: i32 = 0; </fail>
+            return _0::wantsImplicit();
+        }
+    `]);
 
     // /Recursion, closures & implicit arguments.
 
