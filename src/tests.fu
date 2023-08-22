@@ -15047,6 +15047,17 @@ pub extern fn runTests()
                 + typeParamsMusntPickUpVFacts(2) == 230 ? 0 : 1;
     `);
 
+    TODO_StaticEval(currently: "BUG exit code", `
+        fn test() <fail not assignable to never X:X>
+                : never <pass/></fail>
+                    = [];
+
+        fn main() {
+            mut x: i32 = test();
+            return x;
+        }
+    `);
+
 
     // CSE & LICM.
 
