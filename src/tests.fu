@@ -105,6 +105,7 @@ pub extern fn runTests()
     let TODO_cow        = fn TODO;
     let TODO_mangle     = fn TODO;
     let TODO_semis      = fn TODO;
+    let TODO_lint       = fn TODO;
 
     let TODO_Map        = fn TODO;
 
@@ -3390,6 +3391,31 @@ pub extern fn runTests()
             if (!hello(str)) str ~= "!";
             return str.len - 13;
         }
+    `);
+
+    ZERO(`
+        fn test(x: i32) {
+            <fail y is not defined 6:24+1>
+            if (x > 1) let y = 20;      <pass/>
+            let y = x > 1 && 20;        </fail>
+
+            return x + y;
+        }
+
+        fn main() test(7) - 27;
+    `);
+
+    TODO_lint(currently: "y is not defined 7:24+1", `
+        fn test(x: i32) {
+            <fail indent X:X>
+            if (x > 1)
+            let y = 20;                 <pass/>
+            let y = x > 1 && 20;        </fail>
+
+            return x + y;
+        }
+
+        fn main() test(7) - 27;
     `);
 
     // /Logic and selectors.
