@@ -1,6 +1,11 @@
 import module;
 import context;
 
+pub let SELF_TEST = true;
+
+
+//
+
 pub fn FAIL_text(token: TokenIdx, reason: string): string
 {
     let src = getModuleSrc(:token.modid);

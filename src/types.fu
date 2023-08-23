@@ -138,7 +138,17 @@ pub fn is_rx_resize (t: Type) !!(t.quals & q_rx_resize);
 //
 
 fn areVFactsAssignable(host: VFacts, guest: VFacts)
-    host & guest == host;
+{
+    if (SELF_TEST)
+    {
+        let h = host  &~ Typename;
+        let g = guest &~ Typename;
+        if !(h & g == h)
+            BUG("areVFactsAssignable: vfacts mismatch: " ~ host ~ " != " ~ guest);
+    }
+
+    return host & guest == host;
+}
 
 fn areQualsAssignable(host: Quals, guest: Quals)
     host & guest == host;
@@ -153,16 +163,10 @@ pub let CANNOT_definit_mutrefs = true;
 
 pub fn isAssignableAsArgument(host: Type, guest: Type, DONT_match_zeroes!?: bool): bool
 {
-    let old = areQualsAssignable(host: host.quals, guest.quals)
-           &&  isCanonAssignable(host: host.canon, guest.canon)
-           || guest.is_zeroes && !DONT_match_zeroes && !(CANNOT_definit_mutrefs && host.quals & q_mutref);
-
-    if (old && !areVFactsAssignable(host: host.vfacts, guest.vfacts))
-        BUG("isAssignableAsArgument about to succeed, but VFacts not assignable:"
-            ~ "\n\n\t    host:  [" ~ host.vfacts ~ "]"
-            ~   "\n\t    guest: [" ~ guest.vfacts ~ "]");
-
-    return old;
+    return areVFactsAssignable(host: host.vfacts, guest.vfacts)
+        && ( areQualsAssignable(host: host.quals, guest.quals)
+          &&  isCanonAssignable(host: host.canon, guest.canon)
+          || guest.is_zeroes && !DONT_match_zeroes && !(CANNOT_definit_mutrefs && host.quals & q_mutref));
 }
 
 pub fn isAssignable(host: Type, guest: Type, DONT_match_zeroes!?: bool, asArgument!?: bool): bool

@@ -20,7 +20,6 @@ let OPTI_bck                = true;
 let OPTI_ignoreLocalLts     = true;
 let OPTI_unlist_callers     = true;
 
-let SELF_TEST               = true;
 let RESOLVE_report          = false;
 
 
@@ -9011,7 +9010,7 @@ pub fn solve(
                     letdefReplicas.grow_if_oob(expr.target.index) = local || BUG();
 
                     //
-                    fn Lifetime_assertEqual(
+                    lax fn Lifetime_assertEqual(
                         lax a: Lifetime, lax aa: string,
                         lax b: Lifetime, lax bb: string)
                     {
