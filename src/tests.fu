@@ -15047,7 +15047,7 @@ pub extern fn runTests()
                 + typeParamsMusntPickUpVFacts(2) == 230 ? 0 : 1;
     `);
 
-    TODO_StaticEval(currently: "BUG exit code", `
+    TODO_StaticEval(currently: "BUG cannot definit type never 4:23+2", `
         fn test() <fail not assignable to never X:X>
                 : never <pass/></fail>
                     = [];

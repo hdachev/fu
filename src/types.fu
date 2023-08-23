@@ -185,23 +185,24 @@ pub fn is_ref(type: Type): bool
 
 pub fn is_mutref(type: Type): bool
 {
-    let a = type.quals & q_mutref != 0;
-    let b = type.is_ref;
-    a && !b && BUG("MutRef&&!Ref");
+    let is_mutref = !!(type.quals & q_mutref);
 
-    return a;
+    if (SELF_TEST && is_mutref && !type.is_ref)
+        BUG("is_mutref: Empty lifetime, but q_mutref set");
+
+    return is_mutref;
 }
 
 pub fn add_ref(mut type: Type, lifetime: Lifetime): Type
 {
-    type.lifetime = Lifetime_union(type.lifetime, lifetime) || BUG("add_ref: falsy lifetime");
+    type.lifetime = Lifetime_union(type.lifetime, lifetime) || BUG("add_ref: Empty lifetime");
     return type;
 }
 
 pub fn add_mutref(mut type: Type, lifetime: Lifetime): Type
 {
     type.quals |= q_mutref;
-    type.lifetime = Lifetime_union(type.lifetime, lifetime) || BUG("add_mutref: falsy lifetime");
+    type.lifetime = Lifetime_union(type.lifetime, lifetime) || BUG("add_mutref: Empty lifetime");
     return type;
 }
 
@@ -247,6 +248,9 @@ pub fn definitType(mut type: Type)
 
     if (type.is_ref)
         type.lifetime = Lifetime_static;
+
+    if (SELF_TEST && type.is_never)
+        BUG("Cannot definit type never.");
 
     type.vfacts = AlwaysFalse;
     return type;
