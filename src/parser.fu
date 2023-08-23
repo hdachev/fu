@@ -589,6 +589,8 @@ pub fn parse(
             out.flags |= F_CONVERSION;
         else if (out.kind == "let")
             out.flags |= F_USING;
+        else if (out.kind == "enum" || out.kind == "flags" || out.kind == "primitive")
+            out.flags |= F_USING;
         else
             fail("using".qBAD ~ " cannot be used here.");
 

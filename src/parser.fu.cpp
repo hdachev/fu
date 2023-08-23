@@ -2041,6 +2041,8 @@ static s_Node parseUsing_hh8HxI9f(const int modid, const fu::str& fname, const f
         out.flags |= s_Flags_F_CONVERSION;
     else if (out.kind == s_kind_let)
         out.flags |= s_Flags_F_USING;
+    else if (out.kind == s_kind_enum || out.kind == s_kind_flags || out.kind == s_kind_primitive)
+        out.flags |= s_Flags_F_USING;
     else
         fail_QjJC84VE((qBAD_bF2G8fJR("using"_fu) + " cannot be used here."_fu), fname, src, tokens, _idx);
 
