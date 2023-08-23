@@ -242,7 +242,7 @@ pub fn formatTokenCoord(fname!: string, token: LineColChars)
          ~ ansi::RESET;
 }
 
-pub flags CodeFmt
+using pub flags CodeFmt
 {
     FullContext
     NoLeadContext

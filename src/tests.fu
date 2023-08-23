@@ -7987,7 +7987,7 @@ pub extern fn runTests()
                     for (fieldname i: T) {
                         let opt = "i";
                         if (opt.starts(with: prefix) && opt.ends(with: suffix))
-                            result |= i;
+                            result |= T.i;
                     }
 
                     return result;
@@ -7999,7 +7999,7 @@ pub extern fn runTests()
 
             for (fieldname i: T)
                 if (v == "i")
-                    return i;
+                    return T.i;
 
             return [];
         }
@@ -14110,7 +14110,7 @@ pub extern fn runTests()
     `);
 
     TODO_relaxer(currently: "Bad call to useConsumedType 11:24+15", `
-        flags TPFlags { ArgSpec; Typename; NeedsConsumed };
+        using flags TPFlags { ArgSpec; Typename; NeedsConsumed };
 
         struct TP { flags: TPFlags };
 
@@ -14597,7 +14597,7 @@ pub extern fn runTests()
     `);
 
     ZERO(`
-        enum Test { A = 5; B; C };
+        using enum Test { A = 5; B; C };
         fn main()
             <fail - bad call>
             C - 7;      <pass/>
@@ -14605,6 +14605,7 @@ pub extern fn runTests()
     `);
 
     ZERO(`
+        using
         <alt>
         primitive <alt/>
         enum      </alt> Test: i32 { A1; A2; M5 = 5; A6 };
@@ -14615,6 +14616,7 @@ pub extern fn runTests()
     `);
 
     ZERO(`
+        using
         <fail bad call to ->
         enum         <pass/>
         primitive    </fail> Test: i32 { A; B };
@@ -14624,12 +14626,12 @@ pub extern fn runTests()
     ZERO(`
         enum EnumA: i32;
         enum EnumB: EnumA { Zero = 0 };
-        fn main() Zero.i32;
+        fn main() EnumB.Zero.i32;
     `);
 
     ZERO(`
         primitive PrimA: i32;
-        primitive PrimB: PrimA { Zero = 0; One };
+        using primitive PrimB: PrimA { Zero = 0; One };
         fn main() (One - 1).i32;
     `);
 
@@ -14650,7 +14652,7 @@ pub extern fn runTests()
     </alt>
 
         fn main() {
-            mut r = One;
+            mut r = PrimB.One;
             return r.and_decr.i32;
         }
     `);
@@ -14662,7 +14664,7 @@ pub extern fn runTests()
     `);
 
     ZERO(`
-        enum Greet { hello; world };
+        using enum Greet { hello; world };
         fn main()
             hello ~ " " ~ world == "hello world"
                 ? 0 : 1;
@@ -14671,13 +14673,13 @@ pub extern fn runTests()
     ZERO(`
         enum Greet { hello; world };
         fn woot(hi: Greet) hi == "hello";
-        fn main() hello.woot ? 0 : 1;
+        fn main() Greet.hello.woot ? 0 : 1;
     `);
 
     ZERO([`
-        enum Greet { hello; world };
-        fn h() hello;
-        fn w() world;
+        using enum Greet { hello; world };
+        fn h() Greet.hello;
+        fn w() Greet.world;
     `,`
         fn main()
             _0::h() ~ " " ~ _0::w() == "hello world"
@@ -14685,7 +14687,7 @@ pub extern fn runTests()
     `]);
 
     ZERO([`
-        enum _0 { A; B };
+        using enum _0 { A; B };
     `,`
         fn test(::_0) _0.i32;
         fn main() "A".test - _0::A.i32;
@@ -14695,7 +14697,7 @@ pub extern fn runTests()
         enum _0 { A; B };
     `,`
         fn test(x: ::_0 = "B") x.i32;
-        fn main() test - _0::B.i32;
+        fn main() test - ::_0.B.i32;
     `]);
 
     ZERO(`
@@ -14707,11 +14709,11 @@ pub extern fn runTests()
 
     TODO_enums(currently: "A is not defined here 2:28+1", `
         enum Test { A; B = A; C; };
-        fn main() C.i32 - 1;
+        fn main() Test.C.i32 - 1;
     `);
 
     ZERO(`
-        flags Flags { A; B; C; D };
+        using flags Flags { A; B; C; D };
 
         fn main() {
             mut flags = A | C;
@@ -14730,7 +14732,7 @@ pub extern fn runTests()
     `);
 
     ZERO(`
-        flags Hey: u8 { A; B };
+        using flags Hey: u8 { A; B };
         fn main() {
             mut flags = A | B;
             flags &= ~B;
@@ -14738,7 +14740,7 @@ pub extern fn runTests()
         }
     `);
 
-    TODO_ambig(currently: "Ambig call enumv bool 2:9+4 prelude :29+4", `
+    ZERO(`
         enum thing { i32; int; bool }
 
         // So the problem is the retval annotation for fn ==(template): bool
@@ -14767,14 +14769,14 @@ pub extern fn runTests()
         };
 
         fn main() {
-            mut id: u64 = BitmapFontAtlas.u64;
+            mut id: u64 = ID.BitmapFontAtlas.u64;
             // meawhile this outputted the underscores
             return id == 0x8000_0000_0000_0001 ? 0 : 1;
         }
     `);
 
     ZERO(`
-        enum ID: u32 {
+        using enum ID: u32 {
             SecondLast = 0xffff_fffe;
             Last;
             <fail exhaust range>
@@ -14795,18 +14797,19 @@ pub extern fn runTests()
         };
 
         fn main() {
-            return Last.u64 == 0xffff_ffff_ffff_ffff ? 0 : 1;
+            return ID.Last.u64 == 0xffff_ffff_ffff_ffff ? 0 : 1;
         }
     `);
 
     ZERO([
     `
         enum ID { A = 1 };
-        enum IDOffset { B = 10 };
+        using enum IDOffset { B = 10 };
         fn offset(a: ID, b: IDOffset) = a.i32 + b.i32;
     `,
     `
-        fn main() = _0::A.offset(_0::B) - 11;
+        fn main() = _0::ID.A.offset(
+            _0::<alt>B<alt/>IDOffset.B</alt>) - 11;
     `]);
 
     ZERO(`

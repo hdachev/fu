@@ -95,7 +95,7 @@ let M_LAMBDA_STMT_OK        = 1 << 2;
 
 //
 
-enum Fixity {
+using enum Fixity {
     Infix
     Prefix
     Postfix

@@ -85,7 +85,7 @@ fn exec(cmd: string, ref stdout: string)
 
 //
 
-flags DEV_OnFail
+using flags DEV_OnFail
 {
     OnFail_PrintInput
     OnFail_PrintOutput

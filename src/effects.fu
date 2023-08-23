@@ -2,7 +2,7 @@
 
 // Sketch.
 
-flags FxMask: u16
+using flags FxMask: u16
 {
     Fx_NotDeadCode          // cannot dead-code eliminate,  e.g. debug::print().
     Fx_NonDeterministic     // cannot sub-expression eliminate, e.g. now::hr().

@@ -230,7 +230,7 @@ pub fn solve(
         specs?:             map::Map(string, Target); // mangle -> spec;
     };
 
-    flags TypeParamFlags {
+    using flags TypeParamFlags {
         TP_isArgSpec;
         TP_isTypenameArgSpec;
         TP_needsConsumedTypes;
@@ -293,23 +293,23 @@ pub fn solve(
         kills!?:        Helpers;
     };
 
-    enum StaticEval {
+    using enum StaticEval {
         SE_Unknown = 0
         SE_False
         SE_True
     };
 
-    enum BorrowCheckPass {
+    using enum BorrowCheckPass {
         BCK_bck
         BCK_aar
         BCK_ooe
     };
 
-    enum ArgQuery {
+    using enum ArgQuery {
         AQ_WhyNotNovec
     };
 
-    enum DeadBreak {
+    using enum DeadBreak {
         DeadBreak_Dont = 0
         DeadBreak_Always
         DeadBreak_Only_WhileSolvingRecursion
@@ -6072,7 +6072,7 @@ pub fn solve(
             ref innerScope = lookupUserType_mut(out_type.canon).items;
             if (!innerScope && members)
             {
-                let BACK_COMPAT = true;
+                let isUnscoped = !!(node.flags & F_USING);
 
                 // Dereferencing a struct does not require it
                 //  to have any particular qualities.
@@ -6081,7 +6081,7 @@ pub fn solve(
                                  type: despeculateStruct(out_type)) ]
                     : [ Argument(name: "This",
                                  type: into_Typename(out_type),
-                              default: BACK_COMPAT
+                              default: isUnscoped
                                     && createEmpty(type: into_Typename(out_type))) ];
 
                 for (mut i = 0; i < members.len; i++)
@@ -6097,7 +6097,7 @@ pub fn solve(
 
                     ref ext     = EXT_mut(target);
                     ext.args    = args;
-                    ext.min     = BACK_COMPAT && isPrimDecl ? 0 : args.len;
+                    ext.min     = isUnscoped && isPrimDecl ? 0 : args.len;
                     ext.max     = args.len;
 
                     // For snippets -

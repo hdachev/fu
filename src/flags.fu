@@ -2,7 +2,7 @@
 
 // Overload flags.
 
-flags SolverStatus: u16
+using flags SolverStatus: u16
 {
     SS_LAZY
     SS_DID_START
@@ -28,7 +28,7 @@ flags SolverStatus: u16
 
 // Solver helpers.
 
-flags HelpersMask
+using flags HelpersMask
 {
     HM_CanBreak
     HM_CanReturn
@@ -49,7 +49,7 @@ flags HelpersMask
 
 //
 
-flags DeclAsserts: u16
+using flags DeclAsserts: u16
 {
     A_NOCOPY
     A_NOVEC
@@ -80,7 +80,7 @@ flags DeclAsserts: u16
 
 //
 
-flags ParseSyntax
+using flags ParseSyntax
 {
     PS_ID
 
@@ -93,7 +93,7 @@ flags ParseSyntax
 
 // TODO clean up the fncall flags, it's historic bs.
 
-flags Flags: u32
+using flags Flags: u32
 {
     F_METHOD
     // ...
@@ -142,7 +142,7 @@ flags Flags: u32
 
 //
 
-flags ExitPaths {
+using flags ExitPaths {
     XP_NonEmptyReturn
     XP_EmptyReturn
     XP_NoReturn
@@ -173,7 +173,7 @@ let STRUCT_MEMBERS  = 1;
 
 // Solver notes.
 
-flags SolverNotes: i32
+using flags SolverNotes: i32
 {
     N_FnRecursion
     N_FnResolve
@@ -221,7 +221,7 @@ flags SolverNotes: i32
 
 //
 
-flags CGDefects
+using flags CGDefects
 {
     GNUStmtExpr;
     Goto;

@@ -1,5 +1,5 @@
 
-flags DevOptions {
+using flags DevOptions {
     DEV_PrintAST
     DEV_PrintCG
     DEV_Parallel
