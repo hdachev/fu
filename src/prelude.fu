@@ -510,13 +510,21 @@ case (T -> _[:]) {
     return cmp;
 }
 default {
+    lax mut cmp = 0;
+
     // TODO this would be better if it went through each member doing the trivial work first -
-    //  only then going through them again and looking at e.g. array contents etc.
-    for (fieldname i: T) {
-        let cmp = a.i <> b.i;
-        if (cmp)
-            return cmp;
-    }
+    //  only then going through them again and looking at e.g. array contents etc,
+    //   this is a first approx but does not go recursively through structs.
+
+    for (fieldname i: T)
+        if (typeof(a.i).is::trivial)
+            if (cmp = a.i <> b.i)
+                return cmp;
+
+    for (fieldname i: T)
+        if !(typeof(a.i).is::trivial)
+            if (cmp = a.i <> b.i)
+                return cmp;
 
     return 0;
 }
