@@ -3110,6 +3110,33 @@ pub fn solve(
                 return;
             }
 
+
+            // Regular calls -
+            //  we can redirect those to relaxed, cheaper specializations,
+            //   based on what we want from the return value.
+            //
+            fn redirectCallTarget(spec: Target)
+            {
+                if (spec == node.target)
+                    return;
+
+                ensureLazySolved(spec);
+
+                spec.args.len == t.args.len || BUG(
+                    "Relaxed spec.args.len != original.args.len");
+
+                checkAssignable(host: node.type, spec.type,
+                    "Relaxed specialization does not return a subtype");
+
+                if (node.type.is_ref)
+                    node.type.lifetime = Lifetime_test(
+                        Lifetime_replaceArgsAtCallsite(spec, node.items),
+                        tempsOK: true);
+
+                node.target = spec;
+                makeNote(N_RelaxRespec);
+            }
+
             if (t.spec_of && t.type.is_ref)
             {
                 // Template spec relaxer, this is nasty.
@@ -3152,24 +3179,8 @@ pub fn solve(
                     let spec = trySpecialize(
                         t.spec_of, args: relaxed, :args_mangled, REST_START: relaxed.len);
 
-                    if (!spec.is_SPECFAIL && !(spec == t))
-                    {
-                        ensureLazySolved(spec);
-
-                        spec.args.len == t.args.len || BUG(
-                            "Relaxed spec.args.len != original.args.len");
-
-                        checkAssignable(host: node.type, spec.type,
-                            "Relaxed specialization does not return a subtype");
-
-                        if (node.type.is_ref)
-                            node.type.lifetime = Lifetime_test(
-                                Lifetime_replaceArgsAtCallsite(spec, relaxed),
-                                tempsOK: true);
-
-                        node.target = spec;
-                        makeNote(N_RelaxRespec);
-                    }
+                    if (!spec.is_SPECFAIL)
+                        redirectCallTarget(spec);
                 }
             }
 
