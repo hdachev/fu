@@ -8450,13 +8450,11 @@ pub fn solve(
                 //
                 if (sumType)
                 {
-                    sumType = type_trySuper(sumType, item.type);
-
-                    // EXPERIMENTAL & doesnt feel really robust:
-                    //  Allow incompatible types so long as one of the operands is a bool.
-                    //
-                    if (!sumType)
+                    sumType = type_trySuper(sumType, item.type) ||
                     {
+                        // EXPERIMENTAL & doesnt feel really robust:
+                        //  Allow incompatible types so long as one of the operands is a bool.
+                        //
                         items.each: |shadow item|
                         {
                             if (item.type.canon == t_bool.canon)
@@ -8468,7 +8466,7 @@ pub fn solve(
 
                         fail("Ambiguous ||, incompatible operands in a non-bool context: "
                             ~ humanizeType(item.type) ~ " || " ~ humanizeType(sumType));
-                    }
+                    };
                 }
                 else
                 {
