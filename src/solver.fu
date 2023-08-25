@@ -362,9 +362,24 @@ pub fn solve(
 
     fn humanizeTypeName(type: Type)
     {
-        return type.isStruct
-            ? lookupUserType(type).name
-            : type.canon;
+        if (type.isStruct)
+            return lookupUserType(type).name;
+
+        if (let itemType = tryClear_sliceable(type))
+        {
+            if (itemType == t_byte)
+                return "string";
+
+            return humanizeTypeName(itemType)
+                ~ (type.TODO_FIX_isArray ? "[]" : "[:]");
+        }
+
+        if (type.canon == t_bool.canon)
+            return "bool";
+        if (type.canon == t_byte.canon)
+            return "byte";
+
+        return type.canon;
     }
 
     fn fail_appendStack(mut reason: string)
