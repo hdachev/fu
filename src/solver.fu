@@ -1031,6 +1031,20 @@ pub fn solve(
         return fname[start, end];
     }
 
+    fn stableTypeID(type: Type)
+    {
+        // TODO FIX - we dont want this -
+        //  we want quals & vfacts serialized as masks,
+        //   and a type "shape" string, which basically the type structure,
+        //    without any targets/indices/whatever inside.
+        //
+        // This is a better approximation than serializeType,
+        //  which puts a bunch of indices in,
+        //   which thrashes cpp output too often.
+        //
+        return humanizeType(type);
+    }
+
     fn humanizeType(type: Type, mut lt!?: bool, mut no_quals!?: bool, mut usage!?: bool, lax i!?: int, diff!?: Type)
     {
         if (diff)
@@ -5670,7 +5684,11 @@ pub fn solve(
 
                     let sig     = (target.local_of && target.index.str)
                                 ~ shortModuleName
-                                ~ mangleSignature(target.args);
+                                ~ target.args.map(
+                                    |arg| arg.flags & F_INJECTED
+                                        ? ""
+                                        : arg.name ~ ":" ~ stableTypeID(arg.type))
+                                            .join(",");
 
                     EXT_mut(target).sighash = sig
                         && (tea::hash62(sig) || BUG());
@@ -5981,16 +5999,21 @@ pub fn solve(
     {
         let origId      = node.value;
 
-        // TODO FIX the sighash here etc,
-        //  we need a design for this,
-        //   not sure what we want.
-        let name        = origId ||
+        mut name        = origId ||
             ((_current_fn.target && _current_fn.target.name) || "Anon")
-                ~ (_current_fn.target.sighash && "_" ~ _current_fn.target.sighash)
                 ~ (_current_fn.TODO_FIX_unique++ && "_" ~ _current_fn.TODO_FIX_unique++);
 
-        let kind        = node.kind;
+        {
+            mut unique = "";
+            _typeParams.each: |tp, key|
+                (unique ? unique ~= "," : unique)
+                   ~= key ~ ":" ~ stableTypeID(tp.matched);
 
+            if (unique)
+                name ~= "_" ~ tea::hash62(unique);
+        }
+
+        let kind        = node.kind;
         let isStruct    = kind == "struct";
         let isUnion     = kind == "union";
 

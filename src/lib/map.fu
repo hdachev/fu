@@ -45,7 +45,7 @@ fn get(using _, key)
 
 fn each(using _, fn)
     for (mut i = 0; i < vals.len; i++)
-        fn(vals[i]);
+        fn(vals[i], key?: keys[i]);
 
 fn pairs(using _, fn)
     for (mut i = 0; i < keys.len; i++)
