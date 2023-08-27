@@ -3030,6 +3030,32 @@ pub extern fn runTests()
         }
     `);
 
+    ZERO(`
+        fn main() {
+            struct Type { canon: string };
+
+            mut _lookups: int;
+            mut _t_bool: Type;
+
+            fn t_bool() {
+                return _t_bool ||= Scope_lookupType("bool");
+            }
+
+            fn Scope_lookupType(canon: string) {
+                _lookups++;
+                return Type(:canon);
+            }
+
+            fn check(a<alt>: Type</alt>, b = t_bool) {
+                return a.canon.len + b.canon.len;
+            }
+
+            return check(t_bool) + _lookups - 9;
+        }
+    `);
+
+    // /Default arguments.
+
 
     // Truth tests.
 
