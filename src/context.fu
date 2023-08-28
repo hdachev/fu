@@ -203,10 +203,11 @@ pub fn lookupTypeConverts(type: ValueType)
 
 pub fn getFlatCount(type: ValueType): i32
 {
-    if (!type.isStructOrUnion)
-        return 1;
+    let s = tryLookupUserType(type);
+    if (s)
+        return s.flatCount;
 
-    return tryLookupUserType(type).flatCount;
+    return type.is_primitive ? 1 : 0;
 }
 
 
