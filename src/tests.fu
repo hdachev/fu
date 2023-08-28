@@ -3054,6 +3054,42 @@ pub extern fn runTests()
         }
     `);
 
+    TODO_recursion(currently: "Declaration cycle 10:16+10", `
+        struct Type { canon: string };
+        struct Node { kind: string; value: string };
+        struct SolvedNode { value: string; type: Type };
+
+        fn solve(root: Node)
+        {
+            mut _t_bool: Type;
+
+            fn createBool(value: string, type = t_bool)
+                return SolvedNode(:value, :type);
+
+            fn solveNode(node: Node)
+                return node.kind == "bool"
+                    && createBool(:node.value);
+    <alt>
+            fn solveNode(canon: string)
+                return Type(:canon);
+
+            fn t_bool()
+                return _t_bool ||= solveNode("t_bool");
+    <alt/>
+            fn t_bool()
+                return _t_bool ||= Type("t_bool");
+    </alt>
+            return solveNode(root);
+        }
+
+        fn main() {
+            let s = solve(Node(kind: "bool", value: "Hello!"));
+            return s.value      == "Hello!"
+                && s.type.canon == "t_bool"
+                    ? 0 : 1;
+        }
+    `);
+
     // /Default arguments.
 
 

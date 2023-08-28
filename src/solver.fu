@@ -1495,6 +1495,19 @@ pub fn solve(
                         min != max  ? "[" ~ min ~ " upto " ~ max ~ "]"
                                     : min.str;
 
+                    if (arity.min > arity.max)
+                    {
+                        // This borders on a compiler bug -
+                        //  but this is the best I can currently do,
+                        //
+                        matchFail("Declaration cycle, signature not yet available."
+                                ~ "\n\n\t    To fix this, you might need to shuffle functions around"
+                                    ~ "\n\t\tuntil every dependency (type annot or arg default expr)"
+                                    ~ "\n\t\tof " ~ overloadIdx ~ " is declared above it."
+                                ~ "\n\n\t    This borders on a compiler bug, sorry about it,"
+                                    ~ "\n\t\twe gotta come up with a better solve order algorithm.");
+                    }
+
                     matchFail("Wrong number of arguments: expects " ~ str(:arity.min, :arity.max)
                             ~ ", got " ~ str(minArity, maxArity) ~ ".");
                 }
