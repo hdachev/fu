@@ -3068,7 +3068,7 @@ pub extern fn runTests()
 
             fn solveNode(node: Node)
                 return node.kind == "bool"
-                    && createBool(:node.value);
+                    && createBool(:node.value);                 ;; PointlessMustSeq
     <alt>
             fn solveNode(canon: string)
                 return Type(:canon);

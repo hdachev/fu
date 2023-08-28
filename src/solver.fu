@@ -7198,7 +7198,7 @@ pub fn solve(
         {
             t_init.is_mutref    || t_init.is_never && annot
                                 || !init && flags & F_ARG || fail(
-                "`ref` variables must be initialized to a mutable reference: `" ~ id ~ "`"
+                "ref".qBAD ~ " variables must be initialized to a mutable reference: " ~ id.qBAD
                     ~ (t_init ? " = " ~ humanizeType(t_init) : "."));
         }
 
@@ -8998,7 +8998,7 @@ pub fn solve(
             mut helpersReplicas: Helpers[];
 
             //
-            fn matchReplicaOrInjectForeignLocal(target: Target)
+            fn matchReplicaOrInjectForeignLocal(target: Target, slot?: Type)
             {
                 if (target.modid != letdefExpect)
                     BUG("matchReplicaOrInjectForeignLocal: target.modid != letdefExpect"
@@ -9017,7 +9017,9 @@ pub fn solve(
 
                 let o = GET_crossmodule(target, :from);
                 if (o.flags & F_IMPLICIT)
-                    return bindImplicitArg(o.name, :o.type, becauseOf: from).target;
+                    return bindImplicitArg(o.name,
+                        type: slot || o.type,       // Use slot type if available,
+                        becauseOf: from).target;    //  might refer to unused implicit via arg default expr, etc.
 
                 if (from.modid != module.modid)
                     BUG("inlineExpression: about to use injectForeignLocal with an off-module target: " ~ o);
@@ -9126,7 +9128,7 @@ pub fn solve(
                     // Replace references to foreign locals with implicit closure args.
                     if (expr.target.isLocal)
                     {
-                        let local = matchReplicaOrInjectForeignLocal(expr.target);
+                        let local = matchReplicaOrInjectForeignLocal(expr.target, expr.type);
 
                         if (SELF_TEST)
                         {
