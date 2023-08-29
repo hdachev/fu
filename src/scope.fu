@@ -432,16 +432,3 @@ fn Scope_set(ref items: ScopeItem[], id: string, target: Target, shadows!: bool)
 {
     items.push(ScopeItem( :id, :target, :shadows ));
 }
-
-fn Scope_Typedef(scope: &mut Scope,
-    id: string, mut type: Type, flags = F_PUB, name?: string,
-    status?: SolverStatus)
-{
-    type        = into_Typename(type);
-    let target  = Scope_create(:scope, "type", :type, :flags, name: name || id, :status);
-
-    if (id)
-        Scope_set(:scope, :id, :target, shadows: !!(flags & F_SHADOW));
-
-    return target;
-}
