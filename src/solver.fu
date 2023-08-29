@@ -11578,8 +11578,28 @@ pub fn solve(
     }
     else
     {
-        // Pre-populate prelude with primitive types and such.
-        _scope = listGlobals();
+        // PRELUDE:
+        //  Pre-populate with primitive types and such.
+        //
+        Scope_Typedef(_scope,  "i8",    t_i8    );
+        Scope_Typedef(_scope, "i16",    t_i16   );
+        Scope_Typedef(_scope, "i32",    t_i32   );
+        Scope_Typedef(_scope, "i64",    t_i64   );
+        Scope_Typedef(_scope, "i128",   t_i128  );
+
+        Scope_Typedef(_scope,  "u8",    t_u8    );
+        Scope_Typedef(_scope, "u16",    t_u16   );
+        Scope_Typedef(_scope, "u32",    t_u32   );
+        Scope_Typedef(_scope, "u64",    t_u64   );
+        Scope_Typedef(_scope, "u128",   t_u128  );
+
+        Scope_Typedef(_scope, "f32",    t_f32   );
+        Scope_Typedef(_scope, "f64",    t_f64   );
+
+        Scope_Typedef(_scope, "bool",   t_bool  );
+        Scope_Typedef(_scope, "byte",   t_byte  );
+        Scope_Typedef(_scope, "void",   t_void  );
+        Scope_Typedef(_scope, "never",  t_never );
     }
 
     // Solve.
