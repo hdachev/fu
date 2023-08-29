@@ -52,6 +52,12 @@ infix fn >>= !T(ref a: T, b: T) case (T.is::integral): &mut T __native;
 
 
 // Numeric conversions.
+/*  Sketch for making these programmable.
+
+infix fn => !From(from: From, type Into)
+    case (Into.is::primitive && From.is::primitive)
+        __native("/prim_convert");
+*/
 
 fn   i8 !T(v: T) case (T.is::primitive):   i8 __native("/prim/convert");
 fn  i16 !T(v: T) case (T.is::primitive):  i16 __native("/prim/convert");
