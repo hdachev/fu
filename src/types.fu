@@ -166,7 +166,10 @@ pub fn isAssignableAsArgument(host: Type, guest: Type, DONT_match_zeroes!?: bool
     return areVFactsAssignable(host: host.vfacts, guest.vfacts)
         && ( areQualsAssignable(host: host.quals, guest.quals)
           &&  isCanonAssignable(host: host.canon, guest.canon)
-          || guest.is_zeroes && !DONT_match_zeroes && !(CANNOT_definit_mutrefs && host.quals & q_mutref));
+          || !DONT_match_zeroes && guest.is_zeroes
+                                && !(CANNOT_definit_mutrefs && host.quals & q_mutref)
+                                && !host.is_never
+           );
 }
 
 pub fn isAssignable(host: Type, guest: Type, DONT_match_zeroes!?: bool, asArgument!?: bool): bool
@@ -240,7 +243,7 @@ pub fn clear_mutref(mut type: Type)
 
 pub fn definitType(mut type: Type)
 {
-    if (!type)
+    if (!type || type.is_never)
         type = t_zeroes;
 
     if (CANNOT_definit_mutrefs)
