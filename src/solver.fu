@@ -3128,7 +3128,7 @@ pub fn solve(
             {
                 if (canDiscard)
                 {
-                    node = createEmpty();
+                    node = createEmpty(type: slot);
                     return;
                 }
 
