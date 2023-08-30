@@ -3655,9 +3655,26 @@ pub fn solve(
             {
                 node = expr;
             }
-            else
+            else :NOT_IRRELEVANT
             {
                 h.mask |= HM_LabelUsed;
+
+                // Let's get rid of irrelevant expressions,
+                //  wrap them in a block and follow them by a simple
+                //   return(empty).
+                //
+                if (h.ret_actual.isIrrelevant)
+                {
+                    if (expr.kind != "empty")
+                    {
+                        mut not_empty = createEmpty(type: h.ret_actual);
+                        swap(expr, not_empty);
+
+                        node = createBlock(not_empty, node);
+                    }
+
+                    break :NOT_IRRELEVANT;
+                }
 
                 // Code cleanup -
                 //
