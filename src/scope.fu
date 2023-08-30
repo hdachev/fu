@@ -7,16 +7,6 @@ import module;
 
 //
 
-enum SolverPass
-{
-    Solving = 0
-    RelaxMut
-    BorrowCheck
-    ArgumentsAtRisk
-    MaybeCopyOrMove
-    RelaxCopyResize
-};
-
 struct ScopeMemo {
     items_len:      i32;
     implicits_len:  i32;
