@@ -35,6 +35,8 @@ let DONT_match_zeroes       = true;
 
 let MOVE_from_temp          = true;
 
+let TODO_FIX_zeroes_static  = true;
+
 
 
 ///////////////////////////////////////
@@ -939,13 +941,13 @@ pub fn solve(
         // Setup the lifetime for references to this binding.
         ref overload = GET_mut(target);
         {
-            let lifetime = type.is_zeroes       // TODO FIX: deals with passing t_zeroes args
-                ? Lifetime_static               //  not sure if we care to support these,
-                : Lifetime_fromBinding(target); //   perhaps we can have a type.is_definit
-                                                //    which checks for both is_zeroes && is_static.
-                                                //
-                                                // This means that within a template fn you can use
-                                                //  t_zeroes as a sentinel for optional arguments.
+            mut lifetime = Lifetime_fromBinding(target);
+
+            // TODO FIX: deals with passing t_zeroes args
+            //  not sure if we care to support these,
+            if (TODO_FIX_zeroes_static)
+                if (type.is_zeroes)
+                    lifetime = Lifetime_static;
 
             ///////////////////////////////////////////////////////////////
             // Throw away argument lifetime, union below will fix it up. //
@@ -9143,11 +9145,20 @@ pub fn solve(
 
                     //
                     mut type = foreign.type;
-                    Lifetime_assertEqual(
-                        type.lifetime,                      "foreign.type.lifetime",
-                        Lifetime_fromBinding(expr.target),  "Lifetime_fromBinding");
 
-                    type.lifetime = Lifetime_fromBinding(local);
+                    if (type.lifetime == Lifetime_static)
+                    {
+                        TODO_FIX_zeroes_static && type.is_zeroes || BUG(
+                            "Unexpected static lifetime on " ~ foreign);
+                    }
+                    else
+                    {
+                        Lifetime_assertEqual(
+                            type.lifetime,                      "foreign.type.lifetime",
+                            Lifetime_fromBinding(expr.target),  "Lifetime_fromBinding");
+
+                        type.lifetime = Lifetime_fromBinding(local);
+                    }
 
                     //
                     mut solved = foreign.solved;

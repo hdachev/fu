@@ -53,6 +53,12 @@ pub fn Region_asLocal(using r: Region)
 
 //
 
+pub let Lifetime_static =
+    Lifetime(uni0n: [ Region_STATIC ]);
+
+pub let Lifetime_temporary =
+    Lifetime(uni0n: [ Region_TEMP ]);
+
 pub fn Lifetime_union(a: Lifetime, b: Lifetime): Lifetime =
     Lifetime(uni0n: set::union(a.uni0n, b.uni0n));
 
@@ -61,12 +67,6 @@ pub fn Lifetime_inter(a: Lifetime, b: Lifetime): Lifetime =
 
 pub fn Lifetime_makeShared(lifetime: Lifetime): Lifetime =
     Lifetime_union(lifetime, Lifetime_static);
-
-pub fn Lifetime_static(): Lifetime =
-    Lifetime(uni0n: [ Region_STATIC ]);
-
-pub fn Lifetime_temporary(): Lifetime =
-    Lifetime(uni0n: [ Region_TEMP ]);
 
 
 //

@@ -12742,7 +12742,7 @@ pub extern fn runTests()
         }
     `);
 
-    TODO_inline(currently: "BUG visitNode Lifetime_assertEqual 10:26+1", `
+    ZERO(`
         fn nested(ref index: i32)
             return index++ && [];
 
