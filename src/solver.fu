@@ -2891,7 +2891,7 @@ pub fn solve(
 
             ////////////////////////////////////////////////////////////////
             if (items.len < 2)
-                node = items.if_only || createEmpty();
+                node = items.if_only || createEmpty(type: slot);
             else if (canDiscard)
                 node.type = t_bool;
             ////////////////////////////////////////////////////////////////
