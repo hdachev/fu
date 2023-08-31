@@ -49,6 +49,9 @@ fn ScopeItem_canSkipRest(si: ScopeItem)
 fn ScopeItem_canSkipRest_set(ref si: ScopeItem)
     si.packed |= (0x1 << 30);
 
+fn ScopeItem_canSkipRest_clear(ref si: ScopeItem)
+    si.packed &= ~(0x1 << 30);
+
 fn ScopeItem(id: string, target: Target, shadows: bool)
     ScopeItem(:id, :target.modid,
         packed: target.index.u32 & 0x3fffffff | (shadows && (0x1 << 31)));
@@ -114,9 +117,13 @@ fn Scope_exports(scope: Scope, modid!: i32,
 
     for (mut i = 0; i < scope.items.len; i++)
     {
-        let item = scope.items[i];
+        mut item = scope.items[i];
         if (item.target.modid == modid)
         {
+            //////////////////////////////////
+            ScopeItem_canSkipRest_clear(item);
+            //////////////////////////////////
+
             let overload = scope.overloads[item.target.index - 1];
             (overload.flags & F_PUB ? items : prv_items) ~= item;
         }

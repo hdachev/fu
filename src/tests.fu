@@ -11074,6 +11074,48 @@ pub extern fn runTests()
         fn main() = _0::What(3).must_be_public - 33;
     `]);
 
+    ZERO([`
+        struct Module { modid: i32; target: Target }
+        struct Target { _packed: u64 }
+
+        let modid = 2;
+        inline fn modid(t: Target) i32(t._packed);
+        inline fn index(t: Target) i32(t._packed >> 32);
+
+        fn Target(shadow modid: i32, index: i32) {
+            return Target(modid.u64 | index.u64 << 32);
+        }
+    `,`
+        import _0;
+        fn inspect(m: Module) {
+            return modid + m.modid + m.target.modid;            ;; GNUStmtExpr
+        }
+    `,`
+        import _0;
+        fn main() {
+            let m = Module(3, Target(5, 7));
+            return m._1::inspect() - 10;
+        }
+    `]);
+
+    ZERO([`
+        struct Module { modid: i32; };
+        struct Target { _packed: u64; };
+
+        fn modid(t: Target) i32(t._packed & 0xffffff);
+
+        fn Target(modid: i32, index: i32, local: i32) {
+            return Target(modid.u64
+                        | index.u64 << 24
+                        | local.u64 << 44);
+        }
+    `,`
+        import _0;
+        fn inspect(module: Module) = module.modid;
+    `,`
+        fn main() _1::inspect([]);
+    `]);
+
     // /Pubs & imports.
 
 
