@@ -12764,6 +12764,27 @@ pub extern fn runTests()
         }
     `);
 
+    ZERO(`
+        fn Incr(ref x: i32) ++x;
+
+        struct N { v: i32 };
+
+        <alt>
+        inline
+        </alt>
+        fn +=(ref a: N, b: i32) {
+            a.v = a.v * 10 + b;
+            return a;
+        }
+
+        fn main() {
+            mut c: i32;
+            mut a: N;
+            (a = N(c.Incr)) += c.Incr;
+            return a.v - 21;
+        }
+    `);
+
     // /Inliner.
 
 
