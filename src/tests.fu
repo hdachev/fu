@@ -12719,7 +12719,7 @@ pub extern fn runTests()
         }
     `);
 
-    TODO_inline(currently: "BUG botching type of inline arg reason never 13:30+1", `
+    ZERO(`
         fn main() {
             mut stuff = "";
             fn doThing(thing)

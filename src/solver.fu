@@ -9192,8 +9192,9 @@ pub fn solve(
                         {
                             let foreign = GET_crossmodule(expr.target, :from);
 
-                            isAssignable(host: foreign.type, local.type) || BUG(
-                                "matchReplicaOrInjectForeignLocal botched the type of " ~ foreign ~ ":\n"
+                            isAssignable(host: foreign.type, local.type)
+                                || local.type.is_never && local.flags & F_INLINE
+                                || BUG("matchReplicaOrInjectForeignLocal botching the type of " ~ foreign ~ ":\n"
                                     ~ "\n\t\tExpect: " ~ foreign.type.humanizeType
                                     ~ "\n\t\tActual: " ~   local.type.humanizeType);
 
@@ -9589,8 +9590,9 @@ pub fn solve(
                     lax shadow let foreign = GET_crossmodule(foreign, from: target);
 
                     if (SELF_TEST)
-                        isAssignable(host: foreign.type, argdef.target.type) || BUG(
-                            "Inliner botching the argdef type of " ~ foreign ~ ":\n"
+                        isAssignable(host: foreign.type, argdef.target.type)
+                            || argdef.target.type.is_never && argdef.target.flags & F_INLINE
+                            || BUG("Inliner botching the argdef type of " ~ foreign ~ ":\n"
                                 ~ "\n\t\tExpect: " ~       foreign.type.humanizeType
                                 ~ "\n\t\tActual: " ~ argdef.target.type.humanizeType);
 
