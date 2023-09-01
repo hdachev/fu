@@ -652,10 +652,10 @@ pub fn solve(
         return _scope.extended.grow_if_oob(target.index);
     }
 
-    fn GET_next_local_index(implicit _current_fnort: Target)
+    fn GET_next_local_index()
     {
         return _current_fn.target.index
-            && _scope.extended[_current_fnort.index].locals.len + 1;
+            && _scope.extended[_current_fn.target.index].locals.len + 1;
     }
 
     fn nested(index: i32, from!: Target)
