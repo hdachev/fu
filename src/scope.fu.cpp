@@ -1071,6 +1071,11 @@ unsigned& ScopeItem_canSkipRest_set_x7P6ZuiD(s_ScopeItem& si)
     return (si.packed |= (0x1u << 30u));
 }
 
+unsigned& ScopeItem_canSkipRest_clear_x7P6ZuiD(s_ScopeItem& si)
+{
+    return (si.packed &= ~(0x1u << 30u));
+}
+
 s_ScopeItem ScopeItem_BGpM7Fr7(const fu::str& id, const s_Target& target, const bool shadows)
 {
     return s_ScopeItem { fu::str(id), target.modid, ((unsigned(target.index) & 0x3fffffffu) | (shadows ? (0x1u << 31u) : 0u)) };
@@ -1103,11 +1108,13 @@ s_Scope Scope_exports_p1TVwdqG(const s_Scope& scope, const int modid, const fu::
     fu::vec<s_Target> prv_converts {};
     for (int i = 0; i < scope.items.size(); i++)
     {
-        const s_ScopeItem& item = scope.items[i];
+        s_ScopeItem item = scope.items[i];
         if (target_7YqD2G7N(item).modid == modid)
         {
+            ScopeItem_canSkipRest_clear_x7P6ZuiD(item);
+
             const s_Overload& overload = scope.overloads[(target_7YqD2G7N(item).index - 1)];
-            ((overload.flags & s_Flags_F_PUB) ? items : prv_items) += s_ScopeItem(item);
+            ((overload.flags & s_Flags_F_PUB) ? items : prv_items) += static_cast<s_ScopeItem&&>(item);
         };
     };
     for (int i_1 = 0; i_1 < scope.converts.size(); i_1++)
