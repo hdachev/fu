@@ -580,6 +580,11 @@ pub fn solve(
         return Target(:module.modid, -target.modid);
     }
 
+    fn localfn(index: i32)
+    {
+        return Target(:module.modid, :index);
+    }
+
     fn GET_crossmodule(target: Target, from!: Target)
     {
         // When generating errors we can start traversing locals of other modules,
@@ -1775,10 +1780,8 @@ pub fn solve(
                 // Forbid ambiguity.
                 if (matchIdx)
                 {
-                    fn GETfn(idx: i32) Target(modid: module.modid, index: idx);
-
                     fn fnName(idx: i32) idx
-                        ? GETfn(idx).str
+                        ? localfn(index: idx).str
                         : "global scope";
 
                     let PREV        = matchIdx;
@@ -1791,14 +1794,14 @@ pub fn solve(
                         let callsite    = _current_fn.target.index; //   as seen from where we currently are
 
                         mut _c = callsite;
-                        while (_c > inner) _c = GETfn(_c).localOf;
+                        while (_c > inner) _c = localfn(index: _c).localOf;
                         _c == inner || BUG(
                             "Leaking `" ~ id ~ "` between functions [inner/callsite]: "
                                 ~ inner.fnName ~ "::" ~ PREV
                                 ~ " is seen from " ~ callsite.fnName);
 
                         mut _i = inner;
-                        while (_i > outer) _i = GETfn(_i).localOf;
+                        while (_i > outer) _i = localfn(index: _i).localOf;
                         _i == outer || BUG(
                             "Leaking `" ~ id ~ "` between functions [inner/outer]: "
                                 ~ inner.fnName ~ "::" ~ PREV ~ " and "
@@ -4039,7 +4042,7 @@ pub fn solve(
         let helpers_idx = _helpers.len;
         push(HelpersData( :id, :mask,
             ret_expect:     type,
-            target:         fnbody_of && Target(:module.modid, fnbody_of),
+            target:         fnbody_of && localfn(index: fnbody_of),
             local_of:       fnbody_of ? fnbody_of : _current_fn.target.index,
             locals_start:   fnbody_of ? +1 : locals_start || GET_next_local_index()));
 
@@ -4102,7 +4105,7 @@ pub fn solve(
             //   invalidated callsites and such,
             //    just finish up asap.
             //
-            let status = Target(:module.modid, fnbody_of).status;
+            let status = localfn(index: fnbody_of).status;
             if (!(status & SS_DIRTY))
             {
                 sortInjectedArguments();
@@ -4568,7 +4571,7 @@ pub fn solve(
         let calls = steal(target.EPH_mut.calls);
         for (mut i = 0; i < calls.len; i++)
         {
-            let callee = Target(:module.modid, calls[i]);
+            let callee = localfn(index: calls[i]);
             callee.EPH_mut.callers.set::rem(target.index)
                 || BUG("resetChild: Missing in callers on " ~ callee);
         }
@@ -4576,7 +4579,7 @@ pub fn solve(
         let callers = steal(target.EPH_mut.callers);
         for (mut i = 0; i < callers.len; i++)
         {
-            let caller = Target(:module.modid, callers[i]);
+            let caller = localfn(index: callers[i]);
             caller.EPH_mut.calls.set::rem(target.index)
                 || BUG("resetChild: Missing in calls on " ~ caller);
         }
@@ -5647,7 +5650,7 @@ pub fn solve(
 
                 asserts & A_NOFLOW && _current_fn.far_jumps && fail(
                     target ~ " is not noflow: contains non-local control flow, jumping out to "
-                        ~ Target(:module.modid, _current_fn.far_jumps[0]) ~ ".");
+                        ~ localfn(index: _current_fn.far_jumps[0]) ~ ".");
 
                 if (maybeLast && !mustBecomeInline)
                     numArgsWritten || ext.fx_mask || !retval.is_void || overload.flags & F_LAX || warn(:out.token,
@@ -5817,7 +5820,7 @@ pub fn solve(
                     let calls = steal(target.EPH_mut.calls);
                     for (mut i = 0; i < calls.len; i++)
                     {
-                        let call = Target(:module.modid, index: calls[i]);
+                        let call = localfn(index: calls[i]);
                         call.EPH_mut.callers.set::rem(self) || BUG(
                             "doTrySpec: " ~ target ~ " not listed as a caller of " ~ call);
                     }
@@ -6613,7 +6616,7 @@ pub fn solve(
                 :GO_UP
                 for (;;)
                 {
-                    shadow let t = Target(:module.modid, :index);
+                    shadow let t = localfn(:index);
                     shadow ref o = GET_mut(t);
 
                     // If not started or dirty, means someone else will take care of us here.
@@ -6668,7 +6671,7 @@ pub fn solve(
         //
         for (mut i = 0; i < reopen.len; i++)
         {
-            shadow let t = Target(:module.modid, index: reopen[i]);
+            shadow let t = localfn(index: reopen[i]);
             lazySolveStart(t);
         }
     }
@@ -11703,7 +11706,7 @@ pub fn solve(
         //
         if (RESOLVE_report) for (mut i = 0; i < _ephemeral.len; i++)
         {
-            let target  = Target(:module.modid, index: i);
+            let target  = localfn(index: i);
             let REV     = target.revision.i32;
             if (REV > 5)
             {
