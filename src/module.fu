@@ -161,8 +161,8 @@ struct TokenIdx
 
 struct Target
 {
-    modid:      i32;
-    index:      i32;
+    __modid!:   i32;
+    _index:     i32;
 }
 
 struct Local
@@ -446,4 +446,33 @@ fn argsReverse(lax RTL: bool, host_args: [Argument], fn)
     for (mut i = start; i != end; i += incr)
         fn(:i, host_arg: host_args[i], ooe_isLast?: i == start);
 //*/
+}
+
+
+// Forward-compat.
+
+fn globid(using t: Target)
+{
+    return __modid < 0 ? -__modid : _index;
+}
+
+fn locid(using t: Target)
+{
+    return __modid < 0 ? _index : 0;
+}
+
+fn modid(using t: Target)
+{
+    return __modid < 0 ? 1001 : __modid;
+}
+
+fn Target(modid!: i32, globid!: i32, locid!: i32)
+{
+    if (modid < 0 || globid <= 0 || locid < 0)
+        throw("Target: bad modid/globid/locid");
+
+    if (locid)
+        return Target(__modid: -globid, locid);
+
+    return Target(__modid: modid, globid);
 }

@@ -79,6 +79,9 @@ pub extern fn runTests()
     }
 
     shadow let ZERO = fn PARZERO;
+    /*/
+
+    println("\n\n\tDONT COMMIT:\n\n\tPARZERO mode is off.\n");
     // */
 
 

@@ -43,20 +43,21 @@ fn inspect(module: Module, root: SolvedNode): string
                     inspect(n.items[i], indent);
             }
 
-            if (n.target.modid == modid || n.target.modid < 0)
-            {
-                let overloads = n.target.modid < 0
-                    ? module.out.solve.scope.extended[-n.target.modid].locals
-                    : module.out.solve.scope.overloads;
+            let globid = n.target.globid;
+            let locid  = n.target.locid;
 
-                let o = overloads[n.target.index - 1];
+            if (n.target.modid == modid || locid)
+            {
+                let o = locid
+                    ? module.out.solve.scope.extended[globid].locals[locid - 1]
+                    : module.out.solve.scope.overloads[globid - 1];
 
                 if (o.name)
                     src ~= " n:" ~ o.name.trim();
 
                 if (o.kind == "fn")
                 {
-                    let x = module.out.solve.scope.extended[n.target.index];
+                    let x = module.out.solve.scope.extended[globid];
                     if (x.fx_mask)
                         src ~= " fx:" ~ x.fx_mask;
                 }

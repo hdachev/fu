@@ -144,22 +144,19 @@ pub fn cpp_codegen(
 
     mut _current_fn: cg_CurrentFn;
 
-    fn isLocal(target: Target)
-    {
-        return target.modid < 0;
-    }
-
     fn nested(index: i32)
     {
-        return index
-            && Target(modid: -_current_fn.index, :index);
+        return index && Target(
+            :_current_fn.modid,
+            :_current_fn.globid,
+            locid: index);
     }
 
     using fn GET(target: Target)
     {
-        target.index > 0 || BUG();
-
-        if (target.isLocal)
+        let globid = target.globid;
+        let locid  = target.locid;
+        if (locid)
         {
             let from = _current_fn.target;
 
@@ -167,14 +164,14 @@ pub fn cpp_codegen(
                 ? module
                 : ctx.modules[from.modid];
 
-            return m.out.solve.scope.extended[-target.modid].locals[target.index - 1];
+            return m.out.solve.scope.extended[globid].locals[locid - 1];
         }
 
         let m = target.modid == module.modid
             ? module
             : ctx.modules[target.modid];
 
-        return m.out.solve.scope.overloads[target.index - 1];
+        return m.out.solve.scope.overloads[globid - 1];
     }
 
     fn try_GET(target: Target)
@@ -184,14 +181,14 @@ pub fn cpp_codegen(
 
     using fn EXT(target: Target)
     {
-        if (target.modid == module.modid)
-            return module.out.solve.scope.extended.unless_oob(target.index);
-
-        if (target.modid < 0)
+        if (target.locid)
             return [];
 
+        if (target.modid == module.modid)
+            return module.out.solve.scope.extended.unless_oob(target.globid);
+
         return ctx.modules[target.modid]
-            .out.solve.scope.extended.unless_oob(target.index);
+            .out.solve.scope.extended.unless_oob(target.globid);
     }
 
 
@@ -676,7 +673,8 @@ pub fn cpp_codegen(
 
         id = ID(id);
 
-        if (target.isLocal)
+        let locid = target.locid;
+        if (locid)
         {
             fn _ids_dedupe  = _current_fn._ids_dedupe;
             fn _ids_used    = _current_fn._ids_used;
@@ -707,11 +705,11 @@ pub fn cpp_codegen(
                 }
 
                 if (dupes)
-                    _ids_dedupe.grow_if_oob(target.index) = dupes;
+                    _ids_dedupe.grow_if_oob(locid) = dupes;
             }
 
             // Dedupe #2.
-            let dupes = _ids_dedupe.len > target.index && _ids_dedupe[target.index];
+            let dupes = _ids_dedupe.len > locid && _ids_dedupe[locid];
             if (dupes)
                 return id ~ '_' ~ dupes;
         }
@@ -1295,7 +1293,7 @@ pub fn cpp_codegen(
         if (overload.flags & F_HOTSWAP)
         {
             target.modid == module.modid || BUG();
-            _live_targets ~= target.index;
+            _live_targets ~= target.globid;
 
             //
             let fnID        = target.fnID;
@@ -1435,7 +1433,7 @@ pub fn cpp_codegen(
         /////////////////////////////////////////////
         /////////////////////////////////////////////
         /////////////////////////////////////////////
-        let use_initTEMPVARs = !_current_fn.index;
+        let use_initTEMPVARs = !_current_fn.globid;
         mut initTEMPVARs: string[];
 
         if (use_initTEMPVARs)
@@ -1596,7 +1594,7 @@ pub fn cpp_codegen(
 
     fn cgLetDef(node: SolvedNode)
     {
-        if (!_current_fn.index)
+        if (!_current_fn.globid)
             return node.target.isExtLinked
                 && cgGlobal(node.target);
 
@@ -2121,7 +2119,7 @@ pub fn cpp_codegen(
                 if (target.type.isIrrelevant)
                     return cgDefault(target.type);
 
-                if (!node.target.isLocal)
+                if (!node.target.locid)
                 {
                     cgGlobal(node.target);
 

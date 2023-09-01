@@ -443,13 +443,19 @@ pub fn type_tryIntersect(a: Type, b: Type)
 pub fn isAddrOfFn(type: Type): bool =
     type.canon.starts(with: '@');
 
-pub fn packAddrOfFn(targets: Target[])
+pub fn packAddrOfFn(targets: Target[], modid: i32)
 {
-    mut res = "@";
+    mut res = "";
     for (mut i = 0; i < targets.len; i++)
     {
+        res ~= '@';
         let target = targets[i];
-        res.appendMi(:target.modid, :target.index);
+
+        // TODO FIX we don't want this after we switch to absolute Targets.
+        let locid = target.locid;
+        shadow let modid = locid ? modid : target.modid;
+
+        res.appendMi(:modid, :target.globid, :locid);
     }
 
     return res;
@@ -457,13 +463,12 @@ pub fn packAddrOfFn(targets: Target[])
 
 pub fn unpackAddrOfFn(canon: string, fn)
 {
-    canon[0] == '@' || throw("unpackAddrOfFn: No leading @ in `" ~ canon ~ "`.");
-
-    mut offset = 1;
+    mut offset = 0;
     while (offset < canon.len)
     {
+        canon[offset++] == '@' || throw("unpackAddrOfFn: No leading @ in `" ~ canon ~ "`.");
         let mi = parseMi(offset, canon);
-        fn(Target(:mi.modid, :mi.index));
+        fn(Target(:mi.modid, :mi.globid, :mi.locid));
     }
 }
 

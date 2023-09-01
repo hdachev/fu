@@ -201,31 +201,27 @@ fn parse10s32(ref offset: i32, str: string)
 
 // The crazier MMMiiiMMMiii style hex packing.
 
-struct Mi { modid: i32; index: i32 };
+struct Mi { modid: i32; globid: i32; locid: i32 };
 
 fn parseMi(ref offset: i32, str: string)
 {
     // Putting this first so we always start on a lowercase lettern.
-    let index = str.parse_ap(:offset).i32;
+    let globid =  str.parse_ap(:offset).i32;
+    let modid  = str.parse09AV(:offset).i32;
+    let locid  =  str.parse_ap(:offset).i32;
 
-    let modid_u32 = str.parse09AV(:offset);
-    let modid = modid_u32 & 1
-        ? -(modid_u32 >> 1).i32
-        :  (modid_u32 >> 1).i32;
-
-    return Mi(:modid, :index);
+    return Mi(:modid, :globid, :locid);
 }
 
-fn appendMi(ref str: string, mut modid!: i32, mut index!: i32)
+fn appendMi(ref str: string, modid!: i32, globid!: i32, locid!: i32)
 {
-    index < 0 && throw("appendMi: negative index");
-    str.append_ap(index.u32);
+    if (modid < 0 || globid <= 0 || locid < 0)
+         throw("appendMi: bad modid/globid/locid");
 
-    mut modid_u32 = modid < 0
-        ? (-modid).u32 << 1 | 1
-        : ( modid).u32 << 1;
-
-    str.append09AV(modid_u32);
+    str.append_ap(globid.u32);
+    str.append09AV(modid.u32);
+    if (locid)
+        str.append_ap(locid.u32);
 }
 
 

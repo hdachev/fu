@@ -19,7 +19,7 @@ pub fn parseStructCanon(canon: string): StructCanon
         || canon[offset] == '(' // TODO FIX SPECPATs
         || throw("parseStructCanon: trailing garbage in `" ~ canon ~ "`: " ~ offset ~ "|" ~ canon.len);
 
-    return StructCanon(:mi.modid, :mi.index - ONE_BASED);
+    return StructCanon(:mi.modid, mi.globid - ONE_BASED);
 }
 
 pub fn createStructCanon(
@@ -27,7 +27,7 @@ pub fn createStructCanon(
     modid: i32, index: i32, lax name: string): string
 {
     mut res = baseprim || "/";
-    res.appendMi(:modid, :index + ONE_BASED);
+    res.appendMi(:modid, globid: index + ONE_BASED, locid: 0);
 
     //
     if (baseprim)
