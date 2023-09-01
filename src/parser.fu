@@ -549,6 +549,19 @@ pub fn parse(
         return items;
     }
 
+    fn parseSubStatement()
+    {
+        let peek = tokens[_idx];
+
+        // Whitespace warn, unless block.
+        if (peek.kind != "op" || peek.value != "{")
+            peek.col > _col0 || warn(
+                "Misleading indent at `" ~ peek.value ~ "`: expected more than " ~ _col0
+                    ~ ", got " ~ peek.col ~ ".");
+
+        return parseStatement();
+    }
+
 
     // Watch out, we want to not allow pubs & shadows together.
 
@@ -2090,7 +2103,7 @@ pub fn parse(
         if (not)
             cond = createPrefix("!", cond);
 
-        let cons = parseStatement();
+        let cons = parseSubStatement();
 
         let else = tryConsume("id", "else");
         if (else)
@@ -2156,7 +2169,7 @@ pub fn parse(
             consume("op", ":");
             let type = parseTypeAnnot();
             consume("op", ")");
-            let body = parseStatement();
+            let body = parseSubStatement();
 
             return make("forfieldsof",
                 value: placeholder,
@@ -2204,14 +2217,14 @@ pub fn parse(
         consume("op", "(");
         let pre_cond = parseLetOrExpressionStatement();
         consume("op", ")");
-        let body = parseStatement();
+        let body = parseSubStatement();
 
         return createLoop(:pre_cond, :body);
     }
 
     fn parseDoWhile(): Node
     {
-        let body = parseStatement();
+        let body = parseSubStatement();
         consume("id", "while");
         consume("op", "(");
         let post_cond = parseLetOrExpressionStatement();
