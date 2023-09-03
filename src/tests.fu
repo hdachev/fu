@@ -1429,12 +1429,12 @@ pub extern fn runTests()
         fn main() rec(-2).x - 500;
     `])
 
-    TODO_qSTACK(currently: "BUG out of range local", [`
+    ZERO([`
         fn wantsImplicit(implicit ref x: i32) = x++;
     `,`
         fn main() {
-            <fail X:X>               <pass/>
-            implicit mut x: i32 = 0; </fail>
+            <fail no implicit x 4:37+1 2:39+1>  <pass/>
+            implicit mut x: i32 = 0;            </fail>
             return _0::wantsImplicit();
         }
     `]);

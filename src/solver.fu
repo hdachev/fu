@@ -367,11 +367,15 @@ pub fn solve(
         if (target.locid)
             return [];
 
-        if (target.modid == module.modid)
-            return _scope.extended.unless_oob(target.globid);
+        let modid   = target.modid;
+        let globid  = target.globid;
 
-        return ctx.modules[target.modid].out.solve
-           .scope.extended.unless_oob(target.globid);
+        shadow let _scope =
+            modid == module.modid
+                ? _scope
+                : ctx.modules[modid].out.solve.scope;
+
+        return _scope.extended.unless_oob(globid);
     }
 
     fn humanizeTypeName(type: Type)
@@ -619,14 +623,21 @@ pub fn solve(
 
     using fn GET(target: Target)
     {
-        let global = target.globid;
-        let locid = target.locid;
+        let modid   = target.modid;
+        let globid  = target.globid;
+        let locid   = target.locid;
+
+        shadow let _scope =
+            modid == module.modid
+                ? _scope
+                : ctx.modules[modid].out.solve.scope;
+
         if (locid)
         {
-            if (SELF_TEST && _scope.extended.len <= global)
+            if (SELF_TEST && _scope.extended.len <= globid)
                 BUG("Invalid local target -modid.");
 
-            let locals = _scope.extended[global].locals;
+            let locals = _scope.extended[globid].locals;
 
             if (SELF_TEST && locals.len < locid)
                 BUG("Out of range local target from: " ~ GET(target.parent)
@@ -635,21 +646,19 @@ pub fn solve(
             return locals[locid - 1];
         }
 
-        if (target.modid == module.modid)
-            return _scope.overloads[global - 1];
-
-        return ctx.modules[target.modid]
-            .out.solve.scope.overloads[global - 1];
+        return _scope.overloads[globid - 1];
     }
 
     fn GET_mut(target: Target)
     {
-        let globid = target.globid;
-        let locid = target.locid;
+        let globid  = target.globid;
+        let locid   = target.locid;
+
+        globid > 0 && target.modid == module.modid || assert();
+
         if (locid)
             return _scope.extended[globid].locals[locid - 1];
 
-        globid > 0 && target.modid == module.modid || assert();
         return _scope.overloads[globid - 1];
     }
 
@@ -661,9 +670,9 @@ pub fn solve(
 
     fn GET_next_local_index()
     {
-        let global = _current_fn.target.globid;
-        return global
-            && _scope.extended[global].locals.len + 1;
+        let globid = _current_fn.target.globid;
+        return globid
+            && _scope.extended[globid].locals.len + 1;
     }
 
     fn nested(index: i32, from!: Target)
@@ -829,10 +838,10 @@ pub fn solve(
         target.locid || target.modid == module.modid || BUG("not from this module");
 
         // Local?
-        let local = target.locid;
-        if (local)
+        let locid = target.locid;
+        if (locid)
         {
-            let region = Region_fromLocal(local);
+            let region = Region_fromLocal(locid);
             return Lifetime(uni0n: [ region ]);
         }
 
@@ -2648,8 +2657,8 @@ pub fn solve(
         {
             fn trackUse(t: Target)
             {
-                let local = t.locid;
-                if (!bitset.add_once(local))
+                let locid = t.locid;
+                if (!bitset.add_once(locid))
                     return false;
 
                 let o = GET(t);
@@ -2663,7 +2672,7 @@ pub fn solve(
                         return false;
                 }
 
-                return local >= _current_fn.loop_start;
+                return locid >= _current_fn.loop_start;
             }
 
             mut allTrue = true;
@@ -9054,7 +9063,7 @@ pub fn solve(
             defer _helpers.shrink(helpers0);
 
             //
-            let globalExpect = from.globid;
+            let globidExpect = from.globid;
             let minLocalIdx  = GET_next_local_index();
 
             mut helpersReplicas: Helpers[];
@@ -9062,8 +9071,8 @@ pub fn solve(
             //
             fn matchReplicaOrInjectForeignLocal(target: Target, slot?: Type)
             {
-                if (target.globid != globalExpect)
-                    BUG("matchReplicaOrInjectForeignLocal: target.globid != globalExpect"
+                if (target.globid != globidExpect)
+                    BUG("matchReplicaOrInjectForeignLocal: target.globid != globidExpect"
                         ~ ", will mess up the letdefReplicas minimap.");
 
                 let replica = letdefReplicas.unless_oob(target.locid);
@@ -9131,8 +9140,8 @@ pub fn solve(
                 //
                 if (expr.kind == "letdef")
                 {
-                    if (expr.target.globid != globalExpect)
-                        BUG("inlineExpression: letdef doesn't match globalExpect");
+                    if (expr.target.globid != globidExpect)
+                        BUG("inlineExpression: letdef doesn't match globidExpect");
 
                     //
                     let foreign = GET_crossmodule(expr.target, :from);
