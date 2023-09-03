@@ -381,3 +381,16 @@ fn steal !T(ref v: T) {
     swap(v, ret);
     return ret;
 }
+
+fn exchange !T(ref a: T, mut b: T) {
+    swap(a, b);
+    return b;
+}
+
+// TODO using this for _nestingFnort got me in trouble
+//  with COW police, but there's no COW, Target is trivial
+//
+fn shadow !T(ref a: T, mut b: T) unwrap {
+    swap(a, b);
+    defer:ok swap(a, b);
+}

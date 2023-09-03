@@ -282,6 +282,10 @@ pub fn solve(
 
         //
         _typeParams:        TypeParams;
+
+        //
+        _solvingFnort:      Target;
+        _nestingFnort:      Target;
     };
 
     struct HelpersData
@@ -653,9 +657,9 @@ pub fn solve(
         return Target(:from.modid, :from.globid, locid: index);
     }
 
-    fn nested(index: i32, implicit _current_fnort: Target)
+    fn nested(index: i32)
     {
-        return nested(:index, from: _current_fnort);
+        return nested(:index, from: _nestingFnort);
     }
 
     using fn EPH(target: Target)
@@ -5247,9 +5251,15 @@ pub fn solve(
                 ? into.spec_extras
                 : (target.EPH_mut.spec_extras = _typeParams.intoSpecExtras());
 
-            //////////////////////////////////////////////////
-            let implicit _current_fnort = target;
-            //////////////////////////////////////////////////
+            ///////////////////////////////////////////////
+            let solvingFnort0   = _solvingFnort.exchange(target);
+            let nestingFnort0   = _nestingFnort.exchange(target);
+
+            defer {
+                _solvingFnort   = solvingFnort0;
+                _nestingFnort   = nestingFnort0;
+            }
+            ///////////////////////////////////////////////
 
             // Go!
             {
@@ -6180,9 +6190,10 @@ pub fn solve(
         if (!solve)
             return createEmpty(target: out_target);
 
-        //////////////////////////////////////////////////
-        let implicit _current_fnort = out_target;
-        //////////////////////////////////////////////////
+        ///////////////////////////////////////////////
+        let solvingFnort0   = _solvingFnort.exchange(out_target);
+        defer _solvingFnort = solvingFnort0;
+        ///////////////////////////////////////////////
 
         GET_mut(out_target).status |= SS_DID_START;
 
@@ -8782,7 +8793,8 @@ pub fn solve(
     fn qSTACK(target: Target, node: SolvedNode, region: Region, seen!?: Target[], query!?: ArgQuery)
     {
         //////////////////////////////////////////////////
-        let implicit _current_fnort = target;
+        let nestingFnort0   = _nestingFnort.exchange(target);
+        defer _nestingFnort = nestingFnort0;
         //////////////////////////////////////////////////
 
         shadow let seen = seen ~ target;
@@ -8831,7 +8843,8 @@ pub fn solve(
     fn qSTACK(target: Target, node: SolvedNode, fx_mask: FxMask, seen!?: Target[])
     {
         //////////////////////////////////////////////////
-        let implicit _current_fnort = target;
+        let nestingFnort0   = _nestingFnort.exchange(target);
+        defer _nestingFnort = nestingFnort0;
         //////////////////////////////////////////////////
 
         shadow let seen = seen ~ target;
@@ -8862,7 +8875,8 @@ pub fn solve(
     fn qSTACK_implicit(target: Target, node: SolvedNode, id: string, type: Type, seen!?: Target[])
     {
         //////////////////////////////////////////////////
-        let implicit _current_fnort = target;
+        let nestingFnort0   = _nestingFnort.exchange(target);
+        defer _nestingFnort = nestingFnort0;
         //////////////////////////////////////////////////
 
         mut candidates = "";
@@ -8941,7 +8955,8 @@ pub fn solve(
     fn qSTACK_cow_inside(target: Target, node: SolvedNode, host_arg: Argument, cow_inside: TokenIdx, seen!?: Target[])
     {
         //////////////////////////////////////////////////
-        let implicit _current_fnort = target;
+        let nestingFnort0   = _nestingFnort.exchange(target);
+        defer _nestingFnort = nestingFnort0;
         //////////////////////////////////////////////////
 
         let arg_region = Region_fromLocal(host_arg.target.locid);
@@ -9333,7 +9348,7 @@ pub fn solve(
     }
 
     fn CallerNode(
-        debug: string, implicit _current_fnort: Target,
+        debug: string,
         mut target: Target, mut args?: SolvedNode[], reorder?: i32[], conversions?: Target[][])
             : SolvedNode
     {
@@ -9476,10 +9491,13 @@ pub fn solve(
                 // Tracking call graph & type annotations.
                 if (kind == "fn" || kind == "type" || kind == "inline")
                 {
-                    if (EPH_mut(target).callers.set::add(_current_fnort.globid))
-                        EPH_mut(_current_fnort).calls.set::add(target.globid);
+                    if (_solvingFnort)
+                    {
+                        if (EPH_mut(target).callers.set::add(_solvingFnort.globid))
+                            EPH_mut(_solvingFnort).calls.set::add(target.globid);
 
-                    detectRecursion(target);
+                        detectRecursion(target);
+                    }
                 }
             }
 
@@ -11668,9 +11686,6 @@ pub fn solve(
     // Solve.
     {
         // println("\n----------------------------\n");
-
-        let implicit _current_fnort =
-            Target(_packed: module.modid.u64);
 
         let root = solveNode(module.in.parse.root);
 
