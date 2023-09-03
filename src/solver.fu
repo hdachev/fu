@@ -2398,7 +2398,7 @@ pub fn solve(
                     if (calleeReturnDiscarded && !callee_cow.mayEscapeVia)
                         continue;
 
-                    if (callee_cow.argTarget == host_arg.local)
+                    if (callee_cow.argTarget == host_arg.locid)
                     {
                         visit(:callee_cow.vtype, token?: callee_cow.token,
                             uncaughtThrowOnly?:
@@ -5506,7 +5506,7 @@ pub fn solve(
                                        | (cow_inside  && F_COW_INSIDE),
                         :argNode.type,
                         default: !isImplicit && argNode.items && argNode.items[LET_INIT],
-                        local: argTarget.locid,
+                        :argTarget.locid,
 
                         // ARGUMENTS AT RISK //
                         :soft_risk, :hard_risk);
@@ -8771,7 +8771,7 @@ pub fn solve(
 
     fn qSTACK(target: Target, position!: i32, seen!?: Target[], query!?: ArgQuery)
     {
-        return qSTACK(:target, Region_fromLocal(target.args[position].local), :seen, :query);
+        return qSTACK(:target, Region_fromLocal(target.args[position].locid), :seen, :query);
     }
 
     fn qSTACK(target: Target, region: Region, seen!?: Target[], query!?: ArgQuery)
@@ -8929,7 +8929,7 @@ pub fn solve(
                 host_arg.name == id &&
                 isAssignableAsArgument(host: host_arg.type, type))
             {
-                let local = nested(host_arg.local);
+                let local = nested(host_arg.locid);
 
                 return "\n            "
                      ~ "because of " ~ explainWhichFn(local, fmt: FullContext);
@@ -8946,7 +8946,7 @@ pub fn solve(
         let implicit _current_fnort = target;
         //////////////////////////////////////////////////
 
-        let arg_region = Region_fromLocal(host_arg.local);
+        let arg_region = Region_fromLocal(host_arg.locid);
 
         mut candidates = "";
 
@@ -8969,7 +8969,7 @@ pub fn solve(
                 shadow let host_arg = host_args[i];
                 if (host_arg.flags & F_COW_INSIDE
                      && callsite.target.cows_inside.some(
-                        |cow| cow.argTarget == host_arg.local
+                        |cow| cow.argTarget == host_arg.locid
                                && cow.token == cow_inside)
                      && Lifetime_unwind(callsite.items[i].lifetime)
                             .uni0n.has(arg_region))
@@ -9554,7 +9554,7 @@ pub fn solve(
                     let host_arg = host_args[i];
 
                     // TODO FIX the let vs letdef mess
-                    if (!host_arg.local)
+                    if (!host_arg.locid)
                         continue;
 
                     let argdef = createLet(
@@ -9580,7 +9580,7 @@ pub fn solve(
                         argdefs ~= argdef;
 
                     // Watch it, cross-module locals.
-                    let foreign = nested(from: target, host_arg.local);
+                    let foreign = nested(from: target, host_arg.locid);
                     letdefReplicas.grow_if_oob(foreign.locid) = argdef.target || BUG();
                     lax shadow let foreign = GET(foreign);
 

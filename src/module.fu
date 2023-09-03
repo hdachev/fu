@@ -236,7 +236,7 @@ struct Argument
     using type?:    Type;
     default?:       SolvedNode;
     flags?:         flags::Flags;
-    local?:         i32;
+    locid?:         i32;
 
     // Arguments at risk -
     //  This is the borrow checker's global component.
