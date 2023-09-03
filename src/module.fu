@@ -164,12 +164,6 @@ struct Target
     _packed:    u64;
 }
 
-struct Local
-{
-    // modid: -this.fn, this is a fn-local.
-    index:      i32;
-}
-
 struct Helpers
 {
     index:      i32;
@@ -236,7 +230,7 @@ struct Argument
     using type?:    Type;
     default?:       SolvedNode;
     flags?:         flags::Flags;
-    locid?:         i32;
+    target?:        Target;
 
     // Arguments at risk -
     //  This is the borrow checker's global component.

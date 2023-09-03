@@ -1481,9 +1481,7 @@ pub fn cpp_codegen(
 
     fn binding(arg: Argument, forceValue!?: bool)
     {
-        let target = nested(arg.locid);
-
-        return binding(:target, :forceValue);
+        return binding(:arg.target, :forceValue);
     }
 
 
