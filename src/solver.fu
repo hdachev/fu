@@ -591,19 +591,6 @@ pub fn solve(
         return Target(:module.modid, globid: index, locid: 0);
     }
 
-    fn GET_crossmodule(target: Target, from!: Target)
-    {
-        target.modid  == from.modid  &&
-        target.globid == from.globid || assert();
-
-        return GET(target);
-    }
-
-    fn GET_crossmodule(target: Target, implicit _current_fnort: Target)
-    {
-        return GET_crossmodule(:target, from: _current_fnort);
-    }
-
     fn isFnOrType(h: Helpers): bool
         !!(h.mask & (HM_Function | HM_Struct));
 
@@ -6740,7 +6727,7 @@ pub fn solve(
     {
         Lifetime_each(:lifetime, :locals_start, visit: |t, i, shadow lifetime|
         {
-            let init = GET_crossmodule(t).Lifetime_climbType;
+            let init = t.Lifetime_climbType;
             if !(init.is_ref)
                 continue;
 
@@ -8771,7 +8758,7 @@ pub fn solve(
 
             // INDIRECTION !!!!
             shadow let node = node.kind == "letdef"
-                ? GET_crossmodule(node.target).solved
+                ? node.target.solved
                 : node;
             // INDIRECTION !!!!
 
@@ -9072,7 +9059,7 @@ pub fn solve(
                     return target;
                 }
 
-                let o = GET_crossmodule(target, :from);
+                let o = GET(target);
                 if (o.flags & F_IMPLICIT)
                     return bindImplicitArg(o.name,
                         type: slot || o.type,       // Use slot type if available,
@@ -9130,7 +9117,7 @@ pub fn solve(
                         BUG("inlineExpression: letdef doesn't match globidExpect");
 
                     //
-                    let foreign = GET_crossmodule(expr.target, :from);
+                    let foreign = GET(expr.target);
                     let local   = Scope_create(_scope, nest: _current_fn.target.globid);
 
                     letdefReplicas.grow_if_oob(expr.target.locid) = local || BUG();
@@ -9198,7 +9185,7 @@ pub fn solve(
 
                         if (SELF_TEST)
                         {
-                            let foreign = GET_crossmodule(expr.target, :from);
+                            let foreign = GET(expr.target);
 
                             isAssignable(host: foreign.type, local.type)
                                 || local.type.is_never && local.flags & F_INLINE
@@ -9595,7 +9582,7 @@ pub fn solve(
                     // Watch it, cross-module locals.
                     let foreign = nested(from: target, host_arg.local);
                     letdefReplicas.grow_if_oob(foreign.locid) = argdef.target || BUG();
-                    lax shadow let foreign = GET_crossmodule(foreign, from: target);
+                    lax shadow let foreign = GET(foreign);
 
                     if (SELF_TEST)
                         isAssignable(host: foreign.type, argdef.target.type)
