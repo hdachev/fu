@@ -154,41 +154,34 @@ pub fn cpp_codegen(
 
     using fn GET(target: Target)
     {
-        let globid = target.globid;
-        let locid  = target.locid;
-        if (locid)
-        {
-            let from = _current_fn.target;
+        let modid   = target.modid;
+        let globid  = target.globid;
+        let locid   = target.locid;
 
-            let m = !from || from.modid == module.modid
-                ? module
-                : ctx.modules[from.modid];
-
-            return m.out.solve.scope.extended[globid].locals[locid - 1];
-        }
-
-        let m = target.modid == module.modid
+        let m = modid == module.modid
             ? module
-            : ctx.modules[target.modid];
+            : ctx.modules[modid];
+
+        if (locid)
+            return m.out.solve.scope.extended[globid].locals[locid - 1];
 
         return m.out.solve.scope.overloads[globid - 1];
     }
 
-    fn try_GET(target: Target)
-    {
-        return target && GET(target);
-    }
-
     using fn EXT(target: Target)
     {
-        if (target.locid)
+        let locid   = target.locid;
+        if (locid)
             return [];
 
-        if (target.modid == module.modid)
-            return module.out.solve.scope.extended.unless_oob(target.globid);
+        let modid   = target.modid;
+        let globid  = target.globid;
 
-        return ctx.modules[target.modid]
-            .out.solve.scope.extended.unless_oob(target.globid);
+        let m = modid == module.modid
+            ? module
+            : ctx.modules[modid];
+
+        return m.out.solve.scope.extended.unless_oob(globid);
     }
 
 
@@ -404,7 +397,7 @@ pub fn cpp_codegen(
             def ~= "\n    " ~ id ~ "& operator=(const " ~ id ~ "&) = delete;";
             def ~= "\n    " ~ id ~ "& operator=(" ~ id ~ "&&) = default;";
         }
-        else if (try_GET(s.target).status & SS_TYPE_RECUR)
+        else if (s.target.status & SS_TYPE_RECUR)
         {
             def ~= "\n    " ~ id ~ "(const " ~ id ~ "&) = default;";
             def ~= "\n    " ~ id ~ "(" ~ id ~ "&&) = default;";
