@@ -161,8 +161,7 @@ struct TokenIdx
 
 struct Target
 {
-    __modid!:   i32;
-    _index:     i32;
+    _packed:    u64;
 }
 
 struct Local
@@ -198,8 +197,7 @@ struct SolvedNode
 struct ScopeItem
 {
     true id:        string;
-    modid:          i32;
-    packed:         u32;
+    _packed:        u64;
 };
 
 nocopy struct Scope
@@ -449,30 +447,19 @@ fn argsReverse(lax RTL: bool, host_args: [Argument], fn)
 }
 
 
-// Forward-compat.
+// Packed targets, one u64 packing modid+global+local.
 
-fn globid(using t: Target)
+fn  modid(t: Target) i32(t._packed       & 0xffffff);
+fn globid(t: Target) i32(t._packed >> 24 & 0xfffff );
+fn  locid(t: Target) i32(t._packed >> 44 & 0xfffff );
+
+fn Target(modid: i32, globid: i32, locid: i32)
 {
-    return __modid < 0 ? -__modid : _index;
-}
+    modid >= 0 &&
+    globid > 0 &&
+    locid >= 0 || throw("Target: bad modid/index/locid");
 
-fn locid(using t: Target)
-{
-    return __modid < 0 ? _index : 0;
-}
-
-fn modid(using t: Target)
-{
-    return __modid < 0 ? 1001 : __modid;
-}
-
-fn Target(modid!: i32, globid!: i32, locid!: i32)
-{
-    if (modid < 0 || globid <= 0 || locid < 0)
-        throw("Target: bad modid/globid/locid");
-
-    if (locid)
-        return Target(__modid: -globid, locid);
-
-    return Target(__modid: modid, globid);
+    return Target( modid.u64
+                | globid.u64 << 24
+                |  locid.u64 << 44);
 }

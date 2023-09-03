@@ -1771,7 +1771,7 @@ pub fn solve(
                         :REST_START, :REST_TYPE);
 
                     if (specIdx.is_SPECFAIL)
-                        matchFail(_spec_errors[specIdx._index] || "Could not specialize.");
+                        matchFail(_spec_errors[specIdx._packed.u32.i32] || "Could not specialize.");
 
                     ensureLazySolved(overloadIdx = specIdx);
                 }
@@ -4747,7 +4747,7 @@ pub fn solve(
 
     fn is_SPECFAIL(target: Target): bool
     {
-        return target.__modid == 2147483647;
+        return !!(target._packed & 0x8000_0000_0000_0000);
     }
 
     fn getSpecs(parent_idx: i32)
@@ -4839,7 +4839,7 @@ pub fn solve(
             : Target
     {
         let SPECFAIL_RentrySafety =
-            Target(__modid: 2147483647, 0);
+            Target(0x8000_0000_0000_0000);
 
         //
         let original = overloadIdx || into || BUG();
@@ -4916,7 +4916,7 @@ pub fn solve(
             _spec_errors   ~= reason;
 
             let spec        = Target(
-                :SPECFAIL_RentrySafety.__modid, index);
+                :SPECFAIL_RentrySafety._packed | index.u64);
 
             resetSpec(spec);
             return spec;
@@ -11690,7 +11690,7 @@ pub fn solve(
         // println("\n----------------------------\n");
 
         let implicit _current_fnort =
-            Target(__modid: module.modid, 0);
+            Target(_packed: module.modid.u64);
 
         let root = solveNode(module.in.parse.root);
 
