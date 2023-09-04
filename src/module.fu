@@ -161,7 +161,7 @@ struct TokenIdx
 
 struct Target
 {
-    _packed:    u64;
+    _packed!:   u64;
 }
 
 struct Helpers
@@ -442,10 +442,16 @@ fn argsReverse(lax RTL: bool, host_args: [Argument], fn)
 
 
 // Packed targets, one u64 packing modid+global+local.
-
-fn  modid(t: Target) i32(t._packed       & 0xffffff);
-fn globid(t: Target) i32(t._packed >> 24 & 0xfffff );
-fn  locid(t: Target) i32(t._packed >> 44 & 0xfffff );
+//  This gives us a capacity of up to 1 million modids/globids/locids,
+//   which is not a lot but should be relatively hard to hit in practice.
+//
+// Leaves us with the four msbits for flags & such,
+//  we use them for specfails (msb set),
+//   and for shadowing, stop-searching and could use them for F_PUBs too.
+//
+inline fn  modid(t: Target) i32(t._packed       & 0xfffff);
+inline fn globid(t: Target) i32(t._packed >> 20 & 0xfffff);
+inline fn  locid(t: Target) i32(t._packed >> 40 & 0xfffff);
 
 fn Target(modid: i32, globid: i32, locid: i32)
 {
@@ -453,7 +459,7 @@ fn Target(modid: i32, globid: i32, locid: i32)
     globid > 0 &&
     locid >= 0 || throw("Target: bad modid/index/locid");
 
-    return Target( modid.u64
-                | globid.u64 << 24
-                |  locid.u64 << 44);
+    return Target(_packed: modid.u64
+                        | globid.u64 << 20
+                        |  locid.u64 << 40);
 }

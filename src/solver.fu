@@ -4824,7 +4824,7 @@ pub fn solve(
             : Target
     {
         let SPECFAIL_RentrySafety =
-            Target(0x8000_0000_0000_0000);
+            Target(_packed: 0x8000_0000_0000_0000);
 
         //
         let original = overloadIdx || into || BUG();
