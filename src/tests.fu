@@ -1613,19 +1613,24 @@ pub extern fn runTests()
                 : arr; // <- we take this branch
     `);
 
-    TODO_cow(currently: "COW will break (13:27+4|13:41+4)", `
+    TODO_cow(currently: "DOES_THE_WRONG_THING_HERE", `
         fn main() {
             mut nums: i32[];
-            for (mut i = 0; i < 100; i++)
-                nums ~= 1;
+            for (mut i = 0; i < 100; i++) nums ~= 1;
 
             ref woot    = nums[nums.len / 2];
 
             let OPAQUE  = nums.len == 100*woot;
             mut other   = 0;
-            ref zero    = OPAQUE ? woot : other;
 
+            <fail COW will break (13:27+4|13:41+4)>
+            ref zero    = OPAQUE ? woot : other;
             let allOnes = <alt>nums<alt/>indirect_copy(nums)</alt>;
+            <pass/>
+            DOES_THE_WRONG_THING_HERE();
+            let allOnes = <alt>nums<alt/>indirect_copy(nums)</alt>;
+            ref zero    = OPAQUE ? woot : other;
+            </fail>
 
             zero = 0;
 
@@ -1930,7 +1935,7 @@ pub extern fn runTests()
                 : arr; // <- we take this branch
     `);
 
-    TODO_cow(currently: "both alias arr (24:17+3|24:31+3)", `
+    TODO_cow(currently: "DOES_THE_WRONG_THING_HERE", `
         noinline fn test(ref barr: i32[][], ref x: i32[]) {
             for (mut i = 0; i < x.len; i++)
                 x[i] += 2;
@@ -1944,9 +1949,17 @@ pub extern fn runTests()
             barr ~= [ 0 ];
         }
 
-        noinline fn outer(ref a: i32[][], ref b: i32[][]) {
+        noinline fn outer(ref a: i32[][], ref b: i32[][])
+        {
+            <fail both alias arr (28:17+3|28:31+3) 30:35+3>
             ref x = a[0];
             mut barr = <alt>b<alt/>indirect_copy(b)</alt>;      ;; N_COWRestrict
+            <pass/>
+            DOES_THE_WRONG_THING_HERE();
+            mut barr = <alt>b<alt/>indirect_copy(b)</alt>;
+            ref x = a[0];
+            </fail>
+
             test(:barr, x);
 
             return barr;
