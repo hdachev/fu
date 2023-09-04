@@ -1,6 +1,7 @@
 import helpers;
 import compiler;
 import tests;
+import ansi;
 
 fn cli_handle(argv: string[], cwd = fs::cwd()): i32
 {
@@ -184,12 +185,18 @@ fn cli_handle(argv: string[], cwd = fs::cwd()): i32
     }
 
     // Go.
-    compile_and_build(
-        :fname, :bin,
-        :run, :shared, :hotswap, :nocache,
-        :dir_wrk, :dir_src, :dir_cpp, :dir_obj,
-        :scheme,
-        :flags_cc, :flags_ld);
+    try {
+        compile_and_build(
+            :fname, :bin,
+            :run, :shared, :hotswap, :nocache,
+            :dir_wrk, :dir_src, :dir_cpp, :dir_obj,
+            :scheme,
+            :flags_cc, :flags_ld);
+    }
+    catch (e) {
+        println("\n" ~ "  ERROR ".qBAD ~ e);
+        return 1;
+    }
 
     return 0;
 }
