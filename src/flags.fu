@@ -87,7 +87,8 @@ using flags ParseSyntax
     PS_PARENS
     PS_SEMI
 
-    PS_DISCARD
+    PS_DISCARD_IF_BLOCK_TAIL
+    PS_ALWAYS_DISCARD
 };
 
 

@@ -323,7 +323,8 @@ pub fn parse(
             parseCallArgs(")", items);
         }
 
-        return make("pragma", :value, :items, syntax: softSemi() && PS_DISCARD);
+        return make("pragma", :value, :items,
+            syntax: softSemi() && PS_DISCARD_IF_BLOCK_TAIL);
     }
 
 
@@ -337,7 +338,7 @@ pub fn parse(
 
     fn createBlock(mut items: Node[], label?: string): Node
     {
-        if (items.if_last.syntax & PS_DISCARD)
+        if (items.if_last.syntax & (PS_DISCARD_IF_BLOCK_TAIL | PS_ALWAYS_DISCARD))
             items ~= make("empty", :items.last.token);
 
         return make("block", :items, value: label);
@@ -821,7 +822,7 @@ pub fn parse(
         }
 
         if (softSemi())
-            expr.syntax |= PS_DISCARD;
+            expr.syntax |= PS_DISCARD_IF_BLOCK_TAIL;
 
         return expr;
     }
@@ -1174,9 +1175,15 @@ pub fn parse(
         tryConsume("op", "=");
 
         //
-        return expr
+        mut body = expr
             ? parseExpression(_precedence)
             : parseStatement();
+
+        if (body.syntax & PS_ALWAYS_DISCARD)
+            body = createBlock([ body ]);
+
+        //
+        return body;
     }
 
     fn tryPopTypeAnnot(allowTypeUnions! = false): Node
@@ -2051,7 +2058,11 @@ pub fn parse(
                 && (tryConsume("id", "err") || consume("id", "ok")).value;
 
         _fnDepth > 0 || { _idx--; fail() };
-        return make("defer", :value, [ parseStatement() ], syntax: PS_DISCARD);
+        return make("defer", :value, [ parseStatement() ],
+
+            // TODO FIX remove this, solver fails to handle a bunch of things,
+            //  shouldn't rely on a friendly parse for things to work.
+            syntax: PS_ALWAYS_DISCARD);
     }
 
     fn parseTryCatch(): Node
@@ -2114,10 +2125,10 @@ pub fn parse(
                     ~ ". `if` starts on line " ~ token.line ~ ".");
 
             let alt = parseStatement();
-            return createIf(cond, cons, alt, syntax: PS_DISCARD);
+            return createIf(cond, cons, alt, syntax: PS_ALWAYS_DISCARD);
         }
 
-        return createAnd(cond, cons, syntax: PS_DISCARD);
+        return createAnd(cond, cons, syntax: PS_ALWAYS_DISCARD);
     }
 
 

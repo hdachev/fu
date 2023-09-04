@@ -87,8 +87,6 @@ pub extern fn runTests()
 
     // Categorizing what doesn't work and why -
 
-    let TODO_qSTACK     = fn TODO;
-    let TODO_specpat    = fn TODO;
     let TODO_recursion  = fn TODO;
     let TODO_enums      = fn TODO;
     let TODO_structs    = fn TODO;
@@ -103,13 +101,10 @@ pub extern fn runTests()
     let TODO_fntype     = fn TODO;
     let TODO_relaxer    = fn TODO;
     let TODO_ambig      = fn TODO;
-    let TODO_StaticEval = fn TODO;
     let TODO_licm       = fn TODO;
     let TODO_slices     = fn TODO;
     let TODO_cow        = fn TODO;
     let TODO_mangle     = fn TODO;
-    let TODO_semis      = fn TODO;
-    let TODO_lint       = fn TODO;
 
     let TODO_Map        = fn TODO;
 
@@ -8685,14 +8680,19 @@ pub extern fn runTests()
         fn main() = 0.hello;
     `);
 
-    TODO_semis(currently: "if/else no common supertype 3:13+2", `
+    ZERO(`
         fn voidIf(ref a: i32, ref b: u32)
+            <fail no common supertype i32 u32 4:17+1>
+            a   ? a++
+                : b++;
+            <pass/>
             if (a)  a++;
             else    b++;
+            </fail>
 
         fn main() {
             mut a: i32;
-            mut b: i32;
+            mut b: u32;
             voidIf(:a, :b);
             return !a && b ? 0 : 1;
         }
@@ -14279,7 +14279,7 @@ pub extern fn runTests()
         }
     `);
 
-    TODO_relaxer(currently: "Bad call to useConsumedType 11:24+15", `
+    ZERO(`
         using flags TPFlags { ArgSpec; Typename; NeedsConsumed };
 
         struct TP { flags: TPFlags };
