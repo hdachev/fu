@@ -11161,6 +11161,15 @@ pub extern fn runTests()
         fn main() _1::inspect([]);
     `]);
 
+    ZERO([`
+        struct Opts { b: i32 };
+    `,`
+        fn main() {
+            fn muteRest(a, opts?: _0::Opts) a + opts.b;
+            return 0.muteRest;
+        }
+    `]);
+
     // /Pubs & imports.
 
 
