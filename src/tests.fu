@@ -105,6 +105,7 @@ pub extern fn runTests()
     let TODO_slices     = fn TODO;
     let TODO_cow        = fn TODO;
     let TODO_mangle     = fn TODO;
+    let TODO_specpat    = fn TODO;
 
     let TODO_Map        = fn TODO;
 
@@ -13130,6 +13131,17 @@ pub extern fn runTests()
         fn main() {
             mut y = Y(1 + 2);
             return y.x - 3;
+        }
+    `);
+
+    TODO_specpat(currently: "T is not defined 2:38+1", `
+        fn typeArgRename(type t!T) = T;
+        fn main() {
+            mut x: typeArgRename(
+                <fail explicitly named 4:33+1><pass/>t: </fail>
+                    i32);
+
+            return x;
         }
     `);
 
