@@ -1934,7 +1934,7 @@ pub extern fn runTests()
                 : arr; // <- we take this branch
     `);
 
-    TODO_cow(currently: "DOES_THE_WRONG_THING_HERE", `
+    ZERO(`
         noinline fn test(ref barr: i32[][], ref x: i32[]) {
             for (mut i = 0; i < x.len; i++)
                 x[i] += 2;
@@ -1950,13 +1950,15 @@ pub extern fn runTests()
 
         noinline fn outer(ref a: i32[][], ref b: i32[][])
         {
-            <fail both alias arr (28:17+3|28:31+3) 30:35+3>
+            <fail both alias arr (28:17+3|28:31+3|27:17+3|27:31+3) 30:35+3>
             ref x = a[0];
-            mut barr = <alt>b<alt/>indirect_copy(b)</alt>;      ;; N_COWRestrict
-            <pass/>
-            DOES_THE_WRONG_THING_HERE();
+            mut barr = <alt>b<alt/>indirect_copy(b)</alt>;
+            <fail/>
             mut barr = <alt>b<alt/>indirect_copy(b)</alt>;
             ref x = a[0];
+            <pass/>
+            mut barr = <alt>b<alt/>indirect_copy(b)</alt>;
+            mut x = a[0];
             </fail>
 
             test(:barr, x);
