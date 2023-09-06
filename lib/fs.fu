@@ -33,7 +33,7 @@ fn mkdir_p(mut path: string, mode = RWX_RWX_RWX): i32
             if (path[i] != '/')
                 continue;
 
-            ref parent = path[0, i + 1];
+            ref parent = path[: i + 1];
             if (parent.visit() == 0)
             {
                 pragma emit(`

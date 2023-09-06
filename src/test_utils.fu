@@ -208,7 +208,7 @@ pub fn ZERO(
                 shadow let fail = isTODO ? fail.slice(7) : fail;
 
                 let end     = fail.unindent_left(fail.len);
-                sources[i]  = prefix ~ fail[0, end] ~ suffix;
+                sources[i]  = prefix ~ fail[: end] ~ suffix;
 
                 // Don't print errors here, we expect them.
                 shadow mut options = options;
@@ -238,7 +238,7 @@ pub fn ZERO(
             //  just let the rest of the thing do its thing.
             {
                 let end     = pass.unindent_left(pass.len);
-                sources[i]  = prefix ~ pass[0, end] ~ suffix;
+                sources[i]  = prefix ~ pass[: end] ~ suffix;
             }
         }
     }
@@ -277,7 +277,7 @@ pub fn ZERO(
                 let part = split[j];
                 let end  = part.unindent_left(part.len);
 
-                sources[i] = prefix ~ part[0, end] ~ suffix;
+                sources[i] = prefix ~ part[: end] ~ suffix;
 
                 // Re-run everything but the last alt,
                 //  which is gonna run anyway below.
@@ -357,8 +357,8 @@ pub fn ZERO(
 
             // We'll test with and without a module split here.
             let moduleA = src.slice(0, start0);
-            let moduleB = src[start0, start00] ~ "pub import _" ~ i ~ ";" ~ src[start1, src.len];
-            let without = src[0, start0] ~ src[start1, src.len];
+            let moduleB = src[start0 : start00] ~ "pub import _" ~ i ~ ";" ~ src[start1 :];
+            let without = src[: start0] ~ src[start1 :];
 
             sources[i]  = without;
             ZERO(:sources, :options);
@@ -416,7 +416,7 @@ pub fn ZERO(
             let annot = src.slice(start + 4, end);
             if (annot[0] == '!')
             {
-                shadow let annot = annot[1, annot.len];
+                shadow let annot = annot[1 :];
                 let notes = parseWild(annot, as: SolverNotes);
                 if (notes)
                 {
@@ -552,7 +552,7 @@ fn ERR_KEY(sources: string[])
     {
         let src = sources[i];
         let end = src.unindent_left(src.len);
-        key ~= src[0, end];
+        key ~= src[: end];
     }
 
     return key;
@@ -635,7 +635,7 @@ fn ERR_STRIP_SNIPPETS(mut e: string)
 
                 if (snippet)
                 {
-                    // println(" SPLICE " ~ e[i0, i - 1]);
+                    // println(" SPLICE " ~ e[i0 : i - 1]);
                     e.splice(i0, i - i0);
                     i = i0;
                 }

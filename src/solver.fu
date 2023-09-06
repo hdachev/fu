@@ -418,7 +418,7 @@ pub fn solve(
                     reason ~= "\n";
 
                 let pass = (pass0 != (pass0 = h.pass) || callstack == 1) && h.pass ~ " ";
-                reason ~= "\n                "[0, (17 - pass.len).max(1)] ~ pass;
+                reason ~= "\n                "[: (17 - pass.len).max(1)] ~ pass;
 
                 let o = GET(h.target);
                 reason ~= o;
@@ -541,16 +541,16 @@ pub fn solve(
     {
         let s = ctx.modules[modid].out.solve.scope;
 
-        _scope.items    ~= s.items   [0, s.pub_items ];
-        _scope.converts ~= s.converts[0, s.pub_cnvrts];
+        _scope.items    ~= s.items   [: s.pub_items ];
+        _scope.converts ~= s.converts[: s.pub_cnvrts];
     }
 
     fn _Scope_import__forceCopy_privates(modid: i32): void
     {
         let s = ctx.modules[modid].out.solve.scope;
 
-        _scope.items    ~= s.items   [s.pub_items , s.items.len   ];
-        _scope.converts ~= s.converts[s.pub_cnvrts, s.converts.len];
+        _scope.items    ~= s.items   [s.pub_items  :];
+        _scope.converts ~= s.converts[s.pub_cnvrts :];
     }
 
     fn Scope_import(modid: i32)
@@ -1035,7 +1035,7 @@ pub fn solve(
                 end = i;
         }
 
-        return fname[start, end];
+        return fname[start : end];
     }
 
     fn stableTypeID(type: Type)
@@ -1455,7 +1455,7 @@ pub fn solve(
                     ? search(dont_search_just_return: target, scope_iterator)
                     : local_scope
                         ? _SCOPE.search(id, scope_iterator, scope_skip: _SSKIP, :extra_items, :field_items, :shadows)
-                        : misc_scope.items[0, misc_scope.pub_items].search(id, scope_iterator))
+                        : misc_scope.items[: misc_scope.pub_items].search(id, scope_iterator))
             {
                 !local_scope && shadows && BUG("!local_scope but shadows");
 
@@ -1848,7 +1848,7 @@ pub fn solve(
             || node.kind == "real"
             || node.kind == "definit"
             || node.kind == "str"
-            || node.kind == "if"  && node.items[1, 3].all(fn couldRetype)
+            || node.kind == "if"  && node.items[1 : 3].all(fn couldRetype)
             || node.kind == "block" && !(node.helpers.mask & HM_LabelUsed) && node.items.last.couldRetype;
     }
 
@@ -5365,7 +5365,7 @@ pub fn solve(
             if (ret_seed.lifetime)
             {
                 ret_seed.lifetime = isNative
-                    ? Lifetime_fromNative(inItems, _current_fn.items[0, _current_fn.items.len + FN_ARGS_BACK], ret_seed)
+                    ? Lifetime_fromNative(inItems, _current_fn.items[: _current_fn.items.len + FN_ARGS_BACK], ret_seed)
                     : Lifetime_static(); // we'll overpromise during prep
             }
 
@@ -5758,7 +5758,7 @@ pub fn solve(
                         if (item.starts(with: '|'))
                             fx_mask |= item == "|output"
                                 ? EFFECTS_output
-                                : parse(item[1, item.len], as: FxMask) || BUG("Invalid |Fx mask: " ~ item.qBAD);
+                                : parse(item[1 :], as: FxMask) || BUG("Invalid |Fx mask: " ~ item.qBAD);
                         else
                             name ~= "\n" ~ item;
                     }
@@ -5903,13 +5903,13 @@ pub fn solve(
         }
 
         // Find first injected.
-        ref args = _current_fn.items[0, _current_fn.items.len + FN_ARGS_BACK];
+        ref args = _current_fn.items[: _current_fn.items.len + FN_ARGS_BACK];
 
         for (mut i = 0; i < args.len; i++)
         {
             let arg = args[i];
             if (arg.target && arg.target.flags & F_INJECTED)
-                return args[i, args.len].sort(fn compare);
+                return args[i :].sort(fn compare);
         }
     }
 
@@ -6372,7 +6372,7 @@ pub fn solve(
                 let signed      = baseprim[0] == 'i';
                 let unsigned    = baseprim[0] == 'u';
 
-                let size_str    = baseprim[1, baseprim.len];
+                let size_str    = baseprim[1 :];
                 let size: u8    = size_str == "8"   ? 8
                                 : size_str == "16"  ? 16
                                 : size_str == "32"  ? 32
@@ -9831,8 +9831,8 @@ pub fn solve(
             //  of all newly generated entries to what we have right now.
             //
             unorderedPrep_B(
-                nodes[i0, i1],
-                result[i0 + offset, i1 + offset],
+                nodes[i0 : i1],
+                result[i0 + offset : i1 + offset],
                 unorderedClass);
 
             // TODO REMOVE, solve all.

@@ -186,15 +186,15 @@ novec fn [] !T(a: T[:], i: int)
     case (typeof(a) -> &mut T[:]): &mut T __native(".mutref");
     default                      : &    T __native;
 
-novec fn [] !T(a: T[:], start!: int)
+novec fn [:] !T(a: T[:], start!: int)
     case (typeof(a) -> &mut T[:]): &mut T[:] __native("<fu/view.h>", "fu::get_view_mut");
     default                      : &    T[:] __native("<fu/view.h>", "fu::get_view");
 
-novec fn [] !T(a: T[:], end!: int)
+novec fn [:] !T(a: T[:], end!: int)
     case (typeof(a) -> &mut T[:]): &mut T[:] __native("<fu/view.h>", "fu::get_view_start0_mut");
     default                      : &    T[:] __native("<fu/view.h>", "fu::get_view_start0");
 
-novec fn [] !T(a: T[:], start: int, end: int)
+novec fn [:] !T(a: T[:], start: int, end: int)
     case (typeof(a) -> &mut T[:]): &mut T[:] __native("<fu/view.h>", "fu::get_view_mut");
     default                      : &    T[:] __native("<fu/view.h>", "fu::get_view");
 
@@ -213,7 +213,7 @@ fn slice !T(a: T[:], start: int)
 fn substr !T(a: T[], start: int, end: int): T[] __native("<fu/vec/slice.h>", "fu::substr");
 
 fn splice !T(ref a: T[], start: int, count: int): void  __native(".splice");
-fn splice !T(ref a: T[], start: int, count: int, /*TODO FIX*/b: [T]): void  __native(".splice");
+fn splice !T(ref a: T[], start: int, count: int, /*TODO FIX*/b: T[:]): void  __native(".splice");
 
 fn    pop !T(ref a: T[]): void __native(".pop()");
 fn  shift !T(ref a: T[]): void __native(".shift()");
@@ -292,13 +292,13 @@ fn ends !T(a: T[:], with: T): bool
 fn starts !T(a: T[:], with: T[:]): bool
 {
     return a.len >= with.len
-        && a[0, with.len] == with;
+        && a[: with.len] == with;
 }
 
 fn ends !T(a: T[:], with: T[:]): bool
 {
     return a.len >= with.len
-        && a[a.len - with.len, a.len] == with;
+        && a[a.len - with.len : a.len] == with;
 }
 
 fn find !T(a: T[:], b: T, mut start: int): int
@@ -421,7 +421,7 @@ fn println(parts.print[]: [string]): void __native("<fu/print.h>", "fu::println"
 
 // String commons.
 
-fn join !T(a: [T[];], sep?: T or T[:] or [])
+fn join !T(a: T[][:], sep?: T or T[:] or [])
 {
     if (a.len < 2)
         return a.len && a[0];
@@ -439,17 +439,17 @@ fn join !T(a: [T[];], sep?: T or T[:] or [])
 
     let head = a[0];
     size = head.len;
-    res[0, head.len] .= head;
+    res[: head.len] .= head;
     for (mut i = 1; i < a.len; i++)
     {
         let range = a[i];
         if (typeof(sep) -> T[:])
-            res[size, size + N] .= sep;
+            res[size : size + N] .= sep;
         else if (typeof(sep) -> T)
             res[size] = sep;
 
         size += N;
-        res[size, size + range.len] .= range;
+        res[size : size + range.len] .= range;
         size += range.len;
     }
 

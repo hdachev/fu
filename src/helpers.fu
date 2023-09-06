@@ -343,7 +343,7 @@ fn parse(v: [byte], lax as!: $T)
     // if ($T.is::bitfield)
     //     for (mut i = 1; i < v.len; i++)
     //         if (v[i] == "|")
-    //             return parse(v[0, i]) | parse(v[i + 1, v.len]);
+    //             return parse(v[: i]) | parse(v[i + 1 :]);
 
     for (fieldname i: $T)
         if (v == "i")
@@ -359,8 +359,8 @@ fn parseWild(v: [byte], lax as!: $T)
     {
         if (v[i] == '*')
         {
-            let prefix = v[0, i];
-            let suffix = v[i + 1, v.len]
+            let prefix = v[: i];
+            let suffix = v[i + 1 :];
 
             for (fieldname i: $T)
             {

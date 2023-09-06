@@ -140,7 +140,7 @@ pub fn isCanonAssignable(host: [byte], guest: [byte])
     //
     let hostHasPatterns = host.ends(with: ')');
     if (!hostHasPatterns)
-        return host == guest[0 : g0 - 1];
+        return host == guest[: g0 - 1];
 
     let h0 = host.find('(') + 1;
     let h1 = host.len - 1;

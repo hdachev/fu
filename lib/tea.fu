@@ -88,7 +88,7 @@ fn hash(ref res: TEA, u8view: [byte])
 {
     // First off, a view over most of the array as u32s.
     let u32len  = u8view.len & ~3;
-    let u32view = u8view[0, u32len].view(u32);
+    let u32view = u8view[: u32len].view(u32);
 
     // First, tuples.
     for (mut i = 1; i < u32view.len; i += 2)

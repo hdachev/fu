@@ -174,7 +174,7 @@ pub fn add(ref a: $T[], b: [$T])
     }
 
     if (y < b.len)
-        a ~= b[y, b.len];
+        a ~= b[y :];
 }
 
 pub fn add(ref a: $T[], b: $T[], ref extras: $U[], extra: $U)
@@ -202,7 +202,7 @@ pub fn add(ref a: $T[], b: $T[], ref extras: $U[], extra: $U)
 
     if (y < b.len)
     {
-        a ~= b[y, b.len];
+        a ~= b[y :];
 
         while (y++ < b.len)
             extras ~= extra;
@@ -405,7 +405,7 @@ pub fn union(l: $T[], r: $T[])
     {
         if (!useResult) {
             useResult = true;
-            result ~= l[0, left];
+            result ~= l[: left];
         }
 
         result ~= item;

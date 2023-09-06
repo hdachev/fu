@@ -309,7 +309,7 @@ pub fn cpp_codegen(
     {
         let c = type.canon;
 
-        if (type.is_primitive && (c.len < 4 || c.len == 4 && c[1, 4] == "128"))
+        if (type.is_primitive && (c.len < 4 || c.len == 4 && c[1 : 4] == "128"))
             return primAnnotBase(c);
 
         if (c == "never")       return annotateNever();
@@ -565,9 +565,9 @@ pub fn cpp_codegen(
                 c >= '0' && c <= '9' ||
                 c == '_') continue;
 
-            str = str[0, i]
+            str = str[: i]
                 ~ c.u32.xHH
-                ~ str[i + 1, str.len];
+                ~ str[i + 1 :];
         }
 
         return ID(str);
@@ -986,7 +986,7 @@ pub fn cpp_codegen(
 
         mut ret = id.valid_identifier;
         if (target.sighash && !(target.flags & F_EXTERN))
-            ret ~= "_" ~ target.sighash[0, 8];
+            ret ~= "_" ~ target.sighash[: 8];
 
         return ret;
     }
@@ -1548,7 +1548,7 @@ pub fn cpp_codegen(
             let attr = "fu_INIT_PRIORITY(" ~ (1000 + prio) ~ ")";
             let eq = src.find('=');
             if (eq > 0)
-                src = src[0, eq] ~ attr ~ " " ~ src[eq, src.len];
+                src = src[: eq] ~ attr ~ " " ~ src[eq :];
         }
 
         // Hide when possible.
@@ -1972,7 +1972,7 @@ pub fn cpp_codegen(
 
             let c = type.canon;
             return c.len >= 2 && c[1] == '8'
-                || c.len >= 3 && c[1, 3] == "16";
+                || c.len >= 3 && c[1 : 3] == "16";
         }
 
         fn unpromote(expr: string)
@@ -2030,7 +2030,7 @@ pub fn cpp_codegen(
                     }
                 };
 
-                id = id[0 : id.len - 2] ~ '<' ~ angle_brackets ~ '>';
+                id = id[: id.len - 2] ~ '<' ~ angle_brackets ~ '>';
             }
 
             return ooeWrap(id ~ open ~ REST ~ close);
@@ -2388,7 +2388,7 @@ pub fn cpp_codegen(
         if (stmt)
         {
             mut src = "if (";
-            cgAndOr_concat(src, " && ", items[0, items.len - 1], parens: true);
+            cgAndOr_concat(src, " && ", items[: items.len - 1], parens: true);
             src ~= ")";
             src ~= blockWrapSubstatement(items[items.len - 1]);
             return src;
@@ -2426,7 +2426,7 @@ pub fn cpp_codegen(
         if (stmt)
         {
             mut src = "if (!(";
-            cgAndOr_concat(src, " || ", items[0, items.len - 1], parens: true);
+            cgAndOr_concat(src, " || ", items[: items.len - 1], parens: true);
             src ~= "))";
             src ~= blockWrapSubstatement(items[items.len - 1]);
             return src;
@@ -2453,7 +2453,7 @@ pub fn cpp_codegen(
                     shadow let items = item.items;
                     tail = items[items.len - 1] || BUG();
 
-                    cgAndOr_concat(src, " && ", items[0, items.len - 1]);
+                    cgAndOr_concat(src, " && ", items[: items.len - 1]);
                     src ~= " && ";
                 }
 
@@ -2967,7 +2967,7 @@ pub fn cpp_codegen(
                         return expr.items.mayNeedConstCast;
 
                     if (expr.kind == "if")
-                        return expr.items[1, 3].mayNeedConstCast;
+                        return expr.items[1 : 3].mayNeedConstCast;
 
                     if (expr.kind == "block")
                         return expr.items.len > 0
@@ -3075,7 +3075,7 @@ pub fn cpp_codegen(
 
         shadow let id = id || "_" ~ _current_fn.numTEMPVARs++;
         _current_fn.TEMPVARs ~=
-            ptrflip ? annot[0, annot.len - 1] ~ "* " ~ id
+            ptrflip ? annot[: annot.len - 1] ~ "* " ~ id
                     : annot ~ " " ~ id ~ (expr ? " = " ~ expr : " {}"); // TODO dont init trivial
 
         return id;

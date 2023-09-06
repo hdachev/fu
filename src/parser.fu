@@ -101,6 +101,11 @@ using enum Fixity {
     Postfix
 };
 
+struct ArgsParse {
+    flags:          Flags;
+    sliceSyntax:    bool;
+}
+
 
 //
 
@@ -1798,9 +1803,10 @@ pub fn parse(
         endop: string, ref out_args: Node[],
 
         mut sliceSyntax!?: bool,
-        experimental_sliceAnnots!?: bool): Flags
+        experimental_sliceAnnots!?: bool): ArgsParse
     {
         mut flags: Flags;
+        mut sliceSyntax_used: bool;
 
         //////////////////
         let col00 = _col0;
@@ -1826,7 +1832,11 @@ pub fn parse(
                     // TODO FIX bolting on slice syntax in a backward compatible way
                     let peek = tokens[_idx];
                     if (peek.kind == "op" && peek.value == ":")
+                    {
+                        sliceSyntax_used = true;
+
                         break :COMMA;
+                    }
                 }
 
                 softComma(:endop);
@@ -1860,6 +1870,8 @@ pub fn parse(
                     // Open-ended slice syntax alla [start:]
                     if (tryConsume("op", endop))
                     {
+                        sliceSyntax_used = true;
+
                         ref last = out_args.last;
                         last = createArgID("start", last);
                         flags |= F_NAMED_ARGS;
@@ -1896,6 +1908,8 @@ pub fn parse(
             {
                 if (sliceSyntax)
                 {
+                    sliceSyntax_used = true;
+
                     name = "end";
                     sliceSyntax = false;
                 }
@@ -1919,7 +1933,7 @@ pub fn parse(
         _col0 = col00;
         //////////////
 
-        return flags;
+        return ArgsParse(:flags, sliceSyntax: sliceSyntax_used);
     }
 
     fn getAutoName(expr: Node): string
@@ -1956,7 +1970,7 @@ pub fn parse(
         let numDollars0 = _numDollars;
         ////////////////////////////////
 
-        mut flags = expr.flags | parseCallArgs(")", args);
+        mut flags = expr.flags | parseCallArgs(")", args).flags;
 
         ////////////////////////////////
         if (_numDollars > numDollars0)
@@ -1995,7 +2009,7 @@ pub fn parse(
     {
         mut args: Node[];
         let argFlags = parseCallArgs("]", args,
-            experimental_sliceAnnots: true);
+            experimental_sliceAnnots: true).flags;
 
         return createArrayLiteral(argFlags, args);
     }
@@ -2008,11 +2022,14 @@ pub fn parse(
     fn parseIndexExpression(expr: Node): Node
     {
         mut args: Node[];
-        let argFlags = parseCallArgs("]", args, sliceSyntax: true);
+        let argsParse = parseCallArgs("]", args, sliceSyntax: true);
 
         args.unshift(expr);
 
-        return createCall("[]", argFlags | F_OPERATOR, args);
+        return createCall(
+            argsParse.sliceSyntax ? "[:]" : "[]",
+            argsParse.flags | F_OPERATOR,
+            args);
     }
 
     fn createLeaf(::kind, value: string): Node
