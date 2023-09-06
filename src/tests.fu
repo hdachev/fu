@@ -5994,7 +5994,7 @@ pub extern fn runTests()
         }
     `);
 
-    TODO_cow(currently: "COW will break 12:26+1", `
+    TODO_cow(currently: "COW will break 16:22+1 9:17+1", `
         fn track_last_loop_confusion(mut a: string, mut b: string)
         {
             for (mut i = 0; i < 6; i++) {

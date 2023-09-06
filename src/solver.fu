@@ -2581,7 +2581,7 @@ pub fn solve(
                 if (!seen.add_once(child))
                     continue;
 
-                if (_current_fn.postdom.written_directly.has(child))
+                if (_current_fn.postdom.written_indirectly.has(child))
                 {
                     // For a ref to clobber a COW copy,
                     //  the thing it points to must fit inside the COW type -
@@ -5125,7 +5125,7 @@ pub fn solve(
         fn useConsumedType_ifNative(tp) // TODO (tp: TypeParam) test:useConsumedType
             tp.flags & (TP_isArgSpec | TP_isTypenameArgSpec) == TP_isArgSpec;
 
-        ref n_fn = template.node;
+        fn n_fn = template.node;
 
         if (!into)
         {
