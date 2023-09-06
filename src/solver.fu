@@ -2531,7 +2531,21 @@ pub fn solve(
 
                                 flow.at_soft_risk.grow_if_oob(t).set::add(index);
 
-                                if (reason != t)
+                                fn TODO_FIX_slicesAgain()
+                                {
+                                    // Initially I assumed the TODO_FIX_isArray in the hard/soft risk stuff in updateScope
+                                    //  would convert soft -> hard risk for slices [which is the wrong thing to do in the first place]
+                                    //   but that doesn't work because there we care about reallocation,
+                                    //    here it's about aliasing, anyways, doesn't work.
+                                    //
+                                    // We gotta remove the need for this kind of trash,
+                                    //  which can only happen if we formalize the differences between arrays and slices
+                                    //   and array-into-slice conversions.
+                                    //
+                                    return nested(t).type.is_sliceable;
+                                }
+
+                                if (reason != t || TODO_FIX_slicesAgain)
                                     flow.at_hard_risk.grow_if_oob(t).set::add(index);
                             }
                         }
