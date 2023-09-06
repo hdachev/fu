@@ -1609,22 +1609,25 @@ pub extern fn runTests()
                 : arr; // <- we take this branch
     `);
 
-    TODO_cow(currently: "DOES_THE_WRONG_THING_HERE", `
+    ZERO(`
         fn main() {
             mut nums: i32[];
             for (mut i = 0; i < 100; i++) nums ~= 1;
 
-            ref woot    = nums[nums.len / 2];
-
-            let OPAQUE  = nums.len == 100*woot;
+            let OPAQUE  = nums.len == 100 * nums[nums.len / 2];
             mut other   = 0;
 
-            <fail COW will break (13:27+4|13:41+4)>
+            <fail COW will break (12:27+4|12:41+4|11:27+4|11:41+4)>
+            ref woot    = nums[nums.len / 2];
             ref zero    = OPAQUE ? woot : other;
             let allOnes = <alt>nums<alt/>indirect_copy(nums)</alt>;
-            <pass/>
-            DOES_THE_WRONG_THING_HERE();
+            <fail/>
+            ref woot    = nums[nums.len / 2];
             let allOnes = <alt>nums<alt/>indirect_copy(nums)</alt>;
+            ref zero    = OPAQUE ? woot : other;
+            <pass/>
+            let allOnes = <alt>nums<alt/>indirect_copy(nums)</alt>;
+            ref woot    = nums[nums.len / 2];
             ref zero    = OPAQUE ? woot : other;
             </fail>
 
