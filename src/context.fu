@@ -207,7 +207,12 @@ pub fn getFlatCount(type: ValueType): i32
     if (s)
         return s.flatCount;
 
-    return type.is_primitive ? 1 : 0;
+    return type.is_primitive
+        || type.is_sliceable ? 1 : 0;
+}
+
+pub fn is_zst(type: ValueType) {
+    return !getFlatCount(type);
 }
 
 

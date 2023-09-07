@@ -4150,7 +4150,7 @@ pub fn solve(
             let isUnused = !usage;
             if (isUnused)
             {
-                if !(o.flags & F_LAX || o.status & SS_MATCHED || o.type.is_zeroes)
+                if !(o.flags & F_LAX || o.status & SS_MATCHED || o.type.is_zst)
                     warn(:o.solved.token, "Unused variable: " ~ o ~ ": make it " ~ "lax".qKW ~ " if this is intentional.");
             }
 
@@ -6320,9 +6320,17 @@ pub fn solve(
                 //
                 let member_isStruct = member.type.isStruct;
                 let member_userType = member_isStruct && lookupUserType(member.type);
-                let memberFlatCount = member_isStruct
-                    ? member_userType.flatCount
-                    : 1;
+                let memberFlatCount = getFlatCount(member.type);
+
+                if (SELF_TEST)
+                {
+                    let popcount_expect =
+                        min(memberFlatCount, q_USAGE_bitsize);
+
+                    bit::popcount(member.type.usage) == popcount_expect
+                        || member_userType // TODO FIX fails for type recursions
+                        || BUG("member.type.usage popcount != memberFlatCount");
+                }
 
                 if (member.type.isStruct)
                     declDepth = max(declDepth, member_userType.declDepth + 1);

@@ -12,7 +12,7 @@ pub let q_TAGS          = q_mutref | q_rx_copy | q_rx_resize;
 pub let q_USAGE         = ~q_TAGS;
 
 let q_TAGS_bitsize      = 3;
-let q_USAGE_bitsize     = Quals_bitsize - q_TAGS_bitsize;
+pub let q_USAGE_bitsize = Quals_bitsize - q_TAGS_bitsize;
 
 let q_non_compund       = Quals(1) << Quals(q_TAGS_bitsize);
 
