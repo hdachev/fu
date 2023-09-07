@@ -13161,6 +13161,20 @@ pub extern fn runTests()
         }
     `);
 
+    TODO_specpat(currently: "Bad call to T 6:14+1", `
+        struct Hello { a: i32; b: i32 };
+
+        fn Wrap(type T) = struct { using v: T };
+        fn incr_a1_b2 !T(using w: Wrap(T)) =
+            T(:a + 1, :b + 2);
+
+        fn main() {
+            mut zeroes: Wrap(Hello);
+            let ones = incr_a1_b2(zeroes);
+            return ones.a * 10 + ones.b * 100 - 210;
+        }
+    `);
+
     TODO_specpat(currently: "T is not defined 2:38+1", `
         fn typeArgRename(type t!T) = T;
         fn main() {
