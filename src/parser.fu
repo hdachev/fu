@@ -1117,7 +1117,11 @@ pub fn parse(
                         for (mut i = out_push_body.len - 1; i --> 0; )
                         {
                             let arg         = out_push_body[i];
-                            let argName     = arg.kind == "let" && arg.value;
+                            let argName     = arg.kind == "let" && (
+                                arg.flags & F_COMPOUND_ID
+                                    ? cleanID(arg.value)
+                                    :         arg.value);
+
                             if (argName && argName != "_")
                                 withArgTypeParams.set::add(argName);
                         }

@@ -13175,7 +13175,7 @@ pub extern fn runTests()
         }
     `);
 
-    TODO_specpat(currently: "Inner is not defined 3:19+5", `
+    ZERO(`
         fn typeArgRename(type Outer!Inner)
             case (Inner.is::primitive)
                 = Inner;

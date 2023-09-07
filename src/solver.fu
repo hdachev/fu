@@ -5064,7 +5064,11 @@ pub fn solve(
                         }
 
                         //
-                        let argName = argNode.value || BUG();
+                        let argName = argNode.flags & F_COMPOUND_ID
+                            ? cleanID(argNode.value)
+                            :         argNode.value;
+
+                        argName || BUG("No argName");
 
                         // Same pattern - grabs a mutref.
                         ref argName_typeParam = _typeParams.map::ref(argName);
@@ -5354,7 +5358,10 @@ pub fn solve(
                 }
 
                 let specType    = isSpec && spec_extras
-                    .arg_spec_types.map::get(n_arg.value);
+                    .arg_spec_types.map::get(
+                        n_arg.flags & F_COMPOUND_ID
+                            ? cleanID(n_arg.value)
+                            :         n_arg.value);
 
                 let arg         = solveLet(n_arg, :specType);
                 outItems[i]     = arg;
@@ -6093,13 +6100,9 @@ pub fn solve(
                 "Type aliases must be initialized."));
 
         ////////////////////////////////////////////////////////////////
-        mut id = node.value;
-        if (node.flags & F_COMPOUND_ID)
-        {
-            let x = id.find('!');
-            if (x >= 0)
-                id.splice(0, x + 1);
-        }
+        let id = node.flags & F_COMPOUND_ID
+            ? cleanID(node.value)
+            :         node.value;
         ////////////////////////////////////////////////////////////////
 
         createTypedef(id, :annot, :node.flags);
@@ -7399,23 +7402,9 @@ pub fn solve(
         mut shadows     = !!(out.flags & F_SHADOW);
         let isArg       = out.flags & F_ARG;
 
-        // AUTOCALL ////////////////////////////////////////////////////
-        mut cleanID     = "";
-
-        if (out.flags & F_COMPOUND_ID)
-        {
-            let start   = id.find('!') + 1;
-            let end     = id.find('.', start: start > 0 ? start : 0);
-
-            cleanID     = id.slice(
-                start > 0 ? start : 0,
-                end   > 0 ? end   : id.len);
-
-            cleanID && cleanID.len < id.len || BUG("solveLet: F_COMPOUND_ID bad cleanID.");
-        }
-
-        shadow let id   = cleanID || id;
-        ////////////////////////////////////////////////////////////////
+        shadow let id   = out.flags & F_COMPOUND_ID
+            ? cleanID(id)
+            :         id;
 
         if (out.type.isAddrOfFn)
         {

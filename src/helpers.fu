@@ -388,6 +388,23 @@ fn parseWild(v: [byte], lax as!: $T)
     return parse(:v, :as);
 }
 
+
+//
+
+fn cleanID(id: string)
+{
+    let start   = id.find('!') + 1;
+    let end     = id.find('.', :start);
+    if (start || end >= 0 && end < id.len)
+        return id.slice(start, end >= 0 ? end : id.len)
+            || throw("cleanID: ended up with an empty string");
+
+    return id;
+}
+
+
+//
+
 fn steal !T(ref v: T) {
     mut ret: T;
     swap(v, ret);
