@@ -13161,7 +13161,7 @@ pub extern fn runTests()
         }
     `);
 
-    TODO_specpat(currently: "Bad call to T 6:14+1", `
+    ZERO(`
         struct Hello { a: i32; b: i32 };
 
         fn Wrap(type T) = struct { using v: T };

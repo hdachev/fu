@@ -5934,22 +5934,13 @@ pub fn solve(
     {
         mut res: SpecExtras;
 
+        // TODO FIX DISJOINT -
+        //  tried passing _scope as an item to createTypedef,
+        //   getting AAR errors from _ss, should be disjoint-ok.
+        let scopeItems0 = _scope.items.len;
+
         typeParams.map::pairs(|id, tp|
         {
-            let name = id;
-
-            fn checkStruct(shadow type: Type)
-            {
-                // TODO FIX The thing is the type param might not be the naked value type,
-                //  but e.g. a reference or something. It's muddy what we have right now.
-                //   Consider getting rid of the $argname params, should obsolete this.
-                //
-                // See solveTypedef below.
-                //
-                let t = lookupUserType(type).target;
-                return GET(t).type == type && t;
-            }
-
             let type = tp.matched;
             if (!type)
                 continue;
@@ -5962,14 +5953,10 @@ pub fn solve(
             }
 
             // Actual typedefs.
-            let target = type.isStruct
-                && checkStruct(type)
-                || Scope_create(_scope,
-                    kind: "type",
-                    name: id, :type);
-
-            Scope_set(res.scope_items, name, :target, shadows: false);
+            createTypedef(id, type);
         });
+
+        res.scope_items = _scope.items.steal(start: scopeItems0);
 
         return res;
     }
@@ -6060,11 +6047,21 @@ pub fn solve(
         return target;
     }
 
-    fn createTypedef(id: string, annot: Type, flags?: Flags): SolvedNode
+    fn createTypedef(id: string, annot: Type, flags?: Flags)
     {
-        let target = createRawTypedef(id, annot, :flags);
-
         let s = tryLookupUserType(annot);
+
+        if (s.target && !(flags & F_PUB))
+        {
+            // TODO FIX we need to clone the typedef
+            //  if we have to republish it,
+            //   Scope_exports picks up F_PUBs with this modid only.
+            //
+            return Scope_set(_scope, :id, :s.target, shadows: !!(flags & F_SHADOW));
+        }
+
+        // Nope, create a new typedef.
+        let target = createRawTypedef(id, annot, :flags);
         if (s.target)
         {
             // TODO FIX this is a horrible fix that's gonna bite back.
@@ -6078,8 +6075,26 @@ pub fn solve(
             GET_mut(target) = GET(s.target);
             EXT_mut(target) = EXT(s.target);
         }
+    }
 
-        if (flags & F_ARG)
+    fn solveTypedef(node: Node, specType!?: Type): SolvedNode
+    {
+        if (node.items[LET_TYPE])
+        {
+            _here = node.items[LET_TYPE].token;
+            fail("Type annotations on type aliases are not supported.");
+        }
+
+        if (specType && !(specType.vfacts & Typename))
+            BUG("solveTypedef: specType is not a Typename");
+
+        let annot = specType || evalTypeAnnot(
+            node.items[LET_INIT] || fail(
+                "Type aliases must be initialized."));
+
+        createTypedef(node.value, :annot, :node.flags);
+
+        if (node.flags & F_ARG)
         {
             // TODO FIX adding this for the benefit of the arguments mangler,
             //  making the type fully unused so it gets eliminated by codegen,
@@ -6105,24 +6120,6 @@ pub fn solve(
         }
 
         return createEmpty();
-    }
-
-    fn solveTypedef(node: Node, specType!?: Type): SolvedNode
-    {
-        if (node.items[LET_TYPE])
-        {
-            _here = node.items[LET_TYPE].token;
-            fail("Type annotations on type aliases are not supported.");
-        }
-
-        if (specType && !(specType.vfacts & Typename))
-            BUG("solveTypedef: specType is not a Typename");
-
-        let annot = specType || evalTypeAnnot(
-            node.items[LET_INIT] || fail(
-                "Type aliases must be initialized."));
-
-        return createTypedef(node.value, :annot, :node.flags);
     }
 
 

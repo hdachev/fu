@@ -133,7 +133,7 @@ case ($T -> $T)
     return res;
 }
 
-fn steal(a: $T[], start: i32, end: i32)
+fn steal(a: $T[], start!: i32, end!: i32)
 {
     let size = end - start;
 
@@ -144,6 +144,18 @@ fn steal(a: $T[], start: i32, end: i32)
         swap(ret[i], a[i + start]);
 
     a.splice(start, count: size);
+    return ret;
+}
+
+fn steal(a: $T[], start!: i32)
+{
+    mut ret: $T[];
+    ret.resize(a.len - start);
+
+    for (mut i = 0; i < ret.len; i++)
+        swap(ret[i], a[i + start]);
+
+    a.shrink(start);
     return ret;
 }
 
