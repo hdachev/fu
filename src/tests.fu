@@ -527,16 +527,6 @@ pub extern fn runTests()
         }
     `);
 
-    TODO_structs(currently: "fn <> unused var b prelude :22+1", `
-        struct Empty {};
-
-        fn main() {
-            mut e = [ Empty(), Empty() ];
-            fn GET(idx: i32) e.len > idx && e[idx];
-            return GET(0) == GET(1) ? 0 : 1;
-        }
-    `);
-
     // /using
 
 
@@ -14366,6 +14356,16 @@ pub extern fn runTests()
                     count++;
 
             return count - 1;
+        }
+    `);
+
+    TODO_relaxer(currently: "BUG invalid c++ void[] 5:17+1", `
+        struct Empty {};
+
+        fn main() {
+            mut e = [ Empty(), Empty() ];
+            fn GET(idx: i32) e.len > idx && e[idx];
+            return GET(0) == GET(1) ? 0 : 1;
         }
     `);
 

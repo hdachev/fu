@@ -319,6 +319,9 @@ pub fn cpp_codegen(
         let arrayItem = tryClear_sliceable(type);
         if (arrayItem)
         {
+            if (arrayItem.isIrrelevant)
+                BUG("cg: We generate invalid c++ for void[]");
+
             // Arrays & strings.
             if (type.arrayType_annotateAsVec)
             {
