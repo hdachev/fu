@@ -13175,11 +13175,14 @@ pub extern fn runTests()
         }
     `);
 
-    TODO_specpat(currently: "T is not defined 2:38+1", `
-        fn typeArgRename(type t!T) = T;
+    TODO_specpat(currently: "Inner is not defined 3:19+5", `
+        fn typeArgRename(type Outer!Inner)
+            case (Inner.is::primitive)
+                = Inner;
+
         fn main() {
             mut x: typeArgRename(
-                <fail explicitly named 4:33+1><pass/>t: </fail>
+                <fail explicitly named 7:33+1><pass/>Outer: </fail>
                     i32);
 
             return x;

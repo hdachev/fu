@@ -6092,7 +6092,17 @@ pub fn solve(
             node.items[LET_INIT] || fail(
                 "Type aliases must be initialized."));
 
-        createTypedef(node.value, :annot, :node.flags);
+        ////////////////////////////////////////////////////////////////
+        mut id = node.value;
+        if (node.flags & F_COMPOUND_ID)
+        {
+            let x = id.find('!');
+            if (x >= 0)
+                id.splice(0, x + 1);
+        }
+        ////////////////////////////////////////////////////////////////
+
+        createTypedef(id, :annot, :node.flags);
 
         if (node.flags & F_ARG)
         {
