@@ -1424,6 +1424,32 @@ pub extern fn runTests()
         }
     `]);
 
+    ZERO([`
+        struct TokenIdx { id: i32 };
+    `,`
+        import _0;
+        fn fail(implicit a: TokenIdx, b: i32) =
+            a.id + b;
+    `,`
+        import _1;
+        fn cleanID(c: i32) =
+            fail(c) + 3;
+    `,`
+        import _0;
+        import _2;
+        fn solvePrelude(d: i32) {
+            <fail no implicit in scope 10:25+1 6:27+1 4:17+1 3:26+1><pass/>
+            let implicit a: TokenIdx = TokenIdx(2);                 </fail>
+            return cleanID(d) + 5;
+        }
+
+        let CTX_PRELUDE =
+            solvePrelude(7);
+
+        fn main() =
+            CTX_PRELUDE - 17;
+    `]);
+
     // /Recursion, closures & implicit arguments.
 
 
