@@ -32,22 +32,39 @@ pub let RELAX_all           = q_TAGS    | q_USAGE;
 
 // Lifetimes.
 
-pub fn Region_fromLocal(index: i32) Region(_regid: index);
+pub let Region_TEMP     = Region(_regpack: 0xfffff000);
+pub let Region_STATIC   = Region(_regpack: 0x00000fff);
 
-pub let Region_TEMP     = Region(_regid: 0x7fffffff.i32);
-pub let Region_STATIC   = Region(_regid: 0x80000001.i32); // not 0x80000000, overflows when negated
+pub fn Region_isTemp(region: Region) {
+    return region == Region_TEMP;
+}
 
-pub fn Region_isTemp(region: Region)    region == Region_TEMP;
-pub fn Region_isStatic(region: Region)  region == Region_STATIC;
+pub fn Region_isStatic(region: Region) {
+    return region == Region_STATIC;
+}
 
-pub fn Region_isArgPosition(region: Region)
-    region._regid < 0 && !region.Region_isStatic;
+pub fn Region_isArgPosition(region: Region) {
+    let id = region._regpack >> 12;
+    return id >= 1000001 && id < 0xfffff;
+}
 
-pub fn Region_toArgPosition(region: Region)     -(region._regid + 1);
-pub fn Region_fromArgPosition(position: i32)    Region(_regid: -(position + 1));
+pub fn Region_toArgPosition(region: Region) {
+    let id = region._regpack >> 12;
+    return (id - 1000001).i32;
+}
 
-pub fn Region_asLocal(using r: Region)
-    r == Region_TEMP || _regid < 0 ? 0 : _regid;
+pub fn Region_fromArgPosition(position: i32) {
+    return Region(_regpack: (position.u32 + 1000001) << 12);
+}
+
+pub fn Region_asLocal(region: Region) {
+    let id = region._regpack >> 12;
+    return id < 1000001 && id.i32;
+}
+
+pub fn Region_fromLocal(index: i32) {
+    return Region(_regpack: (index.u32 << 12));
+}
 
 
 //

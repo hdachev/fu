@@ -328,7 +328,7 @@ struct Type
 
 struct Lifetime { using uni0n!: Region[]; };
 
-struct Region { _regid!: i32; };
+struct Region { _regpack!: u32; };
 
 
 // Instead of this we'd have a string listing qualities,
