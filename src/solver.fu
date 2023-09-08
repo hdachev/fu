@@ -10129,10 +10129,14 @@ pub fn solve(
 
         fn isInvalidatedBy(read: Region[], write: Region[])
         {
-            shadow let read = read.view(i32);
+            mut r_locals: i32[];
+
+            read.each: |r.Region_asLocal|
+                if (r)
+                    r_locals ~= r;
 
             write.each: |w.Region_asLocal|
-                if (w && flow.invalidates.unless_oob(w).set::has_inter(read))
+                if (w && flow.invalidates.unless_oob(w).set::has_inter(r_locals))
                     return true;
 
             return false;
@@ -10729,7 +10733,9 @@ pub fn solve(
                             // In both cases we need to sequence the order of eval of `a` and `x++`.
                             //
                             let parents = flow.parents.unless_oob(write);
-                            all_written.set::add(parents.view(Region));
+
+                            all_written.set::add(
+                                parents.map(.Region_fromLocal));
                         }
 
                         mut all_written_and_invalidated: Region[];
@@ -10741,7 +10747,9 @@ pub fn solve(
                             //  we only use it for preceding args in OOE.
                             //
                             let invalidates = flow.invalidates.unless_oob(write);
-                            all_written_and_invalidated.set::add(invalidates.view(Region));
+
+                            all_written_and_invalidated.set::add(
+                                invalidates.map(.Region_fromLocal));
                         }
 
                         ////////////////////////////////////////////////////
