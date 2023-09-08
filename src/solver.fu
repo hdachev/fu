@@ -837,9 +837,12 @@ pub fn solve(
 
     //
 
-    using fn Region_GET(r: Region)
+    fn str(r: Region)
     {
-        return GET(nested(Region_asLocal(r)));
+        return r.Region_isStatic        ? "static"
+             : r.Region_isTemp          ? "temp"
+             : r.Region_isArgPosition   ? "arg#" ~ Region_toArgPosition(r)
+             : r.Region_asLocal.nested.str;
     }
 
     fn str(regions: [Region])
@@ -847,18 +850,8 @@ pub fn solve(
         mut str = "";
         for (mut i = 0; i < regions.len; i++)
         {
-            if (i)
-                str ~= "|";
-
-            let r = regions[i];
-            if (r.Region_isStatic)
-                str ~= "static";
-            else if (r.Region_isTemp)
-                str ~= "temp";
-            else if (r.Region_isArgPosition)
-                str ~= "arg#" ~ Region_toArgPosition(r);
-            else
-                str ~= r;
+            if (i) str ~= "|";
+            str ~= regions[i];
         }
 
         return str;
@@ -11457,7 +11450,7 @@ pub fn solve(
                     pos = true;
                 else if (Region_asLocal(r) < locals_start)
                     neg = true;
-                else if (Region_GET(r).isRefArg)
+                else if (Region_asLocal(r).nested.isRefArg)
                     neg = true;
                 else
                     pos = true;
