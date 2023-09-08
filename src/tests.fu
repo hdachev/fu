@@ -5387,6 +5387,35 @@ pub extern fn runTests()
     `);
 
     ZERO(`
+        fn grow_if_oob(ref a: i32[], i: i32) {
+            if (a.len <= i) a.grow(i + 1);
+            return a[i];
+        }
+
+        fn assign(ref what: i32, ref to: i32) to = what;
+
+        fn two_writes_in_an_arg(ref arr: i32[], ref brr: i32[], ref x: i32)
+            assign( what: x ? arr.grow_if_oob(10)
+                            : brr.grow_if_oob(10), to: x );     ;; PointlessMustSeq
+
+        fn main() {                         <flip>
+            mut zero = 0;
+            mut empty: i32[];               <flip/>
+            mut arr = [ 0, 1, 2, 3 ];
+            mut brr = [ 0, 2, 4, 6 ];       </flip>
+
+            <fail arg 3 x 2 brr both alias 25:58+8>
+            ref x = brr[0];                 <pass/>
+            mut x = 0;                      </fail>
+
+            ref opaque_x    = brr.len > arr.len ? zero  : x;
+            ref opaque_brr  = brr.len > arr.len ? empty : brr;
+
+            return two_writes_in_an_arg(arr, opaque_brr, opaque_x);
+        }
+    `);
+
+    ZERO(`
         struct Node { items: Node[] };
 
         fn main() {
