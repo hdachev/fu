@@ -5505,17 +5505,17 @@ pub fn solve(
                     // TODO FAILCASE
                     if (asserts & A_PURE && written_via)
                         fail(backtrack: "pure", target ~ " is not pure, writes to " ~ argTarget ~ ":\n"
-                            ~ qSTACK(:target, Region_fromLocal(argTarget.locid),
+                            ~ qSTACK(:target, :argTarget.locid,
                                         node: out.out));
 
                     if (asserts & A_PURE_CTX && isImplicit && written_via)
                         fail(backtrack: "purectx", target ~ " is not purectx, writes to " ~ argTarget ~ ":\n"
-                            ~ qSTACK(:target, Region_fromLocal(argTarget.locid),
+                            ~ qSTACK(:target, :argTarget.locid,
                                         node: out.out));
 
                     if (maybeLast && asserts & A_NOVEC && !argNode.isNoVec() && !mustBecomeInline)
                         fail(backtrack: "novec", target ~ " is not novec, " ~ argTarget ~ " is " ~ humanizeType(argNode.type) ~ ":\n"
-                            ~ qSTACK(:target, Region_fromLocal(argTarget.locid),
+                            ~ qSTACK(:target, :argTarget.locid,
                                         node: out.out,
                                        query: AQ_WhyNotNovec));
 
@@ -8765,15 +8765,15 @@ pub fn solve(
     fn qSTACK(target: Target, position!: i32, seen!?: Target[], query!?: ArgQuery)
     {
         return qSTACK(:target, :seen, :query,
-            Region_fromLocal(target.args[position].target.locid));
+            :target.args[position].target.locid);
     }
 
-    fn qSTACK(target: Target, region: Region, seen!?: Target[], query!?: ArgQuery)
+    fn qSTACK(target: Target, locid!: i32, seen!?: Target[], query!?: ArgQuery)
     {
-        return qSTACK(target, target.solved, :region, :seen, :query);
+        return qSTACK(target, target.solved, :locid, :seen, :query);
     }
 
-    fn qSTACK(target: Target, node: SolvedNode, region: Region, seen!?: Target[], query!?: ArgQuery)
+    fn qSTACK(target: Target, node: SolvedNode, locid!: i32, seen!?: Target[], query!?: ArgQuery)
     {
         //////////////////////////////////////////////////
         let nestingFnort0   = _nestingFnort.exchange(target);
@@ -8806,7 +8806,8 @@ pub fn solve(
                 }
 
                 let arg = callsite.items[i];
-                if !(Lifetime_unwind(arg.type.lifetime).uni0n.has(region))
+                let unwound = Lifetime_unwind(arg.type.lifetime);
+                if !(unwound.uni0n.some(|r| Region_asLocal(r) == locid))
                     continue;
 
                 let peek = qSTACK(callsite.target, position: i, :seen, :query);
@@ -8942,7 +8943,7 @@ pub fn solve(
         defer _nestingFnort = nestingFnort0;
         //////////////////////////////////////////////////
 
-        let arg_region = Region_fromLocal(host_arg.target.locid);
+        let locid = host_arg.target.locid;
 
         mut candidates = "";
 
@@ -8968,11 +8969,11 @@ pub fn solve(
                         |cow| cow.argTarget == host_arg.target.locid
                                && cow.token == cow_inside)
                      && Lifetime_unwind(callsite.items[i].lifetime)
-                            .uni0n.has(arg_region))
+                            .uni0n.some(|r| Region_asLocal(r) == locid))
                 {
                     let peek = qSTACK_cow_inside(
                         callsite.target, callsite.target.solved,
-                        :host_arg, :cow_inside, :seen);
+                            :host_arg, :cow_inside, :seen);
 
                     return "\n            "
                          ~ "in " ~ target ~ " via " ~ callsite.target
