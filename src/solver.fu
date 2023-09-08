@@ -654,6 +654,7 @@ pub fn solve(
 
     fn nested(index: i32, from!: Target)
     {
+        index > 0 || assert();
         return Target(:from.modid, :from.globid, locid: index);
     }
 
@@ -689,9 +690,6 @@ pub fn solve(
 
 
     //
-
-    fn isRefArg(o: Overload): bool
-        o.flags & F_ARG && o.kind == "var" && o.solved.type.is_ref;
 
 
     // RemoteNode nonsense
@@ -772,7 +770,9 @@ pub fn solve(
         return res.lifetime;
     }
 
-    fn Lifetime_test(lifetime: Lifetime, lax tempsOK!?: bool): Lifetime
+    fn Lifetime_test(lifetime: Lifetime,
+        lax tempsOK!?: bool,
+        lax argPositionsOK!?: bool): Lifetime
     {
         if (SELF_TEST)
         {
@@ -788,22 +788,30 @@ pub fn solve(
                     _last = region;
                 }
 
-                // TODO we shouldn't see these during solve anymore
-                if (Region_isArgPosition(region))
+                if (region.Region_isStatic)
+                {
+                    !i || BUG("Lifetime_test: static not first");
                     continue;
+                }
+
+                if (Region_isArgPosition(region))
+                {
+                    argPositionsOK || BUG("Lifetime_test: Region_isArgPosition");
+                    continue;
+                }
 
                 if (region.Region_isTemp)
                 {
-                    i == lifetime.uni0n.len - 1 && tempsOK || BUG("Lifetime_test: unexpected temporary.");
+                    i == lifetime.uni0n.len - 1 && tempsOK || BUG("Lifetime_test: Region_isTemp");
                     continue;
                 }
 
-                let index = region.Region_toLocal;
-                if (index)
-                {
-                    let o = GET(nested(:index));
-                    o.kind == "var" || BUG("Lifetime_test: local is not a var: " ~ o.kind ~ " " ~ o.name);
-                }
+                let index = region.Region_asLocal || BUG(
+                    "Lifetime_test: No a local");
+
+                let o = GET(nested(:index));
+                o.kind == "var" || BUG(
+                    "Lifetime_test: local is not a var: " ~ o);
             }
         }
 
@@ -831,7 +839,7 @@ pub fn solve(
 
     using fn Region_GET(r: Region)
     {
-        return GET(nested(Region_toLocal(r)));
+        return GET(nested(Region_asLocal(r)));
     }
 
     fn str(regions: [Region])
@@ -5597,7 +5605,7 @@ pub fn solve(
                     if (retval.isIrrelevant)
                         retval.lifetime = Lifetime_static;
 
-                    Lifetime_test(retval.lifetime);
+                    Lifetime_test(retval.lifetime, argPositionsOK: true);
                 }
 
                 retval.lifetime.uni0n.each: |r|
@@ -6744,13 +6752,14 @@ pub fn solve(
         for (mut i = lifetime.uni0n.len; i --> 0; )
         {
             let r = lifetime.uni0n[i];
-            if (r.index < locals_start)
-                break;
-
-            if (r.Region_isTemp)
+            let locid = Region_asLocal(r);
+            if (!locid)
                 continue;
 
-            let t = nested(r.Region_toLocal());
+            if (locid < locals_start)
+                break;
+
+            let t = nested(locid);
             visit(:t, i?: i, lifetime?: lifetime);
         }
     }
@@ -6792,21 +6801,6 @@ pub fn solve(
             lifetime.uni0n.shift();
 
         return Lifetime_unwind(lifetime);
-    }
-
-    fn Lifetime_slotsUp2(lifetime: Lifetime, locals_start!: i32): i32[]
-    {
-        let unwound = Lifetime_unwind(lifetime, :locals_start).uni0n;
-
-        mut result: i32[];
-        for (mut i = 0; i < unwound.len; i++)
-        {
-            let r = unwound[i];
-            if (r.index >= locals_start)
-                result ~= r.index;
-        }
-
-        return result;
     }
 
     fn Lifetime_F_MOVED_FROM(lifetime: Lifetime)
@@ -6874,28 +6868,6 @@ pub fn solve(
                 ~ reason
                 ~ "Cannot intersect types: "
                 ~ humanizeType(a, lt: true) ~ " & " ~ humanizeType(b, lt: true));
-    }
-
-    fn Lifetime_vs(lifetime: Lifetime, locals_start!?: i32)
-    {
-        mut neg = false;
-        mut pos = false;
-
-        let r = lifetime.uni0n;
-        for (mut i = 0; i < r.len && !(pos && neg); i++)
-        {
-            shadow let r = r[i];
-            if (Region_toLocal(r) < locals_start)
-                neg = true;
-            else if (Region_isTemp(r))
-                pos = true;
-            else if (Region_GET(r).isRefArg)
-                neg = true;
-            else
-                pos = true;
-        }
-
-        return neg == pos ? 0 : neg ? -1 : +1;
     }
 
     fn solveJump(node: Node): SolvedNode
@@ -9161,12 +9133,9 @@ pub fn solve(
                         if (!SELF_TEST || a == b)
                             return;
 
-                        fn printLt(lt: Lifetime) =
-                            "(" ~ lt.uni0n.map(.index.str).join("|") ~ ")";
-
                         BUG("visitNode Lifetime_assertEqual:"
-                            ~ "\n\n\t    " ~ aa ~ ":\t" ~ printLt(a)
-                            ~ "\n\n\t    " ~ bb ~ ":\t" ~ printLt(b));
+                            ~ "\n\n\t    " ~ aa ~ ":\t" ~ "(" ~ a.uni0n ~ ")"
+                            ~ "\n\n\t    " ~ bb ~ ":\t" ~ "(" ~ b.uni0n ~ ")");
                     }
 
                     //
@@ -10673,7 +10642,7 @@ pub fn solve(
 
                                 for (shadow mut i = 0; i < inter.uni0n.len; i++)
                                 {
-                                    let t = nested(inter.uni0n[i].index);
+                                    let t = nested(Region_asLocal(inter.uni0n[i]));
 
                                     err ~= "\n            " ~ explainWhichFn(t, fmt: FullContext);
                                 }
@@ -11468,6 +11437,53 @@ pub fn solve(
     {
         if (!h.ret_actual.is_ref)
             return;
+
+        fn Lifetime_vs(lifetime: Lifetime, locals_start!?: i32)
+        {
+            locals_start || BUG("Lifetime_vs: No locals_start");
+
+            fn isRefArg(o: Overload) =
+                o.flags & F_ARG && o.kind == "var"
+                                && o.solved.type.is_ref;
+
+            mut neg = false;
+            mut pos = false;
+
+            let r = lifetime.uni0n;
+            for (mut i = 0; i < r.len && !(pos && neg); i++)
+            {
+                shadow let r = r[i];
+                if (Region_isTemp(r))
+                    pos = true;
+                else if (Region_asLocal(r) < locals_start)
+                    neg = true;
+                else if (Region_GET(r).isRefArg)
+                    neg = true;
+                else
+                    pos = true;
+            }
+
+            return neg == pos ? 0 : neg ? -1 : +1;
+        }
+
+        fn Lifetime_slotsUp2(lifetime: Lifetime, locals_start!: i32): i32[]
+        {
+            let unwound = Lifetime_unwind(lifetime, :locals_start).uni0n;
+
+            mut result: i32[];
+            for (mut i = 0; i < unwound.len; i++)
+            {
+                let r = unwound[i];
+                if (r.Region_isTemp)
+                    continue;
+
+                let locid = Region_asLocal(r);
+                if (locid >= locals_start)
+                    result ~= locid;
+            }
+
+            return result;
+        }
 
         // If the jump is a return-current-fn:
         //  We cannot promote var lifetimes past this fn
