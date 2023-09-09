@@ -12964,6 +12964,69 @@ pub extern fn runTests()
         }
     `);
 
+    TODO_inline(currently: "BUG inliner botching argdef type force_mut 30:21+1", `
+        struct Lifetime { regions: i32[] };
+
+        let Region_STATIC = 0;
+
+        fn Region_asLocal(r: i32) r > 1000 ? r - 1000 : 0;
+
+        fn Lifetime_each !<S, A, L, E>(lt.regions,
+            static: S = [], argidx: A = [],
+            local:  L = [], else:   E = [])
+        {
+            for (mut i = 0; i < lt.len; i++)
+            {
+                let r = lt[i];
+
+                :ELSE {                                         ;; Goto
+                    if (r == Region_STATIC)
+                        S -> [] ? { break :ELSE; }
+                                : static(i?: i);
+                    else if (let locid = Region_asLocal(r))
+                        L -> [] ? { break :ELSE; }
+                                : local(:locid, i?: i);
+                    else
+                        A -> [] ? { break :ELSE; }
+                                : argidx(r, i?: i);
+
+                    continue;
+                }
+
+                else(i?: i);
+            }
+        }
+
+        fn isMovedFrom(locid: i32) locid & 1;
+
+    <alt>
+        fn main() {
+    <alt/>
+        fn main() = test();
+        fn test() {
+    </alt>
+            mut lt = Lifetime([ 1001, <alt>1002<alt/>1</alt>, 1003 ]);
+            mut locids = 0;
+            mut force_mut = true;
+
+            Lifetime_each(lt,
+                local: |locid| {
+                    if (!locid.isMovedFrom) {
+                        force_mut = false;
+                        break;
+                    }
+
+                    locids += locid;
+                },
+                else: || {
+                    force_mut = false;
+                    break;
+                });
+
+            return force_mut == false && locids == 1 ? 0 : 1;
+        }
+    `);
+
     // /Inliner.
 
 
