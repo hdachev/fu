@@ -105,6 +105,7 @@ pub extern fn runTests()
     let TODO_cow        = fn TODO;
     let TODO_mangle     = fn TODO;
     let TODO_specpat    = fn TODO;
+    let TODO_control    = fn TODO;
 
     let TODO_Map        = fn TODO;
 
@@ -13815,6 +13816,44 @@ pub extern fn runTests()
                 sum += hello;          </fail>
 
             return sum;
+        }
+    `);
+
+    TODO_control(currently: "no label in scope 4:13+5", `
+        fn test() {
+            <fail nothing to break>
+            break;   <pass/></fail>
+            return 0;
+        }
+        fn main() = test();
+    `);
+
+    TODO_control(currently: "does not match annotation i32 void 11:25+1", `
+        fn test() {
+            let hello = || {
+                <fail nothing to break>
+                break;   <pass/></fail>
+                return 0;
+            };
+
+            return hello;
+        }
+        fn main() = test();
+    `);
+
+    TODO_control(currently: "does not match annotation i32 void 9:49+5", `
+        fn each(ref arr: i32[], even, odd)
+            for (mut i = 0; i < arr.len; i++)
+                if (i)  odd(i?: i, it?: arr[i]);
+                else   even(i?: i, it?: arr[i]);
+
+        fn main() {
+            mut arr = [ 1, 2, 3 ];
+            arr.each(odd: |it| it++, even: || { break; });
+
+            mut sum = 0;
+            for (mut i = 0; i < arr.len; i++) sum += arr[i];
+            return sum - 7;
         }
     `);
 
