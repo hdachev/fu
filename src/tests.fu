@@ -12964,7 +12964,7 @@ pub extern fn runTests()
         }
     `);
 
-    TODO_inline(currently: "BUG inliner botching argdef type force_mut 30:21+1", `
+    TODO_inline(currently: "return does not match annot 37:25+1", `
         struct Lifetime { regions: i32[] };
 
         let Region_STATIC = 0;
