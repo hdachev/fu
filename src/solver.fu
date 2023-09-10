@@ -6830,20 +6830,32 @@ pub fn solve(
         }
     }
 
-    fn Lifetime_allowsMutrefReturn(lifetime: Lifetime, locals_start!?: i32): bool
+    fn Lifetime_allowsMutrefReturn(lifetime: Lifetime, locals_start!: i32): bool
     {
-        Lifetime_each(:lifetime, :locals_start, visit: |t|
+        Lifetime_each(:lifetime): |locid|
         {
-            t.type.is_mutref || BUG(
-                "Checking for mutref-return-ok found non-mutref: " ~ t);
+            if (!locid)
+            {
+                // TODO FIX seeing static mutrefs -
+                //  appear to be related to : &mut x return annotations.
+                // locid || BUG("Lifetime_allowsMutrefReturn: found a non-local.");
+                continue;
+            }
 
-            if (t.kind == "var" && !(t.flags & F_REF))
+            if (locid < locals_start)
+                break;
+
+            let o = GET(nested(locid));
+            o.type.is_mutref || BUG(
+                "Lifetime_allowsMutrefReturn: found non-mutref: " ~ o);
+
+            if (o.kind == "var" && !(o.flags & F_REF))
                 return false;
 
-            let init = t.Lifetime_climbType;
+            let init = o.Lifetime_climbType;
             if (!Lifetime_allowsMutrefReturn(init.lifetime, :locals_start))
                 return false;
-        });
+        }
 
         return true;
     }
