@@ -3367,12 +3367,9 @@ pub fn solve(
                     //     and B] seems to be messed around with by propagateType(loop)
                     fn callarg_trackWrites(lt: Lifetime)
                     {
-                        for (shadow mut i = 0; i < lt.uni0n.len; i++)
-                        {
-                            let index = Region_asLocal(lt.uni0n[i]);
-                            if (index && _current_fn.postdom.written_directly.add_once(index))
-                                callarg_trackWriteIndirect(index);
-                        }
+                        lt.Lifetime_each: |locid|
+                            if (locid && _current_fn.postdom.written_directly.add_once(locid))
+                                callarg_trackWriteIndirect(locid);
                     }
 
                     fn callarg_trackWriteIndirect(index: i32)
@@ -3380,13 +3377,11 @@ pub fn solve(
                         if (_current_fn.postdom.written_indirectly.add_once(index))
                         {
                             shadow let t = nested(index);
-                            shadow let lt = Lifetime_climbType(t).lifetime.uni0n;
-                            for (shadow mut i = 0; i < lt.len; i++)
-                            {
-                                let parent = Region_asLocal(lt[i]);
-                                if (parent)
-                                    callarg_trackWriteIndirect(parent);
-                            }
+                            shadow let lt = Lifetime_climbType(t).lifetime;
+
+                            lt.Lifetime_each: |locid|
+                                if (locid)
+                                    callarg_trackWriteIndirect(locid);
 
                             if (t.flags & F_ARG)
                                 _current_fn.postdom.mayEscapeVia |= 1 << (index % 32);
