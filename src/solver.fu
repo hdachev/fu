@@ -2454,135 +2454,131 @@ pub fn solve(
         //    breaking value semantics on the copy.
         fn cannotCOW_climbParents(lifetime: Lifetime)
         {
-            for (mut i = 0; i < lifetime.uni0n.len; i++)
+            lifetime.Lifetime_each: |locid!index|
             {
-                let index = Region_asLocal(lifetime.uni0n[i]);
-                if (index)
+                if (!index || !seen.add_once(index))
+                    continue;
+
+                let o = GET(nested(index));
+                o.kind == "var" || BUG("cannotCOW_climbParents found a non-var: " ~ o);
+
+                // Climb parents.
+                cannotCOW_climbParents(Lifetime_climbType(o).lifetime);
+
+                // Check children.
+                cannotCOW_descendChildren(index);
+
+                // GLOBAL COMPONENT
+                // Here we're adding stuff to the arguments-at-risk bitmasks,
+                //  to prevent COW copies to be created while there are outstanding
+                //   writeable refs to their contents, but indirectly,
+                //    via aliased function arguments.
+                ref flow = _current_fn.flow;
+                if (o.flags & F_ARG)
                 {
-                    if (!seen.add_once(index))
-                        continue;
-
-                    let o = GET(nested(index));
-                    o.kind == "var" || BUG("cannotCOW_climbParents found a non-var: " ~ o);
-
-                    // Climb parents.
-                    cannotCOW_climbParents(Lifetime_climbType(o).lifetime);
-
-                    // Check children.
-                    cannotCOW_descendChildren(index);
-
-                    // GLOBAL COMPONENT
-                    // Here we're adding stuff to the arguments-at-risk bitmasks,
-                    //  to prevent COW copies to be created while there are outstanding
-                    //   writeable refs to their contents, but indirectly,
-                    //    via aliased function arguments.
-                    ref flow = _current_fn.flow;
-                    if (o.flags & F_ARG)
+                    // Let's just hard risk all mutref arguments for starters,
+                    //  we'll be relaxing this later as more practical examples become available.
+                    let arg_targets = flow.arg_targets;
+                    for (shadow mut i = 0; i < arg_targets.len; i++)
                     {
-                        // Let's just hard risk all mutref arguments for starters,
-                        //  we'll be relaxing this later as more practical examples become available.
-                        let arg_targets = flow.arg_targets;
-                        for (shadow mut i = 0; i < arg_targets.len; i++)
+                        let t = arg_targets[i];
+                        if (!t || t == index)
+                            continue;
+
+                        // Mutrefs only.
+                        shadow let o = GET(nested(t));
+                        if (!o.solved.type.is_mutref)
+                            continue;
+
+                        // Nothing to do if already hard-risked.
+                        if (flow.at_hard_risk.unless_oob(t).set::has(index))
+                            continue;
+
+                        fn needsHardRisk(shadow index: i32)
                         {
-                            let t = arg_targets[i];
-                            if (!t || t == index)
-                                continue;
-
-                            // Mutrefs only.
-                            shadow let o = GET(nested(t));
-                            if (!o.solved.type.is_mutref)
-                                continue;
-
-                            // Nothing to do if already hard-risked.
-                            if (flow.at_hard_risk.unless_oob(t).set::has(index))
-                                continue;
-
-                            fn needsHardRisk(shadow index: i32)
-                            {
-                                // Gotta visit children first -
-                                //  otherwise a direct match on the parent
-                                //   exits early and fails to hard-risk the argument,
-                                //    see cowAfterConditionalWithLoop testcase.
-                                //
-                                eachLiveChildMutref(index): |child| {
-                                    let reason = needsHardRisk(child);
-                                    if (reason)
-                                        return reason;
-                                }
-
-                                if (_current_fn.postdom.written_directly.has(index)) {
-                                    eachCOWInside: |vtype, uncaughtThrowOnly| {
-
-                                        // If COW only occurs via a throw route,
-                                        //  no writes that follow this call can clobber it.
-                                        if (uncaughtThrowOnly)
-                                            continue;
-
-                                        shadow mut seen: StructCanon[];
-                                        if (type_maybeInside(host: vtype, o.type, :seen))
-                                            return index;
-                                    }
-                                }
-
-                                return 0;
-                            }
-
-                            let reason = needsHardRisk(t);
-                            if (reason)
-                            {
-                                makeNote(N_COWRestrict, nested(index) ~ " at risk from " ~ nested(t) ~ " via " ~ nested(reason));
-
-                                flow.at_soft_risk.grow_if_oob(t).set::add(index);
-
-                                fn TODO_FIX_slicesAgain()
-                                {
-                                    // Initially I assumed the TODO_FIX_isArray in the hard/soft risk stuff in updateScope
-                                    //  would convert soft -> hard risk for slices [which is the wrong thing to do in the first place]
-                                    //   but that doesn't work because there we care about reallocation,
-                                    //    here it's about aliasing, anyways, doesn't work.
-                                    //
-                                    // We gotta remove the need for this kind of trash,
-                                    //  which can only happen if we formalize the differences between arrays and slices
-                                    //   and array-into-slice conversions.
-                                    //
-                                    return nested(t).type.is_sliceable;
-                                }
-
-                                if (reason != t || TODO_FIX_slicesAgain)
-                                    flow.at_hard_risk.grow_if_oob(t).set::add(index);
-                            }
-                        }
-
-                        // Remember this copy, we'll propagate along.
-                        eachCOWInside: |vtype, token, uncaughtThrowOnly|
-                        {
-                            let mayEscapeVia = _current_fn.postdom.mayEscapeVia;
-                            let exitPaths    =
-                                uncaughtThrowOnly
-                                    ? XP_NoReturn
-                                    : _current_fn.postdom.exitPaths || BUG("No current_fn.exitPaths");
-
+                            // Gotta visit children first -
+                            //  otherwise a direct match on the parent
+                            //   exits early and fails to hard-risk the argument,
+                            //    see cowAfterConditionalWithLoop testcase.
                             //
-                            ref my_cows = _current_fn.events.cows_inside;
-                            for (shadow mut i = 0; i < my_cows.len; i++)
-                            {
-                                ref my_cow = my_cows[i];
-                                if (my_cow.argTarget    == index &&
-                                    my_cow.vtype.canon  == vtype.canon)
-                                {
-                                    my_cow.vtype.quals  |= vtype.quals;
-                                    my_cow.mayEscapeVia |= mayEscapeVia;
-                                    my_cow.exitPaths    |= exitPaths;
-                                    return;
+                            eachLiveChildMutref(index): |child| {
+                                let reason = needsHardRisk(child);
+                                if (reason)
+                                    return reason;
+                            }
+
+                            if (_current_fn.postdom.written_directly.has(index)) {
+                                eachCOWInside: |vtype, uncaughtThrowOnly| {
+
+                                    // If COW only occurs via a throw route,
+                                    //  no writes that follow this call can clobber it.
+                                    if (uncaughtThrowOnly)
+                                        continue;
+
+                                    shadow mut seen: StructCanon[];
+                                    if (type_maybeInside(host: vtype, o.type, :seen))
+                                        return index;
                                 }
                             }
 
-                            // Nope, couldn't insert, add a new one.
-                            my_cows ~= COWInside(
-                                :vtype, :token, argTarget: index,
-                                :mayEscapeVia,
-                                :exitPaths);
+                            return 0;
                         }
+
+                        let reason = needsHardRisk(t);
+                        if (reason)
+                        {
+                            makeNote(N_COWRestrict, nested(index) ~ " at risk from " ~ nested(t) ~ " via " ~ nested(reason));
+
+                            flow.at_soft_risk.grow_if_oob(t).set::add(index);
+
+                            fn TODO_FIX_slicesAgain()
+                            {
+                                // Initially I assumed the TODO_FIX_isArray in the hard/soft risk stuff in updateScope
+                                //  would convert soft -> hard risk for slices [which is the wrong thing to do in the first place]
+                                //   but that doesn't work because there we care about reallocation,
+                                //    here it's about aliasing, anyways, doesn't work.
+                                //
+                                // We gotta remove the need for this kind of trash,
+                                //  which can only happen if we formalize the differences between arrays and slices
+                                //   and array-into-slice conversions.
+                                //
+                                return nested(t).type.is_sliceable;
+                            }
+
+                            if (reason != t || TODO_FIX_slicesAgain)
+                                flow.at_hard_risk.grow_if_oob(t).set::add(index);
+                        }
+                    }
+
+                    // Remember this copy, we'll propagate along.
+                    eachCOWInside: |vtype, token, uncaughtThrowOnly|
+                    {
+                        let mayEscapeVia = _current_fn.postdom.mayEscapeVia;
+                        let exitPaths    =
+                            uncaughtThrowOnly
+                                ? XP_NoReturn
+                                : _current_fn.postdom.exitPaths || BUG("No current_fn.exitPaths");
+
+                        //
+                        ref my_cows = _current_fn.events.cows_inside;
+                        for (shadow mut i = 0; i < my_cows.len; i++)
+                        {
+                            ref my_cow = my_cows[i];
+                            if (my_cow.argTarget    == index &&
+                                my_cow.vtype.canon  == vtype.canon)
+                            {
+                                my_cow.vtype.quals  |= vtype.quals;
+                                my_cow.mayEscapeVia |= mayEscapeVia;
+                                my_cow.exitPaths    |= exitPaths;
+                                return;
+                            }
+                        }
+
+                        // Nope, couldn't insert, add a new one.
+                        my_cows ~= COWInside(
+                            :vtype, :token, argTarget: index,
+                            :mayEscapeVia,
+                            :exitPaths);
                     }
                 }
             }
