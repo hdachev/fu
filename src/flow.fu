@@ -56,9 +56,8 @@ pub fn Reference_trackLocalRef(ref flow: Flow, left: i32, right: Lifetime)
 
     mut parents: i32[];
 
-    for (mut i = 0; i < right.uni0n.len; i++)
+    right.Lifetime_each: |shadow locid!right|
     {
-        shadow let right = Region_asLocal(right.uni0n[i]);
         if !(right)
             continue;
 
@@ -74,7 +73,7 @@ pub fn Reference_trackLocalRef(ref flow: Flow, left: i32, right: Lifetime)
 
         // LEFT can show up in the inval lists
         //  after we process the first lifetime.
-        !siblings.set::rem(left) || i > 0 || assert();
+        siblings.set::rem(left);
 
         // So, if:
         //  LEFT = &RIGHT;
@@ -118,9 +117,8 @@ pub fn Reference_trackLocalRef(ref flow: Flow, left: i32, right: Lifetime)
 pub fn Reference_untrackLocalRef(ref flow: Flow, left: i32, right: Lifetime)
 {
     // Unlist parents.
-    for (mut i = 0; i < right.uni0n.len; i++)
+    right.Lifetime_each: |shadow locid!right|
     {
-        shadow let right = Region_asLocal(right.uni0n[i]);
         if (!right)
             continue;
 
