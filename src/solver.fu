@@ -2690,20 +2690,18 @@ pub fn solve(
 
         fn trackJustMoved(lt: Lifetime)
         {
-            for (mut i = 0; i < lt.uni0n.len; i++)
+            lt.Lifetime_each: |locid, temp|
             {
-                let r = lt.uni0n[i];
-                if (MOVE_from_temp && Region_isTemp(r))
+                if (temp && MOVE_from_temp)
                     continue;
 
-                let local = Region_asLocal(r) || BUG(
+                locid || BUG(
                     "trackJustMoved: found a non-local.");
 
-                let target = nested(local);
-                _current_fn.postdom.just_moved.add_once(target.locid) || BUG(
+                _current_fn.postdom.just_moved.add_once(locid) || BUG(
                     "trackJustMoved: already moved.");
 
-                trackJustMoved(Lifetime_climbType(target).lifetime);
+                trackJustMoved(Lifetime_climbType(nested(locid)).lifetime);
             }
         }
 
