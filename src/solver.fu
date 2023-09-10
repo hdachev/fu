@@ -10517,9 +10517,9 @@ pub fn solve(
                                 //
                                 // TODO: args at risk: ignore non-aliasable types.
                                 //
-                                for (mut i = 0; i < unwound.uni0n.len; i++)
+                                unwound.Lifetime_each: |locid|
                                 {
-                                    if (unwound.uni0n[i].Region_asLocal)
+                                    if (locid)
                                     {
                                         arg_first   = arg_first < 0 ? i0 : arg_first;
                                         arg_last    = i0;
@@ -10538,9 +10538,9 @@ pub fn solve(
                         let unwound0 = bck_unwound[i0] = Lifetime_unwind_noStatic(shallow0);
 
                         // Keep track of caller arguments.
-                        for (mut i = 0; i < unwound0.uni0n.len; i++)
+                        unwound0.Lifetime_each: |locid|
                         {
-                            if (unwound0.uni0n[i].Region_asLocal)
+                            if (locid)
                             {
                                 arg_first   = arg_first < 0 ? i0 : arg_first;
                                 arg_last    = i0;
@@ -10640,12 +10640,10 @@ pub fn solve(
                                         ~         " and\n\t    " ~ (i1 + 1) ~ ":\t" ~ host_arg1
                                         ~           "\n\n\t    both alias:\n";
 
-                                for (shadow mut i = 0; i < inter.uni0n.len; i++)
-                                {
-                                    let t = nested(Region_asLocal(inter.uni0n[i]));
-
-                                    err ~= "\n            " ~ explainWhichFn(t, fmt: FullContext);
-                                }
+                                inter.Lifetime_each: |locid|
+                                    if (locid)
+                                        err ~= "\n            "
+                                            ~ explainWhichFn(nested(locid), fmt: FullContext);
 
                                 _here = args[i0].token;
                                 fail(err);
