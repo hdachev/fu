@@ -2666,14 +2666,12 @@ pub fn solve(
             }
 
             mut allTrue = true;
-            for (mut i = 0; i < lt.uni0n.len; i++)
+            lt.Lifetime_each: |locid, temp|
             {
-                let r = lt.uni0n[i];
-                if (MOVE_from_temp && Region_isTemp(r))
+                if (temp && MOVE_from_temp)
                     continue;
 
-                let local = Region_asLocal(r);
-                if !(local && trackUse(nested(local)))
+                if !(locid && trackUse(nested(locid)))
                 {
                     // Can't break early,
                     //  needs to flag all lifetimes underneath.
