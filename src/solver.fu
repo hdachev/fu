@@ -11418,41 +11418,17 @@ pub fn solve(
 
             mut neg = false;
             mut pos = false;
-
-            let r = lifetime.uni0n;
-            for (mut i = 0; i < r.len && !(pos && neg); i++)
-            {
-                shadow let r = r[i];
-                if (Region_isTemp(r))
+            lifetime.Lifetime_each: |isTemp, locid|
+                if (isTemp)
                     pos = true;
-                else if (Region_asLocal(r) < locals_start)
+                else if (locid < locals_start)
                     neg = true;
-                else if (Region_asLocal(r).nested.isRefArg)
+                else if (locid.nested.isRefArg)
                     neg = true;
                 else
                     pos = true;
-            }
 
             return neg == pos ? 0 : neg ? -1 : +1;
-        }
-
-        fn Lifetime_slotsUp2(lifetime: Lifetime, locals_start!: i32): i32[]
-        {
-            let unwound = Lifetime_unwind(lifetime, :locals_start).uni0n;
-
-            mut result: i32[];
-            for (mut i = 0; i < unwound.len; i++)
-            {
-                let r = unwound[i];
-                if (r.Region_isTemp)
-                    continue;
-
-                let locid = Region_asLocal(r);
-                if (locid >= locals_start)
-                    result ~= locid;
-            }
-
-            return result;
         }
 
         // If the jump is a return-current-fn:
@@ -11477,11 +11453,18 @@ pub fn solve(
         //
         else
         {
-            Lifetime_slotsUp2(:h.ret_actual.lifetime, :h.locals_start).each: |index|
+            let locals_start = h.locals_start;
+            let unwound = Lifetime_unwind(
+                :h.ret_actual.lifetime, :locals_start);
+
+            unwound.Lifetime_each: |locid|
             {
-                ref o = GET_mut(nested(index));
-                if !(o.flags & F_ARG)
-                    o.status |= SS_HOIST;
+                if (locid >= locals_start)
+                {
+                    ref o = GET_mut(nested(locid));
+                    if !(o.flags & F_ARG)
+                        o.status |= SS_HOIST;
+                }
             }
         }
     }
