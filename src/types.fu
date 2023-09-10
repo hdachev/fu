@@ -80,7 +80,9 @@ pub fn Lifetime_each(lifetime: Lifetime, each)
             locid?: Region_asLocal(r),
            static?: r == Region_STATIC,
              temp?: r == Region_TEMP,
-           argidx?: Region_toArgPosition(r));
+           argidx?: Region_toArgPosition(r),
+
+           isArgIdx?: Region_isArgPosition(r));
     }
 }
 

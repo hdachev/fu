@@ -880,10 +880,9 @@ pub fn cpp_codegen(
         if (has_val)
         {
             mut force_mut = type.is_ref;
-            type.lifetime.uni0n.each: |r|
+            type.lifetime.Lifetime_each: |locid|
             {
-                let local = Region_asLocal(r);
-                if (!local || !(nested(local).flags & F_MOVED_FROM))
+                if (!locid || !(nested(locid).flags & F_MOVED_FROM))
                 {
                     force_mut = false;
                     break;
@@ -2920,19 +2919,16 @@ pub fn cpp_codegen(
 
         if (node.kind == "move")
         {
-            fn sanityCheck(lt: [Region])
+            fn sanityCheck(lt: Lifetime)
             {
                 lt || BUG("cgMoveOrClone: Considering a move from an empty lifetime.");
 
-                for (mut i = 0; i < lt.len; i++)
-                {
-                    let r = lt[i];
-                    r.Region_asLocal || r.Region_isTemp || BUG(
+                lt.Lifetime_each: |locid, temp|
+                    locid || temp || BUG(
                         "cgMoveOrClone: Considering a move from non-local lifetime.");
-                }
             }
 
-            sanityCheck(expr.type.lifetime.uni0n);
+            sanityCheck(expr.type.lifetime);
 
             // NRVO now here, solver doesn't care.
             if (mode & M_RETURN)
@@ -2999,13 +2995,8 @@ pub fn cpp_codegen(
                             sanityCheck(expr.type.lifetime);
 
                             // Sanity check signature, can't return e.g. statics or whatever.
-                            let lt = t.lifetime.uni0n;
-                            for (mut i = 0; i < lt.len; i++)
-                            {
-                                let r = lt[i];
-                                if !(r.Region_isArgPosition || r.Region_isTemp)
-                                    BUG("About to return mayNeedConstCast, but fn returns non-arg refs.");
-                            }
+                            t.lifetime.Lifetime_each: |isArgIdx|
+                                isArgIdx || BUG("About to return mayNeedConstCast, but fn returns non-arg refs.");
                         }
 
                         return mayNeedConstCast;
