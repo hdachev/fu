@@ -2923,8 +2923,8 @@ pub fn cpp_codegen(
             {
                 lt || BUG("cgMoveOrClone: Considering a move from an empty lifetime.");
 
-                lt.Lifetime_each: |locid, temp|
-                    locid || temp || BUG(
+                lt.Lifetime_each: |locid, isTemp|
+                    locid || isTemp || BUG(
                         "cgMoveOrClone: Considering a move from non-local lifetime.");
             }
 

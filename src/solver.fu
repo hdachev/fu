@@ -870,14 +870,14 @@ pub fn solve(
     fn Lifetime_replaceArgsAtCallsite(target: Target, argNodes: [SolvedNode]): Lifetime
     {
         return target.type.lifetime.Lifetime_process(
-            each: |static, temp, locid, argidx,
+            each: |isStatic, isTemp, locid, argidx,
                 continue_keep,
                 continue_replace|
             {
-                if (static)
+                if (isStatic)
                     continue_keep();
 
-                if (temp || locid)
+                if (isTemp || locid)
                     BUG("Lifetime_replaceArgsAtCallsite: Found a temp or locid.");
 
                 let argNode = argNodes[argidx];
@@ -2666,9 +2666,9 @@ pub fn solve(
             }
 
             mut allTrue = true;
-            lt.Lifetime_each: |locid, temp|
+            lt.Lifetime_each: |locid, isTemp|
             {
-                if (temp && MOVE_from_temp)
+                if (isTemp && MOVE_from_temp)
                     continue;
 
                 if !(locid && trackUse(nested(locid)))
@@ -2690,9 +2690,9 @@ pub fn solve(
 
         fn trackJustMoved(lt: Lifetime)
         {
-            lt.Lifetime_each: |locid, temp|
+            lt.Lifetime_each: |locid, isTemp|
             {
-                if (temp && MOVE_from_temp)
+                if (isTemp && MOVE_from_temp)
                     continue;
 
                 locid || BUG(
@@ -5590,9 +5590,9 @@ pub fn solve(
                     Lifetime_test(retval.lifetime, argPositionsOK: true);
                 }
 
-                retval.lifetime.uni0n.each: |r|
-                    r.Region_isArgPosition() || r.Region_isStatic() || BUG(
-                        "updateScope: Non-static/non-arg leaked:\n\t" ~ r ~ "\n\n\tIn retval lifetime:\n\t" ~ retval.lifetime);
+                retval.lifetime.Lifetime_each: |isArgIdx, isStatic|
+                    isArgIdx || isStatic || BUG(
+                        "updateScope: Non-static/non-arg leaked:\n\t" ~ retval.lifetime);
 
                 // Unconditionally replacing the stuff.
                 let overload    = GET(target);
@@ -6765,10 +6765,10 @@ pub fn solve(
 
     fn Lifetime_F_MOVED_FROM(lifetime: Lifetime)
     {
-        Lifetime_each(:lifetime): |locid, temp|
+        Lifetime_each(:lifetime): |locid, isTemp|
         {
             if !(locid) {
-                temp || BUG("Attempting to move from a non-local, non-temporary region.");
+                isTemp || BUG("Attempting to move from a non-local, non-temporary region.");
                 continue;
             }
 

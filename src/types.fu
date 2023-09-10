@@ -77,12 +77,12 @@ pub fn Lifetime_each(lifetime: Lifetime, each)
         let r = lifetime.uni0n[i];
 
         each(
-            locid?: Region_asLocal(r),
-           static?: r == Region_STATIC,
-             temp?: r == Region_TEMP,
-           argidx?: Region_toArgPosition(r),
+            locid?:     Region_asLocal(r),
+            argidx?:    Region_toArgPosition(r),
 
-           isArgIdx?: Region_isArgPosition(r));
+            isStatic?:  r == Region_STATIC,
+            isTemp?:    r == Region_TEMP,
+            isArgIdx?:  Region_isArgPosition(r));
     }
 }
 
@@ -134,10 +134,12 @@ pub fn Lifetime_process(lifetime: Lifetime, each)
                   continue_replace?: fn continue_replace,
 
                     // Same as above.
-                    locid?: Region_asLocal(r),
-                   static?: r == Region_STATIC,
-                     temp?: r == Region_TEMP,
-                   argidx?: Region_toArgPosition(r));
+                    locid?:     Region_asLocal(r),
+                    argidx?:    Region_toArgPosition(r),
+
+                    isStatic?:  r == Region_STATIC,
+                    isTemp?:    r == Region_TEMP,
+                    isArgIdx?:  Region_isArgPosition(r));
 
                 continue;
             }
