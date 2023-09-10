@@ -869,33 +869,24 @@ pub fn solve(
 
     fn Lifetime_replaceArgsAtCallsite(target: Target, argNodes: [SolvedNode]): Lifetime
     {
-        mut keep:       Lifetime;
-        mut replace:    Lifetime;
-
-        let returned    = target.type.lifetime;
-        for (mut i = 0; i < returned.uni0n.len; i++)
-        {
-            let region = returned.uni0n[i];
-            if (region.Region_isStatic)
+        return target.type.lifetime.Lifetime_process(
+            each: |static, temp, locid, argidx,
+                continue_keep,
+                continue_replace|
             {
-                keep.uni0n ~= region;
-                continue;
-            }
+                if (static)
+                    continue_keep();
 
-            region.Region_isTemp && BUG("Lifetime_replaceArgsAtCallsite: found a temp lt in: " ~ target.type.lifetime);
+                if (temp || locid)
+                    BUG("Lifetime_replaceArgsAtCallsite: Found a temp or locid.");
 
-            let argNode = argNodes[region.Region_toArgPosition];
-            let argLt   = argNode.type.is_ref
-                ? argNode.type.lifetime
-                : Lifetime_temporary();
+                let argNode = argNodes[argidx];
+                let argLt   = argNode.type.is_ref
+                    ? argNode.type.lifetime
+                    : Lifetime_temporary();
 
-            replace     = Lifetime_union(replace, argLt || BUG("refarg without lifetime"));
-        }
-
-        return replace
-             ? keep ? Lifetime_union(keep, replace)
-                    : replace
-             : returned;
+                continue_replace(argLt);
+            });
     }
 
 
