@@ -6751,23 +6751,6 @@ pub fn solve(
 
     //////////////////////////////////////////////////////////
 
-    fn Lifetime_each(lifetime, visit, locals_start!: i32)
-    {
-        for (mut i = lifetime.uni0n.len; i --> 0; )
-        {
-            let r = lifetime.uni0n[i];
-            let locid = Region_asLocal(r);
-            if (!locid)
-                continue;
-
-            if (locid < locals_start)
-                break;
-
-            let t = nested(locid);
-            visit(:t, i?: i, lifetime?: lifetime);
-        }
-    }
-
     fn Lifetime_climbType(o: Overload)
     {
         o.kind == "var" || BUG("Lifetime_climbType: not a `var`: " ~ o);
@@ -6778,25 +6761,20 @@ pub fn solve(
             && node.items[LET_INIT].type;
     }
 
-    fn Lifetime_unwind(mut lifetime: Lifetime, locals_start!?: i32): Lifetime
+    fn Lifetime_unwind(lifetime: Lifetime, locals_start!?: i32): Lifetime
     {
-        Lifetime_each(:lifetime, :locals_start, visit: |t, i, shadow lifetime|
+        return Lifetime_process(:lifetime, each:
+            |locid, continue_keep, continue_climb|
         {
-            let init = t.Lifetime_climbType;
-            if !(init.is_ref)
-                continue;
+            if (locid && locid >= locals_start)
+            {
+                let init = GET(nested(locid)).Lifetime_climbType;
+                if (init.is_ref)
+                    continue_climb(init.lifetime);
+            }
 
-            init.lifetime.uni0n.len || BUG();
-            lifetime.uni0n.splice(i, 1);
-
-            let N0      = lifetime.uni0n.len;
-            lifetime    = Lifetime_union(lifetime, init.lifetime);
-            let N1      = lifetime.uni0n.len;
-
-            i += N1 - N0;
+            continue_keep();
         });
-
-        return lifetime;
     }
 
     fn Lifetime_unwind_noStatic(mut lifetime: Lifetime)
