@@ -17,7 +17,6 @@ import fail;
 let OPTI_autoshadow         = true;
 let OPTI_dedupe_vars        = true;
 let OPTI_bck                = true;
-let OPTI_ignoreLocalLts     = true;
 let OPTI_unlist_callers     = true;
 
 let RESOLVE_report          = false;
@@ -5043,6 +5042,9 @@ pub fn solve(
                     //
                     if (inType)
                     {
+                        // Replace any foreign lifetimes with Lifetime_temporay,
+                        ref_anonymize(inType);
+
                         // Enable conversions on fully typed arguments.
                         let exactType = host_arg.type;
                         if (exactType)
@@ -5070,9 +5072,7 @@ pub fn solve(
                             inType.vfacts & Typename || BUG(
                                 argName ~ " not a typename: " ~ humanizeType(inType));
                         else
-                            inType = add_ref(
-                                clear_Typename(inType), // See solveLetLike_dontTouchScope: t_init = clear_Typename
-                                Lifetime_temporary);
+                            inType = clear_Typename(inType); // See solveLetLike_dontTouchScope: t_init = clear_Typename
                         // TYPES vs VALUES //////
 
                         // TODO FIX VFACTS //////////////////////////
@@ -5531,6 +5531,13 @@ pub fn solve(
                         // ARGUMENTS AT RISK //
                         :soft_risk, :hard_risk);
 
+                    // TODO make this true for F_INJECTEDs too.
+                    if (arg.type.lifetime && !(arg.flags & F_INJECTED))
+                        arg.type.lifetime == Lifetime_temporary || BUG("Non-temporary lt on ref arg: " ~ argTarget);
+                    else
+                        ref_anonymize(arg.type);
+
+                    //
                     if (SELF_TEST)
                     {
                         arg.type || isUnspec || BUG(
@@ -5611,10 +5618,11 @@ pub fn solve(
                         let a = args[i];
                         let b = ext.args[i];
 
-                        fn ignoreLocalLts(mut type: Type)
+                        fn ignoreLocalLts(type: Type)
                         {
-                            if (OPTI_ignoreLocalLts && Region_asLocal(a.type.lifetime.uni0n.if_only))
-                                type.lifetime = Lifetime_temporary;
+                            if (SELF_TEST && type.is_ref)
+                                type.lifetime == Lifetime_temporary || BUG(
+                                    "type.lifetime != Lifetime_temporary");
 
                             return type;
                         }
@@ -7303,10 +7311,15 @@ pub fn solve(
                             ? clear_mutref(t_init)
                             : t_init;
 
-        // Add a temp lifetime to non F_MUT args -
-        //  currently all args are currentlypassed by ref.
+        // TODO FIX ARG TEMPS ///////////////////////
+        if (flags & F_ARG)
+            ref_anonymize(t_let);
+
+        // this was already here, needs some research,
+        //  i'm seeing weird stuff, LTs on F_MUTs, etc
         if (flags & F_ARG && !(flags & F_MUT))
             t_let = add_ref(t_let, Lifetime_temporary);
+        // TODO FIX ARG TEMPS ///////////////////////
 
         if (SELF_TEST)
         {
@@ -8173,7 +8186,7 @@ pub fn solve(
 
     //
 
-    fn createLet(id: string, type: Type, flags: Flags, ref shadows!: bool)
+    fn createLet_implicitArg(id: string, type: Type, flags: Flags, ref shadows!: bool)
     {
         let target  = Binding(id, type, :flags, :shadows);
         let ret     = SolvedNode(
@@ -8260,7 +8273,7 @@ pub fn solve(
         if (type.is_mutref)
             flags |= F_REF | F_RELAXABLE_REF;
 
-        let newArgTarget    = createLet(id, type, :flags, :shadows);
+        let newArgTarget    = createLet_implicitArg(id, type, :flags, :shadows);
         let newArgIdx       = _current_fn.items.len + FN_ARGS_BACK;
         let newLetDef       = createLetDef(newArgTarget);
 

@@ -304,6 +304,12 @@ pub fn is_ref2static(type: Type): bool
     return type.lifetime.uni0n.if_first == Region_STATIC;
 }
 
+pub fn ref_anonymize(ref type: Type)
+{
+    if (type.is_ref)
+        type.lifetime = Lifetime_temporary;
+}
+
 
 //
 
