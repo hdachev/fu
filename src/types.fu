@@ -70,6 +70,88 @@ pub fn Lifetime_makeShared(lifetime: Lifetime): Lifetime =
 
 //
 
+pub fn Lifetime_each(lifetime: Lifetime, each)
+{
+    for (mut i = lifetime.uni0n.len; i --> 0; )
+    {
+        let r = lifetime.uni0n[i];
+
+        each(
+            locid?: Region_asLocal(r),
+           static?: r == Region_STATIC,
+             temp?: r == Region_TEMP,
+           argidx?: Region_toArgPosition(r));
+    }
+}
+
+pub fn Lifetime_process(lifetime: Lifetime, each)
+{
+    mut result: Lifetime;
+
+    lax mut dedupe: Region[];
+
+    fn visit(shadow lifetime: Lifetime)
+    {
+        for (mut i = lifetime.uni0n.len; i --> 0; )
+        {
+            let r = lifetime.uni0n[i];
+
+            :TEST
+            {
+                fn continue_climb(mut parent: Lifetime)
+                {
+                    // Init the deduper lazily,
+                    //  we want this to compile away if noone uses it.
+                    if (!dedupe)
+                        dedupe = lifetime.uni0n;
+
+                    parent.uni0n.set::rem(dedupe);
+
+                    // Don't visit any of these again.
+                    dedupe.set::add(parent.uni0n);
+
+                    visit(parent);
+                    continue;
+                }
+
+                fn continue_replace(replacement: Lifetime)
+                {
+                    result.uni0n.set::add(replacement.uni0n);
+                    continue;
+                }
+
+                fn continue_keep()
+                {
+                    // Doing this in a convoluted way so that
+                    //  you can inline this multiple times at no cost.
+                    break :TEST;
+                }
+
+                each(continue_keep?: fn continue_keep,
+                    continue_climb?: fn continue_climb,
+                  continue_replace?: fn continue_replace,
+
+                    // Same as above.
+                    locid?: Region_asLocal(r),
+                   static?: r == Region_STATIC,
+                     temp?: r == Region_TEMP,
+                   argidx?: Region_toArgPosition(r));
+
+                continue;
+            }
+
+            result.uni0n.set::add(r);
+        }
+    }
+
+    visit(lifetime);
+
+    return result;
+}
+
+
+//
+
 fn Primitive(canon: string)
     Type(ValueType(:canon, quals: q_rx_copy | q_non_compund));
 
