@@ -6751,7 +6751,7 @@ pub fn solve(
 
     //////////////////////////////////////////////////////////
 
-    fn Lifetime_each(lifetime, visit, locals_start!?: i32)
+    fn Lifetime_each(lifetime, visit, locals_start!: i32)
     {
         for (mut i = lifetime.uni0n.len; i --> 0; )
         {
@@ -6809,9 +6809,14 @@ pub fn solve(
 
     fn Lifetime_F_MOVED_FROM(lifetime: Lifetime)
     {
-        Lifetime_each(:lifetime, visit: |t|
+        Lifetime_each(:lifetime): |locid, temp|
         {
-            ref o = GET_mut(t);
+            if !(locid) {
+                temp || BUG("Attempting to move from a non-local, non-temporary region.");
+                continue;
+            }
+
+            ref o = GET_mut(nested(locid));
             if (o.flags & F_MOVED_FROM)
                 continue;
 
@@ -6822,7 +6827,7 @@ pub fn solve(
             let init = o.Lifetime_climbType;
             if (init.is_ref)
                 Lifetime_F_MOVED_FROM(init.lifetime);
-        });
+        }
     }
 
     fn Lifetime_allowsMutrefReturn(lifetime: Lifetime, locals_start!?: i32): bool
