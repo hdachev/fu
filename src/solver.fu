@@ -10550,29 +10550,23 @@ pub fn solve(
                                 if (i0 >= arg_first && i0 <= arg_last &&
                                     i1 >= arg_first && i1 <= arg_last)
                                 {
-                                    for (mut r0 = 0; r0 < shallow0.uni0n.len; r0++)
+                                    shallow0.Lifetime_each: |locid!region0|
                                     {
-                                        let region0 = Region_asLocal(shallow0.uni0n[r0]);
-                                        if (region0)
-                                        {
-                                            for (mut r1 = 0; r1 < shallow1.uni0n.len; r1++)
-                                            {
-                                                let region1 = Region_asLocal(shallow1.uni0n[r1]);
-                                                if (region1 && region0 != region1)
-                                                {
-                                                    //
-                                                    // TODO FAILCASE these can't be correct,
-                                                    //  see the notes on OOE AAR below.
-                                                    //
-                                                    if (host_arg0.is_mutref)
-                                                        RESOLVE_byAAR(write: region0, read: region1,
-                                                            trySoft: !host_arg0.hard_risk.has(i1) && arg1.softRiskSafe);
+                                        if !(region0)
+                                            continue;
 
-                                                    if (host_arg1.is_mutref)
-                                                        RESOLVE_byAAR(read: region0, write: region1,
-                                                            trySoft: !host_arg1.hard_risk.has(i0) && arg0.softRiskSafe);
-                                                }
-                                            }
+                                        shallow1.Lifetime_each: |locid!region1|
+                                        {
+                                            if !(region1 && region0 != region1)
+                                                continue;
+
+                                            if (host_arg0.is_mutref)
+                                                RESOLVE_byAAR(write: region0, read: region1,
+                                                    trySoft: !host_arg0.hard_risk.has(i1) && arg1.softRiskSafe);
+
+                                            if (host_arg1.is_mutref)
+                                                RESOLVE_byAAR(read: region0, write: region1,
+                                                    trySoft: !host_arg1.hard_risk.has(i0) && arg0.softRiskSafe);
                                         }
                                     }
                                 }
