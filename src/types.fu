@@ -205,6 +205,11 @@ pub fn Lifetime_if_only(lifetime: Lifetime, if_only)
         isArgIdx?:  Region_isArgPosition(r));
 }
 
+pub fn hasTemporary(lifetime: Lifetime): bool
+{
+    return lifetime.uni0n.if_last == Region_TEMP;
+}
+
 
 //
 
@@ -344,11 +349,6 @@ pub fn add_mutref(mut type: Type, lifetime: Lifetime): Type
     type.quals |= q_mutref;
     type.lifetime = Lifetime_union(type.lifetime, lifetime) || BUG("add_mutref: Empty lifetime");
     return type;
-}
-
-pub fn is_ref2temp(type: Type): bool
-{
-    return type.lifetime.uni0n.if_last == Region_TEMP;
 }
 
 pub fn is_ref2static(type: Type): bool

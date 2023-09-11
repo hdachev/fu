@@ -2850,7 +2850,7 @@ pub fn solve(
                 if (slot.is_rx_copy && slot.isIrrelevant)
                     BUG(nested(locid) ~ ", trackVarUsage: slot is both copy & irrelevant: " ~ slot.humanizeType);
 
-                if (slot.is_ref2temp)
+                if (slot.lifetime.hasTemporary)
                     BUG(nested(locid) ~ ", trackVarUsage: slot is ref2temp: " ~ slot.humanizeType(lt: true));
             }
 
@@ -6964,7 +6964,7 @@ pub fn solve(
         // I'm postponing work on lengthening temporary lifetimes -
         //  same principle as locals but i need extra stuff i dont have,
         //   so lets try to get it right without this first.
-        shadow let type = type.is_ref2temp
+        shadow let type = type.lifetime.hasTemporary
             ? clear_refs(type)
             :            type;
         ////////////////////////////////////////////////////////////////
@@ -7312,7 +7312,7 @@ pub fn solve(
         // TODO FIX VFACTS //////////////////////////
 
         // Lose refs to temporaries.
-        shadow let t_init = t_init.is_ref2temp
+        shadow let t_init = t_init.lifetime.hasTemporary
             ? clear_refs(t_init)
             : t_init;
 
@@ -7454,8 +7454,8 @@ pub fn solve(
             //
             if (SELF_TEST)
             {
-                !out.type.is_ref2temp || isArg || BUG(
-                    "solveLet_createBindingAndGetLetdef: Non-argument is_ref2temp");
+                !out.type.lifetime.hasTemporary || isArg || BUG(
+                    "solveLet_createBindingAndGetLetdef: Non-argument lifetime.hasTemporary");
 
                 out.type.vfacts & Typename && BUG(
                     "solveLet_createBindingAndGetLetdef: Ended up with a Typename");
@@ -9631,7 +9631,7 @@ pub fn solve(
         {
             // TODO FIX this is questionable stuff,
             //  should get resolved by createTemporary
-            if (slot.is_ref2temp)
+            if (slot.lifetime.hasTemporary)
                 return definitWrap(node, clear_refs(slot));
 
             BUG("Trying to definitWrap a non-static reference: " ~ slot.humanizeType(lt: true))
