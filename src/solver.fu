@@ -5461,8 +5461,20 @@ pub fn solve(
                         }
                         else
                         {
-                            soft_risk.ArgsAtRisk_list(out.flow, position: i, out.flow.at_soft_risk);
-                            hard_risk.ArgsAtRisk_list(out.flow, position: i, out.flow.at_hard_risk);
+                            fn ArgsAtRisk_list(
+                                ref output: bitset::BitSet, at_risk: i32[][])
+                            {
+                                at_risk.unless_oob(argTarget.locid).each: |other|
+                                {
+                                    // `arg_positions` are one-based.
+                                    let other_position = out.flow.arg_positions.unless_oob(other);
+                                    if (other_position)
+                                        output.add(other_position - 1);
+                                }
+                            }
+
+                            soft_risk.ArgsAtRisk_list(out.flow.at_soft_risk);
+                            hard_risk.ArgsAtRisk_list(out.flow.at_hard_risk);
 
                             if (argNode.type.TODO_FIX_isArray)
                             {
