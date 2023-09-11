@@ -5428,6 +5428,17 @@ pub fn solve(
 
                 mut numArgsWritten = 0;
 
+                // argTarget -> argIndex mapping.
+                mut argPos_1b: i32[];
+                for (mut i = 0; i < N; i++)
+                {
+                    let argNode     = items[i];
+                    let argTarget   = argNode.target;
+                    if (argTarget)
+                        argPos_1b.grow_if_oob(argTarget.locid) = i + 1;
+                }
+
+                //
                 shadow mut args: Argument[];
                 for (mut i = 0; i < N; i++)
                 {
@@ -5477,10 +5488,9 @@ pub fn solve(
                             {
                                 at_risk.unless_oob(argTarget.locid).each: |other|
                                 {
-                                    // `arg_positions` are one-based.
-                                    let other_position = out.flow.arg_positions.unless_oob(other);
-                                    if (other_position)
-                                        output.add(other_position - 1);
+                                    let otherPos_1b = argPos_1b.unless_oob(other);
+                                    if (otherPos_1b)
+                                        output.add(otherPos_1b - 1);
                                 }
                             }
 
