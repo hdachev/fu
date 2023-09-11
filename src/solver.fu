@@ -987,7 +987,7 @@ pub fn solve(
         {
             if (CANNOT_definit_mutrefs && type.is_mutref)
                 BUG("createDefinit: Cannot definit a mutref: " ~ type.humanizeType(lt: true));
-            if (!type.is_ref2static)
+            if (!type.lifetime.hasStatic)
                 BUG("createDefinit: Cannot definit a non-static reference: " ~ type.humanizeType(lt: true));
         }
 
@@ -9627,7 +9627,7 @@ pub fn solve(
         CANNOT_definit_mutrefs && slot.is_mutref && BUG(
             "Trying to definitWrap a mutref: " ~ slot.humanizeType(lt: true));
 
-        if (slot.is_ref && !slot.is_ref2static)
+        if (slot.is_ref && !slot.lifetime.hasStatic)
         {
             // TODO FIX this is questionable stuff,
             //  should get resolved by createTemporary
