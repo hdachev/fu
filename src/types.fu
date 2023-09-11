@@ -189,6 +189,22 @@ pub fn Lifetime_process(lifetime: Lifetime, each)
     return result;
 }
 
+pub fn Lifetime_if_only(lifetime: Lifetime, if_only)
+{
+    if (lifetime.uni0n.len != 1)
+        return [];
+
+    let r = lifetime.uni0n[0];
+
+    return if_only(
+        locid?:     Region_asLocal(r),
+        argidx?:    Region_toArgPosition(r),
+
+        isStatic?:  r == Region_STATIC,
+        isTemp?:    r == Region_TEMP,
+        isArgIdx?:  Region_isArgPosition(r));
+}
+
 
 //
 

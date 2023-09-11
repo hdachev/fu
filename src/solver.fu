@@ -779,52 +779,63 @@ pub fn solve(
         return res.lifetime;
     }
 
-    fn Lifetime_test(lifetime: Lifetime,
+    fn TEST_Lifetime(lifetime: Lifetime,
         lax tempsOK!?: bool,
         lax argPositionsOK!?: bool): Lifetime
     {
         if (SELF_TEST)
         {
             if !(lifetime.uni0n.len)
-                BUG("Lifetime_test: no region set.");
+                BUG("TEST_Lifetime: no region set.");
 
             mut _last: Region;
             for (mut i = 0; i < lifetime.uni0n.len; i++)
             {
                 let region  = lifetime.uni0n[i];
                 {
-                    !i || region <> _last > 0 || BUG("Lifetime_test: not a sorted set");
+                    !i || region <> _last > 0 || BUG("TEST_Lifetime: not a sorted set");
                     _last = region;
                 }
 
                 if (region.Region_isStatic)
                 {
-                    !i || BUG("Lifetime_test: static not first");
+                    !i || BUG("TEST_Lifetime: static not first");
                     continue;
                 }
 
                 if (Region_isArgPosition(region))
                 {
-                    argPositionsOK || BUG("Lifetime_test: Region_isArgPosition");
+                    argPositionsOK || BUG("TEST_Lifetime: Region_isArgPosition");
                     continue;
                 }
 
                 if (region.Region_isTemp)
                 {
-                    i == lifetime.uni0n.len - 1 && tempsOK || BUG("Lifetime_test: Region_isTemp");
+                    i == lifetime.uni0n.len - 1 && tempsOK || BUG("TEST_Lifetime: Region_isTemp");
                     continue;
                 }
 
                 let index = region.Region_asLocal || BUG(
-                    "Lifetime_test: No a local");
+                    "TEST_Lifetime: No a local");
 
                 let o = GET(nested(:index));
                 o.kind == "var" || BUG(
-                    "Lifetime_test: local is not a var: " ~ o);
+                    "TEST_Lifetime: local is not a var: " ~ o);
             }
         }
 
         return lifetime;
+    }
+
+    fn TEST_varLifetime(lax lifetime: Lifetime, lax staticOK!?: bool, lax locid!expect?: i32) =
+    {
+        if (SELF_TEST && !lifetime.Lifetime_if_only(
+                |locid, isStatic|
+                    locid && (!expect || locid == expect)
+                        || isStatic && staticOK))
+        {
+            BUG("Bad local lifetime: " ~ lifetime.uni0n);
+        }
     }
 
     fn Lifetime_fromBinding(target: Target): Lifetime
@@ -3184,7 +3195,7 @@ pub fn solve(
                     "Relaxed specialization does not return a subtype");
 
                 if (node.type.is_ref)
-                    node.type.lifetime = Lifetime_test(
+                    node.type.lifetime = TEST_Lifetime(
                         Lifetime_replaceArgsAtCallsite(spec, node.items),
                         tempsOK: true);
 
@@ -5607,7 +5618,7 @@ pub fn solve(
                     if (retval.isIrrelevant)
                         retval.lifetime = Lifetime_static;
 
-                    Lifetime_test(retval.lifetime, argPositionsOK: true);
+                    TEST_Lifetime(retval.lifetime, argPositionsOK: true);
                 }
 
                 retval.lifetime.Lifetime_each: |isArgIdx, isStatic|
@@ -9130,14 +9141,14 @@ pub fn solve(
                     letdefReplicas.grow_if_oob(expr.target.locid) = local || BUG();
 
                     //
-                    lax fn Lifetime_assertEqual(
+                    lax fn TEST_LifetimeEqual(
                         lax a: Lifetime, lax aa: string,
                         lax b: Lifetime, lax bb: string)
                     {
                         if (!SELF_TEST || a == b)
                             return;
 
-                        BUG("visitNode Lifetime_assertEqual:"
+                        BUG("visitNode TEST_LifetimeEqual:"
                             ~ "\n\n\t    " ~ aa ~ ":\t" ~ "(" ~ a.uni0n ~ ")"
                             ~ "\n\n\t    " ~ bb ~ ":\t" ~ "(" ~ b.uni0n ~ ")");
                     }
@@ -9152,7 +9163,7 @@ pub fn solve(
                     }
                     else
                     {
-                        Lifetime_assertEqual(
+                        TEST_LifetimeEqual(
                             type.lifetime,                      "foreign.type.lifetime",
                             Lifetime_fromBinding(expr.target),  "Lifetime_fromBinding");
 
@@ -9432,8 +9443,7 @@ pub fn solve(
         //  previously we tracked them separately but we're making everything more samey.
         else if (kind == "var")
         {
-            type.lifetime.uni0n.len == 1 || BUG(
-                "CallerNode: var " ~ target.name ~ " type.lifetime.len != 1");
+            TEST_varLifetime(type.lifetime, staticOK: true);
 
             // Track deps.
             if (target.locid ||
@@ -9602,7 +9612,7 @@ pub fn solve(
 
             // Not relevant for inline fns.
             if (args && type.is_ref)
-                type.lifetime = Lifetime_test(
+                type.lifetime = TEST_Lifetime(
                     Lifetime_replaceArgsAtCallsite(target, args),
                     tempsOK: true);
         }
@@ -10044,8 +10054,8 @@ pub fn solve(
                 o ~ ": Not F_REF but type.is_mutref"
                         ~ " in RESOLVE_byMutvar: is this a problem?");
 
-            o.kind == "var"                 || BUG("RESOLVE_byMutvar: Not a variable.");
-            o.type.lifetime.uni0n.len == 1  || BUG("RESOLVE_byMutvar: lt.len != 1"  );
+            o.kind == "var" || BUG("RESOLVE_byMutvar: Not a variable.");
+            TEST_varLifetime(o.type.lifetime);
 
             if (!o.type.is_rx_copy)
                 return false;
@@ -10244,9 +10254,7 @@ pub fn solve(
             let target      = callsite.target.locid;
             let loop_start  = callsite._loop_start || BUG("bck_trackRead: loop_start not set on callsite.");
 
-            // TODO FIX: complains about t_zeroes, otherwise correct
-            // callsite.type.lifetime.uni0n.if_only.Region_asLocal == target || BUG(
-            //     "Nope, something is off: " ~ callsite.type.humanizeType(lt: true));
+            TEST_varLifetime(callsite.type.lifetime, locid: target, staticOK: TODO_FIX_zeroes_static);
 
             // Writes invalidate subsequent reads.
             {
