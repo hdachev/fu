@@ -6,7 +6,6 @@ import context;
 import types;
 import quals;
 import structs;
-import flow;
 import effects;
 import module;
 import fail;
@@ -159,6 +158,26 @@ pub fn solve(
     {
         done_relaxing:      bitset::BitSet;
         var_usage:          Type[];
+    };
+
+    struct Flow
+    {
+        // Any ref.
+        parents:        i32[][];
+        invalidates:    i32[][];        // Non-disjoint siblings and children.
+
+        // Arguments at risk.
+        arg_parents:    i32[][];        // is_arg targets each target refers to.
+        at_soft_risk:   i32[][];        // ARG USES at risk from previous ARG WRITES.
+        at_hard_risk:   i32[][];
+
+        // AAR: helpers.
+        is_arg:         bitset::BitSet; // acceleration structure.
+        arg_targets:    i32[];          // argument targets at each position.
+
+        // TODO FIX redundant
+        // COW - direct children.
+        children:       i32[][];
     };
 
     struct CurrentFn
@@ -334,6 +353,15 @@ pub fn solve(
         true applicable: bool;
         map: i32[];
     };
+
+    fn clear(ref flow: Flow)
+    {
+        if (flow.at_hard_risk || flow.at_soft_risk)
+            throw("Flow.clear(): Non-empty at-risk tables.");
+
+        for (fieldname i: Flow)
+            flow.i.clear();
+    }
 
     fn clear(ref reorder: Reorder) {
         reorder.applicable = false;
@@ -10256,6 +10284,90 @@ pub fn solve(
         fn flow         = _current_fn.flow;
         fn events       = _current_fn.events;
 
+        fn Reference_trackArgument(target: i32, position: i32)
+        {
+            // Argument position -> target,
+            //  this is only needed for collecting the outcomes at the end.
+            flow.arg_targets.len <= position || BUG("Reference_trackArgument: positions out of order.");
+            flow.arg_targets.grow(position + 1);
+            flow.arg_targets[position] = target;
+
+            // Speed up memberships checks.
+            flow.is_arg.add(target);
+        }
+
+        fn Reference_trackLocalRef(left: i32, right: Lifetime)
+        {
+            // trackLocalRef during bck:
+            //  defers lead to out-of-order bck,
+            //   so this doesn't hold.
+            //
+            // If defers solved in the right order
+            //  it'd be nice to run this back on,
+            //   now we're running with scissors.
+            //
+            // flow.invalidates.len <= left || assert();
+
+            mut parents: i32[];
+
+            right.Lifetime_each: |shadow locid!right|
+            {
+                if !(right)
+                    continue;
+
+                flow.children.grow_if_oob(right).set::add(left);
+
+                //
+                parents.set::add(right);
+                parents.set::add(flow.parents.unless_oob(right));
+
+                // For each lifetime on the right of the assignment,
+                //  the invals are the stuff it kills on write.
+                mut siblings = flow.invalidates.unless_oob(right);
+
+                // LEFT can show up in the inval lists
+                //  after we process the first lifetime.
+                siblings.set::rem(left);
+
+                // So, if:
+                //  LEFT = &RIGHT;
+                if (siblings)
+                {
+                    // Siblings rule:
+                    //  LEFT invalidates everything RIGHT invalidates.
+                    //
+                    // Same thing backward:
+                    //  Everything that RIGHT invalidates potentially invalidates LEFT.
+                    //
+                    flow.invalidates .grow_if_oob(left).set::add(siblings);
+
+                    for (shadow mut i = 0; i < siblings.len; i++)
+                    {
+                        shadow let sibling = siblings[i];
+                        flow.invalidates .grow_if_oob(sibling).set::add(left);
+                    }
+                }
+
+                // Propagate alised arguments.
+                if (flow.is_arg.has(right))
+                {
+                    flow.is_arg.add(left);
+                    flow.arg_parents.grow_if_oob(left).set::add(right);
+                }
+            }
+
+            if (parents)
+            {
+                // Parent rule, one-sided:
+                //  Finally, RIGHT invalidates LEFT.
+                for (mut i = 0; i < parents.len; i++)
+                    flow.invalidates.grow_if_oob(parents[i]).set::add(left);
+
+                // This is the same as the parents set.
+                flow.parents.grow_if_oob(left) = parents;
+            }
+        }
+
         fn bck_trackRead(callsite: SolvedNode)
         {
             if (!callsite.target.isLocal)
@@ -10410,7 +10522,7 @@ pub fn solve(
                 let init = node.items[LET_INIT];
                 init.type.is_ref || BUG("What!");
 
-                Reference_trackLocalRef(_current_fn.flow,
+                Reference_trackLocalRef(
                     left:  node.target.locid,
                     right: init.type.lifetime);
             }
@@ -11204,7 +11316,7 @@ pub fn solve(
                 target.globid == _current_fn.target.globid || BUG(
                     "Arg target not local to current-fn: " ~ target);
 
-                Reference_trackArgument(_current_fn.flow, target.locid, :position);
+                Reference_trackArgument(target.locid, :position);
             }
 
             // Setup the AAR invalidation matrix -
