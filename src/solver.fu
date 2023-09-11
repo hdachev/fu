@@ -3207,7 +3207,8 @@ pub fn solve(
                     // We'll only attempt to relax arguments whose lifetimes appear in the return value.
                     //  There's this other thing, perhaps we only need to relax a single such argument?
                     //
-                    if (t.type.lifetime.uni0n.has(Region_fromArgPosition(i)))
+                    if (t.type.lifetime.Lifetime_some(
+                        |isArgIdx, argidx| isArgIdx && argidx == i))
                     {
                         // TODO fix this relaxer can't scale up to q_USAGE,
                         //  we gotta replace it with the backwards design.
