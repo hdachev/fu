@@ -764,8 +764,8 @@ pub fn solve(
             mutref = false;
         }
 
-        res.lifetime.uni0n.only.Region_asLocal || fail(
-            "Non-single-local __native lifetime.");
+        res.lifetime.Lifetime_if_only(|locid| !!locid)
+            || fail("Non-single-local __native lifetime.");
 
         // TODO FIX UNIQUENESS adding a static lifetime to ref results
         //  that are not assignable from the source argument,
@@ -785,42 +785,42 @@ pub fn solve(
     {
         if (SELF_TEST)
         {
-            if !(lifetime.uni0n.len)
-                BUG("TEST_Lifetime: no region set.");
+            if (!lifetime)
+                BUG("TEST_Lifetime: empty lifetime");
 
-            mut _last: Region;
-            for (mut i = 0; i < lifetime.uni0n.len; i++)
+            mut first       = true;
+            mut hasStatic   = false;
+            mut lastLocid   = 1000000;
+            mut lastArgIdx  = 1000000;
+
+            lifetime.Lifetime_each: |locid, isStatic, isTemp, isArgIdx, argidx|
             {
-                let region  = lifetime.uni0n[i];
-                {
-                    !i || region <> _last > 0 || BUG("TEST_Lifetime: not a sorted set");
-                    _last = region;
+                !hasStatic      || BUG("TEST_Lifetime: static is not last");
+                if (isStatic)
+                    hasStatic = true;
+
+                //
+                if (isTemp) {
+                    tempsOK     || BUG("TEST_Lifetime: unexpected temporary");
+                    first       || BUG("TEST_Lifetime: temporary is not first");
                 }
 
-                if (region.Region_isStatic)
-                {
-                    !i || BUG("TEST_Lifetime: static not first");
-                    continue;
+                first = false;
+
+                //
+                if (locid) {
+                    lastArgIdx == 1000000   || BUG("TEST_Lifetime: local after argpos");
+                    lastLocid > locid       || BUG("TEST_Lifetime: locid out of order");
+                    lastLocid = locid;
                 }
 
-                if (Region_isArgPosition(region))
-                {
-                    argPositionsOK || BUG("TEST_Lifetime: Region_isArgPosition");
-                    continue;
+                //
+                if (isArgIdx) {
+                    argPositionsOK          || BUG("TEST_Lifetime: unexpected argidx");
+                    lastLocid == 1000000    || BUG("TEST_Lifetime: argidx after local");
+                    lastArgIdx > argidx     || BUG("TEST_Lifetime: argidx out of order");
+                    lastArgIdx = argidx;
                 }
-
-                if (region.Region_isTemp)
-                {
-                    i == lifetime.uni0n.len - 1 && tempsOK || BUG("TEST_Lifetime: Region_isTemp");
-                    continue;
-                }
-
-                let index = region.Region_asLocal || BUG(
-                    "TEST_Lifetime: No a local");
-
-                let o = GET(nested(:index));
-                o.kind == "var" || BUG(
-                    "TEST_Lifetime: local is not a var: " ~ o);
             }
         }
 
