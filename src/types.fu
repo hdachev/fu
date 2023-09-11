@@ -81,6 +81,9 @@ pub fn Lifetime_union(a: Lifetime, b: Lifetime): Lifetime =
 pub fn Lifetime_inter(a: Lifetime, b: Lifetime): Lifetime =
     Lifetime(uni0n: set::inter(a.uni0n, b.uni0n));
 
+pub fn Lifetime_diff(from: Lifetime, remove: Lifetime): Lifetime =
+    Lifetime(uni0n: set::diff(from: from.uni0n, remove: remove.uni0n));
+
 pub fn Lifetime_makeShared(lifetime: Lifetime): Lifetime =
     Lifetime_union(lifetime, Lifetime_static);
 

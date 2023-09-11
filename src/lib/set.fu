@@ -414,6 +414,30 @@ pub fn union(l: $T[], r: $T[])
     return useResult ? result : l;
 }
 
+pub fn diff(remove: $T[], from: $T[])
+{
+    mut result: $T[];
+    mut useResult = false;
+
+    merge(remove, from,
+
+    left_or_both: |_, right|
+    {
+        if (!useResult) {
+            useResult = true;
+            result = from.slice(0, right);
+        }
+    },
+
+    right: |item|
+    {
+        if (useResult)
+            result ~= item;
+    });
+
+    return useResult ? result : from;
+}
+
 
 //
 

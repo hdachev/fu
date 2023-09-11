@@ -11338,10 +11338,13 @@ pub fn solve(
                 if (!expect.type.is_ref)
                     return;
 
-                mut tail = actual.lifetime.uni0n;
-                tail.set::rem(node.type.lifetime.uni0n);
-                if (tail)
-                    BUG(node ~ ": " ~ actualCopy ~ " mentions a lifetime not listed in " ~ expectCopy ~ ": " ~ tail
+                let unexpected = Lifetime_diff(
+                    remove: expect.type.lifetime,
+                    from:   actual.lifetime);
+
+                if (unexpected)
+                    BUG(node ~ ": " ~ actualCopy ~ " mentions a lifetime not listed in "
+                                    ~ expectCopy ~ ": " ~ unexpected
                               ~ "\n\n\t\t" ~ actualCopy ~ ":\t" ~ actual.humanizeType(lt: true)
                               ~ "\n\n\t\t" ~ expectCopy ~ ":\t" ~ expect.humanizeType(lt: true));
             }
