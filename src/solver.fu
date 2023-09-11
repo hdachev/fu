@@ -9271,15 +9271,14 @@ pub fn solve(
 
             fn visitType(ref type: Type)
             {
-                ref regions = type.lifetime.uni0n;
-                mut replacements: Region[] = [];
-                for (mut i = 0; i < regions.len; i++)
-                {
-                    let index   = Region_asLocal(regions[i]);
-                    if (index)
+                type.lifetime = type.lifetime.Lifetime_process(
+                    |locid!index, continue_keep, continue_replace|
                     {
-                        let target  = nested(:index, :from);
-                        let local   = matchReplicaOrInjectForeignLocal(target);
+                        if (!index)
+                            continue_keep;
+
+                        let foreign = nested(:index, :from);
+                        let local   = matchReplicaOrInjectForeignLocal(foreign);
 
                         // INLINE ARGUMENTS ////////////////////////////////////////////
                         if (local.flags & F_INLINE)
@@ -9287,36 +9286,18 @@ pub fn solve(
                             let init = local.solved.items[LET_INIT] || BUG(
                                 "inlineExpression: F_INLINE local has no LET_INIT.");
 
-                            replacements.set::add(
-                                (init.type.lifetime || Lifetime_temporary())
-                                    .uni0n);
+                            continue_replace(init.type.lifetime
+                                || Lifetime_temporary);
                         }
                         // INLINE ARGUMENTS ////////////////////////////////////////////
                         else
                         {
-                            // println("inlineExpression: LT.REPLACE " target " with " local);
+                            // println("inlineExpression: LT.REPLACE " foreign " with " local);
 
-                            mut r = Region_STATIC;
-                            if (local.isLocal)
-                            {
-                                if (SELF_TEST)
-                                    local.globid == _current_fn.target.globid || BUG(
-                                        "visitTypes: cant express lifetime to out-of-frame locals: " ~ local);
-
-                                r = Region_fromLocal(local.locid);
-                            }
-
-                            // We'll add the replacements back in at the end,
-                            //  don't want to deal with the offset juggle here.
-                            replacements.set::add(r);
+                            continue_replace(local.type.lifetime
+                                || BUG("visitType: !local.type.lifetime"));
                         }
-
-                        regions.splice(i, 1);
-                        i--;
-                    }
-                }
-
-                regions.set::add(replacements);
+                    });
             }
 
             visitNode(expr, :locals_start);
