@@ -10210,11 +10210,11 @@ pub fn solve(
 
             mut stack: string;
             {
-                let uni0n = nested(write.rw_target).type.lifetime.uni0n;
-                if (uni0n) for (mut i = 0; i < node.items.len; i++)
+                let lifetime = nested(write.rw_target).type.lifetime;
+                if (lifetime) for (mut i = 0; i < node.items.len; i++)
                 {
                     let arg = node.items[i];
-                    if (arg.lifetime.uni0n.set::inter(uni0n))
+                    if (arg.lifetime.Lifetime_inter(lifetime))
                     {
                         let host_arg = node.target.args[i];
                         if (host_arg.flags & F_WRITTEN_TO)
