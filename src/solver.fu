@@ -5598,11 +5598,12 @@ pub fn solve(
                     //  with the argument position.
                     if (argNode.is_ref)
                     {
-                        let region = Region_fromLocal(argTarget.locid);
-                        if (retval.is_ref && retval.lifetime.uni0n.set::rem(region))
-                            retval.lifetime.uni0n.set::add(Region_fromArgPosition(i));
-                        else if (arg.willPassByValue)
-                            arg.type = clear_refs(arg.type);
+                        if (!retval.lifetime.Lifetime_replace(
+                                :argTarget.locid, with_argidx: i))
+                        {
+                            if (arg.willPassByValue)
+                                arg.type = clear_refs(arg.type);
+                        }
                     }
 
                     args.push(arg);
