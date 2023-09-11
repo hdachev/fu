@@ -8804,7 +8804,7 @@ pub fn solve(
 
                 let arg = callsite.items[i];
                 let unwound = Lifetime_unwind(arg.type.lifetime);
-                if !(unwound.uni0n.some(|r| Region_asLocal(r) == locid))
+                if !(unwound.Lifetime_some(|locid!r| r == locid))
                     continue;
 
                 let peek = qSTACK(callsite.target, position: i, :seen, :query);
@@ -8966,7 +8966,7 @@ pub fn solve(
                         |cow| cow.argTarget == host_arg.target.locid
                                && cow.token == cow_inside)
                      && Lifetime_unwind(callsite.items[i].lifetime)
-                            .uni0n.some(|r| Region_asLocal(r) == locid))
+                            .Lifetime_some(|locid!r| r == locid))
                 {
                     let peek = qSTACK_cow_inside(
                         callsite.target, callsite.target.solved,
@@ -10113,8 +10113,9 @@ pub fn solve(
             // Re: m_and_c_cant_alias_002 test:
             //  We don't want to return a reference to the temporary,
             //   so for now we just forbid this.
-            let argLt       = Region_fromArgPosition(:position);
-            let isReturned  = target.type.lifetime.uni0n.has(argLt);
+            let isReturned  = target.type.lifetime.Lifetime_some(
+                |isArgIdx, argidx| isArgIdx && argidx == position);
+
             if (isReturned)
                 return false;
 
@@ -10193,8 +10194,8 @@ pub fn solve(
                 node.token == w.token &&
             {
                 let arg = w.position < 0 ? node : node.items[w.position];
-                arg.is_mutref && arg.lifetime.uni0n.has(
-                    Region_fromLocal(index: w.rw_target))
+                arg.is_mutref && arg.lifetime
+                    .Lifetime_some(|locid| locid == w.rw_target)
             })
                     || BUG("Cannot find WriteID(" ~ write.id ~ ").");
         }

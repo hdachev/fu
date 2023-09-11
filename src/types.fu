@@ -70,6 +70,22 @@ pub fn Lifetime_makeShared(lifetime: Lifetime): Lifetime =
 
 //
 
+pub fn Lifetime_some(lifetime: Lifetime, some)
+{
+    Lifetime_each(:lifetime):
+        |lax locid, lax argidx, lax isStatic, lax isTemp, lax isArgIdx|
+    {
+        if (some(locid?:    locid,    argidx?: argidx,
+                 isStatic?: isStatic, isTemp?: isTemp,
+                 isArgIdx?: isArgIdx))
+        {
+            return true;
+        }
+    }
+
+    return false;
+}
+
 pub fn Lifetime_each(lifetime: Lifetime, each)
 {
     for (mut i = lifetime.uni0n.len; i --> 0; )
