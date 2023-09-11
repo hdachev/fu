@@ -6760,12 +6760,20 @@ pub fn solve(
             && node.items[LET_INIT].type;
     }
 
-    fn Lifetime_unwind(lifetime: Lifetime, locals_start!?: i32): Lifetime
+    fn Lifetime_unwind(
+        lifetime: Lifetime,
+        locals_start!?: i32,
+        locals_only!?: bool): Lifetime
     {
         return Lifetime_process(:lifetime, each:
             |locid, continue_keep, continue_climb|
         {
-            if (locid && locid >= locals_start)
+            if (!locid)
+            {
+                if (locals_only)
+                    continue/*discard*/;
+            }
+            else if (locid >= locals_start)
             {
                 let init = GET(nested(locid)).Lifetime_climbType;
                 if (init.is_ref)
@@ -6774,14 +6782,6 @@ pub fn solve(
 
             continue_keep();
         });
-    }
-
-    fn Lifetime_unwind_noStatic(mut lifetime: Lifetime)
-    {
-        if (lifetime.uni0n.if_first.Region_isStatic)
-            lifetime.uni0n.shift();
-
-        return Lifetime_unwind(lifetime);
     }
 
     fn Lifetime_F_MOVED_FROM(lifetime: Lifetime)
@@ -10494,7 +10494,8 @@ pub fn solve(
                             bck_unwound.resize(args.len);
                             for (shadow mut i0 = ref_first; i0 <= ref_last; i0++)
                             {
-                                let unwound = bck_unwound[i0] = Lifetime_unwind_noStatic(args[i0].type.lifetime);
+                                let unwound = bck_unwound[i0] = Lifetime_unwind(
+                                    args[i0].type.lifetime, locals_only: true);
 
                                 // Locate first and last callsite arguments
                                 //  that refer to caller arguments,
@@ -10525,7 +10526,8 @@ pub fn solve(
                     {
                         let arg0     = args[i0];
                         let shallow0 = arg0.type.lifetime;
-                        let unwound0 = bck_unwound[i0] = Lifetime_unwind_noStatic(shallow0);
+                        let unwound0 = bck_unwound[i0] = Lifetime_unwind(
+                            shallow0, locals_only: true);
 
                         // Keep track of caller arguments.
                         unwound0.Lifetime_each: |locid|
