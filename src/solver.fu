@@ -5581,6 +5581,10 @@ pub fn solve(
                     }
 
                     //
+                    let may_alias       = bitset::NegatedBitSet(hard_risk);
+                    let may_invalidate  = bitset::NegatedBitSet(soft_risk);
+
+                    //
                     mut arg = Argument(
                         :name,
                         :autocall,
@@ -5590,8 +5594,8 @@ pub fn solve(
                         default: !isImplicit && argNode.items && argNode.items[LET_INIT],
                         target: argTarget,
 
-                        // ARGUMENTS AT RISK //
-                        :soft_risk, :hard_risk);
+                        // Previously soft_risk & hard_risk.
+                        :may_alias, :may_invalidate);
 
                     // TODO make this true for F_INJECTEDs too.
                     if (arg.type.lifetime && !(arg.flags & F_INJECTED))
@@ -10677,7 +10681,7 @@ pub fn solve(
                             let host_arg1 = host_args[i1];
 
                             // Can the fn handle aliasing here?
-                            if (!host_arg0.soft_risk.has(i1) && !host_arg1.soft_risk.has(i0))
+                            if (host_arg0.may_invalidate.has(i1) && host_arg1.may_invalidate.has(i0))
                                 return;
 
                             let arg1     = args[i1];
@@ -10707,11 +10711,11 @@ pub fn solve(
 
                                             if (host_arg0.is_mutref)
                                                 RESOLVE_byAAR(write: region0, read: region1,
-                                                    trySoft: !host_arg0.hard_risk.has(i1) && arg1.softRiskSafe);
+                                                    trySoft: host_arg0.may_alias.has(i1) && arg1.softRiskSafe);
 
                                             if (host_arg1.is_mutref)
                                                 RESOLVE_byAAR(read: region0, write: region1,
-                                                    trySoft: !host_arg1.hard_risk.has(i0) && arg0.softRiskSafe);
+                                                    trySoft: host_arg1.may_alias.has(i0) && arg0.softRiskSafe);
                                         }
                                     }
                                 }
@@ -10730,11 +10734,11 @@ pub fn solve(
                             // Soft risk check -
                             //  If neither is listed as a hard risk,
                             //   and neither invalidates the other, then we should be good.
-                            if (!host_arg0.hard_risk.has(i1) &&
-                                !host_arg1.hard_risk.has(i0))
+                            if (host_arg0.may_alias.has(i1) &&
+                                host_arg1.may_alias.has(i0))
                             {
-                                if ((!host_arg0.soft_risk.has(i1) || arg1.softRiskSafe && !shallow1.isInvalidatedBy(write: shallow0)) &&
-                                    (!host_arg1.soft_risk.has(i0) || arg0.softRiskSafe && !shallow0.isInvalidatedBy(write: shallow1)))
+                                if ((host_arg0.may_invalidate.has(i1) || arg1.softRiskSafe && !shallow1.isInvalidatedBy(write: shallow0)) &&
+                                    (host_arg1.may_invalidate.has(i0) || arg0.softRiskSafe && !shallow0.isInvalidatedBy(write: shallow1)))
                                 {
                                     // Soft risk ok -
                                     //  this is the new thing, further relaxing the bck.

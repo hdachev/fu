@@ -220,3 +220,16 @@ pub fn and_not_assign(ref a: BitSet, b: BitSet)
 
     return a;
 }
+
+
+//
+
+pub struct NegatedBitSet
+{
+    negated: BitSet;
+}
+
+pub fn has(using _: NegatedBitSet, idx: int)
+{
+    return !negated.has(idx);
+}

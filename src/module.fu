@@ -232,30 +232,17 @@ struct Argument
     flags?:         flags::Flags;
     target?:        Target;
 
-    // Arguments at risk -
-    //  This is the borrow checker's global component.
+    // Argument A may safely invalidate argument B
+    //  when all writes to A happen after the last use of B.
     //
-    // Soft vs hard risk:
+    may_invalidate?:    bitset::NegatedBitSet;
+
+    // Argument A may safely alias argument B
+    //  if no unstable pointers derived from B
+    //   are used after A is written to for the last time,
+    //    and vice-versa.
     //
-    //  - soft risk means it's ok if args alias,
-    //     unless writes to the other argument
-    //      invalidate this argument's binding.
-    //
-    soft_risk?:     bitset::BitSet;
-    //
-    //  - hard risk means it's never ok for these args to alias,
-    //     which means we're relying on a derived expr from this arg
-    //      after writing to the other argument.
-    //
-    //  - hard risk is symmetric,
-    //     no point in flagging it on both args.
-    //
-    //  - the old risk-free stuff would only flag the item on the higher arg,
-    //     but i'm starting to think that we should only set the flags on the
-    //      arguments that get written to and invalidate the others,
-    //       this means that we only need to flag the mutrefs.
-    //
-    hard_risk?:     bitset::BitSet;
+    may_alias?:         bitset::NegatedBitSet;
 };
 
 struct COWInside
