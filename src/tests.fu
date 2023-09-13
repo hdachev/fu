@@ -5934,6 +5934,21 @@ pub extern fn runTests()
         }
     `);
 
+    ZERO(`
+        nocopy struct NC { x: i32 };
+
+        noinline fn add(a: i32, b: i32)
+            a + b;
+
+        noinline fn test(a: NC, ref b: NC)
+            add(10 * a.x, ++b.x);                               ;; N_AARMustSeq
+
+        fn main() {
+            mut nc = NC(1);
+            return test(nc, nc) - 12;
+        }
+    `);
+
     // /Borrow checker
 
 
