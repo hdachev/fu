@@ -167,13 +167,13 @@ pub fn solve(
         invalidates:    i32[][];        // Non-disjoint siblings and children.
 
         // Arguments at risk.
-        arg_parents:    i32[][];        // is_arg targets each target refers to.
-        at_soft_risk:   i32[][];        // ARG USES at risk from previous ARG WRITES.
-        at_hard_risk:   i32[][];
+        at_soft_risk:   bitset::BitSet[];
+        at_hard_risk:   bitset::BitSet[];
 
         // AAR: helpers.
-        is_arg:         bitset::BitSet; // acceleration structure.
-        arg_targets:    i32[];          // argument targets at each position.
+        is_arg:         bitset::BitSet;
+        arg_parents:    i32[][];
+        arg_targets:    i32[];
 
         // TODO FIX redundant
         // COW - direct children.
@@ -2529,7 +2529,7 @@ pub fn solve(
                             continue;
 
                         // Nothing to do if already hard-risked.
-                        if (flow.at_hard_risk.unless_oob(t).set::has(index))
+                        if (flow.at_hard_risk.unless_oob(t).has(index))
                             continue;
 
                         fn needsHardRisk(shadow index: i32)
@@ -2567,7 +2567,7 @@ pub fn solve(
                         {
                             makeNote(N_COWRestrict, nested(index) ~ " at risk from " ~ nested(t) ~ " via " ~ nested(reason));
 
-                            flow.at_soft_risk.grow_if_oob(t).set::add(index);
+                            flow.at_soft_risk.grow_if_oob(t).add(index);
 
                             fn TODO_FIX_slicesAgain()
                             {
@@ -2584,7 +2584,7 @@ pub fn solve(
                             }
 
                             if (reason != t || TODO_FIX_slicesAgain)
-                                flow.at_hard_risk.grow_if_oob(t).set::add(index);
+                                flow.at_hard_risk.grow_if_oob(t).add(index);
                         }
                     }
 
@@ -5512,7 +5512,7 @@ pub fn solve(
                         else
                         {
                             fn ArgsAtRisk_list(
-                                ref output: bitset::BitSet, at_risk: i32[][])
+                                ref output: bitset::BitSet, at_risk: bitset::BitSet[])
                             {
                                 at_risk.unless_oob(argTarget.locid).each: |other|
                                 {
@@ -9982,11 +9982,11 @@ pub fn solve(
             // Soft vs hard risk -
             //  Non-direct reads from arguments put the argument at hard risk.
             if (!trySoft || !nested(read).acceptsSoftRisk)
-                if (!_current_fn.flow.at_hard_risk.grow_if_oob(write).set::add(read))
+                if (!_current_fn.flow.at_hard_risk.grow_if_oob(write).add_once(read))
                     return true; // Done this already.
 
             // So, on first add -
-            if (!_current_fn.flow.at_soft_risk.grow_if_oob(write).set::add(read))
+            if (!_current_fn.flow.at_soft_risk.grow_if_oob(write).add_once(read))
                 return true; // Done this already.
 
             // Shake [1] - decomp write parents on first add.

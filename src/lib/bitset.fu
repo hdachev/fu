@@ -39,15 +39,12 @@ pub fn add_once(using _: &mut BitSet, idx: int): bool
     let bit    = idx & 7;
     let mask   = 1 << bit.u8;
 
-    ref entry = _data.helpers::grow_if_oob(bucket);
-    if !(entry & mask)
-    {
-        entry |= mask;
-        return true;
-    }
+    ref entry  = _data.helpers::grow_if_oob(bucket);
+    let ret    = !(entry & mask);
 
-    // Already there.
-    return false;
+    entry |= mask;
+
+    return ret;
 }
 
 pub fn add(using _: &mut BitSet, idx: int)
