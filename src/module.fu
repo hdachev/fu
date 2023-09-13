@@ -398,6 +398,8 @@ fn argsForward(lax RTL: bool, host_args: [Argument], fn,
 fn argsReverse(lax RTL: bool, host_args: [Argument], fn)
 {
 //*
+    mut revSeqIdx = 0;
+
     mut lastPass = 1;
     mut ooe_isLast = true;
     for (mut pass = 2; pass --> lastPass; )
@@ -411,8 +413,10 @@ fn argsReverse(lax RTL: bool, host_args: [Argument], fn)
                 continue;
             }
 
-            fn(:i, :host_arg, ooe_isLast?: ooe_isLast);
+            fn(:i, :host_arg, ooe_isLast?: ooe_isLast, revSeqIdx?: revSeqIdx);
             ooe_isLast = false;
+
+            revSeqIdx++;
         }
     }
 /*/

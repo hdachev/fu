@@ -17,6 +17,7 @@ let OPTI_autoshadow         = true;
 let OPTI_dedupe_vars        = true;
 let OPTI_bck                = true;
 let OPTI_unlist_callers     = true;
+let OPTI_moves_inside_fns   = true;
 
 let RESOLVE_report          = false;
 
@@ -121,8 +122,6 @@ pub fn solve(
     {
         // Moves.
         used_again:         bitset::BitSet;
-        just_moved:         bitset::BitSet;
-        just_used:          bitset::BitSet;
 
         // COW.
         written_directly:   bitset::BitSet;
@@ -2736,9 +2735,6 @@ pub fn solve(
                 locid || BUG(
                     "trackJustMoved: found a non-local.");
 
-                _current_fn.postdom.just_moved.add_once(locid) || BUG(
-                    "trackJustMoved: already moved.");
-
                 trackJustMoved(Lifetime_climbType(nested(locid)).lifetime);
             }
         }
@@ -3185,18 +3181,6 @@ pub fn solve(
                     // MOVE ON LAST USE ////////////////////////////////////////////
                     {
                         tryTrackLastUse(node.lifetime);
-
-                        // MOVE ON LAST USE OOE ////////////////////////////////////////
-                        {
-                            // The problem with OOE is with callsite arguments -
-                            //  we only need to track var reads for this to work,
-                            //   lts passing through fns shouldn't affect this,
-                            //    because the lack of sequence points occurs between
-                            //     the individual callarg expressions.
-                            //
-                            trackUse(node.lifetime, _current_fn.postdom.just_used);
-                        }
-                        // MOVE ON LAST USE OOE ////////////////////////////////////////
                     }
                     // MOVE ON LAST USE ////////////////////////////////////////////
                 }
@@ -3366,34 +3350,13 @@ pub fn solve(
                 //
                 let host_args   = node.target.args;
                 let RTL         = node.target.isRTL;
-                let ooe_isUndef = !RTL && node.items.len > 1;
 
                 host_args.len == node.items.len || BUG(
                     "propagateType(call) args.len != host_args.len at call to " ~ node.target);
 
-                // MOVE ON LAST USE OOE ////////////////////////////////////////
-                //  We'll empty the just_used bitset before solving each argument,
-                //   and merge the results at the end in case someone above needs them.
-                //    Also, snapshot moves so we can detect them in subsequent arguments.
-                //
-                mut just_used1: bitset::BitSet;
-                //
-                if (ooe_isUndef)       swap(_current_fn.postdom.just_used, just_used1);
-                defer if (ooe_isUndef) swap(_current_fn.postdom.just_used, just_used1);
-                //
-                mut just_moved00 = ooe_isUndef && _current_fn.postdom.just_moved;
-                mut MUSTSEQ_mask = 0;
-                // MOVE ON LAST USE OOE ////////////////////////////////////////
-
-                argsReverse(:RTL, :host_args): |i, host_arg, ooe_isLast|
+                argsReverse(:RTL, :host_args): |i, host_arg|
                 {
                     ref arg = node.items[i];
-
-                    // MOVE ON LAST USE OOE ////////////////////////////////////////
-                    lax let just_moved0 = ooe_isUndef
-                        && !ooe_isLast
-                        && _current_fn.postdom.just_moved;
-                    // MOVE ON LAST USE OOE ////////////////////////////////////////
 
                     if (PASS_MaybeCopyOrMove)
                         maybeCopyOrMove(arg, host_arg, isArgument: true);
@@ -3429,42 +3392,7 @@ pub fn solve(
 
                     if (host_arg.flags & F_WRITTEN_TO)
                         callarg_trackWrites(arg.type.lifetime);
-
-                    // MOVE ON LAST USE OOE ////////////////////////////////////////
-                    if (ooe_isUndef)
-                    {
-                        if (just_moved0)
-                        {
-                            let mustSeq = i;
-
-                            // Now we care about things that were moved during this call,
-                            //  but not within this argument,
-                            //   that concern lifetimes used here.
-                            //
-                            _current_fn.postdom.just_used.each: |index|
-                            {
-                                if (just_moved0.has(index) && !just_moved00.has(index))
-                                {
-                                    // println("N_MoveMustSeq: " ~ arg ~ "\n\t\tbecause " ~ nested(index) " was moved by a coarg.");
-
-                                    // An argument that follows moves something we use here,
-                                    //  so we must strictly evaluate before them.
-                                    //
-                                    MUSTSEQ_mask |= 1 << (mustSeq & 31);
-                                    makeNote(N_MoveMustSeq);
-                                    break;
-                                }
-                            }
-                        }
-
-                        just_used1.add(_current_fn.postdom.just_used);
-                        _current_fn.postdom.just_used.clear();
-                    }
-                    // MOVE ON LAST USE OOE ////////////////////////////////////////
                 }
-
-                // Flush seqmask.
-                node.helpers.index |= MUSTSEQ_mask;
             }
         }
         else if (k.isShallowLiteral)
@@ -8493,10 +8421,7 @@ pub fn solve(
 
         // Dead code elim.
         if (cond.type.is_never)
-        {
-            makeNote(N_DeadIfCond);
             return cond;
-        }
 
         // Abstract eval.
         let ae_cond = tryAbstractEvalAsBool(cond);
@@ -10569,7 +10494,6 @@ pub fn solve(
             mut ooe_argIdx: i32[];
 
             let RTL         = target.isRTL;
-            let ooe_isUndef = !RTL;
 
             ///////////////////////////////////////////////
             {
@@ -10995,22 +10919,6 @@ pub fn solve(
                                                     ~ RWEvent_stack(writeID));
                                             }
                                         }
-                                    }
-
-                                    // TODO FIX: have codegen disregard the mask
-                                    //  when cpp guarantees the order - it's call-syntax related.
-                                    //
-                                    if (ooe_isUndef)
-                                    {
-                                        // Flag the arg that needs to eval first for explicit sequencing.
-                                        //  This mask thing is kinda stupid, calls with more than 32 args
-                                        //   could needlessly sequence some of their args,
-                                        //    but it's safe.
-                                        //
-                                        let mustSeq = ooe_ir_evalsBefore_iw ? r : w;
-                                        MUSTSEQ_mask |= 1 << (mustSeq & 31);
-                                        makeNote(AAR ? N_AARMustSeq : N_BckMustSeq,
-                                            " read: " ~ args[r] ~ "\n\t\twrite: " ~ args[w]);
                                     }
 
                                     break;
@@ -11790,6 +11698,314 @@ pub fn solve(
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
+    fn nestingFnort_ensureArgSequencing()
+    {
+        mut _may_alias: bitset::BitSet[];
+        mut _argPos_1b: i32[];
+
+        _nestingFnort.args.each: |host_arg, i|
+        {
+            if (!host_arg.type.is_ref)
+                continue;
+
+            _argPos_1b.grow_if_oob(host_arg.target.locid)
+                = i + 1;
+
+            let may_alias = host_arg.flags & F_WRITTEN_TO && host_arg.may_alias;
+            if (may_alias)
+            {
+                if (SELF_TEST)
+                {
+                    if (!host_arg.is_mutref)
+                        BUG("ensureArgSequencing: F_WRITTEN_TO but !is_mutref");
+                    if (!may_alias.has(i))
+                        BUG("ensureArgSequencing: may_alias does not list self [1]");
+                }
+
+                _may_alias.grow_if_oob(i) = may_alias;
+            }
+        }
+
+
+        //
+
+        struct Regions {
+            locals:     bitset::BitSet;
+            arguments:  bitset::BitSet;
+        };
+
+        fn has_inter(a: Regions, b: Regions)
+            a.locals.has_inter(b.locals) ||
+            a.arguments.has_inter(b.arguments);
+
+        infix fn |=(ref a: Regions, b: Regions)
+            for (fieldname i: Regions)
+                a.i |= b.i;
+
+        fn clear(ref regions: Regions)
+            for (fieldname i: Regions)
+                regions.i.clear();
+
+
+        //
+
+        struct Unsequenced {
+            writes:     Regions;
+            moves:      Regions;
+            reads:      Regions;
+        };
+
+        fn clear(ref events: Unsequenced)
+            for (fieldname i: Unsequenced)
+                events.i.clear();
+
+        infix fn |=(ref events: Unsequenced, other: Unsequenced)
+            for (fieldname i: Unsequenced)
+                events.i |= other.i;
+
+        fn flag(
+            ref regions: Regions, lifetime: Lifetime,
+            /*TODO const*/  dontUse_may_alias!?: bool /*,
+              TODO const    dontCheckArguments!?: bool */)
+        {
+            lifetime.Lifetime_each: |locid|
+            {
+                if (locid && regions.locals.add_once(locid - 1))
+                {
+                    ///////////////////////////////////////
+                    // TODO PERF not necessary for moves //
+                    ///////////////////////////////////////
+
+                    // AAR sequencing.
+                    let argPos_1b = _argPos_1b.unless_oob(locid);
+                    if (argPos_1b)
+                    {
+                        let i = argPos_1b - 1;
+                        let may_alias = !dontUse_may_alias
+                                     && _may_alias.unless_oob(i);
+
+                        if (may_alias)
+                        {
+                            if (SELF_TEST && !may_alias.has(i))
+                                BUG("ensureArgSequencing: may_alias does not list self [2]");
+
+                            regions.arguments |= may_alias;
+                        }
+                        else
+                        {
+                            regions.arguments.add(i);
+                        }
+                    }
+
+                    // Continue.
+                    regions.flag(
+                        nested(locid).Lifetime_climbType.lifetime,
+                        :dontUse_may_alias);
+                }
+            }
+        }
+
+        //
+        mut _unseqDepth = 0;
+        mut _inner: Unsequenced;
+
+        //
+        fn visit(ref node: SolvedNode)
+        {
+            if (node.kind == "call")
+            {
+                let o = GET(node.target);
+
+                if (!node.items)
+                {
+                    // Track reads.
+                    if (o.kind == "var")
+                        if (_unseqDepth)
+                            _inner.reads.flag(
+                                o.type.lifetime,
+
+                                // READS: No point in flagging
+                                //  all potentially-aliased arguments,
+                                //   if someone else writes to another,
+                                //    they'll flag this one.
+                                //
+                                dontUse_may_alias: true);
+
+                    // This handles zero-init constructors.
+                    return;
+                }
+
+                // Sequenced calls - assignments & such.
+                let RTL = o.isRTL;
+
+                ////////////////////////////////////////////////////////////////
+                let unsequencedOutside  = !!_unseqDepth;
+                let unsequencedHere     = !RTL && node.items.len > 1;
+
+                if (unsequencedHere)
+                    _unseqDepth++;
+                ////////////////////////////////////////////////////////////////
+
+                mut outer = _inner.steal();
+                mut parallel: Unsequenced;
+                mut MUSTSEQ_mask = 0;
+
+                let host_args = node.target.args;
+
+                argsReverse(:RTL, :host_args): |i, host_arg, revSeqIdx|
+                {
+                    // This vs parallel arguments.
+                    if (unsequencedHere)
+                    {
+                        if (revSeqIdx == 1)
+                        {
+                            parallel = steal(_inner);
+                        }
+                        else if (revSeqIdx > 1)
+                        {
+                            parallel |= _inner;
+                            _inner.clear();
+                        }
+                    }
+
+                    // Descend - collects inner reads, writes & moves.
+                    ref arg = node.items[i];
+
+                    // OPTI & c++ cg cleanup, special-case callsite moves,
+                    //  move may-happen inside fn, no need to sequence here.
+                    //   Adding this to be test-identical with what we had before.
+                    //
+                    shadow ref arg =
+                        !OPTI_moves_inside_fns
+                            || arg.kind != "move" ? arg :
+                    {
+                        // Move happens INSIDE fn,
+                        //  so sequenced AFTER arg list.
+                        //
+                        ref expr = arg.items.only;
+                        if (unsequencedOutside)
+                            outer.moves.flag(expr.type.lifetime);
+
+                        expr
+                    };
+
+                    //
+                    visit(arg);
+
+                    // Track writes.
+                    if (unsequencedOutside)
+                    {   //         ^^^^^^^
+                        // We only need to bother with this if this call
+                        //  is happening within the argument list of
+                        //   another call with unsequenced arguments.
+                        //
+                        if (host_arg.flags & F_WRITTEN_TO)
+                        {
+                            outer.writes.flag(arg.type.lifetime);
+                            // ^^^^^^^^^
+                            // Writes happen inside the fn we're calling,
+                            //  so they are sequenced AFTER all args have evaluated,
+                            //   no need to consider them here.
+                        }
+                    }
+
+                    // Ensure sequencing.
+                    if (unsequencedHere)
+                    {
+                        let note =  _inner.moves.has_inter(parallel.reads) ||
+                                    parallel.moves.has_inter(_inner.reads)
+                                        ? N_MoveMustSeq
+                                 :  _inner.writes.locals.has_inter(parallel.reads.locals) ||
+                                    parallel.writes.locals.has_inter(_inner.reads.locals)
+                                        ? N_BckMustSeq
+                                 :  _inner.writes.arguments.has_inter(parallel.reads.arguments) ||
+                                    parallel.writes.arguments.has_inter(_inner.reads.arguments)
+                                        ? N_AARMustSeq
+                                 :  { continue; };
+
+                        makeNote(note);
+                        MUSTSEQ_mask |= 1 << (i & 31);
+                    }
+                }
+
+                ////////////////////////////////////////////////////////////////
+                if (unsequencedHere)
+                    _unseqDepth--;
+                ////////////////////////////////////////////////////////////////
+
+                node.helpers.index |= MUSTSEQ_mask;
+
+                //
+                if (unsequencedOutside)
+                {
+                    outer |= _inner;
+                    outer |= parallel;
+                    swap(_inner, outer);
+                }
+                else
+                {
+                    SELF_TEST && outer && BUG("!unsequencedOutside but outer events non-empty.");
+                    _inner.clear();
+                }
+
+                // Done - children already visited.
+                return;
+            }
+
+            if (node.kind == "letdef")
+            {
+                mut root = GET_mut(node.target).solved.steal();
+                visit(root);
+                swap(root, GET_mut(node.target).solved);
+
+                // Done - no children.
+                return;
+            }
+
+            if (node.kind == "move")
+            {
+                // Track moves.
+                if (_unseqDepth)
+                    if (node.kind == "move")
+                        _inner.moves.flag(
+                            node.items.only.type.lifetime);
+            }
+
+            for (mut i = 0; i < node.items.len; i++)
+                visit(node.items[i]);
+        }
+
+        mut root = GET_mut(_nestingFnort).solved.items.last.steal();
+        visit(root);
+        swap(root, GET_mut(_nestingFnort).solved.items.last);
+    }
+
+    fn PASS_runAllVerifiers()
+    {
+        _nestingFnort && BUG("PASS_runAllVerifiers: non-empty _nestingFnort");
+
+        for (mut i = 0; i < _scope.overloads.len; i++)
+        {
+            ref o = _scope.overloads[i];
+            if (o.kind == "fn")
+            {
+                _nestingFnort = Target(
+                    :module.modid, globid: i + 1, locid: 0);
+
+                // TODO only bother with this if backend is unsequenced,
+                //  like c / c++, real moronic total waste of time.
+                nestingFnort_ensureArgSequencing();
+            }
+        }
+
+        _nestingFnort = [];
+    }
+
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
     // Import prelude / inject builtins.
     if (module.modid)
     {
@@ -11833,6 +12049,10 @@ pub fn solve(
         let root = solveNode(module.in.parse.root);
 
         _current_fn && BUG("non-empty _current_fn.");
+
+        ///////////////////////
+        PASS_runAllVerifiers();
+        ///////////////////////
 
         _helpers_data[0] && BUG("non-empty _helpers_data[0].");
 

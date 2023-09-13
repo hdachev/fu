@@ -230,3 +230,18 @@ pub fn negated(bitset: BitSet, end!: i32)
 
     return result;
 }
+
+
+//
+
+pub fn has_inter(a: BitSet, b: BitSet)
+{
+    let N = a._data.len.min(b._data.len);
+
+    // TODO zip over in u64s first.
+    for (mut i = 0; i < N; i++)
+        if (a._data[i] & b._data[i])
+            return true;
+
+    return false;
+}

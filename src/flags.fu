@@ -187,8 +187,6 @@ using flags SolverNotes: i32
     N_DeadCode
     N_DeadCall
     N_DeadLet
-    N_DeadIfCond
-    N_DeadIfCons
     N_DeadArrlit
     N_DeadLoopInit
     N_DeadConv
