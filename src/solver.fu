@@ -5581,8 +5581,8 @@ pub fn solve(
                     }
 
                     //
-                    let may_alias       = bitset::NegatedBitSet(hard_risk);
-                    let may_invalidate  = bitset::NegatedBitSet(soft_risk);
+                    let may_alias       = hard_risk.negated(end: N);
+                    let may_invalidate  = soft_risk.negated(end: N);
 
                     //
                     mut arg = Argument(

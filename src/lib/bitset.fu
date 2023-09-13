@@ -224,12 +224,12 @@ pub fn and_not_assign(ref a: BitSet, b: BitSet)
 
 //
 
-pub struct NegatedBitSet
+pub fn negated(bitset: BitSet, end!: i32)
 {
-    negated: BitSet;
-}
+    mut result: BitSet;
 
-pub fn has(using _: NegatedBitSet, idx: int)
-{
-    return !negated.has(idx);
+    result.add_range(:end);
+    result.and_not_assign(bitset);
+
+    return result;
 }

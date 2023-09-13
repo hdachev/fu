@@ -235,14 +235,14 @@ struct Argument
     // Argument A may safely invalidate argument B
     //  when all writes to A happen after the last use of B.
     //
-    may_invalidate?:    bitset::NegatedBitSet;
+    may_invalidate?:    bitset::BitSet;
 
     // Argument A may safely alias argument B
     //  if no unstable pointers derived from B
     //   are used after A is written to for the last time,
     //    and vice-versa.
     //
-    may_alias?:         bitset::NegatedBitSet;
+    may_alias?:         bitset::BitSet;
 };
 
 struct COWInside
