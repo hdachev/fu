@@ -2370,7 +2370,7 @@ pub extern fn runTests()
                 return c;
             }
 
-            return x.count == 6 ? 0 : 1;                        ;; PointlessMustSeq
+            return x.count == 6 ? 0 : 1;
         }
     `);
 
@@ -3130,7 +3130,7 @@ pub extern fn runTests()
 
             fn solveNode(node: Node)
                 return node.kind == "bool"
-                    && createBool(:node.value);                 ;; PointlessMustSeq
+                    && createBool(:node.value);
     <alt>
             fn solveNode(canon: string)
                 return Type(:canon);
@@ -4254,7 +4254,6 @@ pub extern fn runTests()
 
             ref bb = b[0]; a ~= 1; // Invalidates 'aa' if ref.
             return either(bb, aa); // For completeness.
-                   ;; PointlessMustSeq
         }
 
         fn main() { mut a = [ 0 ]; mut b = [ 0 ]; return test(a, b); }
@@ -5373,7 +5372,7 @@ pub extern fn runTests()
 
         fn two_writes_in_an_arg(ref arr: i32[], ref brr: i32[], ref x: i32)
             assign( what: x ? arr.grow_if_oob(10)
-                            : brr.grow_if_oob(10), to: x );     ;; PointlessMustSeq
+                            : brr.grow_if_oob(10), to: x );
 
         fn main() {
             mut arr = [ 0, 1, 2, 3 ];
@@ -5397,7 +5396,7 @@ pub extern fn runTests()
 
         fn two_writes_in_an_arg(ref arr: i32[], ref brr: i32[], ref x: i32)
             assign( what: x ? arr.grow_if_oob(10)
-                            : brr.grow_if_oob(10), to: x );     ;; PointlessMustSeq
+                            : brr.grow_if_oob(10), to: x );
 
         fn main() {                         <flip>
             mut zero = 0;
@@ -5443,11 +5442,10 @@ pub extern fn runTests()
         fn two_writes_in_an_arg(ref x: i32, ref arr: i32[], ref brr: i32[])
             assign( to: x,  what: arr.grow_if_oob(10)           ;; !N_BckMustSeq
                                || brr.grow_if_oob(10));         ;; !N_MoveMustSeq
-                                                                ;; PointlessMustSeq
 
         fn test(ref x: i32, ref arr: i32[], ref brr: i32[]) {
             two_writes_in_an_arg(
-                <fail arg 2 arr 1 x both alias 18:22>
+                <fail arg 2 arr 1 x both alias 17:22>
                     x || arr[0],              <pass/>
                     x,                        </fail>
                     :arr, :brr);
