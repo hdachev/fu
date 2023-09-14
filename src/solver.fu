@@ -10486,10 +10486,8 @@ pub fn solve(
             //  we'll keep track of reads and writes,
             //   we add sequencing tags last thing here.
             //
-            let ooe_read0   = _current_fn.events.reads.len;
             let ooe_write0  = _current_fn.events.writes.len;
 
-            mut ooe_reads:  i32[];
             mut ooe_writes: i32[];
             mut ooe_argIdx: i32[];
 
@@ -10497,7 +10495,6 @@ pub fn solve(
 
             ///////////////////////////////////////////////
             {
-                shadow lax mut ooe_read0  = ooe_read0;
                 shadow lax mut ooe_write0 = ooe_write0;
 
                 argsForward(:RTL, :host_args, |i, seqIdx|
@@ -10507,13 +10504,10 @@ pub fn solve(
                     //
                     bck_node(args[i]);
 
-                    let r1 = _current_fn.events.reads.len;
                     let w1 = _current_fn.events.writes.len;
+                    if (w1 > ooe_write0)
+                        ooe_writes.grow_oob(seqIdx, fill: ooe_write0) = w1;
 
-                    if (r1 > ooe_read0)  ooe_reads .grow_oob(seqIdx, fill: ooe_read0) = r1;
-                    if (w1 > ooe_write0) ooe_writes.grow_oob(seqIdx, fill: ooe_write0) = w1;
-
-                    ooe_read0 = r1;
                     ooe_write0 = w1;
                 });
             }
@@ -10763,14 +10757,15 @@ pub fn solve(
                     if (ooe_write1 == ooe_write0)
                         continue;
 
-                    //
-                    for (mut w = ooe_write0; w < ooe_write1; w++)
+                    // REFACTOR NOTES -
+                    //  No longer needs to spend time on writes-in-first-argument,
+                    //   everything that used that is offloaded to a separate pass:
+                    //    see `ooe_ir < ooe_iw` in the for-loop below.
+                    // ________
+                    if (ooe_iw) for (mut w = ooe_write0; w < ooe_write1; w++)
                     {
                         let writeID = WriteID(w + 1);
                         let write   = RWEvent(writeID).rw_target;
-
-                        // RTL indexing is reversed, so 0 always means first.
-                        let iw_evalsFirst = ooe_iw == 0;
 
                         mut all_written = [ Region_fromLocal(write) ];
                         {
@@ -10791,141 +10786,69 @@ pub fn solve(
 
                             all_written.set::add(
                                 parents.map(.Region_fromLocal));
-                        }
-
-                        mut all_written_and_invalidated: Region[];
-                        if (!iw_evalsFirst)
-                        {
-                            all_written_and_invalidated = all_written;
 
                             // Deep expansion only useful on non-first arg,
                             //  we only use it for preceding args in OOE.
                             //
                             let invalidates = flow.invalidates.unless_oob(write);
 
-                            all_written_and_invalidated.set::add(
+                            all_written.set::add(
                                 invalidates.map(.Region_fromLocal));
                         }
 
-                        ////////////////////////////////////////////////////
-                        // TODO we need written to be the full set        //
-                        //  of written which is a superset of invalidated //
-                        ////////////////////////////////////////////////////
-
                         // Check remaining arguments.
-                        shadow mut ooe_read0 = ooe_read0;
-
-                        for (mut ooe_ir = 0; ooe_ir < ooe_reads.len; ooe_ir++)
+                        argsForward(:host_args, :RTL): |i!r, host_arg, seqIdx|
                         {
-                            let ooe_read1 = ooe_reads[ooe_ir];
+                            if (seqIdx >= ooe_iw)
+                                break;
 
-                            if (ooe_ir != ooe_iw)
-                            {
-                                let ooe_ir_evalsBefore_iw = ooe_ir < ooe_iw;
+                            shadow let w = ooe_argIdx[ooe_iw];
 
-                                let written = ooe_ir_evalsBefore_iw
-                                    ? all_written_and_invalidated
-                                    : all_written;
+                            if (!host_args[r].is_ref)
+                                continue;
 
-                                written || BUG();
+                            shadow let all_written = all_written || BUG();
 
-                                for (mut r = ooe_read0; r < ooe_read1; r++)
-                                {
-                                    let read    = _current_fn.events.reads[r];
-                                    let regions = read.rw_target.nested.type.lifetime.uni0n;
+                            let arg     = args[r];
+                            let bound   = arg.type.lifetime.uni0n;
+                            let inter   = bound.set::inter(all_written);
+                            if (!inter)
+                                continue;
 
-                                    // TODO: set::has_inter,
-                                    //  how can this optimization work automatically?
-                                    //   !!set::inter -> set::has_inter?
-                                    if !(regions.set::has_inter(written))
-                                        continue;
+                            // We'll have to inject a copy here.
+                            if (AAR ? !RESOLVE_byAAR(:write, reads: inter,
 
-                                    // At this point, we've detected an order-of-eval issue.
-                                    //  It's either just that, in which case F_MUSTSEQ is fine,
-                                    //   or it might be that an arg invalidates a previously evaluated arg
-                                    //    (if you imagine that each arg is a let arg0 = xxx, let arg1 = yyy),
-                                    //     in which case we'll have to resolve-by-copy.
-
-                                    // Now this is important:
-                                    //  If this argument ooe-precedes the writes,
-                                    //   we need to check the writes don't garble it's value.
-                                    //
-                                    // This is not about invalidation -
-                                    //  in ++x + ++x nothing gets invalidated,
-                                    //   yet you want the first ++x arg to bind to the value of its init,
-                                    //    just like any other var, and not get thrashed by the other arg.
-                                    //
-                                    // If needed, we'll inject a write,
-                                    //  if not possible, we'll error out.
-
-                                    // DANGER ZONE:
-                                    //
-                                    //  RTL methods have these indices flipped,
-                                    //   here we index in ORDER OF EVALUATION, not order in AST.
-                                    //
-                                    //  Wonder if we shouldn't just order things correctly
-                                    //   in the AST and avoid this altogether?
-                                    //
-                                    shadow let r = ooe_argIdx[ooe_ir];
-                                    shadow let w = ooe_argIdx[ooe_iw];
-
-                                    let host_arg = host_args[r];
-
-                                    if (ooe_ir_evalsBefore_iw &&
-
-                                        // No need to do anything if the host_arg wants a value -
-                                        //  in case the value is a ref we'll copy/move during mcom,
-                                        //   and we only need to sequence before, which is done below.
+                                        // Considered making this host_arg.acceptsSoftRisk,
+                                        //  which would work (should it though?) if:
                                         //
-                                        host_arg.is_ref)
-                                    {
-                                        let arg     = args[r];
-                                        let bound   = arg.type.lifetime.uni0n;
-                                        let inter   = bound.set::inter(written);
-                                        if (inter)
-                                        {
-                                            // We'll have to inject a copy here.
-                                            if (AAR ? !RESOLVE_byAAR(:write, reads: inter,
+                                        //      ref arg_binding = read;
+                                        //
+                                        // But this could also be:
+                                        //
+                                        //      ref arg_binding = read[something];
+                                        //
+                                        // So the succeeding write to another argument
+                                        //  can invalidate the binding.
+                                        //
+                                        // Could revisit this when we have some notion of reference stability,
+                                        //  but currently the rule is soft-risk only applies to
+                                        //   direct use of arguments without intermediate bindings,
+                                        //    and here we're introducing an intermedite binding - the callee argument.
+                                        //
+                                        trySoft: softRiskSafe(arg))
 
-                                                        // Considered making this host_arg.acceptsSoftRisk,
-                                                        //  which would work (should it though?) if:
-                                                        //
-                                                        //      ref arg_binding = read;
-                                                        //
-                                                        // But this could also be:
-                                                        //
-                                                        //      ref arg_binding = read[something];
-                                                        //
-                                                        // So the succeeding write to another argument
-                                                        //  can invalidate the binding.
-                                                        //
-                                                        // Could revisit this when we have some notion of reference stability,
-                                                        //  but currently the rule is soft-risk only applies to
-                                                        //   direct use of arguments without intermediate bindings,
-                                                        //    and here we're introducing an intermedite binding - the callee argument.
-                                                        //
-                                                        trySoft: softRiskSafe(arg))
+                                    : !RESOLVE_byTempCopy(:callsite, r))
+                            {
+                                _here = callsite.token;
 
-                                                    : !RESOLVE_byTempCopy(:callsite, r))
-                                            {
-                                                _here = callsite.token;
-
-                                                fail("At call to " ~ target ~ ", binding for "
-                                                    ~ host_args[r] ~ " (arg #" ~ r ~ ") at "
-                                                    ~ arg.token.addr_and_snippet
-                                                    ~ "\n\t... invalidated by subsequent write to "
-                                                    ~ all_written.last ~ " upon evaluation of "
-                                                    ~ host_args[w] ~ " (arg #" ~ w ~ ") at "
-                                                    ~ RWEvent_stack(writeID));
-                                            }
-                                        }
-                                    }
-
-                                    break;
-                                }
+                                fail("At call to " ~ target ~ ", binding for "
+                                    ~ host_args[r] ~ " (arg #" ~ r ~ ") at "
+                                    ~ arg.token.addr_and_snippet
+                                    ~ "\n\t... invalidated by subsequent write to "
+                                    ~ Region_fromLocal(write) ~ " upon evaluation of "
+                                    ~ host_args[w] ~ " (arg #" ~ w ~ ") at "
+                                    ~ RWEvent_stack(writeID));
                             }
-
-                            ooe_read0 = ooe_read1;
                         }
                     }
 
