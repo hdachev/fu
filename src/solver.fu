@@ -120,9 +120,10 @@ pub fn solve(
         // Moves.
         used_again:         bitset::BitSet;
 
+        // BCK & COW.
+        ever_written:       bitset::BitSet;
+
         // COW.
-        written_directly:   bitset::BitSet;
-        written_indirectly: bitset::BitSet;
         mayEscapeVia:       i32;
         exitPaths:          ExitPaths;
     };
@@ -2541,7 +2542,7 @@ pub fn solve(
                                     return reason;
                             }
 
-                            if (_current_fn.postdom.written_directly.has(index)) {
+                            if (_current_fn.ever_written.has(index)) {
                                 eachCOWInside: |vtype, uncaughtThrowOnly| {
 
                                     // If COW only occurs via a throw route,
@@ -2628,7 +2629,7 @@ pub fn solve(
                 if (!seen.add_once(child))
                     continue;
 
-                if (_current_fn.postdom.written_indirectly.has(child))
+                if (_current_fn.ever_written.has(child))
                 {
                     // For a ref to clobber a COW copy,
                     //  the thing it points to must fit inside the COW type -
@@ -2744,25 +2745,20 @@ pub fn solve(
         //
         fn callarg_trackWrites(lt: Lifetime)
         {
-            fn callarg_trackWriteIndirect(index: i32)
+            lt.Lifetime_each: |locid|
             {
-                if (_current_fn.postdom.written_indirectly.add_once(index))
+                if (locid &&
+                    _current_fn.ever_written.add_once(locid))
                 {
-                    shadow let t = nested(index);
-                    shadow let lt = Lifetime_climbType(t).lifetime;
+                    shadow let t = nested(locid);
 
-                    lt.Lifetime_each: |locid|
-                        if (locid)
-                            callarg_trackWriteIndirect(locid);
+                    callarg_trackWrites(
+                        Lifetime_climbType(t).lifetime);
 
                     if (t.flags & F_ARG)
-                        _current_fn.postdom.mayEscapeVia |= 1 << (index % 32);
+                        _current_fn.postdom.mayEscapeVia |= 1 << (locid % 32);
                 }
             }
-
-            lt.Lifetime_each: |locid|
-                if (locid && _current_fn.postdom.written_directly.add_once(locid))
-                    callarg_trackWriteIndirect(locid);
         }
 
 
@@ -5427,7 +5423,7 @@ pub fn solve(
                     let argTarget   = argNode.target;
                     let written_via = !isUnspec
                         && argNode.type.is_mutref
-                        && (isNative || out.written_indirectly.has(argTarget.locid));
+                        && (isNative || out.ever_written.has(argTarget.locid));
 
                     mut soft_risk: bitset::BitSet;
                     mut hard_risk: bitset::BitSet;
@@ -11111,7 +11107,7 @@ pub fn solve(
 
                     // Notice we don't consider refs we don't write to as mutrefs for AAR.
                     //  This is meant as an opti, but also tests we've tagged everything correctly.
-                    if (type.is_mutref && _current_fn.written_indirectly.has(target.locid))
+                    if (type.is_mutref && _current_fn.ever_written.has(target.locid))
                         refs ~= t;
                     else if (type.is_ref && !target.willPassByValue())
                         consts ~= t;
