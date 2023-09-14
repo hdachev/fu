@@ -81,9 +81,6 @@ pub fn solve(
         // In a loop, reads forbid subsequent writes -
         used_in_a_loop:     ReadID[];
 
-        // The arguments at risk aparata.
-        ever_written:       bitset::BitSet;
-
         // COW validation, indirect copies behind callsites.
         cows_inside:        COWInside[];
 
@@ -2740,6 +2737,35 @@ pub fn solve(
         }
 
 
+        // Tracking writes alla bck,
+        //  will now use this in cannotCOW which was relying on var usage,
+        //   which A] is not flow-sensitive
+        //     and B] seems to be messed around with by propagateType(loop)
+        //
+        fn callarg_trackWrites(lt: Lifetime)
+        {
+            fn callarg_trackWriteIndirect(index: i32)
+            {
+                if (_current_fn.postdom.written_indirectly.add_once(index))
+                {
+                    shadow let t = nested(index);
+                    shadow let lt = Lifetime_climbType(t).lifetime;
+
+                    lt.Lifetime_each: |locid|
+                        if (locid)
+                            callarg_trackWriteIndirect(locid);
+
+                    if (t.flags & F_ARG)
+                        _current_fn.postdom.mayEscapeVia |= 1 << (index % 32);
+                }
+            }
+
+            lt.Lifetime_each: |locid|
+                if (locid && _current_fn.postdom.written_directly.add_once(locid))
+                    callarg_trackWriteIndirect(locid);
+        }
+
+
         //
 
         fn Breakable_begin(loop_PREVITER?: bool)
@@ -3363,33 +3389,6 @@ pub fn solve(
 
                     arg.propagateType(host_arg, :relax_mask);
 
-                    // Tracking writes alla bck,
-                    //  will now use this in cannotCOW which was relying on var usage,
-                    //   which A] is not flow-sensitive
-                    //     and B] seems to be messed around with by propagateType(loop)
-                    fn callarg_trackWrites(lt: Lifetime)
-                    {
-                        lt.Lifetime_each: |locid|
-                            if (locid && _current_fn.postdom.written_directly.add_once(locid))
-                                callarg_trackWriteIndirect(locid);
-                    }
-
-                    fn callarg_trackWriteIndirect(index: i32)
-                    {
-                        if (_current_fn.postdom.written_indirectly.add_once(index))
-                        {
-                            shadow let t = nested(index);
-                            shadow let lt = Lifetime_climbType(t).lifetime;
-
-                            lt.Lifetime_each: |locid|
-                                if (locid)
-                                    callarg_trackWriteIndirect(locid);
-
-                            if (t.flags & F_ARG)
-                                _current_fn.postdom.mayEscapeVia |= 1 << (index % 32);
-                        }
-                    }
-
                     if (host_arg.flags & F_WRITTEN_TO)
                         callarg_trackWrites(arg.type.lifetime);
                 }
@@ -3940,7 +3939,15 @@ pub fn solve(
             //   and so we don't overrelax.
             //
             for (mut i = 0; i < node.items.len; i++)
-                node.items[i].propagateType(node.items[i].type, :relax_mask);
+            {
+                ref item = node.items[i];
+                item.propagateType(node.items[i].type, :relax_mask);
+
+                // Forgot about this one!
+                //  Caught it when we got rid of Events.ever_written
+                if (item.is_mutref)
+                    callarg_trackWrites(item.type.lifetime);
+            }
 
             // Effect pragmas.
             if (node.value == "clock")
@@ -5420,7 +5427,7 @@ pub fn solve(
                     let argTarget   = argNode.target;
                     let written_via = !isUnspec
                         && argNode.type.is_mutref
-                        && (isNative || out.events.ever_written.has(argTarget.locid));
+                        && (isNative || out.written_indirectly.has(argTarget.locid));
 
                     mut soft_risk: bitset::BitSet;
                     mut hard_risk: bitset::BitSet;
@@ -10404,14 +10411,6 @@ pub fn solve(
                     if (!OPTI_bck || AAR || !set)
                         set ~= writeID;
                 }
-
-                // ARGUMENTS AT RISK ////////////////////////
-                fn tagWritten(shadow target: i32)
-                    if (events.ever_written.add_once(target))
-                        flow.parents.unless_oob(target).each(fn tagWritten);
-
-                tagWritten(target);
-                /////////////////////////////////////////////
             }
         }
 
@@ -11112,7 +11111,7 @@ pub fn solve(
 
                     // Notice we don't consider refs we don't write to as mutrefs for AAR.
                     //  This is meant as an opti, but also tests we've tagged everything correctly.
-                    if (type.is_mutref && _current_fn.events.ever_written.has(target.locid))
+                    if (type.is_mutref && _current_fn.written_indirectly.has(target.locid))
                         refs ~= t;
                     else if (type.is_ref && !target.willPassByValue())
                         consts ~= t;
