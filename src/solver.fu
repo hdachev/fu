@@ -115,6 +115,40 @@ pub fn solve(
             events.i.Events_merge(snap.i);
     }
 
+    fn Events_restore(ref events: Events,
+
+        // Restores these events -
+        restore: EventsSnap,
+
+        // Without climbing past loop_start.
+        loop_start: i32)
+    {
+        if (!loop_start)
+            BUG("Events_restore: no loop_start, cant decide which events need to be survive");
+
+        if (loop_start == 1)
+        {
+            events.snap = restore;
+            return;
+        }
+
+        // Previously we just assigned events =
+        fn Events_restore(ref dest: $T[], src: $T[])
+        {
+            if (dest.len > loop_start)
+                dest.shrink(loop_start);
+
+            if (src.len > loop_start)
+            {
+                dest.grow(loop_start);
+                dest ~= src[loop_start :];
+            }
+        }
+
+        for (fieldname i: EventsSnap)
+            events.i.Events_restore(restore.i);
+    }
+
     struct PostdomSnap
     {
         // Moves.
@@ -3028,6 +3062,12 @@ pub fn solve(
                     "if/else after control flow simplification: ",
                         items[1], items[2]);
             }
+
+            // BCK Events_merge needs loop_start
+            //////////////////////////////////////////
+            node._loop_start = _current_fn.loop_start;
+            //////////////////////////////////////////
+
         }
         else if (k == "try")
         {
@@ -10898,7 +10938,9 @@ pub fn solve(
 
             // Alt ///////////////////////////////////////////////
             let e_Merge_AfterCons       = _current_fn.events.snap;
-            _current_fn.events.snap     = e_Restore_AfterCond;
+
+            _current_fn.events.Events_restore(e_Restore_AfterCond,
+                loop_start: node._loop_start);
             //////////////////////////////////////////////////////
 
             bck_node(items[2]);
@@ -10957,13 +10999,23 @@ pub fn solve(
         {
             mut defers: SolvedNode[];
 
+            ////////////////////////////////////////////////////////////////
+            let TODO_FIX_defers0 = _current_fn.TODO_FIX_defers;
+            ////////////////////////////////////////////////////////////////
+
             // Regular items forward.
             ref items = node.items;
             for (mut i = 0; i < items.len; i++)
             {
                 ref stmt = items[i];
                 if (stmt.kind == "defer")
+                {
+                    ////////////////////////////////////////////////////////////////
+                    _current_fn.TODO_FIX_defers++;
+                    ////////////////////////////////////////////////////////////////
+
                     defers ~= stmt.items.only;
+                }
                 else
                     bck_node(stmt);
 
@@ -10988,6 +11040,10 @@ pub fn solve(
             // Defers in reverse.
             for (mut i = defers.len; i --> 0; )
                 bck_node(defers[i]);
+
+            ////////////////////////////////////////////////////////////////
+            _current_fn.TODO_FIX_defers = TODO_FIX_defers0;
+            ////////////////////////////////////////////////////////////////
         }
 
 
@@ -11050,6 +11106,12 @@ pub fn solve(
                 ref items = node.items;
                 for (mut i = 0; i < items.len; i++)
                     bck_node(items[i]);
+
+                //
+                if (k == "jump" && !_current_fn.TODO_FIX_defers)
+                    _current_fn.events.Events_restore(
+                        [], :node.helpers.postdom.loop_start || BUG(
+                            "bck_node(jump): helpers.postdom.loop_start not set."));
             }
             else if (k == "pragma")
             {

@@ -5964,9 +5964,9 @@ pub extern fn runTests()
                         //  not on the same path as the use of first below ...
                         n.children ~= Node(i);
 
-                        <fail next loop iter X:X>
-                        break;            <pass/>
-                        return sum;       </fail>
+                        <fail cannot access first 23:21+5 inval by write n 16:36+2>
+                        break;                                              <pass/>
+                        return sum;                                         </fail>
                     }
 
                     // ... which will be used again on next outer-loop iter.
