@@ -6226,9 +6226,7 @@ pub extern fn runTests()
     // /Move on last use
 
 
-    // Stuff that isn't working out quite right -
-    //  Keep those around, there's no principle to these tests,
-    //   they just stressed our stuff in weird ways.
+    // quite right
 
     TODO_Map(currently: "Map is not defined", `
         struct BINOP {
@@ -8759,6 +8757,39 @@ pub extern fn runTests()
             mut b: u32;
             voidIf(:a, :b);
             return !a && b ? 0 : 1;
+        }
+    `);
+
+    ZERO(`
+        struct ScopeItem { id: string; uval: u32 }
+
+        fn search(ref items: [ScopeItem], id: string, ref scope_iterator: i32): u32
+        {
+            if (!scope_iterator)
+                scope_iterator = items.len;
+
+            defer if (scope_iterator == 0)
+                scope_iterator = -1;
+
+            while (scope_iterator --> 0) {
+                let item = items[scope_iterator];
+                if (item.id == id)
+                    return item.uval;
+            }
+
+            return [];
+        }
+
+        fn main() {
+            mut items = [ ScopeItem("a", 1), ScopeItem("a", 2), ScopeItem("a", 3) ];
+            mut scope_iterator = 0;
+            mut uval: u32;
+
+            mut result: u32;
+            while (uval = items.search("a", scope_iterator))
+                result += uval;
+
+            return (result - 6).signed;
         }
     `);
 
