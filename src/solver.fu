@@ -159,9 +159,10 @@ pub fn solve(
 
     struct Flow
     {
-        // Any ref.
-        parents:        i32[][];
-        invalidates:    i32[][];        // Non-disjoint siblings and children.
+        // Reference graph.
+        rg_parents:     i32[][];
+        rg_invalidates: i32[][];        // Non-disjoint siblings and children.
+        rg_children:    i32[][];        // Used by validateCOW
 
         // Arguments at risk.
         at_soft_risk:   bitset::BitSet[];
@@ -171,10 +172,6 @@ pub fn solve(
         is_arg:         bitset::BitSet;
         arg_parents:    i32[][];
         arg_targets:    i32[];
-
-        // TODO FIX redundant
-        // COW - direct children.
-        children:       i32[][];
     };
 
     struct CurrentFn
@@ -10111,7 +10108,7 @@ pub fn solve(
                     r_locals ~= r;
 
             write.each: |w.Region_asLocal|
-                if (w && flow.invalidates.unless_oob(w).set::has_inter(r_locals))
+                if (w && flow.rg_invalidates.unless_oob(w).set::has_inter(r_locals))
                     return true;
 
             return false;
@@ -10247,15 +10244,15 @@ pub fn solve(
                 if !(right)
                     continue;
 
-                flow.children.grow_if_oob(right).set::add(left);
+                flow.rg_children.grow_if_oob(right).set::add(left);
 
                 //
                 parents.set::add(right);
-                parents.set::add(flow.parents.unless_oob(right));
+                parents.set::add(flow.rg_parents.unless_oob(right));
 
                 // For each lifetime on the right of the assignment,
                 //  the invals are the stuff it kills on write.
-                mut siblings = flow.invalidates.unless_oob(right);
+                mut siblings = flow.rg_invalidates.unless_oob(right);
 
                 // LEFT can show up in the inval lists
                 //  after we process the first lifetime.
@@ -10271,12 +10268,12 @@ pub fn solve(
                     // Same thing backward:
                     //  Everything that RIGHT invalidates potentially invalidates LEFT.
                     //
-                    flow.invalidates .grow_if_oob(left).set::add(siblings);
+                    flow.rg_invalidates.grow_if_oob(left).set::add(siblings);
 
                     for (shadow mut i = 0; i < siblings.len; i++)
                     {
                         shadow let sibling = siblings[i];
-                        flow.invalidates .grow_if_oob(sibling).set::add(left);
+                        flow.rg_invalidates.grow_if_oob(sibling).set::add(left);
                     }
                 }
 
@@ -10293,10 +10290,10 @@ pub fn solve(
                 // Parent rule, one-sided:
                 //  Finally, RIGHT invalidates LEFT.
                 for (mut i = 0; i < parents.len; i++)
-                    flow.invalidates.grow_if_oob(parents[i]).set::add(left);
+                    flow.rg_invalidates.grow_if_oob(parents[i]).set::add(left);
 
                 // This is the same as the parents set.
-                flow.parents.grow_if_oob(left) = parents;
+                flow.rg_parents.grow_if_oob(left) = parents;
             }
         }
 
@@ -10368,7 +10365,7 @@ pub fn solve(
 
                 // println("bck_trackWrite " ~ target ~ " " ~ callsite.value);
 
-                let invalidates = flow.invalidates.unless_oob(target);
+                let invalidates = flow.rg_invalidates.unless_oob(target);
 
                 if (SELF_TEST && invalidates.has(target))
                     BUG("flow.invalidates[target].has(target): " ~ GET(nested(target)));
@@ -10777,7 +10774,7 @@ pub fn solve(
                             //
                             // In both cases we need to sequence the order of eval of `a` and `x++`.
                             //
-                            let parents = flow.parents.unless_oob(write);
+                            let parents = flow.rg_parents.unless_oob(write);
 
                             all_written.set::add(
                                 parents.map(.Region_fromLocal));
@@ -10785,7 +10782,7 @@ pub fn solve(
                             // Deep expansion only useful on non-first arg,
                             //  we only use it for preceding args in OOE.
                             //
-                            let invalidates = flow.invalidates.unless_oob(write);
+                            let invalidates = flow.rg_invalidates.unless_oob(write);
 
                             all_written.set::add(
                                 invalidates.map(.Region_fromLocal));
@@ -11164,7 +11161,7 @@ pub fn solve(
 
                 // First, ref -> const relationships, cheaper setup.
                 if (consts)
-                    (flow.invalidates.grow_if_oob(target) && BUG("AAR: ref arg already has invalidates."))
+                    (flow.rg_invalidates.grow_if_oob(target) && BUG("AAR: ref arg already has invalidates."))
                         = consts;
 
                 // Finally set up the ref <-> ref relationships,
@@ -11173,7 +11170,7 @@ pub fn solve(
                 {
                     shadow mut refs = refs;
                     refs.set::rem(target);
-                    flow.invalidates.grow_if_oob(target).set::add(refs);
+                    flow.rg_invalidates.grow_if_oob(target).set::add(refs);
                 }
 
                 // OOE/AAR:
@@ -11188,8 +11185,8 @@ pub fn solve(
                 // Basically for all_written_BUT_NOT_invalidated to consider other arguments,
                 //  we list them as if they were parents to each ref argument.
                 if (refs.len > 1 || consts)
-                    (flow.parents.grow_if_oob(target) && BUG("AAR: ref arg already has parents."))
-                        = flow.invalidates.unless_oob(target) || BUG("AAR: (refs.len > 1 || consts), but no invalidates.");
+                    (flow.rg_parents.grow_if_oob(target) && BUG("AAR: ref arg already has parents."))
+                        = flow.rg_invalidates.unless_oob(target) || BUG("AAR: (refs.len > 1 || consts), but no invalidates.");
             }
 
             // trackReferences uses flow.invalidates to locate siblings,
@@ -11197,7 +11194,7 @@ pub fn solve(
             if (refs) for (mut i = 0; i < consts.len; i++)
             {
                 // Same as above but flipped.
-                (flow.invalidates.grow_if_oob(consts[i]) && BUG(
+                (flow.rg_invalidates.grow_if_oob(consts[i]) && BUG(
                     "AAR: const arg already has invalidates."))
                         = refs;
             }
@@ -11493,7 +11490,7 @@ pub fn solve(
 
         node.helpers.pass = "ArgumentsAtRisk";
 
-        _current_fn.TODO_FIX_children = _current_fn.flow.children;
+        _current_fn.TODO_FIX_children = _current_fn.flow.rg_children;
 
         PASS_borrowCheck(node, BCK_aar);
 
