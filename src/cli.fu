@@ -3,7 +3,7 @@ import compiler;
 import tests;
 import ansi;
 
-fn cli_handle(argv: string[], cwd = fs::cwd()): i32
+fn cli_handle(argv: string[], cwd = fs::cwd())
 {
     mut idx = 0;
 
@@ -22,7 +22,7 @@ fn cli_handle(argv: string[], cwd = fs::cwd()): i32
     if (argv.len == 1)
     {
         println("\tTry `" self " file.fu`.\n");
-        return 0;
+        return;
     }
 
     // Full test suite.
@@ -35,7 +35,7 @@ fn cli_handle(argv: string[], cwd = fs::cwd()): i32
         buildCompiler();
 
         println("\n\tRebuilt self.\n");
-        return 0;
+        return;
     }
 
     fn abs(path: string)
@@ -185,13 +185,18 @@ fn cli_handle(argv: string[], cwd = fs::cwd()): i32
     }
 
     // Go.
+    compile_and_build(
+        :fname, :bin,
+        :run, :shared, :hotswap, :nocache,
+        :dir_wrk, :dir_src, :dir_cpp, :dir_obj,
+        :scheme,
+        :flags_cc, :flags_ld);
+}
+
+fn main(argv: string[])
+{
     try {
-        compile_and_build(
-            :fname, :bin,
-            :run, :shared, :hotswap, :nocache,
-            :dir_wrk, :dir_src, :dir_cpp, :dir_obj,
-            :scheme,
-            :flags_cc, :flags_ld);
+        cli_handle(argv);
     }
     catch (e) {
         println("\n" ~ "  ERROR ".qBAD ~ e);
@@ -200,9 +205,6 @@ fn cli_handle(argv: string[], cwd = fs::cwd()): i32
 
     return 0;
 }
-
-fn main(argv: string[])
-    cli_handle(argv);
 
 pub extern fn buildCompiler()
     cli_handle(
