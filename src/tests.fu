@@ -5947,6 +5947,43 @@ pub extern fn runTests()
         }
     `);
 
+    ZERO(`
+        struct Node { value: i32; children?: Node[] };
+
+        noinline fn used_in_a_nested_loop_after_break(ref n: Node)
+        {
+            ref first = n.children[0];
+
+            mut sum = 0;
+            for (mut i = 0; i < n.children.len; i++) {
+                for (shadow mut i = 0; i < n.children.len; i++) {
+                    sum += n.children[i].value;
+
+                    if (sum & 1) {
+                        // write followed by inner-loop break -
+                        //  not on the same path as the use of first below ...
+                        n.children ~= Node(i);
+
+                        <fail next loop iter X:X>
+                        break;            <pass/>
+                        return sum;       </fail>
+                    }
+
+                    // ... which will be used again on next outer-loop iter.
+                    first.value += sum;
+                }
+            }
+
+            return sum;
+        }
+
+        fn main() {
+            mut n = Node(0, [ Node(2), Node(1) ]);
+            let sum = used_in_a_nested_loop_after_break(n);
+            return sum - 3;
+        }
+    `);
+
     // /Borrow checker
 
 
