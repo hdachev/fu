@@ -6020,6 +6020,33 @@ pub extern fn runTests()
         }
     `);
 
+    ZERO(`
+        noinline fn used_after_break_from_block(ref arr: i32[])
+        {
+            <fail cannot access first 18:20+5 inval by write to arr 10:34+1>
+            ref <pass/>
+            mut </fail> first = arr[0];
+
+            :BLOCK {
+                if (first & 2) {
+                    if (first & 1) {
+                        arr.clear();
+                        break :BLOCK;                           ;; Goto
+                    }
+
+                    first++;
+                }
+            }
+
+            return first;
+        }
+
+        fn main() {
+            mut arr = [ 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 16, 17, 18, 19 ];
+            return used_after_break_from_block(arr) - 3;
+        }
+    `);
+
     // /Borrow checker
 
 
