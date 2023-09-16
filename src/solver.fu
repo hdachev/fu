@@ -97,7 +97,7 @@ pub fn solve(
         events = [];
     }
 
-    fn Events_merge(ref events: Events, snap: EventsSnap)
+    fn Events_merge(ref events: EventsSnap, snap: EventsSnap)
     {
         fn Events_merge(ref dest: $T[], src: $T[])
         {
@@ -350,7 +350,9 @@ pub fn solve(
         usage?:         Type[];
 
         postdom?:       Postdom;
-        loop_PREVITER?: Postdom;
+        loop_PREVITER?: Postdom;    // TODO dont remember why i added this
+                                    //  might be ExitPath related, seems dodgy af
+        postevt?:       EventsSnap;
 
         kills!?:        Helpers;
     };
@@ -10998,10 +11000,6 @@ pub fn solve(
         {
             mut defers: SolvedNode[];
 
-            ////////////////////////////////////////////////////////////////
-            let TODO_FIX_defers0 = _current_fn.TODO_FIX_defers;
-            ////////////////////////////////////////////////////////////////
-
             // Regular items forward.
             ref items = node.items;
             for (mut i = 0; i < items.len; i++)
@@ -11009,10 +11007,6 @@ pub fn solve(
                 ref stmt = items[i];
                 if (stmt.kind == "defer")
                 {
-                    ////////////////////////////////////////////////////////////////
-                    _current_fn.TODO_FIX_defers++;
-                    ////////////////////////////////////////////////////////////////
-
                     defers ~= stmt.items.only;
                 }
                 else
@@ -11036,13 +11030,13 @@ pub fn solve(
                 }
             }
 
+            //////////////////////////////////////////////////////
+            _current_fn.events.Events_merge(node.helpers.postevt);
+            //////////////////////////////////////////////////////
+
             // Defers in reverse.
             for (mut i = defers.len; i --> 0; )
                 bck_node(defers[i]);
-
-            ////////////////////////////////////////////////////////////////
-            _current_fn.TODO_FIX_defers = TODO_FIX_defers0;
-            ////////////////////////////////////////////////////////////////
         }
 
 
@@ -11107,10 +11101,18 @@ pub fn solve(
                     bck_node(items[i]);
 
                 //
-                if (k == "jump" && !_current_fn.TODO_FIX_defers)
+                if (k == "jump")
+                {
+                    if (node.helpers.postevt)
+                        Events_merge(node.helpers.postevt, _current_fn.events);
+                    else
+                        node.helpers.postevt = _current_fn.events.snap;
+
+                    //
                     _current_fn.events.Events_restore(
                         [], :node.helpers.postdom.parent_loop_start || BUG(
                             "bck_node(jump): helpers.postdom.parent_loop_start not set."));
+                }
             }
             else if (k == "pragma")
             {
