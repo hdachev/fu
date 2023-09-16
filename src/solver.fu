@@ -120,13 +120,13 @@ pub fn solve(
         // Restores these events -
         restore: EventsSnap,
 
-        // Without climbing past loop_start.
-        loop_start: i32)
+        // Without climbing past parent_loop_start.
+        parent_loop_start: i32)
     {
-        if (!loop_start)
-            BUG("Events_restore: no loop_start, cant decide which events need to be survive");
+        if (!parent_loop_start)
+            BUG("Events_restore: no parent_loop_start, cant decide which events need to be survive");
 
-        if (loop_start == 1)
+        if (parent_loop_start == 1)
         {
             events.snap = restore;
             return;
@@ -135,13 +135,13 @@ pub fn solve(
         // Previously we just assigned events =
         fn Events_restore(ref dest: $T[], src: $T[])
         {
-            if (dest.len > loop_start)
-                dest.shrink(loop_start);
+            if (dest.len > parent_loop_start)
+                dest.shrink(parent_loop_start);
 
-            if (src.len > loop_start)
+            if (src.len > parent_loop_start)
             {
-                dest.grow(loop_start);
-                dest ~= src[loop_start :];
+                dest.grow(parent_loop_start);
+                dest ~= src[parent_loop_start :];
             }
         }
 
@@ -165,14 +165,14 @@ pub fn solve(
     struct Postdom
     {
         using snap:         PostdomSnap;
-        loop_start:         i32;
+        parent_loop_start:  i32;
     };
 
     fn Postdom_resetAtFnEnd(ref postdom: Postdom)
     {
-        postdom             = [];
-        postdom.loop_start  = 1;
-        postdom.exitPaths   = XP_EmptyReturn;
+        postdom                     = [];
+        postdom.parent_loop_start   = 1;
+        postdom.exitPaths           = XP_EmptyReturn;
     }
 
     fn branch(ref dest: Postdom, src: Postdom)
@@ -180,9 +180,9 @@ pub fn solve(
         for (fieldname i: PostdomSnap)
             dest.snap.i |= src.snap.i;
 
-        dest.loop_start = max(
-            dest.loop_start || BUG(),
-             src.loop_start || BUG());
+        dest.parent_loop_start = max(
+            dest.parent_loop_start || BUG(),
+             src.parent_loop_start || BUG());
     }
 
     struct Usage
@@ -2728,7 +2728,7 @@ pub fn solve(
                         return false;
                 }
 
-                return locid >= _current_fn.loop_start;
+                return locid >= _current_fn.parent_loop_start;
             }
 
             mut allTrue = true;
@@ -3065,7 +3065,7 @@ pub fn solve(
 
             // BCK Events_merge needs loop_start
             //////////////////////////////////////////
-            node._loop_start = _current_fn.loop_start;
+            node._loop_start = _current_fn.parent_loop_start;
             //////////////////////////////////////////
 
         }
@@ -3119,8 +3119,8 @@ pub fn solve(
 
             // MOVE ON LAST USE ////////////////////////////////////////////
             Breakable_begin(loop_PREVITER: true);
-            let loop_start0         = _current_fn.loop_start    || BUG();
-            _current_fn.loop_start  = node.helpers.locals_start || BUG();
+            let loop_start0                 = _current_fn.parent_loop_start || BUG();
+            _current_fn.parent_loop_start   = node.helpers.locals_start || BUG();
 
             mut var_usage0: Type[];
             swap(_current_fn.var_usage, var_usage0);
@@ -3166,9 +3166,9 @@ pub fn solve(
                 propagateType(pre_cond, t_proposition, :relax_mask);
 
             // MOVE ON LAST USE ////////////////////////////////////////////
-            _current_fn.loop_start  = loop_start0;
+            _current_fn.parent_loop_start  = loop_start0;
             Breakable_end(loop_PREVITER: true);
-            _current_fn.loop_start == loop_start0 || BUG();
+            _current_fn.parent_loop_start == loop_start0 || BUG();
 
             swap(_current_fn.var_usage, var_usage0);
 
@@ -3198,9 +3198,9 @@ pub fn solve(
         }
         else if (k == "call")
         {
-            //////////////////////////////////////////
-            node._loop_start = _current_fn.loop_start;
-            //////////////////////////////////////////
+            /////////////////////////////////////////////////
+            node._loop_start = _current_fn.parent_loop_start;
+            /////////////////////////////////////////////////
 
             let t = node.target;
             if (t.kind == "field")
@@ -10940,7 +10940,7 @@ pub fn solve(
             let e_Merge_AfterCons       = _current_fn.events.snap;
 
             _current_fn.events.Events_restore(e_Restore_AfterCond,
-                loop_start: node._loop_start);
+                parent_loop_start: node._loop_start);
             //////////////////////////////////////////////////////
 
             bck_node(items[2]);
@@ -11110,8 +11110,8 @@ pub fn solve(
                 //
                 if (k == "jump" && !_current_fn.TODO_FIX_defers)
                     _current_fn.events.Events_restore(
-                        [], :node.helpers.postdom.loop_start || BUG(
-                            "bck_node(jump): helpers.postdom.loop_start not set."));
+                        [], :node.helpers.postdom.parent_loop_start || BUG(
+                            "bck_node(jump): helpers.postdom.parent_loop_start not set."));
             }
             else if (k == "pragma")
             {
@@ -11565,7 +11565,7 @@ pub fn solve(
         _current_fn.fx_mask = [];
         _current_fn.relaxed = [];
 
-        _current_fn.loop_start == 1 || BUG("_current_fn.loop_start leak: " ~ _current_fn.loop_start);
+        _current_fn.parent_loop_start == 1 || BUG("_current_fn.loop_start leak.");
         Postdom_resetAtFnEnd(_current_fn);
 
         propagateType(node, node.type, relax_mask: RELAX_all);
