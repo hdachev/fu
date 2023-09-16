@@ -10344,6 +10344,8 @@ pub fn solve(
             if (!callsite.target.isLocal)
                 return;
 
+            // println("bck_trackRead " ~ target ~ " " ~ callsite.value);
+
             _here           = callsite.token;
             let target      = callsite.target.locid;
             let loop_start  = callsite._loop_start || BUG("bck_trackRead: loop_start not set on callsite.");
@@ -10351,32 +10353,28 @@ pub fn solve(
             TEST_varLifetime(callsite.type.lifetime, locid: target, staticOK: TODO_FIX_zeroes_static);
 
             // Writes invalidate subsequent reads.
+            if (events.invalidated_by.len > target)
             {
-                // println("bck_trackRead " ~ target ~ " " ~ callsite.value);
-
-                if (events.invalidated_by.len > target)
+                let u = events.invalidated_by[target];
+                if (u)
                 {
-                    let u = events.invalidated_by[target];
-                    if (u)
+                    if (AAR ? !RESOLVE_byAAR(read: target, writes: u, trySoft: true /* F_REF check inside */)
+                            : !RESOLVE_byMutvar(target))
                     {
-                        if (AAR ? !RESOLVE_byAAR(read: target, writes: u, trySoft: true /* F_REF check inside */)
-                                : !RESOLVE_byMutvar(target))
-                        {
-                            fail("Cannot access"
-                                ~ " " ~            target.nested ~ ", reference invalidated by write to"
-                                ~ " " ~ u.first.rw_target.nested ~ " at "
-                                ~ RWEvent_stack(u.first));
-                        }
-
-                        if (OPTI_bck)
-                            events.invalidated_by[target] = [];
+                        fail("Cannot access"
+                            ~ " " ~            target.nested ~ ", reference invalidated by write to"
+                            ~ " " ~ u.first.rw_target.nested ~ " at "
+                            ~ RWEvent_stack(u.first));
                     }
-                }
 
-                // Track reads in a loop.
-                if (loop_start && target < loop_start)
-                    events.used_in_a_loop.add(target);
+                    if (OPTI_bck)
+                        events.invalidated_by[target] = [];
+                }
             }
+
+            // Track reads in a loop.
+            if (target < loop_start)
+                events.used_in_a_loop.add(target);
         }
 
 
