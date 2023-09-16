@@ -5167,7 +5167,7 @@ pub fn solve(
                     }
 
                     // Pass.
-                    ref sig = n_fn.items;
+                    fn sig = n_fn.items;
                     {
                         let n_ret = branch[branch.len + FN_RET_BACK];
                         if (n_ret) sig[sig.len + FN_RET_BACK] = n_ret;
