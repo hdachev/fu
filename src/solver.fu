@@ -10908,9 +10908,13 @@ pub fn solve(
             for (mut i = 1; i < items.len; i++)
                 bck_node(items[i]);
 
-            _current_fn.events.used_in_a_loop
-                .shrink(node.helpers.postdom.parent_loop_start || BUG(
-                    "bck_loop: parent_loop_start not set."));
+            // Postdom.
+            let parent_loop_start =
+                node.helpers.postdom.parent_loop_start || BUG(
+                    "bck_loop: parent_loop_start not set.");
+
+            if (_current_fn.events.used_in_a_loop.len  > parent_loop_start)
+                _current_fn.events.used_in_a_loop.shrink(parent_loop_start);
         }
 
         fn bck_if(ref node: SolvedNode)
