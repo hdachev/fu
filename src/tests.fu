@@ -5984,6 +5984,42 @@ pub extern fn runTests()
         }
     `);
 
+    ZERO(`
+        struct Node { value: i32; children?: Node[] };
+
+        noinline fn used_in_a_preceding_nested_loop(ref n: Node)
+        {
+            ref first = n.children[0];
+
+            mut sum = 0;
+            for (mut i = 0; i < n.children.len; i++) {
+
+                for (shadow mut i = 0; i < n.children.len; i++)
+                    first.children ~= Node(i);
+
+                for (shadow mut i = 0; i < n.children.len; i++) {
+                    sum += n.children[i].value;
+
+                    if (sum & 1) {
+                        n.children ~= Node(i);
+
+                        <fail write to n 18:36+2 inval use of first 12:21+5 on next loop iter>
+                        break;          <pass/>
+                        return sum;     </fail>
+                    }
+                }
+            }
+
+            return sum;
+        }
+
+        fn main() {
+            mut n = Node(0, [ Node(2), Node(1) ]);
+            let sum = used_in_a_preceding_nested_loop(n);
+            return sum - 3;
+        }
+    `);
+
     // /Borrow checker
 
 
