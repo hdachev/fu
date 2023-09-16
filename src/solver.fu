@@ -2680,6 +2680,9 @@ pub fn solve(
                             err ~= "COW will break due to pre-existing mutref: "
                                     ~ explainWhichFn(t, fmt: FullContext);
 
+                            err ~= "\n\tBoth refer to: "
+                                    ~ explainWhichFn(nested(index), fmt: FullContext);
+
                             _here = here;
                             fail(err);
                         }
