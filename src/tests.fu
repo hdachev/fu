@@ -14687,6 +14687,37 @@ pub extern fn runTests()
         }
     `);
 
+    ZERO(`
+        fn Map(type K, type V) struct {
+            keys: K[];
+            vals: V[];
+        };
+
+        fn ref !<K, V>(using ref _: Map(K, V), key: K) {
+            for (mut i = 0; i < keys.len; i++)
+                if (keys[i] == key)
+                    return vals[i];
+
+            keys.push(key);
+            vals.push([]);
+            return vals[vals.len - 1];
+        }
+
+        struct Type { using vtype: i32 };
+
+        fn find_if_odd(ref map: Map(i32, Type), key: i32)
+            key & 1
+                ? map.ref(key)
+                : key & 2 && throw("never");
+
+        fn main() {
+            mut map: Map(i32, Type);
+            map.keys ~= 1;
+            map.vals ~= Type(2);
+            return find_if_odd(map, 1) - 2;
+        }
+    `);
+
     // /Relaxer.
 
 
