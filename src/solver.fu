@@ -226,9 +226,6 @@ pub fn solve(
         // The replacement for the callsites stuff.
         using relaxed?:     Usage;
 
-        // The new flow-on-jump idiom doesn't handle defers correctly.
-        TODO_FIX_defers?:   i32;
-
         // So we can pass the F_INLINE flag onto mustBecomeInline
         TODO_FIX_isInline?: bool;
 
@@ -3622,7 +3619,7 @@ pub fn solve(
 
             ref expr            = node.items.only;
 
-            if (!_current_fn.TODO_FIX_defers)
+            // Postdom.
             {
                 _current_fn.postdom = h.postdom || BUG(
                     "propagateType(jump): h.loop_start not available: #" ~ h.index);
@@ -3642,6 +3639,7 @@ pub fn solve(
                 }
             }
 
+            //
             let redundant       = kills && kills.index <= h.index;
             shadow let kills    = redundant ? kills : h;
 
@@ -3759,15 +3757,8 @@ pub fn solve(
                 h.kills = kills;
             }
 
-            //////////////////////
-            Breakable_begin();
-            defer Breakable_end();
-            //////////////////////
-
             ref items = node.items;
             {
-                mut TODO_FIX_defers = 0;
-
                 // Defers first - in reverse order of evaluation,
                 //  which is FORWARD order in the AST, hence the ++ here.
                 for (mut i = 0; i < items.len - 1; i++)
@@ -3777,8 +3768,6 @@ pub fn solve(
 
                     if (k == "defer")
                     {
-                        TODO_FIX_defers++;
-
                         ref expr = node.items.only;
                         propagateType(expr, :relax_mask, t_void);
 
@@ -3826,9 +3815,10 @@ pub fn solve(
                     }
                 }
 
-                ///////////////////////////////////////////////
-                _current_fn.TODO_FIX_defers += TODO_FIX_defers;
-                ///////////////////////////////////////////////
+                //////////////////////
+                Breakable_begin();
+                defer Breakable_end();
+                //////////////////////
 
                 // Tail item.
                 while (items)
@@ -3871,10 +3861,6 @@ pub fn solve(
                             items.splice(i, 1);
                     }
                 }
-
-                ///////////////////////////////////////////////
-                _current_fn.TODO_FIX_defers -= TODO_FIX_defers;
-                ///////////////////////////////////////////////
             }
 
             // TODO FIX args need extra iteration here.
