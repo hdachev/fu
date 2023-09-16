@@ -4,12 +4,6 @@ pub struct BitSet
     _data: u8[];
 };
 
-pub fn size(using _: BitSet)
-{
-    // WTF is this
-    return _data.len * 8;
-}
-
 pub fn clear(using _: &mut BitSet)
 {
     _data.clear();
@@ -30,6 +24,8 @@ pub fn clear(using _: &mut BitSet, start!idx: i32)
         let rem = idx - idx_flr;
         _data[bucket] &= ~(0xff.u8 << rem.u8);
     }
+
+    _shrink_to_fit();
 }
 
 pub fn add_once(using _: &mut BitSet, idx: int): bool
@@ -74,6 +70,16 @@ pub fn |=(using left: &mut BitSet, other: BitSet)
     return left;
 }
 
+fn _shrink_to_fit(using _: &mut BitSet)
+{
+    mut end = _data.len;
+    while (end --> 0)
+        if (_data[end])
+            break;
+
+    _data.shrink(end + 1);
+}
+
 pub fn rem(using _: &mut BitSet, other: BitSet)
 {
     mut N = other._data.len;
@@ -86,14 +92,7 @@ pub fn rem(using _: &mut BitSet, other: BitSet)
 
     // Shrink to fit.
     if (N == _data.len)
-    {
-        mut end = N;
-        while (end --> 0)
-            if (_data[end])
-                break;
-
-        _data.shrink(end + 1);
-    }
+        _shrink_to_fit();
 
     throw("NOT TESTED");
 }
@@ -132,14 +131,7 @@ pub fn rem(using _: &mut BitSet, idx: int)
             _data[bucket] &= ~mask;
 
             if (item == mask && _data.len == bucket + 1)
-            {
-                mut end = bucket;
-                while (end --> 0)
-                    if (_data[end])
-                        break;
-
-                _data.shrink(end + 1);
-            }
+                _shrink_to_fit();
 
             return true;
         }
