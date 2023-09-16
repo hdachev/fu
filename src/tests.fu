@@ -4735,7 +4735,7 @@ pub extern fn runTests()
     `);
 
     ZERO(`
-        <fail arg invalidated by subseq eval>
+        <fail arg a 27:42+1 inval by subseq write injected arg out 27:48+1 via grow 8:21+1>
         nocopy                 <pass/></fail>
         struct Type       { canon: string; };
         struct SolvedNode {  type: Type;   };
