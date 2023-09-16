@@ -8364,10 +8364,13 @@ pub fn solve(
                 return super;
         }
 
+        let b_T = clear_vfacts(b.type);
+        let a_T = clear_vfacts(a.type);
+
         :TRY_RETYPE
         {
-            let aRetype = tryRetyping(a, b.type);
-            let bRetype = tryRetyping(b, a.type);
+            let aRetype = tryRetyping(a, b_T);
+            let bRetype = tryRetyping(b, a_T);
 
             if (aRetype)
             {
@@ -8397,8 +8400,8 @@ pub fn solve(
 
         :TRY_CONVERT
         {
-            let aConv = tryConvert(a, expect: b.type, local_scope: true);
-            let bConv = tryConvert(b, expect: a.type, local_scope: true);
+            let aConv = tryConvert(a, expect: b_T, local_scope: true);
+            let bConv = tryConvert(b, expect: a_T, local_scope: true);
 
             if (aConv)
             {
@@ -8417,13 +8420,13 @@ pub fn solve(
                 }
 
                 applyConversion(a, aConv);
-                return b.type;
+                return type_trySuper(a, b) || BUG("convertToSuper: aConv super");
             }
 
             if (bConv)
             {
                 applyConversion(b, bConv);
-                return a.type;
+                return type_trySuper(a, b) || BUG("convertToSuper: bConv super");
             }
         }
 
