@@ -65,7 +65,6 @@ pub fn solve(
 
     struct RWEvent          { rw_target: i32; token: TokenIdx; position?: i32 };
 
-    struct ReadID           { id: i32 };
     struct WriteID          { id: i32 };
 
     struct EventsSnap
@@ -79,7 +78,7 @@ pub fn solve(
         using snap:         EventsSnap;
 
         // In a loop, reads forbid subsequent writes -
-        used_in_a_loop:     ReadID[];
+        used_in_a_loop:     bitset::BitSet;
 
         // COW validation, indirect copies behind callsites.
         cows_inside:        COWInside[];
@@ -88,7 +87,6 @@ pub fn solve(
         //  I think unordered access should be super strict,
         //   everything that's not disjoint must error out.
         //
-        reads:              RWEvent[];
         writes:             RWEvent[];
     };
 
@@ -10022,9 +10020,6 @@ pub fn solve(
         using fn RWEvent(write: WriteID)
             _current_fn.events.writes[write.id - 1];
 
-        using fn RWEvent(read: ReadID)
-            _current_fn.events.reads[read.id - 1];
-
         fn RESOLVE_byAAR(writes!: WriteID[], read!: i32, trySoft!: bool)
         {
             for (mut i = 0; i < writes.len; i++)
@@ -10171,24 +10166,37 @@ pub fn solve(
 
         fn SLOW_find(test): SolvedNode
         {
-            mut result: SolvedNode;
-
             SLOW_traverse(root): |node|
                 if (test(:node))
-                    result = node;
+                    return node;
 
-            return result;
+            return [];
         }
 
-        fn SLOW_findByReadID(read: ReadID)
+        fn SLOW_findByReadID(read!: i32, loop_start!: i32)
         {
-            let r = RWEvent(read);
+            fn checkLoopStart(_loop_start: i32)
+            {
+                if (_loop_start <= loop_start)
+                    return _loop_start == loop_start;
+
+                for (mut i = 0; i < _helpers_data.len; i++)
+                {
+                    let h = _helpers_data[i];
+                    if (h.locals_start == _loop_start)
+                        return checkLoopStart(
+                            h.postdom.parent_loop_start);
+                }
+
+                return false;
+            }
+
             return SLOW_find(|node|
                 node.kind == "call" &&
                 node.target.isLocal &&
-                node.target.locid == r.rw_target &&
-                node.token == r.token)
-                    || BUG("Cannot find ReadID(" ~ read.id ~ ").");
+                node.target.locid == read &&
+                checkLoopStart(:node._loop_start))
+                    || BUG("Cannot find read(" ~ nested(read) ~ ") in loop(" ~ loop_start ~ ").");
         }
 
         fn SLOW_findByWriteID(write: WriteID)
@@ -10365,16 +10373,9 @@ pub fn solve(
                     }
                 }
 
-                // Order of eval.
-                //  OPTIMIZABLE we don't need the read nodeidx here,
-                //   we only need the target int.
-                //
-                events.reads ~= RWEvent(target, :callsite.token);
-                let readID = ReadID(events.reads.len);
-
                 // Track reads in a loop.
                 if (loop_start && target < loop_start)
-                    events.used_in_a_loop.grow_if_oob(target) ||= readID;
+                    events.used_in_a_loop.add(target);
             }
         }
 
@@ -10386,7 +10387,7 @@ pub fn solve(
             _here           = callsite.token;
 
             let loop_start  = callsite._loop_start || BUG("bck_trackWrites: _loop_start not set on callsite.");
-            let OPTI_isLoop = loop_start != 1 && events.used_in_a_loop.len > 0;
+            let OPTI_isLoop = loop_start != 1 && events.used_in_a_loop;
 
             //
             for (mut i = 0; i < regions.len; i++)
@@ -10410,8 +10411,7 @@ pub fn solve(
                     let read = invalidates[i];
                     if (read < loop_start)
                     {
-                        let readID  = events.used_in_a_loop.unless_oob(read);
-                        if (readID)
+                        if (events.used_in_a_loop.has(read))
                         {
                             if (AAR)
                                 RESOLVE_byAAR(:read, write: target, trySoft: true /* F_REF check inside */);
@@ -10420,7 +10420,7 @@ pub fn solve(
                                     "Write to " ~ target.nested
                                         ~ " at call to " ~ callsite.target
                                         ~ " invalidates the use of " ~ read.nested ~ " at "
-                                        ~ SLOW_findByReadID(readID).token.addr_and_snippet
+                                        ~ SLOW_findByReadID(:read, :loop_start).token.addr_and_snippet
                                         ~ "\n\t... on next loop iteration.\n\n\tWritten"
                                         ~ (positions && qSTACK(callsite.target, :position)));
                         }
@@ -10905,8 +10905,7 @@ pub fn solve(
                 node.helpers.postdom.parent_loop_start || BUG(
                     "bck_loop: parent_loop_start not set.");
 
-            if (_current_fn.events.used_in_a_loop.len  > parent_loop_start)
-                _current_fn.events.used_in_a_loop.shrink(parent_loop_start);
+            _current_fn.events.used_in_a_loop.clear(start: parent_loop_start);
         }
 
         fn bck_if(ref node: SolvedNode)
