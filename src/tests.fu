@@ -12137,7 +12137,7 @@ pub extern fn runTests()
     `);
 
 
-    // First stab at higher-order functions.
+    // Higher-order functions.
 
     ZERO(`
         let x = { mut z = 0; z++; z };
@@ -12270,6 +12270,22 @@ pub extern fn runTests()
             return hey(1) * hey(0);
         }
     `);
+
+    TODO_args(currently: "expected op got id 2:41", `
+        fn check(a, b, compare! = infix fn <>)
+            compare(a, b);
+
+        fn main() check(0, 0);
+    `);
+
+    TODO_args(currently: "BUG about to implicit-bind a non-implicit 5:24+1", `
+        fn check(a, b, compare! = |aa, bb| aa <> bb)
+            compare(a, b);
+
+        fn main() check(0, 0);
+    `);
+
+    // /Higher-order functions.
 
 
     // Conversion functions.
