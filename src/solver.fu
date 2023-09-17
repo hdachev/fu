@@ -3966,6 +3966,10 @@ pub fn solve(
         }
         else if (k == "pragma")
         {
+            /////////////////////////////////////////////////
+            node._loop_start = _current_fn.parent_loop_start;
+            /////////////////////////////////////////////////
+
             // Noop - but do track variable use
             //  so we don't emit warnings
             //   and so we don't overrelax.
@@ -10223,35 +10227,45 @@ pub fn solve(
 
         fn RWEvent_stack(write: WriteID)
         {
-            let node = SLOW_find(|node|
-               (node.kind == "call" || node.kind == "pragma") &&
-                node.token == write.token);
+            let locid = write.locid;
 
-            if (!node)
-                return "\n\tCOMPILER BUG: RWEvent_stack could not find write to " ~ nested(write.locid);
-            if (node.kind != "call")
-                return "\n\tVia " ~ node.kind.str.qKW;
-
-            mut stack: string;
+            SLOW_traverse(root): |node|
             {
-                let lifetime = nested(write.locid).type.lifetime;
-                if (lifetime) for (mut i = 0; i < node.items.len; i++)
+                if (node.token != write.token)
+                    continue;
+                if (node.kind != "call" && node.kind != "pragma")
+                    continue;
+
+                if (node.kind == "call")
                 {
-                    let arg = node.items[i];
-                    if (arg.lifetime.Lifetime_inter(lifetime))
+                    for (mut i = 0; i < node.items.len; i++)
                     {
-                        let host_arg = node.target.args[i];
-                        if (host_arg.flags & F_WRITTEN_TO)
+                        let arg = node.items[i];
+                        if (arg.lifetime.Lifetime_has(:locid))
                         {
-                            stack = qSTACK(node.target, position: i);
-                            break;
+                            let host_arg = node.target.args[i];
+                            if (host_arg.flags & F_WRITTEN_TO)
+                                return node.token.addr_and_snippet
+                                     ~ "\n\tAt call to " ~ node.target
+                                     ~ qSTACK(node.target, position: i);
                         }
                     }
                 }
+                else if (node.kind == "pragma")
+                {
+                    for (mut i = 0; i < node.items.len; i++)
+                    {
+                        let arg = node.items[i];
+                        if (arg.is_mutref && arg.lifetime.Lifetime_has(:locid))
+                            return arg.token.addr_and_snippet
+                                 ~ "\n\tvia pragma " ~ node.value.qID;
+                    }
+                }
+
+                continue;
             }
 
-            let o = GET(node.target);
-            return node.token.addr_and_snippet ~ "\n\tAt call to " ~ o.name.qID ~ stack;
+            return "\n\n\tCOMPILER BUG: RWEvent_stack could not find write to " ~ nested(write.locid);
         }
 
 
@@ -10385,11 +10399,13 @@ pub fn solve(
 
         // Writes.
 
-        fn bck_trackWrites(callsite: SolvedNode, regions: Region[], positions!: i32[])
+        fn bck_trackWrites(callOrPragma: SolvedNode, regions: Region[], positions!: i32[])
         {
-            _here           = callsite.token;
+            _here = callOrPragma.kind == "pragma"
+                ? callOrPragma.items[positions.only].token
+                : callOrPragma.token;
 
-            let loop_start  = callsite._loop_start || BUG("bck_trackWrites: _loop_start not set on callsite.");
+            let loop_start  = callOrPragma._loop_start || BUG("bck_trackWrites: _loop_start not set on callsite.");
             let OPTI_isLoop = loop_start != 1 && !!events.used_in_a_loop;
             let OPTI_hasPRA = !!events.preceding_ref_args;
 
@@ -10422,17 +10438,17 @@ pub fn solve(
                             else
                                 RESOLVE_byMutvar(read) || fail(
                                     "Write to " ~ target.nested
-                                        ~ " at call to " ~ callsite.target
+                                        ~ (callOrPragma.kind == "call" && " at call to " ~ callOrPragma.target)
                                         ~ " invalidates the use of " ~ read.nested ~ " at "
                                         ~ SLOW_findByReadID(:read, :loop_start).token.addr_and_snippet
                                         ~ "\n\t... on next loop iteration.\n\n\tWritten"
-                                        ~ (positions && qSTACK(callsite.target, :position)));
+                                        ~ (callOrPragma.kind == "call" && qSTACK(callOrPragma.target, :position)));
                         }
                     }
                 }
 
                 // Order of eval.
-                let writeID = WriteID(locid: target, token: callsite.token);
+                let writeID = WriteID(locid: target, token: callOrPragma.token);
 
                 // TODO FIX clean it up, previously in bck_call, shoehorned here.
                 if (OPTI_hasPRA)
@@ -10900,7 +10916,7 @@ pub fn solve(
             if (bck_writes)
             {
                 bck_positions.len == bck_writes.len || BUG("bck_position.len is off");
-                bck_trackWrites(:callsite, bck_writes, positions: bck_positions);
+                bck_trackWrites(callsite, bck_writes, positions: bck_positions);
             }
         }
 
@@ -11133,8 +11149,7 @@ pub fn solve(
                 {
                     let item = node.items[i];
                     if (item.is_mutref)
-                        bck_trackWrites(item, item.lifetime.uni0n,
-                            positions: []);
+                        bck_trackWrites(node, item.lifetime.uni0n, positions: [ i ]);
                 }
             }
             else if (node.items)
