@@ -10071,7 +10071,15 @@ pub fn solve(
 
         // Inserting a temporary.
 
-        fn RESOLVE_byTempCopy(ref callsite: SolvedNode, position: i32)
+        fn RESOLVE_byTempCopy(ref callsite!: SolvedNode, position: i32)
+        {
+            let target      = callsite.target;
+            ref arg         = callsite.items[position];
+
+            return RESOLVE_byTempCopy(:arg, :target, :position);
+        }
+
+        fn RESOLVE_byTempCopy(ref arg!: SolvedNode, target!: Target, position: i32)
         {
             BCK || BUG();
 
@@ -10092,10 +10100,8 @@ pub fn solve(
             }
 
             // Back here.
-            let target      = callsite.target;
             let host_args   = target.args;
             let host_arg    = host_args[position];
-            let arg         = callsite.items[position];
 
             // No go if arg is nocopy.
             if (!arg.is_rx_copy)
@@ -10121,8 +10127,8 @@ pub fn solve(
                 return false;
 
             return RESOLVE_byTempCopy(
-                node: callsite.items[position],
-                slot:      host_args[position].type);
+                node: arg,
+                slot: host_args[position].type);
         }
 
 
