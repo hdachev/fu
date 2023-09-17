@@ -6047,6 +6047,55 @@ pub extern fn runTests()
         }
     `);
 
+    // I was trying to test the __preceding_ref_arg stuff,
+    //  but the concat_self_ret_last strikes me
+    //   as something that should actually work.
+    //
+    SKETCH(currently: "arr 13:19+3 inval by subseq 13:44+1 concat_self_ret_last", `
+        fn hello(ref arr: i32[], ref item: i32)
+            arr ~= ++item;
+
+        fn ret_last(ref arr: i32[])
+            arr[arr.len - 1];
+
+        fn concat_self_ret_last(ref arr: i32[])
+            ret_last(arr ~= arr)
+
+        fn main() {
+            mut arr = [ 1, 2, 3 ];
+            hello(arr, concat_self_ret_last(arr));
+            return ret_last(arr) - 4;
+        }
+    `);
+
+    ZERO(`
+        fn Last(ref arr: i32[])
+            arr[arr.len - 1];
+
+        fn Push(ref arr: i32[]) {
+            arr.push([]);
+            return arr.Last;
+        }
+
+        fn Assign(ref b: i32, ref into: i32)
+            into = ++b;
+
+        fn main() {
+            mut arr = [ 1, 2, 3 ];
+
+            <fail write to arr 21:43+1 inval use b 21:30+1 next loop iter>
+            ref <pass/>
+            fn  </fail> b = arr.Last;
+
+            for (mut i = 0; i < 10; i++) {
+                mut tmp: i32;
+                Assign(tmp = b, into: Push(arr));
+            }
+
+            return arr.Last - 13;
+        }
+    `);
+
     // /Borrow checker
 
 
