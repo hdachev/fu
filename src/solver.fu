@@ -3300,8 +3300,7 @@ pub fn solve(
                     // We'll only attempt to relax arguments whose lifetimes appear in the return value.
                     //  There's this other thing, perhaps we only need to relax a single such argument?
                     //
-                    if (t.type.lifetime.Lifetime_some(
-                        |isArgIdx, argidx| isArgIdx && argidx == i))
+                    if (t.type.lifetime.Lifetime_has(argidx: i))
                     {
                         // TODO fix this relaxer can't scale up to q_USAGE,
                         //  we gotta replace it with the backwards design.
@@ -8845,7 +8844,7 @@ pub fn solve(
 
                 let arg = callsite.items[i];
                 let unwound = Lifetime_unwind(arg.type.lifetime);
-                if !(unwound.Lifetime_some(|locid!r| r == locid))
+                if !(unwound.Lifetime_has(:locid))
                     continue;
 
                 let peek = qSTACK(callsite.target, position: i, :seen, :query);
@@ -9007,7 +9006,7 @@ pub fn solve(
                         |cow| cow.argTarget == host_arg.target.locid
                                && cow.token == cow_inside)
                      && Lifetime_unwind(callsite.items[i].lifetime)
-                            .Lifetime_some(|locid!r| r == locid))
+                            .Lifetime_has(:locid))
                 {
                     let peek = qSTACK_cow_inside(
                         callsite.target, callsite.target.solved,
@@ -10134,8 +10133,8 @@ pub fn solve(
             // Re: m_and_c_cant_alias_002 test:
             //  We don't want to return a reference to the temporary,
             //   so for now we just forbid this.
-            let isReturned  = target.type.lifetime.Lifetime_some(
-                |isArgIdx, argidx| isArgIdx && argidx == position);
+            let isReturned = target.type.lifetime
+                            .Lifetime_has(argidx: position);
 
             if (isReturned)
                 return false;

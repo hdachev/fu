@@ -227,6 +227,14 @@ pub fn Lifetime_replace(ref lifetime: Lifetime,
     return true;
 }
 
+pub fn Lifetime_has(lifetime: Lifetime, locid!search: i32)
+    lifetime.Lifetime_some(
+        |locid| locid == search);
+
+pub fn Lifetime_has(lifetime: Lifetime, argidx!search: i32)
+    lifetime.Lifetime_some(
+        |isArgIdx, argidx| isArgIdx && argidx == search);
+
 
 //
 
