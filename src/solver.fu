@@ -63,9 +63,11 @@ pub fn solve(
         message:            string;
     };
 
-    struct RWEvent          { rw_target: i32; token: TokenIdx; position?: i32 };
-
-    struct WriteID          { id: i32 };
+    struct WriteID
+    {
+        locid:              i32;
+        token:              TokenIdx;
+    };
 
     struct EventsSnap
     {
@@ -97,12 +99,6 @@ pub fn solve(
 
         // COW validation, indirect copies behind callsites.
         cows_inside:        COWInside[];
-
-        // The read/write journal, for checking order of eval.
-        //  I think unordered access should be super strict,
-        //   everything that's not disjoint must error out.
-        //
-        writes:             RWEvent[];
     };
 
     fn clear(ref events: Events)
@@ -10038,13 +10034,10 @@ pub fn solve(
 
         //
 
-        using fn RWEvent(write: WriteID)
-            _current_fn.events.writes[write.id - 1];
-
         fn RESOLVE_byAAR(writes!: WriteID[], read!: i32, trySoft!: bool)
         {
             for (mut i = 0; i < writes.len; i++)
-                RESOLVE_byAAR(write: writes[i].rw_target, :read, :trySoft);
+                RESOLVE_byAAR(write: writes[i].locid, :read, :trySoft);
 
             return true;
         }
@@ -10226,37 +10219,23 @@ pub fn solve(
                     || BUG("Cannot find read(" ~ nested(read) ~ ") in loop(" ~ loop_start ~ ").");
         }
 
-        fn SLOW_findByWriteID(write: WriteID)
-        {
-            // TODO FIX: position -1 comes from pragmas,
-            //  and the node could be anything, it's not a biggie
-            //   but it's what makes for the sloppier position < 0 stuff.
-            //
-            let w = RWEvent(write);
-            return SLOW_find(|node|
-               (node.kind == "call" || w.position < 0) &&
-                node.items.len > w.position &&
-                node.token == w.token &&
-            {
-                let arg = w.position < 0 ? node : node.items[w.position];
-                arg.is_mutref && arg.lifetime
-                    .Lifetime_some(|locid| locid == w.rw_target)
-            })
-                    || BUG("Cannot find WriteID(" ~ write.id ~ ").");
-        }
-
 
         //
 
         fn RWEvent_stack(write: WriteID)
         {
-            let node = SLOW_findByWriteID(write);
+            let node = SLOW_find(|node|
+               (node.kind == "call" || node.kind == "pragma") &&
+                node.token == write.token);
+
+            if (!node)
+                return "\n\tCOMPILER BUG: RWEvent_stack could not find write to " ~ nested(write.locid);
             if (node.kind != "call")
                 return "\n\tVia " ~ node.kind.str.qKW;
 
             mut stack: string;
             {
-                let lifetime = nested(write.rw_target).type.lifetime;
+                let lifetime = nested(write.locid).type.lifetime;
                 if (lifetime) for (mut i = 0; i < node.items.len; i++)
                 {
                     let arg = node.items[i];
@@ -10389,8 +10368,8 @@ pub fn solve(
                             : !RESOLVE_byMutvar(target))
                     {
                         fail("Cannot access"
-                            ~ " " ~            target.nested ~ ", reference invalidated by write to"
-                            ~ " " ~ u.first.rw_target.nested ~ " at "
+                            ~ " " ~        target.nested ~ ", reference invalidated by write to"
+                            ~ " " ~ u.first.locid.nested ~ " at "
                             ~ RWEvent_stack(u.first));
                     }
 
@@ -10454,8 +10433,7 @@ pub fn solve(
                 }
 
                 // Order of eval.
-                events.writes ~= RWEvent(target, :callsite.token, :position);
-                let writeID = WriteID(events.writes.len);
+                let writeID = WriteID(locid: target, token: callsite.token);
 
                 // TODO FIX clean it up, previously in bck_call, shoehorned here.
                 if (OPTI_hasPRA)
