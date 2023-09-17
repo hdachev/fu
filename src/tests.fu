@@ -5083,7 +5083,7 @@ pub extern fn runTests()
         }
     `);
 
-    TODO_unique(currently: "both alias 3:29+1", `
+    TODO_unique(currently: "arg a 3:21+1 inval by subseq write arr 3:29+1", `
         fn Swap(ref arr: i32[], x: i32, y: i32)
             swap(arr[x], arr[y]);
 
