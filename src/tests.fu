@@ -5693,6 +5693,27 @@ pub extern fn runTests()
     `);
 
     ZERO(`
+        struct XY { x: i32; y: i32 };
+
+        fn test(ref xy: XY, ref zw: XY) {
+            <fail cannot access ref x 12:20+1 inval by write xy 9:21+2>
+            ref x = xy.x;                                   <pass/>
+            fn  x = xy.x;                                   </fail>
+
+            pragma emit(\`
+                \`xy || zw\`.x++;
+            \`);
+
+            return x;
+        }
+
+        fn main() {
+            mut xy: XY;
+            return test(xy, xy) - 1;
+        }
+    `);
+
+    ZERO(`
         struct Ext { ext: Ext[] };
 
         fn EXT(implicit ext: Ext[], a: i32) ext[a];
