@@ -65,8 +65,7 @@ pub fn solve(
 
     struct WriteID
     {
-        locid:              i32;
-        token:              TokenIdx;
+        _locid_and_hash:    u32;
     };
 
     struct EventsSnap
@@ -9950,6 +9949,21 @@ pub fn solve(
 
         //
 
+        fn tokenHash(token: TokenIdx)
+            (token.modid.u32 * 9973 ^ token.tokidx.u32) << 20;
+
+        fn WriteID(locid: i32, token: TokenIdx)
+            WriteID(locid.u32 | (BCK && token.tokenHash));
+
+        fn locid(w: WriteID)
+            (w._locid_and_hash & 0xfffff).i32;
+
+        fn tokenHash(w: WriteID)
+            w._locid_and_hash & 0xfff00000;
+
+
+        //
+
         fn RESOLVE_byAAR(read!: i32, write!: i32, trySoft!: bool)
         {
             AAR || BUG();
@@ -10231,7 +10245,7 @@ pub fn solve(
 
             SLOW_traverse(root): |node|
             {
-                if (node.token != write.token)
+                if (node.token.tokenHash != write.tokenHash)
                     continue;
                 if (node.kind != "call" && node.kind != "pragma")
                     continue;
@@ -10553,8 +10567,23 @@ pub fn solve(
                 for (shadow mut i = 0; i < invalidates.len; i++)
                 {
                     ref set = events.invalidated_by.grow_if_oob(invalidates[i]);
-                    if (!OPTI_bck || AAR || !set)
-                        set ~= writeID;
+                    if (BCK)
+                    {
+                        // BCK only needs a single event to do its thing.
+                        if (!set)
+                            set ~= writeID;
+                    }
+                    else
+                    {
+                        // AAR needs each unique target,
+                        //  we don't hash the tokens so set::add should do it.
+                        //
+                        if (SELF_TEST)
+                            writeID._locid_and_hash.i32 == target || BUG(
+                                "AAR: set::add wont dedupe");
+
+                        set.set::add(writeID);
+                    }
                 }
             }
         }
