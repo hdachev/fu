@@ -73,12 +73,27 @@ pub fn solve(
         invalidated_by:     WriteID[][];
     };
 
+    struct PrecedingRefArg
+    {
+        // Callsite info.
+        callsite_token:     TokenIdx;
+        target:             Target;
+        r:                  i32;
+        w:                  i32;
+
+        // Argument binding.
+        arg:                SolvedNode;
+    };
+
     struct Events
     {
         using snap:         EventsSnap;
 
         // In a loop, reads forbid subsequent writes -
         used_in_a_loop:     bitset::BitSet;
+
+        // Previously bound reference arguments at currently checked callsites -
+        preceding_ref_args: PrecedingRefArg[];
 
         // COW validation, indirect copies behind callsites.
         cows_inside:        COWInside[];
@@ -218,7 +233,7 @@ pub fn solve(
         using flow?:        Flow;
 
         using effects?:     Effects;
-        events?:            Events;
+        using events?:      Events;
         autoshadow_ok!:     i32;
 
         // The replacement for the callsites stuff.
@@ -8776,6 +8791,12 @@ pub fn solve(
                 : node;
             // INDIRECTION !!!!
 
+            // INDIRECTION !!!!
+            shadow let node = node.kind == "__preceding_ref_arg"
+                ? _current_fn.preceding_ref_args[node.helpers.index].arg
+                : node;
+            // INDIRECTION !!!!
+
             visit(node);
 
             for (mut i = node.items.len; i --> 0; )
@@ -10391,7 +10412,7 @@ pub fn solve(
             _here           = callsite.token;
 
             let loop_start  = callsite._loop_start || BUG("bck_trackWrites: _loop_start not set on callsite.");
-            let OPTI_isLoop = loop_start != 1 && events.used_in_a_loop;
+            let OPTI_isLoop = loop_start != 1 && !!events.used_in_a_loop;
 
             //
             for (mut i = 0; i < regions.len; i++)
@@ -10527,19 +10548,72 @@ pub fn solve(
             {
                 shadow lax mut ooe_write0 = ooe_write0;
 
-                argsForward(:RTL, :host_args, |i, seqIdx|
+                let pra_len0 = _current_fn.preceding_ref_args.len;
+
+                mut pra_first = -1;
+
+                argsForward(:RTL, :host_args, |i, seqIdx, host_arg, ooe_isLast|
                 {
                     ooe_argIdx ~= i;
 
+                    // We keep a current .w position on
+                    //  the first PrecedingRefArg we emit,
+                    //   we pick those up when checking PRAs,
+                    //    and use them to emit a nicer error message.
                     //
-                    bck_node(args[i]);
+                    // The .w is the index of the argument
+                    //  whose evaluation results in a write,
+                    //   == the one we're running bck_node on.
+                    //
+                    if (pra_first >= 0)
+                        _current_fn.preceding_ref_args[pra_first]
+                            .w = i;
+
+                    //
+                    ref arg = args[i];
+                    bck_node(arg);
 
                     let w1 = _current_fn.events.writes.len;
                     if (w1 > ooe_write0)
                         ooe_writes.grow_oob(seqIdx, fill: ooe_write0) = w1;
 
                     ooe_write0 = w1;
+
+                    if (!ooe_isLast && arg.is_ref && host_arg.is_ref)
+                    {
+                        mut pra: SolvedNode;
+                        pra.kind = "__preceding_ref_arg";
+
+                        let pra_index = _current_fn.preceding_ref_args.len;
+                        pra.helpers.index = pra_index;
+
+                        if (pra_first < 0)
+                            pra_first = pra_index;
+
+                        swap(pra, arg);
+
+                        _current_fn.preceding_ref_args ~= PrecedingRefArg(
+                            callsite_token: callsite.token,
+                            :target, r: i, w: -1, arg: pra);
+                    }
                 });
+
+                for (mut i = 0; i < args.len; i++)
+                {
+                    ref arg = args[i];
+                    if (arg.kind == "__preceding_ref_arg")
+                    {
+                        ref pra = _current_fn.preceding_ref_args[arg.helpers.index];
+
+                        if (SELF_TEST)
+                            pra.target == target && pra.r == i || BUG(
+                                "preceding_ref_args got messed up");
+
+                        swap(arg, pra.arg);
+                    }
+                }
+
+                _current_fn.preceding_ref_args.shrink(pra_len0);
             }
             ///////////////////////////////////////////////
 

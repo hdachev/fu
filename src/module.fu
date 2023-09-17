@@ -371,7 +371,8 @@ fn argsForward(lax RTL: bool, host_args: [Argument], fn,
             }
 
             if (seqIdx_start <= seqIdx)
-                fn(:i, host_arg?: host_arg, seqIdx?: seqIdx);
+                fn(:i, host_arg?: host_arg, seqIdx?: seqIdx,
+                     ooe_isLast?: seqIdx == host_args.len - 1);
 
             seqIdx++;
         }

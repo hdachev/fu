@@ -102,6 +102,7 @@ enum kind
 
     __relaxed
     __convert
+    __preceding_ref_arg
 
 
     // Scope: overload types.
