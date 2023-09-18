@@ -10434,18 +10434,23 @@ pub fn solve(
 
         // Writes.
 
-        fn bck_trackWrites(callOrPragma: SolvedNode, regions: Region[])
+        fn bck_trackWrites(callOrPragma: SolvedNode, lifetime: Lifetime)
         {
             let loop_start  = callOrPragma._loop_start || BUG("bck_trackWrites: _loop_start not set on callsite.");
             let OPTI_isLoop = loop_start != 1 && !!events.used_in_a_loop;
             let OPTI_hasPRA = !!events.preceding_ref_args;
 
             //
-            for (mut i = 0; i < regions.len; i++)
+            lifetime.Lifetime_each: |locid!write|
             {
-                let write       = Region_asLocal(regions[i]);
                 if (!write)
+                {
+                    // TODO FIX - we're getting weird stuff here,
+                    //  probably statics from arr[i] Lifetime_makeShared.
+                    //
+                    // BUG("bck_trackWrites: Non-local region.");
                     continue;
+                }
 
                 // println("bck_trackWrite " ~ target ~ " " ~ callsite.value);
 
@@ -10730,7 +10735,7 @@ pub fn solve(
             ///////////////////////////////////////////////
 
             // BORROWCK ////////////////
-            mut bck_writes: Region[];
+            mut bck_writes: Lifetime;
 
             mut mutref_first    = -1;
             mut mutref_last     = -1;
@@ -10942,7 +10947,7 @@ pub fn solve(
                             host_arg0.is_mutref || BUG(host_arg0.name.human.qID ~ ": host_arg0.written but !host_arg0.is_mutref");
                             arg0.is_mutref      || BUG(host_arg0.name.human.qID ~ ": host_arg0.written but !arg.is_mutref");
 
-                            bck_writes.set::add(arg0.lifetime.uni0n);
+                            bck_writes.Lifetime_add(arg0.lifetime);
                         }
                     }
                 }
@@ -11200,7 +11205,7 @@ pub fn solve(
                     {
                         _here = item.token;
 
-                        bck_trackWrites(node, item.lifetime.uni0n);
+                        bck_trackWrites(node, item.lifetime);
                     }
                 }
             }

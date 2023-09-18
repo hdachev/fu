@@ -235,9 +235,10 @@ pub fn Lifetime_replace(ref lifetime: Lifetime,
 }
 
 pub fn Lifetime_add(ref lifetime: Lifetime, locid!: i32)
-{
     lifetime.uni0n.set::add(Region_fromLocal(locid));
-}
+
+pub fn Lifetime_add(ref a: Lifetime, b: Lifetime)
+    a.uni0n.set::add(b.uni0n);
 
 pub fn Lifetime_has(lifetime: Lifetime, locid!search: i32)
     lifetime.Lifetime_some(
