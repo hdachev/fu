@@ -63,6 +63,10 @@ pub fn Region_asLocal(region: Region) {
 }
 
 pub fn Region_fromLocal(index: i32) {
+    if (SELF_TEST)
+        index > 0 && index < 1000001 || BUG(
+            "Region_fromLocal: !(0 < local < 1000001)");
+
     return Region(_regpack: (index.u32 << 12));
 }
 
@@ -86,6 +90,9 @@ pub fn Lifetime_diff(from: Lifetime, remove: Lifetime): Lifetime =
 
 pub fn Lifetime_makeShared(lifetime: Lifetime): Lifetime =
     Lifetime_union(lifetime, Lifetime_static);
+
+pub fn Lifetime_from(locid!: i32): Lifetime =
+    Lifetime(uni0n: [ Region_fromLocal(locid) ]);
 
 
 //

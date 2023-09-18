@@ -908,10 +908,7 @@ pub fn solve(
         // Local?
         let locid = target.locid;
         if (locid)
-        {
-            let region = Region_fromLocal(locid);
-            return Lifetime(uni0n: [ region ]);
-        }
+            return Lifetime_from(:locid);
 
         // Else static.
         return Lifetime_static();
@@ -7489,7 +7486,14 @@ pub fn solve(
         //   so we don't have to deal with them all over the place like this
         //
         if (isArg)
+        {
+            // TODO FIX seeing Lifetime_temporaries here,
+            //  these just got real messy.
+            if (out.type.isAddrOfFn)
+                out.type = out.type.clear_refs();
+
             return out;
+        }
 
         return createEmpty();
     }
