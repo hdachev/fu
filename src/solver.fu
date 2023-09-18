@@ -10057,14 +10057,11 @@ pub fn solve(
             return true; // AAR always succeeds.
         }
 
-        fn RESOLVE_byAAR(write!: i32, reads!: Region[], trySoft!: bool)
+        fn RESOLVE_byAAR(write!: i32, reads!: Lifetime, trySoft!: bool)
         {
-            for (mut r = 0; r < reads.len; r++)
-            {
-                let read = Region_asLocal(reads[r]);
+            reads.Lifetime_each: |locid!read|
                 if (read && read != write)
                     RESOLVE_byAAR(:read, :write, :trySoft);
-            }
 
             return true;
         }

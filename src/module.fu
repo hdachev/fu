@@ -313,7 +313,7 @@ struct Type
     vfacts?:        VFacts;
 };
 
-struct Lifetime { using uni0n!: Region[]; };
+struct Lifetime { uni0n!: Region[]; };
 
 struct Region { _regpack!: u32; };
 
