@@ -1,0 +1,222 @@
+import module;
+import fail;
+import helpers;
+
+
+//
+
+let Region_TEMP     = Region(_regpack: 0xfffff000);
+let Region_STATIC   = Region(_regpack: 0x00000fff);
+
+fn Region_isTemp(region: Region) {
+    return region == Region_TEMP;
+}
+
+fn Region_isStatic(region: Region) {
+    return region == Region_STATIC;
+}
+
+fn Region_isArgPosition(region: Region) {
+    let id = region._regpack >> 12;
+    return id >= 1000001 && id < 0xfffff;
+}
+
+fn Region_toArgPosition(region: Region) {
+    let id = region._regpack >> 12;
+    return (id - 1000001).i32;
+}
+
+fn Region_fromArgPosition(position: i32) {
+    return Region(_regpack: (position.u32 + 1000001) << 12);
+}
+
+fn Region_asLocal(region: Region) {
+    let id = region._regpack >> 12;
+    return id < 1000001 && id.i32;
+}
+
+fn Region_fromLocal(index: i32) {
+    if (SELF_TEST)
+        index > 0 && index < 1000001 || BUG(
+            "Region_fromLocal: !(0 < local < 1000001)");
+
+    return Region(_regpack: (index.u32 << 12));
+}
+
+
+//
+
+pub let Lifetime_static =
+    Lifetime(uni0n: [ Region_STATIC ]);
+
+pub let Lifetime_temporary =
+    Lifetime(uni0n: [ Region_TEMP ]);
+
+pub fn Lifetime_union(a: Lifetime, b: Lifetime): Lifetime =
+    Lifetime(uni0n: set::union(a.uni0n, b.uni0n));
+
+pub fn Lifetime_inter(a: Lifetime, b: Lifetime): Lifetime =
+    Lifetime(uni0n: set::inter(a.uni0n, b.uni0n));
+
+pub fn Lifetime_diff(from: Lifetime, remove: Lifetime): Lifetime =
+    Lifetime(uni0n: set::diff(from: from.uni0n, remove: remove.uni0n));
+
+pub fn Lifetime_makeShared(lifetime: Lifetime): Lifetime =
+    Lifetime_union(lifetime, Lifetime_static);
+
+pub fn Lifetime_from(locid!: i32): Lifetime =
+    Lifetime(uni0n: [ Region_fromLocal(locid) ]);
+
+
+//
+
+fn Lifetime_some(lifetime: Lifetime, some)
+{
+    Lifetime_each(:lifetime):
+        |lax locid, lax argidx, lax isStatic, lax isTemp, lax isArgIdx|
+    {
+        if (some(locid?:    locid,    argidx?: argidx,
+                 isStatic?: isStatic, isTemp?: isTemp,
+                 isArgIdx?: isArgIdx))
+        {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+pub fn Lifetime_each(lifetime: Lifetime, each)
+{
+    for (mut i = lifetime.uni0n.len; i --> 0; )
+    {
+        let r = lifetime.uni0n[i];
+
+        each(
+            locid?:     Region_asLocal(r),
+            argidx?:    Region_toArgPosition(r),
+
+            isStatic?:  r == Region_STATIC,
+            isTemp?:    r == Region_TEMP,
+            isArgIdx?:  Region_isArgPosition(r));
+    }
+}
+
+pub fn Lifetime_process(lifetime: Lifetime, each)
+{
+    mut result: Lifetime;
+
+    lax mut dedupe: Region[];
+
+    fn visit(shadow lifetime: Lifetime)
+    {
+        for (mut i = lifetime.uni0n.len; i --> 0; )
+        {
+            let r = lifetime.uni0n[i];
+
+            :TEST
+            {
+                fn continue_climb(mut parent: Lifetime)
+                {
+                    // Init the deduper lazily,
+                    //  we want this to compile away if noone uses it.
+                    if (!dedupe)
+                        dedupe = lifetime.uni0n;
+
+                    parent.uni0n.set::rem(dedupe);
+
+                    // Don't visit any of these again.
+                    dedupe.set::add(parent.uni0n);
+
+                    visit(parent);
+                    continue;
+                }
+
+                fn continue_replace(replacement: Lifetime)
+                {
+                    result.uni0n.set::add(replacement.uni0n);
+                    continue;
+                }
+
+                fn continue_keep()
+                {
+                    // Doing this in a convoluted way so that
+                    //  you can inline this multiple times at no cost.
+                    break :TEST;
+                }
+
+                each(continue_keep?: fn continue_keep,
+                    continue_climb?: fn continue_climb,
+                  continue_replace?: fn continue_replace,
+
+                    // Same as above.
+                    locid?:     Region_asLocal(r),
+                    argidx?:    Region_toArgPosition(r),
+
+                    isStatic?:  r == Region_STATIC,
+                    isTemp?:    r == Region_TEMP,
+                    isArgIdx?:  Region_isArgPosition(r));
+
+                continue;
+            }
+
+            result.uni0n.set::add(r);
+        }
+    }
+
+    visit(lifetime);
+
+    return result;
+}
+
+pub fn Lifetime_if_only(lifetime: Lifetime, if_only)
+{
+    if (lifetime.uni0n.len != 1)
+        return [];
+
+    let r = lifetime.uni0n[0];
+
+    return if_only(
+        locid?:     Region_asLocal(r),
+        argidx?:    Region_toArgPosition(r),
+
+        isStatic?:  r == Region_STATIC,
+        isTemp?:    r == Region_TEMP,
+        isArgIdx?:  Region_isArgPosition(r));
+}
+
+pub fn hasTemporary(lifetime: Lifetime): bool
+{
+    return lifetime.uni0n.if_last == Region_TEMP;
+}
+
+pub fn hasStatic(lifetime: Lifetime): bool
+{
+    return lifetime.uni0n.if_first == Region_STATIC;
+}
+
+pub fn Lifetime_replace(ref lifetime: Lifetime,
+    locid!: i32, with_argidx!: i32)
+{
+    if (!lifetime.uni0n.set::rem(Region_fromLocal(locid)))
+        return false;
+
+    lifetime.uni0n.set::add(Region_fromArgPosition(with_argidx))
+        || BUG("Lifetime_replace(with_argidx): argidx was already present");
+
+    return true;
+}
+
+pub fn Lifetime_add(ref lifetime: Lifetime, locid!: i32)
+    lifetime.uni0n.set::add(Region_fromLocal(locid));
+
+pub fn Lifetime_add(ref a: Lifetime, b: Lifetime)
+    a.uni0n.set::add(b.uni0n);
+
+pub fn Lifetime_has(lifetime: Lifetime, locid!search: i32)
+    lifetime.Lifetime_some(
+        |locid| locid == search);
+
+pub fn Lifetime_has(lifetime: Lifetime, argidx!search: i32)
+    lifetime.Lifetime_some(
+        |isArgIdx, argidx| isArgIdx && argidx == search);

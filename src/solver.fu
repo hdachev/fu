@@ -7,6 +7,7 @@ import types;
 import quals;
 import structs;
 import effects;
+import lifetime;
 import module;
 import fail;
 
