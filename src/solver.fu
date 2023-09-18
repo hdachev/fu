@@ -10186,17 +10186,19 @@ pub fn solve(
 
         //
 
-        fn isInvalidatedBy(read: Region[], write: Region[])
+        fn isInvalidatedBy(read: Lifetime, write: Lifetime)
         {
-            mut r_locals: i32[];
+            mut singleRegion = true;
+            read.Lifetime_each: |locid!r|
+            {
+                singleRegion || BUG("isInvalidatedBy currently only invoked when read.softRiskSafe, which means single-locid-lifetime.");
+                singleRegion = false;
 
-            read.each: |r.Region_asLocal|
                 if (r)
-                    r_locals ~= r;
-
-            write.each: |w.Region_asLocal|
-                if (w && flow.rg_invalidates.unless_oob(w).set::has_inter(r_locals))
-                    return true;
+                    write.Lifetime_each: |locid!w|
+                        if (w && flow.rg_invalidates.unless_oob(w).set::has(r))
+                            return true;
+            }
 
             return false;
         }
