@@ -8804,6 +8804,25 @@ pub fn solve(
         }
     }
 
+    fn qSTACK(callsite: SolvedNode, write!: i32)
+    {
+        let host_args = callsite.kind == "call" && callsite.target.args;
+        for (mut i = 0; i < host_args.len; i++)
+        {
+            let host_arg = host_args[i];
+            if !(host_arg.flags & F_WRITTEN_TO)
+                continue;
+
+            let arg = callsite.items[i];
+            if !(arg.type.lifetime.Lifetime_has(locid: write))
+                continue;
+
+            return qSTACK(:callsite.target, position: i);
+        }
+
+        return "";
+    }
+
     fn qSTACK(target: Target, position!: i32, seen!?: Target[], query!?: ArgQuery)
     {
         return qSTACK(:target, :seen, :query,
@@ -10415,7 +10434,7 @@ pub fn solve(
 
         // Writes.
 
-        fn bck_trackWrites(callOrPragma: SolvedNode, regions: Region[], positions!: i32[])
+        fn bck_trackWrites(callOrPragma: SolvedNode, regions: Region[])
         {
             let loop_start  = callOrPragma._loop_start || BUG("bck_trackWrites: _loop_start not set on callsite.");
             let OPTI_isLoop = loop_start != 1 && !!events.used_in_a_loop;
@@ -10427,8 +10446,6 @@ pub fn solve(
                 let write       = Region_asLocal(regions[i]);
                 if (!write)
                     continue;
-
-                fn position     = positions ? positions[i] : -1;
 
                 // println("bck_trackWrite " ~ target ~ " " ~ callsite.value);
 
@@ -10454,7 +10471,7 @@ pub fn solve(
                                         ~ " invalidates the use of " ~ read.nested ~ " at "
                                         ~ SLOW_findByReadID(:read, :loop_start).token.addr_and_snippet
                                         ~ "\n\t... on next loop iteration.\n\n\tWritten"
-                                        ~ (callOrPragma.kind == "call" && qSTACK(callOrPragma.target, :position)));
+                                        ~ qSTACK(callOrPragma, :write));
                         }
                     }
                 }
@@ -10714,7 +10731,6 @@ pub fn solve(
 
             // BORROWCK ////////////////
             mut bck_writes: Region[];
-            mut bck_positions: i32[];
 
             mut mutref_first    = -1;
             mut mutref_last     = -1;
@@ -10926,8 +10942,7 @@ pub fn solve(
                             host_arg0.is_mutref || BUG(host_arg0.name.human.qID ~ ": host_arg0.written but !host_arg0.is_mutref");
                             arg0.is_mutref      || BUG(host_arg0.name.human.qID ~ ": host_arg0.written but !arg.is_mutref");
 
-                            bck_writes.set::add(arg0.lifetime.uni0n,
-                                extras: bck_positions, extra: i0);
+                            bck_writes.set::add(arg0.lifetime.uni0n);
                         }
                     }
                 }
@@ -10940,8 +10955,7 @@ pub fn solve(
             {
                 _here = callsite.token;
 
-                bck_positions.len == bck_writes.len || BUG("bck_position.len is off");
-                bck_trackWrites(callsite, bck_writes, positions: bck_positions);
+                bck_trackWrites(callsite, bck_writes);
             }
         }
 
@@ -11186,7 +11200,7 @@ pub fn solve(
                     {
                         _here = item.token;
 
-                        bck_trackWrites(node, item.lifetime.uni0n, positions: [ i ]);
+                        bck_trackWrites(node, item.lifetime.uni0n);
                     }
                 }
             }
