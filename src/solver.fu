@@ -10430,18 +10430,18 @@ pub fn solve(
             //
             for (mut i = 0; i < regions.len; i++)
             {
-                let target      = Region_asLocal(regions[i]);
-                if (!target)
+                let write       = Region_asLocal(regions[i]);
+                if (!write)
                     continue;
 
                 fn position     = positions ? positions[i] : -1;
 
                 // println("bck_trackWrite " ~ target ~ " " ~ callsite.value);
 
-                let invalidates = flow.rg_invalidates.unless_oob(target);
+                let invalidates = flow.rg_invalidates.unless_oob(write);
 
-                if (SELF_TEST && invalidates.has(target))
-                    BUG("flow.invalidates[target].has(target): " ~ GET(nested(target)));
+                if (SELF_TEST && invalidates.has(write))
+                    BUG("flow.invalidates[write].has(write): " ~ GET(nested(write)));
 
                 // Writes in a loop invalidate preceding reads.
                 if (OPTI_isLoop) for (shadow mut i = 0; i < invalidates.len; i++)
@@ -10452,10 +10452,10 @@ pub fn solve(
                         if (events.used_in_a_loop.has(read))
                         {
                             if (AAR)
-                                RESOLVE_byAAR(:read, write: target, trySoft: true /* F_REF check inside */);
+                                RESOLVE_byAAR(:read, :write, trySoft: true /* F_REF check inside */);
                             else
                                 RESOLVE_byMutvar(read) || fail(
-                                    "Write to " ~ target.nested
+                                    "Write to " ~ write.nested
                                         ~ (callOrPragma.kind == "call" && " at call to " ~ callOrPragma.target)
                                         ~ " invalidates the use of " ~ read.nested ~ " at "
                                         ~ SLOW_findByReadID(:read, :loop_start).token.addr_and_snippet
@@ -10466,14 +10466,12 @@ pub fn solve(
                 }
 
                 // Order of eval.
-                let writeID = WriteID(locid: target, token: callOrPragma.token);
+                let writeID = WriteID(locid: write, token: callOrPragma.token);
 
                 // TODO FIX clean it up, previously in bck_call, shoehorned here.
                 if (OPTI_hasPRA)
                 {
-                    let write = target;
-
-                    mut all_written = [ Region_fromLocal(write) ];
+                    mut all_written = Lifetime_from(locid: write);
                     {
                         // The write may not invalidate its parents,
                         //  but it might still change their value.
@@ -10488,16 +10486,14 @@ pub fn solve(
                         //
                         // In both cases we need to sequence the order of eval of `a` and `x++`.
                         //
-                        all_written.set::add(
-                            flow.rg_parents.unless_oob(write)
-                                .map(.Region_fromLocal));
+                        flow.rg_parents.unless_oob(write).each: |locid|
+                            all_written.Lifetime_add(:locid);
 
                         // Deep expansion only useful on non-first arg,
                         //  we only use it for preceding args in OOE.
                         //
-                        all_written.set::add(
-                            flow.rg_invalidates.unless_oob(write)
-                                .map(.Region_fromLocal));
+                        flow.rg_invalidates.unless_oob(write).each: |locid|
+                            all_written.Lifetime_add(:locid);
                     }
 
 
@@ -10521,8 +10517,8 @@ pub fn solve(
                         //
                         shadow let all_written = all_written || BUG();
 
-                        let bound   = pra.arg.type.lifetime.uni0n;
-                        let inter   = bound.set::inter(all_written);
+                        let bound   = pra.arg.type.lifetime;
+                        let inter   = bound.Lifetime_inter(all_written);
                         if (!inter)
                             continue;
 
@@ -10560,7 +10556,7 @@ pub fn solve(
                                 ~ pra.target.args[r] ~ " (arg #" ~ r ~ ") at "
                                 ~ pra.arg.token.addr_and_snippet
                                 ~ "\n\t... invalidated by subsequent write to "
-                                ~ Region_fromLocal(write) ~ " upon evaluation of "
+                                ~ nested(write) ~ " upon evaluation of "
                                 ~ pra.target.args[w] ~ " (arg #" ~ w ~ ") at "
                                 ~ RWEvent_stack(writeID));
                         }
@@ -10583,7 +10579,7 @@ pub fn solve(
                         //  we don't hash the tokens so set::add should do it.
                         //
                         if (SELF_TEST)
-                            writeID._locid_and_hash.i32 == target || BUG(
+                            writeID._locid_and_hash.i32 == write || BUG(
                                 "AAR: set::add wont dedupe");
 
                         set.set::add(writeID);
