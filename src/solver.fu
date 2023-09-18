@@ -10417,10 +10417,6 @@ pub fn solve(
 
         fn bck_trackWrites(callOrPragma: SolvedNode, regions: Region[], positions!: i32[])
         {
-            _here = callOrPragma.kind == "pragma"
-                ? callOrPragma.items[positions.only].token
-                : callOrPragma.token;
-
             let loop_start  = callOrPragma._loop_start || BUG("bck_trackWrites: _loop_start not set on callsite.");
             let OPTI_isLoop = loop_start != 1 && !!events.used_in_a_loop;
             let OPTI_hasPRA = !!events.preceding_ref_args;
@@ -10942,6 +10938,8 @@ pub fn solve(
             //
             if (bck_writes)
             {
+                _here = callsite.token;
+
                 bck_positions.len == bck_writes.len || BUG("bck_position.len is off");
                 bck_trackWrites(callsite, bck_writes, positions: bck_positions);
             }
@@ -11172,11 +11170,24 @@ pub fn solve(
             {
                 // Without this we fail to notice all the writes in pragma emits etc,
                 //  caught this thanks to the new isDiscardable stuff.
+                //
                 for (mut i = 0; i < node.items.len; i++)
                 {
-                    let item = node.items[i];
+                    ref item = node.items[i];
+
+                    // We have to assume some order of evaluation,
+                    //  here we assume left-to-right,
+                    //   this is totally best effort,
+                    //    not in any way sound.
+                    //
+                    bck_node(item);
+
                     if (item.is_mutref)
+                    {
+                        _here = item.token;
+
                         bck_trackWrites(node, item.lifetime.uni0n, positions: [ i ]);
+                    }
                 }
             }
             else if (node.items)
