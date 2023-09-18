@@ -897,7 +897,7 @@ pub fn solve(
                     locid && (!expect || locid == expect)
                         || isStatic && staticOK))
         {
-            BUG("Bad local lifetime: " ~ lifetime.uni0n);
+            BUG("Bad local lifetime: " ~ lifetime);
         }
     }
 
@@ -917,21 +917,19 @@ pub fn solve(
 
     //
 
-    fn str(r: Region)
-    {
-        return r.Region_isStatic        ? "static"
-             : r.Region_isTemp          ? "temp"
-             : r.Region_isArgPosition   ? "arg#" ~ Region_toArgPosition(r)
-             : r.Region_asLocal.nested.str;
-    }
-
-    fn str(regions: [Region])
+    fn str(lifetime: Lifetime)
     {
         mut str = "";
-        for (mut i = 0; i < regions.len; i++)
+
+        lifetime.Lifetime_each: |locid, isStatic, isTemp, isArgIdx, argidx|
         {
-            if (i) str ~= "|";
-            str ~= regions[i];
+            if (str) str ~= "|";
+
+            str ~= locid        ? nested(locid).str
+                 : isStatic     ? "static".qLT
+                 : isTemp       ? "temp".qLT
+                 : isArgIdx     ? "arg#" ~ argidx
+                                : BUG("invalid region");
         }
 
         return str;
@@ -9172,8 +9170,8 @@ pub fn solve(
                             return;
 
                         BUG("visitNode TEST_LifetimeEqual:"
-                            ~ "\n\n\t    " ~ aa ~ ":\t" ~ "(" ~ a.uni0n ~ ")"
-                            ~ "\n\n\t    " ~ bb ~ ":\t" ~ "(" ~ b.uni0n ~ ")");
+                            ~ "\n\n\t    " ~ aa ~ ":\t" ~ "(" ~ a ~ ")"
+                            ~ "\n\n\t    " ~ bb ~ ":\t" ~ "(" ~ b ~ ")");
                     }
 
                     //
