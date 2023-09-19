@@ -2437,6 +2437,37 @@ pub extern fn runTests()
         }
     `);
 
+    ZERO(`
+        struct A { ints: i32[] };
+
+        fn copyInts_then_mutateBytes(ref bytes: byte[], a: A) {
+        <flip>
+            for (mut i = 0; i < bytes.len; i++)
+                bytes[i] = 0.byte;
+        <flip/>
+            mut ret = a;
+        </flip>
+            ret.ints.pop();
+            return ret;
+        }
+
+        fn main() {
+            mut a = A([ 1, 1, 1, 1, 1, 2, 2, 2, 2, 2 ]);
+
+            <fail var a 16:17+1 COW will break 21:56+1 due to bytes 19:18+5>
+            ref <pass/>
+            fn  </fail> bytes = a.ints.view(of: byte);
+
+            let b = copyInts_then_mutateBytes(:bytes, :a);
+
+            mut sum = 0;
+            for (mut i = 0; i < b.ints.len; i++)
+                sum += b.ints[i];
+
+            return sum - 13;
+        }
+    `);
+
     // /COW
 
 
