@@ -2437,6 +2437,11 @@ pub fn solve(
         if (guest.is_reinterpretable)
             return true; // TODO check sizes
 
+        // ref bytes = ints.view(of: byte)
+        let slice_T = tryClear_sliceable(guest);
+        if (slice_T && slice_T.is_reinterpretable)
+            return true;
+
         mut seen: StructCanon[];
         return type_maybeInside(:host, :guest, :seen);
     }
@@ -10324,7 +10329,7 @@ pub fn solve(
             flow.is_arg.add(target);
         }
 
-        fn Reference_trackLocalRef(left: i32, right: Lifetime)
+        fn Reference_trackLocalRef(left: i32, right: Lifetime, lax t_left: ValueType)
         {
             // trackLocalRef during bck:
             //  defers lead to out-of-order bck,
@@ -10342,6 +10347,14 @@ pub fn solve(
             {
                 if !(right)
                     continue;
+
+                if (SELF_TEST)
+                {
+                    let t_right = nested(right).type;
+                    type_maybeAliasInside(host: t_right, t_left)
+                        || BUG("type_maybeAliasInside fails for "
+                                    ~ nested(left) ~ " := " ~ nested(right));
+                }
 
                 flow.rg_children.grow_if_oob(right).set::add(left);
 
@@ -10644,7 +10657,7 @@ pub fn solve(
                 init.type.is_ref || BUG("What!");
 
                 Reference_trackLocalRef(
-                    left:  node.target.locid,
+                    left:  node.target.locid,       t_left: node.type,
                     right: init.type.lifetime);
             }
 
