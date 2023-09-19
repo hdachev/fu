@@ -891,7 +891,7 @@ pub fn solve(
         return lifetime;
     }
 
-    fn TEST_varLifetime(lax lifetime: Lifetime, lax staticOK!?: bool, lax locid!expect?: i32) =
+    lax fn TEST_varLifetime(lax lifetime: Lifetime, lax staticOK!?: bool, lax locid!expect?: i32) =
     {
         if (SELF_TEST && !lifetime.Lifetime_if_only(
                 |locid, isStatic|
@@ -10327,7 +10327,7 @@ pub fn solve(
             flow.is_arg.add(target);
         }
 
-        fn Reference_trackLocalRef(left: i32, right: Lifetime, lax t_left: ValueType)
+        fn Reference_trackLocalRef(left: i32, right: Lifetime, lax t_left: Type)
         {
             // trackLocalRef during bck:
             //  defers lead to out-of-order bck,
@@ -10339,7 +10339,8 @@ pub fn solve(
             //
             // flow.invalidates.len <= left || assert();
 
-            mut parents: i32[];
+            mut parents:    i32[];
+            mut siblings:   i32[];
 
             right.Lifetime_each: |shadow locid!right|
             {
@@ -10360,32 +10361,8 @@ pub fn solve(
                 parents.set::add(right);
                 parents.set::add(flow.rg_parents.unless_oob(right));
 
-                // For each lifetime on the right of the assignment,
-                //  the invals are the stuff it kills on write.
-                mut siblings = flow.rg_invalidates.unless_oob(right);
-
-                // LEFT can show up in the inval lists
-                //  after we process the first lifetime.
-                siblings.set::rem(left);
-
-                // So, if:
-                //  LEFT = &RIGHT;
-                if (siblings)
-                {
-                    // Siblings rule:
-                    //  LEFT invalidates everything RIGHT invalidates.
-                    //
-                    // Same thing backward:
-                    //  Everything that RIGHT invalidates potentially invalidates LEFT.
-                    //
-                    flow.rg_invalidates.grow_if_oob(left).set::add(siblings);
-
-                    for (shadow mut i = 0; i < siblings.len; i++)
-                    {
-                        shadow let sibling = siblings[i];
-                        flow.rg_invalidates.grow_if_oob(sibling).set::add(left);
-                    }
-                }
+                //
+                siblings.set::add(flow.rg_invalidates.unless_oob(right));
 
                 // Propagate alised arguments.
                 if (flow.is_arg.has(right))
@@ -10395,15 +10372,40 @@ pub fn solve(
                 }
             }
 
+            // So, if:
+            //  LEFT = &RIGHT;
+            if (siblings)
+            {
+                if (SELF_TEST && siblings.has(left))
+                    BUG("siblings.has(left)");
+
+                // Siblings rule:
+                //  LEFT invalidates everything RIGHT invalidates.
+                //
+                // Same thing backward:
+                //  Everything that RIGHT invalidates potentially invalidates LEFT.
+                //
+                (flow.rg_invalidates.grow_if_oob(left)
+                    && BUG("rg_invalidates already set"))
+                        = siblings;
+
+                for (mut i = 0; i < siblings.len; i++)
+                    flow.rg_invalidates.grow_if_oob(siblings[i])
+                        .set::add(left);
+            }
+
             if (parents)
             {
                 // Parent rule, one-sided:
                 //  Finally, RIGHT invalidates LEFT.
                 for (mut i = 0; i < parents.len; i++)
-                    flow.rg_invalidates.grow_if_oob(parents[i]).set::add(left);
+                    flow.rg_invalidates.grow_if_oob(parents[i])
+                        .set::add(left);
 
                 // This is the same as the parents set.
-                flow.rg_parents.grow_if_oob(left) = parents;
+                (flow.rg_parents.grow_if_oob(left)
+                    && BUG("rg_parents already set"))
+                        = parents;
             }
         }
 
@@ -11382,7 +11384,7 @@ pub fn solve(
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    lax fn test_node(lax node: SolvedNode, pass: SolverPass)
+    lax fn test_node(lax node: SolvedNode, lax pass: SolverPass)
     {
         if (!SELF_TEST)
             return;
