@@ -4480,7 +4480,7 @@ pub fn solve(
     }
 
     fn X_addrofTarget(targets: [Target])
-        Type(ValueType(canon: packAddrOfFn(targets, :module.modid)));
+        Type(ValueType(canon: packAddrOfFn(targets)));
 
     fn X_addrofTarget(target: Target)
         X_addrofTarget([ target ]);
@@ -6063,7 +6063,7 @@ pub fn solve(
 
             if (!specPat) {
                 specPat = "(";
-                specPat.appendMi(:spec_of.modid, :spec_of.globid, :spec_of.locid);
+                specPat.appendGlobal(spec_of);
             }
 
             specPat ~= ":";
@@ -7865,7 +7865,7 @@ pub fn solve(
             if (pattern)
             {
                 :NEXT_SUB_PATTERN
-                pattern.canon::eachSubPattern(|shadow pattern, mi|
+                pattern.canon::eachSubPattern(|shadow pattern, spec_of!target|
                 {
                     fn patternFail(inline err: string)
                     {
@@ -7875,7 +7875,6 @@ pub fn solve(
                         continue :NEXT_SUB_PATTERN;
                     }
 
-                    let target = Target(:mi.modid, :mi.globid, :mi.locid);
                     let targetsIdx = targets.find(target);
                     if (targetsIdx < 0)
                         continue :NEXT_SUB_PATTERN;

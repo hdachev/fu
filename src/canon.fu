@@ -1,4 +1,5 @@
 import helpers;
+import module;
 
 
 // TODO FIX Approximating unions & intersections.
@@ -63,14 +64,14 @@ pub fn eachSubPattern(pattern: [byte], visit)
     mut offset  = 0;
     for (;;)
     {
-        let mi      = pattern.parseMi(:offset);
+        let spec_of = pattern.parseGlobal(:offset);
         let start   = offset;
 
         mut isLastSubPattern: bool;
         lax let isDeep = pattern.scan('|',
             :offset, isLastSubPattern);
 
-        visit(pattern[start : offset], :mi,
+        visit(pattern[start : offset], :spec_of,
             isDeep?: isDeep, isLast?: isLastSubPattern);
 
         if (isLastSubPattern)
@@ -155,9 +156,9 @@ pub fn isCanonAssignable(host: [byte], guest: [byte])
     //  ensure there's at least one matching guest subpattern.
     //
     :NEXT_HOST_PAIR
-    eachSubPattern(host[h0 : h1]): |shadow host, isDeep!hostDeep, mi!hostTemplateId|
+    eachSubPattern(host[h0 : h1]): |shadow host, isDeep!hostDeep, spec_of!hostTemplateId|
     {
-        eachSubPattern(guest[g0 : g1]): |shadow guest, isDeep!guestDeep, mi!guestTemplateId|
+        eachSubPattern(guest[g0 : g1]): |shadow guest, isDeep!guestDeep, spec_of!guestTemplateId|
         {
             // Both need to be specs of the same template.
             if (guestTemplateId != hostTemplateId)

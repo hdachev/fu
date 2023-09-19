@@ -211,98 +211,50 @@ fn parse10s32(ref offset: i32, str: string)
 }
 
 
-// The crazier MMMiiiMMMiii style hex packing.
+// WARNING dont use BACKTICKS elsewhere
+//
+// Varints -
+//  Any number of msb-set bytes (>= 128),
+//   followed by one [0-9], [A-Z], "_", "`" or [a-z] byte -
+//    so ascii punctuation except for BACKTICKS and UNDERSCORES
+//     can be used unambiguously elsewhere.
+//
+// WARNING dont use BACKTICKS elsewhere
 
-struct Mi { modid: i32; globid: i32; locid: i32 };
-
-fn parseMi(ref offset: i32, str: string)
+fn parseVarint(ref offset: i32, str: byte[])
 {
-    // Putting this first so we always start on a lowercase lettern.
-    let globid =  str.parse_ap(:offset).i32;
-    let modid  = str.parse09AV(:offset).i32;
-    let locid  =  str.parse_ap(:offset).i32;
-
-    return Mi(:modid, :globid, :locid);
-}
-
-fn appendMi(ref str: string, modid!: i32, globid!: i32, locid!: i32)
-{
-    if (modid < 0 || globid <= 0 || locid < 0)
-         throw("appendMi: bad modid/globid/locid");
-
-    str.append_ap(globid.u32);
-    str.append09AV(modid.u32);
-    if (locid)
-        str.append_ap(locid.u32);
-}
-
-
-// 5bit encoding that can be interleaved with _ap
-
-fn parse09AV(ref offset: i32, str: string)
-{
-    mut shift: u32;
+    mut shift:  u32;
     mut result: u32;
-    while (offset < str.len)
-    {
-        let c = str[offset];
-        let v = c >= '0' && c <= '9' ? c.u32 - '0'.u32
-              : c >= 'A' && c <= 'V' ? c.u32 - 'A'.u32 + 10
-              : { break; };
 
-        result |= v << shift;
-        shift += 5;
-        offset++;
+    mut c: byte;
+    while (offset < str.len
+            && (c = str[offset++]).u32 >= 128)
+    {
+        result |= (c.u32 & 0x7f) << shift;
+        shift  += 7;
     }
 
-    return result;
+    let sub = c >= '0' && c <= '9' ? '0'.u32
+            : c >= 'A' && c <= 'Z' ? 'A'.u32 - 10
+            : c >= '_' && c <= 'z' ? '_'.u32 - 36
+            : throw("parseVarint: missing trailer");
+
+    return result | (c.u32 - sub) << shift;
 }
 
-fn append09AV(ref str: string, mut v: u32)
+fn appendVarint(ref str: byte[], mut v: u32)
 {
-    do
+    while (v >= 64)
     {
-        let c = v & 31;
-        v >>= 5;
-
-        str ~= c >= 10
-             ? (c - 10 + 'A'.u32).byte
-             : (c      + '0'.u32).byte;
-    }
-    while (v);
-}
-
-
-// 4bit encoding that can be interleaved with 09AV
-
-fn parse_ap(ref offset: i32, str: string)
-{
-    mut shift: u32;
-    mut result: u32;
-    while (offset < str.len)
-    {
-        let c = str[offset];
-        let v = c >= 'a' && c <= 'p' ? c.u32 - 'a'.u32
-              : { break; };
-
-        result |= v << shift;
-        shift += 4;
-        offset++;
+        str ~= byte((v & 0x7f) | 0x80);
+        v  >>= 7;
     }
 
-    return result;
-}
+    let add = v < 10 ? '0'.u32
+            : v < 36 ? 'A'.u32 - 10
+                     : '_'.u32 - 36;
 
-fn append_ap(ref str: string, mut v: u32)
-{
-    do
-    {
-        let c = v & 15;
-        v >>= 4;
-
-        str ~= (c + 'a'.u32).byte;
-    }
-    while (v);
+    str ~= (v + add).byte;
 }
 
 

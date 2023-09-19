@@ -2930,7 +2930,7 @@ pub extern fn runTests()
         fn main() test(-1);
     `);
 
-    TODO_args(currently: "no implicit `1b1b in scope", `
+    TODO_args(currently: "no implicit `1111 in scope", `
         fn test(a = 3, b = a * 2) a + b;
         fn main() test + test(a: -1) * 3;
     `);

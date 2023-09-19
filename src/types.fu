@@ -260,12 +260,13 @@ pub fn serializeType(type: Type, debug!: string)
 {
     type || throw("COMPILER BUG: serializeType: Falsy type in: " ~ debug);
 
-    mut prefix: string;
+    mut result: string;
 
-    if (type.quals)
-        prefix.append09AV(type.quals.u32);
+    result.appendVarint(type.quals.u32);
+    result ~= type.canon || throw(
+        "COMPILER BUG: serializeType: No type.canon in: " ~ debug);
 
-    return prefix ~ (type.canon || throw("COMPILER BUG: serializeType: No type.canon in: " ~ debug));
+    return result;
 }
 
 pub fn humanizeQuals(quals: Quals)
@@ -282,7 +283,7 @@ pub fn parseType(str: [byte]): ValueType
 {
     mut offset: i32;
 
-    let quals = parse09AV(offset, str).Quals;
+    let quals = parseVarint(offset, str).Quals;
     let canon = clone(str.slice(offset)); // TODO FIX SLICES the clone here
 
     return ValueType(:canon, :quals);
@@ -401,31 +402,25 @@ pub fn type_tryIntersect(a: Type, b: Type)
 pub fn isAddrOfFn(type: Type): bool =
     type.canon.starts(with: '@');
 
-pub fn packAddrOfFn(targets: Target[], modid: i32)
+pub fn packAddrOfFn(targets: Target[])
 {
-    mut res = "";
+    mut res = "@";
     for (mut i = 0; i < targets.len; i++)
-    {
-        res ~= '@';
-        let target = targets[i];
-
-        // TODO FIX we don't want this after we switch to absolute Targets.
-        let locid = target.locid;
-        shadow let modid = locid ? modid : target.modid;
-
-        res.appendMi(:modid, :target.globid, :locid);
-    }
+        res.appendLocalOrGlobal(targets[i]);
 
     return res;
 }
 
 pub fn unpackAddrOfFn(canon: string, fn)
 {
-    mut offset = 0;
+    if (SELF_TEST)
+        canon[0] == '@' || throw(
+            "unpackAddrOfFn: No leading @ in `" ~ canon ~ "`.");
+
+    mut offset = 1;
     while (offset < canon.len)
     {
-        canon[offset++] == '@' || throw("unpackAddrOfFn: No leading @ in `" ~ canon ~ "`.");
-        let mi = parseMi(offset, canon);
+        let mi = canon.parseLocalOrGlobal(:offset);
         fn(Target(:mi.modid, :mi.globid, :mi.locid));
     }
 }

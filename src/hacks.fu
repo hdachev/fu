@@ -19,10 +19,10 @@ fn serialize(using _: ClosureID)
     if (globid <= 0 || locid <= 0)
         BUG("ClosureID: bad globid/locid");
 
-    result.append09AV(modid.u32);
-    result.append_ap(revision);
-    result.append09AV(globid.u32);
-    result.append_ap(locid.u32);
+    result.appendVarint(modid.u32);
+    result.appendVarint(revision);
+    result.appendVarint(globid.u32);
+    result.appendVarint(locid.u32);
 
     return result;
 }
@@ -35,10 +35,10 @@ fn tryParseClosureID(id!: string): ClosureID
         defer offset == id.len || BUG(
             "Bad ClosureID: trailing stuff.");
 
-        let modid    = parse09AV(offset, id).i32;
-        let revision =  parse_ap(offset, id);
-        let globid   = parse09AV(offset, id).i32;
-        let locid    =  parse_ap(offset, id).i32;
+        let modid    = parseVarint(offset, id).i32;
+        let revision = parseVarint(offset, id);
+        let globid   = parseVarint(offset, id).i32;
+        let locid    = parseVarint(offset, id).i32;
 
         return ClosureID(Target(:modid, :globid, :locid), :revision);
     }

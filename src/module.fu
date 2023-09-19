@@ -455,3 +455,46 @@ fn Target(modid: i32, globid: i32, locid: i32)
                         | globid.u64 << 20
                         |  locid.u64 << 40);
 }
+
+
+// Making these distinct,
+//  so we don't waste a byte on locids where we dont need them.
+
+fn parseLocalOrGlobal(str: string, ref offset!: i32)
+{
+    let modid  = str.helpers::parseVarint(:offset).i32;
+    let globid = str.helpers::parseVarint(:offset).i32;
+    let locid  = str.helpers::parseVarint(:offset).i32;
+
+    return Target(:modid, :globid, :locid);
+}
+
+fn appendLocalOrGlobal(ref str: string, using target: Target)
+{
+    modid >= 0 && globid > 0 && locid >= 0 || throw(
+        "appendLocalOrGlobal: bad modid/globid/locid");
+
+    str.helpers::appendVarint(modid.u32);
+    str.helpers::appendVarint(globid.u32);
+    str.helpers::appendVarint(locid.u32);
+}
+
+
+//
+
+fn parseGlobal(str: string, ref offset!: i32)
+{
+    let modid  = str.helpers::parseVarint(:offset).i32;
+    let globid = str.helpers::parseVarint(:offset).i32;
+
+    return Target(:modid, :globid, locid: 0);
+}
+
+fn appendGlobal(ref str: string, using target: Target)
+{
+    modid >= 0 && globid > 0 && !locid || throw(
+        "appendGlobal: bad modid/globid/locid");
+
+    str.helpers::appendVarint(modid.u32);
+    str.helpers::appendVarint(globid.u32);
+}

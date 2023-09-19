@@ -11,23 +11,30 @@ pub fn parseStructCanon(canon: string): StructCanon
     {
         let c = canon[0];
         if (c != '/')
-            offset = quals::basePrimPrefixLen(canon);
+            offset = quals::basePrimPrefixLen(canon) + 1;
     }
 
-    let mi = parseMi(offset, canon);
+    let modid   = canon.parseVarint(:offset).i32;
+    let globid  = canon.parseVarint(:offset).i32;
+
     offset == canon.len
         || canon[offset] == '(' // TODO FIX SPECPATs
         || throw("parseStructCanon: trailing garbage in `" ~ canon ~ "`: " ~ offset ~ "|" ~ canon.len);
 
-    return StructCanon(:mi.modid, mi.globid - ONE_BASED);
+    return StructCanon(:modid, globid - ONE_BASED);
 }
 
 pub fn createStructCanon(
     ::kind!, baseprim!: string,
     modid: i32, index: i32, lax name: string): string
 {
-    mut res = baseprim || "/";
-    res.appendMi(:modid, globid: index + ONE_BASED, locid: 0);
+    mut res = baseprim ~ "/";
+
+    modid >= 0 && index >= 0 || throw(
+        "createStructCanon: bad modid/index");
+
+    res.appendVarint(modid.u32);
+    res.appendVarint((index + ONE_BASED).u32);
 
     //
     if (baseprim)
@@ -40,15 +47,6 @@ pub fn createStructCanon(
             c = 'e';
         else if (kind == "flags")
             c = 'm';
-    }
-
-    //
-    let check = parseStructCanon(res);
-    if !(check.modid == modid && check.index == index)
-    {
-        println("NOPE!!!!!");
-        parseStructCanon(res);
-        throw("Nope!");
     }
 
     // Name is redundant here, only useful for debug.
