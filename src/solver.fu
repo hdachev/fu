@@ -2402,37 +2402,7 @@ pub fn solve(
 
     //
 
-    fn type_maybeInside(
-        host: ValueType, guest: ValueType,
-        ref seen: StructCanon[])
-    {
-        if (host.canon == guest.canon)
-            return true;
-
-        if (let itemType = tryClear_sliceable(host))
-            return type_maybeInside(host: itemType.vtype, :guest, :seen);
-
-        if (host.isStruct)
-        {
-            let scp = parseStructCanon(host.canon);
-            let s   = lookupUserType(scp);
-
-            if ((!s.all_triv || guest.is_trivial)
-                && seen.set::add(scp))
-            {
-                for (mut i = 0; i < s.items.len; i++)
-                {
-                    let f = s.items[i].target;
-                    if (type_maybeInside(host: f.type, guest, :seen))
-                        return true;
-                }
-            }
-        }
-
-        return false;
-    }
-
-    fn type_maybeAliasInside(host: ValueType, guest: ValueType)
+    fn type_mayPointInto(host: ValueType, guest: ValueType)
     {
         if (guest.is_reinterpretable)
             return true; // TODO check sizes
@@ -2442,8 +2412,38 @@ pub fn solve(
         if (slice_T && slice_T.is_reinterpretable)
             return true;
 
+        //
         mut seen: StructCanon[];
-        return type_maybeInside(:host, :guest, :seen);
+
+        fn type_maybeInside(shadow host: ValueType, shadow guest: ValueType)
+        {
+            if (host.canon == guest.canon)
+                return true;
+
+            if (let itemType = tryClear_sliceable(host))
+                return type_maybeInside(host: itemType.vtype, :guest);
+
+            if (host.isStruct)
+            {
+                let scp = parseStructCanon(host.canon);
+                let s   = lookupUserType(scp);
+
+                if ((!s.all_triv || guest.is_trivial)
+                    && seen.set::add(scp))
+                {
+                    for (mut i = 0; i < s.items.len; i++)
+                    {
+                        let f = s.items[i].target;
+                        if (type_maybeInside(host: f.type, guest))
+                            return true;
+                    }
+                }
+            }
+
+            return false;
+        }
+
+        return type_maybeInside(:host, :guest);
     }
 
 
@@ -2589,8 +2589,7 @@ pub fn solve(
                                     if (uncaughtThrowOnly)
                                         continue;
 
-                                    shadow mut seen: StructCanon[];
-                                    if (type_maybeInside(host: vtype, o.type, :seen))
+                                    if (type_mayPointInto(host: vtype, o.type))
                                         return index;
                                 }
                             }
@@ -2675,8 +2674,7 @@ pub fn solve(
                     //   e.g. ref i32 into an cow(i32[]).
                     eachCOWInside: |vtype, token|
                     {
-                        shadow mut seen: StructCanon[];
-                        if (type_maybeInside(host: vtype, o.type, :seen))
+                        if (type_mayPointInto(host: vtype, o.type))
                         {
                             let cow_inside = token;
 
@@ -10351,8 +10349,8 @@ pub fn solve(
                 if (SELF_TEST)
                 {
                     let t_right = nested(right).type;
-                    type_maybeAliasInside(host: t_right, t_left)
-                        || BUG("type_maybeAliasInside fails for "
+                    type_mayPointInto(host: t_right, t_left)
+                        || BUG("type_mayPointInto fails for "
                                     ~ nested(left) ~ " := " ~ nested(right));
                 }
 
