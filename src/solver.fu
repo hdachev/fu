@@ -2434,8 +2434,8 @@ pub fn solve(
 
     fn type_maybeAliasInside(host: ValueType, guest: ValueType)
     {
-        if (guest.is_primitive)
-            return true; // TODO check size
+        if (guest.is_reinterpretable)
+            return true; // TODO check sizes
 
         mut seen: StructCanon[];
         return type_maybeInside(:host, :guest, :seen);
@@ -8050,6 +8050,9 @@ pub fn solve(
 
         if (tag == "flags")
             return type.is_flags;
+
+        if (tag == "reinterpretable")
+            return type.is_reinterpretable;
 
         return BUG("Unknown type tag: `" ~ tag ~ "`.");
     }

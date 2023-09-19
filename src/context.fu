@@ -181,6 +181,14 @@ pub fn lookupUserType(type: ValueType)
 pub fn is_trivial(type: ValueType)
     type.is_primitive || type.isStruct && lookupUserType(type).all_triv;
 
+pub fn is_reinterpretable(type: ValueType)
+{
+    // TODO reconsider, might want only trivial+homogenous,
+    //  or trivial+packed == no reading & writing into padding.
+    //
+    return type.is_trivial;
+}
+
 
 //
 
