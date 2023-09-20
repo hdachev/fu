@@ -1392,6 +1392,31 @@ pub fn cpp_codegen(
 
         //
         mut head    = annot || BUG();
+
+        if (!isArg && place_type.is_ref &&
+            options.dev & options::DEV_CG_LifetimeAnnots)
+        {
+            mut lt = "";
+
+            place_type.lifetime.lifetime::Lifetime_each:
+                |locid, isTemp, isStatic, isArgIdx|
+            {
+                if (lt)
+                    lt ~= "|";
+
+                if (isTemp)
+                    lt ~= "temp";
+                else if (isStatic)
+                    lt ~= "static";
+                else if (isArgIdx)
+                    BUG("WTF");
+                else
+                    lt ~= localID(nested(locid));
+            }
+
+            head ~= " /*" ~ lt ~ "*/";
+        }
+
         head       ~= " " ~ id;
         if (isUnused)
             head    = "[[maybe_unused]] " ~ head;

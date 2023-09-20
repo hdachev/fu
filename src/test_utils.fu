@@ -41,6 +41,8 @@ pub fn compile_snippets(sources: string[], mut fnames?: string[], options?: Opti
         if (snippet.has("/*PRINT*/"))
             options.dev |= DEV_PrintAST | DEV_PrintCG;
 
+        options.dev |= DEV_CG_LifetimeAnnots;
+
         compile(:fname, :options);
     }
 

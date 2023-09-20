@@ -6,6 +6,8 @@ using flags DevOptions {
     DEV_ExpectFail
 
     DEV_DontFoldLiterals
+
+    DEV_CG_LifetimeAnnots
 };
 
 

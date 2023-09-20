@@ -14262,7 +14262,7 @@ pub extern fn runTests()
 
         pub fn test(overload: Overload, ref args: SolvedNode[])
         {
-            let host_args = overload.args;          ;; EXPECT fu::view<s_Argument> host_args
+            let host_args = overload.args;          ;; EXPECT fu::view<s_Argument> /*overload*/ host_args
 
             args.resize(host_args.len);             // .len didnt relax its arg
             for (mut i = 0; i < args.len; i++)
