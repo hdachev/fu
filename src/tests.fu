@@ -106,6 +106,7 @@ pub extern fn runTests()
     let TODO_mangle     = fn TODO;
     let TODO_specpat    = fn TODO;
     let TODO_control    = fn TODO;
+    let TODO_prelude    = fn TODO;
 
     let TODO_Map        = fn TODO;
 
@@ -9032,6 +9033,17 @@ pub extern fn runTests()
 
             return (result - 6).signed;
         }
+    `);
+
+    TODO_prelude(currently: "ambig E", `
+        fn woot!E (e?: E) {
+            if (E -> [])
+                return 2;
+            else
+                return e(3);
+        }
+
+        fn main() woot * woot(|x| x * 5) - 30;
     `);
 
     // /quite right
