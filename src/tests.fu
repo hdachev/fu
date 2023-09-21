@@ -14887,6 +14887,33 @@ pub extern fn runTests()
         }
     `);
 
+    ZERO(`
+        lax fn longer(l: string, r: string, pick!) {
+            let longer = {                                      ;; GNUStmtExpr
+                :PICK {
+                    for (;;) {
+                        if (l.len > r.len)
+                            break :PICK l;                      ;; Goto
+
+                        break :PICK r;
+                    }
+                }
+            };
+
+            return pick(longer);
+        }
+
+        fn main() {
+            longer("does", "nothing",
+                pick: |_| { break; });
+
+            let longer = longer("Hello", " World!",             ;; ConstCast
+                pick: |longer| { break longer; });
+
+            return longer.len - 7;
+        }
+    `);
+
     // /Relaxer.
 
 

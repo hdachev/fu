@@ -3672,7 +3672,11 @@ pub fn solve(
                 //
                 if (h.ret_actual.isIrrelevant)
                 {
-                    if (expr.kind != "empty")
+                    if (expr.kind == "empty")
+                    {
+                        expr.type = h.ret_actual;
+                    }
+                    else
                     {
                         mut not_empty = createEmpty(type: h.ret_actual);
                         swap(expr, not_empty);
