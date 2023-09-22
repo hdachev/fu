@@ -195,18 +195,6 @@ pub fn hasStatic(lifetime: Lifetime): bool
     return lifetime.uni0n.if_first == Region_STATIC;
 }
 
-pub fn Lifetime_replace(ref lifetime: Lifetime,
-    locid!: i32, with_argidx!: i32)
-{
-    if (!lifetime.uni0n.set::rem(Region_fromLocal(locid)))
-        return false;
-
-    lifetime.uni0n.set::add(Region_fromArgPosition(with_argidx))
-        || BUG("Lifetime_replace(with_argidx): argidx was already present");
-
-    return true;
-}
-
 pub fn Lifetime_add(ref lifetime: Lifetime, locid!: i32)
     lifetime.uni0n.set::add(Region_fromLocal(locid));
 
@@ -220,3 +208,6 @@ pub fn Lifetime_has(lifetime: Lifetime, locid!search: i32)
 pub fn Lifetime_has(lifetime: Lifetime, argidx!search: i32)
     lifetime.Lifetime_some(
         |isArgIdx, argidx| isArgIdx && argidx == search);
+
+pub fn Lifetime_from(argidx!: i32): Lifetime =
+    Lifetime(uni0n: [ Region_fromArgPosition(argidx) ]);

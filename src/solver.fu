@@ -5609,19 +5609,50 @@ pub fn solve(
                     if (arg.flags & F_REST_ARG)
                         max = 0x7fffffff.i32;
 
-                    // Finally, replace arg target in retval
-                    //  with the argument position.
-                    if (argNode.is_ref)
-                    {
-                        if (!retval.lifetime.Lifetime_replace(
-                                :argTarget.locid, with_argidx: i))
-                        {
-                            if (arg.willPassByValue)
-                                arg.type = clear_refs(arg.type);
-                        }
-                    }
-
                     args.push(arg);
+                }
+
+                // Prep lifetimes for Lifetime_replaceArgsAtCallsite,
+                //  and unref all args that are pass-by-value.
+                //
+                {
+                    mut returned: bitset::BitSet;
+
+                    retval.lifetime = retval.lifetime.Lifetime_process(
+                        |locid, isStatic, continue_keep, continue_replace|
+                        {
+                            if (!locid)
+                            {
+                                isStatic || BUG("Non-local/non-static in retval.lifetime.");
+                                continue_keep;
+                            }
+                            else
+                            {
+                                shadow let argPos_1b = argPos_1b.unless_oob(locid) || BUG(
+                                    "Non-argument local in retval.lifetime: " ~ nested(locid));
+
+                                let i   = argPos_1b - 1;
+                                let arg = args[i];
+
+                                arg.type.is_ref || BUG(
+                                    "Non-ref argument in retval.lifetime: " ~ nested(locid));
+
+                                returned.add(i);
+
+                                continue_replace(
+                                    Lifetime_from(argidx: i));
+                            }
+                        });
+
+                    for (mut i = 0; i < args.len; i++)
+                    {
+                        if (returned.has(i))
+                            continue;
+
+                        ref arg = args[i];
+                        if (arg.type.is_ref && arg.willPassByValue())
+                            arg.type = clear_refs(arg.type);
+                    }
                 }
 
                 //
