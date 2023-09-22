@@ -160,14 +160,16 @@ pub fn is_mutref(type: Type): bool
 
 pub fn add_ref(mut type: Type, lifetime: Lifetime): Type
 {
-    type.lifetime = Lifetime_union(type.lifetime, lifetime) || BUG("add_ref: Empty lifetime");
+    type.lifetime.Lifetime_add(lifetime);
+    type.lifetime || BUG("add_ref: Empty lifetime");
     return type;
 }
 
 pub fn add_mutref(mut type: Type, lifetime: Lifetime): Type
 {
     type.quals |= q_mutref;
-    type.lifetime = Lifetime_union(type.lifetime, lifetime) || BUG("add_mutref: Empty lifetime");
+    type.lifetime.Lifetime_add(lifetime);
+    type.lifetime || BUG("add_mutref: Empty lifetime");
     return type;
 }
 
@@ -236,7 +238,7 @@ pub fn tryClear_ref(type: Type)
 pub fn add_refs(from: Type, mut to: Type)
 {
     to.quals |= from.quals & q_mutref;
-    to.lifetime = Lifetime_union(from.lifetime, to.lifetime);
+    to.lifetime.Lifetime_add(from.lifetime);
     return to;
 }
 
