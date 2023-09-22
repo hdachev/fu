@@ -313,9 +313,7 @@ struct Type
     vfacts?:        VFacts;
 };
 
-struct Lifetime { uni0n!: Region[]; };
-
-struct Region { _regpack!: u32; };
+struct Lifetime { uni0n!: byte[] };
 
 
 // Instead of this we'd have a string listing qualities,

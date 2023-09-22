@@ -10553,13 +10553,15 @@ pub fn solve(
                         // In both cases we need to sequence the order of eval of `a` and `x++`.
                         //
                         flow.rg_parents.unless_oob(write).each: |locid|
-                            all_written.Lifetime_add(:locid);
+                            all_written.Lifetime_add(
+                                Lifetime_from(:locid));
 
                         // Deep expansion only useful on non-first arg,
                         //  we only use it for preceding args in OOE.
                         //
                         flow.rg_invalidates.unless_oob(write).each: |locid|
-                            all_written.Lifetime_add(:locid);
+                            all_written.Lifetime_add(
+                                Lifetime_from(:locid));
                     }
 
 
