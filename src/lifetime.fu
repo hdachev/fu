@@ -221,6 +221,15 @@ pub fn Lifetime_inter(a: Lifetime, b: Lifetime): Lifetime =
     return result;
 }
 
+pub fn Lifetime_hasInter(a: Lifetime, b: Lifetime): bool =
+{
+    merge(a, b,
+        both: |_| { return true; },
+        rest: |_| { break; });
+
+    return false;
+}
+
 pub fn Lifetime_diff(from: Lifetime, remove: Lifetime): Lifetime =
 {
     mut result: Lifetime;
@@ -267,6 +276,7 @@ pub fn Lifetime_each(lifetime: Lifetime, each)
 
     while (offset < chars.len)
     {
+        lax let offset0 = offset;
         let r = parseRegion(chars, :offset);
 
         each(
@@ -274,7 +284,9 @@ pub fn Lifetime_each(lifetime: Lifetime, each)
             argidx?:    i32(r & 1 ? r >> 2 : 0),
             isStatic?:  r == 0,
             isTemp?:    r == 1,
-            isArgIdx?:  r & 3 == 3);
+            isArgIdx?:  r & 3 == 3,
+
+            region?:    Lifetime(uni0n: chars.slice(offset0, offset)));
     }
 }
 

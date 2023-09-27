@@ -203,8 +203,8 @@ pub fn solve(
     struct Flow
     {
         // Reference graph.
-        rg_parents:     i32[][];
-        rg_invalidates: i32[][];        // Non-disjoint siblings and children.
+        rg_parents:     Lifetime[];
+        rg_invalidates: Lifetime[];     // Non-disjoint siblings and children.
         rg_children:    i32[][];        // Used by validateCOW
 
         // Arguments at risk.
@@ -10226,16 +10226,10 @@ pub fn solve(
 
         fn isInvalidatedBy(read: Lifetime, write: Lifetime)
         {
-            mut singleRegion = true;
-            read.Lifetime_each: |locid!r|
+            write.Lifetime_each: |locid!w|
             {
-                singleRegion || BUG("isInvalidatedBy currently only invoked when read.softRiskSafe, which means single-locid-lifetime.");
-                singleRegion = false;
-
-                if (r)
-                    write.Lifetime_each: |locid!w|
-                        if (w && flow.rg_invalidates.unless_oob(w).set::has(r))
-                            return true;
+                if (w && Lifetime_hasInter(read, flow.rg_invalidates.unless_oob(w)))
+                    return true;
             }
 
             return false;
@@ -10361,8 +10355,37 @@ pub fn solve(
             flow.is_arg.add(target);
         }
 
-        fn Reference_trackLocalRef(left: i32, right: Lifetime, lax t_left: Type)
+        fn Lifetime_getRefLocid_unlessStatic(lifetime: Lifetime)
         {
+            mut left: i32;
+
+            lifetime.Lifetime_each: |locid, isStatic|
+            {
+                // Doesn't seem to matter right now, doing this for ZSTs,
+                //  which we might want to always have static.
+                if (isStatic)
+                    continue;
+
+                (left && BUG("Lifetime_getRefLocid_unlessStatic: multiple locids in left_lt"))
+                    = locid || BUG("Lifetime_getRefLocid_unlessStatic: non-locid/non-static in left_lt");
+            };
+
+            return left;
+        }
+
+        fn Reference_trackLocalRef(t_left: Type, right: Lifetime)
+        {
+            let left = Lifetime_getRefLocid_unlessStatic(t_left.lifetime);
+            if (!left)
+                return;
+
+            //
+            shadow let right = right.Lifetime_process(|locid, continue_keep|
+            {
+                if (locid)
+                    continue_keep();
+            });
+
             // trackLocalRef during bck:
             //  defers lead to out-of-order bck,
             //   so this doesn't hold.
@@ -10373,8 +10396,10 @@ pub fn solve(
             //
             // flow.invalidates.len <= left || assert();
 
-            mut parents:    i32[];
-            mut siblings:   i32[];
+            mut parents:    Lifetime;
+            mut siblings:   Lifetime;
+
+            parents.Lifetime_add(right);
 
             right.Lifetime_each: |shadow locid!right|
             {
@@ -10383,6 +10408,9 @@ pub fn solve(
 
                 if (SELF_TEST)
                 {
+                    if (!right)
+                        BUG("Reference_trackLocalRef: right has non-locals.");
+
                     let t_right = nested(right).type;
                     type_mayPointInto(host: t_right, t_left)
                         || BUG("type_mayPointInto fails for "
@@ -10392,11 +10420,10 @@ pub fn solve(
                 flow.rg_children.grow_if_oob(right).set::add(left);
 
                 //
-                parents.set::add(right);
-                parents.set::add(flow.rg_parents.unless_oob(right));
+                parents.Lifetime_add(flow.rg_parents.unless_oob(right));
 
                 //
-                siblings.set::add(flow.rg_invalidates.unless_oob(right));
+                siblings.Lifetime_add(flow.rg_invalidates.unless_oob(right));
 
                 // Propagate alised arguments.
                 if (flow.is_arg.has(right))
@@ -10410,7 +10437,7 @@ pub fn solve(
             //  LEFT = &RIGHT;
             if (siblings)
             {
-                if (SELF_TEST && siblings.has(left))
+                if (SELF_TEST && siblings.Lifetime_has(locid: left))
                     BUG("siblings.has(left)");
 
                 // Siblings rule:
@@ -10423,23 +10450,32 @@ pub fn solve(
                     && BUG("rg_invalidates already set"))
                         = siblings;
 
-                for (mut i = 0; i < siblings.len; i++)
-                    flow.rg_invalidates.grow_if_oob(siblings[i])
-                        .set::add(left);
+                siblings.Lifetime_each: |locid!sibling|
+                {
+                    if (SELF_TEST && !sibling)
+                        BUG("Reference_trackLocalRef: siblings has non-locals.");
+
+                    flow.rg_invalidates.grow_if_oob(sibling)
+                        .Lifetime_add(t_left.lifetime);
+                }
             }
 
             if (parents)
             {
-                // Parent rule, one-sided:
-                //  Finally, RIGHT invalidates LEFT.
-                for (mut i = 0; i < parents.len; i++)
-                    flow.rg_invalidates.grow_if_oob(parents[i])
-                        .set::add(left);
-
-                // This is the same as the parents set.
                 (flow.rg_parents.grow_if_oob(left)
                     && BUG("rg_parents already set"))
                         = parents;
+
+                // Parent rule, one-sided:
+                //  Finally, RIGHT invalidates LEFT.
+                parents.Lifetime_each: |locid!parent|
+                {
+                    if (SELF_TEST && !parent)
+                        BUG("Reference_trackLocalRef: parents has non-locals.");
+
+                    flow.rg_invalidates.grow_if_oob(parent)
+                        .Lifetime_add(t_left.lifetime);
+                }
             }
         }
 
@@ -10491,7 +10527,7 @@ pub fn solve(
             let OPTI_hasPRA = !!events.preceding_ref_args;
 
             //
-            lifetime.Lifetime_each: |locid!write|
+            lifetime.Lifetime_each: |locid!write, region|
             {
                 if (!write)
                 {
@@ -10506,13 +10542,13 @@ pub fn solve(
 
                 let invalidates = flow.rg_invalidates.unless_oob(write);
 
-                if (SELF_TEST && invalidates.has(write))
+                if (SELF_TEST && invalidates.Lifetime_has(locid: write))
                     BUG("flow.invalidates[write].has(write): " ~ GET(nested(write)));
 
                 // Writes in a loop invalidate preceding reads.
-                if (OPTI_isLoop) for (shadow mut i = 0; i < invalidates.len; i++)
+                if (OPTI_isLoop) invalidates.Lifetime_each: |locid!read|
                 {
-                    let read = invalidates[i];
+                    read || BUG("bck_trackWrites: invalidates contains non-locals.");
                     if (read < loop_start)
                     {
                         if (events.used_in_a_loop.has(read))
@@ -10537,7 +10573,7 @@ pub fn solve(
                 // TODO FIX clean it up, previously in bck_call, shoehorned here.
                 if (OPTI_hasPRA)
                 {
-                    mut all_written = Lifetime_from(locid: write);
+                    mut all_written = region.Lifetime_getRefLocid_unlessStatic && region;
                     {
                         // The write may not invalidate its parents,
                         //  but it might still change their value.
@@ -10552,16 +10588,12 @@ pub fn solve(
                         //
                         // In both cases we need to sequence the order of eval of `a` and `x++`.
                         //
-                        flow.rg_parents.unless_oob(write).each: |locid|
-                            all_written.Lifetime_add(
-                                Lifetime_from(:locid));
+                        all_written.Lifetime_add(flow.rg_parents.unless_oob(write));
 
                         // Deep expansion only useful on non-first arg,
                         //  we only use it for preceding args in OOE.
                         //
-                        flow.rg_invalidates.unless_oob(write).each: |locid|
-                            all_written.Lifetime_add(
-                                Lifetime_from(:locid));
+                        all_written.Lifetime_add(flow.rg_invalidates.unless_oob(write));
                     }
 
 
@@ -10632,9 +10664,9 @@ pub fn solve(
                 }
 
                 // Track writes, easy.
-                for (shadow mut i = 0; i < invalidates.len; i++)
+                invalidates.Lifetime_each: |locid!invalidatee|
                 {
-                    ref set = events.invalidated_by.grow_if_oob(invalidates[i]);
+                    ref set = events.invalidated_by.grow_if_oob(invalidatee);
                     if (BCK)
                     {
                         // BCK only needs a single event to do its thing.
@@ -10693,8 +10725,8 @@ pub fn solve(
                 init.type.is_ref || BUG("What!");
 
                 Reference_trackLocalRef(
-                    left:  node.target.locid,       t_left: node.type,
-                    right: init.type.lifetime);
+                    t_left: node.target.type,
+                    right:  init.type.lifetime);
             }
 
             // De-invalidate after init expr,
@@ -11281,37 +11313,41 @@ pub fn solve(
         //
         if (AAR)
         {
-            mut consts: i32[];
-            mut refs:   i32[];
-
-            mut outOfOrderArgTargets = false;
+            mut consts: Lifetime;
+            mut refs:   Lifetime;
 
             // We only need to seed invalidations from mutref arguments.
             {
-                mut last = 0;
                 _current_fn_eachArg_FWD: |target|
                 {
                     target.globid == _current_fn.target.globid || BUG();
 
-                    let t = target.locid;
-                    last == t && BUG();
-                    if (last > (last = t))
-                        outOfOrderArgTargets = true;
+                    let type    = target.solved.type;
+                    let region  = target.type.lifetime;
 
-                    let type = target.solved.type;
+                    if (!Lifetime_getRefLocid_unlessStatic(region))
+                        continue;
 
                     // Notice we don't consider refs we don't write to as mutrefs for AAR.
                     //  This is meant as an opti, but also tests we've tagged everything correctly.
                     if (type.is_mutref && _current_fn.ever_written.has(target.locid))
-                        refs ~= t;
+                        refs.Lifetime_add(region);
                     else if (type.is_ref && !target.willPassByValue())
-                        consts ~= t;
+                        consts.Lifetime_add(region);
                 }
             }
 
+            //
+            mut refs_len = 0;
+            refs.Lifetime_each: |locid|
+            {
+                locid || BUG("AAR: refs contains non-locals");
+                refs_len++;
+            };
+
             // No point in doing AAR if there are no mutref arguments,
             //  or if there's just one mutref argument and no constref args.
-            if (!refs || refs.len == 1 && !consts)
+            if (!refs_len || refs_len == 1 && !consts)
             {
                 // TODO we can do better -
                 //  we can skip AAR if we can observe that none of the
@@ -11321,14 +11357,6 @@ pub fn solve(
                 //  we wouldn't add invalidation edges between non-aliasable arguments.
                 //
                 return;
-            }
-
-            if (outOfOrderArgTargets)
-            {
-                // sortInjectedArguments() shuffles targets,
-                //  so these need to be sorted before you can use them as sets.
-                refs.sort();
-                consts.sort();
             }
 
             // Reset these, here we use them for the speculative aliasing.
@@ -11353,9 +11381,9 @@ pub fn solve(
             //
             shadow ref flow = _current_fn.flow;
 
-            for (mut i = 0; i < refs.len; i++)
+            refs.Lifetime_each: |locid!target, region|
             {
-                let target = refs[i];
+                target || BUG();
 
                 // First, ref -> const relationships, cheaper setup.
                 if (consts)
@@ -11364,11 +11392,10 @@ pub fn solve(
 
                 // Finally set up the ref <-> ref relationships,
                 //  which are symmetric.
-                if (refs.len > 1)
+                if (refs_len > 1)
                 {
-                    shadow mut refs = refs;
-                    refs.set::rem(target);
-                    flow.rg_invalidates.grow_if_oob(target).set::add(refs);
+                    shadow mut refs = Lifetime_diff(refs, region);
+                    flow.rg_invalidates.grow_if_oob(target).Lifetime_add(refs);
                 }
 
                 // OOE/AAR:
@@ -11382,17 +11409,19 @@ pub fn solve(
                 //
                 // Basically for all_written_BUT_NOT_invalidated to consider other arguments,
                 //  we list them as if they were parents to each ref argument.
-                if (refs.len > 1 || consts)
+                if (refs_len > 1 || consts)
                     (flow.rg_parents.grow_if_oob(target) && BUG("AAR: ref arg already has parents."))
                         = flow.rg_invalidates.unless_oob(target) || BUG("AAR: (refs.len > 1 || consts), but no invalidates.");
             }
 
             // trackReferences uses flow.invalidates to locate siblings,
             //  so we gotta add them here for constants too.
-            if (refs) for (mut i = 0; i < consts.len; i++)
+            if (refs) consts.Lifetime_each: |locid!target|
             {
+                target || BUG();
+
                 // Same as above but flipped.
-                (flow.rg_invalidates.grow_if_oob(consts[i]) && BUG(
+                (flow.rg_invalidates.grow_if_oob(target) && BUG(
                     "AAR: const arg already has invalidates."))
                         = refs;
             }
