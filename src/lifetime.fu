@@ -292,9 +292,8 @@ pub fn Lifetime_each(lifetime: Lifetime, each)
 
 pub fn Lifetime_process(lifetime: Lifetime, each)
 {
-    mut result:         Lifetime;
-    lax mut dedupe:     Lifetime;
-    mut replacements:   Lifetime;
+    mut result: Lifetime;
+    mut maybeOutOfOrder = false;
 
     fn visit(shadow lifetime: Lifetime)
     {
@@ -310,22 +309,15 @@ pub fn Lifetime_process(lifetime: Lifetime, each)
             {
                 fn continue_climb(mut parent: Lifetime)
                 {
-                    // Init the deduper lazily,
-                    //  we want this to compile away if noone uses it.
-                    if (!dedupe)
-                        dedupe = lifetime;
-
-                    // Don't visit anything twice.
-                    parent.Lifetime_rem(dedupe);
-                    dedupe.Lifetime_add(parent);
-
+                    maybeOutOfOrder = true;
                     visit(parent);
                     continue;
                 }
 
                 fn continue_replace(replacement: Lifetime)
                 {
-                    replacements.Lifetime_add(replacement);
+                    maybeOutOfOrder = true;
+                    result.Lifetime_add(replacement);
                     continue;
                 }
 
@@ -350,13 +342,15 @@ pub fn Lifetime_process(lifetime: Lifetime, each)
                 continue;
             }
 
-            result.uni0n ~= chars[offset0 : offset];
+            if (maybeOutOfOrder)
+                result = Lifetime_union(result,
+                    Lifetime(uni0n: chars.slice(offset0, offset)));
+            else
+                result.uni0n ~= chars[offset0 : offset];
         }
     }
 
     visit(lifetime);
-
-    result.Lifetime_add(replacements);
 
     return result;
 }
