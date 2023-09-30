@@ -11381,7 +11381,7 @@ pub fn solve(
             //
             shadow ref flow = _current_fn.flow;
 
-            refs.Lifetime_each: |locid!target, region|
+            refs.Lifetime_each: |locid!target, others|
             {
                 target || BUG();
 
@@ -11392,11 +11392,8 @@ pub fn solve(
 
                 // Finally set up the ref <-> ref relationships,
                 //  which are symmetric.
-                if (refs_len > 1)
-                {
-                    shadow mut refs = Lifetime_diff(refs, region);
-                    flow.rg_invalidates.grow_if_oob(target).Lifetime_add(refs);
-                }
+                if (others)
+                    flow.rg_invalidates.grow_if_oob(target).Lifetime_add(others);
 
                 // OOE/AAR:
                 // Search tests for:
@@ -11537,13 +11534,20 @@ pub fn solve(
                 if (!expect.type.is_ref)
                     return;
 
-                let unexpected = Lifetime_diff(
-                    remove: expect.type.lifetime,
-                    from:   actual.lifetime);
+                // Previously we were testing if
+                //  unexpected := Lifetime_diff(actual, expected)
+                //   was non-empty.
+                //
+                // For unexpected to be non-empty,
+                //  there must be something in actual that's not in expected.
+                //
+                // Thus, the union of actual and expected is > expected.
+                //
+                let union = Lifetime_union(expect.lifetime, actual.lifetime);
 
-                if (unexpected)
+                if (union != expect.lifetime)
                     BUG(node ~ ": " ~ actualCopy ~ " mentions a lifetime not listed in "
-                                    ~ expectCopy ~ ": " ~ unexpected
+                                    ~ expectCopy ~ ":"
                               ~ "\n\n\t\t" ~ actualCopy ~ ":\t" ~ actual.humanizeType(lt: true)
                               ~ "\n\n\t\t" ~ expectCopy ~ ":\t" ~ expect.humanizeType(lt: true));
             }

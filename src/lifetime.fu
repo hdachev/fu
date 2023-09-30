@@ -230,27 +230,6 @@ pub fn Lifetime_hasInter(a: Lifetime, b: Lifetime): bool =
     return false;
 }
 
-pub fn Lifetime_diff(from: Lifetime, remove: Lifetime): Lifetime =
-{
-    mut result: Lifetime;
-
-    merge(from, remove,
-        left: |raw| result.uni0n ~= raw,
-
-        // Early exits.
-        left_done: || {
-
-            // TODO FIX - must be `break;` instead
-            return result;
-        },
-        rest: |left| { // right done, left-leftovers
-            result.uni0n ~= left;
-            break;
-        });
-
-    return result;
-}
-
 
 //
 
@@ -258,12 +237,6 @@ pub fn Lifetime_add(ref l: Lifetime, r: Lifetime)
 {
     if (r)
         l = Lifetime_union(l, r);
-}
-
-pub fn Lifetime_rem(ref l: Lifetime, r: Lifetime)
-{
-    if (l && r)
-        l = Lifetime_diff(l, r);
 }
 
 
@@ -286,7 +259,8 @@ pub fn Lifetime_each(lifetime: Lifetime, each)
             isTemp?:    r == 1,
             isArgIdx?:  r & 3 == 3,
 
-            region?:    Lifetime(uni0n: chars.slice(offset0, offset)));
+            region?:    Lifetime(uni0n: chars.slice(offset0, offset)),
+            others?:    Lifetime(uni0n: chars[: offset0] ~ chars[offset :]));
     }
 }
 
