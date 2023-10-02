@@ -35,7 +35,7 @@ let DONT_match_zeroes       = true;
 
 let MOVE_from_temp          = true;
 
-let TODO_FIX_zeroes_static  = true;
+let TODO_FIX_static_ZSTs    = true;
 
 
 
@@ -1011,8 +1011,8 @@ pub fn solve(
 
             // TODO FIX: deals with passing t_zeroes args
             //  not sure if we care to support these,
-            if (TODO_FIX_zeroes_static)
-                if (type.is_zeroes)
+            if (TODO_FIX_static_ZSTs)
+                if (type.is_zst)
                     lifetime = Lifetime_static;
 
             ///////////////////////////////////////////////////////////////
@@ -9256,7 +9256,7 @@ pub fn solve(
 
                     if (type.lifetime == Lifetime_static)
                     {
-                        TODO_FIX_zeroes_static && type.is_zeroes || BUG(
+                        TODO_FIX_static_ZSTs && type.is_zst || BUG(
                             "Unexpected static lifetime on " ~ foreign);
                     }
                     else
@@ -10507,7 +10507,7 @@ pub fn solve(
             let target      = callsite.target.locid;
             let loop_start  = callsite._loop_start || BUG("bck_trackRead: loop_start not set on callsite.");
 
-            TEST_varLifetime(callsite.type.lifetime, locid: target, staticOK: TODO_FIX_zeroes_static);
+            TEST_varLifetime(callsite.type.lifetime, locid: target, staticOK: TODO_FIX_static_ZSTs);
 
             // Writes invalidate subsequent reads.
             if (events.invalidated_by.len > target)
