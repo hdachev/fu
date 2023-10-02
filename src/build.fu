@@ -18,6 +18,10 @@ let TODO_FIX_ignoredWarnings = ""
     //
     ~ "-Wno-unused-but-set-variable " // opt-out
 
+    // Not every clang has unused-but-set-variable
+    //
+    ~ "-Wno-unknown-warning-option " // opt-out
+
     ;
 
 

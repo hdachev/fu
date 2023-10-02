@@ -602,7 +602,7 @@ pub fn cpp_codegen(
             ~ _tdef
 
             ~ collectDedupes(_gcc_ignore,
-                header: "#pragma GCC diagnostic push\n#ifdef __clang__\n#pragma GCC diagnostic warning \"-Wunknown-warning-option\"\n#endif\n",
+                header: "#pragma GCC diagnostic push\n",
                 prefix: "#pragma GCC diagnostic ignored \"",
                 suffix: "\"\n")
 
