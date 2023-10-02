@@ -908,7 +908,7 @@ pub fn solve(
 
         // Local?
         let locid = target.locid;
-        if (locid)
+        if (locid && (flatCount || !TODO_FIX_static_ZSTs))
             return Lifetime_from(:locid, :flatCount);
 
         // Else static.
@@ -1007,13 +1007,7 @@ pub fn solve(
         // Setup the lifetime for references to this binding.
         ref overload = GET_mut(target);
         {
-            mut lifetime = Lifetime_fromBinding(target, type.getFlatCount());
-
-            // TODO FIX: deals with passing t_zeroes args
-            //  not sure if we care to support these,
-            if (TODO_FIX_static_ZSTs)
-                if (type.is_zst)
-                    lifetime = Lifetime_static;
+            let lifetime = Lifetime_fromBinding(target, type.getFlatCount());
 
             ///////////////////////////////////////////////////////////////
             // Throw away argument lifetime, union below will fix it up. //
