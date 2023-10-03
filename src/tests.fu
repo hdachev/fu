@@ -7125,6 +7125,22 @@ pub extern fn runTests()
     `);
 
     ZERO(`
+        struct Hello { v: i32[] };
+
+        fn main() {
+            let h = Hello();
+
+            <fail novec>
+            novec // qSTACK bug with args.len == 0 at call to Hello
+            <pass/></fail>
+            fn hello(woot?: i32)
+                woot ? Hello() : h;
+
+            return hello.v.len;
+        }
+    `);
+
+    ZERO(`
         struct Module  { cpp:    string; };
         struct Context { module: Module; };     // Simplification of next test, no need to consider COW here
 

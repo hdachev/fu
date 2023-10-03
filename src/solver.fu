@@ -8862,14 +8862,15 @@ pub fn solve(
 
     fn qSTACK(callsite: SolvedNode, write!: i32)
     {
-        let host_args = callsite.kind == "call" && callsite.target.args;
-        for (mut i = 0; i < host_args.len; i++)
+        let args        = callsite.items;
+        let host_args   = callsite.kind == "call" && callsite.target.args;
+        if (args.len == host_args.len) for (mut i = 0; i < host_args.len; i++)
         {
             let host_arg = host_args[i];
             if !(host_arg.flags & F_WRITTEN_TO)
                 continue;
 
-            let arg = callsite.items[i];
+            let arg = args[i];
             if !(arg.type.lifetime.Lifetime_has(locid: write))
                 continue;
 
@@ -8906,8 +8907,9 @@ pub fn solve(
             if (seen.has(callsite.target))
                 continue;
 
-            let host_args = callsite.target.args;
-            for (shadow mut i = 0; i < host_args.len; i++)
+            let args        = callsite.items;
+            let host_args   = callsite.target.args;
+            if (args.len == host_args.len) for (shadow mut i = 0; i < host_args.len; i++)
             {
                 let host_arg = host_args[i];
 
@@ -8922,7 +8924,7 @@ pub fn solve(
                         continue;
                 }
 
-                let arg = callsite.items[i];
+                let arg = args[i];
                 let unwound = Lifetime_unwind(arg.type.lifetime);
                 if !(unwound.Lifetime_has(:locid))
                     continue;
