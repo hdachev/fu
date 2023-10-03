@@ -3198,6 +3198,21 @@ pub extern fn runTests()
         }
     `);
 
+    ZERO(`
+        fn woot(hello!?, world!?) {
+            hello(one?: 1);
+            world(two?: 2);
+        }
+
+        fn main() {
+            mut res = 0;
+            <fail duplicate explicitly named argument hello 10:17+1>
+            woot(hello: |one| res += one, hello: |one| res += one); <pass/>
+            woot(hello: |one| res += one, world: |two| res += two); </fail>
+            return res - 3;
+        }
+    `);
+
     // /Default arguments.
 
 

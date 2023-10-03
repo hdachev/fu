@@ -1342,7 +1342,7 @@ pub fn solve(
         return true;
     }
 
-    fn ERRMSG_findUnmatchedArgName(reorder: Reorder, names: string[])
+    noinline fn ERRMSG_findUnmatchedArgName(reorder: Reorder, names: string[])
     {
         mut used: bitset::BitSet;
         for (mut i = 0; i < reorder.map.len; i++)
@@ -1352,11 +1352,26 @@ pub fn solve(
                 used.add(pos);
         }
 
-        for (mut i = 0; i < names.len; i++)
-            if (!used.has(i))
-                return names[i];
+        names.each: |name, i|
+        {
+            if (used.has(i))
+                continue;
 
-        return "[BUG: findUnmatchedArgName]";
+            mut count = 0;
+            mut first = names.len;
+
+            names.each: |n, shadow i|
+                if (n == name)
+                    if (!count++)
+                        first = i;
+
+            if (first < i)
+                return "Duplicate explicitly named arguments: " ~ count.str.qBAD ~ " args named " ~ names[i].qBAD ~ ".";
+
+            return "Explicit named argument mismatch: no arg " ~ names[i].qBAD ~ ".";
+        }
+
+        return "Explicit argument name related error.\n\n\tBUG failed to explain what's wrong.";
     }
 
     fn findRestStart(ext: Extended)
@@ -1599,7 +1614,7 @@ pub fn solve(
                 if (!names)
                     reorderByNumUsings(:reorder, host_args, args.len, :num_usings);
                 else if (!reorderByArgIDs(:reorder, names, optional, host_args, :num_usings))
-                    matchFail("Unknown argument name: " ~ ERRMSG_findUnmatchedArgName(:reorder, :names));
+                    matchFail(ERRMSG_findUnmatchedArgName(:reorder, :names));
 
                 // Forbid optional argument ambiguities -
                 //  We should either have all optional args satisfied at the receiver or sender part,
