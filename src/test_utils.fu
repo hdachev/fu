@@ -15,11 +15,16 @@ pub fn compile_snippets(sources: string[], mut fnames?: string[], options?: Opti
             : "\n\nfn main(): i32 {\n" ~ src ~ "\n}\n";
 
     // Ensure fnames.
+    let base_dir = FUDIR ~ "__tests__/";
+
     while (fnames.len < sources.len)
-        fnames.push(FUDIR ~ "__tests__/_" ~ fnames.len ~ ".fu");
+        fnames.push(base_dir ~ "_" ~ fnames.len ~ ".fu");
 
     // Preprocess & "cache" sources.
     let implicit mut ctx = prelude::CTX_PRELUDE.clone();
+
+    ctx.base_dir = base_dir;
+
     for (mut i = 0; i < sources.len; i++)
     {
         let snippet = sources[i];

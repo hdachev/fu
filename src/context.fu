@@ -231,11 +231,18 @@ pub fn getModuleSrc(implicit ctx: Context, modid!: i32)
     return ctx.modules[modid].in.src;
 }
 
-pub fn formatTokenCoord(token: TokenIdx, from!: i32)
+pub fn formatTokenCoord(token: TokenIdx, from!: i32, implicit ctx: Context)
 {
-    return formatTokenCoord(
-        fname: from != token.modid && token._fname,
-        token: token._token);
+    mut fname = from != token.modid && token._fname;
+
+    // Doing this for testdiffs, we want to emit the same error messages
+    //  irrespective of where on the fs your code is,
+    //   we dont want /home/username/myproj/whatever in there.
+    //
+    if (fname && ctx.base_dir)
+        fname = path::relative(from: ctx.base_dir, to: fname);
+
+    return formatTokenCoord(:fname, token: token._token);
 }
 
 pub fn formatTokenCoord(fname!: string, token: LineColChars)

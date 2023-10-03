@@ -7,6 +7,10 @@ let Quals_bitsize = 32;
 
 nocopy struct Context
 {
+    // Error reporting & file snippets.
+    base_dir:   string;
+
+    //
     modules:    Module[];
     dep_order:  i32[];
 
