@@ -358,8 +358,8 @@ pub fn spawn(
                 }
 
                 // Don't short circuit here.
-                if (  !ReadPollFD(poll_fds[0], `stdout`)
-                    & !ReadPollFD(poll_fds[1], `stderr`))
+                if (  int(!ReadPollFD(poll_fds[0], `stdout`))
+                    & int(!ReadPollFD(poll_fds[1], `stderr`)))
                 {
                     break;
                 }
