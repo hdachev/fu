@@ -1280,13 +1280,18 @@ pub fn parse(
                 outFlags  |= F_INLINE;
             }
 
-            if (arg.items[LET_INIT])
+            let annot   = arg.items[LET_TYPE];
+            let init    = arg.items[LET_INIT];
+            if (init)
             {
                 if (arg.flags & F_IMPLICIT)
                     fail("TODO default implicit arguments");
 
                 if (firstDefaulted < 0)
                     firstDefaulted = outArgs.len;
+
+                if (init.kind == "definit" && !annot)
+                    arg.flags |= F_TEMPLATE;
             }
             else if (firstDefaulted >= 0)
             {
@@ -1296,7 +1301,7 @@ pub fn parse(
                 insertAt = firstDefaulted;
                 firstDefaulted++;
             }
-            else if (!arg.items[LET_TYPE])
+            else if (!annot)
             {
                 arg.flags |= F_TEMPLATE;
             }

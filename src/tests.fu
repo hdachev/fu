@@ -3184,6 +3184,20 @@ pub extern fn runTests()
         }
     `);
 
+    ZERO(`
+        fn woot(hello!?, world!?) {
+            hello(one?: 1);
+            world(two?: 2);
+        }
+
+        fn main() {
+            mut res = 0;
+            woot(hello: |one| res += one);
+            woot(world: |two| res += two);
+            return res - 3;
+        }
+    `);
+
     // /Default arguments.
 
 
