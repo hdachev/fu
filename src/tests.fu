@@ -11045,6 +11045,40 @@ pub extern fn runTests()
         }
     `);
 
+    ZERO(`
+        fn main() {
+            let v = <alt>u8<alt/>byte</alt>(128);
+            return v.i32 == 128 ? 0 : 1;
+        }
+    `);
+
+    ZERO(`
+        fn main() {
+            let v = <alt>i32<alt/>u32</alt>(128);
+            return byte(v) == byte(128) ? 0 : 1;
+        }
+    `);
+
+    ZERO(`
+        fn main() {
+            let v = <alt>i32<alt/>u32</alt>(2147483648);
+            return byte(v) == byte(0) ? 0 : 1;
+        }
+    `);
+
+    ZERO(`
+        fn main() {
+            let v = <alt>i32<alt/>u32</alt>(-1);
+            return byte(v) == byte(255) ? 0 : 1;
+        }
+    `);
+
+    ZERO(`
+        fn main() {
+            return i32(byte(i32(128))) == 128 ? 0 : 1;
+        }
+    `);
+
 
     // Pubs & imports.
 
