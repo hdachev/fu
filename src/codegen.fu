@@ -668,7 +668,7 @@ pub fn cpp_codegen(
             id = GET(cid.target).name;
         // CLOSURE-ID-HACK
 
-        id = ID(id);
+        id = ID(id).valid_identifier;
 
         let locid = target.locid;
         if (locid)

@@ -785,6 +785,11 @@ pub extern fn runTests()
         }
     `);
 
+    ZERO(`
+        fn work(visit) visit(1, 2);
+        fn main() work: |_, _| return 0;
+    `);
+
     // /Template args
 
 

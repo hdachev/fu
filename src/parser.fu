@@ -1268,7 +1268,7 @@ pub fn parse(
             let isInline = !!tryConsume("id", "inline");
 
             mut insertAt = -1;
-            mut arg = parseLet(xqmark: true, allowTypeUnions: true, allowTypeParams: true);
+            mut arg = parseLet(xqmark: true, allowTypeUnions: true, allowTypeParams: true, anonIndex: outArgs.len);
 
             let NEW = _numDollars > numDollars0;
             if (NEW || arg.items[LET_TYPE].kind == "typeunion")
@@ -1333,7 +1333,7 @@ pub fn parse(
         return ret;
     }
 
-    fn parseLet(xqmark! = false, allowTypeUnions! = false, allowTypeParams! = false): Node
+    fn parseLet(xqmark! = false, allowTypeUnions! = false, allowTypeParams! = false, anonIndex! = 0): Node
     {
         mut flags: Flags;
 
@@ -1362,7 +1362,12 @@ pub fn parse(
         //
         mut id = consume("id").value;
         if (id == "_")
+        {
+            if (anonIndex)
+                id = "_ " ~ anonIndex;
+
             flags |= F_LAX;
+        }
 
         // Explicit external arg name.
         if (xqmark && tryConsume("op", "!"))
