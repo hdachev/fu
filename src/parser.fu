@@ -1049,6 +1049,8 @@ pub fn parse(
         name!: string, mut flags!?: Flags, asserts?: DeclAsserts,
         expr!?: bool, leadingDot!?: bool, endv! = ")"): Node
     {
+        shadow let expr = expr || leadingDot;
+
         // Opening parens!
         mut items: Node[];
 
@@ -1091,7 +1093,8 @@ pub fn parse(
             }
         }
 
-        return make("fn", :items, :flags, :asserts, name);
+        return make("fn", :items, :flags, :asserts, name,
+            syntax: !expr && PS_NOT_AN_EXPRESSION);
     }
 
     fn parseLeadingDot(
@@ -1465,6 +1468,11 @@ pub fn parse(
 
         //
         mut head = parseHead(mode?: mode);
+
+        // TODO FIX This is gnarly - e.g. "statement-mode" lambda,
+        //  we don't want to continue parsing an expression after the semi.
+        //
+        if !(head.syntax & PS_NOT_AN_EXPRESSION)
         {
             //////////////////////////////////////////////
             // Lint, this looks crazy but its fine really,

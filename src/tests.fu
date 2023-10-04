@@ -9096,6 +9096,17 @@ pub extern fn runTests()
         fn main() woot * woot(|x| x * 5) - 30;
     `);
 
+    ZERO(`
+        fn woot(myfn) myfn(1);
+
+        fn main() {
+            mut sum = 0;            // PARSE DRAMA
+            woot: |one| sum += one; //  stmt lambda, followed by
+            (sum += 1) += 1;        //   '(' which continued as-if-expr
+            return sum -3;
+        }
+    `);
+
     // /quite right
 
 
