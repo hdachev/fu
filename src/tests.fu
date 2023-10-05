@@ -8596,6 +8596,40 @@ pub extern fn runTests()
         }
     `);
 
+    TODO_relaxer(currently: "BUG ScopeSkip_push: bad args 21:12+12", `
+        struct Module { events: i32; };
+
+        <alt>
+        inline   <alt/>
+        noinline </alt>
+        fn profile(implicit ref module: Module, id: i32, op) {
+            let events0 = module.events;
+            op();
+            module.events += (events0 + id);
+        }
+
+        <alt>
+        inline   <alt/>
+        noinline </alt>
+        fn propagateType(implicit ref module: Module) {
+                        /// force-template, weird relax order
+            profile(2, |lax unused?| module.events = 1);
+        }               ///////////
+
+        <alt>
+        inline   <alt/>
+        noinline </alt>
+        fn runAllPasses() {
+            profile(3, fn propagateType);
+        }
+
+        fn main() {
+            implicit mut module: Module;
+            runAllPasses();
+            return module.events == 1 + 2 + 3 ? 0 : 1;
+        }
+    `);
+
     ZERO(`
         struct Module { events: i32; };
 
