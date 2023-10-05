@@ -9119,7 +9119,7 @@ pub extern fn runTests()
         }
     `);
 
-    TODO_prelude(currently: "ambig E", `
+    ZERO(`
         fn woot!E (e?: E) {
             if (E -> [])
                 return 2;
@@ -10147,22 +10147,22 @@ pub extern fn runTests()
 
     ZERO(`
         fn main()
-            i32(PI * 2.0) - 6;
+            i32(f64.PI * 2.0) - 6;
     `);
 
     ZERO(`
         fn main()
-            i32(PI * 2 - 6);
+            i32(f64.PI * 2 - 6);
     `);
 
     ZERO(`
         fn main()
-            PI * 2 - 6 |> i32;
+            f64.PI * 2 - 6 |> i32;
     `);
 
     ZERO(`
         fn main()
-            i32 <| PI * 2 - 6;
+            i32 <| f64.PI * 2 - 6;
     `);
 
     ZERO(`

@@ -2042,7 +2042,8 @@ pub fn cpp_codegen(
             //  added this for prelude view<U>(a: T[:], type U),
             //   which becomes a fu::view_of<U>(a).
             //
-            if (id.ends(with: "<>"))
+            let template = id.find("<>");
+            if (template > 0)
             {
                 mut angle_brackets = "";
                 argsForward(:RTL, :host_args): |lax i, host_arg|
@@ -2058,10 +2059,16 @@ pub fn cpp_codegen(
                     }
                 };
 
-                id = id[: id.len - 2] ~ '<' ~ angle_brackets ~ '>';
+                id  = id[: template]
+                    ~ '<' ~ angle_brackets ~ '>'
+                    ~ id[template + 2 :];
             }
 
-            return ooeWrap(id ~ open ~ REST ~ close);
+            shadow let args = open ~ REST ~ close;
+            if (args == "()" && id.ends(with: ')'))
+                return id;
+
+            return ooeWrap(id ~ args);
         }
 
 

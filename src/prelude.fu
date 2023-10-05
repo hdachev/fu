@@ -148,10 +148,10 @@ fn atan !T(v: T) case (T.is::floating_point): T __native("<cmath>", "std::atan")
 
 fn atan2 !T(y: T, x: T) case (T.is::floating_point): T __native("<cmath>", "std::atan2");
 
-fn PI():  f64 __native("<math.h>", "M_PI");
-fn E():   f64 __native("<math.h>", "M_E");
-fn INF(): f64 __native("<math.h>", "INFINITY");
-fn NAN(): f64 __native("<math.h>", "NAN");
+fn PI (type T) case (T.is::floating_point): T __native("<math.h>", "static_cast<>(M_PI)");
+fn E  (type T) case (T.is::floating_point): T __native("<math.h>", "static_cast<>(M_E)");
+fn INF(type T) case (T.is::floating_point): T __native("<math.h>", "static_cast<>(INFINITY)");
+fn NAN(type T) case (T.is::floating_point): T __native("<math.h>", "static_cast<>(NAN)");
 
 fn nan    !T(v: T) case (T.is::floating_point): bool __native("<cmath>", "std::isnan");
 fn inf    !T(v: T) case (T.is::floating_point): bool __native("<cmath>", "std::isinf");
