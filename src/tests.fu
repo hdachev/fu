@@ -13407,7 +13407,7 @@ pub extern fn runTests()
         }
     `);
 
-    TODO_inline(currently: "return does not match annot 37:25+1", `
+    ZERO(`
         struct Lifetime { regions: i32[] };
 
         let Region_STATIC = 0;
@@ -14283,10 +14283,10 @@ pub extern fn runTests()
         fn main() = test();
     `);
 
-    TODO_control(currently: "does not match annotation i32 void 9:49+5", `
+    ZERO(`
         fn each(ref arr: i32[], even, odd)
             for (mut i = 0; i < arr.len; i++)
-                if (i)  odd(i?: i, it?: arr[i]);
+                if (!i) odd(i?: i, it?: arr[i]);
                 else   even(i?: i, it?: arr[i]);
 
         fn main() {

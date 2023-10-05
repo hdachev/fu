@@ -141,6 +141,9 @@ pub fn parse(
     mut _expectedTypeParams: string[];
     mut _upstreamTypeParams: string[];
 
+    //
+    mut _numBreaksWoLabels  = 0;
+
 
     //
 
@@ -1056,11 +1059,13 @@ pub fn parse(
 
         ////////////////////////////////
         _fnDepth++;
-        let numDollars0 = _numDollars;
+        let numDollars0         = _numDollars;
+        let numBreaksWoLabels0  = _numBreaksWoLabels;
 
         defer {
             _fnDepth--;
-            _numDollars = numDollars0;
+            _numDollars         = numDollars0;
+            _numBreaksWoLabels  = numBreaksWoLabels0;
         }
         ////////////////////////////////
 
@@ -1092,6 +1097,14 @@ pub fn parse(
                 flags |= F_EXTERN;
             }
         }
+
+        // TODO FIX gotta rethink how we do jumps & labels,
+        //  starting to think that we should only have jumps
+        //   with explicit labels in the AST,
+        //    which means we'd have to resolve them while parsing.
+        //
+        if (flags & F_LAMBDA && _numBreaksWoLabels > numBreaksWoLabels0)
+            flags |= F_TEMPLATE;
 
         return make("fn", :items, :flags, :asserts, name,
             syntax: !expr && PS_NOT_AN_EXPRESSION);
@@ -2106,6 +2119,10 @@ pub fn parse(
         _fnDepth > 0 || { _idx--; fail() };
 
         let label = tryConsume("op", ":") && consume("id").value;
+
+        // TODO FIX see comment re: `flags & F_LAMBDA` above
+        if (kind == "break" && !label)
+            _numBreaksWoLabels++;
 
         mut expr: Node;
         if (!tryConsume("op", ";"))
