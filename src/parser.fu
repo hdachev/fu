@@ -1658,8 +1658,16 @@ pub fn parse(
                 let peek = tokens[_idx];
                 if (peek.kind == "id")
                 {
-                    if (v == "fn")
-                        return parseFnDecl(expr: true);
+                    if (v == "fn" || v == "infix" || v == "prefix" || v == "postfix")
+                    {
+                        _idx++;
+                        let fixity = v == "infix"   ? Infix
+                                   : v == "prefix"  ? Prefix
+                                   : v == "postfix" ? Postfix
+                                   : { _idx--; [] };
+
+                        return parseFnDecl(expr: true, :fixity);
+                    }
                 }
 
                 if (peek.kind == "op" && peek.value == "{")

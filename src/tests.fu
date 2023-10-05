@@ -12483,7 +12483,7 @@ pub extern fn runTests()
         }
     `);
 
-    TODO_args(currently: "expected op got id 2:41", `
+    ZERO(`
         fn check(a, b, compare! = infix fn <>)
             compare(a, b);
 
