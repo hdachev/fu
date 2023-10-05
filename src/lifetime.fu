@@ -37,7 +37,7 @@ fn appendRegion(ref str: byte[], mut v: u32)
 
 //
 
-pub fn Lifetime_from(locid!: i32): Lifetime =
+pub fn Lifetime_from(locid!: i32, lax flatCount!: i32): Lifetime =
 {
     if (SELF_TEST)
         locid > 0 || BUG("Lifetime_from: Bad locid");
@@ -47,7 +47,7 @@ pub fn Lifetime_from(locid!: i32): Lifetime =
     return Lifetime(:uni0n);
 }
 
-pub fn Lifetime_from(argidx!: i32): Lifetime =
+pub fn Lifetime_from(argidx!: i32, lax flatCount!: i32): Lifetime =
 {
     if (SELF_TEST)
         argidx >= 0 || BUG("Lifetime_from: Bad argidx");

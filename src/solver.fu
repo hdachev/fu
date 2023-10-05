@@ -902,14 +902,14 @@ pub fn solve(
         }
     }
 
-    fn Lifetime_fromBinding(target: Target): Lifetime
+    fn Lifetime_fromBinding(target: Target, flatCount: i32): Lifetime
     {
         target.locid || target.modid == module.modid || BUG("not from this module");
 
         // Local?
         let locid = target.locid;
         if (locid)
-            return Lifetime_from(:locid);
+            return Lifetime_from(:locid, :flatCount);
 
         // Else static.
         return Lifetime_static();
@@ -1007,7 +1007,7 @@ pub fn solve(
         // Setup the lifetime for references to this binding.
         ref overload = GET_mut(target);
         {
-            mut lifetime = Lifetime_fromBinding(target);
+            mut lifetime = Lifetime_fromBinding(target, type.getFlatCount());
 
             // TODO FIX: deals with passing t_zeroes args
             //  not sure if we care to support these,
@@ -5655,7 +5655,7 @@ pub fn solve(
                                 returned.add(i);
 
                                 continue_replace(
-                                    Lifetime_from(argidx: i));
+                                    Lifetime_from(argidx: i, flatCount: arg.type.getFlatCount()));
                             }
                         });
 
@@ -9261,11 +9261,13 @@ pub fn solve(
                     }
                     else
                     {
-                        TEST_LifetimeEqual(
-                            type.lifetime,                      "foreign.type.lifetime",
-                            Lifetime_fromBinding(expr.target),  "Lifetime_fromBinding");
+                        let flatCount = type.getFlatCount();
 
-                        type.lifetime = Lifetime_fromBinding(local);
+                        TEST_LifetimeEqual(
+                            type.lifetime,                                  "foreign.type.lifetime",
+                            Lifetime_fromBinding(expr.target, :flatCount),  "Lifetime_fromBinding");
+
+                        type.lifetime = Lifetime_fromBinding(local, :flatCount);
                     }
 
                     //
