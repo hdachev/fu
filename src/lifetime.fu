@@ -60,12 +60,14 @@ pub fn Lifetime_from(argidx!: i32, lax flatCount!: i32): Lifetime =
 
 //
 
-inline fn merge !<B, L, R, Else, Rest>(
+inline fn merge !<B, L, R, Either, Rest>(
 
     l_chars.uni0n,
     r_chars.uni0n,
 
-    both!?: B, left!?: L, right!?: R, else!?: Else,
+    both!?: B, left!?: L, right!?: R,
+
+    either!?: Either,
 
     left_done!?,
     right_done!?,
@@ -137,40 +139,51 @@ inline fn merge !<B, L, R, Else, Rest>(
                         : (l == 1) != (r == 1)      ? r == 1    ? +1 : -1
                                                     : r <> l;
 
-                if (cmp == 0)
+                let either_chars =
                 {
-                    l_dirty = true;
-                    r_dirty = true;
-                    if !(B -> [])
+                    :EITHER
                     {
-                        both(l_chars[l_start : l_offset]);
-                        continue;
-                    }
-                }
-                else if (cmp < 0)
-                {
-                    l_dirty = true;
-                    if !(L -> [])
-                    {
-                        left(l_chars[l_start : l_offset]);
-                        continue;
-                    }
-                }
-                else
-                {
-                    r_dirty = true;
-                    if !(R -> [])
-                    {
-                        right(r_chars[r_start : r_offset]);
-                        continue;
-                    }
-                }
+                        if (cmp == 0)
+                        {
+                            l_dirty = true;
+                            r_dirty = true;
+                            if !(B -> [])
+                            {
+                                both(l_chars[l_start : l_offset]);
+                                continue;
+                            }
+                        }
+                        else if (cmp < 0)
+                        {
+                            l_dirty = true;
+                            if !(Either -> [])
+                                break :EITHER l_chars[l_start : l_offset];
 
-                if !(Else -> [])
-                {
-                    else(cmp > 0 ? r_chars[r_start : r_offset]
-                                 : l_chars[l_start : l_offset]);
-                }
+                            if !(L -> [])
+                            {
+                                left(l_chars[l_start : l_offset]);
+                                continue;
+                            }
+                        }
+                        else
+                        {
+                            r_dirty = true;
+                            if !(Either -> [])
+                                break :EITHER r_chars[r_start : r_offset];
+
+                            if !(R -> [])
+                            {
+                                right(r_chars[r_start : r_offset]);
+                                continue;
+                            }
+                        }
+
+                        continue;
+                    }
+                };
+
+                //
+                either(either_chars);
             }
 
             return;
@@ -189,7 +202,9 @@ pub fn Lifetime_union(a: Lifetime, b: Lifetime): Lifetime =
     mut result: Lifetime;
 
     merge(a, b,
-        else: |raw| result.uni0n ~= raw,
+
+        either: |raw| result.uni0n ~= raw,
+        both:   |raw| result.uni0n ~= raw,
 
         // Early exits.
         left_done: || {
