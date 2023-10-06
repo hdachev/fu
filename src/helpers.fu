@@ -246,7 +246,7 @@ fn appendVarint(ref str: byte[], mut v: u32)
 {
     while (v >= 64)
     {
-        str ~= byte((v & 0x7f) | 0x80);
+        str ~= byte(v | 0x80);
         v  >>= 7;
     }
 
