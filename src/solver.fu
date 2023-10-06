@@ -4430,13 +4430,8 @@ pub fn solve(
 
     fn solveString(node: Node, type: Type): SolvedNode
     {
-        shadow let type = solveString(node.value, type);
-
-        if (!node.value && t_string.is_sliceable)
-            return createDefinit(
-                add_ref(t_string, Lifetime_static));
-
-        return solved(node, type);
+        return solved(node,
+            type: solveString(node.value, type));
     }
 
     fn createEmpty(::kind = "empty", type = t_void, target?: Target): SolvedNode

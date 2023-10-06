@@ -2808,7 +2808,7 @@ pub extern fn runTests()
             ).len - 14;
     `);
 
-    TODO_definit(currently: "Ambig call to ~ 2:23+1", `
+    ZERO(`
         fn main() ("" ~ "").len;
     `);
 
@@ -10614,7 +10614,10 @@ pub extern fn runTests()
         fn test(a: [byte], b?: [byte]) a == b;
         fn main() test("") ? 0 : 1;
 
-        ;; EXPECT (fu::view<char>{}, fu::view<char>{})
+        ;; EXPECT (""_fu, fu::view<char>{})
+
+        // This is what we had before, it's better.
+        ;; TODO (fu::view<char>{}, fu::view<char>{})
     `);
 
     ZERO(`
