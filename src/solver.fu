@@ -1880,7 +1880,7 @@ pub fn solve(
                                 ~ " as seen from " ~ callsite.fnName);
                     }
 
-                    fail("Ambiguous callsite, matches multiple items in scope:\n"
+                    fail("Ambiguous " ~ (id ? "call to " ~ id.qBAD : "callsite") ~ ", matches multiple items in scope:\n"
                         ~ "\n\t" ~ explainWhichFn(PREV, conversions_out)
                         ~ "\n\t" ~ explainWhichFn(NEXT, conversions    ));
                 }

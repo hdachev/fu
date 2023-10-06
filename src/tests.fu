@@ -107,6 +107,7 @@ pub extern fn runTests()
     let TODO_specpat    = fn TODO;
     let TODO_control    = fn TODO;
     let TODO_prelude    = fn TODO;
+    let TODO_definit    = fn TODO;
 
     let TODO_Map        = fn TODO;
 
@@ -2807,8 +2808,15 @@ pub extern fn runTests()
             ).len - 14;
     `);
 
+    TODO_definit(currently: "Ambig call to ~ 2:23+1", `
+        fn main() ("" ~ "").len;
+    `);
 
-    // String opti checkers.
+    TODO_definit(currently: "BUG exit code", [`
+        let empty_str = "";
+    `,`
+        fn main() = _0::empty_str.len;
+    `]);
 
     ZERO(`
         let strA = "0123456789abcdef0123456789ABCDEF";
@@ -2832,6 +2840,8 @@ pub extern fn runTests()
             strA.slice(26, 32) == "ABCDEF"
                 ? 0 : 1;
     `);
+
+    // /Strings.
 
 
     // Maps.
