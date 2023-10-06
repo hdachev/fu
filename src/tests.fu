@@ -2812,10 +2812,31 @@ pub extern fn runTests()
         fn main() ("" ~ "").len;
     `);
 
-    TODO_definit(currently: "BUG exit code", [`
+    ZERO([`
         let empty_str = "";
     `,`
         fn main() = _0::empty_str.len;
+    `]);
+
+    ZERO([`
+        let empty_str = "";
+        let empty_str_ref = empty_str;
+    `,`
+        fn main() = _0::empty_str_ref.len;
+    `]);
+
+    ZERO([`
+        let non_empty_str = "This is a non-empty string that's too long for small string opti.";
+        let non_empty_str_ref = non_empty_str;
+    `,`
+        fn main() = _0::non_empty_str_ref.len - 65;
+    `]);
+
+    ZERO([`
+        let non_empty_str = "This is a non-empty string that's too long for small string opti.";
+        let non_empty_slice = non_empty_str[5:];
+    `,`
+        fn main() = _0::non_empty_slice.len - 60;
     `]);
 
     ZERO(`

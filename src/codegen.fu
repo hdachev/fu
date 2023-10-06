@@ -26,10 +26,17 @@ let M_MOVABLE           = 1 << 11;
 let M_ARG_TO_NATIVE     = 1 << 12;
 let M_ENUM_DECL         = 1 << 13;
 let M_CHECK_NEVER_LTR   = 1 << 14;
+let M_STATIC_REF        = 1 << 15;
 
 let MAIN_needed         = 1 << 0;
 let MAIN_argv           = 1 << 1;
 let MAIN_zst            = 1 << 2;
+
+
+//
+
+let use_INIT_PRIOIRTY   = true;
+let use_STATIC_REF      = true;
 
 
 //
@@ -219,13 +226,25 @@ pub fn cpp_codegen(
 
     //
 
+    fn refType_annotateAsSlice(type: Type)
+    {
+        return type.is_sliceable
+            && !type.arrayType_annotateAsVec;
+    }
+
     fn typeAnnot(type: Type, mode?: i32): string
     {
         let fwd = typeAnnotBase(type, :mode);
 
         if (type.is_ref)
         {
-            if (type.is_sliceable && !type.arrayType_annotateAsVec || fwd == "void")
+            if (mode & M_STATIC_REF)
+            {
+                include("<fu/static_ref.h>");
+                return "fu::static_ref<" ~ fwd ~ ">";
+            }
+
+            if (type.refType_annotateAsSlice || fwd == "void")
                 return fwd;
 
             if (type.is_mutref)
@@ -1345,6 +1364,56 @@ pub fn cpp_codegen(
         return t.is_ref && (!t.is_sliceable || t.arrayType_annotateAsVec);
     }
 
+    fn globalVar_isConstexpr(o: Overload)
+    {
+        fn isConstexpr(expr: SolvedNode)
+        {
+            if (expr.kind == "int" || expr.kind == "char" || expr.kind == "real" || expr.kind == "bool")
+                return true;
+
+            if (expr.kind == "call")
+            {
+                shadow let o = GET(expr.target);
+                if (o.kind == "__native" && o.flags & F_OPERATOR)
+                {
+                    for (mut i = 0; i < expr.items.len; i++)
+                        if (!expr.items[i].isConstexpr)
+                            return false;
+
+                    return true;
+                }
+                else if (o.kind == "var")
+                {
+                    return o.globalVar_isConstexpr;
+                }
+            }
+
+            return false;
+        }
+
+        return o.solved.items[LET_INIT].isConstexpr;
+    }
+
+    fn TODO_FIX_useStaticRef(target: Target)
+    {
+        if (target.locid || !use_STATIC_REF)
+            return false;
+
+        // Several things break with extern const refs,
+        //  clang complains about init_priority,
+        //   there's some error about extern variables with initializers,
+        //    gotta investigate further but this works,
+        //     honestly really disappointing stuff.
+        //
+        // Return false here to reproduce.
+        //
+        let place_type = target.solved.type;
+        return  place_type.is_ref
+            && !place_type.isPassByValue
+            && !place_type.refType_annotateAsSlice
+            && !target.globalVar_isConstexpr;
+    }
+
     fn binding(target!: Target, forceValue!?: bool)
     {
         let overload    = GET(target);
@@ -1359,7 +1428,9 @@ pub fn cpp_codegen(
             place_type, (!overload.type.is_mutref && M_CONST)
                       | (isArg && M_ARGUMENT)
                       | (overload.type.is_mutref && M_MUTVAR)
-                      | (overload.flags & F_MOVED_FROM && M_MOVABLE));
+                      | (overload.flags & F_MOVED_FROM && M_MOVABLE)
+                      | (target.TODO_FIX_useStaticRef && M_STATIC_REF)
+        );
 
         let isUnused = overload.status & SS_UNUSED;
         if (isArg && isUnused)
@@ -1521,33 +1592,11 @@ pub fn cpp_codegen(
             return "";
 
         // GLOBALS ///////////////////////////////////////////////
-        fn isIntegerConstant(expr)
-        {
-            if (expr.kind == "int")
-                return true;
-
-            if (expr.kind == "call")
-            {
-                let t = GET(expr.target);
-                if (t.kind == "__native" && t.flags & F_OPERATOR)
-                {
-                    for (mut i = 0; i < expr.items.len; i++)
-                        if (!expr.items[i].isIntegerConstant)
-                            return false;
-
-                    return true;
-                }
-            }
-
-            return false;
-        }
-
-        let intconst = global
-            && node.type.is_primitive && !node.type.is_floating_pt
-            && node.items[LET_INIT].isIntegerConstant;
+        let constexpr = global
+            && node.target.globalVar_isConstexpr;
         // GLOBALS ///////////////////////////////////////////////
 
-        mut src = binding(node, doInit: !foreign || intconst);
+        mut src = binding(node, doInit: !foreign || constexpr);
         if (!global)
             return src;
 
@@ -1555,7 +1604,7 @@ pub fn cpp_codegen(
         if (src.starts(with: "const "))
             src = src.slice(6);
 
-        if (intconst)
+        if (constexpr)
         {
             _fdef  ~= "\n                                #ifndef DEF_" ~ node.value
                     ~ "\n                                #define DEF_" ~ node.value
@@ -1566,7 +1615,8 @@ pub fn cpp_codegen(
         }
 
         // Static init prio.
-        let prio    = node.type.is_primitive                ? 0
+        let prio    = !use_INIT_PRIOIRTY                    ? 0
+                    : node.type.is_primitive                ? 0
                     : node.target.modid == module.modid     ? module.order.dep_depth
                                                             : ctx.modules[node.target.modid].order.dep_depth;
         if (prio)
@@ -2149,7 +2199,12 @@ pub fn cpp_codegen(
                 {
                     cgGlobal(node.target);
 
-                    return rootNS(ID(id)); // TODO ensure const emit.
+                    mut ret = rootNS(ID(id)); // TODO ensure const emit.
+
+                    if (node.target.TODO_FIX_useStaticRef)
+                        ret ~= ".ref";
+
+                    return ret;
                 }
 
                 // Derefing ptrs.
