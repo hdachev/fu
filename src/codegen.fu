@@ -978,21 +978,39 @@ pub fn cpp_codegen(
         //   only assignment operators in c++ have guaranteed ooe,
         //    so it HAS to be an operator for this to hold.
         //
-        if (flags & F_OOE_RTL)
-            return true;
-
+        // if (flags & F_OOE_RTL)
+        //     return true;
+        //
+        // TODO FIX Well of course it doesn't just work,
+        //  the primitive/relevant stuff below
+        //   is not taken into account.
+        //
         if !(flags & F_OPERATOR)
-            return false;
-
-        let args = target.args;
-        if (args.len > 2)
             return false;
 
         if (target.kind == "__native")
             return true;
 
+        mut numArgs: int;
+        mut primsOnly = true;
+
+        let args = target.args;
+        for (mut i = 0; i < args.len; i++)
+        {
+            let argType = args[i].type;
+            if (!argType.isIrrelevant)
+            {
+                numArgs++;
+                if (!argType.is_primitive)
+                    primsOnly = false;
+            }
+        }
+
+        if (!numArgs || numArgs > 2 || primsOnly)
+            return false;
+
         let name = target.name;
-        if (args.len > 1)
+        if (numArgs > 1)
             return cpp::hasBinary(name);
 
         return cpp::hasUnary(name);

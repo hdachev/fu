@@ -9172,6 +9172,28 @@ pub extern fn runTests()
         }
     `);
 
+    ZERO([`
+        let PROFILE = <alt>true<alt/>false</alt>;
+
+        struct Empty {};
+        struct NonEmpty { v: i32 };
+
+        type Item = PROFILE ? NonEmpty : Empty;
+
+        lax fn +=(ref a: Item, b: Item)
+            for (fieldname v: Item)
+                a.v += b.v;
+
+        fn get(a: Item) PROFILE ? a.v : 0;
+    `,`
+        import _0;
+        fn main() {
+            mut a: Item;
+            a += Item();
+            return a.get();
+        }
+    `]);
+
     // /quite right
 
 
