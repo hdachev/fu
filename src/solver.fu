@@ -1000,7 +1000,7 @@ pub fn solve(
     {
         mut str = "";
 
-        lifetime.Lifetime_each: |locid, isStatic, isTemp, isArgIdx, argidx|
+        lifetime.Lifetime_each: |locid, isStatic, isTemp, isArgIdx, argidx, paths|
         {
             if (str) str ~= "|";
 
@@ -1009,6 +1009,14 @@ pub fn solve(
                  : isTemp       ? "temp".qLT
                  : isArgIdx     ? "arg#" ~ argidx
                                 : BUG("invalid region");
+
+            mut offset = 0;
+            paths.lifetime::walkPaths(:offset,
+                onPathStart:        ||                  str ~= " [",
+                onPathDone:         |isLastPath|        str ~= isLastPath ? " ]" : " ],",
+                onSubRegionStart:   |flatCount|         str ~= " #" ~ flatCount,
+                onSubRegionOffset:  |flatOffset|        str ~= " @" ~ flatOffset,
+                onSubRegionDone:    |isLastSubRegion|   str ~= isLastSubRegion ? "" : ",");
         }
 
         return str;
@@ -5786,7 +5794,7 @@ pub fn solve(
                     mut returned: bitset::BitSet;
 
                     retval.lifetime = retval.lifetime.Lifetime_process(
-                        |locid, isStatic, continue_keep, continue_replace|
+                        |locid, isStatic, continue_keep, continue_replace, paths|
                         {
                             if (!locid)
                             {
@@ -5807,7 +5815,7 @@ pub fn solve(
                                 returned.add(i);
 
                                 continue_replace(
-                                    Lifetime_from(argidx: i, flatCount: arg.type.getFlatCount()));
+                                    Lifetime_from(argidx: i, :paths));
                             }
                         });
 
@@ -11838,10 +11846,15 @@ pub fn solve(
                 let union = Lifetime_union(expect.lifetime, actual.lifetime);
 
                 if (union != expect.lifetime)
+                {
+                    let debug = Lifetime_union(expect.lifetime, actual.lifetime);
+
                     BUG(node ~ ": " ~ actualCopy ~ " mentions a lifetime not listed in "
                                     ~ expectCopy ~ ":"
                               ~ "\n\n\t\t" ~ actualCopy ~ ":\t" ~ actual.humanizeType(lt: true)
-                              ~ "\n\n\t\t" ~ expectCopy ~ ":\t" ~ expect.humanizeType(lt: true));
+                              ~ "\n\n\t\t" ~ expectCopy ~ ":\t" ~ expect.humanizeType(lt: true)
+                              ~ "\n\n\t\tUNION:\t\t" ~ debug);
+                }
             }
 
             if (k == "block")
