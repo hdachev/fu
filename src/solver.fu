@@ -59,6 +59,8 @@ pub fn solve(
 {
     let implicit mut _here: TokenIdx;
 
+    PROFILE(.UnaccountedFor, reset: true);
+
 
     //
 
@@ -1787,6 +1789,8 @@ pub fn solve(
                             mut autocall_error = error
                                 && "Cannot match " ~ host_arg ~ " autocall " ~ host_arg.autocall.qCODE ~ ": ";
 
+                            PROFILE(.TryMatch_Autocall);
+
                             let t = tryMatch__mutargs(
 
                                 // TODO allow autocalls to be fully::qualified,
@@ -2121,6 +2125,8 @@ pub fn solve(
         expect: Type, actual?: Type, retype?: SolvedNode,
         misc_scope!?: Scope, local_scope!: bool): Target[]
     {
+        PROFILE(.TryConvert);
+
         mut match:  Target[];
         mut path:   Target[];
 
@@ -2168,6 +2174,8 @@ pub fn solve(
                         TODO_FIX_convert_args[0].type = arg0type0;
                 }
                 //////////////////////////////////////////////////
+
+                PROFILE(.TryMatch_Convert);
 
                 mut error: string;
                 mut candidate: Target;
@@ -2321,6 +2329,8 @@ pub fn solve(
         flags: Flags, target: Target): Target
     {
         mut error: string;
+
+        PROFILE(.TryMatch_SolveCall);
 
         let ret = tryMatch__mutargs(:misc_scope, :local_scope, :id, :args, :reorder, :conversions, :flags, :target, :error);
         if (ret)
@@ -4975,6 +4985,8 @@ pub fn solve(
         REST_START?: i32, REST_TYPE?: Type)
             : Target
     {
+        PROFILE(.DoTrySpec);
+
         let SPECFAIL_RentrySafety =
             Target(_packed: 0x8000_0000_0000_0000);
 
@@ -6077,11 +6089,16 @@ pub fn solve(
                 _current_fn.TODO_FIX_isInline = !!(template.node.flags & F_INLINE);
 
                 //
-                let s_body = solveBlock(
-                    n_body, type: ret_expect,
-                    fnbody_of: target.globid,
-                    id: n_fn.value,
-                    mask: HM_Function | HM_CanReturn | HM_LabelUsed | (n_fn.flags & F_LAMBDA && HM_Lambda));
+                mut s_body: SolvedNode;
+                {
+                    PROFILE(.SolveBody);
+
+                    s_body = solveBlock(
+                        n_body, type: ret_expect,
+                        fnbody_of: target.globid,
+                        id: n_fn.value,
+                        mask: HM_Function | HM_CanReturn | HM_LabelUsed | (n_fn.flags & F_LAMBDA && HM_Lambda));
+                }
 
                 //
                 let retval = s_body.helpers.ret_actual || BUG("doTrySpec: no body.ret_actual");
@@ -8578,6 +8595,8 @@ pub fn solve(
             }
         }
         // CLOSURE-ID-HACK
+
+        PROFILE(.TryMatch_Implicit);
 
         mut error: string;
         mut reorder: Reorder;
@@ -11970,51 +11989,83 @@ pub fn solve(
         }
 
         ////////////////////////////////////
-        test_node(node, :node.helpers.pass);
+        if (SELF_TEST)
+        {
+            PROFILE(.TestPass);
+            test_node(node, :node.helpers.pass);
+        }
         ////////////////////////////////////
 
-        node.helpers.pass = "RelaxMut";
+        {
+            PROFILE(.RelaxMut);
+            node.helpers.pass = "RelaxMut";
 
-        _current_fn.var_usage  && BUG("_current_fn.var_usage not empty before propagateType.");
-        _current_fn.postdom    && BUG("_current_fn.postdom not empty before propagateType.");
-        Postdom_resetAtFnEnd(_current_fn);
-        propagateType(node, node.type, relax_mask: RELAX_before_bck);
+            _current_fn.var_usage  && BUG("_current_fn.var_usage not empty before propagateType.");
+            _current_fn.postdom    && BUG("_current_fn.postdom not empty before propagateType.");
+            Postdom_resetAtFnEnd(_current_fn);
+            propagateType(node, node.type, relax_mask: RELAX_before_bck);
+        }
 
         ////////////////////////////////////
-        test_node(node, :node.helpers.pass);
+        if (SELF_TEST)
+        {
+            PROFILE(.TestPass);
+            test_node(node, :node.helpers.pass);
+        }
         ////////////////////////////////////
 
-        node.helpers.pass = "BorrowCheck";
+        {
+            PROFILE(.BorrowCheck);
+            node.helpers.pass = "BorrowCheck";
 
-        PASS_borrowCheck(node, BCK_bck);
+            PASS_borrowCheck(node, BCK_bck);
+        }
 
         ////////////////////////////////////
         // Noticed we were missing a test pass here,
-        // test_node(node, :node.helpers.pass);
+        // if (SELF_TEST)
+        // {
+        //     PROFILE(.TestPass);
+        //     test_node(node, :node.helpers.pass);
+        // }
         ////////////////////////////////////
 
-        node.helpers.pass = "ArgumentsAtRisk";
+        {
+            PROFILE(.ArgumentsAtRisk);
+            node.helpers.pass = "ArgumentsAtRisk";
 
-        _current_fn.TODO_FIX_children = _current_fn.flow.rg_children;
+            _current_fn.TODO_FIX_children = _current_fn.flow.rg_children;
 
-        PASS_borrowCheck(node, BCK_aar);
-
-        ////////////////////////////////////
-        test_node(node, :node.helpers.pass);
-        ////////////////////////////////////
-
-        node.helpers.pass = "RelaxCopyResize";
-
-        _current_fn.fx_mask = [];
-        _current_fn.relaxed = [];
-
-        _current_fn.parent_loop_start == 1 || BUG("_current_fn.loop_start leak.");
-        Postdom_resetAtFnEnd(_current_fn);
-
-        propagateType(node, node.type, relax_mask: RELAX_all);
+            PASS_borrowCheck(node, BCK_aar);
+        }
 
         ////////////////////////////////////
-        test_node(node, :node.helpers.pass);
+        if (SELF_TEST)
+        {
+            PROFILE(.TestPass);
+            test_node(node, :node.helpers.pass);
+        }
+        ////////////////////////////////////
+
+        {
+            PROFILE(.RelaxCopyResize);
+            node.helpers.pass = "RelaxCopyResize";
+
+            _current_fn.fx_mask = [];
+            _current_fn.relaxed = [];
+
+            _current_fn.parent_loop_start == 1 || BUG("_current_fn.loop_start leak.");
+            Postdom_resetAtFnEnd(_current_fn);
+
+            propagateType(node, node.type, relax_mask: RELAX_all);
+        }
+
+        ////////////////////////////////////
+        if (SELF_TEST)
+        {
+            PROFILE(.TestPass);
+            test_node(node, :node.helpers.pass);
+        }
         ////////////////////////////////////
 
         if (_current_fn)
@@ -12497,7 +12548,7 @@ pub fn solve(
         }
 
         //
-        if (RESOLVE_report) for (mut i = 0; i < _ephemeral.len; i++)
+        if (RESOLVE_report) for (mut i = 1; i < _ephemeral.len; i++)
         {
             let target  = localfn(index: i);
             let REV     = target.revision.i32;

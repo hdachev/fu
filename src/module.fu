@@ -28,6 +28,8 @@ struct Module
     order?:     ModuleOrder;
     out?:       ModuleOutputs;
     stats?:     ModuleStats;
+
+    profile?:   profiler::Profile;
 };
 
 struct ModuleInputs
@@ -499,4 +501,33 @@ fn appendGlobal(ref str: string, using target: Target)
 
     str.helpers::appendVarint(modid.u32);
     str.helpers::appendVarint(globid.u32);
+}
+
+
+// Sad this has to be here, don't want an implicit ref p
+//  because we have the module everywhere already
+//   and it'd be a shame to have to inject another arg in every func.
+
+inline fn PROFILE(lax id, implicit ref module: Module, lax reset!?: bool) unwrap
+{
+    if (profiler::PROFILE) unwrap
+    {
+        inline fn p     = module.profile;
+
+        let now0        = now::hr();
+        if (reset)
+            p.now       = now0;
+
+        let offset      = p.now - now0;
+
+        defer {
+            let now_end     = now::hr();
+            let td          = now_end - p.now + offset;
+
+            p.data.id.time  += td;
+            p.data.id.count += 1;
+
+            p.now           += td;
+        };
+    }
 }

@@ -1,0 +1,92 @@
+
+let PROFILE = false;
+
+
+//
+
+struct ProfileItem_TimeCount    { time: f64; count: i64 };
+struct ProfileItem_Empty        {};
+
+type ProfileItem = PROFILE
+    ? ProfileItem_TimeCount
+    : ProfileItem_Empty;
+
+struct ProfileData
+{
+    DoTrySpec:          ProfileItem;
+
+    TryMatch_Autocall:  ProfileItem;
+    TryMatch_Convert:   ProfileItem;
+    TryMatch_Implicit:  ProfileItem;
+    TryMatch_SolveCall: ProfileItem;
+    TryConvert:         ProfileItem;
+    ScopeSearch:        ProfileItem;
+
+    SolveBody:          ProfileItem;
+    RelaxMut:           ProfileItem;
+    BorrowCheck:        ProfileItem;
+    ArgumentsAtRisk:    ProfileItem;
+    RelaxCopyResize:    ProfileItem;
+    TestPass:           ProfileItem;
+
+    UnaccountedFor:     ProfileItem;
+}
+
+lax fn +=(ref a: ProfileData, b: ProfileData)
+{
+    for (fieldname i: ProfileData)
+        for (fieldname j: ProfileItem)
+            a.i.j += b.i.j;
+}
+
+struct Profile
+{
+    now:    f64;
+    data:   ProfileData;
+}
+
+lax fn print(p: ProfileData)
+{
+    if (!PROFILE)
+        return;
+
+    struct Item {
+        id:     string;
+        time:   f64;
+        count:  i64;
+    };
+
+    mut entries: Item[];
+
+    mut total: f64;
+
+    for (fieldname i: ProfileData)
+    {
+        entries ~= Item("i", :p.i.time, :p.i.count);
+        total   += p.i.time;
+    }
+
+    entries.sort: |a, b|
+        a.time > b.time;
+
+    println("\t---------");
+
+    entries.each: |entry|
+    {
+        mut count = entry.count ~ "x";
+        while (count.len < 7)
+            count = ' ' ~ count;
+
+        mut share = i32(entry.time / total * 100 + 0.5) ~ "%";
+        while (share.len < 7)
+            share = ' ' ~ share;
+
+        let unit = entry.count && entry.time / entry.count.f64;
+
+        println("\t" ~ entry.time ~ "s\t"
+                     ~ count ~ "\t" ~ unit ~ "s\t"
+                     ~ share ~ "\t" ~ entry.id);
+    }
+
+    println("\n\t" ~ total ~ "s\t\tTotal time profiled.");
+}

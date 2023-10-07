@@ -263,6 +263,8 @@ pub fn compile_and_build(
             mut solve:      ModuleStat;
             mut codegen:    ModuleStat;
 
+            mut p:          profiler::ProfileData;
+
             ref m = ctx.modules;
             for (mut i = 0; i < m.len; i++)
             {
@@ -270,12 +272,17 @@ pub fn compile_and_build(
                 parse   += m[i].stats.parse;
                 solve   += m[i].stats.solve;
                 codegen += m[i].stats.codegen;
+
+                p       += m[i].profile.data;
             }
 
             ModuleStat_print(lex,   "\n    lex ");
             ModuleStat_print(parse,   "  parse ");
             ModuleStat_print(solve,   "  solve ");
             ModuleStat_print(codegen, "codegen ", "\n");
+
+            p.print();
+            println("\t---------");
         }
 
         println("        ", tt, "s\n");

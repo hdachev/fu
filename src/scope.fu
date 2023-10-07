@@ -209,6 +209,8 @@ fn search(
     extra_items?: [Target],
     field_items?: [ScopeItem]): Target
 {
+    PROFILE(.ScopeSearch);
+
     shadows = false;
 
     // Search.
