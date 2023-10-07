@@ -3,6 +3,7 @@ import options;
 import helpers;
 import module;
 import flags;
+import ansi;
 
 
 // Test running infra.
@@ -487,7 +488,7 @@ pub fn ZERO(
             let note = parseWild(x, as: SolverNotes);
             if (note)
             {
-                out.solve.notes & note || throw("Expected note not listed: `" ~ x ~ "` in:\n" ~ src ~ "\n\nOutput is:\n\n" ~ cpp.src);
+                out.solve.notes & note || throw("Expected note not listed: " ~ x.qBAD ~ " in:\n" ~ src ~ "\n\nOutput is:\n\n" ~ cpp.src);
                 continue;
             }
 

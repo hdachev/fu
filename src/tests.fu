@@ -108,6 +108,7 @@ pub extern fn runTests()
     let TODO_control    = fn TODO;
     let TODO_prelude    = fn TODO;
     let TODO_definit    = fn TODO;
+    let TODO_ooe        = fn TODO;
 
     let TODO_Map        = fn TODO;
 
@@ -9193,6 +9194,24 @@ pub extern fn runTests()
             return a.get();
         }
     `]);
+
+    TODO_ooe(currently: "N_BckMustSeq not listed", `
+        fn +=(ref a: i64, b: bool)  // Doesn't cg c++ operator (illegal, operands all prim),
+            a += b ? 100 : 0;       //  which drops the RTL ooe guarantee, solver fails to notice.
+
+        fn rellocate(ref a: i64[]) {
+            for (mut i = 0; i < 6; i++)
+                a ~= a;
+
+            return !!a.len;
+        }
+
+        fn main() {
+            mut items = [ i64(1), i64(2), i64(3), i64(4) ];
+            items[0] += rellocate(items);                       ;; N_BckMustSeq
+            return (items[0] - 101).i32;
+        }
+    `);
 
     // /quite right
 
