@@ -11199,6 +11199,21 @@ pub extern fn runTests()
         }
     `);
 
+    ZERO(`
+        fn hello(a?: i32, b?: i32) = 10 * a + 100 * b;
+
+        fn test(f) {
+            lax let a = 1;
+            lax let b = 2;
+            lax let c = 3;
+            return f(?:a, ?:b, ?:c);
+        }
+
+        fn main() test(fn hello) - 210;
+    `);
+
+    // /Optional arguments.
+
 
     // Pubs & imports.
 

@@ -1414,13 +1414,15 @@ pub fn parse(
             flags |= F_REST_ARG;
 
         //
-        let optional    = xqmark && tryConsume("op", "?");
+        mut optional    = xqmark && tryConsume("op", "?");
 
         _TODO_FIX_dollarOk = allowTypeParams;
 
         mut type        = sh_import
             ? createRead(registerImport(id) ~ '\t' ~ id, flags: F_COMPOUND_ID)
-            : tryPopTypeAnnot(:allowTypeUnions);
+            : xqmark && !optional && (optional = tryConsume("op", "?:"))
+                ? parseTypeAnnot(:allowTypeUnions)
+                : tryPopTypeAnnot(:allowTypeUnions);
 
         _TODO_FIX_dollarOk = false;
 
@@ -1928,8 +1930,13 @@ pub fn parse(
                   ? tok0.col.max(col00)
                   : col00;
 
-            //
-            if (tok0.kind == "op" && tok0.value == ":")
+            if (tok0.kind == "op" && tok0.value == "?:" && !sliceSyntax)
+            {
+                autoName = true;
+                optional = true;
+                _idx += 1;
+            }
+            else if (tok0.kind == "op" && tok0.value == ":")
             {
                 autoName = true;
                 _idx += 1;
@@ -1953,20 +1960,10 @@ pub fn parse(
                 let tok1 = tokens[_idx + 1];
                 if (tok1.kind == "op")
                 {
-                    if (tok1.value == ":")
+                    if (tok1.value == ":" || (optional = tok1.value == "?:"))
                     {
                         name = tok0.value;
                         _idx += 2;
-                    }
-                    else if (tok1.value == "?")
-                    {
-                        let tok2 = tokens[_idx + 2];
-                        if (tok2.kind == "op" && tok2.value == ":")
-                        {
-                            optional = true;
-                            name = tok0.value;
-                            _idx += 3;
-                        }
                     }
                 }
             }
