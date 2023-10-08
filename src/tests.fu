@@ -11202,10 +11202,13 @@ pub extern fn runTests()
     ZERO(`
         fn hello(a?: i32, b?: i32) = 10 * a + 100 * b;
 
+        <alt>
+        inline                                                  ;; GNUStmtExpr
+        </alt>
         fn test(f) {
-            lax let a = 1;
-            lax let b = 2;
-            lax let c = 3;
+            let a = 1; // none of these should need 'lax',
+            let b = 2; //  they're all SS_MATCHED below,
+            let c = 3; //   and their use is explicitly discard-ok.
             return f(?:a, ?:b, ?:c);
         }
 

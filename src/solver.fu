@@ -9269,6 +9269,7 @@ pub fn solve(
                     GET_mut(local) = Overload(
                         :foreign.kind,
                         :foreign.name,
+                        :foreign.status & SS_MATCHED,
                         :type,
                         :solved,
 
