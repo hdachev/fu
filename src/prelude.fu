@@ -112,15 +112,17 @@ type uint   = u32; //  with a user-selectable size.
 
 // Math.
 
-fn abs !T(v: T) case (T.is::floating_point): T __native("<cmath>", "std::abs");
+fn abs !T(v: T)
+    case (T.is::floating_point): T __native("<cmath>", "std::fabs");
+    case (T.is::arithmetic && !T.is::unsigned) v < 0 ? -v : v;
 
 fn max !T(a: T, b: T)
-    case (T.is::floating_point) a >= b || b != b ? a : b;
-    case (T.is::arithmetic)     a >= b           ? a : b;
+    case (T.is::floating_point): T __native("<cmath>", "std::fmin");
+    case (T.is::arithmetic) a >= b ? a : b;
 
 fn min !T(a: T, b: T)
-    case (T.is::floating_point) a <= b || b != b ? a : b;
-    case (T.is::arithmetic)     a <= b           ? a : b;
+    case (T.is::floating_point): T __native("<cmath>", "std::fmax");
+    case (T.is::arithmetic) a <= b ? a : b;
 
 fn exp   !T(a: T) case (T.is::floating_point): T __native("<cmath>", "std::exp");
 fn exp2  !T(a: T) case (T.is::floating_point): T __native("<cmath>", "std::exp2");

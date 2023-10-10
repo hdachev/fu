@@ -10446,6 +10446,11 @@ pub extern fn runTests()
             pick() == 4 ? 0 : 1;
     `);
 
+    ZERO(`
+        fn main() abs(-19191) - 19191
+                + abs(+72713) - 72713;
+    `);
+
 
     // Typedefs.
 
