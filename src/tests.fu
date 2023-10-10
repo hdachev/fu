@@ -3909,6 +3909,48 @@ pub extern fn runTests()
         }
     `);
 
+    ZERO(`
+        fn doStuff(stuff) {
+            stuff();
+        }
+
+        fn main() {
+            doStuff(
+                <alt>
+                stuff: |_?| {
+                <alt/>
+                stuff: |_?|
+                {
+                <alt/>
+                stuff: |
+                    _?| {
+                <alt/>
+                stuff: |
+                    _?|
+                {
+                </alt>
+                    return 0;
+                });
+        }
+    `);
+
+    ZERO(`
+        fn doStuff(stuff) {
+            stuff();
+        }
+
+        fn main() {
+            <alt>
+            doStuff(stuff: || {
+            <alt/>
+            doStuff(stuff: ||
+                {
+            </alt>
+                    return 0;
+                });
+        }
+    `);
+
 
     // Borrow checker.
 

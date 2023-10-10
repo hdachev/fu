@@ -488,8 +488,11 @@ pub fn parse(
         struct! = false,
         enum! = false): Node[]
     {
-        let line0   = _idx && tokens[_idx - 1].line;
+        let tok0    = _idx && tokens[_idx - 1];
+        let line0   = tok0.line;
+
         let col00   = _col0;
+        let col01   = tok0.col == col00 ? col00 : -1;
 
         mut colNN   = -1;
         mut lineNN  = line0;
@@ -516,8 +519,15 @@ pub fn parse(
                 let line1 = token.line;
                 let col1  = token.col;
 
-                line1 == line0 || col1 == _col0 || warn(
-                    "Inconsistent indent at closing `" ~ token.value ~ "`: expected " ~ (_col0 - 1)
+                let col1_min = _col0;
+                let col1_max = col01 < 0
+                    ? colNN < 0 ? _col0 : colNN - 1
+                    : col01;
+
+                line1 == line0 || (col1 >= col1_min && col1 <= col1_max) || warn(
+                    "Inconsistent indent at closing `" ~ token.value ~ "`: expected "
+                        ~ (col1_min - 1)
+                        ~ (col1_max > col1_min ? " up to " ~ (col1_max - 1) : "")
                         ~ ", got " ~ (col1 - 1)
                         ~ ". Block starts on line " ~ line0 ~ ".");
 
