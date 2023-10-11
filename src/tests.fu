@@ -6321,6 +6321,58 @@ pub extern fn runTests()
         }
     `);
 
+    TODO_borrowck(currently: "BUG ensureArgSequencing: host_args.len != args.len 14:30+1", `
+        struct TokenIdx { tokidx: i32 };
+
+        fn FAIL(implicit _here: TokenIdx, reason: string): never
+            throw(_here && reason);
+
+        noinline fn opaque_bool_check(lt: string)
+            return !!lt;
+
+        fn Lifetime_process(lt: string, each) {
+            fn visit(chars) {
+                for (mut i = 0; i < chars.len; i++) {
+                    fn climb(mut parent: string) {
+                        visit(parent);
+                        continue;
+                    }
+
+                    each(climb?: fn climb, chars.slice(i, chars.len))
+                    i == chars.len - 1 || <alt>FAIL<alt/>throw</alt>("here-0");
+                }
+            }
+
+            visit(lt);
+        }
+
+        fn main() {
+            let implicit mut _here: TokenIdx;
+
+            fn fail(mut reason: string, backtrack!?: string): never {
+                if (backtrack) _here = [];
+                return FAIL(reason);
+            }
+
+            fn climbWhat(mut str: string) {
+                str || fail("here-1");
+                str.pop();
+                return str;
+            }
+
+            mut result = "";
+            Lifetime_process("abc", each: |lt, climb|
+            {
+                result ~= lt;
+                let init = lt.climbWhat;
+                if (init.opaque_bool_check)
+                    climb(init);
+            });
+
+            return result == "abc" ? 0 : 1;
+        }
+    `);
+
     // /Borrow checker
 
 
