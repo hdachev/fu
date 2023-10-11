@@ -4850,7 +4850,7 @@ pub fn solve(
         let original = overloadIdx || into || BUG();
         mut template = original.template;
 
-        // println    ("\n  BEGIN " template.node.value.qID);
+        // println    ("\n  BEGIN " template.node.value.qID "\t" args_in.len ": " mangle);
         // defer println("    END " template.node.value.qID "\n");
 
         ////////////////////
@@ -7693,7 +7693,7 @@ pub fn solve(
                 // Can't shadow here -
                 //  shadowing works per signature,
                 //   we can't just shadow everything by the same name in scope.
-                result.unshift(target);
+                result.set::add(target);
             }
         }
 

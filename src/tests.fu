@@ -792,6 +792,30 @@ pub extern fn runTests()
         fn main() work: |_, _| return 0;
     `);
 
+    ZERO(`
+        fn each(ref moot: u32) moot++;
+
+        fn Lifetime_process(lt: string, each) {
+            for (mut i = 0; i < lt.len; i++) {
+                fn climb(mut parent: string) // .... ///// what happened is this recursively picked up fn each from prelude
+                    Lifetime_process(parent, fn each); ///  on each nested iteration, which grew the addrofn type,
+                                             // ^^^^ /////   resulting in a new mangle on each go.
+                each(climb: fn climb, lt.slice(i, lt.len));
+            }
+        }
+
+        fn main() {
+            mut result = "";
+            Lifetime_process("abc", each: |lt, climb| {
+                result ~= " " ~ lt;
+                if (let init = lt.slice(0, lt.len - 1))
+                    climb(init);
+            });
+
+            return result == " abc ab a b bc b c" ? 0 : 1;
+        }
+    `);
+
     // /Template args
 
 
