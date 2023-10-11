@@ -15207,6 +15207,45 @@ pub extern fn runTests()
         }
     `);
 
+    TODO_relaxer(currently: "BUG inliner botching argdef 33:35+1 zeroes mutref", `
+        struct Target   { index: i32 }
+        struct Lifetime { uni0n!: byte[] };
+        type Type = Lifetime;
+
+        fn is_ref(type: Type) = !!type;
+
+        fn Lifetime_process(lifetime: Lifetime, each) {
+            fn visit(shadow lifetime) {
+                do {
+                    fn continue_climb(mut parent: Lifetime) {
+                        visit(parent);
+                        continue;
+                    }
+
+                    each(lifetime, fn continue_climb);
+                }
+                while (false);
+            }
+
+            return visit(lifetime);
+        }
+
+        fn main() {
+            fn Lifetime_climbType(lax lifetime: Lifetime) return [];
+
+            mut count = 0;
+            Lifetime_process([], each: |lifetime, continue_climb| {
+                count++;
+
+                let init = lifetime.Lifetime_climbType;
+                if (init.is_ref)
+                    continue_climb(init);
+            });
+
+            return count - 1;
+        }
+    `);
+
     // /Relaxer.
 
 
