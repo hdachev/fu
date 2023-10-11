@@ -539,18 +539,29 @@ pub fn solve(
         return [];
     }
 
-    fn fail(mut reason: string, backtrack!?: string): never
+    fn fail(reason: string, backtrack!: string)
     {
         if (backtrack)
             _here = _here.tryBacktrack(backtrack) || _here;
 
-        reason || BUG();
+        fail(reason);
+    }
+
+    fn fail(reason: string)
+    {
+        reason || BUG("fail(): No reason.");
         return FAIL(reason.fail_appendStack());
     }
 
     shadow fn BUG(mut reason?: string)
     {
         fail("COMPILER BUG:\n\n\t" ~ (reason || "Assertion failed."));
+    }
+
+    fn BUG(token: TokenIdx, reason: string)
+    {
+        _here = token;
+        BUG(reason);
     }
 
     fn str(o: Overload)
@@ -12005,7 +12016,11 @@ pub fn solve(
                 mut parallel: Unsequenced;
                 mut MUSTSEQ_mask = 0;
 
-                let host_args = node.target.args;
+                let host_args   = node.target.args;
+                ref args        = node.items;
+
+                host_args.len == args.len ||
+                    BUG(node.token, "ensureArgSequencing: host_args.len != args.len (" ~ host_args.len ~ " != " ~ args.len ~ ")");
 
                 argsReverse(:RTL, :host_args): |i, host_arg, revSeqIdx|
                 {
@@ -12024,7 +12039,7 @@ pub fn solve(
                     }
 
                     // Descend - collects inner reads, writes & moves.
-                    ref arg = node.items[i];
+                    ref arg = args[i];
 
                     // OPTI & c++ cg cleanup, special-case callsite moves,
                     //  move may-happen inside fn, no need to sequence here.
