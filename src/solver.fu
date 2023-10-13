@@ -20,7 +20,11 @@ let OPTI_bck                = true;
 let OPTI_unlist_callers     = true;
 let OPTI_moves_inside_fns   = true;
 
+
+//
+
 let RESOLVE_report          = false;
+let TRACE_enable            = false;
 
 
 // When you have an if (a -> $T) somewhere,
@@ -54,6 +58,47 @@ pub fn solve(
     implicit options: options::Options): SolverOutput
 {
     let implicit mut _here: TokenIdx;
+
+
+    //
+
+    lax mut TRACE_out       = TRACE_enable ? string : void;
+    lax mut TRACE_indent    = TRACE_enable ? string : void;
+
+    lax fn TRACE_BRACKET(inline msg: string) unwrap
+    {
+        lax mut indent0:    string;
+        lax mut len0:       int;
+
+        if (TRACE_enable)
+        {
+            len0    = TRACE_out.len;
+            indent0 = TRACE_indent ~ '\t';
+            swap(TRACE_indent, indent0);
+        }
+
+        defer if (TRACE_enable)
+        {
+            if (TRACE_out.len > len0)
+            {
+                TRACE_out.splice(len0, 0, indent0 ~ "< " ~ msg ~ " >\n");
+                TRACE_out ~= indent0 ~ "</" ~ msg ~ " >\n";
+            }
+
+            swap(indent0, TRACE_indent);
+        }
+    }
+
+    lax fn TRACE(inline msg: string)
+    {
+        if (TRACE_enable)
+            (((TRACE_out ~= "-------") ~= TRACE_indent) ~= msg) ~= '\n';
+    }
+
+    defer if (TRACE_enable)
+    {
+        println("TRACE\n\n" ~ (TRACE_out || "nothing") ~ "\n");
+    }
 
 
     //
@@ -3340,6 +3385,8 @@ pub fn solve(
 
                 if (relaxed)
                 {
+                    TRACE_BRACKET("RELAX trySpecialize " ~ t.globid ~ " " ~ t ~ " for " ~ relaxed.map(.type.humanizeType).join(", "));
+
                     mut args_mangled: string;
                     let spec = trySpecialize(
                         t.spec_of, args: relaxed, :args_mangled, REST_START: relaxed.len);
@@ -5282,6 +5329,8 @@ pub fn solve(
             // Prep reject.
             target = into || Scope_create(_scope, status: SS_DID_START | SS_LAZY);
 
+            TRACE_BRACKET("doTrySpecialize " ~ target.globid ~ " " ~ template.node.value ~ " " ~ mangle);
+
             ref eph = target.EPH_mut;
             eph.local_of = parent_idx;
 
@@ -5430,6 +5479,9 @@ pub fn solve(
                     //   - old arguments are assignable to new arguments.
                     // --------------------------------------------------------
                     //
+
+                    TRACE("SS_UPDATED because SS_DIRTY " ~ target.globid ~ " " ~ target);
+
                     GET_mut(target).status |= SS_UPDATED;
                     return;
                 }
@@ -5817,7 +5869,12 @@ pub fn solve(
                     }
 
                     if (change)
+                    {
+                        TRACE("SS_UPDATED because change==true " ~ target.globid ~ " " ~ target
+                            ~ " callers=[" ~ currentSpec.callers.map(|c| c ~ " " ~ c.localfn).join(", ") ~ "]");
+
                         overload.status |= SS_UPDATED;
+                    }
                 }
 
                 overload.solved = solved;
@@ -6684,6 +6741,8 @@ pub fn solve(
 
     fn ensureLazySolved(target: Target)
     {
+        TRACE_BRACKET("ensureLazySolved " ~ target.globid ~ " " ~ target);
+
         mut repeats = 0;
         while (lazySolveStart(target))
             repeats++ > 1000 && BUG(
@@ -6715,6 +6774,8 @@ pub fn solve(
 
     fn lazySolveEnd(t: Target): void
     {
+        TRACE_BRACKET("lazySolveEnd " ~ t.globid ~ " " ~ t);
+
         ref o = GET_mut(t);
         mut reopen: i32[];
 
@@ -6732,6 +6793,8 @@ pub fn solve(
                 //  and hopefully help avoid nasty resolver patterns & worst cases.
                 mut index = callers[i];
 
+                TRACE("Looking into caller " ~ index ~ " " ~ index.localfn);
+
                 :GO_UP
                 for (;;)
                 {
@@ -6740,11 +6803,17 @@ pub fn solve(
 
                     // If not started or dirty, means someone else will take care of us here.
                     if (o.status & (SS_DID_START | SS_DIRTY) != SS_DID_START)
+                    {
+                        TRACE("\tNo SS_DID_START | SS_DIRTY on " ~ t.globid ~ " " ~ t);
+
                         continue :NEXT_USER;
+                    }
 
                     // If still solving somewhere up our callstack, just flag as dirty.
                     if !(o.status & SS_FINALIZED)
                     {
+                        TRACE("\tSS_DIRTY " ~ t.globid ~ " " ~ t);
+
                         o.status |= SS_DIRTY;
                         continue :NEXT_USER;
                     }
@@ -6756,6 +6825,8 @@ pub fn solve(
                     let up = t.local_of;
                     if (up != parent) // !sibling
                     {
+                        TRACE("\tNot a sibling, climbing up " ~ t.globid ~ " " ~ t);
+
                         up > parent || BUG("lazySolveEnd: about to climb up the wrong tree.");
                         index = up;
                         continue :GO_UP;
@@ -6768,6 +6839,8 @@ pub fn solve(
                     o.status &= ~(SS_DID_START | SS_DIRTY | SS_FINALIZED);
                     reopen ~= index;
 
+                    TRACE("\tREOPEN " ~ t.globid ~ " " ~ t);
+
                     continue :NEXT_USER;
                 }
             }
@@ -6778,10 +6851,15 @@ pub fn solve(
 
         if !(o.status & SS_DIRTY)
         {
+            if (t.callers)
+                TRACE("SS_FINALIZED " ~ t.globid ~ " " ~ t);
+
             o.status |= SS_FINALIZED;
         }
         else
         {
+            TRACE("NOT FINALIZED because SS_DIRTY " ~ t.globid ~ " " ~ t);
+
             o.status & SS_FINALIZED && BUG("Stray SS_FINALIZED.");
             o.status &= ~(SS_DID_START | SS_DIRTY);
             makeNote(o.kind == "type" ? N_TypeResolve : N_FnResolve);
@@ -6791,6 +6869,7 @@ pub fn solve(
         for (mut i = 0; i < reopen.len; i++)
         {
             shadow let t = localfn(index: reopen[i]);
+
             lazySolveStart(t);
         }
     }
