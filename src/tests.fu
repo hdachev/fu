@@ -1483,7 +1483,7 @@ pub extern fn runTests()
             CTX_PRELUDE - 17;
     `]);
 
-    TODO_recursion(currently: "BUG ensureArgSequencing: host_args.len != args.len (2 != 1) 5:64+1", `
+    ZERO(`
         fn Lifetime_process(lt: string, each) {
             fn visit(chars) {
                 for (mut i = 0; i < chars.len; i++) {                   <alt>
@@ -6398,7 +6398,7 @@ pub extern fn runTests()
         }
     `);
 
-    TODO_borrowck(currently: "BUG ensureArgSequencing: host_args.len != args.len 14:30+1", `
+    TODO_borrowck(currently: "arguments both alias _here main:_here 14:30+1", `
         struct TokenIdx { tokidx: i32 };
 
         fn FAIL(implicit _here: TokenIdx, reason: string): never
@@ -6446,7 +6446,7 @@ pub extern fn runTests()
                     climb(init);
             });
 
-            return result == "abc" ? 0 : 1;
+            return result == "abcababbcbc" ? 0 : 1;
         }
     `);
 

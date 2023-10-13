@@ -4897,6 +4897,41 @@ pub fn solve(
 
     //
 
+    fn destroyOverload(t: Target)
+    {
+        TRACE_BRACKET("destroyOverload " ~ t.globid ~ " " ~ t);
+
+        fn intoTombstone(shadow t: Target)
+        {
+            TRACE("intoTombstone " ~ t.globid ~ " " ~ t);
+
+            ref ext = EXT_mut(t);
+            ext = [];
+
+            ref o = GET_mut(t);
+            o = [];
+
+            o.kind = "__tombstone";
+
+            // Discard everything inside.
+            let children = EPH(t).children;
+            for (mut i = 0; i < children.len; i++)
+                intoTombstone(children[i].target);
+
+            let specs = EPH(t).specs;
+            specs.each: |spec| intoTombstone(spec);
+        }
+
+        intoTombstone(t);
+
+        // Is this necessary? This whole thing is a mess.
+        // GET_mut(t).status |= SS_UPDATED;
+        // lazySolveEnd(t);
+    }
+
+
+    //
+
     fn doTrySpecialize(
         parent_idx!: i32, into?: Target,
         overloadIdx?: Target, args_in?: [SolvedNode],
@@ -4960,7 +4995,16 @@ pub fn solve(
                 if (preexisting)
                 {
                     mangles.set::rem(mangle);
+
+                    if (!currentSpec.is_SPECFAIL)
+                    {
+                        TRACE("REPLACE " ~ currentSpec.globid ~ " " ~ currentSpec ~ " with " ~ preexisting.globid ~ " " ~ preexisting);
+
+                        destroyOverload(currentSpec);
+                    }
+
                     resetSpec(preexisting, :allowReplaceNonSpecfails);
+
                     return preexisting;
                 }
 
@@ -12138,7 +12182,7 @@ pub fn solve(
                 ref args        = node.items;
 
                 host_args.len == args.len ||
-                    BUG(node.token, "ensureArgSequencing: host_args.len != args.len (" ~ host_args.len ~ " != " ~ args.len ~ ")");
+                    BUG(node.token, "ensureArgSequencing: host_args.len != args.len (" ~ host_args.len ~ " != " ~ args.len ~ "), nestingFnort= " ~ _nestingFnort.globid ~ " " ~ _nestingFnort);
 
                 argsReverse(:RTL, :host_args): |i, host_arg, revSeqIdx|
                 {

@@ -108,6 +108,7 @@ enum kind
     // Scope: overload types.
 
     __no_kind_yet
+    __tombstone
     type
     var
     field
