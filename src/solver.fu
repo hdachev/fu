@@ -7556,7 +7556,13 @@ pub fn solve(
 
             // TODO FIX if (lets ) started complaining about the t_void here,
             //  which is totally legit, this needs to be formalized.
-            type: letdefType.propositionOK
+            //
+            // TODO FIX needed to fix this up, makes NO SENSE AT ALL.
+            //  we need this for if (let)s, gotta replace this mess with
+            //   a parser transform to { let x; if (x) ... },
+            //    and we can recognize and reverse this during cg.
+            //
+            type: letdefType == t_proposition
                 ? t_bool
                 : t_void);
     }

@@ -9360,7 +9360,7 @@ pub extern fn runTests()
         }
     `);
 
-    TODO_relaxer(currently: "BUG broken jump type empty bool 3:17+1", `
+    ZERO(`
         fn test(x: i32): bool   <fail return type void does not match annot bool 3:17+1>
             let y = x > 10;     <pass/>
                     x > 10;     </fail>
