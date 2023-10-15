@@ -9360,6 +9360,32 @@ pub extern fn runTests()
         }
     `);
 
+    TODO_relaxer(currently: "BUG broken jump type empty bool 3:17+1", `
+        fn test(x: i32): bool   <fail return type void does not match annot bool 3:17+1>
+            let y = x > 10;     <pass/>
+                    x > 10;     </fail>
+
+        fn main() test(3).i32;
+    `);
+
+    TODO_ambig(currently: "actual return Node does not match annot bool 9:21+6", `
+        fn main() {
+            struct Node {};
+    <alt>
+            fn evalTypeAnnot(node: Node) =
+                return !!node;
+    <alt/>
+            fn evalTypeAnnot(node: Node): bool =
+                return node && [];
+    </alt>
+            fn trySolveTypeParams(node: Node): bool =   <fail actual return void does not match annot bool 9:21+6>
+                let expect = evalTypeAnnot(node);       <pass/>
+                             evalTypeAnnot(node);       </fail>
+
+            return trySolveTypeParams([]) && 0;
+        }
+    `);
+
     // /quite right
 
 
