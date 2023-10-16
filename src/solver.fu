@@ -2953,8 +2953,7 @@ pub fn solve(
         {
             if (SELF_TEST)
             {
-                if (slot.is_rx_copy && slot.isIrrelevant)
-                    BUG(nested(locid) ~ ", trackVarUsage: slot is both copy & irrelevant: " ~ slot.humanizeType);
+                TEST_unusedButCopied("trackVarUsage " ~ nested(locid), slot);
 
                 if (slot.lifetime.hasTemporary)
                     BUG(nested(locid) ~ ", trackVarUsage: slot is ref2temp: " ~ slot.humanizeType(lt: true));
@@ -4160,6 +4159,12 @@ pub fn solve(
         _warnings.grow_if_oob(_current_fn.target.globid) ||= Warning(:token, message: message.fail_appendStack);
     }
 
+    lax fn TEST_unusedButCopied(inline topic: string, slot: Type)
+    {
+        if (SELF_TEST && slot.is_rx_copy && slot.isIrrelevant && !slot.is_zst)
+            BUG(topic ~ ": Usage is copy but no usage bits set: " ~ slot.humanizeType);
+    }
+
     fn relaxBlockVar(t: Target, relax_mask!: Quals, canDiscard!?: bool)
     {
         let o = GET(t);
@@ -4176,9 +4181,7 @@ pub fn solve(
                     warn(:o.solved.token, "Unused variable: " ~ o ~ ": make it " ~ "lax".qKW ~ " if this is intentional.");
             }
 
-            //
-            if (SELF_TEST && usage.is_rx_copy && usage.isIrrelevant)
-                BUG(t ~ ": Usage is copy but no usage bits set: " ~ usage.humanizeType);
+            TEST_unusedButCopied("relaxBlockVar " ~ t, usage);
 
             //
             shadow ref o = GET_mut(t);
