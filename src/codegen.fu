@@ -2840,19 +2840,33 @@ pub fn cpp_codegen(
     fn cgTryCatch(node: SolvedNode): string
     {
         let items   = node.items;
-        let try     = blockWrapSubstatement(items[0]);
-        let err     = localID(items[1].target, dedupe: true);
-        let catch   = blockWrapSubstatement(items[2]);
+        let try     = blockWrapSubstatement(items[TRY_TRY]);
+        let err_let = items[TRY_ERR];
 
-        return _indent ~ "try"
-             ~ _indent ~ "{"
-             ~  try
-             ~ _indent ~ "}"
-             ~ _indent ~ "catch (const std::exception& o_0)"
-             ~ _indent ~ "{"
-             ~ _indent ~ "    fu::str " ~ err ~ " = fu::to_str(o_0.what());\n"
-             ~  catch
-             ~ _indent ~ "}\n";
+        err_let.kind == "letdef" || err_let.kind == "empty" || BUG(
+            "TRY_ERR not a letdef/empty");
+
+        let err_trg = err_let.target;
+        let err     = err_trg && localID(err_trg, dedupe: true);
+
+        let catch   = blockWrapSubstatement(items[TRY_CATCH]);
+
+        //
+        mut res: string;
+        res ~= _indent ~ "try"
+        res ~= _indent ~ "{"
+        res ~=  try
+        res ~= _indent ~ "}"
+        res ~= _indent ~ "catch (const std::exception& o_0)"
+        res ~= _indent ~ "{"
+
+        if (err)
+            res ~= _indent ~ "    fu::str " ~ err ~ " = fu::to_str(o_0.what());\n"
+
+        res ~=  catch
+        res ~= _indent ~ "}\n";
+
+        return res;
     }
 
     fn inferIndentation(v: string)

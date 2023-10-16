@@ -3100,9 +3100,9 @@ pub fn solve(
         }
         else if (k == "try")
         {
-            fn attempt      = node.items[0]; // TODO FIX the laxness due to rec solve
-            fn error        = node.items[1]; // TODO FIX the laxness due to rec solve
-            fn recover      = node.items[2];
+            fn attempt      = node.items[TRY_TRY];
+            fn error        = node.items[TRY_ERR];
+            fn recover      = node.items[TRY_CATCH];
 
             // Relax in reverse, catch goes first.
             let postdom0    = _current_fn.postdom;
@@ -11631,6 +11631,13 @@ pub fn solve(
                         ~ "\n\t\tret_expect: " ~ (h.ret_expect ? h.ret_expect.humanizeType : "N/A".qBAD)
                         ~ "\n\t\texpr: " ~ expr);
             }
+        }
+        else if (k == "try")
+        {
+            node.items.len == 3 || BUG("try.items.len != 3");
+            let err = node.items[TRY_ERR];
+            err.kind == "letdef" || err.kind == "empty" || BUG(
+                "TRY_ERR not a letdef/empty: " ~ node.items[TRY_ERR]);
         }
     }
 

@@ -172,6 +172,10 @@ let LOOP_POST_COND  = 5;
 let STRUCT_BASE     = 0;
 let STRUCT_MEMBERS  = 1;
 
+let TRY_TRY         = 0;
+let TRY_ERR         = 1;
+let TRY_CATCH       = 2;
+
 
 // Solver notes.
 
