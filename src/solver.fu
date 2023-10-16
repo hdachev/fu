@@ -7285,7 +7285,7 @@ pub fn solve(
 
         // Control flow & deadcode elim.
         //  TODO break & continue.
-        let items = solveNodes(items_ast, DeadBreak_Always);
+        let items = solveNodes(items_ast, DeadBreak_Always, type_all: t_void);
         let type  = items.if_last.type.is_never ? t_never : t_void;
 
         return createBlock(type, items);
@@ -8633,6 +8633,9 @@ pub fn solve(
 
     fn createOr(mut items: SolvedNode[], mut type: Type): SolvedNode
     {
+        createAndOr_staticEvalFold(items,
+            static_eval_fold: SE_False);
+
         if (items.len < 2)
             return items.only;
 
@@ -8699,19 +8702,26 @@ pub fn solve(
         defer Scope_pop(_scope, scope0);
         ////////////////////////////////
 
+        //
+        let staticEvalBrk =
+            type == t_void || type.propositionOK;
+
         let items = solveNodes(
             node.items,
             type_last:          type,
             use_type_last:      true,
-            static_eval_brk:    SE_False,
+            static_eval_brk:    staticEvalBrk && SE_False,
             type_all:           t_proposition,
             DeadBreak_Always);
 
         return createAnd(items, :type);
     }
 
-    fn createAnd(items: SolvedNode[], mut type: Type): SolvedNode
+    fn createAnd(mut items: SolvedNode[], mut type: Type): SolvedNode
     {
+        createAndOr_staticEvalFold(items,
+            static_eval_fold: SE_True);
+
         if (items.len < 2)
             return items.only;
 
@@ -8777,21 +8787,26 @@ pub fn solve(
         return SolvedNode("and", type, :items);
     }
 
-    fn popAndOr(ref node: SolvedNode)
+    fn createAndOr_staticEvalFold(
+        ref items: SolvedNode[],
+        static_eval_fold!: StaticEval)
     {
-        let N   = node.items.len;
-        let pop = node.items[N - 1];
+        for (mut i = items.len - 1; i --> 0; )
+        {
+            let se = tryAbstractEvalAsBool(items[i]);
+            if (se == static_eval_fold)
+            {
+                let cond = items[i];
+                items.splice(i, 1);
 
-        if (N > 2) {
-            node.items.pop();
+                ref cons = items[i];
+                cons = createBlock(cond, cons);
+            }
         }
-        else {
-            let head = node.items[0];
-            node = head;
-        }
-
-        return pop;
     }
+
+
+    //
 
     fn solveNot(node: Node)
     {
@@ -9850,8 +9865,6 @@ pub fn solve(
         defer _here = here0;
         ////////////////////
 
-        mut ae_first = 0x7fffffff.i32;
-
         for (mut i = 0; i < nodes.len; i++)
         {
             let node = nodes[i];
@@ -9887,14 +9900,8 @@ pub fn solve(
                 if (static_eval_brk)
                 {
                     let ae_item = tryAbstractEvalAsBool(solved, voidOk: i == nodes.len - 1);
-                    if (ae_item)
-                    {
-                        if (static_eval_brk == ae_item)
-                            break;
-
-                        if (ae_first > result.len)
-                            ae_first = result.len - 1;
-                    }
+                    if (ae_item == static_eval_brk)
+                        break;
                 }
 
                 continue;
@@ -9954,25 +9961,6 @@ pub fn solve(
                     let into = result[i + offset].target;
                     if (lazySolveStart(into))
                         repeat = true;
-                }
-            }
-        }
-
-        // TODO this should probably be done in createAnd/createOr & co,
-        //  too bad we'll need to tryAbstractEvalAsBool twice,
-        //   wonder if there's a cheaper way around this.
-        //
-        if (static_eval_brk)
-        {
-            for (mut i = result.len - 1; i --> ae_first; )
-            {
-                if (tryAbstractEvalAsBool(result[i]))
-                {
-                    let cond = result[i];
-                    result.splice(i, 1);
-
-                    ref cons = result[i];
-                    cons = createBlock(cond, cons);
                 }
             }
         }
