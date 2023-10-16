@@ -16329,6 +16329,23 @@ pub extern fn runTests()
         }
     `);
 
+    ZERO(`
+        struct Postdom { a: i32; b?: i32[] };
+
+        fn clear(ref p: Postdom)
+            for (fieldname i: Postdom)
+                if (typeof(p.i) -> i32[])
+                    p.i.clear();
+
+        fn main() {
+            mut a = Postdom(a: 3);
+            mut b = Postdom(a: 3, b: [ 1 ]);
+            if (a == b) return 1;
+            b.clear();
+            return a == b ? 0 : 1;
+        }
+    `);
+
     // /StaticEval
 
 
