@@ -16346,6 +16346,21 @@ pub extern fn runTests()
         }
     `);
 
+    TODO_ambig(currently: "Bad call to len with bool 12:32+3", `
+        novec fn build(ref a: string, b: string) {
+            let cmake       = false;
+            let CMakeLists  = cmake && (a ~= b);
+            if (CMakeLists) DOESNT_EXIST();
+            return CMakeLists;
+        }
+
+        fn main() {
+            mut a = "hello, ";
+            let b = "world!";
+            return build(a, b).len;
+        }
+    `);
+
     // /StaticEval
 
 
