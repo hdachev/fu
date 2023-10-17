@@ -16349,7 +16349,12 @@ pub extern fn runTests()
     ZERO(`
         novec fn build(ref a: string, b: string) {
             let cmake       = false;
+            <alt>
             let CMakeLists  = cmake && (a ~= b);
+            <alt/>
+            let OPAQUE      = a.len + b.len;
+            let CMakeLists  = cmake && OPAQUE && (a ~= b);
+            </alt>
             if (CMakeLists) DOESNT_EXIST();
             return CMakeLists;
         }
