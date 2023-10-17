@@ -8633,11 +8633,9 @@ pub fn solve(
 
     fn createOr(mut items: SolvedNode[], mut type: Type): SolvedNode
     {
-        createAndOr_staticEvalFold(items,
-            static_eval_fold: SE_False);
-
-        if (items.len < 2)
-            return items.only;
+        createAndOr_staticEvalFold(items, static_eval_fold: SE_False)
+            .createAndOr_staticEvalTrim(items, type, AlwaysTrue):
+                |only| return only;
 
         // Unless this is an explicit bool context:
         if !(type.propositionOK || type.is_void) :RESOLVE_SUPERTYPE
@@ -8719,14 +8717,11 @@ pub fn solve(
 
     fn createAnd(mut items: SolvedNode[], mut type: Type): SolvedNode
     {
-        createAndOr_staticEvalFold(items,
+        let trim = createAndOr_staticEvalFold(items,
             static_eval_fold: SE_True);
 
-        if (items.len < 2)
-            return items.only;
-
         // Unless this is an explicit bool context:
-        if !(type.propositionOK || type.is_void)
+        if (items.len > 1 && !(type.propositionOK || type.is_void))
         {
             mut sumType: Type;
 
@@ -8778,12 +8773,13 @@ pub fn solve(
             type = t_bool;
         }
 
+        trim.createAndOr_staticEvalTrim(items, type, AlwaysFalse): |only|
+            return only;
+
         //
         if (items.last.is_never)
             type.vfacts = AlwaysFalse;
 
-        // Because values remain values and refs remain refs,
-        //  there's no copying/moving involved in an && chain.
         return SolvedNode("and", type, :items);
     }
 
@@ -8791,6 +8787,8 @@ pub fn solve(
         ref items: SolvedNode[],
         static_eval_fold!: StaticEval)
     {
+        mut trim = 0;
+
         for (mut i = items.len - 1; i --> 0; )
         {
             let se = tryAbstractEvalAsBool(items[i]);
@@ -8798,11 +8796,36 @@ pub fn solve(
             {
                 let cond = items[i];
                 items.splice(i, 1);
+                if (trim)
+                    trim--;
 
                 ref cons = items[i];
                 cons = createBlock(cond, cons);
             }
+            else if (se)
+            {
+                trim = i + 1;
+            }
         }
+
+        return trim;
+    }
+
+    fn createAndOr_staticEvalTrim(
+        trim: i32,
+        ref items: SolvedNode[],
+        ref type: Type,
+        vfacts: VFacts,
+        if_only)
+    {
+        if (trim)
+        {
+            items.shrink(trim);
+            type.vfacts |= vfacts;
+        }
+
+        if (items.len < 2)
+            if_only(items.only);
     }
 
 
