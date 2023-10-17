@@ -8562,6 +8562,18 @@ pub fn solve(
         if (SELF_TEST)
             cond.type.is_never && BUG("createIf: cond.is_never");
 
+        // Unfortunately, we gotta do the abstract eval again,
+        //  otherwise stuff using createIf directly fails to benefit.
+        //
+        // Could use a defaulted argument for this,
+        //  and pass the ae_cond from solveIf above to avoid this.
+        //
+        if (let ae_cond = tryAbstractEvalAsBool(cond))
+            return createBlock(cond,
+                ae_cond == SE_True ? cons :
+                ae_cond == SE_False ? alt : BUG("createIf: ae_cond, neither True nor False."));
+
+        //
         let cons_isNever = cons.type.is_never;
         let  alt_isNever =  alt.type.is_never;
 
