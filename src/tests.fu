@@ -1512,6 +1512,54 @@ pub extern fn runTests()
         }
     `);
 
+    TODO_ambig(currently: "both alias test:_helpers 23:33+1", `
+        enum Kind       { return; expr }
+        struct Type     { canon: string }
+        struct Helpers  { id: string; ret_actual: Type }
+        struct Node     { kind: Kind; value: string; items?: Node[] }
+
+        fn Scope_pop(implicit ref _helpers: Helpers[])
+            _helpers && _helpers.pop();
+
+        fn test(implicit mut _helpers: Helpers[], root: Node)
+        {
+            fn solveNode(node: Node, type?: Type) {
+                if (node.kind == Kind.return)
+                    return solveJump(node);
+
+                Scope_pop();
+                return type;
+            }
+
+            fn solveJump(node: Node) {
+                let h       = Scope_lookupLabel(node.value);
+                let n_expr  = node.items && node.items[0];
+                return solveNode(n_expr, type: h.ret_actual);
+            }
+
+            fn Scope_lookupLabel(id: string) {
+                _helpers.each: |item| item.id == id && { return item };
+                throw("No label '" ~ id ~ "' in scope.");
+            }
+
+            return solveNode(root);
+        }
+
+        fn main() {
+            implicit mut _helpers = [
+                Helpers("hello", Type("Hello")),
+                Helpers("world", Type("World")),
+            ];
+
+            let res = test(
+                Node(Kind.return, "world", [
+                    Node(Kind.expr, "hello")
+                ]));
+
+            return res.canon == "World" ? 0 : 1;
+        }
+    `);
+
     // /Recursion, closures & implicit arguments.
 
 
