@@ -1512,7 +1512,7 @@ pub extern fn runTests()
         }
     `);
 
-    TODO_ambig(currently: "both alias test:_helpers 23:33+1", `
+    TODO_borrowck(currently: "both arguments 23:33+1 alias implicit arg _helpers injected 21:48+1", `
         enum Kind       { return; expr }
         struct Type     { canon: string }
         struct Helpers  { id: string; ret_actual: Type }
@@ -6398,7 +6398,7 @@ pub extern fn runTests()
         }
     `);
 
-    TODO_borrowck(currently: "arguments both alias _here main:_here 14:30+1", `
+    ZERO(`
         struct TokenIdx { tokidx: i32 };
 
         fn FAIL(implicit _here: TokenIdx, reason: string): never

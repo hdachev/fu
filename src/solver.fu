@@ -8437,6 +8437,18 @@ pub fn solve(
                 BUG("injectForeignLocal: Unexpected closure-id: " ~ noClID.target);
         }
 
+        // Closures over implicit lets & args risk bck later complaining about aliasing,
+        //  as we can end up passing the implicit & closed-over arguments twice,
+        //   so in case this is an implicit let, pass it in as an implicit (no closure id).
+        //
+        if (target.flags & F_IMPLICIT)
+        {
+            return injectImplicitArg(
+                id:     target.name,
+                type:   target.type, becauseOf: target);
+        }
+
+        //
         let clID = hacks::ClosureID(:target,
             target.parent.revision || BUG("injectForeignLocal: About to serialize at rev 0: " ~ target));
 
