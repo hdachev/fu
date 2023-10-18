@@ -13741,6 +13741,34 @@ pub extern fn runTests()
         }
     `);
 
+    TODO_inline(currently: "BUG reason not assignable string never 11:20+1", `
+        struct Overload { name: string };
+        struct Target { globid: i32 };
+
+        fn solve(overloads: Overload[], target: Target, BUG)
+        {
+            using fn GET(t: Target)
+                overloads[t.globid];
+
+            fn BUG2(<alt>inline </alt>topic: string)
+                BUG(topic);
+
+            fn relaxBlockVar(t: Target)
+                BUG2(t.name.BUG2);
+
+            return target.relaxBlockVar();
+        }
+
+        fn main() {
+            try
+                solve([ Overload("hello") ], Target(0), fn throw);
+            catch (e)
+                return e == "hello" ? 0 : 1;
+
+            return 2;
+        }
+    `);
+
     // /Inliner.
 
 
