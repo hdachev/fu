@@ -1512,7 +1512,7 @@ pub extern fn runTests()
         }
     `);
 
-    TODO_borrowck(currently: "both arguments 23:33+1 alias implicit arg _helpers injected 21:48+1", `
+    ZERO(`
         enum Kind       { return; expr }
         struct Type     { canon: string }
         struct Helpers  { id: string; ret_actual: Type }
@@ -1523,7 +1523,14 @@ pub extern fn runTests()
 
         fn test(implicit mut _helpers: Helpers[], root: Node)
         {
-            fn solveNode(node: Node, type?: Type) {
+            fn solveNode(node: Node,
+
+                // TODO fix this is stupid, just documenting the reasoning here
+                <fail arg solveNode:type is ref-returned from fn solveNode 28:33+1><pass/>
+                mut
+                </fail>
+                type?: Type
+            ) {
                 if (node.kind == Kind.return)
                     return solveJump(node);
 

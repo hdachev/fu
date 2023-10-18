@@ -450,6 +450,22 @@ pub fn solve(
     }
 
 
+    //
+
+    using enum ArgRationale {
+
+        // acceptsTempCopies
+        CantTempCopy_HostArg_Ref
+        CantTempCopy_HostArg_MutRef
+        CantTempCopy_HostArg_Implicit
+
+        // RESOLVE_byTempCopy
+        CantTempCopy_FastFn
+        CantTempCopy_NonCopiable
+        CantTempCopy_ReturnedFromFn
+    };
+
+
     // The solver state.
 
     let using mut ss:                   SolverState;
@@ -635,7 +651,11 @@ pub fn solve(
 
         prefix ~= "arg";
 
-        return prefix.qKW ~ (prefix && " ") ~ arg.name.human.qID;
+        let fn   = arg.target
+            &&     arg.target != _current_fn.target
+            && GET(arg.target.parent).name.human.qID ~ ":";
+
+        return prefix.qKW ~ " " ~ fn ~ arg.name.human.qID;
     }
 
     fn human(id: string)
@@ -2050,14 +2070,30 @@ pub fn solve(
 
     fn explainWhichFn(t: Target, conversions?: Target[][], backtrack!?: string, fmt = NoContext)
     {
-        mut result = t ~ " at " ~ t.token.addr_and_snippet(:fmt, :backtrack);
+        mut result = t.str;
 
-        for (mut i = 0; i < conversions.len; i++)
+        if (t.flags & F_INJECTED)
         {
-            let c = conversions[i];
-            if (c)
-                result ~= explainConversion(c,
-                    prefix: t.args.len > 1 && t.args[i] ~ ": ");
+            // Token of origin is the first callsite that incurred this injected argument,
+            //  but it could be used by multiple additional callsites further down,
+            //   so the token/snippet is pretty arbitrary.
+            //
+            // It's also not really useful in explaining what the argument is,
+            //  because it's implicit, and usually not mentioned in the snippet at all.
+            //
+            result ~= "\n";
+        }
+        else
+        {
+            result ~= " at " ~ t.token.addr_and_snippet(:fmt, :backtrack);
+
+            for (mut i = 0; i < conversions.len; i++)
+            {
+                let c = conversions[i];
+                if (c)
+                    result ~= explainConversion(c,
+                        prefix: t.args.len > 1 && t.args[i] ~ ": ");
+            }
         }
 
         return result;
@@ -10147,10 +10183,17 @@ pub fn solve(
             && o.type.isPassByValue();
     }
 
+    fn rejectsTempCopies(arg: Argument)
+    {
+        return arg.flags & F_IMPLICIT   ? CantTempCopy_HostArg_Implicit
+             : arg.flags & F_REF        ? CantTempCopy_HostArg_Ref
+             : arg.type.is_mutref       ? CantTempCopy_HostArg_MutRef
+             : [];
+    }
+
     fn acceptsTempCopies(arg: Argument)
     {
-        return !(arg.flags & (F_IMPLICIT | F_REF))
-            &&  !arg.type.is_mutref;
+        return !arg.rejectsTempCopies();
     }
 
     fn acceptsTempCopies(o: Overload)
@@ -10209,6 +10252,32 @@ pub fn solve(
 
         fn tokenHash(w: WriteID)
             w._locid_and_hash & 0xfff00000;
+
+
+        //
+
+        fn ArgRationale_explain(r: ArgRationale, callee: Target, arg: SolvedNode, host_arg: Argument)
+        {
+            if (r == CantTempCopy_FastFn)
+                return "Temporary copies not allowed in fast fns.";
+            if (r == CantTempCopy_NonCopiable)
+                return host_arg ~ " is non-copyable: " ~ humanizeType(arg);
+
+            if (r == CantTempCopy_HostArg_Ref)
+                return host_arg ~ " is " ~ "ref".qBAD;
+            if (r == CantTempCopy_HostArg_Implicit)
+                return host_arg ~ " is " ~ "implicit".qBAD;
+            if (r == CantTempCopy_HostArg_MutRef)
+                return host_arg ~ " is a mutref: " ~ humanizeType(arg);
+
+            if (r == CantTempCopy_ReturnedFromFn)
+                return host_arg ~ " is ref-returned from " ~ callee;
+
+            if (SELF_TEST)
+                BUG("Unknown reason.");
+
+            return "Unknown reason.";
+        }
 
 
         //
@@ -10362,19 +10431,7 @@ pub fn solve(
 
             // No copy injection in fast fns.
             if (_current_fn.asserts & A_FAST)
-                return false;
-
-            fn RESOLVE_byTempCopy(ref node: SolvedNode, slot: Type)
-            {
-                // Reconstruct a maybe-copyable value type -
-                //  slot is a ref which may not need q_rx_copy.
-                shadow let slot = slot.clear_refs().make_copyable();
-
-                // TODO FIX How do we defer this copy?
-                //  MCOM needs to pick up something.
-                maybeCopyOrMove(:node, slot);
-                return true;
-            }
+                return CantTempCopy_FastFn;
 
             // Back here.
             let host_args   = target.args;
@@ -10382,17 +10439,18 @@ pub fn solve(
 
             // No go if arg is nocopy.
             if (!arg.is_rx_copy)
-                return false;
+                return CantTempCopy_NonCopiable;
 
             // Try to introduce a copy on an intermediate variable.
             //  This should help with closures and stuff.
             if (arg.kind == "call" && RESOLVE_byMutvar(arg.target))
-                return true;
+                return [];
 
             // We don't allow this on implicit arguments, which includes closures.
             //  Implicitly copying implicit arguments is a bit much (TODO not sure, is it?).
-            if (!host_arg.acceptsTempCopies)
-                return false;
+            let r = host_arg.rejectsTempCopies;
+            if (r)
+                return r;
 
             // Re: m_and_c_cant_alias_002 test:
             //  We don't want to return a reference to the temporary,
@@ -10401,11 +10459,21 @@ pub fn solve(
                             .Lifetime_has(argidx: position);
 
             if (isReturned)
-                return false;
+                return CantTempCopy_ReturnedFromFn;
 
-            return RESOLVE_byTempCopy(
-                node: arg,
-                slot: host_args[position].type);
+            // Go.
+            {
+                let slot = host_args[position].type;
+
+                // Reconstruct a maybe-copyable value type -
+                //  slot is a ref which may not need q_rx_copy.
+                shadow let slot = slot.clear_refs().make_copyable();
+
+                // TODO FIX How do we defer this copy?
+                //  MCOM needs to pick up something.
+                maybeCopyOrMove(arg, slot);
+                return [];
+            }
         }
 
 
@@ -10831,7 +10899,7 @@ pub fn solve(
                                     //
                                     trySoft: softRiskSafe(pra.arg))
 
-                                : !RESOLVE_byTempCopy(:pra.target, :pra.arg, r))
+                                : !!RESOLVE_byTempCopy(:pra.target, :pra.arg, r))
                         {
                             // Appease bck
                             shadow ref pra = _current_fn.preceding_ref_args[i];
@@ -11158,22 +11226,34 @@ pub fn solve(
                             // Try to resolve by injecting a copy -
                             //  notice this is an either or, no need to pick one,
                             //   one is a writing mutref so only one could accept a temporary.
-                            if (!RESOLVE_byTempCopy(:callsite, i0) &&
-                                !RESOLVE_byTempCopy(:callsite, i1))
+                            mut noTempCopy0: ArgRationale;
+                            mut noTempCopy1: ArgRationale;
+
+                            if ((noTempCopy0 = RESOLVE_byTempCopy(:callsite, i0)) &&
+                                (noTempCopy1 = RESOLVE_byTempCopy(:callsite, i1)))
                             {
                                 // Else emit an args-cannot-alias error.
-                                mut err = target.str;
+                                mut err = "At call to " ~ target.str;
 
                                 err ~= host_args.len == 2 && target.flags & F_OPERATOR
-                                    ?   ": Both operands alias:\n"
-                                    :   ": Arguments:\n\n\t    " ~ (i0 + 1) ~ ":\t" ~ host_arg0
+                                    ?   ", both operands alias:\n"
+                                    :   ", arguments:\n\n\t    " ~ (i0 + 1) ~ ":\t" ~ host_arg0
                                         ~         " and\n\t    " ~ (i1 + 1) ~ ":\t" ~ host_arg1
                                         ~           "\n\n\t    both alias:\n";
 
                                 inter.Lifetime_each: |locid|
                                     if (locid)
-                                        err ~= "\n            "
-                                            ~ explainWhichFn(nested(locid), fmt: FullContext);
+                                        err ~= "\n\t    " ~ explainWhichFn(
+                                            nested(locid), fmt: FullContext);
+
+                                shadow let noTempCopy0 = noTempCopy0.ArgRationale_explain(target, arg0, host_arg0);
+                                shadow let noTempCopy1 = noTempCopy1.ArgRationale_explain(target, arg1, host_arg1);
+
+                                err ~= "\n\tCan't resolve aliasing by a temporary copy:";
+                                err ~= "\n\n\t    " ~ noTempCopy0;
+
+                                if (noTempCopy0 != noTempCopy1)
+                                    err ~= "\n\n\t    " ~ noTempCopy1;
 
                                 _here = args[i0].token;
                                 fail(err);
