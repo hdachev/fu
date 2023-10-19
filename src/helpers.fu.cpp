@@ -1,34 +1,16 @@
 #include <fu/int.h>
 #include <fu/str.h>
 #include <fu/view.h>
-#include <fu/defer.h>
 #include <fu/never.h>
 #include <fu/vec/slice.h>
 #include <fu/vec/concat.h>
 #include <fu/vec/concat_one.h>
 #include <fu/vec/view_assign.h>
 
-struct s_Mi;
-
-                                #ifndef DEF_s_Mi
-                                #define DEF_s_Mi
-struct s_Mi
-{
-    int modid;
-    int index;
-    explicit operator bool() const noexcept
-    {
-        return false
-            || modid
-            || index
-        ;
-    }
-};
-                                #endif
 
 #ifndef fu_NO_fdefs
 
-bool hasIdentifierChars_j1t51HgV(fu::view<char> id)
+bool hasIdentifierChars_pZLkTusf(fu::view<char> id)
 {
     for (int i = 0; i < id.size(); i++)
     {
@@ -40,7 +22,7 @@ bool hasIdentifierChars_j1t51HgV(fu::view<char> id)
     return false;
 }
 
-bool hasNonIdentifierChars_j1t51HgV(fu::view<char> id)
+bool hasNonIdentifierChars_pZLkTusf(fu::view<char> id)
 {
     for (int i = 0; i < id.size(); i++)
     {
@@ -52,7 +34,7 @@ bool hasNonIdentifierChars_j1t51HgV(fu::view<char> id)
     return false;
 }
 
-unsigned parse10u32_Uqhjg5wd(int& offset, fu::view<char> str)
+unsigned parse10u32_Fc3p3Wmg(int& offset, fu::view<char> str)
 {
     unsigned result {};
     while (offset < str.size())
@@ -69,173 +51,45 @@ unsigned parse10u32_Uqhjg5wd(int& offset, fu::view<char> str)
     return result;
 }
 
-int parse10s32_Uqhjg5wd(int& offset, fu::view<char> str)
+int parse10s32_Fc3p3Wmg(int& offset, fu::view<char> str)
 {
     if ((offset >= str.size()))
         return 0;
     else
     {
         const int mul = ((str[offset] == '-') ? (offset++, -1) : +1);
-        return int(parse10u32_Uqhjg5wd(offset, str)) * mul;
+        return int(parse10u32_Fc3p3Wmg(offset, str)) * mul;
     };
 }
 
-s_Mi parseMi_Uqhjg5wd(int& offset, fu::view<char> str)
-{
-    if ((offset >= str.size()))
-    {
-        return s_Mi{};
-    }
-    else
-    {
-        int modid = 0;
-        int index = 0;
-        fu::view<char> _0 {};
-        char c = (_0 = str, static_cast<fu::view<char>&&>(_0)[offset++]);
-
-        { {
-            if ((c >= 'G') && (c <= 'V'))
-            {
-                fu_DEFER(modid *= -1);
-                modid = (int(fu::u8(c)) - int(fu::u8('G')));
-                int shift = 4;
-                for (; ; )
-                {
-                    if (offset == str.size())
-                        goto BL_3;
-                    else
-                    {
-                        fu::view<char> _1 {};
-                        c = (_1 = str, static_cast<fu::view<char>&&>(_1)[offset++]);
-                        if ((c < 'G') || (c > 'V'))
-                            break;
-                        else
-                        {
-                            modid |= ((int(fu::u8(c)) - int(fu::u8('G'))) << shift);
-                            shift += 4;
-                        };
-                    };
-                };
-            }
-            else if ((c >= 'g') && (c <= 'v'))
-            {
-                modid = (int(fu::u8(c)) - int(fu::u8('g')));
-                int shift = 4;
-                for (; ; )
-                {
-                    if (offset == str.size())
-                        goto BL_3;
-                    else
-                    {
-                        fu::view<char> _2 {};
-                        c = (_2 = str, static_cast<fu::view<char>&&>(_2)[offset++]);
-                        if ((c < 'g') || (c > 'v'))
-                            break;
-                        else
-                        {
-                            modid |= ((int(fu::u8(c)) - int(fu::u8('g'))) << shift);
-                            shift += 4;
-                        };
-                    };
-                };
-            };
-            if (((c >= '0') && (c <= '9')) || ((c >= 'a') && (c <= 'f')))
-            {
-                index = ((c >= 'a') ? ((int(fu::u8(c)) - int(fu::u8('a'))) + 10) : (int(fu::u8(c)) - int(fu::u8('0'))));
-                int shift = 4;
-                for (; ; )
-                {
-                    if (offset == str.size())
-                        goto BL_3;
-                    else
-                    {
-                        fu::view<char> _3 {};
-                        c = (_3 = str, static_cast<fu::view<char>&&>(_3)[offset++]);
-                        if ((c >= '0') && (c <= '9'))
-                        {
-                            index |= ((int(fu::u8(c)) - int(fu::u8('0'))) << shift);
-                        }
-                        else if ((c >= 'a') && (c <= 'f'))
-                        {
-                            index |= (((int(fu::u8(c)) - int(fu::u8('a'))) + 10) << shift);
-                        }
-                        else
-                            break;
-
-                        shift += 4;
-                    };
-                };
-            };
-            offset--;
-          } BL_3:;
-        };
-        return s_Mi { modid, index };
-    };
-}
-
-void appendMi_Pd5VM6Hx(fu::str& str, int modid, int index)
-{
-    if (modid < 0)
-    {
-        modid *= -1;
-        do
-        {
-            str += char(((modid & 15) + int(fu::u8('G'))));
-            modid >>= 4;
-        }
-        while (modid);
-    }
-    else
-    {
-        do
-        {
-            str += char(((modid & 15) + int(fu::u8('g'))));
-            modid >>= 4;
-        }
-        while (modid);
-    };
-    do
-    {
-        const int c = (index & 15);
-        index >>= 4;
-        str += ((c >= 10) ? char(((c - 10) + int(fu::u8('a')))) : char((c + int(fu::u8('0')))));
-    }
-    while (index);
-}
-
-unsigned parse09AV_Uqhjg5wd(int& offset, fu::view<char> str)
+unsigned parseVarint_Fc3p3Wmg(int& offset, fu::view<char> str)
 {
     unsigned shift {};
     unsigned result {};
-    while (offset < str.size())
+    char c {};
+    while ((offset < str.size()) && (unsigned(fu::u8((c = str[offset++]))) >= 128u))
     {
-        const char c = str[offset];
-        fu::never BL_3_v {};
-        const unsigned v = (((c >= '0') && (c <= '9')) ? (unsigned(fu::u8(c)) - unsigned(fu::u8('0'))) : (((c >= 'A') && (c <= 'V')) ? ((unsigned(fu::u8(c)) - unsigned(fu::u8('A'))) + 10u) : (__extension__ (
-        {
-            break;
-        (void)0;}), static_cast<fu::never&&>(BL_3_v))));
-        result |= (v << shift);
-        shift += 5u;
-        offset++;
+        result |= ((unsigned(fu::u8(c)) & 0x7fu) << shift);
+        shift += 7u;
     };
-    return result;
+    const unsigned sub = (((c >= '0') && (c <= '9')) ? unsigned(fu::u8('0')) : (((c >= 'A') && (c <= 'Z')) ? (unsigned(fu::u8('A')) - 10u) : (((c >= '_') && (c <= 'z')) ? (unsigned(fu::u8('_')) - 36u) : fu::fail("parseVarint: missing trailer"_fu))));
+    return result | ((unsigned(fu::u8(c)) - sub) << shift);
 }
 
-void append09AV_PSduX30A(fu::str& str, unsigned v)
+void appendVarint_YxEMA0h9(fu::str& str, unsigned v)
 {
-    do
+    while ((v >= 64u))
     {
-        const unsigned c = (v & 31u);
-        v >>= 5u;
-        str += ((c >= 10u) ? char(((c - 10u) + unsigned(fu::u8('A')))) : char((c + unsigned(fu::u8('0')))));
-    }
-    while (v);
+        str += char((v | 0x80u));
+        v >>= 7u;
+    };
+    const unsigned add = ((v < 10u) ? unsigned(fu::u8('0')) : ((v < 36u) ? (unsigned(fu::u8('A')) - 10u) : (unsigned(fu::u8('_')) - 36u)));
+    str += char((v + add));
 }
 
-                                #ifndef DEF_join_9dTc0Ds4535
-                                #define DEF_join_9dTc0Ds4535
-inline fu::str join_9dTc0Ds4(fu::view<fu::str> a, fu::view<char> sep)
+                                #ifndef DEF_join_jCe9HYtvP9c
+                                #define DEF_join_jCe9HYtvP9c
+inline fu::str join_jCe9HYtv(fu::view<fu::str> a, fu::view<char> sep)
 {
     if (a.size() < 2)
     {
@@ -257,7 +111,7 @@ inline fu::str join_9dTc0Ds4(fu::view<fu::str> a, fu::view<char> sep)
         res.grow<false>(size);
         fu::view<char> head = a[0];
         size = head.size();
-        fu::view_assign(fu::get_view_mut(res, 0, head.size()), head);
+        fu::view_assign(fu::get_view_start0_mut(res, head.size()), head);
         for (int i_1 = 1; i_1 < a.size(); i_1++)
         {
             fu::view<char> range = a[i_1];
@@ -271,16 +125,16 @@ inline fu::str join_9dTc0Ds4(fu::view<fu::str> a, fu::view<char> sep)
 }
                                 #endif
 
-fu::str str_XVTTt9iy(fu::view<fu::str> arr)
+fu::str print_fOf9hIVR(fu::view<fu::str> arr)
 {
     if (arr)
-        return ("[ \""_fu + join_9dTc0Ds4(arr, "\", \""_fu)) + "\" ]"_fu;
+        return ("[ \""_fu + join_jCe9HYtv(arr, "\", \""_fu)) + "\" ]"_fu;
     else
         return "[]"_fu;
 
 }
 
-fu::str trim_UiSEgboz(const fu::str& str)
+fu::str trim_VW4uLx7L(const fu::str& str)
 {
     for (int first = 0; first < str.size(); first++)
     {
@@ -294,7 +148,50 @@ fu::str trim_UiSEgboz(const fu::str& str)
             };
         };
     };
-    return fu::str{};
+    return ""_fu;
+}
+
+                                #ifndef DEF_find_KonMQ4KBuu5
+                                #define DEF_find_KonMQ4KBuu5
+inline int find_KonMQ4KB(fu::view<char> a, const char b)
+{
+    for (int i = 0; i < a.size(); i++)
+    {
+        if (a[i] == b)
+            return i;
+
+    };
+    return -1;
+}
+                                #endif
+
+                                #ifndef DEF_find_T9i966y9wQg
+                                #define DEF_find_T9i966y9wQg
+inline int find_T9i966y9(fu::view<char> a, const char b, int start)
+{
+    start = ((start > 0) ? start : 0);
+    for (int i = start; i < a.size(); i++)
+    {
+        if (a[i] == b)
+            return i;
+
+    };
+    return -1;
+}
+                                #endif
+
+fu::str cleanID_j6ljQymd(const fu::str& id)
+{
+    const int start = (find_KonMQ4KB(id, '!') + 1);
+    const int end = find_T9i966y9(id, '.', start);
+    if (start || ((end >= 0) && (end < id.size())))
+    {
+        fu::str _0 {};
+        return (_0 = fu::slice(id, start, ((end >= 0) ? end : id.size()))) ? static_cast<fu::str&&>(_0) : fu::fail("cleanID: ended up with an empty string"_fu);
+    }
+    else
+        return fu::str(id);
+
 }
 
 #endif

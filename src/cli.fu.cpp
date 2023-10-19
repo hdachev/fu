@@ -3,7 +3,6 @@
 #include <fu/view.h>
 #include <fu/never.h>
 #include <fu/print.h>
-#include <fu/default.h>
 #include <fu/vec/slice.h>
 #include <fu/vec/concat.h>
 #include <fu/init_priority.h>
@@ -11,25 +10,26 @@
 
 fu::str cwd_OvAHpuKu();
 void runTests();
-static int cli_handle_OhzU8uR3(fu::view<fu::str>, const fu::str&);
-fu::str join_By06Vz3F(fu::view<char>, const fu::str&);
-void compile_and_build_wRodeEgF(const fu::str&, const fu::str&, const fu::str&, const fu::str&, const fu::str&, const fu::str&, fu::view<char>, bool, bool, bool, bool, fu::view<fu::str>, fu::view<fu::str>);
+static void cli_handle_u1NgzbUD(fu::view<fu::str>, const fu::str&);
+fu::str join_8GxtVDhD(fu::view<char>, const fu::str&);
+void compile_and_build_ioExL0pD(const fu::str&, const fu::str&, const fu::str&, const fu::str&, const fu::str&, const fu::str&, fu::view<char>, bool, bool, bool, bool, fu::view<fu::str>, fu::view<fu::str>);
+fu::str qBAD_3PsDzMvu(const fu::str&);
 
 #ifndef fu_NO_fdefs
 
-static const fu::str& next_FJXjRAmG(fu::view<fu::str> argv, int& idx)
+static fu::str next_jrWoBf8X(fu::view<fu::str> argv, int& idx)
 {
     const int i = idx++;
     if (i < argv.size())
-        return argv[i];
+        return fu::str(argv[i]);
     else
-        return (*(const fu::str*)fu::NIL);
+        return ""_fu;
 
 }
 
-                                #ifndef DEF_x3Cx3E_AsFD7H8Nlu6
-                                #define DEF_x3Cx3E_AsFD7H8Nlu6
-inline int x3Cx3E_AsFD7H8N(const int a, const int b)
+                                #ifndef DEF_x3Cx3E_mJGU9byOmI4
+                                #define DEF_x3Cx3E_mJGU9byOmI4
+inline int x3Cx3E_mJGU9byO(const int a, const int b)
 {
     if (a < b)
         return -1;
@@ -41,9 +41,9 @@ inline int x3Cx3E_AsFD7H8N(const int a, const int b)
 }
                                 #endif
 
-                                #ifndef DEF_x3Cx3E_f0RieKMU2n0
-                                #define DEF_x3Cx3E_f0RieKMU2n0
-inline int x3Cx3E_f0RieKMU(const char a, const char b)
+                                #ifndef DEF_x3Cx3E_sOVQcK2JOH3
+                                #define DEF_x3Cx3E_sOVQcK2JOH3
+inline int x3Cx3E_sOVQcK2J(const char a, const char b)
 {
     if (a < b)
         return -1;
@@ -55,23 +55,23 @@ inline int x3Cx3E_f0RieKMU(const char a, const char b)
 }
                                 #endif
 
-                                #ifndef DEF_x3Cx3E_r7bhmB7DrQ0
-                                #define DEF_x3Cx3E_r7bhmB7DrQ0
-inline int x3Cx3E_r7bhmB7D(fu::view<char> a, fu::view<char> b)
+                                #ifndef DEF_x3Cx3E_gCeFmDFw0L8
+                                #define DEF_x3Cx3E_gCeFmDFw0L8
+inline int x3Cx3E_gCeFmDFw(fu::view<char> a, fu::view<char> b)
 {
-    int cmp = x3Cx3E_AsFD7H8N(a.size(), b.size());
+    int cmp = x3Cx3E_mJGU9byO(a.size(), b.size());
     for (int i = 0; (i < a.size()) && !cmp; i++)
-        cmp = x3Cx3E_f0RieKMU(a[i], b[i]);
+        cmp = x3Cx3E_sOVQcK2J(a[i], b[i]);
 
     return cmp;
 }
                                 #endif
 
-                                #ifndef DEF_x3Dx3D_r7bhmB7DrQ0
-                                #define DEF_x3Dx3D_r7bhmB7DrQ0
+                                #ifndef DEF_x3Dx3D_gCeFmDFw0L8
+                                #define DEF_x3Dx3D_gCeFmDFw0L8
 inline bool operator==(fu::view<char> a, fu::view<char> b)
 {
-    return !x3Cx3E_r7bhmB7D(a, b);
+    return !x3Cx3E_gCeFmDFw(a, b);
 }
                                 #endif
 
@@ -80,22 +80,22 @@ inline bool operator==(fu::view<char> a, fu::view<char> b)
 extern const fu::str FUDIR;
                                 #endif
 
-int buildCompiler()
+void buildCompiler()
 {
-    return cli_handle_OhzU8uR3((fu::slate<5, fu::str> { "fu"_fu, "--bin"_fu, "bin/fu"_fu, "-c"_fu, "src/cli.fu"_fu }), FUDIR);
+    cli_handle_u1NgzbUD((fu::slate<5, fu::str> { "fu"_fu, "--bin"_fu, "bin/fu"_fu, "-c"_fu, "src/cli.fu"_fu }), FUDIR);
 }
 
-static fu::str abs_3G96im5E(const fu::str& path, fu::view<char> cwd)
+static fu::str abs_5dkXw8fA(const fu::str& path, fu::view<char> cwd)
 {
     if (path && (path[0] != '-'))
-        return join_By06Vz3F(cwd, path);
+        return join_8GxtVDhD(cwd, path);
     else
     {
         return fu::str{};
     };
 }
 
-static void option_r7OtnCf1(fu::view<char> sHort, fu::view<char> lOng, const int o, fu::str& dir, fu::view<fu::str> argv, fu::view<char> cwd, int& idx, int& options, fu::str& val, fu::str& opt)
+static void option_CznypAWj(fu::view<char> sHort, fu::view<char> lOng, const int o, fu::str& dir, fu::view<fu::str> argv, fu::view<char> cwd, int& idx, int& options, fu::str& val, fu::str& opt)
 {
     if ((opt == sHort) || (opt == lOng))
     {
@@ -107,27 +107,27 @@ static void option_r7OtnCf1(fu::view<char> sHort, fu::view<char> lOng, const int
             else
             {
                 fu::str _0 {};
-                dir = ((_0 = abs_3G96im5E(val, cwd)) ? static_cast<fu::str&&>(_0) : fu::fail((((((((("Option "_fu + lOng) + " expects a path,"_fu) + "\n\tgot `"_fu) + val) + "`,"_fu) + "\n\ttry `"_fu) + lOng) + " rel/or/abs/dir/`."_fu)));
-                val = next_FJXjRAmG(argv, idx);
+                dir = ((_0 = abs_5dkXw8fA(val, cwd)) ? static_cast<fu::str&&>(_0) : fu::fail((((((((("Option "_fu + lOng) + " expects a path,"_fu) + "\n\tgot `"_fu) + val) + "`,"_fu) + "\n\ttry `"_fu) + lOng) + " rel/or/abs/dir/`."_fu)));
+                val = next_jrWoBf8X(argv, idx);
             };
         };
-        opt = fu::str{};
+        opt = ""_fu;
     };
 }
 
-                                #ifndef DEF_ends_1wDddajZEEk
-                                #define DEF_ends_1wDddajZEEk
-inline bool ends_1wDddajZ(fu::view<char> a, fu::view<char> with)
+                                #ifndef DEF_ends_t2TApdnqRc8
+                                #define DEF_ends_t2TApdnqRc8
+inline bool ends_t2TApdnq(fu::view<char> a, fu::view<char> with)
 {
     return (a.size() >= with.size()) && (fu::get_view(a, (a.size() - with.size()), a.size()) == with);
 }
                                 #endif
 
-                                #ifndef DEF_starts_1wDddajZEEk
-                                #define DEF_starts_1wDddajZEEk
-inline bool starts_1wDddajZ(fu::view<char> a, fu::view<char> with)
+                                #ifndef DEF_starts_t2TApdnqRc8
+                                #define DEF_starts_t2TApdnqRc8
+inline bool starts_t2TApdnq(fu::view<char> a, fu::view<char> with)
 {
-    return (a.size() >= with.size()) && (fu::get_view(a, 0, with.size()) == with);
+    return (a.size() >= with.size()) && (fu::get_view_start0(a, with.size()) == with);
 }
                                 #endif
 
@@ -136,7 +136,7 @@ inline bool starts_1wDddajZ(fu::view<char> a, fu::view<char> with)
 extern const fu::str DEFAULT_WORKSPACE;
                                 #endif
 
-static int cli_handle_OhzU8uR3(fu::view<fu::str> argv, const fu::str& cwd)
+static void cli_handle_u1NgzbUD(fu::view<fu::str> argv, const fu::str& cwd)
 {
     // Hoisted:
     fu::str x {};
@@ -146,11 +146,10 @@ static int cli_handle_OhzU8uR3(fu::view<fu::str> argv, const fu::str& cwd)
     fu::str x_4 {};
 
     int idx = 0;
-    const fu::str& self = next_FJXjRAmG(argv, idx);
+    /*MOV*/ fu::str self = next_jrWoBf8X(argv, idx);
     if (argv.size() == 1)
     {
-        fu::println((fu::slate<3, fu::str> { static_cast<fu::str&&>((x = "\tTry `"_fu, x)), fu::str(self), static_cast<fu::str&&>((x_1 = " file.fu`.\n"_fu, x_1)) }));
-        return 0;
+        fu::println((fu::slate<3, fu::str> { static_cast<fu::str&&>((x = "\tTry `"_fu, x)), static_cast<fu::str&&>(self), static_cast<fu::str&&>((x_1 = " file.fu`.\n"_fu, x_1)) }));
     }
     else if ((argv.size() == 2) && (argv[1] == "self"_fu))
     {
@@ -159,7 +158,6 @@ static int cli_handle_OhzU8uR3(fu::view<fu::str> argv, const fu::str& cwd)
         fu::println((fu::slate<1, fu::str> { static_cast<fu::str&&>((x_3 = "\n\tRebuilding self ...\n"_fu, x_3)) }));
         buildCompiler();
         fu::println((fu::slate<1, fu::str> { static_cast<fu::str&&>((x_4 = "\n\tRebuilt self.\n"_fu, x_4)) }));
-        return 0;
     }
     else
     {
@@ -178,7 +176,7 @@ static int cli_handle_OhzU8uR3(fu::view<fu::str> argv, const fu::str& cwd)
         bool nocache {};
         fu::vec<fu::str> flags_cc {};
         fu::vec<fu::str> flags_ld {};
-        fu::str val { next_FJXjRAmG(argv, idx) };
+        fu::str val = next_jrWoBf8X(argv, idx);
         while ((val.size() > 1) && (val[0] == '-'))
         {
             fu::str opt { val };
@@ -187,16 +185,16 @@ static int cli_handle_OhzU8uR3(fu::view<fu::str> argv, const fu::str& cwd)
                 opt = fu::str { fu::slate<1, char> { opt[1] } };
                 val = ('-' + fu::slice(val, 2));
                 if (val == "-"_fu)
-                    val = next_FJXjRAmG(argv, idx);
+                    val = next_jrWoBf8X(argv, idx);
 
             }
             else
-                val = next_FJXjRAmG(argv, idx);
+                val = next_jrWoBf8X(argv, idx);
 
-            option_r7OtnCf1("-"_fu, "--src"_fu, 0, dir_src, argv, cwd, idx, options, val, opt);
-            option_r7OtnCf1("c"_fu, "--cpp"_fu, EMIT_CPP, dir_cpp, argv, cwd, idx, options, val, opt);
-            option_r7OtnCf1("o"_fu, "--obj"_fu, EMIT_OBJ, dir_obj, argv, cwd, idx, options, val, opt);
-            option_r7OtnCf1("b"_fu, "--bin"_fu, EMIT_BIN, bin, argv, cwd, idx, options, val, opt);
+            option_CznypAWj("-"_fu, "--src"_fu, 0, dir_src, argv, cwd, idx, options, val, opt);
+            option_CznypAWj("c"_fu, "--cpp"_fu, EMIT_CPP, dir_cpp, argv, cwd, idx, options, val, opt);
+            option_CznypAWj("o"_fu, "--obj"_fu, EMIT_OBJ, dir_obj, argv, cwd, idx, options, val, opt);
+            option_CznypAWj("b"_fu, "--bin"_fu, EMIT_BIN, bin, argv, cwd, idx, options, val, opt);
             if ((opt == "--debug"_fu) || (opt == "--reldeb"_fu) || (opt == "--release"_fu) || (opt == "--retail"_fu))
             {
                 if (scheme)
@@ -227,25 +225,25 @@ static int cli_handle_OhzU8uR3(fu::view<fu::str> argv, const fu::str& cwd)
 
         };
         fu::str _0 {};
-        fu::str fname = ((_0 = abs_3G96im5E(val, cwd)) ? static_cast<fu::str&&>(_0) : fu::fail(("Missing filename argument, a valid example is:"_fu + "\n\t`fu file.fu`."_fu)));
+        fu::str fname = ((_0 = abs_5dkXw8fA(val, cwd)) ? static_cast<fu::str&&>(_0) : fu::fail(("Missing filename argument, a valid example is:"_fu + "\n\t`fu file.fu`."_fu)));
         if (options & EMIT_BIN)
         {
             if (!(bin))
-                bin = (ends_1wDddajZ(fname, ".fu"_fu) ? fu::slice(fname, 0, (fname.size() - ".fu"_fu.size())) : (fname + ".exe"_fu));
+                bin = (ends_t2TApdnq(fname, ".fu"_fu) ? fu::slice(fname, 0, (fname.size() - ".fu"_fu.size())) : (fname + ".exe"_fu));
 
         };
 
         {
-            fu::view<char> opt_1 = next_FJXjRAmG(argv, idx);
+            fu::str opt_1 = next_jrWoBf8X(argv, idx);
             if (opt_1 == "--cflags"_fu)
             {
                 for (; ; )
                 {
-                    const fu::str& val_1 = next_FJXjRAmG(argv, idx);
-                    if (!val_1 || starts_1wDddajZ(val_1, "--"_fu))
+                    /*MOV*/ fu::str val_1 = next_jrWoBf8X(argv, idx);
+                    if (!val_1 || starts_t2TApdnq(val_1, "--"_fu))
                         break;
                     else
-                        flags_cc += fu::str(val_1);
+                        flags_cc += static_cast<fu::str&&>(val_1);
 
                 };
             };
@@ -253,16 +251,16 @@ static int cli_handle_OhzU8uR3(fu::view<fu::str> argv, const fu::str& cwd)
         };
 
         {
-            fu::view<char> opt_2 = next_FJXjRAmG(argv, idx);
+            fu::str opt_2 = next_jrWoBf8X(argv, idx);
             if (opt_2 == "--libs"_fu)
             {
                 for (; ; )
                 {
-                    const fu::str& val_2 = next_FJXjRAmG(argv, idx);
-                    if (!val_2 || starts_1wDddajZ(val_2, "--"_fu))
+                    /*MOV*/ fu::str val_2 = next_jrWoBf8X(argv, idx);
+                    if (!val_2 || starts_t2TApdnq(val_2, "--"_fu))
                         break;
                     else
-                        flags_ld += fu::str(val_2);
+                        flags_ld += static_cast<fu::str&&>(val_2);
 
                 };
             };
@@ -270,19 +268,36 @@ static int cli_handle_OhzU8uR3(fu::view<fu::str> argv, const fu::str& cwd)
         };
 
         {
-            fu::view<char> opt_3 = next_FJXjRAmG(argv, idx);
+            fu::str opt_3 = next_jrWoBf8X(argv, idx);
             if (opt_3)
                 fu::fail((("Leftover option: `"_fu + opt_3) + "`."_fu));
 
         };
-        compile_and_build_wRodeEgF(fname, DEFAULT_WORKSPACE, bin, dir_obj, dir_src, dir_cpp, scheme, run, shared, hotswap, nocache, flags_cc, flags_ld);
-        return 0;
+        compile_and_build_ioExL0pD(fname, DEFAULT_WORKSPACE, bin, dir_obj, dir_src, dir_cpp, scheme, run, shared, hotswap, nocache, flags_cc, flags_ld);
     };
 }
 
 int fu_MAIN(fu::view<fu::str> argv)
 {
-    return cli_handle_OhzU8uR3(argv, cwd_OvAHpuKu());
+    // Hoisted:
+    fu::str x {};
+
+
+    try
+    {
+        cli_handle_u1NgzbUD(argv, cwd_OvAHpuKu());
+    }
+    catch (const std::exception& o_0)
+    {
+        fu::str e = fu::to_str(o_0.what());
+
+    {
+        fu::println((fu::slate<1, fu::str> { static_cast<fu::str&&>((x = (("\n"_fu + qBAD_3PsDzMvu("  ERROR "_fu)) + e), x)) }));
+        return 1;
+    }
+    }
+;
+    return 0;
 }
 
 #endif

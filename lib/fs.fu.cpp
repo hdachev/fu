@@ -7,7 +7,7 @@
 #include <sys/stat.h>
 #include <fu/vec/concat_one.h>
 
-static int visit_00TwKMs8(fu::view_mut<char>, unsigned);
+static int visit_DQYlPKj1(fu::view_mut<char>, unsigned);
 
 #ifndef fu_NO_fdefs
 
@@ -16,15 +16,15 @@ static int visit_00TwKMs8(fu::view_mut<char>, unsigned);
 inline constexpr unsigned RWX_RWX_RWX = (((0x7u << 6u) | (0x7u << 3u)) | (0x7u << 0u));
                                 #endif
 
-                                #ifndef DEF_ends_90iSu77lC9e
-                                #define DEF_ends_90iSu77lC9e
-inline bool ends_90iSu77l(fu::view<char> a, const char with)
+                                #ifndef DEF_ends_Db9eGFmCKDj
+                                #define DEF_ends_Db9eGFmCKDj
+inline bool ends_Db9eGFmC(fu::view<char> a, const char with)
 {
     return a.size() && (a[(a.size() - 1)] == with);
 }
                                 #endif
 
-static int visit_00TwKMs8(fu::view_mut<char> path, const unsigned mode)
+static int visit_DQYlPKj1(fu::view_mut<char> path, const unsigned mode)
 {
     const int N = (path.size() - 1);
     path.mutref(N) = '\x00';
@@ -40,8 +40,8 @@ static int visit_00TwKMs8(fu::view_mut<char> path, const unsigned mode)
         {
             if (!(path[i] != '/'))
             {
-                fu::view_mut<char> parent = fu::get_view_mut(path, 0, (i + 1));
-                if (visit_00TwKMs8(parent, mode) == 0)
+                fu::view_mut<char> parent = fu::get_view_start0_mut(path, (i + 1));
+                if (visit_DQYlPKj1(parent, mode) == 0)
                 {
 
                                         if (mkdir(path.data(), mode_t(mode)))
@@ -55,12 +55,12 @@ static int visit_00TwKMs8(fu::view_mut<char> path, const unsigned mode)
     return err;
 }
 
-int mkdir_p_LwMYaCUQ(fu::str&& path, const unsigned mode)
+int mkdir_p_K8xLUZUk(fu::str&& path, const unsigned mode)
 {
-    if (!ends_90iSu77l(path, '/'))
+    if (!ends_Db9eGFmC(path, '/'))
         path += '/';
 
-    return visit_00TwKMs8(path, mode);
+    return visit_DQYlPKj1(path, mode);
 }
 
 fu::str cwd_OvAHpuKu()

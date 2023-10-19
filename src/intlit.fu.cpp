@@ -37,7 +37,7 @@ struct s_Intlit
 
 #ifndef fu_NO_fdefs
 
-s_Intlit Intlit_n2M83GG7(const uint64_t absval, const bool negative, /*MOV*/ fu::str&& error, const bool uNsigned, const bool sIgned, const uint64_t base)
+s_Intlit Intlit_LmjxY9JB(const uint64_t absval, const bool negative, /*MOV*/ fu::str&& error, const bool uNsigned, const bool sIgned, const uint64_t base)
 {
     if (!(error))
     {
@@ -54,17 +54,17 @@ s_Intlit Intlit_n2M83GG7(const uint64_t absval, const bool negative, /*MOV*/ fu:
     return s_Intlit { fu::u8(base), fu::u8(unsigned(minsize_i)), fu::u8(unsigned(minsize_u)), fu::u8(unsigned(minsize_f)), sIgned, uNsigned, negative, absval, static_cast<fu::str&&>(error) };
 }
 
-s_Intlit Intlit_SQ4NkHfH(fu::view<char> sign_prefix_value_suffix)
+s_Intlit Intlit_sNwIFkW3(fu::view<char> sign_prefix_value_suffix)
 {
     const char c_sign = sign_prefix_value_suffix[0];
     const char sign = (((c_sign == '-') || (c_sign == '+')) ? c_sign : char{});
-    fu::view<char> prefix_value_suffix = fu::get_view(sign_prefix_value_suffix, ((sign != char{}) ? 1 : 0), sign_prefix_value_suffix.size());
+    fu::view<char> prefix_value_suffix = fu::get_view(sign_prefix_value_suffix, ((sign != char{}) ? 1 : 0));
     const char c_prefix = ((prefix_value_suffix.size() > 1) ? prefix_value_suffix[1] : char{});
     const char prefix = ((((c_prefix == 'x') || (c_prefix == 'o') || (c_prefix == 'b')) && (prefix_value_suffix[0] == '0')) ? c_prefix : char{});
-    fu::view<char> value_suffix = fu::get_view(prefix_value_suffix, ((prefix != char{}) ? 2 : 0), prefix_value_suffix.size());
+    fu::view<char> value_suffix = fu::get_view(prefix_value_suffix, ((prefix != char{}) ? 2 : 0));
     const char c_suffix = (value_suffix.size() ? value_suffix[(value_suffix.size() - 1)] : char{});
     const char suffix = ((c_suffix == 'u') ? c_suffix : char{});
-    fu::view<char> value = fu::get_view(value_suffix, 0, (value_suffix.size() - ((suffix != char{}) ? 1 : 0)));
+    fu::view<char> value = fu::get_view_start0(value_suffix, (value_suffix.size() - ((suffix != char{}) ? 1 : 0)));
     const uint64_t base = ((prefix == 'x') ? uint64_t(unsigned(16)) : ((prefix == 'o') ? uint64_t(unsigned(8)) : ((prefix == 'b') ? uint64_t(unsigned(2)) : uint64_t(unsigned(10)))));
     /*MOV*/ fu::str error {};
     uint64_t absval {};
@@ -88,7 +88,7 @@ s_Intlit Intlit_SQ4NkHfH(fu::view<char> sign_prefix_value_suffix)
     const bool uNsigned = (suffix == 'u');
     const bool negative = (sign == '-');
     const bool sIgned = (negative || (suffix == 'i'));
-    return Intlit_n2M83GG7(absval, negative, static_cast<fu::str&&>(error), uNsigned, sIgned, base);
+    return Intlit_LmjxY9JB(absval, negative, static_cast<fu::str&&>(error), uNsigned, sIgned, base);
 }
 
 #endif

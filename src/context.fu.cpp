@@ -26,6 +26,7 @@ struct s_Node;
 typedef uint16_t s_DeclAsserts;
 typedef fu::u8 s_ParseSyntax;
 typedef unsigned s_Flags;
+struct s_Import;
 struct s_ModuleOrder;
 struct s_ModuleOutputs;
 struct s_Struct;
@@ -37,7 +38,6 @@ struct s_Helpers;
 struct s_Type;
 struct s_ValueType;
 struct s_Lifetime;
-struct s_Region;
 typedef fu::u8 s_VFacts;
 struct s_Scope;
 struct s_Overload;
@@ -54,20 +54,21 @@ struct s_CodegenOutput;
 typedef fu::u8 s_CGDefects;
 struct s_ModuleStats;
 struct s_ModuleStat;
-struct s_Map_qfSmCKRS93e;
+struct s_Map_iIYL7rECCBg;
 struct s_StructCanon;
 typedef fu::u8 s_CodeFmt;
-s_StructCanon parseStructCanon_degpQC5i(fu::view<char>);
-int64_t size_IIXDOWa5(fu::str&&);
-fu::str dirname_BWbYsL34(const fu::str&);
-static fu::str resolveFile_ylhZM7pm(const fu::str&, fu::view<char>, s_Context&);
-fu::str read_IIXDOWa5(fu::str&&);
-bool is_primitive_6bkyMkO3(const s_ValueType&);
-bool isStruct_ddyKn6V4(const s_ValueType&);
-int basePrimPrefixLen_VyAVtbGI(fu::view<char>);
-bool isStructOrUnion_ddyKn6V4(const s_ValueType&);
-fu::str ext_BWbYsL34(const fu::str&);
-fu::str formatCodeSnippet_M4QtP2oD(fu::vec<s_TokenIdx>&&, int, s_CodeFmt, const s_Context&);
+s_StructCanon parseStructCanon_9HOct2P6(fu::view<char>);
+int64_t size_zTt3fZzW(fu::str&&);
+fu::str dirname_8Oo0Zp26(const fu::str&);
+static fu::str resolveFile_RdUkCJIG(const fu::str&, fu::view<char>, s_Context&);
+fu::str read_zTt3fZzW(fu::str&&);
+bool is_primitive_3t4EwFeQ(const s_ValueType&);
+bool isStruct_jSb6u57z(const s_ValueType&);
+int basePrimPrefixLen_OaQVyIZB(fu::view<char>);
+bool is_sliceable_3t4EwFeQ(const s_ValueType&);
+fu::str relative_PkLpPlOh(fu::view<char>, const fu::str&);
+fu::str ext_8Oo0Zp26(const fu::str&);
+fu::str formatCodeSnippet_FyeOqRfp(fu::vec<s_TokenIdx>&&, int, s_CodeFmt, const s_Context&);
 
                                 #ifndef DEF_s_kind
                                 #define DEF_s_kind
@@ -103,40 +104,41 @@ enum s_kind: fu::u8
     s_kind_try = 28u,
     s_kind_let = 29u,
     s_kind_letdef = 30u,
-    s_kind_typedef = 31u,
-    s_kind_typecast = 32u,
-    s_kind_typeassert = 33u,
-    s_kind_typeparam = 34u,
-    s_kind_unwrap = 35u,
-    s_kind_pragma = 36u,
-    s_kind_break = 37u,
-    s_kind_return = 38u,
-    s_kind_continue = 39u,
-    s_kind_import = 40u,
-    s_kind_addroffn = 41u,
-    s_kind_forfieldsof = 42u,
-    s_kind_struct = 43u,
-    s_kind_union = 44u,
-    s_kind_primitive = 45u,
-    s_kind_flags = 46u,
-    s_kind_enum = 47u,
-    s_kind_members = 48u,
-    s_kind_fndef = 49u,
-    s_kind_fn = 50u,
-    s_kind_fnbranch = 51u,
-    s_kind_pattern = 52u,
-    s_kind_typeunion = 53u,
-    s_kind_typetag = 54u,
-    s_kind___relaxed = 55u,
-    s_kind___convert = 56u,
+    s_kind_typecast = 31u,
+    s_kind_typeassert = 32u,
+    s_kind_typeparam = 33u,
+    s_kind_unwrap = 34u,
+    s_kind_pragma = 35u,
+    s_kind_break = 36u,
+    s_kind_return = 37u,
+    s_kind_continue = 38u,
+    s_kind_import = 39u,
+    s_kind_addroffn = 40u,
+    s_kind_forfieldsof = 41u,
+    s_kind_struct = 42u,
+    s_kind_union = 43u,
+    s_kind_primitive = 44u,
+    s_kind_flags = 45u,
+    s_kind_enum = 46u,
+    s_kind_members = 47u,
+    s_kind_fndef = 48u,
+    s_kind_fn = 49u,
+    s_kind_fnbranch = 50u,
+    s_kind_pattern = 51u,
+    s_kind_typeunion = 52u,
+    s_kind_typetag = 53u,
+    s_kind___relaxed = 54u,
+    s_kind___convert = 55u,
+    s_kind___preceding_ref_arg = 56u,
     s_kind___no_kind_yet = 57u,
-    s_kind_type = 58u,
-    s_kind_var = 59u,
-    s_kind_field = 60u,
-    s_kind_enumv = 61u,
-    s_kind_template = 62u,
-    s_kind___native = 63u,
-    s_kind_inline = 64u,
+    s_kind___tombstone = 58u,
+    s_kind_type = 59u,
+    s_kind_var = 60u,
+    s_kind_field = 61u,
+    s_kind_enumv = 62u,
+    s_kind_template = 63u,
+    s_kind___native = 64u,
+    s_kind_inline = 65u,
 };
                                 #endif
 
@@ -225,13 +227,17 @@ inline constexpr s_DeclAsserts MASK_s_DeclAsserts
 inline constexpr s_ParseSyntax s_ParseSyntax_PS_ID = s_ParseSyntax(1u);
 inline constexpr s_ParseSyntax s_ParseSyntax_PS_PARENS = s_ParseSyntax(2u);
 inline constexpr s_ParseSyntax s_ParseSyntax_PS_SEMI = s_ParseSyntax(4u);
-inline constexpr s_ParseSyntax s_ParseSyntax_PS_DISCARD = s_ParseSyntax(8u);
+inline constexpr s_ParseSyntax s_ParseSyntax_PS_DISCARD_IF_BLOCK_TAIL = s_ParseSyntax(8u);
+inline constexpr s_ParseSyntax s_ParseSyntax_PS_ALWAYS_DISCARD = s_ParseSyntax(16u);
+inline constexpr s_ParseSyntax s_ParseSyntax_PS_NOT_AN_EXPRESSION = s_ParseSyntax(32u);
 
 inline constexpr s_ParseSyntax MASK_s_ParseSyntax
     = s_ParseSyntax_PS_ID
     | s_ParseSyntax_PS_PARENS
     | s_ParseSyntax_PS_SEMI
-    | s_ParseSyntax_PS_DISCARD;
+    | s_ParseSyntax_PS_DISCARD_IF_BLOCK_TAIL
+    | s_ParseSyntax_PS_ALWAYS_DISCARD
+    | s_ParseSyntax_PS_NOT_AN_EXPRESSION;
                                 #endif
 
                                 #ifndef DEF_s_Flags
@@ -239,37 +245,39 @@ inline constexpr s_ParseSyntax MASK_s_ParseSyntax
 inline constexpr s_Flags s_Flags_F_METHOD = 1u;
 inline constexpr s_Flags s_Flags_F_OPERATOR = 2u;
 inline constexpr s_Flags s_Flags_F_ACCESS = 4u;
-inline constexpr s_Flags s_Flags_F_COMPOUND_ID = 8u;
-inline constexpr s_Flags s_Flags_F_WRITTEN_TO = 16u;
-inline constexpr s_Flags s_Flags_F_LAX = 32u;
-inline constexpr s_Flags s_Flags_F_ARG = 64u;
-inline constexpr s_Flags s_Flags_F_COW_INSIDE = 128u;
-inline constexpr s_Flags s_Flags_F_MOVED_FROM = 256u;
-inline constexpr s_Flags s_Flags_F_CONVERSION = 512u;
-inline constexpr s_Flags s_Flags_F_OPT_ARG = 1024u;
-inline constexpr s_Flags s_Flags_F_MUT = 2048u;
-inline constexpr s_Flags s_Flags_F_REF = 4096u;
-inline constexpr s_Flags s_Flags_F_IMPLICIT = 8192u;
-inline constexpr s_Flags s_Flags_F_USING = 16384u;
-inline constexpr s_Flags s_Flags_F_MUSTNAME = 32768u;
-inline constexpr s_Flags s_Flags_F_SHADOW = 65536u;
-inline constexpr s_Flags s_Flags_F_PUB = 131072u;
-inline constexpr s_Flags s_Flags_F_EXTERN = 262144u;
-inline constexpr s_Flags s_Flags_F_HOTSWAP = 524288u;
-inline constexpr s_Flags s_Flags_F_PREDICATE = 1048576u;
-inline constexpr s_Flags s_Flags_F_NAMED_ARGS = 2097152u;
-inline constexpr s_Flags s_Flags_F_OOE_RTL = 4194304u;
-inline constexpr s_Flags s_Flags_F_REST_ARG = 8388608u;
-inline constexpr s_Flags s_Flags_F_RELAXABLE_REF = 16777216u;
-inline constexpr s_Flags s_Flags_F_TEMPLATE = 33554432u;
-inline constexpr s_Flags s_Flags_F_INLINE = 67108864u;
-inline constexpr s_Flags s_Flags_F_LAMBDA = 134217728u;
-inline constexpr s_Flags s_Flags_F_INJECTED = 268435456u;
+inline constexpr s_Flags s_Flags_F_TYPENAME = 8u;
+inline constexpr s_Flags s_Flags_F_COMPOUND_ID = 16u;
+inline constexpr s_Flags s_Flags_F_WRITTEN_TO = 32u;
+inline constexpr s_Flags s_Flags_F_LAX = 64u;
+inline constexpr s_Flags s_Flags_F_ARG = 128u;
+inline constexpr s_Flags s_Flags_F_COW_INSIDE = 256u;
+inline constexpr s_Flags s_Flags_F_MOVED_FROM = 512u;
+inline constexpr s_Flags s_Flags_F_CONVERSION = 1024u;
+inline constexpr s_Flags s_Flags_F_OPT_ARG = 2048u;
+inline constexpr s_Flags s_Flags_F_MUT = 4096u;
+inline constexpr s_Flags s_Flags_F_REF = 8192u;
+inline constexpr s_Flags s_Flags_F_IMPLICIT = 16384u;
+inline constexpr s_Flags s_Flags_F_USING = 32768u;
+inline constexpr s_Flags s_Flags_F_MUSTNAME = 65536u;
+inline constexpr s_Flags s_Flags_F_SHADOW = 131072u;
+inline constexpr s_Flags s_Flags_F_PUB = 262144u;
+inline constexpr s_Flags s_Flags_F_EXTERN = 524288u;
+inline constexpr s_Flags s_Flags_F_HOTSWAP = 1048576u;
+inline constexpr s_Flags s_Flags_F_PREDICATE = 2097152u;
+inline constexpr s_Flags s_Flags_F_NAMED_ARGS = 4194304u;
+inline constexpr s_Flags s_Flags_F_OOE_RTL = 8388608u;
+inline constexpr s_Flags s_Flags_F_REST_ARG = 16777216u;
+inline constexpr s_Flags s_Flags_F_RELAXABLE_REF = 33554432u;
+inline constexpr s_Flags s_Flags_F_TEMPLATE = 67108864u;
+inline constexpr s_Flags s_Flags_F_INLINE = 134217728u;
+inline constexpr s_Flags s_Flags_F_LAMBDA = 268435456u;
+inline constexpr s_Flags s_Flags_F_INJECTED = 536870912u;
 
 inline constexpr s_Flags MASK_s_Flags
     = s_Flags_F_METHOD
     | s_Flags_F_OPERATOR
     | s_Flags_F_ACCESS
+    | s_Flags_F_TYPENAME
     | s_Flags_F_COMPOUND_ID
     | s_Flags_F_WRITTEN_TO
     | s_Flags_F_LAX
@@ -399,28 +407,26 @@ inline constexpr s_SolverNotes s_SolverNotes_N_TypeReopen = 32;
 inline constexpr s_SolverNotes s_SolverNotes_N_DeadCode = 64;
 inline constexpr s_SolverNotes s_SolverNotes_N_DeadCall = 128;
 inline constexpr s_SolverNotes s_SolverNotes_N_DeadLet = 256;
-inline constexpr s_SolverNotes s_SolverNotes_N_DeadIfCond = 512;
-inline constexpr s_SolverNotes s_SolverNotes_N_DeadIfCons = 1024;
-inline constexpr s_SolverNotes s_SolverNotes_N_DeadArrlit = 2048;
-inline constexpr s_SolverNotes s_SolverNotes_N_DeadLoopInit = 4096;
-inline constexpr s_SolverNotes s_SolverNotes_N_DeadConv = 8192;
-inline constexpr s_SolverNotes s_SolverNotes_N_NonTrivAutoCopy = 16384;
-inline constexpr s_SolverNotes s_SolverNotes_N_RelaxRespec = 32768;
-inline constexpr s_SolverNotes s_SolverNotes_N_UnusedImplicit = 65536;
-inline constexpr s_SolverNotes s_SolverNotes_N_UnusedCall = 131072;
-inline constexpr s_SolverNotes s_SolverNotes_N_UnusedDefer = 262144;
-inline constexpr s_SolverNotes s_SolverNotes_N_UnusedTry = 524288;
-inline constexpr s_SolverNotes s_SolverNotes_N_UnusedAndOr = 1048576;
-inline constexpr s_SolverNotes s_SolverNotes_N_UnusedIfElse = 2097152;
-inline constexpr s_SolverNotes s_SolverNotes_N_UnusedArrlit = 4194304;
-inline constexpr s_SolverNotes s_SolverNotes_N_UnusedLet = 8388608;
-inline constexpr s_SolverNotes s_SolverNotes_N_BckMustSeq = 16777216;
-inline constexpr s_SolverNotes s_SolverNotes_N_AARMustSeq = 33554432;
-inline constexpr s_SolverNotes s_SolverNotes_N_AARSoftRisk = 67108864;
-inline constexpr s_SolverNotes s_SolverNotes_N_MoveMustSeq = 134217728;
-inline constexpr s_SolverNotes s_SolverNotes_N_SD_HasStaticInit = 268435456;
-inline constexpr s_SolverNotes s_SolverNotes_N_SD_ExternPrivates = 536870912;
-inline constexpr s_SolverNotes s_SolverNotes_N_COWRestrict = 1073741824;
+inline constexpr s_SolverNotes s_SolverNotes_N_DeadArrlit = 512;
+inline constexpr s_SolverNotes s_SolverNotes_N_DeadLoopInit = 1024;
+inline constexpr s_SolverNotes s_SolverNotes_N_DeadConv = 2048;
+inline constexpr s_SolverNotes s_SolverNotes_N_NonTrivAutoCopy = 4096;
+inline constexpr s_SolverNotes s_SolverNotes_N_RelaxRespec = 8192;
+inline constexpr s_SolverNotes s_SolverNotes_N_UnusedImplicit = 16384;
+inline constexpr s_SolverNotes s_SolverNotes_N_UnusedCall = 32768;
+inline constexpr s_SolverNotes s_SolverNotes_N_UnusedDefer = 65536;
+inline constexpr s_SolverNotes s_SolverNotes_N_UnusedTry = 131072;
+inline constexpr s_SolverNotes s_SolverNotes_N_UnusedAndOr = 262144;
+inline constexpr s_SolverNotes s_SolverNotes_N_UnusedIfElse = 524288;
+inline constexpr s_SolverNotes s_SolverNotes_N_UnusedArrlit = 1048576;
+inline constexpr s_SolverNotes s_SolverNotes_N_UnusedLet = 2097152;
+inline constexpr s_SolverNotes s_SolverNotes_N_BckMustSeq = 4194304;
+inline constexpr s_SolverNotes s_SolverNotes_N_AARMustSeq = 8388608;
+inline constexpr s_SolverNotes s_SolverNotes_N_AARSoftRisk = 16777216;
+inline constexpr s_SolverNotes s_SolverNotes_N_MoveMustSeq = 33554432;
+inline constexpr s_SolverNotes s_SolverNotes_N_SD_HasStaticInit = 67108864;
+inline constexpr s_SolverNotes s_SolverNotes_N_SD_ExternPrivates = 134217728;
+inline constexpr s_SolverNotes s_SolverNotes_N_COWRestrict = 268435456;
 
 inline constexpr s_SolverNotes MASK_s_SolverNotes
     = s_SolverNotes_N_FnRecursion
@@ -432,8 +438,6 @@ inline constexpr s_SolverNotes MASK_s_SolverNotes
     | s_SolverNotes_N_DeadCode
     | s_SolverNotes_N_DeadCall
     | s_SolverNotes_N_DeadLet
-    | s_SolverNotes_N_DeadIfCond
-    | s_SolverNotes_N_DeadIfCons
     | s_SolverNotes_N_DeadArrlit
     | s_SolverNotes_N_DeadLoopInit
     | s_SolverNotes_N_DeadConv
@@ -476,9 +480,9 @@ inline constexpr s_CGDefects MASK_s_CGDefects
     | s_CGDefects_IrrelevantLiteral;
                                 #endif
 
-                                #ifndef DEF_s_Region
-                                #define DEF_s_Region
-struct s_Region
+                                #ifndef DEF_s_Helpers
+                                #define DEF_s_Helpers
+struct s_Helpers
 {
     int index;
     explicit operator bool() const noexcept
@@ -490,15 +494,29 @@ struct s_Region
 };
                                 #endif
 
-                                #ifndef DEF_s_Helpers
-                                #define DEF_s_Helpers
-struct s_Helpers
+                                #ifndef DEF_s_Target
+                                #define DEF_s_Target
+struct s_Target
 {
-    int index;
+    uint64_t _packed;
     explicit operator bool() const noexcept
     {
         return false
-            || index
+            || _packed
+        ;
+    }
+};
+                                #endif
+
+                                #ifndef DEF_s_Lifetime
+                                #define DEF_s_Lifetime
+struct s_Lifetime
+{
+    fu::str uni0n;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || uni0n
         ;
     }
 };
@@ -518,20 +536,6 @@ struct s_BitSet
 };
                                 #endif
 
-                                #ifndef DEF_s_Lifetime
-                                #define DEF_s_Lifetime
-struct s_Lifetime
-{
-    fu::vec<s_Region> uni0n;
-    explicit operator bool() const noexcept
-    {
-        return false
-            || uni0n
-        ;
-    }
-};
-                                #endif
-
                                 #ifndef DEF_s_ModuleOrder
                                 #define DEF_s_ModuleOrder
 struct s_ModuleOrder
@@ -546,6 +550,21 @@ struct s_ModuleOrder
 };
                                 #endif
 
+                                #ifndef DEF_s_ScopeItem
+                                #define DEF_s_ScopeItem
+struct s_ScopeItem
+{
+    fu::str id;
+    uint64_t _packed;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || id
+        ;
+    }
+};
+                                #endif
+
                                 #ifndef DEF_s_LexerOutput
                                 #define DEF_s_LexerOutput
 struct s_LexerOutput
@@ -555,38 +574,6 @@ struct s_LexerOutput
     {
         return false
             || tokens
-        ;
-    }
-};
-                                #endif
-
-                                #ifndef DEF_s_Target
-                                #define DEF_s_Target
-struct s_Target
-{
-    int modid;
-    int index;
-    explicit operator bool() const noexcept
-    {
-        return false
-            || modid
-            || index
-        ;
-    }
-};
-                                #endif
-
-                                #ifndef DEF_s_ScopeItem
-                                #define DEF_s_ScopeItem
-struct s_ScopeItem
-{
-    fu::str id;
-    int modid;
-    unsigned packed;
-    explicit operator bool() const noexcept
-    {
-        return false
-            || id
         ;
     }
 };
@@ -608,9 +595,9 @@ struct s_ValueType
 };
                                 #endif
 
-                                #ifndef DEF_s_Map_qfSmCKRS93e
-                                #define DEF_s_Map_qfSmCKRS93e
-struct s_Map_qfSmCKRS93e
+                                #ifndef DEF_s_Map_iIYL7rECCBg
+                                #define DEF_s_Map_iIYL7rECCBg
+struct s_Map_iIYL7rECCBg
 {
     fu::vec<fu::str> keys;
     fu::vec<fu::str> vals;
@@ -697,6 +684,22 @@ struct s_Scope
             || converts
             || pub_items
             || pub_cnvrts
+        ;
+    }
+};
+                                #endif
+
+                                #ifndef DEF_s_Import
+                                #define DEF_s_Import
+struct s_Import
+{
+    s_TokenIdx token;
+    fu::str value;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || token
+            || value
         ;
     }
 };
@@ -790,10 +793,11 @@ struct s_Node
                                 #define DEF_s_Context
 struct s_Context
 {
+    fu::str base_dir;
     fu::vec<s_Module> modules;
     fu::vec<int> dep_order;
-    s_Map_qfSmCKRS93e files;
-    s_Map_qfSmCKRS93e fuzzy;
+    s_Map_iIYL7rECCBg files;
+    s_Map_iIYL7rECCBg fuzzy;
     s_Context(const s_Context&) = delete;
     s_Context(s_Context&&) = default;
     s_Context& operator=(const s_Context&) = delete;
@@ -801,6 +805,7 @@ struct s_Context
     explicit operator bool() const noexcept
     {
         return false
+            || base_dir
             || modules
             || dep_order
             || files
@@ -862,13 +867,13 @@ struct s_Template
 struct s_ParserOutput
 {
     s_Node root;
-    fu::vec<fu::str> fuzimports;
+    fu::vec<s_Import> imports;
     fu::vec<fu::str> warnings;
     explicit operator bool() const noexcept
     {
         return false
             || root
-            || fuzimports
+            || imports
             || warnings
         ;
     }
@@ -969,9 +974,9 @@ struct s_Argument
     s_Type type;
     s_SolvedNode dEfault;
     s_Flags flags;
-    int local;
-    s_BitSet soft_risk;
-    s_BitSet hard_risk;
+    s_Target target;
+    s_BitSet may_invalidate;
+    s_BitSet may_alias;
     explicit operator bool() const noexcept
     {
         return false
@@ -980,9 +985,9 @@ struct s_Argument
             || type
             || dEfault
             || flags
-            || local
-            || soft_risk
-            || hard_risk
+            || target
+            || may_invalidate
+            || may_alias
         ;
     }
 };
@@ -1092,37 +1097,37 @@ inline constexpr s_CodeFmt MASK_s_CodeFmt
 
 #ifndef fu_NO_fdefs
 
-const s_Token& _token_yZ5HaS8S(const s_TokenIdx& idx, const s_Context& ctx)
+const s_Token& _token_AZUIslP2(const s_TokenIdx& idx, const s_Context& ctx)
 {
     return ctx.modules[idx.modid].in.lex.tokens[idx.tokidx];
 }
 
-const fu::str& _fname_uP3EjQNl(const s_TokenIdx& idx, const s_Context& ctx)
+const fu::str& _fname_AZUIslP2(const s_TokenIdx& idx, const s_Context& ctx)
 {
     return ctx.modules[idx.modid].fname;
 }
 
-                                #ifndef DEF_x7E_r7bhmB7DrQ0
-                                #define DEF_x7E_r7bhmB7DrQ0
-inline fu::str x7E_r7bhmB7D(fu::view<char> a, fu::view<char> b)
+                                #ifndef DEF_x7E_gCeFmDFw0L8
+                                #define DEF_x7E_gCeFmDFw0L8
+inline fu::str x7E_gCeFmDFw(fu::view<char> a, fu::view<char> b)
 {
     return a + b;
 }
                                 #endif
 
-s_Struct& lookupUserType_mut_CHFnIcLE(fu::view<char> canon, s_Module& module)
+s_Struct& lookupUserType_mut_FnbaZnpH(fu::view<char> canon, s_Module& module)
 {
-    const s_StructCanon scp = parseStructCanon_degpQC5i(canon);
+    const s_StructCanon scp = parseStructCanon_9HOct2P6(canon);
     if (scp.modid == module.modid)
         return module.out.types.mutref(scp.index);
     else
-        fu::fail((((x7E_r7bhmB7D("lookupUserType_mut: Not from this module ("_fu, fu::i64dec(module.modid)) + ": "_fu) + canon) + ")"_fu));
+        fu::fail((((x7E_gCeFmDFw("lookupUserType_mut: Not from this module ("_fu, fu::i64dec(module.modid)) + ": "_fu) + canon) + ")"_fu));
 
 }
 
-                                #ifndef DEF_find_POzvwmtfK11
-                                #define DEF_find_POzvwmtfK11
-inline int find_POzvwmtf(fu::view<char> a, const char b)
+                                #ifndef DEF_find_KonMQ4KBuu5
+                                #define DEF_find_KonMQ4KBuu5
+inline int find_KonMQ4KB(fu::view<char> a, const char b)
 {
     for (int i = 0; i < a.size(); i++)
     {
@@ -1134,9 +1139,9 @@ inline int find_POzvwmtf(fu::view<char> a, const char b)
 }
                                 #endif
 
-                                #ifndef DEF_has_POzvwmtfK11
-                                #define DEF_has_POzvwmtfK11
-inline bool has_POzvwmtf(fu::view<char> a, const char b)
+                                #ifndef DEF_has_KonMQ4KBuu5
+                                #define DEF_has_KonMQ4KBuu5
+inline bool has_KonMQ4KB(fu::view<char> a, const char b)
 {
     for (int i = 0; i < a.size(); i++)
     {
@@ -1148,9 +1153,9 @@ inline bool has_POzvwmtf(fu::view<char> a, const char b)
 }
                                 #endif
 
-                                #ifndef DEF_x3Cx3E_AsFD7H8Nlu6
-                                #define DEF_x3Cx3E_AsFD7H8Nlu6
-inline int x3Cx3E_AsFD7H8N(const int a, const int b)
+                                #ifndef DEF_x3Cx3E_mJGU9byOmI4
+                                #define DEF_x3Cx3E_mJGU9byOmI4
+inline int x3Cx3E_mJGU9byO(const int a, const int b)
 {
     if (a < b)
         return -1;
@@ -1162,9 +1167,9 @@ inline int x3Cx3E_AsFD7H8N(const int a, const int b)
 }
                                 #endif
 
-                                #ifndef DEF_x3Cx3E_f0RieKMU2n0
-                                #define DEF_x3Cx3E_f0RieKMU2n0
-inline int x3Cx3E_f0RieKMU(const char a, const char b)
+                                #ifndef DEF_x3Cx3E_sOVQcK2JOH3
+                                #define DEF_x3Cx3E_sOVQcK2JOH3
+inline int x3Cx3E_sOVQcK2J(const char a, const char b)
 {
     if (a < b)
         return -1;
@@ -1176,28 +1181,28 @@ inline int x3Cx3E_f0RieKMU(const char a, const char b)
 }
                                 #endif
 
-                                #ifndef DEF_x3Cx3E_r7bhmB7DrQ0
-                                #define DEF_x3Cx3E_r7bhmB7DrQ0
-inline int x3Cx3E_r7bhmB7D(fu::view<char> a, fu::view<char> b)
+                                #ifndef DEF_x3Cx3E_gCeFmDFw0L8
+                                #define DEF_x3Cx3E_gCeFmDFw0L8
+inline int x3Cx3E_gCeFmDFw(fu::view<char> a, fu::view<char> b)
 {
-    int cmp = x3Cx3E_AsFD7H8N(a.size(), b.size());
+    int cmp = x3Cx3E_mJGU9byO(a.size(), b.size());
     for (int i = 0; (i < a.size()) && !cmp; i++)
-        cmp = x3Cx3E_f0RieKMU(a[i], b[i]);
+        cmp = x3Cx3E_sOVQcK2J(a[i], b[i]);
 
     return cmp;
 }
                                 #endif
 
-                                #ifndef DEF_get_UrciAYVm9Yj
-                                #define DEF_get_UrciAYVm9Yj
-inline const fu::str& get_UrciAYVm(fu::view<fu::str> keys, fu::view<char> item, fu::view<fu::str> extras)
+                                #ifndef DEF_get_IttJCuZChl6
+                                #define DEF_get_IttJCuZChl6
+inline const fu::str& get_IttJCuZC(fu::view<fu::str> keys, fu::view<char> item, fu::view<fu::str> extras)
 {
     int lo = 0;
     int hi = keys.size();
     while (lo < hi)
     {
         const int i = ((hi + lo) >> 1);
-        const int cmp = x3Cx3E_r7bhmB7D(keys[i], item);
+        const int cmp = x3Cx3E_gCeFmDFw(keys[i], item);
         if (cmp == 0)
             return extras[i];
         else if (cmp < 0)
@@ -1210,35 +1215,35 @@ inline const fu::str& get_UrciAYVm(fu::view<fu::str> keys, fu::view<char> item, 
 }
                                 #endif
 
-                                #ifndef DEF_get_5Sqt0JvvDxj
-                                #define DEF_get_5Sqt0JvvDxj
-inline const fu::str& get_5Sqt0Jvv(const s_Map_qfSmCKRS93e& _, fu::view<char> key)
+                                #ifndef DEF_get_uQvCQT2o0Gd
+                                #define DEF_get_uQvCQT2o0Gd
+inline const fu::str& get_uQvCQT2o(const s_Map_iIYL7rECCBg& _, fu::view<char> key)
 {
-    return get_UrciAYVm(_.keys, key, _.vals);
+    return get_IttJCuZC(_.keys, key, _.vals);
 }
                                 #endif
 
-                                #ifndef DEF_x3Dx3D_r7bhmB7DrQ0
-                                #define DEF_x3Dx3D_r7bhmB7DrQ0
+                                #ifndef DEF_x3Dx3D_gCeFmDFw0L8
+                                #define DEF_x3Dx3D_gCeFmDFw0L8
 inline bool operator==(fu::view<char> a, fu::view<char> b)
 {
-    return !x3Cx3E_r7bhmB7D(a, b);
+    return !x3Cx3E_gCeFmDFw(a, b);
 }
                                 #endif
 
-                                #ifndef DEF_ends_1wDddajZEEk
-                                #define DEF_ends_1wDddajZEEk
-inline bool ends_1wDddajZ(fu::view<char> a, fu::view<char> with)
+                                #ifndef DEF_ends_t2TApdnqRc8
+                                #define DEF_ends_t2TApdnqRc8
+inline bool ends_t2TApdnq(fu::view<char> a, fu::view<char> with)
 {
     return (a.size() >= with.size()) && (fu::get_view(a, (a.size() - with.size()), a.size()) == with);
 }
                                 #endif
 
-static fu::str tryResolve_GtnjLU1C(const fu::str& from, fu::view<char> name, s_Context& ctx, const fu::str& path)
+static fu::str tryResolve_sTYbQwzS(const fu::str& from, fu::view<char> name, const fu::str& path, s_Context& ctx)
 {
 
     {
-        const bool exists = (size_IIXDOWa5(fu::str(path)) >= 0ll);
+        const bool exists = (size_zTt3fZzW(fu::str(path)) >= 0ll);
         if (exists)
             return fu::str(path);
 
@@ -1246,7 +1251,7 @@ static fu::str tryResolve_GtnjLU1C(const fu::str& from, fu::view<char> name, s_C
 
     {
         /*MOV*/ fu::str path_1 = ((from + "lib/"_fu) + name);
-        const bool exists = (size_IIXDOWa5(fu::str(path_1)) >= 0ll);
+        const bool exists = (size_zTt3fZzW(fu::str(path_1)) >= 0ll);
         if (exists)
             return /*NRVO*/ path_1;
 
@@ -1254,12 +1259,12 @@ static fu::str tryResolve_GtnjLU1C(const fu::str& from, fu::view<char> name, s_C
 
     {
         /*MOV*/ fu::str path_1 = ((from + "fu/lib/"_fu) + name);
-        const bool exists = (size_IIXDOWa5(fu::str(path_1)) >= 0ll);
+        const bool exists = (size_zTt3fZzW(fu::str(path_1)) >= 0ll);
         if (exists)
             return /*NRVO*/ path_1;
 
     };
-    if (ends_1wDddajZ(name, ".fu"_fu))
+    if (ends_t2TApdnq(name, ".fu"_fu))
     {
         const int ext = (name.size() - 3);
         int dir = 0;
@@ -1275,7 +1280,7 @@ static fu::str tryResolve_GtnjLU1C(const fu::str& from, fu::view<char> name, s_C
 
         {
             /*MOV*/ fu::str path_1 = (from + name_1);
-            const bool exists = (size_IIXDOWa5(fu::str(path_1)) >= 0ll);
+            const bool exists = (size_zTt3fZzW(fu::str(path_1)) >= 0ll);
             if (exists)
                 return /*NRVO*/ path_1;
 
@@ -1283,50 +1288,48 @@ static fu::str tryResolve_GtnjLU1C(const fu::str& from, fu::view<char> name, s_C
 
         {
             /*MOV*/ fu::str path_1 = ((from + "lib/"_fu) + name_1);
-            const bool exists = (size_IIXDOWa5(fu::str(path_1)) >= 0ll);
+            const bool exists = (size_zTt3fZzW(fu::str(path_1)) >= 0ll);
             if (exists)
                 return /*NRVO*/ path_1;
 
         };
         /*MOV*/ fu::str path_1 = ((from + "fu/lib/"_fu) + name_1);
-        const bool exists = (size_IIXDOWa5(fu::str(path_1)) >= 0ll);
+        const bool exists = (size_zTt3fZzW(fu::str(path_1)) >= 0ll);
         if (exists)
             return /*NRVO*/ path_1;
 
     };
-    fu::str fallback = dirname_BWbYsL34(from);
+    fu::str fallback = dirname_8Oo0Zp26(from);
     if (!fallback || (fallback.size() >= from.size()))
-    {
-        return fu::str{};
-    }
+        return ""_fu;
     else
-        return resolveFile_ylhZM7pm(fallback, name, ctx);
+        return resolveFile_RdUkCJIG(fallback, name, ctx);
 
 }
 
-static fu::vec<fu::str>& l_6_0_B6QYEUmi(s_Map_qfSmCKRS93e& _)
+static fu::vec<fu::str>& l_6_0_pyZi4CVx(s_Map_iIYL7rECCBg& _)
 {
     return _.keys;
 }
 
-static fu::vec<fu::str>& l_6_1_Qx3okPlu(s_Map_qfSmCKRS93e& _)
+static fu::vec<fu::str>& l_6_1_ZKlcvBYC(s_Map_iIYL7rECCBg& _)
 {
     return _.vals;
 }
 
-                                #ifndef DEF_update_MbZssSoNuJh
-                                #define DEF_update_MbZssSoNuJh
-inline bool update_MbZssSoN(const fu::str& item, const fu::str& extra, s_Map_qfSmCKRS93e& _)
+                                #ifndef DEF_update_vo0on6GFcof
+                                #define DEF_update_vo0on6GFcof
+inline bool update_vo0on6GF(const fu::str& item, const fu::str& extra, s_Map_iIYL7rECCBg& _)
 {
     int lo = 0;
-    int hi = l_6_0_B6QYEUmi(_).size();
+    int hi = l_6_0_pyZi4CVx(_).size();
     while (lo < hi)
     {
         const int i = ((hi + lo) >> 1);
-        const int cmp = x3Cx3E_r7bhmB7D(l_6_0_B6QYEUmi(_)[i], item);
+        const int cmp = x3Cx3E_gCeFmDFw(l_6_0_pyZi4CVx(_)[i], item);
         if (cmp == 0)
         {
-            l_6_1_Qx3okPlu(_).mutref(i) = fu::str(extra);
+            l_6_1_ZKlcvBYC(_).mutref(i) = fu::str(extra);
             return false;
         }
         else if (cmp < 0)
@@ -1335,52 +1338,50 @@ inline bool update_MbZssSoN(const fu::str& item, const fu::str& extra, s_Map_qfS
             hi = i;
 
     };
-    l_6_0_B6QYEUmi(_).insert(lo, fu::str(item));
-    l_6_1_Qx3okPlu(_).insert(lo, fu::str(extra));
+    l_6_0_pyZi4CVx(_).insert(lo, fu::str(item));
+    l_6_1_ZKlcvBYC(_).insert(lo, fu::str(extra));
     return true;
 }
                                 #endif
 
-                                #ifndef DEF_set_jaErudM5jC8
-                                #define DEF_set_jaErudM5jC8
-inline bool set_jaErudM5(s_Map_qfSmCKRS93e& _, const fu::str& key, const fu::str& value)
+                                #ifndef DEF_set_1ffKFGH8Pfd
+                                #define DEF_set_1ffKFGH8Pfd
+inline bool set_1ffKFGH8(s_Map_iIYL7rECCBg& _, const fu::str& key, const fu::str& value)
 {
-    return update_MbZssSoN(key, value, _);
+    return update_vo0on6GF(key, value, _);
 }
                                 #endif
 
-static fu::str resolveFile_ylhZM7pm(const fu::str& from, fu::view<char> name, s_Context& ctx)
+static fu::str resolveFile_RdUkCJIG(const fu::str& from, fu::view<char> name, s_Context& ctx)
 {
     fu::str path = (from + name);
-    const fu::str& cached = get_5Sqt0Jvv(ctx.fuzzy, path);
+    const fu::str& cached = get_uQvCQT2o(ctx.fuzzy, path);
     if (cached)
     {
         if (cached == "\v"_fu)
-        {
-            return fu::str{};
-        }
+            return ""_fu;
         else
             return fu::str(cached);
 
     }
     else
     {
-        /*MOV*/ fu::str resolve = tryResolve_GtnjLU1C(from, name, ctx, path);
-        set_jaErudM5(ctx.fuzzy, path, (resolve ? fu::str(resolve) : "\v"_fu));
+        /*MOV*/ fu::str resolve = tryResolve_sTYbQwzS(from, name, path, ctx);
+        set_1ffKFGH8(ctx.fuzzy, path, (resolve ? fu::str(resolve) : "\v"_fu));
         return /*NRVO*/ resolve;
     };
 }
 
-                                #ifndef DEF_has_T5fUfc6TeHb
-                                #define DEF_has_T5fUfc6TeHb
-inline bool has_T5fUfc6T(fu::view<fu::str> keys, fu::view<char> item)
+                                #ifndef DEF_has_03SseD2ZkOf
+                                #define DEF_has_03SseD2ZkOf
+inline bool has_03SseD2Z(fu::view<fu::str> keys, fu::view<char> item)
 {
     int lo = 0;
     int hi = keys.size();
     while (lo < hi)
     {
         const int i = ((hi + lo) >> 1);
-        const int cmp = x3Cx3E_r7bhmB7D(keys[i], item);
+        const int cmp = x3Cx3E_gCeFmDFw(keys[i], item);
         if (cmp == 0)
             return true;
         else if (cmp < 0)
@@ -1393,30 +1394,30 @@ inline bool has_T5fUfc6T(fu::view<fu::str> keys, fu::view<char> item)
 }
                                 #endif
 
-                                #ifndef DEF_has_GtQBpfZYXX1
-                                #define DEF_has_GtQBpfZYXX1
-inline bool has_GtQBpfZY(const s_Map_qfSmCKRS93e& _, fu::view<char> key)
+                                #ifndef DEF_has_uQvCQT2o0Gd
+                                #define DEF_has_uQvCQT2o0Gd
+inline bool has_uQvCQT2o(const s_Map_iIYL7rECCBg& _, fu::view<char> key)
 {
-    return has_T5fUfc6T(_.keys, key);
+    return has_03SseD2Z(_.keys, key);
 }
                                 #endif
 
-fu::str resolveFile_pcP1UVCR(const fu::str& path, s_Context& ctx)
+fu::str resolveFile_F2wCJLDv(const fu::str& path, s_Context& ctx)
 {
-    const int fuzzy = find_POzvwmtf(path, '\v');
+    const int fuzzy = find_KonMQ4KB(path, '\v');
     if (fuzzy > 0)
     {
         fu::str from = fu::slice(path, 0, fuzzy);
         fu::str name = fu::slice(path, (fuzzy + 1));
-        if (from && name && !has_POzvwmtf(name, '\v'))
+        if (from && name && !has_KonMQ4KB(name, '\v'))
         {
-            /*MOV*/ fu::str res = resolveFile_ylhZM7pm(from, name, ctx);
+            /*MOV*/ fu::str res = resolveFile_RdUkCJIG(from, name, ctx);
             if (res)
                 return /*NRVO*/ res;
             else
             {
                 /*MOV*/ fu::str prepopulated = (from + name);
-                if (has_GtQBpfZY(ctx.files, prepopulated))
+                if (has_uQvCQT2o(ctx.files, prepopulated))
                     return /*NRVO*/ prepopulated;
 
             };
@@ -1425,9 +1426,9 @@ fu::str resolveFile_pcP1UVCR(const fu::str& path, s_Context& ctx)
     return fu::str(path);
 }
 
-                                #ifndef DEF_replace_KFDHCttmOi9
-                                #define DEF_replace_KFDHCttmOi9
-inline fu::str replace_KFDHCttm(const fu::str& str, fu::view<char> all, fu::view<char> with)
+                                #ifndef DEF_replace_t9kb9bFxF28
+                                #define DEF_replace_t9kb9bFxF28
+inline fu::str replace_t9kb9bFx(const fu::str& str, fu::view<char> all, fu::view<char> with)
 {
     /*MOV*/ fu::str result {};
 
@@ -1465,18 +1466,18 @@ inline fu::str replace_KFDHCttm(const fu::str& str, fu::view<char> all, fu::view
 }
                                 #endif
 
-                                #ifndef DEF_x21x3D_r7bhmB7DrQ0
-                                #define DEF_x21x3D_r7bhmB7DrQ0
+                                #ifndef DEF_x21x3D_gCeFmDFw0L8
+                                #define DEF_x21x3D_gCeFmDFw0L8
 inline bool operator!=(fu::view<char> a, fu::view<char> b)
 {
-    return !!x3Cx3E_r7bhmB7D(a, b);
+    return !!x3Cx3E_gCeFmDFw(a, b);
 }
                                 #endif
 
-fu::str resolveFile_x_VkBaqzGv(const fu::str& path, const s_Context& ctx)
+fu::str resolveFile_x_aHG8xqFm(const fu::str& path, const s_Context& ctx)
 {
-    /*MOV*/ fu::str clean = replace_KFDHCttm(path, "\v"_fu, fu::view<char>{});
-    const fu::str& match = get_5Sqt0Jvv(ctx.fuzzy, clean);
+    /*MOV*/ fu::str clean = replace_t9kb9bFx(path, "\v"_fu, ""_fu);
+    const fu::str& match = get_uQvCQT2o(ctx.fuzzy, clean);
     if (match && (match != "\v"_fu))
         return fu::str(match);
     else
@@ -1484,28 +1485,26 @@ fu::str resolveFile_x_VkBaqzGv(const fu::str& path, const s_Context& ctx)
 
 }
 
-fu::str getFile_ILGIGgDT(fu::str&& path, s_Context& ctx)
+fu::str getFile_F2wCJLDv(fu::str&& path, s_Context& ctx)
 {
-    const fu::str& cached = get_5Sqt0Jvv(ctx.files, path);
+    const fu::str& cached = get_uQvCQT2o(ctx.files, path);
     if (cached)
     {
         if (cached == "\v"_fu)
-        {
-            return fu::str{};
-        }
+            return ""_fu;
         else
             return fu::str(cached);
 
     }
     else
     {
-        /*MOV*/ fu::str read = read_IIXDOWa5(fu::str(path));
-        set_jaErudM5(ctx.files, path, (read ? fu::str(read) : "\v"_fu));
+        /*MOV*/ fu::str read = read_zTt3fZzW(fu::str(path));
+        set_1ffKFGH8(ctx.files, path, (read ? fu::str(read) : "\v"_fu));
         return /*NRVO*/ read;
     };
 }
 
-s_Module& getModule_9WEb5JfY(const fu::str& fname, s_Context& ctx)
+s_Module& getModule_vqSYGHjE(const fu::str& fname, s_Context& ctx)
 {
     for (int i = 0; i < ctx.modules.size(); i++)
     {
@@ -1518,199 +1517,199 @@ s_Module& getModule_9WEb5JfY(const fu::str& fname, s_Context& ctx)
     return ctx.modules.mutref(i_1);
 }
 
-                                #ifndef DEF_clone_DHH5Baj0nf5
-                                #define DEF_clone_DHH5Baj0nf5
-inline int clone_DHH5Baj0(const int a)
+                                #ifndef DEF_clone_dD3H4GX6AP2
+                                #define DEF_clone_dD3H4GX6AP2
+inline int clone_dD3H4GX6(const int a)
 {
     return a;
 }
                                 #endif
 
-                                #ifndef DEF_clone_DcDCLzbwsce
-                                #define DEF_clone_DcDCLzbwsce
-inline const fu::str& clone_DcDCLzbw(const fu::str& a)
+                                #ifndef DEF_clone_T1Jf1Z0KiR2
+                                #define DEF_clone_T1Jf1Z0KiR2
+inline const fu::str& clone_T1Jf1Z0K(const fu::str& a)
 {
     return a;
 }
                                 #endif
 
-                                #ifndef DEF_clone_cXjT2jIIpdc
-                                #define DEF_clone_cXjT2jIIpdc
-inline const s_ModuleInputs& clone_cXjT2jII(const s_ModuleInputs& a)
+                                #ifndef DEF_clone_BpjaAqZzaaa
+                                #define DEF_clone_BpjaAqZzaaa
+inline const s_ModuleInputs& clone_BpjaAqZz(const s_ModuleInputs& a)
 {
     return a;
 }
                                 #endif
 
-                                #ifndef DEF_clone_otwjp0Ty2Uc
-                                #define DEF_clone_otwjp0Ty2Uc
-inline const s_ModuleOrder& clone_otwjp0Ty(const s_ModuleOrder& a)
+                                #ifndef DEF_clone_CDer1pfRaKl
+                                #define DEF_clone_CDer1pfRaKl
+inline const s_ModuleOrder& clone_CDer1pfR(const s_ModuleOrder& a)
 {
     return a;
 }
                                 #endif
 
-                                #ifndef DEF_clone_4EW58o1IPu4
-                                #define DEF_clone_4EW58o1IPu4
-inline const fu::vec<s_Struct>& clone_4EW58o1I(const fu::vec<s_Struct>& a)
+                                #ifndef DEF_clone_yUzRV7AncM9
+                                #define DEF_clone_yUzRV7AncM9
+inline const fu::vec<s_Struct>& clone_yUzRV7An(const fu::vec<s_Struct>& a)
 {
     return a;
 }
                                 #endif
 
-                                #ifndef DEF_clone_mJncZhdAp2e
-                                #define DEF_clone_mJncZhdAp2e
-inline const s_SolvedNode& clone_mJncZhdA(const s_SolvedNode& a)
+                                #ifndef DEF_clone_Q1UUsXjhPGl
+                                #define DEF_clone_Q1UUsXjhPGl
+inline const s_SolvedNode& clone_Q1UUsXjh(const s_SolvedNode& a)
 {
     return a;
 }
                                 #endif
 
-                                #ifndef DEF_clone_24hW9Ytuzm4
-                                #define DEF_clone_24hW9Ytuzm4
-inline const fu::vec<s_Overload>& clone_24hW9Ytu(const fu::vec<s_Overload>& a)
+                                #ifndef DEF_clone_YgFd2lJf7Gh
+                                #define DEF_clone_YgFd2lJf7Gh
+inline const fu::vec<s_Overload>& clone_YgFd2lJf(const fu::vec<s_Overload>& a)
 {
     return a;
 }
                                 #endif
 
-                                #ifndef DEF_clone_kIrmu6DQ4rl
-                                #define DEF_clone_kIrmu6DQ4rl
-inline const fu::vec<s_Extended>& clone_kIrmu6DQ(const fu::vec<s_Extended>& a)
+                                #ifndef DEF_clone_h2eJ8vfftjk
+                                #define DEF_clone_h2eJ8vfftjk
+inline const fu::vec<s_Extended>& clone_h2eJ8vff(const fu::vec<s_Extended>& a)
 {
     return a;
 }
                                 #endif
 
-                                #ifndef DEF_clone_ESOZciocfl7
-                                #define DEF_clone_ESOZciocfl7
-inline const fu::vec<s_ScopeItem>& clone_ESOZcioc(const fu::vec<s_ScopeItem>& a)
+                                #ifndef DEF_clone_2gILMhVaICb
+                                #define DEF_clone_2gILMhVaICb
+inline const fu::vec<s_ScopeItem>& clone_2gILMhVa(const fu::vec<s_ScopeItem>& a)
 {
     return a;
 }
                                 #endif
 
-                                #ifndef DEF_clone_kttDaK42hjd
-                                #define DEF_clone_kttDaK42hjd
-inline const fu::vec<int>& clone_kttDaK42(const fu::vec<int>& a)
+                                #ifndef DEF_clone_KE4Ju1yDYU9
+                                #define DEF_clone_KE4Ju1yDYU9
+inline const fu::vec<int>& clone_KE4Ju1yD(const fu::vec<int>& a)
 {
     return a;
 }
                                 #endif
 
-                                #ifndef DEF_clone_AfzW5oEvLe7
-                                #define DEF_clone_AfzW5oEvLe7
-inline const fu::vec<s_Target>& clone_AfzW5oEv(const fu::vec<s_Target>& a)
+                                #ifndef DEF_clone_lmGNhJZgGsc
+                                #define DEF_clone_lmGNhJZgGsc
+inline const fu::vec<s_Target>& clone_lmGNhJZg(const fu::vec<s_Target>& a)
 {
     return a;
 }
                                 #endif
 
-                                #ifndef DEF_clone_TfbmnLDB9Pe
-                                #define DEF_clone_TfbmnLDB9Pe
-inline s_Scope clone_TfbmnLDB(const s_Scope& a)
+                                #ifndef DEF_clone_u3AUYy1Feof
+                                #define DEF_clone_u3AUYy1Feof
+inline s_Scope clone_u3AUYy1F(const s_Scope& a)
 {
     /*MOV*/ s_Scope res {};
 
     {
-        res.overloads = clone_24hW9Ytu(a.overloads);
-        res.extended = clone_kIrmu6DQ(a.extended);
-        res.items = clone_ESOZcioc(a.items);
-        res.implicits = clone_ESOZcioc(a.implicits);
-        res.imports = clone_kttDaK42(a.imports);
-        res.privates = clone_kttDaK42(a.privates);
-        res.usings = clone_AfzW5oEv(a.usings);
-        res.converts = clone_AfzW5oEv(a.converts);
-        res.pub_items = clone_DHH5Baj0(a.pub_items);
-        res.pub_cnvrts = clone_DHH5Baj0(a.pub_cnvrts);
+        res.overloads = clone_YgFd2lJf(a.overloads);
+        res.extended = clone_h2eJ8vff(a.extended);
+        res.items = clone_2gILMhVa(a.items);
+        res.implicits = clone_2gILMhVa(a.implicits);
+        res.imports = clone_KE4Ju1yD(a.imports);
+        res.privates = clone_KE4Ju1yD(a.privates);
+        res.usings = clone_lmGNhJZg(a.usings);
+        res.converts = clone_lmGNhJZg(a.converts);
+        res.pub_items = clone_dD3H4GX6(a.pub_items);
+        res.pub_cnvrts = clone_dD3H4GX6(a.pub_cnvrts);
     };
     return /*NRVO*/ res;
 }
                                 #endif
 
-                                #ifndef DEF_clone_55mLsuleO26
-                                #define DEF_clone_55mLsuleO26
-inline s_SolverNotes clone_55mLsule(const s_SolverNotes a)
+                                #ifndef DEF_clone_frE7d1dBjWe
+                                #define DEF_clone_frE7d1dBjWe
+inline s_SolverNotes clone_frE7d1dB(const s_SolverNotes a)
 {
     return a;
 }
                                 #endif
 
-                                #ifndef DEF_clone_7R2wn4vRxyb
-                                #define DEF_clone_7R2wn4vRxyb
-inline s_SolverOutput clone_7R2wn4vR(const s_SolverOutput& a)
+                                #ifndef DEF_clone_NfKDlKSyerj
+                                #define DEF_clone_NfKDlKSyerj
+inline s_SolverOutput clone_NfKDlKSy(const s_SolverOutput& a)
 {
     /*MOV*/ s_SolverOutput res {};
 
     {
-        res.root = clone_mJncZhdA(a.root);
-        res.scope = clone_TfbmnLDB(a.scope);
-        res.notes = clone_55mLsule(a.notes);
+        res.root = clone_Q1UUsXjh(a.root);
+        res.scope = clone_u3AUYy1F(a.scope);
+        res.notes = clone_frE7d1dB(a.notes);
     };
     return /*NRVO*/ res;
 }
                                 #endif
 
-                                #ifndef DEF_clone_iygyhUpoYj9
-                                #define DEF_clone_iygyhUpoYj9
-inline const s_CodegenOutput& clone_iygyhUpo(const s_CodegenOutput& a)
+                                #ifndef DEF_clone_x0DVJAtWpqh
+                                #define DEF_clone_x0DVJAtWpqh
+inline const s_CodegenOutput& clone_x0DVJAtW(const s_CodegenOutput& a)
 {
     return a;
 }
                                 #endif
 
-                                #ifndef DEF_clone_wo58Cdr7rS8
-                                #define DEF_clone_wo58Cdr7rS8
-inline s_ModuleOutputs clone_wo58Cdr7(const s_ModuleOutputs& a)
+                                #ifndef DEF_clone_TzGdNpjoLWe
+                                #define DEF_clone_TzGdNpjoLWe
+inline s_ModuleOutputs clone_TzGdNpjo(const s_ModuleOutputs& a)
 {
     /*MOV*/ s_ModuleOutputs res {};
 
     {
-        res.types = clone_4EW58o1I(a.types);
-        res.solve = clone_7R2wn4vR(a.solve);
-        res.cpp = clone_iygyhUpo(a.cpp);
+        res.types = clone_yUzRV7An(a.types);
+        res.solve = clone_NfKDlKSy(a.solve);
+        res.cpp = clone_x0DVJAtW(a.cpp);
     };
     return /*NRVO*/ res;
 }
                                 #endif
 
-                                #ifndef DEF_clone_kBrbPK4ZhK9
-                                #define DEF_clone_kBrbPK4ZhK9
-inline const s_ModuleStats& clone_kBrbPK4Z(const s_ModuleStats& a)
+                                #ifndef DEF_clone_Iv4I43NBh01
+                                #define DEF_clone_Iv4I43NBh01
+inline const s_ModuleStats& clone_Iv4I43NB(const s_ModuleStats& a)
 {
     return a;
 }
                                 #endif
 
-                                #ifndef DEF_clone_mLnIjDzkpRc
-                                #define DEF_clone_mLnIjDzkpRc
-inline s_Module clone_mLnIjDzk(const s_Module& a)
+                                #ifndef DEF_clone_G5fNGz6vaZ6
+                                #define DEF_clone_G5fNGz6vaZ6
+inline s_Module clone_G5fNGz6v(const s_Module& a)
 {
     /*MOV*/ s_Module res {};
 
     {
-        res.modid = clone_DHH5Baj0(a.modid);
-        res.fname = clone_DcDCLzbw(a.fname);
-        res.in = clone_cXjT2jII(a.in);
-        res.order = clone_otwjp0Ty(a.order);
-        res.out = clone_wo58Cdr7(a.out);
-        res.stats = clone_kBrbPK4Z(a.stats);
+        res.modid = clone_dD3H4GX6(a.modid);
+        res.fname = clone_T1Jf1Z0K(a.fname);
+        res.in = clone_BpjaAqZz(a.in);
+        res.order = clone_CDer1pfR(a.order);
+        res.out = clone_TzGdNpjo(a.out);
+        res.stats = clone_Iv4I43NB(a.stats);
     };
     return /*NRVO*/ res;
 }
                                 #endif
 
-void setModule_fYGWKsxK(const s_Module& module, s_Context& ctx)
+void setModule_0FYNSelM(const s_Module& module, s_Context& ctx)
 {
     s_Module& current = ctx.modules.mutref(module.modid);
     if (current.fname == module.fname)
-        current = clone_mLnIjDzk(module);
+        current = clone_G5fNGz6v(module);
     else
         fu_ASSERT();
 
 }
 
-const s_Struct& lookupUserType_kzfZN3HV(const s_StructCanon& scp, const s_Module& module, const s_Context& ctx)
+const s_Struct& lookupUserType_1TAwTGhV(const s_StructCanon& scp, const s_Module& module, const s_Context& ctx)
 {
     if (scp.modid == module.modid)
     {
@@ -1724,52 +1723,65 @@ const s_Struct& lookupUserType_kzfZN3HV(const s_StructCanon& scp, const s_Module
     };
 }
 
-const s_Struct& lookupUserType_LriKPDIk(const s_ValueType& type, const s_Context& ctx, const s_Module& module)
+const s_Struct& lookupUserType_XVsnoQiv(const s_ValueType& type, const s_Context& ctx, const s_Module& module)
 {
-    return lookupUserType_kzfZN3HV(parseStructCanon_degpQC5i(type.canon), module, ctx);
+    return lookupUserType_1TAwTGhV(parseStructCanon_9HOct2P6(type.canon), module, ctx);
 }
 
-bool is_trivial_LriKPDIk(const s_ValueType& type, const s_Context& ctx, const s_Module& module)
+bool is_trivial_XVsnoQiv(const s_ValueType& type, const s_Context& ctx, const s_Module& module)
 {
-    return is_primitive_6bkyMkO3(type) || (isStruct_ddyKn6V4(type) ? lookupUserType_LriKPDIk(type, ctx, module).all_triv : false);
+    return is_primitive_3t4EwFeQ(type) || (isStruct_jSb6u57z(type) ? lookupUserType_XVsnoQiv(type, ctx, module).all_triv : false);
 }
 
-const s_Struct& tryLookupUserType_LriKPDIk(const s_ValueType& type, const s_Context& ctx, const s_Module& module)
+bool is_reinterpretable_XVsnoQiv(const s_ValueType& type, const s_Context& ctx, const s_Module& module)
 {
-    if (isStruct_ddyKn6V4(type) || (is_primitive_6bkyMkO3(type) && (basePrimPrefixLen_VyAVtbGI(type.canon) < type.canon.size())))
-        return lookupUserType_LriKPDIk(type, ctx, module);
+    return is_trivial_XVsnoQiv(type, ctx, module);
+}
+
+const s_Struct& tryLookupUserType_XVsnoQiv(const s_ValueType& type, const s_Context& ctx, const s_Module& module)
+{
+    if (isStruct_jSb6u57z(type) || (is_primitive_3t4EwFeQ(type) && (basePrimPrefixLen_OaQVyIZB(type.canon) < type.canon.size())))
+        return lookupUserType_XVsnoQiv(type, ctx, module);
     else
         return (*(const s_Struct*)fu::NIL);
 
 }
 
-const fu::vec<int>& lookupTypeImports_LriKPDIk(const s_ValueType& type, const s_Context& ctx, const s_Module& module)
+const fu::vec<int>& lookupTypeImports_XVsnoQiv(const s_ValueType& type, const s_Context& ctx, const s_Module& module)
 {
-    return tryLookupUserType_LriKPDIk(type, ctx, module).imports;
+    return tryLookupUserType_XVsnoQiv(type, ctx, module).imports;
 }
 
-const fu::vec<s_Target>& lookupTypeConverts_LriKPDIk(const s_ValueType& type, const s_Context& ctx, const s_Module& module)
+const fu::vec<s_Target>& lookupTypeConverts_XVsnoQiv(const s_ValueType& type, const s_Context& ctx, const s_Module& module)
 {
-    return tryLookupUserType_LriKPDIk(type, ctx, module).converts;
+    return tryLookupUserType_XVsnoQiv(type, ctx, module).converts;
 }
 
-int getFlatCount_LriKPDIk(const s_ValueType& type, const s_Context& ctx, const s_Module& module)
+int getFlatCount_XVsnoQiv(const s_ValueType& type, const s_Context& ctx, const s_Module& module)
 {
-    if (!isStructOrUnion_ddyKn6V4(type))
+    const s_Struct& s = tryLookupUserType_XVsnoQiv(type, ctx, module);
+    if (s)
+        return s.flatCount;
+    else if (is_primitive_3t4EwFeQ(type) || is_sliceable_3t4EwFeQ(type))
         return 1;
     else
-        return tryLookupUserType_LriKPDIk(type, ctx, module).flatCount;
+        return 0;
 
 }
 
-const fu::str& getModuleSrc_6HD1N2G2(const int modid, const s_Context& ctx)
+bool is_zst_XVsnoQiv(const s_ValueType& type, const s_Context& ctx, const s_Module& module)
+{
+    return !getFlatCount_XVsnoQiv(type, ctx, module);
+}
+
+const fu::str& getModuleSrc_OzfDuO9Z(const int modid, const s_Context& ctx)
 {
     return ctx.modules[modid].in.src;
 }
 
-                                #ifndef DEF_x7E_r7bhmB7DrQ0
-                                #define DEF_x7E_r7bhmB7DrQ0
-inline fu::str x7E_r7bhmB7D(fu::view<char> a, fu::view<char> b)
+                                #ifndef DEF_x7E_gCeFmDFw0L8
+                                #define DEF_x7E_gCeFmDFw0L8
+inline fu::str x7E_gCeFmDFw(fu::view<char> a, fu::view<char> b)
 {
     return a + b;
 }
@@ -1785,33 +1797,37 @@ extern const fu::str DIM;
 extern const fu::str RESET;
                                 #endif
 
-fu::str formatTokenCoord_uWl1krws(const fu::str& fname, const s_LineColChars& token)
+fu::str formatTokenCoord_EgRBgGmY(const fu::str& fname, const s_LineColChars& token)
 {
-    fu::str lcc = x7E_r7bhmB7D((x7E_r7bhmB7D(x7E_r7bhmB7D(fu::i64dec(token.line), ":"_fu), fu::i64dec(token.col)) + "+"_fu), fu::i64dec(token.chars));
+    fu::str lcc = x7E_gCeFmDFw((x7E_gCeFmDFw(x7E_gCeFmDFw(fu::i64dec(token.line), ":"_fu), fu::i64dec(token.col)) + "+"_fu), fu::i64dec(token.chars));
     if (!fname)
         return (DIM + lcc) + RESET;
     else
     {
-        fu::str dir = dirname_BWbYsL34(fname);
+        fu::str dir = dirname_8Oo0Zp26(fname);
         fu::str file = fu::slice(fname, dir.size(), fname.size());
-        fu::str ext = ext_BWbYsL34(file);
+        fu::str ext = ext_8Oo0Zp26(file);
         fu::str noext = fu::slice(file, 0, (file.size() - ext.size()));
         return (((((((DIM + dir) + RESET) + noext) + DIM) + ext) + " "_fu) + lcc) + RESET;
     };
 }
 
-fu::str formatTokenCoord_q6gMmquK(const s_TokenIdx& token, const int from, const s_Context& ctx)
+fu::str formatTokenCoord_eAP4tnAP(const s_TokenIdx& token, const int from, const s_Context& ctx)
 {
-    return formatTokenCoord_uWl1krws(((from != token.modid) ? _fname_uP3EjQNl(token, ctx) : (*(const fu::str*)fu::NIL)), _token_yZ5HaS8S(token, ctx).lcc);
+    fu::str fname { ((from != token.modid) ? _fname_AZUIslP2(token, ctx) : (*(const fu::str*)fu::NIL)) };
+    if (fname && ctx.base_dir)
+        fname = relative_PkLpPlOh(ctx.base_dir, fname);
+
+    return formatTokenCoord_EgRBgGmY(fname, _token_AZUIslP2(token, ctx).lcc);
 }
 
-inline static bool l_4_1_xVrjaOUC(const s_LineColChars& a, const s_LineColChars& b)
+inline static bool l_4_1_aknxy3Yd(const s_LineColChars& a, const s_LineColChars& b)
 {
     int _0 {};
     return ((_0 = (a.line - b.line)) ? _0 : (a.col - b.col)) < 0;
 }
 
-static void sort_sgWfWnhl(fu::vec<s_LineColChars>& a)
+static void sort_k9tAutFP(fu::vec<s_LineColChars>& a)
 {
     s_LineColChars l {};
     s_LineColChars r {};
@@ -1820,28 +1836,28 @@ static void sort_sgWfWnhl(fu::vec<s_LineColChars>& a)
     auto* data = a.data_mut();
     std::sort(data, data + a.size(), [&](auto& l, auto& r)
     {;
-    bool lt = l_4_1_xVrjaOUC(l, r);
+    bool lt = l_4_1_aknxy3Yd(l, r);
     return lt;
             });
 
 }
 
-                                #ifndef DEF_sort_rPyr0EN2jza
-                                #define DEF_sort_rPyr0EN2jza
-inline void sort_rPyr0EN2(fu::vec<s_LineColChars>& a)
+                                #ifndef DEF_sort_crYFtxqb7u2
+                                #define DEF_sort_crYFtxqb7u2
+inline void sort_crYFtxqb(fu::vec<s_LineColChars>& a)
 {
-    sort_sgWfWnhl(a);
+    sort_k9tAutFP(a);
 }
                                 #endif
 
-inline static fu::vec<fu::str>& l_0_0_qYYdpiVy(const fu::str& substr, fu::vec<fu::str>& result)
+inline static fu::vec<fu::str>& l_0_0_YstH9HK8(const fu::str& substr, fu::vec<fu::str>& result)
 {
     return (result += fu::str(substr));
 }
 
-                                #ifndef DEF_split_nZ5bsPvK8bf
-                                #define DEF_split_nZ5bsPvK8bf
-inline void split_nZ5bsPvK(const fu::str& str, fu::view<char> sep, fu::vec<fu::str>& result)
+                                #ifndef DEF_split_73nCVhgMQQ3
+                                #define DEF_split_73nCVhgMQQ3
+inline void split_73nCVhgM(const fu::str& str, fu::view<char> sep, fu::vec<fu::str>& result)
 {
     int last = 0;
     int next = 0;
@@ -1850,31 +1866,31 @@ inline void split_nZ5bsPvK(const fu::str& str, fu::view<char> sep, fu::vec<fu::s
     {
         while (((next = fu::lfind(str, sep, last)) >= 0))
         {
-            l_0_0_qYYdpiVy(fu::slice(str, last, next), result);
+            l_0_0_YstH9HK8(fu::slice(str, last, next), result);
             last = (next + N);
         };
     };
     if (last)
-        l_0_0_qYYdpiVy(fu::slice(str, last), result);
+        l_0_0_YstH9HK8(fu::slice(str, last), result);
     else
-        l_0_0_qYYdpiVy(str, result);
+        l_0_0_YstH9HK8(str, result);
 
 }
                                 #endif
 
-                                #ifndef DEF_split_KKIz7pog4J6
-                                #define DEF_split_KKIz7pog4J6
-inline fu::vec<fu::str> split_KKIz7pog(const fu::str& str, fu::view<char> sep)
+                                #ifndef DEF_split_e8WhGmUqohg
+                                #define DEF_split_e8WhGmUqohg
+inline fu::vec<fu::str> split_e8WhGmUq(const fu::str& str, fu::view<char> sep)
 {
     /*MOV*/ fu::vec<fu::str> result {};
-    split_nZ5bsPvK(str, sep, result);
+    split_73nCVhgM(str, sep, result);
     return /*NRVO*/ result;
 }
                                 #endif
 
-                                #ifndef DEF_first_UgnqAsf5IG4
-                                #define DEF_first_UgnqAsf5IG4
-inline const s_LineColChars& first_UgnqAsf5(fu::view<s_LineColChars> s)
+                                #ifndef DEF_first_442fwj6k8Dl
+                                #define DEF_first_442fwj6k8Dl
+inline const s_LineColChars& first_442fwj6k(fu::view<s_LineColChars> s)
 {
     if (s.size())
         return s[0];
@@ -1884,9 +1900,9 @@ inline const s_LineColChars& first_UgnqAsf5(fu::view<s_LineColChars> s)
 }
                                 #endif
 
-                                #ifndef DEF_last_UgnqAsf5IG4
-                                #define DEF_last_UgnqAsf5IG4
-inline const s_LineColChars& last_UgnqAsf5(fu::view<s_LineColChars> s)
+                                #ifndef DEF_last_442fwj6k8Dl
+                                #define DEF_last_442fwj6k8Dl
+inline const s_LineColChars& last_442fwj6k(fu::view<s_LineColChars> s)
 {
     if (s.size())
         return s[(s.size() - 1)];
@@ -1896,9 +1912,9 @@ inline const s_LineColChars& last_UgnqAsf5(fu::view<s_LineColChars> s)
 }
                                 #endif
 
-                                #ifndef DEF_min_AsFD7H8Nlu6
-                                #define DEF_min_AsFD7H8Nlu6
-inline int min_AsFD7H8N(const int a, const int b)
+                                #ifndef DEF_min_mJGU9byOmI4
+                                #define DEF_min_mJGU9byOmI4
+inline int min_mJGU9byO(const int a, const int b)
 {
     if ((a <= b))
         return a;
@@ -1908,9 +1924,9 @@ inline int min_AsFD7H8N(const int a, const int b)
 }
                                 #endif
 
-                                #ifndef DEF_max_AsFD7H8Nlu6
-                                #define DEF_max_AsFD7H8Nlu6
-inline int max_AsFD7H8N(const int a, const int b)
+                                #ifndef DEF_max_mJGU9byOmI4
+                                #define DEF_max_mJGU9byOmI4
+inline int max_mJGU9byO(const int a, const int b)
 {
     if ((a >= b))
         return a;
@@ -1925,9 +1941,9 @@ inline int max_AsFD7H8N(const int a, const int b)
 extern const fu::str BAD;
                                 #endif
 
-fu::str formatCodeSnippet_AVzbQNfA(const fu::str& src, fu::vec<s_LineColChars>&& highlight, const s_CodeFmt fmt)
+fu::str formatCodeSnippet_r2IRSBUy(const fu::str& src, fu::vec<s_LineColChars>&& highlight, const s_CodeFmt fmt)
 {
-    sort_rPyr0EN2(highlight);
+    sort_crYFtxqb(highlight);
     for (int i = (highlight.size() - 1); i-- > 0; )
     {
         const s_LineColChars& a = highlight[i];
@@ -1943,22 +1959,20 @@ fu::str formatCodeSnippet_AVzbQNfA(const fu::str& src, fu::vec<s_LineColChars>&&
 
     };
     if (!highlight)
-    {
-        return fu::str{};
-    }
+        return ""_fu;
     else
     {
-        fu::vec<fu::str> lines = split_KKIz7pog(src, "\n"_fu);
-        const s_LineColChars& start = first_UgnqAsf5(highlight);
-        const s_LineColChars& end = last_UgnqAsf5(highlight);
+        fu::vec<fu::str> lines = split_e8WhGmUq(src, "\n"_fu);
+        const s_LineColChars& start = first_442fwj6k(highlight);
+        const s_LineColChars& end = last_442fwj6k(highlight);
         int l_start = (start.line - 1);
         int l_end = end.line;
-        l_start = max_AsFD7H8N(min_AsFD7H8N(l_start, lines.size()), 0);
-        l_end = max_AsFD7H8N(min_AsFD7H8N(l_end, lines.size()), 0);
-        /*MOV*/ fu::str result {};
+        l_start = max_mJGU9byO(min_mJGU9byO(l_start, lines.size()), 0);
+        l_end = max_mJGU9byO(min_mJGU9byO(l_end, lines.size()), 0);
+        /*MOV*/ fu::str result = ""_fu;
         const int leadContext = (s_CodeFmt((fmt & s_CodeFmt((s_CodeFmt_NoContext | s_CodeFmt_NoLeadContext)))) ? 0 : 2);
         const int tailContext = (s_CodeFmt((fmt & s_CodeFmt((s_CodeFmt_NoContext | s_CodeFmt_NoTailContext)))) ? 0 : 2);
-        for (int i_1 = max_AsFD7H8N(0, (l_start - leadContext)); i_1 < l_start; i_1++)
+        for (int i_1 = max_mJGU9byO(0, (l_start - leadContext)); i_1 < l_start; i_1++)
         {
             result += (DIM + "      | "_fu);
             result += lines[i_1];
@@ -1970,7 +1984,7 @@ fu::str formatCodeSnippet_AVzbQNfA(const fu::str& src, fu::vec<s_LineColChars>&&
             const int line_no = (i_2 + 1);
 
             {
-                fu::str margin = x7E_r7bhmB7D(fu::i64dec(line_no), " | "_fu);
+                fu::str margin = x7E_gCeFmDFw(fu::i64dec(line_no), " | "_fu);
                 while (margin.size() < 8)
                     margin = (" "_fu + margin);
 
@@ -1981,15 +1995,15 @@ fu::str formatCodeSnippet_AVzbQNfA(const fu::str& src, fu::vec<s_LineColChars>&&
                 const s_LineColChars& token = highlight[i_3];
                 if (token.line == line_no)
                 {
-                    const int c0 = max_AsFD7H8N(min_AsFD7H8N((token.col - 1), line.size()), 0);
-                    const int c1 = min_AsFD7H8N((c0 + token.chars), line.size());
+                    const int c0 = max_mJGU9byO(min_mJGU9byO((token.col - 1), line.size()), 0);
+                    const int c1 = min_mJGU9byO((c0 + token.chars), line.size());
                     line.splice(c1, 0, RESET);
                     line.splice(c0, 0, BAD);
                 };
             };
             result += (line + "\n"_fu);
         };
-        for (int i_3 = l_end; i_3 < min_AsFD7H8N(lines.size(), (l_end + tailContext)); i_3++)
+        for (int i_3 = l_end; i_3 < min_mJGU9byO(lines.size(), (l_end + tailContext)); i_3++)
         {
             result += (DIM + "      | "_fu);
             result += lines[i_3];
@@ -1999,17 +2013,17 @@ fu::str formatCodeSnippet_AVzbQNfA(const fu::str& src, fu::vec<s_LineColChars>&&
     };
 }
 
-fu::str formatCodeSnippet_2ldmrhJc(const fu::str& src, const s_LineColChars& token, const s_CodeFmt fmt)
+fu::str formatCodeSnippet_AUJhD0MQ(const fu::str& src, const s_LineColChars& token, const s_CodeFmt fmt)
 {
-    return formatCodeSnippet_AVzbQNfA(src, fu::vec<s_LineColChars> { fu::slate<1, s_LineColChars> { s_LineColChars(token) } }, fmt);
+    return formatCodeSnippet_r2IRSBUy(src, fu::vec<s_LineColChars> { fu::slate<1, s_LineColChars> { s_LineColChars(token) } }, fmt);
 }
 
-inline static bool l_4_2_X5KXn1Zo(const s_TokenIdx& a, const s_TokenIdx& b)
+inline static bool l_4_2_t8fI9cCr(const s_TokenIdx& a, const s_TokenIdx& b)
 {
     return a.modid < b.modid;
 }
 
-static void sort_gkZb37uC(fu::vec<s_TokenIdx>& a)
+static void sort_LNX00XSV(fu::vec<s_TokenIdx>& a)
 {
     s_TokenIdx l {};
     s_TokenIdx r {};
@@ -2018,23 +2032,23 @@ static void sort_gkZb37uC(fu::vec<s_TokenIdx>& a)
     auto* data = a.data_mut();
     std::sort(data, data + a.size(), [&](auto& l, auto& r)
     {;
-    bool lt = l_4_2_X5KXn1Zo(l, r);
+    bool lt = l_4_2_t8fI9cCr(l, r);
     return lt;
             });
 
 }
 
-                                #ifndef DEF_sort_FuMFYq5e7xj
-                                #define DEF_sort_FuMFYq5e7xj
-inline void sort_FuMFYq5e(fu::vec<s_TokenIdx>& a)
+                                #ifndef DEF_sort_ZvwFtCX4MU9
+                                #define DEF_sort_ZvwFtCX4MU9
+inline void sort_ZvwFtCX4(fu::vec<s_TokenIdx>& a)
 {
-    sort_gkZb37uC(a);
+    sort_LNX00XSV(a);
 }
                                 #endif
 
-                                #ifndef DEF_if_first_MudMRkWrRD0
-                                #define DEF_if_first_MudMRkWrRD0
-inline const s_TokenIdx& if_first_MudMRkWr(fu::view<s_TokenIdx> s)
+                                #ifndef DEF_if_first_q6WLf81sgN1
+                                #define DEF_if_first_q6WLf81sgN1
+inline const s_TokenIdx& if_first_q6WLf81s(fu::view<s_TokenIdx> s)
 {
     if (s.size())
         return s[0];
@@ -2044,10 +2058,10 @@ inline const s_TokenIdx& if_first_MudMRkWr(fu::view<s_TokenIdx> s)
 }
                                 #endif
 
-fu::str formatCodeSnippet_M4QtP2oD(fu::vec<s_TokenIdx>&& tokens, const int from, const s_CodeFmt fmt, const s_Context& ctx)
+fu::str formatCodeSnippet_FyeOqRfp(fu::vec<s_TokenIdx>&& tokens, const int from, const s_CodeFmt fmt, const s_Context& ctx)
 {
-    sort_FuMFYq5e(tokens);
-    /*MOV*/ fu::str append {};
+    sort_ZvwFtCX4(tokens);
+    /*MOV*/ fu::str append = ""_fu;
     for (int i = 0; i < (tokens.size() - 1); i++)
     {
         const s_TokenIdx& a = tokens[i];
@@ -2055,34 +2069,34 @@ fu::str formatCodeSnippet_M4QtP2oD(fu::vec<s_TokenIdx>&& tokens, const int from,
         if (a.modid != b.modid)
         {
             append += "\n"_fu;
-            append += formatCodeSnippet_M4QtP2oD(fu::slice(tokens, (i + 1)), from, s_CodeFmt{}, ctx);
+            append += formatCodeSnippet_FyeOqRfp(fu::slice(tokens, (i + 1)), from, s_CodeFmt{}, ctx);
             tokens.shrink((i + 1));
             break;
         };
     };
-    const s_TokenIdx& head = if_first_MudMRkWr(tokens);
+    const s_TokenIdx& head = if_first_q6WLf81s(tokens);
     if (!head)
         return /*NRVO*/ append;
     else
     {
-        /*MOV*/ fu::str result {};
-        result += formatTokenCoord_q6gMmquK(head, from, ctx);
+        /*MOV*/ fu::str result = ""_fu;
+        result += formatTokenCoord_eAP4tnAP(head, from, ctx);
         result += ":\n"_fu;
         if (!s_CodeFmt((fmt & s_CodeFmt((s_CodeFmt_NoContext | s_CodeFmt_NoLeadContext)))))
             result += "\n"_fu;
 
         /*MOV*/ fu::vec<s_LineColChars> highlight {};
         for (int i_1 = 0; i_1 < tokens.size(); i_1++)
-            highlight.push(s_LineColChars(_token_yZ5HaS8S(tokens[i_1], ctx).lcc));
+            highlight.push(s_LineColChars(_token_AZUIslP2(tokens[i_1], ctx).lcc));
 
-        const fu::str& src = getModuleSrc_6HD1N2G2(head.modid, ctx);
-        result += formatCodeSnippet_AVzbQNfA(src, static_cast<fu::vec<s_LineColChars>&&>(highlight), fmt);
+        const fu::str& src = getModuleSrc_OzfDuO9Z(head.modid, ctx);
+        result += formatCodeSnippet_r2IRSBUy(src, static_cast<fu::vec<s_LineColChars>&&>(highlight), fmt);
         result += append;
         return /*NRVO*/ result;
     };
 }
 
-fu::str getShortModuleName_Y2f94oTr(const fu::str& fname)
+fu::str getShortModuleName_UQKMOJue(const fu::str& fname)
 {
     const int end = (fname.size() - 3);
     bool found = false;

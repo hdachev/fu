@@ -3,7 +3,7 @@
 
 #ifndef fu_NO_fdefs
 
-fu::str bytes_LBHJUHLu(const unsigned unicode)
+fu::str bytes_EvFLFmIM(const unsigned unicode)
 {
     if ((unicode <= 0x7fu))
     {

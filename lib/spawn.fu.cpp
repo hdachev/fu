@@ -134,7 +134,7 @@ static Errno fu_waitpid(
 
 #ifndef fu_NO_fdefs
 
-int spawn_HAbk5FLX(fu::vec<fu::str>&& argv, int& status)
+int spawn_RrSIhxvE(fu::vec<fu::str>&& argv, int& status)
 {
     if (!argv)
         return -1;
@@ -162,7 +162,7 @@ int spawn_HAbk5FLX(fu::vec<fu::str>&& argv, int& status)
     };
 }
 
-int spawn_wqubrwFR(fu::vec<fu::str>&& argv, fu::str& stdout, fu::str& stderr, int& status)
+int spawn_Q72PXxQP(fu::vec<fu::str>&& argv, fu::str& stdout, fu::str& stderr, int& status)
 {
     if (!argv)
         return -1;
@@ -295,8 +295,8 @@ int spawn_wqubrwFR(fu::vec<fu::str>&& argv, fu::str& stdout, fu::str& stderr, in
                             }
 
                             // Don't short circuit here.
-                            if (  !ReadPollFD(poll_fds[0], stdout)
-                                & !ReadPollFD(poll_fds[1], stderr))
+                            if (  int(!ReadPollFD(poll_fds[0], stdout))
+                                & int(!ReadPollFD(poll_fds[1], stderr)))
                             {
                                 break;
                             }

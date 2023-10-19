@@ -5,7 +5,7 @@
 
 #ifndef fu_NO_fdefs
 
-fu::str get_iZKxiafi(/*MOV*/ fu::str&& name)
+fu::str get_vT58MJUZ(/*MOV*/ fu::str&& name)
 {
     name += '\x00';
     const char* value = getenv(name.data());

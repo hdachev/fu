@@ -7,7 +7,7 @@
 
 #ifndef fu_NO_fdefs
 
-int exec_CR6H0XrA(fu::str&& cmd, int& status, fu::str& stdout)
+int exec_sounLutz(fu::str&& cmd, int& status, fu::str& stdout)
 {
     int err = 0;
     status = -1;

@@ -23,7 +23,7 @@ inline constexpr unsigned RW_RW_RW = (((0x6u << 6u) | (0x6u << 3u)) | (0x6u << 0
 inline constexpr unsigned RWX_RX_RX = (((0x7u << 6u) | (0x5u << 3u)) | (0x5u << 0u));
                                 #endif
 
-int write_l2QLWLgK(fu::str&& path, fu::view<char> data, const unsigned mode)
+int write_t5NVzxJy(fu::str&& path, fu::view<char> data, const unsigned mode)
 {
     path += '\x00';
     int err {};
@@ -55,15 +55,15 @@ int write_l2QLWLgK(fu::str&& path, fu::view<char> data, const unsigned mode)
     return err;
 }
 
-                                #ifndef DEF_MAX_bROiNhN5YRb
-                                #define DEF_MAX_bROiNhN5YRb
-inline int MAX_bROiNhN5()
+                                #ifndef DEF_MAX_5Mxm22OPs0k
+                                #define DEF_MAX_5Mxm22OPs0k
+inline int MAX_5Mxm22OP()
 {
     return 2147483647;
 }
                                 #endif
 
-int read_MtnlPN8n(fu::str&& path, fu::str& output, int64_t size)
+int read_Zg7Moiy2(fu::str&& path, fu::str& output, int64_t size)
 {
     path += '\x00';
     int err {};
@@ -80,7 +80,7 @@ int read_MtnlPN8n(fu::str&& path, fu::str& output, int64_t size)
         };
         int len0 = output.size();
         const int64_t len1 = (int64_t(len0) + size);
-        if (len1 > (int64_t(MAX_bROiNhN5()) - 16ll))
+        if (len1 > (int64_t(MAX_5Mxm22OP()) - 16ll))
             return (err = EFBIG);
 ;
         auto fd = open(path.data(), O_RDONLY);
@@ -120,16 +120,16 @@ int read_MtnlPN8n(fu::str&& path, fu::str& output, int64_t size)
     return err;
 }
 
-fu::str read_IIXDOWa5(/*MOV*/ fu::str&& path)
+fu::str read_zTt3fZzW(/*MOV*/ fu::str&& path)
 {
     /*MOV*/ fu::str output {};
-    if (read_MtnlPN8n(static_cast<fu::str&&>(path), output, 0ll))
+    if (read_Zg7Moiy2(static_cast<fu::str&&>(path), output, 0ll))
         output.clear();
 
     return /*NRVO*/ output;
 }
 
-int chmod_ePFhawpV(fu::str&& path, const unsigned mode)
+int chmod_a08pEYIk(fu::str&& path, const unsigned mode)
 {
     path += '\x00';
     int err {};
@@ -139,7 +139,7 @@ int chmod_ePFhawpV(fu::str&& path, const unsigned mode)
     return err;
 }
 
-int unlink_IIXDOWa5(fu::str&& path)
+int unlink_zTt3fZzW(fu::str&& path)
 {
     path += '\x00';
     int err {};
@@ -149,7 +149,7 @@ int unlink_IIXDOWa5(fu::str&& path)
     return err;
 }
 
-int rename_mAw1WpED(fu::str&& from, fu::str&& to)
+int rename_SX2prLSI(fu::str&& from, fu::str&& to)
 {
     from += '\x00';
     to += '\x00';
@@ -160,7 +160,7 @@ int rename_mAw1WpED(fu::str&& from, fu::str&& to)
     return err;
 }
 
-int64_t size_IIXDOWa5(fu::str&& path)
+int64_t size_zTt3fZzW(fu::str&& path)
 {
     path += '\x00';
     struct stat sb;

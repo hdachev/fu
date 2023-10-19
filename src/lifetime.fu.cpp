@@ -4,16 +4,12 @@
 #include <fu/vec.h>
 #include <fu/view.h>
 #include <fu/never.h>
-#include <fu/print.h>
-#include <fu/decstr.h>
-#include <fu/default.h>
-#include <fu/vec/slice.h>
-#include <par/parfor.hpp>
 #include <fu/vec/concat.h>
 #include <fu/init_priority.h>
 #include <fu/vec/concat_one.h>
-#include <fu/vec/view_assign.h>
 
+struct s_Lifetime;
+struct s_TokenIdx;
 struct s_Context;
 struct s_Module;
 struct s_ModuleInputs;
@@ -26,7 +22,6 @@ struct s_Node;
 typedef uint16_t s_DeclAsserts;
 typedef fu::u8 s_ParseSyntax;
 typedef unsigned s_Flags;
-struct s_TokenIdx;
 struct s_Import;
 struct s_ModuleOrder;
 struct s_ModuleOutputs;
@@ -38,7 +33,6 @@ struct s_SolvedNode;
 struct s_Helpers;
 struct s_Type;
 struct s_ValueType;
-struct s_Lifetime;
 typedef fu::u8 s_VFacts;
 struct s_Scope;
 struct s_Overload;
@@ -56,32 +50,37 @@ typedef fu::u8 s_CGDefects;
 struct s_ModuleStats;
 struct s_ModuleStat;
 struct s_Map_iIYL7rECCBg;
-struct s_Options;
-struct s_Lint;
-typedef fu::u8 s_DevOptions;
-struct s_Result;
-typedef fu::u8 s_DEV_OnFail;
-s_Module& getModule_vqSYGHjE(const fu::str&, s_Context&);
-fu::str FAIL_text_caJ9ggwG(const s_TokenIdx&, fu::view<char>, const s_Context&);
-fu::str getFile_F2wCJLDv(fu::str&&, s_Context&);
-fu::str qBAD_3PsDzMvu(const fu::str&);
-[[noreturn]] fu::never FAIL_lTxCw5lL(fu::view<char>, const s_TokenIdx&, const s_Context&);
-s_ModuleStat ModuleStat_now_pUbtfzLn();
-s_LexerOutput lex_XyQUXQaS(const fu::str&, const fu::str&);
-s_ParserOutput parse_SmcwBTdS(int, const fu::str&, const fu::str&, fu::view<s_Token>, const s_Options&);
-s_ModuleStat operator-(const s_ModuleStat&, const s_ModuleStat&);
-void setModule_0FYNSelM(const s_Module&, s_Context&);
-fu::str resolveFile_F2wCJLDv(const fu::str&, s_Context&);
-static s_ModuleOrder compile_lexParseDeps_jCXXspBS(const fu::str&, fu::view<s_TokenIdx>, s_Context&, const s_Options&);
-s_SolverOutput solve_veJH3XG6(const s_Context&, s_Module&, const s_Options&);
-fu::str inspect_SOTjKmcd(const s_Module&);
-s_CodegenOutput cpp_codegen_RSs3vpiZ(const s_Module&, const s_Context&, const s_Options&);
-fu::str get_vT58MJUZ(fu::str&&);
-int64_t size_zTt3fZzW(fu::str&&);
-double hr_CPFg3qvV();
-void operator+=(s_ModuleStat&, const s_ModuleStat&);
-void ModuleStat_print_ldE6SCqb(const s_ModuleStat&, const fu::str&, fu::view<char>);
-void build_DaUeZzJn(fu::str&&, fu::view<char>, fu::str&&, fu::str&&, fu::str&&, fu::str&&, fu::str&&, fu::view<char>, fu::view<char>, s_DEV_OnFail, bool, bool, bool, bool, fu::view<fu::str>, fu::view<fu::str>, const s_Context&);
+[[noreturn]] fu::never BUG_9SZtRVJ0(fu::str&&, const s_TokenIdx&, const s_Context&);
+
+                                #ifndef DEF_s_Lifetime
+                                #define DEF_s_Lifetime
+struct s_Lifetime
+{
+    fu::str uni0n;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || uni0n
+        ;
+    }
+};
+                                #endif
+
+                                #ifndef DEF_s_TokenIdx
+                                #define DEF_s_TokenIdx
+struct s_TokenIdx
+{
+    int modid;
+    int tokidx;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || modid
+            || tokidx
+        ;
+    }
+};
+                                #endif
 
                                 #ifndef DEF_s_kind
                                 #define DEF_s_kind
@@ -471,20 +470,6 @@ struct s_Target
 };
                                 #endif
 
-                                #ifndef DEF_s_Lifetime
-                                #define DEF_s_Lifetime
-struct s_Lifetime
-{
-    fu::str uni0n;
-    explicit operator bool() const noexcept
-    {
-        return false
-            || uni0n
-        ;
-    }
-};
-                                #endif
-
                                 #ifndef DEF_s_BitSet
                                 #define DEF_s_BitSet
 struct s_BitSet
@@ -537,22 +522,6 @@ struct s_LexerOutput
     {
         return false
             || tokens
-        ;
-    }
-};
-                                #endif
-
-                                #ifndef DEF_s_TokenIdx
-                                #define DEF_s_TokenIdx
-struct s_TokenIdx
-{
-    int modid;
-    int tokidx;
-    explicit operator bool() const noexcept
-    {
-        return false
-            || modid
-            || tokidx
         ;
     }
 };
@@ -1078,756 +1047,399 @@ struct s_Module
 };
                                 #endif
 
-                                #ifndef DEF_s_DevOptions
-                                #define DEF_s_DevOptions
-inline constexpr s_DevOptions s_DevOptions_DEV_PrintAST = s_DevOptions(1u);
-inline constexpr s_DevOptions s_DevOptions_DEV_PrintCG = s_DevOptions(2u);
-inline constexpr s_DevOptions s_DevOptions_DEV_Parallel = s_DevOptions(4u);
-inline constexpr s_DevOptions s_DevOptions_DEV_ExpectFail = s_DevOptions(8u);
-inline constexpr s_DevOptions s_DevOptions_DEV_DontFoldLiterals = s_DevOptions(16u);
-inline constexpr s_DevOptions s_DevOptions_DEV_CG_LifetimeAnnots = s_DevOptions(32u);
-
-inline constexpr s_DevOptions MASK_s_DevOptions
-    = s_DevOptions_DEV_PrintAST
-    | s_DevOptions_DEV_PrintCG
-    | s_DevOptions_DEV_Parallel
-    | s_DevOptions_DEV_ExpectFail
-    | s_DevOptions_DEV_DontFoldLiterals
-    | s_DevOptions_DEV_CG_LifetimeAnnots;
-                                #endif
-
-                                #ifndef DEF_s_Lint
-                                #define DEF_s_Lint
-struct s_Lint
-{
-    int maxwarn;
-    explicit operator bool() const noexcept
-    {
-        return false
-            || maxwarn
-        ;
-    }
-};
-                                #endif
-
-                                #ifndef DEF_s_Options
-                                #define DEF_s_Options
-struct s_Options
-{
-    s_Lint lint;
-    s_SolverNotes break_notes;
-    s_CGDefects break_defects;
-    s_DevOptions dev;
-    unsigned shuffle;
-    explicit operator bool() const noexcept
-    {
-        return false
-            || lint
-            || break_notes
-            || break_defects
-            || dev
-            || shuffle
-        ;
-    }
-};
-                                #endif
-
-                                #ifndef DEF_s_Result
-                                #define DEF_s_Result
-struct s_Result
-{
-    s_Module module;
-    fu::str error;
-    s_Result(const s_Result&) = delete;
-    s_Result(s_Result&&) = default;
-    s_Result& operator=(const s_Result&) = delete;
-    s_Result& operator=(s_Result&&) = default;
-    explicit operator bool() const noexcept
-    {
-        return false
-            || module
-            || error
-        ;
-    }
-};
-                                #endif
-
-                                #ifndef DEF_s_DEV_OnFail
-                                #define DEF_s_DEV_OnFail
-inline constexpr s_DEV_OnFail s_DEV_OnFail_OnFail_PrintInput = s_DEV_OnFail(1u);
-inline constexpr s_DEV_OnFail s_DEV_OnFail_OnFail_PrintOutput = s_DEV_OnFail(2u);
-inline constexpr s_DEV_OnFail s_DEV_OnFail_OnFail_WriteRepro = s_DEV_OnFail(4u);
-
-inline constexpr s_DEV_OnFail MASK_s_DEV_OnFail
-    = s_DEV_OnFail_OnFail_PrintInput
-    | s_DEV_OnFail_OnFail_PrintOutput
-    | s_DEV_OnFail_OnFail_WriteRepro;
-                                #endif
-
 #ifndef fu_NO_fdefs
 
-inline static fu::str& l_3_0_QR8StAbE(const s_TokenIdx& token, const int i, fu::view<s_TokenIdx> via, fu::str& error, const s_Context& ctx)
-{
-    return (error += FAIL_text_caJ9ggwG(token, ((i == (via.size() - 1)) ? "Resulting in an import circle, not currently supported."_fu : "Imports:\n"_fu), ctx));
-}
-
-                                #ifndef DEF_each_bclOPZ0IGtk
-                                #define DEF_each_bclOPZ0IGtk
-inline void each_bclOPZ0I(fu::view<s_TokenIdx> a, fu::view<s_TokenIdx> via, fu::str& error, const s_Context& ctx)
-{
-    for (int i = 0; i < a.size(); i++)
-        l_3_0_QR8StAbE(a[i], i, via, error, ctx);
-
-}
+                                #ifndef DEF_Region_TEMP
+                                #define DEF_Region_TEMP
+extern const char Region_TEMP = char(1);
                                 #endif
 
-                                #ifndef DEF_clone_dD3H4GX6AP2
-                                #define DEF_clone_dD3H4GX6AP2
-inline int clone_dD3H4GX6(const int a)
-{
-    return a;
-}
+                                #ifndef DEF_Region_STATIC
+                                #define DEF_Region_STATIC
+extern const char Region_STATIC = char(0);
                                 #endif
 
-                                #ifndef DEF_clone_T1Jf1Z0KiR2
-                                #define DEF_clone_T1Jf1Z0KiR2
-inline const fu::str& clone_T1Jf1Z0K(const fu::str& a)
+unsigned parseRegion(int& offset, fu::view<char> str)
 {
-    return a;
-}
-                                #endif
-
-                                #ifndef DEF_clone_BpjaAqZzaaa
-                                #define DEF_clone_BpjaAqZzaaa
-inline const s_ModuleInputs& clone_BpjaAqZz(const s_ModuleInputs& a)
-{
-    return a;
-}
-                                #endif
-
-                                #ifndef DEF_clone_CDer1pfRaKl
-                                #define DEF_clone_CDer1pfRaKl
-inline const s_ModuleOrder& clone_CDer1pfR(const s_ModuleOrder& a)
-{
-    return a;
-}
-                                #endif
-
-                                #ifndef DEF_clone_yUzRV7AncM9
-                                #define DEF_clone_yUzRV7AncM9
-inline const fu::vec<s_Struct>& clone_yUzRV7An(const fu::vec<s_Struct>& a)
-{
-    return a;
-}
-                                #endif
-
-                                #ifndef DEF_clone_Q1UUsXjhPGl
-                                #define DEF_clone_Q1UUsXjhPGl
-inline const s_SolvedNode& clone_Q1UUsXjh(const s_SolvedNode& a)
-{
-    return a;
-}
-                                #endif
-
-                                #ifndef DEF_clone_YgFd2lJf7Gh
-                                #define DEF_clone_YgFd2lJf7Gh
-inline const fu::vec<s_Overload>& clone_YgFd2lJf(const fu::vec<s_Overload>& a)
-{
-    return a;
-}
-                                #endif
-
-                                #ifndef DEF_clone_h2eJ8vfftjk
-                                #define DEF_clone_h2eJ8vfftjk
-inline const fu::vec<s_Extended>& clone_h2eJ8vff(const fu::vec<s_Extended>& a)
-{
-    return a;
-}
-                                #endif
-
-                                #ifndef DEF_clone_2gILMhVaICb
-                                #define DEF_clone_2gILMhVaICb
-inline const fu::vec<s_ScopeItem>& clone_2gILMhVa(const fu::vec<s_ScopeItem>& a)
-{
-    return a;
-}
-                                #endif
-
-                                #ifndef DEF_clone_KE4Ju1yDYU9
-                                #define DEF_clone_KE4Ju1yDYU9
-inline const fu::vec<int>& clone_KE4Ju1yD(const fu::vec<int>& a)
-{
-    return a;
-}
-                                #endif
-
-                                #ifndef DEF_clone_lmGNhJZgGsc
-                                #define DEF_clone_lmGNhJZgGsc
-inline const fu::vec<s_Target>& clone_lmGNhJZg(const fu::vec<s_Target>& a)
-{
-    return a;
-}
-                                #endif
-
-                                #ifndef DEF_clone_u3AUYy1Feof
-                                #define DEF_clone_u3AUYy1Feof
-inline s_Scope clone_u3AUYy1F(const s_Scope& a)
-{
-    /*MOV*/ s_Scope res {};
-
+    unsigned shift {};
+    unsigned result {};
+    char c {};
+    while ((offset < str.size()) && (unsigned(fu::u8((c = str[offset++]))) >= 128u))
     {
-        res.overloads = clone_YgFd2lJf(a.overloads);
-        res.extended = clone_h2eJ8vff(a.extended);
-        res.items = clone_2gILMhVa(a.items);
-        res.implicits = clone_2gILMhVa(a.implicits);
-        res.imports = clone_KE4Ju1yD(a.imports);
-        res.privates = clone_KE4Ju1yD(a.privates);
-        res.usings = clone_lmGNhJZg(a.usings);
-        res.converts = clone_lmGNhJZg(a.converts);
-        res.pub_items = clone_dD3H4GX6(a.pub_items);
-        res.pub_cnvrts = clone_dD3H4GX6(a.pub_cnvrts);
+        result |= ((unsigned(fu::u8(c)) & 0x7fu) << shift);
+        shift += 7u;
     };
-    return /*NRVO*/ res;
+    return result | (unsigned(fu::u8(c)) << shift);
 }
-                                #endif
 
-                                #ifndef DEF_clone_frE7d1dBjWe
-                                #define DEF_clone_frE7d1dBjWe
-inline s_SolverNotes clone_frE7d1dB(const s_SolverNotes a)
+void appendRegion(fu::str& str, unsigned v)
 {
-    return a;
-}
-                                #endif
-
-                                #ifndef DEF_clone_NfKDlKSyerj
-                                #define DEF_clone_NfKDlKSyerj
-inline s_SolverOutput clone_NfKDlKSy(const s_SolverOutput& a)
-{
-    /*MOV*/ s_SolverOutput res {};
-
+    while ((v >= 128u))
     {
-        res.root = clone_Q1UUsXjh(a.root);
-        res.scope = clone_u3AUYy1F(a.scope);
-        res.notes = clone_frE7d1dB(a.notes);
+        str += char((v | 0x80u));
+        v >>= 7u;
     };
-    return /*NRVO*/ res;
+    str += char(v);
 }
-                                #endif
 
-                                #ifndef DEF_clone_x0DVJAtWpqh
-                                #define DEF_clone_x0DVJAtWpqh
-inline const s_CodegenOutput& clone_x0DVJAtW(const s_CodegenOutput& a)
+s_Lifetime Lifetime_from_LEyvF4Am(const int locid, const s_TokenIdx& _here, const s_Context& ctx)
 {
-    return a;
-}
-                                #endif
-
-                                #ifndef DEF_clone_TzGdNpjoLWe
-                                #define DEF_clone_TzGdNpjoLWe
-inline s_ModuleOutputs clone_TzGdNpjo(const s_ModuleOutputs& a)
-{
-    /*MOV*/ s_ModuleOutputs res {};
-
+    if (locid > 0)
     {
-        res.types = clone_yUzRV7An(a.types);
-        res.solve = clone_NfKDlKSy(a.solve);
-        res.cpp = clone_x0DVJAtW(a.cpp);
-    };
-    return /*NRVO*/ res;
-}
-                                #endif
-
-                                #ifndef DEF_clone_Iv4I43NBh01
-                                #define DEF_clone_Iv4I43NBh01
-inline const s_ModuleStats& clone_Iv4I43NB(const s_ModuleStats& a)
-{
-    return a;
-}
-                                #endif
-
-                                #ifndef DEF_clone_G5fNGz6vaZ6
-                                #define DEF_clone_G5fNGz6vaZ6
-inline s_Module clone_G5fNGz6v(const s_Module& a)
-{
-    /*MOV*/ s_Module res {};
-
-    {
-        res.modid = clone_dD3H4GX6(a.modid);
-        res.fname = clone_T1Jf1Z0K(a.fname);
-        res.in = clone_BpjaAqZz(a.in);
-        res.order = clone_CDer1pfR(a.order);
-        res.out = clone_TzGdNpjo(a.out);
-        res.stats = clone_Iv4I43NB(a.stats);
-    };
-    return /*NRVO*/ res;
-}
-                                #endif
-
-                                #ifndef DEF_if_last_q6WLf81sgN1
-                                #define DEF_if_last_q6WLf81sgN1
-inline const s_TokenIdx& if_last_q6WLf81s(fu::view<s_TokenIdx> s)
-{
-    if (s.size())
-        return s[(s.size() - 1)];
-    else
-        return (*(const s_TokenIdx*)fu::NIL);
-
-}
-                                #endif
-
-                                #ifndef DEF_find_KonMQ4KBuu5
-                                #define DEF_find_KonMQ4KBuu5
-inline int find_KonMQ4KB(fu::view<char> a, const char b)
-{
-    for (int i = 0; i < a.size(); i++)
-    {
-        if (a[i] == b)
-            return i;
-
-    };
-    return -1;
-}
-                                #endif
-
-inline static void l_3_1_qn18yY69(const s_Import& import, fu::view<s_TokenIdx> via, s_Context& ctx, s_Module& module, const s_Options& options)
-{
-    fu::str _0 {};
-    const s_ModuleOrder order = (_0 = resolveFile_F2wCJLDv(import.value, ctx), compile_lexParseDeps_jCXXspBS(static_cast<fu::str&&>(_0), (via + import.token), ctx, options));
-    if ((module.order.dep_depth <= order.dep_depth))
-        module.order.dep_depth = (order.dep_depth + 1);
-
-}
-
-                                #ifndef DEF_each_cm6IaAnKlkk
-                                #define DEF_each_cm6IaAnKlkk
-inline void each_cm6IaAnK(fu::view<s_Import> a, fu::view<s_TokenIdx> via, s_Context& ctx, s_Module& module, const s_Options& options)
-{
-    for (int i = 0; i < a.size(); i++)
-        l_3_1_qn18yY69(a[i], via, ctx, module, options);
-
-}
-                                #endif
-
-static s_ModuleOrder compile_lexParseDeps_jCXXspBS(const fu::str& fname, fu::view<s_TokenIdx> via, s_Context& ctx, const s_Options& options)
-{
-    const s_Module& module = getModule_vqSYGHjE(fname, ctx);
-    if (module.in)
-    {
-        if (module.order)
-            return module.order;
-        else
-        {
-            /*MOV*/ fu::str error = ""_fu;
-            each_bclOPZ0I(via, via, error, ctx);
-            fu::fail(static_cast<fu::str&&>(error));
-        };
+        /*MOV*/ fu::str uni0n {};
+        appendRegion(uni0n, (unsigned(locid) << 1u));
+        return s_Lifetime { static_cast<fu::str&&>(uni0n) };
     }
     else
     {
-        s_Module module_1 = clone_G5fNGz6v(module);
-        if (module_1.out)
-            fu::fail("BUG: !!module.out"_fu);
-        else
-        {
-            /*MOV*/ fu::str src = getFile_F2wCJLDv(fu::str(fname), ctx);
-            if (!src)
+        BUG_9SZtRVJ0("Lifetime_from: Bad locid"_fu, _here, ctx);
+    };
+}
+
+s_Lifetime Lifetime_from_OWsbkiDb(const int argidx, const s_TokenIdx& _here, const s_Context& ctx)
+{
+    if ((argidx >= 0))
+    {
+        /*MOV*/ fu::str uni0n {};
+        appendRegion(uni0n, ((unsigned(argidx) << 2u) | 3u));
+        return s_Lifetime { static_cast<fu::str&&>(uni0n) };
+    }
+    else
+    {
+        BUG_9SZtRVJ0("Lifetime_from: Bad argidx"_fu, _here, ctx);
+    };
+}
+
+                                #ifndef DEF_x3Cx3E_6K8lyb3JRba
+                                #define DEF_x3Cx3E_6K8lyb3JRba
+inline int x3Cx3E_6K8lyb3J(const unsigned a, const unsigned b)
+{
+    if (a < b)
+        return -1;
+    else if (a > b)
+        return +1;
+    else
+        return 0;
+
+}
+                                #endif
+
+inline static fu::str& l_31_0_jAvKb8DA(fu::view<char> raw, s_Lifetime& result)
+{
+    return (result.uni0n += raw);
+}
+
+s_Lifetime Lifetime_union_doHetu2L(const s_Lifetime& a, const s_Lifetime& b)
+{
+    /*MOV*/ s_Lifetime result {};
+
+    { {
+        fu::view<char> l_chars = a.uni0n;
+        fu::view<char> r_chars = b.uni0n;
+        int l_start {};
+        int r_start {};
+        int l_offset {};
+        int r_offset {};
+        unsigned l {};
+        unsigned r {};
+        bool l_dirty = true;
+        bool r_dirty = true;
+        const bool l_done = false;
+        const bool r_done = false;
+        fu::view<char> BL_2_v {};
+        fu::view<char> rest_chars = (__extension__ (
+        { {
+            for (; ; )
             {
-                const s_TokenIdx& token = if_last_q6WLf81s(via);
-                if (token)
+                if (l_dirty)
                 {
-                    fu::str err = "Could not resolve this import."_fu;
-                    const int dirEnd = find_KonMQ4KB(fname, '\v');
-                    if (dirEnd > 0)
+                    l_dirty = false;
+                    l_start = l_offset;
+                    if (l_offset < l_chars.size())
+                        l = parseRegion(l_offset, l_chars);
+                    else if (!result)
                     {
-                        err += ("\n\n\tSearched relative to:    \t"_fu + qBAD_3PsDzMvu(fu::slice(fname, 0, dirEnd)));
-                        err += ("\n\tLooking for a file named:\t"_fu + qBAD_3PsDzMvu(fu::slice(fname, (dirEnd + 1))));
+                        return s_Lifetime(b);
+                    }
+                    else
+                    {
+                        { BL_2_v = fu::get_view(r_chars, (r_dirty ? r_offset : r_start)); goto BL_2; };
                     };
-                    FAIL_lTxCw5lL(err, token, ctx);
-                }
-                else
-                    fu::fail((("Could not load "_fu + qBAD_3PsDzMvu(fname)) + ": file does not exist or is empty."_fu));
-
-            }
-            else
-            {
-                const s_ModuleStat stat0 = ModuleStat_now_pUbtfzLn();
-                /*MOV*/ s_LexerOutput lexer_result = lex_XyQUXQaS(src, fname);
-                const s_ModuleStat stat1 = ModuleStat_now_pUbtfzLn();
-                /*MOV*/ s_ParserOutput parser_result = parse_SmcwBTdS(module_1.modid, fname, src, lexer_result.tokens, options);
-                const s_ModuleStat stat2 = ModuleStat_now_pUbtfzLn();
-                module_1.in = s_ModuleInputs { static_cast<fu::str&&>(src), static_cast<s_LexerOutput&&>(lexer_result), static_cast<s_ParserOutput&&>(parser_result) };
-                module_1.stats.lex = (stat1 - stat0);
-                module_1.stats.parse = (stat2 - stat1);
-                setModule_0FYNSelM(module_1, ctx);
-                if (!module_1.order)
+                };
+                if (r_dirty)
                 {
-                    module_1.order.dep_depth = 1;
-                    each_cm6IaAnK(fu::vec<s_Import>(module_1.in.parse.imports), via, ctx, module_1, options);
-                    setModule_0FYNSelM(module_1, ctx);
+                    r_dirty = false;
+                    r_start = r_offset;
+                    if (r_offset < r_chars.size())
+                        r = parseRegion(r_offset, r_chars);
+                    else if (!result)
+                    {
+                        return s_Lifetime(a);
+                    }
+                    else
+                    {
+                        { BL_2_v = fu::get_view(l_chars, (l_dirty ? l_offset : l_start)); goto BL_2; };
+                    };
+                };
+                fu::never BL_13_v {};
+                const int cmp = (l_done ? (r_done ? (__extension__ (
+                {
+                    goto BL_1;
+                (void)0;}), static_cast<fu::never&&>(BL_13_v)) : +1) : (r_done ? -1 : (((l == 0u) != (r == 0u)) ? ((r == 0u) ? -1 : +1) : (((l == 1u) != (r == 1u)) ? ((r == 1u) ? +1 : -1) : x3Cx3E_6K8lyb3J(r, l)))));
+                if (cmp == 0)
+                {
+                    l_dirty = true;
+                    r_dirty = true;
                 }
+                else if (cmp < 0)
+                    l_dirty = true;
                 else
-                    fu::fail("BUG: !!module.order"_fu);
+                    r_dirty = true;
 
-                return (module_1.order ? module_1.order : fu::fail("BUG: !module.order after lexParseDeps."_fu));
+                l_31_0_jAvKb8DA(((cmp > 0) ? fu::get_view(r_chars, r_start, r_offset) : fu::get_view(l_chars, l_start, l_offset)), result);
             };
-        };
+          } BL_2:;
+        (void)0;}), static_cast<fu::view<char>&&>(BL_2_v));
+        result.uni0n += rest_chars;
+      } BL_1:;
     };
-}
-
-                                #ifndef DEF_grow_if_oob_8tJoRZmSJG8
-                                #define DEF_grow_if_oob_8tJoRZmSJG8
-inline fu::vec<int>& grow_if_oob_8tJoRZmS(fu::vec<fu::vec<int>>& a, const int i)
-{
-    if ((a.size() <= i))
-        a.grow((i + 1));
-
-    return a.mutref(i);
-}
-                                #endif
-
-                                #ifndef DEF_join_3dGR2d3chsk
-                                #define DEF_join_3dGR2d3chsk
-inline fu::vec<int> join_3dGR2d3c(fu::view<fu::vec<int>> a)
-{
-    if (a.size() < 2)
-    {
-        if (a.size())
-            return fu::vec<int>(a[0]);
-        else
-        {
-            return fu::vec<int>{};
-        };
-    }
-    else
-    {
-        const int N = 0;
-        int size = a[0].size();
-        for (int i = 1; i < a.size(); i++)
-            size += (N + a[i].size());
-
-        /*MOV*/ fu::vec<int> res {};
-        res.grow<false>(size);
-        fu::view<int> head = a[0];
-        size = head.size();
-        fu::view_assign(fu::get_view_start0_mut(res, head.size()), head);
-        for (int i_1 = 1; i_1 < a.size(); i_1++)
-        {
-            fu::view<int> range = a[i_1];
-            size += N;
-            fu::view_assign(fu::get_view_mut(res, size, (size + range.size())), range);
-            size += range.size();
-        };
-        return /*NRVO*/ res;
-    };
-}
-                                #endif
-
-static void compile_solveCodegen_F9NqtUPL(s_Module& module, const s_Options& options, const s_Context& ctx)
-{
-    // Hoisted:
-    fu::str x {};
-
-    if (module.out)
-        fu::fail("compile_solveCodegen: !!module.out"_fu);
-    else
-    {
-        const s_ModuleStat stat0 = ModuleStat_now_pUbtfzLn();
-        module.out.solve = solve_veJH3XG6(ctx, module, options);
-        if (options.dev & s_DevOptions_DEV_PrintAST)
-        {
-            fu::println((fu::slate<1, fu::str> { static_cast<fu::str&&>((x = inspect_SOTjKmcd(module), x)) }));
-        };
-        const s_ModuleStat stat1 = ModuleStat_now_pUbtfzLn();
-        module.out.cpp = cpp_codegen_RSs3vpiZ(module, ctx, options);
-        if (options.dev & s_DevOptions_DEV_PrintCG)
-        {
-            const fu::str* BL_5_v;
-            fu::println((fu::slate<1, fu::str> { fu::str((__extension__ (
-            {
-                const fu::str& x_1 = module.out.cpp.src;
-                BL_5_v = &(x_1);
-            (void)0;}), *BL_5_v)) }));
-        };
-        const s_ModuleStat stat2 = ModuleStat_now_pUbtfzLn();
-        module.stats.solve = (stat1 - stat0);
-        module.stats.codegen = (stat2 - stat1);
-    };
-}
-
-                                #ifndef DEF_x7E_gCeFmDFw0L8
-                                #define DEF_x7E_gCeFmDFw0L8
-inline fu::str x7E_gCeFmDFw(fu::view<char> a, fu::view<char> b)
-{
-    return a + b;
-}
-                                #endif
-
-inline static s_Result l_3_2_iERBsFqI(const int modid, const s_Context& ctx, const s_Options& options)
-{
-
-    try
-    {
-    {
-        const s_Module& module = ctx.modules[modid];
-        if (module.out)
-        {
-            return s_Result{};
-        }
-        else
-        {
-            /*MOV*/ s_Module module_1 = clone_G5fNGz6v(module);
-            compile_solveCodegen_F9NqtUPL(module_1, options, ctx);
-            return s_Result { static_cast<s_Module&&>(module_1), fu::str{} };
-        };
-    }
-    }
-    catch (const std::exception& o_0)
-    {
-        fu::str error = fu::to_str(o_0.what());
-
-    {
-        return s_Result { s_Module{}, (error ? static_cast<fu::str&&>(error) : x7E_gCeFmDFw("COMPILER BUG: Empty error string, modid="_fu, fu::i64dec(modid))) };
-    }
-    }
-;
-}
-
-inline static s_Result& l_39_2_bxW6dAqh(const int i, fu::view<int> arr, fu::view_mut<s_Result> result, const s_Context& ctx, const s_Options& options)
-{
-    return (result.mutref(i) = l_3_2_iERBsFqI(arr[i], ctx, options));
-}
-
-inline static void parallel_for_f1yRo0FN(const int min, int end, fu::view<int> arr, fu::view_mut<s_Result> result, const s_Context& ctx, const s_Options& options)
-{
-    int start = (end & 0);
-    (void) start;
-
-    typedef decltype(start) start_t;
-    typedef decltype(end) end_t;
-
-    fu::parallel_for(size_t(end), size_t(min > 1 ? min : 1), [&](size_t Start, size_t End)
-    {
-        auto start = (start_t) Start;
-        auto end   = (end_t  ) End;
-
-    for (int i = start; i < end; i++)
-        l_39_2_bxW6dAqh(i, arr, result, ctx, options);
-
-    });
-
-}
-
-                                #ifndef DEF_map_CMv3O7ZDjH5
-                                #define DEF_map_CMv3O7ZDjH5
-inline fu::vec<s_Result> map_CMv3O7ZD(fu::view<int> arr, const int min, const s_Context& ctx, const s_Options& options)
-{
-    /*MOV*/ fu::vec<s_Result> result {};
-    result.grow<false>(arr.size());
-    parallel_for_f1yRo0FN(min, arr.size(), arr, result, ctx, options);
     return /*NRVO*/ result;
 }
-                                #endif
 
-inline static void l_3_3_NNZa28GY(const s_Result& result, s_Context& ctx)
+inline static fu::str& l_31_4_CscKSjNI(fu::view<char> raw, s_Lifetime& result)
 {
-    if (result.error)
-        fu::fail(fu::str(result.error));
-    else if (result.module.out)
-        setModule_0FYNSelM(result.module, ctx);
-
+    return (result.uni0n += raw);
 }
 
-                                #ifndef DEF_each_IeB436UMqx8
-                                #define DEF_each_IeB436UMqx8
-inline void each_IeB436UM(fu::view<s_Result> a, s_Context& ctx)
+s_Lifetime Lifetime_inter_k7qB83TF(const s_Lifetime& a, const s_Lifetime& b)
 {
-    for (int i = 0; i < a.size(); i++)
-        l_3_3_NNZa28GY(a[i], ctx);
+    /*MOV*/ s_Lifetime result {};
 
-}
-                                #endif
-
-inline static void l_3_4_37AzOvWB(const int modid, s_Context& ctx, const s_Options& options)
-{
-    const s_Module& module = ctx.modules[modid];
-    if (!module.out)
-    {
-        s_Module module_1 = clone_G5fNGz6v(module);
-        compile_solveCodegen_F9NqtUPL(module_1, options, ctx);
-        setModule_0FYNSelM(module_1, ctx);
-    };
-}
-
-                                #ifndef DEF_each_M9RwgTdELzj
-                                #define DEF_each_M9RwgTdELzj
-inline void each_M9RwgTdE(fu::view<int> a, s_Context& ctx, const s_Options& options)
-{
-    for (int i = 0; i < a.size(); i++)
-        l_3_4_37AzOvWB(a[i], ctx, options);
-
-}
-                                #endif
-
-void compile_adoKzaAQ(const fu::str& fname, s_Context& ctx, const s_Options& options)
-{
-    compile_lexParseDeps_jCXXspBS(fname, fu::view<s_TokenIdx>{}, ctx, options);
-    fu::vec<fu::vec<int>> dep_order {};
-    for (int i = 0; i < ctx.modules.size(); i++)
-    {
-        const s_Module& module = ctx.modules[i];
-        grow_if_oob_8tJoRZmS(dep_order, module.order.dep_depth) += module.modid;
-    };
-    ctx.dep_order = join_3dGR2d3c(dep_order);
-    for (int i_1 = 0; i_1 < dep_order.size(); i_1++)
-    {
-        fu::view<int> modids = dep_order[i_1];
-        if (options.dev & s_DevOptions_DEV_Parallel)
+    { {
+        fu::view<char> l_chars = a.uni0n;
+        fu::view<char> r_chars = b.uni0n;
+        int l_start {};
+        int r_start {};
+        int l_offset {};
+        int r_offset {};
+        unsigned l {};
+        unsigned r {};
+        bool l_dirty = true;
+        bool r_dirty = true;
+        const bool l_done = false;
+        const bool r_done = false;
+        for (; ; )
         {
-            fu::vec<s_Result> results = map_CMv3O7ZD(modids, 0, ctx, options);
-            each_IeB436UM(results, ctx);
-        }
-        else
-            each_M9RwgTdE(modids, ctx, options);
-
-    };
-}
-
-                                #ifndef DEF_if_last_uwKwzsvZqOh
-                                #define DEF_if_last_uwKwzsvZqOh
-inline char if_last_uwKwzsvZ(fu::view<char> s)
-{
-    if (s.size())
-        return s[(s.size() - 1)];
-    else
-    {
-        return char{};
-    };
-}
-                                #endif
-
-static fu::str absdir_pPg01rN2(const fu::str& a)
-{
-    if (if_last_uwKwzsvZ(a) == '/')
-        return fu::str(a);
-    else
-        return a + '/';
-
-}
-
-static const fu::str HOME fu_INIT_PRIORITY(1013) = absdir_pPg01rN2(get_vT58MJUZ("HOME"_fu));
-
-fu::str locate_FUDIR_LI96RGZs()
-{
-    /*MOV*/ fu::str dir = (HOME + "fu/"_fu);
-    fu::str fn = (dir + "src/compiler.fu"_fu);
-    const int64_t fs = size_zTt3fZzW(fu::str(fn));
-    if (fs > 1000ll)
-        return /*NRVO*/ dir;
-    else
-        fu::fail(x7E_gCeFmDFw((("Bad compiler.fu: "_fu + fn) + ": "_fu), fu::i64dec(fs)));
-
-}
-
-                                #ifndef DEF_FUDIR
-                                #define DEF_FUDIR
-extern const fu::str FUDIR fu_INIT_PRIORITY(1013) = locate_FUDIR_LI96RGZs();
-                                #endif
-
-                                #ifndef DEF_DEFAULT_WORKSPACE
-                                #define DEF_DEFAULT_WORKSPACE
-extern const fu::str DEFAULT_WORKSPACE fu_INIT_PRIORITY(1013) = (FUDIR + "build-cpp/"_fu);
-                                #endif
-
-                                #ifndef DEF_CTX_PRELUDE
-                                #define DEF_CTX_PRELUDE
-extern const s_Context CTX_PRELUDE;
-                                #endif
-
-                                #ifndef DEF_map_kSAY8xRNAgb
-                                #define DEF_map_kSAY8xRNAgb
-inline fu::vec<s_Module> map_kSAY8xRN(fu::view<s_Module> a)
-{
-    /*MOV*/ fu::vec<s_Module> res {};
-    res.grow<false>(a.size());
-    for (int i = 0; i < a.size(); i++)
-        res.mutref(i) = clone_G5fNGz6v(a[i]);
-
-    return /*NRVO*/ res;
-}
-                                #endif
-
-                                #ifndef DEF_clone_Zb6yNbpahB3
-                                #define DEF_clone_Zb6yNbpahB3
-inline fu::vec<s_Module> clone_Zb6yNbpa(fu::view<s_Module> a)
-{
-    return map_kSAY8xRN(a);
-}
-                                #endif
-
-                                #ifndef DEF_clone_1KjRxs5s6Zg
-                                #define DEF_clone_1KjRxs5s6Zg
-inline const s_Map_iIYL7rECCBg& clone_1KjRxs5s(const s_Map_iIYL7rECCBg& a)
-{
-    return a;
-}
-                                #endif
-
-                                #ifndef DEF_clone_OwUtczlseN4
-                                #define DEF_clone_OwUtczlseN4
-inline s_Context clone_OwUtczls(const s_Context& a)
-{
-    /*MOV*/ s_Context res {};
-
-    {
-        res.base_dir = clone_T1Jf1Z0K(a.base_dir);
-        res.modules = clone_Zb6yNbpa(a.modules);
-        res.dep_order = clone_KE4Ju1yD(a.dep_order);
-        res.files = clone_1KjRxs5s(a.files);
-        res.fuzzy = clone_1KjRxs5s(a.fuzzy);
-    };
-    return /*NRVO*/ res;
-}
-                                #endif
-
-void compile_and_build_ioExL0pD(const fu::str& fname, const fu::str& dir_wrk, const fu::str& bin, const fu::str& dir_obj, const fu::str& dir_src, const fu::str& dir_cpp, fu::view<char> scheme, const bool run, const bool shared, const bool hotswap, const bool nocache, fu::view<fu::str> flags_cc, fu::view<fu::str> flags_ld)
-{
-    // Hoisted:
-    fu::str x {};
-    fu::str x_1 {};
-    fu::str x_2 {};
-    fu::str x_3 {};
-
-    s_Context ctx = clone_OwUtczls(CTX_PRELUDE);
-    const s_Options options = s_Options { s_Lint{}, s_SolverNotes{}, s_CGDefects{}, s_DevOptions_DEV_Parallel, {} };
-
-    {
-        fu::println((fu::slate<2, fu::str> { static_cast<fu::str&&>((x = "COMPILE "_fu, x)), fu::str(fname) }));
-        const double t0 = hr_CPFg3qvV();
-        compile_adoKzaAQ(fname, ctx, options);
-        const double t1 = hr_CPFg3qvV();
-        const double tt = (t1 - t0);
-        if ((t1 - t0) > 0.025)
-        {
-            s_ModuleStat lex {};
-            s_ModuleStat parse {};
-            s_ModuleStat solve {};
-            s_ModuleStat codegen {};
-            fu::view<s_Module> m = ctx.modules;
-            for (int i = 0; i < m.size(); i++)
+            if (l_dirty)
             {
-                lex += m[i].stats.lex;
-                parse += m[i].stats.parse;
-                solve += m[i].stats.solve;
-                codegen += m[i].stats.codegen;
+                l_dirty = false;
+                l_start = l_offset;
+                if (l_offset < l_chars.size())
+                    l = parseRegion(l_offset, l_chars);
+                else
+                    goto BL_1;
+
             };
-            ModuleStat_print_ldE6SCqb(lex, "\n    lex "_fu, ""_fu);
-            ModuleStat_print_ldE6SCqb(parse, "  parse "_fu, ""_fu);
-            ModuleStat_print_ldE6SCqb(solve, "  solve "_fu, ""_fu);
-            ModuleStat_print_ldE6SCqb(codegen, "codegen "_fu, "\n"_fu);
+            if (r_dirty)
+            {
+                r_dirty = false;
+                r_start = r_offset;
+                if (r_offset < r_chars.size())
+                    r = parseRegion(r_offset, r_chars);
+                else
+                    goto BL_1;
+
+            };
+            fu::never BL_10_v {};
+            const int cmp = (l_done ? (r_done ? (__extension__ (
+            {
+                goto BL_1;
+            (void)0;}), static_cast<fu::never&&>(BL_10_v)) : +1) : (r_done ? -1 : (((l == 0u) != (r == 0u)) ? ((r == 0u) ? -1 : +1) : (((l == 1u) != (r == 1u)) ? ((r == 1u) ? +1 : -1) : x3Cx3E_6K8lyb3J(r, l)))));
+            if (cmp == 0)
+            {
+                l_dirty = true;
+                r_dirty = true;
+                l_31_4_CscKSjNI(fu::get_view(l_chars, l_start, l_offset), result);
+            }
+            else if (cmp < 0)
+                l_dirty = true;
+            else
+                r_dirty = true;
+
         };
-        fu::println((fu::slate<3, fu::str> { static_cast<fu::str&&>((x_1 = "        "_fu, x_1)), static_cast<fu::str&&>((x_2 = fu::f64dec(tt), x_2)), static_cast<fu::str&&>((x_3 = "s\n"_fu, x_3)) }));
+      } BL_1:;
     };
-    build_DaUeZzJn(fu::str(dir_wrk), FUDIR, fu::str{}, fu::str(bin), fu::str(dir_obj), fu::str(dir_src), fu::str(dir_cpp), fname, scheme, s_DEV_OnFail{}, run, shared, hotswap, nocache, flags_cc, flags_ld, ctx);
+    return /*NRVO*/ result;
+}
+
+bool Lifetime_hasInter_k7qB83TF(const s_Lifetime& a, const s_Lifetime& b)
+{
+
+    { {
+        fu::view<char> l_chars = a.uni0n;
+        fu::view<char> r_chars = b.uni0n;
+        int l_start {};
+        int r_start {};
+        int l_offset {};
+        int r_offset {};
+        unsigned l {};
+        unsigned r {};
+        bool l_dirty = true;
+        bool r_dirty = true;
+        const bool l_done = false;
+        const bool r_done = false;
+        for (; ; )
+        {
+            if (l_dirty)
+            {
+                l_dirty = false;
+                l_start = l_offset;
+                if (l_offset < l_chars.size())
+                    l = parseRegion(l_offset, l_chars);
+                else
+                    goto BL_1;
+
+            };
+            if (r_dirty)
+            {
+                r_dirty = false;
+                r_start = r_offset;
+                if (r_offset < r_chars.size())
+                    r = parseRegion(r_offset, r_chars);
+                else
+                    goto BL_1;
+
+            };
+            fu::never BL_10_v {};
+            const int cmp = (l_done ? (r_done ? (__extension__ (
+            {
+                goto BL_1;
+            (void)0;}), static_cast<fu::never&&>(BL_10_v)) : +1) : (r_done ? -1 : (((l == 0u) != (r == 0u)) ? ((r == 0u) ? -1 : +1) : (((l == 1u) != (r == 1u)) ? ((r == 1u) ? +1 : -1) : x3Cx3E_6K8lyb3J(r, l)))));
+            if (cmp == 0)
+            {
+                l_dirty = true;
+                r_dirty = true;
+                return true;
+            }
+            else if (cmp < 0)
+                l_dirty = true;
+            else
+                r_dirty = true;
+
+        };
+      } BL_1:;
+    };
+    return false;
+}
+
+void Lifetime_add_PKO62rQ1(s_Lifetime& l, const s_Lifetime& r)
+{
+    if (r)
+    {
+        l = Lifetime_union_doHetu2L(l, r);
+    };
+}
+
+                                #ifndef DEF_Lifetime_static
+                                #define DEF_Lifetime_static
+extern const s_Lifetime Lifetime_static fu_INIT_PRIORITY(1008) = s_Lifetime { fu::str { fu::slate<1, char> { Region_STATIC } } };
+                                #endif
+
+                                #ifndef DEF_Lifetime_temporary
+                                #define DEF_Lifetime_temporary
+extern const s_Lifetime Lifetime_temporary fu_INIT_PRIORITY(1008) = s_Lifetime { fu::str { fu::slate<1, char> { Region_TEMP } } };
+                                #endif
+
+                                #ifndef DEF_starts_Db9eGFmCKDj
+                                #define DEF_starts_Db9eGFmCKDj
+inline bool starts_Db9eGFmC(fu::view<char> a, const char with)
+{
+    return a.size() && (a[0] == with);
+}
+                                #endif
+
+bool hasTemporary_Sd1Oo4TV(const s_Lifetime& lifetime)
+{
+    return starts_Db9eGFmC(lifetime.uni0n, Region_TEMP);
+}
+
+                                #ifndef DEF_ends_Db9eGFmCKDj
+                                #define DEF_ends_Db9eGFmCKDj
+inline bool ends_Db9eGFmC(fu::view<char> a, const char with)
+{
+    return a.size() && (a[(a.size() - 1)] == with);
+}
+                                #endif
+
+bool hasStatic_Sd1Oo4TV(const s_Lifetime& lifetime)
+{
+    return ends_Db9eGFmC(lifetime.uni0n, Region_STATIC);
+}
+
+inline static bool l_31_10_ihXsZyYE(const int locid, const int search)
+{
+    return locid == search;
+}
+
+inline static bool Lifetime_some_k8gkrUbl(const s_Lifetime& lifetime, const int search)
+{
+
+    {
+        fu::view<char> chars = lifetime.uni0n;
+        int offset = 0;
+        while (offset < chars.size())
+        {
+            const unsigned r = parseRegion(offset, chars);
+            const int locid = int(((r & 1u) ? 0u : (r >> 1u)));
+            if (l_31_10_ihXsZyYE(locid, search))
+                return true;
+
+        };
+    };
+    return false;
+}
+
+bool Lifetime_has_62UtfSbx(const s_Lifetime& lifetime, const int search)
+{
+    return Lifetime_some_k8gkrUbl(lifetime, search);
+}
+
+inline static bool l_31_11_puBlnM9l(const bool isArgIdx, const int argidx, const int search)
+{
+    if (isArgIdx)
+        return argidx == search;
+    else
+        return false;
+
+}
+
+inline static bool Lifetime_some_A4mx9NlK(const s_Lifetime& lifetime, const int search)
+{
+
+    {
+        fu::view<char> chars = lifetime.uni0n;
+        int offset = 0;
+        while (offset < chars.size())
+        {
+            const unsigned r = parseRegion(offset, chars);
+            const int argidx = int(((r & 1u) ? (r >> 2u) : 0u));
+            const bool isArgIdx = ((r & 3u) == 3u);
+            if (l_31_11_puBlnM9l(isArgIdx, argidx, search))
+                return true;
+
+        };
+    };
+    return false;
+}
+
+bool Lifetime_has_NRjdLNHo(const s_Lifetime& lifetime, const int search)
+{
+    return Lifetime_some_A4mx9NlK(lifetime, search);
+}
+
+s_Lifetime Lifetime_makeShared_PkVF5Di3(const s_Lifetime& lifetime)
+{
+    return Lifetime_union_doHetu2L(lifetime, Lifetime_static);
 }
 
 #endif

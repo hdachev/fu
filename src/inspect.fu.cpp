@@ -18,6 +18,7 @@ typedef uint16_t s_DeclAsserts;
 typedef fu::u8 s_ParseSyntax;
 typedef unsigned s_Flags;
 struct s_TokenIdx;
+struct s_Import;
 struct s_ModuleOrder;
 struct s_ModuleOutputs;
 struct s_Struct;
@@ -29,7 +30,6 @@ struct s_Helpers;
 struct s_Type;
 struct s_ValueType;
 struct s_Lifetime;
-struct s_Region;
 typedef fu::u8 s_VFacts;
 struct s_Scope;
 struct s_Overload;
@@ -46,12 +46,12 @@ struct s_CodegenOutput;
 typedef fu::u8 s_CGDefects;
 struct s_ModuleStats;
 struct s_ModuleStat;
-fu::str qID_bF2G8fJR(fu::view<char>);
-fu::str qLT_bF2G8fJR(fu::view<char>);
-fu::str qKW_bF2G8fJR(fu::view<char>);
-fu::str qBAD_bF2G8fJR(fu::view<char>);
-static void inspect_rDbbCcMW(const s_SolvedNode&, fu::view<char>, const s_Module&, fu::str&, int);
-fu::str trim_UiSEgboz(const fu::str&);
+fu::str qID_3PsDzMvu(const fu::str&);
+fu::str qLT_3PsDzMvu(const fu::str&);
+fu::str qKW_3PsDzMvu(const fu::str&);
+fu::str qBAD_3PsDzMvu(const fu::str&);
+static void inspect_Z75vBHWs(const s_SolvedNode&, fu::view<char>, const s_Module&, fu::str&, int);
+fu::str trim_VW4uLx7L(const fu::str&);
 
                                 #ifndef DEF_s_kind
                                 #define DEF_s_kind
@@ -87,40 +87,41 @@ enum s_kind: fu::u8
     s_kind_try = 28u,
     s_kind_let = 29u,
     s_kind_letdef = 30u,
-    s_kind_typedef = 31u,
-    s_kind_typecast = 32u,
-    s_kind_typeassert = 33u,
-    s_kind_typeparam = 34u,
-    s_kind_unwrap = 35u,
-    s_kind_pragma = 36u,
-    s_kind_break = 37u,
-    s_kind_return = 38u,
-    s_kind_continue = 39u,
-    s_kind_import = 40u,
-    s_kind_addroffn = 41u,
-    s_kind_forfieldsof = 42u,
-    s_kind_struct = 43u,
-    s_kind_union = 44u,
-    s_kind_primitive = 45u,
-    s_kind_flags = 46u,
-    s_kind_enum = 47u,
-    s_kind_members = 48u,
-    s_kind_fndef = 49u,
-    s_kind_fn = 50u,
-    s_kind_fnbranch = 51u,
-    s_kind_pattern = 52u,
-    s_kind_typeunion = 53u,
-    s_kind_typetag = 54u,
-    s_kind___relaxed = 55u,
-    s_kind___convert = 56u,
+    s_kind_typecast = 31u,
+    s_kind_typeassert = 32u,
+    s_kind_typeparam = 33u,
+    s_kind_unwrap = 34u,
+    s_kind_pragma = 35u,
+    s_kind_break = 36u,
+    s_kind_return = 37u,
+    s_kind_continue = 38u,
+    s_kind_import = 39u,
+    s_kind_addroffn = 40u,
+    s_kind_forfieldsof = 41u,
+    s_kind_struct = 42u,
+    s_kind_union = 43u,
+    s_kind_primitive = 44u,
+    s_kind_flags = 45u,
+    s_kind_enum = 46u,
+    s_kind_members = 47u,
+    s_kind_fndef = 48u,
+    s_kind_fn = 49u,
+    s_kind_fnbranch = 50u,
+    s_kind_pattern = 51u,
+    s_kind_typeunion = 52u,
+    s_kind_typetag = 53u,
+    s_kind___relaxed = 54u,
+    s_kind___convert = 55u,
+    s_kind___preceding_ref_arg = 56u,
     s_kind___no_kind_yet = 57u,
-    s_kind_type = 58u,
-    s_kind_var = 59u,
-    s_kind_field = 60u,
-    s_kind_enumv = 61u,
-    s_kind_template = 62u,
-    s_kind___native = 63u,
-    s_kind_inline = 64u,
+    s_kind___tombstone = 58u,
+    s_kind_type = 59u,
+    s_kind_var = 60u,
+    s_kind_field = 61u,
+    s_kind_enumv = 62u,
+    s_kind_template = 63u,
+    s_kind___native = 64u,
+    s_kind_inline = 65u,
 };
                                 #endif
 
@@ -159,13 +160,17 @@ inline constexpr s_DeclAsserts MASK_s_DeclAsserts
 inline constexpr s_ParseSyntax s_ParseSyntax_PS_ID = s_ParseSyntax(1u);
 inline constexpr s_ParseSyntax s_ParseSyntax_PS_PARENS = s_ParseSyntax(2u);
 inline constexpr s_ParseSyntax s_ParseSyntax_PS_SEMI = s_ParseSyntax(4u);
-inline constexpr s_ParseSyntax s_ParseSyntax_PS_DISCARD = s_ParseSyntax(8u);
+inline constexpr s_ParseSyntax s_ParseSyntax_PS_DISCARD_IF_BLOCK_TAIL = s_ParseSyntax(8u);
+inline constexpr s_ParseSyntax s_ParseSyntax_PS_ALWAYS_DISCARD = s_ParseSyntax(16u);
+inline constexpr s_ParseSyntax s_ParseSyntax_PS_NOT_AN_EXPRESSION = s_ParseSyntax(32u);
 
 inline constexpr s_ParseSyntax MASK_s_ParseSyntax
     = s_ParseSyntax_PS_ID
     | s_ParseSyntax_PS_PARENS
     | s_ParseSyntax_PS_SEMI
-    | s_ParseSyntax_PS_DISCARD;
+    | s_ParseSyntax_PS_DISCARD_IF_BLOCK_TAIL
+    | s_ParseSyntax_PS_ALWAYS_DISCARD
+    | s_ParseSyntax_PS_NOT_AN_EXPRESSION;
                                 #endif
 
                                 #ifndef DEF_s_Flags
@@ -173,37 +178,39 @@ inline constexpr s_ParseSyntax MASK_s_ParseSyntax
 inline constexpr s_Flags s_Flags_F_METHOD = 1u;
 inline constexpr s_Flags s_Flags_F_OPERATOR = 2u;
 inline constexpr s_Flags s_Flags_F_ACCESS = 4u;
-inline constexpr s_Flags s_Flags_F_COMPOUND_ID = 8u;
-inline constexpr s_Flags s_Flags_F_WRITTEN_TO = 16u;
-inline constexpr s_Flags s_Flags_F_LAX = 32u;
-inline constexpr s_Flags s_Flags_F_ARG = 64u;
-inline constexpr s_Flags s_Flags_F_COW_INSIDE = 128u;
-inline constexpr s_Flags s_Flags_F_MOVED_FROM = 256u;
-inline constexpr s_Flags s_Flags_F_CONVERSION = 512u;
-inline constexpr s_Flags s_Flags_F_OPT_ARG = 1024u;
-inline constexpr s_Flags s_Flags_F_MUT = 2048u;
-inline constexpr s_Flags s_Flags_F_REF = 4096u;
-inline constexpr s_Flags s_Flags_F_IMPLICIT = 8192u;
-inline constexpr s_Flags s_Flags_F_USING = 16384u;
-inline constexpr s_Flags s_Flags_F_MUSTNAME = 32768u;
-inline constexpr s_Flags s_Flags_F_SHADOW = 65536u;
-inline constexpr s_Flags s_Flags_F_PUB = 131072u;
-inline constexpr s_Flags s_Flags_F_EXTERN = 262144u;
-inline constexpr s_Flags s_Flags_F_HOTSWAP = 524288u;
-inline constexpr s_Flags s_Flags_F_PREDICATE = 1048576u;
-inline constexpr s_Flags s_Flags_F_NAMED_ARGS = 2097152u;
-inline constexpr s_Flags s_Flags_F_OOE_RTL = 4194304u;
-inline constexpr s_Flags s_Flags_F_REST_ARG = 8388608u;
-inline constexpr s_Flags s_Flags_F_RELAXABLE_REF = 16777216u;
-inline constexpr s_Flags s_Flags_F_TEMPLATE = 33554432u;
-inline constexpr s_Flags s_Flags_F_INLINE = 67108864u;
-inline constexpr s_Flags s_Flags_F_LAMBDA = 134217728u;
-inline constexpr s_Flags s_Flags_F_INJECTED = 268435456u;
+inline constexpr s_Flags s_Flags_F_TYPENAME = 8u;
+inline constexpr s_Flags s_Flags_F_COMPOUND_ID = 16u;
+inline constexpr s_Flags s_Flags_F_WRITTEN_TO = 32u;
+inline constexpr s_Flags s_Flags_F_LAX = 64u;
+inline constexpr s_Flags s_Flags_F_ARG = 128u;
+inline constexpr s_Flags s_Flags_F_COW_INSIDE = 256u;
+inline constexpr s_Flags s_Flags_F_MOVED_FROM = 512u;
+inline constexpr s_Flags s_Flags_F_CONVERSION = 1024u;
+inline constexpr s_Flags s_Flags_F_OPT_ARG = 2048u;
+inline constexpr s_Flags s_Flags_F_MUT = 4096u;
+inline constexpr s_Flags s_Flags_F_REF = 8192u;
+inline constexpr s_Flags s_Flags_F_IMPLICIT = 16384u;
+inline constexpr s_Flags s_Flags_F_USING = 32768u;
+inline constexpr s_Flags s_Flags_F_MUSTNAME = 65536u;
+inline constexpr s_Flags s_Flags_F_SHADOW = 131072u;
+inline constexpr s_Flags s_Flags_F_PUB = 262144u;
+inline constexpr s_Flags s_Flags_F_EXTERN = 524288u;
+inline constexpr s_Flags s_Flags_F_HOTSWAP = 1048576u;
+inline constexpr s_Flags s_Flags_F_PREDICATE = 2097152u;
+inline constexpr s_Flags s_Flags_F_NAMED_ARGS = 4194304u;
+inline constexpr s_Flags s_Flags_F_OOE_RTL = 8388608u;
+inline constexpr s_Flags s_Flags_F_REST_ARG = 16777216u;
+inline constexpr s_Flags s_Flags_F_RELAXABLE_REF = 33554432u;
+inline constexpr s_Flags s_Flags_F_TEMPLATE = 67108864u;
+inline constexpr s_Flags s_Flags_F_INLINE = 134217728u;
+inline constexpr s_Flags s_Flags_F_LAMBDA = 268435456u;
+inline constexpr s_Flags s_Flags_F_INJECTED = 536870912u;
 
 inline constexpr s_Flags MASK_s_Flags
     = s_Flags_F_METHOD
     | s_Flags_F_OPERATOR
     | s_Flags_F_ACCESS
+    | s_Flags_F_TYPENAME
     | s_Flags_F_COMPOUND_ID
     | s_Flags_F_WRITTEN_TO
     | s_Flags_F_LAX
@@ -333,28 +340,26 @@ inline constexpr s_SolverNotes s_SolverNotes_N_TypeReopen = 32;
 inline constexpr s_SolverNotes s_SolverNotes_N_DeadCode = 64;
 inline constexpr s_SolverNotes s_SolverNotes_N_DeadCall = 128;
 inline constexpr s_SolverNotes s_SolverNotes_N_DeadLet = 256;
-inline constexpr s_SolverNotes s_SolverNotes_N_DeadIfCond = 512;
-inline constexpr s_SolverNotes s_SolverNotes_N_DeadIfCons = 1024;
-inline constexpr s_SolverNotes s_SolverNotes_N_DeadArrlit = 2048;
-inline constexpr s_SolverNotes s_SolverNotes_N_DeadLoopInit = 4096;
-inline constexpr s_SolverNotes s_SolverNotes_N_DeadConv = 8192;
-inline constexpr s_SolverNotes s_SolverNotes_N_NonTrivAutoCopy = 16384;
-inline constexpr s_SolverNotes s_SolverNotes_N_RelaxRespec = 32768;
-inline constexpr s_SolverNotes s_SolverNotes_N_UnusedImplicit = 65536;
-inline constexpr s_SolverNotes s_SolverNotes_N_UnusedCall = 131072;
-inline constexpr s_SolverNotes s_SolverNotes_N_UnusedDefer = 262144;
-inline constexpr s_SolverNotes s_SolverNotes_N_UnusedTry = 524288;
-inline constexpr s_SolverNotes s_SolverNotes_N_UnusedAndOr = 1048576;
-inline constexpr s_SolverNotes s_SolverNotes_N_UnusedIfElse = 2097152;
-inline constexpr s_SolverNotes s_SolverNotes_N_UnusedArrlit = 4194304;
-inline constexpr s_SolverNotes s_SolverNotes_N_UnusedLet = 8388608;
-inline constexpr s_SolverNotes s_SolverNotes_N_BckMustSeq = 16777216;
-inline constexpr s_SolverNotes s_SolverNotes_N_AARMustSeq = 33554432;
-inline constexpr s_SolverNotes s_SolverNotes_N_AARSoftRisk = 67108864;
-inline constexpr s_SolverNotes s_SolverNotes_N_MoveMustSeq = 134217728;
-inline constexpr s_SolverNotes s_SolverNotes_N_SD_HasStaticInit = 268435456;
-inline constexpr s_SolverNotes s_SolverNotes_N_SD_ExternPrivates = 536870912;
-inline constexpr s_SolverNotes s_SolverNotes_N_COWRestrict = 1073741824;
+inline constexpr s_SolverNotes s_SolverNotes_N_DeadArrlit = 512;
+inline constexpr s_SolverNotes s_SolverNotes_N_DeadLoopInit = 1024;
+inline constexpr s_SolverNotes s_SolverNotes_N_DeadConv = 2048;
+inline constexpr s_SolverNotes s_SolverNotes_N_NonTrivAutoCopy = 4096;
+inline constexpr s_SolverNotes s_SolverNotes_N_RelaxRespec = 8192;
+inline constexpr s_SolverNotes s_SolverNotes_N_UnusedImplicit = 16384;
+inline constexpr s_SolverNotes s_SolverNotes_N_UnusedCall = 32768;
+inline constexpr s_SolverNotes s_SolverNotes_N_UnusedDefer = 65536;
+inline constexpr s_SolverNotes s_SolverNotes_N_UnusedTry = 131072;
+inline constexpr s_SolverNotes s_SolverNotes_N_UnusedAndOr = 262144;
+inline constexpr s_SolverNotes s_SolverNotes_N_UnusedIfElse = 524288;
+inline constexpr s_SolverNotes s_SolverNotes_N_UnusedArrlit = 1048576;
+inline constexpr s_SolverNotes s_SolverNotes_N_UnusedLet = 2097152;
+inline constexpr s_SolverNotes s_SolverNotes_N_BckMustSeq = 4194304;
+inline constexpr s_SolverNotes s_SolverNotes_N_AARMustSeq = 8388608;
+inline constexpr s_SolverNotes s_SolverNotes_N_AARSoftRisk = 16777216;
+inline constexpr s_SolverNotes s_SolverNotes_N_MoveMustSeq = 33554432;
+inline constexpr s_SolverNotes s_SolverNotes_N_SD_HasStaticInit = 67108864;
+inline constexpr s_SolverNotes s_SolverNotes_N_SD_ExternPrivates = 134217728;
+inline constexpr s_SolverNotes s_SolverNotes_N_COWRestrict = 268435456;
 
 inline constexpr s_SolverNotes MASK_s_SolverNotes
     = s_SolverNotes_N_FnRecursion
@@ -366,8 +371,6 @@ inline constexpr s_SolverNotes MASK_s_SolverNotes
     | s_SolverNotes_N_DeadCode
     | s_SolverNotes_N_DeadCall
     | s_SolverNotes_N_DeadLet
-    | s_SolverNotes_N_DeadIfCond
-    | s_SolverNotes_N_DeadIfCons
     | s_SolverNotes_N_DeadArrlit
     | s_SolverNotes_N_DeadLoopInit
     | s_SolverNotes_N_DeadConv
@@ -410,9 +413,9 @@ inline constexpr s_CGDefects MASK_s_CGDefects
     | s_CGDefects_IrrelevantLiteral;
                                 #endif
 
-                                #ifndef DEF_s_Region
-                                #define DEF_s_Region
-struct s_Region
+                                #ifndef DEF_s_Helpers
+                                #define DEF_s_Helpers
+struct s_Helpers
 {
     int index;
     explicit operator bool() const noexcept
@@ -424,15 +427,29 @@ struct s_Region
 };
                                 #endif
 
-                                #ifndef DEF_s_Helpers
-                                #define DEF_s_Helpers
-struct s_Helpers
+                                #ifndef DEF_s_Target
+                                #define DEF_s_Target
+struct s_Target
 {
-    int index;
+    uint64_t _packed;
     explicit operator bool() const noexcept
     {
         return false
-            || index
+            || _packed
+        ;
+    }
+};
+                                #endif
+
+                                #ifndef DEF_s_Lifetime
+                                #define DEF_s_Lifetime
+struct s_Lifetime
+{
+    fu::str uni0n;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || uni0n
         ;
     }
 };
@@ -452,20 +469,6 @@ struct s_BitSet
 };
                                 #endif
 
-                                #ifndef DEF_s_Lifetime
-                                #define DEF_s_Lifetime
-struct s_Lifetime
-{
-    fu::vec<s_Region> uni0n;
-    explicit operator bool() const noexcept
-    {
-        return false
-            || uni0n
-        ;
-    }
-};
-                                #endif
-
                                 #ifndef DEF_s_ModuleOrder
                                 #define DEF_s_ModuleOrder
 struct s_ModuleOrder
@@ -480,6 +483,21 @@ struct s_ModuleOrder
 };
                                 #endif
 
+                                #ifndef DEF_s_ScopeItem
+                                #define DEF_s_ScopeItem
+struct s_ScopeItem
+{
+    fu::str id;
+    uint64_t _packed;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || id
+        ;
+    }
+};
+                                #endif
+
                                 #ifndef DEF_s_LexerOutput
                                 #define DEF_s_LexerOutput
 struct s_LexerOutput
@@ -489,38 +507,6 @@ struct s_LexerOutput
     {
         return false
             || tokens
-        ;
-    }
-};
-                                #endif
-
-                                #ifndef DEF_s_Target
-                                #define DEF_s_Target
-struct s_Target
-{
-    int modid;
-    int index;
-    explicit operator bool() const noexcept
-    {
-        return false
-            || modid
-            || index
-        ;
-    }
-};
-                                #endif
-
-                                #ifndef DEF_s_ScopeItem
-                                #define DEF_s_ScopeItem
-struct s_ScopeItem
-{
-    fu::str id;
-    int modid;
-    unsigned packed;
-    explicit operator bool() const noexcept
-    {
-        return false
-            || id
         ;
     }
 };
@@ -670,6 +656,22 @@ struct s_Token
 };
                                 #endif
 
+                                #ifndef DEF_s_Import
+                                #define DEF_s_Import
+struct s_Import
+{
+    s_TokenIdx token;
+    fu::str value;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || token
+            || value
+        ;
+    }
+};
+                                #endif
+
                                 #ifndef DEF_s_Type
                                 #define DEF_s_Type
 struct s_Type
@@ -806,13 +808,13 @@ struct s_Template
 struct s_ParserOutput
 {
     s_Node root;
-    fu::vec<fu::str> fuzimports;
+    fu::vec<s_Import> imports;
     fu::vec<fu::str> warnings;
     explicit operator bool() const noexcept
     {
         return false
             || root
-            || fuzimports
+            || imports
             || warnings
         ;
     }
@@ -913,9 +915,9 @@ struct s_Argument
     s_Type type;
     s_SolvedNode dEfault;
     s_Flags flags;
-    int local;
-    s_BitSet soft_risk;
-    s_BitSet hard_risk;
+    s_Target target;
+    s_BitSet may_invalidate;
+    s_BitSet may_alias;
     explicit operator bool() const noexcept
     {
         return false
@@ -924,9 +926,9 @@ struct s_Argument
             || type
             || dEfault
             || flags
-            || local
-            || soft_risk
-            || hard_risk
+            || target
+            || may_invalidate
+            || may_alias
         ;
     }
 };
@@ -1006,9 +1008,9 @@ struct s_Module
 
 #ifndef fu_NO_fdefs
 
-                                #ifndef DEF_str_k2hK9UHjiD5
-                                #define DEF_str_k2hK9UHjiD5
-inline fu::str str_k2hK9UHj(const s_kind n)
+                                #ifndef DEF_str_ZGqrvxJv2z0
+                                #define DEF_str_ZGqrvxJv2z0
+inline fu::str str_ZGqrvxJv(const s_kind n)
 {
     if (n == s_kind_sof)
         return "sof"_fu;
@@ -1072,8 +1074,6 @@ inline fu::str str_k2hK9UHj(const s_kind n)
         return "let"_fu;
     else if (n == s_kind_letdef)
         return "letdef"_fu;
-    else if (n == s_kind_typedef)
-        return "typedef"_fu;
     else if (n == s_kind_typecast)
         return "typecast"_fu;
     else if (n == s_kind_typeassert)
@@ -1124,8 +1124,12 @@ inline fu::str str_k2hK9UHj(const s_kind n)
         return "__relaxed"_fu;
     else if (n == s_kind___convert)
         return "__convert"_fu;
+    else if (n == s_kind___preceding_ref_arg)
+        return "__preceding_ref_arg"_fu;
     else if (n == s_kind___no_kind_yet)
         return "__no_kind_yet"_fu;
+    else if (n == s_kind___tombstone)
+        return "__tombstone"_fu;
     else if (n == s_kind_type)
         return "type"_fu;
     else if (n == s_kind_var)
@@ -1145,25 +1149,25 @@ inline fu::str str_k2hK9UHj(const s_kind n)
 }
                                 #endif
 
-                                #ifndef DEF_x7Ex3D_ljOD9ybkNH8
-                                #define DEF_x7Ex3D_ljOD9ybkNH8
-inline fu::str& x7Ex3D_ljOD9ybk(fu::str& a, fu::view<char> b)
+                                #ifndef DEF_x7Ex3D_vuSW0Q9ulEj
+                                #define DEF_x7Ex3D_vuSW0Q9ulEj
+inline fu::str& x7Ex3D_vuSW0Q9u(fu::str& a, fu::view<char> b)
 {
     return (a += b);
 }
                                 #endif
 
-                                #ifndef DEF_x7E_r7bhmB7DrQ0
-                                #define DEF_x7E_r7bhmB7DrQ0
-inline fu::str x7E_r7bhmB7D(fu::view<char> a, fu::view<char> b)
+                                #ifndef DEF_x7E_gCeFmDFw0L8
+                                #define DEF_x7E_gCeFmDFw0L8
+inline fu::str x7E_gCeFmDFw(fu::view<char> a, fu::view<char> b)
 {
     return a + b;
 }
                                 #endif
 
-                                #ifndef DEF_str_croM9CQTKs0
-                                #define DEF_str_croM9CQTKs0
-inline fu::str str_croM9CQT(const s_Flags n)
+                                #ifndef DEF_str_LjV1TRPHiF7
+                                #define DEF_str_LjV1TRPHiF7
+inline fu::str str_LjV1TRPH(const s_Flags n)
 {
     /*MOV*/ fu::str res {};
 
@@ -1176,6 +1180,9 @@ inline fu::str str_croM9CQT(const s_Flags n)
 
         if (n & s_Flags_F_ACCESS)
             res += ("F_ACCESS"_fu + ", "_fu);
+
+        if (n & s_Flags_F_TYPENAME)
+            res += ("F_TYPENAME"_fu + ", "_fu);
 
         if (n & s_Flags_F_COMPOUND_ID)
             res += ("F_COMPOUND_ID"_fu + ", "_fu);
@@ -1263,9 +1270,9 @@ inline fu::str str_croM9CQT(const s_Flags n)
 }
                                 #endif
 
-                                #ifndef DEF_str_hhQd2ioBQxd
-                                #define DEF_str_hhQd2ioBQxd
-inline fu::str str_hhQd2ioB(const s_FxMask n)
+                                #ifndef DEF_str_Yr5jp2hD4c2
+                                #define DEF_str_Yr5jp2hD4c2
+inline fu::str str_Yr5jp2hD(const s_FxMask n)
 {
     /*MOV*/ fu::str res {};
 
@@ -1326,56 +1333,72 @@ inline fu::str str_hhQd2ioB(const s_FxMask n)
 }
                                 #endif
 
-static void inspect_rDbbCcMW(const s_SolvedNode& n, fu::view<char> indent, const s_Module& module, fu::str& src, const int modid)
+static void inspect_Z75vBHWs(const s_SolvedNode& n, fu::view<char> indent, const s_Module& module, fu::str& src, const int modid)
 {
     src += (indent + "("_fu);
     if (n)
     {
         if (n.kind == s_kind_call)
-            src += qID_bF2G8fJR(str_k2hK9UHj(n.kind));
+            src += qID_3PsDzMvu(str_ZGqrvxJv(n.kind));
         else if ((n.kind == s_kind_block) || (n.kind == s_kind_jump) || (n.kind == s_kind_defer))
-            src += qLT_bF2G8fJR(str_k2hK9UHj(n.kind));
+            src += qLT_3PsDzMvu(str_ZGqrvxJv(n.kind));
         else if ((n.kind == s_kind_if) || (n.kind == s_kind_and) || (n.kind == s_kind_or) || (n.kind == s_kind_loop))
-            src += qKW_bF2G8fJR(str_k2hK9UHj(n.kind));
+            src += qKW_3PsDzMvu(str_ZGqrvxJv(n.kind));
         else if (n.kind == s_kind_empty)
-            src += qBAD_bF2G8fJR(str_k2hK9UHj(n.kind));
+            src += qBAD_3PsDzMvu(str_ZGqrvxJv(n.kind));
         else
-            x7Ex3D_ljOD9ybk(src, str_k2hK9UHj(n.kind));
+            x7Ex3D_vuSW0Q9u(src, str_ZGqrvxJv(n.kind));
 
         if (n.value)
             src += (" v:"_fu + n.value);
 
         if (n.helpers)
-            src += x7E_r7bhmB7D(" h:"_fu, fu::i64dec(n.helpers.index));
+            src += x7E_gCeFmDFw(" h:"_fu, fu::i64dec(n.helpers.index));
 
         if (n.flags)
-            src += x7E_r7bhmB7D(" f:"_fu, str_croM9CQT(n.flags));
+            src += x7E_gCeFmDFw(" f:"_fu, str_LjV1TRPH(n.flags));
 
         if (n.items)
         {
-            fu::str indent_1 = (indent + ((n.kind == s_kind_block) ? qLT_bF2G8fJR(". "_fu) : "  "_fu));
+            fu::str indent_1 = (indent + ((n.kind == s_kind_block) ? qLT_3PsDzMvu(". "_fu) : "  "_fu));
             for (int i = 0; i < n.items.size(); i++)
-                inspect_rDbbCcMW(n.items[i], indent_1, module, src, modid);
+                inspect_Z75vBHWs(n.items[i], indent_1, module, src, modid);
 
         };
-        if ((n.target.modid == modid) || (n.target.modid < 0))
+        int BL_13_v {};
+        const int globid = (__extension__ (
         {
-            fu::view<s_Overload> overloads = ((n.target.modid < 0) ? module.out.solve.scope.extended[-n.target.modid].locals : module.out.solve.scope.overloads);
-            const s_Overload& o = overloads[(n.target.index - 1)];
+            const s_Target& t = n.target;
+            BL_13_v = (int(unsigned(((t._packed >> 20ull) & 0xfffffull))));
+        (void)0;}), BL_13_v);
+        int BL_14_v {};
+        const int locid = (__extension__ (
+        {
+            const s_Target& t = n.target;
+            BL_14_v = (int(unsigned(((t._packed >> 40ull) & 0xfffffull))));
+        (void)0;}), BL_14_v);
+        int BL_15_v {};
+        if (((__extension__ (
+        {
+            const s_Target& t = n.target;
+            BL_15_v = (int(unsigned((t._packed & 0xfffffull))));
+        (void)0;}), BL_15_v) == modid) || locid)
+        {
+            const s_Overload& o = (locid ? module.out.solve.scope.extended[globid].locals[(locid - 1)] : module.out.solve.scope.overloads[(globid - 1)]);
             if (o.name)
-                src += (" n:"_fu + trim_UiSEgboz(o.name));
+                src += (" n:"_fu + trim_VW4uLx7L(o.name));
 
             if (o.kind == s_kind_fn)
             {
-                const s_Extended& x = module.out.solve.scope.extended[n.target.index];
+                const s_Extended& x = module.out.solve.scope.extended[globid];
                 if (x.fx_mask)
-                    src += x7E_r7bhmB7D(" fx:"_fu, str_hhQd2ioB(x.fx_mask));
+                    src += x7E_gCeFmDFw(" fx:"_fu, str_Yr5jp2hD(x.fx_mask));
 
             };
             if ((n.kind == s_kind_fndef) || (n.kind == s_kind_letdef))
             {
-                fu::str indent_1 = (indent + qID_bF2G8fJR(". "_fu));
-                inspect_rDbbCcMW(o.solved, indent_1, module, src, modid);
+                fu::str indent_1 = (indent + qID_3PsDzMvu(". "_fu));
+                inspect_Z75vBHWs(o.solved, indent_1, module, src, modid);
             };
         };
     };
@@ -1385,17 +1408,17 @@ static void inspect_rDbbCcMW(const s_SolvedNode& n, fu::view<char> indent, const
     src += ")"_fu;
 }
 
-fu::str inspect_ertqniSK(const s_Module& module, const s_SolvedNode& root)
+fu::str inspect_KFI0dghT(const s_Module& module, const s_SolvedNode& root)
 {
     /*MOV*/ fu::str src = "Your /*PRINT*/:"_fu;
     const int modid = module.modid;
-    inspect_rDbbCcMW(root, "\n    "_fu, module, src, modid);
+    inspect_Z75vBHWs(root, "\n    "_fu, module, src, modid);
     return /*NRVO*/ src;
 }
 
-fu::str inspect_66vMeR0m(const s_Module& module)
+fu::str inspect_SOTjKmcd(const s_Module& module)
 {
-    return inspect_ertqniSK(module, module.out.solve.root);
+    return inspect_KFI0dghT(module, module.out.solve.root);
 }
 
 #endif

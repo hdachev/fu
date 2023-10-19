@@ -1,43 +1,23 @@
 #include <fu/int.h>
 #include <fu/str.h>
-#include <fu/vec.h>
 #include <fu/view.h>
 #include <fu/never.h>
-#include <fu/print.h>
 #include <fu/decstr.h>
 #include <fu/vec/concat.h>
 
 struct s_StructCanon;
-struct s_Mi;
 enum s_kind: fu::u8;
 struct s_ValueType;
 struct s_Type;
 struct s_Lifetime;
-struct s_Region;
 typedef fu::u8 s_VFacts;
-int basePrimPrefixLen_VyAVtbGI(fu::view<char>);
-s_Mi parseMi_Uqhjg5wd(int&, fu::view<char>);
-void appendMi_Pd5VM6Hx(fu::str&, int, int);
+int basePrimPrefixLen_OaQVyIZB(fu::view<char>);
+unsigned parseVarint_Fc3p3Wmg(int&, fu::view<char>);
+void appendVarint_YxEMA0h9(fu::str&, unsigned);
 
                                 #ifndef DEF_s_StructCanon
                                 #define DEF_s_StructCanon
 struct s_StructCanon
-{
-    int modid;
-    int index;
-    explicit operator bool() const noexcept
-    {
-        return false
-            || modid
-            || index
-        ;
-    }
-};
-                                #endif
-
-                                #ifndef DEF_s_Mi
-                                #define DEF_s_Mi
-struct s_Mi
 {
     int modid;
     int index;
@@ -85,40 +65,41 @@ enum s_kind: fu::u8
     s_kind_try = 28u,
     s_kind_let = 29u,
     s_kind_letdef = 30u,
-    s_kind_typedef = 31u,
-    s_kind_typecast = 32u,
-    s_kind_typeassert = 33u,
-    s_kind_typeparam = 34u,
-    s_kind_unwrap = 35u,
-    s_kind_pragma = 36u,
-    s_kind_break = 37u,
-    s_kind_return = 38u,
-    s_kind_continue = 39u,
-    s_kind_import = 40u,
-    s_kind_addroffn = 41u,
-    s_kind_forfieldsof = 42u,
-    s_kind_struct = 43u,
-    s_kind_union = 44u,
-    s_kind_primitive = 45u,
-    s_kind_flags = 46u,
-    s_kind_enum = 47u,
-    s_kind_members = 48u,
-    s_kind_fndef = 49u,
-    s_kind_fn = 50u,
-    s_kind_fnbranch = 51u,
-    s_kind_pattern = 52u,
-    s_kind_typeunion = 53u,
-    s_kind_typetag = 54u,
-    s_kind___relaxed = 55u,
-    s_kind___convert = 56u,
+    s_kind_typecast = 31u,
+    s_kind_typeassert = 32u,
+    s_kind_typeparam = 33u,
+    s_kind_unwrap = 34u,
+    s_kind_pragma = 35u,
+    s_kind_break = 36u,
+    s_kind_return = 37u,
+    s_kind_continue = 38u,
+    s_kind_import = 39u,
+    s_kind_addroffn = 40u,
+    s_kind_forfieldsof = 41u,
+    s_kind_struct = 42u,
+    s_kind_union = 43u,
+    s_kind_primitive = 44u,
+    s_kind_flags = 45u,
+    s_kind_enum = 46u,
+    s_kind_members = 47u,
+    s_kind_fndef = 48u,
+    s_kind_fn = 49u,
+    s_kind_fnbranch = 50u,
+    s_kind_pattern = 51u,
+    s_kind_typeunion = 52u,
+    s_kind_typetag = 53u,
+    s_kind___relaxed = 54u,
+    s_kind___convert = 55u,
+    s_kind___preceding_ref_arg = 56u,
     s_kind___no_kind_yet = 57u,
-    s_kind_type = 58u,
-    s_kind_var = 59u,
-    s_kind_field = 60u,
-    s_kind_enumv = 61u,
-    s_kind_template = 62u,
-    s_kind___native = 63u,
-    s_kind_inline = 64u,
+    s_kind___tombstone = 58u,
+    s_kind_type = 59u,
+    s_kind_var = 60u,
+    s_kind_field = 61u,
+    s_kind_enumv = 62u,
+    s_kind_template = 63u,
+    s_kind___native = 64u,
+    s_kind_inline = 65u,
 };
                                 #endif
 
@@ -150,25 +131,11 @@ inline constexpr s_VFacts MASK_s_VFacts
     | s_VFacts_Typename;
                                 #endif
 
-                                #ifndef DEF_s_Region
-                                #define DEF_s_Region
-struct s_Region
-{
-    int index;
-    explicit operator bool() const noexcept
-    {
-        return false
-            || index
-        ;
-    }
-};
-                                #endif
-
                                 #ifndef DEF_s_Lifetime
                                 #define DEF_s_Lifetime
 struct s_Lifetime
 {
-    fu::vec<s_Region> uni0n;
+    fu::str uni0n;
     explicit operator bool() const noexcept
     {
         return false
@@ -203,87 +170,83 @@ struct s_Type
 inline constexpr int ONE_BASED = 1;
                                 #endif
 
-                                #ifndef DEF_x7E_r7bhmB7DrQ0
-                                #define DEF_x7E_r7bhmB7DrQ0
-inline fu::str x7E_r7bhmB7D(fu::view<char> a, fu::view<char> b)
+                                #ifndef DEF_x7E_gCeFmDFw0L8
+                                #define DEF_x7E_gCeFmDFw0L8
+inline fu::str x7E_gCeFmDFw(fu::view<char> a, fu::view<char> b)
 {
     return a + b;
 }
                                 #endif
 
-s_StructCanon parseStructCanon_degpQC5i(fu::view<char> canon)
+s_StructCanon parseStructCanon_9HOct2P6(fu::view<char> canon)
 {
     int offset = 1;
 
     {
         const char c = canon[0];
         if (c != '/')
-            offset = basePrimPrefixLen_VyAVtbGI(canon);
+            offset = (basePrimPrefixLen_OaQVyIZB(canon) + 1);
 
     };
-    const s_Mi mi = parseMi_Uqhjg5wd(offset, canon);
-    if (offset == canon.size())
+    const int modid = int(parseVarint_Fc3p3Wmg(offset, canon));
+    const int globid = int(parseVarint_Fc3p3Wmg(offset, canon));
+    if ((offset == canon.size()) || (canon[offset] == '('))
     {
-        return s_StructCanon { mi.modid, (mi.index - ONE_BASED) };
+        return s_StructCanon { modid, (globid - ONE_BASED) };
     }
     else
-        fu::fail(x7E_r7bhmB7D((x7E_r7bhmB7D((("parseStructCanon: trailing garbage in `"_fu + canon) + "`: "_fu), fu::i64dec(offset)) + "|"_fu), fu::i64dec(canon.size())));
+        fu::fail(x7E_gCeFmDFw((x7E_gCeFmDFw((("parseStructCanon: trailing garbage in `"_fu + canon) + "`: "_fu), fu::i64dec(offset)) + "|"_fu), fu::i64dec(canon.size())));
 
 }
 
-fu::str createStructCanon_BwHGTTCS(const s_kind kind, const fu::str& baseprim, const int modid, const int index)
+fu::str createStructCanon_V0cIgHiE(const s_kind kind, fu::view<char> baseprim, const int modid, const int index)
 {
-    // Hoisted:
-    fu::str x {};
-
-    /*MOV*/ fu::str res = (baseprim ? fu::str(baseprim) : "/"_fu);
-    appendMi_Pd5VM6Hx(res, modid, (index + ONE_BASED));
-    if (baseprim)
+    /*MOV*/ fu::str res = (baseprim + "/"_fu);
+    if ((modid >= 0) && (index >= 0))
     {
-        char& c = res.mutref(0);
-        if ((c == 'e') || (c == 'm'))
-            fu::fail(("createStructCanon: bad baseprim: "_fu + baseprim));
-        else if (kind == s_kind_enum)
-            c = 'e';
-        else if (kind == s_kind_flags)
-            c = 'm';
+        appendVarint_YxEMA0h9(res, unsigned(modid));
+        appendVarint_YxEMA0h9(res, unsigned((index + ONE_BASED)));
+        if (baseprim)
+        {
+            char& c = res.mutref(0);
+            if ((c == 'e') || (c == 'm'))
+                fu::fail(("createStructCanon: bad baseprim: "_fu + baseprim));
+            else if (kind == s_kind_enum)
+                c = 'e';
+            else if (kind == s_kind_flags)
+                c = 'm';
 
-    };
-    const s_StructCanon check = parseStructCanon_degpQC5i(res);
-    if (!((check.modid == modid) && (check.index == index)))
-    {
-        fu::println((fu::slate<1, fu::str> { static_cast<fu::str&&>((x = "NOPE!!!!!"_fu, x)) }));
-        parseStructCanon_degpQC5i(res);
-        fu::fail("Nope!"_fu);
+        };
+        return /*NRVO*/ res;
     }
     else
-        return /*NRVO*/ res;
+        fu::fail("createStructCanon: bad modid/index"_fu);
 
 }
 
-                                #ifndef DEF_starts_90iSu77lC9e
-                                #define DEF_starts_90iSu77lC9e
-inline bool starts_90iSu77l(fu::view<char> a, const char with)
+                                #ifndef DEF_starts_Db9eGFmCKDj
+                                #define DEF_starts_Db9eGFmCKDj
+inline bool starts_Db9eGFmC(fu::view<char> a, const char with)
 {
     return a.size() && (a[0] == with);
 }
                                 #endif
 
-bool isStruct_ddyKn6V4(const s_ValueType& type)
+bool isStruct_jSb6u57z(const s_ValueType& type)
 {
-    return starts_90iSu77l(type.canon, '/');
+    return starts_Db9eGFmC(type.canon, '/');
 }
 
-bool isStructOrUnion_ddyKn6V4(const s_ValueType& type)
+bool isStructOrUnion_jSb6u57z(const s_ValueType& type)
 {
-    return isStruct_ddyKn6V4(type);
+    return isStruct_jSb6u57z(type);
 }
 
-int modidOfOrigin_u8EynJdr(const s_Type& type)
+int modidOfOrigin_u9sdbuWn(const s_Type& type)
 {
     if (type.vtype.canon[0] == '/')
     {
-        const s_StructCanon scp = parseStructCanon_degpQC5i(type.vtype.canon);
+        const s_StructCanon scp = parseStructCanon_9HOct2P6(type.vtype.canon);
         return scp.modid;
     }
     else

@@ -24,10 +24,10 @@ struct s_TEA
 
 #ifndef fu_NO_fdefs
 
-s_TEA& hash_233fFet9(s_TEA& res, fu::view<char> u8view)
+s_TEA& hash_okLTgNyg(s_TEA& res, fu::view<char> u8view)
 {
     const int u32len = (u8view.size() & ~3);
-    fu::view<unsigned> u32view = fu::view_of(fu::get_view(u8view, 0, u32len), unsigned{});
+    fu::view<unsigned> u32view = fu::view_of<unsigned>(fu::get_view_start0(u8view, u32len));
     for (int i = 1; i < u32view.size(); (i += 2))
     {
         res.v0 ^= u32view[(i - 1)];
@@ -68,14 +68,14 @@ s_TEA& hash_233fFet9(s_TEA& res, fu::view<char> u8view)
     return res;
 }
 
-s_TEA hash_8ygpSJoS(fu::view<char> u8view)
+s_TEA hash_yvYDPKX8(fu::view<char> u8view)
 {
     s_TEA res {};
-    hash_233fFet9(res, u8view);
+    hash_okLTgNyg(res, u8view);
     return res;
 }
 
-fu::str digest62_3l2d5agL(uint64_t v, int chars)
+fu::str digest62_NBz0rQPD(uint64_t v, int chars)
 {
     chars = (((chars > 0) && (chars < 11)) ? chars : 11);
     /*MOV*/ fu::str res {};
@@ -94,7 +94,7 @@ fu::str digest62_3l2d5agL(uint64_t v, int chars)
     return /*NRVO*/ res;
 }
 
-fu::str digest16_3l2d5agL(uint64_t v, int chars)
+fu::str digest16_NBz0rQPD(uint64_t v, int chars)
 {
     chars = (((chars > 0) && (chars < 16)) ? chars : 16);
     /*MOV*/ fu::str res {};
@@ -111,24 +111,24 @@ fu::str digest16_3l2d5agL(uint64_t v, int chars)
     return /*NRVO*/ res;
 }
 
-fu::str hash62_FVPTYzIy(fu::view<char> str, const int chars)
+fu::str hash62_nHEuzL2I(fu::view<char> str, const int chars)
 {
     s_TEA res {};
-    hash_233fFet9(res, str);
+    hash_okLTgNyg(res, str);
     uint64_t BL_1_v {};
-    return digest62_3l2d5agL((__extension__ (
+    return digest62_NBz0rQPD((__extension__ (
     {
         const s_TEA& tea = res;
         BL_1_v = ((uint64_t(tea.v0) | (uint64_t(tea.v1) << 32ull)));
     (void)0;}), BL_1_v), chars);
 }
 
-fu::str hash16_FVPTYzIy(fu::view<char> str, const int chars)
+fu::str hash16_nHEuzL2I(fu::view<char> str, const int chars)
 {
     s_TEA res {};
-    hash_233fFet9(res, str);
+    hash_okLTgNyg(res, str);
     uint64_t BL_1_v {};
-    return digest16_3l2d5agL((__extension__ (
+    return digest16_NBz0rQPD((__extension__ (
     {
         const s_TEA& tea = res;
         BL_1_v = ((uint64_t(tea.v0) | (uint64_t(tea.v1) << 32ull)));

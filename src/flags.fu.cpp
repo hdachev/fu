@@ -23,7 +23,7 @@ inline constexpr int FN_BODY_BACK = -1;
 
                                 #ifndef DEF_FN_ARGS_BACK
                                 #define DEF_FN_ARGS_BACK
-extern const int FN_ARGS_BACK = FN_RET_BACK;
+inline constexpr int FN_ARGS_BACK = FN_RET_BACK;
                                 #endif
 
                                 #ifndef DEF_TYPECTOR_BACK
@@ -69,6 +69,21 @@ inline constexpr int STRUCT_BASE = 0;
                                 #ifndef DEF_STRUCT_MEMBERS
                                 #define DEF_STRUCT_MEMBERS
 inline constexpr int STRUCT_MEMBERS = 1;
+                                #endif
+
+                                #ifndef DEF_TRY_TRY
+                                #define DEF_TRY_TRY
+inline constexpr int TRY_TRY = 0;
+                                #endif
+
+                                #ifndef DEF_TRY_ERR
+                                #define DEF_TRY_ERR
+inline constexpr int TRY_ERR = 1;
+                                #endif
+
+                                #ifndef DEF_TRY_CATCH
+                                #define DEF_TRY_CATCH
+inline constexpr int TRY_CATCH = 2;
                                 #endif
 
 #endif

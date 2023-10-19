@@ -4,7 +4,7 @@
 
 #ifndef fu_NO_fdefs
 
-fu::str upper_0ZAZU2Wn(/*MOV*/ fu::str&& str)
+fu::str upper_MpX0JQTu(/*MOV*/ fu::str&& str)
 {
     for (int i = 0; i < str.size(); i++)
     {
@@ -16,7 +16,7 @@ fu::str upper_0ZAZU2Wn(/*MOV*/ fu::str&& str)
     return static_cast<fu::str&&>(str);
 }
 
-fu::str lower_0ZAZU2Wn(/*MOV*/ fu::str&& str)
+fu::str lower_MpX0JQTu(/*MOV*/ fu::str&& str)
 {
     for (int i = 0; i < str.size(); i++)
     {
@@ -28,7 +28,7 @@ fu::str lower_0ZAZU2Wn(/*MOV*/ fu::str&& str)
     return static_cast<fu::str&&>(str);
 }
 
-char upper_vtlSJUEf(const char c)
+char upper_jhTAKpQG(const char c)
 {
     if ((c >= 'a') && (c <= 'z'))
         return char((int(fu::u8(c)) + (int(fu::u8('A')) - int(fu::u8('a')))));
@@ -37,7 +37,7 @@ char upper_vtlSJUEf(const char c)
 
 }
 
-char lower_vtlSJUEf(const char c)
+char lower_jhTAKpQG(const char c)
 {
     if ((c >= 'A') && (c <= 'Z'))
         return char((int(fu::u8(c)) + (int(fu::u8('a')) - int(fu::u8('A')))));

@@ -18,6 +18,7 @@ typedef uint16_t s_DeclAsserts;
 typedef fu::u8 s_ParseSyntax;
 typedef unsigned s_Flags;
 struct s_TokenIdx;
+struct s_Import;
 struct s_ModuleOrder;
 struct s_ModuleOutputs;
 struct s_Struct;
@@ -29,7 +30,6 @@ struct s_Helpers;
 struct s_Type;
 struct s_ValueType;
 struct s_Lifetime;
-struct s_Region;
 typedef fu::u8 s_VFacts;
 struct s_Scope;
 struct s_Overload;
@@ -46,15 +46,15 @@ struct s_CodegenOutput;
 typedef fu::u8 s_CGDefects;
 struct s_ModuleStats;
 struct s_ModuleStat;
-struct s_Map_qfSmCKRS93e;
+struct s_Map_iIYL7rECCBg;
 struct s_Options;
 struct s_Lint;
 typedef fu::u8 s_DevOptions;
-s_Module& getModule_9WEb5JfY(const fu::str&, s_Context&);
-s_LexerOutput lex_aPLRBLOl(const fu::str&, const fu::str&);
-s_ParserOutput parse_od6Zl77H(int, const fu::str&, const fu::str&, fu::view<s_Token>, const s_Options&);
-void setModule_fYGWKsxK(const s_Module&, s_Context&);
-s_SolverOutput solve_wxNPSagY(const s_Context&, s_Module&, const s_Options&);
+s_Module& getModule_vqSYGHjE(const fu::str&, s_Context&);
+s_LexerOutput lex_XyQUXQaS(const fu::str&, const fu::str&);
+s_ParserOutput parse_SmcwBTdS(int, const fu::str&, const fu::str&, fu::view<s_Token>, const s_Options&);
+void setModule_0FYNSelM(const s_Module&, s_Context&);
+s_SolverOutput solve_veJH3XG6(const s_Context&, s_Module&, const s_Options&);
 
                                 #ifndef DEF_s_kind
                                 #define DEF_s_kind
@@ -90,40 +90,41 @@ enum s_kind: fu::u8
     s_kind_try = 28u,
     s_kind_let = 29u,
     s_kind_letdef = 30u,
-    s_kind_typedef = 31u,
-    s_kind_typecast = 32u,
-    s_kind_typeassert = 33u,
-    s_kind_typeparam = 34u,
-    s_kind_unwrap = 35u,
-    s_kind_pragma = 36u,
-    s_kind_break = 37u,
-    s_kind_return = 38u,
-    s_kind_continue = 39u,
-    s_kind_import = 40u,
-    s_kind_addroffn = 41u,
-    s_kind_forfieldsof = 42u,
-    s_kind_struct = 43u,
-    s_kind_union = 44u,
-    s_kind_primitive = 45u,
-    s_kind_flags = 46u,
-    s_kind_enum = 47u,
-    s_kind_members = 48u,
-    s_kind_fndef = 49u,
-    s_kind_fn = 50u,
-    s_kind_fnbranch = 51u,
-    s_kind_pattern = 52u,
-    s_kind_typeunion = 53u,
-    s_kind_typetag = 54u,
-    s_kind___relaxed = 55u,
-    s_kind___convert = 56u,
+    s_kind_typecast = 31u,
+    s_kind_typeassert = 32u,
+    s_kind_typeparam = 33u,
+    s_kind_unwrap = 34u,
+    s_kind_pragma = 35u,
+    s_kind_break = 36u,
+    s_kind_return = 37u,
+    s_kind_continue = 38u,
+    s_kind_import = 39u,
+    s_kind_addroffn = 40u,
+    s_kind_forfieldsof = 41u,
+    s_kind_struct = 42u,
+    s_kind_union = 43u,
+    s_kind_primitive = 44u,
+    s_kind_flags = 45u,
+    s_kind_enum = 46u,
+    s_kind_members = 47u,
+    s_kind_fndef = 48u,
+    s_kind_fn = 49u,
+    s_kind_fnbranch = 50u,
+    s_kind_pattern = 51u,
+    s_kind_typeunion = 52u,
+    s_kind_typetag = 53u,
+    s_kind___relaxed = 54u,
+    s_kind___convert = 55u,
+    s_kind___preceding_ref_arg = 56u,
     s_kind___no_kind_yet = 57u,
-    s_kind_type = 58u,
-    s_kind_var = 59u,
-    s_kind_field = 60u,
-    s_kind_enumv = 61u,
-    s_kind_template = 62u,
-    s_kind___native = 63u,
-    s_kind_inline = 64u,
+    s_kind___tombstone = 58u,
+    s_kind_type = 59u,
+    s_kind_var = 60u,
+    s_kind_field = 61u,
+    s_kind_enumv = 62u,
+    s_kind_template = 63u,
+    s_kind___native = 64u,
+    s_kind_inline = 65u,
 };
                                 #endif
 
@@ -162,13 +163,17 @@ inline constexpr s_DeclAsserts MASK_s_DeclAsserts
 inline constexpr s_ParseSyntax s_ParseSyntax_PS_ID = s_ParseSyntax(1u);
 inline constexpr s_ParseSyntax s_ParseSyntax_PS_PARENS = s_ParseSyntax(2u);
 inline constexpr s_ParseSyntax s_ParseSyntax_PS_SEMI = s_ParseSyntax(4u);
-inline constexpr s_ParseSyntax s_ParseSyntax_PS_DISCARD = s_ParseSyntax(8u);
+inline constexpr s_ParseSyntax s_ParseSyntax_PS_DISCARD_IF_BLOCK_TAIL = s_ParseSyntax(8u);
+inline constexpr s_ParseSyntax s_ParseSyntax_PS_ALWAYS_DISCARD = s_ParseSyntax(16u);
+inline constexpr s_ParseSyntax s_ParseSyntax_PS_NOT_AN_EXPRESSION = s_ParseSyntax(32u);
 
 inline constexpr s_ParseSyntax MASK_s_ParseSyntax
     = s_ParseSyntax_PS_ID
     | s_ParseSyntax_PS_PARENS
     | s_ParseSyntax_PS_SEMI
-    | s_ParseSyntax_PS_DISCARD;
+    | s_ParseSyntax_PS_DISCARD_IF_BLOCK_TAIL
+    | s_ParseSyntax_PS_ALWAYS_DISCARD
+    | s_ParseSyntax_PS_NOT_AN_EXPRESSION;
                                 #endif
 
                                 #ifndef DEF_s_Flags
@@ -176,37 +181,39 @@ inline constexpr s_ParseSyntax MASK_s_ParseSyntax
 inline constexpr s_Flags s_Flags_F_METHOD = 1u;
 inline constexpr s_Flags s_Flags_F_OPERATOR = 2u;
 inline constexpr s_Flags s_Flags_F_ACCESS = 4u;
-inline constexpr s_Flags s_Flags_F_COMPOUND_ID = 8u;
-inline constexpr s_Flags s_Flags_F_WRITTEN_TO = 16u;
-inline constexpr s_Flags s_Flags_F_LAX = 32u;
-inline constexpr s_Flags s_Flags_F_ARG = 64u;
-inline constexpr s_Flags s_Flags_F_COW_INSIDE = 128u;
-inline constexpr s_Flags s_Flags_F_MOVED_FROM = 256u;
-inline constexpr s_Flags s_Flags_F_CONVERSION = 512u;
-inline constexpr s_Flags s_Flags_F_OPT_ARG = 1024u;
-inline constexpr s_Flags s_Flags_F_MUT = 2048u;
-inline constexpr s_Flags s_Flags_F_REF = 4096u;
-inline constexpr s_Flags s_Flags_F_IMPLICIT = 8192u;
-inline constexpr s_Flags s_Flags_F_USING = 16384u;
-inline constexpr s_Flags s_Flags_F_MUSTNAME = 32768u;
-inline constexpr s_Flags s_Flags_F_SHADOW = 65536u;
-inline constexpr s_Flags s_Flags_F_PUB = 131072u;
-inline constexpr s_Flags s_Flags_F_EXTERN = 262144u;
-inline constexpr s_Flags s_Flags_F_HOTSWAP = 524288u;
-inline constexpr s_Flags s_Flags_F_PREDICATE = 1048576u;
-inline constexpr s_Flags s_Flags_F_NAMED_ARGS = 2097152u;
-inline constexpr s_Flags s_Flags_F_OOE_RTL = 4194304u;
-inline constexpr s_Flags s_Flags_F_REST_ARG = 8388608u;
-inline constexpr s_Flags s_Flags_F_RELAXABLE_REF = 16777216u;
-inline constexpr s_Flags s_Flags_F_TEMPLATE = 33554432u;
-inline constexpr s_Flags s_Flags_F_INLINE = 67108864u;
-inline constexpr s_Flags s_Flags_F_LAMBDA = 134217728u;
-inline constexpr s_Flags s_Flags_F_INJECTED = 268435456u;
+inline constexpr s_Flags s_Flags_F_TYPENAME = 8u;
+inline constexpr s_Flags s_Flags_F_COMPOUND_ID = 16u;
+inline constexpr s_Flags s_Flags_F_WRITTEN_TO = 32u;
+inline constexpr s_Flags s_Flags_F_LAX = 64u;
+inline constexpr s_Flags s_Flags_F_ARG = 128u;
+inline constexpr s_Flags s_Flags_F_COW_INSIDE = 256u;
+inline constexpr s_Flags s_Flags_F_MOVED_FROM = 512u;
+inline constexpr s_Flags s_Flags_F_CONVERSION = 1024u;
+inline constexpr s_Flags s_Flags_F_OPT_ARG = 2048u;
+inline constexpr s_Flags s_Flags_F_MUT = 4096u;
+inline constexpr s_Flags s_Flags_F_REF = 8192u;
+inline constexpr s_Flags s_Flags_F_IMPLICIT = 16384u;
+inline constexpr s_Flags s_Flags_F_USING = 32768u;
+inline constexpr s_Flags s_Flags_F_MUSTNAME = 65536u;
+inline constexpr s_Flags s_Flags_F_SHADOW = 131072u;
+inline constexpr s_Flags s_Flags_F_PUB = 262144u;
+inline constexpr s_Flags s_Flags_F_EXTERN = 524288u;
+inline constexpr s_Flags s_Flags_F_HOTSWAP = 1048576u;
+inline constexpr s_Flags s_Flags_F_PREDICATE = 2097152u;
+inline constexpr s_Flags s_Flags_F_NAMED_ARGS = 4194304u;
+inline constexpr s_Flags s_Flags_F_OOE_RTL = 8388608u;
+inline constexpr s_Flags s_Flags_F_REST_ARG = 16777216u;
+inline constexpr s_Flags s_Flags_F_RELAXABLE_REF = 33554432u;
+inline constexpr s_Flags s_Flags_F_TEMPLATE = 67108864u;
+inline constexpr s_Flags s_Flags_F_INLINE = 134217728u;
+inline constexpr s_Flags s_Flags_F_LAMBDA = 268435456u;
+inline constexpr s_Flags s_Flags_F_INJECTED = 536870912u;
 
 inline constexpr s_Flags MASK_s_Flags
     = s_Flags_F_METHOD
     | s_Flags_F_OPERATOR
     | s_Flags_F_ACCESS
+    | s_Flags_F_TYPENAME
     | s_Flags_F_COMPOUND_ID
     | s_Flags_F_WRITTEN_TO
     | s_Flags_F_LAX
@@ -336,28 +343,26 @@ inline constexpr s_SolverNotes s_SolverNotes_N_TypeReopen = 32;
 inline constexpr s_SolverNotes s_SolverNotes_N_DeadCode = 64;
 inline constexpr s_SolverNotes s_SolverNotes_N_DeadCall = 128;
 inline constexpr s_SolverNotes s_SolverNotes_N_DeadLet = 256;
-inline constexpr s_SolverNotes s_SolverNotes_N_DeadIfCond = 512;
-inline constexpr s_SolverNotes s_SolverNotes_N_DeadIfCons = 1024;
-inline constexpr s_SolverNotes s_SolverNotes_N_DeadArrlit = 2048;
-inline constexpr s_SolverNotes s_SolverNotes_N_DeadLoopInit = 4096;
-inline constexpr s_SolverNotes s_SolverNotes_N_DeadConv = 8192;
-inline constexpr s_SolverNotes s_SolverNotes_N_NonTrivAutoCopy = 16384;
-inline constexpr s_SolverNotes s_SolverNotes_N_RelaxRespec = 32768;
-inline constexpr s_SolverNotes s_SolverNotes_N_UnusedImplicit = 65536;
-inline constexpr s_SolverNotes s_SolverNotes_N_UnusedCall = 131072;
-inline constexpr s_SolverNotes s_SolverNotes_N_UnusedDefer = 262144;
-inline constexpr s_SolverNotes s_SolverNotes_N_UnusedTry = 524288;
-inline constexpr s_SolverNotes s_SolverNotes_N_UnusedAndOr = 1048576;
-inline constexpr s_SolverNotes s_SolverNotes_N_UnusedIfElse = 2097152;
-inline constexpr s_SolverNotes s_SolverNotes_N_UnusedArrlit = 4194304;
-inline constexpr s_SolverNotes s_SolverNotes_N_UnusedLet = 8388608;
-inline constexpr s_SolverNotes s_SolverNotes_N_BckMustSeq = 16777216;
-inline constexpr s_SolverNotes s_SolverNotes_N_AARMustSeq = 33554432;
-inline constexpr s_SolverNotes s_SolverNotes_N_AARSoftRisk = 67108864;
-inline constexpr s_SolverNotes s_SolverNotes_N_MoveMustSeq = 134217728;
-inline constexpr s_SolverNotes s_SolverNotes_N_SD_HasStaticInit = 268435456;
-inline constexpr s_SolverNotes s_SolverNotes_N_SD_ExternPrivates = 536870912;
-inline constexpr s_SolverNotes s_SolverNotes_N_COWRestrict = 1073741824;
+inline constexpr s_SolverNotes s_SolverNotes_N_DeadArrlit = 512;
+inline constexpr s_SolverNotes s_SolverNotes_N_DeadLoopInit = 1024;
+inline constexpr s_SolverNotes s_SolverNotes_N_DeadConv = 2048;
+inline constexpr s_SolverNotes s_SolverNotes_N_NonTrivAutoCopy = 4096;
+inline constexpr s_SolverNotes s_SolverNotes_N_RelaxRespec = 8192;
+inline constexpr s_SolverNotes s_SolverNotes_N_UnusedImplicit = 16384;
+inline constexpr s_SolverNotes s_SolverNotes_N_UnusedCall = 32768;
+inline constexpr s_SolverNotes s_SolverNotes_N_UnusedDefer = 65536;
+inline constexpr s_SolverNotes s_SolverNotes_N_UnusedTry = 131072;
+inline constexpr s_SolverNotes s_SolverNotes_N_UnusedAndOr = 262144;
+inline constexpr s_SolverNotes s_SolverNotes_N_UnusedIfElse = 524288;
+inline constexpr s_SolverNotes s_SolverNotes_N_UnusedArrlit = 1048576;
+inline constexpr s_SolverNotes s_SolverNotes_N_UnusedLet = 2097152;
+inline constexpr s_SolverNotes s_SolverNotes_N_BckMustSeq = 4194304;
+inline constexpr s_SolverNotes s_SolverNotes_N_AARMustSeq = 8388608;
+inline constexpr s_SolverNotes s_SolverNotes_N_AARSoftRisk = 16777216;
+inline constexpr s_SolverNotes s_SolverNotes_N_MoveMustSeq = 33554432;
+inline constexpr s_SolverNotes s_SolverNotes_N_SD_HasStaticInit = 67108864;
+inline constexpr s_SolverNotes s_SolverNotes_N_SD_ExternPrivates = 134217728;
+inline constexpr s_SolverNotes s_SolverNotes_N_COWRestrict = 268435456;
 
 inline constexpr s_SolverNotes MASK_s_SolverNotes
     = s_SolverNotes_N_FnRecursion
@@ -369,8 +374,6 @@ inline constexpr s_SolverNotes MASK_s_SolverNotes
     | s_SolverNotes_N_DeadCode
     | s_SolverNotes_N_DeadCall
     | s_SolverNotes_N_DeadLet
-    | s_SolverNotes_N_DeadIfCond
-    | s_SolverNotes_N_DeadIfCons
     | s_SolverNotes_N_DeadArrlit
     | s_SolverNotes_N_DeadLoopInit
     | s_SolverNotes_N_DeadConv
@@ -413,9 +416,9 @@ inline constexpr s_CGDefects MASK_s_CGDefects
     | s_CGDefects_IrrelevantLiteral;
                                 #endif
 
-                                #ifndef DEF_s_Region
-                                #define DEF_s_Region
-struct s_Region
+                                #ifndef DEF_s_Helpers
+                                #define DEF_s_Helpers
+struct s_Helpers
 {
     int index;
     explicit operator bool() const noexcept
@@ -427,15 +430,29 @@ struct s_Region
 };
                                 #endif
 
-                                #ifndef DEF_s_Helpers
-                                #define DEF_s_Helpers
-struct s_Helpers
+                                #ifndef DEF_s_Target
+                                #define DEF_s_Target
+struct s_Target
 {
-    int index;
+    uint64_t _packed;
     explicit operator bool() const noexcept
     {
         return false
-            || index
+            || _packed
+        ;
+    }
+};
+                                #endif
+
+                                #ifndef DEF_s_Lifetime
+                                #define DEF_s_Lifetime
+struct s_Lifetime
+{
+    fu::str uni0n;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || uni0n
         ;
     }
 };
@@ -455,20 +472,6 @@ struct s_BitSet
 };
                                 #endif
 
-                                #ifndef DEF_s_Lifetime
-                                #define DEF_s_Lifetime
-struct s_Lifetime
-{
-    fu::vec<s_Region> uni0n;
-    explicit operator bool() const noexcept
-    {
-        return false
-            || uni0n
-        ;
-    }
-};
-                                #endif
-
                                 #ifndef DEF_s_ModuleOrder
                                 #define DEF_s_ModuleOrder
 struct s_ModuleOrder
@@ -483,6 +486,21 @@ struct s_ModuleOrder
 };
                                 #endif
 
+                                #ifndef DEF_s_ScopeItem
+                                #define DEF_s_ScopeItem
+struct s_ScopeItem
+{
+    fu::str id;
+    uint64_t _packed;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || id
+        ;
+    }
+};
+                                #endif
+
                                 #ifndef DEF_s_LexerOutput
                                 #define DEF_s_LexerOutput
 struct s_LexerOutput
@@ -492,38 +510,6 @@ struct s_LexerOutput
     {
         return false
             || tokens
-        ;
-    }
-};
-                                #endif
-
-                                #ifndef DEF_s_Target
-                                #define DEF_s_Target
-struct s_Target
-{
-    int modid;
-    int index;
-    explicit operator bool() const noexcept
-    {
-        return false
-            || modid
-            || index
-        ;
-    }
-};
-                                #endif
-
-                                #ifndef DEF_s_ScopeItem
-                                #define DEF_s_ScopeItem
-struct s_ScopeItem
-{
-    fu::str id;
-    int modid;
-    unsigned packed;
-    explicit operator bool() const noexcept
-    {
-        return false
-            || id
         ;
     }
 };
@@ -579,9 +565,9 @@ struct s_LineColChars
 };
                                 #endif
 
-                                #ifndef DEF_s_Map_qfSmCKRS93e
-                                #define DEF_s_Map_qfSmCKRS93e
-struct s_Map_qfSmCKRS93e
+                                #ifndef DEF_s_Map_iIYL7rECCBg
+                                #define DEF_s_Map_iIYL7rECCBg
+struct s_Map_iIYL7rECCBg
 {
     fu::vec<fu::str> keys;
     fu::vec<fu::str> vals;
@@ -689,6 +675,22 @@ struct s_Token
 };
                                 #endif
 
+                                #ifndef DEF_s_Import
+                                #define DEF_s_Import
+struct s_Import
+{
+    s_TokenIdx token;
+    fu::str value;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || token
+            || value
+        ;
+    }
+};
+                                #endif
+
                                 #ifndef DEF_s_Type
                                 #define DEF_s_Type
 struct s_Type
@@ -777,10 +779,11 @@ struct s_Node
                                 #define DEF_s_Context
 struct s_Context
 {
+    fu::str base_dir;
     fu::vec<s_Module> modules;
     fu::vec<int> dep_order;
-    s_Map_qfSmCKRS93e files;
-    s_Map_qfSmCKRS93e fuzzy;
+    s_Map_iIYL7rECCBg files;
+    s_Map_iIYL7rECCBg fuzzy;
     s_Context(const s_Context&) = delete;
     s_Context(s_Context&&) = default;
     s_Context& operator=(const s_Context&) = delete;
@@ -788,6 +791,7 @@ struct s_Context
     explicit operator bool() const noexcept
     {
         return false
+            || base_dir
             || modules
             || dep_order
             || files
@@ -849,13 +853,13 @@ struct s_Template
 struct s_ParserOutput
 {
     s_Node root;
-    fu::vec<fu::str> fuzimports;
+    fu::vec<s_Import> imports;
     fu::vec<fu::str> warnings;
     explicit operator bool() const noexcept
     {
         return false
             || root
-            || fuzimports
+            || imports
             || warnings
         ;
     }
@@ -956,9 +960,9 @@ struct s_Argument
     s_Type type;
     s_SolvedNode dEfault;
     s_Flags flags;
-    int local;
-    s_BitSet soft_risk;
-    s_BitSet hard_risk;
+    s_Target target;
+    s_BitSet may_invalidate;
+    s_BitSet may_alias;
     explicit operator bool() const noexcept
     {
         return false
@@ -967,9 +971,9 @@ struct s_Argument
             || type
             || dEfault
             || flags
-            || local
-            || soft_risk
-            || hard_risk
+            || target
+            || may_invalidate
+            || may_alias
         ;
     }
 };
@@ -1054,13 +1058,15 @@ inline constexpr s_DevOptions s_DevOptions_DEV_PrintCG = s_DevOptions(2u);
 inline constexpr s_DevOptions s_DevOptions_DEV_Parallel = s_DevOptions(4u);
 inline constexpr s_DevOptions s_DevOptions_DEV_ExpectFail = s_DevOptions(8u);
 inline constexpr s_DevOptions s_DevOptions_DEV_DontFoldLiterals = s_DevOptions(16u);
+inline constexpr s_DevOptions s_DevOptions_DEV_CG_LifetimeAnnots = s_DevOptions(32u);
 
 inline constexpr s_DevOptions MASK_s_DevOptions
     = s_DevOptions_DEV_PrintAST
     | s_DevOptions_DEV_PrintCG
     | s_DevOptions_DEV_Parallel
     | s_DevOptions_DEV_ExpectFail
-    | s_DevOptions_DEV_DontFoldLiterals;
+    | s_DevOptions_DEV_DontFoldLiterals
+    | s_DevOptions_DEV_CG_LifetimeAnnots;
                                 #endif
 
                                 #ifndef DEF_s_Lint
@@ -1101,208 +1107,208 @@ struct s_Options
 
 #ifndef fu_NO_fdefs
 
-                                #ifndef DEF_clone_DHH5Baj0nf5
-                                #define DEF_clone_DHH5Baj0nf5
-inline int clone_DHH5Baj0(const int a)
+                                #ifndef DEF_clone_dD3H4GX6AP2
+                                #define DEF_clone_dD3H4GX6AP2
+inline int clone_dD3H4GX6(const int a)
 {
     return a;
 }
                                 #endif
 
-                                #ifndef DEF_clone_DcDCLzbwsce
-                                #define DEF_clone_DcDCLzbwsce
-inline const fu::str& clone_DcDCLzbw(const fu::str& a)
+                                #ifndef DEF_clone_T1Jf1Z0KiR2
+                                #define DEF_clone_T1Jf1Z0KiR2
+inline const fu::str& clone_T1Jf1Z0K(const fu::str& a)
 {
     return a;
 }
                                 #endif
 
-                                #ifndef DEF_clone_cXjT2jIIpdc
-                                #define DEF_clone_cXjT2jIIpdc
-inline const s_ModuleInputs& clone_cXjT2jII(const s_ModuleInputs& a)
+                                #ifndef DEF_clone_BpjaAqZzaaa
+                                #define DEF_clone_BpjaAqZzaaa
+inline const s_ModuleInputs& clone_BpjaAqZz(const s_ModuleInputs& a)
 {
     return a;
 }
                                 #endif
 
-                                #ifndef DEF_clone_otwjp0Ty2Uc
-                                #define DEF_clone_otwjp0Ty2Uc
-inline const s_ModuleOrder& clone_otwjp0Ty(const s_ModuleOrder& a)
+                                #ifndef DEF_clone_CDer1pfRaKl
+                                #define DEF_clone_CDer1pfRaKl
+inline const s_ModuleOrder& clone_CDer1pfR(const s_ModuleOrder& a)
 {
     return a;
 }
                                 #endif
 
-                                #ifndef DEF_clone_4EW58o1IPu4
-                                #define DEF_clone_4EW58o1IPu4
-inline const fu::vec<s_Struct>& clone_4EW58o1I(const fu::vec<s_Struct>& a)
+                                #ifndef DEF_clone_yUzRV7AncM9
+                                #define DEF_clone_yUzRV7AncM9
+inline const fu::vec<s_Struct>& clone_yUzRV7An(const fu::vec<s_Struct>& a)
 {
     return a;
 }
                                 #endif
 
-                                #ifndef DEF_clone_mJncZhdAp2e
-                                #define DEF_clone_mJncZhdAp2e
-inline const s_SolvedNode& clone_mJncZhdA(const s_SolvedNode& a)
+                                #ifndef DEF_clone_Q1UUsXjhPGl
+                                #define DEF_clone_Q1UUsXjhPGl
+inline const s_SolvedNode& clone_Q1UUsXjh(const s_SolvedNode& a)
 {
     return a;
 }
                                 #endif
 
-                                #ifndef DEF_clone_24hW9Ytuzm4
-                                #define DEF_clone_24hW9Ytuzm4
-inline const fu::vec<s_Overload>& clone_24hW9Ytu(const fu::vec<s_Overload>& a)
+                                #ifndef DEF_clone_YgFd2lJf7Gh
+                                #define DEF_clone_YgFd2lJf7Gh
+inline const fu::vec<s_Overload>& clone_YgFd2lJf(const fu::vec<s_Overload>& a)
 {
     return a;
 }
                                 #endif
 
-                                #ifndef DEF_clone_kIrmu6DQ4rl
-                                #define DEF_clone_kIrmu6DQ4rl
-inline const fu::vec<s_Extended>& clone_kIrmu6DQ(const fu::vec<s_Extended>& a)
+                                #ifndef DEF_clone_h2eJ8vfftjk
+                                #define DEF_clone_h2eJ8vfftjk
+inline const fu::vec<s_Extended>& clone_h2eJ8vff(const fu::vec<s_Extended>& a)
 {
     return a;
 }
                                 #endif
 
-                                #ifndef DEF_clone_ESOZciocfl7
-                                #define DEF_clone_ESOZciocfl7
-inline const fu::vec<s_ScopeItem>& clone_ESOZcioc(const fu::vec<s_ScopeItem>& a)
+                                #ifndef DEF_clone_2gILMhVaICb
+                                #define DEF_clone_2gILMhVaICb
+inline const fu::vec<s_ScopeItem>& clone_2gILMhVa(const fu::vec<s_ScopeItem>& a)
 {
     return a;
 }
                                 #endif
 
-                                #ifndef DEF_clone_kttDaK42hjd
-                                #define DEF_clone_kttDaK42hjd
-inline const fu::vec<int>& clone_kttDaK42(const fu::vec<int>& a)
+                                #ifndef DEF_clone_KE4Ju1yDYU9
+                                #define DEF_clone_KE4Ju1yDYU9
+inline const fu::vec<int>& clone_KE4Ju1yD(const fu::vec<int>& a)
 {
     return a;
 }
                                 #endif
 
-                                #ifndef DEF_clone_AfzW5oEvLe7
-                                #define DEF_clone_AfzW5oEvLe7
-inline const fu::vec<s_Target>& clone_AfzW5oEv(const fu::vec<s_Target>& a)
+                                #ifndef DEF_clone_lmGNhJZgGsc
+                                #define DEF_clone_lmGNhJZgGsc
+inline const fu::vec<s_Target>& clone_lmGNhJZg(const fu::vec<s_Target>& a)
 {
     return a;
 }
                                 #endif
 
-                                #ifndef DEF_clone_TfbmnLDB9Pe
-                                #define DEF_clone_TfbmnLDB9Pe
-inline s_Scope clone_TfbmnLDB(const s_Scope& a)
+                                #ifndef DEF_clone_u3AUYy1Feof
+                                #define DEF_clone_u3AUYy1Feof
+inline s_Scope clone_u3AUYy1F(const s_Scope& a)
 {
     /*MOV*/ s_Scope res {};
 
     {
-        res.overloads = clone_24hW9Ytu(a.overloads);
-        res.extended = clone_kIrmu6DQ(a.extended);
-        res.items = clone_ESOZcioc(a.items);
-        res.implicits = clone_ESOZcioc(a.implicits);
-        res.imports = clone_kttDaK42(a.imports);
-        res.privates = clone_kttDaK42(a.privates);
-        res.usings = clone_AfzW5oEv(a.usings);
-        res.converts = clone_AfzW5oEv(a.converts);
-        res.pub_items = clone_DHH5Baj0(a.pub_items);
-        res.pub_cnvrts = clone_DHH5Baj0(a.pub_cnvrts);
+        res.overloads = clone_YgFd2lJf(a.overloads);
+        res.extended = clone_h2eJ8vff(a.extended);
+        res.items = clone_2gILMhVa(a.items);
+        res.implicits = clone_2gILMhVa(a.implicits);
+        res.imports = clone_KE4Ju1yD(a.imports);
+        res.privates = clone_KE4Ju1yD(a.privates);
+        res.usings = clone_lmGNhJZg(a.usings);
+        res.converts = clone_lmGNhJZg(a.converts);
+        res.pub_items = clone_dD3H4GX6(a.pub_items);
+        res.pub_cnvrts = clone_dD3H4GX6(a.pub_cnvrts);
     };
     return /*NRVO*/ res;
 }
                                 #endif
 
-                                #ifndef DEF_clone_55mLsuleO26
-                                #define DEF_clone_55mLsuleO26
-inline s_SolverNotes clone_55mLsule(const s_SolverNotes a)
+                                #ifndef DEF_clone_frE7d1dBjWe
+                                #define DEF_clone_frE7d1dBjWe
+inline s_SolverNotes clone_frE7d1dB(const s_SolverNotes a)
 {
     return a;
 }
                                 #endif
 
-                                #ifndef DEF_clone_7R2wn4vRxyb
-                                #define DEF_clone_7R2wn4vRxyb
-inline s_SolverOutput clone_7R2wn4vR(const s_SolverOutput& a)
+                                #ifndef DEF_clone_NfKDlKSyerj
+                                #define DEF_clone_NfKDlKSyerj
+inline s_SolverOutput clone_NfKDlKSy(const s_SolverOutput& a)
 {
     /*MOV*/ s_SolverOutput res {};
 
     {
-        res.root = clone_mJncZhdA(a.root);
-        res.scope = clone_TfbmnLDB(a.scope);
-        res.notes = clone_55mLsule(a.notes);
+        res.root = clone_Q1UUsXjh(a.root);
+        res.scope = clone_u3AUYy1F(a.scope);
+        res.notes = clone_frE7d1dB(a.notes);
     };
     return /*NRVO*/ res;
 }
                                 #endif
 
-                                #ifndef DEF_clone_iygyhUpoYj9
-                                #define DEF_clone_iygyhUpoYj9
-inline const s_CodegenOutput& clone_iygyhUpo(const s_CodegenOutput& a)
+                                #ifndef DEF_clone_x0DVJAtWpqh
+                                #define DEF_clone_x0DVJAtWpqh
+inline const s_CodegenOutput& clone_x0DVJAtW(const s_CodegenOutput& a)
 {
     return a;
 }
                                 #endif
 
-                                #ifndef DEF_clone_wo58Cdr7rS8
-                                #define DEF_clone_wo58Cdr7rS8
-inline s_ModuleOutputs clone_wo58Cdr7(const s_ModuleOutputs& a)
+                                #ifndef DEF_clone_TzGdNpjoLWe
+                                #define DEF_clone_TzGdNpjoLWe
+inline s_ModuleOutputs clone_TzGdNpjo(const s_ModuleOutputs& a)
 {
     /*MOV*/ s_ModuleOutputs res {};
 
     {
-        res.types = clone_4EW58o1I(a.types);
-        res.solve = clone_7R2wn4vR(a.solve);
-        res.cpp = clone_iygyhUpo(a.cpp);
+        res.types = clone_yUzRV7An(a.types);
+        res.solve = clone_NfKDlKSy(a.solve);
+        res.cpp = clone_x0DVJAtW(a.cpp);
     };
     return /*NRVO*/ res;
 }
                                 #endif
 
-                                #ifndef DEF_clone_kBrbPK4ZhK9
-                                #define DEF_clone_kBrbPK4ZhK9
-inline const s_ModuleStats& clone_kBrbPK4Z(const s_ModuleStats& a)
+                                #ifndef DEF_clone_Iv4I43NBh01
+                                #define DEF_clone_Iv4I43NBh01
+inline const s_ModuleStats& clone_Iv4I43NB(const s_ModuleStats& a)
 {
     return a;
 }
                                 #endif
 
-                                #ifndef DEF_clone_mLnIjDzkpRc
-                                #define DEF_clone_mLnIjDzkpRc
-inline s_Module clone_mLnIjDzk(const s_Module& a)
+                                #ifndef DEF_clone_G5fNGz6vaZ6
+                                #define DEF_clone_G5fNGz6vaZ6
+inline s_Module clone_G5fNGz6v(const s_Module& a)
 {
     /*MOV*/ s_Module res {};
 
     {
-        res.modid = clone_DHH5Baj0(a.modid);
-        res.fname = clone_DcDCLzbw(a.fname);
-        res.in = clone_cXjT2jII(a.in);
-        res.order = clone_otwjp0Ty(a.order);
-        res.out = clone_wo58Cdr7(a.out);
-        res.stats = clone_kBrbPK4Z(a.stats);
+        res.modid = clone_dD3H4GX6(a.modid);
+        res.fname = clone_T1Jf1Z0K(a.fname);
+        res.in = clone_BpjaAqZz(a.in);
+        res.order = clone_CDer1pfR(a.order);
+        res.out = clone_TzGdNpjo(a.out);
+        res.stats = clone_Iv4I43NB(a.stats);
     };
     return /*NRVO*/ res;
 }
                                 #endif
 
-static const fu::str PRELUDE_SRC fu_INIT_PRIORITY(1011) = "\n\n\n// Arithmetics.\n\nprefix fn + !T(a: T) case (T.is::arithmetic): T __native;\nprefix fn - !T(a: T) case (T.is::arithmetic): T __native;\n\ninfix fn + !T(a: T, b: T) case (T.is::arithmetic): T __native;\ninfix fn - !T(a: T, b: T) case (T.is::arithmetic): T __native;\ninfix fn * !T(a: T, b: T) case (T.is::arithmetic): T __native;\ninfix fn / !T(a: T, b: T) case (T.is::arithmetic): T __native;\n\ninfix fn % !T(a: T, b: T)\n    case (T.is::integral): T __native;\n    case (T.is::floating_point): T __native(\"<cmath>\", \"std::fmod\");\n\nprefix fn ++ !T(ref a: T) case (T.is::arithmetic): &mut T __native;\nprefix fn -- !T(ref a: T) case (T.is::arithmetic): &mut T __native;\n\npostfix fn ++ !T(ref a: T) case (T.is::arithmetic): T __native;\npostfix fn -- !T(ref a: T) case (T.is::arithmetic): T __native;\n\ninfix fn += !T(ref a: T, b: T) case (T.is::arithmetic): &mut T __native;\ninfix fn -= !T(ref a: T, b: T) case (T.is::arithmetic): &mut T __native;\ninfix fn *= !T(ref a: T, b: T) case (T.is::arithmetic): &mut T __native;\ninfix fn /= !T(ref a: T, b: T) case (T.is::arithmetic): &mut T __native;\n\ninfix fn >  !T(a: T, b: T) case (T.is::primitive): bool __native;\ninfix fn <  !T(a: T, b: T) case (T.is::primitive): bool __native;\ninfix fn >= !T(a: T, b: T) case (T.is::primitive): bool __native;\ninfix fn <= !T(a: T, b: T) case (T.is::primitive): bool __native;\n\n\n// Bitwise.\n\nprefix fn ~ !T(a: T) case (T.is::bitfield): T __native;\n\ninfix fn & !T(a: T, b: T) case (T.is::bitfield): T __native;\ninfix fn | !T(a: T, b: T) case (T.is::bitfield): T __native;\ninfix fn ^ !T(a: T, b: T) case (T.is::bitfield): T __native;\n\ninfix fn &= !T(ref a: T, b: T) case (T.is::bitfield): &mut T __native;\ninfix fn |= !T(ref a: T, b: T) case (T.is::bitfield): &mut T __native;\ninfix fn ^= !T(ref a: T, b: T) case (T.is::bitfield): &mut T __native;\n\ninfix fn << !T(a: T, b: T) case (T.is::integral): T __native;\ninfix fn >> !T(a: T, b: T) case (T.is::integral): T __native;\n\ninfix fn <<= !T(ref a: T, b: T) case (T.is::integral): &mut T __native;\ninfix fn >>= !T(ref a: T, b: T) case (T.is::integral): &mut T __native;\n\n\n// Numeric conversions.\n\nfn   i8 !T(v: T) case (T.is::primitive):   i8 __native(\"/prim/convert\");\nfn  i16 !T(v: T) case (T.is::primitive):  i16 __native(\"/prim/convert\");\nfn  i32 !T(v: T) case (T.is::primitive):  i32 __native(\"/prim/convert\");\nfn  i64 !T(v: T) case (T.is::primitive):  i64 __native(\"/prim/convert\");\nfn i128 !T(v: T) case (T.is::primitive): i128 __native(\"/prim/convert\");\n\nfn   u8 !T(v: T) case (T.is::primitive):   u8 __native(\"/prim/convert\");\nfn  u16 !T(v: T) case (T.is::primitive):  u16 __native(\"/prim/convert\");\nfn  u32 !T(v: T) case (T.is::primitive):  u32 __native(\"/prim/convert\");\nfn  u64 !T(v: T) case (T.is::primitive):  u64 __native(\"/prim/convert\");\nfn u128 !T(v: T) case (T.is::primitive): u128 __native(\"/prim/convert\");\n\nfn  f32 !T(v: T) case (T.is::primitive): f32 __native(\"/prim/convert\");\nfn  f64 !T(v: T) case (T.is::primitive): f64 __native(\"/prim/convert\");\n\nfn byte !T(v: T) case (T.is::primitive): byte __native(\"/prim/convert\");\n\nfn unsigned !T(v: T)\n    case (T -> i8)     v.u8;\n    case (T -> i16)    v.u16;\n    case (T -> i32)    v.u32;\n    case (T -> i64)    v.u64;\n    case (T -> i128)   v.u128;\n    case (T.is::integral && T.is::unsigned) v;\n\nfn signed !T(v: T)\n    case (T -> u8)     v.i8;\n    case (T -> u16)    v.i16;\n    case (T -> u32)    v.i32;\n    case (T -> u64)    v.i64;\n    case (T -> u128)   v.i128;\n    case (T.is::integral && !T.is::unsigned) v;\n\nfn MIN !T(_: T)\n    case (T -> i8 )        -128;\n    case (T -> i16)        -32768;\n    case (T -> i32)        -2147483648;\n    case (T -> i64)        -9223372036854775808;\n    case (T.is::unsigned)  T(0);\n\nfn MAX !T(_: T)\n    case (T -> i8 )        127;\n    case (T -> i16)        32767;\n    case (T -> i32)        2147483647;\n    case (T -> i64)        9223372036854775807;\n    case (T.is::unsigned)  T(-1);\n\ntype  int   = i32; // These may become separate types\ntype uint   = u32; //  with a user-selectable size.\n\n\n// Math.\n\nfn abs !T(v: T) case (T.is::floating_point): T __native(\"<cmath>\", \"std::abs\");\n\nfn max !T(a: T, b: T)\n    case (T.is::floating_point) a >= b || b != b ? a : b;\n    case (T.is::arithmetic)     a >= b           ? a : b;\n\nfn min !T(a: T, b: T)\n    case (T.is::floating_point) a <= b || b != b ? a : b;\n    case (T.is::arithmetic)     a <= b           ? a : b;\n\nfn exp   !T(a: T) case (T.is::floating_point): T __native(\"<cmath>\", \"std::exp\");\nfn exp2  !T(a: T) case (T.is::floating_point): T __native(\"<cmath>\", \"std::exp2\");\nfn log   !T(a: T) case (T.is::floating_point): T __native(\"<cmath>\", \"std::log\");\nfn log10 !T(a: T) case (T.is::floating_point): T __native(\"<cmath>\", \"std::log10\");\nfn log2  !T(a: T) case (T.is::floating_point): T __native(\"<cmath>\", \"std::log2\");\n\nfn pow   !T(a: T, b: T) case (T.is::floating_point): T __native(\"<cmath>\", \"std::pow\");\nfn sqrt  !T(v: T) case (T.is::floating_point): T __native(\"<cmath>\", \"std::sqrt\");\nfn cbrt  !T(v: T) case (T.is::floating_point): T __native(\"<cmath>\", \"std::cbrt\");\nfn hypot !T(v: T) case (T.is::floating_point): T __native(\"<cmath>\", \"std::hypot\");\n\nfn ceil  !T(v: T) case (T.is::floating_point): T __native(\"<cmath>\", \"std::ceil\");\nfn floor !T(v: T) case (T.is::floating_point): T __native(\"<cmath>\", \"std::floor\");\nfn trunc !T(v: T) case (T.is::floating_point): T __native(\"<cmath>\", \"std::trunc\");\nfn round !T(v: T) case (T.is::floating_point): T __native(\"<cmath>\", \"std::round\");\n\nfn sin !T(v: T) case (T.is::floating_point): T __native(\"<cmath>\", \"std::sin\");\nfn cos !T(v: T) case (T.is::floating_point): T __native(\"<cmath>\", \"std::cos\");\nfn tan !T(v: T) case (T.is::floating_point): T __native(\"<cmath>\", \"std::tan\");\n\nfn asin !T(v: T) case (T.is::floating_point): T __native(\"<cmath>\", \"std::asin\");\nfn acos !T(v: T) case (T.is::floating_point): T __native(\"<cmath>\", \"std::acos\");\nfn atan !T(v: T) case (T.is::floating_point): T __native(\"<cmath>\", \"std::atan\");\n\nfn atan2 !T(y: T, x: T) case (T.is::floating_point): T __native(\"<cmath>\", \"std::atan2\");\n\nfn PI():  f64 __native(\"<math.h>\", \"M_PI\");\nfn E():   f64 __native(\"<math.h>\", \"M_E\");\nfn INF(): f64 __native(\"<math.h>\", \"INFINITY\");\nfn NAN(): f64 __native(\"<math.h>\", \"NAN\");\n\nfn nan    !T(v: T) case (T.is::floating_point): bool __native(\"<cmath>\", \"std::isnan\");\nfn inf    !T(v: T) case (T.is::floating_point): bool __native(\"<cmath>\", \"std::isinf\");\nfn finite !T(v: T) case (T.is::floating_point): bool __native(\"<cmath>\", \"std::isfinite\");\n\n\n// Assignment.\n\ninfix fn   = !T(ref a: T,    mut b: T): &mut T __native;\ninfix fn ||= !T(ref a: T, inline b: T): &mut T = a || (a = b);\ninfix fn &&= !T(ref a: T, inline b: T): &mut T = a && (a = b);\n\nfn swap !T(ref a: T, ref b: T): void __native(\n    \"hacks/soft_risk\",\n    \"<utility>\", \"std::swap\");\n\n\n\n// Arrays.\n//\n// TODO mutval .=,\n//  just like the assignments and splice.\n\nnovec fn len !T(a: [T;]): int __native(\".size()\");\n\nfn typeof !T(lax _: T) = T;\n\nnovec fn [] !T(a: [T;], i: int)\n    case ($a -> &mut [T;]): &mut T __native(\".mutref\");\n    default               : &    T __native;\n\nnovec fn [] !T(a: [T;], start!: int)\n    case ($a -> &mut [T;]): &mut [T;] __native(\"<fu/view.h>\", \"fu::get_view_mut\");\n    default               : &    [T;] __native(\"<fu/view.h>\", \"fu::get_view\");\n\nnovec fn [] !T(a: [T;], end!: int)\n    case ($a -> &mut [T;]): &mut [T;] __native(\"<fu/view.h>\", \"fu::get_view_start0_mut\");\n    default               : &    [T;] __native(\"<fu/view.h>\", \"fu::get_view_start0\");\n\nnovec fn [] !T(a: [T;], start: int, end: int)\n    case ($a -> &mut [T;]): &mut [T;] __native(\"<fu/view.h>\", \"fu::get_view_mut\");\n    default               : &    [T;] __native(\"<fu/view.h>\", \"fu::get_view\");\n\nfn    push !T(ref a: T[], mut b: T): void __native(\".push\");\nfn unshift !T(ref a: T[], mut b: T): void __native(\".unshift\");\nfn  insert !T(ref a: T[], i: int, mut b: T): void __native(\".insert\");\n\nfn slice !T(a: [T;], start: int, end: int)\n    case ($a -> T[]):  T[] __native(\"<fu/vec/slice.h>\", \"fu::slice\");\n    default         : [T;] __native(\"<fu/view.h>\", \"fu::get_view\");\n\nfn slice !T(a: [T;], start: int)\n    case ($a -> T[]):  T[] __native(\"<fu/vec/slice.h>\", \"fu::slice\");\n    default         : [T;] __native(\"<fu/view.h>\", \"fu::get_view\");\n\nfn substr !T(a: T[], start: int, end: int): T[] __native(\"<fu/vec/slice.h>\", \"fu::substr\");\n\nfn splice !T(ref a: T[], start: int, count: int): void  __native(\".splice\");\nfn splice !T(ref a: T[], start: int, count: int, /*TODO FIX*/b: [T]): void  __native(\".splice\");\n\nfn    pop !T(ref a: T[]): void __native(\".pop()\");\nfn  shift !T(ref a: T[]): void __native(\".shift()\");\n\nfn  clear !T(ref a: T[]): void __native(\".clear()\");\nfn shrink !T(ref a: T[], len: int): void __native(\".shrink\");\n\nfn resize !T(ref a: T[], len: int): void __native(\".resize\");\nfn   grow !T(ref a: T[], len: int): void __native(\".grow\");\n\nfn resize_junk !T(ref a: T[], len: int): void __native(\".resize<false>\");\nfn   grow_junk !T(ref a: T[], len: int): void __native(\".grow<false>\");\n\n\n// Sorts, via std::sort - fnptrs.\n\nfn sort !T(ref a: [T;]): void\n{\n    pragma include(\"<algorithm>\");\n    pragma emit(\n    `\n        auto* data = `a`.data_mut();\n        std::sort(data, data + `a`.size());\n    `);\n}\n\nfn sort !T(ref a: [T;], less/*: fn(a: T, b: T): bool*/): void\n{\n    noflow fn sort()\n    {\n        mut l: T;\n        mut r: T;\n        pragma include(\"<algorithm>\");\n        pragma emit(\n        `\n            (void) `l`;\n            (void) `r`;\n            auto* data = `a`.data_mut();\n            std::sort(data, data + `a`.size(), [&](auto& `l`, auto& `r`)\n            {\n        `);\n\n        mut lt: bool = less(l, r);\n        pragma emit(\n        `\n                return `lt`;\n            });\n        `);\n    }\n\n    sort();\n}\n\n\n// String likes.\n\nfn find !T(a: [T;], b: [T;], start: int, end: int) case (T.is::primitive): int  __native(\"<fu/vec/find.h>\", \"fu::lfind\");\nfn find !T(a: [T;], b: [T;], start: int)           case (T.is::primitive): int  __native(\"<fu/vec/find.h>\", \"fu::lfind\");\nfn find !T(a: [T;], b: [T;])                       case (T.is::primitive): int  __native(\"<fu/vec/find.h>\", \"fu::lfind\");\n\nfn has  !T(a: [T;], b: [T;]) case (T.is::primitive): bool __native(\"<fu/vec/find.h>\", \"fu::has\");\n\n\n// Find char.\n\nfn starts !T(a: [T;], with: T): bool\n{\n    return a.len && a[0] == with;\n}\n\nfn ends !T(a: [T;], with: T): bool\n{\n    return a.len && a[a.len - 1] == with;\n}\n\nfn starts !T(a: [T;], with: [T;]): bool\n{\n    return a.len >= with.len\n        && a[0, with.len] == with;\n}\n\nfn ends !T(a: [T;], with: [T;]): bool\n{\n    return a.len >= with.len\n        && a[a.len - with.len, a.len] == with;\n}\n\nfn find !T(a: [T;], b: T, mut start: int): int\n{\n    start = start > 0 ? start : 0;\n    for (mut i = start; i < a.len; i++) // TODO memchr\n        if (a[i] == b)\n            return i;\n\n    return -1;\n}\n\nfn find !T(a: [T;], b: T): int\n{\n    for (mut i = 0; i < a.len; i++) // TODO memchr\n        if (a[i] == b)\n            return i;\n\n    return -1;\n}\n\nfn has !T(a: [T;], b: T): bool\n{\n    for (mut i = 0; i < a.len; i++)\n        if (a[i] == b)\n            return true;\n\n    return false;\n}\n\n\n// Strings.\n\ntype string = byte[];\n\ninfix fn  >(a: string, b: string): bool __native(\"<fu/vec/cmp.h>\",  \">\");\ninfix fn  <(a: string, b: string): bool __native(\"<fu/vec/cmp.h>\",  \"<\");\ninfix fn >=(a: string, b: string): bool __native(\"<fu/vec/cmp.h>\", \">=\");\ninfix fn <=(a: string, b: string): bool __native(\"<fu/vec/cmp.h>\", \"<=\");\n\n\n// D-style concats.\n//\n// TODO FIX these concats hide copies\n//  which also means they dont work correctly for nocopy stuff\n//\ninfix fn ~ !T(a: [T;], b: [T;]): T[] __native(\"<fu/vec/concat.h>\",     \"+\");\ninfix fn ~ !T(a: [T;], b:  T  ): T[] __native(\"<fu/vec/concat_one.h>\", \"+\");\ninfix fn ~ !T(a:  T  , b: [T;]): T[] __native(\"<fu/vec/concat_one.h>\", \"+\");\n\ninfix fn ~= !T(ref a: T[],     b: [T;]): &mut T[] __native(\"<fu/vec/concat.h>\",     \"+=\");\ninfix fn ~= !T(ref a: T[], mut b:  T  ): &mut T[] __native(\"<fu/vec/concat_one.h>\", \"+=\");\n\n\n// Fun with views.\n\nfn view!<T, U>(a: [T;], of: U)\n    case ($a -> &mut [T;] && T.is::trivial && U.is::trivial): &mut [U] __native(\"<fu/view.h>\", \"fu::view_of_mut\");\n    case (                    T.is::trivial && U.is::trivial):      [U] __native(\"<fu/view.h>\", \"fu::view_of\");\n\ninfix fn .= !T(ref a: [T;], b: [T;]) case (T.is::copy): void __native(\"<fu/vec/view_assign.h>\", \"fu::view_assign\");\n\n// TODO not needed if swap(x, y) alias-ok's its two arguments:\nfn swap !T(ref a: [T;], i: int, j: int): void __native(\"<fu/vec/view_swap.h>\", \"fu::view_swap\");\n\n\n// Stringifiables.\n\ninfix fn ~  !T(    a: [byte], b.str) a ~ b;\ninfix fn ~  !T(    a.str, b: [byte]) a ~ b;\ninfix fn ~= !T(ref a: string, b.str) a ~= b;\n\nfn str !T(n: T)\n    case (T.is::unsigned       ): string __native(\"<fu/decstr.h>\", \"fu::u64dec\");\n    case (T.is::integral       ): string __native(\"<fu/decstr.h>\", \"fu::i64dec\");\n    case (T -> bool            ): string __native(\"<fu/decstr.h>\", \"fu::booldec\");\n    case (T -> f32             ): string __native(\"<fu/decstr.h>\", \"fu::f32dec\");\n    case (T -> f64             ): string __native(\"<fu/decstr.h>\", \"fu::f64dec\");\n    case (T.is::enum)\n{\n    for (fieldname i: T)\n        if (n == \"i\")\n            return \"i\";\n\n    return n.i64.str; // TODO FIX use .integer or .arithmetic when we get these\n}\n    case (T.is::flags)\n{\n    mut res: string;\n    for (fieldname i: T)\n        if (n & \"i\")\n            res ~= \"i\" ~ \", \";\n\n    if (res)\n        res.shrink(res.len - 2);\n\n    return res;\n}\n\n\n// Assertions, bugs & fails.\n//  TODO i dont actually think we want to have nullary stuff in prelude,\n//   so TODO needs to take an arg, same with assert - perhaps a pass-through argument.\n\nfn throw(mut reason: string): never __native(\"<fu/never.h>\", \"fu::fail\",\n    \"|Fx_NotDeadCode\", \"|Fx_DontMoveDown\", \"|Fx_Throws\");\n\nfn assert(): never __native(\"<fu/never.h>\", \"fu_ASSERT()\",\n    \"|Fx_NotDeadCode\", \"|Fx_DontMoveDown\", \"|Fx_Crashes\");\n\n\n// Printifiables = anything that implements print.\n\ninline fn print(x: string): string = x;\ninline fn print(x.str)    : string = x;\n\nfn println(parts.print[]: [string]): void __native(\"<fu/print.h>\", \"fu::println\",\n    \"|output\");\n\n\n// String commons.\n\nfn join !T(a: [T[];], sep?: T or [T;] or [])\n{\n    if (a.len < 2)\n        return a.len && a[0];\n\n    let N = typeof(sep) -> [T;] ? sep.len\n          : typeof(sep) ->  T   ? 1\n                                : 0;\n\n    mut size = a[0].len;\n    for (mut i = 1; i < a.len; i++)\n        size += N + a[i].len;\n\n    mut res: T[];\n    res.grow_junk(size);\n\n    let head = a[0];\n    size = head.len;\n    res[0, head.len] .= head;\n    for (mut i = 1; i < a.len; i++)\n    {\n        let range = a[i];\n        if (typeof(sep) -> [T;])\n            res[size, size + N] .= sep;\n        else if (typeof(sep) -> T)\n            res[size] = sep;\n\n        size += N;\n        res[size, size + range.len] .= range;\n        size += range.len;\n    }\n\n    return res;\n}\n\nfn split !T(str: T[] or [T;], sep: T or [T;], each)\n{\n    mut last = 0;\n    mut next = 0;\n\n    let N = typeof(sep) -> [T;] ? sep.len : 1;\n    if (N) while ((next = str.find(sep, start: last)) >= 0)\n    {\n        each(str.slice(last, next), first?: !last, last?: false);\n        last = next + N;\n    }\n\n    if (last)\n        each(str.slice(last), first?: false, last?: true);\n    else\n        each(str, first?: true, last?: true);\n}\n\nfn split !T(str: T[], sep: T or [T;])\n{\n    mut result: T[][];\n    split(str, :sep, |substr| result ~= substr);\n    return result;\n}\n\n\n// TODO: .replace() is a faster impl of .split().join().\n//  How do we express this so that .split.joins are automatically promoted?\n//   This would be generally useful, e.g.\n//    .map.maps and .map.filters could use this to skip allocs.\n\nfn replace !T(str: T[], all: T or [T;], with: T or [T;] or [])\n{\n    mut result: T[];\n    split(str, sep: all, |substr, lax first, lax last|\n    {\n        if (!first)\n            typeof(with) -> [] ? with() : result ~= with;\n        else if (last)\n            return str;\n\n        result ~= substr;\n    });\n\n    return result;\n}\n\n\n//\n\ninfix fn <> !<T, U>(a: T, b: T)\ncase (T.is::primitive) = a < b ? -1 : a > b ? +1 : 0;\ncase (T -> [U;]) {\n    mut cmp = a.len <> b.len;\n    for (mut i = 0; i < a.len && !cmp; i++)\n        cmp = a[i] <> b[i];\n\n    return cmp;\n}\ndefault {\n    // TODO this would be better if it went through each member doing the trivial work first -\n    //  only then going through them again and looking at e.g. array contents etc.\n    for (fieldname i: T) {\n        let cmp = a.i <> b.i;\n        if (cmp)\n            return cmp;\n    }\n\n    return 0;\n}\n\ninfix fn == !T(a: T, b: T)\n    case (T.is::primitive): bool __native;\n    default: bool = !(a <> b);\n\ninfix fn != !T(a: T, b: T)\n    case (T.is::primitive): bool __native;\n    default: bool = !!(a <> b);\n\n\n//\n\nfn map !T(a: [T;], fn)\n{\n    mut res: typeof( fn(T, i?: a.len) )[];\n    res.grow_junk(a.len);\n    for (mut i = 0; i < a.len; i++)\n        res[i] = fn(a[i], i?: i);\n\n    return res;\n}\n\nfn each !T(a: [T;], fn)\n    for (mut i = 0; i < a.len; i++)\n        fn(a[i], i?: i);\n\nfn reverse !T(ref a: [T;])\n{\n    let n1 = a.len - 1;\n    let n2 = a.len >> 1;\n    for (mut i = 0; i < n2; i++)\n        a.swap(i, n1 - i);\n}\n\nfn all !T(a: [T;], pred)\n{\n    a.each: |item, i|\n        if !(pred(item, i?: i))\n            return false;\n\n    return true;\n}\n\nfn some !T(a: [T;], pred)\n{\n    a.each: |item, i|\n        if (pred(item, i?: i))\n            return true;\n\n    return false;\n}\n\n"_fu;
+static const fu::str PRELUDE_SRC fu_INIT_PRIORITY(1012) = "\n\n\n// Arithmetics.\n\nprefix fn + !T(a: T) case (T.is::arithmetic): T __native;\nprefix fn - !T(a: T) case (T.is::arithmetic): T __native;\n\ninfix fn + !T(a: T, b: T) case (T.is::arithmetic): T __native;\ninfix fn - !T(a: T, b: T) case (T.is::arithmetic): T __native;\ninfix fn * !T(a: T, b: T) case (T.is::arithmetic): T __native;\ninfix fn / !T(a: T, b: T) case (T.is::arithmetic): T __native;\n\ninfix fn % !T(a: T, b: T)\n    case (T.is::integral): T __native;\n    case (T.is::floating_point): T __native(\"<cmath>\", \"std::fmod\");\n\nprefix fn ++ !T(ref a: T) case (T.is::arithmetic): &mut T __native;\nprefix fn -- !T(ref a: T) case (T.is::arithmetic): &mut T __native;\n\npostfix fn ++ !T(ref a: T) case (T.is::arithmetic): T __native;\npostfix fn -- !T(ref a: T) case (T.is::arithmetic): T __native;\n\ninfix fn += !T(ref a: T, b: T) case (T.is::arithmetic): &mut T __native;\ninfix fn -= !T(ref a: T, b: T) case (T.is::arithmetic): &mut T __native;\ninfix fn *= !T(ref a: T, b: T) case (T.is::arithmetic): &mut T __native;\ninfix fn /= !T(ref a: T, b: T) case (T.is::arithmetic): &mut T __native;\n\ninfix fn >  !T(a: T, b: T) case (T.is::primitive): bool __native;\ninfix fn <  !T(a: T, b: T) case (T.is::primitive): bool __native;\ninfix fn >= !T(a: T, b: T) case (T.is::primitive): bool __native;\ninfix fn <= !T(a: T, b: T) case (T.is::primitive): bool __native;\n\n\n// Bitwise.\n\nprefix fn ~ !T(a: T) case (T.is::bitfield): T __native;\n\ninfix fn & !T(a: T, b: T) case (T.is::bitfield): T __native;\ninfix fn | !T(a: T, b: T) case (T.is::bitfield): T __native;\ninfix fn ^ !T(a: T, b: T) case (T.is::bitfield): T __native;\n\ninfix fn &= !T(ref a: T, b: T) case (T.is::bitfield): &mut T __native;\ninfix fn |= !T(ref a: T, b: T) case (T.is::bitfield): &mut T __native;\ninfix fn ^= !T(ref a: T, b: T) case (T.is::bitfield): &mut T __native;\n\ninfix fn << !T(a: T, b: T) case (T.is::integral): T __native;\ninfix fn >> !T(a: T, b: T) case (T.is::integral): T __native;\n\ninfix fn <<= !T(ref a: T, b: T) case (T.is::integral): &mut T __native;\ninfix fn >>= !T(ref a: T, b: T) case (T.is::integral): &mut T __native;\n\n\n// Numeric conversions.\n/*  Sketch for making these programmable.\n\ninfix fn => !From(from: From, type Into)\n    case (Into.is::primitive && From.is::primitive)\n        __native(\"/prim_convert\");\n*/\n\nfn   i8 !T(v: T) case (T.is::primitive):   i8 __native(\"/prim/convert\");\nfn  i16 !T(v: T) case (T.is::primitive):  i16 __native(\"/prim/convert\");\nfn  i32 !T(v: T) case (T.is::primitive):  i32 __native(\"/prim/convert\");\nfn  i64 !T(v: T) case (T.is::primitive):  i64 __native(\"/prim/convert\");\nfn i128 !T(v: T) case (T.is::primitive): i128 __native(\"/prim/convert\");\n\nfn   u8 !T(v: T) case (T.is::primitive):   u8 __native(\"/prim/convert\");\nfn  u16 !T(v: T) case (T.is::primitive):  u16 __native(\"/prim/convert\");\nfn  u32 !T(v: T) case (T.is::primitive):  u32 __native(\"/prim/convert\");\nfn  u64 !T(v: T) case (T.is::primitive):  u64 __native(\"/prim/convert\");\nfn u128 !T(v: T) case (T.is::primitive): u128 __native(\"/prim/convert\");\n\nfn  f32 !T(v: T) case (T.is::primitive): f32 __native(\"/prim/convert\");\nfn  f64 !T(v: T) case (T.is::primitive): f64 __native(\"/prim/convert\");\n\nfn byte !T(v: T) case (T.is::primitive): byte __native(\"/prim/convert\");\n\nfn unsigned !T(v: T)\n    case (T -> i8)     v.u8;\n    case (T -> i16)    v.u16;\n    case (T -> i32)    v.u32;\n    case (T -> i64)    v.u64;\n    case (T -> i128)   v.u128;\n    case (T.is::integral && T.is::unsigned) v;\n\nfn signed !T(v: T)\n    case (T -> u8)     v.i8;\n    case (T -> u16)    v.i16;\n    case (T -> u32)    v.i32;\n    case (T -> u64)    v.i64;\n    case (T -> u128)   v.i128;\n    case (T.is::integral && !T.is::unsigned) v;\n\nfn MIN(type T)\n    case (T -> i8 )        -128;\n    case (T -> i16)        -32768;\n    case (T -> i32)        -2147483648;\n    case (T -> i64)        -9223372036854775808;\n    case (T.is::unsigned)  T(0);\n\nfn MAX(type T)\n    case (T -> i8 )        127;\n    case (T -> i16)        32767;\n    case (T -> i32)        2147483647;\n    case (T -> i64)        9223372036854775807;\n    case (T.is::unsigned)  T(-1);\n\ntype  int   = i32; // These may become separate types\ntype uint   = u32; //  with a user-selectable size.\n\n\n// Math.\n\nfn abs !T(v: T)\n    case (T.is::floating_point): T __native(\"<cmath>\", \"std::fabs\");\n    case (T.is::arithmetic && !T.is::unsigned) v < 0 ? -v : v;\n\nfn max !T(a: T, b: T)\n    case (T.is::floating_point): T __native(\"<cmath>\", \"std::fmin\");\n    case (T.is::arithmetic) a >= b ? a : b;\n\nfn min !T(a: T, b: T)\n    case (T.is::floating_point): T __native(\"<cmath>\", \"std::fmax\");\n    case (T.is::arithmetic) a <= b ? a : b;\n\nfn exp   !T(a: T) case (T.is::floating_point): T __native(\"<cmath>\", \"std::exp\");\nfn exp2  !T(a: T) case (T.is::floating_point): T __native(\"<cmath>\", \"std::exp2\");\nfn log   !T(a: T) case (T.is::floating_point): T __native(\"<cmath>\", \"std::log\");\nfn log10 !T(a: T) case (T.is::floating_point): T __native(\"<cmath>\", \"std::log10\");\nfn log2  !T(a: T) case (T.is::floating_point): T __native(\"<cmath>\", \"std::log2\");\n\nfn pow   !T(a: T, b: T) case (T.is::floating_point): T __native(\"<cmath>\", \"std::pow\");\nfn sqrt  !T(v: T) case (T.is::floating_point): T __native(\"<cmath>\", \"std::sqrt\");\nfn cbrt  !T(v: T) case (T.is::floating_point): T __native(\"<cmath>\", \"std::cbrt\");\nfn hypot !T(v: T) case (T.is::floating_point): T __native(\"<cmath>\", \"std::hypot\");\n\nfn ceil  !T(v: T) case (T.is::floating_point): T __native(\"<cmath>\", \"std::ceil\");\nfn floor !T(v: T) case (T.is::floating_point): T __native(\"<cmath>\", \"std::floor\");\nfn trunc !T(v: T) case (T.is::floating_point): T __native(\"<cmath>\", \"std::trunc\");\nfn round !T(v: T) case (T.is::floating_point): T __native(\"<cmath>\", \"std::round\");\n\nfn sin !T(v: T) case (T.is::floating_point): T __native(\"<cmath>\", \"std::sin\");\nfn cos !T(v: T) case (T.is::floating_point): T __native(\"<cmath>\", \"std::cos\");\nfn tan !T(v: T) case (T.is::floating_point): T __native(\"<cmath>\", \"std::tan\");\n\nfn asin !T(v: T) case (T.is::floating_point): T __native(\"<cmath>\", \"std::asin\");\nfn acos !T(v: T) case (T.is::floating_point): T __native(\"<cmath>\", \"std::acos\");\nfn atan !T(v: T) case (T.is::floating_point): T __native(\"<cmath>\", \"std::atan\");\n\nfn atan2 !T(y: T, x: T) case (T.is::floating_point): T __native(\"<cmath>\", \"std::atan2\");\n\nfn PI (type T) case (T.is::floating_point): T __native(\"<math.h>\", \"static_cast<>(M_PI)\");\nfn E  (type T) case (T.is::floating_point): T __native(\"<math.h>\", \"static_cast<>(M_E)\");\nfn INF(type T) case (T.is::floating_point): T __native(\"<math.h>\", \"static_cast<>(INFINITY)\");\nfn NAN(type T) case (T.is::floating_point): T __native(\"<math.h>\", \"static_cast<>(NAN)\");\n\nfn nan    !T(v: T) case (T.is::floating_point): bool __native(\"<cmath>\", \"std::isnan\");\nfn inf    !T(v: T) case (T.is::floating_point): bool __native(\"<cmath>\", \"std::isinf\");\nfn finite !T(v: T) case (T.is::floating_point): bool __native(\"<cmath>\", \"std::isfinite\");\n\n\n// Assignment.\n\ninfix fn   = !T(ref a: T,    mut b: T): &mut T __native;\ninfix fn ||= !T(ref a: T, inline b: T): &mut T = a || (a = b);\ninfix fn &&= !T(ref a: T, inline b: T): &mut T = a && (a = b);\n\nfn swap !T(ref a: T, ref b: T): void __native(\n    \"hacks/soft_risk\",\n    \"<utility>\", \"std::swap\");\n\n\n\n// Arrays.\n//\n// TODO mutval .=,\n//  just like the assignments and splice.\n\nfn typeof !T(lax _: T) = T;\n\nfn  [] (type T) = typeof([] => T []);\nfn [:] (type T) = typeof([] => T[:]);\n\nnovec fn len !T(a: T[:]): int __native(\".size()\");\n\nnovec fn [] !T(a: T[:], i: int)\n    case (typeof(a) -> &mut T[:]): &mut T __native(\".mutref\");\n    default                      : &    T __native;\n\nnovec fn [:] !T(a: T[:], start!: int)\n    case (typeof(a) -> &mut T[:]): &mut T[:] __native(\"<fu/view.h>\", \"fu::get_view_mut\");\n    default                      : &    T[:] __native(\"<fu/view.h>\", \"fu::get_view\");\n\nnovec fn [:] !T(a: T[:], end!: int)\n    case (typeof(a) -> &mut T[:]): &mut T[:] __native(\"<fu/view.h>\", \"fu::get_view_start0_mut\");\n    default                      : &    T[:] __native(\"<fu/view.h>\", \"fu::get_view_start0\");\n\nnovec fn [:] !T(a: T[:], start: int, end: int)\n    case (typeof(a) -> &mut T[:]): &mut T[:] __native(\"<fu/view.h>\", \"fu::get_view_mut\");\n    default                      : &    T[:] __native(\"<fu/view.h>\", \"fu::get_view\");\n\nfn    push !T(ref a: T[], mut b: T): void __native(\".push\");\nfn unshift !T(ref a: T[], mut b: T): void __native(\".unshift\");\nfn  insert !T(ref a: T[], i: int, mut b: T): void __native(\".insert\");\n\nfn slice !T(a: T[:], start: int, end: int)\n    case (typeof(a) -> T[]):  T[] __native(\"<fu/vec/slice.h>\", \"fu::slice\");\n    default                : T[:] __native(\"<fu/view.h>\", \"fu::get_view\");\n\nfn slice !T(a: T[:], start: int)\n    case (typeof(a) -> T[]):  T[] __native(\"<fu/vec/slice.h>\", \"fu::slice\");\n    default                : T[:] __native(\"<fu/view.h>\", \"fu::get_view\");\n\nfn substr !T(a: T[], start: int, end: int): T[] __native(\"<fu/vec/slice.h>\", \"fu::substr\");\n\nfn splice !T(ref a: T[], start: int, count: int): void  __native(\".splice\");\nfn splice !T(ref a: T[], start: int, count: int, /*TODO FIX*/b: T[:]): void  __native(\".splice\");\n\nfn    pop !T(ref a: T[]): void __native(\".pop()\");\nfn  shift !T(ref a: T[]): void __native(\".shift()\");\n\nfn  clear !T(ref a: T[]): void __native(\".clear()\");\nfn shrink !T(ref a: T[], len: int): void __native(\".shrink\");\n\nfn resize !T(ref a: T[], len: int): void __native(\".resize\");\nfn   grow !T(ref a: T[], len: int): void __native(\".grow\");\n\nfn resize_junk !T(ref a: T[], len: int): void __native(\".resize<false>\");\nfn   grow_junk !T(ref a: T[], len: int): void __native(\".grow<false>\");\n\n\n// Sorts, via std::sort - fnptrs.\n\nfn sort !T(ref a: T[:]): void\n{\n    pragma include(\"<algorithm>\");\n    pragma emit(\n    `\n        auto* data = `a`.data_mut();\n        std::sort(data, data + `a`.size());\n    `);\n}\n\nfn sort !T(ref a: T[:], less/*: fn(a: T, b: T): bool*/): void\n{\n    noflow fn sort()\n    {\n        mut l: T;\n        mut r: T;\n        pragma include(\"<algorithm>\");\n        pragma emit(\n        `\n            (void) `l`;\n            (void) `r`;\n            auto* data = `a`.data_mut();\n            std::sort(data, data + `a`.size(), [&](auto& `l`, auto& `r`)\n            {\n        `);\n\n        mut lt: bool = less(l, r);\n        pragma emit(\n        `\n                return `lt`;\n            });\n        `);\n    }\n\n    sort();\n}\n\n\n// String likes.\n\nfn find !T(a: T[:], b: T[:], start: int, end: int) case (T.is::primitive): int  __native(\"<fu/vec/find.h>\", \"fu::lfind\");\nfn find !T(a: T[:], b: T[:], start: int)           case (T.is::primitive): int  __native(\"<fu/vec/find.h>\", \"fu::lfind\");\nfn find !T(a: T[:], b: T[:])                       case (T.is::primitive): int  __native(\"<fu/vec/find.h>\", \"fu::lfind\");\n\nfn has  !T(a: T[:], b: T[:]) case (T.is::primitive): bool __native(\"<fu/vec/find.h>\", \"fu::has\");\n\n\n// Find char.\n\nfn starts !T(a: T[:], with: T): bool\n{\n    return a.len && a[0] == with;\n}\n\nfn ends !T(a: T[:], with: T): bool\n{\n    return a.len && a[a.len - 1] == with;\n}\n\nfn starts !T(a: T[:], with: T[:]): bool\n{\n    return a.len >= with.len\n        && a[: with.len] == with;\n}\n\nfn ends !T(a: T[:], with: T[:]): bool\n{\n    return a.len >= with.len\n        && a[a.len - with.len : a.len] == with;\n}\n\nfn find !T(a: T[:], b: T, mut start: int): int\n{\n    start = start > 0 ? start : 0;\n    for (mut i = start; i < a.len; i++) // TODO memchr\n        if (a[i] == b)\n            return i;\n\n    return -1;\n}\n\nfn find !T(a: T[:], b: T): int\n{\n    for (mut i = 0; i < a.len; i++) // TODO memchr\n        if (a[i] == b)\n            return i;\n\n    return -1;\n}\n\nfn has !T(a: T[:], b: T): bool\n{\n    for (mut i = 0; i < a.len; i++)\n        if (a[i] == b)\n            return true;\n\n    return false;\n}\n\n\n// Strings.\n\ntype string = byte[];\n\ninfix fn  >(a: string, b: string): bool __native(\"<fu/vec/cmp.h>\",  \">\");\ninfix fn  <(a: string, b: string): bool __native(\"<fu/vec/cmp.h>\",  \"<\");\ninfix fn >=(a: string, b: string): bool __native(\"<fu/vec/cmp.h>\", \">=\");\ninfix fn <=(a: string, b: string): bool __native(\"<fu/vec/cmp.h>\", \"<=\");\n\n\n// D-style concats.\n//\n// TODO FIX these concats hide copies\n//  which also means they dont work correctly for nocopy stuff\n//\ninfix fn ~ !T(a: T[:], b: T[:]): T[] __native(\"<fu/vec/concat.h>\",     \"+\");\ninfix fn ~ !T(a: T[:], b:  T  ): T[] __native(\"<fu/vec/concat_one.h>\", \"+\");\ninfix fn ~ !T(a:  T  , b: T[:]): T[] __native(\"<fu/vec/concat_one.h>\", \"+\");\n\ninfix fn ~= !T(ref a: T[],     b: T[:]): &mut T[] __native(\"<fu/vec/concat.h>\",     \"+=\");\ninfix fn ~= !T(ref a: T[], mut b:  T  ): &mut T[] __native(\"<fu/vec/concat_one.h>\", \"+=\");\n\n\n// Fun with views.\n\nfn view !T(a: T[:], type of)\n    case (typeof(a) -> &mut T[:] && T.is::reinterpretable && of.is::reinterpretable): &mut [of] __native(\"<fu/view.h>\", \"fu::view_of_mut<>\");\n    case (                          T.is::reinterpretable && of.is::reinterpretable):      [of] __native(\"<fu/view.h>\", \"fu::view_of<>\");\n\ninfix fn .= !T(ref a: T[:], b: T[:]) case (T.is::copy): void __native(\"<fu/vec/view_assign.h>\", \"fu::view_assign\");\n\n// TODO not needed if swap(x, y) alias-ok's its two arguments:\nfn swap !T(ref a: T[:], i: int, j: int): void __native(\"<fu/vec/view_swap.h>\", \"fu::view_swap\");\n\n\n// Stringifiables.\n\ninfix fn ~  !T(    a: [byte], b.str) a ~ b;\ninfix fn ~  !T(    a.str, b: [byte]) a ~ b;\ninfix fn ~= !T(ref a: string, b.str) a ~= b;\n\nfn str !T(n: T)\n    case (T.is::unsigned       ): string __native(\"<fu/decstr.h>\", \"fu::u64dec\");\n    case (T.is::integral       ): string __native(\"<fu/decstr.h>\", \"fu::i64dec\");\n    case (T -> bool            ): string __native(\"<fu/decstr.h>\", \"fu::booldec\");\n    case (T -> f32             ): string __native(\"<fu/decstr.h>\", \"fu::f32dec\");\n    case (T -> f64             ): string __native(\"<fu/decstr.h>\", \"fu::f64dec\");\n    case (T.is::enum)\n{\n    for (fieldname i: T)\n        if (n == \"i\")\n            return \"i\";\n\n    return n.i64.str; // TODO FIX use .integer or .arithmetic when we get these\n}\n    case (T.is::flags)\n{\n    mut res: string;\n    for (fieldname i: T)\n        if (n & \"i\")\n            res ~= \"i\" ~ \", \";\n\n    if (res)\n        res.shrink(res.len - 2);\n\n    return res;\n}\n\n\n// Assertions, bugs & fails.\n//  TODO i dont actually think we want to have nullary stuff in prelude,\n//   so TODO needs to take an arg, same with assert - perhaps a pass-through argument.\n\nfn throw(mut reason: string): never __native(\"<fu/never.h>\", \"fu::fail\",\n    \"|Fx_NotDeadCode\", \"|Fx_DontMoveDown\", \"|Fx_Throws\");\n\nfn assert(): never __native(\"<fu/never.h>\", \"fu_ASSERT()\",\n    \"|Fx_NotDeadCode\", \"|Fx_DontMoveDown\", \"|Fx_Crashes\");\n\n\n// Printifiables = anything that implements print.\n\ninline fn print(x: string): string = x;\ninline fn print(x.str)    : string = x;\n\nfn println(parts.print[]: [string]): void __native(\"<fu/print.h>\", \"fu::println\",\n    \"|output\");\n\n\n// String commons.\n\nfn join !T(a: T[][:], sep?: T or T[:] or [])\n{\n    if (a.len < 2)\n        return a.len && a[0];\n\n    let N = typeof(sep) -> T[:] ? sep.len\n          : typeof(sep) ->  T   ? 1\n                                : 0;\n\n    mut size = a[0].len;\n    for (mut i = 1; i < a.len; i++)\n        size += N + a[i].len;\n\n    mut res: T[];\n    res.grow_junk(size);\n\n    let head = a[0];\n    size = head.len;\n    res[: head.len] .= head;\n    for (mut i = 1; i < a.len; i++)\n    {\n        let range = a[i];\n        if (typeof(sep) -> T[:])\n            res[size : size + N] .= sep;\n        else if (typeof(sep) -> T)\n            res[size] = sep;\n\n        size += N;\n        res[size : size + range.len] .= range;\n        size += range.len;\n    }\n\n    return res;\n}\n\nfn split !T(str: T[] or T[:], sep: T or T[:], each)\n{\n    mut last = 0;\n    mut next = 0;\n\n    let N = typeof(sep) -> T[:] ? sep.len : 1;\n    if (N) while ((next = str.find(sep, start: last)) >= 0)\n    {\n        each(str.slice(last, next), first?: !last, last?: false);\n        last = next + N;\n    }\n\n    if (last)\n        each(str.slice(last), first?: false, last?: true);\n    else\n        each(str, first?: true, last?: true);\n}\n\nfn split !T(str: T[], sep: T or T[:])\n{\n    mut result: T[][];\n    split(str, :sep, |substr| result ~= substr);\n    return result;\n}\n\n\n// TODO: .replace() is a faster impl of .split().join().\n//  How do we express this so that .split.joins are automatically promoted?\n//   This would be generally useful, e.g.\n//    .map.maps and .map.filters could use this to skip allocs.\n\nfn replace !T(str: T[], all: T or T[:], with: T or T[:] or [])\n{\n    mut result: T[];\n    split(str, sep: all, |substr, lax first, lax last|\n    {\n        if (!first)\n            typeof(with) -> [] ? with() : result ~= with;\n        else if (last)\n            return str;\n\n        result ~= substr;\n    });\n\n    return result;\n}\n\n\n//\n\ninfix fn <> !T(a: T, b: T)\ncase (T.is::primitive) = a < b ? -1 : a > b ? +1 : 0;\ncase (T -> _[:]) {\n    mut cmp = a.len <> b.len;\n    for (mut i = 0; i < a.len && !cmp; i++)\n        cmp = a[i] <> b[i];\n\n    return cmp;\n}\ndefault {\n    lax mut cmp = 0;\n\n    // TODO this would be better if it went through each member doing the trivial work first -\n    //  only then going through them again and looking at e.g. array contents etc,\n    //   this is a first approx but does not go recursively through structs.\n\n    for (fieldname i: T)\n        if (typeof(a.i).is::trivial)\n            if (cmp = a.i <> b.i)\n                return cmp;\n\n    for (fieldname i: T)\n        if !(typeof(a.i).is::trivial)\n            if (cmp = a.i <> b.i)\n                return cmp;\n\n    return 0;\n}\n\ninfix fn == !T(a: T, b: T)\n    case (T.is::primitive): bool __native;\n    default: bool = !(a <> b);\n\ninfix fn != !T(a: T, b: T)\n    case (T.is::primitive): bool __native;\n    default: bool = !!(a <> b);\n\n\n//\n\nfn map !T(a: T[:], fn)\n{\n    mut res: typeof( fn(T, i?: a.len) )[];\n    res.grow_junk(a.len);\n    for (mut i = 0; i < a.len; i++)\n        res[i] = fn(a[i], i?: i);\n\n    return res;\n}\n\nfn each !T(a: T[:], fn)\n    for (mut i = 0; i < a.len; i++)\n        fn(a[i], i?: i);\n\nfn reverse !T(ref a: T[:])\n{\n    let n1 = a.len - 1;\n    let n2 = a.len >> 1;\n    for (mut i = 0; i < n2; i++)\n        a.swap(i, n1 - i);\n}\n\nfn all !T(a: T[:], pred)\n{\n    a.each: |item, i|\n        if !(pred(item, i?: i))\n            return false;\n\n    return true;\n}\n\nfn some !T(a: T[:], pred)\n{\n    a.each: |item, i|\n        if (pred(item, i?: i))\n            return true;\n\n    return false;\n}\n\n"_fu;
 
 s_Context solvePrelude_eRdBm7hX()
 {
     fu::str fname = "prelude"_fu;
     /*MOV*/ s_Context ctx {};
-    s_Module module = clone_mLnIjDzk(getModule_9WEb5JfY(fname, ctx));
+    s_Module module = clone_G5fNGz6v(getModule_vqSYGHjE(fname, ctx));
     const s_Options options {};
-    /*MOV*/ s_LexerOutput lex = lex_aPLRBLOl(PRELUDE_SRC, fname);
-    /*MOV*/ s_ParserOutput parse = parse_od6Zl77H(0, fname, PRELUDE_SRC, lex.tokens, options);
+    /*MOV*/ s_LexerOutput lex = lex_XyQUXQaS(PRELUDE_SRC, fname);
+    /*MOV*/ s_ParserOutput parse = parse_SmcwBTdS(0, fname, PRELUDE_SRC, lex.tokens, options);
     module.in = s_ModuleInputs { fu::str(PRELUDE_SRC), static_cast<s_LexerOutput&&>(lex), static_cast<s_ParserOutput&&>(parse) };
-    setModule_fYGWKsxK(module, ctx);
-    module.out.solve = solve_wxNPSagY(ctx, module, options);
-    setModule_fYGWKsxK(module, ctx);
+    setModule_0FYNSelM(module, ctx);
+    module.out.solve = solve_veJH3XG6(ctx, module, options);
+    setModule_0FYNSelM(module, ctx);
     return /*NRVO*/ ctx;
 }
 
                                 #ifndef DEF_CTX_PRELUDE
                                 #define DEF_CTX_PRELUDE
-extern const s_Context CTX_PRELUDE fu_INIT_PRIORITY(1011) = solvePrelude_eRdBm7hX();
+extern const s_Context CTX_PRELUDE fu_INIT_PRIORITY(1012) = solvePrelude_eRdBm7hX();
                                 #endif
 
 #endif

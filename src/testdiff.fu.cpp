@@ -24,7 +24,7 @@ struct s_TestDiffs
 
 #ifndef fu_NO_fdefs
 
-fu::str serialize_J7SaJDMr(const s_TestDiffs& diffs)
+fu::str serialize_pma6HIQy(const s_TestDiffs& diffs)
 {
     /*MOV*/ fu::str res {};
     fu::view<fu::str> keys = diffs.keys;
@@ -35,13 +35,13 @@ fu::str serialize_J7SaJDMr(const s_TestDiffs& diffs)
     return /*NRVO*/ res;
 }
 
-void set_next_XReNAHMs(s_TestDiffs& diffs, const fu::str& key, const fu::str& val)
+void set_next_lHORuDVk(s_TestDiffs& diffs, const fu::str& key, const fu::str& val)
 {
     diffs.keys += fu::str(key);
     diffs.vals += fu::str(val);
 }
 
-void append_vG7l8GIy(s_TestDiffs& diffs, const s_TestDiffs& other)
+void append_JNUBnj3w(s_TestDiffs& diffs, const s_TestDiffs& other)
 {
     diffs.keys += other.keys;
     diffs.vals += other.vals;
