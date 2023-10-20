@@ -15339,6 +15339,35 @@ pub extern fn runTests()
         }
     `);
 
+    TODO_conv(currently: "actual return does not match annot Ephemeral <- Target", `
+        struct Module { modid: i32 };
+        struct Ephemeral {};
+        struct SolverState { _ephemeral: Ephemeral[] };
+        struct Target { modid: i32; globid: i32 };
+
+        fn test(implicit ref module: Module, using ref ss: SolverState, target: Target): Ephemeral {
+    <alt>
+            fn EPH(shadow target: Target)
+                return target.modid == module.modid
+                    && _ephemeral[target.globid];
+
+            return EPH(target);
+    <alt/>
+            using fn EPH(shadow target: Target)
+                return target.modid == module.modid
+                    && _ephemeral[target.globid];
+
+            return target;
+    </alt>
+        }
+
+        fn main() {
+            implicit mut module = Module(1);
+            mut ss = SolverState([ Ephemeral(), Ephemeral(), Ephemeral() ]);
+            return test(ss, Target(modid: 1, globid: 2)) == [] ? 0 : 1;
+        }
+    `);
+
     ZERO(`
         fn Map(type K, type V) struct {
             keys: K[];
