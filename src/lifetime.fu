@@ -554,6 +554,18 @@ pub fn Lifetime_from(argidx!: i32, paths: [byte]): Lifetime =
     return Lifetime(:uni0n);
 }
 
+pub fn Lifetime_AAR(locid!: i32): Lifetime =
+{
+    if (SELF_TEST)
+        locid > 0 || BUG("Lifetime_from: Bad locid");
+
+    mut uni0n: byte[];
+    uni0n.append7bit(locid.u32 << 1);
+    uni0n ~= SR_empty;
+
+    return Lifetime(:uni0n);
+}
+
 
 //
 
@@ -712,8 +724,10 @@ pub fn Lifetime_union(a: Lifetime, b: Lifetime,
         both: |r_both, sr_left, sr_right| {
             result.uni0n ~= r_both;
 
-            if (sr_left == sr_right)
+            if (sr_left == sr_right || sr_left == SR_empty)
                 result.uni0n ~= sr_left;
+            else if (sr_right == SR_empty)
+                result.uni0n ~= sr_right;
             else
                 Paths_union(
                     result.uni0n, sr_left, sr_right,
@@ -751,10 +765,11 @@ pub fn Lifetime_inter(a: Lifetime, b: Lifetime): Lifetime =
             {
                 :INTER
                 {
-                    if (sr_left == sr_right)
-                    {
+                    if (sr_left == sr_right || sr_right == SR_empty)
                         break :INTER sr_left;
-                    }
+                    if (sr_left == SR_empty)
+                        break :INTER sr_right;
+
                     else
                     {
                         inter.clear();
@@ -785,7 +800,7 @@ pub fn Lifetime_hasInter(a: Lifetime, b: Lifetime): bool =
 
         both: |_, sr_left, sr_right|
         {
-            if (sr_left == sr_right)
+            if (sr_left == sr_right || sr_left == SR_empty || sr_right == SR_empty)
                 return true;
 
             Paths_inter(inter, sr_left, sr_right);
@@ -975,8 +990,10 @@ pub fn Lifetime_has(lifetime: Lifetime, argidx!search: i32)
     lifetime.Lifetime_some(
         |isArgIdx, argidx| isArgIdx && argidx == search);
 
-pub fn Lifetime_makeShared(lifetime: Lifetime): Lifetime =
-    Lifetime_union(lifetime, Lifetime_static);
+pub fn Lifetime_makeShared(lifetime: Lifetime, flatCount!: i32): Lifetime =
+    Lifetime_union(
+        Lifetime_op_deref(lifetime, :flatCount),
+        Lifetime_static);
 
 
 /*
@@ -1004,17 +1021,16 @@ inline fn Lifetime_op(lt: Lifetime, each, minPathDepth! = 1)
     {
         result ~= r_raw;
 
-        if !(locid)
+        if (paths == SR_empty)
         {
-            if (SELF_TEST) {
-                isStatic || isTemp  || BUG("Lifetime_op: unexpected arg region.");
-                paths == "\x00\x00" || BUG("Lifetime_op: static/temp subregion is not x00x00.");
-            }
-
             result ~= paths;
             continue;
         }
 
+        if (SELF_TEST)
+            locid || BUG("Lifetime_op: non-locid non-x00x00 subregion.");
+
+        //
         lax let result0 = result.len;
 
         each(:result, :paths);

@@ -235,10 +235,17 @@ pub fn tryClear_ref(type: Type)
     return tryClearRefs(:type);
 }
 
-pub fn add_refs(from: Type, mut to: Type)
+pub fn make_field_reference(
+    quals: Quals, lifetime: Lifetime, mut to: Type,
+    memberFlatOffset!: i32, memberFlatCount!: i32)
 {
-    to.quals |= from.quals & q_mutref;
-    to.lifetime.Lifetime_add(from.lifetime);
+    to.quals |= quals & q_mutref;
+
+    to.lifetime.Lifetime_add(
+        Lifetime_op_field(lifetime,
+            flatCount:  memberFlatCount,
+            flatOffset: memberFlatOffset));
+
     return to;
 }
 

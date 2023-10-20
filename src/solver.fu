@@ -916,12 +916,20 @@ pub fn solve(
         // We only want to avoid attempts to move from there for now.
         //
         if (!isAssignable(host: actual, res))
-            return Lifetime_makeShared(res.lifetime);
+        {
+            let flatCount = actual.getFlatCount();
+
+            if (TODO_FIX_static_ZSTs && !flatCount)
+                return Lifetime_static();
+
+            return Lifetime_makeShared(res.lifetime, :flatCount);
+        }
 
         return res.lifetime;
     }
 
     fn TEST_Lifetime(lifetime: Lifetime,
+        lax type!: Type,
         lax tempsOK!?: bool,
         lax argPositionsOK!?: bool): Lifetime
     {
@@ -935,7 +943,7 @@ pub fn solve(
             mut lastLocid   = 1000000;
             mut lastArgIdx  = 1000000;
 
-            lifetime.Lifetime_each: |locid, isStatic, isTemp, isArgIdx, argidx|
+            lifetime.Lifetime_each: |locid, isStatic, isTemp, isArgIdx, argidx, paths|
             {
                 !hasStatic      || BUG("TEST_Lifetime: static is not last");
                 if (isStatic)
@@ -951,6 +959,7 @@ pub fn solve(
 
                 //
                 if (locid) {
+                    !argPositionsOK         || BUG("TEST_Lifetime: unexpected locid");
                     lastArgIdx == 1000000   || BUG("TEST_Lifetime: local after argpos");
                     lastLocid > locid       || BUG("TEST_Lifetime: locid out of order");
                     lastLocid = locid;
@@ -963,6 +972,16 @@ pub fn solve(
                     lastArgIdx > argidx     || BUG("TEST_Lifetime: argidx out of order");
                     lastArgIdx = argidx;
                 }
+
+                //
+                if (isStatic || isTemp)
+                    paths == "\x00\x00" || BUG("TEST_Lifetime: static/temp paths != x00x00");
+                else
+                    assertPathsValid(paths,
+                        expect_flatCount: type.getFlatCount(),
+                        region_flatCount: locid
+                            ? nested(locid).type.getFlatCount()
+                            : -1);
             }
         }
 
@@ -1025,7 +1044,7 @@ pub fn solve(
     fn Lifetime_replaceArgsAtCallsite(target: Target, argNodes: [SolvedNode]): Lifetime
     {
         return target.type.lifetime.Lifetime_process(
-            each: |isStatic, isTemp, locid, argidx,
+            each: |isStatic, isTemp, locid, argidx, paths,
                 continue_keep,
                 continue_replace|
             {
@@ -1040,7 +1059,8 @@ pub fn solve(
                     ? argNode.type.lifetime
                     : Lifetime_temporary();
 
-                continue_replace(argLt);
+                continue_replace(
+                    Lifetime_op_join(argLt, paths));
             });
     }
 
@@ -2129,6 +2149,22 @@ pub fn solve(
 
     //
 
+    fn make_field_reference(from: Type, field: Overload)
+    {
+        using let _ = field_unpackOffset(field);
+
+        return make_field_reference(
+
+            to:         field.type,
+            quals:      (from || BUG()).quals,
+            lifetime:   TODO_FIX_static_ZSTs && !memberFlatCount
+                ? Lifetime_static()
+                : from.lifetime,
+
+            :memberFlatCount,
+            :memberFlatOffset);
+    }
+
     fn tryConvert(
         expect: Type, actual?: Type, retype?: SolvedNode,
         misc_scope!?: Scope, local_scope!: bool): Target[]
@@ -2200,9 +2236,9 @@ pub fn solve(
                     let convert = GET(t);
                     convert.type || fail("No convert.type, perhaps a `using inline fn` without a return type annotation: `" ~ convert ~ "`.");
 
-                    let convertType = convert.kind == "field"
-                        ? add_refs(from: from || BUG(), to: convert.type)
-                        : convert.type;
+                    let convertType = convert.kind != "field"
+                        ? convert.type
+                        : make_field_reference(:from, convert);
 
                     shadow let isStruct = convertType.isStruct;
 
@@ -3393,7 +3429,7 @@ pub fn solve(
                     "Relaxed specialization does not return a subtype");
 
                 if (node.type.is_ref)
-                    node.type.lifetime = TEST_Lifetime(
+                    node.type.lifetime = TEST_Lifetime(:node.type,
                         Lifetime_replaceArgsAtCallsite(spec, node.items),
                         tempsOK: true);
 
@@ -5793,6 +5829,9 @@ pub fn solve(
                 {
                     mut returned: bitset::BitSet;
 
+                    if (SELF_TEST && retval.is_ref)
+                        TEST_Lifetime(type: retval, retval.lifetime);
+
                     retval.lifetime = retval.lifetime.Lifetime_process(
                         |locid, isStatic, continue_keep, continue_replace, paths|
                         {
@@ -5840,7 +5879,8 @@ pub fn solve(
                     if (retval.isIrrelevant)
                         retval.lifetime = Lifetime_static;
 
-                    TEST_Lifetime(retval.lifetime, argPositionsOK: true);
+                    TEST_Lifetime(type: retval,
+                        retval.lifetime, argPositionsOK: true);
                 }
 
                 retval.lifetime.Lifetime_each: |isArgIdx, isStatic|
@@ -7031,7 +7071,7 @@ pub fn solve(
         locals_only!?: bool): Lifetime
     {
         return Lifetime_process(:lifetime, each:
-            |locid, continue_keep, continue_climb|
+            |locid, continue_keep, continue_climb, paths|
         {
             if (!locid)
             {
@@ -7042,7 +7082,8 @@ pub fn solve(
             {
                 let init = GET(nested(locid)).Lifetime_climbType;
                 if (init.is_ref)
-                    continue_climb(init.lifetime);
+                    continue_climb(
+                        Lifetime_op_join(init.lifetime, paths));
             }
 
             continue_keep();
@@ -9659,7 +9700,7 @@ pub fn solve(
             fn visitType(ref type: Type)
             {
                 type.lifetime = type.lifetime.Lifetime_process(
-                    |locid!index, continue_keep, continue_replace|
+                    |locid!index, continue_keep, continue_replace, paths|
                     {
                         if (!index)
                             continue_keep;
@@ -9673,16 +9714,20 @@ pub fn solve(
                             let init = local.solved.items[LET_INIT] || BUG(
                                 "inlineExpression: F_INLINE local has no LET_INIT.");
 
-                            continue_replace(init.type.lifetime
-                                || Lifetime_temporary);
+                            continue_replace(
+                                init.type.lifetime
+                                    ? Lifetime_op_join(init.type.lifetime, paths)
+                                    : Lifetime_temporary);
                         }
                         // INLINE ARGUMENTS ////////////////////////////////////////////
                         else
                         {
                             // println("inlineExpression: LT.REPLACE " foreign " with " local);
 
-                            continue_replace(local.type.lifetime
-                                || BUG("visitType: !local.type.lifetime"));
+                            continue_replace(
+                                local.type.lifetime
+                                    ? Lifetime_op_join(local.type.lifetime, paths)
+                                    : BUG("visitType: !local.type.lifetime"));
                         }
                     });
             }
@@ -9798,9 +9843,8 @@ pub fn solve(
         //  TBD how we make this stuff work in real life.
         //   OR alternatively, do this for arrays too.
         if (kind == "field")
-        {
-            type = add_refs(from: args.only.type || BUG(), to: target.type);
-        }
+            type = make_field_reference(
+                from: args.only.type || BUG(), target);
 
         // So we're turning closeovers into implicit arguments -
         //  previously we tracked them separately but we're making everything more samey.
@@ -9975,7 +10019,7 @@ pub fn solve(
 
             // Not relevant for inline fns.
             if (args && type.is_ref)
-                type.lifetime = TEST_Lifetime(
+                type.lifetime = TEST_Lifetime(:type,
                     Lifetime_replaceArgsAtCallsite(target, args),
                     tempsOK: true);
         }
@@ -10689,7 +10733,7 @@ pub fn solve(
 
             parents.Lifetime_add(right);
 
-            right.Lifetime_each: |shadow locid!right|
+            right.Lifetime_each: |shadow locid!right, paths|
             {
                 if !(right)
                     continue;
@@ -10708,7 +10752,9 @@ pub fn solve(
                 flow.rg_children.grow_if_oob(right).set::add(left);
 
                 //
-                parents.Lifetime_add(flow.rg_parents.unless_oob(right));
+                parents.Lifetime_add(
+                    Lifetime_op_join(
+                        flow.rg_parents.unless_oob(right), paths));
 
                 //
                 siblings.Lifetime_add(flow.rg_invalidates.unless_oob(right));
@@ -10881,7 +10927,9 @@ pub fn solve(
                         // Deep expansion only useful on non-first arg,
                         //  we only use it for preceding args in OOE.
                         //
-                        all_written.Lifetime_add(flow.rg_invalidates.unless_oob(write));
+                        all_written.Lifetime_add(
+                            flow.rg_invalidates.unless_oob(write),
+                            flatCountMismatchOK: true);
                     }
 
 
@@ -11623,7 +11671,7 @@ pub fn solve(
                     target.globid == _current_fn.target.globid || BUG();
 
                     let type    = target.solved.type;
-                    let region  = target.type.lifetime;
+                    let region  = Lifetime_AAR(:target.locid);
 
                     if (!Lifetime_getRefLocid_unlessStatic(region))
                         continue;

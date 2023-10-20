@@ -4593,7 +4593,7 @@ pub extern fn runTests()
         }
     `);
 
-    TODO_disjoint(currently: "Arguments both alias var ab 14:21+1", `
+    ZERO(`
         fn test(ref a: i32, ref b: i32) {
             a += b;
             b += a;
