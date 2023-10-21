@@ -5719,6 +5719,11 @@ pub fn solve(
                     let may_alias       = hard_risk.negated(end: N);
                     let may_invalidate  = soft_risk.negated(end: N);
 
+                    if (SELF_TEST) {
+                        if (may_alias.popcount      > N) BUG("updateScope: " ~ argTarget ~ " may_alias.popcount > N");
+                        if (may_invalidate.popcount > N) BUG("updateScope: " ~ argTarget ~ " may_invalidate.popcount > N");
+                    }
+
                     //
                     mut arg = Argument(
                         :name,
