@@ -9993,7 +9993,7 @@ pub fn solve(
             node = createBlock(node, createDefinit(slot));
     }
 
-    fn maybeCopyOrMove(ref node: SolvedNode, slot: Type, isArgument! = false): void
+    fn maybeCopyOrMove(ref node: SolvedNode, slot: Type, isArgument! = false, debug!?: string): void
     {
         if (slot.isIrrelevant)
             return;
@@ -10055,6 +10055,7 @@ pub fn solve(
         // This may convert to a move during relaxAll.
         node = SolvedNode(
             kind:   "copy",
+            value:  debug,
             items:  [ node ],
             type:   clear_refs(node.type));
     }
@@ -10436,15 +10437,15 @@ pub fn solve(
 
         // Inserting a temporary.
 
-        fn RESOLVE_byTempCopy(ref callsite!: SolvedNode, position: i32)
+        fn RESOLVE_byTempCopy(ref callsite!: SolvedNode, position: i32, debug!: string)
         {
             let target      = callsite.target;
             ref arg         = callsite.items[position];
 
-            return RESOLVE_byTempCopy(:arg, :target, :position);
+            return RESOLVE_byTempCopy(:arg, :target, :position, :debug);
         }
 
-        fn RESOLVE_byTempCopy(ref arg!: SolvedNode, target!: Target, position: i32)
+        fn RESOLVE_byTempCopy(ref arg!: SolvedNode, target!: Target, position: i32, debug!: string)
         {
             BCK || BUG();
 
@@ -10490,7 +10491,7 @@ pub fn solve(
 
                 // TODO FIX How do we defer this copy?
                 //  MCOM needs to pick up something.
-                maybeCopyOrMove(arg, slot);
+                maybeCopyOrMove(arg, slot, :debug);
                 return [];
             }
         }
@@ -10918,7 +10919,7 @@ pub fn solve(
                                     //
                                     trySoft: softRiskSafe(pra.arg))
 
-                                : !!RESOLVE_byTempCopy(:pra.target, :pra.arg, r))
+                                : !!RESOLVE_byTempCopy(:pra.target, :pra.arg, r, debug: "bck:pra " ~ write))
                         {
                             // Appease bck
                             shadow ref pra = _current_fn.preceding_ref_args[i];
@@ -11248,8 +11249,8 @@ pub fn solve(
                             mut noTempCopy0: ArgRationale;
                             mut noTempCopy1: ArgRationale;
 
-                            if ((noTempCopy0 = RESOLVE_byTempCopy(:callsite, i0)) &&
-                                (noTempCopy1 = RESOLVE_byTempCopy(:callsite, i1)))
+                            if ((noTempCopy0 = RESOLVE_byTempCopy(:callsite, i0, debug: "bck:vi " ~ i1)) &&
+                                (noTempCopy1 = RESOLVE_byTempCopy(:callsite, i1, debug: "bck:vi " ~ i0)))
                             {
                                 // Else emit an args-cannot-alias error.
                                 mut err = "At call to " ~ target.str;

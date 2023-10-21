@@ -2592,7 +2592,7 @@ pub fn cpp_codegen(
             if (expr.isFieldChain)
             {
                 let trivial = cgNode(expr);
-                return trivial ~ " ? " ~ cgMoveOrClone(:kind, :type, trivial) ~ " : ";
+                return trivial ~ " ? " ~ cgCopyOrMove(:kind, :type, trivial) ~ " : ";
             }
 
             // TODO fix the copies -
@@ -2991,8 +2991,8 @@ pub fn cpp_codegen(
         if (k == "definit")     return cgDefinit(node, mode, :callarg);
         if (k == "bool")        return node.value;
 
-        if (k == "copy")        return cgMoveOrClone(node, mode);
-        if (k == "move")        return cgMoveOrClone(node, mode);
+        if (k == "copy")        return cgCopyOrMove(node, mode);
+        if (k == "move")        return cgCopyOrMove(node, mode);
 
         if (k == "if")          return cgIf(node, mode);
         if (k == "or")          return cgOr(node, mode);
@@ -3026,12 +3026,12 @@ pub fn cpp_codegen(
 
     //
 
-    fn cgMoveOrClone(node: SolvedNode, mode: i32): string
+    fn cgCopyOrMove(node: SolvedNode, mode: i32): string
     {
         let expr = node.items.only;
 
         // Sanity check.
-        expr.is_ref || BUG("cgMoveOrClone: !expr.is_ref");
+        expr.is_ref || BUG("cgCopyOrMove: !expr.is_ref");
 
         // Less verbose trivial value returns.
         if (mode & M_RETURN && node.type.is_trivial)
@@ -3041,11 +3041,11 @@ pub fn cpp_codegen(
         {
             fn sanityCheck(lt: Lifetime)
             {
-                lt || BUG("cgMoveOrClone: Considering a move from an empty lifetime.");
+                lt || BUG("cgCopyOrMove: Considering a move from an empty lifetime.");
 
                 lt.Lifetime_each: |locid, isTemp|
                     locid || isTemp || BUG(
-                        "cgMoveOrClone: Considering a move from non-local lifetime.");
+                        "cgCopyOrMove: Considering a move from non-local lifetime.");
             }
 
             sanityCheck(expr.type.lifetime);
@@ -3153,26 +3153,34 @@ pub fn cpp_codegen(
             }
         }
 
-        return cgMoveOrClone(node.kind, node.type, cgNode(expr));
+        mut src = cgNode(expr);
+
+        if (node.value &&
+            options.dev & options::DEV_CG_LifetimeAnnots)
+        {
+            src = "/*" ~ node.value ~ "*/ " ~ src;
+        }
+
+        return cgCopyOrMove(node.kind, node.type, src);
     }
 
-    fn cgMoveOrClone(::kind, type: Type, src: string): string
+    fn cgCopyOrMove(::kind, type: Type, src: string): string
     {
         if (kind == "move")
             return cgMove(type, src);
 
-        return cgClone(type, src);
+        return cgCopy(type, src);
     }
 
     fn cgMove(type: Type, src: string): string
     {
         if (type.isPassByValue)
-            return cgClone(type, src);
+            return cgCopy(type, src);
 
         return "static_cast<" ~ typeAnnotBase(type) ~ "&&>(" ~ src ~ ")";
     }
 
-    fn cgClone(type: Type, src: string): string
+    fn cgCopy(type: Type, src: string): string
     {
         if (type.isPassByValue)
             return src;
