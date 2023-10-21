@@ -1513,6 +1513,35 @@ pub extern fn runTests()
     `);
 
     ZERO(`
+        struct Helper { id: i32; type: string };
+
+        fn main() {
+            mut helpers = [
+                Helper(13, "This is a long string, shouldn't fit in small string opti."),
+            ];
+
+            fn solveNode(
+                <fail solveNode 23:32+1 helpers type both alias 5:17+7>
+                ref <pass/>
+                mut </fail>
+                type: string) {
+                helpers && helpers.pop();
+                return type;
+            }
+
+            mut fallback: string;
+            fn lookup(id: i32) {
+                helpers.each: |h| if (h.id == id) return h.type;
+                return fallback;
+            }
+
+            mut str = solveNode(lookup(13));                    ;; PointlessMustSeq
+            str ~= str;
+            return helpers.len * 1000 + str.len - 116;
+        }
+    `);
+
+    ZERO(`
         enum Kind       { return; expr }
         struct Type     { canon: string }
         struct Helpers  { id: string; ret_actual: Type }
