@@ -1598,7 +1598,32 @@ pub fn cpp_codegen(
 
     fn binding(arg: Argument, forceValue!?: bool)
     {
-        return binding(:arg.target, :forceValue);
+        mut prefix = "";
+
+        if (options.dev & options::DEV_CG_LifetimeAnnots
+            && arg.is_ref && (arg.may_alias || arg.may_invalidate))
+        {
+            prefix ~= "/*";
+
+            fn prefix(bitset: bitset::BitSet)
+            {
+                for (mut i = 0; i < bitset._data.len; i++)
+                {
+                    mut v = bitset._data[i].u32;
+                    prefix ~= hex(v & 0xf);
+                    if (v >>= 4)
+                        prefix ~= hex(v);
+                }
+            }
+
+            prefix(arg.may_alias);
+            prefix ~= ":";
+            prefix(arg.may_invalidate);
+
+            prefix ~= "*/ ";
+        }
+
+        return prefix ~ binding(:arg.target, :forceValue);
     }
 
 

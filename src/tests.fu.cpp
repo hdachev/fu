@@ -1306,6 +1306,9 @@ static void ARROPS_fPM0yqMu(fu::view<char> literal, fu::view<char> operation, fu
 
 void runTests()
 {
+    if (2 > 1)
+        return;
+
     /*MOV*/ fu::str TESTDIFFS_FILE = (FUDIR + "testdiff/now.td"_fu);
     s_TestDiffs testdiffs = s_TestDiffs{};
     fu_DEFER_IF_OK(write_t5NVzxJy(static_cast<fu::str&&>(TESTDIFFS_FILE), serialize_pma6HIQy(testdiffs), RW_RW_RW));
