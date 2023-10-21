@@ -6494,6 +6494,49 @@ pub extern fn runTests()
         }
     `);
 
+    ZERO(`
+        struct Target       { modid: i32; globid: i32 }
+        struct SolvedNode   { items: SolvedNode[]; target?: Target }
+
+        fn stealInit(ref allNodes: SolvedNode[], t: Target)
+        {
+            fn GET_mut(target: Target)
+                allNodes[target.globid];
+
+            ref node = GET_mut(t);
+            if (node.items && node.items[0]) {
+                mut init: SolvedNode;
+                swap(init, node.items[0]); // flatCount mismatch here
+                return init;
+            }
+
+            return [];
+        }
+
+        fn main() {
+            mut allNodes = [
+                SolvedNode([
+                    SolvedNode([
+                        SolvedNode(),
+                    ]),
+                ]),
+            ];
+
+            novec fn count(items: SolvedNode[]) {
+                mut count = items.len;
+                items.each: |node| count += node.items.count;
+                return count;
+            }
+
+            let cnt0 = allNodes.count;
+            let init = stealInit(allNodes, Target(0, 0));
+            let cnt1 = [ init ].count;
+            let cnt2 = allNodes.count;
+
+            return cnt0 == 3 && cnt1 == 2 && cnt2 == 2 ? 0 : 1;
+        }
+    `);
+
     // /Borrow checker
 
 
