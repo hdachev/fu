@@ -6457,6 +6457,43 @@ pub extern fn runTests()
         }
     `);
 
+    ZERO(`
+        struct Module { modid: i32; scope: string[] }
+        struct Target { modid: i32; globid: i32 }
+        struct Solver { scope: string[]; tp: string }
+
+        // This hit flatCount asserts in lifetime paths during bck
+        fn test(
+            implicit ref ctx:       Module[],
+            using implicit ref ss:  Solver,
+            target:                 Target)
+        {
+            ref s = ctx.len > target.modid
+                    ? ctx[target.modid].scope
+                    : scope;
+
+            return s.len > target.globid
+                    ? s[target.globid]
+                    : tp;
+        }
+
+        fn main() {
+            implicit mut ss = Solver(scope: [ "h", "w" ], tp: "Hello!");
+            implicit mut ctx = [
+                Module(modid: 0, scope: [ "hello", "world" ]),
+                Module(modid: 1, scope: [ "Hello", "World" ]),
+            ];
+
+            let append = ", " ~ test(Target(modid: 1, globid: 1))
+                       ~ "! " ~ test(Target(modid: 0, globid: 2));
+
+            ref res = test(Target(modid: 0, globid: 0));
+            res ~= append;
+
+            return res == "hello, World! Hello!" ? 0 : 1;
+        }
+    `);
+
     // /Borrow checker
 
 
