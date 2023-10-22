@@ -9550,6 +9550,55 @@ pub extern fn runTests()
         }
     `);
 
+    ZERO(`
+        fn bfind !T(keys, item: T, hit, miss) {
+            mut lo = 0;
+            mut hi = keys.len;
+
+            while (lo < hi) {
+                let i   = (hi + lo) >> 1;
+                let cmp = keys[i] <> item;
+                if (cmp == 0)
+                    return hit(i);
+            }
+
+            return miss(lo);
+        }
+
+        fn update !<T, U>(keys, item: T, extras, extra: U)
+            bfind(fn keys, :item,
+                hit:  |i| { extras[i] = extra; },
+                miss: |_| {});
+
+        fn get !<T, U>(keys: T[], item: T, extras: U[])
+            bfind(:keys, :item,
+                hit:  |i| { return extras[i]; },
+                miss: |_| { return []; });
+
+        fn Map(type K, type V)
+            struct { keys: K[]; vals: V[] };
+
+        fn set(using ref _: Map(_, _), key, value)
+            update(|| keys, key, || vals, value);
+
+        fn get(using _: Map(_, _), key)
+            get(keys, key, vals);
+
+        fn resolveFile(ref cache: Map(string, string), path: string): string
+        {
+            if (let cached = cache.get(path))
+                return cached == "\v" ? "" : cached;
+
+            cache.set(path, "\v");
+            return "";
+        }
+
+        fn main() {
+            mut cache: Map(string, string);
+            return cache.resolveFile("abc").len;
+        }
+    `);
+
     // /quite right
 
 
