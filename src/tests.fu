@@ -9629,6 +9629,63 @@ pub extern fn runTests()
         }
     `);
 
+    TODO_disjoint(currently: "Cannot access ref overloads 23:13+9 inval by write to ref arg scope 21:24+2", `
+        struct Target       { globid: i32; locid: i32 }
+        struct Overload     { name: string }
+        struct Extended     { locals: Overload[] }
+
+        nocopy struct Scope {
+            overloads: Overload[]; extended: Extended[]; total: i32
+        }
+
+        fn grow_if_oob(ref a: $T[], i: i32) {
+            if (a.len <= i) a.grow(i + 1);
+            return a[i];
+        }
+
+        fn CREATE(ref scope: Scope, name: string, nest!?: Target) {
+            ref overloads = nest
+                ? scope.extended.grow_if_oob(nest.globid - 1).locals
+                : scope.overloads;
+
+            <flip>
+            scope.total++;
+            <flip/>
+            overloads ~= Overload(:name);
+            let index = overloads.len;
+            </flip>
+
+            return Target(
+                globid: nest ? nest.globid : index,
+                 locid: nest ? index       : 0);
+        }
+
+        fn GET(ref scope: Scope, target: Target)
+            target.locid
+                ? scope.extended[target.globid - 1].locals[target.locid - 1]
+                : scope.overloads[target.globid - 1];
+
+        fn DUPE(ref scope: Scope, target: Target)
+            CREATE(scope, GET(scope, target).name);
+
+        fn main() {
+            mut scope: Scope;
+            let hello = scope.CREATE("hello!");
+            let world = scope.CREATE("world!", nest: hello);
+            scope.DUPE(world);
+
+            mut result  = "";
+            scope.overloads.each: |o, i| {
+                result ~= "+" ~ o.name;
+                if (scope.extended.len > i)
+                    scope.extended[i].locals.each: |x|
+                        result ~= "-" ~ x.name;
+            }
+
+            return scope.total == 3 && result == "+hello!-world!+world!" ? 0 : 1;
+        }
+    `);
+
     // /quite right
 
 
