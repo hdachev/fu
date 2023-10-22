@@ -9551,6 +9551,36 @@ pub extern fn runTests()
     `);
 
     ZERO(`
+        fn grow_if_oob(ref a: $T[], i: i32) {
+            if (a.len <= i) a.grow(i + 1);
+            return a[i];
+        }
+
+        struct Scope    { overloads: Overload[]; extended: Extended[] };
+        struct Overload { name: string };
+        struct Extended { locals?: Overload[] };
+
+        fn Scope_create(ref scope: Scope, name: string, nest!?: i32): i32 {
+            ref overloads = nest > 0
+                ? scope.extended.grow_if_oob(nest - 1).locals
+                : scope.overloads;
+
+            overloads.push(Overload(:name));
+            return overloads.len;
+        }
+
+        fn main() {
+            mut scope = Scope(
+                overloads:  [ Overload("Hello!") ],
+                extended:   []);
+
+            let a = scope.Scope_create("World!", nest: 1);
+            let b = scope.Scope_create("Bananas!");
+            return a * 10 + b - 12;
+        }
+    `);
+
+    ZERO(`
         fn bfind !T(keys, item: T, hit, miss) {
             mut lo = 0;
             mut hi = keys.len;
