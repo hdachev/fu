@@ -9686,6 +9686,55 @@ pub extern fn runTests()
         }
     `);
 
+    ZERO(`
+        fn first(s: [$T;]) s.len && s[0];
+        struct Node { items: Node[] }
+
+        fn tryFirst(node: Node)
+            node.items
+                ? tryFirst(node.items.first)
+                : node;
+
+        fn main()
+            tryFirst(
+                Node([ Node([ Node, Node ])]))
+                    .items.len;
+    `);
+
+    ZERO(`
+        fn first(s: [$T;]) s.len && s[0];
+        struct Node { value: i32; items: Node[] }
+
+        fn tryFirst(node: Node)
+            node.items
+                ? tryFirst(node.items.first)
+                : node;
+
+        fn main()
+            tryFirst(
+                Node(1, [ Node(2, [ Node(3, []), Node(4, []) ])]))
+                    .value - 3;
+    `);
+
+    ZERO(`
+        fn first(s: [$T;]) s.len && s[0];
+        fn last (s: [$T;]) s.len && s[s.len - 1];
+        struct Node { value: i32; items: Node[] }
+
+        fn tryFirst(node: Node)
+            node.items  ? tryLast(node.items.first)
+                        : node;
+
+        fn tryLast(node: Node)
+            node.items  ? tryFirst(node.items.last)
+                        : node;
+
+        fn main()
+            tryFirst(
+                Node(1, [ Node(2, [ Node(3, []), Node(4, []) ])]))
+                    .value - 4;
+    `);
+
     // /quite right
 
 
