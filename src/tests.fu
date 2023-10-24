@@ -6597,6 +6597,27 @@ pub extern fn runTests()
         }
     `);
 
+    ZERO(`
+        struct TEA { a: byte[]; b: byte[] };
+
+        fn hash(ref res: TEA, u8view: byte[]) {
+            let u32len  = u8view.len & ~3;
+            let u32view = u8view[: u32len];
+            ref out     = res.a || res.b;
+            out        ~= out;
+            mut x       = u32view ~ "?";
+            out        ~= x;
+        }
+
+        fn main() {
+            mut res: TEA;
+            res.b = "hello, world! ";
+            hash(res, res.b);
+            return res.b == "hello, world! hello, world! hello, world?"
+                 ? 0 : 1;
+        }
+    `);
+
     // /Borrow checker
 
 
