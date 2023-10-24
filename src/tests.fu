@@ -6566,6 +6566,37 @@ pub extern fn runTests()
         }
     `);
 
+    ZERO(`
+        noinline fn test(ref ints: i32[], ref iview: i32[:]) {
+            inline fn a() {
+                mut empty: i32[];
+                ref indirect = ints || empty;
+                indirect ~= indirect;
+            }
+
+            inline fn b() {
+                mut empty: i32[];
+                ref indirect = iview || empty;
+
+                ref head = indirect[: indirect.len / 2];
+                for (mut i = 0; i < head.len; i++) head[i] *= 2;
+
+                ref tail = indirect[indirect.len - indirect.len / 2 :];
+                for (mut i = 0; i < tail.len; i++) tail[i] *= 2;
+            }
+
+            <fail at call to test 26:24+4 both alias ints 25:17+4>
+            a(); b(); <pass/>
+            b(); a(); </fail>
+        }
+
+        fn main() {
+            mut ints = [ 1, 2, 3, 4, 5 ];
+            test(ints, ints);
+            return ints == [ 2, 4, 3, 8, 10, 2, 4, 3, 8, 10 ] ? 0 : 1;
+        }
+    `);
+
     // /Borrow checker
 
 
