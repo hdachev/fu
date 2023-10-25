@@ -4603,16 +4603,27 @@ pub extern fn runTests()
 
         fn main() {
             mut ab = AB(1, 2);
-            <alt>
+<fail test:a test:b both alias ab 16:21+1>
+        <alt>
+            ref a = ab.a;
+            ref b = ab.a;
+        <alt/>
+            ref a = ab.b;
+            ref b = ab.b;
+        </alt>
+            test(a, b);
+<pass/>
+        <alt>
             ref a = ab.a;
             ref b = ab.b;
             test(a, b);
-            <alt/>
+        <alt/>
             ref a = ab.a;
             test(a, ab.b);
-            <alt/>
+        <alt/>
             test(ab.a, ab.b);
-            </alt>
+        </alt>
+</fail>
             return ab.b - 5;
         }
     `);
@@ -4946,43 +4957,33 @@ pub extern fn runTests()
         }
     `);
 
-    TODO_disjoint(currently: "Cannot access ref x 15:13+1 inval by ref y 14:15+2", `
-        nocopy struct Woot {
-            x: i32[];
-            y: i32[];
-        };
+    TODO_disjoint(currently: "COW will break 8:18+1 ref x at 5:17+1", `
+        nocopy struct Woot { x: i32[]; y: i32[] };
 
         fn test(ref w: Woot) {
             ref x = w.x;
-            //*F
-            ref y = w.x;
-            /*/
-            ref y = w.y;
-            //*/
+            <fail cannot access x 9:13+1 inval write y 8:15+2>
+            ref y = w.x; <pass/>
+            ref y = w.y; </fail>
             y ~= y; // <- DONT RESOLVE BY COPY! ref can relax to let
             x ~= y;
         }
 
         fn main() {
-            mut w: Woot;
+            mut w: Woot([ 1, 2, 3, 4, 5, 6, 7 ], [ 1, 2, 3, 4, 5, 6, 7, 8, 9 ]);
             test(w);
-            return w.x.len;
+            return w.x.len - 25;
         }
     `);
 
-    TODO_disjoint(currently: "Arguments w1 and w0 both alias var w 20:21+1", `
-        nocopy struct Woot {
-            x: i32[];
-            y: i32[];
-        };
+    TODO_disjoint(currently: "arguments test:w1 and test:w0 14:21+1 both alias var w 13:17+1", `
+        nocopy struct Woot { x: i32[]; y: i32[] };
 
         fn test(ref w0: Woot, ref w1: Woot) {
             ref x = w0.x;
-            //*F
-            ref y = w1.x;
-            /*/
-            ref y = w1.y;
-            //*/
+            <fail arguments test:w1 and test:w0 14:21+1 both alias var w 13:17+1>
+            ref y = w1.x; <pass/>
+            ref y = w1.y; </fail> // <- doesnt realize w0.x can't alias w1.y
             y ~= y; // <- DONT RESOLVE BY COPY! ref can relax to let
             x ~= y;
         }

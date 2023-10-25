@@ -10767,6 +10767,16 @@ pub fn solve(
                 }
             }
 
+            // Disjointness, here we notice references with common ancestors
+            //  that don't actually intersect and can't invalidate each other.
+            //
+            siblings = siblings.Lifetime_process(|locid!sibling, continue_keep|
+            {
+                let sibling_parents = flow.rg_parents.unless_oob(sibling);
+                if (Lifetime_hasInter(parents, sibling_parents))
+                    continue_keep();
+            });
+
             // So, if:
             //  LEFT = &RIGHT;
             if (siblings)
