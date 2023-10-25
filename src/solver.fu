@@ -2683,19 +2683,22 @@ pub fn solve(
         //    breaking value semantics on the copy.
         fn cannotCOW_climbParents(lifetime: Lifetime)
         {
-            lifetime.Lifetime_each: |locid!index|
+            lifetime.Lifetime_each: |locid, region, paths|
             {
-                if (!index || !seen.add_once(index))
+                if (!locid || !seen.add_once(locid))
                     continue;
 
-                let o = GET(nested(index));
+                let o = GET(nested(locid));
                 o.kind == "var" || BUG("cannotCOW_climbParents found a non-var: " ~ o);
 
                 // Climb parents.
-                cannotCOW_climbParents(Lifetime_climbType(o).lifetime);
+                cannotCOW_climbParents(
+                    Lifetime_op_join(
+                        Lifetime_climbType(o).lifetime,
+                        paths));
 
                 // Check children.
-                cannotCOW_descendChildren(index);
+                cannotCOW_descendChildren(locid, region);
 
                 // GLOBAL COMPONENT
                 // Here we're adding stuff to the arguments-at-risk bitmasks,
@@ -2711,7 +2714,7 @@ pub fn solve(
                     for (shadow mut i = 0; i < arg_targets.len; i++)
                     {
                         let t = arg_targets[i];
-                        if (!t || t == index)
+                        if (!t || t == locid)
                             continue;
 
                         // Mutrefs only.
@@ -2720,7 +2723,7 @@ pub fn solve(
                             continue;
 
                         // Nothing to do if already hard-risked.
-                        if (flow.at_hard_risk.unless_oob(t).has(index))
+                        if (flow.at_hard_risk.unless_oob(t).has(locid))
                             continue;
 
                         fn needsHardRisk(shadow index: i32)
@@ -2755,9 +2758,9 @@ pub fn solve(
                         let reason = needsHardRisk(t);
                         if (reason)
                         {
-                            makeNote(N_COWRestrict, nested(index) ~ " at risk from " ~ nested(t) ~ " via " ~ nested(reason));
+                            makeNote(N_COWRestrict, nested(locid) ~ " at risk from " ~ nested(t) ~ " via " ~ nested(reason));
 
-                            flow.at_soft_risk.grow_if_oob(t).add(index);
+                            flow.at_soft_risk.grow_if_oob(t).add(locid);
 
                             fn TODO_FIX_slicesAgain()
                             {
@@ -2774,7 +2777,7 @@ pub fn solve(
                             }
 
                             if (reason != t || TODO_FIX_slicesAgain)
-                                flow.at_hard_risk.grow_if_oob(t).add(index);
+                                flow.at_hard_risk.grow_if_oob(t).add(locid);
                         }
                     }
 
@@ -2792,7 +2795,7 @@ pub fn solve(
                         for (shadow mut i = 0; i < my_cows.len; i++)
                         {
                             ref my_cow = my_cows[i];
-                            if (my_cow.argTarget    == index &&
+                            if (my_cow.argTarget    == locid &&
                                 my_cow.vtype.canon  == vtype.canon)
                             {
                                 my_cow.vtype.quals  |= vtype.quals;
@@ -2804,7 +2807,7 @@ pub fn solve(
 
                         // Nope, couldn't insert, add a new one.
                         my_cows ~= COWInside(
-                            :vtype, :token, argTarget: index,
+                            :vtype, :token, argTarget: locid,
                             :mayEscapeVia,
                             :exitPaths);
                     }
@@ -2815,10 +2818,14 @@ pub fn solve(
         // Step 2:
         // At this point we haven't folded var_usage up parent refs,
         //  so we gotta descend the invalidation chain manually.
-        fn cannotCOW_descendChildren(index: i32)
+        fn cannotCOW_descendChildren(parent_locid: i32, parent_region: Lifetime)
         {
-            index.eachLiveChildMutref: |child, t, o|
+            parent_locid.eachLiveChildMutref: |child, t, o|
             {
+                let inter = _current_fn.flow.rg_parents.unless_oob(child).Lifetime_inter(parent_region);
+                if (!inter)
+                    continue;
+
                 if (!seen.add_once(child))
                     continue;
 
@@ -2843,7 +2850,7 @@ pub fn solve(
                                     ~ explainWhichFn(t, fmt: FullContext);
 
                             err ~= "\n\tBoth refer to: "
-                                    ~ explainWhichFn(nested(index), fmt: FullContext);
+                                    ~ explainWhichFn(nested(parent_locid), fmt: FullContext);
 
                             _here = here;
                             fail(err);
@@ -2852,7 +2859,7 @@ pub fn solve(
                 }
 
                 // Continue.
-                cannotCOW_descendChildren(child);
+                cannotCOW_descendChildren(child, inter);
             }
         }
 

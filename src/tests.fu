@@ -2140,7 +2140,7 @@ pub extern fn runTests()
                 : arr; // <- we take this branch
     `);
 
-    TODO_disjoint(currently: "COW will break (14:32+11|14:46+11)", `
+    ZERO(`
         struct Ephemeral {
             id:             i32;
             scope_skip?:    Ephemeral[];
@@ -2172,7 +2172,7 @@ pub extern fn runTests()
                 : arr; // <- we take this branch
     `);
 
-    TODO_disjoint(currently: "COW will break 23:31+10 ref eph 22:17+3 ref arg s 20:29+1", `
+    ZERO(`
         // This one unrelated to COW but variation of test above.
         <flip>
         struct Ephemeral { // When first, we cg declarations in the wrong order
@@ -4957,7 +4957,7 @@ pub extern fn runTests()
         }
     `);
 
-    TODO_disjoint(currently: "COW will break 8:18+1 ref x at 5:17+1", `
+    ZERO(`
         nocopy struct Woot { x: i32[]; y: i32[] };
 
         fn test(ref w: Woot) {
@@ -4970,7 +4970,7 @@ pub extern fn runTests()
         }
 
         fn main() {
-            mut w: Woot([ 1, 2, 3, 4, 5, 6, 7 ], [ 1, 2, 3, 4, 5, 6, 7, 8, 9 ]);
+            mut w = Woot([ 1, 2, 3, 4, 5, 6, 7 ], [ 1, 2, 3, 4, 5, 6, 7, 8, 9 ]);
             test(w);
             return w.x.len - 25;
         }
