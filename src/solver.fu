@@ -1031,11 +1031,11 @@ pub fn solve(
 
             mut offset = 0;
             paths.lifetime::walkPaths(:offset,
-                onPathStart:        ||                  str ~= " [",
-                onPathDone:         |isLastPath|        str ~= isLastPath ? " ]" : " ],",
-                onSubRegionStart:   |flatCount|         str ~= " #" ~ flatCount,
-                onSubRegionOffset:  |flatOffset|        str ~= " @" ~ flatOffset,
-                onSubRegionDone:    |isLastSubRegion|   str ~= isLastSubRegion ? "" : ",");
+                onPathStart:        ||                      str ~= " [",
+                onPathDone:         |isLastPath|            str ~= isLastPath ? " ]" : " ],",
+                onSubRegion:        |flatCount, flatOffset, isLastSubRegion|
+                    str ~= " #" ~ flatCount ~ " @" ~ flatOffset ~ (isLastSubRegion ? "" : ","),
+            );
         }
 
         return str;

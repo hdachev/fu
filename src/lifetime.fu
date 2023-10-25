@@ -51,9 +51,10 @@ fn append7bit(ref str: byte[], mut v: u32)
 
 pub inline fn walkPaths(str: [byte], ref offset, lax tailOK!?: bool,
     onPathStart!?,
-    onSubRegionStart!?,
-    onSubRegionOffset!?,
-    onSubRegionDone!?,
+
+    onSubRegion!?,
+    onLastSubRegion!?,
+
     onPathDone!?,
     onDone!?)
 {
@@ -65,69 +66,52 @@ pub inline fn walkPaths(str: [byte], ref offset, lax tailOK!?: bool,
         mut isLastPath          = false;
         mut isFirstSubRegion    = true;
 
-        lax let path0           = offset;
+        let path0               = offset;
 
         onPathStart();
 
         // ... which are non-empty lists of subregions ...
         for (;;)
         {
-            let raw_prefix      = str[path0 : offset];
-
             // Subregion flatCount.
+            let subregion0      = offset;
             let raw             = str.parse7bit(:offset);
             let isLastSubRegion = !(raw & 1);
 
             isLastPath          = isLastSubRegion && !(raw & 2);
 
             let flatCount       = i32(raw >> (isLastSubRegion ? 2 : 1));
+            let flatOffset      = i32(str.parse7bit(:offset));
 
-            onSubRegionStart(
-                isFirstSubRegion?:  isFirstSubRegion,
-                isLastSubRegion?:   isLastSubRegion,
-                isLastPath?:        isLastPath,
+            onSubRegion(
+                ?:isFirstSubRegion,
+                ?:isLastSubRegion,
+                ?:isLastPath,
+                ?:flatCount,
+                ?:flatOffset,
 
-                flatCount?:         flatCount,
-                raw_prefix?:        raw_prefix);
-
-            lax let offsets0    = offset;
-
-            // Subregion offsets.
-            for (;;)
-            {
-                shadow let raw      = str.parse7bit(:offset);
-                let isLastOffset    = !(raw & 1);
-
-                onSubRegionOffset(
-                    isFirstSubRegion?:  isFirstSubRegion,
-                    isLastSubRegion?:   isLastSubRegion,
-                    isLastPath?:        isLastPath,
-                    isLastOffset?:      isLastOffset,
-
-                    flatCount?:         flatCount,
-                    flatOffset?:        i32(raw >> 1));
-
-                if (isLastOffset)
-                    break;
-            }
-
-            onSubRegionDone(
-                isFirstSubRegion?:  isFirstSubRegion,
-                isLastSubRegion?:   isLastSubRegion,
-                isLastPath?:        isLastPath,
-
-                flatCount?:         flatCount,
-                raw_prefix?:        raw_prefix,
-                raw_offsets?:       str[offsets0 : offset]);
+                raw_prefix?:    str[path0 : subregion0]);
 
             if (isLastSubRegion)
+            {
+                onLastSubRegion(
+                    ?:isFirstSubRegion,
+                    ?:isLastSubRegion,
+                    ?:isLastPath,
+                    ?:flatCount,
+                    ?:flatOffset,
+
+                    raw_prefix?:    str[path0 : subregion0]);
+
                 break;
+            }
 
             isFirstSubRegion    = false;
         }
 
         onPathDone(
-            isLastPath?:        isLastPath);
+            isLastPath?:        isLastPath,
+            raw_path?:          str[path0 : offset]);
 
         if (isLastPath)
             break;
@@ -155,7 +139,6 @@ pub lax fn assertPathsValid(
     if (!SELF_TEST)
         return;
 
-    mut lastFlatOffset  = 1001;
     mut pathDepth       = -1001;
     mut numPaths        = 0;
 
@@ -178,30 +161,11 @@ pub lax fn assertPathsValid(
                     ~ " !>= minPathDepth(" ~ minPathDepth ~ ")");
         },
 
-        onSubRegionStart: ||
+        onSubRegion: |flatOffset, flatCount, isLastSubRegion, isFirstSubRegion|
         {
-            lastFlatOffset = i32.MIN;
-
             pathDepth++;
             if (pathDepth > 64)
                 BUG("assertPathsValid: pathDepth > 64, we're likely stuck in an infinite loop.");
-        },
-
-        onSubRegionOffset: |flatOffset, flatCount, isLastSubRegion, isFirstSubRegion|
-        {
-            lastFlatOffset < flatOffset || BUG(
-                "assertPathsValid: lastFlatOffset(" ~ lastFlatOffset ~ ")"
-                    ~ " !< flatOffset(" ~ flatOffset ~ ")");
-
-            if (!selfIntersectOK)
-                lastFlatOffset + flatCount <= flatOffset || BUG(
-                    "assertPathsValid: lastFlatOffset(" ~ lastFlatOffset ~ ")"
-                        ~ " + flatCount(" ~ flatCount ~ ")"
-                        ~ " !<= flatOffset(" ~ flatOffset ~ "):\n\n\t"
-                            ~ "Looks like two fields of a structure intersect"
-                            ~ ", shouldnt be currently possible.");
-
-            lastFlatOffset = flatOffset;
 
             if (isFirstSubRegion && region_flatCount >= 0)
             {
@@ -229,7 +193,7 @@ pub lax fn assertPathsValid(
 struct SubRegion
 {
     flatCount:      i32;
-    flatOffsets:    i32[];
+    flatOffset:     i32;
 };
 
 type Paths = SubRegion[][];
@@ -238,21 +202,12 @@ fn parsePaths(str: [byte]): Paths
 {
     mut paths:      SubRegion[][];
     mut path:       SubRegion[];
-    mut subregion:  SubRegion;
 
     mut _o = 0;
     str.walkPaths(offset: _o,
 
-        onSubRegionStart: |flatCount| {
-            subregion.flatCount = flatCount;
-        },
-
-        onSubRegionOffset: |flatOffset| {
-            subregion.flatOffsets ~= flatOffset;
-        },
-
-        onSubRegionDone: || {
-            path ~= helpers::steal(subregion);
+        onSubRegion: |flatCount, flatOffset| {
+            path ~= SubRegion(:flatCount, :flatOffset);
         },
 
         onPathDone: || {
@@ -279,19 +234,13 @@ fn printPaths(str: [byte]): string
             result ~= "\t/Path\tisLastPath=" ~ isLastPath;
         },
 
-        onSubRegionStart: |flatCount, isFirstSubRegion, isLastSubRegion| {
+        onSubRegion: |flatCount, flatOffset, isFirstSubRegion, isLastSubRegion| {
             result ~= "\t\tSubReg\t flatCount="         ~ flatCount
                                 ~ " isFirstSubRegion="  ~ isFirstSubRegion
                                 ~ " isLastSubRegion="   ~ isLastSubRegion
                                 ~ "\n";
-        },
 
-        onSubRegionOffset: |flatOffset| {
             result ~= "\t\t\tflatOffset=" ~ flatOffset ~ "\n";
-        },
-
-        onSubRegionDone: || {
-            result ~= "\t\t/SubRegion.\n";
         },
 
         onDone: || {
@@ -302,25 +251,22 @@ fn printPaths(str: [byte]): string
 
 //
 
-inline fn appendFlatCount(ref uni0n: byte[], flatCount: i32,
-    isLastSubRegion!: bool,
-    isLastPath!: bool)
+inline fn appendSubRegion(ref uni0n: byte[],
+    flatCount: i32, flatOffset: i32,
+    isLastSubRegion!: bool, isLastPath!: bool)
 {
     if (SELF_TEST)
-        flatCount > 0 || BUG("appendFlatCount: flatCount(" ~ flatCount ~ ") !> 0");
+        flatOffset >= 0 && flatCount > 0 && (isLastSubRegion || flatCount == 1) || BUG(
+            "appendSubRegion: flatCount(" ~ flatCount ~ ")"
+                          ~ " flatOffset(" ~ flatOffset ~ ")"
+                          ~ " isLastSubRegion(" ~ isLastSubRegion ~ ")");
 
     uni0n.append7bit(
         flatCount.u32 << (isLastSubRegion ? 2 : 1)
             | (isLastSubRegion ? 0 : 1)
             | (isLastSubRegion && !isLastPath ? 2 : 0));
-}
 
-inline fn appendFlatOffset(ref uni0n: byte[], flatOffset: i32,
-    isLastOffset!: bool)
-{
-    uni0n.append7bit(
-        flatOffset.u32 << 1
-            | (isLastOffset ? 0 : 1));
+    uni0n.append7bit(flatOffset.u32);
 }
 
 fn appendPaths(ref str: byte[], paths: Paths,
@@ -354,35 +300,16 @@ fn appendPaths(ref str: byte[], paths: Paths,
 
                     // TODO FIX statics and temporaries are special right now.
                     || path.len == 1
-                    || subregion.flatOffsets.len == 1 && subregion.flatOffsets[0] == 0
+                    || subregion.flatOffset == 0
                     || BUG("appendPaths: empty flatCount");
             }
 
             let isLastSubRegion = i == path.len - 1;
 
             // Subregion flatCount.
-            str.appendFlatCount(:subregion.flatCount,
+            str.appendSubRegion(
+                :subregion.flatCount, :subregion.flatOffset,
                 :isLastSubRegion, :isLastPath);
-
-            // Subregion offsets.
-            let flatOffsets     = subregion.flatOffsets;
-            if (SELF_TEST)
-                flatOffsets || BUG("appendPaths: empty flatOffsets");
-
-            lax mut lastFlatOffset = -1;
-
-            for (shadow mut i = 0; i < flatOffsets.len; i++)
-            {
-                let flatOffset      = flatOffsets[i];
-                let isLastOffset    = i == flatOffsets.len - 1;
-
-                if (SELF_TEST && i) {
-                    flatOffset > lastFlatOffset || BUG("appendPaths: flatOffsets not increasing");
-                    lastFlatOffset = flatOffset;
-                }
-
-                str.appendFlatOffset(:flatOffset, :isLastOffset);
-            }
         }
     }
 
@@ -410,26 +337,18 @@ fn Paths_union(ref result: SubRegion[][], path: SubRegion[])
 
         if (path[: minL - 1] == host[: minL - 1])
         {
-            mut host_within_path = true;
-            mut path_within_host = true;
-
             let a_sr = host[minL - 1];
             let b_sr = path[minL - 1];
 
             // Does one completely wrap the other?
-            a_sr.flatOffsets.each: |a0|
-            {
-                let a1 = a0 + a_sr.flatCount;
-                b_sr.flatOffsets.each: |b0|
-                {
-                    let b1 = b0 + b_sr.flatCount;
+            let a0 = a_sr.flatOffset;
+            let a1 = a0 + a_sr.flatCount;
 
-                    if !(a0 >= b0 && a1 <= b1)
-                        host_within_path = false;
-                    if !(a0 <= b0 && a1 >= b1)
-                        path_within_host = false;
-                };
-            };
+            let b0 = b_sr.flatOffset;
+            let b1 = b0 + b_sr.flatCount;
+
+            let host_within_path = a0 >= b0 && a1 <= b1;
+            let path_within_host = a0 <= b0 && a1 >= b1;
 
             if (path_within_host && path.len >= host.len)
             {
@@ -482,35 +401,26 @@ fn Paths_inter(ref str: byte[], a: [byte], b: [byte])
             let N = min(a_path.len, b_path.len);
             for (mut i = 0; i < N; i++)
             {
-                let a_sr = a_path[i];
-                let b_sr = b_path[i];
+                shadow let a = a_path[i];
+                shadow let b = b_path[i];
 
-                let a_flatCount = a_sr.flatCount;
-                let b_flatCount = b_sr.flatCount;
+                let overlap = min(
+                    b.flatOffset + b.flatCount - a.flatOffset,
+                    a.flatOffset + a.flatCount - b.flatOffset);
 
-                mut flatCount: i32;
-                mut flatOffsets: i32[];
-
-                a_sr.flatOffsets.each: |shadow a|
-                {
-                    b_sr.flatOffsets.each: |shadow b|
-                    {
-                        let overlap = min(
-                            b + b_flatCount - a,
-                            a + a_flatCount - b);
-
-                        if (overlap > 0)
-                        {
-                            flatCount = max(flatCount, overlap);
-                            flatOffsets.set::add(max(a, b));
-                        }
-                    }
-                }
-
-                if !(flatOffsets)
+                if (overlap <= 0)
                     continue :EACH_B_PATH;
 
-                inter ~= SubRegion(:flatCount, :flatOffsets);
+                let flatCount   = min(a.flatCount,  b.flatCount);
+                let flatOffset  = max(a.flatOffset, b.flatOffset);
+
+                if (SELF_TEST)
+                    overlap >= flatCount || BUG("Paths_inter: self-intersection:"
+                        ~ "\n\t\ta.flatOffset(" ~ a.flatOffset ~ ") a.flatCount(" ~ a.flatCount ~ ")"
+                        ~ "\n\t\tb.flatOffset(" ~ b.flatOffset ~ ") b.flatCount(" ~ b.flatCount ~ ")"
+                        ~ "\n\t\toverlap(" ~ overlap ~ ")");
+
+                inter ~= SubRegion(:flatCount, :flatOffset);
             }
 
             if (SELF_TEST)
@@ -539,8 +449,9 @@ pub fn Lifetime_from(locid!: i32, flatCount: i32): Lifetime =
 
     mut uni0n: byte[];
     uni0n.append7bit(locid.u32 << 1);
-    uni0n.appendFlatCount(:flatCount, isLastPath: true, isLastSubRegion: true);
-    uni0n ~= '\0';
+    uni0n.appendSubRegion(
+        :flatCount, flatOffset: 0,
+        isLastPath: true, isLastSubRegion: true);
 
     return Lifetime(:uni0n);
 }
@@ -773,13 +684,10 @@ pub fn Lifetime_inter(a: Lifetime, b: Lifetime): Lifetime =
                     if (sr_left == SR_empty)
                         break :INTER sr_right;
 
-                    else
-                    {
-                        inter.clear();
-                        Paths_inter(inter, sr_left, sr_right);
-                        if (inter)
-                            break :INTER inter;
-                    }
+                    inter.clear();
+                    Paths_inter(inter, sr_left, sr_right);
+                    if (inter)
+                        break :INTER inter;
 
                     continue;
                 }
@@ -1051,11 +959,8 @@ pub fn Lifetime_op_field(lt: Lifetime, flatCount: i32, flatOffset: i32)
         mut offset = 0;
         paths.walkPaths(:offset,
 
-            onSubRegionStart: |isLastSubRegion, isLastPath, raw_prefix, flatCount!struct_flatCount|
+            onLastSubRegion: |isLastSubRegion, isLastPath, raw_prefix, flatCount!struct_flatCount, flatOffset!struct_flatOffset|
             {
-                if (!isLastSubRegion)
-                    continue;
-
                 if (SELF_TEST)
                     flatCount + flatOffset <= struct_flatCount || BUG(
                         "Lifetime_op_field: field.flatOffset(" ~ flatOffset ~ ")"
@@ -1063,54 +968,37 @@ pub fn Lifetime_op_field(lt: Lifetime, flatCount: i32, flatOffset: i32)
                             ~ " !<= struct.flatCount(" ~ struct_flatCount ~ ")");
 
                 result ~= raw_prefix;
-                result.appendFlatCount(:flatCount,
-                    :isLastSubRegion, :isLastPath);
-            },
-
-            onSubRegionOffset: |isLastSubRegion, isLastOffset, flatOffset!struct_flatOffset|
-            {
-                if (!isLastSubRegion)
-                    continue;
-
-                result.appendFlatOffset(
-                    flatOffset: struct_flatOffset + flatOffset,
-                        :isLastOffset);
+                result.appendSubRegion(
+                    :flatCount, :isLastSubRegion, :isLastPath,
+                    flatOffset: struct_flatOffset + flatOffset);
             });
     });
 }
 
-pub fn Lifetime_op_deref(lt: Lifetime, flatCount: i32)
+pub fn Lifetime_op_deref(lt: Lifetime, flatCount!deref_flatCount: i32)
 {
     return lt.Lifetime_op(minPathDepth: 2, |paths, result|
     {
         mut offset = 0;
         paths.walkPaths(:offset,
 
-            onSubRegionStart: |isLastSubRegion, isLastPath, raw_prefix, flatCount!parent_flatCount|
+            onLastSubRegion: |isLastPath, raw_prefix, flatCount!parent_flatCount, flatOffset!parent_flatOffset|
             {
-                if (!isLastSubRegion)
-                    continue;
-
                 if (SELF_TEST)
                     parent_flatCount == 1 || BUG("Lifetime_op_deref: parent_flatCount(" ~ parent_flatCount ~ ") != 1");
 
                 result ~= raw_prefix;
-                result.appendFlatCount(flatCount: parent_flatCount,
+
+                result.appendSubRegion(
+                    flatCount:  parent_flatCount,
+                    flatOffset: parent_flatOffset,
                     :isLastPath, isLastSubRegion: false);
-            },
-
-            onSubRegionDone: |isLastSubRegion, isLastPath, raw_offsets|
-            {
-                if (!isLastSubRegion)
-                    continue;
-
-                result ~= raw_offsets;
 
                 // This is the actual deref.
-                result.appendFlatCount(:flatCount,
+                result.appendSubRegion(
+                    flatCount:  deref_flatCount,
+                    flatOffset: 0,
                     :isLastPath, isLastSubRegion: true);
-
-                result ~= '\0';
             });
     });
 }
@@ -1119,32 +1007,17 @@ pub fn Lifetime_op_join(lt: Lifetime, child: [byte])
 {
     return lt.Lifetime_op(|paths!parent, result|
     {
-        mut parent_flatOffsets: i32[];
-        mut result_flatOffsets: i32[];
-
         mut _p0 = 0;
         parent.walkPaths(offset: _p0,
 
-            onSubRegionOffset: |
-                isLastSubRegion !parent_isLastSubRegion,
-                flatOffset      !parent_flatOffset|
-            {
-                if (!parent_isLastSubRegion)
-                    continue;
-
-                parent_flatOffsets ~= parent_flatOffset;
-            },
-
-            onSubRegionDone: |
-                isLastSubRegion !parent_isLastSubRegion,
+            onLastSubRegion: |
                 isLastPath      !parent_isLastPath,
 
                 flatCount       !parent_flatCount,
+                flatOffset      !parent_flatOffset,
+
                 raw_prefix      !parent_rawPrefix|
             {
-                if (!parent_isLastSubRegion)
-                    continue;
-
                 // So we've got the raw parent prefix,
                 //  the last parent subregion flatCount and flatOffsets.
                 //
@@ -1156,89 +1029,44 @@ pub fn Lifetime_op_join(lt: Lifetime, child: [byte])
                 // First Child Subregion: [ childOffset0, childOffset1 ]
                 //
                 // Resulting Subregion: [ p0 + c0, p0 + c1, p1 + c0, p1 + c1 ]
-
+                //
                 mut _c0 = 0;
                 child.walkPaths(offset: _c0,
 
-                    onSubRegionStart: |
+                    onSubRegion: |
                         isFirstSubRegion    !child_isFirstSubRegion,
                         isLastSubRegion     !child_isLastSubRegion,
                         isLastPath          !child_isLastPath,
 
-                        flatCount           !child_flatCount|
-                    {
-                        if (child_isFirstSubRegion)
-                        {
-                            if (SELF_TEST)
-                                child_flatCount <= parent_flatCount || BUG(
-                                    "Lifetime_op_join: child_flatCount(" ~ child_flatCount ~ ")"
-                                        ~ " !<= parent_flatCount(" ~ parent_flatCount ~ ")");
-
-                            // Begin a new path -
-                            //  take everything from parent path,
-                            //   up to the final subregion.
-                            //
-                            result ~= parent_rawPrefix;
-                        }
-
-                        // Use the child flatCount.
-                        result.appendFlatCount(
-                            flatCount:          child_flatCount,
-                            isLastSubRegion:    child_isLastSubRegion,
-                            isLastPath:         parent_isLastPath && child_isLastPath);
-                    },
-
-                    onSubRegionOffset: |
-                        isFirstSubRegion    !child_isFirstSubRegion,
-
                         flatCount           !child_flatCount,
                         flatOffset          !child_flatOffset|
                     {
-                        if (!child_isFirstSubRegion)
-                            continue;
-
-                        // We collect all unique parentOffset + childOffset combinations here,
-                        //  we want to dedupe them to keep stuff simple elsewhere,
-                        //   although right now I think this will never actually dedupe anything.
+                        // Begin a new path -
+                        //  take everything from parent path,
+                        //   up to the final subregion.
                         //
-                        // At least it'll guarantee stuff is sorted?
-                        //
-                        if (SELF_TEST)
-                            child_flatOffset + child_flatCount <= parent_flatCount || BUG(
-                                "Lifetime_op_join: child_flatOffset(" ~ child_flatOffset ~ ")"
-                                    ~ " + child_flatCount(" ~ child_flatCount ~ ")"
-                                    ~ " !<= parent_flatCount(" ~ parent_flatCount ~ ")");
+                        if (child_isFirstSubRegion)
+                            result ~= parent_rawPrefix;
 
-                        parent_flatOffsets.each: |parent_flatOffset|
-                            result_flatOffsets.set::add(
-                                parent_flatOffset + child_flatOffset);
-                    },
+                        let result_flatOffset =
+                            !child_isFirstSubRegion ? child_flatOffset :
+                            {
+                                if (SELF_TEST)
+                                    child_flatOffset + child_flatCount <= parent_flatCount || BUG(
+                                        "Lifetime_op_join: child_flatOffset(" ~ child_flatOffset ~ ")"
+                                            ~ " + child_flatCount(" ~ child_flatCount ~ ")"
+                                            ~ " !<= parent_flatCount(" ~ parent_flatCount ~ ")");
 
-                    onSubRegionDone: |
-                        isFirstSubRegion    !child_isFirstSubRegion,
-                        raw_offsets         !child_rawOffsets|
-                    {
-                        if (!child_isFirstSubRegion)
-                        {
-                            // Any offsets following the first child subregion
-                            //  are just pass-through.
-                            //
-                            result ~= child_rawOffsets;
-                            continue;
-                        }
+                                child_flatOffset + parent_flatOffset
+                            };
 
-                        let N1 = result_flatOffsets.len - 1;
-                        for (mut i = 0; i < result_flatOffsets.len; i++)
-                            result.appendFlatOffset(
-                                flatOffset:     result_flatOffsets[i],
-                                isLastOffset:   i == N1);
-
-                        // onFirstChildSubRegionEnd/
-                        result_flatOffsets.clear();
+                        // Use the child flatCount.
+                        result.appendSubRegion(
+                            flatCount:          child_flatCount,
+                            flatOffset:         result_flatOffset,
+                            isLastSubRegion:    child_isLastSubRegion,
+                            isLastPath:         parent_isLastPath && child_isLastPath);
                     });
-
-                // onLastParentSubRegionEnd/
-                parent_flatOffsets.clear();
             });
     });
 }
