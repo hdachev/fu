@@ -6618,6 +6618,35 @@ pub extern fn runTests()
         }
     `);
 
+    TODO_disjoint(currently: "cannot access b 12:13+1 invalidated by write to tv at 11:15+2", `
+        struct TwoVecs { a: i32[]; b: i32[] };
+
+        noinline fn disjoint_refs(ref tv: TwoVecs) {
+            <alt>
+            ref         <alt/>
+            noinline fn <alt/>
+            inline fn   </alt> a = tv.a;
+
+            <alt>
+            ref         <alt/>
+            noinline fn <alt/>
+            inline fn   </alt> b = tv.b;
+
+            a ~= b; // 21
+            b ~= a; // 32
+            a ~= b; // 53
+        }
+
+        fn main() {
+            mut tv = TwoVecs(
+                [  1, 2, 3, 4, 5, 6, 7, 8, 9, 10 ],
+                [ 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0 ]);
+
+            disjoint_refs(tv);
+            return tv.a.len - 53;
+        }
+    `);
+
     // /Borrow checker
 
 
