@@ -75,13 +75,17 @@ pub inline fn walkPaths(str: [byte], ref offset, lax tailOK!?: bool,
         {
             // Subregion flatCount.
             let subregion0      = offset;
-            let raw             = str.parse7bit(:offset);
-            let isLastSubRegion = !(raw & 1);
+            let raw_flatOffset  = str.parse7bit(:offset);
+            let isLastSubRegion = !(raw_flatOffset & 1);
 
-            isLastPath          = isLastSubRegion && !(raw & 2);
+            let raw_flatCount   = isLastSubRegion
+                ? str.parse7bit(:offset)
+                : 6;
 
-            let flatCount       = i32(raw >> (isLastSubRegion ? 2 : 1));
-            let flatOffset      = i32(str.parse7bit(:offset));
+            isLastPath          = !(raw_flatCount & 2);
+
+            let flatCount       = i32(raw_flatCount >> 2);
+            let flatOffset      = i32(raw_flatOffset >> 1);
 
             onSubRegion(
                 ?:isFirstSubRegion,
@@ -282,11 +286,13 @@ inline fn appendSubRegion(ref uni0n: byte[],
                           ~ " isLastSubRegion(" ~ isLastSubRegion ~ ")");
 
     uni0n.append7bit(
-        flatCount.u32 << (isLastSubRegion ? 2 : 1)
-            | (isLastSubRegion ? 0 : 1)
-            | (isLastSubRegion && !isLastPath ? 2 : 0));
+        flatOffset.u32 << 1
+            | (isLastSubRegion ? 0 : 1));
 
-    uni0n.append7bit(flatOffset.u32);
+    if (isLastSubRegion)
+        uni0n.append7bit(
+            flatCount.u32 << 2
+                | (isLastPath ? 0 : 2));
 }
 
 fn appendPaths(ref str: byte[], paths: Paths,
