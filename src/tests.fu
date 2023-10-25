@@ -9787,6 +9787,25 @@ pub extern fn runTests()
                     .value - 4;
     `);
 
+    ZERO(`
+        struct Thing { a: i32; b: i32 };
+        struct Stuff { _gets: Thing[]; _root: Thing; _exts: Thing[] };
+
+        fn GET(ref s: Stuff, i: int) s._gets[i];
+        fn EXT(ref s: Stuff, i: int) s._exts[i];
+
+        fn lookup(ref s: Stuff, i: int) {
+            let start = s._root || s.GET(i);
+            if (!start) return start;
+            return s.EXT(i);
+        }
+
+        fn main() {
+            mut s = Stuff([ Thing(0, 1) ], Thing(1, 2), [ Thing(2, 3) ]);
+            return s.lookup(0).a - 2;
+        }
+    `);
+
     // /quite right
 
 
