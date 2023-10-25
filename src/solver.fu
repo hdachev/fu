@@ -2672,20 +2672,16 @@ pub fn solve(
             }
         }
 
-        // Prevents revisiting parents
-        //  during grandparent's descendChildren.
-        mut seen: bitset::BitSet;
-
         // Step 1:
         // Climb parents, collecting all preexisting refs
         //  that could possibly be used after the COW "copy" is made
         //   to mutate the original as-if-unique,
         //    breaking value semantics on the copy.
-        fn cannotCOW_climbParents(lifetime: Lifetime)
+        fn cannotCOW_climbParents(lifetime: Lifetime, expected_refs!?: i32[])
         {
             lifetime.Lifetime_each: |locid, region, paths|
             {
-                if (!locid || !seen.add_once(locid))
+                if (!locid)
                     continue;
 
                 let o = GET(nested(locid));
@@ -2695,10 +2691,14 @@ pub fn solve(
                 cannotCOW_climbParents(
                     Lifetime_op_join(
                         Lifetime_climbType(o).lifetime,
-                        paths));
+                        paths),
+
+                    // We don't want to forbid the copy when we visit this locid
+                    //  as a child of one of our parents.
+                    :expected_refs ~ locid);
 
                 // Check children.
-                cannotCOW_descendChildren(locid, region);
+                cannotCOW_descendChildren(locid, region, :expected_refs);
 
                 // GLOBAL COMPONENT
                 // Here we're adding stuff to the arguments-at-risk bitmasks,
@@ -2818,15 +2818,17 @@ pub fn solve(
         // Step 2:
         // At this point we haven't folded var_usage up parent refs,
         //  so we gotta descend the invalidation chain manually.
-        fn cannotCOW_descendChildren(parent_locid: i32, parent_region: Lifetime)
+        fn cannotCOW_descendChildren(parent_locid: i32, parent_region: Lifetime, expected_refs!: i32[])
         {
             parent_locid.eachLiveChildMutref: |child, t, o|
             {
-                let inter = _current_fn.flow.rg_parents.unless_oob(child).Lifetime_inter(parent_region);
-                if (!inter)
+                // Ignore this if we're copying through this ref.
+                if (expected_refs.has(child))
                     continue;
 
-                if (!seen.add_once(child))
+                //
+                let inter = _current_fn.flow.rg_parents.unless_oob(child).Lifetime_inter(parent_region);
+                if (!inter)
                     continue;
 
                 if (_current_fn.ever_written.has(child))
@@ -2859,7 +2861,7 @@ pub fn solve(
                 }
 
                 // Continue.
-                cannotCOW_descendChildren(child, inter);
+                cannotCOW_descendChildren(child, inter, :expected_refs);
             }
         }
 
