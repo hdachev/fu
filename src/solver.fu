@@ -2609,6 +2609,8 @@ pub fn solve(
         callee?: Target, host_arg?: Argument,
         calleeReturnDiscarded!?: bool)
     {
+        PROFILE(.ValidateCOW);
+
         // validateCOW is used for 'copy' nodes but also for callargs,
         //  where the copy-inside list has many vtype/token pairs.
         fn eachCOWInside(visit)
@@ -9452,6 +9454,8 @@ pub fn solve(
         locals_start!?: i32,
         must_not_call!?: Target)
     {
+        PROFILE(.InlineExpr);
+
         from || BUG("TODO inlining from global scope, never happened before, might work, remove assert as needed.");
 
         // println("inlineExpression " ~ expr.kind ":" ~ expr.value " in " _current_fn);
@@ -12553,6 +12557,8 @@ pub fn solve(
 
     fn PASS_runAllVerifiers()
     {
+        PROFILE(.EnsureArgSeq);
+
         _nestingFnort && BUG("PASS_runAllVerifiers: non-empty _nestingFnort");
 
         for (mut i = 0; i < _scope.overloads.len; i++)

@@ -29,6 +29,10 @@ struct ProfileData
     RelaxCopyResize:    ProfileItem;
     TestPass:           ProfileItem;
 
+    InlineExpr:         ProfileItem;
+    EnsureArgSeq:       ProfileItem;
+    ValidateCOW:        ProfileItem;
+
     UnaccountedFor:     ProfileItem;
 }
 
