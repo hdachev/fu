@@ -148,9 +148,9 @@ pub lax fn assertPathsValid(
     lax str: [byte],
     lax mut expect_flatCount = -1,
     lax mut region_flatCount = -1,
-    lax flatCountMismatchOK = false,
-    lax selfIntersectOK = false,
-    lax minPathDepth = 1)
+    lax flatCountMismatchOK! = false,
+    lax selfIntersectOK! = false,
+    lax minPathDepth! = 1)
 {
     if (!SELF_TEST)
         return;
@@ -523,7 +523,10 @@ fn Paths_inter(ref str: byte[], a: [byte], b: [byte])
         }
     }
 
-    str.appendPaths(result, emptyOK: true, selfIntersectOK: true);
+    str.appendPaths(result,
+        emptyOK: true,
+        selfIntersectOK: true,
+        flatCountMismatchOK: true);
 }
 
 

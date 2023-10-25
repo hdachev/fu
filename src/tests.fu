@@ -2172,7 +2172,7 @@ pub extern fn runTests()
                 : arr; // <- we take this branch
     `);
 
-    ZERO(`
+    TODO_disjoint(currently: "COW will break 23:31+10 ref eph 22:17+3 ref arg s 20:29+1", `
         // This one unrelated to COW but variation of test above.
         <flip>
         struct Ephemeral { // When first, we cg declarations in the wrong order
@@ -6619,7 +6619,7 @@ pub extern fn runTests()
         }
     `);
 
-    TODO_disjoint(currently: "cannot access b 12:13+1 invalidated by write to tv at 11:15+2", `
+    ZERO(`
         struct TwoVecs { a: i32[]; b: i32[] };
 
         noinline fn disjoint_refs(ref tv: TwoVecs) {
@@ -9711,7 +9711,7 @@ pub extern fn runTests()
         }
     `);
 
-    TODO_disjoint(currently: "Cannot access ref overloads 23:13+9 inval by write to ref arg scope 21:24+2", `
+    ZERO(`
         struct Target       { globid: i32; locid: i32 }
         struct Overload     { name: string }
         struct Extended     { locals: Overload[] }

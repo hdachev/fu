@@ -10871,7 +10871,7 @@ pub fn solve(
             let OPTI_hasPRA = !!events.preceding_ref_args;
 
             //
-            lifetime.Lifetime_each: |locid!write, region|
+            lifetime.Lifetime_each: |locid!write, region!write_region, paths!write_paths|
             {
                 if (!write)
                 {
@@ -10884,10 +10884,38 @@ pub fn solve(
 
                 // println("bck_trackWrite " ~ target ~ " " ~ callsite.value);
 
+                mut all_written = write_region;
+
+                // The write may not invalidate its parents,
+                //  but it might still change their value.
+                //   Search tests for:
+                //
+                //      a * { ref x = z || a; x++ }
+                //
+                // Doing it for all args, including the first arg.
+                //  Search tests for:
+                //
+                //      { ref x = z || a; x++ } * a
+                //
+                // In both cases we need to sequence the order of eval of `a` and `x++`.
+                //
+                all_written.Lifetime_add(
+                    Lifetime_op_join(
+                        flow.rg_parents.unless_oob(write),
+                        write_paths));
+
                 let invalidates = flow.rg_invalidates.unless_oob(write);
 
                 if (SELF_TEST && invalidates.Lifetime_has(locid: write))
                     BUG("flow.invalidates[write].has(write): " ~ GET(nested(write)));
+
+                shadow let invalidates = invalidates.Lifetime_process(
+                    |locid!invalidatee, continue_keep|
+                    {
+                        let parents = flow.rg_parents.unless_oob(invalidatee);
+                        if (Lifetime_hasInter(parents, all_written))
+                            continue_keep();
+                    });
 
                 // Writes in a loop invalidate preceding reads.
                 if (OPTI_isLoop) invalidates.Lifetime_each: |locid!read|
@@ -10917,30 +10945,10 @@ pub fn solve(
                 // TODO FIX clean it up, previously in bck_call, shoehorned here.
                 if (OPTI_hasPRA)
                 {
-                    mut all_written = region.Lifetime_getRefLocid_unlessStatic && region;
-                    {
-                        // The write may not invalidate its parents,
-                        //  but it might still change their value.
-                        //   Search tests for:
-                        //
-                        //      a * { ref x = z || a; x++ }
-                        //
-                        // Doing it for all args, including the first arg.
-                        //  Search tests for:
-                        //
-                        //      { ref x = z || a; x++ } * a
-                        //
-                        // In both cases we need to sequence the order of eval of `a` and `x++`.
-                        //
-                        all_written.Lifetime_add(flow.rg_parents.unless_oob(write));
+                    mut all_written_and_invalidated = all_written;
 
-                        // Deep expansion only useful on non-first arg,
-                        //  we only use it for preceding args in OOE.
-                        //
-                        all_written.Lifetime_add(
-                            flow.rg_invalidates.unless_oob(write),
-                            flatCountMismatchOK: true);
-                    }
+                    all_written_and_invalidated.Lifetime_add(invalidates,
+                        flatCountMismatchOK: true);
 
 
                     // Check if this write invalidates
@@ -10961,10 +10969,8 @@ pub fn solve(
                         let r = pra.r;
 
                         //
-                        shadow let all_written = all_written || BUG();
-
                         let bound   = pra.arg.type.lifetime;
-                        let inter   = bound.Lifetime_inter(all_written);
+                        let inter   = bound.Lifetime_inter(all_written_and_invalidated);
                         if (!inter)
                             continue;
 
@@ -11026,7 +11032,7 @@ pub fn solve(
                         //
                         if (SELF_TEST)
                             writeID._locid_and_hash.i32 == write || BUG(
-                                "AAR: set::add wont dedupe");
+                                "AAR: writeID._locid != write locid, set::add wont be able to dedupe");
 
                         set.set::add(writeID);
                     }
@@ -11739,7 +11745,7 @@ pub fn solve(
             //
             shadow ref flow = _current_fn.flow;
 
-            refs.Lifetime_each: |locid!target, others|
+            refs.Lifetime_each: |locid!target, others!other_refs|
             {
                 target || BUG();
 
@@ -11750,8 +11756,9 @@ pub fn solve(
 
                 // Finally set up the ref <-> ref relationships,
                 //  which are symmetric.
-                if (others)
-                    flow.rg_invalidates.grow_if_oob(target).Lifetime_add(others);
+                if (other_refs)
+                    flow.rg_invalidates.grow_if_oob(target)
+                        .Lifetime_add(other_refs);
 
                 // OOE/AAR:
                 // Search tests for:
@@ -11764,31 +11771,34 @@ pub fn solve(
                 //
                 // Basically for all_written_BUT_NOT_invalidated to consider other arguments,
                 //  we list them as if they were parents to each ref argument.
-                if (refs_len > 1 || consts)
+                if (consts || other_refs)
                     (flow.rg_parents.grow_if_oob(target) && BUG("AAR: ref arg already has parents."))
                         = flow.rg_invalidates.unless_oob(target) || BUG("AAR: (refs.len > 1 || consts), but no invalidates.");
             }
 
             // trackReferences uses flow.invalidates to locate siblings,
             //  so we gotta add them here for constants too.
-            if (refs) consts.Lifetime_each: |locid!target|
+            if (refs)
             {
-                target || BUG();
+                consts.Lifetime_each: |locid!target|
+                {
+                    target || BUG();
 
-                // Same as above but flipped.
-                (flow.rg_invalidates.grow_if_oob(target) && BUG(
-                    "AAR: const arg already has invalidates."))
-                        = refs;
+                    // Same as above but flipped.
+                    (flow.rg_invalidates.grow_if_oob(target) && BUG(
+                        "AAR: const arg already has invalidates."))
+                            = refs;
+
+                    // No point in doing this - we're never ascending .parents for reads.
+                    //  The thing above appears to be sufficient:
+                    //   - listing consts as .parents of refs takes care of refs pointing into consts.
+                    //   - listing consts as .invalidates for refs takes care of consts point into refs.
+                    //
+                    (flow.rg_parents.grow_if_oob(target) && BUG(
+                        "AAR: const arg already has parents."))
+                            = refs;
+                }
             }
-
-            // No point in doing this - we're never ascending .parents for reads.
-            //  The thing above appears to be sufficient:
-            //   - listing consts as .parents of refs takes care of refs pointing into consts.
-            //   - listing consts as .invalidates for refs takes care of consts point into refs.
-            //
-            // for (mut i = 0; i < consts.len; i++)
-            //     (flow.parents.grow_if_oob(consts[i]) && BUG("AAR: const arg already has parents."))
-            //         = refs;
 
             // Go.
             refs || BUG("Wasting time on AAR without ref args.");
