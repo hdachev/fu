@@ -62,20 +62,37 @@ struct ModuleStats
 
 //
 
+struct Shape
+{
+    // User primitives have an
+    //  underlying base primitive type.
+    //
+    basePrim:       string;
+
+    // Mask of non-trivial shape bits
+    //  of all the non-trivial types owned inside.
+    //   Use this to speed up myPointInto queries.
+    //
+    non_triv_mask:  u64;    // contains self if non-triv,
+                            //  else empty.
+    hash:           u64;
+
+    flatCount:      i32;
+    declDepth:      i32;
+};
+
 struct Struct
 {
     ::kind;
-    name:       string;
+    name:           string;
 
-    target?:    Target;
-    items?:     ScopeItem[];
-    imports?:   i32[];
-    converts?:  Target[];
+    target?:        Target;
+    items?:         ScopeItem[];
+    imports?:       i32[];
+    converts?:      Target[];
 
-    base?:      string;
-    flatCount?: i32;
-    declDepth?: i32;
-    all_triv?:  bool;
+    // Size & co.
+    using shape:    Shape;
 };
 
 

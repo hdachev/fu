@@ -57,53 +57,7 @@ fn ScopeItem(id: string, target: Target, shadows: bool)
                        | (shadows && 0x8000_0000_0000_0000));
 
 
-
-///////////////////////////////////////
-///////////////////////////////////////
-///////////////////////////////////////
-///////////////////////////////////////
-////////
-////////
-////////
-////////     Scope.
-
-fn MODID(implicit module: Module): i32
-    module.modid;
-
-fn initStruct(implicit module: &mut Module,
-    ::kind!, baseprim!: string,
-    name: string, asserts: DeclAsserts,
-    flatCount!: i32, specPat!: string)
-{
-    name[0].u8 - '0'.u8 > 9.u8 || throw (
-        "Bad struct name, leading digit: `" ~ name ~ "`.");
-
-    // Alloc a slot.
-    let index = module.out.types.len;
-    module.out.types ~= Struct(:kind, :name, base: baseprim, :flatCount);
-
-    //
-    let canon = createStructCanon(
-        :kind, :baseprim, :module.modid, :index, :name)
-            ~ specPat;
-
-    // if (specPat) println("SPECPAT " specPat);
-
-    // Assume everything, we resolve disappointment.
-    return Type(ValueType(:canon, quals: speculateStruct(:asserts, :flatCount)));
-}
-
-
-
-
-///////////////////////////////////////
-///////////////////////////////////////
-///////////////////////////////////////
-///////////////////////////////////////
-////////
-////////
-////////
-////////     Scope.
+//
 
 fn Scope_exports(scope: Scope, modid!: i32,
     field_items: ScopeItem[],
@@ -395,6 +349,7 @@ fn Scope_pop(ref scope: Scope, implicit ref _helpers: Helpers[], memo: ScopeMemo
 ////////////////////////////////
 
 fn Scope_create(
+    implicit module: Module,
     scope: &mut Scope,
     ::kind = "__no_kind_yet", name!?: string,
     type?: Type, flags!?: Flags,
@@ -408,7 +363,7 @@ fn Scope_create(
     let position = overloads.len + 1;
 
     let target = Target(
-        modid:      MODID,
+        modid:      module.modid,
         globid:     nest || position,
         locid:      nest && position);
 

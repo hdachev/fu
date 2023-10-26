@@ -377,7 +377,7 @@ pub fn cpp_codegen(
 
     fn declareStruct(id: string, s: Struct)
     {
-        if (s.base)
+        if (s.basePrim)
             return declarePrimitive(id, s);
 
         //
@@ -394,6 +394,10 @@ pub fn cpp_codegen(
         mut def = "\n                                #ifndef DEF_" ~ id
                 ~ "\n                                #define DEF_" ~ id
                 ~ "\n" ~ header ~ "\n{";
+
+        if (options.dev & options::DEV_CG_LifetimeAnnots)
+            def ~= "\n                                // shape_hash:    " ~ s.hash.hex64_lower
+                 ~ "\n                                // non_triv_mask: " ~ s.non_triv_mask.hex64_lower;
 
         mut indent = "\n    ";
         mut xOpBool = "";
@@ -456,7 +460,7 @@ pub fn cpp_codegen(
 
     fn declarePrimitive(id: string, s: Struct)
     {
-        let baseprim    = primAnnotBase(s.base);
+        let basePrim    = primAnnotBase(s.basePrim);
         let members     = s.items;
 
         mut def = "\n                                #ifndef DEF_" ~ id
@@ -469,7 +473,7 @@ pub fn cpp_codegen(
             //   which can't happen for arithmetic primitives,
             //    unfortunately also true for flags.
             //
-            _tfwd_src ~= "typedef " ~ baseprim ~ " " ~ id ~ ";\n";
+            _tfwd_src ~= "typedef " ~ basePrim ~ " " ~ id ~ ";\n";
 
             members.each: |member.target|
                 def ~= "\ninline constexpr " ~ id ~ " " ~ id ~ "_" ~ member.name
@@ -503,7 +507,7 @@ pub fn cpp_codegen(
             //  b] Importantly, they can't have an explicit operator bool,
             //      so they need verbose boolchecks, not great.
             //
-            let header      = "enum " ~ id ~ ": " ~ baseprim;
+            let header      = "enum " ~ id ~ ": " ~ basePrim;
 
             _tfwd_src  ~= header ~ ";\n";
             def ~= "\n" ~ header ~ "\n{";
@@ -574,9 +578,23 @@ pub fn cpp_codegen(
         x < 10 ? ('0'.u32 +  x      ).byte
                : ('A'.u32 + (x - 10)).byte;
 
-    fn xHH(c: u32) "x"
-        ~ ((c >> 4) & 0xf).hex
-        ~ ((c >> 0) & 0xf).hex;
+    fn xHH(c: u32)
+        "x" ~ ((c >> 4) & 0xf).hex
+            ~ ((c >> 0) & 0xf).hex;
+
+    fn hex64_lower(v: u64)
+    {
+        mut str = "";
+        for (mut i = 0; i < 16; i++)
+        {
+            let c = (v >> (i.u64 * 4)) & 0xf;
+            str ~= byte(
+                c < 10 ? '0'.u64 + c
+                       : 'a'.u64 + c - 10);
+        }
+
+        return str;
+    }
 
     fn valid_identifier(mut str: string): string
     {
@@ -2386,7 +2404,7 @@ pub fn cpp_codegen(
         while ((idx = src.find('_', start: idx)) >= 0)
             src.splice(idx, 1);
 
-        let base = tryLookupUserType(node.type).base || node.type.canon;
+        let base = tryLookupUserType(node.type).basePrim || node.type.canon;
 
         if (base.starts(with: 'u'))
             if (!src.has('u'))

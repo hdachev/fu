@@ -25,10 +25,10 @@ pub fn parseStructCanon(canon: string): StructCanon
 }
 
 pub fn createStructCanon(
-    ::kind!, baseprim!: string,
+    ::kind!, basePrim!: string,
     modid: i32, index: i32, lax name: string): string
 {
-    mut res = baseprim ~ "/";
+    mut res = basePrim ~ "/";
 
     modid >= 0 && index >= 0 || throw(
         "createStructCanon: bad modid/index");
@@ -37,11 +37,11 @@ pub fn createStructCanon(
     res.appendVarint((index + ONE_BASED).u32);
 
     //
-    if (baseprim)
+    if (basePrim)
     {
         ref c = res[0];
         if (c == 'e' || c == 'm')
-            throw("createStructCanon: bad baseprim: " ~ baseprim);
+            throw("createStructCanon: bad basePrim: " ~ basePrim);
 
         if (kind == "enum")
             c = 'e';

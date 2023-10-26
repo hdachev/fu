@@ -2563,42 +2563,65 @@ pub fn solve(
             return true; // TODO check sizes
 
         // ref bytes = ints.view(of: byte)
-        let slice_T = tryClear_sliceable(guest);
-        if (slice_T && slice_T.is_reinterpretable)
-            return true;
+        guest.if_sliceable: |sliceT|
+            if (sliceT.is_reinterpretable)
+                return true;
+
+        // Acceleration -
+        //  we use the non_triv_mask as a bloom filter
+        //   to get avoid the full loop below when possible.
+        //
+        let host_shape          = getShape(host);
+        let guest_non_triv_mask = getShape(guest).non_triv_mask;
+
+        // Guest might be some kind of ZST -
+        // TODO FIX clean those up and see why we're at all bothering here.
+        if (!guest_non_triv_mask)
+            return false;
+
+        if (host_shape.non_triv_mask & guest_non_triv_mask
+                                    != guest_non_triv_mask)
+            return false;
 
         //
         mut seen: StructCanon[];
 
-        fn type_maybeInside(shadow host: ValueType, shadow guest: ValueType)
+        fn type_maybeInside(shadow host: ValueType)
         {
             if (host.canon == guest.canon)
                 return true;
 
-            if (let itemType = tryClear_sliceable(host))
-                return type_maybeInside(host: itemType.vtype, :guest);
+            host.if_sliceable: |host_sliceT|
+                return type_maybeInside(host_sliceT);
 
             if (host.isStruct)
             {
                 let scp = parseStructCanon(host.canon);
                 let s   = lookupUserType(scp);
 
-                if ((!s.all_triv || guest.is_trivial)
-                    && seen.set::add(scp))
+                if (s.non_triv_mask & guest_non_triv_mask
+                                   != guest_non_triv_mask)
+                    return false;
+
+                if (seen.set::add(scp))
                 {
                     for (mut i = 0; i < s.items.len; i++)
                     {
                         let f = s.items[i].target;
-                        if (type_maybeInside(host: f.type, guest))
+                        if (type_maybeInside(host: f.type))
                             return true;
                     }
                 }
+
+                // TODO FIX investigate these, I'm seeing one in build.fu
+                // if (SELF_TEST)
+                //     BUG("[PERF] type_maybeInside: non_triv_masks failed to optimize a go through some struct: " ~ host.Type.humanizeType);
             }
 
             return false;
         }
 
-        return type_maybeInside(:host, :guest);
+        return type_maybeInside(:host);
     }
 
 
@@ -4465,13 +4488,24 @@ pub fn solve(
             || fail("Not a struct nor custom primitive: " ~ humanizeType(type));
     }
 
-    fn getBasePrimitive(type: Type): string
+    fn getBasePrim(type: Type): string
     {
         mut offset = type.canon.basePrimPrefixLen();
         if (offset < type.canon.len)
-            return lookupUserType(type).base;
+            return lookupUserType(type).basePrim;
 
         return type.canon;
+    }
+
+    fn parseBasePrimBitWidth(basePrim: string): u16
+    {
+        mut size: u16 = 0;
+        for (mut i = 1; i < basePrim.len; i++) {
+            size *= 10;
+            size += basePrim[i++].u16 - '0'.u16;
+        }
+
+        return size;
     }
 
     fn solveInt(v: string, type: Type): Type
@@ -4483,7 +4517,7 @@ pub fn solve(
         {
             if (type && type.is_primitive)
             {
-                let c = type.getBasePrimitive();
+                let c = type.getBasePrim();
 
                 fn want(t: Type)
                     c == t.canon;
@@ -6451,6 +6485,8 @@ pub fn solve(
     fn __solveStruct(shadow solve!: bool, node: Node, into!?: Target,
         TODO_FIX_useSpecPath!?: bool): SolvedNode
     {
+        PROFILE(.SolveStruct);
+
         let origId      = node.value;
 
         mut name        = origId ||
@@ -6474,8 +6510,8 @@ pub fn solve(
         let isPrimDecl  = !isStruct && !isUnion;
 
         //
-        mut basePrimType: Type;
-        mut baseprim: string;
+        mut basePrimType:   Type;
+        mut basePrim:       string;
 
         if (isPrimDecl)
         {
@@ -6484,7 +6520,7 @@ pub fn solve(
                 ? evalTypeAnnot(baseannot)
                 : t_u8; // TODO decide later
 
-            baseprim        = getBasePrimitive(basePrimType);
+            basePrim        = getBasePrim(basePrimType);
         }
 
         //
@@ -6493,8 +6529,21 @@ pub fn solve(
         mut out_target  = into;
         mut out_type: Type;
 
-        mut flatCount   = isPrimDecl && 1;
-        mut declDepth   = 0;
+        //
+        mut shape_hasher = tea::hash(origId);
+
+        mut shape = Shape(
+            :basePrim,
+            non_triv_mask:  0,
+            hash:           shape_hasher.u64,
+
+            flatCount:      isPrimDecl && 1,
+            // bit_width:      isPrimDecl && parseBasePrimBitWidth(basePrim),
+
+            declDepth:      0);
+
+        if (isPrimDecl)
+            shape_hasher.hash(basePrim);
 
         if (out_target)
         {
@@ -6510,7 +6559,7 @@ pub fn solve(
                 && TODO_FIX_getSpecPat();
 
             //
-            out_type    = initStruct(:kind, :baseprim, :name, :asserts, :flatCount, :specPat);
+            out_type    = initStruct(:kind, :shape, :name, :asserts, :specPat);
             out_target  = createRawTypedef(id: origId, :name,
                 type: out_type, :node.flags,
                 status: SS_LAZY);
@@ -6545,7 +6594,7 @@ pub fn solve(
         mut structConverts: Target[];
         mut structImports:  i32[];
 
-        mut non_triv = !out_type.is_rx_copy && -1;
+        mut non_triv_reason = !out_type.is_rx_copy && -1;
 
         // Solve members & check defaults.
         let primType = isPrimDecl && clear_Typename(
@@ -6636,22 +6685,44 @@ pub fn solve(
                 field.type = member.type;
 
                 //
-                let member_isStruct = member.type.isStruct;
-                let member_userType = member_isStruct && lookupUserType(member.type);
-                let memberFlatCount = getFlatCount(member.type);
+                let member_shape = getShape(member.type);
 
-                if (SELF_TEST)
+                mut memberFlatOffset = 0;
+                if (!isPrimDecl)
                 {
-                    let popcount_expect =
-                        min(memberFlatCount, q_USAGE_bitsize);
+                    shape_hasher.hash(item.id);
+                    shape_hasher.hash(member_shape.hash);
 
-                    bit::popcount(member.type.usage) == popcount_expect
-                        || member_userType // TODO FIX fails for type recursions
-                        || BUG("member.type.usage popcount != memberFlatCount");
+                    shape.declDepth = max(
+                        shape.declDepth,
+                        member_shape.declDepth + 1);
+
+                    memberFlatOffset = shape.flatCount;
+                    shape.flatCount += member_shape.flatCount;
+
+                    if (member_shape.non_triv_mask)
+                    {
+                        non_triv_reason ||= non_triv_reason = i + 1;
+                        shape.non_triv_mask |= member_shape.non_triv_mask;
+                    }
                 }
 
-                if (member.type.isStruct)
-                    declDepth = max(declDepth, member_userType.declDepth + 1);
+                //
+                if (SELF_TEST)
+                {
+                    let expect = min(member_shape.flatCount, q_USAGE_bitsize);
+                    let actual = bit::popcount(member.type.usage);
+
+                    actual == expect
+                        || member.type.isStruct // TODO FIX fails for type recursions
+                        || BUG("member.type.usage popcount(" ~ actual ~ ")"
+                            ~ " != member_shape.flatCount(" ~ member_shape.flatCount ~ ")");
+
+                    if (!member.type.is_trivial != !!member_shape.non_triv_mask)
+                        if (member_shape.flatCount) // ignore ZSTs
+                            BUG("member.is_trivial(" ~ member.type.is_trivial ~ "),"
+                                ~ " but non_triv_mask(" ~ member_shape.non_triv_mask ~ ")");
+                }
 
                 // TODO FIX no point in doing this if struct is off-module,
                 //  also no point in doing it if other struct is already checked?
@@ -6659,7 +6730,7 @@ pub fn solve(
                 // Probably this along with sizeof/alignof/flatCount & company
                 //  can all be done in one pass.
                 //
-                fn getRecursionError(s: Struct)
+                fn TODO_FIX_getRecursionError(s: Struct)
                 {
                     for (shadow mut i = 0; i < s.items.len; i++)
                     {
@@ -6668,26 +6739,23 @@ pub fn solve(
                         if (itemType.isStruct)
                         {
                             mut rec = "";
-                            if (itemType.canon == out_type.canon || (rec = getRecursionError(lookupUserType(itemType))))
-                                return "\n\t\tvia " ~ item.explainWhichFn(fmt: FullContext) ~ rec;
+                            if (itemType.canon == out_type.canon
+                                || (rec = TODO_FIX_getRecursionError(lookupUserType(itemType))))
+                            {
+                                return "\n\t\tvia " ~ item.explainWhichFn(fmt: FullContext)
+                                                    ~ rec;
+                            }
                         }
                     }
 
                     return "";
                 }
 
-                let recursionError = member_isStruct && getRecursionError(member_userType);
+                let recursionError = member.type.isStruct
+                    && TODO_FIX_getRecursionError(tryLookupUserType(member.type));
+
                 if (recursionError)
-                    fail("Type " ~ name.qBAD ~ " is self-recursive:\n" ~ recursionError)
-
-                //
-                let memberFlatOffset = !isPrimDecl && flatCount;
-
-                if (!isPrimDecl)
-                    flatCount += memberFlatCount;
-
-                if (!non_triv && !member.type.is_trivial)
-                    non_triv = i + 1;
+                    fail("Type " ~ name.qBAD ~ " is self-recursive:\n" ~ recursionError);
 
                 //
                 if (member.flags & F_USING)
@@ -6703,16 +6771,17 @@ pub fn solve(
 
                 //
                 if (!isPrimDecl)
-                    field.field_packOffset(:memberFlatOffset, :memberFlatCount);
+                    field.field_packOffset(:memberFlatOffset,
+                        memberFlatCount: member_shape.flatCount);
             }
 
             // Primitives - index enum variants & flags.
             if (isPrimDecl)
             {
-                let signed      = baseprim[0] == 'i';
-                let unsigned    = baseprim[0] == 'u';
+                let signed      = basePrim[0] == 'i';
+                let unsigned    = basePrim[0] == 'u';
 
-                let size_str    = baseprim[1 :];
+                let size_str    = basePrim[1 :];
                 let size: u8    = size_str == "8"   ? 8
                                 : size_str == "16"  ? 16
                                 : size_str == "32"  ? 32
@@ -6768,18 +6837,40 @@ pub fn solve(
                     if (signed || unsigned)
                         init = SolvedNode(kind: "int", type: primType, value: (next.negative && "-") ~ next.absval);
                     else
-                        fail("Cannot auto-increment this type: " ~ baseprim);
+                        fail("Cannot auto-increment this type: " ~ basePrim);
                 }
             }
         }
 
         //
-        shadow let non_triv = non_triv;
+        shape.hash = shape_hasher.u64;
 
-        if (non_triv && asserts & A_TRIVIAL)
-            fail("Struct is not " ~ "trivial".qKW ~ (
-                non_triv < 0    ? " because it is " ~ "nocopy".qKW ~ "."
-                                : " because of non-trivial member " ~ items.unless_oob(non_triv - 1).value.qID));
+        // TODO FIX I need a smarted way to deal with recursive types,
+        //  we gotta study Unison's approach to cycle-hashing.
+        //
+        if (out_target.callers)
+        {
+            // println("RECURSIVE TYPE HASH FAIL " ~ out_target);
+            shape.hash = lookupUserType(out_type).hash;
+        }
+
+        //
+        if (non_triv_reason)
+        {
+            if (asserts & A_TRIVIAL)
+                fail("Struct is not " ~ "trivial".qKW ~ (
+                    non_triv_reason < 1
+                        ? " because it is " ~ "nocopy".qKW ~ "."
+                        : " because of non-trivial member "
+                            ~ items.unless_oob(non_triv_reason - 1).value.qID));
+
+            if (SELF_TEST)
+                shape.non_triv_mask || non_triv_reason < 0 || BUG(
+                    "Empty non_triv_mask, but some member is non-trivial.");
+
+            // Lift one bit for this type.
+            shape.non_triv_mask |= 1 << (shape.hash & 63);
+        }
 
         // List imports in scope.
         _scope.imports.each(_ss.imports,
@@ -6798,7 +6889,8 @@ pub fn solve(
 
             //
             if (!isStruct && !isUnion)
-                flatCount == 1 || BUG("Bad flat count: " ~ kind ~ " " ~ name ~ " flatCount=" ~ flatCount);
+                shape.flatCount == 1 || BUG("Bad flatCount("
+                    ~ shape.flatCount ~ "): " ~ kind ~ " " ~ name);
 
             //
             {
@@ -6807,14 +6899,23 @@ pub fn solve(
                 s.converts  = structConverts;
                 s.imports   = structImports;
 
-                let flat0   = s.flatCount;
-                let triv0   = s.all_triv;
+                {
+                    mut shape0  = s.shape;
+                    s.shape     = shape;
+                    CHANGE    ||= shape0 != shape;
+                }
 
-                s.flatCount = flatCount;
-                s.declDepth = declDepth;
-                s.all_triv  = !non_triv;
-
-                CHANGE    ||= flat0 != s.flatCount || triv0 != s.all_triv;
+                // fn printShape(shadow shape: Shape)
+                // {
+                //     mut str = "{";
+                //     for (fieldname i: Shape)
+                //         str ~= ' ' ~ "i" ~ ':' ~ shape.i;
+                //
+                //     return str ~ " }";
+                // }
+                //
+                // if (shape0 != shape)
+                //     println("SHAPE MISMATCH " ~ printShape(shape0) ~ " != " ~ printShape(shape));
 
                 GET(s.target).status & SS_DID_START || BUG(
                     "Setting stuff but missing SS_DID_START.");
@@ -6824,11 +6925,11 @@ pub fn solve(
                 if (SELF_TEST)
                 {
                     let actual = getFlatCount(out_type);
-                    if (actual != flatCount)
-                        BUG("getFlatCount actual=" ~ actual ~ " expect=" ~ flatCount);
+                    if (actual != shape.flatCount)
+                        BUG("getFlatCount actual=" ~ actual ~ " expect=" ~ shape.flatCount);
                 }
 
-                out_type.USAGE_setMaxUsage(:flatCount);
+                out_type.USAGE_setMaxUsage(:shape.flatCount);
             }
 
             //
@@ -6898,6 +6999,29 @@ pub fn solve(
 
         // We're done here, return nothing.
         return SolvedNode();
+    }
+
+    fn initStruct(
+        ::kind!, shape!: Shape,
+        name: string, asserts: DeclAsserts, specPat!: string)
+    {
+        name[0].u8 - '0'.u8 > 9.u8 || throw (
+            "Bad struct name, leading digit: `" ~ name ~ "`.");
+
+        // Alloc a slot.
+        let index = module.out.types.len;
+        module.out.types ~= Struct(:kind, :name, :shape);
+
+        //
+        let canon = createStructCanon(
+            :kind, :shape.basePrim, :module.modid, :index, :name)
+                ~ specPat;
+
+        // if (specPat) println("SPECPAT " specPat);
+
+        // Assume everything, we resolve disappointment.
+        return Type(ValueType(:canon,
+            quals: speculateStruct(:asserts, :shape.flatCount)));
     }
 
 

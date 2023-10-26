@@ -82,3 +82,53 @@ fn basePrimPrefixLen(canon: string): int
             return offset;
     }
 }
+
+
+//
+
+fn serializeType(type: ValueType, debug!: string)
+{
+    type || throw("COMPILER BUG: serializeType: Falsy type in: " ~ debug);
+
+    mut result: string;
+
+    result.helpers::appendVarint(type.quals.u32);
+    result ~= type.canon || throw(
+        "COMPILER BUG: serializeType: No type.canon in: " ~ debug);
+
+    return result;
+}
+
+fn parseType(str: [byte]): ValueType
+{
+    mut offset: i32;
+
+    let quals = helpers::parseVarint(offset, str).Quals;
+
+    // TODO FIX SLICES the clone here
+    let canon = helpers::clone(str.slice(offset));
+    return ValueType(:canon, :quals);
+}
+
+
+//
+
+fn if_sliceable(type: ValueType, hit)
+{
+    if (type.is_sliceable)
+        hit(parseType(type.canon.slice(1, type.canon.len - 1)));
+}
+
+fn tryClear_sliceable(type: ValueType): Type
+{
+    if_sliceable(type): |vtype|
+        return Type(:vtype);
+
+    return [];
+}
+
+inline fn clear_sliceable(type: Type): Type
+{
+    return tryClear_sliceable(type) ||
+        throw("COMPILER BUG: Not sliceable: " ~ type.canon);
+}

@@ -179,7 +179,8 @@ pub fn lookupUserType(type: ValueType)
 }
 
 pub fn is_trivial(type: ValueType)
-    type.is_primitive || type.isStruct && lookupUserType(type).all_triv;
+    type.is_primitive
+        || type.isStruct && !lookupUserType(type).non_triv_mask;
 
 pub fn is_reinterpretable(type: ValueType)
 {
@@ -208,6 +209,51 @@ pub fn lookupTypeConverts(type: ValueType)
 
 
 //
+
+inline fn xorshift64(mut x: u64) {
+    x ^= x << 13;
+    x ^= x >> 7;
+    x ^= x << 17;
+    return x;
+}
+
+pub fn getShape(type: ValueType): Shape
+{
+    let s = tryLookupUserType(type);
+    if (s)
+        return s.shape;
+
+    if (type.is_primitive)
+        return Shape(
+            basePrim:       type.canon,
+            flatCount:      1,
+            declDepth:      0,
+            non_triv_mask:  0,
+            hash:
+            {
+                mut hash: u64;
+                for (mut i = type.canon.len; i --> 0; )
+                    (hash <<= 8) |= type.canon[i].u64;
+
+                hash
+            });
+
+    if_sliceable(type): |arrT|
+    {
+        let item_shape  = getShape(arrT);
+        let hash        = xorshift64(item_shape.hash);
+
+        return Shape(
+            basePrim:   "",
+            flatCount:  1,
+            declDepth:  0,
+            :hash,
+            :item_shape.non_triv_mask | (1 << (hash & 63)));
+    }
+
+    // ZST.
+    return Shape();
+}
 
 pub fn getFlatCount(type: ValueType): i32
 {

@@ -262,21 +262,7 @@ pub fn make_non_copyable(mut type: Type)
 }
 
 
-// Type serialization:
-//  `modid` `+quals` `canon`: a very compact repr.
-
-pub fn serializeType(type: Type, debug!: string)
-{
-    type || throw("COMPILER BUG: serializeType: Falsy type in: " ~ debug);
-
-    mut result: string;
-
-    result.appendVarint(type.quals.u32);
-    result ~= type.canon || throw(
-        "COMPILER BUG: serializeType: No type.canon in: " ~ debug);
-
-    return result;
-}
+// Type serialization.
 
 pub fn humanizeQuals(quals: Quals)
 {
@@ -288,41 +274,14 @@ pub fn humanizeQuals(quals: Quals)
     return result;
 }
 
-pub fn parseType(str: [byte]): ValueType
-{
-    mut offset: i32;
 
-    let quals = parseVarint(offset, str).Quals;
-    let canon = clone(str.slice(offset)); // TODO FIX SLICES the clone here
-
-    return ValueType(:canon, :quals);
-}
-
-
-// Experimental -
-//  Slices are refs to arrays,
-//   with revoked copy & resize priviledges.
+// Slices.
 
 pub fn createSlice(item: Type, lifetime = Lifetime_temporary): Type
 {
     mut out = createArray(item);
     out.quals &= ~(q_rx_copy | q_rx_resize);
     return add_ref(out, lifetime);
-}
-
-pub fn tryClear_sliceable(type: ValueType): Type
-{
-    if (!is_sliceable(type))
-        return Type();
-
-    let vtype = parseType(type.canon.slice(1, type.canon.len - 1));
-    return Type(:vtype/*, :type.lifetime*/);
-}
-
-pub fn clear_sliceable(type: Type): Type
-{
-    return tryClear_sliceable(type)
-        || BUG("Not sliceable: " ~ type.canon);
 }
 
 
