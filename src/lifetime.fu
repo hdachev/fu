@@ -198,6 +198,26 @@ struct SubRegion
 
 type Paths = SubRegion[][];
 
+fn parsePaths_each(str: [byte], each)
+{
+    mut path: SubRegion[];
+
+    mut _o = 0;
+    str.walkPaths(offset: _o,
+
+        onPathStart: || {
+            path.clear();
+        },
+
+        onSubRegion: |flatCount, flatOffset| {
+            path ~= SubRegion(:flatCount, :flatOffset);
+        },
+
+        onPathDone: || {
+            each(path);
+        });
+}
+
 fn parsePaths(str: [byte]): Paths
 {
     mut paths:      SubRegion[][];
@@ -380,24 +400,25 @@ fn Paths_union(ref str: byte[], a: [byte], b: [byte],
 {
     mut result = parsePaths(a);
 
-    shadow let b = parsePaths(b);
-    for (mut i = 0; i < b.len; i++)
-        result.Paths_union(b[i]);
+    b.parsePaths_each: |b_path|
+        result.Paths_union(b_path);
 
     str.appendPaths(result, :flatCountMismatchOK);
 }
 
 fn Paths_inter(ref str: byte[], a: [byte], b: [byte])
 {
-    mut result: SubRegion[][] = [];
+    if (a.len < b.len)
+        return Paths_inter(str, b, a);
 
-    parsePaths(a).each: |a_path|
+    mut result: SubRegion[][] = [];
+    mut inter: SubRegion[];
+
+    a.parsePaths_each: |a_path|
     {
         :EACH_B_PATH
-        parsePaths(b).each: |b_path|
+        b.parsePaths_each: |b_path|
         {
-            mut inter: SubRegion[];
-
             let N = min(a_path.len, b_path.len);
             for (mut i = 0; i < N; i++)
             {
@@ -409,7 +430,10 @@ fn Paths_inter(ref str: byte[], a: [byte], b: [byte])
                     a.flatOffset + a.flatCount - b.flatOffset);
 
                 if (overlap <= 0)
+                {
+                    inter.clear();
                     continue :EACH_B_PATH;
+                }
 
                 let flatCount   = min(a.flatCount,  b.flatCount);
                 let flatOffset  = max(a.flatOffset, b.flatOffset);
@@ -437,6 +461,40 @@ fn Paths_inter(ref str: byte[], a: [byte], b: [byte])
         emptyOK: true,
         selfIntersectOK: true,
         flatCountMismatchOK: true);
+}
+
+
+//
+
+fn Paths_hasInter(a: [byte], b: [byte])
+{
+    if (a.len < b.len)
+        return Paths_hasInter(b, a);
+
+    a.parsePaths_each: |a_path|
+    {
+        :EACH_B_PATH
+        b.parsePaths_each: |b_path|
+        {
+            let N = min(a_path.len, b_path.len);
+            for (mut i = 0; i < N; i++)
+            {
+                shadow let a = a_path[i];
+                shadow let b = b_path[i];
+
+                let overlap = min(
+                    b.flatOffset + b.flatCount - a.flatOffset,
+                    a.flatOffset + a.flatCount - b.flatOffset);
+
+                if (overlap <= 0)
+                    continue :EACH_B_PATH;
+            }
+
+            return true;
+        }
+    }
+
+    return false;
 }
 
 
@@ -578,7 +636,10 @@ inline fn merge !<B, L, R, Either, Rest>(
                             if !(B -> [])
                             {
                                 both(l_chars[l_start : l_paths0],   l_chars[l_paths0 : l_offset],
-                                                                    r_chars[r_paths0 : r_offset]);
+                                                                    r_chars[r_paths0 : r_offset],
+
+                                     locid?: i32(r & 1 ? 0 : r >> 1));
+
                                 continue;
                             }
                         }
@@ -705,24 +766,48 @@ pub fn Lifetime_inter(a: Lifetime, b: Lifetime): Lifetime =
 
 pub fn Lifetime_hasInter(a: Lifetime, b: Lifetime): bool =
 {
-    mut inter: byte[];
-
     merge(a, b,
 
         both: |_, sr_left, sr_right|
         {
-            if (sr_left == sr_right || sr_left == SR_empty || sr_right == SR_empty)
+            if (sr_left == sr_right
+                || sr_left == SR_empty || sr_right == SR_empty
+                || Paths_hasInter(sr_left, sr_right))
+            {
                 return true;
-
-            Paths_inter(inter, sr_left, sr_right);
-            if (inter)
-                return true;
+            }
         },
 
         // Early exits.
         rest: |_| { break; });
 
     return false;
+}
+
+pub fn Lifetime_interLocids(a: Lifetime, b: Lifetime): i32[] =
+{
+    mut result: i32[];
+
+    merge(a, b,
+
+        both: |_, locid, sr_left, sr_right|
+        {
+            if (!locid)
+                continue;
+
+            if (sr_left == sr_right
+                || sr_left == SR_empty || sr_right == SR_empty
+                || Paths_hasInter(sr_left, sr_right))
+            {
+                result ~= locid;
+            }
+        },
+
+        // Early exits.
+        rest: |_| { break; });
+
+    //
+    return result;
 }
 
 

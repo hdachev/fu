@@ -10444,9 +10444,9 @@ pub fn solve(
             return true; // AAR always succeeds.
         }
 
-        fn RESOLVE_byAAR(write!: i32, reads!: Lifetime, trySoft!: bool)
+        fn RESOLVE_byAAR(write!: i32, reads!: [i32], trySoft!: bool)
         {
-            reads.Lifetime_each: |locid!read|
+            reads.each: |read|
                 if (read && read != write)
                     RESOLVE_byAAR(:read, :write, :trySoft);
 
@@ -10983,7 +10983,7 @@ pub fn solve(
 
                         //
                         let bound   = pra.arg.type.lifetime;
-                        let inter   = bound.Lifetime_inter(all_written_and_invalidated);
+                        let inter   = bound.Lifetime_interLocids(all_written_and_invalidated);
                         if (!inter)
                             continue;
 
@@ -11314,8 +11314,7 @@ pub fn solve(
                             // Do we see any aliasing here?
                             let unwound1 = bck_unwound[i1];
 
-                            let inter = Lifetime_inter(unwound0, unwound1);
-                            if !(inter)
+                            if !(Lifetime_hasInter(unwound0, unwound1))
                                 return;
 
                             // Soft risk check -
@@ -11351,10 +11350,9 @@ pub fn solve(
                                         ~         " and\n\t    " ~ (i1 + 1) ~ ":\t" ~ host_arg1
                                         ~           "\n\n\t    both alias:\n";
 
-                                inter.Lifetime_each: |locid|
-                                    if (locid)
-                                        err ~= "\n\t    " ~ explainWhichFn(
-                                            nested(locid), fmt: FullContext);
+                                Lifetime_interLocids(unwound0, unwound1).each: |locid|
+                                    err ~= "\n\t    " ~ explainWhichFn(
+                                        nested(locid), fmt: FullContext);
 
                                 shadow let noTempCopy0 = noTempCopy0.ArgRationale_explain(target, arg0, host_arg0);
                                 shadow let noTempCopy1 = noTempCopy1.ArgRationale_explain(target, arg1, host_arg1);
