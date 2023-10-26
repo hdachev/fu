@@ -3,6 +3,8 @@ import module;
 
 
 // TODO FIX Approximating unions & intersections.
+//  The reason these currently work is that we can currently
+//   only have a single template tag, just by virtue of how it's implemented.
 
 pub fn canon_tryIntersect(a: string, b: string)
 {

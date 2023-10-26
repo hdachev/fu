@@ -6502,6 +6502,9 @@ pub fn solve(
         }
         else
         {
+            // TODO FIX see canon_tryIntersect/_tryUnion,
+            //  they can only handle single specpats correctly.
+            //
             let specPat = !origId
                 && TODO_FIX_useSpecPath
                 && TODO_FIX_getSpecPat();
