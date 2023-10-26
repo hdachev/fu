@@ -6648,6 +6648,32 @@ pub extern fn runTests()
         }
     `);
 
+    TODO_disjoint(currently: "both alias ref arg ss 6:69+2", `
+        nocopy struct PrimArray { prims: i32[]; }
+        nocopy struct Node { index: i32; items?: Node[]; }
+        nocopy struct SolverState { _root: Node; _prim_arrays: PrimArray[] }
+
+        noinline fn AAR_typesCantAlias_lifetimesIntersect(using ref ss: SolverState)
+        {
+            fn unorderedPrep_B(ref root: Node) {
+                let index  = root.index;
+                if (_prim_arrays.len > index) {
+                    ref eph     = _prim_arrays[index];
+                    eph.prims  ~= root.index += eph.prims.len;
+                               // ^^^^^^^^^^ should notice eph can't alias root
+                }
+            }
+
+            return _root.unorderedPrep_B();
+        }
+
+        fn main() {
+            mut ss = SolverState(Node(), [ PrimArray() ]);
+            ss.AAR_typesCantAlias_lifetimesIntersect();
+            return ss._eph.len == 1 && ss._eph[0].things.len == 1 ? 0 : 1;
+        }
+    `);
+
     // /Borrow checker
 
 
