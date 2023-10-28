@@ -10107,13 +10107,18 @@ pub fn solve(
                         continue;
 
                     let argdef = createLet(
-                        id:     host_args[i].name,
+                        id:     host_arg.name,
                         init:   args[i],
                         flags:  host_arg.flags  &~ F_ARG
                                                 &~ F_COMPOUND_ID
 
                                                 // TODO FIX mutrefs lost in translation
                                                 | (host_arg.flags & F_INJECTED && host_arg.is_mutref && F_REF)
+
+                                                // Don't emit unused warnings here,
+                                                //  should have been checked on the original,
+                                                //   SS_MATCHED there etc
+                                                | F_LAX
                                                 ,
                         setScope: false);
 

@@ -14256,6 +14256,39 @@ pub extern fn runTests()
         }
     `);
 
+    TODO_relaxer(currently: "not an array i32[:] 28:24+2", `
+        let SELF_TEST = <alt>true<alt/>false</alt>;
+
+        inline fn LT_each(lt: i32[:], each)
+            for (mut i = 0; i < lt.len; i++)
+                each(lt[i]);
+
+        lax fn assertPathsValid(lax lt: i32[:], lax minPathDepth)
+            if (SELF_TEST)
+                lt.LT_each: |value: i32|
+                    if (value < minPathDepth)
+                        throw("BAD: " ~ value);
+
+        inline fn LT_op(lt: i32[], each, minPathDepth! = 1) {
+            mut result: i32[];
+
+            lt.LT_each: |value: i32| {
+                let result0 = result.len;
+                each(:result, :value);
+                assertPathsValid(result[result0 :], :minPathDepth);
+            }
+
+            return result;
+        }
+
+        fn LT_double(lt: i32[])
+            lt.LT_op(minPathDepth: 2): |value, ref result|  <alt>
+                result ~= value * 2;                        <alt/>
+              { result ~= value * 2; }                      </alt>
+
+        fn main() = [ 1, 2, 3 ].LT_double == [ 2, 4, 6 ] ? 0 : 1;
+    `);
+
     // /Inliner.
 
 
