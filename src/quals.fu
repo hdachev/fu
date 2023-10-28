@@ -119,7 +119,7 @@ fn if_sliceable(type: ValueType, hit)
         hit(parseType(type.canon.slice(1, type.canon.len - 1)));
 }
 
-fn tryClear_sliceable(type: ValueType): Type
+fn tryClear_sliceable(type: ValueType)
 {
     if_sliceable(type): |vtype|
         return Type(:vtype);
@@ -127,8 +127,10 @@ fn tryClear_sliceable(type: ValueType): Type
     return [];
 }
 
-inline fn clear_sliceable(type: Type): Type
+fn clear_sliceable(type: ValueType)
 {
-    return tryClear_sliceable(type) ||
-        throw("COMPILER BUG: Not sliceable: " ~ type.canon);
+    if_sliceable(type): |vtype|
+        return Type(:vtype);
+
+    throw("COMPILER BUG: Not sliceable: " ~ type.canon);
 }

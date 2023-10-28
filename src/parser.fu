@@ -141,9 +141,6 @@ pub fn parse(
     mut _expectedTypeParams: string[];
     mut _upstreamTypeParams: string[];
 
-    //
-    mut _numBreaksWoLabels  = 0;
-
 
     //
 
@@ -1070,12 +1067,10 @@ pub fn parse(
         ////////////////////////////////
         _fnDepth++;
         let numDollars0         = _numDollars;
-        let numBreaksWoLabels0  = _numBreaksWoLabels;
 
         defer {
             _fnDepth--;
             _numDollars         = numDollars0;
-            _numBreaksWoLabels  = numBreaksWoLabels0;
         }
         ////////////////////////////////
 
@@ -1113,7 +1108,12 @@ pub fn parse(
         //   with explicit labels in the AST,
         //    which means we'd have to resolve them while parsing.
         //
-        if (flags & F_LAMBDA && _numBreaksWoLabels > numBreaksWoLabels0)
+        // TODO FIX another problem with lambdas,
+        //  they can end up as private fns within some module,
+        //   but if they're only called from a public inline fn,
+        //    they won't get emitted - no fndef node in the original module.
+        //
+        if (flags & F_LAMBDA)
             flags |= F_TEMPLATE;
 
         return make("fn", :items, :flags, :asserts, name,
@@ -2134,10 +2134,6 @@ pub fn parse(
         _fnDepth > 0 || { _idx--; fail() };
 
         let label = tryConsume("op", ":") && consume("id").value;
-
-        // TODO FIX see comment re: `flags & F_LAMBDA` above
-        if (kind == "break" && !label)
-            _numBreaksWoLabels++;
 
         mut expr: Node;
         if (!tryConsume("op", ";"))

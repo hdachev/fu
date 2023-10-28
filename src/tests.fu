@@ -9025,7 +9025,7 @@ pub extern fn runTests()
         }
     `);
 
-    ZERO(`
+    TODO_relaxer(currently: "BUG ScopeSkip_push: bad args 15:24+2", `
         struct Module { events: i32; };
 
         <alt>
@@ -9041,42 +9041,8 @@ pub extern fn runTests()
         inline   <alt/>
         noinline </alt>
         fn propagateType(implicit ref module: Module) {
-            profile(2, || module.events = 1);
+            profile(2, |<alt>lax unused?</alt>| module.events = 1);
         }
-
-        <alt>
-        inline   <alt/>
-        noinline </alt>
-        fn runAllPasses() {
-            profile(3, fn propagateType);
-        }
-
-        fn main() {
-            implicit mut module: Module;
-            runAllPasses();
-            return module.events == 1 + 2 + 3 ? 0 : 1;
-        }
-    `);
-
-    TODO_relaxer(currently: "BUG ScopeSkip_push: bad args 21:12+12", `
-        struct Module { events: i32; };
-
-        <alt>
-        inline   <alt/>
-        noinline </alt>
-        fn profile(implicit ref module: Module, id: i32, op) {
-            let events0 = module.events;
-            op();
-            module.events += (events0 + id);
-        }
-
-        <alt>
-        inline   <alt/>
-        noinline </alt>
-        fn propagateType(implicit ref module: Module) {
-                        /// force-template, weird relax order
-            profile(2, |lax unused?| module.events = 1);
-        }               ///////////
 
         <alt>
         inline   <alt/>
@@ -12403,6 +12369,27 @@ pub extern fn runTests()
             fn muteRest(a, opts?: _0::Opts) a + opts.b;
             return 0.muteRest;
         }
+    `]);
+
+    ZERO([`
+        noinline fn ifArray(type: string, hit) {
+            if (type.starts(with: "[]"))
+                hit(type.slice(2));
+        }
+
+        noinline fn tryClearArray(type: string, else!?) {
+            ifArray(type): |item|
+                return item;
+
+            return else();
+        }
+
+        inline fn clearArray(type: string) {
+            return tryClearArray(type, else: ||
+                throw("Not an array: " ~ type));
+        }
+    `,`
+        fn main() = _0::clearArray("[]int").len - 3;            ;; GNUStmtExpr
     `]);
 
     // /Pubs & imports.
