@@ -532,6 +532,8 @@ pub fn Lifetime_from(argidx!: i32, paths: [byte]): Lifetime =
     return Lifetime(:uni0n);
 }
 
+pub let Lifetime_AAR_hasFalsePositives = true;
+
 pub fn Lifetime_AAR(locid!: i32): Lifetime =
 {
     if (SELF_TEST)

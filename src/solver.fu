@@ -2561,6 +2561,42 @@ pub fn solve(
 
     //
 
+    fn types_mayAlias(a: ValueType, b: ValueType)
+    {
+        if (a.is_reinterpretable || b.is_reinterpretable)
+            return true;
+
+        a.if_sliceable: |sliceT|
+            if (sliceT.is_reinterpretable)
+                return true;
+
+        b.if_sliceable: |sliceT|
+            if (sliceT.is_reinterpretable)
+                return true;
+
+        let a_non_triv_mask = getShape(a).non_triv_mask;
+        if (!a_non_triv_mask)
+            return false;
+
+        let b_non_triv_mask = getShape(b).non_triv_mask;
+        if (!b_non_triv_mask)
+            return false;
+
+        let inter = a_non_triv_mask & b_non_triv_mask;
+
+        if (inter == a_non_triv_mask &&
+            SLOW_type_maybeInside(host: b, guest: a,
+                             guest_non_triv_mask: a_non_triv_mask))
+            return true;
+
+        if (inter == b_non_triv_mask &&
+            SLOW_type_maybeInside(host: a, guest: b,
+                             guest_non_triv_mask: b_non_triv_mask))
+            return true;
+
+        return false;
+    }
+
     fn type_mayPointInto(host: ValueType, guest: ValueType)
     {
         if (guest.is_reinterpretable)
@@ -2571,23 +2607,26 @@ pub fn solve(
             if (sliceT.is_reinterpretable)
                 return true;
 
+        // Guest might be some kind of ZST -
+        // TODO FIX clean those up and see why we're at all bothering here.
+        let guest_non_triv_mask = getShape(guest).non_triv_mask;
+        if (!guest_non_triv_mask)
+            return false;
+
         // Acceleration -
         //  we use the non_triv_mask as a bloom filter
         //   to get avoid the full loop below when possible.
         //
-        let host_shape          = getShape(host);
-        let guest_non_triv_mask = getShape(guest).non_triv_mask;
-
-        // Guest might be some kind of ZST -
-        // TODO FIX clean those up and see why we're at all bothering here.
-        if (!guest_non_triv_mask)
+        let host_non_triv_mask = getShape(host).non_triv_mask;
+        if (host_non_triv_mask & guest_non_triv_mask
+                              != guest_non_triv_mask)
             return false;
 
-        if (host_shape.non_triv_mask & guest_non_triv_mask
-                                    != guest_non_triv_mask)
-            return false;
+        return SLOW_type_maybeInside(:host, :guest, :guest_non_triv_mask);
+    }
 
-        //
+    fn SLOW_type_maybeInside(host!: ValueType, guest!: ValueType, guest_non_triv_mask!: u64)
+    {
         mut seen: StructCanon[];
 
         fn type_maybeInside(shadow host: ValueType)
@@ -10923,7 +10962,32 @@ pub fn solve(
             {
                 let sibling_parents = flow.rg_parents.unless_oob(sibling);
                 if (Lifetime_hasInter(parents, sibling_parents))
+                {
+                    // Doesn't seem to help with anything, only slows us down.
+                    //  Keeping it around since it also doubles
+                    //   as a test for types_mayAlias.
+                    //
+                    // let approxAAR = Lifetime_AAR_hasFalsePositives && AAR;
+                    // if (approxAAR || SELF_TEST)
+                    // {
+                    //     let t_sibling   = sibling.nested.type;
+                    //
+                    //     let mayAlias    = types_mayAlias(t_left, t_sibling);
+                    //     if (!mayAlias)
+                    //     {
+                    //         approxAAR || BUG(
+                    //             "Reference_trackLocalRef: types_mayAlias fails for lt inter:"
+                    //                 ~ "\n\t\tt_left:    " ~ humanizeType(t_left)
+                    //                 ~ "\n\t\tt_sibling: " ~ humanizeType(t_sibling)
+                    //                 ~ "\n\t\tlt_inter:  " ~ Lifetime_inter(parents, sibling_parents));
+                    //
+                    //         if (!mayAlias)
+                    //             continue /*discard*/;
+                    //     }
+                    // }
+
                     continue_keep();
+                }
             });
 
             // So, if:
