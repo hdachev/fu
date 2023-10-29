@@ -653,9 +653,13 @@ pub fn solve(
 
         prefix ~= "arg";
 
-        let fn   = arg.target
-            &&     arg.target != _current_fn.target
-            && GET(arg.target.parent).name.human.qID ~ ":";
+        mut fn = "";
+        if (arg.target)
+        {
+            let parent = arg.target.parent;
+            if (parent != _current_fn.target)
+                fn = GET(parent).name.human.qID ~ ":";
+        }
 
         return prefix.qKW ~ " " ~ fn ~ arg.name.human.qID;
     }
@@ -738,7 +742,7 @@ pub fn solve(
     fn parent(target: Target)
     {
         target.isLocal || BUG("Using .parent on a non-local");
-        return Target(:module.modid, :target.globid, locid: 0);
+        return Target(:target.modid, :target.globid, locid: 0);
     }
 
     fn localfn(index: i32)

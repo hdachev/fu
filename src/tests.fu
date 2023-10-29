@@ -3000,6 +3000,17 @@ pub extern fn runTests()
                 ? 0 : 1;
     `);
 
+    ZERO(`
+        struct NotAString { hey: string };
+        fn main() {
+            mut a = "Hello";
+            mut b = NotAString("World!");
+            <fail NotAString not a string 7:22+1>
+            return a < b ? 0 : 1;         <pass/>
+            return a < b.hey ? 0 : 1;     </fail>
+        }
+    `);
+
     // /Strings.
 
 
