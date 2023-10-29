@@ -9839,6 +9839,38 @@ pub extern fn runTests()
         }
     `);
 
+    ZERO([`
+        fn Zero(implicit ref result: i32, src: i32[:]) =
+            src.each: |x, i| result += x * (i + 1);
+        fn Todo(implicit ref result: i32, src: i32[:]) =
+            src.each: |x, i| result += x * (i + 1) * 7;
+
+        fn Zero(src: i32) = Zero([ src ]);
+        fn Todo(src: i32) = Todo([ src ]);
+    `,
+    `
+        import _0;
+        fn main() {
+            implicit mut result = 0;
+
+            let Solo    = fn Zero;
+            lax fn Solo_muteRest(_) {}
+            let Zero    = fn Solo_muteRest;
+            let Todo    = fn Solo_muteRest;
+
+            let Todo_A  = fn Todo;
+            let Todo_B  = fn Todo;
+
+            Zero([ 10 ]);   Zero(11);
+            Todo([ 12 ]);   Todo(13);
+            Todo_A([ 14 ]); Todo_A(15);
+            Todo_B([ 16 ]); Todo_B(17);
+            Solo([ 18 ]);   Solo(19);
+
+            return result - 37;
+        }
+    `]);
+
     // /quite right
 
 

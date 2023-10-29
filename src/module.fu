@@ -462,9 +462,9 @@ fn argsReverse(lax RTL: bool, host_args: [Argument], fn)
 //  we use them for specfails (msb set),
 //   and for shadowing, stop-searching and could use them for F_PUBs too.
 //
-inline fn  modid(t: Target) i32(t._packed       & 0xfffff);
+inline fn  modid(t: Target) i32(t._packed >> 40 & 0xfffff);
 inline fn globid(t: Target) i32(t._packed >> 20 & 0xfffff);
-inline fn  locid(t: Target) i32(t._packed >> 40 & 0xfffff);
+inline fn  locid(t: Target) i32(t._packed       & 0xfffff);
 
 fn Target(modid: i32, globid: i32, locid: i32)
 {
@@ -472,9 +472,9 @@ fn Target(modid: i32, globid: i32, locid: i32)
     globid > 0 &&
     locid >= 0 || throw("Target: bad modid/index/locid");
 
-    return Target(_packed: modid.u64
+    return Target(_packed: modid.u64 << 40
                         | globid.u64 << 20
-                        |  locid.u64 << 40);
+                        |  locid.u64);
 }
 
 
