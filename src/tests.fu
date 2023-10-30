@@ -13742,6 +13742,17 @@ pub extern fn runTests()
     </alt>
     `);
 
+    ZERO(`
+        struct A { target: i32; };
+        struct B { target: u32; };
+
+        fn definit()    <fail ambig call zeroes A:target B:target><pass/>
+            : A         </fail>
+                = [];
+
+        fn main() = definit.target;
+    `);
+
     // /Conversion functions.
 
 

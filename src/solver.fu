@@ -495,6 +495,54 @@ pub fn solve(
     push(HelpersData());            // not sure why this is needed
 
 
+    // :(
+
+    fn field_packOffset(ref o: Overload, memberFlatOffset!: i32, memberFlatCount!: i32)
+    {
+        let packed = memberFlatOffset | memberFlatCount << 16;
+
+        if (SELF_TEST)
+        {
+            o.kind == "field" || BUG(
+                "field_packOffset: Not a field.");
+
+            // TODO FIX: this doesn't work with recursion.
+            // !o.solved.helpers || o.solved.helpers.index == packed || BUG(
+            //     "field_packOffset: Helpers already set to something else.");
+        }
+
+        o.solved.helpers = Helpers(packed);
+    }
+
+    fn field_unpackOffset(o: Overload)
+    {
+        if (SELF_TEST) o.kind == "field" || BUG(
+            "field_unpackOffset: Not a field.");
+
+        struct UnpackedOffset {
+            memberFlatOffset: i32;
+            memberFlatCount:  i32;
+        };
+
+        let packed = o.solved.helpers.index;
+
+        return UnpackedOffset(
+            memberFlatOffset: packed & 0xffff,
+            memberFlatCount:  packed >> 16);
+    }
+
+    fn field_setParentStruct(ref o: Overload, structTarget: Target)
+    {
+        (o.solved.target && BUG("field_setParentStruct: solved.target already set."))
+            = structTarget;
+    }
+
+    fn field_getParentStruct(o: Overload)
+    {
+        return o.solved.target || BUG("field_getParentStruct: solved.target not set.");
+    }
+
+
     //
 
     using inline fn GET(h: Helpers): HelpersData
@@ -642,7 +690,16 @@ pub fn solve(
             prefix.pop();
         }
 
-        return prefix.qKW ~ " " ~ o.name.human.qID;
+        // field sname:fname
+        mut ns = "";
+        if (kind == "field")
+        {
+            let from = o.field_getParentStruct();
+            if (from)
+                ns = GET(from).name.human.qID ~ ":";
+        }
+
+        return prefix.qKW ~ " " ~ ns ~ o.name.human.qID;
     }
 
     fn str(arg: Argument)
@@ -1992,7 +2049,7 @@ pub fn solve(
                                 ~ " as seen from " ~ callsite.fnName);
                     }
 
-                    fail("Ambiguous " ~ (id ? "call to " ~ id.qBAD : "callsite") ~ ", matches multiple items in scope:\n"
+                    fail("Ambiguous call to " ~ explainBadCallArguments(:id, :target, :args) ~ ", matches multiple items in scope:\n"
                         ~ "\n\t" ~ explainWhichFn(PREV, conversions_out)
                         ~ "\n\t" ~ explainWhichFn(NEXT, conversions    ));
                 }
@@ -2369,6 +2426,12 @@ pub fn solve(
 
     //
 
+    fn explainBadCallArguments(id: string, target: Target, args: [SolvedNode])
+    {
+        return (target ? target.str : id.qID)
+             ~ (args && " with args (" ~ args.map(.humanizeType).join(", ") ~ ")");
+    }
+
     fn match__mutargs(
         misc_scope: Scope, local_scope: bool,
         id: string, ref args: SolvedNode[],
@@ -2386,9 +2449,7 @@ pub fn solve(
 
         // Compose error message:
         //  separate pass, so we don't have to worry about unnecessary string concats.
-        error = "Bad call to " ~ (target ? target.str : id.qID)
-                ~ (args && " with args (" ~ args.map(.humanizeType).join(", ") ~ ")")
-                ~ ": ";
+        error = "Bad call to " ~ explainBadCallArguments(:id, :target, :args) ~ ": ";
 
         let debug = tryMatch__mutargs(:misc_scope, :local_scope, :id, :args, :reorder, :conversions, :flags, :target, :error);
         if (debug)
@@ -6351,43 +6412,6 @@ pub fn solve(
     }
 
 
-    // :(
-
-    fn field_packOffset(ref o: Overload, memberFlatOffset!: i32, memberFlatCount!: i32)
-    {
-        let packed = memberFlatOffset | memberFlatCount << 16;
-
-        if (SELF_TEST)
-        {
-            o.kind == "field" || BUG(
-                "field_packOffset: Not a field.");
-
-            // TODO FIX: this doesn't work with recursion.
-            // !o.solved.helpers || o.solved.helpers.index == packed || BUG(
-            //     "field_packOffset: Helpers already set to something else.");
-        }
-
-        o.solved.helpers = Helpers(packed);
-    }
-
-    fn field_unpackOffset(o: Overload)
-    {
-        if (SELF_TEST) o.kind == "field" || BUG(
-            "field_unpackOffset: Not a field.");
-
-        struct UnpackedOffset {
-            memberFlatOffset: i32;
-            memberFlatCount:  i32;
-        };
-
-        let packed = o.solved.helpers.index;
-
-        return UnpackedOffset(
-            memberFlatOffset: packed & 0xffff,
-            memberFlatCount:  packed >> 16);
-    }
-
-
     //
 
     fn TODO_FIX_getSpecPat(): string
@@ -6703,6 +6727,10 @@ pub fn solve(
                     ext.template.node.token = items[i].token;
 
                     Scope_set(innerScope, :id, :target, shadows: false);
+
+                    // TODO FIX leaving a breadcrumb for error reporting
+                    field_setParentStruct(GET_mut(target),
+                        structTarget: out_target);
                 }
 
                 // Again the _field_items thing is really messy -
