@@ -14349,6 +14349,73 @@ pub extern fn runTests()
         fn main() = [ 1, 2, 3 ].LT_double == [ 2, 4, 6 ] ? 0 : 1;
     `);
 
+    ZERO(`
+        struct Target { _packed: u32 }
+        inline fn globid(t: Target) i32(t._packed);
+
+        fn solve(ref TRACE_out: string, a: Target, b: Target)
+        {
+            fn TRACE_BRACKET(inline msg: string) unwrap {
+                mut len0: int;
+                defer if (TRACE_out.len > len0) {
+                    shadow let msg = msg;                       ;; GNUStmtExpr
+                    TRACE_out.splice(len0, 0, "<" ~ msg ~ ">");
+                    TRACE_out ~= "</" ~ msg ~ ">";
+                }
+            }
+
+            fn TRACE(msg: string) TRACE_out ~= msg;
+
+            fn doTrySpecialize(mut target: Target, what) {
+                mut mul = 10;
+                TRACE_BRACKET("Hello " ~ (target.globid * mul++));
+                what();
+            }
+
+            doTrySpecialize(a, || {});
+            doTrySpecialize(b, || TRACE("World!"));
+        }
+
+        fn main() {
+            mut TRACE_out = "";
+            solve(:TRACE_out, Target(1), Target(2));
+            return TRACE_out == "<Hello 20>World!</Hello 20>" ? 0 : 1;
+        }
+    `);
+
+    TODO_inline(currently: "BUG siblings.has(left) 18:39+6", `
+        struct Target { _packed: u32 }
+        inline fn globid(t: Target) i32(t._packed);
+
+        fn TRACE_BRACKET(implicit ref TRACE_out: string, inline msg: string) unwrap {
+            mut len0: int;
+            defer if (TRACE_out.len > len0) {
+                // unlike the test above, we'll inline msg twice
+                TRACE_out.splice(len0, 0, "<" ~ msg ~ ">");
+                TRACE_out ~= "</" ~ msg ~ ">";
+            }
+        }
+
+        fn TRACE(implicit ref TRACE_out: string, msg: string) TRACE_out ~= msg;
+
+        fn doTrySpecialize(mut target: Target, what) {
+            mut mul = 10;
+            TRACE_BRACKET("Hello " ~ (target.globid * mul++));
+            what();
+        }
+
+        fn solve(ref TRACE_out: string, a: Target, b: Target) {
+            doTrySpecialize(a, || {});
+            doTrySpecialize(b, || TRACE("World!"));
+        }
+
+        fn main() {
+            implicit mut TRACE_out = "";
+            solve(:TRACE_out, Target(1), Target(2));
+            return TRACE_out == "<Hello 20>World!</Hello 21>" ? 0 : 1;
+        }
+    `);
+
     // /Inliner.
 
 

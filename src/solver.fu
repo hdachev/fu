@@ -7937,7 +7937,7 @@ pub fn solve(
                     let target  = init.target;
                     let other   = GET(target);
 
-                    if (other.kind == "var")
+                    if (other.kind == "var" && !(other.flags & F_INLINE))
                     {
                         if (isAssignable(host: other.type, out.type))
                         {
