@@ -2613,6 +2613,36 @@ pub extern fn runTests()
         }
     `);
 
+    ZERO(`
+        struct Wrapper { str: string };
+
+        fn validateCOW_falsePos_with_typeMayPointInto_disabled(
+            ref _scope: Wrapper[])
+        {
+            fn findFirstSet() {
+                _scope.each: |wrapper|
+                    if (wrapper.str)
+                        return wrapper.str;
+
+                return "None";
+            }
+
+            fn wrapper_cannotPointInto_String(h: int) {
+                ref wrapper = _scope[h];
+                wrapper.str = findFirstSet();
+            }
+
+            for (mut i = 0; i < _scope.len; i++)
+                wrapper_cannotPointInto_String(i);
+        }
+
+        fn main() {
+            mut _scope = [ Wrapper() ];
+            validateCOW_falsePos_with_typeMayPointInto_disabled(_scope);
+            return _scope.len == 1 && _scope[0].str.len - 4;
+        }
+    `);
+
     // /COW
 
 
