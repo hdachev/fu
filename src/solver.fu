@@ -661,6 +661,8 @@ pub fn solve(
     fn fail(reason: string)
     {
         reason || BUG("fail(): No reason.");
+
+        TRACE("FAIL");
         return FAIL(reason.fail_appendStack());
     }
 
@@ -1286,6 +1288,9 @@ pub fn solve(
 
     fn humanizeType(type: Type, mut lt!?: bool, mut no_quals!?: bool, mut usage!?: bool, lax i!?: int, diff!?: Type)
     {
+        if (!type)
+            return "< Empty Type >";
+
         if (diff)
         {
             // TODO now that we're taking the comparison type
@@ -1416,7 +1421,18 @@ pub fn solve(
 
         for (mut i = 0; i < host_args.len; i++)
         {
-            mut idx = names.find(host_args[i].name);
+            let host_arg = host_args[i];
+
+            // Can't bind to injected arguments by name,
+            //  introduces ambiguity and flakyness,
+            //   e.g. argument is not there before the fn is typed checked,
+            //    argument will disappear as you refactor
+            //     and the resulting error will be confusing, etc.
+            //
+            if (host_arg.flags & F_INJECTED)
+                continue;
+
+            mut idx = names.find(host_arg.name);
             if (idx < 0)
             {
                 if (usings_left > 0)
@@ -8777,7 +8793,7 @@ pub fn solve(
     fn injectImplicitArg(id: string, type: Type, becauseOf!: Target): Target
     {
         if (!_current_fn.items || _current_fn.out.flags & F_EXTERN)
-            fail("No implicit " ~ id.qBAD ~ ": " ~ humanizeType(type) ~ " in scope, needed to call " ~ becauseOf ~ ":\n"
+            fail("No implicit " ~ id.human.qBAD ~ ": " ~ humanizeType(type) ~ " in scope, needed to call " ~ becauseOf ~ ":\n"
                 ~ qSTACK_implicit(target: becauseOf,
                         :id, :type, node: becauseOf.solved));
 
@@ -9656,7 +9672,7 @@ pub fn solve(
 
         from || BUG("TODO inlining from global scope, never happened before, might work, remove assert as needed.");
 
-        // println("inlineExpression " ~ expr.kind ":" ~ expr.value " in " _current_fn);
+        TRACE_BRACKET("inlineExpression " ~ expr.kind ~ ":" ~ expr.value ~ " in " ~ _current_fn);
 
         // TODO FAILCASE: used to do nothing if from == self,
         //  which breaks jumps, references to locals, etc.
@@ -9666,7 +9682,6 @@ pub fn solve(
             defer _helpers.shrink(helpers0);
 
             //
-            let globidExpect = from.globid;
             let minLocalIdx  = GET_next_local_index();
 
             mut helpersReplicas: Helpers[];
@@ -9674,16 +9689,12 @@ pub fn solve(
             //
             fn matchReplicaOrInjectForeignLocal(target: Target, slot?: Type)
             {
-                if (target.globid != globidExpect)
-                    BUG("matchReplicaOrInjectForeignLocal: target.globid != globidExpect"
-                        ~ ", will mess up the letdefReplicas minimap.");
-
                 let replica = letdefReplicas.map::get(target);
                 if (replica)
                     return replica;
 
                 // Local of self?
-                if (from == _current_fn.target)
+                if (target.parent == _current_fn.target)
                 {
                     target.locid < minLocalIdx || BUG("Missing a local replica for: " ~ target);
                     return target;
@@ -9743,10 +9754,6 @@ pub fn solve(
                 //
                 if (expr.kind == "letdef")
                 {
-                    if (expr.target.globid != globidExpect)
-                        BUG("inlineExpression: letdef doesn't match globidExpect");
-
-                    //
                     let foreign = GET(expr.target);
                     let local   = Scope_create(_scope, nest: _current_fn.target.globid);
 
@@ -9818,7 +9825,7 @@ pub fn solve(
                             let foreign = GET(expr.target);
 
                             isAssignable(host: foreign.type, local.type)
-                                || local.type.is_never && local.flags & F_INLINE
+                                || local.type.is_never && local.flags & (F_INLINE | F_ARG) == F_INLINE
                                 || BUG("matchReplicaOrInjectForeignLocal botching the type of " ~ foreign ~ ":\n"
                                     ~ "\n\t\tExpect: " ~ foreign.type.humanizeType
                                     ~ "\n\t\tActual: " ~   local.type.humanizeType);
@@ -9833,6 +9840,23 @@ pub fn solve(
                         // TODO FIX VFACTS /////////////////////////////////////////////
                         expr.type.vfacts = local.type.vfacts;
                         // TODO FIX VFACTS /////////////////////////////////////////////
+
+                        // INLINE ARGUMENTS ////////////////////////////////////////////
+                        if (local.flags & (F_INLINE | F_ARG) == F_INLINE)
+                        {
+                            TRACE("F_INLINE local " ~ local);
+
+                            expr = inlineExpression(
+                                from: local.parent,
+                                :letdefReplicas,
+                                local.solved.items[LET_INIT] || BUG(
+                                    "inlineExpression NODE: F_INLINE local has no LET_INIT: " ~ local));
+
+                            // No visitTypes, no nothing -
+                            //  we've already recursively called inlineExpression.
+                            return;
+                        }
+                        // INLINE ARGUMENTS ////////////////////////////////////////////
                     }
                     else if (expr.target == must_not_call)
                     {
@@ -9875,15 +9899,7 @@ pub fn solve(
                 // Replace foreign lifetimes with lifetimes to implicit closure args.
                 visitType(expr.type);
 
-                if (expr.kind == "call")
-                {
-                    // INLINE ARGUMENTS ////////////////////////////////////////////
-                    if (expr.target.isLocal && expr.target.flags & F_INLINE)
-                        expr = expr.target.solved.items[LET_INIT] || BUG(
-                            "inlineExpression: F_INLINE local has no LET_INIT.");
-                    // INLINE ARGUMENTS ////////////////////////////////////////////
-                }
-                else if (expr.helpers)
+                if (expr.helpers)
                 {
                     if (expr.kind == "block" || expr.kind == "loop")
                     {
@@ -9910,6 +9926,8 @@ pub fn solve(
 
             fn visitType(ref type: Type)
             {
+                TRACE_BRACKET("visitType: " ~ humanizeType(type));
+
                 type.lifetime = type.lifetime.Lifetime_process(
                     |locid!index, continue_keep, continue_replace, paths|
                     {
@@ -9920,10 +9938,12 @@ pub fn solve(
                         let local   = matchReplicaOrInjectForeignLocal(foreign);
 
                         // INLINE ARGUMENTS ////////////////////////////////////////////
-                        if (local.flags & F_INLINE)
+                        if (local.flags & (F_INLINE | F_ARG) == F_INLINE)
                         {
+                            TRACE("Type.F_INLINE local " ~ local);
+
                             let init = local.solved.items[LET_INIT] || BUG(
-                                "inlineExpression: F_INLINE local has no LET_INIT.");
+                                "inlineExpression TYPE: F_INLINE local has no LET_INIT: " ~ local);
 
                             continue_replace(
                                 init.type.lifetime
@@ -9954,6 +9974,8 @@ pub fn solve(
         mut target: Target, mut args?: SolvedNode[], reorder?: Reorder, conversions?: Target[][])
             : SolvedNode
     {
+        TRACE_BRACKET("CallerNode " ~ target);
+
         // Do reorder.
         if (reorder)
         {

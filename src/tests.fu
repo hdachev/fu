@@ -3145,7 +3145,7 @@ pub extern fn runTests()
         fn main() test(-1);
     `);
 
-    TODO_args(currently: "no implicit `1111 in scope", `
+    TODO_args(currently: "no implicit test:a in scope", `
         fn test(a = 3, b = a * 2) a + b;
         fn main() test + test(a: -1) * 3;
     `);
@@ -14383,7 +14383,7 @@ pub extern fn runTests()
         }
     `);
 
-    TODO_inline(currently: "BUG siblings.has(left) 18:39+6", `
+    ZERO(`
         struct Target { _packed: u32 }
         inline fn globid(t: Target) i32(t._packed);
 
@@ -14391,7 +14391,7 @@ pub extern fn runTests()
             mut len0: int;
             defer if (TRACE_out.len > len0) {
                 // unlike the test above, we'll inline msg twice
-                TRACE_out.splice(len0, 0, "<" ~ msg ~ ">");
+                TRACE_out.splice(len0, 0, "<" ~ msg ~ ">");     ;; GNUStmtExpr
                 TRACE_out ~= "</" ~ msg ~ ">";
             }
         }
@@ -14404,15 +14404,17 @@ pub extern fn runTests()
             what();
         }
 
-        fn solve(ref TRACE_out: string, a: Target, b: Target) {
+        fn solve(a: Target, b: Target) {
             doTrySpecialize(a, || {});
             doTrySpecialize(b, || TRACE("World!"));
         }
 
         fn main() {
             implicit mut TRACE_out = "";
-            solve(:TRACE_out, Target(1), Target(2));
-            return TRACE_out == "<Hello 20>World!</Hello 21>" ? 0 : 1;
+            solve(          <fail wrong number of arguments 29:18+1>
+                :TRACE_out, <pass/></fail>
+                Target(1), Target(2));
+            return TRACE_out == "<Hello 20>World!</Hello 22>" ? 0 : 1;
         }
     `);
 
