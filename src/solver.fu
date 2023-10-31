@@ -9648,7 +9648,7 @@ pub fn solve(
     fn inlineExpression(
         from: Target,
         mut expr: SolvedNode,
-        mut letdefReplicas?: Target[],
+        mut letdefReplicas?: map::Map(Target, Target),
         locals_start!?: i32,
         must_not_call!?: Target)
     {
@@ -9678,7 +9678,7 @@ pub fn solve(
                     BUG("matchReplicaOrInjectForeignLocal: target.globid != globidExpect"
                         ~ ", will mess up the letdefReplicas minimap.");
 
-                let replica = letdefReplicas.unless_oob(target.locid);
+                let replica = letdefReplicas.map::get(target);
                 if (replica)
                     return replica;
 
@@ -9750,7 +9750,7 @@ pub fn solve(
                     let foreign = GET(expr.target);
                     let local   = Scope_create(_scope, nest: _current_fn.target.globid);
 
-                    letdefReplicas.grow_if_oob(expr.target.locid) = local || BUG();
+                    letdefReplicas.map::set(expr.target, local || BUG());
 
                     //
                     lax fn TEST_LifetimeEqual(
@@ -10158,7 +10158,7 @@ pub fn solve(
                 //  - letdefs we can unshift them in the inlined expression,
                 //  - the letdef mapping for ref replacement.
                 mut argdefs: SolvedNode[];
-                mut letdefReplicas: Target[];
+                mut letdefReplicas: map::Map(Target, Target);
                 let locals_start = GET_next_local_index();
 
                 let host_args = target.args;
@@ -10202,7 +10202,7 @@ pub fn solve(
 
                     // Watch it, cross-module locals.
                     let foreign = host_arg.target;
-                    letdefReplicas.grow_if_oob(foreign.locid) = argdef.target || BUG();
+                    letdefReplicas.set(foreign, argdef.target || BUG());
                     lax shadow let foreign = GET(foreign);
 
                     if (SELF_TEST)
