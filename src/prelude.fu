@@ -366,6 +366,43 @@ infix fn .= !T(ref a: T[:], b: T[:]) case (T.is::copy): void __native("<fu/vec/v
 // TODO not needed if swap(x, y) alias-ok's its two arguments:
 fn swap !T(ref a: T[:], i: int, j: int): void __native("<fu/vec/view_swap.h>", "fu::view_swap");
 
+fn partition !T(ref a: T[:], predicate)
+{
+    let size = a.len;
+    mut keep = 0;
+    for (mut i = 0; i < size; i++)
+        if (!predicate(a[i])) {
+            if (i > keep)
+                a.swap(i, keep);
+
+            keep++;
+        }
+
+    return keep;
+}
+
+fn remove !T(ref a: T[], predicate)
+{
+    if (T.is::trivial)
+    {
+        let size = a.len;
+        mut keep = 0;
+        for (mut i = 0; i < size; i++) {
+            let here = a[i];
+            if (!predicate(here)) {
+                if (i > keep)
+                    a[keep] = here;
+
+                keep++;
+            }
+        }
+    }
+    else
+    {
+        a.shrink(a.partition(fn predicate));
+    }
+}
+
 
 // Stringifiables.
 
