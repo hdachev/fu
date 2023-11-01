@@ -9673,297 +9673,286 @@ pub fn solve(
 
         TRACE_BRACKET("inlineExpression " ~ expr.kind ~ ":" ~ expr.value ~ " in " ~ _current_fn);
 
-        // TODO FAILCASE: used to do nothing if from == self,
-        //  which breaks jumps, references to locals, etc.
+        let helpers0 = _helpers.len;
+        defer _helpers.shrink(helpers0);
+
         //
+        let minLocalIdx  = GET_next_local_index();
+
+        mut helpersReplicas: Helpers[];
+
+        //
+        fn matchReplicaOrInjectForeignLocal(target: Target, slot?: Type)
         {
-            let helpers0 = _helpers.len;
-            defer _helpers.shrink(helpers0);
+            let replica = letdefReplicas.map::get(target);
+            if (replica)
+                return replica;
 
-            //
-            let minLocalIdx  = GET_next_local_index();
-
-            mut helpersReplicas: Helpers[];
-
-            //
-            fn matchReplicaOrInjectForeignLocal(target: Target, slot?: Type)
+            // Local of self?
+            if (target.parent == _current_fn.target)
             {
-                let replica = letdefReplicas.map::get(target);
-                if (replica)
-                    return replica;
-
-                // Local of self?
-                if (target.parent == _current_fn.target)
-                {
-                    target.locid < minLocalIdx || BUG("Missing a local replica for: " ~ target);
-                    return target;
-                }
-
-                let o = GET(target);
-                if (o.flags & F_IMPLICIT)
-                    return bindImplicitArg(o.name,
-                        type: slot || o.type,       // Use slot type if available,
-                        becauseOf: from).target;    //  might refer to unused implicit via arg default expr, etc.
-
-                if (from.modid != module.modid)
-                    BUG("inlineExpression: about to use injectForeignLocal with an off-module target: " ~ o);
-
-                return injectForeignLocal(target);
+                target.locid < minLocalIdx || BUG("Missing a local replica for: " ~ target);
+                return target;
             }
 
-            // println("    from " from);
+            let o = GET(target);
+            if (o.flags & F_IMPLICIT)
+                return bindImplicitArg(o.name,
+                    type: slot || o.type,       // Use slot type if available,
+                    becauseOf: from).target;    //  might refer to unused implicit via arg default expr, etc.
 
-            // TODO it'd be nice if we can skip this by looking at the expr node flags,
-            //  something like F_NO_LOCALS or something that tells us
-            //   there's nothing here that needs relinking.
-            //
-            fn visitNode(shadow ref expr: SolvedNode, shadow locals_start!?: i32)
+            if (from.modid != module.modid)
+                BUG("inlineExpression: about to use injectForeignLocal with an off-module target: " ~ o);
+
+            return injectForeignLocal(target);
+        }
+
+        fn visitNode(shadow ref expr: SolvedNode, shadow locals_start!?: i32)
+        {
+            // We need to setup _helpers & co before we visit the jump nodes inside.
+            if (expr.kind == "block" || expr.kind == "loop")
             {
-                // We need to setup _helpers & co before we visit the jump nodes inside.
-                if (expr.kind == "block" || expr.kind == "loop")
+                let foreign = expr.helpers;
+                if (foreign)
                 {
-                    let foreign = expr.helpers;
-                    if (foreign)
-                    {
-                        let local = push(
-                            HelpersData(
-                                local_of:       _current_fn.target.globid,
-                                locals_start:   locals_start || GET_next_local_index(),
-                                ret_actual:     expr.type,
-                            ));
+                    let local = push(
+                        HelpersData(
+                            local_of:       _current_fn.target.globid,
+                            locals_start:   locals_start || GET_next_local_index(),
+                            ret_actual:     expr.type,
+                        ));
 
-                        helpersReplicas.grow_if_oob(foreign.index) = local || BUG();
+                    helpersReplicas.grow_if_oob(foreign.index) = local || BUG();
 
-                        // println("inlineExpression: REPLICATE block/loop #" foreign.index " -> #" local.index);
+                    // println("inlineExpression: REPLICATE block/loop #" foreign.index " -> #" local.index);
 
-                        expr.helpers = local;
-                    }
+                    expr.helpers = local;
+                }
+            }
+
+            // Descend.
+            for (mut i = 0; i < expr.items.len; i++)
+                visitNode(expr.items[i]);
+
+            // This is unpleasant -
+            //  when inlining expressions we can encouter new let definitions,
+            //   potentially cross-module.
+            //
+            // What we need to do here is to maintain a clone these bindings in the local fn,
+            //  and keep a mapping of the targets that need to be replaced down the line.
+            //
+            if (expr.kind == "letdef")
+            {
+                let foreign = GET(expr.target);
+                let local   = Scope_create(_scope, nest: _current_fn.target.globid);
+
+                letdefReplicas.map::set(expr.target, local || BUG());
+
+                //
+                lax fn TEST_LifetimeEqual(
+                    lax a: Lifetime, lax aa: string,
+                    lax b: Lifetime, lax bb: string)
+                {
+                    if (!SELF_TEST || a == b)
+                        return;
+
+                    BUG("visitNode TEST_LifetimeEqual:"
+                        ~ "\n\n\t    " ~ aa ~ ":\t" ~ "(" ~ a ~ ")"
+                        ~ "\n\n\t    " ~ bb ~ ":\t" ~ "(" ~ b ~ ")");
                 }
 
-                // Descend.
-                for (mut i = 0; i < expr.items.len; i++)
-                    visitNode(expr.items[i]);
+                //
+                mut type = foreign.type;
 
-                // This is unpleasant -
-                //  when inlining expressions we can encouter new let definitions,
-                //   potentially cross-module.
-                //
-                // What we need to do here is to maintain a clone these bindings in the local fn,
-                //  and keep a mapping of the targets that need to be replaced down the line.
-                //
-                if (expr.kind == "letdef")
+                if (type.lifetime == Lifetime_static)
                 {
-                    let foreign = GET(expr.target);
-                    let local   = Scope_create(_scope, nest: _current_fn.target.globid);
+                    TODO_FIX_static_ZSTs && type.is_zst || BUG(
+                        "Unexpected static lifetime on " ~ foreign);
+                }
+                else
+                {
+                    let flatCount = type.getFlatCount();
 
-                    letdefReplicas.map::set(expr.target, local || BUG());
+                    TEST_LifetimeEqual(
+                        type.lifetime,                                  "foreign.type.lifetime",
+                        Lifetime_fromBinding(expr.target, :flatCount),  "Lifetime_fromBinding");
 
-                    //
-                    lax fn TEST_LifetimeEqual(
-                        lax a: Lifetime, lax aa: string,
-                        lax b: Lifetime, lax bb: string)
+                    type.lifetime = Lifetime_fromBinding(local, :flatCount);
+                }
+
+                //
+                mut solved = foreign.solved;
+                solved.kind == "let" && solved.target == expr.target || BUG();
+                solved.target = local;
+
+                visitNode(solved);
+
+                GET_mut(local) = Overload(
+                    :foreign.kind,
+                    :foreign.name,
+                    :foreign.status & SS_MATCHED,
+                    :type,
+                    :solved,
+
+                    // Untested: not sure what this implies / entails,
+                    //  and if this is the only flag that needs juggling here.
+                    flags: foreign.flags &~ F_ARG);
+
+                // println("inlineExpression: introducing a letdef: " ~ local " <- " ~ foreign);
+
+                expr.target = local;
+            }
+            else if (expr.kind == "call")
+            {
+                // Replace references to foreign locals with implicit closure args.
+                if (expr.target.isLocal)
+                {
+                    let local = matchReplicaOrInjectForeignLocal(expr.target, expr.type);
+
+                    if (SELF_TEST)
                     {
-                        if (!SELF_TEST || a == b)
-                            return;
+                        let foreign = GET(expr.target);
 
-                        BUG("visitNode TEST_LifetimeEqual:"
-                            ~ "\n\n\t    " ~ aa ~ ":\t" ~ "(" ~ a ~ ")"
-                            ~ "\n\n\t    " ~ bb ~ ":\t" ~ "(" ~ b ~ ")");
+                        isAssignable(host: foreign.type, local.type)
+                            || local.type.is_never && local.flags & (F_INLINE | F_ARG) == F_INLINE
+                            || BUG("matchReplicaOrInjectForeignLocal botching the type of " ~ foreign ~ ":\n"
+                                ~ "\n\t\tExpect: " ~ foreign.type.humanizeType
+                                ~ "\n\t\tActual: " ~   local.type.humanizeType);
+
+                        // println("inlineExpression: CALL.REPLACE " foreign " with " local);
                     }
-
-                    //
-                    mut type = foreign.type;
-
-                    if (type.lifetime == Lifetime_static)
-                    {
-                        TODO_FIX_static_ZSTs && type.is_zst || BUG(
-                            "Unexpected static lifetime on " ~ foreign);
-                    }
-                    else
-                    {
-                        let flatCount = type.getFlatCount();
-
-                        TEST_LifetimeEqual(
-                            type.lifetime,                                  "foreign.type.lifetime",
-                            Lifetime_fromBinding(expr.target, :flatCount),  "Lifetime_fromBinding");
-
-                        type.lifetime = Lifetime_fromBinding(local, :flatCount);
-                    }
-
-                    //
-                    mut solved = foreign.solved;
-                    solved.kind == "let" && solved.target == expr.target || BUG();
-                    solved.target = local;
-
-                    visitNode(solved);
-
-                    GET_mut(local) = Overload(
-                        :foreign.kind,
-                        :foreign.name,
-                        :foreign.status & SS_MATCHED,
-                        :type,
-                        :solved,
-
-                        // Untested: not sure what this implies / entails,
-                        //  and if this is the only flag that needs juggling here.
-                        flags: foreign.flags &~ F_ARG);
-
-                    // println("inlineExpression: introducing a letdef: " ~ local " <- " ~ foreign);
 
                     expr.target = local;
+
+                    local.GET_mut.status |= SS_MATCHED;
+
+                    // TODO FIX VFACTS /////////////////////////////////////////////
+                    expr.type.vfacts = local.type.vfacts;
+                    // TODO FIX VFACTS /////////////////////////////////////////////
+
+                    // INLINE ARGUMENTS ////////////////////////////////////////////
+                    if (local.flags & (F_INLINE | F_ARG) == F_INLINE)
+                    {
+                        TRACE("F_INLINE local " ~ local);
+
+                        expr = inlineExpression(
+                            from: local.parent,
+                            :letdefReplicas,
+                            local.solved.items[LET_INIT] || BUG(
+                                "inlineExpression NODE: F_INLINE local has no LET_INIT: " ~ local));
+
+                        // No visitTypes, no nothing -
+                        //  we've already recursively called inlineExpression.
+                        return;
+                    }
+                    // INLINE ARGUMENTS ////////////////////////////////////////////
                 }
-                else if (expr.kind == "call")
+                else if (expr.target == must_not_call)
                 {
-                    // Replace references to foreign locals with implicit closure args.
-                    if (expr.target.isLocal)
+                    fail("Cannot inline self-recursive fns: " ~ expr.target);
+                }
+            }
+            else if (expr.kind == "jump" || expr.kind == "__far_jump") :REPLICATE_JUMP
+            {
+                if (expr.kind == "jump")
+                {
+                    let foreign = expr.helpers;
+                    let local   = helpersReplicas.unless_oob(foreign.index);
+                    if (local)
                     {
-                        let local = matchReplicaOrInjectForeignLocal(expr.target, expr.type);
+                        // println("inlineExpression: REPLICATE jump #" foreign.index " -> #" local.index);
 
-                        if (SELF_TEST)
-                        {
-                            let foreign = GET(expr.target);
+                        expr.helpers = local;
+                        local.mask |= HM_LabelUsed;
 
-                            isAssignable(host: foreign.type, local.type)
-                                || local.type.is_never && local.flags & (F_INLINE | F_ARG) == F_INLINE
-                                || BUG("matchReplicaOrInjectForeignLocal botching the type of " ~ foreign ~ ":\n"
-                                    ~ "\n\t\tExpect: " ~ foreign.type.humanizeType
-                                    ~ "\n\t\tActual: " ~   local.type.humanizeType);
-
-                            // println("inlineExpression: CALL.REPLACE " foreign " with " local);
-                        }
-
-                        expr.target = local;
-
-                        local.GET_mut.status |= SS_MATCHED;
-
-                        // TODO FIX VFACTS /////////////////////////////////////////////
-                        expr.type.vfacts = local.type.vfacts;
-                        // TODO FIX VFACTS /////////////////////////////////////////////
-
-                        // INLINE ARGUMENTS ////////////////////////////////////////////
-                        if (local.flags & (F_INLINE | F_ARG) == F_INLINE)
-                        {
-                            TRACE("F_INLINE local " ~ local);
-
-                            expr = inlineExpression(
-                                from: local.parent,
-                                :letdefReplicas,
-                                local.solved.items[LET_INIT] || BUG(
-                                    "inlineExpression NODE: F_INLINE local has no LET_INIT: " ~ local));
-
-                            // No visitTypes, no nothing -
-                            //  we've already recursively called inlineExpression.
-                            return;
-                        }
-                        // INLINE ARGUMENTS ////////////////////////////////////////////
+                        break :REPLICATE_JUMP;
                     }
-                    else if (expr.target == must_not_call)
+
+                    expr.kind = "__far_jump";
+                }
+
+                // println("Found a __far_jump: " ~ expr);
+
+                if (expr.helpers.local_of == _current_fn.target.globid)
+                {
+                    // println("Fixing up a __far_jump: " ~ expr);
+                    expr = solveJump_finish(:expr.flags, h: expr.helpers, expr: expr.items.only);
+                }
+                else
+                {
+                    // TODO FIX these should be collected in later passes
+                    _current_fn.far_jumps.set::add(expr.helpers.local_of);
+                }
+            }
+
+            // Replace foreign lifetimes with lifetimes to implicit closure args.
+            visitType(expr.type);
+
+            if (expr.helpers)
+            {
+                if (expr.kind == "block" || expr.kind == "loop")
+                {
+                    if (expr.helpers.ret_actual)
                     {
-                        fail("Cannot inline self-recursive fns: " ~ expr.target);
+                        mut ret_actual: Type;
+
+                        // TODO FAILCASE
+                        // TODO FAILCASE test_node & co didn't notice this was missing, so ret_actuals had rogue lifetimes.
+                        // TODO FAILCASE
+
+                        // Appeasing bck.
+                        swap(ret_actual, expr.helpers.ret_actual);
+                        visitType(ret_actual);
+                        swap(ret_actual, expr.helpers.ret_actual);
                     }
                 }
-                else if (expr.kind == "jump" || expr.kind == "__far_jump") :REPLICATE_JUMP
+                else if (expr.kind != "jump" && expr.kind != "__far_jump")
                 {
-                    if (expr.kind == "jump")
+                    BUG("inlineExpression: TODO handle .helpers on a " ~ expr.kind);
+                }
+            }
+        }
+
+        fn visitType(ref type: Type)
+        {
+            TRACE_BRACKET("visitType: " ~ humanizeType(type));
+
+            type.lifetime = type.lifetime.Lifetime_process(
+                |locid!index, continue_keep, continue_replace, paths|
+                {
+                    if (!index)
+                        continue_keep;
+
+                    let foreign = nested(:index, :from);
+                    let local   = matchReplicaOrInjectForeignLocal(foreign);
+
+                    // INLINE ARGUMENTS ////////////////////////////////////////////
+                    if (local.flags & (F_INLINE | F_ARG) == F_INLINE)
                     {
-                        let foreign = expr.helpers;
-                        let local   = helpersReplicas.unless_oob(foreign.index);
-                        if (local)
-                        {
-                            // println("inlineExpression: REPLICATE jump #" foreign.index " -> #" local.index);
+                        TRACE("Type.F_INLINE local " ~ local);
 
-                            expr.helpers = local;
-                            local.mask |= HM_LabelUsed;
+                        let init = local.solved.items[LET_INIT] || BUG(
+                            "inlineExpression TYPE: F_INLINE local has no LET_INIT: " ~ local);
 
-                            break :REPLICATE_JUMP;
-                        }
-
-                        expr.kind = "__far_jump";
+                        continue_replace(
+                            init.type.lifetime
+                                ? Lifetime_op_join(init.type.lifetime, paths)
+                                : Lifetime_temporary);
                     }
-
-                    // println("Found a __far_jump: " ~ expr);
-
-                    if (expr.helpers.local_of == _current_fn.target.globid)
-                    {
-                        // println("Fixing up a __far_jump: " ~ expr);
-                        expr = solveJump_finish(:expr.flags, h: expr.helpers, expr: expr.items.only);
-                    }
+                    // INLINE ARGUMENTS ////////////////////////////////////////////
                     else
                     {
-                        // TODO FIX these should be collected in later passes
-                        _current_fn.far_jumps.set::add(expr.helpers.local_of);
+                        // println("inlineExpression: LT.REPLACE " foreign " with " local);
+
+                        continue_replace(
+                            local.type.lifetime
+                                ? Lifetime_op_join(local.type.lifetime, paths)
+                                : BUG("visitType: !local.type.lifetime"));
                     }
-                }
-
-                // Replace foreign lifetimes with lifetimes to implicit closure args.
-                visitType(expr.type);
-
-                if (expr.helpers)
-                {
-                    if (expr.kind == "block" || expr.kind == "loop")
-                    {
-                        if (expr.helpers.ret_actual)
-                        {
-                            mut ret_actual: Type;
-
-                            // TODO FAILCASE
-                            // TODO FAILCASE test_node & co didn't notice this was missing, so ret_actuals had rogue lifetimes.
-                            // TODO FAILCASE
-
-                            // Appeasing bck.
-                            swap(ret_actual, expr.helpers.ret_actual);
-                            visitType(ret_actual);
-                            swap(ret_actual, expr.helpers.ret_actual);
-                        }
-                    }
-                    else if (expr.kind != "jump" && expr.kind != "__far_jump")
-                    {
-                        BUG("inlineExpression: TODO handle .helpers on a " ~ expr.kind);
-                    }
-                }
-            }
-
-            fn visitType(ref type: Type)
-            {
-                TRACE_BRACKET("visitType: " ~ humanizeType(type));
-
-                type.lifetime = type.lifetime.Lifetime_process(
-                    |locid!index, continue_keep, continue_replace, paths|
-                    {
-                        if (!index)
-                            continue_keep;
-
-                        let foreign = nested(:index, :from);
-                        let local   = matchReplicaOrInjectForeignLocal(foreign);
-
-                        // INLINE ARGUMENTS ////////////////////////////////////////////
-                        if (local.flags & (F_INLINE | F_ARG) == F_INLINE)
-                        {
-                            TRACE("Type.F_INLINE local " ~ local);
-
-                            let init = local.solved.items[LET_INIT] || BUG(
-                                "inlineExpression TYPE: F_INLINE local has no LET_INIT: " ~ local);
-
-                            continue_replace(
-                                init.type.lifetime
-                                    ? Lifetime_op_join(init.type.lifetime, paths)
-                                    : Lifetime_temporary);
-                        }
-                        // INLINE ARGUMENTS ////////////////////////////////////////////
-                        else
-                        {
-                            // println("inlineExpression: LT.REPLACE " foreign " with " local);
-
-                            continue_replace(
-                                local.type.lifetime
-                                    ? Lifetime_op_join(local.type.lifetime, paths)
-                                    : BUG("visitType: !local.type.lifetime"));
-                        }
-                    });
-            }
-
-            visitNode(expr, :locals_start);
+                });
         }
+
+        visitNode(expr, :locals_start);
 
         return expr;
     }
