@@ -4136,6 +4136,28 @@ pub fn solve(
                             items[i] = replacement;
                         }
                     }
+                    else if (k == "block")
+                    {
+                        if (node.items.if_last.kind == "unwrap")
+                        {
+                            relax_mask == RELAX_before_bck || BUG(
+                                "Unwrapping a `defer` after BCK, changes control flow.");
+
+                            node.kind == "block" && !(node.helpers.mask & HM_LabelUsed) ||
+                                fail("`unwrap` doesn't currently support early returns.");
+
+                            // Replace child block with contents,
+                            //  except for the `unwrap` trailer.
+                            items.splice(i, 1, node.items.steal(
+                                start: 0,
+                                  end: node.items.len - 1));
+
+                            // Repeat, otherwise we'd be skip over
+                            //  the first unwrapped block item.
+                            i--;
+                            continue;
+                        }
+                    }
                 }
 
                 //////////////////////
@@ -4307,7 +4329,8 @@ pub fn solve(
         }
         else
         {
-            fail("TODO: propagateType(" ~ k ~ ").");
+            // Unexpected unwrap, etc.
+            fail("Unexpected " ~ k.str.qBAD ~ ".");
         }
     }
 
@@ -4555,30 +4578,6 @@ pub fn solve(
     fn createBlock(
         type: Type, mut items: SolvedNode[], h?: Helpers): SolvedNode
     {
-        // Compact + stress test.
-        for (mut i = items.len; i --> 0; )
-        {
-            ref item    = items[i];
-            let k       = item.kind;
-
-            if (k == "block")
-            {
-                if (item.items.if_last.kind == "unwrap")
-                {
-                    // Was this an interesting feature?
-                    //  Not sure how you'd use it even, it's really out there.
-                    //
-                    // relinkJumps(:h, item);
-                    item.kind == "block" && !(item.helpers.mask & HM_LabelUsed) ||
-                        fail("`unwrap` doesn't currently support early returns.");
-
-                    items.splice(i, 1,
-                        item.items.slice(0, item.items.len - 1));
-                }
-            }
-        }
-
-        //
         return SolvedNode(
             kind: "block", :type, :items,
             helpers: h);
@@ -11920,7 +11919,7 @@ pub fn solve(
             }
             else if (node.items)
             {
-                fail("TODO: bck_node(non-empty " ~ k ~ ").");
+                BUG("TODO: bck_node(non-empty " ~ k ~ ").");
             }
         }
 
