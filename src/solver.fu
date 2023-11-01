@@ -10159,101 +10159,8 @@ pub fn solve(
             }
 
             // Inliner.
-            if (kind == "inline") :INLINE_ATTEMPT
-            {
-                if (SELF_TEST)
-                {
-                    target.modid != module.modid || target.revision > 0 || BUG(
-                        "Inlining " ~ target ~ " at revision 0.");
-
-                    TODO_FIX_inline_safety++ < 24 || BUG(
-                        "Inliner recursion, something is off: " ~ target);
-                }
-
-                defer if (SELF_TEST) TODO_FIX_inline_safety--;
-
-                //
-                if (target.status & (SS_DID_START | SS_FINALIZED) == SS_DID_START)
-                    break :INLINE_ATTEMPT;
-
-                // For each argument, we collect:
-                //  - letdefs we can unshift them in the inlined expression,
-                //  - the letdef mapping for ref replacement.
-                mut argdefs: SolvedNode[];
-                mut letdefReplicas: map::Map(Target, Target);
-                let locals_start = GET_next_local_index();
-
-                let host_args = target.args;
-                host_args.len == args.len || BUG("inline: arglen mismatch");
-
-                let RTL = target.isRTL;
-                argsForward(:RTL, :host_args): |i|
-                {
-                    let host_arg = host_args[i];
-
-                    // TODO FIX the let vs letdef mess
-                    if (!host_arg.target)
-                        continue;
-
-                    let argdef = createLet(
-                        id:     host_arg.name,
-                        init:   args[i],
-                        flags:  host_arg.flags  &~ F_ARG
-                                                &~ F_COMPOUND_ID
-
-                                                // TODO FIX mutrefs lost in translation
-                                                | (host_arg.flags & F_INJECTED && host_arg.is_mutref && F_REF)
-
-                                                // Don't emit unused warnings here,
-                                                //  should have been checked on the original,
-                                                //   SS_MATCHED there etc
-                                                | F_LAX
-                                                ,
-                        setScope: false);
-
-                    if (SELF_TEST)
-                    {
-                        argdef.kind == "empty" || argdef.kind == "letdef" || BUG(
-                            "Inliner: argdef neither letdef nor empty: " ~ argdef);
-                        argdef.target || BUG(
-                            "Inliner: no argdef.target: " ~ argdef);
-                    }
-
-                    if (argdef.kind != "empty" && !(argdef.target.flags & F_INLINE))
-                        argdefs ~= argdef;
-
-                    // Watch it, cross-module locals.
-                    let foreign = host_arg.target;
-                    letdefReplicas.set(foreign, argdef.target || BUG());
-                    lax shadow let foreign = GET(foreign);
-
-                    if (SELF_TEST)
-                        isAssignable(host: foreign.type, argdef.target.type)
-                            || argdef.target.type.is_never && argdef.target.flags & F_INLINE
-                            || BUG("Inliner botching the argdef type of " ~ foreign ~ ":\n"
-                                ~ "\n\t\tExpect: " ~       foreign.type.humanizeType
-                                ~ "\n\t\tActual: " ~ argdef.target.type.humanizeType);
-
-                    // println("inline: ARGDEF.REPLACE " foreign " with " argdef);
-                }
-
-                //
-                let n_body = target.solved.items.last;
-                mut s_body = inlineExpression(
-                    from: target, expr: n_body, :letdefReplicas, :locals_start,
-                    must_not_call: target);
-
-                if (argdefs)
-                {
-                    s_body.kind || BUG("inline: no s_body.kind");
-                    if (s_body.kind != "block")
-                        s_body = createBlock(argdefs ~ s_body, type: s_body.type);
-                    else
-                        s_body.items.splice(0, 0, argdefs);
-                }
-
-                return s_body;
-            }
+            if (kind == "inline" && target.status & SS_FINALIZED)
+                return CallerNode_inline(target, args);
 
             // Not relevant for inline fns.
             if (args && type.is_ref)
@@ -10265,6 +10172,99 @@ pub fn solve(
         return SolvedNode(
             "call", flags: [], value: debug,
                     :type, args, :target);
+    }
+
+    fn CallerNode_inline(target: Target, args: SolvedNode[]): SolvedNode
+    {
+        if (SELF_TEST)
+        {
+            target.modid != module.modid || target.revision > 0 || BUG(
+                "Inlining " ~ target ~ " at revision 0.");
+
+            TODO_FIX_inline_safety++ < 24 || BUG(
+                "Inliner recursion, something is off: " ~ target);
+        }
+
+        defer if (SELF_TEST) TODO_FIX_inline_safety--;
+
+        // For each argument, we collect:
+        //  - letdefs we can unshift them in the inlined expression,
+        //  - the letdef mapping for ref replacement.
+        //
+        mut argdefs: SolvedNode[];
+        mut letdefReplicas: map::Map(Target, Target);
+        let locals_start = GET_next_local_index();
+
+        let host_args = target.args;
+        host_args.len == args.len || BUG("inline: arglen mismatch");
+
+        let RTL = target.isRTL;
+        argsForward(:RTL, :host_args): |i|
+        {
+            let host_arg = host_args[i];
+
+            // TODO FIX the let vs letdef mess
+            if (!host_arg.target)
+                continue;
+
+            let argdef = createLet(
+                id:     host_arg.name,
+                init:   args[i],
+                flags:  host_arg.flags  &~ F_ARG
+                                        &~ F_COMPOUND_ID
+
+                                        // TODO FIX mutrefs lost in translation
+                                        | (host_arg.flags & F_INJECTED && host_arg.is_mutref && F_REF)
+
+                                        // Don't emit unused warnings here,
+                                        //  should have been checked on the original,
+                                        //   SS_MATCHED there etc
+                                        | F_LAX
+                                        ,
+                setScope: false);
+
+            if (SELF_TEST)
+            {
+                argdef.kind == "empty" || argdef.kind == "letdef" || BUG(
+                    "Inliner: argdef neither letdef nor empty: " ~ argdef);
+                argdef.target || BUG(
+                    "Inliner: no argdef.target: " ~ argdef);
+            }
+
+            if (argdef.kind != "empty" && !(argdef.target.flags & F_INLINE))
+                argdefs ~= argdef;
+
+            // Watch it, cross-module locals.
+            let foreign = host_arg.target;
+            letdefReplicas.set(foreign, argdef.target || BUG());
+            lax shadow let foreign = GET(foreign);
+
+            if (SELF_TEST)
+                isAssignable(host: foreign.type, argdef.target.type)
+                    || argdef.target.type.is_never && argdef.target.flags & F_INLINE
+                    || BUG("Inliner botching the argdef type of " ~ foreign ~ ":\n"
+                        ~ "\n\t\tExpect: " ~       foreign.type.humanizeType
+                        ~ "\n\t\tActual: " ~ argdef.target.type.humanizeType);
+
+            // println("inline: ARGDEF.REPLACE " foreign " with " argdef);
+        }
+
+        //
+        let n_body = target.solved.items.last;
+        mut s_body = inlineExpression(
+            from: target, expr: n_body, :letdefReplicas, :locals_start,
+            must_not_call: target);
+
+        if (argdefs)
+        {
+            s_body.kind || BUG("inline: no s_body.kind");
+            if (s_body.kind != "block")
+                s_body = createBlock(argdefs ~ s_body, type: s_body.type);
+            else
+                s_body.items.splice(0, 0, argdefs);
+        }
+
+        return s_body;
     }
 
     fn definitWrap(ref node: SolvedNode, slot: Type)
