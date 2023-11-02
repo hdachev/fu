@@ -64,13 +64,6 @@ let EFFECTS_output          = EFFECTS_input     | Fx_Output         | Fx_NotDead
 
 struct Effects
 {
-    // Non-local jumps -
-    //  So we know what needs to get inlined into what,
-    //   and later we might be able to jump out of recursive stacks by throwing,
-    //    or extra return out-params & flags or whatever.
-    //
-    far_jumps:      i32[];
-
     // Builtin effects.
     fx_mask:        FxMask;
 

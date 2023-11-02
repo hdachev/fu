@@ -275,6 +275,7 @@ pub fn solve(
 
         using flow?:        Flow;
 
+        far_jumps?:         i32[];
         using effects?:     Effects;
         using events?:      Events;
         autoshadow_ok!:     i32;
@@ -330,6 +331,8 @@ pub fn solve(
 
         children?:          ChildTarget[];
         specs?:             map::Map(string, Target); // mangle -> spec;
+
+        far_jumps?:         i32[];
     };
 
     using flags TypeParamFlags {
@@ -6116,7 +6119,7 @@ pub fn solve(
 
                 asserts & A_NOFLOW && _current_fn.far_jumps && fail(
                     target ~ " is not noflow: contains non-local control flow, jumping out to "
-                        ~ localfn(index: _current_fn.far_jumps[0]) ~ ".");
+                        ~ localfn(index: _current_fn.far_jumps.first) ~ ".");
 
                 if (maybeLast && !mustBecomeInline)
                     numArgsWritten || ext.fx_mask || !retval.is_void || overload.flags & F_LAX || warn(:out.token,
@@ -6188,6 +6191,11 @@ pub fn solve(
                 }
 
                 overload.solved = solved;
+
+                //
+                shadow ref eph  = EPH_mut(target);
+
+                eph.far_jumps   = out.far_jumps;
 
                 //
                 if (!isNative && !isUnspec)
