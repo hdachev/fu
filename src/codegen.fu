@@ -2221,7 +2221,8 @@ pub fn cpp_codegen(
         }
 
         //
-        if (target.kind == "type")
+        let kind = target.kind;
+        if (kind == "type")
         {
             if (!args)
                 return cgDefault(target.type);
@@ -2242,9 +2243,14 @@ pub fn cpp_codegen(
 
             BUG("Unknown usertype kind: " ~ t.kind);
         }
-
-        if (node.target.modid && target.kind == "fn")
+        else if (kind == "fn" && node.target.modid)
+        {
             ensureFnUsable(node.target);
+        }
+        else if (kind == "inline")
+        {
+            BUG("cgCall: found a call to an inline fn: " ~ node.target.name);
+        }
 
         let id = target.name || BUG();
 
