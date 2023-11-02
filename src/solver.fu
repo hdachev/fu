@@ -288,8 +288,9 @@ pub fn solve(
         //
         TODO_FIX_catches?:  i32;
 
-        // Tempfix, securing old inliner against recursive inlining.
-        now_inlining?:      Target[];
+        // TODO FIX CallerNode_inline still doesn't inline recursively,
+        //  ideally it'll track this stuff on its own.
+        already_inlined?:   Target[];
 
         //
         using postdom?:     Postdom;
@@ -9665,7 +9666,7 @@ pub fn solve(
         mut expr: SolvedNode,
         mut letdefReplicas?: map::Map(Target, Target),
         locals_start!?: i32,
-        must_not_call!?: Target)
+        now_inlining!?: Target)
     {
         PROFILE(.InlineExpr);
 
@@ -9824,7 +9825,9 @@ pub fn solve(
 
                     expr.target = local;
 
-                    local.GET_mut.status |= SS_MATCHED;
+                    // Might point to a global.
+                    if (local.isLocal)
+                        local.GET_mut.status |= SS_MATCHED;
 
                     // TODO FIX VFACTS /////////////////////////////////////////////
                     expr.type.vfacts = local.type.vfacts;
@@ -9847,7 +9850,8 @@ pub fn solve(
                     }
                     // INLINE ARGUMENTS ////////////////////////////////////////////
                 }
-                else if (expr.target == must_not_call)
+                else if (expr.target == now_inlining ||
+                    _current_fn.already_inlined.has(expr.target))
                 {
                     fail("Cannot inline self-recursive fns: " ~ expr.target);
                 }
@@ -10241,7 +10245,7 @@ pub fn solve(
         let n_body = target.solved.items.last;
         mut s_body = inlineExpression(
             from: target, expr: n_body, :letdefReplicas, :locals_start,
-            must_not_call: target);
+            now_inlining: target);
 
         if (argdefs)
         {
