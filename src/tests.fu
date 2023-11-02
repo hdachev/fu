@@ -14418,6 +14418,21 @@ pub extern fn runTests()
         }
     `);
 
+    ZERO(`
+        fn incr_do_incr(ref count: i32, inline do) {
+            count++;
+            count += do;
+            count++;
+        }
+
+        fn main() {
+            mut count = 0;
+            try         incr_do_incr(count, throw("what"));
+            catch (e)   count += 10 * e.len;
+            return count - 41;
+        }
+    `);
+
     // /Inliner.
 
 
