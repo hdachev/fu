@@ -9670,9 +9670,9 @@ pub fn solve(
     }
 
     fn inlineExpression(
-        from: Target,
-        mut expr: SolvedNode,
-        mut letdefReplicas?: map::Map(Target, Target),
+        from!: Target,
+        mut node: SolvedNode,
+        mut letdefReplicas!?: map::Map(Target, Target),
         locals_start!?: i32,
         now_inlining!?: Target)
     {
@@ -9680,7 +9680,7 @@ pub fn solve(
 
         from || BUG("TODO inlining from global scope, never happened before, might work, remove assert as needed.");
 
-        TRACE_BRACKET("inlineExpression " ~ expr.kind ~ ":" ~ expr.value ~ " in " ~ _current_fn);
+        TRACE_BRACKET("inlineExpression " ~ node.kind ~ ":" ~ node.value ~ " in " ~ _current_fn);
 
         let helpers0 = _helpers.len;
         defer _helpers.shrink(helpers0);
@@ -9716,32 +9716,32 @@ pub fn solve(
             return injectForeignLocal(target);
         }
 
-        fn visitNode(shadow ref expr: SolvedNode, shadow locals_start!?: i32)
+        fn visitNode(shadow ref node: SolvedNode, shadow locals_start!?: i32)
         {
             // We need to setup _helpers & co before we visit the jump nodes inside.
-            if (expr.kind == "block" || expr.kind == "loop")
+            if (node.kind == "block" || node.kind == "loop")
             {
-                let foreign = expr.helpers;
+                let foreign = node.helpers;
                 if (foreign)
                 {
                     let local = push(
                         HelpersData(
                             local_of:       _current_fn.target.globid,
                             locals_start:   locals_start || GET_next_local_index(),
-                            ret_actual:     expr.type,
+                            ret_actual:     node.type,
                         ));
 
                     helpersReplicas.grow_if_oob(foreign.index) = local || BUG();
 
                     // println("inlineExpression: REPLICATE block/loop #" foreign.index " -> #" local.index);
 
-                    expr.helpers = local;
+                    node.helpers = local;
                 }
             }
 
             // Descend.
-            for (mut i = 0; i < expr.items.len; i++)
-                visitNode(expr.items[i]);
+            for (mut i = 0; i < node.items.len; i++)
+                visitNode(node.items[i]);
 
             // This is unpleasant -
             //  when inlining expressions we can encouter new let definitions,
@@ -9750,12 +9750,12 @@ pub fn solve(
             // What we need to do here is to maintain a clone these bindings in the local fn,
             //  and keep a mapping of the targets that need to be replaced down the line.
             //
-            if (expr.kind == "letdef")
+            if (node.kind == "letdef")
             {
-                let foreign = GET(expr.target);
+                let foreign = GET(node.target);
                 let local   = Scope_create(_scope, nest: _current_fn.target.globid);
 
-                letdefReplicas.map::set(expr.target, local || BUG());
+                letdefReplicas.map::set(node.target, local || BUG());
 
                 //
                 lax fn TEST_LifetimeEqual(
@@ -9784,14 +9784,14 @@ pub fn solve(
 
                     TEST_LifetimeEqual(
                         type.lifetime,                                  "foreign.type.lifetime",
-                        Lifetime_fromBinding(expr.target, :flatCount),  "Lifetime_fromBinding");
+                        Lifetime_fromBinding(node.target, :flatCount),  "Lifetime_fromBinding");
 
                     type.lifetime = Lifetime_fromBinding(local, :flatCount);
                 }
 
                 //
                 mut solved = foreign.solved;
-                solved.kind == "let" && solved.target == expr.target || BUG();
+                solved.kind == "let" && solved.target == node.target || BUG();
                 solved.target = local;
 
                 visitNode(solved);
@@ -9809,18 +9809,18 @@ pub fn solve(
 
                 // println("inlineExpression: introducing a letdef: " ~ local " <- " ~ foreign);
 
-                expr.target = local;
+                node.target = local;
             }
-            else if (expr.kind == "call")
+            else if (node.kind == "call")
             {
                 // Replace references to foreign locals with implicit closure args.
-                if (expr.target.isLocal)
+                if (node.target.isLocal)
                 {
-                    let local = matchReplicaOrInjectForeignLocal(expr.target, expr.type);
+                    let local = matchReplicaOrInjectForeignLocal(node.target, node.type);
 
                     if (SELF_TEST)
                     {
-                        let foreign = GET(expr.target);
+                        let foreign = GET(node.target);
 
                         isAssignable(host: foreign.type, local.type)
                             || local.type.is_never && local.flags & (F_INLINE | F_ARG) == F_INLINE
@@ -9831,14 +9831,14 @@ pub fn solve(
                         // println("inlineExpression: CALL.REPLACE " foreign " with " local);
                     }
 
-                    expr.target = local;
+                    node.target = local;
 
                     // Might point to a global.
                     if (local.isLocal)
                         local.GET_mut.status |= SS_MATCHED;
 
                     // TODO FIX VFACTS /////////////////////////////////////////////
-                    expr.type.vfacts = local.type.vfacts;
+                    node.type.vfacts = local.type.vfacts;
                     // TODO FIX VFACTS /////////////////////////////////////////////
 
                     // INLINE ARGUMENTS ////////////////////////////////////////////
@@ -9846,7 +9846,7 @@ pub fn solve(
                     {
                         TRACE("F_INLINE local " ~ local);
 
-                        expr = inlineExpression(
+                        node = inlineExpression(
                             from: local.parent,
                             :letdefReplicas,
                             local.solved.items[LET_INIT] || BUG(
@@ -9858,53 +9858,53 @@ pub fn solve(
                     }
                     // INLINE ARGUMENTS ////////////////////////////////////////////
                 }
-                else if (expr.target == now_inlining ||
-                    _current_fn.already_inlined.has(expr.target))
+                else if (node.target == now_inlining ||
+                    _current_fn.already_inlined.has(node.target))
                 {
-                    fail("Cannot inline self-recursive fns: " ~ expr.target);
+                    fail("Cannot inline self-recursive fns: " ~ node.target);
                 }
             }
-            else if (expr.kind == "jump" || expr.kind == "__far_jump") :REPLICATE_JUMP
+            else if (node.kind == "jump" || node.kind == "__far_jump") :REPLICATE_JUMP
             {
-                if (expr.kind == "jump")
+                if (node.kind == "jump")
                 {
-                    let foreign = expr.helpers;
+                    let foreign = node.helpers;
                     let local   = helpersReplicas.unless_oob(foreign.index);
                     if (local)
                     {
                         // println("inlineExpression: REPLICATE jump #" foreign.index " -> #" local.index);
 
-                        expr.helpers = local;
+                        node.helpers = local;
                         local.mask |= HM_LabelUsed;
 
                         break :REPLICATE_JUMP;
                     }
 
-                    expr.kind = "__far_jump";
+                    node.kind = "__far_jump";
                 }
 
-                // println("Found a __far_jump: " ~ expr);
+                // println("Found a __far_jump: " ~ node);
 
-                if (expr.helpers.local_of == _current_fn.target.globid)
+                if (node.helpers.local_of == _current_fn.target.globid)
                 {
-                    // println("Fixing up a __far_jump: " ~ expr);
-                    expr = solveJump_finish(:expr.flags, h: expr.helpers, expr: expr.items.only);
+                    // println("Fixing up a __far_jump: " ~ node);
+                    node = solveJump_finish(:node.flags, h: node.helpers, expr: node.items.only);
                 }
                 else
                 {
                     // TODO FIX these should be collected in later passes
-                    _current_fn.far_jumps.set::add(expr.helpers.local_of);
+                    _current_fn.far_jumps.set::add(node.helpers.local_of);
                 }
             }
 
             // Replace foreign lifetimes with lifetimes to implicit closure args.
-            visitType(expr.type);
+            visitType(node.type);
 
-            if (expr.helpers)
+            if (node.helpers)
             {
-                if (expr.kind == "block" || expr.kind == "loop")
+                if (node.kind == "block" || node.kind == "loop")
                 {
-                    if (expr.helpers.ret_actual)
+                    if (node.helpers.ret_actual)
                     {
                         mut ret_actual: Type;
 
@@ -9913,14 +9913,14 @@ pub fn solve(
                         // TODO FAILCASE
 
                         // Appeasing bck.
-                        swap(ret_actual, expr.helpers.ret_actual);
+                        swap(ret_actual, node.helpers.ret_actual);
                         visitType(ret_actual);
-                        swap(ret_actual, expr.helpers.ret_actual);
+                        swap(ret_actual, node.helpers.ret_actual);
                     }
                 }
-                else if (expr.kind != "jump" && expr.kind != "__far_jump")
+                else if (node.kind != "jump" && node.kind != "__far_jump")
                 {
-                    BUG("inlineExpression: TODO handle .helpers on a " ~ expr.kind);
+                    BUG("inlineExpression: TODO handle .helpers on a " ~ node.kind);
                 }
             }
         }
@@ -9964,9 +9964,9 @@ pub fn solve(
                 });
         }
 
-        visitNode(expr, :locals_start);
+        visitNode(node, :locals_start);
 
-        return expr;
+        return node;
     }
 
     fn CallerNode(
@@ -10046,7 +10046,7 @@ pub fn solve(
                     if (host_arg.default)
                     {
                         args[i] = inlineExpression(
-                            expr: host_arg.default,
+                            host_arg.default,
                             from: target);
                     }
                     else
@@ -10252,7 +10252,7 @@ pub fn solve(
         //
         let n_body = target.solved.items.last;
         mut s_body = inlineExpression(
-            from: target, expr: n_body, :letdefReplicas, :locals_start,
+            from: target, n_body, :letdefReplicas, :locals_start,
             now_inlining: target);
 
         if (argdefs)
