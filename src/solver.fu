@@ -5765,7 +5765,7 @@ pub fn solve(
             }
 
             // Used twice, once to enable recursion before body, and once when done.
-            fn updateScope(shadow out: CurrentFn, mut retval: Type, maybeLast!: bool)
+            fn updateScope(mut retval: Type, maybeLast!: bool)
             {
                 _here = n_fn.token || BUG();
 
@@ -5791,7 +5791,7 @@ pub fn solve(
                 }
                 ///////////////////////////////
 
-                shadow let items = out.items;
+                shadow let items = _current_fn.items;
                 shadow let mustBecomeInline = currentFn_mustBecomeInline();
 
                 let N = items.len + FN_ARGS_BACK;
@@ -5839,7 +5839,7 @@ pub fn solve(
                     let argTarget   = argNode.target;
                     let written_via = !isUnspec
                         && argNode.type.is_mutref
-                        && (isNative || out.ever_written.has(argTarget.locid));
+                        && (isNative || _current_fn.ever_written.has(argTarget.locid));
 
                     mut soft_risk: bitset::BitSet;
                     mut hard_risk: bitset::BitSet;
@@ -5869,8 +5869,8 @@ pub fn solve(
                                 }
                             }
 
-                            soft_risk.ArgsAtRisk_list(out.flow.at_soft_risk);
-                            hard_risk.ArgsAtRisk_list(out.flow.at_hard_risk);
+                            soft_risk.ArgsAtRisk_list(_current_fn.flow.at_soft_risk);
+                            hard_risk.ArgsAtRisk_list(_current_fn.flow.at_hard_risk);
 
                             if (argNode.type.TODO_FIX_isArray)
                             {
@@ -5904,21 +5904,21 @@ pub fn solve(
                     if (asserts & A_PURE && written_via)
                         fail(backtrack: "pure", target ~ " is not pure, writes to " ~ argTarget ~ ":\n"
                             ~ qSTACK(:target, :argTarget.locid,
-                                        node: out.out));
+                                        node: _current_fn.out));
 
                     if (asserts & A_PURE_CTX && isImplicit && written_via)
                         fail(backtrack: "purectx", target ~ " is not purectx, writes to " ~ argTarget ~ ":\n"
                             ~ qSTACK(:target, :argTarget.locid,
-                                        node: out.out));
+                                        node: _current_fn.out));
 
                     if (maybeLast && asserts & A_NOVEC && !argNode.isNoVec() && !mustBecomeInline)
                         fail(backtrack: "novec", target ~ " is not novec, " ~ argTarget ~ " is " ~ humanizeType(argNode.type) ~ ":\n"
                             ~ qSTACK(:target, :argTarget.locid,
-                                        node: out.out,
+                                        node: _current_fn.out,
                                        query: AQ_WhyNotNovec));
 
                     //
-                    let cow_inside = out.events.cows_inside.some(
+                    let cow_inside = _current_fn.events.cows_inside.some(
                         |cow| cow.argTarget == argTarget.locid);
 
                     //
@@ -6094,41 +6094,41 @@ pub fn solve(
                 ext.args    = args;
 
                 if (!isNative)
-                    ext.fx_mask = out.fx_mask;
+                    ext.fx_mask = _current_fn.fx_mask;
 
-                ext.cows_inside = out.events.cows_inside;
+                ext.cows_inside = _current_fn.events.cows_inside;
 
                 // TODO FAILCASE
                 // TODO FAILCASE these dont work for inline fns
                 // TODO FAILCASE
                 asserts & A_NOTHROW && ext.fx_mask & Fx_Throws && fail(
                     target ~ " is not nothrow, throws here:\n"
-                        ~ qSTACK(:target, Fx_Throws, node: out.out));
+                        ~ qSTACK(:target, Fx_Throws, node: _current_fn.out));
 
                 asserts & A_NOCRASH && ext.fx_mask & Fx_Crashes && fail(
                     target ~ " is not nocrash, can crash here:\n"
-                        ~ qSTACK(:target, Fx_Crashes, node: out.out));
+                        ~ qSTACK(:target, Fx_Crashes, node: _current_fn.out));
 
                 asserts & A_NOIO && ext.fx_mask & (Fx_Input|Fx_Output) && fail(
                     target ~ " is not noio, performs I/O here:\n"
-                        ~ qSTACK(:target, Fx_Input|Fx_Output, node: out.out));
+                        ~ qSTACK(:target, Fx_Input|Fx_Output, node: _current_fn.out));
 
                 asserts & A_PURE_FX && ext.fx_mask & Fx_Output && fail(
                     target ~ " is not purefx, outputs here:\n"
-                        ~ qSTACK(:target, Fx_Output, node: out.out));
+                        ~ qSTACK(:target, Fx_Output, node: _current_fn.out));
 
                 asserts & A_NOFLOW && _current_fn.far_jumps && fail(
                     target ~ " is not noflow: contains non-local control flow, jumping out to "
                         ~ localfn(index: _current_fn.far_jumps.first) ~ ".");
 
                 if (maybeLast && !mustBecomeInline)
-                    numArgsWritten || ext.fx_mask || !retval.is_void || overload.flags & F_LAX || warn(:out.token,
+                    numArgsWritten || ext.fx_mask || !retval.is_void || overload.flags & F_LAX || warn(:_current_fn.token,
                         target ~ " does nothing: returns void and has no effects. Make it " ~ "lax".qKW ~ " if this is intentional.");
 
                 //
                 shadow ref overload = GET_mut(target);
                 overload.type       = retval;
-                overload.flags      = out.flags;
+                overload.flags      = _current_fn.flags;
 
                 let kind: ::kind    = isUnspec          ? "template"
                                     : isNative          ? "__native"
@@ -6160,7 +6160,7 @@ pub fn solve(
                 }
 
                 //
-                let solved = !isUnspec && out.out;
+                let solved = !isUnspec && _current_fn.out;
 
                 if (hasCallers)
                 {
@@ -6195,7 +6195,7 @@ pub fn solve(
                 //
                 shadow ref eph  = EPH_mut(target);
 
-                eph.far_jumps   = out.far_jumps;
+                eph.far_jumps   = _current_fn.far_jumps;
 
                 //
                 if (!isNative && !isUnspec)
@@ -6259,7 +6259,7 @@ pub fn solve(
                 ext.fx_mask         = fx_mask;
 
                 //
-                updateScope(_current_fn,
+                updateScope(
                     retval:    ret_seed,
                     maybeLast: isNative && !isUnspec);
             }
@@ -6336,7 +6336,7 @@ pub fn solve(
                 didSetBody = true;
 
                 //
-                updateScope(_current_fn, :retval, maybeLast: true);
+                updateScope(:retval, maybeLast: true);
             }
 
             if (!didSetBody)
