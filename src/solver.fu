@@ -8190,8 +8190,6 @@ pub fn solve(
         }
 
         let qualified = flags & F_COMPOUND_ID;
-
-        // TODO FAILCASE forgot to limit qualified lookup to public items
         if (qualified || !imports)
         {
             visitScope(

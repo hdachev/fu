@@ -109,6 +109,7 @@ pub extern fn runTests()
     let TODO_prelude    = fn TODO;
     let TODO_definit    = fn TODO;
     let TODO_ooe        = fn TODO;
+    let TODO_pub        = fn TODO;
 
     let TODO_Map        = fn TODO;
 
@@ -12467,6 +12468,17 @@ pub extern fn runTests()
             mut arr: _0::Arr(i32);
             return arr.append(0).len - 1;
         }
+    `]);
+
+    TODO_pub(currently: "BUG !isExtLinked but off-module 2:33+1", [`
+        <fail not defined X:X><pass/>
+        pub</fail>
+        fn not_public(x: i32) x * 2;
+        pub fn public(x: i32) x * 3;
+    `,
+    `
+        fn test(x, apply) apply(x);
+        fn main() test(5, fn _0::not_public) - 10;
     `]);
 
     // /Pubs & imports.

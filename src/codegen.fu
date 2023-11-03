@@ -1134,6 +1134,9 @@ pub fn cpp_codegen(
             let linkage = overload.fnLinkage;
 
             src ~= linkage;
+
+            if (SELF_TEST && target.modid != module.modid && !overload.isExtLinked && !overload.isInlLinked)
+                BUG("cgFnPrototype: !isExtLinked but off-module");
         }
 
         // Retval.
