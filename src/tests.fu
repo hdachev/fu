@@ -817,6 +817,22 @@ pub extern fn runTests()
         }
     `);
 
+    TODO_specpat(currently: "Bad call to |= zeroes 5:19+2", `
+        using flags Flags { F_SOME; F_OTHER };
+
+        fn parseInlineDecl(mut flags, flag = F_OTHER) {
+            flags |= flag;
+            return flags;
+        }
+
+        fn parseNoInline(mut flags) {
+            return parseInlineDecl(:flags, flag: []);
+        }
+
+        fn main() = parseInlineDecl(F_SOME).i32
+                  - parseNoInline(F_SOME).i32 * 3;
+    `);
+
     // /Template args
 
 
@@ -2399,7 +2415,7 @@ pub extern fn runTests()
         }
     `);
 
-    ZERO(`
+    TODO_ambig(currently: "if/else no common supertype SolvedNode[] 17:21+1", `
         struct SolvedNode {
             items: SolvedNode[];
         };
@@ -2412,7 +2428,7 @@ pub extern fn runTests()
                 result.items ~= root;
                 return result;
             }
-
+<flip>
             fn indirectRecursion(ref node: SolvedNode) {
                 ref items = node.items;
 
@@ -2424,12 +2440,12 @@ pub extern fn runTests()
                                                                 ;; PointlessMustSeq
                 return items && bck_node(items[0]);
             }
-
+<flip/>
             fn bck_node(ref node: SolvedNode)
                 node.items
                     ? indirectRecursion(node)
                     : mutateThenCopy(node);
-
+</flip>
             return bck_node(root);
         }
 
@@ -3389,6 +3405,41 @@ pub extern fn runTests()
             fn t_bool()
                 return _t_bool ||= Type("t_bool");
     </alt>
+            return solveNode(root);
+        }
+
+        fn main() {
+            let s = solve(Node(kind: "bool", value: "Hello!"));
+            return s.value      == "Hello!"
+                && s.type.canon == "t_bool"
+                    ? 0 : 1;
+        }
+    `);
+
+    TODO_recursion(currently: "Declaration cycle 11:30+1", `
+        struct Type { canon: string };
+        struct Node { kind: string; value: string };
+        struct SolvedNode { value: string; type: Type };
+
+        fn createBool(value: string, type = t_bool)
+            return SolvedNode(:value, :type);
+
+        fn solveNode(node: Node)
+            return node.kind == "bool"
+                && createBool(:node.value);
+<alt>
+        fn solveNode(canon: string)
+            return Type(:canon);
+
+        fn t_bool(implicit ref _t_bool: Type)
+            return _t_bool ||= solveNode("t_bool");
+<alt/>
+        fn t_bool(implicit ref _t_bool: Type)
+            return _t_bool ||= Type("t_bool");
+</alt>
+        fn solve(root: Node)
+        {
+            implicit mut _t_bool: Type;
             return solveNode(root);
         }
 
@@ -9902,6 +9953,44 @@ pub extern fn runTests()
         }
     `]);
 
+    TODO_args(currently: "BUG about to implicit bind arg createEmpty:type 19:35+1", `
+        struct Node { items: Node[]; }
+        struct Type { value: i32 };
+
+        let t_void = Type(0);
+
+        fn main() {
+            fn createEmpty(lax type: Type or Node = t_void) = [];
+
+            fn solveTypedef(node): Type {
+                let annot = node.items
+                    && solveTypedef(node.items[0]);
+
+                if (annot) {
+                    mut relaxed = annot;
+                    return createEmpty(type: relaxed);
+                }
+
+                return createEmpty();
+            }
+
+            solveTypedef(Node()).value;
+        }
+    `);
+
+    TODO_args(currently: "BUG GET_next_local_index oob 6:62+1", `
+        using flags DeclAsserts { A; B };
+        flags SomethingElse { AA; BB };
+
+        fn GET_NEXT_LOCAL_oob() {
+            fn parseNoCopy(x: DeclAsserts or SomethingElse = A) x;
+            fn parseBlockLike(y) y | parseNoCopy();
+            return parseBlockLike(B);
+        }
+
+        fn main() GET_NEXT_LOCAL_oob().i32 - 3;
+    `);
+
     // /quite right
 
 
@@ -15160,10 +15249,16 @@ pub extern fn runTests()
     ZERO(`
         fn main() {
             fn exit(code: i32) { return :main code; }
-
             fn exitViaArgdef(what: i32 = exit(0)) = what;
-
             exitViaArgdef();
+        }
+    `);
+
+    TODO_args(currently: "BUG Helpers.GET oob 4:16+13", `
+        fn main() {
+            fn exit(code: i32) { return :main code; }
+            fn exitViaArgdef(a: i32 = exit(0), b?) = a + b;
+            exitViaArgdef()
         }
     `);
 
@@ -16099,6 +16194,21 @@ pub extern fn runTests()
 
             return count - 1;
         }
+    `);
+
+    TODO_relaxer(currently: "BUG ScopeSkip_push 6:20+3", `
+        using flags Flags { A; B }
+
+        fn parseExoticDecl(shadow mut flags: Flags) {
+            if (flags) {
+                fn add(flag) flags |= flag;
+                return add(B);
+            }
+
+            return flags;
+        }
+
+        fn main() = parseExoticDecl(A).i32 - 3;
     `);
 
     // /Relaxer.
