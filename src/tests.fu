@@ -12454,6 +12454,21 @@ pub extern fn runTests()
         fn main() = _0::clearArray("[]int").len - 3;            ;; GNUStmtExpr
     `]);
 
+    ZERO([`
+        fn Arr(type V) struct { items: V[] };
+        fn append !V(
+            using ref _:    <fail ARR is not defined 5:20+1>
+                ARR(V),     <pass/>
+                Arr(V),     </fail>
+            item: V) items ~= item;
+    `,
+    `
+        fn main() {
+            mut arr: _0::Arr(i32);
+            return arr.append(0).len - 1;
+        }
+    `]);
+
     // /Pubs & imports.
 
 

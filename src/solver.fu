@@ -5484,7 +5484,7 @@ pub fn solve(
                         {
                             let argOk = trySolveTypeParams(
                                 annot, inType, :errout,
-                                invariant: false);
+                                invariant: false, :template.imports);
 
                             if (!error && !argOk)
                             {
@@ -8163,13 +8163,16 @@ pub fn solve(
         return createEmpty(:type);
     }
 
-    fn solveAddrOfFn(mut id: string, token: TokenIdx, flags?: Flags): Target[]
+    fn solveAddrOfFn(
+        mut id: string, token: TokenIdx, flags?: Flags,
+        imports?: i32[])
+            : Target[]
     {
         mut shadow = false;
         mut result: Target[];
 
         // Visit local scope.
-        fn visitScope(local_scope!: bool, items?: [ScopeItem])
+        fn visitScope(shadow local_scope!: bool, items?: [ScopeItem])
         {
             mut scope_iterator: i32;
             mut target: Target;
@@ -8189,9 +8192,23 @@ pub fn solve(
         let qualified = flags & F_COMPOUND_ID;
 
         // TODO FAILCASE forgot to limit qualified lookup to public items
-        visitScope(
-            local_scope: !qualified,
-            items: qualified && dequalify_andGetScope(id).items);
+        if (qualified || !imports)
+        {
+            visitScope(
+                local_scope: !qualified,
+                items: qualified && dequalify_andGetScope(id).items);
+        }
+        else for (mut i = 0; i < imports.len; i++)
+        {
+            let modid = imports[i];
+            let scope = modid == module.modid
+                ? _scope
+                : ctx.modules[modid].out.solve.scope;
+
+            visitScope(
+                local_scope: false,
+                items: scope.items);
+        }
 
         return result || fail(:token, id.isNotDefinedHere);
     }
@@ -8271,7 +8288,8 @@ pub fn solve(
     }
 
     fn trySolveTypeParams(
-        node: Node, mut type: Type, ref errout: Warning[], mut invariant!: bool): bool
+        node: Node, mut type: Type, ref errout: Warning[],
+        mut invariant!: bool, imports!?: i32[]): bool
     {
         fn matchFail(inline err: string)
         {
@@ -8299,7 +8317,7 @@ pub fn solve(
 
                 return trySolveTypeParams(
                     node.items[0] || BUG(), t || BUG(), :errout,
-                    :invariant);
+                    :invariant, :imports);
             }
         }
         else if (node.kind == "typeparam") :TYPEPARAM
@@ -8354,7 +8372,7 @@ pub fn solve(
             let t = tryClear_sliceable(type) || matchFail("Not sliceable: " ~ type.humanizeType);
             return trySolveTypeParams(
                 node.items[0] || BUG(), t, :errout,
-                :invariant);
+                :invariant, :imports);
         }
         else if (node.kind == "typeunion")
         {
@@ -8363,7 +8381,9 @@ pub fn solve(
 
             for (mut i = 0; i < node.items.len; i++)
             {
-                if (trySolveTypeParams(node.items[i], :type, :errout, :invariant))
+                if (trySolveTypeParams(
+                        node.items[i], :type, :errout,
+                        :invariant, :imports))
                 {
                     errout.shrink(errout0);
                     return true;
@@ -8381,7 +8401,7 @@ pub fn solve(
         if (node.kind == "call" && node.flags & F_TEMPLATE
                                 && node.value != "typeof")
         {
-            mut targets = solveAddrOfFn(node.value, :node.token);
+            mut targets = solveAddrOfFn(node.value, :node.token, :imports);
             if (!targets)
                 matchFail(node.value.isNotDefinedHere);
 
@@ -8415,8 +8435,12 @@ pub fn solve(
                         shadow let node = node.items[argIdx];
                         shadow let type = Type(parseType(argSpecType));
 
-                        if (!trySolveTypeParams(:node, :type, :errout, invariant: true))
+                        if (!trySolveTypeParams(
+                                :node, :type, :errout,
+                                invariant: true, :imports))
+                        {
                             continue :NEXT_SUB_PATTERN;
+                        }
                     }
 
                     if (numArgs != node.items.len)
