@@ -2315,7 +2315,7 @@ pub fn solve(
                     shadow let t = nullary ? t : candidate;
 
                     let convert = GET(t);
-                    convert.type || fail("No convert.type, perhaps a `using inline fn` without a return type annotation: `" ~ convert ~ "`.");
+                    convert.type || BUG("No convert.type, perhaps a `using inline fn` without a return type annotation: `" ~ convert ~ "`.");
 
                     let convertType = convert.kind != "field"
                         ? convert.type
@@ -5221,8 +5221,8 @@ pub fn solve(
             ref t = getSpecs(:parent_idx).map::ref(mangle);
 
             fn id(shadow target)
-                target.is_SPECFAIL  ? "SPEC_FAIL"
-                                    : "`" ~ GET(target).name ~ "`";
+                target.is_SPECFAIL  ? "SPEC_FAIL".qBAD
+                                    : GET(target).str;
 
             (!t == nx) && (!t || t.is_SPECFAIL || allowReplaceNonSpecfails) || BUG(
                 "About to screw up royally, replacing spec: "
@@ -6699,7 +6699,7 @@ pub fn solve(
                 node.items[LET_INIT] &&
                 node.items[LET_INIT].kind != "definit" &&
                     fail("All structs must be zerofilled by default."
-                        ~ " Please remove the initializer of struct member `" ~ node.value ~ "`.");
+                        ~ " Please remove the initializer of struct member " ~ node.value.qBAD ~ ".");
 
             mut ret = solveLetLike_dontTouchScope(node, :primType);
 
@@ -7563,7 +7563,7 @@ pub fn solve(
             return item;
         });
 
-        fail("No return `" ~ id ~ "` in scope.");
+        fail("No return " ~ id.qBAD ~ " in scope.");
     }
 
     fn Scope_lookupLabel(id: string, cont!: bool): Helpers
@@ -7621,7 +7621,7 @@ pub fn solve(
             return _helpers[i];
         });
 
-        fail("No label `" ~ id ~ "` in scope.");
+        fail("No label " ~ id.qBAD ~ " in scope.");
     }
 
     fn solveArgID(node: Node, type: Type): SolvedNode
@@ -7804,7 +7804,7 @@ pub fn solve(
         annot!?: Type): SolvedNode
     {
         annot || init.type || fail(
-            "Variable declarations without type annotations must be initialized: `" ~ id ~ "`.");
+            "Variable declarations without type annotations must be initialized: " ~ id.qBAD ~ ".");
 
         // Dead code elim.
         let init_isNever = init.type.is_never;
@@ -8187,7 +8187,7 @@ pub fn solve(
             local_scope: !qualified,
             items: qualified && dequalify_andGetScope(id).items);
 
-        return result || fail("No `fn " ~ id ~ "` in scope.");
+        return result || fail(id.isNotDefinedHere);
     }
 
 
@@ -9657,8 +9657,8 @@ pub fn solve(
             }
             else
             {
-                i   && fail("Bad conversion chain, non-leading nullary: `" ~ t.name ~ "`.");
-                arg && fail("Bad conversion chain, about to throw away an argnode.");
+                i   && BUG("Bad conversion chain, non-leading nullary: " ~ t);
+                arg && BUG("Bad conversion chain, about to throw away an argnode.");
                 arg = CallerNode("__using.b", t);
             }
 
@@ -10052,8 +10052,7 @@ pub fn solve(
                     else
                     {
                         host_arg.flags & F_IMPLICIT || BUG(
-                            "tryMatch: about to implicit-bind a non-implicit argument: `"
-                                ~ host_arg.name ~ ": " ~ humanizeType(host_arg.type) ~ "`.");
+                            "tryMatch: about to implicit-bind a non-implicit argument: " ~ host_arg);
 
                         args[i] = bindImplicitArg(
                             :host_arg.name,
