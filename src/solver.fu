@@ -8351,7 +8351,7 @@ pub fn solve(
                 }
                 else
                 {
-                    let union = type_trySuper(param.matched, type, :DONT_match_zeroes);
+                    let union = type_trySuper(param.matched, type);
                     if (!union)
                         matchFail("Incompatible types for " ~ id.qBAD ~ ": " ~ explainTypeDiff(param.matched, type, "<->"));
 

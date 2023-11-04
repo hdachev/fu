@@ -201,7 +201,7 @@ pub fn clear_mutref(mut type: Type)
     return type;
 }
 
-pub fn definitType(mut type: Type)
+pub fn definitType(mut type: Type, asTypename!?: bool)
 {
     if (!type || type.is_never)
         type = t_zeroes;
@@ -215,7 +215,7 @@ pub fn definitType(mut type: Type)
     if (SELF_TEST && type.is_never)
         BUG("Cannot definit type never.");
 
-    type.vfacts = AlwaysFalse;
+    type.vfacts = AlwaysFalse | (asTypename && Typename);
     return type;
 }
 
@@ -324,8 +324,8 @@ pub fn type_trySuper(a: Type, b: Type, DONT_match_zeroes!?: bool)
 {
     let canon = canon_trySuper(a.canon, b.canon);
     if (!canon)
-        return a.is_zeroes && !DONT_match_zeroes ? type_trySuper(definitType(b), b)
-             : b.is_zeroes && !DONT_match_zeroes ? type_trySuper(definitType(a), a)
+        return a.is_zeroes && !DONT_match_zeroes ? type_trySuper(b, definitType(b, asTypename: true))
+             : b.is_zeroes && !DONT_match_zeroes ? type_trySuper(a, definitType(a, asTypename: true))
              : [];
 
     let quals   = a.quals  & b.quals;

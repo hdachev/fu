@@ -817,7 +817,7 @@ pub extern fn runTests()
         }
     `);
 
-    TODO_specpat(currently: "Bad call to |= zeroes 5:19+2", `
+    ZERO(`
         using flags Flags { F_SOME; F_OTHER };
 
         fn parseInlineDecl(mut flags, flag = F_OTHER) {
@@ -15254,7 +15254,7 @@ pub extern fn runTests()
         }
     `);
 
-    TODO_specpat(currently: "Bad call to + i32 zeroes 4:56+1", `
+    ZERO(`
         fn main() {
             fn exit(code: i32) { return :main code; }
             fn exitViaArgdef(a: i32 = exit(0), b?) = a + b;
