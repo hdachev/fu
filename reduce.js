@@ -338,6 +338,43 @@ function tryReturnDefinit(src)
 }
 
 
+// Pop argument type annot.
+
+/*
+    (
+        [(,]\s*
+        [a-zA-Z0-9_]+\s*
+
+        (?:![a-zA-Z0-9_]*\s*)?
+        (?:.[a-zA-Z0-9_]*\s*)?
+        (?:\[\]\s*)?
+    )
+    (
+        :[^():]+
+    )
+    (
+        [,)]
+    )
+*/
+
+const re_POP_ARG_TYPE_ANNOT = /([(,]\s*[a-zA-Z0-9_]+\s*(?:![a-zA-Z0-9_]*\s*)?(?:.[a-zA-Z0-9_]*\s*)?(?:\[\])?\s*)(:[^():]+)([,)])/g;
+
+function tryPopArgumentTypeAnnot(src)
+{
+    const match = randExec(src, re_POP_ARG_TYPE_ANNOT);
+    if (!match)
+        return false;
+
+    console.log("\nARG TYPE ANNOT\n<<<" + match[1] + "    " + match[2] + "    " + match[3] + ">>>");
+
+    return (
+        src.slice(0, match.index) +
+        match[1] +
+        match[3] +
+        src.slice(match.index + match[0].length));
+}
+
+
 //
 
 const _strategies =
@@ -354,6 +391,8 @@ const _strategies =
     tryCutLineGroup,
 
     tryUnwrapSingleStmtBlock,
+
+    tryPopArgumentTypeAnnot,
 ];
 
 function main()
