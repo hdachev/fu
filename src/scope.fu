@@ -377,6 +377,14 @@ fn Scope_create(
 
     overloads.push(item);
 
+    if (!nest)
+    {
+        // TODO FIX EXT are 0-based right now,
+        //  although we don't benefit from the zeroeth element still.
+        //
+        scope.extended.grow(overloads.len + 1);
+    }
+
     return target;
 }
 

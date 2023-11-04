@@ -571,7 +571,7 @@ pub fn solve(
                 ? _scope
                 : ctx.modules[modid].out.solve.scope;
 
-        return _scope.extended.unless_oob(globid);
+        return _scope.extended[globid];
     }
 
     fn humanizeTypeName(type: Type)
@@ -870,7 +870,7 @@ pub fn solve(
     fn EXT_mut(target: Target)
     {
         target.modid == module.modid || assert();
-        return _scope.extended.grow_if_oob(target.globid);
+        return _scope.extended[target.globid];
     }
 
     fn GET_next_local_index()
