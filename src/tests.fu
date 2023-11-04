@@ -15254,7 +15254,7 @@ pub extern fn runTests()
         }
     `);
 
-    TODO_args(currently: "BUG Helpers.GET oob 4:16+13", `
+    TODO_args(currently: "BUG GET_next_local_index oob 4:43+1", `
         fn main() {
             fn exit(code: i32) { return :main code; }
             fn exitViaArgdef(a: i32 = exit(0), b?) = a + b;

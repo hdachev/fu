@@ -2134,7 +2134,7 @@ pub fn solve(
             || node.kind == "definit"
             || node.kind == "str"
             || node.kind == "if"  && node.items[1 : 3].all(fn couldRetype)
-            || node.kind == "block" && !(node.helpers.mask & HM_LabelUsed) && node.items.last.couldRetype;
+            || node.kind == "block" && !node.helpers && node.items.last.couldRetype;
     }
 
     fn tryRetyping(node: SolvedNode, expect: Type): Type
