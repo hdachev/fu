@@ -9991,6 +9991,66 @@ pub extern fn runTests()
         fn main() GET_NEXT_LOCAL_oob().i32 - 3;
     `);
 
+    ZERO(`
+        fn main() ("hello" == "world").i32;
+    `);
+
+    TODO_borrowck(currently: "BUG EXIT code 11", `
+        struct Node { items?: Node[]; value?: i32 };
+
+        fn tryConvert(ref default: Node) {
+            if (default.items) {
+                default.items ~= default;
+                default.value += 10;
+                return true;
+            }
+
+            return false;
+        }
+
+        fn updateScope(unspecced: Node[], ref defaults: Node[]) {
+            for (mut i = 0; i < defaults.len; i++) {
+                defaults[i] = {
+                    :DEFAULT {
+                        if (!unspecced)
+                            break :DEFAULT (i < defaults.len - 1)
+                                && defaults[i + 1];
+
+                        mut default = unspecced.len > i && unspecced[i];
+                        if (default && tryConvert(default))
+                            break :DEFAULT default;
+
+                        break :DEFAULT [];
+                    }
+                };
+            }
+        }
+
+        fn main() {
+            mut nodes = [ Node(items: [ Node() ]) ];
+            for (mut i = 0; i < 4; i++) {
+                mut node = nodes[nodes.len - 1];
+                tryConvert(node);
+                nodes ~= node;
+            }
+
+            updateScope(nodes, nodes);
+
+            mut checksum = 0;
+            fn checksum(shadow nodes: Node[]) {
+                checksum += nodes.len;
+                for (mut i = 0; i < nodes.len; i++) {
+                    let node = nodes[i];
+                    checksum(node.items);
+                    checksum += 1000 * node.value;
+                }
+            }
+
+            checksum(nodes);
+            return checksum == 570124 ? 0 : 1;
+        }
+    `);
+
     // /quite right
 
 
