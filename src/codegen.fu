@@ -125,6 +125,8 @@ pub fn cpp_codegen(
         helpers: Helpers;
         has_val: bool;
         ptrflip: bool;
+
+        surviving_locals?: i32[];
     };
 
     struct cg_CurrentFn // TODO FIX postfix/prefix non-pub symbols?
@@ -146,6 +148,9 @@ pub fn cpp_codegen(
 
         // We'll start with the silliest thing here.
         _hoist?:        string[];
+
+        // Sanity check.
+        _live_locals?:  i32[];
     };
 
     struct TEMPVAR { annot?: string; id?: string; ptrflip?: bool; };
@@ -883,7 +888,6 @@ pub fn cpp_codegen(
         if (expr && items.exprOK)
             return cgComma(items);
 
-        //
         return cgBlock(items, skipCurlies: !!(mode & M_OPT_CURLIES), gnuStmtExpr: expr,
             :helpers, type: expr && node.type);
     }
@@ -893,17 +897,21 @@ pub fn cpp_codegen(
         helpers!: Helpers, type: Type): string
     {
         ///////////////////////////////////////////////
-        let _ids_used0 = _current_fn._ids_used.len;
-        defer {
+        let indent0         = _indent;
+        let ids_used0       = _current_fn._ids_used.len;
+        let live_locals0    = _current_fn._live_locals.len;
+
+        defer
+        {
+            _indent         = indent0;
+
             if (!_current_fn._hoist)
-                _current_fn._ids_used.shrink(_ids_used0);
+                _current_fn._ids_used.shrink(ids_used0);
+
+            defer _current_fn._live_locals.shrink(live_locals0);
         }
         ///////////////////////////////////////////////
 
-        //////////////////////
-        let indent0 = _indent;
-        defer _indent = indent0;
-        //////////////////////
         _indent ~= "    ";
 
         mut open    = "{";
@@ -942,8 +950,15 @@ pub fn cpp_codegen(
         // Blockvals! //////////////////////////////////////////////////////////////////////////////
         let blocks0  = _current_fn.blocks.len;
         defer _current_fn.blocks.shrink(blocks0);
-        _current_fn.blocks ~= cg_Block(:name, :helpers, ptrflip, :has_val);
+
+        let surviving_locals = _current_fn._live_locals;
+        _current_fn.blocks ~= cg_Block(
+            :name, :helpers, ptrflip, :has_val,
+            :surviving_locals);
         ////////////////////////////////////////////////////////////////////////////////////////////
+
+        if (has_val)
+            nodes.last.TEST_noDanglingRefs(:surviving_locals);
 
         //
         mut count: int;
@@ -1499,6 +1514,11 @@ pub fn cpp_codegen(
             //
             return id;
         }
+        else
+        {
+            // Debug.
+            _current_fn._live_locals ~= target.locid;
+        }
 
         //
         mut head    = annot || BUG();
@@ -1743,10 +1763,41 @@ pub fn cpp_codegen(
         return "goto " ~ block.name;
     }
 
+    fn TEST_noDanglingRefs(surviving_locals: i32[], node: SolvedNode)
+    {
+        if !(node.is_ref)
+            return;
+
+        if (node.kind == "if" || node.kind == "and" || node.kind == "or")
+            node.items[node.kind == "if" ? 0 : 1 :].each: |item|
+                item.TEST_noDanglingRefs(:surviving_locals);
+
+        node.lifetime.TEST_noDanglingRefs(:surviving_locals);
+    }
+
+    fn TEST_noDanglingRefs(surviving_locals: i32[], lifetime: Lifetime)
+    {
+        lifetime.Lifetime_each: |locid|
+        {
+            if (!locid || surviving_locals.has(locid))
+                continue;
+
+            let o = GET(nested(locid));
+            if (o.status & SS_HOIST || o.flags & F_ARG)
+                continue;
+
+            if (o.solved.lifetime)
+                TEST_noDanglingRefs(o.solved.lifetime, :surviving_locals);
+            else
+                BUG("TEST_noDanglingRefs: returning a dangling reference to " ~ o.name.ansi::qBAD);
+        };
+    }
+
     fn cgJump(node: SolvedNode): string
     {
         let helpers     = node.helpers;
         let use_return  = helpers == _current_fn.can_return;
+        let expr        = node.items.only;
 
         fn findBlock()
         {
@@ -1754,14 +1805,17 @@ pub fn cpp_codegen(
             {
                 let block = _current_fn.blocks[i];
                 if (block.helpers == helpers)
+                {
+                    expr.TEST_noDanglingRefs(:block.surviving_locals);
+
                     return block;
+                }
             }
 
             BUG("No such block in scope: " ~ helpers.index);
         }
 
         let block       = !use_return && findBlock();
-        let expr        = node.items.only;
 
         if (expr.kind != "empty" || !expr.type.isIrrelevant)
         {

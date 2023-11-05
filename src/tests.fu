@@ -9995,7 +9995,7 @@ pub extern fn runTests()
         fn main() ("hello" == "world").i32;
     `);
 
-    TODO_borrowck(currently: "BUG EXIT code 11", `
+    TODO_borrowck(currently: "BUG TEST_noDanglingRefs: dangling reference to default", `
         struct Node { items?: Node[]; value?: i32 };
 
         fn tryConvert(ref default: Node) {
