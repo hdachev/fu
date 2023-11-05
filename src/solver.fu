@@ -4084,7 +4084,12 @@ pub fn solve(
             {
                 // MCOM [A]
                 if (PASS_MaybeCopyOrMove)
-                    mcom_BlockReturns_CopyOrMoveDecision(h);
+                {
+                    if (h.mask & HM_Function)
+                        mcom_FnReturn_CopyOrMoveDecision(:h);
+                    else
+                        mcom_BlockReturn_HoistAsNeeded(:h.ret_actual, :h.locals_start);
+                }
 
                 h.ret_actual.try_relax(:slot, :relax_mask);
 
@@ -4471,7 +4476,7 @@ pub fn solve(
                 if (!currentFn_mustBecomeInline())
                     runAllPasses(block);
                 else
-                    mcom_BlockReturns_CopyOrMoveDecision(:h);
+                    mcom_FnReturn_CopyOrMoveDecision(:h);
             }
         }
 
@@ -12290,68 +12295,49 @@ pub fn solve(
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    fn mcom_BlockReturns_CopyOrMoveDecision(h: Helpers)
+    fn mcom_FnReturn_CopyOrMoveDecision(h: Helpers)
     {
-        if (!h.ret_actual.is_ref)
+        let retval = h.ret_actual;
+        if (!retval.is_ref)
             return;
 
-        fn Lifetime_vs(lifetime: Lifetime, locals_start!?: i32)
+        let unwound = Lifetime_unwind(retval.lifetime);
+        unwound.Lifetime_each: |locid, isStatic, lax isTemp|
         {
-            locals_start || BUG("Lifetime_vs: No locals_start");
+            let o = locid && GET(nested(locid));
+            let isRefArg =
+                o.kind == "var" && o.flags & F_ARG
+                                && o.solved.is_ref;
 
-            fn isRefArg(o: Overload) =
-                o.flags & F_ARG && o.kind == "var"
-                                && o.solved.type.is_ref;
-
-            mut neg = false;
-            mut pos = false;
-            lifetime.Lifetime_each: |isTemp, locid|
-                if (isTemp)
-                    pos = true;
-                else if (locid < locals_start)
-                    neg = true;
-                else if (locid.nested.isRefArg)
-                    neg = true;
-                else
-                    pos = true;
-
-            return neg == pos ? 0 : neg ? -1 : +1;
-        }
-
-        // If the jump is a return-current-fn:
-        //  We cannot promote var lifetimes past this fn
-        //   (we actually can but its more complicated and not necessary)
-        //    BUT we dont have to worry about retval users,
-        //     so just change the retval to reflect the current var/ref situation.
-        //
-        if (h.mask & HM_Function)
-        {
-            let unwind = Lifetime_unwind(h.ret_actual.lifetime);
-            if (Lifetime_vs(unwind, :h.locals_start) < 0)
-                h.ret_actual.lifetime = unwind;
-            else
-                reportReturnType(:h, clear_refs(h.ret_actual));
-        }
-        // Otherwise, we can extend local LTs,
-        //  so that's what we're gonna do for now.
-        //   We need to figure out how to determine if LT-extend is better/worse than cpy/mov -
-        //    depends on what you do with the result, if you later cpy, the mov would have been better,
-        //     if you just use as ref, LT-extend is better.
-        //
-        else
-        {
-            let locals_start = h.locals_start;
-            let unwound = Lifetime_unwind(
-                :h.ret_actual.lifetime, :locals_start);
-
-            unwound.Lifetime_each: |locid|
+            // Everything but refs to arguments and statics ...
+            if (!isRefArg && !isStatic)
             {
-                if (locid >= locals_start)
-                {
-                    ref o = GET_mut(nested(locid));
-                    if !(o.flags & F_ARG)
-                        o.status |= SS_HOIST;
-                }
+                if (SELF_TEST)
+                    locid || isTemp || BUG("mcom_FnReturn_CopyOrMoveDecision: !locid && !isStatic && !isTemp.");
+
+                // ... can't be returned out of fns.
+                return reportReturnType(:h, clear_refs(h.ret_actual));
+            }
+        };
+
+        // Remains a reference.
+        h.ret_actual.lifetime = unwound;
+    }
+
+    fn mcom_BlockReturn_HoistAsNeeded(
+        ref ret_actual!: Type, locals_start!: i32)
+    {
+        if (!ret_actual.is_ref)
+            return;
+
+        let unwound = Lifetime_unwind(:ret_actual.lifetime, :locals_start);
+        unwound.Lifetime_each: |locid|
+        {
+            if (locid >= locals_start)
+            {
+                ref o = GET_mut(nested(locid));
+                if !(o.flags & F_ARG)
+                    o.status |= SS_HOIST;
             }
         }
     }
