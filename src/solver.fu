@@ -4083,13 +4083,8 @@ pub fn solve(
             if (h.ret_actual)
             {
                 // MCOM [A]
-                if (PASS_MaybeCopyOrMove)
-                {
-                    if (h.mask & HM_Function)
-                        mcom_FnReturn_CopyOrMoveDecision(:h);
-                    else
-                        mcom_BlockReturn_HoistAsNeeded(:h.ret_actual, :h.locals_start);
-                }
+                if (PASS_MaybeCopyOrMove && h.mask & HM_Function)
+                    mcom_FnReturn_CopyOrMoveDecision(:h);
 
                 h.ret_actual.try_relax(:slot, :relax_mask);
 
@@ -4249,6 +4244,30 @@ pub fn solve(
                         _current_fn.items.splice(position, 1);
                     }
                 }
+            }
+            else if (PASS_MaybeCopyOrMove)
+            {
+                // Hoist variables mentioned in the block return type,
+                //  whose declarations we have encountered
+                //   while relaxing this block's contents.
+                //
+                fn SS_HOIST_returned_locals(lifetime: Lifetime)
+                {
+                    lifetime.Lifetime_each: |locid|
+                    {
+                        if (!locid || !_current_fn.done_relaxing.has(locid))
+                            continue;
+
+                        let t           = nested(locid);
+                        let climbType   = Lifetime_climbType(t);
+                        if (climbType)
+                            SS_HOIST_returned_locals(climbType.lifetime);
+                        else
+                            GET_mut(t).status |= SS_HOIST;
+                    };
+                }
+
+                SS_HOIST_returned_locals(node.type.lifetime);
             }
 
             if (!items && !(h.mask & HM_Function))
@@ -12322,24 +12341,6 @@ pub fn solve(
 
         // Remains a reference.
         h.ret_actual.lifetime = unwound;
-    }
-
-    fn mcom_BlockReturn_HoistAsNeeded(
-        ref ret_actual!: Type, locals_start!: i32)
-    {
-        if (!ret_actual.is_ref)
-            return;
-
-        let unwound = Lifetime_unwind(:ret_actual.lifetime, :locals_start);
-        unwound.Lifetime_each: |locid|
-        {
-            if (locid >= locals_start)
-            {
-                ref o = GET_mut(nested(locid));
-                if !(o.flags & F_ARG)
-                    o.status |= SS_HOIST;
-            }
-        }
     }
 
 
