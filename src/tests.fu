@@ -9953,7 +9953,7 @@ pub extern fn runTests()
         }
     `]);
 
-    TODO_relaxer(currently: "BUG relevant data irrelevant struct 22:41+5", `
+    ZERO(`
         struct Node { items: Node[]; }
         struct Type { value: i32 };
 

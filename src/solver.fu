@@ -10142,8 +10142,16 @@ pub fn solve(
         //  TBD how we make this stuff work in real life.
         //   OR alternatively, do this for arrays too.
         if (kind == "field")
-            type = make_field_reference(
-                from: args.only.type || BUG(), target);
+        {
+            ref arg = args.only || BUG();
+            type = make_field_reference(from: arg.type, target);
+
+            if (arg.is_zeroes)
+            {
+                definitWrap(arg, type);
+                return arg;
+            }
+        }
 
         // So we're turning closeovers into implicit arguments -
         //  previously we tracked them separately but we're making everything more samey.
