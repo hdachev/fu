@@ -111,7 +111,7 @@ pub extern fn runTests()
     let TODO_ooe        = fn TODO;
     let TODO_pub        = fn TODO;
 
-    let TODO_Map        = fn TODO;
+    let LEGACY_Map      = fn TODO;
 
     let SKETCH          = fn TODO;
 
@@ -3063,7 +3063,7 @@ pub extern fn runTests()
 
     // Maps.
 
-    TODO_Map(currently: "Map is not defined", `
+    LEGACY_Map(currently: "Map is not defined", `
         mut x: Map(string, i32);
 
         x["hello"] = 1;
@@ -3072,7 +3072,7 @@ pub extern fn runTests()
         return x["hello"] - x["world"] + 1;
     `);
 
-    TODO_Map(currently: "Map is not defined", `
+    LEGACY_Map(currently: "Map is not defined", `
         mut x: Map(string, i32);
 
         x["hello"] = 1;
@@ -3913,7 +3913,7 @@ pub extern fn runTests()
         return CHANGE.i32 - 1;
     `);
 
-    TODO_Map(currently: "Map is not defined", `
+    LEGACY_Map(currently: "Map is not defined", `
         mut m: Map(string, string);
         mut g = 0;
 
@@ -3927,7 +3927,7 @@ pub extern fn runTests()
         return g;
     `);
 
-    TODO_Map(currently: "Map is not defined", `
+    LEGACY_Map(currently: "Map is not defined", `
         mut m: Map(string, string);
         mut g = 0;
 
@@ -7048,7 +7048,7 @@ pub extern fn runTests()
 
     // quite right
 
-    TODO_Map(currently: "Map is not defined", `
+    LEGACY_Map(currently: "Map is not defined", `
         struct BINOP {
             P: Map(string, i32);
         };
@@ -7550,7 +7550,7 @@ pub extern fn runTests()
         }
     `);
 
-    TODO_Map(currently: "Map is not defined", `
+    LEGACY_Map(currently: "Map is not defined", `
         struct ValueType { modid: i32; };
         struct Type { using vtype: ValueType; };
         struct Target { modid: i32; index: i32; };
@@ -7611,7 +7611,7 @@ pub extern fn runTests()
         pub fn main() test();
     `);
 
-    TODO_Map(currently: "Map is not defined", `
+    LEGACY_Map(currently: "Map is not defined", `
         fn setupOperators(P_PREFIX_UNARY) // <- template
         {
             struct BINOP {
@@ -7771,7 +7771,7 @@ pub extern fn runTests()
         }
     `);
 
-    TODO_Map(currently: "Map is not defined", `
+    LEGACY_Map(currently: "Map is not defined", `
         struct Context
         {
             fuzzy: Map(string, string);
@@ -8875,7 +8875,7 @@ pub extern fn runTests()
     TODO_inline(currently: "BUG exit code", `
         fn inline_args_and_closures(inline nums: i32[]) {       ;; GNUStmtExpr
             mut sum: i32;
-            noinline fn woot(z: i32)                // previously a new woot was emitter
+            noinline fn woot(z: i32)                // previously a new woot was emitted
                 for (mut i = 0; i < nums.len; i++)  //  with the nums expr inlined,
                     sum += nums[i] & z;             //   now nums doesnt inline inside woot
 
@@ -10167,7 +10167,7 @@ pub extern fn runTests()
         fn main() what(RELAX_mutref_only);
     `]);
 
-    TODO_Map(currently: "Map is not defined", `
+    LEGACY_Map(currently: "Map is not defined", `
         pub fn pairs(a: Map($K, $V), fn) {
             let k = a.keys;
             let v = a.values;
@@ -16132,7 +16132,7 @@ pub extern fn runTests()
 
     TODO_conv(currently: "actual return does not match annot Ephemeral <- Target", `
         struct Module { modid: i32 };
-        struct Ephemeral {};
+        struct Ephemeral { <alt>broke_when_zst?: i32</alt> };
         struct SolverState { _ephemeral: Ephemeral[] };
         struct Target { modid: i32; globid: i32 };
 
