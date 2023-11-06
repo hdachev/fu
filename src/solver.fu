@@ -7823,14 +7823,11 @@ pub fn solve(
                 ? add_mutref(annot, Lifetime_temporary)
                 : annot;
 
-        let n_init  = node.items[LET_INIT];
+        // Ignore defaults in template bodies,
+        //  dealt with by the initial template match.
+        //
+        let n_init  = !specType && node.items[LET_INIT];
         let init    = n_init && solveNode(n_init, annot);
-
-        // Drop defaults that don't match current spec types,
-        //  this will effectively make the args non-defaulted.
-        shadow let init = specType && init.type && !isAssignableAsArgument(host: specType, init.type)
-            ? SolvedNode
-            : init;
 
         _here = node.token;
 
@@ -10098,19 +10095,26 @@ pub fn solve(
         if (!isZeroInit)
         {
             // Defaults & implicit argument injection.
-            let host_args = target.args;
+            let host_args       = target.args;
+            let spec_of         = target.spec_of;
+            let spec_of_args    = spec_of && spec_of.args;
+
             args.resize(host_args.len);
             for (mut i = 0; i < args.len; i++)
             {
-                let host_arg = host_args[i];
+                let host_arg    = host_args[i];
 
                 if (!args[i])
                 {
-                    if (host_arg.default)
+                    mut defaultFrom = target;
+                    let default     = host_arg.default || {
+                        defaultFrom = spec_of;
+                        spec_of_args.len > i && spec_of_args[i].default
+                    };
+
+                    if (default)
                     {
-                        args[i] = inlineExpression(
-                            host_arg.default,
-                            from: target);
+                        args[i] = inlineExpression(default, from: defaultFrom);
                     }
                     else
                     {

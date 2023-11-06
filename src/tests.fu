@@ -9953,7 +9953,7 @@ pub extern fn runTests()
         }
     `]);
 
-    TODO_args(currently: "BUG about to implicit bind arg createEmpty:type 19:35+1", `
+    TODO_relaxer(currently: "BUG cgField: about to emit a [nothing].field seq 22:37+1", `
         struct Node { items: Node[]; }
         struct Type { value: i32 };
 
@@ -9974,7 +9974,7 @@ pub extern fn runTests()
                 return createEmpty();
             }
 
-            solveTypedef(Node()).value;
+            return solveTypedef(Node()).value;
         }
     `);
 
@@ -13473,7 +13473,7 @@ pub extern fn runTests()
         fn main() check(0, 0);
     `);
 
-    TODO_args(currently: "BUG about to implicit-bind a non-implicit 5:24+1", `
+    ZERO(`
         fn check(a, b, compare! = |aa, bb| aa <> bb)
             compare(a, b);
 
