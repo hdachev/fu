@@ -16271,6 +16271,68 @@ pub extern fn runTests()
         fn main() = parseExoticDecl(A).i32 - 3;
     `);
 
+    TODO_relaxer(currently: "BUG ScopeSkip_push bad args 7:24+8", `
+        struct Node { items: string };
+
+        pub fn solve(using ref _current_fn: Node, root) {
+            fn solveNode(node) {
+                if (_current_fn) {
+                    fn outItems(back) items[items.len - back];
+                    _current_fn.items ~= "! ";
+                    return outItems(2);
+                }
+
+                _current_fn.items ~= node.items;
+                return [];
+            }
+
+            return solveNode(root);
+        }
+
+        fn main() {
+            mut n = Node("hello");
+            return solve(n, n).i32 - '!'.i32;
+        }
+    `);
+
+    TODO_relaxer(currently: "fn solve is not pure, writes to ref arg n 4:9+4", `
+        struct Node { items: string };
+
+        pure fn closure_of_explicit_ref_cant_relax(ref n) {
+            fn solveNode(ref items) {
+                fn outItems(back) items[items.len - back];
+                if (n) return outItems(1);
+                return [];
+            }
+
+            return solveNode(n.items);
+        }
+
+        fn main() {
+            mut n = Node("hello");
+            return closure_of_explicit_ref_cant_relax(n).i32 - 'o'.i32;
+        }
+    `);
+
+    TODO_relaxer(currently: "fn solve is not pure, writes to ref arg n 4:9+4", `
+        struct Node { items: string };
+
+        pure fn injected_args_ignore_relaxed_types(using ref n) {
+            fn solveNode(lax _) {
+                fn outItems(back) items[items.len - back];
+                if (n) return outItems(1);
+                return [];
+            }
+
+            return solveNode(0);
+        }
+
+        fn main() {
+            mut n = Node("hello");
+            return injected_args_ignore_relaxed_types(n).i32 - 'o'.i32;
+        }
+    `);
+
     // /Relaxer.
 
 
