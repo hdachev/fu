@@ -2340,7 +2340,10 @@ pub fn cpp_codegen(
             }
 
             if (target.kind == "field")
-                return ARG(0) ~ "." ~ ID(id);
+            {
+                let head = ARG(0) || BUG("cgField: about to emit a [nothing].field sequence.");
+                return head ~ "." ~ ID(id);
+            }
 
             if (target.kind == "enumv")
                 return cgEnumv(target.type, id);
