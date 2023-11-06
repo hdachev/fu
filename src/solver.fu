@@ -2131,14 +2131,18 @@ pub fn solve(
     {
         return node.kind == "int"
             || node.kind == "real"
-            || node.kind == "definit"
+            || node.kind == "definit" || node.type.is_zeroes
             || node.kind == "str"
             || node.kind == "if"  && node.items[1 : 3].all(fn couldRetype)
-            || node.kind == "block" && !node.helpers && node.items.last.couldRetype;
+            || node.kind == "block" && !node.helpers && node.items.last.couldRetype
+            ;
     }
 
     fn tryRetyping(node: SolvedNode, expect: Type): Type
     {
+        if (node.kind == "definit" || node.is_zeroes)
+            return definitType(expect);
+
         if (node.is_arithmetic && expect.is_arithmetic)
         {
             if (node.kind == "int")
@@ -2147,9 +2151,6 @@ pub fn solve(
             if (node.kind == "real")
                 return solveReal(node.value, expect);
         }
-
-        if (node.kind == "definit")
-            return definitType(expect);
 
         if (node.kind == "str")
             return solveString(node.value, expect);
@@ -2171,6 +2172,9 @@ pub fn solve(
 
     fn applyRetype(ref node: SolvedNode, retype: Type)
     {
+        if (node.type.is_zeroes)
+            return definitWrap(:node, retype);
+
         if (node.kind == "if")
         {
             applyRetype(node.items[1], retype);

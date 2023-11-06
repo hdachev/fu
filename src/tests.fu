@@ -16217,7 +16217,7 @@ pub extern fn runTests()
         }
     `);
 
-    TODO_relaxer(currently: "BUG inliner botching argdef 33:35+1 zeroes mutref", `
+    ZERO(`
         struct Target   { index: i32 }
         struct Lifetime { uni0n!: byte[] };
         type Type = Lifetime;
