@@ -4928,8 +4928,10 @@ pub fn solve(
 
     fn resetChild(target: Target)
     {
-        if (target.is_SPECFAIL || target.kind == "template")
+        if (target.is_SPECFAIL)
             return;
+
+        TRACE("resetChild " ~ target.globid ~ " " ~ target);
 
         ref status = GET_mut(target).status;
         status & SS_LAZY || BUG("resetChild: not SS_LAZY: " ~ target);
@@ -7182,7 +7184,7 @@ pub fn solve(
             o.status & (SS_FINALIZED | SS_DID_START | SS_DIRTY) && BUG("SS_DID_START: non-zero solver status: " ~ o.status);
             o.status |= SS_DID_START;
 
-            if (o.kind == "fn" || o.kind == "inline")
+            if (o.kind == "fn" || o.kind == "inline" || o.kind == "template")
                 doTrySpecialize(into: target, parent_idx: target.local_of);
             else if (o.kind == "type")
                 __solveStruct(solve: true, :target.template.node, into: target);
