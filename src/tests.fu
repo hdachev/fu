@@ -9953,7 +9953,7 @@ pub extern fn runTests()
         }
     `]);
 
-    TODO_relaxer(currently: "BUG cgField: about to emit a [nothing].field seq 22:37+1", `
+    TODO_relaxer(currently: "BUG relevant data irrelevant struct 22:41+5", `
         struct Node { items: Node[]; }
         struct Type { value: i32 };
 

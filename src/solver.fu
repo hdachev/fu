@@ -12202,7 +12202,13 @@ pub fn solve(
                 let arg      = args[i];
 
                 if (host_arg.isIrrelevant)
+                {
+                    if (o.kind == "field")
+                        node.type.isIrrelevant || !arg.type.isIrrelevant || BUG(
+                            "Relevant data out of an irrelevant struct.");
+
                     continue;
+                }
 
                 isAssignableAsArgument(host: host_arg.type, arg.type) || err(
                     "Arg #" ~ i ~ ", " ~ host_arg.name.human.qID ~ " not assignable to host_arg: "
