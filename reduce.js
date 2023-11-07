@@ -338,6 +338,36 @@ function tryReturnDefinit(src)
 }
 
 
+// Pop leading &&s and ||s.
+
+/*
+    (
+        \(
+    )
+    (
+        [^()&|]*
+        (?:\([^()]*\)[^()&|]*)*
+        [&|]{2}
+    )
+*/
+
+const re_POP_LEADING_ANDOR = /(\()([^()&|]*(?:\([^()]*\)[^()&|]*)*[&|]{2})/g;
+
+function tryPopLeadingAndOr(src)
+{
+    const match = randExec(src, re_POP_LEADING_ANDOR);
+    if (!match)
+        return false;
+
+    console.log("\nLEADING AND/OR\n<<<" + match[0] + ">>>");
+
+    return (
+        src.slice(0, match.index) +
+        match[1] +
+        src.slice(match.index + match[0].length));
+}
+
+
 // Pop argument type annot.
 
 /*
@@ -412,6 +442,7 @@ const _strategies =
 
     tryUnwrapSingleStmtBlock,
 
+    tryPopLeadingAndOr,
     tryPopArgumentTypeAnnot,
     tryPopArgumentLike,
 ];
