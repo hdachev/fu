@@ -438,6 +438,18 @@ pub fn force_relax(ref type: Type, relax_mask!: Quals)
     type.quals &= ~relax_mask;
 }
 
+pub fn is_retval_relaxable(type: Type, relaxed_quals!: Quals)
+{
+    let xor = type.quals & relaxed_quals;
+
+    // Only makes sense if we're gonna go [A] NON-MUTREF,
+    return type.quals & q_mutref ////////////////
+        /////////////////////////////////////////
+        // ... or array -> slice.
+        || xor & q_TAGS == type.quals & (q_TAGS &~ q_mutref)
+                        && type.is_sliceable;
+}
+
 pub fn into_Typename(mut type: Type)
 {
     type = clear_refs(type);

@@ -3251,7 +3251,7 @@ pub fn solve(
         }
 
         //
-        node.type.try_relax(:slot, :relax_mask);
+        let relaxed_quals = node.type.try_relax(:slot, :relax_mask);
 
         fn discardIntoBlock()
         {
@@ -3617,7 +3617,8 @@ pub fn solve(
                 makeNote(N_RelaxRespec);
             }
 
-            if (t.type.lifetime.Lifetime_hasArgs())
+            if (t.type.lifetime.Lifetime_hasArgs() &&
+                is_retval_relaxable(:relaxed_quals, :t.type))
             {
                 if (t.spec_of)
                 {
