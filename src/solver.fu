@@ -2456,7 +2456,9 @@ pub fn solve(
         }
 
         // Go.
-        descend(actual, nullary: !actual, :actual.isStruct, root: true);
+        descend(actual, root: true,
+            nullary: !actual,
+            isStruct: actual && actual.isStruct);
 
         // We're done here.
         return match;
@@ -6665,8 +6667,11 @@ pub fn solve(
         mut out_target  = into;
         mut out_type: Type;
 
+        // Seed the shape hasher with the "sighashed" name for templates from above,
+        //  this should randomize the shapes just fine for recursive types,
+        //   won't thrash any more than than the name alone already does.
         //
-        mut shape_hasher = tea::hash(origId);
+        mut shape_hasher = tea::hash(name);
 
         mut shape = Shape(
             :basePrim,
@@ -6695,7 +6700,10 @@ pub fn solve(
                 && TODO_FIX_getSpecPat();
 
             //
-            out_type    = initStruct(:kind, :shape, :name, :asserts, :specPat);
+            out_type    = initStruct(
+                :kind, :shape, :name, :asserts, :specPat,
+                initialHash: shape.hash);
+
             out_target  = createRawTypedef(id: origId, :name,
                 type: out_type, :node.flags,
                 status: SS_LAZY);
@@ -7143,7 +7151,8 @@ pub fn solve(
 
     fn initStruct(
         ::kind!, shape!: Shape,
-        name: string, asserts: DeclAsserts, specPat!: string)
+        name: string, asserts: DeclAsserts, specPat!: string,
+        initialHash!: u64)
     {
         name[0].u8 - '0'.u8 > 9.u8 || throw (
             "Bad struct name, leading digit: `" ~ name ~ "`.");
@@ -7154,8 +7163,8 @@ pub fn solve(
 
         //
         let canon = createStructCanon(
-            :kind, :shape.basePrim, :module.modid, :index, :name)
-                ~ specPat;
+            :kind, :shape.basePrim, :module.modid, :index,
+            :name, :specPat, :initialHash);
 
         // if (specPat) println("SPECPAT " specPat);
 
@@ -8747,7 +8756,7 @@ pub fn solve(
         mut itemType = type && tryClear_sliceable(type);
 
         // Default constructor calls.
-        if (!itemType && type.isStruct)
+        if (!itemType && type && type.isStruct)
             return solveCall(node,
                 target: lookupUserType(type).target);
 

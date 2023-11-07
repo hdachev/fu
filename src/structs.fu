@@ -10,7 +10,7 @@ pub fn parseStructCanon(canon: string): StructCanon
     mut offset = 1;
     {
         let c = canon[0];
-        if (c != '/')
+        if (c.u8 < 128)
             offset = quals::basePrimPrefixLen(canon) + 1;
     }
 
@@ -26,9 +26,19 @@ pub fn parseStructCanon(canon: string): StructCanon
 
 pub fn createStructCanon(
     ::kind!, basePrim!: string,
-    modid: i32, index: i32, lax name: string): string
+    modid: i32, index: i32, lax name: string, specPat: string,
+    mut initialHash!hash: u64): string
 {
-    mut res = basePrim ~ "/";
+    hash ^= hash >> 32;
+    hash ^= hash >> 16;
+    hash ^= hash >> 8;
+
+    let sigil = byte(hash | 128);
+
+    // println((sigil.int & 127) ~ "\tTYPE: " ~ name ~ " " ~ specPat);
+
+    //
+    mut res = basePrim ~ sigil;
 
     modid >= 0 && index >= 0 || throw(
         "createStructCanon: bad modid/index");
@@ -49,13 +59,16 @@ pub fn createStructCanon(
             c = 'm';
     }
 
-    // Name is redundant here, only useful for debug.
+    //
+    res ~= specPat;
+
     return res;
 }
 
 pub fn isStruct(type: ValueType): bool
 {
-    return type.canon.starts(with: '/');
+    let c = type.canon[0];
+    return c.u8 >= 128;
 }
 
 pub fn isStructOrUnion(type: ValueType): bool
@@ -69,7 +82,7 @@ pub fn isStructOrUnion(type: ValueType): bool
 
 pub fn modidOfOrigin(type: Type)
 {
-    if (type.canon[0] == '/')
+    if (type.isStruct)
     {
         let scp = parseStructCanon(type.canon);
         return scp.modid;
