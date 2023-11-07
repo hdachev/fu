@@ -111,6 +111,7 @@ pub extern fn runTests()
     let TODO_ooe        = fn TODO;
     let TODO_pub        = fn TODO;
     let TODO_zst        = fn TODO;
+    let TODO_StaticEval = fn TODO;
 
     let LEGACY_Map      = fn TODO;
 
@@ -17353,6 +17354,17 @@ pub extern fn runTests()
             let b = "world!";
             return build(a, b).len;
         }
+    `);
+
+    TODO_StaticEval(currently: "DOESNT_EXIST 4:24+12", `
+        fn doesntSkipIfWithTrailingFalse(x: i32) {
+            if (x && false)
+                return DOESNT_EXIST;
+            else
+                return x;
+        }
+
+        fn main() = doesntSkipIfWithTrailingFalse(0);
     `);
 
     // /StaticEval
