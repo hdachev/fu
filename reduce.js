@@ -375,6 +375,26 @@ function tryPopArgumentTypeAnnot(src)
 }
 
 
+// Pop argument-like.
+
+const re_POP_ARGLIKE = /([(,])([^(),]+)([,)])/g;
+
+function tryPopArgumentLike(src)
+{
+    const match = randExec(src, re_POP_ARGLIKE);
+    if (!match)
+        return false;
+
+    console.log("\nARGLIKE\n<<<" + match[0] + ">>>");
+
+    return (
+        src.slice(0, match.index) +
+      ( match[1] == '(' ? match[1] : '' ) +
+        match[3] +
+        src.slice(match.index + match[0].length));
+}
+
+
 //
 
 const _strategies =
@@ -393,6 +413,7 @@ const _strategies =
     tryUnwrapSingleStmtBlock,
 
     tryPopArgumentTypeAnnot,
+    tryPopArgumentLike,
 ];
 
 function main()
