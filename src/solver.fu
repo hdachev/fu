@@ -3250,6 +3250,7 @@ pub fn solve(
             return;
         }
 
+        //
         node.type.try_relax(:slot, :relax_mask);
 
         fn discardIntoBlock()
@@ -3616,52 +3617,55 @@ pub fn solve(
                 makeNote(N_RelaxRespec);
             }
 
-            if (t.spec_of && t.type.is_ref)
+            if (t.type.lifetime.Lifetime_hasArgs())
             {
-                // Template spec relaxer, this is nasty.
-                //  Not sure what the ideal method to deal with this here would be,
-                //   we're basically just going back and redoing things,
-                //    and we don't have the original shit to work with.
-                //
-                mut relaxed: SolvedNode[];
-                for (mut i = 0; i < node.items.len; i++)
+                if (t.spec_of)
                 {
-                    let orig = node.items[i];
-
-                    // We'll only attempt to relax arguments whose lifetimes appear in the return value.
-                    //  There's this other thing, perhaps we only need to relax a single such argument?
+                    // Template spec relaxer, this is nasty.
+                    //  Not sure what the ideal method to deal with this here would be,
+                    //   we're basically just going back and redoing things,
+                    //    and we don't have the original shit to work with.
                     //
-                    if (t.type.lifetime.Lifetime_has(argidx: i))
+                    mut relaxed: SolvedNode[];
+                    for (mut i = 0; i < node.items.len; i++)
                     {
-                        // TODO fix this relaxer can't scale up to q_USAGE,
-                        //  we gotta replace it with the backwards design.
-                        shadow let relax_mask = relax_mask &~ q_USAGE;
+                        let orig = node.items[i];
 
-                        mut type = orig.type;
-                        if (type.try_relax(:slot, :relax_mask))
+                        // We'll only attempt to relax arguments whose lifetimes appear in the return value.
+                        //  There's this other thing, perhaps we only need to relax a single such argument?
+                        //
+                        if (t.type.lifetime.Lifetime_has(argidx: i))
                         {
-                            if (!relaxed)
-                                relaxed = node.items.slice(0, i);
+                            // TODO fix this relaxer can't scale up to q_USAGE,
+                            //  we gotta replace it with the backwards design.
+                            shadow let relax_mask = relax_mask &~ q_USAGE;
 
-                            relaxed ~= SolvedNode("__relaxed", :type);
-                            continue;
+                            mut type = orig.type;
+                            if (type.try_relax(:slot, :relax_mask))
+                            {
+                                if (!relaxed)
+                                    relaxed = node.items.slice(0, i);
+
+                                relaxed ~= SolvedNode("__relaxed", :type);
+                                continue;
+                            }
                         }
+
+                        if (relaxed)
+                            relaxed ~= orig;
                     }
 
                     if (relaxed)
-                        relaxed ~= orig;
-                }
+                    {
+                        TRACE_BRACKET("RELAX trySpecialize " ~ t.globid ~ " " ~ t ~ " for " ~ relaxed.map(.type.humanizeType).join(", "));
 
-                if (relaxed)
-                {
-                    TRACE_BRACKET("RELAX trySpecialize " ~ t.globid ~ " " ~ t ~ " for " ~ relaxed.map(.type.humanizeType).join(", "));
+                        mut args_mangled: string;
+                        let spec = trySpecialize(
+                            t.spec_of, args: relaxed, :args_mangled, REST_START: relaxed.len);
 
-                    mut args_mangled: string;
-                    let spec = trySpecialize(
-                        t.spec_of, args: relaxed, :args_mangled, REST_START: relaxed.len);
-
-                    if (!spec.is_SPECFAIL)
-                        redirectCallTarget(spec);
+                        if (!spec.is_SPECFAIL)
+                            redirectCallTarget(spec);
+                    }
                 }
             }
 

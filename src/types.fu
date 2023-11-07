@@ -421,18 +421,16 @@ pub fn despeculateStruct(mut type: Type)
 
 //
 
-pub fn will_relax(ref type: Type, slot!: Type, relax_mask!: Quals): bool
+pub fn will_relax(ref type: Type, slot!: Type, relax_mask!: Quals): Quals
 {
-    return (type.quals &~ slot.quals) & relax_mask != 0;
+    return (type.quals &~ slot.quals) & relax_mask;
 }
 
-pub fn try_relax(ref type: Type, slot!: Type, relax_mask!: Quals): bool
+pub fn try_relax(ref type: Type, slot!: Type, relax_mask!: Quals): Quals
 {
-    if (!will_relax(type, :slot, :relax_mask))
-        return false;
-
-    type.quals &= slot.quals | ~relax_mask;
-    return true;
+    let will_relax = will_relax(type, :slot, :relax_mask);
+    type.quals &= ~will_relax;
+    return will_relax;
 }
 
 pub fn force_relax(ref type: Type, relax_mask!: Quals)
