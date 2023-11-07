@@ -10052,6 +10052,30 @@ pub extern fn runTests()
         }
     `);
 
+    TODO_ambig(currently: "Ambig call to u32 4:49+3 matches inline u32 13:19+3", `
+        struct TEA { v0: u32; v1: u32 }
+
+        inline fn r4(using ref _: TEA, ref sum: u32) {
+            mut delta: u32 = 0x9e3779b9;
+            for (mut i = 0; i < 4; i++) {
+                sum += delta;
+                v0 += ((v1<<4) + 0xA341316C) ^ (v1 + sum) ^ ((v1>>5) + 0xC8013EA4);
+                v1 += ((v0<<4) + 0xAD90777D) ^ (v0 + sum) ^ ((v0>>5) + 0x7E95761E);
+            }
+        }
+
+        inline fn u32(tea: TEA): u32 =
+            tea.v0 ^ tea.v1;                                    ;; GNUStmtExpr
+
+        fn main() {
+            mut tea: TEA;
+            mut sum: u32;
+            tea.r4(sum);
+            let actual = tea.u32;
+            return actual == 0x93bfa05 ? 0 : 1;
+        }
+    `);
+
     // /quite right
 
 
@@ -10417,19 +10441,12 @@ pub extern fn runTests()
     `);
 
     ZERO(`
-        struct TEA
-        {
-            v0: u32;
-            v1: u32;
-        }
+        struct TEA { v0: u32; v1: u32 }
 
-        inline fn r4(using _: &mut TEA, sum: &mut u32)
-        {
+        inline fn r4(using _: &mut TEA, sum: &mut u32) {
             mut delta: u32 = 0x9e3779b9;
-
             for (mut i = 0; i < 4; i++) {
                 sum += delta;
-
                 v0 += ((v1<<4) + 0xA341316C) ^ (v1 + sum) ^ ((v1>>5) + 0xC8013EA4);
                 v1 += ((v0<<4) + 0xAD90777D) ^ (v0 + sum) ^ ((v0>>5) + 0x7E95761E);
             }
