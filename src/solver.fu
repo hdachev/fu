@@ -4292,7 +4292,7 @@ pub fn solve(
                 if (canDiscard)
                 {
                     // Discard return value.
-                    node.type = t_void;
+                    node.type = slot;
                 }
                 else if (kills)
                 {

@@ -110,6 +110,7 @@ pub extern fn runTests()
     let TODO_definit    = fn TODO;
     let TODO_ooe        = fn TODO;
     let TODO_pub        = fn TODO;
+    let TODO_zst        = fn TODO;
 
     let LEGACY_Map      = fn TODO;
 
@@ -16120,7 +16121,7 @@ pub extern fn runTests()
         }
     `);
 
-    TODO_relaxer(currently: "BUG invalid c++ void[] 5:17+1", `
+    TODO_zst(currently: "BUG invalid c++ void[] 5:17+1", `
         struct Empty {};
 
         fn main() {
@@ -16130,7 +16131,7 @@ pub extern fn runTests()
         }
     `);
 
-    TODO_conv(currently: "actual return does not match annot Ephemeral <- Target", `
+    TODO_zst(currently: "BUG invalid c++ void[] 19:17+2", `
         struct Module { modid: i32 };
         struct Ephemeral { <alt>broke_when_zst?: i32</alt> };
         struct SolverState { _ephemeral: Ephemeral[] };
