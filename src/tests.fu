@@ -7068,7 +7068,7 @@ pub extern fn runTests()
         }
 
         shadow let BINOP = setupOperators();
-        let P_COMMA = BINOP.P[","] || assert();
+        let P_COMMA = BINOP.P[","] || throw("Assertion failed.");
 
         fn main() P_COMMA - 7;
     `);
@@ -8416,7 +8416,7 @@ pub extern fn runTests()
 
         fn TP_get(typeParams!: string, id!: string)
         {
-            id || assert();
+            id || throw("Assertion failed.");
 
             mut start = 0;
             for (;;)
@@ -13628,7 +13628,7 @@ pub extern fn runTests()
 
         fn main() {
             using fn GET(target: Target, implicit overloads: Overload[]) {
-                target.index > 0 || assert();
+                target.index > 0 || throw("Assertion failed.");
                 if (target.modid < 0)
                     return overloads[-target.modid - 1].locals[target.index - 1];
                 else

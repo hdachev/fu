@@ -1,6 +1,5 @@
 
 pub fn break()
 {
-    let a = 2 > 1 && "Breakpoint here";
-    a || assert();
+    println("[[[ BREAKPOINT HERE ]]]");
 }

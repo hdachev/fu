@@ -2,20 +2,15 @@ import helpers;
 import module;
 import structs;
 import quals;
+import fail;
 
 
 //
 
-pub fn _token(implicit ctx: Context, idx: TokenIdx): Token
-    ctx.modules[idx.modid].in.lex.tokens[idx.tokidx];
-
-pub fn _fname(implicit ctx: Context, idx: TokenIdx): string
-    ctx.modules[idx.modid].fname;
-
 pub fn lookupUserType_mut(implicit ref module: Module, canon: string)
 {
     let scp = parseStructCanon(canon);
-    scp.modid == module.modid || throw("lookupUserType_mut: Not from this module (" ~ module.modid ~ ": " ~ canon ~ ")");
+    scp.modid == module.modid || BUG("lookupUserType_mut: Not from this module (" ~ module.modid ~ ": " ~ canon ~ ")");
     return module.out.types[scp.index];
 }
 
@@ -153,7 +148,7 @@ pub fn setModule(
     module: Module)
 {
     ref current = ctx.modules[module.modid];
-    current.fname == module.fname || assert();
+    current.fname == module.fname || throw("setModule: module.fname mismatch");
     current = module.clone();
 }
 
@@ -167,10 +162,10 @@ pub fn lookupUserType(
 {
     if (scp.modid == module.modid)
         return module.out.types[scp.index]
-            || assert();
+            || BUG();
 
     return ctx.modules[scp.modid].out.types[scp.index]
-        || assert();
+        || BUG();
 }
 
 pub fn lookupUserType(type: ValueType)
@@ -272,199 +267,9 @@ pub fn is_zst(type: ValueType) {
 
 //
 
-pub fn getModuleSrc(implicit ctx: Context, modid!: i32)
-{
-    return ctx.modules[modid].in.src;
-}
-
-pub fn formatTokenCoord(token: TokenIdx, from!: i32, implicit ctx: Context)
-{
-    mut fname = from != token.modid && token._fname;
-
-    // Doing this for testdiffs, we want to emit the same error messages
-    //  irrespective of where on the fs your code is,
-    //   we dont want /home/username/myproj/whatever in there.
-    //
-    if (fname && ctx.base_dir)
-        fname = path::relative(from: ctx.base_dir, to: fname);
-
-    return formatTokenCoord(:fname, token: token._token);
-}
-
-pub fn formatTokenCoord(fname!: string, token: LineColChars)
-{
-    let lcc     = token.line ~ ":" ~ token.col ~ "+" ~ token.chars;
-    if (!fname)
-        return ansi::DIM ~ lcc ~ ansi::RESET;
-
-    let dir     = path::dirname(fname);
-    let file    = fname.slice(dir.len, fname.len);
-    let ext     = path::ext(file);
-    let noext   = file.slice(0, file.len - ext.len);
-
-    return ansi::DIM ~ dir ~ ansi::RESET
-         ~ noext
-         ~ ansi::DIM
-         ~ ext ~ " " ~ lcc
-         ~ ansi::RESET;
-}
-
-using pub flags CodeFmt
-{
-    FullContext
-    NoLeadContext
-    NoTailContext
-    NoContext
-};
-
-pub fn formatCodeSnippet(src!: string, token: LineColChars, fmt?: CodeFmt): string
-{
-    return formatCodeSnippet(:src, :fmt, highlight: [ token ]);
-}
-
-pub fn formatCodeSnippet(src!: string, fmt?: CodeFmt, mut highlight!: LineColChars[])
-{
-    // TODO should be able to sort without the < 0, moronic
-    highlight.sort(
-        |a, b| (a.line - b.line || a.col - b.col) < 0);
-
-    for (mut i = highlight.len - 1; i --> 0; )
-    {
-        let a = highlight[i];
-        let b = highlight[i + 1];
-
-        if (a.line != b.line)
-        {
-            a.line < b.line || assert();
-            continue;
-        }
-
-        // Discard duplicate / overlapping tokens.
-        if (a.col + a.chars > b.col)
-            highlight.splice(i, 1);
-    }
-
-    if (!highlight)
-        return "";
-
-    //
-    let lines   = src.split("\n");
-
-    let start   = highlight.first;
-    let end     = highlight.last;
-
-    mut l_start = start.line - 1;  // lines are 1 based.
-    mut l_end   =   end.line;
-
-    l_start     = l_start.min(lines.len).max(0);
-    l_end       = l_end  .min(lines.len).max(0);
-
-    mut result  = "";
-
-    let leadContext = fmt & (NoContext | NoLeadContext) ? 0 : 2;
-    let tailContext = fmt & (NoContext | NoTailContext) ? 0 : 2;
-
-    // Leading context lines.
-    for (mut i = max(0, l_start - leadContext); i < l_start; i++)
-    {
-        result ~= ansi::DIM ~ "      | ";
-        result ~= lines[i];
-        result ~= ansi::RESET ~ "\n";
-    }
-
-    // Highlighted lines.
-    for (mut i = l_start; i < l_end; i++)
-    {
-        mut line = lines[i];
-        let line_no = i + 1;
-
-        // Numbered line margins.
-        {
-            mut margin = line_no ~ " | ";
-            while (margin.len < 8)
-                margin = " " ~ margin;
-
-            result ~= ansi::DIM ~ margin ~ ansi::RESET;
-        }
-
-        // Highlight error tokens on this line.
-        for (shadow mut i = highlight.len; i --> 0; )
-        {
-            let token = highlight[i];
-            if (token.line == line_no)
-            {
-                let c0 = (token.col - 1   ).min(line.len).max(0);
-                let c1 = (c0 + token.chars).min(line.len);
-
-                line.splice(c1, 0, ansi::RESET);
-                line.splice(c0, 0, ansi::BAD);
-            }
-        }
-
-        result ~= line ~ "\n";
-    }
-
-    // Trailing context lines.
-    for (mut i = l_end; i < min(lines.len, l_end + tailContext); i++)
-    {
-        result ~= ansi::DIM ~ "      | ";
-        result ~= lines[i];
-        result ~= ansi::RESET ~ "\n";
-    }
-
-    return result;
-}
-
-pub fn formatCodeSnippet(mut tokens: TokenIdx[], from!: i32, fmt?: CodeFmt)
-{
-    tokens.sort(|a, b| a.modid < b.modid);
-
-    mut append = "";
-    for (mut i = 0; i < tokens.len - 1; i++)
-    {
-        let a = tokens[i];
-        let b = tokens[i + 1];
-
-        if (a.modid != b.modid)
-        {
-            append ~= "\n";
-            append ~= formatCodeSnippet(tokens.slice(i + 1), :from);
-            tokens.shrink(i + 1);
-            break;
-        }
-    }
-
-    let head = tokens.if_first;
-    if (!head)
-        return append;
-
-    //
-    mut result = "";
-    result ~= formatTokenCoord(head, :from);
-    result ~= ":\n";
-
-    if !(fmt & (NoContext | NoLeadContext))
-        result ~= "\n";
-
-    //
-    mut highlight: LineColChars[] = [];
-    for (mut i = 0; i < tokens.len; i++)
-        highlight.push(tokens[i]._token.lcc);
-
-    let src = getModuleSrc(:head.modid);
-    result ~= formatCodeSnippet(:src, :fmt, :highlight);
-
-    //
-    result ~= append;
-    return result;
-}
-
-
-//
-
 pub fn getShortModuleName(fname: string)
 {
-    // fname.ends(with: ".fu") || assert();
+    // fname.ends(with: ".fu") || BUG();
     let end = fname.len - 3;
 
     mut found = false;
@@ -480,5 +285,5 @@ pub fn getShortModuleName(fname: string)
         found = true;
     }
 
-    assert();
+    BUG();
 }

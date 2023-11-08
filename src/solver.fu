@@ -859,7 +859,9 @@ pub fn solve(
         let globid  = target.globid;
         let locid   = target.locid;
 
-        globid > 0 && target.modid == module.modid || assert();
+        if (SELF_TEST)
+            globid > 0 && target.modid == module.modid || throw(
+                "GET_mut: bad modid/globid");
 
         if (locid)
             return _scope.extended[globid].locals[locid - 1];
@@ -869,8 +871,13 @@ pub fn solve(
 
     fn EXT_mut(target: Target)
     {
-        target.modid == module.modid || assert();
-        return _scope.extended[target.globid];
+        let globid  = target.globid;
+
+        if (SELF_TEST)
+            globid > 0 && globid < _scope.extended.len && target.modid == module.modid && !target.locid || throw(
+                "EXT_mut: bad modid/globid/locid");
+
+        return _scope.extended[globid];
     }
 
     fn GET_next_local_index()
@@ -879,15 +886,19 @@ pub fn solve(
         if (!globid)
             return 0;
 
-        if (globid >= _scope.extended.len)
-            BUG("GET_next_local_index: globid >= extended.len, probably not a problem, use .unless_oob");
+        if (SELF_TEST)
+            globid > 0 && globid < _scope.extended.len || BUG(
+                "GET_next_local_index: bad globid");
 
         return _scope.extended[globid].locals.len + 1;
     }
 
     fn nested(index: i32, from!: Target)
     {
-        index > 0 || assert();
+        if (SELF_TEST)
+            index > 0 || BUG(
+                "nested(): bad locid");
+
         return Target(:from.modid, :from.globid, locid: index);
     }
 
@@ -909,7 +920,10 @@ pub fn solve(
 
     fn EPH_mut(target: Target)
     {
-        target.modid == module.modid || assert();
+        if (SELF_TEST)
+            target.modid == module.modid || throw(
+                "EPH_mut: modid is off.");
+
         return EPH_mut(target.globid);
     }
 

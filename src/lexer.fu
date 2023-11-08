@@ -41,7 +41,11 @@ pub fn lex(src: string, fname: string): LexerOutput
         shadow line!: i32, col!: i32)
     {
         let chars = idx1 - idx0;
-        col >= 0 && idx1 >= idx0 && chars >= value.len || assert();
+
+        if (SELF_TEST)
+            col >= 0 && idx1 >= idx0 && chars >= value.len || throw(
+                "lexer: col >= 0 && idx1 >= idx0 && chars >= value.len");
+
         tokens ~= Token(:kind, :value, LineColChars(:line, :col, :chars));
     }
 

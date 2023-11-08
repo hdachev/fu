@@ -454,6 +454,15 @@ fn argsReverse(lax RTL: bool, host_args: [Argument], fn)
 }
 
 
+//
+
+fn _token(implicit ctx: Context, idx: TokenIdx): Token
+    ctx.modules[idx.modid].in.lex.tokens[idx.tokidx];
+
+fn _fname(implicit ctx: Context, idx: TokenIdx): string
+    ctx.modules[idx.modid].fname;
+
+
 // Packed targets, one u64 packing modid+global+local.
 //  This gives us a capacity of up to 1 million modids/globids/locids,
 //   which is not a lot but should be relatively hard to hit in practice.
