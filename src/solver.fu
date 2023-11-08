@@ -5857,432 +5857,10 @@ pub fn solve(
                 }
                 ///////////////////////////////
 
-                shadow let items = _current_fn.items;
-                shadow let mustBecomeInline = currentFn_mustBecomeInline();
-
-                let N = items.len + FN_ARGS_BACK;
-                mut min = 0;
-                mut max = 0;
-
-                let NativeHacks =
-                    isNative && hacks::NativeHacks(target.name);
-
-                mut numArgsWritten = 0;
-
-                // argTarget -> argIndex mapping.
-                mut argPos_1b: i32[];
-                for (mut i = 0; i < N; i++)
-                {
-                    let argNode     = items[i];
-                    let argTarget   = argNode.target;
-                    if (argTarget)
-                        argPos_1b.grow_if_oob(argTarget.locid) = i + 1;
-                }
-
-                //
-                shadow mut args: Argument[];
-                for (mut i = 0; i < N; i++)
-                {
-                    let argNode = items[i];
-
-                    argNode.kind == "letdef" || argNode.target
-                        && BUG("Argnode is not letdef, but has a target: "
-                                ~ argNode.target);
-
-                    shadow let argNode = argNode.kind == "letdef"
-                        ? argNode.target.solved
-                        : argNode;
-
-                    argNode.kind == "let" || argNode.kind == "empty" || BUG();
-
-                    //
-                    mut name        = argNode.value;
-                    let autocall    = argNode.flags & F_COMPOUND_ID && CompoundArgID_outerSplice(name);
-                    let isImplicit  = !!(argNode.flags & F_IMPLICIT);
-                    let isInjected  = !!(argNode.flags & F_INJECTED);
-
-                    // ARGUMENTS AT RISK ////////////////////////
-                    let argTarget   = argNode.target;
-                    let written_via = !isUnspec
-                        && argNode.type.is_mutref
-                        && (isNative || _current_fn.ever_written.has(argTarget.locid));
-
-                    mut soft_risk: bitset::BitSet;
-                    mut hard_risk: bitset::BitSet;
-                    if (written_via)
-                    {
-                        numArgsWritten++;
-
-                        if (isNative)
-                        {
-                            // Natives: we can't see inside, assume everything restricted.
-                            soft_risk.add_range(end: N);
-                            soft_risk.rem(i);
-
-                            if (!NativeHacks.soft_risk)
-                                hard_risk = soft_risk;
-                        }
-                        else
-                        {
-                            fn ArgsAtRisk_list(
-                                ref output: bitset::BitSet, at_risk: bitset::BitSet[])
-                            {
-                                at_risk.unless_oob(argTarget.locid).each: |other|
-                                {
-                                    let otherPos_1b = argPos_1b.unless_oob(other);
-                                    if (otherPos_1b)
-                                        output.add(otherPos_1b - 1);
-                                }
-                            }
-
-                            soft_risk.ArgsAtRisk_list(_current_fn.flow.at_soft_risk);
-                            hard_risk.ArgsAtRisk_list(_current_fn.flow.at_hard_risk);
-
-                            if (argNode.type.TODO_FIX_isArray)
-                            {
-                                ////////////////////////////////////////////////////////////////
-                                // TODO FIX soft risk doesn't interop well
-                                //  with conversions to slices -
-                                //
-                                // When an array binds to a slice arg, that caches the array's length -
-                                //  Relocating the array via another arg looks like soft-risk to bck,
-                                //   but, the way we cg, the view is left dangling.
-                                ////////////////////////////////////////////////////////////////
-
-                                mut soft = soft_risk;
-                                soft.and_not_assign(hard_risk);
-
-                                soft.each: |index: i32|
-                                {
-                                    let other = items[index].target.solved;
-                                    if !(other.type.TODO_FIX_isArray)
-                                        hard_risk.add(index);
-                                }
-                            }
-                        }
-                    }
-                    /////////////////////////////////////////////
-
-                    // Validate `pure` asserts.
-                    // TODO FAILCASE
-                    // TODO FAILCASE these dont work for inline fns
-                    // TODO FAILCASE
-                    if (asserts & A_PURE && written_via)
-                        fail(backtrack: "pure", target ~ " is not pure, writes to " ~ argTarget ~ ":\n"
-                            ~ qSTACK(:target, :argTarget.locid,
-                                        node: _current_fn.out));
-
-                    if (asserts & A_PURE_CTX && isImplicit && written_via)
-                        fail(backtrack: "purectx", target ~ " is not purectx, writes to " ~ argTarget ~ ":\n"
-                            ~ qSTACK(:target, :argTarget.locid,
-                                        node: _current_fn.out));
-
-                    if (maybeLast && asserts & A_NOVEC && !argNode.isNoVec() && !mustBecomeInline)
-                        fail(backtrack: "novec", target ~ " is not novec, " ~ argTarget ~ " is " ~ humanizeType(argNode.type) ~ ":\n"
-                            ~ qSTACK(:target, :argTarget.locid,
-                                        node: _current_fn.out,
-                                       query: AQ_WhyNotNovec));
-
-                    //
-                    let cow_inside = _current_fn.events.cows_inside.some(
-                        |cow| cow.argTarget == argTarget.locid);
-
-                    //
-                    if (SELF_TEST) {
-                        if (soft_risk.has(i)) BUG("updateScope: " ~ argTarget ~ " soft_risk lists self");
-                        if (hard_risk.has(i)) BUG("updateScope: " ~ argTarget ~ " hard_risk lists self");
-                    }
-
-                    //
-                    let may_alias       = hard_risk.negated(end: N);
-                    let may_invalidate  = soft_risk.negated(end: N);
-
-                    if (SELF_TEST) {
-                        if (may_alias.popcount      > N) BUG("updateScope: " ~ argTarget ~ " may_alias.popcount > N");
-                        if (may_invalidate.popcount > N) BUG("updateScope: " ~ argTarget ~ " may_invalidate.popcount > N");
-                    }
-
-                    //
-                    mut arg = Argument(
-                        :name,
-                        :autocall,
-                        :argNode.flags | (written_via && F_WRITTEN_TO)
-                                       | (cow_inside  && F_COW_INSIDE),
-                        :argNode.type,
-                        default: !isImplicit && argNode.items && argNode.items[LET_INIT],
-                        target: argTarget,
-
-                        // Previously soft_risk & hard_risk.
-                        :may_alias, :may_invalidate);
-
-                    // TODO make this true for F_INJECTEDs too.
-                    if (arg.type.lifetime && !(arg.flags & F_INJECTED))
-                        arg.type.lifetime == Lifetime_temporary || BUG("Non-temporary lt on ref arg: " ~ argTarget);
-                    else
-                        ref_anonymize(arg.type);
-
-                    //
-                    if (SELF_TEST)
-                    {
-                        arg.type || isUnspec || BUG(
-                            "updateScope: Unexpected untyped argument.");
-
-                        arg.type.vfacts & (AlwaysTrue | AlwaysFalse)
-                            && arg.type.usage
-                            && !hacks::tryParseClosureID(id: arg.name)
-                            && BUG("updateScope: arg.type is AlwaysTrue/False.");
-                    }
-
-                    // Previously this was `if (!isImplicit)`,
-                    //  but consider a `fn f(implicit a)`:
-                    //   it's nice to be able to pass `a` as usual, e.g. `f(something)`,
-                    //    when you don't want a `let implicit a = something;` outside,
-                    //     esp given that `implicit` in an arg decl does two things -
-                    //      a] enables implicit defaulting, and
-                    //      b] whitelists the argument for implicit binding downstream.
-                    //
-                    // So, when you only need b], this allows you not to pay for a].
-                    //
-                    if (!isInjected)
-                    {
-                        if (max != 0x7fffffff.i32)
-                            max++;
-                        if (!arg.default && !isImplicit)
-                            min++;
-                    }
-
-                    if (arg.flags & F_REST_ARG)
-                        max = 0x7fffffff.i32;
-
-                    args.push(arg);
-                }
-
-                // Prep lifetimes for Lifetime_replaceArgsAtCallsite,
-                //  and unref all args that are pass-by-value.
-                //
-                {
-                    mut returned: bitset::BitSet;
-
-                    if (SELF_TEST && retval.is_ref)
-                        TEST_Lifetime(type: retval, retval.lifetime);
-
-                    retval.lifetime = retval.lifetime.Lifetime_process(
-                        |locid, isStatic, continue_keep, continue_replace, paths|
-                        {
-                            if (!locid)
-                            {
-                                isStatic || BUG("Non-local/non-static in retval.lifetime.");
-                                continue_keep;
-                            }
-                            else
-                            {
-                                shadow let argPos_1b = argPos_1b.unless_oob(locid) || BUG(
-                                    "Non-argument local in retval.lifetime: " ~ nested(locid));
-
-                                let i   = argPos_1b - 1;
-                                let arg = args[i];
-
-                                arg.type.is_ref || BUG(
-                                    "Non-ref argument in retval.lifetime: " ~ nested(locid));
-
-                                returned.add(i);
-
-                                continue_replace(
-                                    Lifetime_from(argidx: i, :paths));
-                            }
-                        });
-
-                    for (mut i = 0; i < args.len; i++)
-                    {
-                        if (returned.has(i))
-                            continue;
-
-                        ref arg = args[i];
-                        if (arg.type.is_ref && arg.willPassByValue())
-                            arg.type = clear_refs(arg.type);
-                    }
-                }
-
-                //
-                retval || BUG("updateScope: no return type.");
-                if (retval.is_ref)
-                {
-                    // TODO FIX: ZST arguments can get unused-removed,
-                    //  which can leaves behind a dead region in the retval lifetime.
-                    //
-                    if (retval.isIrrelevant)
-                        retval.lifetime = Lifetime_static;
-
-                    TEST_Lifetime(type: retval,
-                        retval.lifetime, argPositionsOK: true);
-                }
-
-                retval.lifetime.Lifetime_each: |isArgIdx, isStatic|
-                    isArgIdx || isStatic || BUG(
-                        "updateScope: Non-static/non-arg leaked:\n\t" ~ retval.lifetime);
-
-                // Unconditionally replacing the stuff.
-                let overload    = GET(target);
-                ref ext         = target.EXT_mut;
-
-                mut change      = false;
-
-                let hasCallers  = !!target.callers;
-                if (hasCallers)
-                {
-                    change ||= args.len != ext.args.len
-                           || !(overload.type == retval);
-
-                    if (!change) for (mut i = 0; i < args.len; i++)
-                    {
-                        let a = args[i];
-                        let b = ext.args[i];
-
-                        fn ignoreLocalLts(type: Type)
-                        {
-                            if (SELF_TEST && type.is_ref)
-                                type.lifetime == Lifetime_temporary || BUG(
-                                    "type.lifetime != Lifetime_temporary");
-
-                            return type;
-                        }
-
-                        if !(a.name == b.name && a.type.ignoreLocalLts == b.type.ignoreLocalLts)
-                        {
-                            change = true;
-                            break;
-                        }
-                    }
-                }
-
-                ext.min     = min;
-                ext.max     = max;
-                ext.args    = args;
-
-                if (!isNative)
-                    ext.fx_mask = _current_fn.fx_mask;
-
-                ext.cows_inside = _current_fn.events.cows_inside;
-
-                // TODO FAILCASE
-                // TODO FAILCASE these dont work for inline fns
-                // TODO FAILCASE
-                asserts & A_NOTHROW && ext.fx_mask & Fx_Throws && fail(
-                    target ~ " is not nothrow, throws here:\n"
-                        ~ qSTACK(:target, Fx_Throws, node: _current_fn.out));
-
-                asserts & A_NOCRASH && ext.fx_mask & Fx_Crashes && fail(
-                    target ~ " is not nocrash, can crash here:\n"
-                        ~ qSTACK(:target, Fx_Crashes, node: _current_fn.out));
-
-                asserts & A_NOIO && ext.fx_mask & (Fx_Input|Fx_Output) && fail(
-                    target ~ " is not noio, performs I/O here:\n"
-                        ~ qSTACK(:target, Fx_Input|Fx_Output, node: _current_fn.out));
-
-                asserts & A_PURE_FX && ext.fx_mask & Fx_Output && fail(
-                    target ~ " is not purefx, outputs here:\n"
-                        ~ qSTACK(:target, Fx_Output, node: _current_fn.out));
-
-                asserts & A_NOFLOW && _current_fn.far_jumps && fail(
-                    target ~ " is not noflow: contains non-local control flow, jumping out to "
-                        ~ localfn(index: _current_fn.far_jumps.first) ~ ".");
-
-                if (maybeLast && !mustBecomeInline)
-                    numArgsWritten || ext.fx_mask || !retval.is_void || overload.flags & F_LAX || warn(:_current_fn.token,
-                        target ~ " does nothing: returns void and has no effects. Make it " ~ "lax".qKW ~ " if this is intentional.");
-
-                //
-                shadow ref overload = GET_mut(target);
-                overload.type       = retval;
-                overload.flags      = _current_fn.flags;
-
-                let kind: ::kind    = isUnspec          ? "template"
-                                    : isNative          ? "__native"
-                                    : mustBecomeInline  ? "inline"
-                                                        : "fn";
-                if (kind != overload.kind)
-                {
-                    overload.kind   = kind;
-                    change          = true;
-                }
-
-                // Not amazing but it is what it is,
-                //  these are the only calls c++ guarantees order of eval for,
-                //   and generally js, rust & co behave in the same manner, so why not.
-                //
-                // 16) Every overloaded operator obeys the sequencing rules of
-                //      the built-in operator it overloads when called using operator notation.
-                //
-                // 20) In every simple assignment expression E1=E2\
-                //      and every compound assignment expression E1@=E2,
-                //       every value computation and side-effect of E2 is
-                //        sequenced before every value computation and side effect of E1.
-                {
-                    let rtl = args.len == 2
-                        && overload.flags & F_OPERATOR
-                        && cpp::hasAssignment(overload.name);
-
-                    overload.isRTL_set(rtl);
-                }
-
-                //
-                let solved = !isUnspec && _current_fn.out;
-
-                if (hasCallers)
-                {
-                    if (!change && kind == "inline")
-                    {
-                        fn astChange(a: SolvedNode, b: SolvedNode)
-                        {
-                            if (a.kind != b.kind || a.items.len != b.items.len)
-                                return true;
-
-                            for (mut i = a.items.len; i --> 0; )
-                                if (astChange(a.items[i], b.items[i]))
-                                    return true;
-
-                            return false;
-                        }
-
-                        change = astChange(overload.solved, solved);
-                    }
-
-                    if (change)
-                    {
-                        TRACE("SS_UPDATED because change==true " ~ target.globid ~ " " ~ target
-                            ~ " callers=[" ~ currentSpec.callers.map(|c| c ~ " " ~ c.localfn).join(", ") ~ "]");
-
-                        overload.status |= SS_UPDATED;
-                    }
-                }
-
-                overload.solved = solved;
-
-                //
-                shadow ref eph  = EPH_mut(target);
-
-                eph.far_jumps   = _current_fn.far_jumps;
-
-                //
-                if (!isNative && !isUnspec)
-                {
-                    // "namespacing" via the sighash hashes.
-                    let sourceModid             = template.node.token.modid;
-                    shadow let shortModuleName  = sourceModid != module.modid
-                        ? sourceModid && module.modid && getShortModuleName(ctx.modules[sourceModid].fname)
-                        : shortModuleName;
-
-                    let sig     = (target.local_of && target.globid.str)
-                                ~ shortModuleName
-                                ~ target.args.map(
-                                    |arg| arg.flags & F_INJECTED
-                                        ? ""
-                                        : arg.name ~ ":" ~ stableTypeID(arg.type))
-                                            .join(",");
-
-                    EXT_mut(target).sighash = sig
-                        && (tea::hash62(sig) || BUG());
-                }
+                doUpdateScope(
+                    :retval, :target,
+                    :isNative, :isUnspec, :maybeLast,
+                    :asserts);
 
                 // setSpecs & co.
                 if (!into)
@@ -6416,6 +5994,440 @@ pub fn solve(
         // Go!
         lazySolveEnd(target);
         return target;
+    }
+
+    fn doUpdateScope(
+        mut retval: Type, target: Target,
+        maybeLast!: bool, isNative!: bool, isUnspec!: bool,
+        asserts!: DeclAsserts)
+    {
+        shadow let items = _current_fn.items;
+        shadow let mustBecomeInline = currentFn_mustBecomeInline();
+
+        let N = items.len + FN_ARGS_BACK;
+        mut min = 0;
+        mut max = 0;
+
+        let NativeHacks =
+            isNative && hacks::NativeHacks(target.name);
+
+        mut numArgsWritten = 0;
+
+        // argTarget -> argIndex mapping.
+        mut argPos_1b: i32[];
+        for (mut i = 0; i < N; i++)
+        {
+            let argNode     = items[i];
+            let argTarget   = argNode.target;
+            if (argTarget)
+                argPos_1b.grow_if_oob(argTarget.locid) = i + 1;
+        }
+
+        //
+        shadow mut args: Argument[];
+        for (mut i = 0; i < N; i++)
+        {
+            let argNode = items[i];
+
+            argNode.kind == "letdef" || argNode.target
+                && BUG("Argnode is not letdef, but has a target: "
+                        ~ argNode.target);
+
+            shadow let argNode = argNode.kind == "letdef"
+                ? argNode.target.solved
+                : argNode;
+
+            argNode.kind == "let" || argNode.kind == "empty" || BUG();
+
+            //
+            mut name        = argNode.value;
+            let autocall    = argNode.flags & F_COMPOUND_ID && CompoundArgID_outerSplice(name);
+            let isImplicit  = !!(argNode.flags & F_IMPLICIT);
+            let isInjected  = !!(argNode.flags & F_INJECTED);
+
+            // ARGUMENTS AT RISK ////////////////////////
+            let argTarget   = argNode.target;
+            let written_via = !isUnspec
+                && argNode.type.is_mutref
+                && (isNative || _current_fn.ever_written.has(argTarget.locid));
+
+            mut soft_risk: bitset::BitSet;
+            mut hard_risk: bitset::BitSet;
+            if (written_via)
+            {
+                numArgsWritten++;
+
+                if (isNative)
+                {
+                    // Natives: we can't see inside, assume everything restricted.
+                    soft_risk.add_range(end: N);
+                    soft_risk.rem(i);
+
+                    if (!NativeHacks.soft_risk)
+                        hard_risk = soft_risk;
+                }
+                else
+                {
+                    fn ArgsAtRisk_list(
+                        ref output: bitset::BitSet, at_risk: bitset::BitSet[])
+                    {
+                        at_risk.unless_oob(argTarget.locid).each: |other|
+                        {
+                            let otherPos_1b = argPos_1b.unless_oob(other);
+                            if (otherPos_1b)
+                                output.add(otherPos_1b - 1);
+                        }
+                    }
+
+                    soft_risk.ArgsAtRisk_list(_current_fn.flow.at_soft_risk);
+                    hard_risk.ArgsAtRisk_list(_current_fn.flow.at_hard_risk);
+
+                    if (argNode.type.TODO_FIX_isArray)
+                    {
+                        ////////////////////////////////////////////////////////////////
+                        // TODO FIX soft risk doesn't interop well
+                        //  with conversions to slices -
+                        //
+                        // When an array binds to a slice arg, that caches the array's length -
+                        //  Relocating the array via another arg looks like soft-risk to bck,
+                        //   but, the way we cg, the view is left dangling.
+                        ////////////////////////////////////////////////////////////////
+
+                        mut soft = soft_risk;
+                        soft.and_not_assign(hard_risk);
+
+                        soft.each: |index: i32|
+                        {
+                            let other = items[index].target.solved;
+                            if !(other.type.TODO_FIX_isArray)
+                                hard_risk.add(index);
+                        }
+                    }
+                }
+            }
+            /////////////////////////////////////////////
+
+            // Validate `pure` asserts.
+            // TODO FAILCASE
+            // TODO FAILCASE these dont work for inline fns
+            // TODO FAILCASE
+            if (asserts & A_PURE && written_via)
+                fail(backtrack: "pure", target ~ " is not pure, writes to " ~ argTarget ~ ":\n"
+                    ~ qSTACK(:target, :argTarget.locid,
+                                node: _current_fn.out));
+
+            if (asserts & A_PURE_CTX && isImplicit && written_via)
+                fail(backtrack: "purectx", target ~ " is not purectx, writes to " ~ argTarget ~ ":\n"
+                    ~ qSTACK(:target, :argTarget.locid,
+                                node: _current_fn.out));
+
+            if (maybeLast && asserts & A_NOVEC && !argNode.isNoVec() && !mustBecomeInline)
+                fail(backtrack: "novec", target ~ " is not novec, " ~ argTarget ~ " is " ~ humanizeType(argNode.type) ~ ":\n"
+                    ~ qSTACK(:target, :argTarget.locid,
+                                node: _current_fn.out,
+                               query: AQ_WhyNotNovec));
+
+            //
+            let cow_inside = _current_fn.events.cows_inside.some(
+                |cow| cow.argTarget == argTarget.locid);
+
+            //
+            if (SELF_TEST) {
+                if (soft_risk.has(i)) BUG("updateScope: " ~ argTarget ~ " soft_risk lists self");
+                if (hard_risk.has(i)) BUG("updateScope: " ~ argTarget ~ " hard_risk lists self");
+            }
+
+            //
+            let may_alias       = hard_risk.negated(end: N);
+            let may_invalidate  = soft_risk.negated(end: N);
+
+            if (SELF_TEST) {
+                if (may_alias.popcount      > N) BUG("updateScope: " ~ argTarget ~ " may_alias.popcount > N");
+                if (may_invalidate.popcount > N) BUG("updateScope: " ~ argTarget ~ " may_invalidate.popcount > N");
+            }
+
+            //
+            mut arg = Argument(
+                :name,
+                :autocall,
+                :argNode.flags | (written_via && F_WRITTEN_TO)
+                               | (cow_inside  && F_COW_INSIDE),
+                :argNode.type,
+                default: !isImplicit && argNode.items && argNode.items[LET_INIT],
+                target: argTarget,
+
+                // Previously soft_risk & hard_risk.
+                :may_alias, :may_invalidate);
+
+            // TODO make this true for F_INJECTEDs too.
+            if (arg.type.lifetime && !(arg.flags & F_INJECTED))
+                arg.type.lifetime == Lifetime_temporary || BUG("Non-temporary lt on ref arg: " ~ argTarget);
+            else
+                ref_anonymize(arg.type);
+
+            //
+            if (SELF_TEST)
+            {
+                arg.type || isUnspec || BUG(
+                    "updateScope: Unexpected untyped argument.");
+
+                arg.type.vfacts & (AlwaysTrue | AlwaysFalse)
+                    && arg.type.usage
+                    && !hacks::tryParseClosureID(id: arg.name)
+                    && BUG("updateScope: arg.type is AlwaysTrue/False.");
+            }
+
+            // Previously this was `if (!isImplicit)`,
+            //  but consider a `fn f(implicit a)`:
+            //   it's nice to be able to pass `a` as usual, e.g. `f(something)`,
+            //    when you don't want a `let implicit a = something;` outside,
+            //     esp given that `implicit` in an arg decl does two things -
+            //      a] enables implicit defaulting, and
+            //      b] whitelists the argument for implicit binding downstream.
+            //
+            // So, when you only need b], this allows you not to pay for a].
+            //
+            if (!isInjected)
+            {
+                if (max != 0x7fffffff.i32)
+                    max++;
+                if (!arg.default && !isImplicit)
+                    min++;
+            }
+
+            if (arg.flags & F_REST_ARG)
+                max = 0x7fffffff.i32;
+
+            args.push(arg);
+        }
+
+        // Prep lifetimes for Lifetime_replaceArgsAtCallsite,
+        //  and unref all args that are pass-by-value.
+        //
+        {
+            mut returned: bitset::BitSet;
+
+            if (SELF_TEST && retval.is_ref)
+                TEST_Lifetime(type: retval, retval.lifetime);
+
+            retval.lifetime = retval.lifetime.Lifetime_process(
+                |locid, isStatic, continue_keep, continue_replace, paths|
+                {
+                    if (!locid)
+                    {
+                        isStatic || BUG("Non-local/non-static in retval.lifetime.");
+                        continue_keep;
+                    }
+                    else
+                    {
+                        shadow let argPos_1b = argPos_1b.unless_oob(locid) || BUG(
+                            "Non-argument local in retval.lifetime: " ~ nested(locid));
+
+                        let i   = argPos_1b - 1;
+                        let arg = args[i];
+
+                        arg.type.is_ref || BUG(
+                            "Non-ref argument in retval.lifetime: " ~ nested(locid));
+
+                        returned.add(i);
+
+                        continue_replace(
+                            Lifetime_from(argidx: i, :paths));
+                    }
+                });
+
+            for (mut i = 0; i < args.len; i++)
+            {
+                if (returned.has(i))
+                    continue;
+
+                ref arg = args[i];
+                if (arg.type.is_ref && arg.willPassByValue())
+                    arg.type = clear_refs(arg.type);
+            }
+        }
+
+        //
+        retval || BUG("updateScope: no return type.");
+        if (retval.is_ref)
+        {
+            // TODO FIX: ZST arguments can get unused-removed,
+            //  which can leaves behind a dead region in the retval lifetime.
+            //
+            if (retval.isIrrelevant)
+                retval.lifetime = Lifetime_static;
+
+            TEST_Lifetime(type: retval,
+                retval.lifetime, argPositionsOK: true);
+        }
+
+        retval.lifetime.Lifetime_each: |isArgIdx, isStatic|
+            isArgIdx || isStatic || BUG(
+                "updateScope: Non-static/non-arg leaked:\n\t" ~ retval.lifetime);
+
+        // Unconditionally replacing the stuff.
+        let overload    = GET(target);
+        ref ext         = target.EXT_mut;
+
+        mut change      = false;
+
+        let hasCallers  = !!target.callers;
+        if (hasCallers)
+        {
+            change ||= args.len != ext.args.len
+                   || !(overload.type == retval);
+
+            if (!change) for (mut i = 0; i < args.len; i++)
+            {
+                let a = args[i];
+                let b = ext.args[i];
+
+                fn ignoreLocalLts(type: Type)
+                {
+                    if (SELF_TEST && type.is_ref)
+                        type.lifetime == Lifetime_temporary || BUG(
+                            "type.lifetime != Lifetime_temporary");
+
+                    return type;
+                }
+
+                if !(a.name == b.name && a.type.ignoreLocalLts == b.type.ignoreLocalLts)
+                {
+                    change = true;
+                    break;
+                }
+            }
+        }
+
+        ext.min     = min;
+        ext.max     = max;
+        ext.args    = args;
+
+        if (!isNative)
+            ext.fx_mask = _current_fn.fx_mask;
+
+        ext.cows_inside = _current_fn.events.cows_inside;
+
+        // TODO FAILCASE
+        // TODO FAILCASE these dont work for inline fns
+        // TODO FAILCASE
+        asserts & A_NOTHROW && ext.fx_mask & Fx_Throws && fail(
+            target ~ " is not nothrow, throws here:\n"
+                ~ qSTACK(:target, Fx_Throws, node: _current_fn.out));
+
+        asserts & A_NOCRASH && ext.fx_mask & Fx_Crashes && fail(
+            target ~ " is not nocrash, can crash here:\n"
+                ~ qSTACK(:target, Fx_Crashes, node: _current_fn.out));
+
+        asserts & A_NOIO && ext.fx_mask & (Fx_Input|Fx_Output) && fail(
+            target ~ " is not noio, performs I/O here:\n"
+                ~ qSTACK(:target, Fx_Input|Fx_Output, node: _current_fn.out));
+
+        asserts & A_PURE_FX && ext.fx_mask & Fx_Output && fail(
+            target ~ " is not purefx, outputs here:\n"
+                ~ qSTACK(:target, Fx_Output, node: _current_fn.out));
+
+        asserts & A_NOFLOW && _current_fn.far_jumps && fail(
+            target ~ " is not noflow: contains non-local control flow, jumping out to "
+                ~ localfn(index: _current_fn.far_jumps.first) ~ ".");
+
+        if (maybeLast && !mustBecomeInline)
+            numArgsWritten || ext.fx_mask || !retval.is_void || overload.flags & F_LAX || warn(:_current_fn.token,
+                target ~ " does nothing: returns void and has no effects. Make it " ~ "lax".qKW ~ " if this is intentional.");
+
+        //
+        shadow ref overload = GET_mut(target);
+        overload.type       = retval;
+        overload.flags      = _current_fn.flags;
+
+        let kind: ::kind    = isUnspec          ? "template"
+                            : isNative          ? "__native"
+                            : mustBecomeInline  ? "inline"
+                                                : "fn";
+        if (kind != overload.kind)
+        {
+            overload.kind   = kind;
+            change          = true;
+        }
+
+        // Not amazing but it is what it is,
+        //  these are the only calls c++ guarantees order of eval for,
+        //   and generally js, rust & co behave in the same manner, so why not.
+        //
+        // 16) Every overloaded operator obeys the sequencing rules of
+        //      the built-in operator it overloads when called using operator notation.
+        //
+        // 20) In every simple assignment expression E1=E2\
+        //      and every compound assignment expression E1@=E2,
+        //       every value computation and side-effect of E2 is
+        //        sequenced before every value computation and side effect of E1.
+        {
+            let rtl = args.len == 2
+                && overload.flags & F_OPERATOR
+                && cpp::hasAssignment(overload.name);
+
+            overload.isRTL_set(rtl);
+        }
+
+        //
+        let solved = !isUnspec && _current_fn.out;
+
+        if (hasCallers)
+        {
+            if (!change && kind == "inline")
+            {
+                fn astChange(a: SolvedNode, b: SolvedNode)
+                {
+                    if (a.kind != b.kind || a.items.len != b.items.len)
+                        return true;
+
+                    for (mut i = a.items.len; i --> 0; )
+                        if (astChange(a.items[i], b.items[i]))
+                            return true;
+
+                    return false;
+                }
+
+                change = astChange(overload.solved, solved);
+            }
+
+            if (change)
+            {
+                TRACE("SS_UPDATED because change==true " ~ target.globid ~ " " ~ target);
+
+                overload.status |= SS_UPDATED;
+            }
+        }
+
+        overload.solved = solved;
+
+        //
+        shadow ref eph  = EPH_mut(target);
+
+        eph.far_jumps   = _current_fn.far_jumps;
+
+        //
+        if (!isNative && !isUnspec)
+        {
+            let template = target.template;
+
+            // "namespacing" via the sighash hashes.
+            let sourceModid             = template.node.token.modid;
+            shadow let shortModuleName  = sourceModid != module.modid
+                ? sourceModid && module.modid && getShortModuleName(ctx.modules[sourceModid].fname)
+                : shortModuleName;
+
+            let sig     = (target.local_of && target.globid.str)
+                        ~ shortModuleName
+                        ~ target.args.map(
+                            |arg| arg.flags & F_INJECTED
+                                ? ""
+                                : arg.name ~ ":" ~ stableTypeID(arg.type))
+                                    .join(",");
+
+            EXT_mut(target).sighash = sig
+                && (tea::hash62(sig) || BUG());
+        }
     }
 
 
