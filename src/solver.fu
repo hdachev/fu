@@ -6426,9 +6426,7 @@ pub fn solve(
             let sig     = (target.local_of && target.globid.str)
                         ~ shortModuleName
                         ~ target.args.map(
-                            |arg| arg.flags & F_INJECTED
-                                ? ""
-                                : arg.name ~ ":" ~ stableTypeID(arg.type))
+                            |arg| arg.name ~ ":" ~ stableTypeID(arg.type))
                                     .join(",");
 
             EXT_mut(target).sighash = sig
