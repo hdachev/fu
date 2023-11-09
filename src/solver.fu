@@ -3631,8 +3631,14 @@ pub fn solve(
                 makeNote(N_RelaxRespec);
             }
 
-            if (t.type.lifetime.Lifetime_hasArgs() &&
-                is_retval_relaxable(:relaxed_quals, :t.type))
+            // Function relaxer -
+            //  we're trying to specialize functions based on
+            //   what we need from their return type.
+            //
+            let mask_retval_relaxable =
+                mask_retval_relaxable(:relaxed_quals, :t.type);
+
+            if (mask_retval_relaxable)
             {
                 if (t.spec_of)
                 {

@@ -994,10 +994,6 @@ pub fn Lifetime_has(lifetime: Lifetime, argidx!search: i32)
     lifetime.Lifetime_some(
         |isArgIdx, argidx| isArgIdx && argidx == search);
 
-pub fn Lifetime_hasArgs(lifetime: Lifetime)
-    lifetime.Lifetime_some(
-        |isArgIdx| isArgIdx);
-
 pub fn Lifetime_makeShared(lifetime: Lifetime, flatCount!: i32): Lifetime =
     Lifetime_union(
         Lifetime_op_deref(lifetime, :flatCount),

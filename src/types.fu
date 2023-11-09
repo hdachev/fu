@@ -438,16 +438,52 @@ pub fn force_relax(ref type: Type, relax_mask!: Quals)
     type.quals &= ~relax_mask;
 }
 
-pub fn is_retval_relaxable(type: Type, relaxed_quals!: Quals)
+pub fn mask_retval_relaxable(type: Type, relaxed_quals!: Quals): Quals
 {
-    let xor = type.quals & relaxed_quals;
+    mut returnsFromArgument = false;
+    mut withoutDereferences = false;
 
-    // Only makes sense if we're gonna go [A] NON-MUTREF,
-    return type.quals & q_mutref ////////////////
-        /////////////////////////////////////////
-        // ... or array -> slice.
-        || xor & q_TAGS == type.quals & (q_TAGS &~ q_mutref)
-                        && type.is_sliceable;
+    :HAS_ARGS
+    {
+        type.lifetime.Lifetime_each: |isArgIdx, paths|
+        {
+            if (!isArgIdx)
+                continue;
+
+            returnsFromArgument = true;
+
+            mut offset = 0;
+            paths.walkPaths(:offset, onLastSubRegion: |isFirstSubRegion|
+            {
+                if (!isFirstSubRegion)
+                    continue;
+
+                withoutDereferences = true;
+                break :HAS_ARGS;
+            });
+        }
+
+        if (!returnsFromArgument)
+            return [];
+    }
+
+    // It's only worth bothering with array decay
+    //  if we're not dealing with dereferences,
+    //   we won't be able to relax anything much if
+    //    we're dealing with anything more complicated
+    //     than an array of structs.
+    //
+    let decay = withoutDereferences
+        && type.quals & (q_rx_copy | q_rx_resize);
+
+    //
+    return relaxed_quals & q_mutref
+
+        // Losing both copy+resize for arrays,
+        //  which decays them to slices, not worth it
+        //   if we'll only lose one.
+        //
+        | (relaxed_quals & decay == decay && decay);
 }
 
 pub fn into_Typename(mut type: Type)
