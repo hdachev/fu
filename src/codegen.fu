@@ -1082,9 +1082,8 @@ pub fn cpp_codegen(
                 ~ (!(overload.isExtLinked)   && "static "      );
     }
 
-    fn cgFnSignature(fn: SolvedNode): string
+    fn cgFnSignature(target: Target): string
     {
-        let target      = fn.target;
         let overload    = GET(target);
 
         let host_args   = target.args;
@@ -1104,7 +1103,7 @@ pub fn cpp_codegen(
         }
         else
         {
-            id          = fnID(fn.target);
+            id          = fnID(target);
         }
 
         //
@@ -1263,9 +1262,7 @@ pub fn cpp_codegen(
         }
 
         // Go!
-        let node = target.solved;
-        node.kind == "fn" || BUG("ensureFnDef non-fn");
-        cgFn(node);
+        cgFn(target);
 
         _fdef_complete.set::add(target) || BUG(
             "ensureFnDef: _fdef_complete twice: " ~ target.name);
@@ -1286,17 +1283,19 @@ pub fn cpp_codegen(
         return cgEmpty(n, mode);
     }
 
-    fn cgFn(fn: SolvedNode)
+    fn cgFn(target: Target)
     {
+        let node = target.solved;
+        node.kind == "fn" || BUG("cgFn: target.solved.kind != 'fn'");
+
         //////////////////////
         let indent0 = _indent;
         defer _indent = indent0;
         //////////////////////
 
-        let items = fn.items;
+        let items = node.items;
         let body  = items[items.len + FN_BODY_BACK];
 
-        let target = fn.target;
         let overload = GET(target);
         let id = overload.name;
 
@@ -1322,7 +1321,7 @@ pub fn cpp_codegen(
         mut src: string;
         {
             ////////////////////////////////////////////
-            mut current_fn0 = cg_CurrentFn(target: fn.target);
+            mut current_fn0 = cg_CurrentFn(target: target);
 
             defer swap(_current_fn, current_fn0);
             swap(_current_fn, current_fn0);
@@ -1330,7 +1329,7 @@ pub fn cpp_codegen(
 
             _current_fn.can_return = body.helpers;
 
-            src ~= cgFnSignature(fn);
+            src ~= cgFnSignature(target);
 
             mut body_src = cgBlock(body, M_STMT);
 
