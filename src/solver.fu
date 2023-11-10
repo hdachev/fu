@@ -3616,8 +3616,9 @@ pub fn solve(
 
                 ensureLazySolved(spec);
 
-                spec.args.len == t.args.len || BUG(
-                    "Relaxed spec.args.len != original.args.len");
+                if (SELF_TEST)
+                    spec.args.len == t.args.len || BUG(
+                        "Relaxed spec.args.len(" ~ spec.args.len ~ ") != original.args.len(" ~ t.args.len ~ ")");
 
                 checkAssignable(host: node.type, spec.type,
                     "Relaxed specialization does not return a subtype");
@@ -7607,15 +7608,14 @@ pub fn solve(
 
     fn checkAssignable(
         host: Type, guest: Type,
-        err: string, id?: string, sep?: string,
+        err: string, id?: string,
         asArgument!?: bool)
     {
         isAssignable(:asArgument,
             :host   || BUG("Bad host type."),
             :guest  || BUG("Bad guest type."))
                     || fail(err ~ (id && " " ~ id.qID) ~ ": "
-                                ~ host .humanizeType() ~ (sep || " <- ")
-                                ~ guest.humanizeType());
+                                ~ explainTypeDiff(host, guest, sep: "<-"));
     }
 
     fn convertIfNeeded(
