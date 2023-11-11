@@ -107,6 +107,9 @@ pub fn cpp_codegen(
 
         // testing
         _defects:           CGDefects;
+
+        //
+        _TODO_FIX_seenFns:  string[];
     };
 
     let using mut outputs: Outputs;
@@ -1347,6 +1350,22 @@ pub fn cpp_codegen(
             src ~= body_src;
         }
 
+        // So, the new reverse-specializer can totally emit
+        //  duplicates of normal forward-specializations of templates.
+        //
+        // We gotta figure this out -
+        //  A] it's stupid we now waste time specializing the same thing twice;
+        //  B] overall it'd be cool if we could identify duplicate fns
+        //      outside of the scope of some template,
+        //       e.g. just globally eliminate duplicate code somehow.
+        //
+        if !(_TODO_FIX_seenFns.set::add(src))
+        {
+            noteDefect(DuplicateFunctions);
+            return;
+        }
+
+        //
         let dedupe = overload.flags & F_PUB
                   && overload.flags & F_TEMPLATE
                   && overload.name.valid_identifier;

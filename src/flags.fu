@@ -234,4 +234,5 @@ using flags CGDefects
     ConstCast;
     PointlessLocal;
     IrrelevantLiteral;
+    DuplicateFunctions;
 };

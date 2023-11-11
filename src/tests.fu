@@ -13812,7 +13812,7 @@ pub extern fn runTests()
 
     ZERO(`
         fn a_slash_b(a: f32, b: f32) {
-            return a ~ "/" ~ b;
+            return a ~ "/" ~ b;                                 ;; DuplicateFunctions
         }
 
         fn main() {
@@ -16907,7 +16907,7 @@ pub extern fn runTests()
     ZERO(`
         using enum Greet { hello; world };
         fn main()
-            hello ~ " " ~ world == "hello world"
+            hello ~ " " ~ world == "hello world"                ;; DuplicateFunctions
                 ? 0 : 1;
     `);
 
@@ -16923,7 +16923,7 @@ pub extern fn runTests()
         fn w() Greet.world;
     `,`
         fn main()
-            _0::h() ~ " " ~ _0::w() == "hello world"
+            _0::h() ~ " " ~ _0::w() == "hello world"            ;; DuplicateFunctions
                 ? 0 : 1;
     `]);
 
