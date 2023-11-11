@@ -94,7 +94,7 @@ pub fn is_AssumeNever_WhileSolvingRecursion(t: Type) =
 //
 
 pub fn is_rx_copy   (t: Type) !!(t.quals & q_rx_copy);
-pub fn is_rx_resize (t: Type) !!(t.quals & q_rx_resize);
+pub fn is_rx_resize (t: Type) !!(t.quals & q_rx_copy);
 
 
 //
@@ -249,6 +249,9 @@ pub fn make_field_reference(
     return to;
 }
 
+
+//
+
 pub fn make_copyable(mut type: Type)
 {
     type.quals |= q_rx_copy;
@@ -258,6 +261,22 @@ pub fn make_copyable(mut type: Type)
 pub fn make_non_copyable(mut type: Type)
 {
     type.quals &= ~q_rx_copy;
+    return type;
+}
+
+pub fn is_rx_move(type: Type)
+{
+    if (type.is_sliceable)
+        return !!(type.quals & q_rx_resize);
+
+    return true;
+}
+
+pub fn make_moveable(mut type: Type)
+{
+    if (type.is_sliceable)
+        type.quals |= q_rx_resize;
+
     return type;
 }
 

@@ -3909,16 +3909,6 @@ pub fn solve(
                         return propagateType(:slot, :node, :relax_mask, :kills);
                     }
                     // /Partial copy.
-
-                    // TODO FIX bck doesnt see the `return propagateType` above //
-                    shadow ref item = node.items.only; ///////////////////////////
-
-                    // ... or fail if non-copyable.
-                    if (!item.type.is_rx_copy)
-                        fail("A value is needed, but can neither copy nor move from: " ~ item);
-
-                    if (!node.type.is_trivial)
-                        makeNote(N_NonTrivAutoCopy);
                 }
             }
 
@@ -3926,10 +3916,26 @@ pub fn solve(
             shadow ref item = node.items.only; ///////////////////////////
 
             //
-            propagateType(item, :relax_mask,
-                slot: isCopy
+            {
+                if !(isCopy ? item.type.is_rx_copy
+                            : item.type.is_rx_move)
+                {
+                    if (!isCopy && item.type.is_sliceable)
+                        fail("An array value is needed, but cannot be copied or moved from a slice: " ~ item.humanizeType);
+
+                    fail("A value is needed, but cannot be copied or moved from: " ~ item.humanizeType);
+                }
+
+                if (isCopy && !node.type.is_trivial)
+                    makeNote(N_NonTrivAutoCopy);
+
+                let itemSlot = isCopy
                     ? make_copyable(slot)
-                    : slot);
+                    : make_moveable(slot);
+
+                propagateType(item, :relax_mask,
+                    slot: itemSlot);
+            }
 
             item.is_ref || BUG("Nothing to copy, item is not a ref: " ~ item);
 
