@@ -6423,7 +6423,17 @@ pub fn solve(
                         ~ shortModuleName
                         ~ target.args.map(
                             |arg| arg.name ~ ":" ~ stableTypeID(arg.type))
-                                    .join(",");
+                                    .join(",")
+
+                        // They new relaxer tends to emit some almost-identical fns,
+                        //  e.g. relaxes a mutref return to constref,
+                        //   but fails to relax any of the arguments.
+                        //
+                        // Ideally, we'd discard the reverse specialization,
+                        //  or we wouldn't start it in the first place,
+                        //   but either way there's no reason to fail the c++ build.
+                        //
+                        ~ "," ~ stableTypeID(target.type);
 
             EXT_mut(target).sighash = sig
                 && (tea::hash62(sig) || BUG());
