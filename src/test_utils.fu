@@ -421,7 +421,12 @@ pub fn ZERO(
                 end = src.len;
 
             // TODO FAILCASE: replace with `src[start + 4, end]`
-            let annot = src.slice(start + 4, end);
+            mut annot = src.slice(start + 4, end);
+
+            // Trim trailing whitespace.
+            while (annot && annot.last <= ' ')
+                annot.pop();
+
             if (annot[0] == '!')
             {
                 shadow let annot = annot[1 :];

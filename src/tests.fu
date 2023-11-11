@@ -16201,7 +16201,14 @@ pub extern fn runTests()
     `);
 
     ZERO(`
-        lax fn longer(l: string, r: string, pick!) {
+        lax                         <alt>
+        inline      ;; PointlessLocal   <alt/>
+        noinline    ;; ConstCast        </alt>
+        fn longer(                  <alt>
+            l: string, r: string,       <alt/>
+            l: $T[:], r: $T[:],         </alt>
+            pick!)
+        {
             let longer = {                                      ;; GNUStmtExpr
                 :PICK {
                     for (;;) {
@@ -16220,10 +16227,37 @@ pub extern fn runTests()
             longer("does", "nothing",
                 pick: |_| { break; });
 
-            let longer = longer("Hello", " World!",             ;; ConstCast
+            let longer = longer("Hello", " World!",
                 pick: |longer| { break longer; });
 
             return longer.len - 7;
+        }
+    `);
+
+    ZERO(`
+        noinline fn longer(             <fail cannot move from a slice X:X>
+            l: byte[:], r: byte[:])     <pass/>
+            l: $T[:],   r: $T[:])       </fail>
+        {
+            return l.len > r.len ? l : r;
+        }
+
+        <split/>
+        noinline fn strsqr(mut str: string, n: i32) {
+            for (mut i = 1; i < n; i++) str ~= str;
+            return str;
+        }
+
+        noinline fn mightConstCast() {
+            return longer(
+                "A---A".strsqr(4),
+                "B-BB-B".strsqr(4));                            ;; ConstCast
+        }
+
+        fn main() {
+            let longer = mightConstCast();
+            shadow let longer = longer ~ longer;
+            return longer.split("BB").len == 32 ? 0 : 1;
         }
     `);
 
