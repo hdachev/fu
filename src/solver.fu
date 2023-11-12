@@ -41,16 +41,10 @@ let MOVE_from_temp          = true;
 
 let TODO_FIX_static_ZSTs    = true;
 
+let BUG_missing_SS_FN_REC   = true;
 
 
-///////////////////////////////////////
-///////////////////////////////////////
-///////////////////////////////////////
-///////////////////////////////////////
-////////
-////////
-////////
-////////     Solver.
+//
 
 pub fn solve(
     implicit ctx: Context,
@@ -3047,6 +3041,13 @@ pub fn solve(
         cannotCOW_climbParents(item.type.lifetime);
     }
 
+    fn isShallowLiteral(::kind)
+    {
+        return kind == "int" || kind == "real" || kind == "char"
+            || kind == "str" || kind == "bool"
+            || kind == "definit";
+    }
+
     fn propagateType(ref node: SolvedNode, slot: Type, relax_mask!: Quals, kills!?: Helpers)
     {
         let k = node.kind;
@@ -3198,13 +3199,6 @@ pub fn solve(
                     return false;
 
             return true;
-        }
-
-        fn isShallowLiteral(::kind)
-        {
-            return kind == "int" || kind == "real" || kind == "char"
-                || kind == "str" || kind == "bool"
-                || kind == "definit";
         }
 
         fn isDiscardable(shadow node: SolvedNode): bool
@@ -6413,36 +6407,6 @@ pub fn solve(
         shadow ref eph  = EPH_mut(target);
 
         eph.far_jumps   = _current_fn.far_jumps;
-
-        //
-        if (!isNative && !isUnspec)
-        {
-            let template = target.template;
-
-            // "namespacing" via the sighash hashes.
-            let sourceModid             = template.node.token.modid;
-            shadow let shortModuleName  = sourceModid != module.modid
-                ? sourceModid && module.modid && getShortModuleName(ctx.modules[sourceModid].fname)
-                : shortModuleName;
-
-            let sig     = (target.local_of && target.globid.str)
-                        ~ shortModuleName
-                        ~ target.args.map(
-                            |arg| arg.name ~ ":" ~ stableTypeID(arg.type))
-                                    .join(",")
-
-                        // They new relaxer tends to emit some almost-identical fns,
-                        //  e.g. relaxes a mutref return to constref,
-                        //   but fails to relax any of the arguments.
-                        //
-                        // Ideally, we'd discard the reverse specialization,
-                        //  or we wouldn't start it in the first place,
-                        //   but either way there's no reason to fail the c++ build.
-                        //
-                        ~ "," ~ stableTypeID(target.type);
-
-            EXT_mut(target).sighash = sig && (tea::hash(sig) || BUG());
-        }
     }
 
 
@@ -12904,23 +12868,244 @@ pub fn solve(
         swap(root, GET_mut(_nestingFnort).solved.items.last);
     }
 
+    fn computeFnSighash_asIfCycleRoot(fn_target: Target)
+    {
+        mut already_hashing:    Target[];
+        mut cycle_participants: Target[];
+
+        fn hash(ref hash: tea::TEA, type: Type)
+        {
+            hash.hash(
+                tea::TEA(
+                    (type.quals & q_TAGS).u32,
+                    type.lifetime.uni0n.len && 1.u32));
+
+            hash.hash(
+                type.getShape().hash);
+        }
+
+        fn computeFnSighash(shadow fn_target: Target)
+        {
+            mut hash: tea::TEA;
+
+            fn sighashNode(n: SolvedNode)
+            {
+                hash.hash(
+                    tea::TEA(
+                        n.kind.u32, // TODO FIX adding/removing kinds will thrash all sighashes
+                        n.items.len.u32));
+
+                for (mut i = 0; i < n.items.len; i++)
+                    sighashNode(n.items[i]);
+
+                if (n.kind == "letdef")
+                {
+                    sighashNode(n.target.solved);
+                }
+                else if (n.kind == "let")
+                {
+                    hash.hash(n.target.locid.u64);
+                    hash.hash(n.type);
+                }
+                else if (n.kind == "call")
+                {
+                    let target  = n.target;
+                    let locid   = target.locid;
+                    if (locid)
+                    {
+                        hash.hash(locid.u64);
+                    }
+                    else
+                    {
+                        let o = GET(target);
+                        let k = o.kind;
+                        if (k == "fn")
+                        {
+                            mut sighash = EXT(target).sighash;
+
+                            if (!sighash)
+                            {
+                                let idx = already_hashing.find(target);
+                                if (idx >= 0)
+                                {
+                                    if (SELF_TEST && !BUG_missing_SS_FN_REC)
+                                    {
+                                        target.status & SS_FN_RECUR     || BUG("computeFnSighash: missing SS_FN_RECUR [1] on " ~ target);
+                                        fn_target.status & SS_FN_RECUR  || BUG("computeFnSighash: missing SS_FN_RECUR [2] on " ~ fn_target);
+                                    }
+
+                                    // Dealing with cycles alla Unison,
+                                    //  hashing the whole cycle however we can,
+                                    //   and then hitting all cycle-participants with the grand total.
+                                    //
+                                    cycle_participants.set::add(fn_target);
+
+                                    sighash = tea::TEA(0xffffffff, idx.u32);
+                                }
+                                else if (target.modid == module.modid)
+                                {
+                                    sighash = computeFnSighash(target);
+                                }
+                                else if (SELF_TEST)
+                                {
+                                    BUG("Off-module fn with no sighash: " ~ target.explainWhichFn);
+                                }
+                            }
+
+                            hash.hash(sighash);
+                        }
+                        else if (k == "__native" || k == "enumv")
+                        {
+                            // TODO FIX not great for either, esp enumvs
+                            hash.hash(o.name);
+                        }
+                        else if (k == "field")
+                        {
+                            let offset = field_unpackOffset(o).memberFlatOffset;
+                            hash.hash(offset.u64);
+                        }
+                        else if (k == "var")
+                        {
+                            // Global variables TODO CACHE this somehow
+                            sighashNode(o.solved);
+                        }
+                        else if (k != "type" && k != "definit")
+                        {
+                            BUG("computeFnSighash: no support for kind=" ~ k);
+                        }
+                    }
+                }
+                else if (n.kind.isShallowLiteral)
+                {
+                    hash.hash(n.value);
+                }
+            }
+
+            // Go!
+            let o = GET(fn_target);
+            o.kind == "fn" || BUG("computeFnSighash: Not a fn: " ~ fn_target);
+
+            // Hash return type -
+            hash.hash(o.type);
+
+            // Hash argument types OR fn body -
+            :HASH_args_OR_body
+            {
+                // "Namespace" non-templates,
+                //  so that two identical fns in two modules won't clash at link time.
+                //
+                // Within the same module, two identical fns should deduplicate,
+                //  ideally during solve, but currently codegen notices and discards them.
+                //
+                // Templates emit inline fns and don't need this,
+                //  whatever module they specialize in.
+                //
+                if (~o.flags & F_TEMPLATE)
+                {
+                    hash.hash(shortModuleName);
+
+                    // Additionally, if this is a top-level function,
+                    //  hash it by signature instead of by fnbody, so changes inside
+                    //   don't thrash other translation units.
+                    //
+                    if (o.flags & F_TOP_LEVEL)
+                    {
+                        fn_target.args.each: |host_arg|
+                        {
+                            if (~host_arg.flags & F_INJECTED)
+                            {
+                                hash.hash(host_arg.name);
+                                hash.hash(host_arg.type);
+                            }
+                        }
+
+                        break :HASH_args_OR_body;
+                    }
+                }
+
+                //
+                already_hashing ~= fn_target;
+                sighashNode(o.solved);
+                already_hashing.pop();
+            }
+
+            //
+            let sighash =
+                (EXT_mut(fn_target).sighash && BUG("sighash already set")) =
+                    hash.non_zero;
+
+            // println("HASH FOR " ~ fn_target.modid ~ ":" ~ fn_target.globid ~ " " ~ fn_target ~ " := " ~ sighash.u64);
+            return sighash;
+        }
+
+        //
+        let cycle_root_hash = computeFnSighash(fn_target);
+
+        // The root of the cycle is where we started from -
+        //  we've collected everthing we can, hash-wise,
+        //   so add it on top of all other cycle participants' hashes.
+        //
+        // WARNING! What I managed to do with this
+        //  was to hash fns' hashes with themselves,
+        //   because of the XOR before the shuffle
+        //    it basically reset the hash default-init.
+        //
+        for (mut i = 0; i < cycle_participants.len; i++)
+            EXT_mut(cycle_participants[i]).sighash.hash(cycle_root_hash);
+
+        // for (mut i = 0; i < cycle_participants.len; i++)
+        // {
+        //     shadow let fn_target = cycle_participants[i];
+        //     let sighash = fn_target.sighash;
+        //     println("CYCLE HASH FOR " ~ fn_target.modid ~ ":" ~ fn_target.globid ~ " " ~ fn_target ~ " := " ~ sighash.u64);
+        // }
+    }
+
     fn PASS_runAllVerifiers()
     {
-        PROFILE(.EnsureArgSeq);
-
-        _nestingFnort && BUG("PASS_runAllVerifiers: non-empty _nestingFnort");
-
-        for (mut i = 0; i < _scope.overloads.len; i++)
         {
-            ref o = _scope.overloads[i];
-            if (o.kind == "fn")
-            {
-                _nestingFnort = Target(
-                    :module.modid, globid: i + 1, locid: 0);
+            PROFILE(.ComputeSighashes);
 
-                // TODO only bother with this if backend is unsequenced,
-                //  like c / c++, real moronic total waste of time.
-                nestingFnort_ensureArgSequencing();
+            for (mut i = 0; i < _scope.overloads.len; i++)
+            {
+                ref o = _scope.overloads[i];
+                if (o.kind == "fn")
+                {
+                    let target = Target(
+                        :module.modid, globid: i + 1, locid: 0);
+
+                    // Discard strays.
+                    let status = o.status;
+                    if (~status & SS_FINALIZED)
+                    {
+                        destroyOverload(target);
+                        continue;
+                    }
+
+                    //
+                    if (!target.sighash)
+                        computeFnSighash_asIfCycleRoot(target);
+                }
+            }
+        }
+
+        {
+            PROFILE(.EnsureArgSeq);
+
+            _nestingFnort && BUG("PASS_runAllVerifiers: non-empty _nestingFnort");
+
+            for (mut i = 0; i < _scope.overloads.len; i++)
+            {
+                ref o = _scope.overloads[i];
+                if (o.kind == "fn")
+                {
+                    _nestingFnort = Target(
+                        :module.modid, globid: i + 1, locid: 0);
+
+                    // TODO only bother with this if backend is unsequenced,
+                    //  like c / c++, real moronic total waste of time.
+                    nestingFnort_ensureArgSequencing();
+                }
             }
         }
 

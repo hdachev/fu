@@ -1062,7 +1062,8 @@ pub fn cpp_codegen(
 
         mut ret = id.valid_identifier;
         if (target.sighash && !(target.flags & F_EXTERN))
-            ret ~= "_" ~ target.sighash.digest62(chars: 8);
+            (ret == "_" ? ret : ret ~= "_") ~=
+                target.sighash.digest62(chars: 8);
 
         return ret;
     }
@@ -1319,6 +1320,25 @@ pub fn cpp_codegen(
 
         _indent = "\n";
 
+        //
+        let dedupe = overload.flags & F_TEMPLATE
+                  && overload.name.valid_identifier;
+
+        let sighash = target.sighash;
+
+        shadow let dedupe = dedupe && sighash
+            ? dedupe ~ '_' ~ sighash.digest62
+            : dedupe;
+
+        // Turns out we've had this all along for templates & the like.
+        //  Doing this here prevents any fns called inside from emitting code too.
+        //
+        if (dedupe && !_TODO_FIX_seenFns.set::add(dedupe))
+        {
+            noteDefect(DuplicateFunctions);
+            return;
+        }
+
         // TODO is this needed?
         //  Body should always be a block.
         mut src: string;
@@ -1359,22 +1379,11 @@ pub fn cpp_codegen(
         //      outside of the scope of some template,
         //       e.g. just globally eliminate duplicate code somehow.
         //
-        if !(_TODO_FIX_seenFns.set::add(src))
+        if (!dedupe && !_TODO_FIX_seenFns.set::add(src))
         {
             noteDefect(DuplicateFunctions);
             return;
         }
-
-        //
-        let dedupe = overload.flags & F_PUB
-                  && overload.flags & F_TEMPLATE
-                  && overload.name.valid_identifier;
-
-        let sighash = target.sighash;
-
-        shadow let dedupe = dedupe && sighash
-            ? dedupe ~ '_' ~ sighash.digest62
-            : dedupe;
 
         // LIVE ////////////////////////
         if (overload.flags & F_HOTSWAP)

@@ -120,8 +120,6 @@ pub fn parse(
     mut _precedence = P_RESET;
     mut _fnDepth    = 0;
 
-    mut _anonFns    = 0;
-
     mut _autopub    = true;
 
 
@@ -950,7 +948,7 @@ pub fn parse(
         if (noClosingPipe && _precedence > P_RESET && _precedence < P_PREFIX_UNARY)
             warn("Unparenthesized `|| lambda` within a binary expression.");
 
-        let name = "l_" ~ modid ~ "_" ~ _anonFns++;
+        let name = "_";
 
         // TODO FIX: re: F_LAX, otherwise we get complaints for no effects/returns void,
         //  also there's no way to add the annotation manually, feels sloppy though.
@@ -1065,7 +1063,7 @@ pub fn parse(
         mut items: Node[];
 
         ////////////////////////////////
-        _fnDepth++;
+        let isTopLevel          = !_fnDepth++;
         let numDollars0         = _numDollars;
 
         defer {
@@ -1115,6 +1113,9 @@ pub fn parse(
         //
         if (flags & F_LAMBDA)
             flags |= F_TEMPLATE;
+
+        if (isTopLevel)
+            flags |= F_TOP_LEVEL;
 
         return make("fn", :items, :flags, :asserts, name,
             syntax: !expr && PS_NOT_AN_EXPRESSION);

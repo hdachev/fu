@@ -131,14 +131,14 @@ using flags Flags: u32
 
 
     F_NAMED_ARGS    // TODO FIX do we need this really? the ast is self-explanatory
-    // ...
     F_REST_ARG
     F_RELAXABLE_REF
+    F_INJECTED
 
     F_TEMPLATE
     F_INLINE
     F_LAMBDA
-    F_INJECTED
+    F_TOP_LEVEL
 };
 
 

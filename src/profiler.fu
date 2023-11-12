@@ -33,6 +33,7 @@ struct ProfileData
     EnsureArgSeq:       ProfileItem;
     ValidateCOW:        ProfileItem;
     SolveStruct:        ProfileItem;
+    ComputeSighashes:   ProfileItem;
 
     UnaccountedFor:     ProfileItem;
 }

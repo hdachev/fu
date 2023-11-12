@@ -2918,7 +2918,7 @@ pub extern fn runTests()
         fn main() {
             let sj = "heelloo"  .split("ee").join("e")
                                 .split('o').join("o!")
-                                .split("he").join();
+                                .split("he").join();            ;; DuplicateFunctions
 
             return sj == "llo!o!" ? 0 : 1;
         }
@@ -3461,7 +3461,7 @@ pub extern fn runTests()
 
         fn main() {
             mut res = 0;
-            woot(hello: |one| res += one);
+            woot(hello: |one| res += one);                      ;; DuplicateFunctions
             woot(world: |two| res += two);
             return res - 3;
         }
@@ -3473,7 +3473,7 @@ pub extern fn runTests()
             world(two?: 2);
         }
 
-        fn main() {
+        fn main() {                                             ;; DuplicateFunctions
             mut res = 0;
             <fail duplicate explicitly named argument hello 10:17+1>
             woot(hello: |one| res += one, hello: |one| res += one); <pass/>
@@ -12563,7 +12563,7 @@ pub extern fn runTests()
 
             _0::incr(fn _0::a);
             _0::incr(|i| i._0::b);
-            _0::incr(|i| i.b);
+            _0::incr(|i| i.b);                                  ;; DuplicateFunctions
             _0::incr(._0::c);
             _0::incr(.c);
 
@@ -14272,7 +14272,7 @@ pub extern fn runTests()
                 }
 
                 let sum = depth0 + depth1;
-                return first_inner(|| sum);
+                return first_inner(|| sum);                     ;; DuplicateFunctions
             }
 
             fn second(depth1) {
@@ -16463,7 +16463,7 @@ pub extern fn runTests()
     `,`
         noinline fn hello(x) x;
     `,`
-        fn main() 0._0::hello + 0._1::hello;
+        fn main() 0._0::hello + 0._1::hello;                    ;; DuplicateFunctions
     `]);
 
     ZERO([`
@@ -16647,7 +16647,7 @@ pub extern fn runTests()
         }
     `]);
 
-    TODO_mangle(currently: "BUG exit code", [`
+    ZERO([`
         struct Woot { i: i32 };
         fn sqr(v) = mul(v, v);
     `,`
