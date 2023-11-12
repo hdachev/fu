@@ -6441,8 +6441,7 @@ pub fn solve(
                         //
                         ~ "," ~ stableTypeID(target.type);
 
-            EXT_mut(target).sighash = sig
-                && (tea::hash62(sig) || BUG());
+            EXT_mut(target).sighash = sig && (tea::hash(sig) || BUG());
         }
     }
 

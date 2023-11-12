@@ -5,13 +5,25 @@ struct TEA
     v1: u32;
 }
 
-inline fn TEA(v: u64)
+inline fn u64(tea: TEA): u64
 {
-    return TEA(v.u32, (v >> 32).u32);
+    return tea.v0.u64 | (tea.v1.u64 << 32);
 }
 
-inline fn r4(using ref _: TEA, ref sum: u32)
+fn non_zero(ref tea: TEA)
 {
+    if !(tea)
+        tea.v0 = 0xffffffff;
+
+    return tea;
+}
+
+
+//
+
+fn r4(using ref _: TEA)
+{
+    mut sum: u32;
     mut delta: u32 = 0x9e3779b9;
 
     for (mut i = 0; i < 4; i++) {
@@ -22,8 +34,9 @@ inline fn r4(using ref _: TEA, ref sum: u32)
     }
 }
 
-inline fn r8(using ref _: TEA, ref sum: u32)
+fn r8(using ref _: TEA)
 {
+    mut sum: u32;
     mut delta: u32 = 0x9e3779b9;
 
     for (mut i = 0; i < 8; i++) {
@@ -34,8 +47,9 @@ inline fn r8(using ref _: TEA, ref sum: u32)
     }
 }
 
-inline fn r16(using ref _: TEA, ref sum: u32)
+fn r16(using ref _: TEA)
 {
+    mut sum: u32;
     mut delta: u32 = 0x9e3779b9;
 
     for (mut i = 0; i < 16; i++) {
@@ -47,47 +61,25 @@ inline fn r16(using ref _: TEA, ref sum: u32)
 }
 
 
-// Shorthands.
-
-inline fn r4(ref tea: TEA) {
-    mut sum: u32; tea.r4(sum);
-}
-
-inline fn r8(ref tea: TEA) {
-    mut sum: u32; tea.r8(sum);
-}
-
-inline fn r16(ref tea: TEA) {
-    mut sum: u32; tea.r16(sum);
-}
-
-
 //
 
-inline fn u64(tea: TEA): u64 =
-    tea.v0.u64 | (tea.v1.u64 << 32);
-
-
-// Don't return 1F.
-//  This doesn't use the head byte
-//   which allows you to pick bools without correlation.
-
-inline fn uniform_f01(u: u32)
-    (u & 0xffffff).f32 * (1 / 0x1000000 .f32);
-
-inline fn uniform_f11(u: u32)
+fn hash(ref res: TEA, other: TEA)
 {
-    let f01 = u.uniform_f01;
-    return u & 0x1000000 ? -f01 : +f01;
+    res.v0 ^= other.v1;         // NOTE! Criss-crossing v0 and v1
+    res.v1 ^= other.v0;         //  so that hashing with self by a.hash(a)
+    res.r16();                  //   doesn't reset the hash (ran into this when sighashing self-recursive fns)
 }
-
-
-// Let's put our cooler features to use.
 
 fn hash(ref res: TEA, v: u64)
 {
+    res.v0 ^= (v >> 32).u32;    // Same as above -
+    res.v1 ^= v.u32;            //  flip the hi/lo u32 around, so that hashing with self by a.hash(a.u64)
+    res.r16();                  //   doesn't reset the hash
+}
+
+fn hash(ref res: TEA, v: u32)
+{
     res.v0 ^= v.u32;
-    res.v1 ^= (v >> 32).u32;
     res.r16();
 }
 
@@ -128,12 +120,8 @@ fn hash(ref res: TEA, u8view: [byte])
     }
 }
 
-fn hash(u8view: [byte])
-{
-    mut res: TEA;
-    res.hash(u8view);
-    return res;
-}
+
+// Digests.
 
 fn digest62(mut v.u64: u64, mut chars!?: int): string
 {
@@ -178,6 +166,16 @@ fn digest16(mut v.u64: u64, mut chars!?: int): string
             res ~= byte(c - 10 + 'a'.u64);
     }
 
+    return res;
+}
+
+
+// Shorthands.
+
+fn hash(u8view: [byte])
+{
+    mut res: TEA;
+    res.hash(u8view);
     return res;
 }
 

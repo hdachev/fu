@@ -313,7 +313,7 @@ struct Extended
     // But this could also be used for some kind of content addressed code thing,
     //  TBD where we can take this, deduplicate identical functions or something.
     //
-    sighash?:       string;
+    sighash?:       tea::TEA;
 
     //
     fx_mask?:       effects::FxMask;

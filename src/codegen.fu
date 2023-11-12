@@ -1062,7 +1062,7 @@ pub fn cpp_codegen(
 
         mut ret = id.valid_identifier;
         if (target.sighash && !(target.flags & F_EXTERN))
-            ret ~= "_" ~ target.sighash[: 8];
+            ret ~= "_" ~ target.sighash.digest62(chars: 8);
 
         return ret;
     }
@@ -1373,7 +1373,7 @@ pub fn cpp_codegen(
         let sighash = target.sighash;
 
         shadow let dedupe = dedupe && sighash
-            ? dedupe ~ '_' ~ sighash
+            ? dedupe ~ '_' ~ sighash.digest62
             : dedupe;
 
         // LIVE ////////////////////////
