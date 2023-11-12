@@ -16451,6 +16451,30 @@ pub extern fn runTests()
     // Mangling.
 
     ZERO([`
+        noinline fn hello(x: i32) x;
+    `,`
+        noinline fn hello(x: i32) x;
+    `,`
+        fn main() 0._0::hello + 0._1::hello;
+    `]);
+
+    ZERO([`
+        noinline fn hello(x) x;
+    `,`
+        noinline fn hello(x) x;
+    `,`
+        fn main() 0._0::hello + 0._1::hello;
+    `]);
+
+    ZERO([`
+        noinline fn hello(x: i32) x;
+    `,`
+        noinline fn hello(x) x;
+    `,`
+        fn main() 0._0::hello + 0._1::hello;
+    `]);
+
+    ZERO([`
         fn Each(y<alt>: i32</alt>)
             y & 1   ? y
                     : y / 2 + Each(y / 2);
