@@ -1554,7 +1554,7 @@ pub extern fn runTests()
                 return fallback;
             }
 
-            mut str = solveNode(lookup(13));                    ;; PointlessMustSeq
+            mut str = solveNode(lookup(13));
             str ~= str;
             return helpers.len * 1000 + str.len - 116;
         }
@@ -9114,7 +9114,7 @@ pub extern fn runTests()
         }
     `);
 
-    TODO_relaxer(currently: "BUG ScopeSkip_push: bad args 15:24+2", `
+    ZERO(`
         struct Module { events: i32; };
 
         <alt>
@@ -10295,7 +10295,7 @@ pub extern fn runTests()
         return S(-1).test;
     `);
 
-    ZERO(`
+    ZERO(`                                  ;; DuplicateFunctions
         fn ARR_LAST(a: $T[])
             a[a.len - 1];
 
@@ -10728,7 +10728,7 @@ pub extern fn runTests()
         fn main() args_in_cases(+1, -1);
     `);
 
-    ZERO(`
+    ZERO(`                                  ;; DuplicateFunctions
         fn ARR_LAST(a: $T[])
             case (typeof(a) -> &mut $T[]): &mut $T a[a.len - 1];
             case (typeof(a) -> &    $T[]): &    $T a[a.len - 1];
@@ -10743,7 +10743,7 @@ pub extern fn runTests()
         };
     `);
 
-    ZERO(`
+    ZERO(`                                  ;; DuplicateFunctions
         fn ARR_LAST(a: $T[])
             case (typeof(a) -> &mut $T[]): &mut $T a[a.len - 1];
             case (typeof(a) -> &    $T[]): &    $T a[a.len - 1];
@@ -14507,7 +14507,7 @@ pub extern fn runTests()
         }
     `);
 
-    TODO_relaxer(currently: "not an array i32[:] 28:24+2", `
+    ZERO(`
         let SELF_TEST = <alt>true<alt/>false</alt>;
 
         inline fn LT_each(lt: i32[:], each)
@@ -15830,7 +15830,7 @@ pub extern fn runTests()
         }
     `]);
 
-    TODO_relaxer(currently: "binding arg 4:20+3 invalidated by subsequent write 4:28+3", `
+    ZERO(`
         fn useless_ref_lambda(ref sources: string[]) {
             fn src = sources[sources.len / 2]; // didn't relax the ref, failed bck
             return src[1 : src.len] ~ src[0 : 1];
@@ -15917,7 +15917,7 @@ pub extern fn runTests()
         }
     `);
 
-    TODO_relaxer(currently: "bad call to pop 3:20+1 not an array", `
+    ZERO(`
         fn relaxes_arr_to_slice_and_fails(ref arr) {
             arr.pop();
             return arr;
@@ -16305,7 +16305,7 @@ pub extern fn runTests()
         }
     `);
 
-    TODO_relaxer(currently: "BUG ScopeSkip_push 6:20+3", `
+    ZERO(`
         using flags Flags { A; B }
 
         fn parseExoticDecl(shadow mut flags: Flags) {
@@ -16320,7 +16320,7 @@ pub extern fn runTests()
         fn main() = parseExoticDecl(A).i32 - 3;
     `);
 
-    TODO_relaxer(currently: "BUG ScopeSkip_push bad args 7:24+8", `
+    ZERO(`
         struct Node { items: string };
 
         pub fn solve(using ref _current_fn: Node, root) {
@@ -16344,7 +16344,7 @@ pub extern fn runTests()
         }
     `);
 
-    TODO_relaxer(currently: "fn solve is not pure, writes to ref arg n 4:9+4", `
+    ZERO(`
         struct Node { items: string };
 
         pure fn closure_of_explicit_ref_cant_relax(ref n) {
@@ -16363,7 +16363,7 @@ pub extern fn runTests()
         }
     `);
 
-    TODO_relaxer(currently: "fn solve is not pure, writes to ref arg n 4:9+4", `
+    ZERO(`
         struct Node { items: string };
 
         pure fn injected_args_ignore_relaxed_types(using ref n) {

@@ -239,3 +239,17 @@ pub fn BUG(mut reason?: string)
 {
     FAIL("COMPILER BUG:\n\n\t" ~ (reason || "Assertion failed."));
 }
+
+pub lax fn SELF_TEST(inline assertion: bool, inline msg?: string)
+{
+    if (SELF_TEST && !assertion)
+        BUG(msg);
+}
+
+pub fn ALWAYS_TRUE(inline assertion, inline msg?: string)
+{
+    if (SELF_TEST)
+        return assertion || BUG(msg);
+    else
+        return assertion;
+}

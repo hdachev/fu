@@ -20,6 +20,8 @@ let OPTI_bck                = true;
 let OPTI_unlist_callers     = true;
 let OPTI_moves_inside_fns   = true;
 
+let USE_rev_spec            = true;
+
 
 //
 
@@ -295,6 +297,11 @@ pub fn solve(
 
         //
         TODO_FIX_unique?:   i32;
+
+        // Stashing it on CurrentFn
+        //  so we can update it together with overload.type,
+        //   otherwise they get out of sync = sadness follows.
+        rev_spec_proto?:    RevSpecPrototype;
     };
 
     struct ChildTarget
@@ -309,6 +316,43 @@ pub fn solve(
         scope_items:        ScopeItem[];
         arg_spec_types:     map::Map(string, Type);
     };
+
+
+    //
+
+    struct RevSpecPrototype
+    {
+        // Either an original function,
+        //  available for reverse spec -
+        //
+        true solved:        SolvedNode;
+        locals:             Overload[];
+    };
+
+    struct RevSpecInstance
+    {
+        // Or a reverse specialization,
+        //  pointing to its original -
+        //
+        true original:      Target;
+        relaxed_quals:      Quals;
+    };
+
+    struct RevSpecOutput
+    {
+        relaxed_quals:      Quals;
+        instance_targ:      Target;
+    };
+
+    struct ReverseSpecialization
+    {
+        prototype?:         RevSpecPrototype;
+        instance?:          RevSpecInstance;
+        outputs?:           RevSpecOutput[];
+    };
+
+
+    //
 
     struct Ephemeral
     {
@@ -327,6 +371,8 @@ pub fn solve(
         specs?:             map::Map(string, Target); // mangle -> spec;
 
         far_jumps?:         i32[];
+
+        rev_spec?:          ReverseSpecialization;
     };
 
     using flags TypeParamFlags {
@@ -3603,11 +3649,15 @@ pub fn solve(
                 if (spec == node.target)
                     return;
 
+                TRACE_BRACKET("redirectCallTarget " ~ node.target.globid ~ " " ~ node.target ~ " -> " ~ spec.globid ~ " " ~ spec);
+
                 ensureLazySolved(spec);
 
                 if (SELF_TEST)
                     spec.args.len == t.args.len || BUG(
-                        "Relaxed spec.args.len(" ~ spec.args.len ~ ") != original.args.len(" ~ t.args.len ~ ")");
+                        "Relaxed spec.args.len(" ~ spec.args.len ~ ") != original.args.len(" ~ t.args.len ~ "):"
+                            ~ "\n\n\t\t" ~ spec.args.map(.str).join(", ")
+                            ~ "\n\n\t\t" ~    t.args.map(.str).join(", "));
 
                 checkAssignable(host: node.type, spec.type,
                     "Relaxed specialization does not return a subtype");
@@ -3630,7 +3680,25 @@ pub fn solve(
 
             if (mask_retval_relaxable)
             {
-                if (t.spec_of)
+                // New relaxer -
+                //  grab the current fnbody, and re-relax & re-check it
+                //   against the relaxed return type.
+                //
+                if (USE_rev_spec && t.kind == "fn" && t.modid == module.modid)
+                {
+                    TRACE_BRACKET("RELAX tryReverseSpecialize " ~ t.globid ~ " " ~ t ~ " for " ~ relaxed_quals ~ " status=" ~ t.status);
+
+                    let spec = tryReverseSpecialize(t, relaxed_quals: mask_retval_relaxable);
+                    if (spec)
+                        redirectCallTarget(spec);
+                }
+
+                // Old relaxer -
+                //  attempt to relax the fn by relaxing the arguments whose
+                //   whose lifetimes are mentioned in the return lifetime,
+                //    and then attempting to respecialize.
+                //
+                else if (t.spec_of)
                 {
                     // Template spec relaxer, this is nasty.
                     //  Not sure what the ideal method to deal with this here would be,
@@ -4507,7 +4575,10 @@ pub fn solve(
             type: h.ret_actual || BUG(),
             :h);
 
-        if (fnbody_of)
+        // TODO move this out of here,
+        //  we know exactly when this needs to run.
+        //
+        if (fnbody_of) :RUN_ALL_PASSES
         {
             // Don't run further passes if dirty -
             //  some of our AST might be broken,
@@ -4519,10 +4590,26 @@ pub fn solve(
             {
                 sortInjectedArguments();
 
-                if (!currentFn_mustBecomeInline())
-                    runAllPasses(block);
-                else
+                if (currentFn_mustBecomeInline())
+                {
                     mcom_FnReturn_CopyOrMoveDecision(:h);
+                    break :RUN_ALL_PASSES;
+                }
+
+                // Stash away prototype for reverse specialization.
+                {
+                    let target  = localfn(fnbody_of);
+
+                    let locals  = target.locals;
+                    mut solved  = _current_fn.out;
+                    solved.items.last = block;
+
+                    _current_fn.rev_spec_proto =
+                        RevSpecPrototype(:locals, :solved);
+                }
+
+                //
+                runAllPasses(block);
             }
         }
 
@@ -5204,6 +5291,245 @@ pub fn solve(
 
     //
 
+    fn tryReverseSpecialize(
+        mut original: Target, mut relaxed_quals: Quals): Target
+    {
+        // Climb up to the source.
+        {
+            mut up: Target;
+            while (up = original.rev_spec.instance.original)
+            {
+                relaxed_quals |= original.rev_spec.instance.relaxed_quals || BUG(
+                    "tryReverseSpecialize: .original set on " ~ original ~ " but !relaxed_quals");
+
+                original = up;
+            }
+        }
+
+        // Not sure about this one -
+        //  Prevents us from emitting reverse-specializations
+        //   of functions that are currently being solved.
+        //
+        // Not sure if this actually prevents anything
+        //  from relaxing properly.
+        //
+        if !(original.status & SS_FINALIZED)
+            return [];
+
+        // Try to look up existing reverse specialization.
+        let outputs = original.rev_spec.outputs;
+        for (mut i = 0; i < outputs.len; i++)
+            if (outputs[i].relaxed_quals == relaxed_quals)
+                return outputs[i].instance_targ;
+
+        // OK, we gotta emit a new thing.
+        let target = Scope_create(_scope, "fn");
+
+        GET_mut(target) = GET(original);
+        EXT_mut(target) = EXT(original);
+        EPH_mut(target)
+            .rev_spec =
+                ReverseSpecialization(
+                    instance: RevSpecInstance(
+                        :original,
+                        :relaxed_quals));
+
+        // Put this up on the cache,
+        //  if we end up needing this recursively
+        //   we don't want to reenter.
+        //
+        EPH_mut(original).rev_spec.outputs ~=
+            RevSpecOutput(:relaxed_quals, instance_targ: target);
+
+        // Schedule lazySolveStart.
+        GET_mut(target).status &= SS_LAZY | SS_FN_RECUR;
+
+        // Enable lazySolveEnd.
+        EPH_mut(target).local_of = EPH(original).local_of;
+
+        EPH_mut(target).calls.set::add(original.globid);
+        EPH_mut(original).callers.set::add(target.globid);
+
+        // We should be done here.
+        return target;
+    }
+
+    fn doReverseSpecialize(target: Target)
+    {
+        let instance        = target.rev_spec.instance;
+        let original        = instance.original;
+        let relaxed_quals   = instance.relaxed_quals;
+
+        TRACE_BRACKET("doReverseSpecialize " ~ target.globid ~ " " ~ target ~ " for " ~ relaxed_quals);
+
+        let prototype       = original.rev_spec.prototype;
+
+        mut solved          = prototype.solved || BUG("doReverseSpecialize: no rev_spec.prototype.solved");
+        mut locals          = prototype.locals;
+
+        ////////////////////////////////////////////////////////////////
+        let helpers0        = _helpers.len;
+        let helpers_data0   = _helpers_data.len;
+
+        mut current_fn0     = _current_fn.steal();
+
+        let solvingFnort0   = _solvingFnort.exchange(target);
+        let nestingFnort0   = _nestingFnort.exchange(target);
+
+        defer {
+            _helpers.shrink(helpers0);
+            _helpers_data.shrink(helpers_data0);
+
+            swap(current_fn0, _current_fn);
+
+            _solvingFnort   = solvingFnort0;
+            _nestingFnort   = nestingFnort0;
+        }
+        ////////////////////////////////////////////////////////////////
+
+        // Relink locals & helpers.
+        {
+            mut helpersReplicas:    Helpers[];
+            mut lastKnownLocal:     i32;
+
+            fn replaceGlobid(ref t: Target)
+            {
+                SELF_TEST(t.parent == original);
+
+                t = Target(
+                    modid:  target.modid,
+                    globid: target.globid,
+                    locid:  t.locid);
+            }
+
+            fn relinkNode(ref node: SolvedNode)
+            {
+                let k = node.kind;
+
+                // Relinking locals.
+                if (k == "letdef")
+                {
+                    replaceGlobid(node.target)
+                    let locid = node.target.locid;
+
+                    lastKnownLocal = locid;
+
+                    // Swap trick to appease bck.
+                    fn local = locals[locid - 1];
+
+                    mut letNode: SolvedNode;
+                    swap(letNode, local.solved);
+                    relinkNode(letNode);
+                    swap(letNode, local.solved);
+                }
+                else if (k == "let" || k == "call")
+                {
+                    if (node.target.isLocal)
+                        replaceGlobid(node.target);
+                }
+
+                // Relinking helpers.
+                else if (k == "block" || k == "loop")
+                {
+                    let foreign = node.helpers;
+                    if (foreign)
+                    {
+                        let local = push(
+                            HelpersReplica(
+                                local_of:       _current_fn.target.globid,
+                                locals_start:   lastKnownLocal + 1,
+                                ret_actual:     node.type,
+                            ));
+
+                        helpersReplicas.grow_if_oob(foreign.index) =
+                            node.helpers =
+                                local.ALWAYS_TRUE;
+                    }
+                }
+                else if (k == "jump")
+                {
+                    let foreign = node.helpers;
+                    let local = helpersReplicas.unless_oob(foreign.index);
+
+                    node.helpers = local.ALWAYS_TRUE;
+                }
+
+                // Continue traversal.
+                for (mut i = 0; i < node.items.len; i++)
+                    relinkNode(node.items[i]);
+            }
+
+            relinkNode(solved);
+        }
+
+        // We gotta put the locals on the thing,
+        //  and mock up a _current_fn to runAllPasses on.
+        EXT_mut(target).locals  = locals;
+        GET_mut(target).status &= ~SS_Debug_AllPassesComplete;
+
+        // There's a bunch of places where .target needs to be replaced,
+        //  not terribly elegant.
+        {
+            solved.target           = target;
+
+            ref n_body              = solved.items.last;
+            n_body.helpers.target   = target;
+            n_body.helpers.mask     = HM_Function;
+
+            // Relax the return value.
+            mut slot                = n_body.type;
+            slot.force_relax(relax_mask: relaxed_quals);
+
+            let did_relax           = n_body.type.try_relax(
+                :slot, relax_mask: relaxed_quals);
+
+            did_relax == relaxed_quals || BUG(
+                "doReverseSpecialize: did_relax(" ~ did_relax ~ ")"
+                           ~ " != relaxed_quals(" ~ relaxed_quals ~ ")");
+        }
+
+        // runAllPasses.
+        mut retval: Type;
+        {
+            // runAllPasses needs the fnode on _current_fn.
+            //  Body can't be there, bck not happy.
+            mut n_body = solved.items.last.steal();
+            swap(_current_fn.out, solved);
+
+            runAllPasses(n_body);
+
+            // Finally, we gotta doUpdateScope here as usual.
+            retval = n_body.helpers.ret_actual;
+
+            retval.quals & relaxed_quals && BUG(
+                "reported retval intersects relaxed_quals");
+
+            // Put the body up on _current_fn.
+            swap(_current_fn.out.items.last, n_body);
+        }
+
+        // Update as usual.
+        {
+            TRACE("doUpdateScope " ~ target.globid ~ " retval = " ~ retval.humanizeType(lt: true));
+
+            doUpdateScope(
+                :retval, :target,
+                isNative: false, isUnspec: false, maybeLast: true,
+                asserts: []);
+
+            // SS_UPDATED & co.
+            //
+            // Note: we're not actually inserting invalidation edges right now.
+            //  We weren't doing it for the previous specializer either,
+            //   which begs the question if we ain't broken there too.
+            //
+            lazySolveEnd(target);
+        }
+    }
+
+
+    //
+
     fn ScopeSkip_push(ref scope_skip: ScopeSkip[], start: i32, end: i32)
     {
         start <= end || BUG("ScopeSkip_push: bad args.");
@@ -5249,10 +5575,6 @@ pub fn solve(
         }
 
         intoTombstone(t);
-
-        // Is this necessary? This whole thing is a mess.
-        // GET_mut(t).status |= SS_UPDATED;
-        // lazySolveEnd(t);
     }
 
 
@@ -6003,6 +6325,9 @@ pub fn solve(
         maybeLast!: bool, isNative!: bool, isUnspec!: bool,
         asserts!: DeclAsserts)
     {
+        if (SELF_TEST)
+            target == _current_fn.target || BUG("doUpdateScope: target mismatch");
+
         shadow let items = _current_fn.items;
         shadow let mustBecomeInline = currentFn_mustBecomeInline();
 
@@ -6407,6 +6732,9 @@ pub fn solve(
         shadow ref eph  = EPH_mut(target);
 
         eph.far_jumps   = _current_fn.far_jumps;
+
+        eph.rev_spec.prototype =
+            _current_fn.rev_spec_proto.steal();
     }
 
 
@@ -7202,14 +7530,21 @@ pub fn solve(
         if (target.status & (SS_DID_START | SS_LAZY) != SS_LAZY)
             return false;
 
-        {
-            ref o = GET_mut(target);
-            o.status & (SS_FINALIZED | SS_DID_START | SS_DIRTY) && BUG("SS_DID_START: non-zero solver status: " ~ o.status);
-            o.status |= SS_DID_START;
+        //
+        ref o = GET_mut(target);
+        o.status & (SS_FINALIZED | SS_DID_START | SS_DIRTY) && BUG("SS_DID_START: non-zero solver status: " ~ o.status);
+        o.status |= SS_DID_START;
 
-            if (o.kind == "fn" || o.kind == "inline" || o.kind == "template")
+        if (o.kind == "fn" || o.kind == "inline" || o.kind == "template")
+        {
+            if (target.rev_spec.instance.original)
+                doReverseSpecialize(target);
+            else
                 doTrySpecialize(into: target, parent_idx: target.local_of);
-            else if (o.kind == "type")
+        }
+        else
+        {
+            if (o.kind == "type")
                 __solveStruct(solve: true, :target.template.node, into: target);
             else
                 BUG("lazySolveStart: kind is `" ~ o.kind ~ "`.");
@@ -9751,6 +10086,11 @@ pub fn solve(
         return false;
     }
 
+    fn HelpersReplica(local_of!: i32, locals_start!: i32, ret_actual: Type)
+    {
+        return HelpersData(:local_of, :locals_start, :ret_actual);
+    }
+
     fn inlineExpression(
         from!: Target,
         mut node: SolvedNode,
@@ -9807,7 +10147,7 @@ pub fn solve(
                 if (foreign)
                 {
                     let local = push(
-                        HelpersData(
+                        HelpersReplica(
                             local_of:       _current_fn.target.globid,
                             locals_start:   locals_start || GET_next_local_index(),
                             ret_actual:     node.type,
