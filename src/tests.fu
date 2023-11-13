@@ -1615,6 +1615,49 @@ pub extern fn runTests()
         }
     `);
 
+    TODO_relaxer(currently: "BUG spec.args.len(3) != original.args.len(4)", `
+        struct Target { globid: i32 };
+        struct SolvedNode { target: Target; items?: SolvedNode[] }
+        struct Argument { target: Target };
+        struct Overload { solved: SolvedNode };
+        struct Extended { args: Argument[] };
+
+        noinline fn lazySolveStartDetectRecursionBug(overloads: Overload[], extended: Extended[], root: SolvedNode)
+        {
+            using fn GET(target: Target)
+                overloads[target.globid];
+
+            using fn EXT(target: Target)
+                extended[target.globid];
+
+            fn cgNode(n: SolvedNode) {
+                mut src = "";
+                n.items.each: |member|
+                    src ~= cgFn(member.target);
+
+                return src;
+            }
+
+            fn cgFn(target: Target) {
+                mut src = cgNode(target.solved);
+                target.args.each: |host_arg|
+                    src ~= binding(host_arg);
+
+                return src;
+            }
+
+            fn binding(target: Target)      cgNode(target.solved);
+            fn binding(arg: Argument)       binding(arg.target);
+
+            return cgNode(root);
+        }
+
+        fn main() {
+            return lazySolveStartDetectRecursionBug(
+                [ Overload() ], [ Extended() ], SolvedNode()).len;
+        }
+    `);
+
     // /Recursion, closures & implicit arguments.
 
 
