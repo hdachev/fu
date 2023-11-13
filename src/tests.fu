@@ -16382,6 +16382,42 @@ pub extern fn runTests()
         }
     `);
 
+    TODO_relaxer(currently: "BUG block.tail not listed in block.type lifetime", `
+        struct SolvedNode { value: string; items?: SolvedNode[] };
+
+        noinline fn blockTailHasLocals_but_blockTypeIsTemp(root: SolvedNode)
+        {
+            fn declareStruct(node: SolvedNode) {
+                mut def = "";
+                node.items.each: |item|
+                    def ~= item.value ~ cgCall(item);
+
+                return def;
+            }
+
+            fn cgCall(node: SolvedNode) {
+                mut item_src: string[] = [ "", "" ];
+                fn ooeWrap(src) src && [];
+                fn ARG(i) item_src[i];
+
+                let id = node.value;
+                if (id.len & 1)
+                    return ooeWrap((ARG(0)<alt> = ""</alt>) ~ "" ~ (ARG(1)<alt> = ""</alt>));
+                else if (!id)
+                    return "" ~ id;
+                else
+                    return [];
+            }
+
+            return declareStruct(root);
+        }
+
+        fn main() {
+            return blockTailHasLocals_but_blockTypeIsTemp(
+                SolvedNode("none of this does anything")).len;
+        }
+    `);
+
     // /Relaxer.
 
 
