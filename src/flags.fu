@@ -12,7 +12,7 @@ using flags SolverStatus: u16
     SS_UPDATED
     SS_TYPE_RECUR
     SS_FN_RECUR
-    // ...
+    SS_FN_OOE_RTL
 
     SS_HOIST
     SS_UNUSED
@@ -131,7 +131,7 @@ using flags Flags: u32
 
 
     F_NAMED_ARGS    // TODO FIX do we need this really? the ast is self-explanatory
-    F_OOE_RTL       // TODO FIX perhaps we should just flip the arg order of assignments?
+    // ...
     F_REST_ARG
     F_RELAXABLE_REF
 

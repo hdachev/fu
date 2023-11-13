@@ -353,11 +353,11 @@ using flags VFacts
 // Argument OOE, here for sharing in solver & cg.
 
 fn isRTL(o: Overload): bool
-    !!(o.flags & flags::F_OOE_RTL);
+    !!(o.status & flags::SS_FN_OOE_RTL);
 
 fn isRTL_set(ref o: Overload, rtl: bool)
-    if (rtl)    o.flags |=  flags::F_OOE_RTL;
-    else        o.flags &= ~flags::F_OOE_RTL;
+    if (rtl)    o.status |=  flags::SS_FN_OOE_RTL;
+    else        o.status &= ~flags::SS_FN_OOE_RTL;
 
 
 // New argument order of evaluation rules -
