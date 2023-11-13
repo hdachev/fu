@@ -350,7 +350,7 @@ function tryReturnDefinit(src)
     )
 */
 
-const re_POP_LEADING_ANDOR = /(\()([^()&|]*(?:\([^()]*\)[^()&|]*)*[&|]{2})/g;
+const re_POP_LEADING_ANDOR = /(\()([^()&|]*(?:\([^()]*\)[^()&|]*)*[&|]{2})\s*/g;
 
 function tryPopLeadingAndOr(src)
 {
@@ -380,7 +380,7 @@ function tryPopLeadingAndOr(src)
     )
 */
 
-const re_POP_TAILING_ANDOR = /([&|]{2}[^()&|]*(?:\([^()]*\)[^()&|]*)*)(\))/g;
+const re_POP_TAILING_ANDOR = /\s*([&|]{2}[^()&|;]*(?:\([^()]*\)[^()&|;]*)*)([);])/g;
 
 function tryPopTailingAndOr(src)
 {
@@ -454,6 +454,76 @@ function tryPopArgumentLike(src)
 }
 
 
+// Single statement if & co cutter.
+
+const re_POP_SINGLE_STMT_CONTROL = /(if|else|do|while|for)[^{};]+;/g;
+
+function tryPopSingleStmtControl(src)
+{
+    const match = randExec(src, re_POP_SINGLE_STMT_CONTROL);
+    if (!match)
+        return false;
+
+    console.log("\nSINGLE_STMT_CONTROL\n<<<" + match[0] + ">>>");
+
+    return (
+        src.slice(0, match.index) +
+        src.slice(match.index + match[0].length));
+}
+
+
+// merge `"hello" ~ whatever ~ "yo"` into `"hello"` into `""`
+
+const re_TRY_MERGE_STRING_LITERALS = /("{1,2})[^"\n]+("{1,2})|(`{1,2})[^`]+(`{1,2})/g;
+
+function tryMergeStringLiterals(src)
+{
+    const match = randExec(src, re_TRY_MERGE_STRING_LITERALS);
+    if (!match)
+        return false;
+
+    let open      = match[1] || match[3];
+    let close     = match[2] || match[4];
+
+    let quotes    = open + close;
+    if (quotes.length & 1)
+        quotes = quotes[0];
+    else if (quotes.length > 2)
+        quotes = quotes.slice(0, 2);
+
+    console.log("\nMERGE_STRING_LITERALS\n<<<" + match[0] + " -> " + quotes + ">>>");
+
+    return (
+        src.slice(0, match.index) +
+        quotes +
+        src.slice(match.index + match[0].length));
+}
+
+
+// if/while cut keeping body.
+//
+// This assumes ifs condition is parenthesized,
+//  will have to be updated if we want it to work for always-curly no-parens ifs.
+
+const re_POP_IF_WHILE_COND = /(if|while)\s*!?\([^)]*(?:\([^)]*\))*\)\s*/g;
+
+function tryPopIfWhileCond(src)
+{
+    const match = randExec(src, re_POP_IF_WHILE_COND);
+    if (!match)
+        return false;
+
+    console.log("\nPOP_IF_WHILE_COND\n<<<" + match[0] + ">>>");
+
+    const close = match[2] == '{' ? '{' : '';
+
+    return (
+        src.slice(0, match.index) +
+        close +
+        src.slice(match.index + match[0].length));
+}
+
+
 //
 
 const _strategies =
@@ -475,6 +545,9 @@ const _strategies =
     tryPopTailingAndOr,
     tryPopArgumentTypeAnnot,
     tryPopArgumentLike,
+    tryPopSingleStmtControl,
+    tryMergeStringLiterals,
+    tryPopIfWhileCond,
 ];
 
 function main()
