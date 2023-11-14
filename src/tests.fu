@@ -17539,7 +17539,7 @@ pub extern fn runTests()
         }
     `);
 
-    TODO_StaticEval(currently: "DOESNT_EXIST 4:24+12", `
+    ZERO(`
         fn doesntSkipIfWithTrailingFalse(x: i32) {
             if (x && false)
                 return DOESNT_EXIST;
