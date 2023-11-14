@@ -14667,6 +14667,47 @@ pub extern fn runTests()
         }
     `);
 
+    TODO_inline(currently: "BUG ensureArgSeq host_args.len != args.len 24:45+1", `
+        struct Struct { items: Target[] };
+        struct Target { index: i32 };
+        struct Scope { type: Type };
+        struct Type { canon: i32 };
+
+        noinline fn doNothingCreatively(_types: Struct[], _out: string, _type: Type)
+        {
+            using fn zeroInit(lax target: Target)
+                return [];
+
+            noinline fn noInline(type, ref out): string =
+                return type && inlineOuter(type, :out);
+
+            fn inlineOuter(inline type, ref out): string = {
+                inlineInner(_types[type.canon], :out);
+                return [];
+            }
+
+            fn inlineInner(inline s, ref out) {
+                let fields = s.items;
+                for (mut i = 0; i < fields.len; i++) {
+                    let field = zeroInit(fields[i]);
+                    lax let annot = noInline(field.type, :out);
+                }
+            }
+
+            fn cgCopyOrMove(type: Type, ref out: string)
+                inlineOuter(type, :out);
+
+            return cgCopyOrMove(_type, _out);
+        }
+
+        fn main() {
+            mut structs = [ Struct() ];
+            mut out: string;
+            doNothingCreatively(structs, out, []);
+            return out.len;
+        }
+    `);
+
     // /Inliner.
 
 
