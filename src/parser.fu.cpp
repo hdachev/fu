@@ -1923,7 +1923,7 @@ static s_Node parseLetOrExpressionStatement_ctTo8lq0(const int modid, const fu::
     if ((token.kind == s_kind_id) && (tokens[_idx].kind == s_kind_id))
     {
         fu::view<char> v = token.value;
-        if ((v == "let"_fu) || (v == "alias"_fu) || (v == "val"_fu))
+        if ((v == "let"_fu) || (v == "alias"_fu) || (v == "val"_fu) || (v == "var"_fu) || (v == "const"_fu))
             return parseLetStmt_M9ANAdnV(modid, fname, src, tokens, _idx, _loc, _col0, _precedence, _fnDepth, _anonFns, _autopub, _TODO_FIX_dollarOk, _numDollars, _expectedTypeParams, _upstreamTypeParams, _numBreaksWoLabels, imports, warnings, options);
         else if ((v == "mut"_fu) || (v == "ref"_fu) || (v == "implicit"_fu) || (v == "type"_fu))
         {
@@ -2943,13 +2943,16 @@ static s_Node parseLet_G3lfqLEB(const bool xqmark, const bool allowTypeUnions, c
     if (tryConsume_qQDNuPLv(s_kind_id, "shadow"_fu, s_kind_id, tokens, _idx))
         flags |= s_Flags_F_SHADOW;
 
-    if (tryConsume_qQDNuPLv(s_kind_id, "mut"_fu, s_kind_id, tokens, _idx))
+    if (tryConsume_qQDNuPLv(s_kind_id, "const"_fu, s_kind_id, tokens, _idx))
+        flags |= 0;
+    else if (tryConsume_qQDNuPLv(s_kind_id, "mut"_fu, s_kind_id, tokens, _idx))
         flags |= s_Flags_F_MUT;
 
-    if (tryConsume_qQDNuPLv(s_kind_id, "ref"_fu, s_kind_id, tokens, _idx))
+    if (tryConsume_qQDNuPLv(s_kind_id, "val"_fu, s_kind_id, tokens, _idx))
+        flags |= 0;
+    else if (tryConsume_qQDNuPLv(s_kind_id, "ref"_fu, s_kind_id, tokens, _idx))
         flags |= s_Flags_F_REF;
-
-    if (tryConsume_qQDNuPLv(s_kind_id, "type"_fu, s_kind_id, tokens, _idx))
+    else if (tryConsume_qQDNuPLv(s_kind_id, "type"_fu, s_kind_id, tokens, _idx))
         flags |= s_Flags_F_TYPENAME;
 
     const s_Token& sh_import = tryConsume_uLdN6rGF(s_kind_op, "::"_fu, tokens, _idx);

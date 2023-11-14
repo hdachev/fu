@@ -743,30 +743,48 @@ pub fn parse(
         {
             let v = token.value;
 
-            // Forward compat for the new guys, prep for:
-            //
-            //  let x =             const-ref to src, src const while x in use,
-            //                          which means no temporary copies allowed,
-            //                              == rust immutable borrow.
-            //
-            //  ref x =             unique-mut-ref to src, src cannot be written to
-            //                          from outside for the duration of the borrow
-            //                              == rust mutable borrow.
-            //
-            //  alias [ref] x =     const/mut-ref to src,
-            //                          src writeable from outside,
-            //                              changes visible, src cannot be dangled
-            //                                  == current ref behavior.
-            //
-            //  val x =             const-ref if possible,
-            //                          temp-copy if src needs to change
-            //                              == current let behavior.
-            //
-            //  mut [val] x =       a val you can mutate
-            //                          == current mut behavior [no change].
-            //
-            if (v == "let" || v == "alias" || v == "val")
+            if (v == "let"
+
+                // Forward compat for the new
+                //  explicit value-vs-reference semantics stuff,
+                //   probably something alla:
+                //
+                //      let: const ref to immutable, the default, implide for arguments,
+                //          this is the intersection of value and reference semantics,
+                //          all guarantees hold but most restricting.
+                //
+                // If you want value semantics -
+                //  you don't care if the original changes
+                //   during the lifetime of the binding:
+                //
+                //      mut (or var?): mutable local variable -
+                //          value semantics, allows temp copy on init.
+                //
+                //      val: immutable local variable, allows a temp copy -
+                //          currently all lets allow these, but this
+                //          can lead to really confusing behavior
+                //          in higher-order fn templates.
+                //
+                // If you want reference semantics -
+                //
+                //      ref: binds to any ref, const or mut -
+                //          In templates binds to any ref, const or mut.
+                //          In non-templates, either:
+                //              - implies mutref (almost never any point in using ref otherwise).
+                //              - or perhaps solve against mutref, and then attempt to emit
+                //                  a const-ref return relax if retval is mutref.
+                //
+                //      mut ref: explicitly requests a mutref.
+                //      const ref: explicitly requests a const-ref to a mutable place.
+                //
+                //  --------------------------------
+                //  Not sure about the references semantics stuff, still messy.
+                //  But happy with the let, var & val stuff, let's start from there.
+                //
+                || v == "alias" || v == "val" || v == "var" || v == "const")
+            {
                 return parseLetStmt();
+            }
 
             if (v == "mut" || v == "ref" || v == "implicit" || v == "type")
             {
@@ -1369,9 +1387,15 @@ pub fn parse(
         if (tryConsume("id", "implicit" , peek: "id")) flags |= F_IMPLICIT;
         if (tryConsume("id", "lax"      , peek: "id")) flags |= F_LAX;
         if (tryConsume("id", "shadow"   , peek: "id")) flags |= F_SHADOW;
-        if (tryConsume("id", "mut"      , peek: "id")) flags |= F_MUT;
-        if (tryConsume("id", "ref"      , peek: "id")) flags |= F_REF;
-        if (tryConsume("id", "type"     , peek: "id")) flags |= F_TYPENAME;
+
+        // FWD COMPAT
+        if      (tryConsume("id", "const"    , peek: "id")) {}
+        else if (tryConsume("id", "mut"      , peek: "id")) flags |= F_MUT;
+
+        // FWD COMPAT
+        if      (tryConsume("id", "val"      , peek: "id")) {}
+        else if (tryConsume("id", "ref"      , peek: "id")) flags |= F_REF;
+        else if (tryConsume("id", "type"     , peek: "id")) flags |= F_TYPENAME;
 
         // Experimental shorthand, meant for fn arguments -
         //

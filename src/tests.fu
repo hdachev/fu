@@ -92,6 +92,7 @@ pub extern fn runTests()
     let TODO_structs    = fn TODO;
     let TODO_borrowck   = fn TODO;
     let TODO_disjoint   = fn TODO;
+    let TODO_semantics  = fn TODO;
     let TODO_move       = fn TODO;
     let TODO_unique     = fn TODO;
     let TODO_inline     = fn TODO;
@@ -6488,7 +6489,7 @@ pub extern fn runTests()
     //  but the concat_self_ret_last strikes me
     //   as something that should actually work.
     //
-    SKETCH(currently: "arr 13:19+3 inval by subseq 13:44+1 concat_self_ret_last", `
+    TODO_slices(currently: "arr 13:19+3 inval by subseq 13:44+1 concat_self_ret_last", `
         fn hello(ref arr: i32[], ref item: i32)
             arr ~= ++item;
 
@@ -17551,6 +17552,49 @@ pub extern fn runTests()
     `);
 
     // /StaticEval
+
+
+    // Value vs reference semantics
+
+    ZERO(`
+        fn val_keyword(val a, val b) {
+            val c = a + b;
+            return c;
+        }
+
+        fn main() val_keyword(2, 3) - 5;
+    `);
+
+    TODO_semantics(currently: "Bad call to val_keyword mutref 7:30+1", `
+        fn val_keyword(const ref a, const ref b) {
+            const ref c = a || b;
+            return c;
+        }
+
+        fn main() val_keyword(2, 3) - 2;
+    `);
+
+    TODO_semantics(currently: "BUG exit code", `
+        <fail explicit_arg closure_arg both alias use val or ref X:X>
+        fn foreach_modify(    explicit_arg: int[], foreach)     <pass/>
+        fn foreach_modify(ref explicit_arg: int[], foreach)     </fail>
+            for (mut i = explicit_arg.len; i --> 0; )
+                foreach(explicit_arg[i], i?: i);
+
+        fn main() {
+            mut closure_arg = [ 2 ];
+            closure_arg.foreach_modify: |item, i| {
+                while (item > i) {
+                    closure_arg.insert(i, i);
+                    i++;
+                }
+            }
+
+            return closure_arg == [ 0, 1, 2 ] ? 0 : 1;
+        }
+    `);
+
+    // /Semantics
 
 
     // CSE & LICM.
