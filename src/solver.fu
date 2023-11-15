@@ -7927,21 +7927,30 @@ pub fn solve(
                                 ~ explainTypeDiff(host, guest, sep: "<-"));
     }
 
+    fn tryConvertIfNeeded(
+        ref actual: SolvedNode, expect: Type, asArgument!?: bool)
+    {
+        if (!isAssignable(host: expect, actual.type, :asArgument))
+        {
+            let conv = tryConvert(actual, :expect, local_scope: true);
+            if !(conv)
+                return false;
+
+            applyConversion(actual, conv);
+        }
+
+        return true;
+    }
+
     fn convertIfNeeded(
         ref actual: SolvedNode, expect: Type,
         err: string, id?: string, sep?: string,
         asArgument!?: bool)
     {
-        if (isAssignable(host: expect, actual.type, :asArgument))
-            return;
-
-        let conv = tryConvert(actual, :expect, local_scope: true);
-        if !(conv)
+        if (!tryConvertIfNeeded(:actual, :expect, :asArgument))
             fail(err ~ (id && " " ~ id.qID) ~ ": "
                                 ~ expect.humanizeType() ~ (sep || " <- ")
                                 ~ actual.humanizeType());
-
-        applyConversion(actual, conv);
     }
 
 
