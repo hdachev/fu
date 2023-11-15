@@ -836,6 +836,20 @@ pub extern fn runTests()
                   - parseNoInline(F_SOME).i32 * 3;
     `);
 
+    ZERO([`
+        struct Range { lo_incl: int; hi_excl: int };
+
+        fn each(using _: Range, each)
+            for (mut i = lo_incl; i < hi_excl; i++)
+                each(i);
+    `,`
+        fn main() {
+            mut sum = 0;
+            _0::Range(0, 10).each: |i| sum += i;
+            return sum - 45 ;
+        }
+    `]);
+
     // /Template args
 
 
