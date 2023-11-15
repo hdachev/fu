@@ -1359,19 +1359,29 @@ pub fn solve(
         return humanizeType(type);
     }
 
-    fn humanizeType(type: Type, mut lt!?: bool, mut no_quals!?: bool, mut usage!?: bool, lax i!?: int, diff!?: Type)
+    fn humanizeType(type: Type, mut lt!?: bool, mut no_quals!?: bool, mut usage!?: bool, mut no_vfacts!?: bool, lax i!?: int, diff!?: Type)
     {
         if (!type)
             return "< Empty Type >";
 
         if (diff)
         {
-            // TODO now that we're taking the comparison type
-            //  these can become more granular,
-            //   and we can emphasize the exact differences
-            no_quals    = (type.quals & q_TAGS)  == (diff.quals & q_TAGS);
-            usage       = (type.quals & q_USAGE) != (diff.quals & q_USAGE);
-            lt          =  type.lifetime         !=  diff.lifetime;
+            // TODO CLEAN THIS UP
+            //  Re: quals & vfacts, most interesting to mask off the common stuff.
+            //  It's silly that we have no-quals & no-vfacts, but usage and lt are opt-in.
+            //  Maybe lifetime should become opt-out too, because it actually prints nicely.
+            //
+            no_quals    = true;
+            no_vfacts   = true;
+
+            if (canon::isCanonAssignable(type.canon, diff.canon) ||
+                canon::isCanonAssignable(diff.canon, type.canon))
+            {
+                no_quals    = (type.quals & q_TAGS)  == (diff.quals & q_TAGS);
+                no_vfacts   =  type.vfacts           ==  diff.vfacts;
+                usage       = (type.quals & q_USAGE) != (diff.quals & q_USAGE);
+                lt          =  type.lifetime         !=  diff.lifetime;
+            }
         }
 
         mut result = humanizeTypeName(type);
@@ -1399,7 +1409,7 @@ pub fn solve(
         if (lt && type.lifetime)
             result ~= "`" ~ type.lifetime;
 
-        if (type.vfacts)
+        if (!no_vfacts && type.vfacts)
             result ~= " " ~ type.vfacts;
 
         return result;
@@ -7794,7 +7804,7 @@ pub fn solve(
             (id && id.qID ~ ": ")
                 ~ reason
                 ~ "No common supertype: "
-                ~ humanizeType(a, lt: true) ~ " | " ~ humanizeType(b, lt: true));
+                ~ explainTypeDiff(a, b, sep: "|"));
     }
 
     fn intersectionType(reason: string, a: Type, b: Type, id?: string)
@@ -7803,7 +7813,7 @@ pub fn solve(
             (id && id.qID ~ ": ")
                 ~ reason
                 ~ "Cannot intersect types: "
-                ~ humanizeType(a, lt: true) ~ " & " ~ humanizeType(b, lt: true));
+                ~ explainTypeDiff(a, b, sep: "&"));
     }
 
     fn solveJump(node: Node): SolvedNode
@@ -7947,8 +7957,7 @@ pub fn solve(
     {
         if (!tryConvertIfNeeded(:actual, :expect, :asArgument))
             fail(err ~ (id && " " ~ id.qID) ~ ": "
-                                ~ expect.humanizeType() ~ (sep || " <- ")
-                                ~ actual.humanizeType());
+                ~ explainTypeDiff(expect, actual, :sep || "<-"));
     }
 
 
@@ -8221,7 +8230,7 @@ pub fn solve(
 
         if (annot && init.type && !init_isNever)
             convertIfNeeded(init, expect: annot, asArgument: !!(flags & F_ARG),
-                "Type annotation does not match init expression", :id, " <- ");
+                "Type annotation does not match init expression", :id, "<-");
 
         // TYPES vs VALUES //////
         // To avoid ambiguity, currently we draw a line between:
@@ -9571,7 +9580,7 @@ pub fn solve(
                         }
 
                         fail("Ambiguous ||, incompatible operands in a non-bool context: "
-                            ~ humanizeType(item.type) ~ " || " ~ humanizeType(sumType));
+                            ~ explainTypeDiff(item.type, sumType, sep: "||"));
                     };
                 }
                 else
@@ -10751,8 +10760,7 @@ pub fn solve(
                 return definitWrap(node, slot);
 
             BUG("Considering copy or move for incompatible types: "
-                ~ humanizeType(slot) ~ " <- "
-                ~ humanizeType(node));
+                ~ explainTypeDiff(slot, node, sep: "<-"));
         }
 
         // No copy needed when the slot is a reference.
