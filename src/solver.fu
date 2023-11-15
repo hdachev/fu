@@ -6536,6 +6536,12 @@ pub fn solve(
             if (arg.flags & F_REST_ARG)
                 max = 0x7fffffff.i32;
 
+            if (SELF_TEST)
+            {
+                if (arg.flags & F_MUT && arg.type.is_mutref)
+                    BUG("F_MUT arg.type.is_mutref");
+            }
+
             args.push(arg);
         }
 
@@ -8196,11 +8202,26 @@ pub fn solve(
         //  we allow relaxing the F_REF so that e.g. bck can resolve by temp-copy.
         mut flags   = node.flags;
 
-        if (specType.is_mutref && !(flags & F_REF || annot.is_mutref))
-            flags  |= F_RELAXABLE_REF;
+        //
+        fn at_most_one_set(v.u64) = !(v & (v - 1));
 
-        shadow let annot = specType || primType || annot;
+        at_most_one_set(flags & (F_MUT | F_REF)) || BUG("F_MUT & F_REF both set");
 
+        //
+        shadow let annot = specType &&
+        {
+            shadow let specType = flags & (F_REF | F_MUT) == F_MUT
+                ? clear_mutref(specType)
+                : specType;
+
+            if (specType.is_mutref && !(flags & F_REF || annot.is_mutref))
+                flags  |= F_RELAXABLE_REF;
+
+            specType
+        }
+            || primType || annot;
+
+        //
         shadow let annot =
             annot && node.flags & F_REF
                 ? add_mutref(annot, Lifetime_temporary)
