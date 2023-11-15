@@ -4544,7 +4544,8 @@ pub fn solve(
             else
                 nodes.last = Node(kind: "return", value: [], :nodes.last.token,
                     items: nodes.last.kind != "empty" && [ nodes.last ],
-                    flags: F_IMPLICIT);
+                    flags: (node.kind == "block" && F_IMPLICIT)
+                         | F_LAMBDA);
         }
         ////////////////////////////////////////////////////////////////
 
@@ -7791,17 +7792,17 @@ pub fn solve(
     //  we want to re-iterate all the return statements,
     //   because that can change our copy/move decision.
 
-    fn superType_neverOK(reason: string, a: Type, b: Type)
+    fn superType_neverOK(reason: string, a: Type, b: Type, target?: Target)
     {
         return a.is_never ? b
              : b.is_never ? a
-             : superType(:reason, :a, :b);
+             : superType(:target, :reason, :a, :b);
     }
 
-    fn superType(reason: string, a: Type, b: Type, id?: string)
+    fn superType(reason: string, a: Type, b: Type, target?: Target)
     {
         return type_trySuper(a, b) || fail(
-            (id && id.qID ~ ": ")
+            (target && target.str)
                 ~ reason
                 ~ "No common supertype: "
                 ~ explainTypeDiff(a, b, sep: "|"));
@@ -7819,7 +7820,7 @@ pub fn solve(
     fn solveJump(node: Node): SolvedNode
     {
         let h = node.kind == "return"
-            ? Scope_lookupReturn(node.value, lambdaOK: !!(node.flags & F_IMPLICIT))
+            ? Scope_lookupReturn(node.value, lambdaOK: !!(node.flags & F_LAMBDA))
             : Scope_lookupLabel (node.value, cont: node.kind == "continue");
 
         // Deal with expression first, might noop the jump.
@@ -7910,11 +7911,17 @@ pub fn solve(
         // TODO FIX: this error duplicates with the error in solveJump.
         if (h.ret_expect)
             checkAssignable(host: h.ret_expect, type,
-                "Actual return type does not match annotation");
+                target: NICEERR_missingReturn && h.target,
+                reason: NICEERR_missingReturn
+                    ? " is missing a final return statement"
+                    : "Actual return type does not match annotation");
 
         h.ret_actual = h.ret_actual
             ? superType_neverOK(h.ret_actual, type,
-                reason: NICEERR_missingReturn ? "Missing final return: " : "Subsequent return: ")
+                target: NICEERR_missingReturn && h.target,
+                reason: NICEERR_missingReturn
+                    ? " is missing a final return statement: "
+                    : "Subsequent return: ")
             : type;
 
         h.ret_actual || BUG("reportReturnType: no ret_actual.");
@@ -7925,13 +7932,13 @@ pub fn solve(
 
     fn checkAssignable(
         host: Type, guest: Type,
-        err: string, id?: string,
+        reason: string, target?: Target,
         asArgument!?: bool)
     {
         isAssignable(:asArgument,
             :host   || BUG("Bad host type."),
             :guest  || BUG("Bad guest type."))
-                    || fail(err ~ (id && " " ~ id.qID) ~ ": "
+                    || fail((target && target.str) ~ reason ~ ": "
                                 ~ explainTypeDiff(host, guest, sep: "<-"));
     }
 

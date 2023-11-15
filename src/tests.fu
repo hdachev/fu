@@ -850,6 +850,23 @@ pub extern fn runTests()
         }
     `]);
 
+    ZERO(`
+        fn hello(mut x: <alt>i32<alt/>$T</alt>[]) {
+            x.each: |it| it++;
+            return x;
+        }
+
+        fn main() {
+            mut a = [ 1 ];
+            let b = hello(a);
+            for (mut i = 0; i < min(a.len, b.len); i++)
+                return a[i] + b[i] - 3;
+
+            <fail missing final return 10:13+3> <pass/>
+            return 1;                           </fail>
+        }
+    `);
+
     // /Template args
 
 
@@ -15777,10 +15794,8 @@ pub extern fn runTests()
             return overloads[idx];
         }
 
-        // Uncommenting the inline passes this,
-        //  this is shit, we can't leave this like this.
-        //
-        // inline
+        <alt>
+        inline </alt>
         fn Lifetime_each(mut lifetime: i32[], visit) {
             for (mut i = 0; i < lifetime.len; i++) {
                 let r = lifetime[i];
