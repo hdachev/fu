@@ -7834,10 +7834,8 @@ pub fn solve(
             return expr;
 
         // Conversions.
-        // TODO FIX: this error duplicates with the error in reportReturnType.
         if (h.ret_expect)
-            convertIfNeeded(expr, h.ret_expect,
-                "Actual return type does not match annotation");
+            tryConvertIfNeeded(expr, h.ret_expect);
 
         // Detect & shim non-local jumps.
         if (h.local_of != _current_fn.target.globid)
@@ -8081,6 +8079,9 @@ pub fn solve(
         let type        = !pre_cond && !post_cond && !(h.mask & HM_LabelUsed)
                             ? t_never
                             : t_void;
+
+        // Error attribution.
+        HERE(node);
 
         return SolvedNode(
             kind: "loop", :type,
