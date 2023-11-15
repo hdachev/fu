@@ -8408,12 +8408,7 @@ pub extern fn runTests()
         fn main() withPrefixed('a', "b"): |ab| return ab.len - 2;
     `);
 
-    // Note: see the other tryIntersect test -
-    //  this used to work/compile/run but perhaps by sheer luck,
-    //   anyway, the fn is inline, withMatch doesn't really need an array, etc,
-    //    plently of ways to make this work.
-    //
-    TODO_relaxer(currently: "cannot move from slice 17:41+5", `
+    ZERO(`
         fn tryIntersect(left: [byte], right: [byte], withMatch) {
             let l =  left[0];
             let r = right[0];
@@ -8453,12 +8448,7 @@ pub extern fn runTests()
     `);
 
     ZERO(`
-        // Added this while replacing the inliner, used to compile with a [byte].
-        <fail cannot be copied or moved from 20:50>
-        type Right = byte[:]; <pass/>
-        type Right = byte []; </fail>
-
-        fn tryIntersect(left: [byte], right: Right, ifLeft, ifNotLeft) {
+        fn tryIntersect(left: [byte], right: [byte], ifLeft, ifNotLeft) {
             let l =  left[0];
             let r = right[0];
             let lq = l > '0' && l < '8';

@@ -5819,7 +5819,7 @@ pub fn solve(
 
                         // Enable conversions on fully typed arguments.
                         let exactType = host_arg.type;
-                        if (exactType)
+                        if (exactType && !isAssignableAsArgument(host: exactType, inType, :DONT_match_zeroes))
                         {
                             if (args.len > i)
                                 args[i] = exactType;
@@ -5864,7 +5864,7 @@ pub fn solve(
                             argName_typeParam.flags |= TP_isTypenameArgSpec;
 
                         // Type check.
-                        if (annot)
+                        if (annot && !exactType)
                         {
                             let argOk = trySolveTypeParams(
                                 annot, inType, :errout,
