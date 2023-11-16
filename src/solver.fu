@@ -7749,10 +7749,10 @@ pub fn solve(
             }
 
             ref o = GET_mut(nested(locid));
-            if (o.flags & F_MOVED_FROM)
+            if (o.status & SS_MOVED_FROM)
                 continue;
 
-            o.flags |= F_MOVED_FROM;
+            o.status |= SS_MOVED_FROM;
 
             // println("MOVED FROM " ~ o.name ~ ": " ~ o.type.humanizeType);
 

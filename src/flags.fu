@@ -17,7 +17,7 @@ using flags SolverStatus: u16
     SS_HOIST
     SS_UNUSED
     SS_MATCHED
-    // ...
+    SS_MOVED_FROM
 
     SS_Debug_AllPassesComplete
     // ...
@@ -111,7 +111,7 @@ using flags Flags: u32
     F_LAX
     F_ARG
     F_COW_INSIDE
-    F_MOVED_FROM
+    // ...
 
     F_CONVERSION
     F_OPT_ARG

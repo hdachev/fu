@@ -931,7 +931,7 @@ pub fn cpp_codegen(
             mut force_mut = type.is_ref;
             type.lifetime.Lifetime_each: |locid|
             {
-                if (!locid || !(nested(locid).flags & F_MOVED_FROM))
+                if (!locid || !(nested(locid).status & SS_MOVED_FROM))
                 {
                     force_mut = false;
                     break;
@@ -1497,23 +1497,23 @@ pub fn cpp_codegen(
 
     fn binding(target!: Target, forceValue!?: bool)
     {
-        let overload    = GET(target);
-        let place_type  = overload.solved.type;
-        let isArg       = overload.flags & F_ARG;
+        let o           = GET(target);
+        let place_type  = o.solved.type;
+        let isArg       = o.flags & F_ARG;
 
         shadow let place_type  = forceValue
             ? clear_refs(place_type)
             : place_type;
 
         let annot = typeAnnot(
-            place_type, (!overload.type.is_mutref && M_CONST)
+            place_type, (!o.type.is_mutref && M_CONST)
                       | (isArg && M_ARGUMENT)
-                      | (overload.type.is_mutref && M_MUTVAR)
-                      | (overload.flags & F_MOVED_FROM && M_MOVABLE)
+                      | (o.type.is_mutref && M_MUTVAR)
+                      | (o.status & SS_MOVED_FROM && M_MOVABLE)
                       | (target.TODO_FIX_useStaticRef && M_STATIC_REF)
         );
 
-        let isUnused = overload.status & SS_UNUSED;
+        let isUnused = o.status & SS_UNUSED;
         if (isArg && isUnused)
             return annot;
 
@@ -1577,7 +1577,7 @@ pub fn cpp_codegen(
         head       ~= " " ~ id;
         if (isUnused)
             head    = "[[maybe_unused]] " ~ head;
-        if (target.flags & F_MOVED_FROM)
+        if (target.status & SS_MOVED_FROM)
             head    = "/*MOV*/ " ~ head;
 
         return head;
