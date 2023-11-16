@@ -138,7 +138,7 @@ using flags Flags: u32
     F_TEMPLATE
     F_INLINE
     F_LAMBDA
-    F_TOP_LEVEL
+    // ...
 };
 
 

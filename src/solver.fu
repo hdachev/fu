@@ -13396,7 +13396,7 @@ pub fn solve(
                     //  hash it by signature instead of by fnbody, so changes inside
                     //   don't thrash other translation units.
                     //
-                    if (o.flags & F_TOP_LEVEL)
+                    if (!fn_target.local_of)
                     {
                         fn_target.args.each: |host_arg|
                         {
