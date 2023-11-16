@@ -1499,7 +1499,7 @@ pub fn cpp_codegen(
     {
         let o           = GET(target);
         let place_type  = o.solved.type;
-        let isArg       = o.flags & F_ARG;
+        let isArg       = o.status & SS_ARGUMENT;
 
         shadow let place_type  = forceValue
             ? clear_refs(place_type)
@@ -1810,7 +1810,7 @@ pub fn cpp_codegen(
                 continue;
 
             let o = GET(nested(locid));
-            if (o.status & SS_HOIST || o.flags & F_ARG)
+            if (o.status & (SS_HOIST | SS_ARGUMENT))
                 continue;
 
             if (o.solved.lifetime)
@@ -3190,7 +3190,7 @@ pub fn cpp_codegen(
             if (mode & M_RETURN)
             {
                 fn supportsNRVO(t: Target)
-                    t.kind == "var" && !(t.flags & F_ARG)
+                    t.kind == "var" && !(t.status & SS_ARGUMENT)
                         // && o.local_of == _current_fn.target.index
                         && !t.solved.type.is_ref;
 

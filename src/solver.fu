@@ -586,6 +586,11 @@ pub fn solve(
         return o.solved.target || BUG("field_getParentStruct: solved.target not set.");
     }
 
+    fn isArg(o: Overload)
+    {
+        return !!(o.status & SS_ARGUMENT);
+    }
+
 
     //
 
@@ -740,7 +745,7 @@ pub fn solve(
             prefix = (o.flags & F_INJECTED && "injected ")
                    ~ (o.flags & F_IMPLICIT && "implicit ")
                    ~ (o.flags & F_REF && "ref ")
-                   ~ (o.flags & F_ARG && "arg ")
+                   ~ (o.isArg && "arg ")
                         || "var ";
 
             prefix.pop();
@@ -1225,7 +1230,7 @@ pub fn solve(
         return true;
     }
 
-    fn Binding(id: string, mut type: Type, flags!: Flags, ref shadows!: bool)
+    fn Binding(id: string, mut type: Type, flags!: Flags, ref shadows!: bool, asArgument!: bool)
     {
         mut name        = id;
         let local_of    = _current_fn.target.globid;
@@ -1244,7 +1249,10 @@ pub fn solve(
         }
 
         // Reserve the slot.
-        let target = Scope_create(_scope, kind: "var", :name, :flags, nest:local_of);
+        let status = asArgument && SS_ARGUMENT;
+        let target = Scope_create(_scope,
+            nest: local_of,
+            kind: "var", :name, :flags, :status);
 
         // Setup the lifetime for references to this binding.
         ref overload = GET_mut(target);
@@ -1254,7 +1262,7 @@ pub fn solve(
             ///////////////////////////////////////////////////////////////
             // Throw away argument lifetime, union below will fix it up. //
             // SHALLOW LIFETIMES: Now we do this for all refs.           //
-            // if (flags & F_ARG) /////////////////////////////////////////
+            // if (asArgument) ////////////////////////////////////////////
             type.lifetime = Lifetime(); ///////////////////////////////////
             ///////////////////////////////////////////////////////////////
 
@@ -2571,7 +2579,7 @@ pub fn solve(
         if (k == "block")       return solveBlock(node, :type);
         if (k == "argid")       return solveArgID(node, :type);
 
-        if (k == "let")         return solveLet(node, letdefType: type);
+        if (k == "let")         return solveLet(node, letdefType: type, asArgument: false);
         if (k == "call")        return solveCall(node);
         if (k == "arrlit")      return solveArrlit(node, type);
 
@@ -2704,7 +2712,7 @@ pub fn solve(
         for (mut i = _current_fn.items.len + FN_ARGS_BACK; i --> 0; )
         {
             let t = _current_fn.items[i].target;
-            if (t && t.flags & F_ARG)
+            if (t && t.isArg.ALWAYS_TRUE)
                 visit(t, position?: i);
         }
     }
@@ -2714,7 +2722,7 @@ pub fn solve(
         for (mut i = 0; i < _current_fn.items.len + FN_ARGS_BACK; i++)
         {
             let t = _current_fn.items[i].target;
-            if (t && t.flags & F_ARG)
+            if (t && t.isArg.ALWAYS_TRUE)
                 visit(t, position?: i);
         }
     }
@@ -2935,7 +2943,7 @@ pub fn solve(
                 //   writeable refs to their contents, but indirectly,
                 //    via aliased function arguments.
                 ref flow = _current_fn.flow;
-                if (o.flags & F_ARG)
+                if (o.isArg)
                 {
                     // Let's just hard risk all mutref arguments for starters,
                     //  we'll be relaxing this later as more practical examples become available.
@@ -3130,7 +3138,7 @@ pub fn solve(
                 let letNode = o.solved;
                 if (letNode.is_ref)
                 {
-                    if (o.flags & F_ARG)
+                    if (o.isArg)
                         return false;
 
                     if (!trackUse(Lifetime_climbType(o).lifetime, :bitset))
@@ -3195,7 +3203,7 @@ pub fn solve(
                     callarg_trackWrites(
                         Lifetime_climbType(t).lifetime);
 
-                    if (t.flags & F_ARG)
+                    if (t.isArg)
                         _current_fn.postdom.mayEscapeVia |= 1 << (locid % 32);
                 }
             }
@@ -4720,7 +4728,7 @@ pub fn solve(
             //   while previously mcom_node did not visit argument defaults,
             //    and now we're noticing `copy` nodes during initial relax (after inline).
             //
-            && !(o.flags & F_ARG))
+            && !o.isArg)
         {
             mut init: SolvedNode;
             swap(init, node.items[LET_INIT]);
@@ -4732,7 +4740,7 @@ pub fn solve(
 
             // TODO FIX Codegen helper, this is for the `fu_STR& src = sources[i]` case.
             //  Ideally we should do without this, otherwise we can rerun the solveLet crap.
-            if (node.type.is_ref && !(node.flags & F_ARG))
+            if (node.type.is_ref)
                 node.type.lifetime = init.type.lifetime;
 
             // Done, put it back.
@@ -6138,7 +6146,10 @@ pub fn solve(
                             ? cleanID(n_arg.value)
                             :         n_arg.value);
 
-                let arg         = solveLet(n_arg, :specType);
+                let arg         = solveLet(
+                    n_arg, :specType,
+                    asArgument: true);
+
                 outItems[i]     = arg;
             }
 
@@ -6916,7 +6927,7 @@ pub fn solve(
         }
     }
 
-    fn solveTypedef(node: Node, specType!?: Type): SolvedNode
+    fn solveTypedef(node: Node, specType!?: Type, asArgument!: bool): SolvedNode
     {
         if (node.items[LET_TYPE])
         {
@@ -6939,7 +6950,7 @@ pub fn solve(
 
         createTypedef(id, :annot, :node.flags);
 
-        if (node.flags & F_ARG)
+        if (asArgument)
         {
             // TODO FIX adding this for the benefit of the arguments mangler,
             //  making the type fully unused so it gets eliminated by codegen,
@@ -7109,7 +7120,9 @@ pub fn solve(
                     fail("All structs must be zerofilled by default."
                         ~ " Please remove the initializer of struct member " ~ node.value.qBAD ~ ".");
 
-            mut ret = solveLetLike_dontTouchScope(node, :primType);
+            mut ret = solveLetLike_dontTouchScope(
+                node, :primType,
+                asArgument: false);
 
             // TODO FIX VFACTS //
             ret.type.vfacts = [];
@@ -7710,7 +7723,7 @@ pub fn solve(
 
         let node = o.solved;
 
-        return node.is_ref && !(o.flags & F_ARG)
+        return node.is_ref && !o.isArg
             && node.items[LET_INIT].type;
     }
 
@@ -8193,7 +8206,8 @@ pub fn solve(
     //
 
     fn solveLetLike_dontTouchScope(
-        node: Node, specType!?: Type, primType!?: Type): SolvedNode
+        node: Node, specType!?: Type, primType!?: Type,
+        asArgument!: bool): SolvedNode
     {
         let n_annot = node.items[LET_TYPE];
         let annot   = n_annot && n_annot.kind != "typeunion" && evalTypeAnnot(n_annot);
@@ -8237,27 +8251,28 @@ pub fn solve(
 
         return solveLetLike_dontTouchScope(
             node.value, :flags,
-            :annot, :init);
+            :annot, :init, :asArgument);
     }
 
     fn solveLetLike_dontTouchScope(
         id: string, mut flags: Flags,
         mut init!: SolvedNode,
-        annot!?: Type): SolvedNode
+        annot!?: Type,
+        asArgument!: bool): SolvedNode
     {
         annot || init.type || fail(
             "Variable declarations without type annotations must be initialized: " ~ id.qBAD ~ ".");
 
         // Dead code elim.
         let init_isNever = init.type.is_never;
-        if (init_isNever && !(flags & (F_ARG | F_INLINE)))
+        if (init_isNever && !(asArgument || flags & F_INLINE))
         {
             makeNote(N_DeadLet);
             return init;
         }
 
         if (annot && init.type && !init_isNever)
-            convertIfNeeded(init, expect: annot, asArgument: !!(flags & F_ARG),
+            convertIfNeeded(init, expect: annot, :asArgument,
                 "Type annotation does not match init expression", :id, "<-");
 
         // TYPES vs VALUES //////
@@ -8277,7 +8292,7 @@ pub fn solve(
         // TYPES vs VALUES //////
 
         // TODO FIX VFACTS //////////////////////////
-        if (flags & (F_ARG | F_MUT))
+        if (asArgument || flags & F_MUT)
             t_init.vfacts = [];
         // TODO FIX VFACTS //////////////////////////
 
@@ -8293,25 +8308,25 @@ pub fn solve(
         if (flags & F_REF)
         {
             t_init.is_mutref    || t_init.is_never && annot
-                                || !init && flags & F_ARG || fail(
+                                || !init && asArgument || fail(
                 "ref".qBAD ~ " variables must be initialized to a mutable reference: " ~ id.qBAD
                     ~ (t_init ? " = " ~ humanizeType(t_init) : "."));
         }
 
         //
-        mut t_let   = annot && (flags & F_ARG || !t_init)
+        mut t_let   = annot && (asArgument || !t_init)
                         ? annot
                         : t_init.is_mutref && !(flags & F_REF)
                             ? clear_mutref(t_init)
                             : t_init;
 
         // TODO FIX ARG TEMPS ///////////////////////
-        if (flags & F_ARG)
+        if (asArgument)
             ref_anonymize(t_let);
 
         // this was already here, needs some research,
         //  i'm seeing weird stuff, LTs on F_MUTs, etc
-        if (flags & F_ARG && !(flags & F_MUT))
+        if (asArgument && !(flags & F_MUT))
             t_let = add_ref(t_let, Lifetime_temporary);
         // TODO FIX ARG TEMPS ///////////////////////
 
@@ -8320,7 +8335,7 @@ pub fn solve(
             t_let.vfacts & Typename && BUG(
                 "solveLetLike_dontTouchScope: Ended up with a Typename");
 
-            if (flags & F_ARG || flags & F_MUT)
+            if (asArgument || flags & F_MUT)
                 t_let.vfacts & (AlwaysTrue | AlwaysFalse) && t_let.usage && BUG(
                     "solveLetLike_dontTouchScope: Ended up with an AlwaysTrue/False");
         }
@@ -8333,18 +8348,26 @@ pub fn solve(
             type: t_let, items: [ SolvedNode, init ]);
     }
 
-    fn solveLet(node: Node, specType!?: Type, letdefType!?: Type): SolvedNode
+    fn solveLet(
+        node: Node, letdefType!?: Type, specType!?: Type,
+        asArgument!: bool): SolvedNode
     {
         if (node.flags & F_TYPENAME)
-            return solveTypedef(node, :specType);
+            return solveTypedef(node, :specType, :asArgument);
 
-        mut out = solveLetLike_dontTouchScope(node, :specType);
+        mut out = solveLetLike_dontTouchScope(
+            node, :specType,
+            :asArgument);
+
         let id  = out.value;
-        return solveLet_createBindingAndGetLetdef(:out, :id, setScope: true, :letdefType);
+        return solveLet_createBindingAndGetLetdef(
+            :out, :id, setScope: true, :letdefType,
+            :asArgument);
     }
 
     fn solveLet_createBindingAndGetLetdef(
-        mut out!: SolvedNode, id!: string, setScope!: bool, letdefType!?: Type): SolvedNode
+        mut out!: SolvedNode, id!: string, setScope!: bool, letdefType!?: Type,
+        asArgument!isArg: bool): SolvedNode
     {
         // Dead code elim.
         if (out.kind != "let")
@@ -8356,7 +8379,6 @@ pub fn solve(
         }
 
         mut shadows     = !!(out.flags & F_SHADOW);
-        let isArg       = out.flags & F_ARG;
 
         shadow let id   = out.flags & F_COMPOUND_ID
             ? cleanID(id)
@@ -8419,7 +8441,9 @@ pub fn solve(
             }
             ////////////////////////////////////////////////////////////////
 
-            let target = out.target = Binding(:id, :out.flags, :out.type, :shadows);
+            let target = out.target = Binding(
+                :id, :out.flags, :out.type, :shadows,
+                asArgument: isArg);
 
             //
             if (SELF_TEST)
@@ -8477,8 +8501,13 @@ pub fn solve(
 
     fn createLet(id: string, flags: Flags, init: SolvedNode, setScope!: bool)
     {
-        mut out = solveLetLike_dontTouchScope(:flags, :id, :init);
-        return solveLet_createBindingAndGetLetdef(:out, :id, :setScope);
+        mut out = solveLetLike_dontTouchScope(
+            :flags, :id, :init,
+            asArgument: false);
+
+        return solveLet_createBindingAndGetLetdef(
+            :out, :id, :setScope,
+            asArgument: false);
     }
 
 
@@ -9219,7 +9248,9 @@ pub fn solve(
 
     fn createLet_implicitArg(id: string, type: Type, flags: Flags, ref shadows!: bool)
     {
-        let target  = Binding(id, type, :flags, :shadows);
+        let target  = Binding(id, type, :flags, :shadows,
+            asArgument: true);
+
         let ret     = SolvedNode(
             kind: "let", :flags,
             value: target.name, :target.type, :target);
@@ -9310,8 +9341,7 @@ pub fn solve(
 
         // We'll be adding a new thing here.
         mut shadows: bool;
-        mut flags = F_INJECTED | F_IMPLICIT
-                  | F_ARG | F_LAX/* might get removed, dont want warnings */;
+        mut flags = F_INJECTED | F_IMPLICIT | F_LAX;
 
         if (type.is_mutref)
             flags |= F_REF | F_RELAXABLE_REF;
@@ -10162,6 +10192,11 @@ pub fn solve(
         mut helpersReplicas: Helpers[];
 
         //
+        fn isInlineLocal(o: Overload)
+        {
+            return !o.isArg && o.flags & F_INLINE;
+        }
+
         fn matchReplicaOrInjectForeignLocal(target: Target, slot?: Type)
         {
             let replica = letdefReplicas.map::get(target);
@@ -10276,7 +10311,7 @@ pub fn solve(
 
                     // Untested: not sure what this implies / entails,
                     //  and if this is the only flag that needs juggling here.
-                    flags: foreign.flags &~ F_ARG);
+                    :foreign.flags);
 
                 // println("inlineExpression: introducing a letdef: " ~ local " <- " ~ foreign);
 
@@ -10294,7 +10329,7 @@ pub fn solve(
                         let foreign = GET(node.target);
 
                         isAssignable(host: foreign.type, local.type)
-                            || local.type.is_never && local.flags & (F_INLINE | F_ARG) == F_INLINE
+                            || local.type.is_never && local.isInlineLocal
                             || BUG("matchReplicaOrInjectForeignLocal botching the type of " ~ foreign ~ ":\n"
                                 ~ "\n\t\tExpect: " ~ foreign.type.humanizeType
                                 ~ "\n\t\tActual: " ~   local.type.humanizeType);
@@ -10313,7 +10348,7 @@ pub fn solve(
                     // TODO FIX VFACTS /////////////////////////////////////////////
 
                     // INLINE ARGUMENTS ////////////////////////////////////////////
-                    if (local.flags & (F_INLINE | F_ARG) == F_INLINE)
+                    if (local.isInlineLocal)
                     {
                         TRACE("F_INLINE local " ~ local);
 
@@ -10410,7 +10445,7 @@ pub fn solve(
                     let local   = matchReplicaOrInjectForeignLocal(foreign);
 
                     // INLINE ARGUMENTS ////////////////////////////////////////////
-                    if (local.flags & (F_INLINE | F_ARG) == F_INLINE)
+                    if (local.isInlineLocal)
                     {
                         TRACE("Type.F_INLINE local " ~ local);
 
@@ -10695,8 +10730,7 @@ pub fn solve(
             let argdef = createLet(
                 id:     host_arg.name,
                 init:   args[i],
-                flags:  host_arg.flags  &~ F_ARG
-                                        &~ F_COMPOUND_ID
+                flags:  host_arg.flags  &~ F_COMPOUND_ID
 
                                         // TODO FIX mutrefs lost in translation
                                         | (host_arg.flags & F_INJECTED && host_arg.is_mutref && F_REF)
@@ -11009,7 +11043,7 @@ pub fn solve(
 
     fn acceptsSoftRisk(o: Overload)
     {
-        return o.flags & F_ARG && !o.acceptsTempCopies();
+        return o.isArg && !o.acceptsTempCopies();
     }
 
     fn isFieldChain(arg: SolvedNode)
@@ -11818,7 +11852,8 @@ pub fn solve(
             // Track references.
             if (node.is_ref && !node.target.willPassByValue())
             {
-                node.flags & F_ARG && BUG("bck_let: Found an argument!");
+                if (SELF_TEST)
+                    node.target.isArg && BUG("bck_let: Found an argument!");
 
                 let init = node.items[LET_INIT];
                 init.type.is_ref || BUG("What!");
@@ -12755,7 +12790,7 @@ pub fn solve(
         {
             let o = locid && GET(nested(locid));
             let isRefArg =
-                o.kind == "var" && o.flags & F_ARG
+                o.kind == "var" && o.isArg
                                 && o.solved.is_ref;
 
             // Everything but refs to arguments and statics ...

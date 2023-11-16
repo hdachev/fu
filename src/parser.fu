@@ -1142,7 +1142,7 @@ pub fn parse(
         // A single argument, named after the lambda.
         let singleArg = createLet(
             id: name,
-            flags: F_ARG | F_TEMPLATE);
+            flags: F_TEMPLATE);
 
         // We back off one token, so we can re-parse the leading dot.
         let singleExpression = parseExpression(
@@ -1348,8 +1348,7 @@ pub fn parse(
                 arg.flags |= F_TEMPLATE;
             }
 
-            arg.flags |= F_ARG;
-            outFlags  |= arg.flags & F_TEMPLATE;
+            outFlags |= arg.flags & F_TEMPLATE;
 
             if (arg.flags & F_IMPLICIT)
                 implicit.push(arg);
