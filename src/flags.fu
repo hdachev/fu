@@ -82,10 +82,7 @@ using flags DeclAsserts: u16
 
 using flags ParseSyntax
 {
-    PS_ID
-
     PS_PARENS
-    PS_SEMI
 
     PS_DISCARD_IF_BLOCK_TAIL
     PS_ALWAYS_DISCARD
@@ -93,16 +90,16 @@ using flags ParseSyntax
 };
 
 
-// TODO clean up the fncall flags, it's historic bs.
+//
 
 using flags Flags: u32
 {
-    F_METHOD
-    // ...
+    F_CALL_HAS_DOT          // TODO move into ParseSyntax
+    F_CALL_HAS_ARGPARENS    // TODO move into ParseSyntax
     // ...
     F_OPERATOR
 
-    F_ACCESS
+    // ...
     F_TYPENAME
     F_COMPOUND_ID
     F_WRITTEN_TO
@@ -133,7 +130,7 @@ using flags Flags: u32
     F_NAMED_ARGS    // TODO FIX do we need this really? the ast is self-explanatory
     F_REST_ARG
     F_RELAXABLE_REF
-    F_INJECTED
+    F_INJECTED      // TODO move into SolverStatus
 
     F_TEMPLATE
     F_INLINE

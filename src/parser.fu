@@ -210,6 +210,14 @@ pub fn parse(
         warnings ~= fail_compose(reason);
     }
 
+    fn warn(idx: i32, reason)
+    {
+        let idx0    = _idx;
+        _idx        = idx;
+        warn(reason);
+        _idx        = idx0;
+    }
+
     fn make(
         ::kind,
         items?:     Node[],
@@ -495,6 +503,7 @@ pub fn parse(
         mut items: Node[];
         for (;;)
         {
+            let idx0  = _idx;
             let token = tokens[_idx];
 
             // Ignore excess semicolons, e.g. struct{}; etc.
@@ -552,10 +561,10 @@ pub fn parse(
 
             // Maybe we should get rid of this.
             expr.kind != "call"
-                || !(expr.flags & F_ACCESS) && !(expr.syntax & PS_ID)
+                || expr.flags & (F_CALL_HAS_ARGPARENS | F_OPERATOR)
                 || expr.items.len > 1
                 || tokens[_idx].value == endVal
-                || warn("Orphan pure-looking expression.");
+                || warn(idx: idx0, "Orphaned call without parentheses, add () to imply a useful side effect.");
 
             items.push(expr);
         }
@@ -1617,7 +1626,7 @@ pub fn parse(
         if (right.kind != "call")
             return fail("Cannot pipeline: not a call expr.");
 
-        if (right.flags & F_METHOD)
+        if (right.flags & F_CALL_HAS_DOT)
             right.items.insert(1, left);
         else
             right.items.unshift(left);
@@ -1631,7 +1640,7 @@ pub fn parse(
             return fail("Cannot pipeline: not a call expr.");
 
         left.items.push(right);
-        left.syntax &= ~PS_ID; // non-orphan-looking
+        left.flags |= F_CALL_HAS_ARGPARENS; // non-orphan-looking
         return left;
     }
 
@@ -1845,7 +1854,7 @@ pub fn parse(
 
         return createCall(
             id.value,
-            F_ACCESS, [ expr ]);
+            F_CALL_HAS_DOT, [ expr ]);
     }
 
 
@@ -1858,9 +1867,8 @@ pub fn parse(
         if (expr.kind != "addroffn")
         {
             if (expr.kind != "call"
-                || expr.items && (expr.items.len != 1
-                || !(expr.flags & F_ACCESS))
-                || expr.flags & F_COMPOUND_ID)
+                || expr.items.len > 1
+                || expr.flags & ~F_CALL_HAS_DOT)
             {
                 _idx--;
                 fail();
@@ -2075,31 +2083,39 @@ pub fn parse(
         ////////////////////////////////
 
         // Uniform call syntax.
-        if (expr.kind == "call" && flags & F_ACCESS)
+        if (expr.kind == "call" &&
+                flags & (F_CALL_HAS_DOT | F_CALL_HAS_ARGPARENS)
+                      == F_CALL_HAS_DOT)
         {
             let head = expr.items
                     && expr.items.len == 1
-                    && expr.items[0] || fail();
+                    && expr.items[0] || throw("Malformed property access expression.");
 
             args.unshift(head);
 
-            return createCall(
-                expr.value || fail(),
-                flags &~ F_ACCESS | F_METHOD,
-                args);
+            // Fallthrough.
+        }
+        else if (expr.kind == "call" &&
+            !(flags & (F_CALL_HAS_DOT | F_CALL_HAS_ARGPARENS)))
+        {
+            // Fallthrough.
+        }
+        else if (expr.kind == "typeparam")
+        {
+            // Fallthrough.
+        }
+        else
+        {
+            // Stuff like (a)() will currently hit this,
+            //  ideally we'd start supporting this at some point.
+            //
+            return fail("Invalid call expression.");
         }
 
-        if (expr.kind == "call" && expr.syntax & PS_ID)
-            return createCall(
-                expr.value || fail(),
-                flags, syntax: expr.syntax &~ PS_ID,
-                args);
-
-        if (expr.kind == "typeparam")
-            return createCall(
-                (expr.value || fail()), :flags, args);
-
-        return fail("TODO dynamic call");
+        return createCall(
+            expr.value || fail(),
+            :flags | F_CALL_HAS_ARGPARENS,
+            args);
     }
 
     fn parseArrayLiteral(): Node
@@ -2144,7 +2160,7 @@ pub fn parse(
         if (id == "true" || id == "false")
             return make("bool", value: id);
 
-        return createCall(id || fail(), :flags, syntax: PS_ID);
+        return createCall(id || fail(), :flags);
     }
 
 

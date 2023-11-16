@@ -882,6 +882,10 @@ pub fn solve(
                 ? _scope
                 : ctx.modules[modid].out.solve.scope;
 
+        if (SELF_TEST)
+            globid > 0 && _scope.overloads.len >= globid || BUG(
+                "GET: bad globid");
+
         if (locid)
         {
             if (SELF_TEST && _scope.extended.len <= globid)
@@ -1764,7 +1768,7 @@ pub fn solve(
             // Field access, method calls & operator calls.
             //  TODO no way to opt-out of this for operators currently,
             //   consider regular id-names for all ops, so we can freefn call them.
-            if (flags & (F_ACCESS | F_METHOD | F_OPERATOR))
+            if (flags & (F_CALL_HAS_DOT | F_OPERATOR))
                 for (mut i = 0; i < args.len; i++)
                     visitTypeImports(args[i].type);
         }
@@ -1772,7 +1776,7 @@ pub fn solve(
         // TODO the whole field_items thing is a mess,
         //  we really need a cleaner way to put these things up.
         let considerFieldItems = local_scope && !target
-            && (flags & F_ACCESS || !minArity)
+            && (flags & F_CALL_HAS_DOT || !minArity)
             && minArity <= 1 && maxArity;
 
         fn field_items = considerFieldItems && _field_items;
@@ -1987,11 +1991,14 @@ pub fn solve(
                                 // TODO allow autocalls to be fully::qualified,
                                 //  in which case we'd be doing `local_scope: false`, and
                                 //   `misc_scope: modules[autocall_modid].items` here instead
-                                local_scope: true,
+                                local_scope:    true,
+                                flags:          F_CALL_HAS_DOT,
 
-                                id: host_arg.autocall, args: autocall_args, flags: F_ACCESS,
-                                reorder: autocall_reorder, conversions: autocall_conversions,
-                                error: autocall_error);
+                                id:             host_arg.autocall,
+                                args:           autocall_args,
+                                reorder:        autocall_reorder,
+                                conversions:    autocall_conversions,
+                                error:          autocall_error);
 
                             if (!t)
                                 matchFail(autocall_error.replace("\t", "\t\t"));
