@@ -8,6 +8,7 @@ const fs        = require('fs');
 //
 
 const FILE      = "./src/solver.fu";
+const COMPILE   = FILE;
 const REDUCT    = FILE + ".reduct";
 
 let _current    = fs.readFileSync(
@@ -52,6 +53,10 @@ _current = _current.replace(/\)\s*(:\s*[a-zA-Z0-9\[\]&*|]+)?\s*\{/g, ')$1 {');
 
 function isCompilerBugRepro(output)
 {
+    // Segfaults & co exit without any output.
+    if (!output)
+        return true;
+
     return /\n\tCOMPILER BUG:\n/.test(output);
 }
 
@@ -62,11 +67,20 @@ function execCompiler()
 {
     try {
         return cp.execSync(
-            './bin/fu.works --bin bin/fu -c ' + FILE, { timeout: 10000 })
+            './bin/fu.works ' + COMPILE, { timeout: 10000 })
                 .toString();
     }
     catch (e) {
-        return e.stdout.toString() + e.stderr.toString();
+        let output = e.stdout.toString() + e.stderr.toString();
+
+        // For some reason, output gets piped on exit=0,
+        //  but not on exit=1, TODO figure this out but this does it.
+        if (output)
+            console.log(output);
+        else
+            console.log("e.status: " + e.status + " e.signal:" + e.signal);
+
+        return output;
     }
 }
 
@@ -552,6 +566,16 @@ const _strategies =
 
 function main()
 {
+    console.log("\nChecking if initial state is broken ...");
+
+    if (!tryReproduceWithMutation(_current))
+    {
+        console.log("\nNOT BROKEN: nothing to reduce.");
+        return;
+    }
+
+    console.log("\nBROKEN: starting reduction loop.");
+
     for (let attempts = 0; attempts < 100; attempts++)
     {
         for (let i = 0; i < _strategies.length; i++)
