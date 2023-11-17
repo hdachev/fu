@@ -10778,6 +10778,55 @@ pub extern fn runTests()
         }
     `);
 
+    ZERO(`
+        fn ERRLOG(implicit ref errout: string, msg = "Assertion failed.\\n") {
+            errout ~= msg;
+            return [];
+        }
+
+        fn tryParse(str: string) {
+            implicit mut errout: string;
+            return parse(str) || errout;
+        }
+
+        fn parse(mut str: string)
+        {
+            fn parseExpression!T(parseHead: T = fn popOneChar) {
+                let head = parseHead();
+                return parseExpressionTail(head);
+            }
+
+            fn popOneChar() {
+                if (!str) return ERRLOG("str.len < 1");
+                let lastChar = str.slice(str.len - 1, str.len);
+                str.pop();
+                return lastChar;
+            }
+
+            fn popTwoChars() {
+                if (str.len < 2) return ERRLOG("str.len < 2");
+                let lastChars = str.len > 1 && str.slice(str.len - 2, str.len);
+                str.shrink(str.len - 2);
+                return lastChars;
+            }
+
+            fn parseExpressionTail(head: string) {
+                return head ~ head;
+            }
+
+            return parseExpression()
+                 ~ parseExpression(parseHead: popTwoChars);
+        }
+
+        <split/>
+        let PRELUDE =  <fail no implicit errout 2:32+6>
+            parse("AAB");                       <pass/>
+            tryParse("AAB");                    </fail>
+
+        <split/>
+        fn main() PRELUDE.len == 6 ? 0 : 1;
+    `);
+
     // /quite right
 
 

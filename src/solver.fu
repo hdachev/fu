@@ -10025,7 +10025,7 @@ pub fn solve(
             if (callsite.kind == "let")
             {
                 let candidate = callsite.target;
-                if ( !(candidate.flags & F_INJECTED)
+                if (candidate && !(candidate.flags & F_INJECTED)
                     && candidate.name == id
                     && isAssignableAsArgument(host: type, candidate.type))
                 {
