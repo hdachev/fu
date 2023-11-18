@@ -2627,7 +2627,7 @@ pub fn solve(
             return solveDeclExpr(node);
 
         //
-        return fail("TODO: solveNode(" ~ k ~ ").");
+        return BUG("solve: Unexpected " ~ k);
     }
 
     fn solveDeclExpr(node: Node, TODO_FIX_useSpecPath!?: bool): SolvedNode
@@ -4493,7 +4493,7 @@ pub fn solve(
         else
         {
             // Unexpected unwrap, etc.
-            fail("Unexpected " ~ k.str.qBAD ~ ".");
+            BUG("relax: Unexpected " ~ k.str);
         }
     }
 
@@ -12446,7 +12446,7 @@ pub fn solve(
             }
             else if (node.items)
             {
-                BUG("TODO: bck_node(non-empty " ~ k ~ ").");
+                BUG("bck: Unexpected " ~ k);
             }
         }
 
