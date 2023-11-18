@@ -13301,6 +13301,17 @@ pub fn solve(
 
             fn sighashNode(n: SolvedNode)
             {
+                // Ignore empties and (mostly) ignore literals,
+                //   type hashed elsewhere, only hash a value if any.
+                if (n.kind.isImmediatelyDiscardable)
+                {
+                    if (n.value)
+                        hash.hash(n.value);
+
+                    return;
+                }
+
+                //
                 hash.hash(
                     tea::TEA(
                         n.kind.u32, // TODO FIX adding/removing kinds will thrash all sighashes
@@ -13386,10 +13397,6 @@ pub fn solve(
                         }
                     }
                 }
-                else if (n.kind.isImmediatelyDiscardable)
-                {
-                    hash.hash(n.value);
-                }
             }
 
             // Go!
@@ -13434,9 +13441,12 @@ pub fn solve(
                     }
                 }
 
-                //
-                already_hashing ~= fn_target;
-                sighashNode(o.solved);
+                // Note, previously this was sighashNode(o.solved):
+                //  no longer works because kind.fn isImmediatelyDiscardable
+                // ------------------------------------ //
+                                                        //
+                already_hashing ~= fn_target;           //
+                o.solved.items.each(.sighashNode); // <---
                 already_hashing.pop();
             }
 
