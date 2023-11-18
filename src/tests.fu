@@ -17625,6 +17625,23 @@ pub extern fn runTests()
     // Value vs reference semantics
 
     ZERO(`
+        noinline fn add(ref a: i32, ref b: i32) a + b;
+        fn main() = add(1, 2) - 3;
+    `);
+
+    // Same as above but ref-returned -
+    //  should work for both mutrefs & constrefs.
+    TODO_semantics(currently: "Bad call to add 3:24+1 expects mutref", `
+        noinline fn add(ref a: i32, ref b: i32) a || b;
+        fn main() = add(1, 2) - 1;
+    `);
+
+    TODO_semantics(currently: "Bad call to at 3:29+1 expects mutref", `
+        noinline fn at(ref a: i32[], i: i32) a[i];
+        fn main() = [ 1 ].at(0) - 1;
+    `);
+
+    ZERO(`
         fn val_keyword(val a, val b) {
             val c = a + b;
             return c;
@@ -17633,7 +17650,7 @@ pub extern fn runTests()
         fn main() val_keyword(2, 3) - 5;
     `);
 
-    TODO_semantics(currently: "Bad call to val_keyword mutref 7:30+1", `
+    TODO_semantics(currently: "Bad call to val_keyword 7:30+1 expects mutref", `
         fn val_keyword(const ref a, const ref b) {
             const ref c = a || b;
             return c;
