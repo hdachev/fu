@@ -2,9 +2,8 @@
 enum kind
 {
 
-    // -- -- -- -- Lexeme:
     // LexerOnly:
-    sof
+    sof                             /////// isLexeme begin
     err
     eof
 
@@ -12,48 +11,50 @@ enum kind
     op
     // /LexerOnly
 
-    // AffineExpression:
-    // -- LinearExpression:
-    // -- -- ValueExpression:
-    // -- -- -- Literal:
-    int
+    // Literal:
+    int             /////// isImmediatelyDiscardable begin
     real
     char
     str
-    bool
-    // -- -- -- -- /Lexeme
-    // -- -- -- /Literal
+    bool                            /////// isLexeme end
+
+    definit
+    empty
+    // /Literal
+
+    // Declaration:
+    struct
+    union
+
+    primitive
+    flags
+    enum
+
+    fndef
+    fn              /////// isImmediatelyDiscardable end
+    // /Declaration
 
     copy
     move
     arrlit
-    definit
-
-    empty
-    // -- -- /ValueExpression
 
     not
     call
     argid
-    // -- /LinearExpression
 
     root
     block
 
-    // -- ControlFlow:
+    // ControlFlow:
     if
     or
     and
-    // /AffineExpression
-
     loop
-
     jump
     __far_jump
-
     defer
     try
-    // -- /ControlFlow
+    // /ControlFlow
 
     let
     letdef
@@ -77,19 +78,7 @@ enum kind
     forfieldsof
     // /ParseOnly_Placeholder
 
-    // TypeDecl:
-    struct
-    union
-
-    primitive
-    flags
-    enum
-    // /TypeDecl
-
     members
-
-    fndef
-    fn
 
     fnbranch
     pattern
@@ -116,4 +105,10 @@ enum kind
     template
     __native
     inline
+}
+
+fn isImmediatelyDiscardable(k: kind)
+{
+    return k >= "int"
+        && k <= "fn";
 }
