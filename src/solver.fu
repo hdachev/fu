@@ -3873,8 +3873,13 @@ pub fn solve(
         }
         else if (k.isImmediatelyDiscardable)
         {
-            // Something alla discard.
-            if (canDiscard)
+            // Discard literals -
+            if (canDiscard
+
+                // Also convert all definits -> empties at this point,
+                //  not more definits past first relax.
+                //   Ideally, we'd get rid of them even earlier.
+                || k == "definit")
             {
                 if (SELF_TEST)
                     node.items && BUG("propagateType canDiscard(" ~ k ~ ") has items.");
@@ -10835,7 +10840,7 @@ pub fn solve(
                 // We only do it for trivial types because
                 //  we don't want to add a destructor call here.
                 //
-                if (node.kind == "definit" && isArgument)
+                if (node.kind == "empty" && isArgument)
                     node.type = clear_refs(node.type);
             }
 
@@ -10847,7 +10852,7 @@ pub fn solve(
             return;
 
         // Definits can just as well emit values.
-        if (node.kind == "definit")
+        if (node.kind == "empty")
         {
             node.type = clear_refs(node.type);
             return;

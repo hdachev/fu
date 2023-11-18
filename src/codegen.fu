@@ -1603,7 +1603,7 @@ pub fn cpp_codegen(
             head ~= " = ";
 
         // Definit.
-        if (!init || init.kind == "definit" && !init.type.is_ref)
+        if (!init || init.kind == "empty" && !init.type.is_ref)
             return head ~ " {}";
 
         // A less verbose copy init.
@@ -1980,11 +1980,6 @@ pub fn cpp_codegen(
         return typeAnnotBase(node.type) ~ " { " ~ slate ~ " }";
     }
 
-    fn cgDefinit(node: SolvedNode, mode: i32, callarg: Type): string
-    {
-        return cgArrayLiteral(node, mode, callarg);
-    }
-
     fn binSkipParens(id: string, mode: i32)
     {
         if (mode & M_STMT)
@@ -2065,7 +2060,6 @@ pub fn cpp_codegen(
                 //   or we can leave it to cg a `0` and discard that.
                 //
                 junk = arg.kind == "empty"
-                    || arg.kind == "definit"
                     || arg.kind == "fndef"
                     || arg.kind == "call" && (arg.target.kind == "var" || arg.target.kind == "type" && !arg.items || arg.target.kind == "enumv");
             }
@@ -3132,7 +3126,6 @@ pub fn cpp_codegen(
         if (k == "char")        return cgCharLiteral(node);
         if (k == "str")         return cgStringLiteral(node);
         if (k == "arrlit")      return cgArrayLiteral(node, mode, :callarg);
-        if (k == "definit")     return cgDefinit(node, mode, :callarg);
         if (k == "bool")        return node.value;
 
         if (k == "copy")        return cgCopyOrMove(node, mode);
