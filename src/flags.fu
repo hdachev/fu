@@ -96,30 +96,30 @@ using flags Flags: u32
 {
     F_CALL_HAS_DOT          // TODO move into ParseSyntax
     F_CALL_HAS_ARGPARENS    // TODO move into ParseSyntax
-    // ...
+    F_CALL_HAS_NAMED_ARGS   // TODO FIX do we need this really? the ast is self-explanatory
     F_OPERATOR
 
-    // ...
     F_TYPENAME
+    // ...
     F_COMPOUND_ID
-    F_WRITTEN_TO
+    F_ARGID_IS_OPTIONAL     // TODO move into ParseSyntax
 
 
     F_LAX
-    // ...
-    F_COW_INSIDE
-    // ...
+    F_SHADOW
+    F_MUSTNAME
+    F_WRITTEN_TO
 
-    F_CONVERSION
-    F_OPT_ARG
+    // ...
+    // ...
     F_MUT
     F_REF
 
 
     F_IMPLICIT
     F_USING
-    F_MUSTNAME
-    F_SHADOW
+    F_CONVERSION
+    // ...
 
     F_PUB           // TODO group these three up
     F_EXTERN        //  in enum Linkage
@@ -127,7 +127,7 @@ using flags Flags: u32
     F_PREDICATE
 
 
-    F_NAMED_ARGS    // TODO FIX do we need this really? the ast is self-explanatory
+    // ...
     F_REST_ARG
     F_RELAXABLE_REF
     F_INJECTED      // TODO move into SolverStatus
@@ -135,7 +135,7 @@ using flags Flags: u32
     F_TEMPLATE
     F_INLINE
     F_LAMBDA
-    // ...
+    F_COW_INSIDE
 };
 
 

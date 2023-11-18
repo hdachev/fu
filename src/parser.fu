@@ -1980,7 +1980,7 @@ pub fn parse(
                 autoName = true;
                 _idx += 1;
 
-                if (sliceSyntax && !first && !(flags & F_NAMED_ARGS))
+                if (sliceSyntax && !first && !(flags & F_CALL_HAS_NAMED_ARGS))
                 {
                     // Open-ended slice syntax alla [start:]
                     if (tryConsume("op", endop))
@@ -1989,7 +1989,7 @@ pub fn parse(
 
                         ref last = out_args.last;
                         last = createArgID("start", last);
-                        flags |= F_NAMED_ARGS;
+                        flags |= F_CALL_HAS_NAMED_ARGS;
                         break;
                     }
                 }
@@ -2025,10 +2025,10 @@ pub fn parse(
             }
 
             if (name)
-                flags |= F_NAMED_ARGS;
+                flags |= F_CALL_HAS_NAMED_ARGS;
 
             out_args.push(
-                name    ? createArgID(name, expr, flags: optional && F_OPT_ARG)
+                name    ? createArgID(name, expr, flags: optional && F_ARGID_IS_OPTIONAL)
                         : expr);
 
             first = false;

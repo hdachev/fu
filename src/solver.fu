@@ -1692,7 +1692,7 @@ pub fn solve(
         // Prep labelled args for remap.
         mut names: string[];
         mut optional: bitset::BitSet;
-        if (flags & F_NAMED_ARGS)
+        if (flags & F_CALL_HAS_NAMED_ARGS)
         {
             mut some = false;
 
@@ -1703,7 +1703,7 @@ pub fn solve(
                     ? { some = true; arg.value } || BUG()
                     : "");
 
-                if (arg.flags & F_OPT_ARG)
+                if (arg.flags & F_ARGID_IS_OPTIONAL)
                 {
                     minArity--;
                     optional.add(i);
@@ -9183,7 +9183,7 @@ pub fn solve(
         }
 
         //
-        if !(node.flags & F_NAMED_ARGS)
+        if !(node.flags & F_CALL_HAS_NAMED_ARGS)
             return createArrlit(args, itemType);
 
         fail("TODO: solveArrlit: tryMatch by [ argnames: ... ] without function name.");
