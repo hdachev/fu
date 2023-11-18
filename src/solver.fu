@@ -5145,12 +5145,7 @@ pub fn solve(
         if (node.flags & F_CONVERSION)
             _scope.converts.push(target);
 
-        return createFnDef(:target, type: X_addrofTarget(target));
-    }
-
-    fn createFnDef(type: Type, target: Target): SolvedNode
-    {
-        return SolvedNode(kind: "fndef", :type, :target);
+        return createEmpty(:target, type: X_addrofTarget(target));
     }
 
 

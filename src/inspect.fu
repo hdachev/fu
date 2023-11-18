@@ -62,7 +62,7 @@ fn inspect(module: Module, root: SolvedNode): string
                         src ~= " fx:" ~ x.fx_mask;
                 }
 
-                if (n.kind == "fndef" || n.kind == "letdef")
+                if (n.kind == "letdef")
                 {
                     shadow let indent = indent ~ ". ".ansi::qID;
                     inspect(o.solved, indent);

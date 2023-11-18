@@ -631,8 +631,8 @@ pub fn cpp_codegen(
         for (mut i = 0; i < scope.len; i++)
         {
             let t = scope[i].target;
-            if (t.modid == module.modid && t.kind == "fn")
-                cgFnDef(t, M_STMT);
+            if (t.modid == module.modid && t.kind == "fn" && t.isExtLinked)
+                ensureFnDef(t);
         }
 
         //
@@ -1284,16 +1284,6 @@ pub fn cpp_codegen(
 
 
     //
-
-    fn cgFnDef(target: Target, mode: i32): string
-    {
-        let o = GET(target);
-        let n = target.solved;
-        if (n && o.isExtLinked)
-            ensureFnDef(target);
-
-        return cgEmpty(n, mode);
-    }
 
     fn cgFn(target: Target)
     {
@@ -2060,7 +2050,6 @@ pub fn cpp_codegen(
                 //   or we can leave it to cg a `0` and discard that.
                 //
                 junk = arg.kind == "empty"
-                    || arg.kind == "fndef"
                     || arg.kind == "call" && (arg.target.kind == "var" || arg.target.kind == "type" && !arg.items || arg.target.kind == "enumv");
             }
             else if (arg.is_never)
@@ -3138,10 +3127,8 @@ pub fn cpp_codegen(
         if (k == "letdef")      return cgLetDef(node);
 
         if (k == "block")       return cgBlock(node, mode);
-        if (k == "argid")       return cgComma(node.items);
 
         // Empties.
-        if (k == "fndef")       return cgFnDef(node.target, mode); // TODO no point in this here
         if (k == "empty")       return cgEmpty(node, mode);
 
         // Stuff that we can't cg as expressions.

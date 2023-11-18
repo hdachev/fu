@@ -1,38 +1,36 @@
 
 enum kind
 {
-
-    // LexerOnly:
-    sof                             /////// isLexeme begin
-    err
-    eof
-
-    id
-    op
-    // /LexerOnly
-
-    // Literal:
-    int             /////// isImmediatelyDiscardable begin
-    real
-    char
-    str
-    bool                            /////// isLexeme end
-
-    definit
-    empty
-    // /Literal
-
-    // Declaration:
-    struct
-    union
-
-    primitive
-    flags
-    enum
-
-    fndef
-    fn              /////// isImmediatelyDiscardable end
-    // /Declaration
+    // LexerOnly: /////////////////////////
+    sof                                 ///
+    err                                 ///
+    eof                                 ///
+                                        ///
+    id                                  ///
+    op                                  ///
+    // /LexerOnly                       ///
+                                        ///
+    // Literal:                         ///
+    int                                 ///
+    real                                ///
+    char                                ///
+    str                                 ///
+    bool                                /// isLexeme end
+                        ///////////////////
+    definit             ///
+    empty               ///
+    // /Literal         ///
+                        ///
+    // Declaration:     ///
+    struct              ///
+    union               ///
+                        ///
+    primitive           ///
+    flags               ///
+    enum                ///
+                        ///
+    fn                  /// isImmediatelyDiscardable end
+    // /Declaration ///////
 
     copy
     move
@@ -109,6 +107,5 @@ enum kind
 
 fn isImmediatelyDiscardable(k: kind)
 {
-    return k >= "int"
-        && k <= "fn";
+    return k <= "fn";
 }
