@@ -2561,6 +2561,9 @@ pub fn cpp_codegen(
 
     fn cgEmpty(node: SolvedNode, mode: i32): string
     {
+        if (SELF_TEST)
+            node.type || BUG("cgEmpty: !node.type");
+
         if (mode & M_STMT)
             return "";
 
@@ -2584,9 +2587,6 @@ pub fn cpp_codegen(
 
             return "&" ~ fnID(last);
         }
-
-        if (!node.type)
-            return "0";
 
         return cgDefault(node.type);
     }

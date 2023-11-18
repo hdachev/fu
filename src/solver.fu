@@ -10793,10 +10793,15 @@ pub fn solve(
             BUG("Trying to definitWrap a non-static reference: " ~ slot.humanizeType(lt: true))
         }
 
-        if (node.kind == "definit")
-            node.type = slot;
-        else
-            node = createBlock(node, createDefinit(slot));
+        // Get rid of the definit, no more retypes.
+        //  We want to simplify the definit/zeroes madness,
+        //   it's getting increasingly difficult to reason about.
+        //
+        let empty = createEmpty(type: slot);
+
+        node = node.kind.isImmediatelyDiscardable
+            ? empty
+            : createBlock(node, empty);
     }
 
     fn maybeCopyOrMove(ref node: SolvedNode, slot: Type, isArgument! = false, debug!?: string): void
