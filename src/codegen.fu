@@ -622,10 +622,20 @@ pub fn cpp_codegen(
         return ID(str);
     }
 
-    fn cgRoot(shadow root: SolvedNode): string
+    fn cgRoot(shadow root: SolvedNode, scope: [ScopeItem]): string
     {
         mut count: i32;
         let src    = cgStatements(root.items, :count);
+
+        //
+        for (mut i = 0; i < scope.len; i++)
+        {
+            let t = scope[i].target;
+            if (t.modid == module.modid && t.kind == "fn")
+                cgFnDef(t, M_STMT);
+        }
+
+        //
         let main   = cgMain();
 
         return collectDedupes(_libs, prefix: "#include ")
@@ -1275,10 +1285,8 @@ pub fn cpp_codegen(
 
     //
 
-    fn cgFnDef(fndef: SolvedNode, mode: i32): string
+    fn cgFnDef(target: Target, mode: i32): string
     {
-        let target = fndef.target;
-
         let o = GET(target);
         let n = target.solved;
         if (n && o.isExtLinked)
@@ -3136,12 +3144,11 @@ pub fn cpp_codegen(
 
         if (k == "letdef")      return cgLetDef(node);
 
-        if (k == "root")        return cgRoot(node);
         if (k == "block")       return cgBlock(node, mode);
         if (k == "argid")       return cgComma(node.items);
 
         // Empties.
-        if (k == "fndef")       return cgFnDef(node, mode); // TODO no point in this here
+        if (k == "fndef")       return cgFnDef(node.target, mode); // TODO no point in this here
         if (k == "empty")       return cgEmpty(node, mode);
 
         // Stuff that we can't cg as expressions.
@@ -3156,7 +3163,7 @@ pub fn cpp_codegen(
 
         if (k == "pragma")      return cgCompilerPragma(node);
 
-        return BUG("TODO: " ~ k);
+        return BUG("cg: Unexpected " ~ k);
     }
 
 
@@ -3386,7 +3393,7 @@ pub fn cpp_codegen(
     let root = module.out.solve.root;
     root.kind == "root" || BUG();
 
-    mut src = cgNode(root);
+    mut src = cgRoot(root, module.out.solve.scope.items);
 
 
     // TODO FIX just add these as translation units,

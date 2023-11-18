@@ -3112,13 +3112,6 @@ pub fn solve(
         cannotCOW_climbParents(item.type.lifetime);
     }
 
-    fn isShallowLiteral(::kind)
-    {
-        return kind == "int" || kind == "real" || kind == "char"
-            || kind == "str" || kind == "bool"
-            || kind == "definit";
-    }
-
     fn propagateType(ref node: SolvedNode, slot: Type, relax_mask!: Quals, kills!?: Helpers)
     {
         let k = node.kind;
@@ -3281,7 +3274,7 @@ pub fn solve(
             if (node.kind == "call" || node.kind == "letdef")
                 return false;
 
-            if (node.kind == "empty" || node.kind == /*empty*/"block" || node.kind == "fndef" || node.kind.isShallowLiteral)
+            if (node.kind == /*empty*/"block" || node.kind.isImmediatelyDiscardable)
                 return true;
 
             BUG("TODO: isDiscardable(" ~ node.kind ~ ")");
@@ -3878,7 +3871,7 @@ pub fn solve(
                 }
             }
         }
-        else if (k.isShallowLiteral)
+        else if (k.isImmediatelyDiscardable)
         {
             // Something alla discard.
             if (canDiscard)
@@ -3889,12 +3882,6 @@ pub fn solve(
                 node.kind   = "empty";
                 node.value  = "";
             }
-        }
-        else if (k == "empty" || k == "fndef")
-        {
-            /////////////////////////
-            // What do we do here? //
-            /////////////////////////
         }
         else if (k == "copy")
         {
@@ -13399,7 +13386,7 @@ pub fn solve(
                         }
                     }
                 }
-                else if (n.kind.isShallowLiteral)
+                else if (n.kind.isImmediatelyDiscardable)
                 {
                     hash.hash(n.value);
                 }
