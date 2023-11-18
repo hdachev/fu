@@ -10591,9 +10591,7 @@ pub fn solve(
 
         mut type = target.type;
 
-        // HACK -
-        //  TBD how we make this stuff work in real life.
-        //   OR alternatively, do this for arrays too.
+        // Special casing field access.
         if (kind == "field")
         {
             ref arg = args.only || BUG();
@@ -10862,10 +10860,6 @@ pub fn solve(
             node.type = clear_refs(node.type);
             return;
         }
-
-        // Getting messier by the minute.
-        if (node.is_zeroes)
-            return definitWrap(node, slot);
 
         // Copy line:col attrib.
         let here0   = _here;
