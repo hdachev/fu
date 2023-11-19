@@ -591,6 +591,11 @@ pub fn solve(
         return !!(o.status & SS_ARGUMENT);
     }
 
+    fn isMutVal(o: Overload)
+    {
+        return !!(o.flags & F_MUT);
+    }
+
 
     //
 
@@ -3139,10 +3144,14 @@ pub fn solve(
                 if (letNode.is_ref)
                 {
                     if (o.isArg)
-                        return false;
+                        return o.isMutVal;
 
                     if (!trackUse(Lifetime_climbType(o).lifetime, :bitset))
                         return false;
+                }
+                else if (o.isArg)
+                {
+                    BUG("trackUse: o.isArg but !o.solved.is_ref");
                 }
 
                 return locid >= _current_fn.parent_loop_start;
@@ -4635,6 +4644,17 @@ pub fn solve(
             BUG(topic ~ ": Usage is copy but no usage bits set: " ~ slot.humanizeType);
     }
 
+    fn keepOrClearMutVal(ref o: Overload, keep!: bool)
+    {
+        o.kind == "var" && o.flags & F_MUT || BUG("keepOrClearMutVal: Not a mut var: " ~ o);
+
+        ref node = o.solved;
+        if (keep)
+            node.type = clear_refs(node.type);
+        else
+            o.flags &= ~F_MUT;
+    }
+
     fn relaxBlockVar(t: Target, relax_mask!: Quals, canDiscard!?: bool)
     {
         let o = GET(t);
@@ -4673,17 +4693,15 @@ pub fn solve(
             node.type.try_relax(slot: usage, :relax_mask);
 
             // Lose the F_MUT annots on values that don't need them.
-            if (o.flags & F_MUT)
+            if (o.isMutVal)
             {
-                if (usage.is_mutref)
-                {
-                    let type = clear_refs(node.type);
-                    node.type = type;
-                }
-                else
-                {
-                    o.flags &= ~F_MUT;
-                }
+                // Defer arguments until doUpdateScope,
+                //  so that __native fns are dealt with
+                //   via the same code path.
+                //
+                if (!o.isArg)
+                    o.keepOrClearMutVal(
+                        keep: usage.is_mutref);
             }
 
             // Decide on relaxable refs.
@@ -6325,8 +6343,8 @@ pub fn solve(
         if (SELF_TEST)
             target == _current_fn.target || BUG("doUpdateScope: target mismatch");
 
-        shadow let items = _current_fn.items;
-        shadow let mustBecomeInline = currentFn_mustBecomeInline();
+        let items = _current_fn.items;
+        let mustBecomeInline = currentFn_mustBecomeInline();
 
         let N = items.len + FN_ARGS_BACK;
         mut min = 0;
@@ -6337,14 +6355,32 @@ pub fn solve(
 
         mut numArgsWritten = 0;
 
+        let relaxMutValArgs =
+            maybeLast && !mustBecomeInline;
+
         // argTarget -> argIndex mapping.
         mut argPos_1b: i32[];
         for (mut i = 0; i < N; i++)
         {
             let argNode     = items[i];
             let argTarget   = argNode.target;
-            if (argTarget)
-                argPos_1b.grow_if_oob(argTarget.locid) = i + 1;
+            if !(argTarget)
+                continue;
+
+            argPos_1b.grow_if_oob(argTarget.locid) = i + 1;
+
+            if (relaxMutValArgs)
+            {
+                // Doing this here also handles __native args,
+                //  otherwise it'd be cleaner to do this
+                //   during in relaxBlockVar during RelaxCopyResize.
+                //
+                ref o = GET_mut(argTarget);
+                if (o.isMutVal)
+                    o.keepOrClearMutVal(
+                        keep: o.type.is_mutref
+                           || o.status & SS_MOVED_FROM);
+            }
         }
 
         //
@@ -8297,12 +8333,7 @@ pub fn solve(
 
         // TODO FIX ARG TEMPS ///////////////////////
         if (asArgument)
-            ref_anonymize(t_let);
-
-        // this was already here, needs some research,
-        //  i'm seeing weird stuff, LTs on F_MUTs, etc
-        if (asArgument && !(flags & F_MUT))
-            t_let = add_ref(t_let, Lifetime_temporary);
+            t_let.lifetime = Lifetime_temporary;
         // TODO FIX ARG TEMPS ///////////////////////
 
         if (SELF_TEST)
@@ -12768,9 +12799,7 @@ pub fn solve(
         unwound.Lifetime_each: |locid, isStatic, lax isTemp|
         {
             let o = locid && GET(nested(locid));
-            let isRefArg =
-                o.kind == "var" && o.isArg
-                                && o.solved.is_ref;
+            let isRefArg = o.isArg && !o.isMutVal;
 
             // Everything but refs to arguments and statics ...
             if (!isRefArg && !isStatic)

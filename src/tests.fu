@@ -7120,7 +7120,7 @@ pub extern fn runTests()
         }
     `);
 
-    TODO_relaxer(currently: "A value is needed cannot copy from NoCopy 11:52+1", `
+    ZERO(`
         nocopy struct NoCopy { a: i32[]; b: i32[] };
 
         noinline fn mustRelaxMut(mut nc: NoCopy)
