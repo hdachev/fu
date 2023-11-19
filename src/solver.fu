@@ -11241,13 +11241,8 @@ pub fn solve(
             if (!o.type.is_rx_copy)
                 return false;
 
-            if !(o.flags & F_MUT)
-            {
-                o.flags  |= F_MUT;
-                let t_let = clear_refs(o.type);
-
-                o.solved.type = t_let;
-            }
+            if (o.solved.type.is_ref)
+                o.solved.type = clear_refs(o.type);
 
             return true;
         }
