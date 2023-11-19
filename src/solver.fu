@@ -3171,20 +3171,6 @@ pub fn solve(
                 && trackUse(:lt, _current_fn.postdom.used_again);
         }
 
-        fn trackJustMoved(lt: Lifetime)
-        {
-            lt.Lifetime_each: |locid, isTemp|
-            {
-                if (isTemp && MOVE_from_temp)
-                    continue;
-
-                locid || BUG(
-                    "trackJustMoved: found a non-local.");
-
-                trackJustMoved(Lifetime_climbType(nested(locid)).lifetime);
-            }
-        }
-
 
         // Tracking writes alla bck,
         //  will now use this in cannotCOW which was relying on var usage,
@@ -4025,11 +4011,6 @@ pub fn solve(
                 //  to remove `const` annotations on locals & refs to locals.
                 //
                 Lifetime_F_MOVED_FROM(item.lifetime);
-
-                // This is the move event bitmask,
-                //  currently only used for ensuring correct OOE.
-                //
-                trackJustMoved(item.lifetime);
 
                 node.kind = "move";
             }
