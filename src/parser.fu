@@ -1377,9 +1377,27 @@ pub fn parse(
 
     fn parseLetStmt(): Node
     {
-        let ret = parseLet();
-
+        mut ret = parseLet();
         softSemi();
+
+        // EXPERIMENTAL free implicit ref syntax -
+        //  rewrites:   implicit ref hello: Hello;
+        //  into:       inline fn hello(implicit shadow ref hello: Hello) hello;
+        //
+        if (!(~ret.flags & (F_IMPLICIT | F_REF))    // if implicit ref,
+                &&  ret.items[LET_TYPE]             //  with type annot,
+                && !ret.items[LET_INIT])            //   without an initializer -
+        {
+            let name    = ret.value;
+            let flags   = ret.flags & (F_SHADOW | F_LAX);
+
+            ret.flags  |= F_SHADOW;                 // disambig arg with fn, same name
+
+            return make("fn", value: name, :flags | F_INLINE,
+                items: [ ret, Node(), createRead(name) ]);
+        }
+
+        //
         return ret;
     }
 
@@ -1480,7 +1498,7 @@ pub fn parse(
         //  To finish this up we can have `let a: &mut _ = b`,
         //   and `ref a = b` would be sugar for that.
         //
-        if (flags & F_REF && type)
+        if (flags & F_REF && type && xqmark)
         {
             if (type.kind != "call" || type.value != "&mut")
             {

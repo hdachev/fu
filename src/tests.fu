@@ -927,7 +927,7 @@ pub extern fn runTests()
     `]);
 
 
-    // Recursion, closures & implicit args.
+    // Recursion // Closures // Implicit args
 
     ZERO(`
         fn inner(i: i32): i32
@@ -1690,7 +1690,19 @@ pub extern fn runTests()
         }
     `);
 
-    // /Recursion, closures & implicit arguments.
+    ZERO(`
+        struct Hello { x: i32 };
+        implicit ref hello: Hello;
+        fn woot() = hello.x++;
+
+        <split/>
+        fn main() {
+            shadow implicit mut hello = Hello(1);
+            return woot() * 10 + hello.x - 12;
+        }
+    `);
+
+    // /Recursion /Closures /Implicit args
 
 
     //
