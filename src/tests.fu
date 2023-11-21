@@ -14338,6 +14338,13 @@ pub extern fn runTests()
         fn main = _1::HERE(_0::Node(_0::Token(3))) - 33;
     `]);
 
+    ZERO(`
+        struct A { a: i32 };
+        fn hello(.a: i32) a;
+        fn world(a.a: i32) a;
+        fn main() A(0).hello + A(0).world;
+    `);
+
     // /Autocall, varargs & rest params.
 
 
