@@ -1,9 +1,9 @@
 
-pub purectx fn each(arr: [$T], visit, min!?: int)
+pub purectx fn each(ref arr: [$T], visit, min!?: int)
     parallel_for(:min, end: arr.len): |i|
         visit(arr[i], i?: i);
 
-pub purectx fn zip(arr: [$T], barr: [$U], visit, min!?: int)
+pub purectx fn zip(ref arr: [$T], ref barr: [$U], visit, min!?: int)
     parallel_for(:min, end: arr.len.min(barr.len)): |i|
         visit(arr[i], barr[i], i?: i);
 

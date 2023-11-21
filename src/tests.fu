@@ -853,7 +853,7 @@ pub extern fn runTests()
 
     ZERO(`
         fn hello(mut x: <alt>i32<alt/>$T</alt>[]) {
-            x.each: |it| it++;
+            x.each: |ref it| it++;
             return x;
         }
 
@@ -1644,7 +1644,7 @@ pub extern fn runTests()
 
             mut fallback: string;
             fn lookup(id: i32) {
-                helpers.each: |h| if (h.id == id) return h.type;
+                helpers.each: |ref h| if (h.id == id) return h.type;
                 return fallback;
             }
 
@@ -1671,7 +1671,7 @@ pub extern fn runTests()
                 <fail arg solveNode:type is ref-returned from fn solveNode 28:33+1><pass/>
                 mut
                 </fail>
-                type?: Type
+                val type?: Type
             ) {
                 if (node.kind == Kind.return)
                     return solveJump(node);
@@ -6074,16 +6074,47 @@ pub extern fn runTests()
             // veach(view) should decay to a slice -
             //  which push will invalidate.
             //
-            fn veach(view, fn) {
+            fn veach(                   <fail both alias arr 3:17+3>
+                /* no explicit val */   <fail/>
+                ref                     <pass/>
+                mut                     </fail>
+                    view, fn)
+            {
                 for (mut i = 0; i < view.len; i++) {
                     fn(view[i]);
                     arr ~= arr; // Relocate arr.
                 }
             }
 
-            arr.veach: |i| sum += <fail both alias arr 3:17+3>
-                            (i *= 2)            <pass/>
-                            (i  * 2)            </fail>;
+            arr.veach: |ref i| sum +=   <alt>
+                (i *= 2)                <alt/>
+                (i *  2)                </alt>;
+
+            return sum - 10;
+        }
+    `);
+
+    ZERO(`
+        fn main() {
+            mut arr = [ 1,1,1,1,1 ];
+            mut sum = 0;
+
+            // veach(view) should decay to a slice -
+            //  which push will invalidate.
+            //
+            fn veach(ref view, fn) {
+                for (mut i = 0; i < view.len; i++) {
+                    fn(view[i]);
+                    <fail both alias arr 3:17+3>
+                    arr ~= arr; // Relocate arr.
+                    <pass/></fail>
+                }
+            }
+
+            arr.veach: |ref i| sum +=   <alt>
+                (i *= 2)                ;; PointlessMustSeq
+                                        <alt/>
+                (i *  2)                </alt>;
 
             return sum - 10;
         }
@@ -6451,7 +6482,7 @@ pub extern fn runTests()
 
         noinline fn solve(ref nodes: Node[])
         {
-            noinline fn propagateType(ref node: Node, slot: Type) {
+            noinline fn propagateType(ref node: Node, val slot: Type) {
                 shadow let slot =
                     node.type.nontriv.len == 2 ? two : slot;
 
@@ -7534,7 +7565,7 @@ pub extern fn runTests()
     `);
 
     ZERO(`
-        novec fn novec_each(a: $T[], fn)
+        novec fn novec_each(ref a: $T[], fn)
             for (mut i = 0; i < a.len; i++)
                 fn(a[i]);
 
@@ -7546,7 +7577,7 @@ pub extern fn runTests()
     `);
 
     ZERO(`
-        novec fn Each(a: [$T], fn)
+        novec fn Each(ref a: [$T], fn)
             for (mut i = 0; i < a.len; i++)
                 fn(a[i]);
 
@@ -9621,7 +9652,7 @@ pub extern fn runTests()
     ZERO(`
         struct Item { val: i32 };
 
-        fn Each !T(a: T[:], fn)
+        fn Each !T(ref a: T[:], fn)
             for (mut i = 0; i < a.len; i++)
                 fn(a[i], i?: i);
 
@@ -10596,7 +10627,7 @@ pub extern fn runTests()
     `);
 
     ZERO(`                                  ;; DuplicateFunctions
-        fn ARR_LAST(a: $T[])
+        fn ARR_LAST(ref a: $T[])
             a[a.len - 1];
 
         let a = [1];
@@ -10815,9 +10846,9 @@ pub extern fn runTests()
             items?: SolvedNode[];
         };
 
-        fn visitNodes(_v: &mut $V, _n: SolvedNode) {
-
-            fn traverse(v: &mut $V, n: SolvedNode) {
+        fn visitNodes(ref _v: $V, _n: SolvedNode)
+        {
+            fn traverse(ref v: $V, n: SolvedNode) {
                 v.visit(n);
                 for (mut i = 0; i < n.items.len; i++)
                     traverse(v, n.items[i]);
@@ -10830,7 +10861,7 @@ pub extern fn runTests()
             sum: i32;
         };
 
-        fn visit(using v: &mut Visitor, node: SolvedNode) {
+        fn visit(using ref v: Visitor, node: SolvedNode) {
             sum += node.value;
         };
 
@@ -11100,7 +11131,7 @@ pub extern fn runTests()
     `);
 
     ZERO(`                                  ;; DuplicateFunctions
-        fn ARR_LAST(a: $T[])
+        fn ARR_LAST(ref a: $T[])
             case (typeof(a) -> &mut $T[]): &mut $T a[a.len - 1];
             case (typeof(a) -> &    $T[]): &    $T a[a.len - 1];
 
@@ -11115,7 +11146,7 @@ pub extern fn runTests()
     `);
 
     ZERO(`                                  ;; DuplicateFunctions
-        fn ARR_LAST(a: $T[])
+        fn ARR_LAST(ref a: $T[])
             case (typeof(a) -> &mut $T[]): &mut $T a[a.len - 1];
             case (typeof(a) -> &    $T[]): &    $T a[a.len - 1];
 
@@ -11295,10 +11326,10 @@ pub extern fn runTests()
     ZERO(`
         nocopy struct NoCopy { i: i32; };
 
-        fn      retarg(a) a;                    // <- now templates
-        fn  retargs_if(a, b) a.i ? b : a;
-        fn  retargs_or(a, b) a || b;
-        fn retargs_and(a, b) a && b;
+        fn      retarg(ref a) a;                    // <- now templates
+        fn  retargs_if(ref a, ref b) a.i ? b : a;
+        fn  retargs_or(ref a, ref b) a || b;
+        fn retargs_and(ref a, ref b) a && b;
 
         fn main() {
             mut a: NoCopy;                      // <- now muts
@@ -12933,8 +12964,8 @@ pub extern fn runTests()
             implicit mut p: _0::Profile;
 
             _0::incr(fn _0::a);
-            _0::incr(|i| i._0::b);
-            _0::incr(|i| i.b);                                  ;; DuplicateFunctions
+            _0::incr(|ref i| i._0::b);
+            _0::incr(|ref i| i.b);                              ;; DuplicateFunctions
             _0::incr(._0::c);
             _0::incr(.c);
 
@@ -14355,7 +14386,7 @@ pub extern fn runTests()
 
         using fn getX(ref x.x) x;
         fn main(): i32 {
-            mut c: C;
+            let c: C;
             return c;
         }
     `);
@@ -14369,7 +14400,7 @@ pub extern fn runTests()
 
         using fn getX(ref .x) x;
         fn main(): i32 {
-            mut c: C;
+            let c: C;
             return c;
         }
     `);
@@ -15334,7 +15365,7 @@ pub extern fn runTests()
         }
 
         <alt>
-        fn fill(s, ref v: i32)
+        fn fill(ref s, ref v: i32)
             for (fieldname i: typeof(s))
                 if (typeof(s.i) -> i32)     s.i = v++;
                 else                        fill(s.i, v);
@@ -15980,7 +16011,7 @@ pub extern fn runTests()
 
         fn main() {
             mut arr = [ 1, 2, 3 ];
-            arr.each(odd: |it| it++, even: || { break; });
+            arr.each(odd: |ref it| it++, even: || { break; });
 
             mut sum = 0;
             for (mut i = 0; i < arr.len; i++) sum += arr[i];
@@ -16148,7 +16179,7 @@ pub extern fn runTests()
     `);
 
     ZERO(`
-        fn grow_if_oob(a: &mut $T[], i: i32): &mut $T {
+        fn grow_if_oob(ref a: $T[], i: i32): &mut $T {
             if (a.len <= i)
                 a.grow(i + 1);
 
@@ -16157,7 +16188,7 @@ pub extern fn runTests()
 
         struct BitSet { _data: u8[]; }
 
-        fn add_once(using _: &mut BitSet, idx: i32): bool {
+        fn add_once(using ref _: BitSet, idx: i32): bool {
             let no_neg = idx < 0 ? -1 : 0;
             let bucket = idx / 8 | no_neg;
             let bit    = idx % 8;
@@ -16228,7 +16259,7 @@ pub extern fn runTests()
         }
 
         fn Lifetime_ascend(mut lifetime: i32[], visit) {
-            Lifetime_each(:lifetime, visit: |o, shadow lifetime| {
+            Lifetime_each(:lifetime, visit: |o, shadow ref lifetime| {
                 visit(o);
                 lifetime ~= o.lifetime; // set::add
             });
@@ -16573,7 +16604,7 @@ pub extern fn runTests()
     `);
 
     ZERO(`
-        fn loop(cond, body)         <alt>
+        fn loop(ref cond, body)     <alt>
             while (cond) body();    <alt/>
             do body();
             while (cond);           </alt>
@@ -17312,7 +17343,7 @@ pub extern fn runTests()
         fn main() {
             mut arr = [ 1, 2, 3, 4 ];
 
-            arr.par::each: |it| it *= 2;
+            arr.par::each: |ref it| it *= 2;
 
             mut sum = 0;
             for (mut i = 0; i < arr.len; i++)
@@ -17323,7 +17354,7 @@ pub extern fn runTests()
     `);
 
     ZERO(`
-        fn seq__each(a: [$T], fn)
+        fn seq__each(ref a: [$T], fn)
             for (mut i = 0; i < a.len; i++)
                 fn(a[i]);
 
@@ -17332,8 +17363,8 @@ pub extern fn runTests()
             mut sum = 0;
 
             <fail purectx writes to implicit sum>
-            arr.par::each: |it| <pass/>
-            arr.seq__each: |it| </fail>
+            arr.par::each: |ref it| <pass/>
+            arr.seq__each: |ref it| </fail>
                 sum += it *= 2;                                 ;; PointlessMustSeq
 
             return sum - 2 - 4 - 6 - 8;
@@ -17341,7 +17372,7 @@ pub extern fn runTests()
     `);
 
     ZERO(`
-        fn seq__each(a: [$T], fn)
+        fn seq__each(ref a: [$T], fn)
             for (mut i = 0; i < a.len; i++)
                 fn(a[i]);
 
@@ -17349,8 +17380,8 @@ pub extern fn runTests()
             mut arr = [ 1, 2, 3, 4 ];
 
             <fail noflow non local control flow>
-            arr.par::each: |it| <pass/>
-            arr.seq__each: |it| </fail>
+            arr.par::each: |ref it| <pass/>
+            arr.seq__each: |ref it| </fail>
                 if ((it *= 2) > 4)
                     break;
 
@@ -17364,7 +17395,7 @@ pub extern fn runTests()
 
     ZERO(`
         fn test(ref arr: i32[])
-            arr.par::each: |v, i| v += i;
+            arr.par::each: |ref v, i| v += i;
 
         fn main() {
             let N = 1087 * 1091;
@@ -18080,7 +18111,7 @@ pub extern fn runTests()
 
         fn main() {
             mut closure_arg = [ 2 ];
-            closure_arg.foreach_modify: |item, i| {
+            closure_arg.foreach_modify: |item, ref i| {
                 while (item > i) {
                     closure_arg.insert(i, i);
                     i++;
