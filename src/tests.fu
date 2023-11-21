@@ -17681,6 +17681,17 @@ pub extern fn runTests()
         fn main() = [ 1 ].at(0) - 1;
     `);
 
+    TODO_semantics(currently: "Does not <fail>", `
+        fn PreIncr( <fail bad call ++ mutref 3:20+2><pass/>
+            ref     </fail>
+                x) ++x;
+
+        fn main() {
+            mut res = -1;
+            return PreIncr(res);
+        }
+    `);
+
     ZERO(`
         fn val_keyword(val a, val b) {
             val c = a + b;
