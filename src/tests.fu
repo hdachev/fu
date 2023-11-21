@@ -12882,6 +12882,37 @@ pub extern fn runTests()
         fn main() test(5, fn _0::not_public) - 10;
     `]);
 
+    ZERO(`
+        nocopy struct Target    { x: i32 }
+        nocopy struct Overload  { x: i32 };
+        nocopy struct Scope     { overloads: Overload[]; implicits: ScopeItem[] };
+
+        nocopy struct ScopeItem {
+            <fail Bad call globid expects Target got ScopeItem :50+6><pass/>
+            using </fail>
+            target: Target;
+        };
+
+        inline fn globid(.x: i32) x;
+
+        <split/>
+        fn Scope_exports(using implicit scope: Scope) {
+            for (mut i = 0; i < implicits.len; i++) {
+                let item        = implicits[i];                 ;; GNUStmtExpr
+                let overload    = overloads[item.globid - 1];   ;; PointlessLocal
+                if (overload) return overload.x;
+            }
+
+            return 0;
+        }
+
+        <split/>
+        fn main() {
+            implicit mut scope = Scope(overloads: [ Overload(3) ], implicits: [ ScopeItem(Target(1)) ]);
+            return Scope_exports() - 3;
+        }
+    `);
+
     // /Pubs & imports.
 
 
