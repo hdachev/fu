@@ -1047,7 +1047,7 @@ inline fn Lifetime_op(lt: Lifetime, each, minPathDepth! = 1)
 
 pub fn Lifetime_op_field(lt: Lifetime, flatCount: i32, flatOffset: i32)
 {
-    return lt.Lifetime_op(|paths, result|
+    return lt.Lifetime_op(|paths, ref result|
     {
         mut offset = 0;
         paths.walkPaths(:offset,
@@ -1070,7 +1070,7 @@ pub fn Lifetime_op_field(lt: Lifetime, flatCount: i32, flatOffset: i32)
 
 pub fn Lifetime_op_deref(lt: Lifetime, flatCount!deref_flatCount: i32)
 {
-    return lt.Lifetime_op(minPathDepth: 2, |paths, result|
+    return lt.Lifetime_op(minPathDepth: 2, |paths, ref result|
     {
         mut offset = 0;
         paths.walkPaths(:offset,
@@ -1098,7 +1098,7 @@ pub fn Lifetime_op_deref(lt: Lifetime, flatCount!deref_flatCount: i32)
 
 pub fn Lifetime_op_join(lt: Lifetime, child: [byte])
 {
-    return lt.Lifetime_op(|paths!parent, result|
+    return lt.Lifetime_op(|paths!parent, ref result|
     {
         mut _p0 = 0;
         parent.walkPaths(offset: _p0,

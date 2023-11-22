@@ -9987,7 +9987,7 @@ pub fn solve(
     {
         mut stack = [ node ];
 
-        fn TODO_FIX_pop(arr: $T[])
+        fn TODO_FIX_pop(ref arr: $T[])
         {
             mut item: $T; ////////////////////
             swap(item, arr[arr.len - 1]); //// we need a nice pop()

@@ -1,21 +1,21 @@
 
-fn only(s: [$T;])
+fn only(ref s: [$T;])
     s.len == 1 ? s[0] : throw (
         "len != 1: " ~ s.len);
 
-fn first(s: [$T;])
+fn first(ref s: [$T;])
     s.len ? s[0] : throw("len == 0");
 
-fn last(s: [$T;])
+fn last(ref s: [$T;])
     s.len ? s[s.len - 1] : throw("len == 0");
 
-fn if_only(s: [$T;])
+fn if_only(ref s: [$T;])
     s.len == 1 && s[0];
 
-fn if_first(s: [$T;])
+fn if_first(ref s: [$T;])
     s.len && s[0];
 
-fn if_last(s: [$T;])
+fn if_last(ref s: [$T;])
     s.len && s[s.len - 1];
 
 fn grow_if_oob(ref a: $T[], i: i32): &mut $T
@@ -45,7 +45,7 @@ fn grow_oob(ref a: $T[], i: i32, fill!: $T): &mut $T
     return a[i];
 }
 
-fn unless_oob(a: [$T], i: i32)
+fn unless_oob(ref a: [$T], i: i32)
     i < a.len && a[i];
 
 fn try_steal(ref a: [$T], i: i32)
@@ -102,14 +102,14 @@ fn hasNonIdentifierChars(id: string)
 
 //
 
-fn zip_each(a: [$T;], b: [$U;], fn)
+fn zip_each(ref a: [$T;], ref b: [$U;], fn)
 {
     a.len == b.len || throw("a.len != b.len");
     for (mut i = 0; i < a.len; i++)
         fn(a[i], b[i], i?: i);
 }
 
-fn zip_all(a: [$T;], b: [$U;], pred)
+fn zip_all(ref a: [$T;], ref b: [$U;], pred)
 {
     zip_each(a, b): |shadow a, shadow b, i|
         if !(pred(a, b, i?: i))
@@ -133,7 +133,7 @@ case ($T -> $T)
     return res;
 }
 
-fn steal(a: $T[], start!: i32, end!: i32)
+fn steal(ref a: $T[], start!: i32, end!: i32)
 {
     let size = end - start;
 
@@ -147,7 +147,7 @@ fn steal(a: $T[], start!: i32, end!: i32)
     return ret;
 }
 
-fn steal(a: $T[], start!: i32)
+fn steal(ref a: $T[], start!: i32)
 {
     mut ret: $T[];
     ret.resize(a.len - start);

@@ -32,7 +32,7 @@ fn Map(lax k: $K, lax v: $V) struct
     vals: $V[];
 };
 
-fn has(using _, key)
+fn has(using ref _, key)
     set::has(keys, key);
 
 fn set(using ref _, key, value)
@@ -40,14 +40,14 @@ fn set(using ref _, key, value)
         || keys, key,
         || vals, value);
 
-fn get(using _, key)
+fn get(using ref _, key)
     set::get(keys, key, vals);
 
-fn each(using _, fn)
+fn each(using ref _, fn)
     for (mut i = 0; i < vals.len; i++)
         fn(vals[i], key?: keys[i]);
 
-fn pairs(using _, fn)
+fn pairs(using ref _, fn)
     for (mut i = 0; i < keys.len; i++)
         fn(keys[i], vals[i]);
 
