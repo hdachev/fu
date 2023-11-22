@@ -13309,7 +13309,9 @@ pub fn solve(
         swap(root, GET_mut(_nestingFnort).solved.items.last);
     }
 
-    fn computeFnSighash_asIfCycleRoot(fn_target: Target)
+    fn computeFnSighash_asIfCycleRoot(
+        fn_target:          Target,
+        ref name_counts!:   map::Map(string, u32))
     {
         mut already_hashing:    Target[];
         mut cycle_participants: Target[];
@@ -13433,51 +13435,64 @@ pub fn solve(
             let o = GET(fn_target);
             o.kind == "fn" || BUG("computeFnSighash: Not a fn: " ~ fn_target);
 
-            // Hash return type -
-            hash.hash(o.type);
-
-            // Hash argument types OR fn body -
-            :HASH_args_OR_body
             {
-                // "Namespace" non-templates,
-                //  so that two identical fns in two modules won't clash at link time.
+                // Templates get hashed by contents, alla Unison -
+                //  we want to end up with the same sighashes in all modules,
+                //   so that emitting c++ inline fns will end up
+                //    eliminating them at link time.
                 //
-                // Within the same module, two identical fns should deduplicate,
-                //  ideally during solve, but currently codegen notices and discards them.
-                //
-                // Templates emit inline fns and don't need this,
-                //  whatever module they specialize in.
-                //
-                if (~o.flags & F_TEMPLATE)
+                if (o.flags & F_TEMPLATE)
                 {
-                    hash.hash(shortModuleName);
-
-                    // Additionally, if this is a top-level function,
-                    //  hash it by signature instead of by fnbody, so changes inside
-                    //   don't thrash other translation units.
+                    // The hash relies on all "places" hashing their type,
+                    //  and then ignores the types of individual nodes,
+                    //   assuming it's enough to hash everything uniquely.
                     //
-                    if (!fn_target.local_of)
-                    {
-                        fn_target.args.each: |host_arg|
-                        {
-                            if (~host_arg.flags & F_INJECTED)
-                            {
-                                hash.hash(host_arg.name);
-                                hash.hash(host_arg.type);
-                            }
-                        }
+                    // Originally forgot about the return type,
+                    //  which along with all arguments & locals is a "place" too.
+                    //
+                    hash.hash(o.type);
 
-                        break :HASH_args_OR_body;
-                    }
+                    // Note, previously this was sighashNode(o.solved):
+                    //  no longer works because kind.fn isImmediatelyDiscardable
+                    // ------------------------------------ //
+                                                            //
+                    already_hashing ~= fn_target;           //
+                    o.solved.items.each(.sighashNode); // <---
+                    already_hashing.pop();
                 }
 
-                // Note, previously this was sighashNode(o.solved):
-                //  no longer works because kind.fn isImmediatelyDiscardable
-                // ------------------------------------ //
-                                                        //
-                already_hashing ~= fn_target;           //
-                o.solved.items.each(.sighashNode); // <---
-                already_hashing.pop();
+                // Originally non-templates were hashed by signature,
+                //  but now we use a simple module-unique + num-times-seen-name
+                //   scheme, which means to reduce build thrashing to a minimum.
+                //
+                else
+                {
+                    // "Namespace" non-templates,
+                    //  so that two identical fns in two modules
+                    //   won't clash at link time.
+                    //
+                    hash.hash(shortModuleName);
+
+                    // Within the same module we can still end up with two fns
+                    //  with the same name and identical signatures,
+                    //   so let's add an incremental ID here too.
+                    //
+                    hash.hash(
+                        name_counts.map::ref(
+                            fn_target.name)++);
+
+                    // Which sort of obsoletes the previous design,
+                    //  which was hashing fn signatures.
+                    //
+                    // fn_target.args.each: |host_arg|
+                    // {
+                    //     if (~host_arg.flags & F_INJECTED)
+                    //     {
+                    //         hash.hash(host_arg.name);
+                    //         hash.hash(host_arg.type);
+                    //     }
+                    // }
+                }
             }
 
             //
@@ -13517,6 +13532,8 @@ pub fn solve(
         {
             PROFILE(.ComputeSighashes);
 
+            mut name_counts: map::Map(string, u32);
+
             for (mut i = 0; i < _scope.overloads.len; i++)
             {
                 ref o = _scope.overloads[i];
@@ -13535,7 +13552,7 @@ pub fn solve(
 
                     //
                     if (!target.sighash)
-                        computeFnSighash_asIfCycleRoot(target);
+                        computeFnSighash_asIfCycleRoot(target, :name_counts);
                 }
             }
         }
