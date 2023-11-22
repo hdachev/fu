@@ -13627,12 +13627,22 @@ pub fn solve(
                     //
                     hash.hash(o.type);
 
+                    // TODO FIX `ref` rejects copy,
+                    //  but it fails to recognize we're going through
+                    //   an intermediate val which should lift the ref semantics.
+                    //
+                    // The `~ []` abracadabra here forces the copy,
+                    //  because even `clone` doesn't fool it,
+                    //   it just really hates copying.
+                    //
+                    let TODO_FIX = o.solved.items ~ [];
+
                     // Note, previously this was sighashNode(o.solved):
                     //  no longer works because kind.fn isImmediatelyDiscardable
                     // ------------------------------------ //
                                                             //
                     already_hashing ~= fn_target;           //
-                    o.solved.items.each(.sighashNode); // <---
+                    TODO_FIX.each(.sighashNode); // <------ //
                     already_hashing.pop();
                 }
 
@@ -13800,7 +13810,7 @@ pub fn solve(
     {
         // println("\n----------------------------\n");
 
-        let root = solveNode(module.in.parse.root);
+        let root = solveNode(module.in.parse.root.steal());
 
         _current_fn && BUG("non-empty _current_fn.");
 
