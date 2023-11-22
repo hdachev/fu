@@ -4,7 +4,7 @@ import helpers;
 
 struct ClosureID
 {
-    target: Target;
+    true target: Target;
     revision: u32;
 };
 

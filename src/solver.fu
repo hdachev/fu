@@ -9366,20 +9366,18 @@ pub fn solve(
         let id = name;
 
         // CLOSURE-ID-HACK
+        let cid = hacks::tryParseClosureID(:id);
+        if (cid && cid.target.parent == _current_fn.target)
         {
-            let using _ = hacks::tryParseClosureID(:id);
-            if (target.isLocal && target.localOf == _current_fn.target.globid)
-            {
-                revision == _current_fn.target.revision || BUG(
-                    "ClosureID.revision mismatch: " ~ target
-                        ~ "\n\tCaptured at: " ~ revision
-                        ~ "\n\tCurrent rev: " ~ _current_fn.target.revision);
+            cid.revision == _current_fn.target.revision || BUG(
+                "ClosureID.revision mismatch: " ~ cid.target
+                    ~ "\n\tCaptured at: " ~ cid.revision
+                    ~ "\n\tCurrent rev: " ~ _current_fn.target.revision);
 
-                target.kind == "var" || BUG(
-                    "ClosureID.target is not a var: " ~ target);
+            cid.target.kind == "var" || BUG(
+                "ClosureID.target is not a var: " ~ cid.target);
 
-                return CallerNode("__closure", target);
-            }
+            return CallerNode("__closure", cid.target);
         }
         // CLOSURE-ID-HACK
 
@@ -9388,7 +9386,7 @@ pub fn solve(
         mut error: string;
         mut reorder: Reorder;
         mut conversions: Target[][];
-        let target = tryMatch__mutargs(local_scope: true, :id, :reorder, :conversions, flags: F_IMPLICIT, :error)
+        let target = !cid && tryMatch__mutargs(local_scope: true, :id, :reorder, :conversions, flags: F_IMPLICIT, :error)
             || injectImplicitArg(:id, :type, :becauseOf)
             || BUG();
 
