@@ -60,28 +60,49 @@ fn ScopeItem(id: string, target: Target, shadows: bool)
 //
 
 fn Scope_exports(scope: Scope, modid!: i32,
-    field_items: ScopeItem[],
-    pub_imports: i32[])
+    field_items!: ScopeItem[],
+    field_implicits!: ScopeItem[],
+    pub_imports!: i32[])
 {
-    mut items:          ScopeItem[] = field_items;
-    mut prv_items:      ScopeItem[];
 
-    mut converts:       Target[];
-    mut prv_converts:   Target[];
+    // Scope.items and Scope.implicits -
+    //  public & private + the field always-globals.
 
-    for (mut i = 0; i < scope.items.len; i++)
+    fn collect(what,
+        ref pub_cnt!: i32,
+        mut public?: ScopeItem[],
+        mut private?: ScopeItem[])
     {
-        mut item = scope.items[i];
-        if (item.target.modid == modid)
+        scope.what.each: |mut item|
         {
+            if (item.target.modid != modid)
+                continue;
+
             //////////////////////////////////
             ScopeItem_canSkipRest_clear(item);
             //////////////////////////////////
 
             let overload = scope.overloads[item.target.globid - 1];
-            (overload.flags & F_PUB ? items : prv_items) ~= item;
+            (overload.flags & F_PUB ? public : private) ~= item;
         }
+
+        pub_cnt         = public.len;
+        public         ~= private;
+        return public;
     }
+
+    mut pub_items       = 0;
+    mut pub_implicits   = 0;
+
+    let items           = collect(.items,     pub_cnt: pub_items,     public: field_items);
+    let implicits       = collect(.implicits, pub_cnt: pub_implicits, public: field_implicits);
+
+
+    // Conversions, field conversions namespaced per struct,
+    //  way more efficient that the stuff above.
+
+    mut converts:       Target[];
+    mut prv_converts:   Target[];
 
     for (mut i = 0; i < scope.converts.len; i++)
     {
@@ -93,23 +114,23 @@ fn Scope_exports(scope: Scope, modid!: i32,
         }
     }
 
-    let pub_items   = items.len;
-    items          ~= prv_items;
+    let pub_converts    = converts.len;
+    converts           ~= prv_converts;
 
-    let pub_cnvrts  = converts.len;
-    converts       ~= prv_converts;
+
+    //
 
     return Scope(
-        :items,     :pub_items,
-        :converts,  :pub_cnvrts,
+        :items,         :pub_items,
+        :implicits,     :pub_implicits,
+        :converts,      :pub_converts,
 
         :scope.overloads,
         :scope.extended,
 
-        implicits:  [],
-        imports:    pub_imports,
-        privates:   [],
-        usings:     []);
+        imports:        pub_imports,
+        privates:       [],
+        usings:         []);
 }
 
 

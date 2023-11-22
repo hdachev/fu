@@ -406,6 +406,7 @@ pub fn solve(
         _root_scope:        ScopeMemo;
         _ss:                ScopeSkipMemos;
         _field_items:       ScopeItem[];
+        _field_implicits:   ScopeItem[];
         _pub_imports:       i32[];
         _helpers_data:      HelpersData[];
         _ephemeral:         Ephemeral[];
@@ -819,16 +820,18 @@ pub fn solve(
     {
         let s = ctx.modules[modid].out.solve.scope;
 
-        _scope.items    ~= s.items   [: s.pub_items ];
-        _scope.converts ~= s.converts[: s.pub_cnvrts];
+        _scope.items ~= s.items[: s.pub_items];
+        _scope.converts ~= s.converts[: s.pub_converts];
+        _scope.implicits ~= s.implicits[: s.pub_implicits];
     }
 
     fn _Scope_import__forceCopy_privates(modid: i32): void
     {
         let s = ctx.modules[modid].out.solve.scope;
 
-        _scope.items    ~= s.items   [s.pub_items  :];
-        _scope.converts ~= s.converts[s.pub_cnvrts :];
+        _scope.items ~= s.items[s.pub_items :];
+        _scope.converts ~= s.converts[s.pub_converts :];
+        _scope.implicits ~= s.implicits[s.pub_implicits :];
     }
 
     fn Scope_import(modid: i32)
@@ -1784,7 +1787,8 @@ pub fn solve(
             && (flags & F_CALL_HAS_DOT || !minArity)
             && minArity <= 1 && maxArity;
 
-        fn field_items = considerFieldItems && _field_items;
+        fn field_items = considerFieldItems
+            && (flags & F_IMPLICIT ? _field_implicits : _field_items);
 
         //
         mut alternate_ids: string[];
@@ -7165,14 +7169,18 @@ pub fn solve(
 
                 for (mut i = 0; i < members.len; i++)
                 {
-                    let id = items[i].value;
+                    let item    = items[i];
+                    let id      = item.value;
 
                     // `true` fields.
-                    let isPredicate = items[i].flags & F_PREDICATE;
+                    let flags   = item.flags & (F_PREDICATE | F_IMPLICIT);
+
+                    flags && isPrimDecl && fail(token: item.token,
+                        "Unexpected " ~ "true".qKW ~ " or " ~ "implicit".qKW ~ " qualifier.");
 
                     let target = Scope_create(
                         _scope, !isPrimDecl ? "field" : "enumv", name: id || BUG(),
-                        flags: F_PUB | isPredicate);
+                        flags: F_PUB | flags);
 
                     ref ext     = EXT_mut(target);
                     ext.args    = args;
@@ -7192,9 +7200,18 @@ pub fn solve(
                 // Again the _field_items thing is really messy -
                 //  I think we originally got it for stuff like `fn fieldname`.
                 if (isPrimDecl)
+                {
                     _scope.items ~= innerScope;
+                }
                 else
+                {
                     _field_items ~= innerScope;
+
+                    // Not amazing.
+                    innerScope.each: |item|
+                        if (item.target.flags & F_IMPLICIT)
+                            _field_implicits ~= item;
+                }
             }
 
             // Update field types.
@@ -13643,7 +13660,10 @@ pub fn solve(
         // Exports.
         return SolverOutput(
             root:  root,
-            scope: Scope_exports(_scope, :module.modid, _field_items, _pub_imports),
-            notes: _notes);
+            notes: _notes,
+            scope: Scope_exports(_scope, :module.modid,
+                field_items:        _field_items,
+                field_implicits:    _field_implicits,
+                pub_imports:        _pub_imports));
     }
 }

@@ -1702,6 +1702,21 @@ pub extern fn runTests()
         }
     `);
 
+    ZERO(`
+        struct World { x: i32 };
+        struct Hello {  <fail no implicit world :24+1 because of 6:30+5><pass/>
+            implicit    </fail> world: World;
+        };
+
+        fn woot(implicit ref world: World) = world.x++;
+
+        <split/>
+        fn main() {
+            using mut hello = Hello(World(1));
+            return woot() * 10 + hello.world.x - 12;
+        }
+    `);
+
     // /Recursion /Closures /Implicit args
 
 

@@ -230,7 +230,8 @@ nocopy struct Scope
     converts:       Target[];
 
     pub_items:      i32;
-    pub_cnvrts:     i32;
+    pub_implicits:  i32;
+    pub_converts:   i32;
 };
 
 
