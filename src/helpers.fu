@@ -355,3 +355,19 @@ fn shadow !T(ref a: T, mut b: T) unwrap {
     swap(a, b);
     defer:ok swap(a, b);
 }
+
+
+//
+
+fn leftpad(.str, minw: int, mut pad = "               ")
+{
+    if (str.len >= minw)
+        return str;
+
+    let needed = minw - str.len;
+    while (pad.len < needed)
+        pad ~= pad;
+
+    pad.shrink(needed);
+    return pad ~= str;
+}

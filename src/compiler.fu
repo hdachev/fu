@@ -256,34 +256,8 @@ pub fn compile_and_build(
         let t1 = now::hr();
         let tt = t1 - t0;
 
-        if (t1 - t0 > 0.025)
-        {
-            mut lex:        ModuleStat;
-            mut parse:      ModuleStat;
-            mut solve:      ModuleStat;
-            mut codegen:    ModuleStat;
-
-            mut p:          profiler::ProfileData;
-
-            ref m = ctx.modules;
-            for (mut i = 0; i < m.len; i++)
-            {
-                lex     += m[i].stats.lex;
-                parse   += m[i].stats.parse;
-                solve   += m[i].stats.solve;
-                codegen += m[i].stats.codegen;
-
-                p       += m[i].profile.data;
-            }
-
-            ModuleStat_print(lex,   "\n    lex ");
-            ModuleStat_print(parse,   "  parse ");
-            ModuleStat_print(solve,   "  solve ");
-            ModuleStat_print(codegen, "codegen ", "\n");
-
-            p.print();
-            println("\t---------");
-        }
+        if (tt > 0.025)
+            printSlowBuildDiagnostics(ctx);
 
         println("        ", tt, "s\n");
     }
@@ -294,4 +268,85 @@ pub fn compile_and_build(
         :flags_cc, :flags_ld,
         unity: fname,
         fudir: FUDIR);
+}
+
+
+// Slow build diagnostics.
+
+fn printSlowBuildDiagnostics(ctx: Context)
+{
+    mut lex:        ModuleStat;
+    mut parse:      ModuleStat;
+    mut solve:      ModuleStat;
+    mut codegen:    ModuleStat;
+
+    mut p:          profiler::ProfileData;
+
+    mut sloc:       int;
+    mut specs:      int;
+    mut types:      int;
+
+    ref m = ctx.modules;
+    for (mut i = 0; i < m.len; i++)
+    {
+        shadow let m = m[i];
+
+        lex     += m.stats.lex;
+        parse   += m.stats.parse;
+        solve   += m.stats.solve;
+        codegen += m.stats.codegen;
+
+        p       += m.profile.data;
+
+        sloc    += countSloc(m.in.lex.tokens);
+        specs   += countSpecs(m.out.solve.scope.overloads);
+        types   += m.out.types.len;
+    }
+
+    ModuleStat_print(lex,   "\n    lex ");
+    ModuleStat_print(parse,   "  parse ");
+    ModuleStat_print(solve,   "  solve ");
+    ModuleStat_print(codegen, "codegen ", "\n");
+
+    println("\t---------");
+    println("   sloc " ~ sloc.leftpad(9));
+    println("    fns " ~ specs.leftpad(9));
+    println("  types " ~ types.leftpad(9));
+
+    p.print();
+    println("\t---------");
+}
+
+fn countSloc(tokens: Token[..])
+{
+    mut line0   = -1;
+    mut sloc    = 0;
+
+    for (mut i = 0; i < tokens.len; i++)
+    {
+        let t   = tokens[i];
+        if (t.line == line0 || t.kind != "id")
+            continue;
+
+        line0   = t.line;
+        sloc++;
+    }
+
+    return sloc || 1;
+}
+
+fn countSpecs(overloads: Overload[..])
+{
+    mut specs = 0;
+
+    for (mut i = 0; i < overloads.len; i++)
+    {
+        let o = overloads[i];
+        if (o.kind != "fn" && o.kind != "inline")
+            continue;
+
+        specs++;
+    }
+
+    return specs;
 }
