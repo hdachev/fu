@@ -26,47 +26,47 @@ struct Map(K, V)
 };
 */
 
-fn Map(lax k: $K, lax v: $V) struct
-{
-    keys: $K[];
-    vals: $V[];
+struct Map(type K, type V) {
+    keys: K[];
+    vals: V[];
 };
 
-fn has(using ref _, key)
+fn has(using ref _: Map($K, $V), key: $K): bool =
     set::has(keys, key);
 
-fn set(using ref _, key, value)
-    set::update(
-        || keys, key,
-        || vals, value);
-
-fn get(using ref _, key)
+fn get(using ref _: Map($K, $V), key: $K): $V =
     set::get(keys, key, vals);
 
-fn each(using ref _, fn)
-    for (mut i = 0; i < vals.len; i++)
-        fn(vals[i], key?: keys[i]);
+fn each(using ref _: Map($K, $V), fn)
+    for (mut i = 0; i < vals.len; i++) {
+        let key = keys[i];  // <------ This means to prevent bind-by-mutref here.
+        fn(vals[i], ?:key);         //  Not great, maybe we need a `ref ` kw at callsites like in c#,
+    }                               //   it'd work as `&mut ` in rust if possible, still mut-generic.
+                                    //
+                                    // Wonder what that means for . notation though.
+                                    //
+                                    // Alternatively,
+                                    //  typing the fn(ref key: $K, val: $V)
+                                    //   would also do the trick, probably way cleaner.
 
-fn pairs(using ref _, fn)
-    for (mut i = 0; i < keys.len; i++)
-        fn(keys[i], vals[i]);
-
-fn ref(using ref _, key)
-    set::ref(
-        || keys, key,
-        || vals);
-
-fn if_ref(using ref _, key, visit)
-    set::if_ref(
-        || keys, key,
-        || vals, fn visit);
-
-// TODO FIX - this is real funny -
-//  because i can't limit this to the templated struct above
-//   what's happening is naming this 'clear' makes it try spec
-//    for the keys & val arrays and obviously blows up.
 //
-fn clr(using ref _) {
+
+fn set(using mut ref _: Map($K, $V), key: $K, value: $V): bool =
+    set::update(
+        keys, key,
+        vals, value);
+
+fn ref(using mut ref _: Map($K, $V), key: $K)
+    set::ref(
+        keys, key,
+        vals);
+
+fn if_ref(using mut ref _: Map($K, $V), key: $K, visit)
+    set::if_ref(
+        keys, key,
+        vals, fn visit);
+
+fn clear(using mut ref _: Map($K, $V)) {
     keys.clear();
     vals.clear();
 }

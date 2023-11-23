@@ -1,5 +1,5 @@
 
-fn bfind(keys, item: $T, hit, miss)
+fn bfind(keys: $T[..], item: $T, hit, miss)
 {
     mut lo = 0;
     mut hi = keys.len;
@@ -31,7 +31,7 @@ fn bfind(keys, item: $T, hit, miss)
     return miss(lo);
 }
 
-pub fn has(keys: $T[], item: $T)
+pub fn has(keys: $T[..], item: $T)
 {
     bfind(:keys, :item,
 
@@ -44,7 +44,7 @@ pub fn has(keys: $T[], item: $T)
     });
 }
 
-pub fn add(ref keys: $T[], item: $T)
+pub fn add(mut ref keys: $T[], item: $T)
 {
     bfind(:keys, :item,
 
@@ -73,9 +73,10 @@ pub fn add(ref keys: $T[], item: $T)
 //     });
 // }
 
-pub fn update(keys, item: $T, extras, extra: $U)
+pub fn update(ref keys:   $K[], item:  $K,
+              ref extras: $V[], extra: $V)
 {
-    bfind(fn keys, :item,
+    bfind(keys, :item,
 
     hit: |i| {
         extras[i] = extra;
@@ -89,9 +90,9 @@ pub fn update(keys, item: $T, extras, extra: $U)
     });
 }
 
-pub fn ref(keys, item: $T, extras)
+pub fn ref(ref keys: $K[], item: $K, ref extras: $V[])
 {
-    let idx = bfind(fn keys, :item,
+    let idx = bfind(keys, :item,
 
     hit: |i| {
         break i;
@@ -106,9 +107,9 @@ pub fn ref(keys, item: $T, extras)
     return extras[idx];
 }
 
-pub fn if_ref(keys, item: $T, extras, visit)
+pub fn if_ref(ref keys: $K[..], item: $K, extras: $V[..], visit)
 {
-    bfind(fn keys, :item,
+    bfind(keys, :item,
 
     hit: |i| {
         visit(extras[i]);
@@ -120,7 +121,7 @@ pub fn if_ref(keys, item: $T, extras, visit)
     });
 }
 
-pub fn get(keys: $T[], item: $T, extras: $U[])
+pub fn get(keys: $K[..], item: $K, extras: $V[..])
 {
     bfind(:keys, :item,
 
@@ -133,7 +134,7 @@ pub fn get(keys: $T[], item: $T, extras: $U[])
     });
 }
 
-pub fn rem(ref keys: $T[], item: $T)
+pub fn rem(ref keys: $K[], item: $K)
 {
     bfind(:keys, :item,
 
@@ -151,7 +152,7 @@ pub fn rem(ref keys: $T[], item: $T)
 // TODO instead of this,
 //  make sure each item is moved exactly once.
 
-pub fn add(ref a: $T[], b: $T[..])
+pub fn add(mut ref a: $T[], b: $T[..])
 {
     mut x = 0;
     mut y = 0;
@@ -177,39 +178,7 @@ pub fn add(ref a: $T[], b: $T[..])
         a ~= b[y ..];
 }
 
-pub fn add(ref a: $T[], b: $T[], ref extras: $U[], extra: $U)
-{
-    mut x = 0;
-    mut y = 0;
-    while (x < a.len && y < b.len) {
-        let X = a[x];
-        let Y = b[y];
-
-        let cmp = X <> Y;
-        if (cmp >= 0) {
-            if (cmp != 0) {
-                a.insert(x, Y); // TODO FIX
-                extras.insert(x, extra);
-                y++;
-            }
-            else {
-                y++;
-            }
-        }
-
-        x++;
-    }
-
-    if (y < b.len)
-    {
-        a ~= b[y ..];
-
-        while (y++ < b.len)
-            extras ~= extra;
-    }
-}
-
-pub fn keep(ref a: $T[], b: $T[])
+pub fn keep(mut ref a: $T[], b: $T[..])
 {
     mut x = 0;
     mut y = 0;
@@ -236,7 +205,7 @@ pub fn keep(ref a: $T[], b: $T[])
     return a;
 }
 
-pub fn rem(ref a: $T[], b: $T[])
+pub fn rem(mut ref a: $T[], b: $T[..])
 {
     mut x = 0;
     mut y = 0;

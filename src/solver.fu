@@ -6923,7 +6923,7 @@ pub fn solve(
         //   getting AAR errors from _ss, should be disjoint-ok.
         let scopeItems0 = _scope.items.len;
 
-        typeParams.map::pairs(|id, tp|
+        typeParams.map::each: |key!id, tp|
         {
             let type = tp.matched;
             if (!type)
@@ -6938,7 +6938,7 @@ pub fn solve(
 
             // Actual typedefs.
             createTypedef(id, type);
-        });
+        }
 
         res.scope_items = _scope.items.steal(start: scopeItems0);
 
