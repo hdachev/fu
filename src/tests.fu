@@ -17366,6 +17366,33 @@ pub extern fn runTests()
         fn main() isAorB("A") && isAorB("B") && !isAorB("C") ? 0 : 1;
     `);
 
+    TODO_enums(currently: "ambig call to ~ enumv str 8:25+1", `
+        <alt>
+        using </alt>
+        enum Hello { str; b };
+
+        <split/>
+        fn main() {
+            mut out = "str";
+            return (out ~ "b").len - 2;
+        };
+    `);
+
+    ZERO(`
+        enum world { world; };
+        fn type_vs_value(type X) = "NO!";
+        fn type_vs_value(str: string) = str ~ "!";
+        fn hello(.type_vs_value) = "Hello " ~ type_vs_value;
+        fn main() = hello("world") == "Hello world!" ? 0 : 1;
+    `);
+
+    TODO_enums(currently: "ambig call to world fn enumv 5:26+1", `
+        enum world { world; };
+        fn world(str: string) = str ~ "!";
+        fn hello(.world) = "Hello " ~ world("world");
+        fn main() = hello("world") == "Hello world!" ? 0 : 1;
+    `);
+
     // /Enums
 
 
