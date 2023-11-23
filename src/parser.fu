@@ -421,6 +421,13 @@ pub fn parse(
     {
         let name = tryConsume("id").value;
 
+        // struct Hello(args) shorthand, see below.
+        mut args: Node[];
+        let argFlags = name
+            && tryConsume("op", "(")
+            && parseArgsDecl(args, "op", ")");
+
+        //
         consume("op", "{");
         mut items = parseBlockLike("op", "}", struct: true);
 
@@ -439,7 +446,19 @@ pub fn parse(
         }
 
         // Items: [ Base type (primitives), items (structs, enums & unions) ]
-        return make(:kind, [ [], make("members", items) ], :flags, :asserts, name);
+        mut struct = make(:kind, [ [], make("members", items) ], :flags, :asserts, name);
+        if (!args)
+            return struct;
+
+        // struct Hello(args) { ... } shorthand:
+        //  rewrites into fn Hello(args) struct { ... }
+        //
+        struct.value = "";
+
+        return make("fn",
+            items: args ~ Node() ~ struct,
+            flags: argFlags,
+            value: name);
     }
 
     fn parseStructItem(): Node

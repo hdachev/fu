@@ -14870,8 +14870,11 @@ pub extern fn runTests()
 
     // Template types.
 
-    ZERO(`
-        fn sA(_: $T) struct { hey: $T; };
+    ZERO(`                                  <alt>
+        fn sA(_: $T) struct { hey: $T; };   <alt/>
+        fn sA(type T) struct { hey: T; };   <alt/>
+        struct sA(_: $T) { hey: $T; };      <alt/>
+        struct sA(type T) { hey: T; };      </alt>
 
         fn fA(a: $T): sA($T) = [ a + 2 ];
         fn main() 1.fA.hey - 3;
