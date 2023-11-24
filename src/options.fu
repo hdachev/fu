@@ -1,7 +1,6 @@
 
 using flags DevOptions {
-    DEV_PrintAST
-    DEV_PrintCG
+    DEV_Print
     DEV_Parallel
     DEV_ExpectFail
 

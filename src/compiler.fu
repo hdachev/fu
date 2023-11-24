@@ -106,13 +106,13 @@ fn compile_solveCodegen(implicit ref module: Module, implicit options: Options)
     let stat0 = ModuleStat_now();
     module.out.solve = solver::solve();
 
-    if (options.dev & DEV_PrintAST)
+    if (options.dev & DEV_Print)
         println(::inspect(module));
 
     let stat1 = ModuleStat_now();
     module.out.cpp = codegen::cpp_codegen();
 
-    if (options.dev & DEV_PrintCG)
+    if (options.dev & DEV_Print)
         println(module.out.cpp);
 
     let stat2 = ModuleStat_now();

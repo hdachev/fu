@@ -8,8 +8,10 @@ import ansi;
 
 // Test running infra.
 
-pub fn compile_snippets(sources: string[], mut fnames?: string[], options?: Options[]): Context
+fn compile_snippets(sources: string[], mut fnames?: string[], mut options?: Options): Context
 {
+    options.dev |= DEV_CG_LifetimeAnnots;
+
     fn ensure_main(src: string)
         src.has("fn main")
             ? src
@@ -34,20 +36,16 @@ pub fn compile_snippets(sources: string[], mut fnames?: string[], options?: Opti
                     : snippet;
 
         ctx.files.map::set(fnames[i], src);
+
+        if (snippet.has("/*PRINT*/"))
+            options.dev |= DEV_Print;
     }
 
     // Compile everything once all sources populated,
     //  allows for testing import circles & such.
     for (mut i = 0; i < sources.len; i++)
     {
-        let snippet = sources[i];
         let fname   = fnames[i];
-
-        shadow mut options = options.len > i && options[i];
-        if (snippet.has("/*PRINT*/"))
-            options.dev |= DEV_PrintAST | DEV_PrintCG;
-
-        options.dev |= DEV_CG_LifetimeAnnots;
 
         compile(:fname, :options);
     }
@@ -161,7 +159,7 @@ fn verify_errmsg(topic: string, e!: string, msg!: string)
 pub fn ZERO(
     implicit ref testdiffs: testdiff::TestDiffs,
     mut sources: string[],
-    options?: Options): Context
+    mut options?: Options): Context
 {
     // <fail>x</fail>
     // <fail>x<pass/>y</fail>
@@ -391,9 +389,8 @@ pub fn ZERO(
         println("\nFAILING TESTCASE:\n" ~ sources.join("\n"));
 
     //
-    mut ok_defects_by_insrc: CGDefects[];
-    mut expectations: string[][];
-    shadow mut options = sources.map(|_| options);
+    mut ok_defects: CGDefects;
+    mut expectations: string[];
     for (mut i = 0; i < sources.len; i++)
     {
         ref src = sources[i];
@@ -409,10 +406,6 @@ pub fn ZERO(
         }
 
         // Collect ;; TODO and ;; EXPECTs.
-        mut break_notes:    SolverNotes;
-        mut break_defects:  CGDefects;
-        mut ok_defects:     CGDefects;
-
         mut start = 0;
         while ((start = src.find(" ;; ", :start)) >= 0)
         {
@@ -433,14 +426,14 @@ pub fn ZERO(
                 let notes = parseWild(annot, as: SolverNotes);
                 if (notes)
                 {
-                    break_notes |= notes;
+                    options.break_notes |= notes;
                 }
                 else
                 {
                     let defects = parseWild(annot, as: CGDefects);
                     if (defects)
                     {
-                        break_defects |= defects;
+                        options.break_defects |= defects;
                     }
                     else
                     {
@@ -454,7 +447,7 @@ pub fn ZERO(
                 if (defect)
                     ok_defects |= defect;
                 else
-                    expectations.grow_if_oob(i) ~= annot;
+                    expectations ~= annot;
             }
 
             // Turn ;; commands into // comments and hop over.
@@ -462,12 +455,6 @@ pub fn ZERO(
             src[start + 2]  = '/';
             start           = end;
         }
-
-        options[i].break_notes      = break_notes;
-        options[i].break_defects    = break_defects;
-
-        if (ok_defects)
-            ok_defects_by_insrc.grow_if_oob(i) = ok_defects;
     }
 
     // We can now safely do the nowrites second -
@@ -478,39 +465,49 @@ pub fn ZERO(
 
     mut testdiff_prepend = "";
 
+    //
+    fn all_src = sources.join("\n----\n");
+    fn all_cpp = ctx.modules.map(.out.cpp.src).join("\n----\n");
+
     // Deal with expectations first, nicer errors.
-    for (mut i = 0; i < expectations.len; i++)
+    :NEXT_EXPECTATION
+    expectations.each: |x|
     {
-        let arr = expectations[i];
-        let src = sources[i];
-        let out = ctx.modules[i + 1].out;
-        let cpp = out.cpp;
+        let note = parseWild(x, as: SolverNotes);
 
-        for (shadow mut i = 0; i < arr.len; i++)
+        let idx = !note && x.find(' ');
+        if (idx < 0)
+            throw("Invalid ;; CHECK, no argument: `;; " ~ x ~ "` in:\n" ~ all_src);
+
+        let cmd = x[: idx];
+        let rest = x[idx + 1 :];
+
+        mut found = false;
+        for (mut i = 0; i < sources.len; i++)
         {
-            let x = arr[i];
+            let out = ctx.modules[i + 1].out;
 
-            let note = parseWild(x, as: SolverNotes);
+            fn this_src = sources[i];
+            fn this_cpp = out.cpp.src;
+
             if (note)
             {
-                out.solve.notes & note || throw("Expected note not listed: " ~ x.qBAD ~ " in:\n" ~ src ~ "\n\nOutput is:\n\n" ~ cpp.src);
-                continue;
+                out.solve.notes & note || throw("Expected note not listed: " ~ x.qBAD ~ " in:\n" ~ this_src ~ "\n\nOutput is:\n\n" ~ this_src);
+                continue :NEXT_EXPECTATION;
             }
 
-            let idx     = x.find(' ');
-            let cmd     = x.slice(0, idx);
-            let rest    = x.slice(idx + 1);
-            let found   = cpp.src.has(rest);
-
-            if (cmd == "EXPECT")
-                found || throw("EXPECT mismatch: `;; " ~ x ~ "` in:\n" ~ src ~ "\n\nOutput is:\n\n" ~ cpp.src);
-            else if (cmd != "TODO")
-                throw("Unknown ;; CHECK: `;; " ~ x ~ "` in:\n" ~ src);
-            else if (found)
-                throw("TODO test is actually passing: `;; " ~ x ~ "` in:\n" ~ src ~ "\n\nOutput is:\n\n" ~ cpp.src);
-            else
-                testdiff_prepend ~= ";; " ~ x ~ "\n";
+            if (found = this_cpp.has(rest))
+                break;
         }
+
+        if (cmd == "EXPECT")
+            found || throw("EXPECT mismatch: `;; " ~ x ~ "` in:\n" ~ all_src ~ "\n\nOutput is:\n\n" ~ all_cpp);
+        else if (cmd != "TODO")
+            throw("Unknown ;; CHECK: `;; " ~ x ~ "` in:\n" ~ all_src);
+        else if (found)
+            throw("TODO test is actually passing: `;; " ~ x ~ "` in:\n" ~ all_src ~ "\n\nOutput is:\n\n" ~ all_cpp);
+        else
+            testdiff_prepend ~= ";; " ~ x ~ "\n";
     }
 
     let run = true;
@@ -521,19 +518,22 @@ pub fn ZERO(
     ::build(:ctx, :run, :fudir, :dir_wrk, :onfail);
 
     // Check codegen.
-    for (mut i = 0; i < sources.len; i++)
     {
-        let src         = sources[i];
-        let ok_defects  = ok_defects_by_insrc.unless_oob(i);
+        mut defects: CGDefects;
+        for (mut i = 0; i < sources.len; i++)
+        {
+            let cpp     = ctx.modules[i + 1].out.cpp;
+            defects    |= cpp.defects;
+        }
 
-        let cpp         = ctx.modules[i + 1].out.cpp;
-        let unexpected  =  cpp.defects & ~ok_defects;
-        let unnecessary = ~cpp.defects &  ok_defects;
+        //
+        let unexpected  =  defects & ~ok_defects;
+        let unnecessary = ~defects &  ok_defects;
 
         if (unexpected)
-            throw("Unwanted CGDefect: " ~ unexpected.str.ansi::qBAD ~ " in:\n" ~ src ~ "\n\nOutput is:\n\n" ~ cpp.src);
+            throw("Unwanted CGDefect: " ~ unexpected.str.ansi::qBAD ~ " in:\n" ~ all_src ~ "\n\nOutput is:\n\n" ~ all_cpp);
         if (unnecessary)
-            throw("Unnecessary CGDefect annotation: " ~ unnecessary.str.ansi::qID ~ " in:\n" ~ src ~ "\n\nOutput is:\n\n" ~ cpp.src);
+            throw("Unnecessary CGDefect annotation: " ~ unnecessary.str.ansi::qID ~ " in:\n" ~ all_src ~ "\n\nOutput is:\n\n" ~ all_cpp);
     }
 
     // OK so it works, let's see if test output actually matches -
