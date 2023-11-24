@@ -1415,7 +1415,12 @@ pub fn solve(
             mut offset = -3;
 
             result ~= " { ";
-            while (usage)
+
+            if (!usage)
+            {
+                result ~= "unused ";
+            }
+            else do
             {
                 if (usage & 1)
                     result ~= "#" ~ offset ~ " ";
@@ -1423,6 +1428,8 @@ pub fn solve(
                 usage >>= 1;
                 offset++;
             }
+            while (usage);
+
             result ~= "}";
         }
 
