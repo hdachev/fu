@@ -10055,10 +10055,10 @@ pub extern fn runTests()
         fn main() {
             implicit mut result = 0;
 
-            let Solo    = fn Zero;
+            let Solo = fn Zero;
             lax fn Solo_muteRest(_) {}
-            let Zero    = fn Solo_muteRest;
-            let Todo    = fn Solo_muteRest;
+            shadow let Zero = fn Solo_muteRest;
+            shadow let Todo = fn Solo_muteRest;
 
             <alt>
             mut queue: string;
@@ -10070,8 +10070,8 @@ pub extern fn runTests()
             shadow let Zero = fn Parzero;
             </alt>
 
-            let Todo_A  = fn Todo;
-            let Todo_B  = fn Todo;
+            let Todo_A = fn Todo;
+            let Todo_B = fn Todo;
 
             Zero([ 10 ]);   Zero(11);
             Todo([ 12 ]);   Todo(13);
@@ -10883,6 +10883,28 @@ pub extern fn runTests()
 
         <split/>
         fn main() PRELUDE.len == 6 ? 0 : 1;
+    `);
+
+    ZERO(`
+        fn Zero(src) = src.len;
+        fn Todo(src) = src.NOT_DEFINED();
+
+        <split/>
+        fn main() {
+            let Solo            = fn Zero;
+
+            lax fn Solo_muteRest(lax src) {}
+            shadow let Zero     = fn Solo_muteRest;
+            shadow let Todo     = fn Solo_muteRest;
+
+            lax fn Noop(src)    = Zero(src);
+            shadow let Zero     = fn Noop;
+
+            let Todo_Renamed    = fn Todo;
+            Todo_Renamed("Unused!");
+
+            return Solo("Hello World!") - 12;
+        }
     `);
 
     // /quite right
