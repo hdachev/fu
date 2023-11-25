@@ -15148,6 +15148,31 @@ pub extern fn runTests()
         }
     `);
 
+    TODO_specpat(currently: "~= Incompatible T: string unused -> string #0 12:45+2", `
+        struct HasData(type T) { data: T[] };
+
+        fn obfuscate !T(l.data: T[:], r.data: T[:], with_left, with_right) {
+            with_left (l0?: 0, l1?: l.len);
+            with_right(right: r[: r.len]);
+        }
+
+        fn concatAndFlatten !T(l: HasData(T), r: HasData(T)) {
+            mut result: T[];
+            obfuscate(l, r,
+                with_left:  |l0, l1| result ~= l.data[l0 : l1],
+                with_right: |right|  result ~= right);
+
+            return result.join("");
+        }
+
+        fn main() {
+            let a: HasData(string) = [ [ "Hello", ", " ] ];
+            let b: HasData(string) = [ [ "World", "!" ] ];
+
+            return concatAndFlatten(a, b).len - 13;
+        }
+    `);
+
     // /Template types
 
 
