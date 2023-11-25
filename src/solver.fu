@@ -7039,12 +7039,6 @@ pub fn solve(
             basePrim        = getBasePrim(basePrimType);
         }
 
-        //
-        let asserts = node.asserts;
-
-        mut out_target  = into;
-        mut out_type: Type;
-
         // Seed the shape hasher with the "sighashed" name for templates from above,
         //  this should randomize the shapes just fine for recursive types,
         //   won't thrash any more than than the name alone already does.
@@ -7064,11 +7058,8 @@ pub fn solve(
         if (isPrimDecl)
             shape_hasher.hash(basePrim);
 
-        if (out_target)
-        {
-            out_type    = out_target.type;
-        }
-        else
+        let asserts     = node.asserts;
+        let out_target  = into ||
         {
             // TODO FIX see canon_tryIntersect/_tryUnion,
             //  they can only handle single specpats correctly.
@@ -7078,16 +7069,18 @@ pub fn solve(
                 && TODO_FIX_getSpecPat();
 
             //
-            out_type    = initStruct(
-                :kind, :shape, :name, :asserts, :specPat,
-                initialHash: shape.hash);
-
-            out_target  = createRawTypedef(id: origId, :name,
-                type: out_type, :node.flags,
-                status: SS_LAZY);
+            let out_target = createRawTypedef(id: origId, :name,
+                :node.flags, status: SS_LAZY,
+                type: initStruct(
+                    :kind, :shape, :name, :asserts, :specPat,
+                    initialHash: shape.hash));
 
             out_target.EXT_mut.template = createTemplate(:node);
-        }
+            out_target
+        };
+
+        let out_Typename = out_target.type;
+        let instType = clear_Typename(out_Typename);
 
         // Trying to push this down now.
         if (!solve)
@@ -7116,11 +7109,11 @@ pub fn solve(
         mut structConverts: Target[];
         mut structImports:  i32[];
 
-        mut non_triv_reason = !out_type.is_rx_copy && -1;
+        mut non_triv_reason = !instType.is_rx_copy && -1;
 
         // Solve members & check defaults.
-        let primType = isPrimDecl && clear_Typename(
-            out_type || BUG("Falsy isPrimDecl.out_type"));
+        let primType = isPrimDecl && (
+            instType || BUG("Falsy isPrimDecl.instType"));
 
         fn solveMember(shadow node: Node)
         {
@@ -7149,7 +7142,7 @@ pub fn solve(
 
         // (Re)poplate fields.
         {
-            ref innerScope = lookupUserType_mut(out_type.canon).items;
+            ref innerScope = lookupUserType_mut(instType.canon).items;
             if (!innerScope && members)
             {
                 let isUnscoped = !!(node.flags & F_USING);
@@ -7158,11 +7151,11 @@ pub fn solve(
                 //  to have any particular qualities.
                 let args = !isPrimDecl
                     ? [ Argument(name: "this",
-                                 type: despeculateStruct(out_type)) ]
+                                 type: despeculateStruct(instType)) ]
                     : [ Argument(name: "This",
-                                 type: into_Typename(out_type),
+                                 type: out_Typename,
                               default: isUnscoped
-                                    && createEmpty(type: into_Typename(out_type))) ];
+                                    && createEmpty(type: out_Typename)) ];
 
                 for (mut i = 0; i < members.len; i++)
                 {
@@ -7280,7 +7273,7 @@ pub fn solve(
                         if (itemType.isStruct)
                         {
                             mut rec = "";
-                            if (itemType.canon == out_type.canon
+                            if (itemType.canon == instType.canon
                                 || (rec = TODO_FIX_getRecursionError(lookupUserType(itemType))))
                             {
                                 return "\n\t\tvia " ~ item.explainWhichFn(fmt: FullContext)
@@ -7392,7 +7385,7 @@ pub fn solve(
         if (out_target.callers)
         {
             // println("RECURSIVE TYPE HASH FAIL " ~ out_target);
-            shape.hash = lookupUserType(out_type).hash;
+            shape.hash = lookupUserType(instType).hash;
         }
 
         //
@@ -7407,7 +7400,7 @@ pub fn solve(
 
             if (SELF_TEST)
                 shape.non_triv_mask || non_triv_reason < 0 || BUG(
-                    "Empty non_triv_mask, but some member is non-trivial.");
+                    "solveStruct: Empty non_triv_mask, but some member is non-trivial.");
 
             // Lift one bit for this type.
             shape.non_triv_mask |= 1 << (shape.hash & 63);
@@ -7418,25 +7411,26 @@ pub fn solve(
             |import| structImports.set::add(import));
 
         // Add a default constructor.
+        shadow mut instType = instType;
         {
             mut CHANGE = false;
 
-            if (out_type.is_rx_copy &&
+            if (instType.is_rx_copy &&
                 members.some(|member| !member.type.is_rx_copy))
             {
                 CHANGE      = true;
-                out_type    = make_non_copyable(out_type);
+                instType    = make_non_copyable(instType);
             }
 
             //
             if (!isStruct && !isUnion)
-                shape.flatCount == 1 || BUG("Bad flatCount("
+                shape.flatCount == 1 || BUG("solveStruct: Bad flatCount("
                     ~ shape.flatCount ~ "): " ~ kind ~ " " ~ name);
 
             //
             {
-                ref s       = lookupUserType_mut(out_type.canon);
-                s.target    = out_target || BUG("No struct/out_target.");
+                ref s       = lookupUserType_mut(instType.canon);
+                s.target    = out_target || BUG("solveStruct: No struct/out_target.");
                 s.converts  = structConverts;
                 s.imports   = structImports;
 
@@ -7459,19 +7453,22 @@ pub fn solve(
                 //     println("SHAPE MISMATCH " ~ printShape(shape0) ~ " != " ~ printShape(shape));
 
                 GET(s.target).status & SS_DID_START || BUG(
-                    "Setting stuff but missing SS_DID_START.");
+                    "solveStruct: Setting stuff but missing SS_DID_START.");
 
                 // At this point we must be able
                 //  to resolve flatCount from anywhere.
                 if (SELF_TEST)
                 {
-                    let actual = getFlatCount(out_type);
+                    let actual = getFlatCount(instType);
                     if (actual != shape.flatCount)
-                        BUG("getFlatCount actual=" ~ actual ~ " expect=" ~ shape.flatCount);
+                        BUG("solveStruct: getFlatCount(" ~ actual ~ ") !== shape.flatCount(" ~ shape.flatCount ~ ")");
                 }
 
-                out_type.USAGE_setMaxUsage(:shape.flatCount);
+                instType.USAGE_setMaxUsage(:shape.flatCount);
             }
+
+            shadow let instType = instType;
+            shadow let out_Typename = into_Typename(instType);
 
             //
             mut min = 0;
@@ -7529,7 +7526,7 @@ pub fn solve(
 
             //
             ref overload    = GET_mut(out_target);
-            overload.type   = out_type;
+            overload.type   = out_Typename;
 
             if (mustUpdate)
                 overload.status |= SS_UPDATED;
