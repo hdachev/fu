@@ -6623,9 +6623,17 @@ pub fn solve(
                 retval.lifetime, argPositionsOK: true);
         }
 
-        retval.lifetime.Lifetime_each: |isArgIdx, isStatic|
-            isArgIdx || isStatic || BUG(
-                "updateScope: Non-static/non-arg leaked:\n\t" ~ retval.lifetime);
+        shadow let retval = retval;
+
+        if (SELF_TEST)
+        {
+            retval.lifetime.Lifetime_each: |isArgIdx, isStatic|
+                isArgIdx || isStatic || BUG(
+                    "updateScope: Non-static/non-arg leaked:\n\t" ~ retval.lifetime);
+
+            isNative && retval.is_Typename && BUG(
+                "updateScope: native retval.is_Typename: " ~ retval.humanizeType);
+        }
 
         // Unconditionally replacing the stuff.
         let overload    = GET(target);
