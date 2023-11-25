@@ -4902,13 +4902,13 @@ pub fn solve(
     {
         //////////////////////////////////////////////
         // HACK - Retyping string literals to enums //
+        //  we want to replace them                 //
+        //   with a call(enumv) instead             //
+        //                                          //
         if (type && type.is_primitive)
-        {
-            let members = tryLookupUserType(type).items;
-            for (mut i = 0; i < members.len; i++)
-                if (members[i].id == v)
-                    return clear_refs(type);
-        }
+            tryLookupUserType(type).items.each: |member|
+                if (member.id == v)
+                    return member.target.type;
         //////////////////////////////////////////////
 
         mut ret = t_string;
