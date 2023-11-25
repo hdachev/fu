@@ -8288,43 +8288,46 @@ pub fn solve(
         annot || init.type || fail(
             "Variable declarations without type annotations must be initialized: " ~ id.qBAD ~ ".");
 
-        // Dead code elim.
-        let init_isNever = init.type.is_never;
-        if (init_isNever && !(asArgument || flags & F_INLINE))
+        let t_init = init &&
         {
-            makeNote(N_DeadLet);
-            return init;
-        }
+            // Dead code elim.
+            let init_isNever = init.type.is_never;
+            if (init_isNever && !(asArgument || flags & F_INLINE))
+            {
+                makeNote(N_DeadLet);
+                return init;
+            }
 
-        if (annot && init.type && !init_isNever)
-            convertIfNeeded(init, expect: annot, :asArgument,
-                "Type annotation does not match init expression", :id, "<-");
+            if (annot && init.type && !init_isNever)
+                convertIfNeeded(init, expect: annot, :asArgument,
+                    "Type annotation does not match init expression", :id, "<-");
 
-        // TYPES vs VALUES //////
-        // To avoid ambiguity, currently we draw a line between:
-        //
-        //  let X = i32
-        //   call(X) gives a const-ref to a defailt-initialized i32, and:
-        //
-        //  type X = i32
-        //   call(X) gives the Typename(i32), usable in a type annot.
-        //
-        // What we end up with is not amazing because there's a bit
-        //  of a function coloring situation, fns that operate on types
-        //   vs fns that operate on values, except its not fns but bindings.
-        //
-        mut t_init = clear_Typename(init.type);
-        // TYPES vs VALUES //////
+            // TYPES vs VALUES //////
+            // To avoid ambiguity, currently we draw a line between:
+            //
+            //  let X = i32
+            //   call(X) gives a const-ref to a defailt-initialized i32, and:
+            //
+            //  type X = i32
+            //   call(X) gives the Typename(i32), usable in a type annot.
+            //
+            // What we end up with is not amazing because there's a bit
+            //  of a function coloring situation, fns that operate on types
+            //   vs fns that operate on values, except its not fns but bindings.
+            //
+            mut t_init = clear_Typename(init.type);
+            // TYPES vs VALUES //////
 
-        // TODO FIX VFACTS //////////////////////////
-        if (asArgument || flags & F_MUT)
-            t_init.vfacts = [];
-        // TODO FIX VFACTS //////////////////////////
+            // TODO FIX VFACTS //////////////////////////
+            if (asArgument || flags & F_MUT)
+                t_init.vfacts = [];
+            // TODO FIX VFACTS //////////////////////////
 
-        // Lose refs to temporaries.
-        shadow let t_init = t_init.lifetime.hasTemporary
-            ? clear_refs(t_init)
-            : t_init;
+            // Lose refs to temporaries.
+            t_init.lifetime.hasTemporary
+                ? clear_refs(t_init)
+                : t_init
+        };
 
         // Trying to unify &muts and refs.
         if (annot.is_mutref)
