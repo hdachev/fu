@@ -10042,7 +10042,7 @@ pub extern fn runTests()
         }
     `);
 
-    TODO_shadow(currently: "fwd != rev", [`
+    ZERO([`
         fn Zero(implicit ref result: i32, src: i32[:]) =
             src.each: |x, i| result += x * (i + 1);
         fn Todo(implicit ref result: i32, src: i32[:]) =
@@ -10886,7 +10886,7 @@ pub extern fn runTests()
         fn main() PRELUDE.len == 6 ? 0 : 1;
     `);
 
-    TODO_shadow(currently: "NOT_DEFINED is not defined 3:39+1", `
+    ZERO(`
         fn Zero(src) = src.len;
         fn Todo(src) = src.NOT_DEFINED();
 

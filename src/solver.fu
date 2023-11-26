@@ -8656,6 +8656,8 @@ pub fn solve(
         mut shadow = false;
         mut result: Target[];
 
+        mut unique: Target[];
+
         // Visit local scope.
         fn visitScope(shadow local_scope!: bool, items?: [ScopeItem])
         {
@@ -8667,10 +8669,19 @@ pub fn solve(
                     ? _scope.items.search(:id, :scope_iterator, scope_skip: _ss.items, :shadows)
                     :        items.search(:id, :scope_iterator)))
             {
-                // Can't shadow here -
-                //  shadowing works per signature,
+                // TODO FIX ADDROFFN ///////////////////////////////////////////
+                //
+                // 1. Can't shadow correctly here -
+                //  shadowing currently works per overloads,
                 //   we can't just shadow everything by the same name in scope.
-                result.set::add(target);
+                //
+                // 2. Investigate why we needed these to be unique, dont remember.
+                //
+                // 3. The result.reverse() at the end just adds offense to injury.
+                //
+                if (unique.set::add(target))
+                    result ~= target;
+                // TODO FIX ADDROFFN ///////////////////////////////////////////
             }
         }
 
@@ -8692,6 +8703,10 @@ pub fn solve(
                 local_scope: false,
                 items: scope.items);
         }
+
+        // TODO FIX ADDROFFN ///////////////////////////////////////////
+        result.reverse();    // see comment above
+        // TODO FIX ADDROFFN ///////////////////////////////////////////
 
         return result || fail(:token, id.isNotDefinedHere);
     }
