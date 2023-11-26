@@ -868,6 +868,59 @@ pub extern fn runTests()
         }
     `);
 
+    TODO_specpat(currently: "Things is not defined 2:36+1", [`
+        struct Things(type T) { ARR: T[] };
+    `,`
+        fn add !T(ref a: _0::Things(T), b: _0::Things(T))
+            a.ARR ~= b.ARR;
+
+        fn main() {
+            type i32s = _0::Things(i32);
+            mut a: i32s;
+            mut b: i32s;
+            a.add(b);
+            return a.ARR.len;
+        }
+    `]);
+
+    TODO_specpat(currently: "Things is not defined 9:46+1", [`
+        struct Things(type T) { ARR: T[] };
+
+        fn add(ref a: Things($T), b: Things($T))
+            a.ARR ~= b.ARR;
+    `,`
+        struct Events(type A, type B) {
+            a: _0::Things(A);
+            b: _0::Things(B);
+        };
+
+        fn Events_merge(ref e0: Events($A, $B), e1: Events($A, $B))
+        {
+            fn Events_merge(ref a: _0::Things($T), b: _0::Things($T))
+                a.add(b);
+
+            for (fieldname i: Events($A, $B))
+                Events_merge(e0.i, e1.i);
+        }
+    `,`
+        fn main() {
+            mut e0: _1::Events(i32, u32);
+            mut e1: _1::Events(i32, u32);
+            for (mut i = 0; i < 3; i++) {
+                e0.a.ARR ~= i;
+                e1.a.ARR ~= 3 + i;
+                if (i & 1) {
+                    e0.b.ARR ~= 0xff;
+                    e1.b.ARR ~= 0xfe;
+                }
+            }
+
+            e0.Events_merge(e1);
+            return e0.a.ARR == [ 0, 1, 2, 3, 4, 5 ]
+                && e0.b.ARR == [ 0xff, 0xfe ] ? 0 : 1;
+        }
+    `]);
+
     // /Template args
 
 
