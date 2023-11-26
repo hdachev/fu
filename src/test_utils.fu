@@ -43,12 +43,7 @@ fn compile_snippets(sources: string[], mut fnames?: string[], mut options?: Opti
 
     // Compile everything once all sources populated,
     //  allows for testing import circles & such.
-    for (mut i = 0; i < sources.len; i++)
-    {
-        let fname   = fnames[i];
-
-        compile(:fname, :options);
-    }
+    compile(fname: fnames.last, :options);
 
     // Append some diagnostics.
     for (mut i = 0; i < ctx.modules.len; i++)

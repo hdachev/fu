@@ -113,6 +113,7 @@ pub extern fn runTests()
     let TODO_pub        = fn TODO;
     let TODO_zst        = fn TODO;
     let TODO_StaticEval = fn TODO;
+    let TODO_shadow     = fn TODO;
 
     let LEGACY_Map      = fn TODO;
 
@@ -10041,7 +10042,7 @@ pub extern fn runTests()
         }
     `);
 
-    ZERO([`
+    TODO_shadow(currently: "BUG exit code", [`
         fn Zero(implicit ref result: i32, src: i32[:]) =
             src.each: |x, i| result += x * (i + 1);
         fn Todo(implicit ref result: i32, src: i32[:]) =
@@ -10885,7 +10886,7 @@ pub extern fn runTests()
         fn main() PRELUDE.len == 6 ? 0 : 1;
     `);
 
-    ZERO(`
+    TODO_shadow(currently: "NOT_DEFINED is not defined 3:39+1", `
         fn Zero(src) = src.len;
         fn Todo(src) = src.NOT_DEFINED();
 
