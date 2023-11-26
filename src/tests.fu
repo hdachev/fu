@@ -10041,7 +10041,7 @@ pub extern fn runTests()
         }
     `);
 
-    TODO_ambig(currently: "ambig call to ref arg _ fn _ 15:28+1", [`
+    ZERO([`
         fn Zero(implicit ref result: i32, src: i32[:]) =
             src.each: |x, i| result += x * (i + 1);
         fn Todo(implicit ref result: i32, src: i32[:]) =

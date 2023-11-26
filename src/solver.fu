@@ -6694,8 +6694,13 @@ pub fn solve(
                 ~ localfn(index: _current_fn.far_jumps.first) ~ ".");
 
         if (maybeLast && !mustBecomeInline)
-            numArgsWritten || ext.fx_mask || !retval.is_void || overload.flags & F_LAX || warn(:_current_fn.token,
-                target ~ " does nothing: returns void and has no effects. Make it " ~ "lax".qKW ~ " if this is intentional.");
+            numArgsWritten || ext.fx_mask
+                || !retval.is_void              // Shouldn't this be any warn on any ZST?
+                || overload.flags & F_LAX
+                || args.some(.type.isAddrOfFn)  // Adding this to avoid the need for laxing higher-order fns.
+                || warn(:_current_fn.token,
+                            target  ~ " does nothing: returns void and has no effects."
+                                    ~ " Make it " ~ "lax".qKW ~ " if this is intentional.");
 
         //
         shadow ref overload = GET_mut(target);
