@@ -868,12 +868,16 @@ pub extern fn runTests()
         }
     `);
 
-    ZERO([`
+    TODO_conv(currently: "expects a mutref, got i32[] 4:15+2", [`
         struct Things(type T) { ARR: T[] };
     `,`
+<alt>
         fn add !T(ref a: _0::Things(T), b: _0::Things(T))
             a.ARR ~= b.ARR;
-
+<alt/>
+        fn add(ref a.ARR, b.ARR)
+            a ~= b;
+</alt>
         fn main() {
             type i32s = _0::Things(i32);
             mut a: i32s;
@@ -883,11 +887,15 @@ pub extern fn runTests()
         }
     `]);
 
-    ZERO([`
+    TODO_conv(currently: "expects a mutref, got i32[] 5:15+2", [`
         struct Things(type T) { ARR: T[] };
-
+<alt>
         fn add(ref a: Things($T), b: Things($T))
             a.ARR ~= b.ARR;
+<alt/>
+        fn add(ref a.ARR, b.ARR)
+            a ~= b;
+</alt>
     `,`
         struct Events(type A, type B) {
             a: _0::Things(A);
