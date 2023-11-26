@@ -15148,7 +15148,7 @@ pub extern fn runTests()
         }
     `);
 
-    TODO_specpat(currently: "~= Incompatible T: string unused -> string #0 12:45+2", `
+    ZERO(`
         struct HasData(type T) { data: T[] };
 
         fn obfuscate !T(l.data: T[:], r.data: T[:], with_left, with_right) {

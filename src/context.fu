@@ -2,6 +2,7 @@ import helpers;
 import module;
 import structs;
 import quals;
+import usage;
 import fail;
 
 
@@ -286,4 +287,63 @@ pub fn getShortModuleName(fname: string)
     }
 
     BUG();
+}
+
+
+//
+
+pub fn serializeType(type: ValueType, debug!: string)
+{
+    type || throw("COMPILER BUG: serializeType: Falsy type in: " ~ debug);
+
+    mut result: string;
+    result.helpers::appendVarint(
+        (type.quals & q_TAGS).u32);
+
+    result ~= type.canon || throw(
+        "COMPILER BUG: serializeType: No type.canon in: " ~ debug);
+
+    return result;
+}
+
+pub fn parseType(str: byte[:]): ValueType
+{
+    mut offset: i32;
+
+    let quals = Quals(helpers::parseVarint(offset, str));
+    let canon = helpers::clone(str.slice(offset)); // TODO FIX SLICES clone
+
+    mut type = ValueType(:canon, :quals);
+    type.quals |= getMaxUsage(type.getFlatCount());
+
+    if (SELF_TEST && type.is_primitive)
+        bit::popcount(type.quals) == 2 || BUG(
+            "parseType: Primitive.quals(" ~ quals ~ ").popcount(" ~ bit::popcount(quals) ~ ") != 2");
+
+    return type;
+}
+
+
+//
+
+pub fn if_sliceable(type: ValueType, hit)
+{
+    if (type.is_sliceable)
+        hit(parseType(type.canon.slice(1, type.canon.len - 1)));
+}
+
+pub fn tryClear_sliceable(type: ValueType)
+{
+    if_sliceable(type): |vtype|
+        return Type(:vtype);
+
+    return [];
+}
+
+pub fn clear_sliceable(type: ValueType)
+{
+    if_sliceable(type): |vtype|
+        return Type(:vtype);
+
+    throw("COMPILER BUG: Not sliceable: " ~ type.canon);
 }

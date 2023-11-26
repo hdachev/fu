@@ -5,6 +5,7 @@ import scope;
 import context;
 import types;
 import quals;
+import usage;
 import structs;
 import effects;
 import lifetime;
@@ -5160,22 +5161,6 @@ pub fn solve(
 
 
     //
-
-    fn mangleSignature(args: [Argument]): string
-    {
-        mut mangle = "";
-        for (mut i = 0; i < args.len; i++)
-        {
-            if (i)
-                mangle ~= ", ";
-
-            mangle ~= args[i].name;
-            mangle ~= ':';
-            mangle ~= serializeType(args[i], debug: "mangleSignature");
-        }
-
-        return mangle;
-    }
 
     fn mangleArgTypes(args: [$T]): string
     {

@@ -1,0 +1,82 @@
+import module;
+
+
+//
+
+pub let q_mutref        = Quals(1) << 0;
+pub let q_rx_copy       = Quals(1) << 1;
+pub let q_rx_resize     = Quals(1) << 2;
+
+pub let q_TAGS          = q_mutref | q_rx_copy | q_rx_resize;
+pub let q_USAGE         = ~q_TAGS;
+
+pub let q_TAGS_bitsize  = 3;
+pub let q_USAGE_bitsize = Quals_bitsize - q_TAGS_bitsize;
+
+
+//
+
+pub inline fn usage(type: ValueType): Quals
+{
+    return type.quals & q_USAGE;
+}
+
+pub fn getMaxUsage(flatCount: i32)
+{
+    if (flatCount >= q_USAGE_bitsize)
+        return q_USAGE;
+
+    return Quals(q_USAGE >> (q_USAGE_bitsize - flatCount).u32) & q_USAGE;
+}
+
+pub fn USAGE_setMaxUsage(ref type: Type, flatCount: i32)
+{
+    type.quals = type.quals & q_TAGS | getMaxUsage(:flatCount);
+}
+
+
+//
+
+fn USAGE_shiftRight(quals: Quals, mut memberFlatOffset!offset: i32): Quals
+{
+    let keep    = quals & q_TAGS;
+    mut usage   = quals & q_USAGE;
+
+    while (offset >= q_USAGE_bitsize)
+        offset -= q_USAGE_bitsize;
+
+    usage = usage >>                    offset .Quals
+          | usage << (q_USAGE_bitsize - offset).Quals;
+
+    return keep | (usage & q_USAGE);
+}
+
+fn USAGE_shiftLeft(quals: Quals, mut memberFlatOffset!offset: i32): Quals
+{
+    let keep    = quals & q_TAGS;
+    mut usage   = quals & q_USAGE;
+
+    while (offset >= q_USAGE_bitsize)
+        offset -= q_USAGE_bitsize;
+
+    usage = usage <<                    offset .Quals
+          | usage >> (q_USAGE_bitsize - offset).Quals;
+
+    return keep | (usage & q_USAGE);
+}
+
+pub fn USAGE_structUsageFromFieldUsage(mut slot: Type, memberFlatOffset!: i32): Type
+{
+    slot.quals = USAGE_shiftLeft(:slot.quals, :memberFlatOffset);
+    return slot;
+}
+
+pub fn USAGE_fieldUsageFromStructUsage(mut fieldType!slot: Type, structUsage: Quals, memberFlatOffset!: i32, memberFlatCount!: i32): Type
+{
+    slot.quals &= ~q_USAGE;
+    slot.quals |=  structUsage;
+    slot.quals  =  USAGE_shiftRight(:slot.quals, :memberFlatOffset);
+    slot.quals &=  q_TAGS | getMaxUsage(memberFlatCount);
+
+    return slot;
+}

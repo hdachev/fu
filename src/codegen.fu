@@ -9,6 +9,7 @@ import cpp;
 import module;
 import structs;
 import lifetime;
+import usage;
 import fail;
 
 let M_STMT              = 1 << 0;
