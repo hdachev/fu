@@ -41,9 +41,45 @@ fn compile_snippets(sources: string[], mut fnames?: string[], mut options?: Opti
             options.dev |= DEV_Print;
     }
 
+    mut ctx_reverseBuildOrder = sources.len > 1 && clone(ctx);
+
     // Compile everything once all sources populated,
     //  allows for testing import circles & such.
     compile(fname: fnames.last, :options);
+
+    // Cross-check: module compile order should not affect cg,
+    //  this is a common driver for c++ build thrashing,
+    //   usually means something leaks modids within sighashes & shapes.
+    //
+    if (sources.len > 1)
+    {
+        {
+            shadow implicit ref ctx = ctx_reverseBuildOrder;
+            for (mut i = 0; i < sources.len; i++)
+            {
+                let fname = fnames[i];
+                compile(:fname, :options);
+            }
+        }
+
+        //
+        mut fwd = ctx.modules.map(.out.cpp.src);
+        mut rev = ctx_reverseBuildOrder.modules.map(.out.cpp.src);
+
+        // TODO FIX this `<> < 0` makes NO SENSE
+        fwd.sort(|a, b| a <> b < 0);
+        rev.sort(|a, b| a <> b < 0);
+
+        //
+        fwd.len == rev.len || throw(
+            "compile_snippets: #fwd != #rev");
+
+        for (mut i = 0; i < ctx.modules.len; i++)
+            fwd[i] == rev[i] || throw(
+                "compile_snippets: fwd != rev:"
+                    ~ "\n\nFWD:\n" ~ fwd[i]
+                    ~ "\n\nREV:\n" ~ rev[i]);
+    }
 
     // Append some diagnostics.
     for (mut i = 0; i < ctx.modules.len; i++)

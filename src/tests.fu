@@ -10042,7 +10042,7 @@ pub extern fn runTests()
         }
     `);
 
-    TODO_shadow(currently: "BUG exit code", [`
+    TODO_shadow(currently: "fwd != rev", [`
         fn Zero(implicit ref result: i32, src: i32[:]) =
             src.each: |x, i| result += x * (i + 1);
         fn Todo(implicit ref result: i32, src: i32[:]) =
