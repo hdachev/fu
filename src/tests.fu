@@ -868,7 +868,7 @@ pub extern fn runTests()
         }
     `);
 
-    TODO_specpat(currently: "Things is not defined 2:36+1", [`
+    ZERO([`
         struct Things(type T) { ARR: T[] };
     `,`
         fn add !T(ref a: _0::Things(T), b: _0::Things(T))
@@ -883,7 +883,7 @@ pub extern fn runTests()
         }
     `]);
 
-    TODO_specpat(currently: "Things is not defined 9:46+1", [`
+    ZERO([`
         struct Things(type T) { ARR: T[] };
 
         fn add(ref a: Things($T), b: Things($T))

@@ -8907,7 +8907,10 @@ pub fn solve(
         if (node.kind == "call" && node.flags & F_TEMPLATE
                                 && node.value != "typeof")
         {
-            mut targets = solveAddrOfFn(node.value, :node.token, :imports);
+            mut targets = solveAddrOfFn(
+                node.value, :node.token, :imports,
+                :node.flags & F_COMPOUND_ID);
+
             if (!targets)
                 matchFail(node.value.isNotDefinedHere);
 
