@@ -2468,7 +2468,10 @@ pub fn solve(
 
                     let convertType = convert.kind != "field"
                         ? convert.type
-                        : make_field_reference(:from, convert);
+                        : make_field_reference(:from, convert,
+
+                            // See conversionTailType //////////
+                            TODO_FIX_useTemporaryLifetime: true);
 
                     shadow let isStruct = convertType.isStruct;
 
