@@ -2012,7 +2012,11 @@ pub fn solve(
                                 //  in which case we'd be doing `local_scope: false`, and
                                 //   `misc_scope: modules[autocall_modid].items` here instead
                                 local_scope:    true,
-                                flags:          F_CALL_HAS_DOT,
+                                flags:          F_CALL_HAS_DOT
+
+                                    // Without this we can overflow
+                                    //  when resolving conversions.
+                                    | (flags & F_CONVERSION),
 
                                 id:             host_arg.autocall,
                                 args:           autocall_args,
