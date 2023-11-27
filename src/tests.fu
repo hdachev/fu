@@ -14231,6 +14231,20 @@ pub extern fn runTests()
         fn main() = definit.target;
     `);
 
+    TODO_conv(currently: "conv stack got too deep i32 -> A 5:31+1", `
+        struct A { x: i32 };
+        struct C { a: A };
+                                    <fail C2A bad call a>
+        using fn C2A(ref a) a.a;    <pass/>
+        using fn C2A(ref a.a) a;    </fail>
+
+        using fn getX(ref x.x) x;
+        fn main(): i32 {
+            mut c: C;
+            return c;
+        }
+    `);
+
     // /Conversion functions.
 
 
