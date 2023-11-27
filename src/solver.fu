@@ -2028,10 +2028,10 @@ pub fn solve(
                         }
 
                         // Actual arg type.
-                        let hasConv = conversions.len > i && conversions[i].len;
-                        let actual = hasConv
-                            ? GET(conversions[i].last).type
-                            : args[callsiteIndex].type;
+                        let argConv = conversions.len > i && conversions[i];
+                        let actual  = convertedType(
+                            args[callsiteIndex].type,
+                            argConv);
 
                         if (actual.is_never)
                         {
@@ -2063,7 +2063,7 @@ pub fn solve(
 
                         /////////////////
                         // Literal fixup.
-                        if (!hasConv)
+                        if (!argConv)
                         {
                             let        arg = args[callsiteIndex];
                             shadow let arg = arg.kind == "argid"
@@ -2080,7 +2080,7 @@ pub fn solve(
                         // Go through conversions here.
                         if !(flags & F_CONVERSION)
                         {
-                            let conversion = tryConvert(:misc_scope, :local_scope, :expect, :actual, retype: !hasConv && args[callsiteIndex]);
+                            let conversion = tryConvert(:misc_scope, :local_scope, :expect, :actual, retype: !argConv && args[callsiteIndex]);
                             if (conversion)
                             {
                                 conversions.grow_if_oob(i) ~= conversion;
@@ -2097,11 +2097,10 @@ pub fn solve(
                     {
                         for (mut i = REST_START; i < N; i++)
                         {
-                            let hasConv         = conversions.len > i && conversions[i].len;
                             let callsiteIndex   = reorder ? reorder.map[i] : i;
-                            let actual          = hasConv
-                                ? GET(conversions[i].last).type
-                                : args[callsiteIndex].type;
+                            let actual          = convertedType(
+                                from: args[callsiteIndex].type,
+                                conversions.len > i && conversions[i]);
 
                             // TODO FAILCASE
                             // TODO FAILCASE no coverage for never items here,
@@ -2354,6 +2353,22 @@ pub fn solve(
 
             :memberFlatCount,
             :memberFlatOffset);
+    }
+
+    fn convertedType(from: Type, conversions: Target[:])
+    {
+        for (mut i = conversions.len; i --> 0; )
+        {
+            let lastConv = conversions[i];
+            if (lastConv.kind == "field")
+                return make_field_reference(
+                    from: convertedType(:from, conversions[: i]),
+                    field: lastConv);
+
+            return lastConv.type;
+        }
+
+        return from;
     }
 
     fn tryConvert(
@@ -5725,9 +5740,8 @@ pub fn solve(
 
             for (mut i = 0; i < conversions.len; i++)
             {
-                let c = conversions[i];
-                if (c)
-                    args[i] = GET(c.last).type;
+                ref arg = args[i];
+                arg = convertedType(arg, conversions[i]);
             }
 
             if (REST_TYPE)

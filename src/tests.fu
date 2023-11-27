@@ -868,7 +868,7 @@ pub extern fn runTests()
         }
     `);
 
-    TODO_conv(currently: "expects a mutref, got i32[] 4:15+2", [`
+    ZERO([`
         struct Things(type T) { ARR: T[] };
     `,`
 <alt>
@@ -887,7 +887,7 @@ pub extern fn runTests()
         }
     `]);
 
-    TODO_conv(currently: "expects a mutref, got i32[] 5:15+2", [`
+    ZERO([`
         struct Things(type T) { ARR: T[] };
 <alt>
         fn add(ref a: Things($T), b: Things($T))
