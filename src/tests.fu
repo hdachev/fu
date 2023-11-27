@@ -14245,6 +14245,20 @@ pub extern fn runTests()
         }
     `);
 
+    TODO_conv(currently: "a is not defined 5:31+1", `
+        struct A { x: i32 };
+        struct C { a: A };
+                                    <fail C2A bad call a>
+        using fn C2A(ref a) a.a;    <pass/>
+        using fn C2A(ref .a)  a;    </fail>
+
+        using fn getX(ref .x) x;
+        fn main(): i32 {
+            mut c: C;
+            return c;
+        }
+    `);
+
     // /Conversion functions.
 
 
