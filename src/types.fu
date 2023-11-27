@@ -514,6 +514,11 @@ pub fn clear_Typename(mut type: Type)
     return type;
 }
 
+pub fn is_Typename(type: Type)
+{
+    return !!(type.vfacts & Typename);
+}
+
 
 //
 

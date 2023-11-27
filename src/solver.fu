@@ -2052,7 +2052,7 @@ pub fn solve(
                                 matchFail(host_arg ~ " expects a mutref, got " ~ humanizeType(actual));
 
                             // Might as well do the exact same thing here.
-                            if (host_arg.flags & F_TYPENAME && !(actual.vfacts & Typename))
+                            if (host_arg.flags & F_TYPENAME && !actual.is_Typename)
                                 matchFail(host_arg ~ " expects a type, got a value: " ~ humanizeType(actual));
 
                             continue :ARG_OK;
@@ -5849,7 +5849,7 @@ pub fn solve(
 
                         // TYPES vs VALUES //////
                         if (isTypedef)
-                            inType.vfacts & Typename || BUG(
+                            inType.is_Typename || BUG(
                                 argName ~ " not a typename: " ~ humanizeType(inType));
                         else
                             inType = clear_Typename(inType); // See solveLetLike_dontTouchScope: t_init = clear_Typename
@@ -6947,7 +6947,7 @@ pub fn solve(
             fail("Type annotations on type aliases are not supported.");
         }
 
-        if (specType && !(specType.vfacts & Typename))
+        if (specType && !specType.is_Typename)
             BUG("solveTypedef: specType is not a Typename");
 
         let annot = specType || evalTypeAnnot(
@@ -8352,7 +8352,7 @@ pub fn solve(
 
         if (SELF_TEST)
         {
-            t_let.vfacts & Typename && BUG(
+            t_let.is_Typename && BUG(
                 "solveLetLike_dontTouchScope: Ended up with a Typename");
 
             if (asArgument || flags & F_MUT)
@@ -8471,7 +8471,7 @@ pub fn solve(
                 !out.type.lifetime.hasTemporary || isArg || BUG(
                     "solveLet_createBindingAndGetLetdef: Non-argument lifetime.hasTemporary");
 
-                out.type.vfacts & Typename && BUG(
+                out.type.is_Typename && BUG(
                     "solveLet_createBindingAndGetLetdef: Ended up with a Typename");
             }
 
@@ -8746,7 +8746,7 @@ pub fn solve(
                 {
                     mut type = solveNode(node.items.only).type;
 
-                    if (type.vfacts & Typename)
+                    if (type.is_Typename)
                     {
                         _here = node.items.only.token;
                         fail("Redundant " ~ "typeof".qBAD  ~ ", this is a type, not a value: " ~ humanizeType(type));
@@ -8778,7 +8778,7 @@ pub fn solve(
             ? evalTypeParam(node.value)
             : solveNode(node).type;
 
-        if !(exprType.vfacts & Typename)
+        if !(exprType.is_Typename)
             fail("Invalid type annotation: evaluates to a value, not a type."
                 ~ " Consider wrapping it in typeof().");
 
@@ -10679,7 +10679,7 @@ pub fn solve(
             {
                 // Non-zero-filled type-inits.
                 if (kind == "type")
-                    type.vfacts &= ~Typename;
+                    type = clear_Typename(type);
 
                 //
                 let host_args = target.args || BUG("CallerNode: no host args: " ~ target);
