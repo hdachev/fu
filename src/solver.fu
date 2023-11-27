@@ -2036,7 +2036,7 @@ pub fn solve(
 
                         // Actual arg type.
                         let argConv = conversions.len > i && conversions[i];
-                        let actual  = convertedType(
+                        let actual  = conversionTailType(
                             args[callsiteIndex].type,
                             argConv);
 
@@ -2105,7 +2105,7 @@ pub fn solve(
                         for (mut i = REST_START; i < N; i++)
                         {
                             let callsiteIndex   = reorder ? reorder.map[i] : i;
-                            let actual          = convertedType(
+                            let actual          = conversionTailType(
                                 from: args[callsiteIndex].type,
                                 conversions.len > i && conversions[i]);
 
@@ -2346,7 +2346,9 @@ pub fn solve(
 
     //
 
-    fn make_field_reference(from: Type, field: Overload)
+    fn make_field_reference(from: Type, field: Overload,
+
+        TODO_FIX_useTemporaryLifetime!?: bool)
     {
         using let _ = field_unpackOffset(field);
 
@@ -2354,23 +2356,29 @@ pub fn solve(
 
             to:         field.type,
             quals:      (from || BUG()).quals,
-            lifetime:   TODO_FIX_static_ZSTs && !memberFlatCount
-                ? Lifetime_static()
-                : from.lifetime,
+            lifetime:   TODO_FIX_useTemporaryLifetime
+                ? Lifetime_temporary
+                : TODO_FIX_static_ZSTs && !memberFlatCount
+                    ? Lifetime_static()
+                    : from.lifetime,
 
             :memberFlatCount,
             :memberFlatOffset);
     }
 
-    fn convertedType(from: Type, conversions: Target[:])
+    fn conversionTailType(from: Type, conversions: Target[:])
     {
         for (mut i = conversions.len; i --> 0; )
         {
             let lastConv = conversions[i];
             if (lastConv.kind == "field")
                 return make_field_reference(
-                    from: convertedType(:from, conversions[: i]),
-                    field: lastConv);
+                    from: conversionTailType(:from, conversions[: i]),
+                    field: lastConv,
+
+                    // We could do the correct thing but we gotta
+                    //  go all the way up the conversion chain.
+                    TODO_FIX_useTemporaryLifetime: true);
 
             return lastConv.type;
         }
@@ -5772,7 +5780,7 @@ pub fn solve(
             for (mut i = 0; i < conversions.len; i++)
             {
                 ref arg = args[i];
-                arg = convertedType(arg, conversions[i]);
+                arg = conversionTailType(arg, conversions[i]);
             }
 
             if (REST_TYPE)

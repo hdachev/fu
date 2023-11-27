@@ -14231,7 +14231,7 @@ pub extern fn runTests()
         fn main() = definit.target;
     `);
 
-    TODO_conv(currently: "BUG non-locid non-x00x00 subregion 10:20+1", `
+    ZERO(`
         struct A { x: i32 };
         struct C { a: A };
                                     <fail C2A bad call a>
