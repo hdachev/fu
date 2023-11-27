@@ -289,6 +289,7 @@ pub fn solve(
         // TODO FIX CallerNode_inline still doesn't inline recursively,
         //  ideally it'll track this stuff on its own.
         already_inlined?:   Target[];
+        conv_safety?:       int;
 
         //
         using postdom?:     Postdom;
@@ -411,6 +412,8 @@ pub fn solve(
         _pub_imports:       i32[];
         _helpers_data:      HelpersData[];
         _ephemeral:         Ephemeral[];
+
+        _solver_safety:     int;
 
         // Can't we just list them all and scan through?
         //  Do we need the mangling nonsense?
@@ -2380,6 +2383,15 @@ pub fn solve(
         mut match:  Target[];
         mut path:   Target[];
 
+        //
+        let conv_safety0 = _current_fn.conv_safety++;
+        if (conv_safety0 >= 128)
+            fail("Conversion stack got too deep, exploring: "
+                ~ explainTypeDiff(actual, expect, "->"));
+
+        defer _current_fn.conv_safety = conv_safety0;
+
+        //
         let has_converts    = (local_scope ? _scope : misc_scope).converts.len;
 
         ////////////////////////////////////
@@ -5624,8 +5636,23 @@ pub fn solve(
 
         ////////////////////
         let here0   = _here;
-        defer _here = here0;
         _here       = original.template.node.token;
+
+        ////////////////////////////////////////////////////////////////
+        // TODO FAILCASE:
+        //  grouping this defer with the one below -
+        //   so that the _here write happens AFTER the fail() -
+        //    somehow obscures the _here write,
+        //     and here0 cgs a constref.
+        //
+        defer _here = here0;
+        ////////////////////////////////////////////////////////////////
+
+        let solver_safety0 = _solver_safety++;
+        if (solver_safety0 >= 128)
+            fail("Solver stack got too deep, was about to start working on " ~ template.node.value.qID);
+
+        defer _solver_safety = solver_safety0;
         ////////////////////
 
         //
