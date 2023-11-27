@@ -1191,6 +1191,8 @@ static s_Node createArgID_YjqRDlvN(const fu::str& id, const s_Node& expr, const 
 
 static fu::str getAutoName_EmkweZLm(const s_Node& expr, const fu::str& fname, const fu::str& src, fu::view<s_Token> tokens, const int _idx)
 {
+    if (expr.kind == s_kind_addroffn)
+        return fu::str(expr.value);
     if ((expr.kind == s_kind_call) && hasIdentifierChars_pZLkTusf(expr.value))
         return fu::str(expr.value);
     else if (expr.items)

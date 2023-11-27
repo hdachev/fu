@@ -2091,6 +2091,9 @@ pub fn parse(
 
     fn getAutoName(expr: Node): string
     {
+        if (expr.kind == "addroffn")
+            return expr.value;
+
         if (expr.kind == "call" && expr.value.hasIdentifierChars)
             return expr.value;
 
