@@ -14245,7 +14245,7 @@ pub extern fn runTests()
         }
     `);
 
-    TODO_conv(currently: "a is not defined 5:31+1", `
+    ZERO(`
         struct A { x: i32 };
         struct C { a: A };
                                     <fail C2A bad call a>

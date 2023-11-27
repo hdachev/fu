@@ -280,11 +280,11 @@ pub fn parse(
         return [];
     }
 
-    fn tryConsume(::kind, value: [byte], peek: ::kind): Token
+    fn tryConsume(::kind, value: byte[:], peek!): Token
     {
         let token = tokens[_idx];
         if (token.kind == kind && token.value == value
-                               && tokens[_idx + 1].kind == peek)
+                               && tokens[_idx + 1].peek())
         {
             _idx++;
             return token;
@@ -1424,20 +1424,34 @@ pub fn parse(
     {
         mut flags: Flags;
 
-        //
-        if (tryConsume("id", "using"    , peek: "id")) flags |= F_USING;
-        if (tryConsume("id", "implicit" , peek: "id")) flags |= F_IMPLICIT;
-        if (tryConsume("id", "lax"      , peek: "id")) flags |= F_LAX;
-        if (tryConsume("id", "shadow"   , peek: "id")) flags |= F_SHADOW;
+        {
+            inline fn peek(token: Token)
+                token.kind == "id" ||
 
-        // FWD COMPAT
-        if      (tryConsume("id", "const"    , peek: "id")) {}
-        else if (tryConsume("id", "mut"      , peek: "id")) flags |= F_MUT;
+                    // TODO FIX this is not amazing,
+                    //  ideally you'd get some kind of warning
+                    //   when the variable name is on the keyword list here.
+                    //
+                    // Without this the .autocall shorthand fails
+                    //  when there's an e.g. ref prefix,
+                    //   it gets interpreted as the variable name.
+                    //
+                    xqmark && token.kind == "op" && token.value == ".";
 
-        // FWD COMPAT
-        if      (tryConsume("id", "val"      , peek: "id")) {}
-        else if (tryConsume("id", "ref"      , peek: "id")) flags |= F_REF;
-        else if (tryConsume("id", "type"     , peek: "id")) flags |= F_TYPENAME;
+            if (tryConsume("id", "using"    , :fn peek)) flags |= F_USING;
+            if (tryConsume("id", "implicit" , :fn peek)) flags |= F_IMPLICIT;
+            if (tryConsume("id", "lax"      , :fn peek)) flags |= F_LAX;
+            if (tryConsume("id", "shadow"   , :fn peek)) flags |= F_SHADOW;
+
+            // FWD COMPAT
+            if      (tryConsume("id", "const"    , :fn peek)) {}
+            else if (tryConsume("id", "mut"      , :fn peek)) flags |= F_MUT;
+
+            // FWD COMPAT
+            if      (tryConsume("id", "val"      , :fn peek)) {}
+            else if (tryConsume("id", "ref"      , :fn peek)) flags |= F_REF;
+            else if (tryConsume("id", "type"     , :fn peek)) flags |= F_TYPENAME;
+        }
 
         // Experimental shorthand, meant for fn arguments -
         //
@@ -1468,20 +1482,6 @@ pub fn parse(
             flags |= F_LAX;
         }
 
-        // Explicit external arg name.
-        if (xqmark && tryConsume("op", "!"))
-        {
-            flags |= F_MUSTNAME;
-
-            // Alternate internal arg name.
-            let inner_id = tryConsume("id").value;
-            if (inner_id)
-            {
-                flags |= F_COMPOUND_ID;
-                id    ~= "!" ~ inner_id;
-            }
-        }
-
         // Argument autocalls.
         if (sh_autocall)
         {
@@ -1500,6 +1500,20 @@ pub fn parse(
         // Varargs & rest params.
         if (xqmark && tryConsume("op", "[]"))
             flags |= F_REST_ARG;
+
+        // Explicit external arg name.
+        if (xqmark && tryConsume("op", "!"))
+        {
+            flags |= F_MUSTNAME;
+
+            // Alternate internal arg name.
+            let inner_id = tryConsume("id").value;
+            if (inner_id)
+            {
+                flags |= F_COMPOUND_ID;
+                id    ~= "!" ~ inner_id;
+            }
+        }
 
         //
         mut optional    = xqmark && tryConsume("op", "?");
