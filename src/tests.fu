@@ -6933,6 +6933,48 @@ pub extern fn runTests()
         }
     `);
 
+    TODO_borrowck(currently: "BUG exit code", `
+        struct TokenIdx { modid: i32 }
+        struct SolverState { _solver_safety: int }
+
+        noinline fn doTrySpecialize(
+            there: TokenIdx,
+            using implicit ref _ss: SolverState,
+            implicit ref _here: TokenIdx)
+        {
+            let here0   = _here; ///// <- this emitted a const auto&,
+            _here       = TokenIdx( /////// immediately clobbered here
+                _here.modid + there.modid);
+
+            let solver_safety0  = _solver_safety++;
+            if (solver_safety0 > 1)
+                return _here.modid ~ ":" ~ there.modid ~ ";";
+
+            defer {
+                _here           = here0;
+                _solver_safety  = solver_safety0;
+            }
+
+            return ";";
+        }
+
+        fn main() {
+            implicit mut _here: TokenIdx;
+            implicit mut _ss: SolverState;
+
+            mut res = "";
+            res ~= doTrySpecialize(TokenIdx(1));
+            _ss._solver_safety++;
+            res ~= doTrySpecialize(TokenIdx(2));
+            _ss._solver_safety++;
+            res ~= doTrySpecialize(TokenIdx(3));
+            _ss._solver_safety++;
+            res ~= doTrySpecialize(TokenIdx(4));
+
+            return res == ";;3:3;4:4;" ? 0 : 1;
+        }
+    `);
+
     // /Borrow checker
 
 
