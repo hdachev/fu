@@ -1,3 +1,4 @@
+import flags;
 import module;
 import ansi;
 import fail;
@@ -31,13 +32,13 @@ pub fn lex(src: string, fname: string): LexerOutput
 
     mut tokens: Token[];
 
-    fn token(::kind, value: string, idx0: i32, idx1: i32)
+    fn token(kind: Kind, value: string, idx0: i32, idx1: i32)
     {
         let col = idx0 - lidx;
         token_lc(:kind, :value, :idx0, :idx1, :line, :col);
     }
 
-    fn token_lc(::kind, value: string, idx0!: i32, idx1!: i32,
+    fn token_lc(kind: Kind, value: string, idx0!: i32, idx1!: i32,
         shadow line!: i32, col!: i32)
     {
         let chars = idx1 - idx0;
@@ -68,7 +69,7 @@ pub fn lex(src: string, fname: string): LexerOutput
         err_str(:idx0, idx1: idx, :reason);
     }
 
-    fn err(::kind, idx0: i32, reason: i32)
+    fn err(kind: Kind, idx0: i32, reason: i32)
     {
         err_str(:idx0, kind ~ ": Unexpected " ~ [src[reason]].qBAD ~ ".");
     }

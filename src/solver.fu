@@ -708,7 +708,7 @@ pub fn solve(
         return reason;
     }
 
-    fn tryBacktrack(from: TokenIdx, v: string, k: ::kind = "id"): TokenIdx
+    fn tryBacktrack(from: TokenIdx, v: string, k: Kind = "id"): TokenIdx
     {
         mut here = from;
         while (here.tokidx --> 0)
@@ -1020,7 +1020,7 @@ pub fn solve(
     //
 
     fn SolvedNode(
-        ::kind,
+        kind:       Kind,
         type:       Type,
         flags?:     Flags,
         value?:     string,
@@ -2661,7 +2661,7 @@ pub fn solve(
 
         if (k == "import")      return solveImport(node);
         if (k == "defer")       return solveDefer(node);
-        if (k == "try")         return solveTryCatch(node);
+        if (k == "Try")         return solveTryCatch(node);
 
         if (k == "typecast")    return solveTypeCast(node);
         if (k == "typeassert")  return solveTypeAssert(node);
@@ -2693,13 +2693,13 @@ pub fn solve(
         return res;
     }
 
-    fn isTypeDecl(::kind)
+    fn isTypeDecl(kind: Kind)
     {
         return kind == "struct"    || kind == "union"
             || kind == "primitive" || kind == "enum"  || kind == "flags";
     }
 
-    fn unorderedClassify(::kind): i32
+    fn unorderedClassify(kind: Kind): i32
     {
         if (kind == "fn")
             return 1;
@@ -3514,7 +3514,7 @@ pub fn solve(
             //////////////////////////////////////////
 
         }
-        else if (k == "try")
+        else if (k == "Try")
         {
             fn attempt      = node.items[TRY_TRY];
             fn error        = node.items[TRY_ERR];
@@ -4953,7 +4953,7 @@ pub fn solve(
             type: solveString(node.value, type));
     }
 
-    fn createEmpty(::kind = "empty", type = t_void, target?: Target): SolvedNode
+    fn createEmpty(kind: Kind = "empty", type = t_void, target?: Target): SolvedNode
     {
         return SolvedNode(:kind, :type, :target);
     }
@@ -6792,7 +6792,7 @@ pub fn solve(
         overload.type       = retval;
         overload.flags      = _current_fn.flags;
 
-        let kind: ::kind    = isUnspec          ? "template"
+        let kind: Kind      = isUnspec          ? "template"
                             : isNative          ? "__native"
                             : mustBecomeInline  ? "inline"
                                                 : "fn";
@@ -7625,7 +7625,7 @@ pub fn solve(
     }
 
     fn initStruct(
-        ::kind!, shape!: Shape,
+        kind!: Kind, shape!: Shape,
         name: string, asserts: DeclAsserts, specPat!: string,
         initialHash!: u64)
     {
@@ -12554,7 +12554,7 @@ pub fn solve(
             }
             else if (k == "root"
                   || k == "jump"
-                  || k == "try"
+                  || k == "Try"
 
                   || k == "copy" || k == "move" // TODO shouldn't occur before bck
                   || k == "arrlit")             // TODO get rid of arrlits
@@ -12935,7 +12935,7 @@ pub fn solve(
                         ~ "\n\t\texpr: " ~ expr);
             }
         }
-        else if (k == "try")
+        else if (k == "Try")
         {
             node.items.len == 3 || BUG("try.items.len != 3");
             let err = node.items[TRY_ERR];

@@ -370,12 +370,15 @@ fn Scope_pop(ref scope: Scope, implicit ref _helpers: Helpers[], memo: ScopeMemo
 ////////////////////////////////
 
 fn Scope_create(
-    implicit module: Module,
-    scope: &mut Scope,
-    ::kind = "__no_kind_yet", name!?: string,
-    type?: Type, flags!?: Flags,
-    status?: SolverStatus,
-    nest!?: i32): Target
+    implicit module:    Module,
+    ref scope:          Scope,
+
+    kind:       Kind = "__no_kind_yet",
+    name!?:     string,
+    type?:      Type,
+    flags!?:    Flags,
+    status?:    SolverStatus,
+    nest!?:     i32): Target
 {
     ref overloads = nest
         ? scope.extended.grow_if_oob(nest).locals

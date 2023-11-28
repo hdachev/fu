@@ -233,3 +233,117 @@ using flags CGDefects
     IrrelevantLiteral;
     DuplicateFunctions;
 };
+
+
+//
+
+enum Kind
+{
+    // LexerOnly: /////////////////////////
+    sof                                 ///
+    err                                 ///
+    eof                                 ///
+                                        ///
+    id                                  ///
+    op                                  ///
+    // /LexerOnly                       ///
+                                        ///
+    // Literal:                         ///
+    int                                 ///
+    real                                ///
+    char                                ///
+    str                                 ///
+    bool                                /// isLexeme end
+                        ///////////////////
+    definit             ///
+    empty               ///
+    // /Literal         ///
+                        ///
+    // Declaration:     ///
+    struct              ///
+    union               ///
+                        ///
+    primitive           ///
+    flags               ///
+    enum                ///
+                        ///
+    fn                  /// isImmediatelyDiscardable end
+    // /Declaration ///////
+
+    copy
+    move
+    arrlit
+
+    not
+    call
+    argid
+
+    root
+    block
+
+    // ControlFlow:
+    if
+    or
+    and
+    loop
+    jump
+    __far_jump
+    defer
+    Try
+    // /ControlFlow
+
+    let
+    letdef
+
+    typecast
+    typeassert
+    typeparam
+
+    unwrap
+    pragma
+
+    // ParseOnly_JumpKind:
+    break
+    return
+    continue
+    // /ParseOnly_JumpKind
+
+    // ParseOnly_Placeholder:
+    import
+    addroffn
+    forfieldsof
+    // /ParseOnly_Placeholder
+
+    members
+
+    fnbranch
+    pattern
+
+    typeunion
+    typetag
+
+
+    // Solver: extra node kinds.
+
+    __relaxed
+    __convert
+    __preceding_ref_arg
+
+
+    // Scope: overload types.
+
+    __no_kind_yet
+    __tombstone
+    type
+    var
+    field
+    enumv
+    template
+    __native
+    inline
+}
+
+fn isImmediatelyDiscardable(k: Kind)
+{
+    return k <= "fn";
+}

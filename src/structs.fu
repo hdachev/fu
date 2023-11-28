@@ -1,3 +1,4 @@
+import flags;
 import helpers;
 import module;
 
@@ -25,7 +26,7 @@ pub fn parseStructCanon(canon: string): StructCanon
 }
 
 pub fn createStructCanon(
-    ::kind!, basePrim!: string,
+    kind!: Kind, basePrim!: string,
     modid: i32, index: i32, lax name: string, specPat: string,
     mut initialHash!hash: u64): string
 {

@@ -1,3 +1,4 @@
+import flags;
 
 type Quals = u32; // cant use 64 now because of parseType
 let Quals_bitsize = 32;
@@ -83,7 +84,7 @@ struct Shape
 
 struct Struct
 {
-    ::kind;
+    true kind:      Kind;
     name:           string;
 
     target?:        Target;
@@ -122,7 +123,7 @@ struct SolverOutput
     scope:      Scope;
 
     // Important solver events for testing.
-    notes:      flags::SolverNotes;
+    notes:      SolverNotes;
 };
 
 struct CodegenOutput
@@ -138,7 +139,7 @@ struct CodegenOutput
     live?:              i32[];
 
     //
-    defects?:           flags::CGDefects;
+    defects?:           CGDefects;
 };
 
 
@@ -153,7 +154,7 @@ struct LineColChars
 
 struct Token
 {
-    true        ::kind;
+    true kind:  Kind;
     using lcc:  LineColChars;
     value:      string;
 };
@@ -163,11 +164,11 @@ struct Token
 
 struct Node
 {
-    true        ::kind;
-    asserts?:   flags::DeclAsserts;
-    syntax?:    flags::ParseSyntax;
+    true kind:  Kind;
+    asserts?:   DeclAsserts;
+    syntax?:    ParseSyntax;
 
-    flags?:     flags::Flags;
+    flags?:     Flags;
     value:      string;
     items?:     Node[];
     token:      TokenIdx;
@@ -194,10 +195,10 @@ struct Helpers
 
 struct SolvedNode
 {
-    true            ::kind;
+    true kind:      Kind;
 
     helpers:        Helpers; // TODO not here: I had room for it, but honestly this is not the best place for this.
-    flags:          flags::Flags;
+    flags:          Flags;
     _loop_start?:   i32;
 
     value:          string;
@@ -253,7 +254,7 @@ struct Argument
 
     using type?:    Type;
     default?:       SolvedNode;
-    flags?:         flags::Flags;
+    flags?:         Flags;
     target?:        Target;
 
     // Argument A may safely invalidate argument B
@@ -275,15 +276,15 @@ struct COWInside
     token:          TokenIdx;
     argTarget:      i32;
     mayEscapeVia:   i32;
-    exitPaths:      flags::ExitPaths;
+    exitPaths:      ExitPaths;
 };
 
 struct Overload
 {
-    true            ::kind;
+    true kind:      Kind;
 
-    flags:          flags::Flags;
-    status?:        flags::SolverStatus;
+    flags:          Flags;
+    status?:        SolverStatus;
 
     name:           string;
 
@@ -354,11 +355,11 @@ using flags VFacts
 // Argument OOE, here for sharing in solver & cg.
 
 fn isRTL(o: Overload): bool
-    !!(o.status & flags::SS_FN_OOE_RTL);
+    !!(o.status & SS_FN_OOE_RTL);
 
 fn isRTL_set(ref o: Overload, rtl: bool)
-    if (rtl)    o.status |=  flags::SS_FN_OOE_RTL;
-    else        o.status &= ~flags::SS_FN_OOE_RTL;
+    if (rtl)    o.status |=  SS_FN_OOE_RTL;
+    else        o.status &= ~SS_FN_OOE_RTL;
 
 
 // New argument order of evaluation rules -

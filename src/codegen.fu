@@ -883,7 +883,7 @@ pub fn cpp_codegen(
                 let k = n.kind;
 
                 // TODO FIX doing this with a blacklist is mega stupid
-                if (k == "jump" || k == "loop" || k == "try" || k == "defer" || k == "pragma")
+                if (k == "jump" || k == "loop" || k == "Try" || k == "defer" || k == "pragma")
                     return false;
 
                 // SS_HOISTed letdefs currently just emit an assignment expr
@@ -3138,7 +3138,7 @@ pub fn cpp_codegen(
         if (k == "jump")        return cgJump(node);
 
         if (k == "loop")        return cgLoop(node);
-        if (k == "try")         return cgTryCatch(node);
+        if (k == "Try")         return cgTryCatch(node);
         if (k == "defer")       return cgDefer(node);
 
         if (k == "pragma")      return cgCompilerPragma(node);
@@ -3287,7 +3287,7 @@ pub fn cpp_codegen(
         return cgCopyOrMove(node.kind, node.type, src);
     }
 
-    fn cgCopyOrMove(::kind, type: Type, src: string): string
+    fn cgCopyOrMove(kind: Kind, type: Type, src: string): string
     {
         if (kind == "move")
             return cgMove(type, src);

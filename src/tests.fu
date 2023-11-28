@@ -17548,7 +17548,7 @@ pub extern fn runTests()
     ZERO([`
         using enum _0 { A; B };
     `,`
-        fn test(::_0) _0.i32;
+        fn test(x: ::_0) x.i32;
         fn main() "A".test - _0::A.i32;
     `]);
 
