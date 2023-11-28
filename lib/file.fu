@@ -7,7 +7,7 @@ let RWX_RX_RX   = 0x7 << 6
                 | 0x5 << 3
                 | 0x5 << 0;
 
-fn write(mut path: string, data: [byte], mode = RW_RW_RW): i32
+fn write(mut path: string, data: byte[..], mode = RW_RW_RW): i32
 {
     // C-str ok.
     path ~= '\0';

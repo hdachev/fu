@@ -27,7 +27,7 @@ pub fn canon_trySuper(a: string, b: string)
 //  but skips over parenthesized groups,
 //   however deeply nested. We use it to scan for '|' and ':' below.
 
-fn scan(str: [byte], sep: byte,
+fn scan(str: byte[..], sep: byte,
     ref offset: i32,
     ref isLast: bool): bool
 {
@@ -61,7 +61,7 @@ fn scan(str: [byte], sep: byte,
 // This parses (a|b|c) patterns,
 //  invoking visit with each a, b and c subpattern.
 
-pub fn eachSubPattern(pattern: [byte], visit)
+pub fn eachSubPattern(pattern: byte[..], visit)
 {
     mut offset  = 0;
     for (;;)
@@ -73,7 +73,7 @@ pub fn eachSubPattern(pattern: [byte], visit)
         lax let isDeep = pattern.scan('|',
             :offset, isLastSubPattern);
 
-        visit(pattern[start : offset], :spec_of,
+        visit(pattern[start .. offset], :spec_of,
             isDeep?: isDeep, isLast?: isLastSubPattern);
 
         if (isLastSubPattern)
@@ -83,7 +83,7 @@ pub fn eachSubPattern(pattern: [byte], visit)
     }
 }
 
-pub fn eachArgSpecType(subPattern: [byte], visit)
+pub fn eachArgSpecType(subPattern: byte[..], visit)
 {
     mut offset  = 1; // first arg starts on :
     for (;;)
@@ -94,7 +94,7 @@ pub fn eachArgSpecType(subPattern: [byte], visit)
         lax let isDeep = subPattern.scan(':',
             :offset, isLastArgSpecType);
 
-        visit(subPattern[start : offset],
+        visit(subPattern[start .. offset],
             isDeep?: isDeep, isLast?: isLastArgSpecType);
 
         if (isLastArgSpecType)
@@ -107,10 +107,10 @@ pub fn eachArgSpecType(subPattern: [byte], visit)
 
 //
 
-pub fn tryGetPattern(canon: [byte])
+pub fn tryGetPattern(canon: byte[..])
 {
     return canon.ends(with: ')') // Same as below
-        && canon[canon.find('(') + 1 : canon.len - 1];
+        && canon[canon.find('(') + 1 .. canon.len - 1];
 }
 
 pub fn trimPattern(ref canon: string)
@@ -123,7 +123,7 @@ pub fn trimPattern(ref canon: string)
 
 //
 
-pub fn isCanonAssignable(host: [byte], guest: [byte])
+pub fn isCanonAssignable(host: byte[..], guest: byte[..])
 {
     let guestHasPatterns = guest.ends(with: ')');
 
@@ -143,7 +143,7 @@ pub fn isCanonAssignable(host: [byte], guest: [byte])
     //
     let hostHasPatterns = host.ends(with: ')');
     if (!hostHasPatterns)
-        return host == guest[: g0 - 1];
+        return host == guest[.. g0 - 1];
 
     let h0 = host.find('(') + 1;
     let h1 = host.len - 1;
@@ -158,9 +158,9 @@ pub fn isCanonAssignable(host: [byte], guest: [byte])
     //  ensure there's at least one matching guest subpattern.
     //
     :NEXT_HOST_PAIR
-    eachSubPattern(host[h0 : h1]): |shadow host, isDeep!hostDeep, spec_of!hostTemplateId|
+    eachSubPattern(host[h0 .. h1]): |shadow host, isDeep!hostDeep, spec_of!hostTemplateId|
     {
-        eachSubPattern(guest[g0 : g1]): |shadow guest, isDeep!guestDeep, spec_of!guestTemplateId|
+        eachSubPattern(guest[g0 .. g1]): |shadow guest, isDeep!guestDeep, spec_of!guestTemplateId|
         {
             // Both need to be specs of the same template.
             if (guestTemplateId != hostTemplateId)
@@ -201,8 +201,8 @@ pub fn isCanonAssignable(host: [byte], guest: [byte])
                     if (isLastHostPair != isLastGuestPair)
                         break;
 
-                    let hostItem  = host [h0 : h1];
-                    let guestItem = guest[g0 : g1];
+                    let hostItem  = host [h0 .. h1];
+                    let guestItem = guest[g0 .. g1];
                     if (isCanonAssignable(hostItem, guestItem))
                         continue :NEXT_HOST_PAIR;
                 }

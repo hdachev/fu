@@ -33,7 +33,7 @@ fn bytes(unicode: u32)
     return [];
 }
 
-fn codepoints(text: [byte], each, error)
+fn codepoints(text: byte[..], each, error)
 {
     for (mut i = 0; i < text.len; i++)
     {
@@ -96,7 +96,7 @@ fn codepoints(text: [byte], each, error)
     }
 }
 
-fn codepoints(text: [byte], each)
+fn codepoints(text: byte[..], each)
     text.codepoints(
         each:   fn each,
         error:  || {});

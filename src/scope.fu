@@ -137,7 +137,7 @@ fn Scope_exports(scope: Scope, modid!: i32,
 ////////////////////////////////
 
 fn each(
-    items: [$T],
+    items: $T[..],
     scope_skip: ScopeSkip[],
     fn,
     start = 0)
@@ -159,7 +159,7 @@ fn each(
     }
 }
 
-fn reveach(items: [$T], ss: ScopeSkip[], fn)
+fn reveach(items: $T[..], ss: ScopeSkip[], fn)
 {
     mut ssi = ss.len - 1;
     mut ssN = ssi >= 0 && ss[ssi].end - 1;
@@ -177,12 +177,12 @@ fn reveach(items: [$T], ss: ScopeSkip[], fn)
 }
 
 fn search(
-    ref items: [ScopeItem], id: string,
+    ref items: ScopeItem[..], id: string,
     scope_iterator: &mut i32,
     scope_skip: ScopeSkip[],
     ref shadows: bool,
-    extra_items?: [Target],
-    field_items?: [ScopeItem]): Target
+    extra_items?: Target[..],
+    field_items?: ScopeItem[..]): Target
 {
     PROFILE(.ScopeSearch);
 
@@ -320,7 +320,7 @@ fn search(
 }
 
 fn search(
-    items: [ScopeItem], id: string,
+    items: ScopeItem[..], id: string,
     scope_iterator: &mut i32): Target
 {
     let START = items.len;

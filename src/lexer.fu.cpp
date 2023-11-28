@@ -453,10 +453,10 @@ inline bool has_KonMQ4KB(fu::view<char> a, const char b)
 
                                 #ifndef DEF_MBOPS_maxLen
                                 #define DEF_MBOPS_maxLen
-inline constexpr int MBOPS_maxLen = 3;
+inline constexpr int MBOPS_maxLen = 4;
                                 #endif
 
-static const fu::vec<fu::str> MBOPS fu_INIT_PRIORITY(1005) = fu::vec<fu::str> { fu::slate<43, fu::str> { "++"_fu, "--"_fu, "**"_fu, "<<"_fu, "<<<"_fu, ">>"_fu, ">>>"_fu, "==="_fu, "=="_fu, "!="_fu, "!=="_fu, "<="_fu, ">="_fu, "<=>"_fu, "<>"_fu, "=>"_fu, "->"_fu, "|>"_fu, "<|"_fu, "??"_fu, "?:"_fu, ".."_fu, "..."_fu, "::"_fu, "&&"_fu, "||"_fu, "[]"_fu, "[:]"_fu, "+="_fu, "-="_fu, "*="_fu, "**="_fu, "/="_fu, "%="_fu, "&="_fu, "|="_fu, "^="_fu, "<<="_fu, ">>="_fu, "~="_fu, "&&="_fu, "||="_fu, ".="_fu } };
+static const fu::vec<fu::str> MBOPS fu_INIT_PRIORITY(1005) = fu::vec<fu::str> { fu::slate<44, fu::str> { "++"_fu, "--"_fu, "**"_fu, "<<"_fu, "<<<"_fu, ">>"_fu, ">>>"_fu, "==="_fu, "=="_fu, "!="_fu, "!=="_fu, "<="_fu, ">="_fu, "<=>"_fu, "<>"_fu, "=>"_fu, "->"_fu, "|>"_fu, "<|"_fu, "??"_fu, "?:"_fu, ".."_fu, "..."_fu, "::"_fu, "&&"_fu, "||"_fu, "[]"_fu, "[:]"_fu, "+="_fu, "-="_fu, "*="_fu, "**="_fu, "/="_fu, "%="_fu, "&="_fu, "|="_fu, "^="_fu, "<<="_fu, ">>="_fu, "~="_fu, "&&="_fu, "||="_fu, ".="_fu, "[..]"_fu } };
 
                                 #ifndef DEF_x3Cx3E_mJGU9byOmI4
                                 #define DEF_x3Cx3E_mJGU9byOmI4
@@ -751,6 +751,18 @@ s_LexerOutput lex_XyQUXQaS(const fu::str& src, const fu::str& fname)
                 fu::str candidate = fu::slice(src, idx0, idx);
                 if ((candidate.size() == 1) || has_g5ZsWtbd(MBOPS, candidate))
                 {
+                    // FORWARD COMPAT -
+                    //  we're gonna use ".." as the slice operator,
+                    //   is great for languages without a ternary operator,
+                    //    but we ain't one.
+                    //
+                    if (candidate == ".."_fu) {
+                        candidate = ":"_fu;
+                    }
+                    if (candidate == "[..]"_fu) {
+                        candidate = "[:]"_fu;
+                    }
+
                     token_U2MW14BO(s_kind_op, candidate, idx0, idx, line, lidx, tokens);
                     break;
                 }

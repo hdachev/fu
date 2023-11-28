@@ -374,7 +374,7 @@ fn isRTL_set(ref o: Overload, rtl: bool)
 //      before new mutrefs are taken, which should help compile more stuff
 //       if we need to forbid copies during borrows.
 
-fn argsForward(lax RTL: bool, host_args: [Argument], fn,
+fn argsForward(lax RTL: bool, host_args: Argument[..], fn,
     seqIdx_start = 0)
 {
 //*
@@ -418,7 +418,7 @@ fn argsForward(lax RTL: bool, host_args: [Argument], fn,
 //*/
 }
 
-fn argsReverse(lax RTL: bool, host_args: [Argument], fn)
+fn argsReverse(lax RTL: bool, host_args: Argument[..], fn)
 {
 //*
     mut revSeqIdx = 0;

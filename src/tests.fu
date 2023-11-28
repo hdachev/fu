@@ -681,7 +681,7 @@ pub extern fn runTests()
     `);
 
     ZERO(`
-        pub fn MAP(a: [$T], fn) {               ;; !N_DeadCode
+        pub fn MAP(a: $T[..], fn) {             ;; !N_DeadCode
             mut res: typeof( fn($T) )[];
             res.grow_junk(a.len);
             for (mut i = 0; i < a.len; i++) res[i] = fn(a[i]);
@@ -690,7 +690,7 @@ pub extern fn runTests()
 
         pub fn clone(a: $T)
         case ($T.is::copy) a;
-        case ($T -> [$U]) a.MAP(fn clone);
+        case ($T -> $U[..]) a.MAP(fn clone);
         default {
             mut res: $T;
             for (fieldname i: $T) res.i = a.i.clone();
@@ -1916,7 +1916,7 @@ pub extern fn runTests()
 
         noinline fn indirect_copy(arr: i32[])
             arr.len & 1
-                ? arr[: arr.len / 2] ~ arr[arr.len / 2 :]
+                ? arr[.. arr.len / 2] ~ arr[arr.len / 2 ..]
                 : arr; // <- we take this branch
     `);
 
@@ -1949,7 +1949,7 @@ pub extern fn runTests()
 
         noinline fn indirect_copy(arr: i32[])
             arr.len & 1
-                ? arr[: arr.len / 2] ~ arr[arr.len / 2 :]
+                ? arr[.. arr.len / 2] ~ arr[arr.len / 2 ..]
                 : arr; // <- we take this branch
     `);
 
@@ -1987,7 +1987,7 @@ pub extern fn runTests()
 
         noinline fn indirect_copy(arr: i32[])
             arr.len & 1
-                ? arr[: arr.len / 2] ~ arr[arr.len / 2 :]
+                ? arr[.. arr.len / 2] ~ arr[arr.len / 2 ..]
                 : arr; // <- we take this branch
     `);
 
@@ -2023,7 +2023,7 @@ pub extern fn runTests()
 
         noinline fn indirect_copy(arr: i32[])
             arr.len & 1
-                ? arr[: arr.len / 2] ~ arr[arr.len / 2 :]
+                ? arr[.. arr.len / 2] ~ arr[arr.len / 2 ..]
                 : arr; // <- we take this branch
     `);
 
@@ -2033,11 +2033,11 @@ pub extern fn runTests()
             for (mut i = 0; i < 100; i++) nums ~= 1;
 
             <fail COW will break (8:27+4|8:41+4) 30:19+3 7:17+6>
-            ref zeroes  = nums[10:20];
+            ref zeroes  = nums[10..20];
             let allOnes = <alt>nums<alt/>indirect_copy(nums)</alt>;
             <pass/>
             let allOnes = <alt>nums<alt/>indirect_copy(nums)</alt>;
-            ref zeroes  = nums[10:20];
+            ref zeroes  = nums[10..20];
             </fail>
 
             for (mut i = 0; i < zeroes.len; i++)
@@ -2058,17 +2058,17 @@ pub extern fn runTests()
 
         noinline fn indirect_copy(arr: i32[])
             arr.len & 1
-                ? arr[: arr.len / 2] ~ arr[arr.len / 2 :]
+                ? arr[.. arr.len / 2] ~ arr[arr.len / 2 ..]
                 : arr; // <- we take this branch
     `);
 
     ZERO(`
         <alt>
-        noinline fn cow_after_ref_indirect(ref zeroes: [i32], allOnes: i32[]) cow_after_ref(:zeroes, :allOnes);
-        noinline fn cow_after_ref(ref zeroes: [i32], allOnes: i32[])
+        noinline fn cow_after_ref_indirect(ref zeroes: i32[..], allOnes: i32[]) cow_after_ref(:zeroes, :allOnes);
+        noinline fn cow_after_ref(ref zeroes: i32[..], allOnes: i32[])
         <alt/>
-        noinline fn cow_after_ref_indirect(allOnes: i32[], ref zeroes: [i32]) cow_after_ref(:allOnes, :zeroes);
-        noinline fn cow_after_ref(allOnes: i32[], ref zeroes: [i32])
+        noinline fn cow_after_ref_indirect(allOnes: i32[], ref zeroes: i32[..]) cow_after_ref(:allOnes, :zeroes);
+        noinline fn cow_after_ref(allOnes: i32[], ref zeroes: i32[..])
         </alt>
         {
             for (mut i = 0; i < zeroes.len; i++)
@@ -2095,12 +2095,12 @@ pub extern fn runTests()
             <alt>
             return cow_after_ref(           <alt/>
             return cow_after_ref_indirect(  </alt>
-                zeroes: nums[10:20], allOnes: <alt>nums<alt/>indirect_copy(nums)</alt>);
+                zeroes: nums[10..20], allOnes: <alt>nums<alt/>indirect_copy(nums)</alt>);
         }
 
         noinline fn indirect_copy(arr: i32[])
             arr.len & 1
-                ? arr[: arr.len / 2] ~ arr[arr.len / 2 :]
+                ? arr[.. arr.len / 2] ~ arr[arr.len / 2 ..]
                 : arr; // <- we take this branch
     `);
 
@@ -2141,7 +2141,7 @@ pub extern fn runTests()
 
         noinline fn indirect_copy(arr: i32[])
             arr.len & 1
-                ? arr[: arr.len / 2] ~ arr[arr.len / 2 :]
+                ? arr[.. arr.len / 2] ~ arr[arr.len / 2 ..]
                 : arr; // <- we take this branch
     `);
 
@@ -2186,7 +2186,7 @@ pub extern fn runTests()
 
         noinline fn indirect_copy(arr: i32[])
             arr.len & 1
-                ? arr[: arr.len / 2] ~ arr[arr.len / 2 :]
+                ? arr[.. arr.len / 2] ~ arr[arr.len / 2 ..]
                 : arr; // <- we take this branch
     `);
 
@@ -2238,7 +2238,7 @@ pub extern fn runTests()
 
         noinline fn indirect_copy(arr: i32[])
             arr.len & 1
-                ? arr[: arr.len / 2] ~ arr[arr.len / 2 :]
+                ? arr[.. arr.len / 2] ~ arr[arr.len / 2 ..]
                 : arr; // <- we take this branch
     `);
 
@@ -2274,7 +2274,7 @@ pub extern fn runTests()
 
         noinline fn indirect_copy(arr: i32[][])
             arr.len & 1
-                ? arr[: arr.len / 2] ~ arr[arr.len / 2 :]
+                ? arr[.. arr.len / 2] ~ arr[arr.len / 2 ..]
                 : arr; // <- we take this branch
     `);
 
@@ -2319,7 +2319,7 @@ pub extern fn runTests()
 
         noinline fn indirect_copy(arr: i32[][])
             arr.len & 1
-                ? arr[: arr.len / 2] ~ arr[arr.len / 2 :]
+                ? arr[.. arr.len / 2] ~ arr[arr.len / 2 ..]
                 : arr; // <- we take this branch
     `);
 
@@ -2351,7 +2351,7 @@ pub extern fn runTests()
 
         noinline fn indirect_copy!<T>(arr: T[])
             arr.len & 1
-                ? arr[: arr.len / 2] ~ arr[arr.len / 2 :]
+                ? arr[.. arr.len / 2] ~ arr[arr.len / 2 ..]
                 : arr; // <- we take this branch
     `);
 
@@ -2979,7 +2979,7 @@ pub extern fn runTests()
     `);
 
     ZERO(`
-        fn sort01(ref arr: [$T]) {
+        fn sort01(ref arr: $T[..]) {
             mut tmp: $T;
             if (arr[0] > arr[1]) {
                 swap(arr[0], tmp);
@@ -3185,7 +3185,7 @@ pub extern fn runTests()
 
     ZERO([`
         let non_empty_str = "This is a non-empty string that's too long for small string opti.";
-        let non_empty_slice = non_empty_str[5:];
+        let non_empty_slice = non_empty_str[5..];
     `,`
         fn main() = _0::non_empty_slice.len - 60;
     `]);
@@ -6858,7 +6858,7 @@ pub extern fn runTests()
     `);
 
     ZERO(`
-        noinline fn test(ref ints: i32[], ref iview: i32[:]) {
+        noinline fn test(ref ints: i32[], ref iview: i32[..]) {
             inline fn a() {
                 mut empty: i32[];
                 ref indirect = ints || empty;
@@ -6869,10 +6869,10 @@ pub extern fn runTests()
                 mut empty: i32[];
                 ref indirect = iview || empty;
 
-                ref head = indirect[: indirect.len / 2];
+                ref head = indirect[.. indirect.len / 2];
                 for (mut i = 0; i < head.len; i++) head[i] *= 2;
 
-                ref tail = indirect[indirect.len - indirect.len / 2 :];
+                ref tail = indirect[indirect.len - indirect.len / 2 ..];
                 for (mut i = 0; i < tail.len; i++) tail[i] *= 2;
             }
 
@@ -6893,7 +6893,7 @@ pub extern fn runTests()
 
         fn hash(ref res: TEA, u8view: byte[]) {
             let u32len  = u8view.len & ~3;
-            let u32view = u8view[: u32len];
+            let u32view = u8view[.. u32len];
             ref out     = res.a || res.b;
             out        ~= out;
             mut x       = u32view ~ "?";
@@ -7577,7 +7577,7 @@ pub extern fn runTests()
     `);
 
     ZERO(`
-        novec fn Each(ref a: [$T], fn)
+        novec fn Each(ref a: $T[..], fn)
             for (mut i = 0; i < a.len; i++)
                 fn(a[i]);
 
@@ -7652,7 +7652,7 @@ pub extern fn runTests()
         pub fn setup_quads(
             using mb: &mut MeshBuilder, // <- the 'using' introduced more bindings,
             num_quads: i32)             // <-  advancing the target index number of this arg,
-                : &mut [byte]           // <-   confusing the callsite lifetime of this view.
+                : &mut byte[..]         // <-   confusing the callsite lifetime of this view.
         {
             let b0 = verts.len;
             let v0 = num_verts;
@@ -7662,8 +7662,8 @@ pub extern fn runTests()
 
             alloc(num_quads * 4, num_quads * 6);
 
-            let indices_i32: &mut [i32] =
-                indices[i0 : indices.len]
+            let indices_i32: &mut i32[..] =
+                indices[i0 .. indices.len]
                     .view(i32);
 
             for (mut i = 0; i < indices_i32.len; i += 6)
@@ -7681,7 +7681,7 @@ pub extern fn runTests()
 
             num_verts = v1;
 
-            return verts[b0 : verts.len];
+            return verts[b0 .. verts.len];
         }
 
         let QUAD_VBO: f32[] =
@@ -7917,7 +7917,7 @@ pub extern fn runTests()
     ZERO(`
         pub struct ScopeSkip { start: i32; end: i32; };
 
-        pub fn Each(items: [$T], scope_skip: ScopeSkip[], fn, start = 0) {
+        pub fn Each(items: $T[..], scope_skip: ScopeSkip[], fn, start = 0) {
             let END_DUMMY = ScopeSkip(start: items.len, end: items.len);
 
             mut i0 = start;
@@ -7978,7 +7978,7 @@ pub extern fn runTests()
     `);
 
     ZERO(`
-        fn Each(a: [$T], fn, start!?: i32)
+        fn Each(a: $T[..], fn, start!?: i32)
             for (mut i = start; i < a.len; i++)
                 fn(a[i]);
 
@@ -8219,8 +8219,8 @@ pub extern fn runTests()
                     while (start0 && src[start0 - 1] == ' ') start0--;
 
                     let moduleA = src.slice(0, start0);
-                    let moduleB = src[start0 : start00] ~ "import _" ~ i ~ ";" ~ src[start1 : src.len];
-                    let without = src[0 : start0] ~ src[start1 : src.len];
+                    let moduleB = src[start0 .. start00] ~ "import _" ~ i ~ ";" ~ src[start1 .. src.len];
+                    let without = src[0 .. start0] ~ src[start1 .. src.len];
 
                     sources[i]  = without;
                     ZERO(:sources);
@@ -8365,7 +8365,7 @@ pub extern fn runTests()
                 return throw(addr ~ ":\\n\\t" ~ reason);
             }
 
-            fn consume(value: [byte], err = "") {
+            fn consume(value: byte[..], err = "") {
                 let token = tokens[_idx];
                 if (token.value == value) {
                     _idx++;
@@ -8517,16 +8517,16 @@ pub extern fn runTests()
     ZERO(`
         inline fn test(ref a: i32[]) {
             if ((a[0] + a[2]) & 1) {
-                shadow ref a = a[0 : 2];                        ;; GNUStmtExpr
+                shadow ref a = a[0 .. 2];                       ;; GNUStmtExpr
                 return a;
             }
             else {
-                shadow ref a = a[2 : 4];                        ;; PointlessLocal
+                shadow ref a = a[2 .. 4];                       ;; PointlessLocal
                 return a;
             }
         }
 
-        inline fn sum(ref a: [i32]) {
+        inline fn sum(ref a: i32[..]) {
             mut sum = 0;
             for (mut i = 0; i < a.len; i++) sum += a[i];
             for (mut i = 0; i < a.len; i++) a[i] = sum;
@@ -8574,7 +8574,7 @@ pub extern fn runTests()
             if (a & 1) {
                 arr.grow_if_oob(a)++;
                 <alt>
-                return arr[0 : a + 1];
+                return arr[0 .. a + 1];
                 </alt>
             }
 
@@ -8591,7 +8591,7 @@ pub extern fn runTests()
         fn serializeType(type: string, debug: string)
             debug ~ ":" ~ type;
 
-        fn mangleArguments(args: [$T]): string {
+        fn mangleArguments(args: $T[..]): string {
             mut mangle = "";
             for (mut i = 0; i < args.len; i++) {
                 if (i) mangle ~= ",";
@@ -8673,7 +8673,7 @@ pub extern fn runTests()
     `);
 
     ZERO(`
-        fn withPrefixed(b: byte, view: [byte], fn) {
+        fn withPrefixed(b: byte, view: byte[..], fn) {
             mut tmp: string;
             return fn(view.len > 1 ? view : tmp = b ~ view);
         }
@@ -8682,13 +8682,13 @@ pub extern fn runTests()
     `);
 
     ZERO(`
-        fn tryIntersect(left: [byte], right: [byte], withMatch) {
+        fn tryIntersect(left: byte[..], right: byte[..], withMatch) {
             let l =  left[0];
             let r = right[0];
             let lq = l > '0' && l < '8';
             let rq = r > '0' && r < '8';
 
-            if (left[lq && 1 : left.len] != right[rq && 1 : right.len])
+            if (left[lq && 1 .. left.len] != right[rq && 1 .. right.len])
                 return false;
 
             let ll = lq && l.i32 - '0'.i32;
@@ -8699,11 +8699,11 @@ pub extern fn runTests()
             mut tmp: string;
             return withMatch(qq == ll ? left
                            : qq == rr ? right
-                           : tmp = (qq.byte ~ left[lq && 1 : left.len]),
+                           : tmp = (qq.byte ~ left[lq && 1 .. left.len]),
             <alt/>
             return withMatch(qq == ll ? left
                            : qq == rr ? right
-                           : qq.byte ~ left[lq && 1 : left.len],
+                           : qq.byte ~ left[lq && 1 .. left.len],
             </alt>
                 left?:  qq == ll,
                 right?: qq == rr);
@@ -8721,13 +8721,13 @@ pub extern fn runTests()
     `);
 
     ZERO(`
-        fn tryIntersect(left: [byte], right: [byte], ifLeft, ifNotLeft) {
+        fn tryIntersect(left: byte[..], right: byte[..], ifLeft, ifNotLeft) {
             let l =  left[0];
             let r = right[0];
             let lq = l > '0' && l < '8';
             let rq = r > '0' && r < '8';
 
-            if (left[lq && 1 : left.len] != right[rq && 1 : right.len])
+            if (left[lq && 1 .. left.len] != right[rq && 1 .. right.len])
                 return false;
 
             let ll = lq && l.i32 - '0'.i32;
@@ -8735,7 +8735,7 @@ pub extern fn runTests()
             let qq = ll | rr;
 
             if (qq == ll)   ifLeft();
-            else            ifNotLeft(qq == rr ? right : qq ~ right[rq && 1 : right.len]);
+            else            ifNotLeft(qq == rr ? right : qq ~ right[rq && 1 .. right.len]);
 
             return true;
         }
@@ -8767,7 +8767,7 @@ pub extern fn runTests()
             }
 
             let end = typeParams.find('\t', :start);
-            return tryIntersect(typeParams[start : end], canon,
+            return tryIntersect(typeParams[start .. end], canon,
                 ifLeft: || { /* egyptian */
                     return true;
                 },                  // <- Lint complained about the nested curlies here ...
@@ -9076,11 +9076,11 @@ pub extern fn runTests()
     `);
 
     ZERO(`
-        fn Split !T(str: T[], sep: T or T[:], each) {
+        fn Split !T(str: T[], sep: T or T[..], each) {
             mut last_idx = 0;
             mut next_idx = 0;
 
-            let N = typeof(sep) -> T[:] ? sep.len : 1;
+            let N = typeof(sep) -> T[..] ? sep.len : 1;
             if (N) while ((next_idx = str.find(sep, start: last_idx)) >= 0) {
                 each(str.slice(last_idx, next_idx), first?: !last_idx, last?: false);
                 last_idx = next_idx + N;
@@ -9092,7 +9092,7 @@ pub extern fn runTests()
                 each(str, first?: true, last?: true);
         }
 
-        fn Replace !T(str: T[], all: T or T[:], with: T or T[:] or []) {
+        fn Replace !T(str: T[], all: T or T[..], with: T or T[..] or []) {
             mut result: T[];
             Split(str, sep: all, |substr, lax first, lax last| {
                 if !(first) {
@@ -9276,7 +9276,7 @@ pub extern fn runTests()
         struct Type { quals: i32; };
         struct Node { type: Type; };
 
-        fn unusedLetExprOrBlock(args_in: [Node], default: Node) {
+        fn unusedLetExprOrBlock(args_in: Node[..], default: Node) {
             mut inType: Type;
             for (mut i = 0; i < args_in.len; i++) {
                 // got this while auto-reducing smth else,
@@ -9296,21 +9296,21 @@ pub extern fn runTests()
     `);
 
     ZERO(`
-        fn parse !T(v: [byte], lax as!: T) {
+        fn parse !T(v: byte[..], lax as!: T) {
             mut result: T;
 
             if (T.is::bitfield) {
                 for (mut i = 1; i < v.len; i++) {
                     if (v[i] == '|') {
-                        return parse(v[0 : i], :as) | parse(v[i + 1 : v.len], :as);
+                        return parse(v[0 .. i], :as) | parse(v[i + 1 .. v.len], :as);
                     }
                 }
             }
 
             for (mut i = 0; i < v.len; i++) {
                 if (v[i] == '*') {
-                    let prefix = v[0 : i];
-                    let suffix = v[i + 1 : v.len]
+                    let prefix = v[0 .. i];
+                    let suffix = v[i + 1 .. v.len]
 
                     for (fieldname i: T) {
                         let opt = "i";
@@ -9321,7 +9321,7 @@ pub extern fn runTests()
                     return result;
                 }
                 else if (i > 0 && v[i] == '|') {
-                    return parse(v[0 : i], :as) | parse(v[i + 1 : v.len], :as);
+                    return parse(v[0 .. i], :as) | parse(v[i + 1 .. v.len], :as);
                 }
             }
 
@@ -9652,13 +9652,13 @@ pub extern fn runTests()
     ZERO(`
         struct Item { val: i32 };
 
-        fn Each !T(ref a: T[:], fn)
+        fn Each !T(ref a: T[..], fn)
             for (mut i = 0; i < a.len; i++)
                 fn(a[i], i?: i);
 
-        fn parseStructDecl(ref items: [Item], ref sum: i32) {
+        fn parseStructDecl(ref items: Item[..], ref sum: i32) {
             if (items.len & 2)
-                parseStructDecl(items[1 : items.len], sum);     ;; PointlessMustSeq
+                parseStructDecl(items[1 .. items.len], sum);    ;; PointlessMustSeq
 
             :BLOCK {
                 items.Each: |item|
@@ -9721,7 +9721,7 @@ pub extern fn runTests()
     `);
 
     ZERO(`
-        fn merge !T(l: [T], r: [T], left, right, both) {
+        fn merge !T(l: T[..], r: T[..], left, right, both) {
             mut li = 0;
             mut ri = 0;
             for (;;) {
@@ -9830,7 +9830,7 @@ pub extern fn runTests()
             rem_odd(items);
 
             mut sum = 0;
-            fn visit(shadow items: [Nc])
+            fn visit(shadow items: Nc[..])
             {
                 fn visit(nc: Nc) {
                     sum++;
@@ -9927,7 +9927,7 @@ pub extern fn runTests()
     ZERO(`
         struct ScopeItem { id: string; uval: u32 }
 
-        fn search(ref items: [ScopeItem], id: string, ref scope_iterator: i32): u32
+        fn search(ref items: ScopeItem[..], id: string, ref scope_iterator: i32): u32
         {
             if (!scope_iterator)
                 scope_iterator = items.len;
@@ -10182,7 +10182,7 @@ pub extern fn runTests()
     `);
 
     ZERO(`
-        fn first(s: [$T;]) s.len && s[0];
+        fn first(s: $T[..]) s.len && s[0];
         struct Node { items: Node[] }
 
         fn tryFirst(node: Node)
@@ -10197,7 +10197,7 @@ pub extern fn runTests()
     `);
 
     ZERO(`
-        fn first(s: [$T;]) s.len && s[0];
+        fn first(s: $T[..]) s.len && s[0];
         struct Node { value: i32; items: Node[] }
 
         fn tryFirst(node: Node)
@@ -10212,8 +10212,8 @@ pub extern fn runTests()
     `);
 
     ZERO(`
-        fn first(s: [$T;]) s.len && s[0];
-        fn last (s: [$T;]) s.len && s[s.len - 1];
+        fn first(s: $T[..]) s.len && s[0];
+        fn last (s: $T[..]) s.len && s[s.len - 1];
         struct Node { value: i32; items: Node[] }
 
         fn tryFirst(node: Node)
@@ -10250,9 +10250,9 @@ pub extern fn runTests()
     `);
 
     ZERO([`
-        fn Zero(implicit ref result: i32, src: i32[:]) =
+        fn Zero(implicit ref result: i32, src: i32[..]) =
             src.each: |x, i| result += x * (i + 1);
-        fn Todo(implicit ref result: i32, src: i32[:]) =
+        fn Todo(implicit ref result: i32, src: i32[..]) =
             src.each: |x, i| result += x * (i + 1) * 7;
 
         fn Zero(src: i32) = Zero([ src ]);
@@ -11862,9 +11862,9 @@ pub extern fn runTests()
     ZERO(`
         fn main() {
             mut a = [ 1, 2, 3, 4 ];
-            mut b = a[1: ];
-            mut c = a[ :3];
-            mut d = a[1:3];
+            mut b = a[1.. ];
+            mut c = a[ ..3];
+            mut d = a[1..3];
 
             mut res = b ~ c ~ d;
             return res <> [ 2, 3, 4,  1, 2, 3,  2, 3 ];
@@ -11874,7 +11874,7 @@ pub extern fn runTests()
     ZERO(`
         fn main() {
             let str = "hello world";
-            let s10 = str[:5] ~ str[6:];
+            let s10 = str[..5] ~ str[6..];
             return s10.len - 10;
         }
     `);
@@ -11885,7 +11885,7 @@ pub extern fn runTests()
             let hello = strs[0];
             strs.insert(1,
                 <fail bad call>
-                hello[0:5] /* should work too, but currently expected to mismatch */ <pass/>
+                hello[0..5] /* should work too, but currently expected to mismatch */ <pass/>
                 hello.slice(0, 5)</fail>
             );
             return strs.len - 3;
@@ -11893,7 +11893,7 @@ pub extern fn runTests()
     `);
 
     ZERO(`
-        fn test(hey: [i32])
+        fn test(hey: i32[..])
             hey[0] + hey[1];
 
         fn main()
@@ -11903,7 +11903,7 @@ pub extern fn runTests()
     `);
 
     ZERO(`
-        fn test(hey: &mut [i32])
+        fn test(hey: &mut i32[..])
             hey[0] += hey[1];
 
         fn main() {
@@ -11928,32 +11928,32 @@ pub extern fn runTests()
     `);
 
     ZERO(`
-        fn test(hey: [i32])
+        fn test(hey: i32[..])
             hey[0] + hey[1];
 
         fn main() {
             let hey = [7, -1, +1];
-            return test(hey[1 : 3]);
+            return test(hey[1 .. 3]);
         }
     `);
 
     ZERO(`
-        fn test(hey: &mut [i32])
+        fn test(hey: &mut i32[..])
             hey[0] += hey[1];
 
         fn main() {
             mut hey = [7, -1, +1];
-            return hey[1 : 3].test();
+            return hey[1 .. 3].test();
         }
     `);
 
     ZERO(`
-        fn test(hey: &mut [i32])
+        fn test(hey: &mut i32[..])
             hey.= [2, -3];
 
         fn main() {
             mut hey = [1, 0, 0];
-            test(hey[1 : 3]);
+            test(hey[1 .. 3]);
             return hey[0] + hey[1] + hey[2];
         }
     `);
@@ -11963,7 +11963,7 @@ pub extern fn runTests()
             i: i32;
         };
 
-        fn test(out: &mut [Hey]) {
+        fn test(out: &mut Hey[..]) {
             out.view(u8) .= [ 1.u8, 1.u8, 1.u8, 1.u8 ];
         }
 
@@ -11979,7 +11979,7 @@ pub extern fn runTests()
             i: i32;
         };
 
-        fn test(x: &mut [i32], y: [ Hey ])
+        fn test(x: &mut i32[..], y: Hey[..])
             x .= y.view(i32);
 
         fn main() {
@@ -12002,7 +12002,7 @@ pub extern fn runTests()
     `);
 
     ZERO(`
-        fn test(a: [byte], b?: [byte]) a == b;
+        fn test(a: byte[..], b?: byte[..]) a == b;
         fn main() test("") ? 0 : 1;
 
         ;; EXPECT (""_fu, fu::view<char>{})
@@ -12033,8 +12033,8 @@ pub extern fn runTests()
             if (a.len < 2)                          //
                 return a.len && a[0];               // NOT SURE WHAT'S 100% IDEAL, BUT:
                                                     //
-            let N = typeof(sep) -> [$T;] ? sep.len  // should either match here,
-                  : typeof(sep) ->  $T   ? 1        //                                    but currently matches here, which is just wrong.
+            let N = typeof(sep) -> $T[..] ? sep.len // should either match here,
+                  : typeof(sep) -> $T     ? 1       //                                    but currently matches here, which is just wrong.
                                  : 0;               //                           or here,
 
             mut size = a[0].len;
@@ -12046,17 +12046,17 @@ pub extern fn runTests()
 
             let head = a[0];
             size = head.len;
-            res[0 : head.len] .= head;
+            res[.. head.len] .= head;
             for (mut i = 1; i < a.len; i++)
             {
                 let range = a[i];
-                if (typeof(sep) -> [$T;])
-                    res[size : size + N] .= sep;
+                if (typeof(sep) -> $T[..])
+                    res[size .. size + N] .= sep;
                 else if (typeof(sep) -> $T)
                     res[size] = sep;
 
                 size += N;
-                res[size : size + range.len] .= range;
+                res[size .. size + range.len] .= range;
                 size += range.len;
             }
 
@@ -12072,9 +12072,9 @@ pub extern fn runTests()
     ZERO(`
         // one of these things reported there's no $S in scope.
         fn Join(a: $T, b: $T, lax sep: $S = [])
-            case ($S -> $T || $S -> [$T;] || $S -> [])
+            case ($S -> $T || $S -> $T[..] || $S -> [])
         {
-            return typeof(sep) -> $T || typeof(sep) -> [$T;]
+            return typeof(sep) -> $T || typeof(sep) -> $T[..]
                  ? a ~ sep ~ b
                  : a ~ b;
         }
@@ -12087,9 +12087,9 @@ pub extern fn runTests()
 
     ZERO(`
         // This is the initial type union concept
-        fn Join(a: $T, b: $T, lax sep?: $T or [$T;] or [])
+        fn Join(a: $T, b: $T, lax sep?: $T or $T[..] or [])
         {
-            return typeof(sep) -> $T || typeof(sep) -> [$T;]
+            return typeof(sep) -> $T || typeof(sep) -> $T[..]
                  ? a ~ sep ~ b
                  : a ~ b;
         }
@@ -12101,7 +12101,7 @@ pub extern fn runTests()
     `);
 
     ZERO(`
-        fn Replace(str: $T[], all: $T or [$T;], with: $T or [$T;] or [])
+        fn Replace(str: $T[], all: $T or $T[..], with: $T or $T[..] or [])
             str.len + (typeof(all)  -> $T ? 1 : all.len)
                     + (typeof(with) -> [] ? 0 : typeof(with) -> $T ? 1 : with.len);
 
@@ -12327,7 +12327,7 @@ pub extern fn runTests()
     `);
 
     ZERO(`
-        pub fn reveach(items: [$T], fn)
+        pub fn reveach(items: $T[..], fn)
             for (mut i = items.len; i --> 0; )
                 fn(items[i], i?: i);
 
@@ -13521,7 +13521,7 @@ pub extern fn runTests()
 
     ZERO(`
         fn test(a) {
-            if (typeof(a) -> _[:])
+            if (typeof(a) -> _[..])
                 return a.len;
 
             return a * 10;
@@ -13541,7 +13541,7 @@ pub extern fn runTests()
             ref a: $T[], b)  </fail>
         {
             let N = typeof(b) ->  $T   ? 1 : 2;
-            let M = typeof(b) -> [$T;] ? 2 : 1;
+            let M = typeof(b) -> $T[..] ? 2 : 1;
             a ~= b;
             return N == M ? 0 : 1;
         }
@@ -14099,7 +14099,7 @@ pub extern fn runTests()
     `);
 
     TODO_conv(currently: "Bad call to a_len 4:24+5", `
-        fn a_len(a: [$T]) a.len; // a conversion could navigate this here
+        fn a_len(a: $T[..]) a.len; // a conversion could navigate this here
         struct Test { using a: i32[]; };
         fn main() Test.a_len;
     `);
@@ -14473,7 +14473,7 @@ pub extern fn runTests()
         inline fn Printy(x: string): string = x;                ;; PointlessLocal
         inline fn Printy(x.Stringy): string = x;
 
-        fn Println(parts.Printy[]<alt>: [string]</alt>) {
+        fn Println(parts.Printy[]<alt>: string[..]</alt>) {
             mut total = 0;
             for (mut i = 0; i < parts.len; i++) total += parts[i].len;
             return total;
@@ -14517,7 +14517,7 @@ pub extern fn runTests()
     `);
 
     ZERO(`
-        fn printlike(topic: string, stuff.print[]: [string], implicit ref out: string) {
+        fn printlike(topic: string, stuff.print[]: string[..], implicit ref out: string) {
             out ~= topic ~ ": " ~ stuff.join() ~ '\\n';
         }
 
@@ -14532,7 +14532,7 @@ pub extern fn runTests()
     ZERO(`
         fn main() {
             mut out: string;                                    ;; PointlessLocal
-            fn lazywarn(prefix: string, inline stuff.print[]: [string]) {
+            fn lazywarn(prefix: string, inline stuff.print[]: string[..]) {
                 out ||= prefix ~ stuff.join();
             }
 
@@ -15001,11 +15001,11 @@ pub extern fn runTests()
     ZERO(`
         let SELF_TEST = <alt>true<alt/>false</alt>;
 
-        inline fn LT_each(lt: i32[:], each)
+        inline fn LT_each(lt: i32[..], each)
             for (mut i = 0; i < lt.len; i++)
                 each(lt[i]);
 
-        lax fn assertPathsValid(lax lt: i32[:], lax minPathDepth)
+        lax fn assertPathsValid(lax lt: i32[..], lax minPathDepth)
             if (SELF_TEST)
                 lt.LT_each: |value: i32|
                     if (value < minPathDepth)
@@ -15017,7 +15017,7 @@ pub extern fn runTests()
             lt.LT_each: |value: i32| {
                 let result0 = result.len;
                 each(:result, :value);
-                assertPathsValid(result[result0 :], :minPathDepth);
+                assertPathsValid(result[result0 ..], :minPathDepth);
             }
 
             return result;
@@ -15442,15 +15442,15 @@ pub extern fn runTests()
     ZERO(`
         struct HasData(type T) { data: T[] };
 
-        fn obfuscate !T(l.data: T[:], r.data: T[:], with_left, with_right) {
+        fn obfuscate !T(l.data: T[..], r.data: T[..], with_left, with_right) {
             with_left (l0?: 0, l1?: l.len);
-            with_right(right: r[: r.len]);
+            with_right(right: r[.. r.len]);
         }
 
         fn concatAndFlatten !T(l: HasData(T), r: HasData(T)) {
             mut result: T[];
             obfuscate(l, r,
-                with_left:  |l0, l1| result ~= l.data[l0 : l1],
+                with_left:  |l0, l1| result ~= l.data[l0 .. l1],
                 with_right: |right|  result ~= right);
 
             return result.join("");
@@ -15761,17 +15761,17 @@ pub extern fn runTests()
     `);
 
     ZERO(`
-        fn next(implicit ref sum: i32, lifetime: [i32], locals_start: i32) {
+        fn next(implicit ref sum: i32, lifetime: i32[..], locals_start: i32) {
             sum += lifetime.len;
-            return lifetime[locals_start : lifetime.len];
+            return lifetime[locals_start .. lifetime.len];
         }
 
-        fn Lifetime_each(lifetime: [i32], visit) {
+        fn Lifetime_each(lifetime: i32[..], visit) {
             for (mut i = 0; i < lifetime.len; i++)
-                visit(lifetime[i : lifetime.len]);
+                visit(lifetime[i .. <alt>lifetime.len</alt>]);
         }
 
-        fn Lifetime_F_TODO_FIX_RRET(lifetime: [i32], locals_start: i32) {
+        fn Lifetime_F_TODO_FIX_RRET(lifetime: i32[..], locals_start: i32) {
             Lifetime_each(:lifetime, visit: |l| {
                 if (l)
                     Lifetime_F_TODO_FIX_RRET(l.next(locals_start), locals_start);
@@ -16297,13 +16297,13 @@ pub extern fn runTests()
         struct Overload { items: string[]; };
 
         // This is a bit borderline -
-        //  the problem here is that a: $T[] doesn't relax to a: [$T] (not during prep) -
+        //  the problem here is that a: $T[] doesn't relax to a: $T[..] (not during prep) -
         //   so we don't match at all. Still, that's what's written -
         //    perhaps regular fns are what doesn't behave correctly,
         //     since their relax can create ambiguity?
         //
         fn last(a: $T[])                    a[a.len - 1];
-        fn arg_lets(overload: Overload)     overload.items[0 : overload.items.len - 2];
+        fn arg_lets(overload: Overload)     overload.items[.. overload.items.len - 2];
         fn test(overload: Overload)         overload.arg_lets.last.len;
         fn main()                           Overload([ "hello", "cruel", "world!" ]).test - 5;
     `);
@@ -16391,7 +16391,7 @@ pub extern fn runTests()
     ZERO(`
         fn useless_ref_lambda(ref sources: string[]) {
             fn src = sources[sources.len / 2]; // didn't relax the ref, failed bck
-            return src[1 : src.len] ~ src[0 : 1];
+            return src[1 .. src.len] ~ src[.. 1];
         }
         fn main() {
             mut sources = [ "ab" ];
@@ -16501,8 +16501,8 @@ pub extern fn runTests()
                 let idx = src.find('X');
                 if (idx >= 0) {
                     let moduleA = src.slice(0, idx);
-                    let moduleB = src[idx : idx] ~ src[idx + 1 : src.len];
-                    let without = src[0 : idx] ~ src[idx + 1 : src.len];
+                    let moduleB = src[idx .. idx] ~ src[idx + 1 .. src.len];
+                    let without = src[0   .. idx] ~ src[idx + 1 .. src.len];
 
                     sources[i]  = without;
                     ZERO(:sources);
@@ -16533,13 +16533,13 @@ pub extern fn runTests()
                 ref src = sources[i];
                 mut idx = 0;
                 while ((idx = src.find("X")) > 0) {
-                    let sources1 = sources[0 : i]
+                    let sources1 = sources[0 .. i]
                         ~ src.slice(0, idx)
                         ~ src.slice(idx + 1, src.len)
-                        ~ sources[i + 1 : sources.len];
+                        ~ sources[i + 1 .. sources.len];
 
                     ZERO(sources1);
-                    src = src[0 : idx] ~ src[idx + 1 : src.len];
+                    src = src[0 .. idx] ~ src[idx + 1 .. src.len];
                 }
             }
 
@@ -16558,7 +16558,7 @@ pub extern fn runTests()
     `);
 
     ZERO(`
-        fn test(str: [byte]) {
+        fn test(str: byte[..]) {
             mut res = 1;
             str.split('/'): |piece| res *= piece.len;
             return res;
@@ -16769,7 +16769,7 @@ pub extern fn runTests()
         noinline    ;; ConstCast        </alt>
         fn longer(                  <alt>
             l: string, r: string,       <alt/>
-            l: $T[:], r: $T[:],         </alt>
+            l: $T[..], r: $T[..],       </alt>
             pick!)
         {
             let longer = {                                      ;; GNUStmtExpr
@@ -16799,8 +16799,8 @@ pub extern fn runTests()
 
     ZERO(`
         noinline fn longer(             <fail cannot move from a slice 15:26+1>
-            l: byte[:], r: byte[:])     <pass/>
-            l: $T[:],   r: $T[:])       </fail>
+            l: byte[..], r: byte[..])   <pass/>
+            l: $T[..],   r: $T[..])     </fail>
         {
             return l.len > r.len ? l : r;
         }
@@ -17354,7 +17354,7 @@ pub extern fn runTests()
     `);
 
     ZERO(`
-        fn seq__each(ref a: [$T], fn)
+        fn seq__each(ref a: $T[..], fn)
             for (mut i = 0; i < a.len; i++)
                 fn(a[i]);
 
@@ -17372,7 +17372,7 @@ pub extern fn runTests()
     `);
 
     ZERO(`
-        fn seq__each(ref a: [$T], fn)
+        fn seq__each(ref a: $T[..], fn)
             for (mut i = 0; i < a.len; i++)
                 fn(a[i]);
 

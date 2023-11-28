@@ -338,13 +338,12 @@ pub fn cpp_codegen(
     {
         let c = type.canon;
 
-        if (type.is_primitive && (c.len < 4 || c.len == 4 && c[1 : 4] == "128"))
+        if (type.is_primitive && (c.len < 4 || c.len == 4 && c[1 .. 4] == "128"))
             return primAnnotBase(c);
 
         if (c == "never")       return annotateNever();
         if (type.isIrrelevant)  return annotateZST();
 
-        // TODO FIX slice definit - (arg?: [byte]) somehow manages to drop ref on definit.
         let arrayItem = tryClear_sliceable(type);
         if (arrayItem)
         {
@@ -615,15 +614,15 @@ pub fn cpp_codegen(
                 c >= '0' && c <= '9' ||
                 c == '_') continue;
 
-            str = str[: i]
+            str = str[.. i]
                 ~ c.u32.xHH
-                ~ str[i + 1 :];
+                ~ str[i + 1 ..];
         }
 
         return ID(str);
     }
 
-    fn cgRoot(shadow root: SolvedNode, scope: [ScopeItem]): string
+    fn cgRoot(shadow root: SolvedNode, scope: ScopeItem[..]): string
     {
         mut count: i32;
         let src    = cgStatements(root.items, :count);
@@ -876,7 +875,7 @@ pub fn cpp_codegen(
         //      - if expressible as cpp expr (none of the below stuff),
         //      - if wrappable in a cpp lambda (no jumping up), etc.
         //
-        fn exprOK(nodes: [SolvedNode])
+        fn exprOK(nodes: SolvedNode[..])
         {
             for (mut i = 0; i < nodes.len; i++)
             {
@@ -1736,7 +1735,7 @@ pub fn cpp_codegen(
             let attr = "fu_INIT_PRIORITY(" ~ (1000 + prio) ~ ")";
             let eq = src.find('=');
             if (eq > 0)
-                src = src[: eq] ~ attr ~ " " ~ src[eq :];
+                src = src[.. eq] ~ attr ~ " " ~ src[eq ..];
         }
 
         // Hide when possible.
@@ -1795,7 +1794,7 @@ pub fn cpp_codegen(
             return;
 
         if (node.kind == "if" || node.kind == "and" || node.kind == "or")
-            node.items[node.kind == "if" ? 0 : 1 :].each: |item|
+            node.items[node.kind == "if" ? 0 : 1 ..].each: |item|
                 item.TEST_noDanglingRefs(:surviving_locals);
 
         node.lifetime.TEST_noDanglingRefs(:surviving_locals);
@@ -1876,7 +1875,7 @@ pub fn cpp_codegen(
 
     //
 
-    fn escapeStringLiteral(str: [byte], quot: byte)
+    fn escapeStringLiteral(str: byte[..], quot: byte)
     {
         mut esc = [ quot ];
 
@@ -2187,7 +2186,7 @@ pub fn cpp_codegen(
 
             let c = type.canon;
             return c.len >= 2 && c[1] == '8'
-                || c.len >= 3 && c[1 : 3] == "16";
+                || c.len >= 3 && c[1 .. 3] == "16";
         }
 
         fn unpromote(expr: string)
@@ -2226,7 +2225,7 @@ pub fn cpp_codegen(
         fn emitFunctionCall(mut id: string, open = "(", close = ")")
         {
             // Passing type parameters into cpp templates,
-            //  added this for prelude view<U>(a: T[:], type U),
+            //  added this for prelude view<U>(a: T[..], type U),
             //   which becomes a fu::view_of<U>(a).
             //
             let template = id.find("<>");
@@ -2246,9 +2245,9 @@ pub fn cpp_codegen(
                     }
                 };
 
-                id  = id[: template]
+                id  = id[.. template]
                     ~ '<' ~ angle_brackets ~ '>'
-                    ~ id[template + 2 :];
+                    ~ id[template + 2 ..];
             }
 
             shadow let args = open ~ REST ~ close;
@@ -2618,13 +2617,13 @@ pub fn cpp_codegen(
         return cgAnd(:node.items, :node.type, :mode);
     }
 
-    fn cgAnd(items: [SolvedNode], type: Type, mode: i32): string
+    fn cgAnd(items: SolvedNode[..], type: Type, mode: i32): string
     {
         let stmt = !!(mode & M_STMT);
         if (stmt)
         {
             mut src = "if (";
-            cgAndOr_concat(src, " && ", items[: items.len - 1], parens: true);
+            cgAndOr_concat(src, " && ", items[.. items.len - 1], parens: true);
             src ~= ")";
             src ~= blockWrapSubstatement(items[items.len - 1]);
             return src;
@@ -2662,7 +2661,7 @@ pub fn cpp_codegen(
         if (stmt)
         {
             mut src = "if (!(";
-            cgAndOr_concat(src, " || ", items[: items.len - 1], parens: true);
+            cgAndOr_concat(src, " || ", items[.. items.len - 1], parens: true);
             src ~= "))";
             src ~= blockWrapSubstatement(items[items.len - 1]);
             return src;
@@ -2689,7 +2688,7 @@ pub fn cpp_codegen(
                     shadow let items = item.items;
                     tail = items[items.len - 1] || BUG();
 
-                    cgAndOr_concat(src, " && ", items[: items.len - 1]);
+                    cgAndOr_concat(src, " && ", items[.. items.len - 1]);
                     src ~= " && ";
                 }
 
@@ -2779,7 +2778,7 @@ pub fn cpp_codegen(
         return isFieldChain(arg);
     }
 
-    fn cgAndOr_concat(ref src: string, op: string, items: [SolvedNode], parens!?: bool, last_never_ok!?: bool)
+    fn cgAndOr_concat(ref src: string, op: string, items: SolvedNode[..], parens!?: bool, last_never_ok!?: bool)
     {
         let mode = M_RETBOOL | (parens && items.len == 1 && M_PARENS);
         for (mut i = 0; i < items.len; i++)
@@ -3197,7 +3196,7 @@ pub fn cpp_codegen(
                     if (expr.is_mutref || !expr.is_ref)
                         return false;
 
-                    fn mayNeedConstCast(items: [SolvedNode])
+                    fn mayNeedConstCast(items: SolvedNode[..])
                     {
                         for (mut i = 0; i < items.len; i++)
                             if (items[i].mayNeedConstCast)
@@ -3210,7 +3209,7 @@ pub fn cpp_codegen(
                         return expr.items.mayNeedConstCast;
 
                     if (expr.kind == "if")
-                        return expr.items[1 : 3].mayNeedConstCast;
+                        return expr.items[1 .. 3].mayNeedConstCast;
 
                     if (expr.kind == "block")
                         return expr.items.len > 0
@@ -3321,7 +3320,7 @@ pub fn cpp_codegen(
 
         shadow let id = id || "_" ~ _current_fn.numTEMPVARs++;
         _current_fn.TEMPVARs ~=
-            ptrflip ? annot[: annot.len - 1] ~ "* " ~ id
+            ptrflip ? annot[.. annot.len - 1] ~ "* " ~ id
                     : annot ~ " " ~ id ~ (expr ? " = " ~ expr : " {}"); // TODO dont init trivial
 
         return id;

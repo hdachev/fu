@@ -179,43 +179,43 @@ fn swap !T(mut ref a: T, mut ref b: T): void __native(
 
 fn typeof !T(lax _: T) = T;
 
-fn  [] (type T) = typeof([] => T []);
-fn [:] (type T) = typeof([] => T[:]);
+fn [](type T)   = typeof([] => T[]);
+fn [..](type T) = typeof([] => T[..]);
 
-novec fn len !T(a: T[:]): int __native(".size()");
+novec fn len !T(a: T[..]): int __native(".size()");
 
-novec fn [] !T(ref a: T[:], i: int)
-    case (typeof(a) -> &mut T[:]): &mut T __native(".mutref");
-    default                      : &    T __native;
+novec fn [] !T(ref a: T[..], i: int)
+    case (typeof(a) -> &mut T[..]): &mut T __native(".mutref");
+    default                       : &    T __native;
 
-novec fn [:] !T(ref a: T[:], start!: int)
-    case (typeof(a) -> &mut T[:]): &mut T[:] __native("<fu/view.h>", "fu::get_view_mut");
-    default                      : &    T[:] __native("<fu/view.h>", "fu::get_view");
+novec fn [..] !T(ref a: T[..], start!: int)
+    case (typeof(a) -> &mut T[..]): &mut T[..] __native("<fu/view.h>", "fu::get_view_mut");
+    default                       : &    T[..] __native("<fu/view.h>", "fu::get_view");
 
-novec fn [:] !T(ref a: T[:], end!: int)
-    case (typeof(a) -> &mut T[:]): &mut T[:] __native("<fu/view.h>", "fu::get_view_start0_mut");
-    default                      : &    T[:] __native("<fu/view.h>", "fu::get_view_start0");
+novec fn [..] !T(ref a: T[..], end!: int)
+    case (typeof(a) -> &mut T[..]): &mut T[..] __native("<fu/view.h>", "fu::get_view_start0_mut");
+    default                       : &    T[..] __native("<fu/view.h>", "fu::get_view_start0");
 
-novec fn [:] !T(ref a: T[:], start: int, end: int)
-    case (typeof(a) -> &mut T[:]): &mut T[:] __native("<fu/view.h>", "fu::get_view_mut");
-    default                      : &    T[:] __native("<fu/view.h>", "fu::get_view");
+novec fn [..] !T(ref a: T[..], start: int, end: int)
+    case (typeof(a) -> &mut T[..]): &mut T[..] __native("<fu/view.h>", "fu::get_view_mut");
+    default                       : &    T[..] __native("<fu/view.h>", "fu::get_view");
 
 fn    push !T(mut ref a: T[], mut b: T): void __native(".push");
 fn unshift !T(mut ref a: T[], mut b: T): void __native(".unshift");
 fn  insert !T(mut ref a: T[], i: int, mut b: T): void __native(".insert");
 
-fn slice !T(const ref a: T[:], start: int, end: int)
-    case (typeof(a) -> T[]):  T[] __native("<fu/vec/slice.h>", "fu::slice");
-    default                : T[:] __native("<fu/view.h>", "fu::get_view");
+fn slice !T(const ref a: T[..], start: int, end: int)
+    case (typeof(a) -> T[]): T[]   __native("<fu/vec/slice.h>", "fu::slice");
+    default                : T[..] __native("<fu/view.h>", "fu::get_view");
 
-fn slice !T(const ref a: T[:], start: int)
-    case (typeof(a) -> T[]):  T[] __native("<fu/vec/slice.h>", "fu::slice");
-    default                : T[:] __native("<fu/view.h>", "fu::get_view");
+fn slice !T(const ref a: T[..], start: int)
+    case (typeof(a) -> T[]): T[]   __native("<fu/vec/slice.h>", "fu::slice");
+    default                : T[..] __native("<fu/view.h>", "fu::get_view");
 
 fn substr !T(a: T[], start: int, end: int): T[] __native("<fu/vec/slice.h>", "fu::substr");
 
 fn splice !T(mut ref a: T[], start: int, count: int): void  __native(".splice");
-fn splice !T(mut ref a: T[], start: int, count: int, /*TODO FIX*/b: T[:]): void  __native(".splice");
+fn splice !T(mut ref a: T[], start: int, count: int, /*TODO FIX*/b: T[..]): void  __native(".splice");
 
 fn    pop !T(mut ref a: T[]): void __native(".pop()");
 fn  shift !T(mut ref a: T[]): void __native(".shift()");
@@ -232,7 +232,7 @@ fn   grow_junk !T(mut ref a: T[], len: int): void __native(".grow<false>");
 
 // Sorts, via std::sort - fnptrs.
 
-fn sort !T(mut ref a: T[:]): void
+fn sort !T(mut ref a: T[..]): void
 {
     pragma include("<algorithm>");
     pragma emit(
@@ -242,7 +242,7 @@ fn sort !T(mut ref a: T[:]): void
     \`);
 }
 
-fn sort !T(mut ref a: T[:], less/*: fn(a: T, b: T): bool*/): void
+fn sort !T(mut ref a: T[..], less/*: fn(a: T, b: T): bool*/): void
 {
     noflow fn sort()
     {
@@ -272,38 +272,38 @@ fn sort !T(mut ref a: T[:], less/*: fn(a: T, b: T): bool*/): void
 
 // String likes.
 
-fn find !T(a: T[:], b: T[:], start: int, end: int) case (T.is::primitive): int  __native("<fu/vec/find.h>", "fu::lfind");
-fn find !T(a: T[:], b: T[:], start: int)           case (T.is::primitive): int  __native("<fu/vec/find.h>", "fu::lfind");
-fn find !T(a: T[:], b: T[:])                       case (T.is::primitive): int  __native("<fu/vec/find.h>", "fu::lfind");
+fn find !T(a: T[..], b: T[..], start: int, end: int) case (T.is::primitive): int  __native("<fu/vec/find.h>", "fu::lfind");
+fn find !T(a: T[..], b: T[..], start: int)           case (T.is::primitive): int  __native("<fu/vec/find.h>", "fu::lfind");
+fn find !T(a: T[..], b: T[..])                       case (T.is::primitive): int  __native("<fu/vec/find.h>", "fu::lfind");
 
-fn has  !T(a: T[:], b: T[:]) case (T.is::primitive): bool __native("<fu/vec/find.h>", "fu::has");
+fn has  !T(a: T[..], b: T[..]) case (T.is::primitive): bool __native("<fu/vec/find.h>", "fu::has");
 
 
 // Find char.
 
-fn starts !T(a: T[:], with: T): bool
+fn starts !T(a: T[..], with: T): bool
 {
     return a.len && a[0] == with;
 }
 
-fn ends !T(a: T[:], with: T): bool
+fn ends !T(a: T[..], with: T): bool
 {
     return a.len && a[a.len - 1] == with;
 }
 
-fn starts !T(a: T[:], with: T[:]): bool
+fn starts !T(a: T[..], with: T[..]): bool
 {
     return a.len >= with.len
-        && a[: with.len] == with;
+        && a[.. with.len] == with;
 }
 
-fn ends !T(a: T[:], with: T[:]): bool
+fn ends !T(a: T[..], with: T[..]): bool
 {
     return a.len >= with.len
-        && a[a.len - with.len : a.len] == with;
+        && a[a.len - with.len .. a.len] == with;
 }
 
-fn find !T(a: T[:], b: T, mut start: int): int
+fn find !T(a: T[..], b: T, mut start: int): int
 {
     start = start > 0 ? start : 0;
     for (mut i = start; i < a.len; i++) // TODO memchr
@@ -313,7 +313,7 @@ fn find !T(a: T[:], b: T, mut start: int): int
     return -1;
 }
 
-fn find !T(a: T[:], b: T): int
+fn find !T(a: T[..], b: T): int
 {
     for (mut i = 0; i < a.len; i++) // TODO memchr
         if (a[i] == b)
@@ -322,7 +322,7 @@ fn find !T(a: T[:], b: T): int
     return -1;
 }
 
-fn has !T(a: T[:], b: T): bool
+fn has !T(a: T[..], b: T): bool
 {
     for (mut i = 0; i < a.len; i++)
         if (a[i] == b)
@@ -347,26 +347,26 @@ infix fn <=(a: string, b: string): bool __native("<fu/vec/cmp.h>", "<=");
 // TODO FIX these concats hide copies
 //  which also means they dont work correctly for nocopy stuff
 //
-infix fn ~ !T(a: T[:], b: T[:]): T[] __native("<fu/vec/concat.h>",     "+");
-infix fn ~ !T(a: T[:], b:  T  ): T[] __native("<fu/vec/concat_one.h>", "+");
-infix fn ~ !T(a:  T  , b: T[:]): T[] __native("<fu/vec/concat_one.h>", "+");
+infix fn ~ !T(a: T[..], b: T[..]): T[] __native("<fu/vec/concat.h>",     "+");
+infix fn ~ !T(a: T[..], b: T    ): T[] __native("<fu/vec/concat_one.h>", "+");
+infix fn ~ !T(a: T    , b: T[..]): T[] __native("<fu/vec/concat_one.h>", "+");
 
-infix fn ~= !T(mut ref a: T[],     b: T[:]): &mut T[] __native("<fu/vec/concat.h>",     "+=");
-infix fn ~= !T(mut ref a: T[], mut b:  T  ): &mut T[] __native("<fu/vec/concat_one.h>", "+=");
+infix fn ~= !T(mut ref a: T[],     b: T[..]): &mut T[] __native("<fu/vec/concat.h>",     "+=");
+infix fn ~= !T(mut ref a: T[], mut b: T    ): &mut T[] __native("<fu/vec/concat_one.h>", "+=");
 
 
 // Fun with views.
 
-fn view !T(ref a: T[:], type of)
-    case (typeof(a) -> &mut T[:] && T.is::reinterpretable && of.is::reinterpretable): &mut [of] __native("<fu/view.h>", "fu::view_of_mut<>");
-    case (                          T.is::reinterpretable && of.is::reinterpretable): &    [of] __native("<fu/view.h>", "fu::view_of<>");
+fn view !T(ref a: T[..], type of)
+    case (typeof(a) -> &mut T[..] && T.is::reinterpretable && of.is::reinterpretable): &mut of[..] __native("<fu/view.h>", "fu::view_of_mut<>");
+    case (                           T.is::reinterpretable && of.is::reinterpretable): &    of[..] __native("<fu/view.h>", "fu::view_of<>");
 
-infix fn .= !T(mut ref a: T[:], b: T[:]) case (T.is::copy): void __native("<fu/vec/view_assign.h>", "fu::view_assign");
+infix fn .= !T(mut ref a: T[..], b: T[..]) case (T.is::copy): void __native("<fu/vec/view_assign.h>", "fu::view_assign");
 
 // TODO not needed if swap(x, y) alias-ok's its two arguments:
-fn swap !T(mut ref a: T[:], i: int, j: int): void __native("<fu/vec/view_swap.h>", "fu::view_swap");
+fn swap !T(mut ref a: T[..], i: int, j: int): void __native("<fu/vec/view_swap.h>", "fu::view_swap");
 
-fn partition !T(mut ref a: T[:], predicate)
+fn partition !T(mut ref a: T[..], predicate)
 {
     let size = a.len;
     mut keep = 0;
@@ -406,9 +406,9 @@ fn remove !T(mut ref a: T[], predicate)
 
 // Stringifiables.
 
-infix fn ~ (        a: [byte], b.str) a ~ b;
-infix fn ~ (        a.str, b: [byte]) a ~ b;
-infix fn ~=(mut ref a: string, b.str) a ~= b;
+infix fn ~ (        a: byte[..], b.str      ) a ~ b;
+infix fn ~ (        a.str,       b: byte[..]) a ~ b;
+infix fn ~=(mut ref a: string,   b.str      ) a ~= b;
 
 fn str !T(n: T)
     case (T.is::unsigned       ): string __native("<fu/decstr.h>", "fu::u64dec");
@@ -451,20 +451,20 @@ fn throw(mut reason: string): never __native("<fu/never.h>", "fu::fail",
 inline fn print(x: string): string = x;
 inline fn print(x.str)    : string = x;
 
-fn println(parts.print[]: [string]): void __native("<fu/print.h>", "fu::println",
+fn println(parts.print[]: string[..]): void __native("<fu/print.h>", "fu::println",
     "|output");
 
 
 // String commons.
 
-fn join !T(a: T[][:], sep?: T or T[:] or [])
+fn join !T(a: T[][..], sep?: T or T[..] or [])
 {
     if (a.len < 2)
         return a.len && a[0];
 
-    let N = typeof(sep) -> T[:] ? sep.len
-          : typeof(sep) ->  T   ? 1
-                                : 0;
+    let N = typeof(sep) -> T[..] ? sep.len
+          : typeof(sep) -> T     ? 1
+                                 : 0;
 
     mut size = a[0].len;
     for (mut i = 1; i < a.len; i++)
@@ -475,29 +475,29 @@ fn join !T(a: T[][:], sep?: T or T[:] or [])
 
     let head = a[0];
     size = head.len;
-    res[: head.len] .= head;
+    res[.. head.len] .= head;
     for (mut i = 1; i < a.len; i++)
     {
         let range = a[i];
-        if (typeof(sep) -> T[:])
-            res[size : size + N] .= sep;
+        if (typeof(sep) -> T[..])
+            res[size .. size + N] .= sep;
         else if (typeof(sep) -> T)
             res[size] = sep;
 
         size += N;
-        res[size : size + range.len] .= range;
+        res[size .. size + range.len] .= range;
         size += range.len;
     }
 
     return res;
 }
 
-fn split !T(str: T[] or T[:], sep: T or T[:], each)
+fn split !T(str: T[] or T[..], sep: T or T[..], each)
 {
     mut last = 0;
     mut next = 0;
 
-    let N = typeof(sep) -> T[:] ? sep.len : 1;
+    let N = typeof(sep) -> T[..] ? sep.len : 1;
     if (N) while ((next = str.find(sep, start: last)) >= 0)
     {
         each(str.slice(last, next), first?: !last, last?: false);
@@ -510,7 +510,7 @@ fn split !T(str: T[] or T[:], sep: T or T[:], each)
         each(str, first?: true, last?: true);
 }
 
-fn split !T(str: T[], sep: T or T[:])
+fn split !T(str: T[], sep: T or T[..])
 {
     mut result: T[][];
     split(str, :sep, |substr| result ~= substr);
@@ -523,7 +523,7 @@ fn split !T(str: T[], sep: T or T[:])
 //   This would be generally useful, e.g.
 //    .map.maps and .map.filters could use this to skip allocs.
 
-fn replace !T(str: T[], all: T or T[:], with: T or T[:] or [])
+fn replace !T(str: T[], all: T or T[..], with: T or T[..] or [])
 {
     mut result: T[];
     split(str, sep: all, |substr, lax first, lax last|
@@ -544,7 +544,7 @@ fn replace !T(str: T[], all: T or T[:], with: T or T[:] or [])
 
 infix fn <> !T(a: T, b: T)
 case (T.is::primitive) = a < b ? -1 : a > b ? +1 : 0;
-case (T -> _[:]) {
+case (T -> _[..]) {
     mut cmp = a.len <> b.len;
     for (mut i = 0; i < a.len && !cmp; i++)
         cmp = a[i] <> b[i];
@@ -582,7 +582,7 @@ infix fn != !T(a: T, b: T)
 
 //
 
-fn map !T(a: T[:], fn)
+fn map !T(a: T[..], fn)
 {
     mut res: typeof( fn(T, i?: a.len) )[];
     res.grow_junk(a.len);
@@ -592,11 +592,11 @@ fn map !T(a: T[:], fn)
     return res;
 }
 
-fn each !T(ref a: T[:], fn)
+fn each !T(ref a: T[..], fn)
     for (mut i = 0; i < a.len; i++)
         fn(a[i], i?: i);
 
-fn reverse !T(mut ref a: T[:])
+fn reverse !T(mut ref a: T[..])
 {
     let n1 = a.len - 1;
     let n2 = a.len >> 1;
@@ -604,7 +604,7 @@ fn reverse !T(mut ref a: T[:])
         a.swap(i, n1 - i);
 }
 
-fn all !T(a: T[:], pred)
+fn all !T(a: T[..], pred)
 {
     a.each: |item, i|
         if !(pred(item, i?: i))
@@ -613,7 +613,7 @@ fn all !T(a: T[:], pred)
     return true;
 }
 
-fn some !T(a: T[:], pred)
+fn some !T(a: T[..], pred)
 {
     a.each: |item, i|
         if (pred(item, i?: i))

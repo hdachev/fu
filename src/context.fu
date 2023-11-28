@@ -53,9 +53,9 @@ fn resolveFile(
                 }
             }
 
-            shadow let name = name[0   : dir]
-                            ~ name[dir : ext] ~ '/'
-                            ~ name[dir : name.len];
+            shadow let name = name[0   .. dir]
+                            ~ name[dir .. ext] ~ '/'
+                            ~ name[dir .. name.len];
 
             check(from ~ name);
             check(from ~    "lib/" ~ name);
@@ -306,7 +306,7 @@ pub fn serializeType(type: ValueType, debug!: string)
     return result;
 }
 
-pub fn parseType(str: byte[:]): ValueType
+pub fn parseType(str: byte[..]): ValueType
 {
     mut offset: i32;
 

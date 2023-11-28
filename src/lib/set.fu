@@ -151,7 +151,7 @@ pub fn rem(ref keys: $T[], item: $T)
 // TODO instead of this,
 //  make sure each item is moved exactly once.
 
-pub fn add(ref a: $T[], b: [$T])
+pub fn add(ref a: $T[], b: $T[..])
 {
     mut x = 0;
     mut y = 0;
@@ -174,7 +174,7 @@ pub fn add(ref a: $T[], b: [$T])
     }
 
     if (y < b.len)
-        a ~= b[y :];
+        a ~= b[y ..];
 }
 
 pub fn add(ref a: $T[], b: $T[], ref extras: $U[], extra: $U)
@@ -202,7 +202,7 @@ pub fn add(ref a: $T[], b: $T[], ref extras: $U[], extra: $U)
 
     if (y < b.len)
     {
-        a ~= b[y :];
+        a ~= b[y ..];
 
         while (y++ < b.len)
             extras ~= extra;
@@ -263,7 +263,7 @@ pub fn rem(ref a: $T[], b: $T[])
 
 // The new thing potentially.
 
-fn merge(l: [$T], r: [$T], left, right, both)
+fn merge(l: $T[..], r: $T[..], left, right, both)
 {
     mut li = 0;
     mut ri = 0;
@@ -299,7 +299,7 @@ fn merge(l: [$T], r: [$T], left, right, both)
     }
 }
 
-fn merge(l: [$T], r: [$T], left_or_both, right)
+fn merge(l: $T[..], r: $T[..], left_or_both, right)
 {
     mut li = 0;
     mut ri = 0;
@@ -336,7 +336,7 @@ fn merge(l: [$T], r: [$T], left_or_both, right)
 
 //
 
-pub fn has_inter(l: [$T], r: [$T])
+pub fn has_inter(l: $T[..], r: $T[..])
 {
     merge(l, r,
         left: |_| {}, right: |_| {},
@@ -405,7 +405,7 @@ pub fn union(l: $T[], r: $T[])
     {
         if (!useResult) {
             useResult = true;
-            result ~= l[: left];
+            result ~= l[.. left];
         }
 
         result ~= item;
@@ -441,7 +441,7 @@ pub fn diff(remove: $T[], from: $T[])
 
 //
 
-pub fn misses_some(l: [$T], from!: [$T])
+pub fn misses_some(l: $T[..], from!: $T[..])
 {
     merge(l, from,
         left: |_| {}, right: |_| { return true; },

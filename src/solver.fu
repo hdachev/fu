@@ -194,7 +194,7 @@ pub fn solve(
             if (src.len > parent_loop_start)
             {
                 dest.grow(parent_loop_start);
-                dest ~= src[parent_loop_start :];
+                dest ~= src[parent_loop_start ..];
             }
         }
 
@@ -651,7 +651,7 @@ pub fn solve(
                 return "string";
 
             return humanizeTypeName(itemType)
-                ~ (type.TODO_FIX_isArray ? "[]" : "[:]");
+                ~ (type.TODO_FIX_isArray ? "[]" : "[..]");
         }
 
         if (type.canon == t_bool.canon)
@@ -676,7 +676,7 @@ pub fn solve(
                     reason ~= "\n";
 
                 let pass = (pass0 != (pass0 = h.pass) || callstack == 1) && h.pass ~ " ";
-                reason ~= "\n                "[: (17 - pass.len).max(1)] ~ pass;
+                reason ~= "\n                "[.. (17 - pass.len).max(1)] ~ pass;
 
                 let o = GET(h.target);
                 reason ~= o;
@@ -835,18 +835,18 @@ pub fn solve(
     {
         let s = ctx.modules[modid].out.solve.scope;
 
-        _scope.items ~= s.items[: s.pub_items];
-        _scope.converts ~= s.converts[: s.pub_converts];
-        _scope.implicits ~= s.implicits[: s.pub_implicits];
+        _scope.items ~= s.items[.. s.pub_items];
+        _scope.converts ~= s.converts[.. s.pub_converts];
+        _scope.implicits ~= s.implicits[.. s.pub_implicits];
     }
 
     fn _Scope_import__forceCopy_privates(modid: i32): void
     {
         let s = ctx.modules[modid].out.solve.scope;
 
-        _scope.items ~= s.items[s.pub_items :];
-        _scope.converts ~= s.converts[s.pub_converts :];
-        _scope.implicits ~= s.implicits[s.pub_implicits :];
+        _scope.items ~= s.items[s.pub_items ..];
+        _scope.converts ~= s.converts[s.pub_converts ..];
+        _scope.implicits ~= s.implicits[s.pub_implicits ..];
     }
 
     fn Scope_import(modid: i32)
@@ -1038,7 +1038,7 @@ pub fn solve(
 
     //
 
-    fn Lifetime_fromNative(sig: [Node], args: [SolvedNode], actual: Type): Lifetime
+    fn Lifetime_fromNative(sig: Node[..], args: SolvedNode[..], actual: Type): Lifetime
     {
         mut res: Type;
 
@@ -1194,7 +1194,7 @@ pub fn solve(
         return str;
     }
 
-    fn Lifetime_replaceArgsAtCallsite(target: Target, argNodes: [SolvedNode]): Lifetime
+    fn Lifetime_replaceArgsAtCallsite(target: Target, argNodes: SolvedNode[..]): Lifetime
     {
         return target.type.lifetime.Lifetime_process(
             each: |isStatic, isTemp, locid, argidx, paths,
@@ -1362,7 +1362,7 @@ pub fn solve(
                 end = i;
         }
 
-        return fname[start : end];
+        return fname[start .. end];
     }
 
     fn stableTypeID(type: Type)
@@ -1675,7 +1675,7 @@ pub fn solve(
         ref error!: string,
         local_scope!?: bool,
         misc_scope!?: Scope,
-        args?: [SolvedNode],
+        args?: SolvedNode[..],
         flags!?: Flags, target!?: Target): Target
     {
         let error_len0 = error.len;
@@ -1825,7 +1825,7 @@ pub fn solve(
                     ? search(dont_search_just_return: target, scope_iterator)
                     : local_scope
                         ? _SCOPE.search(id, scope_iterator, scope_skip: _SSKIP, :extra_items, :field_items, :shadows)
-                        : misc_scope.items[: misc_scope.pub_items].search(id, scope_iterator))
+                        : misc_scope.items[.. misc_scope.pub_items].search(id, scope_iterator))
             {
                 !local_scope && shadows && BUG("!local_scope but shadows");
 
@@ -2222,7 +2222,7 @@ pub fn solve(
             || node.kind == "real"
             || node.kind == "definit" || node.type.is_zeroes
             || node.kind == "str"
-            || node.kind == "if"  && node.items[1 : 3].all(fn couldRetype)
+            || node.kind == "if"  && node.items[1 .. 3].all(fn couldRetype)
             || node.kind == "block" && !node.helpers && node.items.last.couldRetype
             ;
     }
@@ -2320,7 +2320,7 @@ pub fn solve(
         return result;
     }
 
-    fn explainConversion(shadow path: [Target], prefix!?: string)
+    fn explainConversion(shadow path: Target[..], prefix!?: string)
     {
         mut res = "";
         for (mut i = 0; i < path.len; i++)
@@ -2358,14 +2358,14 @@ pub fn solve(
             :memberFlatOffset);
     }
 
-    fn conversionTailType(from: Type, conversions: Target[:])
+    fn conversionTailType(from: Type, conversions: Target[..])
     {
         for (mut i = conversions.len; i --> 0; )
         {
             let lastConv = conversions[i];
             if (lastConv.kind == "field")
                 return make_field_reference(
-                    from: conversionTailType(:from, conversions[: i]),
+                    from: conversionTailType(:from, conversions[.. i]),
                     field: lastConv,
 
                     // We could do the correct thing but we gotta
@@ -2592,7 +2592,7 @@ pub fn solve(
 
     //
 
-    fn explainBadCallArguments(id: string, target: Target, args: [SolvedNode])
+    fn explainBadCallArguments(id: string, target: Target, args: SolvedNode[..])
     {
         return (target ? target.str : id.qID)
              ~ (args && " with args (" ~ args.map(.humanizeType).join(", ") ~ ")");
@@ -2723,7 +2723,7 @@ pub fn solve(
         BUG("TODO: unorderedPrep_A(" ~ node.kind ~ ").");
     }
 
-    fn unorderedPrep_B(nodes: [Node], results: [SolvedNode], unorderedClass: i32)
+    fn unorderedPrep_B(nodes: Node[..], results: SolvedNode[..], unorderedClass: i32)
     {
         if (unorderedClass != 1)
             return;
@@ -5002,7 +5002,7 @@ pub fn solve(
             :value, token: _here || BUG());
     }
 
-    fn X_addrofTarget(targets: [Target])
+    fn X_addrofTarget(targets: Target[..])
         Type(ValueType(canon: packAddrOfFn(targets)));
 
     fn X_addrofTarget(target: Target)
@@ -5177,7 +5177,7 @@ pub fn solve(
 
     //
 
-    fn mangleArgTypes(args: [$T]): string
+    fn mangleArgTypes(args: $T[..]): string
     {
         mut mangle = "";
         mut numNonInjected = 0;
@@ -5209,7 +5209,7 @@ pub fn solve(
     }
 
     fn mangleArgTypes(
-        args: [SolvedNode], reorder: Reorder,
+        args: SolvedNode[..], reorder: Reorder,
         conversions: Target[][],
         REST_START: i32, REST_TYPE: Type): string
     {
@@ -5258,7 +5258,7 @@ pub fn solve(
     }
 
     fn trySpecialize(
-        overloadIdx: Target, args: [SolvedNode], ref args_mangled: string,
+        overloadIdx: Target, args: SolvedNode[..], ref args_mangled: string,
         REST_START: i32, REST_TYPE?: Type,
         reorder?: Reorder, conversions?: Target[][])
             : Target
@@ -5605,7 +5605,7 @@ pub fn solve(
 
     fn doTrySpecialize(
         parent_idx!: i32, into?: Target,
-        overloadIdx?: Target, args_in?: [SolvedNode],
+        overloadIdx?: Target, args_in?: SolvedNode[..],
         mangle?: string, reorder?: Reorder, conversions?: Target[][],
         REST_START?: i32, REST_TYPE?: Type)
             : Target
@@ -5700,7 +5700,7 @@ pub fn solve(
             }
         };
 
-        fn resetMangle(shadow args: [Type] or [Argument], allowReplaceNonSpecfails?: bool)
+        fn resetMangle(shadow args: Type[..] or Argument[..], allowReplaceNonSpecfails?: bool)
         {
             // TODO FIX
             let start = mangle.find(' ') + 1 || BUG();
@@ -6016,7 +6016,7 @@ pub fn solve(
                 //  otherwise the thing below loses that information
                 //   if tp.consumed is empty.
                 //
-                ref argNodes = n_fn.items[: n_fn.items.len + FN_ARGS_BACK];
+                ref argNodes = n_fn.items[.. n_fn.items.len + FN_ARGS_BACK];
                 for (mut i = 0; i < argNodes.len; i++)
                 {
                     ref argNode = argNodes[i];
@@ -6222,7 +6222,7 @@ pub fn solve(
             if (ret_seed.lifetime)
             {
                 ret_seed.lifetime = isNative
-                    ? Lifetime_fromNative(inItems, _current_fn.items[: _current_fn.items.len + FN_ARGS_BACK], ret_seed)
+                    ? Lifetime_fromNative(inItems, _current_fn.items[.. _current_fn.items.len + FN_ARGS_BACK], ret_seed)
                     : Lifetime_static(); // we'll overpromise during prep
             }
             else if (isNative)
@@ -6294,7 +6294,7 @@ pub fn solve(
                         if (item.starts(with: '|'))
                             fx_mask |= item == "|output"
                                 ? EFFECTS_output
-                                : parse(item[1 :], as: FxMask) || BUG("Invalid |Fx mask: " ~ item.qBAD);
+                                : parse(item[1 ..], as: FxMask) || BUG("Invalid |Fx mask: " ~ item.qBAD);
                         else
                             name ~= "\n" ~ item;
                     }
@@ -6901,13 +6901,13 @@ pub fn solve(
         }
 
         // Find first injected.
-        ref args = _current_fn.items[: _current_fn.items.len + FN_ARGS_BACK];
+        ref args = _current_fn.items[.. _current_fn.items.len + FN_ARGS_BACK];
 
         for (mut i = 0; i < args.len; i++)
         {
             let arg = args[i];
             if (arg.target && arg.target.flags & F_INJECTED)
-                return args[i :].sort(fn compare);
+                return args[i ..].sort(fn compare);
         }
     }
 
@@ -7400,7 +7400,7 @@ pub fn solve(
                 let signed      = basePrim[0] == 'i';
                 let unsigned    = basePrim[0] == 'u';
 
-                let size_str    = basePrim[1 :];
+                let size_str    = basePrim[1 ..];
                 let size: u8    = size_str == "8"   ? 8
                                 : size_str == "16"  ? 16
                                 : size_str == "32"  ? 32
@@ -8743,7 +8743,7 @@ pub fn solve(
         mut unique: Target[];
 
         // Visit local scope.
-        fn visitScope(shadow local_scope!: bool, items?: [ScopeItem])
+        fn visitScope(shadow local_scope!: bool, items?: ScopeItem[..])
         {
             mut scope_iterator: i32;
             mut target: Target;
@@ -8823,7 +8823,7 @@ pub fn solve(
                 if (node.value == "[]")
                     return createArray(T);
 
-                if (node.value == "[:]")
+                if (node.value == "[..]")
                     return createSlice(T);
 
                 if (node.value == "typeof")
@@ -8846,11 +8846,6 @@ pub fn solve(
                     return type;
                 }
             }
-        }
-        else if (node.kind == "arrlit" && node.items.len == 1)
-        {
-            // TODO FIX REMOVE OLD SLICE SYNTAX
-            return createSlice(T);
         }
         else if (node.kind == "definit")
         {
@@ -8891,10 +8886,10 @@ pub fn solve(
                 let t   = node.value == "&"    ? tryClear_ref(type)     || matchFail("Not a reference: " ~ type.humanizeType)
                         : node.value == "&mut" ? tryClear_mutref(type)  || matchFail("Not a mutref: " ~ type.humanizeType)
                         : node.value == "[]"   ? tryClear_array(type)   || matchFail("Not an array: " ~ type.humanizeType)
-                        : node.value == "[:]"  ? tryClear_sliceable(type) || matchFail("Not sliceable: " ~ type.humanizeType)
+                        : node.value == "[..]" ? tryClear_sliceable(type) || matchFail("Not sliceable: " ~ type.humanizeType)
                         : { break :UNARY; };
 
-                if (node.value == "[]" || node.value == "[:]")
+                if (node.value == "[]" || node.value == "[..]")
                     invariant = true;
 
                 return trySolveTypeParams(
@@ -8944,17 +8939,6 @@ pub fn solve(
                 param.invariant = type;
 
             return true;
-        }
-        else if (node.kind == "arrlit" && node.items.len == 1)
-        {
-            // TODO FIX REMOVE OLD SLICE SYNTAX
-            invariant = true;
-
-            // Slice.
-            let t = tryClear_sliceable(type) || matchFail("Not sliceable: " ~ type.humanizeType);
-            return trySolveTypeParams(
-                node.items[0] || BUG(), t, :errout,
-                :invariant, :imports);
         }
         else if (node.kind == "typeunion")
         {
@@ -9323,7 +9307,7 @@ pub fn solve(
         return clear_refs(head) || BUG();
     }
 
-    fn solveArrlit_itemType(items: [SolvedNode], mut itemType?: Type, mut start = 0)
+    fn solveArrlit_itemType(items: SolvedNode[..], mut itemType?: Type, mut start = 0)
     {
         // Init.
         if (!itemType)
@@ -11085,8 +11069,8 @@ pub fn solve(
             //  of all newly generated entries to what we have right now.
             //
             unorderedPrep_B(
-                nodes[i0 : i1],
-                result[i0 + offset : i1 + offset],
+                nodes[i0 .. i1],
+                result[i0 + offset .. i1 + offset],
                 unorderedClass);
 
             // TODO REMOVE, solve all.
@@ -11314,7 +11298,7 @@ pub fn solve(
             return true; // AAR always succeeds.
         }
 
-        fn RESOLVE_byAAR(write!: i32, reads!: [i32], trySoft!: bool)
+        fn RESOLVE_byAAR(write!: i32, reads!: i32[..], trySoft!: bool)
         {
             reads.each: |read|
                 if (read && read != write)

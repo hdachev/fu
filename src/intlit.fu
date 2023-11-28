@@ -21,23 +21,23 @@ struct Intlit
 
 //
 
-fn Intlit(sign_prefix_value_suffix: [byte]): Intlit
+fn Intlit(sign_prefix_value_suffix: byte[..]): Intlit
 {
     let c_sign                  = sign_prefix_value_suffix[0];
     let sign                    = (c_sign == '-' || c_sign == '+') && c_sign;
-    let prefix_value_suffix     = sign_prefix_value_suffix[sign != byte && 1 :];
+    let prefix_value_suffix     = sign_prefix_value_suffix[sign != byte && 1 ..];
 
     let c_prefix                = prefix_value_suffix.len > 1 && prefix_value_suffix[1];
     let prefix                  = (c_prefix == 'x' || c_prefix == 'o' || c_prefix == 'b')
                                                         && prefix_value_suffix[0] == '0'
                                                         && c_prefix;
 
-    let value_suffix            = prefix_value_suffix[prefix != byte && 2 :];
+    let value_suffix            = prefix_value_suffix[prefix != byte && 2 ..];
 
     let c_suffix                = value_suffix.len && value_suffix[value_suffix.len - 1];
     let suffix                  = c_suffix == 'u' && c_suffix;
 
-    let value                   = value_suffix[: value_suffix.len - (suffix != byte && 1)];
+    let value                   = value_suffix[.. value_suffix.len - (suffix != byte && 1)];
 
     // Done parsing out the various bits.
     let base        = prefix == 'x' ? 16.u64

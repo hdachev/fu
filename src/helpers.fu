@@ -1,21 +1,21 @@
 
-fn only(ref s: [$T;])
+fn only(ref s: $T[..])
     s.len == 1 ? s[0] : throw (
         "len != 1: " ~ s.len);
 
-fn first(ref s: [$T;])
+fn first(ref s: $T[..])
     s.len ? s[0] : throw("len == 0");
 
-fn last(ref s: [$T;])
+fn last(ref s: $T[..])
     s.len ? s[s.len - 1] : throw("len == 0");
 
-fn if_only(ref s: [$T;])
+fn if_only(ref s: $T[..])
     s.len == 1 && s[0];
 
-fn if_first(ref s: [$T;])
+fn if_first(ref s: $T[..])
     s.len && s[0];
 
-fn if_last(ref s: [$T;])
+fn if_last(ref s: $T[..])
     s.len && s[s.len - 1];
 
 fn grow_if_oob(ref a: $T[], i: i32): &mut $T
@@ -45,10 +45,10 @@ fn grow_oob(ref a: $T[], i: i32, fill!: $T): &mut $T
     return a[i];
 }
 
-fn unless_oob(ref a: [$T], i: i32)
+fn unless_oob(ref a: $T[..], i: i32)
     i < a.len && a[i];
 
-fn try_steal(ref a: [$T], i: i32)
+fn try_steal(ref a: $T[..], i: i32)
 {
     if (i < a.len)
     {
@@ -102,14 +102,14 @@ fn hasNonIdentifierChars(id: string)
 
 //
 
-fn zip_each(ref a: [$T;], ref b: [$U;], fn)
+fn zip_each(ref a: $T[..], ref b: $U[..], fn)
 {
     a.len == b.len || throw("a.len != b.len");
     for (mut i = 0; i < a.len; i++)
         fn(a[i], b[i], i?: i);
 }
 
-fn zip_all(ref a: [$T;], ref b: [$U;], pred)
+fn zip_all(ref a: $T[..], ref b: $U[..], pred)
 {
     zip_each(a, b): |shadow a, shadow b, i|
         if !(pred(a, b, i?: i))
@@ -123,7 +123,7 @@ fn zip_all(ref a: [$T;], ref b: [$U;], pred)
 
 fn clone(a: $T)
 case ($T.is::copy) a;
-case ($T -> [$U]) a.map(fn clone);
+case ($T -> $U[..]) a.map(fn clone);
 case ($T -> $T)
 {
     mut res: $T;
@@ -240,7 +240,7 @@ fn appendVarint(ref str: byte[], mut v: u32)
 
 //
 
-fn print(arr: [$T]) case ($T.is::arithmetic)
+fn print(arr: $T[..]) case ($T.is::arithmetic)
 {
     mut result = "";
     for (mut i = 0; i < arr.len; i++)
@@ -259,7 +259,7 @@ fn print(arr: [$T]) case ($T.is::arithmetic)
     return result;
 }
 
-fn print(arr: [string]) {
+fn print(arr: string[..]) {
     return arr ? "[ \"" ~ arr.join("\", \"") ~ "\" ]" : "[]";
 }
 
@@ -280,7 +280,7 @@ fn trim(str: string)
 
 //
 
-fn parse(v: [byte], lax as!: $T)
+fn parse(v: byte[..], lax as!: $T)
     case ($T.is::enum || $T.is::bitfield /*TODO .is::flags*/ )
 {
     // now supported, there's a test for it, this parser is wrong though
@@ -296,15 +296,15 @@ fn parse(v: [byte], lax as!: $T)
     return [];
 }
 
-fn parseWild(v: [byte], lax as!: $T)
+fn parseWild(v: byte[..], lax as!: $T)
 {
     mut result: $T;
     for (mut i = 0; i < v.len; i++)
     {
         if (v[i] == '*')
         {
-            let prefix = v[: i];
-            let suffix = v[i + 1 :];
+            let prefix = v[.. i];
+            let suffix = v[i + 1 ..];
 
             for (fieldname i: $T)
             {

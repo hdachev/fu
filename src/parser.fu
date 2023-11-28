@@ -16,7 +16,7 @@ let P_RESET         = 1000;
 let P_PREFIX_UNARY  = 1   ;
 
 let PREFIX          = [ "++", "+", "--", "-", "!", "~", "?", "*", "&", "&mut" ];
-let POSTFIX         = [ "++", "--", "[]", "[:]" ];
+let POSTFIX         = [ "++", "--", "[]", "[..]" ];
 
 fn setupOperators()
 {
@@ -268,7 +268,7 @@ pub fn parse(
         return [];
     }
 
-    fn tryConsume(::kind, value: [byte]): Token
+    fn tryConsume(::kind, value: byte[..]): Token
     {
         let token = tokens[_idx];
         if (token.kind == kind && token.value == value)
@@ -280,7 +280,7 @@ pub fn parse(
         return [];
     }
 
-    fn tryConsume(::kind, value: byte[:], peek!): Token
+    fn tryConsume(::kind, value: byte[..], peek!): Token
     {
         let token = tokens[_idx];
         if (token.kind == kind && token.value == value
@@ -1937,9 +1937,7 @@ pub fn parse(
 
     fn parseCallArgs(
         endop: string, ref out_args: Node[],
-
-        mut sliceSyntax!?: bool,
-        experimental_sliceAnnots!?: bool): ArgsParse
+        sliceSyntax!?: bool): ArgsParse
     {
         mut flags: Flags;
         mut sliceSyntax_used: bool;
@@ -1948,34 +1946,46 @@ pub fn parse(
         let col00 = _col0;
         //////////////////
 
-        mut first = true;
         for (;;)
         {
-            // EXPERIMENTAL //////////////////////////////////////////
-            //  Trying out the [$T;] syntax for slices.             //
-            if (experimental_sliceAnnots && tryConsume("op", ";"))  //
-            {                                                       //
-                consume("op", endop);                               //
-                break;                                              //
-            }                                                       //
-            //////////////////////////////////////////////////////////
+            mut name = "";
 
             // Comma juggle.
-            if (!first) :COMMA
+            :COMMA
             {
-                if (sliceSyntax)
+                if (sliceSyntax && !sliceSyntax_used)
                 {
-                    // TODO FIX bolting on slice syntax in a backward compatible way
                     let peek = tokens[_idx];
-                    if (peek.kind == "op" && peek.value == ":")
+                    if (peek.kind == "op" && peek.value == "..")
                     {
+                        if (out_args)
+                        {
+                            ref last = out_args.last;
+                            if (last.kind == "argid")
+                                fail();
+
+                            last = createArgID("start", last);
+                            flags |= F_CALL_HAS_NAMED_ARGS;
+                        }
+
+                        _idx++;
                         sliceSyntax_used = true;
+
+                        // This should allow fun stuff like:
+                        //  hello[start .. , step: 2], etc.
+                        //
+                        shadow let peek = tokens[_idx];
+                        if (peek.kind == "op" && peek.value == ",")
+                            _idx++;
+                        else
+                            name = "end";
 
                         break :COMMA;
                     }
                 }
 
-                softComma(:endop);
+                if (out_args)
+                    softComma(:endop);
             }
 
             // Trailing comma -
@@ -1984,7 +1994,6 @@ pub fn parse(
                 break;
 
             // Named arguments.
-            mut name = "";
             mut autoName = false;
             mut optional = false;
 
@@ -1995,7 +2004,11 @@ pub fn parse(
                   ? tok0.col.max(col00)
                   : col00;
 
-            if (tok0.kind == "op" && tok0.value == "?:" && !sliceSyntax)
+            if (name)
+            {
+                // Already set to "end" above.
+            }
+            else if (tok0.kind == "op" && tok0.value == "?:")
             {
                 autoName = true;
                 optional = true;
@@ -2005,22 +2018,8 @@ pub fn parse(
             {
                 autoName = true;
                 _idx += 1;
-
-                if (sliceSyntax && !first && !(flags & F_CALL_HAS_NAMED_ARGS))
-                {
-                    // Open-ended slice syntax alla [start:]
-                    if (tryConsume("op", endop))
-                    {
-                        sliceSyntax_used = true;
-
-                        ref last = out_args.last;
-                        last = createArgID("start", last);
-                        flags |= F_CALL_HAS_NAMED_ARGS;
-                        break;
-                    }
-                }
             }
-            else if (tok0.kind == "id" && !sliceSyntax)
+            else if (tok0.kind == "id")
             {
                 let tok1 = tokens[_idx + 1];
                 if (tok1.kind == "op")
@@ -2036,19 +2035,7 @@ pub fn parse(
             let expr = parseExpression(P_RESET);
 
             if (autoName)
-            {
-                if (sliceSyntax)
-                {
-                    sliceSyntax_used = true;
-
-                    name = "end";
-                    sliceSyntax = false;
-                }
-                else
-                {
-                    name = getAutoName(expr);
-                }
-            }
+                name = getAutoName(expr);
 
             if (name)
                 flags |= F_CALL_HAS_NAMED_ARGS;
@@ -2056,8 +2043,6 @@ pub fn parse(
             out_args.push(
                 name    ? createArgID(name, expr, flags: optional && F_ARGID_IS_OPTIONAL)
                         : expr);
-
-            first = false;
         }
 
         //////////////
@@ -2150,8 +2135,7 @@ pub fn parse(
     fn parseArrayLiteral(): Node
     {
         mut args: Node[];
-        let argFlags = parseCallArgs("]", args,
-            experimental_sliceAnnots: true).flags;
+        let argFlags = parseCallArgs("]", args).flags;
 
         return createArrayLiteral(argFlags, args);
     }
@@ -2169,7 +2153,7 @@ pub fn parse(
         args.unshift(expr);
 
         return createCall(
-            argsParse.sliceSyntax ? "[:]" : "[]",
+            argsParse.sliceSyntax ? "[..]" : "[]",
             argsParse.flags | F_OPERATOR,
             args);
     }

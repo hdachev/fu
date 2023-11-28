@@ -9,7 +9,7 @@ let SR_empty        = "\x00\x00";
 let Region_TEMP     = "\x01" ~ SR_empty;
 let Region_STATIC   = "\x00" ~ SR_empty;
 
-fn parse7bit(str: [byte], ref offset: int)
+fn parse7bit(str: byte[..], ref offset: int)
 {
     mut shift:  u32;
     mut result: u32;
@@ -49,7 +49,7 @@ fn append7bit(ref str: byte[], mut v: u32)
       to optimize each op to directly process the raw bytes.
 */
 
-pub inline fn walkPaths(str: [byte], ref offset, lax tailOK!?: bool,
+pub inline fn walkPaths(str: byte[..], ref offset, lax tailOK!?: bool,
     onPathStart!?,
 
     onSubRegion!?,
@@ -94,7 +94,7 @@ pub inline fn walkPaths(str: [byte], ref offset, lax tailOK!?: bool,
                 ?:flatCount,
                 ?:flatOffset,
 
-                raw_prefix?:    str[path0 : subregion0]);
+                raw_prefix?:    str[path0 .. subregion0]);
 
             if (isLastSubRegion)
             {
@@ -105,7 +105,7 @@ pub inline fn walkPaths(str: [byte], ref offset, lax tailOK!?: bool,
                     ?:flatCount,
                     ?:flatOffset,
 
-                    raw_prefix?:    str[path0 : subregion0]);
+                    raw_prefix?:    str[path0 .. subregion0]);
 
                 break;
             }
@@ -115,7 +115,7 @@ pub inline fn walkPaths(str: [byte], ref offset, lax tailOK!?: bool,
 
         onPathDone(
             isLastPath?:        isLastPath,
-            raw_path?:          str[path0 : offset]);
+            raw_path?:          str[path0 .. offset]);
 
         if (isLastPath)
             break;
@@ -133,7 +133,7 @@ pub inline fn walkPaths(str: [byte], ref offset, lax tailOK!?: bool,
 //
 
 pub lax fn assertPathsValid(
-    lax str: [byte],
+    lax str: byte[..],
     lax mut expect_flatCount = -1,
     lax mut region_flatCount = -1,
     lax flatCountMismatchOK! = false,
@@ -202,7 +202,7 @@ struct SubRegion
 
 type Paths = SubRegion[][];
 
-fn parsePaths_each(str: [byte], each)
+fn parsePaths_each(str: byte[..], each)
 {
     mut path: SubRegion[];
 
@@ -222,7 +222,7 @@ fn parsePaths_each(str: [byte], each)
         });
 }
 
-fn parsePaths(str: [byte]): Paths
+fn parsePaths(str: byte[..]): Paths
 {
     mut paths:      SubRegion[][];
     mut path:       SubRegion[];
@@ -243,7 +243,7 @@ fn parsePaths(str: [byte]): Paths
         });
 }
 
-fn printPaths(str: [byte]): string
+fn printPaths(str: byte[..]): string
 {
     mut result = "";
 
@@ -340,7 +340,7 @@ fn appendPaths(ref str: byte[], paths: Paths,
     }
 
     if (SELF_TEST)
-        str ? assertPathsValid(str[str0 :], :flatCountMismatchOK, :selfIntersectOK)
+        str ? assertPathsValid(str[str0 ..], :flatCountMismatchOK, :selfIntersectOK)
             : emptyOK || BUG("appendPaths: empty output");
 }
 
@@ -361,7 +361,7 @@ fn Paths_union(ref result: SubRegion[][], path: SubRegion[])
         if (SELF_TEST)
             minL || BUG("Paths_union: found an empty path.");
 
-        if (path[: minL - 1] == host[: minL - 1])
+        if (path[.. minL - 1] == host[.. minL - 1])
         {
             let a_sr = host[minL - 1];
             let b_sr = path[minL - 1];
@@ -401,7 +401,7 @@ fn Paths_union(ref result: SubRegion[][], path: SubRegion[])
 
 //
 
-fn Paths_union(ref str: byte[], a: [byte], b: [byte],
+fn Paths_union(ref str: byte[], a: byte[..], b: byte[..],
     flatCountMismatchOK! = false)
 {
     mut result = parsePaths(a);
@@ -412,7 +412,7 @@ fn Paths_union(ref str: byte[], a: [byte], b: [byte],
     str.appendPaths(result, :flatCountMismatchOK);
 }
 
-fn Paths_inter(ref str: byte[], a: [byte], b: [byte])
+fn Paths_inter(ref str: byte[], a: byte[..], b: byte[..])
 {
     if (a.len < b.len)
         return Paths_inter(str, b, a);
@@ -456,8 +456,8 @@ fn Paths_inter(ref str: byte[], a: [byte], b: [byte])
             if (SELF_TEST)
                 inter || BUG("Paths_inter: empty inter, about to append suffix");
 
-            if (a_path.len > b_path.len) inter ~= a_path[b_path.len :];
-            if (b_path.len > a_path.len) inter ~= b_path[a_path.len :];
+            if (a_path.len > b_path.len) inter ~= a_path[b_path.len ..];
+            if (b_path.len > a_path.len) inter ~= b_path[a_path.len ..];
 
             result.Paths_union(inter);
         }
@@ -472,7 +472,7 @@ fn Paths_inter(ref str: byte[], a: [byte], b: [byte])
 
 //
 
-fn Paths_hasInter(a: [byte], b: [byte])
+fn Paths_hasInter(a: byte[..], b: byte[..])
 {
     if (a.len < b.len)
         return Paths_hasInter(b, a);
@@ -520,7 +520,7 @@ pub fn Lifetime_from(locid!: i32, flatCount: i32): Lifetime =
     return Lifetime(:uni0n);
 }
 
-pub fn Lifetime_from(argidx!: i32, paths: [byte]): Lifetime =
+pub fn Lifetime_from(argidx!: i32, paths: byte[..]): Lifetime =
 {
     if (SELF_TEST)
         argidx >= 0 || BUG("Lifetime_from: Bad argidx");
@@ -598,7 +598,7 @@ inline fn merge !<B, L, R, Either, Rest>(
                     else {
                         left_done();
                         if !(Rest -> [])
-                            break :REST r_chars[r_dirty ? r_offset : r_start :];
+                            break :REST r_chars[r_dirty ? r_offset : r_start ..];
                         else
                             l_done = true;
                     }
@@ -615,7 +615,7 @@ inline fn merge !<B, L, R, Either, Rest>(
                     else {
                         right_done();
                         if !(Rest -> [])
-                            break :REST l_chars[l_dirty ? l_offset : l_start :];
+                            break :REST l_chars[l_dirty ? l_offset : l_start ..];
                         else
                             r_done = true;
                     }
@@ -643,8 +643,8 @@ inline fn merge !<B, L, R, Either, Rest>(
                             r_dirty = true;
                             if !(B -> [])
                             {
-                                both(l_chars[l_start : l_paths0],   l_chars[l_paths0 : l_offset],
-                                                                    r_chars[r_paths0 : r_offset],
+                                both(l_chars[l_start .. l_paths0],  l_chars[l_paths0 .. l_offset],
+                                                                    r_chars[r_paths0 .. r_offset],
 
                                      locid?: i32(r & 1 ? 0 : r >> 1));
 
@@ -655,11 +655,11 @@ inline fn merge !<B, L, R, Either, Rest>(
                         {
                             l_dirty = true;
                             if !(Either -> [])
-                                break :EITHER l_chars[l_start : l_offset];
+                                break :EITHER l_chars[l_start .. l_offset];
 
                             if !(L -> [])
                             {
-                                left(l_chars[l_start : l_offset]);
+                                left(l_chars[l_start .. l_offset]);
                                 continue;
                             }
                         }
@@ -667,11 +667,11 @@ inline fn merge !<B, L, R, Either, Rest>(
                         {
                             r_dirty = true;
                             if !(Either -> [])
-                                break :EITHER r_chars[r_start : r_offset];
+                                break :EITHER r_chars[r_start .. r_offset];
 
                             if !(R -> [])
                             {
-                                right(r_chars[r_start : r_offset]);
+                                right(r_chars[r_start .. r_offset]);
                                 continue;
                             }
                         }
@@ -851,10 +851,10 @@ pub fn Lifetime_each(lifetime: Lifetime, each)
             isArgIdx?:  r & 3 == 3,
 
             region?:    Lifetime(uni0n: chars.slice(offset0, offset)),
-            others?:    Lifetime(uni0n: chars[: offset0] ~ chars[offset :]),
+            others?:    Lifetime(uni0n: chars[.. offset0] ~ chars[offset ..]),
 
-            r_raw?:     chars[offset0 : sr],
-            paths?:     chars[sr : offset]);
+            r_raw?:     chars[offset0 .. sr],
+            paths?:     chars[sr .. offset]);
     }
 }
 
@@ -910,7 +910,7 @@ pub fn Lifetime_process(lifetime: Lifetime, each)
                     isTemp?:    r == 1,
                     isArgIdx?:  r & 3 == 3,
 
-                    paths?:     chars[sr : offset]);
+                    paths?:     chars[sr .. offset]);
 
                 continue;
             }
@@ -919,7 +919,7 @@ pub fn Lifetime_process(lifetime: Lifetime, each)
                 result = Lifetime_union(result,
                     Lifetime(uni0n: chars.slice(offset0, offset)));
             else
-                result.uni0n ~= chars[offset0 : offset];
+                result.uni0n ~= chars[offset0 .. offset];
         }
     }
 
@@ -1039,7 +1039,7 @@ inline fn Lifetime_op(lt: Lifetime, each, minPathDepth! = 1)
 
         each(:result, :paths);
 
-        assertPathsValid(result[result0 :], :minPathDepth);
+        assertPathsValid(result[result0 ..], :minPathDepth);
     }
 
     return Lifetime(uni0n: result);
@@ -1096,7 +1096,7 @@ pub fn Lifetime_op_deref(lt: Lifetime, flatCount!deref_flatCount: i32)
     });
 }
 
-pub fn Lifetime_op_join(lt: Lifetime, child: [byte])
+pub fn Lifetime_op_join(lt: Lifetime, child: byte[..])
 {
     return lt.Lifetime_op(|paths!parent, ref result|
     {

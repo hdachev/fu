@@ -7,7 +7,7 @@ inline fn xorshift32(mut x: u32)
     return x;
 }
 
-pub fn shuffle(ref arr: [T], ref seed?: u32)
+pub fn shuffle(ref arr: T[..], ref seed?: u32)
 {
     seed ||= arr.len.u32;
 

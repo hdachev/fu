@@ -83,11 +83,11 @@ fn hash(ref res: TEA, v: u32)
     res.r16();
 }
 
-fn hash(ref res: TEA, u8view: [byte])
+fn hash(ref res: TEA, u8view: byte[..])
 {
     // First off, a view over most of the array as u32s.
     let u32len  = u8view.len & ~3;
-    let u32view = u8view[: u32len].view(u32);
+    let u32view = u8view[.. u32len].view(u32);
 
     // First, tuples.
     for (mut i = 1; i < u32view.len; i += 2)
@@ -172,21 +172,21 @@ fn digest16(mut v.u64: u64, mut chars!?: int): string
 
 // Shorthands.
 
-fn hash(u8view: [byte])
+fn hash(u8view: byte[..])
 {
     mut res: TEA;
     res.hash(u8view);
     return res;
 }
 
-fn hash62(str: [byte], chars = 11): string
+fn hash62(str: byte[..], chars = 11): string
 {
     mut res: TEA;
     res.hash(str);
     return res.digest62(:chars);
 }
 
-fn hash16(str: [byte], chars = 16): string
+fn hash16(str: byte[..], chars = 16): string
 {
     mut res: TEA;
     res.hash(str);
