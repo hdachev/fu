@@ -6975,6 +6975,40 @@ pub extern fn runTests()
         }
     `);
 
+    TODO_borrowck(currently: "BUG exit code", `
+        fn incr_out(ref out: i32[][], a: i32[], b: i32[]) {
+            out ~= a;
+            out ~= b;
+        }
+
+        fn incr_state(ref state: i32[]) {
+            state ~= state.len;
+            return state;
+        }
+
+        fn bck_discards_its_edits_to_defer_nodes(
+            ref out: i32[][], ref state: i32[])
+        {
+            incr_out        (:out, incr_state(state), incr_state(state));
+            defer incr_out  (:out, incr_state(state), incr_state(state));
+            return out;
+        }
+
+        fn main() {
+            mut state = [ 0, 1, 2, 3, 4, 5, 6, 7, 8 ];
+            mut out: i32[][];
+            bck_discards_its_edits_to_defer_nodes(:out, :state);
+
+            mut result = 0;
+            for (mut i = 0; i < out.len; i++) {
+                let item = out[i];
+                result += item.len << ((3 - i) * 4);
+            }
+
+            return result.u32 == 0xabcd ? 0 : 1;
+        }
+    `);
+
     // /Borrow checker
 
 
