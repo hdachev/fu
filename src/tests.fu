@@ -6933,7 +6933,7 @@ pub extern fn runTests()
         }
     `);
 
-    TODO_borrowck(currently: "BUG exit code", `
+    ZERO(`
         struct TokenIdx { modid: i32 }
         struct SolverState { _solver_safety: int }
 
@@ -6971,7 +6971,7 @@ pub extern fn runTests()
         }
     `);
 
-    TODO_borrowck(currently: "BUG exit code", `
+    ZERO(`
         struct TokenIdx { modid: i32 }
         struct SolverState { _solver_safety: int }
 

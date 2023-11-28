@@ -304,6 +304,9 @@ pub fn solve(
         //  so we can update it together with overload.type,
         //   otherwise they get out of sync = sadness follows.
         rev_spec_proto?:    RevSpecPrototype;
+
+        //
+        TODO_FIX_bckCantDealWithNestedDefers?: i32;
     };
 
     struct ChildTarget
@@ -12393,6 +12396,9 @@ pub fn solve(
         {
             mut defers: i32[];
 
+            let TODO_FIX_nesteDefers0 =
+                _current_fn.TODO_FIX_bckCantDealWithNestedDefers;
+
             // Regular items forward.
             ref items = node.items;
             for (mut i = 0; i < items.len; i++)
@@ -12400,6 +12406,22 @@ pub fn solve(
                 ref stmt = items[i];
                 if (stmt.kind == "defer")
                 {
+                    if (!defers && node.helpers.target != _current_fn.target)
+                    {
+                        // See bck_jump -
+                        //  if we're jumping through a nested defer
+                        //   the current impl will lose track of invalidations & co.
+                        //
+                        // The problem is that defers have multiple entry points
+                        //  which aren't really structured -
+                        //
+                        // There's a chance that if we were to borrow check BACKWARDS,
+                        //  e.g. merge bck into relax(MUT),
+                        //   this wouldn't be an actual problem, not sure though.
+                        //
+                        _current_fn.TODO_FIX_bckCantDealWithNestedDefers++;
+                    }
+
                     defers ~= i;
 
                     if (SELF_TEST && stmt.is_never)
@@ -12434,6 +12456,9 @@ pub fn solve(
                 bck_node(
                     node.items[defers[i]]
                         .items.only);
+
+            _current_fn.TODO_FIX_bckCantDealWithNestedDefers =
+                TODO_FIX_nesteDefers0;
         }
 
 
@@ -12505,10 +12530,10 @@ pub fn solve(
                     else
                         node.helpers.postevt = _current_fn.events.snap;
 
-                    //
-                    _current_fn.events.Events_restore(
-                        [], :node.helpers.postdom.parent_loop_start || BUG(
-                            "bck_node(jump): helpers.postdom.parent_loop_start not set."));
+                    if (!_current_fn.TODO_FIX_bckCantDealWithNestedDefers)
+                        _current_fn.events.Events_restore(
+                            [], :node.helpers.postdom.parent_loop_start || BUG(
+                                "bck_node(jump): helpers.postdom.parent_loop_start not set."));
                 }
             }
             else if (k == "pragma")
