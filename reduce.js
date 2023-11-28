@@ -540,28 +540,62 @@ function tryPopIfWhileCond(src)
 
 //
 
+const re_SHORT_CIRCUIT_FN = /  (fn [a-zA-Z0-9_]+\()([^)]+)(\)\s*\{)(\s+)/g;
+
+function tryShortCircuitFn(src)
+{
+    const match = randExec(src, re_SHORT_CIRCUIT_FN);
+    if (!match)
+        return false;
+
+    console.log("\nSHORT_CIRCUIT_FN\n<<<" + match[0] + ">>>");
+
+    let head = match[1];
+    let args = match[2];
+    let tail = match[3];
+    let indent = match[4];
+
+    head = "  lax " + head;
+    args = args.split(/,\s*/).map(i => i.startsWith("lax ") ? i : "lax " + i);
+    tail = tail + indent + "return [];" + indent;
+
+    let replacement = head + args + tail;
+
+    console.log("\nSHORT_CIRCUIT_FN\n<<<" + match[0] + ">>>\n<<<" + replacement + ">>>");
+
+    return (
+        src.slice(0, match.index) +
+        head + args + tail +
+        src.slice(match.index + match[0].length));
+}
+
+
+//
+
 const _strategies =
 [
+    tryShortCircuitFn,
+
     tryRemoveFn,
     tryRemoveFlow,
     tryRemoveLet,
     tryRemoveMisc,
 
-    tryPopElse,
-    tryReturnDefinit,
-
     tryCutLines,
     tryCutLineGroup,
 
+    tryPopElse,
+    tryReturnDefinit,
     tryUnwrapSingleStmtBlock,
+    tryPopSingleStmtControl,
+    tryPopIfWhileCond,
+
+    tryPopArgumentTypeAnnot,
+    tryPopArgumentLike,
 
     tryPopLeadingAndOr,
     tryPopTailingAndOr,
-    tryPopArgumentTypeAnnot,
-    tryPopArgumentLike,
-    tryPopSingleStmtControl,
     tryMergeStringLiterals,
-    tryPopIfWhileCond,
 ];
 
 function main()
