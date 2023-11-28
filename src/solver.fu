@@ -116,7 +116,7 @@ pub fn solve(
     struct EventsSnap
     {
         // Writes invalidate subsequent reads -
-        invalidated_by:     WriteID[][];
+        invalidated_by:     set::Set(WriteID)[];
     };
 
     struct PrecedingRefArg
@@ -152,7 +152,7 @@ pub fn solve(
 
     fn Events_merge(ref events: EventsSnap, snap: EventsSnap)
     {
-        fn Events_merge(ref dest: $T[], src: $T[])
+        fn Events_merge(ref dest: set::Set($T)[], src: set::Set($T)[])
         {
             if (dest.len < src.len)
                 dest.grow(src.len);
@@ -160,7 +160,7 @@ pub fn solve(
             for (mut i = 0; i < src.len; i++) {
                 shadow let src = src[i];
                 if (src)
-                    dest[i].set::add(src);
+                    dest[i].add(src);
             }
         }
 
@@ -248,8 +248,8 @@ pub fn solve(
     {
         // Reference graph.
         rg_parents:     Lifetime[];
-        rg_invalidates: Lifetime[];     // Non-disjoint siblings and children.
-        rg_children:    i32[][];        // Used by validateCOW
+        rg_invalidates: Lifetime[];         // Non-disjoint siblings and children.
+        rg_children:    set::Set(i32)[];    // Used by validateCOW
 
         // Arguments at risk.
         at_soft_risk:   bitset::BitSet[];
@@ -257,7 +257,7 @@ pub fn solve(
 
         // AAR: helpers.
         is_arg:         bitset::BitSet;
-        arg_parents:    i32[][];
+        arg_parents:    set::Set(i32)[];
         arg_targets:    i32[];
     };
 
@@ -272,7 +272,7 @@ pub fn solve(
 
         using flow?:        Flow;
 
-        far_jumps?:         i32[];
+        far_jumps?:         set::Set(i32);
         using effects?:     Effects;
         using events?:      Events;
         autoshadow_ok!:     i32;
@@ -295,7 +295,7 @@ pub fn solve(
         using postdom?:     Postdom;
 
         //
-        TODO_FIX_children?: i32[][];
+        TODO_FIX_children?: set::Set(i32)[];
 
         //
         TODO_FIX_unique?:   i32;
@@ -369,13 +369,13 @@ pub fn solve(
 
         spec_extras?:       SpecExtras;
 
-        callers?:           i32[];
-        calls?:             i32[];
+        callers?:           set::Set(i32);
+        calls?:             set::Set(i32);
 
         children?:          ChildTarget[];
         specs?:             map::Map(string, Target); // mangle -> spec;
 
-        far_jumps?:         i32[];
+        far_jumps?:         set::Set(i32);
 
         rev_spec?:          ReverseSpecialization;
     };
@@ -412,7 +412,7 @@ pub fn solve(
         _ss:                ScopeSkipMemos;
         _field_items:       ScopeItem[];
         _field_implicits:   ScopeItem[];
-        _pub_imports:       i32[];
+        _pub_imports:       set::Set(i32);
         _helpers_data:      HelpersData[];
         _ephemeral:         Ephemeral[];
 
@@ -2854,7 +2854,7 @@ pub fn solve(
 
     fn SLOW_type_maybeInside(host!: ValueType, guest!: ValueType, guest_non_triv_mask!: u64)
     {
-        mut seen: StructCanon[];
+        mut seen: set::Set(StructCanon);
 
         fn type_maybeInside(shadow host: ValueType)
         {
@@ -5100,17 +5100,17 @@ pub fn solve(
 
         // Disconnect.
         let calls = steal(target.EPH_mut.calls);
-        for (mut i = 0; i < calls.len; i++)
+        calls.each: |callee| // TODO FIX autocall .localfn doesn't resolve
         {
-            let callee = localfn(index: calls[i]);
+            shadow let callee = localfn(callee);
             callee.EPH_mut.callers.set::rem(target.globid)
                 || BUG("resetChild: Missing in callers on " ~ callee);
         }
 
         let callers = steal(target.EPH_mut.callers);
-        for (mut i = 0; i < callers.len; i++)
+        callers.each: |caller| // TODO, autocall .localfn doesn't resolve
         {
-            let caller = localfn(index: callers[i]);
+            shadow let caller = localfn(caller);
             caller.EPH_mut.calls.set::rem(target.globid)
                 || BUG("resetChild: Missing in calls on " ~ caller);
         }
@@ -5662,7 +5662,7 @@ pub fn solve(
         }
 
         //
-        mut mangles: string[];
+        mut mangles: set::Set(string);
         mut currentSpec = SPECFAIL_RentrySafety;
 
         fn resetSpec(spec: Target, allowReplaceNonSpecfails?: bool)
@@ -6776,7 +6776,7 @@ pub fn solve(
 
         asserts & A_NOFLOW && _current_fn.far_jumps && fail(
             target ~ " is not noflow: contains non-local control flow, jumping out to "
-                ~ localfn(index: _current_fn.far_jumps.first) ~ ".");
+                ~ localfn(index: _current_fn.far_jumps.keys_asc.first) ~ ".");
 
         if (maybeLast && !mustBecomeInline)
             numArgsWritten || ext.fx_mask
@@ -7192,7 +7192,7 @@ pub fn solve(
 
         // Struct fields only.
         mut structConverts: Target[];
-        mut structImports:  i32[];
+        mut structImports:  set::Set(i32);
 
         mut non_triv_reason = !instType.is_rx_copy && -1;
 
@@ -8740,7 +8740,7 @@ pub fn solve(
         mut shadow = false;
         mut result: Target[];
 
-        mut unique: Target[];
+        mut unique: set::Set(Target);
 
         // Visit local scope.
         fn visitScope(shadow local_scope!: bool, items?: ScopeItem[..])
@@ -11735,13 +11735,15 @@ pub fn solve(
                 let u = events.invalidated_by[target];
                 if (u)
                 {
-                    if (AAR ? !RESOLVE_byAAR(read: target, writes: u, trySoft: true /* F_REF check inside */)
+                    if (AAR ? !RESOLVE_byAAR(read: target, writes: u.keys_asc, trySoft: true /* F_REF check inside */)
                             : !RESOLVE_byMutvar(target))
                     {
+                        let first = u.keys_asc.first;
+
                         fail("Cannot access"
-                            ~ " " ~        target.nested ~ ", reference invalidated by write to"
-                            ~ " " ~ u.first.locid.nested ~ " at "
-                            ~ RWEvent_stack(u.first));
+                            ~ " " ~ target.nested ~ ", reference invalidated by write to"
+                            ~ " " ~ first.locid.nested ~ " at "
+                            ~ RWEvent_stack(first));
                     }
 
                     if (OPTI_bck)
@@ -11925,8 +11927,7 @@ pub fn solve(
                     if (BCK)
                     {
                         // BCK only needs a single event to do its thing.
-                        if (!set)
-                            set ~= writeID;
+                        set.keys_asc ||= [ writeID ];
                     }
                     else
                     {
@@ -13464,7 +13465,7 @@ pub fn solve(
         ref name_counts!:   map::Map(string, u32))
     {
         mut already_hashing:    Target[];
-        mut cycle_participants: Target[];
+        mut cycle_participants: set::Set(Target);
 
         fn hash(ref hash: tea::TEA, type: Type)
         {
@@ -13676,8 +13677,8 @@ pub fn solve(
         //   because of the XOR before the shuffle
         //    it basically reset the hash default-init.
         //
-        for (mut i = 0; i < cycle_participants.len; i++)
-            EXT_mut(cycle_participants[i]).sighash.hash(cycle_root_hash);
+        cycle_participants.each: |target|
+            EXT_mut(target).sighash.hash(cycle_root_hash);
 
         // for (mut i = 0; i < cycle_participants.len; i++)
         // {
@@ -13841,6 +13842,6 @@ pub fn solve(
             scope: Scope_exports(_scope, :module.modid,
                 field_items:        _field_items,
                 field_implicits:    _field_implicits,
-                pub_imports:        _pub_imports));
+                pub_imports:        _pub_imports.keys_asc));
     }
 }

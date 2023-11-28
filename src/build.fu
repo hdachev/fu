@@ -352,11 +352,11 @@ pub fn build(
     ////   but I'd like us to have something that
     ////    just-works for the simplest things like your local glfw.
     ////
-    mut HACK_linkFlags:         string[];
-    mut HACK_pkgConfig_libs:    string[];
+    mut HACK_linkFlags:         set::Set(string);
+    mut HACK_pkgConfig_libs:    set::Set(string);
     mut HACK_pkgConfig_cflags:  string[];
 
-    mut HACK_include_dirs:      string[];
+    mut HACK_include_dirs:      set::Set(string);
 
     for (mut i = 0; i < modules.len; i++)
     {
@@ -396,11 +396,11 @@ pub fn build(
     }
 
     let INCLUDE = (flags_cc && " " ~ flags_cc.join(' ')) ~ " -I " ~ fudir ~ "include"
-                ~ (HACK_include_dirs && " -I " ~ HACK_include_dirs.join(" -I "));
+                ~ (HACK_include_dirs && " -I " ~ HACK_include_dirs.keys_asc.join(" -I "));
 
     let LIBS = (flags_ld && " " ~ flags_ld.join(' '))
-             ~ (HACK_linkFlags      && " "                     ~ HACK_linkFlags.join(" "))
-             ~ (HACK_pkgConfig_libs && " $(pkg-config --libs " ~ HACK_pkgConfig_libs.join(" ") ~ ")");
+             ~ (HACK_linkFlags      && " "                     ~ HACK_linkFlags.keys_asc.join(" "))
+             ~ (HACK_pkgConfig_libs && " $(pkg-config --libs " ~ HACK_pkgConfig_libs.keys_asc.join(" ") ~ ")");
     ////
     ////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////

@@ -89,7 +89,7 @@ struct Struct
 
     target?:        Target;
     items?:         ScopeItem[];
-    imports?:       i32[];
+    imports?:       set::Set(i32);
     converts?:      Target[];
 
     // Size & co.
@@ -131,9 +131,9 @@ struct CodegenOutput
     using src:  string;
 
     // Libraries and such.
-    link?:              string[];
-    include_dirs?:      string[];
-    extra_sources?:     string[];
+    link?:              set::Set(string);
+    include_dirs?:      set::Set(string);
+    extra_sources?:     set::Set(string);
 
     // Live exports.
     live?:              i32[];

@@ -1,8 +1,31 @@
 
-fn bfind(keys: $T[..], item: $T, hit, miss)
+pub fn Set(type T) = struct {
+    keys_asc!: T[];
+};
+
+
+// TODO FIX using instead,
+//  currently won't resolve for templates.
+//
+// NOTE - these are actually const -
+//  we don't want to expose keys_asc for external mutation,
+//   because that'd break sort order.
+//
+// So ideally, we'd be using keys_asc,
+//  but it'd be "file-protected" or whatever we decide to call
+//   read-from-anywhere, but write-only-from-this-file.
+//
+pub inline fn   [](using _: Set($T), i: int) keys_asc[i];
+pub inline fn  len(using _: Set($T)) keys_asc.len;
+pub inline fn each(using _: Set($T), each) keys_asc.each(fn each);
+
+
+//
+
+fn bfind(keys_asc!: $T[..], key: $T, hit, miss)
 {
     mut lo = 0;
-    mut hi = keys.len;
+    mut hi = keys_asc.len;
 
     // TODO if $T is primitive -
     //  use a linear search when hi - lo < 16 or something.
@@ -13,7 +36,7 @@ fn bfind(keys: $T[..], item: $T, hit, miss)
     {
         let i   = (hi + lo) >> 1;
 
-        let cmp = keys[i] <> item;
+        let cmp = keys_asc[i] <> key;
         if (cmp == 0)
             return hit(i);
 
@@ -31,9 +54,9 @@ fn bfind(keys: $T[..], item: $T, hit, miss)
     return miss(lo);
 }
 
-pub fn has(keys: $T[..], item: $T)
+pub fn has(using _: Set($T), key: $T)
 {
-    bfind(:keys, :item,
+    bfind(:keys_asc, :key,
 
     hit: |_| {
         return true;
@@ -44,75 +67,63 @@ pub fn has(keys: $T[..], item: $T)
     });
 }
 
-pub fn add(mut ref keys: $T[], item: $T)
+pub fn add(using mut ref _: Set($T), key: $T)
 {
-    bfind(:keys, :item,
+    bfind(:keys_asc, :key,
 
     hit: |_| {
         return false;
     },
 
     miss: |i| {
-        keys.insert(i, item);
+        keys_asc.insert(i, key);
         return true;
     });
 }
 
-// pub fn add_once(ref keys: $T[], item: $T, ref extras: $U[], inline extra: $U)
-// {
-//     bfind(:keys, :item,
-//
-//     hit: |_| {
-//         return false;
-//     },
-//
-//     miss: |i| {
-//         keys.insert(i, item);
-//         extras.insert(i, extra);
-//         return true;
-//     });
-// }
-
-pub fn update(ref keys:   $K[], item:  $K,
-              ref extras: $V[], extra: $V)
+pub fn update(using mut ref _: Set($K),   key:  $K,
+                        ref values: $V[], value: $V)
 {
-    bfind(keys, :item,
+    bfind(:keys_asc, :key,
 
     hit: |i| {
-        extras[i] = extra;
+        values[i] = value;
         return false;
     },
 
     miss: |i| {
-        keys.insert(i, item);
-        extras.insert(i, extra);
+        keys_asc.insert(i, key);
+        values.insert(i, value);
         return true;
     });
 }
 
-pub fn ref(ref keys: $K[], item: $K, ref extras: $V[])
+pub fn ref(using ref _: Set($K), key: $K,
+                 ref values: $V[])
 {
-    let idx = bfind(keys, :item,
+    let idx = bfind(:keys_asc, :key,
 
     hit: |i| {
         break i;
     },
 
     miss: |i| {
-        keys.insert(i, item);
-        extras.insert(i, []);
+        keys_asc.insert(i, key);
+        values.insert(i, []);
         break i;
     });
 
-    return extras[idx];
+    return values[idx];
 }
 
-pub fn if_ref(ref keys: $K[..], item: $K, extras: $V[..], visit)
+pub fn if_ref(using ref _: Set($K), key: $K,
+                    ref values: $V[..],
+                        visit)
 {
-    bfind(keys, :item,
+    bfind(:keys_asc, :key,
 
     hit: |i| {
-        visit(extras[i]);
+        visit(values[i]);
         return true;
     },
 
@@ -121,12 +132,13 @@ pub fn if_ref(ref keys: $K[..], item: $K, extras: $V[..], visit)
     });
 }
 
-pub fn get(keys: $K[..], item: $K, extras: $V[..])
+pub fn get(using ref _: Set($K), key: $K,
+                 ref values: $V[..])
 {
-    bfind(:keys, :item,
+    bfind(:keys_asc, :key,
 
     hit: |i| {
-        return extras[i];
+        return values[i];
     },
 
     miss: |_| {
@@ -134,12 +146,12 @@ pub fn get(keys: $K[..], item: $K, extras: $V[..])
     });
 }
 
-pub fn rem(ref keys: $K[], item: $K)
+pub fn rem(using mut ref _: Set($K), key: $K)
 {
-    bfind(:keys, :item,
+    bfind(:keys_asc, :key,
 
     hit: |i| {
-        keys.splice(i, 1);
+        keys_asc.splice(i, 1);
         return true;
     },
 
@@ -152,7 +164,7 @@ pub fn rem(ref keys: $K[], item: $K)
 // TODO instead of this,
 //  make sure each item is moved exactly once.
 
-pub fn add(mut ref a: $T[], b: $T[..])
+pub fn add(mut ref a.keys_asc: $T[], b.keys_asc: $T[..])
 {
     mut x = 0;
     mut y = 0;
@@ -178,7 +190,7 @@ pub fn add(mut ref a: $T[], b: $T[..])
         a ~= b[y ..];
 }
 
-pub fn keep(mut ref a: $T[], b: $T[..])
+pub fn keep(mut ref a.keys_asc: $T[], b.keys_asc: $T[..])
 {
     mut x = 0;
     mut y = 0;
@@ -205,7 +217,7 @@ pub fn keep(mut ref a: $T[], b: $T[..])
     return a;
 }
 
-pub fn rem(mut ref a: $T[], b: $T[..])
+pub fn rem(mut ref a.keys_asc: $T[], b.keys_asc: $T[..])
 {
     mut x = 0;
     mut y = 0;
@@ -232,7 +244,7 @@ pub fn rem(mut ref a: $T[], b: $T[..])
 
 // The new thing potentially.
 
-fn merge(l: $T[..], r: $T[..], left, right, both)
+fn merge(l.keys_asc: $T[..], r.keys_asc: $T[..], left, right, both)
 {
     mut li = 0;
     mut ri = 0;
@@ -268,7 +280,7 @@ fn merge(l: $T[..], r: $T[..], left, right, both)
     }
 }
 
-fn merge(l: $T[..], r: $T[..], left_or_both, right)
+fn merge(l.keys_asc: $T[..], r.keys_asc: $T[..], left_or_both, right)
 {
     mut li = 0;
     mut ri = 0;
@@ -305,7 +317,7 @@ fn merge(l: $T[..], r: $T[..], left_or_both, right)
 
 //
 
-pub fn has_inter(l: $T[..], r: $T[..])
+pub fn has_inter(l: Set($T), r: Set($T))
 {
     merge(l, r,
         left: |_| {}, right: |_| {},
@@ -314,13 +326,13 @@ pub fn has_inter(l: $T[..], r: $T[..])
     return false;
 }
 
-pub fn inter(l: $T[], r: $T[])
+pub fn inter(l: Set($T), r: Set($T))
 {
     // First, we'll try to return a copy of left -
     //  can't do that if its the longer of the two,
     //   so we flip args.
     //
-    if (r.len < l.len)
+    if (r.keys_asc.len < l.keys_asc.len)
         return inter(r, l);
 
     mut result: $T[];
@@ -348,15 +360,15 @@ pub fn inter(l: $T[], r: $T[])
             result ~= item;
     });
 
-    return useResult ? result : l;
+    return useResult ? Set(keys_asc: result) : l;
 }
 
-pub fn union(l: $T[], r: $T[])
+pub fn union(l: Set($T), r: Set($T)): Set($T)
 {
     // Same as above, but flipped,
     //  we want left to be the longer of the two.
     //
-    if (r.len > l.len)
+    if (r.keys_asc.len > l.keys_asc.len)
         return union(r, l);
 
     mut result: $T[];
@@ -374,16 +386,16 @@ pub fn union(l: $T[], r: $T[])
     {
         if (!useResult) {
             useResult = true;
-            result ~= l[.. left];
+            result ~= l.keys_asc[.. left];
         }
 
         result ~= item;
     });
 
-    return useResult ? result : l;
+    return useResult ? [ keys_asc: result ] : l;
 }
 
-pub fn diff(remove: $T[], from: $T[])
+pub fn diff(remove: Set($T), from: Set($T)): Set($T)
 {
     mut result: $T[];
     mut useResult = false;
@@ -404,13 +416,13 @@ pub fn diff(remove: $T[], from: $T[])
             result ~= item;
     });
 
-    return useResult ? result : from;
+    return useResult ? [ keys_asc: result ] : from;
 }
 
 
 //
 
-pub fn misses_some(l: $T[..], from!: $T[..])
+pub fn misses_some(l: Set($T), from!: Set($T))
 {
     merge(l, from,
         left: |_| {}, right: |_| { return true; },

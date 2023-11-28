@@ -136,8 +136,8 @@ pub fn parse(
     mut _TODO_FIX_dollarOk  = false;
 
     mut _numDollars         = 0;
-    mut _expectedTypeParams: string[];
-    mut _upstreamTypeParams: string[];
+    mut _expectedTypeParams: set::Set(string);
+    mut _upstreamTypeParams: set::Set(string);
 
 
     //
@@ -1005,8 +1005,7 @@ pub fn parse(
         }
 
         /////////////////////////
-        mut expectedTypedParams0: string[];
-        swap      (expectedTypedParams0, _expectedTypeParams);
+        mut expectedTypedParams0 = _expectedTypeParams.steal();
         defer swap(expectedTypedParams0, _expectedTypeParams);
 
         tryParseTypeParamsDecl();
@@ -1158,7 +1157,7 @@ pub fn parse(
 
         //
         mut TODO_FIX_didInitArgTypeParams = false;
-        mut withArgTypeParams: string[];
+        mut withArgTypeParams: set::Set(string);
 
         //
         if (!expr && tryConsume("id", "case"))

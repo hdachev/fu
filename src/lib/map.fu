@@ -27,46 +27,57 @@ struct Map(K, V)
 */
 
 struct Map(type K, type V) {
-    keys: K[];
+    keys: set::Set(K);
     vals: V[];
-};
+}
 
-fn has(using ref _: Map($K, $V), key: $K): bool =
-    set::has(keys, key);
+fn has(using ref _: Map($K, $V), key: $K): bool {
+    set::has(keys, key)
+}
 
-fn get(using ref _: Map($K, $V), key: $K): $V =
-    set::get(keys, key, vals);
+fn get(using ref _: Map($K, $V), key: $K): $V {
+    set::get(keys, key, vals)
+}
 
-fn each(using ref _: Map($K, $V), fn)
+fn each(using ref _: Map($K, $V), fn) {
     for (mut i = 0; i < vals.len; i++) {
-        let key = keys[i];  // <------ This means to prevent bind-by-mutref here.
-        fn(vals[i], ?:key);         //  Not great, maybe we need a `ref ` kw at callsites like in c#,
-    }                               //   it'd work as `&mut ` in rust if possible, still mut-generic.
+        let key = keys.keys_asc[i]; // <- Going through a let here prevents bind-by-mutref.
+        fn(vals[i], ?:key);         //
+    }                               // Not great, maybe we need a `ref ` kw-prefix
+}                                   //  at callsites like in c#,
+                                    //   it'd work as `&mut ` in rust if possible,
+                                    //    still mut-generic.
                                     //
                                     // Wonder what that means for . notation though.
+                                    //  What's happening in rust is, they make an exception.
+                                    //   Method-invocation via . notation exception
+                                    //    triggers what they call an "auto-deref",
+                                    //     which basically is it's special thing.
                                     //
-                                    // Alternatively,
-                                    //  typing the fn(ref key: $K, val: $V)
-                                    //   would also do the trick, probably way cleaner.
+                                    // POSSIBLE SOLUTION (FN-TYPES):
+                                    //
+                                    // Typing the fn(const key: $K, ref val: $V)
+                                    //  would also do the trick, probably way cleaner.
 
-//
-
-fn set(using mut ref _: Map($K, $V), key: $K, value: $V): bool =
+fn set(using mut ref _: Map($K, $V), key: $K, value: $V): bool {
     set::update(
         keys, key,
-        vals, value);
+        vals, value)
+}
 
-fn ref(using mut ref _: Map($K, $V), key: $K)
+fn ref(using mut ref _: Map($K, $V), key: $K): $V {
     set::ref(
         keys, key,
-        vals);
+        vals)
+}
 
-fn if_ref(using mut ref _: Map($K, $V), key: $K, visit)
+fn if_ref(using mut ref _: Map($K, $V), key: $K, visit): void {
     set::if_ref(
         keys, key,
-        vals, fn visit);
+        vals, fn visit)
+}
 
-fn clear(using mut ref _: Map($K, $V)) {
+fn clear(using mut ref _: Map($K, $V)): void {
     keys.clear();
     vals.clear();
 }

@@ -64,20 +64,20 @@ pub fn cpp_codegen(
     nocopy struct Outputs
     {
         // #include ...
-        _libs:              string[];
+        _libs:              set::Set(string);
 
         // diagnostics
-        _gcc_ignore:        string[];
+        _gcc_ignore:        set::Set(string);
 
         // static pragma emit
         _top_emits:         string;
 
         // struct fwd decls
-        _tfwd:              StructCanon[];
+        _tfwd:              set::Set(StructCanon);
         _tfwd_src:          string;
 
         // fn fwd decls
-        _ffwd:              Target[];
+        _ffwd:              set::Set(Target);
         _ffwd_src:          string;
 
         _ffwd_live_client:  string;
@@ -90,8 +90,8 @@ pub fn cpp_codegen(
         _tdef_stack:        StructDecl[];
 
         // fn definitions
-        _fdef_started:      Target[];
-        _fdef_complete:     Target[];
+        _fdef_started:      set::Set(Target);
+        _fdef_complete:     set::Set(Target);
         _fdef:              string;
 
         // misc garbage
@@ -99,9 +99,9 @@ pub fn cpp_codegen(
         _hasMain:           i32;
 
         // experimentals
-        HACK_link:          string[];
-        HACK_include_dirs:  string[];
-        HACK_extra_sources: string[];
+        HACK_link:          set::Set(string);
+        HACK_include_dirs:  set::Set(string);
+        HACK_extra_sources: set::Set(string);
 
         // live
         _live_targets:      i32[];
@@ -110,7 +110,7 @@ pub fn cpp_codegen(
         _defects:           CGDefects;
 
         //
-        _TODO_FIX_seenFns:  string[];
+        _TODO_FIX_seenFns:  set::Set(string);
     };
 
     let using mut outputs: Outputs;
@@ -537,7 +537,7 @@ pub fn cpp_codegen(
     //
 
     fn collectDedupes(
-        mut values: string[],
+        mut values: set::Set(string),
         prefix?: string, suffix = "\n",
         header?: string, footer = "\n"): string
     {
