@@ -3,12 +3,12 @@
 #include <fu/int.h>
 #include <fu/str.h>
 #include <fu/vec.h>
+#include <algorithm>
 #include <fu/view.h>
 #include <fu/defer.h>
 #include <fu/never.h>
 #include <fu/print.h>
 #include <fu/decstr.h>
-#include <fu/default.h>
 #include <fu/vec/find.h>
 #include <fu/vec/slice.h>
 #include <fu/vec/concat.h>
@@ -35,6 +35,7 @@ struct s_ModuleOutputs;
 struct s_Struct;
 struct s_Target;
 struct s_ScopeItem;
+struct s_Shape;
 struct s_SolverOutput;
 struct s_SolvedNode;
 struct s_Helpers;
@@ -51,12 +52,14 @@ struct s_BitSet;
 struct s_COWInside;
 typedef fu::u8 s_ExitPaths;
 struct s_Template;
+struct s_TEA;
 typedef uint16_t s_FxMask;
 typedef int s_SolverNotes;
 struct s_CodegenOutput;
 typedef fu::u8 s_CGDefects;
 struct s_ModuleStats;
 struct s_ModuleStat;
+struct s_Profile;
 struct s_Map_iIYL7rECCBg;
 struct s_Options;
 struct s_Lint;
@@ -64,12 +67,12 @@ typedef fu::u8 s_DevOptions;
 struct s_TestDiffs;
 typedef fu::u8 s_DEV_OnFail;
 void compile_adoKzaAQ(const fu::str&, s_Context&, const s_Options&);
-s_Context ZERO_nyNhVYvN(fu::vec<fu::str>&&, const s_Options&, s_TestDiffs&);
+s_Context ZERO_nyNhVYvN(fu::vec<fu::str>&&, s_Options&&, s_TestDiffs&);
 fu::str lower_MpX0JQTu(fu::str&&);
-static bool check_7jUeMifY(const fu::str&, fu::view<char>);
+static bool check_XUXAGncz(const fu::str&, fu::view<char>);
 fu::str qBAD_3PsDzMvu(const fu::str&);
 void set_next_lHORuDVk(s_TestDiffs&, const fu::str&, const fu::str&);
-void build_DaUeZzJn(fu::str&&, fu::view<char>, fu::str&&, fu::str&&, fu::str&&, fu::str&&, fu::str&&, fu::view<char>, fu::view<char>, s_DEV_OnFail, bool, bool, bool, bool, fu::view<fu::str>, fu::view<fu::str>, const s_Context&);
+void build_dvjTrKQM(fu::str&&, fu::view<char>, fu::str&&, fu::str&&, fu::str&&, fu::str&&, fu::str&&, fu::view<char>, fu::view<char>, s_DEV_OnFail, bool, bool, bool, bool, fu::view<fu::str>, fu::view<fu::str>, const s_Context&);
 fu::str qID_3PsDzMvu(const fu::str&);
 fu::str inspect_SOTjKmcd(const s_Module&);
 fu::str strip_MUF5RZQ8(fu::view<char>);
@@ -89,61 +92,60 @@ enum s_kind: fu::u8
     s_kind_char = 8u,
     s_kind_str = 9u,
     s_kind_bool = 10u,
-    s_kind_copy = 11u,
-    s_kind_move = 12u,
-    s_kind_arrlit = 13u,
-    s_kind_definit = 14u,
-    s_kind_empty = 15u,
-    s_kind_not = 16u,
-    s_kind_call = 17u,
-    s_kind_argid = 18u,
-    s_kind_root = 19u,
-    s_kind_block = 20u,
-    s_kind_if = 21u,
-    s_kind_or = 22u,
-    s_kind_and = 23u,
-    s_kind_loop = 24u,
-    s_kind_jump = 25u,
-    s_kind___far_jump = 26u,
-    s_kind_defer = 27u,
-    s_kind_try = 28u,
-    s_kind_let = 29u,
-    s_kind_letdef = 30u,
-    s_kind_typecast = 31u,
-    s_kind_typeassert = 32u,
-    s_kind_typeparam = 33u,
-    s_kind_unwrap = 34u,
-    s_kind_pragma = 35u,
-    s_kind_break = 36u,
-    s_kind_return = 37u,
-    s_kind_continue = 38u,
-    s_kind_import = 39u,
-    s_kind_addroffn = 40u,
-    s_kind_forfieldsof = 41u,
-    s_kind_struct = 42u,
-    s_kind_union = 43u,
-    s_kind_primitive = 44u,
-    s_kind_flags = 45u,
-    s_kind_enum = 46u,
-    s_kind_members = 47u,
-    s_kind_fndef = 48u,
-    s_kind_fn = 49u,
-    s_kind_fnbranch = 50u,
-    s_kind_pattern = 51u,
-    s_kind_typeunion = 52u,
-    s_kind_typetag = 53u,
-    s_kind___relaxed = 54u,
-    s_kind___convert = 55u,
-    s_kind___preceding_ref_arg = 56u,
-    s_kind___no_kind_yet = 57u,
-    s_kind___tombstone = 58u,
-    s_kind_type = 59u,
-    s_kind_var = 60u,
-    s_kind_field = 61u,
-    s_kind_enumv = 62u,
-    s_kind_template = 63u,
-    s_kind___native = 64u,
-    s_kind_inline = 65u,
+    s_kind_definit = 11u,
+    s_kind_empty = 12u,
+    s_kind_struct = 13u,
+    s_kind_union = 14u,
+    s_kind_primitive = 15u,
+    s_kind_flags = 16u,
+    s_kind_enum = 17u,
+    s_kind_fn = 18u,
+    s_kind_copy = 19u,
+    s_kind_move = 20u,
+    s_kind_arrlit = 21u,
+    s_kind_not = 22u,
+    s_kind_call = 23u,
+    s_kind_argid = 24u,
+    s_kind_root = 25u,
+    s_kind_block = 26u,
+    s_kind_if = 27u,
+    s_kind_or = 28u,
+    s_kind_and = 29u,
+    s_kind_loop = 30u,
+    s_kind_jump = 31u,
+    s_kind___far_jump = 32u,
+    s_kind_defer = 33u,
+    s_kind_try = 34u,
+    s_kind_let = 35u,
+    s_kind_letdef = 36u,
+    s_kind_typecast = 37u,
+    s_kind_typeassert = 38u,
+    s_kind_typeparam = 39u,
+    s_kind_unwrap = 40u,
+    s_kind_pragma = 41u,
+    s_kind_break = 42u,
+    s_kind_return = 43u,
+    s_kind_continue = 44u,
+    s_kind_import = 45u,
+    s_kind_addroffn = 46u,
+    s_kind_forfieldsof = 47u,
+    s_kind_members = 48u,
+    s_kind_fnbranch = 49u,
+    s_kind_pattern = 50u,
+    s_kind_typeunion = 51u,
+    s_kind_typetag = 52u,
+    s_kind___relaxed = 53u,
+    s_kind___convert = 54u,
+    s_kind___preceding_ref_arg = 55u,
+    s_kind___no_kind_yet = 56u,
+    s_kind___tombstone = 57u,
+    s_kind_type = 58u,
+    s_kind_var = 59u,
+    s_kind_field = 60u,
+    s_kind_enumv = 61u,
+    s_kind_template = 62u,
+    s_kind___native = 63u,
+    s_kind_inline = 64u,
 };
                                 #endif
 
@@ -179,17 +181,13 @@ inline constexpr s_DeclAsserts MASK_s_DeclAsserts
 
                                 #ifndef DEF_s_ParseSyntax
                                 #define DEF_s_ParseSyntax
-inline constexpr s_ParseSyntax s_ParseSyntax_PS_ID = s_ParseSyntax(1u);
-inline constexpr s_ParseSyntax s_ParseSyntax_PS_PARENS = s_ParseSyntax(2u);
-inline constexpr s_ParseSyntax s_ParseSyntax_PS_SEMI = s_ParseSyntax(4u);
-inline constexpr s_ParseSyntax s_ParseSyntax_PS_DISCARD_IF_BLOCK_TAIL = s_ParseSyntax(8u);
-inline constexpr s_ParseSyntax s_ParseSyntax_PS_ALWAYS_DISCARD = s_ParseSyntax(16u);
-inline constexpr s_ParseSyntax s_ParseSyntax_PS_NOT_AN_EXPRESSION = s_ParseSyntax(32u);
+inline constexpr s_ParseSyntax s_ParseSyntax_PS_PARENS = s_ParseSyntax(1u);
+inline constexpr s_ParseSyntax s_ParseSyntax_PS_DISCARD_IF_BLOCK_TAIL = s_ParseSyntax(2u);
+inline constexpr s_ParseSyntax s_ParseSyntax_PS_ALWAYS_DISCARD = s_ParseSyntax(4u);
+inline constexpr s_ParseSyntax s_ParseSyntax_PS_NOT_AN_EXPRESSION = s_ParseSyntax(8u);
 
 inline constexpr s_ParseSyntax MASK_s_ParseSyntax
-    = s_ParseSyntax_PS_ID
-    | s_ParseSyntax_PS_PARENS
-    | s_ParseSyntax_PS_SEMI
+    = s_ParseSyntax_PS_PARENS
     | s_ParseSyntax_PS_DISCARD_IF_BLOCK_TAIL
     | s_ParseSyntax_PS_ALWAYS_DISCARD
     | s_ParseSyntax_PS_NOT_AN_EXPRESSION;
@@ -197,68 +195,64 @@ inline constexpr s_ParseSyntax MASK_s_ParseSyntax
 
                                 #ifndef DEF_s_Flags
                                 #define DEF_s_Flags
-inline constexpr s_Flags s_Flags_F_METHOD = 1u;
-inline constexpr s_Flags s_Flags_F_OPERATOR = 2u;
-inline constexpr s_Flags s_Flags_F_ACCESS = 4u;
-inline constexpr s_Flags s_Flags_F_TYPENAME = 8u;
-inline constexpr s_Flags s_Flags_F_COMPOUND_ID = 16u;
-inline constexpr s_Flags s_Flags_F_WRITTEN_TO = 32u;
-inline constexpr s_Flags s_Flags_F_LAX = 64u;
-inline constexpr s_Flags s_Flags_F_ARG = 128u;
-inline constexpr s_Flags s_Flags_F_COW_INSIDE = 256u;
-inline constexpr s_Flags s_Flags_F_MOVED_FROM = 512u;
-inline constexpr s_Flags s_Flags_F_CONVERSION = 1024u;
-inline constexpr s_Flags s_Flags_F_OPT_ARG = 2048u;
-inline constexpr s_Flags s_Flags_F_MUT = 4096u;
-inline constexpr s_Flags s_Flags_F_REF = 8192u;
-inline constexpr s_Flags s_Flags_F_IMPLICIT = 16384u;
-inline constexpr s_Flags s_Flags_F_USING = 32768u;
-inline constexpr s_Flags s_Flags_F_MUSTNAME = 65536u;
-inline constexpr s_Flags s_Flags_F_SHADOW = 131072u;
+inline constexpr s_Flags s_Flags_F_CALL_HAS_DOT = 1u;
+inline constexpr s_Flags s_Flags_F_CALL_HAS_ARGPARENS = 2u;
+inline constexpr s_Flags s_Flags_F_CALL_HAS_NAMED_ARGS = 4u;
+inline constexpr s_Flags s_Flags_F_OPERATOR = 8u;
+inline constexpr s_Flags s_Flags_F_TYPENAME = 16u;
+inline constexpr s_Flags s_Flags_F_COMPOUND_ID = 32u;
+inline constexpr s_Flags s_Flags_F_ARGID_IS_OPTIONAL = 64u;
+inline constexpr s_Flags s_Flags_F_LAX = 128u;
+inline constexpr s_Flags s_Flags_F_SHADOW = 256u;
+inline constexpr s_Flags s_Flags_F_MUSTNAME = 512u;
+inline constexpr s_Flags s_Flags_F_WRITTEN_TO = 1024u;
+inline constexpr s_Flags s_Flags_F_MUT = 2048u;
+inline constexpr s_Flags s_Flags_F_CONST = 4096u;
+inline constexpr s_Flags s_Flags_F_VAL = 8192u;
+inline constexpr s_Flags s_Flags_F_REF = 16384u;
+inline constexpr s_Flags s_Flags_F_IMPLICIT = 32768u;
+inline constexpr s_Flags s_Flags_F_USING = 65536u;
+inline constexpr s_Flags s_Flags_F_CONVERSION = 131072u;
 inline constexpr s_Flags s_Flags_F_PUB = 262144u;
 inline constexpr s_Flags s_Flags_F_EXTERN = 524288u;
 inline constexpr s_Flags s_Flags_F_HOTSWAP = 1048576u;
 inline constexpr s_Flags s_Flags_F_PREDICATE = 2097152u;
-inline constexpr s_Flags s_Flags_F_NAMED_ARGS = 4194304u;
-inline constexpr s_Flags s_Flags_F_OOE_RTL = 8388608u;
-inline constexpr s_Flags s_Flags_F_REST_ARG = 16777216u;
-inline constexpr s_Flags s_Flags_F_RELAXABLE_REF = 33554432u;
-inline constexpr s_Flags s_Flags_F_TEMPLATE = 67108864u;
-inline constexpr s_Flags s_Flags_F_INLINE = 134217728u;
-inline constexpr s_Flags s_Flags_F_LAMBDA = 268435456u;
-inline constexpr s_Flags s_Flags_F_INJECTED = 536870912u;
+inline constexpr s_Flags s_Flags_F_REST_ARG = 4194304u;
+inline constexpr s_Flags s_Flags_F_INJECTED = 8388608u;
+inline constexpr s_Flags s_Flags_F_TEMPLATE = 16777216u;
+inline constexpr s_Flags s_Flags_F_INLINE = 33554432u;
+inline constexpr s_Flags s_Flags_F_LAMBDA = 67108864u;
+inline constexpr s_Flags s_Flags_F_COW_INSIDE = 134217728u;
 
 inline constexpr s_Flags MASK_s_Flags
-    = s_Flags_F_METHOD
+    = s_Flags_F_CALL_HAS_DOT
+    | s_Flags_F_CALL_HAS_ARGPARENS
+    | s_Flags_F_CALL_HAS_NAMED_ARGS
     | s_Flags_F_OPERATOR
-    | s_Flags_F_ACCESS
     | s_Flags_F_TYPENAME
     | s_Flags_F_COMPOUND_ID
-    | s_Flags_F_WRITTEN_TO
+    | s_Flags_F_ARGID_IS_OPTIONAL
     | s_Flags_F_LAX
-    | s_Flags_F_ARG
-    | s_Flags_F_COW_INSIDE
-    | s_Flags_F_MOVED_FROM
-    | s_Flags_F_CONVERSION
-    | s_Flags_F_OPT_ARG
+    | s_Flags_F_SHADOW
+    | s_Flags_F_MUSTNAME
+    | s_Flags_F_WRITTEN_TO
     | s_Flags_F_MUT
+    | s_Flags_F_CONST
+    | s_Flags_F_VAL
     | s_Flags_F_REF
     | s_Flags_F_IMPLICIT
     | s_Flags_F_USING
-    | s_Flags_F_MUSTNAME
-    | s_Flags_F_SHADOW
+    | s_Flags_F_CONVERSION
     | s_Flags_F_PUB
     | s_Flags_F_EXTERN
     | s_Flags_F_HOTSWAP
     | s_Flags_F_PREDICATE
-    | s_Flags_F_NAMED_ARGS
-    | s_Flags_F_OOE_RTL
     | s_Flags_F_REST_ARG
-    | s_Flags_F_RELAXABLE_REF
+    | s_Flags_F_INJECTED
     | s_Flags_F_TEMPLATE
     | s_Flags_F_INLINE
     | s_Flags_F_LAMBDA
-    | s_Flags_F_INJECTED;
+    | s_Flags_F_COW_INSIDE;
                                 #endif
 
                                 #ifndef DEF_s_VFacts
@@ -282,10 +276,13 @@ inline constexpr s_SolverStatus s_SolverStatus_SS_FINALIZED = s_SolverStatus(8u)
 inline constexpr s_SolverStatus s_SolverStatus_SS_UPDATED = s_SolverStatus(16u);
 inline constexpr s_SolverStatus s_SolverStatus_SS_TYPE_RECUR = s_SolverStatus(32u);
 inline constexpr s_SolverStatus s_SolverStatus_SS_FN_RECUR = s_SolverStatus(64u);
-inline constexpr s_SolverStatus s_SolverStatus_SS_HOIST = s_SolverStatus(128u);
-inline constexpr s_SolverStatus s_SolverStatus_SS_UNUSED = s_SolverStatus(256u);
-inline constexpr s_SolverStatus s_SolverStatus_SS_MATCHED = s_SolverStatus(512u);
-inline constexpr s_SolverStatus s_SolverStatus_SS_Debug_AllPassesComplete = s_SolverStatus(1024u);
+inline constexpr s_SolverStatus s_SolverStatus_SS_FN_OOE_RTL = s_SolverStatus(128u);
+inline constexpr s_SolverStatus s_SolverStatus_SS_HOIST = s_SolverStatus(256u);
+inline constexpr s_SolverStatus s_SolverStatus_SS_UNUSED = s_SolverStatus(512u);
+inline constexpr s_SolverStatus s_SolverStatus_SS_MATCHED = s_SolverStatus(1024u);
+inline constexpr s_SolverStatus s_SolverStatus_SS_MOVED_FROM = s_SolverStatus(2048u);
+inline constexpr s_SolverStatus s_SolverStatus_SS_ARGUMENT = s_SolverStatus(4096u);
+inline constexpr s_SolverStatus s_SolverStatus_SS_Debug_AllPassesComplete = s_SolverStatus(8192u);
 
 inline constexpr s_SolverStatus MASK_s_SolverStatus
     = s_SolverStatus_SS_LAZY
@@ -295,9 +292,12 @@ inline constexpr s_SolverStatus MASK_s_SolverStatus
     | s_SolverStatus_SS_UPDATED
     | s_SolverStatus_SS_TYPE_RECUR
     | s_SolverStatus_SS_FN_RECUR
+    | s_SolverStatus_SS_FN_OOE_RTL
     | s_SolverStatus_SS_HOIST
     | s_SolverStatus_SS_UNUSED
     | s_SolverStatus_SS_MATCHED
+    | s_SolverStatus_SS_MOVED_FROM
+    | s_SolverStatus_SS_ARGUMENT
     | s_SolverStatus_SS_Debug_AllPassesComplete;
                                 #endif
 
@@ -424,6 +424,7 @@ inline constexpr s_CGDefects s_CGDefects_LocalConstBool = s_CGDefects(8u);
 inline constexpr s_CGDefects s_CGDefects_ConstCast = s_CGDefects(16u);
 inline constexpr s_CGDefects s_CGDefects_PointlessLocal = s_CGDefects(32u);
 inline constexpr s_CGDefects s_CGDefects_IrrelevantLiteral = s_CGDefects(64u);
+inline constexpr s_CGDefects s_CGDefects_DuplicateFunctions = s_CGDefects(128u);
 
 inline constexpr s_CGDefects MASK_s_CGDefects
     = s_CGDefects_GNUStmtExpr
@@ -432,7 +433,8 @@ inline constexpr s_CGDefects MASK_s_CGDefects
     | s_CGDefects_LocalConstBool
     | s_CGDefects_ConstCast
     | s_CGDefects_PointlessLocal
-    | s_CGDefects_IrrelevantLiteral;
+    | s_CGDefects_IrrelevantLiteral
+    | s_CGDefects_DuplicateFunctions;
                                 #endif
 
                                 #ifndef DEF_s_Helpers
@@ -500,6 +502,22 @@ struct s_ModuleOrder
     {
         return false
             || dep_depth
+        ;
+    }
+};
+                                #endif
+
+                                #ifndef DEF_s_TEA
+                                #define DEF_s_TEA
+struct s_TEA
+{
+    unsigned v0;
+    unsigned v1;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || v0
+            || v1
         ;
     }
 };
@@ -618,6 +636,28 @@ struct s_ModuleStat
 };
                                 #endif
 
+                                #ifndef DEF_s_Shape
+                                #define DEF_s_Shape
+struct s_Shape
+{
+    fu::str basePrim;
+    uint64_t non_triv_mask;
+    uint64_t hash;
+    int flatCount;
+    int declDepth;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || basePrim
+            || non_triv_mask
+            || hash
+            || flatCount
+            || declDepth
+        ;
+    }
+};
+                                #endif
+
                                 #ifndef DEF_s_CodegenOutput
                                 #define DEF_s_CodegenOutput
 struct s_CodegenOutput
@@ -655,7 +695,8 @@ struct s_Scope
     fu::vec<s_Target> usings;
     fu::vec<s_Target> converts;
     int pub_items;
-    int pub_cnvrts;
+    int pub_implicits;
+    int pub_converts;
     s_Scope(const s_Scope&) = delete;
     s_Scope(s_Scope&&) = default;
     s_Scope& operator=(const s_Scope&) = delete;
@@ -672,7 +713,8 @@ struct s_Scope
             || usings
             || converts
             || pub_items
-            || pub_cnvrts
+            || pub_implicits
+            || pub_converts
         ;
     }
 };
@@ -770,6 +812,32 @@ struct s_COWInside
 };
                                 #endif
 
+                                #ifndef DEF_s_Struct
+                                #define DEF_s_Struct
+struct s_Struct
+{
+    s_kind kind;
+    fu::str name;
+    s_Target target;
+    fu::vec<s_ScopeItem> items;
+    fu::vec<int> imports;
+    fu::vec<s_Target> converts;
+    s_Shape shape;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || kind
+            || name
+            || target
+            || items
+            || imports
+            || converts
+            || shape
+        ;
+    }
+};
+                                #endif
+
                                 #ifndef DEF_s_Node
                                 #define DEF_s_Node
 struct s_Node
@@ -820,33 +888,15 @@ struct s_Context
 };
                                 #endif
 
-                                #ifndef DEF_s_Struct
-                                #define DEF_s_Struct
-struct s_Struct
+                                #ifndef DEF_s_Profile
+                                #define DEF_s_Profile
+struct s_Profile
 {
-    s_kind kind;
-    fu::str name;
-    s_Target target;
-    fu::vec<s_ScopeItem> items;
-    fu::vec<int> imports;
-    fu::vec<s_Target> converts;
-    fu::str base;
-    int flatCount;
-    int declDepth;
-    bool all_triv;
+    double now;
     explicit operator bool() const noexcept
     {
         return false
-            || kind
-            || name
-            || target
-            || items
-            || imports
-            || converts
-            || base
-            || flatCount
-            || declDepth
-            || all_triv
+            || now
         ;
     }
 };
@@ -959,7 +1009,7 @@ struct s_Extended
     s_Target spec_of;
     s_Template tEmplate;
     fu::vec<s_Overload> locals;
-    fu::str sighash;
+    s_TEA sighash;
     s_FxMask fx_mask;
     explicit operator bool() const noexcept
     {
@@ -1052,6 +1102,7 @@ struct s_Module
     s_ModuleOrder order;
     s_ModuleOutputs out;
     s_ModuleStats stats;
+    s_Profile profile;
     s_Module(const s_Module&) = delete;
     s_Module(s_Module&&) = default;
     s_Module& operator=(const s_Module&) = delete;
@@ -1065,6 +1116,7 @@ struct s_Module
             || order
             || out
             || stats
+            || profile
         ;
     }
 };
@@ -1072,16 +1124,14 @@ struct s_Module
 
                                 #ifndef DEF_s_DevOptions
                                 #define DEF_s_DevOptions
-inline constexpr s_DevOptions s_DevOptions_DEV_PrintAST = s_DevOptions(1u);
-inline constexpr s_DevOptions s_DevOptions_DEV_PrintCG = s_DevOptions(2u);
-inline constexpr s_DevOptions s_DevOptions_DEV_Parallel = s_DevOptions(4u);
-inline constexpr s_DevOptions s_DevOptions_DEV_ExpectFail = s_DevOptions(8u);
-inline constexpr s_DevOptions s_DevOptions_DEV_DontFoldLiterals = s_DevOptions(16u);
-inline constexpr s_DevOptions s_DevOptions_DEV_CG_LifetimeAnnots = s_DevOptions(32u);
+inline constexpr s_DevOptions s_DevOptions_DEV_Print = s_DevOptions(1u);
+inline constexpr s_DevOptions s_DevOptions_DEV_Parallel = s_DevOptions(2u);
+inline constexpr s_DevOptions s_DevOptions_DEV_ExpectFail = s_DevOptions(4u);
+inline constexpr s_DevOptions s_DevOptions_DEV_DontFoldLiterals = s_DevOptions(8u);
+inline constexpr s_DevOptions s_DevOptions_DEV_CG_LifetimeAnnots = s_DevOptions(16u);
 
 inline constexpr s_DevOptions MASK_s_DevOptions
-    = s_DevOptions_DEV_PrintAST
-    | s_DevOptions_DEV_PrintCG
+    = s_DevOptions_DEV_Print
     | s_DevOptions_DEV_Parallel
     | s_DevOptions_DEV_ExpectFail
     | s_DevOptions_DEV_DontFoldLiterals
@@ -1276,15 +1326,16 @@ inline s_Scope clone_u3AUYy1F(const s_Scope& a)
         res.usings = clone_lmGNhJZg(a.usings);
         res.converts = clone_lmGNhJZg(a.converts);
         res.pub_items = clone_dD3H4GX6(a.pub_items);
-        res.pub_cnvrts = clone_dD3H4GX6(a.pub_cnvrts);
+        res.pub_implicits = clone_dD3H4GX6(a.pub_implicits);
+        res.pub_converts = clone_dD3H4GX6(a.pub_converts);
     };
     return /*NRVO*/ res;
 }
                                 #endif
 
-                                #ifndef DEF_clone_frE7d1dBjWe
-                                #define DEF_clone_frE7d1dBjWe
-inline s_SolverNotes clone_frE7d1dB(const s_SolverNotes a)
+                                #ifndef DEF_clone_HWuJXO1jEAi
+                                #define DEF_clone_HWuJXO1jEAi
+inline s_SolverNotes clone_HWuJXO1j(const s_SolverNotes a)
 {
     return a;
 }
@@ -1299,7 +1350,7 @@ inline s_SolverOutput clone_NfKDlKSy(const s_SolverOutput& a)
     {
         res.root = clone_Q1UUsXjh(a.root);
         res.scope = clone_u3AUYy1F(a.scope);
-        res.notes = clone_frE7d1dB(a.notes);
+        res.notes = clone_HWuJXO1j(a.notes);
     };
     return /*NRVO*/ res;
 }
@@ -1336,6 +1387,14 @@ inline const s_ModuleStats& clone_Iv4I43NB(const s_ModuleStats& a)
 }
                                 #endif
 
+                                #ifndef DEF_clone_aAoyWZ00Mtb
+                                #define DEF_clone_aAoyWZ00Mtb
+inline const s_Profile& clone_aAoyWZ00(const s_Profile& a)
+{
+    return a;
+}
+                                #endif
+
                                 #ifndef DEF_clone_G5fNGz6vaZ6
                                 #define DEF_clone_G5fNGz6vaZ6
 inline s_Module clone_G5fNGz6v(const s_Module& a)
@@ -1349,6 +1408,7 @@ inline s_Module clone_G5fNGz6v(const s_Module& a)
         res.order = clone_CDer1pfR(a.order);
         res.out = clone_TzGdNpjo(a.out);
         res.stats = clone_Iv4I43NB(a.stats);
+        res.profile = clone_aAoyWZ00(a.profile);
     };
     return /*NRVO*/ res;
 }
@@ -1400,7 +1460,7 @@ inline s_Context clone_OwUtczls(const s_Context& a)
 }
                                 #endif
 
-static fu::str ensure_main_zjS1Te9S(const fu::str& src)
+static fu::str ensure_main_2kqPnRj3(const fu::str& src)
 {
     if (fu::has(src, "fn main"_fu))
         return fu::str(src);
@@ -1410,7 +1470,7 @@ static fu::str ensure_main_zjS1Te9S(const fu::str& src)
     };
 }
 
-static fu::vec<fu::str>& l_6_0_b072nYi5(s_Map_iIYL7rECCBg& _)
+static fu::vec<fu::str>& l_6_0_Z69U6GP0(s_Map_iIYL7rECCBg& _)
 {
     return _.keys;
 }
@@ -1455,24 +1515,24 @@ inline int x3Cx3E_gCeFmDFw(fu::view<char> a, fu::view<char> b)
 }
                                 #endif
 
-static fu::vec<fu::str>& l_6_1_iUOrt6ng(s_Map_iIYL7rECCBg& _)
+static fu::vec<fu::str>& l_6_1_aIoOLTlD(s_Map_iIYL7rECCBg& _)
 {
     return _.vals;
 }
 
-                                #ifndef DEF_update_t76zD0FIjb3
-                                #define DEF_update_t76zD0FIjb3
-inline bool update_t76zD0FI(const fu::str& item, const fu::str& extra, s_Map_iIYL7rECCBg& _)
+                                #ifndef DEF_update_dqzrV6TBGZ0
+                                #define DEF_update_dqzrV6TBGZ0
+inline bool update_dqzrV6TB(const fu::str& item, const fu::str& extra, s_Map_iIYL7rECCBg& _)
 {
     int lo = 0;
-    int hi = l_6_0_b072nYi5(_).size();
+    int hi = l_6_0_Z69U6GP0(_).size();
     while (lo < hi)
     {
         const int i = ((hi + lo) >> 1);
-        const int cmp = x3Cx3E_gCeFmDFw(l_6_0_b072nYi5(_)[i], item);
+        const int cmp = x3Cx3E_gCeFmDFw(l_6_0_Z69U6GP0(_)[i], item);
         if (cmp == 0)
         {
-            l_6_1_iUOrt6ng(_).mutref(i) = fu::str(extra);
+            l_6_1_aIoOLTlD(_).mutref(i) = fu::str(extra);
             return false;
         }
         else if (cmp < 0)
@@ -1481,8 +1541,8 @@ inline bool update_t76zD0FI(const fu::str& item, const fu::str& extra, s_Map_iIY
             hi = i;
 
     };
-    l_6_0_b072nYi5(_).insert(lo, fu::str(item));
-    l_6_1_iUOrt6ng(_).insert(lo, fu::str(extra));
+    l_6_0_Z69U6GP0(_).insert(lo, fu::str(item));
+    l_6_1_aIoOLTlD(_).insert(lo, fu::str(extra));
     return true;
 }
                                 #endif
@@ -1491,13 +1551,125 @@ inline bool update_t76zD0FI(const fu::str& item, const fu::str& extra, s_Map_iIY
                                 #define DEF_set_1ffKFGH8Pfd
 inline bool set_1ffKFGH8(s_Map_iIYL7rECCBg& _, const fu::str& key, const fu::str& value)
 {
-    return update_t76zD0FI(key, value, _);
+    return update_dqzrV6TB(key, value, _);
 }
                                 #endif
 
-                                #ifndef DEF_str_0xO8zo50Duf
-                                #define DEF_str_0xO8zo50Duf
-inline fu::str str_0xO8zo50(const s_SolverNotes n)
+                                #ifndef DEF_last_dHu5rBA1qqg
+                                #define DEF_last_dHu5rBA1qqg
+inline const fu::str& last_dHu5rBA1(fu::view<fu::str> s)
+{
+    if (s.size())
+        return s[(s.size() - 1)];
+    else
+        fu::fail("len == 0"_fu);
+
+}
+                                #endif
+
+inline static const fu::str& l_51_0_1ZaJguRX(const s_Module& l_51_0)
+{
+    return l_51_0.out.cpp.src;
+}
+
+                                #ifndef DEF_map_hl32Kvsojs4
+                                #define DEF_map_hl32Kvsojs4
+inline fu::vec<fu::str> map_hl32Kvso(fu::view<s_Module> a)
+{
+    /*MOV*/ fu::vec<fu::str> res {};
+    res.grow<false>(a.size());
+    for (int i = 0; i < a.size(); i++)
+        res.mutref(i) = fu::str(l_51_0_1ZaJguRX(a[i]));
+
+    return /*NRVO*/ res;
+}
+                                #endif
+
+inline static const fu::str& l_51_1_Xwy7fJ46(const s_Module& l_51_1)
+{
+    return l_51_1.out.cpp.src;
+}
+
+                                #ifndef DEF_map_oqdKAhBOI0i
+                                #define DEF_map_oqdKAhBOI0i
+inline fu::vec<fu::str> map_oqdKAhBO(fu::view<s_Module> a)
+{
+    /*MOV*/ fu::vec<fu::str> res {};
+    res.grow<false>(a.size());
+    for (int i = 0; i < a.size(); i++)
+        res.mutref(i) = fu::str(l_51_1_Xwy7fJ46(a[i]));
+
+    return /*NRVO*/ res;
+}
+                                #endif
+
+inline static bool l_51_2_iwnGIih0(fu::view<char> a, fu::view<char> b)
+{
+    return x3Cx3E_gCeFmDFw(a, b) < 0;
+}
+
+static void sort_6UzLs3iI(fu::vec<fu::str>& a)
+{
+    fu::str l {};
+    fu::str r {};
+    (void) l;
+    (void) r;
+    auto* data = a.data_mut();
+    std::sort(data, data + a.size(), [&](auto& l, auto& r)
+    {;
+    bool lt = l_51_2_iwnGIih0(l, r);
+    return lt;
+            });
+
+}
+
+                                #ifndef DEF_sort_HsCeViTQSTi
+                                #define DEF_sort_HsCeViTQSTi
+inline void sort_HsCeViTQ(fu::vec<fu::str>& a)
+{
+    sort_6UzLs3iI(a);
+}
+                                #endif
+
+inline static bool l_51_3_gmKzaGS6(fu::view<char> a, fu::view<char> b)
+{
+    return x3Cx3E_gCeFmDFw(a, b) < 0;
+}
+
+static void sort_4Ajvv8ar(fu::vec<fu::str>& a)
+{
+    fu::str l {};
+    fu::str r {};
+    (void) l;
+    (void) r;
+    auto* data = a.data_mut();
+    std::sort(data, data + a.size(), [&](auto& l, auto& r)
+    {;
+    bool lt = l_51_3_gmKzaGS6(l, r);
+    return lt;
+            });
+
+}
+
+                                #ifndef DEF_sort_5TwEUtHMNlj
+                                #define DEF_sort_5TwEUtHMNlj
+inline void sort_5TwEUtHM(fu::vec<fu::str>& a)
+{
+    sort_4Ajvv8ar(a);
+}
+                                #endif
+
+                                #ifndef DEF_x3Dx3D_gCeFmDFw0L8
+                                #define DEF_x3Dx3D_gCeFmDFw0L8
+inline bool operator==(fu::view<char> a, fu::view<char> b)
+{
+    return !x3Cx3E_gCeFmDFw(a, b);
+}
+                                #endif
+
+                                #ifndef DEF_str_vnKE5IyQVOd
+                                #define DEF_str_vnKE5IyQVOd
+inline fu::str str_vnKE5IyQ(const s_SolverNotes n)
 {
     /*MOV*/ fu::str res {};
 
@@ -1597,8 +1769,9 @@ inline fu::str str_0xO8zo50(const s_SolverNotes n)
 }
                                 #endif
 
-s_Context compile_snippets_uCcoJP3r(fu::view<fu::str> sources, fu::vec<fu::str>&& fnames, fu::view<s_Options> options)
+static s_Context compile_snippets_sz5Wqh9Y(fu::view<fu::str> sources, fu::vec<fu::str>&& fnames, s_Options&& options)
 {
+    options.dev |= s_DevOptions_DEV_CG_LifetimeAnnots;
     /*MOV*/ fu::str base_dir = (FUDIR + "__tests__/"_fu);
     while (fnames.size() < sources.size())
         fnames.push((x7E_gCeFmDFw((base_dir + "_"_fu), fu::i64dec(fnames.size())) + ".fu"_fu));
@@ -1608,43 +1781,53 @@ s_Context compile_snippets_uCcoJP3r(fu::view<fu::str> sources, fu::vec<fu::str>&
     for (int i = 0; i < sources.size(); i++)
     {
         const fu::str& snippet = sources[i];
-        fu::str src = ((i == (sources.size() - 1)) ? ensure_main_zjS1Te9S(snippet) : fu::str(snippet));
+        fu::str src = ((i == (sources.size() - 1)) ? ensure_main_2kqPnRj3(snippet) : fu::str(snippet));
         set_1ffKFGH8(ctx.files, fnames[i], src);
-    };
-    for (int i_1 = 0; i_1 < sources.size(); i_1++)
-    {
-        fu::view<char> snippet = sources[i_1];
-        const fu::str& fname = fnames[i_1];
-        s_Options options_1 { ((options.size() > i_1) ? options[i_1] : (*(const s_Options*)fu::NIL)) };
         if (fu::has(snippet, "/*PRINT*/"_fu))
-            options_1.dev |= s_DevOptions((s_DevOptions_DEV_PrintAST | s_DevOptions_DEV_PrintCG));
+            options.dev |= s_DevOptions_DEV_Print;
 
-        options_1.dev |= s_DevOptions_DEV_CG_LifetimeAnnots;
-        compile_adoKzaAQ(fname, ctx, options_1);
     };
-    for (int i_2 = 0; i_2 < ctx.modules.size(); i_2++)
+    s_Context ctx_reverseBuildOrder = ((sources.size() > 1) ? clone_OwUtczls(ctx) : s_Context{});
+    compile_adoKzaAQ(last_dHu5rBA1(fnames), ctx, options);
+    if (sources.size() > 1)
     {
-        s_Module& module = ctx.modules.mutref(i_2);
+        for (int i_1 = 0; i_1 < sources.size(); i_1++)
+        {
+            const fu::str& fname = fnames[i_1];
+            compile_adoKzaAQ(fname, ctx_reverseBuildOrder, options);
+        };
+        fu::vec<fu::str> fwd = map_hl32Kvso(ctx.modules);
+        fu::vec<fu::str> rev = map_oqdKAhBO(ctx_reverseBuildOrder.modules);
+        sort_HsCeViTQ(fwd);
+        sort_5TwEUtHM(rev);
+        if (fwd.size() == rev.size())
+        {
+            for (int i_2 = 0; i_2 < ctx.modules.size(); i_2++)
+            {
+                if (!(fwd[i_2] == rev[i_2]))
+                    fu::fail((((("compile_snippets: fwd != rev:"_fu + "\n\nFWD:\n"_fu) + fwd[i_2]) + "\n\nREV:\n"_fu) + rev[i_2]));
+
+            };
+        }
+        else
+            fu::fail("compile_snippets: #fwd != #rev"_fu);
+
+    };
+    for (int i_1 = 0; i_1 < ctx.modules.size(); i_1++)
+    {
+        s_Module& module = ctx.modules.mutref(i_1);
         const s_SolverNotes notes = module.out.solve.notes;
         if (notes)
-            module.out.cpp.src += (x7E_gCeFmDFw("\n// "_fu, str_0xO8zo50(notes)) + "\n"_fu);
+            module.out.cpp.src += (x7E_gCeFmDFw("\n// "_fu, str_vnKE5IyQ(notes)) + "\n"_fu);
 
     };
     return /*NRVO*/ ctx;
 }
 
-                                #ifndef DEF_x3Dx3D_gCeFmDFw0L8
-                                #define DEF_x3Dx3D_gCeFmDFw0L8
-inline bool operator==(fu::view<char> a, fu::view<char> b)
-{
-    return !x3Cx3E_gCeFmDFw(a, b);
-}
-                                #endif
-
 fu::str snippet2cpp_VF0dxkAl(const fu::str& src)
 {
     fu::str fname = "/DIR/FILE.fu"_fu;
-    s_Context ctx = compile_snippets_uCcoJP3r((fu::slate<1, fu::str> { fu::str(src) }), fu::vec<fu::str> { fu::slate<1, fu::str> { fu::str(fname) } }, fu::view<s_Options>{});
+    s_Context ctx = compile_snippets_sz5Wqh9Y((fu::slate<1, fu::str> { fu::str(src) }), fu::vec<fu::str> { fu::slate<1, fu::str> { fu::str(fname) } }, s_Options{});
     for (int i = 0; i < ctx.modules.size(); i++)
     {
         const s_Module& module = ctx.modules[i];
@@ -1673,14 +1856,14 @@ static int unindent_left_wAM9q1gI(fu::view<char> src, const int i0)
     return i0;
 }
 
-inline static fu::vec<fu::str>& l_0_0_EvGGOjUb(const fu::str& substr, fu::vec<fu::str>& result)
+inline static fu::vec<fu::str>& l_0_0_JTOmAv7f(const fu::str& substr, fu::vec<fu::str>& result)
 {
     return (result += fu::str(substr));
 }
 
-                                #ifndef DEF_split_UZdqZGRg7la
-                                #define DEF_split_UZdqZGRg7la
-inline void split_UZdqZGRg(const fu::str& str, fu::view<char> sep, fu::vec<fu::str>& result)
+                                #ifndef DEF_split_XgDUIhDMMWd
+                                #define DEF_split_XgDUIhDMMWd
+inline void split_XgDUIhDM(const fu::str& str, fu::view<char> sep, fu::vec<fu::str>& result)
 {
     int last = 0;
     int next = 0;
@@ -1689,14 +1872,14 @@ inline void split_UZdqZGRg(const fu::str& str, fu::view<char> sep, fu::vec<fu::s
     {
         while (((next = fu::lfind(str, sep, last)) >= 0))
         {
-            l_0_0_EvGGOjUb(fu::slice(str, last, next), result);
+            l_0_0_JTOmAv7f(fu::slice(str, last, next), result);
             last = (next + N);
         };
     };
     if (last)
-        l_0_0_EvGGOjUb(fu::slice(str, last), result);
+        l_0_0_JTOmAv7f(fu::slice(str, last), result);
     else
-        l_0_0_EvGGOjUb(str, result);
+        l_0_0_JTOmAv7f(str, result);
 
 }
                                 #endif
@@ -1706,7 +1889,7 @@ inline void split_UZdqZGRg(const fu::str& str, fu::view<char> sep, fu::vec<fu::s
 inline fu::vec<fu::str> split_e8WhGmUq(const fu::str& str, fu::view<char> sep)
 {
     /*MOV*/ fu::vec<fu::str> result {};
-    split_UZdqZGRg(str, sep, result);
+    split_XgDUIhDM(str, sep, result);
     return /*NRVO*/ result;
 }
                                 #endif
@@ -1856,27 +2039,27 @@ inline int find_T9i966y9(fu::view<char> a, const char b, int start)
 }
                                 #endif
 
-inline static fu::vec<fu::str>& l_0_0_OIbwjWcK(const fu::str& substr, fu::vec<fu::str>& result)
+inline static fu::vec<fu::str>& l_0_0_P7gzeAeI(const fu::str& substr, fu::vec<fu::str>& result)
 {
     return (result += fu::str(substr));
 }
 
-                                #ifndef DEF_split_5UJ4f04JNMf
-                                #define DEF_split_5UJ4f04JNMf
-inline void split_5UJ4f04J(const fu::str& str, const char sep, fu::vec<fu::str>& result)
+                                #ifndef DEF_split_kYoKIIujTu1
+                                #define DEF_split_kYoKIIujTu1
+inline void split_kYoKIIuj(const fu::str& str, const char sep, fu::vec<fu::str>& result)
 {
     int last = 0;
     int next = 0;
     const int N = 1;
     while (((next = find_T9i966y9(str, sep, last)) >= 0))
     {
-        l_0_0_OIbwjWcK(fu::slice(str, last, next), result);
+        l_0_0_P7gzeAeI(fu::slice(str, last, next), result);
         last = (next + N);
     };
     if (last)
-        l_0_0_OIbwjWcK(fu::slice(str, last), result);
+        l_0_0_P7gzeAeI(fu::slice(str, last), result);
     else
-        l_0_0_OIbwjWcK(str, result);
+        l_0_0_P7gzeAeI(str, result);
 
 }
                                 #endif
@@ -1886,12 +2069,12 @@ inline void split_5UJ4f04J(const fu::str& str, const char sep, fu::vec<fu::str>&
 inline fu::vec<fu::str> split_42u6frOY(const fu::str& str, const char sep)
 {
     /*MOV*/ fu::vec<fu::str> result {};
-    split_5UJ4f04J(str, sep, result);
+    split_kYoKIIuj(str, sep, result);
     return /*NRVO*/ result;
 }
                                 #endif
 
-static bool check_7jUeMifY(const fu::str& word, fu::view<char> actual)
+static bool check_XUXAGncz(const fu::str& word, fu::view<char> actual)
 {
     const int pipe = find_KonMQ4KB(word, '|');
     if ((pipe > 1) && starts_Db9eGFmC(word, '(') && ends_Db9eGFmC(word, ')'))
@@ -1899,7 +2082,7 @@ static bool check_7jUeMifY(const fu::str& word, fu::view<char> actual)
         fu::vec<fu::str> alternatives = split_42u6frOY(fu::slice(word, 1, (word.size() - 1)), '|');
         for (int i = 0; i < alternatives.size(); i++)
         {
-            if (check_7jUeMifY(alternatives[i], actual))
+            if (check_XUXAGncz(alternatives[i], actual))
                 return true;
 
         };
@@ -1928,7 +2111,7 @@ static void verify_errmsg_5ROk3yHq(fu::view<char> topic, const fu::str& e, const
                 if (exact == "BUG"_fu)
                     BUG_ok = true;
 
-                if (!check_7jUeMifY(exact, actual))
+                if (!check_XUXAGncz(exact, actual))
                     fu::fail((((((((topic + " mismatch:\n\n    Expected error keyword:\n        "_fu) + qBAD_3PsDzMvu(exact)) + " from pattern <fail"_fu) + qBAD_3PsDzMvu(msg)) + ">"_fu) + "\n\n    ... not present in error message:\n\n"_fu) + e));
 
             };
@@ -1955,17 +2138,17 @@ static fu::str ERR_KEY_2gac3h64(fu::view<fu::str> sources)
     return /*NRVO*/ key;
 }
 
-inline static void l_49_0_gPZBs9DL(fu::str& part)
+inline static void l_51_4_IYqvJOT4(fu::str& part)
 {
     part.shrink(unindent_left_wAM9q1gI(part, part.size()));
 }
 
-                                #ifndef DEF_each_oRImqyOlw8i
-                                #define DEF_each_oRImqyOlw8i
-inline void each_oRImqyOl(fu::view_mut<fu::str> a)
+                                #ifndef DEF_each_HcQCJUkfQd8
+                                #define DEF_each_HcQCJUkfQd8
+inline void each_HcQCJUkf(fu::view_mut<fu::str> a)
 {
     for (int i = 0; i < a.size(); i++)
-        l_49_0_gPZBs9DL(a.mutref(i));
+        l_51_4_IYqvJOT4(a.mutref(i));
 
 }
                                 #endif
@@ -2008,21 +2191,15 @@ inline fu::str join_jCe9HYtv(fu::view<fu::str> a, fu::view<char> sep)
 }
                                 #endif
 
-inline static const s_Options& l_49_1_oNCJQjVj(const s_Options& options)
+                                #ifndef DEF_last_uwKwzsvZqOh
+                                #define DEF_last_uwKwzsvZqOh
+inline char last_uwKwzsvZ(fu::view<char> s)
 {
-    return options;
-}
+    if (s.size())
+        return s[(s.size() - 1)];
+    else
+        fu::fail("len == 0"_fu);
 
-                                #ifndef DEF_map_iTqnWyDTkEk
-                                #define DEF_map_iTqnWyDTkEk
-inline fu::vec<s_Options> map_iTqnWyDT(fu::view<fu::str> a, const s_Options& options)
-{
-    /*MOV*/ fu::vec<s_Options> res {};
-    res.grow<false>(a.size());
-    for (int i = 0; i < a.size(); i++)
-        res.mutref(i) = s_Options(l_49_1_oNCJQjVj(options));
-
-    return /*NRVO*/ res;
 }
                                 #endif
 
@@ -2034,9 +2211,9 @@ inline bool ends_t2TApdnq(fu::view<char> a, fu::view<char> with)
 }
                                 #endif
 
-                                #ifndef DEF_parse_TGKDkVz3OSf
-                                #define DEF_parse_TGKDkVz3OSf
-inline s_SolverNotes parse_TGKDkVz3(fu::view<char> v)
+                                #ifndef DEF_parse_QH70UEfFCS2
+                                #define DEF_parse_QH70UEfFCS2
+inline s_SolverNotes parse_QH70UEfF(fu::view<char> v)
 {
     if (v == "N_FnRecursion"_fu)
         return s_SolverNotes_N_FnRecursion;
@@ -2101,9 +2278,9 @@ inline s_SolverNotes parse_TGKDkVz3(fu::view<char> v)
 }
                                 #endif
 
-                                #ifndef DEF_parseWild_TGKDkVz3OSf
-                                #define DEF_parseWild_TGKDkVz3OSf
-inline s_SolverNotes parseWild_TGKDkVz3(fu::view<char> v)
+                                #ifndef DEF_parseWild_QH70UEfFCS2
+                                #define DEF_parseWild_QH70UEfFCS2
+inline s_SolverNotes parseWild_QH70UEfF(fu::view<char> v)
 {
     s_SolverNotes result {};
     for (int i = 0; i < v.size(); i++)
@@ -2318,13 +2495,13 @@ inline s_SolverNotes parseWild_TGKDkVz3(fu::view<char> v)
             return result;
         };
     };
-    return parse_TGKDkVz3(v);
+    return parse_QH70UEfF(v);
 }
                                 #endif
 
-                                #ifndef DEF_parse_UDsf7ytGJah
-                                #define DEF_parse_UDsf7ytGJah
-inline s_CGDefects parse_UDsf7ytG(fu::view<char> v)
+                                #ifndef DEF_parse_PiQK11ii92e
+                                #define DEF_parse_PiQK11ii92e
+inline s_CGDefects parse_PiQK11ii(fu::view<char> v)
 {
     if (v == "GNUStmtExpr"_fu)
         return s_CGDefects_GNUStmtExpr;
@@ -2340,14 +2517,16 @@ inline s_CGDefects parse_UDsf7ytG(fu::view<char> v)
         return s_CGDefects_PointlessLocal;
     else if (v == "IrrelevantLiteral"_fu)
         return s_CGDefects_IrrelevantLiteral;
+    else if (v == "DuplicateFunctions"_fu)
+        return s_CGDefects_DuplicateFunctions;
 
     return s_CGDefects{};
 }
                                 #endif
 
-                                #ifndef DEF_parseWild_UDsf7ytGJah
-                                #define DEF_parseWild_UDsf7ytGJah
-inline s_CGDefects parseWild_UDsf7ytG(fu::view<char> v)
+                                #ifndef DEF_parseWild_PiQK11ii92e
+                                #define DEF_parseWild_PiQK11ii92e
+inline s_CGDefects parseWild_PiQK11ii(fu::view<char> v)
 {
     s_CGDefects result {};
     for (int i = 0; i < v.size(); i++)
@@ -2400,39 +2579,62 @@ inline s_CGDefects parseWild_UDsf7ytG(fu::view<char> v)
                         result |= s_CGDefects_PointlessLocal;
 
                 };
-                fu::str opt = "IrrelevantLiteral"_fu;
+
+                {
+                    fu::str opt = "IrrelevantLiteral"_fu;
+                    if (starts_t2TApdnq(opt, prefix) && ends_t2TApdnq(opt, suffix))
+                        result |= s_CGDefects_IrrelevantLiteral;
+
+                };
+                fu::str opt = "DuplicateFunctions"_fu;
                 if (starts_t2TApdnq(opt, prefix) && ends_t2TApdnq(opt, suffix))
-                    result |= s_CGDefects_IrrelevantLiteral;
+                    result |= s_CGDefects_DuplicateFunctions;
 
             };
             return result;
         };
     };
-    return parse_UDsf7ytG(v);
+    return parse_PiQK11ii(v);
 }
                                 #endif
 
-                                #ifndef DEF_grow_if_oob_EtmluPGj6me
-                                #define DEF_grow_if_oob_EtmluPGj6me
-inline fu::vec<fu::str>& grow_if_oob_EtmluPGj(fu::vec<fu::vec<fu::str>>& a, const int i)
+static fu::str all_src_35mqdvl0(fu::view<fu::str> sources)
 {
-    if ((a.size() <= i))
-        a.grow((i + 1));
-
-    return a.mutref(i);
+    return join_jCe9HYtv(sources, "\n----\n"_fu);
 }
-                                #endif
 
-                                #ifndef DEF_grow_if_oob_0iAFgjPZkme
-                                #define DEF_grow_if_oob_0iAFgjPZkme
-inline s_CGDefects& grow_if_oob_0iAFgjPZ(fu::vec<s_CGDefects>& a, const int i)
+static fu::str& this_src_aS0KPUuq(const int i, fu::view_mut<fu::str> sources)
 {
-    if ((a.size() <= i))
-        a.grow((i + 1));
+    return sources.mutref(i);
+}
 
-    return a.mutref(i);
+static const fu::str& this_cpp_VtWpL7FH(const s_ModuleOutputs& out)
+{
+    return out.cpp.src;
+}
+
+inline static const fu::str& l_51_5_RogesqlC(const s_Module& l_51_5)
+{
+    return l_51_5.out.cpp.src;
+}
+
+                                #ifndef DEF_map_lKUb3u1qK7j
+                                #define DEF_map_lKUb3u1qK7j
+inline fu::vec<fu::str> map_lKUb3u1q(fu::view<s_Module> a)
+{
+    /*MOV*/ fu::vec<fu::str> res {};
+    res.grow<false>(a.size());
+    for (int i = 0; i < a.size(); i++)
+        res.mutref(i) = fu::str(l_51_5_RogesqlC(a[i]));
+
+    return /*NRVO*/ res;
 }
                                 #endif
+
+static fu::str all_cpp_uquiu6HQ(const s_Context& ctx)
+{
+    return join_jCe9HYtv(map_lKUb3u1q(ctx.modules), "\n----\n"_fu);
+}
 
                                 #ifndef DEF_x21x3D_gCeFmDFw0L8
                                 #define DEF_x21x3D_gCeFmDFw0L8
@@ -2442,27 +2644,70 @@ inline bool operator!=(fu::view<char> a, fu::view<char> b)
 }
                                 #endif
 
+inline static void l_51_6_UWXIoAmS(const fu::str& x, fu::view_mut<fu::str> sources, const s_Context& ctx, fu::str& testdiff_prepend)
+{
+    const s_SolverNotes note = parseWild_QH70UEfF(x);
+    const int idx = (!note ? find_KonMQ4KB(x, ' ') : 0);
+    if (idx < 0)
+        fu::fail(((("Invalid ;; CHECK, no argument: `;; "_fu + x) + "` in:\n"_fu) + all_src_35mqdvl0(sources)));
+    else
+    {
+        fu::view<char> cmd = fu::get_view_start0(x, idx);
+        fu::view<char> rest = fu::get_view(x, (idx + 1));
+        bool found = false;
+        for (int i = 0; i < sources.size(); i++)
+        {
+            const s_ModuleOutputs& out = ctx.modules[(i + 1)].out;
+            if (note)
+            {
+                if (out.solve.notes & note)
+                    return;
+                else
+                {
+                    fu::str _0 {};
+                    fu::fail((_0 = (((("Expected note not listed: "_fu + qBAD_3PsDzMvu(x)) + " in:\n"_fu) + this_src_aS0KPUuq(i, sources)) + "\n\nOutput is:\n\n"_fu), (static_cast<fu::str&&>(_0) + this_src_aS0KPUuq(i, sources))));
+                };
+            }
+            else if ((found = fu::has(this_cpp_VtWpL7FH(out), rest)))
+                break;
+
+        };
+        if (cmd == "EXPECT"_fu)
+        {
+            if (!(found))
+                fu::fail(((((("EXPECT mismatch: `;; "_fu + x) + "` in:\n"_fu) + all_src_35mqdvl0(sources)) + "\n\nOutput is:\n\n"_fu) + all_cpp_uquiu6HQ(ctx)));
+
+        }
+        else if (cmd != "TODO"_fu)
+            fu::fail(((("Unknown ;; CHECK: `;; "_fu + x) + "` in:\n"_fu) + all_src_35mqdvl0(sources)));
+        else if (found)
+            fu::fail(((((("TODO test is actually passing: `;; "_fu + x) + "` in:\n"_fu) + all_src_35mqdvl0(sources)) + "\n\nOutput is:\n\n"_fu) + all_cpp_uquiu6HQ(ctx)));
+        else
+        {
+            testdiff_prepend += ((";; "_fu + x) + "\n"_fu);
+        };
+    };
+}
+
+                                #ifndef DEF_each_rkpdSRjARG8
+                                #define DEF_each_rkpdSRjARG8
+inline void each_rkpdSRjA(fu::view<fu::str> a, fu::view_mut<fu::str> sources, const s_Context& ctx, fu::str& testdiff_prepend)
+{
+    for (int i = 0; i < a.size(); i++)
+    {
+        l_51_6_UWXIoAmS(a[i], sources, ctx, testdiff_prepend);
+    };
+}
+                                #endif
+
                                 #ifndef DEF_DEFAULT_WORKSPACE
                                 #define DEF_DEFAULT_WORKSPACE
 extern const fu::str DEFAULT_WORKSPACE;
                                 #endif
 
-                                #ifndef DEF_unless_oob_dDAnqb1fZwa
-                                #define DEF_unless_oob_dDAnqb1fZwa
-inline s_CGDefects unless_oob_dDAnqb1f(fu::view<s_CGDefects> a, const int i)
-{
-    if (i < a.size())
-        return a[i];
-    else
-    {
-        return s_CGDefects{};
-    };
-}
-                                #endif
-
-                                #ifndef DEF_str_IT4oIwKCbe9
-                                #define DEF_str_IT4oIwKCbe9
-inline fu::str str_IT4oIwKC(const s_CGDefects n)
+                                #ifndef DEF_str_s4ven7yysl4
+                                #define DEF_str_s4ven7yysl4
+inline fu::str str_s4ven7yy(const s_CGDefects n)
 {
     /*MOV*/ fu::str res {};
 
@@ -2488,6 +2733,9 @@ inline fu::str str_IT4oIwKC(const s_CGDefects n)
         if (n & s_CGDefects_IrrelevantLiteral)
             res += ("IrrelevantLiteral"_fu + ", "_fu);
 
+        if (n & s_CGDefects_DuplicateFunctions)
+            res += ("DuplicateFunctions"_fu + ", "_fu);
+
     };
     if (res)
         res.shrink((res.size() - 2));
@@ -2496,7 +2744,7 @@ inline fu::str str_IT4oIwKC(const s_CGDefects n)
 }
                                 #endif
 
-s_Context ZERO_nyNhVYvN(fu::vec<fu::str>&& sources, const s_Options& options, s_TestDiffs& testdiffs)
+s_Context ZERO_nyNhVYvN(fu::vec<fu::str>&& sources, s_Options&& options, s_TestDiffs& testdiffs)
 {
     // Hoisted:
     fu::str x {};
@@ -2547,7 +2795,7 @@ s_Context ZERO_nyNhVYvN(fu::vec<fu::str>&& sources, const s_Options& options, s_
                                         try
                                         {
                                         {
-                                            ZERO_nyNhVYvN(fu::vec<fu::str>(sources), options_1, testdiffs);
+                                            ZERO_nyNhVYvN(fu::vec<fu::str>(sources), s_Options(options_1), testdiffs);
                                         }
                                         }
                                         catch (const std::exception& o_0)
@@ -2624,7 +2872,7 @@ s_Context ZERO_nyNhVYvN(fu::vec<fu::str>&& sources, const s_Options& options, s_
                         sources.mutref(i_1) = ((prefix + fu::get_view_start0(part, end)) + suffix);
                         if (j)
                         {
-                            ZERO_nyNhVYvN(fu::vec<fu::str>(sources), options, testdiffs);
+                            ZERO_nyNhVYvN(fu::vec<fu::str>(sources), s_Options(options), testdiffs);
                         };
                     };
                 }
@@ -2658,7 +2906,7 @@ s_Context ZERO_nyNhVYvN(fu::vec<fu::str>&& sources, const s_Options& options, s_
                         fu::fail("We expect exactly one `<flip/>` in a `<flip></flip>`."_fu);
                     else
                     {
-                        each_oRImqyOl(split);
+                        each_HcQCJUkf(split);
                         for (int j = split.size(); j-- > 0; )
                         {
                             fu::str a { split[0] };
@@ -2669,7 +2917,7 @@ s_Context ZERO_nyNhVYvN(fu::vec<fu::str>&& sources, const s_Options& options, s_
                             sources.mutref(i_2) = (((prefix + a) + b) + suffix);
                             if (j)
                             {
-                                ZERO_nyNhVYvN(fu::vec<fu::str>(sources), options, testdiffs);
+                                ZERO_nyNhVYvN(fu::vec<fu::str>(sources), s_Options(options), testdiffs);
                             };
                         };
                     };
@@ -2699,7 +2947,7 @@ s_Context ZERO_nyNhVYvN(fu::vec<fu::str>&& sources, const s_Options& options, s_
                 /*MOV*/ fu::str moduleB = ((x7E_gCeFmDFw((fu::get_view(src, start0, start00) + "pub import _"_fu), fu::i64dec(i_3)) + ";"_fu) + fu::get_view(src, start1));
                 /*MOV*/ fu::str without = (fu::get_view_start0(src, start0) + fu::get_view(src, start1));
                 sources.mutref(i_3) = static_cast<fu::str&&>(without);
-                ZERO_nyNhVYvN(fu::vec<fu::str>(sources), options, testdiffs);
+                ZERO_nyNhVYvN(fu::vec<fu::str>(sources), s_Options(options), testdiffs);
                 sources.mutref(i_3) = static_cast<fu::str&&>(moduleA);
                 sources.insert((i_3 + 1), static_cast<fu::str&&>(moduleB));
             };
@@ -2717,9 +2965,8 @@ s_Context ZERO_nyNhVYvN(fu::vec<fu::str>&& sources, const s_Options& options, s_
     {
         fu::println((fu::slate<1, fu::str> { static_cast<fu::str&&>((x = ("\nFAILING TESTCASE:\n"_fu + join_jCe9HYtv(sources, "\n"_fu)), x)) }));
     });
-    fu::vec<s_CGDefects> ok_defects_by_insrc {};
-    fu::vec<fu::vec<fu::str>> expectations {};
-    fu::vec<s_Options> options_1 = map_iTqnWyDT(sources, options);
+    s_CGDefects ok_defects {};
+    fu::vec<fu::str> expectations {};
     for (int i_4 = 0; i_4 < sources.size(); i_4++)
     {
         fu::str& src = sources.mutref(i_4);
@@ -2731,9 +2978,6 @@ s_Context ZERO_nyNhVYvN(fu::vec<fu::str>&& sources, const s_Options& options, s_
 
             src.shrink(end);
         };
-        s_SolverNotes break_notes {};
-        s_CGDefects break_defects {};
-        s_CGDefects ok_defects {};
         int start = 0;
         while (((start = fu::lfind(src, " ;; "_fu, start)) >= 0))
         {
@@ -2742,17 +2986,20 @@ s_Context ZERO_nyNhVYvN(fu::vec<fu::str>&& sources, const s_Options& options, s_
                 end_1 = src.size();
 
             /*MOV*/ fu::str annot = fu::slice(src, (start + 4), end_1);
+            while (annot && (last_uwKwzsvZ(annot) <= ' '))
+                annot.pop();
+
             if (annot[0] == '!')
             {
                 fu::view<char> annot_1 = fu::get_view(annot, 1);
-                const s_SolverNotes notes = parseWild_TGKDkVz3(annot_1);
+                const s_SolverNotes notes = parseWild_QH70UEfF(annot_1);
                 if (notes)
-                    break_notes |= notes;
+                    options.break_notes |= notes;
                 else
                 {
-                    const s_CGDefects defects = parseWild_UDsf7ytG(annot_1);
+                    const s_CGDefects defects = parseWild_PiQK11ii(annot_1);
                     if (defects)
-                        break_defects |= defects;
+                        options.break_defects |= defects;
                     else
                         fu::fail((("Bad break_note/defect: `;; "_fu + annot_1) + "`."_fu));
 
@@ -2760,80 +3007,38 @@ s_Context ZERO_nyNhVYvN(fu::vec<fu::str>&& sources, const s_Options& options, s_
             }
             else
             {
-                const s_CGDefects defect = parseWild_UDsf7ytG(annot);
+                const s_CGDefects defect = parseWild_PiQK11ii(annot);
                 if (defect)
                     ok_defects |= defect;
                 else
-                {
-                    grow_if_oob_EtmluPGj(expectations, i_4) += static_cast<fu::str&&>(annot);
-                };
+                    expectations += static_cast<fu::str&&>(annot);
+
             };
             src.mutref((start + 1)) = '/';
             src.mutref((start + 2)) = '/';
             start = end_1;
         };
-        options_1.mutref(i_4).break_notes = break_notes;
-        options_1.mutref(i_4).break_defects = break_defects;
-        if (ok_defects)
-        {
-            grow_if_oob_0iAFgjPZ(ok_defects_by_insrc, i_4) = ok_defects;
-        };
     };
-    /*MOV*/ s_Context ctx = compile_snippets_uCcoJP3r(sources, fu::vec<fu::str>{}, options_1);
+    /*MOV*/ s_Context ctx = compile_snippets_sz5Wqh9Y(sources, fu::vec<fu::str>{}, s_Options(options));
     fu::str testdiff_prepend = ""_fu;
-    for (int i_5 = 0; i_5 < expectations.size(); i_5++)
-    {
-        fu::view<fu::str> arr = expectations[i_5];
-        fu::view<char> src_1 = sources[i_5];
-        const s_ModuleOutputs& out = ctx.modules[(i_5 + 1)].out;
-        const s_CodegenOutput& cpp = out.cpp;
-        for (int i_6 = 0; i_6 < arr.size(); i_6++)
-        {
-            const fu::str& x_1 = arr[i_6];
-            const s_SolverNotes note = parseWild_TGKDkVz3(x_1);
-            if (note)
-            {
-                if (!(out.solve.notes & note))
-                    fu::fail(((((("Expected note not listed: "_fu + qBAD_3PsDzMvu(x_1)) + " in:\n"_fu) + src_1) + "\n\nOutput is:\n\n"_fu) + cpp.src));
-
-            }
-            else
-            {
-                const int idx = find_KonMQ4KB(x_1, ' ');
-                fu::str cmd = fu::slice(x_1, 0, idx);
-                fu::str rest = fu::slice(x_1, (idx + 1));
-                const bool found = fu::has(cpp.src, rest);
-                if (cmd == "EXPECT"_fu)
-                {
-                    if (!(found))
-                        fu::fail(((((("EXPECT mismatch: `;; "_fu + x_1) + "` in:\n"_fu) + src_1) + "\n\nOutput is:\n\n"_fu) + cpp.src));
-
-                }
-                else if (cmd != "TODO"_fu)
-                    fu::fail(((("Unknown ;; CHECK: `;; "_fu + x_1) + "` in:\n"_fu) + src_1));
-                else if (found)
-                    fu::fail(((((("TODO test is actually passing: `;; "_fu + x_1) + "` in:\n"_fu) + src_1) + "\n\nOutput is:\n\n"_fu) + cpp.src));
-                else
-                {
-                    testdiff_prepend += ((";; "_fu + x_1) + "\n"_fu);
-                };
-            };
-        };
-    };
+    each_rkpdSRjA(expectations, sources, ctx, testdiff_prepend);
     const bool run = true;
-    build_DaUeZzJn(fu::str(DEFAULT_WORKSPACE), FUDIR, fu::str{}, fu::str{}, fu::str{}, fu::str{}, fu::str{}, fu::view<char>{}, "debug"_fu, onfail, run, false, false, false, fu::view<fu::str>{}, fu::view<fu::str>{}, ctx);
-    build_DaUeZzJn(fu::str(DEFAULT_WORKSPACE), FUDIR, fu::str{}, fu::str{}, fu::str{}, fu::str{}, fu::str{}, fu::view<char>{}, fu::view<char>{}, onfail, run, false, false, false, fu::view<fu::str>{}, fu::view<fu::str>{}, ctx);
-    for (int i_7 = 0; i_7 < sources.size(); i_7++)
+    build_dvjTrKQM(fu::str(DEFAULT_WORKSPACE), FUDIR, fu::str{}, fu::str{}, fu::str{}, fu::str{}, fu::str{}, fu::view<char>{}, "debug"_fu, onfail, run, false, false, false, fu::view<fu::str>{}, fu::view<fu::str>{}, ctx);
+    build_dvjTrKQM(fu::str(DEFAULT_WORKSPACE), FUDIR, fu::str{}, fu::str{}, fu::str{}, fu::str{}, fu::str{}, fu::view<char>{}, fu::view<char>{}, onfail, run, false, false, false, fu::view<fu::str>{}, fu::view<fu::str>{}, ctx);
+
     {
-        fu::view<char> src_2 = sources[i_7];
-        const s_CGDefects ok_defects_1 = unless_oob_dDAnqb1f(ok_defects_by_insrc, i_7);
-        const s_CodegenOutput& cpp_1 = ctx.modules[(i_7 + 1)].out.cpp;
-        const s_CGDefects unexpected = s_CGDefects((cpp_1.defects & s_CGDefects(~ok_defects_1)));
-        const s_CGDefects unnecessary = s_CGDefects((s_CGDefects(~cpp_1.defects) & ok_defects_1));
+        s_CGDefects defects_1 {};
+        for (int i_5 = 0; i_5 < sources.size(); i_5++)
+        {
+            const s_CodegenOutput& cpp = ctx.modules[(i_5 + 1)].out.cpp;
+            defects_1 |= cpp.defects;
+        };
+        const s_CGDefects unexpected = s_CGDefects((defects_1 & s_CGDefects(~ok_defects)));
+        const s_CGDefects unnecessary = s_CGDefects((s_CGDefects(~defects_1) & ok_defects));
         if (unexpected)
-            fu::fail(((((("Unwanted CGDefect: "_fu + qBAD_3PsDzMvu(str_IT4oIwKC(unexpected))) + " in:\n"_fu) + src_2) + "\n\nOutput is:\n\n"_fu) + cpp_1.src));
+            fu::fail(((((("Unwanted CGDefect: "_fu + qBAD_3PsDzMvu(str_s4ven7yy(unexpected))) + " in:\n"_fu) + all_src_35mqdvl0(sources)) + "\n\nOutput is:\n\n"_fu) + all_cpp_uquiu6HQ(ctx)));
         else if (unnecessary)
-            fu::fail(((((("Unnecessary CGDefect annotation: "_fu + qID_3PsDzMvu(str_IT4oIwKC(unnecessary))) + " in:\n"_fu) + src_2) + "\n\nOutput is:\n\n"_fu) + cpp_1.src));
+            fu::fail(((((("Unnecessary CGDefect annotation: "_fu + qID_3PsDzMvu(str_s4ven7yy(unnecessary))) + " in:\n"_fu) + all_src_35mqdvl0(sources)) + "\n\nOutput is:\n\n"_fu) + all_cpp_uquiu6HQ(ctx)));
 
     };
 
@@ -2843,10 +3048,10 @@ s_Context ZERO_nyNhVYvN(fu::vec<fu::str>&& sources, const s_Options& options, s_
             testdiff_prepend += "\n"_fu;
         };
         fu::str key = ""_fu;
-        for (int i_8 = 0; i_8 < sources.size(); i_8++)
+        for (int i_6 = 0; i_6 < sources.size(); i_6++)
         {
-            key += sources[i_8];
-            fu::view<char> actual = ctx.modules[((i_8 + ctx.modules.size()) - sources.size())].out.cpp.src;
+            key += sources[i_6];
+            fu::view<char> actual = ctx.modules[((i_6 + ctx.modules.size()) - sources.size())].out.cpp.src;
             set_next_lHORuDVk(testdiffs, key, (testdiff_prepend + actual));
         };
     };
@@ -2898,7 +3103,7 @@ inline fu::str replace_t9kb9bFx(const fu::str& str, fu::view<char> all, fu::view
 }
                                 #endif
 
-static fu::str indent_rTmZaqz6(const fu::str& src)
+static fu::str indent_pPYckf56(const fu::str& src)
 {
     return replace_t9kb9bFx(src, "\n"_fu, "\n\t"_fu);
 }
@@ -2908,7 +3113,7 @@ void ZERO_SAME_JNM3Dz9T(fu::view<fu::vec<fu::str>> alts, s_TestDiffs& testdiffs)
     fu::vec<s_Module> expect = ZERO_nyNhVYvN(fu::vec<fu::str>(alts[0]), s_Options{}, testdiffs).modules;
     for (int i = 1; i < alts.size(); i++)
     {
-        fu::vec<s_Module> actual = compile_snippets_uCcoJP3r(alts[i], fu::vec<fu::str>{}, fu::view<s_Options>{}).modules;
+        fu::vec<s_Module> actual = compile_snippets_sz5Wqh9Y(alts[i], fu::vec<fu::str>{}, s_Options{}).modules;
         if (expect.size() != actual.size())
             fu::fail("ZERO_SAME: expect/actual len mismatch."_fu);
         else
@@ -2921,7 +3126,7 @@ void ZERO_SAME_JNM3Dz9T(fu::view<fu::vec<fu::str>> alts, s_TestDiffs& testdiffs)
                 {
                     write_t5NVzxJy((FUDIR + "expect.diff"_fu), ((strip_MUF5RZQ8(inspect_SOTjKmcd(expect[m])) + "\n\n----------------\n\n"_fu) + x), RW_RW_RW);
                     write_t5NVzxJy((FUDIR + "actual.diff"_fu), ((strip_MUF5RZQ8(inspect_SOTjKmcd(actual[m])) + "\n\n----------------\n\n"_fu) + a), RW_RW_RW);
-                    fu::fail((((x7E_gCeFmDFw((((x7E_gCeFmDFw(((x7E_gCeFmDFw("ZERO_SAME: alts["_fu, fu::i64dec(i)) + "] mismatch at:\n"_fu) + "\nexpect["_fu), fu::i64dec(m)) + "]:\n\t"_fu) + indent_rTmZaqz6(x)) + "\nactual["_fu), fu::i64dec(m)) + "]:\n\t"_fu) + indent_rTmZaqz6(a)) + "\n"_fu));
+                    fu::fail((((x7E_gCeFmDFw((((x7E_gCeFmDFw(((x7E_gCeFmDFw("ZERO_SAME: alts["_fu, fu::i64dec(i)) + "] mismatch at:\n"_fu) + "\nexpect["_fu), fu::i64dec(m)) + "]:\n\t"_fu) + indent_pPYckf56(x)) + "\nactual["_fu), fu::i64dec(m)) + "]:\n\t"_fu) + indent_pPYckf56(a)) + "\n"_fu));
                 };
             };
         };

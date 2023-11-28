@@ -1,15 +1,16 @@
 #include <fu/str.h>
-#include <fu/never.h>
+#include <fu/view.h>
+#include <fu/print.h>
 
 
 #ifndef fu_NO_fdefs
 
 void bReak_DX6KImTN()
 {
-    fu::str a = ((2 > 1) ? "Breakpoint here"_fu : fu::str{});
-    if (!(a))
-        fu_ASSERT();
+    // Hoisted:
+    fu::str x {};
 
+    fu::println((fu::slate<1, fu::str> { static_cast<fu::str&&>((x = "[[[ BREAKPOINT HERE ]]]"_fu, x)) }));
 }
 
 #endif

@@ -33,6 +33,7 @@ struct s_ModuleOutputs;
 struct s_Struct;
 struct s_Target;
 struct s_ScopeItem;
+struct s_Shape;
 struct s_SolverOutput;
 struct s_SolvedNode;
 struct s_Helpers;
@@ -49,12 +50,14 @@ struct s_BitSet;
 struct s_COWInside;
 typedef fu::u8 s_ExitPaths;
 struct s_Template;
+struct s_TEA;
 typedef uint16_t s_FxMask;
 typedef int s_SolverNotes;
 struct s_CodegenOutput;
 typedef fu::u8 s_CGDefects;
 struct s_ModuleStats;
 struct s_ModuleStat;
+struct s_Profile;
 struct s_Map_iIYL7rECCBg;
 struct s_Options;
 struct s_Lint;
@@ -81,7 +84,7 @@ int64_t size_zTt3fZzW(fu::str&&);
 double hr_CPFg3qvV();
 void operator+=(s_ModuleStat&, const s_ModuleStat&);
 void ModuleStat_print_ldE6SCqb(const s_ModuleStat&, const fu::str&, fu::view<char>);
-void build_DaUeZzJn(fu::str&&, fu::view<char>, fu::str&&, fu::str&&, fu::str&&, fu::str&&, fu::str&&, fu::view<char>, fu::view<char>, s_DEV_OnFail, bool, bool, bool, bool, fu::view<fu::str>, fu::view<fu::str>, const s_Context&);
+void build_dvjTrKQM(fu::str&&, fu::view<char>, fu::str&&, fu::str&&, fu::str&&, fu::str&&, fu::str&&, fu::view<char>, fu::view<char>, s_DEV_OnFail, bool, bool, bool, bool, fu::view<fu::str>, fu::view<fu::str>, const s_Context&);
 
                                 #ifndef DEF_s_kind
                                 #define DEF_s_kind
@@ -97,61 +100,60 @@ enum s_kind: fu::u8
     s_kind_char = 8u,
     s_kind_str = 9u,
     s_kind_bool = 10u,
-    s_kind_copy = 11u,
-    s_kind_move = 12u,
-    s_kind_arrlit = 13u,
-    s_kind_definit = 14u,
-    s_kind_empty = 15u,
-    s_kind_not = 16u,
-    s_kind_call = 17u,
-    s_kind_argid = 18u,
-    s_kind_root = 19u,
-    s_kind_block = 20u,
-    s_kind_if = 21u,
-    s_kind_or = 22u,
-    s_kind_and = 23u,
-    s_kind_loop = 24u,
-    s_kind_jump = 25u,
-    s_kind___far_jump = 26u,
-    s_kind_defer = 27u,
-    s_kind_try = 28u,
-    s_kind_let = 29u,
-    s_kind_letdef = 30u,
-    s_kind_typecast = 31u,
-    s_kind_typeassert = 32u,
-    s_kind_typeparam = 33u,
-    s_kind_unwrap = 34u,
-    s_kind_pragma = 35u,
-    s_kind_break = 36u,
-    s_kind_return = 37u,
-    s_kind_continue = 38u,
-    s_kind_import = 39u,
-    s_kind_addroffn = 40u,
-    s_kind_forfieldsof = 41u,
-    s_kind_struct = 42u,
-    s_kind_union = 43u,
-    s_kind_primitive = 44u,
-    s_kind_flags = 45u,
-    s_kind_enum = 46u,
-    s_kind_members = 47u,
-    s_kind_fndef = 48u,
-    s_kind_fn = 49u,
-    s_kind_fnbranch = 50u,
-    s_kind_pattern = 51u,
-    s_kind_typeunion = 52u,
-    s_kind_typetag = 53u,
-    s_kind___relaxed = 54u,
-    s_kind___convert = 55u,
-    s_kind___preceding_ref_arg = 56u,
-    s_kind___no_kind_yet = 57u,
-    s_kind___tombstone = 58u,
-    s_kind_type = 59u,
-    s_kind_var = 60u,
-    s_kind_field = 61u,
-    s_kind_enumv = 62u,
-    s_kind_template = 63u,
-    s_kind___native = 64u,
-    s_kind_inline = 65u,
+    s_kind_definit = 11u,
+    s_kind_empty = 12u,
+    s_kind_struct = 13u,
+    s_kind_union = 14u,
+    s_kind_primitive = 15u,
+    s_kind_flags = 16u,
+    s_kind_enum = 17u,
+    s_kind_fn = 18u,
+    s_kind_copy = 19u,
+    s_kind_move = 20u,
+    s_kind_arrlit = 21u,
+    s_kind_not = 22u,
+    s_kind_call = 23u,
+    s_kind_argid = 24u,
+    s_kind_root = 25u,
+    s_kind_block = 26u,
+    s_kind_if = 27u,
+    s_kind_or = 28u,
+    s_kind_and = 29u,
+    s_kind_loop = 30u,
+    s_kind_jump = 31u,
+    s_kind___far_jump = 32u,
+    s_kind_defer = 33u,
+    s_kind_try = 34u,
+    s_kind_let = 35u,
+    s_kind_letdef = 36u,
+    s_kind_typecast = 37u,
+    s_kind_typeassert = 38u,
+    s_kind_typeparam = 39u,
+    s_kind_unwrap = 40u,
+    s_kind_pragma = 41u,
+    s_kind_break = 42u,
+    s_kind_return = 43u,
+    s_kind_continue = 44u,
+    s_kind_import = 45u,
+    s_kind_addroffn = 46u,
+    s_kind_forfieldsof = 47u,
+    s_kind_members = 48u,
+    s_kind_fnbranch = 49u,
+    s_kind_pattern = 50u,
+    s_kind_typeunion = 51u,
+    s_kind_typetag = 52u,
+    s_kind___relaxed = 53u,
+    s_kind___convert = 54u,
+    s_kind___preceding_ref_arg = 55u,
+    s_kind___no_kind_yet = 56u,
+    s_kind___tombstone = 57u,
+    s_kind_type = 58u,
+    s_kind_var = 59u,
+    s_kind_field = 60u,
+    s_kind_enumv = 61u,
+    s_kind_template = 62u,
+    s_kind___native = 63u,
+    s_kind_inline = 64u,
 };
                                 #endif
 
@@ -187,17 +189,13 @@ inline constexpr s_DeclAsserts MASK_s_DeclAsserts
 
                                 #ifndef DEF_s_ParseSyntax
                                 #define DEF_s_ParseSyntax
-inline constexpr s_ParseSyntax s_ParseSyntax_PS_ID = s_ParseSyntax(1u);
-inline constexpr s_ParseSyntax s_ParseSyntax_PS_PARENS = s_ParseSyntax(2u);
-inline constexpr s_ParseSyntax s_ParseSyntax_PS_SEMI = s_ParseSyntax(4u);
-inline constexpr s_ParseSyntax s_ParseSyntax_PS_DISCARD_IF_BLOCK_TAIL = s_ParseSyntax(8u);
-inline constexpr s_ParseSyntax s_ParseSyntax_PS_ALWAYS_DISCARD = s_ParseSyntax(16u);
-inline constexpr s_ParseSyntax s_ParseSyntax_PS_NOT_AN_EXPRESSION = s_ParseSyntax(32u);
+inline constexpr s_ParseSyntax s_ParseSyntax_PS_PARENS = s_ParseSyntax(1u);
+inline constexpr s_ParseSyntax s_ParseSyntax_PS_DISCARD_IF_BLOCK_TAIL = s_ParseSyntax(2u);
+inline constexpr s_ParseSyntax s_ParseSyntax_PS_ALWAYS_DISCARD = s_ParseSyntax(4u);
+inline constexpr s_ParseSyntax s_ParseSyntax_PS_NOT_AN_EXPRESSION = s_ParseSyntax(8u);
 
 inline constexpr s_ParseSyntax MASK_s_ParseSyntax
-    = s_ParseSyntax_PS_ID
-    | s_ParseSyntax_PS_PARENS
-    | s_ParseSyntax_PS_SEMI
+    = s_ParseSyntax_PS_PARENS
     | s_ParseSyntax_PS_DISCARD_IF_BLOCK_TAIL
     | s_ParseSyntax_PS_ALWAYS_DISCARD
     | s_ParseSyntax_PS_NOT_AN_EXPRESSION;
@@ -205,68 +203,64 @@ inline constexpr s_ParseSyntax MASK_s_ParseSyntax
 
                                 #ifndef DEF_s_Flags
                                 #define DEF_s_Flags
-inline constexpr s_Flags s_Flags_F_METHOD = 1u;
-inline constexpr s_Flags s_Flags_F_OPERATOR = 2u;
-inline constexpr s_Flags s_Flags_F_ACCESS = 4u;
-inline constexpr s_Flags s_Flags_F_TYPENAME = 8u;
-inline constexpr s_Flags s_Flags_F_COMPOUND_ID = 16u;
-inline constexpr s_Flags s_Flags_F_WRITTEN_TO = 32u;
-inline constexpr s_Flags s_Flags_F_LAX = 64u;
-inline constexpr s_Flags s_Flags_F_ARG = 128u;
-inline constexpr s_Flags s_Flags_F_COW_INSIDE = 256u;
-inline constexpr s_Flags s_Flags_F_MOVED_FROM = 512u;
-inline constexpr s_Flags s_Flags_F_CONVERSION = 1024u;
-inline constexpr s_Flags s_Flags_F_OPT_ARG = 2048u;
-inline constexpr s_Flags s_Flags_F_MUT = 4096u;
-inline constexpr s_Flags s_Flags_F_REF = 8192u;
-inline constexpr s_Flags s_Flags_F_IMPLICIT = 16384u;
-inline constexpr s_Flags s_Flags_F_USING = 32768u;
-inline constexpr s_Flags s_Flags_F_MUSTNAME = 65536u;
-inline constexpr s_Flags s_Flags_F_SHADOW = 131072u;
+inline constexpr s_Flags s_Flags_F_CALL_HAS_DOT = 1u;
+inline constexpr s_Flags s_Flags_F_CALL_HAS_ARGPARENS = 2u;
+inline constexpr s_Flags s_Flags_F_CALL_HAS_NAMED_ARGS = 4u;
+inline constexpr s_Flags s_Flags_F_OPERATOR = 8u;
+inline constexpr s_Flags s_Flags_F_TYPENAME = 16u;
+inline constexpr s_Flags s_Flags_F_COMPOUND_ID = 32u;
+inline constexpr s_Flags s_Flags_F_ARGID_IS_OPTIONAL = 64u;
+inline constexpr s_Flags s_Flags_F_LAX = 128u;
+inline constexpr s_Flags s_Flags_F_SHADOW = 256u;
+inline constexpr s_Flags s_Flags_F_MUSTNAME = 512u;
+inline constexpr s_Flags s_Flags_F_WRITTEN_TO = 1024u;
+inline constexpr s_Flags s_Flags_F_MUT = 2048u;
+inline constexpr s_Flags s_Flags_F_CONST = 4096u;
+inline constexpr s_Flags s_Flags_F_VAL = 8192u;
+inline constexpr s_Flags s_Flags_F_REF = 16384u;
+inline constexpr s_Flags s_Flags_F_IMPLICIT = 32768u;
+inline constexpr s_Flags s_Flags_F_USING = 65536u;
+inline constexpr s_Flags s_Flags_F_CONVERSION = 131072u;
 inline constexpr s_Flags s_Flags_F_PUB = 262144u;
 inline constexpr s_Flags s_Flags_F_EXTERN = 524288u;
 inline constexpr s_Flags s_Flags_F_HOTSWAP = 1048576u;
 inline constexpr s_Flags s_Flags_F_PREDICATE = 2097152u;
-inline constexpr s_Flags s_Flags_F_NAMED_ARGS = 4194304u;
-inline constexpr s_Flags s_Flags_F_OOE_RTL = 8388608u;
-inline constexpr s_Flags s_Flags_F_REST_ARG = 16777216u;
-inline constexpr s_Flags s_Flags_F_RELAXABLE_REF = 33554432u;
-inline constexpr s_Flags s_Flags_F_TEMPLATE = 67108864u;
-inline constexpr s_Flags s_Flags_F_INLINE = 134217728u;
-inline constexpr s_Flags s_Flags_F_LAMBDA = 268435456u;
-inline constexpr s_Flags s_Flags_F_INJECTED = 536870912u;
+inline constexpr s_Flags s_Flags_F_REST_ARG = 4194304u;
+inline constexpr s_Flags s_Flags_F_INJECTED = 8388608u;
+inline constexpr s_Flags s_Flags_F_TEMPLATE = 16777216u;
+inline constexpr s_Flags s_Flags_F_INLINE = 33554432u;
+inline constexpr s_Flags s_Flags_F_LAMBDA = 67108864u;
+inline constexpr s_Flags s_Flags_F_COW_INSIDE = 134217728u;
 
 inline constexpr s_Flags MASK_s_Flags
-    = s_Flags_F_METHOD
+    = s_Flags_F_CALL_HAS_DOT
+    | s_Flags_F_CALL_HAS_ARGPARENS
+    | s_Flags_F_CALL_HAS_NAMED_ARGS
     | s_Flags_F_OPERATOR
-    | s_Flags_F_ACCESS
     | s_Flags_F_TYPENAME
     | s_Flags_F_COMPOUND_ID
-    | s_Flags_F_WRITTEN_TO
+    | s_Flags_F_ARGID_IS_OPTIONAL
     | s_Flags_F_LAX
-    | s_Flags_F_ARG
-    | s_Flags_F_COW_INSIDE
-    | s_Flags_F_MOVED_FROM
-    | s_Flags_F_CONVERSION
-    | s_Flags_F_OPT_ARG
+    | s_Flags_F_SHADOW
+    | s_Flags_F_MUSTNAME
+    | s_Flags_F_WRITTEN_TO
     | s_Flags_F_MUT
+    | s_Flags_F_CONST
+    | s_Flags_F_VAL
     | s_Flags_F_REF
     | s_Flags_F_IMPLICIT
     | s_Flags_F_USING
-    | s_Flags_F_MUSTNAME
-    | s_Flags_F_SHADOW
+    | s_Flags_F_CONVERSION
     | s_Flags_F_PUB
     | s_Flags_F_EXTERN
     | s_Flags_F_HOTSWAP
     | s_Flags_F_PREDICATE
-    | s_Flags_F_NAMED_ARGS
-    | s_Flags_F_OOE_RTL
     | s_Flags_F_REST_ARG
-    | s_Flags_F_RELAXABLE_REF
+    | s_Flags_F_INJECTED
     | s_Flags_F_TEMPLATE
     | s_Flags_F_INLINE
     | s_Flags_F_LAMBDA
-    | s_Flags_F_INJECTED;
+    | s_Flags_F_COW_INSIDE;
                                 #endif
 
                                 #ifndef DEF_s_VFacts
@@ -290,10 +284,13 @@ inline constexpr s_SolverStatus s_SolverStatus_SS_FINALIZED = s_SolverStatus(8u)
 inline constexpr s_SolverStatus s_SolverStatus_SS_UPDATED = s_SolverStatus(16u);
 inline constexpr s_SolverStatus s_SolverStatus_SS_TYPE_RECUR = s_SolverStatus(32u);
 inline constexpr s_SolverStatus s_SolverStatus_SS_FN_RECUR = s_SolverStatus(64u);
-inline constexpr s_SolverStatus s_SolverStatus_SS_HOIST = s_SolverStatus(128u);
-inline constexpr s_SolverStatus s_SolverStatus_SS_UNUSED = s_SolverStatus(256u);
-inline constexpr s_SolverStatus s_SolverStatus_SS_MATCHED = s_SolverStatus(512u);
-inline constexpr s_SolverStatus s_SolverStatus_SS_Debug_AllPassesComplete = s_SolverStatus(1024u);
+inline constexpr s_SolverStatus s_SolverStatus_SS_FN_OOE_RTL = s_SolverStatus(128u);
+inline constexpr s_SolverStatus s_SolverStatus_SS_HOIST = s_SolverStatus(256u);
+inline constexpr s_SolverStatus s_SolverStatus_SS_UNUSED = s_SolverStatus(512u);
+inline constexpr s_SolverStatus s_SolverStatus_SS_MATCHED = s_SolverStatus(1024u);
+inline constexpr s_SolverStatus s_SolverStatus_SS_MOVED_FROM = s_SolverStatus(2048u);
+inline constexpr s_SolverStatus s_SolverStatus_SS_ARGUMENT = s_SolverStatus(4096u);
+inline constexpr s_SolverStatus s_SolverStatus_SS_Debug_AllPassesComplete = s_SolverStatus(8192u);
 
 inline constexpr s_SolverStatus MASK_s_SolverStatus
     = s_SolverStatus_SS_LAZY
@@ -303,9 +300,12 @@ inline constexpr s_SolverStatus MASK_s_SolverStatus
     | s_SolverStatus_SS_UPDATED
     | s_SolverStatus_SS_TYPE_RECUR
     | s_SolverStatus_SS_FN_RECUR
+    | s_SolverStatus_SS_FN_OOE_RTL
     | s_SolverStatus_SS_HOIST
     | s_SolverStatus_SS_UNUSED
     | s_SolverStatus_SS_MATCHED
+    | s_SolverStatus_SS_MOVED_FROM
+    | s_SolverStatus_SS_ARGUMENT
     | s_SolverStatus_SS_Debug_AllPassesComplete;
                                 #endif
 
@@ -432,6 +432,7 @@ inline constexpr s_CGDefects s_CGDefects_LocalConstBool = s_CGDefects(8u);
 inline constexpr s_CGDefects s_CGDefects_ConstCast = s_CGDefects(16u);
 inline constexpr s_CGDefects s_CGDefects_PointlessLocal = s_CGDefects(32u);
 inline constexpr s_CGDefects s_CGDefects_IrrelevantLiteral = s_CGDefects(64u);
+inline constexpr s_CGDefects s_CGDefects_DuplicateFunctions = s_CGDefects(128u);
 
 inline constexpr s_CGDefects MASK_s_CGDefects
     = s_CGDefects_GNUStmtExpr
@@ -440,7 +441,8 @@ inline constexpr s_CGDefects MASK_s_CGDefects
     | s_CGDefects_LocalConstBool
     | s_CGDefects_ConstCast
     | s_CGDefects_PointlessLocal
-    | s_CGDefects_IrrelevantLiteral;
+    | s_CGDefects_IrrelevantLiteral
+    | s_CGDefects_DuplicateFunctions;
                                 #endif
 
                                 #ifndef DEF_s_Helpers
@@ -508,6 +510,22 @@ struct s_ModuleOrder
     {
         return false
             || dep_depth
+        ;
+    }
+};
+                                #endif
+
+                                #ifndef DEF_s_TEA
+                                #define DEF_s_TEA
+struct s_TEA
+{
+    unsigned v0;
+    unsigned v1;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || v0
+            || v1
         ;
     }
 };
@@ -626,6 +644,28 @@ struct s_ModuleStat
 };
                                 #endif
 
+                                #ifndef DEF_s_Shape
+                                #define DEF_s_Shape
+struct s_Shape
+{
+    fu::str basePrim;
+    uint64_t non_triv_mask;
+    uint64_t hash;
+    int flatCount;
+    int declDepth;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || basePrim
+            || non_triv_mask
+            || hash
+            || flatCount
+            || declDepth
+        ;
+    }
+};
+                                #endif
+
                                 #ifndef DEF_s_CodegenOutput
                                 #define DEF_s_CodegenOutput
 struct s_CodegenOutput
@@ -663,7 +703,8 @@ struct s_Scope
     fu::vec<s_Target> usings;
     fu::vec<s_Target> converts;
     int pub_items;
-    int pub_cnvrts;
+    int pub_implicits;
+    int pub_converts;
     s_Scope(const s_Scope&) = delete;
     s_Scope(s_Scope&&) = default;
     s_Scope& operator=(const s_Scope&) = delete;
@@ -680,7 +721,8 @@ struct s_Scope
             || usings
             || converts
             || pub_items
-            || pub_cnvrts
+            || pub_implicits
+            || pub_converts
         ;
     }
 };
@@ -778,6 +820,32 @@ struct s_COWInside
 };
                                 #endif
 
+                                #ifndef DEF_s_Struct
+                                #define DEF_s_Struct
+struct s_Struct
+{
+    s_kind kind;
+    fu::str name;
+    s_Target target;
+    fu::vec<s_ScopeItem> items;
+    fu::vec<int> imports;
+    fu::vec<s_Target> converts;
+    s_Shape shape;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || kind
+            || name
+            || target
+            || items
+            || imports
+            || converts
+            || shape
+        ;
+    }
+};
+                                #endif
+
                                 #ifndef DEF_s_Node
                                 #define DEF_s_Node
 struct s_Node
@@ -828,33 +896,15 @@ struct s_Context
 };
                                 #endif
 
-                                #ifndef DEF_s_Struct
-                                #define DEF_s_Struct
-struct s_Struct
+                                #ifndef DEF_s_Profile
+                                #define DEF_s_Profile
+struct s_Profile
 {
-    s_kind kind;
-    fu::str name;
-    s_Target target;
-    fu::vec<s_ScopeItem> items;
-    fu::vec<int> imports;
-    fu::vec<s_Target> converts;
-    fu::str base;
-    int flatCount;
-    int declDepth;
-    bool all_triv;
+    double now;
     explicit operator bool() const noexcept
     {
         return false
-            || kind
-            || name
-            || target
-            || items
-            || imports
-            || converts
-            || base
-            || flatCount
-            || declDepth
-            || all_triv
+            || now
         ;
     }
 };
@@ -967,7 +1017,7 @@ struct s_Extended
     s_Target spec_of;
     s_Template tEmplate;
     fu::vec<s_Overload> locals;
-    fu::str sighash;
+    s_TEA sighash;
     s_FxMask fx_mask;
     explicit operator bool() const noexcept
     {
@@ -1060,6 +1110,7 @@ struct s_Module
     s_ModuleOrder order;
     s_ModuleOutputs out;
     s_ModuleStats stats;
+    s_Profile profile;
     s_Module(const s_Module&) = delete;
     s_Module(s_Module&&) = default;
     s_Module& operator=(const s_Module&) = delete;
@@ -1073,6 +1124,7 @@ struct s_Module
             || order
             || out
             || stats
+            || profile
         ;
     }
 };
@@ -1080,16 +1132,14 @@ struct s_Module
 
                                 #ifndef DEF_s_DevOptions
                                 #define DEF_s_DevOptions
-inline constexpr s_DevOptions s_DevOptions_DEV_PrintAST = s_DevOptions(1u);
-inline constexpr s_DevOptions s_DevOptions_DEV_PrintCG = s_DevOptions(2u);
-inline constexpr s_DevOptions s_DevOptions_DEV_Parallel = s_DevOptions(4u);
-inline constexpr s_DevOptions s_DevOptions_DEV_ExpectFail = s_DevOptions(8u);
-inline constexpr s_DevOptions s_DevOptions_DEV_DontFoldLiterals = s_DevOptions(16u);
-inline constexpr s_DevOptions s_DevOptions_DEV_CG_LifetimeAnnots = s_DevOptions(32u);
+inline constexpr s_DevOptions s_DevOptions_DEV_Print = s_DevOptions(1u);
+inline constexpr s_DevOptions s_DevOptions_DEV_Parallel = s_DevOptions(2u);
+inline constexpr s_DevOptions s_DevOptions_DEV_ExpectFail = s_DevOptions(4u);
+inline constexpr s_DevOptions s_DevOptions_DEV_DontFoldLiterals = s_DevOptions(8u);
+inline constexpr s_DevOptions s_DevOptions_DEV_CG_LifetimeAnnots = s_DevOptions(16u);
 
 inline constexpr s_DevOptions MASK_s_DevOptions
-    = s_DevOptions_DEV_PrintAST
-    | s_DevOptions_DEV_PrintCG
+    = s_DevOptions_DEV_Print
     | s_DevOptions_DEV_Parallel
     | s_DevOptions_DEV_ExpectFail
     | s_DevOptions_DEV_DontFoldLiterals
@@ -1285,15 +1335,16 @@ inline s_Scope clone_u3AUYy1F(const s_Scope& a)
         res.usings = clone_lmGNhJZg(a.usings);
         res.converts = clone_lmGNhJZg(a.converts);
         res.pub_items = clone_dD3H4GX6(a.pub_items);
-        res.pub_cnvrts = clone_dD3H4GX6(a.pub_cnvrts);
+        res.pub_implicits = clone_dD3H4GX6(a.pub_implicits);
+        res.pub_converts = clone_dD3H4GX6(a.pub_converts);
     };
     return /*NRVO*/ res;
 }
                                 #endif
 
-                                #ifndef DEF_clone_frE7d1dBjWe
-                                #define DEF_clone_frE7d1dBjWe
-inline s_SolverNotes clone_frE7d1dB(const s_SolverNotes a)
+                                #ifndef DEF_clone_HWuJXO1jEAi
+                                #define DEF_clone_HWuJXO1jEAi
+inline s_SolverNotes clone_HWuJXO1j(const s_SolverNotes a)
 {
     return a;
 }
@@ -1308,7 +1359,7 @@ inline s_SolverOutput clone_NfKDlKSy(const s_SolverOutput& a)
     {
         res.root = clone_Q1UUsXjh(a.root);
         res.scope = clone_u3AUYy1F(a.scope);
-        res.notes = clone_frE7d1dB(a.notes);
+        res.notes = clone_HWuJXO1j(a.notes);
     };
     return /*NRVO*/ res;
 }
@@ -1345,6 +1396,14 @@ inline const s_ModuleStats& clone_Iv4I43NB(const s_ModuleStats& a)
 }
                                 #endif
 
+                                #ifndef DEF_clone_aAoyWZ00Mtb
+                                #define DEF_clone_aAoyWZ00Mtb
+inline const s_Profile& clone_aAoyWZ00(const s_Profile& a)
+{
+    return a;
+}
+                                #endif
+
                                 #ifndef DEF_clone_G5fNGz6vaZ6
                                 #define DEF_clone_G5fNGz6vaZ6
 inline s_Module clone_G5fNGz6v(const s_Module& a)
@@ -1358,6 +1417,7 @@ inline s_Module clone_G5fNGz6v(const s_Module& a)
         res.order = clone_CDer1pfR(a.order);
         res.out = clone_TzGdNpjo(a.out);
         res.stats = clone_Iv4I43NB(a.stats);
+        res.profile = clone_aAoyWZ00(a.profile);
     };
     return /*NRVO*/ res;
 }
@@ -1389,7 +1449,7 @@ inline int find_KonMQ4KB(fu::view<char> a, const char b)
 }
                                 #endif
 
-inline static void l_3_1_qn18yY69(const s_Import& import, fu::view<s_TokenIdx> via, s_Context& ctx, s_Module& module, const s_Options& options)
+inline static void l_3_1_eB4Di6ad(const s_Import& import, fu::view<s_TokenIdx> via, s_Context& ctx, s_Module& module, const s_Options& options)
 {
     fu::str _0 {};
     const s_ModuleOrder order = (_0 = resolveFile_F2wCJLDv(import.value, ctx), compile_lexParseDeps_jCXXspBS(static_cast<fu::str&&>(_0), (via + import.token), ctx, options));
@@ -1398,12 +1458,12 @@ inline static void l_3_1_qn18yY69(const s_Import& import, fu::view<s_TokenIdx> v
 
 }
 
-                                #ifndef DEF_each_cm6IaAnKlkk
-                                #define DEF_each_cm6IaAnKlkk
-inline void each_cm6IaAnK(fu::view<s_Import> a, fu::view<s_TokenIdx> via, s_Context& ctx, s_Module& module, const s_Options& options)
+                                #ifndef DEF_each_Ndet1De7aRa
+                                #define DEF_each_Ndet1De7aRa
+inline void each_Ndet1De7(fu::view<s_Import> a, fu::view<s_TokenIdx> via, s_Context& ctx, s_Module& module, const s_Options& options)
 {
     for (int i = 0; i < a.size(); i++)
-        l_3_1_qn18yY69(a[i], via, ctx, module, options);
+        l_3_1_eB4Di6ad(a[i], via, ctx, module, options);
 
 }
                                 #endif
@@ -1462,7 +1522,7 @@ static s_ModuleOrder compile_lexParseDeps_jCXXspBS(const fu::str& fname, fu::vie
                 if (!module_1.order)
                 {
                     module_1.order.dep_depth = 1;
-                    each_cm6IaAnK(fu::vec<s_Import>(module_1.in.parse.imports), via, ctx, module_1, options);
+                    each_Ndet1De7(fu::vec<s_Import>(module_1.in.parse.imports), via, ctx, module_1, options);
                     setModule_0FYNSelM(module_1, ctx);
                 }
                 else
@@ -1533,13 +1593,13 @@ static void compile_solveCodegen_F9NqtUPL(s_Module& module, const s_Options& opt
     {
         const s_ModuleStat stat0 = ModuleStat_now_pUbtfzLn();
         module.out.solve = solve_veJH3XG6(ctx, module, options);
-        if (options.dev & s_DevOptions_DEV_PrintAST)
+        if (options.dev & s_DevOptions_DEV_Print)
         {
             fu::println((fu::slate<1, fu::str> { static_cast<fu::str&&>((x = inspect_SOTjKmcd(module), x)) }));
         };
         const s_ModuleStat stat1 = ModuleStat_now_pUbtfzLn();
         module.out.cpp = cpp_codegen_RSs3vpiZ(module, ctx, options);
-        if (options.dev & s_DevOptions_DEV_PrintCG)
+        if (options.dev & s_DevOptions_DEV_Print)
         {
             const fu::str* BL_5_v;
             fu::println((fu::slate<1, fu::str> { fu::str((__extension__ (
@@ -1562,7 +1622,7 @@ inline fu::str x7E_gCeFmDFw(fu::view<char> a, fu::view<char> b)
 }
                                 #endif
 
-inline static s_Result l_3_2_iERBsFqI(const int modid, const s_Context& ctx, const s_Options& options)
+inline static s_Result l_3_2_08uleC1H(const int modid, const s_Context& ctx, const s_Options& options)
 {
 
     try
@@ -1592,12 +1652,12 @@ inline static s_Result l_3_2_iERBsFqI(const int modid, const s_Context& ctx, con
 ;
 }
 
-inline static s_Result& l_39_2_bxW6dAqh(const int i, fu::view<int> arr, fu::view_mut<s_Result> result, const s_Context& ctx, const s_Options& options)
+inline static s_Result& l_41_2_4kzr2sbo(const int i, fu::view<int> arr, fu::view_mut<s_Result> result, const s_Context& ctx, const s_Options& options)
 {
-    return (result.mutref(i) = l_3_2_iERBsFqI(arr[i], ctx, options));
+    return (result.mutref(i) = l_3_2_08uleC1H(arr[i], ctx, options));
 }
 
-inline static void parallel_for_f1yRo0FN(const int min, int end, fu::view<int> arr, fu::view_mut<s_Result> result, const s_Context& ctx, const s_Options& options)
+inline static void parallel_for_id2JHCAb(const int min, int end, fu::view<int> arr, fu::view_mut<s_Result> result, const s_Context& ctx, const s_Options& options)
 {
     int start = (end & 0);
     (void) start;
@@ -1611,24 +1671,24 @@ inline static void parallel_for_f1yRo0FN(const int min, int end, fu::view<int> a
         auto end   = (end_t  ) End;
 
     for (int i = start; i < end; i++)
-        l_39_2_bxW6dAqh(i, arr, result, ctx, options);
+        l_41_2_4kzr2sbo(i, arr, result, ctx, options);
 
     });
 
 }
 
-                                #ifndef DEF_map_CMv3O7ZDjH5
-                                #define DEF_map_CMv3O7ZDjH5
-inline fu::vec<s_Result> map_CMv3O7ZD(fu::view<int> arr, const int min, const s_Context& ctx, const s_Options& options)
+                                #ifndef DEF_map_lpJSyCTKxd1
+                                #define DEF_map_lpJSyCTKxd1
+inline fu::vec<s_Result> map_lpJSyCTK(fu::view<int> arr, const int min, const s_Context& ctx, const s_Options& options)
 {
     /*MOV*/ fu::vec<s_Result> result {};
     result.grow<false>(arr.size());
-    parallel_for_f1yRo0FN(min, arr.size(), arr, result, ctx, options);
+    parallel_for_id2JHCAb(min, arr.size(), arr, result, ctx, options);
     return /*NRVO*/ result;
 }
                                 #endif
 
-inline static void l_3_3_NNZa28GY(const s_Result& result, s_Context& ctx)
+inline static void l_3_3_RPATPl69(const s_Result& result, s_Context& ctx)
 {
     if (result.error)
         fu::fail(fu::str(result.error));
@@ -1637,17 +1697,17 @@ inline static void l_3_3_NNZa28GY(const s_Result& result, s_Context& ctx)
 
 }
 
-                                #ifndef DEF_each_IeB436UMqx8
-                                #define DEF_each_IeB436UMqx8
-inline void each_IeB436UM(fu::view<s_Result> a, s_Context& ctx)
+                                #ifndef DEF_each_mG9qDgscHs7
+                                #define DEF_each_mG9qDgscHs7
+inline void each_mG9qDgsc(fu::view<s_Result> a, s_Context& ctx)
 {
     for (int i = 0; i < a.size(); i++)
-        l_3_3_NNZa28GY(a[i], ctx);
+        l_3_3_RPATPl69(a[i], ctx);
 
 }
                                 #endif
 
-inline static void l_3_4_37AzOvWB(const int modid, s_Context& ctx, const s_Options& options)
+inline static void l_3_4_lZIuRqh2(const int modid, s_Context& ctx, const s_Options& options)
 {
     const s_Module& module = ctx.modules[modid];
     if (!module.out)
@@ -1658,12 +1718,12 @@ inline static void l_3_4_37AzOvWB(const int modid, s_Context& ctx, const s_Optio
     };
 }
 
-                                #ifndef DEF_each_M9RwgTdELzj
-                                #define DEF_each_M9RwgTdELzj
-inline void each_M9RwgTdE(fu::view<int> a, s_Context& ctx, const s_Options& options)
+                                #ifndef DEF_each_Mc2AXjxrdOi
+                                #define DEF_each_Mc2AXjxrdOi
+inline void each_Mc2AXjxr(fu::view<int> a, s_Context& ctx, const s_Options& options)
 {
     for (int i = 0; i < a.size(); i++)
-        l_3_4_37AzOvWB(a[i], ctx, options);
+        l_3_4_lZIuRqh2(a[i], ctx, options);
 
 }
                                 #endif
@@ -1683,11 +1743,11 @@ void compile_adoKzaAQ(const fu::str& fname, s_Context& ctx, const s_Options& opt
         fu::view<int> modids = dep_order[i_1];
         if (options.dev & s_DevOptions_DEV_Parallel)
         {
-            fu::vec<s_Result> results = map_CMv3O7ZD(modids, 0, ctx, options);
-            each_IeB436UM(results, ctx);
+            fu::vec<s_Result> results = map_lpJSyCTK(modids, 0, ctx, options);
+            each_mG9qDgsc(results, ctx);
         }
         else
-            each_M9RwgTdE(modids, ctx, options);
+            each_Mc2AXjxr(modids, ctx, options);
 
     };
 }
@@ -1714,7 +1774,7 @@ static fu::str absdir_pPg01rN2(const fu::str& a)
 
 }
 
-static const fu::str HOME fu_INIT_PRIORITY(1013) = absdir_pPg01rN2(get_vT58MJUZ("HOME"_fu));
+static const fu::str HOME fu_INIT_PRIORITY(1012) = absdir_pPg01rN2(get_vT58MJUZ("HOME"_fu));
 
 fu::str locate_FUDIR_LI96RGZs()
 {
@@ -1730,12 +1790,12 @@ fu::str locate_FUDIR_LI96RGZs()
 
                                 #ifndef DEF_FUDIR
                                 #define DEF_FUDIR
-extern const fu::str FUDIR fu_INIT_PRIORITY(1013) = locate_FUDIR_LI96RGZs();
+extern const fu::str FUDIR fu_INIT_PRIORITY(1012) = locate_FUDIR_LI96RGZs();
                                 #endif
 
                                 #ifndef DEF_DEFAULT_WORKSPACE
                                 #define DEF_DEFAULT_WORKSPACE
-extern const fu::str DEFAULT_WORKSPACE fu_INIT_PRIORITY(1013) = (FUDIR + "build-cpp/"_fu);
+extern const fu::str DEFAULT_WORKSPACE fu_INIT_PRIORITY(1012) = (FUDIR + "build-cpp/"_fu);
                                 #endif
 
                                 #ifndef DEF_CTX_PRELUDE
@@ -1796,6 +1856,7 @@ void compile_and_build_ioExL0pD(const fu::str& fname, const fu::str& dir_wrk, co
     fu::str x_1 {};
     fu::str x_2 {};
     fu::str x_3 {};
+    fu::str x_4 {};
 
     s_Context ctx = clone_OwUtczls(CTX_PRELUDE);
     const s_Options options = s_Options { s_Lint{}, s_SolverNotes{}, s_CGDefects{}, s_DevOptions_DEV_Parallel, {} };
@@ -1824,10 +1885,11 @@ void compile_and_build_ioExL0pD(const fu::str& fname, const fu::str& dir_wrk, co
             ModuleStat_print_ldE6SCqb(parse, "  parse "_fu, ""_fu);
             ModuleStat_print_ldE6SCqb(solve, "  solve "_fu, ""_fu);
             ModuleStat_print_ldE6SCqb(codegen, "codegen "_fu, "\n"_fu);
+            fu::println((fu::slate<1, fu::str> { static_cast<fu::str&&>((x_1 = "\t---------"_fu, x_1)) }));
         };
-        fu::println((fu::slate<3, fu::str> { static_cast<fu::str&&>((x_1 = "        "_fu, x_1)), static_cast<fu::str&&>((x_2 = fu::f64dec(tt), x_2)), static_cast<fu::str&&>((x_3 = "s\n"_fu, x_3)) }));
+        fu::println((fu::slate<3, fu::str> { static_cast<fu::str&&>((x_2 = "        "_fu, x_2)), static_cast<fu::str&&>((x_3 = fu::f64dec(tt), x_3)), static_cast<fu::str&&>((x_4 = "s\n"_fu, x_4)) }));
     };
-    build_DaUeZzJn(fu::str(dir_wrk), FUDIR, fu::str{}, fu::str(bin), fu::str(dir_obj), fu::str(dir_src), fu::str(dir_cpp), fname, scheme, s_DEV_OnFail{}, run, shared, hotswap, nocache, flags_cc, flags_ld, ctx);
+    build_dvjTrKQM(fu::str(dir_wrk), FUDIR, fu::str{}, fu::str(bin), fu::str(dir_obj), fu::str(dir_src), fu::str(dir_cpp), fname, scheme, s_DEV_OnFail{}, run, shared, hotswap, nocache, flags_cc, flags_ld, ctx);
 }
 
 #endif

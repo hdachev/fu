@@ -178,7 +178,7 @@ void add_range_y5kfkU4t(s_BitSet& _, const int end)
         int i_1 = (floorBytes << 3);
         do
             tail |= fu::u8((fu::u8(1u) << fu::u8(unsigned((i_1 & 7)))));
-        while ((i_1++ < end));
+        while ((++i_1 < end));
         _._data.mutref(floorBytes) = tail;
     };
 }

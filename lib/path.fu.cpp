@@ -79,9 +79,9 @@ inline static fu::vec<fu::str>& l_0_0_ziPC6VQi(const fu::str& substr, fu::vec<fu
     return (result += fu::str(substr));
 }
 
-                                #ifndef DEF_split_PeSlp6OJs8b
-                                #define DEF_split_PeSlp6OJs8b
-inline void split_PeSlp6OJ(const fu::str& str, const char sep, fu::vec<fu::str>& result)
+                                #ifndef DEF_split_sJokOFGiNqg
+                                #define DEF_split_sJokOFGiNqg
+inline void split_sJokOFGi(const fu::str& str, const char sep, fu::vec<fu::str>& result)
 {
     int last = 0;
     int next = 0;
@@ -104,7 +104,7 @@ inline void split_PeSlp6OJ(const fu::str& str, const char sep, fu::vec<fu::str>&
 inline fu::vec<fu::str> split_42u6frOY(const fu::str& str, const char sep)
 {
     /*MOV*/ fu::vec<fu::str> result {};
-    split_PeSlp6OJ(str, sep, result);
+    split_sJokOFGi(str, sep, result);
     return /*NRVO*/ result;
 }
                                 #endif
