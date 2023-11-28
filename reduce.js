@@ -548,8 +548,6 @@ function tryShortCircuitFn(src)
     if (!match)
         return false;
 
-    console.log("\nSHORT_CIRCUIT_FN\n<<<" + match[0] + ">>>");
-
     let head = match[1];
     let args = match[2];
     let tail = match[3];
@@ -566,6 +564,25 @@ function tryShortCircuitFn(src)
     return (
         src.slice(0, match.index) +
         head + args + tail +
+        src.slice(match.index + match[0].length));
+}
+
+
+//
+
+const re_EMPTY_BLOCK = /\{[^{}]+(\{[^{}]+\}[^{}]*)*\}/g;
+
+function tryEmptyBlock(src)
+{
+    const match = randExec(src, re_EMPTY_BLOCK);
+    if (!match)
+        return false;
+
+    console.log("\nEMPTY_BLOCK\n<<<" + match[0] + ">>>");
+
+    return (
+        src.slice(0, match.index) +
+        '{}' +
         src.slice(match.index + match[0].length));
 }
 
@@ -589,6 +606,7 @@ const _strategies =
     tryUnwrapSingleStmtBlock,
     tryPopSingleStmtControl,
     tryPopIfWhileCond,
+    tryEmptyBlock,
 
     tryPopArgumentTypeAnnot,
     tryPopArgumentLike,
