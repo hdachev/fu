@@ -18042,7 +18042,7 @@ pub extern fn runTests()
         fn main() = [ 1 ].at(0) - 1;
     `);
 
-    TODO_semantics(currently: "Does not <fail>", `
+    ZERO(`
         fn PreIncr( <fail bad call ++ mutref 3:20+2><pass/>
             ref     </fail>
                 x) ++x;
@@ -18062,7 +18062,7 @@ pub extern fn runTests()
         fn main() val_keyword(2, 3) - 5;
     `);
 
-    TODO_semantics(currently: "Bad call to val_keyword 7:30+1 expects mutref", `
+    ZERO(`
         fn val_keyword(const ref a, const ref b) {
             const ref c = a || b;
             return c;
@@ -18071,8 +18071,8 @@ pub extern fn runTests()
         fn main() val_keyword(2, 3) - 2;
     `);
 
-    TODO_semantics(currently: "BUG exit code", `
-        <fail explicit_arg closure_arg both alias use val or ref X:X>
+    TODO_slices(currently: "cannot resolve by temporary copy explicit_arg is ref 8:17+11", `
+        <fail explicit_arg closure_arg both alias use val or ref 9:25+14>
         fn foreach_modify(    explicit_arg: int[], foreach)     <pass/>
         fn foreach_modify(ref explicit_arg: int[], foreach)     </fail>
             for (mut i = explicit_arg.len; i --> 0; )

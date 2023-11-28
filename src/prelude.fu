@@ -15,16 +15,16 @@ infix fn % !T(a: T, b: T)
     case (T.is::integral): T __native;
     case (T.is::floating_point): T __native("<cmath>", "std::fmod");
 
-prefix fn ++ !T(ref a: T) case (T.is::arithmetic): &mut T __native;
-prefix fn -- !T(ref a: T) case (T.is::arithmetic): &mut T __native;
+prefix fn ++ !T(mut ref a: T) case (T.is::arithmetic): &mut T __native;
+prefix fn -- !T(mut ref a: T) case (T.is::arithmetic): &mut T __native;
 
-postfix fn ++ !T(ref a: T) case (T.is::arithmetic): T __native;
-postfix fn -- !T(ref a: T) case (T.is::arithmetic): T __native;
+postfix fn ++ !T(mut ref a: T) case (T.is::arithmetic): T __native;
+postfix fn -- !T(mut ref a: T) case (T.is::arithmetic): T __native;
 
-infix fn += !T(ref a: T, b: T) case (T.is::arithmetic): &mut T __native;
-infix fn -= !T(ref a: T, b: T) case (T.is::arithmetic): &mut T __native;
-infix fn *= !T(ref a: T, b: T) case (T.is::arithmetic): &mut T __native;
-infix fn /= !T(ref a: T, b: T) case (T.is::arithmetic): &mut T __native;
+infix fn += !T(mut ref a: T, b: T) case (T.is::arithmetic): &mut T __native;
+infix fn -= !T(mut ref a: T, b: T) case (T.is::arithmetic): &mut T __native;
+infix fn *= !T(mut ref a: T, b: T) case (T.is::arithmetic): &mut T __native;
+infix fn /= !T(mut ref a: T, b: T) case (T.is::arithmetic): &mut T __native;
 
 infix fn >  !T(a: T, b: T) case (T.is::primitive): bool __native;
 infix fn <  !T(a: T, b: T) case (T.is::primitive): bool __native;
@@ -40,15 +40,15 @@ infix fn & !T(a: T, b: T) case (T.is::bitfield): T __native;
 infix fn | !T(a: T, b: T) case (T.is::bitfield): T __native;
 infix fn ^ !T(a: T, b: T) case (T.is::bitfield): T __native;
 
-infix fn &= !T(ref a: T, b: T) case (T.is::bitfield): &mut T __native;
-infix fn |= !T(ref a: T, b: T) case (T.is::bitfield): &mut T __native;
-infix fn ^= !T(ref a: T, b: T) case (T.is::bitfield): &mut T __native;
+infix fn &= !T(mut ref a: T, b: T) case (T.is::bitfield): &mut T __native;
+infix fn |= !T(mut ref a: T, b: T) case (T.is::bitfield): &mut T __native;
+infix fn ^= !T(mut ref a: T, b: T) case (T.is::bitfield): &mut T __native;
 
 infix fn << !T(a: T, b: T) case (T.is::integral): T __native;
 infix fn >> !T(a: T, b: T) case (T.is::integral): T __native;
 
-infix fn <<= !T(ref a: T, b: T) case (T.is::integral): &mut T __native;
-infix fn >>= !T(ref a: T, b: T) case (T.is::integral): &mut T __native;
+infix fn <<= !T(mut ref a: T, b: T) case (T.is::integral): &mut T __native;
+infix fn >>= !T(mut ref a: T, b: T) case (T.is::integral): &mut T __native;
 
 
 // Numeric conversions.
@@ -162,11 +162,11 @@ fn finite !T(v: T) case (T.is::floating_point): bool __native("<cmath>", "std::i
 
 // Assignment.
 
-infix fn   = !T(ref a: T,    mut b: T): &mut T __native;
-infix fn ||= !T(ref a: T, inline b: T): &mut T = a || (a = b);
-infix fn &&= !T(ref a: T, inline b: T): &mut T = a && (a = b);
+infix fn   = !T(mut ref a: T,    mut b: T): &mut T __native;
+infix fn ||= !T(mut ref a: T, inline b: T): &mut T = a || (a = b);
+infix fn &&= !T(mut ref a: T, inline b: T): &mut T = a && (a = b);
 
-fn swap !T(ref a: T, ref b: T): void __native(
+fn swap !T(mut ref a: T, mut ref b: T): void __native(
     "hacks/soft_risk",
     "<utility>", "std::swap");
 
@@ -184,55 +184,55 @@ fn [:] (type T) = typeof([] => T[:]);
 
 novec fn len !T(a: T[:]): int __native(".size()");
 
-novec fn [] !T(a: T[:], i: int)
+novec fn [] !T(ref a: T[:], i: int)
     case (typeof(a) -> &mut T[:]): &mut T __native(".mutref");
     default                      : &    T __native;
 
-novec fn [:] !T(a: T[:], start!: int)
+novec fn [:] !T(ref a: T[:], start!: int)
     case (typeof(a) -> &mut T[:]): &mut T[:] __native("<fu/view.h>", "fu::get_view_mut");
     default                      : &    T[:] __native("<fu/view.h>", "fu::get_view");
 
-novec fn [:] !T(a: T[:], end!: int)
+novec fn [:] !T(ref a: T[:], end!: int)
     case (typeof(a) -> &mut T[:]): &mut T[:] __native("<fu/view.h>", "fu::get_view_start0_mut");
     default                      : &    T[:] __native("<fu/view.h>", "fu::get_view_start0");
 
-novec fn [:] !T(a: T[:], start: int, end: int)
+novec fn [:] !T(ref a: T[:], start: int, end: int)
     case (typeof(a) -> &mut T[:]): &mut T[:] __native("<fu/view.h>", "fu::get_view_mut");
     default                      : &    T[:] __native("<fu/view.h>", "fu::get_view");
 
-fn    push !T(ref a: T[], mut b: T): void __native(".push");
-fn unshift !T(ref a: T[], mut b: T): void __native(".unshift");
-fn  insert !T(ref a: T[], i: int, mut b: T): void __native(".insert");
+fn    push !T(mut ref a: T[], mut b: T): void __native(".push");
+fn unshift !T(mut ref a: T[], mut b: T): void __native(".unshift");
+fn  insert !T(mut ref a: T[], i: int, mut b: T): void __native(".insert");
 
-fn slice !T(a: T[:], start: int, end: int)
+fn slice !T(const ref a: T[:], start: int, end: int)
     case (typeof(a) -> T[]):  T[] __native("<fu/vec/slice.h>", "fu::slice");
     default                : T[:] __native("<fu/view.h>", "fu::get_view");
 
-fn slice !T(a: T[:], start: int)
+fn slice !T(const ref a: T[:], start: int)
     case (typeof(a) -> T[]):  T[] __native("<fu/vec/slice.h>", "fu::slice");
     default                : T[:] __native("<fu/view.h>", "fu::get_view");
 
 fn substr !T(a: T[], start: int, end: int): T[] __native("<fu/vec/slice.h>", "fu::substr");
 
-fn splice !T(ref a: T[], start: int, count: int): void  __native(".splice");
-fn splice !T(ref a: T[], start: int, count: int, /*TODO FIX*/b: T[:]): void  __native(".splice");
+fn splice !T(mut ref a: T[], start: int, count: int): void  __native(".splice");
+fn splice !T(mut ref a: T[], start: int, count: int, /*TODO FIX*/b: T[:]): void  __native(".splice");
 
-fn    pop !T(ref a: T[]): void __native(".pop()");
-fn  shift !T(ref a: T[]): void __native(".shift()");
+fn    pop !T(mut ref a: T[]): void __native(".pop()");
+fn  shift !T(mut ref a: T[]): void __native(".shift()");
 
-fn  clear !T(ref a: T[]): void __native(".clear()");
-fn shrink !T(ref a: T[], len: int): void __native(".shrink");
+fn  clear !T(mut ref a: T[]): void __native(".clear()");
+fn shrink !T(mut ref a: T[], len: int): void __native(".shrink");
 
-fn resize !T(ref a: T[], len: int): void __native(".resize");
-fn   grow !T(ref a: T[], len: int): void __native(".grow");
+fn resize !T(mut ref a: T[], len: int): void __native(".resize");
+fn   grow !T(mut ref a: T[], len: int): void __native(".grow");
 
-fn resize_junk !T(ref a: T[], len: int): void __native(".resize<false>");
-fn   grow_junk !T(ref a: T[], len: int): void __native(".grow<false>");
+fn resize_junk !T(mut ref a: T[], len: int): void __native(".resize<false>");
+fn   grow_junk !T(mut ref a: T[], len: int): void __native(".grow<false>");
 
 
 // Sorts, via std::sort - fnptrs.
 
-fn sort !T(ref a: T[:]): void
+fn sort !T(mut ref a: T[:]): void
 {
     pragma include("<algorithm>");
     pragma emit(
@@ -242,7 +242,7 @@ fn sort !T(ref a: T[:]): void
     \`);
 }
 
-fn sort !T(ref a: T[:], less/*: fn(a: T, b: T): bool*/): void
+fn sort !T(mut ref a: T[:], less/*: fn(a: T, b: T): bool*/): void
 {
     noflow fn sort()
     {
@@ -351,22 +351,22 @@ infix fn ~ !T(a: T[:], b: T[:]): T[] __native("<fu/vec/concat.h>",     "+");
 infix fn ~ !T(a: T[:], b:  T  ): T[] __native("<fu/vec/concat_one.h>", "+");
 infix fn ~ !T(a:  T  , b: T[:]): T[] __native("<fu/vec/concat_one.h>", "+");
 
-infix fn ~= !T(ref a: T[],     b: T[:]): &mut T[] __native("<fu/vec/concat.h>",     "+=");
-infix fn ~= !T(ref a: T[], mut b:  T  ): &mut T[] __native("<fu/vec/concat_one.h>", "+=");
+infix fn ~= !T(mut ref a: T[],     b: T[:]): &mut T[] __native("<fu/vec/concat.h>",     "+=");
+infix fn ~= !T(mut ref a: T[], mut b:  T  ): &mut T[] __native("<fu/vec/concat_one.h>", "+=");
 
 
 // Fun with views.
 
-fn view !T(a: T[:], type of)
+fn view !T(ref a: T[:], type of)
     case (typeof(a) -> &mut T[:] && T.is::reinterpretable && of.is::reinterpretable): &mut [of] __native("<fu/view.h>", "fu::view_of_mut<>");
-    case (                          T.is::reinterpretable && of.is::reinterpretable):      [of] __native("<fu/view.h>", "fu::view_of<>");
+    case (                          T.is::reinterpretable && of.is::reinterpretable): &    [of] __native("<fu/view.h>", "fu::view_of<>");
 
-infix fn .= !T(ref a: T[:], b: T[:]) case (T.is::copy): void __native("<fu/vec/view_assign.h>", "fu::view_assign");
+infix fn .= !T(mut ref a: T[:], b: T[:]) case (T.is::copy): void __native("<fu/vec/view_assign.h>", "fu::view_assign");
 
 // TODO not needed if swap(x, y) alias-ok's its two arguments:
-fn swap !T(ref a: T[:], i: int, j: int): void __native("<fu/vec/view_swap.h>", "fu::view_swap");
+fn swap !T(mut ref a: T[:], i: int, j: int): void __native("<fu/vec/view_swap.h>", "fu::view_swap");
 
-fn partition !T(ref a: T[:], predicate)
+fn partition !T(mut ref a: T[:], predicate)
 {
     let size = a.len;
     mut keep = 0;
@@ -381,7 +381,7 @@ fn partition !T(ref a: T[:], predicate)
     return keep;
 }
 
-fn remove !T(ref a: T[], predicate)
+fn remove !T(mut ref a: T[], predicate)
 {
     if (T.is::trivial)
     {
@@ -406,9 +406,9 @@ fn remove !T(ref a: T[], predicate)
 
 // Stringifiables.
 
-infix fn ~  !T(    a: [byte], b.str) a ~ b;
-infix fn ~  !T(    a.str, b: [byte]) a ~ b;
-infix fn ~= !T(ref a: string, b.str) a ~= b;
+infix fn ~ (        a: [byte], b.str) a ~ b;
+infix fn ~ (        a.str, b: [byte]) a ~ b;
+infix fn ~=(mut ref a: string, b.str) a ~= b;
 
 fn str !T(n: T)
     case (T.is::unsigned       ): string __native("<fu/decstr.h>", "fu::u64dec");
@@ -592,11 +592,11 @@ fn map !T(a: T[:], fn)
     return res;
 }
 
-fn each !T(a: T[:], fn)
+fn each !T(ref a: T[:], fn)
     for (mut i = 0; i < a.len; i++)
         fn(a[i], i?: i);
 
-fn reverse !T(ref a: T[:])
+fn reverse !T(mut ref a: T[:])
 {
     let n1 = a.len - 1;
     let n2 = a.len >> 1;

@@ -110,9 +110,9 @@ using flags Flags: u32
     F_MUSTNAME
     F_WRITTEN_TO
 
-    // ...
-    // ...
-    F_MUT
+    F_MUT                   // mutability & val-vs-ref semantics
+    F_CONST                 //  now orthogonal.
+    F_VAL
     F_REF
 
 
@@ -129,7 +129,7 @@ using flags Flags: u32
 
     // ...
     F_REST_ARG
-    F_RELAXABLE_REF
+    // ...
     F_INJECTED      // TODO move into SolverStatus
 
     F_TEMPLATE

@@ -771,50 +771,14 @@ pub fn parse(
         {
             let v = token.value;
 
-            if (v == "let"
-
-                // Forward compat for the new
-                //  explicit value-vs-reference semantics stuff,
-                //   probably something alla:
-                //
-                //      let: const ref to immutable, the default, implide for arguments,
-                //          this is the intersection of value and reference semantics,
-                //          all guarantees hold but most restricting.
-                //
-                // If you want value semantics -
-                //  you don't care if the original changes
-                //   during the lifetime of the binding:
-                //
-                //      mut (or var?): mutable local variable -
-                //          value semantics, allows temp copy on init.
-                //
-                //      val: immutable local variable, allows a temp copy -
-                //          currently all lets allow these, but this
-                //          can lead to really confusing behavior
-                //          in higher-order fn templates.
-                //
-                // If you want reference semantics -
-                //
-                //      ref: binds to any ref, const or mut -
-                //          In templates binds to any ref, const or mut.
-                //          In non-templates, either:
-                //              - implies mutref (almost never any point in using ref otherwise).
-                //              - or perhaps solve against mutref, and then attempt to emit
-                //                  a const-ref return relax if retval is mutref.
-                //
-                //      mut ref: explicitly requests a mutref.
-                //      const ref: explicitly requests a const-ref to a mutable place.
-                //
-                //  --------------------------------
-                //  Not sure about the references semantics stuff, still messy.
-                //  But happy with the let, var & val stuff, let's start from there.
-                //
-                || v == "alias" || v == "val" || v == "var" || v == "const")
+            if (v == "let")
             {
                 return parseLetStmt();
             }
 
-            if (v == "mut" || v == "ref" || v == "implicit" || v == "type")
+            if (v == "mut" || v == "ref" ||
+                v == "val" || v == "const" ||
+                v == "implicit" || v == "type")
             {
                 _idx--;
                 return parseLetStmt();
@@ -1170,7 +1134,7 @@ pub fn parse(
         // A single argument, named after the lambda.
         let singleArg = createLet(
             id: name,
-            flags: F_TEMPLATE | F_SHADOW);
+            flags: F_TEMPLATE | F_SHADOW | F_REF);
 
         // We back off one token, so we can re-parse the leading dot.
         let singleExpression = parseExpression(
@@ -1443,16 +1407,35 @@ pub fn parse(
             if (tryConsume("id", "lax"      , :fn peek)) flags |= F_LAX;
             if (tryConsume("id", "shadow"   , :fn peek)) flags |= F_SHADOW;
 
-            // FWD COMPAT
-            if      (tryConsume("id", "const"    , :fn peek)) {}
-            else if (tryConsume("id", "mut"      , :fn peek)) flags |= F_MUT;
+            if (tryConsume("id", "type"     , :fn peek)) flags |= F_TYPENAME;
+            else
+            {
+                // FWD COMPAT
+                if      (tryConsume("id", "mut"      , :fn peek)) flags |= F_MUT;
+                else if (tryConsume("id", "const"    , :fn peek)) flags |= F_CONST;
 
-            // FWD COMPAT
-            if      (tryConsume("id", "val"      , :fn peek)) {}
-            else if (tryConsume("id", "ref"      , :fn peek)) flags |= F_REF;
-            else if (tryConsume("id", "type"     , :fn peek)) flags |= F_TYPENAME;
+                // FWD COMPAT
+                if      (tryConsume("id", "ref"      , :fn peek)) flags |= F_REF;
+                else if (tryConsume("id", "val"      , :fn peek)) flags |= F_VAL;
+            }
         }
+        //
+        // Standalone `mut` - default to value semantics,
+        //  this is a local variable.
+        if (flags & F_MUT && !(flags & F_REF))
+            flags |= F_VAL;
+        //
+        // Standalone `const` - default to reference semantics,
+        //  locks the value in place rust-like.
+        if (flags & F_CONST && !(flags & F_VAL))
+            flags |= F_REF;
+        //
+        // If neither is set, we'll leave this up to the solver to infer.
+        //  Most lets will have value semantics,
+        //   except in cases of ambiguity where we'll explain what's going on,
+        //    and ask the programmer to explicitly use `val` or `ref`.
 
+        // ----
         // Experimental shorthand, meant for fn arguments -
         //
         //  fn name(kind: kind::kind, ...)      max verbose
@@ -1531,25 +1514,6 @@ pub fn parse(
         let init        = optional
             ? createDefinit()
             : tryParseLetInit();
-
-        // TODO FIX unify &mut annots with ref-prefixed vars -
-        //  initially started by replacing a: &mut annots with refs,
-        //   caused a bunch of problems ultimate bottom line is that
-        //    the type annot is no longer one thing but two -
-        //     the annot node and flags.
-        //
-        // Trying out the opposite - going for &mut annots only.
-        //  To finish this up we can have `let a: &mut _ = b`,
-        //   and `ref a = b` would be sugar for that.
-        //
-        if (flags & F_REF && type && xqmark)
-        {
-            if (type.kind != "call" || type.value != "&mut")
-            {
-                type = createPrefix("&mut", type);
-                flags &= ~F_REF;
-            }
-        }
 
         return createLet(id, :flags, :type, :init);
     }
@@ -2124,7 +2088,7 @@ pub fn parse(
             return getAutoName(expr.items[i]);
         }
 
-        return fail("Can't :autoname this expression.");
+        return fail("Cannot :autoname this expression.");
     }
 
     fn createArgID(id: string, expr: Node, flags?: Flags): Node

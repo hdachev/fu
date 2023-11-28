@@ -946,7 +946,7 @@ pub fn hasStatic(lifetime: Lifetime): bool
 
 //
 
-fn Lifetime_some(lifetime: Lifetime, some)
+pub fn Lifetime_some(lifetime: Lifetime, some)
 {
     Lifetime_each(:lifetime):
         |lax locid, lax argidx, lax isStatic, lax isTemp, lax isArgIdx|

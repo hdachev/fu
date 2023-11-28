@@ -517,6 +517,9 @@ pub fn solve(
         CantTempCopy_FastFn
         CantTempCopy_NonCopiable
         CantTempCopy_ReturnedFromFn
+
+        //
+        RequireVal_AliasesMutatedInjectedArgument
     };
 
 
@@ -601,7 +604,12 @@ pub fn solve(
 
     fn isMutVal(o: Overload)
     {
-        return !!(o.flags & F_MUT);
+        return !(~o.flags & (F_MUT | F_VAL));
+    }
+
+    fn isMutRef(flags: Flags)
+    {
+        return !(~flags & (F_MUT | F_REF));
     }
 
 
@@ -776,7 +784,7 @@ pub fn solve(
         return prefix.qKW ~ " " ~ ns ~ o.name.human.qID;
     }
 
-    fn str(arg: Argument)
+    fn str(arg: Argument, brief!?: bool)
     {
         mut prefix = (arg.flags & F_INJECTED && "injected ")
                    ~ (arg.flags & F_IMPLICIT && "implicit ")
@@ -785,7 +793,7 @@ pub fn solve(
         prefix ~= "arg";
 
         mut fn = "";
-        if (arg.target)
+        if (arg.target && !brief)
         {
             let parent = arg.target.parent;
             if (parent != _current_fn.target)
@@ -1032,42 +1040,27 @@ pub fn solve(
 
     fn Lifetime_fromNative(sig: [Node], args: [SolvedNode], actual: Type): Lifetime
     {
-        sig.len + FN_ARGS_BACK == args.len || BUG("sig.len != args.len");
-
-        let ret = sig[sig.len + FN_RET_BACK];
-        mut mutref = ret.kind == "call" && ret.items.len == 1 && ret.value == "&mut";
-
         mut res: Type;
-        for (;;)
+
+        sig.len + FN_ARGS_BACK == args.len || BUG("sig.len != args.len");
+        for (mut i = 0; i < args.len; i++)
         {
-            for (mut i = 0; i < args.len; i++)
+            if (sig[i].flags & F_REF)
             {
-                let inArg = sig[i];
-                let annot = inArg.items[LET_TYPE];
-                if (annot.items.len == 1 && ((annot.kind == "call"
-                    && (!mutref && (annot.value == "&" || annot.value == "[:]") || annot.value == "&mut"))
+                res && fail(
+                    "Multiple ref arguments, cannot infer what the returned reference points to.");
 
-                        // TODO FIX REMOVE OLD SLICE SYNTAX
-                     || !mutref && annot.kind == "arrlit"))
-                {
-                    res && fail("Ambiguous __native lifetime.");
-
-                    res = args[i].target.type;
-                    res.lifetime || fail("Missing arg lifetime.");
-                }
+                res = args[i].target.type;
+                res.lifetime || fail(
+                    "Missing ref argument lifetime.");
             }
-
-            // Try again without the mutref,
-            //  currently we have a bunch of drama related to case-patterns,
-            //   the mutref annots actually come in the branches, not the arg annots.
-            if (!mutref || res.lifetime)
-                break;
-
-            mutref = false;
         }
 
-        res.lifetime.Lifetime_if_only(|locid| !!locid)
-            || fail("Non-single-local __native lifetime.");
+        res.lifetime || fail(
+            "No ref arguments, cannot infer what the returned reference points to.");
+
+        res.lifetime.Lifetime_if_only(|locid| !!locid) || fail(
+            "Infered a non-single-local __native lifetime: " ~ res.lifetime);
 
         // TODO FIX UNIQUENESS adding a static lifetime to ref results
         //  that are not assignable from the source argument,
@@ -2056,12 +2049,8 @@ pub fn solve(
                         // Template arguments.
                         if (!expect)
                         {
-                            // TODO FIX Check that ref args are mutrefs,
-                            //  otherwise we get mustMatch fails after a spec-ok.
-                            if (host_arg.flags & F_REF && !actual.is_mutref)
-                                matchFail(host_arg ~ " expects a mutref, got " ~ humanizeType(actual));
-
-                            // Might as well do the exact same thing here.
+                            // We used to do a flags.isMutRef check here too,
+                            //  now done in doTrySpecialize so it can prevent invalid native relaxes.
                             if (host_arg.flags & F_TYPENAME && !actual.is_Typename)
                                 matchFail(host_arg ~ " expects a type, got a value: " ~ humanizeType(actual));
 
@@ -4703,7 +4692,7 @@ pub fn solve(
 
     fn keepOrClearMutVal(ref o: Overload, keep!: bool)
     {
-        o.kind == "var" && o.flags & F_MUT || BUG("keepOrClearMutVal: Not a mut var: " ~ o);
+        o.kind == "var" && o.isMutVal || BUG("keepOrClearMutVal: Not a mut var: " ~ o);
 
         ref node = o.solved;
         if (keep)
@@ -4759,16 +4748,6 @@ pub fn solve(
                 if (!o.isArg)
                     o.keepOrClearMutVal(
                         keep: usage.is_mutref);
-            }
-
-            // Decide on relaxable refs.
-            shadow ref o = GET_mut(t);
-            if (o.flags & F_RELAXABLE_REF)
-            {
-                let strip = F_RELAXABLE_REF | (!usage.is_mutref && F_REF);
-
-                o.flags             &= ~strip;
-                o.solved.flags      &= ~strip;
             }
         }
 
@@ -5875,6 +5854,13 @@ pub fn solve(
                     }
                     //////////////////////////////////////////////////////////////////////////////////////////////
 
+                    // Previously this was done in tryMatch__mutargs.
+                    if (host_arg.flags.isMutRef && !inType.is_mutref)
+                    {
+                        error = host_arg ~ " expects a mutref, got " ~ humanizeType(inType);
+                        break;
+                    }
+
                     //
                     argNode.kind == "let"  || BUG();
 
@@ -6033,8 +6019,33 @@ pub fn solve(
             let n_body = n_fn.items[n_fn.items.len + FN_BODY_BACK];
             if (n_body.isNativeBody)
             {
+                // TODO FIX really moronic
+                //
+                // Add an F_CONST flag on const ref arguments,
+                //  otherwise the thing below loses that information
+                //   if tp.consumed is empty.
+                //
+                ref argNodes = n_fn.items[: n_fn.items.len + FN_ARGS_BACK];
+                for (mut i = 0; i < argNodes.len; i++)
+                {
+                    ref argNode = argNodes[i];
+                    if (argNode.flags & (F_REF | F_CONST | F_MUT) != F_REF)
+                        continue;
+
+                    let argName = argNode.flags & F_COMPOUND_ID
+                        ? cleanID(argNode.value)
+                        :         argNode.value;
+
+                    let matched = _typeParams.map::get(argName || BUG("No argName"))
+                        .matched || BUG("native F_REF arg without a matched type");
+
+                    if (!matched.is_mutref)
+                        argNode.flags |= F_CONST;
+                }
+
                 // Can't use TP_needsConsumedTypes -
                 //  only set when fn has patterns.
+                //
                 _typeParams.each: |ref tp|
                     if (tp.useConsumedType_ifNative)
                         tp.matched = tp.consumed;
@@ -6222,6 +6233,19 @@ pub fn solve(
                 ret_seed.lifetime = isNative
                     ? Lifetime_fromNative(inItems, _current_fn.items[: _current_fn.items.len + FN_ARGS_BACK], ret_seed)
                     : Lifetime_static(); // we'll overpromise during prep
+            }
+            else if (isNative)
+            {
+                // Adding this for disambiguation,
+                //  don't want to miss anything in prelude.
+                for (mut i = 0; i < inItems.len + FN_ARGS_BACK; i++)
+                {
+                    let arg = inItems[i];
+                    if (arg.flags & F_REF && !(arg.flags & (F_MUT | F_CONST)))
+                        fail(:arg.token, "ref".qKW ~ " arguments to " ~ "__native".qKW
+                            ~ " fns must either be ref-returned"
+                            ~ " or explicitly specified " ~ "mut".qKW ~ " or " ~ "const".qKW ~ ".");
+                }
             }
 
             // Used twice, once to enable recursion before body, and once when done.
@@ -6615,8 +6639,11 @@ pub fn solve(
 
             if (SELF_TEST)
             {
-                if (arg.flags & F_MUT && arg.type.is_mutref)
-                    BUG("F_MUT arg.type.is_mutref");
+                if (arg.flags & F_VAL && arg.type.is_mutref)
+                    BUG("F_VAL but arg.type.is_mutref");
+
+                if (arg.flags.isMutRef && arg.type && !arg.type.is_mutref)
+                    BUG("F_MUT|F_REF but !arg.type.is_mutref");
             }
 
             args.push(arg);
@@ -7880,10 +7907,10 @@ pub fn solve(
                 break;
 
             let o = GET(nested(locid));
-            o.type.is_mutref || BUG(
+            o.kind == "var" && o.type.is_mutref || BUG(
                 "Lifetime_allowsMutrefReturn: found non-mutref: " ~ o);
 
-            if (o.kind == "var" && !(o.flags & F_REF))
+            if !(o.flags & F_REF)
                 return false;
 
             let init = o.Lifetime_climbType;
@@ -8308,27 +8335,34 @@ pub fn solve(
         //
         fn at_most_one_set(v.u64) = !(v & (v - 1));
 
-        at_most_one_set(flags & (F_MUT | F_REF)) || BUG("F_MUT & F_REF both set");
+        at_most_one_set(flags & (F_VAL | F_REF)) || BUG("F_VAL & F_REF both set");
+        at_most_one_set(flags & (F_CONST | F_MUT)) || BUG("F_CONST & F_MUT both set");
 
         //
-        shadow let annot = specType &&
-        {
-            shadow let specType = flags & (F_REF | F_MUT) == F_MUT
-                ? clear_mutref(specType)
-                : specType;
+        shadow let annot
+            = specType ?
+            {
+                shadow let specType = !(flags & F_REF) || flags & F_CONST
+                    ? clear_mutref(specType)
+                    : specType;
 
-            if (specType.is_mutref && !(flags & F_REF || annot.is_mutref))
-                flags  |= F_RELAXABLE_REF;
-
-            specType
-        }
-            || primType || annot;
-
-        //
-        shadow let annot =
-            annot && node.flags & F_REF
-                ? add_mutref(annot, Lifetime_temporary)
-                : annot;
+                specType
+            }
+            : primType ? primType :
+            {
+                // Upgrade to mutref if `ref` set -
+                //  we don't have to care about `mut` here -
+                //   a] specType will overrule the annotaton in templates,
+                //   b] and regular fns will relax if possible.
+                //      b.1] except when ref-returned:
+                //            currently you'd be able to work around this by adding `const`,
+                //             but later we can emit a relaxed version
+                //              so that non-template fns are mut-generic.
+                //
+                annot && node.flags & (F_REF | F_CONST) == F_REF
+                    ? add_mutref(annot, Lifetime_temporary)
+                    : annot
+            };
 
         // Ignore defaults in template bodies,
         //  dealt with by the initial template match.
@@ -8397,18 +8431,10 @@ pub fn solve(
         if (annot.is_mutref)
             flags |= F_REF;
 
-        if (flags & F_REF)
-        {
-            t_init.is_mutref    || t_init.is_never && annot
-                                || !init && asArgument || fail(
-                "ref".qBAD ~ " variables must be initialized to a mutable reference: " ~ id.qBAD
-                    ~ (t_init ? " = " ~ humanizeType(t_init) : "."));
-        }
-
         //
         mut t_let   = annot && (asArgument || !t_init)
                         ? annot
-                        : t_init.is_mutref && !(flags & F_REF)
+                        : t_init.is_mutref && flags & (F_REF | F_CONST) != F_REF
                             ? clear_mutref(t_init)
                             : t_init;
 
@@ -8504,7 +8530,7 @@ pub fn solve(
             //  Can we keep this var here and then just codegen it
             //   as a ref to the original?
             //
-            if (OPTI_dedupe_vars && !isArg && !(out.flags & (F_PUB|F_MUT)))
+            if (OPTI_dedupe_vars && !isArg && !(out.flags & (F_PUB|F_VAL)))
             {
                 let init = out.items[LET_INIT];
                 if (init.kind == "call" && !init.items)
@@ -9446,10 +9472,7 @@ pub fn solve(
 
         // We'll be adding a new thing here.
         mut shadows: bool;
-        mut flags = F_INJECTED | F_IMPLICIT | F_LAX;
-
-        if (type.is_mutref)
-            flags |= F_REF | F_RELAXABLE_REF;
+        mut flags = F_INJECTED | F_IMPLICIT | F_LAX | F_REF;
 
         let newArgTarget    = createLet_implicitArg(id, type, :flags, :shadows);
         let newArgIdx       = _current_fn.items.len + FN_ARGS_BACK;
@@ -10834,7 +10857,7 @@ pub fn solve(
                 flags:  host_arg.flags  &~ F_COMPOUND_ID
 
                                         // TODO FIX mutrefs lost in translation
-                                        | (host_arg.flags & F_INJECTED && host_arg.is_mutref && F_REF)
+                                        | (host_arg.flags & (F_INJECTED | F_REF))
 
                                         // Don't emit unused warnings here,
                                         //  should have been checked on the original,
@@ -11108,7 +11131,7 @@ pub fn solve(
 
     fn willPassByValue(arg: Argument)
     {
-        return arg.acceptsTempCopies()
+        return arg.acceptsTempCopies(requireVal: [])
             && arg.type.isPassByValue();
     }
 
@@ -11118,17 +11141,20 @@ pub fn solve(
             && o.type.isPassByValue();
     }
 
-    fn rejectsTempCopies(arg: Argument)
+    fn rejectsTempCopies(arg: Argument, requireVal!: ArgRationale)
     {
         return arg.flags & F_IMPLICIT   ? CantTempCopy_HostArg_Implicit
              : arg.flags & F_REF        ? CantTempCopy_HostArg_Ref
              : arg.type.is_mutref       ? CantTempCopy_HostArg_MutRef
-             : [];
+
+             // Finally, stuff like an argument getting mutated because
+             //  of aliasing with a mutated injected/implicit argument -
+             : !(arg.flags & F_VAL) && requireVal;
     }
 
-    fn acceptsTempCopies(arg: Argument)
+    fn acceptsTempCopies(arg: Argument, requireVal!: ArgRationale)
     {
-        return !arg.rejectsTempCopies();
+        return !arg.rejectsTempCopies(:requireVal);
     }
 
     fn acceptsTempCopies(o: Overload)
@@ -11138,9 +11164,10 @@ pub fn solve(
             &&  !o.type.is_mutref;
     }
 
-    fn acceptsSoftRisk(arg: Argument)
+    fn acceptsSoftRisk(arg: Argument, requireVal!: ArgRationale)
     {
-        return !arg.acceptsTempCopies();
+        return !requireVal // Val args can't accept any external mutation
+            && !arg.acceptsTempCopies(:requireVal);
     }
 
     fn acceptsSoftRisk(o: Overload)
@@ -11207,6 +11234,13 @@ pub fn solve(
 
             if (r == CantTempCopy_ReturnedFromFn)
                 return host_arg ~ " is ref-returned from " ~ callee;
+
+            if (r == RequireVal_AliasesMutatedInjectedArgument)
+                return host_arg ~ " needs an explicit " ~ "ref".qKW ~ " or " ~ "val".qKW ~ " for disambiguation:"
+                    ~ "\n\n\t\t- Use " ~ "ref".qKW ~ " if you want " ~ host_arg.str(brief: true)
+                                       ~ " to reflect changes made to the aliased injected arg."
+                    ~ "\n\n\t\t- Use " ~ "val".qKW ~ " if you want " ~ host_arg.str(brief: true)
+                                       ~ " to remain constant throughout " ~ callee;
 
             if (SELF_TEST)
                 BUG("Unknown reason.");
@@ -11347,15 +11381,21 @@ pub fn solve(
 
         // Inserting a temporary.
 
-        fn RESOLVE_byTempCopy(ref callsite!: SolvedNode, position: i32, debug!: string)
+        fn RESOLVE_byTempCopy(
+            ref callsite!: SolvedNode, position: i32, debug!: string,
+            requireVal!: ArgRationale)
         {
             let target      = callsite.target;
             ref arg         = callsite.items[position];
 
-            return RESOLVE_byTempCopy(:arg, :target, :position, :debug);
+            return RESOLVE_byTempCopy(
+                :arg, :target, :position, :debug,
+                :requireVal);
         }
 
-        fn RESOLVE_byTempCopy(ref arg!: SolvedNode, target!: Target, position: i32, debug!: string)
+        fn RESOLVE_byTempCopy(
+            ref arg!: SolvedNode, target!: Target, position: i32, debug!: string,
+            requireVal!: ArgRationale)
         {
             BCK || BUG();
 
@@ -11378,7 +11418,7 @@ pub fn solve(
 
             // We don't allow this on implicit arguments, which includes closures.
             //  Implicitly copying implicit arguments is a bit much (TODO not sure, is it?).
-            let r = host_arg.rejectsTempCopies;
+            let r = host_arg.rejectsTempCopies(:requireVal);
             if (r)
                 return r;
 
@@ -11874,7 +11914,17 @@ pub fn solve(
                                     //
                                     trySoft: softRiskSafe(pra.arg))
 
-                                : !!RESOLVE_byTempCopy(:pra.target, :pra.arg, r, debug: "bck:pra " ~ write))
+                                : !!RESOLVE_byTempCopy(
+                                    :pra.target, :pra.arg, r, debug: "bck:pra " ~ write,
+
+                                    // No need to require explicit F_VAL here,
+                                    //  mutation/copy both happen outside the callee,
+                                    //   so deciding on val/ref semantics in its args decl
+                                    //    feels extremely pedantic & just adds noise.
+                                    //
+                                    // In the absence of F_REF we assume F_VAL.
+                                    //
+                                    requireVal: []))
                         {
                             // Appease bck
                             shadow ref pra = _current_fn.preceding_ref_args[i];
@@ -12204,8 +12254,25 @@ pub fn solve(
                             mut noTempCopy0: ArgRationale;
                             mut noTempCopy1: ArgRationale;
 
-                            if ((noTempCopy0 = RESOLVE_byTempCopy(:callsite, i0, debug: "bck:vi " ~ i1)) &&
-                                (noTempCopy1 = RESOLVE_byTempCopy(:callsite, i1, debug: "bck:vi " ~ i0)))
+                            fn requireVal(other: Argument, other_arg: SolvedNode)
+                            {
+                                // We only require an explicit `val` when the write arg
+                                //  is an injected closure-implicit to a local variable,
+                                //   otherwise the reported errors are so confusing that
+                                //    we're better of simply defaulting to value semantics.
+                                //
+                                if (!(other.flags & F_INJECTED) ||
+                                    ! other_arg.type.lifetime.Lifetime_some(|locid|
+                                        locid && !(nested(locid).flags & F_INJECTED)))
+                                {
+                                    return [];
+                                }
+
+                                return RequireVal_AliasesMutatedInjectedArgument;
+                            }
+
+                            if ((noTempCopy0 = RESOLVE_byTempCopy(:callsite, i0, :requireVal(host_arg1, arg1), debug: "bck:vi " ~ i1)) &&
+                                (noTempCopy1 = RESOLVE_byTempCopy(:callsite, i1, :requireVal(host_arg0, arg0), debug: "bck:vi " ~ i0)))
                             {
                                 // Else emit an args-cannot-alias error.
                                 mut err = "At call to " ~ target.str;
@@ -12223,7 +12290,7 @@ pub fn solve(
                                 shadow let noTempCopy0 = noTempCopy0.ArgRationale_explain(target, arg0, host_arg0);
                                 shadow let noTempCopy1 = noTempCopy1.ArgRationale_explain(target, arg1, host_arg1);
 
-                                err ~= "\n\tCan't resolve aliasing by a temporary copy:";
+                                err ~= "\n\tCannot resolve aliasing by a temporary copy:";
                                 err ~= "\n\n\t    " ~ noTempCopy0;
 
                                 if (noTempCopy0 != noTempCopy1)
