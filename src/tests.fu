@@ -6975,7 +6975,7 @@ pub extern fn runTests()
         }
     `);
 
-    TODO_borrowck(currently: "BUG exit code", `
+    ZERO(`
         fn incr_out(ref out: i32[][], a: i32[], b: i32[]) {
             out ~= a;
             out ~= b;
@@ -6987,7 +6987,7 @@ pub extern fn runTests()
         }
 
         fn bck_discards_its_edits_to_defer_nodes(
-            ref out: i32[][], ref state: i32[])
+            ref out: i32[][], ref state: i32[])                 ;; PointlessMustSeq
         {
             incr_out        (:out, incr_state(state), incr_state(state));
             defer incr_out  (:out, incr_state(state), incr_state(state));

@@ -12391,7 +12391,7 @@ pub fn solve(
 
         fn bck_block(ref node: SolvedNode)
         {
-            mut defers: SolvedNode[];
+            mut defers: i32[];
 
             // Regular items forward.
             ref items = node.items;
@@ -12400,26 +12400,28 @@ pub fn solve(
                 ref stmt = items[i];
                 if (stmt.kind == "defer")
                 {
-                    defers ~= stmt.items.only;
+                    defers ~= i;
+
+                    if (SELF_TEST && stmt.is_never)
+                        BUG("bck, block: defer.is_never");
                 }
                 else
+                {
                     bck_node(stmt);
 
-                // #tryAbstractEval #tryAbstractEvalAsBool:
-                //  Abstract eval needs to do these too unfortunately,
-                //   so if it's gonna happen during bck
-                //    i guess this is where it's gonna happen.
-                //
-                if (stmt.type.is_never)
-                {
-                    if (SELF_TEST && stmt.kind == "defer")
-                        BUG("bck, block: defer.is_never");
+                    // #tryAbstractEval #tryAbstractEvalAsBool:
+                    //  Abstract eval needs to do these too unfortunately,
+                    //   so if it's gonna happen during bck
+                    //    i guess this is where it's gonna happen.
+                    //
+                    if (stmt.is_never)
+                    {
+                        items.shrink(i + 1);
+                        if !(node.helpers.mask & HM_LabelUsed)
+                            node.type = t_never;
 
-                    items.shrink(i + 1);
-                    if !(node.helpers.mask & HM_LabelUsed)
-                        node.type = t_never;
-
-                    break;
+                        break;
+                    }
                 }
             }
 
@@ -12429,7 +12431,9 @@ pub fn solve(
 
             // Defers in reverse.
             for (mut i = defers.len; i --> 0; )
-                bck_node(defers[i]);
+                bck_node(
+                    node.items[defers[i]]
+                        .items.only);
         }
 
 
