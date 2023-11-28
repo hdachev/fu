@@ -22,6 +22,9 @@ _current = _current.replace(/\/\/[^\n]*/g, '');
 // Strip multiline comments.
 _current = _current.replace(/\/\*[^*]+\*\//g, '');
 
+// All lets now lax.
+_current = _current.replace(/  ((?:(?:let|implicit|mut|ref) )+[a-zA-Z0-9_]+)/g, (binding) => '  lax ' + binding.slice(2));
+
 function collapseMultilineWhitespace(src)
 {
     // Whitespace.
