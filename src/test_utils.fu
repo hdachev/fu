@@ -20,8 +20,23 @@ fn compile_snippets(sources: string[], mut fnames?: string[], mut options?: Opti
     // Ensure fnames.
     let base_dir = FUDIR ~ "__tests__/";
 
-    while (fnames.len < sources.len)
-        fnames.push(base_dir ~ "_" ~ fnames.len ~ ".fu");
+    fn find !T(arr: T[..], val: T, else!) {
+        for (mut i = 0; i < arr.len; i++)
+            if (arr[i] == val)
+                return i;
+
+        return else;
+    }
+
+    for (mut i = 0; i < sources.len; i++)
+    {
+        let src     = sources[i];
+        let fname   = src.starts(with: "//file ")
+            ? src.slice(7, src.find('\n', else: src.len))
+            : "_" ~ i ~ ".fu";
+
+        fnames.push(base_dir ~ fname);
+    }
 
     // Preprocess & "cache" sources.
     let implicit mut ctx = prelude::CTX_PRELUDE.clone();
