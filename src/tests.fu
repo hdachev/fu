@@ -99,6 +99,7 @@ pub extern fn runTests()
     let TODO_varargs    = fn TODO;
     let TODO_args       = fn TODO;
     let TODO_conv       = fn TODO;
+    let TODO_infer      = fn TODO;
     let TODO_relaxer    = fn TODO;
     let TODO_ambig      = fn TODO;
     let TODO_licm       = fn TODO;
@@ -10758,7 +10759,7 @@ pub extern fn runTests()
         }
     `);
 
-    TODO_conv(currently: "Incompatible types for T 9:41+1", `
+    TODO_infer(currently: "Incompatible types for T 9:41+1", `
         struct ScopeSkip {
             min: i32;
             max: i32;
@@ -10772,7 +10773,7 @@ pub extern fn runTests()
         }
     `);
 
-    TODO_conv(currently: "Bad call to BINOP 7:25+1", `
+    TODO_infer(currently: "Bad call to BINOP 7:25+1", `
         fn setupOperators(i: i32) {
             <alt>
             struct sB { hey: i32; };
@@ -13167,6 +13168,17 @@ pub extern fn runTests()
             return Scope_exports() - 3;
         }
     `);
+
+    TODO_pub(currently: "List is not defined 3:31+1", [`
+        fn List(type T) { data: T[] }
+    `,`
+        pub import _0;
+    `,`
+        fn main() {
+            mut list: _1::List(i32);
+            return list.len;
+        }
+    `]);
 
     // /Pubs & imports.
 
