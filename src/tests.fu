@@ -14428,6 +14428,41 @@ pub extern fn runTests()
         }
     `);
 
+    TODO_conv(currently: "sqr is not defined here 11:24+1", `
+        fn Each !T(ref a: T[..], fn)
+            for (mut i = 0; i < a.len; i++)
+                fn(a[i], i?: i);
+
+        <split/>
+        fn main() {
+            fn sqr(v) v * v;
+            let list = [ 1, 2, 3 ];
+            mut sum_of_squares = 0;
+            list.Each: |.sqr| sum_of_squares += sqr;
+            return sum_of_squares - 14;
+        }
+    `);
+
+    TODO_conv(currently: "sqr is not defined here 4:19+1", `
+        fn Each !T(ref a: T[..], fn)
+            for (mut i = 0; i < a.len; i++)
+                fn(a[i], i?: i);
+
+        <split/>
+        struct List(type T) { sorted!: T[] }
+        fn Each !T(l: List(T), visit)
+            l.sorted.Each: fn visit;
+
+        <split/>
+        fn main() {
+            fn sqr(v) v * v;
+            let list: List(int) = [ sorted: [ 1, 2, 3 ] ];
+            mut sum_of_squares = 0;
+            list.Each: |.sqr| sum_of_squares += sqr;
+            return sum_of_squares - 14;
+        }
+    `);
+
     // /Conversion functions.
 
 
