@@ -1,5 +1,6 @@
 
-pub fn Set(type T) = struct {
+pub struct Set(type T)
+{
     keys_asc!: T[];
 };
 
@@ -34,6 +35,9 @@ fn bfind(keys_asc!: $T[..], key: $T, hit, miss)
     //
     while (lo < hi)
     {
+        // overflow-proof alla std::midpoint:
+        //  let i = lo + ((hi - lo) >> 1);
+        //
         let i   = (hi + lo) >> 1;
 
         let cmp = keys_asc[i] <> key;
@@ -45,11 +49,6 @@ fn bfind(keys_asc!: $T[..], key: $T, hit, miss)
         else
             hi = i;
     }
-
-    ///////////////////////////////////////////////////////////////////////////
-    // lo == hi && (hi == keys.len || keys[hi]     <> item > 0)              //
-    //          && (hi == 0        || keys[hi - 1] <> item < 0) || assert(); //
-    ///////////////////////////////////////////////////////////////////////////
 
     return miss(lo);
 }
@@ -146,7 +145,7 @@ pub fn get(using ref _: Set($K), key: $K,
     });
 }
 
-pub fn rem(using mut ref _: Set($K), key: $K)
+pub fn remove(using mut ref _: Set($K), key: $K)
 {
     bfind(:keys_asc, :key,
 
@@ -217,7 +216,7 @@ pub fn keep(mut ref a.keys_asc: $T[], b.keys_asc: $T[..])
     return a;
 }
 
-pub fn rem(mut ref a.keys_asc: $T[], b.keys_asc: $T[..])
+pub fn remove(mut ref a.keys_asc: $T[], b.keys_asc: $T[..])
 {
     mut x = 0;
     mut y = 0;
@@ -395,7 +394,7 @@ pub fn union(l: Set($T), r: Set($T)): Set($T)
     return useResult ? [ keys_asc: result ] : l;
 }
 
-pub fn diff(remove: Set($T), from: Set($T)): Set($T)
+pub fn diff(from: Set($T), remove: Set($T)): Set($T)
 {
     mut result: $T[];
     mut useResult = false;

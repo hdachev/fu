@@ -5103,7 +5103,7 @@ pub fn solve(
         calls.each: |callee| // TODO FIX autocall .localfn doesn't resolve
         {
             shadow let callee = localfn(callee);
-            callee.EPH_mut.callers.set::rem(target.globid)
+            callee.EPH_mut.callers.set::remove(target.globid)
                 || BUG("resetChild: Missing in callers on " ~ callee);
         }
 
@@ -5111,7 +5111,7 @@ pub fn solve(
         callers.each: |caller| // TODO, autocall .localfn doesn't resolve
         {
             shadow let caller = localfn(caller);
-            caller.EPH_mut.calls.set::rem(target.globid)
+            caller.EPH_mut.calls.set::remove(target.globid)
                 || BUG("resetChild: Missing in calls on " ~ caller);
         }
 
@@ -5682,7 +5682,7 @@ pub fn solve(
                 let preexisting = getSpecs(:parent_idx).map::get(mangle);
                 if (preexisting)
                 {
-                    mangles.set::rem(mangle);
+                    mangles.set::remove(mangle);
 
                     if (!currentSpec.is_SPECFAIL)
                     {
@@ -6353,7 +6353,7 @@ pub fn solve(
                     for (mut i = 0; i < calls.len; i++)
                     {
                         let call = localfn(index: calls[i]);
-                        call.EPH_mut.callers.set::rem(self) || BUG(
+                        call.EPH_mut.callers.set::remove(self) || BUG(
                             "doTrySpec: " ~ target ~ " not listed as a caller of " ~ call);
                     }
                 }
