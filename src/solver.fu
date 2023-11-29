@@ -369,8 +369,8 @@ pub fn solve(
 
         spec_extras?:       SpecExtras;
 
-        callers?:           set::Set(i32);
-        calls?:             set::Set(i32);
+        callers?:           ::CountedSet(i32);
+        calls?:             ::CountedSet(i32);
 
         children?:          ChildTarget[];
         specs?:             map::Map(string, Target); // mangle -> spec;
@@ -5103,7 +5103,7 @@ pub fn solve(
         calls.each: |callee| // TODO FIX autocall .localfn doesn't resolve
         {
             shadow let callee = localfn(callee);
-            callee.EPH_mut.callers.set::remove(target.globid)
+            callee.EPH_mut.callers.remove(target.globid)
                 || BUG("resetChild: Missing in callers on " ~ callee);
         }
 
@@ -5111,7 +5111,7 @@ pub fn solve(
         callers.each: |caller| // TODO, autocall .localfn doesn't resolve
         {
             shadow let caller = localfn(caller);
-            caller.EPH_mut.calls.set::remove(target.globid)
+            caller.EPH_mut.calls.remove(target.globid)
                 || BUG("resetChild: Missing in calls on " ~ caller);
         }
 
@@ -5370,8 +5370,10 @@ pub fn solve(
         // Enable lazySolveEnd.
         EPH_mut(target).local_of = EPH(original).local_of;
 
-        EPH_mut(target).calls.set::add(original.globid);
-        EPH_mut(original).callers.set::add(target.globid);
+        // TODO FIX - this messes up call counts,
+        //  if we're to use them for inline-single-used-fns
+        EPH_mut(target).calls.incr(original.globid);
+        EPH_mut(original).callers.incr(target.globid);
 
         // We should be done here.
         return target;
@@ -6350,12 +6352,9 @@ pub fn solve(
                 {
                     let self = target.globid;
                     let calls = steal(target.EPH_mut.calls);
-                    for (mut i = 0; i < calls.len; i++)
-                    {
-                        let call = localfn(index: calls[i]);
-                        call.EPH_mut.callers.set::remove(self) || BUG(
-                            "doTrySpec: " ~ target ~ " not listed as a caller of " ~ call);
-                    }
+                    calls.each: |callee|
+                        EPH_mut(localfn(callee)).callers.remove(self) || BUG(
+                            "doTrySpec: " ~ target ~ " not listed as a caller of " ~ localfn(callee));
                 }
 
                 // Sanity check / document the status stuff,
@@ -7706,12 +7705,8 @@ pub fn solve(
             let callers = t.EPH_mut.callers;
 
             :NEXT_USER
-            for (mut i = 0; i < callers.len; i++)
+            callers.each: |mut index|
             {
-                // The shuffle here is to help stress test things better
-                //  and hopefully help avoid nasty resolver patterns & worst cases.
-                mut index = callers[i];
-
                 TRACE("Looking into caller " ~ index ~ " " ~ index.localfn);
 
                 :GO_UP
@@ -10734,8 +10729,8 @@ pub fn solve(
                 {
                     if (_solvingFnort)
                     {
-                        if (EPH_mut(target).callers.set::add(_solvingFnort.globid))
-                            EPH_mut(_solvingFnort).calls.set::add(target.globid);
+                        EPH_mut(target).callers.incr(_solvingFnort.globid);
+                        EPH_mut(_solvingFnort).calls.incr(target.globid);
 
                         detectRecursion(target);
                     }

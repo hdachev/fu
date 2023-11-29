@@ -27,8 +27,8 @@ struct Map(K, V)
 */
 
 struct Map(type K, type V) {
-    keys: set::Set(K);
-    vals: V[];
+    keys: set::Set(K)
+    vals: V[]
 }
 
 fn has(using ref _: Map($K, $V), key: $K): bool {
@@ -41,8 +41,8 @@ fn get(using ref _: Map($K, $V), key: $K): $V {
 
 fn each(using ref _: Map($K, $V), fn) {
     for (mut i = 0; i < vals.len; i++) {
-        let key = keys.keys_asc[i]; // <- Going through a let here prevents bind-by-mutref.
-        fn(vals[i], ?:key);         //
+        let key = keys.keys_asc[i]//// <- Going through a let here prevents bind-by-mutref.
+        fn(vals[i], ?:key)          //
     }                               // Not great, maybe we need a `ref ` kw-prefix
 }                                   //  at callsites like in c#,
                                     //   it'd work as `&mut ` in rust if possible,
@@ -71,13 +71,22 @@ fn ref(using mut ref _: Map($K, $V), key: $K): $V {
         vals)
 }
 
-fn if_ref(using mut ref _: Map($K, $V), key: $K, visit): void {
-    set::if_ref(
+fn if(using mut ref _: Map($K, $V), key: $K, visit): void {
+    set::if(
         keys, key,
         vals, fn visit)
 }
 
+fn remove(using mut ref _: Map($K, $V), key: $K) {
+    set::if(keys, key, vals): |_, remove!| {
+        remove()
+        return true
+    }
+
+    false
+}
+
 fn clear(using mut ref _: Map($K, $V)): void {
-    keys.clear();
-    vals.clear();
+    keys.clear()
+    vals.clear()
 }

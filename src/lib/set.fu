@@ -115,14 +115,18 @@ pub fn ref(using ref _: Set($K), key: $K,
     return values[idx];
 }
 
-pub fn if_ref(using ref _: Set($K), key: $K,
-                    ref values: $V[..],
-                        visit)
+pub fn if(using ref _: Set($K), key: $K,
+                ref values: $V[..],
+                    visit)
 {
     bfind(:keys_asc, :key,
 
     hit: |i| {
-        visit(values[i]);
+        visit(values[i], remove?: || {
+            keys_asc.splice(i, 1);
+            values.splice(i, 1);
+        });
+
         return true;
     },
 
