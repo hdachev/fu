@@ -13928,6 +13928,28 @@ pub extern fn runTests()
         fn main() check(0, 0);
     `);
 
+    TODO_ambig(currently: "Expected op , got op ) 9:22+1", `
+        fn Find(ref arr: $T[], needle: $T, visit) {
+            for (mut i = 0; i < arr.len; i++) {
+                ref item = arr[i];
+                if (item == needle) {
+                    visit(i?: i, remove?: |ret = true| {
+                        arr.splice(i, 1);
+                        return ret;
+                    });
+                    return true;
+                }
+            }
+            return [];
+        }
+
+        fn main() {
+            mut arr = [1, 2, 3, 4];
+            let x = arr.Find(2, |i, remove!| remove(i));
+            return x - 1;
+        }
+    `);
+
     // /Higher-order functions.
 
 
