@@ -76,43 +76,55 @@ fn resolveFile(
     return resolve;
 }
 
+fn testSuite_resolvePrepopulatedFile(
+    implicit ref ctx: Context,
+    from: string, name: string): string
+{
+    let prepopulated = from ~ name;
+    return ctx.files.map::has(prepopulated)
+        && prepopulated;
+}
+
 pub fn resolveFile(
     implicit ref ctx: Context,
     path: string): string
 {
-    let fuzzy = path.find('\v');
-    if (fuzzy > 0)
+    let fuz_idx = path.find('\v');
+    if (fuz_idx > 0)
     {
-        let from = path.slice(0, fuzzy);
-        let name = path.slice(fuzzy + 1);
+        let from    = path.slice(0, fuz_idx);
+        mut name    = path.slice(fuz_idx + 1);
+
+        let alt_idx = name.find('\t');
+        mut alt     = "";
+
+        if (alt_idx > 0) {
+            alt = name[.. alt_idx] ~ "/" ~ name[alt_idx + 1 ..];
+            name.shrink(alt_idx);
+        }
+
+        // TODO FIX this got real hairy
+        if (!name.ends(with: ".fu")) name ~= ".fu";
+        if (alt && !alt.ends(with: ".fu")) alt ~= ".fu";
+
         if (from && name && !name.has('\v'))
         {
-            let res = resolveFile(:from, :name);
-            if (res)
-                return res;
+            let file = resolveFile(:from, :name)
+                    || alt && resolveFile(:from, name: alt)
 
-            // Tests have the files prepopulated,
-            //  we only pay the cost of lookup when about to fail compile.
-            let prepopulated = from ~ name;
-            if (ctx.files.map::has(prepopulated))
-                return prepopulated;
+                    // Tests have the files prepopulated,
+                    //  we only pay the cost of lookup when about to
+                    //   otherwise fail compile.
+                    //
+                    ||        testSuite_resolvePrepopulatedFile(:from, :name)
+                    || alt && testSuite_resolvePrepopulatedFile(:from, name: alt);
+
+            if (file)
+                return file;
         }
     }
 
     return path;
-}
-
-pub fn resolveFile_x(
-    implicit ctx: Context,
-    path: string)
-{
-    // TODO FIX
-    let clean = path.replace(all: "\v", "");
-    let match = ctx.fuzzy.map::get(clean);
-
-    return match && match != "\v"
-         ? match
-         : clean;
 }
 
 

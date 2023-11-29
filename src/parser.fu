@@ -145,28 +145,31 @@ pub fn parse(
     mut imports:    Import[];
     mut warnings:   string[];
 
-    fn registerImport(mut value: string): string
+    fn registerImport(mut pattern: string, id?: string)
     {
-        if (!value.path::ext)
-            value ~= ".fu";
+        mut index = imports.len;
+        :ADD {
+            if (id)
+                (pattern ~= '\t') ~= id;
 
-        // Exact relative or fuzzy?
-        let dir = path::dirname(fname);
-        value   = value.starts(with: ".")
-                ? path::join(dir, value)
-                : dir ~ '\v' ~ value;
-
-        :ADD
-        {
-            imports.each: |import|
-                if (import.value == value)
+            for (mut i = 0; i < imports.len; i++)
+                if (imports[i].pattern == pattern) {
+                    index = i;
                     break :ADD;
+                }
 
-            imports ~= Import(:value,
+            imports ~= Import(:pattern,
                 token: TokenIdx(:modid, tokidx: _loc));
         }
 
-        return value;
+        // What we leave in the AST is a serialized modid + import-index,
+        //  and the id to look up, if any, imports dont have it, qualified calls do.
+        mut marker = "";
+        marker.appendVarint(modid.u32);
+        marker.appendVarint(index.u32);
+        marker ~= id;
+
+        return marker;
     }
 
 
@@ -817,20 +820,20 @@ pub fn parse(
 
     fn parseImport(): Node
     {
-        mut value = tryConsume("id").value;
-        if (value)
+        mut path = tryConsume("id").value;
+        if (path)
         {
             while (tryConsume("op", "::"))
-                value ~= "/" ~ consume("id").value;
+                path ~= "/" ~ consume("id").value;
         }
         else
         {
-            value = consume("str").value;
+            path = consume("str").value;
         }
 
         softSemi();
-        value = registerImport(value);
-        return make("import", :value);
+
+        return make("import", value: registerImport(path));
     }
 
     fn parseLabelledStatement(): Node
@@ -1922,8 +1925,8 @@ pub fn parse(
                 }
                 ////////////////////////////////////////////
 
-                path = registerImport(path);
-                expr.value = path ~ "\t" ~ id;
+                expr.value = registerImport(path, id);
+
                 return expr;
             }
 

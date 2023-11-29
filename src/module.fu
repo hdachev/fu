@@ -107,7 +107,8 @@ struct LexerOutput
 struct Import
 {
     token:      TokenIdx;
-    value:      string;
+    pattern:    string;
+    modid?:     i32;
 };
 
 struct ParserOutput

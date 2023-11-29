@@ -8652,19 +8652,20 @@ pub fn solve(
         return solved(node, type, [ try, err, catch ]);
     }
 
-    fn findModule(fuzimport: string): &Module
+    fn findModule(marker: string, ref offset: int)
     {
-        let fname = resolveFile_x(fuzimport);
+        let modid = marker.parseVarint(:offset).i32;
+        let index = marker.parseVarint(:offset).i32;
 
-        let modules = ctx.modules;
-        for (mut i = 1; i < modules.len; i++)
-        {
-            let m = modules[i];
-            if (m.fname == fname)
-                return m;
-        }
+        let m = modid == module.modid
+            ? module
+            : ctx.modules[modid];
 
-        BUG("findModule: cannot locate: " ~ fname);
+        let imports = m.in.parse.imports;
+        let import  = imports.unless_oob(index);
+
+        return ctx.modules[import.modid || BUG(
+            "findModule: !import.modid, marker(" ~ modid ~ ", " ~ index ~ ")")];
     }
 
     fn solveImport(node: Node): SolvedNode
@@ -8680,7 +8681,8 @@ pub fn solve(
                 visit(s.imports[i]);
         }
 
-        let m = findModule(fuzimport: node.value);
+        mut offset = 0;
+        let m = findModule(node.value, :offset);
 
         visit(m.modid);
 
@@ -9188,17 +9190,14 @@ pub fn solve(
 
     fn dequalify_andGetScope(ref id: string): &Scope
     {
-        let split = id.find('\t');
-        split >= 0 || BUG();
+        mut offset = 0;
+        let other = findModule(id, :offset);
+        if (other.modid == module.modid)
+            fail("Self-referential qualified id.");
 
-        let fname = id.slice(0, split);
-        id        = id.slice(split + 1);
-
-        let other = findModule(fuzimport: fname);
-        if (other.modid != module.modid)
-            return other.out.solve.scope;
-
-        fail("Qualified " ~ id.qBAD ~ ":: access current module.");
+        id.splice(0, offset);
+        id || BUG("dequalify_andGetScope: ended up with an empty identifier.");
+        return other.out.solve.scope;
     }
 
     fn solveCall(node: Node, target!?: Target): SolvedNode

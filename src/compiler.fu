@@ -9,13 +9,15 @@ import ansi;
 
 //
 
-fn compile_lexParseDeps(fname: string, via?: TokenIdx[])
+struct ModidAndOrder { modid: i32; order: ModuleOrder };
+
+fn compile_lexParseDeps(fname: string, via?: TokenIdx[]): ModidAndOrder
 {
     let module = getModule(fname);
     if (module.in)
     {
         if (module.order)
-            return module.order;
+            return [ :module.modid, :module.order ];
 
         // Having input stuff solved but no output stuff means circular import -
         //  module.out is currently being worked on the stack above us somewhere.
@@ -79,23 +81,43 @@ fn compile_lexParseDeps(fname: string, via?: TokenIdx[])
     {
         module.order.dep_depth = 1;
 
-        // Ensure dependencies.
-        module.in.parse.imports.each: |import|
-        {
-            let order =
-                compile_lexParseDeps(
-                    fname: resolveFile(import.value),
-                      via:       via ~ import.token);
+        //
+        let dir = path::dirname(fname);
 
-            if (module.order.dep_depth <= order.dep_depth)
-                module.order.dep_depth  = order.dep_depth + 1;
+        // Ensure dependencies.
+        mut imports = module.in.parse.imports.steal(); // TODO disjoint AAR
+
+        imports.each: |ref import|
+        {
+            let pattern = import.pattern;
+
+            // Exact relative or fuzzy?
+            shadow let pattern = pattern.starts(with: ".")
+                ? path::join(dir, pattern)
+                : dir ~ '\v' ~ pattern;
+
+            let other =
+                compile_lexParseDeps(
+                    fname: resolveFile(pattern),
+                      via: via ~ import.token);
+
+            import.modid = other.modid || throw(
+                "BUG: !module.modid after lexParseDeps");
+
+            if (module.order.dep_depth <= other.order.dep_depth)
+                module.order.dep_depth  = other.order.dep_depth + 1;
         }
+
+        swap(module.in.parse.imports, imports);
 
         //
         setModule(module);
     }
 
-    return module.order || throw("BUG: !module.order after lexParseDeps.");
+    return [
+        :module.order || throw("BUG: !module.order after lexParseDeps."),
+        :module.modid,
+    ];
 }
 
 fn compile_solveCodegen(implicit ref module: Module, implicit options: Options)

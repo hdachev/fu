@@ -13170,13 +13170,22 @@ pub extern fn runTests()
     `);
 
     TODO_pub(currently: "List is not defined 3:31+1", [`
-        fn List(type T) { data: T[] }
+        struct List(type T) { data: T[] }
     `,`
         pub import _0;
     `,`
         fn main() {
             mut list: _1::List(i32);
-            return list.len;
+            return list.data.len;
+        }
+    `]);
+
+    ZERO([`//file flat/List.fu
+        struct List(type T) { data: T[] }
+    `,`
+        fn main() {
+            mut list: flat::List(i32);
+            return list.data.len;
         }
     `]);
 
