@@ -13928,8 +13928,8 @@ pub extern fn runTests()
         fn main() check(0, 0);
     `);
 
-    TODO_ambig(currently: "Expected op , got op ) 9:22+1", `
-        fn Find(ref arr: $T[], needle: $T, visit) {
+    ZERO(`
+        fn Find !<T>(ref arr: T[], needle: T, visit) {
             for (mut i = 0; i < arr.len; i++) {
                 ref item = arr[i];
                 if (item == needle) {

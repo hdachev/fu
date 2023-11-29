@@ -1087,7 +1087,11 @@ pub fn parse(
         }
         else
         {
-            flags |= endv && parseArgsDecl(items, "op", :endv);
+            flags |= endv && parseArgsDecl(
+                items, "op", :endv,
+                initPrecedence: endv == "|"
+                    ? P_PREFIX_UNARY
+                    : P_RESET);
 
             // Return type annot.
             mut type = tryPopTypeAnnot();
@@ -1279,7 +1283,8 @@ pub fn parse(
 
     fn parseArgsDecl(
         ref outArgs: Node[],
-        endk: Kind, endv: string): Flags
+        endk: Kind, endv: string,
+        initPrecedence! = P_RESET): Flags
     {
         mut first = true;
         mut outFlags: Flags;
@@ -1301,7 +1306,12 @@ pub fn parse(
             let isInline = !!tryConsume("id", "inline");
 
             mut insertAt = -1;
-            mut arg = parseLet(xqmark: true, allowTypeUnions: true, allowTypeParams: true, anonIndex: outArgs.len);
+            mut arg = parseLet(
+                anonIndex: outArgs.len,
+                xqmark: true,
+                allowTypeUnions: true,
+                allowTypeParams: true,
+                :initPrecedence);
 
             let NEW = _numDollars > numDollars0;
             if (NEW || arg.items[LET_TYPE].kind == "typeunion")
@@ -1383,7 +1393,12 @@ pub fn parse(
         return ret;
     }
 
-    fn parseLet(xqmark! = false, allowTypeUnions! = false, allowTypeParams! = false, anonIndex! = 0): Node
+    fn parseLet(
+        xqmark! = false,
+        anonIndex! = 0,
+        allowTypeUnions! = false,
+        allowTypeParams! = false,
+        initPrecedence! = P_RESET): Node
     {
         mut flags: Flags;
 
@@ -1502,14 +1517,14 @@ pub fn parse(
 
         let init        = optional
             ? createDefinit()
-            : tryParseLetInit();
+            : tryParseLetInit(precedence: initPrecedence);
 
         return createLet(id, :flags, :type, :init);
     }
 
-    fn tryParseLetInit()
+    fn tryParseLetInit(precedence! = P_RESET)
     {
-        return tryConsume("op", "=") && parseExpression(P_RESET);
+        return tryConsume("op", "=") && parseExpression(precedence);
     }
 
     fn createLet(id: string, type!?: Node, init!?: Node, flags!?: Flags): Node
