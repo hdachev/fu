@@ -14141,13 +14141,13 @@ pub extern fn runTests()
         }
     `);
 
-    TODO_conv(currently: "Bad call to a_len 4:24+5", `
+    ZERO(`
         fn a_len(a: $T[..]) a.len; // a conversion could navigate this here
         struct Test { using a: i32[]; };
         fn main() Test.a_len;
     `);
 
-    TODO_conv(currently: "Bad call to ~ 6:24+1", `
+    ZERO(`
         struct CodegenOutput { using src: string; };
 
         fn test(ref str: string, out: CodegenOutput) {
@@ -14505,6 +14505,37 @@ pub extern fn runTests()
             return sum_of_squares - 14;
         }
     `);
+
+    ZERO([`
+        struct Set(type T) { using array: T[] }
+    `,`
+        struct CountedSet(type T) { using set: _0::Set(T) }
+    `,`
+        fn main() {
+            mut cs: _1::CountedSet(i32);
+            mut count = 0;
+            cs.each: |_| count++;
+            return count;
+        }
+    `]);
+
+    ZERO([`
+        struct Set(type T) {    <fail ambig each 5:16+4 :4+4 7:12+4>
+            using               <pass/></fail>
+            array: T[];
+        }
+
+        fn each !T(ref set: Set(T), visit) set.array.each(fn visit);
+    `,`
+        struct CountedSet(type T) { using set: _0::Set(T) }
+    `,`
+        fn main() {
+            mut cs: _1::CountedSet(i32);
+            mut count = 0;
+            cs.each: |_| count++;
+            return count;
+        }
+    `]);
 
     // /Conversion functions.
 

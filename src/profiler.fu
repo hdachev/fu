@@ -21,6 +21,7 @@ struct ProfileData
     TryMatch_SolveCall: ProfileItem;
     TryConvert:         ProfileItem;
     ScopeSearch:        ProfileItem;
+    TryConvertGeneric:  ProfileItem;
 
     SolveBody:          ProfileItem;
     RelaxMut:           ProfileItem;

@@ -1941,7 +1941,8 @@ pub fn solve(
                     for (mut i = 0; i < N; i++)
                     {
                         let rest        = i >= REST_START;
-                        let host_arg    = host_args[rest ? REST_START : i];
+                        let host_argIdx = rest ? REST_START : i;
+                        let host_arg    = host_args[host_argIdx];
                         let expect      = rest ? REST_TYPE : host_arg.type;
 
                         // Its either reorder or args, asserted above [^].
@@ -1978,6 +1979,56 @@ pub fn solve(
                             }
 
                             matchFail("Cannot infer missing " ~ host_arg);
+                        }
+                        else if (!expect)
+                        {
+                            // TEMP HACK -
+                            //  Trying out conversions to type patterns.
+                            //
+                            // A. This is the wrong place for this branch,
+                            //     doesn't work for usings above,
+                            //      it just mostly-worked enough to try this out.
+                            //
+                            // B. This thing slows us down by 10-20%.
+                            //
+                            // C. I think the autocall stuff below is broken too,
+                            //     doesn't look like it's gonna work correctly with defaulted args,
+                            //      I think the default-case shouldn't trigger an autocall,
+                            //       or maybe it should so that default expressions of other arguments
+                            //        can be autocalled too [not sure].
+                            //
+                            fn template     = overloadIdx.template;
+                            fn annot        = template.node.items[host_argIdx].items[LET_TYPE];
+
+                            // No need to bother if annot is trivial,
+                            //  e.g. a typeparam, would match whatever.
+                            if (annot.items)
+                            {
+                                PROFILE(.TryConvertGeneric);
+
+                                mut errout: Warning[];
+                                let actual = args[callsiteIndex].type;
+
+                                mut tp = _typeParams.steal();
+                                defer _typeParams.swap(tp);
+
+                                let ok = trySolveTypeParams(
+                                    type: actual,
+                                    node: annot,
+                                    :errout,
+                                    invariant: false,
+                                    :template.imports);
+
+                                if (!ok)
+                                {
+                                    let conversion = tryConvert(
+                                        :misc_scope, :local_scope, :actual,
+                                        expect: annot, :template.imports);
+
+                                    if (conversion)
+                                        conversions.grow_if_oob(i) ~= conversion;
+                                }
+                            }
                         }
 
                         // Explicit argname requirements.
@@ -2379,10 +2430,15 @@ pub fn solve(
     }
 
     fn tryConvert(
-        expect: Type, actual?: Type, retype?: SolvedNode,
-        misc_scope!?: Scope, local_scope!: bool): Target[]
+        expect: Type or Node, actual?: Type, retype?: SolvedNode,
+        misc_scope!?: Scope, local_scope!: bool,
+        lax imports!?: i32[..]): Target[]
     {
-        PROFILE(.TryConvert);
+        type Expect = typeof(expect);
+
+        PROFILE(Expect -> Node
+            ? .TryConvertGeneric
+            : .TryConvert);
 
         mut match:  Target[];
         mut path:   Target[];
@@ -2391,7 +2447,9 @@ pub fn solve(
         let conv_safety0 = _current_fn.conv_safety++;
         if (conv_safety0 >= 128)
             fail("Conversion stack got too deep, exploring: "
-                ~ explainTypeDiff(actual, expect, "->"));
+                ~ (Expect -> Type
+                    ? explainTypeDiff(actual, expect, "->")
+                    : "[TODO PATTERN]"));
 
         defer _current_fn.conv_safety = conv_safety0;
 
@@ -2476,7 +2534,21 @@ pub fn solve(
                         //   which solves the problem of unspecified return values,
                         //    because initially the t_never assigns to everything.
                     }
-                    else if (isAssignableAsArgument(convertType, /*into*/host: expect))
+                    else if (Expect -> Node
+
+                                ?   {
+                                        mut errout: Warning[];
+                                        mut tp = _typeParams.steal();
+                                        defer _typeParams.swap(tp);
+
+                                        trySolveTypeParams(
+                                            type: convertType, node: expect,
+                                            :errout,
+                                            invariant: false, :imports)
+                                    }
+
+                                :   isAssignableAsArgument(
+                                        host: expect, convertType))
                     {
                         // Actual is assignable to current `from` type,
                         //  this means we've got a conversion edge that works.
@@ -2488,10 +2560,12 @@ pub fn solve(
                             if (actual)
                                 fail("Conversion ambiguity, multiple ways to convert "
                                     ~ humanizeType(actual) ~ " into "
-                                    ~ humanizeType(expect) ~ ":" ~ suffix);
+                                    ~ (Expect -> Type ? humanizeType(expect) : "[TODO pattern str]")
+                                        ~ ":" ~ suffix);
                             else
                                 fail("using".qBAD ~ " ambiguity, multiple ways to obtain a "
-                                    ~ humanizeType(expect) ~ " in this scope:" ~ suffix);
+                                    ~ (Expect -> Type ? humanizeType(expect) : "[TODO pattern str]")
+                                        ~ " in this scope:" ~ suffix);
                         }
 
                         match = path;
