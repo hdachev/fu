@@ -51,7 +51,7 @@ fn compile_snippets(sources: string[], mut fnames?: string[], mut options?: Opti
                     ? ensure_main(snippet)
                     : snippet;
 
-        ctx.files.map::set(fnames[i], src);
+        ctx.files.set(fnames[i], src);
 
         if (snippet.has("/*PRINT*/"))
             options.dev |= DEV_Print;

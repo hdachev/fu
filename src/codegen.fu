@@ -64,20 +64,20 @@ pub fn cpp_codegen(
     nocopy struct Outputs
     {
         // #include ...
-        _libs:              set::Set(string);
+        _libs:              flat::Set(string);
 
         // diagnostics
-        _gcc_ignore:        set::Set(string);
+        _gcc_ignore:        flat::Set(string);
 
         // static pragma emit
         _top_emits:         string;
 
         // struct fwd decls
-        _tfwd:              set::Set(StructCanon);
+        _tfwd:              flat::Set(StructCanon);
         _tfwd_src:          string;
 
         // fn fwd decls
-        _ffwd:              set::Set(Target);
+        _ffwd:              flat::Set(Target);
         _ffwd_src:          string;
 
         _ffwd_live_client:  string;
@@ -90,8 +90,8 @@ pub fn cpp_codegen(
         _tdef_stack:        StructDecl[];
 
         // fn definitions
-        _fdef_started:      set::Set(Target);
-        _fdef_complete:     set::Set(Target);
+        _fdef_started:      flat::Set(Target);
+        _fdef_complete:     flat::Set(Target);
         _fdef:              string;
 
         // misc garbage
@@ -99,9 +99,9 @@ pub fn cpp_codegen(
         _hasMain:           i32;
 
         // experimentals
-        HACK_link:          set::Set(string);
-        HACK_include_dirs:  set::Set(string);
-        HACK_extra_sources: set::Set(string);
+        HACK_link:          flat::Set(string);
+        HACK_include_dirs:  flat::Set(string);
+        HACK_extra_sources: flat::Set(string);
 
         // live
         _live_targets:      i32[];
@@ -110,7 +110,7 @@ pub fn cpp_codegen(
         _defects:           CGDefects;
 
         //
-        _TODO_FIX_seenFns:  set::Set(string);
+        _TODO_FIX_seenFns:  flat::Set(string);
     };
 
     let using mut outputs: Outputs;
@@ -222,7 +222,7 @@ pub fn cpp_codegen(
 
     fn include(lib: string)
     {
-        _libs.set::add(lib);
+        _libs.add(lib);
     }
 
     fn localPath(path: string)
@@ -377,7 +377,7 @@ pub fn cpp_codegen(
         let id  = "s_" ~ s.name;
 
         let scp = parseStructCanon(type.canon);
-        if (_tfwd.set::add(scp))
+        if (_tfwd.add(scp))
             declareStruct(id, s);
 
         return id;
@@ -537,7 +537,7 @@ pub fn cpp_codegen(
     //
 
     fn collectDedupes(
-        mut values: set::Set(string),
+        mut values: flat::Set(string),
         prefix?: string, suffix = "\n",
         header?: string, footer = "\n"): string
     {
@@ -1222,7 +1222,7 @@ pub fn cpp_codegen(
         if (overload.kind != "fn" || overload.name == "main")
             return;
 
-        if !(_ffwd.set::add(target))
+        if !(_ffwd.add(target))
             return;
 
         let fwdDecl = target.cgFnPrototype() ~ ";\n";
@@ -1261,7 +1261,7 @@ pub fn cpp_codegen(
                 ~ target.kind ~ " " ~ target.name ~ "`.");
 
         // Do this just once.
-        if (!_fdef_started.set::add(target))
+        if (!_fdef_started.add(target))
         {
             // Add a fwd decl if recursive.
             if (!_fdef_complete.has(target))
@@ -1278,7 +1278,7 @@ pub fn cpp_codegen(
         // Go!
         cgFn(target);
 
-        _fdef_complete.set::add(target) || BUG(
+        _fdef_complete.add(target) || BUG(
             "ensureFnDef: _fdef_complete twice: " ~ target.name);
     }
 
@@ -1331,7 +1331,7 @@ pub fn cpp_codegen(
         // Turns out we've had this all along for templates & the like.
         //  Doing this here prevents any fns called inside from emitting code too.
         //
-        if (dedupe && !_TODO_FIX_seenFns.set::add(dedupe))
+        if (dedupe && !_TODO_FIX_seenFns.add(dedupe))
         {
             noteDefect(DuplicateFunctions);
             return;
@@ -1377,7 +1377,7 @@ pub fn cpp_codegen(
         //      outside of the scope of some template,
         //       e.g. just globally eliminate duplicate code somehow.
         //
-        if (!dedupe && !_TODO_FIX_seenFns.set::add(src))
+        if (!dedupe && !_TODO_FIX_seenFns.add(src))
         {
             noteDefect(DuplicateFunctions);
             return;
@@ -1762,7 +1762,7 @@ pub fn cpp_codegen(
 
     fn cgGlobal(target: Target)
     {
-        if !(_ffwd.set::add(target))
+        if !(_ffwd.add(target))
             return "";
 
         return cgLet(target.solved,
@@ -3054,7 +3054,7 @@ pub fn cpp_codegen(
             // No longer needed, leaving it as an example,
             //  it was the only thing using the _gcc_ignore thing.
             //
-            // _gcc_ignore.set::add("-Wmisleading-indentation");
+            // _gcc_ignore.add("-Wmisleading-indentation");
 
             if (_current_fn)
                 return result;
@@ -3082,15 +3082,15 @@ pub fn cpp_codegen(
 
         if (cmd == "link")
             eachStringLiteral: |i|
-                HACK_link.set::add(i);
+                HACK_link.add(i);
 
         if (cmd == "include_dirs")
             eachStringLiteral: |i|
-                HACK_include_dirs.set::add(i);
+                HACK_include_dirs.add(i);
 
         if (cmd == "sources")
             eachStringLiteral: |i|
-                HACK_extra_sources.set::add(i);
+                HACK_extra_sources.add(i);
 
         if (cmd == "include")
             eachStringLiteral: |i|

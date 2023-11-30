@@ -116,7 +116,7 @@ pub fn solve(
     struct EventsSnap
     {
         // Writes invalidate subsequent reads -
-        invalidated_by:     set::Set(WriteID)[];
+        invalidated_by:     flat::Set(WriteID)[];
     };
 
     struct PrecedingRefArg
@@ -152,7 +152,7 @@ pub fn solve(
 
     fn Events_merge(ref events: EventsSnap, snap: EventsSnap)
     {
-        fn Events_merge(ref dest: set::Set($T)[], src: set::Set($T)[])
+        fn Events_merge(ref dest: flat::Set($T)[], src: flat::Set($T)[])
         {
             if (dest.len < src.len)
                 dest.grow(src.len);
@@ -249,7 +249,7 @@ pub fn solve(
         // Reference graph.
         rg_parents:     Lifetime[];
         rg_invalidates: Lifetime[];         // Non-disjoint siblings and children.
-        rg_children:    set::Set(i32)[];    // Used by validateCOW
+        rg_children:    flat::Set(i32)[];    // Used by validateCOW
 
         // Arguments at risk.
         at_soft_risk:   bitset::BitSet[];
@@ -257,7 +257,7 @@ pub fn solve(
 
         // AAR: helpers.
         is_arg:         bitset::BitSet;
-        arg_parents:    set::Set(i32)[];
+        arg_parents:    flat::Set(i32)[];
         arg_targets:    i32[];
     };
 
@@ -272,7 +272,7 @@ pub fn solve(
 
         using flow?:        Flow;
 
-        far_jumps?:         set::Set(i32);
+        far_jumps?:         flat::Set(i32);
         using effects?:     Effects;
         using events?:      Events;
         autoshadow_ok!:     i32;
@@ -295,7 +295,7 @@ pub fn solve(
         using postdom?:     Postdom;
 
         //
-        TODO_FIX_children?: set::Set(i32)[];
+        TODO_FIX_children?: flat::Set(i32)[];
 
         //
         TODO_FIX_unique?:   i32;
@@ -319,7 +319,7 @@ pub fn solve(
     struct SpecExtras
     {
         scope_items:        ScopeItem[];
-        arg_spec_types:     map::Map(string, Type);
+        arg_spec_types:     flat::Map(string, Type);
     };
 
 
@@ -369,13 +369,13 @@ pub fn solve(
 
         spec_extras?:       SpecExtras;
 
-        callers?:           ::CountedSet(i32);
-        calls?:             ::CountedSet(i32);
+        callers?:           flat::CountedSet(i32);
+        calls?:             flat::CountedSet(i32);
 
         children?:          ChildTarget[];
-        specs?:             map::Map(string, Target); // mangle -> spec;
+        specs?:             flat::Map(string, Target); // mangle -> spec;
 
-        far_jumps?:         set::Set(i32);
+        far_jumps?:         flat::Set(i32);
 
         rev_spec?:          ReverseSpecialization;
     };
@@ -393,7 +393,7 @@ pub fn solve(
         flags:          TypeParamFlags;
     };
 
-    type TypeParams = map::Map(string, TypeParam);
+    type TypeParams = flat::Map(string, TypeParam);
 
     using enum SolverPass
     {
@@ -412,7 +412,7 @@ pub fn solve(
         _ss:                ScopeSkipMemos;
         _field_items:       ScopeItem[];
         _field_implicits:   ScopeItem[];
-        _pub_imports:       set::Set(i32);
+        _pub_imports:       flat::Set(i32);
         _helpers_data:      HelpersData[];
         _ephemeral:         Ephemeral[];
 
@@ -2854,7 +2854,7 @@ pub fn solve(
 
     fn SLOW_type_maybeInside(host!: ValueType, guest!: ValueType, guest_non_triv_mask!: u64)
     {
-        mut seen: set::Set(StructCanon);
+        mut seen: flat::Set(StructCanon);
 
         fn type_maybeInside(shadow host: ValueType)
         {
@@ -2873,7 +2873,7 @@ pub fn solve(
                                    != guest_non_triv_mask)
                     return false;
 
-                if (seen.set::add(scp))
+                if (seen.add(scp))
                 {
                     for (mut i = 0; i < s.items.len; i++)
                     {
@@ -5304,7 +5304,7 @@ pub fn solve(
         //  Would make the prefix stuff more meaningful.
         //
         let mangle = overloadIdx.modid ~ "#" ~ overloadIdx.globid ~ " " ~ args_mangled;
-        return getSpecs(:parent_idx).map::get(mangle) || doTrySpecialize(:parent_idx,
+        return getSpecs(:parent_idx).get(mangle) || doTrySpecialize(:parent_idx,
             :overloadIdx, args_in:args, :mangle,
             :reorder, :conversions,
             :REST_START, :REST_TYPE)
@@ -5648,7 +5648,7 @@ pub fn solve(
         //
         fn setSpec(shadow mangle: string, target: Target, nx!: bool, allowReplaceNonSpecfails?: bool)
         {
-            ref t = getSpecs(:parent_idx).map::ref(mangle);
+            ref t = getSpecs(:parent_idx).ref(mangle);
 
             fn id(shadow target)
                 target.is_SPECFAIL  ? "SPEC_FAIL".qBAD
@@ -5664,7 +5664,7 @@ pub fn solve(
         }
 
         //
-        mut mangles: set::Set(string);
+        mut mangles: flat::Set(string);
         mut currentSpec = SPECFAIL_RentrySafety;
 
         fn resetSpec(spec: Target, allowReplaceNonSpecfails?: bool)
@@ -5679,12 +5679,12 @@ pub fn solve(
 
         let resetMangle = |shadow mangle: string, allowReplaceNonSpecfails?: bool|
         {
-            if (mangles.set::add(mangle))
+            if (mangles.add(mangle))
             {
-                let preexisting = getSpecs(:parent_idx).map::get(mangle);
+                let preexisting = getSpecs(:parent_idx).get(mangle);
                 if (preexisting)
                 {
-                    mangles.set::remove(mangle);
+                    mangles.remove(mangle);
 
                     if (!currentSpec.is_SPECFAIL)
                     {
@@ -5817,7 +5817,7 @@ pub fn solve(
 
                         let paramType =
                             annot.kind == "typeparam"
-                                ? _typeParams.map::ref(annot.value).matched
+                                ? _typeParams.ref(annot.value).matched
                                 : annot.kind == "call" && !annot.items
                                     && Scope_lookupType(annot.value, :annot.flags);
 
@@ -5881,7 +5881,7 @@ pub fn solve(
                         argName || BUG("No argName");
 
                         // Same pattern - grabs a mutref.
-                        ref argName_typeParam = _typeParams.map::ref(argName);
+                        ref argName_typeParam = _typeParams.ref(argName);
 
                         let isTypedef = !!(argNode.flags & F_TYPENAME);
 
@@ -6029,7 +6029,7 @@ pub fn solve(
                         ? cleanID(argNode.value)
                         :         argNode.value;
 
-                    let matched = _typeParams.map::get(argName || BUG("No argName"))
+                    let matched = _typeParams.get(argName || BUG("No argName"))
                         .matched || BUG("native F_REF arg without a matched type");
 
                     if (!matched.is_mutref)
@@ -6193,7 +6193,7 @@ pub fn solve(
                 }
 
                 let specType    = isSpec && spec_extras
-                    .arg_spec_types.map::get(
+                    .arg_spec_types.get(
                         n_arg.flags & F_COMPOUND_ID
                             ? cleanID(n_arg.value)
                             :         n_arg.value);
@@ -6922,7 +6922,7 @@ pub fn solve(
         //   getting AAR errors from _ss, should be disjoint-ok.
         let scopeItems0 = _scope.items.len;
 
-        typeParams.map::each: |key!id, tp|
+        typeParams.each: |key!id, tp|
         {
             let type = tp.matched;
             if (!type)
@@ -6931,7 +6931,7 @@ pub fn solve(
             // Argument spectypes.
             if (tp.flags & TP_isArgSpec)
             {
-                res.arg_spec_types.map::set(id, type);
+                res.arg_spec_types.set(id, type);
                 continue;
             }
 
@@ -7191,7 +7191,7 @@ pub fn solve(
 
         // Struct fields only.
         mut structConverts: Target[];
-        mut structImports:  set::Set(i32);
+        mut structImports:  flat::Set(i32);
 
         mut non_triv_reason = !instType.is_rx_copy && -1;
 
@@ -7382,9 +7382,9 @@ pub fn solve(
 
                     let m = field.type.modidOfOrigin;
                     if (m && m != module.modid)
-                        structImports.set::add(m);
+                        structImports.add(m);
 
-                    structImports.set::add(field.type.lookupTypeImports());
+                    structImports.add(field.type.lookupTypeImports());
                 }
 
                 //
@@ -7492,7 +7492,7 @@ pub fn solve(
 
         // List imports in scope.
         _scope.imports.each(_ss.imports,
-            |import| structImports.set::add(import));
+            |import| structImports.add(import));
 
         // Add a default constructor.
         shadow mut instType = instType;
@@ -7977,7 +7977,7 @@ pub fn solve(
             // TODO FIX this forces fns with jumps in defaulted arguments
             //  into becoming inline funcs, not necessary,
             //   far jumps can be taken into account during later passes.
-            _current_fn.far_jumps.set::add(h.local_of);
+            _current_fn.far_jumps.add(h.local_of);
 
             // The fn will solve again as inline,
             //  return a shim here that looks jumpy.
@@ -8690,7 +8690,7 @@ pub fn solve(
         if (node.flags & F_PUB)
         {
             _current_fn.scope0 && fail("Cannot pub import from here.");
-            _pub_imports.set::add(m.modid);
+            _pub_imports.add(m.modid);
         }
 
         //
@@ -8712,7 +8712,7 @@ pub fn solve(
 
     fn evalTypeParam(id: string): Type
     {
-        return _typeParams.map::get(id).matched
+        return _typeParams.get(id).matched
             || Scope_lookupType(id || fail("Falsy type param id."))
             || fail("No type param " ~ id.qID ~ " in scope.");
     }
@@ -8737,7 +8737,7 @@ pub fn solve(
         mut shadow = false;
         mut result: Target[];
 
-        mut unique: set::Set(Target);
+        mut unique: flat::Set(Target);
 
         // Visit local scope.
         fn visitScope(shadow local_scope!: bool, items?: ScopeItem[..])
@@ -8760,7 +8760,7 @@ pub fn solve(
                 //
                 // 3. The result.reverse() at the end just adds offense to injury.
                 //
-                if (unique.set::add(target))
+                if (unique.add(target))
                     result ~= target;
                 // TODO FIX ADDROFFN ///////////////////////////////////////////
             }
@@ -8900,7 +8900,7 @@ pub fn solve(
 
             type = relax_typeParam(type);
 
-            ref param = _typeParams.map::ref(id);
+            ref param = _typeParams.ref(id);
             if (param)
             {
                 // TODO FIX arg spec types are not Typenames,
@@ -9111,11 +9111,11 @@ pub fn solve(
                     if (left.kind == "typeparam")
                     {
                         let id = left.value;
-                        if (_typeParams.map::get(id).flags & TP_needsConsumedTypes)
+                        if (_typeParams.get(id).flags & TP_needsConsumedTypes)
                         {
                             let expect  = evalTypeAnnot(right);
 
-                            ref tp      = _typeParams.map::ref(id);
+                            ref tp      = _typeParams.ref(id);
                             tp.consumed = tp.consumed
                                 ? type_tryIntersect(tp.consumed, expect) || fail("typeassert intersect fail.")
                                 : expect;
@@ -10268,7 +10268,7 @@ pub fn solve(
     fn inlineExpression(
         from!: Target,
         mut node: SolvedNode,
-        mut letdefReplicas!?: map::Map(Target, Target),
+        mut letdefReplicas!?: flat::Map(Target, Target),
         locals_start!?: i32,
         now_inlining!?: Target)
     {
@@ -10294,7 +10294,7 @@ pub fn solve(
 
         fn matchReplicaOrInjectForeignLocal(target: Target, slot?: Type)
         {
-            let replica = letdefReplicas.map::get(target);
+            let replica = letdefReplicas.get(target);
             if (replica)
                 return replica;
 
@@ -10356,7 +10356,7 @@ pub fn solve(
                 let foreign = GET(node.target);
                 let local   = Scope_create(_scope, nest: _current_fn.target.globid);
 
-                letdefReplicas.map::set(node.target, local || BUG());
+                letdefReplicas.set(node.target, local || BUG());
 
                 //
                 lax fn TEST_LifetimeEqual(
@@ -10494,7 +10494,7 @@ pub fn solve(
                 else
                 {
                     // TODO FIX these should be collected in later passes
-                    _current_fn.far_jumps.set::add(node.helpers.local_of);
+                    _current_fn.far_jumps.add(node.helpers.local_of);
                 }
             }
 
@@ -10805,7 +10805,7 @@ pub fn solve(
         //  - the letdef mapping for ref replacement.
         //
         mut argdefs: SolvedNode[];
-        mut letdefReplicas: map::Map(Target, Target);
+        mut letdefReplicas: flat::Map(Target, Target);
         let locals_start = GET_next_local_index();
 
         let host_args = target.args;
@@ -11611,7 +11611,7 @@ pub fn solve(
                                     ~ nested(left) ~ " := " ~ nested(right));
                 }
 
-                flow.rg_children.grow_if_oob(right).set::add(left);
+                flow.rg_children.grow_if_oob(right).add(left);
 
                 //
                 parents.Lifetime_add(
@@ -11625,7 +11625,7 @@ pub fn solve(
                 if (flow.is_arg.has(right))
                 {
                     flow.is_arg.add(left);
-                    flow.arg_parents.grow_if_oob(left).set::add(right);
+                    flow.arg_parents.grow_if_oob(left).add(right);
                 }
             }
 
@@ -11932,7 +11932,7 @@ pub fn solve(
                             writeID._locid_and_hash.i32 == write || BUG(
                                 "AAR: writeID._locid != write locid, set::add wont be able to dedupe");
 
-                        set.set::add(writeID);
+                        set.add(writeID);
                     }
                 }
             }
@@ -13456,10 +13456,10 @@ pub fn solve(
 
     fn computeFnSighash_asIfCycleRoot(
         fn_target:          Target,
-        ref name_counts!:   map::Map(string, u32))
+        ref name_counts!:   flat::Map(string, u32))
     {
         mut already_hashing:    Target[];
-        mut cycle_participants: set::Set(Target);
+        mut cycle_participants: flat::Set(Target);
 
         fn hash(ref hash: tea::TEA, type: Type)
         {
@@ -13537,7 +13537,7 @@ pub fn solve(
                                     //  hashing the whole cycle however we can,
                                     //   and then hitting all cycle-participants with the grand total.
                                     //
-                                    cycle_participants.set::add(fn_target);
+                                    cycle_participants.add(fn_target);
 
                                     sighash = tea::TEA(0xffffffff, idx.u32);
                                 }
@@ -13633,7 +13633,7 @@ pub fn solve(
                     //   so let's add an incremental ID here too.
                     //
                     hash.hash(
-                        name_counts.map::ref(
+                        name_counts.ref(
                             fn_target.name)++);
 
                     // Which sort of obsoletes the previous design,
@@ -13687,7 +13687,7 @@ pub fn solve(
         {
             PROFILE(.ComputeSighashes);
 
-            mut name_counts: map::Map(string, u32);
+            mut name_counts: flat::Map(string, u32);
 
             for (mut i = 0; i < _scope.overloads.len; i++)
             {

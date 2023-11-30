@@ -19,8 +19,8 @@ nocopy struct Context
     dep_order:  i32[];
 
     // FS facts.
-    files:      map::Map(string, string);
-    fuzzy:      map::Map(string, string);
+    files:      flat::Map(string, string);
+    fuzzy:      flat::Map(string, string);
 };
 
 struct Module
@@ -92,7 +92,7 @@ struct Struct
 
     target?:        Target;
     items?:         ScopeItem[];
-    imports?:       set::Set(i32);
+    imports?:       flat::Set(i32);
     converts?:      Target[];
 
     // Size & co.
@@ -135,9 +135,9 @@ struct CodegenOutput
     using src:  string;
 
     // Libraries and such.
-    link?:              set::Set(string);
-    include_dirs?:      set::Set(string);
-    extra_sources?:     set::Set(string);
+    link?:              flat::Set(string);
+    include_dirs?:      flat::Set(string);
+    extra_sources?:     flat::Set(string);
 
     // Live exports.
     live?:              i32[];

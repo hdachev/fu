@@ -1,3 +1,8 @@
+// TODO on next 'works', break this file up into
+//  flat/Set.fu, flat/Map.fu and flat/CountedSet.fu
+
+
+// flat/Set.fu
 
 pub struct Set(type T)
 {
@@ -432,4 +437,158 @@ pub fn misses_some(l: Set($T), from!: Set($T))
         both: |_| {});
 
     return false;
+}
+
+
+// flat/Map.fu
+
+/*
+struct Map(K, V)
+{
+    keys: K[];
+    vals: V[];
+
+    fn size()
+        keys.len;
+
+    fn find(key)
+        set::find(keys, key);
+
+    fn has(key)
+        find(key) >= 0;
+
+    fn update(key, value)
+        set::update(keys, key, vals, value);
+
+    fn get(key) {
+        let idx = find(key);
+        if (idx >= 0)
+            return vals[idx];
+
+        return [];
+    }
+};
+*/
+
+pub struct Map(type K, type V) {
+    keys: Set(K)
+    vals: V[]
+}
+
+pub fn has(using ref _: Map($K, $V), key: $K): bool {
+    keys.has(key)
+}
+
+pub fn get(using ref _: Map($K, $V), key: $K): $V {
+    keys.get(key, vals)
+}
+
+pub fn each(using ref _: Map($K, $V), fn) {
+    for (mut i = 0; i < vals.len; i++) {
+        let key = keys.keys_asc[i]//// <- Going through a let here prevents bind-by-mutref.
+        fn(vals[i], ?:key)          //
+    }                               // Not great, maybe we need a `ref ` kw-prefix
+}                                   //  at callsites like in c#,
+                                    //   it'd work as `&mut ` in rust if possible,
+                                    //    still mut-generic.
+                                    //
+                                    // Wonder what that means for . notation though.
+                                    //  What's happening in rust is, they make an exception.
+                                    //   Method-invocation via . notation exception
+                                    //    triggers what they call an "auto-deref",
+                                    //     which basically is it's special thing.
+                                    //
+                                    // POSSIBLE SOLUTION (FN-TYPES):
+                                    //
+                                    // Typing the fn(const key: $K, ref val: $V)
+                                    //  would also do the trick, probably way cleaner.
+
+pub fn set(using mut ref _: Map($K, $V), key: $K, value: $V): bool {
+    keys.update(
+        key,
+        vals, value)
+}
+
+pub fn ref(using mut ref _: Map($K, $V), key: $K): $V {
+    keys.ref(
+        key,
+        vals)
+}
+
+pub fn if(using mut ref _: Map($K, $V), key: $K, visit): void {
+    keys.if(
+        key,
+        vals, fn visit)
+}
+
+pub fn remove(using mut ref _: Map($K, $V), key: $K) {
+    keys.if(key, vals): |_, remove!| {
+        remove()
+        return true
+    }
+
+    false
+}
+
+pub fn clear(using mut ref _: Map($K, $V)): void {
+    keys.clear()
+    vals.clear()
+}
+
+
+// flat/CountedSet.fu
+
+type CountType = i32
+
+pub struct CountedSet(type T) {
+    counts!: Map(T, CountType)
+}
+
+pub inline fn [] !T(using _: CountedSet(T), i: int) {
+    counts.keys[i]
+}
+
+pub inline fn len !T(using _: CountedSet(T)) {
+    counts.keys.len
+}
+
+pub fn total(using _: CountedSet(_)) {
+    mut total: CountType
+    counts.each: |count| total += count
+    total
+}
+
+pub fn count !T(using _: CountedSet(T), key: T) {
+    counts.get(key)
+}
+
+pub fn each !T(using _: CountedSet(T), visit) {
+    counts.each: |key!, count|
+        visit(key, ?:count)
+}
+
+pub fn clear(using mut ref _: CountedSet(_)) {
+    counts.clear()
+}
+
+pub fn remove !T(using mut ref _: CountedSet(T), key: T) {
+    counts.remove(key)
+}
+
+pub fn incr !T(using mut ref _: CountedSet(T), key: T) {
+    if (counts.ref(key)++)
+        return false
+
+    true
+}
+
+pub fn try_decr !T(using mut ref _: CountedSet(T), key: T) {
+    counts.if(key): |count, remove| {
+        if !(--count) {
+            remove()
+            return true
+        }
+    }
+
+    false
 }

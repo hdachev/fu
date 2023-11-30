@@ -352,11 +352,11 @@ pub fn build(
     ////   but I'd like us to have something that
     ////    just-works for the simplest things like your local glfw.
     ////
-    mut HACK_linkFlags:         set::Set(string);
-    mut HACK_pkgConfig_libs:    set::Set(string);
+    mut HACK_linkFlags:         flat::Set(string);
+    mut HACK_pkgConfig_libs:    flat::Set(string);
     mut HACK_pkgConfig_cflags:  string[];
 
-    mut HACK_include_dirs:      set::Set(string);
+    mut HACK_include_dirs:      flat::Set(string);
 
     for (mut i = 0; i < modules.len; i++)
     {
@@ -368,7 +368,7 @@ pub fn build(
         {
             let dir = path::dirname(module.fname);
             include_dirs.each: |incl|
-                HACK_include_dirs.set::add(
+                HACK_include_dirs.add(
                     incl.starts(with: '.')
                         ? path::join(dir, incl)
                         : incl);
@@ -383,11 +383,11 @@ pub fn build(
             mut lib = libs[i];
 
             if (lib.starts(with: "-")) {
-                HACK_linkFlags.set::add(lib);
+                HACK_linkFlags.add(lib);
             }
             else {
                 cflags ~= lib;
-                HACK_pkgConfig_libs.set::add(lib);
+                HACK_pkgConfig_libs.add(lib);
             }
         }
 
