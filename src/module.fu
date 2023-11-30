@@ -8,6 +8,9 @@ let Quals_bitsize = 32;
 
 nocopy struct Context
 {
+    // Default modules & co.
+    fudir:      string;
+
     // Error reporting & file snippets.
     base_dir:   string;
 

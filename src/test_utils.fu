@@ -17,8 +17,11 @@ fn compile_snippets(sources: string[], mut fnames?: string[], mut options?: Opti
             ? src
             : "\n\nfn main(): i32 {\n" ~ src ~ "\n}\n";
 
+    //
+    let implicit mut ctx = prelude::CTX_PRELUDE.clone();
+
     // Ensure fnames.
-    let base_dir = FUDIR ~ "__tests__/";
+    let base_dir = ctx.fudir ~ "__tests__/";
 
     fn find !T(arr: T[..], val: T, else!) {
         for (mut i = 0; i < arr.len; i++)
@@ -39,8 +42,6 @@ fn compile_snippets(sources: string[], mut fnames?: string[], mut options?: Opti
     }
 
     // Preprocess & "cache" sources.
-    let implicit mut ctx = prelude::CTX_PRELUDE.clone();
-
     ctx.base_dir = base_dir;
 
     for (mut i = 0; i < sources.len; i++)
@@ -557,7 +558,7 @@ pub fn ZERO(
     }
 
     let run = true;
-    let fudir = FUDIR;
+    let fudir = ctx.fudir;
     let dir_wrk = DEFAULT_WORKSPACE;
 
     ::build(:ctx, :run, :fudir, :dir_wrk, :onfail, scheme: "debug");
@@ -732,8 +733,8 @@ pub fn ZERO_SAME(alts: string[][])
 
             if (x != a)
             {
-                file::write(path: FUDIR ~ "expect.diff", ansi::strip(::inspect(expect[m])) ~ "\n\n----------------\n\n" ~ x);
-                file::write(path: FUDIR ~ "actual.diff", ansi::strip(::inspect(actual[m])) ~ "\n\n----------------\n\n" ~ a);
+                file::write(path: "./expect.diff", ansi::strip(::inspect(expect[m])) ~ "\n\n----------------\n\n" ~ x);
+                file::write(path: "./actual.diff", ansi::strip(::inspect(actual[m])) ~ "\n\n----------------\n\n" ~ a);
 
                 throw(
                     "ZERO_SAME: alts[" ~ i ~ "] mismatch at:\n"

@@ -37,35 +37,17 @@ fn resolveFile(
         };
 
         check(path);
-        check(from ~    "lib/" ~ name);
-        check(from ~ "fu/lib/" ~ name);
-
-        // Finally, try lib/x/x.fu
-        if (name.ends(with: ".fu"))
-        {
-            let ext = name.len - 3;
-
-            mut dir = 0;
-            for (mut i = ext; i --> 0; ) {
-                if (name[i] == '/') {
-                    dir = i + 1;
-                    break;
-                }
-            }
-
-            shadow let name = name[0   .. dir]
-                            ~ name[dir .. ext] ~ '/'
-                            ~ name[dir .. name.len];
-
-            check(from ~ name);
-            check(from ~    "lib/" ~ name);
-            check(from ~ "fu/lib/" ~ name);
-        }
+        check(from ~ "lib/" ~ name); // TODO REMOVE
 
         /////////////////////////////////
         let fallback = from.path::dirname;
         if (!fallback || fallback.len >= from.len)
+        {
+            if (ctx.fudir.ends(with: '/'))
+                check(ctx.fudir ~ "lib/" ~ name);
+
             return "";
+        }
 
         return resolveFile(
             from: fallback, :name);

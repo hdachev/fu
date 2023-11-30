@@ -1,0 +1,22 @@
+import helpers;
+
+
+// TODO FIX this is a shim,
+//  we probably want this to get the path
+//   to the current executable.
+
+fn absdir(a: string)
+    a.if_last == '/' ? a : a ~ '/';
+
+let HOME = absdir(env::get("HOME"));
+
+fn locate_FUDIR(): string
+{
+    let dir = HOME ~ "fu/";
+    let fn = dir  ~ "src/compiler.fu";
+    let fs = file::size(fn);
+    fs > 1000 || throw("Bad compiler.fu: " ~ fn ~ ": " ~ fs);
+    return dir;
+}
+
+pub let FUDIR = locate_FUDIR();

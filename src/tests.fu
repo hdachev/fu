@@ -7,7 +7,7 @@ import test_utils;
 pub extern fn runTests()
 {
     ////////////////////////////////////////////////
-    let TESTDIFFS_FILE = FUDIR ~ "testdiff/now.td";
+    let TESTDIFFS_FILE = "./testdiff/now.td";
     let implicit mut testdiffs = testdiff::TestDiffs;
     defer:ok file::write(
         TESTDIFFS_FILE, testdiff::serialize(testdiffs));

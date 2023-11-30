@@ -223,22 +223,7 @@ pub fn compile(
 
 //
 
-fn absdir(a: string)
-    a.if_last == '/' ? a : a ~ '/';
-
-let HOME = absdir(env::get("HOME"));
-
-pub fn locate_FUDIR(): string
-{
-    let dir = HOME ~ "fu/";
-    let fn = dir  ~ "src/compiler.fu";
-    let fs = file::size(fn);
-    fs > 1000 || throw("Bad compiler.fu: " ~ fn ~ ": " ~ fs);
-    return dir;
-}
-
-pub let FUDIR              = locate_FUDIR();
-pub let DEFAULT_WORKSPACE   = FUDIR ~ "build-cpp/";
+pub let DEFAULT_WORKSPACE = fudir::FUDIR ~ "build-cpp/";
 
 
 //
@@ -289,7 +274,7 @@ pub fn compile_and_build(
         :dir_wrk, :dir_obj, :dir_src, :dir_cpp,
         :flags_cc, :flags_ld,
         unity: fname,
-        fudir: FUDIR);
+        :ctx.fudir);
 }
 
 
