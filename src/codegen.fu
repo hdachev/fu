@@ -12,6 +12,8 @@ import lifetime;
 import usage;
 import fail;
 
+let SMALL_STRING_OPTI   = 15;
+
 let M_STMT              = 1 << 0;
 let M_RETBOOL           = 1 << 1;
 let M_CONST             = 1 << 2;
@@ -97,6 +99,9 @@ pub fn cpp_codegen(
         // misc garbage
         _indent:            string;
         _hasMain:           i32;
+
+        _static_strings:    flat::Set(u64);
+        _static_string_src: string;
 
         // experimentals
         HACK_link:          flat::Set(string);
@@ -655,6 +660,9 @@ pub fn cpp_codegen(
 
             // Type definitions.
             ~ _tdef
+
+            // String literals.
+            ~ _static_string_src
 
             ~ collectDedupes(_gcc_ignore,
                 header: "#pragma GCC diagnostic push\n",
@@ -1695,6 +1703,16 @@ pub fn cpp_codegen(
 
     //
 
+    fn cgInitPrio(modid: i32)
+    {
+        if (!use_INIT_PRIOIRTY)
+            return "";
+
+        let prio = ctx.modules[modid].order.dep_depth;
+        include("<fu/init_priority.h>");
+        return "fu_INIT_PRIORITY(" ~ (1000 + prio) ~ ") ";
+    }
+
     fn cgLet(node: SolvedNode, global!: bool, foreign?: bool): string
     {
         if (node.type.isIrrelevant)
@@ -1724,18 +1742,12 @@ pub fn cpp_codegen(
         }
 
         // Static init prio.
-        let prio    = !use_INIT_PRIOIRTY                    ? 0
-                    : node.type.is_primitive                ? 0
-                    : node.target.modid == module.modid     ? module.order.dep_depth
-                                                            : ctx.modules[node.target.modid].order.dep_depth;
+        let prio = !foreign && !node.type.is_primitive && cgInitPrio(:node.target.modid);
         if (prio)
         {
-            include("<fu/init_priority.h>");
-
-            let attr = "fu_INIT_PRIORITY(" ~ (1000 + prio) ~ ")";
             let eq = src.find('=');
-            if (eq > 0)
-                src = src[.. eq] ~ attr ~ " " ~ src[eq ..];
+            eq >= 0 || BUG("Needs init priority but can't find first = in `" ~ src ~ "`");
+            src = src[.. eq] ~ prio ~ src[eq ..];
         }
 
         // Hide when possible.
@@ -1918,10 +1930,54 @@ pub fn cpp_codegen(
             return cgEnumv(node.type, node.value);
         //////////////////////////////////////////////
 
-        annotateString();
+        // Include ""_fu, fu::str & co.
+        lax let stringAnnot = annotateString();
 
+        // fu::strlit from a const char*
         mut esc = escapeStringLiteral(node.value, '"');
+
+        // Implicitly converts to fu::view if that's all we need.
+        if (node.type.is_ref &&
+            node.type.refType_annotateAsSlice)
+        {
+            return esc ~ "_view";
+        }
+
         esc ~= "_fu";
+
+        // If we need a static ref ...
+        if (node.type.lifetime.hasStatic ||
+
+            // ... or if the string literal will allocate memory,
+            //  and this could get evaluated more than once (we're within a fn),
+            //   we'll emit a reference to a static variable.
+            //
+            node.value.len > SMALL_STRING_OPTI && _current_fn.target)
+        {
+            mut hash: tea::TEA;
+            hash.hash(node.value);
+
+            let dedupe = hash.digest62;
+            let id = "str_" ~ dedupe;
+
+            if (_static_strings.add(hash.u64))
+            {
+                let prio = cgInitPrio(:module.modid);
+                {
+                    ref src = _static_string_src;
+                    src ~= "\n                                #ifndef STR_" ~ dedupe
+                    src ~= "\n                                #define STR_" ~ dedupe
+                    src ~= "\nstatic const " ~ stringAnnot ~ " " ~ id ~ " " ~ prio ~ "{ " ~ esc ~ " };";
+                    src ~= "\n                                #endif\n";
+                }
+            }
+
+            esc = id;
+        }
+
+        if (!node.type.is_ref)
+            return stringAnnot ~ "(" ~ esc ~ ")";
+
         return esc;
     }
 

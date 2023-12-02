@@ -68,6 +68,10 @@ fu_INL constexpr fu::strlit operator ""_fu(const char* cstr, size_t len) noexcep
     return fu::strlit { cstr, (fu::i) len };
 }
 
+fu_INL constexpr fu::view<char> operator ""_view(const char* cstr, size_t len) noexcept {
+    return fu::view<char> { cstr, (fu::i) len };
+}
+
 
 //
 

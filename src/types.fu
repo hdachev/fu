@@ -331,6 +331,16 @@ pub let t_string = createArray(t_byte);
 
 //
 
+fn set_lifetime(mut type: Type, lifetime: Lifetime) {
+    type.lifetime = lifetime;
+    return type;
+}
+
+pub let t_string_literal = set_lifetime(t_string, Lifetime_static);
+
+
+//
+
 pub fn type_trySuper(a: Type, b: Type, DONT_match_zeroes!?: bool)
 {
     let canon = canon_trySuper(a.canon, b.canon);

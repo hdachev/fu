@@ -5011,7 +5011,7 @@ pub fn solve(
                     return member.target.type;
         //////////////////////////////////////////////
 
-        mut ret = t_string;
+        mut ret = t_string_literal;
 
         if !(options.dev & options::DEV_DontFoldLiterals)
             ret.vfacts = v.len
@@ -5023,8 +5023,17 @@ pub fn solve(
 
     fn solveString(node: Node, type: Type): SolvedNode
     {
-        return solved(node,
-            type: solveString(node.value, type));
+        shadow let type = solveString(node.value, type);
+
+        if (type.vfacts & AlwaysFalse)
+        {
+            SELF_TEST && node.value && BUG(
+                "solveString: AlwaysFalse but non-empty: `" ~ node.value ~ "`.");
+
+            return createEmpty(:type);
+        }
+
+        return solved(node, :type);
     }
 
     fn createEmpty(kind: Kind = "empty", type = t_void, target?: Target): SolvedNode
@@ -9724,26 +9733,6 @@ pub fn solve(
                  :  alt_isNever ? cons.type
                  : convertToSuperType("if/else", cons, alt);
 
-        // TODO FIX this is messy and error-prone.
-        // Best see why it happens in the first place, probably deadcode elim.
-        {
-            cond && cond.kind != "empty" || BUG("!cond || cond.empty");
-            cons || BUG("!cons");
-            alt  || BUG("!alt");
-
-            if (cons.kind == "empty")
-            {
-                if (alt.kind == "empty")
-                    return createBlock(:type, [ cond ]);
-
-                return createOr(:type, [ cond, alt ]);
-            }
-            else if (alt.kind == "empty")
-            {
-                return createAnd(:type, [ cond, cons ]);
-            }
-        }
-
         //
         return SolvedNode("if", type || BUG(), items: [ cond, cons, alt ]);
     }
@@ -11022,7 +11011,14 @@ pub fn solve(
             return;
 
         // Definits can just as well emit values.
-        if (node.kind == "empty")
+        if (node.kind == "empty"
+
+            // Same for string literals -
+            //  if we don't actually need a reference here,
+            //   we're better off leaving this up to cg,
+            //    e.g. it can take small string opti into account.
+            //
+            || node.kind == "str")
         {
             node.type = clear_refs(node.type);
             return;

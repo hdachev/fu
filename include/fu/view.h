@@ -18,18 +18,18 @@ struct view
     const T*    m_data;
     fu::i       m_size;
 
-    fu_INL view() noexcept
+    fu_INL constexpr view() noexcept
         : m_data { nullptr }
         , m_size { 0 }
     {}
 
-    fu_INL view(const T* data, fu::i size) noexcept
+    fu_INL constexpr view(const T* data, fu::i size) noexcept
         : m_data { data }
         , m_size { size }
     {}
 
     template <typename V, typename = decltype(*((const T**)1) = (*(V*)1).data())>
-    fu_INL view(const V& vec) noexcept
+    fu_INL constexpr view(const V& vec) noexcept
         : m_data { vec.data() }
         , m_size { vec.size() }
     {}

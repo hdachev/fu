@@ -12006,10 +12006,7 @@ pub extern fn runTests()
         fn test(a: byte[..], b?: byte[..]) a == b;
         fn main() test("") ? 0 : 1;
 
-        ;; EXPECT (""_fu, fu::view<char>{})
-
-        // This is what we had before, it's better.
-        ;; TODO (fu::view<char>{}, fu::view<char>{})
+        ;; EXPECT (fu::view<char>{}, fu::view<char>{})
     `);
 
     ZERO(`
@@ -12806,7 +12803,7 @@ pub extern fn runTests()
         fn createShader(src: string) = src;
 
         // inits a public let
-        pub let GEOMETRY_PASS_TEST = createShader("src");       ;; ConstCast
+        pub let GEOMETRY_PASS_TEST = createShader("src");
     `,
     `
         pub fn main() _0::GEOMETRY_PASS_TEST.len - 3;
@@ -14579,8 +14576,8 @@ pub extern fn runTests()
     ZERO(`
         fn Stringy(i: i32) "i:" ~ i;
 
-        inline fn Printy(x: string): string = x;                ;; PointlessLocal
-        inline fn Printy(x.Stringy): string = x;
+        inline fn Printy(x: string): string = x;                ;; GNUStmtExpr
+        inline fn Printy(x.Stringy): string = x;                ;; PointlessLocal
 
         fn Println(parts.Printy[]<alt>: string[..]</alt>) {
             mut total = 0;
@@ -14633,8 +14630,8 @@ pub extern fn runTests()
         fn main() {
             let topic = "A";
             implicit mut out: string;
-            printlike(:topic, "Hello, ", "World", "!");         ;; PointlessLocal
-            return out == "A: Hello, World!\\n" ? 0 : 1
+            printlike(:topic, "Hello, ", "World", "!");         ;; GNUStmtExpr
+            return out == "A: Hello, World!\\n" ? 0 : 1         ;; PointlessLocal
         }
     `);
 
@@ -14648,9 +14645,9 @@ pub extern fn runTests()
             mut once = 0;
             fn once(str: string) {
                 once++;
-                return str;                                     ;; ConstCast
+                return str;
             }
-
+                                                                ;; GNUStmtExpr
             lazywarn(once("Hello"), ", ", "World", "!", prefix: "X: ");
             lazywarn(prefix: "Y: ", once("Hello"), "!");
 
@@ -16875,7 +16872,7 @@ pub extern fn runTests()
     ZERO(`
         lax                         <alt>
         inline      ;; PointlessLocal   <alt/>
-        noinline    ;; ConstCast        </alt>
+        noinline                        </alt>
         fn longer(                  <alt>
             l: string, r: string,       <alt/>
             l: $T[..], r: $T[..],       </alt>
