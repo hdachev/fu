@@ -77,6 +77,15 @@ struct view
     const T* end() const noexcept {
         return data() + size();
     }
+
+
+    // fu::view {{ literals }}
+
+    template<fu::i size>
+    constexpr view(T(&&data)[size])
+        : m_data { data }
+        , m_size { size }
+    {}
 };
 
 template <typename T>

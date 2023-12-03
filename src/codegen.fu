@@ -2011,7 +2011,6 @@ pub fn cpp_codegen(
 
         let curly = "{ " ~ items.join(", ") ~ " }";
         let itemT = typeAnnotBase(clear_sliceable(node.type));
-        let slate = "fu::slate<" ~ items.len ~ ", " ~ itemT ~ "> " ~ curly;
 
         // fu::slate literals
         if (callarg.arrayType_annotateAsView)
@@ -2020,9 +2019,10 @@ pub fn cpp_codegen(
 
             // Putting a comma around,
             //  because the `,` misparses in places like argument lists.
-            return "(" ~ slate ~ ")";
+            return "fu::view<" ~ itemT ~ "> {" ~ curly ~ "}";
         }
 
+        let slate = "fu::slate<" ~ items.len ~ ", " ~ itemT ~ "> " ~ curly;
         return typeAnnotBase(node.type) ~ " { " ~ slate ~ " }";
     }
 

@@ -11900,7 +11900,7 @@ pub extern fn runTests()
         fn main()
             test([-1, +1]);
 
-        ;; EXPECT fu::slate<2, int> { -1, +1 }
+        ;; EXPECT fu::view<int> {{ -1, +1 }}
     `);
 
     ZERO(`
@@ -13840,7 +13840,7 @@ pub extern fn runTests()
 
         fn main() [2].MAP(fn sqr)[0] - 4;
 
-        ;; EXPECT (fu::slate<1, int> { 2 })
+        ;; EXPECT fu::view<int> {{ 2 }}
         //  During the propagateType rework
         //   the 'mut result: fn(items[0])[]' type annot
         //    was found listed as a callsite for items,
@@ -15733,7 +15733,7 @@ pub extern fn runTests()
 
         fn main() [ 1, 2, 3 ].Some(|v| v & 1 == 0) - 2;
 
-        ;; EXPECT (fu::slate<3, int> { 1, 2, 3 })
+        ;; EXPECT fu::view<int> {{ 1, 2, 3 }}
     `);
 
     ZERO(`
