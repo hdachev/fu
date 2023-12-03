@@ -1,30 +1,27 @@
 
 pub struct TestDiffs
 {
-    keys: string[];
-    vals: string[];
+    data: string[];
 };
 
 pub fn serialize(diffs: TestDiffs)
 {
-    mut res: string;
+    mut deduped = diffs.data;
 
-    let keys = diffs.keys;
-    let vals = diffs.vals;
-    for (mut i = 0; i < keys.len; i++)
-        res ~= keys[i] ~ "\n-----\n" ~ vals[i] ~ "\n-----\n";
+    deduped.sort(|a, b| a <> b < 0);
+    for (mut i = deduped.len; i --> 1; )
+        if (deduped[i - 1] == deduped[i])
+            deduped.splice(i, 1);
 
-    return res;
+    return deduped.join();
 }
 
 pub fn set_next(ref diffs: TestDiffs, key: string, val: string)
 {
-    diffs.keys ~= key;
-    diffs.vals ~= val;
+    diffs.data ~= key ~ "\n-----\n" ~ val ~ "\n=====\n";
 }
 
 pub fn append(ref diffs: TestDiffs, other: TestDiffs)
 {
-    diffs.keys ~= other.keys;
-    diffs.vals ~= other.vals;
+    diffs.data ~= other.data;
 }
