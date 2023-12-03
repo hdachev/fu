@@ -424,8 +424,15 @@ pub fn ZERO(
 
     // Try running this without some of
     //  the most code-change inducing optimizations.
-    if (!options)
-        ZERO(:sources, options: Options(dev: DEV_DontFoldLiterals));
+    if (!sources.first.has(";; EXPECT"))
+    {
+        if (~options.dev & DEV_DontFoldLiterals)
+        {
+            shadow mut options = options;
+            options.dev |= DEV_DontFoldLiterals;
+            ZERO(:sources, :options);
+        }
+    }
 
     //
     mut onfail = build::OnFail_PrintOutput;
