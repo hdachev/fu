@@ -946,18 +946,18 @@ pub fn cpp_codegen(
 
         if (has_val)
         {
-            mut force_mut = type.is_ref;
+            mut isMovedFrom = type.is_ref;
             type.lifetime.Lifetime_each: |locid|
             {
                 if (!locid || !(nested(locid).status & SS_MOVED_FROM))
                 {
-                    force_mut = false;
+                    isMovedFrom = false;
                     break;
                 }
             }
 
             //
-            let annot   = typeAnnot(type, force_mut && M_MOVABLE);
+            let annot   = typeAnnot(type, isMovedFrom && M_MOVABLE);
             let id      = emitTEMPVAR(annot, :ptrflip, name && name ~ "_v");
 
             let out     = ptrflip ? "*" ~ id : cgMove(:type, id);
@@ -2017,8 +2017,6 @@ pub fn cpp_codegen(
         {
             include("<fu/view.h>");
 
-            // Putting a comma around,
-            //  because the `,` misparses in places like argument lists.
             return "fu::view<" ~ T ~ "> {{ " ~ src ~ " }}";
         }
 
@@ -3212,8 +3210,9 @@ pub fn cpp_codegen(
         expr.is_ref || BUG("cgCopyOrMove: !expr.is_ref");
 
         // Less verbose trivial value returns.
+        mut src = cgNode(expr);
         if (mode & M_RETURN && node.type.is_trivial)
-            return cgNode(expr);
+            return src;
 
         if (node.kind == "move")
         {
@@ -3241,7 +3240,7 @@ pub fn cpp_codegen(
                         && expr.target.supportsNRVO;
 
                 if (nrvo)
-                    return "/*NRVO*/ " ~ cgNode(expr);
+                    return "/*NRVO*/ " ~ src;
             }
 
             if (!node.type.is_trivial)
@@ -3325,13 +3324,11 @@ pub fn cpp_codegen(
                     let annot = typeAnnotBase(node.type);
 
                     return "static_cast<" ~ annot ~ "&&>(const_cast<" ~ annot ~ "&>("
-                                ~ cgNode(expr)
+                                ~ src
                                 ~ "))";
                 }
             }
         }
-
-        mut src = cgNode(expr);
 
         if (node.value &&
             options.dev & options::DEV_CG_LifetimeAnnots)
