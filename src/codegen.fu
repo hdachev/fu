@@ -957,8 +957,9 @@ pub fn cpp_codegen(
             }
 
             //
-            let annot   = typeAnnot(type, isMovedFrom && M_MOVABLE);
-            let id      = emitTEMPVAR(annot, :ptrflip, name && name ~ "_v");
+            mut annot: string;
+            let id      = emitTEMPVAR(:type, mode: isMovedFrom && M_MOVABLE,
+                                      :annot, :ptrflip, name && name ~ "_v");
 
             let out     = ptrflip ? "*" ~ id : cgMove(:type, id);
             close       = "(void)0;}), " ~ out ~ ")";
@@ -2178,8 +2179,8 @@ pub fn cpp_codegen(
 
                     //
                     mut ptrflip = false;
-                    let annot   = typeAnnot(arg);
-                    let id      = emitTEMPVAR(:annot, :ptrflip);
+                    mut annot: string;
+                    let id      = emitTEMPVAR(type: arg, :ptrflip, :annot);
 
                     ooe_header ~= id;
                     ooe_header ~= " = ";
@@ -2792,8 +2793,7 @@ pub fn cpp_codegen(
     fn via(ref tv: TEMPVAR, type: Type, expr!: string): string
     {
         if (!tv.id)
-            tv.id = emitTEMPVAR(
-                tv.annot = typeAnnot(type), :tv.ptrflip);
+            tv.id = emitTEMPVAR(:tv.annot, :type, :tv.ptrflip);
 
         if (tv.ptrflip)
             return "*(" ~ tv.id ~ " = &(" ~ expr ~ ")) ? *" ~ tv.id ~ " : ";
@@ -3366,8 +3366,11 @@ pub fn cpp_codegen(
 
     //
 
-    fn emitTEMPVAR(annot: string, ref ptrflip!: bool, id?: string, expr?: string): string
+    fn emitTEMPVAR(type: Type,
+        ref ptrflip!: bool, ref annot!: string,
+        mode!?: i32, id?: string, expr?: string): string
     {
+        annot = typeAnnot(:type, :mode);
         ptrflip = annot[annot.len - 1] == '&';
 
         shadow let id = id || "_" ~ _current_fn.numTEMPVARs++;
