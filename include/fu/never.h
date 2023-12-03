@@ -16,6 +16,8 @@ struct never
 [[noreturn]] never fail(const char* what = "Assertion failed.");
 [[noreturn]] never fail(fu::str&& what);
 
+extern never unreachable;
+
 
 //
 

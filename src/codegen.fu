@@ -941,10 +941,22 @@ pub fn cpp_codegen(
 
         let name    = "BL_" ~ _current_fn.num_labels++;
 
-        mut has_val     = !type.isIrrelevant;
-        mut ptrflip     = false;
+        mut has_val = !type.isIrrelevant;
+        mut ptrflip = false;
 
-        if (has_val)
+        if (type.is_never)
+        {
+            has_val = false;
+
+            if (gnuStmtExpr)
+            {
+                annotateNever();
+
+                close   = "    (void)0;"
+                        ~ indent0 ~ "}), fu::unreachable)";
+            }
+        }
+        else if (has_val)
         {
             mut isMovedFrom = type.is_ref;
             type.lifetime.Lifetime_each: |locid|
