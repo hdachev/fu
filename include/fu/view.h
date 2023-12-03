@@ -86,6 +86,14 @@ struct view
         : m_data { data }
         , m_size { size }
     {}
+
+
+    // Redundant for views, but needed for vec_ranges,
+    //  where regular = assignment writes to the underlying array.
+
+    fu_INL view& ptr_reassign(view other) noexcept {
+        return *this = other;
+    }
 };
 
 template <typename T>
@@ -175,6 +183,14 @@ struct view_mut
 
     T* end() noexcept {
         return data_mut() + size();
+    }
+
+
+    // Redundant for views, but needed for vec_ranges,
+    //  where regular = assignment writes to the underlying array.
+
+    fu_INL view_mut& ptr_reassign(view_mut other) noexcept {
+        return *this = other;
     }
 };
 

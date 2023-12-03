@@ -128,14 +128,29 @@ pub fn cpp_codegen(
 
     //
 
+    enum PointerFlip {
+        None = 0;
+        VecRangeOrView;
+        RawPointer;
+    };
+
+
+    //
+
+    struct TEMPVAR {
+        annot?:             string;
+        id?:                string;
+        ptr_flip?:          PointerFlip;
+    };
+
     struct cg_Block
     {
-        name: string;
-        helpers: Helpers;
-        has_val: bool;
-        ptrflip: bool;
+        name:               string;
+        helpers:            Helpers;
+        has_val:            bool;
+        ptr_flip:           PointerFlip;
 
-        surviving_locals?: i32[];
+        surviving_locals?:  i32[];
     };
 
     struct cg_CurrentFn // TODO FIX postfix/prefix non-pub symbols?
@@ -161,8 +176,6 @@ pub fn cpp_codegen(
         // Sanity check.
         _live_locals?:  i32[];
     };
-
-    struct TEMPVAR { annot?: string; id?: string; ptrflip?: bool; };
 
     mut _current_fn: cg_CurrentFn;
 
@@ -942,7 +955,7 @@ pub fn cpp_codegen(
         let name    = "BL_" ~ _current_fn.num_labels++;
 
         mut has_val = !type.isIrrelevant;
-        mut ptrflip = false;
+        mut ptr_flip: PointerFlip;
 
         if (type.is_never)
         {
@@ -970,15 +983,16 @@ pub fn cpp_codegen(
 
             //
             mut annot: string;
-            let id      = emitTEMPVAR(:type, mode: isMovedFrom && M_MOVABLE,
-                                      :annot, :ptrflip, name && name ~ "_v");
+            let id      = TEMPVAR_declare(
+                :type, mode: isMovedFrom && M_MOVABLE,
+                :annot, :ptr_flip, name && name ~ "_v");
 
-            let out     = ptrflip ? "*" ~ id : cgMove(:type, id);
-            close       = "(void)0;}), " ~ out ~ ")";
+            let outval  = TEMPVAR_consume(:ptr_flip, :id, :type);
 
-            trail       = id ~ " = ";
-            if (ptrflip)
-                trail  ~= "&";
+            close       = "    (void)0;"
+                        ~ indent0 ~ "}), " ~ outval ~ ")";
+
+            trail       = TEMPVAR_init(:id, :ptr_flip);
         }
 
         // Blockvals! //////////////////////////////////////////////////////////////////////////////
@@ -987,7 +1001,7 @@ pub fn cpp_codegen(
 
         let surviving_locals = _current_fn._live_locals;
         _current_fn.blocks ~= cg_Block(
-            :name, :helpers, ptrflip, :has_val,
+            :name, :helpers, :ptr_flip, :has_val,
             :surviving_locals);
         ////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -1872,12 +1886,15 @@ pub fn cpp_codegen(
             // Break with value.
             if (!use_return)
             {
-                let assign  = block.has_val && block.name ~ "_v = ";
-                mut value   = cgNode(expr, !assign && M_STMT);
-                if (block.ptrflip)
-                    value   = "&(" ~ value ~ ")";
+                mut value   = cgNode(expr, !(block.has_val) && M_STMT);
 
-                return "{ " ~ assign ~ value
+                if (block.has_val)
+                {
+                    let id  = block.name ~ "_v";
+                    value   = TEMPVAR_init(:block.ptr_flip, :id, init: value);
+                }
+
+                return "{ " ~ value
                      ~ "; " ~ cgGoto(block) ~ "; }";
             }
 
@@ -2190,17 +2207,12 @@ pub fn cpp_codegen(
                         ooe_header ~= ", ";
 
                     //
-                    mut ptrflip = false;
+                    mut ptr_flip: PointerFlip;
                     mut annot: string;
-                    let id      = emitTEMPVAR(type: arg, :ptrflip, :annot);
 
-                    ooe_header ~= id;
-                    ooe_header ~= " = ";
-                    ooe_header ~= ptrflip   ? "&(" ~ src ~ ")"
-                                            : src;
-
-                    src         = ptrflip   ? "*" ~ id
-                                            : cgMove(arg.type, id);
+                    let id      = TEMPVAR_declare(type: arg, :ptr_flip, :annot);
+                    ooe_header ~= TEMPVAR_init(:id, :ptr_flip, init: src);
+                    src         = TEMPVAR_consume(:id, :arg.type, :ptr_flip);
                 }
             }
 
@@ -2805,15 +2817,15 @@ pub fn cpp_codegen(
     fn via(ref tv: TEMPVAR, type: Type, expr!: string): string
     {
         if (!tv.id)
-            tv.id = emitTEMPVAR(:tv.annot, :type, :tv.ptrflip);
+            tv.id = TEMPVAR_declare(:tv.annot, :type, :tv.ptr_flip);
 
-        if (tv.ptrflip)
-            return "*(" ~ tv.id ~ " = &(" ~ expr ~ ")) ? *" ~ tv.id ~ " : ";
+        let cond = TEMPVAR_peek(:tv.ptr_flip,
+            "(" ~ TEMPVAR_init(:tv.id, init: expr, :tv.ptr_flip) ~ ")");
 
-        if (type.is_trivial)
-            return "(" ~ tv.id ~ " = " ~ expr ~ ") ? " ~ tv.id ~ " : ";
+        let cons = TEMPVAR_consume(
+            :tv.id, :tv.ptr_flip, :type);
 
-        return "(" ~ tv.id ~ " = " ~ expr ~ ") ? static_cast<" ~ tv.annot ~ "&&>(" ~ tv.id ~ ") : ";
+        return cond ~ " ? " ~ cons ~ " : ";
     }
 
     fn isFieldChain(node: SolvedNode): bool
@@ -3001,7 +3013,7 @@ pub fn cpp_codegen(
         let blocks0  = _current_fn.blocks.len;
         defer _current_fn.blocks.shrink(blocks0);
 
-        _current_fn.blocks ~= cg_Block(:name, :helpers, false, false);
+        _current_fn.blocks ~= cg_Block(:name, :helpers, false, PointerFlip.None);
         ///////////////////////////////////////////////////////////////////////////////////////////
 
         mut body = n_body && blockWrapSubstatement(n_body, M_LOOP_BODY);
@@ -3378,20 +3390,72 @@ pub fn cpp_codegen(
 
     //
 
-    fn emitTEMPVAR(type: Type,
-        ref ptrflip!: bool, ref annot!: string,
-        mode!?: i32, id?: string, expr?: string): string
+    fn TEMPVAR_declare(
+        type: Type,
+        ref ptr_flip!: PointerFlip, ref annot!: string,
+        mode!?: i32, id?: string): string
     {
         annot = typeAnnot(:type, :mode);
-        ptrflip = annot[annot.len - 1] == '&';
+
+        ptr_flip =
+            annot[annot.len - 1] == '&'
+                ? PointerFlip.RawPointer
+                : type.is_ref && !type.isPassByValue
+                    ? PointerFlip.VecRangeOrView
+                    : PointerFlip.None;
 
         shadow let id = id || "_" ~ _current_fn.numTEMPVARs++;
+
         _current_fn.TEMPVARs ~=
-            ptrflip ? annot[.. annot.len - 1] ~ "* " ~ id
-                    : annot ~ " " ~ id ~ (expr ? " = " ~ expr : " {}"); // TODO dont init trivial
+            ptr_flip == PointerFlip.RawPointer
+                ? annot[.. annot.len - 1] ~ "* " ~ id
+                : type.is_trivial
+                    ? annot ~ " " ~ id
+                    : annot ~ " " ~ id ~ " {}";
+
+        if (annot == "int")
+            ptr_flip == PointerFlip.None || BUG(
+                "TEMPVAR_declare: int." ~ ptr_flip);
 
         return id;
     }
+
+    fn TEMPVAR_init(id: string, ptr_flip: PointerFlip, init?: string)
+    {
+        // fu::vec_range and fu::view have a pointer-assignment
+        //  operator=(fu::vec*) that basically reassigns them,
+        //   as if they were pointers, for late init & such.
+        //
+        if (ptr_flip == PointerFlip.RawPointer)
+            return id ~ " = &" ~ (init && "(" ~ init ~ ")");
+
+        if (ptr_flip == PointerFlip.VecRangeOrView)
+            return id ~ ".ptr_reassign" ~ (init && "(" ~ init ~ ")");
+
+        return id ~ " = " ~ init;
+    }
+
+    fn TEMPVAR_consume(id: string, type: Type, ptr_flip: PointerFlip)
+    {
+        if (ptr_flip == PointerFlip.None)
+            return cgMove(:type, id);
+
+        if (ptr_flip == PointerFlip.RawPointer)
+            return "*" ~ id;
+
+        return id;
+    }
+
+    fn TEMPVAR_peek(ptr_flip: PointerFlip, expr: string)
+    {
+        if (ptr_flip == PointerFlip.RawPointer)
+            return "*" ~ expr;
+
+        return expr;
+    }
+
+
+    //
 
     fn cgNodes(nodes: SolvedNode[], mode?: i32, trail!?: string): string[]
     {
