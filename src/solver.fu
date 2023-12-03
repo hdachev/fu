@@ -3805,13 +3805,13 @@ pub fn solve(
             let mask_retval_relaxable =
                 mask_retval_relaxable(:relaxed_quals, :t.type);
 
-            if (mask_retval_relaxable)
+            if (mask_retval_relaxable && t.modid == module.modid)
             {
                 // New relaxer -
                 //  grab the current fnbody, and re-relax & re-check it
                 //   against the relaxed return type.
                 //
-                if (USE_rev_spec && t.kind == "fn" && t.modid == module.modid)
+                if (USE_rev_spec && t.kind == "fn")
                 {
                     TRACE_BRACKET("RELAX tryReverseSpecialize " ~ t.globid ~ " " ~ t ~ " for " ~ relaxed_quals ~ " status=" ~ t.status);
 
