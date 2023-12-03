@@ -1887,6 +1887,29 @@ pub extern fn runTests()
         return other.len;
     `);
 
+    ZERO(`
+        fn grow_if_oob(ref a: $T[], i: int) {
+            if (a.len <= i) a.grow(i + 1);
+            return a[i];
+        }
+
+        <split/>
+        struct Token { str: string };
+        fn add_at(ref tok2d: Token[][], i: int, str: string)
+            tok2d.grow_if_oob(i) ~= Token(str);
+
+        <split/>
+        fn main() {
+            mut tok2d: Token[][];
+            tok2d.add_at(1, ", ");
+            tok2d.add_at(3, "Worl");
+            tok2d.add_at(0, "Hello");
+            tok2d.add_at(3, "!");
+            let res = tok2d.map(.map(.str).join("d")).join();
+            return res == "Hello, World!" ? 0 : 1;
+        }
+    `);
+
     // /Arrays.
 
 
