@@ -2009,8 +2009,8 @@ pub fn cpp_codegen(
         if (!items.len)
             return cgDefault(node.type);
 
-        let curly = "{ " ~ items.join(", ") ~ " }";
-        let itemT = typeAnnotBase(clear_sliceable(node.type));
+        let src = items.join(", ");
+        let T = typeAnnotBase(clear_sliceable(node.type));
 
         // fu::slate literals
         if (callarg.arrayType_annotateAsView)
@@ -2019,11 +2019,10 @@ pub fn cpp_codegen(
 
             // Putting a comma around,
             //  because the `,` misparses in places like argument lists.
-            return "fu::view<" ~ itemT ~ "> {" ~ curly ~ "}";
+            return "fu::view<" ~ T ~ "> {{ " ~ src ~ " }}";
         }
 
-        let slate = "fu::slate<" ~ items.len ~ ", " ~ itemT ~ "> " ~ curly;
-        return typeAnnotBase(node.type) ~ " { " ~ slate ~ " }";
+        return "fu::vec<" ~ T ~ "> {{ " ~ src ~ " }}";
     }
 
     fn binSkipParens(id: string, mode: i32)

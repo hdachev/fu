@@ -1083,7 +1083,7 @@ struct fu_VEC
     }
 
 
-    // Literal expressions.
+    // BACKCOMPAT Literal expressions.
 
     template <fu::i new_size>
     inline fu_VEC(fu::slate<new_size, T>&& init) noexcept
@@ -1091,6 +1091,17 @@ struct fu_VEC
         static_assert(new_size > 0);
 
         UNSAFE__init_move(init.m_data, new_size);
+    }
+
+
+    // fu::vec {{ literals }}
+
+    template <fu::i new_size>
+    fu_INL fu_VEC(T(&&new_data)[new_size])
+    {
+        static_assert(new_size > 0);
+
+        UNSAFE__init_move(new_data, new_size);
     }
 
 
