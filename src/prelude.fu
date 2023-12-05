@@ -166,10 +166,9 @@ infix fn   = !T(mut ref a: T,    mut b: T): &mut T __native;
 infix fn ||= !T(mut ref a: T, inline b: T): &mut T = a || (a = b);
 infix fn &&= !T(mut ref a: T, inline b: T): &mut T = a && (a = b);
 
-fn swap !T(mut ref a: T, mut ref b: T): void __native(
-    "hacks/soft_risk",
-    "<utility>", "std::swap");
-
+fn swap !T(mut ref a: T, mut ref b: T)
+    case (  T -> _[]   ): void __native(".swap");
+    case (!(T -> _[..])): void __native("hacks/soft_risk", "<utility>", "std::swap");
 
 
 // Arrays.
@@ -188,31 +187,39 @@ novec fn [] !T(ref a: T[..], i: int)
     case (typeof(a) -> &mut T[..]): &mut T __native(".mutref");
     default                       : &    T __native;
 
-novec fn [..] !T(ref a: T[..], start!: int)
+fn [..] !T(ref a: T[..], start: int, end: int)
+    case (typeof(a) -> &mut T[]  ): &mut T[]   __native("<fu/vec_range.h>", "fu::get_range_mut");
+    case (typeof(a) -> &    T[]  ): &    T[]   __native("<fu/vec_range.h>", "fu::get_range");
     case (typeof(a) -> &mut T[..]): &mut T[..] __native("<fu/view.h>", "fu::get_view_mut");
     default                       : &    T[..] __native("<fu/view.h>", "fu::get_view");
 
-novec fn [..] !T(ref a: T[..], end!: int)
+fn [..] !T(ref a: T[..], start!: int)
+    case (typeof(a) -> &mut T[]  ): &mut T[]   __native("<fu/vec_range.h>", "fu::get_range_mut");
+    case (typeof(a) -> &    T[]  ): &    T[]   __native("<fu/vec_range.h>", "fu::get_range");
+    case (typeof(a) -> &mut T[..]): &mut T[..] __native("<fu/view.h>", "fu::get_view_mut");
+    default                       : &    T[..] __native("<fu/view.h>", "fu::get_view");
+
+fn [..] !T(ref a: T[..], end!: int)
+    case (typeof(a) -> &mut T[]  ): &mut T[]   __native("<fu/vec_range.h>", "fu::get_range_start0_mut");
+    case (typeof(a) -> &    T[]  ): &    T[]   __native("<fu/vec_range.h>", "fu::get_range_start0");
     case (typeof(a) -> &mut T[..]): &mut T[..] __native("<fu/view.h>", "fu::get_view_start0_mut");
     default                       : &    T[..] __native("<fu/view.h>", "fu::get_view_start0");
 
-novec fn [..] !T(ref a: T[..], start: int, end: int)
+fn slice !T(ref a: T[..], start: int, end: int) // TODO REMOVE
+    case (typeof(a) -> &mut T[]  ): &mut T[]   __native("<fu/vec_range.h>", "fu::get_range_mut");
+    case (typeof(a) -> &    T[]  ): &    T[]   __native("<fu/vec_range.h>", "fu::get_range");
+    case (typeof(a) -> &mut T[..]): &mut T[..] __native("<fu/view.h>", "fu::get_view_mut");
+    default                       : &    T[..] __native("<fu/view.h>", "fu::get_view");
+
+fn slice !T(ref a: T[..], start: int) // TODO REMOVE
+    case (typeof(a) -> &mut T[]  ): &mut T[]   __native("<fu/vec_range.h>", "fu::get_range_mut");
+    case (typeof(a) -> &    T[]  ): &    T[]   __native("<fu/vec_range.h>", "fu::get_range");
     case (typeof(a) -> &mut T[..]): &mut T[..] __native("<fu/view.h>", "fu::get_view_mut");
     default                       : &    T[..] __native("<fu/view.h>", "fu::get_view");
 
 fn    push !T(mut ref a: T[], mut b: T): void __native(".push");
 fn unshift !T(mut ref a: T[], mut b: T): void __native(".unshift");
 fn  insert !T(mut ref a: T[], i: int, mut b: T): void __native(".insert");
-
-fn slice !T(const ref a: T[..], start: int, end: int)
-    case (typeof(a) -> T[]): T[]   __native("<fu/vec/slice.h>", "fu::slice");
-    default                : T[..] __native("<fu/view.h>", "fu::get_view");
-
-fn slice !T(const ref a: T[..], start: int)
-    case (typeof(a) -> T[]): T[]   __native("<fu/vec/slice.h>", "fu::slice");
-    default                : T[..] __native("<fu/view.h>", "fu::get_view");
-
-fn substr !T(a: T[], start: int, end: int): T[] __native("<fu/vec/slice.h>", "fu::substr");
 
 fn splice !T(mut ref a: T[], start: int, count: int): void  __native(".splice");
 fn splice !T(mut ref a: T[], start: int, count: int, /*TODO FIX*/b: T[..]): void  __native(".splice");

@@ -1910,6 +1910,47 @@ pub extern fn runTests()
         }
     `);
 
+    ZERO(`
+        fn main() {
+            mut a = [ 4, 5, 6, 7, 8, 9, 10 ];
+            mut b = [ 1, 2, 3 ];
+            swap(a, b);
+            return a.len + b.len * 10 - 73;
+        }
+    `);
+
+    ZERO(`
+        noinline fn swap_indirect(          <fail bad call swap 4:21+1>
+            ref a: i32[..], ref b: i32[..]) <pass/>
+            ref a: i32[],   ref b: i32[])   </fail>
+                swap(a, b);
+
+        fn main() {
+            mut a = [ 4, 5, 6, 7, 8, 9, 10 ];
+            mut b = [ 1, 2, 3 ];
+            swap_indirect(a, b);
+            return a.len + b.len * 10 - 73;
+        }
+    `);
+
+    ZERO(`
+        noinline fn swap_indirect(          <fail bad call swap 6:17+1>
+            ref a: i32[..])                 <pass/>
+            ref a: i32[])                   </fail>
+        {
+            mut b = [ 1, 2, 3 ];            <alt>
+            swap(a, b);                     <alt/>
+            swap(b, a);                     </alt>
+            return b;
+        }
+
+        fn main() {
+            mut a = [ 4, 5, 6, 7, 8, 9, 10 ];
+            let b = swap_indirect(a);
+            return a.len + b.len * 10 - 73;
+        }
+    `);
+
     // /Arrays.
 
 
@@ -3072,7 +3113,7 @@ pub extern fn runTests()
     ZERO(`
         let hw = "hello world!";
         let a = hw.slice(6, 6 + 5);
-        let b = hw.substr(6, 5);
+        let b = hw[6 .. 6 + 5];
         return a == b && a == "world" ? a.len - 5 : 1;
     `);
 
@@ -5321,7 +5362,7 @@ pub extern fn runTests()
             // Each T() call should invalidate the results from previous T() calls -
             //  so this shouldn't compile if Type is nocopy.
             if (nodes.len > 1)
-                return solved(createMap(T(0), T(1)));           ;; PointlessMustSeq
+                return solved(createMap(T(0), T(1)));
 
             return solved(Type(nodes[0]));
         }
@@ -5753,7 +5794,7 @@ pub extern fn runTests()
 
         fn main() {
             mut arr = [ 9 ];
-            PASS_borrowCheck_reduct(arr[0], arr);               ;; PointlessMustSeq
+            PASS_borrowCheck_reduct(arr[0], arr);
             return arr[0] - arr[1];
         }
     `);
@@ -7081,7 +7122,7 @@ pub extern fn runTests()
         }
 
         fn bck_discards_its_edits_to_defer_nodes(
-            ref out: i32[][], ref state: i32[])                 ;; PointlessMustSeq
+            ref out: i32[][], ref state: i32[])
         {
             incr_out        (:out, incr_state(state), incr_state(state));
             defer incr_out  (:out, incr_state(state), incr_state(state));
@@ -8055,7 +8096,7 @@ pub extern fn runTests()
             {
                 let module = ctx.module;        // This was const Module& =  ... which can't be moved from.
                 if (module.cpp)
-                    return module.cpp;          ;; EXPECT return static_cast<fu::str&&>
+                    return module.cpp;          ;; EXPECT return module.cpp.destructive_move()
             }
 
             return "";
@@ -8074,7 +8115,7 @@ pub extern fn runTests()
             {
                 let module = ctx.modules[i];    ;; TODO .unique(i)
                 if (module.cpp)
-                    return module.cpp;          ;; TODO return static_cast<fu::str&&>
+                    return module.cpp;          ;; TODO return module.cpp.destructive_move()
             }
 
             return "";
@@ -11907,10 +11948,9 @@ pub extern fn runTests()
         fn main() {
             mut strs = [ "hello", "world" ];
             let hello = strs[0];
-            strs.insert(1,
-                <fail bad call>
-                hello[0..5] /* should work too, but currently expected to mismatch */ <pass/>
-                hello.slice(0, 5)</fail>
+            strs.insert(1,          <alt>
+                hello[0..5]         <alt/>
+                hello.slice(0, 5)   </alt>
             );
             return strs.len - 3;
         }
@@ -12033,15 +12073,8 @@ pub extern fn runTests()
     `);
 
     ZERO(`
-        let NOTES = [ "AAA", "BBB", "CCC" ];
-        fn what(annot: string) NOTES.find(annot.slice(1, annot.len));
-        fn main() what("!BBB") - 1;
-    `);
-
-    TODO_slices(currently: "fn what arg annot is not novec 7:9+5", `
-        // When you pass this, delete the test above, they're the same.
-        //  The slice() should relax to a get_view, which doesnt need annot to be a string.
-        //   We generally want to remove the distinction between slice(a,b) and [a:b] altogether.
+        // The slice() should relax to a get_view, which doesnt need annot to be a string.
+        //  We generally want to remove the distinction between slice(a,b) and [a:b] altogether.
         //
         let NOTES = [ "AAA", "BBB", "CCC" ];
         novec fn what(annot: string) NOTES.find(annot.slice(1, annot.len));
@@ -12129,6 +12162,107 @@ pub extern fn runTests()
         fn main()
             "Hello".Replace(all: "ll", with: []) == 7 ? 0 : 1;
     `);
+
+    ZERO(`
+        noinline fn test(ref arr: i32[]) {
+            while (arr.len < 10) arr.unshift(arr.len);
+            while (arr.len < 20) arr.push(arr.len);
+        }
+
+        fn main() {
+            mut arr = [ 1000, 2000, 3000 ];     <alt>
+            test(arr[1 .. 2]);                  <alt/>
+            test(arr[1 ..][.. 1]);              </alt>
+            return arr == [ 1000, 9, 8, 7, 6, 5, 4, 3, 2, 1,
+                            2000, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19,
+                            3000 ] ? 0 : 1;
+        }
+    `);
+
+    ZERO(`
+        noinline fn indirect_swap(ref a: i32[], ref b: i32[]) {
+            swap(a, b);
+        }
+
+        fn main() {
+            mut a = [ 0, 1, 2, 3, 4, 5 ];
+            mut b = [ 6, 7, 8, 9 ];
+    <alt>
+            indirect_swap(a[1 .. 5], b);
+            return (a ~ b) == [ 0, 6,7,8,9, 5, 1,2,3,4 ] ? 0 : 1;
+    <alt/>
+            indirect_swap(a[1 .. 5], b[1 .. 3]);
+            return (a ~ b) == [ 0, 7,8, 5, 6, 1,2,3,4, 9 ] ? 0 : 1;
+    </alt>
+        }
+    `);
+
+    ZERO(`
+        noinline fn inject_via_empty_range(ref a: i32[]) {
+            a.push(10);
+            a.insert(a.len - 1, 20);
+            a ~= [ 30, 40 ];
+            a.splice(a.len - 2, 0, [ 50, 60 ]);
+        }
+
+        fn main() {
+            mut a = [ 1000, 2000, 3000 ];           <alt>
+            inject_via_empty_range(a[2 .. 2]);      <alt/>
+            inject_via_empty_range(a[2 ..][.. 0]);  </alt>
+            return a == [ 1000, 2000,
+                            20, 10, 50, 60, 30, 40,
+                          3000 ] ? 0 : 1;
+        }
+    `);
+
+    ZERO([`
+        struct Node { items: Node[] };
+        noinline fn make(items?: Node[]) Node(:items);
+        noinline fn items_len(n: Node) return n.items.len;
+    `,`
+        fn main() _0::make.items_len;
+    `]);
+
+    ZERO(`
+        noinline fn move_from_slice(a: string, b: string) {
+            mut c = a ~ b;
+            return c[(a.len >> 1) .. c.len - (b.len >> 1)];     ;; ConstCast
+        }
+
+        fn main() {
+            mut c = move_from_slice("HelloHelloHelloHelloHello",
+                                    "WorldWorldWorldWorldWorld");
+
+            return c == "lloHelloHelloWorldWorldWor" ? 0 : 1;
+        }
+    `);
+
+    ZERO(`
+        noinline fn assign_via_vec_range(ref match: i32[], ref other: i32[], x: i32) {
+        <alt>
+            (match = other) ~= x;
+        <alt/>
+            match = (other ~= x);
+        </alt>
+        }
+
+        fn main() {
+            mut match = [ 1 ];
+        <alt>
+            mut other = [ 100, 2, 3 ];
+            assign_via_vec_range(:match, :other, 4);
+        <alt/>
+            mut other = [ 2, 3 ];
+            assign_via_vec_range(:match[1..], :other, 4);
+        <alt/>
+            mut other = [ 1000, 2, 3 ];
+            assign_via_vec_range(:match[1..], :other[1..], 4);
+        </alt>
+            return match.len - 4;
+        }
+    `);
+
+    // /Slices.
 
 
     // Don't repeat yourself ctors.
@@ -16422,15 +16556,9 @@ pub extern fn runTests()
         }
     `);
 
-    TODO_slices(currently: "bad call to last 12:63+4 not an array", `
+    ZERO(`
         struct Overload { items: string[]; };
 
-        // This is a bit borderline -
-        //  the problem here is that a: $T[] doesn't relax to a: $T[..] (not during prep) -
-        //   so we don't match at all. Still, that's what's written -
-        //    perhaps regular fns are what doesn't behave correctly,
-        //     since their relax can create ambiguity?
-        //
         fn last(a: $T[])                    a[a.len - 1];
         fn arg_lets(overload: Overload)     overload.items[.. overload.items.len - 2];
         fn test(overload: Overload)         overload.arg_lets.last.len;
@@ -16687,21 +16815,7 @@ pub extern fn runTests()
     `);
 
     ZERO(`
-        fn test(str: byte[..]) {
-            mut res = 1;
-            str.split('/'): |piece| res *= piece.len;
-            return res;
-        }
-
-        fn main() {
-            let res = test("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa/bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb/cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc");
-            if (mem::ALLOC_STAT_COUNT() != 0) return 101;
-            return res == 196608 ? 0 : 1;
-        }
-    `);
-
-    TODO_slices(currently: "BUG incorrect exit code", `
-        fn test(str: string) {
+        fn test(str: <alt>byte[..]<alt/>string</alt>) {
             mut res = 1;
             str.split('/'): |piece| res *= piece.len;
             return res;

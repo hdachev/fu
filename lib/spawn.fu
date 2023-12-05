@@ -289,7 +289,7 @@ pub fn spawn(
             const size_t BUF_SIZE = 64 * 1024;
             fu::byte BUF[BUF_SIZE];
 
-            const auto& ReadFD = [&](int fd, fu::str& out)
+            const auto& ReadFD = [&](int fd, auto&& out)
             {
                 void*  data = BUF;
                 size_t capa = BUF_SIZE;
@@ -331,7 +331,7 @@ pub fn spawn(
                 return false;
             };
 
-            const auto& ReadPollFD = [&](pollfd& pfd, fu::str& out)
+            const auto& ReadPollFD = [&](pollfd& pfd, auto&& out)
             {
                 return pfd.revents & POLLIN
                     && ReadFD(pfd.fd, out);

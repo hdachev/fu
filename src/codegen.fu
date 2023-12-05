@@ -253,11 +253,30 @@ pub fn cpp_codegen(
 
     //
 
-    fn refType_annotateAsSlice(type: Type)
+    fn ifArrayRef_annotateAsSlice(type: ValueType)
     {
-        return type.is_sliceable
-            && !type.arrayType_annotateAsVec;
+        // !copy && !resize
+        return !(type.quals & (q_rx_resize | q_rx_copy));
     }
+
+    fn ifArrayRef_annotateAsVecRange(type: ValueType)
+    {
+        return !type.ifArrayRef_annotateAsSlice();
+    }
+
+    fn ifArrayRef_annotateAsVec(lax type: ValueType)
+    {
+        return false;
+    }
+
+    fn ifArray_annotateAsVec(type: Type)
+    {
+        return !type.is_ref
+            || type.ifArrayRef_annotateAsVec();
+    }
+
+
+    //
 
     fn typeAnnot(type: Type, mode?: i32): string
     {
@@ -271,8 +290,11 @@ pub fn cpp_codegen(
                 return "fu::static_ref<" ~ fwd ~ ">";
             }
 
-            if (type.refType_annotateAsSlice || fwd == "void")
+            if (type.is_sliceable && !type.ifArrayRef_annotateAsVec
+                    || fwd == "void")
+            {
                 return fwd;
+            }
 
             if (type.is_mutref)
                 return fwd ~ "&";
@@ -342,16 +364,6 @@ pub fn cpp_codegen(
         BUG("Unknown primitive: `" ~ c ~ "`.");
     }
 
-    fn arrayType_annotateAsVec(type: Type)
-    {
-        return !type.is_ref || type.TODO_FIX_isArray;
-    }
-
-    fn arrayType_annotateAsView(type: Type)
-    {
-        return type.is_ref && !(type.is_rx_copy || type.is_rx_resize);
-    }
-
     fn typeAnnotBase(type: Type, mode?: i32): string
     {
         let c = type.canon;
@@ -369,7 +381,7 @@ pub fn cpp_codegen(
                 BUG("cg: We generate invalid c++ for void[]");
 
             // Arrays & strings.
-            if (type.arrayType_annotateAsVec)
+            if (type.ifArray_annotateAsVec)
             {
                 if (arrayItem == t_byte)
                     return annotateString();
@@ -380,8 +392,40 @@ pub fn cpp_codegen(
                 return "fu::vec<" ~ itemAnnot ~ ">";
             }
 
+            // vec_range - mutref to a window into an array/string,
+            //              unfortunately slower than a vec& currently.
+            //
+            // Not sure how to optimize these out yet.
+            //
+            // We're going for vec_ranges to remove the distinction
+            //  between arrays & slices, they make everything Just Work,
+            //   TBD how we can get rid of them where they're never needed,
+            //    which should be almost everywhere.
+            //
+            // Arguments to public non-template fns will be hardest to fix,
+            //  unclear what to do short of:
+            //
+            //  A] global program optimisation [fragile],
+            //  B] emitting multiple overloads [bloat].
             //
             let itemAnnot = typeAnnot(arrayItem);
+
+            if (SELF_TEST)
+                type.is_ref || BUG("!type.ifArray_annotateAsVec but !ref");
+
+            if (type.ifArrayRef_annotateAsVecRange)
+            {
+                include("<fu/vec_range.h>");
+                if (type.is_mutref || mode & (M_MUTVAR | M_MOVABLE))
+                    return "fu::vec_range_mut<" ~ itemAnnot ~ ">";
+                else
+                    return "fu::vec_range<" ~ itemAnnot ~ ">";
+            }
+
+            // Slices - non-resizable/non-copiable windows into an array/string,
+            //          the most efficient thing.
+            if (SELF_TEST)
+                type.ifArrayRef_annotateAsSlice || BUG("!ifArrayRef_annotateAsSlice")
 
             include("<fu/view.h>");
             if (type.is_mutref || mode & M_MUTVAR)
@@ -1475,7 +1519,7 @@ pub fn cpp_codegen(
         if (!t.is_mutref && t.isPassByValue)
             return false;
 
-        return t.is_ref && (!t.is_sliceable || t.arrayType_annotateAsVec);
+        return t.is_ref && (!t.is_sliceable || t.ifArray_annotateAsVec);
     }
 
     fn globalVar_isConstexpr(o: Overload)
@@ -1524,7 +1568,7 @@ pub fn cpp_codegen(
         let place_type = target.solved.type;
         return  place_type.is_ref
             && !place_type.isPassByValue
-            && !place_type.refType_annotateAsSlice
+            && (!place_type.is_sliceable || place_type.ifArray_annotateAsVec)
             && !target.globalVar_isConstexpr;
     }
 
@@ -1616,6 +1660,11 @@ pub fn cpp_codegen(
         return head;
     }
 
+    fn isAbbreviatedCopy(n: SolvedNode, sliceOK!?: bool)
+    {
+        return n.kind == "copy" && (!n.is_sliceable || sliceOK);
+    }
+
     fn binding(target!: Target, init: SolvedNode, doInit!: bool)
     {
         mut head = binding(:target);
@@ -1632,9 +1681,10 @@ pub fn cpp_codegen(
             return head ~ " {}";
 
         // A less verbose copy init.
-        let isCopy = init.kind == "copy" && !target.solved.is_ref;
+        let isAbbreviatedCopy =
+            init.isAbbreviatedCopy();
 
-        shadow let init = isCopy
+        shadow let init = isAbbreviatedCopy
             ? init.items.only
             : init;
 
@@ -1671,8 +1721,8 @@ pub fn cpp_codegen(
         //   but we skip primitives which doesn't make sense -
         //    curly init is BETTER for primitives because it prevents narrowing.
         //*/
-        if (isCopy && !init.is_primitive)
-            return head ~ " { " ~ expr ~ " }";
+        // if (isAbbreviatedCopy && !init.is_primitive)
+        //     return head ~ " { " ~ expr ~ " }";
 
         // Hoisting.
         if (target.status & SS_HOIST)
@@ -1968,7 +2018,7 @@ pub fn cpp_codegen(
 
         // Implicitly converts to fu::view if that's all we need.
         if (node.type.is_ref &&
-            node.type.refType_annotateAsSlice)
+            node.type.ifArrayRef_annotateAsSlice)
         {
             return esc ~ "_view";
         }
@@ -2043,7 +2093,8 @@ pub fn cpp_codegen(
         let T = typeAnnotBase(clear_sliceable(node.type));
 
         // fu::slate literals
-        if (callarg.arrayType_annotateAsView)
+        if (callarg.is_ref &&
+            callarg.ifArrayRef_annotateAsSlice)
         {
             include("<fu/view.h>");
 
@@ -2120,7 +2171,8 @@ pub fn cpp_codegen(
             let arg = args[i];
 
             // Skip explicit copies on assignment, pointless.
-            shadow let arg = isSimpleCpyMovAssign && i == 1 && arg.kind == "copy"
+            shadow let arg = isSimpleCpyMovAssign && i == 1
+                    && arg.isAbbreviatedCopy(sliceOK: true)
                 ? arg.items.only
                 : arg;
 
@@ -2848,7 +2900,7 @@ pub fn cpp_codegen(
         ////////////////////////////////////////////////////////////////
         // TODO FIX the implicit conversion from vec to view we do in c++
         //  is not visible in the AST but is seq-sensitive
-        if (host_arg.is_sliceable && !host_arg.arrayType_annotateAsVec)
+        if (host_arg.is_sliceable && !host_arg.ifArray_annotateAsVec)
             return false;
         ////////////////////////////////////////////////////////////////
 
@@ -2888,7 +2940,7 @@ pub fn cpp_codegen(
 
         if (type.is_ref && !type.isPassByValue)
         {
-            if (!type.is_sliceable || type.arrayType_annotateAsVec)
+            if (!type.is_sliceable || type.ifArray_annotateAsVec)
             {
                 include("<fu/default.h>");
                 type.is_primitive && BUG("cgDefault: Genering NIL refs to primitives.");
@@ -3327,7 +3379,23 @@ pub fn cpp_codegen(
                     return true;
                 }
 
-                if (mayNeedConstCast(expr))
+                let mayNeedConstCast = mayNeedConstCast(expr);
+
+                if (node.type.is_sliceable)
+                {
+                    if (mayNeedConstCast)
+                    {
+                        // See below.
+                        noteDefect(ConstCast);
+
+                        return src ~ ".const_cast_mut().destructive_move()";
+                    }
+                    else
+                    {
+                        return src ~ ".destructive_move()";
+                    }
+                }
+                else if (mayNeedConstCast)
                 {
                     // Moving from a constref return,
                     //  it's an expressiveness problem in cpp,
