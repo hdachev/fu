@@ -1,0 +1,11 @@
+#!/bin/bash
+set -e
+
+echo ""
+
+for i in "$@"
+do
+  git show $i --oneline --no-patch
+  "./bin/fu-debug-$i" src/cli.fu | grep -E 'STAT|allocs'
+  echo ""
+done

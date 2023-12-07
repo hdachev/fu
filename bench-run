@@ -1,0 +1,20 @@
+#!/bin/bash
+set -e
+
+
+#
+
+for run in {1..8}
+do
+  echo ""
+  echo "Starting run $run ..."
+  echo ""
+
+  for i in "$@"
+  do
+    git show $i --oneline --no-patch
+    "./bin/fu-$i" src/cli.fu | grep -E 's\t?$'
+    echo ""
+
+  done
+done

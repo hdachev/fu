@@ -1,0 +1,101 @@
+#!/bin/bash
+set -e
+
+
+# Stash the build cache, we'll restore it on exit.
+
+if test -d build-cpp-bench-stash
+then
+  rm -rf ./build-cpp-bench-stash
+fi
+
+if test -d build-cpp
+then
+  mv ./build-cpp ./build-cpp-bench-stash
+fi
+
+
+# We'll be checking out each individual commit we want to bench,
+#  so it'd be nice if we restored the original git branch
+#   when we're done here.
+
+CLEANUP_must_restore_git_branch=false
+
+
+# On exit -
+
+clean_up () {
+  ARG=$?
+
+  # Restore initial git branch on fail/early exit.
+  if [ "$CLEANUP_must_restore_git_branch" = true ]
+  then
+    git checkout -
+  fi
+
+  # Restore the stashed build cache.
+  if test -d build-cpp
+  then
+    rm -rf build-cpp
+  fi
+
+  if test -d build-cpp-bench-stash
+  then
+    mv ./build-cpp-bench-stash ./build-cpp
+  fi
+
+  # Remove any intermediate build artifacts.
+  if test -f "bin/fu.temp"
+  then
+    rm ./bin/fu.temp
+  fi
+
+  # Goodbye!
+  echo ""
+  echo "All done."
+  echo ""
+
+  exit $ARG
+}
+
+trap clean_up EXIT
+
+
+# For each commit, unless a build is already available,
+#  check out and build third-gen release and debug compilers.
+#
+# Third gen is overkill - unless something is broken,
+#  third-gen should be byte-equal to second-gen.
+
+for i in "$@"
+do
+  echo ""
+  echo "Preparing bin/fu-$i ..."
+
+  if test -f "bin/fu-$i"
+  then
+    echo "   SKIP Already exists."
+  else
+
+    git checkout $i
+    CLEANUP_must_restore_git_branch=true
+
+    if test -d build-cpp
+    then
+      rm -rf build-cpp
+    fi
+
+    ./bin/fu.works --bin bin/fu.temp src/cli.fu
+    ./bin/fu.temp  --bin bin/fu.temp src/cli.fu
+    ./bin/fu.temp  --bin "bin/fu-$i" src/cli.fu
+
+    # Debug builds have allocation counters.
+    ./bin/fu.temp  --debug --bin "bin/fu-debug-$i" src/cli.fu
+
+    # Go back to whatever branch we were on when we started.
+    git checkout -
+    CLEANUP_must_restore_git_branch=false
+
+    echo "     OK bin/fu-$i."
+  fi
+done
