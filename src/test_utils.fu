@@ -275,7 +275,7 @@ pub fn ZERO(
 
                     //
                     testdiffs.set_next(
-                        sources.ERR_KEY, e/*.ERR_TRIM*/);
+                        sources.ERR_KEY ~ "\n---- <fail> ----\n" ~ e/*.ERR_TRIM*/);
 
                     if (isTODO)
                         throw("<fail><todo/> is actually passing:\n\n" ~ e);
@@ -517,8 +517,6 @@ pub fn ZERO(
     //
     let ctx = compile_snippets(:sources, :options);
 
-    mut testdiff_prepend = "";
-
     //
     fn all_src = sources.join("\n----\n");
     fn all_cpp = ctx.modules.map(.out.cpp.src).join("\n----\n");
@@ -560,16 +558,17 @@ pub fn ZERO(
             throw("Unknown ;; CHECK: `;; " ~ x ~ "` in:\n" ~ all_src);
         else if (found)
             throw("TODO test is actually passing: `;; " ~ x ~ "` in:\n" ~ all_src ~ "\n\nOutput is:\n\n" ~ all_cpp);
-        else
-            testdiff_prepend ~= ";; " ~ x ~ "\n";
     }
 
     let run = true;
     let fudir = ctx.fudir;
     let dir_wrk = DEFAULT_WORKSPACE;
 
-    ::build(:ctx, :run, :fudir, :dir_wrk, :onfail, scheme: "debug");
-    ::build(:ctx, :run, :fudir, :dir_wrk, :onfail);
+    let debug_output = ::build(
+        :ctx, :run, :fudir, :dir_wrk, :onfail, scheme: "debug");
+
+    ::build(
+        :ctx, :run, :fudir, :dir_wrk, :onfail);
 
     // Check codegen.
     {
@@ -594,19 +593,21 @@ pub fn ZERO(
     //  this also allows us to perhaps defer all nowrite fails till all tests clear.
     //
     {
-        if (testdiff_prepend)
-            testdiff_prepend ~= "\n";
+        mut input   = "";
+        mut output  = "";
 
-        mut key = "";
         for (mut i = 0; i < sources.len; i++)
         {
-            key ~= sources[i];
-            let actual = ctx.modules
+            input  ~= sources[i];
+            output ~= ctx.modules
                 [i + ctx.modules.len - sources.len]
                     .out.cpp.src;
-
-            testdiffs.set_next(key, testdiff_prepend ~ actual);
         }
+
+        testdiffs.set_next(
+            input ~
+            "\n---- " ~ test_output::into_testdiff(debug_output) ~ " ----\n" ~
+            output);
     }
 
     return ctx;
@@ -766,7 +767,7 @@ pub fn TODO(
             currently || "keywords line:col+chars");
 
         testdiffs.set_next(
-            sources.ERR_KEY, "TODO: " ~ e.ERR_TRIM);
+            sources.ERR_KEY ~ "\n---- TODO: ----\n" ~ e.ERR_TRIM);
 
         return;
     }

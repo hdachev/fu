@@ -1666,7 +1666,7 @@ inline int only_8o6rzxnH(fu::view<int> s)
 
 static int READ_StatusCode_J2ezsHRV(const fu::str& F_exe)
 {
-    return only_8o6rzxnH(fu::view_of<int>(read_zTt3fZzW(fu::str(F_exe))));
+    return fu::view_of<int>(read_zTt3fZzW(fu::str(F_exe)))[0];
 }
 
 static int WRITE_StatusCode_rhOPS2bA(const int code, const fu::str& F_exe)
@@ -1945,7 +1945,7 @@ void build_dvjTrKQM(fu::str&& dir_wrk, fu::view<char> fudir, /*MOV*/ fu::str&& f
     };
     if (run)
     {
-        if (old_size == 4ll)
+        if (old_size == 4ll || old_size == 20ll)
             code = READ_StatusCode_J2ezsHRV(F_exe);
         else
         {
@@ -1955,7 +1955,7 @@ void build_dvjTrKQM(fu::str&& dir_wrk, fu::view<char> fudir, /*MOV*/ fu::str&& f
             const double t1_1 = hr_CPFg3qvV();
             fu::println((fu::slate<3, fu::str> { static_cast<fu::str&&>((x_6 = "     OK "_fu, x_6)), static_cast<fu::str&&>((x_7 = fu::f64dec((t1_1 - t0_1)), x_7)), static_cast<fu::str&&>((x_8 = "s"_fu, x_8)) }));
             const int64_t new_size = size_zTt3fZzW(fu::str(F_exe));
-            if (new_size == 4ll)
+            if (new_size == 4ll || new_size == 20ll)
                 code = READ_StatusCode_J2ezsHRV(F_exe);
             else if ((code != 32512) && (code != 35584))
                 WRITE_StatusCode_rhOPS2bA(code, F_exe);

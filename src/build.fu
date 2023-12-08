@@ -143,7 +143,7 @@ pub fn build(
         //////////////////////////////////////////////
 
         flags_cc!?: string[],
-        flags_ld!?: string[]): void
+        flags_ld!?: string[]): test_output::TestOutput
 {
     // Where we do our dirtywork.
     if (dir_wrk.if_last != '/')
@@ -411,6 +411,13 @@ pub fn build(
                         ~  "-" ~ len_all ~ "-" ~ Fs.len;
 
     let old_size = file::size(F_exe);
+
+    ////////////////////////////////////////////////
+    // TEMP re-run tests without allocation stats //
+    shadow let old_size = old_size != 4 && old_size;
+    // TEMP re-run tests without allocation stats //
+    ////////////////////////////////////////////////
+
     if (old_size < 1 && (bin || run))
     {
         struct BuildError {
@@ -549,33 +556,47 @@ pub fn build(
     }
 
     //
+    mut output: test_output::TestOutput;
+
     if (run)
     {
-        // TODO FIX
-        //
-        // The intent is that if this only reports a status code,
-        //  and does not depend on anything from the environment,
-        //   there's no point in ever rerunning it.
+        // TODO FIX This needs to get out of here,
+        //  but brief this is the compiler test suite runner,
+        //   includes caching for test results so we don't have to
+        //    constantly rerun them.
         //
         let OPTI_StatusCode = true;
 
-        fn READ_StatusCode()
-            file::read(F_exe).view(i32).only;
+        //
+        fn READ_cachedTestOutput()
+        {
+            output  = test_output::parse(file::read(F_exe));
+            code    = output.code;
+        }
 
-        fn WRITE_StatusCode(shadow code: i32)
-            atomic_write(fname: F_exe, [ code ].view(byte));
+        fn WRITE_cachedTestOutput()
+        {
+            let out = test_output::serialize(output);
+            out.len == 20 || throw("TestOutput.len != 20");
+            atomic_write(fname: F_exe, out);
+        }
 
         //
-        if (OPTI_StatusCode && old_size == 4)
+        if (OPTI_StatusCode
+            && old_size.test_output::looks_legit)
         {
-            code = READ_StatusCode();
+            READ_cachedTestOutput();
         }
         else
         {
             println("    RUN " F_exe);
 
             let t0 = now::hr();
-            code = exec(F_exe, :stdout);
+            {
+                shadow mut stdout: string;
+                code    = exec(F_exe, :stdout);
+                output  = test_output::from(:stdout, :code);
+            }
             let t1 = now::hr();
 
             println("     OK ", t1 - t0, "s");
@@ -588,20 +609,20 @@ pub fn build(
                 //   it obviously breaks and here we'd persist the broken result forever.
                 //
                 let new_size = file::size(F_exe);
-                if (new_size == 4)
+                if (new_size.test_output::looks_legit)
                 {
                     // We can notice the exe has shrunk to 4 bytes though,
                     //  and discard the result of our run with the one
                     //   that was just cached by a parallel run.
                     //
-                    code = READ_StatusCode();
+                    READ_cachedTestOutput();
                 }
                 else
                 {
                     // Don't cache spurious failure codes.
                     //
                     if (code != 32512 && code != 35584)
-                        WRITE_StatusCode(code);
+                        WRITE_cachedTestOutput();
                 }
             }
         }
@@ -730,4 +751,7 @@ pub fn build(
     }
 
     if (code) return ERR;
+
+    //
+    return output;
 }

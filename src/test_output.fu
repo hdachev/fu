@@ -1,0 +1,103 @@
+
+struct TestOutput
+{
+    code:           i32;
+    uniq_bytes:     i32;
+    uniq_count:     i32;
+    arc_bytes:      i32;
+    arc_count:      i32;
+};
+
+let sizeof_TestOutput = 5 * 4;
+
+fn looks_legit(size: i64)
+{
+    return size == 4 || size == sizeof_TestOutput.i64;
+}
+
+fn serialize(to: TestOutput)
+{
+    mut data: byte[];
+    data.resize(sizeof_TestOutput);
+    {
+        shadow ref data = data.view(of: TestOutput);
+        data[0] = to;
+    }
+
+    return data;
+}
+
+fn parse(data: byte[])
+{
+    mut out: TestOutput;
+
+    if (data.len == 4)
+        out.code = data.view(of: i32)[0];
+    else if (data.len == sizeof_TestOutput)
+        out = data.view(of: TestOutput)[0];
+    else
+        out.code = 101;
+
+    return out;
+}
+
+fn from(stdout!: string, code!: int)
+{
+    mut out: TestOutput;
+    out.code = code;
+
+    let parts = stdout.split("  STAT: ");
+    for (mut i = 1; i < parts.len; i++)
+    {
+        let part = parts[i];
+
+        ref slot =
+            part.starts(with: "UNIQ Total Bytes") ? out.uniq_bytes :
+            part.starts(with: "UNIQ Total Count") ? out.uniq_count :
+            part.starts(with: "ARC  Total Bytes") ? out.arc_bytes :
+            part.starts(with: "ARC  Total Count") ? out.arc_count :
+            throw("Unknown stat: " ~ part);
+
+        mut firstNewline = part.len;
+        for (shadow mut i = 0; i < part.len; i++) {
+            let c = part[i];
+            if (c == '\n' || c == '\x1B') {
+                firstNewline = i;
+                break;
+            }
+        }
+
+        shadow let part = firstNewline > 0
+            ? part.slice(0, firstNewline)
+            : part;
+
+        // TODO need findLast
+        mut lastSpace = 0;
+        for (shadow mut i = part.len; i --> 0; ) {
+            if (part[i] == ' ') {
+                lastSpace = i;
+                break;
+            }
+        }
+
+        shadow let part = lastSpace > 0
+            ? part.slice(lastSpace + 1)
+            : part;
+
+        mut offset = 0;
+        slot = helpers::parse10s32(:offset, part);
+        offset == part.len || throw("Could not parse stat (" ~ offset ~ "): `" ~ part ~ "` in `" ~ parts[i] ~ "`.");
+    }
+
+    return out;
+}
+
+fn into_testdiff(td: TestOutput)
+{
+    mut out = "[ ";
+    for (fieldname i: TestOutput)
+        out ~= "i" ~ "(" ~ td.i ~ ") ";
+
+    out ~= "]";
+    return out;
+}

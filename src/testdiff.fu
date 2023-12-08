@@ -16,9 +16,9 @@ pub fn serialize(diffs: TestDiffs)
     return deduped.join();
 }
 
-pub fn set_next(ref diffs: TestDiffs, key: string, val: string)
+pub fn set_next(ref diffs: TestDiffs, item: string)
 {
-    diffs.data ~= key ~ "\n-----\n" ~ val ~ "\n=====\n";
+    diffs.data ~= item ~ "\n========\n";
 }
 
 pub fn append(ref diffs: TestDiffs, other: TestDiffs)
