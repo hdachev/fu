@@ -198,15 +198,38 @@ namespace fu
 
         size_t workers = std::thread::hardware_concurrency();
 
-        // TODO getenv("fu_NUM_WORKER_THREADS") here
-        // TODO all of this in a cpp, not here
-
         workers = workers >= 64 ? workers - 4   // leave three cores to the OS, ~ 5% breathing room
                 : workers >= 32 ? workers - 3   // leave two cores to the OS,   ~ 6% breathing room
                 : workers >= 16 ? workers - 2   // leave one core to the OS,    ~ 6% breathing room
                 : workers >=  8 ? workers - 1   // there's also the main thread here, so threads=cores
                 : workers >=  1 ? workers       // oversubscribe 1 core
                 : 1;
+
+        // User-supplied #workers from env var, alla GOMAXPROCS,
+        //  useful for debugging & performance testing.
+        //
+        if (const char* env_var = getenv("fu_NUM_WORKER_THREADS"); env_var)
+        {
+            workers = 0;
+
+            int len = 0;
+            for (;;)
+            {
+                char digit = *env_var++;
+                if (++len > 4 || digit < '0' || digit > '9')
+                {
+                    if (digit) {
+                        puts("  ERROR fu_NUM_WORKER_THREADS bad value, disabling worker threads.");
+                        workers = 0;
+                    }
+
+                    break;
+                }
+
+                workers *= 10;
+                workers += size_t(digit - '0');
+            }
+        }
 
     #endif
 

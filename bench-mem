@@ -1,6 +1,13 @@
 #!/bin/bash
 set -e
 
+
+#
+
+export fu_NUM_WORKER_THREADS=0
+
+echo ""
+echo "Collecting memory stats ..."
 echo ""
 
 for i in "$@"

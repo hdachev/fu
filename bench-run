@@ -4,6 +4,8 @@ set -e
 
 #
 
+export fu_NUM_WORKER_THREADS=0
+
 for run in {1..8}
 do
   echo ""
