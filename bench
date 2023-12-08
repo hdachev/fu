@@ -1,0 +1,6 @@
+#!/bin/bash
+set -e
+
+./bench-prep "${@:1:99}"
+./bench-run  "${@:1:99}"
+./bench-mem  "${@:1:99}"
