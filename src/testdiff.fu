@@ -6,14 +6,37 @@ pub struct TestDiffs
 
 pub fn serialize(diffs: TestDiffs)
 {
-    mut deduped = diffs.data;
+    // "stable" dedupe.
+    struct Dedupe { data: string; index: int };
 
-    deduped.sort(|a, b| a <> b < 0);
-    for (mut i = deduped.len; i --> 1; )
-        if (deduped[i - 1] == deduped[i])
-            deduped.splice(i, 1);
+    mut dedupe = diffs.data.map(
+        |i, data| Dedupe(:data, index: i));
 
-    return deduped.join();
+    // We need to preserve the original order,
+    //  otherwise tests start shifting up and down in the testdiff
+    //   and basically become non-comparable.
+    //
+    // So we keep the indices around,
+    //  we sort by body-first,
+    //   remove duplicates,
+    //    sort again by index.
+    //
+    dedupe.sort: |a, b|
+
+        // Defaulting to a <> b won't do what we want here,
+        //  it'll likely sort by index first
+        //   because it'd be cheaper.
+        //
+        (a.data <> b.data || a.index <> b.index) < 0;
+
+    for (mut i = dedupe.len; i --> 1; )
+        if (dedupe[i - 1].data == dedupe[i].data)
+            dedupe.splice(i, 1);
+
+    dedupe.sort: |a, b| a.index < b.index;
+
+    //
+    return dedupe.map(.data).join();
 }
 
 pub fn set_next(ref diffs: TestDiffs, item: string)
