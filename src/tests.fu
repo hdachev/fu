@@ -16676,7 +16676,7 @@ pub extern fn runTests()
         }
 
         fn ZERO(src: string) {
-            return ZERO([ src ]);
+            return ZERO([ src ]);           ;; ALLOCS 5
         }
 
         fn main() {

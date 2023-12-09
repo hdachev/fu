@@ -521,6 +521,10 @@ pub fn ZERO(
     fn all_src = sources.join("\n----\n");
     fn all_cpp = ctx.modules.map(.out.cpp.src).join("\n----\n");
 
+    // Memory asserts.
+    mut expect_alloc_count = 0;
+    mut expect_alloc_bytes = 0;
+
     // Deal with expectations first, nicer errors.
     :NEXT_EXPECTATION
     expectations.each: |x|
@@ -533,6 +537,25 @@ pub fn ZERO(
 
         let cmd  = x[.. idx];
         let rest = x[idx + 1 ..];
+
+        if (cmd == "ALLOCS")
+        {
+            mut offset  = 0;
+            mut first   = parse10s32(rest, :offset);
+            mut second  = offset < rest.len && rest[offset++] == '/'
+                ? parse10s32(rest, :offset)
+                : -1;
+
+            expect_alloc_count += second < 0 ? first : second;
+            expect_alloc_bytes += second < 0
+                ? first * (128 - 16) // arc-alloc-size
+                : first;
+
+            offset == rest.len || throw(
+                "Invalid ;; ALLOCS, parse leftovers in: `;; " ~ x ~ "`");
+
+            continue;
+        }
 
         mut found = false;
         for (mut i = 0; i < sources.len; i++)
@@ -569,6 +592,30 @@ pub fn ZERO(
 
     ::build(
         :ctx, :run, :fudir, :dir_wrk, :onfail);
+
+    // Check memory use,
+    //  currently opt-in, TODO add a superficial guestimator here
+    //   so we don't have to write these out manually everywhere,
+    //    but force these on at all times.
+    //
+    if (expect_alloc_count)
+    {
+        let actual_alloc_count =
+            debug_output.uniq_count +
+            debug_output.arc_count;
+
+        let actual_alloc_bytes =
+            debug_output.uniq_bytes +
+            debug_output.arc_bytes;
+
+        if (actual_alloc_count != expect_alloc_count ||
+            actual_alloc_bytes != expect_alloc_bytes)
+        {
+            throw("ALLOC mismatch:\n"
+                ~ "\n\tactual_alloc_count(" ~ actual_alloc_count ~ ") != expect_alloc_count(" ~ expect_alloc_count ~ ") ||"
+                ~ "\n\tactual_alloc_bytes(" ~ actual_alloc_bytes ~ ") != expect_alloc_bytes(" ~ expect_alloc_bytes ~ ")");
+        }
+    }
 
     // Check codegen.
     {
