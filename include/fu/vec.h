@@ -345,11 +345,15 @@ struct fu_VEC
     fu_INL fu_VEC& operator=(const fu_VEC& c) noexcept
     {
         static_assert(COPIABLE, "Cannot copy fu_VECs of non-copiable types.");
+        assert(this != &c);
+        return *this = fu_VEC(c);
+    }
 
-        if (this != &c)
-            *this = fu_VEC(c);
-
-        return *this;
+    template <typename V, typename = typename V::fu_VIEW_value_type
+        /* vec ranges */, typename = typename V::fu_GROW_value_type>
+    fu_INL fu_VEC& operator=(const V& c) noexcept
+    {
+        return *this = fu_VEC(c);
     }
 
     fu_INL fu_VEC& operator=(fu_VEC&& c) noexcept
@@ -874,8 +878,14 @@ struct fu_VEC
     }
 
     template <typename I, typename D>
-    void splice(I i, D num) noexcept {
-        MUT_mid(i, num, Zero);
+    void splice(I idx, D del) noexcept {
+        MUT_mid(idx, del, Zero);
+    }
+
+    template <bool ZERO_FILL = true, typename I, typename D, typename C>
+    void splice_empty(I idx, D del, C count) noexcept {
+        MUT_mid(idx, del, count);
+        DEF_initRange<ZERO_FILL>(new_data + idx, new_data + idx + count);
     }
 
     void shift() noexcept {
@@ -1173,6 +1183,34 @@ struct fu_VEC
 
     fu_INL fu::view_mut<T> mut() noexcept {
         return fu::view_mut<T>(*this);
+    }
+
+
+    // vec_range & move-on-last-use interop -
+    //  fu::vec does nothing special here,
+    //   but fu::vec_range damages the underlying vector when moving,
+    //    by cutting off excess elements to the left and right of the region of interest.
+
+    fu_INL fu_VEC&& destructive_move() noexcept {
+        return static_cast<fu_VEC&&>(*this);
+    }
+
+    fu_INL fu_VEC&& const_cast_mut() const noexcept {
+        return const_cast<fu_VEC&>(*this);
+    }
+
+
+    // vec_range & swap interop.
+
+    fu_INL void swap(fu_VEC& other) noexcept {
+        auto tmp = big;
+        big = other.big;
+        other.big = tmp;
+    }
+
+    template <typename V, typename = typename V::fu_GROW_value_type>
+    fu_INL void swap(V& other) noexcept {
+        other.swap(*this);
     }
 };
 

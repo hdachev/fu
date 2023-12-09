@@ -13,3 +13,5 @@
 
 #include <dl/hotswap.cpp>
 #include <par/parfor.cpp>
+
+#include <fu/mem/memswap.cpp>

@@ -19,7 +19,7 @@ namespace fu {
         return static_cast<fu::vec<T>&&>(v);
     }
 
-    template <typename T>
+    template <typename T> // TODO REMOVE
     fu_INL fu::vec<T> substr(fu::vec<T>&& v, fu::i start, fu::i count) noexcept {
         return slice(static_cast<fu::vec<T>&&>(v), start, start + count);
     }
@@ -30,16 +30,26 @@ namespace fu {
     template <typename T>
     fu::vec<T> slice(const fu::vec<T>& v, fu::i start, fu::i end) noexcept
     {
-        // Avoid-alloc for slice(0) strings.
+        fu::i s = v.size();
+
+        assert(start >= 0 && start <= end && end <= s);
+
+        // Can we noop this?
         if constexpr (fu::vec<T>::TRIVIAL)
+        {
+            // Avoid-alloc for slice(0) strings.
             if (!start && end > fu::vec<T>::SMALL_CAPA)
                 return slice(
                     fu::vec<T>(v), 0, end);
+        }
+        else
+        {
+            // Avoid-alloc for slice-nothing.
+            if (!start && end == s)
+                return fu::vec<T>(v);
+        }
 
-        // The usual.
-        fu::i s = v.size();
-        assert(start >= 0 && start <= end && end <= s);
-
+        //
         fu::vec<T> result;
 
         end         = end < s ? end : s;
@@ -58,7 +68,7 @@ namespace fu {
         return slice(v, start, v.size());
     }
 
-    template <typename T>
+    template <typename T> // TODO REMOVE
     fu_INL fu::vec<T> substr(const fu::vec<T>& v, fu::i start, fu::i count) noexcept {
         return slice(v, start, start + count);
     }
