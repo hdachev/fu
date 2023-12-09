@@ -11,10 +11,22 @@ inline fu::vec<T> operator+(fu::vec<T>&& a, fu::vec<T>&& b) noexcept {
     return static_cast<fu::vec<T>&&>(a);
 }
 
-template <typename T>
-inline fu::vec<T>& operator+=(fu::vec<T>& a, fu::vec<T>&& b) noexcept {
-    a.append(fu_ZERO(), static_cast<fu::vec<T>&&>(b));
+template <typename A, typename B,
+    typename T  = typename A::fu_GROW_value_type,
+    typename T2 = typename B::fu_OWN_value_type,
+    typename = decltype(*((T**)1)=((T2*)2))>
+inline A& operator+=(A& a, B&& b) noexcept {
+    a.append(fu_ZERO(), static_cast<B&&>(b));
     return a;
+}
+
+template <typename A, typename B,
+    typename T  = typename A::fu_VIEW_value_type,
+    typename T2 = typename B::fu_OWN_value_type,
+    typename = decltype(*((T**)1)=((T2*)2))>
+inline A&& operator+=(A&& a, B&& b) noexcept {
+    a.append(fu_ZERO(), static_cast<B&&>(b));
+    return static_cast<A&&>(a);
 }
 
 
@@ -36,12 +48,22 @@ inline fu::vec<T> operator+(const V& b, fu::vec<T>&& a) noexcept {
     return static_cast<fu::vec<T>&&>(a);
 }
 
-template <typename V, typename T,
-    typename T2 = typename V::fu_ANY_value_type,
+template <typename A, typename B,
+    typename T  = typename A::fu_GROW_value_type,
+    typename T2 = typename B::fu_ANY_value_type,
     typename = decltype(*((T**)1)=((T2*)2))>
-inline fu::vec<T>& operator+=(fu::vec<T>& a, const V& b) noexcept {
+inline A& operator+=(A& a, const B& b) noexcept {
     a.append(fu_ZERO(), b);
     return a;
+}
+
+template <typename A, typename B,
+    typename T  = typename A::fu_VIEW_value_type,
+    typename T2 = typename B::fu_ANY_value_type,
+    typename = decltype(*((T**)1)=((T2*)2))>
+inline A&& operator+=(A&& a, const B& b) noexcept {
+    a.append(fu_ZERO(), b);
+    return static_cast<A&&>(a);
 }
 
 

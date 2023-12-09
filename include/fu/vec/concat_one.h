@@ -17,39 +17,61 @@ inline fu::vec<T> operator+(T&& a, fu::vec<T>&& b) noexcept {
     return static_cast<fu::vec<T>&&>(b);
 }
 
-template <typename T>
-inline fu::vec<T>& operator+=(fu::vec<T>& a, T&& b) noexcept {
+template <typename V, typename T,
+    typename Exact = typename V::fu_GROW_value_type,
+    typename = decltype( *((Exact**)1) = ((T*)1) )>
+inline V& operator+=(V& a, T&& b) noexcept {
     a.push(static_cast<T&&>(b));
     return a;
+}
+
+template <typename V, typename T,
+    typename Exact = typename V::fu_VIEW_value_type,
+    typename = decltype( *((Exact**)1) = ((T*)1) )>
+inline V&& operator+=(V&& a, T&& b) noexcept {
+    a.push(static_cast<T&&>(b));
+    return static_cast<V&&>(a);
 }
 
 
 // Single item appends (copy-one).
 
-template <typename T>
-inline fu::vec<T> operator+(fu::vec<T>&& a, const T& b) noexcept {
-    a.push(b);
+template <typename T, typename Conv,
+    typename = decltype( *((T*)1) = T(*(Conv*)1) )>
+inline fu::vec<T> operator+(fu::vec<T>&& a, const Conv& b) noexcept {
+    a.push(T(b));
     return static_cast<fu::vec<T>&&>(a);
 }
 
-template <typename T>
-inline fu::vec<T> operator+(const T& a, fu::vec<T>&& b) noexcept {
-    b.unshift(a);
+template <typename T, typename Conv,
+    typename = decltype( *((T*)1) = T(*(Conv*)1) )>
+inline fu::vec<T> operator+(const Conv& a, fu::vec<T>&& b) noexcept {
+    b.unshift(T(a));
     return static_cast<fu::vec<T>&&>(b);
 }
 
-template <typename T, typename X, typename = decltype((*(T*)1)=(*(X*)1))>
-inline fu::vec<T>& operator+=(fu::vec<T>& a, const X& b) noexcept {
+template <typename V, typename Conv,
+    typename T = typename V::fu_GROW_value_type,
+    typename = decltype( *((T*)1) = T(*(Conv*)1) )>
+inline V& operator+=(V& a, const Conv& b) noexcept {
     a.push(b);
     return a;
+}
+
+template <typename V, typename Conv,
+    typename T = typename V::fu_VIEW_value_type,
+    typename = decltype( *((T*)1) = T(*(Conv*)1) )>
+inline V&& operator+=(V&& a, const Conv& b) noexcept {
+    a.push(b);
+    return static_cast<V&&>(a);
 }
 
 
 // Single item appends (copy).
 
 template <typename V, typename T,
-    typename T2 = typename V::fu_ANY_value_type,
-    typename = decltype(*((T**)1)=((T2*)2))>
+    typename Exact = typename V::fu_ANY_value_type,
+    typename = decltype( *((Exact**)1) = ((T*)1) )>
 inline fu::vec<T> operator+(const V& a, T&& b) noexcept {
     fu::vec<T> vec;
 
@@ -61,8 +83,8 @@ inline fu::vec<T> operator+(const V& a, T&& b) noexcept {
 }
 
 template <typename V, typename T,
-    typename T2 = typename V::fu_ANY_value_type,
-    typename = decltype(*((T**)1)=((T2*)2))>
+    typename Exact = typename V::fu_ANY_value_type,
+    typename = decltype( *((Exact**)1) = ((T*)1) )>
 inline fu::vec<T> operator+(T&& a, const V& b) noexcept {
     fu::vec<T> vec;
 
@@ -73,20 +95,28 @@ inline fu::vec<T> operator+(T&& a, const V& b) noexcept {
     return vec;
 }
 
-template <typename V, typename T,
-    typename T2 = typename V::fu_ANY_value_type,
-    typename = decltype(*((T**)1)=((T2*)2))>
-inline fu::vec<T> operator+(const V& a, const T& b) noexcept {
+template <typename V, typename Conv,
+    typename T = typename V::fu_ANY_value_type,
+    typename = decltype( *((T*)1) = T(*(Conv*)1) )>
+inline fu::vec<T> operator+(const V& a, const Conv& b) noexcept {
     fu::vec<T> vec;
-    vec.UNSAFE__init_copy(a.data(), a.size(), &b, 1);
+
+    vec.reserve(a.size() + 1);
+    vec.append(fu_ZERO(), a);
+    vec.push(T(b));
+
     return vec;
 }
 
-template <typename V, typename T,
-    typename T2 = typename V::fu_ANY_value_type,
-    typename = decltype(*((T**)1)=((T2*)2))>
-inline fu::vec<T> operator+(const T& a, const V& b) noexcept {
+template <typename V, typename Conv,
+    typename T = typename V::fu_ANY_value_type,
+    typename = decltype( *((T*)1) = T(*(Conv*)1) )>
+inline fu::vec<T> operator+(const Conv& a, const V& b) noexcept {
     fu::vec<T> vec;
-    vec.UNSAFE__init_copy(&a, 1, b.data(), b.size());
+
+    vec.reserve(b.size() + 1);
+    vec.push(T(a));
+    vec.append(fu_ZERO(), b);
+
     return vec;
 }

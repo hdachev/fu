@@ -20,6 +20,9 @@ struct fu_VEC
     typedef T value_type;
     typedef T fu_ANY_value_type;
 
+    typedef T fu_OWN_value_type;
+    typedef T fu_GROW_value_type;
+
     /////////////////////////////////////////////
 
     static constexpr bool TRIVIAL =
@@ -1065,20 +1068,25 @@ struct fu_VEC
             MUT_reserve(grow);
             UNSAFE__WriteSize(old_size);
         }
-        else {
+        else if constexpr (SHAREABLE) {
             MUT_reserve(Zero);
         }
     }
 
     fu_INL void reserve() noexcept {
-        return reserve(Zero);
+        if constexpr (SHAREABLE) {
+            reserve(Zero);
+        }
     }
 
 
     //
 
     fu_INL T* data_mut() noexcept {
-        reserve();
+        if constexpr (SHAREABLE) {
+            reserve();
+        }
+
         return (T*)data();
     }
 
@@ -1097,7 +1105,7 @@ struct fu_VEC
     // fu::vec {{ literals }}
 
     template <fu::i new_size>
-    fu_INL fu_VEC(T(&&new_data)[new_size])
+    explicit fu_INL fu_VEC(T(&&new_data)[new_size])
     {
         static_assert(new_size > 0);
 
@@ -1134,10 +1142,7 @@ struct fu_VEC
 
     fu_INL T& mutref(fu::i idx) noexcept
     {
-        if constexpr (SHAREABLE)
-            reserve();
-
-        T* ok = (T*) data() + idx;
+        T* ok = data_mut() + idx;
 
         #ifndef NDEBUG
         assert((fu::u) idx < (fu::u) size());
