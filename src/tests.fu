@@ -8096,7 +8096,7 @@ pub extern fn runTests()
             {
                 let module = ctx.module;        // This was const Module& =  ... which can't be moved from.
                 if (module.cpp)
-                    return module.cpp;          ;; EXPECT return module.cpp.destructive_move()
+                    return module.cpp;          ;; EXPECT return static_cast<fu::str&&>(module.cpp)
             }
 
             return "";
@@ -8115,7 +8115,7 @@ pub extern fn runTests()
             {
                 let module = ctx.modules[i];    ;; TODO .unique(i)
                 if (module.cpp)
-                    return module.cpp;          ;; TODO return module.cpp.destructive_move()
+                    return module.cpp;          ;; TODO return static_cast<fu::str&&>(module.cpp)
             }
 
             return "";

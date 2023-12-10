@@ -1367,6 +1367,10 @@ pub fn solve(
 
     fn stableTypeID(type: Type)
     {
+        // TODO FIX - currently seeing Typenames here
+        // if (SELF_TEST)
+        //     type.vfacts && BUG("stableTypeID sees vfacts: " ~ type.vfacts);
+
         // TODO FIX - we dont want this -
         //  we want quals & vfacts serialized as masks,
         //   and a type "shape" string, which basically the type structure,
@@ -5014,9 +5018,13 @@ pub fn solve(
         mut ret = t_string_literal;
 
         if !(options.dev & options::DEV_DontFoldLiterals)
+        {
             ret.vfacts = v.len
                 ? AlwaysTrue
                 : AlwaysFalse;
+
+            ret.vfacts |= LeftAligned | RightAligned;
+        }
 
         return ret;
     }
@@ -8486,8 +8494,10 @@ pub fn solve(
             // TYPES vs VALUES //////
 
             // TODO FIX VFACTS //////////////////////////
-            if (asArgument || flags & F_MUT)
+            if (asArgument)
                 t_init.vfacts = [];
+            else if (flags & F_MUT)
+                t_init.vfacts &= LeftAligned | RightAligned;
             // TODO FIX VFACTS //////////////////////////
 
             // Lose refs to temporaries.
@@ -8511,6 +8521,11 @@ pub fn solve(
         if (asArgument)
             t_let.lifetime = Lifetime_temporary;
         // TODO FIX ARG TEMPS ///////////////////////
+
+        // TODO FIX VFACTS //////////////////////////
+        else if (!init && t_let.is_sliceable)
+            t_let.vfacts |= LeftAligned | RightAligned;
+        // TODO FIX VFACTS //////////////////////////
 
         if (SELF_TEST)
         {
@@ -8724,7 +8739,7 @@ pub fn solve(
         //////////////////////////
 
         err.kind == "letdef" && isAssignableAsArgument(
-            host: err.target.solved.type, t_string) || fail(
+            host: err.target.solved.type, definitType(t_string)) || fail(
                 "catch: exceptions are strings,"
                     ~ " consider dropping the annotation.");
 
@@ -9410,10 +9425,15 @@ pub fn solve(
     {
         mut arrayType = createArray(itemType);
 
-        if (itemCount >= 0 && !(options.dev & options::DEV_DontFoldLiterals))
-            arrayType.vfacts = itemCount
-                ? AlwaysTrue
-                : AlwaysFalse;
+        if !(options.dev & options::DEV_DontFoldLiterals)
+        {
+            if (itemCount >= 0 && !(options.dev & options::DEV_DontFoldLiterals))
+                arrayType.vfacts = itemCount
+                    ? AlwaysTrue
+                    : AlwaysFalse;
+
+            arrayType.vfacts |= LeftAligned | RightAligned;
+        }
 
         return arrayType;
     }

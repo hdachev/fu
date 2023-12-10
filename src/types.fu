@@ -208,6 +208,10 @@ pub fn definitType(mut type: Type, asTypename!?: bool)
         BUG("Cannot definit type never.");
 
     type.vfacts = AlwaysFalse | (asTypename && Typename);
+
+    if (type.is_sliceable)
+        type.vfacts |= LeftAligned | RightAligned;
+
     return type;
 }
 
@@ -237,6 +241,9 @@ pub fn make_field_reference(
         Lifetime_op_field(lifetime,
             flatCount:  memberFlatCount,
             flatOffset: memberFlatOffset));
+
+    if (to.is_sliceable)
+        to.vfacts |= LeftAligned | RightAligned;
 
     return to;
 }

@@ -353,6 +353,19 @@ using flags VFacts
     AlwaysTrue
     AlwaysFalse
     Typename
+
+    // Slices - whether they span all the way
+    //  to either side of the underlying array.
+    //
+    // TODO replace these with something that goes on the lifetimes -
+    //  a] will allow a mutvar to lose the L/R alignment when it degrades to a let,
+    //  b] could be expressed as a bit on the final region -
+    //      when set, it might imply a flatcount of 1 (pointer-indivisible),
+    //       and instead of the flatcount could contain a [lo: locid, hi: locid]
+    //        expression of some kind for borrow checking disjoint ranges.
+    //
+    LeftAligned
+    RightAligned
 };
 
 

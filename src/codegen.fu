@@ -253,26 +253,29 @@ pub fn cpp_codegen(
 
     //
 
-    fn ifArrayRef_annotateAsSlice(type: ValueType)
+    fn ifArrayRef_annotateAsSlice(type: Type)
     {
         // !copy && !resize
         return !(type.quals & (q_rx_resize | q_rx_copy));
     }
 
-    fn ifArrayRef_annotateAsVecRange(type: ValueType)
+    fn ifArrayRef_annotateAsVec(lax type: Type)
     {
-        return !type.ifArrayRef_annotateAsSlice();
+        return !type.ifArrayRef_annotateAsSlice()
+            &&  type.vfacts & LeftAligned
+            &&  type.vfacts & RightAligned;
     }
 
-    fn ifArrayRef_annotateAsVec(lax type: ValueType)
+    fn ifArrayRef_annotateAsVecRange(type: Type)
     {
-        return false;
+        return !type.ifArrayRef_annotateAsSlice()
+            && !type.ifArrayRef_annotateAsVec();
     }
 
     fn ifArray_annotateAsVec(type: Type)
     {
         return !type.is_ref
-            || type.ifArrayRef_annotateAsVec();
+            ||  type.ifArrayRef_annotateAsVec();
     }
 
 
@@ -3381,7 +3384,7 @@ pub fn cpp_codegen(
 
                 let mayNeedConstCast = mayNeedConstCast(expr);
 
-                if (node.type.is_sliceable)
+                if (node.type.is_sliceable && !node.ifArrayRef_annotateAsVec)
                 {
                     if (mayNeedConstCast)
                     {
