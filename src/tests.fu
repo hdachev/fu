@@ -13343,6 +13343,16 @@ pub extern fn runTests()
         }
     `]);
 
+    TODO_pub(currently: "BUG init priority can't find first = 8:19+10", `
+        struct Batch { x: i32[]; y: i32[] };
+        <split/>
+        type ViewQuads = Batch;
+        <split/>
+        let VIEW_QUADS: ViewQuads = [];
+        <split/>
+        fn main() VIEW_QUADS.x.len + VIEW_QUADS.y.len;
+    `);
+
     // /Pubs & imports.
 
 
