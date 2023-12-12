@@ -115,6 +115,7 @@ pub extern fn runTests()
     let TODO_zst        = fn TODO;
     let TODO_StaticEval = fn TODO;
     let TODO_shadow     = fn TODO;
+    let TODO_pragma     = fn TODO;
 
     let LEGACY_Map      = fn TODO;
 
@@ -17517,7 +17518,7 @@ pub extern fn runTests()
     // /Mangling.
 
 
-    // C++ hacks.
+    // Pragmas & c++ hacks.
 
     ZERO(`
         pragma emit(\`
@@ -17541,6 +17542,66 @@ pub extern fn runTests()
         \`);
         fn main() 0;
     `);
+
+    TODO_pragma(currently: "BUG exit code", `
+        fn hello(with_ints) {
+            mut a = 0;
+            mut b = 0;
+            pragma emit(\`
+                for (;;) {
+                    \`b\` += \`a\`++;
+                    \`with_ints(:a, :b)\`;
+                }
+            \`);
+        }
+
+        fn main() {
+            mut sum = 0;
+            hello: |a, b| if (a + b > 3) return (sum = a + b) - 6;
+            return 101;
+        }
+    `);
+
+    TODO_pragma(currently: "BUG exit code", `
+        fn hello(with_ints) {
+            mut a = 0;
+            mut b = 0;
+            pragma emit(\`
+                for (;;) {
+                    \`b\` += \`a\`++;
+                    \`with_ints(:a, :b)\`;
+                }
+            \`);
+        }
+
+        fn main() {
+            mut sum = 0;
+            hello: |a, b| if ((sum = a + b) > 3) break;
+            return sum - 6;
+        }
+    `);
+
+    ZERO(`
+        fn hello(with_ints) {
+            mut a = 0;
+            mut b = 0;
+            pragma emit(\`
+                for (;;) {
+                    \`b\` += \`a\`++;
+                    bool brk = \`with_ints(:a, :b)\`;
+                    if (brk) break;
+                }
+            \`);
+        }
+
+        fn main() {
+            mut sum = 0;
+            hello: |a, b| (sum = a + b) > 3;
+            return sum - 6;
+        }
+    `);
+
+    // /Pragma emit/input/output.
 
 
     // Function types sketch.
