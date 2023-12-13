@@ -1114,12 +1114,12 @@ struct fu_VEC
 
     // fu::vec {{ literals }}
 
-    template <fu::i new_size>
+    template <size_t new_size>
     explicit fu_INL fu_VEC(T(&&new_data)[new_size])
     {
         static_assert(new_size > 0);
 
-        UNSAFE__init_move(new_data, new_size);
+        UNSAFE__init_move(new_data, (fu::i) new_size);
     }
 
 

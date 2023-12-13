@@ -81,10 +81,10 @@ struct view
 
     // fu::view {{ literals }}
 
-    template<fu::i size>
+    template<size_t size>
     constexpr view(T(&&data)[size])
         : m_data { data }
-        , m_size { size }
+        , m_size { (fu::i) size }
     {}
 
 

@@ -22,6 +22,14 @@ let TODO_FIX_ignoredWarnings = ""
     //
     ~ "-Wno-unknown-warning-option " // opt-out
 
+    // Running into a bunch of weird warnings on gcc12.
+    //
+    // Array bounds errors after size is checked,
+    //  sequence-points for assignments (RTL by standard), etc.
+    //   Can't have false positives break builds.
+    //
+    ~ "-Wno-maybe-uninitialized -Wno-stringop-overflow -Wno-array-bounds -Wno-sequence-point "
+
     ;
 
 
