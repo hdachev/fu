@@ -3169,7 +3169,7 @@ pub fn cpp_codegen(
                     result ~= node.value
                         .slice(i == 0 ? indent.len : 0)
                         .replace(all: indent, with: _indent);
-                else if !(node.isIrrelevant)
+                else
                     result ~= cgNode(:node);
             }
 
