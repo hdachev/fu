@@ -72,7 +72,7 @@ pub fn cpp_codegen(
         _gcc_ignore:        flat::Set(string);
 
         // static pragma emit
-        _top_emits:         string;
+        _top_emits:         string[];
 
         // struct fwd decls
         _tfwd:              flat::Set(StructCanon);
@@ -729,7 +729,7 @@ pub fn cpp_codegen(
                 prefix: "#pragma GCC diagnostic ignored \"",
                 suffix: "\"\n")
 
-            ~ _top_emits
+            ~ _top_emits.join()
 
             // Function definitions.
             ~ (_fdef && "\n#ifndef fu_NO_fdefs\n")
@@ -3148,7 +3148,7 @@ pub fn cpp_codegen(
         let cmd = node.value;
 
         // Verbatim cpp nonsense.
-        if (cmd == "emit"  ||
+        if (cmd == "emit" || cmd == "emit_top" ||
             cmd == "input" || cmd == "output" || cmd == "clock")
         {
             mut result = "";
@@ -3188,11 +3188,12 @@ pub fn cpp_codegen(
             //
             // _gcc_ignore.add("-Wmisleading-indentation");
 
-            if (_current_fn)
+            if (_current_fn && cmd != "emit_top")
                 return result;
 
-            _top_emits ~= result;
-            _top_emits ~= '\n';
+            result ~= "\n";
+            if (!_top_emits.has(result))
+                _top_emits ~= result;
 
             return "";
         }
