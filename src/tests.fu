@@ -12256,6 +12256,20 @@ pub extern fn runTests()
         }
     `);
 
+    ZERO(`
+        noinline fn test(ref arr: i32[]) {
+            mut right: i32[];
+            swap(right, arr[arr.len / 2 ..]);
+            return right;
+        }
+
+        fn main() {
+            mut left = [ 1, 2, 3, 4, 5, 6, 7, 8, 9 ];
+            mut right = test(left);
+            return left.len + right.len * 10 - 54;
+        }
+    `);
+
     // /Slices.
 
 
