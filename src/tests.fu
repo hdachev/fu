@@ -12270,6 +12270,22 @@ pub extern fn runTests()
         }
     `);
 
+    ZERO(`
+        noinline fn what(ref s: string, AoB: int)
+            s = AoB ? "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+                    : "BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB"
+
+        fn main() {
+            inline fn what(AoB: int) {                          ;; GNUStmtExpr
+                mut s: string;
+                what(s, AoB)
+            }
+
+            let concat = what(0) ~ what(1)
+            return concat.len - 65
+        }
+    `);
+
     // /Slices.
 
 

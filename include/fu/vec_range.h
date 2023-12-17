@@ -387,6 +387,16 @@ struct vec_range_mut
         return *this;
     }
 
+    fu_INL vec_range_mut& operator=(const fu::vec<T>& src) noexcept
+    {
+        if (m_trim)
+            m_vec->splice(Left(), size(), /*const ref*/ src);
+        else
+            (*m_vec) = /*const ref*/ src;
+
+        return *this;
+    }
+
     // Can't use the template below,
     //  can't get around a defaulted/deleted operator=.
     //
