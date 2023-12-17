@@ -12286,6 +12286,25 @@ pub extern fn runTests()
         }
     `);
 
+    TODO_slices(currently: "BUG exit code", `
+        enum Method { GET };
+        struct Request { method: Method; url: byte[] }
+        noinline fn moveFromVecRangeConst(mut buf: byte[]) {
+            let first_space = 3;
+            let last_space  = buf.len - 9;
+            if (last_space <= first_space) return [];
+            let method_str  = buf[0 .. first_space];
+            let url         = buf[first_space + 1 .. last_space];
+            let ver_str     = buf[last_space + 1 ..];
+            return ver_str == "HTTP/1.1" && method_str == "GET" && Request("GET", url);
+        }
+
+        fn main() {
+            mut hello = moveFromVecRangeConst("GET / HTTP/1.1");
+            return hello.url == "/" ? 0 : 1;
+        }
+    `);
+
     // /Slices.
 
 
