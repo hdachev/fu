@@ -1213,6 +1213,12 @@ struct fu_VEC
     fu_INL void swap(V&& other) noexcept {
         other.swap(*this);
     }
+
+    template <typename V, typename = typename V::fu_VIEW_value_type
+        /* vec ranges */, typename = typename V::fu_GROW_value_type>
+    fu_INL void swap(V& other) noexcept {
+        other.swap(*this);
+    }
 };
 
 } // namespace
