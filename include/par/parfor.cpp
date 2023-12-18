@@ -2,7 +2,7 @@
 
 #include <par/parfor.hpp>
 
-#ifdef __APPLE__
+#if 1
 #define use_PTHREAD
 #endif
 
@@ -19,6 +19,7 @@
 #ifdef use_PTHREAD
 #include <pthread.h>
 #include <stdio.h>
+#include <signal.h>
 #endif
 
 
@@ -240,41 +241,68 @@ namespace fu
 
         pthread_attr_t tattr;
 
+        // Returns success(0) or the errno directly.
         int error = pthread_attr_init(&tattr);
         if (error)
         {
-            puts("  ERROR pthread_attr_init failed.");
+            puts("  ERROR WorkerSet_Create pthread_attr_init");
             return 0;
         }
 
-        // Ignore error here.
-        error = pthread_attr_setdetachstate(&tattr, PTHREAD_CREATE_DETACHED);
-        if (error)
-            puts("  ERROR pthread_attr_setdetachstate failed.");
+        // Workers don't want to handle signals because they can't know how.
+        //  This assumes the main thread handles them correctly.
+        {
+            sigset_t set {};
+            sigemptyset(&set);
+            sigaddset(&set, SIGINT);
+            sigaddset(&set, SIGTERM);
 
-        size_t stacksize = 8 * 1024 * 1024;
-               stacksize = stacksize > PTHREAD_STACK_MIN
-                         ? stacksize : PTHREAD_STACK_MIN;
+            // Returns success(0) or the errno directly.
+            error = pthread_attr_setsigmask_np(&tattr, &set);
+            if (error)
+                puts("  ERROR WorkerSet_Create pthread_attr_setsigmask_np");
+        }
 
-        // Ignore error here.
-        error = pthread_attr_setstacksize(&tattr, stacksize);
-        if (error)
-            puts("  ERROR pthread_attr_setstacksize failed.");
+        // Currently non-joinable,
+        //  probably it'd be better if they were awaited on exit().
+        {
+            // Returns success(0) or the errno directly.
+            error = pthread_attr_setdetachstate(&tattr, PTHREAD_CREATE_DETACHED);
+            if (error)
+                puts("  ERROR WorkerSet_Create pthread_attr_setdetachstate");
+        }
 
+        // On MacOS the default "secondary" thread size was 1mb or less,
+        //  this should probably be an envar or something.
+        {
+            size_t stacksize = 8 * 1024 * 1024;
+                   stacksize = stacksize > PTHREAD_STACK_MIN
+                             ? stacksize : PTHREAD_STACK_MIN;
+
+            // Returns success(0) or the errno directly.
+            error = pthread_attr_setstacksize(&tattr, stacksize);
+            if (error)
+                puts("  ERROR WorkerSet_Create pthread_attr_setstacksize");
+        }
+
+        // Spawn N workers.
         for (size_t i = workers; i --> 0; )
         {
             pthread_t thread;
+
+            // Returns success(0) or the errno directly.
             error = pthread_create(&thread, &tattr, TaskStack_Worker_Loop, nullptr);
             if (error)
             {
-                puts("  ERROR pthread_create failed.");
+                puts("  ERROR WorkerSet_Create pthread_create");
                 workers--;
             }
         }
 
+        // Returns success(0) or the errno directly.
         error = pthread_attr_destroy(&tattr);
         if (error)
-            puts("  ERROR pthread_attr_destroy failed.");
+            puts("  ERROR WorkerSet_Create pthread_attr_destroy");
 
     #else
 
