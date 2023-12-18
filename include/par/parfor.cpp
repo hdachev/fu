@@ -132,6 +132,23 @@ namespace fu
     static void TaskStack_Worker_Loop()
     #endif
     {
+        #ifdef use_PTHREAD
+        #ifndef PTHREAD_ATTR_NO_SIGMASK_NP
+        {
+            // See WorkerSet_Create for comments, this is a fallback,
+            // FALLBACK: (mac/bsd) if pthread_attr_setsigmask_np is not available.
+            sigset_t set {};
+            sigemptyset(&set);
+            sigaddset(&set, SIGINT);
+            sigaddset(&set, SIGTERM);
+
+            int error = pthread_sigmask(SIG_BLOCK, &set, nullptr);
+            if (error)
+                puts("  ERROR TaskStack_Worker_Loop pthread_sigmask");
+        }
+        #endif
+        #endif
+
         bool notify_another = false;
 
         for (;;)
@@ -251,6 +268,7 @@ namespace fu
 
         // Workers don't want to handle signals because they can't know how.
         //  This assumes the main thread handles them correctly.
+        #ifdef PTHREAD_ATTR_NO_SIGMASK_NP
         {
             sigset_t set {};
             sigemptyset(&set);
@@ -262,6 +280,7 @@ namespace fu
             if (error)
                 puts("  ERROR WorkerSet_Create pthread_attr_setsigmask_np");
         }
+        #endif
 
         // Currently non-joinable,
         //  probably it'd be better if they were awaited on exit().
