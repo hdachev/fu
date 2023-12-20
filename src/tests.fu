@@ -112,6 +112,7 @@ pub extern fn runTests()
 
     let TODO_confusing  = fn TODO;
     let TODO_logic      = fn TODO;
+    let TODO_specpat    = fn TODO;
 
     let LEGACY_Map      = fn TODO;
 
@@ -15845,6 +15846,30 @@ pub extern fn runTests()
             let b: HasData(string) = [ [ "World", "!" ] ];
 
             return concatAndFlatten(a, b).len - 13;
+        }
+    `);
+
+    TODO_specpat(currently: "BUG Leaking HTTP 13:24+1", `
+        struct Sockets(type RequestHandler) {
+            req_handler: RequestHandler
+        }
+
+        fn handle_request !RH(ref sockets: Sockets(RH)) {
+            let req_handler = sockets.req_handler;
+            req_handler();
+        }
+
+        fn HTTP(request) {
+            type HTTP = Sockets(typeof(fn request));
+            return HTTP(fn request);
+        }
+
+        fn main() {
+            mut res = -1;
+            fn handler() res++;
+            let http = HTTP(fn handler);
+            handle_request(http);
+            return res;
         }
     `);
 
