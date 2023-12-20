@@ -18158,6 +18158,14 @@ pub extern fn runTests()
         fn main() = hello("world") == "Hello world!" ? 0 : 1;
     `);
 
+    TODO_enums(currently: "BUG exit code", [`
+        enum Kind { None; A };
+    `,`
+        enum Kind { None; B };
+    `,`
+        fn main() _0::Kind.A.i32 - _1::Kind.B.i32;
+    `]);
+
     // /Enums
 
 
