@@ -11199,6 +11199,37 @@ pub extern fn runTests()
         }
     `);
 
+    TODO_borrowck(currently: "BUG TEST_noDanglingRefs", `
+        nocopy struct EventLoop { loop_fd: int };
+
+        fn ipv4_listen(else) {
+            let err = wakeUp_whenReadable();
+            if (err) (else(:err));
+        }
+
+        fn EventLoop(loop_fd: int, loop_start!) {
+            mut err = 0;
+            implicit mut event_loop = {
+                if (loop_fd < 0) return err = loop_fd;
+                EventLoop(loop_fd)
+            };
+
+            return loop_start();
+        }
+
+        fn wakeUp_whenReadable(implicit event_loop: EventLoop) {
+            return event_loop.loop_fd;
+        }
+
+        fn main() {
+            EventLoop(loop_fd: 1, loop_start: || {
+                ipv4_listen(): |err| return err;
+                return 0;
+            });
+            return 2;
+        }
+    `);
+
     // /quite right
 
 
