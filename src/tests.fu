@@ -110,6 +110,8 @@ pub extern fn runTests()
     let TODO_pub        = fn TODO;
     let TODO_zst        = fn TODO;
 
+    let TODO_confusing  = fn TODO;
+
     let LEGACY_Map      = fn TODO;
 
     let SKETCH          = fn TODO;
@@ -1771,6 +1773,29 @@ pub extern fn runTests()
         fn main() {
             using mut hello = Hello(World(1));
             return woot() * 10 + hello.world.x - 12;
+        }
+    `);
+
+    TODO_confusing(currently: "wants not present in error message", `
+        nocopy struct EventLoop { loop_fd: int };
+        pub fn ipv4_listen(implicit ref event_loop: EventLoop)
+            event_loop.loop_fd++;
+
+        pub fn EventLoop(loop_start!) {
+            <fail wants mut ref got const X:X>
+            let implicit <pass/>
+            implicit mut </fail> event_loop = {
+                mut loop_fd: int;
+                EventLoop(loop_fd)
+            };
+
+            loop_start();
+            return event_loop;
+        }
+
+        fn main() {
+            let event_loop = EventLoop(loop_start: || { ipv4_listen() });
+            return event_loop.loop_fd;
         }
     `);
 
