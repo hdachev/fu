@@ -1,0 +1,12 @@
+
+
+// These silly utils are meant to provide
+//  either a vec<char> or view<char> from a const char*,
+//   basically relaxing to views when client code allows it.
+//
+// Originally used in fs::readdir,
+//  where we'd rather avoid copying each filename.
+
+pub fn cstr_view_or_copy !T(ref name_buf: T[..], cstr: u64, size: int)
+    case (typeof(name_buf) -> &mut byte[]): & byte[] = __native("fu::cstr2vec_copy");
+    case (typeof(name_buf) ->    byte[..]): byte[..] = __native("fu::cstr2vec_view");

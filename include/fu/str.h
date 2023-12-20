@@ -26,6 +26,23 @@ inline fu_STR to_str(const char* cstr) noexcept
     return vec;
 }
 
+
+// TODO FIX SKETCH - see fs::readdir -
+//  trying to provide a cstr -> vec<byte> path
+//   that can relax to cstr -> view<byte> when possible.
+
+fu_INL fu::str& cstr2vec_copy(fu::str& buf, uintptr_t cstr, fu::i size) {
+    buf.append_copy(buf.size(), (const char*) cstr, size);
+    return buf;
+}
+
+fu_INL fu::view<char> cstr2vec_view(const fu::str&, uintptr_t cstr, fu::i size) {
+    return fu::view<char> { (const char*) cstr, size };
+}
+
+
+//
+
 struct strlit
 {
     typedef fu::byte value_type;

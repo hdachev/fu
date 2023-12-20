@@ -1,9 +1,9 @@
 
-let RWX_RWX_RWX = 0x7 << 6
-                | 0x7 << 3
-                | 0x7 << 0;
+pub let RWX_RWX_RWX = 0x7 << 6
+                    | 0x7 << 3
+                    | 0x7 << 0;
 
-fn mkdir_p(mut path: string, mode = RWX_RWX_RWX): i32
+pub fn mkdir_p(mut path: string, mode = RWX_RWX_RWX): i32
 {
     // Try create,
     //  on ENOENT try parent and repeat.
@@ -59,7 +59,7 @@ fn mkdir_p(mut path: string, mode = RWX_RWX_RWX): i32
 
 //
 
-fn cwd(): string
+pub fn cwd(): string
 {
     pragma include(
         "<stdlib.h>",   // free
@@ -92,4 +92,92 @@ fn cwd(): string
     `);
 
     return cwd;
+}
+
+
+//
+
+pub primitive DirentType: u8;
+
+pub fn DT_UNKNOWN(): DirentType = __native("<dirent.h>", "DT_UNKNOWN");
+pub fn DT_REG(): DirentType = __native("<dirent.h>", "DT_REG");
+pub fn DT_DIR(): DirentType = __native("<dirent.h>", "DT_DIR");
+pub fn DT_FIFO(): DirentType = __native("<dirent.h>", "DT_FIFO");
+pub fn DT_SOCK(): DirentType = __native("<dirent.h>", "DT_SOCK");
+pub fn DT_CHR(): DirentType = __native("<dirent.h>", "DT_CHR");
+pub fn DT_BLK(): DirentType = __native("<dirent.h>", "DT_BLK");
+pub fn DT_LNK(): DirentType = __native("<dirent.h>", "DT_LNK");
+
+pub fn readdir(mut path: string, each): int
+{
+    pragma include(
+        "<dirent.h>",
+        "<errno.h>");
+
+    //
+    if !(path.ends(with: '/')) path ~= '/';
+    path ~= '\0';
+
+    // Open & close.
+    mut err = 0;
+    pragma input(
+    `
+        DIR* dir = opendir(`path`.data());
+        struct dirent* entry;
+        if (!dir) {
+            `err` = errno;
+            if (!`err`)
+                `err` = ENOENT;
+        }
+    `);
+
+    if (err)
+        return err;
+
+    defer pragma emit(
+    `
+        if (!closedir(dir))
+            `err` = errno;
+    `);
+
+    //
+    mut name_buf: string;
+
+    // Traverse.
+    for (;;)
+    {
+        mut done: bool;
+        pragma input(
+        `
+            entry = readdir(dir);
+            `done` = !entry;
+        `);
+
+        if (done) break;
+
+        //
+        mut name_data: u64;
+        mut name_size = 0;
+        mut type: DirentType;
+
+        pragma input(
+        `
+            `name_data` = (uintptr_t) entry->d_name;
+            `name_size` = (fu::i) _D_EXACT_NAMLEN(entry);
+            `type` = entry->d_type;
+            (void) `type`;
+        `);
+
+        //
+        const ref name = unsafe::cstr_view_or_copy(
+            name_buf, cstr: name_data, size: name_size);
+
+        if (name == "." || name == "..")
+            continue;
+
+        each(:name, ?:type);
+    }
+
+    //
+    return err;
 }
