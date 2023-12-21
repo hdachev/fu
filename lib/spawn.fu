@@ -8,76 +8,136 @@ pragma include(
     "<poll.h>",
     "<sys/wait.h>");
 
-pragma emit(
-`
 
-extern char **environ;
+//
 
-typedef int PosixPipe[2];
+pub primitive PID:      i32;
+pub primitive ReadEnd:  i32;
+pub primitive WriteEnd: i32;
 
-typedef int Errno;
+pub struct PosixPipe {
+    r: ReadEnd;
+    w: WriteEnd;
+};
 
-static Errno fu_spawn(
-    fu::vec<fu::str>& argv, int& pid,
-    const PosixPipe* stdout,
-    const PosixPipe* stderr)
+fn pipe(ref p: PosixPipe) {
+    pragma include(
+        "<unistd.h>",           // pipe
+        "<errno.h>");
+
+    assert(p.r == 0 && p.w == 0);
+
+    mut err = 0;
+    pragma emit(`
+        if (pipe((int*) &`p.r`))
+        {
+            `err` = errno;
+            `p.r` = -1;
+            `p.w` = -1;
+        }
+    `);
+
+    return err;
+}
+
+
+//
+
+pragma emit(`
+    extern char **environ;
+`);
+
+pub fn spawn(
+    ref pid:    PID,
+    mut argv:   string[],
+    stdout?:    PosixPipe,
+    stderr?:    PosixPipe,
+    stdin?:     PosixPipe)
 {
-    Errno err               = -1;
-    pid                     =  0;
+    pragma include(
+        "<alloca.h>",
+        "<errno.h>",
+        "<spawn.h>");
 
-    //
-    const size_t argv_len   = (size_t) argv.size();
-    char** argv_cstr        = (char**) alloca(sizeof(void*) * (1 + argv_len));
-    argv_cstr[argv_len]     = 0;
+    mut err = 0;
+    pid     = 0;
 
-    for (size_t i = 0; i < argv_len; i++)
-    {
-        auto& arg = argv.mutref(fu::i(i));
-              arg.push(0);
+    if (!argv) {
+        pragma emit(`
+            `err` = EINVAL;
+        `);
 
-        argv_cstr[i]        = (char*) arg.data();
+        return err;
     }
 
-    //
-    posix_spawn_file_actions_t file_actions;
-    posix_spawn_file_actions_init(&file_actions);
+    pragma emit(
+    `
+        const size_t argv_len   = (size_t) `argv`.size();
+        char** argv_cstr        = (char**) alloca(sizeof(void*) * (1 + argv_len));
+        argv_cstr[argv_len]     = 0;
 
-    //
-    const auto& Pipe        = [&](const PosixPipe* pipe, int STDOUT_or_STDERR)
-    {
-        if (pipe)
+        for (size_t i = 0; i < argv_len; i++)
         {
-            const int R     = 0;
-            const int W     = 1;
+            auto& arg = argv.mutref(fu::i(i));
+                  arg.push(0);
 
-            posix_spawn_file_actions_addclose(&file_actions, (*pipe)[R]);
-            posix_spawn_file_actions_adddup2 (&file_actions, (*pipe)[W], STDOUT_or_STDERR);
-            posix_spawn_file_actions_addclose(&file_actions, (*pipe)[W]);
+            argv_cstr[i]        = (char*) arg.data();
         }
-        else
+
+        //
+        posix_spawn_file_actions_t file_actions;
+        posix_spawn_file_actions_init(&file_actions);
+
+        const auto& Pipe =
+            [&](const auto& pipe, int which)
         {
-            posix_spawn_file_actions_addopen (&file_actions, STDOUT_or_STDERR,
-                "/dev/null", O_WRONLY|O_APPEND, 0);
-        }
-    };
+            if (pipe) {
+                if (which == STDIN_FILENO) {
+                    posix_spawn_file_actions_addclose(&file_actions, pipe.w);
+                    posix_spawn_file_actions_adddup2 (&file_actions, pipe.r, STDIN_FILENO);
+                    posix_spawn_file_actions_addclose(&file_actions, pipe.r);
+                }
+                else {
+                    posix_spawn_file_actions_addclose(&file_actions, pipe.r);
+                    posix_spawn_file_actions_adddup2 (&file_actions, pipe.w, which);
+                    posix_spawn_file_actions_addclose(&file_actions, pipe.w);
+                }
+            }
+            else {
+                posix_spawn_file_actions_addopen(&file_actions, which,
+                    "/dev/null", which == STDIN_FILENO
+                        ? O_RDONLY                  | O_CLOEXEC
+                        : O_WRONLY | O_APPEND       | O_CLOEXEC,
+                    0);
+            }
+        };
 
-    Pipe(stdout, STDOUT_FILENO);
-    Pipe(stderr, STDERR_FILENO);
+        Pipe(`stdin`,  STDIN_FILENO);
+        Pipe(`stdout`, STDOUT_FILENO);
+        Pipe(`stderr`, STDERR_FILENO);
 
-    //
-    err =
-        posix_spawnp(&pid,
+        //
+        `err` = posix_spawnp(&pid,
             argv_cstr[0],
             &file_actions,
             nullptr,        // posix_spawnattr_t*          attrp
             argv_cstr,
             environ);
 
-    posix_spawn_file_actions_destroy(&file_actions);
+        posix_spawn_file_actions_destroy(&file_actions);
+    `);
 
     //
     return err;
 }
+
+
+//
+
+pragma emit(
+`
+typedef int PosixPipe[2];
+typedef int Errno;
 
 static Errno fu_waitpid(
     int pid, int& wstatus)
@@ -142,30 +202,13 @@ pub fn spawn(
     mut argv: string[],
     ref status!: i32): i32
 {
-    // Command must contain at least one argument,
-    //  the path to the binary.
-    if (!argv)
-        return -1;
-
-    mut err = 0;
-    mut pid: i32;
-    pragma output(
-    `
-        `err` =
-            fu_spawn(
-                `argv`, `pid`,
-                /*stdout*/ nullptr,
-                /*stderr*/ nullptr)
-    `);
-
+    mut pid: PID;
+    mut err = spawn(argv, :pid);
     if (err)
         return err;
 
-    pragma emit(
-    `
-        `err` =
-            fu_waitpid(
-                `pid`, `status`);
+    pragma emit(`
+        `err` = fu_waitpid(`pid`, `status`);
     `);
 
     return err;
@@ -174,198 +217,223 @@ pub fn spawn(
 
 //
 
+pub struct Child {
+    pid:        PID;
+    stdout:     ReadEnd;
+    stderr:     ReadEnd;
+    stdin:      WriteEnd;
+};
+
+fn close_one(fd: ReadEnd or WriteEnd, ref err!: i32)
+{
+    assert(fd != 0);
+    pragma output(`
+        if (close(`fd`) && !`err`)
+            `err` = errno;
+    `);
+}
+
+pub fn close(child!: Child, ref status: i32) {
+    mut err = 0;
+
+    pragma emit(`
+        auto e = fu_waitpid(`child.pid`, `status`);
+        if (!`err`)
+            `err` = e;
+    `);
+
+    if (child.stdout) close_one(child.stdout, :err);
+    if (child.stderr) close_one(child.stderr, :err);
+    if (child.stdin)  close_one(child.stdin,  :err);
+
+    return err;
+}
+
+
+//
+
+pub enum ChildStream {
+    Ignore = 0
+    Parent
+    Pipe
+};
+
+fn STDOUT_FILENO(): WriteEnd = __native("<stdio.h>", "STDOUT_FILENO");
+fn STDERR_FILENO(): WriteEnd = __native("<stdio.h>", "STDERR_FILENO");
+fn  STDIN_FILENO(): ReadEnd  = __native("<stdio.h>", "STDIN_FILENO");
+
+fn close_both(pipe: PosixPipe, ref err!: i32)
+{
+    close_one(pipe.r, :err);
+    close_one(pipe.w, :err);
+}
+
+fn close_one_lax(fd: ReadEnd or WriteEnd)
+{
+    assert(fd != 0);
+    pragma output(`
+        if (close(`fd`))
+            perror("spawn::close_one_lax");
+    `);
+}
+
+pub fn spawn(
+    mut argv:   string[],
+    ref child:  Child,
+
+    stdout  !out_m?: ChildStream,
+    stderr  !err_m?: ChildStream,
+    stdin   !in_m?:  ChildStream)
+{
+    child = [];
+    mut err = 0;
+
+    mut stdout: PosixPipe;
+    if (out_m == "Pipe" && (err = pipe(stdout)))
+        return err;
+
+    mut stderr: PosixPipe;
+    if (err_m == "Pipe" && (err = pipe(stderr)))
+    {
+        if (out_m == "Pipe") close_both(stdout, :err);
+        return err;
+    }
+
+    mut stdin: PosixPipe;
+    if (in_m == "Pipe" && (err = pipe(stdin)))
+    {
+        if (out_m == "Pipe") close_both(stdout, :err);
+        if (err_m == "Pipe") close_both(stderr, :err);
+        return err;
+    }
+
+    if (out_m == "Parent") stdout.w = STDOUT_FILENO;
+    if (err_m == "Parent") stderr.w = STDERR_FILENO;
+    if (in_m == "Parent")  stdin.r  = STDIN_FILENO;
+
+    mut pid: PID;
+    if ((err = spawn(:pid, :argv, :stdout, :stderr, :stdin)))
+    {
+        if (out_m == "Pipe") close_both(stdout, :err);
+        if (err_m == "Pipe") close_both(stderr, :err);
+        if (in_m == "Pipe")  close_both(stdin, :err);
+        return err;
+    }
+
+    if (out_m == "Pipe") close_one_lax(stdout.w);
+    if (err_m == "Pipe") close_one_lax(stderr.w);
+    if (in_m == "Pipe")  close_one_lax(stdin.r);
+
+    child = Child(
+        :pid,
+        stdout: stdout.r,
+        stderr: stderr.r,
+        stdin:  stdin.w,
+    );
+
+    return 0;
+}
+
+
+// TODO get rid of this
+
 pub fn spawn(
     mut argv: string[],
 
-    ref stdout!: string,
-    ref stderr!: string,
+    ref stdout!stdout_buf: string,
+    ref stderr!stderr_buf: string,
 
     ref status!: i32): i32
 {
-    // Command must contain at least one argument,
-    //  the path to the binary.
-    if (!argv)
-        return -1;
-
-    // Create pipes,
-    //  close writing ends immediately,
-    //   defer close reading ends.
-    //
     mut err = 0;
-    {
-        pragma emit(
-        `
-            const auto& Close = [&](int& fd)
+    mut child: Child;
+    if ((err = spawn(:child, :argv, stdout: "Pipe", stderr: "Pipe")))
+        return err;
+
+    defer close(:child, :status);
+
+    // Collect output.
+    pragma input(
+    `
+        const size_t BUF_SIZE = 64 * 1024;
+        fu::byte BUF[BUF_SIZE];
+
+        const auto& ReadFD = [&](int fd, auto&& out)
+        {
+            void*  data = BUF;
+            size_t capa = BUF_SIZE;
+
+            // Write directly into the string
+            //  if it has more capa than the buffer here.
+            //
+            auto size   = out.size();
+            auto avail  = out.capa() - size;
+
+            if (avail > 0 && size_t(avail) > BUF_SIZE)
             {
-                const int DID_CLOSE = -1;
-                if (fd == DID_CLOSE)
-                    return;
-
-                if (close(fd))
-                    `err` = `err` ? `err` : errno;
-
-                fd = DID_CLOSE;
-            };
-        `);
-
-        // unwrap if !(stdout -> void)
-        // {
-        // Create stdout pipe.
-        pragma emit(
-        `
-            PosixPipe stdout_pipe;
-            if (pipe(stdout_pipe))
-                return errno;
-        `);
-
-        defer pragma emit(
-        `
-            Close(stdout_pipe[0]);
-            Close(stdout_pipe[1]);
-        `);
-        // }
-
-        // unwrap if !(stdout -> void)
-        // {
-        // Create stderr pipe.
-        pragma emit(
-        `
-            PosixPipe stderr_pipe;
-            if (pipe(stderr_pipe))
-                return errno;
-        `);
-
-        defer pragma emit(
-        `
-            Close(stderr_pipe[0]);
-            Close(stderr_pipe[1]);
-        `);
-        // }
-
-        // Spawn.
-        if (err)
-            return err;
-
-        mut pid: i32;
-        pragma output(
-        `
-            `err` =
-                fu_spawn(
-                    `argv`, `pid`,
-                    &stdout_pipe,
-                    &stderr_pipe)
-        `);
-
-        if (err)
-            return err;
-
-        // Defer wait-for-close.
-        defer {
-            pragma emit(
-            `
-                auto e =
-                    fu_waitpid(
-                        `pid`, `status`);
-
-                if (!`err`)
-                    err = e;
-            `);
-        }
-
-        // Close our writeable side asap -
-        //  can't do this before spawn though.
-        pragma emit(
-        `
-            Close(stdout_pipe[1]);
-            Close(stderr_pipe[1]);
-        `);
-
-        if (err)
-            return err;
-
-        // Collect output.
-        pragma input(
-        `
-            const size_t BUF_SIZE = 64 * 1024;
-            fu::byte BUF[BUF_SIZE];
-
-            const auto& ReadFD = [&](int fd, auto&& out)
-            {
-                void*  data = BUF;
-                size_t capa = BUF_SIZE;
-
-                // Write directly into the string
-                //  if it has more capa than the buffer here.
-                //
-                auto size   = out.size();
-                auto avail  = out.capa() - size;
-
-                if (avail > 0 && size_t(avail) > BUF_SIZE)
-                {
-                    data = out.data_mut() + size;
-                    capa = size_t(avail);
-                }
-
-                //
-                auto bytes  = read(fd, data, size_t(capa));
-
-                if (bytes < 0 && !`err`)
-                {
-                    `err` = errno;
-                }
-                else if (bytes > 0)
-                {
-                    auto count  = (decltype(size)) bytes;
-                    size += count;
-
-                    // Copy if using the local buffer.
-                    if (data == BUF)
-                        out.append_copy(fu_ZERO(), BUF, count);
-                    else
-                        out.UNSAFE__WriteSize(size);
-
-                    return true;
-                }
-
-                //
-                return false;
-            };
-
-            const auto& ReadPollFD = [&](pollfd& pfd, auto&& out)
-            {
-                return pfd.revents & POLLIN
-                    && ReadFD(pfd.fd, out);
-            };
-
-            const size_t N = 2;
-            pollfd poll_fds[N] =
-            {
-                { stdout_pipe[0], POLLIN, {/* revents */} },
-                { stderr_pipe[0], POLLIN, {/* revents */} },
-            };
-
-            int poll_ret;
-            while (!`err` && (poll_ret = poll(&poll_fds[0], N, /*timeout*/-1)))
-            {
-                if (poll_ret < 0)
-                {
-                    auto e = errno;
-                    if (e == EINTR || e == EAGAIN)
-                        continue;
-
-                    `err` = e;
-                    break;
-                }
-
-                // Don't short circuit here.
-                if (  int(!ReadPollFD(poll_fds[0], `stdout`))
-                    & int(!ReadPollFD(poll_fds[1], `stderr`)))
-                {
-                    break;
-                }
+                data = out.data_mut() + size;
+                capa = size_t(avail);
             }
-        `);
-    }
+
+            //
+            auto bytes  = read(fd, data, size_t(capa));
+
+            if (bytes < 0 && !`err`)
+            {
+                `err` = errno;
+            }
+            else if (bytes > 0)
+            {
+                auto count  = (decltype(size)) bytes;
+                size += count;
+
+                // Copy if using the local buffer.
+                if (data == BUF)
+                    out.append_copy(fu_ZERO(), BUF, count);
+                else
+                    out.UNSAFE__WriteSize(size);
+
+                return true;
+            }
+
+            //
+            return false;
+        };
+
+        const auto& ReadPollFD = [&](pollfd& pfd, auto&& out)
+        {
+            return pfd.revents & POLLIN
+                && ReadFD(pfd.fd, out);
+        };
+
+        const size_t N = 2;
+        pollfd poll_fds[N] =
+        {
+            { `child.stdout`, POLLIN, {/* revents */} },
+            { `child.stderr`, POLLIN, {/* revents */} },
+        };
+
+        int poll_ret;
+        while (!`err` && (poll_ret = poll(&poll_fds[0], N, /*timeout*/-1)))
+        {
+            if (poll_ret < 0)
+            {
+                auto e = errno;
+                if (e == EINTR || e == EAGAIN)
+                    continue;
+
+                `err` = e;
+                break;
+            }
+
+            // Don't short circuit here.
+            if (  int(!ReadPollFD(poll_fds[0], `stdout_buf`))
+                & int(!ReadPollFD(poll_fds[1], `stderr_buf`)))
+            {
+                break;
+            }
+        }
+    `);
 
     return err;
 }
