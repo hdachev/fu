@@ -11243,6 +11243,28 @@ pub extern fn runTests()
         }
     `);
 
+    TODO_inline(currently: "TEST_noDanglingRefs 7:8+5", `
+        struct Child { pid: int };
+        fn call(do) = (do());
+
+        noinline fn test(ref pid: int) {
+            fn spawn(else) {
+                let err = pid + 5;
+                if (err) (else(:err));
+                return pid;
+            }
+
+            fn fatal(err: int) return :test err;
+            call(do: || pid = spawn(else: |err| fatal(err * 10)));
+            return pid;
+        }
+
+        fn main() {
+            mut pid = 5;
+            return test(pid) - 100;
+        }
+    `);
+
     // /quite right
 
 
