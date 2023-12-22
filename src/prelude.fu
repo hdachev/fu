@@ -446,8 +446,6 @@ fn str !T(n: T)
 
 
 // Assertions, bugs & fails.
-//  TODO i dont actually think we want to have nullary stuff in prelude,
-//   so TODO needs to take an arg, same with assert - perhaps a pass-through argument.
 
 fn throw(mut reason: string): never __native("<fu/never.h>", "fu::fail",
     "|Fx_NotDeadCode", "|Fx_DontMoveDown", "|Fx_Throws");

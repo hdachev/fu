@@ -11243,7 +11243,7 @@ pub extern fn runTests()
         }
     `);
 
-    TODO_inline(currently: "TEST_noDanglingRefs 7:8+5", `
+    TODO_inline(currently: "BUG TEST_noDanglingRefs 6:16+5", `
         struct Child { pid: int };
         fn call(do) = (do());
 
