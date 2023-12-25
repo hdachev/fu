@@ -20,7 +20,10 @@ pub struct PosixPipe {
     w: WriteEnd;
 };
 
-fn pipe(ref p: PosixPipe) {
+
+//
+
+fn pipe(ref p: PosixPipe, blocking!: bool) {
     pragma include(
         "<unistd.h>",           // pipe
         "<errno.h>");
@@ -28,17 +31,46 @@ fn pipe(ref p: PosixPipe) {
     assert(p.r == 0 && p.w == 0);
 
     mut err = 0;
-    pragma emit(`
-        if (pipe((int*) &`p.r`))
+    pragma emit(
+    `
+        if (pipe2((int*) &`p.r`, O_CLOEXEC | (`blocking` ? 0 : O_NONBLOCK)))
         {
             `err` = errno;
-            `p.r` = -1;
-            `p.w` = -1;
+            `p = []`;
         }
     `);
 
     return err;
 }
+
+pragma emit(    // pipe2 shim for sad macs
+`
+    template <typename i32, typename = decltype(*((i32**)1) = (int*)1)>
+    i32 pipe2(i32 fildes[2], i32 flags, ...)
+    {
+        auto err = pipe(fildes);
+        if (err)
+            return err;
+
+        if (flags & O_CLOEXEC)
+            for (int i = 0; i < 2; i++)
+                if (fcntl(fildes[i], F_SETFD, FD_CLOEXEC))
+                    goto Rollback;
+
+        if (flags &= ~O_CLOEXEC)
+            for (int i = 0; i < 2; i++)
+                if (fcntl(fildes[i], F_SETFL, flags))
+                    goto Rollback;
+
+        return 0;
+
+        Rollback:
+        for (int i = 0; i < 2; i++)
+            close(fildes[i]);
+
+        return err;
+    }
+`);
 
 
 //
@@ -219,9 +251,9 @@ pub fn spawn(
 
 pub struct Child {
     pid:        PID;
-    stdout:     ReadEnd;
-    stderr:     ReadEnd;
-    stdin:      WriteEnd;
+    in_fd:      WriteEnd;
+    out_fd:     ReadEnd;
+    err_fd:     ReadEnd;
 };
 
 fn close_one(fd: ReadEnd or WriteEnd, ref err!: i32)
@@ -242,9 +274,9 @@ pub fn close(child!: Child, ref status: i32) {
             `err` = e;
     `);
 
-    if (child.stdout) close_one(child.stdout, :err);
-    if (child.stderr) close_one(child.stderr, :err);
-    if (child.stdin)  close_one(child.stdin,  :err);
+    if (child.out_fd) close_one(child.out_fd, :err);
+    if (child.err_fd) close_one(child.err_fd, :err);
+    if (child.in_fd)  close_one(child.in_fd,  :err);
 
     return err;
 }
@@ -281,6 +313,8 @@ pub fn spawn(
     mut argv:   string[],
     ref child:  Child,
 
+    blocking!:  bool,
+
     stdout  !out_m?: ChildStream,
     stderr  !err_m?: ChildStream,
     stdin   !in_m?:  ChildStream)
@@ -289,18 +323,18 @@ pub fn spawn(
     mut err = 0;
 
     mut stdout: PosixPipe;
-    if (out_m == "Pipe" && (err = pipe(stdout)))
+    if (out_m == "Pipe" && (err = pipe(stdout, :blocking)))
         return err;
 
     mut stderr: PosixPipe;
-    if (err_m == "Pipe" && (err = pipe(stderr)))
+    if (err_m == "Pipe" && (err = pipe(stderr, :blocking)))
     {
         if (out_m == "Pipe") close_both(stdout, :err);
         return err;
     }
 
     mut stdin: PosixPipe;
-    if (in_m == "Pipe" && (err = pipe(stdin)))
+    if (in_m == "Pipe" && (err = pipe(stdin, :blocking)))
     {
         if (out_m == "Pipe") close_both(stdout, :err);
         if (err_m == "Pipe") close_both(stderr, :err);
@@ -326,9 +360,9 @@ pub fn spawn(
 
     child = Child(
         :pid,
-        stdout: stdout.r,
-        stderr: stderr.r,
-        stdin:  stdin.w,
+        out_fd: stdout.r,
+        err_fd: stderr.r,
+        in_fd:  stdin.w,
     );
 
     return 0;
@@ -347,7 +381,7 @@ pub fn spawn(
 {
     mut err = 0;
     mut child: Child;
-    if ((err = spawn(:child, :argv, stdout: "Pipe", stderr: "Pipe")))
+    if ((err = spawn(:child, :argv, stdout: "Pipe", stderr: "Pipe", blocking: true)))
         return err;
 
     defer close(:child, :status);
@@ -409,8 +443,8 @@ pub fn spawn(
         const size_t N = 2;
         pollfd poll_fds[N] =
         {
-            { `child.stdout`, POLLIN, {/* revents */} },
-            { `child.stderr`, POLLIN, {/* revents */} },
+            { `child.out_fd`, POLLIN, {/* revents */} },
+            { `child.err_fd`, POLLIN, {/* revents */} },
         };
 
         int poll_ret;
