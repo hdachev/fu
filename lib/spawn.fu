@@ -40,37 +40,39 @@ fn pipe(ref p: PosixPipe, blocking!: bool) {
         }
     `);
 
+    // pipe2 shim for sad macs
+    pragma emit_top(
+    `
+        template <typename i32, typename = decltype(*((i32**)1) = (int*)1)>
+        i32 pipe2(i32 fildes[2], i32 flags, ...)
+        {
+            auto err = pipe(fildes);
+            if (err)
+                return err;
+
+            if (flags & O_CLOEXEC)
+                for (int i = 0; i < 2; i++)
+                    if (fcntl(fildes[i], F_SETFD, FD_CLOEXEC))
+                        goto GetErrno_and_Rollback;
+
+            if (flags &= ~O_CLOEXEC)
+                for (int i = 0; i < 2; i++)
+                    if (fcntl(fildes[i], F_SETFL, flags))
+                        goto GetErrno_and_Rollback;
+
+            return 0;
+
+            GetErrno_and_Rollback:
+            err = errno;
+            for (int i = 0; i < 2; i++)
+                close(fildes[i]);
+
+            return err;
+        }
+    `);
+
     return err;
 }
-
-pragma emit(    // pipe2 shim for sad macs
-`
-    template <typename i32, typename = decltype(*((i32**)1) = (int*)1)>
-    i32 pipe2(i32 fildes[2], i32 flags, ...)
-    {
-        auto err = pipe(fildes);
-        if (err)
-            return err;
-
-        if (flags & O_CLOEXEC)
-            for (int i = 0; i < 2; i++)
-                if (fcntl(fildes[i], F_SETFD, FD_CLOEXEC))
-                    goto Rollback;
-
-        if (flags &= ~O_CLOEXEC)
-            for (int i = 0; i < 2; i++)
-                if (fcntl(fildes[i], F_SETFL, flags))
-                    goto Rollback;
-
-        return 0;
-
-        Rollback:
-        for (int i = 0; i < 2; i++)
-            close(fildes[i]);
-
-        return err;
-    }
-`);
 
 
 //

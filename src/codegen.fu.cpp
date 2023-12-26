@@ -5265,7 +5265,7 @@ inline static void l_40_17_zAmDi5mS(const fu::str& i, s_Outputs& outputs)
 static fu::str cgCompilerPragma_RYR98PLq(const s_SolvedNode& node, s_Outputs& outputs, s_cg_CurrentFn& _current_fn, s_TokenIdx& _here, const s_Context& ctx, const s_Module& module, const s_Options& options)
 {
     fu::view<char> cmd = node.value;
-    if ((cmd == "emit"_fu) || (cmd == "input"_fu) || (cmd == "output"_fu) || (cmd == "clock"_fu))
+    if ((cmd == "emit"_fu) || (cmd == "emit_top"_fu) || (cmd == "input"_fu) || (cmd == "output"_fu) || (cmd == "clock"_fu))
     {
         /*MOV*/ fu::str result = ""_fu;
         fu::str indent = ""_fu;
@@ -5294,7 +5294,7 @@ static fu::str cgCompilerPragma_RYR98PLq(const s_SolvedNode& node, s_Outputs& ou
                 break;
             };
         };
-        if (_current_fn)
+        if (_current_fn && cmd != "emit_top"_fu)
             return /*NRVO*/ result;
         else
         {
