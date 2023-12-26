@@ -4444,6 +4444,30 @@ pub extern fn runTests()
         }
     `);
 
+    TODO_logic(currently: "Unexpected nodiscard", `
+        nodiscard primitive Errcode: i32;
+
+        fn try_incr(implicit ref x: i32): Errcode {
+            if (x > 0) return 10;
+            x++;
+            return 0;
+        }
+
+        fn main() {
+            implicit mut x = -1;
+        <fail nodiscard X:X>
+            try_incr();
+            try_incr();
+            return x - 1;
+        <pass/>
+            shadow let err = try_incr() || try_incr();
+            return err.i32 + x - 11;
+        </fail>
+        }
+    `);
+
+    // /Lints.
+
 
     // Borrow checker.
 
