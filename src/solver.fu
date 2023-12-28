@@ -1365,24 +1365,6 @@ pub fn solve(
         return fname[start .. end];
     }
 
-    fn stableTypeID(type: Type)
-    {
-        // TODO FIX - currently seeing Typenames here
-        // if (SELF_TEST)
-        //     type.vfacts && BUG("stableTypeID sees vfacts: " ~ type.vfacts);
-
-        // TODO FIX - we dont want this -
-        //  we want quals & vfacts serialized as masks,
-        //   and a type "shape" string, which basically the type structure,
-        //    without any targets/indices/whatever inside.
-        //
-        // This is a better approximation than serializeType,
-        //  which puts a bunch of indices in,
-        //   which thrashes cpp output too often.
-        //
-        return humanizeType(type);
-    }
-
     fn humanizeType(type: Type, mut lt!?: bool, mut no_quals!?: bool, mut usage!?: bool, mut no_vfacts!?: bool, lax i!?: int, diff!?: Type)
     {
         if (!type)
@@ -7180,19 +7162,9 @@ pub fn solve(
 
         let origId      = node.value;
 
-        mut name        = origId ||
-            ((_current_fn.target && _current_fn.target.name) || "Anon")
-                ~ (_current_fn.TODO_FIX_unique++ && "_" ~ _current_fn.TODO_FIX_unique++);
-
-        {
-            mut unique = "";
-            _typeParams.each: |tp, key|
-                (unique ? unique ~= "," : unique)
-                   ~= key ~ ":" ~ stableTypeID(tp.matched);
-
-            if (unique)
-                name ~= "_" ~ tea::hash62(unique);
-        }
+        mut name        = origId
+            || _current_fn.target && _current_fn.target.name
+            || "Anon";
 
         let kind        = node.kind;
         let isStruct    = kind == "struct";
@@ -7220,6 +7192,22 @@ pub fn solve(
         //
         mut shape_hasher = tea::hash(name);
 
+        if (isPrimDecl)
+        {
+            // We have a problem with enums - they come out with the same hash,
+            //  because there's nothing to hash really. This is mostly benign
+            //   but it affects c++ cg, because we try to use actual enums there.
+            //
+            // We could hash the variants, but this would thrash all builds whenever you add something,
+            //  so would make enum fwd declarations pointless (note we dont currently benefit from enum fwd decls).
+            //
+            // This is a monkey patch, not sure I want the members hashed still,
+            //  but that's probably the right way to go.
+            //
+            shape_hasher.hash(shortModuleName);
+        }
+
+        //
         mut shape = Shape(
             :basePrim,
             non_triv_mask:  0,
@@ -13544,23 +13532,23 @@ pub fn solve(
         swap(root, GET_mut(_nestingFnort).solved.items.last);
     }
 
+    fn hash(ref hash: tea::TEA, type: Type)
+    {
+        hash.hash(
+            tea::TEA(
+                (type.quals & q_TAGS).u32,
+                type.lifetime.uni0n.len && 1.u32));
+
+        hash.hash(
+            type.getShape().hash);
+    }
+
     fn computeFnSighash_asIfCycleRoot(
         fn_target:          Target,
         ref name_counts!:   flat::Map(string, u32))
     {
         mut already_hashing:    Target[];
         mut cycle_participants: flat::Set(Target);
-
-        fn hash(ref hash: tea::TEA, type: Type)
-        {
-            hash.hash(
-                tea::TEA(
-                    (type.quals & q_TAGS).u32,
-                    type.lifetime.uni0n.len && 1.u32));
-
-            hash.hash(
-                type.getShape().hash);
-        }
 
         fn computeFnSighash(shadow fn_target: Target)
         {

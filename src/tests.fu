@@ -16533,7 +16533,7 @@ pub extern fn runTests()
     ZERO(`
         struct AB { a: i32; b: i32; };
         fn sqr   (ref x: i32) x * x;
-        fn outer (ref ab: AB) sqr(ab.a) + sqr(ab.b);        ;; EXPECT const s_AB&
+        fn outer (ref ab: AB) sqr(ab.a) + sqr(ab.b);        ;; EXPECT const AB_6yft&
         fn main() {
             mut ab = AB(3, 5);
             return ab.outer - 34;
@@ -16608,7 +16608,7 @@ pub extern fn runTests()
 
         pub fn test(overload: Overload, ref args: SolvedNode[])
         {
-            let host_args = overload.args;          ;; EXPECT fu::view<s_Argument> /*overload*/ host_args
+            let host_args = overload.args;          ;; EXPECT fu::view<Argument_5Ucf> /*overload*/ host_args
 
             args.resize(host_args.len);             // .len didnt relax its arg
             for (mut i = 0; i < args.len; i++)
@@ -18246,7 +18246,7 @@ pub extern fn runTests()
         fn main() = hello("world") == "Hello world!" ? 0 : 1;
     `);
 
-    TODO_enums(currently: "BUG exit code", [`
+    ZERO([`
         enum Kind { None; A };
     `,`
         enum Kind { None; B };

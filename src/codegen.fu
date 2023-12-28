@@ -13,6 +13,7 @@ import usage;
 import fail;
 
 let SMALL_STRING_OPTI   = 15;
+let SIGHASH_CHARS       = 4;
 
 let M_STMT              = 1 << 0;
 let M_RETBOOL           = 1 << 1;
@@ -439,13 +440,22 @@ pub fn cpp_codegen(
 
         //
         let s   = lookupUserType(type) || BUG("TODO: " ~ type.canon);
-        let id  = "s_" ~ s.name;
+        let id  = structID(s);
 
         let scp = parseStructCanon(type.canon);
         if (_tfwd.add(scp))
             declareStruct(id, s);
 
         return id;
+    }
+
+    fn structID(s: Struct)
+    {
+        // TODO extern struct (no shape hashing)
+        if (s.shape.hash)
+            return s.name ~ "_" ~ s.shape.hash.tea::digest62(chars: SIGHASH_CHARS);
+
+        return s.name;
     }
 
     fn declareStruct(id: string, s: Struct)
@@ -464,8 +474,10 @@ pub fn cpp_codegen(
 
         let t = GET(s.target).type;
 
-        mut def = "\n                                #ifndef DEF_" ~ id
-                ~ "\n                                #define DEF_" ~ id
+        let dedupe = s.name ~ "_" ~ s.shape.hash.tea::digest62();
+
+        mut def = "\n                                #ifndef DEF_" ~ dedupe
+                ~ "\n                                #define DEF_" ~ dedupe
                 ~ "\n" ~ header ~ "\n{";
 
         if (options.dev & options::DEV_CG_LifetimeAnnots)
@@ -1155,7 +1167,7 @@ pub fn cpp_codegen(
         mut ret = id.valid_identifier;
         if (target.sighash && !(target.flags & F_EXTERN))
             (ret == "_" ? ret : ret ~= "_") ~=
-                target.sighash.digest62(chars: 8);
+                target.sighash.digest62(chars: SIGHASH_CHARS);
 
         return ret;
     }
