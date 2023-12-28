@@ -13533,7 +13533,7 @@ pub extern fn runTests()
         fn main() VIEW_QUADS.x.len + VIEW_QUADS.y.len;
     `);
 
-    TODO_pub(currently: "MyPrim is not defined 3:40+6", [`
+    ZERO([`
         primitive MyPrim: int;
         fn addback !T(ref a: T, ref b: MyPrim, which = .a) {
             a.which += b;

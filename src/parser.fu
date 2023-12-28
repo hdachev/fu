@@ -1295,7 +1295,6 @@ pub fn parse(
         mut implicit: Node[];
         mut firstDefaulted = -1;
 
-        let numDollars0 = _numDollars;
         for (;;)
         {
             if (tryConsume(endk, endv))
@@ -1307,6 +1306,7 @@ pub fn parse(
             first = false;
 
             let isInline = !!tryConsume("id", "inline");
+            let numDollars0 = _numDollars;
 
             mut insertAt = -1;
             mut arg = parseLet(
