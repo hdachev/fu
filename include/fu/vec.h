@@ -1195,7 +1195,7 @@ struct fu_VEC
         return static_cast<fu_VEC&&>(*this);
     }
 
-    fu_INL fu_VEC&& const_cast_mut() const noexcept {
+    fu_INL fu_VEC& const_cast_mut() const noexcept {
         return const_cast<fu_VEC&>(*this);
     }
 

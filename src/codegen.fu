@@ -419,7 +419,7 @@ pub fn cpp_codegen(
             if (type.ifArrayRef_annotateAsVecRange)
             {
                 include("<fu/vec_range.h>");
-                if (type.is_mutref || mode & (M_MUTVAR | M_MOVABLE))
+                if (type.is_mutref || mode & M_MUTVAR)
                     return "fu::vec_range_mut<" ~ itemAnnot ~ ">";
                 else
                     return "fu::vec_range<" ~ itemAnnot ~ ">";
@@ -3345,9 +3345,15 @@ pub fn cpp_codegen(
                     if (expr.kind == "if")
                         return expr.items[1 .. 3].mayNeedConstCast;
 
-                    if (expr.kind == "block")
-                        return expr.items.len > 0
-                            && expr.items[expr.items.len - 1].mayNeedConstCast;
+                    // TODO FIX: checking just the tail expr doesn't look right
+                    // if (expr.kind == "block")
+                    //     return expr.items.len > 0
+                    //         && expr.items[expr.items.len - 1].mayNeedConstCast
+                    //
+                    //         // TODO FIX re: move-from-vec-range, see call(var) comment below
+                    //         || expr.is_sliceable
+                    //             && expr.is_ref && !expr.is_mutref
+                    //             && expr.ifArrayRef_annotateAsVecRange;
 
                     if (expr.kind == "call")
                     {
@@ -3357,11 +3363,21 @@ pub fn cpp_codegen(
 
                         if (k == "var")
                         {
+                            // TODO FIX With vec-ranges we're generating different dereference code
+                            //  for const & mutrefs, and the const-correct cg is more trouble than it's worth,
+                            //   and given that it's not always possible, we're just going to double down on const-casts here.
+                            //
+                            let place = expr.target.solved.type;
+                            if (place.is_sliceable &&
+                                place.is_ref && !place.is_mutref &&
+                                place.ifArrayRef_annotateAsVecRange)
+                            {
+                                return true;
+                            }
+
                             // Currently -
                             return false;
 
-                            // let place = expr.target.solved.type;
-                            // return place.is_ref && !place.is_mutref;
                         }
 
                         let t = expr.target.type;

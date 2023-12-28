@@ -12401,7 +12401,7 @@ pub extern fn runTests()
         }
     `);
 
-    TODO_slices(currently: "BUG exit code", `
+    ZERO(`
         enum Method { GET };
         struct Request { method: Method; url: byte[] }
         noinline fn moveFromVecRangeConst(mut buf: byte[]) {
@@ -12411,7 +12411,8 @@ pub extern fn runTests()
             let method_str  = buf[0 .. first_space];
             let url         = buf[first_space + 1 .. last_space];
             let ver_str     = buf[last_space + 1 ..];
-            return ver_str == "HTTP/1.1" && method_str == "GET" && Request("GET", url);
+            return ver_str == "HTTP/1.1" && method_str == "GET"
+                && Request("GET", url);                         ;; ConstCast
         }
 
         fn main() {
@@ -12435,7 +12436,7 @@ pub extern fn runTests()
             return str;
         }
 
-        fn main() {
+        fn main() {                                             ;; ConstCast
             let hello = Konkat("Hello, ", "World!");            ;; GNUStmtExpr
             return hello == "Hello, World!" ? 0 : 1;            ;; PointlessLocal
         }
@@ -13601,7 +13602,7 @@ pub extern fn runTests()
             shadow mut prims = {
                 mut res: Helper[];
                 for (mut i = 0; i < prims.len; i++)
-                    res ~= Helper(i);
+                    res ~= Helper(i);                           ;; ConstCast
                 res                                             ;; GNUStmtExpr
             };
 
@@ -14941,7 +14942,7 @@ pub extern fn runTests()
 
     ZERO(`
         fn Stringy(i: i32) "i:" ~ i;
-
+                                                                ;; ConstCast
         inline fn Printy(x: string): string = x;                ;; GNUStmtExpr
         inline fn Printy(x.Stringy): string = x;                ;; PointlessLocal
 
