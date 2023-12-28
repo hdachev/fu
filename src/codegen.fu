@@ -1838,6 +1838,7 @@ pub fn cpp_codegen(
         if (prio)
         {
             let eq = src.find('=');
+            shadow let eq = eq >= 0 ? eq : src.find('{');
             eq >= 0 || BUG("Needs init priority but can't find first = in `" ~ src ~ "`");
             src = src[.. eq] ~ prio ~ src[eq ..];
         }

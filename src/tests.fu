@@ -13523,7 +13523,7 @@ pub extern fn runTests()
         }
     `]);
 
-    TODO_pub(currently: "BUG init priority can't find first = 8:19+10", `
+    ZERO(`
         struct Batch { x: i32[]; y: i32[] };
         <split/>
         type ViewQuads = Batch;
@@ -15949,7 +15949,7 @@ pub extern fn runTests()
 
         fn HTTP(request) {
             type HTTP = Sockets(typeof(fn request));
-            return HTTP(fn request);
+            return HTTP(<alt>fn request</alt>);
         }
 
         fn main() {
