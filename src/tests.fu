@@ -12420,6 +12420,27 @@ pub extern fn runTests()
         }
     `);
 
+    ZERO(`
+        inline fn Stringlike(x: string): string = x;
+
+        inline fn Concat(mut parts.Stringlike[]: string[]) {
+            mut str = "";
+            for (mut i = 0; i < parts.len; i++) str ~= parts[i];
+            return str;
+        }
+
+        inline fn Konkat(mut parts.Stringlike[]: string[]) {
+            mut str = "";
+            for (mut i = 0; i < parts.len; i++) str = Concat(str, parts[i]);
+            return str;
+        }
+
+        fn main() {
+            let hello = Konkat("Hello, ", "World!");            ;; GNUStmtExpr
+            return hello == "Hello, World!" ? 0 : 1;            ;; PointlessLocal
+        }
+    `);
+
     // /Slices.
 
 
