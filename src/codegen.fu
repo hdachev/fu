@@ -1899,7 +1899,7 @@ pub fn cpp_codegen(
             return;
 
         if (node.kind == "if" || node.kind == "and" || node.kind == "or")
-            node.items[node.kind == "if" ? 0 : 1 ..].each: |item|
+            node.items[node.kind == "if" ? 1 : 0 ..].each: |item|
                 item.TEST_noDanglingRefs(:surviving_locals);
 
         node.lifetime.TEST_noDanglingRefs(:surviving_locals);

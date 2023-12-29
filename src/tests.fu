@@ -11267,7 +11267,7 @@ pub extern fn runTests()
         }
     `);
 
-    TODO_inline(currently: "BUG TEST_noDanglingRefs 6:16+5", `
+    ZERO(`
         struct Child { pid: int };
         fn call(do) = (do());
 
@@ -11278,7 +11278,7 @@ pub extern fn runTests()
                 return pid;
             }
 
-            fn fatal(err: int) return :test err;
+            fn fatal(err: int) return :test err;                ;; GNUStmtExpr
             call(do: || pid = spawn(else: |err| fatal(err * 10)));
             return pid;
         }
@@ -11286,6 +11286,31 @@ pub extern fn runTests()
         fn main() {
             mut pid = 5;
             return test(pid) - 100;
+        }
+    `);
+
+    ZERO(`
+        struct Child { pid: string };
+        fn call(do) = (do());
+
+        fn append_if_odd(pid: string, other: string)
+            pid.len & 1 ? pid ~ other : pid;
+
+        noinline fn test(ref pid: string) {
+            fn spawn(else) {
+                let err = append_if_odd(pid, "5555555555");
+                if (err) (else(:err));
+                return pid;
+            }
+
+            fn fatal(err: string) return :test err;                ;; GNUStmtExpr
+            call(do: || pid = spawn(else: |err| fatal(err ~ "101010101010")));
+            return pid;
+        }
+
+        fn main() {
+            mut pid = "xxxyyyzzz";
+            return test(pid) == "xxxyyyzzz5555555555101010101010" ? 0 : 1;
         }
     `);
 
