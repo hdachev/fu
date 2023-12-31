@@ -2180,40 +2180,9 @@ pub fn solve(
 
                 // Forbid ambiguity.
                 if (matchIdx)
-                {
-                    fn fnName(idx: i32) idx
-                        ? localfn(index: idx).str
-                        : "global scope";
-
-                    let PREV        = matchIdx;
-                    let NEXT        = overloadIdx;
-
-                    if (SELF_TEST)
-                    {
-                        let inner       = PREV.localOf;             // first to match is innermost scope
-                        let outer       = NEXT.localOf;             //  what we're currently looking is upscope
-                        let callsite    = _current_fn.target.globid;//   as seen from where we currently are
-
-                        mut _c = callsite;
-                        while (_c > inner) _c = localfn(index: _c).localOf;
-                        _c == inner || BUG(
-                            "Leaking `" ~ id ~ "` between functions [inner/callsite]: "
-                                ~ inner.fnName ~ "::" ~ PREV
-                                ~ " is seen from " ~ callsite.fnName);
-
-                        mut _i = inner;
-                        while (_i > outer) _i = localfn(index: _i).localOf;
-                        _i == outer || BUG(
-                            "Leaking `" ~ id ~ "` between functions [inner/outer]: "
-                                ~ inner.fnName ~ "::" ~ PREV ~ " and "
-                                ~ outer.fnName ~ "::" ~ NEXT
-                                ~ " as seen from " ~ callsite.fnName);
-                    }
-
                     fail("Ambiguous call to " ~ explainBadCallArguments(:id, :target, :args) ~ ", matches multiple items in scope:\n"
-                        ~ "\n\t" ~ explainWhichFn(PREV, conversions_out)
-                        ~ "\n\t" ~ explainWhichFn(NEXT, conversions    ));
-                }
+                        ~ "\n\t" ~ explainWhichFn(matchIdx, conversions_out)
+                        ~ "\n\t" ~ explainWhichFn(overloadIdx, conversions));
 
                 // Done!
                 if (TODO_FIX_dontBotherSpecializing)
@@ -13435,7 +13404,7 @@ pub fn solve(
                 ref args        = node.items;
 
                 host_args.len == args.len ||
-                    BUG(node.token, "ensureArgSequencing: host_args.len != args.len (" ~ host_args.len ~ " != " ~ args.len ~ "), nestingFnort= " ~ _nestingFnort.globid ~ " " ~ _nestingFnort);
+                    BUG(node.token, "ensureArgSequencing: host_args.len(" ~ host_args.len ~ ") != args.len(" ~ args.len ~ "), nestingFnort(" ~ _nestingFnort.globid ~ " " ~ _nestingFnort ~ ")");
 
                 argsReverse(:RTL, :host_args): |i, host_arg, revSeqIdx|
                 {

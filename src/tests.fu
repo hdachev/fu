@@ -15993,7 +15993,7 @@ pub extern fn runTests()
         }
     `);
 
-    TODO_specpat(currently: "BUG Leaking HTTP 13:24+1", `
+    ZERO(`
         struct Sockets(type RequestHandler) {
             req_handler: RequestHandler
         }
@@ -16004,6 +16004,9 @@ pub extern fn runTests()
         }
 
         fn HTTP(request) {
+            <fail ambig call type Sockets 2:9+6 fn HTTP 11:12+4><pass/>
+            shadow
+            </fail>
             type HTTP = Sockets(typeof(fn request));
             return HTTP(<alt>fn request</alt>);
         }
