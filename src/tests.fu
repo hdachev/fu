@@ -109,6 +109,7 @@ pub extern fn runTests()
     let TODO_ooe        = fn TODO;
     let TODO_pub        = fn TODO;
     let TODO_zst        = fn TODO;
+    let TODO_ufc        = fn TODO;
 
     let TODO_confusing  = fn TODO;
     let TODO_logic      = fn TODO;
@@ -14388,6 +14389,23 @@ pub extern fn runTests()
             mut arr = [1, 2, 3, 4];
             let x = arr.Find(2, |i, remove!| remove(i));
             return x - 1;
+        }
+    `);
+
+    TODO_ufc(currently: "hello is not defined 13:46+1", `
+        fn Hello(ref str) str ~= "Hello, ";
+        fn World(ref str) str ~= "World!";
+
+        struct addrofns {
+            hello: typeof(fn Hello);
+            world: typeof(fn World);
+        };
+
+        fn main() {
+            mut str = "";
+            mut fns = addrofns();
+            for (fieldname i: addrofns) fns.i(str);
+            return str == "Hello, World!" ? 0 : 1;
         }
     `);
 
