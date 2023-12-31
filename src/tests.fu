@@ -11236,7 +11236,7 @@ pub extern fn runTests()
         }
     `);
 
-    TODO_borrowck(currently: "BUG TEST_noDanglingRefs", `
+    ZERO(`
         nocopy struct EventLoop { loop_fd: int };
 
         fn ipv4_listen(else) {
@@ -11246,8 +11246,8 @@ pub extern fn runTests()
 
         fn EventLoop(loop_fd: int, loop_start!) {
             mut err = 0;
-            implicit mut event_loop = {
-                if (loop_fd < 0) return err = loop_fd;
+            implicit mut event_loop = {                         ;; GNUStmtExpr
+                if (loop_fd < 0) return err = loop_fd;          ;; Goto
                 EventLoop(loop_fd)
             };
 
@@ -11260,10 +11260,41 @@ pub extern fn runTests()
 
         fn main() {
             EventLoop(loop_fd: 1, loop_start: || {
-                ipv4_listen(): |err| return err;
-                return 0;
+                ipv4_listen(): |err| return err - 1;
+                return 10;
             });
-            return 2;
+            return 20;
+        }
+    `);
+
+    ZERO(`
+        nocopy struct EventLoop { loop_fd: string };
+
+        fn ipv4_listen(else) {
+            let err = wakeUp_whenReadable();
+            if (err) (else(:err));
+        }
+
+        fn EventLoop(loop_fd: string, loop_start!) {
+            mut err = "none";
+            implicit mut event_loop = {                         ;; GNUStmtExpr
+                if !(loop_fd.len & 1) return err = loop_fd;     ;; Goto
+                EventLoop(loop_fd)
+            };
+
+            return loop_start();
+        }
+
+        fn wakeUp_whenReadable(implicit event_loop: EventLoop) {
+            return event_loop.loop_fd;
+        }
+
+        fn main() {
+            EventLoop(loop_fd: "loop_fd", loop_start: || {
+                ipv4_listen(): |err| return err.len - 7;
+                return 10;
+            });
+            return 20;
         }
     `);
 

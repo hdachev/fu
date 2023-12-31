@@ -3979,8 +3979,7 @@ pub fn solve(
                 if (SELF_TEST)
                     node.items && BUG("propagateType canDiscard(" ~ k ~ ") has items.");
 
-                node.kind   = "empty";
-                node.value  = "";
+                node.intoEmpty();
             }
         }
         else if (k == "copy")
@@ -4205,7 +4204,9 @@ pub fn solve(
                 {
                     if (expr.kind == "empty")
                     {
+                        // TODO FIX this is messy
                         expr.type = h.ret_actual;
+                        expr.intoEmpty();
                     }
                     else
                     {
@@ -4477,8 +4478,7 @@ pub fn solve(
                 if (SELF_TEST && !canDiscard)
                     BUG("Empty block type is relevant: " ~ node.type.humanizeType);
 
-                node.kind = "empty";
-                node.helpers = [];
+                node.intoEmpty();
             }
             else if (items.len == 1 && !(h.mask & (HM_LabelUsed | HM_Function)))
             {
@@ -5026,9 +5026,32 @@ pub fn solve(
         return solved(node, :type);
     }
 
-    fn createEmpty(kind: Kind = "empty", type = t_void, target?: Target): SolvedNode
+    fn createEmpty(mut type = t_void, target?: Target): SolvedNode
     {
-        return SolvedNode(:kind, :type, :target);
+        mut ret = SolvedNode(kind: "empty", :type, :target);
+        ret.intoEmpty();
+        return ret;
+    }
+
+    fn intoEmpty(ref node: SolvedNode)
+    {
+        node.kind       = "empty";
+        node.helpers    = [];
+
+        if (SELF_TEST)
+            node.items && BUG("intoEmpty: !!node.items");
+
+        ref type = node.type;
+        if (type.lifetime)
+        {
+            if (SELF_TEST)
+            {
+                type.isIrrelevant || type.lifetime.hasStatic || BUG(
+                    "createEmpty: non-static non-irrelevant lifetime: " ~ type.lifetime);
+            }
+
+            type.lifetime = Lifetime_static;
+        }
     }
 
     fn executeCompilerPragma(node: Node)
@@ -12916,11 +12939,6 @@ pub fn solve(
                     "Return value not assignable to node.type: "
                         ~ explainTypeDiff(node.type, o.type, "<-"));
         }
-        else if (k == "let")
-        {
-            node.items.len == 2 || BUG("let.items.len: " ~ node.items.len);
-            node.items[0] && BUG("let.items[0] not empty: " ~ node.items[0].kind);
-        }
         else if (k == "block" || k == "and" || k == "or" || k == "if")
         {
             fn checkLt(actual: Type,
@@ -13014,6 +13032,21 @@ pub fn solve(
             let err = node.items[TRY_ERR];
             err.kind == "letdef" || err.kind == "empty" || BUG(
                 "TRY_ERR not a letdef/empty: " ~ node.items[TRY_ERR]);
+        }
+        else if (k == "empty")
+        {
+            if (node.lifetime)
+                node.lifetime == Lifetime_static || BUG(
+                    "empty: non-static lifetime: " ~ node.lifetime);
+        }
+        else if (k == "letdef")
+        {
+            test_node(node: node.target.solved, :pass);
+        }
+        else if (k == "let")
+        {
+            node.items.len == 2 || BUG("let.items.len: " ~ node.items.len);
+            node.items[0] && BUG("let.items[0] not empty: " ~ node.items[0].kind);
         }
     }
 

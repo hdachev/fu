@@ -11,6 +11,9 @@ struct never
 
     template<typename T>
     [[noreturn]] operator T&() const;
+
+    template<typename T>
+    [[noreturn]] operator T&&();
 };
 
 [[noreturn]] never fail(const char* what = "Assertion failed.");
