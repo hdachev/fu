@@ -295,8 +295,8 @@ namespace fu
         //  this should probably be an envar or something.
         {
             size_t stacksize = 8 * 1024 * 1024;
-                   stacksize = stacksize > PTHREAD_STACK_MIN
-                             ? stacksize : PTHREAD_STACK_MIN;
+                   stacksize = stacksize > (size_t) PTHREAD_STACK_MIN
+                             ? stacksize : (size_t) PTHREAD_STACK_MIN;
 
             // Returns success(0) or the errno directly.
             error = pthread_attr_setstacksize(&tattr, stacksize);
