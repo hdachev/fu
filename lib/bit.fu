@@ -1,3 +1,9 @@
 
 pub fn popcount(path: u32): i32 __native("__builtin_popcount");
 pub fn popcount(path: u64): i32 __native("__builtin_popcountll");
+
+pub fn clz(path: u32): i32 __native("__builtin_clz");
+pub fn clz(path: u64): i32 __native("__builtin_clzll");
+
+pub fn ctz(path: u32): i32 __native("__builtin_ctz");
+pub fn ctz(path: u64): i32 __native("__builtin_ctzll");

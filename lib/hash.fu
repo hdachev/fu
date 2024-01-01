@@ -1,0 +1,864 @@
+
+primitive DataPos:  int
+
+struct IndexEntry {
+    hash:           int
+    data_pos:       DataPos
+}
+
+struct DataEntry(type Key, type Value) {
+    key:            Key
+    value?:         Value
+    hash:           int
+    collision:      DataPos
+}
+
+
+// Brace for some really stupid shit
+
+let DefaultHasher_seed = rand::next_u64()
+
+pub struct DefaultHasher {}
+
+fn digest !Src(v: Src, type Dest)
+case (Src -> int && Dest -> int) v
+case (Src -> u64 && Dest -> i32) i32(v.u32 ^ (v >> 32).u32)
+case (Src -> u16 && Dest -> int) int(v)
+
+inline fn xorshift64(ref x: u64, value: u64) {
+    x ^= DefaultHasher_seed ^ value
+    x ^= x >> 12
+    x ^= x << 25
+    x ^= x >> 27
+}
+
+fn hash !<Key, Item>(hasher: DefaultHasher, key: Key)
+case (Key.is::primitive)
+{
+    mut x: u64
+    x.xorshift64(key.u64)
+    return x
+}
+case (Key -> Item[..] && Item.is::primitive)
+{
+    let bytes   = key.view(of: byte)
+    let u64s    = key[0 .. (bytes.len & ~7) / sizeof(Item)].view(of: u64)
+
+    mut x: u64
+    for (mut i = 0; i < u64s.len; i++)
+        x.xorshift64(u64s[i])
+
+    mut tail: u64
+    for (mut i = bytes.len & ~7; i < bytes.len; i++) {
+        tail <<= 8
+        tail ^= bytes[i].u64
+    }
+
+    x.xorshift64(tail)
+    x.xorshift64(key.len.u64)
+    return x
+}
+default
+{
+    mut x: u64
+    for (fieldname i: Key)
+        x.xorshift64(hasher.hash(key.i))
+
+    return x
+}
+
+
+//
+
+pub struct Map(type Key, type Value, type Hasher = DefaultHasher) {
+    index:          IndexEntry[]
+    data:           DataEntry(:Key, :Value)[]
+    hasher:         Hasher
+}
+
+
+//
+
+inline fn hash_mask(index: IndexEntry[])
+    index.len && index.len - 1
+
+inline fn max_probes(index: IndexEntry[])
+    index.len && bit::ctz(index.len.uint).int
+
+inline fn [](ref .data, data_pos: DataPos)
+    data[data_pos.int - 1]
+
+inline fn hash !Key(map: Map(:Key, _, _), key: Key) {
+    mut hash = map.hasher.hash(key).digest(int)
+    return hash < 0 ? ~hash : hash
+}
+
+
+//
+
+inline fn probe(
+    ref index: IndexEntry[],
+        mask: int,
+        max_probes: int,
+
+        hash!: int,
+        visit)
+{
+    for (mut probe = 0;
+             probe < max_probes;
+             probe++)
+    {
+        let i           = (hash + probe) & mask
+        ref index_entry = index[i]
+
+        visit(?:index_entry, ?:i, ?:probe)
+    }
+}
+
+inline fn route !Key(
+    ref map: Map(:Key, _, _),
+        key: Key,
+        hash!: int,
+
+        found!,
+        available!?,
+        unavailable!?)
+{
+    ref index       = map.index
+    let max_probes  = index.max_probes
+    let mask        = index.hash_mask
+
+    mut fair_i      = -1
+
+    probe(:index, :mask, :max_probes, :hash): |mut i, ref index_entry, probe|
+    {
+        if (!index_entry.data_pos)
+        {
+            // Unused slot, fallthrough to insert.
+
+            // We're breaking the search here -
+            //  this means the index needs compacting during removal,
+            //   can't leave empty slots behind.
+
+            // Basically, we're fine with slow removes,
+            //  so long as lookups & insertions have decent perf.
+            fair_i      = fair_i == -1 ? i : fair_i
+        }
+        else if (index_entry.hash == hash)
+        {
+            mut data_pos = index_entry.data_pos
+            mut collision: DataPos
+
+            do {
+                ref data_entry  = map[:data_pos]
+                if (data_entry.key == key)
+                    return found(
+                        ?: i,
+                        ?: data_pos,
+                        ?: index_entry,
+                        ?: data_entry,
+                        ?: collision,
+                        ?: mask,
+                        ?: max_probes,
+                        ?: index)
+
+                collision   = data_pos
+                data_pos    = data_entry.collision
+            }
+            while (data_pos)
+
+            // Hash collision, fallthrough to insert.
+            fair_i      = i
+        }
+        else
+        {
+            let dist    = (i - index_entry.hash) & mask
+
+            fair_i      = probe > dist && fair_i == -1 ? i : fair_i
+
+            // Slot in use by another bucket, probe next.
+            continue;
+        }
+
+        inline fn make_fair()
+        {
+            if (i != fair_i)
+            {
+                do {
+                    let prev_i = (i - 1) & mask
+
+                    // TODO FIX do this with a single [..] .rotate_right
+                    // TODO FIX except you gotta watch out for the wraparound
+                    index[i] = index[prev_i]
+                    i = prev_i
+                }
+                while (i != fair_i)
+
+                return index[i] = []
+            }
+
+            return index[i]
+        }
+
+        return available(?:mask, ?:fn make_fair)
+    }
+
+    return unavailable()
+}
+
+
+//
+
+fn increase_capacity(ref index: IndexEntry[])
+{
+    // So we go from empty to N slots,
+    //  we can only grow by a factor of two from there on,
+    //   otherwise the rehash below won't work right.
+    //
+    let old_len     = index.len
+    let old_mask    = index.hash_mask
+    let old_probes  = index.max_probes
+
+    let len         = max(old_len * 2, 2)
+    index.grow(len);
+
+    let mask        = index.hash_mask
+    let max_probes  = index.max_probes;
+
+    // Now, go through the index,
+    //  and move half of the stuff back.
+    //
+    :NEXT
+    for (mut probe = 0; probe < old_len; probe++)
+    {
+        let i           = (probe + old_probes) & old_mask
+        let index_entry = index[i]
+
+        // Rehash / compact.
+        let ideal       = index_entry.hash & mask
+        let data_pos    = index_entry.data_pos
+        let diff        = (i - ideal) & mask
+
+        if ((ideal >= old_len || diff >= max_probes)
+            && data_pos)
+        {
+            mut i_dest  = ideal
+            while (index[i_dest].data_pos)
+            {
+                i_dest  = (i_dest + 1) & mask
+
+                // This check is NOT redundant - imagine all the slots
+                //  need to get shifted off to the second half,
+                //   any wraparounds will have to stay where they are.
+                if (i_dest == i)
+                    continue :NEXT;
+            }
+
+            // TODO there's surely a way to do this all in a single loop.
+            mut i_prev = (i_dest - 1) & mask
+            while (i_dest != ideal &&
+                1 + ((i_prev - index[i_prev].hash) & mask)
+                  < ((i_dest - ideal) & mask))
+            {
+                index.swap(i_dest, i_prev)
+                i_dest =  i_prev
+                i_prev = (i_dest - 1) & mask
+            }
+
+            index.swap(i, i_dest)
+            compact(:mask, :index, i_free: i)
+            probe--
+        }
+    }
+}
+
+inline fn compact(
+    ref index:      IndexEntry[..],
+    mask!:          int,
+    mut i_free!:    int)
+{
+    for (;;)
+    {
+        let i       = (i_free + 1) & mask
+        let other   = index[i]
+        let diff    = (i - other.hash) & mask
+        if (!diff || !other.data_pos)
+            return;
+
+        index.swap(i, i_free)
+        i_free = i
+    }
+}
+
+
+//
+
+fn if_ref !Key(
+    ref map: Map(:Key, _, _),
+        key: Key,
+        hash!: int,
+
+    visit,
+    else!?)
+{
+    route(:map,
+          :key, :hash,
+
+    found: |ref data_entry| {
+        return visit(:data_entry.value)
+    })
+
+    return else()
+}
+
+
+//
+
+fn ref !<Key, Value>(
+    ref map: Map(:Key, :Value, _),
+        key: Key,
+        hash!: int,
+
+    visit)
+{
+    mut ref data_entry =
+    {
+        :SEARCH
+        {
+            for (;;)
+            {
+                route(:map,
+                      :key, :hash,
+
+                found: |ref data_entry|
+                {
+                    break :SEARCH data_entry
+                },
+
+                available: |mask, make_fair|
+                {
+                    ref index_entry     = make_fair()
+
+                    type DataEntry      = DataEntry(:Key, :Value)
+                    map.data           ~= DataEntry(:key, :hash,
+                        collision: index_entry.data_pos)
+
+                    let data_pos        = DataPos(map.data.len)
+                    index_entry         = IndexEntry(:hash, :data_pos)
+
+                    break :SEARCH map[:data_pos]
+                })
+
+                // Neither found nor available,
+                //  grow & repeat.
+                //
+                map.index.increase_capacity()
+                continue;
+            }
+        }
+    }
+
+    return visit(:data_entry.value)
+}
+
+
+//
+
+fn remove !Key(
+    ref map: Map(:Key, _, _),
+        key: Key,
+        hash!: int,
+
+    visit?,
+    take!?,
+    else!?)
+{
+    route(:map,
+          :key, :hash,
+
+    found: |ref index_entry,    i,
+            ref data_entry,     data_pos,
+                collision,
+
+            mask, max_probes, ref index|
+    {
+        take(value?: data_entry.value);
+
+        // Unlink.
+        {
+            mut next = data_entry.collision
+
+            ref prev = collision
+                ? map[collision].collision
+                : index_entry.data_pos
+
+            prev = next
+
+            // We have to compact the index if the slot got emptied.
+            if (!collision && !next)
+                compact(:mask, :index, i_free: i);
+        }
+
+        // Swap out with last data item.
+        let last_data_pos = DataPos(map.data.len);
+        if (last_data_pos != data_pos) :SWAP
+        {
+            map.data.swap(
+                     data_pos.int - 1,
+                last_data_pos.int - 1)
+
+            // Update the index pointer to the newly swapped item.
+            shadow let hash = map[:data_pos].hash
+
+            map.index.probe(:mask, :max_probes, :hash): |shadow ref index_entry|
+            {
+                if (index_entry.hash != hash || !index_entry.data_pos)
+                    continue;
+
+                shadow mut collision = index_entry.data_pos
+                if (collision == last_data_pos)
+                {
+                    // Already bucket head, easy.
+                    index_entry.data_pos = data_pos
+                }
+                else for (;;)
+                {
+                    // We have collisions, gotta traverse the bucket.
+                    shadow ref data_entry = map[collision]
+                    collision = data_entry.collision
+                    if (collision == last_data_pos)
+                    {
+                        data_entry.collision = data_pos
+                        break;
+                    }
+                }
+
+                break :SWAP;
+            };
+        }
+
+        // Shrink data array.
+        map.data.pop()
+
+        // Done.
+        return visit()
+    })
+
+    return else()
+}
+
+
+//
+
+pub inline fn get !Key(
+    ref map: Map(:Key, _, _),
+        key: Key)
+{
+    return map.if_ref(:key, hash: map.hash(key), visit: |ref value| value)
+        || []
+}
+
+pub inline fn get !Key(
+    ref exists: bool,
+    ref map: Map(:Key, _, _),
+        key: Key)
+{
+    exists = false
+    return map.if_ref(:key, hash: map.hash(key), visit: |ref value| { exists = true; value })
+        || []
+}
+
+pub inline fn set !<Key, Value>(
+    ref map: Map(:Key, :Value, _),
+        key: Key,
+    mut value: Value)
+{
+    return map.ref(:key, hash: map.hash(key), visit: |shadow ref value| value) = value
+}
+
+pub inline fn remove !Key(
+    ref map: Map(:Key, _, _),
+        key: Key)
+{
+    return map.remove(:key, hash: map.hash(key), visit: true)
+}
+
+pub inline fn len(ref map: Map(_, _, _))
+{
+    return map.data.len
+}
+
+pub inline fn each(ref map: Map(_, _, _), visit)
+{
+    for (mut i = 0; i < map.data.len; i++) {
+        ref entry   = map.data[i]
+        let key     = entry.key
+        visit(entry.value, ?:key)
+    }
+}
+
+pub inline fn ref !Key(ref map: Map(:Key, _, _), key: Key, visit)
+{
+    return map.ref(:key, hash: map.hash(key), fn visit);
+}
+
+pub inline fn if_ref !Key(ref map: Map(:Key, _, _), key: Key, visit, else!?)
+{
+    return map.if_ref(:key, hash: map.hash(key), fn visit, fn else);
+}
+
+
+// Brute-force diagnostics.
+
+pure fn Verify(ref map: Map(_, _, _))
+{
+    let reach_expect = map.data.len
+    mut reach_actual = 0
+
+    //
+    mut reach_bits: u64[]
+    reach_bits.grow((reach_expect + 63) >> 6)
+
+    //
+    ref index       = map.index
+    let mask        = index.hash_mask
+    let max_probes  = index.max_probes
+
+    mut max_dist = 0
+    if (index.len)
+    {
+        let i = index.len - 1
+        let index_entry = index[i]
+        if (index_entry.data_pos) {
+            let ideal   = index_entry.hash & mask
+            let dist    = (i - ideal) & mask
+            max_dist    = dist + 1
+        }
+    }
+
+    for (mut i = 0; i < index.len; i++)
+    {
+        let index_entry = index[i]
+        if (!index_entry.data_pos) {
+            max_dist = 0
+            continue;
+        }
+
+        mut ideal = index_entry.hash & mask
+        let dist = (i - ideal) & mask
+        assert(dist < max_probes)
+        assert(dist <= max_dist)
+        max_dist = dist + 1
+
+        //
+        mut data_pos = index_entry.data_pos
+        while (data_pos)
+        {
+            ref data_entry  = map[data_pos]
+
+            shadow let i    = (data_pos.int - 1)
+            ref bucket      = reach_bits[i >> 6]
+            let bit         = 1 << u64(i & 63)
+
+            assert(!(bucket & bit))
+            bucket |= bit
+            reach_actual++
+
+            data_pos = data_entry.collision
+        }
+    }
+
+    assert(reach_actual == reach_expect)
+}
+
+pure fn Explain(map: Map(_, _, _))
+{
+    if (map.index.len > 64) {
+        println("--- Explain: too big.");
+        return;
+    }
+
+    let mask = map.index.hash_mask
+
+    println("--- Explain:");
+    for (mut i = 0; i < map.index.len; i++)
+    {
+        let index_entry = map.index[i];
+        mut data_pos = index_entry.data_pos
+        if (!data_pos) {
+            println("  #" i ": empty");
+            continue;
+        }
+
+        let ideal = index_entry.hash & mask
+        let diff = (i - ideal) & mask
+
+        mut data_str = ""
+        while (data_pos) {
+            if (data_str) data_str ~= ", "
+            data_str ~= data_pos
+            data_pos = map[data_pos].collision
+        }
+
+        println("  #" i ": data(" data_str ") ideal(" ideal ") diff(" diff ")");
+    }
+
+    println("--- /Explain.");
+}
+
+
+//
+
+struct PassthroughHasher {}
+fn hash(_: PassthroughHasher, key) key
+
+test grow_and_rehash()
+{
+    mut expect: u64[]
+
+    fn expect_add(key: u16) {
+        let bucket = int(key >> 6)
+        if (expect.len <= bucket)
+            expect.grow(bucket + 1)
+
+        expect[bucket] |= 1 << u64(key & 63)
+    }
+
+    fn expect_get(key: u16) {
+        let bucket = int(key >> 6)
+        return expect.len > bucket
+            && !!(expect[bucket] & 1 << u64(key & 63))
+    }
+
+    fn expect_rem(key: u16) {
+        mut ok = false
+        let bucket = int(key >> 6)
+        if (expect.len > bucket)
+        {
+            let bit = 1 << u64(key & 63)
+            ok = !!(expect[bucket] & bit)
+            expect[bucket] &= ~bit
+        }
+
+        return ok
+    }
+
+    fn random(mut x: u64) {
+        x ^= x >> 12
+        x ^= x << 25
+        x ^= x >> 27
+        x *= 0x2545_f491_4f6c_dd1d
+
+        x ^= x >> 32
+        x ^= x >> 16
+        return u16(x)
+    }
+
+
+    //
+
+    for (mut run = 0; run < 30; run++)
+    {
+        expect.clear()
+        mut actual = Map(u16, u16, PassthroughHasher)
+
+        fn random(i: int) = random((i ^ run).u64)
+
+        mut size = (run + 1) * (run + 1)
+
+        let OP_CYCLES = 10
+        for (mut op_cycle = 0; op_cycle < OP_CYCLES; op_cycle++)
+        {
+            size += (run + 1) * 10
+
+            let reverse = random(op_cycle) & 1
+            let step    = op_cycle + 1
+
+            for (mut i = reverse ? size : 0;
+                 reverse ? i >= 0 : i < size;
+                 i += (reverse ? -step : step))
+            {
+                let key = random(op_cycle ^ i)
+                if (op_cycle & 1) {
+                    let expect_ok = expect_rem(key)
+                    let actual_ok = actual.remove(key)
+
+                    // actual.Explain()
+                    actual.Verify()
+
+                    assert(expect_ok == actual_ok)
+                }
+                else {
+                    expect_add(key)
+                    actual.set(key, key)
+
+                    // actual.Explain()
+                    actual.Verify()
+                }
+            }
+
+            mut count = 0
+            for (mut i = 0; i < size; i++)
+            {
+                let key = random(i)
+                shadow let expect = expect_get(key)
+
+                mut exists: bool
+                shadow let actual = actual.get(key, :exists)
+                assert(exists ? actual == key : actual == 0)
+
+                assert(expect == exists)
+
+                if (exists) count++
+            }
+
+            assert(run <= 10 || size > 256)
+            assert(count == size || op_cycle > 0)
+        }
+    }
+}
+
+struct CollideEverything {}
+fn hash(hasher: CollideEverything, _) = 0
+
+struct MaskHasher(mask) { mask: typeof(fn mask) }
+fn hash(h: MaskHasher(_), key.int) {
+    let mask = h.mask
+    return key & mask
+}
+
+struct BiasedHasher(mask) { mask: typeof(fn mask) }
+fn hash(h: BiasedHasher(_), mut key.int) {
+    let mask = h.mask
+    key &= mask
+    if (key) while (key.uint.bit::ctz) key |= key - 1
+    return key
+}
+
+test bad_hash()
+{
+    fn test(type Hasher)
+    {
+        for (mut reverse = 0; reverse < 4; reverse++)
+        {
+            mut map: Map(u8, u8, Hasher)
+            for (mut i = 0; i < 256; i++) {
+                let key = (reverse & 1 ? 255 - i : i).u8
+                map.set(key, key)
+                map.Verify()
+            }
+
+            for (mut i = 0; i < 256; i++) {
+                let key = i.u8
+                mut exists: bool
+                let val = map.get(key, :exists)
+                assert(exists && val == key)
+            }
+
+            for (mut i = 0; i < 256; i++) {
+                let key = (reverse & 2 ? 255 - i : i).u8
+                map.remove(key)
+                map.Verify()
+            }
+
+            for (mut i = 0; i < 256; i++) {
+                let key = i.u8
+                mut exists: bool
+                let val = map.get(key, :exists)
+                assert(!exists && val == 0)
+            }
+        }
+    }
+
+    test(CollideEverything)
+
+    test(MaskHasher(|| 1))
+    test(MaskHasher(|| 2))
+    test(MaskHasher(|| 3))
+    test(MaskHasher(|| 4))
+    test(MaskHasher(|| 5))
+    test(MaskHasher(|| 6))
+    test(MaskHasher(|| 7))
+    test(MaskHasher(|| 8))
+
+    test(BiasedHasher(|| 1))
+    test(BiasedHasher(|| 3))
+    test(BiasedHasher(|| 7))
+    test(BiasedHasher(|| 15))
+    test(BiasedHasher(|| 31))
+    test(BiasedHasher(|| 63))
+    test(BiasedHasher(|| 127))
+    test(BiasedHasher(|| 255))
+}
+
+test default_hash_collisions()
+{
+    fn test(key_mul: int)
+    {
+        primitive Opaque: int
+        fn key(i: int) Opaque(i * key_mul)
+
+        mut map: Map(Opaque, Opaque)
+        for (mut i = 0; i < 16000000; i++) {
+            let key = key(i)
+            map.ref(:key, hash: map.hash(:key),
+                visit: |ref value| value = key)
+        }
+
+        mut num_collisions = 0
+        mut actual = 0
+        map.data.each: |entry, i| {
+            actual++
+            if (entry.collision)
+                num_collisions++
+
+            let key = key(i)
+            assert(entry.key == key)
+            assert(entry.value == key)
+        }
+
+        // Ideally we wouldn't generate collisions for <=32bit keys.
+        assert(!num_collisions)
+
+        // Failing that, we expect about 30k collisions for 16mil items.
+        assert(num_collisions < 30000)
+        assert(actual == 16000000)
+
+        // Ideally we'd end up with a load factor nearing 100%.
+        assert(map.index.len <= 2*16777216)
+
+        for (mut i = 0; i < 16000000; i++)
+        {
+            let key = key(i)
+            map.remove(:key)
+            assert(map.data.len == 16000000 - (i + 1))
+        }
+
+        assert(!map.data.len)
+    }
+
+
+    //
+
+    test(1)
+
+/*  // TODO we're not doing great - seeing up to 300k collisions for 47,
+    //  and generally the prime numbers all result in a load factor of 50%.
+
+    test(2)
+    test(3); test(4);
+    test(5)
+    test(7); test(8);
+
+    test(17); test(16);
+    test(19)
+    test(23)
+    test(29)
+    test(31); test(32);
+
+    test(47); test(64);
+    test(127); test(128);
+
+    test(251)
+/*/
+}

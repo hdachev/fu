@@ -15198,6 +15198,19 @@ pub extern fn runTests()
         }
     `]);
 
+    ZERO(`
+        fn main() {                                             ;; GNUStmtExpr
+            mut hello: hash::Map(string, string);               ;; Goto
+            hello.set("hello", "world!");
+            let a = hello.get("hello").len - 6;
+            hello.remove("hello");
+            let b = hello.get("hello").len;
+            hello.set("world", "world!!");
+            let c = hello.get("world").len - 7;
+            return a + b * 10 + c * 100;
+        }
+    `);
+
     // /Conversion functions.
 
 
