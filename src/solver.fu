@@ -1654,6 +1654,32 @@ pub fn solve(
         return ext.args.len;
     }
 
+    fn collectNamedArgs(args: Node[..] or SolvedNode[..], ref minArity: int)
+    {
+        struct NamedArgs {
+            names:      string[]
+            optional:   bitset::BitSet;
+        }
+
+        using mut ret: NamedArgs;
+
+        mut some = false;
+        for (mut i = 0; i < args.len; i++) {
+            let arg = args[i];
+            names.push(arg.kind == "argid"
+                ? { some = true; arg.value } || BUG()
+                : "");
+
+            if (arg.flags & F_ARGID_IS_OPTIONAL) {
+                minArity--;
+                optional.add(i);
+            }
+        }
+
+        some || BUG("collectNamedArgs: no named arguments here");
+        return ret;
+    }
+
     fn tryMatch__mutargs(
         mut id: string,
         ref reorder!reorder_out: Reorder,
@@ -1691,28 +1717,8 @@ pub fn solve(
         let maxArity        = explicitArity + numUsings;
 
         // Prep labelled args for remap.
-        mut names: string[];
-        mut optional: bitset::BitSet;
-        if (flags & F_CALL_HAS_NAMED_ARGS)
-        {
-            mut some = false;
-
-            for (mut i = 0; i < args.len; i++)
-            {
-                let arg = args[i];
-                names.push(arg.kind == "argid"
-                    ? { some = true; arg.value } || BUG()
-                    : "");
-
-                if (arg.flags & F_ARGID_IS_OPTIONAL)
-                {
-                    minArity--;
-                    optional.add(i);
-                }
-            }
-
-            some || BUG();
-        }
+        using let namedArgs =
+            flags & F_CALL_HAS_NAMED_ARGS && collectNamedArgs(args, :minArity);
 
         mut reusable_mangle: string;
 
@@ -9052,6 +9058,12 @@ pub fn solve(
             let pattern = type.canon.canon::tryGetPattern();
             if (pattern)
             {
+                mut reorder: Reorder;
+                mut TODO_FIX_what_about_opt_args = 0;
+                using let namedArgs = node.flags & F_CALL_HAS_NAMED_ARGS
+                    && collectNamedArgs(node.items, minArity: TODO_FIX_what_about_opt_args);
+
+                //
                 :NEXT_SUB_PATTERN
                 pattern.canon::eachSubPattern(|shadow pattern, spec_of!target|
                 {
@@ -9069,15 +9081,26 @@ pub fn solve(
 
                     targets.splice(targetsIdx, 1);
 
+                    //
+                    reorder.clear()
+                    if (names)
+                        if (!reorderByArgIDs(:reorder, names, optional, target.args, num_usings: 0))
+                            patternFail(ERRMSG_findUnmatchedArgName(:reorder, :names));
+
+                    //
                     mut numArgs = 0;
                     pattern.canon::eachArgSpecType: |argSpecType|
                     {
-                        let argIdx = numArgs++;
-                        if (argIdx >= node.items.len)
-                            patternFail("Missing type argument for " ~ target ~ ": " ~ target.args[argIdx]);
+                        let i = numArgs++;
+                        if (i >= node.items.len)
+                            patternFail("Missing type argument for " ~ target ~ ": " ~ target.args[i]);
 
-                        shadow let node = node.items[argIdx];
+                        let callsiteIndex = reorder ? reorder.map[i] : i;
+
+                        shadow let node = node.items[callsiteIndex];
                         shadow let type = Type(parseType(argSpecType));
+
+                        shadow let node = node.kind == "argid" ? node.items.only : node;
 
                         if (!trySolveTypeParams(
                                 :node, :type, :errout,
