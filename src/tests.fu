@@ -14975,6 +14975,43 @@ pub extern fn runTests()
         }
     `]);
 
+    ZERO([`
+        pub struct SillyHash { int: int }
+        pub fn SillyHash(str: string) = SillyHash(str.len)
+
+        struct SetItem(type Key, type Hash) { hash: Hash; key: Key }
+        pub struct Set(type Key, type Hash = SillyHash) { items: SetItem(:Hash, :Key)[] }
+
+        fn if_ref !<Hash, Key>(ref set: Set(:Hash, :Key), hash!: Hash, key: Key, visit, else?) {
+            for (mut i = 0; i < set.items.len; i++) {
+                ref item = set.items[i]
+                if (item.hash == hash && item.key == key)
+                    return visit(?: item)
+            }
+
+            return else()
+        }
+
+        pub inline fn get !<Hash, Key>(ref set: Set(:Hash, :Key), key: Key) {
+            return set.if_ref(:key, hash: Hash(key), visit: |item| item) || []
+        }
+
+        pub fn add !<Hash, Key>(ref set: Set(:Hash, :Key), key: Key) {
+            let hash = Hash(key)
+            set.if_ref(:key, :hash, visit: false): || {
+                type Item = SetItem(:Key, :Hash)
+                set.items ~= Item(:key, :hash)
+                return true
+            }
+        }
+    `,`
+        fn main() {
+            mut set = _0::Set(string)
+            if (!set.add("Hello!")) return 1                    ;; GNUStmtExpr
+            return set.get("Hello!").hash.int - 6               ;; LocalConstBool
+        }
+    `]);
+
     // /Conversion functions.
 
 
