@@ -1740,7 +1740,7 @@ pub fn solve(
         ///////////////////////////////////
 
         //
-        for (;;)
+        for (mut isExplicitConversion = false;; isExplicitConversion = true)
         {
             // Argument & `using` dependent lookup,
             //  basically we do everything we can to get rid of imports.
@@ -1885,6 +1885,25 @@ pub fn solve(
 
                     matchFail("Wrong number of arguments: expects " ~ str(:arity.min, :arity.max)
                             ~ ", got " ~ str(minArity, maxArity) ~ ".");
+                }
+
+                // TODO FIX this got messy as usual,
+                //  not sure how we gotta model explicit conversions here,
+                //   i'd like them to work without another forgettable keyword,
+                //    but we probably need to identify them at definition time,
+                //     and keep track of them otherwise.
+                //
+                if (isExplicitConversion)
+                {
+                    if (overload.kind == "fn")
+                    {
+                        if (overload.type.is_Typename)
+                            matchFail("Not a conversion function: returns a type.");
+                    }
+                    else if (overload.kind != "template")
+                    {
+                        matchFail("Not a conversion function.");
+                    }
                 }
 
                 // Reorder by argument names or number of implicit `using` args.
@@ -2183,6 +2202,10 @@ pub fn solve(
                         matchFail(_spec_errors[specIdx._packed.u32.i32] || "Could not specialize.");
 
                     ensureLazySolved(overloadIdx = specIdx);
+
+                    if (isExplicitConversion)
+                        if (overloadIdx.type.is_Typename)
+                            matchFail("Not a conversion function: returns a type.");
                 }
 
                 // TODO FIX: we allow ambig among overloads that will be dead-code eliminated by the callsite,
