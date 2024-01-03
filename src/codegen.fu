@@ -100,6 +100,7 @@ pub fn cpp_codegen(
         // misc garbage
         _indent:            string;
         _hasMain:           i32;
+        _test_cases:        string;
 
         _static_strings:    flat::Set(u64);
         _static_string_src: string;
@@ -759,33 +760,52 @@ pub fn cpp_codegen(
 
     fn cgMain(): string
     {
-        if (!_hasMain)
-            return "";
+        mut src = "";
 
-        mut zst = "";
-        if (_hasMain & MAIN_zst)
-            zst = ", 0";
-
-        mut src = "\nint main() { return fu_MAIN()" ~ zst ~ "; }";
-
-        if (_hasMain & MAIN_argv)
+        // So ideally everything test-related should be ifdefed.
+        //  This means everything that's only used by test fns too,
+        //   template specializations, etc.
+        //
+        // This basically implies we want to layer an entire cg scope,
+        //  and run & ifdef everything it emits under an ifdef TESTSUITE
+        //   or smth.
+        //
+        if (_test_cases)
         {
-            // Main with cli args.
-            annotateString();
-
-            src = "\nint main(int argc, char* argv[])"
-                ~ "\n{"
-                ~ "\n    fu::vec<fu::str> args;"
-                ~ "\n    args.reserve(argc);"
-                ~ "\n"
-                ~ "\n    for (int i = 0; i < argc; i++)"
-                ~ "\n        args.push(fu::to_str(argv[i]));"
-                ~ "\n"
-                ~ "\n    return fu_MAIN(static_cast<fu::vec<fu::str>&&>(args))" ~ zst ~ ";"
-                ~ "\n}";
+            src ~= "\n#define TESTSUITE TESTSUITE ## __COUNTER__\n"
+            src ~= "\nstatic int TESTSUITE = (" ~ _test_cases ~ "\n    0);\n"
+            src ~= "\n#undef TESTSUITE\n"
         }
 
-        src ~= "\n";
+        //
+        if (_hasMain)
+        {
+            mut zst = "";
+            if (_hasMain & MAIN_zst)
+                zst = ", 0";
+
+            src ~= "\nint main() { return fu_MAIN()" ~ zst ~ "; }";
+
+            if (_hasMain & MAIN_argv)
+            {
+                // Main with cli args.
+                annotateString();
+
+                src = "\nint main(int argc, char* argv[])"
+                    ~ "\n{"
+                    ~ "\n    fu::vec<fu::str> args;"
+                    ~ "\n    args.reserve(argc);"
+                    ~ "\n"
+                    ~ "\n    for (int i = 0; i < argc; i++)"
+                    ~ "\n        args.push(fu::to_str(argv[i]));"
+                    ~ "\n"
+                    ~ "\n    return fu_MAIN(static_cast<fu::vec<fu::str>&&>(args))" ~ zst ~ ";"
+                    ~ "\n}";
+            }
+
+            src ~= "\n";
+        }
+
         return src;
     }
 
@@ -1504,6 +1524,14 @@ pub fn cpp_codegen(
                 ~ "                                #undef " ~ fnID ~ "\n"
                 ~ fnPtrAnnot ~ " =\n    fu::hotswap(\"" ~ fnID_local ~ "\",\n                 " ~ fnID ~ ",\n                &" ~ fnID_local ~ ");\n"
                 ~ "                                #endif";
+        }
+        ////////////////////////////////
+
+        // TESTS ///////////////////////
+        if (overload.flags & F_TESTCASE)
+        {
+            target.modid == module.modid || BUG();
+            _test_cases ~= "\n    " ~ id ~ "(),";
         }
         ////////////////////////////////
 

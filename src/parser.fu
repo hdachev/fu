@@ -757,6 +757,7 @@ pub fn parse(
 
                 if (v == "extern")      return parseExoticDecl(F_EXTERN);
                 if (v == "hotswap")     return parseExoticDecl(F_HOTSWAP);
+                if (v == "test")        return parseTestcase();
             }
         }
 
@@ -1115,6 +1116,16 @@ pub fn parse(
                 set_PUB(flags);
                 flags |= F_EXTERN;
             }
+
+            // TODO FIX testsuite should definitely not be F_PUB
+            //  ideally shouldn't even go onto scope or anything,
+            //   doing right now to ensure they reach cg.
+            //
+            if (flags & F_TESTCASE)
+            {
+                set_PUB(flags);
+                flags |= F_EXTERN;
+            }
         }
 
         // TODO FIX gotta rethink how we do jumps & labels,
@@ -1259,6 +1270,11 @@ pub fn parse(
 
         //
         return body;
+    }
+
+    fn parseTestcase()
+    {
+        return parseFnDecl(flags: F_TESTCASE);
     }
 
     fn tryPopTypeAnnot(allowTypeUnions! = false): Node

@@ -174,6 +174,11 @@ let TRY_ERR         = 1;
 let TRY_CATCH       = 2;
 
 
+//
+
+let F_TESTCASE      = F_PREDICATE;
+
+
 // Solver notes.
 
 using flags SolverNotes: i32
