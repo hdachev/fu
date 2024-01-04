@@ -16106,6 +16106,19 @@ pub extern fn runTests()
         }
     `);
 
+    ZERO(`
+        struct Map(type Key, type Value, type Hash) {
+            k: Key; v: Value; h: Hash
+        }
+
+        fn key !<Key>(ref map: Map(:Key, _, _)) map.k;
+
+        fn main() {
+            mut map: Map(int, u32, u64);
+            return map.key;
+        }
+    `);
+
     // /Template types
 
 

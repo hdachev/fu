@@ -1776,7 +1776,7 @@ pub fn parse(
                 //   into whatever was matched from typeParams.
                 //
                 if (v == "_")
-                    return createTypeParam("anon:" ~ _expectedTypeParams.len);
+                    return createAnonymousTypeParam();
 
                 return createRead(v);
             }
@@ -1832,6 +1832,11 @@ pub fn parse(
         let value = "$" ~ consume("id").value;
 
         return createTypeParam(value);
+    }
+
+    fn createAnonymousTypeParam(): Node
+    {
+        return createTypeParam("_ " ~ _idx);
     }
 
     fn createTypeParam(value: string): Node
