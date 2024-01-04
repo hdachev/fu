@@ -16075,6 +16075,17 @@ pub extern fn runTests()
         }
     `);
 
+    ZERO(`
+        struct CollideEverything {}
+        noinline fn set_hash !T(ref slot: T, value: T) slot = value;
+        using fn int(_: CollideEverything) 0;
+        fn main() {
+            mut hash: CollideEverything;
+            set_hash(hash, hash);
+            return hash;
+        }
+    `);
+
     // /Template types
 
 

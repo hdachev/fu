@@ -1059,7 +1059,7 @@ pub fn solve(
         res.lifetime || fail(
             "No ref arguments, cannot infer what the returned reference points to.");
 
-        res.lifetime.Lifetime_if_only(|locid| !!locid) || fail(
+        res.lifetime.Lifetime_if_only(|locid| !!locid) || res.is_zst || fail(
             "Infered a non-single-local __native lifetime: " ~ res.lifetime);
 
         // TODO FIX UNIQUENESS adding a static lifetime to ref results
