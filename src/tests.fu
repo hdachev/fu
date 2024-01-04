@@ -16086,6 +16086,26 @@ pub extern fn runTests()
         }
     `);
 
+    ZERO(`
+        struct Collide {}
+        struct HK(type Hash, type Key) { hash: Hash; key: Key }
+
+        noinline fn set_hk !<Hash, Key>(
+            ref a: HK(:Hash, :Key), ref b: HK(:Hash, :Key), hash: Hash, key: Key)
+        {
+            a.hash = hash;
+            b.key  = key;
+        }
+
+        using fn int(_: Collide) 2;
+        fn main() {
+            shadow type HK = HK(Hash: Collide, Key: int);
+            mut hk = HK(Collide(), 3);
+            set_hk(hk, hk, hk.hash, hk.key);
+            return hk.hash.int + hk.key - 5;
+        }
+    `);
+
     // /Template types
 
 

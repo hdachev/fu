@@ -6583,7 +6583,8 @@ pub fn solve(
             let argTarget   = argNode.target;
             let written_via = !isUnspec
                 && argNode.type.is_mutref
-                && (isNative || _current_fn.ever_written.has(argTarget.locid));
+                && (isNative    ? !argNode.type.is_zst
+                                : _current_fn.ever_written.has(argTarget.locid));
 
             mut soft_risk: bitset::BitSet;
             mut hard_risk: bitset::BitSet;

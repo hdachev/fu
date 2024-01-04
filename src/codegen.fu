@@ -2255,11 +2255,11 @@ pub fn cpp_codegen(
                 src = "";
             }
 
-            if (mustDiscard && target.kind == "type")
+            if (mustDiscard && target.kind == "type" && !arg.is_zst)
             {
                 // TODO FIX - unused struct members,
                 //  we cant skip args in struct initializers
-                src = "{}";
+                src = "{/*unused non-zst*/}";
             }
 
             // Explicit sequencing.
