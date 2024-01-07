@@ -5337,14 +5337,13 @@ pub fn solve(
                 mangle ~= ',';
 
             let callsiteIndex = reorder ? reorder.map[i] : i;
+            let arg = callsiteIndex >= 0 && args[callsiteIndex];
+            let type = conversions.len > i
+                ? conversionTailType(arg, conversions[i])
+                : arg;
 
-            if (conversions.len > i && conversions[i].len)
-                mangle ~= serializeType(
-                    GET(conversions[i].last).type, debug: "mangle.conv");
-
-            else if (callsiteIndex >= 0 && callsiteIndex <= args.len)
-                mangle ~= serializeType(
-                    args[callsiteIndex].type, debug: "mangle.no-conv");
+            if (type)
+                mangle ~= serializeType(type, debug: "mangle.conv");
         }
 
         if (REST_START < REST_END)

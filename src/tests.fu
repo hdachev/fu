@@ -11363,6 +11363,90 @@ pub extern fn runTests()
         }
     `);
 
+    ZERO(`
+        struct Hello { stuff: i32 };
+        <alt>
+        fn hello(ref .stuff) stuff; <alt/>
+        fn hello(ref h) h.stuff;    </alt>
+        fn get(h) h.hello;
+        fn incr(ref h) h.hello++;
+
+        fn main() {
+            mut h: Hello;
+            let a = get(h);
+            let b = incr(h);
+            return a == 0 && b == 0 && h.stuff == 1 ? 0 : 1;
+        }
+    `);
+
+    ZERO(`
+        primitive DataPos: int
+
+        struct DataEntry(type K, type V) {
+            key: K
+            value?: V
+            collision: DataPos
+        }
+
+        pub struct Map(type K, type V) {
+            index_entries: DataPos[]
+            data_entries: DataEntry(:K, :V)[]
+        }
+
+        inline fn [](ref .data_entries, data_pos)
+            data_entries[data_pos.int - 1]
+
+        fn ref !<K>(mut ref map: Map(:K, _), key: K, visit) {
+            mut ref data_entry = {
+                :SEARCH {
+                    for (mut i = 0; i < map.index_entries.len; i++) {
+                        mut data_pos = map.index_entries[i]
+                        while (data_pos) {
+                            ref data_entry = map[:data_pos]
+                            if (data_entry.key == key)
+                                break :SEARCH data_entry
+
+                            data_pos = data_entry.collision
+                        }
+                    }
+
+                    map.data_entries ~= []
+                    let data_pos = DataPos(map.data_entries.len)
+                    map.index_entries ~= data_pos
+                    break :SEARCH map[:data_pos]
+                }
+            }
+
+            return visit(:data_entry.value)
+        }
+
+        pub inline fn set !<K, V>(ref map: Map(:K, :V), key: K, mut value: V)
+            map.ref(:key, visit: |shadow ref value| value)  ;; GNUStmtExpr
+                = value                                     ;; Goto
+
+        fn len(map: Map(_, _)) {
+            mut count = 0
+            for (mut i = 0; i < map.index_entries.len; i++) {
+                mut data_pos = map.index_entries[i]
+                while (data_pos) {
+                    count++
+                    data_pos = map[:data_pos].collision
+                }
+            }
+
+            return count
+        }
+
+        fn main() {
+            mut actual: Map(int, int)
+            let len0 = actual.len
+            actual.set(0, 0)
+            let len1 = actual.len
+            let x = actual.data_entries[0].value
+            return len0 == 0 && len1 == 1 && x == 0 ? 0 : 1
+        }
+    `);
+
     // /quite right
 
 
