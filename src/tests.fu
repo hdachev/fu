@@ -18842,6 +18842,23 @@ pub extern fn runTests()
         }
     `);
 
+    ZERO(`
+        fn main() {
+            lax let five = 5;
+            ref x = <fail init expr not ref 4:17+1>5<pass/>five</fail>;
+            return x - 5;
+        }
+    `);
+
+    ZERO(`
+        fn main() {         <fail init expr not mut ref 4:21+1>
+            let five = 5;   <pass/>
+            mut five = 5;   </fail>
+            mut ref x = five;
+            return x - 5;
+        }
+    `);
+
     // /Semantics
 
 

@@ -1266,6 +1266,15 @@ pub fn solve(
             nest: local_of,
             kind: "var", :name, :flags, :status);
 
+        // New ref semantics appear to be missing checks upstream.
+        if (SELF_TEST && flags & F_REF)
+        {
+            type.is_ref || BUG(
+                "Binding(" ~ flags ~ " " ~ name ~ ") !type.is_ref:\n\n\t\t" ~ humanizeType(type));
+            !(flags & F_MUT) || type.is_mutref || BUG(
+                "Binding(" ~ flags ~ " " ~ name ~ ") !type.is_mutref:\n\n\t\t" ~ humanizeType(type, lt: true));
+        }
+
         // Setup the lifetime for references to this binding.
         ref overload = GET_mut(target);
         {
@@ -8497,6 +8506,18 @@ pub fn solve(
             if (annot && init.type && !init_isNever)
                 convertIfNeeded(init, expect: annot, :asArgument,
                     "Type annotation does not match init expression", :id, "<-");
+
+            if (flags & F_REF)
+            {
+                init.is_ref || fail(
+                    "Init expression is not a " ~ "ref".qBAD ~ ": "
+                        ~ humanizeType(init));
+
+                if (flags & F_MUT)
+                    init.is_mutref || fail(
+                        "Init expression is not a " ~ "mut".qBAD ~ " ref: "
+                            ~ humanizeType(init, lt: true));
+            }
 
             // TYPES vs VALUES //////
             // To avoid ambiguity, currently we draw a line between:
