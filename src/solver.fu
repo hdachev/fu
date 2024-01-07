@@ -9127,22 +9127,31 @@ pub fn solve(
                     pattern.canon::eachArgSpecType: |argSpecType|
                     {
                         let i = numArgs++;
-                        if (i >= node.items.len)
-                            patternFail("Missing type argument for " ~ target ~ ": " ~ target.args[i]);
-
-                        let callsiteIndex = reorder ? reorder.map[i] : i;
-
-                        shadow let node = node.items[callsiteIndex];
-                        shadow let type = Type(parseType(argSpecType));
-
-                        shadow let node = node.kind == "argid" ? node.items.only : node;
-
-                        if (!trySolveTypeParams(
-                                :node, :type, :errout,
-                                invariant: true, :imports))
+                        :MATCH_TYPE_ARG
                         {
-                            continue :NEXT_SUB_PATTERN;
+                            if (i >= node.items.len)
+                                break :MATCH_TYPE_ARG;
+
+                            let callsiteIndex = reorder ? reorder.map[i] : i;
+                            if (callsiteIndex < 0)
+                                break :MATCH_TYPE_ARG;
+
+                            shadow let node = node.items[callsiteIndex];
+                            shadow let type = Type(parseType(argSpecType));
+
+                            shadow let node = node.kind == "argid" ? node.items.only : node;
+
+                            if (!trySolveTypeParams(
+                                    :node, :type, :errout,
+                                    invariant: true, :imports))
+                            {
+                                continue :NEXT_SUB_PATTERN;
+                            }
+
+                            continue;
                         }
+
+                        patternFail("Missing type argument for " ~ target ~ ": " ~ target.args[i]);
                     }
 
                     if (numArgs != node.items.len)

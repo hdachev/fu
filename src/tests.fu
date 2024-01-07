@@ -16119,6 +16119,23 @@ pub extern fn runTests()
         }
     `);
 
+    ZERO(`
+        struct SillyHash {}
+        struct Map(type Key, <fail missing type arg Value Map 9:24+1>
+                 type Value, <pass/></fail>type Hash = SillyHash) {}
+        inline fn set !<Key, Hash>(ref map: Map(:Key, :Hash), key: Key) return []
+
+        lax fn test(ref map)
+            for (mut i = 0; i < 10; i++)
+                map.set(i)
+
+        fn main() {
+            mut map: Map(int, int)
+            test(map)
+            return 0
+        }
+    `);
+
     // /Template types
 
 
