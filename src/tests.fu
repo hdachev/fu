@@ -41,8 +41,25 @@ pub extern fn runTests()
     fn PARZERO(src: string)
         PARZERO_queue ~= [ src ];
 
+    //
+    mut hasSOLO = false;
+
+    fn SOLO(src: string[]) {
+        hasSOLO = true;
+        ZERO(src)
+    }
+
+    fn SOLO(src: string) {
+        hasSOLO = true;
+        ZERO(src)
+    }
+
+    //
     defer:ok
     {
+        if (hasSOLO) throw(
+            "\n\n\tDONT COMMIT:\n\n\tSOLO mode is on.\n");
+
         struct TestResult
         {
             error:      string;
