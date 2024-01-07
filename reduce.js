@@ -129,7 +129,7 @@ function tryReproduceWithMutation(next)
     if (_successes++ > 100)
     {
         _successes = 0;
-        cp.execSync('git reset && git add -Av src/*.reduct && git commit -m auto-reduct-wip');
+        cp.execSync('git reset && git add -Av ' + REDUCT + ' && git commit -m auto-reduct-wip');
     }
 
     return true;
