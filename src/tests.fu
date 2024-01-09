@@ -7218,6 +7218,68 @@ pub extern fn runTests()
         }
     `);
 
+    TODO_borrowck(currently: "BUG cannot find read(ref outer) in loop(6) 16:34+1", `
+        struct Map(type K) { index: K[] }
+
+        noinline fn bckUsedInALoopFalsePositive(ref map: Map(int)) {
+            map.index ~= 10
+
+            // Manual inline of the testcase that follows.
+            ref outer = map.index[0 .. map.index.len];
+            for (mut i = 0; i < outer.len; i++) {
+                ref b = outer[i]
+
+                // Writes to 'inner' invalidate 'outer',
+                //  but the return below makes sure we'll never use 'outer' again.
+                shadow ref inner = map.index[0 .. map.index.len];
+                for (shadow mut i = 0; i < inner.len; i++) {
+                    ref a = inner[i]
+                    a = b + 1
+                }
+
+                inner ~= inner.len;
+                return; // <- we dont use 'outer' again if we wrote through 'inner'
+            }
+
+            outer ~= outer.len;
+        }
+
+        fn main() {
+            mut map: Map(int)
+            map.bckUsedInALoopFalsePositive()
+            return map.index[0] == 11 ? 0 : 1
+        }
+    `);
+
+    TODO_borrowck(currently: "BUG cannot find read(ref index) in loop(10) 6:35+1", `
+        struct Map(type K) { index: K[] }
+
+        inline fn probe(ref index: int[], hash: int, visit) {
+            for (mut i = 0; i < index.len; i++)
+                visit(entry: index[(hash + i) & (index.len - 1)])
+
+            index ~= index.len // Rellocate to trigger bck
+        }
+
+        inline fn incr(ref map: Map(int), hash: int, visit?) {
+            probe(:map.index, :hash): |entry!b| {
+                map.index.probe(:hash): |ref entry!a| a = b + 1
+                return visit()
+            }
+        }
+
+        noinline fn bckUsedInALoopFalsePositive(ref map: Map(int)) {
+            map.index ~= 10
+            map.incr(0)
+        }
+
+        fn main() {
+            mut map: Map(int)
+            map.bckUsedInALoopFalsePositive()
+            return map.index[0] == 11 ? 0 : 1
+        }
+    `);
+
     // /Borrow checker
 
 
