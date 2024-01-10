@@ -1884,10 +1884,7 @@ pub fn cpp_codegen(
         }
         else
         {
-            _fdef  ~= "\n                                #ifndef DEF_" ~ node.value
-                    ~ "\n                                #define DEF_" ~ node.value
-                    ~ "\nextern const " ~ src ~ ";"
-                    ~ "\n                                #endif\n";
+            _fdef  ~= "\nextern const " ~ src ~ ";";
         }
 
         return "";
