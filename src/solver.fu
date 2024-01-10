@@ -9339,6 +9339,9 @@ pub fn solve(
         if (tag == "reinterpretable")
             return type.is_reinterpretable;
 
+        if (tag == "zero_size")
+            return type.is_zst;
+
         return BUG("Unknown type tag: `" ~ tag ~ "`.");
     }
 

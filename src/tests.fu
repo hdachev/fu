@@ -12356,7 +12356,7 @@ pub extern fn runTests()
             i: i32;
         };
 
-        fn test(out: &mut Hey[..]) {
+        fn test(ref out: Hey[]) {
             out.view(u8) .= [ 1.u8, 1.u8, 1.u8, 1.u8 ];
         }
 
@@ -12372,7 +12372,7 @@ pub extern fn runTests()
             i: i32;
         };
 
-        fn test(x: &mut i32[..], y: Hey[..])
+        fn test(ref x: i32[], y: Hey[])
             x .= y.view(i32);
 
         fn main() {
@@ -12659,6 +12659,29 @@ pub extern fn runTests()
         fn main() {                                             ;; ConstCast
             let hello = Konkat("Hello, ", "World!");            ;; GNUStmtExpr
             return hello == "Hello, World!" ? 0 : 1;            ;; PointlessLocal
+        }
+    `);
+
+    ZERO(`
+        fn u64reduce(str: string) {
+            mut x: u64;
+            let u64s = str[0 .. str.len & ~7].view(of: u64);
+            for (mut i = 0; i < u64s.len; i++) {
+                x ^= u64s[i];
+                x ^= x << 13;
+                x ^= x >> 17;
+                x ^= x << 5;
+            }
+            return x;
+        }
+
+        fn main() {
+            let a = u64reduce("hello, world!");
+            let b = u64reduce("Hello, world!");
+            let c = u64reduce("Hello, World!");
+            let sum = a + b + c;
+            let ret = (sum ^ sum >> 32).u32.i32;
+            return ret - 1184288320;
         }
     `);
 

@@ -364,9 +364,17 @@ infix fn ~= !T(mut ref a: T[], mut b: T    ): &mut T[] __native("<fu/vec/concat_
 
 // Fun with views.
 
-fn view !T(ref a: T[..], type of)
-    case (typeof(a) -> &mut T[..] && T.is::reinterpretable && of.is::reinterpretable): &mut of[..] __native("<fu/view.h>", "fu::view_of_mut<>");
-    case (                           T.is::reinterpretable && of.is::reinterpretable): &    of[..] __native("<fu/view.h>", "fu::view_of<>");
+fn sizeof !T(type T)
+    case (T.is::zero_size) 0;
+    case (T ->   i8 || T ->   u8 || T -> byte || T -> bool) 1;
+    case (T ->  i16 || T ->  u16) 2;
+    case (T ->  i32 || T ->  u32) 4;
+    case (T ->  i64 || T ->  u64) 8;
+    case (T -> i128 || T -> u128) 16;
+
+fn view !T(ref a: T[], type of)
+    case (typeof(a) -> &mut T[] && T.is::reinterpretable && of.is::reinterpretable): &mut of[..] __native("<fu/view.h>", "fu::view_of_mut<>");
+    case (                         T.is::reinterpretable && of.is::reinterpretable): &    of[..] __native("<fu/view.h>", "fu::view_of<>");
 
 infix fn .= !T(mut ref a: T[..], b: T[..]) case (T.is::copy): void __native("<fu/vec/view_assign.h>", "fu::view_assign");
 
