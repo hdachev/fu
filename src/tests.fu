@@ -16370,6 +16370,26 @@ pub extern fn runTests()
         }
     `]);
 
+    ZERO(`
+        struct Map(type Key, type Hasher) { hasher: Hasher }
+        fn hash !Key(map: Map(:Key, _), key: Key) = map.hasher.hash(key)
+        fn add !Key(ref map: Map(:Key, _), key: Key) = map.hash(key)
+    <flip>
+        struct Noop {}
+        fn hash(hasher: Noop, _) = 0
+    <flip/>
+        struct Constant(c) { c: typeof(fn c) }
+        fn hash(h: Constant(_), _) {
+            let c = h.c
+            return c
+        }
+    </flip>
+        fn main() {
+            mut map: Map(u8, Constant(|| 1))
+            return map.add(2) - 1
+        }
+    `);
+
     // /Template types
 
 
