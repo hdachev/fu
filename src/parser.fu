@@ -1352,8 +1352,11 @@ pub fn parse(
                 if (firstDefaulted < 0)
                     firstDefaulted = outArgs.len;
 
-                if (init.kind == "definit" && !annot)
+                if (init.kind == "definit" && !annot ||
+                    arg.flags & F_TYPENAME)
+                {
                     arg.flags |= F_TEMPLATE;
+                }
             }
             else if (firstDefaulted >= 0)
             {

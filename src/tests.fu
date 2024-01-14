@@ -26,13 +26,12 @@ pub extern fn runTests()
     let ZERO_SAME       = fn SOLO_muteRest;
 
     defer:ok throw("\n\n\tDONT COMMIT:\n\n\tSOLO mode is on.\n");
-    // */
 
 
     // Parallel mode,
     //  comment it out to set breakpoints & such.
 
-    //*
+    /*/
     mut PARZERO_queue: string[][];
 
     fn PARZERO(src: string[])
@@ -16338,6 +16337,38 @@ pub extern fn runTests()
             return 0
         }
     `);
+
+    ZERO(`
+        struct Hello(type T = uint) {} // missing F_TEMPLATE because of the default
+        fn zero !T(ref h: Hello(T)) T();
+        fn main() {
+            mut h_i32: Hello(i32);
+            mut h_i64: Hello(i64);
+
+            mut v_i32: i32 = h_i32.zero;
+            mut v_i64: i64 = h_i64.zero;
+            <fail incompatible T 11:23+2>
+            if (v_i64 += v_i32) <pass/>
+            if (v_i32 || v_i64) </fail> return 1;
+
+            mut hello: Hello(int);
+            return hello.zero;
+        }
+    `);
+
+    ZERO([`
+        struct DefaultHasher {}
+        fn hash(_: DefaultHasher, value: int) value * 10;
+        pub struct Map(type Hasher = DefaultHasher) { hasher: Hasher; data: int[] }
+        inline fn hash(ref map: Map(_), value: int) map.hasher.hash(value);
+        pub fn add(ref map: Map(_), value: int) map.data ~= map.hash(value);
+    `,`
+        fn main() {
+            mut map: _0::Map();
+            map.add(10);
+            return map.data.len == 1 && map.data[0] == 100 ? 0 : 1;
+        }
+    `]);
 
     // /Template types
 
