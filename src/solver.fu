@@ -1697,7 +1697,7 @@ pub fn solve(
         local_scope!?: bool,
         misc_scope!?: Scope,
         args?: SolvedNode[..],
-        flags!?: Flags, target!?: Target): Target
+        flags!?: Flags, targets!?: Target[..]): Target
     {
         let error_len0 = error.len;
 
@@ -1733,7 +1733,7 @@ pub fn solve(
 
         // TODO the whole field_items thing is a mess,
         //  we really need a cleaner way to put these things up.
-        let considerFieldItems = local_scope && !target
+        let considerFieldItems = local_scope && !targets
             && (flags & F_CALL_HAS_DOT || !minArity)
             && minArity <= 1 && maxArity;
 
@@ -1759,7 +1759,7 @@ pub fn solve(
             //   and we could possibly further filter them by arity.
             //
             mut extra_items: Target[];
-            if (local_scope && !target)
+            if (local_scope && !targets)
             {
                 mut seen: bitset::BitSet;
 
@@ -1823,8 +1823,8 @@ pub fn solve(
             //
             mut shadows: bool;
             :SHADOWING_GROUP while (overloadIdx =
-                target
-                    ? search(dont_search_just_return: target, scope_iterator)
+                targets
+                    ? search(:targets, scope_iterator)
                     : local_scope
                         ? _SCOPE.search(id, scope_iterator, scope_skip: _SSKIP, :extra_items, :field_items, :shadows)
                         : misc_scope.items[.. misc_scope.pub_items].search(id, scope_iterator))
@@ -1857,7 +1857,7 @@ pub fn solve(
 
                 ////////////////////////////////////////////
                 // Conversions / typename aliases.
-                if (minArity && isType && !target) :ALT
+                if (minArity && isType && !targets) :ALT
                 {
                     let s = tryLookupUserType(overload.type);
                     let alt = s ? s.name || BUG("No usertype.name")
@@ -2228,7 +2228,7 @@ pub fn solve(
                     if (matchIdx == overloadIdx)
                         BUG("tryMatch__mutargs: Tested the same overload twice: " ~ explainWhichFn(matchIdx, conversions_out));
 
-                    fail("Ambiguous call to " ~ explainBadCallArguments(:id, :target, :args) ~ ", matches multiple items in scope:\n"
+                    fail("Ambiguous call to " ~ explainBadCallArguments(:id, :targets, :args) ~ ", matches multiple items in scope:\n"
                         ~ "\n\t" ~ explainWhichFn(matchIdx, conversions_out)
                         ~ "\n\t" ~ explainWhichFn(overloadIdx, conversions));
                 }
@@ -2508,7 +2508,7 @@ pub fn solve(
                 mut error: string;
                 mut candidate: Target;
                 if (nullary || (candidate = tryMatch__mutargs(
-                    target: t, :error,
+                    targets: [ t ], :error,
                     id: "",
                     args: TODO_FIX_convert_args,
                     reorder: TODO_FIX_reorder,
@@ -2670,9 +2670,9 @@ pub fn solve(
 
     //
 
-    fn explainBadCallArguments(id: string, target: Target, args: SolvedNode[..])
+    fn explainBadCallArguments(id: string, targets: Target[..], args: SolvedNode[..])
     {
-        return (target ? target.str : id.qID)
+        return (targets.len == 1 ? targets[0].str : id.qID)
              ~ (args && " with args (" ~ args.map(.humanizeType).join(", ") ~ ")");
     }
 
@@ -2681,21 +2681,21 @@ pub fn solve(
         id: string, ref args: SolvedNode[],
         ref reorder: Reorder,
         ref conversions: Target[][],
-        flags: Flags, target: Target): Target
+        flags: Flags, targets: Target[..]): Target
     {
         mut error: string;
 
         PROFILE(.TryMatch_SolveCall);
 
-        let ret = tryMatch__mutargs(:misc_scope, :local_scope, :id, :args, :reorder, :conversions, :flags, :target, :error);
+        let ret = tryMatch__mutargs(:misc_scope, :local_scope, :id, :args, :reorder, :conversions, :flags, :targets, :error);
         if (ret)
             return ret;
 
         // Compose error message:
         //  separate pass, so we don't have to worry about unnecessary string concats.
-        error = "Bad call to " ~ explainBadCallArguments(:id, :target, :args) ~ ": ";
+        error = "Bad call to " ~ explainBadCallArguments(:id, :targets, :args) ~ ": ";
 
-        let debug = tryMatch__mutargs(:misc_scope, :local_scope, :id, :args, :reorder, :conversions, :flags, :target, :error);
+        let debug = tryMatch__mutargs(:misc_scope, :local_scope, :id, :args, :reorder, :conversions, :flags, :targets, :error);
         if (debug)
             BUG("Did match on second pass: " ~ debug);
 
@@ -2751,6 +2751,7 @@ pub fn solve(
         if (k == "pragma")      return executeCompilerPragma(node);
         if (k == "empty")       return createEmpty();
         if (k == "unwrap")      return createUnwrap();
+        if (k == "call_indir")  return solveCallIndirect(node);
 
         if (unorderedClassify(k))
             return solveDeclExpr(node);
@@ -9368,7 +9369,7 @@ pub fn solve(
         return other.out.solve.scope;
     }
 
-    fn solveCall(node: Node, target!?: Target): SolvedNode
+    fn solveCall(node: Node, targets!?: Target[..]): SolvedNode
     {
         let args = solveNodes(node.items,
 
@@ -9381,14 +9382,45 @@ pub fn solve(
             return args.last;
 
         //
-        return solveCall(id: node.value, args, :node.flags, :target);
+        return solveCall(id: node.value, args, :node.flags, :targets);
+    }
+
+    fn solveCallIndirect(node: Node)
+    {
+        node.items.len || BUG("solveCallIndirect: No head node, nothing to call.");
+
+        mut targets: Target[];
+
+        let head = solveCall(node.items.first);
+        if (head.isAddrOfFn) {
+            head.type.canon.unpackAddrOfFn: |t|
+                targets ~= t;
+        }
+        else if (head.is_Typename) {
+            let s = head.type.tryLookupUserType();
+            if (s.target)
+                targets ~= s.target;
+        }
+
+        if (!targets)
+            fail(:node.items.first.token,
+                "Indirect call: expression does not evaluate to an overload set: "
+                    ~ humanizeType(head));
+
+        // TODO FIX this copy pastes the stuff in solveCall above, not amazing.
+        let args = solveNodes(node.items[1 ..], DeadBreak_Only_WhileSolvingRecursion);
+        if (args.if_last.is_AssumeNever_WhileSolvingRecursion)
+            return args.last;
+
+        //
+        return solveCall(id: "__indirect", args, :targets);
     }
 
     fn solveCall(
         mut id: string, mut args?: SolvedNode[],
-        flags!?: Flags, target!?: Target): SolvedNode
+        flags!?: Flags, targets!?: Target[..]): SolvedNode
     {
-        id || target || BUG("solveCall: No id, no target.");
+        id || targets || BUG("solveCall: No id, no target.");
 
         // Qualified?
         let qualified = flags & F_COMPOUND_ID;
@@ -9399,7 +9431,7 @@ pub fn solve(
         mut conversions: Target[][];
         let callTargIdx = match__mutargs(
             :misc_scope, local_scope: !qualified,
-            :id, :args, :reorder, :conversions, :flags, :target);
+            :id, :args, :reorder, :conversions, :flags, :targets);
 
         //
         return CallerNode(id, callTargIdx, args, :reorder, :conversions);
@@ -9445,8 +9477,7 @@ pub fn solve(
 
         // Default constructor calls.
         if (!itemType && type && type.isStruct)
-            return solveCall(node,
-                target: lookupUserType(type).target);
+            return solveCall(node, targets: [ lookupUserType(type).target ]);
 
         // Dead code elim.
         mut args = solveNodes(node.items, DeadBreak_Always, itemType);

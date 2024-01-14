@@ -2115,47 +2115,64 @@ pub fn parse(
         let numDollars0 = _numDollars;
         ////////////////////////////////
 
-        mut flags = expr.flags | parseCallArgs(")", args).flags;
+        mut argFlags = parseCallArgs(")", args).flags;
 
         ////////////////////////////////
         if (_numDollars > numDollars0)
-            flags |= F_TEMPLATE;
+            argFlags |= F_TEMPLATE;
         ////////////////////////////////
 
-        // Uniform call syntax.
-        if (expr.kind == "call" &&
-                flags & (F_CALL_HAS_DOT | F_CALL_HAS_ARGPARENS)
-                      == F_CALL_HAS_DOT)
-        {
-            let head = expr.items
-                    && expr.items.len == 1
-                    && expr.items[0] || throw("Malformed property access expression.");
+        mut flags = expr.flags | argFlags;
 
-            args.unshift(head);
+        :CallByName
+        {
+            if (expr.syntax & PS_PARENS)
+                break :CallByName;
 
-            // Fallthrough.
-        }
-        else if (expr.kind == "call" &&
-            !(flags & (F_CALL_HAS_DOT | F_CALL_HAS_ARGPARENS)))
-        {
-            // Fallthrough.
-        }
-        else if (expr.kind == "typeparam")
-        {
-            // Fallthrough.
-        }
-        else
-        {
-            // Stuff like (a)() will currently hit this,
-            //  ideally we'd start supporting this at some point.
-            //
-            return fail("Invalid call expression.");
+            // Uniform call syntax.
+            if (expr.kind == "call" &&
+                    flags & (F_CALL_HAS_DOT | F_CALL_HAS_ARGPARENS)
+                          == F_CALL_HAS_DOT)
+            {
+                let head = expr.items
+                        && expr.items.len == 1
+                        && expr.items[0] || throw("Malformed property access expression.");
+
+                args.unshift(head);
+
+                // Fallthrough.
+            }
+            else if (expr.kind == "call" &&
+                !(flags & (F_CALL_HAS_DOT | F_CALL_HAS_ARGPARENS)))
+            {
+                // Fallthrough.
+            }
+            else if (expr.kind == "typeparam")
+            {
+                // Fallthrough.
+            }
+            else
+            {
+                break :CallByName;
+            }
+
+            return createCall(
+                expr.value || fail(),
+                :flags | F_CALL_HAS_ARGPARENS,
+                args);
         }
 
-        return createCall(
-            expr.value || fail(),
-            :flags | F_CALL_HAS_ARGPARENS,
-            args);
+        // Call-by-expression.
+
+        // Stuff like (a)() will currently hit this,
+        //  ideally we'd start supporting this at some point.
+        //
+        return make("call_indir", expr ~ args, flags: argFlags);
+    }
+
+    fn createCall(id: string, flags: Flags, args?: Node[], syntax?: ParseSyntax): Node
+    {
+        return make("call", args, :flags, :syntax, id);
     }
 
     fn parseArrayLiteral(): Node
@@ -2187,11 +2204,6 @@ pub fn parse(
     fn createLeaf(kind: Kind, value: string): Node
     {
         return make(kind, :value);
-    }
-
-    fn createCall(id: string, flags: Flags, args?: Node[], syntax?: ParseSyntax): Node
-    {
-        return make("call", args, :flags, :syntax, id);
     }
 
     fn createRead(id: string, flags?: Flags): Node

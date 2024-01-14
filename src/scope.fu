@@ -178,7 +178,7 @@ fn reveach(items: $T[..], ss: ScopeSkip[], fn)
 
 fn search(
     ref items: ScopeItem[..], id: string,
-    scope_iterator: &mut i32,
+    ref scope_iterator: i32,
     scope_skip: ScopeSkip[],
     ref shadows: bool,
     extra_items?: Target[..],
@@ -308,20 +308,18 @@ fn search(
 //
 
 fn search(
-    dont_search_just_return!: Target,
-    scope_iterator: &mut i32)
+    targets!: Target[..],
+    ref scope_iterator: i32)
 {
-    // Searching & forcing results the same way.
-    if (scope_iterator)
-        return Target;
+    while (scope_iterator < targets.len)
+        return targets[scope_iterator++];
 
-    scope_iterator--;
-    return dont_search_just_return;
+    return [];
 }
 
 fn search(
     items: ScopeItem[..], id: string,
-    scope_iterator: &mut i32): Target
+    ref scope_iterator: i32): Target
 {
     let START = items.len;
 
