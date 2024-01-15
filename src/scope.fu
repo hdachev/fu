@@ -3,6 +3,7 @@ import types;
 import structs;
 import helpers;
 import module;
+import fail;
 
 
 //
@@ -272,8 +273,14 @@ fn search(
         ////////////////////////////////////////////////////////
         if (scope_iterator0 >= 0 && scope_iterator0 < items.len)
         {
+            ref item = items[scope_iterator0];
+
+            if (SELF_TEST)
+                items[scope_iterator0].id == id || BUG(
+                    "scope::search WILL_SKIP about to flag item.id(" ~ item.id ~ ") != search.id(" ~ id ~ ")");
+
             // println("WILL SKIP " id " " scope_iterator0);
-            ScopeItem_canSkipRest_set(items[scope_iterator0]);
+            ScopeItem_canSkipRest_set(item);
         }
         ////////////////////////////////////////////////////////
     }
