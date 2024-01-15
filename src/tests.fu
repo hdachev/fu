@@ -11508,6 +11508,13 @@ pub extern fn runTests()
         }
     `);
 
+    ZERO(`
+        struct Type { vfacts?: VFacts };
+        flags VFacts { RightAligned };
+        <split/>
+        fn main() Type().vfacts.i32;
+    `);
+
     // /quite right
 
 
