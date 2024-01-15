@@ -187,28 +187,22 @@ fn search(
 {
     PROFILE(.ScopeSearch);
 
+    if (SELF_TEST)
+        scope_iterator >= 0 || BUG(
+            "scope::search: Iterator already exhausted.");
+
     shadows = false;
 
-    // Search.
-    let NUM_EXTRAS      = extra_items.len;
-    let NUM_SPECIALS    = NUM_EXTRAS    + field_items.len;
-    let START           = NUM_SPECIALS  + items.len;
-
-    if (!scope_iterator)
-        scope_iterator = START;
-    else if (scope_iterator >= START)
-        throw ("Scope/search: items shrunk while we iterated.");
-
-    // Prevent re-entry, otherwise we loop forever
-    //  if we're matching the very first item in scope.
-    defer scope_iterator ||= -1;
-
     // We've got to do actual scope items first for shadowing to work correctly.
+    let N = items.len;
+    if (scope_iterator < 0x10000000.i32)
+        scope_iterator = 0x10000000.i32 + N;
+
+    if (scope_iterator > 0x10000000.i32 && scope_iterator < 0x1fffffff.i32)
     {
-        ////////////////////////////////////////
-        scope_iterator          -= NUM_SPECIALS;
-        defer scope_iterator    += NUM_SPECIALS;
-        ////////////////////////////////////////
+        /////////////////////////////////
+        scope_iterator -= 0x10000000.i32;
+        /////////////////////////////////
 
         // Actual scope items,
         //  this is the only stuff we need to scope-skip through.
@@ -237,7 +231,6 @@ fn search(
         }
 
         // Go.
-
         let scope_iterator0 = scope_iterator;
 
         scope_iterator--;
@@ -266,6 +259,10 @@ fn search(
                 }
                 ////////////////////////////////
 
+                /////////////////////////////////
+                scope_iterator += 0x10000000.i32;
+                /////////////////////////////////
+
                 return item.target;
             }
         }
@@ -286,28 +283,54 @@ fn search(
     }
 
     // Field items, the next batch.
-    scope_iterator++;
+    shadow let N = field_items.len;
+    if (scope_iterator < 0x60000000.i32)
+        scope_iterator = 0x60000000.i32 + N;
+
+    if (scope_iterator > 0x60000000.i32 && scope_iterator < 0x6fffffff.i32)
     {
-        //////////////////////////////////////
-        scope_iterator          -= NUM_EXTRAS;
-        defer scope_iterator    += NUM_EXTRAS;
-        //////////////////////////////////////
+        /////////////////////////////////
+        scope_iterator -= 0x60000000.i32;
+        /////////////////////////////////
 
         while (scope_iterator --> 0)
         {
             let item = field_items[scope_iterator];
             if (item.id == id)
+            {
+                /////////////////////////////////
+                scope_iterator += 0x60000000.i32;
+                /////////////////////////////////
+
                 return item.target;
+            }
         }
     }
 
     // Finally extra items, the simplest loop.
-    scope_iterator++;
+    shadow let N = extra_items.len;
+    if (scope_iterator < 0x70000000.i32)
+        scope_iterator = 0x70000000.i32 + N;
+
+    if (scope_iterator > 0x70000000.i32 && scope_iterator < 0x7fffffff.i32)
     {
+        /////////////////////////////////
+        scope_iterator -= 0x70000000.i32;
+        /////////////////////////////////
+
         while (scope_iterator --> 0)
-            return extra_items[scope_iterator];
+        {
+            let item = extra_items[scope_iterator];
+
+            /////////////////////////////////
+            scope_iterator += 0x70000000.i32;
+            /////////////////////////////////
+
+            return item;
+        }
     }
 
+    // Done.
     return Target;
 }
 
