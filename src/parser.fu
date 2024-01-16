@@ -405,6 +405,8 @@ pub fn parse(
         //
         else if (peek.col == _col0)
             return false;
+        else if (peek.kind == "eof")
+            return false;
 
         warn("Missing semicollon before `" ~ peek.value ~ "`.");
         return false;
