@@ -13710,8 +13710,8 @@ pub extern fn runTests()
         }
     `]);
 
-    TODO_pub(currently: "BUG !isExtLinked but off-module 2:33+1", [`
-        <fail not defined X:X><pass/>
+    ZERO([`
+        <fail not defined 3:30+2><pass/>
         pub</fail>
         fn not_public(x: i32) x * 2;
         pub fn public(x: i32) x * 3;
