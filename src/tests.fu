@@ -11515,6 +11515,28 @@ pub extern fn runTests()
         fn main() Type().vfacts.i32;
     `);
 
+    TODO_relaxer(currently: "BUG areVFactsAssignable AlwaysTrue 12:56+1", `
+        struct Node { items: Node[]; type: Type };
+        struct Type { canon: string; items: Type[] };
+
+        noinline fn evalTypeParam(id: int, implicit ref _typeParams: Type[]) {
+            return id >= 0 && id < _typeParams.len
+                && _typeParams[id]
+                || throw("always true");
+        }
+
+        noinline fn evalTypeAnnot(node) {
+            let exprType = node.items   ? evalTypeParam(node.items.len)
+                                        : [].type;
+            return exprType.canon.len;
+        }
+
+        fn main() {
+            implicit mut _typeParams: Type[];
+            return evalTypeAnnot(Type());
+        }
+    `);
+
     // /quite right
 
 
