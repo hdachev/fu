@@ -8432,9 +8432,6 @@ pub fn solve(
         node: Node, specType!?: Type, primType!?: Type,
         asArgument!: bool): SolvedNode
     {
-        let n_annot = node.items[LET_TYPE];
-        let annot   = n_annot && n_annot.kind != "typeunion" && evalTypeAnnot(n_annot);
-
         // When we're specializing with a mutref, but there's no explicit mutref annot,
         //  we allow relaxing the F_REF so that e.g. bck can resolve by temp-copy.
         mut flags   = node.flags;
@@ -8457,6 +8454,13 @@ pub fn solve(
             }
             : primType ? primType :
             {
+                // No point in evaluating annots in the presence of a specType.
+                //  Noticed it because the redundancy was covering up incorrect
+                //   .pub_items handling in trySolveTypeParams>solveAddrOfFn(:imports).
+                //
+                let n_annot = node.items[LET_TYPE];
+                let annot   = n_annot && evalTypeAnnot(n_annot);
+
                 // Upgrade to mutref if `ref` set -
                 //  we don't have to care about `mut` here -
                 //   a] specType will overrule the annotaton in templates,
@@ -8909,20 +8913,20 @@ pub fn solve(
         let qualified = flags & F_COMPOUND_ID;
         if (qualified || !imports)
         {
+            let s = qualified && dequalify_andGetScope(id);
+
             visitScope(
                 local_scope: !qualified,
-                items: qualified && dequalify_andGetScope(id).items);
+                items: s.items[.. s.pub_items]);
         }
         else for (mut i = 0; i < imports.len; i++)
         {
             let modid = imports[i];
-            let scope = modid == module.modid
-                ? _scope
-                : ctx.modules[modid].out.solve.scope;
+            let s = modid != module.modid && ctx.modules[modid].out.solve.scope;
 
             visitScope(
-                local_scope: false,
-                items: scope.items);
+                local_scope: modid == module.modid,
+                items: s.items[.. i ? s.pub_items : s.items.len]);
         }
 
         // TODO FIX ADDROFFN ///////////////////////////////////////////

@@ -16423,6 +16423,18 @@ pub extern fn runTests()
         </alt>
     `]);
 
+    ZERO([`
+        <fail List not defined 3:29+1><pass/>
+        pub </fail>
+        struct List(type X) { f: X };
+        pub fn make_list(v: int) = List(int)(v);
+    `,`
+        import _0;
+        pub fn get_f(l: List(_)) l.f;
+    `,`
+        fn main() _0::make_list(0)._1::get_f();
+    `]);
+
     // /Template types
 
 
