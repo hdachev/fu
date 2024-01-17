@@ -331,7 +331,7 @@ struct Extended
 struct ValueType
 {
     quals?:         Quals;
-    // TODO FIX wasting an i32 here until quals/usage goes u64
+    vfacts?:        VFacts;
     canon:          string;
 };
 
@@ -339,7 +339,6 @@ struct Type
 {
     using vtype:    ValueType;
     lifetime?:      Lifetime; // Excluding this from the truth check feels dangerous
-    vfacts?:        VFacts;
 };
 
 struct Lifetime { uni0n!: byte[] };

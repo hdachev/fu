@@ -363,8 +363,8 @@ pub fn type_trySuper(a: Type, b: Type, DONT_match_zeroes!?: bool)
                 && Lifetime_union(a.lifetime, b.lifetime);
 
     return Type(
-        ValueType(:canon, :quals),
-        :lifetime, :vfacts);
+        ValueType(:canon, :quals, :vfacts),
+        :lifetime);
 }
 
 pub fn type_tryIntersect(a: Type, b: Type)
@@ -388,8 +388,8 @@ pub fn type_tryIntersect(a: Type, b: Type)
 
     //
     return Type(
-        ValueType(:canon, :quals),
-        :lifetime, :vfacts);
+        ValueType(:canon, :quals, :vfacts),
+        :lifetime);
 }
 
 
