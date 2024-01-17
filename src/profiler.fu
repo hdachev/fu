@@ -16,12 +16,14 @@ struct ProfileData
     DoTrySpec:          ProfileItem;
 
     TryMatch_Autocall:  ProfileItem;
-    TryMatch_Convert:   ProfileItem;
+    // TryMatch_Convert:   ProfileItem;
     TryMatch_Implicit:  ProfileItem;
     TryMatch_SolveCall: ProfileItem;
-    TryConvert:         ProfileItem;
     ScopeSearch:        ProfileItem;
+
+    TryConvertExact:    ProfileItem;
     TryConvertGeneric:  ProfileItem;
+    ExploreConversions: ProfileItem;
 
     SolveBody:          ProfileItem;
     RelaxMut:           ProfileItem;

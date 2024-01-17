@@ -25,6 +25,8 @@ pub inline fn   [](using _: Set($T), i: int) keys_asc[i];
 pub inline fn  len(using _: Set($T)) keys_asc.len;
 pub inline fn each(using _: Set($T), each) keys_asc.each(fn each);
 
+pub inline fn clear(using ref _: Set($T)) keys_asc.clear();
+
 
 //
 
@@ -103,7 +105,8 @@ pub fn update(using mut ref _: Set($K),   key:  $K,
 }
 
 pub fn ref(using ref _: Set($K), key: $K,
-                 ref values: $V[])
+                 ref values: $V[],
+                 init!?)
 {
     let idx = bfind(:keys_asc, :key,
 
@@ -112,8 +115,8 @@ pub fn ref(using ref _: Set($K), key: $K,
     },
 
     miss: |i| {
-        keys_asc.insert(i, key);
-        values.insert(i, []);
+        values.insert(i, init());   // <- init FIRST, throw/return safety
+        keys_asc.insert(i, key);    //  how can this be made safe generally?
         break i;
     });
 
@@ -509,10 +512,10 @@ pub fn set(using mut ref _: Map($K, $V), key: $K, value: $V): bool {
         vals, value)
 }
 
-pub fn ref(using mut ref _: Map($K, $V), key: $K): $V {
+pub fn ref(using mut ref _: Map($K, $V), key: $K, init!?): $V {
     keys.ref(
         key,
-        vals)
+        vals, :fn init)
 }
 
 pub fn if(using mut ref _: Map($K, $V), key: $K, visit): void {

@@ -20,7 +20,6 @@ let OPTI_dedupe_vars        = true;
 let OPTI_bck                = true;
 let OPTI_unlist_callers     = true;
 let OPTI_moves_inside_fns   = true;
-
 let USE_rev_spec            = true;
 
 
@@ -39,12 +38,17 @@ let TRACE_enable            = false;
 //   which can naturally fit zeroes.
 //
 let DONT_match_zeroes       = true;
-
 let MOVE_from_temp          = true;
-
 let TODO_FIX_static_ZSTs    = true;
-
 let BUG_missing_SS_FN_REC   = true;
+
+
+// Experimental -
+//  conversion loops are manageable + very expressive,
+//   previously disallowed but they shouldn't be a problem
+//    if ambiguity == error as usual.
+//
+let ALLOW_conv_loops        = true;
 
 
 //
@@ -247,18 +251,18 @@ pub fn solve(
     struct Flow
     {
         // Reference graph.
-        rg_parents:     Lifetime[];
-        rg_invalidates: Lifetime[];         // Non-disjoint siblings and children.
-        rg_children:    flat::Set(i32)[];    // Used by validateCOW
+        rg_parents:         Lifetime[];
+        rg_invalidates:     Lifetime[];         // Non-disjoint siblings and children.
+        rg_children:        flat::Set(i32)[];    // Used by validateCOW
 
         // Arguments at risk.
-        at_soft_risk:   bitset::BitSet[];
-        at_hard_risk:   bitset::BitSet[];
+        at_soft_risk:       bitset::BitSet[];
+        at_hard_risk:       bitset::BitSet[];
 
         // AAR: helpers.
-        is_arg:         bitset::BitSet;
-        arg_parents:    flat::Set(i32)[];
-        arg_targets:    i32[];
+        is_arg:             bitset::BitSet;
+        arg_parents:        flat::Set(i32)[];
+        arg_targets:        i32[];
     };
 
     struct CurrentFn
@@ -405,6 +409,18 @@ pub fn solve(
         RelaxCopyResize
     };
 
+    struct ConvCacheEntryMustSee {
+        target:             Target;
+        at_index:           i32;
+    };
+
+    struct ConvCacheEntry {
+        // thus conv-id is just the index into the types/via arrays
+        types:              ValueType[];
+        paths:              Target[][];
+        must_see:           ConvCacheEntryMustSee[][];
+    };
+
     struct SolverState
     {
         _scope:             Scope;
@@ -415,6 +431,8 @@ pub fn solve(
         _pub_imports:       flat::Set(i32);
         _helpers_data:      HelpersData[];
         _ephemeral:         Ephemeral[];
+
+        _conv_cache:        flat::Map(ValueType, ConvCacheEntry);
 
         _solver_safety:     int;
 
@@ -831,22 +849,54 @@ pub fn solve(
 
     // Public & private imports.
 
+    fn ConvCache_nukeConverts(inline reason: string) {
+        TRACE("ConvCache_nukeConverts: " ~ reason);
+        _conv_cache.clear();
+    }
+
+    fn ConvCache_nukeUsings(inline reason: string) {
+        TRACE("ConvCache_nukeUsings: " ~ reason);
+        _conv_cache.remove(ValueType());
+    }
+
     fn _Scope_import__forceCopy(modid: i32): void
     {
         let s = ctx.modules[modid].out.solve.scope;
 
+        let usings0 = _scope.usings.len;
+        let converts0 = _scope.converts.len;
+
         _scope.items ~= s.items[.. s.pub_items];
         _scope.converts ~= s.converts[.. s.pub_converts];
         _scope.implicits ~= s.implicits[.. s.pub_implicits];
+
+        let converts1 = _scope.converts.len;
+        if (converts1 != converts0)
+            ConvCache_nukeConverts("[import.pub]: converts0(" ~ converts0 ~ ") converts1(" ~ converts1 ~ ")");
+
+        let usings1 = _scope.usings.len;
+        if (usings1 != usings0)
+            ConvCache_nukeUsings("[import.pub]: usings0(" ~ usings0 ~ ") usings1(" ~ usings1 ~ ")");
     }
 
     fn _Scope_import__forceCopy_privates(modid: i32): void
     {
         let s = ctx.modules[modid].out.solve.scope;
 
+        let usings0 = _scope.usings.len;
+        let converts0 = _scope.converts.len;
+
         _scope.items ~= s.items[s.pub_items ..];
         _scope.converts ~= s.converts[s.pub_converts ..];
         _scope.implicits ~= s.implicits[s.pub_implicits ..];
+
+        let converts1 = _scope.converts.len;
+        if (converts1 != converts0)
+            ConvCache_nukeConverts("[import.priv]: converts0(" ~ converts0 ~ ") converts1(" ~ converts1 ~ ")");
+
+        let usings1 = _scope.usings.len;
+        if (usings1 != usings0)
+            ConvCache_nukeUsings("[import.priv]: usings0(" ~ usings0 ~ ") usings1(" ~ usings1 ~ ")");
     }
 
     fn Scope_import(modid: i32)
@@ -2420,90 +2470,100 @@ pub fn solve(
         return from;
     }
 
-    fn tryConvert(
-        expect: Type or Node, actual?: Type, retype?: SolvedNode,
-        lax imports!?: i32[..]): Target[]
+
+    //
+
+    fn exploreConversions(type: ValueType)
     {
-        type Expect = typeof(expect);
+        mut inserted = false;
+        ref cc = _conv_cache.ref(type, init: || { inserted = true; [] });
+        if (!inserted)
+        {
+            TRACE("exploreConversions reuse(" ~ humanizeType(type && Type(type, Lifetime_worst)) ~ ")");
+            return cc;
+        }
 
-        PROFILE(Expect -> Node
-            ? .TryConvertGeneric
-            : .TryConvert);
+        // We inserted an empty entry to prevent reentry,
+        //  conversions will not be available until this completes here.
+        //
+        return _conv_cache.ref(type) = doExploreConversions(type);
+    }
 
-        mut match:  Target[];
-        mut path:   Target[];
+    fn doExploreConversions(startType: ValueType)
+    {
+        shadow let startType = startType && Type(startType, Lifetime_worst);
+
+        PROFILE(.ExploreConversions);
+
+        TRACE_BRACKET("doExploreConversions startType(" ~ humanizeType(startType) ~ ")");
+
+        mut result: ConvCacheEntry;
 
         //
         let conv_safety0 = _current_fn.conv_safety++;
         if (conv_safety0 >= 128)
-            fail("Conversion stack got too deep, exploring: "
-                ~ (Expect -> Type
-                    ? explainTypeDiff(actual, expect, "->")
-                    : "[TODO PATTERN]"));
+            fail("Conversion stack got too deep, exploring: " ~ humanizeType(startType));
 
         defer _current_fn.conv_safety = conv_safety0;
 
-        //
-        let has_converts = _scope.converts.count(_ss.converts);
-
         ////////////////////////////////////
-        mut arg0 = TODO_FIX_convert_args[0];
-
         mut TODO_FIX_reorder: Reorder;
         mut TODO_FIX_conversions: Target[][];
         ////////////////////////////////////
 
-        fn descend(from: Type, nullary!: bool, isStruct!: bool, root?: bool)
+        mut path: Target[];
+        mut must_see: ConvCacheEntryMustSee[];
+
+        fn descend(from: Type, nullary!: bool, isStruct!: bool)
         {
-            fn foreach(t: Target)
+            fn foreach(target: Target, i!at_index: i32)
             {
+                // Experimental - allow conversion loops?
+                if (ALLOW_conv_loops && path.has(target))
+                {
+                    TRACE("doExploreConversions: conv loop [SKIP] " ~ target);
+                    return;
+                }
+
+                if (target.status & (SS_LAZY | SS_DID_START) == SS_LAZY &&
+                    target.globid > _current_fn.target.globid)
+                {
+                    TRACE("doExploreConversions: skipping [!SS_DID_START] " ~ target);
+                    target.GET_mut.status |= SS_OBSERVED_BY_CONV_CACHE;
+
+                    // Decidability [A]:
+                    //
+                    // Conversion fns don't kick in before they start solving in the usual top-to-bottom order,
+                    //  this is my nth attempt to deal with recursive fns & conversion drama,
+                    //   now in a conv-caching world.
+                    return;
+                }
+
                 //////////////////////////////////////////////////
                 mut arg0type0 = TODO_FIX_convert_args[0].type;
 
-                if (!nullary)
-                {
-                    // Decidability [A]:
-                    //
-                    // Enforce strict ordering of conversion functions -
-                    //  they can still solve out of order, but you can't use the syntax sugar
-                    //   before the `using` declaration. Makes everything way simpler.
-                    //
-                    // Obsoleted by Decidability [C] below.
-                    //
-                    // let here = _current_fn.target.globid;
-                    // if (here && t.index > here && t.modid == module.modid && t.local_of != here)
-                    //     return;
-
-                    if (root && retype)
-                        TODO_FIX_convert_args[0] = retype;
-                    else
-                        TODO_FIX_convert_args[0].type = from;
-                }
-
+                if       (!nullary)
+                    TODO_FIX_convert_args[0].type = from;
                 defer if (!nullary)
-                {
-                    if (root && retype)
-                        TODO_FIX_convert_args[0] = arg0;
-                    else
-                        TODO_FIX_convert_args[0].type = arg0type0;
-                }
+                    TODO_FIX_convert_args[0].type = arg0type0;
                 //////////////////////////////////////////////////
 
-                PROFILE(.TryMatch_Convert);
+                // No point, collected under .ExploreConversions
+                // PROFILE(.TryMatch_Convert);
 
                 mut error: string;
                 mut candidate: Target;
                 if (nullary || (candidate = tryMatch__mutargs(
-                    targets: [ t ], :error,
+                    targets: [ target ], :error,
                     id: "",
                     args: TODO_FIX_convert_args,
                     reorder: TODO_FIX_reorder,
                     conversions: TODO_FIX_conversions,
                     flags: F_CONVERSION)))
                 {
-                    shadow let t = nullary ? t : candidate;
+                    shadow let target = nullary ? target : candidate;
 
-                    let convert = GET(t);
+                    let convert = GET(target);
                     convert.type || BUG("No convert.type, perhaps a `using inline fn` without a return type annotation: `" ~ convert ~ "`.");
 
                     let convertType = convert.kind != "field"
@@ -2515,8 +2575,13 @@ pub fn solve(
 
                     shadow let isStruct = convertType.isStruct;
 
+                    if (target.modid == module.modid)
+                        target.GET_mut.status |= SS_OBSERVED_BY_CONV_CACHE;
+
                     if (convert.status & (SS_DID_START | SS_FINALIZED) == SS_DID_START)
                     {
+                        TRACE("doExploreConversions: skipping [!SS_FINALIZED] " ~ convert);
+
                         // Decidability [B]:
                         //
                         // We ignore unsolved conversions:
@@ -2524,102 +2589,77 @@ pub fn solve(
                         //   which solves the problem of unspecified return values,
                         //    because initially the t_never assigns to everything.
                     }
-                    else if (Expect -> Node
-
-                                ?   {
-                                        mut errout: Warning[];
-                                        mut tp = _typeParams.steal();
-                                        defer _typeParams.swap(tp);
-
-                                        trySolveTypeParams(
-                                            type: convertType, node: expect,
-                                            :errout,
-                                            invariant: false, :imports)
-                                    }
-
-                                :   isAssignableAsArgument(
-                                        host: expect, convertType))
+                    else
                     {
-                        // Actual is assignable to current `from` type,
-                        //  this means we've got a conversion edge that works.
-                        if (match)
-                        {
-                            mut suffix  = "\n"          ~ explainConversion(match)
-                                        ~ "\n\tand:\n"  ~ explainConversion(path ~ t);
-
-                            if (actual)
-                                fail("Conversion ambiguity, multiple ways to convert "
-                                    ~ humanizeType(actual) ~ " into "
-                                    ~ (Expect -> Type ? humanizeType(expect) : "[TODO pattern str]")
-                                        ~ ":" ~ suffix);
-                            else
-                                fail("using".qBAD ~ " ambiguity, multiple ways to obtain a "
-                                    ~ (Expect -> Type ? humanizeType(expect) : "[TODO pattern str]")
-                                        ~ " in this scope:" ~ suffix);
-                        }
-
-                        match = path;
+                        /////////////////////
+                        let path0 = path.len;
+                        let must_see0 = must_see.len;
+                        /////////////////////
 
                         // AUTOCALL /////////////
                         if (TODO_FIX_conversions)
-                            match ~= TODO_FIX_conversions.only;
+                            path ~= TODO_FIX_conversions.only;
 
-                        match ~= t;
-                    }
-                    else
-                    {
-                        let mightHaveConversion = isStruct || has_converts;
-                        if (mightHaveConversion)
+                        path ~= target;
+
+                        if (at_index >= 0)
+                            must_see ~= ConvCacheEntryMustSee(:target, :at_index);
+
+                        //
+                        result.types ~= convertType.vtype;
+                        result.paths ~= path;
+                        result.must_see ~= must_see;
+
+                        // We've found something.
+                        if (isStruct || _scope.converts.len)
                         {
                             // Forbid cyclic conversions.
                             //  Delaying the error check to speed up the general case.
-                            if (path.len > 10)
+                            if (!ALLOW_conv_loops && path.len > 10)
                             {
-                                for (mut i = path.len; i --> 0; )
+                                for (mut i = path.len - 1; i --> 0; )
                                 {
-                                    if (path[i] == t)
+                                    if (path[i] == target)
                                     {
                                         mut err = "Conversion loop:\n";
 
-                                        for (shadow mut i = i; i < path.len; i++)
+                                        for (shadow mut i = i; i < path.len - 1; i++)
                                         {
                                             err ~= "\n\t    ";
 
-                                            shadow let convert = GET(path[i]);
-                                            err ~= convert ~ ": " ~ humanizeType(convertType) ~ " ->";
+                                            shadow let convert = path[i];
+                                            err ~= convert.explainWhichFn()
+                                                ~ "\n\t        -> " ~ humanizeType(convert.type) ~ " ->\n";
                                         }
 
-                                        err ~= "\n\t        " ~ convert;
+                                        err ~= "\n\t    " ~ convert;
                                         fail(err);
                                     }
                                 }
                             }
 
                             ///////////////////////////////
-                            let path0 = path.len;
-                            defer path.shrink(path0);
-
-                            // AUTOCALL /////////////
-                            if (TODO_FIX_conversions)
-                                path ~= TODO_FIX_conversions.only;
-
-                            path ~= t;
-
-                            ///////////////////////////////
                             descend(convertType, nullary: false, :isStruct);
                             ///////////////////////////////
                         }
+
+                        ///////////////////
+                        path.shrink(path0);
+                        must_see.shrink(must_see0);
+                        ///////////////////
                     }
                 }
             }
 
-            // Usings.
             if (nullary)
-                _scope.usings.each(_ss.usings, fn foreach);
-
-            // On-struct stuff.
+            {
+                // Usings.
+                for (mut i = 0; i < _scope.usings.len; i++)
+                    foreach(_scope.usings[i], :i);
+            }
             else
             {
+                // Conversions.
                 if (isStruct)
                 {
                     let inner = lookupUserType(from).converts;
@@ -2629,21 +2669,128 @@ pub fn solve(
                     //       so we don't have to check anything at all?
                     //
                     for (mut i = 0; i < inner.len; i++)
-                        foreach(inner[i]);
+                        foreach(inner[i], i: -1);
                 }
 
                 // Conversions.
-                if (has_converts)
-                    _scope.converts.each(_ss.converts, fn foreach);
+                for (mut i = 0; i < _scope.converts.len; i++)
+                    foreach(_scope.converts[i], :i);
             }
         }
 
         // Go.
-        descend(actual, root: true,
-            nullary: !actual,
-            isStruct: actual && actual.isStruct);
+        descend(
+            from:       startType,
+            nullary:   !startType,
+            isStruct:   startType && startType.isStruct);
 
         // We're done here.
+        return result;
+    }
+
+    fn tryConvert(
+        expect: Type or Node, actual?: Type, retype?: SolvedNode,
+        lax imports!?: i32[..]): Target[]
+    {
+        type Expect = typeof(expect);
+
+        PROFILE(Expect -> Type
+            ? .TryConvertExact
+            : .TryConvertGeneric);
+
+        if (retype)
+        {
+            // TODO
+        }
+
+
+        // The new conversion cache,
+        //  see we still have this bunch of looping nonsense at the end,
+        //   but maybe there's a way around this shit?
+
+        mut match: Target[];
+
+        let cc = exploreConversions(actual);
+
+        :NEXT_TYPE
+        for (mut i = 0; i < cc.types.len; i++)
+        {
+            let convertType = cc.types[i];
+            if (Expect -> Node
+                ?   {
+                        mut errout: Warning[];
+                        mut tp = _typeParams.steal();
+                        defer _typeParams.swap(tp);
+
+                        trySolveTypeParams(
+                            type: Type(vtype: convertType, lifetime: Lifetime_temporary),
+                            node: expect, :errout,
+                            invariant: false, :imports)
+                    }
+                :   isAssignableAsArgument(
+                        host: expect, convertType))
+            {
+                let path = cc.paths[i];
+
+                //
+                let ms = cc.must_see[i];
+                for (shadow mut i = 0; i < ms.len; i++)
+                {
+                    shadow let ms = ms[i];
+
+                    // TODO FIX - this is really stupid /////////////
+                    let isUsing = !actual && ms.target == path.first;
+
+                    let slot = (isUsing ? _scope.usings : _scope.converts)
+                        .unless_oob(ms.at_index);
+
+                    let stillThere = slot == ms.target
+                        || slot && !isUsing && (ms.target.spec_of == slot);
+
+                    if (!stillThere)
+                    {
+                        TRACE("ConvCache no longer there [invalid]: " ~ ms.target ~ " slot(" ~ (slot ? slot.str : "OOB") ~ ")");
+                        continue :NEXT_TYPE;
+                    }
+
+                    let scope_skips = isUsing
+                        ? _ss.usings
+                        : _ss.converts;
+
+                    for (shadow mut i = 0; i < scope_skips.len; i++)
+                    {
+                        let skip = scope_skips[i];
+                        if (skip.start <= ms.at_index &&
+                            skip.end    > ms.at_index)
+                        {
+                            TRACE("ConvCache not visible from here: " ~ ms.target);
+                            continue :NEXT_TYPE;
+                        }
+                    }
+                }
+
+                // Actual is assignable to current `from` type,
+                //  this means we've got a conversion edge that works.
+                if (match)
+                {
+                    mut suffix  = "\n"          ~ explainConversion(match)
+                                ~ "\n\tand:\n"  ~ explainConversion(path);
+
+                    if (actual)
+                        fail("Conversion ambiguity, multiple ways to convert "
+                            ~ humanizeType(actual) ~ " into "
+                            ~ (Expect -> Type ? humanizeType(expect) : "[TODO pattern str]")
+                                ~ ":" ~ suffix);
+                    else
+                        fail("using".qBAD ~ " ambiguity, multiple ways to obtain a "
+                            ~ (Expect -> Type ? humanizeType(expect) : "[TODO pattern str]")
+                                ~ " in this scope:" ~ suffix);
+                }
+
+                match = path || BUG("Empty conversion path in cache.");
+            }
+        }
+
         return match;
     }
 
@@ -5262,9 +5409,12 @@ pub fn solve(
         eph.scope_memo  = _current_fn && Scope_snap(_scope);
         eph.scope_skip  = _current_fn && _ss;
 
-        // Experimental conversion functions.
+        //
         if (node.flags & F_CONVERSION)
+        {
             _scope.converts.push(target);
+            ConvCache_nukeConverts("[new.conv] id(" ~ id ~ ")");
+        }
 
         return createEmpty(:target, type: X_addrofTarget(target));
     }
@@ -6946,6 +7096,12 @@ pub fn solve(
         }
 
         overload.solved = solved;
+
+        if (overload.status & SS_OBSERVED_BY_CONV_CACHE)
+        {
+            overload.status &= ~SS_OBSERVED_BY_CONV_CACHE;
+            ConvCache_nukeConverts("[doUpdateScope]: target(" ~ target ~ ")");
+        }
 
         //
         shadow ref eph  = EPH_mut(target);
@@ -8632,7 +8788,10 @@ pub fn solve(
                     Scope_set(_scope.implicits, :id, :target, :shadows);
 
                 if (out.flags & F_USING)
+                {
                     _scope.usings.push(target);
+                    ConvCache_nukeUsings("[new.using] id(" ~ id ~ ")");
+                }
             }
 
             ////////////////////////////////////////////////////////////////

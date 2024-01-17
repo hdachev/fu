@@ -944,6 +944,14 @@ pub fn hasStatic(lifetime: Lifetime): bool
     lifetime.uni0n.ends(with: Region_STATIC);
 
 
+// TODO worst := temp | static
+//
+// My thinking is, if you really don't want to rely on any guarantees a lifetime gives you,
+//  temporary means you can't rely on it surviving, and static means you can't move from it.
+
+pub let Lifetime_worst = Lifetime_temporary;
+
+
 //
 
 pub fn Lifetime_some(lifetime: Lifetime, some)

@@ -20,7 +20,7 @@ using flags SolverStatus: u16
     SS_MOVED_FROM
 
     SS_ARGUMENT
-    // ...
+    SS_OBSERVED_BY_CONV_CACHE
     // ...
     SS_Debug_AllPassesComplete
 }
