@@ -11537,6 +11537,30 @@ pub extern fn runTests()
         }
     `);
 
+    ZERO(`
+        fn convolutedHelloWorld(ref _scope: int) {
+            mut TRACE_out = string();
+            fn fail(reason: string) {
+                TRACE_out ~= reason;
+                throw(", World!");
+            }
+
+            fn solveNode(targets = [ _scope || fail("Hello") ]) {
+                _scope--;
+                if (targets) solveNode();
+            }
+
+            try         solveNode();
+            catch (e)   return TRACE_out ~ e;
+            return [];
+        }
+
+        fn main() {
+            mut _scope = 1;
+            return convolutedHelloWorld(:_scope) == "Hello, World!" ? 0 : 1;
+        }
+    `);
+
     // /quite right
 
 
@@ -12710,6 +12734,30 @@ pub extern fn runTests()
             let sum = a + b + c;
             let ret = (sum ^ sum >> 32).u32.i32;
             return ret - 1184288320;
+        }
+    `);
+
+    ZERO(`
+        <alt>
+        inline                                                  ;; GNUStmtExpr
+        <alt/>
+        noinline
+        </alt>
+        fn sillyDot(a: int[..], b: int[..]) {
+            mut res: int[];
+            let n = min(a.len, b.len);
+            for (mut i = 0; i < n; i++) res.push(a[i] * b[i]);
+            return res;
+        }
+
+        fn main() {
+            mut counter = 0;
+            fn c() counter++;
+            mut res = sillyDot(
+                [ c,c,c,c, c,c,c,c ],  // 0, 1, 2, 3,  4, 5, 6, 7
+                [ c,c,c,c, c,c,c,c ]); // 8, 9,10,11, 12,13,14,15
+
+            return counter == 16 && res == [ 0,9,20,33, 48,65,84,105 ] ? 0 : 1;
         }
     `);
 

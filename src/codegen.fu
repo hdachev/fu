@@ -2233,13 +2233,16 @@ pub fn cpp_codegen(
                 BUG("cgCall: arg.is_never");
             }
 
+            //
+            let MUSTSEQ_bit = 1 << (i & 31);
+            let mustSeq_useTemporary = MUSTSEQ_mask & MUSTSEQ_bit;
+
             mut src = junk ? "" : cgNode(
-                arg, callarg: host_arg.type,
+                arg,
+                callarg: !mustSeq_useTemporary && host_arg.type,
                 mode: isNative && M_ARG_TO_NATIVE) || BUG("Empty arg src.");
 
             //
-            let MUSTSEQ_bit = 1 << (i & 31);
-
             if (mustDiscard && src)
             {
                 ooe_crosscheck |= MUSTSEQ_bit;
@@ -2260,7 +2263,7 @@ pub fn cpp_codegen(
             }
 
             // Explicit sequencing.
-            if (MUSTSEQ_mask & MUSTSEQ_bit)
+            if (mustSeq_useTemporary)
             {
                 junk && BUG("Trying to MUSTSEQ a discarded argument, shouldnt happen.");
 
