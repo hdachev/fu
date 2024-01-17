@@ -69,9 +69,9 @@ pub let t_void      = NotSure("void");
 pub let t_never     = NotSure("never");
 pub let t_zeroes    = NotSure("zeroes");
 
-pub fn is_void  (t: Type) t.canon == t_void  .canon;
-pub fn is_never (t: Type) t.canon == t_never .canon;
-pub fn is_zeroes(t: Type) t.canon == t_zeroes.canon;
+pub fn is_void  (t: ValueType) t.canon == t_void  .canon;
+pub fn is_never (t: ValueType) t.canon == t_never .canon;
+pub fn is_zeroes(t: ValueType) t.canon == t_zeroes.canon;
 
 
 //
@@ -115,7 +115,7 @@ fn isLifetimeAssignable(host: Lifetime, guest: Lifetime)
 
 pub let CANNOT_definit_mutrefs = true;
 
-pub fn isAssignableAsArgument(host: Type, guest: Type, DONT_match_zeroes!?: bool): bool
+pub fn isAssignableAsArgument(host: ValueType, guest: ValueType, DONT_match_zeroes!?: bool): bool
 {
     return areVFactsAssignable(host: host.vfacts, guest.vfacts)
         && ( areQualsAssignable(host: host.quals, guest.quals)
