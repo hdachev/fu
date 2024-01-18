@@ -137,6 +137,15 @@ fn Scope_exports(scope: Scope, modid!: i32,
 
 ////////////////////////////////
 
+fn count(
+    items: $T[..],
+    scope_skip: ScopeSkip[])
+{
+    mut count = 0;
+    items.each(:scope_skip): |_| count++;
+    return count;
+}
+
 fn each(
     items: $T[..],
     scope_skip: ScopeSkip[],

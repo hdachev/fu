@@ -1709,19 +1709,8 @@ pub fn solve(
         mut matchIdx: Target;
         mut ambigOkIdx: Target;
 
-        fn countUsings()
-        {
-            shadow let scope = local_scope ? _scope : misc_scope;
-
-            mut count = 0;
-            if (scope.usings)
-                scope.usings.each(local_scope && _ss.usings, |u| u ? count++ : BUG());
-
-            return count;
-        }
-
         mut minArity        = args.len;
-        let numUsings       = countUsings();
+        let numUsings       = _scope.usings.count(_ss.usings);
         let explicitArity   = minArity;
         let maxArity        = explicitArity + numUsings;
 
@@ -1797,9 +1786,8 @@ pub fn solve(
 
                 // Usings.
                 if (numUsings)
-                    (local_scope ? _scope : misc_scope).usings.each(
-                        local_scope && _ss.usings,
-                            |u| visitTypeImports(GET(u).type));
+                    _scope.usings.each(_ss.usings,
+                        |u| visitTypeImports(GET(u).type));
 
                 // Field access, method calls & operator calls.
                 //  TODO no way to opt-out of this for operators currently,
@@ -1995,7 +1983,7 @@ pub fn solve(
                                 //
                                 if (expect)
                                 {
-                                    let conversion = tryConvert(:misc_scope, :local_scope, :expect);
+                                    let conversion = tryConvert(:expect);
                                     if (conversion)
                                     {
                                         conversions.grow_if_oob(i) = conversion;
@@ -2048,8 +2036,7 @@ pub fn solve(
                                 if (!ok)
                                 {
                                     let conversion = tryConvert(
-                                        :misc_scope, :local_scope, :actual,
-                                        expect: annot, :template.imports);
+                                        :actual, expect: annot, :template.imports);
 
                                     if (conversion)
                                         conversions.grow_if_oob(i) ~= conversion;
@@ -2156,7 +2143,7 @@ pub fn solve(
                         // Go through conversions here.
                         if !(flags & F_CONVERSION)
                         {
-                            let conversion = tryConvert(:misc_scope, :local_scope, :expect, :actual, retype: !argConv && args[callsiteIndex]);
+                            let conversion = tryConvert(:expect, :actual, retype: !argConv && args[callsiteIndex]);
                             if (conversion)
                             {
                                 conversions.grow_if_oob(i) ~= conversion;
@@ -2435,7 +2422,6 @@ pub fn solve(
 
     fn tryConvert(
         expect: Type or Node, actual?: Type, retype?: SolvedNode,
-        misc_scope!?: Scope, local_scope!: bool,
         lax imports!?: i32[..]): Target[]
     {
         type Expect = typeof(expect);
@@ -2458,7 +2444,7 @@ pub fn solve(
         defer _current_fn.conv_safety = conv_safety0;
 
         //
-        let has_converts    = (local_scope ? _scope : misc_scope).converts.len;
+        let has_converts = _scope.converts.count(_ss.converts);
 
         ////////////////////////////////////
         mut arg0 = TODO_FIX_convert_args[0];
@@ -2582,7 +2568,7 @@ pub fn solve(
                     }
                     else
                     {
-                        let mightHaveConversion = isStruct || (local_scope ? _scope : misc_scope).converts;
+                        let mightHaveConversion = isStruct || has_converts;
                         if (mightHaveConversion)
                         {
                             // Forbid cyclic conversions.
@@ -2629,11 +2615,7 @@ pub fn solve(
 
             // Usings.
             if (nullary)
-            {
-                (local_scope ? _scope : misc_scope)
-                    .usings.each(local_scope && _ss.usings,
-                        |u| foreach(u));
-            }
+                _scope.usings.each(_ss.usings, fn foreach);
 
             // On-struct stuff.
             else
@@ -2652,9 +2634,7 @@ pub fn solve(
 
                 // Conversions.
                 if (has_converts)
-                    (local_scope ? _scope : misc_scope)
-                        .converts.each(local_scope && _ss.converts,
-                            fn foreach);
+                    _scope.converts.each(_ss.converts, fn foreach);
             }
         }
 
@@ -8189,7 +8169,7 @@ pub fn solve(
     {
         if (!isAssignable(host: expect, actual.type, :asArgument))
         {
-            let conv = tryConvert(actual, :expect, local_scope: true);
+            let conv = tryConvert(actual, :expect);
             if !(conv)
                 return false;
 
@@ -9741,8 +9721,8 @@ pub fn solve(
 
         :TRY_CONVERT
         {
-            let aConv = tryConvert(a, expect: b_T, local_scope: true);
-            let bConv = tryConvert(b, expect: a_T, local_scope: true);
+            let aConv = tryConvert(a, expect: b_T);
+            let bConv = tryConvert(b, expect: a_T);
 
             if (aConv)
             {
