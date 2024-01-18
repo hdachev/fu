@@ -15287,6 +15287,45 @@ pub extern fn runTests()
         }
     `);
 
+    ZERO([`//file helpers.fu
+        fn grow_if_oob(ref a: $T[], i: i32): &mut $T {
+            if (a.len <= i) a.grow(i + 1);
+            return a[i];
+        }
+    `,`//file bitset.fu
+        struct BitSet { _data: u8[] }
+
+        fn rem(using ref _: BitSet, idx: int) {
+            let bucket  = idx >> 3;
+            let mask    = 1 << u8(idx & 7);
+            if (_data.len > bucket) {
+                let item = _data[bucket];
+                if (item & mask) {
+                    _data[bucket] &= ~mask;
+                    if (item == mask && _data.len == bucket + 1)
+                        _shrink_to_fit();
+                }
+            }
+        }
+
+        fn add(using ref _: BitSet, idx: int) {
+            _data.helpers::grow_if_oob(idx >> 3) |= 1 << u8(idx & 7);
+        }
+
+        fn _shrink_to_fit(using ref _: BitSet) {
+            mut end = _data.len;
+            while (end --> 0) if (_data[end]) break;
+            _data.shrink(end + 1);
+        }
+    `,`
+        fn main() {
+            mut bs: bitset::BitSet;
+            bs.add(100);    let len0 = bs._data.len;
+            bs.rem(100);    let len1 = bs._data.len;
+            return len0 == 13 && len1 == 0 ? 0 : 1;
+        }
+    `]);
+
     // /Conversion functions.
 
 
