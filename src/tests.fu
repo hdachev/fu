@@ -15326,6 +15326,24 @@ pub extern fn runTests()
         }
     `]);
 
+    ZERO(`
+        struct Key   { ki: int };
+        struct Value { vi: int };
+        struct Data  { values: Value[] };
+
+        noinline fn test(using ref _: Data) {
+            fn push(v: Value) values ~= v;
+            using fn EXT(k: Key) values[k.ki];
+            push(Value(101));
+            return Key(0).vi;
+        }
+
+        fn main() {
+            mut data: Data;
+            return data.test() - 101;
+        }
+    `);
+
     // /Conversion functions.
 
 
