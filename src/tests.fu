@@ -15344,6 +15344,43 @@ pub extern fn runTests()
         }
     `);
 
+    ZERO(`
+        struct Helpers      { index: int };
+        struct HelpersData  { target: Target };
+        struct Target       { globid: int };
+        struct Overload     { name: string };
+
+        noinline fn test(_overloads: Overload[], _helpers: Helpers[], _data: HelpersData[], t: Target)
+        {
+            using fn H(h: Helpers): HelpersData {
+                h.index >= 0 && h.index < _data.len || throw("A");
+                return _data[h.index];
+            }
+
+            fn fail_appendStack(mut r: string) {
+                for (mut i = _helpers.len; i --> 0; ) r ~= O(_helpers[i].target);
+                return r;
+            }
+
+            fn fail(r: string) {
+                r || fail("B");
+                return throw(r.fail_appendStack());
+            }
+
+            fn str(o: Overload) = o.name;
+
+            using fn O(target: Target) {
+                let globid = target.globid;
+                globid > 0 && _overloads.len >= globid || fail("C");
+                return _overloads[target.globid - 1];
+            }
+
+            return t.name;
+        }
+
+        fn main() = test([ Overload("Hello") ], [], [], Target(1)) == "Hello" ? 0 : 1;
+    `);
+
     // /Conversion functions.
 
 
