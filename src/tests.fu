@@ -18036,6 +18036,21 @@ pub extern fn runTests()
         }
     `);
 
+    TODO_relaxer(currently: "BUG doReverseSpecialize: did_relax(0) != relaxed_quals(1) 10:22+3", `
+        struct Target { id: int };
+        fn isLocal(t: Target) t.id & 1;
+        fn parent(t: Target) Target(t.id & ~1);
+
+        fn main() {
+            struct SolverState { _scope: string };
+            using mut ss: SolverState = [ "Hello" ];
+            fn GETLocal(t: Target) = GET(t.parent) ~ ", world!";
+            using fn GET(t: Target) = t.isLocal ? GETLocal(t) : _scope;
+            let res: string = Target(1);
+            return res == "Hello, world!" ? 0 : 1;
+        }
+    `);
+
     // /Relaxer.
 
 
