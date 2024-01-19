@@ -23,7 +23,10 @@ _current = _current.replace(/\/\/[^\n]*/g, '');
 _current = _current.replace(/\/\*[^*]+\*\//g, '');
 
 // All lets now lax.
-_current = _current.replace(/  ((?:(?:let|implicit|mut|ref) )+[a-zA-Z0-9_]+)/g, (binding) => '  lax ' + binding.slice(2));
+_current = _current.replace(
+    /  ((?:(?:let|implicit|mut|ref) )+[a-zA-Z0-9_]+)/g,
+        (binding) => ('  lax ' + binding.slice(2))
+            .replace('lax implicit', 'implicit lax'));
 
 function collapseMultilineWhitespace(src)
 {
