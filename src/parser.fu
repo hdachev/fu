@@ -175,6 +175,12 @@ pub fn parse(
 
     //
 
+    fn fail(token: TokenIdx, mut reason?: string)
+    {
+        if (token.modid == modid) _loc = _idx = token.tokidx;
+        return fail(:reason);
+    }
+
     fn fail(mut reason?: string)
     {
         let token = tokens[_idx];
@@ -646,7 +652,19 @@ pub fn parse(
     {
         mut out = parseStatement();
         if (out.kind == "fn")
+        {
             out.flags |= F_CONVERSION;
+
+            // TODO move into solver
+            if (out.items.len < 3)
+                fail(:out.token, "TODO nullary using fns.");
+
+            for (mut i = 0; i < out.items.len - 2; i++) {
+                let arg = out.items[i];
+                if (!arg.items[LET_TYPE] && !arg.value.has('.'))
+                    fail(:arg.token, "Conversion functions need type annotations on their arguments to know when to kick in.");
+            }
+        }
         else if (out.kind == "let")
             out.flags |= F_USING;
         else if (out.kind == "enum" || out.kind == "flags" || out.kind == "primitive")

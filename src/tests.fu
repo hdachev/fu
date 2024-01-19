@@ -14682,7 +14682,7 @@ pub extern fn runTests()
 
         <alt>
         using fn bananas(a: A)  B(a.a * 2); <alt/>
-        using fn bananas(a)     B(a.a * 2); <alt/>
+        using fn bananas(a: _)  B(a.a * 2); <alt/>
         using fn bananas(a.a)   B(  a * 2); </alt>
 
         <split/>
@@ -15123,7 +15123,7 @@ pub extern fn runTests()
     ZERO(`
         struct A { x: i32 };
         struct C { a: A };
-                                    <fail C2A bad call a>
+                                    <fail conv func arg need type annot 5:26+1>
         using fn C2A(ref a) a.a;    <pass/>
         using fn C2A(ref a.a) a;    </fail>
 
@@ -15137,7 +15137,7 @@ pub extern fn runTests()
     ZERO(`
         struct A { x: i32 };
         struct C { a: A };
-                                    <fail C2A bad call a>
+                                    <fail conv func arg need type annot 5:26+1>
         using fn C2A(ref a) a.a;    <pass/>
         using fn C2A(ref .a)  a;    </fail>
 
