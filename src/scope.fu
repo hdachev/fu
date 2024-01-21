@@ -8,31 +8,10 @@ import fail;
 
 //
 
-struct ScopeMemo {
-    items_len:      i32;
-    implicits_len:  i32;
-    imports_len:    i32;
-    privates_len:   i32;
-    usings_len:     i32;
-    converts_len:   i32;
-    helpers_len:    i32;
-};
-
 struct ScopeSkip
 {
     start:          i32;
     end:            i32;
-};
-
-struct ScopeSkipMemos
-{
-    items:          ScopeSkip[];
-    implicits:      ScopeSkip[];
-    imports:        ScopeSkip[];
-    privates:       ScopeSkip[];
-    usings:         ScopeSkip[];
-    converts:       ScopeSkip[];
-    helpers:        ScopeSkip[];
 };
 
 
@@ -377,30 +356,6 @@ fn search(
     }
 
     return Target;
-}
-
-
-////////////////////////////////
-
-fn Scope_snap(scope: Scope, implicit _helpers: Helpers[])
-    ScopeMemo(
-        items_len:      scope.items     .len,
-        implicits_len:  scope.implicits .len,
-        imports_len:    scope.imports   .len,
-        privates_len:   scope.privates  .len,
-        usings_len:     scope.usings    .len,
-        converts_len:   scope.converts  .len,
-        helpers_len:         _helpers   .len);
-
-fn Scope_pop(ref scope: Scope, implicit ref _helpers: Helpers[], memo: ScopeMemo)
-{
-    scope.items     .shrink(memo.items_len);
-    scope.implicits .shrink(memo.implicits_len);
-    scope.imports   .shrink(memo.imports_len);
-    scope.privates  .shrink(memo.privates_len);
-    scope.usings    .shrink(memo.usings_len);
-    scope.converts  .shrink(memo.converts_len);
-    _helpers        .shrink(memo.helpers_len);
 }
 
 

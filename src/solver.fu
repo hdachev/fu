@@ -363,8 +363,27 @@ pub fn solve(
 
     //
 
-    struct Ephemeral
-    {
+    struct ScopeMemo {
+        items_len:          i32;
+        implicits_len:      i32;
+        imports_len:        i32;
+        privates_len:       i32;
+        usings_len:         i32;
+        converts_len:       i32;
+        helpers_len:        i32;
+    };
+
+    struct ScopeSkipMemos {
+        items:              ScopeSkip[];
+        implicits:          ScopeSkip[];
+        imports:            ScopeSkip[];
+        privates:           ScopeSkip[];
+        usings:             ScopeSkip[];
+        converts:           ScopeSkip[];
+        helpers:            ScopeSkip[];
+    };
+
+    struct Ephemeral {
         local_of:           i32;
         revision:           u32;
 
@@ -391,10 +410,10 @@ pub fn solve(
     };
 
     struct TypeParam {
-        matched:        Type;
-        invariant:      Type;
-        consumed:       Type;
-        flags:          TypeParamFlags;
+        matched:            Type;
+        invariant:          Type;
+        consumed:           Type;
+        flags:              TypeParamFlags;
     };
 
     type TypeParams = flat::Map(string, TypeParam);
@@ -460,25 +479,25 @@ pub fn solve(
 
     struct HelpersData
     {
-        target!?:       Target;
-        pass!?:         SolverPass;
+        target!?:           Target;
+        pass!?:             SolverPass;
 
-        id?:            string;
-        mask!?:         HelpersMask;
-        local_of!?:     i32;
-        locals_start!?: i32;
+        id?:                string;
+        mask!?:             HelpersMask;
+        local_of!?:         i32;
+        locals_start!?:     i32;
 
-        ret_expect?:    Type;
-        ret_actual?:    Type;
+        ret_expect?:        Type;
+        ret_actual?:        Type;
 
-        usage?:         Type[];
+        usage?:             Type[];
 
-        postdom?:       Postdom;
-        loop_PREVITER?: Postdom;    // TODO dont remember why i added this
-                                    //  might be ExitPath related, seems dodgy af
-        postevt?:       EventsSnap;
+        postdom?:           Postdom;
+        loop_PREVITER?:     Postdom;    // TODO dont remember why i added this
+                                        //  might be ExitPath related, seems dodgy af
+        postevt?:           EventsSnap;
 
-        kills!?:        Helpers;
+        kills!?:            Helpers;
     };
 
     using enum StaticEval {
@@ -504,8 +523,8 @@ pub fn solve(
     };
 
     struct Reorder {
-        true applicable: bool;
-        map: i32[];
+        true applicable:    bool;
+        map:                i32[];
     };
 
     fn clear(ref flow: Flow)
@@ -544,9 +563,9 @@ pub fn solve(
 
     // The solver state.
 
-    let using mut ss:                   SolverState;
-    mut _current_fn:                    CurrentFn;
-    let implicit mut _helpers:          Helpers[];      // TODO rename, this is the block helpers stack, unwinds during solve
+    using mut ss:           SolverState;
+    mut _current_fn:        CurrentFn;
+    implicit mut _helpers:  Helpers[];      // TODO rename, this is the block helpers stack, unwinds during solve
 
 
     // Prep.
@@ -566,6 +585,30 @@ pub fn solve(
 
     _scope.extended ~= Extended();  // global nodes and such
     push(HelpersData());            // not sure why this is needed
+
+
+    //
+
+    fn Scope_pop(memo: ScopeMemo) {
+        _scope.items    .shrink(memo.items_len);
+        _scope.implicits.shrink(memo.implicits_len);
+        _scope.imports  .shrink(memo.imports_len);
+        _scope.privates .shrink(memo.privates_len);
+        _scope.usings   .shrink(memo.usings_len);
+        _scope.converts .shrink(memo.converts_len);
+        _helpers        .shrink(memo.helpers_len);
+    }
+
+    fn Scope_snap() {
+        ScopeMemo(
+            items_len:     _scope.items     .len,
+            implicits_len: _scope.implicits .len,
+            imports_len:   _scope.imports   .len,
+            privates_len:  _scope.privates  .len,
+            usings_len:    _scope.usings    .len,
+            converts_len:  _scope.converts  .len,
+            helpers_len:         _helpers   .len)
+    }
 
 
     // :(
@@ -4765,8 +4808,8 @@ pub fn solve(
         shadow let id = id || node.kind == "block" && node.value;
 
         ////////////////////////////////
-        let scope0 = Scope_snap(_scope);
-        defer if !(mask & HM_LoopPreheader) Scope_pop(_scope, scope0);
+        let scope0 = Scope_snap();
+        defer if !(mask & HM_LoopPreheader) Scope_pop(scope0);
         ////////////////////////////////
 
         let helpers_idx = _helpers.len;
@@ -5406,7 +5449,7 @@ pub fn solve(
         //
         ref eph         = target.EPH_mut;
         eph.local_of    = local_of;
-        eph.scope_memo  = _current_fn && Scope_snap(_scope);
+        eph.scope_memo  = _current_fn && Scope_snap();
         eph.scope_skip  = _current_fn && _ss;
 
         //
@@ -6296,12 +6339,12 @@ pub fn solve(
 
         {
             ////////////////////////////////////////////////////////////////
-            let scope0          = Scope_snap(_scope);
+            let scope0          = Scope_snap();
             let ss0             = _ss;
             let helpers_data0   = _helpers_data.len;
 
             defer {
-                Scope_pop(_scope, scope0);
+                Scope_pop(scope0);
                 _ss             = ss0;
 
                 _helpers_data.shrink(helpers_data0);
@@ -8432,8 +8475,8 @@ pub fn solve(
     fn solveLoop(node: Node): SolvedNode
     {
         ////////////////////////////////
-        let scope0 = Scope_snap(_scope);
-        defer Scope_pop(_scope, scope0);
+        let scope0 = Scope_snap();
+        defer Scope_pop(scope0);
         ////////////////////////////////
 
         // TODO really consider getting rid of this,
@@ -8906,21 +8949,21 @@ pub fn solve(
         node.items.len == 3 || BUG();
 
         /////////////////////////////////
-        let scope0  = Scope_snap(_scope);
+        let scope0  = Scope_snap();
         /////////////////////////////////
 
         let try     = solveNode(node.items[0], t_void);
 
         ///////////////////////////////////////
-        Scope_pop(_scope, scope0);
-        shadow let scope0 = Scope_snap(_scope);
+        Scope_pop(scope0);
+        shadow let scope0 = Scope_snap();
         ///////////////////////////////////////
 
         let err     = solveLetStatement(node.items[1]);
         let catch   = solveNode(node.items[2], t_void);
 
         //////////////////////////
-        Scope_pop(_scope, scope0);
+        Scope_pop(scope0);
         //////////////////////////
 
         err.kind == "letdef" && isAssignableAsArgument(
@@ -9938,8 +9981,8 @@ pub fn solve(
     fn solveIf(node: Node, type: Type): SolvedNode
     {
         ////////////////////////////////
-        let scope0 = Scope_snap(_scope);
-        defer Scope_pop(_scope, scope0);
+        let scope0 = Scope_snap();
+        defer Scope_pop(scope0);
         ////////////////////////////////
 
         mut cond    = solveNode(node.items[0], t_proposition);
@@ -9960,7 +10003,7 @@ pub fn solve(
         ////////////////////////////////
         // Can't use anything introduced
         //  in the cond or cons.
-        defer Scope_pop(_scope, scope0);
+        defer Scope_pop(scope0);
         ////////////////////////////////
 
         let alt     = solveNode(node.items[2], :type);
@@ -10009,8 +10052,8 @@ pub fn solve(
     fn solveOr(node: Node, type: Type): SolvedNode
     {
         ////////////////////////////////
-        let scope0 = Scope_snap(_scope);
-        defer Scope_pop(_scope, scope0);
+        let scope0 = Scope_snap();
+        defer Scope_pop(scope0);
         ////////////////////////////////
 
         let items = solveNodes(
@@ -10090,8 +10133,8 @@ pub fn solve(
     fn solveAnd(node: Node, type: Type): SolvedNode
     {
         ////////////////////////////////
-        let scope0 = Scope_snap(_scope);
-        defer Scope_pop(_scope, scope0);
+        let scope0 = Scope_snap();
+        defer Scope_pop(scope0);
         ////////////////////////////////
 
         //
