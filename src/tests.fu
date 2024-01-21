@@ -127,6 +127,7 @@ pub extern fn runTests()
     let TODO_zst        = fn TODO;
     let TODO_ufc        = fn TODO;
     let TODO_litfix     = fn TODO;
+    let TODO_baderror   = fn TODO;
 
     let TODO_confusing  = fn TODO;
     let TODO_logic      = fn TODO;
@@ -11559,6 +11560,19 @@ pub extern fn runTests()
         fn main() {
             mut _scope = 1;
             return convolutedHelloWorld(:_scope) == "Hello, World!" ? 0 : 1;
+        }
+    `);
+
+    TODO_baderror(currently: "fn badRetvalAnnot is missing a final return statement bool <- void", `
+        fn incr(ref x: i32) { x++; }
+        fn badRetvalAnnot(ref x: i32)   <fail not assignable to return type annot X:X>
+            : bool                      <pass/></fail>
+                { incr(x) }
+
+        fn main() {
+            mut x = -1;
+            badRetvalAnnot(x);
+            return x;
         }
     `);
 
