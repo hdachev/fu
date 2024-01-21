@@ -518,7 +518,7 @@ pub fn ref(using mut ref _: Map($K, $V), key: $K, init!?): $V {
         vals, :fn init)
 }
 
-pub fn if(using mut ref _: Map($K, $V), key: $K, visit): void {
+pub fn if(using mut ref _: Map($K, $V), key: $K, visit)/*TODO FAILCASE: void*/ {
     keys.if(
         key,
         vals, fn visit)

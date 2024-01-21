@@ -428,16 +428,14 @@ pub fn solve(
         RelaxCopyResize
     };
 
-    struct ConvCacheEntryMustSee {
-        target:             Target;
-        at_index:           i32;
-    };
-
     struct ConvCacheEntry {
         // thus conv-id is just the index into the types/via arrays
         types:              ValueType[];
         paths:              Target[][];
-        must_see:           ConvCacheEntryMustSee[][];
+
+        // positive positions are +1 indices into _scope.converts
+        // negative positions are negated +1 indices into _scope.usings
+        must_see:           i32[][];
     };
 
     struct SolverState
@@ -589,7 +587,28 @@ pub fn solve(
 
     //
 
-    fn Scope_pop(memo: ScopeMemo) {
+    fn Scope_pop(memo: ScopeMemo)
+    {
+        for (mut i = memo.usings_len; i < _scope.usings.len; i++) {
+            let t = _scope.usings[i];
+
+            _conv_cache.if(ValueType()): |ref cc|
+                for (shadow mut i = cc.paths.len; i --> 0; )
+                    if (cc.paths[i].starts(with: t))
+                        for (fieldname column: ConvCacheEntry)
+                            cc.column.splice(i, 1);
+        }
+
+        for (mut i = memo.converts_len; i < _scope.converts.len; i++) {
+            let t = _scope.converts[i];
+
+            _conv_cache.each: |ref cc|
+                for (shadow mut i = cc.paths.len; i --> 0; )
+                    if (cc.paths[i].has(t))
+                        for (fieldname column: ConvCacheEntry)
+                            cc.column.splice(i, 1);
+        }
+
         _scope.items    .shrink(memo.items_len);
         _scope.implicits.shrink(memo.implicits_len);
         _scope.imports  .shrink(memo.imports_len);
@@ -2555,7 +2574,7 @@ pub fn solve(
         ////////////////////////////////////
 
         mut path: Target[];
-        mut must_see: ConvCacheEntryMustSee[];
+        mut must_see: i32[];
 
         fn descend(from: Type, nullary!: bool, isStruct!: bool)
         {
@@ -2646,7 +2665,8 @@ pub fn solve(
                         path ~= target;
 
                         if (at_index >= 0)
-                            must_see ~= ConvCacheEntryMustSee(:target, :at_index);
+                            must_see ~= nullary ? -(at_index + 1)
+                                                : +(at_index + 1);
 
                         //
                         result.types ~= convertType.vtype;
@@ -2775,38 +2795,31 @@ pub fn solve(
             {
                 let path = cc.paths[i];
 
+                // Visibility check -
+                //  we don't remove things from the ConvCache as they get ScopeSkipped,
+                //   so we gotta do this check here.
                 //
                 let ms = cc.must_see[i];
                 for (shadow mut i = 0; i < ms.len; i++)
                 {
                     shadow let ms = ms[i];
 
-                    // TODO FIX - this is really stupid /////////////
-                    let isUsing = !actual && ms.target == path.first;
+                    let isUsing = ms < 0;
+                    let index = (isUsing ? -ms : +ms) - 1;
+                    let skips = isUsing ? _ss.usings : _ss.converts;
+                    let which = isUsing ? _scope.usings : _scope.converts;
 
-                    let slot = (isUsing ? _scope.usings : _scope.converts)
-                        .unless_oob(ms.at_index);
+                    if (SELF_TEST)
+                        index >= 0 && index < which.len || BUG(
+                            "ConvCache.must_see ms(" ~ ms ~ ") isUsing(" ~ isUsing ~ ") index(" ~ index ~ ") is out of bounds(" ~ which.len ~ ")");
 
-                    let stillThere = slot == ms.target
-                        || slot && !isUsing && (ms.target.spec_of == slot);
-
-                    if (!stillThere)
+                    for (shadow mut i = 0; i < skips.len; i++)
                     {
-                        TRACE("ConvCache no longer there [invalid]: " ~ ms.target ~ " slot(" ~ (slot ? slot.str : "OOB") ~ ")");
-                        continue :NEXT_TYPE;
-                    }
-
-                    let scope_skips = isUsing
-                        ? _ss.usings
-                        : _ss.converts;
-
-                    for (shadow mut i = 0; i < scope_skips.len; i++)
-                    {
-                        let skip = scope_skips[i];
-                        if (skip.start <= ms.at_index &&
-                            skip.end    > ms.at_index)
+                        let skip = skips[i];
+                        if (skip.start <= index &&
+                            skip.end    > index)
                         {
-                            TRACE("ConvCache not visible from here: " ~ ms.target);
+                            TRACE("ConvCache not visible from here: " ~ which[index]);
                             continue :NEXT_TYPE;
                         }
                     }
