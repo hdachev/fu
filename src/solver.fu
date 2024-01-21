@@ -440,11 +440,12 @@ pub fn solve(
     };
 
     struct ConvCache_ColsAndBakes {
+
+        // Kept separately for for-fieldname-splicing.
         using columns:      ConvCacheColumns;
 
-        // ... field items & implicits intended to come here,
-        //  kept separately from the columns so the latter can be
-        //   for-fieldnamed for splicing.
+        field_items:        ScopeItem[];
+        field_implicits:    ScopeItem[];
     };
 
     struct SolverState
@@ -452,8 +453,7 @@ pub fn solve(
         _scope:             Scope;
         _root_scope:        ScopeMemo;
         _ss:                ScopeSkipMemos;
-        _field_items:       ScopeItem[];
-        _field_implicits:   ScopeItem[];
+
         _pub_imports:       flat::Set(i32);
         _helpers_data:      HelpersData[];
         _ephemeral:         Ephemeral[];
@@ -1847,9 +1847,6 @@ pub fn solve(
             && (flags & F_CALL_HAS_DOT || !minArity)
             && minArity <= 1 && maxArity;
 
-        fn field_items = considerFieldItems
-            && (flags & F_IMPLICIT ? _field_implicits : _field_items);
-
         //
         mut alternate_ids: string[];
 
@@ -1868,7 +1865,12 @@ pub fn solve(
             //  We only pushback stuff when the modules are not imported and there's an actual match,
             //   and we could possibly further filter them by arity.
             //
+            let field_items = considerFieldItems
+                && convCache_considerFieldItems(:flags,
+                    type: flags & F_CALL_HAS_DOT && args.first);
+
             mut extra_items: Target[];
+
             if (local_scope && !targets)
             {
                 mut seen: bitset::BitSet;
@@ -2335,7 +2337,15 @@ pub fn solve(
                 if (matchIdx)
                 {
                     if (matchIdx == overloadIdx)
+                    {
+                        if (matchIdx.kind == "enumv")
+                        {
+                            // TODO FIX: using enums' items appear in global & local scope
+                            continue;
+                        }
+
                         BUG("tryMatch__mutargs: Tested the same overload twice: " ~ explainWhichFn(matchIdx, conversions_out));
+                    }
 
                     fail("Ambiguous call to " ~ explainBadCallArguments(:id, :targets, :args) ~ ", matches multiple items in scope:\n"
                         ~ "\n\t" ~ explainWhichFn(matchIdx, conversions_out)
@@ -2560,10 +2570,10 @@ pub fn solve(
         // We inserted an empty entry to prevent reentry,
         //  conversions will not be available until this completes here.
         //
-        return _conv_cache.ref(type) = doExploreConversions(type);
+        return _conv_cache.ref(type) = doExploreConversions(type, init: cc);
     }
 
-    fn doExploreConversions(startType: ValueType)
+    fn doExploreConversions(startType: ValueType, ref init: ConvCache_ColsAndBakes)
     {
         shadow let startType = startType && Type(startType, Lifetime_worst);
 
@@ -2571,6 +2581,18 @@ pub fn solve(
 
         TRACE_BRACKET("doExploreConversions startType(" ~ humanizeType(startType) ~ ")");
 
+        // Before we begin, we gotta init the field_items / field_implicits stuff
+        //  in case they're needed before we're done,
+        //   otherwise a struct's fields & co won't be visible because of the re-entry safety.
+        //
+        if (startType)
+        {
+            let s = tryLookupUserType(startType);
+            init.field_items     = s.items;
+            init.field_implicits = s.implicits;
+        }
+
+        //
         mut result: ConvCache_ColsAndBakes;
 
         //
@@ -2753,13 +2775,38 @@ pub fn solve(
             }
         }
 
-        // Go.
+        // Collect all reachable types.
         descend(
             from:       startType,
             nullary:   !startType,
             isStruct:   startType && startType.isStruct);
 
-        // We're done here.
+        // NOTE - we can end up with duplicates here -
+        //  two usings in currently open but exclusive scopes
+        //   can have the same type, so we end up traversing them twice.
+        //
+        mut seen: flat::Set(StructCanon);
+
+        // Collect all reachable field_items & field_implicits.
+        //  NOTE: At -1 we reexplore the startType because the `result` here
+        //   will replace the initial anti-reentry stub we left above.
+        //
+        for (mut i = startType && -1; i < result.types.len; i++)
+        {
+            // TODO FAILCASE   remove _____
+            let t = i < 0 ? startType.vtype : result.types[i];
+
+            shadow let t = tryParseStructCanon(t);
+            if (t && seen.add(t))
+            {
+                let s = lookupUserType(t);
+
+                result.field_items      ~= s.items;
+                result.field_implicits  ~= s.implicits;
+            }
+        }
+
+        //
         return result;
     }
 
@@ -2860,6 +2907,24 @@ pub fn solve(
         }
 
         return match;
+    }
+
+    fn convCache_considerFieldItems(type: Type, flags: Flags): ScopeItem[..]
+    {
+        // TODO FIX remove this moot loop,
+        //  failcase present & passing
+        for (mut i = 0; i < 1; i++)
+        {
+            let cc      = exploreConversions(type);
+            let items   = flags & F_IMPLICIT
+                ? cc.field_implicits
+                : cc.field_items;
+
+            if (2 > 1)
+                return items;
+        }
+
+        return [];
     }
 
 
@@ -7613,12 +7678,10 @@ pub fn solve(
                 }
                 else
                 {
-                    _field_items ~= s.items;
-
                     // Not amazing.
                     s.items.each: |item|
                         if (item.target.flags & F_IMPLICIT)
-                            _field_implicits.push(item);
+                            s.implicits.push(item);
                 }
             }
 
@@ -14272,8 +14335,6 @@ pub fn solve(
             root:  root,
             notes: _notes,
             scope: Scope_exports(_scope, :module.modid,
-                field_items:        _field_items,
-                field_implicits:    _field_implicits,
-                pub_imports:        _pub_imports.keys_asc));
+                pub_imports: _pub_imports.keys_asc));
     }
 }

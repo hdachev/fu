@@ -40,8 +40,6 @@ fn ScopeItem(id: string, target: Target, shadows: bool)
 //
 
 fn Scope_exports(scope: Scope, modid!: i32,
-    field_items!: ScopeItem[],
-    field_implicits!: ScopeItem[],
     pub_imports!: i32[])
 {
 
@@ -74,8 +72,8 @@ fn Scope_exports(scope: Scope, modid!: i32,
     mut pub_items       = 0;
     mut pub_implicits   = 0;
 
-    let items           = collect(.items,     pub_cnt: pub_items,     public: field_items);
-    let implicits       = collect(.implicits, pub_cnt: pub_implicits, public: field_implicits);
+    let items           = collect(.items,     pub_cnt: pub_items);
+    let implicits       = collect(.implicits, pub_cnt: pub_implicits);
 
 
     // Conversions, field conversions namespaced per struct,

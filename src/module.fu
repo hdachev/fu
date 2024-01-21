@@ -92,6 +92,7 @@ struct Struct
 
     target?:        Target;
     items?:         ScopeItem[];
+    implicits?:     ScopeItem[];
     imports?:       flat::Set(i32);
     converts?:      Target[];
 
