@@ -15397,6 +15397,29 @@ pub extern fn runTests()
         fn main() = test([ Overload("Hello") ], [], [], Target(1)) == "Hello" ? 0 : 1;
     `);
 
+    ZERO(`
+        struct ConvCacheEntry   { types: int[] }
+        struct Set(type T)      { keys_asc!: T[] };
+
+        fn append(using ref _: Set($T), v: int) keys_asc ~= v;
+
+        struct SolverState {    <flip>
+            _input?: int[];     <flip/>
+            _output?: Set(int); </flip>
+        }
+
+        fn ConvCache_fieldItemsOrder_glitch(using ref ss: SolverState) {
+            fn append(v: int) _output.append(v);
+            _input.each: |v| append(v);
+        }
+
+        fn main() {
+            mut ss = SolverState(_input: [ 1, 2, 3 ]);
+            ss.ConvCache_fieldItemsOrder_glitch();
+            return ss._output.keys_asc.len - 3;
+        }
+    `);
+
     // /Conversion functions.
 
 
