@@ -4163,6 +4163,28 @@ pub extern fn runTests()
         fn main() = State().mustClose.i32;
     `);
 
+    TODO_logic(currently: "actual return does not match annot i32 <- bool 8:21+2", `
+        fn main() {
+            mut match: int;
+
+            fn and_brokenInference(my_int): int {
+                return my_int > 0
+                    && { indir_rec_inner(my_int.uint); true }
+                    && match;
+            }
+
+            fn indir_rec_inner(my_uint: uint) {
+                match = my_uint > 0 && and_brokenInference(my_uint - 1);
+            }
+
+            fn indir_rec(my_uint: uint) {
+                indir_rec_inner(my_uint);
+            }
+
+            return and_brokenInference(3);
+        }
+    `);
+
     // /Logic and selectors.
 
 
@@ -14699,7 +14721,8 @@ pub extern fn runTests()
         using fn bananas(a: A)  B(a.a * 2); <alt/>
         using fn bananas(a: _)  // conv-cache: adding the case to salvage this alt
         case(typeof(a) -> A)    B(a.a * 2); <alt/>
-        using fn bananas(a.a)   B(  a * 2); </alt>
+        using fn bananas(a.a)   B(  a * 2); <alt/>
+        using fn bananas( .a)   B(  a * 2); </alt>
 
         <split/>
         fn main() 1.A.b - 2;
