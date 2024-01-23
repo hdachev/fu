@@ -7539,8 +7539,8 @@ pub fn solve(
 
         // (Re)poplate fields.
         {
-            ref innerScope = lookupUserType_mut(instType.canon).items;
-            if (!innerScope && members)
+            ref s = lookupUserType_mut(instType.canon);
+            if (!s.items && members)
             {
                 let isUnscoped = !!(node.flags & F_USING);
 
@@ -7577,7 +7577,7 @@ pub fn solve(
                     // For snippets -
                     ext.template.node.token = items[i].token;
 
-                    Scope_set(innerScope, :id, :target, shadows: false);
+                    Scope_set(s.items, :id, :target, shadows: false);
 
                     // TODO FIX leaving a breadcrumb for error reporting
                     field_setParentStruct(GET_mut(target),
@@ -7588,26 +7588,26 @@ pub fn solve(
                 //  I think we originally got it for stuff like `fn fieldname`.
                 if (isPrimDecl)
                 {
-                    _scope.items ~= innerScope;
+                    _scope.items ~= s.items;
                 }
                 else
                 {
-                    _field_items ~= innerScope;
+                    _field_items ~= s.items;
 
                     // Not amazing.
-                    innerScope.each: |item|
+                    s.items.each: |item|
                         if (item.target.flags & F_IMPLICIT)
-                            _field_implicits ~= item;
+                            _field_implicits.push(item);
                 }
             }
 
             // Update field types.
-            innerScope.len == members.len || BUG(
-                "solveStructMembers_3: field lens mismatch: " ~ innerScope.len ~ " vs " ~ members.len ~ "/" ~ items.len ~ ": `struct " ~ name ~ "`.");
+            s.items.len == members.len || BUG(
+                "solveStructMembers_3: field lens mismatch: " ~ s.items.len ~ " vs " ~ members.len ~ "/" ~ items.len ~ ": `struct " ~ name ~ "`.");
 
-            for (mut i = 0; i < innerScope.len; i++)
+            for (mut i = 0; i < s.items.len; i++)
             {
-                let item = innerScope[i];
+                let item = s.items[i];
                 shadow let member = members[i];
                 item.id == member.value || BUG("solveStructMembers_4: field id mismatch.");
 
@@ -7661,11 +7661,11 @@ pub fn solve(
                 // Probably this along with sizeof/alignof/flatCount & company
                 //  can all be done in one pass.
                 //
-                fn TODO_FIX_getRecursionError(s: Struct)
+                fn TODO_FIX_getRecursionError(other: Struct)
                 {
-                    for (shadow mut i = 0; i < s.items.len; i++)
+                    for (shadow mut i = 0; i < other.items.len; i++)
                     {
-                        shadow let item = s.items[i].target;
+                        shadow let item = other.items[i].target;
                         let itemType = item.type;
                         if (itemType.isStruct)
                         {
@@ -7721,9 +7721,9 @@ pub fn solve(
                                                     : BUG("Enum auto-incrementer: unknown prim size: " ~ size_str);
 
                 mut last: intlit::Intlit;
-                for (mut i = 0; i < innerScope.len; i++)
+                for (mut i = 0; i < s.items.len; i++)
                 {
-                    ref init    = innerScope[i].target.GET_mut.solved;
+                    ref init    = s.items[i].target.GET_mut.solved;
                     let member  = members[i];
                     init        = member.items[LET_INIT];
                     _here       = member.token;
