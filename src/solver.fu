@@ -428,7 +428,8 @@ pub fn solve(
         RelaxCopyResize
     };
 
-    struct ConvCacheEntry {
+    struct ConvCacheColumns {
+
         // thus conv-id is just the index into the types/via arrays
         types:              ValueType[];
         paths:              Target[][];
@@ -436,6 +437,14 @@ pub fn solve(
         // positive positions are +1 indices into _scope.converts
         // negative positions are negated +1 indices into _scope.usings
         must_see:           i32[][];
+    };
+
+    struct ConvCache_ColsAndBakes {
+        using columns:      ConvCacheColumns;
+
+        // ... field items & implicits intended to come here,
+        //  kept separately from the columns so the latter can be
+        //   for-fieldnamed for splicing.
     };
 
     struct SolverState
@@ -449,7 +458,7 @@ pub fn solve(
         _helpers_data:      HelpersData[];
         _ephemeral:         Ephemeral[];
 
-        _conv_cache:        flat::Map(ValueType, ConvCacheEntry);
+        _conv_cache:        flat::Map(ValueType, ConvCache_ColsAndBakes);
 
         _solver_safety:     int;
 
@@ -595,7 +604,7 @@ pub fn solve(
             _conv_cache.if(ValueType()): |ref cc|
                 for (shadow mut i = cc.paths.len; i --> 0; )
                     if (cc.paths[i].starts(with: t))
-                        for (fieldname column: ConvCacheEntry)
+                        for (fieldname column: ConvCacheColumns)
                             cc.column.splice(i, 1);
         }
 
@@ -605,7 +614,7 @@ pub fn solve(
             _conv_cache.each: |ref cc|
                 for (shadow mut i = cc.paths.len; i --> 0; )
                     if (cc.paths[i].has(t))
-                        for (fieldname column: ConvCacheEntry)
+                        for (fieldname column: ConvCacheColumns)
                             cc.column.splice(i, 1);
         }
 
@@ -2559,7 +2568,7 @@ pub fn solve(
 
         TRACE_BRACKET("doExploreConversions startType(" ~ humanizeType(startType) ~ ")");
 
-        mut result: ConvCacheEntry;
+        mut result: ConvCache_ColsAndBakes;
 
         //
         let conv_safety0 = _current_fn.conv_safety++;
