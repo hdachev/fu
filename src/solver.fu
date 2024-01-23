@@ -10169,7 +10169,7 @@ pub fn solve(
             use_type_last:      true,
             static_eval_brk:    staticEvalBrk && SE_False,
             type_all:           t_proposition,
-            DeadBreak_Always);
+            dead_brk:           staticEvalBrk && DeadBreak_Always);
 
         return createAnd(items, :type);
     }

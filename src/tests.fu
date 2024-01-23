@@ -2686,7 +2686,7 @@ pub extern fn runTests()
         }
     `);
 
-    TODO_ambig(currently: "if/else no common supertype SolvedNode[] 17:21+1", `
+    TODO_logic(currently: "if/else no common supertype SolvedNode[] 17:21+1", `
         struct SolvedNode {
             items: SolvedNode[];
         };
@@ -4163,7 +4163,7 @@ pub extern fn runTests()
         fn main() = State().mustClose.i32;
     `);
 
-    TODO_logic(currently: "actual return does not match annot i32 <- bool 8:21+2", `
+    ZERO(`
         fn main() {
             mut match: int;
 
