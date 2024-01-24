@@ -2381,14 +2381,15 @@ pub fn solve(
 
     fn couldRetype(node: SolvedNode): int
     {
-        return node.kind == "real"      && 1
-            || node.kind == "int"       && 2
-            || node.kind == "definit"   && 3
-            || node.type.is_zeroes      && 3
-            || node.kind == "str"       && 3
-            || node.kind == "if"        && min(node.items[1].couldRetype, node.items[2].couldRetype)
-            || node.kind == "block"     && !node.helpers && node.items.last.couldRetype
-            ;
+        return node.kind == "real"      ? 1
+            :  node.kind == "int"       ? 2
+            :  node.kind == "definit"   ? 3
+            :  node.type.is_zeroes      ? 3
+            :  node.kind == "str"       ? 3
+            :  node.kind == "if"        ? min(node.items[1].couldRetype, node.items[2].couldRetype)
+            :  node.kind == "block"     ? !node.helpers && node.items.last.couldRetype
+            :  node.kind == "argid"     ? node.items.only.couldRetype
+            :  0;
     }
 
     fn tryRetyping(node: SolvedNode, expect: Type): Type
@@ -2416,7 +2417,7 @@ pub fn solve(
                 && type_trySuper(left, right);
         }
 
-        if (node.kind == "block")
+        if (node.kind == "block" || node.kind == "argid")
             return !(node.helpers.mask & HM_LabelUsed)
                 && tryRetyping(node.items.last, expect);
 
@@ -2433,7 +2434,7 @@ pub fn solve(
             applyRetype(node.items[1], retype);
             applyRetype(node.items[2], retype);
         }
-        else if (node.kind == "block")
+        else if (node.kind == "block" || node.kind == "argid")
         {
             node.helpers.mask & HM_LabelUsed && BUG(
                 "Trying to retype a labelled block, we cant do this still.");
