@@ -2379,14 +2379,15 @@ pub fn solve(
 
     //
 
-    fn couldRetype(node: SolvedNode): bool
+    fn couldRetype(node: SolvedNode): int
     {
-        return node.kind == "int"
-            || node.kind == "real"
-            || node.kind == "definit" || node.type.is_zeroes
-            || node.kind == "str"
-            || node.kind == "if"  && node.items[1 .. 3].all(fn couldRetype)
-            || node.kind == "block" && !node.helpers && node.items.last.couldRetype
+        return node.kind == "real"      && 1
+            || node.kind == "int"       && 2
+            || node.kind == "definit"   && 3
+            || node.type.is_zeroes      && 3
+            || node.kind == "str"       && 3
+            || node.kind == "if"        && min(node.items[1].couldRetype, node.items[2].couldRetype)
+            || node.kind == "block"     && !node.helpers && node.items.last.couldRetype
             ;
     }
 
@@ -6075,7 +6076,9 @@ pub fn solve(
 
             /////////////////
             // Literal fixup.
-            mut retypeIndices: i32[];
+            struct RetypeOrder { retype_score: int; index: int };
+
+            mut retypeIndices: RetypeOrder[];
 
             //
             mut errout = [ Warning ];
@@ -6088,14 +6091,18 @@ pub fn solve(
             //        /LITFIX
             /////////////////
 
-                for (mut i = 0; i < numArgs; i++)
+                let N = pass_retype
+                    ? {
+                        retypeIndices.sort(|a, b| a <> b < 0);
+                        retypeIndices.len
+                      }
+                    : numArgs;
+
+                for (mut i = 0; i < N; i++)
                 {
-                    if (pass_retype)
-                    {
-                        // TODO fix, .try_shift instead.
-                        if (!retypeIndices.has(i))
-                            continue;
-                    }
+                    shadow let i = pass_retype
+                        ? retypeIndices[i].index
+                        : i;
 
                     mut inType  = args.len > i && args[i];
                     let inValue = reorder
@@ -6116,11 +6123,12 @@ pub fn solve(
 
                     /////////////////
                     // Literal fixup.
-                    if (couldRetype(inValue))
+                    mut retype_score = couldRetype(inValue);
+                    if (retype_score)
                     {
                         if (!pass_retype)
                         {
-                            retypeIndices.push(i);
+                            retypeIndices.push(RetypeOrder(:retype_score, index: i));
                             continue;
                         }
 
@@ -6151,7 +6159,7 @@ pub fn solve(
                     //   and collapse along the way.                                                            //
                     if (!pass_retype && annot.kind == "typeunion")
                     {
-                        retypeIndices.push(i);
+                        retypeIndices.push(RetypeOrder(index: i, retype_score: int.MAX));
                         continue;
                     }
                     //////////////////////////////////////////////////////////////////////////////////////////////
