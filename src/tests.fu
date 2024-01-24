@@ -10072,6 +10072,13 @@ pub extern fn runTests()
 
     ZERO(`
         let SMTH = false;
+        fn LITFIX(reason: f32) reason;
+        fn litfix(lax mut reason: string) LITFIX(SMTH ? reason : 0);
+        fn main() litfix("hello").i32;
+    `);
+
+    ZERO(`
+        let SMTH = false;
 
         fn FAIL(reason: string, implicit ref log: string)
             log ~= reason ~ '\\n';
@@ -18187,6 +18194,30 @@ pub extern fn runTests()
             using fn GET(t: Target) = t.isLocal ? GETLocal(t) : _scope;
             let res: string = Target(1);
             return res == "Hello, world!" ? 0 : 1;
+        }
+    `);
+
+    ZERO(`
+        struct Target { id: int }
+        struct Overload { name: string };
+        struct ClosureID { target: Target };
+        inline fn globid(lax t) i32();
+
+        fn parse(id!: string) {
+            if (!id) throw("throw!");
+            shadow let id = id[0].int;
+            return ClosureID(Target(id));
+        }
+
+        fn zstHostArgsCanEndUpWithMismatchedArgVals(ref overloads: Overload[]) {
+            fn strGET(id: string) GET(parse(:id).target);
+            fn GET(t: Target) overloads[t.globid].name;
+            return "0".strGET;
+        }
+
+        fn main() {
+            mut overloads = [ Overload("Hello, world!") ];
+            return overloads.zstHostArgsCanEndUpWithMismatchedArgVals().len - 13;
         }
     `);
 
