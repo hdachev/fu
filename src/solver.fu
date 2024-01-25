@@ -11164,7 +11164,11 @@ pub fn solve(
                     {
                         let retype = tryRetyping(arg, expect);
                         if (retype && isAssignableAsArgument(expect, retype))
+                        {
+                            TRACE("RETYPE ARG from(" ~ arg.type.humanizeType(usage: true) ~ ") retype(" ~ retype.humanizeType(usage: true) ~ ") expect(" ~ expect.humanizeType(usage: true) ~ ")");
+
                             applyRetype(arg, retype);
+                        }
                     }
                     //        /LITFIX
                     /////////////////
@@ -13226,7 +13230,7 @@ pub fn solve(
                 {
                     if (o.kind == "field")
                         node.type.isIrrelevant || !arg.type.isIrrelevant || BUG(
-                            "Relevant data out of an irrelevant struct.");
+                            "Relevant data out of an irrelevant struct: getting a " ~ humanizeType(node) ~ " from a " ~ humanizeType(arg));
 
                     continue;
                 }
