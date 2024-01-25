@@ -14738,7 +14738,7 @@ pub extern fn runTests()
         }
     `);
 
-    TODO_semis(currently: "fn void_ret is missing a final return void <- i32 6:12+8", `
+    ZERO(`
         fn non_void_ret(fn) {
             return fn();
         }

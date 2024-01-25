@@ -891,7 +891,12 @@ pub fn parse(
                 fail("Cannot pipeline: expression is not a call.");
 
             let right = parseExpression(P_RESET, mode: M_LAMBDA_STMT_OK);
-            return pipelineLeft(expr, right);
+            expr = pipelineLeft(expr, right);
+
+            // HACK! TODO FIX semicollon ambiguity here.
+            let prev = _idx && tokens[_idx - 1];
+            if (prev.kind == "op" && prev.value == ";")
+                _idx--;
         }
 
         if (softSemi())
