@@ -131,6 +131,7 @@ pub extern fn runTests()
 
     let TODO_confusing  = fn TODO;
     let TODO_logic      = fn TODO;
+    let TODO_semis      = fn TODO;
     let TODO_specpat    = fn TODO;
 
     let LEGACY_Map      = fn TODO;
@@ -14734,6 +14735,22 @@ pub extern fn runTests()
             mut fns = addrofns();
             for (fieldname i: addrofns) (fns.i)(str);
             return str == "Hello, World!" ? 0 : 1;
+        }
+    `);
+
+    TODO_semis(currently: "fn void_ret is missing a final return void <- i32 6:12+8", `
+        fn non_void_ret(fn) {
+            return fn();
+        }
+
+        fn void_ret(fn): void {
+            non_void_ret: || fn();  // statement-mode semi should discard retval
+        }
+
+        fn main() {
+            mut v = 3;
+            void_ret(|| v -= 3);
+            return v;
         }
     `);
 
