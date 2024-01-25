@@ -11547,7 +11547,18 @@ pub extern fn runTests()
         fn main() Type().vfacts.i32;
     `);
 
-    TODO_relaxer(currently: "BUG areVFactsAssignable AlwaysTrue 12:56+1", `
+    ZERO(`
+        struct Type { canon: int; items: string };
+
+        fn evalTypeAnnot(node: Type) {
+            let exprType = node ? node || throw("always true") : Type();
+            return exprType.canon;
+        }
+
+        fn main() evalTypeAnnot(Type());
+    `);
+
+    ZERO(`
         struct Node { items: Node[]; type: Type };
         struct Type { canon: string; items: Type[] };
 
@@ -16708,6 +16719,31 @@ pub extern fn runTests()
     `]);
 
     // /Template types
+
+
+    // Assoc functions & types
+
+    SKETCH(currently: "Missing semicollon before Item 3:20+4", `
+        struct List {
+            struct Item { value: int };
+            fn newItem(v: int)  Item(value);
+
+            items: Item[];
+            fn push(v: int)     items ~= newItem(v);
+            fn each(fn)         items.each: fn fn;
+        }
+
+        fn main() {
+            mut list: List;
+            list.push(3);
+            list.items ~= List.Item(5);
+            mut check = 0;
+            list.each: |item: List.Item| check += 11 * item.value;
+            return check - 88;
+        }
+    `);
+
+    // /Assoc types & functions
 
 
     // Macros & loops.

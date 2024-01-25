@@ -4230,6 +4230,8 @@ pub fn solve(
                         if (s.kind != "struct")
                             break :PARTIAL_COPY;
 
+                        TRACE_BRACKET("PartialCopy " ~ humanizeType(node.type));
+
                         // So we'll break down the copy(a) into a
                         //  A(copy(a.x), [], copy(a.y)).
                         //
@@ -4274,7 +4276,7 @@ pub fn solve(
                                     copy.type   = usedFieldType;
                                     copy.items  = [
                                         CallerNode(
-                                            debug: "__partcopy_field",
+                                            debug: "__partcopy_f",
                                             target: fieldTarget,
                                             args: /*there's only one*/ [ item ])
                                     ];
@@ -4285,7 +4287,7 @@ pub fn solve(
 
                             let type0   = node.type;
                             node        = CallerNode(
-                                debug: "__partcopy_struct",
+                                debug: "__partcopy_s",
                                 target: s.target,
                                 :args);
 
@@ -13246,9 +13248,22 @@ pub fn solve(
             }
 
             if (o.kind != "field")
-                isAssignable(host: node.type, o.type) || err(
+            {
+                let expect = node.type;
+
+                // Fields man.
+                shadow let expect = o.kind == "field"
+                    ? clear_refs(expect) : expect;
+
+                // Partcopy preserves vfacts when emitting constructor calls,
+                //  and o.type obviously doesn't have AlwaysTrue & co on it.
+                shadow let expect = o.kind == "type" && node.value == "__partcopy_s"
+                    ? clear_vfacts(expect) : expect;
+
+                isAssignable(host: expect, o.type) || err(
                     "Return value not assignable to node.type: "
-                        ~ explainTypeDiff(node.type, o.type, "<-"));
+                        ~ explainTypeDiff(expect, o.type, "<-"));
+            }
         }
         else if (k == "block" || k == "and" || k == "or" || k == "if")
         {
