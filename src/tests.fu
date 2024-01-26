@@ -15508,6 +15508,22 @@ pub extern fn runTests()
         }
     `);
 
+    ZERO(`
+        struct A { x: int };
+        struct B { using a: A };
+        struct C { using a: A };
+
+        fn main() {
+            using mut b = B(A(1));
+            <fail using ambig var a 7:13+5 field B:a 3:20+5 var b 9:13+5 field C:a 4:20+5>
+            using <pass/></fail>
+            mut c = C(A(2));
+
+            x *= 10;
+            return b.x == 10 && c.x == 2 ? 0 : 1;
+        }
+    `);
+
     // /Conversion functions.
 
 
