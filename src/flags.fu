@@ -295,7 +295,7 @@ enum Kind
     jump
     __far_jump
     defer
-    Try
+    try
     // /ControlFlow
 
     let

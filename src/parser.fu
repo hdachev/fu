@@ -2297,7 +2297,7 @@ pub fn parse(
 
         let catch = parseStatement();
 
-        return make("Try", [ try, err, catch ]);
+        return make("try", [ try, err, catch ]);
     }
 
     fn parseCatchErrvar(): Node

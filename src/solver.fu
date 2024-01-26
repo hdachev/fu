@@ -2933,7 +2933,7 @@ pub fn solve(
 
         if (k == "import")      return solveImport(node);
         if (k == "defer")       return solveDefer(node);
-        if (k == "Try")         return solveTryCatch(node);
+        if (k == "try")         return solveTryCatch(node);
 
         if (k == "typecast")    return solveTypeCast(node);
         if (k == "typeassert")  return solveTypeAssert(node);
@@ -3787,7 +3787,7 @@ pub fn solve(
             //////////////////////////////////////////
 
         }
-        else if (k == "Try")
+        else if (k == "try")
         {
             fn attempt      = node.items[TRY_TRY];
             fn error        = node.items[TRY_ERR];
@@ -12963,7 +12963,7 @@ pub fn solve(
             }
             else if (k == "root"
                   || k == "jump"
-                  || k == "Try"
+                  || k == "try"
 
                   || k == "copy" || k == "move" // TODO shouldn't occur before bck
                   || k == "arrlit")             // TODO get rid of arrlits
@@ -13352,7 +13352,7 @@ pub fn solve(
                         ~ "\n\t\texpr: " ~ expr);
             }
         }
-        else if (k == "Try")
+        else if (k == "try")
         {
             node.items.len == 3 || BUG("try.items.len != 3");
             let err = node.items[TRY_ERR];
