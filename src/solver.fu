@@ -1905,17 +1905,18 @@ pub fn solve(
                     }
                 }
 
-                // Usings.
-                if (numUsings)
+                //
+                if (flags & (F_CALL_HAS_DOT | F_OPERATOR))
+                {
+                    let N = flags & F_CALL_HAS_DOT ? 1 : args.len;
+                    for (mut i = 0; i < N; i++)
+                        visitTypeImports(args[i].type);
+                }
+                else if (numUsings)
+                {
                     _scope.usings.each(_ss.usings,
                         |u| visitTypeImports(GET(u).type));
-
-                // Field access, method calls & operator calls.
-                //  TODO no way to opt-out of this for operators currently,
-                //   consider regular id-names for all ops, so we can freefn call them.
-                if (flags & (F_CALL_HAS_DOT | F_OPERATOR))
-                    for (mut i = 0; i < args.len; i++)
-                        visitTypeImports(args[i].type);
+                }
             }
 
             //
