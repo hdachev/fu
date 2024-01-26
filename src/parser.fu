@@ -883,26 +883,33 @@ pub fn parse(
     fn parseExpressionStatement(): Node
     {
         mut expr = parseExpression(P_RESET);
+        expr.tryColonPipeline(stmt: true);
 
+        if (softSemi())
+            expr.syntax |= PS_DISCARD_IF_BLOCK_TAIL;
+
+        return expr;
+    }
+
+    fn tryColonPipeline(ref expr: Node, stmt!: bool)
+    {
         // Pipeline left expriment.
         if (tryConsume("op", ":"))
         {
             if !(expr.kind == "call")
                 fail("Cannot pipeline: expression is not a call.");
 
-            let right = parseExpression(P_RESET, mode: M_LAMBDA_STMT_OK);
+            let right = parseExpression(P_RESET, mode: stmt && M_LAMBDA_STMT_OK);
             expr = pipelineLeft(expr, right);
 
-            // HACK! TODO FIX semicollon ambiguity here.
-            let prev = _idx && tokens[_idx - 1];
-            if (prev.kind == "op" && prev.value == ";")
-                _idx--;
+            if (stmt)
+            {
+                // HACK! TODO FIX semicollon ambiguity here.
+                let prev = _idx && tokens[_idx - 1];
+                if (prev.kind == "op" && prev.value == ";")
+                    _idx--;
+            }
         }
-
-        if (softSemi())
-            expr.syntax |= PS_DISCARD_IF_BLOCK_TAIL;
-
-        return expr;
     }
 
 
@@ -2088,7 +2095,8 @@ pub fn parse(
                 }
             }
 
-            let expr = parseExpression(P_RESET);
+            mut expr = parseExpression(P_RESET);
+            expr.tryColonPipeline(stmt: false);
 
             if (autoName)
                 name = getAutoName(expr);
