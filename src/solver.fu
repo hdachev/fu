@@ -13337,7 +13337,7 @@ pub fn solve(
                        expect: SolvedNode = node,
                        expectCopy: string = node.kind ~ ".type")
             {
-                if (!expect.type.is_ref)
+                if (!expect.type.is_ref || expect.type.isIrrelevant)
                     return;
 
                 // Previously we were testing if

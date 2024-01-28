@@ -18223,7 +18223,21 @@ pub extern fn runTests()
         }
     `);
 
-    TODO_relaxer(currently: "BUG block.tail not listed in block.type lifetime", `
+    ZERO(`
+        fn blockTailHasLocals_but_blockTypeIsTemp_reduct(ref id: string) {
+            fn ooeWrap(src) src && [];
+            return id
+                 ? ooeWrap((id = "") ~ (id = ""))
+                 : "";
+        }
+
+        fn main() {
+            mut id: string = "none of this does anything";
+            return blockTailHasLocals_but_blockTypeIsTemp_reduct(:id).len;
+        }
+    `);
+
+    ZERO(`
         struct SolvedNode { value: string; items?: SolvedNode[] };
 
         noinline fn blockTailHasLocals_but_blockTypeIsTemp(root: SolvedNode)
