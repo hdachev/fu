@@ -206,7 +206,8 @@ fn verify_errmsg(topic: string, e!: string, msg!: string)
 pub fn ZERO(
     implicit ref testdiffs: testdiff::TestDiffs,
     mut sources: string[],
-    mut options?: Options): Context
+    mut options?: Options,
+    expect_fail?: string): Context
 {
     // <fail>x</fail>
     // <fail>x<pass/>y</fail>
@@ -257,9 +258,6 @@ pub fn ZERO(
             {
                 let fail    = fails[j];
 
-                let isTODO  = fail.starts(with: "<TODO/>");
-                shadow let fail = isTODO ? fail.slice(7) : fail;
-
                 let end     = fail.unindent_left(fail.len);
                 sources[i]  = prefix ~ fail[.. end] ~ suffix;
 
@@ -268,23 +266,7 @@ pub fn ZERO(
                 options.dev |= DEV_ExpectFail;
 
                 // Each fail variant must throw.
-                try ZERO(:sources, :options);
-                catch (e)
-                {
-                    verify_errmsg("<fail>", :e, :msg);
-
-                    //
-                    testdiffs.set_next(
-                        sources.ERR_KEY ~ "\n---- <fail> ----\n" ~ e/*.ERR_TRIM*/);
-
-                    if (isTODO)
-                        throw("<fail><todo/> is actually passing:\n\n" ~ e);
-
-                    continue;
-                }
-
-                if (!isTODO)
-                    throw("<fail> does not throw:\n" ~ sources[i]);
+                ZERO(:sources, :options, expect_fail: msg);
             }
 
             // Finally, this should run fine,
@@ -335,7 +317,7 @@ pub fn ZERO(
                 // Re-run everything but the last alt,
                 //  which is gonna run anyway below.
                 if (j)
-                    ZERO(:sources, :options);
+                    ZERO(:sources, :options, :expect_fail);
             }
         }
     }
@@ -387,7 +369,7 @@ pub fn ZERO(
                 // Re-run everything but the last alt,
                 //  which is gonna run anyway below.
                 if (j)
-                    ZERO(:sources, :options);
+                    ZERO(:sources, :options, :expect_fail);
             }
         }
     }
@@ -414,7 +396,7 @@ pub fn ZERO(
             let without = src[.. start0] ~ src[start1 ..];
 
             sources[i]  = without;
-            ZERO(:sources, :options);
+            ZERO(:sources, :options, :expect_fail);
 
             // Continue with the greater modules count here.
             sources[i]  = moduleA;
@@ -430,7 +412,7 @@ pub fn ZERO(
         {
             shadow mut options = options;
             options.dev |= DEV_DontFoldLiterals;
-            ZERO(:sources, :options);
+            ZERO(:sources, :options, :expect_fail);
         }
     }
 
@@ -511,134 +493,165 @@ pub fn ZERO(
         }
     }
 
-    // We can now safely do the nowrites second -
-    //  so that we can first test if the thing works,
-    //   and only then allow you to persist it as an OK test output.
-    //
-    let ctx = compile_snippets(:sources, :options);
+    struct TODO_FIX_Tuple {
+        ctx:            Context;
+        debug_output:   test_output::TestOutput;
+    };
 
-    //
-    fn all_src = sources.join("\n----\n");
-    fn all_cpp = ctx.modules.map(.out.cpp.src).join("\n----\n");
-
-    // Memory asserts.
-    mut expect_alloc_count = 0;
-    mut expect_alloc_bytes = 0;
-
-    // Deal with expectations first, nicer errors.
-    :NEXT_EXPECTATION
-    expectations.each: |x|
+    fn compile_build_and_run()
     {
-        let note = parseWild(x, as: SolverNotes);
-
-        let idx = !note && x.find(' ');
-        if (idx < 0)
-            throw("Invalid ;; CHECK, no argument: `;; " ~ x ~ "` in:\n" ~ all_src);
-
-        let cmd  = x[.. idx];
-        let rest = x[idx + 1 ..];
-
-        if (cmd == "ALLOCS")
-        {
-            mut offset  = 0;
-            mut first   = parse10s32(rest, :offset);
-            mut second  = offset < rest.len && rest[offset++] == '/'
-                ? parse10s32(rest, :offset)
-                : -1;
-
-            expect_alloc_count += second < 0 ? first : second;
-            expect_alloc_bytes += second < 0
-                ? first * (128 - 16) // arc-alloc-size
-                : first;
-
-            offset == rest.len || throw(
-                "Invalid ;; ALLOCS, parse leftovers in: `;; " ~ x ~ "`");
-
-            continue;
-        }
-
-        mut found = false;
-        for (mut i = 0; i < sources.len; i++)
-        {
-            let out = ctx.modules[i + 1].out;
-
-            fn this_src = sources[i];
-            fn this_cpp = out.cpp.src;
-
-            if (note)
-            {
-                out.solve.notes & note || throw("Expected note not listed: " ~ x.qBAD ~ " in:\n" ~ this_src ~ "\n\nOutput is:\n\n" ~ this_src);
-                continue :NEXT_EXPECTATION;
-            }
-
-            if (found = this_cpp.has(rest))
-                break;
-        }
-
-        if (cmd == "EXPECT")
-            found || throw("EXPECT mismatch: `;; " ~ x ~ "` in:\n" ~ all_src ~ "\n\nOutput is:\n\n" ~ all_cpp);
-        else if (cmd != "TODO")
-            throw("Unknown ;; CHECK: `;; " ~ x ~ "` in:\n" ~ all_src);
-        else if (found)
-            throw("TODO test is actually passing: `;; " ~ x ~ "` in:\n" ~ all_src ~ "\n\nOutput is:\n\n" ~ all_cpp);
-    }
-
-    let run = true;
-    let fudir = ctx.fudir;
-    let dir_wrk = DEFAULT_WORKSPACE;
-
-    let debug_output = ::build(
-        :ctx, :run, :fudir, :dir_wrk, :onfail, scheme: "debug");
-
-    ::build(
-        :ctx, :run, :fudir, :dir_wrk, :onfail);
-
-    // Check memory use,
-    //  currently opt-in, TODO add a superficial guestimator here
-    //   so we don't have to write these out manually everywhere,
-    //    but force these on at all times.
-    //
-    if (expect_alloc_count)
-    {
-        let actual_alloc_count =
-            debug_output.uniq_count +
-            debug_output.arc_count;
-
-        let actual_alloc_bytes =
-            debug_output.uniq_bytes +
-            debug_output.arc_bytes;
-
-        if (actual_alloc_count != expect_alloc_count ||
-            actual_alloc_bytes != expect_alloc_bytes)
-        {
-            throw("ALLOC mismatch:\n"
-                ~ "\n\tactual_alloc_count(" ~ actual_alloc_count ~ ") != expect_alloc_count(" ~ expect_alloc_count ~ ") ||"
-                ~ "\n\tactual_alloc_bytes(" ~ actual_alloc_bytes ~ ") != expect_alloc_bytes(" ~ expect_alloc_bytes ~ ")");
-        }
-    }
-
-    // Check codegen.
-    {
-        mut defects: CGDefects;
-        for (mut i = 0; i < sources.len; i++)
-        {
-            let cpp     = ctx.modules[i + 1].out.cpp;
-            defects    |= cpp.defects;
-        }
+        // We can now safely do the nowrites second -
+        //  so that we can first test if the thing works,
+        //   and only then allow you to persist it as an OK test output.
+        //
+        let ctx = compile_snippets(:sources, :options);
 
         //
-        let unexpected  =  defects & ~ok_defects;
-        let unnecessary = ~defects &  ok_defects;
+        fn all_src = sources.join("\n----\n");
+        fn all_cpp = ctx.modules.map(.out.cpp.src).join("\n----\n");
 
-        if (unexpected)
-            throw("Unwanted CGDefect: " ~ unexpected.str.ansi::qBAD ~ " in:\n" ~ all_src ~ "\n\nOutput is:\n\n" ~ all_cpp);
-        if (unnecessary)
-            throw("Unnecessary CGDefect annotation: " ~ unnecessary.str.ansi::qID ~ " in:\n" ~ all_src ~ "\n\nOutput is:\n\n" ~ all_cpp);
+        // Memory asserts.
+        mut expect_alloc_count = 0;
+        mut expect_alloc_bytes = 0;
+
+        // Deal with expectations first, nicer errors.
+        :NEXT_EXPECTATION
+        expectations.each: |x|
+        {
+            let note = parseWild(x, as: SolverNotes);
+
+            let idx = !note && x.find(' ');
+            if (idx < 0)
+                throw("Invalid ;; CHECK, no argument: `;; " ~ x ~ "` in:\n" ~ all_src);
+
+            let cmd  = x[.. idx];
+            let rest = x[idx + 1 ..];
+
+            if (cmd == "ALLOCS")
+            {
+                mut offset  = 0;
+                mut first   = parse10s32(rest, :offset);
+                mut second  = offset < rest.len && rest[offset++] == '/'
+                    ? parse10s32(rest, :offset)
+                    : -1;
+
+                expect_alloc_count += second < 0 ? first : second;
+                expect_alloc_bytes += second < 0
+                    ? first * (128 - 16) // arc-alloc-size
+                    : first;
+
+                offset == rest.len || throw(
+                    "Invalid ;; ALLOCS, parse leftovers in: `;; " ~ x ~ "`");
+
+                continue;
+            }
+
+            mut found = false;
+            for (mut i = 0; i < sources.len; i++)
+            {
+                let out = ctx.modules[i + 1].out;
+
+                fn this_src = sources[i];
+                fn this_cpp = out.cpp.src;
+
+                if (note)
+                {
+                    out.solve.notes & note || throw("Expected note not listed: " ~ x.qBAD ~ " in:\n" ~ this_src ~ "\n\nOutput is:\n\n" ~ this_src);
+                    continue :NEXT_EXPECTATION;
+                }
+
+                if (found = this_cpp.has(rest))
+                    break;
+            }
+
+            if (cmd == "EXPECT")
+                found || throw("EXPECT mismatch: `;; " ~ x ~ "` in:\n" ~ all_src ~ "\n\nOutput is:\n\n" ~ all_cpp);
+            else if (cmd != "TODO")
+                throw("Unknown ;; CHECK: `;; " ~ x ~ "` in:\n" ~ all_src);
+            else if (found)
+                throw("TODO test is actually passing: `;; " ~ x ~ "` in:\n" ~ all_src ~ "\n\nOutput is:\n\n" ~ all_cpp);
+        }
+
+        let run = true;
+        let fudir = ctx.fudir;
+        let dir_wrk = DEFAULT_WORKSPACE;
+
+        let debug_output = ::build(
+            :ctx, :run, :fudir, :dir_wrk, :onfail, scheme: "debug");
+
+        ::build(
+            :ctx, :run, :fudir, :dir_wrk, :onfail);
+
+        // Check memory use,
+        //  currently opt-in, TODO add a superficial guestimator here
+        //   so we don't have to write these out manually everywhere,
+        //    but force these on at all times.
+        //
+        if (expect_alloc_count)
+        {
+            let actual_alloc_count =
+                debug_output.uniq_count +
+                debug_output.arc_count;
+
+            let actual_alloc_bytes =
+                debug_output.uniq_bytes +
+                debug_output.arc_bytes;
+
+            if (actual_alloc_count != expect_alloc_count ||
+                actual_alloc_bytes != expect_alloc_bytes)
+            {
+                throw("ALLOC mismatch:\n"
+                    ~ "\n\tactual_alloc_count(" ~ actual_alloc_count ~ ") != expect_alloc_count(" ~ expect_alloc_count ~ ") ||"
+                    ~ "\n\tactual_alloc_bytes(" ~ actual_alloc_bytes ~ ") != expect_alloc_bytes(" ~ expect_alloc_bytes ~ ")");
+            }
+        }
+
+        // Check codegen.
+        {
+            mut defects: CGDefects;
+            for (mut i = 0; i < sources.len; i++)
+            {
+                let cpp     = ctx.modules[i + 1].out.cpp;
+                defects    |= cpp.defects;
+            }
+
+            //
+            let unexpected  =  defects & ~ok_defects;
+            let unnecessary = ~defects &  ok_defects;
+
+            if (unexpected)
+                throw("Unwanted CGDefect: " ~ unexpected.str.ansi::qBAD ~ " in:\n" ~ all_src ~ "\n\nOutput is:\n\n" ~ all_cpp);
+            if (unnecessary)
+                throw("Unnecessary CGDefect annotation: " ~ unnecessary.str.ansi::qID ~ " in:\n" ~ all_src ~ "\n\nOutput is:\n\n" ~ all_cpp);
+        }
+
+        return TODO_FIX_Tuple(ctx, debug_output);
+    }
+
+    //
+    if (expect_fail)
+    {
+        try
+        {
+            compile_build_and_run();
+        }
+        catch (e)
+        {
+            verify_errmsg("<fail>", :e, msg: expect_fail);
+
+            testdiffs.set_next( // why was this commented? ______________
+                sources.ERR_KEY ~ "\n---- <fail> ----\n" ~ e/*.ERR_TRIM*/);
+
+            return [];
+        }
+
+        throw("<fail> does not throw:\n" ~ sources.join("\n\n"));
     }
 
     // OK so it works, let's see if test output actually matches -
     //  this also allows us to perhaps defer all nowrite fails till all tests clear.
     //
+    using let _ = compile_build_and_run();
     {
         mut input   = "";
         mut output  = "";

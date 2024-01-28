@@ -2138,7 +2138,7 @@ pub extern fn runTests()
             mut nums: i32[];
             for (mut i = 0; i < 100; i++) nums ~= 1;
 
-            <fail COW will break (8:27+4|8:41+4) 30:19+3 7:17+6>
+            <fail COW will break (8:27+4|8:41+4) (8:27+4|30:19+3) 7:17+6>
             ref zeroes  = nums[10..20];
             let allOnes = <alt>nums<alt/>indirect_copy(nums)</alt>;
             <pass/>
@@ -2213,7 +2213,7 @@ pub extern fn runTests()
     ZERO(`
         fn test(ref nums: i32[][])
         {
-            <fail COW will break (6:31+1|6:45+1) 36:19+3 5:17+6>
+            <fail COW will break (6:31+1|6:45+1) (6:31+1|36:19+3) 5:17+6>
             ref zeroes  = nums[nums.len / 2];
             mut allOnes = <alt>nums[nums.len / 2]<alt/>indirect_copy(nums[nums.len / 2])</alt>;
             <pass/>
@@ -2263,7 +2263,7 @@ pub extern fn runTests()
                 orig.twos ~= 2;
             }
 
-            <fail COW will break (15:27+4|15:41+4) 34:40+1 40:19+3>
+            <fail COW will break (15:27+4|15:41+4) (15:27+4|34:40+1) (15:27+4|40:19+3)>
             ref zero    = orig.ones[orig.ones.len / 2];
             let all     = <alt>orig<alt/>indirect_copy(orig)</alt>;
             <pass/>
@@ -2365,7 +2365,7 @@ pub extern fn runTests()
         fn main() {
             mut arr: i32[][] = [ [0,1,2,3,4,5,6,7], [8,9,10,11,12,13,14,15] ];
 
-            <fail COW will break (20:24+3|20:38+3) 31:19+3>
+            <fail COW will break (20:24+3|20:38+3) (20:24+3|31:19+3)>
             ref x = arr[0];
             mut barr = <alt>arr<alt/>indirect_copy(arr)</alt>;
             <pass/>
@@ -6237,7 +6237,7 @@ pub extern fn runTests()
             // veach(view) should decay to a slice -
             //  which push will invalidate.
             //
-            fn veach(                   <fail both alias arr 3:17+3>
+            fn veach(                   <fail (both|expects) (alias|mutref) (3:17+3|20:20+2)>
                 /* no explicit val */   <fail/>
                 ref                     <pass/>
                 mut                     </fail>
@@ -15120,7 +15120,7 @@ pub extern fn runTests()
         using fn toMidB(start: Start) MidB(start.s * 3);
         using fn toEnd(mida: MidA) End(mida.a * 5);
 
-        <fail 18:26+1 multiple ways to conv Start into End toMidA 7:9+5 toEnd 9:9+5 toMidB 8:9+5 toEnd 12:9+5>
+        <fail (5:26+1|18:26+1) multiple ways to conv Start into End toMidA 7:9+5 toEnd 9:9+5 toMidB 8:9+5 toEnd 12:9+5>
         using <pass/></fail>
         fn toEnd(midb: MidB) End(midb.b * 7);
         <split/>
@@ -15682,7 +15682,7 @@ pub extern fn runTests()
             let c = not_ambig(:sum, "abc", "de");
             let d = not_ambig(:sum, 3, 3);
             let e = not_ambig(:sum, "abcdef",
-                <fail bad call to not_ambig 23:30>
+                <fail bad call to not_ambig (23:30+1|25:30+1)>
                                      'g'); <pass/>
                                      "g"); </fail>
 
@@ -16574,7 +16574,7 @@ pub extern fn runTests()
             req_handler();
         }
 
-        fn HTTP(request) {
+        fn HTTP(request?) {
             <fail ambig call type Sockets 2:9+6 fn HTTP 11:12+4><pass/>
             shadow
             </fail>
@@ -18081,7 +18081,7 @@ pub extern fn runTests()
     `);
 
     ZERO(`
-        noinline fn longer(             <fail cannot move from a slice 15:26+1>
+        noinline fn longer(             <fail cannot move from a slice (8:26+1|15:26+1)>
             l: byte[..], r: byte[..])   <pass/>
             l: $T[..],   r: $T[..])     </fail>
         {
