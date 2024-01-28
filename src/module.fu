@@ -230,6 +230,7 @@ nocopy struct Scope
 
     items:          ScopeItem[];
     implicits:      ScopeItem[];
+    globals:        ScopeItem[];
     imports:        i32[];
     privates:       i32[];
     usings:         Target[];
@@ -237,6 +238,7 @@ nocopy struct Scope
 
     pub_items:      i32;
     pub_implicits:  i32;
+    pub_globals:    i32;
     pub_converts:   i32;
 };
 

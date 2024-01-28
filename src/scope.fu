@@ -71,9 +71,11 @@ fn Scope_exports(scope: Scope, modid!: i32,
 
     mut pub_items       = 0;
     mut pub_implicits   = 0;
+    mut pub_globals     = 0;
 
     let items           = collect(.items,     pub_cnt: pub_items);
     let implicits       = collect(.implicits, pub_cnt: pub_implicits);
+    let globals         = collect(.globals,   pub_cnt: pub_globals);
 
 
     // Conversions, field conversions namespaced per struct,
@@ -102,6 +104,7 @@ fn Scope_exports(scope: Scope, modid!: i32,
         :items,         :pub_items,
         :implicits,     :pub_implicits,
         :converts,      :pub_converts,
+        :globals,       :pub_globals,
 
         :scope.overloads,
         :scope.extended,
@@ -335,24 +338,26 @@ fn search(
 
 fn search(
     items: ScopeItem[..], id: string,
-    ref scope_iterator: i32): Target
+    ref scope_iterator: i32,
+    field_items?: ScopeItem[..]): Target
 {
-    let START = items.len;
-
-    if (!scope_iterator)
-        scope_iterator = START;
-    else if (scope_iterator >= START)
-        throw ("Scope/search: items shrunk while we iterated.");
-
-    defer scope_iterator ||= -1;
-
-    while (scope_iterator --> 0)
+    let N0 = items.len;
+    while (scope_iterator < N0)
     {
-        let item = items[scope_iterator];
+        let item = items[scope_iterator++];
         if (item.id == id)
             return item.target;
     }
 
+    shadow let N1 = N0 + field_items.len;
+    while (scope_iterator < N1)
+    {
+        let item = field_items[(scope_iterator++) - N0];
+        if (item.id == id)
+            return item.target;
+    }
+
+    // Done.
     return Target;
 }
 
