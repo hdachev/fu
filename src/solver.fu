@@ -2970,7 +2970,7 @@ pub fn solve(
         if (k == "block")       return solveBlock(node, :type);
         if (k == "argid")       return solveArgID(node, :type);
 
-        if (k == "let")         return solveLet(node, letdefType: type, asArgument: false);
+        if (k == "let")         return solveLet(node, asArgument: false);
         if (k == "call")        return solveCall(node);
         if (k == "arrlit")      return solveArrlit(node, type);
 
@@ -3658,41 +3658,10 @@ pub fn solve(
 
         //
 
-        let canDiscard = slot.isIrrelevant;
-
-        // Shortcutting lets, they source the slot from usage.
-        if (k == "let" || k == "letdef")
-        {
-            // Addrofn & co.
-            if (!node.target)
-                return;
-
-            if (PASS_MaybeCopyOrMove)
-            {
-                shadow ref node = GET_mut(node.target).solved;
-
-                ref init = node.items[LET_INIT];
-                if (init)
-                    maybeCopyOrMove(init, node.type);
-            }
-
-            relaxBlockVar(node.target, :relax_mask, :canDiscard);
-
-            k == "letdef" || BUG("Unexpected let node.");
-
-            // Discarding unused variables.
-            if (node.target.status & SS_UNUSED)
-            {
-                makeNote(N_UnusedLet);
-                node = node.target.solved.items[LET_INIT] || createEmpty();
-            }
-
-            return;
-        }
+        let canDiscard      = slot.isIrrelevant;
+        let relaxed_quals   = node.type.try_relax(:slot, :relax_mask);
 
         //
-        let relaxed_quals = node.type.try_relax(:slot, :relax_mask);
-
         fn discardIntoBlock()
         {
             node = createBlock(:node.items, slot);
@@ -3716,17 +3685,62 @@ pub fn solve(
 
             shadow ref usage = _current_fn.var_usage.grow_if_oob(locid);
             if (!usage)
+            {
                 usage = slot;
+                return true;
+            }
             else
+            {
                 usage = type_tryIntersect(usage, slot) || BUG(
                     nested(locid) ~ ": Usage intersection failure: "
                                   ~ explainTypeDiff(usage, slot, "&"));
+
+                return false;
+            }
         }
 
 
         // Control flow.
 
-        if (k == "and" || k == "or")
+        if (k == "let" || k == "letdef")
+        {
+            // Addrofn & co.
+            if (!node.target)
+                return;
+
+            if (PASS_MaybeCopyOrMove)
+            {
+                shadow ref node = GET_mut(node.target).solved;
+
+                ref init = node.items[LET_INIT];
+                if (init)
+                    maybeCopyOrMove(init, node.type);
+            }
+
+            if (!canDiscard)
+            {
+                // TODO FIX!
+                //  This is nonsense but better than what i had before,
+                //   basically we want letdefs to work as an immediate variable read.
+                let firstUse = trackVarUsage(:node.target.locid, node.type);
+                node.target.GET_mut.status |= SS_HOIST;
+
+                if (firstUse)
+                    node.target.warnUnused();
+            }
+
+            relaxBlockVar(node.target, :relax_mask, :canDiscard);
+
+            k == "letdef" || BUG("Unexpected let node.");
+
+            // Discarding unused variables.
+            if (node.target.status & SS_UNUSED)
+            {
+                makeNote(N_UnusedLet);
+                node = node.target.solved.items[LET_INIT] || createEmpty();
+            }
+        }
+        else if (k == "and" || k == "or")
         {
             let rest = !canDiscard && (k == "or" || slot.is_mutref && CANNOT_definit_mutrefs)
                 ? slot
@@ -3863,7 +3877,7 @@ pub fn solve(
             //  only executes if try block throws.
             _current_fn.postdom.branch(postdom0);
 
-            propagateType(error, t_string, :relax_mask);
+            propagateType(error, t_void, :relax_mask);
 
             //////////////////////////////////////////////
             let throws0 = _current_fn.fx_mask & Fx_Throws;
@@ -5031,6 +5045,12 @@ pub fn solve(
             o.flags &= ~F_MUT;
     }
 
+    fn warnUnused(o: Overload)
+    {
+        if !(o.flags & F_LAX || o.status & SS_MATCHED || o.type.is_zst)
+            warn(:o.solved.token, "Unused variable: " ~ o ~ ": make it " ~ "lax".qKW ~ " if this is intentional.");
+    }
+
     fn relaxBlockVar(t: Target, relax_mask!: Quals, canDiscard!?: bool)
     {
         let o = GET(t);
@@ -5042,10 +5062,7 @@ pub fn solve(
             let usage = _current_fn.var_usage.unless_oob(t.locid);
             let isUnused = !usage;
             if (isUnused)
-            {
-                if !(o.flags & F_LAX || o.status & SS_MATCHED || o.type.is_zst)
-                    warn(:o.solved.token, "Unused variable: " ~ o ~ ": make it " ~ "lax".qKW ~ " if this is intentional.");
-            }
+                o.warnUnused();
 
             TEST_unusedButCopied("relaxBlockVar " ~ t, usage);
 
@@ -8867,7 +8884,7 @@ pub fn solve(
     }
 
     fn solveLet(
-        node: Node, letdefType!?: Type, specType!?: Type,
+        node: Node, specType!?: Type,
         asArgument!: bool): SolvedNode
     {
         if (node.flags & F_TYPENAME)
@@ -8879,12 +8896,12 @@ pub fn solve(
 
         let id  = out.value;
         return solveLet_createBindingAndGetLetdef(
-            :out, :id, setScope: true, :letdefType,
+            :out, :id, setScope: true,
             :asArgument);
     }
 
     fn solveLet_createBindingAndGetLetdef(
-        mut out!: SolvedNode, id!: string, setScope!: bool, letdefType!?: Type,
+        mut out!: SolvedNode, id!: string, setScope!: bool,
         asArgument!isArg: bool): SolvedNode
     {
         // Dead code elim.
@@ -8983,7 +9000,7 @@ pub fn solve(
             Scope_set(:target);
 
             //
-            return createLetDef(:target, :letdefType);
+            return createLetDef(:target);
         }
 
         // TODO FIX: these are the addrofn target-less lets,
@@ -9003,21 +9020,9 @@ pub fn solve(
         return createEmpty();
     }
 
-    fn createLetDef(target: Target, letdefType?: Type)
+    fn createLetDef(target: Target)
     {
-        return SolvedNode(kind: "letdef", :target,
-
-            // TODO FIX if (lets ) started complaining about the t_void here,
-            //  which is totally legit, this needs to be formalized.
-            //
-            // TODO FIX needed to fix this up, makes NO SENSE AT ALL.
-            //  we need this for if (let)s, gotta replace this mess with
-            //   a parser transform to { let x; if (x) ... },
-            //    and we can recognize and reverse this during cg.
-            //
-            type: letdefType == t_proposition
-                ? t_bool
-                : t_void);
+        return SolvedNode(kind: "letdef", :target, :target.type);
     }
 
     fn createLet(id: string, flags: Flags, init: SolvedNode, setScope!: bool)
@@ -13414,7 +13419,9 @@ pub fn solve(
                     || BUG("BROKEN JUMP TYPE"
                         ~ "\n\t\tret_actual: " ~ (h.ret_actual ? h.ret_actual.humanizeType : "N/A".qBAD)
                         ~ "\n\t\tret_expect: " ~ (h.ret_expect ? h.ret_expect.humanizeType : "N/A".qBAD)
-                        ~ "\n\t\texpr: " ~ expr);
+                        ~ "\n\t\texpr: " ~ expr
+
+                        ~ "\n\n\t" ~ explainTypeDiff(h.ret_actual, expr, "<-"));
             }
         }
         else if (k == "try")

@@ -1424,7 +1424,14 @@ pub fn parse(
     fn parseLetStmt(): Node
     {
         mut ret = parseLet();
-        softSemi();
+
+        // TODO FIX we're now adding a "let expression",
+        //  which is (a := b) that can be nested wherever,
+        //   but for the time being we'll support if (let a = b) for backwards compat,
+        //    so the presence of this semi is what's gonna drive discards for now here.
+        //
+        if (softSemi())
+            ret.syntax |= PS_ALWAYS_DISCARD;
 
         // EXPERIMENTAL free implicit ref syntax -
         //  rewrites:   implicit ref hello: Hello;

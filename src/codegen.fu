@@ -1708,7 +1708,7 @@ pub fn cpp_codegen(
         return n.kind == "copy" && (!n.is_sliceable || sliceOK);
     }
 
-    fn binding(target!: Target, init: SolvedNode, doInit!: bool)
+    fn binding(target!: Target, init: SolvedNode, doInit!: bool, mode!: i32)
     {
         mut head = binding(:target);
         if (!doInit)
@@ -1716,12 +1716,20 @@ pub fn cpp_codegen(
 
         // Hoisted vars: the declaration is elsewhere,
         //  this is an assignment here.
-        if (target.status & SS_HOIST)
+        let hoist = target.status & SS_HOIST;
+        if (hoist)
             head ~= " = ";
 
         // Definit.
         if (!init || init.kind == "empty" && !init.type.is_ref)
-            return head ~ " {}";
+        {
+            let ret = head ~ " {}";
+
+            if (!hoist || mode & M_STMT)
+                return ret;
+
+            return "(" ~ ret ~ ")";
+        }
 
         // A less verbose copy init.
         let isAbbreviatedCopy =
@@ -1768,12 +1776,17 @@ pub fn cpp_codegen(
         //     return head ~ " { " ~ expr ~ " }";
 
         // Hoisting.
-        if (target.status & SS_HOIST)
+        if (hoist)
         {
-            if (target.F_HOIST_asPtr)
-                return head ~ "&(" ~ expr ~ ")";
+            let ret =
+                target.F_HOIST_asPtr
+                    ? head ~ "&(" ~ expr ~ ")"
+                    : head ~ expr;
 
-            return head ~ expr;
+            if (mode & M_STMT)
+                return ret;
+
+            return "(" ~ ret ~ ")";
         }
 
         return head ~ " = " ~ expr;
@@ -1782,12 +1795,12 @@ pub fn cpp_codegen(
         //*/
     }
 
-    fn binding(node: SolvedNode, doInit!?: bool): string
+    fn binding(node: SolvedNode, doInit!?: bool, mode!: i32): string
     {
         let target  = node.target;
         let init    = doInit && node.items && node.items[LET_INIT];
 
-        return binding(:target, :init, :doInit);
+        return binding(:target, :init, :doInit, :mode);
     }
 
     fn binding(arg: Argument, forceValue!?: bool)
@@ -1833,7 +1846,7 @@ pub fn cpp_codegen(
         return "fu_INIT_PRIORITY(" ~ (1000 + prio) ~ ") ";
     }
 
-    fn cgLet(node: SolvedNode, global!: bool, foreign?: bool): string
+    fn cgLet(node: SolvedNode, global!: bool, foreign?: bool, mode!: i32): string
     {
         if (node.type.isIrrelevant)
             return "";
@@ -1843,7 +1856,7 @@ pub fn cpp_codegen(
             && node.target.globalVar_isConstexpr;
         // GLOBALS ///////////////////////////////////////////////
 
-        mut src = binding(node, doInit: !foreign || constexpr);
+        mut src = binding(node, doInit: !foreign || constexpr, :mode);
         if (!global)
             return src;
 
@@ -1897,16 +1910,17 @@ pub fn cpp_codegen(
 
         return cgLet(target.solved,
             global: true,
-            foreign: target.modid != module.modid);
+            foreign: target.modid != module.modid,
+            mode: M_STMT);
     }
 
-    fn cgLetDef(node: SolvedNode)
+    fn cgLetDef(node: SolvedNode, mode!: i32)
     {
         if (!_current_fn.globid)
             return node.target.isExtLinked
                 && cgGlobal(node.target);
 
-        return cgLet(node.target.solved, global: false);
+        return cgLet(node.target.solved, global: false, :mode);
     }
 
 
@@ -3282,28 +3296,28 @@ pub fn cpp_codegen(
         HERE(node);
 
         if (k == "not")         return cgNot(node);
-        if (k == "call")        return cgCall(node, mode);
+        if (k == "call")        return cgCall(node, :mode);
 
-        if (k == "int")         return cgLiteral(node, mode);
-        if (k == "real")        return cgLiteral(node, mode);
+        if (k == "int")         return cgLiteral(node, :mode);
+        if (k == "real")        return cgLiteral(node, :mode);
         if (k == "char")        return cgCharLiteral(node);
         if (k == "str")         return cgStringLiteral(node);
-        if (k == "arrlit")      return cgArrayLiteral(node, mode, :callarg);
+        if (k == "arrlit")      return cgArrayLiteral(node, :mode, :callarg);
         if (k == "bool")        return node.value;
 
-        if (k == "copy")        return cgCopyOrMove(node, mode);
-        if (k == "move")        return cgCopyOrMove(node, mode);
+        if (k == "copy")        return cgCopyOrMove(node, :mode);
+        if (k == "move")        return cgCopyOrMove(node, :mode);
 
-        if (k == "if")          return cgIf(node, mode);
-        if (k == "or")          return cgOr(node, mode);
-        if (k == "and")         return cgAnd(node, mode);
+        if (k == "if")          return cgIf(node, :mode);
+        if (k == "or")          return cgOr(node, :mode);
+        if (k == "and")         return cgAnd(node, :mode);
 
-        if (k == "letdef")      return cgLetDef(node);
+        if (k == "letdef")      return cgLetDef(node, :mode);
 
-        if (k == "block")       return cgBlock(node, mode);
+        if (k == "block")       return cgBlock(node, :mode);
 
         // Empties.
-        if (k == "empty")       return cgEmpty(node, mode);
+        if (k == "empty")       return cgEmpty(node, :mode);
 
         // Stuff that we can't cg as expressions.
         if !(mode & M_STMT)

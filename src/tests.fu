@@ -10252,7 +10252,7 @@ pub extern fn runTests()
     `);
 
     ZERO(`
-        fn test(x: i32): bool   <fail return type void does not match annot bool 3:17+1>
+        fn test(x: i32): bool   <fail fn test is missing a final return statement bool <- void 3:17+1>
             let y = x > 10;     <pass/>
                     x > 10;     </fail>
 
