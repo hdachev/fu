@@ -9638,14 +9638,6 @@ pub fn solve(
 
     //
 
-    fn createRead(id: string): Node
-    {
-        return Node(
-            kind:   "call",
-            value:  id,
-            token:  (_here || BUG()));
-    }
-
     fn dequalify_andGetScope(ref id: string): &Scope
     {
         mut offset = 0;
@@ -10743,7 +10735,11 @@ pub fn solve(
         mut node: SolvedNode,
         mut letdefReplicas!?: flat::Map(Target, Target),
         locals_start!?: i32,
-        now_inlining!?: Target)
+        now_inlining!?: Target,
+
+        // TODO FIX mut slice arguments can be defaultable,
+        //  an empty slice is a perfectly sane default
+        ref callsite_args!: SolvedNode[..])
     {
         PROFILE(.InlineExpr);
 
@@ -10772,7 +10768,8 @@ pub fn solve(
                 return replica;
 
             // Local of self?
-            if (target.parent == _current_fn.target)
+            let parent = target.parent;
+            if (parent == _current_fn.target)
             {
                 target.locid < minLocalIdx || BUG("Missing a local replica for: " ~ target);
                 return target;
@@ -10786,6 +10783,31 @@ pub fn solve(
 
             if (from.modid != module.modid)
                 BUG("inlineExpression: about to use injectForeignLocal with an off-module target: " ~ o);
+
+            // Preceding argument references -
+            //  fn myfn(a = 2, b = a * a)
+            //
+            if (parent == from && callsite_args)
+            {
+                o.isArg || BUG("inlineExpression callsite_args(" ~ callsite_args.len ~ ") observing a non-F_ARG local(" ~ target ~ ") from(" ~ from ~ ")");
+                parent.args.each: |host_arg, i|
+                {
+                    if (host_arg.target == target)
+                    {
+                        if (callsite_args.len < i)
+                            break;
+
+                        ref arg = callsite_args[i];
+                        let replacement =
+                            (arg.kind == "call" && arg.target.kind == "var" || arg.kind == "letdef")
+                                ? arg.target
+                                : (arg = createLet(setScope: false,
+                                    "__def_arg_ref", init: arg, flags: [])).target;
+
+                        return replacement;
+                    }
+                }
+            }
 
             return injectForeignLocal(target);
         }
@@ -10920,11 +10942,14 @@ pub fn solve(
                     {
                         TRACE("F_INLINE local " ~ local);
 
+                        shadow mut callsite_args: SolvedNode[]; // TODO FIX REMOVE mutslice defaulting
                         node = inlineExpression(
                             from: local.parent,
                             :letdefReplicas,
                             local.solved.items[LET_INIT] || BUG(
-                                "inlineExpression NODE: F_INLINE local has no LET_INIT: " ~ local));
+                                "inlineExpression NODE: F_INLINE local has no LET_INIT: " ~ local),
+
+                            :callsite_args);
 
                         // No visitTypes, no nothing -
                         //  we've already recursively called inlineExpression.
@@ -11128,7 +11153,10 @@ pub fn solve(
 
                     if (default)
                     {
-                        args[i] = inlineExpression(default, from: defaultFrom);
+                        args[i] = inlineExpression(
+                            default,
+                            from: defaultFrom,
+                            callsite_args: args);
                     }
                     else
                     {
@@ -11340,9 +11368,12 @@ pub fn solve(
 
         //
         let n_body = target.solved.items.last;
+
+        mut callsite_args: SolvedNode[]; // TODO FIX REMOVE mutslice defaulting
         mut s_body = inlineExpression(
             from: target, n_body, :letdefReplicas, :locals_start,
-            now_inlining: target);
+            now_inlining: target,
+            :callsite_args);
 
         if (argdefs)
         {

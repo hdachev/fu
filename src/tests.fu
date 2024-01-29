@@ -3434,16 +3434,21 @@ pub extern fn runTests()
         fn main() test(-1);
     `);
 
-    TODO_args(currently: "no implicit test:a in scope", `
+    ZERO(`
         fn test(a = 3, b = a * 2) a + b;
         fn main() test + test(a: -1) * 3;
     `);
 
     ZERO(`
+        fn test(a = 3, b = a * a) a + b;
+        fn main() test + test(a: 5) - 42;
+    `);
+
+    ZERO(`
         fn woot(ref a: i32, ref b: i32) {
-            ref c = a || b;
-            fn arg_defaulted_to_closure(ref x = c)
-                x *= 2;
+            ref c = a || b;                                         <alt>
+            fn arg_defaulted_to_closure(ref x = c)     x *= 2;      <alt/>
+            fn arg_defaulted_to_closure(ref x = c, y = x *= 2) y;   </alt>
 
             arg_defaulted_to_closure( );
             arg_defaulted_to_closure(a);
