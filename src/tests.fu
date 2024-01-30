@@ -1728,7 +1728,42 @@ pub extern fn runTests()
         }
     `);
 
-    TODO_relaxer(currently: "BUG spec.args.len(3) != original.args.len(4)", `
+    ZERO(`
+        struct Node { target: int; items?: Node[] }
+
+        noinline fn revSpecFewerArgs(overloads: Node[], args: int[][], root: Node)
+        {
+            fn cgNode(n: Node) {
+                mut src = "";
+                for (mut i = 0; i < n.items.len; i++)
+                    src ~= cgFn(n.items[i].target);
+
+                return src;
+            }
+
+            fn cgFn(target: int) {
+                mut src = cgNode(overloads[target]);
+
+                fn foreach(arg: int)
+                    src ~= cgNode(overloads[arg]);
+
+                shadow let args = args[target];
+                for (mut i = 0; i < args.len; i++)
+                    foreach(args[i]);
+
+                return src;
+            }
+
+            return cgNode(root);
+        }
+
+        fn main() {
+            return revSpecFewerArgs(
+                [ Node() ], [ [] => int[] ], Node()).len;
+        }
+    `);
+
+    ZERO(`
         struct Target { globid: i32 };
         struct SolvedNode { target: Target; items?: SolvedNode[] }
         struct Argument { target: Target };
@@ -1745,17 +1780,26 @@ pub extern fn runTests()
 
             fn cgNode(n: SolvedNode) {
                 mut src = "";
+        <alt>
                 n.items.each: |member|
                     src ~= cgFn(member.target);
-
+        <alt/>
+                for (mut i = 0; i < n.items.len; i++)
+                    src ~= cgFn(n.items[i].target);
+        </alt>
                 return src;
             }
 
             fn cgFn(target: Target) {
                 mut src = cgNode(target.solved);
+        <alt>
                 target.args.each: |host_arg|
                     src ~= binding(host_arg);
-
+        <alt/>
+                let args = target.args;
+                for (mut i = 0; i < args.len; i++)
+                    src ~= binding(args[i]);
+        </alt>
                 return src;
             }
 

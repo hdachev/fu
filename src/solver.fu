@@ -5500,6 +5500,12 @@ pub fn solve(
         callers.each: |caller| // TODO, autocall .localfn doesn't resolve
         {
             shadow let caller = localfn(caller);
+
+            // Had to add this to ensure rev specs get resolved.
+            shadow ref status = caller.GET_mut.status;
+            if (status & (SS_FINALIZED | SS_DIRTY) == SS_FINALIZED)
+                status &= ~(SS_DID_START | SS_FINALIZED);
+
             caller.EPH_mut.calls.remove(target.globid)
                 || BUG("resetChild: Missing in calls on " ~ caller);
         }
