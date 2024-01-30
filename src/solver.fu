@@ -5730,6 +5730,8 @@ pub fn solve(
         if !(original.status & SS_FINALIZED)
             return [];
 
+        let expect_revision = SELF_TEST && original.revision;
+
         // Try to look up existing reverse specialization.
         let outputs = original.rev_spec.outputs;
         for (mut i = 0; i < outputs.len; i++)
@@ -5752,7 +5754,13 @@ pub fn solve(
         //  if we end up needing this recursively
         //   we don't want to reenter.
         //
-        EPH_mut(original).rev_spec.outputs ~=
+        ref eph_orig = EPH_mut(original);
+
+        if (SELF_TEST)
+            expect_revision && eph_orig.revision == expect_revision || BUG(
+                "tryReverseSpecialize: original.revision bumped while reverse specializing.");
+
+        eph_orig.rev_spec.outputs ~=
             RevSpecOutput(:relaxed_quals, instance_targ: target);
 
         // Schedule lazySolveStart.
