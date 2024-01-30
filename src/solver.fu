@@ -3627,10 +3627,21 @@ pub fn solve(
 
         fn isDiscardable(t: Target): bool
         {
+            let ext = EXT(t);
+
+            // TODO FIX this is not terribly elegant but should work well -
+            //  ideally you wouldn't perform this check if you aren't about to discard a fncall,
+            //   which means this is an ideal spot to raise the warning.
+            //
+            if (ext.template.node.asserts & A_NODISCARD)
+                warn("Return value of " ~ t ~ ": "
+                    ~ "nodiscard".qBAD ~ " "
+                    ~ humanizeType(t.type) ~ " is getting discarded here.");
+
             if (t.fx_mask & Fx_NotDeadCode)
                 return false;
 
-            let host_args = t.args;
+            let host_args = ext.args;
             for (mut i = 0; i < host_args.len; i++)
                 if (host_args[i].flags & F_WRITTEN_TO)
                     return false;
@@ -7164,6 +7175,10 @@ pub fn solve(
             ext.fx_mask = _current_fn.fx_mask;
 
         ext.cows_inside = _current_fn.events.cows_inside;
+
+        // Propagate nodiscard.
+        if (let retval_targ = retval.tryLookupUserType().target)
+            ext.template.node.asserts |= retval_targ.template.node.asserts;
 
         // TODO FAILCASE
         // TODO FAILCASE these dont work for inline fns

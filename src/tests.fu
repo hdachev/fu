@@ -4535,18 +4535,17 @@ pub extern fn runTests()
         }
     `);
 
-    TODO_logic(currently: "Unexpected nodiscard", `
+    ZERO(`
         nodiscard primitive Errcode: i32;
 
         fn try_incr(implicit ref x: i32): Errcode {
-            if (x > 0) return 10;
-            x++;
+            if (++x > 0) return 10;
             return 0;
         }
 
         fn main() {
             implicit mut x = -1;
-        <fail nodiscard X:X>
+        <fail nodiscard Errcode return try_incr (13:21+1|14:21+1)>
             try_incr();
             try_incr();
             return x - 1;
@@ -9497,7 +9496,7 @@ pub extern fn runTests()
     `);
 
     ZERO(`
-        <fail inline recursi>
+        <fail cannot inline recursive inlineSelfRecursion 8:38+1>
         inline <pass/></fail>
         fn inlineSelfRecursion(x: int)
             x > 10  ? inlineSelfRecursion(x / 2)
@@ -9507,7 +9506,7 @@ pub extern fn runTests()
     `);
 
     ZERO(`
-        <fail inline recursi>
+        <fail cannot inline recursive inlineMutualRecursion_a 9:46+1>
         inline <pass/></fail>
         fn inlineMutualRecursion_a(x: int)
             x > 10  ? inlineMutualRecursion_b(x / 2)

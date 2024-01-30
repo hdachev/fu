@@ -54,7 +54,7 @@ using flags DeclAsserts: u16
     A_NOCOPY
     A_NOVEC
     A_TRIVIAL
-    // ...
+    A_NODISCARD
 
     A_PURE
     A_PURE_CTX
