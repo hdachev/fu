@@ -71,7 +71,7 @@ fn setupOperators()
     rightToLeft = true;
     binop([ "?",
             "=", "+=", "-=", "**=", "*=", "/=", "%=", "<<=", ">>=", "&=", "^=", "|=",
-            "||=", "&&=", ".=", "~=" ]);
+            "||=", "&&=", ".=", "~=", ":=" ]);
 
     // F# has weird precedence here, why?
     binop([ "<|" ]);
@@ -1689,6 +1689,7 @@ pub fn parse(
         //  pipeline operator basics.
         if (op == "|>") return pipelineRight(left, right);
         if (op == "<|") return pipelineLeft (left, right);
+        if (op == ":=") return letShorthand (left, right);
 
         //
         if (op == "->") return typeCheck(left, right);
@@ -1733,6 +1734,14 @@ pub fn parse(
         left.items.push(right);
         left.flags |= F_CALL_HAS_ARGPARENS; // non-orphan-looking
         return left;
+    }
+
+    fn letShorthand(left: Node, right: Node): Node
+    {
+        if (left.kind != "call" || left.flags || left.items)
+            return fail("Invalid let shorthand - left side not an identifier.");
+
+        return createLet(id: left.value, init: right);
     }
 
     fn tryParseExpressionTail(head: Node, mode!?: i32): Node

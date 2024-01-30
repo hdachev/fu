@@ -19548,6 +19548,20 @@ pub extern fn runTests()
         }
     `);
 
+    ZERO(`
+        fn test(ref x: int) {
+            if ((y := x *= 2) > 10)
+                return y * 2;
+            else
+                return y;
+        }
+
+        fn main() {
+            mut x = 6;
+            return test(x) == 24 && x == 12 ? 0 : 1;
+        }
+    `);
+
     // /Semantics
 
 
