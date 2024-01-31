@@ -19606,6 +19606,37 @@ pub extern fn runTests()
         }
     `);
 
+    ZERO(`
+        struct NonTriv { items: NonTriv[] };
+
+        fn pick(ref things: <alt>NonTriv<alt/>_</alt>[], id: int) {
+            for (mut i = 0; i < things.len; i++)
+                if ((thing := things[i]).items.len == id)
+                    return thing;
+
+            return [];
+        }
+
+        fn test(ref things: <alt>NonTriv<alt/>_</alt>[], id: int) {
+            if (let thing = pick(things, id))
+                return thing.items.len;
+
+            return -1;
+        }
+
+        fn main() {
+            mut things: NonTriv[];
+            for (mut i = 0; i < 10; i++) {
+                mut thing: NonTriv;
+                for (mut j = 0; j < i; j++) thing.items ~= [];
+                things ~= thing;
+            }
+
+            return test(things, 11) == -1
+                && test(things, 7)  ==  7 ? 0 : 1;
+        }
+    `);
+
     // /Semantics
 
 

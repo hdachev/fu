@@ -1645,11 +1645,13 @@ pub fn cpp_codegen(
             _current_fn.target || BUG("TODO: hoisting for global variables.");
 
             // This is such crap.
-            mut hoistDecl = annot.starts(with: "const ")
+            let F_HOIST_asPtr = target.F_HOIST_asPtr;
+
+            mut hoistDecl = annot.starts(with: "const ") && !F_HOIST_asPtr
                 ? annot.slice(6)
                 : annot;
 
-            if (target.F_HOIST_asPtr)
+            if (F_HOIST_asPtr)
             {
                 hoistDecl[hoistDecl.len - 1] == '&' || BUG("F_HOIST_asPtr: Decl not a ref: " ~ hoistDecl);
                 hoistDecl[hoistDecl.len - 1] = '*';
@@ -1723,12 +1725,17 @@ pub fn cpp_codegen(
         // Definit.
         if (!init || init.kind == "empty" && !init.type.is_ref)
         {
-            let ret = head ~ " {}";
+            mut ret = head ~ " {}";
 
-            if (!hoist || mode & M_STMT)
-                return ret;
+            if (hoist && !(mode & M_STMT))
+            {
+                ret = "(" ~ ret ~ ")";
 
-            return "(" ~ ret ~ ")";
+                if (target.F_HOIST_asPtr)
+                    ret ~= "(*" ~ ret ~ ")";
+            }
+
+            return ret;
         }
 
         // A less verbose copy init.
@@ -1778,15 +1785,20 @@ pub fn cpp_codegen(
         // Hoisting.
         if (hoist)
         {
-            let ret =
-                target.F_HOIST_asPtr
+            let asPtr = target.F_HOIST_asPtr;
+
+            mut ret = asPtr
                     ? head ~ "&(" ~ expr ~ ")"
                     : head ~ expr;
 
-            if (mode & M_STMT)
-                return ret;
+            if !(mode & M_STMT)
+            {
+                ret = "(" ~ ret ~ ")";
+                if (asPtr)
+                    ret = "(*" ~ ret ~ ")";
+            }
 
-            return "(" ~ ret ~ ")";
+            return ret;
         }
 
         return head ~ " = " ~ expr;
