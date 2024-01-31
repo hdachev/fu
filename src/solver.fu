@@ -4934,14 +4934,21 @@ pub fn solve(
         // TODO FIX adding the trailing return /////////////////////////
         if (fnbody_of && nodes)
         {
-            let k = nodes.last.kind;
-            if (k == "unwrap")
+            ref last = nodes.last;
+            if (last.kind == "unwrap")
+            {
                 _current_fn.TODO_FIX_isInline = true;
+            }
             else
-                nodes.last = Node(kind: "return", value: [], :nodes.last.token,
-                    items: nodes.last.kind != "empty" && [ nodes.last ],
-                    flags: (node.kind == "block" && F_IMPLICIT)
+            {
+                let NICEERR_missingReturn = node.kind == "block"
+                    && (last.kind == "empty" || last.syntax & PS_ALWAYS_DISCARD);
+
+                last = Node(kind: "return", value: [], :last.token,
+                    items: last.kind != "empty" && [ last ],
+                    flags: (NICEERR_missingReturn && F_IMPLICIT)
                          | F_LAMBDA);
+            }
         }
         ////////////////////////////////////////////////////////////////
 

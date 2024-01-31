@@ -2498,7 +2498,9 @@ pub fn parse(
 
     fn createLoop(init!?: Node, pre_cond!?: Node, pre!?: Node, body!?: Node, post!?: Node, post_cond!?: Node): Node
     {
-        return make("loop", [ init, pre_cond, pre, body, post, post_cond ]);
+        return make("loop",
+            [ init, pre_cond, pre, body, post, post_cond ],
+            syntax: PS_ALWAYS_DISCARD);
     }
 
     // -------------------------------

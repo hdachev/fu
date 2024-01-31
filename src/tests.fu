@@ -143,13 +143,13 @@ pub extern fn runTests()
     //
 
     ZERO(`
-        <fail return>
+        <fail main return type does not match annot i32 3:12+4>
         fn main(): i32 {}               <pass/>
         fn main(): i32 { return 0; }    </fail>
     `);
 
     ZERO(`
-        <fail return>
+        <fail test return type does not match annot i32 3:12+4>
         fn test(): i32 {}               <pass/>
         fn test(): i32 { return 0; }    </fail>
         fn main() test();
@@ -11666,9 +11666,9 @@ pub extern fn runTests()
         }
     `);
 
-    TODO_baderror(currently: "fn badRetvalAnnot is missing a final return statement bool <- void", `
+    ZERO(`
         fn incr(ref x: i32) { x++; }
-        fn badRetvalAnnot(ref x: i32)   <fail not assignable to return type annot X:X>
+        fn badRetvalAnnot(ref x: i32)   <fail badRetvalAnnot return type does not match annot bool <- void 5:23+1>
             : bool                      <pass/></fail>
                 { incr(x) }
 
@@ -14304,7 +14304,7 @@ pub extern fn runTests()
             if (x & 1)
                 return x * 2;
 
-            <fail missing return>
+            <fail hello is missing a final return statement 7:13+1>
             x;            <pass/>
             return x;     </fail>
         }
@@ -18885,7 +18885,7 @@ pub extern fn runTests()
     ZERO(`
         fn main() {
             let i: i8 = 0;
-            <fail return type annot>
+            <fail return type does not match annot i32 <- i8 5:20+1>
             return i;        <pass/>
             return i.i32;    </fail>
         }
@@ -18896,7 +18896,7 @@ pub extern fn runTests()
 
         fn main() {
             let i: s32 = 0;
-            <fail return type annot>
+            <fail return type does not match annot i32 <- prim s32 7:20+1>
             return i;        <pass/>
             return i.i32;    </fail>
         }
@@ -18907,7 +18907,7 @@ pub extern fn runTests()
 
         fn main() {
             let e = Enum.None;
-            <fail return type annot>
+            <fail return type does not match annot i32 <- Enum 7:20+1>
             return e;        <pass/>
             return e.i32;    </fail>
         }
