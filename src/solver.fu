@@ -731,24 +731,22 @@ pub fn solve(
 
     fn humanizeTypeName(type: Type)
     {
-        if (type.isStruct)
-            return lookupUserType(type).name;
+        let s = tryLookupUserType(type);
+        if (s.kind)
+            return s.kind.str.qKW ~ " " ~ s.name.qID;
 
         if (let itemType = tryClear_sliceable(type))
         {
             if (itemType == t_byte)
-                return "string";
+                return "string".qID;
 
             return humanizeTypeName(itemType)
-                ~ (type.TODO_FIX_isArray ? "[]" : "[..]");
+                ~ (type.TODO_FIX_isArray ? "[]" : "[..]").qKW;
         }
 
-        if (type.canon == t_bool.canon)
-            return "bool";
-        if (type.canon == t_byte.canon)
-            return "byte";
-
-        return type.canon;
+        return (type.canon == t_bool.canon ? "bool"
+              : type.canon == t_byte.canon ? "byte"
+              : type.canon).qID;
     }
 
     fn fail_appendStack(mut reason: string)

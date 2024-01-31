@@ -4202,7 +4202,7 @@ pub extern fn runTests()
         fn main() test(7) - 27;
     `);
 
-    TODO_logic(currently: "no common supertype bool <-> m8 6:17+1", `
+    TODO_logic(currently: "no common supertype bool <-> flags State 6:17+1", `
         using flags State: u8 { ReadEOF; WriteEOF; WantsRead; WantsWrite }
 
         fn mustClose(state: State)
@@ -15301,7 +15301,7 @@ pub extern fn runTests()
         }
     `);
 
-    TODO_conv(currently: "val_x(C) generic_ref_x:a expects mutref 11:36+13", `
+    TODO_conv(currently: "val_x(struct C) generic_ref_x:a expects mutref 11:36+13", `
         struct A { x: i32 };
         struct B { using a: A };
         struct C { b: B };
