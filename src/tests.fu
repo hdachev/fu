@@ -128,6 +128,7 @@ pub extern fn runTests()
     let TODO_ufc        = fn TODO;
     let TODO_litfix     = fn TODO;
     let TODO_baderror   = fn TODO;
+    let TODO_lint       = fn TODO;
 
     let TODO_confusing  = fn TODO;
     let TODO_logic      = fn TODO;
@@ -4554,6 +4555,19 @@ pub extern fn runTests()
             return err.i32 + x - 11;
         </fail>
         }
+    `);
+
+    TODO_lint(currently: "BUG exit code", `
+        using flags Flags { F_LAMBDA; F_IMPLICIT }
+        fn precedenceWhitespace(NICEERR_missingReturn: bool)
+        {
+            <fail misleading whitespace X:X>
+            return NICEERR_missingReturn && F_IMPLICIT      <pass/>
+            return (NICEERR_missingReturn && F_IMPLICIT)    </fail>
+                 | F_LAMBDA;
+        }
+
+        fn main() precedenceWhitespace(false) == F_LAMBDA ? 0 : 1;
     `);
 
     // /Lints.
