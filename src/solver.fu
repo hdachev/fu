@@ -6340,20 +6340,17 @@ pub fn solve(
                         // Type check.
                         if (annot && !exactType)
                         {
-                            let argOk = trySolveTypeParams(
+                            if (!trySolveTypeParams(
                                 annot, inType, :errout,
-                                invariant: false, :template.imports);
-
-                            if (!error && !argOk)
+                                invariant: false, :template.imports))
                             {
                                 error = "arg".qKW ~ " " ~ argName.qID ~ ":";
                                 errout.len > 1 || BUG("BUG trySolveTypeParams did not provide an explanation.");
                                 for (shadow mut i = 1; i < errout.len; i++)
                                     error ~= "\n\t    " ~ errout[i].message;
-                            }
 
-                            if (error)
                                 break;
+                            }
                         }
                     }
                 }
