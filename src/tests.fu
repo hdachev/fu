@@ -15586,6 +15586,30 @@ pub extern fn runTests()
         }
     `);
 
+    TODO_conv(currently: "BUG did match on second pass 8:37+4", [`
+        struct Target { id: string }
+        struct ScopeItem { name: string }
+        fn zeroes() = [];
+    `,`
+        import _0;
+        fn throwIfEmpty_else_returnEmptyStr(what: string) {
+            using inline fn GET(lax h: Target): ScopeItem = <alt>[]<alt/>zeroes()</alt>;
+
+            fn throwIfEmpty(id: string) {
+                let t = Target(:id);
+                return t.AlwaysTrue.name;
+            }
+
+            fn AlwaysTrue(target) target || throw(target.id);
+            return throwIfEmpty(what);
+        }
+
+        fn main() {
+            try         return throwIfEmpty_else_returnEmptyStr("Not empty!").len;
+            catch (e)   return 1000 + e.len;
+        }
+    `]);
+
     // /Conversion functions.
 
 
