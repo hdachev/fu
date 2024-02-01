@@ -108,8 +108,10 @@ pub fn solve(
 
     struct Warning
     {
-        token:              TokenIdx;
-        message:            string;
+        // Currently only two types of warnings here -
+        //  unused variables (locid != 0)
+        //  pointless fns (locid == 0) do nothing & return void
+        locid:              i32;
     };
 
     struct WriteID
@@ -724,6 +726,8 @@ pub fn solve(
 
     fn humanizeTypeName(type: Type)
     {
+        PERF_slowPath();
+
         let s = tryLookupUserType(type);
         if (s.kind)
             return s.kind.str.qKW ~ " " ~ s.name.qID;
@@ -824,6 +828,12 @@ pub fn solve(
 
         TRACE("FAIL");
         return FAIL(reason.fail_appendStack());
+    }
+
+    lax fn PERF_slowPath()
+    {
+        if (SELF_TEST && options.dev & options::DEV_HappyPathOnly)
+            println("DEV_HappyPathOnly: we ended up on a slow path.");
     }
 
     shadow fn BUG(mut reason?: string)
@@ -3642,7 +3652,7 @@ pub fn solve(
             //   which means this is an ideal spot to raise the warning.
             //
             if (ext.template.node.asserts & A_NODISCARD)
-                warn("Return value of " ~ t ~ ": "
+                fail("Return value of " ~ t ~ ": "
                     ~ "nodiscard".qBAD ~ " "
                     ~ humanizeType(t.type) ~ " is getting discarded here.");
 
@@ -3740,10 +3750,11 @@ pub fn solve(
                 //  This is nonsense but better than what i had before,
                 //   basically we want letdefs to work as an immediate variable read.
                 let firstUse = trackVarUsage(:node.target.locid, node.type);
-                node.target.GET_mut.status |= SS_HOIST;
+                ref o = GET_mut(node.target);
+                o.status |= SS_HOIST;
 
                 if (firstUse)
-                    node.target.warnUnused();
+                    warnUnused(:node.target, :o);
             }
 
             relaxBlockVar(node.target, :relax_mask, :canDiscard);
@@ -5049,9 +5060,10 @@ pub fn solve(
             && "Contains non-local control flow.";
     }
 
-    fn warn(inline message: string, token!: TokenIdx = _here)
+    fn push(warning: Warning)
     {
-        _warnings.grow_if_oob(_current_fn.target.globid) ||= Warning(:token, message: message.fail_appendStack);
+        // TODO FIX currently only one per fn
+        _warnings.grow_if_oob(_current_fn.target.globid) ||= warning;
     }
 
     lax fn TEST_unusedButCopied(inline topic: string, slot: Type)
@@ -5071,10 +5083,10 @@ pub fn solve(
             o.flags &= ~F_MUT;
     }
 
-    fn warnUnused(o: Overload)
+    fn warnUnused(target: Target, o: Overload)
     {
         if !(o.flags & F_LAX || o.status & SS_MATCHED || o.type.is_zst)
-            warn(:o.solved.token, "Unused variable: " ~ o ~ ": make it " ~ "lax".qKW ~ " if this is intentional.");
+            push(Warning(:target.locid));
     }
 
     fn relaxBlockVar(t: Target, relax_mask!: Quals, canDiscard!?: bool)
@@ -5088,7 +5100,7 @@ pub fn solve(
             let usage = _current_fn.var_usage.unless_oob(t.locid);
             let isUnused = !usage;
             if (isUnused)
-                o.warnUnused();
+                warnUnused(t, o);
 
             TEST_unusedButCopied("relaxBlockVar " ~ t, usage);
 
@@ -7245,9 +7257,7 @@ pub fn solve(
                 || !retval.is_void              // Shouldn't this be any warn on any ZST?
                 || overload.flags & F_LAX
                 || args.some(.type.isAddrOfFn)  // Adding this to avoid the need for laxing higher-order fns.
-                || warn(:_current_fn.token,
-                            target  ~ " does nothing: returns void and has no effects."
-                                    ~ " Make it " ~ "lax".qKW ~ " if this is intentional.");
+                || push(Warning(locid: -101));
 
         //
         shadow ref overload = GET_mut(target);
@@ -10131,7 +10141,7 @@ pub fn solve(
 
         if (cond.type.isIrrelevant)
         {
-            voidOk || warn("Condition is " ~ humanizeType(cond.type)
+            voidOk || fail("Condition is " ~ humanizeType(cond.type)
                 ~ (cond.kind == "call"
                     ? ", returned from " ~ cond.target.explainWhichFn(fmt: FullContext)
                     : ", not meaningful in a boolean context."));
@@ -14408,10 +14418,17 @@ pub fn solve(
         for (mut i = 0; i < _warnings.len; i++)
         {
             let w = _warnings[i];
-            if (w.token)
+            if (w.locid)
             {
-                _here = w.token;
-                fail(w.message);
+                let target = Target(:module.modid, globid: i, locid: w.locid > 0 ? w.locid : 0);
+                _here = target.solved.token;
+
+                fail(
+                    w.locid == -101
+                        ? target    ~ " does nothing: returns void and has no effects."
+                                    ~ " Make it " ~ "lax".qKW ~ " if this is intentional."
+                        : "Unused variable: " ~ target ~ "."
+                                    ~ " Make it " ~ "lax".qKW ~ " if this is intentional.");
             }
         }
 

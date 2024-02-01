@@ -3,6 +3,7 @@ using flags DevOptions {
     DEV_Print
     DEV_Parallel
     DEV_ExpectFail
+    DEV_HappyPathOnly
 
     DEV_DontFoldLiterals
 

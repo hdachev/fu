@@ -419,7 +419,10 @@ pub fn ZERO(
     //
     mut onfail = build::OnFail_PrintOutput;
     if !(options.dev & DEV_ExpectFail)
+    {
         onfail |= build::OnFail_WriteRepro;
+        options.dev |= DEV_HappyPathOnly;
+    }
 
     defer:err if !(options.dev & DEV_ExpectFail)
         println("\nFAILING TESTCASE:\n" ~ sources.join("\n"));
