@@ -462,12 +462,6 @@ pub fn solve(
 
         _solver_safety:     int;
 
-        // Can't we just list them all and scan through?
-        //  Do we need the mangling nonsense?
-        //   We can bucket however many times we want here,
-        //    its append only and trivial to maintain.
-        _spec_errors:       string[];
-
         //
         _notes:             SolverNotes;
         _warnings:          Warning[];
@@ -578,7 +572,6 @@ pub fn solve(
     // Prep.
 
     ss.shortModuleName          = module.modid && getShortModuleName(module.fname);
-    ss._spec_errors             = [ "BUG: Specializer reentry." ];
     ss.TODO_FIX_convert_args    = [ SolvedNode ];
     ss.TODO_FIX_convert_args[0].kind = "__convert";
 
@@ -1944,12 +1937,17 @@ pub fn solve(
                 reorder.clear();
                 ///////////////////////////////////
 
-                fn matchFail(inline err: string)
-                {
+                fn matchFail_print(inline reason: string)
                     if (error)
-                        error ~= "\n\n\t" ~ overloadIdx.explainWhichFn ~ "\n\t    " ~ err;
+                        error ~= "\n\n\t" ~ overloadIdx.explainWhichFn ~ "\n\t    " ~ reason;
 
+                fn matchFail_cont()
                     continue :SHADOWING_GROUP;
+
+                fn matchFail(inline reason: string)
+                {
+                    matchFail_print(reason);
+                    matchFail_cont();
                 }
 
                 // Make sure we know what this is.
@@ -2306,13 +2304,23 @@ pub fn solve(
                         (reorder || conversions
                             ? cant_reuse : reusable_mangle);
 
+                    let err0 = error.len;
+
+                    matchFail_print("");
+
                     let specIdx = trySpecialize(
                         :overloadIdx, :args, :reorder,
                         :conversions, :args_mangled,
-                        :REST_START, :REST_TYPE);
+                        :REST_START, :REST_TYPE,
+                        :error);
 
                     if (specIdx.is_SPECFAIL)
-                        matchFail(_spec_errors[specIdx._packed.u32.i32] || "Could not specialize.");
+                    {
+                        !err0 || err0 < error.len || BUG(
+                            "tryMatch: is_SPECFAIL but trySpec provides no error message.")
+
+                        matchFail_cont();
+                    }
 
                     ensureLazySolved(overloadIdx = specIdx);
 
@@ -4148,9 +4156,10 @@ pub fn solve(
                     {
                         TRACE_BRACKET("RELAX trySpecialize " ~ t.globid ~ " " ~ t ~ " for " ~ relaxed.map(.type.humanizeType).join(", "));
 
+                        mut error: string;
                         mut args_mangled: string;
                         let spec = trySpecialize(
-                            t.spec_of, args: relaxed, :args_mangled, REST_START: relaxed.len);
+                            t.spec_of, args: relaxed, :args_mangled, REST_START: relaxed.len, :error);
 
                         if (!spec.is_SPECFAIL)
                             redirectCallTarget(spec);
@@ -5671,7 +5680,7 @@ pub fn solve(
     }
 
     fn trySpecialize(
-        overloadIdx: Target, args: SolvedNode[..], ref args_mangled: string,
+        overloadIdx: Target, args: SolvedNode[..], ref args_mangled: string, ref error!: string,
         REST_START: i32, REST_TYPE?: Type,
         reorder?: Reorder, conversions?: Target[][])
             : Target
@@ -5717,10 +5726,10 @@ pub fn solve(
         //  Would make the prefix stuff more meaningful.
         //
         let mangle = overloadIdx.modid ~ "#" ~ overloadIdx.globid ~ " " ~ args_mangled;
-        return getSpecs(:parent_idx).get(mangle) || doTrySpecialize(:parent_idx,
+        return !error && getSpecs(:parent_idx).get(mangle) || doTrySpecialize(:parent_idx,
             :overloadIdx, args_in:args, :mangle,
             :reorder, :conversions,
-            :REST_START, :REST_TYPE)
+            :REST_START, :REST_TYPE, :error)
                 || BUG("doTrySpecialize returns empty target.");
     }
 
@@ -6027,7 +6036,8 @@ pub fn solve(
     //
 
     fn doTrySpecialize(
-        parent_idx!: i32, into?: Target,
+        parent_idx!: i32, ref error!: string,
+        into?: Target,
         overloadIdx?: Target, args_in?: SolvedNode[..],
         mangle?: string, reorder?: Reorder, conversions?: Target[][],
         REST_START?: i32, REST_TYPE?: Type)
@@ -6037,6 +6047,8 @@ pub fn solve(
 
         let SPECFAIL_RentrySafety =
             Target(_packed: 0x8000_0000_0000_0000);
+
+        let err0 = error.len;
 
         //
         let original = overloadIdx || into || BUG();
@@ -6069,6 +6081,9 @@ pub fn solve(
         //
         fn setSpec(shadow mangle: string, target: Target, nx!: bool, allowReplaceNonSpecfails?: bool)
         {
+            if (SELF_TEST && error)
+                BUG("doTrySpec: setSpec on error path");
+
             ref t = getSpecs(:parent_idx).ref(mangle);
 
             fn id(shadow target)
@@ -6090,7 +6105,7 @@ pub fn solve(
 
         fn resetSpec(spec: Target, allowReplaceNonSpecfails?: bool)
         {
-            if !(spec == currentSpec)
+            if (spec != currentSpec)
             {
                 currentSpec = spec;
                 for (mut i = 0; i < mangles.len; i++)
@@ -6105,6 +6120,9 @@ pub fn solve(
                 let preexisting = getSpecs(:parent_idx).get(mangle);
                 if (preexisting)
                 {
+                    if (SELF_TEST && error)
+                        BUG("doTrySpec: resetMangle/preexisting on error path");
+
                     mangles.remove(mangle);
 
                     if (!currentSpec.is_SPECFAIL)
@@ -6131,15 +6149,20 @@ pub fn solve(
             resetMangle(mangle, :allowReplaceNonSpecfails);
         };
 
-        fn SPECFAIL(reason: string)
+        fn SPECFAIL(reason?: string)
         {
-            let index       = _spec_errors.len;
-            _spec_errors   ~= reason;
+            let spec = SPECFAIL_RentrySafety;
 
-            let spec        = Target(
-                :SPECFAIL_RentrySafety._packed | index.u64);
+            if (error)
+            {
+                error ~= reason;
+                error.len > err0 || BUG("SPECFAIL: no error output");
+            }
+            else
+            {
+                resetSpec(spec);
+            }
 
-            resetSpec(spec);
             return spec;
         }
 
@@ -6157,7 +6180,7 @@ pub fn solve(
 
         if (!into)
         {
-            mut error = "";
+            mut fail = false;
 
             mut args: Type[];
             if (reorder)
@@ -6198,6 +6221,15 @@ pub fn solve(
             {
             //        /LITFIX
             /////////////////
+
+                fn matchFail(inline reason: string)
+                {
+                    if (error)
+                        error ~= reason || BUG("matchFail: No reason.");
+
+                    fail = true;
+                    break;
+                }
 
                 let N = pass_retype
                     ? {
@@ -6274,10 +6306,8 @@ pub fn solve(
 
                     // Previously this was done in tryMatch__mutargs.
                     if (host_arg.flags.isMutRef && !inType.is_mutref)
-                    {
-                        error = host_arg ~ " expects a mutref, got " ~ humanizeType(inType);
-                        break;
-                    }
+                        matchFail(host_arg  ~ " expects a mutref, got "
+                                            ~ humanizeType(inType));
 
                     //
                     argNode.kind == "let"  || BUG();
@@ -6337,44 +6367,33 @@ pub fn solve(
                         // Type check.
                         if (annot && !exactType)
                         {
-                            let err0 = error.len;
-
-                            // TODO FIX ///////////
-                            if (!err0) error = "%";
-                            // TODO FIX ///////////
+                            shadow mut error = error && "arg".qKW ~ " " ~ argName.qID ~ ":";
 
                             if (!trySolveTypeParams(
                                 annot, inType, :error,
                                 invariant: false, :template.imports))
                             {
-                                // TODO FIX ////////////////
-                                shadow let err0 = err0 || 1;
-                                // TODO FIX ////////////////
-
-                                error.len > err0 || BUG(
-                                    "BUG trySolveTypeParams did not provide an explanation.");
-
-                                error = "arg".qKW ~ " " ~ argName.qID ~ ":" ~ error[err0 ..];
-                                break;
+                                matchFail(error);
                             }
-
-                            // TODO FIX //////////
-                            if (!err0) error = "";
-                            // TODO FIX //////////
                         }
                     }
                 }
             }
 
-            /////////////////
-            // Literal fixup.
-            resetMangle(args);
-            //        /LITFIX
-            /////////////////
+            // NOTE - this checks if we're in error-output-mode,
+            //  not if there's an error, maybe rename things to make it more evident.
+            if (!error)
+            {
+                /////////////////
+                // Literal fixup.
+                resetMangle(args);
+                //        /LITFIX
+                /////////////////
+            }
 
             // Match pattern arm here.
-            if (error)
-                return SPECFAIL(error);
+            if (fail)
+                return SPECFAIL();
         }
 
 
@@ -8127,10 +8146,11 @@ pub fn solve(
 
         if (o.kind == "fn" || o.kind == "inline" || o.kind == "template")
         {
+            mut error = "";
             if (target.rev_spec.instance.original)
                 doReverseSpecialize(target);
             else
-                doTrySpecialize(into: target, parent_idx: target.local_of);
+                doTrySpecialize(into: target, parent_idx: target.local_of, :error);
         }
         else
         {
