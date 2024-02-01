@@ -2137,7 +2137,7 @@ pub fn solve(
                             {
                                 PROFILE(.TryConvertGeneric);
 
-                                mut errout: Warning[];
+                                shadow mut error = "";
                                 let actual = args[callsiteIndex].type;
 
                                 mut tp = _typeParams.steal();
@@ -2146,7 +2146,7 @@ pub fn solve(
                                 let ok = trySolveTypeParams(
                                     type: actual,
                                     node: annot,
-                                    :errout,
+                                    :error,
                                     invariant: false,
                                     :template.imports);
 
@@ -2833,13 +2833,13 @@ pub fn solve(
             let convertType = cc.types[i];
             if (Expect -> Node
                 ?   {
-                        mut errout: Warning[];
+                        mut error = "";
                         mut tp = _typeParams.steal();
                         defer _typeParams.swap(tp);
 
                         trySolveTypeParams(
                             type: Type(vtype: convertType, lifetime: Lifetime_temporary),
-                            node: expect, :errout,
+                            node: expect, :error,
                             invariant: false, :imports)
                     }
                 :   isAssignableAsArgument(
@@ -6191,9 +6191,6 @@ pub fn solve(
 
             mut retypeIndices: RetypeOrder[];
 
-            //
-            mut errout = [ Warning ];
-
             // First off, solve type params.
             for (   mut pass_retype  = 0;
                         pass_retype == 0 || pass_retype == 1 && retypeIndices;
@@ -6340,17 +6337,30 @@ pub fn solve(
                         // Type check.
                         if (annot && !exactType)
                         {
+                            let err0 = error.len;
+
+                            // TODO FIX ///////////
+                            if (!err0) error = "%";
+                            // TODO FIX ///////////
+
                             if (!trySolveTypeParams(
-                                annot, inType, :errout,
+                                annot, inType, :error,
                                 invariant: false, :template.imports))
                             {
-                                error = "arg".qKW ~ " " ~ argName.qID ~ ":";
-                                errout.len > 1 || BUG("BUG trySolveTypeParams did not provide an explanation.");
-                                for (shadow mut i = 1; i < errout.len; i++)
-                                    error ~= "\n\t    " ~ errout[i].message;
+                                // TODO FIX ////////////////
+                                shadow let err0 = err0 || 1;
+                                // TODO FIX ////////////////
 
+                                error.len > err0 || BUG(
+                                    "BUG trySolveTypeParams did not provide an explanation.");
+
+                                error = "arg".qKW ~ " " ~ argName.qID ~ ":" ~ error[err0 ..];
                                 break;
                             }
+
+                            // TODO FIX //////////
+                            if (!err0) error = "";
+                            // TODO FIX //////////
                         }
                     }
                 }
@@ -9322,14 +9332,20 @@ pub fn solve(
     }
 
     fn trySolveTypeParams(
-        node: Node, mut type: Type, ref errout: Warning[],
+        node: Node, mut type: Type, ref error: string,
         mut invariant!: bool, imports!?: i32[]): bool
     {
+        fn matchFail_print(inline err: string)
+        {
+            // `node.token` was previously kept track of here, but it wasn't used,
+            // TODO try to add minisnippets to this here
+            if (error)
+                error ~= "\n\t    " ~ err;
+        }
+
         fn matchFail(inline err: string)
         {
-            if (errout)
-                errout ~= Warning(node.token, err);
-
+            matchFail_print(:err);
             return :trySolveTypeParams false;
         }
 
@@ -9350,7 +9366,7 @@ pub fn solve(
                     invariant = true;
 
                 return trySolveTypeParams(
-                    node.items[0] || BUG(), t || BUG(), :errout,
+                    node.items[0] || BUG(), t || BUG(), :error,
                     :invariant, :imports);
             }
         }
@@ -9399,16 +9415,16 @@ pub fn solve(
         }
         else if (node.kind == "typeunion")
         {
-            let errout0     = errout.len;
+            let error0     = error.len;
             mut typeParams0 = _typeParams;
 
             for (mut i = 0; i < node.items.len; i++)
             {
                 if (trySolveTypeParams(
-                        node.items[i], :type, :errout,
+                        node.items[i], :type, :error,
                         :invariant, :imports))
                 {
-                    errout.shrink(errout0);
+                    error.shrink(error0);
                     return true;
                 }
 
@@ -9445,9 +9461,7 @@ pub fn solve(
                 {
                     fn patternFail(inline err: string)
                     {
-                        if (errout)
-                            errout ~= Warning(node.token, err);
-
+                        matchFail_print(:err);
                         continue :NEXT_SUB_PATTERN;
                     }
 
@@ -9483,7 +9497,7 @@ pub fn solve(
                             shadow let node = node.kind == "argid" ? node.items.only : node;
 
                             if (!trySolveTypeParams(
-                                    :node, :type, :errout,
+                                    :node, :type, :error,
                                     invariant: true, :imports))
                             {
                                 continue :NEXT_SUB_PATTERN;
@@ -9503,9 +9517,9 @@ pub fn solve(
                 });
             }
 
-            if (errout && targets)
+            if (error && targets)
                 for (mut i = 0; i < targets.len; i++)
-                    errout ~= Warning(node.token, "Not produced by " ~ targets[i] ~ ": " ~ humanizeType(type));
+                    matchFail_print("Not produced by " ~ targets[i] ~ ": " ~ humanizeType(type));
 
             return false;
         }
@@ -9564,13 +9578,13 @@ pub fn solve(
             }
             else
             {
-                mut errout: Warning[];
+                mut error: string;
                 let ok = trySolveTypeParams(
                     type: actual, node: right,
-                    :errout,
-                    invariant: false);
+                    invariant: false,
+                    :error);
 
-                errout && BUG("Inefficient: trySolveTypeParams pushing errors when told not to (falsy errout).");
+                error && BUG("Inefficient: trySolveTypeParams pushing errors when told not to (falsy errout).");
 
                 ////////////////////////////////////
                 // NATIVE RELAXER             [1] //
