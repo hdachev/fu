@@ -18398,6 +18398,35 @@ pub extern fn runTests()
         }
     `);
 
+    TODO_relaxer(currently: "BUG relaxed spec.args.len(2) != original.args.len(4)", `
+        fn FAIL(implicit fnames: string[], implicit _here: int)
+            throw(fnames[_here]);
+
+        fn ensureArgSeq_argsLenMismatch(
+            ref overloads: string[], which: int)
+        {
+            fn strGET(id: string)                   <alt>
+                intGET(int(id && id[0]) || FAIL()); <alt/>
+                id && intGET(int(id[0]) || FAIL()); </alt>
+
+            fn intGET(target: int) {
+                if (target >= overloads.len)
+                    throw(overloads ? intGET(0).strGET : "");
+
+                return overloads[target];
+            }
+
+            return intGET(which);
+        }
+
+        fn main() {
+            let implicit _here = 0;
+            let implicit fnames = [ "Hello!" ];
+            mut overloads = [ "Hello, World!" ];
+            return ensureArgSeq_argsLenMismatch(overloads, 0).len - 13;
+        }
+    `);
+
     // /Relaxer.
 
 
