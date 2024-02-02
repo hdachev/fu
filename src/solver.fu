@@ -4064,10 +4064,11 @@ pub fn solve(
             //
             fn redirectCallTarget(spec: Target)
             {
-                if (spec == node.target)
+                let orig = node.target;
+                if (orig == spec)
                     return;
 
-                TRACE_BRACKET("redirectCallTarget " ~ node.target.globid ~ " " ~ node.target ~ " -> " ~ spec.globid ~ " " ~ spec);
+                TRACE_BRACKET("redirectCallTarget " ~ orig.globid ~ " " ~ orig ~ " -> " ~ spec.globid ~ " " ~ spec);
 
                 ensureLazySolved(spec);
 
@@ -5759,7 +5760,10 @@ pub fn solve(
         //  from relaxing properly.
         //
         if !(original.status & SS_FINALIZED)
+        {
+            TRACE("REVSPEC ABORT because not SS_FINALIZED " ~ original.globid ~ " " ~ original);
             return [];
+        }
 
         let expect_revision = SELF_TEST && original.revision;
 
@@ -6504,6 +6508,8 @@ pub fn solve(
         // Scopes & scope skips.
         mut target: Target;
 
+        TRACE_BRACKET("doTrySpecialize " ~ target.globid ~ " " ~ template.node.value ~ " " ~ mangle);
+
         {
             ////////////////////////////////////////////////////////////////
             let scope0          = Scope_snap();
@@ -6547,8 +6553,6 @@ pub fn solve(
 
             // Prep reject.
             target = into || Scope_create(_scope, status: SS_DID_START | SS_LAZY);
-
-            TRACE_BRACKET("doTrySpecialize " ~ target.globid ~ " " ~ template.node.value ~ " " ~ mangle);
 
             ref eph = target.EPH_mut;
             eph.local_of = parent_idx;
@@ -13929,7 +13933,7 @@ pub fn solve(
                 ref args        = node.items;
 
                 host_args.len == args.len ||
-                    BUG(node.token, "ensureArgSequencing: host_args.len(" ~ host_args.len ~ ") != args.len(" ~ args.len ~ "), nestingFnort(" ~ _nestingFnort.globid ~ " " ~ _nestingFnort ~ ")");
+                    BUG(node.token, "ensureArgSequencing: target(" ~ node.target.globid ~ " " ~ node.target ~ ") host_args.len(" ~ host_args.len ~ ") != args.len(" ~ args.len ~ "), nestingFnort(" ~ _nestingFnort.globid ~ " " ~ _nestingFnort ~ ")");
 
                 argsReverse(:RTL, :host_args): |i, host_arg, revSeqIdx|
                 {
