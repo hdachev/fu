@@ -18398,6 +18398,31 @@ pub extern fn runTests()
         }
     `);
 
+    TODO_relaxer(currently: "BUG doReverseSpecialize: did_relax(0) != relaxed_quals(1) 11:16+6", `
+        fn FAIL(implicit side: string)
+            throw(side);
+
+        fn ensureArgSeq_argsLenMismatch(
+            ref data: string, index: int)
+        {
+            fn strGET(id: string)
+                id && intGET(id.len || FAIL());
+
+            fn intGET(target: int)
+                target > data.len
+                    ? intGET(0).strGET
+                    : data[target ..];
+
+            return intGET(index);
+        }
+
+        fn main() {
+            let implicit side = "Hello!";
+            mut data = "Hello, World!";
+            return ensureArgSeq_argsLenMismatch(data, 5).len - 8;
+        }
+    `);
+
     TODO_relaxer(currently: "BUG relaxed spec.args.len(2) != original.args.len(4)", `
         fn FAIL(implicit fnames: string[], implicit _here: int)
             throw(fnames[_here]);
