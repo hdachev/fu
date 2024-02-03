@@ -5538,12 +5538,6 @@ pub fn solve(
         callers.each: |caller| // TODO, autocall .localfn doesn't resolve
         {
             shadow let caller = localfn(caller);
-
-            // Had to add this to ensure rev specs get resolved.
-            shadow ref status = caller.GET_mut.status;
-            if (status & (SS_FINALIZED | SS_DIRTY) == SS_FINALIZED)
-                status &= ~(SS_DID_START | SS_FINALIZED);
-
             caller.EPH_mut.calls.remove(target.globid)
                 || BUG("resetChild: Missing in calls on " ~ caller);
         }
@@ -5815,11 +5809,6 @@ pub fn solve(
 
         // Enable lazySolveEnd.
         EPH_mut(target).local_of = EPH(original).local_of;
-
-        // TODO FIX - this messes up call counts,
-        //  if we're to use them for inline-single-used-fns
-        EPH_mut(target).calls.incr(original.globid);
-        EPH_mut(original).callers.incr(target.globid);
 
         // We should be done here.
         return target;
@@ -8182,6 +8171,7 @@ pub fn solve(
     {
         TRACE_BRACKET("lazySolveEnd " ~ t.globid ~ " " ~ t);
 
+        //
         ref o = GET_mut(t);
         mut reopen: i32[];
 
@@ -8257,6 +8247,43 @@ pub fn solve(
                 TRACE("SS_FINALIZED " ~ t.globid ~ " " ~ t);
 
             o.status |= SS_FINALIZED;
+
+            // Immediately update all outstanding rev specs.
+            let rev_specs = o.kind == "fn" && t.rev_spec.outputs;
+            if (rev_specs)
+            {
+                TRACE_BRACKET("REVSPEC UPDATE");
+                let actual = o.type.quals;
+
+                for (mut i = 0; i < rev_specs.len; i++)
+                {
+                    let rev_spec = rev_specs[i];
+                    shadow let t = rev_spec.instance_targ;
+                    shadow ref o = GET_mut(t);
+
+                    // What can happen is:
+                    //  - you had a fn that e.g. returned a mutref -
+                    //  - you produced a revspec that didn't return a mutref -
+                    //  - and now for some reason the fn no longer returns a mutref,
+                    //      - so the revspec isn't needed.
+                    //
+                    // TODO turn this into a hard BUG when we manage to do single-pass type checking,
+                    //  then we'd expect return types to become narrower, not wider:
+                    //   mutref < anyref, so going from mutref to constref is widening.
+                    //
+                    if ((actual & rev_spec.relaxed_quals)
+                               == rev_spec.relaxed_quals)
+                    {
+                        o.status &= ~(SS_DID_START | SS_DIRTY | SS_FINALIZED);
+                        lazySolveStart(t);
+                    }
+                    else if (o.kind != "__tombstone")
+                    {
+                        TRACE("REVSPEC DESTROY actual(" ~ actual ~ ") relaxed_quals(" ~ rev_spec.relaxed_quals ~ ")");
+                        destroyOverload(t);
+                    }
+                }
+            }
         }
         else
         {

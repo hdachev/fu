@@ -18359,7 +18359,7 @@ pub extern fn runTests()
         }
     `);
 
-    TODO_relaxer(currently: "BUG doReverseSpecialize: did_relax(0) != relaxed_quals(1) 10:22+3", `
+    ZERO(`
         struct Target { id: int };
         fn isLocal(t: Target) t.id & 1;
         fn parent(t: Target) Target(t.id & ~1);
@@ -18398,7 +18398,7 @@ pub extern fn runTests()
         }
     `);
 
-    TODO_relaxer(currently: "BUG doReverseSpecialize: did_relax(0) != relaxed_quals(1) 11:16+6", `
+    ZERO(`
         fn FAIL(implicit side: string)
             throw(side);
 
