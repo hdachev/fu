@@ -371,3 +371,11 @@ fn leftpad(.str, minw: int, mut pad = "               ")
     pad.shrink(needed);
     return pad ~= str;
 }
+
+
+// Sketch, cursor-like empty ranges.
+
+inline fn start  !T(ref arr: T[]) arr[.. 0];
+inline fn end    !T(ref arr: T[]) arr[arr.len ..];
+inline fn before !T(ref arr: T[], index: int) arr[i .. i];
+inline fn after  !T(ref arr: T[], index: int) arr.before(i + 1);
