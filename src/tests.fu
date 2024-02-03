@@ -7669,25 +7669,15 @@ pub extern fn runTests()
     // quite right
 
     LEGACY_Map(currently: "Map is not defined", `
-        struct BINOP {
-            P: Map(string, i32);
-        };
-
-        fn setupOperators(): BINOP
-        {
-            mut out: BINOP;
-
-            fn binop(op: string)
-                out.P[op] = 7;
-
+        fn setupOperators() {
+            mut out: struct { P: Map(string, i32) };
+            fn binop(op: string) out.P[op] = 7;
             binop(",");
-
             return out;
         }
 
-        shadow let BINOP = setupOperators();
+        let BINOP = setupOperators();
         let P_COMMA = BINOP.P[","] || throw("Assertion failed.");
-
         fn main() P_COMMA - 7;
     `);
 
@@ -14083,6 +14073,20 @@ pub extern fn runTests()
             return res == 27 ? 0 : 1;
         }
     `);
+
+    ZERO(`
+        fn hello(x: int) = x * 10;
+        fn originalHello(x: int) = x.hello;
+
+        shadow fn hello(x: int) = x * 100;
+        fn shadowedHello(x: int) = x.hello;
+
+        <fail shadowing only supported inside functions 5:16+2>
+        fn main() = <pass/>
+        return      </fail> 1.originalHello + 2.shadowedHello == 210 ? 0 : 1;
+    `);
+
+    // /Shadows /Explicit shadowing
 
 
     // Return inference.

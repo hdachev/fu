@@ -635,10 +635,22 @@ pub fn parse(
 
     // Watch out, we want to not allow pubs & shadows together.
 
+    fn set_SHADOW(ref flags: Flags)
+    {
+        flags & F_PUB && fail(
+            "Cannot " ~ "shadow".qBAD ~ " a " ~ "pub".qKW);
+
+        _fnDepth || fail(
+            "Shadowing is currently only supported inside functions.");
+
+        flags |= F_SHADOW;
+    }
+
     fn set_PUB(ref flags: Flags, extra?: string, autopub_ok!?: bool)
     {
-        flags & F_SHADOW && fail("Cannot " ~ "pub".qBAD ~ " a " ~ "shadow".qKW ~
-            (extra ? ": " ~ extra : "."));
+        flags & F_SHADOW && fail(
+            "Cannot " ~ "pub".qBAD ~ " a " ~ "shadow".qKW ~
+                (extra ? ": " ~ extra : "."));
 
         flags |= F_PUB;
 
@@ -658,10 +670,15 @@ pub fn parse(
 
     fn parseShadow(): Node
     {
+        mut idx0 = _idx;
+
         mut out = parseStatement();
         out.flags & F_PUB && fail("Cannot " ~ "shadow".qBAD ~ " a " ~ "pub".qKW ~ ".");
 
-        out.flags |= F_SHADOW;
+        swap(idx0, _idx);
+        out.flags.set_SHADOW();
+        swap(idx0, _idx);
+
         return out;
     }
 
@@ -1498,7 +1515,7 @@ pub fn parse(
             if (tryConsume("id", "using"    , :fn peek)) flags |= F_USING;
             if (tryConsume("id", "implicit" , :fn peek)) flags |= F_IMPLICIT;
             if (tryConsume("id", "lax"      , :fn peek)) flags |= F_LAX;
-            if (tryConsume("id", "shadow"   , :fn peek)) flags |= F_SHADOW;
+            if (tryConsume("id", "shadow"   , :fn peek)) flags.set_SHADOW();
 
             if (tryConsume("id", "type"     , :fn peek)) flags |= F_TYPENAME;
             else

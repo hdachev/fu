@@ -3115,6 +3115,11 @@ pub fn solve(
                     eph.scope_memo = lastSnap;
                 }
             }
+
+            // Also break-scope-before shadowing functions:
+            //  fn hello; fn uses_hello; <break>; shadow fn hello.
+            if (node.flags & F_SHADOW)
+                hasSnap = false;
         }
     }
 
