@@ -13933,6 +13933,8 @@ pub fn solve(
         //
         fn visit(ref node: SolvedNode)
         {
+            let unsequencedOutside = !!_unseqDepth;
+
             if (node.kind == "call")
             {
                 let o = GET(node.target);
@@ -13960,9 +13962,7 @@ pub fn solve(
                 let RTL = o.isRTL;
 
                 ////////////////////////////////////////////////////////////////
-                let unsequencedOutside  = !!_unseqDepth;
-                let unsequencedHere     = !RTL && node.items.len > 1;
-
+                let unsequencedHere = !RTL && node.items.len > 1;
                 if (unsequencedHere)
                     _unseqDepth++;
                 ////////////////////////////////////////////////////////////////
@@ -14082,6 +14082,10 @@ pub fn solve(
                 mut root = GET_mut(node.target).solved.steal();
                 visit(root);
                 swap(root, GET_mut(node.target).solved);
+
+                // Letdef expressions
+                if (!node.type.isIrrelevant && unsequencedOutside)
+                    _inner.writes.flag(node.type.lifetime);
 
                 // Done - no children.
                 return;
