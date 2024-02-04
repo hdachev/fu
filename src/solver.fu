@@ -724,6 +724,59 @@ pub fn solve(
         return _scope.extended[globid];
     }
 
+    fn GET_next_local_index()
+    {
+        let globid = _current_fn.target.globid;
+        if (!globid)
+            return 0;
+
+        if (SELF_TEST)
+            globid > 0 && globid < _scope.extended.len || BUG(
+                "GET_next_local_index: bad globid");
+
+        return _scope.extended[globid].locals.len + 1;
+    }
+
+    fn nested(index: i32, from!: Target)
+    {
+        if (SELF_TEST)
+            index > 0 || BUG(
+                "nested(): bad locid");
+
+        return Target(:from.modid, :from.globid, locid: index);
+    }
+
+    fn nested(index: i32)
+    {
+        return nested(:index, from: _nestingFnort);
+    }
+
+    fn str(lifetime: Lifetime)
+    {
+        mut str = "";
+
+        lifetime.Lifetime_each: |locid, isStatic, isTemp, isArgIdx, argidx, paths|
+        {
+            if (str) str ~= "|";
+
+            str ~= locid        ? GET(nested(locid)).str
+                 : isStatic     ? "static".qLT
+                 : isTemp       ? "temp".qLT
+                 : isArgIdx     ? "arg#" ~ argidx
+                                : BUG("invalid region");
+
+            mut offset = 0;
+            paths.lifetime::walkPaths(:offset,
+                onPathStart:        ||                      str ~= " [",
+                onPathDone:         |isLastPath|            str ~= isLastPath ? " ]" : " ],",
+                onSubRegion:        |flatCount, flatOffset, isLastSubRegion|
+                    str ~= " #" ~ flatCount ~ " @" ~ flatOffset ~ (isLastSubRegion ? "" : ","),
+            );
+        }
+
+        return str;
+    }
+
     fn humanizeTypeName(type: Type)
     {
         PERF_slowPath();
@@ -744,6 +797,69 @@ pub fn solve(
         return (type.canon == t_bool.canon ? "bool"
               : type.canon == t_byte.canon ? "byte"
               : type.canon).qID;
+    }
+
+    fn humanizeType(type: Type, mut lt!?: bool, mut no_quals!?: bool, mut usage!?: bool, mut no_vfacts!?: bool, lax i!?: int, diff!?: Type)
+    {
+        if (!type)
+            return "< Empty Type >";
+
+        if (diff)
+        {
+            // TODO CLEAN THIS UP
+            //  Re: quals & vfacts, most interesting to mask off the common stuff.
+            //  It's silly that we have no-quals & no-vfacts, but usage and lt are opt-in.
+            //  Maybe lifetime should become opt-out too, because it actually prints nicely.
+            //
+            no_quals    = true;
+            no_vfacts   = true;
+
+            if (canon::isCanonAssignable(type.canon, diff.canon) ||
+                canon::isCanonAssignable(diff.canon, type.canon))
+            {
+                no_quals    = (type.quals & q_TAGS)  == (diff.quals & q_TAGS);
+                no_vfacts   =  type.vfacts           ==  diff.vfacts;
+                usage       = (type.quals & q_USAGE) != (diff.quals & q_USAGE);
+                lt          =  type.lifetime         !=  diff.lifetime;
+            }
+        }
+
+        mut result = humanizeTypeName(type);
+
+        if (!no_quals)
+            result ~= humanizeQuals(type.quals);
+
+        if (usage)
+        {
+            shadow mut usage = type.quals & q_USAGE;
+            mut offset = -3;
+
+            result ~= " { ";
+
+            if (!usage)
+            {
+                result ~= "unused ";
+            }
+            else do
+            {
+                if (usage & 1)
+                    result ~= "#" ~ offset ~ " ";
+
+                usage >>= 1;
+                offset++;
+            }
+            while (usage);
+
+            result ~= "}";
+        }
+
+        if (lt && type.lifetime)
+            result ~= "`" ~ type.lifetime;
+
+        if (!no_vfacts && type.vfacts)
+            result ~= " " ~ type.vfacts;
+
+        return result;
     }
 
     fn fail_appendStack(mut reason: string)
@@ -834,11 +950,6 @@ pub fn solve(
     {
         if (SELF_TEST && options.dev & options::DEV_HappyPathOnly)
             println("DEV_HappyPathOnly: we ended up on a slow path.");
-    }
-
-    shadow fn BUG(mut reason?: string)
-    {
-        fail("COMPILER BUG:\n\n\t" ~ (reason || "Assertion failed."));
     }
 
     fn BUG(token: TokenIdx, reason: string)
@@ -1035,6 +1146,17 @@ pub fn solve(
         return _scope.overloads[globid - 1];
     }
 
+    shadow fn BUG(mut reason?: string)
+    {
+        fail("COMPILER BUG:\n\n\t" ~ (reason || "Assertion failed."));
+    }
+
+    shadow fn lookupUserType(type: Type): Struct
+    {
+        return tryLookupUserType(type)
+            || fail("Not a struct nor custom primitive: " ~ humanizeType(type));
+    }
+
     fn GET_mut(target: Target)
     {
         let globid  = target.globid;
@@ -1059,33 +1181,6 @@ pub fn solve(
                 "EXT_mut: bad modid/globid/locid");
 
         return _scope.extended[globid];
-    }
-
-    fn GET_next_local_index()
-    {
-        let globid = _current_fn.target.globid;
-        if (!globid)
-            return 0;
-
-        if (SELF_TEST)
-            globid > 0 && globid < _scope.extended.len || BUG(
-                "GET_next_local_index: bad globid");
-
-        return _scope.extended[globid].locals.len + 1;
-    }
-
-    fn nested(index: i32, from!: Target)
-    {
-        if (SELF_TEST)
-            index > 0 || BUG(
-                "nested(): bad locid");
-
-        return Target(:from.modid, :from.globid, locid: index);
-    }
-
-    fn nested(index: i32)
-    {
-        return nested(:index, from: _nestingFnort);
     }
 
     using fn EPH(target: Target)
@@ -1277,32 +1372,6 @@ pub fn solve(
 
     //
 
-    fn str(lifetime: Lifetime)
-    {
-        mut str = "";
-
-        lifetime.Lifetime_each: |locid, isStatic, isTemp, isArgIdx, argidx, paths|
-        {
-            if (str) str ~= "|";
-
-            str ~= locid        ? nested(locid).str
-                 : isStatic     ? "static".qLT
-                 : isTemp       ? "temp".qLT
-                 : isArgIdx     ? "arg#" ~ argidx
-                                : BUG("invalid region");
-
-            mut offset = 0;
-            paths.lifetime::walkPaths(:offset,
-                onPathStart:        ||                      str ~= " [",
-                onPathDone:         |isLastPath|            str ~= isLastPath ? " ]" : " ],",
-                onSubRegion:        |flatCount, flatOffset, isLastSubRegion|
-                    str ~= " #" ~ flatCount ~ " @" ~ flatOffset ~ (isLastSubRegion ? "" : ","),
-            );
-        }
-
-        return str;
-    }
-
     fn Lifetime_replaceArgsAtCallsite(target: Target, argNodes: SolvedNode[..]): Lifetime
     {
         return target.type.lifetime.Lifetime_process(
@@ -1481,69 +1550,6 @@ pub fn solve(
         }
 
         return fname[start .. end];
-    }
-
-    fn humanizeType(type: Type, mut lt!?: bool, mut no_quals!?: bool, mut usage!?: bool, mut no_vfacts!?: bool, lax i!?: int, diff!?: Type)
-    {
-        if (!type)
-            return "< Empty Type >";
-
-        if (diff)
-        {
-            // TODO CLEAN THIS UP
-            //  Re: quals & vfacts, most interesting to mask off the common stuff.
-            //  It's silly that we have no-quals & no-vfacts, but usage and lt are opt-in.
-            //  Maybe lifetime should become opt-out too, because it actually prints nicely.
-            //
-            no_quals    = true;
-            no_vfacts   = true;
-
-            if (canon::isCanonAssignable(type.canon, diff.canon) ||
-                canon::isCanonAssignable(diff.canon, type.canon))
-            {
-                no_quals    = (type.quals & q_TAGS)  == (diff.quals & q_TAGS);
-                no_vfacts   =  type.vfacts           ==  diff.vfacts;
-                usage       = (type.quals & q_USAGE) != (diff.quals & q_USAGE);
-                lt          =  type.lifetime         !=  diff.lifetime;
-            }
-        }
-
-        mut result = humanizeTypeName(type);
-
-        if (!no_quals)
-            result ~= humanizeQuals(type.quals);
-
-        if (usage)
-        {
-            shadow mut usage = type.quals & q_USAGE;
-            mut offset = -3;
-
-            result ~= " { ";
-
-            if (!usage)
-            {
-                result ~= "unused ";
-            }
-            else do
-            {
-                if (usage & 1)
-                    result ~= "#" ~ offset ~ " ";
-
-                usage >>= 1;
-                offset++;
-            }
-            while (usage);
-
-            result ~= "}";
-        }
-
-        if (lt && type.lifetime)
-            result ~= "`" ~ type.lifetime;
-
-        if (!no_vfacts && type.vfacts)
-            result ~= " " ~ type.vfacts;
-
-        return result;
     }
 
     fn explainTypeDiff(a: Type, b: Type, sep = "<->")
@@ -5195,12 +5201,6 @@ pub fn solve(
 
 
     //
-
-    shadow fn lookupUserType(type: Type): Struct
-    {
-        return tryLookupUserType(type)
-            || fail("Not a struct nor custom primitive: " ~ humanizeType(type));
-    }
 
     fn getBasePrim(type: Type): string
     {
