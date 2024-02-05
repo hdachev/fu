@@ -131,7 +131,18 @@ pub fn isCanonAssignable(host: byte[..], guest: byte[..])
     //  If guest is not generic, we match by canon.
     //
     if (!guestHasPatterns)
+    {
+        // TODO FIX - I had forgotten about arrays here.
+        //  This slows us down by ~ 1%, if we add more stuff here
+        //   for tuples & fixed length arrays it'll only get slower
+        //
+        if (guest.starts(with: '['))
+            return host.starts(with: '[')
+                && isCanonAssignable(host[1 .. host.len - 1],
+                                    guest[1 .. guest.len - 1]);
+
         return host == guest;
+    }
 
     let g0 = guest.find('(') + 1;
     let g1 = guest.len - 1;

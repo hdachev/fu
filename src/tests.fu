@@ -16832,6 +16832,29 @@ pub extern fn runTests()
         fn main() _0::make_list(0)._1::get_f();
     `]);
 
+    ZERO([`
+        struct Two(type T) { a: T; b: T };
+    `,`
+        fn arr_of_two(x: int)               <alt>
+            : _0::Two(int)[] = [[ x, x ]];  <alt/>
+            [ _0::Two(int)(x, x) ];         </alt>
+    `,`
+        import _0;
+        fn arr_of_2(x: int)                 <alt>
+            : Two(int)[] = [[ x, x ]];      <alt/>
+            [ Two(int)(x, x) ];             </alt>
+    `,`
+        fn main() {
+            mut sum = 0;
+            fn sum !T(what: T)
+                case (T -> _[])     what.each(.sum);
+                default             sum += what.a + what.b;
+
+            sum(_1::arr_of_two(2) ~ _2::arr_of_2(3));
+            return sum == 10 ? 0 : 1;
+        }
+    `]);
+
     // /Template types
 
 
