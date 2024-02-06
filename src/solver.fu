@@ -777,13 +777,13 @@ pub fn solve(
         return str;
     }
 
-    fn humanizeTypeName(type: Type)
+    fn humanizeTypeName(type: Type, brief!?: bool)
     {
         PERF_slowPath();
 
         let s = tryLookupUserType(type);
         if (s.kind)
-            return s.kind.str.qKW ~ " " ~ s.name.qID;
+            return (!brief && s.kind.str.qKW ~ " ") ~ s.name.qID;
 
         if (let itemType = tryClear_sliceable(type))
         {
@@ -799,7 +799,7 @@ pub fn solve(
               : type.canon).qID;
     }
 
-    fn humanizeType(type: Type, mut lt!?: bool, mut no_quals!?: bool, mut usage!?: bool, mut no_vfacts!?: bool, lax i!?: int, diff!?: Type)
+    fn humanizeType(type: Type, brief!?: bool, mut lt!?: bool, mut no_quals!?: bool, mut usage!?: bool, mut no_vfacts!?: bool, lax i!?: int, diff!?: Type)
     {
         if (!type)
             return "< Empty Type >";
@@ -824,8 +824,29 @@ pub fn solve(
             }
         }
 
-        mut result = humanizeTypeName(type);
+        mut result = humanizeTypeName(type, :brief);
 
+        // Template type arguments.
+        let pattern = type.canon.canon::tryGetPattern();
+        if (pattern)
+        {
+            pattern.canon::eachSubPattern(|shadow pattern, lax spec_of!target|
+            {
+                result ~= "(";
+
+                pattern.canon::eachArgSpecType: |argSpecType, isFirst|
+                {
+                    if (!isFirst)
+                        result ~= ", ";
+
+                    result ~= humanizeType(Type(parseType(argSpecType)), brief: true, no_quals: true);
+                }
+
+                result ~= ")";
+            });
+        }
+
+        //
         if (!no_quals)
             result ~= humanizeQuals(type.quals);
 

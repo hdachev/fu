@@ -104,7 +104,7 @@ pub fn eachArgSpecType(subPattern: byte[..], visit)
             :offset, isLastArgSpecType);
 
         visit(subPattern[start .. offset],
-            isDeep?: isDeep, isLast?: isLastArgSpecType);
+            isDeep?: isDeep, isLast?: isLastArgSpecType, isFirst?: !start);
 
         if (isLastArgSpecType)
             break;
