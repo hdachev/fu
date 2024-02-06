@@ -1,5 +1,6 @@
 import helpers;
 import module;
+import fail;
 
 
 // TODO FIX Approximating unions & intersections.
@@ -148,6 +149,9 @@ pub fn isCanonAssignable(host: byte[..], guest: byte[..])
             return host.starts(with: '[')
                 && isCanonAssignable(host[1 .. host.len - 1],
                                     guest[1 .. guest.len - 1]);
+
+        if (SELF_TEST)
+            host && guest || BUG("isCanonAssignable: host(" ~ host ~ ") guest(" ~ guest ~ ")");
 
         return host == guest;
     }
