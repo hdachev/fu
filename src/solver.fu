@@ -7439,8 +7439,10 @@ pub fn solve(
                 specPat = "(";
                 specPat.appendGlobal(spec_of);
             }
+            else {
+                specPat ~= ":";
+            }
 
-            specPat ~= ":";
             specPat ~= serializeType(arg.type, debug: "TODO_FIX_getSpecPat");
         }
 

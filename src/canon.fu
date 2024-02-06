@@ -85,7 +85,15 @@ pub fn eachSubPattern(pattern: byte[..], visit)
 
 pub fn eachArgSpecType(subPattern: byte[..], visit)
 {
-    mut offset  = 1; // first arg starts on :
+    // PREVIOUSLY
+    // First spec-args begins on a : after the template-id,
+    //  so we skip the head byte
+    // mut offset = 1;
+
+    // NOW
+    // We skip the leading : to save a byte.
+    mut offset = 0;
+
     for (;;)
     {
         let start   = offset;
@@ -194,10 +202,11 @@ pub fn isCanonAssignable(host: byte[..], guest: byte[..])
                 // We split-zip the two spec-arg sequences here.
                 for (;;)
                 {
+                    // PREVIOUSLY
                     // First spec-args begins on a : after the template-id,
                     //  that's why we increment this on the first loop iter.
-                    h1++;
-                    g1++;
+                    // h1++;
+                    // g1++;
 
                     shadow let h0 = h1;
                     shadow let g0 = g1;
@@ -216,6 +225,11 @@ pub fn isCanonAssignable(host: byte[..], guest: byte[..])
                     let guestItem = guest[g0 .. g1];
                     if (isCanonAssignable(hostItem, guestItem))
                         continue :NEXT_HOST_PAIR;
+
+                    // NOW
+                    // We skip the leading : to save a byte.
+                    h1++;
+                    g1++;
                 }
             }
         }
