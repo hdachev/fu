@@ -16877,11 +16877,10 @@ pub extern fn runTests()
 
     ZERO(`
         struct Some(type T) { some: T }
-
         fn wrap !T(v: T) Some(T)(v);
 
         fn map !T(v: Some(T), fn) {
-            shadow let v =      <fail got Some(Some(string)) 17:23+4>
+            shadow let v =      <fail got Some(Some(string)) 16:23+4>
                 fn(v);          <pass/>
                 fn(v.some);     </fail>
 
@@ -16900,6 +16899,33 @@ pub extern fn runTests()
         fn main() {
             let result = ZeroSame(wrap("Hello, World!"));
             return result.some.some.len - 13;
+        }
+    `);
+
+    ZERO(`
+        struct Some(type T) { some: T }
+        fn wrap !T(v: T) Some(T)(v);
+
+        fn map !T(v: Some(T), fn) {
+            shadow let v =      <fail got Some(Some(Some(string))) 16:23+4>
+                fn(v);          <pass/>
+                fn(v.some);     </fail>
+
+            return Some(typeof(v))(v);
+        }
+
+        fn Zero(sources: Some(Some(string)))
+            sources;
+
+        fn ZeroSame(alts: Some(Some(Some(string))))
+            alts.map(.Zero);
+
+        fn ZeroSame(alts: Some(Some(string)))
+            ZeroSame(alts.map(|x| wrap(x)));
+
+        fn main() {
+            let result = ZeroSame(wrap(wrap("Hello, World!")));
+            return result.some.some.some.len - 13;
         }
     `);
 

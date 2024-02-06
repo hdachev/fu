@@ -203,8 +203,11 @@ pub fn isCanonAssignable(host: byte[..], guest: byte[..])
                 shadow mut h1 = 0;
                 shadow mut g1 = 0;
 
+                mut isLastHostPair:  bool;
+                mut isLastGuestPair: bool;
+
                 // We split-zip the two spec-arg sequences here.
-                for (;;)
+                do
                 {
                     // PREVIOUSLY
                     // First spec-args begins on a : after the template-id,
@@ -214,9 +217,6 @@ pub fn isCanonAssignable(host: byte[..], guest: byte[..])
 
                     shadow let h0 = h1;
                     shadow let g0 = g1;
-
-                    mut isLastHostPair:  bool;
-                    mut isLastGuestPair: bool;
 
                     host .scan(':', h1, isLastHostPair);
                     guest.scan(':', g1, isLastGuestPair);
@@ -235,6 +235,7 @@ pub fn isCanonAssignable(host: byte[..], guest: byte[..])
                     h1++;
                     g1++;
                 }
+                while (!isLastHostPair);
             }
         }
 
