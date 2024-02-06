@@ -3375,6 +3375,26 @@ pub extern fn runTests()
         }
     `);
 
+    ZERO(`
+        fn Zero(sources: string[])
+            sources;
+
+        fn ZeroSame(alts: string[][])
+            alts.map(.Zero);
+
+        fn ZeroSame(alts: string[])
+            ZeroSame(alts.map(|x| [ x ]));
+
+        fn main() {
+            let result =
+                ZeroSame([ "Hello", "World" ])
+                    .map(|inner| inner.join("#"))
+                        .join(", ") ~ "!";
+
+            return result == "Hello, World!" ? 0 : 1;
+        }
+    `);
+
     // /Strings.
 
 
