@@ -3905,7 +3905,6 @@ pub fn solve(
                 //   basically we want letdefs to work as an immediate variable read.
                 let firstUse = trackVarUsage(:node.target.locid, node.type);
                 ref o = GET_mut(node.target);
-                o.status |= SS_HOIST;
 
                 if (firstUse)
                     warnUnused(:node.target, :o);
@@ -4943,30 +4942,6 @@ pub fn solve(
                         _current_fn.items.splice(position, 1);
                     }
                 }
-            }
-            else if (PASS_MaybeCopyOrMove)
-            {
-                // Hoist variables mentioned in the block return type,
-                //  whose declarations we have encountered
-                //   while relaxing this block's contents.
-                //
-                fn SS_HOIST_returned_locals(lifetime: Lifetime)
-                {
-                    lifetime.Lifetime_each: |locid|
-                    {
-                        if (!locid || !_current_fn.done_relaxing.has(locid))
-                            continue;
-
-                        let t           = nested(locid);
-                        let climbType   = Lifetime_climbType(t);
-                        if (climbType)
-                            SS_HOIST_returned_locals(climbType.lifetime);
-                        else
-                            GET_mut(t).status |= SS_HOIST;
-                    };
-                }
-
-                SS_HOIST_returned_locals(node.type.lifetime);
             }
 
             if (!items && !(h.mask & HM_Function))

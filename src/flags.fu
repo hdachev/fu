@@ -14,7 +14,7 @@ using flags SolverStatus: u16
     SS_FN_RECUR
     SS_FN_OOE_RTL
 
-    SS_HOIST
+    // ...
     SS_UNUSED
     SS_MATCHED
     SS_MOVED_FROM

@@ -3578,7 +3578,7 @@ pub extern fn runTests()
         <split/>
         fn main() {
             implicit mut sum = 3;
-            let res = inline_implicit_from_defarg(sum);         ;; GNUStmtExpr
+            let res = inline_implicit_from_defarg(sum);
             return sum == 4 && res == 9 ? 0 : 1;
         }
     `);
@@ -3604,10 +3604,10 @@ pub extern fn runTests()
             </alt>
                         ;; N_BckMustSeq
             <alt>
-            let res = a * { ref x = z || a; x++ };              ;; GNUStmtExpr
+            let res = a * { ref x = z || a; x++ };
             return a == 4 && res == 9 ? 0 : 1;
             <alt/>
-            let res = { ref x = z || a; x++ } * a;              ;; GNUStmtExpr
+            let res = { ref x = z || a; x++ } * a;
             return a == 4 && res == 12 ? 0 : 1;
             </alt>
         }
@@ -3622,7 +3622,7 @@ pub extern fn runTests()
             noinline                                            ;; N_AARMustSeq
             </alt>
             fn ooe_closure(ref hello<alt>: i32</alt>) {
-                let res = hello * { ref x = z || a; x++ };      ;; GNUStmtExpr
+                let res = hello * { ref x = z || a; x++ };
                 hello += 10;
                 return res;
             }
@@ -3650,7 +3650,7 @@ pub extern fn runTests()
             noinline                                            ;; N_AARMustSeq
             </alt>
             fn ooe_closure(ref hello<alt>: i32</alt>) {
-                let res = mul({ ref x = z || a; x++ }, hello);  ;; GNUStmtExpr
+                let res = mul({ ref x = z || a; x++ }, hello);
                 hello += 10;
                 return res;
             }
@@ -3676,10 +3676,8 @@ pub extern fn runTests()
         }
 
         <alt>
-        inline                                                  ;; GNUStmtExpr
-        <alt/>
-        ;; N_BckMustSeq
-        </alt>
+        inline                  <alt/>
+        ;; N_BckMustSeq         </alt>
         fn inline_implicit_from_defarg(hello: i32, defaulted_argument: i32 = uses_implicit_inside) {
             return hello * defaulted_argument;
         }
@@ -3696,10 +3694,8 @@ pub extern fn runTests()
         inline fn uses_implicit_inside() = uses_implicit;
 
         <alt>
-        inline                                                  ;; GNUStmtExpr
-        <alt/>
-        ;; N_BckMustSeq
-        </alt>
+        inline                  <alt/>
+        ;; N_BckMustSeq         </alt>
         fn inline_implicit_from_defarg(defaulted_argument: i32 = uses_implicit_inside, hello: i32 = 0)
             hello * defaulted_argument;
 
@@ -4185,7 +4181,7 @@ pub extern fn runTests()
     ZERO(`
         <alt>
         noinline                <alt/>
-        inline    ;; GNUStmtExpr</alt>
+        inline                  </alt>
         fn twiceUnlessEmpty(x) {
             return x && [ x, x ];
         }
@@ -5943,11 +5939,10 @@ pub extern fn runTests()
 
     ZERO(`
         struct HasVec { x: i32[] };
-        inline fn last(x: i32[]) x[x.len - 1];                  ;; GNUStmtExpr
+        inline fn last(x: i32[]) x[x.len - 1];
 
         <alt>
-        inline                                                  ;; GNUStmtExpr
-                                                                ;; PointlessLocal
+        inline                                                  ;; PointlessLocal
         </alt>
         fn will_return_value(ref x: HasVec) {
             let bck_will_cpy = x;
@@ -9218,7 +9213,7 @@ pub extern fn runTests()
 
         fn main() {
             mut a = [ 1 ];
-            return a[0] - hey(a, 1)[1];                         ;; GNUStmtExpr
+            return a[0] - hey(a, 1)[1];
         }
     `);
 
@@ -9254,7 +9249,7 @@ pub extern fn runTests()
         struct Cmd { self: string; options: i32 };
 
         inline fn unlessHasExt(str: string) {
-            let idx = str.find('.');                            ;; GNUStmtExpr
+            let idx = str.find('.');
             if (idx > 0)
                 return [];
 
@@ -9588,7 +9583,7 @@ pub extern fn runTests()
             vUp = vec3(z: 1)) // <- this crashes
         {
             let pView = vUp * (rPlanet + altitude);
-            return Atmosphere(:rPlanet, :pView);                ;; GNUStmtExpr
+            return Atmosphere(:rPlanet, :pView);
         }
     `,
     `
@@ -9597,7 +9592,7 @@ pub extern fn runTests()
 
         fn main() {
             let atmo = Atmosphere(altitude: 1e2);
-            return atmo.pView.z == 11e2 ? 0 : 1;                ;; GNUStmtExpr
+            return atmo.pView.z == 11e2 ? 0 : 1;
         }
     `]);
 
@@ -9608,7 +9603,7 @@ pub extern fn runTests()
         let kMie_min: f32 = 3e-6;
         inline fn Atmo(kMie = vec3(fill: kMie_min)) = kMie;     ;; PointlessLocal
 
-        fn main() Atmo == 3e-6 ? 0 : 1;                         ;; GNUStmtExpr
+        fn main() Atmo == 3e-6 ? 0 : 1;
     `]);
 
     ZERO([
@@ -9622,7 +9617,7 @@ pub extern fn runTests()
         inline fn Atmosphere(kMie = vec3(fill: kMie_min)) = kMie.y * 2;
 
         <split/>
-        fn main() Atmosphere == 6e-6 ? 0 : 1;                   ;; GNUStmtExpr
+        fn main() Atmosphere == 6e-6 ? 0 : 1;
     `]);
 
     ZERO(`
@@ -11371,7 +11366,7 @@ pub extern fn runTests()
         }
 
         fn main() i32 <|
-            mat34_identity.inverse.determinant - 1;             ;; GNUStmtExpr
+            mat34_identity.inverse.determinant - 1;
     `);
 
     ZERO(`
@@ -12560,7 +12555,7 @@ pub extern fn runTests()
     ZERO(`
         struct vec3 { x?: f32; y?: f32; z?: f32; };
 
-        inline fn /(a: f32, b: vec3)                            ;; GNUStmtExpr
+        inline fn /(a: f32, b: vec3)
             vec3(a / b.x, a / b.y, a / b.z);
 
         fn main() i32 <|
@@ -12681,7 +12676,7 @@ pub extern fn runTests()
         }
     `,`
         inline fn test(ref v) {
-            v = v.norm();                                       ;; GNUStmtExpr
+            v = v.norm();
             return v.len;
         }
 
@@ -13151,7 +13146,7 @@ pub extern fn runTests()
                     : "BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB"
 
         fn main() {
-            inline fn what(AoB: int) {                          ;; GNUStmtExpr
+            inline fn what(AoB: int) {
                 mut s: string;
                 what(s, AoB)
             }
@@ -13307,7 +13302,7 @@ pub extern fn runTests()
         }
     `);
 
-    TODO_slices(currently: "BUG exit code", `
+    ZERO(`
         fn ifLetVecRangeMut(ref x: i32[]) {
             if (ref items = x[.. x.len / 2]) {
                 mut hello = [ 1, 2 ];
@@ -13770,8 +13765,7 @@ pub extern fn runTests()
         fn hello(a?: i32, b?: i32) = 10 * a + 100 * b;
 
         <alt>
-        inline                                                  ;; GNUStmtExpr
-        </alt>
+        inline                  </alt>
         fn test(f) {
             let a = 1; // none of these should need 'lax',
             let b = 2; //  they're all SS_MATCHED below,
@@ -13820,7 +13814,7 @@ pub extern fn runTests()
     `,
     `
         import _1;
-        fn main() 1._0::Hey.test - 3;                           ;; GNUStmtExpr
+        fn main() 1._0::Hey.test - 3;
     `
     ]);
 
@@ -13833,7 +13827,7 @@ pub extern fn runTests()
     `,
     `
         import _1;
-        fn main() 1._0::Hey.test - 3;                           ;; GNUStmtExpr
+        fn main() 1._0::Hey.test - 3;
     `
     ]);
 
@@ -13845,7 +13839,7 @@ pub extern fn runTests()
         pub inline fn test(h: _0::Hey) h.i + 2;
     `,
     `
-        fn main() 1._0::Hey._1::test - 3;                       ;; GNUStmtExpr
+        fn main() 1._0::Hey._1::test - 3;
     `
     ]);
 
@@ -13861,7 +13855,7 @@ pub extern fn runTests()
         pub inline fn test(using h = _1::init3) i + 7;
     `,
     `
-        fn main() _2::test - 10;                                ;; GNUStmtExpr
+        fn main() _2::test - 10;
     `
     ]);
 
@@ -14242,7 +14236,7 @@ pub extern fn runTests()
 
         pub inline fn fun(x: i32) recB(x);
     `,`
-        fn main() _0::fun(0) == 2 ? 0 : 1;                      ;; GNUStmtExpr
+        fn main() _0::fun(0) == 2 ? 0 : 1;
     `]);
 
     ZERO([`
@@ -14294,7 +14288,7 @@ pub extern fn runTests()
     `,`
         import _0;
         fn inspect(m: Module) {
-            return modid + m.modid + m.target.modid;            ;; GNUStmtExpr
+            return modid + m.modid + m.target.modid;
         }
     `,`
         import _0;
@@ -14349,7 +14343,7 @@ pub extern fn runTests()
                 throw("Not an array: " ~ type));
         }
     `,`
-        fn main() = _0::clearArray("[]int").len - 3;            ;; GNUStmtExpr
+        fn main() = _0::clearArray("[]int").len - 3;
     `]);
 
     ZERO([`
@@ -14394,7 +14388,7 @@ pub extern fn runTests()
         <split/>
         fn Scope_exports(using implicit scope: Scope) {
             for (mut i = 0; i < implicits.len; i++) {
-                let item        = implicits[i];                 ;; GNUStmtExpr
+                let item        = implicits[i];
                 let overload    = overloads[item.globid - 1];   ;; PointlessLocal
                 if (overload) return overload.x;
             }
@@ -15388,7 +15382,7 @@ pub extern fn runTests()
         fn to_debug_str(a: i32) X("i" ~ a);
 
         fn main() {
-            let hey = X("Hey! ") ~ 5;                           ;; GNUStmtExpr
+            let hey = X("Hey! ") ~ 5;
             return hey.str == "Hey! i5" ? 0 : 1;
         }
     `);
@@ -15404,7 +15398,7 @@ pub extern fn runTests()
         </alt>
 
         inline fn /(a: conv32, b: vec32) vec32(a.v / b.x);
-        fn main() i32 <| (1/vec32(1)).x - 1;                    ;; GNUStmtExpr
+        fn main() i32 <| (1/vec32(1)).x - 1;
     `);
 
     TODO_litfix(currently: "expects conv32 got i32 18:28+1", `
@@ -15424,7 +15418,7 @@ pub extern fn runTests()
         inline fn /(a: conv32, b: vec32) vec32(a.v / b.x);
         inline fn /(a: conv64, b: vec64) vec64(a.v / b.x);
 
-        fn main() i32 <| (1/vec32(1)).x - 1;                    ;; GNUStmtExpr
+        fn main() i32 <| (1/vec32(1)).x - 1;
     `);
 
     ZERO(`
@@ -15896,7 +15890,7 @@ pub extern fn runTests()
     `,`
         fn main() {
             mut set = _0::Set(string)
-            if (!set.add("Hello!")) return 1                    ;; GNUStmtExpr
+            if (!set.add("Hello!")) return 1
             return set.get("Hello!").hash.int - 6               ;; LocalConstBool
         }
     `]);
@@ -16112,8 +16106,8 @@ pub extern fn runTests()
 
     ZERO(`
         fn Stringy(i: i32) "i:" ~ i;
-                                                                ;; ConstCast
-        inline fn Printy(x: string): string = x;                ;; GNUStmtExpr
+
+        inline fn Printy(x: string): string = x;                ;; ConstCast
         inline fn Printy(x.Stringy): string = x;                ;; PointlessLocal
 
         fn Println(parts.Printy[]<alt>: string[..]</alt>) {
@@ -16125,7 +16119,7 @@ pub extern fn runTests()
         fn main() Println("str", 10) - 7; // 'stri:10'.len
     `);
 
-    ZERO(` // inline fn empty retval on autocall                ;; GNUStmtExpr
+    ZERO(` // inline fn empty retval on autocall
         inline fn concatable(a: bool)               a ? "yes" : "no";
         inline fn concat(a.concatable, b: string)   a ~ b;
         fn main()                                   concat(true, "!") == "yes!" ? 0 : 1;
@@ -16167,7 +16161,7 @@ pub extern fn runTests()
         fn main() {
             let topic = "A";
             implicit mut out: string;
-            printlike(:topic, "Hello, ", "World", "!");         ;; GNUStmtExpr
+            printlike(:topic, "Hello, ", "World", "!");
             return out == "A: Hello, World!\\n" ? 0 : 1         ;; PointlessLocal
         }
     `);
@@ -16184,7 +16178,7 @@ pub extern fn runTests()
                 once++;
                 return str;
             }
-                                                                ;; GNUStmtExpr
+
             lazywarn(once("Hello"), ", ", "World", "!", prefix: "X: ");
             lazywarn(prefix: "Y: ", once("Hello"), "!");
 
@@ -16295,7 +16289,7 @@ pub extern fn runTests()
             implicit mut FIVE   = 5;
 
             mut data = [ 0, 0, 0, 0, 0 ];
-            let res = descend_b(data, 0);                       ;; GNUStmtExpr
+            let res = descend_b(data, 0);
             return res == 10000 ? 0 : 1;
         }
     `);
@@ -16443,8 +16437,7 @@ pub extern fn runTests()
         fn use_c(implicit c: i32) c * c;
 
         <alt>
-        inline                                                  ;; GNUStmtExpr
-        </alt>
+        inline </alt>
         fn parseStuff(x: i32) {
             fn doStuff(y: i32) doSomething(y * y);
             return doStuff(x * x);
@@ -16458,8 +16451,7 @@ pub extern fn runTests()
         }
 
         <alt>
-        inline                                                  ;; GNUStmtExpr
-        </alt>
+        inline </alt>
         fn descend(x: i32) { // <- x here
             fn descend_inner(y: i32)
                 y & 1 ? parseStuff(y / 2) * parseStuff(x) // x not defined here?
@@ -16469,8 +16461,7 @@ pub extern fn runTests()
         }
 
         <alt>
-        inline                                                  ;; GNUStmtExpr
-        </alt>
+        inline </alt>
         fn doSomethingElse(x: i32) {
             fn doSomethingElse_inner(y: i32) y * use_b;
             return doSomethingElse_inner(x * x);
@@ -16683,7 +16674,7 @@ pub extern fn runTests()
             fn TRACE_BRACKET(inline msg: string) unwrap {
                 mut len0: int;
                 defer if (TRACE_out.len > len0) {
-                    shadow let msg = msg;                       ;; GNUStmtExpr
+                    shadow let msg = msg;
                     TRACE_out.splice(len0, 0, "<" ~ msg ~ ">");
                     TRACE_out ~= "</" ~ msg ~ ">";
                 }
@@ -16716,7 +16707,7 @@ pub extern fn runTests()
             mut len0: int;
             defer if (TRACE_out.len > len0) {
                 // unlike the test above, we'll inline msg twice
-                TRACE_out.splice(len0, 0, "<" ~ msg ~ ">");     ;; GNUStmtExpr
+                TRACE_out.splice(len0, 0, "<" ~ msg ~ ">");
                 TRACE_out ~= "</" ~ msg ~ ">";
             }
         }
@@ -19030,7 +19021,7 @@ pub extern fn runTests()
         }
 
         fn DUPE(implicit ref x: X[], idx: int) {
-            let src = GET(idx);                                 ;; GNUStmtExpr
+            let src = GET(idx);
             let idx1 = x.len;
 
             x.grow(idx1 + 1)

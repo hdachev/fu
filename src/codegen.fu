@@ -31,6 +31,8 @@ let M_ARG_TO_NATIVE     = 1 << 12;
 let M_ENUM_DECL         = 1 << 13;
 let M_CHECK_NEVER_LTR   = 1 << 14;
 let M_STATIC_REF        = 1 << 15;
+let M_VOID_EXPR         = 1 << 16;
+let M_FN_BODY           = 1 << 17;
 
 let MAIN_needed         = 1 << 0;
 let MAIN_argv           = 1 << 1;
@@ -173,8 +175,9 @@ pub fn cpp_codegen(
         _ids_dedupe_p?: i32[];
         _ids_dedupe_n?: i32[];
 
-        // We'll start with the silliest thing here.
-        _hoist?:        string[];
+        // Hoisting now a little more robust.
+        _hoisted?:      bitset::BitSet;
+        _declared?:     bitset::BitSet;
 
         // Sanity check.
         _live_locals?:  i32[];
@@ -927,10 +930,28 @@ pub fn cpp_codegen(
     fn blockWrapSubstatement(node: SolvedNode, mode?: i32): string
         cgBlock(node, mode: M_STMT | M_OPT_CURLIES | mode);
 
+    fn isHoistable(locid: i32)
+        locid > 0;
+
     fn cgBlock(node: SolvedNode, mode: i32): string
     {
         let items   = node.kind == "block"  ? node.items : [ node ];
         let helpers = node.kind == "block" && node.helpers;
+
+        // We now hoist here.
+        if !(mode & M_FN_BODY) {
+            node.lifetime.Lifetime_each: |locid|
+            {
+                if (isHoistable(:locid) && !_current_fn._declared.has(locid))
+                {
+                    set_isHoisted(:locid);
+
+                    // TODO FIX declaring here to emit the tempvars
+                    //  before the block captures tv0.
+                    binding(target: locid.nested);
+                }
+            }
+        }
 
         ///////////////////////////////////////////
         if (mode & M_LOOP_BODY)
@@ -994,10 +1015,6 @@ pub fn cpp_codegen(
                 if (k == "jump" || k == "loop" || k == "try" || k == "defer" || k == "pragma")
                     return false;
 
-                // SS_HOISTed letdefs currently just emit an assignment expr
-                if (k == "letdef" && !(n.target.status & SS_HOIST))
-                    return false;
-
                 if (!n.items.exprOK)
                     return false;
             }
@@ -1026,9 +1043,7 @@ pub fn cpp_codegen(
         {
             _indent         = indent0;
 
-            if (!_current_fn._hoist)
-                _current_fn._ids_used.shrink(ids_used0);
-
+            _current_fn._ids_used.shrink(ids_used0);
             defer _current_fn._live_locals.shrink(live_locals0);
         }
         ///////////////////////////////////////////////
@@ -1474,20 +1489,11 @@ pub fn cpp_codegen(
 
             src ~= cgFnSignature(target);
 
-            mut body_src = cgBlock(body, M_STMT);
-
-            if (_current_fn._hoist)
-            {
-                mut hoist = "\n    // Hoisted:";
-                for (mut i = 0; i < _current_fn._hoist.len; i++)
-                    hoist ~= "\n    " ~ _current_fn._hoist[i] ~ ";";
-
-                let idx = body_src.find("{") + 1;
-                if (idx > 0)
-                    body_src.splice(idx, 0, hoist ~ "\n");
-            }
+            mut body_src = cgBlock(body, M_STMT | M_FN_BODY);
 
             src ~= body_src;
+
+            _current_fn.TEMPVARs && BUG("Leftover tempvars.");
         }
 
         // So, the new reverse-specializer can totally emit
@@ -1556,23 +1562,6 @@ pub fn cpp_codegen(
 
     //
 
-    fn F_HOIST_asPtr(target: Target)
-    {
-        if !(target.status & SS_HOIST)
-            return false;
-
-        let t = target.solved.type;
-
-        // TODO FAILCASE
-        // TODO FAILCASE the isPassByValue stuff here was outright missing
-        // TODO FAILCASE forgot the is_mutref here, we'd need a test with a write against a hoisted mutref
-        // TODO FAILCASE
-        if (!t.is_mutref && t.isPassByValue)
-            return false;
-
-        return t.is_ref && (!t.is_sliceable || t.ifArray_annotateAsVec);
-    }
-
     fn globalVar_isConstexpr(o: Overload)
     {
         fn isConstexpr(expr: SolvedNode)
@@ -1633,49 +1622,42 @@ pub fn cpp_codegen(
             ? clear_refs(place_type)
             : place_type;
 
-        let annot = typeAnnot(
-            place_type, (!o.type.is_mutref && M_CONST)
-                      | (isArg && M_ARGUMENT)
-                      | (o.type.is_mutref && M_MUTVAR)
-                      | (o.status & SS_MOVED_FROM && M_MOVABLE)
-                      | (target.TODO_FIX_useStaticRef && M_STATIC_REF)
-        );
+        // TODO FIX re: hoising - we emit the declarations before entering blocks,
+        //  we we hit a double-declare here, not great.
+        let alreadyDeclared =
+            isHoistable(:target.locid) &&
+                !_current_fn._declared.add_once(target.locid);
+
+        let id          = localID(:target, dedupe: !alreadyDeclared);
+        let isHoisted   = isHoisted(:target.locid);
+
+        let mode    = (o.type.is_mutref && M_MUTVAR)
+                    | (o.status & SS_MOVED_FROM && M_MOVABLE)
+                    | (target.TODO_FIX_useStaticRef && M_STATIC_REF);
+
+        if (isHoisted)
+        {
+            if (!alreadyDeclared)
+            {
+                mut annot: string;
+                mut ptr_flip: PointerFlip;
+                TEMPVAR_declare(
+                    type: place_type, :ptr_flip, :annot, :id, :mode);
+            }
+
+            return id;
+        }
+
+        let annot = typeAnnot(place_type,
+            :mode   | (!o.type.is_mutref && M_CONST)
+                    | (isArg && M_ARGUMENT));
 
         let isUnused = o.status & SS_UNUSED;
         if (isArg && isUnused)
             return annot;
 
-        let id      = localID(:target, dedupe: true);
-
-        // The new hoisting stuff, obviously comes as a complete afterthought.
-        if (target.status & SS_HOIST)
-        {
-            _current_fn.target || BUG("TODO: hoisting for global variables.");
-
-            // This is such crap.
-            let F_HOIST_asPtr = target.F_HOIST_asPtr;
-
-            mut hoistDecl = annot.starts(with: "const ") && !F_HOIST_asPtr
-                ? annot.slice(6)
-                : annot;
-
-            if (F_HOIST_asPtr)
-            {
-                hoistDecl[hoistDecl.len - 1] == '&' || BUG("F_HOIST_asPtr: Decl not a ref: " ~ hoistDecl);
-                hoistDecl[hoistDecl.len - 1] = '*';
-            }
-
-            _current_fn._hoist ~= hoistDecl ~ " " ~ id
-                ~ (!place_type.is_trivial && " {}");
-
-            //
-            return id;
-        }
-        else
-        {
-            // Debug.
+        if (!isHoisted)
             _current_fn._live_locals ~= target.locid;
-        }
 
         //
         mut head    = annot || BUG();
@@ -1724,26 +1706,21 @@ pub fn cpp_codegen(
         if (!doInit)
             return head;
 
-        // Hoisted vars: the declaration is elsewhere,
-        //  this is an assignment here.
-        let hoist = target.status & SS_HOIST;
-        if (hoist)
-            head ~= " = ";
-
         // Definit.
+        let isHoisted = isHoisted(:target.locid);
+
+        fn HOIST_init(shadow init: string)
+            return TEMPVAR_init(
+                id: head, :init,
+                ptr_flip: PointerFlip(target),
+                immediate: !(mode & (M_STMT | M_VOID_EXPR)));
+
         if (!init || init.kind == "empty" && !init.type.is_ref)
         {
-            mut ret = head ~ " {}";
+            if (isHoisted)
+                return HOIST_init(init: "{}");
 
-            if (hoist && !(mode & M_STMT))
-            {
-                ret = "(" ~ ret ~ ")";
-
-                if (target.F_HOIST_asPtr)
-                    ret ~= "(*" ~ ret ~ ")";
-            }
-
-            return ret;
+            return head ~ " {}";
         }
 
         // A less verbose copy init.
@@ -1791,23 +1768,8 @@ pub fn cpp_codegen(
         //     return head ~ " { " ~ expr ~ " }";
 
         // Hoisting.
-        if (hoist)
-        {
-            let asPtr = target.F_HOIST_asPtr;
-
-            mut ret = asPtr
-                    ? head ~ "&(" ~ expr ~ ")"
-                    : head ~ expr;
-
-            if !(mode & M_STMT)
-            {
-                ret = "(" ~ ret ~ ")";
-                if (asPtr)
-                    ret = "(*" ~ ret ~ ")";
-            }
-
-            return ret;
-        }
+        if (isHoisted)
+            return HOIST_init(expr);
 
         return head ~ " = " ~ expr;
         /*/
@@ -1866,10 +1828,31 @@ pub fn cpp_codegen(
         return "fu_INIT_PRIORITY(" ~ (1000 + prio) ~ ") ";
     }
 
+    fn set_isHoisted(locid!: i32)
+    {
+        if (SELF_TEST)
+        {
+            locid || BUG("set_isHoisted: Not a local.");
+            locid.nested.status & SS_ARGUMENT && BUG("Hoisted an argument.");
+        }
+
+        _current_fn._hoisted.add(locid);
+    }
+
+    fn isHoisted(locid!: i32)
+    {
+        return isHoistable(:locid)
+            && _current_fn._hoisted.has(locid);
+    }
+
     fn cgLet(node: SolvedNode, global!: bool, foreign?: bool, mode!: i32): string
     {
         if (node.type.isIrrelevant)
             return "";
+
+        // Hoist let-expressions.
+        if !(mode & M_STMT)
+            set_isHoisted(:node.target.locid);
 
         // GLOBALS ///////////////////////////////////////////////
         let constexpr = global
@@ -1940,6 +1923,9 @@ pub fn cpp_codegen(
             return node.target.isExtLinked
                 && cgGlobal(node.target);
 
+        shadow let mode = mode
+            | (node.isIrrelevant && !(mode & M_STMT) && M_VOID_EXPR);
+
         return cgLet(node.target.solved, global: false, :mode);
     }
 
@@ -1972,7 +1958,7 @@ pub fn cpp_codegen(
                 continue;
 
             let o = GET(nested(locid));
-            if (o.status & (SS_HOIST | SS_ARGUMENT))
+            if (o.status & SS_ARGUMENT || isHoisted(:locid))
                 continue;
 
             if (o.solved.lifetime)
@@ -2559,8 +2545,8 @@ pub fn cpp_codegen(
 
                 // Derefing ptrs.
                 shadow let id = localID(:node.target);
-                if (node.target.F_HOIST_asPtr)
-                    return "(*" ~ id ~ ")";
+                if (isHoisted(:node.target.locid))
+                    return TEMPVAR_peek(PointerFlip(target), id, parens: true);
 
                 return id;
             }
@@ -2949,7 +2935,7 @@ pub fn cpp_codegen(
         if (!tv.id)
             tv.id = TEMPVAR_declare(:tv.annot, :type, :tv.ptr_flip);
 
-        let cond = TEMPVAR_peek(:tv.ptr_flip,
+        let cond = TEMPVAR_peek(:tv.ptr_flip, parens: false,
             "(" ~ TEMPVAR_init(:tv.id, init: expr, :tv.ptr_flip) ~ ")");
 
         let cons = TEMPVAR_consume(
@@ -3553,6 +3539,11 @@ pub fn cpp_codegen(
 
     //
 
+    fn PointerFlip(o: Overload)
+    {
+        return PointerFlip(o.solved.type);
+    }
+
     fn PointerFlip(type: Type)
     {
         return !type.is_ref || type.isPassByValue && !type.is_mutref
@@ -3586,8 +3577,13 @@ pub fn cpp_codegen(
         return id;
     }
 
-    fn TEMPVAR_init(id: string, ptr_flip: PointerFlip, init?: string)
+    fn TEMPVAR_init(id: string, ptr_flip: PointerFlip, init?: string, immediate!?: bool)
     {
+        if (immediate && ptr_flip != PointerFlip.VecRangeOrView)
+            return (ptr_flip == PointerFlip.RawPointer ? "(*(" : "(")
+                 ~ TEMPVAR_init(:id, :ptr_flip, :init)
+                 ~ (ptr_flip == PointerFlip.RawPointer ? "))" : ")");
+
         // fu::vec_range and fu::view have a pointer-assignment
         //  operator=(fu::vec*) that basically reassigns them,
         //   as if they were pointers, for late init & such.
@@ -3612,10 +3608,15 @@ pub fn cpp_codegen(
         return id;
     }
 
-    fn TEMPVAR_peek(ptr_flip: PointerFlip, expr: string)
+    fn TEMPVAR_peek(ptr_flip: PointerFlip, expr: string, parens!: bool)
     {
         if (ptr_flip == PointerFlip.RawPointer)
+        {
+            if (parens)
+                return "(*" ~ expr ~ ")";
+
             return "*" ~ expr;
+        }
 
         return expr;
     }
