@@ -3553,19 +3553,22 @@ pub fn cpp_codegen(
 
     //
 
+    fn PointerFlip(type: Type)
+    {
+        return !type.is_ref || type.isPassByValue && !type.is_mutref
+            ? PointerFlip.None
+            : !type.is_sliceable || type.ifArrayRef_annotateAsVec
+                ? PointerFlip.RawPointer
+                : PointerFlip.VecRangeOrView;
+    }
+
     fn TEMPVAR_declare(
         type: Type,
         ref ptr_flip!: PointerFlip, ref annot!: string,
         mode!?: i32, id?: string): string
     {
         annot = typeAnnot(:type, :mode);
-
-        ptr_flip =
-            annot[annot.len - 1] == '&'
-                ? PointerFlip.RawPointer
-                : type.is_ref && !type.isPassByValue
-                    ? PointerFlip.VecRangeOrView
-                    : PointerFlip.None;
+        ptr_flip = PointerFlip(type);
 
         shadow let id = id || "_" ~ _current_fn.numTEMPVARs++;
 
