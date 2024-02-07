@@ -13307,6 +13307,23 @@ pub extern fn runTests()
         }
     `);
 
+    TODO_slices(currently: "BUG exit code", `
+        fn ifLetVecRangeMut(ref x: i32[]) {
+            if (ref items = x[.. x.len / 2]) {
+                mut hello = [ 1, 2 ];
+                swap(items, hello);
+            }
+
+            x ~= 5;
+        }
+
+        fn main() {
+            mut arr = [ 5, 6, 3, 4 ];
+            ifLetVecRangeMut(arr);
+            return arr == [ 1, 2, 3, 4, 5 ] ? 0 : 1;
+        }
+    `);
+
     // /Slices.
 
 
