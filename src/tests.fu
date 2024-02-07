@@ -7683,6 +7683,22 @@ pub extern fn runTests()
         }
     `);
 
+    ZERO(`
+        nocopy struct NonTriv { items: NonTriv[] }
+
+        fn moveViaHoisted(mut a: NonTriv, mut b: NonTriv) {
+            if (ref either = a || b) return either;
+            return [];
+        }
+
+        fn main() {
+            mut b = moveViaHoisted(NonTriv(), NonTriv([ NonTriv() ]));
+            mut a: NonTriv;
+            swap(b, a);
+            return a.items.len - 1;
+        }
+    `);
+
     // /Move on last use
 
 
