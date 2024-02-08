@@ -4256,6 +4256,24 @@ pub extern fn runTests()
         }
     `);
 
+    TODO_move(currently: "NC[] cannot be copied or moved from 16:36+1", `
+        nocopy struct NC { items: NC[]; }
+
+        noinline fn silly_ctz(x: u32) {
+            for (mut i: u32 = 0; i < 32; i++)
+                if (x & (1 << i))
+                    return i.int;
+
+            return 32;
+        }
+
+        inline fn max_probes(index: NC[])
+            index.len && index[0] && silly_ctz(index.len.uint).int
+
+        noinline fn either(a: NC[], b: NC[]) a || b;
+        fn main() max_probes(either([], [ NC([ NC() ]), NC() ])) - 1;
+    `);
+
     // /Logic and selectors.
 
 
