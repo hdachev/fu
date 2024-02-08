@@ -7386,6 +7386,55 @@ pub extern fn runTests()
         }
     `);
 
+    TODO_borrowck(currently: "grow 34:39+1 invalidates index 15:13+5 next loop iter", `
+        primitive DataPos:  int
+
+        nocopy struct IndexEntry {
+            hash:           int
+            data_pos:       DataPos
+        }
+
+        pub struct Map {
+            index:          IndexEntry[]
+            data:           int[]
+        }
+
+        inline fn hash_mask(index)
+            index.len && index.len - 1
+
+        fn ref(ref map: Map, hash!: int, visit) {
+            mut ref value = {
+                :SEARCH {                                       ;; GNUStmtExpr
+                    for (;;) {                                  ;; Goto
+                        ref index   = map.index
+                        let mask    = index.hash_mask           ;; !N_NonTrivAutoCopy
+                        let i       = hash & mask
+
+                        if (index.len > i) {
+                            ref index_entry = index[i]
+                            let data_pos = DataPos(map.data.len)
+                            index_entry = IndexEntry(:hash, :data_pos)
+
+                            map.data.grow(map.data.len + 1)
+                            break :SEARCH map.data[data_pos.int]
+                        }
+                        else {
+                            index.grow(index.len + 1)
+                        }
+                    }
+                }
+            }
+
+            return visit(:value)
+        }
+
+        fn main() {
+            mut map: Map
+            map.ref(hash: 0, visit: |ref value| value = 0)
+            return map.data.len - 1
+        }
+    `);
+
     // /Borrow checker
 
 
