@@ -7435,6 +7435,51 @@ pub extern fn runTests()
         }
     `);
 
+    TODO_borrowck(currently: "BUG cannot find read(var index) in loop(7)", `
+        nocopy struct IndexEntry { data_pos: int }
+        struct Map { index: IndexEntry[]; data: int[] }
+
+        inline fn hash_mask(index) index.len && index.len - 1;
+
+        fn ref(ref map: Map, hash!: int, visit) {
+            mut ref data_entry = {
+                :SEARCH {
+                    for (;;) {
+                        ref index   = map.index;
+                        let mask    = index.hash_mask;          ;; GNUStmtExpr
+                        let i       = hash & mask;
+
+                        for (;;) {
+                            if (i >= index.len) {
+                                index.grow(index.len + 1);      <alt>
+                                if (index.len & 1)
+                                    break;                      </alt>
+                            }
+                            else {
+                                ref index_entry = index[i];
+                                index_entry.data_pos = map.data.len;
+                                map.data.grow(map.data.len + 1);
+                                break :SEARCH map.data[index_entry.data_pos];
+                            }                                   ;; Goto
+                        }
+                    }
+                }
+            }
+                                        <alt>
+            visit(data_entry);          <alt/>
+            return visit(data_entry);   </alt>
+        }
+
+        noinline fn test(ref map: Map, i: int)
+            map.ref(hash: i, visit: |ref value| value = i);
+
+        fn main() {
+            mut map: Map;
+            test(map, 1);
+            return map.data.len - 1;
+        }
+    `);
+
     // /Borrow checker
 
 
