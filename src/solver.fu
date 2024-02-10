@@ -2601,7 +2601,7 @@ pub fn solve(
         ref cc = _conv_cache.ref(type, init: || { inserted = true; [] });
         if (!inserted)
         {
-            TRACE("exploreConversions reuse(" ~ humanizeType(type && Type(type, Lifetime_worst)) ~ ")");
+            // TRACE("exploreConversions reuse(" ~ humanizeType(type && Type(type, Lifetime_worst)) ~ ")");
             return cc;
         }
 
@@ -5898,15 +5898,25 @@ pub fn solve(
                     replaceGlobid(node.target)
                     let locid = node.target.locid;
 
-                    lastKnownLocal = locid;
-
                     // Swap trick to appease bck.
                     fn local = locals[locid - 1];
+
+                    TRACE("relinkNode(" ~ k ~ ") locid(" ~ locid ~ ") name(" ~ local.name ~ ")");
 
                     mut letNode: SolvedNode;
                     swap(letNode, local.solved);
                     relinkNode(letNode);
                     swap(letNode, local.solved);
+
+                    // TODO FIX this is not robust -
+                    //  ideally we'd just have the exact same _loop_start/locals_start
+                    //   by removing it from Helpers and just using the one of the node.
+                    //
+                    // PREVIOUSLY this was done before the relinkNode(initializer) above.
+                    // DOING THIS LAST - so that any loops within the initializer expression
+                    //  dont see the incremented lastKnownLocal
+                    //
+                    lastKnownLocal = locid;
                 }
                 else if (k == "let" || k == "call")
                 {
@@ -5920,11 +5930,15 @@ pub fn solve(
                     let foreign = node.helpers;
                     if (foreign)
                     {
+                        let locals_start = lastKnownLocal + 1;
+
+                        TRACE_BRACKET("relinkNode(" ~ k ~ ") locals_start(" ~ locals_start ~ ")");
+
                         let local = push(
                             HelpersReplica(
                                 local_of:       _current_fn.target.globid,
-                                locals_start:   lastKnownLocal + 1,
                                 ret_actual:     node.type,
+                                :locals_start,
                             ));
 
                         helpersReplicas.grow_if_oob(foreign.index) =
@@ -10953,16 +10967,18 @@ pub fn solve(
                 let foreign = node.helpers;
                 if (foreign)
                 {
+                    shadow let locals_start = locals_start || GET_next_local_index();
+
                     let local = push(
                         HelpersReplica(
                             local_of:       _current_fn.target.globid,
-                            locals_start:   locals_start || GET_next_local_index(),
                             ret_actual:     node.type,
+                            :locals_start,
                         ));
 
                     helpersReplicas.grow_if_oob(foreign.index) = local || BUG();
 
-                    // println("inlineExpression: REPLICATE block/loop #" foreign.index " -> #" local.index);
+                    TRACE("inlineExpression: REPLICATE " ~ node.kind ~ " #" ~ foreign.index ~ " -> #" ~ local.index ~ " locals_start(" ~ locals_start ~ ")");
 
                     node.helpers = local;
                 }
@@ -11036,7 +11052,7 @@ pub fn solve(
                     //  and if this is the only flag that needs juggling here.
                     :foreign.flags);
 
-                // println("inlineExpression: introducing a letdef: " ~ local " <- " ~ foreign);
+                TRACE("inlineExpression: introducing a letdef: " ~ local ~ " <- " ~ foreign);
 
                 node.target = local;
             }
@@ -11049,7 +11065,7 @@ pub fn solve(
 
                     if (SELF_TEST)
                     {
-                        let foreign = GET(node.target);
+                        let foreign = node.target;
 
                         isAssignable(host: foreign.type, local.type)
                             || local.type.is_never && local.isInlineLocal
@@ -11057,7 +11073,7 @@ pub fn solve(
                                 ~ "\n\t\tExpect: " ~ foreign.type.humanizeType
                                 ~ "\n\t\tActual: " ~   local.type.humanizeType);
 
-                        // println("inlineExpression: CALL.REPLACE " foreign " with " local);
+                        TRACE("inlineExpression: CALL.REPLACE " ~ foreign.locid ~ " " ~ foreign ~ " with " ~ local.locid ~ " " ~ local);
                     }
 
                     node.target = local;
@@ -11104,7 +11120,7 @@ pub fn solve(
                     let local   = helpersReplicas.unless_oob(foreign.index);
                     if (local)
                     {
-                        // println("inlineExpression: REPLICATE jump #" foreign.index " -> #" local.index);
+                        TRACE("inlineExpression: REPLICATE jump #" ~ foreign.index ~ " -> #" ~ local.index);
 
                         node.helpers = local;
                         local.mask |= HM_LabelUsed;
@@ -11115,11 +11131,11 @@ pub fn solve(
                     node.kind = "__far_jump";
                 }
 
-                // println("Found a __far_jump: " ~ node);
+                TRACE("Found a __far_jump: " ~ node);
 
                 if (node.helpers.local_of == _current_fn.target.globid)
                 {
-                    // println("Fixing up a __far_jump: " ~ node);
+                    TRACE("Fixing up a __far_jump: " ~ node);
                     node = solveJump_finish(:node.flags, h: node.helpers, expr: node.items.only);
                 }
                 else
@@ -11186,7 +11202,7 @@ pub fn solve(
                     // INLINE ARGUMENTS ////////////////////////////////////////////
                     else
                     {
-                        // println("inlineExpression: LT.REPLACE " foreign " with " local);
+                        TRACE("inlineExpression: LT.REPLACE " ~ foreign.locid ~ " " ~ foreign ~ " with " ~ local.locid ~ " " ~ local);
 
                         continue_replace(
                             local.type.lifetime
@@ -11398,7 +11414,7 @@ pub fn solve(
                         let retype = tryRetyping(arg, expect);
                         if (retype && isAssignableAsArgument(expect, retype))
                         {
-                            TRACE("RETYPE ARG from(" ~ arg.type.humanizeType(usage: true) ~ ") retype(" ~ retype.humanizeType(usage: true) ~ ") expect(" ~ expect.humanizeType(usage: true) ~ ")");
+                            // TRACE("RETYPE ARG from(" ~ arg.type.humanizeType(usage: true) ~ ") retype(" ~ retype.humanizeType(usage: true) ~ ") expect(" ~ expect.humanizeType(usage: true) ~ ")");
 
                             applyRetype(arg, retype);
                         }
