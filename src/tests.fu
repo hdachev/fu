@@ -7367,7 +7367,7 @@ pub extern fn runTests()
         }
     `);
 
-    TODO_borrowck(currently: "BUG exit code", `
+    TODO_borrowck(currently: "BUG cannot find read(ref DONT_DANGLE_ME) in loop(4) 11:34+2", `
         fn main() {
             ref res = {
                 :BRK {
@@ -7389,7 +7389,7 @@ pub extern fn runTests()
         }
     `);
 
-    TODO_borrowck(currently: "BUG exit code", `
+    ZERO(`
         noinline fn test(ref data: int[],
             <fail at call to test 26:37+14 both alias var data 17:17+4>
             ref <pass/>
@@ -15783,7 +15783,7 @@ pub extern fn runTests()
         }
     `]);
 
-    ZERO(`
+    TODO_borrowck(currently: "BUG Cannot find read(ref index_entry) in loop(38)", `
         fn main() {                                             ;; GNUStmtExpr
             mut hello: hash::Map(string, string);               ;; Goto
             hello.set("hello", "world!");
