@@ -7324,6 +7324,121 @@ pub extern fn runTests()
         }
     `);
 
+    ZERO(`
+        fn main() {
+            ref res = {                                         ;; GNUStmtExpr
+                :BRK {
+                    mut data = [ 1, 2, 3, 4, 5 ];
+                    <fail ref DONT_DANGLE_ME invalidated by write to data 11:38+2>
+                    ref <pass/>
+                    let </fail> DONT_DANGLE_ME = data[2 .. 3];
+                    for (mut i = 0; i < 2; i++)
+                        if !(i & 1)
+                            for (mut j = 0; j < 8; j++)
+                                data ~= data;
+                        else
+                            break :BRK DONT_DANGLE_ME;          ;; Goto
+
+                    data
+                }
+            };
+
+            mut sum = 0;
+            for (mut i = 0; i < res.len; i++) sum += res[i];
+            return sum - 3;
+        }
+    `);
+
+    TODO_borrowck(currently: "BUG exit code", `
+        fn main() {
+            ref res = {
+                :BRK {
+                    mut data = [ 1, 2, 3, 4, 5 ];
+                    ref DONT_DANGLE_ME = data[2 .. 3];
+                    for (mut i = 0; i < 2; i++)
+                        if (i & 1)
+                            break :BRK DONT_DANGLE_ME;
+                        else for (mut j = 0; j < 8; j++)
+                            data ~= data;
+
+                    data
+                }
+            };
+
+            mut sum = 0;
+            for (mut i = 0; i < res.len; i++) sum += res[i];
+            return sum - 3;
+        }
+    `);
+
+    TODO_borrowck(currently: "BUG exit code", `
+        noinline fn test(ref data: int[],
+            <fail at call to test 26:37+14 both alias var data 17:17+4>
+            ref <pass/>
+            mut </fail>DONT_DANGLE_ME: int[])
+        {
+            for (mut i = 0; i < 2; i++)
+    <alt>
+                if (i & 1)
+                    return DONT_DANGLE_ME;
+                else for (mut j = 0; j < 8; j++)
+                    data ~= data;
+    <alt/>
+                if !(i & 1) for (mut j = 0; j < 8; j++)
+                                data ~= data;
+                else
+                    return DONT_DANGLE_ME;
+    </alt>
+            return data;
+        }
+
+        fn main() {
+            mut data = [ 1, 2, 3, 4, 5 ];
+            ref DONT_DANGLE_ME = data[2 .. 3];
+
+            fn sum(arr: int[]) {
+                mut sum = 0;
+                for (mut i = 0; i < arr.len; i++) sum += arr[i];
+                return sum;
+            }
+
+            return sum(test(:data, :DONT_DANGLE_ME)) - 3;
+        }
+    `);
+
+    TODO_borrowck(currently: "BUG exit code", `
+        fn main() {
+            mut data = [ 1, 2, 3, 4, 5 ];
+
+            <fail main:DONT_DANGLE_ME main:data both alias var data 3:17+4>
+            ref <pass/>
+            let </fail> DONT_DANGLE_ME = data[2 .. 3];
+            noinline fn test() {
+                for (mut i = 0; i < 2; i++)
+        <alt>
+                    if (i & 1)
+                        return DONT_DANGLE_ME;
+                    else for (mut j = 0; j < 8; j++)
+                        data ~= data;
+        <alt/>
+                    if !(i & 1) for (mut j = 0; j < 8; j++)
+                                    data ~= data;
+                    else
+                        return DONT_DANGLE_ME;
+        </alt>
+                return data;
+            }
+
+            fn sum(arr: int[]) {
+                mut sum = 0;
+                for (mut i = 0; i < arr.len; i++) sum += arr[i];
+                return sum;
+            }
+
+            return sum(test) - 3;
+        }
+    `);
+
     TODO_borrowck(currently: "BUG cannot find read(ref outer) in loop(6) 16:34+1", `
         struct Map(type K) { index: K[] }
 
