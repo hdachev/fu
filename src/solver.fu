@@ -4053,8 +4053,10 @@ pub fn solve(
 
             Breakable_end(loop_PREVITER: true);
 
-            _current_fn.read_loop_start  == read_loop0  || BUG();
-            _current_fn.write_loop_start == write_loop0 || BUG();
+            if (SELF_TEST) {
+                _current_fn.read_loop_start  == read_loop0  || BUG();
+                _current_fn.write_loop_start == write_loop0 || BUG();
+            }
 
             swap(_current_fn.var_usage, var_usage0);
 
@@ -4069,6 +4071,24 @@ pub fn solve(
             // MOVE ON LAST USE ////////////////////////////////////////////
 
             if (init)       propagateType(init, t_void, :relax_mask);
+
+            // bck_loop uses its parent write_loop_start
+            //  to temporarily "switch off" all the used-in-a-loops
+            //   that are not in scope during the loop,
+            //    perhaps because of a break/return that follows the loop,
+            //     and restores them on exit.
+            //
+            //////////////////////////////////////////
+            !node._loop_start || node._loop_start == _current_fn.write_loop_start || BUG(
+                "The new loop._loop_start thing would mess something else up");
+
+            node._loop_start = _current_fn.write_loop_start;
+            //////////////////////////////////////////
+
+            if (SELF_TEST) {
+                _current_fn.read_loop_start  == read_loop0  || BUG();
+                _current_fn.write_loop_start == write_loop0 || BUG();
+            }
         }
 
         //
@@ -13124,6 +13144,9 @@ pub fn solve(
 
         fn bck_loop(ref node: SolvedNode)
         {
+            let used_in_a_loop0 = _current_fn.events.used_in_a_loop;
+            _current_fn.events.used_in_a_loop.clear(start: node._loop_start);
+
             ref items = node.items;
 
             bck_node(items[0]);
@@ -13137,6 +13160,7 @@ pub fn solve(
                     "bck_loop: read_loop_start not set.");
 
             _current_fn.events.used_in_a_loop.clear(start: read_loop_start);
+            _current_fn.events.used_in_a_loop.add(used_in_a_loop0);
         }
 
         fn bck_if(ref node: SolvedNode)
