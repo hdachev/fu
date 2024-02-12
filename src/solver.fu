@@ -4156,7 +4156,7 @@ pub fn solve(
                             ~ "\n\n\t\t" ~ spec.args.map(.str).join(", ")
                             ~ "\n\n\t\t" ~    t.args.map(.str).join(", "));
 
-                checkAssignable(host: node.type, spec.type,
+                TEST_Assignable(host: node.type, spec.type,
                     "Relaxed specialization does not return a subtype");
 
                 if (node.type.is_ref)
@@ -6056,6 +6056,8 @@ pub fn solve(
                 isNative: false, isUnspec: false, maybeLast: true,
                 asserts: []);
 
+            TEST_FunctionNarrowing(wider: original, narrower: target);
+
             // SS_UPDATED & co.
             //
             // Note: we're not actually inserting invalidation edges right now.
@@ -6064,6 +6066,43 @@ pub fn solve(
             //
             lazySolveEnd(target);
         }
+    }
+
+    lax fn TEST_FunctionNarrowing(lax wider: Target, lax narrower: Target)
+    {
+        if (!SELF_TEST)
+            return;
+
+        // Check args -
+        let w_args = wider.args;
+        let n_args = narrower.args;
+
+        w_args.len == n_args.len || BUG("w_args(" ~ w_args.len ~ ") != n_args(" ~ n_args.len ~ ")");
+
+        for (mut i = 0; i < w_args.len; i++)
+        {
+            let w = w_args[i];
+            let n = n_args[i];
+
+            w.name == n.name || BUG("w.name(" ~ w ~ ") == n.name(" ~ n ~ ")");
+
+            // Wider argument must be assignable to narrower argument.
+            TEST_Assignable(host: n.type, w.type, "n.type !<- w.type (" ~ n ~ ")");
+
+            // Narrower can't write if wider doesn't.
+            if (n.flags & F_WRITTEN_TO)
+                w.flags & F_WRITTEN_TO || BUG("n.flags & F_WRITTEN_TO (" ~ n ~ ")");
+
+            // Narrower can't miss anything from wider's may_invalidate/may_alias masks.
+            n.may_invalidate.has_missing(w.may_invalidate) && BUG("n.may_invalidate less (" ~ n ~ ")");
+            n.may_alias.has_missing(w.may_alias) && BUG("n.may_alias less (" ~ n ~ ")");
+        }
+
+        // New effects can't show up during e.g. rev spec.
+        let w_fx = wider.fx_mask;
+        let n_fx = narrower.fx_mask;
+
+        n_fx & w_fx == n_fx || BUG("n_fx(" ~ n_fx ~ ") !<= w_fx(" ~ w_fx ~ ")");
     }
 
 
@@ -8656,6 +8695,17 @@ pub fn solve(
             :guest  || BUG("Bad guest type."))
                     || fail((target && target.str) ~ reason ~ ": "
                                 ~ explainTypeDiff(host, guest, sep: "<-"));
+    }
+
+    fn TEST_Assignable(
+        host: Type, guest: Type,
+        inline reason: string,
+        asArgument!?: bool)
+    {
+        isAssignable(:asArgument,
+            :host   || BUG("Bad host type."),
+            :guest  || BUG("Bad guest type."))
+                    || BUG(reason ~ ": " ~ explainTypeDiff(host, guest, sep: "<-"));
     }
 
     fn tryConvertIfNeeded(

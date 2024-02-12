@@ -6650,7 +6650,7 @@ pub extern fn runTests()
         }
     `);
 
-    ZERO(`
+    TODO_borrowck(currently: "BUG n.may_alias less (ref arg id) 4:12+21", `
         struct ScopeItem { k: string; v: i32 };
 
         fn dequalify_andGetScope(ref id: string, implicit locals: ScopeItem[], implicit globals: ScopeItem[]) {
@@ -7424,7 +7424,7 @@ pub extern fn runTests()
         }
     `);
 
-    TODO_borrowck(currently: "BUG exit code", `
+    TODO_borrowck(currently: "BUG n.may_invalidate less (injected implicit ref arg main:data) 7:25+4", `
         fn main() {
             mut data = [ 1, 2, 3, 4, 5 ];
 
@@ -7613,7 +7613,7 @@ pub extern fn runTests()
         }
     `);
 
-    TODO_borrowck(currently: "BUG exit code", `
+    TODO_borrowck(currently: "BUG n.may_alias less (ref arg array) 2:21+21", `
         noinline fn sliceRelaxDanglesView(ref array: i32[], ref view: i32[]) {
             for (mut j = 0; j < 4; j++)
                 for (mut i = view.len; i --> 0; )

@@ -237,3 +237,15 @@ pub fn has_inter(a: BitSet, b: BitSet)
 
     return false;
 }
+
+pub fn has_missing(a: BitSet, b: BitSet)
+{
+    if (a._data.len < b._data.len)
+        return true;
+
+    for (mut i = 0; i < a._data.len; i++)
+        if (~a._data[i] & b._data[i])
+            return true;
+
+    return false;
+}
