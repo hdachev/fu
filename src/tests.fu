@@ -6180,7 +6180,7 @@ pub extern fn runTests()
 
             <fail arg 3 x 2 brr both alias 20:51>
             ref x = brr[0];               <pass/>
-            mut x = 0;                    </fail>
+            mut x = 0;                    </fail>               ;; PointlessMustSeq
 
             return two_writes_in_an_arg(arr, brr, x);
         }
@@ -6206,7 +6206,7 @@ pub extern fn runTests()
 
             <fail arg 3 x 2 brr both alias 25:58+8>
             ref x = brr[0];                 <pass/>
-            mut x = 0;                      </fail>
+            mut x = 0;                      </fail>             ;; PointlessMustSeq
 
             ref opaque_x    = brr.len > arr.len ? zero  : x;
             ref opaque_brr  = brr.len > arr.len ? empty : brr;
@@ -6247,7 +6247,7 @@ pub extern fn runTests()
             two_writes_in_an_arg(
                 <fail arg 2 arr 1 x both alias 17:22>
                     x || arr[0],              <pass/>
-                    x,                        </fail>
+                    x,                        </fail>           ;; PointlessMustSeq
                     :arr, :brr);
 
             return x;
@@ -6331,15 +6331,14 @@ pub extern fn runTests()
 
     ZERO(`
         fn main() {
-            mut arr = [ 1,1,1,1,1 ];
+            mut arr = [ 1,1,1,1,1,10,10,10,10,10 ];
             mut sum = 0;
 
             // veach(view) should decay to a slice -
             //  which push will invalidate.
             //
             fn veach(                   <fail (both|expects) (alias|mutref) (3:17+3|20:20+2)>
-                /* no explicit val */   <fail/>
-                ref                     <pass/>
+                /* no explicit val */   <pass/>
                 mut                     </fail>
                     view, fn)
             {
@@ -6353,24 +6352,22 @@ pub extern fn runTests()
                 (i *= 2)                <alt/>
                 (i *  2)                </alt>;
 
-            return sum - 10;
+            return sum - 110;
         }
     `);
 
     ZERO(`
         fn main() {
-            mut arr = [ 1,1,1,1,1 ];
+            mut arr = [ 1,1,1,1,1,10,10,10,10,10 ];
             mut sum = 0;
 
             // veach(view) should decay to a slice -
             //  which push will invalidate.
             //
             fn veach(ref view, fn) {
-                for (mut i = 0; i < view.len; i++) {
+                for (mut i = view.len; i --> 0; ) {
                     fn(view[i]);
-                    <fail both alias arr 3:17+3>
-                    arr ~= arr; // Relocate arr.
-                    <pass/></fail>
+                    arr ~= arr.map(|x| x * 1); // Relocate arr.
                 }
             }
 
@@ -6379,7 +6376,7 @@ pub extern fn runTests()
                                         <alt/>
                 (i *  2)                </alt>;
 
-            return sum - 10;
+            return sum - 110;
         }
     `);
 
@@ -6650,7 +6647,7 @@ pub extern fn runTests()
         }
     `);
 
-    TODO_borrowck(currently: "BUG n.may_alias less (ref arg id) 4:12+21", `
+    ZERO(`
         struct ScopeItem { k: string; v: i32 };
 
         fn dequalify_andGetScope(ref id: string, implicit locals: ScopeItem[], implicit globals: ScopeItem[]) {
@@ -7613,7 +7610,7 @@ pub extern fn runTests()
         }
     `);
 
-    TODO_borrowck(currently: "BUG n.may_alias less (ref arg array) 2:21+21", `
+    TODO_ooe(currently: "BUG exit code", `
         noinline fn sliceRelaxDanglesView(ref array: i32[], ref view: i32[]) {
             for (mut j = 0; j < 4; j++)
                 for (mut i = view.len; i --> 0; )
@@ -20066,7 +20063,7 @@ pub extern fn runTests()
         fn main() val_keyword(2, 3) - 2;
     `);
 
-    TODO_slices(currently: "cannot resolve by temporary copy explicit_arg is ref 8:17+11", `
+    ZERO(`
         <fail explicit_arg closure_arg both alias use val or ref 9:25+14>
         fn foreach_modify(    explicit_arg: int[], foreach)     <pass/>
         fn foreach_modify(ref explicit_arg: int[], foreach)     </fail>

@@ -21,7 +21,7 @@ using flags SolverStatus: u16
 
     SS_ARGUMENT
     SS_OBSERVED_BY_CONV_CACHE
-    // ...
+    SS_TODO_FIX_was_rx_resize
     SS_Debug_AllPassesComplete
 }
 

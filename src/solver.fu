@@ -1483,7 +1483,9 @@ pub fn solve(
         }
 
         // Reserve the slot.
-        let status = asArgument && SS_ARGUMENT;
+        let status = (asArgument && SS_ARGUMENT)
+                   | (type.quals & q_rx_resize && SS_TODO_FIX_was_rx_resize);
+
         let target = Scope_create(_scope,
             nest: local_of,
             kind: "var", :name, :flags, :status);
@@ -6989,7 +6991,7 @@ pub fn solve(
         if (SELF_TEST)
             target == _current_fn.target || BUG("doUpdateScope: target mismatch");
 
-        let items = _current_fn.items;
+        ref items = _current_fn.items;
         let mustBecomeInline = currentFn_mustBecomeInline();
 
         let N = items.len + FN_ARGS_BACK;
@@ -7028,6 +7030,9 @@ pub fn solve(
                            || o.status & SS_MOVED_FROM);
             }
         }
+
+        //
+        mut TODO_FIX_mayAlias_ensureStable: flat::Set(i32);
 
         //
         shadow mut args: Argument[];
@@ -7105,9 +7110,14 @@ pub fn solve(
 
                         soft.each: |index: i32|
                         {
-                            let other = items[index].target.solved;
-                            if !(other.type.TODO_FIX_isArray)
-                                hard_risk.add(index);
+                            let other = GET(items[index].target);
+                            if (other.solved.is_sliceable && !other.solved.TODO_FIX_isArray)
+                            {
+                                if (other.status & SS_TODO_FIX_was_rx_resize)
+                                    TODO_FIX_mayAlias_ensureStable.add(index);
+                                else
+                                    hard_risk.add(index);
+                            }
                         }
                     }
                 }
@@ -7212,9 +7222,39 @@ pub fn solve(
 
                 if (arg.flags.isMutRef && arg.type && !arg.type.is_mutref)
                     BUG("F_MUT|F_REF but !arg.type.is_mutref");
+
+                args.len == i || BUG(
+                    "TODO_FIX_mayAlias_ensureStable: the stuff below relies on argument indices being 1:1");
             }
 
             args.push(arg);
+        }
+
+        // What we did previously was to force no-alias for array->slice no-invalidate pairs,
+        //  but we found the rev-specializer could relax an array arg into a slice arg,
+        //   basically worsening the no-alias signature of the relaxed fn,
+        //    which was in turn ignored because it happened after BCK had run on the callsite.
+        //
+        // Overall, we want to forbid any kind of signature-widening from now on,
+        //  and here the symmetric thing to do is to prevent the arg from relaxing to a slice.
+        //
+        for (mut i = 0; i < TODO_FIX_mayAlias_ensureStable.len; i++)
+        {
+            shadow let i = TODO_FIX_mayAlias_ensureStable[i];
+            ref arg = args[i];
+
+            TRACE("TODO_FIX_mayAlias_ensureStable(" ~ target ~ "): Adding q_rx_resize to " ~ arg ~ " to ensure may-alias stability.");
+
+            // TODO FIX we need to be sure we're allowed to do this,
+            //  this is only a valid strat if the argument started off
+            //   as an array in the first place.
+            arg.type.is_sliceable && !arg.type.TODO_FIX_isArray || BUG("TODO_FIX_mayAlias_ensureStable[1]");
+            arg.type.quals |= q_rx_resize;
+
+            // TODO FIX REDUNDANT cg appears to use the let node
+            ref argNode = items[i].target.GET_mut.solved;
+            argNode.type.is_sliceable && !argNode.type.TODO_FIX_isArray || BUG("TODO_FIX_mayAlias_ensureStable[2] (" ~ arg.name ~ "): " ~ argNode.value ~ " : " ~ humanizeType(argNode.type));
+            argNode.type.quals |= q_rx_resize;
         }
 
         // Prep lifetimes for Lifetime_replaceArgsAtCallsite,
