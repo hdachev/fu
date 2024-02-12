@@ -8596,8 +8596,7 @@ pub fn solve(
 
     fn checkAssignable(
         host: Type, guest: Type,
-        reason: string, target?: Target,
-        asArgument!?: bool)
+        inline reason: string, target?: Target, asArgument!?: bool)
     {
         isAssignable(:asArgument,
             :host   || BUG("Bad host type."),
