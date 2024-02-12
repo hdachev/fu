@@ -565,32 +565,31 @@ struct vec_range
     typedef T fu_GROW_value_type;
 
     const fu::vec<T>*   m_vec;
-    uint64_t            m_tram;
+    uint64_t            m_trim;
 
     fu_INL fu::i Left() const noexcept {
-        return fu::i(m_tram & 0xffffffff);
+        return fu::i(m_trim & 0xffffffff);
     }
 
-    fu_INL fu::i size() const noexcept {
-        return fu::i(m_tram >> 32);
+    fu_INL fu::i Right() const noexcept {
+        return fu::i(m_trim >> 32);
     }
 
     fu_INL vec_range() noexcept
         : m_vec     { (const fu::vec<T>*) fu::NIL }
-        , m_tram    { 0 }
+        , m_trim    { 0 }
     {}
 
-    fu_INL vec_range(const vec_range& v) = default;
+    fu_INL vec_range(const vec_range& vr) = default;
 
-    fu_INL vec_range(const fu::vec_range_mut<T>& v) noexcept
-        : m_vec     { v.m_vec }
-        , m_tram    { uint64_t(v.m_trim & 0xffffffff)
-                    | uint64_t(v.size()) << 32 }
+    fu_INL vec_range(const fu::vec_range_mut<T>& vr) noexcept
+        : m_vec     { vr.m_vec }
+        , m_trim    { vr.m_trim }
     {}
 
-    fu_INL vec_range(const fu::vec<T>& v) noexcept
-        : m_vec     { &v }
-        , m_tram    { uint64_t(v.size()) << 32 }
+    fu_INL vec_range(const fu::vec<T>& vec) noexcept
+        : m_vec     { &vec }
+        , m_trim    { 0 }
     {}
 
     fu_INL explicit operator fu::vec<T>() const noexcept {
@@ -600,21 +599,12 @@ struct vec_range
             Left() + size());
     }
 
-    fu_INL explicit operator bool() const noexcept {
-        return !!size();
-    }
-
     fu_INL const T* data() const noexcept {
         return m_vec->data() + Left();
     }
 
-    fu_INL fu::vec_range_mut<T> const_cast_mut() const noexcept {
-        vec_range_mut<T> ret { *const_cast<fu::vec<T>*>(m_vec) };
-
-        ret.m_trim  = (m_tram & 0xffffffff)
-                    | uint64_t(m_vec->size() - (Left() + size())) << 32;
-
-        return ret;
+    fu_INL fu::i size() const noexcept {
+        return m_vec->size() - (Left() + Right());
     }
 
 
@@ -641,11 +631,26 @@ struct vec_range
     }
 
 
+    //
+
+    fu_INL explicit operator bool() const noexcept
+    {
+        return !!size();
+    }
+
+
+    // Move interop.
+
+    fu_INL vec_range_mut<T>& const_cast_mut() const noexcept {
+        return (vec_range_mut<T>&) *this;
+    }
+
+
     // Pointer-reassignment.
 
     fu_INL vec_range& ptr_reassign(vec_range other) noexcept {
         this->m_vec = other.m_vec;
-        this->m_tram = other.m_tram;
+        this->m_trim = other.m_trim;
         return *this;
     }
 };
@@ -653,43 +658,35 @@ struct vec_range
 
 // Const slicing - (start ..), (.. end) and (start .. end)
 
-template <typename V, typename T = typename V::fu_GROW_value_type>
-fu::vec_range<T> get_range(const V& _v, fu::i start) noexcept
+template <typename T>
+fu::vec_range<T> get_range(fu::vec_range<T> v, fu::i start) noexcept
 {
-    fu::vec_range<T> v { _v };
-
     auto end = v.size();
     assert(start >= 0 && start <= end);
 
     start   = start > 0   ? start : 0;
     start   = start < end ? start : end;
 
-    v.m_tram    = ((v.m_tram & 0xffffffff) + uint64_t(start))
-                | uint64_t(end - start) << 32;
+    v.m_trim += uint64_t(start);
     return v;
 }
 
-template <typename V, typename T = typename V::fu_GROW_value_type>
-fu::vec_range<T> get_range_start0(const V& _v, fu::i end) noexcept
+template <typename T>
+fu::vec_range<T> get_range_start0(fu::vec_range<T> v, fu::i end) noexcept
 {
-    fu::vec_range<T> v { _v };
-
     auto size = v.size();
     assert((fu::u) end <= (fu::u) size);
 
     end     = end   > 0 ? end   : 0;
     end     = (fu::u)end <= (fu::u)size ? end : size;
 
-    v.m_tram    = (v.m_tram & 0xffffffff)
-                | uint64_t(end) << 32;
+    v.m_trim += uint64_t(size - end) << 32;
     return v;
 }
 
-template <typename V, typename T = typename V::fu_GROW_value_type>
-fu::vec_range<T> get_range(const V& _v, fu::i start, fu::i end) noexcept
+template <typename T>
+fu::vec_range<T> get_range(fu::vec_range<T> v, fu::i start, fu::i end) noexcept
 {
-    fu::vec_range<T> v { _v };
-
     auto size = v.size();
     assert(start >= 0 && start <= end && (fu::u) end <= (fu::u) size);
 
@@ -699,8 +696,7 @@ fu::vec_range<T> get_range(const V& _v, fu::i start, fu::i end) noexcept
     end     = (fu::u)end <= (fu::u)size ? end : size;
     start   = start < end ? start : end;
 
-    v.m_tram    = ((v.m_tram & 0xffffffff) + uint64_t(start))
-                | uint64_t(end - start) << 32;
+    v.m_trim += uint64_t(start) | uint64_t(size - end) << 32;
     return v;
 }
 
@@ -765,6 +761,42 @@ fu_INL fu::vec_range_mut<T> get_range_mut(fu::vec<T>& v, fu::i start, fu::i end)
 template <typename T>
 fu_INL fu::vec_range_mut<T> get_range_start0_mut(fu::vec<T>& v, fu::i end) noexcept {
     return get_range_start0_mut(fu::vec_range_mut<T>(v), end);
+}
+
+
+//
+
+template <typename T>
+fu_INL fu::vec_range<T> get_range(const fu::vec<T>& v, fu::i start) noexcept {
+    return get_range(fu::vec_range<T>(v), start);
+}
+
+template <typename T>
+fu_INL fu::vec_range<T> get_range(const fu::vec<T>& v, fu::i start, fu::i end) noexcept {
+    return get_range(fu::vec_range<T>(v), start, end);
+}
+
+template <typename T>
+fu_INL fu::vec_range<T> get_range_start0(const fu::vec<T>& v, fu::i end) noexcept {
+    return get_range_start0(fu::vec_range<T>(v), end);
+}
+
+
+//
+
+template <typename T>
+fu_INL fu::vec_range<T> get_range(const fu::vec_range_mut<T>& v, fu::i start) noexcept {
+    return get_range((const fu::vec_range<T>&) v, start);
+}
+
+template <typename T>
+fu_INL fu::vec_range<T> get_range(const fu::vec_range_mut<T>& v, fu::i start, fu::i end) noexcept {
+    return get_range((const fu::vec_range<T>&) v, start, end);
+}
+
+template <typename T>
+fu_INL fu::vec_range<T> get_range_start0(const fu::vec_range_mut<T>& v, fu::i end) noexcept {
+    return get_range_start0((const fu::vec_range<T>&) v, end);
 }
 
 
