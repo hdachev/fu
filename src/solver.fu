@@ -1050,9 +1050,26 @@ pub fn solve(
 
     fn human(id: string)
     {
+        PERF_slowPath();
+
         let t = hacks::tryParseClosureID(:id).target;
         if (!t)
+        {
+            // TODO FIX we gotta get rid of the newlines in __native names,
+            //  just use spaces as separators, and get rid of the leading space too.
+            //
+            // TODO FIX in str(o), if native fn with spaces,
+            //  drop the initial "__native" prefix, and print out the leading keywords
+            //   in 'prefix' color. Probably get rid of the 'native hacks' too.
+            //
+            // TODO FIX get rid of the leading newlines in __native,
+            //  ugly, carry no information.
+            //
+            if (id.has('\n'))
+                return id.replace(all: '\n', with: ' ').trim();
+
             return id;
+        }
 
         return GET(t.parent).name ~ ":" ~ GET(t).name;
     }
@@ -12039,6 +12056,8 @@ pub fn solve(
 
             read != write || BUG("RESOLVE_byAAR: read == write");
 
+            TRACE("RESOLVE_byAAR: trySoft(" ~ trySoft ~ ") read(" ~ read.nested ~ ") write(" ~ write.nested ~ ")");
+
             // Soft vs hard risk -
             //  Non-direct reads from arguments put the argument at hard risk.
             if (!trySoft || !nested(read).acceptsSoftRisk)
@@ -12141,6 +12160,8 @@ pub fn solve(
             let t = nested(target);
             ref o = GET_mut(t);
 
+            TRACE("RESOLVE_byTempCopy: " ~ o);
+
             if (!o.acceptsTempCopies)
                 return false;
 
@@ -12180,6 +12201,8 @@ pub fn solve(
             requireVal!: ArgRationale)
         {
             BCK || BUG();
+
+            TRACE("RESOLVE_byTempCopy: " ~ arg);
 
             // No copy injection in fast fns.
             if (_current_fn.asserts & A_FAST)
@@ -12969,6 +12992,8 @@ pub fn solve(
                             // Can the fn handle aliasing here?
                             if (host_arg0.may_invalidate.has(i1) && host_arg1.may_invalidate.has(i0))
                                 return;
+
+                            TRACE_BRACKET("bck_call.validate: " ~ callsite.target ~ "(" ~ host_arg0.str(brief: true) ~ " <-> " ~ host_arg1.str(brief: true) ~ ")");
 
                             let arg1     = args[i1];
                             let shallow1 = arg1.type.lifetime;
