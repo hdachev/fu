@@ -13154,6 +13154,64 @@ pub extern fn runTests()
         }
     `);
 
+    ZERO(`
+        <alt>
+        inline      <alt/>
+        noinline    </alt>
+        fn invoke(ref str: int[..], what) {
+            what(str);
+        }
+
+        <alt>
+        inline      <alt/>
+        noinline    </alt>
+        fn Lifetime_op(ref lt: int[..], what) {
+            mut result: int[];
+            lt.invoke: |p| {
+                result ~= p;                                    ;; PointlessMustSeq
+                what(lt);
+            }
+            return result;
+        }
+
+        fn Lifetime_op_join(ref lt: int[..]) {
+            return lt.Lifetime_op(|c| {
+                mut sum = 0;
+                for (mut i = 0; i < c.len; i++) sum += c[i];
+                lt.each: |ref x| x += sum;
+            });
+        }
+
+        fn main() {
+            mut lt  = [ 1, 2, 3, 4 ];
+            let res = Lifetime_op_join(lt);
+            return res == [ 1, 2, 3, 4 ] && lt == [ 11, 12, 13, 14 ] ? 0 : 1;
+        }
+    `);
+
+    ZERO(`
+        <alt>
+        inline          <alt/>
+        noinline        </alt>
+        fn slicePromotion_inner(ref array: i32[], ref view: i32[..]) {
+            array ~= array.map(|x| x + view.len);
+            for (mut i = 0; i < view.len; i++) view[i] += array.len;
+        }
+
+        noinline fn slicePromotion_outer(ref array: i32[], ref view: i32[..]) {
+            return slicePromotion_inner(array, view);
+        }
+
+        fn main() {
+            mut array = [ 1, 2, 3, 4 ];
+            mut view  = [ 2, 3, 4, 5 ];
+            slicePromotion_outer(array, view);
+            return array == [ 1, 2, 3, 4, 5, 6, 7, 8 ]
+                && view  == [ 10, 11, 12, 13 ]
+                    ? 0 : 1;
+        }
+    `);
+
     // /Slices.
 
 
