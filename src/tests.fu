@@ -7613,6 +7613,24 @@ pub extern fn runTests()
         }
     `);
 
+    TODO_borrowck(currently: "BUG exit code", `
+        noinline fn sliceRelaxDanglesView(ref array: i32[], ref view: i32[]) {
+            for (mut j = 0; j < 4; j++)
+                for (mut i = view.len; i --> 0; )
+                    array ~= view[i];
+
+            return view;
+        }
+
+        fn main() {
+            mut array = [ 1, 1, 1, 1, 1, 1, 1, 1 ];
+            sliceRelaxDanglesView(array, array);
+            mut sum = 0;
+            for (mut i = 0; i < array.len; i++) sum += array[i];
+            return sum == 128 ? 0 : 1;
+        }
+    `);
+
     // /Borrow checker
 
 
