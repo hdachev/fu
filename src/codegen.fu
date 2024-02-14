@@ -170,7 +170,8 @@ pub fn cpp_codegen(
         can_cont?:      Helpers;
 
         _ids_used?:     string[];
-        _ids_dedupe?:   i32[];
+        _ids_dedupe_p?: i32[];
+        _ids_dedupe_n?: i32[];
 
         // We'll start with the silliest thing here.
         _hoist?:        string[];
@@ -831,7 +832,6 @@ pub fn cpp_codegen(
         let locid = target.locid;
         if (locid)
         {
-            fn _ids_dedupe  = _current_fn._ids_dedupe;
             fn _ids_used    = _current_fn._ids_used;
 
             // Dedupe #1.
@@ -860,11 +860,16 @@ pub fn cpp_codegen(
                 }
 
                 if (dupes)
-                    _ids_dedupe.grow_if_oob(locid) = dupes;
+                    (locid < 0
+                        ? _current_fn._ids_dedupe_n.grow_if_oob(-locid)
+                        : _current_fn._ids_dedupe_p.grow_if_oob(+locid)) = dupes;
             }
 
             // Dedupe #2.
-            let dupes = _ids_dedupe.len > locid && _ids_dedupe[locid];
+            let dupes = locid < 0
+                ? _current_fn._ids_dedupe_n.unless_oob(-locid)
+                : _current_fn._ids_dedupe_p.unless_oob(+locid);
+
             if (dupes)
                 return id ~ '_' ~ dupes;
         }

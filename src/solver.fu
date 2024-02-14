@@ -106,6 +106,16 @@ pub fn solve(
 
     //
 
+    struct LocidSet
+    {
+        _bitset:            bitset::BitSet;
+    };
+
+    struct LocidMap(type T)
+    {
+        _values:            T[];
+    };
+
     struct Warning
     {
         // Currently only two types of warnings here -
@@ -122,7 +132,7 @@ pub fn solve(
     struct EventsSnap
     {
         // Writes invalidate subsequent reads -
-        invalidated_by:     flat::Set(WriteID)[];
+        invalidated_by:     LocidMap(flat::Set(WriteID));
     };
 
     struct PrecedingRefArg
@@ -142,7 +152,7 @@ pub fn solve(
         using snap:         EventsSnap;
 
         // In a loop, reads forbid subsequent writes -
-        used_in_a_loop:     bitset::BitSet;
+        used_in_a_loop:     LocidSet;
 
         // Previously bound reference arguments at currently checked callsites -
         preceding_ref_args: PrecedingRefArg[];
@@ -158,7 +168,7 @@ pub fn solve(
 
     fn Events_merge(ref events: EventsSnap, snap: EventsSnap)
     {
-        fn Events_merge(ref dest: flat::Set($T)[], src: flat::Set($T)[])
+        fn Events_merge(ref dest._values: flat::Set($T)[], src._values: flat::Set($T)[])
         {
             if (dest.len < src.len)
                 dest.grow(src.len);
@@ -192,7 +202,7 @@ pub fn solve(
         }
 
         // Previously we just assigned events =
-        fn Events_restore(ref dest: $T[], src: $T[])
+        fn Events_restore(ref dest._values: $T[], src._values: $T[])
         {
             if (dest.len > write_loop_start)
                 dest.shrink(write_loop_start);
@@ -211,10 +221,10 @@ pub fn solve(
     struct PostdomSnap
     {
         // Moves.
-        used_again:         bitset::BitSet;
+        used_again:         LocidSet;
 
         // BCK & COW.
-        ever_written:       bitset::BitSet;
+        ever_written:       LocidSet;
 
         // COW.
         mayEscapeVia:       i32;
@@ -245,114 +255,48 @@ pub fn solve(
         read_loop_start:    i32;
     };
 
-    fn Postdom_resetAtFnEnd(ref postdom: Postdom)
-    {
-        postdom                     = [];
-        postdom.write_loop_start    = 1;
-        postdom.read_loop_start     = 1;
-        postdom.exitPaths           = XP_EmptyReturn;
-    }
-
-    fn branch(ref dest: Postdom, src: Postdom)
-    {
-        for (fieldname i: PostdomSnap)
-            dest.snap.i |= src.snap.i;
-
-        dest.write_loop_start = max(
-            dest.write_loop_start || BUG(),
-             src.write_loop_start || BUG());
-
-        dest.read_loop_start = max(
-            dest.read_loop_start || BUG(),
-             src.read_loop_start || BUG());
-    }
-
     struct Usage
     {
-        done_relaxing:      bitset::BitSet;
-        var_usage:          Type[];
+        done_relaxing:      LocidSet;
+        var_usage:          LocidMap(Type);
     };
 
     struct Flow
     {
         // Reference graph.
-        rg_parents:         Lifetime[];
-        rg_invalidates:     Lifetime[];         // Non-disjoint siblings and children.
-        rg_children:        flat::Set(i32)[];    // Used by validateCOW
+        rg_parents:         LocidMap(Lifetime);
+        rg_invalidates:     LocidMap(Lifetime);         // Non-disjoint siblings and children.
+        rg_children:        LocidMap(flat::Set(i32));    // Used by validateCOW
 
         // Arguments at risk.
-        at_soft_risk:       bitset::BitSet[];
-        at_hard_risk:       bitset::BitSet[];
+        at_soft_risk:       LocidMap(LocidSet);
+        at_hard_risk:       LocidMap(LocidSet);
 
         // AAR: helpers.
-        is_arg:             bitset::BitSet;
-        arg_parents:        flat::Set(i32)[];
+        is_arg:             LocidSet;
+        arg_parents:        LocidMap(flat::Set(i32));
         arg_targets:        i32[];
     };
 
-    struct CurrentFn
-    {
-        true using out:     SolvedNode;
-
-        // Start-of-func scope0 for implicit scopeskip.
-        scope0:             ScopeMemo;
-
-        asserts:            DeclAsserts;
-
-        using flow?:        Flow;
-
-        far_jumps?:         flat::Set(i32);
-        using effects?:     Effects;
-        using events?:      Events;
-        autoshadow_ok!:     i32;
-
-        // The replacement for the callsites stuff.
-        using relaxed?:     Usage;
-
-        // So we can pass the F_INLINE flag onto mustBecomeInline
-        TODO_FIX_isInline?: bool;
-
-        //
-        TODO_FIX_catches?:  i32;
-
-        // TODO FIX CallerNode_inline still doesn't inline recursively,
-        //  ideally it'll track this stuff on its own.
-        already_inlined?:   Target[];
-        conv_safety?:       int;
-
-        //
-        using postdom?:     Postdom;
-
-        //
-        TODO_FIX_children?: flat::Set(i32)[];
-
-        //
-        TODO_FIX_unique?:   i32;
-
-        // Stashing it on CurrentFn
-        //  so we can update it together with overload.type,
-        //   otherwise they get out of sync = sadness follows.
-        rev_spec_proto?:    RevSpecPrototype;
-
-        //
-        TODO_FIX_bckCantDealWithNestedDefers?: i32;
+    struct ScopeMemo {
+        items_len:          i32;
+        implicits_len:      i32;
+        imports_len:        i32;
+        privates_len:       i32;
+        usings_len:         i32;
+        converts_len:       i32;
+        helpers_len:        i32;
     };
 
-    struct ChildTarget
-    {
-        token:              TokenIdx;
-        parent_rev:         u32;
-        target:             Target;
-    }
-
-    struct SpecExtras
-    {
-        scope_items:        ScopeItem[];
-        arg_spec_types:     flat::Map(string, Type);
+    struct ScopeSkipMemos {
+        items:              ScopeSkip[];
+        implicits:          ScopeSkip[];
+        imports:            ScopeSkip[];
+        privates:           ScopeSkip[];
+        usings:             ScopeSkip[];
+        converts:           ScopeSkip[];
+        helpers:            ScopeSkip[];
     };
-
-
-    //
 
     struct RevSpecPrototype
     {
@@ -386,28 +330,165 @@ pub fn solve(
         outputs?:           RevSpecOutput[];
     };
 
+    struct CurrentFn
+    {
+        true using out:     SolvedNode;
+
+        // Start-of-func scope0 for implicit scopeskip.
+        scope0:             ScopeMemo;
+
+        asserts:            DeclAsserts;
+
+        using flow?:        Flow;
+
+        far_jumps?:         flat::Set(i32);
+        using effects?:     Effects;
+        using events?:      Events;
+        autoshadow_ok!:     i32;
+
+        // The replacement for the callsites stuff.
+        using relaxed?:     Usage;
+
+        // So we can pass the F_INLINE flag onto mustBecomeInline
+        TODO_FIX_isInline?: bool;
+
+        //
+        TODO_FIX_catches?:  i32;
+
+        // TODO FIX CallerNode_inline still doesn't inline recursively,
+        //  ideally it'll track this stuff on its own.
+        already_inlined?:   Target[];
+        conv_safety?:       int;
+        args_neg?:          i32;
+
+        //
+        using postdom?:     Postdom;
+
+        //
+        TODO_FIX_children?: LocidMap(flat::Set(i32));
+
+        // Stashing it on CurrentFn
+        //  so we can update it together with overload.type,
+        //   otherwise they get out of sync = sadness follows.
+        rev_spec_proto?:    RevSpecPrototype;
+
+        //
+        TODO_FIX_bckCantDealWithNestedDefers?: i32;
+        TODO_FIX_unique?:   i32;
+    };
+
+    mut _current_fn:        CurrentFn;
+
 
     //
 
-    struct ScopeMemo {
-        items_len:          i32;
-        implicits_len:      i32;
-        imports_len:        i32;
-        privates_len:       i32;
-        usings_len:         i32;
-        converts_len:       i32;
-        helpers_len:        i32;
+    inline fn |= (ref set: LocidSet, other: LocidSet)
+        set._bitset |= other._bitset;
+
+    inline fn add(ref set: LocidSet, other: LocidSet)
+        set._bitset.add(other._bitset);
+
+    inline fn clear(ref set: LocidSet)
+        set._bitset.clear();
+
+    inline fn has_inter(a: LocidSet, b: LocidSet)
+        a._bitset.has_inter(b._bitset);
+
+    fn clear(ref set: LocidSet, start: i32) {
+        let args_neg = _current_fn.args_neg;
+        set._bitset.clear(start: args_neg + start);
+    }
+
+    fn has(set: LocidSet, locid: i32) {
+        let args_neg = _current_fn.args_neg;
+        return set._bitset.has(args_neg + locid);
+    }
+
+    fn add(ref set: LocidSet, locid: i32) {
+        let args_neg = _current_fn.args_neg;
+        return set._bitset.add(args_neg + locid);
+    }
+
+    fn add_once(ref set: LocidSet, locid: i32) {
+        let args_neg = _current_fn.args_neg;
+        return set._bitset.add_once(args_neg + locid);
+    }
+
+    fn each(set: LocidSet, each) {
+        let args_neg = _current_fn.args_neg;
+        return set._bitset.each(|locid| each(locid - args_neg));
+    }
+
+
+    //
+
+    inline fn clear(ref map: LocidMap(_))
+        map._values.clear();
+
+    // TODO FAILCASE fn [], neither infix nor postfix can't declare here
+    fn at!T(ref map: LocidMap(T), locid: i32) {
+        let args_neg = _current_fn.args_neg;
+        return map._values[args_neg + locid];
+    }
+
+    fn unless_oob!T(ref map: LocidMap(T), locid: i32) {
+        let args_neg = _current_fn.args_neg;
+        return map._values.unless_oob(args_neg + locid);
+    }
+
+    fn grow_if_oob!T(ref map: LocidMap(T), locid: i32) {
+        let args_neg = _current_fn.args_neg;
+        return map._values.grow_if_oob(args_neg + locid);
+    }
+
+    fn each(ref map: LocidMap(_), each) {
+        let args_neg = _current_fn.args_neg;
+        return map._values.each(|ref type, i| each(type, i?: i - args_neg));
+    }
+
+
+    //
+
+    fn Postdom_resetAtFnEnd(ref postdom: Postdom)
+    {
+        postdom                     = [];
+        postdom.write_loop_start    = 1;
+        postdom.read_loop_start     = 1;
+        postdom.exitPaths           = XP_EmptyReturn;
+    }
+
+    fn branch(ref dest: Postdom, src: Postdom)
+    {
+        for (fieldname i: PostdomSnap)
+            dest.snap.i |= src.snap.i;
+
+        dest.write_loop_start = max(
+            dest.write_loop_start || BUG(),
+             src.write_loop_start || BUG());
+
+        dest.read_loop_start = max(
+            dest.read_loop_start || BUG(),
+             src.read_loop_start || BUG());
+    }
+
+
+    //
+
+    struct ChildTarget
+    {
+        token:              TokenIdx;
+        parent_rev:         u32;
+        target:             Target;
+    }
+
+    struct SpecExtras
+    {
+        scope_items:        ScopeItem[];
+        arg_spec_types:     flat::Map(string, Type);
     };
 
-    struct ScopeSkipMemos {
-        items:              ScopeSkip[];
-        implicits:          ScopeSkip[];
-        imports:            ScopeSkip[];
-        privates:           ScopeSkip[];
-        usings:             ScopeSkip[];
-        converts:           ScopeSkip[];
-        helpers:            ScopeSkip[];
-    };
+
+    //
 
     struct Ephemeral {
         local_of:           i32;
@@ -517,7 +598,7 @@ pub fn solve(
         ret_expect?:        Type;
         ret_actual?:        Type;
 
-        usage?:             Type[];
+        usage?:             LocidMap(Type);
 
         postdom?:           Postdom;
         loop_PREVITER?:     Postdom;    // TODO dont remember why i added this
@@ -591,7 +672,6 @@ pub fn solve(
     // The solver state.
 
     using mut ss:           SolverState;
-    mut _current_fn:        CurrentFn;
     implicit mut _helpers:  Helpers[];      // TODO rename, this is the block helpers stack, unwinds during solve
 
 
@@ -3383,7 +3463,7 @@ pub fn solve(
 
                 // Skip if we've already seen the declaration for this var,
                 //  which means ref is taken after the copy is made.
-                if (_current_fn.done_relaxing.has(child))
+                if (_current_fn.done_relaxing.has(locid: child))
                     continue;
 
                 visit(child?: child, t?: t, o?: o);
@@ -3600,7 +3680,7 @@ pub fn solve(
         inline fn PASS_MoveOnLastUse    = relax_mask == RELAX_all;
         inline fn PASS_MaybeCopyOrMove  = relax_mask == RELAX_all;
 
-        fn trackUse(lt: Lifetime, ref bitset: bitset::BitSet)
+        fn trackUse(lt: Lifetime, ref bitset: LocidSet)
         {
             fn trackUse(t: Target)
             {
@@ -3705,7 +3785,7 @@ pub fn solve(
                 let loop_start  = node.helpers.locals_start;
 
                 for (fieldname i: PostdomSnap)
-                    if (typeof (previter.i) -> bitset::BitSet)
+                    if (typeof (previter.i) -> LocidSet)
                         previter.i.clear(start: loop_start);
             }
 
@@ -4022,7 +4102,7 @@ pub fn solve(
             _current_fn.read_loop_start     =
             _current_fn.write_loop_start    = node.helpers.locals_start || BUG();
 
-            mut var_usage0: Type[];
+            mut var_usage0: LocidMap(Type);
             swap(_current_fn.var_usage, var_usage0);
             // MOVE ON LAST USE ////////////////////////////////////////////
 
@@ -4078,12 +4158,11 @@ pub fn solve(
 
             swap(_current_fn.var_usage, var_usage0);
 
-            for (mut i = 0; i < var_usage0.len; i++)
-            {
-                shadow let slot = var_usage0[i];
+            // TODO FAILCASE: |i, shadow slot|
+            // TODO FAILCASE: |shadow slot, i|
+            var_usage0.each: |shadow slot: Type, i: int|
                 if (slot)
                     trackVarUsage(i, slot);
-            }
 
             node.helpers.usage = var_usage0;
             // MOVE ON LAST USE ////////////////////////////////////////////
@@ -7120,7 +7199,7 @@ pub fn solve(
                 else
                 {
                     fn ArgsAtRisk_list(
-                        ref output: bitset::BitSet, at_risk: bitset::BitSet[])
+                        ref output: bitset::BitSet, at_risk: LocidMap(LocidSet))
                     {
                         at_risk.unless_oob(argTarget.locid).each: |other|
                         {
@@ -12565,25 +12644,22 @@ pub fn solve(
             TEST_varLifetime(callsite.type.lifetime, locid: target, staticOK: TODO_FIX_static_ZSTs);
 
             // Writes invalidate subsequent reads.
-            if (events.invalidated_by.len > target)
+            let u = events.invalidated_by.unless_oob(target);
+            if (u)
             {
-                let u = events.invalidated_by[target];
-                if (u)
+                if (AAR ? !RESOLVE_byAAR(read: target, writes: u.keys_asc, trySoft: true /* F_REF check inside */)
+                        : !RESOLVE_byMutvar(target))
                 {
-                    if (AAR ? !RESOLVE_byAAR(read: target, writes: u.keys_asc, trySoft: true /* F_REF check inside */)
-                            : !RESOLVE_byMutvar(target))
-                    {
-                        let first = u.keys_asc.first;
+                    let first = u.keys_asc.first;
 
-                        fail("Cannot access"
-                            ~ " " ~ target.nested ~ ", reference invalidated by write to"
-                            ~ " " ~ first.locid.nested ~ " at "
-                            ~ RWEvent_stack(first));
-                    }
-
-                    if (OPTI_bck)
-                        events.invalidated_by[target] = [];
+                    fail("Cannot access"
+                        ~ " " ~ target.nested ~ ", reference invalidated by write to"
+                        ~ " " ~ first.locid.nested ~ " at "
+                        ~ RWEvent_stack(first));
                 }
+
+                if (OPTI_bck)
+                    events.invalidated_by.at(target) = [];
             }
 
             // Track reads in a loop.
@@ -14071,12 +14147,12 @@ pub fn solve(
         //
 
         struct Regions {
-            locals:     bitset::BitSet;
+            locids:     LocidSet;
             arguments:  bitset::BitSet;
         };
 
         fn has_inter(a: Regions, b: Regions)
-            a.locals.has_inter(b.locals) ||
+            a.locids.has_inter(b.locids) ||
             a.arguments.has_inter(b.arguments);
 
         infix fn |=(ref a: Regions, b: Regions)
@@ -14111,7 +14187,7 @@ pub fn solve(
         {
             lifetime.Lifetime_each: |locid|
             {
-                if (locid && regions.locals.add_once(locid - 1))
+                if (locid && regions.locids.add_once(locid))
                 {
                     ///////////////////////////////////////
                     // TODO PERF not necessary for moves //
@@ -14260,8 +14336,8 @@ pub fn solve(
                         let note =  _inner.moves.has_inter(parallel.reads) ||
                                     parallel.moves.has_inter(_inner.reads)
                                         ? N_MoveMustSeq
-                                 :  _inner.writes.locals.has_inter(parallel.reads.locals) ||
-                                    parallel.writes.locals.has_inter(_inner.reads.locals)
+                                 :  _inner.writes.locids.has_inter(parallel.reads.locids) ||
+                                    parallel.writes.locids.has_inter(_inner.reads.locids)
                                         ? N_BckMustSeq
                                  :  _inner.writes.arguments.has_inter(parallel.reads.arguments) ||
                                     parallel.writes.arguments.has_inter(_inner.reads.arguments)
