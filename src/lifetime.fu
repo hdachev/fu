@@ -506,13 +506,40 @@ fn Paths_hasInter(a: byte[..], b: byte[..])
 
 //
 
+inline fn appendLocid(ref str: byte[], locid!: i32)
+{
+    // Current -
+    // str.append7bit(locid.u32 << 1);
+
+    // Next -
+    str.append7bit(locid.sign_rotate << 1);
+
+    // Faster? -
+    // str.append7bit((locid.u32 & 0x8000000) >> 30 | locid.u32 << 2);
+}
+
+inline fn unpackLocid(r: u32)
+{
+    // Current -
+    // return i32(r & 1 ? 0 : r >> 1);
+
+    // Next -
+    return r & 1 ? 0 : (r >> 1).sign_unrotate;
+
+    // Faster? -
+    // return r & 1 ? 0 : i32(r >> 2 | (r & 2) << 30);
+}
+
+
+//
+
 pub fn Lifetime_from(locid!: i32, flatCount: i32): Lifetime =
 {
     if (SELF_TEST)
         locid > 0 || BUG("Lifetime_from: Bad locid");
 
     mut uni0n: byte[];
-    uni0n.append7bit(locid.u32 << 1);
+    uni0n.appendLocid(:locid);
     uni0n.appendSubRegion(
         :flatCount, flatOffset: 0,
         isLastPath: true, isLastSubRegion: true);
@@ -540,7 +567,7 @@ pub fn Lifetime_AAR(locid!: i32): Lifetime =
         locid > 0 || BUG("Lifetime_from: Bad locid");
 
     mut uni0n: byte[];
-    uni0n.append7bit(locid.u32 << 1);
+    uni0n.appendLocid(:locid);
     uni0n ~= SR_empty;
 
     return Lifetime(:uni0n);
@@ -631,7 +658,17 @@ inline fn merge !<B, L, R, Either, Rest>(
                         //
                         : (l == 0) != (r == 0)      ? r == 0    ? -1 : +1
                         : (l == 1) != (r == 1)      ? r == 1    ? +1 : -1
-                                                    : r <> l;
+
+                        // Additionally complicated by locid sign-rotation.
+                        //
+                        // TODO FIX sign rotate the two instead,
+                        //  which might reverse the order of arg-positions
+                        //   but it shouldn't matter.
+                        //
+                        : (l & 3 == 2)  ? (r & 3 == 2)  ? l <> r
+                                                        : +1
+                                        : (r & 3 == 2)  ? -1
+                                                        : r <> l;
 
                 let either_chars =
                 {
@@ -646,7 +683,7 @@ inline fn merge !<B, L, R, Either, Rest>(
                                 both(l_chars[l_start .. l_paths0],  l_chars[l_paths0 .. l_offset],
                                                                     r_chars[r_paths0 .. r_offset],
 
-                                     locid?: i32(r & 1 ? 0 : r >> 1));
+                                     locid?: r.unpackLocid);
 
                                 continue;
                             }
@@ -844,7 +881,7 @@ pub fn Lifetime_each(lifetime: Lifetime, each)
         lax mut sr  = chars.walkPaths(:offset, tailOK: true);
 
         each(
-            locid?:     i32(r & 1 ? 0 : r >> 1),
+            locid?:     r.unpackLocid,
             argidx?:    i32(r & 1 ? r >> 2 : 0),
             isStatic?:  r == 0,
             isTemp?:    r == 1,
@@ -904,7 +941,7 @@ pub fn Lifetime_process(lifetime: Lifetime, each)
                   continue_replace?: fn continue_replace,
 
                     // Same as above.
-                    locid?:     i32(r & 1 ? 0 : r >> 1),
+                    locid?:     r.unpackLocid,
                     argidx?:    i32(r & 1 ? r >> 2 : 0),
                     isStatic?:  r == 0,
                     isTemp?:    r == 1,

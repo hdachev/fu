@@ -314,7 +314,7 @@ struct Extended
     true template:  Template;
 
     // The new nodelists.
-    locals?:        Overload[];
+    args_n_locals?: Overload[];
 
     // Previously we appended a fns signature hash to its name,
     //  now we'll do this in the codegen.
@@ -326,6 +326,7 @@ struct Extended
 
     //
     fx_mask?:       effects::FxMask;
+    args_neg?:      i32;
 };
 
 
@@ -484,6 +485,50 @@ fn _fname(implicit ctx: Context, idx: TokenIdx): string
     ctx.modules[idx.modid].fname;
 
 
+//
+
+inline fn indexOfLocal(args_neg!: i32, locid!: i32): int
+{
+    // Currently -
+    return { args_neg(); locid - 1 };
+
+    // Next -
+    // return ext.args_neg - (locid > 0 ? 1 : 0) + locid;
+}
+
+inline fn indexOfLocal(ext: Extended, locid!: i32): int
+{
+    locid > 0 && ext.args_n_locals.len >= locid || throw(
+        "indexOfLocal: bad locid");
+
+    // Currently -
+    return { ext(); locid - 1 };
+
+    // Next -
+    // return ext.args_neg - (locid > 0 ? 1 : 0) + locid;
+}
+
+inline fn nextIndexOfLocal(ext: Extended, asArgument!: bool): int
+{
+    // Currently -
+    return ext.args_n_locals.len + 1;
+
+    // Next -
+    // return asArgument
+    //     ? (-1) - ext.args_neg;
+    //     : ext.args_n_locals.len + (1 - ext.args_neg);
+}
+
+
+//
+
+inline fn sign_rotate(v: i32)
+    (v.u32 << 1) ^ (v < 0 ? 0xffffffff : 0x0)
+
+inline fn sign_unrotate(v: u32)
+    i32((v >> 1) ^ (v & 1 ? 0xffffffff : 0x0))
+
+
 // Packed targets, one u64 packing modid+global+local.
 //  This gives us a capacity of up to 1 million modids/globids/locids,
 //   which is not a lot but should be relatively hard to hit in practice.
@@ -494,17 +539,16 @@ fn _fname(implicit ctx: Context, idx: TokenIdx): string
 //
 inline fn  modid(t: Target) i32(t._packed >> 40 & 0xfffff);
 inline fn globid(t: Target) i32(t._packed >> 20 & 0xfffff);
-inline fn  locid(t: Target) i32(t._packed       & 0xfffff);
+inline fn  locid(t: Target) u32(t._packed       & 0xfffff).sign_unrotate;
 
 fn Target(modid: i32, globid: i32, locid: i32)
 {
-    modid >= 0 &&
-    globid > 0 &&
-    locid >= 0 || throw("Target: bad modid/index/locid");
+    modid >= 0 && globid > 0 || throw(
+        "Target: bad modid/index/locid");
 
     return Target(_packed: modid.u64 << 40
                         | globid.u64 << 20
-                        |  locid.u64);
+                        |  locid.sign_rotate.u64);
 }
 
 
@@ -515,19 +559,19 @@ fn parseLocalOrGlobal(str: string, ref offset!: i32)
 {
     let modid  = str.helpers::parseVarint(:offset).i32;
     let globid = str.helpers::parseVarint(:offset).i32;
-    let locid  = str.helpers::parseVarint(:offset).i32;
+    let locid  = str.helpers::parseVarint(:offset).sign_unrotate;
 
     return Target(:modid, :globid, :locid);
 }
 
 fn appendLocalOrGlobal(ref str: string, using target: Target)
 {
-    modid >= 0 && globid > 0 && locid >= 0 || throw(
+    modid >= 0 && globid > 0 || throw(
         "appendLocalOrGlobal: bad modid/globid/locid");
 
     str.helpers::appendVarint(modid.u32);
     str.helpers::appendVarint(globid.u32);
-    str.helpers::appendVarint(locid.u32);
+    str.helpers::appendVarint(locid.sign_rotate);
 }
 
 

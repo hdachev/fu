@@ -368,18 +368,26 @@ fn Scope_create(
     implicit module:    Module,
     ref scope:          Scope,
 
-    kind:       Kind = "__no_kind_yet",
-    name!?:     string,
-    type?:      Type,
-    flags!?:    Flags,
-    status?:    SolverStatus,
-    nest!?:     i32): Target
-{
-    ref overloads = nest
-        ? scope.extended.grow_if_oob(nest).locals
-        : scope.overloads;
+    kind:               Kind = "__no_kind_yet",
+    name!?:             string,
+    type?:              Type,
+    flags!?:            Flags,
+    status?:            SolverStatus,
+    nest!?:             i32,
 
-    let position = overloads.len + 1;
+    asArgument!?:       bool): Target
+{
+    mut position: i32;
+    ref overloads = nest
+        ? {
+            ref ext     = scope.extended.grow_if_oob(nest);
+            position    = ext.nextIndexOfLocal(:asArgument);
+            ext.args_n_locals
+          }
+        : {
+            position    = scope.overloads.len + 1;
+            scope.overloads
+          };
 
     let target = Target(
         modid:      module.modid,
@@ -393,6 +401,9 @@ fn Scope_create(
     item.flags          = flags;
     item.type           = type;
     item.status         = status;
+
+    !!(status & SS_ARGUMENT) == asArgument || BUG(
+        "Scope_create(asArgument) !== SS_ARGUMENT");
 
     overloads.push(item);
 

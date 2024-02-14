@@ -360,7 +360,8 @@ pub fn solve(
         //  available for reverse spec -
         //
         true solved:        SolvedNode;
-        locals:             Overload[];
+        args_n_locals:      Overload[];
+        args_neg:           i32;
     };
 
     struct RevSpecInstance
@@ -757,7 +758,7 @@ pub fn solve(
             globid > 0 && globid < _scope.extended.len || BUG(
                 "GET_next_local_index: bad globid");
 
-        return _scope.extended[globid].locals.len + 1;
+        return _scope.extended[globid].nextIndexOfLocal(asArgument: false);
     }
 
     fn nested(index: i32, from!: Target)
@@ -1195,13 +1196,8 @@ pub fn solve(
             if (SELF_TEST && _scope.extended.len <= globid)
                 BUG("Invalid local target -modid.");
 
-            let locals = _scope.extended[globid].locals;
-
-            if (SELF_TEST && locals.len < locid)
-                BUG("Out of range local target from: " ~ GET(target.parent)
-                    ~ "\n\tlocals=" ~ locals.len ~ "\n\tlocal=" ~ locid);
-
-            return locals[locid - 1];
+            let ext = _scope.extended[globid];
+            return ext.args_n_locals[ext.indexOfLocal(:locid)];
         }
 
         return _scope.overloads[globid - 1];
@@ -1228,7 +1224,10 @@ pub fn solve(
                 "GET_mut: bad modid/globid");
 
         if (locid)
-            return _scope.extended[globid].locals[locid - 1];
+        {
+            ref ext = _scope.extended[globid];
+            return ext.args_n_locals[ext.indexOfLocal(:locid)];
+        }
 
         return _scope.overloads[globid - 1];
     }
@@ -1504,7 +1503,7 @@ pub fn solve(
                    | (type.quals & q_rx_resize && SS_TODO_FIX_was_rx_resize);
 
         let target = Scope_create(_scope,
-            nest: local_of,
+            nest: local_of, :asArgument,
             kind: "var", :name, :flags, :status);
 
         // New ref semantics appear to be missing checks upstream.
@@ -5145,14 +5144,14 @@ pub fn solve(
 
                 // Stash away prototype for reverse specialization.
                 {
-                    let target  = localfn(fnbody_of);
-
-                    let locals  = target.locals;
-                    mut solved  = _current_fn.out;
+                    mut solved = _current_fn.out;
                     solved.items.last = block;
 
+                    let target = localfn(fnbody_of);
                     _current_fn.rev_spec_proto =
-                        RevSpecPrototype(:locals, :solved);
+                        RevSpecPrototype(
+                            :target.args_n_locals, :target.args_neg,
+                            :solved);
                 }
 
                 //
@@ -5931,7 +5930,8 @@ pub fn solve(
         let prototype       = original.rev_spec.prototype;
 
         mut solved          = prototype.solved || BUG("doReverseSpecialize: no rev_spec.prototype.solved");
-        mut locals          = prototype.locals;
+        mut args_n_locals   = prototype.args_n_locals;
+        let args_neg        = prototype.args_neg;
 
         ////////////////////////////////////////////////////////////////
         let helpers0        = _helpers.len;
@@ -5979,7 +5979,7 @@ pub fn solve(
                     let locid = node.target.locid;
 
                     // Swap trick to appease bck.
-                    fn local = locals[locid - 1];
+                    fn local = args_n_locals[indexOfLocal(:args_neg, :locid)];
 
                     TRACE("relinkNode(" ~ k ~ ") locid(" ~ locid ~ ") name(" ~ local.name ~ ")");
 
@@ -6044,7 +6044,7 @@ pub fn solve(
 
         // We gotta put the locals on the thing,
         //  and mock up a _current_fn to runAllPasses on.
-        EXT_mut(target).locals  = locals;
+        EXT_mut(target).args_n_locals = args_n_locals;
         GET_mut(target).status &= ~SS_Debug_AllPassesComplete;
 
         // There's a bunch of places where .target needs to be replaced,
@@ -6742,7 +6742,7 @@ pub fn solve(
                         BUG("Looping forever: " ~ target ~ ".revision >= 1024");
 
                     ref o = EXT_mut(target);
-                    o.locals.clear();
+                    o.args_n_locals.clear();
 
                     // This looks horrible but hope is
                     //  warnings array should be usually empty,
@@ -13966,13 +13966,8 @@ pub fn solve(
         {
             let t  = _current_fn.target;
             debug ~= "\n    Current fn: " ~ t ~ " at (" ~ t.modid ~ ", " ~ t.globid ~ "):";
-
-            let locals = t.locals;
-            for (mut i = 0; i < locals.len; i++)
-            {
-                let item = locals[i];
+            t.args_n_locals.each: |item|
                 debug ~= "\n        " ~ item;
-            }
         }
 
         if (debug)

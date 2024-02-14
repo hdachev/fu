@@ -49,7 +49,10 @@ fn inspect(module: Module, root: SolvedNode): string
             if (n.target.modid == modid || locid)
             {
                 let o = locid
-                    ? module.out.solve.scope.extended[globid].locals[locid - 1]
+                    ? {
+                        let ext = module.out.solve.scope.extended[globid];
+                        ext.args_n_locals[ext.indexOfLocal(:locid)]
+                      }
                     : module.out.solve.scope.overloads[globid - 1];
 
                 if (o.name)

@@ -200,7 +200,10 @@ pub fn cpp_codegen(
             : ctx.modules[modid];
 
         if (locid)
-            return m.out.solve.scope.extended[globid].locals[locid - 1];
+        {
+            let ext = m.out.solve.scope.extended[globid];
+            return ext.args_n_locals[ext.indexOfLocal(:locid)];
+        }
 
         return m.out.solve.scope.overloads[globid - 1];
     }
