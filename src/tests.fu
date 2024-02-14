@@ -7421,6 +7421,43 @@ pub extern fn runTests()
         }
     `);
 
+    TODO_borrowck(currently: "BUG n.may_invalidate less (ref arg data) 2:21+4", `
+        noinline fn test(ref data: int[]) {
+            for (mut i = 0; i < 2; i++)
+    <alt>
+                if (i & 1)
+                    return DONT_DANGLE_ME;
+                else for (mut j = 0; j < 8; j++)
+                    data ~= data;
+    <alt/>
+                if !(i & 1) for (mut j = 0; j < 8; j++)
+                                data ~= data;
+                else
+                    return DONT_DANGLE_ME;
+    </alt>
+            return data;
+        }
+
+        fn main() {
+            mut data = [ 1, 2, 3, 4, 5 ];
+            implicit shadow <fail at call to test X:X both alias var data 15:17+4>
+                        ref <pass/>
+                        mut </fail>DONT_DANGLE_ME = data[2 .. 3];
+
+            fn sum(arr: int[]) {
+                mut sum = 0;
+                for (mut i = 0; i < arr.len; i++) sum += arr[i];
+                return sum;
+            }
+
+            return sum(test(:data)) - 3;
+        }
+
+        fn DONT_DANGLE_ME(implicit shadow DONT_DANGLE_ME: int[]) {
+            return DONT_DANGLE_ME;
+        }
+    `);
+
     TODO_borrowck(currently: "BUG n.may_invalidate less (injected implicit ref arg main:data) 7:25+4", `
         fn main() {
             mut data = [ 1, 2, 3, 4, 5 ];
