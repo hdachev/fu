@@ -53,6 +53,11 @@ let ALLOW_conv_loops        = true;
 
 //
 
+let NO_LOOP         = -1000001;
+
+
+//
+
 pub fn solve(
     implicit ctx: Context,
     implicit ref module: Module,
@@ -193,9 +198,9 @@ pub fn solve(
         write_loop_start: i32)
     {
         if (!write_loop_start)
-            BUG("Events_restore: no write_loop_start, cant decide which events need to be survive");
+            BUG("Events_restore: no write_loop_start, cant decide which events need to survive");
 
-        if (write_loop_start == 1)
+        if (write_loop_start == NO_LOOP)
         {
             events.snap = restore;
             return;
@@ -396,7 +401,7 @@ pub fn solve(
 
     fn clear(ref set: LocidSet, start: i32) {
         let args_neg = _current_fn.args_neg;
-        set._bitset.clear(start: args_neg + start);
+        set._bitset.clear(start: start == NO_LOOP ? 0 : args_neg + start);
     }
 
     fn has(set: LocidSet, locid: i32) {
@@ -452,8 +457,8 @@ pub fn solve(
     fn Postdom_resetAtFnEnd(ref postdom: Postdom)
     {
         postdom                     = [];
-        postdom.write_loop_start    = 1;
-        postdom.read_loop_start     = 1;
+        postdom.write_loop_start    = NO_LOOP;
+        postdom.read_loop_start     = NO_LOOP;
         postdom.exitPaths           = XP_EmptyReturn;
     }
 
@@ -8624,7 +8629,6 @@ pub fn solve(
 
     fn Lifetime_unwind(
         lifetime: Lifetime,
-        locals_start!?: i32,
         locals_only!?: bool): Lifetime
     {
         return Lifetime_process(:lifetime, each:
@@ -8635,7 +8639,7 @@ pub fn solve(
                 if (locals_only)
                     continue/*discard*/;
             }
-            else if (locid >= locals_start)
+            else
             {
                 let init = GET(nested(locid)).Lifetime_climbType;
                 if (init.is_ref)
@@ -12676,7 +12680,7 @@ pub fn solve(
                                 : p.BCK_TrackWrites);
 
             let loop_start  = callOrPragma._loop_start || BUG("bck_trackWrites: _loop_start not set on callsite.");
-            let OPTI_isLoop = loop_start != 1 && !!events.used_in_a_loop;
+            let OPTI_isLoop = loop_start != NO_LOOP && !!events.used_in_a_loop;
             let OPTI_hasPRA = !!events.preceding_ref_args;
 
             //
@@ -13952,8 +13956,12 @@ pub fn solve(
 
             _current_fn.var_usage  && BUG("_current_fn.var_usage not empty before propagateType.");
             _current_fn.postdom    && BUG("_current_fn.postdom not empty before propagateType.");
+
             Postdom_resetAtFnEnd(_current_fn);
             propagateType(node, node.type, relax_mask: RELAX_before_bck);
+
+            _current_fn.read_loop_start  == NO_LOOP || BUG("RelaxMut.end: read_loop_start(" ~ _current_fn.read_loop_start ~ ")");
+            _current_fn.write_loop_start == NO_LOOP || BUG("RelaxMut.end: write_loop_start(" ~ _current_fn.write_loop_start ~ ")");
         }
 
         ////////////////////////////////////
@@ -14004,11 +14012,14 @@ pub fn solve(
             _current_fn.fx_mask = [];
             _current_fn.relaxed = [];
 
-            _current_fn.read_loop_start  == 1 || BUG("_current_fn.read_loop_start leak.");
-            _current_fn.write_loop_start == 1 || BUG("_current_fn.write_loop_start leak.");
-            Postdom_resetAtFnEnd(_current_fn);
+            _current_fn.read_loop_start  == NO_LOOP || BUG("RelaxCopyResize: read_loop_start(" ~ _current_fn.read_loop_start ~ ")");
+            _current_fn.write_loop_start == NO_LOOP || BUG("RelaxCopyResize: write_loop_start(" ~ _current_fn.write_loop_start ~ ")");
 
+            Postdom_resetAtFnEnd(_current_fn);
             propagateType(node, node.type, relax_mask: RELAX_all);
+
+            _current_fn.read_loop_start  == NO_LOOP || BUG("RelaxCopyResize.end: read_loop_start(" ~ _current_fn.read_loop_start ~ ")");
+            _current_fn.write_loop_start == NO_LOOP || BUG("RelaxCopyResize.end: write_loop_start(" ~ _current_fn.write_loop_start ~ ")");
         }
 
         ////////////////////////////////////
