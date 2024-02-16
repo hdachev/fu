@@ -489,34 +489,19 @@ fn _fname(implicit ctx: Context, idx: TokenIdx): string
 
 inline fn indexOfLocal(args_neg!: i32, locid!: i32): int
 {
-    // Currently -
-    return { args_neg(); locid - 1 };
-
-    // Next -
-    // return ext.args_neg - (locid > 0 ? 1 : 0) + locid;
+    return args_neg - (locid > 0 ? 1 : 0) + locid;
 }
 
 inline fn indexOfLocal(ext: Extended, locid!: i32): int
 {
-    locid > 0 && ext.args_n_locals.len >= locid || throw(
-        "indexOfLocal: bad locid");
-
-    // Currently -
-    return { ext(); locid - 1 };
-
-    // Next -
-    // return ext.args_neg - (locid > 0 ? 1 : 0) + locid;
+    return ext.args_neg - (locid > 0 ? 1 : 0) + locid;
 }
 
 inline fn nextIndexOfLocal(ext: Extended, asArgument!: bool): int
 {
-    // Currently -
-    return ext.args_n_locals.len + 1;
-
-    // Next -
-    // return asArgument
-    //     ? (-1) - ext.args_neg;
-    //     : ext.args_n_locals.len + (1 - ext.args_neg);
+    return asArgument
+        ? (-1) - ext.args_neg
+        : ext.args_n_locals.len + (1 - ext.args_neg);
 }
 
 

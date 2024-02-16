@@ -401,7 +401,8 @@ pub fn solve(
 
     fn clear(ref set: LocidSet, start: i32) {
         let args_neg = _current_fn.args_neg;
-        set._bitset.clear(start: start == NO_LOOP ? 0 : args_neg + start);
+        set._bitset.clear(start:
+            args_neg + (start == NO_LOOP ? -args_neg : start));
     }
 
     fn has(set: LocidSet, locid: i32) {
@@ -842,7 +843,7 @@ pub fn solve(
     fn nested(index: i32, from!: Target)
     {
         if (SELF_TEST)
-            index > 0 || BUG(
+            index != 0 || BUG(
                 "nested(): bad locid");
 
         return Target(:from.modid, :from.globid, locid: index);
@@ -6060,7 +6061,8 @@ pub fn solve(
                     // DOING THIS LAST - so that any loops within the initializer expression
                     //  dont see the incremented lastKnownLocal
                     //
-                    lastKnownLocal = locid;
+                    if (locid > 0)
+                        lastKnownLocal = locid;
                 }
                 else if (k == "let" || k == "call")
                 {
@@ -6108,7 +6110,12 @@ pub fn solve(
 
         // We gotta put the locals on the thing,
         //  and mock up a _current_fn to runAllPasses on.
-        EXT_mut(target).args_n_locals = args_n_locals;
+        {
+            ref ext                 = EXT_mut(target);
+            ext.args_n_locals       = args_n_locals;
+            ext.args_neg            = args_neg;
+        }
+
         GET_mut(target).status &= ~SS_Debug_AllPassesComplete;
 
         // There's a bunch of places where .target needs to be replaced,
@@ -6807,6 +6814,7 @@ pub fn solve(
 
                     ref o = EXT_mut(target);
                     o.args_n_locals.clear();
+                    o.args_neg = 0;
 
                     // This looks horrible but hope is
                     //  warnings array should be usually empty,
@@ -7094,6 +7102,16 @@ pub fn solve(
         if (SELF_TEST)
             target == _current_fn.target || BUG("doUpdateScope: target mismatch");
 
+        ///////////////////////////////////////
+        let args_neg0   = _current_fn.args_neg;
+        _current_fn.args_neg = target.args_neg;
+
+        defer {
+            _current_fn.args_neg == target.args_neg || BUG("doUpdateScope: args_neg drift");
+            _current_fn.args_neg = args_neg0;
+        }
+        ///////////////////////////////////////
+
         ref items = _current_fn.items;
         let mustBecomeInline = currentFn_mustBecomeInline();
 
@@ -7118,7 +7136,7 @@ pub fn solve(
             if !(argTarget)
                 continue;
 
-            argPos_1b.grow_if_oob(argTarget.locid) = i + 1;
+            argPos_1b.grow_if_oob((-1) - argTarget.locid) = i + 1;
 
             if (relaxMutValArgs)
             {
@@ -7188,7 +7206,7 @@ pub fn solve(
                     {
                         at_risk.unless_oob(argTarget.locid).each: |other|
                         {
-                            let otherPos_1b = argPos_1b.unless_oob(other);
+                            let otherPos_1b = argPos_1b.unless_oob((-1) - other);
                             if (otherPos_1b)
                                 output.add(otherPos_1b - 1);
                         }
@@ -7379,7 +7397,7 @@ pub fn solve(
                     }
                     else
                     {
-                        shadow let argPos_1b = argPos_1b.unless_oob(locid) || BUG(
+                        shadow let argPos_1b = argPos_1b.unless_oob((-1) - locid) || BUG(
                             "Non-argument local in retval.lifetime: " ~ nested(locid));
 
                         let i   = argPos_1b - 1;
@@ -7507,7 +7525,7 @@ pub fn solve(
                 || !retval.is_void              // Shouldn't this be any warn on any ZST?
                 || overload.flags & F_LAX
                 || args.some(.type.isAddrOfFn)  // Adding this to avoid the need for laxing higher-order fns.
-                || push(Warning(locid: -101));
+                || push(Warning(locid: 0x11110000));
 
         //
         shadow ref overload = GET_mut(target);
@@ -12071,10 +12089,10 @@ pub fn solve(
             (token.modid.u32 * 9973 ^ token.tokidx.u32) << 20;
 
         fn WriteID(locid: i32, token: TokenIdx)
-            WriteID(locid.u32 | (BCK && token.tokenHash));
+            WriteID(locid.sign_rotate | (BCK && token.tokenHash));
 
         fn locid(w: WriteID)
-            (w._locid_and_hash & 0xfffff).i32;
+            (w._locid_and_hash & 0xfffff).sign_unrotate;
 
         fn tokenHash(w: WriteID)
             w._locid_and_hash & 0xfff00000;
@@ -12833,7 +12851,7 @@ pub fn solve(
                         //  we don't hash the tokens so set::add should do it.
                         //
                         if (SELF_TEST)
-                            writeID._locid_and_hash.i32 == write || BUG(
+                            writeID._locid_and_hash.sign_unrotate == write || BUG(
                                 "AAR: writeID._locid != write locid, set::add wont be able to dedupe");
 
                         set.add(writeID);
@@ -13920,6 +13938,15 @@ pub fn solve(
 
             if (_current_fn.target.status & SS_Debug_AllPassesComplete)
                 BUG("runAllPasses: All passes already complete.");
+
+            // Enable LocidSets & co
+            _current_fn.args_neg = _current_fn.target.args_neg;
+        }
+
+        defer if (_current_fn)
+        {
+            _current_fn.args_neg == _current_fn.target.args_neg || BUG("runAllPasses: args_neg drifted");
+            _current_fn.args_neg = 0;
         }
 
         ////////////////////////////////////
@@ -14116,8 +14143,7 @@ pub fn solve(
             if (!host_arg.type.is_ref)
                 continue;
 
-            _argPos_1b.grow_if_oob(host_arg.target.locid)
-                = i + 1;
+            _argPos_1b.grow_if_oob((-1) - host_arg.target.locid) = i + 1;
 
             let may_alias = host_arg.flags & F_WRITTEN_TO && host_arg.may_alias;
             if (may_alias)
@@ -14185,7 +14211,7 @@ pub fn solve(
                     ///////////////////////////////////////
 
                     // AAR sequencing.
-                    let argPos_1b = _argPos_1b.unless_oob(locid);
+                    let argPos_1b = _argPos_1b.unless_oob((-1) - locid);
                     if (argPos_1b)
                     {
                         let i = argPos_1b - 1;
@@ -14658,6 +14684,7 @@ pub fn solve(
             PROFILE(.EnsureArgSeq);
 
             _nestingFnort && BUG("PASS_runAllVerifiers: non-empty _nestingFnort");
+            _current_fn.args_neg && BUG("PASS_runAllVerifiers: non-empty _current_fn.args_neg");
 
             for (mut i = 0; i < _scope.overloads.len; i++)
             {
@@ -14667,6 +14694,8 @@ pub fn solve(
                     _nestingFnort = Target(
                         :module.modid, globid: i + 1, locid: 0);
 
+                    _current_fn.args_neg = _nestingFnort.args_neg;
+
                     // TODO only bother with this if backend is unsequenced,
                     //  like c / c++, real moronic total waste of time.
                     nestingFnort_ensureArgSequencing();
@@ -14675,6 +14704,7 @@ pub fn solve(
         }
 
         _nestingFnort = [];
+        _current_fn.args_neg = [];
     }
 
 
@@ -14743,11 +14773,11 @@ pub fn solve(
             let w = _warnings[i];
             if (w.locid)
             {
-                let target = Target(:module.modid, globid: i, locid: w.locid > 0 ? w.locid : 0);
+                let target = Target(:module.modid, globid: i, locid: w.locid < 0x11110000 ? w.locid : 0);
                 _here = target.solved.token;
 
                 fail(
-                    w.locid == -101
+                    w.locid == 0x11110000
                         ? target    ~ " does nothing: returns void and has no effects."
                                     ~ " Make it " ~ "lax".qKW ~ " if this is intentional."
                         : "Unused variable: " ~ target ~ "."

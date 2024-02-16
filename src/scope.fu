@@ -382,6 +382,7 @@ fn Scope_create(
         ? {
             ref ext     = scope.extended.grow_if_oob(nest);
             position    = ext.nextIndexOfLocal(:asArgument);
+            ext.args_neg += asArgument ? 1 : 0;
             ext.args_n_locals
           }
         : {
@@ -405,7 +406,9 @@ fn Scope_create(
     !!(status & SS_ARGUMENT) == asArgument || BUG(
         "Scope_create(asArgument) !== SS_ARGUMENT");
 
-    overloads.push(item);
+    overloads.insert(
+        asArgument ? 0 : overloads.len,
+        item);
 
     if (!nest)
     {

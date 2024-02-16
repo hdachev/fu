@@ -7433,7 +7433,7 @@ pub extern fn runTests()
         }
     `);
 
-    TODO_borrowck(currently: "BUG n.may_invalidate less (ref arg data) 2:21+4", `
+    TODO_borrowck(currently: "Cannot resolve aliasing by temporary copy test:DONT_DANGLE_ME is implicit 24:28+1 14:17+4", `
         noinline fn test(ref data: int[]) {
             for (mut i = 0; i < 2; i++)
     <alt>
@@ -7452,7 +7452,7 @@ pub extern fn runTests()
 
         fn main() {
             mut data = [ 1, 2, 3, 4, 5 ];
-            implicit shadow <fail at call to test X:X both alias var data 15:17+4>
+            implicit shadow <fail at call to test 24:28+1 both alias var data 14:17+4>
                         ref <pass/>
                         mut </fail>DONT_DANGLE_ME = data[2 .. 3];
 
@@ -7470,7 +7470,7 @@ pub extern fn runTests()
         }
     `);
 
-    TODO_borrowck(currently: "BUG n.may_invalidate less (injected implicit ref arg main:data) 7:25+4", `
+    ZERO(`
         fn main() {
             mut data = [ 1, 2, 3, 4, 5 ];
 
@@ -7645,7 +7645,7 @@ pub extern fn runTests()
         }
     `);
 
-    TODO_borrowck(currently: "BUG cannot find read(var index) in loop(7)", `
+    ZERO(`
         nocopy struct IndexEntry { data_pos: int }
         struct Map { index: IndexEntry[]; data: int[] }
 
@@ -15884,7 +15884,7 @@ pub extern fn runTests()
         }
     `]);
 
-    TODO_borrowck(currently: "128:23+5", `
+    ZERO(`
         fn main() {                                             ;; GNUStmtExpr
             mut hello: hash::Map(string, string);               ;; Goto
             hello.set("hello", "world!");

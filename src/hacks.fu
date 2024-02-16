@@ -16,8 +16,8 @@ fn serialize(using _: ClosureID)
     let globid  = target.globid;
     let locid   = target.locid;
 
-    if (globid <= 0 || locid <= 0)
-        BUG("ClosureID: bad globid/locid");
+    if (globid <= 0)
+        BUG("ClosureID: bad globid");
 
     result.appendVarint(modid.u32);
     result.appendVarint(revision);

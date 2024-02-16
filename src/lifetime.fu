@@ -536,7 +536,7 @@ inline fn unpackLocid(r: u32)
 pub fn Lifetime_from(locid!: i32, flatCount: i32): Lifetime =
 {
     if (SELF_TEST)
-        locid > 0 || BUG("Lifetime_from: Bad locid");
+        locid != 0 || BUG("Lifetime_from: Bad locid");
 
     mut uni0n: byte[];
     uni0n.appendLocid(:locid);
@@ -564,7 +564,7 @@ pub let Lifetime_AAR_hasFalsePositives = true;
 pub fn Lifetime_AAR(locid!: i32): Lifetime =
 {
     if (SELF_TEST)
-        locid > 0 || BUG("Lifetime_from: Bad locid");
+        locid < 0 || BUG("Lifetime_from: Bad locid");
 
     mut uni0n: byte[];
     uni0n.appendLocid(:locid);
