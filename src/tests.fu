@@ -2037,6 +2037,18 @@ pub extern fn runTests()
         }
     `);
 
+    ZERO(`
+        nocopy struct NC { items: NC[] };
+
+        fn main() {
+            mut whats = [ NC([ NC(), NC(), NC(), NC() ]), NC([ NC(), NC() ]), NC([ NC() ]), NC([ NC(), NC(), NC() ]) ];
+            whats.sort(|a, b| a.items.len - b.items.len < 0);
+            mut res = 0;
+            for (mut i = 0; i < whats.len; i++) res = res * 10 + whats[i].items.len;
+            return res == 1234 ? 0 : 1;
+        }
+    `);
+
     // /Arrays.
 
 
