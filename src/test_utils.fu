@@ -662,9 +662,14 @@ pub fn ZERO(
         for (mut i = 0; i < sources.len; i++)
         {
             input  ~= sources[i];
-            output ~= ctx.modules
-                [i + ctx.modules.len - sources.len]
-                    .out.cpp.src;
+
+            let m = ctx.modules[i + ctx.modules.len - sources.len];
+            output ~= m.out.cpp.src;
+
+            for (fieldname what: typeof(m.stats))
+                if (m.stats.what.alloc_count)
+                    input ~= "what" ~ ":\t" ~ m.stats.what.alloc_count
+                                    ~  "\t" ~ m.stats.what.alloc_bytes ~ "\n";
         }
 
         testdiffs.set_next(
