@@ -7630,8 +7630,16 @@ pub fn solve(
                     // Originally it was by modid, then by index,
                     //  flipping b-a.modid || a-b.index since modid was neg,
                     //   doesnt matter which way you go.
-                    let cmp = bcid.target.globid - acid.target.globid
-                           ||  acid.target.locid - bcid.target.locid;
+                    let cmp = bcid.target.globid - acid.target.globid ||
+                    {
+                        shadow let a = acid.target.locid;
+                        shadow let b = bcid.target.locid;
+
+                        a < 0 ? b < 0 ? b - a
+                                      : -1
+                              : b < 0 ? +1
+                                      : a - b
+                    };
 
                     return cmp < 0;
                 }
