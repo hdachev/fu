@@ -561,18 +561,18 @@ inline fn PROFILE(lax id, implicit ref module: Module, lax reset!?: bool) unwrap
     {
         inline fn p     = module.profile;
 
-        let now0        = now::hr();
+        let now0        = profiler::Now();
         if (reset)
             p.now       = now0;
 
         let offset      = p.now - now0;
 
         defer {
-            let now_end     = now::hr();
+            let now_end     = profiler::Now();
             let td          = now_end - p.now + offset;
 
-            p.data.id.time  += td;
-            p.data.id.count += 1;
+            p.data.id.sample    += td;
+            p.data.id.count     += 1;
 
             p.now           += td;
         };

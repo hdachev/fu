@@ -294,7 +294,10 @@ fn printSlowBuildDiagnostics(ctx: Context)
     mut types:      int;
 
     ref m = ctx.modules;
-    for (mut i = 0; i < m.len; i++)
+
+    for (mut i = 1;     // Ignore prelude, missing stats.solve & co mess up crosscheck
+         i < m.len;
+         i++)
     {
         shadow let m = m[i];
 
@@ -315,13 +318,13 @@ fn printSlowBuildDiagnostics(ctx: Context)
     ModuleStat_print(solve,   "  solve ");
     ModuleStat_print(codegen, "codegen ", "\n");
 
-    println("\t---------");
+    println("        ---------");
     println("   sloc " ~ sloc.leftpad(9));
     println("    fns " ~ specs.leftpad(9));
     println("  types " ~ types.leftpad(9));
 
     p.print();
-    println("\t---------");
+    println("        ---------");
 }
 
 fn countSloc(tokens: Token[..])

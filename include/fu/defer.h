@@ -24,7 +24,7 @@ struct defer
     void operator=(const defer&) = delete;
 };
 
-#define fu_DEFER(x) fu::defer fu_UNIQUE_ID() { [&]() { x; } };
+#define fu_DEFER(...) fu::defer fu_UNIQUE_ID() { [&]() { __VA_ARGS__; } };
 
 /////////////////////////////////////////////
 
@@ -40,7 +40,7 @@ struct defer_if_err
     void operator=(const defer_if_err&) = delete;
 };
 
-#define fu_DEFER_IF_ERR(x) fu::defer_if_err fu_UNIQUE_ID() { [&]() { x; } };
+#define fu_DEFER_IF_ERR(...) fu::defer_if_err fu_UNIQUE_ID() { [&]() { __VA_ARGS__; } };
 
 /////////////////////////////////////////////
 
@@ -56,7 +56,7 @@ struct defer_if_ok
     void operator=(const defer_if_ok&) = delete;
 };
 
-#define fu_DEFER_IF_OK(x) fu::defer_if_ok fu_UNIQUE_ID() { [&]() { x; } };
+#define fu_DEFER_IF_OK(...) fu::defer_if_ok fu_UNIQUE_ID() { [&]() { __VA_ARGS__; } };
 
 /////////////////////////////////////////////
 

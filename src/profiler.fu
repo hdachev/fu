@@ -1,10 +1,54 @@
 
-let PROFILE = false;
+let PROFILE     = !!false;   // bang-bang for bench-prep sed -i
+let MEMORY      = !!false;
 
 
 //
 
-struct ProfileItem_TimeCount    { time: f64; count: i64 };
+struct Sample_TimeMemory    { time: f64; allocs: i32; alloc_bytes: i32 };
+struct Sample_Time          { time: f64 };
+
+type Sample = MEMORY
+    ? Sample_TimeMemory
+    : Sample_Time;
+
+lax inline infix fn +(a: Sample, b: Sample) {
+    mut res: Sample;
+    for (fieldname i: Sample) res.i = a.i + b.i;
+    return res;
+}
+
+lax inline infix fn -(a: Sample, b: Sample) {
+    mut res: Sample;
+    for (fieldname i: Sample) res.i = a.i - b.i;
+    return res;
+}
+
+lax inline infix fn +=(ref a: Sample, b: Sample) {
+    for (fieldname i: Sample) a.i += b.i;
+    return a;
+}
+
+lax inline infix fn -=(ref a: Sample, b: Sample) {
+    for (fieldname i: Sample) a.i -= b.i;
+    return a;
+}
+
+
+//
+
+inline fn Now() = MEMORY
+    ? Sample(
+        time:           now::hr(),
+        allocs:         mem::ALLOC_STAT_COUNT(),
+        alloc_bytes:    mem::ALLOC_STAT_BYTES())
+    : Sample(
+        time:           now::hr());
+
+
+//
+
+struct ProfileItem_TimeCount    { sample: Sample; count: i64 };
 struct ProfileItem_Empty        {};
 
 type ProfileItem = PROFILE
@@ -50,7 +94,7 @@ lax fn +=(ref a: ProfileData, b: ProfileData)
 
 struct Profile
 {
-    now:    f64;
+    now:    Sample;
     data:   ProfileData;
 }
 
@@ -59,43 +103,112 @@ lax fn print(p: ProfileData)
     if (!PROFILE)
         return;
 
+
+    // bench-mem -
+    //  comparing commits back to back,
+    //   we only persist the tmp file if it already existed,
+    //    which means bench-mem has to `touch ./profile.tmp` on entry
+    //     and `rm ./profile.tmp` on exit.
+//*
+    let PROFILE_TMP = "./profile.tmp";
+
+    mut cmp: ProfileData;
+    if (lib::blob::read(path: PROFILE_TMP, cmp) != "BadFile")
+        lib::blob::write(path: PROFILE_TMP, p);
+/*/
+    mut cmp = p;
+    for (fieldname i: ProfileData)
+        cmp.i.sample.time *= (0.5 + (rand::next_u64 & 0xff).f64 / 255);
+//*/
+
+    //
+
     struct Item {
         id:     string;
-        time:   f64;
+        value:  f64;
         count:  i64;
+
+        cmp_value:  f64;
+        cmp_count:  i64;
     };
 
-    mut entries: Item[];
-
-    mut total: f64;
-
-    for (fieldname i: ProfileData)
-    {
-        entries ~= Item("i", :p.i.time, :p.i.count);
-        total   += p.i.time;
+    fn pretty(v: f64) {
+        let i = v.i64;
+        return i.f64 == v ? i.str : v.str;
     }
 
-    entries.sort: |a, b|
-        a.time > b.time;
+    fn single(amount: f64, count: i64)
+        count && amount / count.f64;
 
-    println("\t---------");
+    fn leftpad(mut str: byte[], pad: int)
+        "                                "[.. max(0, min(32, pad - str.len))] ~ str;
 
-    entries.each: |entry|
+    fn percent(amount: f64, shadow total: f64)
+        leftpad(i32(total && amount / total * 100 + 0.5) ~ "%", 5);
+
+    fn tuple(amount: f64, shadow total: f64, count: i64, pad: int, unit: string)
+        leftpad(single(:amount, :count).pretty ~ unit, :pad)
+            ~ percent(:amount, :total);
+
+    fn diff(value: f64, cmp_value: f64, unit: string)
     {
-        mut count = entry.count ~ "x";
-        while (count.len < 7)
-            count = ' ' ~ count;
+        if (value > cmp_value || value < cmp_value)
+            return abs(value - cmp_value).pretty ~ unit
+                 ~ (value < cmp_value ? "-" : "+")
+                 ~ percent(abs(value - cmp_value), cmp_value)
+                 ~ (value < cmp_value ? "      "
+                                      : " WORSE");
 
-        mut share = i32(entry.time / total * 100 + 0.5) ~ "%";
-        while (share.len < 7)
-            share = ' ' ~ share;
-
-        let unit = entry.count && entry.time / entry.count.f64;
-
-        println("\t" ~ entry.time ~ "s\t"
-                     ~ count ~ "\t" ~ unit ~ "s\t"
-                     ~ share ~ "\t" ~ entry.id);
+        return "";
     }
 
-    println("\n\t" ~ total ~ "s\t\tTotal time profiled.");
+    fn report(mut entries: Item[], total: f64, cmp_total: f64, unit!: string, column: string) {
+        entries.sort: |a, b|
+            a.value > b.value;
+
+        if (total) {
+            println("        ---------");
+
+            entries.each: |row| {
+                println(leftpad(row.value.pretty ~ unit, 17)
+                      ~ leftpad(row.count ~ "x", 9)
+                      ~ tuple(row.value, total, :row.count, :unit, 15)
+                      ~ (row.cmp_count && leftpad(
+                            diff(:row.value, :row.cmp_value, :unit), 24))
+                      ~ "  " ~ row.id);
+            }
+
+            println("");
+        }
+
+        println(leftpad(total.pretty ~ unit, 17),
+                leftpad("Total " ~ column ~ ".", 29),
+                cmp_total && leftpad(diff(total, cmp_total, :unit), 24));
+    }
+
+    mut index = 0;
+    mut units = [ "s", "a", "b" ];
+    for (fieldname column: Sample)
+    {
+        let unit = units[index++];
+
+        mut total: f64;
+        mut cmp_total: f64;
+
+        mut entries: Item[];
+
+        for (fieldname i: ProfileData)
+        {
+            entries ~= Item("i",
+                value:       p.i.sample.column.f64,
+                count:       p.i.count,
+                cmp_value: cmp.i.sample.column.f64,
+                cmp_count: cmp.i.count);
+
+            total       +=   p.i.sample.column.f64;
+            cmp_total   += cmp.i.sample.column.f64;
+        }
+
+        report(:entries, :total, :cmp_total, :unit, "column");
+    }
 }

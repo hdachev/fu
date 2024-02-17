@@ -14173,6 +14173,30 @@ pub extern fn runTests()
         }
     `]);
 
+    ZERO(`
+        struct Sample { x: int; y: int };
+
+        fn main() {
+            mut res: Sample;
+            mut now_x = 1;
+            mut now_y = 2;
+            inline fn Now() = Sample(++now_x, now_y++);
+
+            fn PROFILE() unwrap {
+                defer {
+                    for (mut i = 0; i < 10; i++) now_x++;
+                    res = Now();
+                }
+            }
+
+            {
+                PROFILE();
+                now_y += 100;
+            }
+            return res.x == 12 && res.y == 102 ? 0 : 1;
+        }
+    `);
+
     ZERO([
     `
         inline fn isStruct(type: string) =

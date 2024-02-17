@@ -20,6 +20,24 @@ fi
 #   when we're done here.
 
 CLEANUP_must_restore_git_branch=false
+CLEANUP_must_restore_profiler_fu=false
+
+do_clean_up () {
+
+  # Restore initial git branch on fail/early exit.
+  if [ "$CLEANUP_must_restore_git_branch" = true ]
+  then
+    CLEANUP_must_restore_git_branch=false
+    git checkout -
+  fi
+
+  # Disable profiler.
+  if [ "$CLEANUP_must_restore_profiler_fu" = true ]
+  then
+    CLEANUP_must_restore_profiler_fu=false
+    sed -i '' 's/!!!!!!1/!!false/g' ./src/profiler.fu
+  fi
+}
 
 
 # On exit -
@@ -28,10 +46,7 @@ clean_up () {
   ARG=$?
 
   # Restore initial git branch on fail/early exit.
-  if [ "$CLEANUP_must_restore_git_branch" = true ]
-  then
-    git checkout -
-  fi
+  do_clean_up
 
   # Restore the stashed build cache.
   if test -d build-cpp
@@ -89,12 +104,15 @@ do
     ./bin/fu.temp  --bin bin/fu.temp src/cli.fu
     ./bin/fu.temp  --bin "bin/fu-$i" src/cli.fu
 
-    # Debug builds have allocation counters.
+    # Enable memory profiling.
+    sed -i '' 's/!!false/!!!!!!1/g' ./src/profiler.fu
+    CLEANUP_must_restore_profiler_fu=true
+
+    # Allocation counters currently only work for debug builds.
     ./bin/fu.temp  --debug --bin "bin/fu-debug-$i" src/cli.fu
 
     # Go back to whatever branch we were on when we started.
-    git checkout -
-    CLEANUP_must_restore_git_branch=false
+    do_clean_up
 
     echo "     OK bin/fu-$i."
   fi

@@ -1,0 +1,39 @@
+
+
+// Quickly read/write temp blobs from disk,
+//  no versioning, no nothing.
+
+enum BlobError {
+    OK
+    Empty
+    BadSize
+    BadFile
+}
+
+fn read !Blob(path: string, ref blob: Blob): BlobError
+{
+    mut data    = "";
+    let err     = file::read(:path, data);
+    if (err)
+        return "BadFile";
+
+    if (!data)
+        return "Empty";
+
+    mut output  = [ Blob() ];
+    ref bytes   = output.view(of: byte);
+
+    if (data.len != bytes.len)
+        return "BadSize";
+
+    bytes .= data;
+    blob = output[0];
+    return "OK";
+}
+
+fn write !Blob(path: string, blob: Blob)
+{
+    let data    = [ blob ];
+
+    return file::write(:path, data.view(of: byte));
+}

@@ -4,6 +4,25 @@ set -e
 
 #
 
+clean_up () {
+  ARG=$?
+
+  #
+  if test -f "./profile.tmp"
+  then
+    rm ./profile.tmp
+  fi
+
+  exit $ARG
+}
+
+trap clean_up EXIT
+
+touch ./profile.tmp
+
+
+#
+
 export fu_NUM_WORKER_THREADS=0
 
 echo ""
@@ -13,6 +32,6 @@ echo ""
 for i in "$@"
 do
   git show $i --oneline --no-patch
-  "./bin/fu-debug-$i" src/cli.fu | grep -E 'STAT|allocs'
+  "./bin/fu-debug-$i" src/cli.fu | grep -E 'STAT| bytes|[ab][+-]'
   echo ""
 done
