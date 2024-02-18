@@ -446,11 +446,6 @@ pub fn solve(
         return map._values.grow_if_oob(args_neg + locid);
     }
 
-    fn each(ref map: LocidMap(_), each) {
-        let args_neg = _current_fn.args_neg;
-        return map._values.each(|ref type, i| each(type, i?: i - args_neg));
-    }
-
 
     //
 
@@ -602,8 +597,6 @@ pub fn solve(
 
         ret_expect?:        Type;
         ret_actual?:        Type;
-
-        usage?:             LocidMap(Type);
 
         postdom?:           Postdom;
         loop_PREVITER?:     Postdom;    // TODO dont remember why i added this
@@ -4106,9 +4099,6 @@ pub fn solve(
 
             _current_fn.read_loop_start     =
             _current_fn.write_loop_start    = node.helpers.locals_start || BUG();
-
-            mut var_usage0: LocidMap(Type);
-            swap(_current_fn.var_usage, var_usage0);
             // MOVE ON LAST USE ////////////////////////////////////////////
 
             // Relax in reverse.
@@ -4160,16 +4150,6 @@ pub fn solve(
                 _current_fn.read_loop_start  == read_loop0  || BUG();
                 _current_fn.write_loop_start == write_loop0 || BUG();
             }
-
-            swap(_current_fn.var_usage, var_usage0);
-
-            // TODO FAILCASE: |i, shadow slot|
-            // TODO FAILCASE: |shadow slot, i|
-            var_usage0.each: |shadow slot: Type, i: int|
-                if (slot)
-                    trackVarUsage(i, slot);
-
-            node.helpers.usage = var_usage0;
             // MOVE ON LAST USE ////////////////////////////////////////////
 
             if (init)       propagateType(init, t_void, :relax_mask);
