@@ -13540,6 +13540,42 @@ pub extern fn runTests()
             make(1, d: 2).res   == 2001 ? 0 : 1;
     `);
 
+    TODO_confusing(currently: "Bad call to slot 19:21+4 wrong number of arguments expects 2 got 0", `
+        struct Type { canon: string }
+        struct LocidMap(type T) { _values: T[] };
+
+        fn each(ref map: LocidMap(_), each) // <- This each arg confusingly matches ...
+            map._values.each( // ... at this .each callsite, and then fails to compile.
+                |ref type, i| // Needs a BETTER ERROR message, doesn't need to work.
+                    each(type, i?: map._values.len - 1 - i));
+
+        fn test(var_usage0: LocidMap(Type), ref sum: int)
+        {
+            mut result: string;
+            fn trackVarUsage(i: int, slot: Type) {
+                sum     += i;
+                result  ~= slot.canon;
+            }
+                                                    <alt>
+            var_usage0.each: |slot: Type, i: int|   <alt/>
+            var_usage0.each: |slot,       i: int|   <alt/>
+            var_usage0.each: |slot: Type, i     |   <alt/>
+            var_usage0.each: |slot,       i     |   <alt/>
+            var_usage0.each: |i: int, slot: Type|   <alt/>
+            var_usage0.each: |i: int, slot      |   <alt/>
+            var_usage0.each: |i,      slot: Type|   <alt/>
+            var_usage0.each: |i,      slot      |   </alt>
+                if (slot)
+                    trackVarUsage(i, slot);
+        }
+
+        fn main() {
+            mut sum = 0;
+            let res = test(:sum, LocidMap([ Type(", World!"), Type("Hello") ]));
+            return res == "Hello, World!" && sum == 1 ? 0 : 1;
+        }
+    `);
+
     // /Explicit arguments.
 
 
