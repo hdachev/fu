@@ -109,7 +109,7 @@ fn exec(cmd: string, ref stdout: string)
     mut status = 0;
     mut err: i32;
 
-    if (cmd.has("$(") || 2 > 1)
+    if (cmd.has("$("))
         err = ::exec(cmd, :status, stdout);
     else
         err = ::spawn(cmd.split(' '), :status, :stdout, stderr: stdout);
