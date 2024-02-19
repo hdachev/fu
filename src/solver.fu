@@ -6270,21 +6270,14 @@ pub fn solve(
         let here0   = _here;
         _here       = original.template.node.token;
 
-        ////////////////////////////////////////////////////////////////
-        // TODO FAILCASE:
-        //  grouping this defer with the one below -
-        //   so that the _here write happens AFTER the fail() -
-        //    somehow obscures the _here write,
-        //     and here0 cgs a constref.
-        //
-        defer _here = here0;
-        ////////////////////////////////////////////////////////////////
-
         let solver_safety0 = _solver_safety++;
         if (solver_safety0 >= 128)
             fail("Solver stack got too deep, was about to start working on " ~ template.node.value.qID);
 
-        defer _solver_safety = solver_safety0;
+        defer {
+            _here = here0;
+            _solver_safety = solver_safety0;
+        }
         ////////////////////
 
         //

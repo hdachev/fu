@@ -7313,6 +7313,31 @@ pub extern fn runTests()
     `);
 
     ZERO(`
+        // Same thing as above, i had forgotten to remove a missing-failcase note,
+        //  reduced again and only saw the test above once i was looking for a spot for this one.
+        fn deferAfterConditionalThrow_danglesConstRef(
+            mut _here: string, ref _solver_safety: int)
+        {
+            fn doTrySpecialize() {
+                let here0   = _here;        ;; N_NonTrivAutoCopy
+                _here       = [];
+                if (_solver_safety++ >= 128) throw("woot");
+                defer _here = here0;
+                return 0;
+            }
+
+            doTrySpecialize();
+            return _here;
+        }
+
+        fn main() {
+            mut _solver_safety = 0;
+            return deferAfterConditionalThrow_danglesConstRef(
+                "Hello", _solver_safety).len - 5;
+        }
+    `);
+
+    ZERO(`
         fn incr_out(ref out: i32[][], a: i32[], b: i32[]) {
             out ~= a;
             out ~= b;
