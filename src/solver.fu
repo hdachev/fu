@@ -3776,6 +3776,8 @@ pub fn solve(
 
         fn trackVarUsage(locid: i32, shadow slot: Type)
         {
+            PROFILE(.TrackVarUsage);
+
             if (SELF_TEST)
             {
                 TEST_unusedButCopied("trackVarUsage " ~ nested(locid), slot);
@@ -12551,6 +12553,9 @@ pub fn solve(
             if (!callsite.target.isLocal)
                 return;
 
+            PROFILE(|ref p| AAR ? p.AAR_TrackRead
+                                : p.BCK_TrackRead);
+
             // println("bck_trackRead " ~ target ~ " " ~ callsite.value);
 
             _here           = callsite.token;
@@ -12591,6 +12596,9 @@ pub fn solve(
 
         fn bck_trackWrites(callOrPragma: SolvedNode, lifetime: Lifetime)
         {
+            PROFILE(|ref p| AAR ? p.AAR_TrackWrites
+                                : p.BCK_TrackWrites);
+
             let loop_start  = callOrPragma._loop_start || BUG("bck_trackWrites: _loop_start not set on callsite.");
             let OPTI_isLoop = loop_start != 1 && !!events.used_in_a_loop;
             let OPTI_hasPRA = !!events.preceding_ref_args;
@@ -13881,7 +13889,7 @@ pub fn solve(
         ////////////////////////////////////
 
         {
-            PROFILE(.BorrowCheck);
+            PROFILE(.BCK_Misc);
             node.helpers.pass = "BorrowCheck";
 
             PASS_borrowCheck(node, BCK_bck);
@@ -13897,7 +13905,7 @@ pub fn solve(
         ////////////////////////////////////
 
         {
-            PROFILE(.ArgumentsAtRisk);
+            PROFILE(.AAR_Misc);
             node.helpers.pass = "ArgumentsAtRisk";
 
             _current_fn.TODO_FIX_children = _current_fn.flow.rg_children;

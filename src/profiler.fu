@@ -58,6 +58,9 @@ type ProfileItem = PROFILE
 struct ProfileData
 {
     DoTrySpec:          ProfileItem;
+    SolveBody:          ProfileItem;
+    SolveStruct:        ProfileItem;
+    InlineExpr:         ProfileItem;
 
     TryMatch_Autocall:  ProfileItem;
     // TryMatch_Convert:   ProfileItem;
@@ -69,17 +72,21 @@ struct ProfileData
     TryConvertGeneric:  ProfileItem;
     ExploreConversions: ProfileItem;
 
-    SolveBody:          ProfileItem;
     RelaxMut:           ProfileItem;
-    BorrowCheck:        ProfileItem;
-    ArgumentsAtRisk:    ProfileItem;
     RelaxCopyResize:    ProfileItem;
-    TestPass:           ProfileItem;
-
-    InlineExpr:         ProfileItem;
-    EnsureArgSeq:       ProfileItem;
+    TrackVarUsage:      ProfileItem;
     ValidateCOW:        ProfileItem;
-    SolveStruct:        ProfileItem;
+
+    BCK_Misc:           ProfileItem;
+    BCK_TrackRead:      ProfileItem;
+    BCK_TrackWrites:    ProfileItem;
+
+    AAR_Misc:           ProfileItem;
+    AAR_TrackRead:      ProfileItem;
+    AAR_TrackWrites:    ProfileItem;
+
+    TestPass:           ProfileItem;
+    EnsureArgSeq:       ProfileItem;
     ComputeSighashes:   ProfileItem;
 
     UnaccountedFor:     ProfileItem;
