@@ -5875,7 +5875,7 @@ pub fn solve(
             return [];
         }
 
-        let expect_revision = SELF_TEST && original.revision;
+        lax let expect_revision = SELF_TEST && original.revision;
 
         // Try to look up existing reverse specialization.
         let outputs = original.rev_spec.outputs;

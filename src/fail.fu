@@ -1,7 +1,7 @@
 import module;
 import helpers;
 
-pub let SELF_TEST = true;
+pub let SELF_TEST = !!true;
 
 
 //

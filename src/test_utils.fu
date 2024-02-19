@@ -827,6 +827,14 @@ pub fn TODO(
     sources: string[],
     currently!?: string)
 {
+    // Skip TODO(BUGs) when SELF_TEST is off,
+    //  we probably won't be able to generate the expected error message
+    //   when most diagnostics are turned off.
+    //
+    if (!fail::SELF_TEST)
+        if (currently.starts(with: "BUG "))
+            return;
+
     try {
         ZERO(:sources, options: Options(dev: DEV_ExpectFail));
     }

@@ -21,6 +21,7 @@ fi
 
 CLEANUP_must_restore_git_branch=false
 CLEANUP_must_restore_profiler_fu=false
+CLEANUP_must_restore_SELF_TEST=false
 
 do_clean_up () {
 
@@ -36,6 +37,13 @@ do_clean_up () {
   then
     CLEANUP_must_restore_profiler_fu=false
     sed -i '' 's/!!!!!!1/!!false/g' ./src/profiler.fu
+  fi
+
+  # Re-enable SELF_TEST mode.
+  if [ "$CLEANUP_must_restore_SELF_TEST" = true ]
+  then
+    CLEANUP_must_restore_SELF_TEST=false
+    sed -i '' 's/!!!101/!!true/g' ./src/fail.fu
   fi
 }
 
@@ -100,6 +108,11 @@ do
       rm -rf build-cpp
     fi
 
+    # Disable SELF_TEST mode.
+    sed -i '' 's/!!true/!!!101/g' ./src/fail.fu
+    CLEANUP_must_restore_SELF_TEST=true
+
+    #
     ./bin/fu.works --bin bin/fu.temp src/cli.fu
     ./bin/fu.temp  --bin bin/fu.temp src/cli.fu
     ./bin/fu.temp  --bin "bin/fu-$i" src/cli.fu

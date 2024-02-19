@@ -1029,7 +1029,7 @@ inline fn Lifetime_op(lt: Lifetime, each, minPathDepth! = 1)
 {
     mut result: byte[];
 
-    lt.Lifetime_each: |r_raw, paths, locid, lax isStatic, lax isTemp|
+    lt.Lifetime_each: |r_raw, paths, lax locid, lax isStatic, lax isTemp|
     {
         result ~= r_raw;
 
@@ -1060,7 +1060,7 @@ pub fn Lifetime_op_field(lt: Lifetime, flatCount: i32, flatOffset: i32)
         mut offset = 0;
         paths.walkPaths(:offset,
 
-            onLastSubRegion: |isLastSubRegion, isLastPath, raw_prefix, flatCount!struct_flatCount, flatOffset!struct_flatOffset|
+            onLastSubRegion: |isLastSubRegion, isLastPath, raw_prefix, lax flatCount!struct_flatCount, flatOffset!struct_flatOffset|
             {
                 if (SELF_TEST)
                     flatCount + flatOffset <= struct_flatCount || BUG(
@@ -1114,7 +1114,7 @@ pub fn Lifetime_op_join(lt: Lifetime, child: byte[..])
             onLastSubRegion: |
                 isLastPath      !parent_isLastPath,
 
-                flatCount       !parent_flatCount,
+            lax flatCount       !parent_flatCount,
                 flatOffset      !parent_flatOffset,
 
                 raw_prefix      !parent_rawPrefix|
