@@ -16065,6 +16065,22 @@ pub extern fn runTests()
         }
     `]);
 
+    TODO_conv(currently: "if/else: No common supertype Type <-> ValueType mutref 6:20+1", `
+        struct ValueType { canon: string };
+        struct Type { using vtype: ValueType };
+        <split/>
+        fn ternary_mutrefExact_vs_constUsingField(left: Type, ref right: ValueType[])
+            !right ? left : right[0];
+
+        fn main() {
+            mut right: ValueType[];
+            let a = ternary_mutrefExact_vs_constUsingField(Type(ValueType("Hello, ")), :right);
+            right ~= ValueType("World!");
+            let b = ternary_mutrefExact_vs_constUsingField(Type(), :right);
+            return a.canon ~ b.canon == "Hello, World!" ? 0 : 1;
+        }
+    `);
+
     // /Conversion functions.
 
 

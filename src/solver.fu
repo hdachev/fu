@@ -2951,7 +2951,6 @@ pub fn solve(
         //
         for (mut i = startType && -1; i < result.types.len; i++)
         {
-            // TODO FAILCASE   remove _____
             let t = i < 0 ? startType.vtype : result.types[i];
 
             shadow let t = tryParseStructCanon(t);
