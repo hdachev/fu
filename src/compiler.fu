@@ -223,7 +223,7 @@ pub fn compile(
 
 //
 
-pub let DEFAULT_WORKSPACE = fudir::FUDIR ~ "build-cpp/";
+pub let DEFAULT_WORKSPACE = fudir::FU_ROOT ~ "build-cpp/";
 
 
 //

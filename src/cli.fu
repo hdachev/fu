@@ -208,5 +208,5 @@ fn main(argv: string[])
 
 pub extern fn buildCompiler()
     cli_handle(
-        cwd: fudir::FUDIR,
+        cwd: fudir::FU_ROOT,
         [ "fu", "--bin", "bin/fu", "-c", "src/cli.fu" ]);

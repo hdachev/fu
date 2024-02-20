@@ -666,7 +666,7 @@ pub fn solvePrelude(): Context
     module.out.solve = solver::solve();
     setModule(module);
 
-    ctx.fudir   = fudir::FUDIR;
+    ctx.fudir   = fudir::FU_ROOT;
 
     return ctx;
 }

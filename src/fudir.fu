@@ -4,19 +4,30 @@ import helpers;
 // TODO FIX this is a shim,
 //  we probably want this to get the path
 //   to the current executable.
+//
+// Or do we rely on an envar alla Go?
 
-fn absdir(a: string)
+fn slash(a: string)
     a.if_last == '/' ? a : a ~ '/';
 
-let HOME = absdir(env::get("HOME"));
+let HOME            = env::get("HOME").slash;
 
-fn locate_FUDIR(): string
+fn get_FU_ROOT(): string
 {
-    let dir = HOME ~ "fu/";
-    let fn = dir  ~ "src/compiler.fu";
-    let fs = file::size(fn);
-    fs > 1000 || throw("Bad compiler.fu: " ~ fn ~ ": " ~ fs);
-    return dir;
+    let FU_ROOT         = slash(env::get("FU_ROOT") || path::join(HOME, "fu"));
+
+    let compiler_fu     = FU_ROOT ~ "src/compiler.fu";
+    let fs              = file::size(compiler_fu);
+    if (fs < 1000)
+        throw("Bad compiler.fu: " ~ compiler_fu ~ ": " ~ fs);
+
+    return FU_ROOT;
 }
 
-pub let FUDIR = locate_FUDIR();
+pub let FU_ROOT     = get_FU_ROOT();
+
+
+//
+
+pub let FU_BIN      = path::join(FU_ROOT, "bin/");
+pub let FU_INCLUDE  = path::join(FU_ROOT, "include/");
