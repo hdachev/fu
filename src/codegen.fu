@@ -3690,8 +3690,9 @@ pub fn cpp_codegen(
     //
 
     return CodegenOutput(:src,
-        link:           HACK_link,
-        include_dirs:   HACK_include_dirs,
-        extra_sources:  HACK_extra_sources,
-        defects:        _defects);
+        link:               HACK_link,
+        extra_sources:      HACK_extra_sources,
+        include_dirs:       HACK_include_dirs,
+        includes_headers:   _libs,
+        defects:            _defects);
 }

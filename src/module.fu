@@ -137,8 +137,11 @@ struct CodegenOutput
 
     // Libraries and such.
     link?:              flat::Set(string);
-    include_dirs?:      flat::Set(string);
     extra_sources?:     flat::Set(string);
+
+    // Includes such & such headers from such & such dirs.
+    includes_headers?:  flat::Set(string);
+    include_dirs?:      flat::Set(string);
 
     // Live exports.
     live?:              i32[];
