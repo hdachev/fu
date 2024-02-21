@@ -19120,7 +19120,7 @@ pub extern fn runTests()
         }
     `);
 
-    TODO_relaxer(currently: "BUG exit code", `
+    ZERO(`
         struct Unit { a: string; b: string };
 
         fn brokenAssignmentWantsStringGetsSlice(ref u: Unit) {
@@ -19143,7 +19143,7 @@ pub extern fn runTests()
         }
     `);
 
-    TODO_relaxer(currently: "BUG exit code", `
+    ZERO(`
         struct Unit { a: string; b: string };
 
         fn brokenAssignmentWantsStringGetsSlice(u: Unit, ref res: string) {
@@ -19163,7 +19163,7 @@ pub extern fn runTests()
         }
     `);
 
-    TODO_relaxer(currently: "BUG exit code", `
+    ZERO(`
         struct Unit { a: string; b: string };
 
         fn brokenAssignmentWantsStringGetsSlice(ref u: Unit, ref res: string) {
@@ -19187,7 +19187,7 @@ pub extern fn runTests()
         }
     `);
 
-    TODO_relaxer(currently: "BUG exit code", `
+    ZERO(`
         struct Unit { a: string; b: string };
 
         fn brokenAssignmentWantsStringGetsSlice(units: Unit[], ref res: string) {
@@ -19209,7 +19209,7 @@ pub extern fn runTests()
         }
     `);
 
-    TODO_relaxer(currently: "BUG exit code", `
+    ZERO(`
         struct Unit { a: string; b: string };
 
         fn brokenAssignmentWantsStringGetsSlice(ref units: Unit[], ref res: string) {
@@ -19235,7 +19235,7 @@ pub extern fn runTests()
         }
     `);
 
-    TODO_relaxer(currently: "BUG exit code", `
+    ZERO(`
         struct Unit { a: string; b: string };
 <alt>
         fn bang(str: string)
@@ -19268,7 +19268,7 @@ pub extern fn runTests()
         }
     `);
 
-    TODO_relaxer(currently: "BUG exit code", `
+    TODO_borrowck(currently: "Cannot access ref b 16:25+1 inval write u 15:34+1 via 5:31+2", `
         struct Unit { a: string; b: string };
 
         fn bang(ref str: string)

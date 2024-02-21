@@ -3940,7 +3940,7 @@ pub fn solve(
         }
         else if (k == "and" || k == "or")
         {
-            let rest = !canDiscard && (k == "or" || slot.is_mutref && CANNOT_definit_mutrefs)
+            let rest = !canDiscard && (k == "or" || !node.type.andNodeType_canCleanlyDefinit)
                 ? slot
                 : t_proposition;
 
@@ -8851,10 +8851,14 @@ pub fn solve(
     }
 
     fn TEST_Assignable(
-        host: Type, guest: Type,
-        inline reason: string,
+        mut host: Type, guest: Type,
+        inline reason: string, vfacts_ignore!?: VFacts,
         asArgument!?: bool)
     {
+        // Writing this within an if to help it disappear when inlined.
+        if (vfacts_ignore)
+            host.vfacts &= ~vfacts_ignore;
+
         isAssignable(:asArgument,
             :host   || BUG("Bad host type."),
             :guest  || BUG("Bad guest type."))
@@ -10558,7 +10562,7 @@ pub fn solve(
                 |only| return only;
 
         // Unless this is an explicit bool context:
-        if !(type.propositionOK || type.is_void) :RESOLVE_SUPERTYPE
+        if !(type.is_void_or_propositionOK) :RESOLVE_SUPERTYPE
         {
             mut sumType: Type;
 
@@ -10622,8 +10626,7 @@ pub fn solve(
         ////////////////////////////////
 
         //
-        let staticEvalBrk =
-            type == t_void || type.propositionOK;
+        let staticEvalBrk = type.is_void_or_propositionOK;
 
         let items = solveNodes(
             node.items,
@@ -10636,13 +10639,19 @@ pub fn solve(
         return createAnd(items, :type);
     }
 
+    fn andNodeType_canCleanlyDefinit(type: Type)
+    {
+        return (!CANNOT_definit_mutrefs || !type.is_mutref)
+            && (!type.is_ref || type.lifetime.hasStatic);
+    }
+
     fn createAnd(mut items: SolvedNode[], mut type: Type): SolvedNode
     {
         let trim = createAndOr_staticEvalFold(items,
             static_eval_fold: SE_True);
 
         // Unless this is an explicit bool context:
-        if (items.len > 1 && !(type.propositionOK || type.is_void))
+        if (items.len > 1 && !type.is_void_or_propositionOK)
         {
             mut sumType: Type;
 
@@ -10657,7 +10666,7 @@ pub fn solve(
                 if (sumType)
                 {
                     sumType = type_trySuper(sumType, item.type);
-                    if (!sumType.is_ref)
+                    if (andNodeType_canCleanlyDefinit(sumType))
                         break;
                 }
                 else
@@ -10672,7 +10681,7 @@ pub fn solve(
                 }
             }
 
-            if (!sumType.is_ref)
+            if (andNodeType_canCleanlyDefinit(sumType))
             {
                 let cond = items.slice(0, items.len - 1);
                 let cons = items.last;
@@ -13818,9 +13827,42 @@ pub fn solve(
             {
                 node.items.len >= 2 || BUG(node ~ ".len: " ~ node.items.len);
 
-                let start = k == "and" && !node.is_mutref && node.items.len - 1;
+                // TODO FIX - ideally ands will behave just as ORs
+                //  and when we discover that we can cleanly-definit during propagateType,
+                //   we'd immediately switch over to an `a && b ? c : []` pattern.
+                //
+                let start = node.andNodeType_canCleanlyDefinit() && node.items.len - 1;
                 for (mut i = start; i < node.items.len; i++)
-                    checkLt(node.items[i], k ~ ".items[" ~ i ~ "]");
+                {
+                    let item = node.items[i];
+                    checkLt(node, k ~ ".items[" ~ i ~ "]");
+
+                    if (item.is_never)
+                    {
+                        if (i < node.items.len - 1)
+                            BUG("and/or has a never halfway: " ~ item);
+                    }
+                    else if (pass < RelaxCopyResize && item.is_zeroes)
+                    {
+                        // Ignore zeroes until copy/resize,
+                        //  at that point we maybe-copy-or-move it into a definit.
+                    }
+                    else if (!node.is_void_or_propositionOK(vfactsOK: true))
+                    {
+                        // TODO FIX inline arguments we can end up with unexpected temp lifetimes after inlining arguments //
+                        if (node.type.lifetime.hasTemporary)
+                            continue;
+                        // TODO FIX inline arguments we can end up with unexpected temp lifetimes after inlining arguments //
+
+                        TEST_Assignable(
+                            host: node.type, item, "and/or type !<- item[" ~ i ~ "]",
+
+                            // Intermediate terms don't need their vfacts to mention
+                            vfacts_ignore:
+                                i < node.items.len - 1
+                                    && (k == "and" ? AlwaysFalse : AlwaysTrue));
+                    }
+                }
             }
             else if (k == "if")
             {

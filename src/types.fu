@@ -53,10 +53,13 @@ pub let t_byte      = Primitive("c8");
 
 pub let t_proposition   = Type(ValueType(quals: q_USAGE, canon: t_bool.canon));
 
-pub fn propositionOK(type: Type) {
-    return  !type.lifetime
-        && (!type.vfacts || BUG("propositionOK seeing vfacts: " ~ type.vfacts))
-        &&   type.canon == t_bool.canon;
+pub fn propositionOK(type: Type, vfactsOK!?: bool)
+{
+    if (!vfactsOK && SELF_TEST && type.vfacts)
+        BUG("propositionOK seeing vfacts: " ~ type.vfacts);
+
+    return !type.lifetime
+        &&  type.canon == t_bool.canon;
 }
 
 
@@ -72,6 +75,12 @@ pub let t_zeroes    = NotSure("zeroes");
 pub fn is_void  (t: ValueType) t.canon == t_void  .canon;
 pub fn is_never (t: ValueType) t.canon == t_never .canon;
 pub fn is_zeroes(t: ValueType) t.canon == t_zeroes.canon;
+
+pub fn is_void_or_propositionOK(type: Type, vfactsOK!?: bool)
+{
+    return type.propositionOK(:vfactsOK)
+        || type.is_void;
+}
 
 
 //
