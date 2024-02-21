@@ -16877,6 +16877,26 @@ pub extern fn runTests()
         }
     `);
 
+    ZERO(`
+        noinline fn orNodeTypeExpectsRefGotValue(ref error!: string, args?: int[]) {
+            fn matchFail(inline reason: string)
+                if (error) error ~= reason || throw("-");
+
+            for (mut i = 0; i < args.len; i++) {
+                mut arg = args[i];
+                if (!arg) matchFail(", w" ~ i ~ "rld!");
+            }
+
+            return [];
+        }
+
+        fn main() {
+            mut error = "Hello";
+            orNodeTypeExpectsRefGotValue(:error, [ 0 ]);
+            return error == "Hello, w0rld!" ? 0 : 1;
+        }
+    `);
+
     // /Inliner.
 
 
