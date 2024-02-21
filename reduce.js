@@ -146,7 +146,12 @@ function randExec(src, re)
     const rand = Math.random() * src.length |0;
 
     re.lastIndex = rand;
-    return re.exec(src);
+
+    // console.log("randExec start", re);
+    const match = re.exec(src);
+    // console.log("randExec end");
+
+    return match;
 }
 
 
@@ -595,6 +600,25 @@ function tryEmptyBlock(src)
 
 //
 
+const re_KILL_CALLSITE = /[\. ][a-zA-Z_:][a-zA-Z0-9_:]+\([^()]*(\([^()]*\)[^()]*)*\)/g;
+
+function tryKillCallsite(src)
+{
+    const match = randExec(src, re_KILL_CALLSITE);
+    if (!match)
+        return false;
+
+    console.log("\nKILL_CALLSITE\n<<<" + match[0] + ">>>");
+
+    return (
+        src.slice(0, match.index) +
+        (match[0][0] === '.' ? " && []" : " []") +
+        src.slice(match.index + match[0].length));
+}
+
+
+//
+
 const _strategies =
 [
     tryShortCircuitFn,
@@ -620,6 +644,7 @@ const _strategies =
     tryPopLeadingAndOr,
     tryPopTailingAndOr,
     tryMergeStringLiterals,
+    tryKillCallsite,
 ];
 
 function main()
