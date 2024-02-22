@@ -19120,6 +19120,185 @@ pub extern fn runTests()
         }
     `);
 
+    TODO_relaxer(currently: "BUG exit code", `
+        struct Unit { a: string; b: string };
+
+        fn brokenAssignmentWantsStringGetsSlice(ref u: Unit) {
+            <alt>
+            ref a = u.b && u.a;         <alt/>
+            fn  a = u.b && u.a;         <alt/>
+            ref a = u.a;                <alt/>
+            fn  a = u.a;                </alt>
+            return a && a[0 .. a.len];
+        }
+
+        fn main() {
+            mut u = Unit("Hello", "world!");
+            <alt>
+            mut ;; ConstCast    <alt/>
+            ref                 </alt>
+                res = brokenAssignmentWantsStringGetsSlice(:u);
+            res ~= "!!";
+            return res.len == 7 ? 0 : 1;
+        }
+    `);
+
+    TODO_relaxer(currently: "BUG exit code", `
+        struct Unit { a: string; b: string };
+
+        fn brokenAssignmentWantsStringGetsSlice(u: Unit, ref res: string) {
+            <alt>
+            let a = u.b && u.a;         <alt/>
+            fn  a = u.b && u.a;         <alt/>
+            let a = u.a;                <alt/>
+            fn  a = u.a;                </alt>
+            res   = a && a[0 .. a.len];
+        }
+
+        fn main() {
+            let u = Unit("Hello", "world!");
+            mut res: string;
+            brokenAssignmentWantsStringGetsSlice(:u, :res);
+            return res.len == 5 ? 0 : 1;
+        }
+    `);
+
+    TODO_relaxer(currently: "BUG exit code", `
+        struct Unit { a: string; b: string };
+
+        fn brokenAssignmentWantsStringGetsSlice(ref u: Unit, ref res: string) {
+            <alt>
+            ref a = u.b && u.a;         <alt/>
+            fn  a = u.b && u.a;         <alt/>
+            ref a = u.a;                <alt/>
+            fn  a = u.a;                </alt>
+            res   = a && a[0 .. a.len];
+            if (u.b)
+                return a;
+
+            return res;
+        }
+
+        fn main() {
+            mut u = Unit("Hello", "world!");
+            mut res: string;
+            brokenAssignmentWantsStringGetsSlice(:u, :res).clear();
+            return res.len == 5 && !u.a.len ? 0 : 1;
+        }
+    `);
+
+    TODO_relaxer(currently: "BUG exit code", `
+        struct Unit { a: string; b: string };
+
+        fn brokenAssignmentWantsStringGetsSlice(units: Unit[], ref res: string) {
+            for (mut i = 0; i < units.len; i++) {
+                let u = units[i];           <alt>
+                let a = u.b && u.a;         <alt/>
+                fn  a = u.b && u.a;         <alt/>
+                let a = u.a;                <alt/>
+                fn  a = u.a;                </alt>
+                res   = a && a[0 .. a.len];
+            }
+        }
+
+        fn main() {
+            let units = [ Unit("Hello", "world!") ];
+            mut res: string;
+            brokenAssignmentWantsStringGetsSlice(:units, :res);
+            return res.len == 5 ? 0 : 1;
+        }
+    `);
+
+    TODO_relaxer(currently: "BUG exit code", `
+        struct Unit { a: string; b: string };
+
+        fn brokenAssignmentWantsStringGetsSlice(ref units: Unit[], ref res: string) {
+            for (mut i = 0; i < units.len; i++) {
+                ref u = units[i];           <alt>
+                ref a = u.b && u.a;         <alt/>
+                fn  a = u.b && u.a;         <alt/>
+                ref a = u.a;                <alt/>
+                fn  a = u.a;                </alt>
+                res   = a && a[0 .. a.len];
+                if (u.b)
+                    return a;
+            }
+
+            return res;
+        }
+
+        fn main() {
+            mut units = [ Unit("Hello", "world!") ];
+            mut res: string;
+            brokenAssignmentWantsStringGetsSlice(:units, :res).clear();
+            return res.len == 5 && units.all(|x| !x.a.len) ? 0 : 1;
+        }
+    `);
+
+    TODO_relaxer(currently: "BUG exit code", `
+        struct Unit { a: string; b: string };
+<alt>
+        fn bang(str: string)
+            str[0 .. str.len] ~ (str.starts(with: "H") ? ", " : "!");
+<alt/>
+        fn bang(mut str: string)
+            str[0 .. str.len] ~= (str.starts(with: "H") ? ", " : "!");
+</alt>
+        fn brokenAssignmentWantsStringGetsSlice(units: Unit[], ref aa: string[], ref bb: string[]) {
+            for (mut i = 0; i < units.len; i++) {
+                let u = units[i];
+        <alt>
+                let a = u.a;        <alt/>
+                fn  a = u.a;        </alt>
+        <alt>
+                let b = a && u.b;   <alt/>
+                fn  b = a && u.b;   </alt>
+
+                aa.push(a && bang(a));
+                bb.push(b && bang(b));
+            }
+        }
+
+        fn main() {
+            let units = [ Unit("Hello", "world") ];
+            mut aa: string[];
+            mut bb: string[];
+            brokenAssignmentWantsStringGetsSlice(:units, :aa, :bb);
+            return aa.join() ~ bb.join() == "Hello, world!" ? 0 : 1;
+        }
+    `);
+
+    TODO_relaxer(currently: "BUG exit code", `
+        struct Unit { a: string; b: string };
+
+        fn bang(ref str: string)
+            str[0 .. str.len] ~= str.starts(with: "H") ? ", " : "!";
+
+        fn brokenAssignmentWantsStringGetsSlice(ref units: Unit[], ref aa: string[], ref bb: string[]) {
+            for (mut i = 0; i < units.len; i++) {
+                ref u = units[i];
+        <alt>
+                ref a = u.a;        <alt/>
+                fn  a = u.a;        </alt>
+        <alt>
+                ref b = a && u.b;   <alt/>
+                fn  b = a && u.b;   </alt>
+
+                aa.push(a && bang(a));
+                bb.push(b && bang(b));
+            }
+        }
+
+        fn main() {
+            mut units = [ Unit("Hello", "world") ];
+            mut aa: string[];
+            mut bb: string[];
+            brokenAssignmentWantsStringGetsSlice(:units, :aa, :bb);
+            return aa.join() ~ bb.join() == "Hello, world!"
+                && units.map(|u| u.a ~ u.b).join() == "Hello, world!" ? 0 : 1;
+        }
+    `);
+
     // /Relaxer.
 
 
