@@ -567,12 +567,19 @@ pub fn ZERO(
                     break;
             }
 
+            //
+            fn STOP(reason)
+                throw(reason ~ ": `;; " ~ x ~ "` in:\n" ~ all_src ~ "\n\nOutput is:\n\n" ~ all_cpp);
+
             if (cmd == "EXPECT")
-                found || throw("EXPECT mismatch: `;; " ~ x ~ "` in:\n" ~ all_src ~ "\n\nOutput is:\n\n" ~ all_cpp);
+                found || STOP("EXPECT mismatch");
+            else if (cmd == "BROKEN")
+                found   ? STOP("STILL BROKEN")
+                        : STOP("BROKEN mismatch");
             else if (cmd != "TODO")
-                throw("Unknown ;; CHECK: `;; " ~ x ~ "` in:\n" ~ all_src);
+                STOP("Unknown ;; CHECK");
             else if (found)
-                throw("TODO test is actually passing: `;; " ~ x ~ "` in:\n" ~ all_src ~ "\n\nOutput is:\n\n" ~ all_cpp);
+                STOP("TODO test is actually passing");
         }
 
         let run = true;
