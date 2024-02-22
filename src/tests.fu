@@ -4292,6 +4292,27 @@ pub extern fn runTests()
         fn main() max_probes(either([], [ NC([ NC() ]), NC() ])) - 1;
     `);
 
+    ZERO(`
+        fn grow_if_oob(ref a: _[], i: i32) {
+            if (a.len <= i) a.grow(i + 1);
+            return a[i];
+        }
+
+        fn init !T(ref a: T[], i: i32, mut v: T) {
+            (a.grow_if_oob(i) && { return false; }) = v;        ;; GNUStmtExpr
+            return true;
+        }
+
+        fn main() {
+            mut hello = [ 1, 2, 3 ];
+            let a = hello.init(2, 30);
+            let b = hello.init(3, 40);
+            mut sum = 0;
+            for (mut i = 0; i < hello.len; i++) sum += hello[i];
+            return !a && b && sum == 46 ? 0 : 1;
+        }
+    `);
+
     // /Logic and selectors.
 
 
