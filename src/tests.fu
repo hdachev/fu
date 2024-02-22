@@ -16899,6 +16899,17 @@ pub extern fn runTests()
     `);
 
     ZERO(`
+        fn main() {
+            mut error = "Hello";
+            fn matchFail(inline reason: string)
+                if (error) error ~= reason || throw("-");
+
+            matchFail(", w" ~ 0 ~ "rld!");
+            return error == "Hello, w0rld!" ? 0 : 1;
+        }
+    `);
+
+    ZERO(`
         noinline fn orNodeTypeExpectsRefGotValue(ref error!: string, args?: int[]) {
             fn matchFail(inline reason: string)
                 if (error) error ~= reason || throw("-");
