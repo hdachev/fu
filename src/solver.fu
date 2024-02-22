@@ -827,6 +827,12 @@ pub fn solve(
         return _scope.extended[globid];
     }
 
+    using fn EPH(target: Target)
+    {
+        return target.modid == module.modid
+            && _ephemeral.unless_oob(target.globid);
+    }
+
     fn GET_next_local_index()
     {
         let globid = _current_fn.target.globid;
@@ -893,7 +899,7 @@ pub fn solve(
             if (itemType == t_byte)
                 return "string".qID;
 
-            return humanizeTypeName(itemType)
+            return humanizeTypeName(itemType, :brief)
                 ~ (type.TODO_FIX_isArray ? "[]" : "[..]").qKW;
         }
 
@@ -988,39 +994,57 @@ pub fn solve(
 
     fn fail_appendStack(mut reason: string)
     {
-        // What were we currently solving?
-        mut callstack = 0;
         mut pass0: SolverPass;
+        mut callstack           = 0;
+        mut skip_if_local_of    = i32.MAX;
+        mut ellipsis            = false;
+
+        // What were we currently solving?
         for (mut i = _helpers.len; i --> 0; )
         {
             let h = _helpers[i];
             if (h.isFnOrType)
             {
+                let o   = GET(h.target);
+                let ext = EXT(h.target);
+                let eph = EPH(h.target);
+
+                // Sometimes the solver stacks can get too
+                if (o.kind == "fn") {
+                    if (eph.local_of >= skip_if_local_of) {
+                        if (!ellipsis) {
+                            ellipsis = true;
+                            reason ~= "\n                " ~ "...".qDIM;
+                        }
+
+                        continue;
+                    }
+
+                    ellipsis = false;
+
+                    // Skip over non-template siblings.
+                    if (!ext.spec_of)
+                        skip_if_local_of = eph.local_of;
+                }
+
+                //
                 if (!callstack++)
                     reason ~= "\n";
 
                 let pass = (pass0 != (pass0 = h.pass) || callstack == 1) && h.pass ~ " ";
                 reason ~= "\n                "[.. (17 - pass.len).max(1)] ~ pass;
 
-                let o = GET(h.target);
                 reason ~= o;
 
+                if (ext.args)
                 {
-                    mut argsOut = "";
-
-                    let args = EXT(h.target).args;
-                    for (shadow mut i = 0; i < args.len; i++)
-                    {
-                        if (!argsOut)
-                            argsOut ~= "(";
-                        else
-                            argsOut ~= ", ";
-
-                        argsOut ~= humanizeTypeName(args[i].type);
+                    reason ~= "(";
+                    ext.args.each: |arg, shadow i| {
+                        if (i) reason ~= ", ";
+                        reason ~= humanizeTypeName(arg.type, brief: true);
                     }
 
-                    if (argsOut)
-                        reason ~= argsOut ~= ")";
+                    reason ~= ")";
                 }
 
                 let token = o.solved.token;
@@ -1320,12 +1344,6 @@ pub fn solve(
                 "EXT_mut: bad modid/globid/locid");
 
         return _scope.extended[globid];
-    }
-
-    using fn EPH(target: Target)
-    {
-        return target.modid == module.modid
-            && _ephemeral.unless_oob(target.globid);
     }
 
     fn EPH_mut(index: i32)

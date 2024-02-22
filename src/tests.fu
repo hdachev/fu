@@ -15840,7 +15840,7 @@ pub extern fn runTests()
         }
     `);
 
-    TODO_conv(currently: "val_x(struct C) generic_ref_x:a expects mutref 11:36+13", `
+    TODO_conv(currently: "val_x(C) generic_ref_x:a expects mutref 11:36+13", `
         struct A { x: i32 };
         struct B { using a: A };
         struct C { b: B };

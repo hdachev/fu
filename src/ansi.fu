@@ -44,6 +44,8 @@ pub fn qLT(id: string) =
 
 pub fn qCODE(id: string) = id.qID;
 
+pub fn qDIM(str: string) = DIM ~ str ~ RESET;
+
 
 //
 
