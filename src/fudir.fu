@@ -29,5 +29,10 @@ pub let FU_ROOT     = get_FU_ROOT();
 
 //
 
-pub let FU_BIN      = path::join(FU_ROOT, "bin/");
-pub let FU_INCLUDE  = path::join(FU_ROOT, "include/");
+pub let FU_BIN      = FU_ROOT ~ "bin/";
+pub let FU_INCLUDE  = FU_ROOT ~ "include/";
+
+
+//
+
+pub let DEFAULT_WORKSPACE = HOME ~ ".fu/cache/";

@@ -577,7 +577,7 @@ pub fn ZERO(
 
         let run = true;
         let fudir = ctx.fudir;
-        let dir_wrk = DEFAULT_WORKSPACE;
+        let dir_wrk = fudir::DEFAULT_WORKSPACE;
 
         let debug_output = ::build(
             :ctx, :run, :fudir, :dir_wrk, :onfail, scheme: "debug");

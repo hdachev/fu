@@ -223,11 +223,6 @@ pub fn compile(
 
 //
 
-pub let DEFAULT_WORKSPACE = fudir::FU_ROOT ~ "build-cpp/";
-
-
-//
-
 pub fn compile_and_build(
 
     fname!:     string,
