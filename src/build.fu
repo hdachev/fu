@@ -1,5 +1,22 @@
 import helpers;
 import module;
+import ansi;
+
+
+// TODO re: rewrite -
+//
+// We need a principled fn fail() here,
+//  something that can relate most problems to a token somewhere in your sources,
+//   so we can raise error messages with the usual formatting.
+
+
+// TODO FAILCASE - doesn't parse here, weird
+// fn fail = fn throw;
+
+// TODO FAILCASE - doesn't work either
+// fn fail = .throw;
+
+fn fail(reason: string) throw(reason);
 
 
 //
@@ -86,14 +103,14 @@ fn update_file(
     dir_out !: string)
 {
     shadow let fname = ensure_local_fname(:fname, :dir_src);
-    fname.starts(with: dir_src) || throw("ensure_local_fname broken");
+    fname.starts(with: dir_src) || fail("ensure_local_fname broken");
 
     shadow let fname = dir_out ~ fname.slice(dir_src.len);
     if (file::read(fname) != data)
     {
         let err = atomic_write(:fname, data);
         if (err)
-            throw("Failed to write `" ~ fname ~ "`, error: #" ~ err);
+            fail("Failed to write `" ~ fname ~ "`, error: #" ~ err);
 
         println("  WROTE " ~ fname);
     }
@@ -156,7 +173,7 @@ pub fn build(
     // Where we do our dirtywork.
     if (dir_wrk.if_last != '/')
     {
-        dir_wrk || throw ("No workspace directory provided.");
+        dir_wrk || fail("No workspace directory provided.");
         dir_wrk ~= '/';
     }
 
@@ -205,6 +222,8 @@ pub fn build(
                 ~ (process::LINUX && "-pthread -ldl ")
                 ;
 
+    shadow let GCChash = tea::hash(GCChash);
+
     //
     fulib ||= path::join(fudir, hotswap ? "include/fu/_sharedlib.cpp"
                                         : "include/fu/_fulib.cpp");
@@ -216,7 +235,48 @@ pub fn build(
     //   we could use this to guarantee static init order,
     //    access to private values & optimize build time.
     mut unit_mapping: i32[];
-    mut unit_fnames: string[];
+
+    struct TranslationUnit
+    {
+        // Original filename or whatever describes what this is,
+        //  we'll print it out in case of error.
+        human?:             string;
+
+        // Zero/one/many modules' codegen output.
+        src?:               string;
+
+        // Dirname to resolve #includes "with quotes" relative to.
+        iquote?:            string;
+
+        // Hash of all mutable headers this unit #includes in the src.
+        includes_hash?:     tea::TEA;
+
+        // Where this goes to if cpp-source output is requested.
+        src_output_file?:   string;
+
+        // .fu-cache cpp file, what we feed to gcc/clang & co - ideally temp,
+        //  but there's some benefit to leaving these around
+        //   when investigating failing tests.
+        //
+        // The ideal generated filename is a shallow hash
+        //  of just the text contents of the file itself.
+        //
+        cpp_cache_file?:    string;
+
+        // .fu-cache obj file, ideal filename is -
+        //  .fu-cache/cache_cpp_file-[hash includes + build options]
+        //
+        // We want a clean mapping from one single source file
+        //  to multiple object files, and we want new object files
+        //   when we fiddle with e.g. the builtin headers or whatever.
+        //
+        obj_cache_file?:    string;
+
+        //
+        HACK_pkgConfig_cflags?: string;
+    };
+
+    mut units: TranslationUnit[];
 
     //
     let modules = ctx.modules;
@@ -251,60 +311,261 @@ pub fn build(
             continue;
         }
 
-        mut unit = i;
+        let fname   = i ? module.fname
+                        : "fulib runtime";
+
+        let human   = i ? module.fname.path::filename
+                        : "fulib runtime";
+
+        let iquote  = i ? module.fname.path::dirname
+                        : "";
+
+        mut unit_index = i;
 /*
         for (shadow mut i = 0; i < cpp.unity.len; i++)
         {
             let u = unit_mapping[cpp.unity[i]];
-            if (unit > u)
-                unit = u;
+            if (unit_index > u)
+                unit_index = u;
         }
 
         for (shadow mut i = 0; i < cpp.unity.len; i++)
         {
             let m = cpp.unity[i];
             let u = unit_mapping[m];
-            if (u != unit)
+            if (u != unit_index)
                 for (shadow mut i = u; i < unit_mapping.len; i++)
                     if (unit_mapping[i] == u)
-                        unit_mapping[i] = unit;
+                        unit_mapping[i] = unit_index;
         }
 */
-        unit_mapping ~= unit;
-        unit_fnames.grow_if_oob(unit) = i ? module.fname : "fulib runtime";
+        unit_mapping ~= unit_index;
+        units.grow_if_oob(unit_index) =
+            TranslationUnit(
+                src_output_file: fname ~ ".cpp",
+                :human, :iquote);
     }
 
     // Concat unit sources.
-    mut units: string[];
-
-    for (mut i = 0; i < modules.len; i++)
     {
-        let module  = modules[i];
-        let cpp     = i ? module.out.cpp
-                        : fulib_cpp;
-        if (cpp.src)
-            units.grow_if_oob(unit_mapping[i]) ~= cpp.src;
+        mut content_hashes: flat::Map(string, u64);
+
+        fn getContentHash(
+            include: string,
+            start_fname: string,
+            include_dirs: string[])
+        {
+            fn tryFollow(dir: string, file: string): u64
+            {
+                let path = path::join(dir, file);
+
+                ref hash = content_hashes.ref(path);
+                if (hash)
+                    return hash;
+
+                let src = file::read(:path);
+                if (!src)
+                    fail("Could not resolve include " ~ include.qBAD ~ " relative to " ~ dir.qID);
+
+                shadow let hash = (hash = tea::hash(src).u64);
+
+                // Traverse #includes recursively.
+                mut hash_deep = parseIncludes(:path, :src);
+                if (hash_deep)
+                {
+                    shadow ref hash = content_hashes.ref(path);
+
+                    hash_deep.hash(hash);
+                    return hash = hash_deep.u64;
+                }
+
+                // TODO FIX parse & follow #includes inside
+                return hash;
+            }
+
+            fn parseIncludes(path: string, src: string): tea::TEA
+            {
+                mut hash_all: tea::TEA;
+
+                :NEXT_INCLUDE
+                src.split("#include", each: |match, first|
+                {
+                    if (first)
+                        continue :NEXT_INCLUDE;
+
+                    fn matchFail(lax reason: string)
+                    {
+                        let firstNewline = match.find('\n');
+                        shadow let match = firstNewline > 0
+                                 ? match.slice(start: 0, end: firstNewline)
+                                 : match;
+
+                        shadow let match = match.len > 90
+                                 ? match.slice(start: 0, end: 80)
+                                 : match;
+
+                        println("  FISHY #include in " ~ path ~ " (" ~ reason ~ "):\n\n" ~ match.qBAD);
+
+                        continue :NEXT_INCLUDE;
+                    }
+
+                    // Trim leading whitespace.
+                    mut trimLeft = 0;
+                    for (mut i = 0; i < match.len; i++)
+                    {
+                        if (match[i] > ' ') {
+                            trimLeft = i;
+                            break;
+                        }
+                    }
+
+                    shadow let match = match.slice(start: trimLeft);
+
+                    //
+                    let lead = match.len > 2 && match[0];
+
+                    let endChar = lead == '"' ? '"'
+                                : lead == '<' ? '>'
+                                : matchFail("no leading " ~ "\"".qCODE ~ " or " ~ "<".qCODE);
+
+                    //
+                    for (mut i = 1; i < match.len; i++)
+                    {
+                        let c = match[i];
+                        if (c <= ' ')
+                            matchFail("contains whitespace");
+
+                        if (c == endChar)
+                        {
+                            shadow let include = match.slice(0, i + 1);
+                            hash_all.hash(visitInclude(:include, start_fname: path));
+                            continue :NEXT_INCLUDE;
+                        }
+                    }
+
+                    matchFail("no trailing " ~ (endChar ~ "").qCODE);
+                });
+
+                return hash_all;
+            }
+
+            fn visitInclude(shadow include: string, shadow start_fname: string): u64
+            {
+                let f = include.slice(1, include.len - 1);
+
+                if (include.starts(with: '"'))
+                    return tryFollow(path::dirname(start_fname), f);
+
+                // TODO FIX not all of our headers start with fu/,
+                //  there's the par/ and dl/ nonsense,
+                //   gotta move those back in.
+                //
+                if (include.starts(with: "<fu/"))
+                    return tryFollow(fudir::FU_INCLUDE, f);
+
+                if (include_dirs)
+                {
+                    // TODO FIX the include_dirs stuff doesn't make amazing sense,
+                    //  we need to skope them somehow so we know
+                    //   which headers need to be looked up where.
+                }
+
+                // TODO FIX we need to tell the system headers from
+                //  whatever custom stuff people add to their include_dirs
+                //
+                // Maybe we want to introduce an extra #include convension,
+                //  e.g. <<sys/time.h>>, to explicitly opt-out of content hashing.
+                //
+                // Alternatively, we'd have to locate the std headers on disk
+                //  and just treat them like any other header.
+                //   Here's one way to do it (see https://stackoverflow.com/a/33485647):
+                //
+                //  LC_ALL=C gcc -v -E -xc - < /dev/null 2>&1 |
+                //  LC_ALL=C sed -ne '/starts here/,/End of/p'
+                //
+                // Basically, we'd ignore includes without an extension (std cpp),
+                //  and check the ones with an extension & treat them as usual,
+                //   or ignore when found / error when not found?
+                //    What's the point i wonder.
+                //
+                // println("  CACHE TODO FIX Assuming " ~ include.qID ~ " is immutable, TODO resolve + hash + follow.");
+
+                return 0;
+            }
+
+            return visitInclude(:include, :start_fname);
+        }
+
+        for (mut i = 0; i < modules.len; i++)
+        {
+            let module  = modules[i];
+            let cpp     = i ? module.out.cpp
+                            : fulib_cpp;
+            if (cpp.src)
+            {
+                ref unit = units[unit_mapping[i]];
+                unit.src ~= cpp.src;
+
+                //
+                ref includes_hash = unit.includes_hash;
+                for (shadow mut i = 0; i < cpp.includes_headers.len; i++)
+                {
+                    let hash = getContentHash(
+                        include:        cpp.includes_headers[i],
+                        start_fname:    module.fname,
+                        include_dirs:   cpp.include_dirs.keys_asc);
+
+                    if (hash)
+                        includes_hash.hash(hash);
+                }
+            }
+        }
     }
 
     //
-    mut Fs: string[];
-    mut len_all: i32;
+    let dir_wrk_cpp = dir_wrk ~ "cpp/";     fs::mkdir_p(dir_wrk_cpp);
+    let dir_wrk_obj = dir_wrk ~ "obj/";     fs::mkdir_p(dir_wrk_obj);
+    let dir_wrk_bin = dir_wrk ~ "bin/";     fs::mkdir_p(dir_wrk_bin);
 
+    mut len_all: i32;
+    mut hash_all: tea::TEA;
     for (mut i = 0; i < units.len; i++)
     {
-        let cpp = units[i];
+        ref unit = units[i];
+
+        let cpp = unit.src;
         if (!cpp)
             continue;
 
-        let F = dir_wrk ~ "o-" ~ tea::hash16(GCChash ~ cpp)
-                        ~  "-" ~ cpp.len;
+        mut hash: tea::TEA;
 
-        Fs.grow_if_oob(i) = F;
+        // Cpp cache file -
+        //  we only care about the immediate content hash here,
+        //   no includes, no dependencies, no gcc flags, nothing.
+        //
+        hash.hash(cpp);
+
+        unit.cpp_cache_file = hash.digest16 ~ "-" ~ cpp.len;
+
+        // Obj cache file -
+        //  we care about the contents of everything that's
+        //   included by this source file:
+        //
+        hash.hash(unit.includes_hash);
+        //
+        //  and we care about compiler/linker flags:
+        //
+        hash.hash(GCChash);
+        //
+        // TODO FIX we should probably care about compiler version too,
+        //  we could resolve it once on boot by gcc --version and hash its output.
+
         len_all += cpp.len;
-    }
+        hash_all.hash(hash);
 
-    //
-    fs::mkdir_p(dir_wrk);
+        unit.obj_cache_file = dir_wrk_obj ~ unit.cpp_cache_file ~ "-" ~ hash.digest16 ~ ".o";
+        unit.cpp_cache_file = dir_wrk_cpp ~ unit.cpp_cache_file ~ ".cpp";
+    }
 
     //
     mut code:   i32;
@@ -314,10 +575,12 @@ pub fn build(
     {
         if (onfail & OnFail_WriteRepro)
         {
-            if (!cpp)
-                for (mut i = Fs.len; i --> 0; )
-                    if (Fs[i])
-                        cpp ~= "#include \"" ~ Fs[i] ~ ".cpp\"\n";
+            if (!cpp) for (mut i = units.len; i --> 0; )
+            {
+                let unit = units[i];
+                if (unit.cpp_cache_file)
+                    cpp ~= "#include \"" ~ unit.cpp_cache_file ~ "\"\n";
+            }
 
             let fname = dir_wrk ~ "failing-testcase.cpp";
             println("  WRITE " ~ fname);
@@ -349,7 +612,7 @@ pub fn build(
             }
         }
 
-        return throw(stdout ~ explain);
+        return fail(stdout ~ explain);
     }
 
     ////////////////////////////////////////////////////////////////
@@ -362,7 +625,6 @@ pub fn build(
     ////
     mut HACK_linkFlags:         flat::Set(string);
     mut HACK_pkgConfig_libs:    flat::Set(string);
-    mut HACK_pkgConfig_cflags:  string[];
 
     mut HACK_include_dirs:      flat::Set(string);
 
@@ -400,7 +662,8 @@ pub fn build(
         }
 
         if (cflags)
-            HACK_pkgConfig_cflags.grow_if_oob(i) = " $(pkg-config --cflags " ~ cflags ~ ")";
+            units[unit_mapping[i]].HACK_pkgConfig_cflags =
+                " $(pkg-config --cflags " ~ cflags ~ ")";
     }
 
     let INCLUDE = (flags_cc && " " ~ flags_cc.join(' ')) ~ " -I " ~ fudir ~ "include"
@@ -415,9 +678,12 @@ pub fn build(
     ////////////////////////////////////////////////////////////////
 
     //
-    let F_exe = dir_wrk ~ "b-" ~ tea::hash16(Fs.join("/") ~ LIBS)
-                        ~  "-" ~ len_all ~ "-" ~ Fs.len;
+    len_all += LIBS.len;
+    hash_all.hash(LIBS);
 
+    let F_exe = dir_wrk_bin ~ hash_all.digest16 ~ "-" ~ len_all;
+
+    //
     let old_size = file::size(F_exe);
 
     ////////////////////////////////////////////////
@@ -434,13 +700,13 @@ pub fn build(
             stdout: string;
         };
 
-        fn buildFile(F: string, i: int): BuildError
+        fn buildUnit(unit: TranslationUnit): BuildError
         {
-            if (!F)
+            let F_cpp = unit.cpp_cache_file;
+            let F_obj = unit.obj_cache_file;
+            if (!F_cpp || !F_obj)
                 return [];
 
-            let F_cpp = F ~ ".cpp";
-            let F_obj = F ~ ".o";
             let F_tmp = tmpfile(F_obj);
 
             fn CACHE_objFileAvailable()
@@ -449,26 +715,19 @@ pub fn build(
             if (CACHE_objFileAvailable() && !nocache)
                 return [];
 
-            let original_fname = i && modules[i].fname;
-
-            // Prelude @ 0.
-            let human = original_fname
-                      ? original_fname.path::filename
-                      : "fulib runtime";
-
-            let cpp = units[i];
+            let cpp = unit.src;
             atomic_write(fname: F_cpp, cpp);
 
-            println("  BUILD ", human, " ", F_cpp);
+            println("  BUILD ", unit.human, " ", F_cpp);
 
             let t0 = now::hr();
 
             ///////////////////////////////////////////////////////////////////
-            shadow let INCLUDE = INCLUDE ~ HACK_pkgConfig_cflags.unless_oob(i);
+            shadow let INCLUDE = INCLUDE ~ unit.HACK_pkgConfig_cflags;
             ///////////////////////////////////////////////////////////////////
 
             ////////////////////////////////////////////////////////////////////////////////////////////////
-            shadow let INCLUDE = INCLUDE ~ (original_fname && " -iquote " ~ original_fname.path::dirname);
+            shadow let INCLUDE = INCLUDE ~ (unit.iquote && " -iquote " ~ unit.iquote);
             ////////////////////////////////////////////////////////////////////////////////////////////////
 
             let CMD = GCC_CMD ~ "-c" ~ INCLUDE ~ " -o " ~ F_tmp ~ " " ~ F_cpp;
@@ -487,7 +746,7 @@ pub fn build(
                     //  so long as the obj is now present in its final location
                     //   we're fine to go forward.
                     //
-                    println("RACE OK ", human);
+                    println("RACE OK ", unit.human);
                     return [];
                 }
 
@@ -495,12 +754,12 @@ pub fn build(
             }
 
             let t1 = now::hr();
-            println("     OK ", human, " ", t1 - t0, "s");
+            println("     OK ", unit.human, " ", t1 - t0, "s");
             return [];
         }
 
         // Build.
-        let buildErrors = Fs.par::map(fn buildFile);
+        let buildErrors = units.par::map(fn buildUnit);
 
         for (mut i = 0; i < buildErrors.len; i++)
         {
@@ -529,11 +788,11 @@ pub fn build(
                 cmd ~= " -Wl,-soname," ~ soname;
         }
 
-        for (mut i = 0; i < Fs.len; i++)
+        for (mut i = 0; i < units.len; i++)
         {
-            let F = Fs[i];
-            if (F)
-                cmd ~= " " ~ F ~ ".o";
+            let unit = units[i];
+            if (unit.obj_cache_file)
+                cmd ~= " " ~ unit.obj_cache_file;
         }
 
         //
@@ -585,7 +844,7 @@ pub fn build(
         fn WRITE_cachedTestOutput()
         {
             let out = test_output::serialize(output);
-            out.len == 20 || throw("TestOutput.len != 20");
+            out.len == 20 || fail("TestOutput.len != 20");
             atomic_write(fname: F_exe, out);
         }
 
@@ -647,10 +906,14 @@ pub fn build(
 
         for (mut i = 1; i < units.len; i++)
         {
-            let data            = units[i];
-            let fname           = data  && unit_fnames[i] ~ ".cpp";
+            let unit            = units[i];
+
+            // TODO NEXT BOOTSTRAP failcase exits + fixed
+            // TODO let data    = unit.src; + replace unit.src below with data
+
+            let fname           = unit.src && unit.src_output_file;
             shadow let fname    = fname && update_file(
-                :fname, :data,
+                :fname, data: unit.src,
                 :dir_src, dir_out: dir_cpp);
 
             cpp_files.push(fname);
