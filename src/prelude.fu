@@ -506,7 +506,7 @@ fn join !T(a: T[][..], sep?: T or T[..] or [])
     return res;
 }
 
-fn split !T(str: T[] or T[..], sep: T or T[..], each)
+fn split !T(str: T[..], sep: T or T[..], each)
 {
     mut last = 0;
     mut next = 0;

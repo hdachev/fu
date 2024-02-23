@@ -3407,6 +3407,16 @@ pub extern fn runTests()
         }
     `);
 
+    ZERO(`
+        fn main() {
+            let data = "kung--fury";
+            mut what = 1;
+            mut res = "";
+            data.split("--"): |part| what *= (res ~= part).len;
+            return what == 32 && res == "kungfury" ? 0 : 1;
+        }
+    `);
+
     // /Strings.
 
 
