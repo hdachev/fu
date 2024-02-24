@@ -7,7 +7,7 @@ pub purectx fn zip(ref arr: $T[..], ref barr: $U[..], visit, min!?: int)
     parallel_for(:min, end: arr.len.min(barr.len)): |i|
         visit(arr[i], barr[i], i?: i);
 
-pub purectx fn map(arr: $T[..], visit, min!?: int)
+pub purectx fn map(ref arr: $T[..], visit, min!?: int)
 {
     mut result: typeof( visit(arr[0], i?: 0) )[];
     result.grow_junk(arr.len);

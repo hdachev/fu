@@ -13,7 +13,7 @@ enum BlobError {
 fn read !Blob(path: string, ref blob: Blob): BlobError
 {
     mut data    = "";
-    let err     = file::read(:path, data);
+    let err     = file::read(:path, into: data);
     if (err)
         return "BadFile";
 

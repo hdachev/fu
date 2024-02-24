@@ -84,13 +84,13 @@ fn write(mut path: string, data: byte[..], mode = RW_RW_RW): i32
 fn read(mut path: string): string
 {
     mut output: string;
-    if (read(path, output))
+    if (read(path, into: output))
         output.clear();
 
     return output;
 }
 
-fn read(mut path: string, ref output: string, mut size?: i64): i32
+fn read(mut path: string, ref into!output: string, mut size?: i64): i32
 {
     // C-str ok.
     path ~= '\0';
@@ -327,4 +327,65 @@ fn size(mut path: string): i64
     `);
 
     return -1;
+}
+
+
+// TODO impl the rest or just forward the underlying type somehow,
+//  its a shame we have to wrap it up like this.
+
+struct Timespec { sec: u32; nsec: u32 }
+
+struct Stat {
+    size:       i64;
+    atime:      Timespec;
+    mtime:      Timespec;
+    ctime:      Timespec;
+}
+
+fn stat(mut path: string, ref into!out: Stat)
+{
+    // C-str ok.
+    path ~= '\0';
+
+    pragma include(
+        "<errno.h>",
+        "<sys/stat.h>");
+
+    mut err: i32;
+    out = [];
+
+    pragma input(
+    `
+        struct stat sb;
+        if (stat(`path`.data(), &sb) != 0)
+        {
+            `err` = errno;
+        }
+        else
+        {
+            `out.size`         = (signed long long) sb.st_size;
+
+        #ifdef __APPLE__
+            `out.atime.sec`    = (unsigned) sb.st_atimespec.tv_sec;
+            `out.atime.nsec`   = (unsigned) sb.st_atimespec.tv_nsec;
+
+            `out.mtime.sec`    = (unsigned) sb.st_mtimespec.tv_sec;
+            `out.mtime.nsec`   = (unsigned) sb.st_mtimespec.tv_nsec;
+
+            `out.ctime.sec`    = (unsigned) sb.st_ctimespec.tv_sec;
+            `out.ctime.nsec`   = (unsigned) sb.st_ctimespec.tv_nsec;
+        #else
+            `out.atime.sec`    = (unsigned) sb.st_atim.tv_sec;
+            `out.atime.nsec`   = (unsigned) sb.st_atim.tv_nsec;
+
+            `out.mtime.sec`    = (unsigned) sb.st_mtim.tv_sec;
+            `out.mtime.nsec`   = (unsigned) sb.st_mtim.tv_nsec;
+
+            `out.ctime.sec`    = (unsigned) sb.st_ctim.tv_sec;
+            `out.ctime.nsec`   = (unsigned) sb.st_ctim.tv_nsec;
+        #endif
+        }
+    `);
+
+    return err;
 }

@@ -68,10 +68,8 @@ fn ensure_local_fname(fname: string, dir_src: string): string
     return foreign ~ rel;
 }
 
-fn tmpfile(mut fname: string)
+fn tmpfile(mut dir_wrk_tmp!fname: string)
 {
-    fname ~= '-';
-
     mut r = rand::next_u64();
     for (mut i = 0; i < 8; i++)
     {
@@ -85,9 +83,9 @@ fn tmpfile(mut fname: string)
     return fname;
 }
 
-fn atomic_write(fname!: string, data: string)
+fn atomic_write(dir_wrk_tmp!: string, fname!: string, data: string)
 {
-    let tmp = tmpfile(fname);
+    let tmp = tmpfile(:dir_wrk_tmp);
 
     let err = file::write(tmp, data) || file::rename(tmp, fname);
     if (err)
@@ -97,10 +95,11 @@ fn atomic_write(fname!: string, data: string)
 }
 
 fn update_file(
-    fname   !: string,
-    data    !: string,
-    dir_src !: string,
-    dir_out !: string)
+    fname       !: string,
+    data        !: string,
+    dir_src     !: string,
+    dir_out     !: string,
+    dir_wrk_tmp !: string)
 {
     shadow let fname = ensure_local_fname(:fname, :dir_src);
     fname.starts(with: dir_src) || fail("ensure_local_fname broken");
@@ -108,7 +107,7 @@ fn update_file(
     shadow let fname = dir_out ~ fname.slice(dir_src.len);
     if (file::read(fname) != data)
     {
-        let err = atomic_write(:fname, data);
+        let err = atomic_write(:fname, data, :dir_wrk_tmp);
         if (err)
             fail("Failed to write `" ~ fname ~ "`, error: #" ~ err);
 
@@ -236,6 +235,8 @@ pub fn build(
     //    access to private values & optimize build time.
     mut unit_mapping: i32[];
 
+    flags CacheCleanup { Obj; Cpp }
+
     struct TranslationUnit
     {
         // Original filename or whatever describes what this is,
@@ -272,11 +273,45 @@ pub fn build(
         //
         obj_cache_file?:    string;
 
+        // In case we need to build this unit,
+        //  this is the tmp file
+        //
+        tmp_file?:          string;
+
+        //
+        //
+        cache_cleanup?:     CacheCleanup;
+
         //
         HACK_pkgConfig_cflags?: string;
     };
 
     mut units: TranslationUnit[];
+
+
+    // Delete temp files, if any.
+
+    defer for (mut i = 0; i < units.len; i++)
+    {
+        let unit = units[i];
+
+        // Unlink + print & ignore errors.
+        fn try_unlink(path: string) {
+            if (path) {
+                let err = file::unlink(:path);
+                if (err)
+                    println(" UNLINK " ~ ("E" ~ err).qBAD ~ " " ~ path);
+            }
+        }
+
+        try_unlink(unit.tmp_file);
+
+        //
+        if (unit.cache_cleanup & "Cpp")
+            try_unlink(unit.cpp_cache_file);
+        if (unit.cache_cleanup & "Obj")
+            try_unlink(unit.obj_cache_file);
+    }
 
     //
     let modules = ctx.modules;
@@ -347,6 +382,12 @@ pub fn build(
     }
 
     // Concat unit sources.
+    struct FileInvariants {
+        path:   string;
+        stat:   file::Stat;
+    };
+
+    mut file_invariants: FileInvariants[];
     {
         mut content_hashes: flat::Map(string, u64);
 
@@ -355,6 +396,9 @@ pub fn build(
             start_fname: string,
             include_dirs: string[])
         {
+            shadow let fail = |reason|
+                fail("Failed to hash the #includes of:\n\t" ~ include.qID ~ "\n\n\t" ~ reason);
+
             fn tryFollow(dir: string, file: string): u64
             {
                 let path = path::join(dir, file);
@@ -363,9 +407,19 @@ pub fn build(
                 if (hash)
                     return hash;
 
-                let src = file::read(:path);
-                if (!src)
-                    fail("Could not resolve include " ~ include.qBAD ~ " relative to " ~ dir.qID);
+                mut stat: file::Stat;
+                if (let err = file::stat(:path, into: stat))
+                    fail(("E" ~ err).qBAD ~ " while attempting to stat: " ~ path.qBAD);
+
+                // We want to make sure these remain unchanged
+                //  while we're building object files.
+                //
+                file_invariants ~= FileInvariants(:path, stat);
+
+                //
+                mut src: string;
+                if (let err = file::read(:path, into: src))
+                    fail(("E" ~ err).qBAD ~ " while attempting to read: " ~ path.qBAD);
 
                 shadow let hash = (hash = tea::hash(src).u64);
 
@@ -527,6 +581,12 @@ pub fn build(
     let dir_wrk_obj = dir_wrk ~ "obj/";     fs::mkdir_p(dir_wrk_obj);
     let dir_wrk_bin = dir_wrk ~ "bin/";     fs::mkdir_p(dir_wrk_bin);
 
+    // TODO FIX - the novec on parallel_for prevents us from binding to dir_wrk_tmp as a variable,
+    //  the novec has to go, we'd rather have something
+    //
+    fn  dir_wrk_tmp = dir_wrk ~ "tmp/";     fs::mkdir_p(dir_wrk_tmp);
+
+    //
     mut len_all: i32;
     mut hash_all: tea::TEA;
     for (mut i = 0; i < units.len; i++)
@@ -575,16 +635,22 @@ pub fn build(
     {
         if (onfail & OnFail_WriteRepro)
         {
-            if (!cpp) for (mut i = units.len; i --> 0; )
+            if (!cpp)
             {
-                let unit = units[i];
-                if (unit.cpp_cache_file)
-                    cpp ~= "#include \"" ~ unit.cpp_cache_file ~ "\"\n";
+                for (mut i = units.len; i --> 0; )
+                {
+                    ref unit = units[i];
+                    if (unit.cpp_cache_file)
+                    {
+                        unit.cache_cleanup &= ~CacheCleanup.Cpp;
+                        cpp ~= "#include \"" ~ unit.cpp_cache_file ~ "\"\n";
+                    }
+                }
             }
 
             let fname = dir_wrk ~ "failing-testcase.cpp";
             println("  WRITE " ~ fname);
-            atomic_write(:fname, cpp);
+            atomic_write(:fname, cpp, :dir_wrk_tmp);
         }
 
         // Print exit code.
@@ -700,23 +766,23 @@ pub fn build(
             stdout: string;
         };
 
-        fn buildUnit(unit: TranslationUnit): BuildError
+        fn buildUnit(ref unit: TranslationUnit, i: int): BuildError
         {
             let F_cpp = unit.cpp_cache_file;
             let F_obj = unit.obj_cache_file;
             if (!F_cpp || !F_obj)
                 return [];
 
-            let F_tmp = tmpfile(F_obj);
-
-            fn CACHE_objFileAvailable()
-                file::size(F_obj) > 0;
-
-            if (CACHE_objFileAvailable() && !nocache)
+            if (file::size(F_obj) > 0 && !nocache)
                 return [];
 
+            // We'll be doing work here.
+            unit.tmp_file = tmpfile(:dir_wrk_tmp);
+
+            unit.cache_cleanup |= "Cpp";
+
             let cpp = unit.src;
-            atomic_write(fname: F_cpp, cpp);
+            atomic_write(fname: F_cpp, cpp, :dir_wrk_tmp);
 
             println("  BUILD ", unit.human, " ", F_cpp);
 
@@ -730,29 +796,22 @@ pub fn build(
             shadow let INCLUDE = INCLUDE ~ (unit.iquote && " -iquote " ~ unit.iquote);
             ////////////////////////////////////////////////////////////////////////////////////////////////
 
-            let CMD = GCC_CMD ~ "-c" ~ INCLUDE ~ " -o " ~ F_tmp ~ " " ~ F_cpp;
+            let CMD = GCC_CMD ~ "-c" ~ INCLUDE ~ " -o " ~ unit.tmp_file ~ " " ~ F_cpp;
 
             // println("      > ", CMD);
             shadow mut stdout: string;
 
-            shadow let code = exec(CMD, :stdout)
-                           || file::rename(F_tmp, F_obj);
-
+            shadow let code = exec(CMD, :stdout);
             if (code)
-            {
-                if (CACHE_objFileAvailable())
-                {
-                    // We can race with a parallel build here,
-                    //  so long as the obj is now present in its final location
-                    //   we're fine to go forward.
-                    //
-                    println("RACE OK ", unit.human);
-                    return [];
-                }
-
                 return BuildError(:code, :cpp, :stdout);
-            }
 
+            // TODO FIX testcases -
+            //  Discard object files after linking.
+            //
+            if (run && i == 1)
+                unit.cache_cleanup |= "Obj";
+
+            //
             let t1 = now::hr();
             println("     OK ", unit.human, " ", t1 - t0, "s");
             return [];
@@ -771,8 +830,63 @@ pub fn build(
             }
         }
 
+
+        // We've built all object files, they're still under workspace/temp.
+        //  We can't trust the hashes if some header was modified while we were building,
+        //   so we'll have to check if we need to scrap this build.
+
+        mut _didCrosscheckHeaders: int;
+
+        fn crosscheckHeaders_beforePersistingTempObjects()
+        {
+            if (_didCrosscheckHeaders++)
+                return;
+
+            file_invariants.each: |file_invariant|
+            {
+                let expect = file_invariant.stat;
+
+                mut actual: file::Stat;
+                let err = file::stat(:file_invariant.path, into: actual);
+
+                if (err || actual.size != expect.size
+                        || actual.mtime != expect.mtime)
+                {
+                    fail("Header crosscheck failed for:"
+                        ~ "\n\t" ~ file_invariant.path
+                        ~ "\n\n\tError: " ~ (err ? ("E" ~ err).qBAD : "mtime changed."));
+                }
+
+                // Uncomment this to verify this isn't running unnecessarily.
+                // println(" HEADOK " ~ file_invariant.path ~ " " ~ actual.size ~ "b");
+            }
+        }
+
+        for (mut i = 0; i < units.len; i++)
+        {
+            ref unit = units[i];
+            if (unit.tmp_file)
+            {
+                crosscheckHeaders_beforePersistingTempObjects();
+
+                //
+                let from = unit.tmp_file;
+                let to   = unit.obj_cache_file;
+
+                let err = file::rename(:from, :to);
+                if (err)
+                    fail("Build cache failed to move temporary:\n\t" ~ from
+                        ~ "\n\n\tto the object cache at:\n\t" ~ to
+                        ~ "\n\n\tError: " ~ ("E" ~ err).qBAD);
+
+                unit.tmp_file.clear();
+            }
+        }
+
+
         // Link.
-        let F_tmp = tmpfile(F_exe);
+
+        let F_tmp = tmpfile(:dir_wrk_tmp);
 
         mut cmd = GCC_CMD ~ "-o " ~ F_tmp;
 
@@ -845,7 +959,7 @@ pub fn build(
         {
             let out = test_output::serialize(output);
             out.len == 20 || fail("TestOutput.len != 20");
-            atomic_write(fname: F_exe, out);
+            atomic_write(fname: F_exe, out, :dir_wrk_tmp);
         }
 
         //
@@ -895,7 +1009,8 @@ pub fn build(
         }
     }
 
-    if (code) return ERR;
+    if (code)
+        return ERR;
 
     // .cpp file output.
     if (dir_cpp && dir_src)
@@ -914,7 +1029,8 @@ pub fn build(
             let fname           = unit.src && unit.src_output_file;
             shadow let fname    = fname && update_file(
                 :fname, data: unit.src,
-                :dir_src, dir_out: dir_cpp);
+                :dir_src, dir_out: dir_cpp,
+                :dir_wrk_tmp);
 
             cpp_files.push(fname);
         }
@@ -941,7 +1057,8 @@ pub fn build(
 
                 update_file(
                     fname: unity ~ ".unity.cpp", :data,
-                    :dir_src, dir_out: dir_cpp);
+                    :dir_src, dir_out: dir_cpp,
+                    :dir_wrk_tmp);
             }
 
             // CMakeLists.txt
@@ -1008,7 +1125,8 @@ pub fn build(
 
                 update_file(
                     fname: CMakeLists, :data,
-                    :dir_src, dir_out: dir_cpp);
+                    :dir_src, dir_out: dir_cpp,
+                    :dir_wrk_tmp);
             }
         }
     }
