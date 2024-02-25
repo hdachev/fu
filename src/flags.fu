@@ -127,7 +127,7 @@ using flags Flags: u32
     F_PREDICATE
 
 
-    // ...
+    F_LT_RETURNED   // host-arg ref-returned from
     F_REST_ARG
     // ...
     F_INJECTED      // TODO move into SolverStatus

@@ -4337,7 +4337,7 @@ pub fn solve(
                         // We'll only attempt to relax arguments whose lifetimes appear in the return value.
                         //  There's this other thing, perhaps we only need to relax a single such argument?
                         //
-                        if (t.type.lifetime.Lifetime_has(argidx: i))
+                        if (t.args[i].flags & F_LT_RETURNED)
                         {
                             // TODO fix this relaxer can't scale up to q_USAGE,
                             //  we gotta replace it with the backwards design.
@@ -7411,8 +7411,6 @@ pub fn solve(
         //  and unref all args that are pass-by-value.
         //
         {
-            mut returned: bitset::BitSet;
-
             if (SELF_TEST && retval.is_ref)
                 TEST_Lifetime(type: retval, retval.lifetime);
 
@@ -7430,12 +7428,12 @@ pub fn solve(
                             "Non-argument local in retval.lifetime: " ~ nested(locid));
 
                         let i   = argPos_1b - 1;
-                        let arg = args[i];
+                        ref arg = args[i];
 
                         arg.type.is_ref || BUG(
                             "Non-ref argument in retval.lifetime: " ~ nested(locid));
 
-                        returned.add(i);
+                        arg.flags |= F_LT_RETURNED;
 
                         continue_replace(
                             Lifetime_from(argidx: i, :paths));
@@ -7444,10 +7442,10 @@ pub fn solve(
 
             for (mut i = 0; i < args.len; i++)
             {
-                if (returned.has(i))
+                ref arg = args[i];
+                if (arg.flags & F_LT_RETURNED)
                     continue;
 
-                ref arg = args[i];
                 if (arg.type.is_ref && arg.willPassByValue())
                     arg.type = clear_refs(arg.type);
             }
@@ -12382,10 +12380,7 @@ pub fn solve(
             // Re: m_and_c_cant_alias_002 test:
             //  We don't want to return a reference to the temporary,
             //   so for now we just forbid this.
-            let isReturned = target.type.lifetime
-                            .Lifetime_has(argidx: position);
-
-            if (isReturned)
+            if (host_arg.flags & F_LT_RETURNED)
                 return CantTempCopy_ReturnedFromFn;
 
             // Go.
