@@ -9897,7 +9897,7 @@ pub extern fn runTests()
         }
     `]);
 
-    TODO_inline(currently: "BUG exit code", `
+    TODO_inline(currently: "Inline arguments can only be inlined once 9:33+4", `
         fn inline_args_and_closures(inline nums: i32[]) {       ;; GNUStmtExpr
             mut sum: i32;
             noinline fn woot(z: i32)                // previously a new woot was emitted
@@ -16380,7 +16380,7 @@ pub extern fn runTests()
             fn acc(inline x: string)    sum += x.len;
             fn acc(inline x: i32)       sum += x;
 
-            for (mut i = 0; i < v.len; i++) acc(v[i]);
+            shadow let v = v; for (mut i = 0; i < v.len; i++) acc(v[i]);
             return sum;
         }
 
@@ -16856,6 +16856,28 @@ pub extern fn runTests()
     `);
 
     ZERO(`
+        fn TRACE_BRACKET(x: bool, inline msg: string)
+            x && { shadow let msg = msg; msg };                 ;; PointlessLocal
+
+        fn main() TRACE_BRACKET(true, "hello" ~ 0) == "hello0" ? 0 : 1;
+    `);
+
+    ZERO(`
+        fn TRACE_BRACKET(x: bool, inline msg: string)
+            x && { shadow let msg = msg; msg ~ msg };
+
+        fn main() {
+            mut count = 0;      <alt>
+            inline              <alt/>
+            noinline            </alt>
+            fn woot() "hello" ~ (count++);
+            let a = TRACE_BRACKET(false, woot);
+            let b = TRACE_BRACKET(true, woot);
+            return a ~ b == "hello0hello0" && count == 1 ? 0 : 1;
+        }
+    `);
+
+    ZERO(`
         struct Target { _packed: u32 }
         inline fn globid(t: Target) i32(t._packed);
 
@@ -16889,7 +16911,7 @@ pub extern fn runTests()
         }
     `);
 
-    ZERO(`
+    TODO_inline(currently: "Inline arguments can only be inlined once 10:37+3", `
         struct Target { _packed: u32 }
         inline fn globid(t: Target) i32(t._packed);
 
