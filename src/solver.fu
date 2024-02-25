@@ -3927,10 +3927,21 @@ pub fn solve(
                 //  This is nonsense but better than what i had before,
                 //   basically we want letdefs to work as an immediate variable read.
                 let firstUse = trackVarUsage(:node.target.locid, node.type);
-                ref o = GET_mut(node.target);
-
                 if (firstUse)
+                {
+                    ref o = GET_mut(node.target);
+                    o.status |= SS_NAME_UNUSED;
+
                     warnUnused(:node.target, :o);
+
+                    // We can get rid of the local immediately
+                    //  if the slot doesn't want a reference.
+                    if (!slot.is_ref)
+                    {
+                        unwrapLetdef(node, :relax_mask);
+                        return propagateType(:node, :slot, :relax_mask, :kills);
+                    }
+                }
             }
 
             relaxBlockVar(node.target, :relax_mask, :canDiscard);
@@ -4475,6 +4486,15 @@ pub fn solve(
 
                     if (host_arg.flags & F_WRITTEN_TO)
                         callarg_trackWrites(arg.type.lifetime);
+
+                    if !(host_arg.flags & F_LT_RETURNED)
+                    {
+                        if (arg.kind == "letdef" &&
+                            arg.target.status & SS_NAME_UNUSED)
+                        {
+                            unwrapLetdef(arg, :relax_mask);
+                        }
+                    }
                 }
             }
         }
@@ -5298,6 +5318,21 @@ pub fn solve(
         node.flags &= ~F_TEST_painted;
     }
 
+    fn unwrapLetdef(shadow ref node: SolvedNode, lax relax_mask!: Quals)
+    {
+        ref o = GET_mut(node.target);
+        if (SELF_TEST)
+        {
+            o.kind == "var" && o.status & SS_NAME_UNUSED || BUG("unwrapLetdef: !var || !SS_NAME_UNUSED");
+
+            if (relax_mask != RELAX_before_bck)
+                BUG("About to unwrap letdef " ~ node.target ~ " during mcom, might be ok, remove this assert at will.");
+        }
+
+        TRACE("UNWRAP LETDEF " ~ node.target.locid ~ " " ~ node.target);
+        node = o.solved.items[LET_INIT].steal();
+    }
+
     fn relaxBlockVar(t: Target, relax_mask!: Quals, canDiscard!?: bool)
     {
         let o = GET(t);
@@ -5346,7 +5381,7 @@ pub fn solve(
         }
 
         // Either way, try to relax.
-        ref node = GET_mut(t).solved;
+        mut node = steal(GET_mut(t).solved);
 
         // We'll relax the initializer, nothing to paint the let node.
         TEST_paintNode(node);
@@ -5361,22 +5396,27 @@ pub fn solve(
             //
             && !o.isArg)
         {
-            mut init: SolvedNode;
-            swap(init, node.items[LET_INIT]);
+            ref init = node.items[LET_INIT];
 
             init.propagateType(node.type, :relax_mask);
 
-            shadow ref o = GET_mut(t);
-            shadow ref node = o.solved;
-
-            // TODO FIX Codegen helper, this is for the `fu_STR& src = sources[i]` case.
-            //  Ideally we should do without this, otherwise we can rerun the solveLet crap.
             if (node.type.is_ref)
-                node.type.lifetime = init.type.lifetime;
+            {
+                // Strip nested letdefs.
+                if (init.kind == "letdef" &&
+                    init.target.status & SS_NAME_UNUSED)
+                {
+                    unwrapLetdef(init, :relax_mask);
+                }
 
-            // Done, put it back.
-            swap(init, node.items[LET_INIT]);
+                // TODO FIX Codegen helper, this is for the `fu_STR& src = sources[i]` case.
+                //  Ideally we should do without this, otherwise we can rerun the solveLet crap.
+                node.type.lifetime = init.type.lifetime;
+            }
         }
+
+        // Done, put it back.
+        swap(node, GET_mut(t).solved);
 
         // All good.
         _current_fn.done_relaxing.add(t.locid);
