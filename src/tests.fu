@@ -16955,6 +16955,39 @@ pub extern fn runTests()
         }
     `);
 
+    ZERO(`
+        fn letdefUnwrapsDuringMCOM(
+            ref error: string, ref effect: int,
+            a: string, b: string, c: string) {
+    <alt>
+            fn inl4(inline err: string) if (error) error ~= err;
+            fn inl3(inline err: string) inl4(:err);
+            fn inl2(inline err: string) inl3(:err);
+            fn inl1(inline err: string) inl2(:err);
+    <alt/>
+            fn inl4(inline err) if (error) error ~= err;
+            fn inl3(inline err) inl4(:err);
+            fn inl2(inline err) inl3(:err);
+            fn inl1(inline err) inl2(:err);
+    </alt>
+            inl1("ello");
+            inl2({ effect++; a ~ b });
+            inl3("World");
+            inl4(c);
+        }
+
+        fn main() {
+            mut error: string;
+            mut effect: int;
+            letdefUnwrapsDuringMCOM(:error, :effect, ",", " ", "!");
+            if (effect || error) return 101;
+
+            error = "H";
+            letdefUnwrapsDuringMCOM(:error, :effect, ",", " ", "!");
+            return effect == 1 && error == "Hello, World!" ? 0 : 1;
+        }
+    `);
+
     // /Inliner.
 
 
