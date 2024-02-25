@@ -538,10 +538,10 @@ pub fn ZERO(
                     ? parse10s32(rest, :offset)
                     : -1;
 
-                expect_alloc_count += second < 0 ? first : second;
+                expect_alloc_count += first
                 expect_alloc_bytes += second < 0
                     ? first * (128 - 16) // arc-alloc-size
-                    : first;
+                    : second;
 
                 offset == rest.len || throw(
                     "Invalid ;; ALLOCS, parse leftovers in: `;; " ~ x ~ "`");

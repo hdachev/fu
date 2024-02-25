@@ -3417,6 +3417,17 @@ pub extern fn runTests()
         }
     `);
 
+    ZERO(`
+        fn Append(inline a: string, <alt>inline</alt> b: string) a ~ b;
+        fn main() {
+            let res = Append(
+                Append("12345678901234567890", "12345678901234567890"),
+                "12345678901234567890"); ;; ALLOCS 1
+
+            return res.len == 60 ? 0 : 1;
+        }
+    `);
+
     // /Strings.
 
 
