@@ -16144,7 +16144,7 @@ pub extern fn runTests()
         }
     `);
 
-    TODO_conv(currently: "BUG did match on second pass 8:37+4", [`
+    TODO_conv(currently: "GET returns zeroes 4:13+5", [`
         struct Target { id: string }
         struct ScopeItem { name: string }
         fn zeroes() = [];
@@ -16182,6 +16182,21 @@ pub extern fn runTests()
             let b = ternary_mutrefExact_vs_constUsingField(Type(), :right);
             return a.canon ~ b.canon == "Hello, World!" ? 0 : 1;
         }
+    `);
+
+    ZERO(`
+        struct A { a: int };
+        struct B { b: int };
+
+        fn conversionToZeroesOrNever(what: A) {
+            using fn intoB(a: A)    <fail ambiguous conversion assigns to anything 6:13+5>
+                [];                 <pass/>
+                B(a.a * 2);         </fail>
+
+            return what && what.b;
+        }
+
+        fn main() conversionToZeroesOrNever(A(3)) == 6 ? 0 : 1;
     `);
 
     // /Conversion functions.
@@ -16876,7 +16891,7 @@ pub extern fn runTests()
 
         noinline fn doNothingCreatively(_types: Struct[], _out: string, _type: Type)
         {
-            using fn zeroInit(lax target: Target)
+            fn zeroInit(lax target: Target)
                 return [];
 
             noinline fn noInline(type, ref out): string =

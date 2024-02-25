@@ -7578,8 +7578,24 @@ pub fn solve(
 
         overload.solved = solved;
 
+        if (overload.flags & F_CONVERSION)
+        {
+                                // TODO FIX this technically works right now -
+                                //  happens during recursive solves,
+                                //   maybe this is a great spot to suggest
+                                //    a return type annot somewhere.
+                                //
+            if (retval.is_zeroes/* || retval.is_never*/)
+                fail(backtrack: "using", target ~ " returns " ~ humanizeType(retval)
+                    ~ "\n\n\tThis would make the conversion function ambiguous because it assigns to anything.");
+        }
+
         if (overload.status & SS_OBSERVED_BY_CONV_CACHE)
         {
+            if (SELF_TEST)
+                overload.flags & F_CONVERSION || BUG(
+                    "SS_OBSERVED_BY_CONV_CACHE but !F_CONVERSION");
+
             overload.status &= ~SS_OBSERVED_BY_CONV_CACHE;
             ConvCache_nukeConverts("[doUpdateScope]: target(" ~ target ~ ")");
         }
