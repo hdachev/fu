@@ -2,19 +2,6 @@
 set -e
 
 
-# Stash the build cache, we'll restore it on exit.
-
-if test -d build-cpp-bench-stash
-then
-  rm -rf ./build-cpp-bench-stash
-fi
-
-if test -d build-cpp
-then
-  mv ./build-cpp ./build-cpp-bench-stash
-fi
-
-
 # We'll be checking out each individual commit we want to bench,
 #  so it'd be nice if we restored the original git branch
 #   when we're done here.
@@ -56,17 +43,6 @@ clean_up () {
   # Restore initial git branch on fail/early exit.
   do_clean_up
 
-  # Restore the stashed build cache.
-  if test -d build-cpp
-  then
-    rm -rf build-cpp
-  fi
-
-  if test -d build-cpp-bench-stash
-  then
-    mv ./build-cpp-bench-stash ./build-cpp
-  fi
-
   # Remove any intermediate build artifacts.
   if test -f "bin/fu.temp"
   then
@@ -102,11 +78,6 @@ do
 
     git checkout $i
     CLEANUP_must_restore_git_branch=true
-
-    if test -d build-cpp
-    then
-      rm -rf build-cpp
-    fi
 
     # Disable SELF_TEST mode.
     sed -i '' 's/!!true/!!!101/g' ./src/fail.fu
