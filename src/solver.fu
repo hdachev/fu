@@ -11451,20 +11451,20 @@ pub fn solve(
                         ref o = GET_mut(local);
                         o.status |= SS_NAME_UNUSED;
 
+                        TRACE("F_INLINE local " ~ local.locid ~ " " ~ local);
+
+                        // Gotta handle nevers here,
+                        //  otherwise we're emitting broken letdefs.
+                        ref init = o.solved.items[LET_INIT];
+                        if (init.is_never)
+                        {
+                            TRACE("F_INLINE local NEVER " ~ local.locid);
+                            node = init;
+                            return;
+                        }
+
                         //
-                        TRACE("F_INLINE local " ~ local);
-
-                        shadow mut callsite_args: SolvedNode[]; // TODO FIX REMOVE mutslice defaulting
-                        node = inlineExpression(
-                            from: local.parent,
-                            :letdefReplicas,
-                            local.solved.items[LET_INIT] || BUG(
-                                "inlineExpression NODE: F_INLINE local has no LET_INIT: " ~ local),
-
-                            :callsite_args);
-
-                        // No visitTypes, no nothing -
-                        //  we've already recursively called inlineExpression.
+                        node = createLetDef(local);
                         return;
                     }
                     // INLINE ARGUMENTS ////////////////////////////////////////////
@@ -11549,29 +11549,12 @@ pub fn solve(
                     let foreign = nested(:index, :from);
                     let local   = matchReplicaOrInjectForeignLocal(foreign);
 
-                    // INLINE ARGUMENTS ////////////////////////////////////////////
-                    if (local.isInlineLocal)
-                    {
-                        TRACE("Type.F_INLINE local " ~ local);
+                    TRACE("inlineExpression: LT.REPLACE " ~ foreign.locid ~ " " ~ foreign ~ " with " ~ local.locid ~ " " ~ local);
 
-                        let init = local.solved.items[LET_INIT] || BUG(
-                            "inlineExpression TYPE: F_INLINE local has no LET_INIT: " ~ local);
-
-                        continue_replace(
-                            init.type.lifetime
-                                ? Lifetime_op_join(init.type.lifetime, paths)
-                                : Lifetime_temporary);
-                    }
-                    // INLINE ARGUMENTS ////////////////////////////////////////////
-                    else
-                    {
-                        TRACE("inlineExpression: LT.REPLACE " ~ foreign.locid ~ " " ~ foreign ~ " with " ~ local.locid ~ " " ~ local);
-
-                        continue_replace(
-                            local.type.lifetime
-                                ? Lifetime_op_join(local.type.lifetime, paths)
-                                : BUG("visitType: !local.type.lifetime"));
-                    }
+                    continue_replace(
+                        local.type.lifetime
+                            ? Lifetime_op_join(local.type.lifetime, paths)
+                            : BUG("visitType: !local.type.lifetime"));
                 });
         }
 
@@ -14059,6 +14042,17 @@ pub fn solve(
             {
                 // TODO FIX really moronic, LET_ANNOT is always empty, there's no point in keeping it around
                 node.items[0] && BUG("let.items[0] not empty: " ~ node.items[0].kind);
+
+                node.type.lifetime.hasTemporary && BUG(
+                    "test_node(let) place.type has temp lt: " ~ humanizeType(node.type, lt: true));
+
+                TEST_Assignable(host: node.target.type.clear_refs(), node.type,
+                    "test_node(let): let.target.type !<- let.place.type");
+
+                let init = node.items[1];
+                if (init)
+                    TEST_Assignable(host: node.type, init.type,
+                        "test_node(let): place.type !<- let.init.type");
             }
         }
     }
