@@ -12099,6 +12099,28 @@ pub extern fn runTests()
         }
     `);
 
+    ZERO(`
+        struct Thing { using i: int };
+
+        fn vfactsAssignableComplainsAboutAlwaysFalse(ref things: Thing[], into?: Thing) {
+            fn DISCARD(thing: Thing)    = thing && [];
+            fn THROW_IF_ZERO(i)         = Thing(i || throw("zero"));
+
+            let x: Thing = into || {
+                let x: Thing = DISCARD(THROW_IF_ZERO(things.len));
+                x
+            };
+
+            things[x.i].i++;
+        }
+
+        fn main() {
+            mut things = [ Thing() ];
+            vfactsAssignableComplainsAboutAlwaysFalse(things);
+            return things.len == 1 && things[0].i == 1 ? 0 : 1;
+        }
+    `);
+
     // /quite right
 
 
