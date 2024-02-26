@@ -119,7 +119,7 @@ using flags Flags: u32
     F_IMPLICIT
     F_USING
     F_CONVERSION
-    // ...
+    F_TEST_painted          // test_node check_painted
 
     F_PUB           // TODO group these three up
     F_EXTERN        //  in enum Linkage

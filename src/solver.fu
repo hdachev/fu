@@ -1100,12 +1100,6 @@ pub fn solve(
             println("DEV_HappyPathOnly: we ended up on a slow path.");
     }
 
-    fn BUG(token: TokenIdx, reason: string)
-    {
-        _here = token;
-        BUG(reason);
-    }
-
     fn str(o: Overload)
     {
         let kind    = o.kind;
@@ -1311,6 +1305,12 @@ pub fn solve(
         fail("COMPILER BUG:\n\n\t" ~ (reason || "Assertion failed."));
     }
 
+    fn BUG(token: TokenIdx, reason: string)
+    {
+        _here = token;
+        BUG(reason);
+    }
+
     shadow fn lookupUserType(type: Type): Struct
     {
         return tryLookupUserType(type)
@@ -1390,7 +1390,7 @@ pub fn solve(
         helpers?:   Helpers)
     {
         return SolvedNode(
-            :kind, :flags, :value,
+            :kind, :value, :flags | (SELF_TEST && F_TEST_painted),
             :items,
             :type, :target, token: _here,
             :helpers);
@@ -3900,6 +3900,8 @@ pub fn solve(
 
         // Control flow.
 
+        TEST_paintNode(node);
+
         if (k == "let" || k == "letdef")
         {
             // Addrofn & co.
@@ -4825,6 +4827,8 @@ pub fn solve(
 
                     if (k == "defer")
                     {
+                        TEST_paintNode(node);
+
                         ref expr = node.items.only;
                         propagateType(expr, :relax_mask, t_void);
 
@@ -4911,6 +4915,9 @@ pub fn solve(
                         tail = tail.value == "err"
                             ? createEmpty()
                             : tail.items.only;
+
+                        // Already relaxed above.
+                        break;
                     }
 
                     // TODO FIX: preserving explicit returns for fns,
@@ -5257,6 +5264,36 @@ pub fn solve(
             push(Warning(:target.locid));
     }
 
+    lax fn TEST_paintNode(lax ref node: SolvedNode)
+    {
+        if (!SELF_TEST)
+            return;
+
+        if (node.flags & F_TEST_painted)
+        {
+            // We don't want to relax stuff more than once (inefficient) -
+            //  modelling this correctly is a bit of a mess because we create a bunch of nodes during relax,
+            //   so this will have to do for now - we don't expect to ever relax non-trivial callsites twice.
+            //
+            if (node.kind == "call" && node.target.kind == "fn")
+                BUG("Already F_TEST_painted: " ~ node);
+        }
+
+        node.flags |= F_TEST_painted;
+    }
+
+    lax fn TEST_unpaintNode(lax ref node: SolvedNode, lax expect_paint!: bool)
+    {
+        if (!SELF_TEST)
+            return;
+
+        if (expect_paint)
+            node.flags & F_TEST_painted || !node || BUG(
+                "Not F_TEST_painted: " ~ node);
+
+        node.flags &= ~F_TEST_painted;
+    }
+
     fn relaxBlockVar(t: Target, relax_mask!: Quals, canDiscard!?: bool)
     {
         let o = GET(t);
@@ -5306,6 +5343,9 @@ pub fn solve(
 
         // Either way, try to relax.
         ref node = GET_mut(t).solved;
+
+        // We'll relax the initializer, nothing to paint the let node.
+        TEST_paintNode(node);
 
         // Steal init expression for processing.
         if (node.items && node.items[LET_INIT]
@@ -11424,7 +11464,7 @@ pub fn solve(
                         mut ret_actual: Type;
 
                         // TODO FAILCASE
-                        // TODO FAILCASE test_node & co didn't notice this was missing, so ret_actuals had rogue lifetimes.
+                        // TODO FAILCASE TEST_node & co didn't notice this was missing, so ret_actuals had rogue lifetimes.
                         // TODO FAILCASE
 
                         // Appeasing bck.
@@ -13700,18 +13740,20 @@ pub fn solve(
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    lax fn test_node(lax node: SolvedNode, lax pass: SolverPass)
+    lax fn TEST_node(lax ref node: SolvedNode, lax pass: SolverPass, lax expect_paint!?: bool)
     {
         if (!SELF_TEST)
             return;
 
         for (mut i = 0; i < node.items.len; i++)
-            test_node(node.items[i], :pass);
+            TEST_node(node.items[i], :pass, :expect_paint);
 
         _here = node.token;
 
         if (node.is_never && node.usage)
             BUG("node.is_never but some usage bits set");
+
+        TEST_unpaintNode(:node, :expect_paint);
 
         //
         let k = node.kind;
@@ -13934,13 +13976,40 @@ pub fn solve(
         }
         else if (k == "letdef")
         {
-            test_node(node: node.target.solved, :pass);
+            // Mutating the tree during the test pass feels a bit icky
+            //  but it's what we have here.
+            //
+            TEST_node(node: GET_mut(node.target).solved, :pass, :expect_paint);
         }
         else if (k == "let")
         {
-            node.items.len == 2 || BUG("let.items.len: " ~ node.items.len);
-            node.items[0] && BUG("let.items[0] not empty: " ~ node.items[0].kind);
+            if (node.items.len != 2)
+            {
+                // TODO FIX injected args don't appear to have the items annot/init tuple
+                node.target && node.target.isArg && node.target.flags & F_INJECTED
+                    || BUG("let.items.len: " ~ node.items.len);
+            }
+            else
+            {
+                // TODO FIX really moronic, LET_ANNOT is always empty, there's no point in keeping it around
+                node.items[0] && BUG("let.items[0] not empty: " ~ node.items[0].kind);
+            }
         }
+    }
+
+    lax fn TEST_pass(lax ref node: SolvedNode, lax pass: SolverPass, lax expect_paint!?: bool)
+    {
+        if (!SELF_TEST)
+            return;
+
+        PROFILE(.TestPass);
+
+        node.helpers.target == _current_fn.target || BUG();
+
+        for (mut i = 0; i < _current_fn.items.len + FN_ARGS_BACK; i++)
+            TEST_unpaintNode(_current_fn.items[i], expect_paint: false);
+
+        TEST_node(:node, :pass, :expect_paint);
     }
 
 
@@ -14001,11 +14070,7 @@ pub fn solve(
         }
 
         ////////////////////////////////////
-        if (SELF_TEST)
-        {
-            PROFILE(.TestPass);
-            test_node(node, :node.helpers.pass);
-        }
+        TEST_pass(node, :node.helpers.pass);
         ////////////////////////////////////
 
         {
@@ -14023,11 +14088,7 @@ pub fn solve(
         }
 
         ////////////////////////////////////
-        if (SELF_TEST)
-        {
-            PROFILE(.TestPass);
-            test_node(node, :node.helpers.pass);
-        }
+        TEST_pass(node, :node.helpers.pass, expect_paint: true);
         ////////////////////////////////////
 
         {
@@ -14039,11 +14100,7 @@ pub fn solve(
 
         ////////////////////////////////////
         // Noticed we were missing a test pass here,
-        // if (SELF_TEST)
-        // {
-        //     PROFILE(.TestPass);
-        //     test_node(node, :node.helpers.pass);
-        // }
+        // TEST_pass(node, :node.helpers.pass);
         ////////////////////////////////////
 
         {
@@ -14056,11 +14113,7 @@ pub fn solve(
         }
 
         ////////////////////////////////////
-        if (SELF_TEST)
-        {
-            PROFILE(.TestPass);
-            test_node(node, :node.helpers.pass);
-        }
+        TEST_pass(node, :node.helpers.pass);
         ////////////////////////////////////
 
         {
@@ -14081,11 +14134,7 @@ pub fn solve(
         }
 
         ////////////////////////////////////
-        if (SELF_TEST)
-        {
-            PROFILE(.TestPass);
-            test_node(node, :node.helpers.pass);
-        }
+        TEST_pass(node, :node.helpers.pass, expect_paint: true);
         ////////////////////////////////////
 
         if (_current_fn)

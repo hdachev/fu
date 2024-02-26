@@ -16838,6 +16838,24 @@ pub extern fn runTests()
     `);
 
     ZERO(`
+        fn solve(ref TRACE_out: string, ref effect: int) {
+            fn doTrySpecialize(what) {
+                defer TRACE_out ~= "<" ~ effect++ ~ ">";
+                what();
+            }
+
+            doTrySpecialize(|| {});
+        }
+
+        fn main() {
+            mut TRACE_out = "";
+            mut effect = 10;
+            solve(:TRACE_out, :effect);
+            return TRACE_out == "<10>" ? 0 : 1;
+        }
+    `);
+
+    ZERO(`
         struct Target { _packed: u32 }
         inline fn globid(t: Target) i32(t._packed);
 
