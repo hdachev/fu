@@ -12201,6 +12201,12 @@ pub extern fn runTests()
         fn main() X(1).rec_cases;
     `);
 
+    TODO_specpat(currently: "BUG unexpected pattern 3:12+4", `
+        let OK = true;
+        fn what() case (OK) a;
+        fn main() 0.what;
+    `);
+
     // /Template cases
 
 
