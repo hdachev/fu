@@ -12089,6 +12089,16 @@ pub extern fn runTests()
         }
     `);
 
+    TODO_definit(currently: "BUG trying to definitWrap a mutref 6:19+4", `
+        struct Shape { hash: int };
+
+        fn main() {
+            mut shape = []; // maybe disallow t_zeroes as a local variable (require type annot?)
+            shape.hash = 3;
+            return -shape.hash + 3;
+        }
+    `);
+
     // /quite right
 
 
