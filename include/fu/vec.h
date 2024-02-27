@@ -925,7 +925,7 @@ struct fu_VEC
                 MEMCPY_range(new_data + idx, src_data, src_size);
                 src.UNIQ__Dealloc_DontRunDtors();
             }
-            else {
+            else if constexpr (SHAREABLE) {
                 if constexpr (!TRIVIAL)
                     CPY_ctor_range(new_data + idx, src_data, src_size);
 
@@ -984,7 +984,7 @@ struct fu_VEC
                 MEMCPY_range(new_data + idx, src_data, src_size);
                 src.UNIQ__Dealloc_DontRunDtors();
             }
-            else {
+            else if constexpr (SHAREABLE) {
                 if constexpr (!TRIVIAL)
                     CPY_ctor_range(new_data + idx, src_data, src_size);
 

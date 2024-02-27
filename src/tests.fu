@@ -2034,19 +2034,17 @@ pub extern fn runTests()
         }
     `);
 
-    TODO_arrays(currently: "STILL BROKEN", `
-        // This documents the fact that our array concats & co
-        //  are actually totally clueless and hiding copies,
-        //   detectable here because NC is non-copiable.
-        //
-        ;; BROKEN }} + fu::view<NC_
-
-        nocopy struct NC { items: NC[] }
+    ZERO(`
+        <alt>           ;; ALLOCS 4/512
+        nocopy
+        <alt/>          ;; ALLOCS 3/336
+        </alt>
+        struct NC { items: NC[] }
         fn takesInlineArg(inline a: NC[], inline b: NC[]) a ~ b;
 
         fn count(items: NC[]) {
             mut count = items.len;
-            for (mut i = 0; i < count; i++) count += items[i].items.count;
+            items.each: |x| count += x.items.count;
             return count;
         }
 
