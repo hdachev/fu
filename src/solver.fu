@@ -3875,10 +3875,14 @@ pub fn solve(
 
             if (SELF_TEST)
             {
-                TEST_unusedButCopied("trackVarUsage " ~ nested(locid), slot);
+                let t = nested(locid);
+                TEST_unusedButCopied("trackVarUsage " ~ t, slot);
 
                 if (slot.lifetime.hasTemporary)
-                    BUG(nested(locid) ~ ", trackVarUsage: slot is ref2temp: " ~ slot.humanizeType(lt: true));
+                    BUG(t ~ ", trackVarUsage: slot is ref2temp: " ~ slot.humanizeType(lt: true));
+
+                if (slot.isIrrelevant)
+                    BUG(nested(locid) ~ ", trackVarUsage: slot is irrelevant: " ~ slot.humanizeType(usage: true));
             }
 
             shadow ref usage = _current_fn.var_usage.grow_if_oob(locid);
@@ -11672,6 +11676,13 @@ pub fn solve(
                 type    = GET(target).type || BUG(
                     "CallerNode: !type on var " ~ target.name);
             }
+
+            // Discard the callsite if irrelevant,
+            //  unless this is an inline argument, in which case the callsite
+            //   is needed for replacement during inlineExpression.
+            //
+            if (type.isIrrelevant && !(target.isArg && target.flags & F_INLINE))
+                return createEmpty(:type);
         }
 
         // Funcs & co.
@@ -13823,6 +13834,9 @@ pub fn solve(
 
             if (o.kind != "field")
             {
+                if (o.kind == "var" && o.type.isIrrelevant)
+                    BUG("Call to irrelevant local: " ~ o);
+
                 let expect = node.type;
 
                 // Fields man.
@@ -13983,6 +13997,9 @@ pub fn solve(
         }
         else if (k == "let")
         {
+            if (node.type.isIrrelevant && pass >= RelaxMut)
+                node.target.isArg || BUG(node.target ~ " place.type is irrelevant: " ~ humanizeType(node.type, usage: true));
+
             if (node.items.len != 2)
             {
                 // TODO FIX injected args don't appear to have the items annot/init tuple
