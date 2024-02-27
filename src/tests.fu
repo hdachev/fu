@@ -2040,8 +2040,11 @@ pub extern fn runTests()
         <alt/>          ;; ALLOCS 3/336
         </alt>
         struct NC { items: NC[] }
+<alt>
         fn takesInlineArg(inline a: NC[], inline b: NC[]) a ~ b;
-
+<alt/>
+        fn takesInlineArg(mut a: NC[], inline b: NC[]) a ~= b;
+</alt>
         fn count(items: NC[]) {
             mut count = items.len;
             items.each: |x| count += x.items.count;

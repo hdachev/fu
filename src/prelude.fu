@@ -460,8 +460,9 @@ infix fn ~ !T(mut a: T[], mut b: T[]) case (!T.is::copy): T[] __native("<fu/vec/
 infix fn ~ !T(mut a: T[], mut b: T  ) case (!T.is::copy): T[] __native("<fu/vec/concat_one.h>", "+");
 infix fn ~ !T(mut a: T  , mut b: T[]) case (!T.is::copy): T[] __native("<fu/vec/concat_one.h>", "+");
 
-infix fn ~= !T(mut ref a: T[],     b: T[..]): &mut T[] __native("<fu/vec/concat.h>",     "+=");
-infix fn ~= !T(mut ref a: T[], mut b: T    ): &mut T[] __native("<fu/vec/concat_one.h>", "+=");
+infix fn ~= !T(mut ref a: T[],     b: T[..]) case ( T.is::copy): &mut T[] __native("<fu/vec/concat.h>",     "+=");
+infix fn ~= !T(mut ref a: T[], mut b: T[]  ) case (!T.is::copy): &mut T[] __native("<fu/vec/concat.h>",     "+=");
+infix fn ~= !T(mut ref a: T[], mut b: T    )                   : &mut T[] __native("<fu/vec/concat_one.h>", "+=");
 
 
 // Fun with views.
