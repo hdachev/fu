@@ -2044,6 +2044,11 @@ pub extern fn runTests()
         fn takesInlineArg(inline a: NC[], inline b: NC[]) a ~ b;
 <alt/>
         fn takesInlineArg(mut a: NC[], inline b: NC[]) a ~= b;
+<alt/>
+        fn takesInlineArg(mut a: NC[], inline b: NC[]) {
+            a.splice(a.len / 2, 0, b);
+            return a;
+        }
 </alt>
         fn count(items: NC[]) {
             mut count = items.len;

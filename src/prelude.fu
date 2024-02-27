@@ -221,8 +221,10 @@ fn    push !T(mut ref a: T[], mut b: T): void __native(".push");
 fn unshift !T(mut ref a: T[], mut b: T): void __native(".unshift");
 fn  insert !T(mut ref a: T[], i: int, mut b: T): void __native(".insert");
 
+// TODO group these with the concats below
 fn splice !T(mut ref a: T[], start: int, count: int): void  __native(".splice");
-fn splice !T(mut ref a: T[], start: int, count: int, /*TODO FIX*/b: T[..]): void  __native(".splice");
+fn splice !T(mut ref a: T[], start: int, count: int,     b: T[..]) case ( T.is::copy): void  __native(".splice");
+fn splice !T(mut ref a: T[], start: int, count: int, mut b: T[]  ) case (!T.is::copy): void  __native(".splice");
 
 fn    pop !T(mut ref a: T[]): void __native(".pop()");
 fn  shift !T(mut ref a: T[]): void __native(".shift()");
