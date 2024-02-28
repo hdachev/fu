@@ -41,24 +41,8 @@ pub extern fn runTests()
         PARZERO_queue ~= [ src ];
 
     //
-    mut hasSOLO = false;
-
-    fn SOLO(src: string[]) {
-        hasSOLO = true;
-        ZERO(src)
-    }
-
-    fn SOLO(src: string) {
-        hasSOLO = true;
-        ZERO(src)
-    }
-
-    //
     defer:ok
     {
-        if (hasSOLO) throw(
-            "\n\n\tDONT COMMIT:\n\n\tSOLO mode is on.\n");
-
         struct TestResult
         {
             error:      string;
@@ -3219,6 +3203,123 @@ pub extern fn runTests()
             cpy ~= str[i];
 
         return (cpy.len - 11) + (cpy == str ? 0 : 1);
+    `);
+
+    ZERO(`
+        fn xorshift(mut x: u8)  { x ^= x <<  5; x ^= x >>  3; x ^= x <<  7 }
+        fn xorshift(mut x: u16) { x ^= x <<  3; x ^= x >>  5; x ^= x << 11 }
+        fn xorshift(mut x: u32) { x ^= x << 13; x ^= x >> 17; x ^= x <<  5 }
+        fn xorshift(mut x: u64) { x ^= x << 13; x ^= x >>  7; x ^= x << 17 }
+
+        fn main() {                                             ;; DuplicateFunctions
+            mut rnd_state = 1.u32;
+            fn rnd() {
+                rnd_state = xorshift(rnd_state);
+                return rnd_state + 0;
+            }
+
+            fn check(a: string, b: string, expect: int, next = -1)
+            {
+                let a0 = a.find(b);
+                assert(a0 == expect);
+
+                if (expect >= 0) {
+                    let a1 = a.find(b, start: expect + b.len);
+                    assert(a1 == next);
+                }
+
+                if (!b) return;
+
+                if (b.len < 256) {
+                    mut aa = "";
+                    mut bb = "";
+                    for (mut i = 0; i < a.len; i++) aa ~= [ a[i], a[i] ];
+                    for (mut i = 0; i < b.len; i++) bb ~= [ b[i], b[i] ];
+
+                    check(aa, bb, expect < 0 ? -1 : expect * 2,
+                                    next < 0 ? -1 :   next * 2);
+                }
+
+                if (!b.has('x')) {
+                    let bi = b.len && (rnd % b.len.u32).int;
+                    check(a, b[.. bi] ~ 'x' ~ b[bi ..], -1, -1);
+
+                    if (b.len >= 2 && expect >= 0 && next < 0) {
+                        let bmid = b.len - 2;
+                        let ai = expect + 1 + (bmid && rnd % bmid.u32).int;
+                        check(a[.. ai] ~ 'c' ~ a[ai ..], b, -1, -1);
+                    }
+
+                    fn check(type as!T) {
+                        shadow let rnd = rnd;
+                        fn randomize(v: byte) xorshift(v.T + rnd.T);
+                        shadow let a = a.map(.randomize);
+                        shadow let b = b.map(.randomize);
+
+                        shadow let a0 = a.find(b);
+                        assert(a0 == expect);
+
+                        if (expect >= 0) {
+                            shadow let a1 = a.find(b, start: expect + b.len);
+                            assert(a1 == next);
+                        }
+                    }
+
+                    check(as: u8); check(as: u16); check(as: u32); check(as: u64);
+
+                    if (expect >= 0 && !(b.len & 1) && !(a.has('n')))
+                    {
+                        check(a ~ 'n', b, expect, next);
+                        check('n' ~ a, b, expect + 1, next < 0 ? next : next + 1);
+
+                        if (!b.has('n') && a.len)
+                        {
+                            let replace = b[int(rnd % b.len.u32)];
+                            shadow let a = a.replace(all: replace, with: 'n');
+                            shadow let b = b.replace(all: replace, with: 'n');
+
+                            {
+                                shadow let expect = expect < 0 ? expect : expect - 1;
+                                shadow let next   = next   < 0 ? next   : next   - 1;
+
+                                if (expect >= 0 || next < 0)
+                                    check(a[1 ..], b, expect, next);
+                            }
+
+                            check(a[.. a.len - 1], b, expect < a.len - b.len ? expect : -1
+                                                    , next   < a.len - b.len ? next   : -1);
+                        }
+                    }
+                }
+            }
+
+            check("hello world", "", 0, 0);
+            check("hello world", "h", 0);
+            check("hello world", " ", 5);
+            check("hello world", "d", 10);
+            check("hello world", "hello", 0);
+            check("hello world", "helllo", -1);
+            check("hello world", "ello ", 1);
+            check("hello world", "lllo ", -1);
+            check("hello world", "lllo ", -1);
+            check("hello world", "wrld", -1);
+            check("hello world", "world ", -1);
+            check("hello world", "worldd", -1);
+            check("hello world", "hh", -1);
+            check("hello world", "dd", -1);
+            check("hello world", "ll", 2);
+            check("hello world", " w", 5);
+            check("hello world", "o ", 4);
+            check("hello world", "world", 6);
+            check("hello world", "hello world", 0);
+            check("hello world", "eello world", -1);
+            check("hello world", " hello world", -1);
+            check("hello world", "hello world ", -1);
+            check("hellohellohello", "hello", 0, 5);
+            check("hellhellohello", "hello", 4, 9);
+            check("hellhellhello", "hello", 8);
+            return 0;
+        }
     `);
 
     ZERO(`
