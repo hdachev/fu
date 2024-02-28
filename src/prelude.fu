@@ -279,11 +279,127 @@ fn sort !T(mut ref a: T[..], less/*: fn(a: T, b: T): bool*/): void
 
 // String likes.
 
-fn find !T(a: T[..], b: T[..], start: int, end: int) case (T.is::primitive): int  __native("<fu/vec/find.h>", "fu::lfind");
-fn find !T(a: T[..], b: T[..], start: int)           case (T.is::primitive): int  __native("<fu/vec/find.h>", "fu::lfind");
-fn find !T(a: T[..], b: T[..])                       case (T.is::primitive): int  __native("<fu/vec/find.h>", "fu::lfind");
+fn has !T(a: T[..], b: T[..]) = a.find(b) >= 0;
 
-fn has  !T(a: T[..], b: T[..]) case (T.is::primitive): bool __native("<fu/vec/find.h>", "fu::has");
+fn find !T(haystack: T[..], needle: T[..], start?: int or [], end?: int or []): int
+{
+    type Start  = typeof(start);
+    type End    = typeof(end);
+
+    // Keep things simple.
+    if !(Start -> [] && End -> [])
+    {
+        let slice = Start -> [] ? haystack[      .. end]
+                  : End   -> [] ? haystack[start ..    ]
+                                : haystack[start .. end];
+
+        let res = slice.find(needle);
+        return res + (res < 0 ? 0 : start);
+    }
+
+    // Shorter haystack & empty needle.
+    if (haystack.len < needle.len || needle.len <= 0)
+        return needle.len ? -1 : 0;
+
+    // This is both a fast path for single-item needles,
+    //  and simplifies the loops below,
+    //   where the Booyer-Moore trick can rely on needle having at least two items.
+    if (needle.len == 1)
+        return haystack.find(needle[0]);
+
+
+    // Try to go for a whole needle comparison
+    //  if the needle is small enough to fit in an integer.
+    //
+    // This works, never measured if it speeds anything up though.
+
+    // if (T.is::primitive && !T.is::floating_point
+    //                     && needle.len * sizeof(T) <= 16)
+    // {
+    //     let shift       = (sizeof(T) * 8).u128;
+    //     let mask        = needle.len * sizeof(T) * 8;
+    //     shadow let mask =
+    //         mask < 128  ? ~(~(0.u128) << (needle.len * sizeof(T) * 8).u128)
+    //                     :   ~(0.u128);
+    //
+    //     mut reg_needle:     u128;
+    //     mut reg_haystack:   u128;
+    //     for (mut i = 0; i < needle.len; i++) {
+    //         reg_needle    <<= shift;
+    //         reg_haystack  <<= shift;
+    //         reg_needle     |= needle[i].u128;
+    //         reg_haystack   |= haystack[i].u128;
+    //     }
+    //
+    //     mut i = needle.len;
+    //     for (;;) {
+    //         if (reg_haystack == reg_needle)
+    //             return i - needle.len;
+    //
+    //         if !(i < haystack.len)
+    //             return -1;
+    //
+    //         reg_haystack  <<= shift;
+    //         reg_haystack   &= mask;
+    //         reg_haystack   |= haystack[i++].u128;
+    //     }
+    // }
+
+
+    // Booyer-Moore trick from FBString::find,
+    //  modified to avoid testing the last needle character twice.
+
+    let needle_len_m1       = needle.len - 1;
+    let needle_last_char    = needle[needle_len_m1];
+
+    // How many bytes are skipped when a mismatch is found after tail matches -
+    //  if needle is 'aa', then skip would be 1, if needle doesn't repeat the tail byte,
+    //   skip would be needle.len.
+    mut skip = 0;
+
+    for (mut i = needle_len_m1;
+             i < haystack.len; )
+    {
+        // Scan for a the tail char of the needle,
+        //  consider using strchr here or something.
+        while (haystack[i] != needle_last_char)
+            if (++i == haystack.len)
+                return -1;
+
+        // Match the rest of the needle,
+        //  consider randomizing this part, should help with crafted needles.
+        for (mut j = 0;; )
+        {
+            // Mismatch halfway through the needle?
+            if (haystack[i - needle_len_m1 + j] != needle[j])
+            {
+                // Init the skip value.
+                if !(skip)
+                {
+                    // Scan the needle backwards,
+                    //  break on first match with needle tail.
+                    skip = needle.len;
+                    for (shadow mut j = needle_len_m1; j --> 0; ) {
+                        if (needle[j] == needle_last_char) {
+                            skip = needle_len_m1 - j;
+                            break;
+                        }
+                    }
+                }
+
+                // Skip over to the next possible tail-char position.
+                i += skip;
+                break;
+            }
+
+            // Entire needle matches?
+            if (++j == needle_len_m1)
+                return i - needle_len_m1;
+        }
+    }
+
+    return -1;
+}
 
 
 // Find char.
