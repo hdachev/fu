@@ -279,9 +279,9 @@ fn sort !T(mut ref a: T[..], less/*: fn(a: T, b: T): bool*/): void
 
 // String likes.
 
-fn has !T(a: T[..], b: T[..]) = a.find(b) >= 0;
+fn has !T(a: T[..], b: T[..] or T) = a.find(b) >= 0;
 
-fn find !T(haystack: T[..], needle: T[..], start?: int or [], end?: int or []): int
+fn find !T(haystack: T[..], needle: T[..] or T, start?: int or [], end?: int or []): int
 {
     type Start  = typeof(start);
     type End    = typeof(end);
@@ -295,6 +295,16 @@ fn find !T(haystack: T[..], needle: T[..], start?: int or [], end?: int or []): 
 
         let res = slice.find(needle);
         return res + (res < 0 ? 0 : start);
+    }
+
+    // Char vs string.
+    if (typeof(needle) -> T)
+    {
+        for (mut i = 0; i < haystack.len; i++)
+            if (haystack[i] == needle)
+                return i;
+
+        return -1;
     }
 
     // Shorter haystack & empty needle.
@@ -424,34 +434,6 @@ fn ends !T(a: T[..], with: T[..]): bool
 {
     return a.len >= with.len
         && a[a.len - with.len .. a.len] == with;
-}
-
-fn find !T(a: T[..], b: T, mut start: int): int
-{
-    start = start > 0 ? start : 0;
-    for (mut i = start; i < a.len; i++) // TODO memchr
-        if (a[i] == b)
-            return i;
-
-    return -1;
-}
-
-fn find !T(a: T[..], b: T): int
-{
-    for (mut i = 0; i < a.len; i++) // TODO memchr
-        if (a[i] == b)
-            return i;
-
-    return -1;
-}
-
-fn has !T(a: T[..], b: T): bool
-{
-    for (mut i = 0; i < a.len; i++)
-        if (a[i] == b)
-            return true;
-
-    return false;
 }
 
 
