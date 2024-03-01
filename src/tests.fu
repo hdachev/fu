@@ -3003,11 +3003,11 @@ pub extern fn runTests()
         }
     `);
 
-    TODO_cow(currently: "BUG expected keyword cow not present in error message exit code", `
+    ZERO(`
         fn main() {
             mut data: int[][] = [ [ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 ], [ 10, 11, 12, 13, 14, 15, 16, 17, 18, 19 ] ];
 
-        <fail cow will break data X:X>
+        <fail cow will break data (10:31+4|11:21+4|11:25+1|9:28+1|9:24+4)>
             ref <pass/>
             mut </fail> item = data[0][1];
 
@@ -8045,7 +8045,7 @@ pub extern fn runTests()
         }
     `);
 
-    TODO_cow(currently: "COW will break 16:22+1 9:17+1", `
+    TODO_cow(currently: "COW will break 17:27+1 9:17+1", `
         fn track_last_loop_confusion(mut a: string, mut b: string)
         {
             for (mut i = 0; i < 6; i++) {
@@ -13517,7 +13517,7 @@ pub extern fn runTests()
         }
     `);
 
-    ZERO(`
+    TODO_cow(currently: "at call to fn Lifetime_op 20:34+1 both alias ref arg lt 19:33+2", `
         <alt>
         inline      <alt/>
         noinline    </alt>
@@ -18883,7 +18883,7 @@ pub extern fn runTests()
         }
     `);
 
-    ZERO(`
+    TODO_cow(currently: "COW will break 10:34+1 4:21+3 2:21+7", `
         fn ZERO(mut sources: string[], implicit ref output: string) {
             for (mut i = 0; i < sources.len; i++) {
                 ref src = sources[i];

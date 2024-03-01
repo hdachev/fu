@@ -232,7 +232,7 @@ pub fn solve(
         ever_written:       LocidSet;
 
         // COW.
-        mayEscapeVia:       i32;
+        mayEscapeVia:       MayEscapeVia;
         exitPaths:          ExitPaths;
     };
 
@@ -3764,7 +3764,7 @@ pub fn solve(
                         Lifetime_climbType(t).lifetime);
 
                     if (t.isArg)
-                        _current_fn.postdom.mayEscapeVia |= 1 << (locid % 32);
+                        _current_fn.postdom.mayEscapeVia.add(:locid);
                 }
             }
         }
@@ -7196,6 +7196,9 @@ pub fn solve(
         let relaxMutValArgs =
             maybeLast && !mustBecomeInline;
 
+        // See below.
+        mut TODO_FIX_nativeCOWsInside_mayEscapeVia: MayEscapeVia;
+
         // argTarget -> argIndex mapping.
         mut argPos_1b: i32[];
         for (mut i = 0; i < N; i++)
@@ -7218,6 +7221,46 @@ pub fn solve(
                     o.keepOrClearMutVal(
                         keep: o.type.is_mutref
                            || o.status & SS_MOVED_FROM);
+            }
+
+            // See below.
+            if (isNative && argNode.type.is_mutref && !argNode.type.is_trivial)
+                TODO_FIX_nativeCOWsInside_mayEscapeVia.add(
+                    :argNode.target.locid || BUG(
+                        "TODO_FIX_nativeCOWsInside_mayEscapeVia: no locid"));
+        }
+
+        //
+        let TODO_FIX_nativeCOWsInside = !!TODO_FIX_nativeCOWsInside_mayEscapeVia
+            || isNative && !retval.is_ref && !retval.is_trivial;
+
+        // TODO FIX ARRAYS AND SLICES - T[] ~= T[], T[] ~ T[] and .splice(.. T[])
+        //  currently hide copies that happen in c++ code. This heuristic detects their pattern -
+        //   non-triv-mut-ref-args and/or non-triv-value-retval
+        //    imply that the any non-triv-const-ref-args are copied from.
+        //
+        if (TODO_FIX_nativeCOWsInside)
+        {
+            _current_fn.cows_inside && BUG(
+                "TODO_FIX_nativeCOWsInside: _current_fn.cows_inside already set");
+
+            for (mut i = 0; i < N; i++)
+            {
+                ref argNode = items[i];
+                if (argNode.type.is_ref && !argNode.type.is_mutref && !argNode.type.is_trivial)
+                {
+                    let locid = argNode.target.locid || BUG(
+                        "TODO_FIX_nativeCOWsInside: ref arg target not set");
+
+                    _current_fn.cows_inside ~= COWInside(
+                        :argNode.type.vtype,
+                        :argNode.token,
+                        argTarget:      locid,
+                        mayEscapeVia:   TODO_FIX_nativeCOWsInside_mayEscapeVia,
+                        exitPaths:      XP_NonEmptyReturn
+                            | (TODO_FIX_nativeCOWsInside_mayEscapeVia && XP_EmptyReturn)
+                    );
+                }
             }
         }
 
