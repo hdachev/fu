@@ -7247,19 +7247,43 @@ pub fn solve(
             for (mut i = 0; i < N; i++)
             {
                 ref argNode = items[i];
+
+                shadow ref argNode = argNode.kind == "letdef"
+                    ? argNode.target.GET_mut.solved
+                    : { continue; };
+
                 if (argNode.type.is_ref && !argNode.type.is_mutref && !argNode.type.is_trivial)
                 {
                     let locid = argNode.target.locid || BUG(
                         "TODO_FIX_nativeCOWsInside: ref arg target not set");
 
-                    _current_fn.cows_inside ~= COWInside(
-                        :argNode.type.vtype,
-                        :argNode.token,
-                        argTarget:      locid,
-                        mayEscapeVia:   TODO_FIX_nativeCOWsInside_mayEscapeVia,
-                        exitPaths:      XP_NonEmptyReturn
-                            | (TODO_FIX_nativeCOWsInside_mayEscapeVia && XP_EmptyReturn)
-                    );
+                    let vtype =
+                        argNode.type.is_rx_copy
+                            ? argNode.type.vtype
+                            : argNode.type.if_sliceable(
+                                |itemType| itemType.is_rx_copy && itemType);
+
+                    if (!vtype.is_rx_copy)
+                    {
+                        // Non-copiable? Require a value - unless ref-returned.
+                        if (!retval.is_ref || retval.is_mutref)
+                            argNode.type = clear_refs(argNode.type);
+                        else
+                            fail("Heuristically, " ~ target ~ " likely performs COW inside, but "
+                                ~ argNode.target ~ " is neither copiable nor value-convertible "
+                                ~ " (appears to be ref-returned).");
+                    }
+                    else
+                    {
+                        _current_fn.cows_inside ~= COWInside(
+                            :vtype,
+                            :argNode.token,
+                            argTarget:      locid,
+                            mayEscapeVia:   TODO_FIX_nativeCOWsInside_mayEscapeVia,
+                            exitPaths:      XP_NonEmptyReturn
+                                | (TODO_FIX_nativeCOWsInside_mayEscapeVia && XP_EmptyReturn)
+                        );
+                    }
                 }
             }
         }

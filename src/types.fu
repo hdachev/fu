@@ -88,14 +88,14 @@ pub fn is_void_or_propositionOK(type: Type, vfactsOK!?: bool)
 pub let t_AssumeNever_WhileSolvingRecursion =
     NotSure("never", q_rx_resize);
 
-pub fn is_AssumeNever_WhileSolvingRecursion(t: Type) =
+pub fn is_AssumeNever_WhileSolvingRecursion(t: ValueType) =
     t.canon == "never" && t.quals & q_rx_resize;
 
 
 //
 
-pub fn is_rx_copy   (t: Type) !!(t.quals & q_rx_copy);
-pub fn is_rx_resize (t: Type) !!(t.quals & q_rx_copy);
+pub fn is_rx_copy   (t: ValueType) !!(t.quals & q_rx_copy);
+pub fn is_rx_resize (t: ValueType) !!(t.quals & q_rx_copy);
 
 
 //

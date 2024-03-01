@@ -332,8 +332,8 @@ pub fn parseType(str: byte[..]): ValueType
 
 pub fn if_sliceable(type: ValueType, hit)
 {
-    if (type.is_sliceable)
-        hit(parseType(type.canon.slice(1, type.canon.len - 1)));
+    return type.is_sliceable
+        && hit(parseType(type.canon.slice(1, type.canon.len - 1)));
 }
 
 pub fn tryClear_sliceable(type: ValueType)

@@ -221,10 +221,8 @@ fn    push !T(mut ref a: T[], mut b: T): void __native(".push");
 fn unshift !T(mut ref a: T[], mut b: T): void __native(".unshift");
 fn  insert !T(mut ref a: T[], i: int, mut b: T): void __native(".insert");
 
-// TODO group these with the concats below
 fn splice !T(mut ref a: T[], start: int, count: int): void  __native(".splice");
-fn splice !T(mut ref a: T[], start: int, count: int,     b: T[..]) case ( T.is::copy): void  __native(".splice");
-fn splice !T(mut ref a: T[], start: int, count: int, mut b: T[]  ) case (!T.is::copy): void  __native(".splice");
+fn splice !T(mut ref a: T[], start: int, count: int, b: T[..]): void  __native(".splice");
 
 fn    pop !T(mut ref a: T[]): void __native(".pop()");
 fn  shift !T(mut ref a: T[]): void __native(".shift()");
@@ -450,21 +448,13 @@ infix fn <=(a: string, b: string): bool __native("<fu/vec/cmp.h>", "<=");
 
 
 // D-style concats.
-//
-// TODO FIX these concats hide copies
-//  which also means they dont work correctly for nocopy stuff
-//
-infix fn ~ !T(a: T[..], b: T[..]) case (T.is::copy): T[] __native("<fu/vec/concat.h>",     "+");
-infix fn ~ !T(a: T[..], mut b: T) case (T.is::copy): T[] __native("<fu/vec/concat_one.h>", "+");
-infix fn ~ !T(mut a: T, b: T[..]) case (T.is::copy): T[] __native("<fu/vec/concat_one.h>", "+");
 
-infix fn ~ !T(mut a: T[], mut b: T[]) case (!T.is::copy): T[] __native("<fu/vec/concat.h>",     "+");
-infix fn ~ !T(mut a: T[], mut b: T  ) case (!T.is::copy): T[] __native("<fu/vec/concat_one.h>", "+");
-infix fn ~ !T(mut a: T  , mut b: T[]) case (!T.is::copy): T[] __native("<fu/vec/concat_one.h>", "+");
+infix fn ~ !T(a: T[..], b: T[..]): T[] __native("<fu/vec/concat.h>",     "+");
+infix fn ~ !T(a: T[..], b: T    ): T[] __native("<fu/vec/concat_one.h>", "+");
+infix fn ~ !T(a: T    , b: T[..]): T[] __native("<fu/vec/concat_one.h>", "+");
 
-infix fn ~= !T(mut ref a: T[],     b: T[..]) case ( T.is::copy): &mut T[] __native("<fu/vec/concat.h>",     "+=");
-infix fn ~= !T(mut ref a: T[], mut b: T[]  ) case (!T.is::copy): &mut T[] __native("<fu/vec/concat.h>",     "+=");
-infix fn ~= !T(mut ref a: T[], mut b: T    )                   : &mut T[] __native("<fu/vec/concat_one.h>", "+=");
+infix fn ~= !T(mut ref a: T[],     b: T[..]): &mut T[] __native("<fu/vec/concat.h>",     "+=");
+infix fn ~= !T(mut ref a: T[], mut b: T    ): &mut T[] __native("<fu/vec/concat_one.h>", "+=");
 
 
 // Fun with views.
