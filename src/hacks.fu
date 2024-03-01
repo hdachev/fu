@@ -49,21 +49,31 @@ fn tryParseClosureID(id!: string): ClosureID
 
 //
 
-struct NativeHacks
+struct NativeQualities
 {
     name_start_idx:     i32;
 
-    // Opts.
-    soft_risk:          bool;
+
+    // We don't see inside functions written in c/c++,
+    //  so the next best thing is to support some annotations
+    //   that can help us "infer" various useful qualities.
+
+    // Arguments may alias each other, e.g. swap:
+    //  tmp <- a; a <- b; b <- tmp;
+    //
+    // If a and b are the same object, this still works correctly:
+    //  tmp <- a; 0 <- 0; a <- tmp;
+    //
+    MayAlias?:          bool;
 };
 
-fn NativeHacks(name: string)
+fn NativeQualities(name: string)
 {
-    if (name.starts(with: "\nhacks/soft_risk"))
+    if (name.starts(with: "\n#MayAlias"))
     {
-        return NativeHacks(
-            name_start_idx:     16,
-            soft_risk:          true);
+        return NativeQualities(
+            name_start_idx:     10,
+            MayAlias:           true);
     }
 
     return [];

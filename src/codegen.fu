@@ -2457,7 +2457,7 @@ pub fn cpp_codegen(
         if (isNative && target.name[0] == '\n')
         {
             mut id = target.name.slice(
-                hacks::NativeHacks(target.name)
+                hacks::NativeQualities(target.name)
                     .name_start_idx + 1);
 
             let idx = id.find('\n');

@@ -168,7 +168,7 @@ infix fn &&= !T(mut ref a: T, inline b: T): &mut T = a && (a = b);
 
 fn swap !T(mut ref a: T, mut ref b: T)
     case (  T -> _[]   ): void __native(".swap");
-    case (!(T -> _[..])): void __native("hacks/soft_risk", "<utility>", "std::swap");
+    case (!(T -> _[..])): void __native("#MayAlias", "<utility>", "std::swap");
 
 
 // Arrays.

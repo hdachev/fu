@@ -7188,8 +7188,8 @@ pub fn solve(
         mut min = 0;
         mut max = 0;
 
-        let NativeHacks =
-            isNative && hacks::NativeHacks(target.name);
+        let NativeQualities =
+            isNative && hacks::NativeQualities(target.name);
 
         mut numArgsWritten = 0;
 
@@ -7265,7 +7265,7 @@ pub fn solve(
                     soft_risk.add_range(end: N);
                     soft_risk.rem(i);
 
-                    if (!NativeHacks.soft_risk)
+                    if (!NativeQualities.MayAlias)
                         hard_risk = soft_risk;
                 }
                 else
