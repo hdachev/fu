@@ -2997,6 +2997,43 @@ pub extern fn runTests()
         }
     `);
 
+    TODO_cow(currently: "BUG expected keyword cow not present in error message exit code", `
+        fn main() {
+            mut data: int[][] = [ [ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 ], [ 10, 11, 12, 13, 14, 15, 16, 17, 18, 19 ] ];
+
+        <fail cow will break data X:X>
+            ref <pass/>
+            mut </fail> item = data[0][1];
+
+        <alt>
+            mut copy = data;
+        <alt/>
+            mut copy = data ~ [ 0, 0, 0, 0 ];
+        <alt/>
+            mut copy = data ~ [ [ 0, 0, 0, 0 ] ];
+        <alt/>
+            mut copy = data[.. 1] ~ data[1 ..];
+        <alt/>
+            mut copy: int[][];
+            copy ~= data[.. data.len / 2];
+            copy ~= data[data.len / 2 ..];
+        <alt/>
+            mut copy: int[][];
+            copy ~= [ 0, 0, 0, 0 ];
+            copy ~= data;
+        <alt/>
+            mut copy: int[][];
+            copy.splice(0, 0, data);
+        </alt>
+
+            item += 1000;
+
+            mut sum = 0;
+            copy.each: .each(|x| sum += x);
+            return item == 1001 && sum == 190 ? 0 : 1;
+        }
+    `);
+
     // /COW
 
 
