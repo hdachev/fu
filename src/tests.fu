@@ -3293,7 +3293,7 @@ pub extern fn runTests()
                         check(a[.. ai] ~ 'c' ~ a[ai ..], b, -1, -1);
                     }
 
-                    fn check(type as!T) {
+                    fn check(type as!<T>) {
                         shadow let rnd = rnd;
                         fn randomize(v: byte) xorshift(v.T + rnd.T);
                         shadow let a = a.map(.randomize);
@@ -16171,10 +16171,10 @@ pub extern fn runTests()
         pub struct SillyHash { int: int }
         pub fn SillyHash(str: string) = SillyHash(str.len)
 
-        struct SetItem(type Key, type Hash) { hash: Hash; key: Key }
-        pub struct Set(type Key, type Hash = SillyHash) { items: SetItem(:Hash, :Key)[] }
+        struct SetItem(type <Key>, type <Hash>) { hash: Hash; key: Key }
+        pub struct Set(type <Key>, type <Hash> = SillyHash) { items: SetItem(:Hash, :Key)[] }
 
-        fn if_ref !<Hash, Key>(ref set: Set(:Hash, :Key), hash!: Hash, key: Key, visit, else?) {
+        fn if_ref <Hash, Key>(ref set: Set(:Hash, :Key), hash!: Hash, key: Key, visit, else?) {
             for (mut i = 0; i < set.items.len; i++) {
                 ref item = set.items[i]
                 if (item.hash == hash && item.key == key)
@@ -16184,11 +16184,11 @@ pub extern fn runTests()
             return else()
         }
 
-        pub inline fn get !<Hash, Key>(ref set: Set(:Hash, :Key), key: Key) {
+        pub inline fn get(ref set: Set(:<Hash>, :<Key>), key: Key) {
             return set.if_ref(:key, hash: Hash(key), visit: |item| item) || []
         }
 
-        pub fn add !<Hash, Key>(ref set: Set(:Hash, :Key), key: Key) {
+        pub fn add <Hash>(ref set: Set(:Hash, :<Key>), key: Key) {
             let hash = Hash(key)
             set.if_ref(:key, :hash, visit: false): || {
                 type Item = SetItem(:Key, :Hash)
@@ -17508,7 +17508,7 @@ pub extern fn runTests()
     `);
 
     ZERO(`
-        fn typeArgRename(type Outer!Inner)
+        fn typeArgRename(type Outer!<Inner>)
             case (Inner.is::primitive)
                 = Inner;
 
@@ -17588,7 +17588,7 @@ pub extern fn runTests()
         struct Collide {}
         struct HK(type Hash, type Key) { hash: Hash; key: Key }
 
-        noinline fn set_hk !<Hash, Key>(
+        noinline fn set_hk <Hash, Key>(
             ref a: HK(:Hash, :Key), ref b: HK(:Hash, :Key), hash: Hash, key: Key)
         {
             a.hash = hash;

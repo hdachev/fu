@@ -1589,8 +1589,8 @@ pub fn parse(
         //
         mut id =
             // TODO FIX forward compat for type <T> //////////////////////
-            flags & F_TYPENAME && tryConsume("op", "<")
-                ? { let id = consume("id").value; consume("op", ">"); id }
+            flags & F_TYPENAME && tryConsume("op", "<")                 //
+                ? { let v = consume("id").value; consume("op", ">"); v }//
             // TODO FIX forward compat for type <T> //////////////////////
                 : consume("id").value;
 
@@ -1627,7 +1627,13 @@ pub fn parse(
             flags |= F_MUSTNAME;
 
             // Alternate internal arg name.
-            let inner_id = tryConsume("id").value;
+            let inner_id =
+                // TODO FIX forward compat for type <T> //////////////////////
+                flags & F_TYPENAME && tryConsume("op", "<")                 //
+                    ? { let v = consume("id").value; consume("op", ">"); v }//
+                // TODO FIX forward compat for type <T> //////////////////////
+                    : tryConsume("id").value;
+
             if (inner_id)
             {
                 flags |= F_COMPOUND_ID;

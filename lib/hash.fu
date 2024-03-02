@@ -20,7 +20,7 @@ let DefaultHasher_seed = rand::next_u64()
 
 pub struct DefaultHasher {}
 
-fn digest !Src(v: Src, type Dest)
+fn digest(v: <Src>, type <Dest>)
 case (Src -> int && Dest -> int) v
 case (Src -> u64 && Dest -> i32) i32(v.u32 ^ (v >> 32).u32)
 case (Src -> u16 && Dest -> int) int(v)
@@ -32,7 +32,7 @@ inline fn xorshift64(ref x: u64, value: u64) {
     x ^= x >> 27
 }
 
-fn hash !<Key, Item>(hasher: DefaultHasher, key: Key)
+fn hash <Item>(hasher: DefaultHasher, key: <Key>)
 case (Key.is::primitive)
 {
     mut x: u64
@@ -88,7 +88,7 @@ inline fn max_probes(index: IndexEntry[])
 inline fn [](ref .data, data_pos: DataPos)
     data[data_pos.int - 1]
 
-inline fn hash !Key(map: Map(:Key, _, _), key: Key) {
+inline fn hash(map: Map(:<Key>, _, _), key: Key) {
     mut hash = map.hasher.hash(key).digest(int)
     return hash < 0 ? ~hash : hash
 }
@@ -115,8 +115,8 @@ inline fn probe(
     }
 }
 
-inline fn route !Key(
-    ref map: Map(:Key, _, _),
+inline fn route(
+    ref map: Map(:<Key>, _, _),
         key: Key,
         hash!: int,
 
@@ -293,8 +293,8 @@ inline fn compact(
 
 //
 
-fn if_ref !Key(
-    ref map: Map(:Key, _, _),
+fn if_ref(
+    ref map: Map(:<Key>, _, _),
         key: Key,
         hash!: int,
 
@@ -314,8 +314,8 @@ fn if_ref !Key(
 
 //
 
-fn ref !<Key, Value>(
-    ref map: Map(:Key, :Value, _),
+fn ref(
+    ref map: Map(:<Key>, :<Value>, _),
         key: Key,
         hash!: int,
 
@@ -364,8 +364,8 @@ fn ref !<Key, Value>(
 
 //
 
-fn remove !Key(
-    ref map: Map(:Key, _, _),
+fn remove(
+    ref map: Map(:<Key>, _, _),
         key: Key,
         hash!: int,
 
@@ -450,17 +450,17 @@ fn remove !Key(
 
 //
 
-pub inline fn get !Key(
-    ref map: Map(:Key, _, _),
+pub inline fn get(
+    ref map: Map(:<Key>, _, _),
         key: Key)
 {
     return map.if_ref(:key, hash: map.hash(key), visit: |ref value| value)
         || []
 }
 
-pub inline fn get !Key(
+pub inline fn get(
     ref exists: bool,
-    ref map: Map(:Key, _, _),
+    ref map: Map(:<Key>, _, _),
         key: Key)
 {
     exists = false
@@ -468,16 +468,16 @@ pub inline fn get !Key(
         || []
 }
 
-pub inline fn set !<Key, Value>(
-    ref map: Map(:Key, :Value, _),
+pub inline fn set(
+    ref map: Map(:<Key>, :<Value>, _),
         key: Key,
     mut value: Value)
 {
     return map.ref(:key, hash: map.hash(key), visit: |shadow ref value| value) = value
 }
 
-pub inline fn remove !Key(
-    ref map: Map(:Key, _, _),
+pub inline fn remove(
+    ref map: Map(:<Key>, _, _),
         key: Key)
 {
     return map.remove(:key, hash: map.hash(key), visit: true)
@@ -497,12 +497,12 @@ pub inline fn each(ref map: Map(_, _, _), visit)
     }
 }
 
-pub inline fn ref !Key(ref map: Map(:Key, _, _), key: Key, visit)
+pub inline fn ref(ref map: Map(:<Key>, _, _), key: Key, visit)
 {
     return map.ref(:key, hash: map.hash(key), fn visit);
 }
 
-pub inline fn if_ref !Key(ref map: Map(:Key, _, _), key: Key, visit, else!?)
+pub inline fn if_ref(ref map: Map(:<Key>, _, _), key: Key, visit, else!?)
 {
     return map.if_ref(:key, hash: map.hash(key), fn visit, fn else);
 }
