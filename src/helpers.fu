@@ -1,24 +1,24 @@
 
-fn only(ref s: $T[..])
+fn only(ref s: <T>[..])
     s.len == 1 ? s[0] : throw (
         "len != 1: " ~ s.len);
 
-fn first(ref s: $T[..])
+fn first(ref s: <T>[..])
     s.len ? s[0] : throw("len == 0");
 
-fn last(ref s: $T[..])
+fn last(ref s: <T>[..])
     s.len ? s[s.len - 1] : throw("len == 0");
 
-fn if_only(ref s: $T[..])
+fn if_only(ref s: <T>[..])
     s.len == 1 && s[0];
 
-fn if_first(ref s: $T[..])
+fn if_first(ref s: <T>[..])
     s.len && s[0];
 
-fn if_last(ref s: $T[..])
+fn if_last(ref s: <T>[..])
     s.len && s[s.len - 1];
 
-fn grow_if_oob(ref a: $T[], i: i32): &mut $T
+fn grow_if_oob(ref a: <T>[], i: i32): &mut T
 {
     if (a.len <= i)
         a.grow(i + 1);
@@ -26,14 +26,14 @@ fn grow_if_oob(ref a: $T[], i: i32): &mut $T
     return a[i];
 }
 
-fn unless_oob(ref a: $T[..], i: i32)
+fn unless_oob(ref a: <T>[..], i: i32)
     i.unsigned < a.len.unsigned && a[i];
 
-fn try_steal(ref a: $T[..], i: i32)
+fn try_steal(ref a: <T>[..], i: i32)
 {
     if (i.unsigned < a.len.unsigned)
     {
-        mut slot: $T;
+        mut slot: T;
         swap(slot, a[i]);
         return slot;
     }
@@ -83,14 +83,14 @@ fn hasNonIdentifierChars(id: string)
 
 //
 
-fn zip_each(ref a: $T[..], ref b: $U[..], fn)
+fn zip_each(ref a: <T>[..], ref b: <U>[..], fn)
 {
     a.len == b.len || throw("a.len != b.len");
     for (mut i = 0; i < a.len; i++)
         fn(a[i], b[i], i?: i);
 }
 
-fn zip_all(ref a: $T[..], ref b: $U[..], pred)
+fn zip_all(ref a: <T>[..], ref b: <U>[..], pred)
 {
     zip_each(a, b): |shadow a, shadow b, i|
         if !(pred(a, b, i?: i))
@@ -102,23 +102,23 @@ fn zip_all(ref a: $T[..], ref b: $U[..], pred)
 
 //
 
-fn clone(a: $T)
-case ($T.is::copy) a;
-case ($T -> $U[..]) a.map(fn clone);
-case ($T -> $T)
+fn clone(a: <T>)
+case (T.is::copy) a;
+case (T -> _[..]) a.map(fn clone);
+case (T -> T) // <- weird, whats this for?
 {
-    mut res: $T;
-    for (fieldname i: $T)
+    mut res: T;
+    for (fieldname i: T)
         res.i = a.i.clone();
 
     return res;
 }
 
-fn steal(ref a: $T[], start!: i32, end!: i32)
+fn steal(ref a: <T>[], start!: i32, end!: i32)
 {
     let size = end - start;
 
-    mut ret: $T[];
+    mut ret: T[];
     ret.resize(size);
 
     for (mut i = 0; i < size; i++)
@@ -128,9 +128,9 @@ fn steal(ref a: $T[], start!: i32, end!: i32)
     return ret;
 }
 
-fn steal(ref a: $T[], start!: i32)
+fn steal(ref a: <T>[], start!: i32)
 {
-    mut ret: $T[];
+    mut ret: T[];
     ret.resize(a.len - start);
 
     for (mut i = 0; i < ret.len; i++)
@@ -221,7 +221,7 @@ fn appendVarint(ref str: byte[], mut v: u32)
 
 //
 
-fn print(arr: $T[..]) case ($T.is::arithmetic)
+fn print(arr: <T>[..]) case (T.is::arithmetic)
 {
     mut result = "";
     for (mut i = 0; i < arr.len; i++)
@@ -261,25 +261,25 @@ fn trim(str: string)
 
 //
 
-fn parse(v: byte[..], lax as!: $T)
-    case ($T.is::enum || $T.is::bitfield /*TODO .is::flags*/ )
+fn parse(v: byte[..], type as!<T>)
+    case (T.is::enum || T.is::bitfield /*TODO .is::flags*/ )
 {
     // now supported, there's a test for it, this parser is wrong though
-    // if ($T.is::bitfield)
+    // if (T.is::bitfield)
     //     for (mut i = 1; i < v.len; i++)
     //         if (v[i] == "|")
     //             return parse(v[: i]) | parse(v[i + 1 :]);
 
-    for (fieldname i: $T)
+    for (fieldname i: T)
         if (v == "i")
             return i; // TODO "i", was only allowed for enums
 
     return [];
 }
 
-fn parseWild(v: byte[..], lax as!: $T)
+fn parseWild(v: byte[..], type as!<T>)
 {
-    mut result: $T;
+    mut result: T;
     for (mut i = 0; i < v.len; i++)
     {
         if (v[i] == '*')
@@ -287,7 +287,7 @@ fn parseWild(v: byte[..], lax as!: $T)
             let prefix = v[.. i];
             let suffix = v[i + 1 ..];
 
-            for (fieldname i: $T)
+            for (fieldname i: T)
             {
                 let opt = "i";
                 if (opt.starts(with: prefix) && opt.ends(with: suffix))
@@ -298,7 +298,7 @@ fn parseWild(v: byte[..], lax as!: $T)
         }
     }
 
-    return parse(:v, :as);
+    return parse(:v, as: T);
 }
 
 
@@ -318,13 +318,13 @@ fn cleanID(id: string)
 
 //
 
-fn steal !T(ref v: T) {
+fn steal(ref v: <T>) {
     mut ret: T;
     swap(v, ret);
     return ret;
 }
 
-fn exchange !T(ref a: T, mut b: T) {
+fn exchange(ref a: <T>, mut b: T) {
     swap(a, b);
     return b;
 }
@@ -332,7 +332,7 @@ fn exchange !T(ref a: T, mut b: T) {
 // TODO using this for _nestingFnort got me in trouble
 //  with COW police, but there's no COW, Target is trivial
 //
-fn shadow !T(ref a: T, mut b: T) unwrap {
+fn shadow(ref a: <T>, mut b: T) unwrap {
     swap(a, b);
     defer:ok swap(a, b);
 }
@@ -356,7 +356,7 @@ fn leftpad(.str, minw: int, mut pad = "               ")
 
 // Sketch, cursor-like empty ranges.
 
-inline fn start  !T(ref arr: T[]) arr[.. 0];
-inline fn end    !T(ref arr: T[]) arr[arr.len ..];
-inline fn before !T(ref arr: T[], index: int) arr[i .. i];
-inline fn after  !T(ref arr: T[], index: int) arr.before(i + 1);
+inline fn start  (ref arr: <T>[]) arr[.. 0];
+inline fn end    (ref arr: <T>[]) arr[arr.len ..];
+inline fn before (ref arr: <T>[], index: int) arr[i .. i];
+inline fn after  (ref arr: <T>[], index: int) arr.before(i + 1);

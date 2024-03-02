@@ -1070,7 +1070,11 @@ static void parseAndAdd_xkEtAxR6(const fu::str& fname, const fu::str& src, fu::v
 
 static void tryParseTypeParamsDecl_wC2VdYU6(const fu::str& fname, const fu::str& src, fu::view<s_Token> tokens, int& _idx, fu::vec<fu::str>& _expectedTypeParams, fu::view<fu::str> _upstreamTypeParams)
 {
-    if (tryConsume_RS2yajZX(s_kind_op, "!"_fu, tokens, _idx))
+    if (tryConsume_RS2yajZX(s_kind_op, "!"_fu, tokens, _idx)
+
+        // RETROFIT see parser.fu
+        || tryConsume_RS2yajZX(s_kind_op, "<"_fu, tokens, _idx)
+            && (_idx--, true))
     {
         if (tryConsume_RS2yajZX(s_kind_op, "<"_fu, tokens, _idx))
         {
@@ -2765,9 +2769,13 @@ static s_Node parseArrayLiteral_HVHnW2wO(const int modid, const fu::str& fname, 
     return createArrayLiteral_xBmPG9H1(argFlags, args, modid, _loc);
 }
 
-static s_Node parseTypeParam_Wu7Epznd(const int modid, const fu::str& fname, const fu::str& src, fu::view<s_Token> tokens, int& _idx, const int _loc, const bool _TODO_FIX_dollarOk, int& _numDollars, fu::vec<fu::str>& _expectedTypeParams, fu::view<fu::str> _upstreamTypeParams)
+static s_Node parseTypeParam_Wu7Epznd(const int modid, const fu::str& fname, const fu::str& src, fu::view<s_Token> tokens, int& _idx, const int _loc, const bool _TODO_FIX_dollarOk, int& _numDollars, fu::vec<fu::str>& _expectedTypeParams, fu::view<fu::str> _upstreamTypeParams,
+
+    // RETROFIT /////////
+    bool oldDollarSyntax)
+    // RETROFIT /////////
 {
-    fu::str value = ("$"_fu + consume_ifLltrwq(s_kind_id, (*(const fu::str*)fu::NIL), fname, src, tokens, _idx).value);
+    fu::str value = ((oldDollarSyntax ? "$"_fu : ""_fu) + consume_ifLltrwq(s_kind_id, (*(const fu::str*)fu::NIL), fname, src, tokens, _idx).value);
     return createTypeParam_2wDfSPFl(value, modid, fname, src, tokens, _idx, _loc, _TODO_FIX_dollarOk, _numDollars, _expectedTypeParams, _upstreamTypeParams);
 }
 
@@ -2853,7 +2861,7 @@ static s_Node parseExpressionHead_AIC28k1n(const int mode, const int modid, cons
             else if (v == "["_fu)
                 return parseArrayLiteral_HVHnW2wO(modid, fname, src, tokens, _idx, _loc, _col0, _precedence, _fnDepth, _autopub, _TODO_FIX_dollarOk, _numDollars, _expectedTypeParams, _upstreamTypeParams, imports, warnings, options);
             else if (v == "$"_fu)
-                return parseTypeParam_Wu7Epznd(modid, fname, src, tokens, _idx, _loc, _TODO_FIX_dollarOk, _numDollars, _expectedTypeParams, _upstreamTypeParams);
+                return parseTypeParam_Wu7Epznd(modid, fname, src, tokens, _idx, _loc, _TODO_FIX_dollarOk, _numDollars, _expectedTypeParams, _upstreamTypeParams, /*oldDollarSyntax*/true);
             else if (v == "|"_fu)
                 return parseLambda_z8gvJnpB(false, false, mode, modid, fname, src, tokens, _idx, _loc, _col0, _precedence, _fnDepth, _autopub, _TODO_FIX_dollarOk, _numDollars, _expectedTypeParams, _upstreamTypeParams, imports, warnings, options);
             else if (v == "||"_fu)
@@ -2867,6 +2875,14 @@ static s_Node parseExpressionHead_AIC28k1n(const int mode, const int modid, cons
                 const fu::str& id = consume_ifLltrwq(s_kind_id, (*(const fu::str*)fu::NIL), fname, src, tokens, _idx).value;
                 _idx--;
                 return parseQualifierChain_NXNdYmCl(createRead_9y30X3Q5(id, s_Flags{}, modid, fname, src, tokens, _idx, _loc), modid, fname, src, tokens, _idx, _loc, imports);
+            }
+            else if (v == "<"_fu)
+            {
+                // RETROFIT //////////////////////
+                auto ret = parseTypeParam_Wu7Epznd(modid, fname, src, tokens, _idx, _loc, _TODO_FIX_dollarOk, _numDollars, _expectedTypeParams, _upstreamTypeParams, /*oldDollarSyntax*/false);
+                add_mts1NXJ4(_expectedTypeParams, ret.value);
+                consume_ifLltrwq(s_kind_op, ">"_fu, fname, src, tokens, _idx);
+                return ret; //////////////////////
             }
             else
                 return parsePrefix_guIekM2D(fu::str(v), modid, fname, src, tokens, _idx, _loc, _col0, _precedence, _fnDepth, _autopub, _TODO_FIX_dollarOk, _numDollars, _expectedTypeParams, _upstreamTypeParams, imports, warnings, options);
@@ -2984,7 +3000,15 @@ static s_Node parseLet_smk4PW6Z(const bool xqmark, const bool allowTypeUnions, c
     const int loc0 = _loc;
     _loc = _idx;
     fu_DEFER(_loc = loc0);
+
+    // RETROFIT /////////////////////////////////////////
+    tryConsume_RS2yajZX(s_kind_op, "<"_fu, tokens, _idx);
+
     fu::str id { consume_ifLltrwq(s_kind_id, (*(const fu::str*)fu::NIL), fname, src, tokens, _idx).value };
+
+    // RETROFIT /////////////////////////////////////////
+    tryConsume_RS2yajZX(s_kind_op, "<"_fu, tokens, _idx);
+
     if (id == "_"_fu)
     {
         if (anonIndex)
@@ -3011,6 +3035,9 @@ static s_Node parseLet_smk4PW6Z(const bool xqmark, const bool allowTypeUnions, c
 
     if (xqmark && tryConsume_RS2yajZX(s_kind_op, "!"_fu, tokens, _idx))
     {
+        // RETROFIT /////////////////////////////////////////
+        tryConsume_RS2yajZX(s_kind_op, "<"_fu, tokens, _idx);
+
         flags |= s_Flags_F_MUSTNAME;
         fu::view<char> inner_id = tryConsume_xXyIFHPn(s_kind_id, tokens, _idx).value;
         if (inner_id)
@@ -3018,6 +3045,9 @@ static s_Node parseLet_smk4PW6Z(const bool xqmark, const bool allowTypeUnions, c
             flags |= s_Flags_F_COMPOUND_ID;
             id += ("!"_fu + inner_id);
         };
+
+        // RETROFIT /////////////////////////////////////////
+        tryConsume_RS2yajZX(s_kind_op, ">"_fu, tokens, _idx);
     };
     s_Token optional { (xqmark ? tryConsume_RS2yajZX(s_kind_op, "?"_fu, tokens, _idx) : (*(const s_Token*)fu::NIL)) };
     _TODO_FIX_dollarOk = allowTypeParams;
