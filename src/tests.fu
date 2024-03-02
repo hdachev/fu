@@ -588,7 +588,7 @@ pub extern fn runTests()
     `);
 
     ZERO(`
-        fn div3by(a: $T) 3 / a;
+        fn div3by(a: <T>) 3 / a;
         return div3by(2) - 1;
     `);
 
@@ -603,19 +603,19 @@ pub extern fn runTests()
     `);
 
     ZERO(`
-        fn add3(a: $T, b = 3) a + b;
+        fn add3(a: <T>, b = 3) a + b;
         struct v1 { x: i32; };
         fn +(a: v1, b: i32) v1(a.x + b);
         fn main() add3(2.v1).x - 5;
     `);
 
     ZERO(`
-        fn mul_ab_init(a: $T, b = 0) a*b;
+        fn mul_ab_init(a: <T>, b = 0) a*b;
         fn main() mul_ab_init(1);
     `);
 
     ZERO(`
-        fn mul_ab_annot_init(a: $T, b: $T = 0) a*b;
+        fn mul_ab_annot_init(a: <T>, b: T = 0) a*b;
         fn main() mul_ab_annot_init(1);
     `);
 
@@ -780,7 +780,7 @@ pub extern fn runTests()
     `);
 
     ZERO(`
-        fn arrof !T(lax _: T[], type U)
+        fn arrof <T>(lax _: T[], type U)
             case (T -> U)   true;
             default         false;
 
@@ -874,7 +874,7 @@ pub extern fn runTests()
     `);
 
     ZERO([`
-        struct Things(type T) { ARR: T[] };
+        struct Things(type <T>) { ARR: T[] };
     `,`
 <alt>
         fn add !T(ref a: _0::Things(T), b: _0::Things(T))

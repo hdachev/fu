@@ -1097,7 +1097,34 @@ pub fn parse(
 
     fn tryParseTypeParamsDecl()
     {
-        if (tryConsume("op", "!"))
+        if (tryConsume("op", "!")
+
+            // TODO FIX, removing the bangs,
+            //  we're now going for a syntax alla:
+            //
+            // fn what<T>(a: T, b: T)
+            //
+            //  ... with an inline version alla:
+            //
+            // fn what(a: <T>, b: T)
+            //
+            //  ... in an attempt to make everything look consistent
+            //       and avoid repetition where it feels natural:
+            //
+            // struct Map<K, V>(type K, type V)
+            //
+            //  ... is just too moronic, which motivates the inline syntax:
+            //
+            // struct Map(type <K>, type <V>)
+            //
+            //  ... which feels less stupid, but more consistent than:
+            //
+            // struct Map(type K, type V)
+            //
+            //  ... where type K & V magically become type params
+            //       without any visible declaration.
+            //
+            || tryConsume("op", "<") && { _idx--; true })
         {
             fn parseAndAdd()
             {
@@ -1510,7 +1537,10 @@ pub fn parse(
                     //  when there's an e.g. ref prefix,
                     //   it gets interpreted as the variable name.
                     //
-                    xqmark && token.kind == "op" && token.value == ".";
+                    xqmark && token.kind == "op"
+
+                                               // TODO FIX see type <T> below
+                        && (token.value == "." || token.value == "<");
 
             if (tryConsume("id", "using"    , :fn peek)) flags |= F_USING;
             if (tryConsume("id", "implicit" , :fn peek)) flags |= F_IMPLICIT;
@@ -1557,7 +1587,13 @@ pub fn parse(
         defer _loc  = loc0;
 
         //
-        mut id = consume("id").value;
+        mut id =
+            // TODO FIX forward compat for type <T> //////////////////////
+            flags & F_TYPENAME && tryConsume("op", "<")
+                ? { let id = consume("id").value; consume("op", ">"); id }
+            // TODO FIX forward compat for type <T> //////////////////////
+                : consume("id").value;
+
         if (id == "_")
         {
             if (anonIndex)
@@ -1888,6 +1924,9 @@ pub fn parse(
                     return parseQualifierChain(createRead(id));
                 }
 
+                if (v == "<" && _TODO_FIX_dollarOk)
+                    return parseTypeParam(">");
+
                 return parsePrefix(v);
             }
         }
@@ -1911,6 +1950,20 @@ pub fn parse(
 
         consume("op", ")");
         return out;
+    }
+
+    fn parseTypeParam(endv: string): Node
+    {
+        _TODO_FIX_dollarOk || fail();
+
+        let value = consume("id").value;
+        if (_upstreamTypeParams.has(value) || !_expectedTypeParams.add(value))
+            fail("A type parameter " ~ value.qID ~ " is already defined.");
+
+        consume("op", endv);
+
+        _numDollars++;
+        return make("typeparam", :value);
     }
 
     fn parseTypeParam(): Node
