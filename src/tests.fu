@@ -87,7 +87,6 @@ pub extern fn runTests()
 
     // Categorizing what doesn't work and why -
 
-    let TODO_arrays     = fn TODO;
     let TODO_recursion  = fn TODO;
     let TODO_enums      = fn TODO;
     let TODO_borrowck   = fn TODO;
@@ -97,7 +96,6 @@ pub extern fn runTests()
     let TODO_unique     = fn TODO;
     let TODO_inline     = fn TODO;
     let TODO_varargs    = fn TODO;
-    let TODO_args       = fn TODO;
     let TODO_conv       = fn TODO;
     let TODO_infer      = fn TODO;
     let TODO_relaxer    = fn TODO;
@@ -105,20 +103,17 @@ pub extern fn runTests()
     let TODO_licm       = fn TODO;
     let TODO_slices     = fn TODO;
     let TODO_cow        = fn TODO;
-    let TODO_control    = fn TODO;
-    let TODO_definit    = fn TODO;
     let TODO_ooe        = fn TODO;
     let TODO_pub        = fn TODO;
     let TODO_zst        = fn TODO;
-    let TODO_ufc        = fn TODO;
     let TODO_litfix     = fn TODO;
-    let TODO_baderror   = fn TODO;
-    let TODO_lint       = fn TODO;
 
     let TODO_confusing  = fn TODO;
     let TODO_logic      = fn TODO;
-    let TODO_semis      = fn TODO;
+
     let TODO_specpat    = fn TODO;
+    let TODO_lint       = fn TODO;
+    let TODO_definit    = fn TODO;
 
     let LEGACY_Map      = fn TODO;
 
@@ -18359,6 +18354,14 @@ pub extern fn runTests()
             };
 
             return hello;
+        }
+        fn main() = test();
+    `);
+
+    ZERO(`
+        fn test() {     <fail nothing to continue from here 3:13+8>
+            continue;   <pass/>
+            return 0;   </fail>
         }
         fn main() = test();
     `);
