@@ -4808,17 +4808,36 @@ pub extern fn runTests()
         }
     `);
 
-    TODO_lint(currently: "BUG exit code", `
+    ZERO(`
         using flags Flags { F_LAMBDA; F_IMPLICIT }
         fn precedenceWhitespace(NICEERR_missingReturn: bool)
         {
-            <fail misleading whitespace X:X>
+            <fail misleading whitespace 7:18+1 parenthesize>
             return NICEERR_missingReturn && F_IMPLICIT      <pass/>
             return (NICEERR_missingReturn && F_IMPLICIT)    </fail>
                  | F_LAMBDA;
         }
 
         fn main() precedenceWhitespace(false) == F_LAMBDA ? 0 : 1;
+    `);
+
+    ZERO(`
+        using flags Flags { F_LAMBDA; F_IMPLICIT }
+        fn precedenceWhitespace(NICEERR_missingReturn: bool)
+        {
+            return F_LAMBDA
+            <fail misleading whitespace 7:18+1 parenthesize>
+                 | NICEERR_missingReturn && F_IMPLICIT;     <pass/>
+                 | (NICEERR_missingReturn && F_IMPLICIT);   </fail>
+        }
+
+        fn main() precedenceWhitespace(false) == F_LAMBDA ? 0 : 1;
+    `);
+
+    ZERO(`
+        fn main()              <fail parenthesize 3:25+1>
+                    6-3 * 2    <pass/>
+                    6-(3 * 2)  </fail> ;
     `);
 
     // /Lints.
@@ -20646,7 +20665,8 @@ pub extern fn runTests()
         }
 
         fn main() typeParamsMusntPickUpVFacts(3)
-                + typeParamsMusntPickUpVFacts(2) == 230 ? 0 : 1;
+                + typeParamsMusntPickUpVFacts(2) <fail weaker operator new line 11:17+1> == 230 ? 0 : 1 <pass/>
+                    == 230 ? 0 : 1;              </fail>
     `);
 
     ZERO(`

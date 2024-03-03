@@ -7297,9 +7297,8 @@ pub fn solve(
         {
             let argNode = items[i];
 
-            argNode.kind == "letdef" || argNode.target
-                && BUG("Argnode is not letdef, but has a target: "
-                        ~ argNode.target);
+            argNode.kind == "letdef" || argNode.target && BUG(
+                "Argnode is not letdef, but has a target: " ~ argNode.target);
 
             shadow let argNode = argNode.kind == "letdef"
                 ? argNode.target.solved
@@ -10148,9 +10147,9 @@ pub fn solve(
                     //    this just doesn't make any sense at all.
                     //
                     shadow let left =
-                        left.kind  == "call"    &&
-                        left.value == "typeof"  &&
-                        left.items.if_only      || left;
+                        left.kind  == "call"   &&
+                        left.value == "typeof" && left.items.if_only
+                            || left;
 
                     if (left.kind == "typeparam")
                     {

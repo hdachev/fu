@@ -12,8 +12,14 @@ let use_AUTOPUB     = true;
 
 // Operator precedence table.
 
-let P_RESET         = 1000;
-let P_PREFIX_UNARY  = 1   ;
+struct Precedence {
+    formal:         int;
+    whitesp_lint?:  int;
+    tokidx?:        int;
+}
+
+let P_RESET         = Precedence(1000);
+let P_PREFIX_UNARY  = Precedence(1   );
 
 let PREFIX          = [ "++", "+", "--", "-", "!", "~", "?", "*", "&", "&mut" ];
 let POSTFIX         = [ "++", "--", "[]", "[..]" ];
@@ -27,7 +33,7 @@ fn setupOperators()
 
     mut out: BINOP;
 
-    mut precedence  = P_PREFIX_UNARY;
+    mut precedence  = P_PREFIX_UNARY.formal;
     mut rightToLeft = false;
 
     fn binop(ops: string[])
@@ -83,7 +89,7 @@ fn setupOperators()
     return out;
 }
 
-let BINOP     = setupOperators();
+let BINOP       = setupOperators();
 
 
 // Descent modes.
@@ -110,7 +116,8 @@ struct ParserState {
     _idx:           int;
     _loc:           int;
     _col0:          int;
-    _precedence:    int;
+    _precedence:    Precedence;
+
     _fnDepth:       int;
     _autopub:       bool;
 
@@ -246,8 +253,6 @@ pub fn parse(
             :flags, :asserts, :syntax,
             token: token || TokenIdx(:modid, _loc));
     };
-
-    fn miss() Node();
 
 
     //
@@ -1031,7 +1036,7 @@ pub fn parse(
 
     fn parseLambda(noClosingPipe!?: bool, leadingDot!?: bool, mode!?: i32): Node
     {
-        if (noClosingPipe && _precedence > P_RESET && _precedence < P_PREFIX_UNARY)
+        if (noClosingPipe && _precedence.formal > P_RESET.formal && _precedence.formal < P_PREFIX_UNARY.formal)
             warn("Unparenthesized `|| lambda` within a binary expression.");
 
         let name = "_";
@@ -1379,8 +1384,7 @@ pub fn parse(
     fn tryPopTypeAnnot(allowTypeUnions! = false): Node
     {
         return tryConsume("op", ":")
-             ? parseTypeAnnot(:allowTypeUnions)
-             : miss;
+            && parseTypeAnnot(:allowTypeUnions);
     }
 
     fn parseTypeAnnot(allowTypeUnions! = false): Node
@@ -1676,8 +1680,9 @@ pub fn parse(
     }
 
     fn parseExpression !ParseHead(
-        p1: i32, mode!?: i32,
-        parseHead: ParseHead = fn parseExpressionHead): Node
+        p1: Precedence,
+        parseHead: ParseHead = fn parseExpressionHead,
+        mode!?: i32): Node
     {
         //////////////////////////////
         let p0 = _precedence;
@@ -1739,13 +1744,67 @@ pub fn parse(
         return head;
     }
 
-    fn tryParseBinary(left: Node, op: string, p1: i32): Node
+    fn whitespaceDiff(prev: Token, next: Token)
     {
-        if (p1 > _precedence || p1 == _precedence && !BINOP.RIGHT_TO_LEFT[p1])
-            return miss;
+        if (prev.line < next.line)
+            return 10;
+
+        return max(0, min(1, next.col - prev.col - prev.chars));
+    }
+
+    fn tryParseBinary(left: Node, op: Token, p1: i32): Node
+    {
+        let miss = p1 > _precedence.formal || p1 == _precedence.formal && !BINOP.RIGHT_TO_LEFT[p1];
+
+        // Whitespace lint -
+        let whitesp_lint = max(
+            whitespaceDiff(tokens.unless_oob(_idx - 1), op),
+            whitespaceDiff(op, tokens.unless_oob(_idx + 1)));
+
+        if (_precedence.tokidx)
+        {
+            let whitespace_diff = whitesp_lint - _precedence.whitesp_lint;
+            let multiline       = whitespace_diff.abs > 1;
+
+            if ((miss ? whitespace_diff < 0 : whitespace_diff > 0)
+                    && p1 != _precedence.formal
+
+                    && (!multiline || {
+                            // To further cut down on false positives,
+                            //  consider indentation - if the tighter operator is indented further in,
+                            //   then the intent reads well.
+                            //
+                            let indent_diff = op.col - tokens[_precedence.tokidx].col;
+                            miss ? indent_diff >= 0 : indent_diff <= 0
+                        })
+
+                    // Trying to make this as permissive as possible,
+                    //  I don't think we want this for assignments & ternaries.
+                    && !BINOP.RIGHT_TO_LEFT[p1]
+                    && !BINOP.RIGHT_TO_LEFT[_precedence.formal])
+            {
+                if (miss)
+                    _idx = _precedence.tokidx;
+
+                warn("Misleading whitespace: misrepresents operator precedence."
+                    ~ "\n\n\tPlease parenthesize this expression to disambiguate"
+                    ~ (multiline
+                        ? ","   ~ "\n\t\tindent the stronger operator further to the right,"
+                                ~ "\n\t\tor put the weaker operator on a new line."
+                        : "."));
+            }
+        }
+
+        //
+        if (miss)
+            return [];
+
+        shadow let p1 = Precedence(formal: p1, whitesp_lint, tokidx: _idx);
 
         // consume
         _idx++;
+
+        shadow let op = op.value;
 
         mut mid: Node;
         if (op == "?")
@@ -1840,14 +1899,14 @@ pub fn parse(
                         ~ " and wraps around the whole expression."
                         ~ " Please parenthesize explicitly to make this obvious.");
 
-            if (v == ";") return { _idx--; miss() };
+            if (v == ";") return { _idx--; Node() };
             if (v == ".") return { lint(); parseAccessExpression(head) };
             if (v == "(") return { lint(); parseCallExpression(head) };
             if (v == "[") return { lint(); parseIndexExpression(head) };
 
             let p1 = BINOP.PRECEDENCE.get(v);
             if (p1)
-                return { _idx--; tryParseBinary(head, v, p1) };
+                return { _idx--; tryParseBinary(head, token, p1) };
 
             if (POSTFIX.has(v))
                 return createCall(
@@ -1859,7 +1918,7 @@ pub fn parse(
         }
 
         // Backtrack.
-        return { _idx--; miss() };
+        return { _idx--; Node() };
     }
 
     fn parseExpressionHead(mode: i32): Node
@@ -2285,9 +2344,8 @@ pub fn parse(
                     flags & (F_CALL_HAS_DOT | F_CALL_HAS_ARGPARENS)
                           == F_CALL_HAS_DOT)
             {
-                let head = expr.items
-                        && expr.items.len == 1
-                        && expr.items[0] || throw("Malformed property access expression.");
+                let head = expr.items.len == 1 && expr.items[0]
+                    || throw("Malformed property access expression.");
 
                 args.unshift(head);
 
