@@ -18351,12 +18351,11 @@ pub extern fn runTests()
         fn main() = test();
     `);
 
-    TODO_control(currently: "does not match annotation i32 void 11:25+1", `
+    ZERO(`
         fn test() {
-            let hello = || {
-                <fail nothing to break>
-                break;   <pass/></fail>
-                return 0;
+            let hello = || {    <fail nothing to break from here 4:17+5>
+                break;          <pass/>
+                return 0;       </fail>
             };
 
             return hello;
