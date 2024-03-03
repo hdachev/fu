@@ -106,22 +106,13 @@ struct ArgsParse {
     sliceSyntax:    bool;
 }
 
-
-//
-
-pub fn parse(
-    modid!: i32,
-    fname!: string, src!: string, tokens!: Token[],
-    implicit options!: options::Options): ParserOutput
-{
-    mut _idx        = 0;
-    mut _loc        = 0;
-    mut _col0       = 0;
-    mut _precedence = P_RESET;
-    mut _fnDepth    = 0;
-
-    mut _autopub    = true;
-
+struct ParserState {
+    _idx:           int;
+    _loc:           int;
+    _col0:          int;
+    _precedence:    int;
+    _fnDepth:       int;
+    _autopub:       bool;
 
     // TODO FIX So the $T thing backfired -
     //  when you have an if (a -> $T) in the middle of some fn,
@@ -133,17 +124,31 @@ pub fn parse(
     //
     // The upside is this frees up the dollar sigil.
     //
-    mut _TODO_FIX_dollarOk  = false;
+    _TODO_FIX_dollarOk:     bool;
 
-    mut _numDollars         = 0;
-    mut _expectedTypeParams: flat::Set(string);
-    mut _upstreamTypeParams: flat::Set(string);
+    _numDollars:            int;
+    _expectedTypeParams:    flat::Set(string);
+    _upstreamTypeParams:    flat::Set(string);
+
+    //
+    imports:        Import[];
+    warnings:       string[];
+}
+
+
+//
+
+pub fn parse(
+    modid!: i32,
+    fname!: string, src!: string, tokens!: Token[],
+    implicit options!: options::Options): ParserOutput
+{
+    using mut _ps: ParserState;
+
+    _autopub = true;
 
 
     //
-
-    mut imports:    Import[];
-    mut warnings:   string[];
 
     fn registerImport(mut pattern: string, id?: string)
     {
