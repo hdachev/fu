@@ -18366,6 +18366,20 @@ pub extern fn runTests()
     `);
 
     ZERO(`
+        fn main() {
+    <alt>
+            let lambda = || { return 0; }       <alt/>
+            let lambda = |nil?| { return nil; } </alt>
+    <alt>
+            let test = || lambda + 11;          <alt/>
+            fn test() lambda + 11;              <alt/>
+            fn test() return lambda + 11;       </alt>
+
+            return test + 13;
+        }
+    `);
+
+    ZERO(`
         fn each(ref arr: i32[], even, odd)
             for (mut i = 0; i < arr.len; i++)
                 if (!i) odd(i?: i, it?: arr[i]);
