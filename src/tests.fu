@@ -111,8 +111,6 @@ pub extern fn runTests()
     let TODO_confusing  = fn TODO;
     let TODO_logic      = fn TODO;
 
-    let TODO_specpat    = fn TODO;
-    let TODO_lint       = fn TODO;
     let TODO_definit    = fn TODO;
 
     let LEGACY_Map      = fn TODO;
@@ -12383,9 +12381,9 @@ pub extern fn runTests()
         fn main() X(1).rec_cases;
     `);
 
-    TODO_specpat(currently: "BUG unexpected pattern 3:12+4", `
+    ZERO(`
         let OK = true;
-        fn what() case (OK) a;
+        fn what(a: int) case (OK) a;
         fn main() 0.what;
     `);
 

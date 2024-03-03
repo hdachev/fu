@@ -10175,6 +10175,12 @@ pub fn solve(
         {
             return !evalTypePattern(node.items.only);
         }
+        else if (node.kind == "call")
+        {
+            let res = tryAbstractEvalAsBool(solveCall(node));
+            if (res == SE_True)  return true;
+            if (res == SE_False) return false;
+        }
 
         return fail("Invalid type pattern.");
     }

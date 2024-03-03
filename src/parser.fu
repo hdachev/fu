@@ -1284,6 +1284,9 @@ pub fn parse(
         //
         if (!expr && tryConsume("id", "case"))
         {
+            // TODO FIX otherwise solver doesn't handle the pattern
+            flags |= F_TEMPLATE;
+
             mut branches: Node[];
 
             fn parseBranch(noCond?: bool)
