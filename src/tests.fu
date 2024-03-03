@@ -18343,11 +18343,10 @@ pub extern fn runTests()
         }
     `);
 
-    TODO_control(currently: "no label in scope 4:13+5", `
-        fn test() {
-            <fail nothing to break>
-            break;   <pass/></fail>
-            return 0;
+    ZERO(`
+        fn test() {     <fail nothing to break from here 3:13+5>
+            break;      <pass/>
+            return 0;   </fail>
         }
         fn main() = test();
     `);

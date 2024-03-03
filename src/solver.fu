@@ -9130,7 +9130,10 @@ pub fn solve(
             return _helpers[i];
         });
 
-        fail("No label " ~ id.qBAD ~ " in scope.");
+        if (id)
+            fail("No label " ~ id.qBAD ~ " in scope.");
+
+        fail("Nothing to " ~ (cont ? "continue" : "break").qBAD ~ " from here.");
     }
 
     fn solveArgID(node: Node, type: Type): SolvedNode
