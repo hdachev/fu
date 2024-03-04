@@ -886,7 +886,7 @@ pub fn solve(
         return str;
     }
 
-    fn humanizeTypeName(type: Type, brief!?: bool)
+    fn explainTypeName(type: Type, brief!?: bool)
     {
         PERF_slowPath();
 
@@ -899,7 +899,7 @@ pub fn solve(
             if (itemType == t_byte)
                 return "string".qID;
 
-            return humanizeTypeName(itemType, :brief)
+            return explainTypeName(itemType, :brief)
                 ~ (type.TODO_FIX_isArray ? "[]" : "[..]").qKW;
         }
 
@@ -908,7 +908,7 @@ pub fn solve(
               : type.canon).qID;
     }
 
-    fn humanizeType(type: Type, brief!?: bool, mut lt!?: bool, mut no_quals!?: bool, mut usage!?: bool, mut no_vfacts!?: bool, lax i!?: int, diff!?: Type)
+    fn explainType(type: Type, brief!?: bool, mut lt!?: bool, mut no_quals!?: bool, mut usage!?: bool, mut no_vfacts!?: bool, lax i!?: int, diff!?: Type)
     {
         if (!type)
             return "< Empty Type >";
@@ -933,7 +933,7 @@ pub fn solve(
             }
         }
 
-        mut result = humanizeTypeName(type, :brief);
+        mut result = explainTypeName(type, :brief);
 
         // Template type arguments.
         let pattern = type.canon.canon::tryGetPattern();
@@ -948,7 +948,7 @@ pub fn solve(
                     if (!isFirst)
                         result ~= ", ";
 
-                    result ~= humanizeType(Type(parseType(argSpecType)), brief: true, no_quals: true);
+                    result ~= explainType(Type(parseType(argSpecType)), brief: true, no_quals: true);
                 }
 
                 result ~= ")";
@@ -1041,7 +1041,7 @@ pub fn solve(
                     reason ~= "(";
                     ext.args.each: |arg, shadow i| {
                         if (i) reason ~= ", ";
-                        reason ~= humanizeTypeName(arg.type, brief: true);
+                        reason ~= explainTypeName(arg.type, brief: true);
                     }
 
                     reason ~= ")";
@@ -1314,7 +1314,7 @@ pub fn solve(
     shadow fn lookupUserType(type: Type): Struct
     {
         return tryLookupUserType(type)
-            || fail("Not a struct nor custom primitive: " ~ humanizeType(type));
+            || fail("Not a struct nor custom primitive: " ~ explainType(type));
     }
 
     fn GET_mut(target: Target)
@@ -1607,9 +1607,9 @@ pub fn solve(
         if (SELF_TEST && flags & F_REF)
         {
             type.is_ref || BUG(
-                "Binding(" ~ flags ~ " " ~ name ~ ") !type.is_ref:\n\n\t\t" ~ humanizeType(type));
+                "Binding(" ~ flags ~ " " ~ name ~ ") !type.is_ref:\n\n\t\t" ~ explainType(type));
             !(flags & F_MUT) || type.is_mutref || BUG(
-                "Binding(" ~ flags ~ " " ~ name ~ ") !type.is_mutref:\n\n\t\t" ~ humanizeType(type, lt: true));
+                "Binding(" ~ flags ~ " " ~ name ~ ") !type.is_mutref:\n\n\t\t" ~ explainType(type, lt: true));
         }
 
         // Setup the lifetime for references to this binding.
@@ -1647,9 +1647,9 @@ pub fn solve(
         if (type.is_ref)
         {
             if (CANNOT_definit_mutrefs && type.is_mutref)
-                BUG("createDefinit: Cannot definit a mutref: " ~ type.humanizeType(lt: true));
+                BUG("createDefinit: Cannot definit a mutref: " ~ type.explainType(lt: true));
             if (!type.lifetime.hasStatic)
-                BUG("createDefinit: Cannot definit a non-static reference: " ~ type.humanizeType(lt: true));
+                BUG("createDefinit: Cannot definit a non-static reference: " ~ type.explainType(lt: true));
         }
 
         // TODO FIX several issues, most trivial,
@@ -1657,7 +1657,7 @@ pub fn solve(
         //   so there's a bit of fiddling i'm leaving for later
         //
         // if !(type.vfacts & AlwaysFalse)
-        //     BUG("createDefinit: Missing vfacts.AlwaysFalse: " ~ type.humanizeType(lt: true));
+        //     BUG("createDefinit: Missing vfacts.AlwaysFalse: " ~ type.explainType(lt: true));
 
         // TODO FIX this is backwards, its not always practical -
         //  tryRetype just switches the type but doesn't switch from definit to int/real lit.
@@ -1713,9 +1713,9 @@ pub fn solve(
 
     fn explainTypeDiff(a: Type, b: Type, sep = "<->")
     {
-        return humanizeType(a, diff: b)
+        return explainType(a, diff: b)
              ~ " " ~ sep ~ " "
-             ~ humanizeType(b, diff: a);
+             ~ explainType(b, diff: a);
     }
 
     fn str(n: SolvedNode)
@@ -1728,7 +1728,7 @@ pub fn solve(
             src ~= "(" ~ n.value.qID ~ ")";
 
         if (n.type)
-            src ~= " -> " ~ humanizeType(n.type);
+            src ~= " -> " ~ explainType(n.type);
 
         return src;
     }
@@ -2235,7 +2235,7 @@ pub fn solve(
                             REST_TYPE = tryClear_sliceable(expect) || fail(
                                 overloadIdx.name
                                     ~ ": Rest argument annotation is not an array: "
-                                    ~ humanizeType(expect));
+                                    ~ explainType(expect));
                     }
 
                     reorder.map.len >= args.len || !reorder || optional || BUG(
@@ -2406,7 +2406,7 @@ pub fn solve(
                             // We used to do a flags.isMutRef check here too,
                             //  now done in doTrySpecialize so it can prevent invalid native relaxes.
                             if (host_arg.flags & F_TYPENAME && !actual.is_Typename)
-                                matchFail(host_arg ~ " expects a type, got a value: " ~ humanizeType(actual));
+                                matchFail(host_arg ~ " expects a type, got a value: " ~ explainType(actual));
 
                             continue :ARG_OK;
                         }
@@ -2442,8 +2442,8 @@ pub fn solve(
                         }
 
                         // Nope, args fail.
-                        matchFail(host_arg  ~ " expects " ~ humanizeType(expect)
-                                            ~ ", got "    ~ humanizeType(actual));
+                        matchFail(host_arg  ~ " expects " ~ explainType(expect)
+                                            ~ ", got "    ~ explainType(actual));
                     }
 
                     if (REST_START < N)
@@ -2462,8 +2462,8 @@ pub fn solve(
                                 ? solveArrlit_itemType_init(head: actual)
                                 : type_trySuper(REST_TYPE, actual)
                                     || matchFail("Rest arguments have no common supertype: "
-                                                             ~ humanizeType(REST_TYPE)
-                                                    ~ " <- " ~ humanizeType(actual));
+                                                             ~ explainType(REST_TYPE)
+                                                    ~ " <- " ~ explainType(actual));
                         }
 
                         REST_TYPE = solveArrlit_done(itemType: REST_TYPE);
@@ -2740,7 +2740,7 @@ pub fn solve(
         ref cc = _conv_cache.ref(type, init: || { inserted = true; [] });
         if (!inserted)
         {
-            // TRACE("exploreConversions reuse(" ~ humanizeType(type && Type(type, Lifetime_worst)) ~ ")");
+            // TRACE("exploreConversions reuse(" ~ explainType(type && Type(type, Lifetime_worst)) ~ ")");
             return cc;
         }
 
@@ -2756,7 +2756,7 @@ pub fn solve(
 
         PROFILE(.ExploreConversions);
 
-        TRACE_BRACKET("doExploreConversions startType(" ~ humanizeType(startType) ~ ")");
+        TRACE_BRACKET("doExploreConversions startType(" ~ explainType(startType) ~ ")");
 
         // Before we begin, we gotta init the field_items / field_implicits stuff
         //  in case they're needed before we're done,
@@ -2775,7 +2775,7 @@ pub fn solve(
         //
         let conv_safety0 = _current_fn.conv_safety++;
         if (conv_safety0 >= 128)
-            fail("Conversion stack got too deep, exploring: " ~ humanizeType(startType));
+            fail("Conversion stack got too deep, exploring: " ~ explainType(startType));
 
         defer _current_fn.conv_safety = conv_safety0;
 
@@ -2903,7 +2903,7 @@ pub fn solve(
 
                                             shadow let convert = path[i];
                                             err ~= convert.explainWhichFn()
-                                                ~ "\n\t        -> " ~ humanizeType(convert.type) ~ " ->\n";
+                                                ~ "\n\t        -> " ~ explainType(convert.type) ~ " ->\n";
                                         }
 
                                         err ~= "\n\t    " ~ convert;
@@ -3069,12 +3069,12 @@ pub fn solve(
 
                     if (actual)
                         fail("Conversion ambiguity, multiple ways to convert "
-                            ~ humanizeType(actual) ~ " into "
-                            ~ (Expect -> Type ? humanizeType(expect) : "[TODO pattern str]")
+                            ~ explainType(actual) ~ " into "
+                            ~ (Expect -> Type ? explainType(expect) : "[TODO pattern str]")
                                 ~ ":" ~ suffix);
                     else
                         fail("using".qBAD ~ " ambiguity, multiple ways to obtain a "
-                            ~ (Expect -> Type ? humanizeType(expect) : "[TODO pattern str]")
+                            ~ (Expect -> Type ? explainType(expect) : "[TODO pattern str]")
                                 ~ " in this scope:" ~ suffix);
                 }
 
@@ -3109,7 +3109,7 @@ pub fn solve(
     fn explainBadCallArguments(id: string, targets: Target[..], args: SolvedNode[..])
     {
         return (targets.len == 1 ? targets[0].str : id.qID)
-             ~ (args && " with args (" ~ args.map(.humanizeType).join(", ") ~ ")");
+             ~ (args && " with args (" ~ args.map(.explainType).join(", ") ~ ")");
     }
 
     fn match__mutargs(
@@ -3405,7 +3405,7 @@ pub fn solve(
 
                 // TODO FIX investigate these, I'm seeing one in build.fu
                 // if (SELF_TEST)
-                //     BUG("[PERF] type_maybeInside: non_triv_masks failed to optimize a go through some struct: " ~ host.Type.humanizeType);
+                //     BUG("[PERF] type_maybeInside: non_triv_masks failed to optimize a go through some struct: " ~ host.Type.explainType);
             }
 
             return false;
@@ -3824,7 +3824,7 @@ pub fn solve(
             if (ext.template.node.asserts & A_NODISCARD)
                 fail("Return value of " ~ t ~ ": "
                     ~ "nodiscard".qBAD ~ " "
-                    ~ humanizeType(t.type) ~ " is getting discarded here.");
+                    ~ explainType(t.type) ~ " is getting discarded here.");
 
             if (t.fx_mask & Fx_NotDeadCode)
                 return false;
@@ -3880,10 +3880,10 @@ pub fn solve(
                 TEST_unusedButCopied("trackVarUsage " ~ t, slot);
 
                 if (slot.lifetime.hasTemporary)
-                    BUG(t ~ ", trackVarUsage: slot is ref2temp: " ~ slot.humanizeType(lt: true));
+                    BUG(t ~ ", trackVarUsage: slot is ref2temp: " ~ slot.explainType(lt: true));
 
                 if (slot.isIrrelevant)
-                    BUG(nested(locid) ~ ", trackVarUsage: slot is irrelevant: " ~ slot.humanizeType(usage: true));
+                    BUG(nested(locid) ~ ", trackVarUsage: slot is irrelevant: " ~ slot.explainType(usage: true));
             }
 
             shadow ref usage = _current_fn.var_usage.grow_if_oob(locid);
@@ -4372,7 +4372,7 @@ pub fn solve(
 
                     if (relaxed)
                     {
-                        TRACE_BRACKET("RELAX trySpecialize " ~ t.globid ~ " " ~ t ~ " for " ~ relaxed.map(.type.humanizeType).join(", "));
+                        TRACE_BRACKET("RELAX trySpecialize " ~ t.globid ~ " " ~ t ~ " for " ~ relaxed.map(.type.explainType).join(", "));
 
                         mut error: string;
                         mut args_mangled: string;
@@ -4550,7 +4550,7 @@ pub fn solve(
                         if (s.kind != "struct")
                             break :PARTIAL_COPY;
 
-                        TRACE_BRACKET("PartialCopy " ~ humanizeType(node.type));
+                        TRACE_BRACKET("PartialCopy " ~ explainType(node.type));
 
                         // So we'll break down the copy(a) into a
                         //  A(copy(a.x), [], copy(a.y)).
@@ -4629,9 +4629,9 @@ pub fn solve(
                             : item.type.is_rx_move)
                 {
                     if (!isCopy && item.type.is_sliceable)
-                        fail("An array value is needed, but cannot be copied or moved from a slice: " ~ item.humanizeType);
+                        fail("An array value is needed, but cannot be copied or moved from a slice: " ~ item.explainType);
 
-                    fail("A value is needed, but cannot be copied or moved from: " ~ item.humanizeType);
+                    fail("A value is needed, but cannot be copied or moved from: " ~ item.explainType);
                 }
 
                 if (isCopy && !node.type.is_trivial)
@@ -4786,7 +4786,7 @@ pub fn solve(
                             expr = createBlock(t_void, items: [ expr ]);
 
                         expr.items.if_last.is_void && BUG(
-                            "tryInjectJumps: Block tail is void, but block.type isn't: " ~ expr.type.humanizeType);
+                            "tryInjectJumps: Block tail is void, but block.type isn't: " ~ expr.type.explainType);
 
                         expr.items ~= createEmpty();
                     }
@@ -4996,7 +4996,7 @@ pub fn solve(
             if (!items && !(h.mask & HM_Function))
             {
                 if (SELF_TEST && !canDiscard)
-                    BUG("Empty block type is relevant: " ~ node.type.humanizeType);
+                    BUG("Empty block type is relevant: " ~ node.type.explainType);
 
                 node.intoEmpty();
             }
@@ -5269,7 +5269,7 @@ pub fn solve(
     lax fn TEST_unusedButCopied(inline topic: string, slot: Type)
     {
         if (SELF_TEST && slot.is_rx_copy && slot.isIrrelevant && !slot.is_zst)
-            BUG(topic ~ ": Usage is copy but no usage bits set: " ~ slot.humanizeType);
+            BUG(topic ~ ": Usage is copy but no usage bits set: " ~ slot.explainType);
     }
 
     fn keepOrClearMutVal(ref o: Overload, keep!: bool)
@@ -5354,7 +5354,7 @@ pub fn solve(
             if (isUnused)
                 o.status |= SS_UNUSED;
             else
-                o.status & SS_UNUSED && BUG("relaxBlockVar: previously SS_UNUSED " ~ o ~ " now used as " ~ humanizeType(usage));
+                o.status & SS_UNUSED && BUG("relaxBlockVar: previously SS_UNUSED " ~ o ~ " now used as " ~ explainType(usage));
 
             if (isUnused && canDiscard)
                 o.solved.type = t_void;
@@ -6238,7 +6238,7 @@ pub fn solve(
 
         // Update as usual.
         {
-            TRACE("doUpdateScope " ~ target.globid ~ " retval = " ~ retval.humanizeType(lt: true));
+            TRACE("doUpdateScope " ~ target.globid ~ " retval = " ~ retval.explainType(lt: true));
 
             doUpdateScope(
                 :retval, :target,
@@ -6612,7 +6612,7 @@ pub fn solve(
                     // Previously this was done in tryMatch__mutargs.
                     if (host_arg.flags.isMutRef && !inType.is_mutref)
                         matchFail(host_arg  ~ " expects a mutref, got "
-                                            ~ humanizeType(inType));
+                                            ~ explainType(inType));
 
                     //
                     argNode.kind == "let"  || BUG();
@@ -6648,7 +6648,7 @@ pub fn solve(
                         // TYPES vs VALUES //////
                         if (isTypedef)
                             inType.is_Typename || BUG(
-                                argName ~ " not a typename: " ~ humanizeType(inType));
+                                argName ~ " not a typename: " ~ explainType(inType));
                         else
                             inType = clear_Typename(inType); // See solveLetLike_dontTouchScope: t_init = clear_Typename
                         // TYPES vs VALUES //////
@@ -7155,7 +7155,7 @@ pub fn solve(
             {
                 let o = GET(target);
                 o.kind != "fn" || BUG(
-                    "did not set body on " ~ o ~ ": " ~ humanizeType(o.type));
+                    "did not set body on " ~ o ~ ": " ~ explainType(o.type));
             }
         }
 
@@ -7396,7 +7396,7 @@ pub fn solve(
                                 node: _current_fn.out));
 
             if (maybeLast && asserts & A_NOVEC && !argNode.isNoVec() && !mustBecomeInline)
-                fail(backtrack: "novec", target ~ " is not novec, " ~ argTarget ~ " is " ~ humanizeType(argNode.type) ~ ":\n"
+                fail(backtrack: "novec", target ~ " is not novec, " ~ argTarget ~ " is " ~ explainType(argNode.type) ~ ":\n"
                     ~ qSTACK(:target, :argTarget.locid,
                                 node: _current_fn.out,
                                query: AQ_WhyNotNovec));
@@ -7510,7 +7510,7 @@ pub fn solve(
 
             // TODO FIX REDUNDANT cg appears to use the let node
             ref argNode = items[i].target.GET_mut.solved;
-            argNode.type.is_sliceable && !argNode.type.TODO_FIX_isArray || BUG("TODO_FIX_mayAlias_ensureStable[2] (" ~ arg.name ~ "): " ~ argNode.value ~ " : " ~ humanizeType(argNode.type));
+            argNode.type.is_sliceable && !argNode.type.TODO_FIX_isArray || BUG("TODO_FIX_mayAlias_ensureStable[2] (" ~ arg.name ~ "): " ~ argNode.value ~ " : " ~ explainType(argNode.type));
             argNode.type.quals |= q_rx_resize;
         }
 
@@ -7581,7 +7581,7 @@ pub fn solve(
                     "updateScope: Non-static/non-arg leaked:\n\t" ~ retval.lifetime);
 
             isNative && retval.is_Typename && BUG(
-                "updateScope: native retval.is_Typename: " ~ retval.humanizeType);
+                "updateScope: native retval.is_Typename: " ~ retval.explainType);
         }
 
         // Unconditionally replacing the stuff.
@@ -7735,7 +7735,7 @@ pub fn solve(
                                 //    a return type annot somewhere.
                                 //
             if (retval.is_zeroes/* || retval.is_never*/)
-                fail(backtrack: "using", target ~ " returns " ~ humanizeType(retval)
+                fail(backtrack: "using", target ~ " returns " ~ explainType(retval)
                     ~ "\n\n\tThis would make the conversion function ambiguous because it assigns to anything.");
         }
 
@@ -8822,7 +8822,7 @@ pub fn solve(
 
             o.status |= SS_MOVED_FROM;
 
-            // println("MOVED FROM " ~ o.name ~ ": " ~ o.type.humanizeType);
+            // println("MOVED FROM " ~ o.name ~ ": " ~ o.type.explainType);
 
             let init = o.Lifetime_climbType;
             if (init.is_ref)
@@ -9392,12 +9392,12 @@ pub fn solve(
             {
                 init.is_ref || fail(
                     "Init expression is not a " ~ "ref".qBAD ~ ": "
-                        ~ humanizeType(init));
+                        ~ explainType(init));
 
                 if (flags & F_MUT)
                     init.is_mutref || fail(
                         "Init expression is not a " ~ "mut".qBAD ~ " ref: "
-                            ~ humanizeType(init, lt: true));
+                            ~ explainType(init, lt: true));
             }
 
             // TYPES vs VALUES //////
@@ -9552,8 +9552,8 @@ pub fn solve(
                     {
                         if (isAssignable(host: other.type, out.type))
                         {
-                            // println("VARFOLD " ~ id ~ ": " ~ humanizeType(out.type)
-                            //                    ~ " := " ~ other.name ~ ": " ~ humanizeType(other.type));
+                            // println("VARFOLD " ~ id ~ ": " ~ explainType(out.type)
+                            //                    ~ " := " ~ other.name ~ ": " ~ explainType(other.type));
 
                             Scope_set(:target);
                             out = createEmpty(:target); // Inliner: needed to put argdefs into letdefReplicas
@@ -9844,7 +9844,7 @@ pub fn solve(
                     if (type.is_Typename)
                     {
                         _here = node.items.only.token;
-                        fail("Redundant " ~ "typeof".qBAD  ~ ", this is a type, not a value: " ~ humanizeType(type));
+                        fail("Redundant " ~ "typeof".qBAD  ~ ", this is a type, not a value: " ~ explainType(type));
                     }
 
                     if (!TODO_FIX_typeof_dontStripRefs)
@@ -9900,10 +9900,10 @@ pub fn solve(
             :UNARY
             if (items.len == 1)
             {
-                let t   = node.value == "&"    ? tryClear_ref(type)     || matchFail("Not a reference: " ~ type.humanizeType)
-                        : node.value == "&mut" ? tryClear_mutref(type)  || matchFail("Not a mutref: " ~ type.humanizeType)
-                        : node.value == "[]"   ? tryClear_array(type)   || matchFail("Not an array: " ~ type.humanizeType)
-                        : node.value == "[..]" ? tryClear_sliceable(type) || matchFail("Not sliceable: " ~ type.humanizeType)
+                let t   = node.value == "&"    ? tryClear_ref(type)     || matchFail("Not a reference: " ~ type.explainType)
+                        : node.value == "&mut" ? tryClear_mutref(type)  || matchFail("Not a mutref: " ~ type.explainType)
+                        : node.value == "[]"   ? tryClear_array(type)   || matchFail("Not an array: " ~ type.explainType)
+                        : node.value == "[..]" ? tryClear_sliceable(type) || matchFail("Not sliceable: " ~ type.explainType)
                         : { break :UNARY; };
 
                 if (node.value == "[]" || node.value == "[..]")
@@ -10063,7 +10063,7 @@ pub fn solve(
 
             if (error && targets)
                 for (mut i = 0; i < targets.len; i++)
-                    matchFail_print("Not produced by " ~ targets[i] ~ ": " ~ humanizeType(type));
+                    matchFail_print("Not produced by " ~ targets[i] ~ ": " ~ explainType(type));
 
             return false;
         }
@@ -10281,7 +10281,7 @@ pub fn solve(
         if (!targets)
             fail(:node.items.first.token,
                 "Indirect call: expression does not evaluate to an overload set: "
-                    ~ humanizeType(head));
+                    ~ explainType(head));
 
         // TODO FIX this copy pastes the stuff in solveCall above, not amazing.
         let args = solveNodes(node.items[1 ..], DeadBreak_Only_WhileSolvingRecursion);
@@ -10476,7 +10476,7 @@ pub fn solve(
     fn injectImplicitArg(id: string, type: Type, becauseOf!: Target): Target
     {
         if (!_current_fn.items || _current_fn.out.flags & F_EXTERN)
-            fail("No implicit " ~ id.human.qBAD ~ ": " ~ humanizeType(type) ~ " in scope, needed to call " ~ becauseOf ~ ":\n"
+            fail("No implicit " ~ id.human.qBAD ~ ": " ~ explainType(type) ~ " in scope, needed to call " ~ becauseOf ~ ":\n"
                 ~ qSTACK_implicit(target: becauseOf,
                         :id, :type, node: becauseOf.solved));
 
@@ -10589,8 +10589,8 @@ pub fn solve(
             {
                 if (bRetype)
                     fail(topic ~ ": Type ambiguity, literals can be retyped both ways: "
-                        ~ a.humanizeType ~ " <-> "
-                        ~ b.humanizeType);
+                        ~ a.explainType ~ " <-> "
+                        ~ b.explainType);
 
                 let super = type_trySuper(aRetype, b);
                 if (super)
@@ -10644,8 +10644,8 @@ pub fn solve(
         }
 
         fail(topic ~ ": No common supertype: "
-            ~ a.humanizeType ~ " <-> "
-            ~ b.humanizeType);
+            ~ a.explainType ~ " <-> "
+            ~ b.explainType);
     }
 
     fn tryAbstractEvalAsBool(cond: SolvedNode, voidOk!?: bool): StaticEval
@@ -10657,7 +10657,7 @@ pub fn solve(
 
         if (cond.type.isIrrelevant)
         {
-            voidOk || fail("Condition is " ~ humanizeType(cond.type)
+            voidOk || fail("Condition is " ~ explainType(cond.type)
                 ~ (cond.kind == "call"
                     ? ", returned from " ~ cond.target.explainWhichFn(fmt: FullContext)
                     : ", not meaningful in a boolean context."));
@@ -11523,8 +11523,8 @@ pub fn solve(
                         isAssignable(host: foreign.type, local.type)
                             || local.type.is_never && local.isInlineLocal
                             || BUG("matchReplicaOrInjectForeignLocal botching the type of " ~ foreign ~ ":\n"
-                                ~ "\n\t\tExpect: " ~ foreign.type.humanizeType
-                                ~ "\n\t\tActual: " ~   local.type.humanizeType);
+                                ~ "\n\t\tExpect: " ~ foreign.type.explainType
+                                ~ "\n\t\tActual: " ~   local.type.explainType);
 
                         TRACE("inlineExpression: CALL.REPLACE " ~ foreign.locid ~ " " ~ foreign ~ " with " ~ local.locid ~ " " ~ local);
                     }
@@ -11642,7 +11642,7 @@ pub fn solve(
 
         fn visitType(ref type: Type)
         {
-            TRACE_BRACKET("visitType: " ~ humanizeType(type));
+            TRACE_BRACKET("visitType: " ~ explainType(type));
 
             type.lifetime = type.lifetime.Lifetime_process(
                 |locid!index, continue_keep, continue_replace, paths|
@@ -11871,7 +11871,7 @@ pub fn solve(
                         let retype = tryRetyping(arg, expect);
                         if (retype && isAssignableAsArgument(expect, retype))
                         {
-                            // TRACE("RETYPE ARG from(" ~ arg.type.humanizeType(usage: true) ~ ") retype(" ~ retype.humanizeType(usage: true) ~ ") expect(" ~ expect.humanizeType(usage: true) ~ ")");
+                            // TRACE("RETYPE ARG from(" ~ arg.type.explainType(usage: true) ~ ") retype(" ~ retype.explainType(usage: true) ~ ") expect(" ~ expect.explainType(usage: true) ~ ")");
 
                             applyRetype(arg, retype);
                         }
@@ -11966,8 +11966,8 @@ pub fn solve(
                 isAssignable(host: foreign.type, argdef.target.type)
                     || argdef.target.type.is_never && argdef.target.flags & F_INLINE
                     || BUG("Inliner botching the argdef type of " ~ foreign ~ ":\n"
-                        ~ "\n\t\tExpect: " ~       foreign.type.humanizeType
-                        ~ "\n\t\tActual: " ~ argdef.target.type.humanizeType);
+                        ~ "\n\t\tExpect: " ~       foreign.type.explainType
+                        ~ "\n\t\tActual: " ~ argdef.target.type.explainType);
 
             // println("inline: ARGDEF.REPLACE " foreign " with " argdef);
         }
@@ -11996,7 +11996,7 @@ pub fn solve(
     fn definitWrap(ref node: SolvedNode, slot: Type)
     {
         CANNOT_definit_mutrefs && slot.is_mutref && BUG(
-            "Trying to definitWrap a mutref: " ~ slot.humanizeType(lt: true));
+            "Trying to definitWrap a mutref: " ~ slot.explainType(lt: true));
 
         if (slot.is_ref && !slot.lifetime.hasStatic)
         {
@@ -12005,7 +12005,7 @@ pub fn solve(
             if (slot.lifetime.hasTemporary)
                 return definitWrap(node, clear_refs(slot));
 
-            BUG("Trying to definitWrap a non-static reference: " ~ slot.humanizeType(lt: true))
+            BUG("Trying to definitWrap a non-static reference: " ~ slot.explainType(lt: true))
         }
 
         // Get rid of the definit, no more retypes.
@@ -12313,14 +12313,14 @@ pub fn solve(
             if (r == CantTempCopy_FastFn)
                 return "Temporary copies not allowed in fast fns.";
             if (r == CantTempCopy_NonCopiable)
-                return host_arg ~ " is non-copyable: " ~ humanizeType(arg);
+                return host_arg ~ " is non-copyable: " ~ explainType(arg);
 
             if (r == CantTempCopy_HostArg_Ref)
                 return host_arg ~ " is " ~ "ref".qBAD;
             if (r == CantTempCopy_HostArg_Implicit)
                 return host_arg ~ " is " ~ "implicit".qBAD;
             if (r == CantTempCopy_HostArg_MutRef)
-                return host_arg ~ " is a mutref: " ~ humanizeType(arg);
+                return host_arg ~ " is a mutref: " ~ explainType(arg);
 
             if (r == CantTempCopy_ReturnedFromFn)
                 return host_arg ~ " is ref-returned from " ~ callee;
@@ -12775,8 +12775,8 @@ pub fn solve(
                     //     {
                     //         approxAAR || BUG(
                     //             "Reference_trackLocalRef: types_mayAlias fails for lt inter:"
-                    //                 ~ "\n\t\tt_left:    " ~ humanizeType(t_left)
-                    //                 ~ "\n\t\tt_sibling: " ~ humanizeType(t_sibling)
+                    //                 ~ "\n\t\tt_left:    " ~ explainType(t_left)
+                    //                 ~ "\n\t\tt_sibling: " ~ explainType(t_sibling)
                     //                 ~ "\n\t\tlt_inter:  " ~ Lifetime_inter(parents, sibling_parents));
                     //
                     //         if (!mayAlias)
@@ -13906,7 +13906,7 @@ pub fn solve(
         let k = node.kind;
 
         !node.is_ref == !node.lifetime || BUG(
-            node ~ ": !!ref != !!lt: " ~ humanizeType(node.type));
+            node ~ ": !!ref != !!lt: " ~ explainType(node.type));
 
         //
         if (k == "call")
@@ -13953,7 +13953,7 @@ pub fn solve(
                 {
                     if (o.kind == "field")
                         node.type.isIrrelevant || !arg.type.isIrrelevant || BUG(
-                            "Relevant data out of an irrelevant struct: getting a " ~ humanizeType(node) ~ " from a " ~ humanizeType(arg));
+                            "Relevant data out of an irrelevant struct: getting a " ~ explainType(node) ~ " from a " ~ explainType(arg));
 
                     continue;
                 }
@@ -14016,8 +14016,8 @@ pub fn solve(
 
                     BUG(node ~ ": " ~ actualCopy ~ " mentions a lifetime not listed in "
                                     ~ expectCopy ~ ":"
-                              ~ "\n\n\t\t" ~ actualCopy ~ ":\t" ~ actual.humanizeType(lt: true)
-                              ~ "\n\n\t\t" ~ expectCopy ~ ":\t" ~ expect.humanizeType(lt: true)
+                              ~ "\n\n\t\t" ~ actualCopy ~ ":\t" ~ actual.explainType(lt: true)
+                              ~ "\n\n\t\t" ~ expectCopy ~ ":\t" ~ expect.explainType(lt: true)
                               ~ "\n\n\t\tUNION:\t\t" ~ debug);
                 }
             }
@@ -14104,8 +14104,8 @@ pub fn solve(
 
                 h.ret_actual.isAssignable(expr)
                     || BUG("BROKEN JUMP TYPE"
-                        ~ "\n\t\tret_actual: " ~ (h.ret_actual ? h.ret_actual.humanizeType : "N/A".qBAD)
-                        ~ "\n\t\tret_expect: " ~ (h.ret_expect ? h.ret_expect.humanizeType : "N/A".qBAD)
+                        ~ "\n\t\tret_actual: " ~ (h.ret_actual ? h.ret_actual.explainType : "N/A".qBAD)
+                        ~ "\n\t\tret_expect: " ~ (h.ret_expect ? h.ret_expect.explainType : "N/A".qBAD)
                         ~ "\n\t\texpr: " ~ expr
 
                         ~ "\n\n\t" ~ explainTypeDiff(h.ret_actual, expr, "<-"));
@@ -14134,7 +14134,7 @@ pub fn solve(
         else if (k == "let")
         {
             if (node.type.isIrrelevant && pass >= RelaxMut)
-                node.target.isArg || BUG(node.target ~ " place.type is irrelevant: " ~ humanizeType(node.type, usage: true));
+                node.target.isArg || BUG(node.target ~ " place.type is irrelevant: " ~ explainType(node.type, usage: true));
 
             if (node.items.len != 2)
             {
@@ -14148,7 +14148,7 @@ pub fn solve(
                 node.items[0] && BUG("let.items[0] not empty: " ~ node.items[0].kind);
 
                 node.type.lifetime.hasTemporary && BUG(
-                    "test_node(let) place.type has temp lt: " ~ humanizeType(node.type, lt: true));
+                    "test_node(let) place.type has temp lt: " ~ explainType(node.type, lt: true));
 
                 TEST_Assignable(host: node.target.type.clear_refs(), node.type,
                     "test_node(let): let.target.type !<- let.place.type");
