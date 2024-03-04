@@ -3989,7 +3989,7 @@ pub extern fn runTests()
 
         fn main() {
             mut res = 0;
-            woot(hello: |one| res += one);                      ;; DuplicateFunctions
+            woot(hello: |one| res += one);
             woot(world: |two| res += two);
             return res - 3;
         }
@@ -4001,7 +4001,7 @@ pub extern fn runTests()
             world(two?: 2);
         }
 
-        fn main() {                                             ;; DuplicateFunctions
+        fn main() {
             mut res = 0;
             <fail duplicate explicitly named argument hello 10:17+1>
             woot(hello: |one| res += one, hello: |one| res += one); <pass/>

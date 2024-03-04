@@ -2279,7 +2279,13 @@ pub fn parse(
                 name = getAutoName(expr);
 
             if (name)
+            {
                 flags |= F_CALL_HAS_NAMED_ARGS;
+
+                // TODO FIX auto-name lambdas & co if possible, better debug.
+                if (expr.kind == "fn" && expr.value == "_")
+                    expr.value = name;
+            }
 
             out_args.push(
                 name    ? createArgID(name, expr, flags: optional && F_ARGID_IS_OPTIONAL)
