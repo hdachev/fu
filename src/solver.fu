@@ -10476,9 +10476,8 @@ pub fn solve(
     fn injectImplicitArg(id: string, type: Type, becauseOf!: Target): Target
     {
         if (!_current_fn.items || _current_fn.out.flags & F_EXTERN)
-            fail("No implicit " ~ id.human.qBAD ~ ": " ~ explainType(type) ~ " in scope, needed to call " ~ becauseOf ~ ":\n"
-                ~ qSTACK_implicit(target: becauseOf,
-                        :id, :type, node: becauseOf.solved));
+            fail("No implicit " ~ id.human.qBAD ~ ": " ~ explainType(type) ~ " in scope, needed to call " ~ becauseOf.parent ~ ":\n"
+                ~ qSTACK_implicit(:becauseOf));
 
         // Reuse existing or add new argnode.
         for (mut i = 0; i < _current_fn.items.len + FN_ARGS_BACK; i++)
@@ -11167,6 +11166,16 @@ pub fn solve(
         return "";
     }
 
+    fn qSTACK_implicit(becauseOf!: Target)
+    {
+        let target = becauseOf.parent;
+
+        // TODO FIX this 4 arg sig doesn't make great sense anymore
+        return qSTACK_implicit(
+            target, node: target.solved,
+            id: becauseOf.name, becauseOf.type)
+    }
+
     fn qSTACK_implicit(target: Target, node: SolvedNode, id: string, type: Type, seen!?: Target[])
     {
         //////////////////////////////////////////////////
@@ -11379,7 +11388,7 @@ pub fn solve(
             if (o.flags & F_IMPLICIT)
                 return bindImplicitArg(o.name,
                     type: slot || o.type,       // Use slot type if available,
-                    becauseOf: from).target;    //  might refer to unused implicit via arg default expr, etc.
+                    becauseOf: target).target;  //  might refer to unused implicit via arg default expr, etc.
 
             if (from.modid != module.modid)
                 BUG("inlineExpression: about to use injectForeignLocal with an off-module target: " ~ o);
@@ -11764,7 +11773,7 @@ pub fn solve(
 
                         args[i] = bindImplicitArg(
                             :host_arg.name,
-                            :host_arg.type, becauseOf: target);
+                            :host_arg.type, becauseOf: host_arg.target);
                     }
                 }
 

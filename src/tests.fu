@@ -11967,9 +11967,9 @@ pub extern fn runTests()
         }
 
         <split/>
-        let PRELUDE =  <fail no implicit errout 2:32+6>
-            parse("AAB");                       <pass/>
-            tryParse("AAB");                    </fail>
+        let PRELUDE =           <fail no implicit errout 2:32+6 needed to call fn parse :18+1>
+            parse("AAB");       <pass/>
+            tryParse("AAB");    </fail>
 
         <split/>
         fn main() PRELUDE.len == 6 ? 0 : 1;
