@@ -111,8 +111,6 @@ pub extern fn runTests()
     let TODO_confusing  = fn TODO;
     let TODO_logic      = fn TODO;
 
-    let TODO_definit    = fn TODO;
-
     let LEGACY_Map      = fn TODO;
 
     let SKETCH          = fn TODO;
@@ -12269,12 +12267,26 @@ pub extern fn runTests()
         }
     `);
 
-    TODO_definit(currently: "BUG trying to definitWrap a mutref 6:19+4", `
+    TODO_confusing(currently: "expects a mutref, got i32 copy", `
         struct Shape { hash: int };
 
         fn main() {
-            mut shape = []; // maybe disallow t_zeroes as a local variable (require type annot?)
+            mut shape = [];
             shape.hash = 3;
+            return -shape.hash + 3;
+        }
+    `);
+
+    TODO_confusing(currently: "expects a mutref, got i32 copy", `
+        struct Shape { hash: int };
+
+        fn test(mut shape) {
+            shape.hash = 3;
+            return shape;
+        }
+
+        fn main() {
+            let shape = test([]);
             return -shape.hash + 3;
         }
     `);

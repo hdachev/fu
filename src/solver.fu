@@ -2691,15 +2691,16 @@ pub fn solve(
     //
 
     fn make_field_reference(from: Type, field: Overload,
-
         TODO_FIX_useTemporaryLifetime!?: bool)
     {
         using let _ = field_unpackOffset(field);
 
-        return make_field_reference(
+        // Can't "dereference" zeroes mutably.
+        let quals = !from.is_zeroes && from.quals;
 
+        return make_field_reference(
             to:         field.type,
-            quals:      (from || BUG()).quals,
+            quals:      quals,
             lifetime:   TODO_FIX_useTemporaryLifetime
                 ? Lifetime_temporary
                 : TODO_FIX_static_ZSTs && !memberFlatCount
