@@ -126,6 +126,9 @@ pub let CANNOT_definit_mutrefs = true;
 
 pub fn isAssignableAsArgument(host: ValueType, guest: ValueType, DONT_match_zeroes!?: bool): bool
 {
+    if (SELF_TEST)
+        host && guest || BUG("isAssignableAsArgument: !host || !guest");
+
     return areVFactsAssignable(host: host.vfacts, guest.vfacts)
         && ( areQualsAssignable(host: host.quals, guest.quals)
           &&  isCanonAssignable(host: host.canon, guest.canon)

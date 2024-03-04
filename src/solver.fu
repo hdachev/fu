@@ -1711,11 +1711,59 @@ pub fn solve(
         return fname[start .. end];
     }
 
-    fn explainTypeDiff(a: Type, b: Type, sep = "<->")
+    fn explainTypeDiff(a: Type, b: Type, sep: string)
     {
         return explainType(a, diff: b)
              ~ " " ~ sep ~ " "
              ~ explainType(b, diff: a);
+    }
+
+    fn explainNotMutref(what: Type or SolvedNode)
+    {
+        fn tryExplainWell(shadow what: Type or SolvedNode): string
+        {
+            mut has_mutrefs = false;
+
+            what.lifetime.Lifetime_each: |locid|
+            {
+                if (!locid)
+                    continue;
+
+                let t       = nested(locid);
+                let o       = GET(t);
+                let init    = o.solved.items[LET_INIT];
+
+                if (o.type.is_mutref)
+                {
+                    has_mutrefs = true;
+                    continue;
+                }
+
+                let reason  = o.flags & (F_CONST|F_REF) == F_REF
+                            ? init && tryExplainWell(init)
+                            : !(o.flags & (F_MUT|F_REF)) && "not mutable.";
+
+                return "a ref to "  ~ t.explainWhichFn(fmt: FullContext)
+                                    ~ (reason && "\n\t    ... " ~ reason);
+            };
+
+            return "";
+        }
+
+        return tryExplainWell(what)
+            || explainType(what);
+    }
+
+    fn explainNotAssignable(host: Type, guest: Type or SolvedNode)
+    {
+        // Special case common problems.
+        if (host.is_mutref)
+        {
+            if (!guest.is_mutref)
+                return "expects a mutref, got " ~ explainNotMutref(guest);
+        }
+
+        return explainTypeDiff(host, guest, sep: "<-");
     }
 
     fn str(n: SolvedNode)
@@ -8993,9 +9041,8 @@ pub fn solve(
         // TODO FIX: this error duplicates with the error in solveJump.
         if (h.ret_expect)
             checkAssignable(host: h.ret_expect, type,
-                target: NICEERR_missingReturn && h.target,
                 reason: NICEERR_missingReturn
-                    ? " is missing a final return statement"
+                    ? h.target ~ " is missing a final return statement"
                     : "Actual return type does not match annotation");
 
         h.ret_actual = h.ret_actual
@@ -9014,13 +9061,12 @@ pub fn solve(
 
     fn checkAssignable(
         host: Type, guest: Type,
-        inline reason: string, target?: Target, asArgument!?: bool)
+        inline reason: string, target?: Target, asArgument!?: bool,
+        shadow fail?)
     {
-        isAssignable(:asArgument,
-            :host   || BUG("Bad host type."),
-            :guest  || BUG("Bad guest type."))
-                    || fail((target && target.str) ~ reason ~ ": "
-                                ~ explainTypeDiff(host, guest, sep: "<-"));
+        isAssignable(:asArgument, :host, :guest)
+            || fail((target && target.str)
+                ~ reason ~ ": " ~ explainNotAssignable(:host, :guest));
     }
 
     fn TEST_Assignable(
@@ -9032,10 +9078,8 @@ pub fn solve(
         if (vfacts_ignore)
             host.vfacts &= ~vfacts_ignore;
 
-        isAssignable(:asArgument,
-            :host   || BUG("Bad host type."),
-            :guest  || BUG("Bad guest type."))
-                    || BUG(reason ~ ": " ~ explainTypeDiff(host, guest, sep: "<-"));
+        isAssignable(:asArgument, :host, :guest)
+            || BUG(reason ~ ": " ~ explainNotAssignable(:host, :guest));
     }
 
     fn tryConvertIfNeeded(
@@ -10506,7 +10550,7 @@ pub fn solve(
                     //
                     arg.type == target.type || BUG(
                         "injectImplicitArg: arg.type != target.type:\n\n\t    "
-                            ~ explainTypeDiff(arg.type, target.type));
+                            ~ explainTypeDiff(arg.type, target.type, sep: "!="));
                 }
 
                 mut super = intersectionType(
@@ -10567,7 +10611,14 @@ pub fn solve(
             || BUG();
 
         let call = CallerNode("__implicit", :target, :reorder, :conversions);
-        checkAssignable(host: type, call.type, "Implicit " ~ name.qBAD ~ " type mismatch", asArgument: true);
+
+        checkAssignable(
+            host: type, call.type, asArgument: true,
+            reason: becauseOf ~ " type mismatch",
+            fail: |reason| fail(
+                reason  ~ "\n\n\tNeeded to call " ~ becauseOf.parent ~ ":\n"
+                        ~ qSTACK_implicit(:becauseOf)));
+
         return call;
     }
 

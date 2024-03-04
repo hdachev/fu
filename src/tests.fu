@@ -1819,13 +1819,13 @@ pub extern fn runTests()
         }
     `);
 
-    TODO_confusing(currently: "wants not present in error message", `
+    ZERO(`
         nocopy struct EventLoop { loop_fd: int };
         pub fn ipv4_listen(implicit ref event_loop: EventLoop)
             event_loop.loop_fd++;
 
         pub fn EventLoop(loop_start!) {
-            <fail wants mut ref got const X:X>
+            <fail implicit event_loop 3:41+10 expects mutref 13:23+1 not mutable 8:27+10 loop_start>
             let implicit <pass/>
             implicit mut </fail> event_loop = {
                 mut loop_fd: int;
@@ -1838,7 +1838,7 @@ pub extern fn runTests()
 
         fn main() {
             let event_loop = EventLoop(loop_start: || { ipv4_listen() });
-            return event_loop.loop_fd;
+            return event_loop.loop_fd - 1;
         }
     `);
 
