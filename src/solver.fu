@@ -1722,9 +1722,9 @@ pub fn solve(
              ~ explainType(b, diff: a);
     }
 
-    fn explainNotMutref(what: Type or SolvedNode)
+    fn explainNotMutref(what: Type)
     {
-        fn tryExplainWell(shadow what: Type or SolvedNode): string
+        fn tryExplainWell(shadow what: Type): string
         {
             mut has_mutrefs = false;
 
@@ -1743,28 +1743,29 @@ pub fn solve(
                     continue;
                 }
 
-                let reason  = o.flags & (F_CONST|F_REF) == F_REF
-                            ? init && tryExplainWell(init)
-                            : !(o.flags & (F_MUT|F_REF)) && "not mutable.";
+                let reason  =
+                    o.flags & (F_CONST|F_REF) == F_REF
+                        && init && tryExplainWell(init)
+                            || "not mutable.";
 
                 return "a ref to "  ~ t.explainWhichFn(fmt: FullContext)
-                                    ~ (reason && "\n\t    ... " ~ reason);
+                                    ~ "\n\t    ... " ~ reason;
             };
 
             return "";
         }
 
-        return tryExplainWell(what)
-            || explainType(what);
+        return "expects a mutref, got " ~ (
+            tryExplainWell(what) || explainType(what, lt: true));
     }
 
-    fn explainNotAssignable(host: Type, guest: Type or SolvedNode)
+    fn explainNotAssignable(host: Type, guest: Type)
     {
         // Special case common problems.
         if (host.is_mutref)
         {
             if (!guest.is_mutref)
-                return "expects a mutref, got " ~ explainNotMutref(guest);
+                return explainNotMutref(guest);
         }
 
         return "expects " ~ explainTypeDiff(host, guest, sep: ", got ");
@@ -6676,8 +6677,7 @@ pub fn solve(
 
                     // Previously this was done in tryMatch__mutargs.
                     if (host_arg.flags.isMutRef && !inType.is_mutref)
-                        matchFail(host_arg  ~ " expects a mutref, got "
-                                            ~ explainType(inType));
+                        matchFail(host_arg ~ " " ~ explainNotMutref(inType));
 
                     //
                     argNode.kind == "let"  || BUG();
