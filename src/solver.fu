@@ -10001,7 +10001,7 @@ pub fn solve(
 
                 if (param.invariant)
                     if (!isAssignable(host: param.invariant, type, :DONT_match_zeroes))
-                        matchFail("Incompatible types for " ~ id.qBAD ~ ": " ~ explainTypeDiff(param.invariant, type, " <- "));
+                        matchFail("Incompatible types for " ~ id.qBAD ~ ": " ~ explainNotAssignable(param.invariant, type));
             }
 
             param.matched = type;
@@ -10125,7 +10125,7 @@ pub fn solve(
         // Everything else is a regular type annotation.
         let expect = evalTypeAnnot(node);
         if (!isAssignable(expect, type, :DONT_match_zeroes))
-            matchFail("Incompatible types: " ~ explainTypeDiff(expect, type, " <- "));
+            matchFail("Incompatible types: " ~ explainNotAssignable(expect, type));
 
         return true;
     }
@@ -12104,7 +12104,7 @@ pub fn solve(
                 return definitWrap(node, slot);
 
             BUG("Considering copy or move for incompatible types: "
-                ~ explainTypeDiff(slot, node, sep: " <- "));
+                ~ explainNotAssignable(slot, node));
         }
 
         // No copy needed when the slot is a reference.
@@ -14030,12 +14030,12 @@ pub fn solve(
 
                 isAssignableAsArgument(host: host_arg.type, arg.type) || err(
                     "Arg #" ~ i ~ ", " ~ host_arg.name.human.qID ~ " not assignable to host_arg: "
-                        ~ explainTypeDiff(host_arg.type, arg.type, " <- "));
+                        ~ explainNotAssignable(host_arg.type, arg.type));
 
                 if (pass >= RelaxCopyResize)
                     host_arg.type.is_ref || !arg.type.is_ref || err(
                         "Missing copy or move for arg #" ~ i ~ ", " ~ host_arg.name.human.qID ~ ": "
-                            ~ explainTypeDiff(host_arg.type, arg.type, " <- "));
+                            ~ explainNotAssignable(host_arg.type, arg.type));
             }
 
             if (o.kind != "field")
@@ -14056,7 +14056,7 @@ pub fn solve(
 
                 isAssignable(host: expect, o.type) || err(
                     "Return value not assignable to node.type: "
-                        ~ explainTypeDiff(expect, o.type, " <- "));
+                        ~ explainNotAssignable(expect, o.type));
             }
         }
         else if (k == "block" || k == "and" || k == "or" || k == "if")
@@ -14178,7 +14178,7 @@ pub fn solve(
                         ~ "\n\t\tret_expect: " ~ (h.ret_expect ? h.ret_expect.explainType : "N/A".qBAD)
                         ~ "\n\t\texpr: " ~ expr
 
-                        ~ "\n\n\t" ~ explainTypeDiff(h.ret_actual, expr, " <- "));
+                        ~ "\n\n\t" ~ explainNotAssignable(h.ret_actual, expr));
             }
         }
         else if (k == "try")
