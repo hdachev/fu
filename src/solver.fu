@@ -907,6 +907,9 @@ pub fn solve(
                 ~ (type.TODO_FIX_isArray ? "[]" : "[..]").qKW;
         }
 
+        if (type.is_zeroes)
+            return "[]".qKW;
+
         return (type.canon == t_bool.canon ? "bool"
               : type.canon == t_byte.canon ? "byte"
               : type.canon).qID;
@@ -1638,9 +1641,20 @@ pub fn solve(
             overload.type = flags & F_MUT
                 ? add_mutref(type, lifetime)
                 : add_ref   (type, lifetime);
+
+            // Not the best place for this, but we intercept everything here.
+            if (overload.type.is_zeroes && ~flags & F_LAX)
+                if (flags & (F_TEMPLATE | F_REF | F_MUT) != F_TEMPLATE)
+                    fail(overload ~ " needs a tighter type annotation, inferred type is " ~ explainTypeName(overload.type) ~ "."
+                        ~ makeItLaxIfIntentional());
         }
 
         return target;
+    }
+
+    fn makeItLaxIfIntentional()
+    {
+        return " Make it " ~ "lax".qKW ~ " if this is intentional.";
     }
 
     fn createTemplate(node: Node): Template
@@ -7806,7 +7820,7 @@ pub fn solve(
                                 //    a return type annot somewhere.
                                 //
             if (retval.is_zeroes/* || retval.is_never*/)
-                fail(backtrack: "using", target ~ " returns " ~ explainType(retval)
+                fail(backtrack: "using", target ~ " returns type " ~ explainTypeName(retval) ~ "."
                     ~ "\n\n\tThis would make the conversion function ambiguous because it assigns to anything.");
         }
 
@@ -9111,6 +9125,15 @@ pub fn solve(
             applyConversion(actual, conv);
         }
 
+        // TODO FIX without this we propagate []s further than we want them.
+        //  It's funny that we mostly ignore the type annots after checking -
+        //   in the case of [] it's really harmful, otherwise it's probably fine,
+        //    helps get the most specific type available.
+        //
+        if (actual.is_zeroes && !expect.is_zeroes)
+            definitWrap(actual, expect);
+
+        //
         return true;
     }
 
@@ -15124,9 +15147,9 @@ pub fn solve(
                 fail(
                     w.locid == 0x11110000
                         ? target    ~ " does nothing: returns void and has no effects."
-                                    ~ " Make it " ~ "lax".qKW ~ " if this is intentional."
+                                    ~ makeItLaxIfIntentional()
                         : "Unused variable: " ~ target ~ "."
-                                    ~ " Make it " ~ "lax".qKW ~ " if this is intentional.");
+                                    ~ makeItLaxIfIntentional());
             }
         }
 

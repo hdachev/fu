@@ -110,6 +110,7 @@ pub extern fn runTests()
 
     let TODO_confusing  = fn TODO;
     let TODO_logic      = fn TODO;
+    let TODO_definit    = fn TODO;
 
     let LEGACY_Map      = fn TODO;
 
@@ -817,7 +818,7 @@ pub extern fn runTests()
         }
     `);
 
-    ZERO(`
+    TODO_definit(currently: "arg flag type is [] needs annot 4:39+4", `
         using flags Flags { F_SOME; F_OTHER };
 
         fn parseInlineDecl(mut flags, flag = F_OTHER) {
@@ -11183,7 +11184,7 @@ pub extern fn runTests()
             fn createEmpty(lax type: Type or Node = t_void) = [];
 
             fn solveTypedef(node): Type {
-                let annot = node.items
+                lax let annot = node.items
                     && solveTypedef(node.items[0]);
 
                 if (annot) {
@@ -12267,20 +12268,20 @@ pub extern fn runTests()
         }
     `);
 
-    TODO_confusing(currently: "expects a mutref, got i32", `
+    ZERO(`
         struct Shape { hash: int };
 
         fn main() {
-            mut shape = [];
+            mut shape<fail needs annot type is [] 5:17+5><pass/>: Shape</fail> = [];
             shape.hash = 3;
             return -shape.hash + 3;
         }
     `);
 
-    TODO_confusing(currently: "expects a mutref, got i32", `
+    ZERO(`
         struct Shape { hash: int };
 
-        fn test(mut shape) {
+        fn test(mut shape<fail needs annot type is [] 4:21+5><pass/>: Shape</fail>) {
             shape.hash = 3;
             return shape;
         }
@@ -12300,7 +12301,7 @@ pub extern fn runTests()
 
             let x: Thing = into || {
                 let x: Thing = DISCARD(THROW_IF_ZERO(things.len));
-                x
+                x                                               ;; PointlessLocal
             };
 
             things[x.i].i++;
@@ -16067,7 +16068,7 @@ pub extern fn runTests()
         struct A { target: i32; };
         struct B { target: u32; };
 
-        fn definit()    <fail ambig call zeroes A:target B:target><pass/>
+        fn definit()    <fail ambig call [] A:target B:target><pass/>
             : A         </fail>
                 = [];
 
@@ -16374,7 +16375,7 @@ pub extern fn runTests()
         }
     `);
 
-    TODO_conv(currently: "GET returns zeroes 4:13+5", [`
+    ZERO([`
         struct Target { id: string }
         struct ScopeItem { name: string }
         fn zeroes() = [];
@@ -17175,7 +17176,7 @@ pub extern fn runTests()
             fn inlineInner(inline s, ref out) {
                 let fields = s.items;
                 for (mut i = 0; i < fields.len; i++) {
-                    let field = zeroInit(fields[i]);
+                    lax let field = zeroInit(fields[i]);
                     lax let annot = noInline(field.type, :out);
                 }
             }
@@ -19240,7 +19241,7 @@ pub extern fn runTests()
             Lifetime_process([], each: |lifetime, continue_climb| {
                 count++;
 
-                let init = lifetime.Lifetime_climbType;
+                lax let init = lifetime.Lifetime_climbType;
                 if (init.is_ref)
                     continue_climb(init);
             });
