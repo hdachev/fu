@@ -2950,7 +2950,7 @@ pub extern fn runTests()
         fn main() {
             mut a = A([ 1, 1, 1, 1, 1, 2, 2, 2, 2, 2 ]);
 
-            <fail var a 16:17+1 COW will break 21:56+1 due to bytes 19:18+5>
+            <fail mut a 16:17+1 COW will break 21:56+1 due to bytes 19:18+5>
             ref <pass/>
             fn  </fail> bytes = a.ints.view(of: byte);
 
@@ -4904,7 +4904,7 @@ pub extern fn runTests()
         noinline fn test(ref a: nci32, b: nci32) a.i++ || b.i;
         fn main() {
             mut x = nci32(0);
-            <fail arguments b and a both alias var x 6:17+1>
+            <fail arguments b and a both alias mut x 6:17+1>
             ref y = x;                        <pass/>
             let y = nci32(0);                 </fail>
 
@@ -5144,7 +5144,7 @@ pub extern fn runTests()
             mut ab = 0; mut cd = 0;
             mut ef = 0; mut gh = 0;
 
-            <fail alias var cd 17:29+2>
+            <fail alias mut cd 17:29+2>
             abcd_efgh(ab, ab, cd, gh, ef, ef, cd, gh); <pass/>
             abcd_efgh(ab, ab, cd, cd, ef, ef, gh, gh); </fail>
 
@@ -5726,12 +5726,12 @@ pub extern fn runTests()
         }
     `);
 
-    TODO_disjoint(currently: "arguments test:w1 and test:w0 14:21+1 both alias var w 13:17+1", `
+    TODO_disjoint(currently: "arguments test:w1 and test:w0 14:21+1 both alias mut w 13:17+1", `
         nocopy struct Woot { x: i32[]; y: i32[] };
 
         fn test(ref w0: Woot, ref w1: Woot) {
             ref x = w0.x;
-            <fail arguments test:w1 and test:w0 14:21+1 both alias var w 13:17+1>
+            <fail arguments test:w1 and test:w0 14:21+1 both alias mut w 13:17+1>
             ref y = w1.x; <pass/>
             ref y = w1.y; </fail> // <- doesnt realize w0.x can't alias w1.y
             y ~= y; // <- DONT RESOLVE BY COPY! ref can relax to let
@@ -7616,7 +7616,7 @@ pub extern fn runTests()
         }
     `);
 
-    TODO_borrowck(currently: "BUG cannot find read(ref DONT_DANGLE_ME) in loop(4) 11:34+2", `
+    TODO_borrowck(currently: "BUG cannot find read(const ref DONT_DANGLE_ME) in loop(4) 11:34+2", `
         fn main() {
             ref res = {
                 :BRK {
@@ -7640,7 +7640,7 @@ pub extern fn runTests()
 
     ZERO(`
         noinline fn test(ref data: int[],
-            <fail at call to test 26:37+14 both alias var data 17:17+4>
+            <fail at call to test 26:37+14 both alias mut data 17:17+4>
             ref <pass/>
             mut </fail>DONT_DANGLE_ME: int[])
         {
@@ -7692,7 +7692,7 @@ pub extern fn runTests()
 
         fn main() {
             mut data = [ 1, 2, 3, 4, 5 ];
-            implicit shadow <fail at call to test 24:28+1 both alias var data 14:17+4>
+            implicit shadow <fail at call to test 24:28+1 both alias mut data 14:17+4>
                         ref <pass/>
                         mut </fail>DONT_DANGLE_ME = data[2 .. 3];
 
@@ -7714,7 +7714,7 @@ pub extern fn runTests()
         fn main() {
             mut data = [ 1, 2, 3, 4, 5 ];
 
-            <fail main:DONT_DANGLE_ME main:data both alias var data 3:17+4>
+            <fail main:DONT_DANGLE_ME main:data both alias mut data 3:17+4>
             ref <pass/>
             let </fail> DONT_DANGLE_ME = data[2 .. 3];
             noinline fn test() {
@@ -16365,7 +16365,7 @@ pub extern fn runTests()
 
         fn main() {
             using mut b = B(A(1));
-            <fail using ambig var a 7:13+5 field B:a 3:20+5 var b 9:13+5 field C:a 4:20+5>
+            <fail using ambig mut a 7:13+5 field B:a 3:20+5 mut b 9:13+5 field C:a 4:20+5>
             using <pass/></fail>
             mut c = C(A(2));
 

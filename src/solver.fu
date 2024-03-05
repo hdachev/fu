@@ -1113,9 +1113,15 @@ pub fn solve(
         {
             prefix = (o.flags & F_INJECTED && "injected ")
                    ~ (o.flags & F_IMPLICIT && "implicit ")
+
+                   ~ (o.flags & F_CONST && "const ")
+                   ~ (o.flags & F_MUT   && "mut ")
+                   ~ (o.flags & (F_REF | F_MUT | F_CONST) == F_REF
+                        && (o.type.is_mutref ? "mut " : "const "))
+
                    ~ (o.flags & F_REF && "ref ")
                    ~ (o.isArg && "arg ")
-                        || "var ";
+                        || "let ";
 
             prefix.pop();
         }
