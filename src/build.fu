@@ -480,7 +480,7 @@ pub fn build(
 
                     let endChar = lead == '"' ? '"'
                                 : lead == '<' ? '>'
-                                : matchFail("no leading " ~ "\"".qCODE ~ " or " ~ "<".qCODE);
+                                : matchFail("no leading " ~ "\"".qKW ~ " or " ~ "<".qKW);
 
                     //
                     for (mut i = 1; i < match.len; i++)
@@ -497,7 +497,7 @@ pub fn build(
                         }
                     }
 
-                    matchFail("no trailing " ~ (endChar ~ "").qCODE);
+                    matchFail("no trailing " ~ (endChar ~ "").qKW);
                 });
 
                 return hash_all;

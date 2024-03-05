@@ -2399,7 +2399,7 @@ pub fn solve(
                             autocall_args[0] = args[callsiteIndex];
 
                             mut autocall_error = error
-                                && "Cannot match " ~ host_arg ~ " autocall " ~ host_arg.autocall.qCODE ~ ": ";
+                                && "Cannot match " ~ host_arg ~ " autocall " ~ host_arg.autocall.qID ~ ": ";
 
                             PROFILE(.TryMatch_Autocall);
 

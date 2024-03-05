@@ -23,9 +23,12 @@ pub let BAD     = ansi(31,1);
 
 // Syntax highlighting.
 
-let cID         = ansi(34,1);
-let cKW         = ansi(35,1);
-let cLT         = ansi(32,1);
+let cID         = ansi(60 + 34,1);
+let cKW         = ansi(     35,3);
+
+let cVFACTS     = ansi(     35,3);
+let cQUALS      = ansi(     35,3);
+let cLT         = ansi(     32,3);
 
 
 //
@@ -42,7 +45,11 @@ pub fn qKW(id: string) =
 pub fn qLT(id: string) =
     cLT ~ (id || "?") ~ RESET;
 
-pub fn qCODE(id: string) = id.qID;
+pub fn qQUALS(id: string) =
+    cQUALS ~ (id || "?") ~ RESET;
+
+pub fn qVFACTS(id: string) =
+    cVFACTS ~ (id || "?") ~ RESET;
 
 pub fn qDIM(str: string) = DIM ~ str ~ RESET;
 
