@@ -1713,8 +1713,7 @@ pub fn solve(
 
     fn explainTypeDiff(a: Type, b: Type, sep: string)
     {
-        return explainType(a, diff: b)
-             ~ " " ~ sep ~ " "
+        return explainType(a, diff: b) ~ sep
              ~ explainType(b, diff: a);
     }
 
@@ -1763,7 +1762,7 @@ pub fn solve(
                 return "expects a mutref, got " ~ explainNotMutref(guest);
         }
 
-        return explainTypeDiff(host, guest, sep: "<-");
+        return "expects " ~ explainTypeDiff(host, guest, sep: ", got ");
     }
 
     fn str(n: SolvedNode)
@@ -2490,8 +2489,7 @@ pub fn solve(
                         }
 
                         // Nope, args fail.
-                        matchFail(host_arg  ~ " expects " ~ explainType(expect)
-                                            ~ ", got "    ~ explainType(actual));
+                        matchFail(host_arg ~ " " ~ explainNotAssignable(host: expect, actual));
                     }
 
                     if (REST_START < N)
@@ -3944,7 +3942,7 @@ pub fn solve(
             {
                 usage = type_tryIntersect(usage, slot) || BUG(
                     nested(locid) ~ ": Usage intersection failure: "
-                                  ~ explainTypeDiff(usage, slot, "&"));
+                                  ~ explainTypeDiff(usage, slot, " & "));
 
                 return false;
             }
@@ -8941,7 +8939,7 @@ pub fn solve(
             (target && target.str)
                 ~ reason
                 ~ "No common supertype: "
-                ~ explainTypeDiff(a, b, sep: "|"));
+                ~ explainTypeDiff(a, b, sep: " | "));
     }
 
     fn intersectionType(reason: string, a: Type, b: Type, id?: string)
@@ -8950,7 +8948,7 @@ pub fn solve(
             (id && id.qID ~ ": ")
                 ~ reason
                 ~ "Cannot intersect types: "
-                ~ explainTypeDiff(a, b, sep: "&"));
+                ~ explainTypeDiff(a, b, sep: " & "));
     }
 
     fn solveJump(node: Node): SolvedNode
@@ -9112,7 +9110,7 @@ pub fn solve(
     {
         if (!tryConvertIfNeeded(:actual, :expect, :asArgument))
             fail(err ~ (id && " " ~ id.qID) ~ ": "
-                ~ explainTypeDiff(expect, actual, :sep || "<-"));
+                ~ explainTypeDiff(expect, actual, :sep || " <- "));
     }
 
 
@@ -9444,7 +9442,7 @@ pub fn solve(
 
             if (annot && init.type && !init_isNever)
                 convertIfNeeded(init, expect: annot, :asArgument,
-                    "Type annotation does not match init expression", :id, "<-");
+                    "Type annotation does not match init expression", :id, " <- ");
 
             if (flags & F_REF)
             {
@@ -9992,20 +9990,20 @@ pub fn solve(
                 if (invariant)
                 {
                     if (!isAssignable(host: type, param.matched, :DONT_match_zeroes))
-                        matchFail("Incompatible types for " ~ id.qBAD ~ ": " ~ explainTypeDiff(param.matched, type, "->"));
+                        matchFail("Incompatible types for " ~ id.qBAD ~ ": " ~ explainTypeDiff(param.matched, type, " -> "));
                 }
                 else
                 {
                     let union = type_trySuper(param.matched, type);
                     if (!union)
-                        matchFail("Incompatible types for " ~ id.qBAD ~ ": " ~ explainTypeDiff(param.matched, type, "<->"));
+                        matchFail("Incompatible types for " ~ id.qBAD ~ ": " ~ explainTypeDiff(param.matched, type, " <-> "));
 
                     type = union;
                 }
 
                 if (param.invariant)
                     if (!isAssignable(host: param.invariant, type, :DONT_match_zeroes))
-                        matchFail("Incompatible types for " ~ id.qBAD ~ ": " ~ explainTypeDiff(param.invariant, type, "<-"));
+                        matchFail("Incompatible types for " ~ id.qBAD ~ ": " ~ explainTypeDiff(param.invariant, type, " <- "));
             }
 
             param.matched = type;
@@ -10129,7 +10127,7 @@ pub fn solve(
         // Everything else is a regular type annotation.
         let expect = evalTypeAnnot(node);
         if (!isAssignable(expect, type, :DONT_match_zeroes))
-            matchFail("Incompatible types: " ~ explainTypeDiff(expect, type, "<-"));
+            matchFail("Incompatible types: " ~ explainTypeDiff(expect, type, " <- "));
 
         return true;
     }
@@ -10558,7 +10556,7 @@ pub fn solve(
                     //
                     arg.type == target.type || BUG(
                         "injectImplicitArg: arg.type != target.type:\n\n\t    "
-                            ~ explainTypeDiff(arg.type, target.type, sep: "!="));
+                            ~ explainTypeDiff(arg.type, target.type, sep: " != "));
                 }
 
                 mut super = intersectionType(
@@ -10687,7 +10685,7 @@ pub fn solve(
                     mut error = topic ~ ": Type ambiguity, conversions exist both ways:\n";
 
                     fn explain(shadow a: Type, shadow b: Type, chain: Target[])
-                        error ~= "\n\t" ~ explainTypeDiff(a, b, "->") ~ ":"
+                        error ~= "\n\t" ~ explainTypeDiff(a, b, " -> ") ~ ":"
                                         ~ explainConversion(chain);
 
                     explain(a, b, aConv);
@@ -10857,7 +10855,7 @@ pub fn solve(
                         }
 
                         fail("Ambiguous ||, incompatible operands in a non-bool context: "
-                            ~ explainTypeDiff(item.type, sumType, sep: "||"));
+                            ~ explainTypeDiff(item.type, sumType, sep: " || "));
                     };
                 }
                 else
@@ -12108,7 +12106,7 @@ pub fn solve(
                 return definitWrap(node, slot);
 
             BUG("Considering copy or move for incompatible types: "
-                ~ explainTypeDiff(slot, node, sep: "<-"));
+                ~ explainTypeDiff(slot, node, sep: " <- "));
         }
 
         // No copy needed when the slot is a reference.
@@ -14034,12 +14032,12 @@ pub fn solve(
 
                 isAssignableAsArgument(host: host_arg.type, arg.type) || err(
                     "Arg #" ~ i ~ ", " ~ host_arg.name.human.qID ~ " not assignable to host_arg: "
-                        ~ explainTypeDiff(host_arg.type, arg.type, "<-"));
+                        ~ explainTypeDiff(host_arg.type, arg.type, " <- "));
 
                 if (pass >= RelaxCopyResize)
                     host_arg.type.is_ref || !arg.type.is_ref || err(
                         "Missing copy or move for arg #" ~ i ~ ", " ~ host_arg.name.human.qID ~ ": "
-                            ~ explainTypeDiff(host_arg.type, arg.type, "<-"));
+                            ~ explainTypeDiff(host_arg.type, arg.type, " <- "));
             }
 
             if (o.kind != "field")
@@ -14060,7 +14058,7 @@ pub fn solve(
 
                 isAssignable(host: expect, o.type) || err(
                     "Return value not assignable to node.type: "
-                        ~ explainTypeDiff(expect, o.type, "<-"));
+                        ~ explainTypeDiff(expect, o.type, " <- "));
             }
         }
         else if (k == "block" || k == "and" || k == "or" || k == "if")
@@ -14182,7 +14180,7 @@ pub fn solve(
                         ~ "\n\t\tret_expect: " ~ (h.ret_expect ? h.ret_expect.explainType : "N/A".qBAD)
                         ~ "\n\t\texpr: " ~ expr
 
-                        ~ "\n\n\t" ~ explainTypeDiff(h.ret_actual, expr, "<-"));
+                        ~ "\n\n\t" ~ explainTypeDiff(h.ret_actual, expr, " <- "));
             }
         }
         else if (k == "try")
