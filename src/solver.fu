@@ -9105,12 +9105,10 @@ pub fn solve(
 
     fn convertIfNeeded(
         ref actual: SolvedNode, expect: Type,
-        err: string, id?: string, sep?: string,
-        asArgument!?: bool)
+        /*TODO inline*/ err: string, asArgument!?: bool)
     {
         if (!tryConvertIfNeeded(:actual, :expect, :asArgument))
-            fail(err ~ (id && " " ~ id.qID) ~ ": "
-                ~ explainTypeDiff(expect, actual, :sep || " <- "));
+            fail(err ~ explainNotAssignable(host: expect, actual));
     }
 
 
@@ -9442,7 +9440,7 @@ pub fn solve(
 
             if (annot && init.type && !init_isNever)
                 convertIfNeeded(init, expect: annot, :asArgument,
-                    "Type annotation does not match init expression", :id, " <- ");
+                    "Type annotation does not match initializer: ");
 
             if (flags & F_REF)
             {
