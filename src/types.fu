@@ -294,12 +294,49 @@ pub fn make_moveable(mut type: Type)
 
 // Type serialization.
 
-pub fn humanizeQuals(quals: Quals)
+pub fn explainQuals(quals: Quals, lifetime: Lifetime)
 {
     mut result: string;
-    for (mut i = 0; i < TAGS.len; i++)
-        if (quals & (1 << Quals(i)))
-            result ~= " " ~ TAGS[i];
+
+    if !(quals & q_rx_copy)
+        result ~= "nocopy".ansi::qQUALS ~ ' ';
+
+    // TODO FIX ignore resize, not terribly presentable
+    // if (quals & q_rx_resize)
+    //     result ~= "resize".ansi::qQUALS ~ ' ';
+
+    if (quals & q_mutref)
+        result ~= "mut".ansi::qQUALS ~ ' ';
+    else if (lifetime)
+        result ~= "const".ansi::qQUALS ~ ' ';
+
+    if (lifetime || quals & q_mutref)
+        result ~= "ref".ansi::qQUALS ~ ' ';
+
+    return result;
+}
+
+pub fn explainVFacts(vfacts: VFacts)
+{
+    mut result: string;
+
+    if (vfacts & AlwaysTrue)
+        result ~= "always-true".ansi::qVFACTS  ~ ' ';
+    if (vfacts & AlwaysFalse)
+        result ~= "always-false".ansi::qVFACTS ~ ' ';
+    if (vfacts & Typename)
+        result ~= "type".ansi::qVFACTS  ~ ' ';
+
+    // TODO FIX ignoring LeftAligned & co here, not terribly relevant yet.
+    // if (vfacts & LeftAligned) {
+    //     if (vfacts & RightAligned)
+    //         result ~= "[0 .. len]";
+    //     else
+    //         result ~= "[0 .. ?]"
+    // }
+    // else if (vfacts & RightAligned) {
+    //     result ~= "[? .. len]";
+    // }
 
     return result;
 }

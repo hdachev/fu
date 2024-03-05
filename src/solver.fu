@@ -866,7 +866,8 @@ pub fn solve(
 
         lifetime.Lifetime_each: |locid, isStatic, isTemp, isArgIdx, argidx, paths|
         {
-            if (str) str ~= "|";
+            if (str)
+                str ~= "|".qLT;
 
             str ~= locid        ? GET(nested(locid)).str
                  : isStatic     ? "static".qLT
@@ -874,13 +875,16 @@ pub fn solve(
                  : isArgIdx     ? "arg#" ~ argidx
                                 : BUG("invalid region");
 
-            mut offset = 0;
-            paths.lifetime::walkPaths(:offset,
-                onPathStart:        ||                      str ~= " [",
-                onPathDone:         |isLastPath|            str ~= isLastPath ? " ]" : " ],",
-                onSubRegion:        |flatCount, flatOffset, isLastSubRegion|
-                    str ~= " #" ~ flatCount ~ " @" ~ flatOffset ~ (isLastSubRegion ? "" : ","),
-            );
+            if (locid)
+            {
+                mut offset = 0;
+                paths.lifetime::walkPaths(:offset,
+                    onPathStart:        ||                      str ~= " [",
+                    onPathDone:         |isLastPath|            str ~= isLastPath ? " ]" : " ],",
+                    onSubRegion:        |flatCount, flatOffset, isLastSubRegion|
+                        str ~= " #" ~ flatCount ~ " @" ~ flatOffset ~ (isLastSubRegion ? "" : ","),
+                );
+            }
         }
 
         return str;
@@ -933,7 +937,18 @@ pub fn solve(
             }
         }
 
-        mut result = explainTypeName(type, :brief);
+        mut result = "";
+
+        if (!no_vfacts && type.vfacts)
+            result ~= explainVFacts(type.vfacts);
+
+        if (!no_quals)
+            result ~= explainQuals(type.quals, lt && type.lifetime);
+
+        if (lt && type.lifetime)
+            result ~= type.lifetime ~ " ";
+
+        result ~= explainTypeName(type, :brief);
 
         // Template type arguments.
         let pattern = type.canon.canon::tryGetPattern();
@@ -954,10 +969,6 @@ pub fn solve(
                 result ~= ")";
             });
         }
-
-        //
-        if (!no_quals)
-            result ~= humanizeQuals(type.quals);
 
         if (usage)
         {
@@ -982,12 +993,6 @@ pub fn solve(
 
             result ~= "}";
         }
-
-        if (lt && type.lifetime)
-            result ~= "`" ~ type.lifetime;
-
-        if (!no_vfacts && type.vfacts)
-            result ~= " " ~ type.vfacts;
 
         return result;
     }
