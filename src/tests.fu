@@ -20792,6 +20792,16 @@ pub extern fn runTests()
         fn main() = doesntSkipIfWithTrailingFalse(0);
     `);
 
+    ZERO(`
+        struct Hello { hello: int };
+        fn what(who) {
+            if (who.hello) DOESNT_EXIST;
+            return 0;
+        }
+
+        fn main() what([]);
+    `);
+
     // /StaticEval
 
 

@@ -5667,16 +5667,24 @@ pub fn solve(
         if (SELF_TEST)
             node.items && BUG("intoEmpty: !!node.items");
 
-        ref type = node.type;
+        ref type        = node.type;
+        let canDiscard  = type.isIrrelevant;
         if (type.lifetime)
         {
             if (SELF_TEST)
-            {
-                type.isIrrelevant || type.lifetime.hasStatic || BUG(
-                    "createEmpty: non-static non-irrelevant lifetime: " ~ type.lifetime);
-            }
+                canDiscard || type.lifetime.hasStatic || BUG(
+                    "intoEmpty: non-static non-irrelevant lifetime: " ~ type.lifetime);
 
             type.lifetime = Lifetime_static;
+        }
+
+        if (!canDiscard)
+        {
+            if (SELF_TEST)
+                type.vfacts & AlwaysTrue && BUG(
+                    "intoEmpty: vfacts & AlwaysTrue: " ~ type.explainType);
+
+            type.vfacts |= AlwaysFalse;
         }
     }
 
