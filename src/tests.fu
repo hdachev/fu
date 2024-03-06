@@ -17259,6 +17259,29 @@ pub extern fn runTests()
         }
     `);
 
+    TODO_inline(currently: "BUG unwrap letdef during mcom 11:31+11", `
+        fn ALWAYS_TRUE(inline assertion) assertion;
+
+        fn solve(ref overloads: int[]) {
+            fn GET(t: int)
+                t >= 0 && t < overloads.len && overloads[t];
+
+            fn _current_fn_eachArg(visit) {
+                for (mut i = 0; i < overloads.len; i++) {
+                    let t = overloads[i];
+                    if (t.GET.ALWAYS_TRUE)
+                        visit(i?: i);
+                }
+            }
+
+            mut mask = u32();
+            _current_fn_eachArg: |i| mask |= (1 << (i.u32 & 31));
+            return mask;
+        }
+
+        fn main() solve([ 1, 2 ]) == 1 ? 0 : 1;
+    `);
+
     // /Inliner.
 
 
