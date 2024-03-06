@@ -17282,6 +17282,17 @@ pub extern fn runTests()
         fn main() solve([ 1, 2 ]) == 1 ? 0 : 1;
     `);
 
+    TODO_inline(currently: "BUG relax unexpected unwrap 2:29+6", `
+        fn unwrapCall(what) unwrap { defer what() }
+
+        fn main() {
+            mut res = -1;
+            lax fn trackVarUsage(what) unwrapCall(fn what);
+            trackVarUsage(|| res++);
+            return res;
+        }
+    `);
+
     // /Inliner.
 
 
