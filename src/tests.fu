@@ -818,7 +818,7 @@ pub extern fn runTests()
         }
     `);
 
-    TODO_definit(currently: "arg flag type is [] needs annot 4:39+4", `
+    ZERO(`
         using flags Flags { F_SOME; F_OTHER };
 
         fn parseInlineDecl(mut flags, flag = F_OTHER) {
@@ -12288,6 +12288,24 @@ pub extern fn runTests()
 
         fn main() {
             let shape = test([]);
+            return -shape.hash + 3;
+        }
+    `);
+
+    ZERO(`
+        struct Shape { hash: int };
+        struct NotAShape { other: int };
+
+        fn test(ref a: <T>, mut b: T) {
+            <fail field other expects NotAShape, got Shape 7:15+5>
+            b.other += 3; <pass/>
+            b.hash  += 3; </fail>
+            a = b;
+        }
+
+        fn main() {
+            mut shape: Shape;
+            test(shape, []);
             return -shape.hash + 3;
         }
     `);

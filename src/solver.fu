@@ -6672,6 +6672,11 @@ pub fn solve(
                     //  to let all type params solve normally.
                     let host_arg = original.args[i];
 
+                    // Don't infer [] if possible.
+                    shadow let inValue =
+                        (!host_arg.default || !inValue.is_zeroes)
+                            && inValue;
+
                     shadow let inValue = inValue || {
                         inType = host_arg.default.type;
                         host_arg.default
