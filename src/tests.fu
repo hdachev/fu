@@ -17287,12 +17287,33 @@ pub extern fn runTests()
         fn main() solve([ 1, 2 ]) == 1 ? 0 : 1;
     `);
 
-    TODO_inline(currently: "BUG relax unexpected unwrap 2:29+6", `
+    ZERO(`
+        fn unwrapCall(what) unwrap { defer what() }
+
+        fn main() {
+            mut res = 0;
+            unwrapCall(|| res++);
+            return res;
+        }
+    `);
+
+    ZERO(`
         fn unwrapCall(what) unwrap { defer what() }
 
         fn main() {
             mut res = -1;
-            lax fn trackVarUsage(what) unwrapCall(fn what);
+            { unwrapCall(|| res++); }
+            return res;
+        }
+    `);
+
+    ZERO(`
+        fn unwrapCall(what) unwrap { defer what() }
+
+        fn main() {
+            mut res = -1; <fail unwrapCall as a value 6:46+1 wrap in block>
+            fn trackVarUsage(what) unwrapCall(fn what);             <pass/>
+            fn trackVarUsage(what) { unwrapCall(fn what); }         </fail>
             trackVarUsage(|| res++);
             return res;
         }

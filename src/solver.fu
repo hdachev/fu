@@ -5164,6 +5164,14 @@ pub fn solve(
             else if (node.value == "output")
                 _current_fn.fx_mask |= EFFECTS_output;
         }
+        else if (k == "unwrap")
+        {
+            let what = node.target ? node.target.str : "block";
+
+            fail("Attempting to use an " ~ "unwrap".qKW ~ " " ~ what ~ " as a value."
+                ~ "\n\n\tUnwrapping here would complete any defers inside immediately."
+                ~ "\n\n\tIf this is intended, wrap it in a block to disambiguate.");
+        }
         else
         {
             // Unexpected unwrap, etc.
@@ -11730,6 +11738,14 @@ pub fn solve(
                 {
                     // TODO FIX these should be collected in later passes
                     _current_fn.far_jumps.add(node.helpers.local_of);
+                }
+            }
+            else if (node.kind == "unwrap")
+            {
+                if !(node.target)
+                {
+                    node.target = from;
+                    node.token = _here;
                 }
             }
 
