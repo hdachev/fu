@@ -17259,7 +17259,12 @@ pub extern fn runTests()
         }
     `);
 
-    TODO_inline(currently: "BUG unwrap letdef during mcom 11:31+11", `
+    ZERO(`
+        inline fn test(inline hey: int) hey;
+        fn main() 1.test && 0;
+    `);
+
+    ZERO(`
         fn ALWAYS_TRUE(inline assertion) assertion;
 
         fn solve(ref overloads: int[]) {

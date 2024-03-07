@@ -5391,19 +5391,36 @@ pub fn solve(
         node.flags &= ~F_TEST_painted;
     }
 
-    fn unwrapLetdef(shadow ref node: SolvedNode, lax relax_mask!: Quals)
+    fn unwrapLetdef(shadow ref node: SolvedNode, relax_mask!: Quals)
     {
+        // Not terribly happy about this -
+        //  ideally most unwraps will happen during RelaxMut.
+        //
+        // TODO FIX try to forbid this again when known
+        //  if fns return values or references during RelaxMut,
+        //   that means mcom_FnReturn_CopyOrMoveDecision
+        //    must have done its thing by then.
+        //
+        if (relax_mask != RELAX_before_bck)
+            makeNote(N_McomUnwrapsLetdef);
+
         ref o = GET_mut(node.target);
+        ref init = o.solved.items[LET_INIT];
+
         if (SELF_TEST)
         {
-            o.kind == "var" && o.status & SS_NAME_UNUSED || BUG("unwrapLetdef: !var || !SS_NAME_UNUSED");
+            o.kind == "var" && o.status & SS_NAME_UNUSED
+                || BUG("unwrapLetdef: !var || !SS_NAME_UNUSED");
 
-            if (relax_mask != RELAX_before_bck)
-                BUG("About to unwrap letdef " ~ node.target ~ " during mcom, might be ok, remove this assert at will.");
+            !o.type.is_mutref || o.solved.type.is_mutref
+                || BUG("unwrapLetdef: converts a mutval into a mutref.");
+
+            o.solved.type.is_ref || !init.is_ref
+                || BUG("unwrapLetdef: runs before mcom.");
         }
 
         TRACE("UNWRAP LETDEF " ~ node.target.locid ~ " " ~ node.target);
-        node = o.solved.items[LET_INIT].steal();
+        node = init.steal();
     }
 
     fn relaxBlockVar(t: Target, relax_mask!: Quals, canDiscard!?: bool)

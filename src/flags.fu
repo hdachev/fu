@@ -217,6 +217,7 @@ using flags SolverNotes: i32
     N_AARSoftRisk
 
     N_MoveMustSeq
+    N_McomUnwrapsLetdef
 
     N_SD_HasStaticInit
     N_SD_ExternPrivates
