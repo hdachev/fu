@@ -20546,6 +20546,16 @@ pub extern fn runTests()
     `);
 
 
+    // Wrapping arithmetic.
+
+    ZERO(`
+        fn test(a: int, b: int) a +% b;
+        fn main() test(int.MIN, -1) - int.MAX;
+    `);
+
+    // /Wrapping arithmetic.
+
+
     // Effects & discard.
 
     ZERO(`

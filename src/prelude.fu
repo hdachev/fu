@@ -32,6 +32,19 @@ infix fn >= (a: <T>, b: T) case (T.is::primitive): bool __native;
 infix fn <= (a: <T>, b: T) case (T.is::primitive): bool __native;
 
 
+// Wrapping arithmetic, alla Zig.
+
+prefix fn -% (a: <T>) case (T.is::arithmetic): T __native("-");
+
+infix fn +% (a: <T>, b: T) case (T.is::arithmetic): T __native("+");
+infix fn -% (a: <T>, b: T) case (T.is::arithmetic): T __native("-");
+infix fn *% (a: <T>, b: T) case (T.is::arithmetic): T __native("*");
+
+infix fn +%= (mut ref a: <T>, b: T) case (T.is::arithmetic): &mut T __native("+=");
+infix fn -%= (mut ref a: <T>, b: T) case (T.is::arithmetic): &mut T __native("-=");
+infix fn *%= (mut ref a: <T>, b: T) case (T.is::arithmetic): &mut T __native("*=");
+
+
 // Bitwise.
 
 prefix fn ~ (a: <T>) case (T.is::bitfield): T __native;

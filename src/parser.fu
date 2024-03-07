@@ -21,7 +21,7 @@ struct Precedence {
 let P_RESET         = Precedence(1000);
 let P_PREFIX_UNARY  = Precedence(1   );
 
-let PREFIX          = [ "++", "+", "--", "-", "!", "~", "?", "*", "&", "&mut" ];
+let PREFIX          = [ "++", "+", "--", "-", "!", "~", "?", "*", "&", "&mut", "-%" ];
 let POSTFIX         = [ "++", "--", "[]", "[..]" ];
 
 fn setupOperators()
@@ -60,8 +60,8 @@ fn setupOperators()
     // binop([ "**" ]);
 
     rightToLeft = false;
-    binop([ "*", "/", "%" ]);
-    binop([ "+", "-" ]);
+    binop([ "*", "/", "%",      "*%"       ]);
+    binop([ "+",  "-",          "+%", "-%" ]);
     binop([ "<<", ">>" ]);
     binop([ "&" ]); // Notice this is not js/c precedence, it's just never usefu]l.
     binop([ "^" ]); // We're doing the rust thing her]e.
@@ -77,7 +77,9 @@ fn setupOperators()
     rightToLeft = true;
     binop([ "?",
             "=", "+=", "-=", "**=", "*=", "/=", "%=", "<<=", ">>=", "&=", "^=", "|=",
-            "||=", "&&=", ".=", "~=", ":=" ]);
+            "||=", "&&=", ".=", "~=", ":=",
+
+            "+%=", "-%=", "*%=" ]);
 
     // F# has weird precedence here, why?
     binop([ "<|" ]);
