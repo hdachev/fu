@@ -2138,13 +2138,10 @@ pub fn cpp_codegen(
 
     //
 
-    fn cgArrayLiteral(node: SolvedNode, mode: i32, callarg: Type): string
+    fn cgArrayLiteral(node: SolvedNode, callarg: Type): string
     {
         if (node.isIrrelevant)
             noteDefect(IrrelevantLiteral);
-
-        if (node.target)
-            return cgCall(node, mode);
 
         let items = cgNodes(node.items, mode: M_CHECK_NEVER_LTR);
         if (!items.len)
@@ -3308,7 +3305,7 @@ pub fn cpp_codegen(
         if (k == "real")        return cgLiteral(node, :mode);
         if (k == "char")        return cgCharLiteral(node);
         if (k == "str")         return cgStringLiteral(node);
-        if (k == "arrlit")      return cgArrayLiteral(node, :mode, :callarg);
+        if (k == "arrlit")      return cgArrayLiteral(node, :callarg);
         if (k == "bool")        return node.value;
 
         if (k == "copy")        return cgCopyOrMove(node, :mode);
