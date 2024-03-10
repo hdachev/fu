@@ -16705,7 +16705,7 @@ pub extern fn runTests()
     // /Autocall, varargs & rest params.
 
 
-    // Addrofns of struct fields.
+    // Addrofns.
 
     ZERO(`
         fn fn_v(fn, v) fn(v);
@@ -16734,6 +16734,16 @@ pub extern fn runTests()
             return fn_v(.x, v) + fn_v(.y, v) - 24;
         }
     `);
+
+    ZERO(`
+        fn woot(x: int) x + 5;
+    <alt>
+        let what = .woot;   <alt/>
+        let what = fn woot; </alt>
+        fn main() (-5).what;
+    `);
+
+    // /Addrofns.
 
 
     // Inliner.
@@ -20010,6 +20020,16 @@ pub extern fn runTests()
             let b = _2::use_sqr(x);
             return a == 4 && b == 8 ? 0 : 1;
         }
+    `]);
+
+    ZERO([`
+        noinline fn hey(a: int) a + 2;
+        pub fn add2(a) a.hey;
+    `,`
+        noinline fn hey(a: int) a + 3;
+        pub fn add3(a) a.hey;
+    `,`
+        fn main() (-5)._0::add2._1::add3;
     `]);
 
     // /Mangling.

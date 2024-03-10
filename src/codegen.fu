@@ -1215,13 +1215,18 @@ pub fn cpp_codegen(
         return ret;
     }
 
-    fn isExtLinked(overload: Overload)
+    fn isExtLinked(overload: Overload): bool
     {
-        return overload.flags & (F_PUB | F_EXTERN)
-            && overload.kind != "inline";
+        return overload.status & SS_EXTERNAL_LINKAGE
+
+            // TODO FIX instead of this,
+            //  traverse all template specs in solver
+            //   and set their SS_EXTERNAL_LINKAGE as needed.
+            //
+            || overload.flags & F_TEMPLATE && overload.flags & F_PUB;
     }
 
-    fn isInlLinked(overload: Overload)
+    fn isInlLinked(overload: Overload): bool
     {
         return !!(overload.flags & F_TEMPLATE);
     }

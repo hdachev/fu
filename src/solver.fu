@@ -14462,30 +14462,29 @@ pub fn solve(
 
     //
 
-    fn Scope_observeDefects(items: ScopeItem[])
+    fn Scope_observeDefects()
     {
         mut hasLets         = false;
         mut hasPubTemplates = false;
 
         mut privates: Target[];
 
-        for (mut i = 0; i < items.len; i++)
+        for (mut i = 0; i < _scope.items.len; i++)
         {
-            let t = items[i].target;
+            let t = _scope.items[i].target;
             if (t.modid != module.modid)
                 continue;
 
-            let o = GET(t);
-            if (o.kind == "var")
+            ref o = GET_mut(t);
+            if (o.kind == "var" || o.kind == "fn")
             {
-                hasLets = true;
+                if (o.kind == "var")
+                    hasLets = true;
+
                 if !(o.flags & F_PUB)
                     privates ~= t;
-            }
-            else if (o.kind == "fn")
-            {
-                if !(o.flags & F_PUB)
-                    privates ~= t;
+                else
+                    o.status |= SS_EXTERNAL_LINKAGE;
             }
             else if (o.kind == "template")
             {
@@ -14511,7 +14510,7 @@ pub fn solve(
             for (mut i = 0; i < privates.len; i++)
             {
                 ref o = GET_mut(privates[i]);
-                o.flags |= F_EXTERN;
+                o.status |= SS_EXTERNAL_LINKAGE;
             }
         }
     }
@@ -15153,7 +15152,7 @@ pub fn solve(
         // println("TOTAL OVERLOADS " ~ module.fname ~ ": " ~ _scope.overloads.len);
 
         // Global deoptis so it can all work.
-        Scope_observeDefects(_scope.items);
+        Scope_observeDefects();
 
         // TODO suppressing & opting out of warnings.
         for (mut i = 0; i < _warnings.len; i++)
