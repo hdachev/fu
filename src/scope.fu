@@ -403,9 +403,6 @@ fn Scope_create(
     item.type           = type;
     item.status         = status;
 
-    !!(status & SS_ARGUMENT) == asArgument || BUG(
-        "Scope_create(asArgument) !== SS_ARGUMENT");
-
     overloads.insert(
         asArgument ? 0 : overloads.len,
         item);

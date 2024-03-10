@@ -784,11 +784,6 @@ pub fn solve(
         return o.solved.target || BUG("field_getParentStruct: solved.target not set.");
     }
 
-    fn isArg(o: Overload)
-    {
-        return !!(o.status & SS_ARGUMENT);
-    }
-
     fn isMutVal(o: Overload)
     {
         return !(~o.flags & (F_MUT | F_VAL));
@@ -869,7 +864,7 @@ pub fn solve(
             if (str)
                 str ~= "|".qLT;
 
-            str ~= locid        ? GET(nested(locid)).str
+            str ~= locid        ? nested(locid).str
                  : isStatic     ? "static".qLT
                  : isTemp       ? "temp".qLT
                  : isArgIdx     ? "arg#" ~ argidx
@@ -1042,7 +1037,7 @@ pub fn solve(
                 let pass = (pass0 != (pass0 = h.pass) || callstack == 1) && h.pass ~ " ";
                 reason ~= "\n                "[.. (17 - pass.len).max(1)] ~ pass;
 
-                reason ~= o;
+                reason ~= h.target;
 
                 if (ext.args)
                 {
@@ -1108,8 +1103,9 @@ pub fn solve(
             println("DEV_HappyPathOnly: we ended up on a slow path.");
     }
 
-    fn str(o: Overload)
+    fn str(t: Target)
     {
+        let o       = GET(t);
         let kind    = o.kind;
         mut prefix  = kind.str;
         if (kind == "var")
@@ -1123,7 +1119,7 @@ pub fn solve(
                         && (o.type.is_mutref ? "mut " : "const "))
 
                    ~ (o.flags & F_REF && "ref ")
-                   ~ (o.isArg && "arg ")
+                   ~ (t.isArg && "arg ")
                         || "let ";
 
             prefix.pop();
@@ -1610,8 +1606,7 @@ pub fn solve(
         }
 
         // Reserve the slot.
-        let status = (asArgument && SS_ARGUMENT)
-                   | (type.quals & q_rx_resize && SS_TODO_FIX_was_rx_resize);
+        let status = (type.quals & q_rx_resize && SS_TODO_FIX_was_rx_resize);
 
         let target = Scope_create(_scope,
             nest: local_of, :asArgument,
@@ -1645,7 +1640,7 @@ pub fn solve(
             // Not the best place for this, but we intercept everything here.
             if (overload.type.is_zeroes && ~flags & F_LAX)
                 if (flags & (F_TEMPLATE | F_REF | F_MUT) != F_TEMPLATE)
-                    fail(overload ~ " needs a tighter type annotation, inferred type is " ~ explainTypeName(overload.type) ~ "."
+                    fail(target ~ " needs a tighter type annotation, inferred type is " ~ explainTypeName(overload.type) ~ "."
                         ~ makeItLaxIfIntentional());
         }
 
@@ -2909,7 +2904,7 @@ pub fn solve(
                     shadow let target = nullary ? target : candidate;
 
                     let convert = GET(target);
-                    convert.type || BUG("No convert.type, perhaps a `using inline fn` without a return type annotation: `" ~ convert ~ "`.");
+                    convert.type || BUG("No convert.type, perhaps a `using inline fn` without a return type annotation: " ~ target ~ ".");
 
                     let convertType = convert.kind != "field"
                         ? convert.type
@@ -2925,7 +2920,7 @@ pub fn solve(
 
                     if (convert.status & (SS_DID_START | SS_FINALIZED) == SS_DID_START)
                     {
-                        TRACE("doExploreConversions: skipping [!SS_FINALIZED] " ~ convert);
+                        TRACE("doExploreConversions: skipping [!SS_FINALIZED] " ~ target);
 
                         // Decidability [B]:
                         //
@@ -3571,13 +3566,14 @@ pub fn solve(
                 if (!locid)
                     continue;
 
-                let o = GET(nested(locid));
-                o.kind == "var" || BUG("cannotCOW_climbParents found a non-var: " ~ o);
+                let t = nested(locid);
+                if (SELF_TEST)
+                    t.kind == "var" || BUG("cannotCOW_climbParents found a non-var: " ~ t);
 
                 // Climb parents.
                 cannotCOW_climbParents(
                     Lifetime_op_join(
-                        Lifetime_climbType(o).lifetime,
+                        Lifetime_climbType(t).lifetime,
                         paths),
 
                     // We don't want to forbid the copy when we visit this locid
@@ -3593,19 +3589,19 @@ pub fn solve(
                 //   writeable refs to their contents, but indirectly,
                 //    via aliased function arguments.
                 ref flow = _current_fn.flow;
-                if (o.isArg)
+                if (t.isArg)
                 {
                     // Let's just hard risk all mutref arguments for starters,
                     //  we'll be relaxing this later as more practical examples become available.
                     let arg_targets = flow.arg_targets;
                     for (shadow mut i = 0; i < arg_targets.len; i++)
                     {
-                        let t = arg_targets[i];
+                        shadow let t = arg_targets[i];
                         if (!t || t == locid)
                             continue;
 
                         // Mutrefs only.
-                        shadow let o = GET(nested(t));
+                        let o = GET(nested(t));
                         if (!o.solved.type.is_mutref)
                             continue;
 
@@ -3778,16 +3774,17 @@ pub fn solve(
                     return false;
 
                 let o = GET(t);
+                let isArg = t.isArg;
                 let letNode = o.solved;
                 if (letNode.is_ref)
                 {
-                    if (o.isArg)
+                    if (isArg)
                         return o.isMutVal;
 
-                    if (!trackUse(Lifetime_climbType(o).lifetime, :bitset))
+                    if (!trackUse(Lifetime_climbType(t).lifetime, :bitset))
                         return false;
                 }
-                else if (o.isArg)
+                else if (isArg)
                 {
                     BUG("trackUse: o.isArg but !o.solved.is_ref");
                 }
@@ -5354,7 +5351,7 @@ pub fn solve(
 
     fn keepOrClearMutVal(ref o: Overload, keep!: bool)
     {
-        o.kind == "var" && o.isMutVal || BUG("keepOrClearMutVal: Not a mut var: " ~ o);
+        o.kind == "var" && o.isMutVal || BUG("keepOrClearMutVal: Not a mut var");
 
         ref node = o.solved;
         if (keep)
@@ -5451,7 +5448,7 @@ pub fn solve(
             if (isUnused)
                 o.status |= SS_UNUSED;
             else
-                o.status & SS_UNUSED && BUG("relaxBlockVar: previously SS_UNUSED " ~ o ~ " now used as " ~ explainType(usage));
+                o.status & SS_UNUSED && BUG("relaxBlockVar: previously SS_UNUSED " ~ t ~ " now used as " ~ explainType(usage));
 
             if (isUnused && canDiscard)
                 o.solved.type = t_void;
@@ -5472,7 +5469,7 @@ pub fn solve(
                 //  so that __native fns are dealt with
                 //   via the same code path.
                 //
-                if (!o.isArg)
+                if (!t.isArg)
                     o.keepOrClearMutVal(
                         keep: usage.is_mutref);
             }
@@ -5492,7 +5489,7 @@ pub fn solve(
             //   while previously mcom_node did not visit argument defaults,
             //    and now we're noticing `copy` nodes during initial relax (after inline).
             //
-            && !o.isArg)
+            && !t.isArg)
         {
             ref init = node.items[LET_INIT];
 
@@ -6504,7 +6501,7 @@ pub fn solve(
 
             fn id(shadow target)
                 target.is_SPECFAIL  ? "SPEC_FAIL".qBAD
-                                    : GET(target).str;
+                                    : target.str;
 
             (!t == nx) && (!t || t.is_SPECFAIL || allowReplaceNonSpecfails) || BUG(
                 "About to screw up royally, replacing spec: "
@@ -7267,11 +7264,7 @@ pub fn solve(
             }
 
             if (!didSetBody)
-            {
-                let o = GET(target);
-                o.kind != "fn" || BUG(
-                    "did not set body on " ~ o ~ ": " ~ explainType(o.type));
-            }
+                target.kind != "fn" || BUG("Did not set body on " ~ target);
         }
 
         // Go!
@@ -8888,14 +8881,16 @@ pub fn solve(
 
     //////////////////////////////////////////////////////////
 
-    fn Lifetime_climbType(o: Overload)
+    fn Lifetime_climbType(t: Target)
     {
-        o.kind == "var" || BUG("Lifetime_climbType: not a `var`: " ~ o);
+        if (t.isArg)
+            return [];
+
+        let o = GET(t);
+        o.kind == "var" || BUG("Lifetime_climbType: not a var");
 
         let node = o.solved;
-
-        return node.is_ref && !o.isArg
-            && node.items[LET_INIT].type;
+        return node.is_ref && node.items[LET_INIT].type;
     }
 
     fn Lifetime_unwind(
@@ -8912,7 +8907,7 @@ pub fn solve(
             }
             else
             {
-                let init = GET(nested(locid)).Lifetime_climbType;
+                let init = nested(locid).Lifetime_climbType;
                 if (init.is_ref)
                     continue_climb(
                         Lifetime_op_join(init.lifetime, paths));
@@ -8931,7 +8926,8 @@ pub fn solve(
                 continue;
             }
 
-            ref o = GET_mut(nested(locid));
+            let t = nested(locid);
+            ref o = GET_mut(t);
             if (o.status & SS_MOVED_FROM)
                 continue;
 
@@ -8939,7 +8935,7 @@ pub fn solve(
 
             // println("MOVED FROM " ~ o.name ~ ": " ~ o.type.explainType);
 
-            let init = o.Lifetime_climbType;
+            let init = t.Lifetime_climbType;
             if (init.is_ref)
                 Lifetime_F_MOVED_FROM(init.lifetime);
         }
@@ -8960,14 +8956,15 @@ pub fn solve(
             if (locid < locals_start)
                 break;
 
-            let o = GET(nested(locid));
+            let t = nested(locid);
+            let o = GET(t);
             o.kind == "var" && o.type.is_mutref || BUG(
-                "Lifetime_allowsMutrefReturn: found non-mutref: " ~ o);
+                "Lifetime_allowsMutrefReturn: found non-mutref: " ~ t);
 
             if !(o.flags & F_REF)
                 return false;
 
-            let init = o.Lifetime_climbType;
+            let init = t.Lifetime_climbType;
             if (!Lifetime_allowsMutrefReturn(init.lifetime, :locals_start))
                 return false;
         }
@@ -11490,9 +11487,9 @@ pub fn solve(
         mut helpersReplicas: Helpers[];
 
         //
-        fn isInlineLocal(o: Overload)
+        fn isInlineLocal(t: Target)
         {
-            return !o.isArg && o.flags & F_INLINE;
+            return !t.isArg && t.flags & F_INLINE;
         }
 
         fn matchReplicaOrInjectForeignLocal(target: Target, slot?: Type)
@@ -11516,14 +11513,14 @@ pub fn solve(
                     becauseOf: target).target;  //  might refer to unused implicit via arg default expr, etc.
 
             if (from.modid != module.modid)
-                BUG("inlineExpression: about to use injectForeignLocal with an off-module target: " ~ o);
+                BUG("inlineExpression: about to use injectForeignLocal with an off-module target: " ~ target);
 
             // Preceding argument references -
             //  fn myfn(a = 2, b = a * a)
             //
             if (parent == from && callsite_args)
             {
-                o.isArg || BUG("inlineExpression callsite_args(" ~ callsite_args.len ~ ") observing a non-F_ARG local(" ~ target ~ ") from(" ~ from ~ ")");
+                target.isArg || BUG("inlineExpression callsite_args(" ~ callsite_args.len ~ ") observing a non-F_ARG local(" ~ target ~ ") from(" ~ from ~ ")");
                 parent.args.each: |host_arg, i|
                 {
                     if (host_arg.target == target)
@@ -11608,7 +11605,7 @@ pub fn solve(
                 if (type.lifetime == Lifetime_static)
                 {
                     TODO_FIX_static_ZSTs && type.is_zst || BUG(
-                        "Unexpected static lifetime on " ~ foreign);
+                        "Unexpected static lifetime on " ~ node.target);
                 }
                 else
                 {
@@ -11639,7 +11636,7 @@ pub fn solve(
                     //  and if this is the only flag that needs juggling here.
                     :foreign.flags);
 
-                TRACE("inlineExpression: introducing a letdef: " ~ local ~ " <- " ~ foreign);
+                TRACE("inlineExpression: introducing a letdef: " ~ local ~ " <- " ~ node.target);
 
                 node.target = local;
             }
@@ -12102,7 +12099,6 @@ pub fn solve(
             // Watch it, cross-module locals.
             let foreign = host_arg.target;
             letdefReplicas.set(foreign, argdef.target || BUG());
-            lax shadow let foreign = GET(foreign);
 
             if (SELF_TEST)
                 isAssignable(host: foreign.type, argdef.target.type)
@@ -12402,9 +12398,9 @@ pub fn solve(
             && !arg.acceptsTempCopies(:requireVal);
     }
 
-    fn acceptsSoftRisk(o: Overload)
+    fn acceptsSoftRisk(t: Target)
     {
-        return o.isArg && !o.acceptsTempCopies();
+        return t.isArg && !t.acceptsTempCopies();
     }
 
     fn isFieldChain(arg: SolvedNode)
@@ -12593,16 +12589,16 @@ pub fn solve(
             let t = nested(target);
             ref o = GET_mut(t);
 
-            TRACE("RESOLVE_byTempCopy: " ~ o);
+            TRACE("RESOLVE_byTempCopy: " ~ t);
 
             if (!o.acceptsTempCopies)
                 return false;
 
             o.type.is_mutref && BUG(
-                o ~ ": Not F_REF but type.is_mutref"
-                        ~ " in RESOLVE_byMutvar: is this a problem?");
+                t ~ ": Not F_REF but type.is_mutref"
+                    ~ " in RESOLVE_byMutvar: is this a problem?");
 
-            o.kind == "var" || BUG("RESOLVE_byMutvar: Not a variable.");
+            o.kind == "var" || BUG("RESOLVE_byMutvar: Not a variable: " ~ t);
             TEST_varLifetime(o.type.lifetime);
 
             if (!o.type.is_rx_copy)
@@ -13065,7 +13061,7 @@ pub fn solve(
                 let invalidates = flow.rg_invalidates.unless_oob(write);
 
                 if (SELF_TEST && invalidates.Lifetime_has(locid: write))
-                    BUG("flow.invalidates[write].has(write): " ~ GET(nested(write)));
+                    BUG("flow.invalidates[write].has(write): " ~ nested(write));
 
                 shadow let invalidates = invalidates.Lifetime_process(
                     |locid!invalidatee, continue_keep|
@@ -14053,14 +14049,15 @@ pub fn solve(
         //
         if (k == "call")
         {
-            let o           = GET(node.target);
+            let t           = node.target;
+            let o           = GET(t);
             shadow let k    = o.kind;
 
-            let host_args   = node.target.args;
+            let host_args   = t.args;
             let args        = node.items;
 
             fn err(reason: string)
-                BUG(node ~ " " ~ o ~ ": " ~ reason);
+                BUG(node ~ " " ~ t ~ ": " ~ reason);
 
             // TODO FAILCASE enable this, allowing non-inline callsites to inline fns
             //  helps us navigate some nasty inline-recursions,
@@ -14077,7 +14074,7 @@ pub fn solve(
             host_args.len == args.len || k == "type" && !args.len || err(
                 "host_args.len (" ~ host_args.len ~ ") != args.len (" ~ args.len ~ "):"
                     ~ "\n\t\t" ~ mangleArgTypes(args)
-                    ~ "\n\t\t" ~ explainWhichFn(node.target));
+                    ~ "\n\t\t" ~ explainWhichFn(t));
 
 
             if (o.kind == "type" && o.type.tryLookupUserType.kind == "struct")
@@ -14113,7 +14110,7 @@ pub fn solve(
             if (o.kind != "field")
             {
                 if (o.kind == "var" && o.type.isIrrelevant)
-                    BUG("Call to irrelevant local: " ~ o);
+                    BUG("Call to irrelevant local: " ~ t);
 
                 let expect = node.type;
 
@@ -14332,8 +14329,8 @@ pub fn solve(
         let unwound = Lifetime_unwind(retval.lifetime);
         unwound.Lifetime_each: |locid, isStatic, lax isTemp|
         {
-            let o = locid && GET(nested(locid));
-            let isRefArg = o.isArg && !o.isMutVal;
+            let t = locid && nested(locid);
+            let isRefArg = t.isArg && !t.isMutVal;
 
             // Everything but refs to arguments and statics ...
             if (!isRefArg && !isStatic)
@@ -14459,21 +14456,6 @@ pub fn solve(
 
     fn compilerBreak()
     {
-        mut debug = "\nCompiler break:";
-
-        // Print all locals.
-        if (_current_fn.target)
-        {
-            let t  = _current_fn.target;
-            debug ~= "\n    Current fn: " ~ t ~ " at (" ~ t.modid ~ ", " ~ t.globid ~ "):";
-            t.args_n_locals.each: |item|
-                debug ~= "\n        " ~ item;
-        }
-
-        if (debug)
-            println(debug);
-
-        //
         println("[[[ BREAKPOINT HERE ]]]");
     }
 

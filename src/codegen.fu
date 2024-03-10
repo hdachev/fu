@@ -1616,7 +1616,7 @@ pub fn cpp_codegen(
     {
         let o           = GET(target);
         let place_type  = o.solved.type;
-        let isArg       = o.status & SS_ARGUMENT;
+        let isArg       = target.isArg;
 
         shadow let place_type  = forceValue
             ? clear_refs(place_type)
@@ -1833,7 +1833,7 @@ pub fn cpp_codegen(
         if (SELF_TEST)
         {
             locid || BUG("set_isHoisted: Not a local.");
-            locid.nested.status & SS_ARGUMENT && BUG("Hoisted an argument.");
+            locid.nested.isArg && BUG("Hoisted an argument.");
         }
 
         _current_fn._hoisted.add(locid);
@@ -1957,10 +1957,11 @@ pub fn cpp_codegen(
             if (!locid || surviving_locals.has(locid))
                 continue;
 
-            let o = GET(nested(locid));
-            if (o.status & SS_ARGUMENT || isHoisted(:locid))
+            let t = nested(locid);
+            if (t.isArg || isHoisted(:locid))
                 continue;
 
+            let o = GET(t);
             if (o.solved.lifetime)
                 TEST_noDanglingRefs(o.solved.lifetime, :surviving_locals);
             else
@@ -3369,7 +3370,7 @@ pub fn cpp_codegen(
             if (mode & M_RETURN)
             {
                 fn supportsNRVO(t: Target)
-                    t.kind == "var" && !(t.status & SS_ARGUMENT)
+                    t.kind == "var" && !t.isArg
                         // && o.local_of == _current_fn.target.index
                         && !t.solved.type.is_ref;
 

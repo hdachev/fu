@@ -12,14 +12,14 @@ using flags SolverStatus: u16
     SS_UPDATED
     SS_TYPE_RECUR
     SS_FN_RECUR
-    SS_FN_OOE_RTL
+    SS_FN_OOE_RTL                   // TODO get rid of this, silly
 
-    SS_NAME_UNUSED
-    SS_UNUSED
+    SS_NAME_UNUSED                  // TODO GET RID OF THIS, SS_MATCHED is enough
+    SS_UNUSED                       // also this feels redundant, if its unused, why is it still around
     SS_MATCHED
     SS_MOVED_FROM
 
-    SS_ARGUMENT
+    // ...
     SS_OBSERVED_BY_CONV_CACHE
     SS_TODO_FIX_was_rx_resize
     SS_Debug_AllPassesComplete
