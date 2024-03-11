@@ -12721,20 +12721,31 @@ pub fn solve(
             return [];
         }
 
-        fn SLOW_findByReadID(read!: i32, loop_start!: i32)
+        fn SLOW_findByReadID(read!: i32, write_loop_start: i32)
         {
-            fn checkLoopStart(_loop_start: i32)
+            fn eachLoopStart(mut search: i32, which, visit)
             {
-                if (_loop_start <= loop_start)
-                    return _loop_start == loop_start;
-
-                for (mut i = 0; i < _helpers_data.len; i++)
-                {
+                for (mut i = _helpers_data.len; i --> 0; ) {
                     let h = _helpers_data[i];
-                    if (h.locals_start == _loop_start)
-                        return checkLoopStart(
-                            h.postdom.read_loop_start);
+                    if (h.locals_start == search) {
+                        let parent = h.postdom.which;
+                        visit(search);
+                        search = parent;
+                    }
                 }
+            }
+
+            // List all loops reachable through this write ...
+            mut loop_ids: i32[];
+            eachLoopStart(write_loop_start, .write_loop_start): |loop_id|
+                loop_ids ~= loop_id;
+
+            // Check all reachable reads ends.
+            fn checkReadLoopStart(read_loop_start: i32)
+            {
+                eachLoopStart(read_loop_start, .read_loop_start): |loop_id|
+                    if (loop_ids.has(loop_id))
+                        return true;
 
                 return false;
             }
@@ -12743,8 +12754,8 @@ pub fn solve(
                 node.kind == "call" &&
                 node.target.isLocal &&
                 node.target.locid == read &&
-                checkLoopStart(:node._loop_start))
-                    || BUG("Cannot find read(" ~ nested(read) ~ ") in loop(" ~ loop_start ~ ").");
+                checkReadLoopStart(node._loop_start))
+                    || BUG("Cannot find read(" ~ nested(read) ~ ") in loop(" ~ write_loop_start ~ ").");
         }
 
 
@@ -13086,7 +13097,7 @@ pub fn solve(
                                     "Write to " ~ write.nested
                                         ~ (callOrPragma.kind == "call" && " at call to " ~ callOrPragma.target)
                                         ~ " invalidates the use of " ~ read.nested ~ " at "
-                                        ~ SLOW_findByReadID(:read, :loop_start).token.addr_and_snippet
+                                        ~ SLOW_findByReadID(:read, loop_start).token.addr_and_snippet
                                         ~ "\n\t... on next loop iteration.\n\n\tWritten"
                                         ~ qSTACK(callOrPragma, :write));
                         }

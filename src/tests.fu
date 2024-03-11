@@ -7617,15 +7617,17 @@ pub extern fn runTests()
         }
     `);
 
-    TODO_borrowck(currently: "BUG cannot find read(const ref DONT_DANGLE_ME) in loop(4) 11:34+2", `
+    ZERO(`
         fn main() {
-            ref res = {
+            ref res = {                                         ;; GNUStmtExpr
                 :BRK {
                     mut data = [ 1, 2, 3, 4, 5 ];
-                    ref DONT_DANGLE_ME = data[2 .. 3];
+                    <fail write to mut data 12:34+2 invalidates ref DONT_DANGLE_ME invalidates 10:40+14 next loop iter>
+                    ref <pass/>
+                    let </fail> DONT_DANGLE_ME = data[2 .. 3];
                     for (mut i = 0; i < 2; i++)
                         if (i & 1)
-                            break :BRK DONT_DANGLE_ME;
+                            break :BRK DONT_DANGLE_ME;          ;; Goto
                         else for (mut j = 0; j < 8; j++)
                             data ~= data;
 
