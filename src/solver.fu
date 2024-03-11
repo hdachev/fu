@@ -2031,7 +2031,7 @@ pub fn solve(
         return ret;
     }
 
-    fn tryMatch__mutargs(
+    fn tryMatchCall(
         mut id: string,
         ref reorder!reorder_out: Reorder,
         ref conversions!conversions_out: Target[][],
@@ -2424,7 +2424,7 @@ pub fn solve(
 
                             PROFILE(.TryMatch_Autocall);
 
-                            let t = tryMatch__mutargs(
+                            let t = tryMatchCall(
 
                                 // TODO allow autocalls to be fully::qualified,
                                 //  in which case we'd be doing `local_scope: false`, and
@@ -2587,7 +2587,7 @@ pub fn solve(
                             continue;
                         }
 
-                        BUG("tryMatch__mutargs: Tested the same overload twice: " ~ explainWhichFn(matchIdx, conversions_out));
+                        BUG("tryMatchCall: Tested the same overload twice: " ~ explainWhichFn(matchIdx, conversions_out));
                     }
 
                     fail("Ambiguous call to " ~ explainBadCallArguments(:id, :targets, :args) ~ ", matches multiple items in scope:\n"
@@ -2893,7 +2893,7 @@ pub fn solve(
 
                 mut error: string;
                 mut candidate: Target;
-                if (nullary || (candidate = tryMatch__mutargs(
+                if (nullary || (candidate = tryMatchCall(
                     targets: [ target ], :error,
                     id: "",
                     args: TODO_FIX_convert_args,
@@ -3179,7 +3179,7 @@ pub fn solve(
              ~ (args && " with args (" ~ args.map(.explainType).join(", ") ~ ")");
     }
 
-    fn match__mutargs(
+    fn matchCall(
         misc_scope: Scope, local_scope: bool,
         id: string, ref args: SolvedNode[],
         ref reorder: Reorder,
@@ -3190,7 +3190,7 @@ pub fn solve(
 
         PROFILE(.TryMatch_SolveCall);
 
-        let ret = tryMatch__mutargs(:misc_scope, :local_scope, :id, :args, :reorder, :conversions, :flags, :targets, :error);
+        let ret = tryMatchCall(:misc_scope, :local_scope, :id, :args, :reorder, :conversions, :flags, :targets, :error);
         if (ret)
             return ret;
 
@@ -3198,7 +3198,7 @@ pub fn solve(
         //  separate pass, so we don't have to worry about unnecessary string concats.
         error = "Bad call to " ~ explainBadCallArguments(:id, :targets, :args) ~ ": ";
 
-        let debug = tryMatch__mutargs(:misc_scope, :local_scope, :id, :args, :reorder, :conversions, :flags, :targets, :error);
+        let debug = tryMatchCall(:misc_scope, :local_scope, :id, :args, :reorder, :conversions, :flags, :targets, :error);
         if (debug)
             BUG("Did match on second pass: " ~ debug);
 
@@ -6722,7 +6722,7 @@ pub fn solve(
                     }
                     //////////////////////////////////////////////////////////////////////////////////////////////
 
-                    // Previously this was done in tryMatch__mutargs.
+                    // Previously this was done in tryMatchCall.
                     if (host_arg.flags.isMutRef && !inType.is_mutref)
                         matchFail(host_arg ~ " " ~ explainNotMutref(inType));
 
@@ -10420,7 +10420,7 @@ pub fn solve(
         //
         mut reorder: Reorder;
         mut conversions: Target[][];
-        let callTargIdx = match__mutargs(
+        let callTargIdx = matchCall(
             :misc_scope, local_scope: !qualified,
             :id, :args, :reorder, :conversions, :flags, :targets);
 
@@ -10671,7 +10671,7 @@ pub fn solve(
         mut error: string;
         mut reorder: Reorder;
         mut conversions: Target[][];
-        let target = !cid && tryMatch__mutargs(local_scope: true, :id, :reorder, :conversions, flags: F_IMPLICIT, :error)
+        let target = !cid && tryMatchCall(local_scope: true, :id, :reorder, :conversions, flags: F_IMPLICIT, :error)
             || injectImplicitArg(:id, :type, :becauseOf)
             || BUG();
 

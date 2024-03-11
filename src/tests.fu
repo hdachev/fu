@@ -97,6 +97,7 @@ pub extern fn runTests()
     let TODO_inline     = fn TODO;
     let TODO_varargs    = fn TODO;
     let TODO_conv       = fn TODO;
+    let TODO_autocall   = fn TODO;
     let TODO_infer      = fn TODO;
     let TODO_relaxer    = fn TODO;
     let TODO_ambig      = fn TODO;
@@ -5379,7 +5380,7 @@ pub extern fn runTests()
         }
     `);
 
-    TODO_borrowck(currently: "ref old 7:23+3", `
+    TODO_unique(currently: "ref old 7:23+3", `
         struct Helper { vars: i32[]; };
 
         fn test(ref _helpers: Helper[], helpers_idx: i32) {
@@ -16123,7 +16124,7 @@ pub extern fn runTests()
         }
     `);
 
-    TODO_conv(currently: "val_x(C) generic_ref_x:a expects mutref 11:36+13", `
+    TODO_semantics(currently: "val_x(C) generic_ref_x:a expects mutref 11:36+13", `
         struct A { x: i32 };
         struct B { using a: A };
         struct C { b: B };
@@ -16146,7 +16147,7 @@ pub extern fn runTests()
         }
     `);
 
-    TODO_conv(currently: "sqr is not defined here 11:24+1", `
+    TODO_autocall(currently: "sqr is not defined here 11:24+1", `
         fn Each !T(ref a: T[..], fn)
             for (mut i = 0; i < a.len; i++)
                 fn(a[i], i?: i);
@@ -16161,7 +16162,7 @@ pub extern fn runTests()
         }
     `);
 
-    TODO_conv(currently: "sqr is not defined here 4:19+1", `
+    TODO_autocall(currently: "sqr is not defined here 4:19+1", `
         fn Each !T(ref a: T[..], fn)
             for (mut i = 0; i < a.len; i++)
                 fn(a[i], i?: i);
