@@ -15913,6 +15913,48 @@ pub extern fn runTests()
         }
     `);
 
+    TODO_conv(currently: "Bad call to qWHAT (struct Target) 26:23+5", `
+        struct Overload     { name: string; };
+        struct Target       { o_index: i32; };
+
+        struct Helpers      { hd_index: i32; };
+        struct HelpersData  { target: Target; };
+
+        fn overloads(implicit ref o: Overload[]) o;
+        fn helpers(implicit ref h: HelpersData[]) h;
+
+        using fn GET(h: Helpers)
+            helpers[h.hd_index];
+
+        fn qWHAT(o: Overload)
+            o.name;
+
+        using fn GET(t: Target) {
+            ref o = overloads[t.o_index];
+
+            // The qWHAT here tried to (pointlessly) solve qWHAT below,
+            //  but GET hadn't solved yet so it wasn't available.
+            return o.qWHAT ? o : GET(Target(t.o_index + 1));
+        }
+
+        fn qWHAT(hd: HelpersData)
+            hd.target.qWHAT;
+
+        fn solve() = Helpers(0).qWHAT;
+
+        fn main() {
+            implicit mut o: Overload[];
+            implicit mut h: HelpersData[];
+
+            for (mut i = 0; i < 2; i++) {
+                o ~= Overload(i && "o=" ~ i);
+                h ~= HelpersData(Target(i));
+            }
+
+            return solve() == "o=1" ? 0 : 1;
+        }
+    `);
+
     ZERO(`
         struct Target       { index: int };
         struct Overload     { name: string; };
@@ -15952,6 +15994,57 @@ pub extern fn runTests()
 
             return _targets.qWHAT;
         }
+
+        fn main() {
+            mut res = solve(
+                [ Overload("Hello"), Overload(", "), Overload("! "), Overload("World!") ],
+                [ Target(0), Target(1), Target(3) ]);
+
+            return res == "Hello, World!" ? 0 : 1;
+        }
+    `);
+
+    TODO_conv(currently: "bad call to qWHAT with (struct Target) 30:32+5", `
+        struct Target       { index: int };
+        struct Overload     { name: string; };
+
+        fn _overloads(implicit overloads: Overload[]) overloads;
+        fn _targets(implicit targets: Target[]) targets;
+
+        fn fail(mut reason: string): never {
+            for (mut i = _targets.len; i --> 0; ) {
+                let t = _targets[i];
+                if (t)
+                    reason ~= GET(t).qWHAT;
+            }
+
+            return throw(reason);
+        }
+
+        fn qWHAT(o: Overload)
+            o.name;
+
+        using fn GET(target: Target) {
+            _overloads.len >= target.index || fail(
+                GET(Target(_overloads.len - 1)).qWHAT);
+
+            return _overloads[target.index];
+        }
+
+        fn qWHAT(n: Target[]) {
+        <alt>
+            mut res = "";
+            for (mut i = 0; i < n.len; i++)
+                res ~= n[i].qWHAT;
+
+            return res;
+        <alt/>
+            return n.map(|t| t.qWHAT).join();
+        </alt>
+        }
+
+        fn solve(implicit overloads: Overload[], implicit targets: Target[])
+            targets.qWHAT;
 
         fn main() {
             mut res = solve(
