@@ -16553,12 +16553,25 @@ pub extern fn runTests()
         }
     `);
 
-    TODO_conv(currently: "BUG No convert.type perhaps using inline fn without ret annot 2:43+3", `
+    ZERO(`
         using fn what(implicit ref hello: int) ++hello;
         fn main() {
             implicit mut hello = 0;
             fn add(x: int, y: int) x + y;
             return add(-1);
+        }
+    `);
+
+    ZERO(`
+        using fn what(implicit ref a: i32) ++a;
+        using fn woot(implicit ref b: u32) ++b;
+        fn main() {
+            implicit mut a: i32 = 10;
+            implicit mut b: u32 = 201;
+            fn add(x: i32, y: i32) x + y;
+            fn add(x: u32, y: u32) x + y;
+            return add(1<fail ambig 8:16+3 using 3:9+5 7:16+3 using 2:9+5><pass/>.i32</fail>)
+                 + add(1.u32).i32 - 215;
         }
     `);
 

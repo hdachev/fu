@@ -2145,8 +2145,8 @@ pub fn solve(
                 }
                 else if (numUsings)
                 {
-                    _scope.usings.each(_ss.usings,
-                        |u| visitTypeImports(GET(u).type));
+                    _scope.usings.each(_ss.usings): |u|
+                        visitTypeImports(u.type || { continue; });
                 }
             }
 
@@ -2865,10 +2865,9 @@ pub fn solve(
                     return;
                 }
 
-                if (target.status & (SS_LAZY | SS_DID_START) == SS_LAZY &&
-                    target.globid > _current_fn.target.globid)
+                if (target.status & (SS_LAZY | SS_FINALIZED) == SS_LAZY)
                 {
-                    TRACE("doExploreConversions: skipping [!SS_DID_START] " ~ target);
+                    TRACE("doExploreConversions: skipping [!SS_FINALIZED] " ~ target);
                     target.GET_mut.status |= SS_OBSERVED_BY_CONV_CACHE;
 
                     // Decidability [A]:
