@@ -3315,17 +3315,6 @@ pub fn solve(
 
         for (mut i = nodes.len; i --> 0; )
         {
-            // Decidability [C]:
-            //
-            // Conversion fns don't see below their declaration,
-            //  otherwise we start running into conversion loop drama.
-            //
-            // This obsoletes Decidability [A] above.
-            //
-            let node    = nodes[i];
-            if (node.flags & F_CONVERSION)
-                hasSnap = false;
-
             // Everyone in this group sees everyone else.
             let target  = results[i].target;
             ref eph     = target.EPH_mut;
@@ -3341,11 +3330,6 @@ pub fn solve(
                     eph.scope_memo = lastSnap;
                 }
             }
-
-            // Also break-scope-before shadowing functions:
-            //  fn hello; fn uses_hello; <break>; shadow fn hello.
-            if (node.flags & F_SHADOW)
-                hasSnap = false;
         }
     }
 
@@ -12304,7 +12288,13 @@ pub fn solve(
             for (shadow mut i = i0; i < nodes.len; i++)
             {
                 shadow let node = nodes[i] || BUG("solveNodes, prep-a: falsy node");
-                if (unorderedClassify(node.kind) != unorderedClass)
+                if (unorderedClassify(node.kind) != unorderedClass
+
+                    // Break before introducing new shadowing definitions -
+                    //  this isn't amazing but is a decent way of sequencing
+                    //   unordered declarations and shadowing points.
+                    //
+                    || node.flags & F_SHADOW && i > i0)
                 {
                     i1 = i;
                     break;
@@ -12312,6 +12302,19 @@ pub fn solve(
 
                 HERE(node);
                 result ~= unorderedPrep_A(node, :TODO_FIX_useSpecPath);
+
+                // Decidability [C]:
+                //
+                // Conversion fns don't see below their declaration,
+                //  otherwise we start running into conversion loop drama.
+                //
+                // This obsoletes Decidability [A] above.
+                //
+                if (node.flags & (F_CONVERSION | F_USING))
+                {
+                    i1 = i + 1;
+                    break;
+                }
             }
 
             // Later we'll continue from group end.

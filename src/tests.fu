@@ -15913,7 +15913,7 @@ pub extern fn runTests()
         }
     `);
 
-    TODO_conv(currently: "Bad call to qWHAT (struct Target) 26:23+5", `
+    ZERO(`
         struct Overload     { name: string; };
         struct Target       { o_index: i32; };
 
@@ -16004,7 +16004,7 @@ pub extern fn runTests()
         }
     `);
 
-    TODO_conv(currently: "bad call to qWHAT with (struct Target) 30:32+5", `
+    ZERO(`
         struct Target       { index: int };
         struct Overload     { name: string; };
 
