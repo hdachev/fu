@@ -16217,16 +16217,21 @@ pub extern fn runTests()
         }
     `);
 
-    TODO_semantics(currently: "val_x(C) generic_ref_x:a expects mutref 11:36+13", `
+    TODO_semantics(currently: "val_x(C) generic_ref_x:a expects mutref 12:36+13", `
         struct A { x: i32 };
         struct B { using a: A };
         struct C { b: B };
 <alt>
         using fn C2B(ref .b) b;                             <alt/>
+        using fn C2B(using ref c: C or C) b;                <alt/>
+        using fn C2B(using ref c: <T>) case (T -> C) b;     <alt/>
         using fn C2B(using ref c: C, lax unused?: $T) b;    </alt>
 
         <split/>
-        using fn generic_ref_x(using ref a: A, lax unused?: $T) x;
+<alt>
+        using fn generic_ref_x(using ref a: A or A) x;              <alt/>
+        using fn generic_ref_x(using ref a: <T>) case (T -> A) x;   <alt/>
+        using fn generic_ref_x(using ref a: A, lax unused?: $T) x;  </alt>
 <alt>
         using fn val_x(using c: C) generic_ref_x;           <alt/>
         using fn val_x(c: C)     c.generic_ref_x;           <alt/>
