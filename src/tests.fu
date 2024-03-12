@@ -16544,6 +16544,24 @@ pub extern fn runTests()
         fn main() conversionToZeroesOrNever(A(3)) == 6 ? 0 : 1;
     `);
 
+    ZERO(`
+        fn main() {
+            mut hello = 0;
+            using fn what() ++hello;
+            fn add(x: int, y: int) x + y;
+            return add(-1);
+        }
+    `);
+
+    TODO_conv(currently: "BUG No convert.type perhaps using inline fn without ret annot 2:43+3", `
+        using fn what(implicit ref hello: int) ++hello;
+        fn main() {
+            implicit mut hello = 0;
+            fn add(x: int, y: int) x + y;
+            return add(-1);
+        }
+    `);
+
     // /Conversion functions.
 
 

@@ -699,12 +699,29 @@ pub fn parse(
         mut out = parseStatement();
         if (out.kind == "fn")
         {
-            out.flags |= F_CONVERSION;
+            // This should probably move within the solver.
+            mut explicitMin = 0;
+            mut explicitMax = 0;
 
-            // TODO move into solver
-            if (out.items.len < 3)
-                fail(:out.token, "TODO nullary using fns.");
+            for (mut i = 0; i < out.items.len + FN_ARGS_BACK; i++)
+            {
+                let arg = out.items[i];
+                if (arg.flags & F_IMPLICIT)
+                    continue;
 
+                explicitMax++;
+                if (!arg.items[LET_INIT] && explicitMin++)
+                    fail(:arg.token, "Conversion functions cannot have more than one non-defaulted explicit argument.");
+            }
+
+            if (explicitMin)
+                out.flags |= F_CONVERSION;
+            else if (!explicitMax)
+                out.flags |= F_USING;
+            else
+                fail(:out.token, "Conversion functions cannot have all their explicit arguments defaulted.");
+
+            //
             for (mut i = 0; i < out.items.len - 2; i++) {
                 let arg = out.items[i];
                 if (!arg.items[LET_TYPE] && !arg.value.has('.'))

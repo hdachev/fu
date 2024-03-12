@@ -5934,10 +5934,14 @@ pub fn solve(
         eph.scope_skip  = _current_fn && _ss;
 
         //
-        if (node.flags & F_CONVERSION)
-        {
+        if (node.flags & F_CONVERSION) {
             _scope.converts.push(target);
             ConvCache_nukeConverts("[new.conv] id(" ~ id ~ ")");
+        }
+
+        if (node.flags & F_USING) {
+            _scope.usings.push(target);
+            ConvCache_nukeUsings("[new.using-fn] id(" ~ id ~ ")");
         }
 
         return createEmpty(:target, type: X_addrofTarget(target));
@@ -7833,12 +7837,14 @@ pub fn solve(
 
         if (overload.status & SS_OBSERVED_BY_CONV_CACHE)
         {
-            if (SELF_TEST)
-                overload.flags & F_CONVERSION || BUG(
-                    "SS_OBSERVED_BY_CONV_CACHE but !F_CONVERSION");
-
             overload.status &= ~SS_OBSERVED_BY_CONV_CACHE;
-            ConvCache_nukeConverts("[doUpdateScope]: target(" ~ target ~ ")");
+
+            if (overload.flags & F_CONVERSION)
+                ConvCache_nukeConverts("[doUpdateScope.F_CONVERSION]: target(" ~ target ~ ")");
+            else if (overload.flags & F_USING)
+                ConvCache_nukeUsings("[doUpdateScope.F_USING]: target(" ~ target ~ ")");
+            else if (SELF_TEST)
+                BUG("SS_OBSERVED_BY_CONV_CACHE but !F_CONVERSION && !F_USING");
         }
 
         //
