@@ -6,8 +6,34 @@ import fail;
 
 let SR_empty        = "\x00\x00";
 
-let Region_TEMP     = "\x01" ~ SR_empty;
-let Region_STATIC   = "\x00" ~ SR_empty;
+
+// Current encoding -
+//
+//  r & 1 == 0          ? locid
+//  r & 3 == 3 (1 + 2)  ? argpos
+//  r & 3 == 1          ? either static, temp or zeroes
+//
+//  r & 15 == 1         ? static
+//  r & 15 == 5 (1 + 4) ? zeroes
+//  r & 15 == 9 (1 + 8) ? temp
+//
+// The point of tracking the zero-init lifetime separately
+//  is that you can move from it unlike other statics.
+
+let byte_STATIC     = byte(0b0001);
+let byte_ZEROES     = byte(0b0101);
+let byte_TEMP       = byte(0b1001);
+
+inline fn isStaticOrZeroes(r: u32) r & 11 == 1;
+inline fn isTemporary(r: u32) r == 0b1001;
+inline fn isArgIdx(r: u32) r & 3 == 3;
+
+
+//
+
+let Region_STATIC   = byte_STATIC   ~ SR_empty;
+let Region_ZEROES   = byte_ZEROES   ~ SR_empty;
+let Region_TEMP     = byte_TEMP     ~ SR_empty;
 
 fn parse7bit(str: byte[..], ref offset: int)
 {
@@ -656,8 +682,8 @@ inline fn merge !<B, L, R, Either, Rest>(
                         //   so that we end up with the same reverse iteration order,
                         //    we basically store them innermost to outermost.
                         //
-                        : (l == 0) != (r == 0)      ? r == 0    ? -1 : +1
-                        : (l == 1) != (r == 1)      ? r == 1    ? +1 : -1
+                        : (l.isStaticOrZeroes) != (r.isStaticOrZeroes) ? r.isStaticOrZeroes ? -1 : +1
+                        : (l.isTemporary)      != (r.isTemporary)      ? r.isTemporary      ? +1 : -1
 
                         // Additionally complicated by locid sign-rotation.
                         //
@@ -883,9 +909,9 @@ pub fn Lifetime_each(lifetime: Lifetime, each)
         each(
             locid?:     r.unpackLocid,
             argidx?:    i32(r & 1 ? r >> 2 : 0),
-            isStatic?:  r == 0,
-            isTemp?:    r == 1,
-            isArgIdx?:  r & 3 == 3,
+            isStatic?:  r.isStaticOrZeroes,
+            isTemp?:    r.isTemporary,
+            isArgIdx?:  r.isArgIdx,
 
             region?:    Lifetime(uni0n: chars.slice(offset0, offset)),
             others?:    Lifetime(uni0n: chars[.. offset0] ~ chars[offset ..]),
@@ -943,9 +969,9 @@ pub fn Lifetime_process(lifetime: Lifetime, each)
                     // Same as above.
                     locid?:     r.unpackLocid,
                     argidx?:    i32(r & 1 ? r >> 2 : 0),
-                    isStatic?:  r == 0,
-                    isTemp?:    r == 1,
-                    isArgIdx?:  r & 3 == 3,
+                    isStatic?:  r.isStaticOrZeroes,
+                    isTemp?:    r.isTemporary,
+                    isArgIdx?:  r.isArgIdx,
 
                     paths?:     chars[sr .. offset]);
 
@@ -996,9 +1022,9 @@ pub fn Lifetime_some(lifetime: Lifetime, some)
     Lifetime_each(:lifetime):
         |lax locid, lax argidx, lax isStatic, lax isTemp, lax isArgIdx|
     {
-        if (some(locid?:    locid,    argidx?: argidx,
-                 isStatic?: isStatic, isTemp?: isTemp,
-                 isArgIdx?: isArgIdx))
+        if (some(?:locid,    ?:argidx,
+                 ?:isStatic, ?:isTemp,
+                 ?:isArgIdx))
         {
             return true;
         }
@@ -1020,9 +1046,9 @@ pub fn Lifetime_if_only(lifetime: Lifetime, if_only)
         first = false;
 
         //
-        if (if_only(locid?:    locid,    argidx?: argidx,
-                    isStatic?: isStatic, isTemp?: isTemp,
-                    isArgIdx?: isArgIdx))
+        if (if_only(?:locid,    ?:argidx,
+                    ?:isStatic, ?:isTemp,
+                    ?:isArgIdx))
         {
             return true;
         }
