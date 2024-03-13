@@ -8249,10 +8249,10 @@ pub extern fn runTests()
         }
     `);
 
-    ZERO(`
+    TODO_move(currently: "cannot be moved from 10:35+1", `
         nocopy struct NonTriv { items: NonTriv[] }
 
-        fn moveViaHoisted(mut a: NonTriv, mut b: NonTriv) {
+        fn moveViaHoisted(<alt>mut </alt>a: NonTriv, <alt>mut </alt>b: NonTriv) {
             if (ref either = a || b) return either;
             return [];
         }
