@@ -2091,13 +2091,15 @@ pub extern fn runTests()
     `);
 
     ZERO(`
+        let immovable: i32[] = [ 1, 2, 3 ];
+
         fn main() {
             mut nums: i32[];
             for (mut i = 0; i < 100; i++) nums ~= 1;
 
             let OPAQUE  = nums.len == 100 * nums[nums.len / 2];
 
-            <fail COW will break (13:34+2|13:48+2) 9:17+4>
+            <fail COW will break (15:34+1|15:48+2) 11:17+4>
             ref zero    = nums[nums.len / 2];
             let woot    = OPAQUE && nums;
             <pass/>
@@ -2105,7 +2107,7 @@ pub extern fn runTests()
             ref zero    = nums[nums.len / 2];
             </fail>
 
-            let allOnes = <alt>OPAQUE && woot<alt/>indirect_copy(OPAQUE && woot)</alt>;
+            let allOnes = <alt>OPAQUE ? woot : immovable<alt/>indirect_copy(OPAQUE && woot)</alt>;
 
             zero = 0;
 
@@ -4446,7 +4448,7 @@ pub extern fn runTests()
         }
     `);
 
-    TODO_move(currently: "NC[] cannot be copied or moved from 16:36+1", `
+    ZERO(`
         nocopy struct NC { items: NC[]; }
 
         noinline fn silly_ctz(x: u32) {
@@ -4460,7 +4462,7 @@ pub extern fn runTests()
         inline fn max_probes(index: NC[])
             index.len && index[0] && silly_ctz(index.len.uint).int
 
-        noinline fn either(a: NC[], b: NC[]) a || b;
+        noinline fn either(a: NC[], b: NC[]) a || b;            ;; ConstCast
         fn main() max_probes(either([], [ NC([ NC() ]), NC() ])) - 1;
     `);
 
@@ -8249,10 +8251,13 @@ pub extern fn runTests()
         }
     `);
 
-    TODO_move(currently: "cannot be moved from 10:35+1", `
+    ZERO(`
         nocopy struct NonTriv { items: NonTriv[] }
-
-        fn moveViaHoisted(<alt>mut </alt>a: NonTriv, <alt>mut </alt>b: NonTriv) {
+                                                                            <alt>
+        fn moveViaHoisted(mut a: NonTriv, mut b: NonTriv) {                 <alt/>
+        fn moveViaHoisted(val a: NonTriv, val b: NonTriv) { ;; ConstCast    <alt/>
+        fn moveViaHoisted(ref a: NonTriv, ref b: NonTriv) { ;; ConstCast    <alt/>
+        fn moveViaHoisted(    a: NonTriv,     b: NonTriv) { ;; ConstCast    </alt>
             if (ref either = a || b) return either;
             return [];
         }
@@ -8262,6 +8267,40 @@ pub extern fn runTests()
             mut a: NonTriv;
             swap(b, a);
             return a.items.len - 1;
+        }
+    `);
+
+    ZERO([`
+        <alt>
+        nocopy </alt>
+        struct NonTriv { a: NonTriv[]; b: NonTriv[] }
+
+        noinline fn test(a: NonTriv, b: NonTriv, which: int) which & 1 ? a : b;
+        noinline fn balance(ref a: NonTriv) while (a.b.len < a.a.len) a.b ~= NonTriv();
+    `,`
+        import _0;
+        fn main() {
+            mut a = NonTriv([ NonTriv(), NonTriv() ], [ NonTriv() ]);
+            mut b = test(a, [], <alt>0<alt/>1</alt>);           ;; ConstCast
+            b.balance();
+            return b.a.len - b.b.len;
+        }
+    `]);
+
+    ZERO(`
+        fn E(modid: int) {
+            try {
+                modid && throw(modid & 1 && "A" ~ modid);
+                return [];
+            }
+            catch (e) {
+                return e || "B" ~ modid;
+            }
+        }
+
+        fn main() {
+            let e = E(0) ~ E(1) ~ E(2);
+            return e == "A1B2" ? 0 : 1;
         }
     `);
 

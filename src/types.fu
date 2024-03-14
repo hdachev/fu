@@ -214,7 +214,7 @@ pub fn definitType(mut type: Type, asTypename!?: bool)
         type.quals &= ~q_mutref;
 
     if (type.is_ref)
-        type.lifetime = Lifetime_static;
+        type.lifetime = Lifetime_static_moveable;
 
     if (SELF_TEST && type.is_never)
         BUG("Cannot definit type never.");
@@ -392,7 +392,7 @@ fn set_lifetime(mut type: Type, lifetime: Lifetime) {
     return type;
 }
 
-pub let t_string_literal = set_lifetime(t_string, Lifetime_static);
+pub let t_string_literal = set_lifetime(t_string, Lifetime_static_immoveable);
 
 
 //

@@ -20,6 +20,7 @@ let OPTI_dedupe_vars        = true;
 let OPTI_bck                = true;
 let OPTI_unlist_callers     = true;
 let OPTI_moves_inside_fns   = true;
+
 let USE_rev_spec            = true;
 
 
@@ -38,7 +39,6 @@ let TRACE_enable            = false;
 //   which can naturally fit zeroes.
 //
 let DONT_match_zeroes       = true;
-let MOVE_from_temp          = true;
 let TODO_FIX_static_ZSTs    = true;
 let BUG_missing_SS_FN_REC   = true;
 
@@ -1460,7 +1460,7 @@ pub fn solve(
             let flatCount = actual.getFlatCount();
 
             if (TODO_FIX_static_ZSTs && !flatCount)
-                return Lifetime_static();
+                return Lifetime_static_moveable;
 
             return Lifetime_makeShared(res.lifetime, :flatCount);
         }
@@ -1479,17 +1479,12 @@ pub fn solve(
                 BUG("TEST_Lifetime: empty lifetime");
 
             mut first       = true;
-            mut hasStatic   = false;
+            mut lastStatic  = 1000000;
             mut lastLocid   = 1000000;
             mut lastArgIdx  = 1000000;
 
-            lifetime.Lifetime_each: |locid, isStatic, isTemp, isArgIdx, argidx, paths|
+            lifetime.Lifetime_each: |locid, isStatic, isAlwaysMoveable, isTemp, isArgIdx, argidx, paths|
             {
-                !hasStatic      || BUG("TEST_Lifetime: static is not last");
-                if (isStatic)
-                    hasStatic = true;
-
-                //
                 if (isTemp) {
                     tempsOK     || BUG("TEST_Lifetime: unexpected temporary");
                     first       || BUG("TEST_Lifetime: temporary is not first");
@@ -1498,9 +1493,17 @@ pub fn solve(
                 first = false;
 
                 //
+                if (isStatic) {
+                    mut r = isAlwaysMoveable ? 1 : 0;
+                    lastStatic > r          || BUG("TEST_Lifetime: static out of order");
+                    lastStatic = r;
+                }
+
+                //
                 if (locid) {
                     !argPositionsOK         || BUG("TEST_Lifetime: unexpected locid");
                     lastArgIdx == 1000000   || BUG("TEST_Lifetime: local after argpos");
+                    lastStatic == 1000000   || BUG("TEST_Lifetime: local after static");
                     lastLocid > locid       || BUG("TEST_Lifetime: locid out of order");
                     lastLocid = locid;
                 }
@@ -1509,6 +1512,7 @@ pub fn solve(
                 if (isArgIdx) {
                     argPositionsOK          || BUG("TEST_Lifetime: unexpected argidx");
                     lastLocid == 1000000    || BUG("TEST_Lifetime: argidx after local");
+                    lastStatic == 1000000   || BUG("TEST_Lifetime: argidx after static");
                     lastArgIdx > argidx     || BUG("TEST_Lifetime: argidx out of order");
                     lastArgIdx = argidx;
                 }
@@ -1543,13 +1547,17 @@ pub fn solve(
     {
         target.locid || target.modid == module.modid || BUG("not from this module");
 
+        // ZST?
+        if (TODO_FIX_static_ZSTs && !flatCount)
+            return Lifetime_static_moveable;
+
         // Local?
         let locid = target.locid;
-        if (locid && (flatCount || !TODO_FIX_static_ZSTs))
+        if (locid)
             return Lifetime_from(:locid, :flatCount);
 
         // Else static.
-        return Lifetime_static();
+        return Lifetime_static_immoveable;
     }
 
 
@@ -2787,7 +2795,7 @@ pub fn solve(
             lifetime:   TODO_FIX_useTemporaryLifetime
                 ? Lifetime_temporary
                 : TODO_FIX_static_ZSTs && !memberFlatCount
-                    ? Lifetime_static()
+                    ? Lifetime_static_moveable
                     : from.lifetime,
 
             :memberFlatCount,
@@ -3820,9 +3828,9 @@ pub fn solve(
                 }
 
                 mut some: UsedAgain;
-                lt.Lifetime_each: |locid, isTemp, lax isStatic|
+                lt.Lifetime_each: |locid, isAlwaysMoveable, lax isStatic|
                 {
-                    if (isTemp)
+                    if (isAlwaysMoveable)
                         continue;
 
                     if !(locid)
@@ -5763,7 +5771,7 @@ pub fn solve(
                 canDiscard || type.lifetime.hasStatic || BUG(
                     "intoEmpty: non-static non-irrelevant lifetime: " ~ type.lifetime);
 
-            type.lifetime = Lifetime_static;
+            type.lifetime = Lifetime_static_moveable;
         }
 
         if (!canDiscard)
@@ -7143,7 +7151,7 @@ pub fn solve(
             {
                 ret_seed.lifetime = isNative
                     ? Lifetime_fromNative(inItems, _current_fn.items[.. _current_fn.items.len + FN_ARGS_BACK], ret_seed)
-                    : Lifetime_static(); // we'll overpromise during prep
+                    : Lifetime_static_moveable; // we'll overpromise during prep
             }
             else if (isNative)
             {
@@ -7717,10 +7725,10 @@ pub fn solve(
         if (retval.is_ref)
         {
             // TODO FIX: ZST arguments can get unused-removed,
-            //  which can leaves behind a dead region in the retval lifetime.
+            //  which leaves behind a dead region in the retval lifetime.
             //
             if (retval.isIrrelevant)
-                retval.lifetime = Lifetime_static;
+                retval.lifetime = Lifetime_static_moveable;
 
             TEST_Lifetime(type: retval,
                 retval.lifetime, argPositionsOK: true);
@@ -8967,10 +8975,10 @@ pub fn solve(
 
     fn Lifetime_F_MOVED_FROM(lifetime: Lifetime)
     {
-        Lifetime_each(:lifetime): |locid, isTemp|
+        Lifetime_each(:lifetime): |locid, isAlwaysMoveable|
         {
             if !(locid) {
-                isTemp || BUG("Attempting to move from a non-local, non-temporary region.");
+                isAlwaysMoveable || BUG("Attempting to move from a non-local, non-temporary region.");
                 continue;
             }
 
@@ -11650,7 +11658,7 @@ pub fn solve(
                 //
                 mut type = foreign.type;
 
-                if (type.lifetime == Lifetime_static)
+                if (type.lifetime.isStaticOrZeroes)
                 {
                     TODO_FIX_static_ZSTs && type.is_zst || BUG(
                         "Unexpected static lifetime on " ~ node.target);
@@ -14338,7 +14346,7 @@ pub fn solve(
         else if (k == "empty")
         {
             if (node.lifetime)
-                node.lifetime == Lifetime_static || BUG(
+                node.lifetime == Lifetime_static_moveable || BUG(
                     "empty: non-static lifetime: " ~ node.lifetime);
         }
         else if (k == "letdef")

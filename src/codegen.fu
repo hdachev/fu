@@ -15,24 +15,28 @@ import fail;
 let SMALL_STRING_OPTI   = 15;
 let SIGHASH_CHARS       = 4;
 
-let M_STMT              = 1 << 0;
-let M_RETBOOL           = 1 << 1;
-let M_CONST             = 1 << 2;
-let M_RETVAL            = 1 << 3;
-let M_ARGUMENT          = 1 << 4;
-let M_RETURN            = 1 << 5;
-let M_FWDECL            = 1 << 6;
-let M_PARENS            = 1 << 7;
-let M_OPT_CURLIES       = 1 << 8;
-let M_LOOP_BODY         = 1 << 9;
-let M_MUTVAR            = 1 << 10;
-let M_MOVABLE           = 1 << 11;
-let M_ARG_TO_NATIVE     = 1 << 12;
-let M_ENUM_DECL         = 1 << 13;
-let M_CHECK_NEVER_LTR   = 1 << 14;
-let M_STATIC_REF        = 1 << 15;
-let M_VOID_EXPR         = 1 << 16;
-let M_FN_BODY           = 1 << 17;
+using flags Mode: u32 {
+    M_STMT
+    M_RETBOOL
+    M_CONST
+    M_RETVAL
+    M_ARGUMENT
+    M_RETURN
+    M_FWDECL
+    M_PARENS
+    M_OPT_CURLIES
+    M_LOOP_BODY
+    M_MUTVAR
+    M_MOVABLE
+    M_ARG_TO_NATIVE
+    M_ENUM_DECL
+    M_CHECK_NEVER_LTR
+    M_STATIC_REF
+    M_VOID_EXPR
+    M_FN_BODY
+    M_IGNORE_REFERENCE
+}
+
 
 let MAIN_needed         = 1 << 0;
 let MAIN_argv           = 1 << 1;
@@ -290,7 +294,7 @@ pub fn cpp_codegen(
 
     //
 
-    fn typeAnnot(type: Type, mode?: i32): string
+    fn typeAnnot(type: Type, mode?: Mode): string
     {
         let fwd = typeAnnotBase(type, :mode);
 
@@ -376,7 +380,7 @@ pub fn cpp_codegen(
         BUG("Unknown primitive: `" ~ c ~ "`.");
     }
 
-    fn typeAnnotBase(type: Type, mode?: i32): string
+    fn typeAnnotBase(type: Type, mode?: Mode): string
     {
         let c = type.canon;
 
@@ -393,7 +397,7 @@ pub fn cpp_codegen(
                 BUG("cg: We generate invalid c++ for void[]");
 
             // Arrays & strings.
-            if (type.ifArray_annotateAsVec)
+            if (type.ifArray_annotateAsVec || mode & M_IGNORE_REFERENCE)
             {
                 if (arrayItem == t_byte)
                     return annotateString();
@@ -927,13 +931,13 @@ pub fn cpp_codegen(
 
     //
 
-    fn blockWrapSubstatement(node: SolvedNode, mode?: i32): string
+    fn blockWrapSubstatement(node: SolvedNode, mode?: Mode): string
         cgBlock(node, mode: M_STMT | M_OPT_CURLIES | mode);
 
     fn isHoistable(locid: i32)
         locid > 0;
 
-    fn cgBlock(node: SolvedNode, mode: i32): string
+    fn cgBlock(node: SolvedNode, mode: Mode): string
     {
         let items   = node.kind == "block"  ? node.items : [ node ];
         let helpers = node.kind == "block" && node.helpers;
@@ -1086,7 +1090,7 @@ pub fn cpp_codegen(
             //
             mut annot: string;
             let id      = TEMPVAR_declare(
-                :type, mode: isMovedFrom && M_MOVABLE,
+                :type, isMovedFrom && M_MOVABLE,
                 :annot, :ptr_flip, name && name ~ "_v");
 
             let outval  = TEMPVAR_consume(:ptr_flip, :id, :type);
@@ -1673,7 +1677,7 @@ pub fn cpp_codegen(
             mut lt = "";
 
             place_type.lifetime.lifetime::Lifetime_each:
-                |locid, isTemp, isStatic, isArgIdx|
+                |locid, isTemp, isStatic, isArgIdx, isAlwaysMoveable|
             {
                 if (lt)
                     lt ~= "|";
@@ -1681,7 +1685,7 @@ pub fn cpp_codegen(
                 if (isTemp)
                     lt ~= "temp";
                 else if (isStatic)
-                    lt ~= "static";
+                    lt ~= isAlwaysMoveable ? "zeroes" : "static";
                 else if (isArgIdx)
                     BUG("WTF");
                 else
@@ -1705,7 +1709,7 @@ pub fn cpp_codegen(
         return n.kind == "copy" && (!n.is_sliceable || sliceOK);
     }
 
-    fn binding(target!: Target, init: SolvedNode, doInit!: bool, mode!: i32)
+    fn binding(target!: Target, init: SolvedNode, mode: Mode, doInit!: bool)
     {
         mut head = binding(:target);
         if (!doInit)
@@ -1782,7 +1786,7 @@ pub fn cpp_codegen(
         //*/
     }
 
-    fn binding(node: SolvedNode, doInit!?: bool, mode!: i32): string
+    fn binding(node: SolvedNode, mode: Mode, doInit!?: bool): string
     {
         let target  = node.target;
         let init    = doInit && node.items && node.items[LET_INIT];
@@ -1850,7 +1854,7 @@ pub fn cpp_codegen(
             && _current_fn._hoisted.has(locid);
     }
 
-    fn cgLet(node: SolvedNode, global!: bool, foreign?: bool, mode!: i32): string
+    fn cgLet(node: SolvedNode, global!: bool, mode: Mode, foreign!?: bool): string
     {
         if (node.type.isIrrelevant)
             return "";
@@ -1922,7 +1926,7 @@ pub fn cpp_codegen(
             mode: M_STMT);
     }
 
-    fn cgLetDef(node: SolvedNode, mode!: i32)
+    fn cgLetDef(node: SolvedNode, mode: Mode)
     {
         if (!_current_fn.globid)
             return node.target.isExtLinked
@@ -2168,7 +2172,7 @@ pub fn cpp_codegen(
         return "fu::vec<" ~ T ~ "> {{ " ~ src ~ " }}";
     }
 
-    fn binSkipParens(id: string, mode: i32)
+    fn binSkipParens(id: string, mode: Mode)
     {
         if (mode & M_STMT)
             return true;
@@ -2197,7 +2201,7 @@ pub fn cpp_codegen(
         return "!" ~ cgNode(node.items.only);
     }
 
-    fn cgCall(node: SolvedNode, mode: i32): string
+    fn cgCall(node: SolvedNode, mode: Mode): string
     {
         let ext             = node.target.EXT;
         let target          = GET(node.target) || BUG();
@@ -2578,9 +2582,6 @@ pub fn cpp_codegen(
                     return emitBinaryOp(id.valid_operator);
                 }
             }
-
-            if (id == "STEAL" && args.len == 1)
-                return cgMove(node.type, ARG(0));
         }
 
         isNative && BUG("Unknown __native: `" ~ id ~ "`.");
@@ -2673,7 +2674,7 @@ pub fn cpp_codegen(
         return "void";
     }
 
-    fn cgLiteral(node: SolvedNode, mode: i32): string
+    fn cgLiteral(node: SolvedNode, mode: Mode): string
     {
         if (node.isIrrelevant)
             noteDefect(IrrelevantLiteral);
@@ -2739,7 +2740,7 @@ pub fn cpp_codegen(
         return src;
     }
 
-    fn cgEmpty(node: SolvedNode, mode: i32): string
+    fn cgEmpty(node: SolvedNode, mode: Mode): string
     {
         if (SELF_TEST)
             node.type || BUG("cgEmpty: !node.type");
@@ -2783,7 +2784,7 @@ pub fn cpp_codegen(
             && type.canon == t_bool.canon;
     }
 
-    fn cgIf(node: SolvedNode, mode: i32): string
+    fn cgIf(node: SolvedNode, mode: Mode): string
     {
         let n0 = node.items[0];
         if (n0.is_never)
@@ -2809,12 +2810,12 @@ pub fn cpp_codegen(
         return "(" ~ cond ~ " ? " ~ cons ~ " : " ~ alt ~ ")";
     }
 
-    fn cgAnd(node: SolvedNode, mode: i32): string
+    fn cgAnd(node: SolvedNode, mode: Mode): string
     {
         return cgAnd(:node.items, :node.type, :mode);
     }
 
-    fn cgAnd(items: SolvedNode[..], type: Type, mode: i32): string
+    fn cgAnd(items: SolvedNode[..], type: Type, mode: Mode): string
     {
         let stmt = !!(mode & M_STMT);
         if (stmt)
@@ -2849,7 +2850,7 @@ pub fn cpp_codegen(
         return src;
     }
 
-    fn cgOr(node: SolvedNode, mode: i32): string
+    fn cgOr(node: SolvedNode, mode: Mode): string
     {
         let type  = node.type;
         let items = node.items;
@@ -2911,12 +2912,15 @@ pub fn cpp_codegen(
 
         if (expr.kind == "copy" || expr.kind == "move")
         {
+            // TODO FIX make this work for non-field-chains too,
+            //  just gotta transform the via thing to perform the copy on the cons.
+            //
             let kind = expr.kind;
             shadow let expr = expr.items.only;
             if (expr.isFieldChain)
             {
-                let trivial = cgNode(expr);
-                return trivial ~ " ? " ~ cgCopyOrMove(:kind, :type, trivial) ~ " : ";
+                let fieldChain = cgNode(expr);
+                return fieldChain ~ " ? " ~ cgCopyOrMove(:kind, :expr.type, fieldChain) ~ " : ";
             }
 
             // TODO fix the copies -
@@ -3011,7 +3015,7 @@ pub fn cpp_codegen(
             {
                 include("<fu/default.h>");
                 type.is_primitive && BUG("cgDefault: Genering NIL refs to primitives.");
-                return "(*(const " ~ typeAnnot(clear_refs(type)) ~ "*)fu::NIL)";
+                return "(*(" ~ typeAnnot(clear_refs(type)) ~ "*)fu::NIL)";
             }
         }
 
@@ -3299,7 +3303,7 @@ pub fn cpp_codegen(
 
     //
 
-    fn cgNode(node: SolvedNode, mode?: i32, callarg?: Type): string
+    fn cgNode(node: SolvedNode, mode?: Mode, callarg?: Type): string
     {
         let k = node.kind || BUG("cgNode: No node.kind.");
         HERE(node);
@@ -3346,7 +3350,7 @@ pub fn cpp_codegen(
 
     //
 
-    fn cgCopyOrMove(node: SolvedNode, mode: i32): string
+    fn cgCopyOrMove(node: SolvedNode, mode: Mode): string
     {
         let expr = node.items.only;
 
@@ -3364,8 +3368,8 @@ pub fn cpp_codegen(
             {
                 lt || BUG("cgCopyOrMove: Considering a move from an empty lifetime.");
 
-                lt.Lifetime_each: |locid, isTemp|
-                    locid || isTemp || BUG(
+                lt.Lifetime_each: |locid, isAlwaysMoveable|
+                    locid || isAlwaysMoveable || BUG(
                         "cgCopyOrMove: Considering a move from non-local lifetime.");
             }
 
@@ -3452,8 +3456,8 @@ pub fn cpp_codegen(
                             sanityCheck(expr.type.lifetime);
 
                             // Sanity check signature, can't return e.g. statics or whatever.
-                            t.lifetime.Lifetime_each: |isArgIdx|
-                                isArgIdx || BUG("About to return mayNeedConstCast, but fn returns non-arg refs.");
+                            t.lifetime.Lifetime_each: |isArgIdx, isAlwaysMoveable|
+                                isArgIdx || isAlwaysMoveable || BUG("About to return mayNeedConstCast, but fn returns non-arg refs.");
                         }
 
                         return mayNeedConstCast;
@@ -3472,12 +3476,17 @@ pub fn cpp_codegen(
                         // See below.
                         noteDefect(ConstCast);
 
-                        return src ~ ".const_cast_mut().destructive_move()";
+                        src ~= ".const_cast_mut().destructive_move()";
                     }
                     else
                     {
-                        return src ~ ".destructive_move()";
+                        src ~= ".destructive_move()";
                     }
+
+                    if (node.type.lifetime.hasZeroes)
+                        return cgMoveOrDefault(src);
+
+                    return src;
                 }
                 else if (mayNeedConstCast)
                 {
@@ -3497,11 +3506,7 @@ pub fn cpp_codegen(
                     //
                     noteDefect(ConstCast);
 
-                    let annot = typeAnnotBase(node.type);
-
-                    return "static_cast<" ~ annot ~ "&&>(const_cast<" ~ annot ~ "&>("
-                                ~ src
-                                ~ "))";
+                    src = "const_cast<" ~ typeAnnotBase(node.type) ~ "&>(" ~ src ~ ")";
                 }
             }
         }
@@ -3512,7 +3517,7 @@ pub fn cpp_codegen(
             src = "/*" ~ node.value ~ "*/ " ~ src;
         }
 
-        return cgCopyOrMove(node.kind, node.type, src);
+        return cgCopyOrMove(node.kind, expr.type, src);
     }
 
     fn cgCopyOrMove(kind: Kind, type: Type, src: string): string
@@ -3523,12 +3528,27 @@ pub fn cpp_codegen(
         return cgCopy(type, src);
     }
 
-    fn cgMove(type: Type, src: string): string
+    fn cgMove(type: Type, src: string, notRefOK!?: bool): string
     {
+        if !(notRefOK || type.is_ref)
+            BUG("cgMove: Not a reference.");
+
         if (type.isPassByValue)
             return cgCopy(type, src);
 
-        return "static_cast<" ~ typeAnnotBase(type) ~ "&&>(" ~ src ~ ")";
+        if (type.is_ref && type.is_sliceable && !type.ifArrayRef_annotateAsVec)
+            BUG("cgMove: About to use the wrong move for a slice or vec-range.");
+
+        if (type.lifetime.hasZeroes)
+            return cgMoveOrDefault(src);
+
+        return "static_cast<" ~ typeAnnotBase(type, M_IGNORE_REFERENCE) ~ "&&>(" ~ src ~ ")";
+    }
+
+    fn cgMoveOrDefault(src: string): string
+    {
+        include("<fu/move_or_default.h>");
+        return "fu::move_or_default(" ~ src ~ ")";
     }
 
     fn cgCopy(type: Type, src: string): string
@@ -3536,7 +3556,7 @@ pub fn cpp_codegen(
         if (type.isPassByValue)
             return src;
 
-        return typeAnnotBase(type) ~ "(" ~ src ~ ")";
+        return typeAnnotBase(type, M_IGNORE_REFERENCE) ~ "(" ~ src ~ ")";
     }
 
 
@@ -3559,7 +3579,7 @@ pub fn cpp_codegen(
     fn TEMPVAR_declare(
         type: Type,
         ref ptr_flip!: PointerFlip, ref annot!: string,
-        mode!?: i32, id?: string): string
+        mode?: Mode, id?: string): string
     {
         annot = typeAnnot(:type, :mode);
         ptr_flip = PointerFlip(type);
@@ -3603,7 +3623,7 @@ pub fn cpp_codegen(
     fn TEMPVAR_consume(id: string, type: Type, ptr_flip: PointerFlip)
     {
         if (ptr_flip == PointerFlip.None)
-            return cgMove(:type, id);
+            return cgMove(:type, id, notRefOK: true);
 
         if (ptr_flip == PointerFlip.RawPointer)
             return "*" ~ id;
@@ -3627,7 +3647,7 @@ pub fn cpp_codegen(
 
     //
 
-    fn cgNodes(nodes: SolvedNode[], mode?: i32, trail!?: string): string[]
+    fn cgNodes(nodes: SolvedNode[], mode?: Mode, trail!?: string): string[]
     {
         mut result: string[];
 

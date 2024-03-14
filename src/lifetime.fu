@@ -24,9 +24,10 @@ let byte_STATIC     = byte(0b0001);
 let byte_ZEROES     = byte(0b0101);
 let byte_TEMP       = byte(0b1001);
 
-inline fn isStaticOrZeroes(r: u32) r & 11 == 1;
-inline fn isTemporary(r: u32) r == 0b1001;
-inline fn isArgIdx(r: u32) r & 3 == 3;
+inline fn isZeroes(r: u32)          r == 0b0101;
+inline fn isStaticOrZeroes(r: u32)  r & 11 == 1;
+inline fn isTemporary(r: u32)       r == 0b1001;
+inline fn isArgIdx(r: u32)          r & 3 == 3;
 
 
 //
@@ -909,6 +910,8 @@ pub fn Lifetime_each(lifetime: Lifetime, each)
         each(
             locid?:     r.unpackLocid,
             argidx?:    i32(r & 1 ? r >> 2 : 0),
+
+            isAlwaysMoveable?:  r.isZeroes || r.isTemporary,
             isStatic?:  r.isStaticOrZeroes,
             isTemp?:    r.isTemporary,
             isArgIdx?:  r.isArgIdx,
@@ -994,7 +997,10 @@ pub fn Lifetime_process(lifetime: Lifetime, each)
 
 //
 
-pub let Lifetime_static =
+pub let Lifetime_static_moveable =
+    Lifetime(uni0n: Region_ZEROES);
+
+pub let Lifetime_static_immoveable =
     Lifetime(uni0n: Region_STATIC);
 
 pub let Lifetime_temporary =
@@ -1003,8 +1009,17 @@ pub let Lifetime_temporary =
 pub fn hasTemporary(lifetime: Lifetime): bool
     lifetime.uni0n.starts(with: Region_TEMP);
 
-pub fn hasStatic(lifetime: Lifetime): bool
-    lifetime.uni0n.ends(with: Region_STATIC);
+pub fn hasStatic(lifetime: Lifetime): bool {
+    let n = lifetime.uni0n.len;
+    return n >= 3
+        && lifetime.uni0n[n - 2 ..] == SR_empty
+        && lifetime.uni0n[n - 3].u32.isStaticOrZeroes;
+}
+
+pub fn isStaticOrZeroes(lifetime: Lifetime): bool {
+    return lifetime.uni0n.len == 3
+        && lifetime.uni0n[0].u32.isStaticOrZeroes;
+}
 
 
 // TODO worst := temp | static
@@ -1020,10 +1035,10 @@ pub let Lifetime_worst = Lifetime_temporary;
 pub fn Lifetime_some(lifetime: Lifetime, some)
 {
     Lifetime_each(:lifetime):
-        |lax locid, lax argidx, lax isStatic, lax isTemp, lax isArgIdx|
+        |locid, argidx, isStatic, isTemp, isArgIdx, isAlwaysMoveable|
     {
         if (some(?:locid,    ?:argidx,
-                 ?:isStatic, ?:isTemp,
+                 ?:isStatic, ?:isTemp, ?:isAlwaysMoveable,
                  ?:isArgIdx))
         {
             return true;
@@ -1038,7 +1053,7 @@ pub fn Lifetime_if_only(lifetime: Lifetime, if_only)
     mut first = true;
 
     Lifetime_each(:lifetime):
-        |lax locid, lax argidx, lax isStatic, lax isTemp, lax isArgIdx|
+        |locid, argidx, isStatic, isTemp, isArgIdx, isAlwaysMoveable|
     {
         if (!first)
             break;
@@ -1047,7 +1062,7 @@ pub fn Lifetime_if_only(lifetime: Lifetime, if_only)
 
         //
         if (if_only(?:locid,    ?:argidx,
-                    ?:isStatic, ?:isTemp,
+                    ?:isStatic, ?:isTemp, ?:isAlwaysMoveable,
                     ?:isArgIdx))
         {
             return true;
@@ -1068,7 +1083,11 @@ pub fn Lifetime_has(lifetime: Lifetime, argidx!search: i32)
 pub fn Lifetime_makeShared(lifetime: Lifetime, flatCount!: i32): Lifetime =
     Lifetime_union(
         Lifetime_op_deref(lifetime, :flatCount),
-        Lifetime_static);
+        Lifetime_static_immoveable);
+
+pub fn hasZeroes(lifetime: Lifetime)
+    lifetime.Lifetime_some(|isStatic, isAlwaysMoveable|
+        isStatic && isAlwaysMoveable);
 
 
 /*
