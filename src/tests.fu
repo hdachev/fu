@@ -8367,6 +8367,25 @@ pub extern fn runTests()
         }
     `);
 
+    ZERO([`
+        inline   fn inl  (x: string) x;
+        noinline fn noinl(x: string) x;
+
+        noinline fn opaque_concat(                          <alt>
+            items.inl[]:   string[..]   ;; ConstCast
+                                        ;; PointlessLocal   <alt/>
+            items.noinl[]: string[..]   ;; ConstCast        <alt/>
+            items[]:       string[..]                       </alt>
+        ) {
+            mut sum = 0;
+            for (mut i = 0; i < items.len; i++) sum += items[i].len;
+            return sum;
+        }
+    `,`
+        import _0;
+        fn main() opaque_concat("", []);
+    `]);
+
     // /Move on last use
 
 
