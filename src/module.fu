@@ -541,10 +541,8 @@ fn Target(modid: i32, globid: i32, locid: i32)
                         |  locid.sign_rotate.u64);
 }
 
-inline fn isArg(target: Target)
-{
-    return target.locid < 0;
-}
+inline fn isArg(locid!: i32)           locid < 0;
+inline fn isArg(target: Target) target.locid < 0;
 
 
 // Making these distinct,

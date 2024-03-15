@@ -1085,10 +1085,6 @@ pub fn Lifetime_makeShared(lifetime: Lifetime, flatCount!: i32): Lifetime =
         Lifetime_op_deref(lifetime, :flatCount),
         Lifetime_static_immoveable);
 
-pub fn hasZeroes(lifetime: Lifetime)
-    lifetime.Lifetime_some(|isStatic, isAlwaysMoveable|
-        isStatic && isAlwaysMoveable);
-
 
 /*
     We have three operations on lifetimes:

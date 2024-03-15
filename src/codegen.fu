@@ -189,13 +189,8 @@ pub fn cpp_codegen(
 
     mut _current_fn: cg_CurrentFn;
 
-    fn nested(index: i32)
-    {
-        return index && Target(
-            :_current_fn.modid,
-            :_current_fn.globid,
-            locid: index);
-    }
+    fn nested(locid!: i32)
+        locid && Target(:_current_fn.modid, :_current_fn.globid, :locid);
 
     using fn GET(target: Target)
     {
@@ -952,7 +947,7 @@ pub fn cpp_codegen(
 
                     // TODO FIX declaring here to emit the tempvars
                     //  before the block captures tv0.
-                    binding(target: locid.nested);
+                    binding(target: nested(:locid));
                 }
             }
         }
@@ -1080,7 +1075,7 @@ pub fn cpp_codegen(
             mut isMovedFrom = type.is_ref;
             type.lifetime.Lifetime_each: |locid|
             {
-                if (!locid || !(nested(locid).status & SS_MOVED_FROM))
+                if (!locid || !(nested(:locid).status & SS_MOVED_FROM))
                 {
                     isMovedFrom = false;
                     break;
@@ -1689,7 +1684,7 @@ pub fn cpp_codegen(
                 else if (isArgIdx)
                     BUG("WTF");
                 else
-                    lt ~= localID(nested(locid));
+                    lt ~= localID(nested(:locid));
             }
 
             head ~= " /*" ~ lt ~ "*/";
@@ -1842,7 +1837,7 @@ pub fn cpp_codegen(
         if (SELF_TEST)
         {
             locid || BUG("set_isHoisted: Not a local.");
-            locid.nested.isArg && BUG("Hoisted an argument.");
+            isArg(:locid) && BUG("Hoisted an argument.");
         }
 
         _current_fn._hoisted.add(locid);
@@ -1966,11 +1961,10 @@ pub fn cpp_codegen(
             if (!locid || surviving_locals.has(locid))
                 continue;
 
-            let t = nested(locid);
-            if (t.isArg || isHoisted(:locid))
+            if (isArg(:locid) || isHoisted(:locid))
                 continue;
 
-            let o = GET(t);
+            let o = GET(nested(:locid));
             if (o.solved.lifetime)
                 TEST_noDanglingRefs(o.solved.lifetime, :surviving_locals);
             else
@@ -3349,6 +3343,24 @@ pub fn cpp_codegen(
 
 
     //
+
+    fn hasZeroes(lifetime: Lifetime)
+    {
+        lifetime.Lifetime_each: |isStatic, isAlwaysMoveable, locid|
+        {
+            if (isStatic && isAlwaysMoveable)
+                return true;
+
+            if (locid && !isArg(:locid))
+            {
+                let n = GET(nested(:locid)).solved;
+                if (n.is_ref && n.items[LET_INIT].lifetime.hasZeroes)
+                    return true;
+            }
+        }
+
+        return false;
+    }
 
     fn cgCopyOrMove(node: SolvedNode, mode: Mode): string
     {

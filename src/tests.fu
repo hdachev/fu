@@ -8315,7 +8315,12 @@ pub extern fn runTests()
         import _0;
         fn moveOrDefault(which: int) {
             mut a = [ NonTriv(), NonTriv() ];
+        <alt>
             mut b = test(a, [], which);                         ;; ConstCast
+        <alt/>
+            ref c = which & 1 ? a : [];
+            mut b = test(a, c, which);                          ;; ConstCast
+        </alt>
             b.balance();
             return (b.len + 1) & 1;
         }
@@ -8333,7 +8338,12 @@ pub extern fn runTests()
         import _0;
         fn moveOrDefault(which: int) {
             mut a = NonTriv([ NonTriv(), NonTriv() ], [ NonTriv() ]);
+        <alt>
             mut b = test(a, [], which);                         ;; ConstCast
+        <alt/>
+            ref c = which & 1 ? a : [];
+            mut b = test(a, c, which);                          ;; ConstCast
+        </alt>
             b.balance();
             return b.a.len - b.b.len;
         }
