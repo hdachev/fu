@@ -2510,6 +2510,23 @@ pub fn parse(
 
     //
 
+    fn parseIfCond(): Node
+    {
+        // A little bit of syntactic sugar -
+        //  TBD if this is good or not, i'm 50/50.
+        //   At least it's unambiguous.
+        let not = tryConsume("op", "!");
+
+        consume("op", "(");
+        let cond = parseLetOrExpressionStatement();
+        consume("op", ")");
+
+        if (not)
+            return createPrefix("!", cond);
+
+        return cond;
+    }
+
     fn parseIf(): Node
     {
         // Indentation lint for `else`s:
@@ -2520,18 +2537,7 @@ pub fn parse(
 
         shadow let token = prev.kind == "id" && prev.value == "else" ? prev : token;
 
-        // A little bit of syntactic sugar -
-        //  TBD if this is good or not, i'm 50/50.
-        //   At least it's unambiguous.
-        let not = tryConsume("op", "!");
-
-        consume("op", "(");
-        mut cond = parseLetOrExpressionStatement();
-        consume("op", ")");
-
-        if (not)
-            cond = createPrefix("!", cond);
-
+        let cond = parseIfCond();
         let cons = parseSubStatement();
 
         let else = tryConsume("id", "else");
@@ -2643,9 +2649,7 @@ pub fn parse(
 
     fn parseWhile(): Node
     {
-        consume("op", "(");
-        let pre_cond = parseLetOrExpressionStatement();
-        consume("op", ")");
+        let pre_cond = parseIfCond();
         let body = parseSubStatement();
 
         return createLoop(:pre_cond, :body);
