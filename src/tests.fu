@@ -1844,6 +1844,40 @@ pub extern fn runTests()
         }
     `);
 
+    TODO_recursion(currently: "expects struct UsedAgain, got struct UsedAgain 8:54+1", `
+        fn privateTypeWithinRecursion(lt: int[]) {
+            fn propagateType(shadow lt: int[]) {
+                struct UsedAgain { i: int };
+
+                fn trackUsedAgain_descend(shadow lt: int[]): UsedAgain {
+                    fn trackUsedAgain_descend(t: int): UsedAgain {
+                        return trackUsedAgain_descend(Lifetime_climbType(t));
+                    }
+
+                    for (mut i = 0; i < lt.len; i++) {
+                        let u = trackUsedAgain_descend(lt[i]);
+                        if (u) return u;
+                    }
+
+                    return UsedAgain(lt.len);
+                }
+
+                let v = trackUsedAgain_descend(lt);
+                return v && propagateType([ v.i ]);
+            }
+
+            fn Lifetime_climbType(i: int): i32[] {
+                return i > 1 ? [ i / 2 ] : [];
+            }
+
+            return propagateType(lt);
+        }
+
+        fn main() {
+            return privateTypeWithinRecursion([ 1, 2, 3 ]);
+        }
+    `);
+
     // /Recursion /Closures /Implicit args
 
 
