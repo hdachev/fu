@@ -30,11 +30,16 @@ let cVFACTS     = ansi(     35,3);
 let cQUALS      = ansi(     35,3);
 let cLT         = ansi(     32,3);
 
+let cBAD_KW     = ansi(     31,3);
+
 
 //
 
 pub fn qBAD(id: string) =
     BAD ~ (id || "?") ~ RESET;
+
+pub fn qBAD_KW(id: string) =
+    cBAD_KW ~ (id || "?") ~ RESET;
 
 pub fn qID(id: string) =
     cID ~ (id || "?") ~ RESET;

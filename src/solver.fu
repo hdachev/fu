@@ -2010,12 +2010,35 @@ pub fn solve(
                         first = i;
 
             if (first < i)
-                return "Duplicate explicitly named arguments: " ~ count.str.qBAD ~ " args named " ~ names[i].qBAD ~ ".";
+                return "Duplicate :named arguments: " ~ "arg".qBAD_KW ~ " " ~ names[i].qBAD ~ " explicitly provided " ~ count ~ " times.";
 
-            return "Explicit named argument mismatch: no arg " ~ names[i].qBAD ~ ".";
+            return "Named :argument mismatch: no " ~ "arg".qBAD_KW ~ " " ~ names[i].qBAD ~ ".";
         }
 
-        return "Explicit argument name related error.\n\n\tBUG failed to explain what's wrong.";
+        return "Named :argument mismatch: BUG failing to explain what's wrong.";
+    }
+
+    fn ERRMSG_optionalArgumentAmbiguity(
+        host_args: Argument[], reorder: Reorder, names: string[])
+    {
+        mut error = "Optional argument ambiguity:";
+
+        host_args.each: |host_arg, i| {
+            let callsiteIndex = reorder.map.if(i, else: -1);
+            if (callsiteIndex < 0) {
+                error ~= "\n\n\t\tExpected " ~ (host_arg.default && "optional ") ~ host_arg ~ " not provided.";
+                break;
+            }
+        }
+
+        names.each: |name| {
+            if (name && !host_args.some(|a| a.name == name)) {
+                error ~= "\n\n\t\tOptional :named argument mismatch: no " ~ "arg".qBAD_KW ~ " " ~ name.qBAD ~ ".";
+                break;
+            }
+        }
+
+        return error ~= "\n\n\t\tCannot distinguish from a typo.";
     }
 
     fn findRestStart(ext: Extended)
@@ -2302,7 +2325,7 @@ pub fn solve(
                 //
                 if (optional && reorder)
                     if (reorder.map.len < args.len && reorder.map.len < arity.max)
-                        matchFail("Optional argument ambiguity, not all optional arguments provided, and not all callsite arguments used. Cannot distinguish from a typo. [TODO LIST MISSING ARGS]");
+                        matchFail(ERRMSG_optionalArgumentAmbiguity(:host_args, :reorder, :names));
 
                 // TODO FIX the two reorder fns don't deal correctly with rest args,
                 //  this seems to fix it but honestly I'm not sure
@@ -2431,7 +2454,7 @@ pub fn solve(
                         if (host_arg.flags & F_MUSTNAME)
                         {
                             if (names.len <= callsiteIndex || !names[callsiteIndex])
-                                matchFail(host_arg ~ " must be :explicitly named.");
+                                matchFail(host_arg ~ " must be :named explicitly.");
                         }
 
                         // Autocall.

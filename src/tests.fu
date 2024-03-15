@@ -3723,7 +3723,7 @@ pub extern fn runTests()
     `);
 
     ZERO(`
-        <fail bad call>
+        <fail bad call test string, i32 4:23+1>
         fn test(a = "hello") a.len;     <pass/>
         fn test(a = 0) a + 1;           </fail>
         fn main() test(-1);
@@ -14019,7 +14019,7 @@ pub extern fn runTests()
                 + a1o0(a?: 1, b?: 2) *     10   //     10
                 + a2o1(a?: 1, b?: 2) *    100   //    300
                 + a2o2(a?: 1, b?: 2) *   1000   //   3000
-                + a2o1(a : 1, <fail bad call>
+                + a2o1(a : 1, <fail bad call a2o1 10:23+1 b not provided c mismatch>
                               c       <pass/>
                               b       </fail>
                                ?: 2) *  10000   //  30000
@@ -15551,7 +15551,7 @@ pub extern fn runTests()
     `);
 
     ZERO(`
-        fn test(a: $A, b: $B) b +   <fail bad call>
+        fn test(a: $A, b: $B) b +   <fail bad call + i32 i8 2:33+1>
             a;                      <pass/>
             $B(a);                  </fail>
 
@@ -17633,7 +17633,8 @@ pub extern fn runTests()
         fn sB(_: $T) struct { hey: $T; };
 
         fn fB(a: $T): sB($T) = [ a + 2 ];
-        fn main() 1.fB.hey - 1.u32.fB.hey <fail bad call><pass/> .i32 </fail> ;
+        fn main() 1.fB.hey - 1.u32.fB.hey   <fail bad call - i32 u32 5:28+1><pass/>
+                              .i32          </fail>;
     `);
 
     ZERO(`
