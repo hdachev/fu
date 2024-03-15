@@ -3476,15 +3476,12 @@ pub fn cpp_codegen(
                         // See below.
                         noteDefect(ConstCast);
 
-                        src ~= ".const_cast_mut().destructive_move()";
-                    }
-                    else
-                    {
-                        src ~= ".destructive_move()";
+                        src ~= ".const_cast_mut()";
                     }
 
-                    if (node.type.lifetime.hasZeroes)
-                        return cgMoveOrDefault(src);
+                    src ~= expr.lifetime.hasZeroes
+                        ? ".destructive_move_or_default()"
+                        : ".destructive_move()";
 
                     return src;
                 }

@@ -8275,16 +8275,35 @@ pub extern fn runTests()
         nocopy </alt>
         struct NonTriv { a: NonTriv[]; b: NonTriv[] }
 
+        noinline fn test(a: NonTriv[], b: NonTriv[], which: int) which & 1 ? a : b;
+        noinline fn balance(ref a: NonTriv[]) while !(a.len & 1) a ~= NonTriv();
+    `,`
+        import _0;
+        fn moveOrDefault(which: int) {
+            mut a = [ NonTriv(), NonTriv() ];
+            mut b = test(a, [], which);                         ;; ConstCast
+            b.balance();
+            return (b.len + 1) & 1;
+        }
+        fn main() moveOrDefault(0) * 10 + moveOrDefault(1) * 100;
+    `]);
+
+    ZERO([`
+        <alt>
+        nocopy </alt>
+        struct NonTriv { a: NonTriv[]; b: NonTriv[] }
+
         noinline fn test(a: NonTriv, b: NonTriv, which: int) which & 1 ? a : b;
         noinline fn balance(ref a: NonTriv) while (a.b.len < a.a.len) a.b ~= NonTriv();
     `,`
         import _0;
-        fn main() {
+        fn moveOrDefault(which: int) {
             mut a = NonTriv([ NonTriv(), NonTriv() ], [ NonTriv() ]);
-            mut b = test(a, [], <alt>0<alt/>1</alt>);           ;; ConstCast
+            mut b = test(a, [], which);                         ;; ConstCast
             b.balance();
             return b.a.len - b.b.len;
         }
+        fn main() moveOrDefault(0) * 10 + moveOrDefault(1) * 100;
     `]);
 
     ZERO(`

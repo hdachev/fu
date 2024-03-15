@@ -1191,12 +1191,19 @@ struct fu_VEC
     //   but fu::vec_range damages the underlying vector when moving,
     //    by cutting off excess elements to the left and right of the region of interest.
 
+    fu_INL fu_VEC& const_cast_mut() const noexcept {
+        return const_cast<fu_VEC&>(*this);
+    }
+
     fu_INL fu_VEC&& destructive_move() noexcept {
         return static_cast<fu_VEC&&>(*this);
     }
 
-    fu_INL fu_VEC& const_cast_mut() const noexcept {
-        return const_cast<fu_VEC&>(*this);
+    fu_VEC destructive_move_or_default() noexcept {
+        if (!big.PACK)
+            return {};
+
+        return destructive_move();
     }
 
 

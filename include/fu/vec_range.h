@@ -429,16 +429,23 @@ struct vec_range_mut
 
     // Move interop.
 
+    fu_INL vec_range_mut& const_cast_mut() const noexcept {
+        return const_cast<vec_range_mut&>(*this);
+    }
+
     fu_INL fu::vec<T>&& destructive_move() noexcept {
         m_vec->shift_pop(Left(), Right());
         #ifndef NDEBUG
         m_trim  = 0xffffffffffffffff;
         #endif
-        return static_cast<fu::vec<T>&&>(*m_vec);
+        return m_vec->destructive_move();
     }
 
-    fu_INL vec_range_mut& const_cast_mut() const noexcept {
-        return const_cast<vec_range_mut&>(*this);
+    fu::vec<T> destructive_move_or_default() noexcept {
+        if (!m_vec->big.PACK)
+            return {};
+
+        return destructive_move();
     }
 
 
