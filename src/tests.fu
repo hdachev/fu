@@ -7988,6 +7988,20 @@ pub extern fn runTests()
         }
     `);
 
+    TODO_disjoint(currently: "both argument alias mut ab 9:17+2", `
+        struct TwoArrays { a: i32[]; b: i32[] };
+        noinline fn what(ref arr: i32[], ref w: TwoArrays) {
+            w.b ~= w.a;
+            w.b ~= arr;
+        }
+
+        fn main() {
+            mut ab = TwoArrays([ 1, 2, 3 ], [ 4, 5, 6 ]);
+            what(ab.a[1 ..], ab);
+            return ab.b == [ 4, 5, 6, 1, 2, 3, 2, 3 ] ? 0 : 1;
+        }
+    `);
+
     // /Borrow checker
 
 
