@@ -3799,6 +3799,8 @@ pub fn solve(
 
         fn trackUsedAgain(lt: Lifetime)
         {
+            mut just_added: LocidSet;
+
             fn descend(shadow lt: Lifetime, ref bitset: LocidSet): UsedAgain
             {
                 fn descend(t: Target): UsedAgain
@@ -3806,6 +3808,8 @@ pub fn solve(
                     let locid = t.locid;
                     if (!bitset.add_once(locid))
                         return UsedAgain(:locid, "UsedAgain");
+
+                    just_added.add(locid);
 
                     let o = GET(t);
                     let isArg = t.isArg;
@@ -3841,8 +3845,7 @@ pub fn solve(
 
                         some = UsedAgain(:locid, "StaticReference");
                     }
-
-                    if (locid)
+                    else if !(just_added.has(locid))
                     {
                         // Can't break early,
                         //  needs to flag all lifetimes underneath.
