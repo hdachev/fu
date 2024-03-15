@@ -870,7 +870,7 @@ pub fn solve(
     {
         mut str = "";
 
-        lifetime.Lifetime_each: |locid, isStatic, isTemp, isArgIdx, argidx, paths|
+        lifetime.Lifetime_each: |locid, isStatic, isTemp, isArgIdx, argidx|
         {
             if (str)
                 str ~= "|".qLT;
@@ -881,16 +881,17 @@ pub fn solve(
                  : isArgIdx     ? "arg#" ~ argidx
                                 : BUG("invalid region");
 
-            if (locid)
-            {
-                mut offset = 0;
-                paths.lifetime::walkPaths(:offset,
-                    onPathStart:        ||                      str ~= " [",
-                    onPathDone:         |isLastPath|            str ~= isLastPath ? " ]" : " ],",
-                    onSubRegion:        |flatCount, flatOffset, isLastSubRegion|
-                        str ~= " #" ~ flatCount ~ " @" ~ flatOffset ~ (isLastSubRegion ? "" : ","),
-                );
-            }
+            // This is useless without some pretty-printing, not presentable.
+            // if (locid)
+            // {
+            //     mut offset = 0;
+            //     paths.lifetime::walkPaths(:offset,
+            //         onPathStart:        ||                      str ~= " [",
+            //         onPathDone:         |isLastPath|            str ~= isLastPath ? " ]" : " ],",
+            //         onSubRegion:        |flatCount, flatOffset, isLastSubRegion|
+            //             str ~= " #" ~ flatCount ~ " @" ~ flatOffset ~ (isLastSubRegion ? "" : ","),
+            //     );
+            // }
         }
 
         return str;
@@ -907,7 +908,7 @@ pub fn solve(
         if (let itemType = tryClear_sliceable(type))
         {
             if (itemType == t_byte)
-                return "string".qID;
+                return "string".qKW;
 
             return explainTypeName(itemType, :brief)
                 ~ (type.TODO_FIX_isArray ? "[]" : "[..]").qKW;
@@ -918,7 +919,7 @@ pub fn solve(
 
         return (type.canon == t_bool.canon ? "bool"
               : type.canon == t_byte.canon ? "byte"
-              : type.canon).qID;
+              : type.canon).qKW;
     }
 
     fn explainType(type: Type, brief!?: bool, mut lt!?: bool, mut no_quals!?: bool, mut usage!?: bool, mut no_vfacts!?: bool, lax i!?: int, diff!?: Type)
