@@ -667,6 +667,17 @@ pub fn solve(
         RequireVal_AliasesMutatedInjectedArgument
     };
 
+    primitive UsedAgain: u32;
+
+    enum UsedAgainReason: u8 {
+        None = 0
+        WrongPass
+        UsedAgain
+        UsedInALoop
+        ArgReference
+        StaticReference
+    };
+
 
     // The solver state.
 
@@ -864,7 +875,7 @@ pub fn solve(
             if (str)
                 str ~= "|".qLT;
 
-            str ~= locid        ? nested(locid).str
+            str ~= locid        ? nested(locid).str(brief: true)
                  : isStatic     ? "static".qLT
                  : isTemp       ? "temp".qLT
                  : isArgIdx     ? "arg#" ~ argidx
@@ -1103,26 +1114,31 @@ pub fn solve(
             println("DEV_HappyPathOnly: we ended up on a slow path.");
     }
 
-    fn str(t: Target)
+    fn str(t: Target, brief!?: bool)
     {
         let o       = GET(t);
         let kind    = o.kind;
-        mut prefix  = kind.str;
-        if (kind == "var")
+
+        mut prefix  = "";
+        if (!brief)
         {
-            prefix = (o.flags & F_INJECTED && "injected ")
-                   ~ (o.flags & F_IMPLICIT && "implicit ")
+            prefix  = kind.str;
+            if (kind == "var")
+            {
+                prefix = (o.flags & F_INJECTED && "injected ")
+                       ~ (o.flags & F_IMPLICIT && "implicit ")
 
-                   ~ (o.flags & F_CONST && "const ")
-                   ~ (o.flags & F_MUT   && "mut ")
-                   ~ (o.flags & (F_REF | F_MUT | F_CONST) == F_REF
-                        && (o.type.is_mutref ? "mut " : "const "))
+                       ~ (o.flags & F_CONST && "const ")
+                       ~ (o.flags & F_MUT   && "mut ")
+                       ~ (o.flags & (F_REF | F_MUT | F_CONST) == F_REF
+                            && (o.type.is_mutref ? "mut " : "const "))
 
-                   ~ (o.flags & F_REF && "ref ")
-                   ~ (t.isArg && "arg ")
-                        || "let ";
+                       ~ (o.flags & F_REF && "ref ")
+                       ~ (t.isArg && "arg ")
+                            || "let ";
 
-            prefix.pop();
+                prefix.pop();
+            }
         }
 
         // field sname:fname
@@ -1134,7 +1150,7 @@ pub fn solve(
                 ns = GET(from).name.human.qID ~ ":";
         }
 
-        return prefix.qKW ~ " " ~ ns ~ o.name.human.qID;
+        return (prefix && prefix.qKW ~ " ") ~ ns ~ o.name.human.qID;
     }
 
     fn str(arg: Argument, brief!?: bool)
@@ -3748,54 +3764,91 @@ pub fn solve(
         inline fn PASS_MoveOnLastUse    = relax_mask == RELAX_all;
         inline fn PASS_MaybeCopyOrMove  = relax_mask == RELAX_all;
 
-        fn trackUse(lt: Lifetime, ref bitset: LocidSet)
+
+        //
+
+        inline fn UsedAgain(locid!: i32, reason: UsedAgainReason)
+            UsedAgain(locid.sign_rotate << 8 | reason.u32);
+
+        fn explainUsedAgain(usedAgain: UsedAgain)
         {
-            fn trackUse(t: Target)
-            {
-                let locid = t.locid;
-                if (!bitset.add_once(locid))
-                    return false;
+            let locid   = (usedAgain >> 8).u32.sign_unrotate;
+            let reason  = (usedAgain).u8.UsedAgainReason;
 
-                let o = GET(t);
-                let isArg = t.isArg;
-                let letNode = o.solved;
-                if (letNode.is_ref)
-                {
-                    if (isArg)
-                        return o.isMutVal;
+            if (locid)
+                return nested(locid) ~ (
+                    reason == "UsedInALoop"     ? " is used on next loop iteration."    :
+                    reason == "ArgReference"    ? " is a reference argument."           :
+                    reason == "UsedAgain"       ? " is used again."
+                                                : "");
 
-                    if (!trackUse(Lifetime_climbType(t).lifetime, :bitset))
-                        return false;
-                }
-                else if (isArg)
-                {
-                    BUG("trackUse: o.isArg but !o.solved.is_ref");
-                }
-
-                return locid >= _current_fn.write_loop_start;
-            }
-
-            mut allTrue = true;
-            lt.Lifetime_each: |locid, isTemp|
-            {
-                if (isTemp && MOVE_from_temp)
-                    continue;
-
-                if !(locid && trackUse(nested(locid)))
-                {
-                    // Can't break early,
-                    //  needs to flag all lifetimes underneath.
-                    allTrue = false;
-                }
-            }
-
-            return allTrue;
+            return reason == "StaticReference" && "references a static.";
         }
 
-        fn tryTrackLastUse(lt: Lifetime)
+
+        //
+
+        fn trackUsedAgain(lt: Lifetime)
         {
+            fn descend(shadow lt: Lifetime, ref bitset: LocidSet): UsedAgain
+            {
+                fn descend(t: Target): UsedAgain
+                {
+                    let locid = t.locid;
+                    if (!bitset.add_once(locid))
+                        return UsedAgain(:locid, "UsedAgain");
+
+                    let o = GET(t);
+                    let isArg = t.isArg;
+                    let letNode = o.solved;
+                    if (letNode.is_ref)
+                    {
+                        if (isArg)
+                            return !o.isMutVal && UsedAgain(:locid, "ArgReference");
+
+                        let usedAgain = descend(Lifetime_climbType(t).lifetime, :bitset);
+                        if (usedAgain)
+                            return usedAgain;
+                    }
+                    else if (isArg)
+                    {
+                        BUG("trackUsedAgain/descend: o.isArg but !o.solved.is_ref");
+                    }
+
+                    return locid < _current_fn.write_loop_start
+                        && UsedAgain(:locid, "UsedInALoop");
+                }
+
+                mut some: UsedAgain;
+                lt.Lifetime_each: |locid, isTemp, lax isStatic|
+                {
+                    if (isTemp)
+                        continue;
+
+                    if !(locid)
+                    {
+                        if (SELF_TEST)
+                            isStatic || BUG("trackUsedAgain/descend: non-static non-local");
+
+                        some = UsedAgain(:locid, "StaticReference");
+                    }
+
+                    if (locid)
+                    {
+                        // Can't break early,
+                        //  needs to flag all lifetimes underneath.
+                        let usedAgain = descend(nested(locid));
+                        if (usedAgain && !some)
+                            some = usedAgain;
+                    }
+                }
+
+                return some;
+            }
+
             return PASS_MoveOnLastUse
-                && trackUse(:lt, _current_fn.postdom.used_again);
+                 ? descend(:lt, _current_fn.postdom.used_again)
+                 : UsedAgain(locid: 0, "WrongPass");
         }
 
 
@@ -4318,7 +4371,7 @@ pub fn solve(
 
                     // MOVE ON LAST USE ////////////////////////////////////////////
                     {
-                        tryTrackLastUse(node.lifetime);
+                        trackUsedAgain(node.lifetime);
                     }
                     // MOVE ON LAST USE ////////////////////////////////////////////
                 }
@@ -4473,7 +4526,7 @@ pub fn solve(
 
                     let host_arg = host_args[i];
                     if (host_arg.is_ref)
-                        tryTrackLastUse(arg.lifetime);
+                        trackUsedAgain(arg.lifetime);
 
                     if (host_arg.flags & F_COW_INSIDE)
                         validateCOW(arg, :host_arg,
@@ -4578,12 +4631,14 @@ pub fn solve(
             ref item = node.items.only;
             mut isCopy = true;
 
+            mut usedAgain: UsedAgain;
+
             // No longer doing this for trivials -
             //  it can trigger a bullshit MoveMustSeq.
             if (!item.is_trivial)
             {
                 // Move on last use.
-                if (tryTrackLastUse(item.type.lifetime))
+                if !((usedAgain = trackUsedAgain(item.type.lifetime)))
                 {
                     isCopy = false;
                 }
@@ -4680,10 +4735,14 @@ pub fn solve(
                 if !(isCopy ? item.type.is_rx_copy
                             : item.type.is_rx_move)
                 {
-                    if (!isCopy && item.type.is_sliceable)
-                        fail("An array value is needed, but cannot be copied or moved from a slice: " ~ item.explainType);
+                    let extra = explainUsedAgain(usedAgain);
 
-                    fail("A value is needed, but cannot be copied or moved from: " ~ item.explainType);
+                    fail(
+                        (!isCopy && item.type.is_sliceable
+                            ? "An array value is needed, but cannot be copied or moved from a slice: "
+                            : "A value is needed, but cannot be copied or moved from: ")
+                                ~ item.explainType(lt: true)
+                                ~ (extra && "\n\n\tCannot move: " ~ extra));
                 }
 
                 if (isCopy && !node.type.is_trivial)

@@ -5881,7 +5881,7 @@ pub extern fn runTests()
         }
     `);
 
-    TODO_move(currently: "cannot be copied or moved 6:38+1", `
+    TODO_move(currently: "cannot be copied or moved 6:38+1 ref static", `
         <alt>
         nocopy
         </alt>
@@ -8122,7 +8122,7 @@ pub extern fn runTests()
                 }
             }
 
-            <fail cannot be copied or moved 10:27>
+            <fail cannot be copied or moved 10:27 mut arg nc is used again>
             if (nc.x > 15) return nc; // <- ... unless used here.
             <pass/></fail>
 
@@ -8144,7 +8144,7 @@ pub extern fn runTests()
             while (nc.str.len < 64)
                 nc.str ~= nc.str;
 
-            <fail cannot be copied or moved 10:20>
+            <fail cannot be copied or moved 10:20 mut arg nc is used again>
             return nc;                     <pass/>
             return nc.str.len;             </fail>
         }
