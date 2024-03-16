@@ -158,7 +158,7 @@ pub fn compile(
     for (mut i = 0; i < ctx.modules.len; i++)
     {
         let module = ctx.modules[i];
-        dep_order.grow_if_oob(module.order.dep_depth) ~= module.modid;
+        dep_order.ensure(exists: module.order.dep_depth) ~= module.modid;
     }
 
     ctx.dep_order = dep_order.join();

@@ -380,7 +380,7 @@ fn Scope_create(
     mut position: i32;
     ref overloads = nest
         ? {
-            ref ext     = scope.extended.grow_if_oob(nest);
+            ref ext     = scope.extended.ensure(exists: nest);
             position    = ext.nextIndexOfLocal(:asArgument);
             ext.args_neg += asArgument ? 1 : 0;
             ext.args_n_locals

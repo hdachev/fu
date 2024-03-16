@@ -1,3 +1,4 @@
+import helpers;
 
 pub struct BitSet
 {
@@ -35,7 +36,7 @@ pub fn add_once(using _: &mut BitSet, idx: int): bool
     let bit    = idx & 7;
     let mask   = 1 << bit.u8;
 
-    ref entry  = _data.helpers::grow_if_oob(bucket);
+    ref entry  = _data.ensure(exists: bucket);
     let ret    = !(entry & mask);
 
     entry |= mask;
@@ -50,7 +51,7 @@ pub fn add(using _: &mut BitSet, idx: int)
     let bit    = idx & 7;
     let mask   = 1 << bit.u8;
 
-    _data.helpers::grow_if_oob(bucket) |= mask;
+    _data.ensure(exists: bucket) |= mask;
 }
 
 pub fn add(using _: &mut BitSet, other: BitSet)

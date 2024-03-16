@@ -441,9 +441,9 @@ pub fn solve(
         return map._values.if(exists: args_neg + locid);
     }
 
-    fn grow_if_oob(ref map: LocidMap(<T>), locid: i32) {
+    fn ensure(ref map: LocidMap(<T>), exists!locid: i32) {
         let args_neg = _current_fn.args_neg;
-        return map._values.grow_if_oob(args_neg + locid);
+        return map._values.ensure(exists: args_neg + locid);
     }
 
 
@@ -1374,7 +1374,7 @@ pub fn solve(
 
     fn EPH_mut(index: i32)
     {
-        return _ephemeral.grow_if_oob(index);
+        return _ephemeral.ensure(exists: index);
     }
 
     fn EPH_mut(target: Target)
@@ -2391,7 +2391,7 @@ pub fn solve(
                                     let conversion = tryConvert(:expect);
                                     if (conversion)
                                     {
-                                        conversions.grow_if_oob(i) = conversion;
+                                        conversions.ensure(exists: i) = conversion;
                                         continue :ARG_OK;
                                     }
                                 }
@@ -2444,7 +2444,7 @@ pub fn solve(
                                         :actual, expect: annot, :template.imports);
 
                                     if (conversion)
-                                        conversions.grow_if_oob(i) ~= conversion;
+                                        conversions.ensure(exists: i) ~= conversion;
                                 }
                             }
                         }
@@ -2493,9 +2493,9 @@ pub fn solve(
                                 matchFail(autocall_error.replace("\t", "\t\t"));
 
                             if (autocall_conversions)
-                                conversions.grow_if_oob(i) ~= autocall_conversions.only;
+                                conversions.ensure(exists: i) ~= autocall_conversions.only;
 
-                            conversions.grow_if_oob(i) ~= t;
+                            conversions.ensure(exists: i) ~= t;
                             autocall_reorder.map.len < 2 || BUG("autocall: reorder");
                         }
 
@@ -2551,7 +2551,7 @@ pub fn solve(
                             let conversion = tryConvert(:expect, :actual, retype: !argConv && args[callsiteIndex]);
                             if (conversion)
                             {
-                                conversions.grow_if_oob(i) ~= conversion;
+                                conversions.ensure(exists: i) ~= conversion;
                                 continue :ARG_OK;
                             }
                         }
@@ -3673,7 +3673,7 @@ pub fn solve(
                         {
                             makeNote(N_COWRestrict, nested(locid) ~ " at risk from " ~ nested(t) ~ " via " ~ nested(reason));
 
-                            flow.at_soft_risk.grow_if_oob(t).add(locid);
+                            flow.at_soft_risk.ensure(exists: t).add(locid);
 
                             fn TODO_FIX_slicesAgain()
                             {
@@ -3690,7 +3690,7 @@ pub fn solve(
                             }
 
                             if (reason != t || TODO_FIX_slicesAgain)
-                                flow.at_hard_risk.grow_if_oob(t).add(locid);
+                                flow.at_hard_risk.ensure(exists: t).add(locid);
                         }
                     }
 
@@ -4025,7 +4025,7 @@ pub fn solve(
                     BUG(nested(locid) ~ ", trackVarUsage: slot is irrelevant: " ~ slot.explainType(usage: true));
             }
 
-            shadow ref usage = _current_fn.var_usage.grow_if_oob(locid);
+            shadow ref usage = _current_fn.var_usage.ensure(exists: locid);
             if (!usage)
             {
                 usage = slot;
@@ -5416,7 +5416,7 @@ pub fn solve(
     fn push(warning: Warning)
     {
         // TODO FIX currently only one per fn
-        _warnings.grow_if_oob(_current_fn.target.globid) ||= warning;
+        _warnings.ensure(exists: _current_fn.target.globid) ||= warning;
     }
 
     lax fn TEST_unusedButCopied(inline topic: string, slot: Type)
@@ -6352,7 +6352,7 @@ pub fn solve(
                                 :locals_start,
                             ));
 
-                        helpersReplicas.grow_if_oob(foreign.index) =
+                        helpersReplicas.ensure(exists: foreign.index) =
                             node.helpers =
                                 local.ALWAYS_TRUE;
                     }
@@ -7397,7 +7397,7 @@ pub fn solve(
             if !(argTarget)
                 continue;
 
-            argPos_1b.grow_if_oob((-1) - argTarget.locid) = i + 1;
+            argPos_1b.ensure(exists: (-1) - argTarget.locid) = i + 1;
 
             if (relaxMutValArgs)
             {
@@ -11642,7 +11642,7 @@ pub fn solve(
                             :locals_start,
                         ));
 
-                    helpersReplicas.grow_if_oob(foreign.index) = local || BUG();
+                    helpersReplicas.ensure(exists: foreign.index) = local || BUG();
 
                     TRACE("inlineExpression: REPLICATE " ~ node.kind ~ " #" ~ foreign.index ~ " -> #" ~ local.index ~ " locals_start(" ~ locals_start ~ ")");
 
@@ -12591,11 +12591,11 @@ pub fn solve(
             // Soft vs hard risk -
             //  Non-direct reads from arguments put the argument at hard risk.
             if (!trySoft || !nested(read).acceptsSoftRisk)
-                if (!_current_fn.flow.at_hard_risk.grow_if_oob(write).add_once(read))
+                if (!_current_fn.flow.at_hard_risk.ensure(exists: write).add_once(read))
                     return true; // Done this already.
 
             // So, on first add -
-            if (!_current_fn.flow.at_soft_risk.grow_if_oob(write).add_once(read))
+            if (!_current_fn.flow.at_soft_risk.ensure(exists: write).add_once(read))
                 return true; // Done this already.
 
             // Shake [1] - decomp write parents on first add.
@@ -12985,7 +12985,7 @@ pub fn solve(
                                     ~ nested(left) ~ " := " ~ nested(right));
                 }
 
-                flow.rg_children.grow_if_oob(right).add(left);
+                flow.rg_children.ensure(exists: right).add(left);
 
                 //
                 parents.Lifetime_add(
@@ -12999,7 +12999,7 @@ pub fn solve(
                 if (flow.is_arg.has(right))
                 {
                     flow.is_arg.add(left);
-                    flow.arg_parents.grow_if_oob(left).add(right);
+                    flow.arg_parents.ensure(exists: left).add(right);
                 }
             }
 
@@ -13051,7 +13051,7 @@ pub fn solve(
                 // Same thing backward:
                 //  Everything that RIGHT invalidates potentially invalidates LEFT.
                 //
-                (flow.rg_invalidates.grow_if_oob(left)
+                (flow.rg_invalidates.ensure(exists: left)
                     && BUG("rg_invalidates already set"))
                         = siblings;
 
@@ -13060,14 +13060,14 @@ pub fn solve(
                     if (SELF_TEST && !sibling)
                         BUG("Reference_trackLocalRef: siblings has non-locals.");
 
-                    flow.rg_invalidates.grow_if_oob(sibling)
+                    flow.rg_invalidates.ensure(exists: sibling)
                         .Lifetime_add(t_left.lifetime);
                 }
             }
 
             if (parents)
             {
-                (flow.rg_parents.grow_if_oob(left)
+                (flow.rg_parents.ensure(exists: left)
                     && BUG("rg_parents already set"))
                         = parents;
 
@@ -13078,7 +13078,7 @@ pub fn solve(
                     if (SELF_TEST && !parent)
                         BUG("Reference_trackLocalRef: parents has non-locals.");
 
-                    flow.rg_invalidates.grow_if_oob(parent)
+                    flow.rg_invalidates.ensure(exists: parent)
                         .Lifetime_add(t_left.lifetime);
                 }
             }
@@ -13294,7 +13294,7 @@ pub fn solve(
                 // Track writes, easy.
                 invalidates.Lifetime_each: |locid!invalidatee|
                 {
-                    ref set = events.invalidated_by.grow_if_oob(invalidatee);
+                    ref set = events.invalidated_by.ensure(exists: invalidatee);
                     if (BCK)
                     {
                         // BCK only needs a single event to do its thing.
@@ -14074,13 +14074,13 @@ pub fn solve(
 
                 // First, ref -> const relationships, cheaper setup.
                 if (consts)
-                    (flow.rg_invalidates.grow_if_oob(target) && BUG("AAR: ref arg already has invalidates."))
+                    (flow.rg_invalidates.ensure(exists: target) && BUG("AAR: ref arg already has invalidates."))
                         = consts;
 
                 // Finally set up the ref <-> ref relationships,
                 //  which are symmetric.
                 if (other_refs)
-                    flow.rg_invalidates.grow_if_oob(target)
+                    flow.rg_invalidates.ensure(exists: target)
                         .Lifetime_add(other_refs);
 
                 // OOE/AAR:
@@ -14095,7 +14095,7 @@ pub fn solve(
                 // Basically for all_written_BUT_NOT_invalidated to consider other arguments,
                 //  we list them as if they were parents to each ref argument.
                 if (consts || other_refs)
-                    (flow.rg_parents.grow_if_oob(target) && BUG("AAR: ref arg already has parents."))
+                    (flow.rg_parents.ensure(exists: target) && BUG("AAR: ref arg already has parents."))
                         = flow.rg_invalidates.if(exists: target) || BUG("AAR: (refs.len > 1 || consts), but no invalidates.");
             }
 
@@ -14108,7 +14108,7 @@ pub fn solve(
                     target || BUG();
 
                     // Same as above but flipped.
-                    (flow.rg_invalidates.grow_if_oob(target) && BUG(
+                    (flow.rg_invalidates.ensure(exists: target) && BUG(
                         "AAR: const arg already has invalidates."))
                             = refs;
 
@@ -14117,7 +14117,7 @@ pub fn solve(
                     //   - listing consts as .parents of refs takes care of refs pointing into consts.
                     //   - listing consts as .invalidates for refs takes care of consts point into refs.
                     //
-                    (flow.rg_parents.grow_if_oob(target) && BUG(
+                    (flow.rg_parents.ensure(exists: target) && BUG(
                         "AAR: const arg already has parents."))
                             = refs;
                 }
@@ -14642,7 +14642,7 @@ pub fn solve(
             if (!host_arg.type.is_ref)
                 continue;
 
-            _argPos_1b.grow_if_oob((-1) - host_arg.target.locid) = i + 1;
+            _argPos_1b.ensure(exists: (-1) - host_arg.target.locid) = i + 1;
 
             let may_alias = host_arg.flags & F_WRITTEN_TO && host_arg.may_alias;
             if (may_alias)
@@ -14655,7 +14655,7 @@ pub fn solve(
                         BUG("ensureArgSequencing: may_alias does not list self [1]");
                 }
 
-                _may_alias.grow_if_oob(i) = may_alias;
+                _may_alias.ensure(exists: i) = may_alias;
             }
         }
 

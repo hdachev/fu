@@ -375,7 +375,7 @@ pub fn build(
         }
 */
         unit_mapping ~= unit_index;
-        units.grow_if_oob(unit_index) =
+        units.ensure(exists: unit_index) =
             TranslationUnit(
                 src_output_file: fname ~ ".cpp",
                 :human, :iquote);
