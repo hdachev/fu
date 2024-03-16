@@ -26,12 +26,9 @@ fn grow_if_oob(ref a: <T>[], i: i32): &mut T
     return a[i];
 }
 
-fn unless_oob(ref a: <T>[..], i: i32)
-    i.unsigned < a.len.unsigned && a[i];
-
-fn if(ref a: <T>[..], i: i32, then = |v| v, else?)
+fn if(ref a: <T>[..], exists!i: i32, and!then?: <Then>, else!?)
     i.unsigned < a.len.unsigned
-        ? then(a[i])
+        ? Then -> [] ? a[i] : then(a[i])
         : else();
 
 fn try_steal(ref a: <T>[..], i: i32)

@@ -224,7 +224,7 @@ pub fn cpp_codegen(
             ? module
             : ctx.modules[modid];
 
-        return m.out.solve.scope.extended.unless_oob(globid);
+        return m.out.solve.scope.extended.if(exists: globid);
     }
 
 
@@ -869,8 +869,8 @@ pub fn cpp_codegen(
 
             // Dedupe #2.
             let dupes = locid < 0
-                ? _current_fn._ids_dedupe_n.unless_oob(-locid)
-                : _current_fn._ids_dedupe_p.unless_oob(+locid);
+                ? _current_fn._ids_dedupe_n.if(exists: -locid)
+                : _current_fn._ids_dedupe_p.if(exists: +locid);
 
             if (dupes)
                 return id ~ '_' ~ dupes;

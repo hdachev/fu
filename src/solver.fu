@@ -431,17 +431,17 @@ pub fn solve(
     inline fn clear(ref map: LocidMap(_))
         map._values.clear();
 
-    postfix fn [] !T(ref map: LocidMap(T), locid: i32) {
+    postfix fn [] (ref map: LocidMap(<T>), locid: i32) {
         let args_neg = _current_fn.args_neg;
         return map._values[args_neg + locid];
     }
 
-    fn unless_oob!T(ref map: LocidMap(T), locid: i32) {
+    fn if(ref map: LocidMap(<T>), exists!locid: i32) {
         let args_neg = _current_fn.args_neg;
-        return map._values.unless_oob(args_neg + locid);
+        return map._values.if(exists: args_neg + locid);
     }
 
-    fn grow_if_oob!T(ref map: LocidMap(T), locid: i32) {
+    fn grow_if_oob(ref map: LocidMap(<T>), locid: i32) {
         let args_neg = _current_fn.args_neg;
         return map._values.grow_if_oob(args_neg + locid);
     }
@@ -835,7 +835,7 @@ pub fn solve(
     using fn EPH(target: Target)
     {
         return target.modid == module.modid
-            && _ephemeral.unless_oob(target.globid);
+            && _ephemeral.if(exists: target.globid);
     }
 
     fn GET_next_local_index()
@@ -2023,7 +2023,7 @@ pub fn solve(
         mut error = "Optional argument ambiguity:";
 
         host_args.each: |host_arg, i| {
-            let callsiteIndex = reorder.map.if(i, else: -1);
+            let callsiteIndex = reorder.map.if(exists: i, else: -1);
             if (callsiteIndex < 0) {
                 error ~= "\n\n\t\tExpected " ~ (host_arg.default && "optional ") ~ host_arg ~ " not provided.";
                 break;
@@ -3564,7 +3564,7 @@ pub fn solve(
 
         fn eachLiveChildMutref(index: i32, visit)
         {
-            let children = _current_fn.TODO_FIX_children.unless_oob(index);
+            let children = _current_fn.TODO_FIX_children.if(exists: index);
             for (mut i = 0; i < children.len; i++)
             {
                 let child = children[i];
@@ -3636,7 +3636,7 @@ pub fn solve(
                             continue;
 
                         // Nothing to do if already hard-risked.
-                        if (flow.at_hard_risk.unless_oob(t).has(locid))
+                        if (flow.at_hard_risk.if(exists: t).has(locid))
                             continue;
 
                         fn needsHardRisk(shadow index: i32)
@@ -3740,7 +3740,7 @@ pub fn solve(
                     continue;
 
                 //
-                let inter = _current_fn.flow.rg_parents.unless_oob(child).Lifetime_inter(parent_region);
+                let inter = _current_fn.flow.rg_parents.if(exists: child).Lifetime_inter(parent_region);
                 if (!inter)
                     continue;
 
@@ -5512,7 +5512,7 @@ pub fn solve(
         //  Can't do much even if we're exporting a single template, it's a shame.
         if (_current_fn)
         {
-            let usage = _current_fn.var_usage.unless_oob(t.locid);
+            let usage = _current_fn.var_usage.if(exists: t.locid);
             let isUnused = !usage;
             if (isUnused)
                 warnUnused(t, o);
@@ -6360,7 +6360,7 @@ pub fn solve(
                 else if (k == "jump")
                 {
                     let foreign = node.helpers;
-                    let local = helpersReplicas.unless_oob(foreign.index);
+                    let local = helpersReplicas.if(exists: foreign.index);
 
                     node.helpers = local.ALWAYS_TRUE;
                 }
@@ -7528,9 +7528,9 @@ pub fn solve(
                     fn ArgsAtRisk_list(
                         ref output: bitset::BitSet, at_risk: LocidMap(LocidSet))
                     {
-                        at_risk.unless_oob(argTarget.locid).each: |other|
+                        at_risk.if(exists: argTarget.locid).each: |other|
                         {
-                            let otherPos_1b = argPos_1b.unless_oob((-1) - other);
+                            let otherPos_1b = argPos_1b.if(exists: (-1) - other);
                             if (otherPos_1b)
                                 output.add(otherPos_1b - 1);
                         }
@@ -7719,7 +7719,7 @@ pub fn solve(
                     }
                     else
                     {
-                        shadow let argPos_1b = argPos_1b.unless_oob((-1) - locid) || BUG(
+                        shadow let argPos_1b = argPos_1b.if(exists: (-1) - locid) || BUG(
                             "Non-argument local in retval.lifetime: " ~ nested(locid));
 
                         let i   = argPos_1b - 1;
@@ -8585,7 +8585,7 @@ pub fn solve(
                     non_triv_reason < 1
                         ? " because it is " ~ "nocopy".qKW ~ "."
                         : " because of non-trivial member "
-                            ~ items.unless_oob(non_triv_reason - 1).value.qID));
+                            ~ items.if(exists: non_triv_reason - 1).value.qID));
 
             if (SELF_TEST)
                 shape.non_triv_mask || non_triv_reason < 0 || BUG(
@@ -9871,7 +9871,7 @@ pub fn solve(
             : ctx.modules[modid];
 
         let imports = m.in.parse.imports;
-        let import  = imports.unless_oob(index);
+        let import  = imports.if(exists: index);
 
         return ctx.modules[import.modid || BUG(
             "findModule: !import.modid, marker(" ~ modid ~ ", " ~ index ~ ")")];
@@ -11797,7 +11797,7 @@ pub fn solve(
                 if (node.kind == "jump")
                 {
                     let foreign = node.helpers;
-                    let local   = helpersReplicas.unless_oob(foreign.index);
+                    let local   = helpersReplicas.if(exists: foreign.index);
                     if (local)
                     {
                         TRACE("inlineExpression: REPLICATE jump #" ~ foreign.index ~ " -> #" ~ local.index);
@@ -12601,7 +12601,7 @@ pub fn solve(
             // Shake [1] - decomp write parents on first add.
             let ascendWrites = ||
             {
-                let parents = _current_fn.flow.arg_parents.unless_oob(write);
+                let parents = _current_fn.flow.arg_parents.if(exists: write);
                 if (parents)
                 {
                     for (mut i = 0; i < parents.len; i++)
@@ -12626,7 +12626,7 @@ pub fn solve(
             // Shake [2] - decomp read parents on first add.
             let ascendReads = ||
             {
-                let parents = _current_fn.flow.arg_parents.unless_oob(read);
+                let parents = _current_fn.flow.arg_parents.if(exists: read);
                 if (parents)
                 {
                     for (mut i = 0; i < parents.len; i++)
@@ -12785,7 +12785,7 @@ pub fn solve(
         {
             write.Lifetime_each: |locid!w|
             {
-                if (w && Lifetime_hasInter(read, flow.rg_invalidates.unless_oob(w)))
+                if (w && Lifetime_hasInter(read, flow.rg_invalidates.if(exists: w)))
                     return true;
             }
 
@@ -12990,10 +12990,10 @@ pub fn solve(
                 //
                 parents.Lifetime_add(
                     Lifetime_op_join(
-                        flow.rg_parents.unless_oob(right), paths));
+                        flow.rg_parents.if(exists: right), paths));
 
                 //
-                siblings.Lifetime_add(flow.rg_invalidates.unless_oob(right));
+                siblings.Lifetime_add(flow.rg_invalidates.if(exists: right));
 
                 // Propagate alised arguments.
                 if (flow.is_arg.has(right))
@@ -13008,7 +13008,7 @@ pub fn solve(
             //
             siblings = siblings.Lifetime_process(|locid!sibling, continue_keep|
             {
-                let sibling_parents = flow.rg_parents.unless_oob(sibling);
+                let sibling_parents = flow.rg_parents.if(exists: sibling);
                 if (Lifetime_hasInter(parents, sibling_parents))
                 {
                     // Doesn't seem to help with anything, only slows us down.
@@ -13101,7 +13101,7 @@ pub fn solve(
             TEST_varLifetime(callsite.type.lifetime, locid: target, staticOK: TODO_FIX_static_ZSTs);
 
             // Writes invalidate subsequent reads.
-            let u = events.invalidated_by.unless_oob(target);
+            let u = events.invalidated_by.if(exists: target);
             if (u)
             {
                 if (AAR ? !RESOLVE_byAAR(read: target, writes: u.keys_asc, trySoft: true /* F_REF check inside */)
@@ -13167,10 +13167,10 @@ pub fn solve(
                 //
                 all_written.Lifetime_add(
                     Lifetime_op_join(
-                        flow.rg_parents.unless_oob(write),
+                        flow.rg_parents.if(exists: write),
                         write_paths));
 
-                let invalidates = flow.rg_invalidates.unless_oob(write);
+                let invalidates = flow.rg_invalidates.if(exists: write);
 
                 if (SELF_TEST && invalidates.Lifetime_has(locid: write))
                     BUG("flow.invalidates[write].has(write): " ~ nested(write));
@@ -13178,7 +13178,7 @@ pub fn solve(
                 shadow let invalidates = invalidates.Lifetime_process(
                     |locid!invalidatee, continue_keep|
                     {
-                        let parents = flow.rg_parents.unless_oob(invalidatee);
+                        let parents = flow.rg_parents.if(exists: invalidatee);
                         if (Lifetime_hasInter(parents, all_written))
                             continue_keep();
                     });
@@ -13329,8 +13329,8 @@ pub fn solve(
             //   But this same technique can also be used for ref reassignment later on.
             //
             // NOT EXPECTING THIS RIGHT NOW //////////////////////////
-            events.invalidated_by.unless_oob(index) && BUG();       //
-            // if (events.invalidated_by.unless_oob(index))         //
+            events.invalidated_by.if(exists: index) && BUG();       //
+            // if (events.invalidated_by.if(exists: index))         //
             //     events.invalidated_by[index] = WriteID();        //
             //////////////////////////////////////////////////////////
         }
@@ -14096,7 +14096,7 @@ pub fn solve(
                 //  we list them as if they were parents to each ref argument.
                 if (consts || other_refs)
                     (flow.rg_parents.grow_if_oob(target) && BUG("AAR: ref arg already has parents."))
-                        = flow.rg_invalidates.unless_oob(target) || BUG("AAR: (refs.len > 1 || consts), but no invalidates.");
+                        = flow.rg_invalidates.if(exists: target) || BUG("AAR: (refs.len > 1 || consts), but no invalidates.");
             }
 
             // trackReferences uses flow.invalidates to locate siblings,
@@ -14710,12 +14710,12 @@ pub fn solve(
                     ///////////////////////////////////////
 
                     // AAR sequencing.
-                    let argPos_1b = _argPos_1b.unless_oob((-1) - locid);
+                    let argPos_1b = _argPos_1b.if(exists: (-1) - locid);
                     if (argPos_1b)
                     {
                         let i = argPos_1b - 1;
                         let may_alias = !dontUse_may_alias
-                                     && _may_alias.unless_oob(i);
+                                     && _may_alias.if(exists: i);
 
                         if (may_alias)
                         {
