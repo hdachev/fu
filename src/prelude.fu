@@ -191,28 +191,28 @@ fn swap(mut ref a: <T>, mut ref b: T)
 
 fn typeof(lax _: <T>) = T;
 
-fn []  (type <T>) = typeof([] => T[]);
-fn [..](type <T>) = typeof([] => T[..]);
+postfix fn []  (type <T>) = typeof([] => T[]);
+postfix fn [..](type <T>) = typeof([] => T[..]);
 
 novec fn len(a: <T>[..]): int __native(".size()");
 
-novec fn [] (ref a: <T>[..], i: int)
+novec postfix fn [] (ref a: <T>[..], i: int)
     case (typeof(a) -> &mut T[..]): &mut T __native(".mutref");
     default                       : &    T __native;
 
-fn [..] (ref a: <T>[..], start: int, end: int)
+postfix fn [..] (ref a: <T>[..], start: int, end: int)
     case (typeof(a) -> &mut T[]  ): &mut T[]   __native("<fu/vec_range.h>", "fu::get_range_mut");
     case (typeof(a) -> &    T[]  ): &    T[]   __native("<fu/vec_range.h>", "fu::get_range");
     case (typeof(a) -> &mut T[..]): &mut T[..] __native("<fu/view.h>", "fu::get_view_mut");
     default                       : &    T[..] __native("<fu/view.h>", "fu::get_view");
 
-fn [..] (ref a: <T>[..], start!: int)
+postfix fn [..] (ref a: <T>[..], start!: int)
     case (typeof(a) -> &mut T[]  ): &mut T[]   __native("<fu/vec_range.h>", "fu::get_range_mut");
     case (typeof(a) -> &    T[]  ): &    T[]   __native("<fu/vec_range.h>", "fu::get_range");
     case (typeof(a) -> &mut T[..]): &mut T[..] __native("<fu/view.h>", "fu::get_view_mut");
     default                       : &    T[..] __native("<fu/view.h>", "fu::get_view");
 
-fn [..] (ref a: <T>[..], end!: int)
+postfix fn [..] (ref a: <T>[..], end!: int)
     case (typeof(a) -> &mut T[]  ): &mut T[]   __native("<fu/vec_range.h>", "fu::get_range_start0_mut");
     case (typeof(a) -> &    T[]  ): &    T[]   __native("<fu/vec_range.h>", "fu::get_range_start0");
     case (typeof(a) -> &mut T[..]): &mut T[..] __native("<fu/view.h>", "fu::get_view_start0_mut");

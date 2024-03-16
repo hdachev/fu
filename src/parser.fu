@@ -823,24 +823,24 @@ pub fn parse(
                 if (v == "flags")       return parsePrimDecl("flags");
                 if (v == "enum")        return parsePrimDecl("enum");
 
-                if (v == "pure")        return parseExoticDecl(asserts: A_PURE);
-                if (v == "purectx")     return parseExoticDecl(asserts: A_PURE_CTX);
-                if (v == "purefx")      return parseExoticDecl(asserts: A_PURE_FX);
+                if (v == "pure")        return parseAnnotatedFn(asserts: A_PURE);
+                if (v == "purectx")     return parseAnnotatedFn(asserts: A_PURE_CTX);
+                if (v == "purefx")      return parseAnnotatedFn(asserts: A_PURE_FX);
 
-                if (v == "novec")       return parseExoticDecl(asserts: A_NOVEC);
-                if (v == "noflow")      return parseExoticDecl(asserts: A_NOFLOW);
+                if (v == "novec")       return parseAnnotatedFn(asserts: A_NOVEC);
+                if (v == "noflow")      return parseAnnotatedFn(asserts: A_NOFLOW);
 
-                if (v == "nothrow")     return parseExoticDecl(asserts: A_NOTHROW);
-                if (v == "nocrash")     return parseExoticDecl(asserts: A_NOCRASH);
-                if (v == "noio")        return parseExoticDecl(asserts: A_NOIO);
-                if (v == "fast")        return parseExoticDecl(asserts: A_FAST);
+                if (v == "nothrow")     return parseAnnotatedFn(asserts: A_NOTHROW);
+                if (v == "nocrash")     return parseAnnotatedFn(asserts: A_NOCRASH);
+                if (v == "noio")        return parseAnnotatedFn(asserts: A_NOIO);
+                if (v == "fast")        return parseAnnotatedFn(asserts: A_FAST);
 
                 if (v == "nocopy")      return parseAnnotatedStruct(A_NOCOPY);
                 if (v == "trivial")     return parseAnnotatedStruct(A_TRIVIAL);
                 if (v == "nodiscard")   return parseAnnotatedType(A_NODISCARD);
 
-                if (v == "extern")      return parseExoticDecl(F_EXTERN);
-                if (v == "hotswap")     return parseExoticDecl(F_HOTSWAP);
+                if (v == "extern")      return parseAnnotatedFn(F_EXTERN);
+                if (v == "hotswap")     return parseAnnotatedFn(F_HOTSWAP);
                 if (v == "test")        return parseTestcase();
             }
         }
@@ -981,43 +981,20 @@ pub fn parse(
     //  fn keyword comes last to disambiguate operators from anonymous functions,
     //   which makes the parse a bit problematic but whatever.
 
-    fn parseExoticDecl(mut flags?: Flags, mut asserts?: DeclAsserts): Node
+    fn parseAnnotatedFn(mut flags?: Flags, mut asserts?: DeclAsserts): Node
     {
-        for (;;)
+        let _idx0 = _idx;
+        mut stmt = parseStatement();
+
+        if (stmt.kind != "fn" || stmt.flags & F_LAMBDA)
         {
-            let v = consume("id").value;
-
-            fn add(flag: Flags)
-            {
-                flags  & flag && fail("Duplicate qualifier: " ~ v.qKW);
-                flags |= flag;
-            }
-
-            fn add(shadow assert?: DeclAsserts)
-            {
-                asserts  & assert && fail("Dulicate assertion: " ~ v.qKW);
-                asserts |= assert;
-            }
-
-            if      (v == "pure")       add(A_PURE);
-            else if (v == "purectx")    add(A_PURE_CTX);
-            else if (v == "purefx")     add(A_PURE_FX);
-
-            else if (v == "novec")      add(A_NOVEC);
-            else if (v == "noflow")     add(A_NOFLOW);
-
-            else if (v == "nothrow")    add(A_NOTHROW);
-            else if (v == "nocrash")    add(A_NOCRASH);
-            else if (v == "noio")       add(A_NOIO);
-
-            else if (v == "extern")     add(F_EXTERN);
-            else if (v == "hotswap")    add(F_HOTSWAP);
-
-            else if (v == "fn")
-                return { _idx--; parseInlineDecl(F: flags, :asserts) };
-            else
-                fail("Unknown qualifier: " ~ v.qKW);
+            _idx = _idx0 && _idx0 - 1;
+            fail("Invalid annotation: not a " ~ "fn".qKW ~ " declaration.");
         }
+
+        stmt.flags      |= flags;
+        stmt.asserts    |= asserts;
+        return stmt;
     }
 
     fn parseNoInlineDecl(): Node

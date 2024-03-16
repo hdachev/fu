@@ -5351,28 +5351,23 @@ pub extern fn runTests()
             ? t.overload
             : t.extended;
 
-        fn test(ref target: Target)
-        {
+        fn test(ref target: Target) {
             ref overload = target.which(target.overload.len);
             ref extended = target.which(target.overload.len + 1);
 
             mut change = false;
-            if (overload)
-            {
-                for (mut i = 0; i < overload.len; i++)
-                {
+            if (overload) {
+                for (mut i = 0; i < overload.len; i++) {
                     let a = overload[i];
                     let b = extended[i];
-                    if (a != b)
-                    {
+                    if (a != b) {
                         change = true;
                         break;
                     }
                 }
             }
 
-            if (change)
-            {
+            if (change) {
                 extended[0] = 3;
 
                 shadow ref overload = target.which(target.overload.len);
@@ -5380,8 +5375,7 @@ pub extern fn runTests()
             }
         }
 
-        fn main()
-        {
+        fn main() {
             mut target = Target([ 0 ], [ 1 ]);
             target.test();
             return target.overload[0] * 10 + target.extended[0] * 100 - 350;
@@ -5459,8 +5453,7 @@ pub extern fn runTests()
     `);
 
     ZERO(`
-        fn append_self(ref a: i32[])
-        {
+        fn append_self(ref a: i32[]) {
             let b = a;
             a ~= b; // b narrowed down to a slice which is non-copyable
                     //  but it (unfortunately) wanted to copy to a temp.
@@ -5471,6 +5464,13 @@ pub extern fn runTests()
             arr.append_self();
             return arr[2] + arr[3] - 3;
         }
+    `);
+
+    ZERO(`
+        <fail invalid annotation not a fn decl 3:9+4>
+        pure <pass/></fail>
+        struct X { x: i32 };
+        fn main() X(0).x;
     `);
 
     ZERO(`
