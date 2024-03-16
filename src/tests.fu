@@ -21189,6 +21189,11 @@ pub extern fn runTests()
         fn main() = add(1, 2) - 3;
     `);
 
+    TODO_semantics(currently: "Bad call to add 3:24+1 expects mutref", `
+        inline fn add(ref a: i32, ref b: i32) a + b;
+        fn main() = add(1, 2) - 3;
+    `);
+
     // Same as above but ref-returned -
     //  should work for both mutrefs & constrefs.
     TODO_semantics(currently: "Bad call to add 3:24+1 expects mutref", `
