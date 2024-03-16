@@ -986,6 +986,13 @@ pub extern fn runTests()
         }                                                       //   given the autoshadowing, we might just want to allow everything.
     `]);
 
+    ZERO(`
+        fn main() {
+            postfix fn [](x: u32, at: u32) x & 1 << (at & 31);
+            return 0x7[3].i32;
+        }
+    `);
+
 
     // Recursion // Closures // Implicit args
 

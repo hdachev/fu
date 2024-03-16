@@ -2692,11 +2692,11 @@ static s_Node parseFnDecl_x0HZ97dk(s_Flags flags, const s_Fixity fixity, const s
         name = consume_ifLltrwq(s_kind_op, (*(const fu::str*)fu::NIL), fname, src, tokens, _idx).value;
         if (fixity == s_Fixity_Postfix)
         {
-            if ((name == "++"_fu) || (name == "--"_fu))
-                name = ("postfix"_fu + name);
-            else
+            if (!(has_g5ZsWtbd(POSTFIX, name)))
                 fail_a0ZqfRup((("No such postfix operator: `"_fu + name) + "`."_fu), fname, src, tokens, _idx);
 
+            if (has_g5ZsWtbd(PREFIX, name))
+                name = ("postfix"_fu + name);
         }
         else if (fixity == s_Fixity_Infix)
         {

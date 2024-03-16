@@ -1083,25 +1083,26 @@ pub fn parse(
 
             if (fixity == Postfix)
             {
-                name == "++" || name == "--"
-                    || fail("No such postfix operator: `" ~ name ~ "`.");
+                if !(POSTFIX.has(name))
+                    fail("No such postfix operator: " ~ name.qBAD ~ ".");
 
-                name = "postfix" ~ name;
+                if (PREFIX.has(name))
+                    name = "postfix" ~ name;
             }
             else if (fixity == Infix)
             {
-                BINOP.PRECEDENCE.has(name) || fail("No such infix operator: `" ~ name ~ "`.");
+                BINOP.PRECEDENCE.has(name) || fail("No such infix operator: " ~ name.qBAD ~ ".");
             }
             else if (fixity == Prefix)
             {
-                PREFIX.has(name) || fail("No such prefix operator: `" ~ name ~ "`.");
+                PREFIX.has(name) || fail("No such prefix operator: " ~ name.qBAD ~ ".");
             }
 
             flags |= F_OPERATOR;
         }
         else if (flags & F_OPERATOR || fixity)
         {
-            fail("Not an operator: `" ~ name ~ "`.");
+            fail("Not an operator: " ~ name.qBAD ~ ".");
         }
 
         /////////////////////////

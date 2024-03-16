@@ -431,8 +431,7 @@ pub fn solve(
     inline fn clear(ref map: LocidMap(_))
         map._values.clear();
 
-    // TODO FAILCASE fn [], neither infix nor postfix can't declare here
-    fn at!T(ref map: LocidMap(T), locid: i32) {
+    postfix fn [] !T(ref map: LocidMap(T), locid: i32) {
         let args_neg = _current_fn.args_neg;
         return map._values[args_neg + locid];
     }
@@ -13117,7 +13116,7 @@ pub fn solve(
                 }
 
                 if (OPTI_bck)
-                    events.invalidated_by.at(target) = [];
+                    events.invalidated_by[target] = [];
             }
 
             // Track reads in a loop.
