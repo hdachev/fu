@@ -399,7 +399,7 @@ pub fn solve(
     inline fn has_inter(a: LocidSet, b: LocidSet)
         a._bitset.has_inter(b._bitset);
 
-    fn clear(ref set: LocidSet, start: i32) {
+    fn clear(ref set: LocidSet, start!: i32) {
         let args_neg = _current_fn.args_neg;
         set._bitset.clear(start:
             args_neg + (start == NO_LOOP ? -args_neg : start));
@@ -431,17 +431,17 @@ pub fn solve(
     inline fn clear(ref map: LocidMap(_))
         map._values.clear();
 
-    postfix fn [] (ref map: LocidMap(<T>), locid: i32) {
+    postfix fn [] (ref map: LocidMap(_), locid: i32) {
         let args_neg = _current_fn.args_neg;
         return map._values[args_neg + locid];
     }
 
-    fn if(ref map: LocidMap(<T>), exists!locid: i32) {
+    fn if(ref map: LocidMap(_), exists!locid: i32) {
         let args_neg = _current_fn.args_neg;
         return map._values.if(exists: args_neg + locid);
     }
 
-    fn ensure(ref map: LocidMap(<T>), exists!locid: i32) {
+    fn ensure(ref map: LocidMap(_), exists!locid: i32) {
         let args_neg = _current_fn.args_neg;
         return map._values.ensure(exists: args_neg + locid);
     }
@@ -3940,7 +3940,7 @@ pub fn solve(
                 let loop_start  = node.helpers.locals_start;
 
                 for (fieldname i: PostdomSnap)
-                    if (typeof (previter.i) -> LocidSet)
+                    if !(typeof(previter.i).is::primitive)
                         previter.i.clear(start: loop_start);
             }
 
