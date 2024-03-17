@@ -229,7 +229,7 @@ pub fn solve(
         used_again:         LocidSet;
 
         // BCK & COW.
-        ever_written:       LocidSet;
+        ever_written:       LocidMap(Lifetime);
 
         // COW.
         mayEscapeVia:       MayEscapeVia;
@@ -434,6 +434,13 @@ pub fn solve(
     inline fn clear(ref map: LocidMap(_))
         map._values.clear();
 
+    fn clear(ref map: LocidMap(_), start!: i32) {
+        let args_neg = _current_fn.args_neg;
+        let i = start + args_neg;
+        if (map._values.len > i)
+            map._values.shrink(i);
+    }
+
     postfix fn [] (ref map: LocidMap(_), locid: i32) {
         let args_neg = _current_fn.args_neg;
         return map._values[args_neg + locid];
@@ -447,6 +454,15 @@ pub fn solve(
     fn ensure(ref map: LocidMap(_), exists!locid: i32) {
         let args_neg = _current_fn.args_neg;
         return map._values.ensure(exists: args_neg + locid);
+    }
+
+    infix fn |=(ref dest: LocidMap(Lifetime), src: LocidMap(Lifetime)) {
+        for (mut i = src._values.len; i --> 0; ) {
+            shadow ref src = src._values[i];
+            if (src)
+                dest._values.ensure(exists: i)
+                    .Lifetime_add(src, flatCountMismatchOK: true);
+        }
     }
 
 
@@ -3663,7 +3679,7 @@ pub fn solve(
                                     return reason;
                             }
 
-                            if (_current_fn.ever_written.has(index)) {
+                            if (_current_fn.ever_written.if(exists: index)) {
                                 eachCOWInside: |vtype, uncaughtThrowOnly| {
 
                                     // If COW only occurs via a throw route,
@@ -3755,7 +3771,7 @@ pub fn solve(
                 if (!inter)
                     continue;
 
-                if (_current_fn.ever_written.has(child))
+                if (_current_fn.ever_written.if(exists: child))
                 {
                     // For a ref to clobber a COW copy,
                     //  the thing it points to must fit inside the COW type -
@@ -3904,15 +3920,19 @@ pub fn solve(
         //
         fn callarg_trackWrites(lt: Lifetime)
         {
-            lt.Lifetime_each: |locid|
+            lt.Lifetime_each: |locid, region, paths|
             {
-                if (locid &&
-                    _current_fn.ever_written.add_once(locid))
+                if (locid)
                 {
+                    _current_fn.ever_written.ensure(exists: locid)
+                        .Lifetime_add(region, flatCountMismatchOK: true);
+
                     shadow let t = nested(locid);
 
-                    callarg_trackWrites(
-                        Lifetime_climbType(t).lifetime);
+                    let parents = Lifetime_climbType(t).lifetime;
+                    if (parents)
+                        callarg_trackWrites(
+                            Lifetime_op_join(parents, :paths));
 
                     if (t.isArg)
                         _current_fn.postdom.mayEscapeVia.add(:locid);
@@ -7517,7 +7537,7 @@ pub fn solve(
             let written_via = !isUnspec
                 && argNode.type.is_mutref
                 && (isNative    ? !argNode.type.is_zst
-                                : _current_fn.ever_written.has(argTarget.locid));
+                                : !!_current_fn.ever_written.if(exists: argTarget.locid));
 
             mut soft_risk: bitset::BitSet;
             mut hard_risk: bitset::BitSet;
@@ -14015,7 +14035,7 @@ pub fn solve(
 
                 // Notice we don't consider refs we don't write to as mutrefs for AAR.
                 //  This is meant as an opti, but also tests we've tagged everything correctly.
-                if (type.is_mutref && _current_fn.ever_written.has(target.locid))
+                if (type.is_mutref && _current_fn.ever_written.if(exists: target.locid))
                     refs.Lifetime_add(region);
                 else if (type.is_ref && !target.willPassByValue())
                     consts.Lifetime_add(region);
@@ -14155,7 +14175,7 @@ pub fn solve(
                     if (!locid)
                         continue;
 
-                    if (_current_fn.ever_written.has(locid))
+                    if (_current_fn.ever_written.if(exists: locid))
                         notPointless = true;
                     else if (!isArg(:locid))
                         verifyCopyNotRedundant(GET(nested(locid)).solved.lifetime);
