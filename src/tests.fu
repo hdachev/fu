@@ -8009,6 +8009,24 @@ pub extern fn runTests()
         }
     `);
 
+    TODO_borrowck(currently: "BUG pathDepth > 64, we're likely stuck in an infinite loop 6:48+12", `
+        struct SolvedNode { items: SolvedNode[]; target: int }
+
+        fn assertPathsValidChainTooDeep(ref node: SolvedNode) {
+            fn isFieldChain(n: SolvedNode)
+                n.items.len == 1 && n.items[0].isFieldChain || n.target;
+
+            return isFieldChain(node);
+        }
+
+        fn main() {
+            mut v  = SolvedNode([    ], 1);
+            mut f1 = SolvedNode([  v ], 2);
+            mut f2 = SolvedNode([ f1 ], 3);
+            return assertPathsValidChainTooDeep(f2) -= 1;
+        }
+    `);
+
     // /Borrow checker
 
 
