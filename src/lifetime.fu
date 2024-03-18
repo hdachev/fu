@@ -920,7 +920,9 @@ pub fn Lifetime_each(lifetime: Lifetime, each)
             others?:    Lifetime(uni0n: chars[.. offset0] ~ chars[offset ..]),
 
             r_raw?:     chars[offset0 .. sr],
-            paths?:     chars[sr .. offset]);
+            paths?:     chars[sr .. offset],
+
+            isOnly?:    !offset0 && offset == chars.len);
     }
 }
 
@@ -936,7 +938,7 @@ pub fn Lifetime_process(lifetime: Lifetime, each)
 
         while (offset < chars.len)
         {
-            let offset0 = offset;
+            lax let offset0 = offset;
 
             :TEST
             {
@@ -1050,23 +1052,12 @@ pub fn Lifetime_some(lifetime: Lifetime, some)
 
 pub fn Lifetime_if_only(lifetime: Lifetime, if_only)
 {
-    mut first = true;
-
     Lifetime_each(:lifetime):
-        |locid, argidx, isStatic, isTemp, isArgIdx, isAlwaysMoveable|
+        |isOnly, locid, argidx, isStatic, isTemp, isArgIdx, isAlwaysMoveable|
     {
-        if (!first)
-            break;
-
-        first = false;
-
-        //
-        if (if_only(?:locid,    ?:argidx,
-                    ?:isStatic, ?:isTemp, ?:isAlwaysMoveable,
-                    ?:isArgIdx))
-        {
-            return true;
-        }
+        return isOnly && if_only(?:locid,    ?:argidx,
+                                 ?:isStatic, ?:isTemp, ?:isAlwaysMoveable,
+                                 ?:isArgIdx);
     }
 
     return false;
