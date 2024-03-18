@@ -12477,6 +12477,22 @@ pub extern fn runTests()
         }
     `);
 
+    ZERO(`
+        struct AB       { a: int; b: int }
+        struct IdxLocP  { _idx: int; _loc: int; _p: AB }
+
+        fn trackWritesAssertPathsValid(using ref _ps: IdxLocP, pa: AB) {
+            fn unary(p: AB) { _p = p; _loc = _idx }
+            fn nullary() { unary(_p) }
+            return pa ? { nullary(); _loc } : { unary(pa); _idx };
+        }
+
+        fn main() {
+            mut _ps: IdxLocP;
+            return trackWritesAssertPathsValid(_ps, []);
+        }
+    `);
+
     // /quite right
 
 
