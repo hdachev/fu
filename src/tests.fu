@@ -12493,6 +12493,28 @@ pub extern fn runTests()
         }
     `);
 
+    ZERO(`
+        struct Overload { flags: u32; type: Type };
+        struct Type { quals: int; lifetime: int[] };
+
+        noinline fn bckWritesAssertPathsValid(ref overload: Overload) {
+            noinline fn GET_mut() overload;
+            noinline fn clearMutVal(ref o: Overload) {
+                o.type = [];
+                o.flags &= ~0x1;
+            }
+
+            shadow ref o = GET_mut();
+            o.clearMutVal();
+        }
+
+        fn main() {
+            mut overload = Overload(3, Type(12345, [ 1, 2, 3, 4, 5 ]));
+            bckWritesAssertPathsValid(overload);
+            return overload == Overload(2, Type()) ? 0 : 1;
+        }
+    `);
+
     // /quite right
 
 
