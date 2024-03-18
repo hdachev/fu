@@ -1582,7 +1582,7 @@ pub fn solve(
                     : Lifetime_temporary();
 
                 continue_replace(
-                    Lifetime_op_join(argLt, paths));
+                    Lifetime_op_join(argLt, :paths));
             });
     }
 
@@ -3603,8 +3603,7 @@ pub fn solve(
                 // Climb parents.
                 cannotCOW_climbParents(
                     Lifetime_op_join(
-                        Lifetime_climbType(t).lifetime,
-                        paths),
+                        Lifetime_climbType(t).lifetime, :paths),
 
                     // We don't want to forbid the copy when we visit this locid
                     //  as a child of one of our parents.
@@ -8992,7 +8991,7 @@ pub fn solve(
                 let init = nested(locid).Lifetime_climbType;
                 if (init.is_ref)
                     continue_climb(
-                        Lifetime_op_join(init.lifetime, paths));
+                        Lifetime_op_join(init.lifetime, :paths));
             }
 
             continue_keep();
@@ -11878,7 +11877,7 @@ pub fn solve(
 
                     continue_replace(
                         local.type.lifetime
-                            ? Lifetime_op_join(local.type.lifetime, paths)
+                            ? Lifetime_op_join(local.type.lifetime, :paths)
                             : BUG("visitType: !local.type.lifetime"));
                 });
         }
@@ -12990,7 +12989,7 @@ pub fn solve(
                 //
                 parents.Lifetime_add(
                     Lifetime_op_join(
-                        flow.rg_parents.if(exists: right), paths));
+                        flow.rg_parents.if(exists: right), :paths));
 
                 //
                 siblings.Lifetime_add(flow.rg_invalidates.if(exists: right));
@@ -13168,7 +13167,7 @@ pub fn solve(
                 all_written.Lifetime_add(
                     Lifetime_op_join(
                         flow.rg_parents.if(exists: write),
-                        write_paths));
+                        paths: write_paths));
 
                 let invalidates = flow.rg_invalidates.if(exists: write);
 

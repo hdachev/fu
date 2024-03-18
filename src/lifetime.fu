@@ -1182,7 +1182,7 @@ pub fn Lifetime_op_deref(lt: Lifetime, flatCount!deref_flatCount: i32)
     });
 }
 
-pub fn Lifetime_op_join(lt: Lifetime, child: byte[..])
+pub fn Lifetime_op_join(lt: Lifetime, paths!child: byte[..])
 {
     return lt.Lifetime_op(|paths!parent, ref result|
     {
