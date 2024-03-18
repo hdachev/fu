@@ -13560,11 +13560,11 @@ pub fn solve(
                                             if !(region1 && region0 != region1)
                                                 continue;
 
-                                            if (host_arg0.is_mutref)
+                                            if (host_arg0.flags & F_WRITTEN_TO)
                                                 RESOLVE_byAAR(write: region0, read: region1,
                                                     trySoft: host_arg0.may_alias.has(i1) && arg1.softRiskSafe);
 
-                                            if (host_arg1.is_mutref)
+                                            if (host_arg1.flags & F_WRITTEN_TO)
                                                 RESOLVE_byAAR(read: region0, write: region1,
                                                     trySoft: host_arg1.may_alias.has(i0) && arg0.softRiskSafe);
                                         }
