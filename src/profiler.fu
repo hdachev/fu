@@ -84,6 +84,7 @@ struct ProfileData
     AAR_Misc:           ProfileItem;
     AAR_TrackRead:      ProfileItem;
     AAR_TrackWrites:    ProfileItem;
+    AAR_Prepare:        ProfileItem;
 
     TestPass:           ProfileItem;
     EnsureArgSeq:       ProfileItem;
