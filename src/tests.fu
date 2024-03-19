@@ -8051,6 +8051,51 @@ pub extern fn runTests()
         }
     `);
 
+    ZERO(`
+        struct Target   { globid: int[] }
+        struct Entity   { quals: int[]; specs?: Spec[] }
+        struct Spec     { relax: int[]; inst: Target }
+
+        noinline fn redundantCopiesOfCopies(    <fail not mutref redundantCopiesOfCopies:entities 7:17+8><pass/>
+            ref                                 </fail>
+                entities: Entity[], target: Target)
+        {
+            fn GET_mut(t) entities[t.globid.len];
+
+            fn lazySolveStart(t: Target) {
+                ref o           = GET_mut(t);
+                let specs       = o.specs;
+                let actual      = o.quals;
+
+                for (mut i = 0; i < specs.len; i++) {
+                    let spec        = specs[i];
+                    shadow let t    = spec.inst;
+                    shadow ref o    = GET_mut(t);
+
+                    if (min(actual.len, spec.relax.len) == spec.relax.len) {
+                        o = [];
+                        return lazySolveStart(t);
+                    }
+                }
+            }
+
+            return lazySolveStart(target);
+        }
+
+        fn main() {
+            mut entities = [
+                Entity([ 1 ], [ Spec([ 1 ], Target([ 1 ])) ]),
+                Entity([ 2, 2 ]),
+                Entity([ 3, 3, 3 ]),
+            ];
+
+            redundantCopiesOfCopies(entities, []);
+            mut sum = 0;
+            entities.map(|v| sum += v.quals.len);
+            return sum - 4;
+        }
+    `);
+
     // /Borrow checker
 
 

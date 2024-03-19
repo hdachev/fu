@@ -1768,8 +1768,6 @@ pub fn solve(
     {
         fn tryExplainWell(shadow what: Type): string
         {
-            mut has_mutrefs = false;
-
             what.lifetime.Lifetime_each: |locid|
             {
                 if (!locid)
@@ -1777,13 +1775,10 @@ pub fn solve(
 
                 let t       = nested(locid);
                 let o       = GET(t);
-                let init    = o.solved.items[LET_INIT];
+                let init    = o.solved.items.if(exists: LET_INIT);
 
                 if (o.type.is_mutref)
-                {
-                    has_mutrefs = true;
                     continue;
-                }
 
                 let reason  =
                     o.flags & (F_CONST|F_REF) == F_REF
@@ -1791,7 +1786,7 @@ pub fn solve(
                             || "not mutable.";
 
                 return "a ref to "  ~ t.explainWhichFn(fmt: FullContext)
-                                    ~ "\n\t    ... " ~ reason;
+                                    ~ "\n\t    ... which is " ~ reason;
             };
 
             return "";
@@ -2752,9 +2747,18 @@ pub fn solve(
 
     //
 
-    fn explainWhichFn(t: Target, conversions?: Target[][], backtrack!?: string, fmt = NoContext)
+    fn explainWhichFn(mut t: Target, conversions?: Target[][], backtrack!?: string, fmt = NoContext)
     {
         mut result = t.str;
+
+        while (t.flags & F_INJECTED)
+        {
+            let cid = hacks::tryParseClosureID(id: t.name);
+            if (!cid)
+                break;
+
+            t = cid.target;
+        }
 
         if (t.flags & F_INJECTED)
         {
@@ -14471,13 +14475,47 @@ pub fn solve(
                 node.type.lifetime.hasTemporary && BUG(
                     "test_node(let) place.type has temp lt: " ~ explainType(node.type, lt: true));
 
-                TEST_Assignable(host: node.target.type.clear_refs(), node.type,
+                let o = GET(node.target);
+                TEST_Assignable(host: o.type.clear_refs(), node.type,
                     "test_node(let): let.target.type !<- let.place.type");
 
                 let init = node.items[1];
                 if (init)
                     TEST_Assignable(host: node.type, init.type,
                         "test_node(let): place.type !<- let.init.type");
+
+                // Borrow check injects copies at the nearest binding,
+                //  but this can easily create multiple copies through several bindings.
+                if (init.kind == "copy" && !init.is_trivial && !(o.status & SS_MOVED_FROM)
+                                                            && !o.type.is_mutref)
+                {
+                    let expr = init.items.only;
+                    expr.is_ref || BUG("test_node(let) init::copy, !expr.is_ref");
+
+                    mut notPointless = false;
+                    fn check(lifetime: Lifetime)
+                    {
+                        lifetime.Lifetime_each: |locid|
+                        {
+                            if (!locid) continue;
+
+                            let t = nested(locid);
+                            shadow let o = GET(t);
+                            o.kind == "var" || BUG("let.init::copy.expr.lifetime, locid not a var: " ~ t);
+
+                            if (o.type.is_mutref)
+                                notPointless = true;
+                            else if (!isArg(:locid)) // TODO FAILCASE stack overflow without this check
+                                check(o.solved.lifetime);
+
+                            if (notPointless)
+                                break;
+                        }
+                    }
+
+                    check(expr.lifetime);
+                    notPointless || BUG("test_node(let) Pointless copy " ~ expr.lifetime);
+                }
             }
         }
     }
