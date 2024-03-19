@@ -277,6 +277,9 @@ pub fn solve(
         at_soft_risk:       LocidMap(LocidSet);
         at_hard_risk:       LocidMap(LocidSet);
 
+        // BCK: helpers.
+        bck_consider_copy:  LocidSet;
+
         // AAR: helpers.
         is_arg:             LocidSet;
         arg_parents:        LocidMap(flat::Set(i32));
@@ -12697,14 +12700,14 @@ pub fn solve(
         fn RESOLVE_byMutvar(target: Target)
         {
             return target.globid == _current_fn.target.globid
-                && RESOLVE_byMutvar(target.locid);
+                && RESOLVE_byMutvar(:target.locid);
         }
 
-        fn RESOLVE_byMutvar(target: i32)
+        fn RESOLVE_byMutvar(locid: i32)
         {
             BCK || BUG();
 
-            let t = nested(target);
+            let t = nested(locid);
             ref o = GET_mut(t);
 
             TRACE("RESOLVE_byTempCopy: " ~ t);
@@ -12722,8 +12725,7 @@ pub fn solve(
             if (!o.type.is_rx_copy)
                 return false;
 
-            if (o.solved.type.is_ref)
-                o.solved.type = clear_refs(o.type);
+            flow.bck_consider_copy.add(locid);
 
             return true;
         }
@@ -13211,7 +13213,9 @@ pub fn solve(
 
                     for (shadow mut i = 0; i < _current_fn.preceding_ref_args.len; i++)
                     {
-                        ref pra = _current_fn.preceding_ref_args[i];
+                        // TODO FIX DISJOINT - remove the swaps here
+                        mut pra = _current_fn.preceding_ref_args[i].steal();
+                        defer _current_fn.preceding_ref_args[i].swap(pra);
 
                         //
                         if (pra.w < 0)
@@ -13261,10 +13265,6 @@ pub fn solve(
                                     //
                                     requireVal: []))
                         {
-                            // Appease bck
-                            shadow ref pra = _current_fn.preceding_ref_args[i];
-
-                            //
                             _here = pra.callsite_token;
 
                             fail("At call to " ~ pra.target ~ ", binding for "
@@ -14127,6 +14127,38 @@ pub fn solve(
         return true;
     }
 
+    fn PASS_BCK_applyCopies()
+    {
+        _current_fn.flow.bck_consider_copy.each: |locid|
+        {
+            ref o = GET_mut(nested(locid));
+
+            o.solved.type.is_ref || BUG("PASS_BCK_applyCopies: not a ref");
+
+            mut notPointless = false;
+            fn verifyCopyNotRedundant(lt: Lifetime)
+            {
+                lt.Lifetime_each: |shadow locid|
+                {
+                    if (!locid)
+                        continue;
+
+                    if (_current_fn.ever_written.has(locid))
+                        notPointless = true;
+                    else if (!isArg(:locid))
+                        verifyCopyNotRedundant(GET(nested(locid)).solved.lifetime);
+
+                    if (notPointless)
+                        break;
+                }
+            }
+
+            verifyCopyNotRedundant(o.solved.lifetime);
+
+            if (notPointless)
+                o.solved.type = clear_refs(o.type);
+        }
+    }
 
 
     //////////////////////////////////////////////////////////////////////////
@@ -14507,6 +14539,7 @@ pub fn solve(
             node.helpers.pass = "BorrowCheck";
 
             PASS_borrowCheck(node, BCK_bck);
+            PASS_BCK_applyCopies();
         }
 
         ////////////////////////////////////
