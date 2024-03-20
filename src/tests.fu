@@ -566,6 +566,29 @@ pub extern fn runTests()
         fn main() test(Hey(2)).v - 3;
     `);
 
+    ZERO(`
+        type A = int;   <fail ambig call A 3:14+1 2:14+1>
+        type A = int;   <pass/></fail>
+
+        fn main() {
+            mut a: A;
+            return a;
+        }
+    `);
+
+    TODO_confusing(currently: "BUG tryMatchCall tested the same overload twice 2:9+6", `
+        struct Int { i: int };
+
+        type A = Int;   <fail ambig X:X>
+        type A = Int;   <pass/></fail>
+
+        fn main() {
+            mut a: A;
+            return a.i;
+        }
+    `);
+
+
     // /Type Annotations
 
 

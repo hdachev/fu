@@ -8078,7 +8078,7 @@ pub fn solve(
 
     fn createRawTypedef(
         id: string, mut type: Type, flags: Flags, name?: string,
-        status?: SolverStatus)
+        status?: SolverStatus, token?: TokenIdx)
     {
         type        = into_Typename(type);
         let target  = Scope_create(_scope, "type", :type, :flags, name: name || id, :status);
@@ -8086,10 +8086,13 @@ pub fn solve(
         if (id)
             Scope_set(_scope, :id, :target, shadows: !!(flags & F_SHADOW));
 
+        if (token)
+            target.GET_mut.solved.token = token;
+
         return target;
     }
 
-    fn createTypedef(id: string, annot: Type, flags?: Flags)
+    fn createTypedef(id: string, annot: Type, flags?: Flags, token?: TokenIdx)
     {
         let s = tryLookupUserType(annot);
 
@@ -8103,7 +8106,7 @@ pub fn solve(
         }
 
         // Nope, create a new typedef.
-        let target = createRawTypedef(id, annot, :flags);
+        let target = createRawTypedef(id, annot, :flags, :token);
         if (s.target)
         {
             // TODO FIX this is a horrible fix that's gonna bite back.
@@ -8140,7 +8143,7 @@ pub fn solve(
             :         node.value;
         ////////////////////////////////////////////////////////////////
 
-        createTypedef(id, :annot, :node.flags);
+        createTypedef(id, :annot, :node.flags, :node.token);
 
         if (asArgument)
         {
