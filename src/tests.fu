@@ -112,6 +112,7 @@ pub extern fn runTests()
     let TODO_confusing  = fn TODO;
     let TODO_logic      = fn TODO;
     let TODO_definit    = fn TODO;
+    let TODO_specpat    = fn TODO;
 
     let LEGACY_Map      = fn TODO;
 
@@ -12617,6 +12618,28 @@ pub extern fn runTests()
         let OK = true;
         fn what(a: int) case (OK) a;
         fn main() 0.what;
+    `);
+
+    TODO_specpat(currently: "BUG doTrySpec resetMangle/preexisting 5:12+12", `
+        fn Concat(a: byte[..], b.PrettyPronto) a ~ b;
+        fn Concat(a.PrettyPronto, b: byte[..]) a ~ b;
+
+        fn PrettyPronto(n: <T>) n & 1 ? "odd" : "even";
+                                                            <fail bad call X:X><pass/>
+        fn Concat(a.PrettyPronto, b.PrettyPronto) a ~ b;    </fail>
+
+        fn main() {
+            mut str = Concat(0, 1);
+            return str.len - 2;
+        }
+    `);
+
+    TODO_specpat(currently: "BUG doTrySpec resetMangle/preexisting prelude :4+3", `
+        fn main() {                     <fail bad call X:X>
+            mut str = 0      ~ 1;       <pass/>
+            mut str = 0 ~ "" ~ 1;       </fail>
+            return str.len - 2;
+        }
     `);
 
     // /Template cases
