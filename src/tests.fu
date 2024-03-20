@@ -576,10 +576,10 @@ pub extern fn runTests()
         }
     `);
 
-    TODO_confusing(currently: "BUG tryMatchCall tested the same overload twice 2:9+6", `
+    ZERO(`
         struct Int { i: int };
 
-        type A = Int;   <fail ambig X:X>
+        type A = Int;   <fail ambig call A 5:14+1 4:14+1>
         type A = Int;   <pass/></fail>
 
         fn main() {
