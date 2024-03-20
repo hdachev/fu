@@ -8078,16 +8078,13 @@ pub fn solve(
 
     fn createRawTypedef(
         id: string, mut type: Type, flags: Flags, name?: string,
-        status?: SolverStatus, token?: TokenIdx)
+        status?: SolverStatus)
     {
         type        = into_Typename(type);
         let target  = Scope_create(_scope, "type", :type, :flags, name: name || id, :status);
 
         if (id)
             Scope_set(_scope, :id, :target, shadows: !!(flags & F_SHADOW));
-
-        if (token)
-            target.GET_mut.solved.token = token;
 
         return target;
     }
@@ -8096,17 +8093,8 @@ pub fn solve(
     {
         let s = tryLookupUserType(annot);
 
-        if (s.target && !(flags & F_PUB))
-        {
-            // TODO FIX we need to clone the typedef
-            //  if we have to republish it,
-            //   Scope_exports picks up F_PUBs with this modid only.
-            //
-            return Scope_set(_scope, :id, :s.target, shadows: !!(flags & F_SHADOW));
-        }
-
         // Nope, create a new typedef.
-        let target = createRawTypedef(id, annot, :flags, :token);
+        let target = createRawTypedef(id, annot, :flags);
         if (s.target)
         {
             // TODO FIX this is a horrible fix that's gonna bite back.
@@ -8120,6 +8108,10 @@ pub fn solve(
             GET_mut(target) = GET(s.target);
             EXT_mut(target) = EXT(s.target);
         }
+
+        // Re-stamp token of origin.
+        if (token)
+            target.EXT_mut.template.node.token = token;
     }
 
     fn solveTypedef(node: Node, specType!?: Type, asArgument!: bool): SolvedNode
