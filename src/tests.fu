@@ -579,7 +579,7 @@ pub extern fn runTests()
     ZERO(`
         struct Int { i: int };
 
-        type A = Int;   <fail ambig call A 5:14+1 4:14+1>
+        type A = Int;   <fail ambig call A 5:14+1 4:14+1 2:9+6>
         type A = Int;   <pass/></fail>
 
         fn main() {
