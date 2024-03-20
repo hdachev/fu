@@ -20068,6 +20068,68 @@ pub extern fn runTests()
         }
     `);
 
+    TODO_relaxer(currently: "BUG Trying to discard a copy 5:29+4", `
+        struct Type { vfacts: int };
+
+        fn TEST_FunctionNarrowing(host: Type)
+            TEST_Assignable(host, false);
+
+        fn TEST_Assignable(mut host: Type, inline reason) {
+            if (reason) host.vfacts = [];   <fail X:X><pass/>
+            return host;                    </fail>
+        }
+
+        fn main() {
+            let host = Type(1);
+            TEST_FunctionNarrowing(host);
+            return host.vfacts - 1;
+        }
+    `);
+
+    TODO_relaxer(currently: "BUG Trying to discard a copy 5:31+4", `
+        struct Type { vfacts: int };
+
+        fn TEST_FunctionNarrowing(host: Type, inline reason) {
+            shadow mut host = host;
+            if (reason) host.vfacts = [];
+            return host;
+        }
+
+        fn main() {
+            let host = Type(1);
+            TEST_FunctionNarrowing(host, false);
+            return host.vfacts - 1;
+        }
+    `);
+
+    ZERO(`
+        struct Type { canon: string; vfacts: int }
+
+        fn TEST_FunctionNarrowing(host: Type, guest: Type) {
+            TEST_Assignable(host, guest, false)
+        }
+
+        fn TEST_Assignable(mut host: Type, guest: Type, inline reason: bool) {
+            if (reason) host.vfacts = [];
+            isAssignable(:host, :guest)
+        }
+
+        fn isAssignable(host: Type, guest: Type) {
+            host == guest
+        }
+
+        fn main() TEST_FunctionNarrowing(Type(), Type()) ? 0 : 1;
+    `);
+
+    TODO_relaxer(currently: "BUG Nothing to copy, item not a ref 3:21+6", `
+        fn what(arg: int) {
+            lax mut prefix = arg & 1        <fail does nothing X:X><pass/>
+            return prefix;                  </fail>
+        }
+
+        fn main() 0.what;
+    `);
+
     // /Relaxer.
 
 
