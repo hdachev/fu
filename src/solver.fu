@@ -2749,12 +2749,6 @@ pub fn solve(
 
     //
 
-    fn token(target: Target)
-    {
-        return target.template.node.token
-            || target.solved.token;
-    }
-
     fn explainWhichFn(t: Target, conversions?: Target[][], backtrack!?: string, fmt = NoContext)
     {
         mut result = t.str;
@@ -2772,8 +2766,19 @@ pub fn solve(
         }
         else
         {
-            result ~= " at " ~ t.token.addr_and_snippet(:fmt, :backtrack);
+            let t0 = t.template.node.token;
+            let t1 = t.solved.token;
 
+            // The two snippets, re: typedefs, gives you the place where
+            //  the thing is originally defined + the source location of the typedef,
+            //   kinda looks nice, not sure if its terribly useful.
+            //
+            if (t0 || t1)
+                result ~= " at " ~ (t0 || t1).addr_and_snippet(:fmt, :backtrack);
+            if (t0 && t1 && t0 != t1)
+                result ~= "\n\t    ... via " ~ t1.addr_and_snippet(:fmt, :backtrack);
+
+            //
             for (mut i = 0; i < conversions.len; i++)
             {
                 let c = conversions[i];
@@ -8111,7 +8116,7 @@ pub fn solve(
 
         // Re-stamp token of origin.
         if (token)
-            target.EXT_mut.template.node.token = token;
+            target.GET_mut.solved.token = token;
     }
 
     fn solveTypedef(node: Node, specType!?: Type, asArgument!: bool): SolvedNode
