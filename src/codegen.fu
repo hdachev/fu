@@ -2159,10 +2159,10 @@ pub fn cpp_codegen(
             callarg.ifArrayRef_annotateAsSlice)
         {
             include("<fu/view.h>");
-
             return "fu::view<" ~ T ~ "> {{ " ~ src ~ " }}";
         }
 
+        include("<fu/vec.h>");
         return "fu::vec<" ~ T ~ "> {{ " ~ src ~ " }}";
     }
 
