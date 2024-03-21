@@ -15644,33 +15644,50 @@ static fu::view_mut<SolvedNode_owql> args_FDl5(SolvedNode_owql& callsite)
     return callsite.items;
 }
 
-                                #ifndef DEF___zLxWBc8I9Qa
-                                #define DEF___zLxWBc8I9Qa
-inline static void _zLxW(const int i, const Argument_HFkq& host_arg, const bool ooe_isLast, SolvedNode_owql& callsite, int& pra_first, const SolvedNode_owql& root, const BorrowCheckPass_i0wt pass, CurrentFn_JWil& _current_fn, SolverState_1ia3& ss, fu::view<Helpers_DyqV> _helpers, TokenIdx_5b85& _here, const Context_UXD9& ctx, const Module_qqBh& module, const Options_mg7V& options)
+                                #ifndef DEF___p1PPB9Ag6e3
+                                #define DEF___p1PPB9Ag6e3
+inline static void _p1PP(const int i, const Argument_HFkq& host_arg, const bool ooe_isLast, SolvedNode_owql& callsite, Lifetime_llCF& bck_writes, int& num_ref_args, int& pra_first, const SolvedNode_owql& root, const BorrowCheckPass_i0wt pass, CurrentFn_JWil& _current_fn, SolverState_1ia3& ss, fu::view<Helpers_DyqV> _helpers, TokenIdx_5b85& _here, const Context_UXD9& ctx, const Module_qqBh& module, const Options_mg7V& options)
 {
     if ((pra_first >= 0))
         _current_fn.events.preceding_ref_args.mutref(pra_first).w = i;
 
     SolvedNode_owql& arg = args_FDl5(callsite).mutref(i);
     bck_node_gDsn(arg, root, pass, _current_fn, ss, _helpers, _here, ctx, module, options);
-    if (!ooe_isLast && is_ref_9CJm(arg.type) && is_ref_9CJm(host_arg.type))
+    if (!(!(is_ref_9CJm(host_arg.type) && is_ref_9CJm(arg.type))))
     {
-        /*MOV*/ SolvedNode_owql pra {};
-        pra.kind = Kind_Idfg___preceding_ref_arg;
-        const int pra_index = _current_fn.events.preceding_ref_args.size();
-        pra.helpers.index = pra_index;
-        if (pra_first < 0)
-            pra_first = pra_index;
+        num_ref_args++;
+        if (host_arg.flags & Flags_Lzg8_F_WRITTEN_TO)
+        {
+            if (is_mutref_9CJm(host_arg.type, _here, ctx))
+            {
+                if (!(is_mutref_9CJm(arg.type, _here, ctx)))
+                    BUG_gDsn((qID_e44U(human_gDsn(host_arg.name, ss, _here, ctx, module, options)) + ": host_arg.written but !arg.is_mutref"_view), ss, _helpers, _here, ctx, module, options);
 
-        std::swap(pra, arg);
-        _current_fn.events.preceding_ref_args += PrecedingRefArg_ZHCm { TokenIdx_5b85(callsite.token), Target_VZrr(target_FDl5(callsite)), i, -1, static_cast<SolvedNode_owql&&>(pra) };
+            }
+            else
+                BUG_gDsn((qID_e44U(human_gDsn(host_arg.name, ss, _here, ctx, module, options)) + ": host_arg.written but !host_arg.is_mutref"_view), ss, _helpers, _here, ctx, module, options);
+
+            Lifetime_add_7Yz9(bck_writes, arg.type.lifetime, false, _here, ctx);
+        };
+        if (!ooe_isLast)
+        {
+            /*MOV*/ SolvedNode_owql pra {};
+            pra.kind = Kind_Idfg___preceding_ref_arg;
+            const int pra_index = _current_fn.events.preceding_ref_args.size();
+            pra.helpers.index = pra_index;
+            if (pra_first < 0)
+                pra_first = pra_index;
+
+            std::swap(pra, arg);
+            _current_fn.events.preceding_ref_args += PrecedingRefArg_ZHCm { TokenIdx_5b85(callsite.token), Target_VZrr(target_FDl5(callsite)), i, -1, static_cast<SolvedNode_owql&&>(pra) };
+        };
     };
 }
                                 #endif
 
-                                #ifndef DEF_argsForward_yPEOLIEKymb
-                                #define DEF_argsForward_yPEOLIEKymb
-inline void argsForward_yPEO(const bool RTL, fu::view<Argument_HFkq> host_args, const int seqIdx_start, SolvedNode_owql& callsite, int& pra_first, const SolvedNode_owql& root, const BorrowCheckPass_i0wt pass, CurrentFn_JWil& _current_fn, SolverState_1ia3& ss, fu::view<Helpers_DyqV> _helpers, TokenIdx_5b85& _here, const Context_UXD9& ctx, const Module_qqBh& module, const Options_mg7V& options)
+                                #ifndef DEF_argsForward_ahOt2NlXXgi
+                                #define DEF_argsForward_ahOt2NlXXgi
+inline void argsForward_ahOt(const bool RTL, fu::view<Argument_HFkq> host_args, const int seqIdx_start, SolvedNode_owql& callsite, Lifetime_llCF& bck_writes, int& num_ref_args, int& pra_first, const SolvedNode_owql& root, const BorrowCheckPass_i0wt pass, CurrentFn_JWil& _current_fn, SolverState_1ia3& ss, fu::view<Helpers_DyqV> _helpers, TokenIdx_5b85& _here, const Context_UXD9& ctx, const Module_qqBh& module, const Options_mg7V& options)
 {
     int seqIdx = 0;
     int lastPass = 1;
@@ -15684,7 +15701,7 @@ inline void argsForward_yPEO(const bool RTL, fu::view<Argument_HFkq> host_args, 
             else
             {
                 if ((seqIdx_start <= seqIdx))
-                    _zLxW(i, host_arg, (seqIdx == (host_args.size() - 1)), callsite, pra_first, root, pass, _current_fn, ss, _helpers, _here, ctx, module, options);
+                    _p1PP(i, host_arg, (seqIdx == (host_args.size() - 1)), callsite, bck_writes, num_ref_args, pra_first, root, pass, _current_fn, ss, _helpers, _here, ctx, module, options);
 
                 seqIdx++;
             };
@@ -16653,11 +16670,13 @@ static void bck_call_gDsn(SolvedNode_owql& callsite, const SolvedNode_owql& root
     {
         const bool RTL = isRTL_xQNS(GET_gDsn(target_FDl5(callsite), ss, _here, ctx, module));
         fu::vec<Argument_HFkq> host_args = fu::vec<Argument_HFkq>(EXT_gDsn(target_FDl5(callsite), ss, ctx, module).args);
+        Lifetime_llCF bck_writes {};
+        int num_ref_args {};
 
         {
             const int pra_len0 = _current_fn.events.preceding_ref_args.size();
             int pra_first = -1;
-            argsForward_yPEO(RTL, host_args, 0, callsite, pra_first, root, pass, _current_fn, ss, _helpers, _here, ctx, module, options);
+            argsForward_ahOt(RTL, host_args, 0, callsite, bck_writes, num_ref_args, pra_first, root, pass, _current_fn, ss, _helpers, _here, ctx, module, options);
             for (int i = 0; i < args_iUdw(callsite).size(); i++)
             {
                 SolvedNode_owql& arg = args_FDl5(callsite).mutref(i);
@@ -16673,93 +16692,67 @@ static void bck_call_gDsn(SolvedNode_owql& callsite, const SolvedNode_owql& root
             };
             _current_fn.events.preceding_ref_args.shrink(pra_len0);
         };
-        Lifetime_llCF bck_writes {};
-        int mutref_first = -1;
-        int mutref_last = -1;
-        int ref_first = -1;
-        int ref_last = -1;
-        fu::vec<Lifetime_llCF> bck_unwound {};
-        int arg_first = -1;
-        int arg_last = -1;
-        for (int i0 = 0; i0 < args_iUdw(callsite).size(); i0++)
+        if (!(!bck_writes))
         {
-            const Argument_HFkq& host_arg0 = host_args[i0];
-            const Type_KBIB& expect = host_arg0.type;
-            if (is_ref_9CJm(expect))
+            if (num_ref_args > 1)
             {
-                if (!bck_unwound)
+                int mutref_first = -1;
+                int mutref_last = -1;
+                int ref_first = -1;
+                int ref_last = -1;
+                fu::vec<Lifetime_llCF> bck_unwound {};
+                bck_unwound.resize(args_iUdw(callsite).size());
+                int arg_first = -1;
+                int arg_last = -1;
+                for (int i0 = 0; i0 < args_iUdw(callsite).size(); i0++)
                 {
-                    if ((mutref_first >= 0) || ((ref_first >= 0) && is_mutref_9CJm(expect, _here, ctx)))
+                    const Argument_HFkq& host_arg0 = host_args[i0];
+                    const Type_KBIB& expect = host_arg0.type;
+                    if (!(!is_ref_9CJm(expect)))
                     {
-                        bck_unwound.resize(args_iUdw(callsite).size());
-                        for (int i0_1 = ref_first; (i0_1 <= ref_last); i0_1++)
+                        const SolvedNode_owql* __partcopy_ref;
+                        SolvedNode_owql arg0 = (__partcopy_ref = &(args_iUdw(callsite)[i0]), SolvedNode_owql { (*__partcopy_ref).kind, {/*unused non-zst*/}, {/*unused non-zst*/}, {/*unused non-zst*/}, {/*unused non-zst*/}, fu::vec<SolvedNode_owql>((*__partcopy_ref).items), {/*unused non-zst*/}, Type_KBIB((*__partcopy_ref).type), Target_VZrr((*__partcopy_ref).target) });
+                        const Lifetime_llCF& shallow0 = arg0.type.lifetime;
+                        const Lifetime_llCF& unwound0 = (bck_unwound.mutref(i0) = Lifetime_unwind_gDsn(shallow0, true, ss, _helpers, _here, ctx, module, options));
+                        Lifetime_each_JmyG(unwound0, arg_first, arg_last, i0);
+                        if ((ref_first >= 0))
                         {
-                            const Lifetime_llCF& unwound = (bck_unwound.mutref(i0_1) = Lifetime_unwind_gDsn(args_iUdw(callsite)[i0_1].type.lifetime, true, ss, _helpers, _here, ctx, module, options));
-                            Lifetime_each_JmyG(unwound, arg_first, arg_last, i0_1);
-                        };
-                    };
-                };
-                if (bck_unwound)
-                {
-                    const SolvedNode_owql* __partcopy_ref;
-                    SolvedNode_owql arg0 = (__partcopy_ref = &(args_iUdw(callsite)[i0]), SolvedNode_owql { (*__partcopy_ref).kind, {/*unused non-zst*/}, {/*unused non-zst*/}, {/*unused non-zst*/}, {/*unused non-zst*/}, fu::vec<SolvedNode_owql>((*__partcopy_ref).items), {/*unused non-zst*/}, Type_KBIB((*__partcopy_ref).type), Target_VZrr((*__partcopy_ref).target) });
-                    const Lifetime_llCF& shallow0 = arg0.type.lifetime;
-                    const Lifetime_llCF& unwound0 = (bck_unwound.mutref(i0) = Lifetime_unwind_gDsn(shallow0, true, ss, _helpers, _here, ctx, module, options));
-                    Lifetime_each_JmyG(unwound0, arg_first, arg_last, i0);
-                    if (is_mutref_9CJm(expect, _here, ctx))
-                    {
-                        for (int i = ref_first; (i <= ref_last); i++)
-                        {
-                            if (is_ref_9CJm(host_args[i].type))
-                                validate_gDsn(i, callsite, host_args, bck_unwound, arg_first, arg_last, i0, host_arg0, arg0, shallow0, unwound0, pass, _current_fn, ss, _helpers, _here, ctx, module, options);
-
-                        };
-                    }
-                    else
-                    {
-                        for (int i = mutref_first; (i <= mutref_last); i++)
-                        {
-                            if (is_mutref_9CJm(host_args[i].type, _here, ctx))
-                                validate_gDsn(i, callsite, host_args, bck_unwound, arg_first, arg_last, i0, host_arg0, arg0, shallow0, unwound0, pass, _current_fn, ss, _helpers, _here, ctx, module, options);
-
-                        };
-                    };
-                };
-
-                {
-                    if (ref_first < 0)
-                        ref_first = i0;
-
-                    ref_last = i0;
-                };
-                if (is_mutref_9CJm(expect, _here, ctx))
-                {
-                    if (mutref_first < 0)
-                        mutref_first = i0;
-
-                    mutref_last = i0;
-                    if (host_arg0.flags & Flags_Lzg8_F_WRITTEN_TO)
-                    {
-                        const SolvedNode_owql& arg0 = args_iUdw(callsite)[i0];
-                        if (is_mutref_9CJm(host_arg0.type, _here, ctx))
-                        {
-                            if (is_mutref_9CJm(arg0.type, _here, ctx))
+                            if (is_mutref_9CJm(expect, _here, ctx))
                             {
-                                Lifetime_add_7Yz9(bck_writes, arg0.type.lifetime, false, _here, ctx);
+                                for (int i = ref_first; (i <= ref_last); i++)
+                                {
+                                    if (is_ref_9CJm(host_args[i].type))
+                                        validate_gDsn(i, callsite, host_args, bck_unwound, arg_first, arg_last, i0, host_arg0, arg0, shallow0, unwound0, pass, _current_fn, ss, _helpers, _here, ctx, module, options);
+
+                                };
                             }
-                            else
-                                BUG_gDsn((qID_e44U(human_gDsn(host_arg0.name, ss, _here, ctx, module, options)) + ": host_arg0.written but !arg.is_mutref"_view), ss, _helpers, _here, ctx, module, options);
+                            else if ((mutref_first >= 0))
+                            {
+                                for (int i = mutref_first; (i <= mutref_last); i++)
+                                {
+                                    if (is_mutref_9CJm(host_args[i].type, _here, ctx))
+                                        validate_gDsn(i, callsite, host_args, bck_unwound, arg_first, arg_last, i0, host_arg0, arg0, shallow0, unwound0, pass, _current_fn, ss, _helpers, _here, ctx, module, options);
 
-                        }
-                        else
-                            BUG_gDsn((qID_e44U(human_gDsn(host_arg0.name, ss, _here, ctx, module, options)) + ": host_arg0.written but !host_arg0.is_mutref"_view), ss, _helpers, _here, ctx, module, options);
+                                };
+                            };
+                        };
 
+                        {
+                            if (ref_first < 0)
+                                ref_first = i0;
+
+                            ref_last = i0;
+                        };
+                        if (is_mutref_9CJm(expect, _here, ctx))
+                        {
+                            if (mutref_first < 0)
+                                mutref_first = i0;
+
+                            mutref_last = i0;
+                        };
                     };
                 };
             };
-        };
-        if (bck_writes)
-        {
             _here = callsite.token;
             bck_trackWrites_gDsn(callsite, bck_writes, root, pass, _current_fn, ss, _helpers, _here, ctx, module, options);
         };
