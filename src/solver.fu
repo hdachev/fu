@@ -13416,6 +13416,8 @@ pub fn solve(
             let RTL         = target.isRTL;
             let host_args   = target.args;
 
+            mut has_writes  = false;
+
             ///////////////////////////////////////////////
             {
                 let pra_len0 = _current_fn.preceding_ref_args.len;
@@ -13424,6 +13426,9 @@ pub fn solve(
 
                 argsForward(:RTL, :host_args, |i, host_arg, ooe_isLast|
                 {
+                    if (host_arg.flags & F_WRITTEN_TO)
+                        has_writes = true;
+
                     // We keep a current .w position on
                     //  the first PrecedingRefArg we emit,
                     //   we pick those up when checking PRAs,
@@ -13478,6 +13483,9 @@ pub fn solve(
                 _current_fn.preceding_ref_args.shrink(pra_len0);
             }
             ///////////////////////////////////////////////
+
+            if (!has_writes)
+                return;
 
             // BORROWCK ////////////////
             mut bck_writes: Lifetime;
@@ -13730,12 +13738,10 @@ pub fn solve(
             // Track all writes at once, not important for reads,
             //  but tracking args one by one would prevent args-at-risk.
             //
-            if (bck_writes)
-            {
-                _here = callsite.token;
+            bck_writes || BUG("has_writes but !bck_writes");
 
-                bck_trackWrites(callsite, bck_writes);
-            }
+            _here = callsite.token;
+            bck_trackWrites(callsite, bck_writes);
         }
 
 
