@@ -4,7 +4,7 @@
 
 #ifndef fu_NO_fdefs
 
-fu::str upper_MpX0JQTu(/*MOV*/ fu::str&& str)
+fu::str upper_KPhi(/*MOV*/ fu::str&& str)
 {
     for (int i = 0; i < str.size(); i++)
     {
@@ -13,10 +13,10 @@ fu::str upper_MpX0JQTu(/*MOV*/ fu::str&& str)
             str.mutref(i) = char((int(fu::u8(c)) + (int(fu::u8('A')) - int(fu::u8('a')))));
 
     };
-    return static_cast<fu::str&&>(str);
+    return str.destructive_move();
 }
 
-fu::str lower_MpX0JQTu(/*MOV*/ fu::str&& str)
+fu::str lower_KPhi(/*MOV*/ fu::str&& str)
 {
     for (int i = 0; i < str.size(); i++)
     {
@@ -25,10 +25,10 @@ fu::str lower_MpX0JQTu(/*MOV*/ fu::str&& str)
             str.mutref(i) = char((int(fu::u8(c)) + (int(fu::u8('a')) - int(fu::u8('A')))));
 
     };
-    return static_cast<fu::str&&>(str);
+    return str.destructive_move();
 }
 
-char upper_jhTAKpQG(const char c)
+char upper_KWQn(const char c)
 {
     if ((c >= 'a') && (c <= 'z'))
         return char((int(fu::u8(c)) + (int(fu::u8('A')) - int(fu::u8('a')))));
@@ -37,7 +37,7 @@ char upper_jhTAKpQG(const char c)
 
 }
 
-char lower_jhTAKpQG(const char c)
+char lower_KWQn(const char c)
 {
     if ((c >= 'A') && (c <= 'Z'))
         return char((int(fu::u8(c)) + (int(fu::u8('a')) - int(fu::u8('A')))));

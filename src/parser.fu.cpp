@@ -8,228 +8,237 @@
 #include <fu/never.h>
 #include <fu/decstr.h>
 #include <fu/default.h>
+#include <fu/vec_range.h>
 #include <fu/vec/concat.h>
 #include <fu/init_priority.h>
 #include <fu/vec/concat_one.h>
 
-struct s_ParserOutput;
-struct s_Node;
-enum s_kind: fu::u8;
-typedef uint16_t s_DeclAsserts;
-typedef fu::u8 s_ParseSyntax;
-typedef unsigned s_Flags;
-struct s_TokenIdx;
-struct s_Import;
-struct s_Token;
-struct s_LineColChars;
-struct s_Options;
-struct s_Lint;
-typedef int s_SolverNotes;
-typedef fu::u8 s_CGDefects;
-typedef fu::u8 s_DevOptions;
-enum s_Fixity: fu::u8;
-struct s_BINOP;
-struct s_Map_ZvYmFQlP8R5;
-struct s_ArgsParse;
-fu::str qKW_3PsDzMvu(const fu::str&);
-fu::str qID_3PsDzMvu(const fu::str&);
-[[noreturn]] fu::never FAIL_fezemVq0(const fu::str&, const fu::str&, const s_LineColChars&, fu::view<char>);
-fu::str ext_8Oo0Zp26(const fu::str&);
-fu::str dirname_8Oo0Zp26(const fu::str&);
-fu::str join_8GxtVDhD(fu::view<char>, const fu::str&);
-fu::str qBAD_3PsDzMvu(const fu::str&);
-inline static s_Node parseExpression_djvSQ5j2(int, int, int, const fu::str&, const fu::str&, fu::view<s_Token>, int&, int&, int&, int&, int&, bool&, bool&, int&, fu::vec<fu::str>&, fu::vec<fu::str>&, fu::vec<s_Import>&, fu::vec<fu::str>&, const s_Options&);
-bool hasIdentifierChars_pZLkTusf(fu::view<char>);
-static fu::str getAutoName_kWtblw2z(const s_Node&, const fu::str&, const fu::str&, fu::view<s_Token>, int);
-static s_Node parseLet_smk4PW6Z(bool, bool, bool, int, int, const fu::str&, const fu::str&, fu::view<s_Token>, int&, int&, int&, int&, int&, bool&, bool&, int&, fu::vec<fu::str>&, fu::vec<fu::str>&, fu::vec<s_Import>&, fu::vec<fu::str>&, const s_Options&);
-static s_Node parseTypeAnnot_JxRmj4Ey(bool, int, const fu::str&, const fu::str&, fu::view<s_Token>, int&, int&, int&, int&, int&, bool&, bool&, int&, fu::vec<fu::str>&, fu::vec<fu::str>&, fu::vec<s_Import>&, fu::vec<fu::str>&, const s_Options&);
-fu::str cleanID_j6ljQymd(const fu::str&);
-static s_Node parseUnaryExpression_Wyb4ayQA(int, int, const fu::str&, const fu::str&, fu::view<s_Token>, int&, int&, int&, int&, int&, bool&, bool&, int&, fu::vec<fu::str>&, fu::vec<fu::str>&, fu::vec<s_Import>&, fu::vec<fu::str>&, const s_Options&);
-inline fu::vec<fu::str> uNion_bZpiHcbv(const fu::vec<fu::str>&, const fu::vec<fu::str>&);
-static fu::vec<s_Node> parseBlockLike_bSAgMgCf(s_kind, fu::view<char>, bool, bool, int, const fu::str&, const fu::str&, fu::view<s_Token>, int&, int&, int&, int&, int&, bool&, bool&, int&, fu::vec<fu::str>&, fu::vec<fu::str>&, fu::vec<s_Import>&, fu::vec<fu::str>&, const s_Options&);
-static s_Node parseStatement_GzQ8uksl(int, const fu::str&, const fu::str&, fu::view<s_Token>, int&, int&, int&, int&, int&, bool&, bool&, int&, fu::vec<fu::str>&, fu::vec<fu::str>&, fu::vec<s_Import>&, fu::vec<fu::str>&, const s_Options&);
-static s_Node parseFnDecl_x0HZ97dk(s_Flags, s_Fixity, s_DeclAsserts, bool, int, const fu::str&, const fu::str&, fu::view<s_Token>, int&, int&, int&, int&, int&, bool&, bool&, int&, fu::vec<fu::str>&, fu::vec<fu::str>&, fu::vec<s_Import>&, fu::vec<fu::str>&, const s_Options&);
+struct ParserOutput_oNgu;
+struct Node_Wr1X;
+enum Kind_Idfg: fu::u8;
+typedef uint16_t DeclAsserts_taUG;
+typedef fu::u8 ParseSyntax_Lay2;
+typedef unsigned Flags_Lzg8;
+struct TokenIdx_5b85;
+struct Import_jcWj;
+struct Token_RpL8;
+struct LineColChars_03II;
+struct Options_mg7V;
+struct Lint_Q9R1;
+typedef int SolverNotes_LSla;
+typedef fu::u8 CGDefects_2L18;
+typedef fu::u8 DevOptions_QEya;
+struct ParserState_tGnm;
+struct Precedence_vGSt;
+struct Set_XshD;
+enum Fixity_7dA5: fu::u8;
+struct BINOP_Aycy;
+struct Map_Oj0K;
+struct ArgsParse_yOm1;
+fu::str qKW_e44U(fu::view<char>);
+fu::str qID_e44U(fu::view<char>);
+[[noreturn]] fu::never FAIL_k53p(fu::vec_range<char>, fu::vec_range<char>, const LineColChars_03II&, fu::view<char>);
+fu::str qBAD_e44U(fu::view<char>);
+inline static Node_Wr1X parseExpression_ZIeg(const Precedence_vGSt&, int, int, fu::vec_range<char>, fu::vec_range<char>, fu::vec_range<Token_RpL8>, ParserState_tGnm&, const Options_mg7V&);
+bool hasIdentifierChars_V5Iu(fu::view<char>);
+static fu::str getAutoName_qFIn(const Node_Wr1X&, fu::vec_range<char>, fu::vec_range<char>, fu::view<Token_RpL8>, const ParserState_tGnm&);
+void appendVarint_V5Iu(fu::vec_range_mut<char>, unsigned);
+static Node_Wr1X parseLet_qFIn(bool, int, bool, bool, const Precedence_vGSt&, int, fu::vec_range<char>, fu::vec_range<char>, fu::vec_range<Token_RpL8>, ParserState_tGnm&, const Options_mg7V&);
+static Node_Wr1X parseTypeAnnot_qFIn(bool, int, fu::vec_range<char>, fu::vec_range<char>, fu::vec_range<Token_RpL8>, ParserState_tGnm&, const Options_mg7V&);
+fu::vec_range<char> cleanID_V5Iu(fu::vec_range<char>);
+static Node_Wr1X parseUnaryExpression_qFIn(int, int, fu::vec_range<char>, fu::vec_range<char>, fu::vec_range<Token_RpL8>, ParserState_tGnm&, const Options_mg7V&);
+inline Set_XshD uNion_fXik(const Set_XshD&, const Set_XshD&);
+static fu::vec<Node_Wr1X> parseBlockLike_qFIn(Kind_Idfg, fu::view<char>, bool, bool, int, fu::vec_range<char>, fu::vec_range<char>, fu::vec_range<Token_RpL8>, ParserState_tGnm&, const Options_mg7V&);
+static Node_Wr1X parseStatement_qFIn(int, fu::vec_range<char>, fu::vec_range<char>, fu::vec_range<Token_RpL8>, ParserState_tGnm&, const Options_mg7V&);
+static Node_Wr1X parseFnDecl_qFIn(Flags_Lzg8, Fixity_7dA5, DeclAsserts_taUG, bool, int, fu::vec_range<char>, fu::vec_range<char>, fu::vec_range<Token_RpL8>, ParserState_tGnm&, const Options_mg7V&);
 
-                                #ifndef DEF_s_kind
-                                #define DEF_s_kind
-enum s_kind: fu::u8
+                                #ifndef DEF_Kind_Idfg
+                                #define DEF_Kind_Idfg
+enum Kind_Idfg: fu::u8
 {
-    s_kind_sof = 1u,
-    s_kind_err = 2u,
-    s_kind_eof = 3u,
-    s_kind_id = 4u,
-    s_kind_op = 5u,
-    s_kind_int = 6u,
-    s_kind_real = 7u,
-    s_kind_char = 8u,
-    s_kind_str = 9u,
-    s_kind_bool = 10u,
-    s_kind_definit = 11u,
-    s_kind_empty = 12u,
-    s_kind_struct = 13u,
-    s_kind_union = 14u,
-    s_kind_primitive = 15u,
-    s_kind_flags = 16u,
-    s_kind_enum = 17u,
-    s_kind_fn = 18u,
-    s_kind_copy = 19u,
-    s_kind_move = 20u,
-    s_kind_arrlit = 21u,
-    s_kind_not = 22u,
-    s_kind_call = 23u,
-    s_kind_argid = 24u,
-    s_kind_root = 25u,
-    s_kind_block = 26u,
-    s_kind_if = 27u,
-    s_kind_or = 28u,
-    s_kind_and = 29u,
-    s_kind_loop = 30u,
-    s_kind_jump = 31u,
-    s_kind___far_jump = 32u,
-    s_kind_defer = 33u,
-    s_kind_try = 34u,
-    s_kind_let = 35u,
-    s_kind_letdef = 36u,
-    s_kind_typecast = 37u,
-    s_kind_typeassert = 38u,
-    s_kind_typeparam = 39u,
-    s_kind_unwrap = 40u,
-    s_kind_pragma = 41u,
-    s_kind_break = 42u,
-    s_kind_return = 43u,
-    s_kind_continue = 44u,
-    s_kind_import = 45u,
-    s_kind_addroffn = 46u,
-    s_kind_forfieldsof = 47u,
-    s_kind_members = 48u,
-    s_kind_fnbranch = 49u,
-    s_kind_pattern = 50u,
-    s_kind_typeunion = 51u,
-    s_kind_typetag = 52u,
-    s_kind___relaxed = 53u,
-    s_kind___convert = 54u,
-    s_kind___preceding_ref_arg = 55u,
-    s_kind___no_kind_yet = 56u,
-    s_kind___tombstone = 57u,
-    s_kind_type = 58u,
-    s_kind_var = 59u,
-    s_kind_field = 60u,
-    s_kind_enumv = 61u,
-    s_kind_template = 62u,
-    s_kind___native = 63u,
-    s_kind_inline = 64u,
+    Kind_Idfg_sof = 1u,
+    Kind_Idfg_err = 2u,
+    Kind_Idfg_eof = 3u,
+    Kind_Idfg_id = 4u,
+    Kind_Idfg_op = 5u,
+    Kind_Idfg_int = 6u,
+    Kind_Idfg_real = 7u,
+    Kind_Idfg_char = 8u,
+    Kind_Idfg_str = 9u,
+    Kind_Idfg_bool = 10u,
+    Kind_Idfg_definit = 11u,
+    Kind_Idfg_empty = 12u,
+    Kind_Idfg_struct = 13u,
+    Kind_Idfg_union = 14u,
+    Kind_Idfg_primitive = 15u,
+    Kind_Idfg_flags = 16u,
+    Kind_Idfg_enum = 17u,
+    Kind_Idfg_fn = 18u,
+    Kind_Idfg_copy = 19u,
+    Kind_Idfg_move = 20u,
+    Kind_Idfg_arrlit = 21u,
+    Kind_Idfg_not = 22u,
+    Kind_Idfg_call = 23u,
+    Kind_Idfg_call_indir = 24u,
+    Kind_Idfg_argid = 25u,
+    Kind_Idfg_root = 26u,
+    Kind_Idfg_block = 27u,
+    Kind_Idfg_if = 28u,
+    Kind_Idfg_or = 29u,
+    Kind_Idfg_and = 30u,
+    Kind_Idfg_loop = 31u,
+    Kind_Idfg_jump = 32u,
+    Kind_Idfg___far_jump = 33u,
+    Kind_Idfg_defer = 34u,
+    Kind_Idfg_try = 35u,
+    Kind_Idfg_let = 36u,
+    Kind_Idfg_letdef = 37u,
+    Kind_Idfg_typecast = 38u,
+    Kind_Idfg_typeassert = 39u,
+    Kind_Idfg_typeparam = 40u,
+    Kind_Idfg_unwrap = 41u,
+    Kind_Idfg_pragma = 42u,
+    Kind_Idfg_break = 43u,
+    Kind_Idfg_return = 44u,
+    Kind_Idfg_continue = 45u,
+    Kind_Idfg_import = 46u,
+    Kind_Idfg_addroffn = 47u,
+    Kind_Idfg_forfieldsof = 48u,
+    Kind_Idfg_members = 49u,
+    Kind_Idfg_fnbranch = 50u,
+    Kind_Idfg_pattern = 51u,
+    Kind_Idfg_typeunion = 52u,
+    Kind_Idfg_typetag = 53u,
+    Kind_Idfg___relaxed = 54u,
+    Kind_Idfg___convert = 55u,
+    Kind_Idfg___preceding_ref_arg = 56u,
+    Kind_Idfg___no_kind_yet = 57u,
+    Kind_Idfg___tombstone = 58u,
+    Kind_Idfg_type = 59u,
+    Kind_Idfg_var = 60u,
+    Kind_Idfg_field = 61u,
+    Kind_Idfg_enumv = 62u,
+    Kind_Idfg_template = 63u,
+    Kind_Idfg___native = 64u,
+    Kind_Idfg_inline = 65u,
 };
                                 #endif
 
-                                #ifndef DEF_s_DeclAsserts
-                                #define DEF_s_DeclAsserts
-inline constexpr s_DeclAsserts s_DeclAsserts_A_NOCOPY = s_DeclAsserts(1u);
-inline constexpr s_DeclAsserts s_DeclAsserts_A_NOVEC = s_DeclAsserts(2u);
-inline constexpr s_DeclAsserts s_DeclAsserts_A_TRIVIAL = s_DeclAsserts(4u);
-inline constexpr s_DeclAsserts s_DeclAsserts_A_PURE = s_DeclAsserts(8u);
-inline constexpr s_DeclAsserts s_DeclAsserts_A_PURE_CTX = s_DeclAsserts(16u);
-inline constexpr s_DeclAsserts s_DeclAsserts_A_PURE_FX = s_DeclAsserts(32u);
-inline constexpr s_DeclAsserts s_DeclAsserts_A_NOFLOW = s_DeclAsserts(64u);
-inline constexpr s_DeclAsserts s_DeclAsserts_A_NOTHROW = s_DeclAsserts(128u);
-inline constexpr s_DeclAsserts s_DeclAsserts_A_NOCRASH = s_DeclAsserts(256u);
-inline constexpr s_DeclAsserts s_DeclAsserts_A_NOIO = s_DeclAsserts(512u);
-inline constexpr s_DeclAsserts s_DeclAsserts_A_FAST = s_DeclAsserts(1024u);
-inline constexpr s_DeclAsserts s_DeclAsserts_A_NOINLINE = s_DeclAsserts(2048u);
+                                #ifndef DEF_DeclAsserts_taUG
+                                #define DEF_DeclAsserts_taUG
+inline constexpr DeclAsserts_taUG DeclAsserts_taUG_A_NOCOPY = DeclAsserts_taUG(1u);
+inline constexpr DeclAsserts_taUG DeclAsserts_taUG_A_NOVEC = DeclAsserts_taUG(2u);
+inline constexpr DeclAsserts_taUG DeclAsserts_taUG_A_TRIVIAL = DeclAsserts_taUG(4u);
+inline constexpr DeclAsserts_taUG DeclAsserts_taUG_A_NODISCARD = DeclAsserts_taUG(8u);
+inline constexpr DeclAsserts_taUG DeclAsserts_taUG_A_PURE = DeclAsserts_taUG(16u);
+inline constexpr DeclAsserts_taUG DeclAsserts_taUG_A_PURE_CTX = DeclAsserts_taUG(32u);
+inline constexpr DeclAsserts_taUG DeclAsserts_taUG_A_PURE_FX = DeclAsserts_taUG(64u);
+inline constexpr DeclAsserts_taUG DeclAsserts_taUG_A_NOFLOW = DeclAsserts_taUG(128u);
+inline constexpr DeclAsserts_taUG DeclAsserts_taUG_A_NOTHROW = DeclAsserts_taUG(256u);
+inline constexpr DeclAsserts_taUG DeclAsserts_taUG_A_NOCRASH = DeclAsserts_taUG(512u);
+inline constexpr DeclAsserts_taUG DeclAsserts_taUG_A_NOIO = DeclAsserts_taUG(1024u);
+inline constexpr DeclAsserts_taUG DeclAsserts_taUG_A_FAST = DeclAsserts_taUG(2048u);
+inline constexpr DeclAsserts_taUG DeclAsserts_taUG_A_NOINLINE = DeclAsserts_taUG(4096u);
 
-inline constexpr s_DeclAsserts MASK_s_DeclAsserts
-    = s_DeclAsserts_A_NOCOPY
-    | s_DeclAsserts_A_NOVEC
-    | s_DeclAsserts_A_TRIVIAL
-    | s_DeclAsserts_A_PURE
-    | s_DeclAsserts_A_PURE_CTX
-    | s_DeclAsserts_A_PURE_FX
-    | s_DeclAsserts_A_NOFLOW
-    | s_DeclAsserts_A_NOTHROW
-    | s_DeclAsserts_A_NOCRASH
-    | s_DeclAsserts_A_NOIO
-    | s_DeclAsserts_A_FAST
-    | s_DeclAsserts_A_NOINLINE;
+inline constexpr DeclAsserts_taUG MASK_DeclAsserts_taUG
+    = DeclAsserts_taUG_A_NOCOPY
+    | DeclAsserts_taUG_A_NOVEC
+    | DeclAsserts_taUG_A_TRIVIAL
+    | DeclAsserts_taUG_A_NODISCARD
+    | DeclAsserts_taUG_A_PURE
+    | DeclAsserts_taUG_A_PURE_CTX
+    | DeclAsserts_taUG_A_PURE_FX
+    | DeclAsserts_taUG_A_NOFLOW
+    | DeclAsserts_taUG_A_NOTHROW
+    | DeclAsserts_taUG_A_NOCRASH
+    | DeclAsserts_taUG_A_NOIO
+    | DeclAsserts_taUG_A_FAST
+    | DeclAsserts_taUG_A_NOINLINE;
                                 #endif
 
-                                #ifndef DEF_s_ParseSyntax
-                                #define DEF_s_ParseSyntax
-inline constexpr s_ParseSyntax s_ParseSyntax_PS_PARENS = s_ParseSyntax(1u);
-inline constexpr s_ParseSyntax s_ParseSyntax_PS_DISCARD_IF_BLOCK_TAIL = s_ParseSyntax(2u);
-inline constexpr s_ParseSyntax s_ParseSyntax_PS_ALWAYS_DISCARD = s_ParseSyntax(4u);
-inline constexpr s_ParseSyntax s_ParseSyntax_PS_NOT_AN_EXPRESSION = s_ParseSyntax(8u);
+                                #ifndef DEF_ParseSyntax_Lay2
+                                #define DEF_ParseSyntax_Lay2
+inline constexpr ParseSyntax_Lay2 ParseSyntax_Lay2_PS_PARENS = ParseSyntax_Lay2(1u);
+inline constexpr ParseSyntax_Lay2 ParseSyntax_Lay2_PS_DISCARD_IF_BLOCK_TAIL = ParseSyntax_Lay2(2u);
+inline constexpr ParseSyntax_Lay2 ParseSyntax_Lay2_PS_ALWAYS_DISCARD = ParseSyntax_Lay2(4u);
+inline constexpr ParseSyntax_Lay2 ParseSyntax_Lay2_PS_NOT_AN_EXPRESSION = ParseSyntax_Lay2(8u);
 
-inline constexpr s_ParseSyntax MASK_s_ParseSyntax
-    = s_ParseSyntax_PS_PARENS
-    | s_ParseSyntax_PS_DISCARD_IF_BLOCK_TAIL
-    | s_ParseSyntax_PS_ALWAYS_DISCARD
-    | s_ParseSyntax_PS_NOT_AN_EXPRESSION;
+inline constexpr ParseSyntax_Lay2 MASK_ParseSyntax_Lay2
+    = ParseSyntax_Lay2_PS_PARENS
+    | ParseSyntax_Lay2_PS_DISCARD_IF_BLOCK_TAIL
+    | ParseSyntax_Lay2_PS_ALWAYS_DISCARD
+    | ParseSyntax_Lay2_PS_NOT_AN_EXPRESSION;
                                 #endif
 
-                                #ifndef DEF_s_Flags
-                                #define DEF_s_Flags
-inline constexpr s_Flags s_Flags_F_CALL_HAS_DOT = 1u;
-inline constexpr s_Flags s_Flags_F_CALL_HAS_ARGPARENS = 2u;
-inline constexpr s_Flags s_Flags_F_CALL_HAS_NAMED_ARGS = 4u;
-inline constexpr s_Flags s_Flags_F_OPERATOR = 8u;
-inline constexpr s_Flags s_Flags_F_TYPENAME = 16u;
-inline constexpr s_Flags s_Flags_F_COMPOUND_ID = 32u;
-inline constexpr s_Flags s_Flags_F_ARGID_IS_OPTIONAL = 64u;
-inline constexpr s_Flags s_Flags_F_LAX = 128u;
-inline constexpr s_Flags s_Flags_F_SHADOW = 256u;
-inline constexpr s_Flags s_Flags_F_MUSTNAME = 512u;
-inline constexpr s_Flags s_Flags_F_WRITTEN_TO = 1024u;
-inline constexpr s_Flags s_Flags_F_MUT = 2048u;
-inline constexpr s_Flags s_Flags_F_CONST = 4096u;
-inline constexpr s_Flags s_Flags_F_VAL = 8192u;
-inline constexpr s_Flags s_Flags_F_REF = 16384u;
-inline constexpr s_Flags s_Flags_F_IMPLICIT = 32768u;
-inline constexpr s_Flags s_Flags_F_USING = 65536u;
-inline constexpr s_Flags s_Flags_F_CONVERSION = 131072u;
-inline constexpr s_Flags s_Flags_F_PUB = 262144u;
-inline constexpr s_Flags s_Flags_F_EXTERN = 524288u;
-inline constexpr s_Flags s_Flags_F_HOTSWAP = 1048576u;
-inline constexpr s_Flags s_Flags_F_PREDICATE = 2097152u;
-inline constexpr s_Flags s_Flags_F_REST_ARG = 4194304u;
-inline constexpr s_Flags s_Flags_F_INJECTED = 8388608u;
-inline constexpr s_Flags s_Flags_F_TEMPLATE = 16777216u;
-inline constexpr s_Flags s_Flags_F_INLINE = 33554432u;
-inline constexpr s_Flags s_Flags_F_LAMBDA = 67108864u;
-inline constexpr s_Flags s_Flags_F_COW_INSIDE = 134217728u;
+                                #ifndef DEF_Flags_Lzg8
+                                #define DEF_Flags_Lzg8
+inline constexpr Flags_Lzg8 Flags_Lzg8_F_CALL_HAS_DOT = 1u;
+inline constexpr Flags_Lzg8 Flags_Lzg8_F_CALL_HAS_ARGPARENS = 2u;
+inline constexpr Flags_Lzg8 Flags_Lzg8_F_CALL_HAS_NAMED_ARGS = 4u;
+inline constexpr Flags_Lzg8 Flags_Lzg8_F_OPERATOR = 8u;
+inline constexpr Flags_Lzg8 Flags_Lzg8_F_TYPENAME = 16u;
+inline constexpr Flags_Lzg8 Flags_Lzg8_F_COMPOUND_ID = 32u;
+inline constexpr Flags_Lzg8 Flags_Lzg8_F_ARGID_IS_OPTIONAL = 64u;
+inline constexpr Flags_Lzg8 Flags_Lzg8_F_LAX = 128u;
+inline constexpr Flags_Lzg8 Flags_Lzg8_F_SHADOW = 256u;
+inline constexpr Flags_Lzg8 Flags_Lzg8_F_MUSTNAME = 512u;
+inline constexpr Flags_Lzg8 Flags_Lzg8_F_WRITTEN_TO = 1024u;
+inline constexpr Flags_Lzg8 Flags_Lzg8_F_MUT = 2048u;
+inline constexpr Flags_Lzg8 Flags_Lzg8_F_CONST = 4096u;
+inline constexpr Flags_Lzg8 Flags_Lzg8_F_VAL = 8192u;
+inline constexpr Flags_Lzg8 Flags_Lzg8_F_REF = 16384u;
+inline constexpr Flags_Lzg8 Flags_Lzg8_F_IMPLICIT = 32768u;
+inline constexpr Flags_Lzg8 Flags_Lzg8_F_USING = 65536u;
+inline constexpr Flags_Lzg8 Flags_Lzg8_F_CONVERSION = 131072u;
+inline constexpr Flags_Lzg8 Flags_Lzg8_F_TEST_painted = 262144u;
+inline constexpr Flags_Lzg8 Flags_Lzg8_F_PUB = 524288u;
+inline constexpr Flags_Lzg8 Flags_Lzg8_F_EXTERN = 1048576u;
+inline constexpr Flags_Lzg8 Flags_Lzg8_F_HOTSWAP = 2097152u;
+inline constexpr Flags_Lzg8 Flags_Lzg8_F_PREDICATE = 4194304u;
+inline constexpr Flags_Lzg8 Flags_Lzg8_F_LT_RETURNED = 8388608u;
+inline constexpr Flags_Lzg8 Flags_Lzg8_F_REST_ARG = 16777216u;
+inline constexpr Flags_Lzg8 Flags_Lzg8_F_INJECTED = 33554432u;
+inline constexpr Flags_Lzg8 Flags_Lzg8_F_TEMPLATE = 67108864u;
+inline constexpr Flags_Lzg8 Flags_Lzg8_F_INLINE = 134217728u;
+inline constexpr Flags_Lzg8 Flags_Lzg8_F_LAMBDA = 268435456u;
+inline constexpr Flags_Lzg8 Flags_Lzg8_F_COW_INSIDE = 536870912u;
 
-inline constexpr s_Flags MASK_s_Flags
-    = s_Flags_F_CALL_HAS_DOT
-    | s_Flags_F_CALL_HAS_ARGPARENS
-    | s_Flags_F_CALL_HAS_NAMED_ARGS
-    | s_Flags_F_OPERATOR
-    | s_Flags_F_TYPENAME
-    | s_Flags_F_COMPOUND_ID
-    | s_Flags_F_ARGID_IS_OPTIONAL
-    | s_Flags_F_LAX
-    | s_Flags_F_SHADOW
-    | s_Flags_F_MUSTNAME
-    | s_Flags_F_WRITTEN_TO
-    | s_Flags_F_MUT
-    | s_Flags_F_CONST
-    | s_Flags_F_VAL
-    | s_Flags_F_REF
-    | s_Flags_F_IMPLICIT
-    | s_Flags_F_USING
-    | s_Flags_F_CONVERSION
-    | s_Flags_F_PUB
-    | s_Flags_F_EXTERN
-    | s_Flags_F_HOTSWAP
-    | s_Flags_F_PREDICATE
-    | s_Flags_F_REST_ARG
-    | s_Flags_F_INJECTED
-    | s_Flags_F_TEMPLATE
-    | s_Flags_F_INLINE
-    | s_Flags_F_LAMBDA
-    | s_Flags_F_COW_INSIDE;
+inline constexpr Flags_Lzg8 MASK_Flags_Lzg8
+    = Flags_Lzg8_F_CALL_HAS_DOT
+    | Flags_Lzg8_F_CALL_HAS_ARGPARENS
+    | Flags_Lzg8_F_CALL_HAS_NAMED_ARGS
+    | Flags_Lzg8_F_OPERATOR
+    | Flags_Lzg8_F_TYPENAME
+    | Flags_Lzg8_F_COMPOUND_ID
+    | Flags_Lzg8_F_ARGID_IS_OPTIONAL
+    | Flags_Lzg8_F_LAX
+    | Flags_Lzg8_F_SHADOW
+    | Flags_Lzg8_F_MUSTNAME
+    | Flags_Lzg8_F_WRITTEN_TO
+    | Flags_Lzg8_F_MUT
+    | Flags_Lzg8_F_CONST
+    | Flags_Lzg8_F_VAL
+    | Flags_Lzg8_F_REF
+    | Flags_Lzg8_F_IMPLICIT
+    | Flags_Lzg8_F_USING
+    | Flags_Lzg8_F_CONVERSION
+    | Flags_Lzg8_F_TEST_painted
+    | Flags_Lzg8_F_PUB
+    | Flags_Lzg8_F_EXTERN
+    | Flags_Lzg8_F_HOTSWAP
+    | Flags_Lzg8_F_PREDICATE
+    | Flags_Lzg8_F_LT_RETURNED
+    | Flags_Lzg8_F_REST_ARG
+    | Flags_Lzg8_F_INJECTED
+    | Flags_Lzg8_F_TEMPLATE
+    | Flags_Lzg8_F_INLINE
+    | Flags_Lzg8_F_LAMBDA
+    | Flags_Lzg8_F_COW_INSIDE;
                                 #endif
 
-                                #ifndef DEF_s_TokenIdx
-                                #define DEF_s_TokenIdx
-struct s_TokenIdx
+                                #ifndef DEF_TokenIdx_5b85kf1B4eb
+                                #define DEF_TokenIdx_5b85kf1B4eb
+struct TokenIdx_5b85
 {
     int modid;
     int tokidx;
@@ -243,37 +252,39 @@ struct s_TokenIdx
 };
                                 #endif
 
-                                #ifndef DEF_s_Import
-                                #define DEF_s_Import
-struct s_Import
+                                #ifndef DEF_Import_jcWj5jfyCbh
+                                #define DEF_Import_jcWj5jfyCbh
+struct Import_jcWj
 {
-    s_TokenIdx token;
-    fu::str value;
+    TokenIdx_5b85 token;
+    fu::str pattern;
+    int modid;
     explicit operator bool() const noexcept
     {
         return false
             || token
-            || value
+            || pattern
+            || modid
         ;
     }
 };
                                 #endif
 
-                                #ifndef DEF_s_Node
-                                #define DEF_s_Node
-struct s_Node
+                                #ifndef DEF_Node_Wr1XN7BRTn1
+                                #define DEF_Node_Wr1XN7BRTn1
+struct Node_Wr1X
 {
-    s_kind kind;
-    s_DeclAsserts asserts;
-    s_ParseSyntax syntax;
-    s_Flags flags;
+    Kind_Idfg kind;
+    DeclAsserts_taUG asserts;
+    ParseSyntax_Lay2 syntax;
+    Flags_Lzg8 flags;
     fu::str value;
-    fu::vec<s_Node> items;
-    s_TokenIdx token;
-    s_Node(const s_Node&) = default;
-    s_Node(s_Node&&) = default;
-    s_Node& operator=(s_Node&&) = default;
-    s_Node& operator=(const s_Node& selfrec) { return *this = s_Node(selfrec); }
+    fu::vec<Node_Wr1X> items;
+    TokenIdx_5b85 token;
+    Node_Wr1X(const Node_Wr1X&) = default;
+    Node_Wr1X(Node_Wr1X&&) = default;
+    Node_Wr1X& operator=(Node_Wr1X&&) = default;
+    Node_Wr1X& operator=(const Node_Wr1X& selfrec) { return *this = Node_Wr1X(selfrec); }
     explicit operator bool() const noexcept
     {
         return false
@@ -283,12 +294,12 @@ struct s_Node
 };
                                 #endif
 
-                                #ifndef DEF_s_ParserOutput
-                                #define DEF_s_ParserOutput
-struct s_ParserOutput
+                                #ifndef DEF_ParserOutput_oNgu6PpUXWb
+                                #define DEF_ParserOutput_oNgu6PpUXWb
+struct ParserOutput_oNgu
 {
-    s_Node root;
-    fu::vec<s_Import> imports;
+    Node_Wr1X root;
+    fu::vec<Import_jcWj> imports;
     fu::vec<fu::str> warnings;
     explicit operator bool() const noexcept
     {
@@ -301,9 +312,9 @@ struct s_ParserOutput
 };
                                 #endif
 
-                                #ifndef DEF_s_LineColChars
-                                #define DEF_s_LineColChars
-struct s_LineColChars
+                                #ifndef DEF_LineColChars_03IIie77ad3
+                                #define DEF_LineColChars_03IIie77ad3
+struct LineColChars_03II
 {
     int line;
     int col;
@@ -319,12 +330,12 @@ struct s_LineColChars
 };
                                 #endif
 
-                                #ifndef DEF_s_Token
-                                #define DEF_s_Token
-struct s_Token
+                                #ifndef DEF_Token_RpL8tz7XMX0
+                                #define DEF_Token_RpL8tz7XMX0
+struct Token_RpL8
 {
-    s_kind kind;
-    s_LineColChars lcc;
+    Kind_Idfg kind;
+    LineColChars_03II lcc;
     fu::str value;
     explicit operator bool() const noexcept
     {
@@ -335,111 +346,115 @@ struct s_Token
 };
                                 #endif
 
-                                #ifndef DEF_s_SolverNotes
-                                #define DEF_s_SolverNotes
-inline constexpr s_SolverNotes s_SolverNotes_N_FnRecursion = 1;
-inline constexpr s_SolverNotes s_SolverNotes_N_FnResolve = 2;
-inline constexpr s_SolverNotes s_SolverNotes_N_FnReopen = 4;
-inline constexpr s_SolverNotes s_SolverNotes_N_TypeRecursion = 8;
-inline constexpr s_SolverNotes s_SolverNotes_N_TypeResolve = 16;
-inline constexpr s_SolverNotes s_SolverNotes_N_TypeReopen = 32;
-inline constexpr s_SolverNotes s_SolverNotes_N_DeadCode = 64;
-inline constexpr s_SolverNotes s_SolverNotes_N_DeadCall = 128;
-inline constexpr s_SolverNotes s_SolverNotes_N_DeadLet = 256;
-inline constexpr s_SolverNotes s_SolverNotes_N_DeadArrlit = 512;
-inline constexpr s_SolverNotes s_SolverNotes_N_DeadLoopInit = 1024;
-inline constexpr s_SolverNotes s_SolverNotes_N_DeadConv = 2048;
-inline constexpr s_SolverNotes s_SolverNotes_N_NonTrivAutoCopy = 4096;
-inline constexpr s_SolverNotes s_SolverNotes_N_RelaxRespec = 8192;
-inline constexpr s_SolverNotes s_SolverNotes_N_UnusedImplicit = 16384;
-inline constexpr s_SolverNotes s_SolverNotes_N_UnusedCall = 32768;
-inline constexpr s_SolverNotes s_SolverNotes_N_UnusedDefer = 65536;
-inline constexpr s_SolverNotes s_SolverNotes_N_UnusedTry = 131072;
-inline constexpr s_SolverNotes s_SolverNotes_N_UnusedAndOr = 262144;
-inline constexpr s_SolverNotes s_SolverNotes_N_UnusedIfElse = 524288;
-inline constexpr s_SolverNotes s_SolverNotes_N_UnusedArrlit = 1048576;
-inline constexpr s_SolverNotes s_SolverNotes_N_UnusedLet = 2097152;
-inline constexpr s_SolverNotes s_SolverNotes_N_BckMustSeq = 4194304;
-inline constexpr s_SolverNotes s_SolverNotes_N_AARMustSeq = 8388608;
-inline constexpr s_SolverNotes s_SolverNotes_N_AARSoftRisk = 16777216;
-inline constexpr s_SolverNotes s_SolverNotes_N_MoveMustSeq = 33554432;
-inline constexpr s_SolverNotes s_SolverNotes_N_SD_HasStaticInit = 67108864;
-inline constexpr s_SolverNotes s_SolverNotes_N_SD_ExternPrivates = 134217728;
-inline constexpr s_SolverNotes s_SolverNotes_N_COWRestrict = 268435456;
+                                #ifndef DEF_SolverNotes_LSla
+                                #define DEF_SolverNotes_LSla
+inline constexpr SolverNotes_LSla SolverNotes_LSla_N_FnRecursion = 1;
+inline constexpr SolverNotes_LSla SolverNotes_LSla_N_FnResolve = 2;
+inline constexpr SolverNotes_LSla SolverNotes_LSla_N_FnReopen = 4;
+inline constexpr SolverNotes_LSla SolverNotes_LSla_N_TypeRecursion = 8;
+inline constexpr SolverNotes_LSla SolverNotes_LSla_N_TypeResolve = 16;
+inline constexpr SolverNotes_LSla SolverNotes_LSla_N_TypeReopen = 32;
+inline constexpr SolverNotes_LSla SolverNotes_LSla_N_DeadCode = 64;
+inline constexpr SolverNotes_LSla SolverNotes_LSla_N_DeadCall = 128;
+inline constexpr SolverNotes_LSla SolverNotes_LSla_N_DeadLet = 256;
+inline constexpr SolverNotes_LSla SolverNotes_LSla_N_DeadArrlit = 512;
+inline constexpr SolverNotes_LSla SolverNotes_LSla_N_DeadLoopInit = 1024;
+inline constexpr SolverNotes_LSla SolverNotes_LSla_N_DeadConv = 2048;
+inline constexpr SolverNotes_LSla SolverNotes_LSla_N_NonTrivAutoCopy = 4096;
+inline constexpr SolverNotes_LSla SolverNotes_LSla_N_RelaxRespec = 8192;
+inline constexpr SolverNotes_LSla SolverNotes_LSla_N_UnusedImplicit = 16384;
+inline constexpr SolverNotes_LSla SolverNotes_LSla_N_UnusedCall = 32768;
+inline constexpr SolverNotes_LSla SolverNotes_LSla_N_UnusedDefer = 65536;
+inline constexpr SolverNotes_LSla SolverNotes_LSla_N_UnusedTry = 131072;
+inline constexpr SolverNotes_LSla SolverNotes_LSla_N_UnusedAndOr = 262144;
+inline constexpr SolverNotes_LSla SolverNotes_LSla_N_UnusedIfElse = 524288;
+inline constexpr SolverNotes_LSla SolverNotes_LSla_N_UnusedArrlit = 1048576;
+inline constexpr SolverNotes_LSla SolverNotes_LSla_N_UnusedLet = 2097152;
+inline constexpr SolverNotes_LSla SolverNotes_LSla_N_BckMustSeq = 4194304;
+inline constexpr SolverNotes_LSla SolverNotes_LSla_N_AARMustSeq = 8388608;
+inline constexpr SolverNotes_LSla SolverNotes_LSla_N_AARSoftRisk = 16777216;
+inline constexpr SolverNotes_LSla SolverNotes_LSla_N_MoveMustSeq = 33554432;
+inline constexpr SolverNotes_LSla SolverNotes_LSla_N_McomUnwrapsLetdef = 67108864;
+inline constexpr SolverNotes_LSla SolverNotes_LSla_N_SD_HasStaticInit = 134217728;
+inline constexpr SolverNotes_LSla SolverNotes_LSla_N_SD_ExternPrivates = 268435456;
+inline constexpr SolverNotes_LSla SolverNotes_LSla_N_COWRestrict = 536870912;
 
-inline constexpr s_SolverNotes MASK_s_SolverNotes
-    = s_SolverNotes_N_FnRecursion
-    | s_SolverNotes_N_FnResolve
-    | s_SolverNotes_N_FnReopen
-    | s_SolverNotes_N_TypeRecursion
-    | s_SolverNotes_N_TypeResolve
-    | s_SolverNotes_N_TypeReopen
-    | s_SolverNotes_N_DeadCode
-    | s_SolverNotes_N_DeadCall
-    | s_SolverNotes_N_DeadLet
-    | s_SolverNotes_N_DeadArrlit
-    | s_SolverNotes_N_DeadLoopInit
-    | s_SolverNotes_N_DeadConv
-    | s_SolverNotes_N_NonTrivAutoCopy
-    | s_SolverNotes_N_RelaxRespec
-    | s_SolverNotes_N_UnusedImplicit
-    | s_SolverNotes_N_UnusedCall
-    | s_SolverNotes_N_UnusedDefer
-    | s_SolverNotes_N_UnusedTry
-    | s_SolverNotes_N_UnusedAndOr
-    | s_SolverNotes_N_UnusedIfElse
-    | s_SolverNotes_N_UnusedArrlit
-    | s_SolverNotes_N_UnusedLet
-    | s_SolverNotes_N_BckMustSeq
-    | s_SolverNotes_N_AARMustSeq
-    | s_SolverNotes_N_AARSoftRisk
-    | s_SolverNotes_N_MoveMustSeq
-    | s_SolverNotes_N_SD_HasStaticInit
-    | s_SolverNotes_N_SD_ExternPrivates
-    | s_SolverNotes_N_COWRestrict;
+inline constexpr SolverNotes_LSla MASK_SolverNotes_LSla
+    = SolverNotes_LSla_N_FnRecursion
+    | SolverNotes_LSla_N_FnResolve
+    | SolverNotes_LSla_N_FnReopen
+    | SolverNotes_LSla_N_TypeRecursion
+    | SolverNotes_LSla_N_TypeResolve
+    | SolverNotes_LSla_N_TypeReopen
+    | SolverNotes_LSla_N_DeadCode
+    | SolverNotes_LSla_N_DeadCall
+    | SolverNotes_LSla_N_DeadLet
+    | SolverNotes_LSla_N_DeadArrlit
+    | SolverNotes_LSla_N_DeadLoopInit
+    | SolverNotes_LSla_N_DeadConv
+    | SolverNotes_LSla_N_NonTrivAutoCopy
+    | SolverNotes_LSla_N_RelaxRespec
+    | SolverNotes_LSla_N_UnusedImplicit
+    | SolverNotes_LSla_N_UnusedCall
+    | SolverNotes_LSla_N_UnusedDefer
+    | SolverNotes_LSla_N_UnusedTry
+    | SolverNotes_LSla_N_UnusedAndOr
+    | SolverNotes_LSla_N_UnusedIfElse
+    | SolverNotes_LSla_N_UnusedArrlit
+    | SolverNotes_LSla_N_UnusedLet
+    | SolverNotes_LSla_N_BckMustSeq
+    | SolverNotes_LSla_N_AARMustSeq
+    | SolverNotes_LSla_N_AARSoftRisk
+    | SolverNotes_LSla_N_MoveMustSeq
+    | SolverNotes_LSla_N_McomUnwrapsLetdef
+    | SolverNotes_LSla_N_SD_HasStaticInit
+    | SolverNotes_LSla_N_SD_ExternPrivates
+    | SolverNotes_LSla_N_COWRestrict;
                                 #endif
 
-                                #ifndef DEF_s_CGDefects
-                                #define DEF_s_CGDefects
-inline constexpr s_CGDefects s_CGDefects_GNUStmtExpr = s_CGDefects(1u);
-inline constexpr s_CGDefects s_CGDefects_Goto = s_CGDefects(2u);
-inline constexpr s_CGDefects s_CGDefects_PointlessMustSeq = s_CGDefects(4u);
-inline constexpr s_CGDefects s_CGDefects_LocalConstBool = s_CGDefects(8u);
-inline constexpr s_CGDefects s_CGDefects_ConstCast = s_CGDefects(16u);
-inline constexpr s_CGDefects s_CGDefects_PointlessLocal = s_CGDefects(32u);
-inline constexpr s_CGDefects s_CGDefects_IrrelevantLiteral = s_CGDefects(64u);
-inline constexpr s_CGDefects s_CGDefects_DuplicateFunctions = s_CGDefects(128u);
+                                #ifndef DEF_CGDefects_2L18
+                                #define DEF_CGDefects_2L18
+inline constexpr CGDefects_2L18 CGDefects_2L18_GNUStmtExpr = CGDefects_2L18(1u);
+inline constexpr CGDefects_2L18 CGDefects_2L18_Goto = CGDefects_2L18(2u);
+inline constexpr CGDefects_2L18 CGDefects_2L18_PointlessMustSeq = CGDefects_2L18(4u);
+inline constexpr CGDefects_2L18 CGDefects_2L18_LocalConstBool = CGDefects_2L18(8u);
+inline constexpr CGDefects_2L18 CGDefects_2L18_ConstCast = CGDefects_2L18(16u);
+inline constexpr CGDefects_2L18 CGDefects_2L18_PointlessLocal = CGDefects_2L18(32u);
+inline constexpr CGDefects_2L18 CGDefects_2L18_IrrelevantLiteral = CGDefects_2L18(64u);
+inline constexpr CGDefects_2L18 CGDefects_2L18_DuplicateFunctions = CGDefects_2L18(128u);
 
-inline constexpr s_CGDefects MASK_s_CGDefects
-    = s_CGDefects_GNUStmtExpr
-    | s_CGDefects_Goto
-    | s_CGDefects_PointlessMustSeq
-    | s_CGDefects_LocalConstBool
-    | s_CGDefects_ConstCast
-    | s_CGDefects_PointlessLocal
-    | s_CGDefects_IrrelevantLiteral
-    | s_CGDefects_DuplicateFunctions;
+inline constexpr CGDefects_2L18 MASK_CGDefects_2L18
+    = CGDefects_2L18_GNUStmtExpr
+    | CGDefects_2L18_Goto
+    | CGDefects_2L18_PointlessMustSeq
+    | CGDefects_2L18_LocalConstBool
+    | CGDefects_2L18_ConstCast
+    | CGDefects_2L18_PointlessLocal
+    | CGDefects_2L18_IrrelevantLiteral
+    | CGDefects_2L18_DuplicateFunctions;
                                 #endif
 
-                                #ifndef DEF_s_DevOptions
-                                #define DEF_s_DevOptions
-inline constexpr s_DevOptions s_DevOptions_DEV_Print = s_DevOptions(1u);
-inline constexpr s_DevOptions s_DevOptions_DEV_Parallel = s_DevOptions(2u);
-inline constexpr s_DevOptions s_DevOptions_DEV_ExpectFail = s_DevOptions(4u);
-inline constexpr s_DevOptions s_DevOptions_DEV_DontFoldLiterals = s_DevOptions(8u);
-inline constexpr s_DevOptions s_DevOptions_DEV_CG_LifetimeAnnots = s_DevOptions(16u);
+                                #ifndef DEF_DevOptions_QEya
+                                #define DEF_DevOptions_QEya
+inline constexpr DevOptions_QEya DevOptions_QEya_DEV_Print = DevOptions_QEya(1u);
+inline constexpr DevOptions_QEya DevOptions_QEya_DEV_Parallel = DevOptions_QEya(2u);
+inline constexpr DevOptions_QEya DevOptions_QEya_DEV_ExpectFail = DevOptions_QEya(4u);
+inline constexpr DevOptions_QEya DevOptions_QEya_DEV_HappyPathOnly = DevOptions_QEya(8u);
+inline constexpr DevOptions_QEya DevOptions_QEya_DEV_DontFoldLiterals = DevOptions_QEya(16u);
+inline constexpr DevOptions_QEya DevOptions_QEya_DEV_CG_LifetimeAnnots = DevOptions_QEya(32u);
 
-inline constexpr s_DevOptions MASK_s_DevOptions
-    = s_DevOptions_DEV_Print
-    | s_DevOptions_DEV_Parallel
-    | s_DevOptions_DEV_ExpectFail
-    | s_DevOptions_DEV_DontFoldLiterals
-    | s_DevOptions_DEV_CG_LifetimeAnnots;
+inline constexpr DevOptions_QEya MASK_DevOptions_QEya
+    = DevOptions_QEya_DEV_Print
+    | DevOptions_QEya_DEV_Parallel
+    | DevOptions_QEya_DEV_ExpectFail
+    | DevOptions_QEya_DEV_HappyPathOnly
+    | DevOptions_QEya_DEV_DontFoldLiterals
+    | DevOptions_QEya_DEV_CG_LifetimeAnnots;
                                 #endif
 
-                                #ifndef DEF_s_Lint
-                                #define DEF_s_Lint
-struct s_Lint
+                                #ifndef DEF_Lint_Q9R1a2Yzb4c
+                                #define DEF_Lint_Q9R1a2Yzb4c
+struct Lint_Q9R1
 {
     int maxwarn;
     explicit operator bool() const noexcept
@@ -451,14 +466,14 @@ struct s_Lint
 };
                                 #endif
 
-                                #ifndef DEF_s_Options
-                                #define DEF_s_Options
-struct s_Options
+                                #ifndef DEF_Options_mg7VY0HPRL2
+                                #define DEF_Options_mg7VY0HPRL2
+struct Options_mg7V
 {
-    s_Lint lint;
-    s_SolverNotes break_notes;
-    s_CGDefects break_defects;
-    s_DevOptions dev;
+    Lint_Q9R1 lint;
+    SolverNotes_LSla break_notes;
+    CGDefects_2L18 break_defects;
+    DevOptions_QEya dev;
     unsigned shuffle;
     explicit operator bool() const noexcept
     {
@@ -473,21 +488,89 @@ struct s_Options
 };
                                 #endif
 
-                                #ifndef DEF_s_Fixity
-                                #define DEF_s_Fixity
-enum s_Fixity: fu::u8
+                                #ifndef DEF_Set_XshDfC0Mim3
+                                #define DEF_Set_XshDfC0Mim3
+struct Set_XshD
 {
-    s_Fixity_Infix = 1u,
-    s_Fixity_Prefix = 2u,
-    s_Fixity_Postfix = 3u,
+    fu::vec<fu::str> keys_asc;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || keys_asc
+        ;
+    }
 };
                                 #endif
 
-                                #ifndef DEF_s_Map_ZvYmFQlP8R5
-                                #define DEF_s_Map_ZvYmFQlP8R5
-struct s_Map_ZvYmFQlP8R5
+                                #ifndef DEF_Precedence_vGSt1o62lxl
+                                #define DEF_Precedence_vGSt1o62lxl
+struct Precedence_vGSt
 {
-    fu::vec<fu::str> keys;
+    int formal;
+    int whitesp_lint;
+    int tokidx;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || formal
+            || whitesp_lint
+            || tokidx
+        ;
+    }
+};
+                                #endif
+
+                                #ifndef DEF_ParserState_tGnmOqh3a37
+                                #define DEF_ParserState_tGnmOqh3a37
+struct ParserState_tGnm
+{
+    int _idx;
+    int _loc;
+    int _col0;
+    Precedence_vGSt _precedence;
+    int _fnDepth;
+    bool _autopub;
+    bool _TODO_FIX_dollarOk;
+    int _numDollars;
+    Set_XshD _expectedTypeParams;
+    Set_XshD _upstreamTypeParams;
+    fu::vec<Import_jcWj> imports;
+    fu::vec<fu::str> warnings;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || _idx
+            || _loc
+            || _col0
+            || _precedence
+            || _fnDepth
+            || _autopub
+            || _TODO_FIX_dollarOk
+            || _numDollars
+            || _expectedTypeParams
+            || _upstreamTypeParams
+            || imports
+            || warnings
+        ;
+    }
+};
+                                #endif
+
+                                #ifndef DEF_Fixity_7dA5
+                                #define DEF_Fixity_7dA5
+enum Fixity_7dA5: fu::u8
+{
+    Fixity_7dA5_Infix = 1u,
+    Fixity_7dA5_Prefix = 2u,
+    Fixity_7dA5_Postfix = 3u,
+};
+                                #endif
+
+                                #ifndef DEF_Map_Oj0K4yTGzLl
+                                #define DEF_Map_Oj0K4yTGzLl
+struct Map_Oj0K
+{
+    Set_XshD keys;
     fu::vec<int> vals;
     explicit operator bool() const noexcept
     {
@@ -499,11 +582,11 @@ struct s_Map_ZvYmFQlP8R5
 };
                                 #endif
 
-                                #ifndef DEF_s_BINOP
-                                #define DEF_s_BINOP
-struct s_BINOP
+                                #ifndef DEF_BINOP_AycyrqM52Ig
+                                #define DEF_BINOP_AycyrqM52Ig
+struct BINOP_Aycy
 {
-    s_Map_ZvYmFQlP8R5 PRECEDENCE;
+    Map_Oj0K PRECEDENCE;
     fu::vec<bool> RIGHT_TO_LEFT;
     explicit operator bool() const noexcept
     {
@@ -515,11 +598,11 @@ struct s_BINOP
 };
                                 #endif
 
-                                #ifndef DEF_s_ArgsParse
-                                #define DEF_s_ArgsParse
-struct s_ArgsParse
+                                #ifndef DEF_ArgsParse_yOm1RB9nQV2
+                                #define DEF_ArgsParse_yOm1RB9nQV2
+struct ArgsParse_yOm1
 {
-    s_Flags flags;
+    Flags_Lzg8 flags;
     bool sliceSyntax;
     explicit operator bool() const noexcept
     {
@@ -531,16 +614,131 @@ struct s_ArgsParse
 };
                                 #endif
 
+                                #ifndef STR_onytfN8TIli
+                                #define STR_onytfN8TIli
+static const fu::str str_onytfN8TIli fu_INIT_PRIORITY(1006) { "__preceding_ref_arg"_fu };
+                                #endif
+
+                                #ifndef STR_YA1luviVkz3
+                                #define STR_YA1luviVkz3
+static const fu::str str_YA1luviVkz3 fu_INIT_PRIORITY(1006) { "Shadowing is currently only supported inside functions."_fu };
+                                #endif
+
+                                #ifndef STR_Rh23JTcABj5
+                                #define STR_Rh23JTcABj5
+static const fu::str str_Rh23JTcABj5 fu_INIT_PRIORITY(1006) { "Assertion failed: precedence < 64"_fu };
+                                #endif
+
+                                #ifndef STR_QlC4mahL2gb
+                                #define STR_QlC4mahL2gb
+static const fu::str str_QlC4mahL2gb fu_INIT_PRIORITY(1006) { "start"_fu };
+                                #endif
+
+                                #ifndef STR_OokQ1yGra4d
+                                #define STR_OokQ1yGra4d
+static const fu::str str_OokQ1yGra4d fu_INIT_PRIORITY(1006) { "Cannot pipeline: expression is not a call."_fu };
+                                #endif
+
+                                #ifndef STR_2NQa5TNr8Mc
+                                #define STR_2NQa5TNr8Mc
+static const fu::str str_2NQa5TNr8Mc fu_INIT_PRIORITY(1006) { "Cannot pipeline: not a call expr."_fu };
+                                #endif
+
+                                #ifndef STR_KgYNc12jxbi
+                                #define STR_KgYNc12jxbi
+static const fu::str str_KgYNc12jxbi fu_INIT_PRIORITY(1006) { "Cannot :autoname this expression."_fu };
+                                #endif
+
+                                #ifndef STR_2SffdvnVDw8
+                                #define STR_2SffdvnVDw8
+static const fu::str str_2SffdvnVDw8 fu_INIT_PRIORITY(1006) { "Malformed property access expression."_fu };
+                                #endif
+
+                                #ifndef STR_cZzwiUzJ2K1
+                                #define STR_cZzwiUzJ2K1
+static const fu::str str_cZzwiUzJ2K1 fu_INIT_PRIORITY(1006) { "[..]"_fu };
+                                #endif
+
+                                #ifndef STR_77oJR2ghS9a
+                                #define STR_77oJR2ghS9a
+static const fu::str str_77oJR2ghS9a fu_INIT_PRIORITY(1006) { "[]"_fu };
+                                #endif
+
+                                #ifndef STR_fiRLyok9R0k
+                                #define STR_fiRLyok9R0k
+static const fu::str str_fiRLyok9R0k fu_INIT_PRIORITY(1006) { "Invalid let shorthand - left side not an identifier."_fu };
+                                #endif
+
+                                #ifndef STR_WGOYs0nMGhg
+                                #define STR_WGOYs0nMGhg
+static const fu::str str_WGOYs0nMGhg fu_INIT_PRIORITY(1006) { "TODO default implicit arguments"_fu };
+                                #endif
+
+                                #ifndef STR_IXHmY51sMJb
+                                #define STR_IXHmY51sMJb
+static const fu::str str_IXHmY51sMJb fu_INIT_PRIORITY(1006) { "Non-optional arguments without a bang! cannot follow optional arguments."_fu };
+                                #endif
+
+                                #ifndef STR_5TEYhFzaE10
+                                #define STR_5TEYhFzaE10
+static const fu::str str_5TEYhFzaE10 fu_INIT_PRIORITY(1006) { "!"_fu };
+                                #endif
+
+                                #ifndef STR_8atgJDQsZa1
+                                #define STR_8atgJDQsZa1
+static const fu::str str_8atgJDQsZa1 fu_INIT_PRIORITY(1006) { "string"_fu };
+                                #endif
+
+                                #ifndef STR_RRLMAufVgP7
+                                #define STR_RRLMAufVgP7
+static const fu::str str_RRLMAufVgP7 fu_INIT_PRIORITY(1006) { "Conversion functions cannot have more than one non-defaulted explicit argument."_fu };
+                                #endif
+
+                                #ifndef STR_vpTbc9CkFUc
+                                #define STR_vpTbc9CkFUc
+static const fu::str str_vpTbc9CkFUc fu_INIT_PRIORITY(1006) { "Conversion functions cannot have all their explicit arguments defaulted."_fu };
+                                #endif
+
+                                #ifndef STR_H0VBGU0sq44
+                                #define STR_H0VBGU0sq44
+static const fu::str str_H0VBGU0sq44 fu_INIT_PRIORITY(1006) { "Conversion functions need type annotations on their arguments to know when to kick in."_fu };
+                                #endif
+
+                                #ifndef STR_K8KxoYxA7Xl
+                                #define STR_K8KxoYxA7Xl
+static const fu::str str_K8KxoYxA7Xl fu_INIT_PRIORITY(1006) { "i32"_fu };
+                                #endif
+
+                                #ifndef STR_MQ9AWe6yLTi
+                                #define STR_MQ9AWe6yLTi
+static const fu::str str_MQ9AWe6yLTi fu_INIT_PRIORITY(1006) { "fn main() must return i32."_fu };
+                                #endif
+
+                                #ifndef STR_ocR3YpRuxa5
+                                #define STR_ocR3YpRuxa5
+static const fu::str str_ocR3YpRuxa5 fu_INIT_PRIORITY(1006) { "Unparenthesized `|| lambda` within a binary expression."_fu };
+                                #endif
+
+                                #ifndef STR_SXzNzprGfI2
+                                #define STR_SXzNzprGfI2
+static const fu::str str_SXzNzprGfI2 fu_INIT_PRIORITY(1006) { "_"_fu };
+                                #endif
+
+                                #ifndef STR_uQtsXLlT0n9
+                                #define STR_uQtsXLlT0n9
+static const fu::str str_uQtsXLlT0n9 fu_INIT_PRIORITY(1006) { "Orphaned call without parentheses, add () to imply a useful side effect."_fu };
+                                #endif
+
+                                #ifndef STR_2te45mOwAV9
+                                #define STR_2te45mOwAV9
+static const fu::str str_2te45mOwAV9 fu_INIT_PRIORITY(1006) { "Missing `eof` token."_fu };
+                                #endif
+
 #ifndef fu_NO_fdefs
 
-                                #ifndef DEF_P_RESET
-                                #define DEF_P_RESET
-inline constexpr int P_RESET = 1000;
-                                #endif
-
-                                #ifndef DEF_x3Cx3E_mJGU9byOmI4
-                                #define DEF_x3Cx3E_mJGU9byOmI4
-inline int x3Cx3E_mJGU9byO(const int a, const int b)
+                                #ifndef DEF_x3Cx3E_odNTdyipeEj
+                                #define DEF_x3Cx3E_odNTdyipeEj
+inline int x3Cx3E_odNT(const int a, const int b)
 {
     if (a < b)
         return -1;
@@ -552,9 +750,9 @@ inline int x3Cx3E_mJGU9byO(const int a, const int b)
 }
                                 #endif
 
-                                #ifndef DEF_x3Cx3E_sOVQcK2JOH3
-                                #define DEF_x3Cx3E_sOVQcK2JOH3
-inline int x3Cx3E_sOVQcK2J(const char a, const char b)
+                                #ifndef DEF_x3Cx3E_YuqOPxIKAE3
+                                #define DEF_x3Cx3E_YuqOPxIKAE3
+inline int x3Cx3E_YuqO(const char a, const char b)
 {
     if (a < b)
         return -1;
@@ -566,334 +764,324 @@ inline int x3Cx3E_sOVQcK2J(const char a, const char b)
 }
                                 #endif
 
-                                #ifndef DEF_x3Cx3E_gCeFmDFw0L8
-                                #define DEF_x3Cx3E_gCeFmDFw0L8
-inline int x3Cx3E_gCeFmDFw(fu::view<char> a, fu::view<char> b)
+                                #ifndef DEF_x3Cx3E_erT9abBVjC1
+                                #define DEF_x3Cx3E_erT9abBVjC1
+inline int x3Cx3E_erT9(fu::view<char> a, fu::view<char> b)
 {
-    int cmp = x3Cx3E_mJGU9byO(a.size(), b.size());
+    int cmp = x3Cx3E_odNT(a.size(), b.size());
     for (int i = 0; (i < a.size()) && !cmp; i++)
-        cmp = x3Cx3E_sOVQcK2J(a[i], b[i]);
+        cmp = x3Cx3E_YuqO(a[i], b[i]);
 
     return cmp;
 }
                                 #endif
 
-                                #ifndef DEF_x3Dx3D_gCeFmDFw0L8
-                                #define DEF_x3Dx3D_gCeFmDFw0L8
+                                #ifndef DEF_x3Dx3D_xqw8ga5OCp4
+                                #define DEF_x3Dx3D_xqw8ga5OCp4
 inline bool operator==(fu::view<char> a, fu::view<char> b)
 {
-    return !x3Cx3E_gCeFmDFw(a, b);
+    return !x3Cx3E_erT9(a, b);
 }
                                 #endif
 
-                                #ifndef DEF_str_n4lV73pjzGh
-                                #define DEF_str_n4lV73pjzGh
-inline fu::str str_n4lV73pj(const s_kind n)
+                                #ifndef DEF_str_J9IqwO347p0
+                                #define DEF_str_J9IqwO347p0
+inline fu::str str_J9Iq(const Kind_Idfg n)
 {
-    if (n == s_kind_sof)
-        return "sof"_fu;
-    else if (n == s_kind_err)
-        return "err"_fu;
-    else if (n == s_kind_eof)
-        return "eof"_fu;
-    else if (n == s_kind_id)
-        return "id"_fu;
-    else if (n == s_kind_op)
-        return "op"_fu;
-    else if (n == s_kind_int)
-        return "int"_fu;
-    else if (n == s_kind_real)
-        return "real"_fu;
-    else if (n == s_kind_char)
-        return "char"_fu;
-    else if (n == s_kind_str)
-        return "str"_fu;
-    else if (n == s_kind_bool)
-        return "bool"_fu;
-    else if (n == s_kind_definit)
-        return "definit"_fu;
-    else if (n == s_kind_empty)
-        return "empty"_fu;
-    else if (n == s_kind_struct)
-        return "struct"_fu;
-    else if (n == s_kind_union)
-        return "union"_fu;
-    else if (n == s_kind_primitive)
-        return "primitive"_fu;
-    else if (n == s_kind_flags)
-        return "flags"_fu;
-    else if (n == s_kind_enum)
-        return "enum"_fu;
-    else if (n == s_kind_fn)
-        return "fn"_fu;
-    else if (n == s_kind_copy)
-        return "copy"_fu;
-    else if (n == s_kind_move)
-        return "move"_fu;
-    else if (n == s_kind_arrlit)
-        return "arrlit"_fu;
-    else if (n == s_kind_not)
-        return "not"_fu;
-    else if (n == s_kind_call)
-        return "call"_fu;
-    else if (n == s_kind_argid)
-        return "argid"_fu;
-    else if (n == s_kind_root)
-        return "root"_fu;
-    else if (n == s_kind_block)
-        return "block"_fu;
-    else if (n == s_kind_if)
+    if (n == Kind_Idfg_sof)
+        return fu::str("sof"_fu);
+    else if (n == Kind_Idfg_err)
+        return fu::str("err"_fu);
+    else if (n == Kind_Idfg_eof)
+        return fu::str("eof"_fu);
+    else if (n == Kind_Idfg_id)
+        return fu::str("id"_fu);
+    else if (n == Kind_Idfg_op)
+        return fu::str("op"_fu);
+    else if (n == Kind_Idfg_int)
+        return fu::str("int"_fu);
+    else if (n == Kind_Idfg_real)
+        return fu::str("real"_fu);
+    else if (n == Kind_Idfg_char)
+        return fu::str("char"_fu);
+    else if (n == Kind_Idfg_str)
+        return fu::str("str"_fu);
+    else if (n == Kind_Idfg_bool)
+        return fu::str("bool"_fu);
+    else if (n == Kind_Idfg_definit)
+        return fu::str("definit"_fu);
+    else if (n == Kind_Idfg_empty)
+        return fu::str("empty"_fu);
+    else if (n == Kind_Idfg_struct)
+        return fu::str("struct"_fu);
+    else if (n == Kind_Idfg_union)
+        return fu::str("union"_fu);
+    else if (n == Kind_Idfg_primitive)
+        return fu::str("primitive"_fu);
+    else if (n == Kind_Idfg_flags)
+        return fu::str("flags"_fu);
+    else if (n == Kind_Idfg_enum)
+        return fu::str("enum"_fu);
+    else if (n == Kind_Idfg_fn)
+        return fu::str("fn"_fu);
+    else if (n == Kind_Idfg_copy)
+        return fu::str("copy"_fu);
+    else if (n == Kind_Idfg_move)
+        return fu::str("move"_fu);
+    else if (n == Kind_Idfg_arrlit)
+        return fu::str("arrlit"_fu);
+    else if (n == Kind_Idfg_not)
+        return fu::str("not"_fu);
+    else if (n == Kind_Idfg_call)
+        return fu::str("call"_fu);
+    else if (n == Kind_Idfg_call_indir)
+        return fu::str("call_indir"_fu);
+    else if (n == Kind_Idfg_argid)
+        return fu::str("argid"_fu);
+    else if (n == Kind_Idfg_root)
+        return fu::str("root"_fu);
+    else if (n == Kind_Idfg_block)
+        return fu::str("block"_fu);
+    else if (n == Kind_Idfg_if)
     {
-        return "if"_fu;
+        return fu::str("if"_fu);
     }
-    else if (n == s_kind_or)
-        return "or"_fu;
-    else if (n == s_kind_and)
-        return "and"_fu;
-    else if (n == s_kind_loop)
-        return "loop"_fu;
-    else if (n == s_kind_jump)
-        return "jump"_fu;
-    else if (n == s_kind___far_jump)
-        return "__far_jump"_fu;
-    else if (n == s_kind_defer)
-        return "defer"_fu;
-    else if (n == s_kind_try)
-        return "try"_fu;
-    else if (n == s_kind_let)
-        return "let"_fu;
-    else if (n == s_kind_letdef)
-        return "letdef"_fu;
-    else if (n == s_kind_typecast)
-        return "typecast"_fu;
-    else if (n == s_kind_typeassert)
-        return "typeassert"_fu;
-    else if (n == s_kind_typeparam)
-        return "typeparam"_fu;
-    else if (n == s_kind_unwrap)
-        return "unwrap"_fu;
-    else if (n == s_kind_pragma)
-        return "pragma"_fu;
-    else if (n == s_kind_break)
-        return "break"_fu;
-    else if (n == s_kind_return)
-        return "return"_fu;
-    else if (n == s_kind_continue)
-        return "continue"_fu;
-    else if (n == s_kind_import)
-        return "import"_fu;
-    else if (n == s_kind_addroffn)
-        return "addroffn"_fu;
-    else if (n == s_kind_forfieldsof)
-        return "forfieldsof"_fu;
-    else if (n == s_kind_members)
-        return "members"_fu;
-    else if (n == s_kind_fnbranch)
-        return "fnbranch"_fu;
-    else if (n == s_kind_pattern)
-        return "pattern"_fu;
-    else if (n == s_kind_typeunion)
-        return "typeunion"_fu;
-    else if (n == s_kind_typetag)
-        return "typetag"_fu;
-    else if (n == s_kind___relaxed)
-        return "__relaxed"_fu;
-    else if (n == s_kind___convert)
-        return "__convert"_fu;
-    else if (n == s_kind___preceding_ref_arg)
-        return "__preceding_ref_arg"_fu;
-    else if (n == s_kind___no_kind_yet)
-        return "__no_kind_yet"_fu;
-    else if (n == s_kind___tombstone)
-        return "__tombstone"_fu;
-    else if (n == s_kind_type)
-        return "type"_fu;
-    else if (n == s_kind_var)
-        return "var"_fu;
-    else if (n == s_kind_field)
-        return "field"_fu;
-    else if (n == s_kind_enumv)
-        return "enumv"_fu;
-    else if (n == s_kind_template)
-        return "template"_fu;
-    else if (n == s_kind___native)
-        return "__native"_fu;
-    else if (n == s_kind_inline)
-        return "inline"_fu;
+    else if (n == Kind_Idfg_or)
+        return fu::str("or"_fu);
+    else if (n == Kind_Idfg_and)
+        return fu::str("and"_fu);
+    else if (n == Kind_Idfg_loop)
+        return fu::str("loop"_fu);
+    else if (n == Kind_Idfg_jump)
+        return fu::str("jump"_fu);
+    else if (n == Kind_Idfg___far_jump)
+        return fu::str("__far_jump"_fu);
+    else if (n == Kind_Idfg_defer)
+        return fu::str("defer"_fu);
+    else if (n == Kind_Idfg_try)
+        return fu::str("try"_fu);
+    else if (n == Kind_Idfg_let)
+        return fu::str("let"_fu);
+    else if (n == Kind_Idfg_letdef)
+        return fu::str("letdef"_fu);
+    else if (n == Kind_Idfg_typecast)
+        return fu::str("typecast"_fu);
+    else if (n == Kind_Idfg_typeassert)
+        return fu::str("typeassert"_fu);
+    else if (n == Kind_Idfg_typeparam)
+        return fu::str("typeparam"_fu);
+    else if (n == Kind_Idfg_unwrap)
+        return fu::str("unwrap"_fu);
+    else if (n == Kind_Idfg_pragma)
+        return fu::str("pragma"_fu);
+    else if (n == Kind_Idfg_break)
+        return fu::str("break"_fu);
+    else if (n == Kind_Idfg_return)
+        return fu::str("return"_fu);
+    else if (n == Kind_Idfg_continue)
+        return fu::str("continue"_fu);
+    else if (n == Kind_Idfg_import)
+        return fu::str("import"_fu);
+    else if (n == Kind_Idfg_addroffn)
+        return fu::str("addroffn"_fu);
+    else if (n == Kind_Idfg_forfieldsof)
+        return fu::str("forfieldsof"_fu);
+    else if (n == Kind_Idfg_members)
+        return fu::str("members"_fu);
+    else if (n == Kind_Idfg_fnbranch)
+        return fu::str("fnbranch"_fu);
+    else if (n == Kind_Idfg_pattern)
+        return fu::str("pattern"_fu);
+    else if (n == Kind_Idfg_typeunion)
+        return fu::str("typeunion"_fu);
+    else if (n == Kind_Idfg_typetag)
+        return fu::str("typetag"_fu);
+    else if (n == Kind_Idfg___relaxed)
+        return fu::str("__relaxed"_fu);
+    else if (n == Kind_Idfg___convert)
+        return fu::str("__convert"_fu);
+    else if (n == Kind_Idfg___preceding_ref_arg)
+        return fu::str(str_onytfN8TIli);
+    else if (n == Kind_Idfg___no_kind_yet)
+        return fu::str("__no_kind_yet"_fu);
+    else if (n == Kind_Idfg___tombstone)
+        return fu::str("__tombstone"_fu);
+    else if (n == Kind_Idfg_type)
+        return fu::str("type"_fu);
+    else if (n == Kind_Idfg_var)
+        return fu::str("var"_fu);
+    else if (n == Kind_Idfg_field)
+        return fu::str("field"_fu);
+    else if (n == Kind_Idfg_enumv)
+        return fu::str("enumv"_fu);
+    else if (n == Kind_Idfg_template)
+        return fu::str("template"_fu);
+    else if (n == Kind_Idfg___native)
+        return fu::str("__native"_fu);
+    else if (n == Kind_Idfg_inline)
+        return fu::str("inline"_fu);
 
     return fu::i64dec(int64_t(n));
 }
                                 #endif
 
-[[noreturn]] static fu::never fail_a0ZqfRup(fu::str&& reason, const fu::str& fname, const fu::str& src, fu::view<s_Token> tokens, const int _idx)
+[[noreturn]] static fu::never fail_94Qv(fu::str&& reason, fu::vec_range<char> fname, fu::vec_range<char> src, fu::view<Token_RpL8> tokens, const ParserState_tGnm& _ps)
 {
-    const s_Token& token = tokens[_idx];
+    const Token_RpL8& token = tokens[_ps._idx];
     if (!reason)
-        reason = (("Unexpected `"_fu + token.value) + "`."_fu);
+        reason = (("Unexpected `"_view + token.value) + "`."_view);
 
-    FAIL_fezemVq0(fname, src, token.lcc, reason);
+    FAIL_k53p(fname, src, token.lcc, reason);
 }
 
-static const s_Token& consume_ifLltrwq(const s_kind kind, const fu::str& value, const fu::str& fname, const fu::str& src, fu::view<s_Token> tokens, int& _idx)
+static const Token_RpL8& consume_qFIn(const Kind_Idfg kind, fu::view<char> value, fu::vec_range<char> fname, fu::vec_range<char> src, fu::view<Token_RpL8> tokens, ParserState_tGnm& _ps)
 {
-    const s_Token& token = tokens[_idx];
+    const Token_RpL8& token = tokens[_ps._idx];
     if ((token.kind == kind) && (!value || (token.value == value)))
     {
-        _idx++;
+        _ps._idx++;
         return token;
     }
     else
     {
-        fail_a0ZqfRup(((((("Expected "_fu + qKW_3PsDzMvu(str_n4lV73pj(kind))) + ((value && (kind == token.kind)) ? (" "_fu + qID_3PsDzMvu(value)) : fu::str{})) + "\n\t     got "_fu) + qKW_3PsDzMvu(str_n4lV73pj(token.kind))) + ((value && (kind == token.kind)) ? (" "_fu + qID_3PsDzMvu(token.value)) : fu::str{})), fname, src, tokens, _idx);
+        fail_94Qv(((((("Expected "_view + qKW_e44U(str_J9Iq(kind))) + ((value && (kind == token.kind)) ? (" "_view + qID_e44U(value)) : fu::str{})) + "\n\t     got "_view) + qKW_e44U(str_J9Iq(token.kind))) + ((value && (kind == token.kind)) ? (" "_view + qID_e44U(token.value)) : fu::str{})), fname, src, tokens, _ps);
     };
 }
 
-                                #ifndef DEF_x7E_gCeFmDFw0L8
-                                #define DEF_x7E_gCeFmDFw0L8
-inline fu::str x7E_gCeFmDFw(fu::view<char> a, fu::view<char> b)
+                                #ifndef DEF_x7E_rA003L6Quul
+                                #define DEF_x7E_rA003L6Quul
+inline fu::str x7E_rA00(fu::view<char> a, fu::view<char> b)
 {
     return a + b;
 }
                                 #endif
 
-static fu::str fail_compose_fyNGq3bz(fu::str&& reason, fu::view<char> fname, fu::view<s_Token> tokens, const int _idx, const int _loc)
+static fu::str fail_compose_qFIn(fu::str&& reason, fu::view<char> fname, fu::view<Token_RpL8> tokens, const ParserState_tGnm& _ps)
 {
-    const s_Token& loc = tokens[_loc];
-    const s_Token& here = tokens[_idx];
+    const Token_RpL8& loc = tokens[_ps._loc];
+    const Token_RpL8& here = tokens[_ps._idx];
     if (!reason)
-        reason = (("Unexpected `"_fu + here.value) + "`."_fu);
+        reason = (("Unexpected `"_view + here.value) + "`."_view);
 
     const int l0 = loc.lcc.line;
     const int c0 = loc.lcc.col;
     const int l1 = here.lcc.line;
     const int c1 = here.lcc.col;
-    fu::str addr = ((l1 == l0) ? x7E_gCeFmDFw((x7E_gCeFmDFw("@"_fu, fu::i64dec(l1)) + ":"_fu), fu::i64dec(c1)) : x7E_gCeFmDFw((x7E_gCeFmDFw((x7E_gCeFmDFw((x7E_gCeFmDFw("@"_fu, fu::i64dec(l0)) + ":"_fu), fu::i64dec(c0)) + ".."_fu), fu::i64dec(l1)) + ":"_fu), fu::i64dec(c1)));
-    return (((fname + " "_fu) + addr) + ":\n\t"_fu) + reason;
+    fu::str addr = ((l1 == l0) ? x7E_rA00((x7E_rA00("@"_view, fu::i64dec(l1)) + ":"_view), fu::i64dec(c1)) : x7E_rA00((x7E_rA00((x7E_rA00((x7E_rA00("@"_view, fu::i64dec(l0)) + ":"_view), fu::i64dec(c0)) + ".."_view), fu::i64dec(l1)) + ":"_view), fu::i64dec(c1)));
+    return (((fname + " "_view) + addr) + ":\n\t"_view) + reason;
 }
 
-static void warn_JY9fwXxS(const fu::str& reason, const fu::str& fname, const fu::str& src, fu::view<s_Token> tokens, const int _idx, const int _loc, fu::vec<fu::str>& warnings, const s_Options& options)
+static void warn_qFIn(fu::vec_range<char> reason, fu::vec_range<char> fname, fu::vec_range<char> src, fu::view<Token_RpL8> tokens, ParserState_tGnm& _ps, const Options_mg7V& options)
 {
-    if (warnings.size() == options.lint.maxwarn)
-        fail_a0ZqfRup(fu::str(reason), fname, src, tokens, _idx);
+    if (_ps.warnings.size() == options.lint.maxwarn)
+        fail_94Qv(fu::str(reason), fname, src, tokens, _ps);
     else
-        warnings += fail_compose_fyNGq3bz(fu::str(reason), fname, tokens, _idx, _loc);
+        _ps.warnings += fail_compose_qFIn(fu::str(reason), fname, tokens, _ps);
 
 }
 
-static const s_Token& tryConsume_RS2yajZX(const s_kind kind, fu::view<char> value, fu::view<s_Token> tokens, int& _idx)
+static const Token_RpL8& tryConsume_94Qv(const Kind_Idfg kind, fu::view<char> value, fu::view<Token_RpL8> tokens, ParserState_tGnm& _ps)
 {
-    const s_Token& token = tokens[_idx];
+    const Token_RpL8& token = tokens[_ps._idx];
     if ((token.kind == kind) && (token.value == value))
     {
-        _idx++;
+        _ps._idx++;
         return token;
     }
     else
-        return (*(const s_Token*)fu::NIL);
+        return (*(Token_RpL8*)fu::NIL);
 
 }
 
-inline static const s_Token& tryConsume_QdsI94aK(const s_kind kind, fu::view<char> value, const bool xqmark, fu::view<s_Token> tokens, int& _idx)
+static const Precedence_vGSt P_RESET fu_INIT_PRIORITY(1006) = Precedence_vGSt { 1000, 0, 0 };
+
+                                #ifndef DEF_tryConsume_2joWdRbRl8i
+                                #define DEF_tryConsume_2joWdRbRl8i
+inline static const Token_RpL8& tryConsume_2joW(const Kind_Idfg kind, fu::view<char> value, const bool xqmark, fu::view<Token_RpL8> tokens, ParserState_tGnm& _ps)
 {
-    const s_Token& token = tokens[_idx];
-    bool BL_1_v {};
-    if ((token.kind == kind) && (token.value == value) && (__extension__ (
+    const Token_RpL8& token = tokens[_ps._idx];
+    const Token_RpL8* token_1;
+    if ((token.kind == kind) && (token.value == value) && (token_1 = &(tokens[(_ps._idx + 1)]), (((*token_1).kind == Kind_Idfg_id) || ((xqmark && ((*token_1).kind == Kind_Idfg_op)) ? (((*token_1).value == "."_view) || ((*token_1).value == "<"_view)) : false))))
     {
-        const s_Token& token_1 = tokens[(_idx + 1)];
-        BL_1_v = (((token_1.kind == s_kind_id) || ((xqmark && (token_1.kind == s_kind_op)) ? (token_1.value == "."_fu) : false)));
-    (void)0;}), BL_1_v))
-    {
-        _idx++;
+        _ps._idx++;
         return token;
     }
     else
-        return (*(const s_Token*)fu::NIL);
+        return (*(Token_RpL8*)fu::NIL);
+
+}
+                                #endif
+
+static void set_SHADOW_qFIn(Flags_Lzg8& flags, fu::vec_range<char> fname, fu::vec_range<char> src, fu::view<Token_RpL8> tokens, const ParserState_tGnm& _ps)
+{
+    if (flags & Flags_Lzg8_F_PUB)
+        fail_94Qv(((("Cannot "_view + qBAD_e44U("shadow"_view)) + " a "_view) + qKW_e44U("pub"_view)), fname, src, tokens, _ps);
+    else if (_ps._fnDepth)
+        flags |= Flags_Lzg8_F_SHADOW;
+    else
+        fail_94Qv(fu::str(str_YA1luviVkz3), fname, src, tokens, _ps);
 
 }
 
-static const s_Token& tryConsume_xXyIFHPn(const s_kind kind, fu::view<s_Token> tokens, int& _idx)
+static const Token_RpL8& tryConsume_qFIn(const Kind_Idfg kind, fu::view<Token_RpL8> tokens, ParserState_tGnm& _ps)
 {
-    const s_Token& token = tokens[_idx];
+    const Token_RpL8& token = tokens[_ps._idx];
     if (token.kind == kind)
     {
-        _idx++;
+        _ps._idx++;
         return token;
     }
     else
-        return (*(const s_Token*)fu::NIL);
+        return (*(Token_RpL8*)fu::NIL);
 
 }
 
-                                #ifndef DEF_starts_t2TApdnqRc8
-                                #define DEF_starts_t2TApdnqRc8
-inline bool starts_t2TApdnq(fu::view<char> a, fu::view<char> with)
-{
-    return (a.size() >= with.size()) && (fu::get_view_start0(a, with.size()) == with);
-}
-                                #endif
-
-static fu::str registerImport_ugbgDS9b(/*MOV*/ fu::str&& value, const int modid, const fu::str& fname, const int _loc, fu::vec<s_Import>& imports)
-{
-    if (!ext_8Oo0Zp26(value))
-        value += ".fu"_fu;
-
-    fu::str dir = dirname_8Oo0Zp26(fname);
-    value = (starts_t2TApdnq(value, "."_fu) ? join_8GxtVDhD(dir, value) : ((dir + '\v') + value));
-
-    { {
-        for (int i = 0; i < imports.size(); i++)
-        {
-            const s_Import& import = imports[i];
-            if (import.value == value)
-                goto BL_2;
-
-        };
-        imports += s_Import { s_TokenIdx { modid, _loc }, fu::str(value) };
-      } BL_2:;
-    };
-    return static_cast<fu::str&&>(value);
-}
-
-static s_Node make_3RGKUyIO(const s_kind kind, const fu::vec<s_Node>& items, const s_Flags flags, const fu::str& value, const s_DeclAsserts asserts, const s_ParseSyntax syntax, const s_TokenIdx& token, const int modid, const int _loc)
-{
-    return s_Node { kind, asserts, syntax, flags, fu::str(value), fu::vec<s_Node>(items), (token ? s_TokenIdx(token) : s_TokenIdx { modid, _loc }) };
-}
-
-static s_Node createCall_mBEz988k(const fu::str& id, const s_Flags flags, const fu::vec<s_Node>& args, const s_ParseSyntax syntax, const int modid, const int _loc)
-{
-    return make_3RGKUyIO(s_kind_call, args, flags, id, s_DeclAsserts{}, syntax, s_TokenIdx{}, modid, _loc);
-}
-
-static s_Node createRead_9y30X3Q5(const fu::str& id, const s_Flags flags, const int modid, const fu::str& fname, const fu::str& src, fu::view<s_Token> tokens, const int _idx, const int _loc)
-{
-    if ((id == "true"_fu) || (id == "false"_fu))
-    {
-        return make_3RGKUyIO(s_kind_bool, (*(const fu::vec<s_Node>*)fu::NIL), s_Flags{}, id, s_DeclAsserts{}, s_ParseSyntax{}, s_TokenIdx{}, modid, _loc);
-    }
-    else
-    {
-        return createCall_mBEz988k((id ? id : fail_a0ZqfRup(fu::str{}, fname, src, tokens, _idx)), flags, (*(const fu::vec<s_Node>*)fu::NIL), s_ParseSyntax{}, modid, _loc);
-    };
-}
-
-                                #ifndef DEF_P_PREFIX_UNARY
-                                #define DEF_P_PREFIX_UNARY
-inline constexpr int P_PREFIX_UNARY = 1;
-                                #endif
+static const Precedence_vGSt P_PREFIX_UNARY fu_INIT_PRIORITY(1006) = Precedence_vGSt { 1, 0, 0 };
 
                                 #ifndef DEF_M_LINT_ENSURE_INDENT
                                 #define DEF_M_LINT_ENSURE_INDENT
 inline constexpr int M_LINT_ENSURE_INDENT = (1 << 1);
                                 #endif
 
-static s_Node createLeaf_BO33R8nU(const s_kind kind, const fu::str& value, const int modid, const int _loc)
+static Node_Wr1X make_qFIn(const Kind_Idfg kind, fu::vec_range<Node_Wr1X> items, const Flags_Lzg8 flags, fu::vec_range<char> value, const DeclAsserts_taUG asserts, const ParseSyntax_Lay2 syntax, const TokenIdx_5b85& token, const int modid, const ParserState_tGnm& _ps)
 {
-    return make_3RGKUyIO(kind, (*(const fu::vec<s_Node>*)fu::NIL), s_Flags{}, value, s_DeclAsserts{}, s_ParseSyntax{}, s_TokenIdx{}, modid, _loc);
+    return Node_Wr1X { kind, asserts, syntax, flags, fu::str(value), fu::vec<Node_Wr1X>(items), (token ? TokenIdx_5b85(token) : TokenIdx_5b85 { modid, _ps._loc }) };
 }
 
-                                #ifndef DEF_grow_if_oob_g9Y9RHMdUy1
-                                #define DEF_grow_if_oob_g9Y9RHMdUy1
-inline bool& grow_if_oob_g9Y9RHMd(fu::vec<bool>& a, const int i)
+static Node_Wr1X createLeaf_qFIn(const Kind_Idfg kind, fu::vec_range<char> value, const int modid, const ParserState_tGnm& _ps)
+{
+    return make_qFIn(kind, (*(fu::vec<Node_Wr1X>*)fu::NIL), Flags_Lzg8{}, value, DeclAsserts_taUG{}, ParseSyntax_Lay2{}, TokenIdx_5b85{}, modid, _ps);
+}
+
+static const fu::vec<fu::str> POSTFIX fu_INIT_PRIORITY(1006) = fu::vec<fu::str> {{ fu::str("++"_fu), fu::str("--"_fu), fu::str("[]"_fu), fu::str("[..]"_fu) }};
+
+                                #ifndef DEF_find_maZ1bPk9M33
+                                #define DEF_find_maZ1bPk9M33
+inline int find_maZ1(fu::view<fu::str> haystack, fu::view<char> needle)
+{
+    for (int i = 0; i < haystack.size(); i++)
+    {
+        if (haystack[i] == needle)
+            return i;
+
+    };
+    return -1;
+}
+                                #endif
+
+                                #ifndef DEF_has_2Cr49IHQCne
+                                #define DEF_has_2Cr49IHQCne
+inline bool has_2Cr4(fu::view<fu::str> a, fu::view<char> b)
+{
+    return (find_maZ1(a, b) >= 0);
+}
+                                #endif
+
+static const fu::vec<fu::str> PREFIX fu_INIT_PRIORITY(1006) = fu::vec<fu::str> {{ fu::str("++"_fu), fu::str("+"_fu), fu::str("--"_fu), fu::str("-"_fu), fu::str("!"_fu), fu::str("~"_fu), fu::str("?"_fu), fu::str("*"_fu), fu::str("&"_fu), fu::str("&mut"_fu), fu::str("-%"_fu) }};
+
+                                #ifndef DEF_ensure_HLp3lv8Bwna
+                                #define DEF_ensure_HLp3lv8Bwna
+inline bool& ensure_HLp3(fu::vec_range_mut<bool> a, const int i)
 {
     if ((a.size() <= i))
         a.grow((i + 1));
@@ -902,29 +1090,20 @@ inline bool& grow_if_oob_g9Y9RHMd(fu::vec<bool>& a, const int i)
 }
                                 #endif
 
-static fu::vec<fu::str>& l_6_0_a5P0miaw(s_Map_ZvYmFQlP8R5& _)
+                                #ifndef DEF_update_vhekgmNBmU6
+                                #define DEF_update_vhekgmNBmU6
+inline bool update_vhek(Set_XshD& _, fu::vec_range<char> key, fu::vec_range_mut<int> values, const int value)
 {
-    return _.keys;
-}
-
-static fu::vec<int>& l_6_1_34LbA0ur(s_Map_ZvYmFQlP8R5& _)
-{
-    return _.vals;
-}
-
-                                #ifndef DEF_update_HDUvgk0YVUa
-                                #define DEF_update_HDUvgk0YVUa
-inline bool update_HDUvgk0Y(const fu::str& item, const int extra, s_Map_ZvYmFQlP8R5& _)
-{
+    fu::view<fu::str> keys_asc = _.keys_asc;
     int lo = 0;
-    int hi = l_6_0_a5P0miaw(_).size();
+    int hi = keys_asc.size();
     while (lo < hi)
     {
         const int i = ((hi + lo) >> 1);
-        const int cmp = x3Cx3E_gCeFmDFw(l_6_0_a5P0miaw(_)[i], item);
+        const int cmp = x3Cx3E_erT9(keys_asc[i], key);
         if (cmp == 0)
         {
-            l_6_1_34LbA0ur(_).mutref(i) = extra;
+            values.mutref(i) = value;
             return false;
         }
         else if (cmp < 0)
@@ -933,74 +1112,76 @@ inline bool update_HDUvgk0Y(const fu::str& item, const int extra, s_Map_ZvYmFQlP
             hi = i;
 
     };
-    l_6_0_a5P0miaw(_).insert(lo, fu::str(item));
-    l_6_1_34LbA0ur(_).insert(lo, extra);
+    const int i = lo;
+    _.keys_asc.insert(i, fu::str(key));
+    values.insert(i, value);
     return true;
 }
                                 #endif
 
-                                #ifndef DEF_set_aEyaPH6ApB3
-                                #define DEF_set_aEyaPH6ApB3
-inline bool set_aEyaPH6A(s_Map_ZvYmFQlP8R5& _, const fu::str& key, const int value)
+                                #ifndef DEF_set_yRyIlu0PIXd
+                                #define DEF_set_yRyIlu0PIXd
+inline bool set_yRyI(Map_Oj0K& _, fu::vec_range<char> key, const int value)
 {
-    return update_HDUvgk0Y(key, value, _);
+    return update_vhek(_.keys, key, _.vals, value);
 }
                                 #endif
 
-static void binop_g9H7c3np(fu::view<fu::str> ops, s_BINOP& out, int& precedence, const bool rightToLeft)
+static void binop_qFIn(fu::view<fu::str> ops, BINOP_Aycy& out, int& precedence, const bool rightToLeft)
 {
     precedence++;
     if (precedence < 64)
     {
-        grow_if_oob_g9Y9RHMd(out.RIGHT_TO_LEFT, precedence) = rightToLeft;
+        ensure_HLp3(out.RIGHT_TO_LEFT, precedence) = rightToLeft;
         for (int i = 0; i < ops.size(); i++)
-            set_aEyaPH6A(out.PRECEDENCE, ops[i], precedence);
+            set_yRyI(out.PRECEDENCE, ops[i], precedence);
 
     }
     else
-        fu::fail("Assertion failed: precedence < 64"_fu);
+        fu::fail(fu::str(str_Rh23JTcABj5));
 
 }
 
-static s_BINOP setupOperators_J2h3fYmf()
+static BINOP_Aycy setupOperators_qFIn()
 {
-    /*MOV*/ s_BINOP out {};
-    int precedence = P_PREFIX_UNARY;
+    /*MOV*/ BINOP_Aycy out {};
+    int precedence = P_PREFIX_UNARY.formal;
     bool rightToLeft = false;
     rightToLeft = false;
-    binop_g9H7c3np((fu::slate<3, fu::str> { "*"_fu, "/"_fu, "%"_fu }), out, precedence, rightToLeft);
-    binop_g9H7c3np((fu::slate<2, fu::str> { "+"_fu, "-"_fu }), out, precedence, rightToLeft);
-    binop_g9H7c3np((fu::slate<2, fu::str> { "<<"_fu, ">>"_fu }), out, precedence, rightToLeft);
-    binop_g9H7c3np((fu::slate<1, fu::str> { "&"_fu }), out, precedence, rightToLeft);
-    binop_g9H7c3np((fu::slate<1, fu::str> { "^"_fu }), out, precedence, rightToLeft);
-    binop_g9H7c3np((fu::slate<1, fu::str> { "|"_fu }), out, precedence, rightToLeft);
-    binop_g9H7c3np((fu::slate<1, fu::str> { "~"_fu }), out, precedence, rightToLeft);
-    binop_g9H7c3np((fu::slate<2, fu::str> { "<=>"_fu, "<>"_fu }), out, precedence, rightToLeft);
-    binop_g9H7c3np((fu::slate<2, fu::str> { "=>"_fu, "->"_fu }), out, precedence, rightToLeft);
-    binop_g9H7c3np((fu::slate<5, fu::str> { "<"_fu, "<="_fu, ">"_fu, ">="_fu, "<=>"_fu }), out, precedence, rightToLeft);
-    binop_g9H7c3np((fu::slate<2, fu::str> { "=="_fu, "!="_fu }), out, precedence, rightToLeft);
-    binop_g9H7c3np((fu::slate<1, fu::str> { "&&"_fu }), out, precedence, rightToLeft);
-    binop_g9H7c3np((fu::slate<1, fu::str> { "||"_fu }), out, precedence, rightToLeft);
+    binop_qFIn(fu::view<fu::str> {{ fu::str("*"_fu), fu::str("/"_fu), fu::str("%"_fu), fu::str("*%"_fu) }}, out, precedence, rightToLeft);
+    binop_qFIn(fu::view<fu::str> {{ fu::str("+"_fu), fu::str("-"_fu), fu::str("+%"_fu), fu::str("-%"_fu) }}, out, precedence, rightToLeft);
+    binop_qFIn(fu::view<fu::str> {{ fu::str("<<"_fu), fu::str(">>"_fu) }}, out, precedence, rightToLeft);
+    binop_qFIn(fu::view<fu::str> {{ fu::str("&"_fu) }}, out, precedence, rightToLeft);
+    binop_qFIn(fu::view<fu::str> {{ fu::str("^"_fu) }}, out, precedence, rightToLeft);
+    binop_qFIn(fu::view<fu::str> {{ fu::str("|"_fu) }}, out, precedence, rightToLeft);
+    binop_qFIn(fu::view<fu::str> {{ fu::str("~"_fu) }}, out, precedence, rightToLeft);
+    binop_qFIn(fu::view<fu::str> {{ fu::str("<=>"_fu), fu::str("<>"_fu) }}, out, precedence, rightToLeft);
+    binop_qFIn(fu::view<fu::str> {{ fu::str("=>"_fu), fu::str("->"_fu) }}, out, precedence, rightToLeft);
+    binop_qFIn(fu::view<fu::str> {{ fu::str("<"_fu), fu::str("<="_fu), fu::str(">"_fu), fu::str(">="_fu), fu::str("<=>"_fu) }}, out, precedence, rightToLeft);
+    binop_qFIn(fu::view<fu::str> {{ fu::str("=="_fu), fu::str("!="_fu) }}, out, precedence, rightToLeft);
+    binop_qFIn(fu::view<fu::str> {{ fu::str("&&"_fu) }}, out, precedence, rightToLeft);
+    binop_qFIn(fu::view<fu::str> {{ fu::str("||"_fu) }}, out, precedence, rightToLeft);
     rightToLeft = true;
-    binop_g9H7c3np((fu::slate<17, fu::str> { "?"_fu, "="_fu, "+="_fu, "-="_fu, "**="_fu, "*="_fu, "/="_fu, "%="_fu, "<<="_fu, ">>="_fu, "&="_fu, "^="_fu, "|="_fu, "||="_fu, "&&="_fu, ".="_fu, "~="_fu }), out, precedence, rightToLeft);
-    binop_g9H7c3np((fu::slate<1, fu::str> { "<|"_fu }), out, precedence, rightToLeft);
+    binop_qFIn(fu::view<fu::str> {{ fu::str("?"_fu), fu::str("="_fu), fu::str("+="_fu), fu::str("-="_fu), fu::str("**="_fu), fu::str("*="_fu), fu::str("/="_fu), fu::str("%="_fu), fu::str("<<="_fu), fu::str(">>="_fu), fu::str("&="_fu), fu::str("^="_fu), fu::str("|="_fu), fu::str("||="_fu), fu::str("&&="_fu), fu::str(".="_fu), fu::str("~="_fu), fu::str(":="_fu), fu::str("+%="_fu), fu::str("-%="_fu), fu::str("*%="_fu) }}, out, precedence, rightToLeft);
+    binop_qFIn(fu::view<fu::str> {{ fu::str("<|"_fu) }}, out, precedence, rightToLeft);
     rightToLeft = false;
-    binop_g9H7c3np((fu::slate<1, fu::str> { "|>"_fu }), out, precedence, rightToLeft);
+    binop_qFIn(fu::view<fu::str> {{ fu::str("|>"_fu) }}, out, precedence, rightToLeft);
     return /*NRVO*/ out;
 }
 
-static const s_BINOP BINOP fu_INIT_PRIORITY(1005) = setupOperators_J2h3fYmf();
+static const BINOP_Aycy BINOP fu_INIT_PRIORITY(1006) = setupOperators_qFIn();
 
-                                #ifndef DEF_has_03SseD2ZkOf
-                                #define DEF_has_03SseD2ZkOf
-inline bool has_03SseD2Z(fu::view<fu::str> keys, fu::view<char> item)
+                                #ifndef DEF_has_1vcUAHGwkZd
+                                #define DEF_has_1vcUAHGwkZd
+inline bool has_1vcU(const Set_XshD& _, fu::view<char> key)
 {
+    fu::view<fu::str> keys_asc = _.keys_asc;
     int lo = 0;
-    int hi = keys.size();
+    int hi = keys_asc.size();
     while (lo < hi)
     {
         const int i = ((hi + lo) >> 1);
-        const int cmp = x3Cx3E_gCeFmDFw(keys[i], item);
+        const int cmp = x3Cx3E_erT9(keys_asc[i], key);
         if (cmp == 0)
             return true;
         else if (cmp < 0)
@@ -1013,40 +1194,35 @@ inline bool has_03SseD2Z(fu::view<fu::str> keys, fu::view<char> item)
 }
                                 #endif
 
-                                #ifndef DEF_has_JTjmFfAyj34
-                                #define DEF_has_JTjmFfAyj34
-inline bool has_JTjmFfAy(const s_Map_ZvYmFQlP8R5& _, fu::view<char> key)
+                                #ifndef DEF_has_xhWJBtFv2W7
+                                #define DEF_has_xhWJBtFv2W7
+inline bool has_xhWJ(const Map_Oj0K& _, fu::view<char> key)
 {
-    return has_03SseD2Z(_.keys, key);
+    return has_1vcU(_.keys, key);
 }
                                 #endif
 
-static const fu::vec<fu::str> PREFIX fu_INIT_PRIORITY(1005) = fu::vec<fu::str> { fu::slate<10, fu::str> { "++"_fu, "+"_fu, "--"_fu, "-"_fu, "!"_fu, "~"_fu, "?"_fu, "*"_fu, "&"_fu, "&mut"_fu } };
-
-                                #ifndef DEF_has_g5ZsWtbdNfi
-                                #define DEF_has_g5ZsWtbdNfi
-inline bool has_g5ZsWtbd(fu::view<fu::str> a, fu::view<char> b)
+                                #ifndef DEF_steal_NfnDLH8Kprj
+                                #define DEF_steal_NfnDLH8Kprj
+inline Set_XshD steal_NfnD(Set_XshD& v)
 {
-    for (int i = 0; i < a.size(); i++)
-    {
-        if (a[i] == b)
-            return true;
-
-    };
-    return false;
+    /*MOV*/ Set_XshD ret {};
+    std::swap(v, ret);
+    return /*NRVO*/ ret;
 }
                                 #endif
 
-                                #ifndef DEF_add_mts1NXJ4Qz0
-                                #define DEF_add_mts1NXJ4Qz0
-inline bool add_mts1NXJ4(fu::vec<fu::str>& keys, const fu::str& item)
+                                #ifndef DEF_add_poRwwHZ0Mo1
+                                #define DEF_add_poRwwHZ0Mo1
+inline bool add_poRw(Set_XshD& _, fu::vec_range<char> key)
 {
+    fu::view<fu::str> keys_asc = _.keys_asc;
     int lo = 0;
-    int hi = keys.size();
+    int hi = keys_asc.size();
     while (lo < hi)
     {
         const int i = ((hi + lo) >> 1);
-        const int cmp = x3Cx3E_gCeFmDFw(keys[i], item);
+        const int cmp = x3Cx3E_erT9(keys_asc[i], key);
         if (cmp == 0)
             return false;
         else if (cmp < 0)
@@ -1055,59 +1231,72 @@ inline bool add_mts1NXJ4(fu::vec<fu::str>& keys, const fu::str& item)
             hi = i;
 
     };
-    keys.insert(lo, fu::str(item));
+    const int i = lo;
+    _.keys_asc.insert(i, fu::str(key));
     return true;
 }
                                 #endif
 
-static void parseAndAdd_xkEtAxR6(const fu::str& fname, const fu::str& src, fu::view<s_Token> tokens, int& _idx, fu::vec<fu::str>& _expectedTypeParams, fu::view<fu::str> _upstreamTypeParams)
+static void parseAndAdd_qFIn(fu::vec_range<char> fname, fu::vec_range<char> src, fu::view<Token_RpL8> tokens, ParserState_tGnm& _ps)
 {
-    const fu::str& id = consume_ifLltrwq(s_kind_id, (*(const fu::str*)fu::NIL), fname, src, tokens, _idx).value;
-    if (has_g5ZsWtbd(_upstreamTypeParams, id) || !add_mts1NXJ4(_expectedTypeParams, id))
-        fail_a0ZqfRup((("Duplicate type parameter: "_fu + qBAD_3PsDzMvu(id)) + "."_fu), fname, src, tokens, _idx);
+    const fu::str& id = consume_qFIn(Kind_Idfg_id, fu::view<char>{}, fname, src, tokens, _ps).value;
+    if (has_1vcU(_ps._upstreamTypeParams, id) || !add_poRw(_ps._expectedTypeParams, id))
+        fail_94Qv((("Duplicate type parameter: "_view + qBAD_e44U(id)) + "."_view), fname, src, tokens, _ps);
 
 }
 
-static void tryParseTypeParamsDecl_wC2VdYU6(const fu::str& fname, const fu::str& src, fu::view<s_Token> tokens, int& _idx, fu::vec<fu::str>& _expectedTypeParams, fu::view<fu::str> _upstreamTypeParams)
+static void tryParseTypeParamsDecl_qFIn(fu::vec_range<char> fname, fu::vec_range<char> src, fu::view<Token_RpL8> tokens, ParserState_tGnm& _ps)
 {
-    if (tryConsume_RS2yajZX(s_kind_op, "!"_fu, tokens, _idx)
-
-        // RETROFIT see parser.fu
-        || tryConsume_RS2yajZX(s_kind_op, "<"_fu, tokens, _idx)
-            && (_idx--, true))
+    if (tryConsume_94Qv(Kind_Idfg_op, "!"_view, tokens, _ps) || (tryConsume_94Qv(Kind_Idfg_op, "<"_view, tokens, _ps) && (_ps._idx--, true)))
     {
-        if (tryConsume_RS2yajZX(s_kind_op, "<"_fu, tokens, _idx))
+        if (tryConsume_94Qv(Kind_Idfg_op, "<"_view, tokens, _ps))
         {
             bool first = true;
             for (; ; )
             {
-                if (tryConsume_RS2yajZX(s_kind_op, ">"_fu, tokens, _idx))
+                if (tryConsume_94Qv(Kind_Idfg_op, ">"_view, tokens, _ps))
                     break;
                 else
                 {
                     if (!first)
-                    {
-                        consume_ifLltrwq(s_kind_op, ","_fu, fname, src, tokens, _idx);
-                    };
+                        consume_qFIn(Kind_Idfg_op, ","_view, fname, src, tokens, _ps);
+
                     first = false;
-                    parseAndAdd_xkEtAxR6(fname, src, tokens, _idx, _expectedTypeParams, _upstreamTypeParams);
+                    parseAndAdd_qFIn(fname, src, tokens, _ps);
                 };
             };
         }
         else
-            parseAndAdd_xkEtAxR6(fname, src, tokens, _idx, _expectedTypeParams, _upstreamTypeParams);
+            parseAndAdd_qFIn(fname, src, tokens, _ps);
 
     };
 }
 
-static s_Node createAddrOfFn_sLA17eRn(const fu::str& name, const s_Flags flags, const int modid, const int _loc)
+static Node_Wr1X createAddrOfFn_qFIn(fu::vec_range<char> name, const Flags_Lzg8 flags, const int modid, const ParserState_tGnm& _ps)
 {
-    return make_3RGKUyIO(s_kind_addroffn, (*(const fu::vec<s_Node>*)fu::NIL), flags, name, s_DeclAsserts{}, s_ParseSyntax{}, s_TokenIdx{}, modid, _loc);
+    return make_qFIn(Kind_Idfg_addroffn, (*(fu::vec<Node_Wr1X>*)fu::NIL), flags, name, DeclAsserts_taUG{}, ParseSyntax_Lay2{}, TokenIdx_5b85{}, modid, _ps);
 }
 
-static s_Node createLet_smN5JZFS(const fu::str& id, const s_Node& type, const s_Node& init, const s_Flags flags, const int modid, const int _loc)
+static Node_Wr1X createLet_qFIn(fu::vec_range<char> id, const Node_Wr1X& type, const Node_Wr1X& init, const Flags_Lzg8 flags, const int modid, const ParserState_tGnm& _ps)
 {
-    return make_3RGKUyIO(s_kind_let, fu::vec<s_Node> { fu::slate<2, s_Node> { s_Node(type), s_Node(init) } }, flags, id, s_DeclAsserts{}, s_ParseSyntax{}, s_TokenIdx{}, modid, _loc);
+    return make_qFIn(Kind_Idfg_let, fu::vec<Node_Wr1X> {{ Node_Wr1X(type), Node_Wr1X(init) }}, flags, id, DeclAsserts_taUG{}, ParseSyntax_Lay2{}, TokenIdx_5b85{}, modid, _ps);
+}
+
+static Node_Wr1X createCall_qFIn(fu::vec_range<char> id, const Flags_Lzg8 flags, fu::vec_range<Node_Wr1X> args, const ParseSyntax_Lay2 syntax, const int modid, const ParserState_tGnm& _ps)
+{
+    return make_qFIn(Kind_Idfg_call, args, flags, id, DeclAsserts_taUG{}, syntax, TokenIdx_5b85{}, modid, _ps);
+}
+
+static Node_Wr1X createRead_qFIn(fu::vec_range<char> id, const Flags_Lzg8 flags, const int modid, fu::vec_range<char> fname, fu::vec_range<char> src, fu::view<Token_RpL8> tokens, const ParserState_tGnm& _ps)
+{
+    if ((id == "true"_view) || (id == "false"_view))
+    {
+        return make_qFIn(Kind_Idfg_bool, (*(fu::vec<Node_Wr1X>*)fu::NIL), Flags_Lzg8{}, id, DeclAsserts_taUG{}, ParseSyntax_Lay2{}, TokenIdx_5b85{}, modid, _ps);
+    }
+    else
+    {
+        return createCall_qFIn((id ? id : fail_94Qv(fu::str{}, fname, src, tokens, _ps)), flags, (*(fu::vec<Node_Wr1X>*)fu::NIL), ParseSyntax_Lay2{}, modid, _ps);
+    };
 }
 
                                 #ifndef DEF_M_LINT_UNARY_PRECEDENCE
@@ -1115,53 +1304,65 @@ static s_Node createLet_smN5JZFS(const fu::str& id, const s_Node& type, const s_
 inline constexpr int M_LINT_UNARY_PRECEDENCE = (1 << 0);
                                 #endif
 
-static s_Node miss_Rruxt4LX()
-{
-    return s_Node{};
-}
-
-static void lint_BxXpQjpT(const int mode, const fu::str& fname, const fu::str& src, fu::view<s_Token> tokens, const int _idx, const int _loc, fu::vec<fu::str>& warnings, const s_Options& options)
+static void lint_qFIn(const int mode, fu::vec_range<char> fname, fu::vec_range<char> src, fu::view<Token_RpL8> tokens, ParserState_tGnm& _ps, const Options_mg7V& options)
 {
     if (mode & M_LINT_UNARY_PRECEDENCE)
-        warn_JY9fwXxS((("Here the unary -/+ separates from the numeric literal,"_fu + " and wraps around the whole expression."_fu) + " Please parenthesize explicitly to make this obvious."_fu), fname, src, tokens, _idx, _loc, warnings, options);
+        warn_qFIn((("Here the unary -/+ separates from the numeric literal,"_view + " and wraps around the whole expression."_view) + " Please parenthesize explicitly to make this obvious."_view), fname, src, tokens, _ps, options);
 
 }
 
-static s_Node parseAccessExpression_joifAiN6(const s_Node& expr, const int modid, const fu::str& fname, const fu::str& src, fu::view<s_Token> tokens, int& _idx, int& _loc)
+static Node_Wr1X parseAccessExpression_qFIn(const Node_Wr1X& expr, const int modid, fu::vec_range<char> fname, fu::vec_range<char> src, fu::view<Token_RpL8> tokens, ParserState_tGnm& _ps)
 {
-    _loc = _idx;
-    s_Token id { tryConsume_xXyIFHPn(s_kind_id, tokens, _idx) };
+    _ps._loc = _ps._idx;
+    Token_RpL8 id = tryConsume_qFIn(Kind_Idfg_id, tokens, _ps);
     if (!id)
     {
-        consume_ifLltrwq(s_kind_op, "::"_fu, fname, src, tokens, _idx);
-        id = consume_ifLltrwq(s_kind_id, (*(const fu::str*)fu::NIL), fname, src, tokens, _idx);
-        _idx -= 2;
+        consume_qFIn(Kind_Idfg_op, "::"_view, fname, src, tokens, _ps);
+        id = consume_qFIn(Kind_Idfg_id, fu::view<char>{}, fname, src, tokens, _ps);
+        _ps._idx -= 2;
     };
-    return createCall_mBEz988k(id.value, s_Flags_F_CALL_HAS_DOT, fu::vec<s_Node> { fu::slate<1, s_Node> { s_Node(expr) } }, s_ParseSyntax{}, modid, _loc);
+    return createCall_qFIn(id.value, Flags_Lzg8_F_CALL_HAS_DOT, fu::vec<Node_Wr1X> {{ Node_Wr1X(expr) }}, ParseSyntax_Lay2{}, modid, _ps);
 }
 
-static void softComma_eRGnsrbO(fu::view<char> endop, const fu::str& fname, const fu::str& src, fu::view<s_Token> tokens, int& _idx, const int _loc, fu::vec<fu::str>& warnings, const s_Options& options)
+                                #ifndef DEF_last_m6RKSWXHf1f
+                                #define DEF_last_m6RKSWXHf1f
+inline Node_Wr1X& last_m6RK(fu::view_mut<Node_Wr1X> s)
 {
-    const s_Token& peek = tokens[_idx];
-    if (peek.kind == s_kind_op)
+    if (s.size())
+        return s.mutref((s.size() - 1));
+    else
+        fu::fail(fu::str("len == 0"_fu));
+
+}
+                                #endif
+
+static Node_Wr1X createArgID_qFIn(fu::vec_range<char> id, const Node_Wr1X& expr, const Flags_Lzg8 flags, const int modid, const ParserState_tGnm& _ps)
+{
+    return make_qFIn(Kind_Idfg_argid, fu::vec<Node_Wr1X> {{ Node_Wr1X(expr) }}, flags, id, DeclAsserts_taUG{}, ParseSyntax_Lay2{}, TokenIdx_5b85{}, modid, _ps);
+}
+
+static void softComma_qFIn(fu::view<char> endop, fu::vec_range<char> fname, fu::vec_range<char> src, fu::view<Token_RpL8> tokens, ParserState_tGnm& _ps, const Options_mg7V& options)
+{
+    const Token_RpL8& peek = tokens[_ps._idx];
+    if (peek.kind == Kind_Idfg_op)
     {
-        if (peek.value == ","_fu)
+        if (peek.value == ","_view)
         {
-            _idx++;
+            _ps._idx++;
             return;
         }
         else if (peek.value == endop)
             return;
 
     };
-    if (!((peek.kind == s_kind_str) != (tokens[(_idx - 1)].kind == s_kind_str)))
-        warn_JY9fwXxS((("Missing comma before `"_fu + peek.value) + "`."_fu), fname, src, tokens, _idx, _loc, warnings, options);
+    if (!((peek.kind == Kind_Idfg_str) != (tokens[(_ps._idx - 1)].kind == Kind_Idfg_str)))
+        warn_qFIn((("Missing comma before "_view + qBAD_e44U(peek.value)) + "."_view), fname, src, tokens, _ps, options);
 
 }
 
-                                #ifndef DEF_max_mJGU9byOmI4
-                                #define DEF_max_mJGU9byOmI4
-inline int max_mJGU9byO(const int a, const int b)
+                                #ifndef DEF_max_BjFAioWEpjb
+                                #define DEF_max_BjFAioWEpjb
+inline int max_BjFA(const int a, const int b)
 {
     if ((a >= b))
         return a;
@@ -1171,182 +1372,211 @@ inline int max_mJGU9byO(const int a, const int b)
 }
                                 #endif
 
-                                #ifndef DEF_last_4PVbatPg4uj
-                                #define DEF_last_4PVbatPg4uj
-inline s_Node& last_4PVbatPg(fu::view_mut<s_Node> s)
-{
-    if (s.size())
-        return s.mutref((s.size() - 1));
-    else
-        fu::fail("len == 0"_fu);
-
-}
+                                #ifndef DEF_M_LAMBDA_STMT_OK
+                                #define DEF_M_LAMBDA_STMT_OK
+inline constexpr int M_LAMBDA_STMT_OK = (1 << 2);
                                 #endif
 
-static s_Node createArgID_g0AzNAZQ(const fu::str& id, const s_Node& expr, const s_Flags flags, const int modid, const int _loc)
+static Node_Wr1X pipelineLeft_qFIn(/*MOV*/ Node_Wr1X&& left, const Node_Wr1X& right, fu::vec_range<char> fname, fu::vec_range<char> src, fu::view<Token_RpL8> tokens, const ParserState_tGnm& _ps)
 {
-    return make_3RGKUyIO(s_kind_argid, fu::vec<s_Node> { fu::slate<1, s_Node> { s_Node(expr) } }, flags, id, s_DeclAsserts{}, s_ParseSyntax{}, s_TokenIdx{}, modid, _loc);
+    if (left.kind != Kind_Idfg_call)
+        fail_94Qv(fu::str(str_2NQa5TNr8Mc), fname, src, tokens, _ps);
+    else
+    {
+        left.items.push(Node_Wr1X(right));
+        left.flags |= Flags_Lzg8_F_CALL_HAS_ARGPARENS;
+        return static_cast<Node_Wr1X&&>(left);
+    };
 }
 
-static fu::str getAutoName_kWtblw2z(const s_Node& expr, const fu::str& fname, const fu::str& src, fu::view<s_Token> tokens, const int _idx)
+static void tryColonPipeline_qFIn(Node_Wr1X& expr, const bool stmt, const int modid, fu::vec_range<char> fname, fu::vec_range<char> src, fu::vec_range<Token_RpL8> tokens, ParserState_tGnm& _ps, const Options_mg7V& options)
 {
-    if (expr.kind == s_kind_addroffn)
-        return fu::str(expr.value);
-    else if ((expr.kind == s_kind_call) && hasIdentifierChars_pZLkTusf(expr.value))
+    if (tryConsume_94Qv(Kind_Idfg_op, ":"_view, tokens, _ps))
+    {
+        if (!(expr.kind == Kind_Idfg_call))
+            fail_94Qv(fu::str(str_OokQ1yGra4d), fname, src, tokens, _ps);
+        else
+        {
+            Node_Wr1X right = parseExpression_ZIeg(P_RESET, (stmt ? M_LAMBDA_STMT_OK : 0), modid, fname, src, tokens, _ps, options);
+            expr = pipelineLeft_qFIn(Node_Wr1X(expr), right, fname, src, tokens, _ps);
+            if (stmt)
+            {
+                const Token_RpL8& prev = (_ps._idx ? tokens[(_ps._idx - 1)] : (*(Token_RpL8*)fu::NIL));
+                if ((prev.kind == Kind_Idfg_op) && (prev.value == ";"_view))
+                    _ps._idx--;
+
+            };
+        };
+    };
+}
+
+static fu::str getAutoName_qFIn(const Node_Wr1X& expr, fu::vec_range<char> fname, fu::vec_range<char> src, fu::view<Token_RpL8> tokens, const ParserState_tGnm& _ps)
+{
+    if (hasIdentifierChars_V5Iu(expr.value) && ((expr.kind == Kind_Idfg_call) || (expr.kind == Kind_Idfg_typeparam) || (expr.kind == Kind_Idfg_addroffn)))
         return fu::str(expr.value);
     else if (expr.items)
     {
-        const int i = (((expr.kind == s_kind_and) && (expr.items.size() - 1)) ? ((expr.kind == s_kind_if) ? 1 : 0) : 0);
-        return getAutoName_kWtblw2z(expr.items[i], fname, src, tokens, _idx);
+        const int i = (((expr.kind == Kind_Idfg_and) && (expr.items.size() - 1)) ? ((expr.kind == Kind_Idfg_if) ? 1 : 0) : 0);
+        return getAutoName_qFIn(expr.items[i], fname, src, tokens, _ps);
     }
     else
-        fail_a0ZqfRup("Cannot :autoname this expression."_fu, fname, src, tokens, _idx);
+        fail_94Qv(fu::str(str_KgYNc12jxbi), fname, src, tokens, _ps);
 
 }
 
-static s_ArgsParse parseCallArgs_BABVKvPl(const fu::str& endop, fu::vec<s_Node>& out_args, bool sliceSyntax, const bool experimental_sliceAnnots, const int modid, const fu::str& fname, const fu::str& src, fu::view<s_Token> tokens, int& _idx, int& _loc, int& _col0, int& _precedence, int& _fnDepth, bool& _autopub, bool& _TODO_FIX_dollarOk, int& _numDollars, fu::vec<fu::str>& _expectedTypeParams, fu::vec<fu::str>& _upstreamTypeParams, fu::vec<s_Import>& imports, fu::vec<fu::str>& warnings, const s_Options& options)
+static ArgsParse_yOm1 parseCallArgs_qFIn(fu::view<char> endop, fu::vec_range_mut<Node_Wr1X> out_args, const bool sliceSyntax, const int modid, fu::vec_range<char> fname, fu::vec_range<char> src, fu::vec_range<Token_RpL8> tokens, ParserState_tGnm& _ps, const Options_mg7V& options)
 {
-    s_Flags flags {};
+    Flags_Lzg8 flags {};
     bool sliceSyntax_used {};
-    const int col00 = _col0;
-    bool first = true;
+    const int col00 = _ps._col0;
     for (; ; )
     {
-        if (experimental_sliceAnnots && tryConsume_RS2yajZX(s_kind_op, ";"_fu, tokens, _idx))
-        {
-            consume_ifLltrwq(s_kind_op, endop, fname, src, tokens, _idx);
+        fu::str name {};
+
+        { {
+            if (sliceSyntax && !sliceSyntax_used)
+            {
+                const Token_RpL8& peek = tokens[_ps._idx];
+                if ((peek.kind == Kind_Idfg_op) && (peek.value == ".."_view))
+                {
+                    if (out_args)
+                    {
+                        Node_Wr1X& last = last_m6RK(out_args);
+                        if (last.kind == Kind_Idfg_argid)
+                        {
+                            fail_94Qv(fu::str{}, fname, src, tokens, _ps);
+                        }
+                        else
+                        {
+                            last = createArgID_qFIn(str_QlC4mahL2gb, last, Flags_Lzg8{}, modid, _ps);
+                            flags |= Flags_Lzg8_F_CALL_HAS_NAMED_ARGS;
+                        };
+                    };
+                    _ps._idx++;
+                    sliceSyntax_used = true;
+                    const Token_RpL8& peek_1 = tokens[_ps._idx];
+                    if ((peek_1.kind == Kind_Idfg_op) && (peek_1.value == ","_view))
+                        _ps._idx++;
+                    else
+                        name = fu::str("end"_fu);
+
+                    goto BL_3;
+                };
+            };
+            if (out_args)
+                softComma_qFIn(endop, fname, src, tokens, _ps, options);
+
+          } BL_3:;
+        };
+        if (tryConsume_94Qv(Kind_Idfg_op, endop, tokens, _ps))
             break;
-        }
         else
         {
-            if (!first)
-            { {
-                if (sliceSyntax)
-                {
-                    const s_Token& peek = tokens[_idx];
-                    if ((peek.kind == s_kind_op) && (peek.value == ":"_fu))
-                    {
-                        sliceSyntax_used = true;
-                        goto BL_5;
-                    };
-                };
-                softComma_eRGnsrbO(endop, fname, src, tokens, _idx, _loc, warnings, options);
-              } BL_5:;
-            };
-            if (tryConsume_RS2yajZX(s_kind_op, endop, tokens, _idx))
-                break;
-            else
+            bool autoName = false;
+            bool optional = false;
+            const Token_RpL8& tok0 = tokens[_ps._idx];
+            _ps._col0 = ((tok0.lcc.line > tokens[(_ps._idx - 1)].lcc.line) ? max_BjFA(tok0.lcc.col, col00) : col00);
+            if (!(name))
             {
-                fu::str name = ""_fu;
-                bool autoName = false;
-                bool optional = false;
-                const s_Token& tok0 = tokens[_idx];
-                _col0 = ((tok0.lcc.line > tokens[(_idx - 1)].lcc.line) ? max_mJGU9byO(tok0.lcc.col, col00) : col00);
-                if ((tok0.kind == s_kind_op) && (tok0.value == "?:"_fu) && !sliceSyntax)
+                if ((tok0.kind == Kind_Idfg_op) && (tok0.value == "?:"_view))
                 {
                     autoName = true;
                     optional = true;
-                    _idx += 1;
+                    _ps._idx += 1;
                 }
-                else if ((tok0.kind == s_kind_op) && (tok0.value == ":"_fu))
+                else if ((tok0.kind == Kind_Idfg_op) && (tok0.value == ":"_view))
                 {
                     autoName = true;
-                    _idx += 1;
-                    if (sliceSyntax && !first && !(flags & s_Flags_F_CALL_HAS_NAMED_ARGS))
-                    {
-                        if (tryConsume_RS2yajZX(s_kind_op, endop, tokens, _idx))
-                        {
-                            sliceSyntax_used = true;
-                            s_Node& last = last_4PVbatPg(out_args);
-                            last = createArgID_g0AzNAZQ("start"_fu, last, s_Flags{}, modid, _loc);
-                            flags |= s_Flags_F_CALL_HAS_NAMED_ARGS;
-                            break;
-                        };
-                    };
+                    _ps._idx += 1;
                 }
-                else if ((tok0.kind == s_kind_id) && !sliceSyntax)
+                else if (tok0.kind == Kind_Idfg_id)
                 {
-                    const s_Token& tok1 = tokens[(_idx + 1)];
-                    if (tok1.kind == s_kind_op)
+                    const Token_RpL8& tok1 = tokens[(_ps._idx + 1)];
+                    if (tok1.kind == Kind_Idfg_op)
                     {
-                        if ((tok1.value == ":"_fu) || (optional = (tok1.value == "?:"_fu)))
+                        if ((tok1.value == ":"_view) || (optional = (tok1.value == "?:"_view)))
                         {
                             name = tok0.value;
-                            _idx += 2;
+                            _ps._idx += 2;
                         };
                     };
                 };
-                /*MOV*/ s_Node expr = parseExpression_djvSQ5j2(P_RESET, 0, modid, fname, src, tokens, _idx, _loc, _col0, _precedence, _fnDepth, _autopub, _TODO_FIX_dollarOk, _numDollars, _expectedTypeParams, _upstreamTypeParams, imports, warnings, options);
-                if (autoName)
+            };
+            /*MOV*/ Node_Wr1X expr = parseExpression_ZIeg(P_RESET, 0, modid, fname, src, tokens, _ps, options);
+            tryColonPipeline_qFIn(expr, false, modid, fname, src, tokens, _ps, options);
+            if (autoName)
+                name = getAutoName_qFIn(expr, fname, src, tokens, _ps);
+
+            if (name)
+            {
+                flags |= Flags_Lzg8_F_CALL_HAS_NAMED_ARGS;
+                if ((expr.kind == Kind_Idfg_fn) && (expr.value == "_"_view))
+                    expr.value = name;
+
+            };
+            out_args.push((name ? createArgID_qFIn(name, expr, (optional ? Flags_Lzg8_F_ARGID_IS_OPTIONAL : Flags_Lzg8{}), modid, _ps) : static_cast<Node_Wr1X&&>(expr)));
+        };
+    };
+    _ps._col0 = col00;
+    return ArgsParse_yOm1 { flags, sliceSyntax_used };
+}
+
+static Node_Wr1X parseCallExpression_qFIn(const Node_Wr1X& expr, const int modid, fu::vec_range<char> fname, fu::vec_range<char> src, fu::vec_range<Token_RpL8> tokens, ParserState_tGnm& _ps, const Options_mg7V& options)
+{
+    fu::vec<Node_Wr1X> args {};
+    const int numDollars0 = _ps._numDollars;
+    Flags_Lzg8 argFlags = parseCallArgs_qFIn(")"_view, args, false, modid, fname, src, tokens, _ps, options).flags;
+    if (_ps._numDollars > numDollars0)
+        argFlags |= Flags_Lzg8_F_TEMPLATE;
+
+    const Flags_Lzg8 flags = (expr.flags | argFlags);
+
+    { {
+        if (!(expr.syntax & ParseSyntax_Lay2_PS_PARENS))
+        {
+            if ((expr.kind == Kind_Idfg_call) && ((flags & (Flags_Lzg8_F_CALL_HAS_DOT | Flags_Lzg8_F_CALL_HAS_ARGPARENS)) == Flags_Lzg8_F_CALL_HAS_DOT))
+            {
+                const Node_Wr1X* _0;
+                const Node_Wr1X& head = (*(_0 = &(((expr.items.size() == 1) ? expr.items[0] : (*(Node_Wr1X*)fu::NIL)))) ? *_0 : fu::fail(fu::str(str_2SffdvnVDw8)));
+                args.unshift(Node_Wr1X(head));
+            }
+            else
+            {
+                if (!((expr.kind == Kind_Idfg_call) && !(flags & (Flags_Lzg8_F_CALL_HAS_DOT | Flags_Lzg8_F_CALL_HAS_ARGPARENS))))
                 {
-                    if (sliceSyntax)
-                    {
-                        sliceSyntax_used = true;
-                        name = "end"_fu;
-                        sliceSyntax = false;
-                    }
-                    else
-                        name = getAutoName_kWtblw2z(expr, fname, src, tokens, _idx);
+                    if (!(expr.kind == Kind_Idfg_typeparam))
+                        goto BL_2;
 
                 };
-                if (name)
-                    flags |= s_Flags_F_CALL_HAS_NAMED_ARGS;
-
-                out_args.push((name ? createArgID_g0AzNAZQ(name, expr, (optional ? s_Flags_F_ARGID_IS_OPTIONAL : s_Flags{}), modid, _loc) : static_cast<s_Node&&>(expr)));
-                first = false;
             };
+            return createCall_qFIn((expr.value ? expr.value : fail_94Qv(fu::str{}, fname, src, tokens, _ps)), (flags | Flags_Lzg8_F_CALL_HAS_ARGPARENS), args, ParseSyntax_Lay2{}, modid, _ps);
         };
+      } BL_2:;
     };
-    _col0 = col00;
-    return s_ArgsParse { flags, sliceSyntax_used };
+    return make_qFIn(Kind_Idfg_call_indir, (expr + args), argFlags, (*(fu::str*)fu::NIL), DeclAsserts_taUG{}, ParseSyntax_Lay2{}, TokenIdx_5b85{}, modid, _ps);
 }
 
-static s_Node parseCallExpression_m6VOOz4D(const s_Node& expr, const int modid, const fu::str& fname, const fu::str& src, fu::view<s_Token> tokens, int& _idx, int& _loc, int& _col0, int& _precedence, int& _fnDepth, bool& _autopub, bool& _TODO_FIX_dollarOk, int& _numDollars, fu::vec<fu::str>& _expectedTypeParams, fu::vec<fu::str>& _upstreamTypeParams, fu::vec<s_Import>& imports, fu::vec<fu::str>& warnings, const s_Options& options)
+static Node_Wr1X parseIndexExpression_qFIn(const Node_Wr1X& expr, const int modid, fu::vec_range<char> fname, fu::vec_range<char> src, fu::vec_range<Token_RpL8> tokens, ParserState_tGnm& _ps, const Options_mg7V& options)
 {
-    fu::vec<s_Node> args {};
-    const int numDollars0 = _numDollars;
-    s_Flags flags = (expr.flags | parseCallArgs_BABVKvPl(")"_fu, args, false, false, modid, fname, src, tokens, _idx, _loc, _col0, _precedence, _fnDepth, _autopub, _TODO_FIX_dollarOk, _numDollars, _expectedTypeParams, _upstreamTypeParams, imports, warnings, options).flags);
-    if (_numDollars > numDollars0)
-        flags |= s_Flags_F_TEMPLATE;
-
-    if ((expr.kind == s_kind_call) && ((flags & (s_Flags_F_CALL_HAS_DOT | s_Flags_F_CALL_HAS_ARGPARENS)) == s_Flags_F_CALL_HAS_DOT))
-    {
-        const s_Node* _0;
-        const s_Node& head = (*(_0 = &(((expr.items && (expr.items.size() == 1)) ? expr.items[0] : (*(const s_Node*)fu::NIL)))) ? *_0 : fu::fail("Malformed property access expression."_fu));
-        args.unshift(s_Node(head));
-    }
-    else
-    {
-        if (!((expr.kind == s_kind_call) && !(flags & (s_Flags_F_CALL_HAS_DOT | s_Flags_F_CALL_HAS_ARGPARENS))))
-        {
-            if (!(expr.kind == s_kind_typeparam))
-                fail_a0ZqfRup("Invalid call expression."_fu, fname, src, tokens, _idx);
-
-        };
-    };
-    return createCall_mBEz988k((expr.value ? expr.value : fail_a0ZqfRup(fu::str{}, fname, src, tokens, _idx)), (flags | s_Flags_F_CALL_HAS_ARGPARENS), args, s_ParseSyntax{}, modid, _loc);
+    fu::vec<Node_Wr1X> args {};
+    const ArgsParse_yOm1 argsParse = parseCallArgs_qFIn("]"_view, args, true, modid, fname, src, tokens, _ps, options);
+    args.unshift(Node_Wr1X(expr));
+    return createCall_qFIn((argsParse.sliceSyntax ? str_cZzwiUzJ2K1 : str_77oJR2ghS9a), (argsParse.flags | Flags_Lzg8_F_OPERATOR), args, ParseSyntax_Lay2{}, modid, _ps);
 }
 
-static s_Node parseIndexExpression_cht38Puc(const s_Node& expr, const int modid, const fu::str& fname, const fu::str& src, fu::view<s_Token> tokens, int& _idx, int& _loc, int& _col0, int& _precedence, int& _fnDepth, bool& _autopub, bool& _TODO_FIX_dollarOk, int& _numDollars, fu::vec<fu::str>& _expectedTypeParams, fu::vec<fu::str>& _upstreamTypeParams, fu::vec<s_Import>& imports, fu::vec<fu::str>& warnings, const s_Options& options)
+                                #ifndef DEF_get_Eupufe0A8Uk
+                                #define DEF_get_Eupufe0A8Uk
+inline int get_Eupu(const Set_XshD& _, fu::view<char> key, fu::view<int> values)
 {
-    fu::vec<s_Node> args {};
-    const s_ArgsParse argsParse = parseCallArgs_BABVKvPl("]"_fu, args, true, false, modid, fname, src, tokens, _idx, _loc, _col0, _precedence, _fnDepth, _autopub, _TODO_FIX_dollarOk, _numDollars, _expectedTypeParams, _upstreamTypeParams, imports, warnings, options);
-    args.unshift(s_Node(expr));
-    return createCall_mBEz988k((argsParse.sliceSyntax ? "[:]"_fu : "[]"_fu), (argsParse.flags | s_Flags_F_OPERATOR), args, s_ParseSyntax{}, modid, _loc);
-}
-
-                                #ifndef DEF_get_90TVR3QvsI8
-                                #define DEF_get_90TVR3QvsI8
-inline int get_90TVR3Qv(fu::view<fu::str> keys, fu::view<char> item, fu::view<int> extras)
-{
+    fu::view<fu::str> keys_asc = _.keys_asc;
     int lo = 0;
-    int hi = keys.size();
+    int hi = keys_asc.size();
     while (lo < hi)
     {
         const int i = ((hi + lo) >> 1);
-        const int cmp = x3Cx3E_gCeFmDFw(keys[i], item);
+        const int cmp = x3Cx3E_erT9(keys_asc[i], key);
         if (cmp == 0)
-            return extras[i];
+            return values[i];
         else if (cmp < 0)
             lo = (i + 1);
         else
@@ -1357,272 +1587,369 @@ inline int get_90TVR3Qv(fu::view<fu::str> keys, fu::view<char> item, fu::view<in
 }
                                 #endif
 
-                                #ifndef DEF_get_JTjmFfAyj34
-                                #define DEF_get_JTjmFfAyj34
-inline int get_JTjmFfAy(const s_Map_ZvYmFQlP8R5& _, fu::view<char> key)
+                                #ifndef DEF_get_zoJEWn5NDQj
+                                #define DEF_get_zoJEWn5NDQj
+inline int get_zoJE(const Map_Oj0K& _, fu::view<char> key)
 {
-    return get_90TVR3Qv(_.keys, key, _.vals);
+    return get_Eupu(_.keys, key, _.vals);
 }
                                 #endif
 
-static s_Node createIf_GfIIGbSf(const s_Node& cond, const s_Node& cons, const s_Node& alt, const s_ParseSyntax syntax, const int modid, const int _loc)
+                                #ifndef DEF_uNsigned_40Hlp3Rl5Y4
+                                #define DEF_uNsigned_40Hlp3Rl5Y4
+inline unsigned uNsigned_40Hl(const int v)
 {
-    return make_3RGKUyIO(s_kind_if, fu::vec<s_Node> { fu::slate<3, s_Node> { s_Node(cond), s_Node(cons), s_Node(alt) } }, s_Flags{}, (*(const fu::str*)fu::NIL), s_DeclAsserts{}, syntax, s_TokenIdx{}, modid, _loc);
+    return unsigned(v);
+}
+                                #endif
+
+                                #ifndef DEF_iF_R2Pme90WUj2
+                                #define DEF_iF_R2Pme90WUj2
+inline const Token_RpL8& iF_R2Pm(fu::view<Token_RpL8> a, const int i)
+{
+    if (uNsigned_40Hl(i) < uNsigned_40Hl(a.size()))
+        return a[i];
+    else
+        return (*(Token_RpL8*)fu::NIL);
+
+}
+                                #endif
+
+                                #ifndef DEF_min_DbqN29MT8e3
+                                #define DEF_min_DbqN29MT8e3
+inline int min_DbqN(const int a, const int b)
+{
+    if ((a <= b))
+        return a;
+    else
+        return b;
+
+}
+                                #endif
+
+static int whitespaceDiff_qFIn(const Token_RpL8& prev, const Token_RpL8& next)
+{
+    if (prev.lcc.line < next.lcc.line)
+        return 10;
+    else
+        return max_BjFA(0, min_DbqN(1, ((next.lcc.col - prev.lcc.col) - prev.lcc.chars)));
+
 }
 
-static s_Node flattenIfSame_VK45J0Fw(const s_kind kind, const s_Node& left, const s_Node& right, const s_ParseSyntax syntax, const int modid, const int _loc)
+                                #ifndef DEF_abs_NHZZYqEtT21
+                                #define DEF_abs_NHZZYqEtT21
+inline int abs_NHZZ(const int v)
 {
-    const s_kind k_left = left.kind;
-    const s_kind k_right = right.kind;
-    fu::vec<s_Node> items = (((k_left == kind) && (k_right == kind)) ? (left.items + right.items) : ((k_left == kind) ? (left.items + right) : ((k_right == kind) ? (left + right.items) : fu::vec<s_Node> { fu::slate<2, s_Node> { s_Node(left), s_Node(right) } })));
-    return make_3RGKUyIO(kind, items, s_Flags{}, (*(const fu::str*)fu::NIL), s_DeclAsserts{}, syntax, s_TokenIdx{}, modid, _loc);
+    if (v < 0)
+        return -v;
+    else
+        return v;
+
+}
+                                #endif
+
+static Node_Wr1X createIf_qFIn(const Node_Wr1X& cond, const Node_Wr1X& cons, const Node_Wr1X& alt, const ParseSyntax_Lay2 syntax, const int modid, const ParserState_tGnm& _ps)
+{
+    return make_qFIn(Kind_Idfg_if, fu::vec<Node_Wr1X> {{ Node_Wr1X(cond), Node_Wr1X(cons), Node_Wr1X(alt) }}, Flags_Lzg8{}, (*(fu::str*)fu::NIL), DeclAsserts_taUG{}, syntax, TokenIdx_5b85{}, modid, _ps);
 }
 
-static s_Node createOr_QkHvaC2I(const s_Node& left, const s_Node& right, const s_ParseSyntax syntax, const int modid, const int _loc)
+static Node_Wr1X flattenIfSame_qFIn(const Kind_Idfg kind, const Node_Wr1X& left, const Node_Wr1X& right, const ParseSyntax_Lay2 syntax, const int modid, const ParserState_tGnm& _ps)
 {
-    return flattenIfSame_VK45J0Fw(s_kind_or, left, right, syntax, modid, _loc);
+    const Kind_Idfg k_left = left.kind;
+    const Kind_Idfg k_right = right.kind;
+    fu::vec<Node_Wr1X> items = (((k_left == kind) && (k_right == kind)) ? (left.items + right.items) : ((k_left == kind) ? (left.items + right) : ((k_right == kind) ? (left + right.items) : fu::vec<Node_Wr1X> {{ Node_Wr1X(left), Node_Wr1X(right) }})));
+    return make_qFIn(kind, items, Flags_Lzg8{}, (*(fu::str*)fu::NIL), DeclAsserts_taUG{}, syntax, TokenIdx_5b85{}, modid, _ps);
 }
 
-static s_Node createAnd_lIz6bDXy(const s_Node& left, const s_Node& right, const s_ParseSyntax syntax, const int modid, const int _loc)
+static Node_Wr1X createOr_qFIn(const Node_Wr1X& left, const Node_Wr1X& right, const ParseSyntax_Lay2 syntax, const int modid, const ParserState_tGnm& _ps)
 {
-    return flattenIfSame_VK45J0Fw(s_kind_and, left, right, syntax, modid, _loc);
+    return flattenIfSame_qFIn(Kind_Idfg_or, left, right, syntax, modid, _ps);
 }
 
-static s_Node pipelineRight_jM2ij3aE(const s_Node& left, /*MOV*/ s_Node&& right, const fu::str& fname, const fu::str& src, fu::view<s_Token> tokens, const int _idx)
+static Node_Wr1X createAnd_qFIn(const Node_Wr1X& left, const Node_Wr1X& right, const ParseSyntax_Lay2 syntax, const int modid, const ParserState_tGnm& _ps)
 {
-    if (right.kind != s_kind_call)
-        fail_a0ZqfRup("Cannot pipeline: not a call expr."_fu, fname, src, tokens, _idx);
+    return flattenIfSame_qFIn(Kind_Idfg_and, left, right, syntax, modid, _ps);
+}
+
+static Node_Wr1X pipelineRight_qFIn(const Node_Wr1X& left, /*MOV*/ Node_Wr1X&& right, fu::vec_range<char> fname, fu::vec_range<char> src, fu::view<Token_RpL8> tokens, const ParserState_tGnm& _ps)
+{
+    if (right.kind != Kind_Idfg_call)
+        fail_94Qv(fu::str(str_2NQa5TNr8Mc), fname, src, tokens, _ps);
     else
     {
-        if (right.flags & s_Flags_F_CALL_HAS_DOT)
-            right.items.insert(1, s_Node(left));
+        if (right.flags & Flags_Lzg8_F_CALL_HAS_DOT)
+            right.items.insert(1, Node_Wr1X(left));
         else
         {
-            right.items.unshift(s_Node(left));
+            right.items.unshift(Node_Wr1X(left));
         };
-        return static_cast<s_Node&&>(right);
+        return static_cast<Node_Wr1X&&>(right);
     };
 }
 
-static s_Node pipelineLeft_4IoZWeLk(/*MOV*/ s_Node&& left, const s_Node& right, const fu::str& fname, const fu::str& src, fu::view<s_Token> tokens, const int _idx)
+static Node_Wr1X letShorthand_qFIn(const Node_Wr1X& left, const Node_Wr1X& right, const int modid, fu::vec_range<char> fname, fu::vec_range<char> src, fu::view<Token_RpL8> tokens, const ParserState_tGnm& _ps)
 {
-    if (left.kind != s_kind_call)
-        fail_a0ZqfRup("Cannot pipeline: not a call expr."_fu, fname, src, tokens, _idx);
+    if ((left.kind != Kind_Idfg_call) || left.flags || left.items)
+        fail_94Qv(fu::str(str_fiRLyok9R0k), fname, src, tokens, _ps);
     else
     {
-        left.items.push(s_Node(right));
-        left.flags |= s_Flags_F_CALL_HAS_ARGPARENS;
-        return static_cast<s_Node&&>(left);
+        return createLet_qFIn(left.value, (*(Node_Wr1X*)fu::NIL), right, Flags_Lzg8{}, modid, _ps);
     };
 }
 
-static s_Node typeCheck_WbQ39EP1(const s_Node& actual, const s_Node& expect, const int modid, const int _loc)
+static Node_Wr1X typeCheck_qFIn(const Node_Wr1X& actual, const Node_Wr1X& expect, const int modid, const ParserState_tGnm& _ps)
 {
-    return make_3RGKUyIO(s_kind_typeassert, fu::vec<s_Node> { fu::slate<2, s_Node> { s_Node(actual), s_Node(expect) } }, s_Flags{}, (*(const fu::str*)fu::NIL), s_DeclAsserts{}, s_ParseSyntax{}, s_TokenIdx{}, modid, _loc);
+    return make_qFIn(Kind_Idfg_typeassert, fu::vec<Node_Wr1X> {{ Node_Wr1X(actual), Node_Wr1X(expect) }}, Flags_Lzg8{}, (*(fu::str*)fu::NIL), DeclAsserts_taUG{}, ParseSyntax_Lay2{}, TokenIdx_5b85{}, modid, _ps);
 }
 
-static s_Node typeCast_tptvGwZv(const s_Node& actual, const s_Node& expect, const int modid, const int _loc)
+static Node_Wr1X typeCast_qFIn(const Node_Wr1X& actual, const Node_Wr1X& expect, const int modid, const ParserState_tGnm& _ps)
 {
-    return make_3RGKUyIO(s_kind_typecast, fu::vec<s_Node> { fu::slate<2, s_Node> { s_Node(actual), s_Node(expect) } }, s_Flags{}, (*(const fu::str*)fu::NIL), s_DeclAsserts{}, s_ParseSyntax{}, s_TokenIdx{}, modid, _loc);
+    return make_qFIn(Kind_Idfg_typecast, fu::vec<Node_Wr1X> {{ Node_Wr1X(actual), Node_Wr1X(expect) }}, Flags_Lzg8{}, (*(fu::str*)fu::NIL), DeclAsserts_taUG{}, ParseSyntax_Lay2{}, TokenIdx_5b85{}, modid, _ps);
 }
 
-static s_Node tryParseBinary_PCbrGXiu(const s_Node& left, const fu::str& op, const int p1, const int modid, const fu::str& fname, const fu::str& src, fu::view<s_Token> tokens, int& _idx, int& _loc, int& _col0, int& _precedence, int& _fnDepth, bool& _autopub, bool& _TODO_FIX_dollarOk, int& _numDollars, fu::vec<fu::str>& _expectedTypeParams, fu::vec<fu::str>& _upstreamTypeParams, fu::vec<s_Import>& imports, fu::vec<fu::str>& warnings, const s_Options& options)
+static Node_Wr1X tryParseBinary_qFIn(const Node_Wr1X& left, const Token_RpL8& op, const int p1, const int modid, fu::vec_range<char> fname, fu::vec_range<char> src, fu::vec_range<Token_RpL8> tokens, ParserState_tGnm& _ps, const Options_mg7V& options)
 {
-    if ((p1 > _precedence) || ((p1 == _precedence) && !BINOP.RIGHT_TO_LEFT[p1]))
-        return miss_Rruxt4LX();
-    else
+    const bool miss = ((p1 > _ps._precedence.formal) || ((p1 == _ps._precedence.formal) ? !BINOP.RIGHT_TO_LEFT[p1] : false));
+    const int whitesp_lint = max_BjFA(whitespaceDiff_qFIn(iF_R2Pm(tokens, (_ps._idx - 1)), op), whitespaceDiff_qFIn(op, iF_R2Pm(tokens, (_ps._idx + 1))));
+    if (_ps._precedence.tokidx)
     {
-        _idx++;
-        s_Node mid {};
-        if (op == "?"_fu)
+        const int whitespace_diff = (whitesp_lint - _ps._precedence.whitesp_lint);
+        const bool multiline = (abs_NHZZ(whitespace_diff) > 1);
+        int indent_diff;
+        if ((miss ? (whitespace_diff < 0) : (whitespace_diff > 0)) && (p1 != _ps._precedence.formal) && (!multiline || (indent_diff = (op.lcc.col - tokens[_ps._precedence.tokidx].lcc.col), (miss ? (indent_diff >= 0) : (indent_diff <= 0)))) && !BINOP.RIGHT_TO_LEFT[p1] && !BINOP.RIGHT_TO_LEFT[_ps._precedence.formal])
         {
-            mid = parseExpression_djvSQ5j2(P_RESET, 0, modid, fname, src, tokens, _idx, _loc, _col0, _precedence, _fnDepth, _autopub, _TODO_FIX_dollarOk, _numDollars, _expectedTypeParams, _upstreamTypeParams, imports, warnings, options);
-            consume_ifLltrwq(s_kind_op, ":"_fu, fname, src, tokens, _idx);
+            if (miss)
+                _ps._idx = _ps._precedence.tokidx;
+
+            warn_qFIn((("Misleading whitespace: misrepresents operator precedence."_view + "\n\n\tPlease parenthesize this expression to disambiguate"_view) + (multiline ? ((","_view + "\n\t\tindent the stronger operator further to the right,"_view) + "\n\t\tor put the weaker operator on a new line."_view) : fu::str("."_fu))), fname, src, tokens, _ps, options);
         };
-        /*MOV*/ s_Node right = parseExpression_djvSQ5j2(p1, 0, modid, fname, src, tokens, _idx, _loc, _col0, _precedence, _fnDepth, _autopub, _TODO_FIX_dollarOk, _numDollars, _expectedTypeParams, _upstreamTypeParams, imports, warnings, options);
+    };
+    if (miss)
+    {
+        return Node_Wr1X{};
+    }
+    else
+    {
+        const Precedence_vGSt p1_1 = Precedence_vGSt { p1, whitesp_lint, _ps._idx };
+        _ps._idx++;
+        const fu::str& op_1 = op.value;
+        Node_Wr1X mid {};
+        if (op_1 == "?"_view)
+        {
+            mid = parseExpression_ZIeg(P_RESET, 0, modid, fname, src, tokens, _ps, options);
+            consume_qFIn(Kind_Idfg_op, ":"_view, fname, src, tokens, _ps);
+        };
+        /*MOV*/ Node_Wr1X right = parseExpression_ZIeg(p1_1, 0, modid, fname, src, tokens, _ps, options);
         if (mid)
         {
-            return createIf_GfIIGbSf(left, mid, right, s_ParseSyntax{}, modid, _loc);
+            return createIf_qFIn(left, mid, right, ParseSyntax_Lay2{}, modid, _ps);
         }
-        else if (op == "||"_fu)
+        else if (op_1 == "||"_view)
         {
-            return createOr_QkHvaC2I(left, right, s_ParseSyntax{}, modid, _loc);
+            return createOr_qFIn(left, right, ParseSyntax_Lay2{}, modid, _ps);
         }
-        else if (op == "&&"_fu)
+        else if (op_1 == "&&"_view)
         {
-            return createAnd_lIz6bDXy(left, right, s_ParseSyntax{}, modid, _loc);
+            return createAnd_qFIn(left, right, ParseSyntax_Lay2{}, modid, _ps);
         }
         else
         {
-            if ((left.kind == s_kind_and) || (left.kind == s_kind_or))
+            if ((left.kind == Kind_Idfg_and) || (left.kind == Kind_Idfg_or))
             {
-                if (!(left.syntax & s_ParseSyntax_PS_PARENS))
-                    warn_JY9fwXxS((((x7E_gCeFmDFw("Unparenthesized `"_fu, str_n4lV73pj(left.kind)) + "` on the left side of an `"_fu) + op) + "`."_fu), fname, src, tokens, _idx, _loc, warnings, options);
+                if (!(left.syntax & ParseSyntax_Lay2_PS_PARENS))
+                    warn_qFIn((((x7E_rA00("Unparenthesized `"_view, str_J9Iq(left.kind)) + "` on the left side of an `"_view) + op_1) + "`."_view), fname, src, tokens, _ps, options);
 
             };
-            if (op == "|>"_fu)
-                return pipelineRight_jM2ij3aE(left, static_cast<s_Node&&>(right), fname, src, tokens, _idx);
-            else if (op == "<|"_fu)
-                return pipelineLeft_4IoZWeLk(s_Node(left), right, fname, src, tokens, _idx);
-            else if (op == "->"_fu)
-                return typeCheck_WbQ39EP1(left, right, modid, _loc);
-            else if (op == "=>"_fu)
-                return typeCast_tptvGwZv(left, right, modid, _loc);
+            if (op_1 == "|>"_view)
+                return pipelineRight_qFIn(left, static_cast<Node_Wr1X&&>(right), fname, src, tokens, _ps);
+            else if (op_1 == "<|"_view)
+                return pipelineLeft_qFIn(Node_Wr1X(left), right, fname, src, tokens, _ps);
+            else if (op_1 == ":="_view)
+                return letShorthand_qFIn(left, right, modid, fname, src, tokens, _ps);
+            else if (op_1 == "->"_view)
+                return typeCheck_qFIn(left, right, modid, _ps);
+            else if (op_1 == "=>"_view)
+                return typeCast_qFIn(left, right, modid, _ps);
             else
             {
-                return createCall_mBEz988k(op, s_Flags_F_OPERATOR, fu::vec<s_Node> { fu::slate<2, s_Node> { s_Node(left), static_cast<s_Node&&>(right) } }, s_ParseSyntax{}, modid, _loc);
+                return createCall_qFIn(op_1, Flags_Lzg8_F_OPERATOR, fu::vec<Node_Wr1X> {{ Node_Wr1X(left), static_cast<Node_Wr1X&&>(right) }}, ParseSyntax_Lay2{}, modid, _ps);
             };
         };
     };
 }
 
-static const fu::vec<fu::str> POSTFIX fu_INIT_PRIORITY(1005) = fu::vec<fu::str> { fu::slate<4, fu::str> { "++"_fu, "--"_fu, "[]"_fu, "[:]"_fu } };
-
-                                #ifndef DEF_only_a6qr8qgsAa4
-                                #define DEF_only_a6qr8qgsAa4
-inline const s_Node& only_a6qr8qgs(fu::view<s_Node> s)
+                                #ifndef DEF_only_ARgXkDrRDv9
+                                #define DEF_only_ARgXkDrRDv9
+inline const Node_Wr1X& only_ARgX(fu::view<Node_Wr1X> s)
 {
     if (s.size() == 1)
         return s[0];
     else
-        fu::fail(x7E_gCeFmDFw("len != 1: "_fu, fu::i64dec(s.size())));
+        fu::fail(x7E_rA00("len != 1: "_view, fu::i64dec(s.size())));
 
 }
                                 #endif
 
-static s_Node createTypeTag_tqh7oohf(const fu::str& value, const int modid, const int _loc)
+static Node_Wr1X createTypeTag_qFIn(fu::vec_range<char> value, const int modid, const ParserState_tGnm& _ps)
 {
-    return make_3RGKUyIO(s_kind_typetag, (*(const fu::vec<s_Node>*)fu::NIL), s_Flags{}, value, s_DeclAsserts{}, s_ParseSyntax{}, s_TokenIdx{}, modid, _loc);
+    return make_qFIn(Kind_Idfg_typetag, (*(fu::vec<Node_Wr1X>*)fu::NIL), Flags_Lzg8{}, value, DeclAsserts_taUG{}, ParseSyntax_Lay2{}, TokenIdx_5b85{}, modid, _ps);
 }
 
-static s_Node parseQualifierChain_NXNdYmCl(/*MOV*/ s_Node&& expr, const int modid, const fu::str& fname, const fu::str& src, fu::view<s_Token> tokens, int& _idx, const int _loc, fu::vec<s_Import>& imports)
+static fu::str registerImport_qFIn(/*MOV*/ fu::str&& pattern, fu::view<char> id, const int modid, ParserState_tGnm& _ps)
 {
-    if (expr.kind != s_kind_addroffn)
-    {
-        if ((expr.kind != s_kind_call) || (expr.items.size() > 1) || (expr.flags & ~s_Flags_F_CALL_HAS_DOT))
+    int index = _ps.imports.size();
+
+    { {
+        if (id)
+            (pattern += '\t') += id;
+
+        for (int i = 0; i < _ps.imports.size(); i++)
         {
-            _idx--;
-            fail_a0ZqfRup(fu::str{}, fname, src, tokens, _idx);
+            if (_ps.imports[i].pattern == pattern)
+            {
+                index = i;
+                goto BL_1;
+            };
+        };
+        _ps.imports += Import_jcWj { TokenIdx_5b85 { modid, _ps._loc }, pattern.destructive_move(), 0 };
+      } BL_1:;
+    };
+    /*MOV*/ fu::str marker {};
+    appendVarint_V5Iu(marker, unsigned(modid));
+    appendVarint_V5Iu(marker, unsigned(index));
+    marker += id;
+    return /*NRVO*/ marker;
+}
+
+static Node_Wr1X parseQualifierChain_qFIn(/*MOV*/ Node_Wr1X&& expr, const int modid, fu::vec_range<char> fname, fu::vec_range<char> src, fu::view<Token_RpL8> tokens, ParserState_tGnm& _ps)
+{
+    if (expr.kind != Kind_Idfg_addroffn)
+    {
+        if ((expr.kind != Kind_Idfg_call) || (expr.items.size() > 1) || (expr.flags & ~Flags_Lzg8_F_CALL_HAS_DOT))
+        {
+            _ps._idx--;
+            fail_94Qv(fu::str{}, fname, src, tokens, _ps);
         };
     };
-    expr.flags |= s_Flags_F_COMPOUND_ID;
-    fu::str path { expr.value };
+    expr.flags |= Flags_Lzg8_F_COMPOUND_ID;
+    /*MOV*/ fu::str path = fu::str(expr.value);
     for (; ; )
     {
-        const fu::str& id = consume_ifLltrwq(s_kind_id, (*(const fu::str*)fu::NIL), fname, src, tokens, _idx).value;
-        if (!tryConsume_RS2yajZX(s_kind_op, "::"_fu, tokens, _idx))
+        const fu::str& id = consume_qFIn(Kind_Idfg_id, fu::view<char>{}, fname, src, tokens, _ps).value;
+        if (!tryConsume_94Qv(Kind_Idfg_op, "::"_view, tokens, _ps))
         {
-            if ((path == "is"_fu) && (expr.items.size() == 1))
+            if ((path == "is"_view) && (expr.items.size() == 1))
             {
-                const s_Node& left = only_a6qr8qgs(expr.items);
-                s_Node right = createTypeTag_tqh7oohf(id, modid, _loc);
-                return typeCheck_WbQ39EP1(left, right, modid, _loc);
+                const Node_Wr1X& left = only_ARgX(expr.items);
+                Node_Wr1X right = createTypeTag_qFIn(id, modid, _ps);
+                return typeCheck_qFIn(left, right, modid, _ps);
             }
             else
             {
-                path = registerImport_ugbgDS9b(fu::str(path), modid, fname, _loc, imports);
-                expr.value = ((path + "\t"_fu) + id);
-                return static_cast<s_Node&&>(expr);
+                expr.value = registerImport_qFIn(static_cast<fu::str&&>(path), id, modid, _ps);
+                return static_cast<Node_Wr1X&&>(expr);
             };
         }
         else
-            path += ("/"_fu + id);
+            path += ("/"_view + id);
 
     };
 }
 
-static s_Node tryParseExpressionTail_3P8LHR5x(const s_Node& head, const int mode, const int modid, const fu::str& fname, const fu::str& src, fu::view<s_Token> tokens, int& _idx, int& _loc, int& _col0, int& _precedence, int& _fnDepth, bool& _autopub, bool& _TODO_FIX_dollarOk, int& _numDollars, fu::vec<fu::str>& _expectedTypeParams, fu::vec<fu::str>& _upstreamTypeParams, fu::vec<s_Import>& imports, fu::vec<fu::str>& warnings, const s_Options& options)
+static Node_Wr1X tryParseExpressionTail_qFIn(const Node_Wr1X& head, const int mode, const int modid, fu::vec_range<char> fname, fu::vec_range<char> src, fu::vec_range<Token_RpL8> tokens, ParserState_tGnm& _ps, const Options_mg7V& options)
 {
-    const s_Token& token = tokens[_idx++];
-    if (token.kind == s_kind_op)
+    const Token_RpL8& token = tokens[_ps._idx++];
+    if (token.kind == Kind_Idfg_op)
     {
         const fu::str& v = token.value;
-        if (v == ";"_fu)
+        if (v == ";"_view)
         {
-            _idx--;
-            return miss_Rruxt4LX();
+            _ps._idx--;
+            return Node_Wr1X{};
         }
-        else if (v == "."_fu)
+        else if (v == "."_view)
         {
-            lint_BxXpQjpT(mode, fname, src, tokens, _idx, _loc, warnings, options);
-            return parseAccessExpression_joifAiN6(head, modid, fname, src, tokens, _idx, _loc);
+            lint_qFIn(mode, fname, src, tokens, _ps, options);
+            return parseAccessExpression_qFIn(head, modid, fname, src, tokens, _ps);
         }
-        else if (v == "("_fu)
+        else if (v == "("_view)
         {
-            lint_BxXpQjpT(mode, fname, src, tokens, _idx, _loc, warnings, options);
-            return parseCallExpression_m6VOOz4D(head, modid, fname, src, tokens, _idx, _loc, _col0, _precedence, _fnDepth, _autopub, _TODO_FIX_dollarOk, _numDollars, _expectedTypeParams, _upstreamTypeParams, imports, warnings, options);
+            lint_qFIn(mode, fname, src, tokens, _ps, options);
+            return parseCallExpression_qFIn(head, modid, fname, src, tokens, _ps, options);
         }
-        else if (v == "["_fu)
+        else if (v == "["_view)
         {
-            lint_BxXpQjpT(mode, fname, src, tokens, _idx, _loc, warnings, options);
-            return parseIndexExpression_cht38Puc(head, modid, fname, src, tokens, _idx, _loc, _col0, _precedence, _fnDepth, _autopub, _TODO_FIX_dollarOk, _numDollars, _expectedTypeParams, _upstreamTypeParams, imports, warnings, options);
+            lint_qFIn(mode, fname, src, tokens, _ps, options);
+            return parseIndexExpression_qFIn(head, modid, fname, src, tokens, _ps, options);
         }
         else
         {
-            const int p1 = get_JTjmFfAy(BINOP.PRECEDENCE, v);
+            const int p1 = get_zoJE(BINOP.PRECEDENCE, v);
             if (p1)
             {
-                _idx--;
-                return tryParseBinary_PCbrGXiu(head, v, p1, modid, fname, src, tokens, _idx, _loc, _col0, _precedence, _fnDepth, _autopub, _TODO_FIX_dollarOk, _numDollars, _expectedTypeParams, _upstreamTypeParams, imports, warnings, options);
+                _ps._idx--;
+                return tryParseBinary_qFIn(head, token, p1, modid, fname, src, tokens, _ps, options);
             }
-            else if (has_g5ZsWtbd(POSTFIX, v))
+            else if (has_2Cr4(POSTFIX, v))
             {
-                return createCall_mBEz988k((((v == "++"_fu) || (v == "--"_fu)) ? ("postfix"_fu + v) : fu::str(v)), s_Flags_F_OPERATOR, fu::vec<s_Node> { fu::slate<1, s_Node> { s_Node(head) } }, s_ParseSyntax{}, modid, _loc);
+                return createCall_qFIn((((v == "++"_view) || (v == "--"_view)) ? ("postfix"_view + v) : fu::str(v)), Flags_Lzg8_F_OPERATOR, fu::vec<Node_Wr1X> {{ Node_Wr1X(head) }}, ParseSyntax_Lay2{}, modid, _ps);
             }
-            else if (v == "::"_fu)
+            else if (v == "::"_view)
             {
-                return parseQualifierChain_NXNdYmCl(s_Node(head), modid, fname, src, tokens, _idx, _loc, imports);
+                return parseQualifierChain_qFIn(Node_Wr1X(head), modid, fname, src, tokens, _ps);
             };
         };
     };
-    _idx--;
-    return miss_Rruxt4LX();
+    _ps._idx--;
+    return Node_Wr1X{};
 }
 
-inline static s_Node parseExpression_QdbRgGe3(const int p1, const int mode, const s_Node& parseHead, const int modid, const fu::str& fname, const fu::str& src, fu::view<s_Token> tokens, int& _idx, int& _loc, int& _col0, int& _precedence, int& _fnDepth, bool& _autopub, bool& _TODO_FIX_dollarOk, int& _numDollars, fu::vec<fu::str>& _expectedTypeParams, fu::vec<fu::str>& _upstreamTypeParams, fu::vec<s_Import>& imports, fu::vec<fu::str>& warnings, const s_Options& options)
+                                #ifndef DEF_parseExpression_nzwfJuemnb0
+                                #define DEF_parseExpression_nzwfJuemnb0
+inline static Node_Wr1X parseExpression_nzwf(const Precedence_vGSt& p1, const Node_Wr1X& parseHead, const int mode, const int modid, fu::vec_range<char> fname, fu::vec_range<char> src, fu::vec_range<Token_RpL8> tokens, ParserState_tGnm& _ps, const Options_mg7V& options)
 {
-    const int p0 = _precedence;
-    const int loc00 = _loc;
-    _precedence = p1;
-    _loc = _idx;
-    const int col00 = _col0;
-    if (!((tokens[_idx].lcc.col >= (_col0 + ((mode & M_LINT_ENSURE_INDENT) ? 1 : 0)))))
-        warn_JY9fwXxS(x7E_gCeFmDFw((x7E_gCeFmDFw((("Ambiguous indent at `"_fu + tokens[_idx].value) + "`: expected more than "_fu), fu::i64dec(_col0)) + ", got "_fu), fu::i64dec(tokens[_idx].lcc.col)), fname, src, tokens, _idx, _loc, warnings, options);
+    const Precedence_vGSt p0 = _ps._precedence;
+    const int loc00 = _ps._loc;
+    _ps._precedence = p1;
+    _ps._loc = _ps._idx;
+    const int col00 = _ps._col0;
+    if (!((tokens[_ps._idx].lcc.col >= (_ps._col0 + ((mode & M_LINT_ENSURE_INDENT) ? 1 : 0)))))
+        warn_qFIn(x7E_rA00((x7E_rA00((("Ambiguous indent at `"_view + tokens[_ps._idx].value) + "`: expected more than "_view), fu::i64dec(_ps._col0)) + ", got "_view), fu::i64dec(tokens[_ps._idx].lcc.col)), fname, src, tokens, _ps, options);
 
-    /*MOV*/ s_Node head { parseHead };
-    if (!s_ParseSyntax((head.syntax & s_ParseSyntax_PS_NOT_AN_EXPRESSION)))
+    /*MOV*/ Node_Wr1X head = parseHead;
+    if (!ParseSyntax_Lay2((head.syntax & ParseSyntax_Lay2_PS_NOT_AN_EXPRESSION)))
     {
-        const int mode_1 = (((mode & M_LINT_UNARY_PRECEDENCE) && ((head.kind == s_kind_int) || (head.kind == s_kind_real))) ? mode : (mode & ~M_LINT_UNARY_PRECEDENCE));
-        int loc0 = (_loc = _idx);
-        s_Node out {};
-        while ((out = tryParseExpressionTail_3P8LHR5x(head, mode_1, modid, fname, src, tokens, _idx, _loc, _col0, _precedence, _fnDepth, _autopub, _TODO_FIX_dollarOk, _numDollars, _expectedTypeParams, _upstreamTypeParams, imports, warnings, options)))
+        const int mode_1 = (((mode & M_LINT_UNARY_PRECEDENCE) && ((head.kind == Kind_Idfg_int) || (head.kind == Kind_Idfg_real))) ? mode : (mode & ~M_LINT_UNARY_PRECEDENCE));
+        int loc0 = (_ps._loc = _ps._idx);
+        Node_Wr1X out {};
+        while ((out = tryParseExpressionTail_qFIn(head, mode_1, modid, fname, src, tokens, _ps, options)))
         {
 
             {
-                const s_Token& t1 = tokens[(_loc = loc0)];
+                const Token_RpL8& t1 = tokens[(_ps._loc = loc0)];
                 if (!(t1.lcc.col > col00))
-                    warn_JY9fwXxS(x7E_gCeFmDFw((x7E_gCeFmDFw((("Ambiguous indent at `"_fu + t1.value) + "`: expected more than "_fu), fu::i64dec(col00)) + ", got "_fu), fu::i64dec(t1.lcc.col)), fname, src, tokens, _idx, _loc, warnings, options);
+                    warn_qFIn(x7E_rA00((x7E_rA00((("Ambiguous indent at `"_view + t1.value) + "`: expected more than "_view), fu::i64dec(col00)) + ", got "_view), fu::i64dec(t1.lcc.col)), fname, src, tokens, _ps, options);
 
             };
-            loc0 = (_loc = _idx);
+            loc0 = (_ps._loc = _ps._idx);
             head = out;
         };
     };
-    _precedence = p0;
-    _loc = loc00;
+    _ps._precedence = p0;
+    _ps._loc = loc00;
     return /*NRVO*/ head;
 }
+                                #endif
 
-static s_Flags parseLeadingDot_TDejJgK6(fu::vec<s_Node>& out_push_arg_and_body, const fu::str& name, const int modid, const fu::str& fname, const fu::str& src, fu::view<s_Token> tokens, int& _idx, int& _loc, int& _col0, int& _precedence, int& _fnDepth, bool& _autopub, bool& _TODO_FIX_dollarOk, int& _numDollars, fu::vec<fu::str>& _expectedTypeParams, fu::vec<fu::str>& _upstreamTypeParams, fu::vec<s_Import>& imports, fu::vec<fu::str>& warnings, const s_Options& options)
+static Flags_Lzg8 parseLeadingDot_qFIn(fu::vec_range_mut<Node_Wr1X> out_push_arg_and_body, fu::vec_range<char> name, const int modid, fu::vec_range<char> fname, fu::vec_range<char> src, fu::vec_range<Token_RpL8> tokens, ParserState_tGnm& _ps, const Options_mg7V& options)
 {
-    /*MOV*/ s_Node singleArg = createLet_smN5JZFS(name, (*(const s_Node*)fu::NIL), (*(const s_Node*)fu::NIL), ((s_Flags_F_TEMPLATE | s_Flags_F_SHADOW) | s_Flags_F_REF), modid, _loc);
-    int _0 {};
-    s_Node _1 {};
-    /*MOV*/ s_Node singleExpression = (_0 = _precedence, _1 = (_idx--, createRead_9y30X3Q5(name, s_Flags{}, modid, fname, src, tokens, _idx, _loc)), parseExpression_QdbRgGe3(_0, 0, static_cast<s_Node&&>(_1), modid, fname, src, tokens, _idx, _loc, _col0, _precedence, _fnDepth, _autopub, _TODO_FIX_dollarOk, _numDollars, _expectedTypeParams, _upstreamTypeParams, imports, warnings, options));
-    out_push_arg_and_body.push(static_cast<s_Node&&>(singleArg));
-    out_push_arg_and_body.push(s_Node{});
-    out_push_arg_and_body.push(static_cast<s_Node&&>(singleExpression));
-    return s_Flags_F_TEMPLATE;
+    /*MOV*/ Node_Wr1X singleArg = createLet_qFIn(name, (*(Node_Wr1X*)fu::NIL), (*(Node_Wr1X*)fu::NIL), ((Flags_Lzg8_F_TEMPLATE | Flags_Lzg8_F_SHADOW) | Flags_Lzg8_F_REF), modid, _ps);
+    Node_Wr1X _0 {};
+    /*MOV*/ Node_Wr1X singleExpression = (_0 = (_ps._idx--, createRead_qFIn(name, Flags_Lzg8{}, modid, fname, src, tokens, _ps)), parseExpression_nzwf(_ps._precedence, static_cast<Node_Wr1X&&>(_0), 0, modid, fname, src, tokens, _ps, options));
+    out_push_arg_and_body.push(static_cast<Node_Wr1X&&>(singleArg));
+    out_push_arg_and_body.push(Node_Wr1X{});
+    out_push_arg_and_body.push(static_cast<Node_Wr1X&&>(singleExpression));
+    return Flags_Lzg8_F_TEMPLATE;
 }
 
                                 #ifndef DEF_LET_TYPE
@@ -1635,56 +1962,55 @@ inline constexpr int LET_TYPE = 0;
 inline constexpr int LET_INIT = 1;
                                 #endif
 
-static s_Flags parseArgsDecl_0b0tHnte(fu::vec<s_Node>& outArgs, const s_kind endk, fu::view<char> endv, const int modid, const fu::str& fname, const fu::str& src, fu::view<s_Token> tokens, int& _idx, int& _loc, int& _col0, int& _precedence, int& _fnDepth, bool& _autopub, bool& _TODO_FIX_dollarOk, int& _numDollars, fu::vec<fu::str>& _expectedTypeParams, fu::vec<fu::str>& _upstreamTypeParams, fu::vec<s_Import>& imports, fu::vec<fu::str>& warnings, const s_Options& options)
+static Flags_Lzg8 parseArgsDecl_qFIn(fu::vec_range_mut<Node_Wr1X> outArgs, const Kind_Idfg endk, fu::view<char> endv, const Precedence_vGSt& initPrecedence, const int modid, fu::vec_range<char> fname, fu::vec_range<char> src, fu::vec_range<Token_RpL8> tokens, ParserState_tGnm& _ps, const Options_mg7V& options)
 {
     bool first = true;
-    s_Flags outFlags {};
-    fu::vec<s_Node> implicit {};
+    Flags_Lzg8 outFlags {};
+    fu::vec<Node_Wr1X> implicit {};
     int firstDefaulted = -1;
-    const int numDollars0 = _numDollars;
     for (; ; )
     {
-        if (tryConsume_RS2yajZX(endk, endv, tokens, _idx))
+        if (tryConsume_94Qv(endk, endv, tokens, _ps))
             break;
         else
         {
             if (!first)
-            {
-                consume_ifLltrwq(s_kind_op, ","_fu, fname, src, tokens, _idx);
-            };
+                consume_qFIn(Kind_Idfg_op, ","_view, fname, src, tokens, _ps);
+
             first = false;
-            const bool isInline = !!tryConsume_RS2yajZX(s_kind_id, "inline"_fu, tokens, _idx);
+            const bool isInline = !!tryConsume_94Qv(Kind_Idfg_id, "inline"_view, tokens, _ps);
+            const int numDollars0 = _ps._numDollars;
             int insertAt = -1;
-            /*MOV*/ s_Node arg = parseLet_smk4PW6Z(true, true, true, outArgs.size(), modid, fname, src, tokens, _idx, _loc, _col0, _precedence, _fnDepth, _autopub, _TODO_FIX_dollarOk, _numDollars, _expectedTypeParams, _upstreamTypeParams, imports, warnings, options);
-            const bool NEW = (_numDollars > numDollars0);
-            if (NEW || (arg.items[LET_TYPE].kind == s_kind_typeunion))
-                arg.flags |= s_Flags_F_TEMPLATE;
+            /*MOV*/ Node_Wr1X arg = parseLet_qFIn(true, outArgs.size(), true, true, initPrecedence, modid, fname, src, tokens, _ps, options);
+            const bool NEW = (_ps._numDollars > numDollars0);
+            if (NEW || (arg.items[LET_TYPE].kind == Kind_Idfg_typeunion))
+                arg.flags |= Flags_Lzg8_F_TEMPLATE;
 
             if (isInline)
             {
-                arg.flags |= s_Flags_F_INLINE;
-                outFlags |= s_Flags_F_INLINE;
+                arg.flags |= Flags_Lzg8_F_INLINE;
+                outFlags |= Flags_Lzg8_F_INLINE;
             };
-            const s_Node& annot = arg.items[LET_TYPE];
-            const s_Node& init = arg.items[LET_INIT];
+            const Node_Wr1X& annot = arg.items[LET_TYPE];
+            const Node_Wr1X& init = arg.items[LET_INIT];
             if (init)
             {
-                if (arg.flags & s_Flags_F_IMPLICIT)
-                    fail_a0ZqfRup("TODO default implicit arguments"_fu, fname, src, tokens, _idx);
+                if (arg.flags & Flags_Lzg8_F_IMPLICIT)
+                    fail_94Qv(fu::str(str_WGOYs0nMGhg), fname, src, tokens, _ps);
                 else
                 {
                     if (firstDefaulted < 0)
                         firstDefaulted = outArgs.size();
 
-                    if ((init.kind == s_kind_definit) && !annot)
-                        arg.flags |= s_Flags_F_TEMPLATE;
+                    if (((init.kind == Kind_Idfg_definit) && !annot) || (arg.flags & Flags_Lzg8_F_TYPENAME))
+                        arg.flags |= Flags_Lzg8_F_TEMPLATE;
 
                 };
             }
             else if ((firstDefaulted >= 0))
             {
-                if (!(arg.flags & s_Flags_F_MUSTNAME))
-                    fail_a0ZqfRup("Non-optional arguments without a bang! cannot follow optional arguments."_fu, fname, src, tokens, _idx);
+                if (!(arg.flags & Flags_Lzg8_F_MUSTNAME))
+                    fail_94Qv(fu::str(str_IXHmY51sMJb), fname, src, tokens, _ps);
                 else
                 {
                     insertAt = firstDefaulted;
@@ -1692,60 +2018,69 @@ static s_Flags parseArgsDecl_0b0tHnte(fu::vec<s_Node>& outArgs, const s_kind end
                 };
             }
             else if (!annot)
-                arg.flags |= s_Flags_F_TEMPLATE;
+                arg.flags |= Flags_Lzg8_F_TEMPLATE;
 
-            outFlags |= (arg.flags & s_Flags_F_TEMPLATE);
-            if (arg.flags & s_Flags_F_IMPLICIT)
-                implicit.push(static_cast<s_Node&&>(arg));
+            outFlags |= (arg.flags & Flags_Lzg8_F_TEMPLATE);
+            if (arg.flags & Flags_Lzg8_F_IMPLICIT)
+                implicit.push(static_cast<Node_Wr1X&&>(arg));
             else if ((insertAt >= 0))
-                outArgs.insert(insertAt, static_cast<s_Node&&>(arg));
+                outArgs.insert(insertAt, static_cast<Node_Wr1X&&>(arg));
             else
-                outArgs.push(static_cast<s_Node&&>(arg));
+                outArgs.push(static_cast<Node_Wr1X&&>(arg));
 
         };
     };
     if (implicit)
         for (int i = 0; i < implicit.size(); i++)
-            outArgs.push(s_Node(implicit[i]));
+            outArgs.push(Node_Wr1X(implicit[i]));
 ;
     return outFlags;
 }
 
-static s_Node tryPopTypeAnnot_SOzY03Zo(const bool allowTypeUnions, const int modid, const fu::str& fname, const fu::str& src, fu::view<s_Token> tokens, int& _idx, int& _loc, int& _col0, int& _precedence, int& _fnDepth, bool& _autopub, bool& _TODO_FIX_dollarOk, int& _numDollars, fu::vec<fu::str>& _expectedTypeParams, fu::vec<fu::str>& _upstreamTypeParams, fu::vec<s_Import>& imports, fu::vec<fu::str>& warnings, const s_Options& options)
+static Node_Wr1X tryPopTypeAnnot_qFIn(const bool allowTypeUnions, const int modid, fu::vec_range<char> fname, fu::vec_range<char> src, fu::vec_range<Token_RpL8> tokens, ParserState_tGnm& _ps, const Options_mg7V& options)
 {
-    if (tryConsume_RS2yajZX(s_kind_op, ":"_fu, tokens, _idx))
-        return parseTypeAnnot_JxRmj4Ey(allowTypeUnions, modid, fname, src, tokens, _idx, _loc, _col0, _precedence, _fnDepth, _autopub, _TODO_FIX_dollarOk, _numDollars, _expectedTypeParams, _upstreamTypeParams, imports, warnings, options);
+    if (tryConsume_94Qv(Kind_Idfg_op, ":"_view, tokens, _ps))
+        return parseTypeAnnot_qFIn(allowTypeUnions, modid, fname, src, tokens, _ps, options);
     else
-        return miss_Rruxt4LX();
-
+    {
+        return Node_Wr1X{};
+    };
 }
 
-                                #ifndef DEF_x21x3D_gCeFmDFw0L8
-                                #define DEF_x21x3D_gCeFmDFw0L8
+                                #ifndef DEF_x21x3D_lsKv82TBH74
+                                #define DEF_x21x3D_lsKv82TBH74
 inline bool operator!=(fu::view<char> a, fu::view<char> b)
 {
-    return !!x3Cx3E_gCeFmDFw(a, b);
+    return !!x3Cx3E_erT9(a, b);
 }
                                 #endif
 
-inline static void l_7_20_zM4VFqus(const fu::str& item, fu::vec<fu::str>& result, const bool useResult)
+                                #ifndef DEF_left_or_both_aKyt5SS5SNj
+                                #define DEF_left_or_both_aKyt5SS5SNj
+inline static void left_or_both_aKyt(fu::vec_range<char> item, fu::vec<fu::str>& result, const bool useResult)
 {
     if (useResult)
         result += fu::str(item);
 
 }
+                                #endif
 
-inline static void l_7_21_fSveg32f(const fu::str& item, const int left, fu::view<fu::str> l, fu::vec<fu::str>& result, bool& useResult)
+                                #ifndef DEF_right_X0YCGYdoQ5g
+                                #define DEF_right_X0YCGYdoQ5g
+inline static void right_X0YC(fu::vec_range<char> item, const int left, const Set_XshD& l, fu::vec<fu::str>& result, bool& useResult)
 {
     if (!useResult)
     {
         useResult = true;
-        result += fu::get_view_start0(l, left);
+        result += fu::get_view_start0(l.keys_asc, left);
     };
     result += fu::str(item);
 }
+                                #endif
 
-inline static void merge_BJpm1Wws(fu::view<fu::str> l, fu::view<fu::str> r, fu::view<fu::str> l_1, fu::vec<fu::str>& result, bool& useResult)
+                                #ifndef DEF_merge_8EmwR6y1fFh
+                                #define DEF_merge_8EmwR6y1fFh
+inline static void merge_8Emw(fu::view<fu::str> l, fu::view<fu::str> r, const Set_XshD& l_1, fu::vec<fu::str>& result, bool& useResult)
 {
     int li = 0;
     int ri = 0;
@@ -1753,102 +2088,95 @@ inline static void merge_BJpm1Wws(fu::view<fu::str> l, fu::view<fu::str> r, fu::
     {
         const bool l_done = (li == l.size());
         const bool r_done = (ri == r.size());
-        fu::never BL_3_v {};
         const int cmp = (l_done ? (r_done ? (__extension__ (
         {
             return;
-        (void)0;}), static_cast<fu::never&&>(BL_3_v)) : +1) : (r_done ? -1 : x3Cx3E_gCeFmDFw(l[li], r[ri])));
+            (void)0;
+        }), fu::unreachable) : +1) : (r_done ? -1 : x3Cx3E_erT9(l[li], r[ri])));
         if ((cmp <= 0))
         {
-            l_7_20_zM4VFqus(l[li], result, useResult);
+            left_or_both_aKyt(l[li], result, useResult);
             li++;
             ri += int((cmp == 0));
         }
         else
         {
-            l_7_21_fSveg32f(r[ri], li, l_1, result, useResult);
+            right_X0YC(r[ri], li, l_1, result, useResult);
             ri++;
         };
     };
 }
+                                #endif
 
-                                #ifndef DEF_uNion_bZpiHcbvZl5
-                                #define DEF_uNion_bZpiHcbvZl5
-inline fu::vec<fu::str> uNion_bZpiHcbv(const fu::vec<fu::str>& l, const fu::vec<fu::str>& r)
+                                #ifndef DEF_uNion_fXikg9qqqFa
+                                #define DEF_uNion_fXikg9qqqFa
+inline Set_XshD uNion_fXik(const Set_XshD& l, const Set_XshD& r)
 {
-    if (r.size() > l.size())
-        return uNion_bZpiHcbv(r, l);
+    if (r.keys_asc.size() > l.keys_asc.size())
+        return uNion_fXik(r, l);
     else
     {
         /*MOV*/ fu::vec<fu::str> result {};
         bool useResult = false;
-        merge_BJpm1Wws(l, r, l, result, useResult);
+        merge_8Emw(l.keys_asc, r.keys_asc, l, result, useResult);
         if (useResult)
-            return /*NRVO*/ result;
+        {
+            return Set_XshD { static_cast<fu::vec<fu::str>&&>(result) };
+        }
         else
-            return fu::vec<fu::str>(l);
+            return Set_XshD(l);
 
     };
 }
                                 #endif
 
-                                #ifndef DEF_steal_SsrT85jPAoh
-                                #define DEF_steal_SsrT85jPAoh
-inline fu::vec<fu::str> steal_SsrT85jP(fu::vec<fu::str>& v)
-{
-    /*MOV*/ fu::vec<fu::str> ret {};
-    std::swap(v, ret);
-    return /*NRVO*/ ret;
-}
-                                #endif
-
-                                #ifndef DEF_if_last_a6qr8qgsAa4
-                                #define DEF_if_last_a6qr8qgsAa4
-inline const s_Node& if_last_a6qr8qgs(fu::view<s_Node> s)
+                                #ifndef DEF_if_last_0HIcm1gO4oj
+                                #define DEF_if_last_0HIcm1gO4oj
+inline const Node_Wr1X& if_last_0HIc(fu::view<Node_Wr1X> s)
 {
     if (s.size())
         return s[(s.size() - 1)];
     else
-        return (*(const s_Node*)fu::NIL);
+        return (*(Node_Wr1X*)fu::NIL);
 
 }
                                 #endif
 
-                                #ifndef DEF_last_a6qr8qgsAa4
-                                #define DEF_last_a6qr8qgsAa4
-inline const s_Node& last_a6qr8qgs(fu::view<s_Node> s)
+                                #ifndef DEF_last_ugtx4dB9yF5
+                                #define DEF_last_ugtx4dB9yF5
+inline const Node_Wr1X& last_ugtx(fu::view<Node_Wr1X> s)
 {
     if (s.size())
         return s[(s.size() - 1)];
     else
-        fu::fail("len == 0"_fu);
+        fu::fail(fu::str("len == 0"_fu));
 
 }
                                 #endif
 
-static s_Node createBlock_Xs4gphBm(fu::vec<s_Node>&& items, const fu::str& label, const int modid, const int _loc)
+static Node_Wr1X createBlock_qFIn(fu::vec<Node_Wr1X>&& items, fu::vec_range<char> label, const int modid, const ParserState_tGnm& _ps)
 {
-    if (if_last_a6qr8qgs(items).syntax & s_ParseSyntax((s_ParseSyntax_PS_DISCARD_IF_BLOCK_TAIL | s_ParseSyntax_PS_ALWAYS_DISCARD)))
+    if (if_last_0HIc(items).syntax & ParseSyntax_Lay2((ParseSyntax_Lay2_PS_DISCARD_IF_BLOCK_TAIL | ParseSyntax_Lay2_PS_ALWAYS_DISCARD)))
     {
-        items += make_3RGKUyIO(s_kind_empty, (*(const fu::vec<s_Node>*)fu::NIL), s_Flags{}, (*(const fu::str*)fu::NIL), s_DeclAsserts{}, s_ParseSyntax{}, last_a6qr8qgs(items).token, modid, _loc);
+        items += make_qFIn(Kind_Idfg_empty, (*(fu::vec<Node_Wr1X>*)fu::NIL), Flags_Lzg8{}, (*(fu::str*)fu::NIL), DeclAsserts_taUG{}, ParseSyntax_Lay2{}, last_ugtx(items).token, modid, _ps);
     };
-    return make_3RGKUyIO(s_kind_block, items, s_Flags{}, label, s_DeclAsserts{}, s_ParseSyntax{}, s_TokenIdx{}, modid, _loc);
+    return make_qFIn(Kind_Idfg_block, items, Flags_Lzg8{}, label, DeclAsserts_taUG{}, ParseSyntax_Lay2{}, TokenIdx_5b85{}, modid, _ps);
 }
 
-static s_Node parseBlock_JHukuVno(const int modid, const fu::str& fname, const fu::str& src, fu::view<s_Token> tokens, int& _idx, int& _loc, int& _col0, int& _precedence, int& _fnDepth, bool& _autopub, bool& _TODO_FIX_dollarOk, int& _numDollars, fu::vec<fu::str>& _expectedTypeParams, fu::vec<fu::str>& _upstreamTypeParams, fu::vec<s_Import>& imports, fu::vec<fu::str>& warnings, const s_Options& options)
+static Node_Wr1X parseBlock_qFIn(const int modid, fu::vec_range<char> fname, fu::vec_range<char> src, fu::vec_range<Token_RpL8> tokens, ParserState_tGnm& _ps, const Options_mg7V& options)
 {
-    fu::vec<s_Node> _0 {};
-    return (_0 = parseBlockLike_bSAgMgCf(s_kind_op, "}"_fu, false, false, modid, fname, src, tokens, _idx, _loc, _col0, _precedence, _fnDepth, _autopub, _TODO_FIX_dollarOk, _numDollars, _expectedTypeParams, _upstreamTypeParams, imports, warnings, options), createBlock_Xs4gphBm(static_cast<fu::vec<s_Node>&&>(_0), (*(const fu::str*)fu::NIL), modid, _loc));
+    fu::vec<Node_Wr1X> _0 {};
+    return (_0 = parseBlockLike_qFIn(Kind_Idfg_op, "}"_view, false, false, modid, fname, src, tokens, _ps, options), createBlock_qFIn(static_cast<fu::vec<Node_Wr1X>&&>(_0), (*(fu::str*)fu::NIL), modid, _ps));
 }
 
-static s_Node parseLabelledStatement_ITvfuHJO(const int modid, const fu::str& fname, const fu::str& src, fu::view<s_Token> tokens, int& _idx, int& _loc, int& _col0, int& _precedence, int& _fnDepth, bool& _autopub, bool& _TODO_FIX_dollarOk, int& _numDollars, fu::vec<fu::str>& _expectedTypeParams, fu::vec<fu::str>& _upstreamTypeParams, fu::vec<s_Import>& imports, fu::vec<fu::str>& warnings, const s_Options& options)
+static Node_Wr1X parseLabelledStatement_qFIn(const int modid, fu::vec_range<char> fname, fu::vec_range<char> src, fu::vec_range<Token_RpL8> tokens, ParserState_tGnm& _ps, const Options_mg7V& options)
 {
-    const fu::str& label = consume_ifLltrwq(s_kind_id, (*(const fu::str*)fu::NIL), fname, src, tokens, _idx).value;
-    /*MOV*/ s_Node stmt = parseStatement_GzQ8uksl(modid, fname, src, tokens, _idx, _loc, _col0, _precedence, _fnDepth, _autopub, _TODO_FIX_dollarOk, _numDollars, _expectedTypeParams, _upstreamTypeParams, imports, warnings, options);
-    if ((stmt.kind == s_kind_loop) || (stmt.kind == s_kind_block))
+    const fu::str& label = consume_qFIn(Kind_Idfg_id, fu::view<char>{}, fname, src, tokens, _ps).value;
+    /*MOV*/ Node_Wr1X stmt = parseStatement_qFIn(modid, fname, src, tokens, _ps, options);
+    if ((stmt.kind == Kind_Idfg_loop) || (stmt.kind == Kind_Idfg_block))
     {
         if (stmt.value)
-            fail_a0ZqfRup((((("Label "_fu + qID_3PsDzMvu(label)) + ": statement already labeled as "_fu) + qID_3PsDzMvu(stmt.value)) + "."_fu), fname, src, tokens, _idx);
+            fail_94Qv((((("Label "_view + qID_e44U(label)) + ": statement already labeled as "_view) + qID_e44U(stmt.value)) + "."_view), fname, src, tokens, _ps);
         else
         {
             stmt.value = label;
@@ -1857,1361 +2185,1426 @@ static s_Node parseLabelledStatement_ITvfuHJO(const int modid, const fu::str& fn
     }
     else
     {
-        return createBlock_Xs4gphBm(fu::vec<s_Node> { fu::slate<1, s_Node> { static_cast<s_Node&&>(stmt) } }, label, modid, _loc);
+        return createBlock_qFIn(fu::vec<Node_Wr1X> {{ static_cast<Node_Wr1X&&>(stmt) }}, label, modid, _ps);
     };
 }
 
-static bool softSemi_MnASs0li(const fu::str& fname, const fu::str& src, fu::view<s_Token> tokens, int& _idx, const int _loc, const int _col0, fu::vec<fu::str>& warnings, const s_Options& options)
+static bool softSemi_qFIn(fu::vec_range<char> fname, fu::vec_range<char> src, fu::view<Token_RpL8> tokens, ParserState_tGnm& _ps, const Options_mg7V& options)
 {
-    const s_Token& peek = tokens[_idx];
-    if (peek.kind == s_kind_op)
+    const Token_RpL8& peek = tokens[_ps._idx];
+    if (peek.kind == Kind_Idfg_op)
     {
-        if (peek.value == ";"_fu)
+        if (peek.value == ";"_view)
         {
-            _idx++;
+            _ps._idx++;
             return true;
         }
-        else if ((peek.value == "}"_fu) || (peek.value == ")"_fu))
+        else if ((peek.value == "}"_view) || (peek.value == ")"_view))
             return false;
 
     }
-    else if (peek.lcc.col == _col0)
+    else if (peek.lcc.col == _ps._col0)
+        return false;
+    else if (peek.kind == Kind_Idfg_eof)
         return false;
 
-    warn_JY9fwXxS((("Missing semicollon before `"_fu + peek.value) + "`."_fu), fname, src, tokens, _idx, _loc, warnings, options);
+    warn_qFIn((("Missing semicollon before "_view + qBAD_e44U(peek.value)) + "."_view), fname, src, tokens, _ps, options);
     return false;
 }
 
-static s_Node parseLetStmt_xskOWIkE(const int modid, const fu::str& fname, const fu::str& src, fu::view<s_Token> tokens, int& _idx, int& _loc, int& _col0, int& _precedence, int& _fnDepth, bool& _autopub, bool& _TODO_FIX_dollarOk, int& _numDollars, fu::vec<fu::str>& _expectedTypeParams, fu::vec<fu::str>& _upstreamTypeParams, fu::vec<s_Import>& imports, fu::vec<fu::str>& warnings, const s_Options& options)
+static Node_Wr1X parseLetStmt_qFIn(const int modid, fu::vec_range<char> fname, fu::vec_range<char> src, fu::vec_range<Token_RpL8> tokens, ParserState_tGnm& _ps, const Options_mg7V& options)
 {
-    /*MOV*/ s_Node ret = parseLet_smk4PW6Z(false, false, false, 0, modid, fname, src, tokens, _idx, _loc, _col0, _precedence, _fnDepth, _autopub, _TODO_FIX_dollarOk, _numDollars, _expectedTypeParams, _upstreamTypeParams, imports, warnings, options);
-    softSemi_MnASs0li(fname, src, tokens, _idx, _loc, _col0, warnings, options);
-    if (!(~ret.flags & (s_Flags_F_IMPLICIT | s_Flags_F_REF)) && ret.items[LET_TYPE] && !ret.items[LET_INIT])
+    /*MOV*/ Node_Wr1X ret = parseLet_qFIn(false, 0, false, false, P_RESET, modid, fname, src, tokens, _ps, options);
+    if (softSemi_qFIn(fname, src, tokens, _ps, options))
+        ret.syntax |= ParseSyntax_Lay2_PS_ALWAYS_DISCARD;
+
+    if (!(~ret.flags & (Flags_Lzg8_F_IMPLICIT | Flags_Lzg8_F_REF)) && ret.items[LET_TYPE] && !ret.items[LET_INIT])
     {
-        fu::str name { ret.value };
-        const s_Flags flags = (ret.flags & (s_Flags_F_SHADOW | s_Flags_F_LAX));
-        ret.flags |= s_Flags_F_SHADOW;
-        return make_3RGKUyIO(s_kind_fn, fu::vec<s_Node> { fu::slate<3, s_Node> { static_cast<s_Node&&>(ret), s_Node{}, createRead_9y30X3Q5(name, s_Flags{}, modid, fname, src, tokens, _idx, _loc) } }, (flags | s_Flags_F_INLINE), name, s_DeclAsserts{}, s_ParseSyntax{}, s_TokenIdx{}, modid, _loc);
+        const fu::str& name = ret.value;
+        const Flags_Lzg8 flags = (ret.flags & (Flags_Lzg8_F_SHADOW | Flags_Lzg8_F_LAX));
+        ret.flags |= Flags_Lzg8_F_SHADOW;
+        return make_qFIn(Kind_Idfg_fn, fu::vec<Node_Wr1X> {{ Node_Wr1X(ret), Node_Wr1X{}, createRead_qFIn(name, Flags_Lzg8{}, modid, fname, src, tokens, _ps) }}, (flags | Flags_Lzg8_F_INLINE), name, DeclAsserts_taUG{}, ParseSyntax_Lay2{}, TokenIdx_5b85{}, modid, _ps);
     }
     else
         return /*NRVO*/ ret;
 
 }
 
-                                #ifndef DEF_M_LAMBDA_STMT_OK
-                                #define DEF_M_LAMBDA_STMT_OK
-inline constexpr int M_LAMBDA_STMT_OK = (1 << 2);
-                                #endif
-
-static s_Node parseExpressionStatement_NsEgxFfw(const int modid, const fu::str& fname, const fu::str& src, fu::view<s_Token> tokens, int& _idx, int& _loc, int& _col0, int& _precedence, int& _fnDepth, bool& _autopub, bool& _TODO_FIX_dollarOk, int& _numDollars, fu::vec<fu::str>& _expectedTypeParams, fu::vec<fu::str>& _upstreamTypeParams, fu::vec<s_Import>& imports, fu::vec<fu::str>& warnings, const s_Options& options)
+static Node_Wr1X parseExpressionStatement_qFIn(const int modid, fu::vec_range<char> fname, fu::vec_range<char> src, fu::vec_range<Token_RpL8> tokens, ParserState_tGnm& _ps, const Options_mg7V& options)
 {
-    /*MOV*/ s_Node expr = parseExpression_djvSQ5j2(P_RESET, 0, modid, fname, src, tokens, _idx, _loc, _col0, _precedence, _fnDepth, _autopub, _TODO_FIX_dollarOk, _numDollars, _expectedTypeParams, _upstreamTypeParams, imports, warnings, options);
-    if (tryConsume_RS2yajZX(s_kind_op, ":"_fu, tokens, _idx))
-    {
-        if (!(expr.kind == s_kind_call))
-            fail_a0ZqfRup("Cannot pipeline: expression is not a call."_fu, fname, src, tokens, _idx);
-        else
-        {
-            s_Node right = parseExpression_djvSQ5j2(P_RESET, M_LAMBDA_STMT_OK, modid, fname, src, tokens, _idx, _loc, _col0, _precedence, _fnDepth, _autopub, _TODO_FIX_dollarOk, _numDollars, _expectedTypeParams, _upstreamTypeParams, imports, warnings, options);
-            return pipelineLeft_4IoZWeLk(static_cast<s_Node&&>(expr), right, fname, src, tokens, _idx);
-        };
-    }
-    else
-    {
-        if (softSemi_MnASs0li(fname, src, tokens, _idx, _loc, _col0, warnings, options))
-            expr.syntax |= s_ParseSyntax_PS_DISCARD_IF_BLOCK_TAIL;
+    /*MOV*/ Node_Wr1X expr = parseExpression_ZIeg(P_RESET, 0, modid, fname, src, tokens, _ps, options);
+    tryColonPipeline_qFIn(expr, true, modid, fname, src, tokens, _ps, options);
+    if (softSemi_qFIn(fname, src, tokens, _ps, options))
+        expr.syntax |= ParseSyntax_Lay2_PS_DISCARD_IF_BLOCK_TAIL;
 
-        return /*NRVO*/ expr;
-    };
+    return /*NRVO*/ expr;
 }
 
-static s_Node parseLetOrExpressionStatement_AhqcHb1j(const int modid, const fu::str& fname, const fu::str& src, fu::view<s_Token> tokens, int& _idx, int& _loc, int& _col0, int& _precedence, int& _fnDepth, bool& _autopub, bool& _TODO_FIX_dollarOk, int& _numDollars, fu::vec<fu::str>& _expectedTypeParams, fu::vec<fu::str>& _upstreamTypeParams, fu::vec<s_Import>& imports, fu::vec<fu::str>& warnings, const s_Options& options)
+static Node_Wr1X parseLetOrExpressionStatement_qFIn(const int modid, fu::vec_range<char> fname, fu::vec_range<char> src, fu::vec_range<Token_RpL8> tokens, ParserState_tGnm& _ps, const Options_mg7V& options)
 {
-    const s_Token& token = tokens[_idx++];
-    if ((token.kind == s_kind_id) && (tokens[_idx].kind == s_kind_id))
+    const Token_RpL8& token = tokens[_ps._idx++];
+    if ((token.kind == Kind_Idfg_id) && (tokens[_ps._idx].kind == Kind_Idfg_id))
     {
         fu::view<char> v = token.value;
-        if (v == "let"_fu)
-            return parseLetStmt_xskOWIkE(modid, fname, src, tokens, _idx, _loc, _col0, _precedence, _fnDepth, _autopub, _TODO_FIX_dollarOk, _numDollars, _expectedTypeParams, _upstreamTypeParams, imports, warnings, options);
-        else if ((v == "mut"_fu) || (v == "ref"_fu) || (v == "val"_fu) || (v == "const"_fu) || (v == "implicit"_fu) || (v == "type"_fu))
+        if (v == "let"_view)
+            return parseLetStmt_qFIn(modid, fname, src, tokens, _ps, options);
+        else if ((v == "mut"_view) || (v == "ref"_view) || (v == "val"_view) || (v == "const"_view) || (v == "implicit"_view) || (v == "type"_view))
         {
-            _idx--;
-            return parseLetStmt_xskOWIkE(modid, fname, src, tokens, _idx, _loc, _col0, _precedence, _fnDepth, _autopub, _TODO_FIX_dollarOk, _numDollars, _expectedTypeParams, _upstreamTypeParams, imports, warnings, options);
+            _ps._idx--;
+            return parseLetStmt_qFIn(modid, fname, src, tokens, _ps, options);
         };
     };
-    _idx--;
-    if (!_fnDepth)
+    _ps._idx--;
+    if (!_ps._fnDepth)
     {
-        fail_a0ZqfRup(fu::str{}, fname, src, tokens, _idx);
+        fail_94Qv(fu::str{}, fname, src, tokens, _ps);
     }
     else
-        return parseExpressionStatement_NsEgxFfw(modid, fname, src, tokens, _idx, _loc, _col0, _precedence, _fnDepth, _autopub, _TODO_FIX_dollarOk, _numDollars, _expectedTypeParams, _upstreamTypeParams, imports, warnings, options);
+        return parseExpressionStatement_qFIn(modid, fname, src, tokens, _ps, options);
 
 }
 
-                                #ifndef DEF_only_uwKwzsvZqOh
-                                #define DEF_only_uwKwzsvZqOh
-inline char only_uwKwzsvZ(fu::view<char> s)
+                                #ifndef DEF_only_aB76dCw98mh
+                                #define DEF_only_aB76dCw98mh
+inline char only_aB76(fu::view<char> s)
 {
     if (s.size() == 1)
         return s[0];
     else
-        fu::fail(x7E_gCeFmDFw("len != 1: "_fu, fu::i64dec(s.size())));
+        fu::fail(x7E_rA00("len != 1: "_view, fu::i64dec(s.size())));
 
 }
                                 #endif
 
-static s_Node createPrefix_2MFNfWCU(const fu::str& op, /*MOV*/ s_Node&& expr, const int modid, const int _loc)
+static Node_Wr1X createPrefix_qFIn(fu::vec_range<char> op, /*MOV*/ Node_Wr1X&& expr, const int modid, const ParserState_tGnm& _ps)
 {
-    if (((op == "+"_fu) || (op == "-"_fu)) && ((expr.kind == s_kind_int) || (expr.kind == s_kind_real)))
+    if (((op == "+"_view) || (op == "-"_view)) && ((expr.kind == Kind_Idfg_int) || (expr.kind == Kind_Idfg_real)))
     {
         const char sign = expr.value[0];
         if ((sign == '+') || (sign == '-'))
-            expr.value.mutref(0) = ((sign == only_uwKwzsvZ(op)) ? '+' : '-');
+            expr.value.mutref(0) = ((sign == only_aB76(op)) ? '+' : '-');
         else
             expr.value = (op + expr.value);
 
-        return static_cast<s_Node&&>(expr);
+        return static_cast<Node_Wr1X&&>(expr);
     }
-    else if (op == "!"_fu)
+    else if (op == "!"_view)
     {
-        return make_3RGKUyIO(s_kind_not, fu::vec<s_Node> { fu::slate<1, s_Node> { static_cast<s_Node&&>(expr) } }, s_Flags{}, (*(const fu::str*)fu::NIL), s_DeclAsserts{}, s_ParseSyntax{}, s_TokenIdx{}, modid, _loc);
+        return make_qFIn(Kind_Idfg_not, fu::vec<Node_Wr1X> {{ static_cast<Node_Wr1X&&>(expr) }}, Flags_Lzg8{}, (*(fu::str*)fu::NIL), DeclAsserts_taUG{}, ParseSyntax_Lay2{}, TokenIdx_5b85{}, modid, _ps);
     }
     else
     {
-        return createCall_mBEz988k(op, s_Flags_F_OPERATOR, fu::vec<s_Node> { fu::slate<1, s_Node> { static_cast<s_Node&&>(expr) } }, s_ParseSyntax{}, modid, _loc);
+        return createCall_qFIn(op, Flags_Lzg8_F_OPERATOR, fu::vec<Node_Wr1X> {{ static_cast<Node_Wr1X&&>(expr) }}, ParseSyntax_Lay2{}, modid, _ps);
     };
 }
 
-static s_Node parseSubStatement_e5pF24cY(const int modid, const fu::str& fname, const fu::str& src, fu::view<s_Token> tokens, int& _idx, int& _loc, int& _col0, int& _precedence, int& _fnDepth, bool& _autopub, bool& _TODO_FIX_dollarOk, int& _numDollars, fu::vec<fu::str>& _expectedTypeParams, fu::vec<fu::str>& _upstreamTypeParams, fu::vec<s_Import>& imports, fu::vec<fu::str>& warnings, const s_Options& options)
+static Node_Wr1X parseIfCond_qFIn(const int modid, fu::vec_range<char> fname, fu::vec_range<char> src, fu::vec_range<Token_RpL8> tokens, ParserState_tGnm& _ps, const Options_mg7V& options)
 {
-    const s_Token& peek = tokens[_idx];
-    if ((peek.kind != s_kind_op) || (peek.value != "{"_fu))
-    {
-        if (!(peek.lcc.col > _col0))
-            warn_JY9fwXxS((x7E_gCeFmDFw((x7E_gCeFmDFw((("Misleading indent at `"_fu + peek.value) + "`: expected more than "_fu), fu::i64dec(_col0)) + ", got "_fu), fu::i64dec(peek.lcc.col)) + "."_fu), fname, src, tokens, _idx, _loc, warnings, options);
-
-    };
-    return parseStatement_GzQ8uksl(modid, fname, src, tokens, _idx, _loc, _col0, _precedence, _fnDepth, _autopub, _TODO_FIX_dollarOk, _numDollars, _expectedTypeParams, _upstreamTypeParams, imports, warnings, options);
-}
-
-static s_Node parseIf_XBHYqa2E(const int modid, const fu::str& fname, const fu::str& src, fu::view<s_Token> tokens, int& _idx, int& _loc, int& _col0, int& _precedence, int& _fnDepth, bool& _autopub, bool& _TODO_FIX_dollarOk, int& _numDollars, fu::vec<fu::str>& _expectedTypeParams, fu::vec<fu::str>& _upstreamTypeParams, fu::vec<s_Import>& imports, fu::vec<fu::str>& warnings, const s_Options& options)
-{
-    const s_Token& token = tokens[(_idx - 1)];
-    const s_Token& prev = ((_idx > 1) ? tokens[(_idx - 2)] : (*(const s_Token*)fu::NIL));
-    const s_Token& token_1 = (((prev.kind == s_kind_id) && (prev.value == "else"_fu)) ? prev : token);
-    const s_Token& nOt = tryConsume_RS2yajZX(s_kind_op, "!"_fu, tokens, _idx);
-    consume_ifLltrwq(s_kind_op, "("_fu, fname, src, tokens, _idx);
-    s_Node cond = parseLetOrExpressionStatement_AhqcHb1j(modid, fname, src, tokens, _idx, _loc, _col0, _precedence, _fnDepth, _autopub, _TODO_FIX_dollarOk, _numDollars, _expectedTypeParams, _upstreamTypeParams, imports, warnings, options);
-    consume_ifLltrwq(s_kind_op, ")"_fu, fname, src, tokens, _idx);
+    const Token_RpL8& nOt = tryConsume_94Qv(Kind_Idfg_op, "!"_view, tokens, _ps);
+    consume_qFIn(Kind_Idfg_op, "("_view, fname, src, tokens, _ps);
+    /*MOV*/ Node_Wr1X cond = parseLetOrExpressionStatement_qFIn(modid, fname, src, tokens, _ps, options);
+    consume_qFIn(Kind_Idfg_op, ")"_view, fname, src, tokens, _ps);
     if (nOt)
-        cond = createPrefix_2MFNfWCU("!"_fu, s_Node(cond), modid, _loc);
+        return createPrefix_qFIn(str_5TEYhFzaE10, static_cast<Node_Wr1X&&>(cond), modid, _ps);
+    else
+        return /*NRVO*/ cond;
 
-    s_Node cons = parseSubStatement_e5pF24cY(modid, fname, src, tokens, _idx, _loc, _col0, _precedence, _fnDepth, _autopub, _TODO_FIX_dollarOk, _numDollars, _expectedTypeParams, _upstreamTypeParams, imports, warnings, options);
-    const s_Token& eLse = tryConsume_RS2yajZX(s_kind_id, "else"_fu, tokens, _idx);
+}
+
+static Node_Wr1X parseSubStatement_qFIn(const int modid, fu::vec_range<char> fname, fu::vec_range<char> src, fu::vec_range<Token_RpL8> tokens, ParserState_tGnm& _ps, const Options_mg7V& options)
+{
+    const Token_RpL8& peek = tokens[_ps._idx];
+    if ((peek.kind != Kind_Idfg_op) || (peek.value != "{"_view))
+    {
+        if (!(peek.lcc.col > _ps._col0))
+            warn_qFIn((x7E_rA00((x7E_rA00((("Misleading indent at "_view + qBAD_e44U(peek.value)) + ": expected more than "_view), fu::i64dec(_ps._col0)) + ", got "_view), fu::i64dec(peek.lcc.col)) + "."_view), fname, src, tokens, _ps, options);
+
+    };
+    return parseStatement_qFIn(modid, fname, src, tokens, _ps, options);
+}
+
+static Node_Wr1X parseIf_qFIn(const int modid, fu::vec_range<char> fname, fu::vec_range<char> src, fu::vec_range<Token_RpL8> tokens, ParserState_tGnm& _ps, const Options_mg7V& options)
+{
+    const Token_RpL8& token = tokens[(_ps._idx - 1)];
+    const Token_RpL8& prev = ((_ps._idx > 1) ? tokens[(_ps._idx - 2)] : (*(Token_RpL8*)fu::NIL));
+    const Token_RpL8& token_1 = (((prev.kind == Kind_Idfg_id) && (prev.value == "else"_view)) ? prev : token);
+    Node_Wr1X cond = parseIfCond_qFIn(modid, fname, src, tokens, _ps, options);
+    Node_Wr1X cons = parseSubStatement_qFIn(modid, fname, src, tokens, _ps, options);
+    const Token_RpL8& eLse = tryConsume_94Qv(Kind_Idfg_id, "else"_view, tokens, _ps);
     if (eLse)
     {
         if (!((eLse.lcc.line == token_1.lcc.line) || (eLse.lcc.col == token_1.lcc.col)))
         {
-            warn_JY9fwXxS((x7E_gCeFmDFw((x7E_gCeFmDFw((x7E_gCeFmDFw("Inconsistent indent at `else`: expected "_fu, fu::i64dec(token_1.lcc.col)) + ", got "_fu), fu::i64dec(eLse.lcc.col)) + ". `if` starts on line "_fu), fu::i64dec(token_1.lcc.line)) + "."_fu), fname, src, tokens, _idx, _loc, warnings, options);
+            warn_qFIn((x7E_rA00((x7E_rA00((x7E_rA00("Inconsistent indent at `else`: expected "_view, fu::i64dec(token_1.lcc.col)) + ", got "_view), fu::i64dec(eLse.lcc.col)) + ". `if` starts on line "_view), fu::i64dec(token_1.lcc.line)) + "."_view), fname, src, tokens, _ps, options);
         };
-        s_Node alt = parseStatement_GzQ8uksl(modid, fname, src, tokens, _idx, _loc, _col0, _precedence, _fnDepth, _autopub, _TODO_FIX_dollarOk, _numDollars, _expectedTypeParams, _upstreamTypeParams, imports, warnings, options);
-        return createIf_GfIIGbSf(cond, cons, alt, s_ParseSyntax_PS_ALWAYS_DISCARD, modid, _loc);
+        Node_Wr1X alt = parseStatement_qFIn(modid, fname, src, tokens, _ps, options);
+        return createIf_qFIn(cond, cons, alt, ParseSyntax_Lay2_PS_ALWAYS_DISCARD, modid, _ps);
     }
     else
-        return createAnd_lIz6bDXy(cond, cons, s_ParseSyntax_PS_ALWAYS_DISCARD, modid, _loc);
+        return createAnd_qFIn(cond, cons, ParseSyntax_Lay2_PS_ALWAYS_DISCARD, modid, _ps);
 
 }
 
-static s_Node parseParens_pIG3IH1I(const int modid, const fu::str& fname, const fu::str& src, fu::view<s_Token> tokens, int& _idx, int& _loc, int& _col0, int& _precedence, int& _fnDepth, bool& _autopub, bool& _TODO_FIX_dollarOk, int& _numDollars, fu::vec<fu::str>& _expectedTypeParams, fu::vec<fu::str>& _upstreamTypeParams, fu::vec<s_Import>& imports, fu::vec<fu::str>& warnings, const s_Options& options)
+static Node_Wr1X parseParens_qFIn(const int modid, fu::vec_range<char> fname, fu::vec_range<char> src, fu::vec_range<Token_RpL8> tokens, ParserState_tGnm& _ps, const Options_mg7V& options)
 {
-    /*MOV*/ s_Node out = parseExpression_djvSQ5j2(P_RESET, 0, modid, fname, src, tokens, _idx, _loc, _col0, _precedence, _fnDepth, _autopub, _TODO_FIX_dollarOk, _numDollars, _expectedTypeParams, _upstreamTypeParams, imports, warnings, options);
-    out.syntax |= s_ParseSyntax_PS_PARENS;
-    consume_ifLltrwq(s_kind_op, ")"_fu, fname, src, tokens, _idx);
+    /*MOV*/ Node_Wr1X out = parseExpression_ZIeg(P_RESET, 0, modid, fname, src, tokens, _ps, options);
+    out.syntax |= ParseSyntax_Lay2_PS_PARENS;
+    consume_qFIn(Kind_Idfg_op, ")"_view, fname, src, tokens, _ps);
     return /*NRVO*/ out;
 }
 
-static s_Node tryParseLoopPreheader_muv1XVFm(const int modid, const fu::str& fname, const fu::str& src, fu::view<s_Token> tokens, int& _idx, int& _loc, int& _col0, int& _precedence, int& _fnDepth, bool& _autopub, bool& _TODO_FIX_dollarOk, int& _numDollars, fu::vec<fu::str>& _expectedTypeParams, fu::vec<fu::str>& _upstreamTypeParams, fu::vec<s_Import>& imports, fu::vec<fu::str>& warnings, const s_Options& options)
+static Node_Wr1X tryParseLoopPreheader_qFIn(const int modid, fu::vec_range<char> fname, fu::vec_range<char> src, fu::vec_range<Token_RpL8> tokens, ParserState_tGnm& _ps, const Options_mg7V& options)
 {
-    const s_Token& peek = tokens[_idx];
-    if ((peek.kind == s_kind_id) && (peek.value == "on"_fu))
+    const Token_RpL8& peek = tokens[_ps._idx];
+    if ((peek.kind == Kind_Idfg_id) && (peek.value == "on"_view))
     {
-        const s_Token& peek_1 = tokens[(_idx + 1)];
-        if ((peek_1.kind == s_kind_id) && (peek_1.value == "enter"_fu))
+        const Token_RpL8& peek_1 = tokens[(_ps._idx + 1)];
+        if ((peek_1.kind == Kind_Idfg_id) && (peek_1.value == "enter"_view))
         {
-            _idx += 2;
-            /*MOV*/ s_Node ret = parseStatement_GzQ8uksl(modid, fname, src, tokens, _idx, _loc, _col0, _precedence, _fnDepth, _autopub, _TODO_FIX_dollarOk, _numDollars, _expectedTypeParams, _upstreamTypeParams, imports, warnings, options);
-            consume_ifLltrwq(s_kind_id, "then"_fu, fname, src, tokens, _idx);
+            _ps._idx += 2;
+            /*MOV*/ Node_Wr1X ret = parseStatement_qFIn(modid, fname, src, tokens, _ps, options);
+            consume_qFIn(Kind_Idfg_id, "then"_view, fname, src, tokens, _ps);
             return /*NRVO*/ ret;
         };
     };
-    return s_Node{};
+    return Node_Wr1X{};
 }
 
-static s_Node createLoop_8OE9KoCG(const s_Node& init, const s_Node& pre_cond, const s_Node& pre, const s_Node& body, const s_Node& post, const s_Node& post_cond, const int modid, const int _loc)
+static Node_Wr1X createLoop_qFIn(const Node_Wr1X& init, const Node_Wr1X& pre_cond, const Node_Wr1X& pre, const Node_Wr1X& body, const Node_Wr1X& post, const Node_Wr1X& post_cond, const int modid, const ParserState_tGnm& _ps)
 {
-    return make_3RGKUyIO(s_kind_loop, fu::vec<s_Node> { fu::slate<6, s_Node> { s_Node(init), s_Node(pre_cond), s_Node(pre), s_Node(body), s_Node(post), s_Node(post_cond) } }, s_Flags{}, (*(const fu::str*)fu::NIL), s_DeclAsserts{}, s_ParseSyntax{}, s_TokenIdx{}, modid, _loc);
+    return make_qFIn(Kind_Idfg_loop, fu::vec<Node_Wr1X> {{ Node_Wr1X(init), Node_Wr1X(pre_cond), Node_Wr1X(pre), Node_Wr1X(body), Node_Wr1X(post), Node_Wr1X(post_cond) }}, Flags_Lzg8{}, (*(fu::str*)fu::NIL), DeclAsserts_taUG{}, ParseSyntax_Lay2_PS_ALWAYS_DISCARD, TokenIdx_5b85{}, modid, _ps);
 }
 
-static s_Node parseFor_qT3oAVeV(const int modid, const fu::str& fname, const fu::str& src, fu::view<s_Token> tokens, int& _idx, int& _loc, int& _col0, int& _precedence, int& _fnDepth, bool& _autopub, bool& _TODO_FIX_dollarOk, int& _numDollars, fu::vec<fu::str>& _expectedTypeParams, fu::vec<fu::str>& _upstreamTypeParams, fu::vec<s_Import>& imports, fu::vec<fu::str>& warnings, const s_Options& options)
+static Node_Wr1X parseFor_qFIn(const int modid, fu::vec_range<char> fname, fu::vec_range<char> src, fu::vec_range<Token_RpL8> tokens, ParserState_tGnm& _ps, const Options_mg7V& options)
 {
-    consume_ifLltrwq(s_kind_op, "("_fu, fname, src, tokens, _idx);
-    if (tryConsume_RS2yajZX(s_kind_id, "fieldname"_fu, tokens, _idx))
+    consume_qFIn(Kind_Idfg_op, "("_view, fname, src, tokens, _ps);
+    if (tryConsume_94Qv(Kind_Idfg_id, "fieldname"_view, tokens, _ps))
     {
-        const fu::str& placeholder = consume_ifLltrwq(s_kind_id, (*(const fu::str*)fu::NIL), fname, src, tokens, _idx).value;
-        consume_ifLltrwq(s_kind_op, ":"_fu, fname, src, tokens, _idx);
-        /*MOV*/ s_Node type = parseTypeAnnot_JxRmj4Ey(false, modid, fname, src, tokens, _idx, _loc, _col0, _precedence, _fnDepth, _autopub, _TODO_FIX_dollarOk, _numDollars, _expectedTypeParams, _upstreamTypeParams, imports, warnings, options);
-        consume_ifLltrwq(s_kind_op, ")"_fu, fname, src, tokens, _idx);
-        /*MOV*/ s_Node body = parseSubStatement_e5pF24cY(modid, fname, src, tokens, _idx, _loc, _col0, _precedence, _fnDepth, _autopub, _TODO_FIX_dollarOk, _numDollars, _expectedTypeParams, _upstreamTypeParams, imports, warnings, options);
-        return make_3RGKUyIO(s_kind_forfieldsof, fu::vec<s_Node> { fu::slate<2, s_Node> { static_cast<s_Node&&>(type), static_cast<s_Node&&>(body) } }, s_Flags{}, placeholder, s_DeclAsserts{}, s_ParseSyntax{}, s_TokenIdx{}, modid, _loc);
+        const fu::str& placeholder = consume_qFIn(Kind_Idfg_id, fu::view<char>{}, fname, src, tokens, _ps).value;
+        consume_qFIn(Kind_Idfg_op, ":"_view, fname, src, tokens, _ps);
+        /*MOV*/ Node_Wr1X type = parseTypeAnnot_qFIn(false, modid, fname, src, tokens, _ps, options);
+        consume_qFIn(Kind_Idfg_op, ")"_view, fname, src, tokens, _ps);
+        /*MOV*/ Node_Wr1X body = parseSubStatement_qFIn(modid, fname, src, tokens, _ps, options);
+        return make_qFIn(Kind_Idfg_forfieldsof, fu::vec<Node_Wr1X> {{ static_cast<Node_Wr1X&&>(type), static_cast<Node_Wr1X&&>(body) }}, Flags_Lzg8{}, placeholder, DeclAsserts_taUG{}, ParseSyntax_Lay2{}, TokenIdx_5b85{}, modid, _ps);
     }
     else
     {
-        s_Node init = (!tryConsume_RS2yajZX(s_kind_op, ";"_fu, tokens, _idx) ? parseStatement_GzQ8uksl(modid, fname, src, tokens, _idx, _loc, _col0, _precedence, _fnDepth, _autopub, _TODO_FIX_dollarOk, _numDollars, _expectedTypeParams, _upstreamTypeParams, imports, warnings, options) : s_Node{});
-        if (init && (init.kind != s_kind_let))
-            fail_a0ZqfRup((x7E_gCeFmDFw("`for` expects a `let` statement, got a `"_fu, str_n4lV73pj(init.kind)) + "`."_fu), fname, src, tokens, _idx);
+        Node_Wr1X init = (!tryConsume_94Qv(Kind_Idfg_op, ";"_view, tokens, _ps) ? parseStatement_qFIn(modid, fname, src, tokens, _ps, options) : Node_Wr1X{});
+        if (init && (init.kind != Kind_Idfg_let))
+            fail_94Qv((x7E_rA00("`for` expects a `let` statement, got a `"_view, str_J9Iq(init.kind)) + "`."_view), fname, src, tokens, _ps);
         else
         {
-            s_Node pre_cond = (!tryConsume_RS2yajZX(s_kind_op, ";"_fu, tokens, _idx) ? parseLetOrExpressionStatement_AhqcHb1j(modid, fname, src, tokens, _idx, _loc, _col0, _precedence, _fnDepth, _autopub, _TODO_FIX_dollarOk, _numDollars, _expectedTypeParams, _upstreamTypeParams, imports, warnings, options) : s_Node{});
-            const s_Token& token = tokens[_idx];
-            s_Node post = (!((token.kind == s_kind_op) && (token.value == ")"_fu)) ? parseParens_pIG3IH1I(modid, fname, src, tokens, _idx, _loc, _col0, _precedence, _fnDepth, _autopub, _TODO_FIX_dollarOk, _numDollars, _expectedTypeParams, _upstreamTypeParams, imports, warnings, options) : (consume_ifLltrwq(s_kind_op, ")"_fu, fname, src, tokens, _idx), s_Node{}));
-            s_Node pre = tryParseLoopPreheader_muv1XVFm(modid, fname, src, tokens, _idx, _loc, _col0, _precedence, _fnDepth, _autopub, _TODO_FIX_dollarOk, _numDollars, _expectedTypeParams, _upstreamTypeParams, imports, warnings, options);
-            s_Node body = parseStatement_GzQ8uksl(modid, fname, src, tokens, _idx, _loc, _col0, _precedence, _fnDepth, _autopub, _TODO_FIX_dollarOk, _numDollars, _expectedTypeParams, _upstreamTypeParams, imports, warnings, options);
-            return createLoop_8OE9KoCG(init, pre_cond, pre, body, post, (*(const s_Node*)fu::NIL), modid, _loc);
+            Node_Wr1X pre_cond = (!tryConsume_94Qv(Kind_Idfg_op, ";"_view, tokens, _ps) ? parseLetOrExpressionStatement_qFIn(modid, fname, src, tokens, _ps, options) : Node_Wr1X{});
+            const Token_RpL8& token = tokens[_ps._idx];
+            Node_Wr1X post = (!((token.kind == Kind_Idfg_op) && (token.value == ")"_view)) ? parseParens_qFIn(modid, fname, src, tokens, _ps, options) : (consume_qFIn(Kind_Idfg_op, ")"_view, fname, src, tokens, _ps), Node_Wr1X{}));
+            Node_Wr1X pre = tryParseLoopPreheader_qFIn(modid, fname, src, tokens, _ps, options);
+            Node_Wr1X body = parseStatement_qFIn(modid, fname, src, tokens, _ps, options);
+            return createLoop_qFIn(init, pre_cond, pre, body, post, (*(Node_Wr1X*)fu::NIL), modid, _ps);
         };
     };
 }
 
-static s_Node parseWhile_I1QhYpkA(const int modid, const fu::str& fname, const fu::str& src, fu::view<s_Token> tokens, int& _idx, int& _loc, int& _col0, int& _precedence, int& _fnDepth, bool& _autopub, bool& _TODO_FIX_dollarOk, int& _numDollars, fu::vec<fu::str>& _expectedTypeParams, fu::vec<fu::str>& _upstreamTypeParams, fu::vec<s_Import>& imports, fu::vec<fu::str>& warnings, const s_Options& options)
+static Node_Wr1X parseWhile_qFIn(const int modid, fu::vec_range<char> fname, fu::vec_range<char> src, fu::vec_range<Token_RpL8> tokens, ParserState_tGnm& _ps, const Options_mg7V& options)
 {
-    consume_ifLltrwq(s_kind_op, "("_fu, fname, src, tokens, _idx);
-    s_Node pre_cond = parseLetOrExpressionStatement_AhqcHb1j(modid, fname, src, tokens, _idx, _loc, _col0, _precedence, _fnDepth, _autopub, _TODO_FIX_dollarOk, _numDollars, _expectedTypeParams, _upstreamTypeParams, imports, warnings, options);
-    consume_ifLltrwq(s_kind_op, ")"_fu, fname, src, tokens, _idx);
-    s_Node body = parseSubStatement_e5pF24cY(modid, fname, src, tokens, _idx, _loc, _col0, _precedence, _fnDepth, _autopub, _TODO_FIX_dollarOk, _numDollars, _expectedTypeParams, _upstreamTypeParams, imports, warnings, options);
-    return createLoop_8OE9KoCG((*(const s_Node*)fu::NIL), pre_cond, (*(const s_Node*)fu::NIL), body, (*(const s_Node*)fu::NIL), (*(const s_Node*)fu::NIL), modid, _loc);
+    Node_Wr1X pre_cond = parseIfCond_qFIn(modid, fname, src, tokens, _ps, options);
+    Node_Wr1X body = parseSubStatement_qFIn(modid, fname, src, tokens, _ps, options);
+    return createLoop_qFIn((*(Node_Wr1X*)fu::NIL), pre_cond, (*(Node_Wr1X*)fu::NIL), body, (*(Node_Wr1X*)fu::NIL), (*(Node_Wr1X*)fu::NIL), modid, _ps);
 }
 
-static s_Node parseDoWhile_DbFSNEs3(const int modid, const fu::str& fname, const fu::str& src, fu::view<s_Token> tokens, int& _idx, int& _loc, int& _col0, int& _precedence, int& _fnDepth, bool& _autopub, bool& _TODO_FIX_dollarOk, int& _numDollars, fu::vec<fu::str>& _expectedTypeParams, fu::vec<fu::str>& _upstreamTypeParams, fu::vec<s_Import>& imports, fu::vec<fu::str>& warnings, const s_Options& options)
+static Node_Wr1X parseDoWhile_qFIn(const int modid, fu::vec_range<char> fname, fu::vec_range<char> src, fu::vec_range<Token_RpL8> tokens, ParserState_tGnm& _ps, const Options_mg7V& options)
 {
-    s_Node body = parseSubStatement_e5pF24cY(modid, fname, src, tokens, _idx, _loc, _col0, _precedence, _fnDepth, _autopub, _TODO_FIX_dollarOk, _numDollars, _expectedTypeParams, _upstreamTypeParams, imports, warnings, options);
-    consume_ifLltrwq(s_kind_id, "while"_fu, fname, src, tokens, _idx);
-    consume_ifLltrwq(s_kind_op, "("_fu, fname, src, tokens, _idx);
-    s_Node post_cond = parseLetOrExpressionStatement_AhqcHb1j(modid, fname, src, tokens, _idx, _loc, _col0, _precedence, _fnDepth, _autopub, _TODO_FIX_dollarOk, _numDollars, _expectedTypeParams, _upstreamTypeParams, imports, warnings, options);
-    consume_ifLltrwq(s_kind_op, ")"_fu, fname, src, tokens, _idx);
-    softSemi_MnASs0li(fname, src, tokens, _idx, _loc, _col0, warnings, options);
-    return createLoop_8OE9KoCG((*(const s_Node*)fu::NIL), (*(const s_Node*)fu::NIL), (*(const s_Node*)fu::NIL), body, (*(const s_Node*)fu::NIL), post_cond, modid, _loc);
+    Node_Wr1X body = parseSubStatement_qFIn(modid, fname, src, tokens, _ps, options);
+    consume_qFIn(Kind_Idfg_id, "while"_view, fname, src, tokens, _ps);
+    consume_qFIn(Kind_Idfg_op, "("_view, fname, src, tokens, _ps);
+    Node_Wr1X post_cond = parseLetOrExpressionStatement_qFIn(modid, fname, src, tokens, _ps, options);
+    consume_qFIn(Kind_Idfg_op, ")"_view, fname, src, tokens, _ps);
+    softSemi_qFIn(fname, src, tokens, _ps, options);
+    return createLoop_qFIn((*(Node_Wr1X*)fu::NIL), (*(Node_Wr1X*)fu::NIL), (*(Node_Wr1X*)fu::NIL), body, (*(Node_Wr1X*)fu::NIL), post_cond, modid, _ps);
 }
 
-static s_Node parseJump_hG02po1B(const s_kind kind, const int modid, const fu::str& fname, const fu::str& src, fu::view<s_Token> tokens, int& _idx, int& _loc, int& _col0, int& _precedence, int& _fnDepth, bool& _autopub, bool& _TODO_FIX_dollarOk, int& _numDollars, fu::vec<fu::str>& _expectedTypeParams, fu::vec<fu::str>& _upstreamTypeParams, fu::vec<s_Import>& imports, fu::vec<fu::str>& warnings, const s_Options& options)
+static Node_Wr1X parseJump_qFIn(const Kind_Idfg kind, const int modid, fu::vec_range<char> fname, fu::vec_range<char> src, fu::vec_range<Token_RpL8> tokens, ParserState_tGnm& _ps, const Options_mg7V& options)
 {
-    if (_fnDepth > 0)
+    if (_ps._fnDepth > 0)
     {
-        const fu::str& label = (tryConsume_RS2yajZX(s_kind_op, ":"_fu, tokens, _idx) ? consume_ifLltrwq(s_kind_id, (*(const fu::str*)fu::NIL), fname, src, tokens, _idx).value : (*(const fu::str*)fu::NIL));
-        /*MOV*/ s_Node expr {};
-        if (!tryConsume_RS2yajZX(s_kind_op, ";"_fu, tokens, _idx))
+        const fu::str& label = (tryConsume_94Qv(Kind_Idfg_op, ":"_view, tokens, _ps) ? consume_qFIn(Kind_Idfg_id, fu::view<char>{}, fname, src, tokens, _ps).value : (*(fu::str*)fu::NIL));
+        /*MOV*/ Node_Wr1X expr {};
+        if (!tryConsume_94Qv(Kind_Idfg_op, ";"_view, tokens, _ps))
         {
-            expr = parseExpression_djvSQ5j2(P_RESET, M_LINT_ENSURE_INDENT, modid, fname, src, tokens, _idx, _loc, _col0, _precedence, _fnDepth, _autopub, _TODO_FIX_dollarOk, _numDollars, _expectedTypeParams, _upstreamTypeParams, imports, warnings, options);
-            softSemi_MnASs0li(fname, src, tokens, _idx, _loc, _col0, warnings, options);
+            expr = parseExpression_ZIeg(P_RESET, M_LINT_ENSURE_INDENT, modid, fname, src, tokens, _ps, options);
+            softSemi_qFIn(fname, src, tokens, _ps, options);
         };
-        return make_3RGKUyIO(kind, (expr ? fu::vec<s_Node> { fu::slate<1, s_Node> { static_cast<s_Node&&>(expr) } } : fu::vec<s_Node>{}), s_Flags{}, label, s_DeclAsserts{}, s_ParseSyntax{}, s_TokenIdx{}, modid, _loc);
+        return make_qFIn(kind, (expr ? fu::vec<Node_Wr1X> {{ static_cast<Node_Wr1X&&>(expr) }} : fu::vec<Node_Wr1X>{}), Flags_Lzg8{}, label, DeclAsserts_taUG{}, ParseSyntax_Lay2{}, TokenIdx_5b85{}, modid, _ps);
     }
     else
     {
-        _idx--;
-        fail_a0ZqfRup(fu::str{}, fname, src, tokens, _idx);
+        _ps._idx--;
+        fail_94Qv(fu::str{}, fname, src, tokens, _ps);
     };
 }
 
-static s_Node parseCatchErrvar_WZQFJDnD(const int modid, const fu::str& fname, const fu::str& src, fu::view<s_Token> tokens, int& _idx, const int _loc)
+static Node_Wr1X parseCatchErrvar_qFIn(const int modid, fu::vec_range<char> fname, fu::vec_range<char> src, fu::view<Token_RpL8> tokens, ParserState_tGnm& _ps)
 {
-    const fu::str& id = consume_ifLltrwq(s_kind_id, (*(const fu::str*)fu::NIL), fname, src, tokens, _idx).value;
-    return createLet_smN5JZFS(id, createRead_9y30X3Q5("string"_fu, s_Flags{}, modid, fname, src, tokens, _idx, _loc), (*(const s_Node*)fu::NIL), s_Flags{}, modid, _loc);
+    const fu::str& id = consume_qFIn(Kind_Idfg_id, fu::view<char>{}, fname, src, tokens, _ps).value;
+    return createLet_qFIn(id, createRead_qFIn(str_8atgJDQsZa1, Flags_Lzg8{}, modid, fname, src, tokens, _ps), (*(Node_Wr1X*)fu::NIL), Flags_Lzg8{}, modid, _ps);
 }
 
-static s_Node parseTryCatch_0htiNgEo(const int modid, const fu::str& fname, const fu::str& src, fu::view<s_Token> tokens, int& _idx, int& _loc, int& _col0, int& _precedence, int& _fnDepth, bool& _autopub, bool& _TODO_FIX_dollarOk, int& _numDollars, fu::vec<fu::str>& _expectedTypeParams, fu::vec<fu::str>& _upstreamTypeParams, fu::vec<s_Import>& imports, fu::vec<fu::str>& warnings, const s_Options& options)
+static Node_Wr1X parseTryCatch_qFIn(const int modid, fu::vec_range<char> fname, fu::vec_range<char> src, fu::vec_range<Token_RpL8> tokens, ParserState_tGnm& _ps, const Options_mg7V& options)
 {
-    if (_fnDepth > 0)
+    if (_ps._fnDepth > 0)
     {
-        /*MOV*/ s_Node tRy = parseStatement_GzQ8uksl(modid, fname, src, tokens, _idx, _loc, _col0, _precedence, _fnDepth, _autopub, _TODO_FIX_dollarOk, _numDollars, _expectedTypeParams, _upstreamTypeParams, imports, warnings, options);
-        consume_ifLltrwq(s_kind_id, "catch"_fu, fname, src, tokens, _idx);
-        consume_ifLltrwq(s_kind_op, "("_fu, fname, src, tokens, _idx);
-        /*MOV*/ s_Node err = parseCatchErrvar_WZQFJDnD(modid, fname, src, tokens, _idx, _loc);
-        consume_ifLltrwq(s_kind_op, ")"_fu, fname, src, tokens, _idx);
-        /*MOV*/ s_Node cAtch = parseStatement_GzQ8uksl(modid, fname, src, tokens, _idx, _loc, _col0, _precedence, _fnDepth, _autopub, _TODO_FIX_dollarOk, _numDollars, _expectedTypeParams, _upstreamTypeParams, imports, warnings, options);
-        return make_3RGKUyIO(s_kind_try, fu::vec<s_Node> { fu::slate<3, s_Node> { static_cast<s_Node&&>(tRy), static_cast<s_Node&&>(err), static_cast<s_Node&&>(cAtch) } }, s_Flags{}, (*(const fu::str*)fu::NIL), s_DeclAsserts{}, s_ParseSyntax{}, s_TokenIdx{}, modid, _loc);
+        /*MOV*/ Node_Wr1X tRy = parseStatement_qFIn(modid, fname, src, tokens, _ps, options);
+        consume_qFIn(Kind_Idfg_id, "catch"_view, fname, src, tokens, _ps);
+        consume_qFIn(Kind_Idfg_op, "("_view, fname, src, tokens, _ps);
+        /*MOV*/ Node_Wr1X err = parseCatchErrvar_qFIn(modid, fname, src, tokens, _ps);
+        consume_qFIn(Kind_Idfg_op, ")"_view, fname, src, tokens, _ps);
+        /*MOV*/ Node_Wr1X cAtch = parseStatement_qFIn(modid, fname, src, tokens, _ps, options);
+        return make_qFIn(Kind_Idfg_try, fu::vec<Node_Wr1X> {{ static_cast<Node_Wr1X&&>(tRy), static_cast<Node_Wr1X&&>(err), static_cast<Node_Wr1X&&>(cAtch) }}, Flags_Lzg8{}, (*(fu::str*)fu::NIL), DeclAsserts_taUG{}, ParseSyntax_Lay2{}, TokenIdx_5b85{}, modid, _ps);
     }
     else
     {
-        _idx--;
-        fail_a0ZqfRup(fu::str{}, fname, src, tokens, _idx);
+        _ps._idx--;
+        fail_94Qv(fu::str{}, fname, src, tokens, _ps);
     };
 }
 
-static s_Node parseUnwrap_tkChLXD1(const int modid, const fu::str& fname, const fu::str& src, fu::view<s_Token> tokens, int& _idx, int& _loc, int& _col0, int& _precedence, int& _fnDepth, bool& _autopub, bool& _TODO_FIX_dollarOk, int& _numDollars, fu::vec<fu::str>& _expectedTypeParams, fu::vec<fu::str>& _upstreamTypeParams, fu::vec<s_Import>& imports, fu::vec<fu::str>& warnings, const s_Options& options)
+static Node_Wr1X parseUnwrap_qFIn(const int modid, fu::vec_range<char> fname, fu::vec_range<char> src, fu::vec_range<Token_RpL8> tokens, ParserState_tGnm& _ps, const Options_mg7V& options)
 {
-    /*MOV*/ s_Node stmt = parseStatement_GzQ8uksl(modid, fname, src, tokens, _idx, _loc, _col0, _precedence, _fnDepth, _autopub, _TODO_FIX_dollarOk, _numDollars, _expectedTypeParams, _upstreamTypeParams, imports, warnings, options);
-    if (stmt.kind == s_kind_block)
+    /*MOV*/ Node_Wr1X stmt = parseStatement_qFIn(modid, fname, src, tokens, _ps, options);
+    if (stmt.kind == Kind_Idfg_block)
     {
-        stmt.items += make_3RGKUyIO(s_kind_unwrap, (*(const fu::vec<s_Node>*)fu::NIL), s_Flags{}, (*(const fu::str*)fu::NIL), s_DeclAsserts{}, s_ParseSyntax{}, s_TokenIdx{}, modid, _loc);
+        stmt.items += make_qFIn(Kind_Idfg_unwrap, (*(fu::vec<Node_Wr1X>*)fu::NIL), Flags_Lzg8{}, (*(fu::str*)fu::NIL), DeclAsserts_taUG{}, ParseSyntax_Lay2{}, TokenIdx_5b85{}, modid, _ps);
         return /*NRVO*/ stmt;
     }
     else
-        fail_a0ZqfRup((("Unwrap only works for blocks, this is a "_fu + qKW_3PsDzMvu(str_n4lV73pj(stmt.kind))) + "."_fu), fname, src, tokens, _idx);
+        fail_94Qv((("Unwrap only works for blocks, this is a "_view + qKW_e44U(str_J9Iq(stmt.kind))) + "."_view), fname, src, tokens, _ps);
 
 }
 
-inline static void l_29_2_PJHJ6Vft(s_Node& item)
+                                #ifndef DEF___Dg5ORxXEZZ9
+                                #define DEF___Dg5ORxXEZZ9
+inline static void _Dg5O(Node_Wr1X& item)
 {
-    if (item.kind == s_kind_let)
-        item.flags |= s_Flags_F_PREDICATE;
-
-}
-
-                                #ifndef DEF_each_QJi9AqbTaNe
-                                #define DEF_each_QJi9AqbTaNe
-inline void each_QJi9AqbT(fu::view_mut<s_Node> a)
-{
-    for (int i = 0; i < a.size(); i++)
-        l_29_2_PJHJ6Vft(a.mutref(i));
+    if (item.kind == Kind_Idfg_let)
+        item.flags |= Flags_Lzg8_F_PREDICATE;
 
 }
                                 #endif
 
-static s_Node parseStructDecl_QN9UXwKW(const s_kind kind, const s_Flags flags, const s_DeclAsserts asserts, const int modid, const fu::str& fname, const fu::str& src, fu::view<s_Token> tokens, int& _idx, int& _loc, int& _col0, int& _precedence, int& _fnDepth, bool& _autopub, bool& _TODO_FIX_dollarOk, int& _numDollars, fu::vec<fu::str>& _expectedTypeParams, fu::vec<fu::str>& _upstreamTypeParams, fu::vec<s_Import>& imports, fu::vec<fu::str>& warnings, const s_Options& options)
+                                #ifndef DEF_each_9XqkudxTqOa
+                                #define DEF_each_9XqkudxTqOa
+inline void each_9Xqk(fu::view_mut<Node_Wr1X> a)
 {
-    const fu::str& name = tryConsume_xXyIFHPn(s_kind_id, tokens, _idx).value;
-    fu::vec<s_Node> args {};
-    const s_Flags argFlags = ((name && tryConsume_RS2yajZX(s_kind_op, "("_fu, tokens, _idx)) ? parseArgsDecl_0b0tHnte(args, s_kind_op, ")"_fu, modid, fname, src, tokens, _idx, _loc, _col0, _precedence, _fnDepth, _autopub, _TODO_FIX_dollarOk, _numDollars, _expectedTypeParams, _upstreamTypeParams, imports, warnings, options) : s_Flags{});
-    consume_ifLltrwq(s_kind_op, "{"_fu, fname, src, tokens, _idx);
-    fu::vec<s_Node> items = parseBlockLike_bSAgMgCf(s_kind_op, "}"_fu, true, false, modid, fname, src, tokens, _idx, _loc, _col0, _precedence, _fnDepth, _autopub, _TODO_FIX_dollarOk, _numDollars, _expectedTypeParams, _upstreamTypeParams, imports, warnings, options);
+    for (int i = 0; i < a.size(); i++)
+        _Dg5O(a.mutref(i));
+
+}
+                                #endif
+
+static Node_Wr1X parseStructDecl_qFIn(const Kind_Idfg kind, const Flags_Lzg8 flags, const DeclAsserts_taUG asserts, const int modid, fu::vec_range<char> fname, fu::vec_range<char> src, fu::vec_range<Token_RpL8> tokens, ParserState_tGnm& _ps, const Options_mg7V& options)
+{
+    const fu::str& name = tryConsume_qFIn(Kind_Idfg_id, tokens, _ps).value;
+    fu::vec<Node_Wr1X> args {};
+    const Flags_Lzg8 argFlags = ((name && tryConsume_94Qv(Kind_Idfg_op, "("_view, tokens, _ps)) ? parseArgsDecl_qFIn(args, Kind_Idfg_op, ")"_view, P_RESET, modid, fname, src, tokens, _ps, options) : Flags_Lzg8{});
+    consume_qFIn(Kind_Idfg_op, "{"_view, fname, src, tokens, _ps);
+    fu::vec<Node_Wr1X> items = parseBlockLike_qFIn(Kind_Idfg_op, "}"_view, true, false, modid, fname, src, tokens, _ps, options);
 
     { {
         for (int i = 0; i < items.size(); i++)
         {
-            const s_Node& item = items[i];
-            if ((item.kind == s_kind_let) && (item.flags & s_Flags_F_PREDICATE))
+            const Node_Wr1X& item = items[i];
+            if ((item.kind == Kind_Idfg_let) && (item.flags & Flags_Lzg8_F_PREDICATE))
                 goto BL_1;
 
         };
-        each_QJi9AqbT(items);
+        each_9Xqk(items);
       } BL_1:;
     };
-    /*MOV*/ s_Node sTruct = make_3RGKUyIO(kind, fu::vec<s_Node> { fu::slate<2, s_Node> { s_Node{}, make_3RGKUyIO(s_kind_members, items, s_Flags{}, (*(const fu::str*)fu::NIL), s_DeclAsserts{}, s_ParseSyntax{}, s_TokenIdx{}, modid, _loc) } }, flags, name, asserts, s_ParseSyntax{}, s_TokenIdx{}, modid, _loc);
+    /*MOV*/ Node_Wr1X sTruct = make_qFIn(kind, fu::vec<Node_Wr1X> {{ Node_Wr1X{}, make_qFIn(Kind_Idfg_members, items, Flags_Lzg8{}, (*(fu::str*)fu::NIL), DeclAsserts_taUG{}, ParseSyntax_Lay2{}, TokenIdx_5b85{}, modid, _ps) }}, flags, name, asserts, ParseSyntax_Lay2{}, TokenIdx_5b85{}, modid, _ps);
     if (!args)
         return /*NRVO*/ sTruct;
     else
     {
-        sTruct.value = ""_fu;
-        return make_3RGKUyIO(s_kind_fn, ((args + s_Node{}) + sTruct), argFlags, name, s_DeclAsserts{}, s_ParseSyntax{}, s_TokenIdx{}, modid, _loc);
+        sTruct.value = fu::str{};
+        return make_qFIn(Kind_Idfg_fn, ((args + Node_Wr1X{}) + sTruct), argFlags, name, DeclAsserts_taUG{}, ParseSyntax_Lay2{}, TokenIdx_5b85{}, modid, _ps);
     };
 }
 
-static void set_PUB_A85zFcwG(s_Flags& flags, fu::view<char> extra, const bool autopub_ok, const fu::str& fname, const fu::str& src, fu::view<s_Token> tokens, const int _idx, bool& _autopub)
+static void set_PUB_qFIn(Flags_Lzg8& flags, fu::view<char> extra, const bool autopub_ok, fu::vec_range<char> fname, fu::vec_range<char> src, fu::view<Token_RpL8> tokens, ParserState_tGnm& _ps)
 {
-    if (flags & s_Flags_F_SHADOW)
-        fail_a0ZqfRup((((("Cannot "_fu + qBAD_3PsDzMvu("pub"_fu)) + " a "_fu) + qKW_3PsDzMvu("shadow"_fu)) + (extra ? (": "_fu + extra) : "."_fu)), fname, src, tokens, _idx);
+    if (flags & Flags_Lzg8_F_SHADOW)
+        fail_94Qv((((("Cannot "_view + qBAD_e44U("pub"_view)) + " a "_view) + qKW_e44U("shadow"_view)) + (extra ? (": "_view + extra) : fu::str("."_fu))), fname, src, tokens, _ps);
     else
     {
-        flags |= s_Flags_F_PUB;
+        flags |= Flags_Lzg8_F_PUB;
         if (!autopub_ok)
-            _autopub = false;
+            _ps._autopub = false;
 
     };
 }
 
-static s_Node parsePub_gc3n8hC7(const int modid, const fu::str& fname, const fu::str& src, fu::view<s_Token> tokens, int& _idx, int& _loc, int& _col0, int& _precedence, int& _fnDepth, bool& _autopub, bool& _TODO_FIX_dollarOk, int& _numDollars, fu::vec<fu::str>& _expectedTypeParams, fu::vec<fu::str>& _upstreamTypeParams, fu::vec<s_Import>& imports, fu::vec<fu::str>& warnings, const s_Options& options)
+static Node_Wr1X parsePub_qFIn(const int modid, fu::vec_range<char> fname, fu::vec_range<char> src, fu::vec_range<Token_RpL8> tokens, ParserState_tGnm& _ps, const Options_mg7V& options)
 {
-    if (_fnDepth)
-        fail_a0ZqfRup((((("Cannot "_fu + qBAD_3PsDzMvu("pub"_fu)) + " from within a "_fu) + qKW_3PsDzMvu("fn"_fu)) + "."_fu), fname, src, tokens, _idx);
+    if (_ps._fnDepth)
+        fail_94Qv((((("Cannot "_view + qBAD_e44U("pub"_view)) + " from within a "_view) + qKW_e44U("fn"_view)) + "."_view), fname, src, tokens, _ps);
     else
     {
-        /*MOV*/ s_Node out = parseStatement_GzQ8uksl(modid, fname, src, tokens, _idx, _loc, _col0, _precedence, _fnDepth, _autopub, _TODO_FIX_dollarOk, _numDollars, _expectedTypeParams, _upstreamTypeParams, imports, warnings, options);
-        set_PUB_A85zFcwG(out.flags, fu::view<char>{}, (out.kind == s_kind_import), fname, src, tokens, _idx, _autopub);
+        /*MOV*/ Node_Wr1X out = parseStatement_qFIn(modid, fname, src, tokens, _ps, options);
+        set_PUB_qFIn(out.flags, fu::view<char>{}, (out.kind == Kind_Idfg_import), fname, src, tokens, _ps);
         return /*NRVO*/ out;
     };
 }
 
-static s_Node parseShadow_7jnHazlz(const int modid, const fu::str& fname, const fu::str& src, fu::view<s_Token> tokens, int& _idx, int& _loc, int& _col0, int& _precedence, int& _fnDepth, bool& _autopub, bool& _TODO_FIX_dollarOk, int& _numDollars, fu::vec<fu::str>& _expectedTypeParams, fu::vec<fu::str>& _upstreamTypeParams, fu::vec<s_Import>& imports, fu::vec<fu::str>& warnings, const s_Options& options)
+static Node_Wr1X parseShadow_qFIn(const int modid, fu::vec_range<char> fname, fu::vec_range<char> src, fu::vec_range<Token_RpL8> tokens, ParserState_tGnm& _ps, const Options_mg7V& options)
 {
-    /*MOV*/ s_Node out = parseStatement_GzQ8uksl(modid, fname, src, tokens, _idx, _loc, _col0, _precedence, _fnDepth, _autopub, _TODO_FIX_dollarOk, _numDollars, _expectedTypeParams, _upstreamTypeParams, imports, warnings, options);
-    if (out.flags & s_Flags_F_PUB)
-        fail_a0ZqfRup((((("Cannot "_fu + qBAD_3PsDzMvu("shadow"_fu)) + " a "_fu) + qKW_3PsDzMvu("pub"_fu)) + "."_fu), fname, src, tokens, _idx);
+    int idx0 = _ps._idx;
+    /*MOV*/ Node_Wr1X out = parseStatement_qFIn(modid, fname, src, tokens, _ps, options);
+    if (out.flags & Flags_Lzg8_F_PUB)
+        fail_94Qv((((("Cannot "_view + qBAD_e44U("shadow"_view)) + " a "_view) + qKW_e44U("pub"_view)) + "."_view), fname, src, tokens, _ps);
     else
     {
-        out.flags |= s_Flags_F_SHADOW;
+        std::swap(idx0, _ps._idx);
+        set_SHADOW_qFIn(out.flags, fname, src, tokens, _ps);
+        std::swap(idx0, _ps._idx);
         return /*NRVO*/ out;
     };
 }
 
-static s_Node parseUsing_WxcdcCvp(const int modid, const fu::str& fname, const fu::str& src, fu::view<s_Token> tokens, int& _idx, int& _loc, int& _col0, int& _precedence, int& _fnDepth, bool& _autopub, bool& _TODO_FIX_dollarOk, int& _numDollars, fu::vec<fu::str>& _expectedTypeParams, fu::vec<fu::str>& _upstreamTypeParams, fu::vec<s_Import>& imports, fu::vec<fu::str>& warnings, const s_Options& options)
-{
-    /*MOV*/ s_Node out = parseStatement_GzQ8uksl(modid, fname, src, tokens, _idx, _loc, _col0, _precedence, _fnDepth, _autopub, _TODO_FIX_dollarOk, _numDollars, _expectedTypeParams, _upstreamTypeParams, imports, warnings, options);
-    if (out.kind == s_kind_fn)
-        out.flags |= s_Flags_F_CONVERSION;
-    else if (out.kind == s_kind_let)
-        out.flags |= s_Flags_F_USING;
-    else if ((out.kind == s_kind_enum) || (out.kind == s_kind_flags) || (out.kind == s_kind_primitive))
-        out.flags |= s_Flags_F_USING;
-    else
-        fail_a0ZqfRup((qBAD_3PsDzMvu("using"_fu) + " cannot be used here."_fu), fname, src, tokens, _idx);
+                                #ifndef DEF_FN_RET_BACK
+                                #define DEF_FN_RET_BACK
+inline constexpr int FN_RET_BACK = -2;
+                                #endif
 
-    if (out.flags & s_Flags_F_OPERATOR)
-        fail_a0ZqfRup((qBAD_3PsDzMvu("using"_fu) + " cannot be used on operator functions."_fu), fname, src, tokens, _idx);
+                                #ifndef DEF_FN_ARGS_BACK
+                                #define DEF_FN_ARGS_BACK
+inline constexpr int FN_ARGS_BACK = FN_RET_BACK;
+                                #endif
+
+[[noreturn]] static fu::never fail_qFIn(const TokenIdx_5b85& token, /*MOV*/ fu::str&& reason, const int modid, fu::vec_range<char> fname, fu::vec_range<char> src, fu::view<Token_RpL8> tokens, ParserState_tGnm& _ps)
+{
+    if (token.modid == modid)
+        _ps._loc = (_ps._idx = token.tokidx);
+
+    fail_94Qv(reason.destructive_move(), fname, src, tokens, _ps);
+}
+
+                                #ifndef DEF_find_ZKsG2FXrtpg
+                                #define DEF_find_ZKsG2FXrtpg
+inline int find_ZKsG(fu::view<char> haystack, const char needle)
+{
+    for (int i = 0; i < haystack.size(); i++)
+    {
+        if (haystack[i] == needle)
+            return i;
+
+    };
+    return -1;
+}
+                                #endif
+
+                                #ifndef DEF_has_Mnu2KTFEuhg
+                                #define DEF_has_Mnu2KTFEuhg
+inline bool has_Mnu2(fu::view<char> a, const char b)
+{
+    return (find_ZKsG(a, b) >= 0);
+}
+                                #endif
+
+static Node_Wr1X parseUsing_qFIn(const int modid, fu::vec_range<char> fname, fu::vec_range<char> src, fu::vec_range<Token_RpL8> tokens, ParserState_tGnm& _ps, const Options_mg7V& options)
+{
+    /*MOV*/ Node_Wr1X out = parseStatement_qFIn(modid, fname, src, tokens, _ps, options);
+    if (out.kind == Kind_Idfg_fn)
+    {
+        int explicitMin = 0;
+        int explicitMax = 0;
+        for (int i = 0; i < (out.items.size() + FN_ARGS_BACK); i++)
+        {
+            const Node_Wr1X& arg = out.items[i];
+            if (!(arg.flags & Flags_Lzg8_F_IMPLICIT))
+            {
+                explicitMax++;
+                if (!arg.items[LET_INIT] && explicitMin++)
+                    fail_qFIn(arg.token, fu::str(str_RRLMAufVgP7), modid, fname, src, tokens, _ps);
+
+            };
+        };
+        if (explicitMin)
+            out.flags |= Flags_Lzg8_F_CONVERSION;
+        else if (!explicitMax)
+            out.flags |= Flags_Lzg8_F_USING;
+        else
+            fail_qFIn(out.token, fu::str(str_vpTbc9CkFUc), modid, fname, src, tokens, _ps);
+
+        for (int i_1 = 0; i_1 < (out.items.size() - 2); i_1++)
+        {
+            const Node_Wr1X& arg = out.items[i_1];
+            if (!arg.items[LET_TYPE] && !has_Mnu2(arg.value, '.'))
+                fail_qFIn(arg.token, fu::str(str_H0VBGU0sq44), modid, fname, src, tokens, _ps);
+
+        };
+    }
+    else if (out.kind == Kind_Idfg_let)
+        out.flags |= Flags_Lzg8_F_USING;
+    else if ((out.kind == Kind_Idfg_enum) || (out.kind == Kind_Idfg_flags) || (out.kind == Kind_Idfg_primitive))
+        out.flags |= Flags_Lzg8_F_USING;
+    else
+        fail_94Qv((qBAD_e44U("using"_view) + " cannot be used here."_view), fname, src, tokens, _ps);
+
+    if (out.flags & Flags_Lzg8_F_OPERATOR)
+        fail_94Qv((qBAD_e44U("using"_view) + " cannot be used on operator functions."_view), fname, src, tokens, _ps);
     else
         return /*NRVO*/ out;
 
 }
 
-static s_Node parseLax_9jrKNzEV(const int modid, const fu::str& fname, const fu::str& src, fu::view<s_Token> tokens, int& _idx, int& _loc, int& _col0, int& _precedence, int& _fnDepth, bool& _autopub, bool& _TODO_FIX_dollarOk, int& _numDollars, fu::vec<fu::str>& _expectedTypeParams, fu::vec<fu::str>& _upstreamTypeParams, fu::vec<s_Import>& imports, fu::vec<fu::str>& warnings, const s_Options& options)
+static Node_Wr1X parseLax_qFIn(const int modid, fu::vec_range<char> fname, fu::vec_range<char> src, fu::vec_range<Token_RpL8> tokens, ParserState_tGnm& _ps, const Options_mg7V& options)
 {
-    /*MOV*/ s_Node out = parseStatement_GzQ8uksl(modid, fname, src, tokens, _idx, _loc, _col0, _precedence, _fnDepth, _autopub, _TODO_FIX_dollarOk, _numDollars, _expectedTypeParams, _upstreamTypeParams, imports, warnings, options);
-    if ((out.kind == s_kind_let) || (out.kind == s_kind_fn))
+    /*MOV*/ Node_Wr1X out = parseStatement_qFIn(modid, fname, src, tokens, _ps, options);
+    if ((out.kind == Kind_Idfg_let) || (out.kind == Kind_Idfg_fn))
     {
-        out.flags |= s_Flags_F_LAX;
+        out.flags |= Flags_Lzg8_F_LAX;
         return /*NRVO*/ out;
     }
     else
-        fail_a0ZqfRup((qBAD_3PsDzMvu("lax"_fu) + " cannot be used here."_fu), fname, src, tokens, _idx);
+        fail_94Qv((qBAD_e44U("lax"_view) + " cannot be used here."_view), fname, src, tokens, _ps);
 
 }
 
-static s_Node parseImport_WFA6leDZ(const int modid, const fu::str& fname, const fu::str& src, fu::view<s_Token> tokens, int& _idx, const int _loc, const int _col0, fu::vec<s_Import>& imports, fu::vec<fu::str>& warnings, const s_Options& options)
+static Node_Wr1X parseImport_qFIn(const int modid, fu::vec_range<char> fname, fu::vec_range<char> src, fu::view<Token_RpL8> tokens, ParserState_tGnm& _ps, const Options_mg7V& options)
 {
-    fu::str value { tryConsume_xXyIFHPn(s_kind_id, tokens, _idx).value };
-    if (value)
+    /*MOV*/ fu::str path = fu::str(tryConsume_qFIn(Kind_Idfg_id, tokens, _ps).value);
+    if (path)
     {
-        while (tryConsume_RS2yajZX(s_kind_op, "::"_fu, tokens, _idx))
+        while (tryConsume_94Qv(Kind_Idfg_op, "::"_view, tokens, _ps))
         {
-            value += ("/"_fu + consume_ifLltrwq(s_kind_id, (*(const fu::str*)fu::NIL), fname, src, tokens, _idx).value);
+            path += ("/"_view + consume_qFIn(Kind_Idfg_id, fu::view<char>{}, fname, src, tokens, _ps).value);
         };
     }
     else
     {
-        value = consume_ifLltrwq(s_kind_str, (*(const fu::str*)fu::NIL), fname, src, tokens, _idx).value;
+        path = consume_qFIn(Kind_Idfg_str, fu::view<char>{}, fname, src, tokens, _ps).value;
     };
-    softSemi_MnASs0li(fname, src, tokens, _idx, _loc, _col0, warnings, options);
-    value = registerImport_ugbgDS9b(fu::str(value), modid, fname, _loc, imports);
-    return make_3RGKUyIO(s_kind_import, (*(const fu::vec<s_Node>*)fu::NIL), s_Flags{}, value, s_DeclAsserts{}, s_ParseSyntax{}, s_TokenIdx{}, modid, _loc);
+    softSemi_qFIn(fname, src, tokens, _ps, options);
+    fu::str _0 {};
+    return (_0 = registerImport_qFIn(static_cast<fu::str&&>(path), fu::view<char>{}, modid, _ps), make_qFIn(Kind_Idfg_import, (*(fu::vec<Node_Wr1X>*)fu::NIL), Flags_Lzg8{}, static_cast<fu::str&&>(_0), DeclAsserts_taUG{}, ParseSyntax_Lay2{}, TokenIdx_5b85{}, modid, _ps));
 }
 
-static s_Node parseCompilerPragma_S0oLrTyv(const int modid, const fu::str& fname, const fu::str& src, fu::view<s_Token> tokens, int& _idx, int& _loc, int& _col0, int& _precedence, int& _fnDepth, bool& _autopub, bool& _TODO_FIX_dollarOk, int& _numDollars, fu::vec<fu::str>& _expectedTypeParams, fu::vec<fu::str>& _upstreamTypeParams, fu::vec<s_Import>& imports, fu::vec<fu::str>& warnings, const s_Options& options)
+static Node_Wr1X parseCompilerPragma_qFIn(const int modid, fu::vec_range<char> fname, fu::vec_range<char> src, fu::vec_range<Token_RpL8> tokens, ParserState_tGnm& _ps, const Options_mg7V& options)
 {
-    const fu::str& value = consume_ifLltrwq(s_kind_id, (*(const fu::str*)fu::NIL), fname, src, tokens, _idx).value;
-    fu::vec<s_Node> items {};
-    if (value != "break"_fu)
+    const fu::str& value = consume_qFIn(Kind_Idfg_id, fu::view<char>{}, fname, src, tokens, _ps).value;
+    fu::vec<Node_Wr1X> items {};
+    if (value != "break"_view)
     {
-        consume_ifLltrwq(s_kind_op, "("_fu, fname, src, tokens, _idx);
-        parseCallArgs_BABVKvPl(")"_fu, items, false, false, modid, fname, src, tokens, _idx, _loc, _col0, _precedence, _fnDepth, _autopub, _TODO_FIX_dollarOk, _numDollars, _expectedTypeParams, _upstreamTypeParams, imports, warnings, options);
+        consume_qFIn(Kind_Idfg_op, "("_view, fname, src, tokens, _ps);
+        parseCallArgs_qFIn(")"_view, items, false, modid, fname, src, tokens, _ps, options);
     };
-    s_ParseSyntax _0 {};
-    return (_0 = (softSemi_MnASs0li(fname, src, tokens, _idx, _loc, _col0, warnings, options) ? s_ParseSyntax_PS_DISCARD_IF_BLOCK_TAIL : s_ParseSyntax{}), make_3RGKUyIO(s_kind_pragma, items, s_Flags{}, value, s_DeclAsserts{}, _0, s_TokenIdx{}, modid, _loc));
+    ParseSyntax_Lay2 _0;
+    return (_0 = (softSemi_qFIn(fname, src, tokens, _ps, options) ? ParseSyntax_Lay2_PS_DISCARD_IF_BLOCK_TAIL : ParseSyntax_Lay2{}), make_qFIn(Kind_Idfg_pragma, items, Flags_Lzg8{}, value, DeclAsserts_taUG{}, _0, TokenIdx_5b85{}, modid, _ps));
 }
 
-static s_Node parseFixityDecl_0cZvb8Gd(const s_Flags flags, const s_Fixity fixity, const s_DeclAsserts asserts, const bool expr, const int modid, const fu::str& fname, const fu::str& src, fu::view<s_Token> tokens, int& _idx, int& _loc, int& _col0, int& _precedence, int& _fnDepth, bool& _autopub, bool& _TODO_FIX_dollarOk, int& _numDollars, fu::vec<fu::str>& _expectedTypeParams, fu::vec<fu::str>& _upstreamTypeParams, fu::vec<s_Import>& imports, fu::vec<fu::str>& warnings, const s_Options& options)
+static Node_Wr1X parseFixityDecl_qFIn(const Flags_Lzg8 flags, const Fixity_7dA5 fixity, const DeclAsserts_taUG asserts, const bool expr, const int modid, fu::vec_range<char> fname, fu::vec_range<char> src, fu::vec_range<Token_RpL8> tokens, ParserState_tGnm& _ps, const Options_mg7V& options)
 {
-    consume_ifLltrwq(s_kind_id, "fn"_fu, fname, src, tokens, _idx);
-    return parseFnDecl_x0HZ97dk(flags, fixity, asserts, expr, modid, fname, src, tokens, _idx, _loc, _col0, _precedence, _fnDepth, _autopub, _TODO_FIX_dollarOk, _numDollars, _expectedTypeParams, _upstreamTypeParams, imports, warnings, options);
+    consume_qFIn(Kind_Idfg_id, "fn"_view, fname, src, tokens, _ps);
+    return parseFnDecl_qFIn(flags, fixity, asserts, expr, modid, fname, src, tokens, _ps, options);
 }
 
-static s_Node parseOperatorDecl_wyeqfGAA(const s_Fixity fixity, const s_Flags flags, const int modid, const fu::str& fname, const fu::str& src, fu::view<s_Token> tokens, int& _idx, int& _loc, int& _col0, int& _precedence, int& _fnDepth, bool& _autopub, bool& _TODO_FIX_dollarOk, int& _numDollars, fu::vec<fu::str>& _expectedTypeParams, fu::vec<fu::str>& _upstreamTypeParams, fu::vec<s_Import>& imports, fu::vec<fu::str>& warnings, const s_Options& options)
+static Node_Wr1X parseOperatorDecl_qFIn(const Fixity_7dA5 fixity, const Flags_Lzg8 flags, const int modid, fu::vec_range<char> fname, fu::vec_range<char> src, fu::vec_range<Token_RpL8> tokens, ParserState_tGnm& _ps, const Options_mg7V& options)
 {
     if (fixity)
     {
-        return parseFixityDecl_0cZvb8Gd(flags, fixity, s_DeclAsserts{}, false, modid, fname, src, tokens, _idx, _loc, _col0, _precedence, _fnDepth, _autopub, _TODO_FIX_dollarOk, _numDollars, _expectedTypeParams, _upstreamTypeParams, imports, warnings, options);
+        return parseFixityDecl_qFIn(flags, fixity, DeclAsserts_taUG{}, false, modid, fname, src, tokens, _ps, options);
     }
     else
-        fail_a0ZqfRup("Falsy fixity."_fu, fname, src, tokens, _idx);
+        fail_94Qv(fu::str("Falsy fixity."_fu), fname, src, tokens, _ps);
 
 }
 
-static s_Node parseInlineDecl_yoFjJFSS(s_Flags flags, const s_Flags F, const s_DeclAsserts asserts, const int modid, const fu::str& fname, const fu::str& src, fu::view<s_Token> tokens, int& _idx, int& _loc, int& _col0, int& _precedence, int& _fnDepth, bool& _autopub, bool& _TODO_FIX_dollarOk, int& _numDollars, fu::vec<fu::str>& _expectedTypeParams, fu::vec<fu::str>& _upstreamTypeParams, fu::vec<s_Import>& imports, fu::vec<fu::str>& warnings, const s_Options& options)
+static Node_Wr1X parseInlineDecl_qFIn(Flags_Lzg8 flags, const Flags_Lzg8 F, const DeclAsserts_taUG asserts, const int modid, fu::vec_range<char> fname, fu::vec_range<char> src, fu::vec_range<Token_RpL8> tokens, ParserState_tGnm& _ps, const Options_mg7V& options)
 {
     flags |= F;
-    fu::view<char> v = consume_ifLltrwq(s_kind_id, (*(const fu::str*)fu::NIL), fname, src, tokens, _idx).value;
-    if (v == "infix"_fu)
-        return parseOperatorDecl_wyeqfGAA(s_Fixity_Infix, flags, modid, fname, src, tokens, _idx, _loc, _col0, _precedence, _fnDepth, _autopub, _TODO_FIX_dollarOk, _numDollars, _expectedTypeParams, _upstreamTypeParams, imports, warnings, options);
-    else if (v == "prefix"_fu)
-        return parseOperatorDecl_wyeqfGAA(s_Fixity_Prefix, flags, modid, fname, src, tokens, _idx, _loc, _col0, _precedence, _fnDepth, _autopub, _TODO_FIX_dollarOk, _numDollars, _expectedTypeParams, _upstreamTypeParams, imports, warnings, options);
-    else if (v == "postfix"_fu)
-        return parseOperatorDecl_wyeqfGAA(s_Fixity_Postfix, flags, modid, fname, src, tokens, _idx, _loc, _col0, _precedence, _fnDepth, _autopub, _TODO_FIX_dollarOk, _numDollars, _expectedTypeParams, _upstreamTypeParams, imports, warnings, options);
+    fu::view<char> v = consume_qFIn(Kind_Idfg_id, fu::view<char>{}, fname, src, tokens, _ps).value;
+    if (v == "infix"_view)
+        return parseOperatorDecl_qFIn(Fixity_7dA5_Infix, flags, modid, fname, src, tokens, _ps, options);
+    else if (v == "prefix"_view)
+        return parseOperatorDecl_qFIn(Fixity_7dA5_Prefix, flags, modid, fname, src, tokens, _ps, options);
+    else if (v == "postfix"_view)
+        return parseOperatorDecl_qFIn(Fixity_7dA5_Postfix, flags, modid, fname, src, tokens, _ps, options);
     else
     {
-        _idx--;
-        return parseFixityDecl_0cZvb8Gd(flags, s_Fixity{}, asserts, false, modid, fname, src, tokens, _idx, _loc, _col0, _precedence, _fnDepth, _autopub, _TODO_FIX_dollarOk, _numDollars, _expectedTypeParams, _upstreamTypeParams, imports, warnings, options);
+        _ps._idx--;
+        return parseFixityDecl_qFIn(flags, Fixity_7dA5{}, asserts, false, modid, fname, src, tokens, _ps, options);
     };
 }
 
-static s_Node parseNoInlineDecl_WesxvqeU(const int modid, const fu::str& fname, const fu::str& src, fu::view<s_Token> tokens, int& _idx, int& _loc, int& _col0, int& _precedence, int& _fnDepth, bool& _autopub, bool& _TODO_FIX_dollarOk, int& _numDollars, fu::vec<fu::str>& _expectedTypeParams, fu::vec<fu::str>& _upstreamTypeParams, fu::vec<s_Import>& imports, fu::vec<fu::str>& warnings, const s_Options& options)
+static Node_Wr1X parseNoInlineDecl_qFIn(const int modid, fu::vec_range<char> fname, fu::vec_range<char> src, fu::vec_range<Token_RpL8> tokens, ParserState_tGnm& _ps, const Options_mg7V& options)
 {
-    return parseInlineDecl_yoFjJFSS(s_Flags{}, s_Flags{}, s_DeclAsserts_A_NOINLINE, modid, fname, src, tokens, _idx, _loc, _col0, _precedence, _fnDepth, _autopub, _TODO_FIX_dollarOk, _numDollars, _expectedTypeParams, _upstreamTypeParams, imports, warnings, options);
+    return parseInlineDecl_qFIn(Flags_Lzg8{}, Flags_Lzg8{}, DeclAsserts_taUG_A_NOINLINE, modid, fname, src, tokens, _ps, options);
 }
 
-static s_Node parsePrimDecl_sob8wCh5(const s_kind kind, const int modid, const fu::str& fname, const fu::str& src, fu::view<s_Token> tokens, int& _idx, int& _loc, int& _col0, int& _precedence, int& _fnDepth, bool& _autopub, bool& _TODO_FIX_dollarOk, int& _numDollars, fu::vec<fu::str>& _expectedTypeParams, fu::vec<fu::str>& _upstreamTypeParams, fu::vec<s_Import>& imports, fu::vec<fu::str>& warnings, const s_Options& options)
+static Node_Wr1X parsePrimDecl_qFIn(const Kind_Idfg kind, const DeclAsserts_taUG asserts, const int modid, fu::vec_range<char> fname, fu::vec_range<char> src, fu::vec_range<Token_RpL8> tokens, ParserState_tGnm& _ps, const Options_mg7V& options)
 {
-    const fu::str& name = tryConsume_xXyIFHPn(s_kind_id, tokens, _idx).value;
-    /*MOV*/ s_Node annot = tryPopTypeAnnot_SOzY03Zo(false, modid, fname, src, tokens, _idx, _loc, _col0, _precedence, _fnDepth, _autopub, _TODO_FIX_dollarOk, _numDollars, _expectedTypeParams, _upstreamTypeParams, imports, warnings, options);
-    fu::vec<s_Node> items = (tryConsume_RS2yajZX(s_kind_op, "{"_fu, tokens, _idx) ? parseBlockLike_bSAgMgCf(s_kind_op, "}"_fu, false, true, modid, fname, src, tokens, _idx, _loc, _col0, _precedence, _fnDepth, _autopub, _TODO_FIX_dollarOk, _numDollars, _expectedTypeParams, _upstreamTypeParams, imports, warnings, options) : fu::vec<s_Node>{});
-    if ((kind != s_kind_enum) && (kind != s_kind_flags))
+    const fu::str& name = tryConsume_qFIn(Kind_Idfg_id, tokens, _ps).value;
+    /*MOV*/ Node_Wr1X annot = tryPopTypeAnnot_qFIn(false, modid, fname, src, tokens, _ps, options);
+    fu::vec<Node_Wr1X> items = (tryConsume_94Qv(Kind_Idfg_op, "{"_view, tokens, _ps) ? parseBlockLike_qFIn(Kind_Idfg_op, "}"_view, false, true, modid, fname, src, tokens, _ps, options) : fu::vec<Node_Wr1X>{});
+    if ((kind != Kind_Idfg_enum) && (kind != Kind_Idfg_flags))
     {
         if (!(annot))
-            fail_a0ZqfRup((qKW_3PsDzMvu("primitive"_fu) + " declarations require a base type annotation."_fu), fname, src, tokens, _idx);
+            fail_94Qv((qKW_e44U("primitive"_view) + " declarations require a base type annotation."_view), fname, src, tokens, _ps);
 
     };
-    return make_3RGKUyIO(kind, fu::vec<s_Node> { fu::slate<2, s_Node> { static_cast<s_Node&&>(annot), (items ? make_3RGKUyIO(s_kind_members, items, s_Flags{}, (*(const fu::str*)fu::NIL), s_DeclAsserts{}, s_ParseSyntax{}, s_TokenIdx{}, modid, _loc) : s_Node{}) } }, s_Flags{}, name, s_DeclAsserts{}, s_ParseSyntax{}, s_TokenIdx{}, modid, _loc);
+    return make_qFIn(kind, fu::vec<Node_Wr1X> {{ static_cast<Node_Wr1X&&>(annot), (items ? make_qFIn(Kind_Idfg_members, items, Flags_Lzg8{}, (*(fu::str*)fu::NIL), DeclAsserts_taUG{}, ParseSyntax_Lay2{}, TokenIdx_5b85{}, modid, _ps) : Node_Wr1X{}) }}, Flags_Lzg8{}, name, asserts, ParseSyntax_Lay2{}, TokenIdx_5b85{}, modid, _ps);
 }
 
-static void add_LVnVuR8v(const s_DeclAsserts assert, s_DeclAsserts& asserts, const fu::str& v, const fu::str& fname, const fu::str& src, fu::view<s_Token> tokens, const int _idx)
+static Node_Wr1X parseAnnotatedFn_qFIn(const Flags_Lzg8 flags, const DeclAsserts_taUG asserts, const int modid, fu::vec_range<char> fname, fu::vec_range<char> src, fu::vec_range<Token_RpL8> tokens, ParserState_tGnm& _ps, const Options_mg7V& options)
 {
-    if (asserts & assert)
-        fail_a0ZqfRup(("Dulicate assertion: "_fu + qKW_3PsDzMvu(v)), fname, src, tokens, _idx);
-    else
-        asserts |= assert;
-
-}
-
-static void add_wECeSnhi(const s_Flags flag, s_Flags& flags, const fu::str& v, const fu::str& fname, const fu::str& src, fu::view<s_Token> tokens, const int _idx)
-{
-    if (flags & flag)
+    const int _idx0 = _ps._idx;
+    /*MOV*/ Node_Wr1X stmt = parseStatement_qFIn(modid, fname, src, tokens, _ps, options);
+    if ((stmt.kind != Kind_Idfg_fn) || (stmt.flags & Flags_Lzg8_F_LAMBDA))
     {
-        fail_a0ZqfRup(("Duplicate qualifier: "_fu + qKW_3PsDzMvu(v)), fname, src, tokens, _idx);
+        _ps._idx = (_idx0 ? (_idx0 - 1) : 0);
+        fail_94Qv((("Invalid annotation: not a "_view + qKW_e44U("fn"_view)) + " declaration."_view), fname, src, tokens, _ps);
     }
     else
-        flags |= flag;
-
-}
-
-static s_Node parseExoticDecl_tr5Hu9pl(s_Flags flags, s_DeclAsserts asserts, const int modid, const fu::str& fname, const fu::str& src, fu::view<s_Token> tokens, int& _idx, int& _loc, int& _col0, int& _precedence, int& _fnDepth, bool& _autopub, bool& _TODO_FIX_dollarOk, int& _numDollars, fu::vec<fu::str>& _expectedTypeParams, fu::vec<fu::str>& _upstreamTypeParams, fu::vec<s_Import>& imports, fu::vec<fu::str>& warnings, const s_Options& options)
-{
-    for (; ; )
     {
-        const fu::str& v = consume_ifLltrwq(s_kind_id, (*(const fu::str*)fu::NIL), fname, src, tokens, _idx).value;
-        if (v == "pure"_fu)
-            add_LVnVuR8v(s_DeclAsserts_A_PURE, asserts, v, fname, src, tokens, _idx);
-        else if (v == "purectx"_fu)
-            add_LVnVuR8v(s_DeclAsserts_A_PURE_CTX, asserts, v, fname, src, tokens, _idx);
-        else if (v == "purefx"_fu)
-            add_LVnVuR8v(s_DeclAsserts_A_PURE_FX, asserts, v, fname, src, tokens, _idx);
-        else if (v == "novec"_fu)
-            add_LVnVuR8v(s_DeclAsserts_A_NOVEC, asserts, v, fname, src, tokens, _idx);
-        else if (v == "noflow"_fu)
-            add_LVnVuR8v(s_DeclAsserts_A_NOFLOW, asserts, v, fname, src, tokens, _idx);
-        else if (v == "nothrow"_fu)
-            add_LVnVuR8v(s_DeclAsserts_A_NOTHROW, asserts, v, fname, src, tokens, _idx);
-        else if (v == "nocrash"_fu)
-            add_LVnVuR8v(s_DeclAsserts_A_NOCRASH, asserts, v, fname, src, tokens, _idx);
-        else if (v == "noio"_fu)
-            add_LVnVuR8v(s_DeclAsserts_A_NOIO, asserts, v, fname, src, tokens, _idx);
-        else if (v == "extern"_fu)
-            add_wECeSnhi(s_Flags_F_EXTERN, flags, v, fname, src, tokens, _idx);
-        else if (v == "hotswap"_fu)
-            add_wECeSnhi(s_Flags_F_HOTSWAP, flags, v, fname, src, tokens, _idx);
-        else if (v == "fn"_fu)
-        {
-            _idx--;
-            return parseInlineDecl_yoFjJFSS(s_Flags{}, flags, asserts, modid, fname, src, tokens, _idx, _loc, _col0, _precedence, _fnDepth, _autopub, _TODO_FIX_dollarOk, _numDollars, _expectedTypeParams, _upstreamTypeParams, imports, warnings, options);
-        }
-        else
-        {
-            fail_a0ZqfRup(("Unknown qualifier: "_fu + qKW_3PsDzMvu(v)), fname, src, tokens, _idx);
-        };
+        stmt.flags |= flags;
+        stmt.asserts |= asserts;
+        return /*NRVO*/ stmt;
     };
 }
 
-static s_Node parseNoCopy_hMkS4kwQ(const s_DeclAsserts asserts, const int modid, const fu::str& fname, const fu::str& src, fu::view<s_Token> tokens, int& _idx, int& _loc, int& _col0, int& _precedence, int& _fnDepth, bool& _autopub, bool& _TODO_FIX_dollarOk, int& _numDollars, fu::vec<fu::str>& _expectedTypeParams, fu::vec<fu::str>& _upstreamTypeParams, fu::vec<s_Import>& imports, fu::vec<fu::str>& warnings, const s_Options& options)
+static Node_Wr1X parseAnnotatedStruct_qFIn(const DeclAsserts_taUG asserts, const int modid, fu::vec_range<char> fname, fu::vec_range<char> src, fu::vec_range<Token_RpL8> tokens, ParserState_tGnm& _ps, const Options_mg7V& options)
 {
-    consume_ifLltrwq(s_kind_id, "struct"_fu, fname, src, tokens, _idx);
-    return parseStructDecl_QN9UXwKW(s_kind_struct, s_Flags{}, asserts, modid, fname, src, tokens, _idx, _loc, _col0, _precedence, _fnDepth, _autopub, _TODO_FIX_dollarOk, _numDollars, _expectedTypeParams, _upstreamTypeParams, imports, warnings, options);
+    consume_qFIn(Kind_Idfg_id, "struct"_view, fname, src, tokens, _ps);
+    return parseStructDecl_qFIn(Kind_Idfg_struct, Flags_Lzg8{}, asserts, modid, fname, src, tokens, _ps, options);
 }
 
-static s_Node parseStatement_GzQ8uksl(const int modid, const fu::str& fname, const fu::str& src, fu::view<s_Token> tokens, int& _idx, int& _loc, int& _col0, int& _precedence, int& _fnDepth, bool& _autopub, bool& _TODO_FIX_dollarOk, int& _numDollars, fu::vec<fu::str>& _expectedTypeParams, fu::vec<fu::str>& _upstreamTypeParams, fu::vec<s_Import>& imports, fu::vec<fu::str>& warnings, const s_Options& options)
+static Node_Wr1X parseAnnotatedType_qFIn(const DeclAsserts_taUG asserts, const int modid, fu::vec_range<char> fname, fu::vec_range<char> src, fu::vec_range<Token_RpL8> tokens, ParserState_tGnm& _ps, const Options_mg7V& options)
 {
-    const int loc0 = _loc;
-    fu_DEFER(_loc = loc0);
-    const s_Token* _0;
-    const s_Token& token = (*(_0 = &(tokens[(_loc = _idx++)])) ? *_0 : fail_a0ZqfRup(fu::str{}, fname, src, tokens, _idx));
-    if (token.kind == s_kind_op)
+    fu::view<char> kw = consume_qFIn(Kind_Idfg_id, fu::view<char>{}, fname, src, tokens, _ps).value;
+    if (kw == "struct"_view)
+    {
+        return parseStructDecl_qFIn(Kind_Idfg_struct, Flags_Lzg8{}, asserts, modid, fname, src, tokens, _ps, options);
+    }
+    else if (kw == "enum"_view)
+        return parsePrimDecl_qFIn(Kind_Idfg_enum, asserts, modid, fname, src, tokens, _ps, options);
+    else if (kw == "flags"_view)
+        return parsePrimDecl_qFIn(Kind_Idfg_flags, asserts, modid, fname, src, tokens, _ps, options);
+    else if (kw == "primitive"_view)
+        return parsePrimDecl_qFIn(Kind_Idfg_primitive, asserts, modid, fname, src, tokens, _ps, options);
+    else
+    {
+        _ps._idx--;
+        fail_94Qv(fu::str{}, fname, src, tokens, _ps);
+    };
+}
+
+extern const Flags_Lzg8 F_TESTCASE;
+static Node_Wr1X parseTestcase_qFIn(const int modid, fu::vec_range<char> fname, fu::vec_range<char> src, fu::vec_range<Token_RpL8> tokens, ParserState_tGnm& _ps, const Options_mg7V& options)
+{
+    return parseFnDecl_qFIn(F_TESTCASE, Fixity_7dA5{}, DeclAsserts_taUG{}, false, modid, fname, src, tokens, _ps, options);
+}
+
+static Node_Wr1X parseStatement_qFIn(const int modid, fu::vec_range<char> fname, fu::vec_range<char> src, fu::vec_range<Token_RpL8> tokens, ParserState_tGnm& _ps, const Options_mg7V& options)
+{
+    const int loc0 = _ps._loc;
+    fu_DEFER(_ps._loc = loc0);
+    const Token_RpL8* _0;
+    const Token_RpL8& token = (*(_0 = &(tokens[(_ps._loc = _ps._idx++)])) ? *_0 : fail_94Qv(fu::str{}, fname, src, tokens, _ps));
+    if (token.kind == Kind_Idfg_op)
     {
         fu::view<char> v = token.value;
-        if (v == "{"_fu)
-            return parseBlock_JHukuVno(modid, fname, src, tokens, _idx, _loc, _col0, _precedence, _fnDepth, _autopub, _TODO_FIX_dollarOk, _numDollars, _expectedTypeParams, _upstreamTypeParams, imports, warnings, options);
-        else if (v == ":"_fu)
-            return parseLabelledStatement_ITvfuHJO(modid, fname, src, tokens, _idx, _loc, _col0, _precedence, _fnDepth, _autopub, _TODO_FIX_dollarOk, _numDollars, _expectedTypeParams, _upstreamTypeParams, imports, warnings, options);
+        if (v == "{"_view)
+            return parseBlock_qFIn(modid, fname, src, tokens, _ps, options);
+        else if (v == ":"_view)
+            return parseLabelledStatement_qFIn(modid, fname, src, tokens, _ps, options);
 
     }
-    else if (token.kind == s_kind_id)
+    else if (token.kind == Kind_Idfg_id)
     {
         fu::view<char> v = token.value;
-        const s_Token& peek = tokens[_idx];
-        if (_fnDepth)
+        const Token_RpL8& peek = tokens[_ps._idx];
+        if (_ps._fnDepth)
         {
-            if (v == "if"_fu)
-                return parseIf_XBHYqa2E(modid, fname, src, tokens, _idx, _loc, _col0, _precedence, _fnDepth, _autopub, _TODO_FIX_dollarOk, _numDollars, _expectedTypeParams, _upstreamTypeParams, imports, warnings, options);
-            else if (v == "for"_fu)
-                return parseFor_qT3oAVeV(modid, fname, src, tokens, _idx, _loc, _col0, _precedence, _fnDepth, _autopub, _TODO_FIX_dollarOk, _numDollars, _expectedTypeParams, _upstreamTypeParams, imports, warnings, options);
-            else if (v == "while"_fu)
-                return parseWhile_I1QhYpkA(modid, fname, src, tokens, _idx, _loc, _col0, _precedence, _fnDepth, _autopub, _TODO_FIX_dollarOk, _numDollars, _expectedTypeParams, _upstreamTypeParams, imports, warnings, options);
-            else if (v == "do"_fu)
-                return parseDoWhile_DbFSNEs3(modid, fname, src, tokens, _idx, _loc, _col0, _precedence, _fnDepth, _autopub, _TODO_FIX_dollarOk, _numDollars, _expectedTypeParams, _upstreamTypeParams, imports, warnings, options);
-            else if (v == "return"_fu)
-                return parseJump_hG02po1B(s_kind_return, modid, fname, src, tokens, _idx, _loc, _col0, _precedence, _fnDepth, _autopub, _TODO_FIX_dollarOk, _numDollars, _expectedTypeParams, _upstreamTypeParams, imports, warnings, options);
-            else if (v == "break"_fu)
-                return parseJump_hG02po1B(s_kind_break, modid, fname, src, tokens, _idx, _loc, _col0, _precedence, _fnDepth, _autopub, _TODO_FIX_dollarOk, _numDollars, _expectedTypeParams, _upstreamTypeParams, imports, warnings, options);
-            else if (v == "continue"_fu)
-                return parseJump_hG02po1B(s_kind_continue, modid, fname, src, tokens, _idx, _loc, _col0, _precedence, _fnDepth, _autopub, _TODO_FIX_dollarOk, _numDollars, _expectedTypeParams, _upstreamTypeParams, imports, warnings, options);
-            else if (v == "try"_fu)
-                return parseTryCatch_0htiNgEo(modid, fname, src, tokens, _idx, _loc, _col0, _precedence, _fnDepth, _autopub, _TODO_FIX_dollarOk, _numDollars, _expectedTypeParams, _upstreamTypeParams, imports, warnings, options);
+            if (v == "if"_view)
+                return parseIf_qFIn(modid, fname, src, tokens, _ps, options);
+            else if (v == "for"_view)
+                return parseFor_qFIn(modid, fname, src, tokens, _ps, options);
+            else if (v == "while"_view)
+                return parseWhile_qFIn(modid, fname, src, tokens, _ps, options);
+            else if (v == "do"_view)
+                return parseDoWhile_qFIn(modid, fname, src, tokens, _ps, options);
+            else if (v == "return"_view)
+                return parseJump_qFIn(Kind_Idfg_return, modid, fname, src, tokens, _ps, options);
+            else if (v == "break"_view)
+                return parseJump_qFIn(Kind_Idfg_break, modid, fname, src, tokens, _ps, options);
+            else if (v == "continue"_view)
+                return parseJump_qFIn(Kind_Idfg_continue, modid, fname, src, tokens, _ps, options);
+            else if (v == "try"_view)
+                return parseTryCatch_qFIn(modid, fname, src, tokens, _ps, options);
 
         };
-        if ((peek.kind == s_kind_op) && (peek.value == "{"_fu))
+        if ((peek.kind == Kind_Idfg_op) && (peek.value == "{"_view))
         {
-            if (v == "unwrap"_fu)
-                return parseUnwrap_tkChLXD1(modid, fname, src, tokens, _idx, _loc, _col0, _precedence, _fnDepth, _autopub, _TODO_FIX_dollarOk, _numDollars, _expectedTypeParams, _upstreamTypeParams, imports, warnings, options);
+            if (v == "unwrap"_view)
+                return parseUnwrap_qFIn(modid, fname, src, tokens, _ps, options);
 
         };
-        if ((v == "fn"_fu) && ((peek.kind == s_kind_id) || !_fnDepth))
+        if ((v == "fn"_view) && ((peek.kind == Kind_Idfg_id) || !_ps._fnDepth))
         {
-            return parseFnDecl_x0HZ97dk(s_Flags{}, s_Fixity{}, s_DeclAsserts{}, false, modid, fname, src, tokens, _idx, _loc, _col0, _precedence, _fnDepth, _autopub, _TODO_FIX_dollarOk, _numDollars, _expectedTypeParams, _upstreamTypeParams, imports, warnings, options);
+            return parseFnDecl_qFIn(Flags_Lzg8{}, Fixity_7dA5{}, DeclAsserts_taUG{}, false, modid, fname, src, tokens, _ps, options);
         }
-        else if (peek.kind == s_kind_id)
+        else if (peek.kind == Kind_Idfg_id)
         {
-            if (v == "struct"_fu)
+            if (v == "struct"_view)
             {
-                return parseStructDecl_QN9UXwKW(s_kind_struct, s_Flags{}, s_DeclAsserts{}, modid, fname, src, tokens, _idx, _loc, _col0, _precedence, _fnDepth, _autopub, _TODO_FIX_dollarOk, _numDollars, _expectedTypeParams, _upstreamTypeParams, imports, warnings, options);
+                return parseStructDecl_qFIn(Kind_Idfg_struct, Flags_Lzg8{}, DeclAsserts_taUG{}, modid, fname, src, tokens, _ps, options);
             }
-            else if (v == "union"_fu)
+            else if (v == "union"_view)
             {
-                return parseStructDecl_QN9UXwKW(s_kind_union, s_Flags{}, s_DeclAsserts{}, modid, fname, src, tokens, _idx, _loc, _col0, _precedence, _fnDepth, _autopub, _TODO_FIX_dollarOk, _numDollars, _expectedTypeParams, _upstreamTypeParams, imports, warnings, options);
+                return parseStructDecl_qFIn(Kind_Idfg_union, Flags_Lzg8{}, DeclAsserts_taUG{}, modid, fname, src, tokens, _ps, options);
             }
-            else if (v == "pub"_fu)
-                return parsePub_gc3n8hC7(modid, fname, src, tokens, _idx, _loc, _col0, _precedence, _fnDepth, _autopub, _TODO_FIX_dollarOk, _numDollars, _expectedTypeParams, _upstreamTypeParams, imports, warnings, options);
-            else if (v == "shadow"_fu)
-                return parseShadow_7jnHazlz(modid, fname, src, tokens, _idx, _loc, _col0, _precedence, _fnDepth, _autopub, _TODO_FIX_dollarOk, _numDollars, _expectedTypeParams, _upstreamTypeParams, imports, warnings, options);
-            else if (v == "using"_fu)
-                return parseUsing_WxcdcCvp(modid, fname, src, tokens, _idx, _loc, _col0, _precedence, _fnDepth, _autopub, _TODO_FIX_dollarOk, _numDollars, _expectedTypeParams, _upstreamTypeParams, imports, warnings, options);
-            else if (v == "lax"_fu)
-                return parseLax_9jrKNzEV(modid, fname, src, tokens, _idx, _loc, _col0, _precedence, _fnDepth, _autopub, _TODO_FIX_dollarOk, _numDollars, _expectedTypeParams, _upstreamTypeParams, imports, warnings, options);
-            else if (v == "import"_fu)
-                return parseImport_WFA6leDZ(modid, fname, src, tokens, _idx, _loc, _col0, imports, warnings, options);
-            else if (v == "pragma"_fu)
-                return parseCompilerPragma_S0oLrTyv(modid, fname, src, tokens, _idx, _loc, _col0, _precedence, _fnDepth, _autopub, _TODO_FIX_dollarOk, _numDollars, _expectedTypeParams, _upstreamTypeParams, imports, warnings, options);
-            else if (v == "inline"_fu)
+            else if (v == "pub"_view)
+                return parsePub_qFIn(modid, fname, src, tokens, _ps, options);
+            else if (v == "shadow"_view)
+                return parseShadow_qFIn(modid, fname, src, tokens, _ps, options);
+            else if (v == "using"_view)
+                return parseUsing_qFIn(modid, fname, src, tokens, _ps, options);
+            else if (v == "lax"_view)
+                return parseLax_qFIn(modid, fname, src, tokens, _ps, options);
+            else if (v == "import"_view)
+                return parseImport_qFIn(modid, fname, src, tokens, _ps, options);
+            else if (v == "pragma"_view)
+                return parseCompilerPragma_qFIn(modid, fname, src, tokens, _ps, options);
+            else if (v == "inline"_view)
             {
-                return parseInlineDecl_yoFjJFSS(s_Flags{}, s_Flags_F_INLINE, s_DeclAsserts{}, modid, fname, src, tokens, _idx, _loc, _col0, _precedence, _fnDepth, _autopub, _TODO_FIX_dollarOk, _numDollars, _expectedTypeParams, _upstreamTypeParams, imports, warnings, options);
+                return parseInlineDecl_qFIn(Flags_Lzg8{}, Flags_Lzg8_F_INLINE, DeclAsserts_taUG{}, modid, fname, src, tokens, _ps, options);
             }
-            else if (v == "noinline"_fu)
-                return parseNoInlineDecl_WesxvqeU(modid, fname, src, tokens, _idx, _loc, _col0, _precedence, _fnDepth, _autopub, _TODO_FIX_dollarOk, _numDollars, _expectedTypeParams, _upstreamTypeParams, imports, warnings, options);
-            else if (v == "infix"_fu)
+            else if (v == "noinline"_view)
+                return parseNoInlineDecl_qFIn(modid, fname, src, tokens, _ps, options);
+            else if (v == "infix"_view)
             {
-                return parseOperatorDecl_wyeqfGAA(s_Fixity_Infix, s_Flags{}, modid, fname, src, tokens, _idx, _loc, _col0, _precedence, _fnDepth, _autopub, _TODO_FIX_dollarOk, _numDollars, _expectedTypeParams, _upstreamTypeParams, imports, warnings, options);
+                return parseOperatorDecl_qFIn(Fixity_7dA5_Infix, Flags_Lzg8{}, modid, fname, src, tokens, _ps, options);
             }
-            else if (v == "prefix"_fu)
+            else if (v == "prefix"_view)
             {
-                return parseOperatorDecl_wyeqfGAA(s_Fixity_Prefix, s_Flags{}, modid, fname, src, tokens, _idx, _loc, _col0, _precedence, _fnDepth, _autopub, _TODO_FIX_dollarOk, _numDollars, _expectedTypeParams, _upstreamTypeParams, imports, warnings, options);
+                return parseOperatorDecl_qFIn(Fixity_7dA5_Prefix, Flags_Lzg8{}, modid, fname, src, tokens, _ps, options);
             }
-            else if (v == "postfix"_fu)
+            else if (v == "postfix"_view)
             {
-                return parseOperatorDecl_wyeqfGAA(s_Fixity_Postfix, s_Flags{}, modid, fname, src, tokens, _idx, _loc, _col0, _precedence, _fnDepth, _autopub, _TODO_FIX_dollarOk, _numDollars, _expectedTypeParams, _upstreamTypeParams, imports, warnings, options);
+                return parseOperatorDecl_qFIn(Fixity_7dA5_Postfix, Flags_Lzg8{}, modid, fname, src, tokens, _ps, options);
             }
-            else if (v == "primitive"_fu)
-                return parsePrimDecl_sob8wCh5(s_kind_primitive, modid, fname, src, tokens, _idx, _loc, _col0, _precedence, _fnDepth, _autopub, _TODO_FIX_dollarOk, _numDollars, _expectedTypeParams, _upstreamTypeParams, imports, warnings, options);
-            else if (v == "flags"_fu)
-                return parsePrimDecl_sob8wCh5(s_kind_flags, modid, fname, src, tokens, _idx, _loc, _col0, _precedence, _fnDepth, _autopub, _TODO_FIX_dollarOk, _numDollars, _expectedTypeParams, _upstreamTypeParams, imports, warnings, options);
-            else if (v == "enum"_fu)
-                return parsePrimDecl_sob8wCh5(s_kind_enum, modid, fname, src, tokens, _idx, _loc, _col0, _precedence, _fnDepth, _autopub, _TODO_FIX_dollarOk, _numDollars, _expectedTypeParams, _upstreamTypeParams, imports, warnings, options);
-            else if (v == "pure"_fu)
+            else if (v == "primitive"_view)
             {
-                return parseExoticDecl_tr5Hu9pl(s_Flags{}, s_DeclAsserts_A_PURE, modid, fname, src, tokens, _idx, _loc, _col0, _precedence, _fnDepth, _autopub, _TODO_FIX_dollarOk, _numDollars, _expectedTypeParams, _upstreamTypeParams, imports, warnings, options);
+                return parsePrimDecl_qFIn(Kind_Idfg_primitive, DeclAsserts_taUG{}, modid, fname, src, tokens, _ps, options);
             }
-            else if (v == "purectx"_fu)
+            else if (v == "flags"_view)
             {
-                return parseExoticDecl_tr5Hu9pl(s_Flags{}, s_DeclAsserts_A_PURE_CTX, modid, fname, src, tokens, _idx, _loc, _col0, _precedence, _fnDepth, _autopub, _TODO_FIX_dollarOk, _numDollars, _expectedTypeParams, _upstreamTypeParams, imports, warnings, options);
+                return parsePrimDecl_qFIn(Kind_Idfg_flags, DeclAsserts_taUG{}, modid, fname, src, tokens, _ps, options);
             }
-            else if (v == "purefx"_fu)
+            else if (v == "enum"_view)
             {
-                return parseExoticDecl_tr5Hu9pl(s_Flags{}, s_DeclAsserts_A_PURE_FX, modid, fname, src, tokens, _idx, _loc, _col0, _precedence, _fnDepth, _autopub, _TODO_FIX_dollarOk, _numDollars, _expectedTypeParams, _upstreamTypeParams, imports, warnings, options);
+                return parsePrimDecl_qFIn(Kind_Idfg_enum, DeclAsserts_taUG{}, modid, fname, src, tokens, _ps, options);
             }
-            else if (v == "novec"_fu)
+            else if (v == "pure"_view)
             {
-                return parseExoticDecl_tr5Hu9pl(s_Flags{}, s_DeclAsserts_A_NOVEC, modid, fname, src, tokens, _idx, _loc, _col0, _precedence, _fnDepth, _autopub, _TODO_FIX_dollarOk, _numDollars, _expectedTypeParams, _upstreamTypeParams, imports, warnings, options);
+                return parseAnnotatedFn_qFIn(Flags_Lzg8{}, DeclAsserts_taUG_A_PURE, modid, fname, src, tokens, _ps, options);
             }
-            else if (v == "noflow"_fu)
+            else if (v == "purectx"_view)
             {
-                return parseExoticDecl_tr5Hu9pl(s_Flags{}, s_DeclAsserts_A_NOFLOW, modid, fname, src, tokens, _idx, _loc, _col0, _precedence, _fnDepth, _autopub, _TODO_FIX_dollarOk, _numDollars, _expectedTypeParams, _upstreamTypeParams, imports, warnings, options);
+                return parseAnnotatedFn_qFIn(Flags_Lzg8{}, DeclAsserts_taUG_A_PURE_CTX, modid, fname, src, tokens, _ps, options);
             }
-            else if (v == "nothrow"_fu)
+            else if (v == "purefx"_view)
             {
-                return parseExoticDecl_tr5Hu9pl(s_Flags{}, s_DeclAsserts_A_NOTHROW, modid, fname, src, tokens, _idx, _loc, _col0, _precedence, _fnDepth, _autopub, _TODO_FIX_dollarOk, _numDollars, _expectedTypeParams, _upstreamTypeParams, imports, warnings, options);
+                return parseAnnotatedFn_qFIn(Flags_Lzg8{}, DeclAsserts_taUG_A_PURE_FX, modid, fname, src, tokens, _ps, options);
             }
-            else if (v == "nocrash"_fu)
+            else if (v == "novec"_view)
             {
-                return parseExoticDecl_tr5Hu9pl(s_Flags{}, s_DeclAsserts_A_NOCRASH, modid, fname, src, tokens, _idx, _loc, _col0, _precedence, _fnDepth, _autopub, _TODO_FIX_dollarOk, _numDollars, _expectedTypeParams, _upstreamTypeParams, imports, warnings, options);
+                return parseAnnotatedFn_qFIn(Flags_Lzg8{}, DeclAsserts_taUG_A_NOVEC, modid, fname, src, tokens, _ps, options);
             }
-            else if (v == "noio"_fu)
+            else if (v == "noflow"_view)
             {
-                return parseExoticDecl_tr5Hu9pl(s_Flags{}, s_DeclAsserts_A_NOIO, modid, fname, src, tokens, _idx, _loc, _col0, _precedence, _fnDepth, _autopub, _TODO_FIX_dollarOk, _numDollars, _expectedTypeParams, _upstreamTypeParams, imports, warnings, options);
+                return parseAnnotatedFn_qFIn(Flags_Lzg8{}, DeclAsserts_taUG_A_NOFLOW, modid, fname, src, tokens, _ps, options);
             }
-            else if (v == "fast"_fu)
+            else if (v == "nothrow"_view)
             {
-                return parseExoticDecl_tr5Hu9pl(s_Flags{}, s_DeclAsserts_A_FAST, modid, fname, src, tokens, _idx, _loc, _col0, _precedence, _fnDepth, _autopub, _TODO_FIX_dollarOk, _numDollars, _expectedTypeParams, _upstreamTypeParams, imports, warnings, options);
+                return parseAnnotatedFn_qFIn(Flags_Lzg8{}, DeclAsserts_taUG_A_NOTHROW, modid, fname, src, tokens, _ps, options);
             }
-            else if (v == "nocopy"_fu)
-                return parseNoCopy_hMkS4kwQ(s_DeclAsserts_A_NOCOPY, modid, fname, src, tokens, _idx, _loc, _col0, _precedence, _fnDepth, _autopub, _TODO_FIX_dollarOk, _numDollars, _expectedTypeParams, _upstreamTypeParams, imports, warnings, options);
-            else if (v == "trivial"_fu)
-                return parseNoCopy_hMkS4kwQ(s_DeclAsserts_A_TRIVIAL, modid, fname, src, tokens, _idx, _loc, _col0, _precedence, _fnDepth, _autopub, _TODO_FIX_dollarOk, _numDollars, _expectedTypeParams, _upstreamTypeParams, imports, warnings, options);
-            else if (v == "extern"_fu)
+            else if (v == "nocrash"_view)
             {
-                return parseExoticDecl_tr5Hu9pl(s_Flags_F_EXTERN, s_DeclAsserts{}, modid, fname, src, tokens, _idx, _loc, _col0, _precedence, _fnDepth, _autopub, _TODO_FIX_dollarOk, _numDollars, _expectedTypeParams, _upstreamTypeParams, imports, warnings, options);
+                return parseAnnotatedFn_qFIn(Flags_Lzg8{}, DeclAsserts_taUG_A_NOCRASH, modid, fname, src, tokens, _ps, options);
             }
-            else if (v == "hotswap"_fu)
+            else if (v == "noio"_view)
             {
-                return parseExoticDecl_tr5Hu9pl(s_Flags_F_HOTSWAP, s_DeclAsserts{}, modid, fname, src, tokens, _idx, _loc, _col0, _precedence, _fnDepth, _autopub, _TODO_FIX_dollarOk, _numDollars, _expectedTypeParams, _upstreamTypeParams, imports, warnings, options);
-            };
+                return parseAnnotatedFn_qFIn(Flags_Lzg8{}, DeclAsserts_taUG_A_NOIO, modid, fname, src, tokens, _ps, options);
+            }
+            else if (v == "fast"_view)
+            {
+                return parseAnnotatedFn_qFIn(Flags_Lzg8{}, DeclAsserts_taUG_A_FAST, modid, fname, src, tokens, _ps, options);
+            }
+            else if (v == "nocopy"_view)
+                return parseAnnotatedStruct_qFIn(DeclAsserts_taUG_A_NOCOPY, modid, fname, src, tokens, _ps, options);
+            else if (v == "trivial"_view)
+                return parseAnnotatedStruct_qFIn(DeclAsserts_taUG_A_TRIVIAL, modid, fname, src, tokens, _ps, options);
+            else if (v == "nodiscard"_view)
+                return parseAnnotatedType_qFIn(DeclAsserts_taUG_A_NODISCARD, modid, fname, src, tokens, _ps, options);
+            else if (v == "extern"_view)
+            {
+                return parseAnnotatedFn_qFIn(Flags_Lzg8_F_EXTERN, DeclAsserts_taUG{}, modid, fname, src, tokens, _ps, options);
+            }
+            else if (v == "hotswap"_view)
+            {
+                return parseAnnotatedFn_qFIn(Flags_Lzg8_F_HOTSWAP, DeclAsserts_taUG{}, modid, fname, src, tokens, _ps, options);
+            }
+            else if (v == "test"_view)
+                return parseTestcase_qFIn(modid, fname, src, tokens, _ps, options);
+
         };
     };
-    _idx--;
-    return parseLetOrExpressionStatement_AhqcHb1j(modid, fname, src, tokens, _idx, _loc, _col0, _precedence, _fnDepth, _autopub, _TODO_FIX_dollarOk, _numDollars, _expectedTypeParams, _upstreamTypeParams, imports, warnings, options);
+    _ps._idx--;
+    return parseLetOrExpressionStatement_qFIn(modid, fname, src, tokens, _ps, options);
 }
 
-static s_Node parseFnBodyBranch_D4pQuvx0(const bool expr, const int modid, const fu::str& fname, const fu::str& src, fu::view<s_Token> tokens, int& _idx, int& _loc, int& _col0, int& _precedence, int& _fnDepth, bool& _autopub, bool& _TODO_FIX_dollarOk, int& _numDollars, fu::vec<fu::str>& _expectedTypeParams, fu::vec<fu::str>& _upstreamTypeParams, fu::vec<s_Import>& imports, fu::vec<fu::str>& warnings, const s_Options& options)
+static Node_Wr1X parseFnBodyBranch_qFIn(const bool expr, const int modid, fu::vec_range<char> fname, fu::vec_range<char> src, fu::vec_range<Token_RpL8> tokens, ParserState_tGnm& _ps, const Options_mg7V& options)
 {
-    fu::vec<fu::str> upstreamTypeParams0 = uNion_bZpiHcbv(_upstreamTypeParams, _expectedTypeParams);
-    std::swap(_upstreamTypeParams, upstreamTypeParams0);
-    fu::vec<fu::str> expectedTypeParams0 = steal_SsrT85jP(_expectedTypeParams);
-    fu_DEFER(std::swap(_upstreamTypeParams, upstreamTypeParams0));
-    fu_DEFER(std::swap(_expectedTypeParams, expectedTypeParams0));
-    tryConsume_RS2yajZX(s_kind_op, "="_fu, tokens, _idx);
-    /*MOV*/ s_Node body = (expr ? parseExpression_djvSQ5j2(_precedence, 0, modid, fname, src, tokens, _idx, _loc, _col0, _precedence, _fnDepth, _autopub, _TODO_FIX_dollarOk, _numDollars, _expectedTypeParams, _upstreamTypeParams, imports, warnings, options) : parseStatement_GzQ8uksl(modid, fname, src, tokens, _idx, _loc, _col0, _precedence, _fnDepth, _autopub, _TODO_FIX_dollarOk, _numDollars, _expectedTypeParams, _upstreamTypeParams, imports, warnings, options));
-    if (body.syntax & s_ParseSyntax_PS_ALWAYS_DISCARD)
+    Set_XshD upstreamTypeParams0 = uNion_fXik(_ps._upstreamTypeParams, _ps._expectedTypeParams);
+    std::swap(_ps._upstreamTypeParams, upstreamTypeParams0);
+    Set_XshD expectedTypeParams0 = steal_NfnD(_ps._expectedTypeParams);
+    fu_DEFER(std::swap(_ps._upstreamTypeParams, upstreamTypeParams0));
+    fu_DEFER(std::swap(_ps._expectedTypeParams, expectedTypeParams0));
+    tryConsume_94Qv(Kind_Idfg_op, "="_view, tokens, _ps);
+    /*MOV*/ Node_Wr1X body = (expr ? parseExpression_ZIeg(_ps._precedence, 0, modid, fname, src, tokens, _ps, options) : parseStatement_qFIn(modid, fname, src, tokens, _ps, options));
+    if (body.syntax & ParseSyntax_Lay2_PS_ALWAYS_DISCARD)
     {
-        body = createBlock_Xs4gphBm(fu::vec<s_Node> { fu::slate<1, s_Node> { s_Node(body) } }, (*(const fu::str*)fu::NIL), modid, _loc);
+        body = createBlock_qFIn(fu::vec<Node_Wr1X> {{ Node_Wr1X(body) }}, (*(fu::str*)fu::NIL), modid, _ps);
     };
     return /*NRVO*/ body;
 }
 
-static void parseBranch_xJB0C2Cj(const bool noCond, fu::view<s_Node> out_push_body, bool& TODO_FIX_didInitArgTypeParams, fu::vec<fu::str>& withArgTypeParams, fu::vec<s_Node>& branches, const int modid, const fu::str& fname, const fu::str& src, fu::view<s_Token> tokens, int& _idx, int& _loc, int& _col0, int& _precedence, int& _fnDepth, bool& _autopub, bool& _TODO_FIX_dollarOk, int& _numDollars, fu::vec<fu::str>& _expectedTypeParams, fu::vec<fu::str>& _upstreamTypeParams, fu::vec<s_Import>& imports, fu::vec<fu::str>& warnings, const s_Options& options)
+static void parseBranch_qFIn(const bool noCond, fu::view<Node_Wr1X> out_push_body, bool& TODO_FIX_didInitArgTypeParams, Set_XshD& withArgTypeParams, fu::vec<Node_Wr1X>& branches, const int modid, fu::vec_range<char> fname, fu::vec_range<char> src, fu::vec_range<Token_RpL8> tokens, ParserState_tGnm& _ps, const Options_mg7V& options)
 {
     if (!noCond)
     {
         if (!TODO_FIX_didInitArgTypeParams)
         {
             TODO_FIX_didInitArgTypeParams = true;
-            withArgTypeParams = _expectedTypeParams;
+            withArgTypeParams = _ps._expectedTypeParams;
             for (int i = (out_push_body.size() - 1); i-- > 0; )
             {
-                const s_Node& arg = out_push_body[i];
-                fu::str argName = ((arg.kind == s_kind_let) ? ((arg.flags & s_Flags_F_COMPOUND_ID) ? cleanID_j6ljQymd(arg.value) : fu::str(arg.value)) : fu::str{});
-                if (argName && (argName != "_"_fu))
-                    add_mts1NXJ4(withArgTypeParams, argName);
+                const Node_Wr1X& arg = out_push_body[i];
+                fu::vec_range<char> argName = ((arg.kind == Kind_Idfg_let) ? ((arg.flags & Flags_Lzg8_F_COMPOUND_ID) ? cleanID_V5Iu(arg.value) : arg.value) : (*(fu::str*)fu::NIL));
+                if (argName && (argName != "_"_view))
+                    add_poRw(withArgTypeParams, argName);
 
             };
         };
-        std::swap(_expectedTypeParams, withArgTypeParams);
+        std::swap(_ps._expectedTypeParams, withArgTypeParams);
     };
-    _TODO_FIX_dollarOk = true;
-    /*MOV*/ s_Node cond = (!noCond ? parseUnaryExpression_Wyb4ayQA(0, modid, fname, src, tokens, _idx, _loc, _col0, _precedence, _fnDepth, _autopub, _TODO_FIX_dollarOk, _numDollars, _expectedTypeParams, _upstreamTypeParams, imports, warnings, options) : s_Node{});
-    _TODO_FIX_dollarOk = false;
+    _ps._TODO_FIX_dollarOk = true;
+    /*MOV*/ Node_Wr1X cond = (!noCond ? parseUnaryExpression_qFIn(0, modid, fname, src, tokens, _ps, options) : Node_Wr1X{});
+    _ps._TODO_FIX_dollarOk = false;
     if (!noCond)
-        std::swap(_expectedTypeParams, withArgTypeParams);
+        std::swap(_ps._expectedTypeParams, withArgTypeParams);
 
-    /*MOV*/ s_Node type = tryPopTypeAnnot_SOzY03Zo(false, modid, fname, src, tokens, _idx, _loc, _col0, _precedence, _fnDepth, _autopub, _TODO_FIX_dollarOk, _numDollars, _expectedTypeParams, _upstreamTypeParams, imports, warnings, options);
-    /*MOV*/ s_Node cons = parseFnBodyBranch_D4pQuvx0(false, modid, fname, src, tokens, _idx, _loc, _col0, _precedence, _fnDepth, _autopub, _TODO_FIX_dollarOk, _numDollars, _expectedTypeParams, _upstreamTypeParams, imports, warnings, options);
-    branches.push(make_3RGKUyIO(s_kind_fnbranch, fu::vec<s_Node> { fu::slate<3, s_Node> { static_cast<s_Node&&>(cond), static_cast<s_Node&&>(type), static_cast<s_Node&&>(cons) } }, s_Flags{}, (*(const fu::str*)fu::NIL), s_DeclAsserts{}, s_ParseSyntax{}, s_TokenIdx{}, modid, _loc));
+    /*MOV*/ Node_Wr1X type = tryPopTypeAnnot_qFIn(false, modid, fname, src, tokens, _ps, options);
+    /*MOV*/ Node_Wr1X cons = parseFnBodyBranch_qFIn(false, modid, fname, src, tokens, _ps, options);
+    branches.push(make_qFIn(Kind_Idfg_fnbranch, fu::vec<Node_Wr1X> {{ static_cast<Node_Wr1X&&>(cond), static_cast<Node_Wr1X&&>(type), static_cast<Node_Wr1X&&>(cons) }}, Flags_Lzg8{}, (*(fu::str*)fu::NIL), DeclAsserts_taUG{}, ParseSyntax_Lay2{}, TokenIdx_5b85{}, modid, _ps));
 }
 
-static s_Flags parseFnBodyOrPattern_qOh7JdpM(fu::vec<s_Node>& out_push_body, const bool expr, const int modid, const fu::str& fname, const fu::str& src, fu::view<s_Token> tokens, int& _idx, int& _loc, int& _col0, int& _precedence, int& _fnDepth, bool& _autopub, bool& _TODO_FIX_dollarOk, int& _numDollars, fu::vec<fu::str>& _expectedTypeParams, fu::vec<fu::str>& _upstreamTypeParams, fu::vec<s_Import>& imports, fu::vec<fu::str>& warnings, const s_Options& options)
+static Flags_Lzg8 parseFnBodyOrPattern_qFIn(fu::vec_range_mut<Node_Wr1X> out_push_body, const bool expr, const int modid, fu::vec_range<char> fname, fu::vec_range<char> src, fu::vec_range<Token_RpL8> tokens, ParserState_tGnm& _ps, const Options_mg7V& options)
 {
-    const s_Flags flags {};
-    /*MOV*/ s_Node body {};
+    Flags_Lzg8 flags {};
+    /*MOV*/ Node_Wr1X body {};
     bool TODO_FIX_didInitArgTypeParams = false;
-    fu::vec<fu::str> withArgTypeParams {};
-    if (!expr && tryConsume_RS2yajZX(s_kind_id, "case"_fu, tokens, _idx))
+    Set_XshD withArgTypeParams {};
+    if (!expr && tryConsume_94Qv(Kind_Idfg_id, "case"_view, tokens, _ps))
     {
-        fu::vec<s_Node> branches {};
+        flags |= Flags_Lzg8_F_TEMPLATE;
+        fu::vec<Node_Wr1X> branches {};
         do
-            parseBranch_xJB0C2Cj(false, out_push_body, TODO_FIX_didInitArgTypeParams, withArgTypeParams, branches, modid, fname, src, tokens, _idx, _loc, _col0, _precedence, _fnDepth, _autopub, _TODO_FIX_dollarOk, _numDollars, _expectedTypeParams, _upstreamTypeParams, imports, warnings, options);
-        while (tryConsume_RS2yajZX(s_kind_id, "case"_fu, tokens, _idx));
-        if (tryConsume_RS2yajZX(s_kind_id, "default"_fu, tokens, _idx))
-            parseBranch_xJB0C2Cj(true, out_push_body, TODO_FIX_didInitArgTypeParams, withArgTypeParams, branches, modid, fname, src, tokens, _idx, _loc, _col0, _precedence, _fnDepth, _autopub, _TODO_FIX_dollarOk, _numDollars, _expectedTypeParams, _upstreamTypeParams, imports, warnings, options);
+            parseBranch_qFIn(false, out_push_body, TODO_FIX_didInitArgTypeParams, withArgTypeParams, branches, modid, fname, src, tokens, _ps, options);
+        while (tryConsume_94Qv(Kind_Idfg_id, "case"_view, tokens, _ps));
+        if (tryConsume_94Qv(Kind_Idfg_id, "default"_view, tokens, _ps))
+            parseBranch_qFIn(true, out_push_body, TODO_FIX_didInitArgTypeParams, withArgTypeParams, branches, modid, fname, src, tokens, _ps, options);
 
-        body = make_3RGKUyIO(s_kind_pattern, branches, s_Flags{}, (*(const fu::str*)fu::NIL), s_DeclAsserts{}, s_ParseSyntax{}, s_TokenIdx{}, modid, _loc);
+        body = make_qFIn(Kind_Idfg_pattern, branches, Flags_Lzg8{}, (*(fu::str*)fu::NIL), DeclAsserts_taUG{}, ParseSyntax_Lay2{}, TokenIdx_5b85{}, modid, _ps);
     }
     else
-        body = parseFnBodyBranch_D4pQuvx0(expr, modid, fname, src, tokens, _idx, _loc, _col0, _precedence, _fnDepth, _autopub, _TODO_FIX_dollarOk, _numDollars, _expectedTypeParams, _upstreamTypeParams, imports, warnings, options);
+        body = parseFnBodyBranch_qFIn(expr, modid, fname, src, tokens, _ps, options);
 
-    out_push_body.push(static_cast<s_Node&&>(body));
+    out_push_body.push(static_cast<Node_Wr1X&&>(body));
     return flags;
 }
 
-static s_Node parseFnDecl_cont_4u2vd9sO(const fu::str& name, s_Flags flags, const s_DeclAsserts asserts, const bool expr, const bool leadingDot, fu::view<char> endv, const int modid, const fu::str& fname, const fu::str& src, fu::view<s_Token> tokens, int& _idx, int& _loc, int& _col0, int& _precedence, int& _fnDepth, bool& _autopub, bool& _TODO_FIX_dollarOk, int& _numDollars, fu::vec<fu::str>& _expectedTypeParams, fu::vec<fu::str>& _upstreamTypeParams, fu::vec<s_Import>& imports, fu::vec<fu::str>& warnings, const s_Options& options)
+static Node_Wr1X parseFnDecl_cont_qFIn(fu::vec_range<char> name, Flags_Lzg8 flags, const DeclAsserts_taUG asserts, const bool expr, const bool leadingDot, fu::view<char> endv, const int modid, fu::vec_range<char> fname, fu::vec_range<char> src, fu::vec_range<Token_RpL8> tokens, ParserState_tGnm& _ps, const Options_mg7V& options)
 {
     const bool expr_1 = (expr ? expr : leadingDot);
-    fu::vec<s_Node> items {};
-    _fnDepth++;
-    const int numDollars0 = _numDollars;
+    fu::vec<Node_Wr1X> items {};
+    _ps._fnDepth++;
+    const int numDollars0 = _ps._numDollars;
     fu_DEFER(
     {
-        _fnDepth--;
-        _numDollars = numDollars0;
+        _ps._fnDepth--;
+        _ps._numDollars = numDollars0;
     });
     if (leadingDot)
-        flags |= parseLeadingDot_TDejJgK6(items, name, modid, fname, src, tokens, _idx, _loc, _col0, _precedence, _fnDepth, _autopub, _TODO_FIX_dollarOk, _numDollars, _expectedTypeParams, _upstreamTypeParams, imports, warnings, options);
+        flags |= parseLeadingDot_qFIn(items, name, modid, fname, src, tokens, _ps, options);
     else
     {
-        flags |= (endv ? parseArgsDecl_0b0tHnte(items, s_kind_op, endv, modid, fname, src, tokens, _idx, _loc, _col0, _precedence, _fnDepth, _autopub, _TODO_FIX_dollarOk, _numDollars, _expectedTypeParams, _upstreamTypeParams, imports, warnings, options) : s_Flags{});
-        /*MOV*/ s_Node type = tryPopTypeAnnot_SOzY03Zo(false, modid, fname, src, tokens, _idx, _loc, _col0, _precedence, _fnDepth, _autopub, _TODO_FIX_dollarOk, _numDollars, _expectedTypeParams, _upstreamTypeParams, imports, warnings, options);
+        flags |= (endv ? parseArgsDecl_qFIn(items, Kind_Idfg_op, endv, ((endv == "|"_view) ? P_PREFIX_UNARY : P_RESET), modid, fname, src, tokens, _ps, options) : Flags_Lzg8{});
+        /*MOV*/ Node_Wr1X type = tryPopTypeAnnot_qFIn(false, modid, fname, src, tokens, _ps, options);
         const int retIdx = items.size();
-        items.push(s_Node(type));
-        flags |= parseFnBodyOrPattern_qOh7JdpM(items, expr_1, modid, fname, src, tokens, _idx, _loc, _col0, _precedence, _fnDepth, _autopub, _TODO_FIX_dollarOk, _numDollars, _expectedTypeParams, _upstreamTypeParams, imports, warnings, options);
-        if ((name == "main"_fu) && (_fnDepth == 1))
+        items.push(Node_Wr1X(type));
+        flags |= parseFnBodyOrPattern_qFIn(items, expr_1, modid, fname, src, tokens, _ps, options);
+        if ((name == "main"_view) && (_ps._fnDepth == 1))
         {
             if (!type)
             {
-                items.mutref(retIdx) = static_cast<s_Node&&>((type = createRead_9y30X3Q5("i32"_fu, s_Flags{}, modid, fname, src, tokens, _idx, _loc)));
+                items.mutref(retIdx) = static_cast<Node_Wr1X&&>((type = createRead_qFIn(str_K8KxoYxA7Xl, Flags_Lzg8{}, modid, fname, src, tokens, _ps)));
             }
-            else if ((type.kind != s_kind_call) || (type.value != "i32"_fu) || type.items.size())
-                fail_a0ZqfRup("fn main() must return i32."_fu, fname, src, tokens, _idx);
+            else if ((type.kind != Kind_Idfg_call) || (type.value != "i32"_view) || type.items.size())
+                fail_94Qv(fu::str(str_MQ9AWe6yLTi), fname, src, tokens, _ps);
 
-            set_PUB_A85zFcwG(flags, fu::view<char>{}, false, fname, src, tokens, _idx, _autopub);
-            flags |= s_Flags_F_EXTERN;
+            set_PUB_qFIn(flags, fu::view<char>{}, false, fname, src, tokens, _ps);
+            flags |= Flags_Lzg8_F_EXTERN;
+        };
+        if (flags & F_TESTCASE)
+        {
+            set_PUB_qFIn(flags, fu::view<char>{}, false, fname, src, tokens, _ps);
+            flags |= Flags_Lzg8_F_EXTERN;
         };
     };
-    if (flags & s_Flags_F_LAMBDA)
-        flags |= s_Flags_F_TEMPLATE;
+    if (flags & Flags_Lzg8_F_LAMBDA)
+        flags |= Flags_Lzg8_F_TEMPLATE;
 
-    return make_3RGKUyIO(s_kind_fn, items, flags, name, asserts, (!expr_1 ? s_ParseSyntax_PS_NOT_AN_EXPRESSION : s_ParseSyntax{}), s_TokenIdx{}, modid, _loc);
+    return make_qFIn(Kind_Idfg_fn, items, flags, name, asserts, (!expr_1 ? ParseSyntax_Lay2_PS_NOT_AN_EXPRESSION : ParseSyntax_Lay2{}), TokenIdx_5b85{}, modid, _ps);
 }
 
-static s_Node parseFnDecl_x0HZ97dk(s_Flags flags, const s_Fixity fixity, const s_DeclAsserts asserts, const bool expr, const int modid, const fu::str& fname, const fu::str& src, fu::view<s_Token> tokens, int& _idx, int& _loc, int& _col0, int& _precedence, int& _fnDepth, bool& _autopub, bool& _TODO_FIX_dollarOk, int& _numDollars, fu::vec<fu::str>& _expectedTypeParams, fu::vec<fu::str>& _upstreamTypeParams, fu::vec<s_Import>& imports, fu::vec<fu::str>& warnings, const s_Options& options)
+static Node_Wr1X parseFnDecl_qFIn(Flags_Lzg8 flags, const Fixity_7dA5 fixity, const DeclAsserts_taUG asserts, const bool expr, const int modid, fu::vec_range<char> fname, fu::vec_range<char> src, fu::vec_range<Token_RpL8> tokens, ParserState_tGnm& _ps, const Options_mg7V& options)
 {
-    const int loc0 = _loc;
-    _loc = _idx;
-    fu_DEFER(_loc = loc0);
-    fu::str name { tryConsume_xXyIFHPn(s_kind_id, tokens, _idx).value };
+    const int loc0 = _ps._loc;
+    _ps._loc = _ps._idx;
+    fu_DEFER(_ps._loc = loc0);
+    fu::str name = fu::str(tryConsume_qFIn(Kind_Idfg_id, tokens, _ps).value);
     if (!name)
     {
-        name = consume_ifLltrwq(s_kind_op, (*(const fu::str*)fu::NIL), fname, src, tokens, _idx).value;
-        if (fixity == s_Fixity_Postfix)
+        name = consume_qFIn(Kind_Idfg_op, fu::view<char>{}, fname, src, tokens, _ps).value;
+        if (fixity == Fixity_7dA5_Postfix)
         {
-            if (!(has_g5ZsWtbd(POSTFIX, name)))
-                fail_a0ZqfRup((("No such postfix operator: `"_fu + name) + "`."_fu), fname, src, tokens, _idx);
-
-            if (has_g5ZsWtbd(PREFIX, name))
-                name = ("postfix"_fu + name);
-        }
-        else if (fixity == s_Fixity_Infix)
-        {
-            if (!(has_JTjmFfAy(BINOP.PRECEDENCE, name)))
-                fail_a0ZqfRup((("No such infix operator: `"_fu + name) + "`."_fu), fname, src, tokens, _idx);
+            if (!has_2Cr4(POSTFIX, name))
+                fail_94Qv((("No such postfix operator: "_view + qBAD_e44U(name)) + "."_view), fname, src, tokens, _ps);
+            else if (has_2Cr4(PREFIX, name))
+                name = ("postfix"_view + name);
 
         }
-        else if (fixity == s_Fixity_Prefix)
+        else if (fixity == Fixity_7dA5_Infix)
         {
-            if (!(has_g5ZsWtbd(PREFIX, name)))
-                fail_a0ZqfRup((("No such prefix operator: `"_fu + name) + "`."_fu), fname, src, tokens, _idx);
+            if (!(has_xhWJ(BINOP.PRECEDENCE, name)))
+                fail_94Qv((("No such infix operator: "_view + qBAD_e44U(name)) + "."_view), fname, src, tokens, _ps);
+
+        }
+        else if (fixity == Fixity_7dA5_Prefix)
+        {
+            if (!(has_2Cr4(PREFIX, name)))
+                fail_94Qv((("No such prefix operator: "_view + qBAD_e44U(name)) + "."_view), fname, src, tokens, _ps);
 
         };
-        flags |= s_Flags_F_OPERATOR;
+        flags |= Flags_Lzg8_F_OPERATOR;
     }
-    else if ((flags & s_Flags_F_OPERATOR) || fixity)
-        fail_a0ZqfRup((("Not an operator: `"_fu + name) + "`."_fu), fname, src, tokens, _idx);
+    else if ((flags & Flags_Lzg8_F_OPERATOR) || fixity)
+        fail_94Qv((("Not an operator: "_view + qBAD_e44U(name)) + "."_view), fname, src, tokens, _ps);
 
-    fu::vec<fu::str> expectedTypedParams0 {};
-    std::swap(expectedTypedParams0, _expectedTypeParams);
-    fu_DEFER(std::swap(expectedTypedParams0, _expectedTypeParams));
-    tryParseTypeParamsDecl_wC2VdYU6(fname, src, tokens, _idx, _expectedTypeParams, _upstreamTypeParams);
-    fu::str endv = (tryConsume_RS2yajZX(s_kind_op, "("_fu, tokens, _idx) ? ")"_fu : fu::str{});
+    Set_XshD expectedTypedParams0 = steal_NfnD(_ps._expectedTypeParams);
+    fu_DEFER(std::swap(expectedTypedParams0, _ps._expectedTypeParams));
+    tryParseTypeParamsDecl_qFIn(fname, src, tokens, _ps);
+    fu::view<char> endv = (tryConsume_94Qv(Kind_Idfg_op, "("_view, tokens, _ps) ? ")"_view : fu::view<char>{});
     if (!endv)
     {
         if (expr)
-            return createAddrOfFn_sLA17eRn(name, flags, modid, _loc);
+            return createAddrOfFn_qFIn(name, flags, modid, _ps);
         else
-        {
-            consume_ifLltrwq(s_kind_op, "="_fu, fname, src, tokens, _idx);
-        };
+            consume_qFIn(Kind_Idfg_op, "="_view, fname, src, tokens, _ps);
+
     };
-    return parseFnDecl_cont_4u2vd9sO(name, flags, asserts, expr, false, endv, modid, fname, src, tokens, _idx, _loc, _col0, _precedence, _fnDepth, _autopub, _TODO_FIX_dollarOk, _numDollars, _expectedTypeParams, _upstreamTypeParams, imports, warnings, options);
+    return parseFnDecl_cont_qFIn(name, flags, asserts, expr, false, endv, modid, fname, src, tokens, _ps, options);
 }
 
-                                #ifndef DEF_starts_Db9eGFmCKDj
-                                #define DEF_starts_Db9eGFmCKDj
-inline bool starts_Db9eGFmC(fu::view<char> a, const char with)
+                                #ifndef DEF_starts_SfbfOAVfSee
+                                #define DEF_starts_SfbfOAVfSee
+inline bool starts_Sfbf(fu::view<char> a, const char with)
 {
     return a.size() && (a[0] == with);
 }
                                 #endif
 
-static s_Node createTypeParam_2wDfSPFl(const fu::str& value, const int modid, const fu::str& fname, const fu::str& src, fu::view<s_Token> tokens, const int _idx, const int _loc, const bool _TODO_FIX_dollarOk, int& _numDollars, fu::vec<fu::str>& _expectedTypeParams, fu::view<fu::str> _upstreamTypeParams)
+static Node_Wr1X createTypeParam_qFIn(fu::vec_range<char> value, const int modid, fu::vec_range<char> fname, fu::vec_range<char> src, fu::view<Token_RpL8> tokens, ParserState_tGnm& _ps)
 {
-    const bool isDollar = starts_Db9eGFmC(value, '$');
-    if ((!_TODO_FIX_dollarOk && isDollar) || has_g5ZsWtbd(_upstreamTypeParams, value))
+    const bool isDollar = starts_Sfbf(value, '$');
+    if ((!_ps._TODO_FIX_dollarOk && isDollar) || has_1vcU(_ps._upstreamTypeParams, value))
     {
-        return createRead_9y30X3Q5(value, s_Flags{}, modid, fname, src, tokens, _idx, _loc);
+        return createRead_qFIn(value, Flags_Lzg8{}, modid, fname, src, tokens, _ps);
     }
     else
     {
-        if (_TODO_FIX_dollarOk && isDollar)
-            add_mts1NXJ4(_expectedTypeParams, value);
+        if (_ps._TODO_FIX_dollarOk && isDollar)
+            add_poRw(_ps._expectedTypeParams, value);
 
-        _numDollars++;
-        return make_3RGKUyIO(s_kind_typeparam, (*(const fu::vec<s_Node>*)fu::NIL), s_Flags{}, value, s_DeclAsserts{}, s_ParseSyntax{}, s_TokenIdx{}, modid, _loc);
+        _ps._numDollars++;
+        return make_qFIn(Kind_Idfg_typeparam, (*(fu::vec<Node_Wr1X>*)fu::NIL), Flags_Lzg8{}, value, DeclAsserts_taUG{}, ParseSyntax_Lay2{}, TokenIdx_5b85{}, modid, _ps);
     };
 }
 
-static s_Node createArrayLiteral_xBmPG9H1(const s_Flags argFlags, const fu::vec<s_Node>& items, const int modid, const int _loc)
+static Node_Wr1X createAnonymousTypeParam_qFIn(const int modid, fu::vec_range<char> fname, fu::vec_range<char> src, fu::view<Token_RpL8> tokens, ParserState_tGnm& _ps)
 {
-    return make_3RGKUyIO(s_kind_arrlit, items, argFlags, (*(const fu::str*)fu::NIL), s_DeclAsserts{}, s_ParseSyntax{}, s_TokenIdx{}, modid, _loc);
+    return createTypeParam_qFIn(x7E_rA00("_ "_view, fu::i64dec(_ps._idx)), modid, fname, src, tokens, _ps);
 }
 
-static s_Node parseArrayLiteral_HVHnW2wO(const int modid, const fu::str& fname, const fu::str& src, fu::view<s_Token> tokens, int& _idx, int& _loc, int& _col0, int& _precedence, int& _fnDepth, bool& _autopub, bool& _TODO_FIX_dollarOk, int& _numDollars, fu::vec<fu::str>& _expectedTypeParams, fu::vec<fu::str>& _upstreamTypeParams, fu::vec<s_Import>& imports, fu::vec<fu::str>& warnings, const s_Options& options)
+static Node_Wr1X createArrayLiteral_qFIn(const Flags_Lzg8 argFlags, fu::vec_range<Node_Wr1X> items, const int modid, const ParserState_tGnm& _ps)
 {
-    fu::vec<s_Node> args {};
-    const s_Flags argFlags = parseCallArgs_BABVKvPl("]"_fu, args, false, true, modid, fname, src, tokens, _idx, _loc, _col0, _precedence, _fnDepth, _autopub, _TODO_FIX_dollarOk, _numDollars, _expectedTypeParams, _upstreamTypeParams, imports, warnings, options).flags;
-    return createArrayLiteral_xBmPG9H1(argFlags, args, modid, _loc);
+    return make_qFIn(Kind_Idfg_arrlit, items, argFlags, (*(fu::str*)fu::NIL), DeclAsserts_taUG{}, ParseSyntax_Lay2{}, TokenIdx_5b85{}, modid, _ps);
 }
 
-static s_Node parseTypeParam_Wu7Epznd(const int modid, const fu::str& fname, const fu::str& src, fu::view<s_Token> tokens, int& _idx, const int _loc, const bool _TODO_FIX_dollarOk, int& _numDollars, fu::vec<fu::str>& _expectedTypeParams, fu::view<fu::str> _upstreamTypeParams,
-
-    // RETROFIT /////////
-    bool oldDollarSyntax)
-    // RETROFIT /////////
+static Node_Wr1X parseArrayLiteral_qFIn(const int modid, fu::vec_range<char> fname, fu::vec_range<char> src, fu::vec_range<Token_RpL8> tokens, ParserState_tGnm& _ps, const Options_mg7V& options)
 {
-    fu::str value = ((oldDollarSyntax ? "$"_fu : ""_fu) + consume_ifLltrwq(s_kind_id, (*(const fu::str*)fu::NIL), fname, src, tokens, _idx).value);
-    return createTypeParam_2wDfSPFl(value, modid, fname, src, tokens, _idx, _loc, _TODO_FIX_dollarOk, _numDollars, _expectedTypeParams, _upstreamTypeParams);
+    fu::vec<Node_Wr1X> args {};
+    const Flags_Lzg8 argFlags = parseCallArgs_qFIn("]"_view, args, false, modid, fname, src, tokens, _ps, options).flags;
+    return createArrayLiteral_qFIn(argFlags, args, modid, _ps);
 }
 
-static s_Node parseLambda_z8gvJnpB(const bool noClosingPipe, const bool leadingDot, const int mode, const int modid, const fu::str& fname, const fu::str& src, fu::view<s_Token> tokens, int& _idx, int& _loc, int& _col0, int& _precedence, int& _fnDepth, bool& _autopub, bool& _TODO_FIX_dollarOk, int& _numDollars, fu::vec<fu::str>& _expectedTypeParams, fu::vec<fu::str>& _upstreamTypeParams, fu::vec<s_Import>& imports, fu::vec<fu::str>& warnings, const s_Options& options)
+static Node_Wr1X parseTypeParam_94Qv(const int modid, fu::vec_range<char> fname, fu::vec_range<char> src, fu::view<Token_RpL8> tokens, ParserState_tGnm& _ps)
 {
-    if (noClosingPipe && (_precedence > P_RESET) && (_precedence < P_PREFIX_UNARY))
-        warn_JY9fwXxS("Unparenthesized `|| lambda` within a binary expression."_fu, fname, src, tokens, _idx, _loc, warnings, options);
-
-    fu::str name = "_"_fu;
-    const s_Flags flags = (s_Flags_F_LAX | s_Flags_F_LAMBDA);
-    return parseFnDecl_cont_4u2vd9sO(name, flags, s_DeclAsserts{}, !(mode & M_LAMBDA_STMT_OK), leadingDot, (!noClosingPipe ? "|"_fu : fu::str{}), modid, fname, src, tokens, _idx, _loc, _col0, _precedence, _fnDepth, _autopub, _TODO_FIX_dollarOk, _numDollars, _expectedTypeParams, _upstreamTypeParams, imports, warnings, options);
+    fu::str value = ("$"_view + consume_qFIn(Kind_Idfg_id, fu::view<char>{}, fname, src, tokens, _ps).value);
+    return createTypeParam_qFIn(value, modid, fname, src, tokens, _ps);
 }
 
-static s_Node createDefinit_4BgnEF3S(const int modid, const int _loc)
+static Node_Wr1X parseLambda_qFIn(const bool noClosingPipe, const bool leadingDot, const int mode, const int modid, fu::vec_range<char> fname, fu::vec_range<char> src, fu::vec_range<Token_RpL8> tokens, ParserState_tGnm& _ps, const Options_mg7V& options)
 {
-    return make_3RGKUyIO(s_kind_definit, (*(const fu::vec<s_Node>*)fu::NIL), s_Flags{}, (*(const fu::str*)fu::NIL), s_DeclAsserts{}, s_ParseSyntax{}, s_TokenIdx{}, modid, _loc);
+    if (noClosingPipe && (_ps._precedence.formal > P_RESET.formal) && (_ps._precedence.formal < P_PREFIX_UNARY.formal))
+        warn_qFIn(str_ocR3YpRuxa5, fname, src, tokens, _ps, options);
+
+    const fu::str& name = str_SXzNzprGfI2;
+    const Flags_Lzg8 flags = (Flags_Lzg8_F_LAX | Flags_Lzg8_F_LAMBDA);
+    return parseFnDecl_cont_qFIn(name, flags, DeclAsserts_taUG{}, !(mode & M_LAMBDA_STMT_OK), leadingDot, (!noClosingPipe ? "|"_view : fu::view<char>{}), modid, fname, src, tokens, _ps, options);
 }
 
-static s_Node parsePrefix_guIekM2D(fu::str&& op, const int modid, const fu::str& fname, const fu::str& src, fu::view<s_Token> tokens, int& _idx, int& _loc, int& _col0, int& _precedence, int& _fnDepth, bool& _autopub, bool& _TODO_FIX_dollarOk, int& _numDollars, fu::vec<fu::str>& _expectedTypeParams, fu::vec<fu::str>& _upstreamTypeParams, fu::vec<s_Import>& imports, fu::vec<fu::str>& warnings, const s_Options& options)
+static Node_Wr1X createDefinit_qFIn(const int modid, const ParserState_tGnm& _ps)
 {
-    if (has_g5ZsWtbd(PREFIX, op))
+    return make_qFIn(Kind_Idfg_definit, (*(fu::vec<Node_Wr1X>*)fu::NIL), Flags_Lzg8{}, (*(fu::str*)fu::NIL), DeclAsserts_taUG{}, ParseSyntax_Lay2{}, TokenIdx_5b85{}, modid, _ps);
+}
+
+static Node_Wr1X parseTypeParam_qFIn(fu::view<char> endv, const int modid, fu::vec_range<char> fname, fu::vec_range<char> src, fu::view<Token_RpL8> tokens, ParserState_tGnm& _ps)
+{
+    if (_ps._TODO_FIX_dollarOk)
     {
-        if ((op == "&"_fu) && tryConsume_RS2yajZX(s_kind_id, "mut"_fu, tokens, _idx))
-            op = "&mut"_fu;
-
-        const int mode = (((op == "-"_fu) || (op == "+"_fu)) ? M_LINT_UNARY_PRECEDENCE : 0);
-        return createPrefix_2MFNfWCU(op, parseUnaryExpression_Wyb4ayQA(mode, modid, fname, src, tokens, _idx, _loc, _col0, _precedence, _fnDepth, _autopub, _TODO_FIX_dollarOk, _numDollars, _expectedTypeParams, _upstreamTypeParams, imports, warnings, options), modid, _loc);
-    }
-    else
-    {
-        _idx--;
-        fail_a0ZqfRup(fu::str{}, fname, src, tokens, _idx);
-    };
-}
-
-static s_Node parseExpressionHead_AIC28k1n(const int mode, const int modid, const fu::str& fname, const fu::str& src, fu::view<s_Token> tokens, int& _idx, int& _loc, int& _col0, int& _precedence, int& _fnDepth, bool& _autopub, bool& _TODO_FIX_dollarOk, int& _numDollars, fu::vec<fu::str>& _expectedTypeParams, fu::vec<fu::str>& _upstreamTypeParams, fu::vec<s_Import>& imports, fu::vec<fu::str>& warnings, const s_Options& options)
-{
-    const s_Token& token = tokens[_idx++];
-
-    {
-        const s_kind k = token.kind;
-        const fu::str& v = token.value;
-        if ((k == s_kind_int) || (k == s_kind_real) || (k == s_kind_str) || (k == s_kind_char))
-            return createLeaf_BO33R8nU(k, v, modid, _loc);
-        else if (k == s_kind_id)
+        const fu::str& value = consume_qFIn(Kind_Idfg_id, fu::view<char>{}, fname, src, tokens, _ps).value;
+        if (has_1vcU(_ps._upstreamTypeParams, value) || !add_poRw(_ps._expectedTypeParams, value))
+            fail_94Qv((("A type parameter "_view + qID_e44U(value)) + " is already defined."_view), fname, src, tokens, _ps);
+        else
         {
-            const s_Token& peek = tokens[_idx];
-            if (peek.kind == s_kind_id)
+            consume_qFIn(Kind_Idfg_op, endv, fname, src, tokens, _ps);
+            _ps._numDollars++;
+            return make_qFIn(Kind_Idfg_typeparam, (*(fu::vec<Node_Wr1X>*)fu::NIL), Flags_Lzg8{}, value, DeclAsserts_taUG{}, ParseSyntax_Lay2{}, TokenIdx_5b85{}, modid, _ps);
+        };
+    }
+    else
+    {
+        fail_94Qv(fu::str{}, fname, src, tokens, _ps);
+    };
+}
+
+static Node_Wr1X parsePrefix_qFIn(fu::str&& op, const int modid, fu::vec_range<char> fname, fu::vec_range<char> src, fu::vec_range<Token_RpL8> tokens, ParserState_tGnm& _ps, const Options_mg7V& options)
+{
+    if (has_2Cr4(PREFIX, op))
+    {
+        if ((op == "&"_view) && tryConsume_94Qv(Kind_Idfg_id, "mut"_view, tokens, _ps))
+            op = fu::str("&mut"_fu);
+
+        const int mode = (((op == "-"_view) || (op == "+"_view)) ? M_LINT_UNARY_PRECEDENCE : 0);
+        return createPrefix_qFIn(op, parseUnaryExpression_qFIn(mode, modid, fname, src, tokens, _ps, options), modid, _ps);
+    }
+    else
+    {
+        _ps._idx--;
+        fail_94Qv(fu::str{}, fname, src, tokens, _ps);
+    };
+}
+
+static Node_Wr1X parseExpressionHead_qFIn(const int mode, const int modid, fu::vec_range<char> fname, fu::vec_range<char> src, fu::vec_range<Token_RpL8> tokens, ParserState_tGnm& _ps, const Options_mg7V& options)
+{
+    const Token_RpL8& token = tokens[_ps._idx++];
+
+    {
+        const Kind_Idfg k = token.kind;
+        const fu::str& v = token.value;
+        if ((k == Kind_Idfg_int) || (k == Kind_Idfg_real) || (k == Kind_Idfg_str) || (k == Kind_Idfg_char))
+            return createLeaf_qFIn(k, v, modid, _ps);
+        else if (k == Kind_Idfg_id)
+        {
+            const Token_RpL8& peek = tokens[_ps._idx];
+            if (peek.kind == Kind_Idfg_id)
             {
-                if ((v == "fn"_fu) || (v == "infix"_fu) || (v == "prefix"_fu) || (v == "postfix"_fu))
+                if ((v == "fn"_view) || (v == "infix"_view) || (v == "prefix"_view) || (v == "postfix"_view))
                 {
-                    _idx++;
-                    const s_Fixity fixity = ((v == "infix"_fu) ? s_Fixity_Infix : ((v == "prefix"_fu) ? s_Fixity_Prefix : ((v == "postfix"_fu) ? s_Fixity_Postfix : (_idx--, s_Fixity{}))));
-                    return parseFnDecl_x0HZ97dk(s_Flags{}, fixity, s_DeclAsserts{}, true, modid, fname, src, tokens, _idx, _loc, _col0, _precedence, _fnDepth, _autopub, _TODO_FIX_dollarOk, _numDollars, _expectedTypeParams, _upstreamTypeParams, imports, warnings, options);
+                    _ps._idx++;
+                    const Fixity_7dA5 fixity = ((v == "infix"_view) ? Fixity_7dA5_Infix : ((v == "prefix"_view) ? Fixity_7dA5_Prefix : ((v == "postfix"_view) ? Fixity_7dA5_Postfix : (_ps._idx--, Fixity_7dA5{}))));
+                    return parseFnDecl_qFIn(Flags_Lzg8{}, fixity, DeclAsserts_taUG{}, true, modid, fname, src, tokens, _ps, options);
                 };
             };
-            if ((peek.kind == s_kind_op) && (peek.value == "{"_fu))
+            if ((peek.kind == Kind_Idfg_op) && (peek.value == "{"_view))
             {
-                if (v == "struct"_fu)
+                if (v == "struct"_view)
                 {
-                    return parseStructDecl_QN9UXwKW(s_kind_struct, s_Flags{}, s_DeclAsserts{}, modid, fname, src, tokens, _idx, _loc, _col0, _precedence, _fnDepth, _autopub, _TODO_FIX_dollarOk, _numDollars, _expectedTypeParams, _upstreamTypeParams, imports, warnings, options);
+                    return parseStructDecl_qFIn(Kind_Idfg_struct, Flags_Lzg8{}, DeclAsserts_taUG{}, modid, fname, src, tokens, _ps, options);
                 }
-                else if (v == "union"_fu)
+                else if (v == "union"_view)
                 {
-                    return parseStructDecl_QN9UXwKW(s_kind_union, s_Flags{}, s_DeclAsserts{}, modid, fname, src, tokens, _idx, _loc, _col0, _precedence, _fnDepth, _autopub, _TODO_FIX_dollarOk, _numDollars, _expectedTypeParams, _upstreamTypeParams, imports, warnings, options);
+                    return parseStructDecl_qFIn(Kind_Idfg_union, Flags_Lzg8{}, DeclAsserts_taUG{}, modid, fname, src, tokens, _ps, options);
                 };
             };
-            if (_TODO_FIX_dollarOk && has_g5ZsWtbd(_expectedTypeParams, v))
-                return createTypeParam_2wDfSPFl(v, modid, fname, src, tokens, _idx, _loc, _TODO_FIX_dollarOk, _numDollars, _expectedTypeParams, _upstreamTypeParams);
-            else if (v == "_"_fu)
-                return createTypeParam_2wDfSPFl(x7E_gCeFmDFw("anon:"_fu, fu::i64dec(_expectedTypeParams.size())), modid, fname, src, tokens, _idx, _loc, _TODO_FIX_dollarOk, _numDollars, _expectedTypeParams, _upstreamTypeParams);
+            if (_ps._TODO_FIX_dollarOk && has_1vcU(_ps._expectedTypeParams, v))
+                return createTypeParam_qFIn(v, modid, fname, src, tokens, _ps);
+            else if (v == "_"_view)
+                return createAnonymousTypeParam_qFIn(modid, fname, src, tokens, _ps);
             else
             {
-                return createRead_9y30X3Q5(v, s_Flags{}, modid, fname, src, tokens, _idx, _loc);
+                return createRead_qFIn(v, Flags_Lzg8{}, modid, fname, src, tokens, _ps);
             };
         }
-        else if (k == s_kind_op)
+        else if (k == Kind_Idfg_op)
         {
-            if (v == "("_fu)
-                return parseParens_pIG3IH1I(modid, fname, src, tokens, _idx, _loc, _col0, _precedence, _fnDepth, _autopub, _TODO_FIX_dollarOk, _numDollars, _expectedTypeParams, _upstreamTypeParams, imports, warnings, options);
-            else if (v == "{"_fu)
-                return parseBlock_JHukuVno(modid, fname, src, tokens, _idx, _loc, _col0, _precedence, _fnDepth, _autopub, _TODO_FIX_dollarOk, _numDollars, _expectedTypeParams, _upstreamTypeParams, imports, warnings, options);
-            else if (v == "["_fu)
-                return parseArrayLiteral_HVHnW2wO(modid, fname, src, tokens, _idx, _loc, _col0, _precedence, _fnDepth, _autopub, _TODO_FIX_dollarOk, _numDollars, _expectedTypeParams, _upstreamTypeParams, imports, warnings, options);
-            else if (v == "$"_fu)
-                return parseTypeParam_Wu7Epznd(modid, fname, src, tokens, _idx, _loc, _TODO_FIX_dollarOk, _numDollars, _expectedTypeParams, _upstreamTypeParams, /*oldDollarSyntax*/true);
-            else if (v == "|"_fu)
-                return parseLambda_z8gvJnpB(false, false, mode, modid, fname, src, tokens, _idx, _loc, _col0, _precedence, _fnDepth, _autopub, _TODO_FIX_dollarOk, _numDollars, _expectedTypeParams, _upstreamTypeParams, imports, warnings, options);
-            else if (v == "||"_fu)
-                return parseLambda_z8gvJnpB(true, false, mode, modid, fname, src, tokens, _idx, _loc, _col0, _precedence, _fnDepth, _autopub, _TODO_FIX_dollarOk, _numDollars, _expectedTypeParams, _upstreamTypeParams, imports, warnings, options);
-            else if (v == "."_fu)
-                return parseLambda_z8gvJnpB(true, true, 0, modid, fname, src, tokens, _idx, _loc, _col0, _precedence, _fnDepth, _autopub, _TODO_FIX_dollarOk, _numDollars, _expectedTypeParams, _upstreamTypeParams, imports, warnings, options);
-            else if (v == "[]"_fu)
-                return createDefinit_4BgnEF3S(modid, _loc);
-            else if (v == "::"_fu)
+            if (v == "("_view)
+                return parseParens_qFIn(modid, fname, src, tokens, _ps, options);
+            else if (v == "{"_view)
+                return parseBlock_qFIn(modid, fname, src, tokens, _ps, options);
+            else if (v == "["_view)
+                return parseArrayLiteral_qFIn(modid, fname, src, tokens, _ps, options);
+            else if (v == "$"_view)
+                return parseTypeParam_94Qv(modid, fname, src, tokens, _ps);
+            else if (v == "|"_view)
+                return parseLambda_qFIn(false, false, mode, modid, fname, src, tokens, _ps, options);
+            else if (v == "||"_view)
+                return parseLambda_qFIn(true, false, mode, modid, fname, src, tokens, _ps, options);
+            else if (v == "."_view)
+                return parseLambda_qFIn(true, true, 0, modid, fname, src, tokens, _ps, options);
+            else if (v == "[]"_view)
+                return createDefinit_qFIn(modid, _ps);
+            else if (v == "::"_view)
             {
-                const fu::str& id = consume_ifLltrwq(s_kind_id, (*(const fu::str*)fu::NIL), fname, src, tokens, _idx).value;
-                _idx--;
-                return parseQualifierChain_NXNdYmCl(createRead_9y30X3Q5(id, s_Flags{}, modid, fname, src, tokens, _idx, _loc), modid, fname, src, tokens, _idx, _loc, imports);
+                const fu::str& id = consume_qFIn(Kind_Idfg_id, fu::view<char>{}, fname, src, tokens, _ps).value;
+                _ps._idx--;
+                return parseQualifierChain_qFIn(createRead_qFIn(id, Flags_Lzg8{}, modid, fname, src, tokens, _ps), modid, fname, src, tokens, _ps);
             }
-            else if (v == "<"_fu)
-            {
-                // RETROFIT //////////////////////
-                auto ret = parseTypeParam_Wu7Epznd(modid, fname, src, tokens, _idx, _loc, _TODO_FIX_dollarOk, _numDollars, _expectedTypeParams, _upstreamTypeParams, /*oldDollarSyntax*/false);
-                add_mts1NXJ4(_expectedTypeParams, ret.value);
-                consume_ifLltrwq(s_kind_op, ">"_fu, fname, src, tokens, _idx);
-                return ret; //////////////////////
-            }
+            else if ((v == "<"_view) && _ps._TODO_FIX_dollarOk)
+                return parseTypeParam_qFIn(">"_view, modid, fname, src, tokens, _ps);
             else
-                return parsePrefix_guIekM2D(fu::str(v), modid, fname, src, tokens, _idx, _loc, _col0, _precedence, _fnDepth, _autopub, _TODO_FIX_dollarOk, _numDollars, _expectedTypeParams, _upstreamTypeParams, imports, warnings, options);
+                return parsePrefix_qFIn(fu::str(v), modid, fname, src, tokens, _ps, options);
 
         };
     };
-    _idx--;
-    fail_a0ZqfRup(fu::str{}, fname, src, tokens, _idx);
+    _ps._idx--;
+    fail_94Qv(fu::str{}, fname, src, tokens, _ps);
 }
 
-inline static s_Node parseExpression_djvSQ5j2(const int p1, const int mode, const int modid, const fu::str& fname, const fu::str& src, fu::view<s_Token> tokens, int& _idx, int& _loc, int& _col0, int& _precedence, int& _fnDepth, bool& _autopub, bool& _TODO_FIX_dollarOk, int& _numDollars, fu::vec<fu::str>& _expectedTypeParams, fu::vec<fu::str>& _upstreamTypeParams, fu::vec<s_Import>& imports, fu::vec<fu::str>& warnings, const s_Options& options)
+                                #ifndef DEF_parseExpression_ZIegOeHJ9O1
+                                #define DEF_parseExpression_ZIegOeHJ9O1
+inline static Node_Wr1X parseExpression_ZIeg(const Precedence_vGSt& p1, const int mode, const int modid, fu::vec_range<char> fname, fu::vec_range<char> src, fu::vec_range<Token_RpL8> tokens, ParserState_tGnm& _ps, const Options_mg7V& options)
 {
-    const int p0 = _precedence;
-    const int loc00 = _loc;
-    _precedence = p1;
-    _loc = _idx;
-    const int col00 = _col0;
-    if (!((tokens[_idx].lcc.col >= (_col0 + ((mode & M_LINT_ENSURE_INDENT) ? 1 : 0)))))
-        warn_JY9fwXxS(x7E_gCeFmDFw((x7E_gCeFmDFw((("Ambiguous indent at `"_fu + tokens[_idx].value) + "`: expected more than "_fu), fu::i64dec(_col0)) + ", got "_fu), fu::i64dec(tokens[_idx].lcc.col)), fname, src, tokens, _idx, _loc, warnings, options);
+    const Precedence_vGSt p0 = _ps._precedence;
+    const int loc00 = _ps._loc;
+    _ps._precedence = p1;
+    _ps._loc = _ps._idx;
+    const int col00 = _ps._col0;
+    if (!((tokens[_ps._idx].lcc.col >= (_ps._col0 + ((mode & M_LINT_ENSURE_INDENT) ? 1 : 0)))))
+        warn_qFIn(x7E_rA00((x7E_rA00((("Ambiguous indent at `"_view + tokens[_ps._idx].value) + "`: expected more than "_view), fu::i64dec(_ps._col0)) + ", got "_view), fu::i64dec(tokens[_ps._idx].lcc.col)), fname, src, tokens, _ps, options);
 
-    /*MOV*/ s_Node head = parseExpressionHead_AIC28k1n(mode, modid, fname, src, tokens, _idx, _loc, _col0, _precedence, _fnDepth, _autopub, _TODO_FIX_dollarOk, _numDollars, _expectedTypeParams, _upstreamTypeParams, imports, warnings, options);
-    if (!s_ParseSyntax((head.syntax & s_ParseSyntax_PS_NOT_AN_EXPRESSION)))
+    /*MOV*/ Node_Wr1X head = parseExpressionHead_qFIn(mode, modid, fname, src, tokens, _ps, options);
+    if (!ParseSyntax_Lay2((head.syntax & ParseSyntax_Lay2_PS_NOT_AN_EXPRESSION)))
     {
-        const int mode_1 = (((mode & M_LINT_UNARY_PRECEDENCE) && ((head.kind == s_kind_int) || (head.kind == s_kind_real))) ? mode : (mode & ~M_LINT_UNARY_PRECEDENCE));
-        int loc0 = (_loc = _idx);
-        s_Node out {};
-        while ((out = tryParseExpressionTail_3P8LHR5x(head, mode_1, modid, fname, src, tokens, _idx, _loc, _col0, _precedence, _fnDepth, _autopub, _TODO_FIX_dollarOk, _numDollars, _expectedTypeParams, _upstreamTypeParams, imports, warnings, options)))
+        const int mode_1 = (((mode & M_LINT_UNARY_PRECEDENCE) && ((head.kind == Kind_Idfg_int) || (head.kind == Kind_Idfg_real))) ? mode : (mode & ~M_LINT_UNARY_PRECEDENCE));
+        int loc0 = (_ps._loc = _ps._idx);
+        Node_Wr1X out {};
+        while ((out = tryParseExpressionTail_qFIn(head, mode_1, modid, fname, src, tokens, _ps, options)))
         {
 
             {
-                const s_Token& t1 = tokens[(_loc = loc0)];
+                const Token_RpL8& t1 = tokens[(_ps._loc = loc0)];
                 if (!(t1.lcc.col > col00))
-                    warn_JY9fwXxS(x7E_gCeFmDFw((x7E_gCeFmDFw((("Ambiguous indent at `"_fu + t1.value) + "`: expected more than "_fu), fu::i64dec(col00)) + ", got "_fu), fu::i64dec(t1.lcc.col)), fname, src, tokens, _idx, _loc, warnings, options);
+                    warn_qFIn(x7E_rA00((x7E_rA00((("Ambiguous indent at `"_view + t1.value) + "`: expected more than "_view), fu::i64dec(col00)) + ", got "_view), fu::i64dec(t1.lcc.col)), fname, src, tokens, _ps, options);
 
             };
-            loc0 = (_loc = _idx);
+            loc0 = (_ps._loc = _ps._idx);
             head = out;
         };
     };
-    _precedence = p0;
-    _loc = loc00;
+    _ps._precedence = p0;
+    _ps._loc = loc00;
     return /*NRVO*/ head;
 }
+                                #endif
 
-static s_Node parseUnaryExpression_Wyb4ayQA(const int mode, const int modid, const fu::str& fname, const fu::str& src, fu::view<s_Token> tokens, int& _idx, int& _loc, int& _col0, int& _precedence, int& _fnDepth, bool& _autopub, bool& _TODO_FIX_dollarOk, int& _numDollars, fu::vec<fu::str>& _expectedTypeParams, fu::vec<fu::str>& _upstreamTypeParams, fu::vec<s_Import>& imports, fu::vec<fu::str>& warnings, const s_Options& options)
+static Node_Wr1X parseUnaryExpression_qFIn(const int mode, const int modid, fu::vec_range<char> fname, fu::vec_range<char> src, fu::vec_range<Token_RpL8> tokens, ParserState_tGnm& _ps, const Options_mg7V& options)
 {
-    return parseExpression_djvSQ5j2(P_PREFIX_UNARY, mode, modid, fname, src, tokens, _idx, _loc, _col0, _precedence, _fnDepth, _autopub, _TODO_FIX_dollarOk, _numDollars, _expectedTypeParams, _upstreamTypeParams, imports, warnings, options);
+    return parseExpression_ZIeg(P_PREFIX_UNARY, mode, modid, fname, src, tokens, _ps, options);
 }
 
-static s_Node parseTypeAnnot_JxRmj4Ey(const bool allowTypeUnions, const int modid, const fu::str& fname, const fu::str& src, fu::view<s_Token> tokens, int& _idx, int& _loc, int& _col0, int& _precedence, int& _fnDepth, bool& _autopub, bool& _TODO_FIX_dollarOk, int& _numDollars, fu::vec<fu::str>& _expectedTypeParams, fu::vec<fu::str>& _upstreamTypeParams, fu::vec<s_Import>& imports, fu::vec<fu::str>& warnings, const s_Options& options)
+static Node_Wr1X parseTypeAnnot_qFIn(const bool allowTypeUnions, const int modid, fu::vec_range<char> fname, fu::vec_range<char> src, fu::vec_range<Token_RpL8> tokens, ParserState_tGnm& _ps, const Options_mg7V& options)
 {
-    /*MOV*/ s_Node res = parseUnaryExpression_Wyb4ayQA(0, modid, fname, src, tokens, _idx, _loc, _col0, _precedence, _fnDepth, _autopub, _TODO_FIX_dollarOk, _numDollars, _expectedTypeParams, _upstreamTypeParams, imports, warnings, options);
-    while (allowTypeUnions && tryConsume_RS2yajZX(s_kind_id, "or"_fu, tokens, _idx))
+    /*MOV*/ Node_Wr1X res = parseUnaryExpression_qFIn(0, modid, fname, src, tokens, _ps, options);
+    while (allowTypeUnions && tryConsume_94Qv(Kind_Idfg_id, "or"_view, tokens, _ps))
     {
-        if (res.kind != s_kind_typeunion)
+        if (res.kind != Kind_Idfg_typeunion)
         {
-            res = make_3RGKUyIO(s_kind_typeunion, fu::vec<s_Node> { fu::slate<1, s_Node> { s_Node(res) } }, s_Flags{}, (*(const fu::str*)fu::NIL), s_DeclAsserts{}, s_ParseSyntax{}, s_TokenIdx{}, modid, _loc);
+            res = make_qFIn(Kind_Idfg_typeunion, fu::vec<Node_Wr1X> {{ Node_Wr1X(res) }}, Flags_Lzg8{}, (*(fu::str*)fu::NIL), DeclAsserts_taUG{}, ParseSyntax_Lay2{}, TokenIdx_5b85{}, modid, _ps);
         };
-        res.items += parseUnaryExpression_Wyb4ayQA(0, modid, fname, src, tokens, _idx, _loc, _col0, _precedence, _fnDepth, _autopub, _TODO_FIX_dollarOk, _numDollars, _expectedTypeParams, _upstreamTypeParams, imports, warnings, options);
+        res.items += parseUnaryExpression_qFIn(0, modid, fname, src, tokens, _ps, options);
     };
     return /*NRVO*/ res;
 }
 
-static s_Node tryParseLetInit_tHOcSerL(const int modid, const fu::str& fname, const fu::str& src, fu::view<s_Token> tokens, int& _idx, int& _loc, int& _col0, int& _precedence, int& _fnDepth, bool& _autopub, bool& _TODO_FIX_dollarOk, int& _numDollars, fu::vec<fu::str>& _expectedTypeParams, fu::vec<fu::str>& _upstreamTypeParams, fu::vec<s_Import>& imports, fu::vec<fu::str>& warnings, const s_Options& options)
+static Node_Wr1X tryParseLetInit_qFIn(const Precedence_vGSt& precedence, const int modid, fu::vec_range<char> fname, fu::vec_range<char> src, fu::vec_range<Token_RpL8> tokens, ParserState_tGnm& _ps, const Options_mg7V& options)
 {
-    if (tryConsume_RS2yajZX(s_kind_op, "="_fu, tokens, _idx))
-        return parseExpression_djvSQ5j2(P_RESET, 0, modid, fname, src, tokens, _idx, _loc, _col0, _precedence, _fnDepth, _autopub, _TODO_FIX_dollarOk, _numDollars, _expectedTypeParams, _upstreamTypeParams, imports, warnings, options);
+    if (tryConsume_94Qv(Kind_Idfg_op, "="_view, tokens, _ps))
+        return parseExpression_ZIeg(precedence, 0, modid, fname, src, tokens, _ps, options);
     else
     {
-        return s_Node{};
+        return Node_Wr1X{};
     };
 }
 
-static s_Node parseLet_smk4PW6Z(const bool xqmark, const bool allowTypeUnions, const bool allowTypeParams, const int anonIndex, const int modid, const fu::str& fname, const fu::str& src, fu::view<s_Token> tokens, int& _idx, int& _loc, int& _col0, int& _precedence, int& _fnDepth, bool& _autopub, bool& _TODO_FIX_dollarOk, int& _numDollars, fu::vec<fu::str>& _expectedTypeParams, fu::vec<fu::str>& _upstreamTypeParams, fu::vec<s_Import>& imports, fu::vec<fu::str>& warnings, const s_Options& options)
+static Node_Wr1X parseLet_qFIn(const bool xqmark, const int anonIndex, const bool allowTypeUnions, const bool allowTypeParams, const Precedence_vGSt& initPrecedence, const int modid, fu::vec_range<char> fname, fu::vec_range<char> src, fu::vec_range<Token_RpL8> tokens, ParserState_tGnm& _ps, const Options_mg7V& options)
 {
-    s_Flags flags {};
+    Flags_Lzg8 flags {};
 
     {
-        if (tryConsume_QdsI94aK(s_kind_id, "using"_fu, xqmark, tokens, _idx))
-            flags |= s_Flags_F_USING;
+        if (tryConsume_2joW(Kind_Idfg_id, "using"_view, xqmark, tokens, _ps))
+            flags |= Flags_Lzg8_F_USING;
 
-        if (tryConsume_QdsI94aK(s_kind_id, "implicit"_fu, xqmark, tokens, _idx))
-            flags |= s_Flags_F_IMPLICIT;
+        if (tryConsume_2joW(Kind_Idfg_id, "implicit"_view, xqmark, tokens, _ps))
+            flags |= Flags_Lzg8_F_IMPLICIT;
 
-        if (tryConsume_QdsI94aK(s_kind_id, "lax"_fu, xqmark, tokens, _idx))
-            flags |= s_Flags_F_LAX;
+        if (tryConsume_2joW(Kind_Idfg_id, "lax"_view, xqmark, tokens, _ps))
+            flags |= Flags_Lzg8_F_LAX;
 
-        if (tryConsume_QdsI94aK(s_kind_id, "shadow"_fu, xqmark, tokens, _idx))
-            flags |= s_Flags_F_SHADOW;
+        if (tryConsume_2joW(Kind_Idfg_id, "shadow"_view, xqmark, tokens, _ps))
+            set_SHADOW_qFIn(flags, fname, src, tokens, _ps);
 
-        if (tryConsume_QdsI94aK(s_kind_id, "type"_fu, xqmark, tokens, _idx))
-            flags |= s_Flags_F_TYPENAME;
+        if (tryConsume_2joW(Kind_Idfg_id, "type"_view, xqmark, tokens, _ps))
+            flags |= Flags_Lzg8_F_TYPENAME;
         else
         {
-            if (tryConsume_QdsI94aK(s_kind_id, "mut"_fu, xqmark, tokens, _idx))
-                flags |= s_Flags_F_MUT;
-            else if (tryConsume_QdsI94aK(s_kind_id, "const"_fu, xqmark, tokens, _idx))
-                flags |= s_Flags_F_CONST;
+            if (tryConsume_2joW(Kind_Idfg_id, "mut"_view, xqmark, tokens, _ps))
+                flags |= Flags_Lzg8_F_MUT;
+            else if (tryConsume_2joW(Kind_Idfg_id, "const"_view, xqmark, tokens, _ps))
+                flags |= Flags_Lzg8_F_CONST;
 
-            if (tryConsume_QdsI94aK(s_kind_id, "ref"_fu, xqmark, tokens, _idx))
-                flags |= s_Flags_F_REF;
-            else if (tryConsume_QdsI94aK(s_kind_id, "val"_fu, xqmark, tokens, _idx))
-                flags |= s_Flags_F_VAL;
+            if (tryConsume_2joW(Kind_Idfg_id, "ref"_view, xqmark, tokens, _ps))
+                flags |= Flags_Lzg8_F_REF;
+            else if (tryConsume_2joW(Kind_Idfg_id, "val"_view, xqmark, tokens, _ps))
+                flags |= Flags_Lzg8_F_VAL;
 
         };
     };
-    if ((flags & s_Flags_F_MUT) && !(flags & s_Flags_F_REF))
-        flags |= s_Flags_F_VAL;
+    if ((flags & Flags_Lzg8_F_MUT) && !(flags & Flags_Lzg8_F_REF))
+        flags |= Flags_Lzg8_F_VAL;
 
-    if ((flags & s_Flags_F_CONST) && !(flags & s_Flags_F_VAL))
-        flags |= s_Flags_F_REF;
+    if ((flags & Flags_Lzg8_F_CONST) && !(flags & Flags_Lzg8_F_VAL))
+        flags |= Flags_Lzg8_F_REF;
 
-    const s_Token& sh_import = tryConsume_RS2yajZX(s_kind_op, "::"_fu, tokens, _idx);
-    const s_Token& sh_autocall = (xqmark ? tryConsume_RS2yajZX(s_kind_op, "."_fu, tokens, _idx) : (*(const s_Token*)fu::NIL));
-    const int loc0 = _loc;
-    _loc = _idx;
-    fu_DEFER(_loc = loc0);
-
-    // RETROFIT /////////////////////////////////////////
-    tryConsume_RS2yajZX(s_kind_op, "<"_fu, tokens, _idx);
-
-    fu::str id { consume_ifLltrwq(s_kind_id, (*(const fu::str*)fu::NIL), fname, src, tokens, _idx).value };
-
-    // RETROFIT /////////////////////////////////////////
-    tryConsume_RS2yajZX(s_kind_op, "<"_fu, tokens, _idx);
-
-    if (id == "_"_fu)
+    const Token_RpL8& sh_autocall = (xqmark ? tryConsume_94Qv(Kind_Idfg_op, "."_view, tokens, _ps) : (*(Token_RpL8*)fu::NIL));
+    const int loc0 = _ps._loc;
+    _ps._loc = _ps._idx;
+    fu_DEFER(_ps._loc = loc0);
+    const fu::str* v;
+    fu::str id = fu::str((((flags & Flags_Lzg8_F_TYPENAME) && tryConsume_94Qv(Kind_Idfg_op, "<"_view, tokens, _ps)) ? (v = &(consume_qFIn(Kind_Idfg_id, fu::view<char>{}, fname, src, tokens, _ps).value), consume_qFIn(Kind_Idfg_op, ">"_view, fname, src, tokens, _ps), (*v)) : consume_qFIn(Kind_Idfg_id, fu::view<char>{}, fname, src, tokens, _ps).value));
+    if (id == "_"_view)
     {
         if (anonIndex)
-            id = x7E_gCeFmDFw("_ "_fu, fu::i64dec(anonIndex));
+            id = x7E_rA00("_ "_view, fu::i64dec(anonIndex));
 
-        flags |= s_Flags_F_LAX;
+        flags |= Flags_Lzg8_F_LAX;
     };
     if (sh_autocall)
     {
-        flags |= s_Flags_F_COMPOUND_ID;
-        id += ("."_fu + id);
+        flags |= Flags_Lzg8_F_COMPOUND_ID;
+        id += ("."_view + id);
     }
-    else if (xqmark && tryConsume_RS2yajZX(s_kind_op, "."_fu, tokens, _idx))
+    else if (xqmark && tryConsume_94Qv(Kind_Idfg_op, "."_view, tokens, _ps))
     {
-        flags |= s_Flags_F_COMPOUND_ID;
-        id += ("."_fu + consume_ifLltrwq(s_kind_id, (*(const fu::str*)fu::NIL), fname, src, tokens, _idx).value);
-        while (tryConsume_RS2yajZX(s_kind_op, "::"_fu, tokens, _idx))
+        flags |= Flags_Lzg8_F_COMPOUND_ID;
+        id += ("."_view + consume_qFIn(Kind_Idfg_id, fu::view<char>{}, fname, src, tokens, _ps).value);
+        while (tryConsume_94Qv(Kind_Idfg_op, "::"_view, tokens, _ps))
         {
-            id += ("\t"_fu + consume_ifLltrwq(s_kind_id, (*(const fu::str*)fu::NIL), fname, src, tokens, _idx).value);
+            id += ("\t"_view + consume_qFIn(Kind_Idfg_id, fu::view<char>{}, fname, src, tokens, _ps).value);
         };
     };
-    if (xqmark && tryConsume_RS2yajZX(s_kind_op, "[]"_fu, tokens, _idx))
-        flags |= s_Flags_F_REST_ARG;
+    if (xqmark && tryConsume_94Qv(Kind_Idfg_op, "[]"_view, tokens, _ps))
+        flags |= Flags_Lzg8_F_REST_ARG;
 
-    if (xqmark && tryConsume_RS2yajZX(s_kind_op, "!"_fu, tokens, _idx))
+    if (xqmark && tryConsume_94Qv(Kind_Idfg_op, "!"_view, tokens, _ps))
     {
-        // RETROFIT /////////////////////////////////////////
-        tryConsume_RS2yajZX(s_kind_op, "<"_fu, tokens, _idx);
-
-        flags |= s_Flags_F_MUSTNAME;
-        fu::view<char> inner_id = tryConsume_xXyIFHPn(s_kind_id, tokens, _idx).value;
+        flags |= Flags_Lzg8_F_MUSTNAME;
+        fu::view<char> v_1 {};
+        fu::view<char> inner_id = (((flags & Flags_Lzg8_F_TYPENAME) && tryConsume_94Qv(Kind_Idfg_op, "<"_view, tokens, _ps)) ? (v_1.ptr_reassign(consume_qFIn(Kind_Idfg_id, fu::view<char>{}, fname, src, tokens, _ps).value), consume_qFIn(Kind_Idfg_op, ">"_view, fname, src, tokens, _ps), v_1) : tryConsume_qFIn(Kind_Idfg_id, tokens, _ps).value);
         if (inner_id)
         {
-            flags |= s_Flags_F_COMPOUND_ID;
-            id += ("!"_fu + inner_id);
+            flags |= Flags_Lzg8_F_COMPOUND_ID;
+            id += ("!"_view + inner_id);
         };
-
-        // RETROFIT /////////////////////////////////////////
-        tryConsume_RS2yajZX(s_kind_op, ">"_fu, tokens, _idx);
     };
-    s_Token optional { (xqmark ? tryConsume_RS2yajZX(s_kind_op, "?"_fu, tokens, _idx) : (*(const s_Token*)fu::NIL)) };
-    _TODO_FIX_dollarOk = allowTypeParams;
-    fu::str _0 {};
-    s_Node type = (sh_import ? (_0 = ((registerImport_ugbgDS9b(fu::str(id), modid, fname, _loc, imports) + '\t') + id), createRead_9y30X3Q5(static_cast<fu::str&&>(_0), s_Flags_F_COMPOUND_ID, modid, fname, src, tokens, _idx, _loc)) : ((xqmark && !optional && (optional = tryConsume_RS2yajZX(s_kind_op, "?:"_fu, tokens, _idx))) ? parseTypeAnnot_JxRmj4Ey(allowTypeUnions, modid, fname, src, tokens, _idx, _loc, _col0, _precedence, _fnDepth, _autopub, _TODO_FIX_dollarOk, _numDollars, _expectedTypeParams, _upstreamTypeParams, imports, warnings, options) : tryPopTypeAnnot_SOzY03Zo(allowTypeUnions, modid, fname, src, tokens, _idx, _loc, _col0, _precedence, _fnDepth, _autopub, _TODO_FIX_dollarOk, _numDollars, _expectedTypeParams, _upstreamTypeParams, imports, warnings, options)));
-    _TODO_FIX_dollarOk = false;
-    s_Node init = (optional ? createDefinit_4BgnEF3S(modid, _loc) : tryParseLetInit_tHOcSerL(modid, fname, src, tokens, _idx, _loc, _col0, _precedence, _fnDepth, _autopub, _TODO_FIX_dollarOk, _numDollars, _expectedTypeParams, _upstreamTypeParams, imports, warnings, options));
-    return createLet_smN5JZFS(id, type, init, flags, modid, _loc);
+    Token_RpL8 optional = (xqmark ? tryConsume_94Qv(Kind_Idfg_op, "?"_view, tokens, _ps) : (*(Token_RpL8*)fu::NIL));
+    _ps._TODO_FIX_dollarOk = allowTypeParams;
+    Node_Wr1X type = ((xqmark && !optional && (optional = tryConsume_94Qv(Kind_Idfg_op, "?:"_view, tokens, _ps))) ? parseTypeAnnot_qFIn(allowTypeUnions, modid, fname, src, tokens, _ps, options) : tryPopTypeAnnot_qFIn(allowTypeUnions, modid, fname, src, tokens, _ps, options));
+    _ps._TODO_FIX_dollarOk = false;
+    Node_Wr1X init = (optional ? createDefinit_qFIn(modid, _ps) : tryParseLetInit_qFIn(initPrecedence, modid, fname, src, tokens, _ps, options));
+    return createLet_qFIn(id, type, init, flags, modid, _ps);
 }
 
-static s_Node parseStructItem_VN3o1iDS(const int modid, const fu::str& fname, const fu::str& src, fu::view<s_Token> tokens, int& _idx, int& _loc, int& _col0, int& _precedence, int& _fnDepth, bool& _autopub, bool& _TODO_FIX_dollarOk, int& _numDollars, fu::vec<fu::str>& _expectedTypeParams, fu::vec<fu::str>& _upstreamTypeParams, fu::vec<s_Import>& imports, fu::vec<fu::str>& warnings, const s_Options& options)
+static Node_Wr1X parseStructItem_qFIn(const int modid, fu::vec_range<char> fname, fu::vec_range<char> src, fu::vec_range<Token_RpL8> tokens, ParserState_tGnm& _ps, const Options_mg7V& options)
 {
-    const s_Token& isPredicate = tryConsume_RS2yajZX(s_kind_id, "true"_fu, tokens, _idx);
-    /*MOV*/ s_Node member = parseLet_smk4PW6Z(true, false, false, 0, modid, fname, src, tokens, _idx, _loc, _col0, _precedence, _fnDepth, _autopub, _TODO_FIX_dollarOk, _numDollars, _expectedTypeParams, _upstreamTypeParams, imports, warnings, options);
-    softSemi_MnASs0li(fname, src, tokens, _idx, _loc, _col0, warnings, options);
+    const Token_RpL8& isPredicate = tryConsume_94Qv(Kind_Idfg_id, "true"_view, tokens, _ps);
+    /*MOV*/ Node_Wr1X member = parseLet_qFIn(true, 0, false, false, P_RESET, modid, fname, src, tokens, _ps, options);
+    softSemi_qFIn(fname, src, tokens, _ps, options);
     if (isPredicate)
-        member.flags |= s_Flags_F_PREDICATE;
+        member.flags |= Flags_Lzg8_F_PREDICATE;
 
     return /*NRVO*/ member;
 }
 
-static s_Node parseEnumItem_arxIquYP(const int modid, const fu::str& fname, const fu::str& src, fu::view<s_Token> tokens, int& _idx, int& _loc, int& _col0, int& _precedence, int& _fnDepth, bool& _autopub, bool& _TODO_FIX_dollarOk, int& _numDollars, fu::vec<fu::str>& _expectedTypeParams, fu::vec<fu::str>& _upstreamTypeParams, fu::vec<s_Import>& imports, fu::vec<fu::str>& warnings, const s_Options& options)
+static Node_Wr1X parseEnumItem_qFIn(const int modid, fu::vec_range<char> fname, fu::vec_range<char> src, fu::vec_range<Token_RpL8> tokens, ParserState_tGnm& _ps, const Options_mg7V& options)
 {
-    const fu::str& id = consume_ifLltrwq(s_kind_id, (*(const fu::str*)fu::NIL), fname, src, tokens, _idx).value;
-    s_Node init = tryParseLetInit_tHOcSerL(modid, fname, src, tokens, _idx, _loc, _col0, _precedence, _fnDepth, _autopub, _TODO_FIX_dollarOk, _numDollars, _expectedTypeParams, _upstreamTypeParams, imports, warnings, options);
-    softSemi_MnASs0li(fname, src, tokens, _idx, _loc, _col0, warnings, options);
-    return createLet_smN5JZFS(id, (*(const s_Node*)fu::NIL), init, s_Flags{}, modid, _loc);
+    const fu::str& id = consume_qFIn(Kind_Idfg_id, fu::view<char>{}, fname, src, tokens, _ps).value;
+    Node_Wr1X init = tryParseLetInit_qFIn(P_RESET, modid, fname, src, tokens, _ps, options);
+    softSemi_qFIn(fname, src, tokens, _ps, options);
+    return createLet_qFIn(id, (*(Node_Wr1X*)fu::NIL), init, Flags_Lzg8{}, modid, _ps);
 }
 
-static s_Node parseDefer_cHXLilIa(const int modid, const fu::str& fname, const fu::str& src, fu::view<s_Token> tokens, int& _idx, int& _loc, int& _col0, int& _precedence, int& _fnDepth, bool& _autopub, bool& _TODO_FIX_dollarOk, int& _numDollars, fu::vec<fu::str>& _expectedTypeParams, fu::vec<fu::str>& _upstreamTypeParams, fu::vec<s_Import>& imports, fu::vec<fu::str>& warnings, const s_Options& options)
+static Node_Wr1X parseDefer_qFIn(const int modid, fu::vec_range<char> fname, fu::vec_range<char> src, fu::vec_range<Token_RpL8> tokens, ParserState_tGnm& _ps, const Options_mg7V& options)
 {
-    const s_Token* _0;
-    const fu::str& value = (tryConsume_RS2yajZX(s_kind_op, ":"_fu, tokens, _idx) ? (*(_0 = &(tryConsume_RS2yajZX(s_kind_id, "err"_fu, tokens, _idx))) ? *_0 : consume_ifLltrwq(s_kind_id, "ok"_fu, fname, src, tokens, _idx)).value : (*(const fu::str*)fu::NIL));
-    if (_fnDepth > 0)
+    const Token_RpL8* _0;
+    const fu::str& value = (tryConsume_94Qv(Kind_Idfg_op, ":"_view, tokens, _ps) ? (*(_0 = &(tryConsume_94Qv(Kind_Idfg_id, "err"_view, tokens, _ps))) ? *_0 : consume_qFIn(Kind_Idfg_id, "ok"_view, fname, src, tokens, _ps)).value : (*(fu::str*)fu::NIL));
+    if (_ps._fnDepth > 0)
     {
-        fu::vec<s_Node> _1 {};
-        return (_1 = fu::vec<s_Node> { fu::slate<1, s_Node> { parseStatement_GzQ8uksl(modid, fname, src, tokens, _idx, _loc, _col0, _precedence, _fnDepth, _autopub, _TODO_FIX_dollarOk, _numDollars, _expectedTypeParams, _upstreamTypeParams, imports, warnings, options) } }, make_3RGKUyIO(s_kind_defer, static_cast<fu::vec<s_Node>&&>(_1), s_Flags{}, value, s_DeclAsserts{}, s_ParseSyntax_PS_ALWAYS_DISCARD, s_TokenIdx{}, modid, _loc));
+        fu::vec<Node_Wr1X> _1 {};
+        return (_1 = fu::vec<Node_Wr1X> {{ parseStatement_qFIn(modid, fname, src, tokens, _ps, options) }}, make_qFIn(Kind_Idfg_defer, static_cast<fu::vec<Node_Wr1X>&&>(_1), Flags_Lzg8{}, value, DeclAsserts_taUG{}, ParseSyntax_Lay2_PS_ALWAYS_DISCARD, TokenIdx_5b85{}, modid, _ps));
     }
     else
     {
-        _idx--;
-        fail_a0ZqfRup(fu::str{}, fname, src, tokens, _idx);
+        _ps._idx--;
+        fail_94Qv(fu::str{}, fname, src, tokens, _ps);
     };
 }
 
-static s_Node parseDeferOrStatement_PQIy48QJ(const int modid, const fu::str& fname, const fu::str& src, fu::view<s_Token> tokens, int& _idx, int& _loc, int& _col0, int& _precedence, int& _fnDepth, bool& _autopub, bool& _TODO_FIX_dollarOk, int& _numDollars, fu::vec<fu::str>& _expectedTypeParams, fu::vec<fu::str>& _upstreamTypeParams, fu::vec<s_Import>& imports, fu::vec<fu::str>& warnings, const s_Options& options)
+static Node_Wr1X parseDeferOrStatement_qFIn(const int modid, fu::vec_range<char> fname, fu::vec_range<char> src, fu::vec_range<Token_RpL8> tokens, ParserState_tGnm& _ps, const Options_mg7V& options)
 {
-    const int loc0 = _loc;
-    fu_DEFER(_loc = loc0);
-    const s_Token* _0;
-    const s_Token& peek = (*(_0 = &(tokens[(_loc = _idx)])) ? *_0 : fail_a0ZqfRup(fu::str{}, fname, src, tokens, _idx));
-    if (peek.kind == s_kind_id)
+    const int loc0 = _ps._loc;
+    fu_DEFER(_ps._loc = loc0);
+    const Token_RpL8* _0;
+    const Token_RpL8& peek = (*(_0 = &(tokens[(_ps._loc = _ps._idx)])) ? *_0 : fail_94Qv(fu::str{}, fname, src, tokens, _ps));
+    if (peek.kind == Kind_Idfg_id)
     {
         fu::view<char> v = peek.value;
-        if (v == "defer"_fu)
+        if (v == "defer"_view)
         {
-            _idx++;
-            return parseDefer_cHXLilIa(modid, fname, src, tokens, _idx, _loc, _col0, _precedence, _fnDepth, _autopub, _TODO_FIX_dollarOk, _numDollars, _expectedTypeParams, _upstreamTypeParams, imports, warnings, options);
+            _ps._idx++;
+            return parseDefer_qFIn(modid, fname, src, tokens, _ps, options);
         };
     };
-    return parseStatement_GzQ8uksl(modid, fname, src, tokens, _idx, _loc, _col0, _precedence, _fnDepth, _autopub, _TODO_FIX_dollarOk, _numDollars, _expectedTypeParams, _upstreamTypeParams, imports, warnings, options);
+    return parseStatement_qFIn(modid, fname, src, tokens, _ps, options);
 }
 
-inline static void warn_0rH35IQ8(const int idx, const fu::str& reason, const fu::str& fname, const fu::str& src, fu::view<s_Token> tokens, int& _idx, const int _loc, fu::vec<fu::str>& warnings, const s_Options& options)
+                                #ifndef DEF_warn_3hIN3dU9Ajk
+                                #define DEF_warn_3hIN3dU9Ajk
+inline static void warn_3hIN(const int idx, fu::vec_range<char> reason, fu::vec_range<char> fname, fu::vec_range<char> src, fu::view<Token_RpL8> tokens, ParserState_tGnm& _ps, const Options_mg7V& options)
 {
-    const int idx0 = _idx;
-    _idx = idx;
-    warn_JY9fwXxS(reason, fname, src, tokens, _idx, _loc, warnings, options);
-    _idx = idx0;
+    const int idx0 = _ps._idx;
+    _ps._idx = idx;
+    warn_qFIn(reason, fname, src, tokens, _ps, options);
+    _ps._idx = idx0;
 }
+                                #endif
 
-static fu::vec<s_Node> parseBlockLike_bSAgMgCf(const s_kind endKind, fu::view<char> endVal, const bool sTruct, const bool eNum, const int modid, const fu::str& fname, const fu::str& src, fu::view<s_Token> tokens, int& _idx, int& _loc, int& _col0, int& _precedence, int& _fnDepth, bool& _autopub, bool& _TODO_FIX_dollarOk, int& _numDollars, fu::vec<fu::str>& _expectedTypeParams, fu::vec<fu::str>& _upstreamTypeParams, fu::vec<s_Import>& imports, fu::vec<fu::str>& warnings, const s_Options& options)
+static fu::vec<Node_Wr1X> parseBlockLike_qFIn(const Kind_Idfg endKind, fu::view<char> endVal, const bool sTruct, const bool eNum, const int modid, fu::vec_range<char> fname, fu::vec_range<char> src, fu::vec_range<Token_RpL8> tokens, ParserState_tGnm& _ps, const Options_mg7V& options)
 {
-    const s_Token& tok0 = (_idx ? tokens[(_idx - 1)] : (*(const s_Token*)fu::NIL));
+    const Token_RpL8& tok0 = (_ps._idx ? tokens[(_ps._idx - 1)] : (*(Token_RpL8*)fu::NIL));
     const int line0 = tok0.lcc.line;
-    const int col00 = _col0;
+    const int col00 = _ps._col0;
     const int col01 = ((tok0.lcc.col == col00) ? col00 : -1);
     int colNN = -1;
     int lineNN = line0;
-    /*MOV*/ fu::vec<s_Node> items {};
+    /*MOV*/ fu::vec<Node_Wr1X> items {};
     for (; ; )
     {
-        const int idx0 = _idx;
-        const s_Token& token = tokens[_idx];
-        if ((token.kind == s_kind_op) && (token.value == ";"_fu))
-            _idx++;
+        const int idx0 = _ps._idx;
+        const Token_RpL8& token = tokens[_ps._idx];
+        if ((token.kind == Kind_Idfg_op) && (token.value == ";"_view))
+            _ps._idx++;
         else if ((token.kind == endKind) && (token.value == endVal))
         {
-            _col0 = col00;
-            _idx++;
+            _ps._col0 = col00;
+            _ps._idx++;
             const int line1 = token.lcc.line;
             const int col1 = token.lcc.col;
-            const int col1_min = _col0;
-            const int col1_max = ((col01 < 0) ? ((colNN < 0) ? _col0 : (colNN - 1)) : col01);
+            const int col1_min = _ps._col0;
+            const int col1_max = ((col01 < 0) ? ((colNN < 0) ? _ps._col0 : (colNN - 1)) : col01);
             if (!((line1 == line0) || ((col1 >= col1_min) && (col1 <= col1_max))))
-                warn_JY9fwXxS((x7E_gCeFmDFw((x7E_gCeFmDFw(((x7E_gCeFmDFw((("Inconsistent indent at closing `"_fu + token.value) + "`: expected "_fu), fu::i64dec((col1_min - 1))) + ((col1_max > col1_min) ? x7E_gCeFmDFw(" up to "_fu, fu::i64dec((col1_max - 1))) : ""_fu)) + ", got "_fu), fu::i64dec((col1 - 1))) + ". Block starts on line "_fu), fu::i64dec(line0)) + "."_fu), fname, src, tokens, _idx, _loc, warnings, options);
-
+            {
+                warn_qFIn((x7E_rA00((x7E_rA00(((x7E_rA00((("Inconsistent indent at closing `"_view + token.value) + "`: expected "_view), fu::i64dec((col1_min - 1))) + ((col1_max > col1_min) ? x7E_rA00(" up to "_view, fu::i64dec((col1_max - 1))) : fu::str{})) + ", got "_view), fu::i64dec((col1 - 1))) + ". Block starts on line "_view), fu::i64dec(line0)) + "."_view), fname, src, tokens, _ps, options);
+            };
             break;
         }
         else
         {
-            _col0 = token.lcc.col;
-            if (!(_col0 > col00))
-                warn_JY9fwXxS((x7E_gCeFmDFw((x7E_gCeFmDFw((x7E_gCeFmDFw((("Inconsistent indent at `"_fu + token.value) + "`: expected more than "_fu), fu::i64dec(col00)) + ", got "_fu), fu::i64dec(_col0)) + ". Block starts on line "_fu), fu::i64dec(line0)) + "."_fu), fname, src, tokens, _idx, _loc, warnings, options);
+            _ps._col0 = token.lcc.col;
+            if (!(_ps._col0 > col00))
+                warn_qFIn((x7E_rA00((x7E_rA00((x7E_rA00((("Inconsistent indent at `"_view + token.value) + "`: expected more than "_view), fu::i64dec(col00)) + ", got "_view), fu::i64dec(_ps._col0)) + ". Block starts on line "_view), fu::i64dec(line0)) + "."_view), fname, src, tokens, _ps, options);
 
-            if (!((colNN < 0) || (colNN == _col0) || (token.lcc.line == lineNN)))
-                warn_JY9fwXxS((x7E_gCeFmDFw((x7E_gCeFmDFw((x7E_gCeFmDFw((("Inconsistent indent at `"_fu + token.value) + "`: expected exactly "_fu), fu::i64dec(colNN)) + ", got "_fu), fu::i64dec(_col0)) + ". Previous statement starts on line "_fu), fu::i64dec(lineNN)) + "."_fu), fname, src, tokens, _idx, _loc, warnings, options);
+            if (!((colNN < 0) || (colNN == _ps._col0) || (token.lcc.line == lineNN)))
+                warn_qFIn((x7E_rA00((x7E_rA00((x7E_rA00((("Inconsistent indent at `"_view + token.value) + "`: expected exactly "_view), fu::i64dec(colNN)) + ", got "_view), fu::i64dec(_ps._col0)) + ". Previous statement starts on line "_view), fu::i64dec(lineNN)) + "."_view), fname, src, tokens, _ps, options);
 
             if (colNN < 0)
-                colNN = _col0;
+                colNN = _ps._col0;
 
             lineNN = token.lcc.line;
-            /*MOV*/ s_Node expr = (sTruct ? parseStructItem_VN3o1iDS(modid, fname, src, tokens, _idx, _loc, _col0, _precedence, _fnDepth, _autopub, _TODO_FIX_dollarOk, _numDollars, _expectedTypeParams, _upstreamTypeParams, imports, warnings, options) : (eNum ? parseEnumItem_arxIquYP(modid, fname, src, tokens, _idx, _loc, _col0, _precedence, _fnDepth, _autopub, _TODO_FIX_dollarOk, _numDollars, _expectedTypeParams, _upstreamTypeParams, imports, warnings, options) : parseDeferOrStatement_PQIy48QJ(modid, fname, src, tokens, _idx, _loc, _col0, _precedence, _fnDepth, _autopub, _TODO_FIX_dollarOk, _numDollars, _expectedTypeParams, _upstreamTypeParams, imports, warnings, options)));
-            if (!((expr.kind != s_kind_call) || (expr.flags & (s_Flags_F_CALL_HAS_ARGPARENS | s_Flags_F_OPERATOR)) || (expr.items.size() > 1) || (tokens[_idx].value == endVal)))
-                warn_0rH35IQ8(idx0, "Orphaned call without parentheses, add () to imply a useful side effect."_fu, fname, src, tokens, _idx, _loc, warnings, options);
+            /*MOV*/ Node_Wr1X expr = (sTruct ? parseStructItem_qFIn(modid, fname, src, tokens, _ps, options) : (eNum ? parseEnumItem_qFIn(modid, fname, src, tokens, _ps, options) : parseDeferOrStatement_qFIn(modid, fname, src, tokens, _ps, options)));
+            if (!((expr.kind != Kind_Idfg_call) || (expr.flags & (Flags_Lzg8_F_CALL_HAS_ARGPARENS | Flags_Lzg8_F_OPERATOR)) || (expr.items.size() > 1) || (tokens[_ps._idx].value == endVal)))
+                warn_3hIN(idx0, str_uQtsXLlT0n9, fname, src, tokens, _ps, options);
 
-            items.push(static_cast<s_Node&&>(expr));
+            items.push(static_cast<Node_Wr1X&&>(expr));
         };
     };
     return /*NRVO*/ items;
 }
 
-static s_Node parseRoot_EXdLsWck(const int modid, const fu::str& fname, const fu::str& src, fu::view<s_Token> tokens, int& _idx, int& _loc, int& _col0, int& _precedence, int& _fnDepth, bool& _autopub, bool& _TODO_FIX_dollarOk, int& _numDollars, fu::vec<fu::str>& _expectedTypeParams, fu::vec<fu::str>& _upstreamTypeParams, fu::vec<s_Import>& imports, fu::vec<fu::str>& warnings, const s_Options& options)
+static Node_Wr1X parseRoot_qFIn(const int modid, fu::vec_range<char> fname, fu::vec_range<char> src, fu::vec_range<Token_RpL8> tokens, ParserState_tGnm& _ps, const Options_mg7V& options)
 {
-    consume_ifLltrwq(s_kind_sof, ""_fu, fname, src, tokens, _idx);
-    _loc = _idx;
-    fu::vec<s_Node> _0 {};
-    /*MOV*/ s_Node out = (_0 = parseBlockLike_bSAgMgCf(s_kind_eof, ""_fu, false, false, modid, fname, src, tokens, _idx, _loc, _col0, _precedence, _fnDepth, _autopub, _TODO_FIX_dollarOk, _numDollars, _expectedTypeParams, _upstreamTypeParams, imports, warnings, options), make_3RGKUyIO(s_kind_root, static_cast<fu::vec<s_Node>&&>(_0), s_Flags{}, (*(const fu::str*)fu::NIL), s_DeclAsserts{}, s_ParseSyntax{}, s_TokenIdx{}, modid, _loc));
-    _idx--;
-    if (_autopub)
+    consume_qFIn(Kind_Idfg_sof, fu::view<char>{}, fname, src, tokens, _ps);
+    _ps._loc = _ps._idx;
+    fu::vec<Node_Wr1X> _0 {};
+    /*MOV*/ Node_Wr1X out = (_0 = parseBlockLike_qFIn(Kind_Idfg_eof, fu::view<char>{}, false, false, modid, fname, src, tokens, _ps, options), make_qFIn(Kind_Idfg_root, static_cast<fu::vec<Node_Wr1X>&&>(_0), Flags_Lzg8{}, (*(fu::str*)fu::NIL), DeclAsserts_taUG{}, ParseSyntax_Lay2{}, TokenIdx_5b85{}, modid, _ps));
+    _ps._idx--;
+    if (_ps._autopub)
     {
         for (int i = 0; i < out.items.size(); i++)
         {
-            s_Node& item = out.items.mutref(i);
-            const s_kind k = item.kind;
-            if ((k == s_kind_fn) || (k == s_kind_let) || (k == s_kind_struct) || (k == s_kind_union) || (k == s_kind_enum) || (k == s_kind_flags) || (k == s_kind_primitive))
-                set_PUB_A85zFcwG(item.flags, "Module has no pubs, pubbing everything."_fu, false, fname, src, tokens, _idx, _autopub);
+            Node_Wr1X& item = out.items.mutref(i);
+            const Kind_Idfg k = item.kind;
+            if ((k == Kind_Idfg_fn) || (k == Kind_Idfg_let) || (k == Kind_Idfg_struct) || (k == Kind_Idfg_union) || (k == Kind_Idfg_enum) || (k == Kind_Idfg_flags) || (k == Kind_Idfg_primitive))
+                set_PUB_qFIn(item.flags, "Module has no pubs, pubbing everything."_view, false, fname, src, tokens, _ps);
 
         };
     };
     return /*NRVO*/ out;
 }
 
-s_ParserOutput parse_SmcwBTdS(const int modid, const fu::str& fname, const fu::str& src, fu::view<s_Token> tokens, const s_Options& options)
+ParserOutput_oNgu parse_qFIn(const int modid, fu::vec_range<char> fname, fu::vec_range<char> src, fu::vec_range<Token_RpL8> tokens, const Options_mg7V& options)
 {
-    int _idx = 0;
-    int _loc = 0;
-    int _col0 = 0;
-    int _precedence = P_RESET;
-    int _fnDepth = 0;
-    bool _autopub = true;
-    bool _TODO_FIX_dollarOk = false;
-    int _numDollars = 0;
-    fu::vec<fu::str> _expectedTypeParams {};
-    fu::vec<fu::str> _upstreamTypeParams {};
-    /*MOV*/ fu::vec<s_Import> imports {};
-    /*MOV*/ fu::vec<fu::str> warnings {};
-    if (tokens[(tokens.size() - 1)].kind == s_kind_eof)
+    /*MOV*/ ParserState_tGnm _ps {};
+    _ps._autopub = true;
+    if (tokens[(tokens.size() - 1)].kind == Kind_Idfg_eof)
     {
-        /*MOV*/ s_Node root = parseRoot_EXdLsWck(modid, fname, src, tokens, _idx, _loc, _col0, _precedence, _fnDepth, _autopub, _TODO_FIX_dollarOk, _numDollars, _expectedTypeParams, _upstreamTypeParams, imports, warnings, options);
-        return s_ParserOutput { static_cast<s_Node&&>(root), static_cast<fu::vec<s_Import>&&>(imports), static_cast<fu::vec<fu::str>&&>(warnings) };
+        /*MOV*/ Node_Wr1X root = parseRoot_qFIn(modid, fname, src, tokens, _ps, options);
+        return ParserOutput_oNgu { static_cast<Node_Wr1X&&>(root), fu::vec<Import_jcWj>(_ps.imports), static_cast<fu::vec<fu::str>&&>(_ps.warnings) };
     }
     else
-        fail_a0ZqfRup("Missing `eof` token."_fu, fname, src, tokens, _idx);
+        fail_94Qv(fu::str(str_2te45mOwAV9), fname, src, tokens, _ps);
 
 }
 

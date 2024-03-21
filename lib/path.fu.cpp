@@ -1,7 +1,8 @@
 #include <fu/str.h>
 #include <fu/vec.h>
 #include <fu/view.h>
-#include <fu/vec/slice.h>
+#include <fu/default.h>
+#include <fu/vec_range.h>
 #include <fu/vec/concat.h>
 #include <fu/vec/concat_one.h>
 #include <fu/vec/view_assign.h>
@@ -9,64 +10,63 @@
 
 #ifndef fu_NO_fdefs
 
-fu::str ext_8Oo0Zp26(const fu::str& path)
+fu::vec_range<char> ext_qZI0(fu::vec_range<char> path)
 {
     for (int i = path.size(); i-- > 0; )
     {
         const char c = path[i];
         if (c == '.')
-            return fu::slice(path, i);
+            return fu::get_range(path, i);
         else if (c == '/')
             break;
 
     };
-    return ""_fu;
+    return (*(fu::str*)fu::NIL);
 }
 
-fu::str noext_8Oo0Zp26(const fu::str& path)
+fu::vec_range<char> noext_qZI0(fu::vec_range<char> path)
 {
     for (int i = path.size(); i-- > 0; )
     {
         const char c = path[i];
         if (c == '.')
-            return fu::slice(path, 0, i);
+            return fu::get_range(path, 0, i);
         else if (c == '/')
             break;
 
     };
-    return ""_fu;
+    return (*(fu::str*)fu::NIL);
 }
 
-fu::str dirname_8Oo0Zp26(const fu::str& path)
+fu::vec_range<char> dirname_qZI0(fu::vec_range<char> path)
 {
     for (int i = (path.size() - 1); i-- > 0; )
     {
         if (path[i] == '/')
-            return fu::slice(path, 0, (i + 1));
+            return fu::get_range(path, 0, (i + 1));
 
     };
-    return ""_fu;
+    return (*(fu::str*)fu::NIL);
 }
 
-fu::str filename_8Oo0Zp26(const fu::str& path)
+fu::vec_range<char> filename_qZI0(fu::vec_range<char> path)
 {
     for (int i = path.size(); i-- > 0; )
     {
         if (path[i] == '/')
-            return fu::slice(path, (i + 1));
+            return fu::get_range(path, (i + 1));
 
     };
-    return fu::str(path);
+    return path;
 }
 
-                                #ifndef DEF_find_T9i966y9wQg
-                                #define DEF_find_T9i966y9wQg
-inline int find_T9i966y9(fu::view<char> a, const char b, int start)
+                                #ifndef DEF_find_ZKsG2FXrtpg
+                                #define DEF_find_ZKsG2FXrtpg
+inline int find_ZKsG(fu::view<char> haystack, const char needle)
 {
-    start = ((start > 0) ? start : 0);
-    for (int i = start; i < a.size(); i++)
+    for (int i = 0; i < haystack.size(); i++)
     {
-        if (a[i] == b)
+        if (haystack[i] == needle)
             return i;
 
     };
@@ -74,44 +74,57 @@ inline int find_T9i966y9(fu::view<char> a, const char b, int start)
 }
                                 #endif
 
-inline static fu::vec<fu::str>& l_0_0_ziPC6VQi(const fu::str& substr, fu::vec<fu::str>& result)
+                                #ifndef DEF_find_rkz0SQgq7mk
+                                #define DEF_find_rkz0SQgq7mk
+inline int find_rkz0(fu::view<char> haystack, const char needle, const int start)
+{
+    fu::view<char> slice = fu::get_view(haystack, start);
+    const int res = find_ZKsG(slice, needle);
+    return res + ((res < 0) ? 0 : start);
+}
+                                #endif
+
+                                #ifndef DEF___eQwyLf8GPl6
+                                #define DEF___eQwyLf8GPl6
+inline static fu::view<fu::str> _eQwy(fu::vec_range<char> substr, fu::vec<fu::str>& result)
 {
     return (result += fu::str(substr));
 }
+                                #endif
 
-                                #ifndef DEF_split_sJokOFGiNqg
-                                #define DEF_split_sJokOFGiNqg
-inline void split_sJokOFGi(const fu::str& str, const char sep, fu::vec<fu::str>& result)
+                                #ifndef DEF_split_kfES3Koo5I5
+                                #define DEF_split_kfES3Koo5I5
+inline void split_kfES(fu::vec_range<char> str, const char sep, fu::vec<fu::str>& result)
 {
     int last = 0;
     int next = 0;
     const int N = 1;
-    while (((next = find_T9i966y9(str, sep, last)) >= 0))
+    while (((next = find_rkz0(str, sep, last)) >= 0))
     {
-        l_0_0_ziPC6VQi(fu::slice(str, last, next), result);
+        _eQwy(fu::get_range(str, last, next), result);
         last = (next + N);
     };
     if (last)
-        l_0_0_ziPC6VQi(fu::slice(str, last), result);
+        _eQwy(fu::get_range(str, last), result);
     else
-        l_0_0_ziPC6VQi(str, result);
+        _eQwy(str, result);
 
 }
                                 #endif
 
-                                #ifndef DEF_split_42u6frOYgx6
-                                #define DEF_split_42u6frOYgx6
-inline fu::vec<fu::str> split_42u6frOY(const fu::str& str, const char sep)
+                                #ifndef DEF_split_Gbk9Z7dwor4
+                                #define DEF_split_Gbk9Z7dwor4
+inline fu::vec<fu::str> split_Gbk9(fu::vec_range<char> str, const char sep)
 {
     /*MOV*/ fu::vec<fu::str> result {};
-    split_sJokOFGi(str, sep, result);
+    split_kfES(str, sep, result);
     return /*NRVO*/ result;
 }
                                 #endif
 
-                                #ifndef DEF_x3Cx3E_mJGU9byOmI4
-                                #define DEF_x3Cx3E_mJGU9byOmI4
-inline int x3Cx3E_mJGU9byO(const int a, const int b)
+                                #ifndef DEF_x3Cx3E_odNTdyipeEj
+                                #define DEF_x3Cx3E_odNTdyipeEj
+inline int x3Cx3E_odNT(const int a, const int b)
 {
     if (a < b)
         return -1;
@@ -123,9 +136,9 @@ inline int x3Cx3E_mJGU9byO(const int a, const int b)
 }
                                 #endif
 
-                                #ifndef DEF_x3Cx3E_sOVQcK2JOH3
-                                #define DEF_x3Cx3E_sOVQcK2JOH3
-inline int x3Cx3E_sOVQcK2J(const char a, const char b)
+                                #ifndef DEF_x3Cx3E_YuqOPxIKAE3
+                                #define DEF_x3Cx3E_YuqOPxIKAE3
+inline int x3Cx3E_YuqO(const char a, const char b)
 {
     if (a < b)
         return -1;
@@ -137,29 +150,29 @@ inline int x3Cx3E_sOVQcK2J(const char a, const char b)
 }
                                 #endif
 
-                                #ifndef DEF_x3Cx3E_gCeFmDFw0L8
-                                #define DEF_x3Cx3E_gCeFmDFw0L8
-inline int x3Cx3E_gCeFmDFw(fu::view<char> a, fu::view<char> b)
+                                #ifndef DEF_x3Cx3E_erT9abBVjC1
+                                #define DEF_x3Cx3E_erT9abBVjC1
+inline int x3Cx3E_erT9(fu::view<char> a, fu::view<char> b)
 {
-    int cmp = x3Cx3E_mJGU9byO(a.size(), b.size());
+    int cmp = x3Cx3E_odNT(a.size(), b.size());
     for (int i = 0; (i < a.size()) && !cmp; i++)
-        cmp = x3Cx3E_sOVQcK2J(a[i], b[i]);
+        cmp = x3Cx3E_YuqO(a[i], b[i]);
 
     return cmp;
 }
                                 #endif
 
-                                #ifndef DEF_x3Dx3D_gCeFmDFw0L8
-                                #define DEF_x3Dx3D_gCeFmDFw0L8
+                                #ifndef DEF_x3Dx3D_xqw8ga5OCp4
+                                #define DEF_x3Dx3D_xqw8ga5OCp4
 inline bool operator==(fu::view<char> a, fu::view<char> b)
 {
-    return !x3Cx3E_gCeFmDFw(a, b);
+    return !x3Cx3E_erT9(a, b);
 }
                                 #endif
 
-                                #ifndef DEF_join_zqpLPm5h6cf
-                                #define DEF_join_zqpLPm5h6cf
-inline fu::str join_zqpLPm5h(fu::view<fu::str> a, const char sep)
+                                #ifndef DEF_join_RGgBgTHcISl
+                                #define DEF_join_RGgBgTHcISl
+inline fu::str join_RGgB(fu::view<fu::str> a, const char sep)
 {
     if (a.size() < 2)
     {
@@ -195,19 +208,19 @@ inline fu::str join_zqpLPm5h(fu::view<fu::str> a, const char sep)
 }
                                 #endif
 
-fu::str normalize_yoYXJgEn(const fu::str& p)
+fu::str normalize_qZI0(fu::vec_range<char> p)
 {
-    fu::vec<fu::str> path = split_42u6frOY(p, '/');
+    fu::vec<fu::str> path = split_Gbk9(p, '/');
     for (int i = path.size(); i-- > 0; )
     {
         fu::view<char> part = path[i];
-        if ((part == "."_fu) || (!part && (i > 0) && (i < (path.size() - 1))))
+        if ((part == "."_view) || (!part && (i > 0) && (i < (path.size() - 1))))
             path.splice(i, 1);
 
     };
     for (int i_1 = 1; i_1 < path.size(); i_1++)
     {
-        if (path[i_1] == ".."_fu)
+        if (path[i_1] == ".."_view)
         {
             path.splice(--i_1, 2);
             if (i_1)
@@ -215,10 +228,10 @@ fu::str normalize_yoYXJgEn(const fu::str& p)
 
         };
     };
-    return join_zqpLPm5h(path, '/');
+    return join_RGgB(path, '/');
 }
 
-fu::str relative_PkLpPlOh(fu::view<char> from, const fu::str& to)
+fu::str relative_qZI0(fu::view<char> from, fu::view<char> to)
 {
     const int min = ((from.size() < to.size()) ? from.size() : to.size());
     int same = 0;
@@ -236,32 +249,32 @@ fu::str relative_PkLpPlOh(fu::view<char> from, const fu::str& to)
     for (int i_1 = same; i_1 < from.size(); i_1++)
     {
         if (from[i_1] == '/')
-            res += "../"_fu;
+            res += "../"_view;
 
     };
-    res += fu::slice(to, same);
+    res += fu::get_view(to, same);
     return /*NRVO*/ res;
 }
 
-                                #ifndef DEF_starts_Db9eGFmCKDj
-                                #define DEF_starts_Db9eGFmCKDj
-inline bool starts_Db9eGFmC(fu::view<char> a, const char with)
+                                #ifndef DEF_starts_SfbfOAVfSee
+                                #define DEF_starts_SfbfOAVfSee
+inline bool starts_Sfbf(fu::view<char> a, const char with)
 {
     return a.size() && (a[0] == with);
 }
                                 #endif
 
-                                #ifndef DEF_ends_Db9eGFmCKDj
-                                #define DEF_ends_Db9eGFmCKDj
-inline bool ends_Db9eGFmC(fu::view<char> a, const char with)
+                                #ifndef DEF_ends_L30JVW8oAb6
+                                #define DEF_ends_L30JVW8oAb6
+inline bool ends_L30J(fu::view<char> a, const char with)
 {
     return a.size() && (a[(a.size() - 1)] == with);
 }
                                 #endif
 
-fu::str join_8GxtVDhD(fu::view<char> a, const fu::str& b)
+fu::str join_qZI0(fu::view<char> a, fu::vec_range<char> b)
 {
-    return normalize_yoYXJgEn((starts_Db9eGFmC(b, '/') ? fu::str(b) : (ends_Db9eGFmC(a, '/') ? (a + b) : ((a + '/') + b))));
+    return normalize_qZI0((starts_Sfbf(b, '/') ? fu::str(b) : (ends_L30J(a, '/') ? (a + b) : ((a + '/') + b))));
 }
 
 #endif

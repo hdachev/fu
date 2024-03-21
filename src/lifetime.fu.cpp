@@ -1,68 +1,87 @@
 #include <cstdint>
-#include <utility>
 #include <fu/int.h>
 #include <fu/str.h>
 #include <fu/vec.h>
 #include <fu/view.h>
 #include <fu/never.h>
 #include <fu/decstr.h>
+#include <fu/vec_range.h>
+#include <fu/static_ref.h>
 #include <fu/vec/concat.h>
 #include <fu/init_priority.h>
 #include <fu/vec/concat_one.h>
 
-struct s_TokenIdx;
-struct s_Context;
-struct s_Module;
-struct s_ModuleInputs;
-struct s_LexerOutput;
-struct s_Token;
-enum s_kind: fu::u8;
-struct s_LineColChars;
-struct s_ParserOutput;
-struct s_Node;
-typedef uint16_t s_DeclAsserts;
-typedef fu::u8 s_ParseSyntax;
-typedef unsigned s_Flags;
-struct s_Import;
-struct s_ModuleOrder;
-struct s_ModuleOutputs;
-struct s_Struct;
-struct s_Target;
-struct s_ScopeItem;
-struct s_Shape;
-struct s_SolverOutput;
-struct s_SolvedNode;
-struct s_Helpers;
-struct s_Type;
-struct s_ValueType;
-struct s_Lifetime;
-typedef fu::u8 s_VFacts;
-struct s_Scope;
-struct s_Overload;
-typedef uint16_t s_SolverStatus;
-struct s_Extended;
-struct s_Argument;
-struct s_BitSet;
-struct s_COWInside;
-typedef fu::u8 s_ExitPaths;
-struct s_Template;
-struct s_TEA;
-typedef uint16_t s_FxMask;
-typedef int s_SolverNotes;
-struct s_CodegenOutput;
-typedef fu::u8 s_CGDefects;
-struct s_ModuleStats;
-struct s_ModuleStat;
-struct s_Profile;
-struct s_Map_iIYL7rECCBg;
-struct s_SubRegion;
-[[noreturn]] fu::never BUG_9SZtRVJ0(fu::str&&, const s_TokenIdx&, const s_Context&);
-void Paths_inter(fu::str&, fu::view<char>, fu::view<char>, const s_TokenIdx&, const s_Context&);
-bool Paths_hasInter(fu::view<char>, fu::view<char>, const s_TokenIdx&, const s_Context&);
+struct Lifetime_llCF;
+struct TokenIdx_5b85;
+struct Context_UXD9;
+struct Module_qqBh;
+struct ModuleInputs_1DFx;
+struct LexerOutput_VDDl;
+struct Token_RpL8;
+enum Kind_Idfg: fu::u8;
+struct LineColChars_03II;
+struct ParserOutput_oNgu;
+struct Node_Wr1X;
+typedef uint16_t DeclAsserts_taUG;
+typedef fu::u8 ParseSyntax_Lay2;
+typedef unsigned Flags_Lzg8;
+struct Import_jcWj;
+struct ModuleOrder_HMNg;
+struct ModuleOutputs_wJzJ;
+struct Struct_5VgD;
+struct Target_VZrr;
+struct ScopeItem_ydOE;
+struct Set_qOJY;
+struct Shape_aOyF;
+struct SolverOutput_FnNg;
+struct SolvedNode_owql;
+struct Helpers_DyqV;
+struct Type_KBIB;
+struct ValueType_B8uC;
+typedef fu::u8 VFacts_xhRf;
+struct Scope_bN0w;
+struct Overload_OYmb;
+typedef uint16_t SolverStatus_h9em;
+struct Extended_Ebxv;
+struct Argument_HFkq;
+struct BitSet_mmp7;
+struct COWInside_2Z4D;
+typedef unsigned MayEscapeVia_5nki;
+typedef fu::u8 ExitPaths_UXHs;
+struct Template_1cFh;
+struct TEA_87LR;
+typedef uint16_t FxMask_2dRz;
+typedef int SolverNotes_LSla;
+struct CodegenOutput_OFce;
+struct Set_XshD;
+typedef fu::u8 CGDefects_2L18;
+struct ModuleStats_zo42;
+struct ModuleStat_6soj;
+struct Profile_zroC;
+struct Sample_Time_cblj;
+struct Map_4s6T;
+struct SubRegion_ageN;
+[[noreturn]] fu::never BUG_u9Gb(fu::view<char>, const TokenIdx_5b85&, const Context_UXD9&);
+void Paths_inter_7Yz9(fu::vec_range_mut<char>, fu::view<char>, fu::view<char>, const TokenIdx_5b85&, const Context_UXD9&);
+bool Paths_hasInter_7Yz9(fu::view<char>, fu::view<char>, const TokenIdx_5b85&, const Context_UXD9&);
 
-                                #ifndef DEF_s_TokenIdx
-                                #define DEF_s_TokenIdx
-struct s_TokenIdx
+                                #ifndef DEF_Lifetime_llCFAn7rdDl
+                                #define DEF_Lifetime_llCFAn7rdDl
+struct Lifetime_llCF
+{
+    fu::str uni0n;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || uni0n
+        ;
+    }
+};
+                                #endif
+
+                                #ifndef DEF_TokenIdx_5b85kf1B4eb
+                                #define DEF_TokenIdx_5b85kf1B4eb
+struct TokenIdx_5b85
 {
     int modid;
     int tokidx;
@@ -76,368 +95,389 @@ struct s_TokenIdx
 };
                                 #endif
 
-                                #ifndef DEF_s_kind
-                                #define DEF_s_kind
-enum s_kind: fu::u8
+                                #ifndef DEF_Kind_Idfg
+                                #define DEF_Kind_Idfg
+enum Kind_Idfg: fu::u8
 {
-    s_kind_sof = 1u,
-    s_kind_err = 2u,
-    s_kind_eof = 3u,
-    s_kind_id = 4u,
-    s_kind_op = 5u,
-    s_kind_int = 6u,
-    s_kind_real = 7u,
-    s_kind_char = 8u,
-    s_kind_str = 9u,
-    s_kind_bool = 10u,
-    s_kind_definit = 11u,
-    s_kind_empty = 12u,
-    s_kind_struct = 13u,
-    s_kind_union = 14u,
-    s_kind_primitive = 15u,
-    s_kind_flags = 16u,
-    s_kind_enum = 17u,
-    s_kind_fn = 18u,
-    s_kind_copy = 19u,
-    s_kind_move = 20u,
-    s_kind_arrlit = 21u,
-    s_kind_not = 22u,
-    s_kind_call = 23u,
-    s_kind_argid = 24u,
-    s_kind_root = 25u,
-    s_kind_block = 26u,
-    s_kind_if = 27u,
-    s_kind_or = 28u,
-    s_kind_and = 29u,
-    s_kind_loop = 30u,
-    s_kind_jump = 31u,
-    s_kind___far_jump = 32u,
-    s_kind_defer = 33u,
-    s_kind_try = 34u,
-    s_kind_let = 35u,
-    s_kind_letdef = 36u,
-    s_kind_typecast = 37u,
-    s_kind_typeassert = 38u,
-    s_kind_typeparam = 39u,
-    s_kind_unwrap = 40u,
-    s_kind_pragma = 41u,
-    s_kind_break = 42u,
-    s_kind_return = 43u,
-    s_kind_continue = 44u,
-    s_kind_import = 45u,
-    s_kind_addroffn = 46u,
-    s_kind_forfieldsof = 47u,
-    s_kind_members = 48u,
-    s_kind_fnbranch = 49u,
-    s_kind_pattern = 50u,
-    s_kind_typeunion = 51u,
-    s_kind_typetag = 52u,
-    s_kind___relaxed = 53u,
-    s_kind___convert = 54u,
-    s_kind___preceding_ref_arg = 55u,
-    s_kind___no_kind_yet = 56u,
-    s_kind___tombstone = 57u,
-    s_kind_type = 58u,
-    s_kind_var = 59u,
-    s_kind_field = 60u,
-    s_kind_enumv = 61u,
-    s_kind_template = 62u,
-    s_kind___native = 63u,
-    s_kind_inline = 64u,
+    Kind_Idfg_sof = 1u,
+    Kind_Idfg_err = 2u,
+    Kind_Idfg_eof = 3u,
+    Kind_Idfg_id = 4u,
+    Kind_Idfg_op = 5u,
+    Kind_Idfg_int = 6u,
+    Kind_Idfg_real = 7u,
+    Kind_Idfg_char = 8u,
+    Kind_Idfg_str = 9u,
+    Kind_Idfg_bool = 10u,
+    Kind_Idfg_definit = 11u,
+    Kind_Idfg_empty = 12u,
+    Kind_Idfg_struct = 13u,
+    Kind_Idfg_union = 14u,
+    Kind_Idfg_primitive = 15u,
+    Kind_Idfg_flags = 16u,
+    Kind_Idfg_enum = 17u,
+    Kind_Idfg_fn = 18u,
+    Kind_Idfg_copy = 19u,
+    Kind_Idfg_move = 20u,
+    Kind_Idfg_arrlit = 21u,
+    Kind_Idfg_not = 22u,
+    Kind_Idfg_call = 23u,
+    Kind_Idfg_call_indir = 24u,
+    Kind_Idfg_argid = 25u,
+    Kind_Idfg_root = 26u,
+    Kind_Idfg_block = 27u,
+    Kind_Idfg_if = 28u,
+    Kind_Idfg_or = 29u,
+    Kind_Idfg_and = 30u,
+    Kind_Idfg_loop = 31u,
+    Kind_Idfg_jump = 32u,
+    Kind_Idfg___far_jump = 33u,
+    Kind_Idfg_defer = 34u,
+    Kind_Idfg_try = 35u,
+    Kind_Idfg_let = 36u,
+    Kind_Idfg_letdef = 37u,
+    Kind_Idfg_typecast = 38u,
+    Kind_Idfg_typeassert = 39u,
+    Kind_Idfg_typeparam = 40u,
+    Kind_Idfg_unwrap = 41u,
+    Kind_Idfg_pragma = 42u,
+    Kind_Idfg_break = 43u,
+    Kind_Idfg_return = 44u,
+    Kind_Idfg_continue = 45u,
+    Kind_Idfg_import = 46u,
+    Kind_Idfg_addroffn = 47u,
+    Kind_Idfg_forfieldsof = 48u,
+    Kind_Idfg_members = 49u,
+    Kind_Idfg_fnbranch = 50u,
+    Kind_Idfg_pattern = 51u,
+    Kind_Idfg_typeunion = 52u,
+    Kind_Idfg_typetag = 53u,
+    Kind_Idfg___relaxed = 54u,
+    Kind_Idfg___convert = 55u,
+    Kind_Idfg___preceding_ref_arg = 56u,
+    Kind_Idfg___no_kind_yet = 57u,
+    Kind_Idfg___tombstone = 58u,
+    Kind_Idfg_type = 59u,
+    Kind_Idfg_var = 60u,
+    Kind_Idfg_field = 61u,
+    Kind_Idfg_enumv = 62u,
+    Kind_Idfg_template = 63u,
+    Kind_Idfg___native = 64u,
+    Kind_Idfg_inline = 65u,
 };
                                 #endif
 
-                                #ifndef DEF_s_DeclAsserts
-                                #define DEF_s_DeclAsserts
-inline constexpr s_DeclAsserts s_DeclAsserts_A_NOCOPY = s_DeclAsserts(1u);
-inline constexpr s_DeclAsserts s_DeclAsserts_A_NOVEC = s_DeclAsserts(2u);
-inline constexpr s_DeclAsserts s_DeclAsserts_A_TRIVIAL = s_DeclAsserts(4u);
-inline constexpr s_DeclAsserts s_DeclAsserts_A_PURE = s_DeclAsserts(8u);
-inline constexpr s_DeclAsserts s_DeclAsserts_A_PURE_CTX = s_DeclAsserts(16u);
-inline constexpr s_DeclAsserts s_DeclAsserts_A_PURE_FX = s_DeclAsserts(32u);
-inline constexpr s_DeclAsserts s_DeclAsserts_A_NOFLOW = s_DeclAsserts(64u);
-inline constexpr s_DeclAsserts s_DeclAsserts_A_NOTHROW = s_DeclAsserts(128u);
-inline constexpr s_DeclAsserts s_DeclAsserts_A_NOCRASH = s_DeclAsserts(256u);
-inline constexpr s_DeclAsserts s_DeclAsserts_A_NOIO = s_DeclAsserts(512u);
-inline constexpr s_DeclAsserts s_DeclAsserts_A_FAST = s_DeclAsserts(1024u);
-inline constexpr s_DeclAsserts s_DeclAsserts_A_NOINLINE = s_DeclAsserts(2048u);
+                                #ifndef DEF_DeclAsserts_taUG
+                                #define DEF_DeclAsserts_taUG
+inline constexpr DeclAsserts_taUG DeclAsserts_taUG_A_NOCOPY = DeclAsserts_taUG(1u);
+inline constexpr DeclAsserts_taUG DeclAsserts_taUG_A_NOVEC = DeclAsserts_taUG(2u);
+inline constexpr DeclAsserts_taUG DeclAsserts_taUG_A_TRIVIAL = DeclAsserts_taUG(4u);
+inline constexpr DeclAsserts_taUG DeclAsserts_taUG_A_NODISCARD = DeclAsserts_taUG(8u);
+inline constexpr DeclAsserts_taUG DeclAsserts_taUG_A_PURE = DeclAsserts_taUG(16u);
+inline constexpr DeclAsserts_taUG DeclAsserts_taUG_A_PURE_CTX = DeclAsserts_taUG(32u);
+inline constexpr DeclAsserts_taUG DeclAsserts_taUG_A_PURE_FX = DeclAsserts_taUG(64u);
+inline constexpr DeclAsserts_taUG DeclAsserts_taUG_A_NOFLOW = DeclAsserts_taUG(128u);
+inline constexpr DeclAsserts_taUG DeclAsserts_taUG_A_NOTHROW = DeclAsserts_taUG(256u);
+inline constexpr DeclAsserts_taUG DeclAsserts_taUG_A_NOCRASH = DeclAsserts_taUG(512u);
+inline constexpr DeclAsserts_taUG DeclAsserts_taUG_A_NOIO = DeclAsserts_taUG(1024u);
+inline constexpr DeclAsserts_taUG DeclAsserts_taUG_A_FAST = DeclAsserts_taUG(2048u);
+inline constexpr DeclAsserts_taUG DeclAsserts_taUG_A_NOINLINE = DeclAsserts_taUG(4096u);
 
-inline constexpr s_DeclAsserts MASK_s_DeclAsserts
-    = s_DeclAsserts_A_NOCOPY
-    | s_DeclAsserts_A_NOVEC
-    | s_DeclAsserts_A_TRIVIAL
-    | s_DeclAsserts_A_PURE
-    | s_DeclAsserts_A_PURE_CTX
-    | s_DeclAsserts_A_PURE_FX
-    | s_DeclAsserts_A_NOFLOW
-    | s_DeclAsserts_A_NOTHROW
-    | s_DeclAsserts_A_NOCRASH
-    | s_DeclAsserts_A_NOIO
-    | s_DeclAsserts_A_FAST
-    | s_DeclAsserts_A_NOINLINE;
+inline constexpr DeclAsserts_taUG MASK_DeclAsserts_taUG
+    = DeclAsserts_taUG_A_NOCOPY
+    | DeclAsserts_taUG_A_NOVEC
+    | DeclAsserts_taUG_A_TRIVIAL
+    | DeclAsserts_taUG_A_NODISCARD
+    | DeclAsserts_taUG_A_PURE
+    | DeclAsserts_taUG_A_PURE_CTX
+    | DeclAsserts_taUG_A_PURE_FX
+    | DeclAsserts_taUG_A_NOFLOW
+    | DeclAsserts_taUG_A_NOTHROW
+    | DeclAsserts_taUG_A_NOCRASH
+    | DeclAsserts_taUG_A_NOIO
+    | DeclAsserts_taUG_A_FAST
+    | DeclAsserts_taUG_A_NOINLINE;
                                 #endif
 
-                                #ifndef DEF_s_ParseSyntax
-                                #define DEF_s_ParseSyntax
-inline constexpr s_ParseSyntax s_ParseSyntax_PS_PARENS = s_ParseSyntax(1u);
-inline constexpr s_ParseSyntax s_ParseSyntax_PS_DISCARD_IF_BLOCK_TAIL = s_ParseSyntax(2u);
-inline constexpr s_ParseSyntax s_ParseSyntax_PS_ALWAYS_DISCARD = s_ParseSyntax(4u);
-inline constexpr s_ParseSyntax s_ParseSyntax_PS_NOT_AN_EXPRESSION = s_ParseSyntax(8u);
+                                #ifndef DEF_ParseSyntax_Lay2
+                                #define DEF_ParseSyntax_Lay2
+inline constexpr ParseSyntax_Lay2 ParseSyntax_Lay2_PS_PARENS = ParseSyntax_Lay2(1u);
+inline constexpr ParseSyntax_Lay2 ParseSyntax_Lay2_PS_DISCARD_IF_BLOCK_TAIL = ParseSyntax_Lay2(2u);
+inline constexpr ParseSyntax_Lay2 ParseSyntax_Lay2_PS_ALWAYS_DISCARD = ParseSyntax_Lay2(4u);
+inline constexpr ParseSyntax_Lay2 ParseSyntax_Lay2_PS_NOT_AN_EXPRESSION = ParseSyntax_Lay2(8u);
 
-inline constexpr s_ParseSyntax MASK_s_ParseSyntax
-    = s_ParseSyntax_PS_PARENS
-    | s_ParseSyntax_PS_DISCARD_IF_BLOCK_TAIL
-    | s_ParseSyntax_PS_ALWAYS_DISCARD
-    | s_ParseSyntax_PS_NOT_AN_EXPRESSION;
+inline constexpr ParseSyntax_Lay2 MASK_ParseSyntax_Lay2
+    = ParseSyntax_Lay2_PS_PARENS
+    | ParseSyntax_Lay2_PS_DISCARD_IF_BLOCK_TAIL
+    | ParseSyntax_Lay2_PS_ALWAYS_DISCARD
+    | ParseSyntax_Lay2_PS_NOT_AN_EXPRESSION;
                                 #endif
 
-                                #ifndef DEF_s_Flags
-                                #define DEF_s_Flags
-inline constexpr s_Flags s_Flags_F_CALL_HAS_DOT = 1u;
-inline constexpr s_Flags s_Flags_F_CALL_HAS_ARGPARENS = 2u;
-inline constexpr s_Flags s_Flags_F_CALL_HAS_NAMED_ARGS = 4u;
-inline constexpr s_Flags s_Flags_F_OPERATOR = 8u;
-inline constexpr s_Flags s_Flags_F_TYPENAME = 16u;
-inline constexpr s_Flags s_Flags_F_COMPOUND_ID = 32u;
-inline constexpr s_Flags s_Flags_F_ARGID_IS_OPTIONAL = 64u;
-inline constexpr s_Flags s_Flags_F_LAX = 128u;
-inline constexpr s_Flags s_Flags_F_SHADOW = 256u;
-inline constexpr s_Flags s_Flags_F_MUSTNAME = 512u;
-inline constexpr s_Flags s_Flags_F_WRITTEN_TO = 1024u;
-inline constexpr s_Flags s_Flags_F_MUT = 2048u;
-inline constexpr s_Flags s_Flags_F_CONST = 4096u;
-inline constexpr s_Flags s_Flags_F_VAL = 8192u;
-inline constexpr s_Flags s_Flags_F_REF = 16384u;
-inline constexpr s_Flags s_Flags_F_IMPLICIT = 32768u;
-inline constexpr s_Flags s_Flags_F_USING = 65536u;
-inline constexpr s_Flags s_Flags_F_CONVERSION = 131072u;
-inline constexpr s_Flags s_Flags_F_PUB = 262144u;
-inline constexpr s_Flags s_Flags_F_EXTERN = 524288u;
-inline constexpr s_Flags s_Flags_F_HOTSWAP = 1048576u;
-inline constexpr s_Flags s_Flags_F_PREDICATE = 2097152u;
-inline constexpr s_Flags s_Flags_F_REST_ARG = 4194304u;
-inline constexpr s_Flags s_Flags_F_INJECTED = 8388608u;
-inline constexpr s_Flags s_Flags_F_TEMPLATE = 16777216u;
-inline constexpr s_Flags s_Flags_F_INLINE = 33554432u;
-inline constexpr s_Flags s_Flags_F_LAMBDA = 67108864u;
-inline constexpr s_Flags s_Flags_F_COW_INSIDE = 134217728u;
+                                #ifndef DEF_Flags_Lzg8
+                                #define DEF_Flags_Lzg8
+inline constexpr Flags_Lzg8 Flags_Lzg8_F_CALL_HAS_DOT = 1u;
+inline constexpr Flags_Lzg8 Flags_Lzg8_F_CALL_HAS_ARGPARENS = 2u;
+inline constexpr Flags_Lzg8 Flags_Lzg8_F_CALL_HAS_NAMED_ARGS = 4u;
+inline constexpr Flags_Lzg8 Flags_Lzg8_F_OPERATOR = 8u;
+inline constexpr Flags_Lzg8 Flags_Lzg8_F_TYPENAME = 16u;
+inline constexpr Flags_Lzg8 Flags_Lzg8_F_COMPOUND_ID = 32u;
+inline constexpr Flags_Lzg8 Flags_Lzg8_F_ARGID_IS_OPTIONAL = 64u;
+inline constexpr Flags_Lzg8 Flags_Lzg8_F_LAX = 128u;
+inline constexpr Flags_Lzg8 Flags_Lzg8_F_SHADOW = 256u;
+inline constexpr Flags_Lzg8 Flags_Lzg8_F_MUSTNAME = 512u;
+inline constexpr Flags_Lzg8 Flags_Lzg8_F_WRITTEN_TO = 1024u;
+inline constexpr Flags_Lzg8 Flags_Lzg8_F_MUT = 2048u;
+inline constexpr Flags_Lzg8 Flags_Lzg8_F_CONST = 4096u;
+inline constexpr Flags_Lzg8 Flags_Lzg8_F_VAL = 8192u;
+inline constexpr Flags_Lzg8 Flags_Lzg8_F_REF = 16384u;
+inline constexpr Flags_Lzg8 Flags_Lzg8_F_IMPLICIT = 32768u;
+inline constexpr Flags_Lzg8 Flags_Lzg8_F_USING = 65536u;
+inline constexpr Flags_Lzg8 Flags_Lzg8_F_CONVERSION = 131072u;
+inline constexpr Flags_Lzg8 Flags_Lzg8_F_TEST_painted = 262144u;
+inline constexpr Flags_Lzg8 Flags_Lzg8_F_PUB = 524288u;
+inline constexpr Flags_Lzg8 Flags_Lzg8_F_EXTERN = 1048576u;
+inline constexpr Flags_Lzg8 Flags_Lzg8_F_HOTSWAP = 2097152u;
+inline constexpr Flags_Lzg8 Flags_Lzg8_F_PREDICATE = 4194304u;
+inline constexpr Flags_Lzg8 Flags_Lzg8_F_LT_RETURNED = 8388608u;
+inline constexpr Flags_Lzg8 Flags_Lzg8_F_REST_ARG = 16777216u;
+inline constexpr Flags_Lzg8 Flags_Lzg8_F_INJECTED = 33554432u;
+inline constexpr Flags_Lzg8 Flags_Lzg8_F_TEMPLATE = 67108864u;
+inline constexpr Flags_Lzg8 Flags_Lzg8_F_INLINE = 134217728u;
+inline constexpr Flags_Lzg8 Flags_Lzg8_F_LAMBDA = 268435456u;
+inline constexpr Flags_Lzg8 Flags_Lzg8_F_COW_INSIDE = 536870912u;
 
-inline constexpr s_Flags MASK_s_Flags
-    = s_Flags_F_CALL_HAS_DOT
-    | s_Flags_F_CALL_HAS_ARGPARENS
-    | s_Flags_F_CALL_HAS_NAMED_ARGS
-    | s_Flags_F_OPERATOR
-    | s_Flags_F_TYPENAME
-    | s_Flags_F_COMPOUND_ID
-    | s_Flags_F_ARGID_IS_OPTIONAL
-    | s_Flags_F_LAX
-    | s_Flags_F_SHADOW
-    | s_Flags_F_MUSTNAME
-    | s_Flags_F_WRITTEN_TO
-    | s_Flags_F_MUT
-    | s_Flags_F_CONST
-    | s_Flags_F_VAL
-    | s_Flags_F_REF
-    | s_Flags_F_IMPLICIT
-    | s_Flags_F_USING
-    | s_Flags_F_CONVERSION
-    | s_Flags_F_PUB
-    | s_Flags_F_EXTERN
-    | s_Flags_F_HOTSWAP
-    | s_Flags_F_PREDICATE
-    | s_Flags_F_REST_ARG
-    | s_Flags_F_INJECTED
-    | s_Flags_F_TEMPLATE
-    | s_Flags_F_INLINE
-    | s_Flags_F_LAMBDA
-    | s_Flags_F_COW_INSIDE;
+inline constexpr Flags_Lzg8 MASK_Flags_Lzg8
+    = Flags_Lzg8_F_CALL_HAS_DOT
+    | Flags_Lzg8_F_CALL_HAS_ARGPARENS
+    | Flags_Lzg8_F_CALL_HAS_NAMED_ARGS
+    | Flags_Lzg8_F_OPERATOR
+    | Flags_Lzg8_F_TYPENAME
+    | Flags_Lzg8_F_COMPOUND_ID
+    | Flags_Lzg8_F_ARGID_IS_OPTIONAL
+    | Flags_Lzg8_F_LAX
+    | Flags_Lzg8_F_SHADOW
+    | Flags_Lzg8_F_MUSTNAME
+    | Flags_Lzg8_F_WRITTEN_TO
+    | Flags_Lzg8_F_MUT
+    | Flags_Lzg8_F_CONST
+    | Flags_Lzg8_F_VAL
+    | Flags_Lzg8_F_REF
+    | Flags_Lzg8_F_IMPLICIT
+    | Flags_Lzg8_F_USING
+    | Flags_Lzg8_F_CONVERSION
+    | Flags_Lzg8_F_TEST_painted
+    | Flags_Lzg8_F_PUB
+    | Flags_Lzg8_F_EXTERN
+    | Flags_Lzg8_F_HOTSWAP
+    | Flags_Lzg8_F_PREDICATE
+    | Flags_Lzg8_F_LT_RETURNED
+    | Flags_Lzg8_F_REST_ARG
+    | Flags_Lzg8_F_INJECTED
+    | Flags_Lzg8_F_TEMPLATE
+    | Flags_Lzg8_F_INLINE
+    | Flags_Lzg8_F_LAMBDA
+    | Flags_Lzg8_F_COW_INSIDE;
                                 #endif
 
-                                #ifndef DEF_s_VFacts
-                                #define DEF_s_VFacts
-inline constexpr s_VFacts s_VFacts_AlwaysTrue = s_VFacts(1u);
-inline constexpr s_VFacts s_VFacts_AlwaysFalse = s_VFacts(2u);
-inline constexpr s_VFacts s_VFacts_Typename = s_VFacts(4u);
+                                #ifndef DEF_VFacts_xhRf
+                                #define DEF_VFacts_xhRf
+inline constexpr VFacts_xhRf VFacts_xhRf_AlwaysTrue = VFacts_xhRf(1u);
+inline constexpr VFacts_xhRf VFacts_xhRf_AlwaysFalse = VFacts_xhRf(2u);
+inline constexpr VFacts_xhRf VFacts_xhRf_Typename = VFacts_xhRf(4u);
+inline constexpr VFacts_xhRf VFacts_xhRf_LeftAligned = VFacts_xhRf(8u);
+inline constexpr VFacts_xhRf VFacts_xhRf_RightAligned = VFacts_xhRf(16u);
 
-inline constexpr s_VFacts MASK_s_VFacts
-    = s_VFacts_AlwaysTrue
-    | s_VFacts_AlwaysFalse
-    | s_VFacts_Typename;
+inline constexpr VFacts_xhRf MASK_VFacts_xhRf
+    = VFacts_xhRf_AlwaysTrue
+    | VFacts_xhRf_AlwaysFalse
+    | VFacts_xhRf_Typename
+    | VFacts_xhRf_LeftAligned
+    | VFacts_xhRf_RightAligned;
                                 #endif
 
-                                #ifndef DEF_s_SolverStatus
-                                #define DEF_s_SolverStatus
-inline constexpr s_SolverStatus s_SolverStatus_SS_LAZY = s_SolverStatus(1u);
-inline constexpr s_SolverStatus s_SolverStatus_SS_DID_START = s_SolverStatus(2u);
-inline constexpr s_SolverStatus s_SolverStatus_SS_DIRTY = s_SolverStatus(4u);
-inline constexpr s_SolverStatus s_SolverStatus_SS_FINALIZED = s_SolverStatus(8u);
-inline constexpr s_SolverStatus s_SolverStatus_SS_UPDATED = s_SolverStatus(16u);
-inline constexpr s_SolverStatus s_SolverStatus_SS_TYPE_RECUR = s_SolverStatus(32u);
-inline constexpr s_SolverStatus s_SolverStatus_SS_FN_RECUR = s_SolverStatus(64u);
-inline constexpr s_SolverStatus s_SolverStatus_SS_FN_OOE_RTL = s_SolverStatus(128u);
-inline constexpr s_SolverStatus s_SolverStatus_SS_HOIST = s_SolverStatus(256u);
-inline constexpr s_SolverStatus s_SolverStatus_SS_UNUSED = s_SolverStatus(512u);
-inline constexpr s_SolverStatus s_SolverStatus_SS_MATCHED = s_SolverStatus(1024u);
-inline constexpr s_SolverStatus s_SolverStatus_SS_MOVED_FROM = s_SolverStatus(2048u);
-inline constexpr s_SolverStatus s_SolverStatus_SS_ARGUMENT = s_SolverStatus(4096u);
-inline constexpr s_SolverStatus s_SolverStatus_SS_Debug_AllPassesComplete = s_SolverStatus(8192u);
+                                #ifndef DEF_SolverStatus_h9em
+                                #define DEF_SolverStatus_h9em
+inline constexpr SolverStatus_h9em SolverStatus_h9em_SS_LAZY = SolverStatus_h9em(1u);
+inline constexpr SolverStatus_h9em SolverStatus_h9em_SS_DID_START = SolverStatus_h9em(2u);
+inline constexpr SolverStatus_h9em SolverStatus_h9em_SS_DIRTY = SolverStatus_h9em(4u);
+inline constexpr SolverStatus_h9em SolverStatus_h9em_SS_FINALIZED = SolverStatus_h9em(8u);
+inline constexpr SolverStatus_h9em SolverStatus_h9em_SS_UPDATED = SolverStatus_h9em(16u);
+inline constexpr SolverStatus_h9em SolverStatus_h9em_SS_TYPE_RECUR = SolverStatus_h9em(32u);
+inline constexpr SolverStatus_h9em SolverStatus_h9em_SS_FN_RECUR = SolverStatus_h9em(64u);
+inline constexpr SolverStatus_h9em SolverStatus_h9em_SS_FN_OOE_RTL = SolverStatus_h9em(128u);
+inline constexpr SolverStatus_h9em SolverStatus_h9em_SS_NAME_UNUSED = SolverStatus_h9em(256u);
+inline constexpr SolverStatus_h9em SolverStatus_h9em_SS_UNUSED = SolverStatus_h9em(512u);
+inline constexpr SolverStatus_h9em SolverStatus_h9em_SS_MATCHED = SolverStatus_h9em(1024u);
+inline constexpr SolverStatus_h9em SolverStatus_h9em_SS_MOVED_FROM = SolverStatus_h9em(2048u);
+inline constexpr SolverStatus_h9em SolverStatus_h9em_SS_EXTERNAL_LINKAGE = SolverStatus_h9em(4096u);
+inline constexpr SolverStatus_h9em SolverStatus_h9em_SS_OBSERVED_BY_CONV_CACHE = SolverStatus_h9em(8192u);
+inline constexpr SolverStatus_h9em SolverStatus_h9em_SS_TODO_FIX_was_rx_resize = SolverStatus_h9em(16384u);
+inline constexpr SolverStatus_h9em SolverStatus_h9em_SS_Debug_AllPassesComplete = SolverStatus_h9em(32768u);
 
-inline constexpr s_SolverStatus MASK_s_SolverStatus
-    = s_SolverStatus_SS_LAZY
-    | s_SolverStatus_SS_DID_START
-    | s_SolverStatus_SS_DIRTY
-    | s_SolverStatus_SS_FINALIZED
-    | s_SolverStatus_SS_UPDATED
-    | s_SolverStatus_SS_TYPE_RECUR
-    | s_SolverStatus_SS_FN_RECUR
-    | s_SolverStatus_SS_FN_OOE_RTL
-    | s_SolverStatus_SS_HOIST
-    | s_SolverStatus_SS_UNUSED
-    | s_SolverStatus_SS_MATCHED
-    | s_SolverStatus_SS_MOVED_FROM
-    | s_SolverStatus_SS_ARGUMENT
-    | s_SolverStatus_SS_Debug_AllPassesComplete;
+inline constexpr SolverStatus_h9em MASK_SolverStatus_h9em
+    = SolverStatus_h9em_SS_LAZY
+    | SolverStatus_h9em_SS_DID_START
+    | SolverStatus_h9em_SS_DIRTY
+    | SolverStatus_h9em_SS_FINALIZED
+    | SolverStatus_h9em_SS_UPDATED
+    | SolverStatus_h9em_SS_TYPE_RECUR
+    | SolverStatus_h9em_SS_FN_RECUR
+    | SolverStatus_h9em_SS_FN_OOE_RTL
+    | SolverStatus_h9em_SS_NAME_UNUSED
+    | SolverStatus_h9em_SS_UNUSED
+    | SolverStatus_h9em_SS_MATCHED
+    | SolverStatus_h9em_SS_MOVED_FROM
+    | SolverStatus_h9em_SS_EXTERNAL_LINKAGE
+    | SolverStatus_h9em_SS_OBSERVED_BY_CONV_CACHE
+    | SolverStatus_h9em_SS_TODO_FIX_was_rx_resize
+    | SolverStatus_h9em_SS_Debug_AllPassesComplete;
                                 #endif
 
-                                #ifndef DEF_s_ExitPaths
-                                #define DEF_s_ExitPaths
-inline constexpr s_ExitPaths s_ExitPaths_XP_NonEmptyReturn = s_ExitPaths(1u);
-inline constexpr s_ExitPaths s_ExitPaths_XP_EmptyReturn = s_ExitPaths(2u);
-inline constexpr s_ExitPaths s_ExitPaths_XP_NoReturn = s_ExitPaths(4u);
-
-inline constexpr s_ExitPaths MASK_s_ExitPaths
-    = s_ExitPaths_XP_NonEmptyReturn
-    | s_ExitPaths_XP_EmptyReturn
-    | s_ExitPaths_XP_NoReturn;
+                                #ifndef DEF_MayEscapeVia_5nki
+                                #define DEF_MayEscapeVia_5nki
                                 #endif
 
-                                #ifndef DEF_s_FxMask
-                                #define DEF_s_FxMask
-inline constexpr s_FxMask s_FxMask_Fx_NotDeadCode = s_FxMask(1u);
-inline constexpr s_FxMask s_FxMask_Fx_NonDeterministic = s_FxMask(2u);
-inline constexpr s_FxMask s_FxMask_Fx_DontMoveUp = s_FxMask(4u);
-inline constexpr s_FxMask s_FxMask_Fx_DontMoveDown = s_FxMask(8u);
-inline constexpr s_FxMask s_FxMask_Fx_Input = s_FxMask(16u);
-inline constexpr s_FxMask s_FxMask_Fx_Output = s_FxMask(32u);
-inline constexpr s_FxMask s_FxMask_Fx_Throws = s_FxMask(64u);
-inline constexpr s_FxMask s_FxMask_Fx_Crashes = s_FxMask(128u);
-inline constexpr s_FxMask s_FxMask_Fx_Crashes_Div0 = s_FxMask(256u);
-inline constexpr s_FxMask s_FxMask_Fx_Crashes_OOB = s_FxMask(512u);
-inline constexpr s_FxMask s_FxMask_Fx_Crashes_Assert = s_FxMask(1024u);
-inline constexpr s_FxMask s_FxMask_Fx_Crashes_Exit = s_FxMask(2048u);
-inline constexpr s_FxMask s_FxMask_Fx_Syscall = s_FxMask(4096u);
-inline constexpr s_FxMask s_FxMask_Fx_Blocks = s_FxMask(8192u);
-inline constexpr s_FxMask s_FxMask_Fx_Blocks_Alloc = s_FxMask(16384u);
-inline constexpr s_FxMask s_FxMask_Fx_Blocks_Await = s_FxMask(32768u);
+                                #ifndef DEF_ExitPaths_UXHs
+                                #define DEF_ExitPaths_UXHs
+inline constexpr ExitPaths_UXHs ExitPaths_UXHs_XP_NonEmptyReturn = ExitPaths_UXHs(1u);
+inline constexpr ExitPaths_UXHs ExitPaths_UXHs_XP_EmptyReturn = ExitPaths_UXHs(2u);
+inline constexpr ExitPaths_UXHs ExitPaths_UXHs_XP_NoReturn = ExitPaths_UXHs(4u);
 
-inline constexpr s_FxMask MASK_s_FxMask
-    = s_FxMask_Fx_NotDeadCode
-    | s_FxMask_Fx_NonDeterministic
-    | s_FxMask_Fx_DontMoveUp
-    | s_FxMask_Fx_DontMoveDown
-    | s_FxMask_Fx_Input
-    | s_FxMask_Fx_Output
-    | s_FxMask_Fx_Throws
-    | s_FxMask_Fx_Crashes
-    | s_FxMask_Fx_Crashes_Div0
-    | s_FxMask_Fx_Crashes_OOB
-    | s_FxMask_Fx_Crashes_Assert
-    | s_FxMask_Fx_Crashes_Exit
-    | s_FxMask_Fx_Syscall
-    | s_FxMask_Fx_Blocks
-    | s_FxMask_Fx_Blocks_Alloc
-    | s_FxMask_Fx_Blocks_Await;
+inline constexpr ExitPaths_UXHs MASK_ExitPaths_UXHs
+    = ExitPaths_UXHs_XP_NonEmptyReturn
+    | ExitPaths_UXHs_XP_EmptyReturn
+    | ExitPaths_UXHs_XP_NoReturn;
                                 #endif
 
-                                #ifndef DEF_s_SolverNotes
-                                #define DEF_s_SolverNotes
-inline constexpr s_SolverNotes s_SolverNotes_N_FnRecursion = 1;
-inline constexpr s_SolverNotes s_SolverNotes_N_FnResolve = 2;
-inline constexpr s_SolverNotes s_SolverNotes_N_FnReopen = 4;
-inline constexpr s_SolverNotes s_SolverNotes_N_TypeRecursion = 8;
-inline constexpr s_SolverNotes s_SolverNotes_N_TypeResolve = 16;
-inline constexpr s_SolverNotes s_SolverNotes_N_TypeReopen = 32;
-inline constexpr s_SolverNotes s_SolverNotes_N_DeadCode = 64;
-inline constexpr s_SolverNotes s_SolverNotes_N_DeadCall = 128;
-inline constexpr s_SolverNotes s_SolverNotes_N_DeadLet = 256;
-inline constexpr s_SolverNotes s_SolverNotes_N_DeadArrlit = 512;
-inline constexpr s_SolverNotes s_SolverNotes_N_DeadLoopInit = 1024;
-inline constexpr s_SolverNotes s_SolverNotes_N_DeadConv = 2048;
-inline constexpr s_SolverNotes s_SolverNotes_N_NonTrivAutoCopy = 4096;
-inline constexpr s_SolverNotes s_SolverNotes_N_RelaxRespec = 8192;
-inline constexpr s_SolverNotes s_SolverNotes_N_UnusedImplicit = 16384;
-inline constexpr s_SolverNotes s_SolverNotes_N_UnusedCall = 32768;
-inline constexpr s_SolverNotes s_SolverNotes_N_UnusedDefer = 65536;
-inline constexpr s_SolverNotes s_SolverNotes_N_UnusedTry = 131072;
-inline constexpr s_SolverNotes s_SolverNotes_N_UnusedAndOr = 262144;
-inline constexpr s_SolverNotes s_SolverNotes_N_UnusedIfElse = 524288;
-inline constexpr s_SolverNotes s_SolverNotes_N_UnusedArrlit = 1048576;
-inline constexpr s_SolverNotes s_SolverNotes_N_UnusedLet = 2097152;
-inline constexpr s_SolverNotes s_SolverNotes_N_BckMustSeq = 4194304;
-inline constexpr s_SolverNotes s_SolverNotes_N_AARMustSeq = 8388608;
-inline constexpr s_SolverNotes s_SolverNotes_N_AARSoftRisk = 16777216;
-inline constexpr s_SolverNotes s_SolverNotes_N_MoveMustSeq = 33554432;
-inline constexpr s_SolverNotes s_SolverNotes_N_SD_HasStaticInit = 67108864;
-inline constexpr s_SolverNotes s_SolverNotes_N_SD_ExternPrivates = 134217728;
-inline constexpr s_SolverNotes s_SolverNotes_N_COWRestrict = 268435456;
+                                #ifndef DEF_FxMask_2dRz
+                                #define DEF_FxMask_2dRz
+inline constexpr FxMask_2dRz FxMask_2dRz_Fx_NotDeadCode = FxMask_2dRz(1u);
+inline constexpr FxMask_2dRz FxMask_2dRz_Fx_NonDeterministic = FxMask_2dRz(2u);
+inline constexpr FxMask_2dRz FxMask_2dRz_Fx_DontMoveUp = FxMask_2dRz(4u);
+inline constexpr FxMask_2dRz FxMask_2dRz_Fx_DontMoveDown = FxMask_2dRz(8u);
+inline constexpr FxMask_2dRz FxMask_2dRz_Fx_Input = FxMask_2dRz(16u);
+inline constexpr FxMask_2dRz FxMask_2dRz_Fx_Output = FxMask_2dRz(32u);
+inline constexpr FxMask_2dRz FxMask_2dRz_Fx_Throws = FxMask_2dRz(64u);
+inline constexpr FxMask_2dRz FxMask_2dRz_Fx_Crashes = FxMask_2dRz(128u);
+inline constexpr FxMask_2dRz FxMask_2dRz_Fx_Crashes_Div0 = FxMask_2dRz(256u);
+inline constexpr FxMask_2dRz FxMask_2dRz_Fx_Crashes_OOB = FxMask_2dRz(512u);
+inline constexpr FxMask_2dRz FxMask_2dRz_Fx_Crashes_Assert = FxMask_2dRz(1024u);
+inline constexpr FxMask_2dRz FxMask_2dRz_Fx_Crashes_Exit = FxMask_2dRz(2048u);
+inline constexpr FxMask_2dRz FxMask_2dRz_Fx_Syscall = FxMask_2dRz(4096u);
+inline constexpr FxMask_2dRz FxMask_2dRz_Fx_Blocks = FxMask_2dRz(8192u);
+inline constexpr FxMask_2dRz FxMask_2dRz_Fx_Blocks_Alloc = FxMask_2dRz(16384u);
+inline constexpr FxMask_2dRz FxMask_2dRz_Fx_Blocks_Await = FxMask_2dRz(32768u);
 
-inline constexpr s_SolverNotes MASK_s_SolverNotes
-    = s_SolverNotes_N_FnRecursion
-    | s_SolverNotes_N_FnResolve
-    | s_SolverNotes_N_FnReopen
-    | s_SolverNotes_N_TypeRecursion
-    | s_SolverNotes_N_TypeResolve
-    | s_SolverNotes_N_TypeReopen
-    | s_SolverNotes_N_DeadCode
-    | s_SolverNotes_N_DeadCall
-    | s_SolverNotes_N_DeadLet
-    | s_SolverNotes_N_DeadArrlit
-    | s_SolverNotes_N_DeadLoopInit
-    | s_SolverNotes_N_DeadConv
-    | s_SolverNotes_N_NonTrivAutoCopy
-    | s_SolverNotes_N_RelaxRespec
-    | s_SolverNotes_N_UnusedImplicit
-    | s_SolverNotes_N_UnusedCall
-    | s_SolverNotes_N_UnusedDefer
-    | s_SolverNotes_N_UnusedTry
-    | s_SolverNotes_N_UnusedAndOr
-    | s_SolverNotes_N_UnusedIfElse
-    | s_SolverNotes_N_UnusedArrlit
-    | s_SolverNotes_N_UnusedLet
-    | s_SolverNotes_N_BckMustSeq
-    | s_SolverNotes_N_AARMustSeq
-    | s_SolverNotes_N_AARSoftRisk
-    | s_SolverNotes_N_MoveMustSeq
-    | s_SolverNotes_N_SD_HasStaticInit
-    | s_SolverNotes_N_SD_ExternPrivates
-    | s_SolverNotes_N_COWRestrict;
+inline constexpr FxMask_2dRz MASK_FxMask_2dRz
+    = FxMask_2dRz_Fx_NotDeadCode
+    | FxMask_2dRz_Fx_NonDeterministic
+    | FxMask_2dRz_Fx_DontMoveUp
+    | FxMask_2dRz_Fx_DontMoveDown
+    | FxMask_2dRz_Fx_Input
+    | FxMask_2dRz_Fx_Output
+    | FxMask_2dRz_Fx_Throws
+    | FxMask_2dRz_Fx_Crashes
+    | FxMask_2dRz_Fx_Crashes_Div0
+    | FxMask_2dRz_Fx_Crashes_OOB
+    | FxMask_2dRz_Fx_Crashes_Assert
+    | FxMask_2dRz_Fx_Crashes_Exit
+    | FxMask_2dRz_Fx_Syscall
+    | FxMask_2dRz_Fx_Blocks
+    | FxMask_2dRz_Fx_Blocks_Alloc
+    | FxMask_2dRz_Fx_Blocks_Await;
                                 #endif
 
-                                #ifndef DEF_s_CGDefects
-                                #define DEF_s_CGDefects
-inline constexpr s_CGDefects s_CGDefects_GNUStmtExpr = s_CGDefects(1u);
-inline constexpr s_CGDefects s_CGDefects_Goto = s_CGDefects(2u);
-inline constexpr s_CGDefects s_CGDefects_PointlessMustSeq = s_CGDefects(4u);
-inline constexpr s_CGDefects s_CGDefects_LocalConstBool = s_CGDefects(8u);
-inline constexpr s_CGDefects s_CGDefects_ConstCast = s_CGDefects(16u);
-inline constexpr s_CGDefects s_CGDefects_PointlessLocal = s_CGDefects(32u);
-inline constexpr s_CGDefects s_CGDefects_IrrelevantLiteral = s_CGDefects(64u);
-inline constexpr s_CGDefects s_CGDefects_DuplicateFunctions = s_CGDefects(128u);
+                                #ifndef DEF_SolverNotes_LSla
+                                #define DEF_SolverNotes_LSla
+inline constexpr SolverNotes_LSla SolverNotes_LSla_N_FnRecursion = 1;
+inline constexpr SolverNotes_LSla SolverNotes_LSla_N_FnResolve = 2;
+inline constexpr SolverNotes_LSla SolverNotes_LSla_N_FnReopen = 4;
+inline constexpr SolverNotes_LSla SolverNotes_LSla_N_TypeRecursion = 8;
+inline constexpr SolverNotes_LSla SolverNotes_LSla_N_TypeResolve = 16;
+inline constexpr SolverNotes_LSla SolverNotes_LSla_N_TypeReopen = 32;
+inline constexpr SolverNotes_LSla SolverNotes_LSla_N_DeadCode = 64;
+inline constexpr SolverNotes_LSla SolverNotes_LSla_N_DeadCall = 128;
+inline constexpr SolverNotes_LSla SolverNotes_LSla_N_DeadLet = 256;
+inline constexpr SolverNotes_LSla SolverNotes_LSla_N_DeadArrlit = 512;
+inline constexpr SolverNotes_LSla SolverNotes_LSla_N_DeadLoopInit = 1024;
+inline constexpr SolverNotes_LSla SolverNotes_LSla_N_DeadConv = 2048;
+inline constexpr SolverNotes_LSla SolverNotes_LSla_N_NonTrivAutoCopy = 4096;
+inline constexpr SolverNotes_LSla SolverNotes_LSla_N_RelaxRespec = 8192;
+inline constexpr SolverNotes_LSla SolverNotes_LSla_N_UnusedImplicit = 16384;
+inline constexpr SolverNotes_LSla SolverNotes_LSla_N_UnusedCall = 32768;
+inline constexpr SolverNotes_LSla SolverNotes_LSla_N_UnusedDefer = 65536;
+inline constexpr SolverNotes_LSla SolverNotes_LSla_N_UnusedTry = 131072;
+inline constexpr SolverNotes_LSla SolverNotes_LSla_N_UnusedAndOr = 262144;
+inline constexpr SolverNotes_LSla SolverNotes_LSla_N_UnusedIfElse = 524288;
+inline constexpr SolverNotes_LSla SolverNotes_LSla_N_UnusedArrlit = 1048576;
+inline constexpr SolverNotes_LSla SolverNotes_LSla_N_UnusedLet = 2097152;
+inline constexpr SolverNotes_LSla SolverNotes_LSla_N_BckMustSeq = 4194304;
+inline constexpr SolverNotes_LSla SolverNotes_LSla_N_AARMustSeq = 8388608;
+inline constexpr SolverNotes_LSla SolverNotes_LSla_N_AARSoftRisk = 16777216;
+inline constexpr SolverNotes_LSla SolverNotes_LSla_N_MoveMustSeq = 33554432;
+inline constexpr SolverNotes_LSla SolverNotes_LSla_N_McomUnwrapsLetdef = 67108864;
+inline constexpr SolverNotes_LSla SolverNotes_LSla_N_SD_HasStaticInit = 134217728;
+inline constexpr SolverNotes_LSla SolverNotes_LSla_N_SD_ExternPrivates = 268435456;
+inline constexpr SolverNotes_LSla SolverNotes_LSla_N_COWRestrict = 536870912;
 
-inline constexpr s_CGDefects MASK_s_CGDefects
-    = s_CGDefects_GNUStmtExpr
-    | s_CGDefects_Goto
-    | s_CGDefects_PointlessMustSeq
-    | s_CGDefects_LocalConstBool
-    | s_CGDefects_ConstCast
-    | s_CGDefects_PointlessLocal
-    | s_CGDefects_IrrelevantLiteral
-    | s_CGDefects_DuplicateFunctions;
+inline constexpr SolverNotes_LSla MASK_SolverNotes_LSla
+    = SolverNotes_LSla_N_FnRecursion
+    | SolverNotes_LSla_N_FnResolve
+    | SolverNotes_LSla_N_FnReopen
+    | SolverNotes_LSla_N_TypeRecursion
+    | SolverNotes_LSla_N_TypeResolve
+    | SolverNotes_LSla_N_TypeReopen
+    | SolverNotes_LSla_N_DeadCode
+    | SolverNotes_LSla_N_DeadCall
+    | SolverNotes_LSla_N_DeadLet
+    | SolverNotes_LSla_N_DeadArrlit
+    | SolverNotes_LSla_N_DeadLoopInit
+    | SolverNotes_LSla_N_DeadConv
+    | SolverNotes_LSla_N_NonTrivAutoCopy
+    | SolverNotes_LSla_N_RelaxRespec
+    | SolverNotes_LSla_N_UnusedImplicit
+    | SolverNotes_LSla_N_UnusedCall
+    | SolverNotes_LSla_N_UnusedDefer
+    | SolverNotes_LSla_N_UnusedTry
+    | SolverNotes_LSla_N_UnusedAndOr
+    | SolverNotes_LSla_N_UnusedIfElse
+    | SolverNotes_LSla_N_UnusedArrlit
+    | SolverNotes_LSla_N_UnusedLet
+    | SolverNotes_LSla_N_BckMustSeq
+    | SolverNotes_LSla_N_AARMustSeq
+    | SolverNotes_LSla_N_AARSoftRisk
+    | SolverNotes_LSla_N_MoveMustSeq
+    | SolverNotes_LSla_N_McomUnwrapsLetdef
+    | SolverNotes_LSla_N_SD_HasStaticInit
+    | SolverNotes_LSla_N_SD_ExternPrivates
+    | SolverNotes_LSla_N_COWRestrict;
                                 #endif
 
-                                #ifndef DEF_s_Helpers
-                                #define DEF_s_Helpers
-struct s_Helpers
+                                #ifndef DEF_CGDefects_2L18
+                                #define DEF_CGDefects_2L18
+inline constexpr CGDefects_2L18 CGDefects_2L18_GNUStmtExpr = CGDefects_2L18(1u);
+inline constexpr CGDefects_2L18 CGDefects_2L18_Goto = CGDefects_2L18(2u);
+inline constexpr CGDefects_2L18 CGDefects_2L18_PointlessMustSeq = CGDefects_2L18(4u);
+inline constexpr CGDefects_2L18 CGDefects_2L18_LocalConstBool = CGDefects_2L18(8u);
+inline constexpr CGDefects_2L18 CGDefects_2L18_ConstCast = CGDefects_2L18(16u);
+inline constexpr CGDefects_2L18 CGDefects_2L18_PointlessLocal = CGDefects_2L18(32u);
+inline constexpr CGDefects_2L18 CGDefects_2L18_IrrelevantLiteral = CGDefects_2L18(64u);
+inline constexpr CGDefects_2L18 CGDefects_2L18_DuplicateFunctions = CGDefects_2L18(128u);
+
+inline constexpr CGDefects_2L18 MASK_CGDefects_2L18
+    = CGDefects_2L18_GNUStmtExpr
+    | CGDefects_2L18_Goto
+    | CGDefects_2L18_PointlessMustSeq
+    | CGDefects_2L18_LocalConstBool
+    | CGDefects_2L18_ConstCast
+    | CGDefects_2L18_PointlessLocal
+    | CGDefects_2L18_IrrelevantLiteral
+    | CGDefects_2L18_DuplicateFunctions;
+                                #endif
+
+                                #ifndef DEF_Helpers_DyqVC1yXPkj
+                                #define DEF_Helpers_DyqVC1yXPkj
+struct Helpers_DyqV
 {
     int index;
     explicit operator bool() const noexcept
@@ -449,9 +489,23 @@ struct s_Helpers
 };
                                 #endif
 
-                                #ifndef DEF_s_Target
-                                #define DEF_s_Target
-struct s_Target
+                                #ifndef DEF_Set_qOJYtbQKZe4
+                                #define DEF_Set_qOJYtbQKZe4
+struct Set_qOJY
+{
+    fu::vec<int> keys_asc;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || keys_asc
+        ;
+    }
+};
+                                #endif
+
+                                #ifndef DEF_Target_VZrrYUw5Awd
+                                #define DEF_Target_VZrrYUw5Awd
+struct Target_VZrr
 {
     uint64_t _packed;
     explicit operator bool() const noexcept
@@ -463,23 +517,23 @@ struct s_Target
 };
                                 #endif
 
-                                #ifndef DEF_s_Lifetime
-                                #define DEF_s_Lifetime
-struct s_Lifetime
+                                #ifndef DEF_Set_XshDfC0Mim3
+                                #define DEF_Set_XshDfC0Mim3
+struct Set_XshD
 {
-    fu::str uni0n;
+    fu::vec<fu::str> keys_asc;
     explicit operator bool() const noexcept
     {
         return false
-            || uni0n
+            || keys_asc
         ;
     }
 };
                                 #endif
 
-                                #ifndef DEF_s_BitSet
-                                #define DEF_s_BitSet
-struct s_BitSet
+                                #ifndef DEF_BitSet_mmp7xBZ4kaf
+                                #define DEF_BitSet_mmp7xBZ4kaf
+struct BitSet_mmp7
 {
     fu::vec<fu::u8> _data;
     explicit operator bool() const noexcept
@@ -491,9 +545,23 @@ struct s_BitSet
 };
                                 #endif
 
-                                #ifndef DEF_s_ModuleOrder
-                                #define DEF_s_ModuleOrder
-struct s_ModuleOrder
+                                #ifndef DEF_Sample_Time_cblj5KsY6d7
+                                #define DEF_Sample_Time_cblj5KsY6d7
+struct Sample_Time_cblj
+{
+    double time;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || time
+        ;
+    }
+};
+                                #endif
+
+                                #ifndef DEF_ModuleOrder_HMNgkDis85k
+                                #define DEF_ModuleOrder_HMNgkDis85k
+struct ModuleOrder_HMNg
 {
     int dep_depth;
     explicit operator bool() const noexcept
@@ -505,9 +573,9 @@ struct s_ModuleOrder
 };
                                 #endif
 
-                                #ifndef DEF_s_TEA
-                                #define DEF_s_TEA
-struct s_TEA
+                                #ifndef DEF_TEA_87LRqzeMoI3
+                                #define DEF_TEA_87LRqzeMoI3
+struct TEA_87LR
 {
     unsigned v0;
     unsigned v1;
@@ -521,9 +589,9 @@ struct s_TEA
 };
                                 #endif
 
-                                #ifndef DEF_s_ScopeItem
-                                #define DEF_s_ScopeItem
-struct s_ScopeItem
+                                #ifndef DEF_ScopeItem_ydOEnUwGFm9
+                                #define DEF_ScopeItem_ydOEnUwGFm9
+struct ScopeItem_ydOE
 {
     fu::str id;
     uint64_t _packed;
@@ -536,11 +604,11 @@ struct s_ScopeItem
 };
                                 #endif
 
-                                #ifndef DEF_s_LexerOutput
-                                #define DEF_s_LexerOutput
-struct s_LexerOutput
+                                #ifndef DEF_LexerOutput_VDDlFbkjeT7
+                                #define DEF_LexerOutput_VDDlFbkjeT7
+struct LexerOutput_VDDl
 {
-    fu::vec<s_Token> tokens;
+    fu::vec<Token_RpL8> tokens;
     explicit operator bool() const noexcept
     {
         return false
@@ -550,25 +618,9 @@ struct s_LexerOutput
 };
                                 #endif
 
-                                #ifndef DEF_s_ValueType
-                                #define DEF_s_ValueType
-struct s_ValueType
-{
-    unsigned quals;
-    fu::str canon;
-    explicit operator bool() const noexcept
-    {
-        return false
-            || quals
-            || canon
-        ;
-    }
-};
-                                #endif
-
-                                #ifndef DEF_s_LineColChars
-                                #define DEF_s_LineColChars
-struct s_LineColChars
+                                #ifndef DEF_LineColChars_03IIie77ad3
+                                #define DEF_LineColChars_03IIie77ad3
+struct LineColChars_03II
 {
     int line;
     int col;
@@ -584,25 +636,27 @@ struct s_LineColChars
 };
                                 #endif
 
-                                #ifndef DEF_s_Map_iIYL7rECCBg
-                                #define DEF_s_Map_iIYL7rECCBg
-struct s_Map_iIYL7rECCBg
+                                #ifndef DEF_ValueType_B8uCkrFbhH5
+                                #define DEF_ValueType_B8uCkrFbhH5
+struct ValueType_B8uC
 {
-    fu::vec<fu::str> keys;
-    fu::vec<fu::str> vals;
+    unsigned quals;
+    VFacts_xhRf vfacts;
+    fu::str canon;
     explicit operator bool() const noexcept
     {
         return false
-            || keys
-            || vals
+            || quals
+            || vfacts
+            || canon
         ;
     }
 };
                                 #endif
 
-                                #ifndef DEF_s_ModuleStat
-                                #define DEF_s_ModuleStat
-struct s_ModuleStat
+                                #ifndef DEF_ModuleStat_6sojRyzHDma
+                                #define DEF_ModuleStat_6sojRyzHDma
+struct ModuleStat_6soj
 {
     double time;
     int alloc_count;
@@ -618,9 +672,9 @@ struct s_ModuleStat
 };
                                 #endif
 
-                                #ifndef DEF_s_Shape
-                                #define DEF_s_Shape
-struct s_Shape
+                                #ifndef DEF_Shape_aOyFxjH0sYj
+                                #define DEF_Shape_aOyFxjH0sYj
+struct Shape_aOyF
 {
     fu::str basePrim;
     uint64_t non_triv_mask;
@@ -640,49 +694,27 @@ struct s_Shape
 };
                                 #endif
 
-                                #ifndef DEF_s_CodegenOutput
-                                #define DEF_s_CodegenOutput
-struct s_CodegenOutput
+                                #ifndef DEF_Scope_bN0wB0bie31
+                                #define DEF_Scope_bN0wB0bie31
+struct Scope_bN0w
 {
-    fu::str src;
-    fu::vec<fu::str> link;
-    fu::vec<fu::str> include_dirs;
-    fu::vec<fu::str> extra_sources;
-    fu::vec<int> live;
-    s_CGDefects defects;
-    explicit operator bool() const noexcept
-    {
-        return false
-            || src
-            || link
-            || include_dirs
-            || extra_sources
-            || live
-            || defects
-        ;
-    }
-};
-                                #endif
-
-                                #ifndef DEF_s_Scope
-                                #define DEF_s_Scope
-struct s_Scope
-{
-    fu::vec<s_Overload> overloads;
-    fu::vec<s_Extended> extended;
-    fu::vec<s_ScopeItem> items;
-    fu::vec<s_ScopeItem> implicits;
+    fu::vec<Overload_OYmb> overloads;
+    fu::vec<Extended_Ebxv> extended;
+    fu::vec<ScopeItem_ydOE> items;
+    fu::vec<ScopeItem_ydOE> implicits;
+    fu::vec<ScopeItem_ydOE> globals;
     fu::vec<int> imports;
     fu::vec<int> privates;
-    fu::vec<s_Target> usings;
-    fu::vec<s_Target> converts;
+    fu::vec<Target_VZrr> usings;
+    fu::vec<Target_VZrr> converts;
     int pub_items;
     int pub_implicits;
+    int pub_globals;
     int pub_converts;
-    s_Scope(const s_Scope&) = delete;
-    s_Scope(s_Scope&&) = default;
-    s_Scope& operator=(const s_Scope&) = delete;
-    s_Scope& operator=(s_Scope&&) = default;
+    Scope_bN0w(const Scope_bN0w&) = delete;
+    Scope_bN0w(Scope_bN0w&&) = default;
+    Scope_bN0w& operator=(const Scope_bN0w&) = delete;
+    Scope_bN0w& operator=(Scope_bN0w&&) = default;
     explicit operator bool() const noexcept
     {
         return false
@@ -690,24 +722,56 @@ struct s_Scope
             || extended
             || items
             || implicits
+            || globals
             || imports
             || privates
             || usings
             || converts
             || pub_items
             || pub_implicits
+            || pub_globals
             || pub_converts
         ;
     }
 };
                                 #endif
 
-                                #ifndef DEF_s_Token
-                                #define DEF_s_Token
-struct s_Token
+                                #ifndef DEF_Profile_zroCYrctPoa
+                                #define DEF_Profile_zroCYrctPoa
+struct Profile_zroC
 {
-    s_kind kind;
-    s_LineColChars lcc;
+    Sample_Time_cblj now;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || now
+        ;
+    }
+};
+                                #endif
+
+                                #ifndef DEF_Map_4s6TdIiM4gd
+                                #define DEF_Map_4s6TdIiM4gd
+struct Map_4s6T
+{
+    Set_XshD keys;
+    fu::vec<fu::str> vals;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || keys
+            || vals
+        ;
+    }
+};
+                                #endif
+
+                                #ifndef DEF_Token_RpL8tz7XMX0
+                                #define DEF_Token_RpL8tz7XMX0
+struct Token_RpL8
+{
+    Kind_Idfg kind;
+    LineColChars_03II lcc;
     fu::str value;
     explicit operator bool() const noexcept
     {
@@ -718,48 +782,48 @@ struct s_Token
 };
                                 #endif
 
-                                #ifndef DEF_s_Import
-                                #define DEF_s_Import
-struct s_Import
+                                #ifndef DEF_Type_KBIBAQNxKdi
+                                #define DEF_Type_KBIBAQNxKdi
+struct Type_KBIB
 {
-    s_TokenIdx token;
-    fu::str value;
-    explicit operator bool() const noexcept
-    {
-        return false
-            || token
-            || value
-        ;
-    }
-};
-                                #endif
-
-                                #ifndef DEF_s_Type
-                                #define DEF_s_Type
-struct s_Type
-{
-    s_ValueType vtype;
-    s_Lifetime lifetime;
-    s_VFacts vfacts;
+    ValueType_B8uC vtype;
+    Lifetime_llCF lifetime;
     explicit operator bool() const noexcept
     {
         return false
             || vtype
             || lifetime
-            || vfacts
         ;
     }
 };
                                 #endif
 
-                                #ifndef DEF_s_ModuleStats
-                                #define DEF_s_ModuleStats
-struct s_ModuleStats
+                                #ifndef DEF_Import_jcWj5jfyCbh
+                                #define DEF_Import_jcWj5jfyCbh
+struct Import_jcWj
 {
-    s_ModuleStat lex;
-    s_ModuleStat parse;
-    s_ModuleStat solve;
-    s_ModuleStat codegen;
+    TokenIdx_5b85 token;
+    fu::str pattern;
+    int modid;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || token
+            || pattern
+            || modid
+        ;
+    }
+};
+                                #endif
+
+                                #ifndef DEF_ModuleStats_zo42yWR5Sz7
+                                #define DEF_ModuleStats_zo42yWR5Sz7
+struct ModuleStats_zo42
+{
+    ModuleStat_6soj lex;
+    ModuleStat_6soj parse;
+    ModuleStat_6soj solve;
+    ModuleStat_6soj codegen;
     explicit operator bool() const noexcept
     {
         return false
@@ -772,15 +836,36 @@ struct s_ModuleStats
 };
                                 #endif
 
-                                #ifndef DEF_s_COWInside
-                                #define DEF_s_COWInside
-struct s_COWInside
+                                #ifndef DEF_Struct_5VgDIbV9CPf
+                                #define DEF_Struct_5VgDIbV9CPf
+struct Struct_5VgD
 {
-    s_ValueType vtype;
-    s_TokenIdx token;
+    Kind_Idfg kind;
+    fu::str name;
+    Target_VZrr target;
+    fu::vec<ScopeItem_ydOE> items;
+    fu::vec<ScopeItem_ydOE> implicits;
+    Set_qOJY imports;
+    fu::vec<Target_VZrr> converts;
+    Shape_aOyF shape;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || kind
+        ;
+    }
+};
+                                #endif
+
+                                #ifndef DEF_COWInside_2Z4DPB5kLr4
+                                #define DEF_COWInside_2Z4DPB5kLr4
+struct COWInside_2Z4D
+{
+    ValueType_B8uC vtype;
+    TokenIdx_5b85 token;
     int argTarget;
-    int mayEscapeVia;
-    s_ExitPaths exitPaths;
+    MayEscapeVia_5nki mayEscapeVia;
+    ExitPaths_UXHs exitPaths;
     explicit operator bool() const noexcept
     {
         return false
@@ -794,47 +879,47 @@ struct s_COWInside
 };
                                 #endif
 
-                                #ifndef DEF_s_Struct
-                                #define DEF_s_Struct
-struct s_Struct
+                                #ifndef DEF_CodegenOutput_OFceMf04noa
+                                #define DEF_CodegenOutput_OFceMf04noa
+struct CodegenOutput_OFce
 {
-    s_kind kind;
-    fu::str name;
-    s_Target target;
-    fu::vec<s_ScopeItem> items;
-    fu::vec<int> imports;
-    fu::vec<s_Target> converts;
-    s_Shape shape;
+    fu::str src;
+    Set_XshD link;
+    Set_XshD extra_sources;
+    Set_XshD includes_headers;
+    Set_XshD include_dirs;
+    fu::vec<int> live;
+    CGDefects_2L18 defects;
     explicit operator bool() const noexcept
     {
         return false
-            || kind
-            || name
-            || target
-            || items
-            || imports
-            || converts
-            || shape
+            || src
+            || link
+            || extra_sources
+            || includes_headers
+            || include_dirs
+            || live
+            || defects
         ;
     }
 };
                                 #endif
 
-                                #ifndef DEF_s_Node
-                                #define DEF_s_Node
-struct s_Node
+                                #ifndef DEF_Node_Wr1XN7BRTn1
+                                #define DEF_Node_Wr1XN7BRTn1
+struct Node_Wr1X
 {
-    s_kind kind;
-    s_DeclAsserts asserts;
-    s_ParseSyntax syntax;
-    s_Flags flags;
+    Kind_Idfg kind;
+    DeclAsserts_taUG asserts;
+    ParseSyntax_Lay2 syntax;
+    Flags_Lzg8 flags;
     fu::str value;
-    fu::vec<s_Node> items;
-    s_TokenIdx token;
-    s_Node(const s_Node&) = default;
-    s_Node(s_Node&&) = default;
-    s_Node& operator=(s_Node&&) = default;
-    s_Node& operator=(const s_Node& selfrec) { return *this = s_Node(selfrec); }
+    fu::vec<Node_Wr1X> items;
+    TokenIdx_5b85 token;
+    Node_Wr1X(const Node_Wr1X&) = default;
+    Node_Wr1X(Node_Wr1X&&) = default;
+    Node_Wr1X& operator=(Node_Wr1X&&) = default;
+    Node_Wr1X& operator=(const Node_Wr1X& selfrec) { return *this = Node_Wr1X(selfrec); }
     explicit operator bool() const noexcept
     {
         return false
@@ -844,51 +929,11 @@ struct s_Node
 };
                                 #endif
 
-                                #ifndef DEF_s_Context
-                                #define DEF_s_Context
-struct s_Context
+                                #ifndef DEF_Template_1cFh7XoXDYc
+                                #define DEF_Template_1cFh7XoXDYc
+struct Template_1cFh
 {
-    fu::str base_dir;
-    fu::vec<s_Module> modules;
-    fu::vec<int> dep_order;
-    s_Map_iIYL7rECCBg files;
-    s_Map_iIYL7rECCBg fuzzy;
-    s_Context(const s_Context&) = delete;
-    s_Context(s_Context&&) = default;
-    s_Context& operator=(const s_Context&) = delete;
-    s_Context& operator=(s_Context&&) = default;
-    explicit operator bool() const noexcept
-    {
-        return false
-            || base_dir
-            || modules
-            || dep_order
-            || files
-            || fuzzy
-        ;
-    }
-};
-                                #endif
-
-                                #ifndef DEF_s_Profile
-                                #define DEF_s_Profile
-struct s_Profile
-{
-    double now;
-    explicit operator bool() const noexcept
-    {
-        return false
-            || now
-        ;
-    }
-};
-                                #endif
-
-                                #ifndef DEF_s_Template
-                                #define DEF_s_Template
-struct s_Template
-{
-    s_Node node;
+    Node_Wr1X node;
     fu::vec<int> imports;
     explicit operator bool() const noexcept
     {
@@ -899,12 +944,12 @@ struct s_Template
 };
                                 #endif
 
-                                #ifndef DEF_s_ParserOutput
-                                #define DEF_s_ParserOutput
-struct s_ParserOutput
+                                #ifndef DEF_ParserOutput_oNgu6PpUXWb
+                                #define DEF_ParserOutput_oNgu6PpUXWb
+struct ParserOutput_oNgu
 {
-    s_Node root;
-    fu::vec<s_Import> imports;
+    Node_Wr1X root;
+    fu::vec<Import_jcWj> imports;
     fu::vec<fu::str> warnings;
     explicit operator bool() const noexcept
     {
@@ -917,23 +962,51 @@ struct s_ParserOutput
 };
                                 #endif
 
-                                #ifndef DEF_s_SolvedNode
-                                #define DEF_s_SolvedNode
-struct s_SolvedNode
+                                #ifndef DEF_Context_UXD9wQGQXT5
+                                #define DEF_Context_UXD9wQGQXT5
+struct Context_UXD9
 {
-    s_kind kind;
-    s_Helpers helpers;
-    s_Flags flags;
+    fu::str fudir;
+    fu::str base_dir;
+    fu::vec<Module_qqBh> modules;
+    fu::vec<int> dep_order;
+    Map_4s6T files;
+    Map_4s6T fuzzy;
+    Context_UXD9(const Context_UXD9&) = delete;
+    Context_UXD9(Context_UXD9&&) = default;
+    Context_UXD9& operator=(const Context_UXD9&) = delete;
+    Context_UXD9& operator=(Context_UXD9&&) = default;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || fudir
+            || base_dir
+            || modules
+            || dep_order
+            || files
+            || fuzzy
+        ;
+    }
+};
+                                #endif
+
+                                #ifndef DEF_SolvedNode_owqlcZ14neg
+                                #define DEF_SolvedNode_owqlcZ14neg
+struct SolvedNode_owql
+{
+    Kind_Idfg kind;
+    Helpers_DyqV helpers;
+    Flags_Lzg8 flags;
     int _loop_start;
     fu::str value;
-    fu::vec<s_SolvedNode> items;
-    s_TokenIdx token;
-    s_Type type;
-    s_Target target;
-    s_SolvedNode(const s_SolvedNode&) = default;
-    s_SolvedNode(s_SolvedNode&&) = default;
-    s_SolvedNode& operator=(s_SolvedNode&&) = default;
-    s_SolvedNode& operator=(const s_SolvedNode& selfrec) { return *this = s_SolvedNode(selfrec); }
+    fu::vec<SolvedNode_owql> items;
+    TokenIdx_5b85 token;
+    Type_KBIB type;
+    Target_VZrr target;
+    SolvedNode_owql(const SolvedNode_owql&) = default;
+    SolvedNode_owql(SolvedNode_owql&&) = default;
+    SolvedNode_owql& operator=(SolvedNode_owql&&) = default;
+    SolvedNode_owql& operator=(const SolvedNode_owql& selfrec) { return *this = SolvedNode_owql(selfrec); }
     explicit operator bool() const noexcept
     {
         return false
@@ -943,13 +1016,13 @@ struct s_SolvedNode
 };
                                 #endif
 
-                                #ifndef DEF_s_ModuleInputs
-                                #define DEF_s_ModuleInputs
-struct s_ModuleInputs
+                                #ifndef DEF_ModuleInputs_1DFxH6zi2ic
+                                #define DEF_ModuleInputs_1DFxH6zi2ic
+struct ModuleInputs_1DFx
 {
     fu::str src;
-    s_LexerOutput lex;
-    s_ParserOutput parse;
+    LexerOutput_VDDl lex;
+    ParserOutput_oNgu parse;
     explicit operator bool() const noexcept
     {
         return false
@@ -961,16 +1034,16 @@ struct s_ModuleInputs
 };
                                 #endif
 
-                                #ifndef DEF_s_Overload
-                                #define DEF_s_Overload
-struct s_Overload
+                                #ifndef DEF_Overload_OYmbI2gRgOj
+                                #define DEF_Overload_OYmbI2gRgOj
+struct Overload_OYmb
 {
-    s_kind kind;
-    s_Flags flags;
-    s_SolverStatus status;
+    Kind_Idfg kind;
+    Flags_Lzg8 flags;
+    SolverStatus_h9em status;
     fu::str name;
-    s_Type type;
-    s_SolvedNode solved;
+    Type_KBIB type;
+    SolvedNode_owql solved;
     explicit operator bool() const noexcept
     {
         return false
@@ -980,19 +1053,20 @@ struct s_Overload
 };
                                 #endif
 
-                                #ifndef DEF_s_Extended
-                                #define DEF_s_Extended
-struct s_Extended
+                                #ifndef DEF_Extended_EbxvU56XnN6
+                                #define DEF_Extended_EbxvU56XnN6
+struct Extended_Ebxv
 {
     int min;
     int max;
-    fu::vec<s_Argument> args;
-    fu::vec<s_COWInside> cows_inside;
-    s_Target spec_of;
-    s_Template tEmplate;
-    fu::vec<s_Overload> locals;
-    s_TEA sighash;
-    s_FxMask fx_mask;
+    fu::vec<Argument_HFkq> args;
+    fu::vec<COWInside_2Z4D> cows_inside;
+    Target_VZrr spec_of;
+    Template_1cFh tEmplate;
+    fu::vec<Overload_OYmb> args_n_locals;
+    TEA_87LR sighash;
+    FxMask_2dRz fx_mask;
+    int args_neg;
     explicit operator bool() const noexcept
     {
         return false
@@ -1002,18 +1076,18 @@ struct s_Extended
 };
                                 #endif
 
-                                #ifndef DEF_s_Argument
-                                #define DEF_s_Argument
-struct s_Argument
+                                #ifndef DEF_Argument_HFkqHKf0jo7
+                                #define DEF_Argument_HFkqHKf0jo7
+struct Argument_HFkq
 {
     fu::str name;
     fu::str autocall;
-    s_Type type;
-    s_SolvedNode dEfault;
-    s_Flags flags;
-    s_Target target;
-    s_BitSet may_invalidate;
-    s_BitSet may_alias;
+    Type_KBIB type;
+    SolvedNode_owql dEfault;
+    Flags_Lzg8 flags;
+    Target_VZrr target;
+    BitSet_mmp7 may_invalidate;
+    BitSet_mmp7 may_alias;
     explicit operator bool() const noexcept
     {
         return false
@@ -1030,17 +1104,17 @@ struct s_Argument
 };
                                 #endif
 
-                                #ifndef DEF_s_SolverOutput
-                                #define DEF_s_SolverOutput
-struct s_SolverOutput
+                                #ifndef DEF_SolverOutput_FnNg0g9pDh2
+                                #define DEF_SolverOutput_FnNg0g9pDh2
+struct SolverOutput_FnNg
 {
-    s_SolvedNode root;
-    s_Scope scope;
-    s_SolverNotes notes;
-    s_SolverOutput(const s_SolverOutput&) = delete;
-    s_SolverOutput(s_SolverOutput&&) = default;
-    s_SolverOutput& operator=(const s_SolverOutput&) = delete;
-    s_SolverOutput& operator=(s_SolverOutput&&) = default;
+    SolvedNode_owql root;
+    Scope_bN0w scope;
+    SolverNotes_LSla notes;
+    SolverOutput_FnNg(const SolverOutput_FnNg&) = delete;
+    SolverOutput_FnNg(SolverOutput_FnNg&&) = default;
+    SolverOutput_FnNg& operator=(const SolverOutput_FnNg&) = delete;
+    SolverOutput_FnNg& operator=(SolverOutput_FnNg&&) = default;
     explicit operator bool() const noexcept
     {
         return false
@@ -1052,17 +1126,17 @@ struct s_SolverOutput
 };
                                 #endif
 
-                                #ifndef DEF_s_ModuleOutputs
-                                #define DEF_s_ModuleOutputs
-struct s_ModuleOutputs
+                                #ifndef DEF_ModuleOutputs_wJzJlJKhdDi
+                                #define DEF_ModuleOutputs_wJzJlJKhdDi
+struct ModuleOutputs_wJzJ
 {
-    fu::vec<s_Struct> types;
-    s_SolverOutput solve;
-    s_CodegenOutput cpp;
-    s_ModuleOutputs(const s_ModuleOutputs&) = delete;
-    s_ModuleOutputs(s_ModuleOutputs&&) = default;
-    s_ModuleOutputs& operator=(const s_ModuleOutputs&) = delete;
-    s_ModuleOutputs& operator=(s_ModuleOutputs&&) = default;
+    fu::vec<Struct_5VgD> types;
+    SolverOutput_FnNg solve;
+    CodegenOutput_OFce cpp;
+    ModuleOutputs_wJzJ(const ModuleOutputs_wJzJ&) = delete;
+    ModuleOutputs_wJzJ(ModuleOutputs_wJzJ&&) = default;
+    ModuleOutputs_wJzJ& operator=(const ModuleOutputs_wJzJ&) = delete;
+    ModuleOutputs_wJzJ& operator=(ModuleOutputs_wJzJ&&) = default;
     explicit operator bool() const noexcept
     {
         return false
@@ -1074,21 +1148,21 @@ struct s_ModuleOutputs
 };
                                 #endif
 
-                                #ifndef DEF_s_Module
-                                #define DEF_s_Module
-struct s_Module
+                                #ifndef DEF_Module_qqBh0BoNExk
+                                #define DEF_Module_qqBh0BoNExk
+struct Module_qqBh
 {
     int modid;
     fu::str fname;
-    s_ModuleInputs in;
-    s_ModuleOrder order;
-    s_ModuleOutputs out;
-    s_ModuleStats stats;
-    s_Profile profile;
-    s_Module(const s_Module&) = delete;
-    s_Module(s_Module&&) = default;
-    s_Module& operator=(const s_Module&) = delete;
-    s_Module& operator=(s_Module&&) = default;
+    ModuleInputs_1DFx in;
+    ModuleOrder_HMNg order;
+    ModuleOutputs_wJzJ out;
+    ModuleStats_zo42 stats;
+    Profile_zroC profile;
+    Module_qqBh(const Module_qqBh&) = delete;
+    Module_qqBh(Module_qqBh&&) = default;
+    Module_qqBh& operator=(const Module_qqBh&) = delete;
+    Module_qqBh& operator=(Module_qqBh&&) = default;
     explicit operator bool() const noexcept
     {
         return false
@@ -1104,9 +1178,9 @@ struct s_Module
 };
                                 #endif
 
-                                #ifndef DEF_s_SubRegion
-                                #define DEF_s_SubRegion
-struct s_SubRegion
+                                #ifndef DEF_SubRegion_ageNK9rzXm5
+                                #define DEF_SubRegion_ageNK9rzXm5
+struct SubRegion_ageN
 {
     int flatCount;
     int flatOffset;
@@ -1120,24 +1194,42 @@ struct s_SubRegion
 };
                                 #endif
 
+                                #ifndef STR_vbFiCEx2aD6
+                                #define STR_vbFiCEx2aD6
+static const fu::str str_vbFiCEx2aD6 fu_INIT_PRIORITY(1006) { "\x00\x00"_fu };
+                                #endif
+
 #ifndef fu_NO_fdefs
 
-                                #ifndef DEF_SR_empty
-                                #define DEF_SR_empty
-extern const fu::str SR_empty fu_INIT_PRIORITY(1005) = "\x00\x00"_fu;
+extern const fu::static_ref<fu::str> SR_empty fu_INIT_PRIORITY(1006) = str_vbFiCEx2aD6;
+extern const char byte_STATIC = char(0b0001u);
+extern const char byte_ZEROES = char(0b0101u);
+extern const char byte_TEMP = char(0b1001u);
+extern const fu::str Region_STATIC fu_INIT_PRIORITY(1006) = (byte_STATIC + SR_empty.ref);
+extern const fu::str Region_ZEROES fu_INIT_PRIORITY(1006) = (byte_ZEROES + SR_empty.ref);
+extern const fu::str Region_TEMP fu_INIT_PRIORITY(1006) = (byte_TEMP + SR_empty.ref);
+                                #ifndef DEF_Lifetime_AAR_hasFalsePositives
+                                #define DEF_Lifetime_AAR_hasFalsePositives
+inline constexpr bool Lifetime_AAR_hasFalsePositives = true;
                                 #endif
 
-                                #ifndef DEF_Region_TEMP
-                                #define DEF_Region_TEMP
-extern const fu::str Region_TEMP fu_INIT_PRIORITY(1005) = ("\x01"_fu + SR_empty);
+extern const Lifetime_llCF Lifetime_static_moveable fu_INIT_PRIORITY(1006) = Lifetime_llCF { fu::str(Region_ZEROES) };
+extern const Lifetime_llCF Lifetime_static_immoveable fu_INIT_PRIORITY(1006) = Lifetime_llCF { fu::str(Region_STATIC) };
+extern const Lifetime_llCF Lifetime_temporary fu_INIT_PRIORITY(1006) = Lifetime_llCF { fu::str(Region_TEMP) };
+extern const fu::static_ref<Lifetime_llCF> Lifetime_worst fu_INIT_PRIORITY(1006) = Lifetime_temporary;
+                                #ifndef DEF_onPathStart_dVnxKIPIfd9
+                                #define DEF_onPathStart_dVnxKIPIfd9
+inline static void onPathStart_dVnx(int& pathDepth, int& numPaths, const TokenIdx_5b85& _here, const Context_UXD9& ctx)
+{
+    pathDepth = 0;
+    numPaths++;
+    if (numPaths > 64)
+        BUG_u9Gb("assertPathsValid: numPaths > 64, we're likely stuck in an infinite loop."_view, _here, ctx);
+
+}
                                 #endif
 
-                                #ifndef DEF_Region_STATIC
-                                #define DEF_Region_STATIC
-extern const fu::str Region_STATIC fu_INIT_PRIORITY(1005) = ("\x00"_fu + SR_empty);
-                                #endif
-
-unsigned parse7bit(fu::view<char> str, int& offset)
+unsigned parse7bit_7Yz9(fu::view<char> str, int& offset)
 {
     unsigned shift {};
     unsigned result {};
@@ -1150,44 +1242,27 @@ unsigned parse7bit(fu::view<char> str, int& offset)
     return result | (unsigned(fu::u8(c)) << shift);
 }
 
-void append7bit(fu::str& str, unsigned v)
-{
-    while ((v >= 128u))
-    {
-        str += char((v | 0x80u));
-        v >>= 7u;
-    };
-    str += char(v);
-}
-
-static void l_34_0_5Xypm2Oy(int& pathDepth, int& numPaths, const s_TokenIdx& _here, const s_Context& ctx)
-{
-    pathDepth = 0;
-    numPaths++;
-    if (numPaths > 64)
-        BUG_9SZtRVJ0("assertPathsValid: numPaths > 64, we're likely stuck in an infinite loop."_fu, _here, ctx);
-
-}
-
-                                #ifndef DEF_x7E_gCeFmDFw0L8
-                                #define DEF_x7E_gCeFmDFw0L8
-inline fu::str x7E_gCeFmDFw(fu::view<char> a, fu::view<char> b)
+                                #ifndef DEF_x7E_rA003L6Quul
+                                #define DEF_x7E_rA003L6Quul
+inline fu::str x7E_rA00(fu::view<char> a, fu::view<char> b)
 {
     return a + b;
 }
                                 #endif
 
-inline static void l_34_2_FFDQyLd9(const int flatOffset, const int flatCount, const bool isLastSubRegion, const bool isFirstSubRegion, int& expect_flatCount, const int region_flatCount, const bool flatCountMismatchOK, int& pathDepth, const s_TokenIdx& _here, const s_Context& ctx)
+                                #ifndef DEF_onSubRegion_wJgnzX5JWQf
+                                #define DEF_onSubRegion_wJgnzX5JWQf
+inline static void onSubRegion_wJgn(const int flatOffset, const int flatCount, const bool isLastSubRegion, const bool isFirstSubRegion, int& expect_flatCount, const int region_flatCount, const bool flatCountMismatchOK, int& pathDepth, const TokenIdx_5b85& _here, const Context_UXD9& ctx)
 {
     pathDepth++;
     if (pathDepth > 64)
-        BUG_9SZtRVJ0("assertPathsValid: pathDepth > 64, we're likely stuck in an infinite loop."_fu, _here, ctx);
+        BUG_u9Gb("assertPathsValid: pathDepth > 64, we're likely stuck in an infinite loop."_view, _here, ctx);
     else
     {
         if (isFirstSubRegion && (region_flatCount >= 0))
         {
             if (!(((flatOffset + flatCount) <= region_flatCount)))
-                BUG_9SZtRVJ0((x7E_gCeFmDFw(((x7E_gCeFmDFw(((x7E_gCeFmDFw("assertPathsValid: flatOffset("_fu, fu::i64dec(flatOffset)) + ")"_fu) + " + flatCount("_fu), fu::i64dec(flatCount)) + ")"_fu) + " !<= region_flatCount("_fu), fu::i64dec(region_flatCount)) + ")"_fu), _here, ctx);
+                BUG_u9Gb((x7E_rA00(((x7E_rA00(((x7E_rA00("assertPathsValid: flatOffset("_view, fu::i64dec(flatOffset)) + ")"_view) + " + flatCount("_view), fu::i64dec(flatCount)) + ")"_view) + " !<= region_flatCount("_view), fu::i64dec(region_flatCount)) + ")"_view), _here, ctx);
 
         };
         if (isLastSubRegion && !flatCountMismatchOK)
@@ -1197,233 +1272,129 @@ inline static void l_34_2_FFDQyLd9(const int flatOffset, const int flatCount, co
             else
             {
                 if (!(expect_flatCount == flatCount))
-                    BUG_9SZtRVJ0((x7E_gCeFmDFw(((x7E_gCeFmDFw("assertPathsValid: expect_flatCount("_fu, fu::i64dec(expect_flatCount)) + ")"_fu) + " != flatCount("_fu), fu::i64dec(flatCount)) + ")"_fu), _here, ctx);
+                    BUG_u9Gb((x7E_rA00(((x7E_rA00("assertPathsValid: expect_flatCount("_view, fu::i64dec(expect_flatCount)) + ")"_view) + " != flatCount("_view), fu::i64dec(flatCount)) + ")"_view), _here, ctx);
 
             };
         };
     };
 }
+                                #endif
 
-static void l_34_1_ydsTSEcW(const int minPathDepth, const int pathDepth, const s_TokenIdx& _here, const s_Context& ctx)
+                                #ifndef DEF_onPathDone_Camti227472
+                                #define DEF_onPathDone_Camti227472
+inline static void onPathDone_Camt(const int minPathDepth, const int pathDepth, const TokenIdx_5b85& _here, const Context_UXD9& ctx)
 {
     if (!((pathDepth >= minPathDepth)))
-        BUG_9SZtRVJ0((x7E_gCeFmDFw(((x7E_gCeFmDFw("assertPathsValid: pathDepth("_fu, fu::i64dec(pathDepth)) + ")"_fu) + " !>= minPathDepth("_fu), fu::i64dec(minPathDepth)) + ")"_fu), _here, ctx);
+        BUG_u9Gb((x7E_rA00(((x7E_rA00("assertPathsValid: pathDepth("_view, fu::i64dec(pathDepth)) + ")"_view) + " !>= minPathDepth("_view), fu::i64dec(minPathDepth)) + ")"_view), _here, ctx);
 
 }
+                                #endif
 
-void assertPathsValid_F77ZcVgF(fu::view<char> str, int expect_flatCount, const int region_flatCount, const bool flatCountMismatchOK, const int minPathDepth, const s_TokenIdx& _here, const s_Context& ctx)
+void assertPathsValid_7Yz9(fu::view<char> str, int expect_flatCount, const int region_flatCount, const bool flatCountMismatchOK, const int minPathDepth, const TokenIdx_5b85& _here, const Context_UXD9& ctx)
 {
     int pathDepth = -1001;
     int numPaths = 0;
     int offset = 0;
-    const int region_flatCount_1 = region_flatCount;
     for (; ; )
     {
         bool isLastPath = false;
         bool isFirstSubRegion = true;
-        l_34_0_5Xypm2Oy(pathDepth, numPaths, _here, ctx);
+        onPathStart_dVnx(pathDepth, numPaths, _here, ctx);
         for (; ; )
         {
-            const unsigned raw_flatOffset = parse7bit(str, offset);
+            const unsigned raw_flatOffset = parse7bit_7Yz9(str, offset);
             const bool isLastSubRegion = !(raw_flatOffset & 1u);
-            const unsigned raw_flatCount = (isLastSubRegion ? parse7bit(str, offset) : 3u);
+            const unsigned raw_flatCount = (isLastSubRegion ? parse7bit_7Yz9(str, offset) : 3u);
             isLastPath = !(raw_flatCount & 1u);
             const int flatCount = int((raw_flatCount >> 1u));
             const int flatOffset = int((raw_flatOffset >> 1u));
-            l_34_2_FFDQyLd9(flatOffset, flatCount, isLastSubRegion, isFirstSubRegion, expect_flatCount, region_flatCount_1, flatCountMismatchOK, pathDepth, _here, ctx);
+            onSubRegion_wJgn(flatOffset, flatCount, isLastSubRegion, isFirstSubRegion, expect_flatCount, region_flatCount, flatCountMismatchOK, pathDepth, _here, ctx);
             if (isLastSubRegion)
                 break;
             else
                 isFirstSubRegion = false;
 
         };
-        l_34_1_ydsTSEcW(minPathDepth, pathDepth, _here, ctx);
+        onPathDone_Camt(minPathDepth, pathDepth, _here, ctx);
         if (isLastPath)
             break;
 
     };
     if (!(offset == str.size()))
-        BUG_9SZtRVJ0("walkPaths(!tailOK): excess bytes"_fu, _here, ctx);
+        BUG_u9Gb("walkPaths(!tailOK): excess bytes"_view, _here, ctx);
 
 }
 
-inline static void l_34_6_1QLeETVV(const int flatCount, const int flatOffset, fu::vec<s_SubRegion>& path)
+void append7bit_7Yz9(fu::vec_range_mut<char> str, unsigned v)
 {
-    path += s_SubRegion { flatCount, flatOffset };
-}
-
-                                #ifndef DEF_steal_ZjRuwWGLNHl
-                                #define DEF_steal_ZjRuwWGLNHl
-inline fu::vec<s_SubRegion> steal_ZjRuwWGL(fu::vec<s_SubRegion>& v)
-{
-    /*MOV*/ fu::vec<s_SubRegion> ret {};
-    std::swap(v, ret);
-    return /*NRVO*/ ret;
-}
-                                #endif
-
-static void l_34_7_LMqRHJSG(fu::vec<fu::vec<s_SubRegion>>& paths, fu::vec<s_SubRegion>& path)
-{
-    paths += steal_ZjRuwWGL(path);
-}
-
-fu::vec<fu::vec<s_SubRegion>> parsePaths(fu::view<char> str, const s_TokenIdx& _here, const s_Context& ctx)
-{
-    /*MOV*/ fu::vec<fu::vec<s_SubRegion>> paths {};
-    fu::vec<s_SubRegion> path {};
-    int _o = 0;
-    for (; ; )
+    while ((v >= 128u))
     {
-        bool isLastPath = false;
-        bool isFirstSubRegion = true;
-        for (; ; )
-        {
-            const unsigned raw_flatOffset = parse7bit(str, _o);
-            const bool isLastSubRegion = !(raw_flatOffset & 1u);
-            const unsigned raw_flatCount = (isLastSubRegion ? parse7bit(str, _o) : 3u);
-            isLastPath = !(raw_flatCount & 1u);
-            const int flatCount = int((raw_flatCount >> 1u));
-            const int flatOffset = int((raw_flatOffset >> 1u));
-            l_34_6_1QLeETVV(flatCount, flatOffset, path);
-            if (isLastSubRegion)
-                break;
-            else
-                isFirstSubRegion = false;
-
-        };
-        l_34_7_LMqRHJSG(paths, path);
-        if (isLastPath)
-            break;
-
+        str += char((v | 0x80u));
+        v >>= 7u;
     };
-    if (!(_o == str.size()))
-        BUG_9SZtRVJ0("walkPaths(!tailOK): excess bytes"_fu, _here, ctx);
-
-    return /*NRVO*/ paths;
+    str += char(v);
 }
 
-static void l_34_9_EysPgzMu(fu::str& result)
+Lifetime_llCF Lifetime_from_7Yz9(const int locid, const int flatCount, const TokenIdx_5b85& _here, const Context_UXD9& ctx)
 {
-    result += "\n\tPath:\n"_fu;
-}
-
-inline static void l_34_11_rSdA8r6S(const int flatCount, const int flatOffset, const bool isFirstSubRegion, const bool isLastSubRegion, fu::str& result)
-{
-    result += (x7E_gCeFmDFw((x7E_gCeFmDFw((x7E_gCeFmDFw("\t\tSubReg\t flatCount="_fu, fu::i64dec(flatCount)) + " isFirstSubRegion="_fu), fu::booldec(isFirstSubRegion)) + " isLastSubRegion="_fu), fu::booldec(isLastSubRegion)) + "\n"_fu);
-    result += (x7E_gCeFmDFw("\t\t\tflatOffset="_fu, fu::i64dec(flatOffset)) + "\n"_fu);
-}
-
-inline static void l_34_10_pQoRu8Ry(const bool isLastPath, fu::str& result)
-{
-    result += x7E_gCeFmDFw("\t/Path\tisLastPath="_fu, fu::booldec(isLastPath));
-}
-
-fu::str printPaths(fu::view<char> str, const s_TokenIdx& _here, const s_Context& ctx)
-{
-    /*MOV*/ fu::str result = ""_fu;
-    int _o = 0;
-    for (; ; )
+    if (locid != 0)
     {
-        bool isLastPath = false;
-        bool isFirstSubRegion = true;
-        l_34_9_EysPgzMu(result);
-        for (; ; )
+        /*MOV*/ fu::str uni0n {};
+        append7bit_7Yz9(uni0n, (((unsigned(locid) << 1u) ^ ((locid < 0) ? 0xffffffffu : 0x0u)) << 1u));
+
         {
-            const unsigned raw_flatOffset = parse7bit(str, _o);
-            const bool isLastSubRegion = !(raw_flatOffset & 1u);
-            const unsigned raw_flatCount = (isLastSubRegion ? parse7bit(str, _o) : 3u);
-            isLastPath = !(raw_flatCount & 1u);
-            const int flatCount = int((raw_flatCount >> 1u));
-            const int flatOffset = int((raw_flatOffset >> 1u));
-            l_34_11_rSdA8r6S(flatCount, flatOffset, isFirstSubRegion, isLastSubRegion, result);
-            if (isLastSubRegion)
-                break;
-            else
-                isFirstSubRegion = false;
-
-        };
-        l_34_10_pQoRu8Ry(isLastPath, result);
-        if (isLastPath)
-            break;
-
-    };
-    if (!(_o == str.size()))
-        BUG_9SZtRVJ0("walkPaths(!tailOK): excess bytes"_fu, _here, ctx);
-
-    return /*NRVO*/ result;
-}
-
-void appendPaths(fu::str& str, fu::view<fu::vec<s_SubRegion>> paths, const bool emptyOK, const bool flatCountMismatchOK, const s_TokenIdx& _here, const s_Context& ctx)
-{
-    const int str0 = str.size();
-    if (emptyOK || paths)
-    {
-        for (int i = 0; i < paths.size(); i++)
-        {
-            fu::view<s_SubRegion> path = paths[i];
-            const bool isLastPath = (i == (paths.size() - 1));
-            if (path)
+            const int flatOffset = 0;
+            const bool isLastSubRegion = true;
+            if ((flatOffset >= 0) && (flatCount > 0) && isLastSubRegion)
             {
-                for (int i_1 = 0; i_1 < path.size(); i_1++)
-                {
-                    const s_SubRegion& subregion = path[i_1];
-                    if (subregion)
-                    {
-                        if (!(subregion.flatCount || (path.size() == 1) || (subregion.flatOffset == 0)))
-                            BUG_9SZtRVJ0("appendPaths: empty flatCount"_fu, _here, ctx);
-
-                    }
-                    else
-                        BUG_9SZtRVJ0("appendPaths: empty subregion"_fu, _here, ctx);
-
-                    const bool isLastSubRegion = (i_1 == (path.size() - 1));
-                    const int flatCount = subregion.flatCount;
-                    const int flatOffset = subregion.flatOffset;
-                    if ((flatOffset >= 0) && (flatCount > 0) && (isLastSubRegion || (flatCount == 1)))
-                    {
-                        append7bit(str, ((unsigned(flatOffset) << 1u) | (isLastSubRegion ? 0u : 1u)));
-                        if (isLastSubRegion)
-                            append7bit(str, ((unsigned(flatCount) << 1u) | (isLastPath ? 0u : 1u)));
-
-                    }
-                    else
-                        BUG_9SZtRVJ0((x7E_gCeFmDFw(((x7E_gCeFmDFw(((x7E_gCeFmDFw("appendSubRegion: flatCount("_fu, fu::i64dec(flatCount)) + ")"_fu) + " flatOffset("_fu), fu::i64dec(flatOffset)) + ")"_fu) + " isLastSubRegion("_fu), fu::booldec(isLastSubRegion)) + ")"_fu), _here, ctx);
-
-                };
+                append7bit_7Yz9(uni0n, ((unsigned(flatOffset) << 1u) | 0u));
+                append7bit_7Yz9(uni0n, ((unsigned(flatCount) << 1u) | 0u));
             }
             else
-                BUG_9SZtRVJ0("appendPaths: zero subregions"_fu, _here, ctx);
+                BUG_u9Gb((x7E_rA00(((x7E_rA00(((x7E_rA00("appendSubRegion: flatCount("_view, fu::i64dec(flatCount)) + ")"_view) + " flatOffset("_view), fu::i64dec(flatOffset)) + ")"_view) + " isLastSubRegion("_view), fu::booldec(isLastSubRegion)) + ")"_view), _here, ctx);
 
         };
-        if (str)
-            assertPathsValid_F77ZcVgF(fu::get_view(str, str0), -1, -1, flatCountMismatchOK, 1, _here, ctx);
-        else
-        {
-            if (!(emptyOK))
-                BUG_9SZtRVJ0("appendPaths: empty output"_fu, _here, ctx);
-
-        };
+        return Lifetime_llCF { static_cast<fu::str&&>(uni0n) };
     }
     else
-        BUG_9SZtRVJ0("appendPaths: zero paths"_fu, _here, ctx);
-
+    {
+        BUG_u9Gb("Lifetime_from: Bad locid"_view, _here, ctx);
+    };
 }
 
-                                #ifndef DEF_min_mJGU9byOmI4
-                                #define DEF_min_mJGU9byOmI4
-inline int min_mJGU9byO(const int a, const int b)
+Lifetime_llCF Lifetime_from_UkiI(const int argidx, fu::view<char> paths, const TokenIdx_5b85& _here, const Context_UXD9& ctx)
 {
-    if ((a <= b))
-        return a;
+    if ((argidx >= 0))
+    {
+        /*MOV*/ fu::str uni0n {};
+        append7bit_7Yz9(uni0n, ((unsigned(argidx) << 2u) | 3u));
+        uni0n += paths;
+        return Lifetime_llCF { static_cast<fu::str&&>(uni0n) };
+    }
     else
-        return b;
-
+    {
+        BUG_u9Gb("Lifetime_from: Bad argidx"_view, _here, ctx);
+    };
 }
-                                #endif
 
-                                #ifndef DEF_x3Cx3E_mJGU9byOmI4
-                                #define DEF_x3Cx3E_mJGU9byOmI4
-inline int x3Cx3E_mJGU9byO(const int a, const int b)
+Lifetime_llCF Lifetime_AAR_7Yz9(const int locid, const TokenIdx_5b85& _here, const Context_UXD9& ctx)
+{
+    if (locid < 0)
+    {
+        /*MOV*/ fu::str uni0n {};
+        append7bit_7Yz9(uni0n, (((unsigned(locid) << 1u) ^ ((locid < 0) ? 0xffffffffu : 0x0u)) << 1u));
+        uni0n += SR_empty.ref;
+        return Lifetime_llCF { static_cast<fu::str&&>(uni0n) };
+    }
+    else
+    {
+        BUG_u9Gb("Lifetime_from: Bad locid"_view, _here, ctx);
+    };
+}
+
+                                #ifndef DEF_x3Cx3E_Rgh3ARpn2a3
+                                #define DEF_x3Cx3E_Rgh3ARpn2a3
+inline int x3Cx3E_Rgh3(const unsigned a, const unsigned b)
 {
     if (a < b)
         return -1;
@@ -1435,52 +1406,182 @@ inline int x3Cx3E_mJGU9byO(const int a, const int b)
 }
                                 #endif
 
-                                #ifndef DEF_x3Cx3E_rMs6lL8vDvc
-                                #define DEF_x3Cx3E_rMs6lL8vDvc
-inline int x3Cx3E_rMs6lL8v(const s_SubRegion& a, const s_SubRegion& b)
+                                #ifndef DEF_x3Cx3E_odNTdyipeEj
+                                #define DEF_x3Cx3E_odNTdyipeEj
+inline int x3Cx3E_odNT(const int a, const int b)
+{
+    if (a < b)
+        return -1;
+    else if (a > b)
+        return +1;
+    else
+        return 0;
+
+}
+                                #endif
+
+                                #ifndef DEF_x3Cx3E_YuqOPxIKAE3
+                                #define DEF_x3Cx3E_YuqOPxIKAE3
+inline int x3Cx3E_YuqO(const char a, const char b)
+{
+    if (a < b)
+        return -1;
+    else if (a > b)
+        return +1;
+    else
+        return 0;
+
+}
+                                #endif
+
+                                #ifndef DEF_x3Cx3E_erT9abBVjC1
+                                #define DEF_x3Cx3E_erT9abBVjC1
+inline int x3Cx3E_erT9(fu::view<char> a, fu::view<char> b)
+{
+    int cmp = x3Cx3E_odNT(a.size(), b.size());
+    for (int i = 0; (i < a.size()) && !cmp; i++)
+        cmp = x3Cx3E_YuqO(a[i], b[i]);
+
+    return cmp;
+}
+                                #endif
+
+                                #ifndef DEF_x3Dx3D_xqw8ga5OCp4
+                                #define DEF_x3Dx3D_xqw8ga5OCp4
+inline bool operator==(fu::view<char> a, fu::view<char> b)
+{
+    return !x3Cx3E_erT9(a, b);
+}
+                                #endif
+
+                                #ifndef DEF_onSubRegion_r4aZeQon0q7
+                                #define DEF_onSubRegion_r4aZeQon0q7
+inline static void onSubRegion_r4aZ(const int flatCount, const int flatOffset, fu::vec<SubRegion_ageN>& path)
+{
+    path += SubRegion_ageN { flatCount, flatOffset };
+}
+                                #endif
+
+                                #ifndef DEF_steal_hxuJb0AnOYa
+                                #define DEF_steal_hxuJb0AnOYa
+inline fu::vec<SubRegion_ageN> steal_hxuJ(fu::vec_range_mut<SubRegion_ageN> v)
+{
+    /*MOV*/ fu::vec<SubRegion_ageN> ret {};
+    v.swap(ret);
+    return /*NRVO*/ ret;
+}
+                                #endif
+
+                                #ifndef DEF_onPathDone_rAhsiL1EaKg
+                                #define DEF_onPathDone_rAhsiL1EaKg
+inline static void onPathDone_rAhs(fu::vec<fu::vec<SubRegion_ageN>>& paths, fu::vec<SubRegion_ageN>& path)
+{
+    fu::vec<SubRegion_ageN> _0 {};
+    (_0 = steal_hxuJ(path), (paths += static_cast<fu::vec<SubRegion_ageN>&&>(_0)));
+}
+                                #endif
+
+fu::vec<fu::vec<SubRegion_ageN>> parsePaths_7Yz9(fu::view<char> str, const TokenIdx_5b85& _here, const Context_UXD9& ctx)
+{
+    /*MOV*/ fu::vec<fu::vec<SubRegion_ageN>> paths {};
+    fu::vec<SubRegion_ageN> path {};
+    int _o = 0;
+    for (; ; )
+    {
+        bool isLastPath = false;
+        bool isFirstSubRegion = true;
+        for (; ; )
+        {
+            const unsigned raw_flatOffset = parse7bit_7Yz9(str, _o);
+            const bool isLastSubRegion = !(raw_flatOffset & 1u);
+            const unsigned raw_flatCount = (isLastSubRegion ? parse7bit_7Yz9(str, _o) : 3u);
+            isLastPath = !(raw_flatCount & 1u);
+            const int flatCount = int((raw_flatCount >> 1u));
+            const int flatOffset = int((raw_flatOffset >> 1u));
+            onSubRegion_r4aZ(flatCount, flatOffset, path);
+            if (isLastSubRegion)
+                break;
+            else
+                isFirstSubRegion = false;
+
+        };
+        onPathDone_rAhs(paths, path);
+        if (isLastPath)
+            break;
+
+    };
+    if (!(_o == str.size()))
+        BUG_u9Gb("walkPaths(!tailOK): excess bytes"_view, _here, ctx);
+
+    return /*NRVO*/ paths;
+}
+
+                                #ifndef DEF_onPathStart_0ty3gqIUh22
+                                #define DEF_onPathStart_0ty3gqIUh22
+inline static void onPathStart_0ty3(fu::vec<SubRegion_ageN>& path)
+{
+    path.clear();
+}
+                                #endif
+
+                                #ifndef DEF_min_DbqN29MT8e3
+                                #define DEF_min_DbqN29MT8e3
+inline int min_DbqN(const int a, const int b)
+{
+    if ((a <= b))
+        return a;
+    else
+        return b;
+
+}
+                                #endif
+
+                                #ifndef DEF_x3Cx3E_b5E58HBC8h7
+                                #define DEF_x3Cx3E_b5E58HBC8h7
+inline int x3Cx3E_b5E5(const SubRegion_ageN& a, const SubRegion_ageN& b)
 {
     int cmp = 0;
-    if ((cmp = x3Cx3E_mJGU9byO(a.flatCount, b.flatCount)))
+    if ((cmp = x3Cx3E_odNT(a.flatCount, b.flatCount)))
         return cmp;
-    else if ((cmp = x3Cx3E_mJGU9byO(a.flatOffset, b.flatOffset)))
+    else if ((cmp = x3Cx3E_odNT(a.flatOffset, b.flatOffset)))
         return cmp;
 
     return 0;
 }
                                 #endif
 
-                                #ifndef DEF_x3Cx3E_ywQZhn5XCB4
-                                #define DEF_x3Cx3E_ywQZhn5XCB4
-inline int x3Cx3E_ywQZhn5X(fu::view<s_SubRegion> a, fu::view<s_SubRegion> b)
+                                #ifndef DEF_x3Cx3E_XvaPt4Bxuwg
+                                #define DEF_x3Cx3E_XvaPt4Bxuwg
+inline int x3Cx3E_XvaP(fu::view<SubRegion_ageN> a, fu::view<SubRegion_ageN> b)
 {
-    int cmp = x3Cx3E_mJGU9byO(a.size(), b.size());
+    int cmp = x3Cx3E_odNT(a.size(), b.size());
     for (int i = 0; (i < a.size()) && !cmp; i++)
-        cmp = x3Cx3E_rMs6lL8v(a[i], b[i]);
+        cmp = x3Cx3E_b5E5(a[i], b[i]);
 
     return cmp;
 }
                                 #endif
 
-                                #ifndef DEF_x3Dx3D_ywQZhn5XCB4
-                                #define DEF_x3Dx3D_ywQZhn5XCB4
-inline bool operator==(fu::view<s_SubRegion> a, fu::view<s_SubRegion> b)
+                                #ifndef DEF_x3Dx3D_rg6za5jWqBc
+                                #define DEF_x3Dx3D_rg6za5jWqBc
+inline bool operator==(fu::view<SubRegion_ageN> a, fu::view<SubRegion_ageN> b)
 {
-    return !x3Cx3E_ywQZhn5X(a, b);
+    return !x3Cx3E_XvaP(a, b);
 }
                                 #endif
 
-bool Paths_union(fu::vec<fu::vec<s_SubRegion>>& result, const fu::vec<s_SubRegion>& path, const s_TokenIdx& _here, const s_Context& ctx)
+bool Paths_union_7Yz9(fu::vec_range_mut<fu::vec<SubRegion_ageN>> result, fu::vec_range<SubRegion_ageN> path, const TokenIdx_5b85& _here, const Context_UXD9& ctx)
 {
     for (int i = 0; i < result.size(); i++)
     {
-        fu::view<s_SubRegion> host = result[i];
-        const int minL = min_mJGU9byO(path.size(), host.size());
+        fu::view<SubRegion_ageN> host = result[i];
+        const int minL = min_DbqN(path.size(), host.size());
         if (minL)
         {
             if (fu::get_view_start0(path, (minL - 1)) == fu::get_view_start0(host, (minL - 1)))
             {
-                const s_SubRegion& a_sr = host[(minL - 1)];
-                const s_SubRegion& b_sr = path[(minL - 1)];
+                const SubRegion_ageN& a_sr = host[(minL - 1)];
+                const SubRegion_ageN& b_sr = path[(minL - 1)];
                 const int a0 = a_sr.flatOffset;
                 const int a1 = (a0 + a_sr.flatCount);
                 const int b0 = b_sr.flatOffset;
@@ -1497,486 +1598,155 @@ bool Paths_union(fu::vec<fu::vec<s_SubRegion>>& result, const fu::vec<s_SubRegio
             };
         }
         else
-            BUG_9SZtRVJ0("Paths_union: found an empty path."_fu, _here, ctx);
+            BUG_u9Gb("Paths_union: found an empty path."_view, _here, ctx);
 
     };
-    result += fu::vec<s_SubRegion>(path);
+    result += fu::vec<SubRegion_ageN>(path);
     return true;
 }
 
-static void l_34_3_T0OGWuro(fu::vec<s_SubRegion>& path)
+                                #ifndef DEF___7LDQwrvlFq9
+                                #define DEF___7LDQwrvlFq9
+inline static bool _7LDQ(fu::vec_range<SubRegion_ageN> b_path, fu::vec<fu::vec<SubRegion_ageN>>& result, const TokenIdx_5b85& _here, const Context_UXD9& ctx)
 {
-    path.clear();
+    return Paths_union_7Yz9(result, b_path, _here, ctx);
 }
+                                #endif
 
-inline static void l_34_4_HsBPHSDv(const int flatCount, const int flatOffset, fu::vec<s_SubRegion>& path)
+                                #ifndef DEF_onPathDone_INe9nqiH7J4
+                                #define DEF_onPathDone_INe9nqiH7J4
+inline static void onPathDone_INe9(const fu::vec<SubRegion_ageN>& path, fu::vec<fu::vec<SubRegion_ageN>>& result, const TokenIdx_5b85& _here, const Context_UXD9& ctx)
 {
-    path += s_SubRegion { flatCount, flatOffset };
+    _7LDQ(path, result, _here, ctx);
 }
+                                #endif
 
-inline static bool l_34_13_az7N1nwS(const fu::vec<s_SubRegion>& b_path, fu::vec<fu::vec<s_SubRegion>>& result, const s_TokenIdx& _here, const s_Context& ctx)
+                                #ifndef DEF_parsePaths_each_yiK0ozlkGhh
+                                #define DEF_parsePaths_each_yiK0ozlkGhh
+inline static void parsePaths_each_yiK0(fu::view<char> str, fu::vec<fu::vec<SubRegion_ageN>>& result, const TokenIdx_5b85& _here, const Context_UXD9& ctx)
 {
-    return Paths_union(result, b_path, _here, ctx);
-}
-
-static void l_34_5_hIYEZQCV(const fu::vec<s_SubRegion>& path, fu::vec<fu::vec<s_SubRegion>>& result, const s_TokenIdx& _here, const s_Context& ctx)
-{
-    l_34_13_az7N1nwS(path, result, _here, ctx);
-}
-
-inline static void parsePaths_each_sjw2eI4t(fu::view<char> str, fu::vec<fu::vec<s_SubRegion>>& result, const s_TokenIdx& _here, const s_Context& ctx)
-{
-    fu::vec<s_SubRegion> path {};
+    fu::vec<SubRegion_ageN> path {};
     int _o = 0;
     for (; ; )
     {
         bool isLastPath = false;
         bool isFirstSubRegion = true;
-        l_34_3_T0OGWuro(path);
+        onPathStart_0ty3(path);
         for (; ; )
         {
-            const unsigned raw_flatOffset = parse7bit(str, _o);
+            const unsigned raw_flatOffset = parse7bit_7Yz9(str, _o);
             const bool isLastSubRegion = !(raw_flatOffset & 1u);
-            const unsigned raw_flatCount = (isLastSubRegion ? parse7bit(str, _o) : 3u);
+            const unsigned raw_flatCount = (isLastSubRegion ? parse7bit_7Yz9(str, _o) : 3u);
             isLastPath = !(raw_flatCount & 1u);
             const int flatCount = int((raw_flatCount >> 1u));
             const int flatOffset = int((raw_flatOffset >> 1u));
-            l_34_4_HsBPHSDv(flatCount, flatOffset, path);
+            onSubRegion_r4aZ(flatCount, flatOffset, path);
             if (isLastSubRegion)
                 break;
             else
                 isFirstSubRegion = false;
 
         };
-        l_34_5_hIYEZQCV(path, result, _here, ctx);
+        onPathDone_INe9(path, result, _here, ctx);
         if (isLastPath)
             break;
 
     };
     if (!(_o == str.size()))
-        BUG_9SZtRVJ0("walkPaths(!tailOK): excess bytes"_fu, _here, ctx);
-
-}
-
-void Paths_union(fu::str& str, fu::view<char> a, fu::view<char> b, const bool flatCountMismatchOK, const s_TokenIdx& _here, const s_Context& ctx)
-{
-    fu::vec<fu::vec<s_SubRegion>> result = parsePaths(a, _here, ctx);
-    parsePaths_each_sjw2eI4t(b, result, _here, ctx);
-    appendPaths(str, result, false, flatCountMismatchOK, _here, ctx);
-}
-
-static void l_34_3_gL61ofdk(fu::vec<s_SubRegion>& path)
-{
-    path.clear();
-}
-
-inline static void l_34_4_qxNvDlXx(const int flatCount, const int flatOffset, fu::vec<s_SubRegion>& path)
-{
-    path += s_SubRegion { flatCount, flatOffset };
-}
-
-static void l_34_3_Mo5aGTAE(fu::vec<s_SubRegion>& path)
-{
-    path.clear();
-}
-
-inline static void l_34_4_JsqPIddW(const int flatCount, const int flatOffset, fu::vec<s_SubRegion>& path)
-{
-    path += s_SubRegion { flatCount, flatOffset };
-}
-
-                                #ifndef DEF_max_mJGU9byOmI4
-                                #define DEF_max_mJGU9byOmI4
-inline int max_mJGU9byO(const int a, const int b)
-{
-    if ((a >= b))
-        return a;
-    else
-        return b;
+        BUG_u9Gb("walkPaths(!tailOK): excess bytes"_view, _here, ctx);
 
 }
                                 #endif
 
-inline static void l_34_15_ILNoYwvF(fu::view<s_SubRegion> b_path, fu::view<s_SubRegion> a_path, fu::vec<fu::vec<s_SubRegion>>& result, fu::vec<s_SubRegion>& inter, const s_TokenIdx& _here, const s_Context& ctx)
+void appendPaths_7Yz9(fu::vec_range_mut<char> str, fu::view<fu::vec<SubRegion_ageN>> paths, const bool emptyOK, const bool flatCountMismatchOK, const TokenIdx_5b85& _here, const Context_UXD9& ctx)
 {
-    const int N = min_mJGU9byO(a_path.size(), b_path.size());
-    for (int i = 0; i < N; i++)
+    const int str0 = str.size();
+    if (emptyOK || paths)
     {
-        const s_SubRegion& a = a_path[i];
-        const s_SubRegion& b = b_path[i];
-        const int overlap = min_mJGU9byO(((b.flatOffset + b.flatCount) - a.flatOffset), ((a.flatOffset + a.flatCount) - b.flatOffset));
-        if ((overlap <= 0))
+        for (int i = 0; i < paths.size(); i++)
         {
-            inter.clear();
-            return;
-        }
+            fu::view<SubRegion_ageN> path = paths[i];
+            const bool isLastPath = (i == (paths.size() - 1));
+            if (path)
+            {
+                for (int i_1 = 0; i_1 < path.size(); i_1++)
+                {
+                    const SubRegion_ageN& subregion = path[i_1];
+                    if (subregion)
+                    {
+                        if (!(subregion.flatCount || (path.size() == 1) || (subregion.flatOffset == 0)))
+                            BUG_u9Gb("appendPaths: empty flatCount"_view, _here, ctx);
+
+                    }
+                    else
+                        BUG_u9Gb("appendPaths: empty subregion"_view, _here, ctx);
+
+                    const bool isLastSubRegion = (i_1 == (path.size() - 1));
+                    const int flatCount = subregion.flatCount;
+                    const int flatOffset = subregion.flatOffset;
+                    if ((flatOffset >= 0) && (flatCount > 0) && (isLastSubRegion || (flatCount == 1)))
+                    {
+                        append7bit_7Yz9(str, ((unsigned(flatOffset) << 1u) | (isLastSubRegion ? 0u : 1u)));
+                        if (isLastSubRegion)
+                            append7bit_7Yz9(str, ((unsigned(flatCount) << 1u) | (isLastPath ? 0u : 1u)));
+
+                    }
+                    else
+                        BUG_u9Gb((x7E_rA00(((x7E_rA00(((x7E_rA00("appendSubRegion: flatCount("_view, fu::i64dec(flatCount)) + ")"_view) + " flatOffset("_view), fu::i64dec(flatOffset)) + ")"_view) + " isLastSubRegion("_view), fu::booldec(isLastSubRegion)) + ")"_view), _here, ctx);
+
+                };
+            }
+            else
+                BUG_u9Gb("appendPaths: zero subregions"_view, _here, ctx);
+
+        };
+        if (str)
+            assertPathsValid_7Yz9(fu::get_view(str, str0), -1, -1, flatCountMismatchOK, 1, _here, ctx);
         else
         {
-            const int flatCount = min_mJGU9byO(a.flatCount, b.flatCount);
-            const int flatOffset = max_mJGU9byO(a.flatOffset, b.flatOffset);
-            if ((overlap >= flatCount))
-            {
-                inter += s_SubRegion { flatCount, flatOffset };
-            }
-            else
-                BUG_9SZtRVJ0((x7E_gCeFmDFw(((x7E_gCeFmDFw((x7E_gCeFmDFw(((x7E_gCeFmDFw((x7E_gCeFmDFw(("Paths_inter: self-intersection:"_fu + "\n\t\ta.flatOffset("_fu), fu::i64dec(a.flatOffset)) + ") a.flatCount("_fu), fu::i64dec(a.flatCount)) + ")"_fu) + "\n\t\tb.flatOffset("_fu), fu::i64dec(b.flatOffset)) + ") b.flatCount("_fu), fu::i64dec(b.flatCount)) + ")"_fu) + "\n\t\toverlap("_fu), fu::i64dec(overlap)) + ")"_fu), _here, ctx);
+            if (!(emptyOK))
+                BUG_u9Gb("appendPaths: empty output"_view, _here, ctx);
 
         };
-    };
-    if (inter)
-    {
-        if (a_path.size() > b_path.size())
-            inter += fu::get_view(a_path, b_path.size());
-
-        if (b_path.size() > a_path.size())
-            inter += fu::get_view(b_path, a_path.size());
-
-        Paths_union(result, inter, _here, ctx);
     }
     else
-        BUG_9SZtRVJ0("Paths_inter: empty inter, about to append suffix"_fu, _here, ctx);
+        BUG_u9Gb("appendPaths: zero paths"_view, _here, ctx);
 
 }
 
-static void l_34_5_QxpncM3c(fu::view<s_SubRegion> path, fu::view<s_SubRegion> a_path, fu::vec<fu::vec<s_SubRegion>>& result, fu::vec<s_SubRegion>& inter, const s_TokenIdx& _here, const s_Context& ctx)
+void Paths_union_UkiI(fu::vec_range_mut<char> str, fu::view<char> a, fu::view<char> b, const bool flatCountMismatchOK, const TokenIdx_5b85& _here, const Context_UXD9& ctx)
 {
-    l_34_15_ILNoYwvF(path, a_path, result, inter, _here, ctx);
+    fu::vec<fu::vec<SubRegion_ageN>> result = parsePaths_7Yz9(a, _here, ctx);
+    parsePaths_each_yiK0(b, result, _here, ctx);
+    appendPaths_7Yz9(str, result, false, flatCountMismatchOK, _here, ctx);
 }
 
-inline static void parsePaths_each_bUl3Innq(fu::view<char> str, fu::view<s_SubRegion> a_path, fu::vec<fu::vec<s_SubRegion>>& result, fu::vec<s_SubRegion>& inter, const s_TokenIdx& _here, const s_Context& ctx)
-{
-    fu::vec<s_SubRegion> path {};
-    int _o = 0;
-    for (; ; )
-    {
-        bool isLastPath = false;
-        bool isFirstSubRegion = true;
-        l_34_3_Mo5aGTAE(path);
-        for (; ; )
-        {
-            const unsigned raw_flatOffset = parse7bit(str, _o);
-            const bool isLastSubRegion = !(raw_flatOffset & 1u);
-            const unsigned raw_flatCount = (isLastSubRegion ? parse7bit(str, _o) : 3u);
-            isLastPath = !(raw_flatCount & 1u);
-            const int flatCount = int((raw_flatCount >> 1u));
-            const int flatOffset = int((raw_flatOffset >> 1u));
-            l_34_4_JsqPIddW(flatCount, flatOffset, path);
-            if (isLastSubRegion)
-                break;
-            else
-                isFirstSubRegion = false;
-
-        };
-        l_34_5_QxpncM3c(path, a_path, result, inter, _here, ctx);
-        if (isLastPath)
-            break;
-
-    };
-    if (!(_o == str.size()))
-        BUG_9SZtRVJ0("walkPaths(!tailOK): excess bytes"_fu, _here, ctx);
-
-}
-
-inline static void l_34_14_ICuDN8Fo(fu::view<s_SubRegion> a_path, fu::view<char> b, fu::vec<fu::vec<s_SubRegion>>& result, fu::vec<s_SubRegion>& inter, const s_TokenIdx& _here, const s_Context& ctx)
-{
-    parsePaths_each_bUl3Innq(b, a_path, result, inter, _here, ctx);
-}
-
-static void l_34_5_zeCrrEdY(fu::view<s_SubRegion> path, fu::view<char> b, fu::vec<fu::vec<s_SubRegion>>& result, fu::vec<s_SubRegion>& inter, const s_TokenIdx& _here, const s_Context& ctx)
-{
-    l_34_14_ICuDN8Fo(path, b, result, inter, _here, ctx);
-}
-
-inline static void parsePaths_each_AEjms8ot(fu::view<char> str, fu::view<char> b, fu::vec<fu::vec<s_SubRegion>>& result, fu::vec<s_SubRegion>& inter, const s_TokenIdx& _here, const s_Context& ctx)
-{
-    fu::vec<s_SubRegion> path {};
-    int _o = 0;
-    for (; ; )
-    {
-        bool isLastPath = false;
-        bool isFirstSubRegion = true;
-        l_34_3_gL61ofdk(path);
-        for (; ; )
-        {
-            const unsigned raw_flatOffset = parse7bit(str, _o);
-            const bool isLastSubRegion = !(raw_flatOffset & 1u);
-            const unsigned raw_flatCount = (isLastSubRegion ? parse7bit(str, _o) : 3u);
-            isLastPath = !(raw_flatCount & 1u);
-            const int flatCount = int((raw_flatCount >> 1u));
-            const int flatOffset = int((raw_flatOffset >> 1u));
-            l_34_4_qxNvDlXx(flatCount, flatOffset, path);
-            if (isLastSubRegion)
-                break;
-            else
-                isFirstSubRegion = false;
-
-        };
-        l_34_5_zeCrrEdY(path, b, result, inter, _here, ctx);
-        if (isLastPath)
-            break;
-
-    };
-    if (!(_o == str.size()))
-        BUG_9SZtRVJ0("walkPaths(!tailOK): excess bytes"_fu, _here, ctx);
-
-}
-
-void Paths_inter(fu::str& str, fu::view<char> a, fu::view<char> b, const s_TokenIdx& _here, const s_Context& ctx)
-{
-    if (a.size() < b.size())
-        Paths_inter(str, b, a, _here, ctx);
-    else
-    {
-        fu::vec<fu::vec<s_SubRegion>> result {};
-        fu::vec<s_SubRegion> inter {};
-        parsePaths_each_AEjms8ot(a, b, result, inter, _here, ctx);
-        appendPaths(str, result, true, true, _here, ctx);
-    };
-}
-
-static void l_34_3_LRg9Hu56(fu::vec<s_SubRegion>& path)
-{
-    path.clear();
-}
-
-inline static void l_34_4_2KuaXV1i(const int flatCount, const int flatOffset, fu::vec<s_SubRegion>& path)
-{
-    path += s_SubRegion { flatCount, flatOffset };
-}
-
-static void l_34_3_pC7mtmav(fu::vec<s_SubRegion>& path)
-{
-    path.clear();
-}
-
-inline static void l_34_4_MzADPMBX(const int flatCount, const int flatOffset, fu::vec<s_SubRegion>& path)
-{
-    path += s_SubRegion { flatCount, flatOffset };
-}
-
-bool Paths_hasInter(fu::view<char> a, fu::view<char> b, const s_TokenIdx& _here, const s_Context& ctx)
-{
-    if (a.size() < b.size())
-        return Paths_hasInter(b, a, _here, ctx);
-    else
-    {
-
-        {
-            fu::vec<s_SubRegion> path {};
-            int _o = 0;
-            for (; ; )
-            {
-                bool isLastPath = false;
-                bool isFirstSubRegion = true;
-                l_34_3_LRg9Hu56(path);
-                for (; ; )
-                {
-                    const unsigned raw_flatOffset = parse7bit(a, _o);
-                    const bool isLastSubRegion = !(raw_flatOffset & 1u);
-                    const unsigned raw_flatCount = (isLastSubRegion ? parse7bit(a, _o) : 3u);
-                    isLastPath = !(raw_flatCount & 1u);
-                    const int flatCount = int((raw_flatCount >> 1u));
-                    const int flatOffset = int((raw_flatOffset >> 1u));
-                    l_34_4_2KuaXV1i(flatCount, flatOffset, path);
-                    if (isLastSubRegion)
-                        break;
-                    else
-                        isFirstSubRegion = false;
-
-                };
-
-                {
-                    fu::vec<s_SubRegion> path_1 {};
-                    int _o_1 = 0;
-                    for (; ; )
-                    {
-                        bool isLastPath_1 = false;
-                        bool isFirstSubRegion_1 = true;
-                        l_34_3_pC7mtmav(path_1);
-                        for (; ; )
-                        {
-                            const unsigned raw_flatOffset = parse7bit(b, _o_1);
-                            const bool isLastSubRegion = !(raw_flatOffset & 1u);
-                            const unsigned raw_flatCount = (isLastSubRegion ? parse7bit(b, _o_1) : 3u);
-                            isLastPath_1 = !(raw_flatCount & 1u);
-                            const int flatCount = int((raw_flatCount >> 1u));
-                            const int flatOffset = int((raw_flatOffset >> 1u));
-                            l_34_4_MzADPMBX(flatCount, flatOffset, path_1);
-                            if (isLastSubRegion)
-                                break;
-                            else
-                                isFirstSubRegion_1 = false;
-
-                        };
-
-                        { {
-                            const int N = min_mJGU9byO(path.size(), path_1.size());
-                            for (int i = 0; i < N; i++)
-                            {
-                                const s_SubRegion& a_1 = path[i];
-                                const s_SubRegion& b_1 = path_1[i];
-                                const int overlap = min_mJGU9byO(((b_1.flatOffset + b_1.flatCount) - a_1.flatOffset), ((a_1.flatOffset + a_1.flatCount) - b_1.flatOffset));
-                                if ((overlap <= 0))
-                                    goto BL_17;
-
-                            };
-                            return true;
-                          } BL_17:;
-                        };
-                        if (isLastPath_1)
-                            break;
-
-                    };
-                    if (!(_o_1 == b.size()))
-                        BUG_9SZtRVJ0("walkPaths(!tailOK): excess bytes"_fu, _here, ctx);
-
-                };
-                if (isLastPath)
-                    break;
-
-            };
-            if (!(_o == a.size()))
-                BUG_9SZtRVJ0("walkPaths(!tailOK): excess bytes"_fu, _here, ctx);
-
-        };
-        return false;
-    };
-}
-
-s_Lifetime Lifetime_from_PFBW1nI4(const int locid, const int flatCount, const s_TokenIdx& _here, const s_Context& ctx)
-{
-    if (locid > 0)
-    {
-        /*MOV*/ fu::str uni0n {};
-        append7bit(uni0n, (unsigned(locid) << 1u));
-
-        {
-            const int flatOffset = 0;
-            const bool isLastSubRegion = true;
-            if ((flatOffset >= 0) && (flatCount > 0) && isLastSubRegion)
-            {
-                append7bit(uni0n, ((unsigned(flatOffset) << 1u) | 0u));
-                append7bit(uni0n, ((unsigned(flatCount) << 1u) | 0u));
-            }
-            else
-                BUG_9SZtRVJ0((x7E_gCeFmDFw(((x7E_gCeFmDFw(((x7E_gCeFmDFw("appendSubRegion: flatCount("_fu, fu::i64dec(flatCount)) + ")"_fu) + " flatOffset("_fu), fu::i64dec(flatOffset)) + ")"_fu) + " isLastSubRegion("_fu), fu::booldec(isLastSubRegion)) + ")"_fu), _here, ctx);
-
-        };
-        return s_Lifetime { static_cast<fu::str&&>(uni0n) };
-    }
-    else
-    {
-        BUG_9SZtRVJ0("Lifetime_from: Bad locid"_fu, _here, ctx);
-    };
-}
-
-s_Lifetime Lifetime_from_w8BwafZY(const int argidx, fu::view<char> paths, const s_TokenIdx& _here, const s_Context& ctx)
-{
-    if ((argidx >= 0))
-    {
-        /*MOV*/ fu::str uni0n {};
-        append7bit(uni0n, ((unsigned(argidx) << 2u) | 3u));
-        uni0n += paths;
-        return s_Lifetime { static_cast<fu::str&&>(uni0n) };
-    }
-    else
-    {
-        BUG_9SZtRVJ0("Lifetime_from: Bad argidx"_fu, _here, ctx);
-    };
-}
-
-                                #ifndef DEF_Lifetime_AAR_hasFalsePositives
-                                #define DEF_Lifetime_AAR_hasFalsePositives
-inline constexpr bool Lifetime_AAR_hasFalsePositives = true;
-                                #endif
-
-s_Lifetime Lifetime_AAR_KIn2aDsn(const int locid, const s_TokenIdx& _here, const s_Context& ctx)
-{
-    if (locid > 0)
-    {
-        /*MOV*/ fu::str uni0n {};
-        append7bit(uni0n, (unsigned(locid) << 1u));
-        uni0n += SR_empty;
-        return s_Lifetime { static_cast<fu::str&&>(uni0n) };
-    }
-    else
-    {
-        BUG_9SZtRVJ0("Lifetime_from: Bad locid"_fu, _here, ctx);
-    };
-}
-
-                                #ifndef DEF_x3Cx3E_6K8lyb3JRba
-                                #define DEF_x3Cx3E_6K8lyb3JRba
-inline int x3Cx3E_6K8lyb3J(const unsigned a, const unsigned b)
-{
-    if (a < b)
-        return -1;
-    else if (a > b)
-        return +1;
-    else
-        return 0;
-
-}
-                                #endif
-
-                                #ifndef DEF_x3Cx3E_sOVQcK2JOH3
-                                #define DEF_x3Cx3E_sOVQcK2JOH3
-inline int x3Cx3E_sOVQcK2J(const char a, const char b)
-{
-    if (a < b)
-        return -1;
-    else if (a > b)
-        return +1;
-    else
-        return 0;
-
-}
-                                #endif
-
-                                #ifndef DEF_x3Cx3E_gCeFmDFw0L8
-                                #define DEF_x3Cx3E_gCeFmDFw0L8
-inline int x3Cx3E_gCeFmDFw(fu::view<char> a, fu::view<char> b)
-{
-    int cmp = x3Cx3E_mJGU9byO(a.size(), b.size());
-    for (int i = 0; (i < a.size()) && !cmp; i++)
-        cmp = x3Cx3E_sOVQcK2J(a[i], b[i]);
-
-    return cmp;
-}
-                                #endif
-
-                                #ifndef DEF_x3Dx3D_gCeFmDFw0L8
-                                #define DEF_x3Dx3D_gCeFmDFw0L8
-inline bool operator==(fu::view<char> a, fu::view<char> b)
-{
-    return !x3Cx3E_gCeFmDFw(a, b);
-}
-                                #endif
-
-inline static void l_34_19_KgImeqWp(fu::view<char> r_both, fu::view<char> sr_left, fu::view<char> sr_right, const bool flatCountMismatchOK, s_Lifetime& result, const s_TokenIdx& _here, const s_Context& ctx)
+                                #ifndef DEF_both_TmvYAyc4cI5
+                                #define DEF_both_TmvYAyc4cI5
+inline static void both_TmvY(fu::view<char> r_both, fu::view<char> sr_left, fu::view<char> sr_right, const bool flatCountMismatchOK, Lifetime_llCF& result, const TokenIdx_5b85& _here, const Context_UXD9& ctx)
 {
     result.uni0n += r_both;
-    if ((sr_left == sr_right) || (sr_left == SR_empty))
+    if ((sr_left == sr_right) || (sr_left == SR_empty.ref))
         result.uni0n += sr_left;
-    else if (sr_right == SR_empty)
+    else if (sr_right == SR_empty.ref)
         result.uni0n += sr_right;
     else
-        Paths_union(result.uni0n, sr_left, sr_right, flatCountMismatchOK, _here, ctx);
+        Paths_union_UkiI(result.uni0n, sr_left, sr_right, flatCountMismatchOK, _here, ctx);
 
 }
+                                #endif
 
-inline static fu::str& l_34_18_1sglnJu5(fu::view<char> raw, s_Lifetime& result)
+                                #ifndef DEF_either_0yqHbITrVoj
+                                #define DEF_either_0yqHbITrVoj
+inline static fu::view<char> either_0yqH(fu::view<char> raw, Lifetime_llCF& result)
 {
     return (result.uni0n += raw);
 }
+                                #endif
 
-s_Lifetime Lifetime_union_YIGC7Sux(const s_Lifetime& a, const s_Lifetime& b, const bool flatCountMismatchOK, const s_TokenIdx& _here, const s_Context& ctx)
+Lifetime_llCF Lifetime_union_7Yz9(const Lifetime_llCF& a, const Lifetime_llCF& b, const bool flatCountMismatchOK, const TokenIdx_5b85& _here, const Context_UXD9& ctx)
 {
-    // Hoisted:
-    int offset0;
-    int offset0_1;
-
-    /*MOV*/ s_Lifetime result {};
+    /*MOV*/ Lifetime_llCF result {};
 
     { {
         fu::view<char> l_chars = a.uni0n;
@@ -2004,8 +1774,9 @@ s_Lifetime Lifetime_union_YIGC7Sux(const s_Lifetime& a, const s_Lifetime& b, con
                     l_start = l_offset;
                     if (l_offset < l_chars.size())
                     {
-                        l = parse7bit(l_chars, l_offset);
-                        int BL_7_v {};
+                        l = parse7bit_7Yz9(l_chars, l_offset);
+                        int offset0;
+                        int BL_7_v;
                         l_paths0 = (__extension__ (
                         {
                             offset0 = (l_offset + 0);
@@ -2015,9 +1786,9 @@ s_Lifetime Lifetime_union_YIGC7Sux(const s_Lifetime& a, const s_Lifetime& b, con
                                 bool isFirstSubRegion = true;
                                 for (; ; )
                                 {
-                                    const unsigned raw_flatOffset = parse7bit(l_chars, l_offset);
+                                    const unsigned raw_flatOffset = parse7bit_7Yz9(l_chars, l_offset);
                                     const bool isLastSubRegion = !(raw_flatOffset & 1u);
-                                    const unsigned raw_flatCount = (isLastSubRegion ? parse7bit(l_chars, l_offset) : 3u);
+                                    const unsigned raw_flatCount = (isLastSubRegion ? parse7bit_7Yz9(l_chars, l_offset) : 3u);
                                     isLastPath = !(raw_flatCount & 1u);
                                     if (isLastSubRegion)
                                         break;
@@ -2030,15 +1801,16 @@ s_Lifetime Lifetime_union_YIGC7Sux(const s_Lifetime& a, const s_Lifetime& b, con
 
                             };
                             BL_7_v = (offset0);
-                        (void)0;}), BL_7_v);
+                            (void)0;
+                        }), BL_7_v);
                     }
                     else if (!result)
                     {
-                        return s_Lifetime(b);
+                        return Lifetime_llCF(b);
                     }
                     else
                     {
-                        { BL_2_v = fu::get_view(r_chars, (r_dirty ? r_offset : r_start)); goto BL_2; };
+                        { BL_2_v.ptr_reassign(fu::get_view(r_chars, (r_dirty ? r_offset : r_start))); goto BL_2; };
                     };
                 };
                 if (r_dirty)
@@ -2047,90 +1819,266 @@ s_Lifetime Lifetime_union_YIGC7Sux(const s_Lifetime& a, const s_Lifetime& b, con
                     r_start = r_offset;
                     if (r_offset < r_chars.size())
                     {
-                        r = parse7bit(r_chars, r_offset);
-                        int BL_19_v {};
+                        r = parse7bit_7Yz9(r_chars, r_offset);
+                        int offset0;
+                        int BL_19_v;
                         r_paths0 = (__extension__ (
                         {
-                            offset0_1 = (r_offset + 0);
+                            offset0 = (r_offset + 0);
                             for (; ; )
                             {
-                                bool isLastPath_1 = false;
-                                bool isFirstSubRegion_1 = true;
+                                bool isLastPath = false;
+                                bool isFirstSubRegion = true;
                                 for (; ; )
                                 {
-                                    const unsigned raw_flatOffset_1 = parse7bit(r_chars, r_offset);
-                                    const bool isLastSubRegion_1 = !(raw_flatOffset_1 & 1u);
-                                    const unsigned raw_flatCount_1 = (isLastSubRegion_1 ? parse7bit(r_chars, r_offset) : 3u);
-                                    isLastPath_1 = !(raw_flatCount_1 & 1u);
-                                    if (isLastSubRegion_1)
+                                    const unsigned raw_flatOffset = parse7bit_7Yz9(r_chars, r_offset);
+                                    const bool isLastSubRegion = !(raw_flatOffset & 1u);
+                                    const unsigned raw_flatCount = (isLastSubRegion ? parse7bit_7Yz9(r_chars, r_offset) : 3u);
+                                    isLastPath = !(raw_flatCount & 1u);
+                                    if (isLastSubRegion)
                                         break;
                                     else
-                                        isFirstSubRegion_1 = false;
+                                        isFirstSubRegion = false;
 
                                 };
-                                if (isLastPath_1)
+                                if (isLastPath)
                                     break;
 
                             };
-                            BL_19_v = (offset0_1);
-                        (void)0;}), BL_19_v);
+                            BL_19_v = (offset0);
+                            (void)0;
+                        }), BL_19_v);
                     }
                     else if (!result)
                     {
-                        return s_Lifetime(a);
+                        return Lifetime_llCF(a);
                     }
                     else
                     {
-                        { BL_2_v = fu::get_view(l_chars, (l_dirty ? l_offset : l_start)); goto BL_2; };
+                        { BL_2_v.ptr_reassign(fu::get_view(l_chars, (l_dirty ? l_offset : l_start))); goto BL_2; };
                     };
                 };
-                fu::never BL_29_v {};
+                unsigned r_1;
+                unsigned r_2;
+                unsigned r_3;
+                unsigned r_4;
+                unsigned r_5;
+                unsigned r_6;
                 const int cmp = (l_done ? (r_done ? (__extension__ (
                 {
                     goto BL_1;
-                (void)0;}), static_cast<fu::never&&>(BL_29_v)) : +1) : (r_done ? -1 : (((l == 0u) != (r == 0u)) ? ((r == 0u) ? -1 : +1) : (((l == 1u) != (r == 1u)) ? ((r == 1u) ? +1 : -1) : x3Cx3E_6K8lyb3J(r, l)))));
-                fu::never BL_30_v {};
+                    (void)0;
+                }), fu::unreachable) : +1) : (r_done ? -1 : (((r_1 = l, ((r_1 & 11u) == 1u)) != (r_2 = r, ((r_2 & 11u) == 1u))) ? ((r_3 = r, ((r_3 & 11u) == 1u)) ? -1 : +1) : (((r_4 = l, (r_4 == 0b1001u)) != (r_5 = r, (r_5 == 0b1001u))) ? ((r_6 = r, (r_6 == 0b1001u)) ? +1 : -1) : (((l & 3u) == 2u) ? (((r & 3u) == 2u) ? x3Cx3E_Rgh3(l, r) : +1) : (((r & 3u) == 2u) ? -1 : x3Cx3E_Rgh3(r, l)))))));
                 fu::view<char> either_chars = ((cmp == 0) ? (__extension__ (
                 {
                     l_dirty = true;
                     r_dirty = true;
-                    l_34_19_KgImeqWp(fu::get_view(l_chars, l_start, l_paths0), fu::get_view(l_chars, l_paths0, l_offset), fu::get_view(r_chars, r_paths0, r_offset), flatCountMismatchOK, result, _here, ctx);
+                    both_TmvY(fu::get_view(l_chars, l_start, l_paths0), fu::get_view(l_chars, l_paths0, l_offset), fu::get_view(r_chars, r_paths0, r_offset), flatCountMismatchOK, result, _here, ctx);
                     continue;
-                (void)0;}), static_cast<fu::never&&>(BL_30_v)) : ((cmp < 0) ? ((l_dirty = true), fu::get_view(l_chars, l_start, l_offset)) : ((r_dirty = true), fu::get_view(r_chars, r_start, r_offset))));
-                l_34_18_1sglnJu5(either_chars, result);
+                    (void)0;
+                }), fu::unreachable) : ((cmp < 0) ? ((l_dirty = true), fu::get_view(l_chars, l_start, l_offset)) : ((r_dirty = true), fu::get_view(r_chars, r_start, r_offset))));
+                either_0yqH(either_chars, result);
             };
           } BL_2:;
-        (void)0;}), static_cast<fu::view<char>&&>(BL_2_v));
+            (void)0;
+        }), BL_2_v);
         result.uni0n += rest_chars;
       } BL_1:;
     };
     return /*NRVO*/ result;
 }
 
-inline static void l_34_23_10JM5Soq(fu::view<char> r_both, fu::view<char> sr_left, fu::view<char> sr_right, s_Lifetime& result, fu::str& inter, const s_TokenIdx& _here, const s_Context& ctx)
+                                #ifndef DEF_max_BjFAioWEpjb
+                                #define DEF_max_BjFAioWEpjb
+inline int max_BjFA(const int a, const int b)
+{
+    if ((a >= b))
+        return a;
+    else
+        return b;
+
+}
+                                #endif
+
+                                #ifndef DEF___pZhsBfXA9zi
+                                #define DEF___pZhsBfXA9zi
+inline static void _pZhs(fu::view<SubRegion_ageN> b_path, fu::view<SubRegion_ageN> a_path, fu::vec<fu::vec<SubRegion_ageN>>& result, fu::vec<SubRegion_ageN>& inter, const TokenIdx_5b85& _here, const Context_UXD9& ctx)
+{
+    const int N = min_DbqN(a_path.size(), b_path.size());
+    for (int i = 0; i < N; i++)
+    {
+        const SubRegion_ageN& a = a_path[i];
+        const SubRegion_ageN& b = b_path[i];
+        const int overlap = min_DbqN(((b.flatOffset + b.flatCount) - a.flatOffset), ((a.flatOffset + a.flatCount) - b.flatOffset));
+        if ((overlap <= 0))
+        {
+            inter.clear();
+            return;
+        }
+        else
+        {
+            const int flatCount = min_DbqN(a.flatCount, b.flatCount);
+            const int flatOffset = max_BjFA(a.flatOffset, b.flatOffset);
+            if ((overlap >= flatCount))
+            {
+                inter += SubRegion_ageN { flatCount, flatOffset };
+            }
+            else
+                BUG_u9Gb((x7E_rA00(((x7E_rA00((x7E_rA00(((x7E_rA00((x7E_rA00(("Paths_inter: self-intersection:"_view + "\n\t\ta.flatOffset("_view), fu::i64dec(a.flatOffset)) + ") a.flatCount("_view), fu::i64dec(a.flatCount)) + ")"_view) + "\n\t\tb.flatOffset("_view), fu::i64dec(b.flatOffset)) + ") b.flatCount("_view), fu::i64dec(b.flatCount)) + ")"_view) + "\n\t\toverlap("_view), fu::i64dec(overlap)) + ")"_view), _here, ctx);
+
+        };
+    };
+    if (inter)
+    {
+        if (a_path.size() > b_path.size())
+            inter += fu::get_view(a_path, b_path.size());
+
+        if (b_path.size() > a_path.size())
+            inter += fu::get_view(b_path, a_path.size());
+
+        Paths_union_7Yz9(result, inter, _here, ctx);
+    }
+    else
+        BUG_u9Gb("Paths_inter: empty inter, about to append suffix"_view, _here, ctx);
+
+}
+                                #endif
+
+                                #ifndef DEF_onPathDone_lg3ugU5Qci6
+                                #define DEF_onPathDone_lg3ugU5Qci6
+inline static void onPathDone_lg3u(fu::view<SubRegion_ageN> path, fu::view<SubRegion_ageN> a_path, fu::vec<fu::vec<SubRegion_ageN>>& result, fu::vec<SubRegion_ageN>& inter, const TokenIdx_5b85& _here, const Context_UXD9& ctx)
+{
+    _pZhs(path, a_path, result, inter, _here, ctx);
+}
+                                #endif
+
+                                #ifndef DEF_parsePaths_each_FdVcje62Pfh
+                                #define DEF_parsePaths_each_FdVcje62Pfh
+inline static void parsePaths_each_FdVc(fu::view<char> str, fu::view<SubRegion_ageN> a_path, fu::vec<fu::vec<SubRegion_ageN>>& result, fu::vec<SubRegion_ageN>& inter, const TokenIdx_5b85& _here, const Context_UXD9& ctx)
+{
+    fu::vec<SubRegion_ageN> path {};
+    int _o = 0;
+    for (; ; )
+    {
+        bool isLastPath = false;
+        bool isFirstSubRegion = true;
+        onPathStart_0ty3(path);
+        for (; ; )
+        {
+            const unsigned raw_flatOffset = parse7bit_7Yz9(str, _o);
+            const bool isLastSubRegion = !(raw_flatOffset & 1u);
+            const unsigned raw_flatCount = (isLastSubRegion ? parse7bit_7Yz9(str, _o) : 3u);
+            isLastPath = !(raw_flatCount & 1u);
+            const int flatCount = int((raw_flatCount >> 1u));
+            const int flatOffset = int((raw_flatOffset >> 1u));
+            onSubRegion_r4aZ(flatCount, flatOffset, path);
+            if (isLastSubRegion)
+                break;
+            else
+                isFirstSubRegion = false;
+
+        };
+        onPathDone_lg3u(path, a_path, result, inter, _here, ctx);
+        if (isLastPath)
+            break;
+
+    };
+    if (!(_o == str.size()))
+        BUG_u9Gb("walkPaths(!tailOK): excess bytes"_view, _here, ctx);
+
+}
+                                #endif
+
+                                #ifndef DEF___CdRGjm7ozg3
+                                #define DEF___CdRGjm7ozg3
+inline static void _CdRG(fu::view<SubRegion_ageN> a_path, fu::view<char> b, fu::vec<fu::vec<SubRegion_ageN>>& result, fu::vec<SubRegion_ageN>& inter, const TokenIdx_5b85& _here, const Context_UXD9& ctx)
+{
+    parsePaths_each_FdVc(b, a_path, result, inter, _here, ctx);
+}
+                                #endif
+
+                                #ifndef DEF_onPathDone_mjLCY6xcs76
+                                #define DEF_onPathDone_mjLCY6xcs76
+inline static void onPathDone_mjLC(fu::view<SubRegion_ageN> path, fu::view<char> b, fu::vec<fu::vec<SubRegion_ageN>>& result, fu::vec<SubRegion_ageN>& inter, const TokenIdx_5b85& _here, const Context_UXD9& ctx)
+{
+    _CdRG(path, b, result, inter, _here, ctx);
+}
+                                #endif
+
+                                #ifndef DEF_parsePaths_each_Uf9uFtUzRe4
+                                #define DEF_parsePaths_each_Uf9uFtUzRe4
+inline static void parsePaths_each_Uf9u(fu::view<char> str, fu::view<char> b, fu::vec<fu::vec<SubRegion_ageN>>& result, fu::vec<SubRegion_ageN>& inter, const TokenIdx_5b85& _here, const Context_UXD9& ctx)
+{
+    fu::vec<SubRegion_ageN> path {};
+    int _o = 0;
+    for (; ; )
+    {
+        bool isLastPath = false;
+        bool isFirstSubRegion = true;
+        onPathStart_0ty3(path);
+        for (; ; )
+        {
+            const unsigned raw_flatOffset = parse7bit_7Yz9(str, _o);
+            const bool isLastSubRegion = !(raw_flatOffset & 1u);
+            const unsigned raw_flatCount = (isLastSubRegion ? parse7bit_7Yz9(str, _o) : 3u);
+            isLastPath = !(raw_flatCount & 1u);
+            const int flatCount = int((raw_flatCount >> 1u));
+            const int flatOffset = int((raw_flatOffset >> 1u));
+            onSubRegion_r4aZ(flatCount, flatOffset, path);
+            if (isLastSubRegion)
+                break;
+            else
+                isFirstSubRegion = false;
+
+        };
+        onPathDone_mjLC(path, b, result, inter, _here, ctx);
+        if (isLastPath)
+            break;
+
+    };
+    if (!(_o == str.size()))
+        BUG_u9Gb("walkPaths(!tailOK): excess bytes"_view, _here, ctx);
+
+}
+                                #endif
+
+void Paths_inter_7Yz9(fu::vec_range_mut<char> str, fu::view<char> a, fu::view<char> b, const TokenIdx_5b85& _here, const Context_UXD9& ctx)
+{
+    if (a.size() < b.size())
+        Paths_inter_7Yz9(str, b, a, _here, ctx);
+    else
+    {
+        fu::vec<fu::vec<SubRegion_ageN>> result {};
+        fu::vec<SubRegion_ageN> inter {};
+        parsePaths_each_Uf9u(a, b, result, inter, _here, ctx);
+        appendPaths_7Yz9(str, result, true, true, _here, ctx);
+    };
+}
+
+                                #ifndef DEF_both_gsIfvtD1qo6
+                                #define DEF_both_gsIfvtD1qo6
+inline static void both_gsIf(fu::view<char> r_both, fu::view<char> sr_left, fu::view<char> sr_right, Lifetime_llCF& result, fu::str& inter, const TokenIdx_5b85& _here, const Context_UXD9& ctx)
 {
     fu::view<char> BL_1_v {};
-    fu::view<char> sr_chars = (((sr_left == sr_right) || (sr_right == SR_empty)) ? sr_left : ((sr_left == SR_empty) ? sr_right : (__extension__ (
+    fu::view<char> sr_chars = (((sr_left == sr_right) || (sr_right == SR_empty.ref)) ? sr_left : ((sr_left == SR_empty.ref) ? sr_right : (__extension__ (
     {
         inter.clear();
-        Paths_inter(inter, sr_left, sr_right, _here, ctx);
-        fu::never BL_2_v {};
-        BL_1_v = ((inter ? inter : (__extension__ (
+        Paths_inter_7Yz9(inter, sr_left, sr_right, _here, ctx);
+        BL_1_v.ptr_reassign((inter ? inter : (__extension__ (
         {
             return;
-        (void)0;}), static_cast<fu::never&&>(BL_2_v))));
-    (void)0;}), static_cast<fu::view<char>&&>(BL_1_v))));
+            (void)0;
+        }), fu::unreachable)));
+        (void)0;
+    }), BL_1_v)));
     result.uni0n += r_both;
     result.uni0n += sr_chars;
 }
+                                #endif
 
-s_Lifetime Lifetime_inter_lYlULmp8(const s_Lifetime& a, const s_Lifetime& b, const s_TokenIdx& _here, const s_Context& ctx)
+Lifetime_llCF Lifetime_inter_7Yz9(const Lifetime_llCF& a, const Lifetime_llCF& b, const TokenIdx_5b85& _here, const Context_UXD9& ctx)
 {
-    // Hoisted:
-    int offset0;
-    int offset0_1;
-
-    /*MOV*/ s_Lifetime result {};
+    /*MOV*/ Lifetime_llCF result {};
     fu::str inter {};
 
     { {
@@ -2156,8 +2104,9 @@ s_Lifetime Lifetime_inter_lYlULmp8(const s_Lifetime& a, const s_Lifetime& b, con
                 l_start = l_offset;
                 if (l_offset < l_chars.size())
                 {
-                    l = parse7bit(l_chars, l_offset);
-                    int BL_6_v {};
+                    l = parse7bit_7Yz9(l_chars, l_offset);
+                    int offset0;
+                    int BL_6_v;
                     l_paths0 = (__extension__ (
                     {
                         offset0 = (l_offset + 0);
@@ -2167,9 +2116,9 @@ s_Lifetime Lifetime_inter_lYlULmp8(const s_Lifetime& a, const s_Lifetime& b, con
                             bool isFirstSubRegion = true;
                             for (; ; )
                             {
-                                const unsigned raw_flatOffset = parse7bit(l_chars, l_offset);
+                                const unsigned raw_flatOffset = parse7bit_7Yz9(l_chars, l_offset);
                                 const bool isLastSubRegion = !(raw_flatOffset & 1u);
-                                const unsigned raw_flatCount = (isLastSubRegion ? parse7bit(l_chars, l_offset) : 3u);
+                                const unsigned raw_flatCount = (isLastSubRegion ? parse7bit_7Yz9(l_chars, l_offset) : 3u);
                                 isLastPath = !(raw_flatCount & 1u);
                                 if (isLastSubRegion)
                                     break;
@@ -2182,7 +2131,8 @@ s_Lifetime Lifetime_inter_lYlULmp8(const s_Lifetime& a, const s_Lifetime& b, con
 
                         };
                         BL_6_v = (offset0);
-                    (void)0;}), BL_6_v);
+                        (void)0;
+                    }), BL_6_v);
                 }
                 else
                     goto BL_1;
@@ -2194,48 +2144,56 @@ s_Lifetime Lifetime_inter_lYlULmp8(const s_Lifetime& a, const s_Lifetime& b, con
                 r_start = r_offset;
                 if (r_offset < r_chars.size())
                 {
-                    r = parse7bit(r_chars, r_offset);
-                    int BL_17_v {};
+                    r = parse7bit_7Yz9(r_chars, r_offset);
+                    int offset0;
+                    int BL_17_v;
                     r_paths0 = (__extension__ (
                     {
-                        offset0_1 = (r_offset + 0);
+                        offset0 = (r_offset + 0);
                         for (; ; )
                         {
-                            bool isLastPath_1 = false;
-                            bool isFirstSubRegion_1 = true;
+                            bool isLastPath = false;
+                            bool isFirstSubRegion = true;
                             for (; ; )
                             {
-                                const unsigned raw_flatOffset_1 = parse7bit(r_chars, r_offset);
-                                const bool isLastSubRegion_1 = !(raw_flatOffset_1 & 1u);
-                                const unsigned raw_flatCount_1 = (isLastSubRegion_1 ? parse7bit(r_chars, r_offset) : 3u);
-                                isLastPath_1 = !(raw_flatCount_1 & 1u);
-                                if (isLastSubRegion_1)
+                                const unsigned raw_flatOffset = parse7bit_7Yz9(r_chars, r_offset);
+                                const bool isLastSubRegion = !(raw_flatOffset & 1u);
+                                const unsigned raw_flatCount = (isLastSubRegion ? parse7bit_7Yz9(r_chars, r_offset) : 3u);
+                                isLastPath = !(raw_flatCount & 1u);
+                                if (isLastSubRegion)
                                     break;
                                 else
-                                    isFirstSubRegion_1 = false;
+                                    isFirstSubRegion = false;
 
                             };
-                            if (isLastPath_1)
+                            if (isLastPath)
                                 break;
 
                         };
-                        BL_17_v = (offset0_1);
-                    (void)0;}), BL_17_v);
+                        BL_17_v = (offset0);
+                        (void)0;
+                    }), BL_17_v);
                 }
                 else
                     goto BL_1;
 
             };
-            fu::never BL_26_v {};
+            unsigned r_1;
+            unsigned r_2;
+            unsigned r_3;
+            unsigned r_4;
+            unsigned r_5;
+            unsigned r_6;
             const int cmp = (l_done ? (r_done ? (__extension__ (
             {
                 goto BL_1;
-            (void)0;}), static_cast<fu::never&&>(BL_26_v)) : +1) : (r_done ? -1 : (((l == 0u) != (r == 0u)) ? ((r == 0u) ? -1 : +1) : (((l == 1u) != (r == 1u)) ? ((r == 1u) ? +1 : -1) : x3Cx3E_6K8lyb3J(r, l)))));
+                (void)0;
+            }), fu::unreachable) : +1) : (r_done ? -1 : (((r_1 = l, ((r_1 & 11u) == 1u)) != (r_2 = r, ((r_2 & 11u) == 1u))) ? ((r_3 = r, ((r_3 & 11u) == 1u)) ? -1 : +1) : (((r_4 = l, (r_4 == 0b1001u)) != (r_5 = r, (r_5 == 0b1001u))) ? ((r_6 = r, (r_6 == 0b1001u)) ? +1 : -1) : (((l & 3u) == 2u) ? (((r & 3u) == 2u) ? x3Cx3E_Rgh3(l, r) : +1) : (((r & 3u) == 2u) ? -1 : x3Cx3E_Rgh3(r, l)))))));
             if (cmp == 0)
             {
                 l_dirty = true;
                 r_dirty = true;
-                l_34_23_10JM5Soq(fu::get_view(l_chars, l_start, l_paths0), fu::get_view(l_chars, l_paths0, l_offset), fu::get_view(r_chars, r_paths0, r_offset), result, inter, _here, ctx);
+                both_gsIf(fu::get_view(l_chars, l_start, l_paths0), fu::get_view(l_chars, l_paths0, l_offset), fu::get_view(r_chars, r_paths0, r_offset), result, inter, _here, ctx);
             }
             else if (cmp < 0)
                 l_dirty = true;
@@ -2248,12 +2206,99 @@ s_Lifetime Lifetime_inter_lYlULmp8(const s_Lifetime& a, const s_Lifetime& b, con
     return /*NRVO*/ result;
 }
 
-bool Lifetime_hasInter_lYlULmp8(const s_Lifetime& a, const s_Lifetime& b, const s_TokenIdx& _here, const s_Context& ctx)
+bool Paths_hasInter_7Yz9(fu::view<char> a, fu::view<char> b, const TokenIdx_5b85& _here, const Context_UXD9& ctx)
 {
-    // Hoisted:
-    int offset0;
-    int offset0_1;
+    if (a.size() < b.size())
+        return Paths_hasInter_7Yz9(b, a, _here, ctx);
+    else
+    {
 
+        {
+            fu::vec<SubRegion_ageN> path {};
+            int _o = 0;
+            for (; ; )
+            {
+                bool isLastPath = false;
+                bool isFirstSubRegion = true;
+                onPathStart_0ty3(path);
+                for (; ; )
+                {
+                    const unsigned raw_flatOffset = parse7bit_7Yz9(a, _o);
+                    const bool isLastSubRegion = !(raw_flatOffset & 1u);
+                    const unsigned raw_flatCount = (isLastSubRegion ? parse7bit_7Yz9(a, _o) : 3u);
+                    isLastPath = !(raw_flatCount & 1u);
+                    const int flatCount = int((raw_flatCount >> 1u));
+                    const int flatOffset = int((raw_flatOffset >> 1u));
+                    onSubRegion_r4aZ(flatCount, flatOffset, path);
+                    if (isLastSubRegion)
+                        break;
+                    else
+                        isFirstSubRegion = false;
+
+                };
+
+                {
+                    fu::view<SubRegion_ageN> a_path = path;
+                    fu::vec<SubRegion_ageN> path_1 {};
+                    int _o_1 = 0;
+                    for (; ; )
+                    {
+                        bool isLastPath_1 = false;
+                        bool isFirstSubRegion_1 = true;
+                        onPathStart_0ty3(path_1);
+                        for (; ; )
+                        {
+                            const unsigned raw_flatOffset = parse7bit_7Yz9(b, _o_1);
+                            const bool isLastSubRegion = !(raw_flatOffset & 1u);
+                            const unsigned raw_flatCount = (isLastSubRegion ? parse7bit_7Yz9(b, _o_1) : 3u);
+                            isLastPath_1 = !(raw_flatCount & 1u);
+                            const int flatCount = int((raw_flatCount >> 1u));
+                            const int flatOffset = int((raw_flatOffset >> 1u));
+                            onSubRegion_r4aZ(flatCount, flatOffset, path_1);
+                            if (isLastSubRegion)
+                                break;
+                            else
+                                isFirstSubRegion_1 = false;
+
+                        };
+
+                        { {
+                            fu::view<SubRegion_ageN> b_path = path_1;
+                            const int N = min_DbqN(a_path.size(), b_path.size());
+                            for (int i = 0; i < N; i++)
+                            {
+                                const SubRegion_ageN& a_1 = a_path[i];
+                                const SubRegion_ageN& b_1 = b_path[i];
+                                const int overlap = min_DbqN(((b_1.flatOffset + b_1.flatCount) - a_1.flatOffset), ((a_1.flatOffset + a_1.flatCount) - b_1.flatOffset));
+                                if ((overlap <= 0))
+                                    goto BL_17;
+
+                            };
+                            return true;
+                          } BL_17:;
+                        };
+                        if (isLastPath_1)
+                            break;
+
+                    };
+                    if (!(_o_1 == b.size()))
+                        BUG_u9Gb("walkPaths(!tailOK): excess bytes"_view, _here, ctx);
+
+                };
+                if (isLastPath)
+                    break;
+
+            };
+            if (!(_o == a.size()))
+                BUG_u9Gb("walkPaths(!tailOK): excess bytes"_view, _here, ctx);
+
+        };
+        return false;
+    };
+}
+
+bool Lifetime_hasInter_7Yz9(const Lifetime_llCF& a, const Lifetime_llCF& b, const TokenIdx_5b85& _here, const Context_UXD9& ctx)
+{
 
     { {
         fu::view<char> l_chars = a.uni0n;
@@ -2278,8 +2323,9 @@ bool Lifetime_hasInter_lYlULmp8(const s_Lifetime& a, const s_Lifetime& b, const 
                 l_start = l_offset;
                 if (l_offset < l_chars.size())
                 {
-                    l = parse7bit(l_chars, l_offset);
-                    int BL_6_v {};
+                    l = parse7bit_7Yz9(l_chars, l_offset);
+                    int offset0;
+                    int BL_6_v;
                     l_paths0 = (__extension__ (
                     {
                         offset0 = (l_offset + 0);
@@ -2289,9 +2335,9 @@ bool Lifetime_hasInter_lYlULmp8(const s_Lifetime& a, const s_Lifetime& b, const 
                             bool isFirstSubRegion = true;
                             for (; ; )
                             {
-                                const unsigned raw_flatOffset = parse7bit(l_chars, l_offset);
+                                const unsigned raw_flatOffset = parse7bit_7Yz9(l_chars, l_offset);
                                 const bool isLastSubRegion = !(raw_flatOffset & 1u);
-                                const unsigned raw_flatCount = (isLastSubRegion ? parse7bit(l_chars, l_offset) : 3u);
+                                const unsigned raw_flatCount = (isLastSubRegion ? parse7bit_7Yz9(l_chars, l_offset) : 3u);
                                 isLastPath = !(raw_flatCount & 1u);
                                 if (isLastSubRegion)
                                     break;
@@ -2304,7 +2350,8 @@ bool Lifetime_hasInter_lYlULmp8(const s_Lifetime& a, const s_Lifetime& b, const 
 
                         };
                         BL_6_v = (offset0);
-                    (void)0;}), BL_6_v);
+                        (void)0;
+                    }), BL_6_v);
                 }
                 else
                     goto BL_1;
@@ -2316,50 +2363,58 @@ bool Lifetime_hasInter_lYlULmp8(const s_Lifetime& a, const s_Lifetime& b, const 
                 r_start = r_offset;
                 if (r_offset < r_chars.size())
                 {
-                    r = parse7bit(r_chars, r_offset);
-                    int BL_17_v {};
+                    r = parse7bit_7Yz9(r_chars, r_offset);
+                    int offset0;
+                    int BL_17_v;
                     r_paths0 = (__extension__ (
                     {
-                        offset0_1 = (r_offset + 0);
+                        offset0 = (r_offset + 0);
                         for (; ; )
                         {
-                            bool isLastPath_1 = false;
-                            bool isFirstSubRegion_1 = true;
+                            bool isLastPath = false;
+                            bool isFirstSubRegion = true;
                             for (; ; )
                             {
-                                const unsigned raw_flatOffset_1 = parse7bit(r_chars, r_offset);
-                                const bool isLastSubRegion_1 = !(raw_flatOffset_1 & 1u);
-                                const unsigned raw_flatCount_1 = (isLastSubRegion_1 ? parse7bit(r_chars, r_offset) : 3u);
-                                isLastPath_1 = !(raw_flatCount_1 & 1u);
-                                if (isLastSubRegion_1)
+                                const unsigned raw_flatOffset = parse7bit_7Yz9(r_chars, r_offset);
+                                const bool isLastSubRegion = !(raw_flatOffset & 1u);
+                                const unsigned raw_flatCount = (isLastSubRegion ? parse7bit_7Yz9(r_chars, r_offset) : 3u);
+                                isLastPath = !(raw_flatCount & 1u);
+                                if (isLastSubRegion)
                                     break;
                                 else
-                                    isFirstSubRegion_1 = false;
+                                    isFirstSubRegion = false;
 
                             };
-                            if (isLastPath_1)
+                            if (isLastPath)
                                 break;
 
                         };
-                        BL_17_v = (offset0_1);
-                    (void)0;}), BL_17_v);
+                        BL_17_v = (offset0);
+                        (void)0;
+                    }), BL_17_v);
                 }
                 else
                     goto BL_1;
 
             };
-            fu::never BL_26_v {};
+            unsigned r_1;
+            unsigned r_2;
+            unsigned r_3;
+            unsigned r_4;
+            unsigned r_5;
+            unsigned r_6;
             const int cmp = (l_done ? (r_done ? (__extension__ (
             {
                 goto BL_1;
-            (void)0;}), static_cast<fu::never&&>(BL_26_v)) : +1) : (r_done ? -1 : (((l == 0u) != (r == 0u)) ? ((r == 0u) ? -1 : +1) : (((l == 1u) != (r == 1u)) ? ((r == 1u) ? +1 : -1) : x3Cx3E_6K8lyb3J(r, l)))));
+                (void)0;
+            }), fu::unreachable) : +1) : (r_done ? -1 : (((r_1 = l, ((r_1 & 11u) == 1u)) != (r_2 = r, ((r_2 & 11u) == 1u))) ? ((r_3 = r, ((r_3 & 11u) == 1u)) ? -1 : +1) : (((r_4 = l, (r_4 == 0b1001u)) != (r_5 = r, (r_5 == 0b1001u))) ? ((r_6 = r, (r_6 == 0b1001u)) ? +1 : -1) : (((l & 3u) == 2u) ? (((r & 3u) == 2u) ? x3Cx3E_Rgh3(l, r) : +1) : (((r & 3u) == 2u) ? -1 : x3Cx3E_Rgh3(r, l)))))));
             if (cmp == 0)
             {
                 l_dirty = true;
                 r_dirty = true;
                 fu::view<char> sr_left = fu::get_view(l_chars, l_paths0, l_offset);
                 fu::view<char> sr_right = fu::get_view(r_chars, r_paths0, r_offset);
-                if ((sr_left == sr_right) || (sr_left == SR_empty) || (sr_right == SR_empty) || Paths_hasInter(sr_left, sr_right, _here, ctx))
+                if ((sr_left == sr_right) || (sr_left == SR_empty.ref) || (sr_right == SR_empty.ref) || Paths_hasInter_7Yz9(sr_left, sr_right, _here, ctx))
                     return true;
 
             }
@@ -2374,22 +2429,21 @@ bool Lifetime_hasInter_lYlULmp8(const s_Lifetime& a, const s_Lifetime& b, const 
     return false;
 }
 
-inline static void l_34_27_aYVAJGKe(const int locid, fu::view<char> sr_left, fu::view<char> sr_right, fu::vec<int>& result, const s_TokenIdx& _here, const s_Context& ctx)
+                                #ifndef DEF_both_Tjd1AqxmaDb
+                                #define DEF_both_Tjd1AqxmaDb
+inline static void both_Tjd1(const int locid, fu::view<char> sr_left, fu::view<char> sr_right, fu::vec<int>& result, const TokenIdx_5b85& _here, const Context_UXD9& ctx)
 {
     if (!(!locid))
     {
-        if ((sr_left == sr_right) || (sr_left == SR_empty) || (sr_right == SR_empty) || Paths_hasInter(sr_left, sr_right, _here, ctx))
+        if ((sr_left == sr_right) || (sr_left == SR_empty.ref) || (sr_right == SR_empty.ref) || Paths_hasInter_7Yz9(sr_left, sr_right, _here, ctx))
             result += locid;
 
     };
 }
+                                #endif
 
-fu::vec<int> Lifetime_interLocids_lYlULmp8(const s_Lifetime& a, const s_Lifetime& b, const s_TokenIdx& _here, const s_Context& ctx)
+fu::vec<int> Lifetime_interLocids_7Yz9(const Lifetime_llCF& a, const Lifetime_llCF& b, const TokenIdx_5b85& _here, const Context_UXD9& ctx)
 {
-    // Hoisted:
-    int offset0;
-    int offset0_1;
-
     /*MOV*/ fu::vec<int> result {};
 
     { {
@@ -2415,8 +2469,9 @@ fu::vec<int> Lifetime_interLocids_lYlULmp8(const s_Lifetime& a, const s_Lifetime
                 l_start = l_offset;
                 if (l_offset < l_chars.size())
                 {
-                    l = parse7bit(l_chars, l_offset);
-                    int BL_6_v {};
+                    l = parse7bit_7Yz9(l_chars, l_offset);
+                    int offset0;
+                    int BL_6_v;
                     l_paths0 = (__extension__ (
                     {
                         offset0 = (l_offset + 0);
@@ -2426,9 +2481,9 @@ fu::vec<int> Lifetime_interLocids_lYlULmp8(const s_Lifetime& a, const s_Lifetime
                             bool isFirstSubRegion = true;
                             for (; ; )
                             {
-                                const unsigned raw_flatOffset = parse7bit(l_chars, l_offset);
+                                const unsigned raw_flatOffset = parse7bit_7Yz9(l_chars, l_offset);
                                 const bool isLastSubRegion = !(raw_flatOffset & 1u);
-                                const unsigned raw_flatCount = (isLastSubRegion ? parse7bit(l_chars, l_offset) : 3u);
+                                const unsigned raw_flatCount = (isLastSubRegion ? parse7bit_7Yz9(l_chars, l_offset) : 3u);
                                 isLastPath = !(raw_flatCount & 1u);
                                 if (isLastSubRegion)
                                     break;
@@ -2441,7 +2496,8 @@ fu::vec<int> Lifetime_interLocids_lYlULmp8(const s_Lifetime& a, const s_Lifetime
 
                         };
                         BL_6_v = (offset0);
-                    (void)0;}), BL_6_v);
+                        (void)0;
+                    }), BL_6_v);
                 }
                 else
                     goto BL_1;
@@ -2453,48 +2509,58 @@ fu::vec<int> Lifetime_interLocids_lYlULmp8(const s_Lifetime& a, const s_Lifetime
                 r_start = r_offset;
                 if (r_offset < r_chars.size())
                 {
-                    r = parse7bit(r_chars, r_offset);
-                    int BL_17_v {};
+                    r = parse7bit_7Yz9(r_chars, r_offset);
+                    int offset0;
+                    int BL_17_v;
                     r_paths0 = (__extension__ (
                     {
-                        offset0_1 = (r_offset + 0);
+                        offset0 = (r_offset + 0);
                         for (; ; )
                         {
-                            bool isLastPath_1 = false;
-                            bool isFirstSubRegion_1 = true;
+                            bool isLastPath = false;
+                            bool isFirstSubRegion = true;
                             for (; ; )
                             {
-                                const unsigned raw_flatOffset_1 = parse7bit(r_chars, r_offset);
-                                const bool isLastSubRegion_1 = !(raw_flatOffset_1 & 1u);
-                                const unsigned raw_flatCount_1 = (isLastSubRegion_1 ? parse7bit(r_chars, r_offset) : 3u);
-                                isLastPath_1 = !(raw_flatCount_1 & 1u);
-                                if (isLastSubRegion_1)
+                                const unsigned raw_flatOffset = parse7bit_7Yz9(r_chars, r_offset);
+                                const bool isLastSubRegion = !(raw_flatOffset & 1u);
+                                const unsigned raw_flatCount = (isLastSubRegion ? parse7bit_7Yz9(r_chars, r_offset) : 3u);
+                                isLastPath = !(raw_flatCount & 1u);
+                                if (isLastSubRegion)
                                     break;
                                 else
-                                    isFirstSubRegion_1 = false;
+                                    isFirstSubRegion = false;
 
                             };
-                            if (isLastPath_1)
+                            if (isLastPath)
                                 break;
 
                         };
-                        BL_17_v = (offset0_1);
-                    (void)0;}), BL_17_v);
+                        BL_17_v = (offset0);
+                        (void)0;
+                    }), BL_17_v);
                 }
                 else
                     goto BL_1;
 
             };
-            fu::never BL_26_v {};
+            unsigned r_1;
+            unsigned r_2;
+            unsigned r_3;
+            unsigned r_4;
+            unsigned r_5;
+            unsigned r_6;
             const int cmp = (l_done ? (r_done ? (__extension__ (
             {
                 goto BL_1;
-            (void)0;}), static_cast<fu::never&&>(BL_26_v)) : +1) : (r_done ? -1 : (((l == 0u) != (r == 0u)) ? ((r == 0u) ? -1 : +1) : (((l == 1u) != (r == 1u)) ? ((r == 1u) ? +1 : -1) : x3Cx3E_6K8lyb3J(r, l)))));
+                (void)0;
+            }), fu::unreachable) : +1) : (r_done ? -1 : (((r_1 = l, ((r_1 & 11u) == 1u)) != (r_2 = r, ((r_2 & 11u) == 1u))) ? ((r_3 = r, ((r_3 & 11u) == 1u)) ? -1 : +1) : (((r_4 = l, (r_4 == 0b1001u)) != (r_5 = r, (r_5 == 0b1001u))) ? ((r_6 = r, (r_6 == 0b1001u)) ? +1 : -1) : (((l & 3u) == 2u) ? (((r & 3u) == 2u) ? x3Cx3E_Rgh3(l, r) : +1) : (((r & 3u) == 2u) ? -1 : x3Cx3E_Rgh3(r, l)))))));
             if (cmp == 0)
             {
                 l_dirty = true;
                 r_dirty = true;
-                l_34_27_aYVAJGKe(int(((r & 1u) ? 0u : (r >> 1u))), fu::get_view(l_chars, l_paths0, l_offset), fu::get_view(r_chars, r_paths0, r_offset), result, _here, ctx);
+                unsigned r_7;
+                unsigned v;
+                both_Tjd1((r_7 = r, ((r_7 & 1u) ? 0 : (v = (r_7 >> 1u), int(((v >> 1u) ^ ((v & 1u) ? 0xffffffffu : 0x0u)))))), fu::get_view(l_chars, l_paths0, l_offset), fu::get_view(r_chars, r_paths0, r_offset), result, _here, ctx);
             }
             else if (cmp < 0)
                 l_dirty = true;
@@ -2507,58 +2573,51 @@ fu::vec<int> Lifetime_interLocids_lYlULmp8(const s_Lifetime& a, const s_Lifetime
     return /*NRVO*/ result;
 }
 
-void Lifetime_add_PUWFQPIX(s_Lifetime& l, const s_Lifetime& r, const bool flatCountMismatchOK, const s_TokenIdx& _here, const s_Context& ctx)
+void Lifetime_add_7Yz9(Lifetime_llCF& l, const Lifetime_llCF& r, const bool flatCountMismatchOK, const TokenIdx_5b85& _here, const Context_UXD9& ctx)
 {
     if (r)
     {
-        l = Lifetime_union_YIGC7Sux(l, r, flatCountMismatchOK, _here, ctx);
+        l = Lifetime_union_7Yz9(l, r, flatCountMismatchOK, _here, ctx);
     };
 }
 
-                                #ifndef DEF_Lifetime_static
-                                #define DEF_Lifetime_static
-extern const s_Lifetime Lifetime_static fu_INIT_PRIORITY(1005) = s_Lifetime { fu::str(Region_STATIC) };
-                                #endif
-
-                                #ifndef DEF_Lifetime_temporary
-                                #define DEF_Lifetime_temporary
-extern const s_Lifetime Lifetime_temporary fu_INIT_PRIORITY(1005) = s_Lifetime { fu::str(Region_TEMP) };
-                                #endif
-
-                                #ifndef DEF_starts_t2TApdnqRc8
-                                #define DEF_starts_t2TApdnqRc8
-inline bool starts_t2TApdnq(fu::view<char> a, fu::view<char> with)
+                                #ifndef DEF_starts_e85pmfesWad
+                                #define DEF_starts_e85pmfesWad
+inline bool starts_e85p(fu::view<char> a, fu::view<char> with)
 {
     return (a.size() >= with.size()) && (fu::get_view_start0(a, with.size()) == with);
 }
                                 #endif
 
-bool hasTemporary_Sd1Oo4TV(const s_Lifetime& lifetime)
+bool hasTemporary_7Yz9(const Lifetime_llCF& lifetime)
 {
-    return starts_t2TApdnq(lifetime.uni0n, Region_TEMP);
+    return starts_e85p(lifetime.uni0n, Region_TEMP);
 }
 
-                                #ifndef DEF_ends_t2TApdnqRc8
-                                #define DEF_ends_t2TApdnqRc8
-inline bool ends_t2TApdnq(fu::view<char> a, fu::view<char> with)
+bool hasStatic_7Yz9(const Lifetime_llCF& lifetime)
 {
-    return (a.size() >= with.size()) && (fu::get_view(a, (a.size() - with.size()), a.size()) == with);
-}
-                                #endif
-
-bool hasStatic_Sd1Oo4TV(const s_Lifetime& lifetime)
-{
-    return ends_t2TApdnq(lifetime.uni0n, Region_STATIC);
+    const int n = lifetime.uni0n.size();
+    unsigned r;
+    return (n >= 3) && (fu::get_view(lifetime.uni0n, (n - 2)) == SR_empty.ref) && (r = unsigned(fu::u8(lifetime.uni0n[(n - 3)])), ((r & 11u) == 1u));
 }
 
-inline static bool l_34_31_IL0xcmNa(const int locid, const int search)
+bool isStaticOrZeroes_7Yz9(const Lifetime_llCF& lifetime)
+{
+    unsigned r;
+    return (lifetime.uni0n.size() == 3) && (r = unsigned(fu::u8(lifetime.uni0n[0])), ((r & 11u) == 1u));
+}
+
+                                #ifndef DEF___oQSm86ihkT3
+                                #define DEF___oQSm86ihkT3
+inline static bool _oQSm(const int locid, const int search)
 {
     return locid == search;
 }
+                                #endif
 
-                                #ifndef DEF_Lifetime_some_XyDqMOgE4z7
-                                #define DEF_Lifetime_some_XyDqMOgE4z7
-inline bool Lifetime_some_XyDqMOgE(const s_Lifetime& lifetime, const int search)
+                                #ifndef DEF_Lifetime_some_hZbh0nSqLt8
+                                #define DEF_Lifetime_some_hZbh0nSqLt8
+inline bool Lifetime_some_hZbh(const Lifetime_llCF& lifetime, const int search)
 {
 
     {
@@ -2566,16 +2625,16 @@ inline bool Lifetime_some_XyDqMOgE(const s_Lifetime& lifetime, const int search)
         int offset = 0;
         while (offset < chars.size())
         {
-            const unsigned r = parse7bit(chars, offset);
+            const unsigned r = parse7bit_7Yz9(chars, offset);
             for (; ; )
             {
                 bool isLastPath = false;
                 bool isFirstSubRegion = true;
                 for (; ; )
                 {
-                    const unsigned raw_flatOffset = parse7bit(chars, offset);
+                    const unsigned raw_flatOffset = parse7bit_7Yz9(chars, offset);
                     const bool isLastSubRegion = !(raw_flatOffset & 1u);
-                    const unsigned raw_flatCount = (isLastSubRegion ? parse7bit(chars, offset) : 3u);
+                    const unsigned raw_flatCount = (isLastSubRegion ? parse7bit_7Yz9(chars, offset) : 3u);
                     isLastPath = !(raw_flatCount & 1u);
                     if (isLastSubRegion)
                         break;
@@ -2587,8 +2646,9 @@ inline bool Lifetime_some_XyDqMOgE(const s_Lifetime& lifetime, const int search)
                     break;
 
             };
-            const int locid = int(((r & 1u) ? 0u : (r >> 1u)));
-            if (l_34_31_IL0xcmNa(locid, search))
+            unsigned v;
+            const int locid = ((r & 1u) ? 0 : (v = (r >> 1u), int(((v >> 1u) ^ ((v & 1u) ? 0xffffffffu : 0x0u)))));
+            if (_oQSm(locid, search))
                 return true;
 
         };
@@ -2597,12 +2657,14 @@ inline bool Lifetime_some_XyDqMOgE(const s_Lifetime& lifetime, const int search)
 }
                                 #endif
 
-bool Lifetime_has_62UtfSbx(const s_Lifetime& lifetime, const int search)
+bool Lifetime_has_7Yz9(const Lifetime_llCF& lifetime, const int search)
 {
-    return Lifetime_some_XyDqMOgE(lifetime, search);
+    return Lifetime_some_hZbh(lifetime, search);
 }
 
-inline static bool l_34_32_dK23HtF9(const bool isArgIdx, const int argidx, const int search)
+                                #ifndef DEF___ezknwL9odHj
+                                #define DEF___ezknwL9odHj
+inline static bool _ezkn(const bool isArgIdx, const int argidx, const int search)
 {
     if (isArgIdx)
         return argidx == search;
@@ -2610,10 +2672,11 @@ inline static bool l_34_32_dK23HtF9(const bool isArgIdx, const int argidx, const
         return false;
 
 }
+                                #endif
 
-                                #ifndef DEF_Lifetime_some_Ukn6URmk30g
-                                #define DEF_Lifetime_some_Ukn6URmk30g
-inline bool Lifetime_some_Ukn6URmk(const s_Lifetime& lifetime, const int search)
+                                #ifndef DEF_Lifetime_some_vteaStDK7Fd
+                                #define DEF_Lifetime_some_vteaStDK7Fd
+inline bool Lifetime_some_vtea(const Lifetime_llCF& lifetime, const int search)
 {
 
     {
@@ -2621,16 +2684,16 @@ inline bool Lifetime_some_Ukn6URmk(const s_Lifetime& lifetime, const int search)
         int offset = 0;
         while (offset < chars.size())
         {
-            const unsigned r = parse7bit(chars, offset);
+            const unsigned r = parse7bit_7Yz9(chars, offset);
             for (; ; )
             {
                 bool isLastPath = false;
                 bool isFirstSubRegion = true;
                 for (; ; )
                 {
-                    const unsigned raw_flatOffset = parse7bit(chars, offset);
+                    const unsigned raw_flatOffset = parse7bit_7Yz9(chars, offset);
                     const bool isLastSubRegion = !(raw_flatOffset & 1u);
-                    const unsigned raw_flatCount = (isLastSubRegion ? parse7bit(chars, offset) : 3u);
+                    const unsigned raw_flatCount = (isLastSubRegion ? parse7bit_7Yz9(chars, offset) : 3u);
                     isLastPath = !(raw_flatCount & 1u);
                     if (isLastSubRegion)
                         break;
@@ -2644,7 +2707,7 @@ inline bool Lifetime_some_Ukn6URmk(const s_Lifetime& lifetime, const int search)
             };
             const int argidx = int(((r & 1u) ? (r >> 2u) : 0u));
             const bool isArgIdx = ((r & 3u) == 3u);
-            if (l_34_32_dK23HtF9(isArgIdx, argidx, search))
+            if (_ezkn(isArgIdx, argidx, search))
                 return true;
 
         };
@@ -2653,12 +2716,14 @@ inline bool Lifetime_some_Ukn6URmk(const s_Lifetime& lifetime, const int search)
 }
                                 #endif
 
-bool Lifetime_has_NRjdLNHo(const s_Lifetime& lifetime, const int search)
+bool Lifetime_has_UkiI(const Lifetime_llCF& lifetime, const int search)
 {
-    return Lifetime_some_Ukn6URmk(lifetime, search);
+    return Lifetime_some_vtea(lifetime, search);
 }
 
-inline static void l_34_37_aydkDYZv(const bool isLastPath, fu::view<char> raw_prefix, const int parent_flatCount, const int parent_flatOffset, fu::str& result, const int deref_flatCount, const s_TokenIdx& _here, const s_Context& ctx)
+                                #ifndef DEF_onLastSubRegion_1GYkLor9oT6
+                                #define DEF_onLastSubRegion_1GYkLor9oT6
+inline static void onLastSubRegion_1GYk(const bool isLastPath, fu::view<char> raw_prefix, const int parent_flatCount, const int parent_flatOffset, fu::vec_range_mut<char> result, const int deref_flatCount, const TokenIdx_5b85& _here, const Context_UXD9& ctx)
 {
     if (parent_flatCount == 1)
     {
@@ -2667,30 +2732,32 @@ inline static void l_34_37_aydkDYZv(const bool isLastPath, fu::view<char> raw_pr
         {
             const bool isLastSubRegion = false;
             if ((parent_flatOffset >= 0) && (parent_flatCount > 0) && (parent_flatCount == 1))
-                append7bit(result, ((unsigned(parent_flatOffset) << 1u) | 1u));
+                append7bit_7Yz9(result, ((unsigned(parent_flatOffset) << 1u) | 1u));
             else
-                BUG_9SZtRVJ0((x7E_gCeFmDFw(((x7E_gCeFmDFw(((x7E_gCeFmDFw("appendSubRegion: flatCount("_fu, fu::i64dec(parent_flatCount)) + ")"_fu) + " flatOffset("_fu), fu::i64dec(parent_flatOffset)) + ")"_fu) + " isLastSubRegion("_fu), fu::booldec(isLastSubRegion)) + ")"_fu), _here, ctx);
+                BUG_u9Gb((x7E_rA00(((x7E_rA00(((x7E_rA00("appendSubRegion: flatCount("_view, fu::i64dec(parent_flatCount)) + ")"_view) + " flatOffset("_view), fu::i64dec(parent_flatOffset)) + ")"_view) + " isLastSubRegion("_view), fu::booldec(isLastSubRegion)) + ")"_view), _here, ctx);
 
         };
         const int flatOffset = 0;
         const bool isLastSubRegion = true;
-        const bool isLastPath_1 = isLastPath;
         if ((flatOffset >= 0) && (deref_flatCount > 0) && isLastSubRegion)
         {
-            append7bit(result, ((unsigned(flatOffset) << 1u) | 0u));
-            append7bit(result, ((unsigned(deref_flatCount) << 1u) | (isLastPath_1 ? 0u : 1u)));
+            append7bit_7Yz9(result, ((unsigned(flatOffset) << 1u) | 0u));
+            append7bit_7Yz9(result, ((unsigned(deref_flatCount) << 1u) | (isLastPath ? 0u : 1u)));
         }
         else
-            BUG_9SZtRVJ0((x7E_gCeFmDFw(((x7E_gCeFmDFw(((x7E_gCeFmDFw("appendSubRegion: flatCount("_fu, fu::i64dec(deref_flatCount)) + ")"_fu) + " flatOffset("_fu), fu::i64dec(flatOffset)) + ")"_fu) + " isLastSubRegion("_fu), fu::booldec(isLastSubRegion)) + ")"_fu), _here, ctx);
+            BUG_u9Gb((x7E_rA00(((x7E_rA00(((x7E_rA00("appendSubRegion: flatCount("_view, fu::i64dec(deref_flatCount)) + ")"_view) + " flatOffset("_view), fu::i64dec(flatOffset)) + ")"_view) + " isLastSubRegion("_view), fu::booldec(isLastSubRegion)) + ")"_view), _here, ctx);
 
     }
     else
     {
-        BUG_9SZtRVJ0((x7E_gCeFmDFw("Lifetime_op_deref: parent_flatCount("_fu, fu::i64dec(parent_flatCount)) + ") != 1"_fu), _here, ctx);
+        BUG_u9Gb((x7E_rA00("Lifetime_op_deref: parent_flatCount("_view, fu::i64dec(parent_flatCount)) + ") != 1"_view), _here, ctx);
     };
 }
+                                #endif
 
-inline static void l_34_36_ISpVkrxQ(fu::view<char> paths, fu::str& result, const int deref_flatCount, const s_TokenIdx& _here, const s_Context& ctx)
+                                #ifndef DEF___61re7ahiQ60
+                                #define DEF___61re7ahiQ60
+inline static void _61re(fu::view<char> paths, fu::vec_range_mut<char> result, const int deref_flatCount, const TokenIdx_5b85& _here, const Context_UXD9& ctx)
 {
     int offset = 0;
     for (; ; )
@@ -2701,15 +2768,15 @@ inline static void l_34_36_ISpVkrxQ(fu::view<char> paths, fu::str& result, const
         for (; ; )
         {
             const int subregion0 = offset;
-            const unsigned raw_flatOffset = parse7bit(paths, offset);
+            const unsigned raw_flatOffset = parse7bit_7Yz9(paths, offset);
             const bool isLastSubRegion = !(raw_flatOffset & 1u);
-            const unsigned raw_flatCount = (isLastSubRegion ? parse7bit(paths, offset) : 3u);
+            const unsigned raw_flatCount = (isLastSubRegion ? parse7bit_7Yz9(paths, offset) : 3u);
             isLastPath = !(raw_flatCount & 1u);
             const int flatCount = int((raw_flatCount >> 1u));
             const int flatOffset = int((raw_flatOffset >> 1u));
             if (isLastSubRegion)
             {
-                l_34_37_aydkDYZv(isLastPath, fu::get_view(paths, path0, subregion0), flatCount, flatOffset, result, deref_flatCount, _here, ctx);
+                onLastSubRegion_1GYk(isLastPath, fu::get_view(paths, path0, subregion0), flatCount, flatOffset, result, deref_flatCount, _here, ctx);
                 break;
             }
             else
@@ -2721,41 +2788,43 @@ inline static void l_34_36_ISpVkrxQ(fu::view<char> paths, fu::str& result, const
 
     };
     if (!(offset == paths.size()))
-        BUG_9SZtRVJ0("walkPaths(!tailOK): excess bytes"_fu, _here, ctx);
+        BUG_u9Gb("walkPaths(!tailOK): excess bytes"_view, _here, ctx);
 
 }
+                                #endif
 
-inline static void l_34_33_5y6WdB13(fu::view<char> r_raw, fu::view<char> paths, const int locid, const int minPathDepth, fu::str& result, const int deref_flatCount, const s_TokenIdx& _here, const s_Context& ctx)
+                                #ifndef DEF___NniGF2cFl96
+                                #define DEF___NniGF2cFl96
+inline static void _NniG(fu::view<char> r_raw, fu::view<char> paths, const int locid, const int minPathDepth, fu::str& result, const int deref_flatCount, const TokenIdx_5b85& _here, const Context_UXD9& ctx)
 {
     result += r_raw;
-    if (paths == SR_empty)
+    if (paths == SR_empty.ref)
         result += paths;
     else if (locid)
     {
         const int result0 = result.size();
-        l_34_36_ISpVkrxQ(paths, result, deref_flatCount, _here, ctx);
-        assertPathsValid_F77ZcVgF(fu::get_view(result, result0), -1, -1, false, minPathDepth, _here, ctx);
+        _61re(paths, result, deref_flatCount, _here, ctx);
+        assertPathsValid_7Yz9(fu::get_view(result, result0), -1, -1, false, minPathDepth, _here, ctx);
     }
     else
     {
-        BUG_9SZtRVJ0("Lifetime_op: non-locid non-x00x00 subregion."_fu, _here, ctx);
+        BUG_u9Gb("Lifetime_op: non-locid non-x00x00 subregion."_view, _here, ctx);
     };
 }
+                                #endif
 
-                                #ifndef DEF_Lifetime_each_j3dUF9OKQf4
-                                #define DEF_Lifetime_each_j3dUF9OKQf4
-inline void Lifetime_each_j3dUF9OK(const s_Lifetime& lifetime, const int minPathDepth, fu::str& result, const int deref_flatCount, const s_TokenIdx& _here, const s_Context& ctx)
+                                #ifndef DEF_Lifetime_each_bvvSYCwrCv4
+                                #define DEF_Lifetime_each_bvvSYCwrCv4
+inline void Lifetime_each_bvvS(const Lifetime_llCF& lifetime, const int minPathDepth, fu::str& result, const int deref_flatCount, const TokenIdx_5b85& _here, const Context_UXD9& ctx)
 {
-    // Hoisted:
-    int offset0_1;
-
     fu::view<char> chars = lifetime.uni0n;
     int offset = 0;
     while (offset < chars.size())
     {
         const int offset0 = offset;
-        const unsigned r = parse7bit(chars, offset);
-        int BL_3_v {};
+        const unsigned r = parse7bit_7Yz9(chars, offset);
+        int offset0_1;
+        int BL_3_v;
         const int sr = (__extension__ (
         {
             offset0_1 = (offset + 0);
@@ -2765,9 +2834,9 @@ inline void Lifetime_each_j3dUF9OK(const s_Lifetime& lifetime, const int minPath
                 bool isFirstSubRegion = true;
                 for (; ; )
                 {
-                    const unsigned raw_flatOffset = parse7bit(chars, offset);
+                    const unsigned raw_flatOffset = parse7bit_7Yz9(chars, offset);
                     const bool isLastSubRegion = !(raw_flatOffset & 1u);
-                    const unsigned raw_flatCount = (isLastSubRegion ? parse7bit(chars, offset) : 3u);
+                    const unsigned raw_flatCount = (isLastSubRegion ? parse7bit_7Yz9(chars, offset) : 3u);
                     isLastPath = !(raw_flatCount & 1u);
                     if (isLastSubRegion)
                         break;
@@ -2780,50 +2849,56 @@ inline void Lifetime_each_j3dUF9OK(const s_Lifetime& lifetime, const int minPath
 
             };
             BL_3_v = (offset0_1);
-        (void)0;}), BL_3_v);
-        l_34_33_5y6WdB13(fu::get_view(chars, offset0, sr), fu::get_view(chars, sr, offset), int(((r & 1u) ? 0u : (r >> 1u))), minPathDepth, result, deref_flatCount, _here, ctx);
+            (void)0;
+        }), BL_3_v);
+        unsigned v;
+        _NniG(fu::get_view(chars, offset0, sr), fu::get_view(chars, sr, offset), ((r & 1u) ? 0 : (v = (r >> 1u), int(((v >> 1u) ^ ((v & 1u) ? 0xffffffffu : 0x0u))))), minPathDepth, result, deref_flatCount, _here, ctx);
     };
 }
                                 #endif
 
-s_Lifetime Lifetime_op_deref_L4FL85LY(const s_Lifetime& lt, const int deref_flatCount, const s_TokenIdx& _here, const s_Context& ctx)
+Lifetime_llCF Lifetime_op_deref_7Yz9(const Lifetime_llCF& lt, const int deref_flatCount, const TokenIdx_5b85& _here, const Context_UXD9& ctx)
 {
     const int minPathDepth = 2;
     /*MOV*/ fu::str result {};
-    Lifetime_each_j3dUF9OK(lt, minPathDepth, result, deref_flatCount, _here, ctx);
-    return s_Lifetime { static_cast<fu::str&&>(result) };
+    Lifetime_each_bvvS(lt, minPathDepth, result, deref_flatCount, _here, ctx);
+    return Lifetime_llCF { static_cast<fu::str&&>(result) };
 }
 
-s_Lifetime Lifetime_makeShared_pCJ6hBta(const s_Lifetime& lifetime, const int flatCount, const s_TokenIdx& _here, const s_Context& ctx)
+Lifetime_llCF Lifetime_makeShared_7Yz9(const Lifetime_llCF& lifetime, const int flatCount, const TokenIdx_5b85& _here, const Context_UXD9& ctx)
 {
-    return Lifetime_union_YIGC7Sux(Lifetime_op_deref_L4FL85LY(lifetime, flatCount, _here, ctx), Lifetime_static, false, _here, ctx);
+    return Lifetime_union_7Yz9(Lifetime_op_deref_7Yz9(lifetime, flatCount, _here, ctx), Lifetime_static_immoveable, false, _here, ctx);
 }
 
-inline static void l_34_35_KiodcHJa(const bool isLastSubRegion, const bool isLastPath, fu::view<char> raw_prefix, const int struct_flatCount, const int struct_flatOffset, fu::str& result, const int flatCount, const int flatOffset, const s_TokenIdx& _here, const s_Context& ctx)
+                                #ifndef DEF_onLastSubRegion_gOOQOAPFEMc
+                                #define DEF_onLastSubRegion_gOOQOAPFEMc
+inline static void onLastSubRegion_gOOQ(const bool isLastSubRegion, const bool isLastPath, fu::view<char> raw_prefix, const int struct_flatCount, const int struct_flatOffset, fu::vec_range_mut<char> result, const int flatCount, const int flatOffset, const TokenIdx_5b85& _here, const Context_UXD9& ctx)
 {
     if (((flatCount + flatOffset) <= struct_flatCount))
     {
         result += raw_prefix;
         const int flatOffset_1 = (struct_flatOffset + flatOffset);
-        const bool isLastPath_1 = isLastPath;
         if ((flatOffset_1 >= 0) && (flatCount > 0) && (isLastSubRegion || (flatCount == 1)))
         {
-            append7bit(result, ((unsigned(flatOffset_1) << 1u) | (isLastSubRegion ? 0u : 1u)));
+            append7bit_7Yz9(result, ((unsigned(flatOffset_1) << 1u) | (isLastSubRegion ? 0u : 1u)));
             if (isLastSubRegion)
-                append7bit(result, ((unsigned(flatCount) << 1u) | (isLastPath_1 ? 0u : 1u)));
+                append7bit_7Yz9(result, ((unsigned(flatCount) << 1u) | (isLastPath ? 0u : 1u)));
 
         }
         else
-            BUG_9SZtRVJ0((x7E_gCeFmDFw(((x7E_gCeFmDFw(((x7E_gCeFmDFw("appendSubRegion: flatCount("_fu, fu::i64dec(flatCount)) + ")"_fu) + " flatOffset("_fu), fu::i64dec(flatOffset_1)) + ")"_fu) + " isLastSubRegion("_fu), fu::booldec(isLastSubRegion)) + ")"_fu), _here, ctx);
+            BUG_u9Gb((x7E_rA00(((x7E_rA00(((x7E_rA00("appendSubRegion: flatCount("_view, fu::i64dec(flatCount)) + ")"_view) + " flatOffset("_view), fu::i64dec(flatOffset_1)) + ")"_view) + " isLastSubRegion("_view), fu::booldec(isLastSubRegion)) + ")"_view), _here, ctx);
 
     }
     else
     {
-        BUG_9SZtRVJ0((x7E_gCeFmDFw(((x7E_gCeFmDFw(((x7E_gCeFmDFw("Lifetime_op_field: field.flatOffset("_fu, fu::i64dec(flatOffset)) + ")"_fu) + " + field.flatCount("_fu), fu::i64dec(flatCount)) + ")"_fu) + " !<= struct.flatCount("_fu), fu::i64dec(struct_flatCount)) + ")"_fu), _here, ctx);
+        BUG_u9Gb((x7E_rA00(((x7E_rA00(((x7E_rA00("Lifetime_op_field: field.flatOffset("_view, fu::i64dec(flatOffset)) + ")"_view) + " + field.flatCount("_view), fu::i64dec(flatCount)) + ")"_view) + " !<= struct.flatCount("_view), fu::i64dec(struct_flatCount)) + ")"_view), _here, ctx);
     };
 }
+                                #endif
 
-inline static void l_34_34_6YdPdThv(fu::view<char> paths, fu::str& result, const int flatCount, const int flatOffset, const s_TokenIdx& _here, const s_Context& ctx)
+                                #ifndef DEF___4qhyZHMu3ma
+                                #define DEF___4qhyZHMu3ma
+inline static void _4qhy(fu::view<char> paths, fu::vec_range_mut<char> result, const int flatCount, const int flatOffset, const TokenIdx_5b85& _here, const Context_UXD9& ctx)
 {
     int offset = 0;
     for (; ; )
@@ -2834,15 +2909,15 @@ inline static void l_34_34_6YdPdThv(fu::view<char> paths, fu::str& result, const
         for (; ; )
         {
             const int subregion0 = offset;
-            const unsigned raw_flatOffset = parse7bit(paths, offset);
+            const unsigned raw_flatOffset = parse7bit_7Yz9(paths, offset);
             const bool isLastSubRegion = !(raw_flatOffset & 1u);
-            const unsigned raw_flatCount = (isLastSubRegion ? parse7bit(paths, offset) : 3u);
+            const unsigned raw_flatCount = (isLastSubRegion ? parse7bit_7Yz9(paths, offset) : 3u);
             isLastPath = !(raw_flatCount & 1u);
             const int flatCount_1 = int((raw_flatCount >> 1u));
             const int flatOffset_1 = int((raw_flatOffset >> 1u));
             if (isLastSubRegion)
             {
-                l_34_35_KiodcHJa(isLastSubRegion, isLastPath, fu::get_view(paths, path0, subregion0), flatCount_1, flatOffset_1, result, flatCount, flatOffset, _here, ctx);
+                onLastSubRegion_gOOQ(isLastSubRegion, isLastPath, fu::get_view(paths, path0, subregion0), flatCount_1, flatOffset_1, result, flatCount, flatOffset, _here, ctx);
                 break;
             }
             else
@@ -2854,41 +2929,43 @@ inline static void l_34_34_6YdPdThv(fu::view<char> paths, fu::str& result, const
 
     };
     if (!(offset == paths.size()))
-        BUG_9SZtRVJ0("walkPaths(!tailOK): excess bytes"_fu, _here, ctx);
+        BUG_u9Gb("walkPaths(!tailOK): excess bytes"_view, _here, ctx);
 
 }
+                                #endif
 
-inline static void l_34_33_h4lOB3RY(fu::view<char> r_raw, fu::view<char> paths, const int locid, const int minPathDepth, fu::str& result, const int flatCount, const int flatOffset, const s_TokenIdx& _here, const s_Context& ctx)
+                                #ifndef DEF___K4otcw1nc83
+                                #define DEF___K4otcw1nc83
+inline static void _K4ot(fu::view<char> r_raw, fu::view<char> paths, const int locid, const int minPathDepth, fu::str& result, const int flatCount, const int flatOffset, const TokenIdx_5b85& _here, const Context_UXD9& ctx)
 {
     result += r_raw;
-    if (paths == SR_empty)
+    if (paths == SR_empty.ref)
         result += paths;
     else if (locid)
     {
         const int result0 = result.size();
-        l_34_34_6YdPdThv(paths, result, flatCount, flatOffset, _here, ctx);
-        assertPathsValid_F77ZcVgF(fu::get_view(result, result0), -1, -1, false, minPathDepth, _here, ctx);
+        _4qhy(paths, result, flatCount, flatOffset, _here, ctx);
+        assertPathsValid_7Yz9(fu::get_view(result, result0), -1, -1, false, minPathDepth, _here, ctx);
     }
     else
     {
-        BUG_9SZtRVJ0("Lifetime_op: non-locid non-x00x00 subregion."_fu, _here, ctx);
+        BUG_u9Gb("Lifetime_op: non-locid non-x00x00 subregion."_view, _here, ctx);
     };
 }
+                                #endif
 
-                                #ifndef DEF_Lifetime_each_ICHl8Sx2Nv9
-                                #define DEF_Lifetime_each_ICHl8Sx2Nv9
-inline void Lifetime_each_ICHl8Sx2(const s_Lifetime& lifetime, const int minPathDepth, fu::str& result, const int flatCount, const int flatOffset, const s_TokenIdx& _here, const s_Context& ctx)
+                                #ifndef DEF_Lifetime_each_kP3bIKTg7Q6
+                                #define DEF_Lifetime_each_kP3bIKTg7Q6
+inline void Lifetime_each_kP3b(const Lifetime_llCF& lifetime, const int minPathDepth, fu::str& result, const int flatCount, const int flatOffset, const TokenIdx_5b85& _here, const Context_UXD9& ctx)
 {
-    // Hoisted:
-    int offset0_1;
-
     fu::view<char> chars = lifetime.uni0n;
     int offset = 0;
     while (offset < chars.size())
     {
         const int offset0 = offset;
-        const unsigned r = parse7bit(chars, offset);
-        int BL_3_v {};
+        const unsigned r = parse7bit_7Yz9(chars, offset);
+        int offset0_1;
+        int BL_3_v;
         const int sr = (__extension__ (
         {
             offset0_1 = (offset + 0);
@@ -2898,9 +2975,9 @@ inline void Lifetime_each_ICHl8Sx2(const s_Lifetime& lifetime, const int minPath
                 bool isFirstSubRegion = true;
                 for (; ; )
                 {
-                    const unsigned raw_flatOffset = parse7bit(chars, offset);
+                    const unsigned raw_flatOffset = parse7bit_7Yz9(chars, offset);
                     const bool isLastSubRegion = !(raw_flatOffset & 1u);
-                    const unsigned raw_flatCount = (isLastSubRegion ? parse7bit(chars, offset) : 3u);
+                    const unsigned raw_flatCount = (isLastSubRegion ? parse7bit_7Yz9(chars, offset) : 3u);
                     isLastPath = !(raw_flatCount & 1u);
                     if (isLastSubRegion)
                         break;
@@ -2913,56 +2990,62 @@ inline void Lifetime_each_ICHl8Sx2(const s_Lifetime& lifetime, const int minPath
 
             };
             BL_3_v = (offset0_1);
-        (void)0;}), BL_3_v);
-        l_34_33_h4lOB3RY(fu::get_view(chars, offset0, sr), fu::get_view(chars, sr, offset), int(((r & 1u) ? 0u : (r >> 1u))), minPathDepth, result, flatCount, flatOffset, _here, ctx);
+            (void)0;
+        }), BL_3_v);
+        unsigned v;
+        _K4ot(fu::get_view(chars, offset0, sr), fu::get_view(chars, sr, offset), ((r & 1u) ? 0 : (v = (r >> 1u), int(((v >> 1u) ^ ((v & 1u) ? 0xffffffffu : 0x0u))))), minPathDepth, result, flatCount, flatOffset, _here, ctx);
     };
 }
                                 #endif
 
-s_Lifetime Lifetime_op_field_vZQKmIec(const s_Lifetime& lt, const int flatCount, const int flatOffset, const s_TokenIdx& _here, const s_Context& ctx)
+Lifetime_llCF Lifetime_op_field_7Yz9(const Lifetime_llCF& lt, const int flatCount, const int flatOffset, const TokenIdx_5b85& _here, const Context_UXD9& ctx)
 {
     const int minPathDepth = 1;
     /*MOV*/ fu::str result {};
-    Lifetime_each_ICHl8Sx2(lt, minPathDepth, result, flatCount, flatOffset, _here, ctx);
-    return s_Lifetime { static_cast<fu::str&&>(result) };
+    Lifetime_each_kP3b(lt, minPathDepth, result, flatCount, flatOffset, _here, ctx);
+    return Lifetime_llCF { static_cast<fu::str&&>(result) };
 }
 
-inline static void l_34_40_vbsGH4bz(const bool child_isFirstSubRegion, const bool child_isLastSubRegion, const bool child_isLastPath, const int child_flatCount, const int child_flatOffset, const bool parent_isLastPath, const int parent_flatCount, const int parent_flatOffset, fu::view<char> parent_rawPrefix, fu::str& result, const s_TokenIdx& _here, const s_Context& ctx)
+                                #ifndef DEF_onSubRegion_wNQCQbkgyfk
+                                #define DEF_onSubRegion_wNQCQbkgyfk
+inline static void onSubRegion_wNQC(const bool child_isFirstSubRegion, const bool child_isLastSubRegion, const bool child_isLastPath, const int child_flatCount, const int child_flatOffset, const bool parent_isLastPath, const int parent_flatCount, const int parent_flatOffset, fu::view<char> parent_rawPrefix, fu::vec_range_mut<char> result, const TokenIdx_5b85& _here, const Context_UXD9& ctx)
 {
     if (child_isFirstSubRegion)
         result += parent_rawPrefix;
 
-    const int result_flatOffset = (!child_isFirstSubRegion ? child_flatOffset : (((child_flatOffset + child_flatCount) <= parent_flatCount) ? (child_flatOffset + parent_flatOffset) : BUG_9SZtRVJ0((x7E_gCeFmDFw(((x7E_gCeFmDFw(((x7E_gCeFmDFw("Lifetime_op_join: child_flatOffset("_fu, fu::i64dec(child_flatOffset)) + ")"_fu) + " + child_flatCount("_fu), fu::i64dec(child_flatCount)) + ")"_fu) + " !<= parent_flatCount("_fu), fu::i64dec(parent_flatCount)) + ")"_fu), _here, ctx)));
+    const int result_flatOffset = (!child_isFirstSubRegion ? child_flatOffset : (((child_flatOffset + child_flatCount) <= parent_flatCount) ? (child_flatOffset + parent_flatOffset) : BUG_u9Gb((x7E_rA00(((x7E_rA00(((x7E_rA00("Lifetime_op_join: child_flatOffset("_view, fu::i64dec(child_flatOffset)) + ")"_view) + " + child_flatCount("_view), fu::i64dec(child_flatCount)) + ")"_view) + " !<= parent_flatCount("_view), fu::i64dec(parent_flatCount)) + ")"_view), _here, ctx)));
     const bool isLastPath = (!parent_isLastPath ? parent_isLastPath : child_isLastPath);
     if ((result_flatOffset >= 0) && (child_flatCount > 0) && (child_isLastSubRegion || (child_flatCount == 1)))
     {
-        append7bit(result, ((unsigned(result_flatOffset) << 1u) | (child_isLastSubRegion ? 0u : 1u)));
+        append7bit_7Yz9(result, ((unsigned(result_flatOffset) << 1u) | (child_isLastSubRegion ? 0u : 1u)));
         if (child_isLastSubRegion)
-            append7bit(result, ((unsigned(child_flatCount) << 1u) | (isLastPath ? 0u : 1u)));
+            append7bit_7Yz9(result, ((unsigned(child_flatCount) << 1u) | (isLastPath ? 0u : 1u)));
 
     }
     else
-        BUG_9SZtRVJ0((x7E_gCeFmDFw(((x7E_gCeFmDFw(((x7E_gCeFmDFw("appendSubRegion: flatCount("_fu, fu::i64dec(child_flatCount)) + ")"_fu) + " flatOffset("_fu), fu::i64dec(result_flatOffset)) + ")"_fu) + " isLastSubRegion("_fu), fu::booldec(child_isLastSubRegion)) + ")"_fu), _here, ctx);
+        BUG_u9Gb((x7E_rA00(((x7E_rA00(((x7E_rA00("appendSubRegion: flatCount("_view, fu::i64dec(child_flatCount)) + ")"_view) + " flatOffset("_view), fu::i64dec(result_flatOffset)) + ")"_view) + " isLastSubRegion("_view), fu::booldec(child_isLastSubRegion)) + ")"_view), _here, ctx);
 
 }
+                                #endif
 
-inline static void l_34_39_J7QiNk4o(const bool parent_isLastPath, const int parent_flatCount, const int parent_flatOffset, fu::view<char> parent_rawPrefix, fu::str& result, fu::view<char> child, const s_TokenIdx& _here, const s_Context& ctx)
+                                #ifndef DEF_onLastSubRegion_M8HfHduY688
+                                #define DEF_onLastSubRegion_M8HfHduY688
+inline static void onLastSubRegion_M8Hf(const bool parent_isLastPath, const int parent_flatCount, const int parent_flatOffset, fu::view<char> parent_rawPrefix, fu::vec_range_mut<char> result, fu::view<char> child, const TokenIdx_5b85& _here, const Context_UXD9& ctx)
 {
     int _c0 = 0;
-    const bool parent_isLastPath_1 = parent_isLastPath;
     for (; ; )
     {
         bool isLastPath = false;
         bool isFirstSubRegion = true;
         for (; ; )
         {
-            const unsigned raw_flatOffset = parse7bit(child, _c0);
+            const unsigned raw_flatOffset = parse7bit_7Yz9(child, _c0);
             const bool isLastSubRegion = !(raw_flatOffset & 1u);
-            const unsigned raw_flatCount = (isLastSubRegion ? parse7bit(child, _c0) : 3u);
+            const unsigned raw_flatCount = (isLastSubRegion ? parse7bit_7Yz9(child, _c0) : 3u);
             isLastPath = !(raw_flatCount & 1u);
             const int flatCount = int((raw_flatCount >> 1u));
             const int flatOffset = int((raw_flatOffset >> 1u));
-            l_34_40_vbsGH4bz(isFirstSubRegion, isLastSubRegion, isLastPath, flatCount, flatOffset, parent_isLastPath_1, parent_flatCount, parent_flatOffset, parent_rawPrefix, result, _here, ctx);
+            onSubRegion_wNQC(isFirstSubRegion, isLastSubRegion, isLastPath, flatCount, flatOffset, parent_isLastPath, parent_flatCount, parent_flatOffset, parent_rawPrefix, result, _here, ctx);
             if (isLastSubRegion)
                 break;
             else
@@ -2974,11 +3057,14 @@ inline static void l_34_39_J7QiNk4o(const bool parent_isLastPath, const int pare
 
     };
     if (!(_c0 == child.size()))
-        BUG_9SZtRVJ0("walkPaths(!tailOK): excess bytes"_fu, _here, ctx);
+        BUG_u9Gb("walkPaths(!tailOK): excess bytes"_view, _here, ctx);
 
 }
+                                #endif
 
-inline static void l_34_38_YhQK4pZ4(fu::view<char> parent, fu::str& result, fu::view<char> child, const s_TokenIdx& _here, const s_Context& ctx)
+                                #ifndef DEF___ufWZx1icJFi
+                                #define DEF___ufWZx1icJFi
+inline static void _ufWZ(fu::view<char> parent, fu::vec_range_mut<char> result, fu::view<char> child, const TokenIdx_5b85& _here, const Context_UXD9& ctx)
 {
     int _p0 = 0;
     for (; ; )
@@ -2989,15 +3075,15 @@ inline static void l_34_38_YhQK4pZ4(fu::view<char> parent, fu::str& result, fu::
         for (; ; )
         {
             const int subregion0 = _p0;
-            const unsigned raw_flatOffset = parse7bit(parent, _p0);
+            const unsigned raw_flatOffset = parse7bit_7Yz9(parent, _p0);
             const bool isLastSubRegion = !(raw_flatOffset & 1u);
-            const unsigned raw_flatCount = (isLastSubRegion ? parse7bit(parent, _p0) : 3u);
+            const unsigned raw_flatCount = (isLastSubRegion ? parse7bit_7Yz9(parent, _p0) : 3u);
             isLastPath = !(raw_flatCount & 1u);
             const int flatCount = int((raw_flatCount >> 1u));
             const int flatOffset = int((raw_flatOffset >> 1u));
             if (isLastSubRegion)
             {
-                l_34_39_J7QiNk4o(isLastPath, flatCount, flatOffset, fu::get_view(parent, path0, subregion0), result, child, _here, ctx);
+                onLastSubRegion_M8Hf(isLastPath, flatCount, flatOffset, fu::get_view(parent, path0, subregion0), result, child, _here, ctx);
                 break;
             }
             else
@@ -3009,41 +3095,43 @@ inline static void l_34_38_YhQK4pZ4(fu::view<char> parent, fu::str& result, fu::
 
     };
     if (!(_p0 == parent.size()))
-        BUG_9SZtRVJ0("walkPaths(!tailOK): excess bytes"_fu, _here, ctx);
+        BUG_u9Gb("walkPaths(!tailOK): excess bytes"_view, _here, ctx);
 
 }
+                                #endif
 
-inline static void l_34_33_xyqI12y8(fu::view<char> r_raw, fu::view<char> paths, const int locid, const int minPathDepth, fu::str& result, fu::view<char> child, const s_TokenIdx& _here, const s_Context& ctx)
+                                #ifndef DEF___UhEJ79eywB1
+                                #define DEF___UhEJ79eywB1
+inline static void _UhEJ(fu::view<char> r_raw, fu::view<char> paths, const int locid, const int minPathDepth, fu::str& result, fu::view<char> child, const TokenIdx_5b85& _here, const Context_UXD9& ctx)
 {
     result += r_raw;
-    if (paths == SR_empty)
+    if (paths == SR_empty.ref)
         result += paths;
     else if (locid)
     {
         const int result0 = result.size();
-        l_34_38_YhQK4pZ4(paths, result, child, _here, ctx);
-        assertPathsValid_F77ZcVgF(fu::get_view(result, result0), -1, -1, false, minPathDepth, _here, ctx);
+        _ufWZ(paths, result, child, _here, ctx);
+        assertPathsValid_7Yz9(fu::get_view(result, result0), -1, -1, false, minPathDepth, _here, ctx);
     }
     else
     {
-        BUG_9SZtRVJ0("Lifetime_op: non-locid non-x00x00 subregion."_fu, _here, ctx);
+        BUG_u9Gb("Lifetime_op: non-locid non-x00x00 subregion."_view, _here, ctx);
     };
 }
+                                #endif
 
-                                #ifndef DEF_Lifetime_each_ozNP2EhUKBj
-                                #define DEF_Lifetime_each_ozNP2EhUKBj
-inline void Lifetime_each_ozNP2EhU(const s_Lifetime& lifetime, const int minPathDepth, fu::str& result, fu::view<char> child, const s_TokenIdx& _here, const s_Context& ctx)
+                                #ifndef DEF_Lifetime_each_M0tKBcx03dc
+                                #define DEF_Lifetime_each_M0tKBcx03dc
+inline void Lifetime_each_M0tK(const Lifetime_llCF& lifetime, const int minPathDepth, fu::str& result, fu::view<char> child, const TokenIdx_5b85& _here, const Context_UXD9& ctx)
 {
-    // Hoisted:
-    int offset0_1;
-
     fu::view<char> chars = lifetime.uni0n;
     int offset = 0;
     while (offset < chars.size())
     {
         const int offset0 = offset;
-        const unsigned r = parse7bit(chars, offset);
-        int BL_3_v {};
+        const unsigned r = parse7bit_7Yz9(chars, offset);
+        int offset0_1;
+        int BL_3_v;
         const int sr = (__extension__ (
         {
             offset0_1 = (offset + 0);
@@ -3053,9 +3141,9 @@ inline void Lifetime_each_ozNP2EhU(const s_Lifetime& lifetime, const int minPath
                 bool isFirstSubRegion = true;
                 for (; ; )
                 {
-                    const unsigned raw_flatOffset = parse7bit(chars, offset);
+                    const unsigned raw_flatOffset = parse7bit_7Yz9(chars, offset);
                     const bool isLastSubRegion = !(raw_flatOffset & 1u);
-                    const unsigned raw_flatCount = (isLastSubRegion ? parse7bit(chars, offset) : 3u);
+                    const unsigned raw_flatCount = (isLastSubRegion ? parse7bit_7Yz9(chars, offset) : 3u);
                     isLastPath = !(raw_flatCount & 1u);
                     if (isLastSubRegion)
                         break;
@@ -3068,18 +3156,80 @@ inline void Lifetime_each_ozNP2EhU(const s_Lifetime& lifetime, const int minPath
 
             };
             BL_3_v = (offset0_1);
-        (void)0;}), BL_3_v);
-        l_34_33_xyqI12y8(fu::get_view(chars, offset0, sr), fu::get_view(chars, sr, offset), int(((r & 1u) ? 0u : (r >> 1u))), minPathDepth, result, child, _here, ctx);
+            (void)0;
+        }), BL_3_v);
+        unsigned v;
+        _UhEJ(fu::get_view(chars, offset0, sr), fu::get_view(chars, sr, offset), ((r & 1u) ? 0 : (v = (r >> 1u), int(((v >> 1u) ^ ((v & 1u) ? 0xffffffffu : 0x0u))))), minPathDepth, result, child, _here, ctx);
     };
 }
                                 #endif
 
-s_Lifetime Lifetime_op_join_dwN33Lug(const s_Lifetime& lt, fu::view<char> child, const s_TokenIdx& _here, const s_Context& ctx)
+Lifetime_llCF Lifetime_op_join_7Yz9(const Lifetime_llCF& lt, fu::view<char> child, const TokenIdx_5b85& _here, const Context_UXD9& ctx)
 {
     const int minPathDepth = 1;
     /*MOV*/ fu::str result {};
-    Lifetime_each_ozNP2EhU(lt, minPathDepth, result, child, _here, ctx);
-    return s_Lifetime { static_cast<fu::str&&>(result) };
+    Lifetime_each_M0tK(lt, minPathDepth, result, child, _here, ctx);
+    return Lifetime_llCF { static_cast<fu::str&&>(result) };
+}
+
+                                #ifndef DEF_onPathStart_aBuIzFe5hYb
+                                #define DEF_onPathStart_aBuIzFe5hYb
+inline static void onPathStart_aBuI(fu::str& result)
+{
+    result += "\n\tPath:\n"_view;
+}
+                                #endif
+
+                                #ifndef DEF_onSubRegion_m7FSm6F7R8g
+                                #define DEF_onSubRegion_m7FSm6F7R8g
+inline static void onSubRegion_m7FS(const int flatCount, const int flatOffset, const bool isFirstSubRegion, const bool isLastSubRegion, fu::str& result)
+{
+    result += (x7E_rA00((x7E_rA00((x7E_rA00("\t\tSubReg\t flatCount="_view, fu::i64dec(flatCount)) + " isFirstSubRegion="_view), fu::booldec(isFirstSubRegion)) + " isLastSubRegion="_view), fu::booldec(isLastSubRegion)) + "\n"_view);
+    result += (x7E_rA00("\t\t\tflatOffset="_view, fu::i64dec(flatOffset)) + "\n"_view);
+}
+                                #endif
+
+                                #ifndef DEF_onPathDone_b58IAFDbu5b
+                                #define DEF_onPathDone_b58IAFDbu5b
+inline static void onPathDone_b58I(const bool isLastPath, fu::str& result)
+{
+    result += x7E_rA00("\t/Path\tisLastPath="_view, fu::booldec(isLastPath));
+}
+                                #endif
+
+fu::str printPaths_7Yz9(fu::view<char> str, const TokenIdx_5b85& _here, const Context_UXD9& ctx)
+{
+    /*MOV*/ fu::str result {};
+    int _o = 0;
+    for (; ; )
+    {
+        bool isLastPath = false;
+        bool isFirstSubRegion = true;
+        onPathStart_aBuI(result);
+        for (; ; )
+        {
+            const unsigned raw_flatOffset = parse7bit_7Yz9(str, _o);
+            const bool isLastSubRegion = !(raw_flatOffset & 1u);
+            const unsigned raw_flatCount = (isLastSubRegion ? parse7bit_7Yz9(str, _o) : 3u);
+            isLastPath = !(raw_flatCount & 1u);
+            const int flatCount = int((raw_flatCount >> 1u));
+            const int flatOffset = int((raw_flatOffset >> 1u));
+            onSubRegion_m7FS(flatCount, flatOffset, isFirstSubRegion, isLastSubRegion, result);
+            if (isLastSubRegion)
+                break;
+            else
+                isFirstSubRegion = false;
+
+        };
+        onPathDone_b58I(isLastPath, result);
+        if (isLastPath)
+            break;
+
+    };
+    if (!(_o == str.size()))
+        BUG_u9Gb("walkPaths(!tailOK): excess bytes"_view, _here, ctx);
+
+    return /*NRVO*/ result;
 }
 
 #endif

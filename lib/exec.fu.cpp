@@ -2,12 +2,13 @@
 #include <stdio.h>
 #include <fu/str.h>
 #include <fu/defer.h>
+#include <fu/vec_range.h>
 #include <fu/vec/concat_one.h>
 
 
 #ifndef fu_NO_fdefs
 
-int exec_sounLutz(fu::str&& cmd, int& status, fu::str& stdout)
+int exec_G82R(fu::str&& cmd, int& status, fu::vec_range_mut<char> stdout)
 {
     int err = 0;
     status = -1;

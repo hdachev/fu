@@ -5,62 +5,67 @@
 #include <fu/view.h>
 #include <fu/defer.h>
 #include <fu/never.h>
+#include <fu/vec_range.h>
 
-struct s_ClosureID;
-struct s_Target;
-struct s_TokenIdx;
-struct s_Context;
-struct s_Module;
-struct s_ModuleInputs;
-struct s_LexerOutput;
-struct s_Token;
-enum s_kind: fu::u8;
-struct s_LineColChars;
-struct s_ParserOutput;
-struct s_Node;
-typedef uint16_t s_DeclAsserts;
-typedef fu::u8 s_ParseSyntax;
-typedef unsigned s_Flags;
-struct s_Import;
-struct s_ModuleOrder;
-struct s_ModuleOutputs;
-struct s_Struct;
-struct s_ScopeItem;
-struct s_Shape;
-struct s_SolverOutput;
-struct s_SolvedNode;
-struct s_Helpers;
-struct s_Type;
-struct s_ValueType;
-struct s_Lifetime;
-typedef fu::u8 s_VFacts;
-struct s_Scope;
-struct s_Overload;
-typedef uint16_t s_SolverStatus;
-struct s_Extended;
-struct s_Argument;
-struct s_BitSet;
-struct s_COWInside;
-typedef fu::u8 s_ExitPaths;
-struct s_Template;
-struct s_TEA;
-typedef uint16_t s_FxMask;
-typedef int s_SolverNotes;
-struct s_CodegenOutput;
-typedef fu::u8 s_CGDefects;
-struct s_ModuleStats;
-struct s_ModuleStat;
-struct s_Profile;
-struct s_Map_iIYL7rECCBg;
-struct s_NativeHacks;
-[[noreturn]] fu::never BUG_9SZtRVJ0(fu::str&&, const s_TokenIdx&, const s_Context&);
-void appendVarint_YxEMA0h9(fu::str&, unsigned);
-unsigned parseVarint_Fc3p3Wmg(int&, fu::view<char>);
-s_Target Target_2jgCJZJY(int, int, int);
+struct ClosureID_XYK2;
+struct Target_VZrr;
+struct TokenIdx_5b85;
+struct Context_UXD9;
+struct Module_qqBh;
+struct ModuleInputs_1DFx;
+struct LexerOutput_VDDl;
+struct Token_RpL8;
+enum Kind_Idfg: fu::u8;
+struct LineColChars_03II;
+struct ParserOutput_oNgu;
+struct Node_Wr1X;
+typedef uint16_t DeclAsserts_taUG;
+typedef fu::u8 ParseSyntax_Lay2;
+typedef unsigned Flags_Lzg8;
+struct Import_jcWj;
+struct ModuleOrder_HMNg;
+struct ModuleOutputs_wJzJ;
+struct Struct_5VgD;
+struct ScopeItem_ydOE;
+struct Set_qOJY;
+struct Shape_aOyF;
+struct SolverOutput_FnNg;
+struct SolvedNode_owql;
+struct Helpers_DyqV;
+struct Type_KBIB;
+struct ValueType_B8uC;
+typedef fu::u8 VFacts_xhRf;
+struct Lifetime_llCF;
+struct Scope_bN0w;
+struct Overload_OYmb;
+typedef uint16_t SolverStatus_h9em;
+struct Extended_Ebxv;
+struct Argument_HFkq;
+struct BitSet_mmp7;
+struct COWInside_2Z4D;
+typedef unsigned MayEscapeVia_5nki;
+typedef fu::u8 ExitPaths_UXHs;
+struct Template_1cFh;
+struct TEA_87LR;
+typedef uint16_t FxMask_2dRz;
+typedef int SolverNotes_LSla;
+struct CodegenOutput_OFce;
+struct Set_XshD;
+typedef fu::u8 CGDefects_2L18;
+struct ModuleStats_zo42;
+struct ModuleStat_6soj;
+struct Profile_zroC;
+struct Sample_Time_cblj;
+struct Map_4s6T;
+struct NativeQualities_EGJc;
+[[noreturn]] fu::never BUG_u9Gb(fu::view<char>, const TokenIdx_5b85&, const Context_UXD9&);
+void appendVarint_V5Iu(fu::vec_range_mut<char>, unsigned);
+unsigned parseVarint_V5Iu(int&, fu::view<char>);
+Target_VZrr Target_xQNS(int, int, int);
 
-                                #ifndef DEF_s_Target
-                                #define DEF_s_Target
-struct s_Target
+                                #ifndef DEF_Target_VZrrYUw5Awd
+                                #define DEF_Target_VZrrYUw5Awd
+struct Target_VZrr
 {
     uint64_t _packed;
     explicit operator bool() const noexcept
@@ -72,11 +77,11 @@ struct s_Target
 };
                                 #endif
 
-                                #ifndef DEF_s_ClosureID
-                                #define DEF_s_ClosureID
-struct s_ClosureID
+                                #ifndef DEF_ClosureID_XYK2X2pzbZd
+                                #define DEF_ClosureID_XYK2X2pzbZd
+struct ClosureID_XYK2
 {
-    s_Target target;
+    Target_VZrr target;
     unsigned revision;
     explicit operator bool() const noexcept
     {
@@ -87,9 +92,9 @@ struct s_ClosureID
 };
                                 #endif
 
-                                #ifndef DEF_s_TokenIdx
-                                #define DEF_s_TokenIdx
-struct s_TokenIdx
+                                #ifndef DEF_TokenIdx_5b85kf1B4eb
+                                #define DEF_TokenIdx_5b85kf1B4eb
+struct TokenIdx_5b85
 {
     int modid;
     int tokidx;
@@ -103,368 +108,389 @@ struct s_TokenIdx
 };
                                 #endif
 
-                                #ifndef DEF_s_kind
-                                #define DEF_s_kind
-enum s_kind: fu::u8
+                                #ifndef DEF_Kind_Idfg
+                                #define DEF_Kind_Idfg
+enum Kind_Idfg: fu::u8
 {
-    s_kind_sof = 1u,
-    s_kind_err = 2u,
-    s_kind_eof = 3u,
-    s_kind_id = 4u,
-    s_kind_op = 5u,
-    s_kind_int = 6u,
-    s_kind_real = 7u,
-    s_kind_char = 8u,
-    s_kind_str = 9u,
-    s_kind_bool = 10u,
-    s_kind_definit = 11u,
-    s_kind_empty = 12u,
-    s_kind_struct = 13u,
-    s_kind_union = 14u,
-    s_kind_primitive = 15u,
-    s_kind_flags = 16u,
-    s_kind_enum = 17u,
-    s_kind_fn = 18u,
-    s_kind_copy = 19u,
-    s_kind_move = 20u,
-    s_kind_arrlit = 21u,
-    s_kind_not = 22u,
-    s_kind_call = 23u,
-    s_kind_argid = 24u,
-    s_kind_root = 25u,
-    s_kind_block = 26u,
-    s_kind_if = 27u,
-    s_kind_or = 28u,
-    s_kind_and = 29u,
-    s_kind_loop = 30u,
-    s_kind_jump = 31u,
-    s_kind___far_jump = 32u,
-    s_kind_defer = 33u,
-    s_kind_try = 34u,
-    s_kind_let = 35u,
-    s_kind_letdef = 36u,
-    s_kind_typecast = 37u,
-    s_kind_typeassert = 38u,
-    s_kind_typeparam = 39u,
-    s_kind_unwrap = 40u,
-    s_kind_pragma = 41u,
-    s_kind_break = 42u,
-    s_kind_return = 43u,
-    s_kind_continue = 44u,
-    s_kind_import = 45u,
-    s_kind_addroffn = 46u,
-    s_kind_forfieldsof = 47u,
-    s_kind_members = 48u,
-    s_kind_fnbranch = 49u,
-    s_kind_pattern = 50u,
-    s_kind_typeunion = 51u,
-    s_kind_typetag = 52u,
-    s_kind___relaxed = 53u,
-    s_kind___convert = 54u,
-    s_kind___preceding_ref_arg = 55u,
-    s_kind___no_kind_yet = 56u,
-    s_kind___tombstone = 57u,
-    s_kind_type = 58u,
-    s_kind_var = 59u,
-    s_kind_field = 60u,
-    s_kind_enumv = 61u,
-    s_kind_template = 62u,
-    s_kind___native = 63u,
-    s_kind_inline = 64u,
+    Kind_Idfg_sof = 1u,
+    Kind_Idfg_err = 2u,
+    Kind_Idfg_eof = 3u,
+    Kind_Idfg_id = 4u,
+    Kind_Idfg_op = 5u,
+    Kind_Idfg_int = 6u,
+    Kind_Idfg_real = 7u,
+    Kind_Idfg_char = 8u,
+    Kind_Idfg_str = 9u,
+    Kind_Idfg_bool = 10u,
+    Kind_Idfg_definit = 11u,
+    Kind_Idfg_empty = 12u,
+    Kind_Idfg_struct = 13u,
+    Kind_Idfg_union = 14u,
+    Kind_Idfg_primitive = 15u,
+    Kind_Idfg_flags = 16u,
+    Kind_Idfg_enum = 17u,
+    Kind_Idfg_fn = 18u,
+    Kind_Idfg_copy = 19u,
+    Kind_Idfg_move = 20u,
+    Kind_Idfg_arrlit = 21u,
+    Kind_Idfg_not = 22u,
+    Kind_Idfg_call = 23u,
+    Kind_Idfg_call_indir = 24u,
+    Kind_Idfg_argid = 25u,
+    Kind_Idfg_root = 26u,
+    Kind_Idfg_block = 27u,
+    Kind_Idfg_if = 28u,
+    Kind_Idfg_or = 29u,
+    Kind_Idfg_and = 30u,
+    Kind_Idfg_loop = 31u,
+    Kind_Idfg_jump = 32u,
+    Kind_Idfg___far_jump = 33u,
+    Kind_Idfg_defer = 34u,
+    Kind_Idfg_try = 35u,
+    Kind_Idfg_let = 36u,
+    Kind_Idfg_letdef = 37u,
+    Kind_Idfg_typecast = 38u,
+    Kind_Idfg_typeassert = 39u,
+    Kind_Idfg_typeparam = 40u,
+    Kind_Idfg_unwrap = 41u,
+    Kind_Idfg_pragma = 42u,
+    Kind_Idfg_break = 43u,
+    Kind_Idfg_return = 44u,
+    Kind_Idfg_continue = 45u,
+    Kind_Idfg_import = 46u,
+    Kind_Idfg_addroffn = 47u,
+    Kind_Idfg_forfieldsof = 48u,
+    Kind_Idfg_members = 49u,
+    Kind_Idfg_fnbranch = 50u,
+    Kind_Idfg_pattern = 51u,
+    Kind_Idfg_typeunion = 52u,
+    Kind_Idfg_typetag = 53u,
+    Kind_Idfg___relaxed = 54u,
+    Kind_Idfg___convert = 55u,
+    Kind_Idfg___preceding_ref_arg = 56u,
+    Kind_Idfg___no_kind_yet = 57u,
+    Kind_Idfg___tombstone = 58u,
+    Kind_Idfg_type = 59u,
+    Kind_Idfg_var = 60u,
+    Kind_Idfg_field = 61u,
+    Kind_Idfg_enumv = 62u,
+    Kind_Idfg_template = 63u,
+    Kind_Idfg___native = 64u,
+    Kind_Idfg_inline = 65u,
 };
                                 #endif
 
-                                #ifndef DEF_s_DeclAsserts
-                                #define DEF_s_DeclAsserts
-inline constexpr s_DeclAsserts s_DeclAsserts_A_NOCOPY = s_DeclAsserts(1u);
-inline constexpr s_DeclAsserts s_DeclAsserts_A_NOVEC = s_DeclAsserts(2u);
-inline constexpr s_DeclAsserts s_DeclAsserts_A_TRIVIAL = s_DeclAsserts(4u);
-inline constexpr s_DeclAsserts s_DeclAsserts_A_PURE = s_DeclAsserts(8u);
-inline constexpr s_DeclAsserts s_DeclAsserts_A_PURE_CTX = s_DeclAsserts(16u);
-inline constexpr s_DeclAsserts s_DeclAsserts_A_PURE_FX = s_DeclAsserts(32u);
-inline constexpr s_DeclAsserts s_DeclAsserts_A_NOFLOW = s_DeclAsserts(64u);
-inline constexpr s_DeclAsserts s_DeclAsserts_A_NOTHROW = s_DeclAsserts(128u);
-inline constexpr s_DeclAsserts s_DeclAsserts_A_NOCRASH = s_DeclAsserts(256u);
-inline constexpr s_DeclAsserts s_DeclAsserts_A_NOIO = s_DeclAsserts(512u);
-inline constexpr s_DeclAsserts s_DeclAsserts_A_FAST = s_DeclAsserts(1024u);
-inline constexpr s_DeclAsserts s_DeclAsserts_A_NOINLINE = s_DeclAsserts(2048u);
+                                #ifndef DEF_DeclAsserts_taUG
+                                #define DEF_DeclAsserts_taUG
+inline constexpr DeclAsserts_taUG DeclAsserts_taUG_A_NOCOPY = DeclAsserts_taUG(1u);
+inline constexpr DeclAsserts_taUG DeclAsserts_taUG_A_NOVEC = DeclAsserts_taUG(2u);
+inline constexpr DeclAsserts_taUG DeclAsserts_taUG_A_TRIVIAL = DeclAsserts_taUG(4u);
+inline constexpr DeclAsserts_taUG DeclAsserts_taUG_A_NODISCARD = DeclAsserts_taUG(8u);
+inline constexpr DeclAsserts_taUG DeclAsserts_taUG_A_PURE = DeclAsserts_taUG(16u);
+inline constexpr DeclAsserts_taUG DeclAsserts_taUG_A_PURE_CTX = DeclAsserts_taUG(32u);
+inline constexpr DeclAsserts_taUG DeclAsserts_taUG_A_PURE_FX = DeclAsserts_taUG(64u);
+inline constexpr DeclAsserts_taUG DeclAsserts_taUG_A_NOFLOW = DeclAsserts_taUG(128u);
+inline constexpr DeclAsserts_taUG DeclAsserts_taUG_A_NOTHROW = DeclAsserts_taUG(256u);
+inline constexpr DeclAsserts_taUG DeclAsserts_taUG_A_NOCRASH = DeclAsserts_taUG(512u);
+inline constexpr DeclAsserts_taUG DeclAsserts_taUG_A_NOIO = DeclAsserts_taUG(1024u);
+inline constexpr DeclAsserts_taUG DeclAsserts_taUG_A_FAST = DeclAsserts_taUG(2048u);
+inline constexpr DeclAsserts_taUG DeclAsserts_taUG_A_NOINLINE = DeclAsserts_taUG(4096u);
 
-inline constexpr s_DeclAsserts MASK_s_DeclAsserts
-    = s_DeclAsserts_A_NOCOPY
-    | s_DeclAsserts_A_NOVEC
-    | s_DeclAsserts_A_TRIVIAL
-    | s_DeclAsserts_A_PURE
-    | s_DeclAsserts_A_PURE_CTX
-    | s_DeclAsserts_A_PURE_FX
-    | s_DeclAsserts_A_NOFLOW
-    | s_DeclAsserts_A_NOTHROW
-    | s_DeclAsserts_A_NOCRASH
-    | s_DeclAsserts_A_NOIO
-    | s_DeclAsserts_A_FAST
-    | s_DeclAsserts_A_NOINLINE;
+inline constexpr DeclAsserts_taUG MASK_DeclAsserts_taUG
+    = DeclAsserts_taUG_A_NOCOPY
+    | DeclAsserts_taUG_A_NOVEC
+    | DeclAsserts_taUG_A_TRIVIAL
+    | DeclAsserts_taUG_A_NODISCARD
+    | DeclAsserts_taUG_A_PURE
+    | DeclAsserts_taUG_A_PURE_CTX
+    | DeclAsserts_taUG_A_PURE_FX
+    | DeclAsserts_taUG_A_NOFLOW
+    | DeclAsserts_taUG_A_NOTHROW
+    | DeclAsserts_taUG_A_NOCRASH
+    | DeclAsserts_taUG_A_NOIO
+    | DeclAsserts_taUG_A_FAST
+    | DeclAsserts_taUG_A_NOINLINE;
                                 #endif
 
-                                #ifndef DEF_s_ParseSyntax
-                                #define DEF_s_ParseSyntax
-inline constexpr s_ParseSyntax s_ParseSyntax_PS_PARENS = s_ParseSyntax(1u);
-inline constexpr s_ParseSyntax s_ParseSyntax_PS_DISCARD_IF_BLOCK_TAIL = s_ParseSyntax(2u);
-inline constexpr s_ParseSyntax s_ParseSyntax_PS_ALWAYS_DISCARD = s_ParseSyntax(4u);
-inline constexpr s_ParseSyntax s_ParseSyntax_PS_NOT_AN_EXPRESSION = s_ParseSyntax(8u);
+                                #ifndef DEF_ParseSyntax_Lay2
+                                #define DEF_ParseSyntax_Lay2
+inline constexpr ParseSyntax_Lay2 ParseSyntax_Lay2_PS_PARENS = ParseSyntax_Lay2(1u);
+inline constexpr ParseSyntax_Lay2 ParseSyntax_Lay2_PS_DISCARD_IF_BLOCK_TAIL = ParseSyntax_Lay2(2u);
+inline constexpr ParseSyntax_Lay2 ParseSyntax_Lay2_PS_ALWAYS_DISCARD = ParseSyntax_Lay2(4u);
+inline constexpr ParseSyntax_Lay2 ParseSyntax_Lay2_PS_NOT_AN_EXPRESSION = ParseSyntax_Lay2(8u);
 
-inline constexpr s_ParseSyntax MASK_s_ParseSyntax
-    = s_ParseSyntax_PS_PARENS
-    | s_ParseSyntax_PS_DISCARD_IF_BLOCK_TAIL
-    | s_ParseSyntax_PS_ALWAYS_DISCARD
-    | s_ParseSyntax_PS_NOT_AN_EXPRESSION;
+inline constexpr ParseSyntax_Lay2 MASK_ParseSyntax_Lay2
+    = ParseSyntax_Lay2_PS_PARENS
+    | ParseSyntax_Lay2_PS_DISCARD_IF_BLOCK_TAIL
+    | ParseSyntax_Lay2_PS_ALWAYS_DISCARD
+    | ParseSyntax_Lay2_PS_NOT_AN_EXPRESSION;
                                 #endif
 
-                                #ifndef DEF_s_Flags
-                                #define DEF_s_Flags
-inline constexpr s_Flags s_Flags_F_CALL_HAS_DOT = 1u;
-inline constexpr s_Flags s_Flags_F_CALL_HAS_ARGPARENS = 2u;
-inline constexpr s_Flags s_Flags_F_CALL_HAS_NAMED_ARGS = 4u;
-inline constexpr s_Flags s_Flags_F_OPERATOR = 8u;
-inline constexpr s_Flags s_Flags_F_TYPENAME = 16u;
-inline constexpr s_Flags s_Flags_F_COMPOUND_ID = 32u;
-inline constexpr s_Flags s_Flags_F_ARGID_IS_OPTIONAL = 64u;
-inline constexpr s_Flags s_Flags_F_LAX = 128u;
-inline constexpr s_Flags s_Flags_F_SHADOW = 256u;
-inline constexpr s_Flags s_Flags_F_MUSTNAME = 512u;
-inline constexpr s_Flags s_Flags_F_WRITTEN_TO = 1024u;
-inline constexpr s_Flags s_Flags_F_MUT = 2048u;
-inline constexpr s_Flags s_Flags_F_CONST = 4096u;
-inline constexpr s_Flags s_Flags_F_VAL = 8192u;
-inline constexpr s_Flags s_Flags_F_REF = 16384u;
-inline constexpr s_Flags s_Flags_F_IMPLICIT = 32768u;
-inline constexpr s_Flags s_Flags_F_USING = 65536u;
-inline constexpr s_Flags s_Flags_F_CONVERSION = 131072u;
-inline constexpr s_Flags s_Flags_F_PUB = 262144u;
-inline constexpr s_Flags s_Flags_F_EXTERN = 524288u;
-inline constexpr s_Flags s_Flags_F_HOTSWAP = 1048576u;
-inline constexpr s_Flags s_Flags_F_PREDICATE = 2097152u;
-inline constexpr s_Flags s_Flags_F_REST_ARG = 4194304u;
-inline constexpr s_Flags s_Flags_F_INJECTED = 8388608u;
-inline constexpr s_Flags s_Flags_F_TEMPLATE = 16777216u;
-inline constexpr s_Flags s_Flags_F_INLINE = 33554432u;
-inline constexpr s_Flags s_Flags_F_LAMBDA = 67108864u;
-inline constexpr s_Flags s_Flags_F_COW_INSIDE = 134217728u;
+                                #ifndef DEF_Flags_Lzg8
+                                #define DEF_Flags_Lzg8
+inline constexpr Flags_Lzg8 Flags_Lzg8_F_CALL_HAS_DOT = 1u;
+inline constexpr Flags_Lzg8 Flags_Lzg8_F_CALL_HAS_ARGPARENS = 2u;
+inline constexpr Flags_Lzg8 Flags_Lzg8_F_CALL_HAS_NAMED_ARGS = 4u;
+inline constexpr Flags_Lzg8 Flags_Lzg8_F_OPERATOR = 8u;
+inline constexpr Flags_Lzg8 Flags_Lzg8_F_TYPENAME = 16u;
+inline constexpr Flags_Lzg8 Flags_Lzg8_F_COMPOUND_ID = 32u;
+inline constexpr Flags_Lzg8 Flags_Lzg8_F_ARGID_IS_OPTIONAL = 64u;
+inline constexpr Flags_Lzg8 Flags_Lzg8_F_LAX = 128u;
+inline constexpr Flags_Lzg8 Flags_Lzg8_F_SHADOW = 256u;
+inline constexpr Flags_Lzg8 Flags_Lzg8_F_MUSTNAME = 512u;
+inline constexpr Flags_Lzg8 Flags_Lzg8_F_WRITTEN_TO = 1024u;
+inline constexpr Flags_Lzg8 Flags_Lzg8_F_MUT = 2048u;
+inline constexpr Flags_Lzg8 Flags_Lzg8_F_CONST = 4096u;
+inline constexpr Flags_Lzg8 Flags_Lzg8_F_VAL = 8192u;
+inline constexpr Flags_Lzg8 Flags_Lzg8_F_REF = 16384u;
+inline constexpr Flags_Lzg8 Flags_Lzg8_F_IMPLICIT = 32768u;
+inline constexpr Flags_Lzg8 Flags_Lzg8_F_USING = 65536u;
+inline constexpr Flags_Lzg8 Flags_Lzg8_F_CONVERSION = 131072u;
+inline constexpr Flags_Lzg8 Flags_Lzg8_F_TEST_painted = 262144u;
+inline constexpr Flags_Lzg8 Flags_Lzg8_F_PUB = 524288u;
+inline constexpr Flags_Lzg8 Flags_Lzg8_F_EXTERN = 1048576u;
+inline constexpr Flags_Lzg8 Flags_Lzg8_F_HOTSWAP = 2097152u;
+inline constexpr Flags_Lzg8 Flags_Lzg8_F_PREDICATE = 4194304u;
+inline constexpr Flags_Lzg8 Flags_Lzg8_F_LT_RETURNED = 8388608u;
+inline constexpr Flags_Lzg8 Flags_Lzg8_F_REST_ARG = 16777216u;
+inline constexpr Flags_Lzg8 Flags_Lzg8_F_INJECTED = 33554432u;
+inline constexpr Flags_Lzg8 Flags_Lzg8_F_TEMPLATE = 67108864u;
+inline constexpr Flags_Lzg8 Flags_Lzg8_F_INLINE = 134217728u;
+inline constexpr Flags_Lzg8 Flags_Lzg8_F_LAMBDA = 268435456u;
+inline constexpr Flags_Lzg8 Flags_Lzg8_F_COW_INSIDE = 536870912u;
 
-inline constexpr s_Flags MASK_s_Flags
-    = s_Flags_F_CALL_HAS_DOT
-    | s_Flags_F_CALL_HAS_ARGPARENS
-    | s_Flags_F_CALL_HAS_NAMED_ARGS
-    | s_Flags_F_OPERATOR
-    | s_Flags_F_TYPENAME
-    | s_Flags_F_COMPOUND_ID
-    | s_Flags_F_ARGID_IS_OPTIONAL
-    | s_Flags_F_LAX
-    | s_Flags_F_SHADOW
-    | s_Flags_F_MUSTNAME
-    | s_Flags_F_WRITTEN_TO
-    | s_Flags_F_MUT
-    | s_Flags_F_CONST
-    | s_Flags_F_VAL
-    | s_Flags_F_REF
-    | s_Flags_F_IMPLICIT
-    | s_Flags_F_USING
-    | s_Flags_F_CONVERSION
-    | s_Flags_F_PUB
-    | s_Flags_F_EXTERN
-    | s_Flags_F_HOTSWAP
-    | s_Flags_F_PREDICATE
-    | s_Flags_F_REST_ARG
-    | s_Flags_F_INJECTED
-    | s_Flags_F_TEMPLATE
-    | s_Flags_F_INLINE
-    | s_Flags_F_LAMBDA
-    | s_Flags_F_COW_INSIDE;
+inline constexpr Flags_Lzg8 MASK_Flags_Lzg8
+    = Flags_Lzg8_F_CALL_HAS_DOT
+    | Flags_Lzg8_F_CALL_HAS_ARGPARENS
+    | Flags_Lzg8_F_CALL_HAS_NAMED_ARGS
+    | Flags_Lzg8_F_OPERATOR
+    | Flags_Lzg8_F_TYPENAME
+    | Flags_Lzg8_F_COMPOUND_ID
+    | Flags_Lzg8_F_ARGID_IS_OPTIONAL
+    | Flags_Lzg8_F_LAX
+    | Flags_Lzg8_F_SHADOW
+    | Flags_Lzg8_F_MUSTNAME
+    | Flags_Lzg8_F_WRITTEN_TO
+    | Flags_Lzg8_F_MUT
+    | Flags_Lzg8_F_CONST
+    | Flags_Lzg8_F_VAL
+    | Flags_Lzg8_F_REF
+    | Flags_Lzg8_F_IMPLICIT
+    | Flags_Lzg8_F_USING
+    | Flags_Lzg8_F_CONVERSION
+    | Flags_Lzg8_F_TEST_painted
+    | Flags_Lzg8_F_PUB
+    | Flags_Lzg8_F_EXTERN
+    | Flags_Lzg8_F_HOTSWAP
+    | Flags_Lzg8_F_PREDICATE
+    | Flags_Lzg8_F_LT_RETURNED
+    | Flags_Lzg8_F_REST_ARG
+    | Flags_Lzg8_F_INJECTED
+    | Flags_Lzg8_F_TEMPLATE
+    | Flags_Lzg8_F_INLINE
+    | Flags_Lzg8_F_LAMBDA
+    | Flags_Lzg8_F_COW_INSIDE;
                                 #endif
 
-                                #ifndef DEF_s_VFacts
-                                #define DEF_s_VFacts
-inline constexpr s_VFacts s_VFacts_AlwaysTrue = s_VFacts(1u);
-inline constexpr s_VFacts s_VFacts_AlwaysFalse = s_VFacts(2u);
-inline constexpr s_VFacts s_VFacts_Typename = s_VFacts(4u);
+                                #ifndef DEF_VFacts_xhRf
+                                #define DEF_VFacts_xhRf
+inline constexpr VFacts_xhRf VFacts_xhRf_AlwaysTrue = VFacts_xhRf(1u);
+inline constexpr VFacts_xhRf VFacts_xhRf_AlwaysFalse = VFacts_xhRf(2u);
+inline constexpr VFacts_xhRf VFacts_xhRf_Typename = VFacts_xhRf(4u);
+inline constexpr VFacts_xhRf VFacts_xhRf_LeftAligned = VFacts_xhRf(8u);
+inline constexpr VFacts_xhRf VFacts_xhRf_RightAligned = VFacts_xhRf(16u);
 
-inline constexpr s_VFacts MASK_s_VFacts
-    = s_VFacts_AlwaysTrue
-    | s_VFacts_AlwaysFalse
-    | s_VFacts_Typename;
+inline constexpr VFacts_xhRf MASK_VFacts_xhRf
+    = VFacts_xhRf_AlwaysTrue
+    | VFacts_xhRf_AlwaysFalse
+    | VFacts_xhRf_Typename
+    | VFacts_xhRf_LeftAligned
+    | VFacts_xhRf_RightAligned;
                                 #endif
 
-                                #ifndef DEF_s_SolverStatus
-                                #define DEF_s_SolverStatus
-inline constexpr s_SolverStatus s_SolverStatus_SS_LAZY = s_SolverStatus(1u);
-inline constexpr s_SolverStatus s_SolverStatus_SS_DID_START = s_SolverStatus(2u);
-inline constexpr s_SolverStatus s_SolverStatus_SS_DIRTY = s_SolverStatus(4u);
-inline constexpr s_SolverStatus s_SolverStatus_SS_FINALIZED = s_SolverStatus(8u);
-inline constexpr s_SolverStatus s_SolverStatus_SS_UPDATED = s_SolverStatus(16u);
-inline constexpr s_SolverStatus s_SolverStatus_SS_TYPE_RECUR = s_SolverStatus(32u);
-inline constexpr s_SolverStatus s_SolverStatus_SS_FN_RECUR = s_SolverStatus(64u);
-inline constexpr s_SolverStatus s_SolverStatus_SS_FN_OOE_RTL = s_SolverStatus(128u);
-inline constexpr s_SolverStatus s_SolverStatus_SS_HOIST = s_SolverStatus(256u);
-inline constexpr s_SolverStatus s_SolverStatus_SS_UNUSED = s_SolverStatus(512u);
-inline constexpr s_SolverStatus s_SolverStatus_SS_MATCHED = s_SolverStatus(1024u);
-inline constexpr s_SolverStatus s_SolverStatus_SS_MOVED_FROM = s_SolverStatus(2048u);
-inline constexpr s_SolverStatus s_SolverStatus_SS_ARGUMENT = s_SolverStatus(4096u);
-inline constexpr s_SolverStatus s_SolverStatus_SS_Debug_AllPassesComplete = s_SolverStatus(8192u);
+                                #ifndef DEF_SolverStatus_h9em
+                                #define DEF_SolverStatus_h9em
+inline constexpr SolverStatus_h9em SolverStatus_h9em_SS_LAZY = SolverStatus_h9em(1u);
+inline constexpr SolverStatus_h9em SolverStatus_h9em_SS_DID_START = SolverStatus_h9em(2u);
+inline constexpr SolverStatus_h9em SolverStatus_h9em_SS_DIRTY = SolverStatus_h9em(4u);
+inline constexpr SolverStatus_h9em SolverStatus_h9em_SS_FINALIZED = SolverStatus_h9em(8u);
+inline constexpr SolverStatus_h9em SolverStatus_h9em_SS_UPDATED = SolverStatus_h9em(16u);
+inline constexpr SolverStatus_h9em SolverStatus_h9em_SS_TYPE_RECUR = SolverStatus_h9em(32u);
+inline constexpr SolverStatus_h9em SolverStatus_h9em_SS_FN_RECUR = SolverStatus_h9em(64u);
+inline constexpr SolverStatus_h9em SolverStatus_h9em_SS_FN_OOE_RTL = SolverStatus_h9em(128u);
+inline constexpr SolverStatus_h9em SolverStatus_h9em_SS_NAME_UNUSED = SolverStatus_h9em(256u);
+inline constexpr SolverStatus_h9em SolverStatus_h9em_SS_UNUSED = SolverStatus_h9em(512u);
+inline constexpr SolverStatus_h9em SolverStatus_h9em_SS_MATCHED = SolverStatus_h9em(1024u);
+inline constexpr SolverStatus_h9em SolverStatus_h9em_SS_MOVED_FROM = SolverStatus_h9em(2048u);
+inline constexpr SolverStatus_h9em SolverStatus_h9em_SS_EXTERNAL_LINKAGE = SolverStatus_h9em(4096u);
+inline constexpr SolverStatus_h9em SolverStatus_h9em_SS_OBSERVED_BY_CONV_CACHE = SolverStatus_h9em(8192u);
+inline constexpr SolverStatus_h9em SolverStatus_h9em_SS_TODO_FIX_was_rx_resize = SolverStatus_h9em(16384u);
+inline constexpr SolverStatus_h9em SolverStatus_h9em_SS_Debug_AllPassesComplete = SolverStatus_h9em(32768u);
 
-inline constexpr s_SolverStatus MASK_s_SolverStatus
-    = s_SolverStatus_SS_LAZY
-    | s_SolverStatus_SS_DID_START
-    | s_SolverStatus_SS_DIRTY
-    | s_SolverStatus_SS_FINALIZED
-    | s_SolverStatus_SS_UPDATED
-    | s_SolverStatus_SS_TYPE_RECUR
-    | s_SolverStatus_SS_FN_RECUR
-    | s_SolverStatus_SS_FN_OOE_RTL
-    | s_SolverStatus_SS_HOIST
-    | s_SolverStatus_SS_UNUSED
-    | s_SolverStatus_SS_MATCHED
-    | s_SolverStatus_SS_MOVED_FROM
-    | s_SolverStatus_SS_ARGUMENT
-    | s_SolverStatus_SS_Debug_AllPassesComplete;
+inline constexpr SolverStatus_h9em MASK_SolverStatus_h9em
+    = SolverStatus_h9em_SS_LAZY
+    | SolverStatus_h9em_SS_DID_START
+    | SolverStatus_h9em_SS_DIRTY
+    | SolverStatus_h9em_SS_FINALIZED
+    | SolverStatus_h9em_SS_UPDATED
+    | SolverStatus_h9em_SS_TYPE_RECUR
+    | SolverStatus_h9em_SS_FN_RECUR
+    | SolverStatus_h9em_SS_FN_OOE_RTL
+    | SolverStatus_h9em_SS_NAME_UNUSED
+    | SolverStatus_h9em_SS_UNUSED
+    | SolverStatus_h9em_SS_MATCHED
+    | SolverStatus_h9em_SS_MOVED_FROM
+    | SolverStatus_h9em_SS_EXTERNAL_LINKAGE
+    | SolverStatus_h9em_SS_OBSERVED_BY_CONV_CACHE
+    | SolverStatus_h9em_SS_TODO_FIX_was_rx_resize
+    | SolverStatus_h9em_SS_Debug_AllPassesComplete;
                                 #endif
 
-                                #ifndef DEF_s_ExitPaths
-                                #define DEF_s_ExitPaths
-inline constexpr s_ExitPaths s_ExitPaths_XP_NonEmptyReturn = s_ExitPaths(1u);
-inline constexpr s_ExitPaths s_ExitPaths_XP_EmptyReturn = s_ExitPaths(2u);
-inline constexpr s_ExitPaths s_ExitPaths_XP_NoReturn = s_ExitPaths(4u);
-
-inline constexpr s_ExitPaths MASK_s_ExitPaths
-    = s_ExitPaths_XP_NonEmptyReturn
-    | s_ExitPaths_XP_EmptyReturn
-    | s_ExitPaths_XP_NoReturn;
+                                #ifndef DEF_MayEscapeVia_5nki
+                                #define DEF_MayEscapeVia_5nki
                                 #endif
 
-                                #ifndef DEF_s_FxMask
-                                #define DEF_s_FxMask
-inline constexpr s_FxMask s_FxMask_Fx_NotDeadCode = s_FxMask(1u);
-inline constexpr s_FxMask s_FxMask_Fx_NonDeterministic = s_FxMask(2u);
-inline constexpr s_FxMask s_FxMask_Fx_DontMoveUp = s_FxMask(4u);
-inline constexpr s_FxMask s_FxMask_Fx_DontMoveDown = s_FxMask(8u);
-inline constexpr s_FxMask s_FxMask_Fx_Input = s_FxMask(16u);
-inline constexpr s_FxMask s_FxMask_Fx_Output = s_FxMask(32u);
-inline constexpr s_FxMask s_FxMask_Fx_Throws = s_FxMask(64u);
-inline constexpr s_FxMask s_FxMask_Fx_Crashes = s_FxMask(128u);
-inline constexpr s_FxMask s_FxMask_Fx_Crashes_Div0 = s_FxMask(256u);
-inline constexpr s_FxMask s_FxMask_Fx_Crashes_OOB = s_FxMask(512u);
-inline constexpr s_FxMask s_FxMask_Fx_Crashes_Assert = s_FxMask(1024u);
-inline constexpr s_FxMask s_FxMask_Fx_Crashes_Exit = s_FxMask(2048u);
-inline constexpr s_FxMask s_FxMask_Fx_Syscall = s_FxMask(4096u);
-inline constexpr s_FxMask s_FxMask_Fx_Blocks = s_FxMask(8192u);
-inline constexpr s_FxMask s_FxMask_Fx_Blocks_Alloc = s_FxMask(16384u);
-inline constexpr s_FxMask s_FxMask_Fx_Blocks_Await = s_FxMask(32768u);
+                                #ifndef DEF_ExitPaths_UXHs
+                                #define DEF_ExitPaths_UXHs
+inline constexpr ExitPaths_UXHs ExitPaths_UXHs_XP_NonEmptyReturn = ExitPaths_UXHs(1u);
+inline constexpr ExitPaths_UXHs ExitPaths_UXHs_XP_EmptyReturn = ExitPaths_UXHs(2u);
+inline constexpr ExitPaths_UXHs ExitPaths_UXHs_XP_NoReturn = ExitPaths_UXHs(4u);
 
-inline constexpr s_FxMask MASK_s_FxMask
-    = s_FxMask_Fx_NotDeadCode
-    | s_FxMask_Fx_NonDeterministic
-    | s_FxMask_Fx_DontMoveUp
-    | s_FxMask_Fx_DontMoveDown
-    | s_FxMask_Fx_Input
-    | s_FxMask_Fx_Output
-    | s_FxMask_Fx_Throws
-    | s_FxMask_Fx_Crashes
-    | s_FxMask_Fx_Crashes_Div0
-    | s_FxMask_Fx_Crashes_OOB
-    | s_FxMask_Fx_Crashes_Assert
-    | s_FxMask_Fx_Crashes_Exit
-    | s_FxMask_Fx_Syscall
-    | s_FxMask_Fx_Blocks
-    | s_FxMask_Fx_Blocks_Alloc
-    | s_FxMask_Fx_Blocks_Await;
+inline constexpr ExitPaths_UXHs MASK_ExitPaths_UXHs
+    = ExitPaths_UXHs_XP_NonEmptyReturn
+    | ExitPaths_UXHs_XP_EmptyReturn
+    | ExitPaths_UXHs_XP_NoReturn;
                                 #endif
 
-                                #ifndef DEF_s_SolverNotes
-                                #define DEF_s_SolverNotes
-inline constexpr s_SolverNotes s_SolverNotes_N_FnRecursion = 1;
-inline constexpr s_SolverNotes s_SolverNotes_N_FnResolve = 2;
-inline constexpr s_SolverNotes s_SolverNotes_N_FnReopen = 4;
-inline constexpr s_SolverNotes s_SolverNotes_N_TypeRecursion = 8;
-inline constexpr s_SolverNotes s_SolverNotes_N_TypeResolve = 16;
-inline constexpr s_SolverNotes s_SolverNotes_N_TypeReopen = 32;
-inline constexpr s_SolverNotes s_SolverNotes_N_DeadCode = 64;
-inline constexpr s_SolverNotes s_SolverNotes_N_DeadCall = 128;
-inline constexpr s_SolverNotes s_SolverNotes_N_DeadLet = 256;
-inline constexpr s_SolverNotes s_SolverNotes_N_DeadArrlit = 512;
-inline constexpr s_SolverNotes s_SolverNotes_N_DeadLoopInit = 1024;
-inline constexpr s_SolverNotes s_SolverNotes_N_DeadConv = 2048;
-inline constexpr s_SolverNotes s_SolverNotes_N_NonTrivAutoCopy = 4096;
-inline constexpr s_SolverNotes s_SolverNotes_N_RelaxRespec = 8192;
-inline constexpr s_SolverNotes s_SolverNotes_N_UnusedImplicit = 16384;
-inline constexpr s_SolverNotes s_SolverNotes_N_UnusedCall = 32768;
-inline constexpr s_SolverNotes s_SolverNotes_N_UnusedDefer = 65536;
-inline constexpr s_SolverNotes s_SolverNotes_N_UnusedTry = 131072;
-inline constexpr s_SolverNotes s_SolverNotes_N_UnusedAndOr = 262144;
-inline constexpr s_SolverNotes s_SolverNotes_N_UnusedIfElse = 524288;
-inline constexpr s_SolverNotes s_SolverNotes_N_UnusedArrlit = 1048576;
-inline constexpr s_SolverNotes s_SolverNotes_N_UnusedLet = 2097152;
-inline constexpr s_SolverNotes s_SolverNotes_N_BckMustSeq = 4194304;
-inline constexpr s_SolverNotes s_SolverNotes_N_AARMustSeq = 8388608;
-inline constexpr s_SolverNotes s_SolverNotes_N_AARSoftRisk = 16777216;
-inline constexpr s_SolverNotes s_SolverNotes_N_MoveMustSeq = 33554432;
-inline constexpr s_SolverNotes s_SolverNotes_N_SD_HasStaticInit = 67108864;
-inline constexpr s_SolverNotes s_SolverNotes_N_SD_ExternPrivates = 134217728;
-inline constexpr s_SolverNotes s_SolverNotes_N_COWRestrict = 268435456;
+                                #ifndef DEF_FxMask_2dRz
+                                #define DEF_FxMask_2dRz
+inline constexpr FxMask_2dRz FxMask_2dRz_Fx_NotDeadCode = FxMask_2dRz(1u);
+inline constexpr FxMask_2dRz FxMask_2dRz_Fx_NonDeterministic = FxMask_2dRz(2u);
+inline constexpr FxMask_2dRz FxMask_2dRz_Fx_DontMoveUp = FxMask_2dRz(4u);
+inline constexpr FxMask_2dRz FxMask_2dRz_Fx_DontMoveDown = FxMask_2dRz(8u);
+inline constexpr FxMask_2dRz FxMask_2dRz_Fx_Input = FxMask_2dRz(16u);
+inline constexpr FxMask_2dRz FxMask_2dRz_Fx_Output = FxMask_2dRz(32u);
+inline constexpr FxMask_2dRz FxMask_2dRz_Fx_Throws = FxMask_2dRz(64u);
+inline constexpr FxMask_2dRz FxMask_2dRz_Fx_Crashes = FxMask_2dRz(128u);
+inline constexpr FxMask_2dRz FxMask_2dRz_Fx_Crashes_Div0 = FxMask_2dRz(256u);
+inline constexpr FxMask_2dRz FxMask_2dRz_Fx_Crashes_OOB = FxMask_2dRz(512u);
+inline constexpr FxMask_2dRz FxMask_2dRz_Fx_Crashes_Assert = FxMask_2dRz(1024u);
+inline constexpr FxMask_2dRz FxMask_2dRz_Fx_Crashes_Exit = FxMask_2dRz(2048u);
+inline constexpr FxMask_2dRz FxMask_2dRz_Fx_Syscall = FxMask_2dRz(4096u);
+inline constexpr FxMask_2dRz FxMask_2dRz_Fx_Blocks = FxMask_2dRz(8192u);
+inline constexpr FxMask_2dRz FxMask_2dRz_Fx_Blocks_Alloc = FxMask_2dRz(16384u);
+inline constexpr FxMask_2dRz FxMask_2dRz_Fx_Blocks_Await = FxMask_2dRz(32768u);
 
-inline constexpr s_SolverNotes MASK_s_SolverNotes
-    = s_SolverNotes_N_FnRecursion
-    | s_SolverNotes_N_FnResolve
-    | s_SolverNotes_N_FnReopen
-    | s_SolverNotes_N_TypeRecursion
-    | s_SolverNotes_N_TypeResolve
-    | s_SolverNotes_N_TypeReopen
-    | s_SolverNotes_N_DeadCode
-    | s_SolverNotes_N_DeadCall
-    | s_SolverNotes_N_DeadLet
-    | s_SolverNotes_N_DeadArrlit
-    | s_SolverNotes_N_DeadLoopInit
-    | s_SolverNotes_N_DeadConv
-    | s_SolverNotes_N_NonTrivAutoCopy
-    | s_SolverNotes_N_RelaxRespec
-    | s_SolverNotes_N_UnusedImplicit
-    | s_SolverNotes_N_UnusedCall
-    | s_SolverNotes_N_UnusedDefer
-    | s_SolverNotes_N_UnusedTry
-    | s_SolverNotes_N_UnusedAndOr
-    | s_SolverNotes_N_UnusedIfElse
-    | s_SolverNotes_N_UnusedArrlit
-    | s_SolverNotes_N_UnusedLet
-    | s_SolverNotes_N_BckMustSeq
-    | s_SolverNotes_N_AARMustSeq
-    | s_SolverNotes_N_AARSoftRisk
-    | s_SolverNotes_N_MoveMustSeq
-    | s_SolverNotes_N_SD_HasStaticInit
-    | s_SolverNotes_N_SD_ExternPrivates
-    | s_SolverNotes_N_COWRestrict;
+inline constexpr FxMask_2dRz MASK_FxMask_2dRz
+    = FxMask_2dRz_Fx_NotDeadCode
+    | FxMask_2dRz_Fx_NonDeterministic
+    | FxMask_2dRz_Fx_DontMoveUp
+    | FxMask_2dRz_Fx_DontMoveDown
+    | FxMask_2dRz_Fx_Input
+    | FxMask_2dRz_Fx_Output
+    | FxMask_2dRz_Fx_Throws
+    | FxMask_2dRz_Fx_Crashes
+    | FxMask_2dRz_Fx_Crashes_Div0
+    | FxMask_2dRz_Fx_Crashes_OOB
+    | FxMask_2dRz_Fx_Crashes_Assert
+    | FxMask_2dRz_Fx_Crashes_Exit
+    | FxMask_2dRz_Fx_Syscall
+    | FxMask_2dRz_Fx_Blocks
+    | FxMask_2dRz_Fx_Blocks_Alloc
+    | FxMask_2dRz_Fx_Blocks_Await;
                                 #endif
 
-                                #ifndef DEF_s_CGDefects
-                                #define DEF_s_CGDefects
-inline constexpr s_CGDefects s_CGDefects_GNUStmtExpr = s_CGDefects(1u);
-inline constexpr s_CGDefects s_CGDefects_Goto = s_CGDefects(2u);
-inline constexpr s_CGDefects s_CGDefects_PointlessMustSeq = s_CGDefects(4u);
-inline constexpr s_CGDefects s_CGDefects_LocalConstBool = s_CGDefects(8u);
-inline constexpr s_CGDefects s_CGDefects_ConstCast = s_CGDefects(16u);
-inline constexpr s_CGDefects s_CGDefects_PointlessLocal = s_CGDefects(32u);
-inline constexpr s_CGDefects s_CGDefects_IrrelevantLiteral = s_CGDefects(64u);
-inline constexpr s_CGDefects s_CGDefects_DuplicateFunctions = s_CGDefects(128u);
+                                #ifndef DEF_SolverNotes_LSla
+                                #define DEF_SolverNotes_LSla
+inline constexpr SolverNotes_LSla SolverNotes_LSla_N_FnRecursion = 1;
+inline constexpr SolverNotes_LSla SolverNotes_LSla_N_FnResolve = 2;
+inline constexpr SolverNotes_LSla SolverNotes_LSla_N_FnReopen = 4;
+inline constexpr SolverNotes_LSla SolverNotes_LSla_N_TypeRecursion = 8;
+inline constexpr SolverNotes_LSla SolverNotes_LSla_N_TypeResolve = 16;
+inline constexpr SolverNotes_LSla SolverNotes_LSla_N_TypeReopen = 32;
+inline constexpr SolverNotes_LSla SolverNotes_LSla_N_DeadCode = 64;
+inline constexpr SolverNotes_LSla SolverNotes_LSla_N_DeadCall = 128;
+inline constexpr SolverNotes_LSla SolverNotes_LSla_N_DeadLet = 256;
+inline constexpr SolverNotes_LSla SolverNotes_LSla_N_DeadArrlit = 512;
+inline constexpr SolverNotes_LSla SolverNotes_LSla_N_DeadLoopInit = 1024;
+inline constexpr SolverNotes_LSla SolverNotes_LSla_N_DeadConv = 2048;
+inline constexpr SolverNotes_LSla SolverNotes_LSla_N_NonTrivAutoCopy = 4096;
+inline constexpr SolverNotes_LSla SolverNotes_LSla_N_RelaxRespec = 8192;
+inline constexpr SolverNotes_LSla SolverNotes_LSla_N_UnusedImplicit = 16384;
+inline constexpr SolverNotes_LSla SolverNotes_LSla_N_UnusedCall = 32768;
+inline constexpr SolverNotes_LSla SolverNotes_LSla_N_UnusedDefer = 65536;
+inline constexpr SolverNotes_LSla SolverNotes_LSla_N_UnusedTry = 131072;
+inline constexpr SolverNotes_LSla SolverNotes_LSla_N_UnusedAndOr = 262144;
+inline constexpr SolverNotes_LSla SolverNotes_LSla_N_UnusedIfElse = 524288;
+inline constexpr SolverNotes_LSla SolverNotes_LSla_N_UnusedArrlit = 1048576;
+inline constexpr SolverNotes_LSla SolverNotes_LSla_N_UnusedLet = 2097152;
+inline constexpr SolverNotes_LSla SolverNotes_LSla_N_BckMustSeq = 4194304;
+inline constexpr SolverNotes_LSla SolverNotes_LSla_N_AARMustSeq = 8388608;
+inline constexpr SolverNotes_LSla SolverNotes_LSla_N_AARSoftRisk = 16777216;
+inline constexpr SolverNotes_LSla SolverNotes_LSla_N_MoveMustSeq = 33554432;
+inline constexpr SolverNotes_LSla SolverNotes_LSla_N_McomUnwrapsLetdef = 67108864;
+inline constexpr SolverNotes_LSla SolverNotes_LSla_N_SD_HasStaticInit = 134217728;
+inline constexpr SolverNotes_LSla SolverNotes_LSla_N_SD_ExternPrivates = 268435456;
+inline constexpr SolverNotes_LSla SolverNotes_LSla_N_COWRestrict = 536870912;
 
-inline constexpr s_CGDefects MASK_s_CGDefects
-    = s_CGDefects_GNUStmtExpr
-    | s_CGDefects_Goto
-    | s_CGDefects_PointlessMustSeq
-    | s_CGDefects_LocalConstBool
-    | s_CGDefects_ConstCast
-    | s_CGDefects_PointlessLocal
-    | s_CGDefects_IrrelevantLiteral
-    | s_CGDefects_DuplicateFunctions;
+inline constexpr SolverNotes_LSla MASK_SolverNotes_LSla
+    = SolverNotes_LSla_N_FnRecursion
+    | SolverNotes_LSla_N_FnResolve
+    | SolverNotes_LSla_N_FnReopen
+    | SolverNotes_LSla_N_TypeRecursion
+    | SolverNotes_LSla_N_TypeResolve
+    | SolverNotes_LSla_N_TypeReopen
+    | SolverNotes_LSla_N_DeadCode
+    | SolverNotes_LSla_N_DeadCall
+    | SolverNotes_LSla_N_DeadLet
+    | SolverNotes_LSla_N_DeadArrlit
+    | SolverNotes_LSla_N_DeadLoopInit
+    | SolverNotes_LSla_N_DeadConv
+    | SolverNotes_LSla_N_NonTrivAutoCopy
+    | SolverNotes_LSla_N_RelaxRespec
+    | SolverNotes_LSla_N_UnusedImplicit
+    | SolverNotes_LSla_N_UnusedCall
+    | SolverNotes_LSla_N_UnusedDefer
+    | SolverNotes_LSla_N_UnusedTry
+    | SolverNotes_LSla_N_UnusedAndOr
+    | SolverNotes_LSla_N_UnusedIfElse
+    | SolverNotes_LSla_N_UnusedArrlit
+    | SolverNotes_LSla_N_UnusedLet
+    | SolverNotes_LSla_N_BckMustSeq
+    | SolverNotes_LSla_N_AARMustSeq
+    | SolverNotes_LSla_N_AARSoftRisk
+    | SolverNotes_LSla_N_MoveMustSeq
+    | SolverNotes_LSla_N_McomUnwrapsLetdef
+    | SolverNotes_LSla_N_SD_HasStaticInit
+    | SolverNotes_LSla_N_SD_ExternPrivates
+    | SolverNotes_LSla_N_COWRestrict;
                                 #endif
 
-                                #ifndef DEF_s_Helpers
-                                #define DEF_s_Helpers
-struct s_Helpers
+                                #ifndef DEF_CGDefects_2L18
+                                #define DEF_CGDefects_2L18
+inline constexpr CGDefects_2L18 CGDefects_2L18_GNUStmtExpr = CGDefects_2L18(1u);
+inline constexpr CGDefects_2L18 CGDefects_2L18_Goto = CGDefects_2L18(2u);
+inline constexpr CGDefects_2L18 CGDefects_2L18_PointlessMustSeq = CGDefects_2L18(4u);
+inline constexpr CGDefects_2L18 CGDefects_2L18_LocalConstBool = CGDefects_2L18(8u);
+inline constexpr CGDefects_2L18 CGDefects_2L18_ConstCast = CGDefects_2L18(16u);
+inline constexpr CGDefects_2L18 CGDefects_2L18_PointlessLocal = CGDefects_2L18(32u);
+inline constexpr CGDefects_2L18 CGDefects_2L18_IrrelevantLiteral = CGDefects_2L18(64u);
+inline constexpr CGDefects_2L18 CGDefects_2L18_DuplicateFunctions = CGDefects_2L18(128u);
+
+inline constexpr CGDefects_2L18 MASK_CGDefects_2L18
+    = CGDefects_2L18_GNUStmtExpr
+    | CGDefects_2L18_Goto
+    | CGDefects_2L18_PointlessMustSeq
+    | CGDefects_2L18_LocalConstBool
+    | CGDefects_2L18_ConstCast
+    | CGDefects_2L18_PointlessLocal
+    | CGDefects_2L18_IrrelevantLiteral
+    | CGDefects_2L18_DuplicateFunctions;
+                                #endif
+
+                                #ifndef DEF_Helpers_DyqVC1yXPkj
+                                #define DEF_Helpers_DyqVC1yXPkj
+struct Helpers_DyqV
 {
     int index;
     explicit operator bool() const noexcept
@@ -476,9 +502,23 @@ struct s_Helpers
 };
                                 #endif
 
-                                #ifndef DEF_s_Lifetime
-                                #define DEF_s_Lifetime
-struct s_Lifetime
+                                #ifndef DEF_Set_qOJYtbQKZe4
+                                #define DEF_Set_qOJYtbQKZe4
+struct Set_qOJY
+{
+    fu::vec<int> keys_asc;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || keys_asc
+        ;
+    }
+};
+                                #endif
+
+                                #ifndef DEF_Lifetime_llCFAn7rdDl
+                                #define DEF_Lifetime_llCFAn7rdDl
+struct Lifetime_llCF
 {
     fu::str uni0n;
     explicit operator bool() const noexcept
@@ -490,9 +530,23 @@ struct s_Lifetime
 };
                                 #endif
 
-                                #ifndef DEF_s_BitSet
-                                #define DEF_s_BitSet
-struct s_BitSet
+                                #ifndef DEF_Set_XshDfC0Mim3
+                                #define DEF_Set_XshDfC0Mim3
+struct Set_XshD
+{
+    fu::vec<fu::str> keys_asc;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || keys_asc
+        ;
+    }
+};
+                                #endif
+
+                                #ifndef DEF_BitSet_mmp7xBZ4kaf
+                                #define DEF_BitSet_mmp7xBZ4kaf
+struct BitSet_mmp7
 {
     fu::vec<fu::u8> _data;
     explicit operator bool() const noexcept
@@ -504,9 +558,23 @@ struct s_BitSet
 };
                                 #endif
 
-                                #ifndef DEF_s_ModuleOrder
-                                #define DEF_s_ModuleOrder
-struct s_ModuleOrder
+                                #ifndef DEF_Sample_Time_cblj5KsY6d7
+                                #define DEF_Sample_Time_cblj5KsY6d7
+struct Sample_Time_cblj
+{
+    double time;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || time
+        ;
+    }
+};
+                                #endif
+
+                                #ifndef DEF_ModuleOrder_HMNgkDis85k
+                                #define DEF_ModuleOrder_HMNgkDis85k
+struct ModuleOrder_HMNg
 {
     int dep_depth;
     explicit operator bool() const noexcept
@@ -518,9 +586,9 @@ struct s_ModuleOrder
 };
                                 #endif
 
-                                #ifndef DEF_s_TEA
-                                #define DEF_s_TEA
-struct s_TEA
+                                #ifndef DEF_TEA_87LRqzeMoI3
+                                #define DEF_TEA_87LRqzeMoI3
+struct TEA_87LR
 {
     unsigned v0;
     unsigned v1;
@@ -534,9 +602,9 @@ struct s_TEA
 };
                                 #endif
 
-                                #ifndef DEF_s_ScopeItem
-                                #define DEF_s_ScopeItem
-struct s_ScopeItem
+                                #ifndef DEF_ScopeItem_ydOEnUwGFm9
+                                #define DEF_ScopeItem_ydOEnUwGFm9
+struct ScopeItem_ydOE
 {
     fu::str id;
     uint64_t _packed;
@@ -549,11 +617,11 @@ struct s_ScopeItem
 };
                                 #endif
 
-                                #ifndef DEF_s_LexerOutput
-                                #define DEF_s_LexerOutput
-struct s_LexerOutput
+                                #ifndef DEF_LexerOutput_VDDlFbkjeT7
+                                #define DEF_LexerOutput_VDDlFbkjeT7
+struct LexerOutput_VDDl
 {
-    fu::vec<s_Token> tokens;
+    fu::vec<Token_RpL8> tokens;
     explicit operator bool() const noexcept
     {
         return false
@@ -563,25 +631,9 @@ struct s_LexerOutput
 };
                                 #endif
 
-                                #ifndef DEF_s_ValueType
-                                #define DEF_s_ValueType
-struct s_ValueType
-{
-    unsigned quals;
-    fu::str canon;
-    explicit operator bool() const noexcept
-    {
-        return false
-            || quals
-            || canon
-        ;
-    }
-};
-                                #endif
-
-                                #ifndef DEF_s_LineColChars
-                                #define DEF_s_LineColChars
-struct s_LineColChars
+                                #ifndef DEF_LineColChars_03IIie77ad3
+                                #define DEF_LineColChars_03IIie77ad3
+struct LineColChars_03II
 {
     int line;
     int col;
@@ -597,25 +649,27 @@ struct s_LineColChars
 };
                                 #endif
 
-                                #ifndef DEF_s_Map_iIYL7rECCBg
-                                #define DEF_s_Map_iIYL7rECCBg
-struct s_Map_iIYL7rECCBg
+                                #ifndef DEF_ValueType_B8uCkrFbhH5
+                                #define DEF_ValueType_B8uCkrFbhH5
+struct ValueType_B8uC
 {
-    fu::vec<fu::str> keys;
-    fu::vec<fu::str> vals;
+    unsigned quals;
+    VFacts_xhRf vfacts;
+    fu::str canon;
     explicit operator bool() const noexcept
     {
         return false
-            || keys
-            || vals
+            || quals
+            || vfacts
+            || canon
         ;
     }
 };
                                 #endif
 
-                                #ifndef DEF_s_ModuleStat
-                                #define DEF_s_ModuleStat
-struct s_ModuleStat
+                                #ifndef DEF_ModuleStat_6sojRyzHDma
+                                #define DEF_ModuleStat_6sojRyzHDma
+struct ModuleStat_6soj
 {
     double time;
     int alloc_count;
@@ -631,9 +685,9 @@ struct s_ModuleStat
 };
                                 #endif
 
-                                #ifndef DEF_s_Shape
-                                #define DEF_s_Shape
-struct s_Shape
+                                #ifndef DEF_Shape_aOyFxjH0sYj
+                                #define DEF_Shape_aOyFxjH0sYj
+struct Shape_aOyF
 {
     fu::str basePrim;
     uint64_t non_triv_mask;
@@ -653,49 +707,27 @@ struct s_Shape
 };
                                 #endif
 
-                                #ifndef DEF_s_CodegenOutput
-                                #define DEF_s_CodegenOutput
-struct s_CodegenOutput
+                                #ifndef DEF_Scope_bN0wB0bie31
+                                #define DEF_Scope_bN0wB0bie31
+struct Scope_bN0w
 {
-    fu::str src;
-    fu::vec<fu::str> link;
-    fu::vec<fu::str> include_dirs;
-    fu::vec<fu::str> extra_sources;
-    fu::vec<int> live;
-    s_CGDefects defects;
-    explicit operator bool() const noexcept
-    {
-        return false
-            || src
-            || link
-            || include_dirs
-            || extra_sources
-            || live
-            || defects
-        ;
-    }
-};
-                                #endif
-
-                                #ifndef DEF_s_Scope
-                                #define DEF_s_Scope
-struct s_Scope
-{
-    fu::vec<s_Overload> overloads;
-    fu::vec<s_Extended> extended;
-    fu::vec<s_ScopeItem> items;
-    fu::vec<s_ScopeItem> implicits;
+    fu::vec<Overload_OYmb> overloads;
+    fu::vec<Extended_Ebxv> extended;
+    fu::vec<ScopeItem_ydOE> items;
+    fu::vec<ScopeItem_ydOE> implicits;
+    fu::vec<ScopeItem_ydOE> globals;
     fu::vec<int> imports;
     fu::vec<int> privates;
-    fu::vec<s_Target> usings;
-    fu::vec<s_Target> converts;
+    fu::vec<Target_VZrr> usings;
+    fu::vec<Target_VZrr> converts;
     int pub_items;
     int pub_implicits;
+    int pub_globals;
     int pub_converts;
-    s_Scope(const s_Scope&) = delete;
-    s_Scope(s_Scope&&) = default;
-    s_Scope& operator=(const s_Scope&) = delete;
-    s_Scope& operator=(s_Scope&&) = default;
+    Scope_bN0w(const Scope_bN0w&) = delete;
+    Scope_bN0w(Scope_bN0w&&) = default;
+    Scope_bN0w& operator=(const Scope_bN0w&) = delete;
+    Scope_bN0w& operator=(Scope_bN0w&&) = default;
     explicit operator bool() const noexcept
     {
         return false
@@ -703,24 +735,56 @@ struct s_Scope
             || extended
             || items
             || implicits
+            || globals
             || imports
             || privates
             || usings
             || converts
             || pub_items
             || pub_implicits
+            || pub_globals
             || pub_converts
         ;
     }
 };
                                 #endif
 
-                                #ifndef DEF_s_Token
-                                #define DEF_s_Token
-struct s_Token
+                                #ifndef DEF_Profile_zroCYrctPoa
+                                #define DEF_Profile_zroCYrctPoa
+struct Profile_zroC
 {
-    s_kind kind;
-    s_LineColChars lcc;
+    Sample_Time_cblj now;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || now
+        ;
+    }
+};
+                                #endif
+
+                                #ifndef DEF_Map_4s6TdIiM4gd
+                                #define DEF_Map_4s6TdIiM4gd
+struct Map_4s6T
+{
+    Set_XshD keys;
+    fu::vec<fu::str> vals;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || keys
+            || vals
+        ;
+    }
+};
+                                #endif
+
+                                #ifndef DEF_Token_RpL8tz7XMX0
+                                #define DEF_Token_RpL8tz7XMX0
+struct Token_RpL8
+{
+    Kind_Idfg kind;
+    LineColChars_03II lcc;
     fu::str value;
     explicit operator bool() const noexcept
     {
@@ -731,48 +795,48 @@ struct s_Token
 };
                                 #endif
 
-                                #ifndef DEF_s_Import
-                                #define DEF_s_Import
-struct s_Import
+                                #ifndef DEF_Type_KBIBAQNxKdi
+                                #define DEF_Type_KBIBAQNxKdi
+struct Type_KBIB
 {
-    s_TokenIdx token;
-    fu::str value;
-    explicit operator bool() const noexcept
-    {
-        return false
-            || token
-            || value
-        ;
-    }
-};
-                                #endif
-
-                                #ifndef DEF_s_Type
-                                #define DEF_s_Type
-struct s_Type
-{
-    s_ValueType vtype;
-    s_Lifetime lifetime;
-    s_VFacts vfacts;
+    ValueType_B8uC vtype;
+    Lifetime_llCF lifetime;
     explicit operator bool() const noexcept
     {
         return false
             || vtype
             || lifetime
-            || vfacts
         ;
     }
 };
                                 #endif
 
-                                #ifndef DEF_s_ModuleStats
-                                #define DEF_s_ModuleStats
-struct s_ModuleStats
+                                #ifndef DEF_Import_jcWj5jfyCbh
+                                #define DEF_Import_jcWj5jfyCbh
+struct Import_jcWj
 {
-    s_ModuleStat lex;
-    s_ModuleStat parse;
-    s_ModuleStat solve;
-    s_ModuleStat codegen;
+    TokenIdx_5b85 token;
+    fu::str pattern;
+    int modid;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || token
+            || pattern
+            || modid
+        ;
+    }
+};
+                                #endif
+
+                                #ifndef DEF_ModuleStats_zo42yWR5Sz7
+                                #define DEF_ModuleStats_zo42yWR5Sz7
+struct ModuleStats_zo42
+{
+    ModuleStat_6soj lex;
+    ModuleStat_6soj parse;
+    ModuleStat_6soj solve;
+    ModuleStat_6soj codegen;
     explicit operator bool() const noexcept
     {
         return false
@@ -785,15 +849,36 @@ struct s_ModuleStats
 };
                                 #endif
 
-                                #ifndef DEF_s_COWInside
-                                #define DEF_s_COWInside
-struct s_COWInside
+                                #ifndef DEF_Struct_5VgDIbV9CPf
+                                #define DEF_Struct_5VgDIbV9CPf
+struct Struct_5VgD
 {
-    s_ValueType vtype;
-    s_TokenIdx token;
+    Kind_Idfg kind;
+    fu::str name;
+    Target_VZrr target;
+    fu::vec<ScopeItem_ydOE> items;
+    fu::vec<ScopeItem_ydOE> implicits;
+    Set_qOJY imports;
+    fu::vec<Target_VZrr> converts;
+    Shape_aOyF shape;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || kind
+        ;
+    }
+};
+                                #endif
+
+                                #ifndef DEF_COWInside_2Z4DPB5kLr4
+                                #define DEF_COWInside_2Z4DPB5kLr4
+struct COWInside_2Z4D
+{
+    ValueType_B8uC vtype;
+    TokenIdx_5b85 token;
     int argTarget;
-    int mayEscapeVia;
-    s_ExitPaths exitPaths;
+    MayEscapeVia_5nki mayEscapeVia;
+    ExitPaths_UXHs exitPaths;
     explicit operator bool() const noexcept
     {
         return false
@@ -807,47 +892,47 @@ struct s_COWInside
 };
                                 #endif
 
-                                #ifndef DEF_s_Struct
-                                #define DEF_s_Struct
-struct s_Struct
+                                #ifndef DEF_CodegenOutput_OFceMf04noa
+                                #define DEF_CodegenOutput_OFceMf04noa
+struct CodegenOutput_OFce
 {
-    s_kind kind;
-    fu::str name;
-    s_Target target;
-    fu::vec<s_ScopeItem> items;
-    fu::vec<int> imports;
-    fu::vec<s_Target> converts;
-    s_Shape shape;
+    fu::str src;
+    Set_XshD link;
+    Set_XshD extra_sources;
+    Set_XshD includes_headers;
+    Set_XshD include_dirs;
+    fu::vec<int> live;
+    CGDefects_2L18 defects;
     explicit operator bool() const noexcept
     {
         return false
-            || kind
-            || name
-            || target
-            || items
-            || imports
-            || converts
-            || shape
+            || src
+            || link
+            || extra_sources
+            || includes_headers
+            || include_dirs
+            || live
+            || defects
         ;
     }
 };
                                 #endif
 
-                                #ifndef DEF_s_Node
-                                #define DEF_s_Node
-struct s_Node
+                                #ifndef DEF_Node_Wr1XN7BRTn1
+                                #define DEF_Node_Wr1XN7BRTn1
+struct Node_Wr1X
 {
-    s_kind kind;
-    s_DeclAsserts asserts;
-    s_ParseSyntax syntax;
-    s_Flags flags;
+    Kind_Idfg kind;
+    DeclAsserts_taUG asserts;
+    ParseSyntax_Lay2 syntax;
+    Flags_Lzg8 flags;
     fu::str value;
-    fu::vec<s_Node> items;
-    s_TokenIdx token;
-    s_Node(const s_Node&) = default;
-    s_Node(s_Node&&) = default;
-    s_Node& operator=(s_Node&&) = default;
-    s_Node& operator=(const s_Node& selfrec) { return *this = s_Node(selfrec); }
+    fu::vec<Node_Wr1X> items;
+    TokenIdx_5b85 token;
+    Node_Wr1X(const Node_Wr1X&) = default;
+    Node_Wr1X(Node_Wr1X&&) = default;
+    Node_Wr1X& operator=(Node_Wr1X&&) = default;
+    Node_Wr1X& operator=(const Node_Wr1X& selfrec) { return *this = Node_Wr1X(selfrec); }
     explicit operator bool() const noexcept
     {
         return false
@@ -857,51 +942,11 @@ struct s_Node
 };
                                 #endif
 
-                                #ifndef DEF_s_Context
-                                #define DEF_s_Context
-struct s_Context
+                                #ifndef DEF_Template_1cFh7XoXDYc
+                                #define DEF_Template_1cFh7XoXDYc
+struct Template_1cFh
 {
-    fu::str base_dir;
-    fu::vec<s_Module> modules;
-    fu::vec<int> dep_order;
-    s_Map_iIYL7rECCBg files;
-    s_Map_iIYL7rECCBg fuzzy;
-    s_Context(const s_Context&) = delete;
-    s_Context(s_Context&&) = default;
-    s_Context& operator=(const s_Context&) = delete;
-    s_Context& operator=(s_Context&&) = default;
-    explicit operator bool() const noexcept
-    {
-        return false
-            || base_dir
-            || modules
-            || dep_order
-            || files
-            || fuzzy
-        ;
-    }
-};
-                                #endif
-
-                                #ifndef DEF_s_Profile
-                                #define DEF_s_Profile
-struct s_Profile
-{
-    double now;
-    explicit operator bool() const noexcept
-    {
-        return false
-            || now
-        ;
-    }
-};
-                                #endif
-
-                                #ifndef DEF_s_Template
-                                #define DEF_s_Template
-struct s_Template
-{
-    s_Node node;
+    Node_Wr1X node;
     fu::vec<int> imports;
     explicit operator bool() const noexcept
     {
@@ -912,12 +957,12 @@ struct s_Template
 };
                                 #endif
 
-                                #ifndef DEF_s_ParserOutput
-                                #define DEF_s_ParserOutput
-struct s_ParserOutput
+                                #ifndef DEF_ParserOutput_oNgu6PpUXWb
+                                #define DEF_ParserOutput_oNgu6PpUXWb
+struct ParserOutput_oNgu
 {
-    s_Node root;
-    fu::vec<s_Import> imports;
+    Node_Wr1X root;
+    fu::vec<Import_jcWj> imports;
     fu::vec<fu::str> warnings;
     explicit operator bool() const noexcept
     {
@@ -930,23 +975,51 @@ struct s_ParserOutput
 };
                                 #endif
 
-                                #ifndef DEF_s_SolvedNode
-                                #define DEF_s_SolvedNode
-struct s_SolvedNode
+                                #ifndef DEF_Context_UXD9wQGQXT5
+                                #define DEF_Context_UXD9wQGQXT5
+struct Context_UXD9
 {
-    s_kind kind;
-    s_Helpers helpers;
-    s_Flags flags;
+    fu::str fudir;
+    fu::str base_dir;
+    fu::vec<Module_qqBh> modules;
+    fu::vec<int> dep_order;
+    Map_4s6T files;
+    Map_4s6T fuzzy;
+    Context_UXD9(const Context_UXD9&) = delete;
+    Context_UXD9(Context_UXD9&&) = default;
+    Context_UXD9& operator=(const Context_UXD9&) = delete;
+    Context_UXD9& operator=(Context_UXD9&&) = default;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || fudir
+            || base_dir
+            || modules
+            || dep_order
+            || files
+            || fuzzy
+        ;
+    }
+};
+                                #endif
+
+                                #ifndef DEF_SolvedNode_owqlcZ14neg
+                                #define DEF_SolvedNode_owqlcZ14neg
+struct SolvedNode_owql
+{
+    Kind_Idfg kind;
+    Helpers_DyqV helpers;
+    Flags_Lzg8 flags;
     int _loop_start;
     fu::str value;
-    fu::vec<s_SolvedNode> items;
-    s_TokenIdx token;
-    s_Type type;
-    s_Target target;
-    s_SolvedNode(const s_SolvedNode&) = default;
-    s_SolvedNode(s_SolvedNode&&) = default;
-    s_SolvedNode& operator=(s_SolvedNode&&) = default;
-    s_SolvedNode& operator=(const s_SolvedNode& selfrec) { return *this = s_SolvedNode(selfrec); }
+    fu::vec<SolvedNode_owql> items;
+    TokenIdx_5b85 token;
+    Type_KBIB type;
+    Target_VZrr target;
+    SolvedNode_owql(const SolvedNode_owql&) = default;
+    SolvedNode_owql(SolvedNode_owql&&) = default;
+    SolvedNode_owql& operator=(SolvedNode_owql&&) = default;
+    SolvedNode_owql& operator=(const SolvedNode_owql& selfrec) { return *this = SolvedNode_owql(selfrec); }
     explicit operator bool() const noexcept
     {
         return false
@@ -956,13 +1029,13 @@ struct s_SolvedNode
 };
                                 #endif
 
-                                #ifndef DEF_s_ModuleInputs
-                                #define DEF_s_ModuleInputs
-struct s_ModuleInputs
+                                #ifndef DEF_ModuleInputs_1DFxH6zi2ic
+                                #define DEF_ModuleInputs_1DFxH6zi2ic
+struct ModuleInputs_1DFx
 {
     fu::str src;
-    s_LexerOutput lex;
-    s_ParserOutput parse;
+    LexerOutput_VDDl lex;
+    ParserOutput_oNgu parse;
     explicit operator bool() const noexcept
     {
         return false
@@ -974,16 +1047,16 @@ struct s_ModuleInputs
 };
                                 #endif
 
-                                #ifndef DEF_s_Overload
-                                #define DEF_s_Overload
-struct s_Overload
+                                #ifndef DEF_Overload_OYmbI2gRgOj
+                                #define DEF_Overload_OYmbI2gRgOj
+struct Overload_OYmb
 {
-    s_kind kind;
-    s_Flags flags;
-    s_SolverStatus status;
+    Kind_Idfg kind;
+    Flags_Lzg8 flags;
+    SolverStatus_h9em status;
     fu::str name;
-    s_Type type;
-    s_SolvedNode solved;
+    Type_KBIB type;
+    SolvedNode_owql solved;
     explicit operator bool() const noexcept
     {
         return false
@@ -993,19 +1066,20 @@ struct s_Overload
 };
                                 #endif
 
-                                #ifndef DEF_s_Extended
-                                #define DEF_s_Extended
-struct s_Extended
+                                #ifndef DEF_Extended_EbxvU56XnN6
+                                #define DEF_Extended_EbxvU56XnN6
+struct Extended_Ebxv
 {
     int min;
     int max;
-    fu::vec<s_Argument> args;
-    fu::vec<s_COWInside> cows_inside;
-    s_Target spec_of;
-    s_Template tEmplate;
-    fu::vec<s_Overload> locals;
-    s_TEA sighash;
-    s_FxMask fx_mask;
+    fu::vec<Argument_HFkq> args;
+    fu::vec<COWInside_2Z4D> cows_inside;
+    Target_VZrr spec_of;
+    Template_1cFh tEmplate;
+    fu::vec<Overload_OYmb> args_n_locals;
+    TEA_87LR sighash;
+    FxMask_2dRz fx_mask;
+    int args_neg;
     explicit operator bool() const noexcept
     {
         return false
@@ -1015,18 +1089,18 @@ struct s_Extended
 };
                                 #endif
 
-                                #ifndef DEF_s_Argument
-                                #define DEF_s_Argument
-struct s_Argument
+                                #ifndef DEF_Argument_HFkqHKf0jo7
+                                #define DEF_Argument_HFkqHKf0jo7
+struct Argument_HFkq
 {
     fu::str name;
     fu::str autocall;
-    s_Type type;
-    s_SolvedNode dEfault;
-    s_Flags flags;
-    s_Target target;
-    s_BitSet may_invalidate;
-    s_BitSet may_alias;
+    Type_KBIB type;
+    SolvedNode_owql dEfault;
+    Flags_Lzg8 flags;
+    Target_VZrr target;
+    BitSet_mmp7 may_invalidate;
+    BitSet_mmp7 may_alias;
     explicit operator bool() const noexcept
     {
         return false
@@ -1043,17 +1117,17 @@ struct s_Argument
 };
                                 #endif
 
-                                #ifndef DEF_s_SolverOutput
-                                #define DEF_s_SolverOutput
-struct s_SolverOutput
+                                #ifndef DEF_SolverOutput_FnNg0g9pDh2
+                                #define DEF_SolverOutput_FnNg0g9pDh2
+struct SolverOutput_FnNg
 {
-    s_SolvedNode root;
-    s_Scope scope;
-    s_SolverNotes notes;
-    s_SolverOutput(const s_SolverOutput&) = delete;
-    s_SolverOutput(s_SolverOutput&&) = default;
-    s_SolverOutput& operator=(const s_SolverOutput&) = delete;
-    s_SolverOutput& operator=(s_SolverOutput&&) = default;
+    SolvedNode_owql root;
+    Scope_bN0w scope;
+    SolverNotes_LSla notes;
+    SolverOutput_FnNg(const SolverOutput_FnNg&) = delete;
+    SolverOutput_FnNg(SolverOutput_FnNg&&) = default;
+    SolverOutput_FnNg& operator=(const SolverOutput_FnNg&) = delete;
+    SolverOutput_FnNg& operator=(SolverOutput_FnNg&&) = default;
     explicit operator bool() const noexcept
     {
         return false
@@ -1065,17 +1139,17 @@ struct s_SolverOutput
 };
                                 #endif
 
-                                #ifndef DEF_s_ModuleOutputs
-                                #define DEF_s_ModuleOutputs
-struct s_ModuleOutputs
+                                #ifndef DEF_ModuleOutputs_wJzJlJKhdDi
+                                #define DEF_ModuleOutputs_wJzJlJKhdDi
+struct ModuleOutputs_wJzJ
 {
-    fu::vec<s_Struct> types;
-    s_SolverOutput solve;
-    s_CodegenOutput cpp;
-    s_ModuleOutputs(const s_ModuleOutputs&) = delete;
-    s_ModuleOutputs(s_ModuleOutputs&&) = default;
-    s_ModuleOutputs& operator=(const s_ModuleOutputs&) = delete;
-    s_ModuleOutputs& operator=(s_ModuleOutputs&&) = default;
+    fu::vec<Struct_5VgD> types;
+    SolverOutput_FnNg solve;
+    CodegenOutput_OFce cpp;
+    ModuleOutputs_wJzJ(const ModuleOutputs_wJzJ&) = delete;
+    ModuleOutputs_wJzJ(ModuleOutputs_wJzJ&&) = default;
+    ModuleOutputs_wJzJ& operator=(const ModuleOutputs_wJzJ&) = delete;
+    ModuleOutputs_wJzJ& operator=(ModuleOutputs_wJzJ&&) = default;
     explicit operator bool() const noexcept
     {
         return false
@@ -1087,21 +1161,21 @@ struct s_ModuleOutputs
 };
                                 #endif
 
-                                #ifndef DEF_s_Module
-                                #define DEF_s_Module
-struct s_Module
+                                #ifndef DEF_Module_qqBh0BoNExk
+                                #define DEF_Module_qqBh0BoNExk
+struct Module_qqBh
 {
     int modid;
     fu::str fname;
-    s_ModuleInputs in;
-    s_ModuleOrder order;
-    s_ModuleOutputs out;
-    s_ModuleStats stats;
-    s_Profile profile;
-    s_Module(const s_Module&) = delete;
-    s_Module(s_Module&&) = default;
-    s_Module& operator=(const s_Module&) = delete;
-    s_Module& operator=(s_Module&&) = default;
+    ModuleInputs_1DFx in;
+    ModuleOrder_HMNg order;
+    ModuleOutputs_wJzJ out;
+    ModuleStats_zo42 stats;
+    Profile_zroC profile;
+    Module_qqBh(const Module_qqBh&) = delete;
+    Module_qqBh(Module_qqBh&&) = default;
+    Module_qqBh& operator=(const Module_qqBh&) = delete;
+    Module_qqBh& operator=(Module_qqBh&&) = default;
     explicit operator bool() const noexcept
     {
         return false
@@ -1117,17 +1191,17 @@ struct s_Module
 };
                                 #endif
 
-                                #ifndef DEF_s_NativeHacks
-                                #define DEF_s_NativeHacks
-struct s_NativeHacks
+                                #ifndef DEF_NativeQualities_EGJcP9v6iee
+                                #define DEF_NativeQualities_EGJcP9v6iee
+struct NativeQualities_EGJc
 {
     int name_start_idx;
-    bool soft_risk;
+    bool MayAlias;
     explicit operator bool() const noexcept
     {
         return false
             || name_start_idx
-            || soft_risk
+            || MayAlias
         ;
     }
 };
@@ -1135,61 +1209,50 @@ struct s_NativeHacks
 
 #ifndef fu_NO_fdefs
 
-fu::str serialize_LBuqoCCv(const s_ClosureID& _, const s_TokenIdx& _here, const s_Context& ctx)
+fu::str serialize_UvH3(const ClosureID_XYK2& _, const TokenIdx_5b85& _here, const Context_UXD9& ctx)
 {
-    /*MOV*/ fu::str result = "`"_fu;
-    int BL_1_v {};
-    const int modid = (__extension__ (
-    {
-        const s_Target& t = _.target;
-        BL_1_v = (int(unsigned(((t._packed >> 40ull) & 0xfffffull))));
-    (void)0;}), BL_1_v);
-    int BL_2_v {};
-    const int globid = (__extension__ (
-    {
-        const s_Target& t = _.target;
-        BL_2_v = (int(unsigned(((t._packed >> 20ull) & 0xfffffull))));
-    (void)0;}), BL_2_v);
-    int BL_3_v {};
-    const int locid = (__extension__ (
-    {
-        const s_Target& t = _.target;
-        BL_3_v = (int(unsigned((t._packed & 0xfffffull))));
-    (void)0;}), BL_3_v);
-    if ((globid <= 0) || (locid <= 0))
-        BUG_9SZtRVJ0("ClosureID: bad globid/locid"_fu, _here, ctx);
+    /*MOV*/ fu::str result = fu::str("`"_fu);
+    const Target_VZrr* t;
+    const int modid = (t = &(_.target), int(unsigned((((*t)._packed >> 40ull) & 0xfffffull))));
+    const Target_VZrr* t_1;
+    const int globid = (t_1 = &(_.target), int(unsigned((((*t_1)._packed >> 20ull) & 0xfffffull))));
+    const Target_VZrr* t_2;
+    unsigned v;
+    const int locid = (t_2 = &(_.target), v = unsigned(((*t_2)._packed & 0xfffffull)), int(((v >> 1u) ^ ((v & 1u) ? 0xffffffffu : 0x0u))));
+    if ((globid <= 0))
+        BUG_u9Gb("ClosureID: bad globid"_view, _here, ctx);
     else
     {
-        appendVarint_YxEMA0h9(result, unsigned(modid));
-        appendVarint_YxEMA0h9(result, _.revision);
-        appendVarint_YxEMA0h9(result, unsigned(globid));
-        appendVarint_YxEMA0h9(result, unsigned(locid));
+        appendVarint_V5Iu(result, unsigned(modid));
+        appendVarint_V5Iu(result, _.revision);
+        appendVarint_V5Iu(result, unsigned(globid));
+        appendVarint_V5Iu(result, unsigned(locid));
         return /*NRVO*/ result;
     };
 }
 
-s_ClosureID tryParseClosureID_54NQWyOV(fu::view<char> id, const s_TokenIdx& _here, const s_Context& ctx)
+ClosureID_XYK2 tryParseClosureID_UvH3(fu::view<char> id, const TokenIdx_5b85& _here, const Context_UXD9& ctx)
 {
     if ((id.size() > 3) && (id[0] == '`'))
     {
         int offset = 1;
         fu_DEFER(if (!(offset == id.size()))
-            BUG_9SZtRVJ0("Bad ClosureID: trailing stuff."_fu, _here, ctx););
-        const int modid = int(parseVarint_Fc3p3Wmg(offset, id));
-        const unsigned revision = parseVarint_Fc3p3Wmg(offset, id);
-        const int globid = int(parseVarint_Fc3p3Wmg(offset, id));
-        const int locid = int(parseVarint_Fc3p3Wmg(offset, id));
-        return s_ClosureID { Target_2jgCJZJY(modid, globid, locid), revision };
+            BUG_u9Gb("Bad ClosureID: trailing stuff."_view, _here, ctx););
+        const int modid = int(parseVarint_V5Iu(offset, id));
+        const unsigned revision = parseVarint_V5Iu(offset, id);
+        const int globid = int(parseVarint_V5Iu(offset, id));
+        const int locid = int(parseVarint_V5Iu(offset, id));
+        return ClosureID_XYK2 { Target_xQNS(modid, globid, locid), revision };
     }
     else
     {
-        return s_ClosureID{};
+        return ClosureID_XYK2{};
     };
 }
 
-                                #ifndef DEF_x3Cx3E_mJGU9byOmI4
-                                #define DEF_x3Cx3E_mJGU9byOmI4
-inline int x3Cx3E_mJGU9byO(const int a, const int b)
+                                #ifndef DEF_x3Cx3E_odNTdyipeEj
+                                #define DEF_x3Cx3E_odNTdyipeEj
+inline int x3Cx3E_odNT(const int a, const int b)
 {
     if (a < b)
         return -1;
@@ -1201,9 +1264,9 @@ inline int x3Cx3E_mJGU9byO(const int a, const int b)
 }
                                 #endif
 
-                                #ifndef DEF_x3Cx3E_sOVQcK2JOH3
-                                #define DEF_x3Cx3E_sOVQcK2JOH3
-inline int x3Cx3E_sOVQcK2J(const char a, const char b)
+                                #ifndef DEF_x3Cx3E_YuqOPxIKAE3
+                                #define DEF_x3Cx3E_YuqOPxIKAE3
+inline int x3Cx3E_YuqO(const char a, const char b)
 {
     if (a < b)
         return -1;
@@ -1215,43 +1278,43 @@ inline int x3Cx3E_sOVQcK2J(const char a, const char b)
 }
                                 #endif
 
-                                #ifndef DEF_x3Cx3E_gCeFmDFw0L8
-                                #define DEF_x3Cx3E_gCeFmDFw0L8
-inline int x3Cx3E_gCeFmDFw(fu::view<char> a, fu::view<char> b)
+                                #ifndef DEF_x3Cx3E_erT9abBVjC1
+                                #define DEF_x3Cx3E_erT9abBVjC1
+inline int x3Cx3E_erT9(fu::view<char> a, fu::view<char> b)
 {
-    int cmp = x3Cx3E_mJGU9byO(a.size(), b.size());
+    int cmp = x3Cx3E_odNT(a.size(), b.size());
     for (int i = 0; (i < a.size()) && !cmp; i++)
-        cmp = x3Cx3E_sOVQcK2J(a[i], b[i]);
+        cmp = x3Cx3E_YuqO(a[i], b[i]);
 
     return cmp;
 }
                                 #endif
 
-                                #ifndef DEF_x3Dx3D_gCeFmDFw0L8
-                                #define DEF_x3Dx3D_gCeFmDFw0L8
+                                #ifndef DEF_x3Dx3D_xqw8ga5OCp4
+                                #define DEF_x3Dx3D_xqw8ga5OCp4
 inline bool operator==(fu::view<char> a, fu::view<char> b)
 {
-    return !x3Cx3E_gCeFmDFw(a, b);
+    return !x3Cx3E_erT9(a, b);
 }
                                 #endif
 
-                                #ifndef DEF_starts_t2TApdnqRc8
-                                #define DEF_starts_t2TApdnqRc8
-inline bool starts_t2TApdnq(fu::view<char> a, fu::view<char> with)
+                                #ifndef DEF_starts_e85pmfesWad
+                                #define DEF_starts_e85pmfesWad
+inline bool starts_e85p(fu::view<char> a, fu::view<char> with)
 {
     return (a.size() >= with.size()) && (fu::get_view_start0(a, with.size()) == with);
 }
                                 #endif
 
-s_NativeHacks NativeHacks_aylVahSQ(fu::view<char> name)
+NativeQualities_EGJc NativeQualities_UvH3(fu::view<char> name)
 {
-    if (starts_t2TApdnq(name, "\nhacks/soft_risk"_fu))
+    if (starts_e85p(name, "\n#MayAlias"_view))
     {
-        return s_NativeHacks { 16, true };
+        return NativeQualities_EGJc { 10, true };
     }
     else
     {
-        return s_NativeHacks{};
+        return NativeQualities_EGJc{};
     };
 }
 

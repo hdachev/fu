@@ -3,7 +3,7 @@
 
 #ifndef fu_NO_fdefs
 
-double hr_CPFg3qvV()
+double hr_0pZh()
 {
     double timestamp {};
 
@@ -15,7 +15,7 @@ double hr_CPFg3qvV()
     return timestamp;
 }
 
-double utc_CPFg3qvV()
+double utc_0pZh()
 {
     double timestamp {};
 

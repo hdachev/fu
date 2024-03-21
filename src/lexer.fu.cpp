@@ -5,96 +5,99 @@
 #include <fu/view.h>
 #include <fu/never.h>
 #include <fu/decstr.h>
-#include <fu/vec/slice.h>
+#include <fu/default.h>
+#include <fu/vec_range.h>
+#include <fu/static_ref.h>
 #include <fu/vec/concat.h>
 #include <fu/init_priority.h>
 #include <fu/vec/concat_one.h>
 
-struct s_LexerOutput;
-struct s_Token;
-enum s_kind: fu::u8;
-struct s_LineColChars;
-[[noreturn]] fu::never FAIL_fezemVq0(const fu::str&, const fu::str&, const s_LineColChars&, fu::view<char>);
-fu::str qBAD_3PsDzMvu(const fu::str&);
-fu::str lower_MpX0JQTu(fu::str&&);
-fu::str bytes_EvFLFmIM(unsigned);
+struct LexerOutput_VDDl;
+struct Token_RpL8;
+enum Kind_Idfg: fu::u8;
+struct LineColChars_03II;
+[[noreturn]] fu::never FAIL_k53p(fu::vec_range<char>, fu::vec_range<char>, const LineColChars_03II&, fu::view<char>);
+fu::str qBAD_e44U(fu::view<char>);
+fu::str lower_KPhi(fu::str&&);
+fu::str bytes_QxwW(unsigned);
 
-                                #ifndef DEF_s_kind
-                                #define DEF_s_kind
-enum s_kind: fu::u8
+                                #ifndef DEF_Kind_Idfg
+                                #define DEF_Kind_Idfg
+enum Kind_Idfg: fu::u8
 {
-    s_kind_sof = 1u,
-    s_kind_err = 2u,
-    s_kind_eof = 3u,
-    s_kind_id = 4u,
-    s_kind_op = 5u,
-    s_kind_int = 6u,
-    s_kind_real = 7u,
-    s_kind_char = 8u,
-    s_kind_str = 9u,
-    s_kind_bool = 10u,
-    s_kind_definit = 11u,
-    s_kind_empty = 12u,
-    s_kind_struct = 13u,
-    s_kind_union = 14u,
-    s_kind_primitive = 15u,
-    s_kind_flags = 16u,
-    s_kind_enum = 17u,
-    s_kind_fn = 18u,
-    s_kind_copy = 19u,
-    s_kind_move = 20u,
-    s_kind_arrlit = 21u,
-    s_kind_not = 22u,
-    s_kind_call = 23u,
-    s_kind_argid = 24u,
-    s_kind_root = 25u,
-    s_kind_block = 26u,
-    s_kind_if = 27u,
-    s_kind_or = 28u,
-    s_kind_and = 29u,
-    s_kind_loop = 30u,
-    s_kind_jump = 31u,
-    s_kind___far_jump = 32u,
-    s_kind_defer = 33u,
-    s_kind_try = 34u,
-    s_kind_let = 35u,
-    s_kind_letdef = 36u,
-    s_kind_typecast = 37u,
-    s_kind_typeassert = 38u,
-    s_kind_typeparam = 39u,
-    s_kind_unwrap = 40u,
-    s_kind_pragma = 41u,
-    s_kind_break = 42u,
-    s_kind_return = 43u,
-    s_kind_continue = 44u,
-    s_kind_import = 45u,
-    s_kind_addroffn = 46u,
-    s_kind_forfieldsof = 47u,
-    s_kind_members = 48u,
-    s_kind_fnbranch = 49u,
-    s_kind_pattern = 50u,
-    s_kind_typeunion = 51u,
-    s_kind_typetag = 52u,
-    s_kind___relaxed = 53u,
-    s_kind___convert = 54u,
-    s_kind___preceding_ref_arg = 55u,
-    s_kind___no_kind_yet = 56u,
-    s_kind___tombstone = 57u,
-    s_kind_type = 58u,
-    s_kind_var = 59u,
-    s_kind_field = 60u,
-    s_kind_enumv = 61u,
-    s_kind_template = 62u,
-    s_kind___native = 63u,
-    s_kind_inline = 64u,
+    Kind_Idfg_sof = 1u,
+    Kind_Idfg_err = 2u,
+    Kind_Idfg_eof = 3u,
+    Kind_Idfg_id = 4u,
+    Kind_Idfg_op = 5u,
+    Kind_Idfg_int = 6u,
+    Kind_Idfg_real = 7u,
+    Kind_Idfg_char = 8u,
+    Kind_Idfg_str = 9u,
+    Kind_Idfg_bool = 10u,
+    Kind_Idfg_definit = 11u,
+    Kind_Idfg_empty = 12u,
+    Kind_Idfg_struct = 13u,
+    Kind_Idfg_union = 14u,
+    Kind_Idfg_primitive = 15u,
+    Kind_Idfg_flags = 16u,
+    Kind_Idfg_enum = 17u,
+    Kind_Idfg_fn = 18u,
+    Kind_Idfg_copy = 19u,
+    Kind_Idfg_move = 20u,
+    Kind_Idfg_arrlit = 21u,
+    Kind_Idfg_not = 22u,
+    Kind_Idfg_call = 23u,
+    Kind_Idfg_call_indir = 24u,
+    Kind_Idfg_argid = 25u,
+    Kind_Idfg_root = 26u,
+    Kind_Idfg_block = 27u,
+    Kind_Idfg_if = 28u,
+    Kind_Idfg_or = 29u,
+    Kind_Idfg_and = 30u,
+    Kind_Idfg_loop = 31u,
+    Kind_Idfg_jump = 32u,
+    Kind_Idfg___far_jump = 33u,
+    Kind_Idfg_defer = 34u,
+    Kind_Idfg_try = 35u,
+    Kind_Idfg_let = 36u,
+    Kind_Idfg_letdef = 37u,
+    Kind_Idfg_typecast = 38u,
+    Kind_Idfg_typeassert = 39u,
+    Kind_Idfg_typeparam = 40u,
+    Kind_Idfg_unwrap = 41u,
+    Kind_Idfg_pragma = 42u,
+    Kind_Idfg_break = 43u,
+    Kind_Idfg_return = 44u,
+    Kind_Idfg_continue = 45u,
+    Kind_Idfg_import = 46u,
+    Kind_Idfg_addroffn = 47u,
+    Kind_Idfg_forfieldsof = 48u,
+    Kind_Idfg_members = 49u,
+    Kind_Idfg_fnbranch = 50u,
+    Kind_Idfg_pattern = 51u,
+    Kind_Idfg_typeunion = 52u,
+    Kind_Idfg_typetag = 53u,
+    Kind_Idfg___relaxed = 54u,
+    Kind_Idfg___convert = 55u,
+    Kind_Idfg___preceding_ref_arg = 56u,
+    Kind_Idfg___no_kind_yet = 57u,
+    Kind_Idfg___tombstone = 58u,
+    Kind_Idfg_type = 59u,
+    Kind_Idfg_var = 60u,
+    Kind_Idfg_field = 61u,
+    Kind_Idfg_enumv = 62u,
+    Kind_Idfg_template = 63u,
+    Kind_Idfg___native = 64u,
+    Kind_Idfg_inline = 65u,
 };
                                 #endif
 
-                                #ifndef DEF_s_LexerOutput
-                                #define DEF_s_LexerOutput
-struct s_LexerOutput
+                                #ifndef DEF_LexerOutput_VDDlFbkjeT7
+                                #define DEF_LexerOutput_VDDlFbkjeT7
+struct LexerOutput_VDDl
 {
-    fu::vec<s_Token> tokens;
+    fu::vec<Token_RpL8> tokens;
     explicit operator bool() const noexcept
     {
         return false
@@ -104,9 +107,9 @@ struct s_LexerOutput
 };
                                 #endif
 
-                                #ifndef DEF_s_LineColChars
-                                #define DEF_s_LineColChars
-struct s_LineColChars
+                                #ifndef DEF_LineColChars_03IIie77ad3
+                                #define DEF_LineColChars_03IIie77ad3
+struct LineColChars_03II
 {
     int line;
     int col;
@@ -122,12 +125,12 @@ struct s_LineColChars
 };
                                 #endif
 
-                                #ifndef DEF_s_Token
-                                #define DEF_s_Token
-struct s_Token
+                                #ifndef DEF_Token_RpL8tz7XMX0
+                                #define DEF_Token_RpL8tz7XMX0
+struct Token_RpL8
 {
-    s_kind kind;
-    s_LineColChars lcc;
+    Kind_Idfg kind;
+    LineColChars_03II lcc;
     fu::str value;
     explicit operator bool() const noexcept
     {
@@ -138,194 +141,211 @@ struct s_Token
 };
                                 #endif
 
+                                #ifndef STR_q6JoXJtPU0l
+                                #define STR_q6JoXJtPU0l
+static const fu::str str_q6JoXJtPU0l fu_INIT_PRIORITY(1006) { "lexer: col >= 0 && idx1 >= idx0 && chars >= value.len"_fu };
+                                #endif
+
+                                #ifndef STR_onytfN8TIli
+                                #define STR_onytfN8TIli
+static const fu::str str_onytfN8TIli fu_INIT_PRIORITY(1006) { "__preceding_ref_arg"_fu };
+                                #endif
+
+                                #ifndef STR_kjRm9m5SAE6
+                                #define STR_kjRm9m5SAE6
+static const fu::str str_kjRm9m5SAE6 fu_INIT_PRIORITY(1006) { "{}[]()!?~@#$%^&*/-+<=>,.;:|"_fu };
+                                #endif
+
 #ifndef fu_NO_fdefs
 
-static void token_lc_F2LmpIMo(const s_kind kind, const fu::str& value, const int idx0, const int idx1, const int line, const int col, fu::vec<s_Token>& tokens)
+static void token_lc_pnA5(const Kind_Idfg kind, fu::vec_range<char> value, const int idx0, const int idx1, const int line, const int col, fu::vec<Token_RpL8>& tokens)
 {
     const int chars = (idx1 - idx0);
     if ((col >= 0) && (idx1 >= idx0) && (chars >= value.size()))
     {
-        tokens += s_Token { kind, s_LineColChars { line, col, chars }, fu::str(value) };
+        tokens += Token_RpL8 { kind, LineColChars_03II { line, col, chars }, fu::str(value) };
     }
     else
-        fu::fail("lexer: col >= 0 && idx1 >= idx0 && chars >= value.len"_fu);
+        fu::fail(fu::str(str_q6JoXJtPU0l));
 
 }
 
-static void token_U2MW14BO(const s_kind kind, const fu::str& value, const int idx0, const int idx1, const int line, const int lidx, fu::vec<s_Token>& tokens)
+static void token_pnA5(const Kind_Idfg kind, fu::vec_range<char> value, const int idx0, const int idx1, const int line, const int lidx, fu::vec<Token_RpL8>& tokens)
 {
     const int col = (idx0 - lidx);
-    token_lc_F2LmpIMo(kind, value, idx0, idx1, line, col, tokens);
+    token_lc_pnA5(kind, value, idx0, idx1, line, col, tokens);
 }
 
-[[noreturn]] static fu::never err_str_9ZteMbSb(const int idx0, const int idx1, fu::view<char> reason, const fu::str& src, const fu::str& fname, const int line, const int lidx)
+[[noreturn]] static fu::never err_str_pnA5(const int idx0, const int idx1, fu::view<char> reason, fu::vec_range<char> src, fu::vec_range<char> fname, const int line, const int lidx)
 {
     const int col = (idx0 - lidx);
     const int chars = (idx1 - idx0);
-    FAIL_fezemVq0(fname, src, s_LineColChars { line, col, chars }, reason);
+    FAIL_k53p(fname, src, LineColChars_03II { line, col, chars }, reason);
 }
 
-[[noreturn]] static fu::never err_str_v1Atzbai(const int idx0, fu::view<char> reason, const fu::str& src, const fu::str& fname, const int line, const int lidx, const int idx)
+[[noreturn]] static fu::never err_str_foi6(const int idx0, fu::view<char> reason, fu::vec_range<char> src, fu::vec_range<char> fname, const int line, const int lidx, const int idx)
 {
-    err_str_9ZteMbSb(idx0, idx, reason, src, fname, line, lidx);
+    err_str_pnA5(idx0, idx, reason, src, fname, line, lidx);
 }
 
-                                #ifndef DEF_str_n4lV73pjzGh
-                                #define DEF_str_n4lV73pjzGh
-inline fu::str str_n4lV73pj(const s_kind n)
+                                #ifndef DEF_str_J9IqwO347p0
+                                #define DEF_str_J9IqwO347p0
+inline fu::str str_J9Iq(const Kind_Idfg n)
 {
-    if (n == s_kind_sof)
-        return "sof"_fu;
-    else if (n == s_kind_err)
-        return "err"_fu;
-    else if (n == s_kind_eof)
-        return "eof"_fu;
-    else if (n == s_kind_id)
-        return "id"_fu;
-    else if (n == s_kind_op)
-        return "op"_fu;
-    else if (n == s_kind_int)
-        return "int"_fu;
-    else if (n == s_kind_real)
-        return "real"_fu;
-    else if (n == s_kind_char)
-        return "char"_fu;
-    else if (n == s_kind_str)
-        return "str"_fu;
-    else if (n == s_kind_bool)
-        return "bool"_fu;
-    else if (n == s_kind_definit)
-        return "definit"_fu;
-    else if (n == s_kind_empty)
-        return "empty"_fu;
-    else if (n == s_kind_struct)
-        return "struct"_fu;
-    else if (n == s_kind_union)
-        return "union"_fu;
-    else if (n == s_kind_primitive)
-        return "primitive"_fu;
-    else if (n == s_kind_flags)
-        return "flags"_fu;
-    else if (n == s_kind_enum)
-        return "enum"_fu;
-    else if (n == s_kind_fn)
-        return "fn"_fu;
-    else if (n == s_kind_copy)
-        return "copy"_fu;
-    else if (n == s_kind_move)
-        return "move"_fu;
-    else if (n == s_kind_arrlit)
-        return "arrlit"_fu;
-    else if (n == s_kind_not)
-        return "not"_fu;
-    else if (n == s_kind_call)
-        return "call"_fu;
-    else if (n == s_kind_argid)
-        return "argid"_fu;
-    else if (n == s_kind_root)
-        return "root"_fu;
-    else if (n == s_kind_block)
-        return "block"_fu;
-    else if (n == s_kind_if)
+    if (n == Kind_Idfg_sof)
+        return fu::str("sof"_fu);
+    else if (n == Kind_Idfg_err)
+        return fu::str("err"_fu);
+    else if (n == Kind_Idfg_eof)
+        return fu::str("eof"_fu);
+    else if (n == Kind_Idfg_id)
+        return fu::str("id"_fu);
+    else if (n == Kind_Idfg_op)
+        return fu::str("op"_fu);
+    else if (n == Kind_Idfg_int)
+        return fu::str("int"_fu);
+    else if (n == Kind_Idfg_real)
+        return fu::str("real"_fu);
+    else if (n == Kind_Idfg_char)
+        return fu::str("char"_fu);
+    else if (n == Kind_Idfg_str)
+        return fu::str("str"_fu);
+    else if (n == Kind_Idfg_bool)
+        return fu::str("bool"_fu);
+    else if (n == Kind_Idfg_definit)
+        return fu::str("definit"_fu);
+    else if (n == Kind_Idfg_empty)
+        return fu::str("empty"_fu);
+    else if (n == Kind_Idfg_struct)
+        return fu::str("struct"_fu);
+    else if (n == Kind_Idfg_union)
+        return fu::str("union"_fu);
+    else if (n == Kind_Idfg_primitive)
+        return fu::str("primitive"_fu);
+    else if (n == Kind_Idfg_flags)
+        return fu::str("flags"_fu);
+    else if (n == Kind_Idfg_enum)
+        return fu::str("enum"_fu);
+    else if (n == Kind_Idfg_fn)
+        return fu::str("fn"_fu);
+    else if (n == Kind_Idfg_copy)
+        return fu::str("copy"_fu);
+    else if (n == Kind_Idfg_move)
+        return fu::str("move"_fu);
+    else if (n == Kind_Idfg_arrlit)
+        return fu::str("arrlit"_fu);
+    else if (n == Kind_Idfg_not)
+        return fu::str("not"_fu);
+    else if (n == Kind_Idfg_call)
+        return fu::str("call"_fu);
+    else if (n == Kind_Idfg_call_indir)
+        return fu::str("call_indir"_fu);
+    else if (n == Kind_Idfg_argid)
+        return fu::str("argid"_fu);
+    else if (n == Kind_Idfg_root)
+        return fu::str("root"_fu);
+    else if (n == Kind_Idfg_block)
+        return fu::str("block"_fu);
+    else if (n == Kind_Idfg_if)
     {
-        return "if"_fu;
+        return fu::str("if"_fu);
     }
-    else if (n == s_kind_or)
-        return "or"_fu;
-    else if (n == s_kind_and)
-        return "and"_fu;
-    else if (n == s_kind_loop)
-        return "loop"_fu;
-    else if (n == s_kind_jump)
-        return "jump"_fu;
-    else if (n == s_kind___far_jump)
-        return "__far_jump"_fu;
-    else if (n == s_kind_defer)
-        return "defer"_fu;
-    else if (n == s_kind_try)
-        return "try"_fu;
-    else if (n == s_kind_let)
-        return "let"_fu;
-    else if (n == s_kind_letdef)
-        return "letdef"_fu;
-    else if (n == s_kind_typecast)
-        return "typecast"_fu;
-    else if (n == s_kind_typeassert)
-        return "typeassert"_fu;
-    else if (n == s_kind_typeparam)
-        return "typeparam"_fu;
-    else if (n == s_kind_unwrap)
-        return "unwrap"_fu;
-    else if (n == s_kind_pragma)
-        return "pragma"_fu;
-    else if (n == s_kind_break)
-        return "break"_fu;
-    else if (n == s_kind_return)
-        return "return"_fu;
-    else if (n == s_kind_continue)
-        return "continue"_fu;
-    else if (n == s_kind_import)
-        return "import"_fu;
-    else if (n == s_kind_addroffn)
-        return "addroffn"_fu;
-    else if (n == s_kind_forfieldsof)
-        return "forfieldsof"_fu;
-    else if (n == s_kind_members)
-        return "members"_fu;
-    else if (n == s_kind_fnbranch)
-        return "fnbranch"_fu;
-    else if (n == s_kind_pattern)
-        return "pattern"_fu;
-    else if (n == s_kind_typeunion)
-        return "typeunion"_fu;
-    else if (n == s_kind_typetag)
-        return "typetag"_fu;
-    else if (n == s_kind___relaxed)
-        return "__relaxed"_fu;
-    else if (n == s_kind___convert)
-        return "__convert"_fu;
-    else if (n == s_kind___preceding_ref_arg)
-        return "__preceding_ref_arg"_fu;
-    else if (n == s_kind___no_kind_yet)
-        return "__no_kind_yet"_fu;
-    else if (n == s_kind___tombstone)
-        return "__tombstone"_fu;
-    else if (n == s_kind_type)
-        return "type"_fu;
-    else if (n == s_kind_var)
-        return "var"_fu;
-    else if (n == s_kind_field)
-        return "field"_fu;
-    else if (n == s_kind_enumv)
-        return "enumv"_fu;
-    else if (n == s_kind_template)
-        return "template"_fu;
-    else if (n == s_kind___native)
-        return "__native"_fu;
-    else if (n == s_kind_inline)
-        return "inline"_fu;
+    else if (n == Kind_Idfg_or)
+        return fu::str("or"_fu);
+    else if (n == Kind_Idfg_and)
+        return fu::str("and"_fu);
+    else if (n == Kind_Idfg_loop)
+        return fu::str("loop"_fu);
+    else if (n == Kind_Idfg_jump)
+        return fu::str("jump"_fu);
+    else if (n == Kind_Idfg___far_jump)
+        return fu::str("__far_jump"_fu);
+    else if (n == Kind_Idfg_defer)
+        return fu::str("defer"_fu);
+    else if (n == Kind_Idfg_try)
+        return fu::str("try"_fu);
+    else if (n == Kind_Idfg_let)
+        return fu::str("let"_fu);
+    else if (n == Kind_Idfg_letdef)
+        return fu::str("letdef"_fu);
+    else if (n == Kind_Idfg_typecast)
+        return fu::str("typecast"_fu);
+    else if (n == Kind_Idfg_typeassert)
+        return fu::str("typeassert"_fu);
+    else if (n == Kind_Idfg_typeparam)
+        return fu::str("typeparam"_fu);
+    else if (n == Kind_Idfg_unwrap)
+        return fu::str("unwrap"_fu);
+    else if (n == Kind_Idfg_pragma)
+        return fu::str("pragma"_fu);
+    else if (n == Kind_Idfg_break)
+        return fu::str("break"_fu);
+    else if (n == Kind_Idfg_return)
+        return fu::str("return"_fu);
+    else if (n == Kind_Idfg_continue)
+        return fu::str("continue"_fu);
+    else if (n == Kind_Idfg_import)
+        return fu::str("import"_fu);
+    else if (n == Kind_Idfg_addroffn)
+        return fu::str("addroffn"_fu);
+    else if (n == Kind_Idfg_forfieldsof)
+        return fu::str("forfieldsof"_fu);
+    else if (n == Kind_Idfg_members)
+        return fu::str("members"_fu);
+    else if (n == Kind_Idfg_fnbranch)
+        return fu::str("fnbranch"_fu);
+    else if (n == Kind_Idfg_pattern)
+        return fu::str("pattern"_fu);
+    else if (n == Kind_Idfg_typeunion)
+        return fu::str("typeunion"_fu);
+    else if (n == Kind_Idfg_typetag)
+        return fu::str("typetag"_fu);
+    else if (n == Kind_Idfg___relaxed)
+        return fu::str("__relaxed"_fu);
+    else if (n == Kind_Idfg___convert)
+        return fu::str("__convert"_fu);
+    else if (n == Kind_Idfg___preceding_ref_arg)
+        return fu::str(str_onytfN8TIli);
+    else if (n == Kind_Idfg___no_kind_yet)
+        return fu::str("__no_kind_yet"_fu);
+    else if (n == Kind_Idfg___tombstone)
+        return fu::str("__tombstone"_fu);
+    else if (n == Kind_Idfg_type)
+        return fu::str("type"_fu);
+    else if (n == Kind_Idfg_var)
+        return fu::str("var"_fu);
+    else if (n == Kind_Idfg_field)
+        return fu::str("field"_fu);
+    else if (n == Kind_Idfg_enumv)
+        return fu::str("enumv"_fu);
+    else if (n == Kind_Idfg_template)
+        return fu::str("template"_fu);
+    else if (n == Kind_Idfg___native)
+        return fu::str("__native"_fu);
+    else if (n == Kind_Idfg_inline)
+        return fu::str("inline"_fu);
 
     return fu::i64dec(int64_t(n));
 }
                                 #endif
 
-                                #ifndef DEF_x7E_gCeFmDFw0L8
-                                #define DEF_x7E_gCeFmDFw0L8
-inline fu::str x7E_gCeFmDFw(fu::view<char> a, fu::view<char> b)
+                                #ifndef DEF_x7E_rA003L6Quul
+                                #define DEF_x7E_rA003L6Quul
+inline fu::str x7E_rA00(fu::view<char> a, fu::view<char> b)
 {
     return a + b;
 }
                                 #endif
 
-[[noreturn]] static fu::never err_Wh3NOAuD(const s_kind kind, const int idx0, const int reason, const fu::str& src, const fu::str& fname, const int line, const int lidx, const int idx)
+[[noreturn]] static fu::never err_pnA5(const Kind_Idfg kind, const int idx0, const int reason, fu::vec_range<char> src, fu::vec_range<char> fname, const int line, const int lidx, const int idx)
 {
-    err_str_v1Atzbai(idx0, ((x7E_gCeFmDFw(str_n4lV73pj(kind), ": Unexpected "_fu) + qBAD_3PsDzMvu(fu::str { fu::slate<1, char> { src[reason] } })) + "."_fu), src, fname, line, lidx, idx);
+    err_str_foi6(idx0, ((x7E_rA00(str_J9Iq(kind), ": Unexpected "_view) + qBAD_e44U(fu::view<char> {{ src[reason] }})) + "."_view), src, fname, line, lidx, idx);
 }
 
-static unsigned parseHex_9Js47iVH(fu::view<char> topic, fu::view<char> esc, int& i, const int idx0, const fu::str& src, const fu::str& fname, const int line, const int lidx)
+static unsigned parseHex_pnA5(fu::view<char> topic, fu::view<char> esc, int& i, const int idx0, fu::vec_range<char> src, fu::vec_range<char> fname, const int line, const int lidx)
 {
     fu::view<char> _0 {};
-    const char c = (_0 = esc, static_cast<fu::view<char>&&>(_0)[++i]);
+    const char c = (_0.ptr_reassign(esc), _0[++i]);
     if ((c >= '0') && (c <= '9'))
         return unsigned(fu::u8(c)) - unsigned(fu::u8('0'));
     else if ((c >= 'A') && (c <= 'F'))
@@ -333,13 +353,13 @@ static unsigned parseHex_9Js47iVH(fu::view<char> topic, fu::view<char> esc, int&
     else if ((c >= 'a') && (c <= 'f'))
         return (unsigned(fu::u8(c)) - unsigned(fu::u8('a'))) + 10u;
     else
-        err_str_9ZteMbSb(idx0, (i + 1), (((("Non hexadecimal character in "_fu + topic) + ": `"_fu) + c) + "`."_fu), src, fname, line, lidx);
+        err_str_pnA5(idx0, (i + 1), (((("Non hexadecimal character in "_view + topic) + ": `"_view) + c) + "`."_view), src, fname, line, lidx);
 
 }
 
-static fu::str UNSAFE_unescapeStr_J22KEgy4(fu::view<char> esc, const int idx0, const int idx1, const char quot, const fu::str& src, const fu::str& fname, const int line, const int lidx)
+static fu::str UNSAFE_unescapeStr_pnA5(fu::view<char> esc, const int idx0, const int idx1, const char quot, fu::vec_range<char> src, fu::vec_range<char> fname, const int line, const int lidx)
 {
-    /*MOV*/ fu::str out = ""_fu;
+    /*MOV*/ fu::str out {};
     const int n = (idx1 - 1);
     for (int i = (idx0 + 1); i < n; i++)
     {
@@ -373,18 +393,18 @@ static fu::str UNSAFE_unescapeStr_J22KEgy4(fu::view<char> esc, const int idx0, c
             else if (c1 == 'x')
             {
                 if ((i >= (n - 2)))
-                    err_str_9ZteMbSb(idx0_1, n, "Incomplete \\x-escape sequence."_fu, src, fname, line, lidx);
+                    err_str_pnA5(idx0_1, n, "Incomplete \\x-escape sequence."_view, src, fname, line, lidx);
                 else
                 {
-                    unsigned _0 {};
-                    out += char((_0 = (parseHex_9Js47iVH("\\x-escape sequence"_fu, esc, i, idx0_1, src, fname, line, lidx) << 4u), (_0 | parseHex_9Js47iVH("\\x-escape sequence"_fu, esc, i, idx0_1, src, fname, line, lidx))));
+                    unsigned _0;
+                    out += char((_0 = (parseHex_pnA5("\\x-escape sequence"_view, esc, i, idx0_1, src, fname, line, lidx) << 4u), (_0 | parseHex_pnA5("\\x-escape sequence"_view, esc, i, idx0_1, src, fname, line, lidx))));
                 };
             }
             else if (c1 == 'u')
             {
                 if ((i == n) || (esc[++i] != '{'))
                 {
-                    err_str_9ZteMbSb(idx0_1, i, "Invalid \\u-escape: no opening `{`."_fu, src, fname, line, lidx);
+                    err_str_pnA5(idx0_1, i, "Invalid \\u-escape: no opening `{`."_view, src, fname, line, lidx);
                 }
                 else
                 {
@@ -397,27 +417,27 @@ static fu::str UNSAFE_unescapeStr_J22KEgy4(fu::view<char> esc, const int idx0, c
                             if (esc[i] == '}')
                                 goto BL_21;
                             else if (digits == 6)
-                                err_str_9ZteMbSb(idx0_1, i, "Invalid \\u-escape: no closing `}` after 6 hex digits."_fu, src, fname, line, lidx);
+                                err_str_pnA5(idx0_1, i, "Invalid \\u-escape: no closing `}` after 6 hex digits."_view, src, fname, line, lidx);
 
                             digits++;
                             unicode <<= 4u;
                             i--;
-                            unicode |= parseHex_9Js47iVH("\\u-escape sequence"_fu, esc, i, idx0_1, src, fname, line, lidx);
+                            unicode |= parseHex_pnA5("\\u-escape sequence"_view, esc, i, idx0_1, src, fname, line, lidx);
                         };
-                        err_str_9ZteMbSb(idx0_1, n, "Incomplete \\u-escape: no closing `}`."_fu, src, fname, line, lidx);
+                        err_str_pnA5(idx0_1, n, "Incomplete \\u-escape: no closing `}`."_view, src, fname, line, lidx);
                       } BL_21:;
                     };
                     if (!digits)
-                        err_str_9ZteMbSb(idx0_1, (i + 1), "Empty \\u-escape."_fu, src, fname, line, lidx);
+                        err_str_pnA5(idx0_1, (i + 1), "Empty \\u-escape."_view, src, fname, line, lidx);
                     else
                     {
                         fu::str _1 {};
-                        out += ((_1 = bytes_EvFLFmIM(unicode)) ? static_cast<fu::str&&>(_1) : err_str_9ZteMbSb(idx0_1, (i + 1), "Invalid \\u-escape: bad code point."_fu, src, fname, line, lidx));
+                        out += ((_1 = bytes_QxwW(unicode)) ? static_cast<fu::str&&>(_1) : err_str_pnA5(idx0_1, (i + 1), "Invalid \\u-escape: bad code point."_view, src, fname, line, lidx));
                     };
                 };
             }
             else
-                err_str_9ZteMbSb(idx0_1, (i + 1), "Unknown escape sequence."_fu, src, fname, line, lidx);
+                err_str_pnA5(idx0_1, (i + 1), "Unknown escape sequence."_view, src, fname, line, lidx);
 
         }
         else
@@ -427,27 +447,27 @@ static fu::str UNSAFE_unescapeStr_J22KEgy4(fu::view<char> esc, const int idx0, c
     return /*NRVO*/ out;
 }
 
-                                #ifndef DEF_x7E_gCeFmDFw0L8
-                                #define DEF_x7E_gCeFmDFw0L8
-inline fu::str x7E_gCeFmDFw(fu::view<char> a, fu::view<char> b)
+static const fu::static_ref<fu::str> OPTOKENS fu_INIT_PRIORITY(1006) = str_kjRm9m5SAE6;
+
+                                #ifndef DEF_find_ZKsG2FXrtpg
+                                #define DEF_find_ZKsG2FXrtpg
+inline int find_ZKsG(fu::view<char> haystack, const char needle)
 {
-    return a + b;
+    for (int i = 0; i < haystack.size(); i++)
+    {
+        if (haystack[i] == needle)
+            return i;
+
+    };
+    return -1;
 }
                                 #endif
 
-static const fu::str OPTOKENS fu_INIT_PRIORITY(1005) = "{}[]()!?~@#$%^&*/-+<=>,.;:|"_fu;
-
-                                #ifndef DEF_has_KonMQ4KBuu5
-                                #define DEF_has_KonMQ4KBuu5
-inline bool has_KonMQ4KB(fu::view<char> a, const char b)
+                                #ifndef DEF_has_Mnu2KTFEuhg
+                                #define DEF_has_Mnu2KTFEuhg
+inline bool has_Mnu2(fu::view<char> a, const char b)
 {
-    for (int i = 0; i < a.size(); i++)
-    {
-        if (a[i] == b)
-            return true;
-
-    };
-    return false;
+    return (find_ZKsG(a, b) >= 0);
 }
                                 #endif
 
@@ -456,11 +476,11 @@ inline bool has_KonMQ4KB(fu::view<char> a, const char b)
 inline constexpr int MBOPS_maxLen = 4;
                                 #endif
 
-static const fu::vec<fu::str> MBOPS fu_INIT_PRIORITY(1005) = fu::vec<fu::str> { fu::slate<44, fu::str> { "++"_fu, "--"_fu, "**"_fu, "<<"_fu, "<<<"_fu, ">>"_fu, ">>>"_fu, "==="_fu, "=="_fu, "!="_fu, "!=="_fu, "<="_fu, ">="_fu, "<=>"_fu, "<>"_fu, "=>"_fu, "->"_fu, "|>"_fu, "<|"_fu, "??"_fu, "?:"_fu, ".."_fu, "..."_fu, "::"_fu, "&&"_fu, "||"_fu, "[]"_fu, "[:]"_fu, "+="_fu, "-="_fu, "*="_fu, "**="_fu, "/="_fu, "%="_fu, "&="_fu, "|="_fu, "^="_fu, "<<="_fu, ">>="_fu, "~="_fu, "&&="_fu, "||="_fu, ".="_fu, "[..]"_fu } };
+static const fu::vec<fu::str> MBOPS fu_INIT_PRIORITY(1006) = fu::vec<fu::str> {{ fu::str("++"_fu), fu::str("--"_fu), fu::str("<<"_fu), fu::str(">>"_fu), fu::str("=="_fu), fu::str("!="_fu), fu::str("<="_fu), fu::str(">="_fu), fu::str("<=>"_fu), fu::str("<>"_fu), fu::str("=>"_fu), fu::str("->"_fu), fu::str("|>"_fu), fu::str("<|"_fu), fu::str("??"_fu), fu::str("?:"_fu), fu::str(".."_fu), fu::str("..."_fu), fu::str("::"_fu), fu::str("&&"_fu), fu::str("||"_fu), fu::str("[]"_fu), fu::str("[..]"_fu), fu::str("+="_fu), fu::str("-="_fu), fu::str("*="_fu), fu::str("/="_fu), fu::str("%="_fu), fu::str("&="_fu), fu::str("|="_fu), fu::str("^="_fu), fu::str("<<="_fu), fu::str(">>="_fu), fu::str("~="_fu), fu::str("&&="_fu), fu::str("||="_fu), fu::str(".="_fu), fu::str(":="_fu), fu::str("+%"_fu), fu::str("-%"_fu), fu::str("*%"_fu), fu::str("+%="_fu), fu::str("-%="_fu), fu::str("*%="_fu) }};
 
-                                #ifndef DEF_x3Cx3E_mJGU9byOmI4
-                                #define DEF_x3Cx3E_mJGU9byOmI4
-inline int x3Cx3E_mJGU9byO(const int a, const int b)
+                                #ifndef DEF_x3Cx3E_odNTdyipeEj
+                                #define DEF_x3Cx3E_odNTdyipeEj
+inline int x3Cx3E_odNT(const int a, const int b)
 {
     if (a < b)
         return -1;
@@ -472,9 +492,9 @@ inline int x3Cx3E_mJGU9byO(const int a, const int b)
 }
                                 #endif
 
-                                #ifndef DEF_x3Cx3E_sOVQcK2JOH3
-                                #define DEF_x3Cx3E_sOVQcK2JOH3
-inline int x3Cx3E_sOVQcK2J(const char a, const char b)
+                                #ifndef DEF_x3Cx3E_YuqOPxIKAE3
+                                #define DEF_x3Cx3E_YuqOPxIKAE3
+inline int x3Cx3E_YuqO(const char a, const char b)
 {
     if (a < b)
         return -1;
@@ -486,48 +506,56 @@ inline int x3Cx3E_sOVQcK2J(const char a, const char b)
 }
                                 #endif
 
-                                #ifndef DEF_x3Cx3E_gCeFmDFw0L8
-                                #define DEF_x3Cx3E_gCeFmDFw0L8
-inline int x3Cx3E_gCeFmDFw(fu::view<char> a, fu::view<char> b)
+                                #ifndef DEF_x3Cx3E_erT9abBVjC1
+                                #define DEF_x3Cx3E_erT9abBVjC1
+inline int x3Cx3E_erT9(fu::view<char> a, fu::view<char> b)
 {
-    int cmp = x3Cx3E_mJGU9byO(a.size(), b.size());
+    int cmp = x3Cx3E_odNT(a.size(), b.size());
     for (int i = 0; (i < a.size()) && !cmp; i++)
-        cmp = x3Cx3E_sOVQcK2J(a[i], b[i]);
+        cmp = x3Cx3E_YuqO(a[i], b[i]);
 
     return cmp;
 }
                                 #endif
 
-                                #ifndef DEF_x3Dx3D_gCeFmDFw0L8
-                                #define DEF_x3Dx3D_gCeFmDFw0L8
+                                #ifndef DEF_x3Dx3D_xqw8ga5OCp4
+                                #define DEF_x3Dx3D_xqw8ga5OCp4
 inline bool operator==(fu::view<char> a, fu::view<char> b)
 {
-    return !x3Cx3E_gCeFmDFw(a, b);
+    return !x3Cx3E_erT9(a, b);
 }
                                 #endif
 
-                                #ifndef DEF_has_g5ZsWtbdNfi
-                                #define DEF_has_g5ZsWtbdNfi
-inline bool has_g5ZsWtbd(fu::view<fu::str> a, fu::view<char> b)
+                                #ifndef DEF_find_maZ1bPk9M33
+                                #define DEF_find_maZ1bPk9M33
+inline int find_maZ1(fu::view<fu::str> haystack, fu::view<char> needle)
 {
-    for (int i = 0; i < a.size(); i++)
+    for (int i = 0; i < haystack.size(); i++)
     {
-        if (a[i] == b)
-            return true;
+        if (haystack[i] == needle)
+            return i;
 
     };
-    return false;
+    return -1;
 }
                                 #endif
 
-s_LexerOutput lex_XyQUXQaS(const fu::str& src, const fu::str& fname)
+                                #ifndef DEF_has_2Cr49IHQCne
+                                #define DEF_has_2Cr49IHQCne
+inline bool has_2Cr4(fu::view<fu::str> a, fu::view<char> b)
+{
+    return (find_maZ1(a, b) >= 0);
+}
+                                #endif
+
+LexerOutput_VDDl lex_pnA5(fu::vec_range<char> src, fu::vec_range<char> fname)
 {
     const int end = src.size();
     int line = 1;
     int lidx = -1;
     int idx = 0;
-    /*MOV*/ fu::vec<s_Token> tokens {};
-    token_U2MW14BO(s_kind_sof, ""_fu, idx, idx, line, lidx, tokens);
+    /*MOV*/ fu::vec<Token_RpL8> tokens {};
+    token_pnA5(Kind_Idfg_sof, (*(fu::str*)fu::NIL), idx, idx, line, lidx, tokens);
     while (idx < end)
     {
         const int idx0 = idx;
@@ -552,7 +580,7 @@ s_LexerOutput lex_XyQUXQaS(const fu::str& src, const fu::str& fname)
                 };
             };
             const int idx1 = idx;
-            token_U2MW14BO(s_kind_id, fu::slice(src, idx0, idx1), idx0, idx1, line, lidx, tokens);
+            token_pnA5(Kind_Idfg_id, fu::get_range(src, idx0, idx1), idx0, idx1, line, lidx, tokens);
         }
         else if ((c >= '0') && (c <= '9'))
         {
@@ -582,7 +610,7 @@ s_LexerOutput lex_XyQUXQaS(const fu::str& src, const fu::str& fname)
                     idx++;
                 }
                 else if ((c_1 >= '0') && (c_1 <= '9'))
-                    err_str_v1Atzbai(idx0, ("Leading zero in numeric literal,"_fu + " perhaps you meant 0x, 0b or 0o."_fu), src, fname, line, lidx, idx);
+                    err_str_foi6(idx0, ("Leading zero in numeric literal,"_view + " perhaps you meant 0x, 0b or 0o."_view), src, fname, line, lidx, idx);
 
             };
             while (idx < end)
@@ -604,7 +632,7 @@ s_LexerOutput lex_XyQUXQaS(const fu::str& src, const fu::str& fname)
                             break;
                         }
                         else if (dot || exp)
-                            err_Wh3NOAuD(s_kind_real, idx0, (idx - 1), src, fname, line, lidx, idx);
+                            err_pnA5(Kind_Idfg_real, idx0, (idx - 1), src, fname, line, lidx, idx);
                         else
                             dot = true;
 
@@ -612,7 +640,7 @@ s_LexerOutput lex_XyQUXQaS(const fu::str& src, const fu::str& fname)
                     else if ((hex ? ((c_1 == 'p') || (c_1 == 'P')) : ((c_1 == 'e') || (c_1 == 'E'))))
                     {
                         if (exp)
-                            err_Wh3NOAuD(s_kind_real, idx0, (idx - 1), src, fname, line, lidx, idx);
+                            err_pnA5(Kind_Idfg_real, idx0, (idx - 1), src, fname, line, lidx, idx);
                         else
                         {
                             if ((idx < end) && ((src[idx] == '-') || (src[idx] == '+')))
@@ -639,15 +667,15 @@ s_LexerOutput lex_XyQUXQaS(const fu::str& src, const fu::str& fname)
             };
             const char trail = src[(idx - 1)];
             if (!((trail >= '0') && (trail <= '9')) && !(hex && (((trail >= 'a') && (trail <= 'f')) || ((trail >= 'A') && (trail <= 'F')))))
-                err_Wh3NOAuD(s_kind_real, idx0, (idx - 1), src, fname, line, lidx, idx);
+                err_pnA5(Kind_Idfg_real, idx0, (idx - 1), src, fname, line, lidx, idx);
             else
             {
                 const int idx1 = idx;
-                /*MOV*/ fu::str str = fu::slice(src, idx0, idx1);
+                fu::vec_range<char> str = fu::get_range(src, idx0, idx1);
                 if (hex && dot && !exp)
-                    err_str_v1Atzbai(idx0, ("The exponent is never optional"_fu + " for hexadecimal floating-point literals."_fu), src, fname, line, lidx, idx);
+                    err_str_foi6(idx0, ("The exponent is never optional"_view + " for hexadecimal floating-point literals."_view), src, fname, line, lidx, idx);
                 else
-                    token_U2MW14BO(((dot || exp) ? s_kind_real : s_kind_int), lower_MpX0JQTu(static_cast<fu::str&&>(str)), idx0, idx1, line, lidx, tokens);
+                    token_pnA5(((dot || exp) ? Kind_Idfg_real : Kind_Idfg_int), lower_KPhi(fu::str(str)), idx0, idx1, line, lidx, tokens);
 
             };
         }
@@ -676,7 +704,7 @@ s_LexerOutput lex_XyQUXQaS(const fu::str& src, const fu::str& fname)
                     {
                         while ((src[--idx] <= ' '));
                         idx++;
-                        err_str_v1Atzbai(idx0, ((c == '\'') ? "Unterminated char literal."_fu : "Unterminated double-quote string literal.\n\n\tUse backticks around multiline strings."_fu), src, fname, line, lidx, idx);
+                        err_str_foi6(idx0, ((c == '\'') ? "Unterminated char literal."_view : "Unterminated double-quote string literal.\n\n\tUse backticks around multiline strings."_view), src, fname, line, lidx, idx);
                     }
                     else
                     {
@@ -686,16 +714,16 @@ s_LexerOutput lex_XyQUXQaS(const fu::str& src, const fu::str& fname)
                 };
             };
             if (!ok)
-                err_str_v1Atzbai(idx0, "Unterminated string literal."_fu, src, fname, line, lidx, idx);
+                err_str_foi6(idx0, "Unterminated string literal."_view, src, fname, line, lidx, idx);
             else
             {
                 const int idx1 = idx;
-                fu::str str = (esc ? UNSAFE_unescapeStr_J22KEgy4(src, idx0, idx1, c, src, fname, line, lidx) : fu::slice(src, (idx0 + 1), (idx1 - 1)));
+                fu::str str = (esc ? UNSAFE_unescapeStr_pnA5(src, idx0, idx1, c, src, fname, line, lidx) : fu::str(fu::get_range(src, (idx0 + 1), (idx1 - 1))));
                 const bool cHar = (c == '\'');
                 if (cHar && (str.size() != 1))
-                    err_str_v1Atzbai(idx0, (x7E_gCeFmDFw("Invalid char literal, not single byte: "_fu, fu::i64dec(str.size())) + " bytes long."_fu), src, fname, line, lidx, idx);
+                    err_str_foi6(idx0, (x7E_rA00("Invalid char literal, not single byte: "_view, fu::i64dec(str.size())) + " bytes long."_view), src, fname, line, lidx, idx);
                 else
-                    token_lc_F2LmpIMo((cHar ? s_kind_char : s_kind_str), str, idx0, idx1, line0, col, tokens);
+                    token_lc_pnA5((cHar ? Kind_Idfg_char : Kind_Idfg_str), str, idx0, idx1, line0, col, tokens);
 
             };
         }
@@ -731,7 +759,7 @@ s_LexerOutput lex_XyQUXQaS(const fu::str& src, const fu::str& fname)
                 };
             };
         }
-        else if (has_KonMQ4KB(OPTOKENS, c))
+        else if (has_Mnu2(OPTOKENS.ref, c))
         {
             int maxLookahead = (idx0 + MBOPS_maxLen);
             if (maxLookahead > end)
@@ -740,7 +768,7 @@ s_LexerOutput lex_XyQUXQaS(const fu::str& src, const fu::str& fname)
             while (idx < maxLookahead)
             {
                 const char c_1 = src[idx++];
-                if (!has_KonMQ4KB(OPTOKENS, c_1))
+                if (!has_Mnu2(OPTOKENS.ref, c_1))
                 {
                     idx--;
                     break;
@@ -748,22 +776,10 @@ s_LexerOutput lex_XyQUXQaS(const fu::str& src, const fu::str& fname)
             };
             for (; ; )
             {
-                fu::str candidate = fu::slice(src, idx0, idx);
-                if ((candidate.size() == 1) || has_g5ZsWtbd(MBOPS, candidate))
+                fu::vec_range<char> candidate = fu::get_range(src, idx0, idx);
+                if ((candidate.size() == 1) || has_2Cr4(MBOPS, candidate))
                 {
-                    // FORWARD COMPAT -
-                    //  we're gonna use ".." as the slice operator,
-                    //   is great for languages without a ternary operator,
-                    //    but we ain't one.
-                    //
-                    if (candidate == ".."_fu) {
-                        candidate = ":"_fu;
-                    }
-                    if (candidate == "[..]"_fu) {
-                        candidate = "[:]"_fu;
-                    }
-
-                    token_U2MW14BO(s_kind_op, candidate, idx0, idx, line, lidx, tokens);
+                    token_pnA5(Kind_Idfg_op, candidate, idx0, idx, line, lidx, tokens);
                     break;
                 }
                 else
@@ -772,13 +788,13 @@ s_LexerOutput lex_XyQUXQaS(const fu::str& src, const fu::str& fname)
             };
         }
         else
-            err_Wh3NOAuD(s_kind_err, idx0, idx0, src, fname, line, lidx, idx);
+            err_pnA5(Kind_Idfg_err, idx0, idx0, src, fname, line, lidx, idx);
 
     };
     line++;
     lidx = (idx + 0);
-    token_U2MW14BO(s_kind_eof, ""_fu, idx, idx, line, lidx, tokens);
-    return s_LexerOutput { static_cast<fu::vec<s_Token>&&>(tokens) };
+    token_pnA5(Kind_Idfg_eof, (*(fu::str*)fu::NIL), idx, idx, line, lidx, tokens);
+    return LexerOutput_VDDl { static_cast<fu::vec<Token_RpL8>&&>(tokens) };
 }
 
 #endif
