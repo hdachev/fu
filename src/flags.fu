@@ -108,7 +108,7 @@ using flags Flags: u32
     F_LAX
     F_SHADOW
     F_MUSTNAME
-    F_WRITTEN_TO
+    // ...
 
     F_MUT                   // mutability & val-vs-ref semantics
     F_CONST                 //  now orthogonal.

@@ -269,6 +269,11 @@ struct Argument
     flags?:         Flags;
     target?:        Target;
 
+    // Previously the F_WRITTEN_TO flag,
+    //  now trying to be more exact here.
+    //
+    written_to?:        Lifetime;
+
     // Argument A may safely invalidate argument B
     //  when all writes to A happen after the last use of B.
     //

@@ -4001,7 +4001,7 @@ pub fn solve(
 
             let host_args = ext.args;
             for (mut i = 0; i < host_args.len; i++)
-                if (host_args[i].flags & F_WRITTEN_TO)
+                if (host_args[i].written_to)
                     return false;
 
             return true;
@@ -4655,7 +4655,7 @@ pub fn solve(
 
                     arg.propagateType(host_arg, :relax_mask);
 
-                    if (host_arg.flags & F_WRITTEN_TO)
+                    if (host_arg.written_to)
                         callarg_trackWrites(arg.type.lifetime);
 
                     if !(host_arg.flags & F_LT_RETURNED)
@@ -6497,9 +6497,12 @@ pub fn solve(
             // Wider argument must be assignable to narrower argument.
             TEST_Assignable(host: n.type, w.type, "n.type !<- w.type (" ~ n ~ ")");
 
-            // Narrower can't write if wider doesn't.
-            if (n.flags & F_WRITTEN_TO)
-                w.flags & F_WRITTEN_TO || BUG("n.flags & F_WRITTEN_TO (" ~ n ~ ")");
+            // Narrower can't write if wider doesn't,
+            //  which is the same as saying that union(narrow, wide) == wide
+            //   (narrow mentions nothing that wide doesn't).
+            //
+            let union = Lifetime_union(n.written_to, w.written_to);
+            union == w.written_to || BUG("n.written_to(" ~ n.written_to ~ ") w.written_to(" ~ w.written_to ~ ") union(" ~ union ~ ")");
 
             // Narrower can't miss anything from wider's may_invalidate/may_alias masks.
             n.may_invalidate.has_missing(w.may_invalidate) && BUG("n.may_invalidate less (" ~ n ~ ")");
@@ -7534,14 +7537,14 @@ pub fn solve(
 
             // ARGUMENTS AT RISK ////////////////////////
             let argTarget   = argNode.target;
-            let written_via = !isUnspec
+            let written_to  = !isUnspec
                 && argNode.type.is_mutref
-                && (isNative    ? !argNode.type.is_zst
-                                : !!_current_fn.ever_written.if(exists: argTarget.locid));
+                && (isNative    ? !argNode.type.is_zst && argNode.target.type.lifetime
+                                : _current_fn.ever_written.if(exists: argTarget.locid));
 
             mut soft_risk: bitset::BitSet;
             mut hard_risk: bitset::BitSet;
-            if (written_via)
+            if (written_to)
             {
                 numArgsWritten++;
 
@@ -7604,12 +7607,12 @@ pub fn solve(
             // TODO FAILCASE
             // TODO FAILCASE these dont work for inline fns
             // TODO FAILCASE
-            if (asserts & A_PURE && written_via)
+            if (asserts & A_PURE && written_to)
                 fail(backtrack: "pure", target ~ " is not pure, writes to " ~ argTarget ~ ":\n"
                     ~ qSTACK(:target, :argTarget.locid,
                                 node: _current_fn.out));
 
-            if (asserts & A_PURE_CTX && isImplicit && written_via)
+            if (asserts & A_PURE_CTX && isImplicit && written_to)
                 fail(backtrack: "purectx", target ~ " is not purectx, writes to " ~ argTarget ~ ":\n"
                     ~ qSTACK(:target, :argTarget.locid,
                                 node: _current_fn.out));
@@ -7643,8 +7646,8 @@ pub fn solve(
             mut arg = Argument(
                 :name,
                 :autocall,
-                :argNode.flags | (written_via && F_WRITTEN_TO)
-                               | (cow_inside  && F_COW_INSIDE),
+                :written_to,
+                :argNode.flags | (cow_inside && F_COW_INSIDE),
                 :argNode.type,
                 default: !isImplicit && argNode.items && argNode.items[LET_INIT],
                 target: argTarget,
@@ -11288,7 +11291,7 @@ pub fn solve(
         if (args.len == host_args.len) for (mut i = 0; i < host_args.len; i++)
         {
             let host_arg = host_args[i];
-            if !(host_arg.flags & F_WRITTEN_TO)
+            if !(host_arg.written_to)
                 continue;
 
             let arg = args[i];
@@ -11341,7 +11344,7 @@ pub fn solve(
                 }
                 else
                 {
-                    if !(host_arg.flags & F_WRITTEN_TO)
+                    if !(host_arg.written_to)
                         continue;
                 }
 
@@ -12966,7 +12969,7 @@ pub fn solve(
                         if (arg.lifetime.Lifetime_has(:locid))
                         {
                             let host_arg = node.target.args[i];
-                            if (host_arg.flags & F_WRITTEN_TO)
+                            if (host_arg.written_to)
                                 return node.token.addr_and_snippet
                                      ~ "\n\tAt call to " ~ node.target
                                      ~ qSTACK(node.target, position: i);
@@ -13468,7 +13471,7 @@ pub fn solve(
 
                     num_ref_args++;
 
-                    if (host_arg.flags & F_WRITTEN_TO)
+                    if (host_arg.written_to)
                     {
                         if (SELF_TEST) {
                             host_arg.is_mutref || BUG(host_arg.name.human.qID ~ ": host_arg.written but !host_arg.is_mutref");
@@ -13539,9 +13542,7 @@ pub fn solve(
                 for (mut i0 = 0; i0 < args.len; i0++)
                 {
                     let host_arg0   = host_args[i0];
-                    let expect      = host_arg0.type;
-
-                    if !(expect.is_ref)
+                    if !(host_arg0.is_ref)
                         continue;
 
                     // BORROWCK: multiple mutrefs error,
@@ -13600,11 +13601,11 @@ pub fn solve(
                                             if !(region1 && region0 != region1)
                                                 continue;
 
-                                            if (host_arg0.flags & F_WRITTEN_TO)
+                                            if (host_arg0.written_to)
                                                 RESOLVE_byAAR(write: region0, read: region1,
                                                     trySoft: host_arg0.may_alias.has(i1) && arg1.softRiskSafe);
 
-                                            if (host_arg1.flags & F_WRITTEN_TO)
+                                            if (host_arg1.written_to)
                                                 RESOLVE_byAAR(read: region0, write: region1,
                                                     trySoft: host_arg1.may_alias.has(i0) && arg0.softRiskSafe);
                                         }
@@ -13690,7 +13691,7 @@ pub fn solve(
                         }
 
                         // If we have a mutref, go over all refs.
-                        if (expect.is_mutref) {
+                        if (host_arg0.written_to) {
                             for (mut i = ref_first; i <= ref_last; i++)
                                 if (host_args[i].is_ref)
                                     validate(i);
@@ -13699,7 +13700,7 @@ pub fn solve(
                         // Else we only care about mutrefs here.
                         else if (mutref_first >= 0) {
                             for (mut i = mutref_first; i <= mutref_last; i++)
-                                if (host_args[i].is_mutref)
+                                if (host_args[i].written_to)
                                     validate(i);
                         }
                     }
@@ -13712,7 +13713,7 @@ pub fn solve(
                         ref_last = i0;
                     }
 
-                    if (expect.is_mutref)
+                    if (host_arg0.written_to)
                     {
                         if (mutref_first < 0)
                             mutref_first = i0;
@@ -14740,7 +14741,7 @@ pub fn solve(
 
             _argPos_1b.ensure(exists: (-1) - host_arg.target.locid) = i + 1;
 
-            let may_alias = host_arg.flags & F_WRITTEN_TO && host_arg.may_alias;
+            let may_alias = host_arg.written_to && host_arg.may_alias;
             if (may_alias)
             {
                 if (SELF_TEST)
@@ -14932,7 +14933,7 @@ pub fn solve(
                         //  is happening within the argument list of
                         //   another call with unsequenced arguments.
                         //
-                        if (host_arg.flags & F_WRITTEN_TO)
+                        if (host_arg.written_to)
                         {
                             outer.writes.flag(arg.type.lifetime);
                             // ^^^^^^^^^
