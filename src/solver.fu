@@ -13416,9 +13416,9 @@ pub fn solve(
             let RTL         = target.isRTL;
             let host_args   = target.args;
 
-            mut has_writes  = false;
-
             ///////////////////////////////////////////////
+            mut bck_writes: Lifetime;
+            mut num_ref_args: int;
             {
                 let pra_len0 = _current_fn.preceding_ref_args.len;
 
@@ -13426,9 +13426,6 @@ pub fn solve(
 
                 argsForward(:RTL, :host_args, |i, host_arg, ooe_isLast|
                 {
-                    if (host_arg.flags & F_WRITTEN_TO)
-                        has_writes = true;
-
                     // We keep a current .w position on
                     //  the first PrecedingRefArg we emit,
                     //   we pick those up when checking PRAs,
@@ -13446,7 +13443,22 @@ pub fn solve(
                     ref arg = args[i];
                     bck_node(arg);
 
-                    if (!ooe_isLast && arg.is_ref && host_arg.is_ref)
+                    if !(host_arg.is_ref && arg.is_ref)
+                        continue;
+
+                    num_ref_args++;
+
+                    if (host_arg.flags & F_WRITTEN_TO)
+                    {
+                        if (SELF_TEST) {
+                            host_arg.is_mutref || BUG(host_arg.name.human.qID ~ ": host_arg.written but !host_arg.is_mutref");
+                            arg.is_mutref      || BUG(host_arg.name.human.qID ~ ": host_arg.written but !arg.is_mutref");
+                        }
+
+                        bck_writes.Lifetime_add(arg.lifetime);
+                    }
+
+                    if (!ooe_isLast)
                     {
                         mut pra: SolvedNode;
                         pra.kind = "__preceding_ref_arg";
@@ -13484,89 +13496,55 @@ pub fn solve(
             }
             ///////////////////////////////////////////////
 
-            if (!has_writes)
+            if (!bck_writes)
                 return;
 
-            // BORROWCK ////////////////
-            mut bck_writes: Lifetime;
-
-            mut mutref_first    = -1;
-            mut mutref_last     = -1;
-            mut ref_first       = -1;
-            mut ref_last        = -1;
-
-            //
-            mut bck_unwound: Lifetime[];
-
-            mut arg_first       = -1;
-            mut arg_last        = -1;
-            ////////////////////////////
-
-
-            for (mut i0 = 0; i0 < args.len; i0++)
+            if (num_ref_args > 1)
             {
-                let host_arg0   = host_args[i0];
-                let expect      = host_arg0.type;
+                // BORROWCK ////////////////
+                mut mutref_first    = -1;
+                mut mutref_last     = -1;
+                mut ref_first       = -1;
+                mut ref_last        = -1;
 
-                // BORROWCK: multiple mutrefs error,
-                //  this is the only thing we can't workaround by copying.
-                if (expect.is_ref)
+                //
+                mut bck_unwound: Lifetime[];
+                bck_unwound.resize(args.len);
+
+                //
+                mut arg_first       = -1;
+                mut arg_last        = -1;
+                ////////////////////////////
+
+                for (mut i0 = 0; i0 < args.len; i0++)
                 {
-                    // Lazy init unwound lifetimes.
-                    if !(bck_unwound)
-                    {
-                        if (mutref_first >= 0 || ref_first >= 0 && expect.is_mutref)
-                        {
-                            bck_unwound.resize(args.len);
-                            for (shadow mut i0 = ref_first; i0 <= ref_last; i0++)
-                            {
-                                let unwound = bck_unwound[i0] = Lifetime_unwind(
-                                    args[i0].type.lifetime, locals_only: true);
+                    let host_arg0   = host_args[i0];
+                    let expect      = host_arg0.type;
 
-                                // Locate first and last callsite arguments
-                                //  that refer to caller arguments,
-                                //   so we can later on loop over them faster.
-                                //
-                                // TODO: args at risk: ignore closures & implicits,
-                                //  they are disjoint by definition.
-                                //   But are they? You can totally have
-                                //    an implicit ref a = implicit b.
-                                //
-                                // TODO: args at risk: ignore non-aliasable types.
-                                //
-                                unwound.Lifetime_each: |locid|
-                                {
-                                    if (locid)
-                                    {
-                                        arg_first   = arg_first < 0 ? i0 : arg_first;
-                                        arg_last    = i0;
-                                        continue;
-                                    }
-                                }
-                            }
+                    if !(expect.is_ref)
+                        continue;
+
+                    // BORROWCK: multiple mutrefs error,
+                    //  this is the only thing we can't workaround by copying.
+                    let arg0     = args[i0];
+                    let shallow0 = arg0.type.lifetime;
+                    let unwound0 = bck_unwound[i0] = Lifetime_unwind(
+                        shallow0, locals_only: true);
+
+                    // Keep track of caller arguments.
+                    unwound0.Lifetime_each: |locid|
+                    {
+                        if (locid)
+                        {
+                            arg_first   = arg_first < 0 ? i0 : arg_first;
+                            arg_last    = i0;
+                            continue;
                         }
                     }
 
                     // Validate aliasing.
-                    if (bck_unwound)
+                    if (ref_first >= 0)
                     {
-                        let arg0     = args[i0];
-                        let shallow0 = arg0.type.lifetime;
-                        let unwound0 = bck_unwound[i0] = Lifetime_unwind(
-                            shallow0, locals_only: true);
-
-                        // Keep track of caller arguments.
-                        unwound0.Lifetime_each: |locid|
-                        {
-                            if (locid)
-                            {
-                                arg_first   = arg_first < 0 ? i0 : arg_first;
-                                arg_last    = i0;
-                                continue;
-                            }
-                        }
-
-                        //
                         fn validate(i1: i32)
                         {
                             let host_arg1 = host_args[i1];
@@ -13699,7 +13677,7 @@ pub fn solve(
                         }
 
                         // Else we only care about mutrefs here.
-                        else {
+                        else if (mutref_first >= 0) {
                             for (mut i = mutref_first; i <= mutref_last; i++)
                                 if (host_args[i].is_mutref)
                                     validate(i);
@@ -13720,25 +13698,9 @@ pub fn solve(
                             mutref_first = i0;
 
                         mutref_last = i0;
-
-                        // We'll batch all writes together in a bit.
-                        if (host_arg0.flags & F_WRITTEN_TO)
-                        {
-                            let arg0 = args[i0];
-
-                            host_arg0.is_mutref || BUG(host_arg0.name.human.qID ~ ": host_arg0.written but !host_arg0.is_mutref");
-                            arg0.is_mutref      || BUG(host_arg0.name.human.qID ~ ": host_arg0.written but !arg.is_mutref");
-
-                            bck_writes.Lifetime_add(arg0.lifetime);
-                        }
                     }
                 }
             }
-
-            // Track all writes at once, not important for reads,
-            //  but tracking args one by one would prevent args-at-risk.
-            //
-            bck_writes || BUG("has_writes but !bck_writes");
 
             _here = callsite.token;
             bck_trackWrites(callsite, bck_writes);
