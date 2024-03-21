@@ -1094,7 +1094,7 @@ pub fn Lifetime_makeShared(lifetime: Lifetime, flatCount!: i32): Lifetime =
                 Feels like the last one is an N*M situation unfortunately.
 */
 
-inline fn Lifetime_op(lt: Lifetime, each, minPathDepth! = 1)
+inline fn Lifetime_op(lt: Lifetime, each, minPathDepth! = 1, flatCountMismatchOK! = false)
 {
     mut result: byte[];
 
@@ -1116,7 +1116,7 @@ inline fn Lifetime_op(lt: Lifetime, each, minPathDepth! = 1)
 
         each(:result, :paths);
 
-        assertPathsValid(result[result0 ..], :minPathDepth);
+        assertPathsValid(result[result0 ..], :minPathDepth, :flatCountMismatchOK);
     }
 
     return Lifetime(uni0n: result);
@@ -1173,9 +1173,9 @@ pub fn Lifetime_op_deref(lt: Lifetime, flatCount!deref_flatCount: i32)
     });
 }
 
-pub fn Lifetime_op_join(lt: Lifetime, paths!child: byte[..])
+pub fn Lifetime_op_join(lt: Lifetime, paths!child: byte[..], flatCountMismatchOK! = false)
 {
-    return lt.Lifetime_op(|paths!parent, ref result|
+    return lt.Lifetime_op(:flatCountMismatchOK, |paths!parent, ref result|
     {
         mut _p0 = 0;
         parent.walkPaths(offset: _p0,

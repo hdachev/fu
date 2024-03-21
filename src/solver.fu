@@ -3918,7 +3918,7 @@ pub fn solve(
         //   which A] is not flow-sensitive
         //     and B] seems to be messed around with by propagateType(loop)
         //
-        fn callarg_trackWrites(lt: Lifetime)
+        fn callarg_trackWrites(lt: Lifetime, flatCountMismatchOK! = false)
         {
             lt.Lifetime_each: |locid, region, paths|
             {
@@ -3932,12 +3932,20 @@ pub fn solve(
                     let parents = Lifetime_climbType(t).lifetime;
                     if (parents)
                         callarg_trackWrites(
-                            Lifetime_op_join(parents, :paths));
+                            Lifetime_op_join(parents, :paths,
+                                :flatCountMismatchOK));
 
                     if (t.isArg)
                         _current_fn.postdom.mayEscapeVia.add(:locid);
                 }
             }
+        }
+
+        fn callarg_trackWrites(lt: Lifetime, paths: byte[..])
+        {
+            callarg_trackWrites(
+                Lifetime_op_join(lt, :paths, flatCountMismatchOK: true),
+                    flatCountMismatchOK: true);
         }
 
 
@@ -4655,8 +4663,21 @@ pub fn solve(
 
                     arg.propagateType(host_arg, :relax_mask);
 
-                    if (host_arg.written_to)
-                        callarg_trackWrites(arg.type.lifetime);
+                    // NOTE - this is actually invoked only once,
+                    //  previously if (host_arg.written_to) -
+                    //
+                    host_arg.written_to.Lifetime_each: |locid, paths, isOnly|
+                    {
+                        // TODO FIX we're expecting only one region here,
+                        //  we only care about the paths, the region byte is wasted.
+                        //   Ideally - we would keep paths only here.
+                        //
+                        if (SELF_TEST)
+                            isOnly && locid == host_arg.target.locid || BUG("written_to: bad region");
+
+                        // ...
+                        callarg_trackWrites(arg.type.lifetime, :paths);
+                    };
 
                     if !(host_arg.flags & F_LT_RETURNED)
                     {
@@ -7539,7 +7560,7 @@ pub fn solve(
             let argTarget   = argNode.target;
             let written_to  = !isUnspec
                 && argNode.type.is_mutref
-                && (isNative    ? !argNode.type.is_zst && argNode.target.type.lifetime
+                && (isNative    ? !argNode.type.is_zst && argTarget.type.lifetime
                                 : _current_fn.ever_written.if(exists: argTarget.locid));
 
             mut soft_risk: bitset::BitSet;
@@ -13226,7 +13247,9 @@ pub fn solve(
                 all_written.Lifetime_add(
                     Lifetime_op_join(
                         flow.rg_parents.if(exists: write),
-                        paths: write_paths));
+                        paths: write_paths,
+                        flatCountMismatchOK: true),
+                    flatCountMismatchOK: true);
 
                 let invalidates = flow.rg_invalidates.if(exists: write);
 
@@ -13471,14 +13494,25 @@ pub fn solve(
 
                     num_ref_args++;
 
-                    if (host_arg.written_to)
+                    host_arg.written_to.Lifetime_each: |lax isOnly, lax locid, paths|
                     {
-                        if (SELF_TEST) {
+                        if (SELF_TEST)
+                        {
+                            // We only expect a single region here -
+                            //  the region prefix is useless, we currently expect it to be the locid of the host_arg.target,
+                            //   but ideally we'd just have naked paths here.
+                            //
+                            isOnly && locid == host_arg.target.locid || BUG("bck_writes: bad written_to");
+
                             host_arg.is_mutref || BUG(host_arg.name.human.qID ~ ": host_arg.written but !host_arg.is_mutref");
                             arg.is_mutref      || BUG(host_arg.name.human.qID ~ ": host_arg.written but !arg.is_mutref");
                         }
 
-                        bck_writes.Lifetime_add(arg.lifetime);
+                        bck_writes.Lifetime_add(
+                            Lifetime_op_join(
+                                arg.lifetime, :paths,
+                                flatCountMismatchOK: true),
+                            flatCountMismatchOK: true);
                     }
 
                     if (!ooe_isLast)
