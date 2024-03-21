@@ -11653,8 +11653,50 @@ pub fn solve(
             }
 
             // Descend.
-            for (mut i = 0; i < node.items.len; i++)
-                visitNode(node.items[i]);
+            {
+                mut rest = 0;
+
+                if (node.kind == "if" || node.kind == "and" || node.kind == "or")
+                {
+                    rest = node.kind == "if" ? 1 : node.items.len - 1;
+
+                    for (mut i = 0; i < rest; i++)
+                    {
+                        ref item = node.items[i];
+                        visitNode(item);
+
+                        let ae = tryAbstractEvalAsBool(item);
+                        if (ae)
+                        {
+                            if (ae == SE_True  && node.kind != "and" ||
+                                ae == SE_False && node.kind != "or")
+                            {
+                                TRACE("ABSTRACT EVAL kind(" ~ node.kind ~ ") ae(" ~ ae ~ ") cond(" ~ item ~ ")");
+
+                                if (node.kind == "if")
+                                {
+                                    node.kind = "block";
+                                    node.items.remove(at: ae == SE_True ? 2 : 1);
+                                }
+                                else
+                                {
+                                    if (!i) {
+                                        node = item.steal();
+                                        return;
+                                    }
+
+                                    node.items.shrink(rest = i + 1);
+                                }
+
+                                break;
+                            }
+                        }
+                    }
+                }
+
+                for (mut i = rest; i < node.items.len; i++)
+                    visitNode(node.items[i]);
+            }
 
             // This is unpleasant -
             //  when inlining expressions we can encouter new let definitions,

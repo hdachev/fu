@@ -20114,14 +20114,14 @@ pub extern fn runTests()
         }
     `);
 
-    TODO_relaxer(currently: "BUG Trying to discard a copy 5:29+4", `
+    ZERO(`
         struct Type { vfacts: int };
 
         fn TEST_FunctionNarrowing(host: Type)
             TEST_Assignable(host, false);
 
         fn TEST_Assignable(mut host: Type, inline reason) {
-            if (reason) host.vfacts = [];   <fail X:X><pass/>
+            if (reason) host.vfacts = [];   <fail does nothing 4:12+22><pass/>
             return host;                    </fail>
         }
 
@@ -20132,7 +20132,7 @@ pub extern fn runTests()
         }
     `);
 
-    TODO_relaxer(currently: "BUG Trying to discard a copy 5:31+4", `
+    ZERO(`
         struct Type { vfacts: int };
 
         fn TEST_FunctionNarrowing(host: Type, inline reason) {

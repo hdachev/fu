@@ -30,17 +30,8 @@ fn if(ref a: <T>[..], exists!i: int, and!then?: <Then>, else!?)
         ? Then -> [] ? a[i] : then(a[i])
         : else();
 
-fn try_steal(ref a: <T>[..], i: int)
-{
-    if (i.unsigned < a.len.unsigned)
-    {
-        mut slot: T;
-        swap(slot, a[i]);
-        return slot;
-    }
-
-    return [];
-}
+fn remove(ref a: <T>[..], at!: int, count = 1)
+    a.splice(at, count);
 
 
 //
