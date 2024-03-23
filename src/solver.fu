@@ -924,7 +924,7 @@ pub fn solve(
               : type.canon).qKW;
     }
 
-    fn explainType(type: Type, brief!?: bool, mut lt!?: bool, mut no_quals!?: bool, mut usage!?: bool, mut no_vfacts!?: bool, lax i!?: int, diff!?: Type)
+    fn explainType(type: Type, brief!?: bool, mut lt!?: bool, mut no_quals!?: bool, mut usage!?: bool, mut no_vfacts!?: bool, diff!?: Type, lax i!_ignore?: int)
     {
         if (!type)
             return "< Empty Type >";
@@ -984,26 +984,55 @@ pub fn solve(
 
         if (usage)
         {
-            shadow mut usage = type.quals & q_USAGE;
-            mut offset = -3;
-
-            result ~= " { ";
-
-            if (!usage)
+            fn appendUsage(shadow type: Type, shadow usage: Quals)
             {
-                result ~= "unused ";
-            }
-            else do
-            {
-                if (usage & 1)
-                    result ~= "#" ~ offset ~ " ";
+                result ~= " { ";
 
-                usage >>= 1;
-                offset++;
-            }
-            while (usage);
+                if (!usage)
+                {
+                    result ~= "- ";
+                }
+                else
+                {
+                    let s = tryLookupUserType(type);
+                    if (!s)
+                    {
+                        result ~= "* ";
+                    }
+                    else
+                    {
+                        for (mut i = 0; i < s.items.len; i++)
+                        {
+                            let f           = s.items[i].target;
+                            let o           = GET(f);
+                            using let _     = o.field_unpackOffset;
 
-            result ~= "}";
+                            let match       = USAGE_fieldUsageFromStructUsage(quals: o.type.usage,
+                                usage,
+                                :memberFlatOffset,
+                                :memberFlatCount);
+
+                            if (match)
+                            {
+                                result ~= o.name.human.qID;
+
+                                if (match != getMaxUsage(memberFlatCount))
+                                    appendUsage(o.type, match);
+                                else
+                                    result ~= ", ";
+                            }
+                        }
+                    }
+                }
+
+                // No trailing comma.
+                if (result.ends(with: ", "))
+                    result.remove(at: result.len - 2);
+
+                result ~= "}";
+            }
+
+            appendUsage(type, type.quals & q_USAGE);
         }
 
         return result;
