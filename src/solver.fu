@@ -14206,6 +14206,8 @@ pub fn solve(
         mut consts: Lifetime;
         mut refs:   Lifetime;
 
+        mut num_refs = 0;
+
         // We only need to seed invalidations from mutref arguments.
         {
             _current_fn_eachArg_FWD: |target|
@@ -14216,38 +14218,76 @@ pub fn solve(
                 let region  = Lifetime_AAR(:target.locid);
 
                 if (!Lifetime_getRefLocid_unlessStatic(region))
+                {
+                    type.is_ref && BUG("What's happening here?");
                     continue;
+                }
 
                 // Notice we don't consider refs we don't write to as mutrefs for AAR.
                 //  This is meant as an opti, but also tests we've tagged everything correctly.
                 if (type.is_mutref && _current_fn.ever_written.has(target.locid))
+                {
+                    num_refs++;
                     refs.Lifetime_add(region);
+                }
                 else if (type.is_ref && !target.willPassByValue())
+                {
                     consts.Lifetime_add(region);
+                }
             }
         }
 
-        //
-        mut refs_len = 0;
-        refs.Lifetime_each: |locid|
-        {
-            locid || BUG("AAR: refs contains non-locals");
-            refs_len++;
-        };
-
         // No point in doing AAR if there are no mutref arguments,
         //  or if there's just one mutref argument and no constref args.
-        if (!refs_len || refs_len == 1 && !consts)
-        {
-            // TODO we can do better -
-            //  we can skip AAR if we can observe that none of the
-            //   mutref/mutref and mutref/constref pairs are aliasable type-wise.
-            //
-            // Ideally, even when we can't skip AAR,
-            //  we wouldn't add invalidation edges between non-aliasable arguments.
-            //
+        //
+        if (!refs || !consts && num_refs == 1)
             return false;
+
+        // Setup the AAR invalidation matrix -
+        //  we assume that each ref argument invalidates EVERY other argument.
+        //
+        // As bck runs, instead of raising errors when this causes issues,
+        //  we take note that the args can't alias for things to work,
+        //   and this becomes our hard_risks/soft_risks solution.
+        //
+        // We do this on the side because there's an early exit below,
+        //  we don't want to nuke / pollute these before we know this needs to run.
+        //
+        mut matrix: LocidMap(Lifetime);
+        {
+            shadow let flow = void;
+
+            refs.Lifetime_each: |locid!write, region!write_region|
+            {
+                write || BUG();
+                let write_vtype = nested(write).type.vtype;
+
+                for (mut roc = 0; roc < 2; roc++)
+                {
+                    shadow let roc = roc ? refs : consts;
+                    roc.Lifetime_each: |locid!read, region!read_region|
+                    {
+                        read || BUG();
+                        if (read == write)
+                            continue;
+
+                        let read_vtype = nested(read).type.vtype;
+
+                        if (types_mayAlias(write_vtype, read_vtype))
+                        {
+                            matrix.ensure(exists: write)
+                                .Lifetime_add(read_region);
+
+                            matrix.ensure(exists: read)
+                                .Lifetime_add(write_region);
+                        }
+                    }
+                }
+            }
         }
+
+        if (!matrix)
+            return false;
 
         // Reset these, here we use them for the speculative aliasing.
         _current_fn.flow.clear();
@@ -14272,73 +14312,16 @@ pub fn solve(
             _current_fn.flow.is_arg.add(target);
         }
 
-        // Setup the AAR invalidation matrix -
-        //  we assume that each ref argument invalidates EVERY other argument.
+        // We put these things into both rg_invalidates & rg_parents,
+        //  we need them in rg_invalidates to trigger READ-IN-A-LOOP & co,
+        //   and we need them in rg_parents for PRECEDING-REF-ARGS.
         //
-        // As bck runs, instead of raising errors when this causes issues,
-        //  we take note that the args can't alias for things to work,
-        //   and this becomes our hard_risks/soft_risks solution.
-        //
-        ref flow = _current_fn.flow;
-
-        refs.Lifetime_each: |locid!target, others!other_refs|
-        {
-            target || BUG();
-
-            // First, ref -> const relationships, cheaper setup.
-            if (consts)
-                (flow.rg_invalidates.ensure(exists: target) && BUG("AAR: ref arg already has invalidates."))
-                    = consts;
-
-            // Finally set up the ref <-> ref relationships,
-            //  which are symmetric.
-            if (other_refs)
-                flow.rg_invalidates.ensure(exists: target)
-                    .Lifetime_add(other_refs);
-
-            // OOE/AAR:
-            // Search tests for:
-            //
-            //      mul({ ref x = z || a; x++ }, hello)
-            //
-            // Also see comment above on:
-            //
-            //      a * { ref x = z || a; x++ }
-            //
-            // Basically for all_written_BUT_NOT_invalidated to consider other arguments,
-            //  we list them as if they were parents to each ref argument.
-            if (consts || other_refs)
-                (flow.rg_parents.ensure(exists: target) && BUG("AAR: ref arg already has parents."))
-                    = flow.rg_invalidates.if(exists: target) || BUG("AAR: (refs.len > 1 || consts), but no invalidates.");
-        }
-
-        // trackReferences uses flow.invalidates to locate siblings,
-        //  so we gotta add them here for constants too.
-        if (refs)
-        {
-            consts.Lifetime_each: |locid!target|
-            {
-                target || BUG();
-
-                // Same as above but flipped.
-                (flow.rg_invalidates.ensure(exists: target) && BUG(
-                    "AAR: const arg already has invalidates."))
-                        = refs;
-
-                // No point in doing this - we're never ascending .parents for reads.
-                //  The thing above appears to be sufficient:
-                //   - listing consts as .parents of refs takes care of refs pointing into consts.
-                //   - listing consts as .invalidates for refs takes care of consts point into refs.
-                //
-                (flow.rg_parents.ensure(exists: target) && BUG(
-                    "AAR: const arg already has parents."))
-                        = refs;
-            }
-        }
+        _current_fn.flow.rg_parents =
+        _current_fn.flow.rg_invalidates = matrix;
 
         // Go.
         refs || BUG("Wasting time on AAR without ref args.");
-        _current_fn.events = Events();
+        _current_fn.events && BUG("AAR_prepare: _current_fn.events not empty");
 
         // AAR needs to run.
         return true;
