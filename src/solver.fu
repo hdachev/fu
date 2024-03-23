@@ -13107,22 +13107,28 @@ pub fn solve(
                     //
                     // let approxAAR = Lifetime_AAR_hasFalsePositives && AAR;
                     // if (approxAAR || SELF_TEST)
-                    // {
-                    //     let t_sibling   = sibling.nested.type;
-                    //
-                    //     let mayAlias    = types_mayAlias(t_left, t_sibling);
-                    //     if (!mayAlias)
-                    //     {
-                    //         approxAAR || BUG(
-                    //             "Reference_trackLocalRef: types_mayAlias fails for lt inter:"
-                    //                 ~ "\n\t\tt_left:    " ~ explainType(t_left)
-                    //                 ~ "\n\t\tt_sibling: " ~ explainType(t_sibling)
-                    //                 ~ "\n\t\tlt_inter:  " ~ Lifetime_inter(parents, sibling_parents));
-                    //
-                    //         if (!mayAlias)
-                    //             continue /*discard*/;
-                    //     }
-                    // }
+                    {
+                        let t_sibling   = sibling.nested.type;
+
+                        let mayAlias    = types_mayAlias(t_left, t_sibling);
+                        if (!mayAlias)
+                        {
+                            // TODO - reenable this, we appear to be missing
+                            //  a lot of opportunities to ignore variable pairs.
+                            //
+                            // What we need to do is take the usage masks into account
+                            //  in Lifetime_hasInter, but to do so correctly we have to first formalize
+                            //   the recursive/collapsed/unknown paths first.
+                            //
+                            // approxAAR || BUG(
+                            //     "Reference_trackLocalRef: types_mayAlias fails for lt inter:"
+                            //         ~ "\n\t\tt_left:    " ~ explainType(t_left, usage: true)
+                            //         ~ "\n\t\tt_sibling: " ~ explainType(t_sibling, usage: true)
+                            //         ~ "\n\t\tlt_inter:  " ~ Lifetime_inter(parents, sibling_parents));
+
+                            continue /*discard*/;
+                        }
+                    }
 
                     continue_keep();
                 }

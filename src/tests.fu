@@ -8096,6 +8096,32 @@ pub extern fn runTests()
         }
     `);
 
+    ZERO(`
+        struct Node     { items?: Node[]; target: int }
+        struct Extended { min: i32; node?: Node }
+
+        fn solve(root: Node, ref _extended: Extended)
+        {
+            noinline fn GET() _extended.node;
+            noinline fn EXT() _extended;
+
+            fn unorderedPrep_A(node: Node) {
+                ref o       = GET();
+                ref ext     = EXT();
+                ext.min     = 0x7fffffff.i32;
+                o           = node;
+            }
+
+            return unorderedPrep_A(root);
+        }
+
+        fn main() {
+            mut _extended: Extended;
+            solve(Node([], 11), :_extended);
+            return _extended.min == i32.MAX && _extended.node.target == 11 ? 0 : 1;
+        }
+    `);
+
     // /Borrow checker
 
 
