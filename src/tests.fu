@@ -7494,7 +7494,7 @@ pub extern fn runTests()
         }
     `);
 
-    TODO_disjoint(currently: "both alias ref arg ss 6:69+2", `
+    ZERO(`
         nocopy struct PrimArray { prims: i32[]; }
         nocopy struct Node { index: i32; items?: Node[]; }
         nocopy struct SolverState { _root: Node; _prim_arrays: PrimArray[] }
@@ -7516,7 +7516,7 @@ pub extern fn runTests()
         fn main() {
             mut ss = SolverState(Node(), [ PrimArray() ]);
             ss.AAR_typesCantAlias_lifetimesIntersect();
-            return ss._eph.len == 1 && ss._eph[0].things.len == 1 ? 0 : 1;
+            return ss._prim_arrays.len == 1 && ss._prim_arrays[0].prims.len == 1 ? 0 : 1;
         }
     `);
 
