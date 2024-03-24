@@ -21535,6 +21535,47 @@ pub extern fn runTests()
         }
     `);
 
+    TODO_semantics(currently: "Bad call to each arg locids not mutref 23:16+6", `
+        struct RawSet { ints: int[] };
+
+        fn each(using ref _: RawSet, fn) {
+            for (mut i = ints.len; i --> 0; ) {
+                fn remove() {
+                    ints.splice(i, 1);
+                    continue;
+                }
+
+                fn(ints[i], ?:fn remove);
+            }
+        }
+
+        <split/>
+        struct LocidSet { raw_set: RawSet };
+
+        fn each(using ref _: LocidSet, offset: int, fn)
+            raw_set.each: |item, remove|
+                fn(item + offset, ?:fn remove);
+
+        <split/>
+        fn sum(locids: LocidSet, offset: int) {
+            mut sum = 0;
+            locids.each(:offset): |item| sum += item;
+            return sum;
+        }
+
+        fn main() {
+            mut locids = LocidSet(RawSet([ 1, 2, 3 ]));
+            mut sum = locids.sum(offset: 10);
+
+            locids.each(offset: 10): |item, remove| {
+                if (item & 1) remove();
+                sum -= item;
+            }
+
+            return locids.raw_set.ints == [ 2 ] && sum == 11 + 13 ? 0 : 1;
+        }
+    `);
+
     // /Semantics
 
 
