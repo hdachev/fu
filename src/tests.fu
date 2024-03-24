@@ -15183,6 +15183,31 @@ pub extern fn runTests()
         return      </fail> 1.originalHello + 2.shadowedHello == 210 ? 0 : 1;
     `);
 
+    TODO_ambig(currently: "Bad call to each LocidSet 9:21+4", `
+        struct RawSet { ints: int[] };
+        fn each(using ref _: RawSet, fn) ints.each: fn fn;
+
+        struct LocidSet { raw_set: RawSet };
+        fn each(using ref <fail ambig X:X>
+                          raw_set       <pass/>
+                                _       </fail> : LocidSet, offset: int, fn)
+        {
+            raw_set.each: |item| fn(item + offset);
+        }
+
+        fn sum(using ref ls: LocidSet, offset: int) {
+            mut sum = 0;
+            ls.each(:offset): |item| sum += item;
+            return sum;
+        }
+
+        fn main() {
+            mut ls = LocidSet(RawSet([ 1, 2, 3 ]));
+            mut sum = ls.sum(10);
+            return sum - 36;
+        }
+    `);
+
     // /Shadows /Explicit shadowing
 
 
