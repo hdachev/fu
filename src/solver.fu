@@ -260,7 +260,7 @@ pub fn solve(
         read_loop_start:    i32;
     };
 
-    struct Usage
+    struct VarUsage
     {
         done_relaxing:      LocidSet;
         var_usage:          LocidMap(Type);
@@ -355,7 +355,7 @@ pub fn solve(
         autoshadow_ok!:     i32;
 
         // The replacement for the callsites stuff.
-        using relaxed?:     Usage;
+        using relaxed?:     VarUsage;
 
         // So we can pass the F_INLINE flag onto mustBecomeInline
         TODO_FIX_isInline?: bool;

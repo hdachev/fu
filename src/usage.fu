@@ -65,18 +65,31 @@ fn USAGE_shiftLeft(quals: Quals, mut memberFlatOffset!offset: i32): Quals
     return keep | (usage & q_USAGE);
 }
 
+pub fn USAGE_structUsageFromFieldUsage(mut quals: Quals, memberFlatOffset!: i32): Quals
+{
+    return USAGE_shiftLeft(:quals, :memberFlatOffset);
+}
+
+pub fn USAGE_fieldUsageFromStructUsage(mut quals: Quals, structUsage: Quals, memberFlatOffset!: i32, memberFlatCount!: i32): Quals
+{
+    quals &= ~q_USAGE;
+    quals |=  structUsage;
+    quals  =  USAGE_shiftRight(:quals, :memberFlatOffset);
+    quals &=  q_TAGS | getMaxUsage(memberFlatCount);
+    return quals;
+}
+
+
+//
+
 pub fn USAGE_structUsageFromFieldUsage(mut slot: Type, memberFlatOffset!: i32): Type
 {
-    slot.quals = USAGE_shiftLeft(:slot.quals, :memberFlatOffset);
+    slot.quals = USAGE_structUsageFromFieldUsage(:slot.quals, :memberFlatOffset);
     return slot;
 }
 
 pub fn USAGE_fieldUsageFromStructUsage(mut fieldType!slot: Type, structUsage: Quals, memberFlatOffset!: i32, memberFlatCount!: i32): Type
 {
-    slot.quals &= ~q_USAGE;
-    slot.quals |=  structUsage;
-    slot.quals  =  USAGE_shiftRight(:slot.quals, :memberFlatOffset);
-    slot.quals &=  q_TAGS | getMaxUsage(memberFlatCount);
-
+    slot.quals = USAGE_fieldUsageFromStructUsage(:slot.quals, :structUsage, :memberFlatOffset, :memberFlatCount);
     return slot;
 }
