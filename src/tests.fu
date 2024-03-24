@@ -8033,8 +8033,10 @@ pub extern fn runTests()
         }
     `);
 
-    TODO_borrowck(currently: "BUG pathDepth > 64, we're likely stuck in an infinite loop 6:48+12", `
-        struct SolvedNode { items: SolvedNode[]; target: int }
+    TODO_borrowck(currently: "BUG pathDepth > 64, we're likely stuck in an infinite loop 7:48+12", `
+        struct SolvedNode                           <alt>
+            { items: SolvedNode[]; target: int }    <alt/>
+            { target: int; items: SolvedNode[] }    </alt>
 
         fn assertPathsValidChainTooDeep(ref node: SolvedNode) {
             fn isFieldChain(n: SolvedNode)
@@ -8044,9 +8046,9 @@ pub extern fn runTests()
         }
 
         fn main() {
-            mut v  = SolvedNode([    ], 1);
-            mut f1 = SolvedNode([  v ], 2);
-            mut f2 = SolvedNode([ f1 ], 3);
+            mut v  = SolvedNode([    ], target: 1);
+            mut f1 = SolvedNode([  v ], target: 2);
+            mut f2 = SolvedNode([ f1 ], target: 3);
             return assertPathsValidChainTooDeep(f2) -= 1;
         }
     `);

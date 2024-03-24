@@ -868,32 +868,69 @@ pub fn solve(
         return nested(:index, from: _nestingFnort);
     }
 
-    fn str(lifetime: Lifetime)
+    fn str(lifetime: Lifetime, brief?: bool)
     {
         mut str = "";
 
-        lifetime.Lifetime_each: |locid, isStatic, isTemp, isArgIdx, argidx|
+        lifetime.Lifetime_each: |locid, isStatic, isTemp, isArgIdx, isAlwaysMoveable, argidx, paths|
         {
             if (str)
                 str ~= "|".qLT;
 
             str ~= locid        ? nested(locid).str(brief: true)
-                 : isStatic     ? "static".qLT
+                 : isStatic     ? isAlwaysMoveable ? "zeroes".qLT : "static".qLT
                  : isTemp       ? "temp".qLT
                  : isArgIdx     ? "arg#" ~ argidx
                                 : BUG("invalid region");
 
-            // This is useless without some pretty-printing, not presentable.
-            // if (locid)
-            // {
-            //     mut offset = 0;
-            //     paths.lifetime::walkPaths(:offset,
-            //         onPathStart:        ||                      str ~= " [",
-            //         onPathDone:         |isLastPath|            str ~= isLastPath ? " ]" : " ],",
-            //         onSubRegion:        |flatCount, flatOffset, isLastSubRegion|
-            //             str ~= " #" ~ flatCount ~ " @" ~ flatOffset ~ (isLastSubRegion ? "" : ","),
-            //     );
-            // }
+            // Let's try pretty-printing lifetime subregions.
+            if (locid && !brief)
+            {
+                mut type: Type;
+
+                mut offset = 0;
+                paths.lifetime::walkPaths(:offset, onSubRegion: |flatCount, mut flatOffset, isFirstSubRegion, isLastSubRegion, isLastPath|
+                {
+                    if (isFirstSubRegion)
+                        type = GET(nested(locid)).type;
+
+                    :NEXT_TYPE
+                    for (;;)
+                    {
+                        let s = type.tryLookupUserType();
+                        if (flatCount >= s.shape.flatCount)
+                            break;
+
+                        for (mut i = 0; i < s.items.len; i++)
+                        {
+                            let o           = GET(s.items[i].target);
+                            using let _     = o.field_unpackOffset;
+
+                            if (memberFlatOffset + memberFlatCount > flatOffset)
+                            {
+                                type        = o.type;
+                                flatOffset -= memberFlatOffset;
+                                str        ~= "." ~ o.name.human.qID;
+
+                                continue :NEXT_TYPE;
+                            }
+                        }
+
+                        break;
+                    }
+
+                    if (!isLastSubRegion)
+                    {
+                        if (type.is_sliceable)
+                            type = type.clear_sliceable();
+
+                        str ~= "*";
+                    }
+
+                    if (isLastSubRegion && !isLastPath)
+                        str ~= ", ";
+                });
+            }
         }
 
         return str;
@@ -958,7 +995,7 @@ pub fn solve(
             result ~= explainQuals(type.quals, lt && type.lifetime);
 
         if (lt && type.lifetime)
-            result ~= type.lifetime ~ " ";
+            result ~= type.lifetime.str(:brief) ~ " ";
 
         result ~= explainTypeName(type, :brief);
 
@@ -1517,6 +1554,9 @@ pub fn solve(
 
             lifetime.Lifetime_each: |locid, isStatic, isAlwaysMoveable, isTemp, isArgIdx, argidx, paths|
             {
+                // if (paths.len > 116)
+                //     BUG("[PERF] TEST_Lifetime: paths.len > 116: " ~ lifetime);
+
                 if (isTemp) {
                     tempsOK     || BUG("TEST_Lifetime: unexpected temporary");
                     first       || BUG("TEST_Lifetime: temporary is not first");
