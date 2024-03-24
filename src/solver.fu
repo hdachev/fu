@@ -3520,13 +3520,8 @@ pub fn solve(
 
     fn type_mayPointInto(host: ValueType, guest: ValueType)
     {
-        if (guest.is_reinterpretable)
-            return true; // TODO check sizes
-
-        // ref bytes = ints.view(of: byte)
-        guest.if_sliceable: |sliceT|
-            if (sliceT.is_reinterpretable)
-                return true;
+        if (guest.is_reinterpretable || guest.if_sliceable(.is_reinterpretable))
+            return !!(host.quals & q_USAGE);
 
         // Guest might be some kind of ZST -
         // TODO FIX clean those up and see why we're at all bothering here.
@@ -3550,9 +3545,12 @@ pub fn solve(
     {
         mut seen: flat::Set(StructCanon);
 
-        fn type_maybeInside(shadow host: ValueType)
+        fn type_maybeInside(shadow host: ValueType, usage?: <Usage/*: Quals or []*/>, flatCount?: <FlatCount>)
         {
-            if (host.canon == guest.canon)
+            if (!(Usage -> []) && !usage)
+                return false;
+
+            if (canon::isCanonAssignable(host: host.canon, guest: guest.canon))
                 return true;
 
             host.if_sliceable: |host_sliceT|
@@ -3567,13 +3565,37 @@ pub fn solve(
                                    != guest_non_triv_mask)
                     return false;
 
-                if (seen.add(scp))
+                if (!(Usage -> []) || seen.add(scp))
                 {
                     for (mut i = 0; i < s.items.len; i++)
                     {
-                        let f = s.items[i].target;
-                        if (type_maybeInside(host: f.type))
-                            return true;
+                        let f           = s.items[i].target.GET;
+                        let fieldType   = f.type;
+
+                        if (Usage -> [])
+                        {
+                            if (type_maybeInside(host: fieldType))
+                                return true;
+                        }
+                        else
+                        {
+                            using let _         = f.field_unpackOffset;
+                            shadow let usage    = USAGE_fieldUsageFromStructUsage(quals: f.type.usage,
+                                usage,
+                                :memberFlatOffset,
+                                :memberFlatCount);
+
+                            if (usage == getMaxUsage(memberFlatCount))
+                            {
+                                if (type_maybeInside(host: fieldType))
+                                    return true;
+                            }
+                            else
+                            {
+                                if (type_maybeInside(host: fieldType, :usage))
+                                    return true;
+                            }
+                        }
                     }
                 }
 
@@ -3585,7 +3607,11 @@ pub fn solve(
             return false;
         }
 
-        return type_maybeInside(:host);
+        let usage = host.usage;
+        if (usage == getMaxUsage(getFlatCount(host)))
+            return type_maybeInside(:host);
+        else
+            return type_maybeInside(:host, :usage);
     }
 
 
