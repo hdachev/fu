@@ -21535,6 +21535,36 @@ pub extern fn runTests()
         }
     `);
 
+    TODO_semantics(currently: "Bad call visit expects mutref 9:15+5 8:17+1", `
+        struct Container { value: int };
+        fn visit(ref container: Container, fn) {
+            fn(container.value);
+        }
+
+        fn main() {
+            let c = Container(0);
+            c.visit: |v| return v;
+        }
+    `);
+
+    TODO_semantics(currently: "Bad call visit expects mutref 15:15+5 14:17+1", `
+        struct Container { value: int };
+        fn visit(ref container: Container, fn) {
+            fn update(v: int) container.value = v;
+            fn(container.value, ?:fn update);
+        }
+
+        fn init(mut c?: Container) {
+            c.visit: |v, update| { update(v - 10) };
+            return c;
+        }
+
+        fn main() {
+            let c = init(Container(10));
+            c.visit: |v| return v;
+        }
+    `);
+
     TODO_semantics(currently: "Bad call to each arg locids not mutref 23:16+6", `
         struct RawSet { ints: int[] };
 
