@@ -18963,6 +18963,34 @@ pub extern fn runTests()
         }
     `);
 
+    TODO_confusing(currently: "Nothing to continue 14:38+8", `
+        struct BitSet { _data: u8 };
+
+        fn each(ref ._data, visit)
+            if (_data) for (mut b = 0; b < 8; b++) {
+                let mask = 1 << b.u8;
+                let remove = || _data &= ~mask;
+                if (_data & mask)
+                    visit(b.int, ?:fn remove);
+            }
+
+        fn Lifetime_process(ref set: BitSet, fn)
+            set.each: |locid, remove| {
+                fn continue_keep() { continue; }
+                fn(:locid, ?:fn continue_keep);
+                remove();
+            }
+
+        fn main() {
+            mut ls = BitSet(255.u8);
+            ls.Lifetime_process: |locid, continue_keep|
+                if (locid & 1)
+                    continue_keep();
+
+            return ls._data == 170 ? 0 : 1;
+        }
+    `);
+
     // /Macros & loops.
 
 
