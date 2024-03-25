@@ -16571,7 +16571,7 @@ pub extern fn runTests()
         }
     `);
 
-    TODO_semantics(currently: "val_x(C) generic_ref_x:a expects mutref 12:36+13", `
+    TODO_semantics(currently: "bad call generic_ref_x expects A, got C 12:36+13", `
         struct A { x: i32 };
         struct B { using a: A };
         struct C { b: B };
@@ -21652,7 +21652,7 @@ pub extern fn runTests()
         }
     `);
 
-    TODO_semantics(currently: "Bad call visit expects mutref 9:15+5 8:17+1", `
+    ZERO(`
         struct Container { value: int };
         fn visit(ref container: Container, fn) {
             fn(container.value);
@@ -21664,7 +21664,7 @@ pub extern fn runTests()
         }
     `);
 
-    TODO_semantics(currently: "Bad call visit expects mutref 15:15+5 14:17+1", `
+    ZERO(`
         struct Container { value: int };
         fn visit(ref container: Container, fn) {
             fn update(v: int) container.value = v;
@@ -21682,7 +21682,7 @@ pub extern fn runTests()
         }
     `);
 
-    TODO_semantics(currently: "Bad call to each arg locids not mutref 23:16+6", `
+    ZERO(`
         struct RawSet { ints: int[] };
 
         fn each(using ref _: RawSet, fn) {
