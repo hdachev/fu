@@ -15131,6 +15131,21 @@ pub extern fn runTests()
         }
     `]);
 
+    TODO_pub(currently: "A is not defined here 4:23+1", [`
+        primitive A: int;
+        primitive B: int;
+        fn process(v: A or B, what) what(v);
+    `,`
+        <alt>
+        fn three() _0::A(3);
+        <alt/>
+        import _0;
+        fn three() A(3);
+        </alt>
+
+        fn main() three.process(|v| v * 2).int - 6;
+    `]);
+
     // /Pubs & imports.
 
 
