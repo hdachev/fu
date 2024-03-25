@@ -123,7 +123,7 @@ pub fn cpp_codegen(
         _defects:           CGDefects;
 
         //
-        _TODO_FIX_seenFns:  flat::Set(string);
+        _TODO_FIX_seenFns:  flat::Map(string, Target);
     };
 
     let using mut outputs: Outputs;
@@ -232,7 +232,7 @@ pub fn cpp_codegen(
 
     shadow fn BUG(reason?: string)
     {
-        FAIL("THIS IS A COMPILER BUG.\n\n\tCODEGEN FAIL:\n\n\t" ~ (reason || "Assertion failed."));
+        FAIL("COMPILER BUG:\n\n\tCODEGEN FAIL:\n\n\t" ~ (reason || "Assertion failed."));
     }
 
     fn noteDefect(defects: CGDefects)
@@ -1426,6 +1426,19 @@ pub fn cpp_codegen(
 
     //
 
+    fn TODO_FIX_seenFns_dedupeAlreadyUsable(what: string, target: Target)
+    {
+        ref t = _TODO_FIX_seenFns.ref(what);
+        if (t)
+        {
+            ensureFnUsable(t);
+            return true;
+        }
+
+        t = target;
+        return false;
+    }
+
     fn cgFn(target: Target)
     {
         let node = target.solved;
@@ -1472,7 +1485,7 @@ pub fn cpp_codegen(
         // Turns out we've had this all along for templates & the like.
         //  Doing this here prevents any fns called inside from emitting code too.
         //
-        if (dedupe && !_TODO_FIX_seenFns.add(dedupe))
+        if (dedupe && TODO_FIX_seenFns_dedupeAlreadyUsable(dedupe, target))
         {
             noteDefect(DuplicateFunctions);
             return;
@@ -1509,7 +1522,7 @@ pub fn cpp_codegen(
         //      outside of the scope of some template,
         //       e.g. just globally eliminate duplicate code somehow.
         //
-        if (!dedupe && !_TODO_FIX_seenFns.add(src))
+        if (!dedupe && TODO_FIX_seenFns_dedupeAlreadyUsable(src, target))
         {
             noteDefect(DuplicateFunctions);
             return;

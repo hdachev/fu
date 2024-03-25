@@ -8098,6 +8098,38 @@ pub extern fn runTests()
         }
     `);
 
+    TODO_recursion(currently: "BUG CODEGEN recur without SS_FN_RECUR 13:28+1", `
+        nocopy struct Node { items: Node[]; type: Node[] };
+
+        fn append_one(ref items: Node[]) {
+            items.push(Node());
+            return items;
+        }
+
+        fn count(ref type: Node[], ref items: Node[]) {
+            mut count = 0;
+            fn visit(n: Node) {
+                count++;
+                n.type.each(.visit);
+                n.items.each(.visit);
+            }
+
+            type.each(.visit);
+            items.each(.visit);
+            return count;
+        }
+
+        fn process(ref node: Node) {
+            return count(node.type, append_one(node.items));
+        }
+
+        fn main() {
+            mut node = Node( type: [ Node() ], items: [ Node(), Node() ] );
+            let count = process(node);
+            return count - 5;
+        }
+    `);
+
     // /Borrow checker
 
 
