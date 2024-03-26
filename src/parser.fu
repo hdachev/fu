@@ -121,6 +121,8 @@ struct ParserState {
     _precedence:    Precedence;
 
     _fnDepth:       int;
+    _templateDepth: int;
+
     _autopub:       bool;
 
     // TODO FIX So the $T thing backfired -
@@ -1204,7 +1206,7 @@ pub fn parse(
             items.push(type);
 
             // Body or pattern (case/case).
-            flags |= parseFnBodyOrPattern(items, :expr);
+            parseFnBodyOrPattern(:flags, items, :expr);
 
             // Ensure main: i32, kinda lame doing it here.
             if (name == "main" && _fnDepth == 1)
@@ -1239,7 +1241,11 @@ pub fn parse(
         //   but if they're only called from a public inline fn,
         //    they won't get emitted - no fndef node in the original module.
         //
-        if (flags & F_LAMBDA)
+        // TODO FIX adding F_TEMPLATE to all nested fns within templates -
+        //  helps make everything lazy which helps with mut/const-generics,
+        //   alla visit(item, ?:fn remove), etc.
+        //
+        if (flags & F_LAMBDA || _templateDepth)
             flags |= F_TEMPLATE;
 
         return make("fn", :items, :flags, :asserts, name,
@@ -1268,10 +1274,8 @@ pub fn parse(
     }
 
     fn parseFnBodyOrPattern(
-        ref out_push_body: Node[], expr!: bool): Flags
+        ref flags: Flags, ref out_push_body: Node[], expr!: bool)
     {
-        //
-        mut flags: Flags;
         mut body: Node;
 
         //
@@ -1319,7 +1323,7 @@ pub fn parse(
                     swap(_expectedTypeParams, withArgTypeParams);
 
                 let type = tryPopTypeAnnot(allowLegacyRefs: true);
-                let cons = parseFnBodyBranch();
+                let cons = parseFnBodyBranch(:flags);
 
                 branches.push(
                     make("fnbranch", [ cond, type, cons ]));
@@ -1338,15 +1342,14 @@ pub fn parse(
         }
         else
         {
-            body = parseFnBodyBranch(:expr);
+            body = parseFnBodyBranch(:flags, :expr);
         }
 
         //
         out_push_body.push(body);
-        return flags;
     }
 
-    fn parseFnBodyBranch(expr!?: bool): Node
+    fn parseFnBodyBranch(ref flags: Flags, expr!?: bool): Node
     {
         ////////////////////////////////////////////////////////////////
         mut upstreamTypeParams0 =
@@ -1355,8 +1358,17 @@ pub fn parse(
         swap(_upstreamTypeParams, upstreamTypeParams0);
         mut expectedTypeParams0 = steal(_expectedTypeParams);
 
-        defer swap(_upstreamTypeParams, upstreamTypeParams0);
-        defer swap(_expectedTypeParams, expectedTypeParams0);
+        let templateDepth0 = _templateDepth;
+
+        defer {
+            swap(_upstreamTypeParams, upstreamTypeParams0);
+            swap(_expectedTypeParams, expectedTypeParams0);
+            defer _templateDepth = templateDepth0;
+        }
+
+        if (flags & F_TEMPLATE)
+            _templateDepth++;
+
         ////////////////////////////////////////////////////////////////
 
         // Allow a leading `=` before body.
