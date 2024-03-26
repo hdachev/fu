@@ -2483,8 +2483,7 @@ pub fn solve(
                             //       or maybe it should so that default expressions of other arguments
                             //        can be autocalled too [not sure].
                             //
-                            fn template     = overloadIdx.template;
-                            fn annot        = template.node.items[host_argIdx].items[LET_TYPE];
+                            fn annot = overloadIdx.template.node.items[host_argIdx].items[LET_TYPE];
 
                             // No need to bother if annot is trivial,
                             //  e.g. a typeparam, would match whatever.
@@ -2502,13 +2501,12 @@ pub fn solve(
                                     type: actual,
                                     node: annot,
                                     :error,
-                                    invariant: false,
-                                    :template.imports);
+                                    invariant: false);
 
                                 if (!ok)
                                 {
                                     let conversion = tryConvert(
-                                        :actual, expect: annot, :template.imports);
+                                        :actual, expect: annot);
 
                                     if (conversion)
                                         conversions.ensure(exists: i) ~= conversion;
@@ -3180,9 +3178,7 @@ pub fn solve(
         return result;
     }
 
-    fn tryConvert(
-        expect: Type or Node, actual?: Type, retype?: SolvedNode,
-        lax imports!?: i32[..]): Target[]
+    fn tryConvert(expect: Type or Node, actual?: Type, retype?: SolvedNode): Target[]
     {
         type Expect = typeof(expect);
 
@@ -3217,7 +3213,7 @@ pub fn solve(
                         trySolveTypeParams(
                             type: Type(vtype: convertType, lifetime: Lifetime_temporary),
                             node: expect, :error,
-                            invariant: false, :imports)
+                            invariant: false)
                     }
                 :   isAssignableAsArgument(
                         host: expect, convertType))
@@ -6947,8 +6943,8 @@ pub fn solve(
                             shadow mut error = error && "arg".qKW ~ " " ~ argName.qID ~ ":";
 
                             if (!trySolveTypeParams(
-                                annot, inType, :error,
-                                invariant: false, :template.imports))
+                                    annot, inType, :error,
+                                    invariant: false))
                             {
                                 matchFail(error);
                             }
@@ -10023,9 +10019,7 @@ pub fn solve(
     }
 
     fn solveAddrOfFn(
-        mut id: string, token: TokenIdx, flags?: Flags,
-        imports?: i32[])
-            : Target[]
+        mut id: string, token: TokenIdx, flags?: Flags): Target[]
     {
         mut shadow = false;
         mut result: Target[];
@@ -10059,26 +10053,13 @@ pub fn solve(
             }
         }
 
-        let qualified = flags & F_COMPOUND_ID;
-        if (qualified || !imports)
-        {
-            let s = qualified && dequalify_andGetScope(id);
+        let qualified   = flags & F_COMPOUND_ID;
+        let s           = qualified && dequalify_andGetScope(id);
 
-            visitScope(
-                local_scope: !qualified,
-                items: s.items[.. s.pub_items],
-                globals: s.globals[.. s.pub_globals]);
-        }
-        else for (mut i = 0; i < imports.len; i++)
-        {
-            let modid = imports[i];
-            let s = modid != module.modid && ctx.modules[modid].out.solve.scope;
-
-            visitScope(
-                local_scope: modid == module.modid,
-                items: s.items[.. i ? s.pub_items : s.items.len],
-                globals: s.globals[.. i ? s.pub_globals : s.globals.len]);
-        }
+        visitScope(
+            local_scope: !qualified,
+            items: s.items[.. s.pub_items],
+            globals: s.globals[.. s.pub_globals]);
 
         // TODO FIX ADDROFFN ///////////////////////////////////////////
         result.reverse();    // see comment above
@@ -10162,7 +10143,7 @@ pub fn solve(
 
     fn trySolveTypeParams(
         node: Node, mut type: Type, ref error: string,
-        mut invariant!: bool, imports!?: i32[]): bool
+        mut invariant!: bool): bool
     {
         fn matchFail_print(inline err: string)
         {
@@ -10196,7 +10177,7 @@ pub fn solve(
 
                 return trySolveTypeParams(
                     node.items[0] || BUG(), t || BUG(), :error,
-                    :invariant, :imports);
+                    :invariant);
             }
         }
         else if (node.kind == "typeparam") :TYPEPARAM
@@ -10251,7 +10232,7 @@ pub fn solve(
             {
                 if (trySolveTypeParams(
                         node.items[i], :type, :error,
-                        :invariant, :imports))
+                        :invariant))
                 {
                     error.shrink(error0);
                     return true;
@@ -10267,15 +10248,21 @@ pub fn solve(
         //  already having problems with typeof().
         //
         if (node.kind == "call" && node.flags & F_TEMPLATE
-                                && node.value != "typeof")
+                                && node.value != "typeof"
+
+                || node.kind == "__serialized_addrof_type_fn")
         {
-            mut targets = solveAddrOfFn(
-                node.value, :node.token, :imports,
-                :node.flags & F_COMPOUND_ID);
+            //
+            mut targets: Target[];
+            if (node.kind == "__serialized_addrof_type_fn")
+                unpackAddrOfFn(node.value): |target|
+                    targets ~= target;
+            else
+                targets = solveAddrOfFn(
+                    node.value, :node.token,
+                    :node.flags & F_COMPOUND_ID);
 
-            if (!targets)
-                matchFail(node.value.isNotDefinedHere);
-
+            //
             let pattern = type.canon.canon::tryGetPattern();
             if (pattern)
             {
@@ -10327,7 +10314,7 @@ pub fn solve(
 
                             if (!trySolveTypeParams(
                                     :node, :type, :error,
-                                    invariant: true, :imports))
+                                    invariant: true))
                             {
                                 continue :NEXT_SUB_PATTERN;
                             }
@@ -10546,11 +10533,16 @@ pub fn solve(
         {
             if (node.flags & F_TEMPLATE)
             {
-                // TODO -
+                let targets = solveAddrOfFn(
+                    node.value, :node.token,
+                    :node.flags & F_COMPOUND_ID);
+
+                node.kind   = "__serialized_addrof_type_fn";
+                node.value  = packAddrOfFn(targets);
             }
             else if !(node.items)
             {
-                let type = evalTypeAnnot(node);
+                let type    = evalTypeAnnot(node);
 
                 node.kind   = "__serialized_type";
                 node.value  = serializeType(:type, debug: "__serialized_type");
