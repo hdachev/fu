@@ -15122,7 +15122,7 @@ pub extern fn runTests()
         }
     `]);
 
-    TODO_pub(currently: "A is not defined here 4:23+1", [`
+    ZERO([`
         primitive A: int;
         primitive B: int;
         fn process(v: A or B, what) what(v);

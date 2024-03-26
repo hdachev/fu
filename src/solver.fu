@@ -7193,7 +7193,7 @@ pub fn solve(
             /////////////////////////////////
             fn outItems() _current_fn.items;
 
-            let inItems = n_fn.items;
+            ref inItems = n_fn.items;
             outItems.resize(inItems.len);
 
             // Arg decls.
@@ -7207,21 +7207,30 @@ pub fn solve(
 
             for (mut i = 0; i < inItems.len + FN_ARGS_BACK; i++)
             {
-                let n_arg       = inItems[i];
+                ref n_arg       = inItems[i];
                 _here           = n_arg.token;
 
-                // TODO FIX Template prep: mock up free parameters.
-                //          Super unclean but at least its contained here.
-                if (isUnspec && (n_arg.flags & F_TEMPLATE || !n_arg.items[LET_TYPE]))
+                if (isUnspec)
                 {
-                    let init = n_arg.items[LET_INIT]
-                            && solveNode(n_arg.items[LET_INIT]);
+                    ref type_annot = n_arg.items[LET_TYPE];
 
-                    outItems[i] = SolvedNode(
-                        kind: "let", flags: n_arg.flags, value: n_arg.value,
-                        type: Type(), items: [ [], init, ]);
+                    // TODO FIX Template prep: mock up free parameters.
+                    //          Super unclean but at least its contained here.
+                    if (n_arg.flags & F_TEMPLATE || !type_annot)
+                    {
+                        // Resolve what we can from here, we're in the right scope.
+                        if (type_annot)
+                            TODO_FIX_partialEvalTypeAnnot(type_annot);
 
-                    continue;
+                        let init = n_arg.items[LET_INIT]
+                                && solveNode(n_arg.items[LET_INIT]);
+
+                        outItems[i] = SolvedNode(
+                            kind: "let", flags: n_arg.flags, value: n_arg.value,
+                            type: Type(), items: [ [], init, ]);
+
+                        continue;
+                    }
                 }
 
                 let specType    = isSpec && spec_extras
@@ -10134,6 +10143,10 @@ pub fn solve(
         {
             return t_zeroes;
         }
+        else if (node.kind == "__serialized_type")
+        {
+            return Type(parseType(node.value));
+        }
 
         //
         let exprType = node.kind == "typeparam"
@@ -10500,6 +10513,55 @@ pub fn solve(
             return type.is_zst;
 
         return BUG("Unknown type tag: `" ~ tag ~ "`.");
+    }
+
+
+    //
+
+    fn TODO_FIX_partialEvalTypeAnnot(ref node: Node): void
+    {
+        // Brief, when you have a `_[]` or `Map(<K>, <V>)` type annotation,
+        //  we clearly can't just call evalTypeAnnot on it without knowing what's in the holes.
+        //
+        // What we've been doing since forever is to eval such annots just in time
+        //  when specializing templates against the specific specialization types,
+        //   possibly failing to match.
+        //
+        // Then we started running trySolveTypeParams in tryMatchCall
+        //  in order to power conversion <-> template param interop,
+        //   which suffers from scope visibility issues -
+        //    in doTrySpec we've already set up imports etc to match the template fn declaration environment,
+        //     but in tryMatchCall we haven't, and the cost of doing so would be exorbitant.
+        //
+        // So IDEALLY -
+        //  we'd evaluate such type patterns into an intermediate repr that resolves
+        //   all symbols that can be resolved at the declaration site,
+        //    and then only needs to be matched against to resolve the concrete types at each hole/param.
+        //
+        // What we're gonna do now for starters is to pre-evaluate what we can
+        //  and stuff it on the AST for later reuse,
+        //   slower but doesn't require much rework to get going.
+
+        if (node.kind == "call")
+        {
+            if (node.flags & F_TEMPLATE)
+            {
+                // TODO -
+            }
+            else if !(node.items)
+            {
+                let type = evalTypeAnnot(node);
+
+                node.kind   = "__serialized_type";
+                node.value  = serializeType(:type, debug: "__serialized_type");
+            }
+        }
+
+        if (node.kind == "call" || node.kind == "typeunion")
+        {
+            for (mut i = 0; i < node.items.len; i++)
+                TODO_FIX_partialEvalTypeAnnot(node.items[i]);
+        }
     }
 
 
