@@ -10528,7 +10528,7 @@ pub fn solve(
         // What we're gonna do now for starters is to pre-evaluate what we can
         //  and stuff it on the AST for later reuse,
         //   slower but doesn't require much rework to get going.
-
+        //
         if (node.kind == "call")
         {
             if (node.flags & F_TEMPLATE)
@@ -10540,16 +10540,28 @@ pub fn solve(
                 node.kind   = "__serialized_addrof_type_fn";
                 node.value  = packAddrOfFn(targets);
             }
-            else if !(node.items)
+
+            // TODO FIX this nonsense, these are special-cased fns evalTypeAnnot ///
+            else if (node.items.len != 1 ||         ////////////////////////////////
+                node.value != "[]"   &&             //
+                node.value != "[..]" &&             //
+                node.value != "&"    &&             //
+                node.value != "&mut")               //
+            //////////////////////////////////////////
             {
                 let type    = evalTypeAnnot(node);
 
                 node.kind   = "__serialized_type";
                 node.value  = serializeType(:type, debug: "__serialized_type");
+
+                // Discard contents.
+                node.items.clear();
             }
         }
 
-        if (node.kind == "call" || node.kind == "typeunion")
+        if (node.kind == "call" ||
+            node.kind == "typeunion" ||
+            node.kind == "__serialized_addrof_type_fn")
         {
             for (mut i = 0; i < node.items.len; i++)
                 TODO_FIX_partialEvalTypeAnnot(node.items[i]);

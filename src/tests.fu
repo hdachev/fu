@@ -18401,6 +18401,32 @@ pub extern fn runTests()
         }
     `);
 
+    ZERO([`
+        struct Thing(type <Value>) { value: Value }
+
+        fn woot(ref t: Thing(int) or Thing(uint), what)
+            what(t.value);
+    `,`
+        fn main() {
+            mut t = _0::Thing(int)(11);
+            t.woot(|ref v| v += v);
+            return t.value - 22;
+        }
+    `]);
+
+    ZERO([`
+        struct Tuple(type <Left>, type <Right>) { left: Left; right: Right }
+
+        fn woot(ref t: Tuple(<T>, Tuple(int, int)))
+            t.right.left += t.right.right;
+    `,`
+        fn main() {
+            mut t = _0::Tuple(int, _0::Tuple(int, int))(0, _0::Tuple(int, int)(2, 3));
+            t.woot();
+            return t.right.left - 5;
+        }
+    `]);
+
     // /Template types
 
 
