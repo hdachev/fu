@@ -12,7 +12,7 @@ pub fn +(a: ModuleStat, b: ModuleStat)
 pub fn -(a: ModuleStat, b: ModuleStat)
     ModuleStat(a.time - b.time, a.alloc_count - b.alloc_count, a.alloc_bytes - b.alloc_bytes);
 
-pub fn +=(a: &mut ModuleStat, b: ModuleStat)
+pub fn +=(ref a: ModuleStat, b: ModuleStat)
 {
     a.time        += b.time;
     a.alloc_count += b.alloc_count;

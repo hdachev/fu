@@ -254,15 +254,6 @@ pub extern fn runTests()
     `);
 
     ZERO(`
-        fn decr(num: &mut i32)
-            num--;
-
-        mut res = 0;
-        decr(res);
-        return res + 1;
-    `);
-
-    ZERO(`
         fn decr(ref num: i32)
             num--;
 
@@ -282,7 +273,7 @@ pub extern fn runTests()
 
     ZERO(`
         mut res = 0;
-        fn decr(num: &mut i32) { num--; } // ret void
+        fn decr(ref num: i32) { num--; } // ret void
 
         decr(res);
         return res + 1;
@@ -4628,7 +4619,7 @@ pub extern fn runTests()
 
     ZERO(`
         struct Test { x: i32; }
-        fn test(t: &mut Test) t.x++;
+        fn test(ref t: Test) t.x++;
         mut t = Test();
         <fail orphan call () 9:9+1>
         t.test;             <pass/>
@@ -5665,7 +5656,7 @@ pub extern fn runTests()
         struct Arg { i: i32; };
 
         // A mutref fail.
-        fn mutargs(args: &mut Arg[])
+        fn mutargs(ref args: Arg[])
         {
             // This miscompiles to ref into args,
             //  after which we invalidate the reference.
@@ -5693,7 +5684,7 @@ pub extern fn runTests()
         fn witharg(using a: Arg)
             i[i.len - 1] * 4;
 
-        fn mutargs(args: &mut Arg[]) {
+        fn mutargs(ref args: Arg[]) {
             <fail invalidate badref>
             ref <pass/>
             let </fail> badref = args[0];
@@ -5714,7 +5705,7 @@ pub extern fn runTests()
         fn witharg(using a: Arg, x: i32)
             i[i.len - 1] * x;
 
-        fn mutargs(args: &mut Arg[]) {
+        fn mutargs(ref args: Arg[]) {
             <fail inval badref>
             ref <pass/>
             let </fail> badref = args[0];
@@ -8601,7 +8592,7 @@ pub extern fn runTests()
         struct SolvedNode   { i: i32; };
 
         fn Scope_add(
-            scope: &mut Scope,
+            ref scope: Scope,
             kind: string, id: string, type: Type,
 
             min: i32 = 0,
@@ -8781,7 +8772,7 @@ pub extern fn runTests()
         };
 
         pub fn alloc(
-            using mb: &mut MeshBuilder,
+            using ref mb: MeshBuilder,
             new_verts: i32,
             new_indices: i32)
         {
@@ -8792,7 +8783,7 @@ pub extern fn runTests()
         }
 
         pub fn setup_quads(
-            using mb: &mut MeshBuilder, // <- the 'using' introduced more bindings,
+            using ref mb: MeshBuilder,  // <- the 'using' introduced more bindings,
             num_quads: i32)             // <-  advancing the target index number of this arg,
                 : &mut byte[..]         // <-   confusing the callsite lifetime of this view.
         {
@@ -8804,7 +8795,7 @@ pub extern fn runTests()
 
             alloc(num_quads * 4, num_quads * 6);
 
-            let indices_i32: &mut i32[..] =
+            ref indices_i32: i32[..] =
                 indices[i0 .. indices.len]
                     .view(i32);
 
@@ -9254,7 +9245,7 @@ pub extern fn runTests()
         }
 
         fn resolveFile(
-            implicit ctx: &mut Context,
+            implicit ref ctx: Context,
             from: string, name: string): string
         {
             let path    = from ~ name;
@@ -9277,7 +9268,7 @@ pub extern fn runTests()
         }
 
         pub fn resolveFile(
-            implicit ctx: &mut Context,
+            implicit ref ctx: Context,
             path: string): string
         {
             let fuzzy = path.find('\v');
@@ -10260,7 +10251,7 @@ pub extern fn runTests()
     ZERO(`
         struct BitSet { _data: u8[] };
 
-        fn add(using _: &mut BitSet, idx: int) {
+        fn add(using ref _: BitSet, idx: int) {
             let no_neg = idx & int.MIN;
             let bucket = idx >> 3 | no_neg;
             let bit    = idx & 7;
@@ -11792,7 +11783,7 @@ pub extern fn runTests()
 
         inline fn mat4_identity() mat4(1);
 
-        fn test(output: &mut RenderFrame) {
+        fn test(ref output: RenderFrame) {
             output.u_mat4_VP = mat4_identity;
         }
 
@@ -11884,7 +11875,7 @@ pub extern fn runTests()
     ZERO(`
         struct TEA { v0: u32; v1: u32 }
 
-        inline fn r4(using _: &mut TEA, sum: &mut u32) {
+        inline fn r4(using ref _: TEA, ref sum: u32) {
             mut delta: u32 = 0x9e3779b9;
             for (mut i = 0; i < 4; i++) {
                 sum += delta;
@@ -11896,7 +11887,7 @@ pub extern fn runTests()
         // Stack overflow solving this,
         //  argmax is +inf, and it just
         //   re-enters and re-enters.
-        inline fn r4(tea: &mut TEA) {
+        inline fn r4(ref tea: TEA) {
             mut sum: u32; tea.r4(sum);
         }
 
@@ -12109,8 +12100,8 @@ pub extern fn runTests()
     ZERO(`
         struct X { i: i32; };
 
-        fn         ++(using x: &mut X) ++i;
-        postfix fn ++(using x: &mut X) i++;
+        fn         ++(using ref x: X) ++i;
+        postfix fn ++(using ref x: X) i++;
 
         fn main() {
             mut x: X;
@@ -13473,7 +13464,7 @@ pub extern fn runTests()
     `);
 
     ZERO(`
-        fn test(hey: &mut i32[..])
+        fn test(ref hey: i32[..])
             hey[0] += hey[1];
 
         fn main() {
@@ -13508,7 +13499,7 @@ pub extern fn runTests()
     `);
 
     ZERO(`
-        fn test(hey: &mut i32[..])
+        fn test(ref hey: i32[..])
             hey[0] += hey[1];
 
         fn main() {
@@ -13518,7 +13509,7 @@ pub extern fn runTests()
     `);
 
     ZERO(`
-        fn test(hey: &mut i32[..])
+        fn test(ref hey: i32[..])
             hey.= [2, -3];
 
         fn main() {

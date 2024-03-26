@@ -77,7 +77,7 @@ fn cli_handle(argv: string[], cwd = fs::cwd())
             val = next();
         }
 
-        fn option(short: string, long: string, o: i32, dir: &mut string) {
+        fn option(short: string, long: string, o: i32, ref dir: string) {
             if (opt == short || opt == long) {
                 options |= o;
                 if (opt == long) {

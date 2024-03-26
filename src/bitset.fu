@@ -5,12 +5,12 @@ pub struct BitSet
     _data: u8[];
 };
 
-pub fn clear(using _: &mut BitSet)
+pub fn clear(using ref _: BitSet)
 {
     _data.clear();
 }
 
-pub fn clear(using _: &mut BitSet, start!idx: i32)
+pub fn clear(using ref _: BitSet, start!idx: i32)
 {
     let no_neg  = idx & int.MIN;
     let bucket  = idx >> 3 | no_neg;
@@ -29,7 +29,7 @@ pub fn clear(using _: &mut BitSet, start!idx: i32)
     _shrink_to_fit();
 }
 
-pub fn add_once(using _: &mut BitSet, idx: int): bool
+pub fn add_once(using ref _: BitSet, idx: int): bool
 {
     let no_neg = idx & int.MIN;
     let bucket = idx >> 3 | no_neg;
@@ -44,7 +44,7 @@ pub fn add_once(using _: &mut BitSet, idx: int): bool
     return ret;
 }
 
-pub fn add(using _: &mut BitSet, idx: int)
+pub fn add(using ref _: BitSet, idx: int)
 {
     let no_neg = idx & int.MIN;
     let bucket = idx >> 3 | no_neg;
@@ -54,7 +54,7 @@ pub fn add(using _: &mut BitSet, idx: int)
     _data.ensure(exists: bucket) |= mask;
 }
 
-pub fn add(using _: &mut BitSet, other: BitSet)
+pub fn add(using ref _: BitSet, other: BitSet)
 {
     let N = other._data.len;
     if (_data.len < N)
@@ -65,13 +65,13 @@ pub fn add(using _: &mut BitSet, other: BitSet)
         _data[i] |= other._data[i];
 }
 
-pub fn |=(using left: &mut BitSet, other: BitSet)
+pub fn |=(ref left: BitSet, other: BitSet)
 {
     left.add(:other);
     return left;
 }
 
-fn _shrink_to_fit(using _: &mut BitSet)
+fn _shrink_to_fit(using ref _: BitSet)
 {
     mut end = _data.len;
     while (end --> 0)
@@ -81,7 +81,7 @@ fn _shrink_to_fit(using _: &mut BitSet)
     _data.shrink(end + 1);
 }
 
-pub fn rem(using _: &mut BitSet, other: BitSet)
+pub fn rem(using ref _: BitSet, other: BitSet)
 {
     mut N = other._data.len;
     if (N > _data.len)
@@ -109,7 +109,7 @@ pub fn has(using _: BitSet, idx: int)
         && _data[bucket] & mask != 0;
 }
 
-pub fn rem(using _: &mut BitSet, idx: int)
+pub fn rem(using ref _: BitSet, idx: int)
 {
     let no_neg = idx & int.MIN;
     let bucket = idx >> 3 | no_neg;
@@ -141,7 +141,7 @@ pub fn rem(using _: &mut BitSet, idx: int)
     return false;
 }
 
-pub fn add_range(using _: &mut BitSet, end!: int)
+pub fn add_range(using ref _: BitSet, end!: int)
 {
     let no_neg      =  end & int.MIN;
 

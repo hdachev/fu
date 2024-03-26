@@ -21,7 +21,7 @@ struct Precedence {
 let P_RESET         = Precedence(1000);
 let P_PREFIX_UNARY  = Precedence(1   );
 
-let PREFIX          = [ "++", "+", "--", "-", "!", "~", "?", "*", "&", "&mut", "-%" ];
+let PREFIX          = [ "++", "+", "--", "-", "!", "~", "?", "*", "&", "-%" ];
 let POSTFIX         = [ "++", "--", "[]", "[..]" ];
 
 fn setupOperators()
@@ -1199,7 +1199,7 @@ pub fn parse(
                     : P_RESET);
 
             // Return type annot.
-            mut type = tryPopTypeAnnot();
+            mut type = tryPopTypeAnnot(allowLegacyRefs: true);
             let retIdx = items.len;
             items.push(type);
 
@@ -1318,7 +1318,7 @@ pub fn parse(
                 if (!noCond)
                     swap(_expectedTypeParams, withArgTypeParams);
 
-                let type = tryPopTypeAnnot();
+                let type = tryPopTypeAnnot(allowLegacyRefs: true);
                 let cons = parseFnBodyBranch();
 
                 branches.push(
@@ -1381,17 +1381,27 @@ pub fn parse(
         return parseFnDecl(flags: F_TESTCASE);
     }
 
-    fn tryPopTypeAnnot(allowTypeUnions! = false): Node
+    fn tryPopTypeAnnot(allowTypeUnions! = false, allowLegacyRefs! = false): Node
     {
         return tryConsume("op", ":")
-            && parseTypeAnnot(:allowTypeUnions);
+            && parseTypeAnnot(:allowTypeUnions, :allowLegacyRefs);
     }
 
-    fn parseTypeAnnot(allowTypeUnions! = false): Node
+    fn parseTypeAnnot(allowTypeUnions! = false, allowLegacyRefs! = false): Node
     {
+        mut hasLegacyRef    = false;
+        mut hasLegacyMutRef = false;
+
+        if (allowLegacyRefs)
+        {
+            hasLegacyRef    = !!tryConsume("op", "&");
+            hasLegacyMutRef = hasLegacyRef && !!tryConsume("id", "mut");
+        }
+
+        //
         mut res = parseUnaryExpression();
 
-        // EXPERIMENTAL type union syntax
+        // EXPERIMENTAL type union syntax, i'm not loving it
         while (allowTypeUnions && tryConsume("id", "or"))
         {
             if (res.kind != "typeunion")
@@ -1399,6 +1409,9 @@ pub fn parse(
 
             res.items ~= parseUnaryExpression();
         }
+
+        if (hasLegacyRef)
+            res = createCall(hasLegacyMutRef ? "&mut" : "&", F_OPERATOR, [ res ]);
 
         return res;
     }
@@ -1813,7 +1826,10 @@ pub fn parse(
             consume("op", ":");
         }
 
-        let right = parseExpression(p1);
+        let right = op == "->" || op == "=>"
+            ? parseTypeAnnot(allowLegacyRefs: true)
+            : parseExpression(p1);
+
         if (mid)
             return createIf(left, mid, right);
 
@@ -2065,9 +2081,6 @@ pub fn parse(
     fn parsePrefix(mut op: string): Node
     {
         PREFIX.has(op) || { _idx--; fail() };
-
-        if (op == "&" && tryConsume("id", "mut"))
-            op = "&mut";
 
         let mode = op == "-" || op == "+"
             ? M_LINT_UNARY_PRECEDENCE
