@@ -99,6 +99,7 @@ let BINOP       = setupOperators();
 let M_LINT_UNARY_PRECEDENCE = 1 << 0;
 let M_LINT_ENSURE_INDENT    = 1 << 1;
 let M_LAMBDA_STMT_OK        = 1 << 2;
+let M_CALLSITE_ARGUMENT_POS = 1 << 3;
 
 
 //
@@ -114,16 +115,12 @@ struct ArgsParse {
     sliceSyntax:    bool;
 }
 
-struct ParserState {
-    _idx:           int;
-    _loc:           int;
-    _col0:          int;
-    _precedence:    Precedence;
-
+struct MustBeZeroAtExit {
     _fnDepth:       int;
     _templateDepth: int;
-
-    _autopub:       bool;
+    _loopDepth:     int;
+    _lambdaDepth:   int;
+    _blockArgDepth: int;
 
     // TODO FIX So the $T thing backfired -
     //  when you have an if (a -> $T) in the middle of some fn,
@@ -137,9 +134,20 @@ struct ParserState {
     //
     _TODO_FIX_dollarOk:     bool;
 
-    _numDollars:            int;
     _expectedTypeParams:    flat::Set(string);
     _upstreamTypeParams:    flat::Set(string);
+}
+
+struct ParserState {
+    _idx:           int;
+    _loc:           int;
+    _col0:          int;
+    _precedence:    Precedence;
+
+    using mbz:      MustBeZeroAtExit;
+
+    _autopub:       bool;
+    _numDollars:    int;
 
     //
     imports:        Import[];
@@ -155,6 +163,11 @@ pub fn parse(
     implicit options!: options::Options): ParserOutput
 {
     using mut _ps: ParserState;
+
+    defer {
+        for (fieldname i: MustBeZeroAtExit)
+            _ps.i && throw("parser: end-cleanup, not empty: " ~ "i");
+    }
 
     _autopub = true;
 
@@ -461,6 +474,11 @@ pub fn parse(
 
     fn parseStructDecl(kind: Kind, flags!?: Flags, asserts!?: DeclAsserts): Node
     {
+        ////////////////////////////////////////////////////////////////
+        mut expectedTypedParams0 = _expectedTypeParams.steal();
+        defer swap(expectedTypedParams0, _expectedTypeParams);
+        ////////////////////////////////////////////////////////////////
+
         let name = tryConsume("id").value;
 
         // struct Hello(args) shorthand, see below.
@@ -965,7 +983,7 @@ pub fn parse(
             if !(expr.kind == "call")
                 fail("Cannot pipeline: expression is not a call.");
 
-            let right = parseExpression(P_RESET, mode: stmt && M_LAMBDA_STMT_OK);
+            let right = parseExpression(P_RESET, mode: (stmt && M_LAMBDA_STMT_OK) | M_CALLSITE_ARGUMENT_POS);
             expr = pipelineLeft(expr, right);
 
             if (stmt)
@@ -1034,6 +1052,17 @@ pub fn parse(
 
     fn parseLambda(noClosingPipe!?: bool, leadingDot!?: bool, mode!?: i32): Node
     {
+        ///////////////////////////////////////////////////////////
+        let blockArgDepth0 = _blockArgDepth;
+        _blockArgDepth = mode & M_CALLSITE_ARGUMENT_POS ? _blockArgDepth + 1 : 0;
+        _lambdaDepth++;
+
+        defer {
+            _blockArgDepth = blockArgDepth0;
+            _lambdaDepth--;
+        }
+        ///////////////////////////////////////////////////////////
+
         if (noClosingPipe && _precedence.formal > P_RESET.formal && _precedence.formal < P_PREFIX_UNARY.formal)
             warn("Unparenthesized `|| lambda` within a binary expression.");
 
@@ -2302,7 +2331,7 @@ pub fn parse(
                 }
             }
 
-            mut expr = parseExpression(P_RESET);
+            mut expr = parseExpression(P_RESET, mode: M_CALLSITE_ARGUMENT_POS);
             expr.tryColonPipeline(stmt: false);
 
             if (autoName)
@@ -2467,10 +2496,34 @@ pub fn parse(
 
     fn parseJump(kind: Kind/*"break"|"continue"|"return"*/): Node
     {
-        _fnDepth > 0 || { _idx--; fail() };
-
         let label = tryConsume("op", ":") && consume("id").value;
 
+        //
+        {
+            _idx--;
+
+            if (!label)
+            {
+                if (kind == "break")
+                    _blockArgDepth || _loopDepth || fail(
+                        "Nothing to " ~ kind.str.qKW ~ " from here."
+                            ~ "\n\n\tNo surrounding loop or |code| block.");
+
+                if (kind == "continue")
+                    _lambdaDepth || _loopDepth || fail(
+                        "Nothing to " ~ kind.str.qKW ~ " from here."
+                            ~ "\n\n\tNo surrounding loop or callsite: |code| block.");
+            }
+
+            if (kind == "return")
+                _fnDepth || fail(
+                    "Cannot " ~ kind.str.qKW ~ " here."
+                        ~ "\n\n\tNo surrounding function.");
+
+            _idx++;
+        }
+
+        //
         mut expr: Node;
         if (!tryConsume("op", ";"))
         {
@@ -2604,8 +2657,16 @@ pub fn parse(
 
     //
 
+    fn WILL_PARSE_LOOP() unwrap
+    {
+        _loopDepth++;
+        defer _loopDepth--;
+    }
+
     fn parseFor(): Node
     {
+        WILL_PARSE_LOOP();
+
         consume("op", "(");
 
         // First of the crazies.
@@ -2660,6 +2721,8 @@ pub fn parse(
 
     fn parseWhile(): Node
     {
+        WILL_PARSE_LOOP();
+
         let pre_cond = parseIfCond();
         let body = parseSubStatement();
 
@@ -2668,6 +2731,8 @@ pub fn parse(
 
     fn parseDoWhile(): Node
     {
+        WILL_PARSE_LOOP();
+
         let body = parseSubStatement();
         consume("id", "while");
         consume("op", "(");

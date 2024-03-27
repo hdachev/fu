@@ -9358,7 +9358,6 @@ pub fn solve(
     {
         mut CONTINUE_BELOW: i32;
 
-        :SEARCH
         _helpers.reveach(_ss.helpers, |item, ref i|
         {
             // Continue into first return when possible,
@@ -9407,32 +9406,7 @@ pub fn solve(
                 }
             }
 
-            ref h = _helpers[i];
-
-            // TODO FIX see the "nothing to break [2]" testcase,
-            //  default break/continue stuff above can eagerly match
-            //   stuff that shouldn't work intuitively.
-            //
-            // But yeah, at this point this is firefighting,
-            //  the best way to fix all of these would be to resolve all jumps
-            //   WHILE PARSING, and only deal with fully-qualified jumps in the solver,
-            //    no walking up and down the helpers stack, total nonsense.
-            //
-            :CHECK
-            if (!id && h.target && h.target != _current_fn.target)
-            {
-                let spec_of = _current_fn.target.spec_of;
-                h.target.args.each: |arg.type|
-                    if (arg.isAddrOfFn)
-                        arg.canon.unpackAddrOfFn: |target|
-                            if (target == spec_of)
-                                break :CHECK;
-
-                break :SEARCH;
-            }
-
-            //
-            return h;
+            return _helpers[i];
         });
 
         if (id)

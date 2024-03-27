@@ -15891,9 +15891,10 @@ pub extern fn runTests()
                     return x;
 
                 // this complains about indentation
-                // TODO should work without the continue
                 <alt>
                 continue "".len                                 ;; GNUStmtExpr
+                <alt/>
+                "".len                                          ;; GNUStmtExpr
                 <alt/>
                 "".len.addret(x)
                 </alt>
@@ -18990,6 +18991,21 @@ pub extern fn runTests()
     `);
 
     ZERO(`
+        fn run(action) action();
+        fn test() {
+            run: || {
+                let hello = || {    <fail nothing to break from here 6:21+5>
+                    break;          <pass/>
+                    return 0;       </fail>
+                };
+
+                return hello;
+            };
+        }
+        fn main() = test();
+    `);
+
+    ZERO(`
         fn test() {     <fail nothing to continue from here 3:13+8>
             continue;   <pass/>
             return 0;   </fail>
@@ -19027,7 +19043,7 @@ pub extern fn runTests()
         }
     `);
 
-    TODO_confusing(currently: "Nothing to continue 14:38+8", `
+    ZERO(`
         struct BitSet { _data: u8 };
 
         fn each(ref ._data, visit)
