@@ -114,6 +114,8 @@ pub extern fn runTests()
     let TODO_definit    = fn TODO;
     let TODO_specpat    = fn TODO;
 
+    let TODO_templ_vis  = fn TODO; // autoshadow needs to go + how do we make nested fns visible?
+
     let LEGACY_Map      = fn TODO;
 
     let SKETCH          = fn TODO;
@@ -15221,12 +15223,25 @@ pub extern fn runTests()
         return      </fail> 1.originalHello + 2.shadowedHello == 210 ? 0 : 1;
     `);
 
-    TODO_ambig(currently: "Bad call to each LocidSet 9:21+4", `
+    TODO_templ_vis(currently: "actual return type i32, got Hello 9:30+1", `
+        struct Hello { hello: int };
+        fn what(using ref <fail ambig hello hello using 5:16+5 4:27+5 2:24+5>
+                          hello     <pass/>
+                          _         </fail><alt>: Hello</alt>, fn)
+            fn(hello);
+
+        fn main() {
+            mut hello: Hello;
+            return hello.what(|v| v);
+        }
+    `);
+
+    TODO_templ_vis(currently: "Bad call to each LocidSet 9:21+4", `
         struct RawSet { ints: int[] };
         fn each(using ref _: RawSet, fn) ints.each: fn fn;
 
         struct LocidSet { raw_set: RawSet };
-        fn each(using ref <fail ambig X:X>
+        fn each(using ref <fail ambig call raw_set field using 9:13+7 7:27+7 5:27+7>
                           raw_set       <pass/>
                                 _       </fail> : LocidSet, offset: int, fn)
         {
@@ -20552,7 +20567,7 @@ pub extern fn runTests()
                 + _0::hello(2) - 2 * Each(20000);
     `]);
 
-    TODO_ambig(currently: "BUG exit code", [`
+    TODO_templ_vis(currently: "BUG exit code", [`
         fn sum_each(a, b)       // Same as above,
             a.Each + b.Each;    //  but we don't explicitly pass the fn Each in.
 
