@@ -7,7 +7,7 @@
     throw std::runtime_error(reason);
 }
 
-[[noreturn]] fu_EXPORT fu::never fu::fail(fu_STR&& reason)
+[[noreturn]] fu_EXPORT fu::never fu::fail(fu::str&& reason)
 {
     reason.push('\0');
     fu::fail((const char*)reason.data());

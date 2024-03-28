@@ -3,9 +3,9 @@
 // TODO use decstr.fu instead,
 //  currently having issues with importing things from prelude.
 
-fu_STR fu::u64dec(uint64_t num)
+fu::str fu::u64dec(uint64_t num)
 {
-    fu_STR res;
+    fu::str res;
 
     do {
         uint64_t d = num % 10;
@@ -17,14 +17,14 @@ fu_STR fu::u64dec(uint64_t num)
     return res;
 }
 
-fu_STR fu::i64dec(int64_t num)
+fu::str fu::i64dec(int64_t num)
 {
     if (num < 0)
     {
         if (num == int64_t(0x8000000000000000))
             return "-9223372036854775808"_fu;
 
-        fu_STR res = fu::u64dec(uint64_t(-num));
+        fu::str res = fu::u64dec(uint64_t(-num));
         res.insert(0, fu::byte('-'));
         return  res;
     }
@@ -37,12 +37,12 @@ fu_STR fu::i64dec(int64_t num)
 
 #include <stdio.h>
 
-fu_STR fu::f64dec(double num)
+fu::str fu::f64dec(double num)
 {
     char buffer[64];
     int len = snprintf(buffer, 64, "%f", num);
 
-    fu_STR res;
+    fu::str res;
     res.UNSAFE__init_copy(
         buffer,
         len > 0 ? len < 64 ? len : 64 : 0);
@@ -55,7 +55,7 @@ fu_STR fu::f64dec(double num)
 //  Needed to pass the `a ~ (smth && SelfRecursiveCall())` test.
 //   Stringifying bools feels off, but everyone does it, so I guess it is fine.
 
-fu_STR fu::booldec(bool num)
+fu::str fu::booldec(bool num)
 {
     return num ? "1"_fu : "0"_fu;
 }

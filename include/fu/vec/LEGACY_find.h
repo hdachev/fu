@@ -2,11 +2,12 @@
 
 #include "./cmp.h"
 #include "../inl.h"
-#include "../algo/fbstring_lfind.h"
 
 // memchr
 #include <string.h>
 #include <type_traits>
+
+// TODO REMOVE this header after next bootstrap
 
 namespace fu
 {
@@ -21,9 +22,14 @@ S lfind(const H& haystack, const N& needle) noexcept
     S size = haystack.size();
     S start = 0;
 
-    return fbstring_lfind(
-        haystack.data(), size,
-        needle.data(), needle.size(), start);
+    static_assert(sizeof(typename H::value_type) == 1, "woops");
+
+    auto* data = haystack.data();
+    auto* ret = (typename H::value_type*) memmem(
+        data + start,   (size_t) (size - start),
+        needle.data(),  (size_t) needle.size());
+
+    return ret ? (int) (ret - data) : -1;
 }
 
 // lfind substr
@@ -39,9 +45,14 @@ S lfind(const H& haystack, const N& needle, S start) noexcept
     start = start >    0 ? start :    0;
     start = start < size ? start : size;
 
-    return fbstring_lfind(
-        haystack.data(), size,
-        needle.data(), needle.size(), start);
+    static_assert(sizeof(typename H::value_type) == 1, "woops");
+
+    auto* data = haystack.data();
+    auto* ret = (typename H::value_type*) memmem(
+        data + start,   (size_t) (size - start),
+        needle.data(),  (size_t) needle.size());
+
+    return ret ? (int) (ret - data) : -1;
 }
 
 // lfind substr
@@ -61,9 +72,14 @@ S lfind(const H& haystack, const N& needle, S start, S end) noexcept
     size  = size  <  end ? size  :  end;
     size  = size  >    0 ? size  :    0;
 
-    return fbstring_lfind(
-        haystack.data(), size,
-        needle.data(), needle.size(), start);
+    static_assert(sizeof(typename H::value_type) == 1, "woops");
+
+    auto* data = haystack.data();
+    auto* ret = (typename H::value_type*) memmem(
+        data + start,   (size_t) (size - start),
+        needle.data(),  (size_t) needle.size());
+
+    return ret ? (int) (ret - data) : -1;
 }
 
 // starts with substr

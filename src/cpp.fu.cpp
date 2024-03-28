@@ -1,7 +1,7 @@
 #include <fu/str.h>
 #include <fu/vec.h>
 #include <fu/view.h>
-#include <fu/vec/find.h>
+#include <fu/vec/LEGACY_find.h>
 #include <fu/init_priority.h>
 
 char upper_jhTAKpQG(char);

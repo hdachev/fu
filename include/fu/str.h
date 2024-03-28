@@ -3,25 +3,14 @@
 #include "./vec.h"
 #include "./int.h"
 
-
-// BACKCOMPAT.
-
-typedef fu::vec<fu::byte> fu_STR;
-
-#define fu_TO_STR fu::to_str
-#define fu_STRLIT fu::strlit
-
-
-//
-
 namespace fu {
 
-typedef fu_STR str;
+typedef fu::vec<fu::byte> str;
 
-inline fu_STR to_str(const char* cstr) noexcept
+inline fu::str to_str(const char* cstr) noexcept
 {
     cstr = cstr ? cstr : "";
-    fu_STR vec;
+    fu::str vec;
     vec.UNSAFE__init_copy((const fu::byte*)cstr, fu::i(strlen(cstr)));
     return vec;
 }
@@ -52,8 +41,8 @@ struct strlit
     const char* m_data;
     fu::i m_size;
 
-    operator fu_STR() const noexcept {
-        fu_STR vec;
+    operator fu::str() const noexcept {
+        fu::str vec;
         vec.UNSAFE__init_copy((const fu::byte*)m_data, m_size);
         return vec;
     }
@@ -87,27 +76,4 @@ fu_INL constexpr fu::strlit operator ""_fu(const char* cstr, size_t len) noexcep
 
 fu_INL constexpr fu::view<char> operator ""_view(const char* cstr, size_t len) noexcept {
     return fu::view<char> { cstr, (fu::i) len };
-}
-
-
-//
-
-template <typename OStream>
-auto operator<<(OStream& stream, const fu_STR& str)
-    -> decltype(
-        stream.write((const char*)str.data(), size_t(str.size())),
-        stream << *(const char*)str.data())
-{
-    stream.write((const char*)str.data(), size_t(str.size()));
-    return stream;
-}
-
-template <typename OStream>
-auto operator<<(OStream& stream, const fu::strlit& str)
-    -> decltype(
-        stream.write((const char*)str.data(), size_t(str.size())),
-        stream << *(const char*)str.data())
-{
-    stream.write((const char*)str.data(), size_t(str.size()));
-    return stream;
 }

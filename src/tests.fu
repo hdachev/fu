@@ -12806,7 +12806,11 @@ pub extern fn runTests()
         fn main() {
             let a = XY(99, 2);
             let ref2a = ref2arg(a);
-            return mem::ptr_eq(a, ref2a) ? 0 : 1;
+            mut ret = 1;
+            pragma emit(\`
+                \`ret\` -= int(&\`ref2a\` == &\`a\`);
+            \`);
+            return ret;
         }
     `);
 

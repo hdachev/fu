@@ -2,7 +2,7 @@
 
 #include "./print.h"
 
-fu_EXPORT void fu::println(fu::view<fu_STR> parts)
+fu_EXPORT void fu::println(fu::view<fu::str> parts)
 {
     for (int i = 0; i < parts.size(); i++)
     {

@@ -5,7 +5,7 @@
 #include <fu/view.h>
 #include <fu/defer.h>
 #include <fu/never.h>
-#include <fu/vec/find.h>
+#include <fu/vec/LEGACY_find.h>
 #include <fu/vec/slice.h>
 #include <par/parfor.hpp>
 #include <fu/vec/concat.h>
@@ -1966,7 +1966,7 @@ void runTests()
     PARZERO_EiSsO8S1("\n        struct Test { a: i32; b: i32; };\n\n        fn test() {\n            mut x = Test(5, -5);\n            return x;\n        }\n\n        fn main()\n            test().a + test().b;\n    "_fu, PARZERO_queue);
     PARZERO_EiSsO8S1("\n        struct X { x: i32; };\n        fn ref2arg(x: X) = x;\n\n        fn main() {\n            let NOTREF = ref2arg(X(101));\n            return NOTREF.x - 101;\n        }\n    "_fu, PARZERO_queue);
     PARZERO_EiSsO8S1("\n        <fail cannot be copied or moved 8:21>\n        nocopy <pass/></fail>\n        struct Copied { x: i32; };\n\n        fn main() {\n            let a = Copied(1);\n            mut b = a;\n            b.x++;\n            return b.x - a.x * 2;\n        }\n    "_fu, PARZERO_queue);
-    PARZERO_EiSsO8S1("\n        struct XY { x: i32; y: i32; };\n        fn ref2arg(v: XY) = v;\n\n        fn main() {\n            let a = XY(99, 2);\n            let ref2a = ref2arg(a);\n            return mem::ptr_eq(a, ref2a) ? 0 : 1;\n        }\n    "_fu, PARZERO_queue);
+
     PARZERO_EiSsO8S1("\n        nocopy struct NoCopy { i: i32; };\n        fn retmutref(ref nc: NoCopy) nc;\n\n        fn main() {\n            mut nc: NoCopy;\n            nc.retmutref.retmutref.i++;\n            return nc.i - 1;\n        }\n    "_fu, PARZERO_queue);
     PARZERO_EiSsO8S1("\n        nocopy struct NoCopy { i: i32; };\n        fn mutrefself(ref nc: NoCopy) {\n            nc.i++;\n            return nc;\n        }\n\n        fn main() {\n            mut nc: NoCopy;\n            nc.mutrefself().mutrefself();\n            return nc.i - 2;\n        }\n    "_fu, PARZERO_queue);
     PARZERO_EiSsO8S1("\n        nocopy struct NoCopy { i: i32; };\n\n        fn      retarg(a: NoCopy) a;\n        fn  retargs_if(a: NoCopy, b: NoCopy) a.i ? b : a;\n        fn  retargs_or(a: NoCopy, b: NoCopy) a || b;\n        fn retargs_and(a: NoCopy, b: NoCopy) a && b;\n\n        fn main() {\n            let a: NoCopy;\n            let b: NoCopy;\n            return retarg(retargs_if(a, retargs_and(a, retargs_or(a, b)))).i;\n        }\n    "_fu, PARZERO_queue);

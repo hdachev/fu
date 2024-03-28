@@ -5,14 +5,25 @@
 #include "../init_priority.h"
 
 #include "./arc.h"
-#include "./next_pow2.h"
 
+static uint32_t next_pow2(uint32_t v) noexcept
+{
+    v--;
+    v |= v >> 1;
+    v |= v >> 2;
+    v |= v >> 4;
+    v |= v >> 8;
+    v |= v >> 16;
+    v++;
+
+    return v;
+}
 
 constexpr uint8_t fu_EXIT_BadAlloc = 101;
 
 static inline size_t fu_POW2MEM_RoundUp(size_t bytes) noexcept
 {
-    uint32_t rnd = fu::next_pow2(uint32_t(bytes));
+    uint32_t rnd = next_pow2(uint32_t(bytes));
 
     // Node re 0x8: it'll fit in an i32
     //  after we sub the header size.
@@ -50,7 +61,7 @@ static inline char* fu_POW2MEM_ALLOC(size_t& bytes) noexcept
 
 static inline void fu_POW2MEM_FREE(char* memory, size_t bytes) noexcept
 {
-    bytes = fu::next_pow2(uint32_t(bytes));
+    bytes = next_pow2(uint32_t(bytes));
 
     #ifndef NDEBUG
     {

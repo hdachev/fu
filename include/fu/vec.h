@@ -1248,7 +1248,3 @@ struct fu_VEC
 #undef MUT_init
 #undef MUT_clear
 #undef MUT_reserve
-
-// Backcompat.
-
-#define fu_VEC fu::vec
