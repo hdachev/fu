@@ -1,6 +1,5 @@
 #pragma once
 
-#include "./cmp.h"
 #include "../inl.h"
 
 // memchr

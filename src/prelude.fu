@@ -252,17 +252,7 @@ fn   grow_junk(mut ref a: <T>[], len: int): void __native(".grow<false>");
 
 // Sorts, via std::sort - fnptrs.
 
-fn sort(mut ref a: <T>[..]): void
-{
-    pragma include("<algorithm>");
-    pragma emit(
-    \`
-        auto* data = \`a\`.data_mut();
-        std::sort(data, data + \`a\`.size());
-    \`);
-}
-
-fn sort(mut ref a: <T>[..], less/*: fn(a: T, b: T): bool*/): void
+fn sort(mut ref a: <T>[..], less = |l, r| l <> r < 0): void
 {
     noflow fn sort()
     {
@@ -450,16 +440,6 @@ fn ends(a: <T>[..], with: T[..]): bool
 }
 
 
-// Strings.
-
-type string = byte[];
-
-infix fn  >(a: string, b: string): bool __native("<fu/vec/cmp.h>",  ">");
-infix fn  <(a: string, b: string): bool __native("<fu/vec/cmp.h>",  "<");
-infix fn >=(a: string, b: string): bool __native("<fu/vec/cmp.h>", ">=");
-infix fn <=(a: string, b: string): bool __native("<fu/vec/cmp.h>", "<=");
-
-
 // D-style concats.
 
 infix fn ~ (a: <T>[..], b: T[..]): T[] __native("<fu/vec/concat.h>",     "+");
@@ -526,6 +506,8 @@ fn remove(mut ref a: <T>[], predicate, mut start!keep = 0)
 
 
 // Stringifiables.
+
+type string = byte[];
 
 infix fn ~ (        a: byte[..], b.str      ) a ~ b;
 infix fn ~ (        a.str,       b: byte[..]) a ~ b;
@@ -700,6 +682,14 @@ infix fn == (a: <T>, b: T)
 infix fn != (a: <T>, b: T)
     case (T.is::primitive): bool __native;
     default: bool = !!(a <> b);
+
+
+// String comparisons, TODO FIX: T -> byte hack to force template.
+
+infix fn  >(a: <T>[..], b: T[..]) case (T -> byte) = a <> b > 0;
+infix fn  <(a: <T>[..], b: T[..]) case (T -> byte) = a <> b < 0;
+infix fn >=(a: <T>[..], b: T[..]) case (T -> byte) = a <> b >= 0;
+infix fn <=(a: <T>[..], b: T[..]) case (T -> byte) = a <> b <= 0;
 
 
 //
