@@ -1,7 +1,7 @@
 #pragma once
 
 #include "./vec.h"
-#include "./vec/slice.h"
+#include "./vec/LEGACY_slice.h"
 #include "./default.h"
 #include "./mem/memswap.h"
 

@@ -7,7 +7,7 @@
 #include <fu/print.h>
 #include <fu/decstr.h>
 #include <fu/default.h>
-#include <fu/vec/slice.h>
+#include <fu/vec/LEGACY_slice.h>
 #include <par/parfor.hpp>
 #include <fu/vec/concat.h>
 #include <fu/init_priority.h>

@@ -12,7 +12,7 @@
 #include <fu/default.h>
 #include <fu/vec/LEGACY_cmp.h>
 #include <fu/vec/LEGACY_find.h>
-#include <fu/vec/slice.h>
+#include <fu/vec/LEGACY_slice.h>
 #include <fu/vec/concat.h>
 #include <fu/init_priority.h>
 #include <fu/vec/view_swap.h>

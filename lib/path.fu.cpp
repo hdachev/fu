@@ -1,7 +1,7 @@
 #include <fu/str.h>
 #include <fu/vec.h>
 #include <fu/view.h>
-#include <fu/vec/slice.h>
+#include <fu/vec/LEGACY_slice.h>
 #include <fu/vec/concat.h>
 #include <fu/vec/concat_one.h>
 #include <fu/vec/view_assign.h>
