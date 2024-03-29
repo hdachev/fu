@@ -1,5 +1,4 @@
 import module;
-import fail;
 
 fn is_primitive(t: ValueType) {
     let c = t.canon[0];

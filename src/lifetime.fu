@@ -499,21 +499,24 @@ fn Paths_inter(ref str: byte[], a: byte[..], b: byte[..])
 
 //
 
-fn Paths_hasInter(a: byte[..], b: byte[..])
+fn Paths_hasInter(a: byte[..], b: byte[..],
+    left_usage?:    Quals or [],
+    right_usage?:   Quals or [])
 {
-    if (a.len < b.len)
-        return Paths_hasInter(b, a);
-
     a.parsePaths_each: |a_path|
     {
         :EACH_B_PATH
         b.parsePaths_each: |b_path|
         {
             let N = min(a_path.len, b_path.len);
+
+            shadow mut a: SubRegion;
+            shadow mut b: SubRegion;
+
             for (mut i = 0; i < N; i++)
             {
-                shadow let a = a_path[i];
-                shadow let b = b_path[i];
+                a = a_path[i];
+                b = b_path[i];
 
                 let overlap = min(
                     b.flatOffset + b.flatCount - a.flatOffset,
@@ -521,6 +524,81 @@ fn Paths_hasInter(a: byte[..], b: byte[..])
 
                 if (overlap <= 0)
                     continue :EACH_B_PATH;
+            }
+
+            fn checkUsage(shadow a: SubRegion, usage: Quals, lax flatCountMismatchOK!?: bool)
+            {
+                if (SELF_TEST && !flatCountMismatchOK)
+                {
+                    let usageBits       = usage::q_USAGE_bitsize - usage.unsigned.bit::clz;
+                    let usagePopcount   = usage.unsigned.bit::popcount;
+
+                    usageBits <= a.flatCount
+                        || usagePopcount <= a.flatCount
+                        || BUG("Region flatOffset(" ~ a.flatOffset  ~ ")"
+                                ~     " flatCount(" ~ a.flatCount   ~ ")"
+                                ~     " usageBits(" ~ usageBits     ~ ")"
+                                ~ " usagePopcount(" ~ usagePopcount ~ ")");
+                }
+
+                let range = usage::getRegionUsage(:a.flatOffset, :a.flatCount);
+
+                if (SELF_TEST && !flatCountMismatchOK)
+                    range & usage == usage || BUG("range(" ~ range ~ ") usage(" ~ usage ~ ")");
+
+                if !(range & usage)
+                    continue :EACH_B_PATH;
+
+                // println("USAGE INTERSECTS range(" ~ range ~ ") usage(" ~ usage ~ ") inter(" ~ (range & usage) ~ ")");
+            }
+
+            lax mut left_usage_abs: Quals;
+
+            if (left_usage.typeof -> Quals)
+            {
+                // We can't use left-usage when a_path is longer than b-path,
+                //  meaning a-path is not fully dereferenced on intersection.
+                //
+                if (a_path.len <= b_path.len)
+                {
+                    shadow let usage = usage::USAGE_structUsageFromFieldUsage(
+                        left_usage,
+                        memberFlatOffset: a.flatOffset);
+
+                    checkUsage(a, usage);
+                    checkUsage(b, usage, flatCountMismatchOK: true);
+
+                    if (right_usage.typeof -> Quals)
+                        left_usage_abs = usage;
+                }
+            }
+
+            if (right_usage.typeof -> Quals)
+            {
+                if (b_path.len <= a_path.len)
+                {
+                    shadow let usage = usage::USAGE_structUsageFromFieldUsage(
+                        right_usage,
+                        memberFlatOffset: b.flatOffset);
+
+                    checkUsage(a, usage, flatCountMismatchOK: true);
+                    checkUsage(b, usage);
+
+                    // Finally, if both sides are talking about the same region,
+                    //  the two usage masks, if provided, must intersect.
+                    if (left_usage.typeof -> Quals && b_path.len == a_path.len)
+                    {
+                        if !(usage & left_usage_abs)
+                        {
+                            ///////////////////////////////////////////////////////
+                            // MEANINGFUL FAILCASE test suite never arrives here //
+                            // BUG("// TODO FAILCASE //"); ////////////////////////
+                            ///////////////////////////////////////////////////////
+
+                            continue :EACH_B_PATH;
+                        }
+                    }
+                }
             }
 
             return true;
@@ -836,15 +914,22 @@ pub fn Lifetime_inter(a: Lifetime, b: Lifetime): Lifetime =
     return result;
 }
 
-pub fn Lifetime_hasInter(a: Lifetime, b: Lifetime): bool =
+pub fn Lifetime_hasInter(a: Lifetime, b: Lifetime,
+    left_usage?:  Quals or [],
+    right_usage?: Quals or []): bool =
 {
     merge(a, b,
 
         both: |_, sr_left, sr_right|
         {
             if (sr_left == sr_right
-                || sr_left == SR_empty || sr_right == SR_empty
-                || Paths_hasInter(sr_left, sr_right))
+
+                    ? left_usage.typeof -> [] || right_usage.typeof -> []
+                            || !!(left_usage & right_usage)
+
+                    : sr_left == SR_empty || sr_right == SR_empty
+                            || Paths_hasInter(sr_left, sr_right,
+                                            :left_usage, :right_usage))
             {
                 return true;
             }
