@@ -8123,6 +8123,59 @@ pub extern fn runTests()
         }
     `);
 
+    ZERO(`
+        struct Node     { items?: Node[]; target: int }
+        struct Extended { min: i32; node?: Node }
+
+        fn solve(root: Node, ref _extended: Extended)
+        {
+            noinline fn GET() _extended.node;
+            noinline fn EXT() _extended;
+
+            fn unorderedPrep_A(node: Node) {
+                ref o       = GET();
+                ref ext     = EXT();
+                ext.min     = 0x7fffffff.i32;
+                o           = node;
+            }
+
+            return unorderedPrep_A(root);
+        }
+
+        fn main() {
+            mut _extended: Extended;
+            solve(Node([], 11), :_extended);
+            return _extended.min == i32.MAX && _extended.node.target == 11 ? 0 : 1;
+        }
+    `);
+
+    ZERO(`
+        struct Child  { hello: int; irrelevant?: string };
+        struct Parent { world?: int; children?: Child[] };
+
+        fn test(ref parents: Parent[], t: int) {
+            fn getParent(index: int)    parents[index];
+            fn getChild(index: int)     getParent(index).children[index];
+
+            ref c = getChild(t);        c.hello++;
+            ref p = getParent(t);       p.world++;
+        }
+
+        fn main() {
+            mut parents = [ Parent(children: [ Child() ]) ];
+            test(parents, 0);
+
+            mut sum = 0;
+            fn count(what: <What>)
+                case (What.is::primitive)       sum += what.int;
+                case (What -> _[])              what.each(.count);
+                default for (fieldname i: What) what.i.count();
+
+            count(parents);
+            return sum - 2;
+        }
+    `);
+
     // /Borrow checker
 
 
