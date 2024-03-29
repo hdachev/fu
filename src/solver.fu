@@ -13242,21 +13242,21 @@ pub fn solve(
                     //  Keeping it around since it also doubles
                     //   as a test for types_mayAlias.
                     //
-                    // let approxAAR = Lifetime_AAR_hasFalsePositives && AAR;
-                    // if (approxAAR || SELF_TEST)
-                    // {
-                    //     let mayAlias    = types_mayAlias(t_left, t_sibling);
-                    //     if (!mayAlias)
-                    //     {
-                    //         approxAAR || BUG(
-                    //             "Reference_trackLocalRef: types_mayAlias fails for lt inter:"
-                    //                 ~ "\n\t\tt_left:    " ~ explainType(t_left, usage: true)
-                    //                 ~ "\n\t\tt_sibling: " ~ explainType(t_sibling, usage: true)
-                    //                 ~ "\n\t\tlt_inter:  " ~ Lifetime_inter(parents, sibling_parents));
+                    let approxAAR = Lifetime_AAR_hasFalsePositives && AAR;
+                    if (approxAAR || SELF_TEST)
+                    {
+                        let mayAlias    = types_mayAlias(t_left, t_sibling);
+                        if (!mayAlias)
+                        {
+                            approxAAR || BUG(
+                                "Reference_trackLocalRef: types_mayAlias fails for lt inter:"
+                                    ~ "\n\t\tt_left:    " ~ explainType(t_left, usage: true)
+                                    ~ "\n\t\tt_sibling: " ~ explainType(t_sibling, usage: true)
+                                    ~ "\n\t\tlt_inter:  " ~ Lifetime_inter(parents, sibling_parents));
 
-                    //         continue /*discard*/;
-                    //     }
-                    // }
+                            continue /*discard*/;
+                        }
+                    }
 
                     continue_keep();
                 }
