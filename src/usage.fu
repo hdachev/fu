@@ -29,6 +29,11 @@ pub fn getMaxUsage(flatCount: i32)
     return Quals(q_USAGE >> (q_USAGE_bitsize - flatCount).u32) & q_USAGE;
 }
 
+pub fn getRegionUsage(flatOffset: i32, flatCount: i32)
+{
+    return USAGE_shiftLeft(getMaxUsage(:flatCount), memberFlatOffset: flatOffset);
+}
+
 pub fn USAGE_setMaxUsage(ref type: Type, flatCount: i32)
 {
     type.quals = type.quals & q_TAGS | getMaxUsage(:flatCount);

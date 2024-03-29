@@ -13178,8 +13178,12 @@ pub fn solve(
             //
             siblings = siblings.Lifetime_process(|locid!sibling, continue_keep|
             {
+                let t_sibling       = sibling.nested.type;
+
                 let sibling_parents = flow.rg_parents.if(exists: sibling);
-                if (Lifetime_hasInter(parents, sibling_parents))
+                if (Lifetime_hasInter(parents, sibling_parents,
+                        left_usage:  t_left.usage,
+                        right_usage: t_sibling.usage))
                 {
                     // Doesn't seem to help with anything, only slows us down.
                     //  Keeping it around since it also doubles
@@ -13188,19 +13192,16 @@ pub fn solve(
                     // let approxAAR = Lifetime_AAR_hasFalsePositives && AAR;
                     // if (approxAAR || SELF_TEST)
                     // {
-                    //     let t_sibling   = sibling.nested.type;
-                    //
                     //     let mayAlias    = types_mayAlias(t_left, t_sibling);
                     //     if (!mayAlias)
                     //     {
                     //         approxAAR || BUG(
                     //             "Reference_trackLocalRef: types_mayAlias fails for lt inter:"
-                    //                 ~ "\n\t\tt_left:    " ~ explainType(t_left)
-                    //                 ~ "\n\t\tt_sibling: " ~ explainType(t_sibling)
+                    //                 ~ "\n\t\tt_left:    " ~ explainType(t_left, usage: true)
+                    //                 ~ "\n\t\tt_sibling: " ~ explainType(t_sibling, usage: true)
                     //                 ~ "\n\t\tlt_inter:  " ~ Lifetime_inter(parents, sibling_parents));
-                    //
-                    //         if (!mayAlias)
-                    //             continue /*discard*/;
+
+                    //         continue /*discard*/;
                     //     }
                     // }
 
