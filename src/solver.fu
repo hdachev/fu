@@ -13734,8 +13734,16 @@ pub fn solve(
                             // Do we see any aliasing here?
                             let unwound1 = bck_unwound[i1];
 
-                            if !(Lifetime_hasInter(unwound0, unwound1))
+                            if (SELF_TEST)
+                                host_arg0.usage == arg0.usage && host_arg1.usage == arg1.usage
+                                    || BUG("host_arg/arg.usage mismatch");
+
+                            if !(Lifetime_hasInter(unwound0, unwound1,
+                                    left_usage:  host_arg0.usage,
+                                    right_usage: host_arg1.usage))
+                            {
                                 return;
+                            }
 
                             // Soft risk check -
                             //  If neither is listed as a hard risk,
