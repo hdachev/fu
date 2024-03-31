@@ -477,6 +477,14 @@ namespace fu
         size_t max_batches = TaskStack_Worker_Count + 1;
 
 
+        // TODO go for a work stealing design at some point,
+        //  in the meantime without this we see very poor work distribution,
+        //   not ideal but a bit better than nothing.
+
+        max_batches = max_batches > 64 || max_batches == 1
+                    ? max_batches : 64;
+
+
         // Enforce max_batches.
 
         size_t batches = size / per_batch;
