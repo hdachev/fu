@@ -14257,19 +14257,23 @@ pub fn solve(
         {
             shadow let flow = void;
 
-            refs.Lifetime_each: |locid!write, region!write_region|
+            refs.Lifetime_each: |locid!write, region!write_region, offset1!|
             {
                 write || BUG();
                 let write_vtype = nested(write).type.vtype;
 
                 for (mut roc = 0; roc < 2; roc++)
                 {
+                    let start = roc && offset1;
+
                     shadow let roc = roc ? refs : consts;
-                    roc.Lifetime_each: |locid!read, region!read_region|
+                    roc.Lifetime_each(:start): |locid!read, region!read_region|
                     {
-                        read || BUG();
-                        if (read == write)
-                            continue;
+                        if (SELF_TEST)
+                        {
+                            read || BUG();
+                            read == write && BUG();
+                        }
 
                         let read_vtype = nested(read).type.vtype;
 

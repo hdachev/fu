@@ -1021,10 +1021,11 @@ pub fn Lifetime_add(ref l: Lifetime, r: Lifetime,
 
 //
 
-pub fn Lifetime_each(lifetime: Lifetime, each)
+pub fn Lifetime_each(lifetime: Lifetime, each, start!?: <Start>)
 {
+    mut offset = Start -> [] || start <= 0 ? 0 : start;
+
     let chars = lifetime.uni0n;
-    mut offset = 0;
 
     while (offset < chars.len)
     {
@@ -1048,7 +1049,10 @@ pub fn Lifetime_each(lifetime: Lifetime, each)
             r_raw?:     chars[offset0 .. sr],
             paths?:     chars[sr .. offset],
 
-            isOnly?:    !offset0 && offset == chars.len);
+            isOnly?:    !offset0 && offset == chars.len,
+
+            offset0?:   offset0,
+            offset1?:   offset);
     }
 }
 
