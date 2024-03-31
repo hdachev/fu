@@ -5,9 +5,9 @@
 template <typename T>
 void cow_vec_test(int cap0, int cap1)
 {
-    using vec = fu_VEC<T>;
+    using vec = fu::vec<T>;
 
-    const int SMALL_CAPA = fu_VEC<T>::SMALL_CAPA;
+    const int SMALL_CAPA = fu::vec<T>::SMALL_CAPA;
 
     const size_t HEADER = sizeof(fu_ARC) / sizeof(T);
 
@@ -244,10 +244,10 @@ void cow_vec_tests()
     }
 
     //
-    fu_STR hey = fu_TO_STR("you");
-    hey += " cruel "_fu + fu_TO_STR("world");
+    fu::str hey = fu::to_str("you");
+    hey += " cruel "_fu + fu::to_str("world");
 
-    fu_STR hey2 = fu_TO_STR("you cruel world");
+    fu::str hey2 = fu::to_str("you cruel world");
 
     assert(hey == hey2);
 

@@ -13,7 +13,7 @@ thread_local int THREAD_ID = THREAD_ID_COUNTER.fetch_add(+1);
 
 static void TaskStack_Test()
 {
-    fu_VEC<int> data;
+    fu::vec<int> data;
     data.resize(1024 * 1024);
 
     int* DATA = data.data_mut();
