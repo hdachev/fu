@@ -5788,7 +5788,26 @@ pub extern fn runTests()
         }
     `);
 
-    TODO_disjoint(currently: "arguments test:w1 and test:w0 14:21+1 both alias mut w 13:17+1", `
+    ZERO(`
+        nocopy struct Woot { x: i32[]; y: i32[] };
+
+        fn test(ref w0: Woot, ref w1: Woot) {
+            ref x = w0.x;
+            <fail arguments test:w1 and test:w0 14:21+1 both alias mut w 13:17+1>
+            ref y = w1.x; <pass/>
+            ref y = w1.y; </fail>
+            y ~= y;
+            x ~= x; // <- This is the only diff wrt test below, x ~= x vs x ~= y.
+        }
+
+        fn main() {
+            mut w: Woot;
+            test(w, w);
+            return w.x.len;
+        }
+    `);
+
+    ZERO(`
         nocopy struct Woot { x: i32[]; y: i32[] };
 
         fn test(ref w0: Woot, ref w1: Woot) {
@@ -7487,7 +7506,7 @@ pub extern fn runTests()
         }
     `);
 
-    TODO_disjoint(currently: "both alias ref arg ss 6:69+2", `
+    ZERO(`
         nocopy struct PrimArray { prims: i32[]; }
         nocopy struct Node { index: i32; items?: Node[]; }
         nocopy struct SolverState { _root: Node; _prim_arrays: PrimArray[] }
@@ -7509,7 +7528,7 @@ pub extern fn runTests()
         fn main() {
             mut ss = SolverState(Node(), [ PrimArray() ]);
             ss.AAR_typesCantAlias_lifetimesIntersect();
-            return ss._eph.len == 1 && ss._eph[0].things.len == 1 ? 0 : 1;
+            return ss._prim_arrays.len == 1 && ss._prim_arrays[0].prims.len == 1 ? 0 : 1;
         }
     `);
 
@@ -19352,7 +19371,7 @@ pub extern fn runTests()
         }
     `);
 
-    TODO_borrowck(currently: "Both alias mc 10:51+2", `
+    TODO_borrowck(currently: "Both alias mc 10:51+2 m_and_c_cant_alias_001:c is ref-returned", `
         struct S { hey: i32[]; };
 
         fn m_and_c_cant_alias_001(ref m!: S, c!: S) {
