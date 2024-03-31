@@ -8196,6 +8196,35 @@ pub extern fn runTests()
         }
     `);
 
+    ZERO(`
+        struct Pad4 { a: int; b: int; c: int; d: int };
+        struct Pad16 { a: Pad4; b: Pad4; c: Pad4; d: Pad4 };
+        struct Pad64 { a: Pad16; b: Pad16; c: Pad16; d: Pad16 };
+        struct Pad256 { a: Pad64; b: Pad64; c: Pad64; d: Pad64 };
+
+        struct Data {
+            pad_front?: Pad256;
+            ints: int[];
+            pad_back?: Pad256;
+        }
+
+        fn main() {
+            mut data = Data(ints: [ 1, 2, 3, 4, 5, 6, 7, 8, 9, -1 ]);
+
+            <fail cannot access ref fin 22:22+3 ref inval (data|v) (20:27+2|20:43+2)>
+            ref <pass/>
+            mut </fail> fin = data.ints[data.ints.len - 1];
+    <alt>
+            ref v = data.ints;
+            for (mut i = 0; i < 8; i++) v ~= v.map(|w| w + 1);
+    <alt/>
+            for (mut i = 0; i < 8; i++)
+                data.ints ~= data.ints.map(|v| v + 1);
+    </alt>
+            return ++fin;
+        }
+    `);
+
     // /Borrow checker
 
 
