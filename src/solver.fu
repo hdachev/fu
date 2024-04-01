@@ -229,7 +229,7 @@ pub fn solve(
         used_again:         LocidSet;
 
         // BCK & COW.
-        ever_written:       LocidSet;
+        ever_written:       LocidMap(Quals);
 
         // COW.
         mayEscapeVia:       MayEscapeVia;
@@ -434,6 +434,16 @@ pub fn solve(
     inline fn clear(ref map: LocidMap(_))
         map._values.clear();
 
+    inline fn has(ref map: LocidMap(_), locid: i32)
+        return !!map.if(exists: locid);
+
+    fn clear(ref map: LocidMap(_), start!: i32) {
+        let args_neg = _current_fn.args_neg;
+        let i = start + args_neg;
+        if (map._values.len > i)
+            map._values.shrink(i);
+    }
+
     postfix fn [] (ref map: LocidMap(_), locid: i32) {
         let args_neg = _current_fn.args_neg;
         return map._values[args_neg + locid];
@@ -447,6 +457,21 @@ pub fn solve(
     fn ensure(ref map: LocidMap(_), exists!locid: i32) {
         let args_neg = _current_fn.args_neg;
         return map._values.ensure(exists: args_neg + locid);
+    }
+
+    fn add_once(ref map: LocidMap(Quals), locid: i32, quals: Quals) {
+        ref v = map.ensure(exists: locid);
+        let v0 = v;
+        v |= quals;
+        return v != v0;
+    }
+
+    infix fn |=(ref dest: LocidMap(Quals), src: LocidMap(Quals)) {
+        for (mut i = src._values.len; i --> 0; ) {
+            shadow ref src = src._values[i];
+            if (src)
+                dest._values.ensure(exists: i) |= src;
+        }
     }
 
 
@@ -3993,17 +4018,23 @@ pub fn solve(
         //   which A] is not flow-sensitive
         //     and B] seems to be messed around with by propagateType(loop)
         //
-        fn callarg_trackWrites(lt: Lifetime)
+        fn callarg_trackWrites(lt: Lifetime, usage: Quals)
         {
-            lt.Lifetime_each: |locid|
+            lt.Lifetime_each: |locid, paths|
             {
-                if (locid &&
-                    _current_fn.ever_written.add_once(locid))
-                {
-                    shadow let t = nested(locid);
+                if (!locid)
+                    continue;
 
-                    callarg_trackWrites(
-                        Lifetime_climbType(t).lifetime);
+                shadow let usage = Lifetime_shiftUsage(:usage, :paths);
+                if (_current_fn.ever_written.add_once(locid, usage))
+                {
+                    let t = nested(locid);
+
+                    if (SELF_TEST)
+                        t.type.usage & usage == usage || BUG(
+                            "callarg_trackWrites: written_to(" ~ usage ~ ") quals(" ~ t.type.usage ~ ") " ~ t);
+
+                    callarg_trackWrites(Lifetime_climbType(t).lifetime, usage);
 
                     if (t.isArg)
                         _current_fn.postdom.mayEscapeVia.add(:locid);
@@ -4072,7 +4103,7 @@ pub fn solve(
 
             let host_args = ext.args;
             for (mut i = 0; i < host_args.len; i++)
-                if (host_args[i].flags & F_WRITTEN_TO)
+                if (host_args[i].written_to)
                     return false;
 
             return true;
@@ -4726,8 +4757,14 @@ pub fn solve(
 
                     arg.propagateType(host_arg, :relax_mask);
 
-                    if (host_arg.flags & F_WRITTEN_TO)
-                        callarg_trackWrites(arg.type.lifetime);
+                    if (host_arg.written_to)
+                    {
+                        if (SELF_TEST)
+                            host_arg.written_to & arg.usage == host_arg.written_to
+                                || BUG("propagateType(call) host_arg.written_to(" ~ host_arg.written_to ~ ") arg.usage(" ~ arg.usage ~ ")");
+
+                        callarg_trackWrites(arg.type.lifetime, host_arg.written_to);
+                    }
 
                     if !(host_arg.flags & F_LT_RETURNED)
                     {
@@ -5328,7 +5365,7 @@ pub fn solve(
                 // Forgot about this one!
                 //  Caught it when we got rid of Events.ever_written
                 if (item.is_mutref)
-                    callarg_trackWrites(item.type.lifetime);
+                    callarg_trackWrites(item.type.lifetime, item.type.usage);
             }
 
             // Effect pragmas.
@@ -6568,9 +6605,12 @@ pub fn solve(
             // Wider argument must be assignable to narrower argument.
             TEST_Assignable(host: n.type, w.type, "n.type !<- w.type (" ~ n ~ ")");
 
-            // Narrower can't write if wider doesn't.
-            if (n.flags & F_WRITTEN_TO)
-                w.flags & F_WRITTEN_TO || BUG("n.flags & F_WRITTEN_TO (" ~ n ~ ")");
+            // Narrower can't write if wider doesn't,
+            //  which is the same as saying that union(narrow, wide) == wide
+            //   (narrow mentions nothing that wide doesn't).
+            //
+            let union = n.written_to | w.written_to;
+            union == w.written_to || BUG("n.written_to(" ~ n.written_to ~ ") w.written_to(" ~ w.written_to ~ ") union(" ~ union ~ ")");
 
             // Narrower can't miss anything from wider's may_invalidate/may_alias masks.
             n.may_invalidate.has_missing(w.may_invalidate) && BUG("n.may_invalidate less (" ~ n ~ ")");
@@ -7614,15 +7654,18 @@ pub fn solve(
 
             // ARGUMENTS AT RISK ////////////////////////
             let argTarget   = argNode.target;
-            let written_via = !isUnspec
+            let written_to  = !isUnspec
                 && argNode.type.is_mutref
-                && (isNative    ? !argNode.type.is_zst
-                                : _current_fn.ever_written.has(argTarget.locid));
+                && (isNative    ? argNode.type.usage
+                                : _current_fn.ever_written.if(exists: argTarget.locid));
 
             mut soft_risk: bitset::BitSet;
             mut hard_risk: bitset::BitSet;
-            if (written_via)
+            if (written_to)
             {
+                written_to & argNode.type.usage == written_to || BUG(
+                    "doUpdateScope written_to(" ~ written_to ~ ") argNode.usage(" ~ argNode.type.usage ~ "): " ~ argNode.target);
+
                 numArgsWritten++;
 
                 if (isNative)
@@ -7684,12 +7727,12 @@ pub fn solve(
             // TODO FAILCASE
             // TODO FAILCASE these dont work for inline fns
             // TODO FAILCASE
-            if (asserts & A_PURE && written_via)
+            if (asserts & A_PURE && written_to)
                 fail(backtrack: "pure", target ~ " is not pure, writes to " ~ argTarget ~ ":\n"
                     ~ qSTACK(:target, :argTarget.locid,
                                 node: _current_fn.out));
 
-            if (asserts & A_PURE_CTX && isImplicit && written_via)
+            if (asserts & A_PURE_CTX && isImplicit && written_to)
                 fail(backtrack: "purectx", target ~ " is not purectx, writes to " ~ argTarget ~ ":\n"
                     ~ qSTACK(:target, :argTarget.locid,
                                 node: _current_fn.out));
@@ -7723,8 +7766,8 @@ pub fn solve(
             mut arg = Argument(
                 :name,
                 :autocall,
-                :argNode.flags | (written_via && F_WRITTEN_TO)
-                               | (cow_inside  && F_COW_INSIDE),
+                :written_to,
+                :argNode.flags | (cow_inside && F_COW_INSIDE),
                 :argNode.type,
                 default: !isImplicit && argNode.items && argNode.items[LET_INIT],
                 target: argTarget,
@@ -11403,7 +11446,7 @@ pub fn solve(
         if (args.len == host_args.len) for (mut i = 0; i < host_args.len; i++)
         {
             let host_arg = host_args[i];
-            if !(host_arg.flags & F_WRITTEN_TO)
+            if !(host_arg.written_to)
                 continue;
 
             let arg = args[i];
@@ -11456,7 +11499,7 @@ pub fn solve(
                 }
                 else
                 {
-                    if !(host_arg.flags & F_WRITTEN_TO)
+                    if !(host_arg.written_to)
                         continue;
                 }
 
@@ -13081,7 +13124,7 @@ pub fn solve(
                         if (arg.lifetime.Lifetime_has(:locid))
                         {
                             let host_arg = node.target.args[i];
-                            if (host_arg.flags & F_WRITTEN_TO)
+                            if (host_arg.written_to)
                                 return node.token.addr_and_snippet
                                      ~ "\n\tAt call to " ~ node.target
                                      ~ qSTACK(node.target, position: i);
@@ -13116,6 +13159,9 @@ pub fn solve(
             let left = Lifetime_getRefLocid_unlessStatic(t_left.lifetime);
             if (!left)
                 return;
+
+            //
+            let left_ever_written = _current_fn.ever_written.if(exists: left);
 
             //
             shadow let right = right.Lifetime_process(|locid, continue_keep|
@@ -13179,11 +13225,18 @@ pub fn solve(
             siblings = siblings.Lifetime_process(|locid!sibling, continue_keep|
             {
                 let t_sibling       = sibling.nested.type;
+                let sibling_written = _current_fn.ever_written.if(exists: sibling);
 
                 let sibling_parents = flow.rg_parents.if(exists: sibling);
-                if (Lifetime_hasInter(parents, sibling_parents,
-                        left_usage:  t_left.usage,
-                        right_usage: t_sibling.usage))
+                if (left_ever_written &&
+                        Lifetime_hasInter(parents, sibling_parents,
+                            left_usage:  left_ever_written,
+                            right_usage: t_sibling.usage)
+
+                    || sibling_written &&
+                        Lifetime_hasInter(parents, sibling_parents,
+                            left_usage:  t_left.usage,
+                            right_usage: sibling_written))
                 {
                     // Doesn't seem to help with anything, only slows us down.
                     //  Keeping it around since it also doubles
@@ -13584,7 +13637,7 @@ pub fn solve(
 
                     num_ref_args++;
 
-                    if (host_arg.flags & F_WRITTEN_TO)
+                    if (host_arg.written_to)
                     {
                         if (SELF_TEST) {
                             host_arg.is_mutref || BUG(host_arg.name.human.qID ~ ": host_arg.written but !host_arg.is_mutref");
@@ -13716,11 +13769,11 @@ pub fn solve(
                                             if !(region1 && region0 != region1)
                                                 continue;
 
-                                            if (host_arg0.flags & F_WRITTEN_TO)
+                                            if (host_arg0.written_to)
                                                 RESOLVE_byAAR(write: region0, read: region1,
                                                     trySoft: host_arg0.may_alias.has(i1) && arg1.softRiskSafe);
 
-                                            if (host_arg1.flags & F_WRITTEN_TO)
+                                            if (host_arg1.written_to)
                                                 RESOLVE_byAAR(read: region0, write: region1,
                                                     trySoft: host_arg1.may_alias.has(i0) && arg0.softRiskSafe);
                                         }
@@ -14866,7 +14919,7 @@ pub fn solve(
 
             _argPos_1b.ensure(exists: (-1) - host_arg.target.locid) = i + 1;
 
-            let may_alias = host_arg.flags & F_WRITTEN_TO && host_arg.may_alias;
+            let may_alias = host_arg.written_to && host_arg.may_alias;
             if (may_alias)
             {
                 if (SELF_TEST)
@@ -15058,7 +15111,7 @@ pub fn solve(
                         //  is happening within the argument list of
                         //   another call with unsequenced arguments.
                         //
-                        if (host_arg.flags & F_WRITTEN_TO)
+                        if (host_arg.written_to)
                         {
                             outer.writes.flag(arg.type.lifetime);
                             // ^^^^^^^^^

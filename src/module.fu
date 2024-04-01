@@ -269,6 +269,11 @@ struct Argument
     flags?:         Flags;
     target?:        Target;
 
+    // Original concept was a full-fledged lifetime here,
+    //  but we're starting off with a simple usage mask.
+    //
+    written_to?:    Quals;
+
     // Argument A may safely invalidate argument B
     //  when all writes to A happen after the last use of B.
     //

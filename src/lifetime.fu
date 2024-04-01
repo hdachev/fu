@@ -535,9 +535,9 @@ fn Paths_hasInter(a: byte[..], b: byte[..],
 
                     usageBits <= a.flatCount
                         || usagePopcount <= a.flatCount
-                        || BUG("Region flatOffset(" ~ a.flatOffset  ~ ")"
-                                ~     " flatCount(" ~ a.flatCount   ~ ")"
-                                ~     " usageBits(" ~ usageBits     ~ ")"
+                        || BUG("Paths_hasInter: flatOffset(" ~ a.flatOffset ~ ")"
+                                ~ " flatCount(" ~ a.flatCount ~ ")"
+                                ~ " usageBits(" ~ usageBits ~ ")"
                                 ~ " usagePopcount(" ~ usagePopcount ~ ")");
                 }
 
@@ -606,6 +606,47 @@ fn Paths_hasInter(a: byte[..], b: byte[..],
     }
 
     return false;
+}
+
+
+//
+
+pub fn Lifetime_shiftUsage(paths: byte[..], usage: Quals)
+{
+    mut result: Quals;
+
+    mut offset = 0;
+    walkPaths(paths, offset, onSubRegion:
+        |isFirstSubRegion, isLastSubRegion, flatCount, flatOffset|
+    {
+        if (!isFirstSubRegion)
+            continue;
+
+        if (!isLastSubRegion)
+        {
+            result |= usage::getRegionUsage(:flatOffset, :flatCount);
+        }
+        else
+        {
+            let usageBits       = usage::q_USAGE_bitsize - usage.unsigned.bit::clz;
+            let usagePopcount   = usage.unsigned.bit::popcount;
+
+            usageBits <= flatCount
+                || usagePopcount <= flatCount
+                || BUG("Lifetime_shiftUsage: flatOffset(" ~ flatOffset ~ ")"
+                        ~ " flatCount(" ~ flatCount ~ ")"
+                        ~ " usageBits(" ~ usageBits ~ ")"
+                        ~ " usagePopcount(" ~ usagePopcount ~ ")");
+
+            shadow let usage = usage::USAGE_structUsageFromFieldUsage(
+                usage,
+                memberFlatOffset: flatOffset);
+
+            result |= usage;
+        }
+    });
+
+    return result;
 }
 
 
