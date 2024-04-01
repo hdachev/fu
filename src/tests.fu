@@ -12731,6 +12731,23 @@ pub extern fn runTests()
         }
     `);
 
+    ZERO(`
+        struct Hello(type A, type B) { a: A; b: B };
+        fn main() {
+            mut h: Hello(<fail unexpected , 4:26+1><pass/>int</fail>, int);
+            return h.a + h.b;
+        }
+    `);
+
+    ZERO(`
+        struct Hello(type A, type B) { a: A; b: B };
+        fn main() {
+            mut h: Hello(i<fail missing comma 6:0+0><pass/>nt, int);
+            return h.a + h.b;
+        }
+                           </fail>
+    `);
+
     // /quite right
 
 

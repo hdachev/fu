@@ -1717,10 +1717,17 @@ pub fn parse(
 
         _TODO_FIX_dollarOk = allowTypeParams;
 
-        mut type        =
-            xqmark && !optional && (optional = tryConsume("op", "?:"))
-                ? parseTypeAnnot(:allowTypeUnions)
-                : tryPopTypeAnnot(:allowTypeUnions);
+        // TODO INVESTIGATE Something here looks like a clang bug,
+        //  if isOpt here is used as a temporary within the mut type init below,
+        //   and an exception is thrown, we crash in release -
+        //    looks like the Token temporary's destructor blows up,
+        //     unclear if this is somehow my fault, maybe it's a noexcept thing?
+        //
+        let isOpt       = xqmark && !optional && (optional = tryConsume("op", "?:"));
+
+        mut type        = isOpt
+            ? parseTypeAnnot(:allowTypeUnions)
+            : tryPopTypeAnnot(:allowTypeUnions);
 
         _TODO_FIX_dollarOk = false;
 
