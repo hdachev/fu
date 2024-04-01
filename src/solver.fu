@@ -13791,9 +13791,15 @@ pub fn solve(
                                 host_arg0.usage == arg0.usage && host_arg1.usage == arg1.usage
                                     || BUG("host_arg/arg.usage mismatch");
 
-                            if !(Lifetime_hasInter(unwound0, unwound1,
-                                    left_usage:  host_arg0.usage,
-                                    right_usage: host_arg1.usage))
+                            if  !( host_arg0.written_to
+                                    && Lifetime_hasInter(unwound0, unwound1,
+                                        left_usage:  host_arg0.written_to,
+                                        right_usage: host_arg1.usage)
+
+                                || host_arg1.written_to
+                                    && Lifetime_hasInter(unwound0, unwound1,
+                                        left_usage:  host_arg0.usage,
+                                        right_usage: host_arg1.written_to))
                             {
                                 return;
                             }
