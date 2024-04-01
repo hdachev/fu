@@ -8225,6 +8225,33 @@ pub extern fn runTests()
         }
     `);
 
+    ZERO(`
+        fn ensure(ref a: <T>[], exists!i: int) {
+            if (a.len <= i) a.grow(i + 1);
+            return a[i];
+        }
+
+        struct Thing4   { a: int; b: int; c: int; d: int }
+        struct Thing16  { a: Thing4; b: Thing4; c: Thing4; d: Thing4 }
+        struct Thing64  { a: Thing16; b: Thing16; c: Thing16; d: Thing16 }
+        struct Thing256 { a: Thing64; b: Thing64; c: Thing64; d: Thing64 }
+
+        struct SolverState {
+            _pad_before:    Thing256;
+            _warnings:      int[];
+            _pad_after:     Thing256;
+        }
+
+        fn search(using ref ss: SolverState, t: int)
+            _warnings.ensure(exists: t) ||= t;
+
+        fn main() {
+            mut ss: SolverState;
+            ss.search(0);
+            ss._warnings.len - 1
+        }
+    `);
+
     // /Borrow checker
 
 
