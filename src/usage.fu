@@ -98,3 +98,15 @@ pub fn USAGE_fieldUsageFromStructUsage(mut fieldType!slot: Type, structUsage: Qu
     slot.quals = USAGE_fieldUsageFromStructUsage(:slot.quals, :structUsage, :memberFlatOffset, :memberFlatCount);
     return slot;
 }
+
+
+//
+
+pub struct RWQuals { usage: Quals; written_to: Quals };
+
+pub fn USAGE_structUsageFromFieldUsage(rw: RWQuals, memberFlatOffset: i32)
+{
+    return RWQuals(
+        usage:      rw.usage.USAGE_structUsageFromFieldUsage(:memberFlatOffset),
+        written_to: rw.written_to.USAGE_structUsageFromFieldUsage(:memberFlatOffset));
+}

@@ -500,8 +500,8 @@ fn Paths_inter(ref str: byte[], a: byte[..], b: byte[..])
 //
 
 fn Paths_hasInter(a: byte[..], b: byte[..],
-    left_usage?:    Quals or [],
-    right_usage?:   Quals or [])
+    rw_left?:  usage::RWQuals or [],
+    rw_right?: usage::RWQuals or [])
 {
     a.parsePaths_each: |a_path|
     {
@@ -526,76 +526,83 @@ fn Paths_hasInter(a: byte[..], b: byte[..],
                     continue :EACH_B_PATH;
             }
 
-            fn checkUsage(shadow a: SubRegion, usage: Quals, lax flatCountMismatchOK!?: bool)
+            lax fn TEST_verifyUsageBitRanges(lax shadow a: SubRegion, lax rw: usage::RWQuals)
             {
-                if (SELF_TEST && !flatCountMismatchOK)
-                {
-                    let usageBits       = usage::q_USAGE_bitsize - usage.unsigned.bit::clz;
-                    let usagePopcount   = usage.unsigned.bit::popcount;
-
-                    usageBits <= a.flatCount
-                        || usagePopcount <= a.flatCount
-                        || BUG("Region flatOffset(" ~ a.flatOffset  ~ ")"
-                                ~     " flatCount(" ~ a.flatCount   ~ ")"
-                                ~     " usageBits(" ~ usageBits     ~ ")"
-                                ~ " usagePopcount(" ~ usagePopcount ~ ")");
-                }
+                if (!SELF_TEST)
+                    return;
 
                 let range = usage::getRegionUsage(:a.flatOffset, :a.flatCount);
 
-                if (SELF_TEST && !flatCountMismatchOK)
-                    range & usage == usage || BUG("range(" ~ range ~ ") usage(" ~ usage ~ ")");
+                // All quals.uage bits must be contained within the lifetime subregion,
+                range & rw.usage == rw.usage
+                    //
+                    // ... at least some usage bits must be set,
+                    && range & rw.usage
+                    //
+                    // ... and all rw.written_to must be a subset rw.usage.
+                    && rw.written_to & rw.usage == rw.written_to
+                        || BUG("range(" ~ range ~ ") rw.usage(" ~ rw.usage ~ ") rw.written_to(" ~ rw.written_to ~ ")");
+            }
 
-                if !(range & usage)
+            fn checkUsage(shadow a: SubRegion, rw: Quals)
+            {
+                let range = usage::getRegionUsage(:a.flatOffset, :a.flatCount);
+                if !(range & rw)
                     continue :EACH_B_PATH;
 
                 // println("USAGE INTERSECTS range(" ~ range ~ ") usage(" ~ usage ~ ") inter(" ~ (range & usage) ~ ")");
             }
 
-            lax mut left_usage_abs: Quals;
+            //
+            lax mut abs_left: usage::RWQuals;
 
-            if (left_usage.typeof -> Quals)
+            if !(rw_left.typeof -> [])
             {
                 // We can't use left-usage when a_path is longer than b-path,
                 //  meaning a-path is not fully dereferenced on intersection.
                 //
                 if (a_path.len <= b_path.len)
                 {
-                    shadow let usage = usage::USAGE_structUsageFromFieldUsage(
-                        left_usage,
-                        memberFlatOffset: a.flatOffset);
+                    abs_left = usage::USAGE_structUsageFromFieldUsage(
+                        rw_left, memberFlatOffset: a.flatOffset);
 
-                    checkUsage(a, usage);
-                    checkUsage(b, usage, flatCountMismatchOK: true);
+                    TEST_verifyUsageBitRanges(a, abs_left);
 
-                    if (right_usage.typeof -> Quals)
-                        left_usage_abs = usage;
+                    checkUsage(b, rw_right.typeof -> [] || rw_right.written_to
+                        ? abs_left.usage
+                        : abs_left.written_to);
                 }
             }
 
-            if (right_usage.typeof -> Quals)
+            if !(rw_right.typeof -> [])
             {
                 if (b_path.len <= a_path.len)
                 {
-                    shadow let usage = usage::USAGE_structUsageFromFieldUsage(
-                        right_usage,
-                        memberFlatOffset: b.flatOffset);
+                    let abs_right = usage::USAGE_structUsageFromFieldUsage(
+                        rw_right, memberFlatOffset: b.flatOffset);
 
-                    checkUsage(a, usage, flatCountMismatchOK: true);
-                    checkUsage(b, usage);
+                    TEST_verifyUsageBitRanges(b, abs_right);
+
+                    checkUsage(a, rw_left.typeof -> [] || rw_left.written_to
+                        ? abs_right.usage
+                        : abs_right.written_to);
 
                     // Finally, if both sides are talking about the same region,
                     //  the two usage masks, if provided, must intersect.
-                    if (left_usage.typeof -> Quals && b_path.len == a_path.len)
+                    if !(rw_left.typeof -> [])
                     {
-                        if !(usage & left_usage_abs)
+                        if (b_path.len == a_path.len)
                         {
-                            ///////////////////////////////////////////////////////
-                            // MEANINGFUL FAILCASE test suite never arrives here //
-                            // BUG("// TODO FAILCASE //"); ////////////////////////
-                            ///////////////////////////////////////////////////////
+                            if !(abs_right.written_to & abs_left.usage ||
+                                 abs_left.written_to & abs_right.usage)
+                            {
+                                ///////////////////////////////////////////////////////
+                                // MEANINGFUL FAILCASE test suite never arrives here //
+                                // BUG("// TODO FAILCASE //"); ////////////////////////
+                                ///////////////////////////////////////////////////////
 
-                            continue :EACH_B_PATH;
+                                continue :EACH_B_PATH;
+                            }
                         }
                     }
                 }
@@ -606,6 +613,47 @@ fn Paths_hasInter(a: byte[..], b: byte[..],
     }
 
     return false;
+}
+
+
+//
+
+pub fn Lifetime_shiftUsage(paths: byte[..], usage: Quals)
+{
+    mut result: Quals;
+
+    mut offset = 0;
+    walkPaths(paths, offset, onSubRegion:
+        |isFirstSubRegion, isLastSubRegion, flatCount, flatOffset|
+    {
+        if (!isFirstSubRegion)
+            continue;
+
+        if (!isLastSubRegion)
+        {
+            result |= usage::getRegionUsage(:flatOffset, :flatCount);
+        }
+        else
+        {
+            let usageBits       = usage::q_USAGE_bitsize - usage.unsigned.bit::clz;
+            let usagePopcount   = usage.unsigned.bit::popcount;
+
+            usageBits <= flatCount
+                || usagePopcount <= flatCount
+                || BUG("Lifetime_shiftUsage: flatOffset(" ~ flatOffset ~ ")"
+                        ~ " flatCount(" ~ flatCount ~ ")"
+                        ~ " usageBits(" ~ usageBits ~ ")"
+                        ~ " usagePopcount(" ~ usagePopcount ~ ")");
+
+            shadow let usage = usage::USAGE_structUsageFromFieldUsage(
+                usage,
+                memberFlatOffset: flatOffset);
+
+            result |= usage;
+        }
+    });
+
+    return result;
 }
 
 
@@ -915,21 +963,26 @@ pub fn Lifetime_inter(a: Lifetime, b: Lifetime): Lifetime =
 }
 
 pub fn Lifetime_hasInter(a: Lifetime, b: Lifetime,
-    left_usage?:  Quals or [],
-    right_usage?: Quals or []): bool =
+    rw_left?:  usage::RWQuals or [],
+    rw_right?: usage::RWQuals or []): bool =
 {
+    if !(rw_left.typeof -> [] || rw_right.typeof -> [])
+        if !(rw_left.written_to || rw_right.written_to)
+            return false;
+
     merge(a, b,
 
         both: |_, sr_left, sr_right|
         {
             if (sr_left == sr_right
 
-                    ? left_usage.typeof -> [] || right_usage.typeof -> []
-                            || !!(left_usage & right_usage)
+                    ? rw_left.typeof -> [] || rw_right.typeof -> []
+                            || !!(rw_left.written_to & rw_right.usage ||
+                                  rw_right.written_to & rw_left.usage)
 
                     : sr_left == SR_empty || sr_right == SR_empty
-                            || Paths_hasInter(sr_left, sr_right,
-                                            :left_usage, :right_usage))
+                            || Paths_hasInter(sr_left,  sr_right,
+                                             :rw_left, :rw_right))
             {
                 return true;
             }

@@ -8031,7 +8031,7 @@ pub extern fn runTests()
         }
     `);
 
-    TODO_disjoint(currently: "both argument alias mut ab 9:17+2", `
+    ZERO(`
         struct TwoArrays { a: i32[]; b: i32[] };
         noinline fn what(ref arr: i32[], ref w: TwoArrays) {
             w.b ~= w.a;
