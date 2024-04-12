@@ -6221,7 +6221,7 @@ pub extern fn runTests()
 
     ZERO(`
         struct HasVec { x: i32[] };
-        inline fn last(x: i32[]) x[x.len - 1];
+        inline fn Last(x: i32[]) x[x.len - 1];
 
         <alt>
         inline                                                  ;; PointlessLocal
@@ -6240,7 +6240,7 @@ pub extern fn runTests()
 
         fn main() {
             mut x = HasVec([ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 ]);
-            return will_return_value(x).last/*9*/ - x.x.last/*10*/ + 1;
+            return will_return_value(x).Last/*9*/ - x.x.Last/*10*/ + 1;
         }
     `);
 
@@ -11453,12 +11453,12 @@ pub extern fn runTests()
     `);
 
     ZERO(`
-        fn first(s: $T[..]) s.len && s[0];
+        fn First(s: $T[..]) s.len && s[0];
         struct Node { items: Node[] }
 
         fn tryFirst(node: Node)
             node.items
-                ? tryFirst(node.items.first)
+                ? tryFirst(node.items.First)
                 : node;
 
         fn main()
@@ -11468,12 +11468,12 @@ pub extern fn runTests()
     `);
 
     ZERO(`
-        fn first(s: $T[..]) s.len && s[0];
+        fn First(s: $T[..]) s.len && s[0];
         struct Node { value: i32; items: Node[] }
 
         fn tryFirst(node: Node)
             node.items
-                ? tryFirst(node.items.first)
+                ? tryFirst(node.items.First)
                 : node;
 
         fn main()
@@ -11483,16 +11483,16 @@ pub extern fn runTests()
     `);
 
     ZERO(`
-        fn first(s: $T[..]) s.len && s[0];
-        fn last (s: $T[..]) s.len && s[s.len - 1];
+        fn First(s: $T[..]) s.len && s[0];
+        fn Last (s: $T[..]) s.len && s[s.len - 1];
         struct Node { value: i32; items: Node[] }
 
         fn tryFirst(node: Node)
-            node.items  ? tryLast(node.items.first)
+            node.items  ? tryLast(node.items.First)
                         : node;
 
         fn tryLast(node: Node)
-            node.items  ? tryFirst(node.items.last)
+            node.items  ? tryFirst(node.items.Last)
                         : node;
 
         fn main()
@@ -13146,7 +13146,7 @@ pub extern fn runTests()
     `);
 
     ZERO(`
-        fn only(s: $T[]) s.len == 1 ? s[0] : throw ("len != 1: " ~ s.len);
+        fn Only(s: $T[]) s.len == 1 ? s[0] : throw ("len != 1: " ~ s.len);
 
         struct Node       { kind: string; };
         struct SolvedNode { kind: string; };
@@ -13159,7 +13159,7 @@ pub extern fn runTests()
 
         // the '|| throw' introduces a bullshit lambda during codegen,
         //  which misreturns a dangling reference to its own frame.
-        fn solveDeclExpr(n: Node) solveNodes([ n ]).only || throw ("!only");
+        fn solveDeclExpr(n: Node) solveNodes([ n ]).Only || throw ("!only");
 
         fn main() solveDeclExpr(Node("a")).kind.len - 1;
     `);
@@ -13520,38 +13520,38 @@ pub extern fn runTests()
     `);
 
     ZERO(`
-        fn if_first(a: $T[]) a && a[0];
-        fn hello(a: i32[]) a.if_first;
+        fn ifFirst(a: $T[]) a && a[0];
+        fn hello(a: i32[]) a.ifFirst;
         fn main() hello([ 3 ]) - 3;
     `);
 
     ZERO(`
-        fn if_first(a: $T[]) a && a[0];
+        fn ifFirst(a: $T[]) a && a[0];
         type X = i32[];
-        fn hello(a: X) a.if_first;
+        fn hello(a: X) a.ifFirst;
         fn main() hello([ 3 ]) - 3;
     `);
 
     ZERO(`
-        fn if_first(a: $T[]) a && a[0];
+        fn ifFirst(a: $T[]) a && a[0];
 
         fn list(): i32[][] {
             return [[ 3 ]];
         }
 
-        fn hello() list.if_first.if_first;
+        fn hello() list.ifFirst.ifFirst;
         fn main() hello - 3;
     `);
 
     ZERO(`
-        fn if_first(a: $T[]) a && a[0];
+        fn ifFirst(a: $T[]) a && a[0];
         type X = i32[];
 
         fn list(): X[] {
             return [[ 3 ]];
         }
 
-        fn hello() list.if_first.if_first;
+        fn hello() list.ifFirst.ifFirst;
         fn main() hello - 3;
     `);
 
@@ -19513,9 +19513,9 @@ pub extern fn runTests()
     ZERO(`
         struct Overload { items: string[]; };
 
-        fn last(a: $T[])                    a[a.len - 1];
+        fn Last(a: $T[])                    a[a.len - 1];
         fn arg_lets(overload: Overload)     overload.items[.. overload.items.len - 2];
-        fn test(overload: Overload)         overload.arg_lets.last.len;
+        fn test(overload: Overload)         overload.arg_lets.Last.len;
         fn main()                           Overload([ "hello", "cruel", "world!" ]).test - 5;
     `);
 
@@ -19671,14 +19671,14 @@ pub extern fn runTests()
     `);
 
     ZERO(`
-        fn last(s: $T[])
+        fn Last(s: $T[])
             s.len ? s[s.len - 1] : throw("len == 0");
 
         struct Node { kind: string; items: Node[] }
 
         pure fn check(ref node: Node)
             node.kind != "block" ||
-            node.items.last.kind == "return";
+            node.items.Last.kind == "return";
 
         fn main() {
             mut node: Node;
@@ -21331,6 +21331,15 @@ pub extern fn runTests()
     `,`
         fn main() _0::Kind.A.i32 - _1::Kind.B.i32;
     `]);
+
+    ZERO(`
+        using primitive Distance: f32 {
+            Meter       = 1
+            Kilometer   = 1000
+        };
+
+        fn main() Kilometer / Meter == Kilometer ? 0 : 1;
+    `);
 
     // /Enums
 

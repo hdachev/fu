@@ -1,23 +1,4 @@
 
-fn only(ref s: <T>[..])
-    s.len == 1 ? s[0] : throw (
-        "len != 1: " ~ s.len);
-
-fn first(ref s: <T>[..])
-    s.len ? s[0] : throw("len == 0");
-
-fn last(ref s: <T>[..])
-    s.len ? s[s.len - 1] : throw("len == 0");
-
-fn if_only(ref s: <T>[..])
-    s.len == 1 && s[0];
-
-fn if_first(ref s: <T>[..])
-    s.len && s[0];
-
-fn if_last(ref s: <T>[..])
-    s.len && s[s.len - 1];
-
 fn ensure(ref a: <T>[], exists!i: int) {
     if (a.len <= i)
         a.grow(i + 1);

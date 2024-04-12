@@ -742,6 +742,35 @@ fn some(a: <T>[..], pred)
     return false;
 }
 
+
+//
+
+fn only(ref s: <T>[..]) {
+    assert(s.len == 1);
+    return s[0];
+}
+
+fn first(ref s: <T>[..])
+    s[0];
+
+fn last(ref s: <T>[..])
+    s[s.len - 1];
+
+fn if_only(ref s: <T>[..], and!then?: <Then>, else!?) // TODO inline else!?
+    s.len == 1
+        ? Then -> [] ? s[0] : then(s[0])
+        : else();
+
+fn if_first(ref s: <T>[..], and!then?: <Then>, else!?)
+    s.len
+        ? Then -> [] ? s[0] : then(s[0])
+        : else();
+
+fn if_last(ref s: <T>[..], and!then?: <Then>, else!?)
+    s.len
+        ? Then -> [] ? s[s.len - 1] : then(s[s.len - 1])
+        : else();
+
 `;
 
 
