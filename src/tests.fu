@@ -108,6 +108,7 @@ pub extern fn runTests()
     let TODO_pub        = fn TODO;
     let TODO_zst        = fn TODO;
     let TODO_litfix     = fn TODO;
+    let TODO_args       = fn TODO;
 
     let TODO_confusing  = fn TODO;
     let TODO_logic      = fn TODO;
@@ -4070,6 +4071,17 @@ pub extern fn runTests()
             woot(hello: |one| res += one, world: |two| res += two); </fail>
             return res - 3;
         }
+    `);
+
+    TODO_args(currently: "BUG about to implicit bind non-implicit arg pointer 6:24+1", `
+        struct Node { bullet?: byte; pointer: int }
+
+        fn skipNonTrailingDefaultedStructField() {
+            mut bullet = byte();
+            return Node(:bullet);
+        }
+
+        fn main() skipNonTrailingDefaultedStructField.pointer;
     `);
 
     // /Default arguments.
