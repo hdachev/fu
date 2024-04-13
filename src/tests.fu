@@ -17119,6 +17119,37 @@ pub extern fn runTests()
         }
     `);
 
+    TODO_conv(currently: "Incompatible types T for Node <-> OpenBlock 7:42+2", `
+        struct Node         { value: int; items: Node[] };
+        struct OpenBlock    { using node: Node };
+
+        fn closeOpenBlocks(ref open_blocks: OpenBlock[]) {
+            for (mut i = open_blocks.len; i --> 1; )
+                open_blocks[i - 1].items ~= open_blocks[i];
+
+            open_blocks.shrink(1);
+            return open_blocks.only;
+        }
+
+        fn main() {
+            mut open_blocks = [
+                OpenBlock(Node(10)),
+                OpenBlock(Node(20)),
+                OpenBlock(Node(30)),
+            ];
+
+            let n = closeOpenBlocks(open_blocks);
+
+            fn sum(n: Node) {
+                mut sum = n.value;
+                n.items.each(|item| sum += item.sum());
+                return sum;
+            }
+
+            return n.sum() == 60 ? 0 : 1;
+        }
+    `);
+
     // /Conversion functions.
 
 
