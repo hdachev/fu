@@ -1903,6 +1903,25 @@ pub extern fn runTests()
         }
     `);
 
+    TODO_recursion(currently: "BUG recursive function without SS_FN_RECUR 10:25+4", `
+        struct Node  { items: Node[] }
+        struct Document { root: Node }
+
+        fn render(doc: Document) {
+            mut count = 0;
+
+            fn visit(n: Node) {
+                count++;
+                n.items.each: |item| visit(item);
+            }
+
+            doc.root.items.each: |item| visit(item);
+            return count;
+        }
+
+        fn main() Document(root: Node(items: [ Node(items: [ Node(), Node() ]), Node() ])).render - 5;
+    `);
+
     // /Recursion /Closures /Implicit args
 
 
