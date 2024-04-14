@@ -108,7 +108,7 @@ pub fn DT_CHR(): DirentType = __native("<dirent.h>", "DT_CHR");
 pub fn DT_BLK(): DirentType = __native("<dirent.h>", "DT_BLK");
 pub fn DT_LNK(): DirentType = __native("<dirent.h>", "DT_LNK");
 
-pub fn readdir(mut path: string, each): int
+pub fn readdir(mut path: string, yield): int
 {
     pragma include(
         "<dirent.h>",
@@ -122,9 +122,10 @@ pub fn readdir(mut path: string, each): int
     mut err = 0;
     pragma input(
     `
-        DIR* dir = opendir(`path`.data());
-        struct dirent* entry;
-        if (!dir) {
+        DIR* DIR_ptr = opendir(`path`.data());
+        struct dirent* dirent_ptr;
+
+        if (!DIR_ptr) {
             `err` = errno;
             if (!`err`)
                 `err` = ENOENT;
@@ -136,7 +137,7 @@ pub fn readdir(mut path: string, each): int
 
     defer pragma emit(
     `
-        if (!closedir(dir))
+        if (!closedir(DIR_ptr))
             `err` = errno;
     `);
 
@@ -149,22 +150,31 @@ pub fn readdir(mut path: string, each): int
         mut done: bool;
         pragma input(
         `
-            entry = readdir(dir);
-            `done` = !entry;
+            dirent_ptr = readdir(DIR_ptr);
+            `done` = !dirent_ptr;
         `);
 
         if (done) break;
 
         //
+        mut type: DirentType;
         mut name_data: u64;
         mut name_size = 0;
-        mut type: DirentType;
 
         pragma input(
         `
-            `name_data` = (uintptr_t) entry->d_name;
-            `name_size` = (fu::i) _D_EXACT_NAMLEN(entry);
-            `type` = entry->d_type;
+            `type`      = dirent_ptr->d_type;
+            `name_data` = (uintptr_t) dirent_ptr->d_name;
+            `name_size` = (fu::i)
+                #if defined(_D_EXACT_NAMLEN)
+                    _D_EXACT_NAMLEN(dirent_ptr)
+                #elif defined(_DIRENT_HAVE_D_NAMLEN)
+                    dirent_ptr->d_namlen
+                #else
+                    strlen(dirent_ptr->d_name)
+                #endif
+                    ;
+
             (void) `type`;
         `);
 
@@ -175,7 +185,7 @@ pub fn readdir(mut path: string, each): int
         if (name == "." || name == "..")
             continue;
 
-        each(:name, ?:type);
+        yield(:name, ?:type);
     }
 
     //

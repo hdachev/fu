@@ -633,19 +633,16 @@ pub fn build(
 
     fn ERR(mut cpp?: string)
     {
+        units.each: |ref unit|
+            unit.cache_cleanup &= ~CacheCleanup.Cpp;
+
         if (onfail & OnFail_WriteRepro)
         {
-            if (!cpp)
+            if (!cpp) for (mut i = units.len; i --> 0; )
             {
-                for (mut i = units.len; i --> 0; )
-                {
-                    ref unit = units[i];
-                    if (unit.cpp_cache_file)
-                    {
-                        unit.cache_cleanup &= ~CacheCleanup.Cpp;
-                        cpp ~= "#include \"" ~ unit.cpp_cache_file ~ "\"\n";
-                    }
-                }
+                ref unit = units[i];
+                if (unit.cpp_cache_file)
+                    cpp ~= "#include \"" ~ unit.cpp_cache_file ~ "\"\n";
             }
 
             let fname = dir_wrk ~ "failing-testcase.cpp";
