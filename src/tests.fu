@@ -1922,7 +1922,7 @@ pub extern fn runTests()
         fn main() Document(root: Node(items: [ Node(items: [ Node(), Node() ]), Node() ])).render - 5;
     `);
 
-    TODO_recursion(currently: "BUG Empty nothrow qSTACK 4:20+5", `
+    ZERO(`
         struct Node { items?: Node[] }
 
         nothrow fn count(tree: Node) {

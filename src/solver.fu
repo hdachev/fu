@@ -7441,7 +7441,7 @@ pub fn solve(
                             relax_mask: RELAX_all &~ q_USAGE);
 
                     // Make sure mutually recursive fns don't dump each other.
-                    ext.fx_mask |= Fx_NotDeadCode | Fx_Throws;
+                    ext.fx_mask |= Fx_NotDeadCode;
                 }
                 // RECURSIVE RELAX //////////////////////////////////
 
