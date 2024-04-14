@@ -15294,6 +15294,12 @@ pub extern fn runTests()
         }
     `]);
 
+    ZERO([`//file markdown/markdown.fu
+        struct Document { value: int };
+    `,`
+        fn main() markdown::Document().value;
+    `]);
+
     ZERO(`
         struct Batch { x: i32[]; y: i32[] };
         <split/>

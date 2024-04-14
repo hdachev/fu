@@ -71,38 +71,55 @@ pub fn resolveFile(
     path: string): string
 {
     let fuz_idx = path.find('\v');
-    if (fuz_idx > 0)
+    if (fuz_idx > 0                         &&   // path non-empty
+        fuz_idx < path.len - 1              &&   // name non-empty
+        path.find('\v', start: fuz_idx + 1) < 0) // exactly one \v
     {
         let from    = path.slice(0, fuz_idx);
         mut name    = path.slice(fuz_idx + 1);
 
-        let alt_idx = name.find('\t');
         mut alt     = "";
+        mut nested  = "";
 
-        if (alt_idx > 0) {
-            alt = name[.. alt_idx] ~ "/" ~ name[alt_idx + 1 ..];
-            name.shrink(alt_idx);
-        }
-
-        // TODO FIX this got real hairy
-        if (!name.ends(with: ".fu")) name ~= ".fu";
-        if (alt && !alt.ends(with: ".fu")) alt ~= ".fu";
-
-        if (from && name && !name.has('\v'))
+        if !(name.ends(with: ".fu"))
         {
-            let file = resolveFile(:from, :name)
-                    || alt && resolveFile(:from, name: alt)
+            // When we encounter `hash::Map`,
+            //  we attempt three naming conventions:
+            //
+            // 1. hash.fu
+            // 2. hash/hash.fu
+            // 3. hash/Map.fu
+            //
+            // hash/Map.fu is explored last because it's least cacheable -
+            //  we don't want to start off with it because most of the time it'll fail,
+            //   and we'd just flood the cache with misses for every possible identifier.
 
-                    // Tests have the files prepopulated,
-                    //  we only pay the cost of lookup when about to
-                    //   otherwise fail compile.
-                    //
-                    ||        testSuite_resolvePrepopulatedFile(:from, :name)
-                    || alt && testSuite_resolvePrepopulatedFile(:from, name: alt);
+            let alt_idx = name.find('\t');
+            if (alt_idx > 0                         &&   // name non-empty
+                alt_idx < name.len - 1              &&   // identifier non-empty
+                name.find('\t', start: alt_idx + 1) < 0) // exactly one \t
+            {
+                alt = name[.. alt_idx] ~ '/' ~ name[alt_idx + 1 ..] ~ ".fu";
+                name.shrink(alt_idx);
+            }
 
-            if (file)
-                return file;
+            nested = name ~ '/' ~ name ~ ".fu";
+            name ~= ".fu";
         }
+
+        assert(from && name && !name.has('\v'));
+
+        fn run(strategy) {
+            return           strategy(:from, :name)
+                || nested && strategy(:from, name: nested)
+                ||    alt && strategy(:from, name: alt);
+        }
+
+        let file = run(fn resolveFile)
+                || run(fn testSuite_resolvePrepopulatedFile);
+
+        if (file)
+            return file;
     }
 
     return path;
