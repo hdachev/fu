@@ -1922,6 +1922,25 @@ pub extern fn runTests()
         fn main() Document(root: Node(items: [ Node(items: [ Node(), Node() ]), Node() ])).render - 5;
     `);
 
+    TODO_recursion(currently: "BUG Empty nothrow qSTACK 4:20+5", `
+        struct Node { items?: Node[] }
+
+        nothrow fn count(tree: Node) {
+            mut count = 0;
+            fn visit(node: Node) {
+                count++;                                <fail throws here 8:37+1 via visit 13:18+1>
+                if (count > 1) throw("What! Throws.");  <pass/></fail>
+
+                node.items.each(fn visit);
+            }
+
+            visit(tree);
+            return count;
+        }
+
+        fn main() Node(items: [ Node(), Node() ]).count - 3;
+    `);
+
     // /Recursion /Closures /Implicit args
 
 
