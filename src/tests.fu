@@ -17940,7 +17940,7 @@ pub extern fn runTests()
         }
     `);
 
-    TODO_inline(currently: "BUG ensureArgSeq host_args.len != args.len 24:45+1", `
+    ZERO(`
         struct Struct { items: Target[] };
         struct Target { index: i32 };
         struct Scope { type: Type };

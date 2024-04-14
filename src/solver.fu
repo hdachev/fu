@@ -7439,9 +7439,6 @@ pub fn solve(
                     for (mut i = 0; i < ext.args.len; i++)
                         ext.args[i].type.force_relax(
                             relax_mask: RELAX_all &~ q_USAGE);
-
-                    // Make sure mutually recursive fns don't dump each other.
-                    ext.fx_mask |= Fx_NotDeadCode;
                 }
                 // RECURSIVE RELAX //////////////////////////////////
 
