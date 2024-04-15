@@ -12930,6 +12930,37 @@ pub extern fn runTests()
         fn main() 0.what;
     `);
 
+    TODO_specpat(currently: "BUG doTrySpec resetMangle/preexisting 4:12+3", `
+        enum K { A }
+
+        fn Str(n: <T>) case (T.is::enum) {
+            for (fieldname i: T) if (n == "i") return "i";
+            return "?";
+        }
+
+        // TODO error message fail here, passes is: /////
+        // inline fn Print(x: byte)  : string = [ x ]; //
+        inline fn Print(x: string): string = x;
+        inline fn Print(x.Str)    : string = x;
+
+        fn concat(parts.Print[]: string[..]) {
+            mut res = "(";
+            for (mut i = 0; i < parts.len; i++) {
+                if (i) res ~= ", ";
+                res ~= parts[i];
+            }
+            return res ~= ")";
+        }
+
+        fn consumeNextLinePrefix(kind: K, bullet: byte)
+            concat(kind, bullet);                               ;; PointlessLocal
+
+        fn main() {
+            mut str = concat("A", 'B');
+            return str == "(A, B)" ? 0 : 1;
+        }
+    `);
+
     TODO_specpat(currently: "BUG doTrySpec resetMangle/preexisting 5:12+12", `
         fn Concat(a: byte[..], b.PrettyPronto) a ~ b;
         fn Concat(a.PrettyPronto, b: byte[..]) a ~ b;
