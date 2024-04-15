@@ -2084,7 +2084,7 @@ pub fn cpp_codegen(
 
         //////////////////////////////////////////////
         // HACK - Retyping string literals to enums //
-        if (node.type.is_enum || node.type.is_flags)
+        if (node.type.is_primitive)
             return cgEnumv(node.type, node.value);
         //////////////////////////////////////////////
 

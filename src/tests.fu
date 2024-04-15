@@ -21478,6 +21478,23 @@ pub extern fn runTests()
         fn main() Kilometer / Meter == Kilometer ? 0 : 1;
     `);
 
+    ZERO(`
+        primitive LogicalIndent: u16 { Max = 0xffff };
+
+        noinline fn test(ref li: LogicalIndent) {
+            let prev = li;
+            li = "Max";
+            return prev < "Max";
+        }
+
+        fn main() {
+            mut li: LogicalIndent;
+            let a = test(li);
+            let b = test(li);
+            return a || !b ? 0 : 1;
+        }
+    `);
+
     // /Enums
 
 
