@@ -19390,7 +19390,7 @@ pub extern fn runTests()
     ZERO(`
         struct AB { a: i32; b: i32; };
         fn sqr   (ref x: i32) x * x;
-        fn outer (ref ab: AB) sqr(ab.a) + sqr(ab.b);        ;; EXPECT const AB_6yft&
+        fn outer (ref ab: AB) sqr(ab.a) + sqr(ab.b);        ;; EXPECT const AB_kiW0&
         fn main() {
             mut ab = AB(3, 5);
             return ab.outer - 34;
@@ -20951,6 +20951,26 @@ pub extern fn runTests()
         pub fn add3(a) a.hey;
     `,`
         fn main() (-5)._0::add2._1::add3;
+    `]);
+
+    ZERO(`
+        fn main() {
+            type A = { struct Node { value?: int; items: Node[] }; Node };
+            type B = { struct Node { items: Node[]; value?: uint }; Node };
+            fn sum(a: A, b: B) a.items.len + b.items.len;
+            return sum(A(items: [ A, A ]), B(items: [ B, B, B ])) - 5;
+        }
+    `);
+
+    ZERO([`
+        struct Node { value: int; items: Node[] }
+        fn sum_a(n: Node) n.value + n.items.len;
+    `,`
+        struct Node { items: Node[]; value: uint }
+        fn sum_b(n: Node) n.value.int + n.items.len;
+    `,`
+        fn main() _0::sum_a(_0::Node(value: -11, [ _0::Node(), _0::Node() ]))
+                + _1::sum_b(_1::Node(value: 0x6, [ _1::Node(), _1::Node(), _1::Node() ]));
     `]);
 
     // /Mangling.

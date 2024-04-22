@@ -8341,6 +8341,7 @@ pub fn solve(
         let isUnion     = kind == "union";
 
         let isPrimDecl  = !isStruct && !isUnion;
+        let items       = node.items && node.items[STRUCT_MEMBERS].items;
 
         //
         mut basePrimType:   Type;
@@ -8364,7 +8365,7 @@ pub fn solve(
 
         if (isPrimDecl)
         {
-            // We have a problem with enums - they come out with the same hash,
+            // TODO FIX We have a problem with enums - they come out with the same hash,
             //  because there's nothing to hash really. This is mostly benign
             //   but it affects c++ cg, because we try to use actual enums there.
             //
@@ -8375,6 +8376,12 @@ pub fn solve(
             //  but that's probably the right way to go.
             //
             shape_hasher.hash(shortModuleName);
+        }
+        else
+        {
+            // TODO FIX we have an analogous problem with recursive structs
+            for (mut i = 0; i < items.len; i++)
+                shape_hasher.hash(items[i].value.ALWAYS_TRUE);
         }
 
         //
@@ -8470,7 +8477,6 @@ pub fn solve(
             return ret;
         }
 
-        let items   = node.items && node.items[STRUCT_MEMBERS].items;
         let members = items.map(fn solveMember);
 
         // (Re)poplate fields.
@@ -8559,7 +8565,8 @@ pub fn solve(
                 mut memberFlatOffset = 0;
                 if (!isPrimDecl)
                 {
-                    shape_hasher.hash(item.id);
+                    // TODO FIX hashed above
+                    // shape_hasher.hash(item.id);
                     shape_hasher.hash(member_shape.hash);
 
                     shape.declDepth = max(
