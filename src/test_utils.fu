@@ -8,7 +8,7 @@ import ansi;
 
 // Test running infra.
 
-fn compile_snippets(sources: string[], mut fnames?: string[], mut options?: Options): Context
+pub fn compile_snippets(sources: string[], mut fnames?: string[], mut options?: Options): Context
 {
     options.dev |= DEV_CG_LifetimeAnnots;
 
@@ -148,7 +148,7 @@ fn verify_errmsg(topic: string, e!: string, msg!: string)
         .ERR_TRIM
         .ERR_STRIP_ANSI
         .ERR_STRIP_SNIPPETS
-        .ascii::lower();
+        .ascii::lowercase();
 
     mut BUG_ok = false;
 
@@ -174,7 +174,7 @@ fn verify_errmsg(topic: string, e!: string, msg!: string)
                         return false;
                     }
 
-                    let expect = word.ascii::lower();
+                    let expect = word.ascii::lowercase();
                     return actual.has(expect);
                 }
 

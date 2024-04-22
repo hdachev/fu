@@ -1,23 +1,43 @@
 
-fn upper(mut str: string): string
+fn uppercased(ref str: byte[..])
 {
     for (mut i = 0; i < str.len; i++)
     {
         let c = str[i];
         if (c >= 'a' && c <= 'z')
-            str[i] = byte(c.i32 + ('A'.i32 - 'a'.i32));
+            str[i] = byte(c.int + ('A'.int - 'a'.int));
     }
-
-    return str;
 }
 
-fn lower(mut str: string): string
+fn lowercased(ref str: byte[..])
 {
     for (mut i = 0; i < str.len; i++)
     {
         let c = str[i];
         if (c >= 'A' && c <= 'Z')
-            str[i] = byte(c.i32 + ('a'.i32 - 'A'.i32));
+            str[i] = byte(c.int + ('a'.int - 'A'.int));
+    }
+}
+
+fn uppercase(mut str: string): string
+{
+    for (mut i = 0; i < str.len; i++)
+    {
+        let c = str[i];
+        if (c >= 'a' && c <= 'z')
+            str[i] = byte(c.int + ('A'.int - 'a'.int));
+    }
+
+    return str;
+}
+
+fn lowercase(mut str: string): string
+{
+    for (mut i = 0; i < str.len; i++)
+    {
+        let c = str[i];
+        if (c >= 'A' && c <= 'Z')
+            str[i] = byte(c.int + ('a'.int - 'A'.int));
     }
 
     return str;
@@ -26,13 +46,28 @@ fn lower(mut str: string): string
 fn upper(c: byte): byte
 {
     return c >= 'a' && c <= 'z'
-         ? byte(c.i32 + ('A'.i32 - 'a'.i32))
+         ? byte(c.int + ('A'.int - 'a'.int))
          : c;
 }
 
 fn lower(c: byte): byte
 {
     return c >= 'A' && c <= 'Z'
-         ? byte(c.i32 + ('a'.i32 - 'A'.i32))
+         ? byte(c.int + ('a'.int - 'A'.int))
          : c;
+}
+
+fn trim(str: string or byte[..])
+{
+    mut start = 0;
+    for (; start < str.len; start++)
+        if (str[start] > ' ')
+            break;
+
+    mut end = str.len;
+    for (; end --> start; )
+        if (str[end] > ' ')
+            break;
+
+    return str[start .. end + 1];
 }
