@@ -1198,7 +1198,7 @@ pub fn Lifetime_if_only(lifetime: Lifetime, if_only)
                                  ?:isArgIdx);
     }
 
-    return false;
+    return [];
 }
 
 pub fn Lifetime_has(lifetime: Lifetime, locid!search: i32)

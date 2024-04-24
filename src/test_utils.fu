@@ -723,7 +723,7 @@ fn ERR_TRIM(e: string)
     return e.slice(start);
 }
 
-fn ERR_STRIP_ANSI(mut e: string)
+pub fn ERR_STRIP_ANSI(mut e: string)
 {
     // This is a more optimal one liner with a compile-time regex -
     //  its just e.replace(/\e[^m]+m/g, ""),

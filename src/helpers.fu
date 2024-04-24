@@ -6,9 +6,9 @@ fn ensure(ref a: <T>[], exists!i: int) {
     return a[i];
 }
 
-fn if(ref a: <T>[..], exists!i: int, and!then?: <Then>, else!?)
+fn if(ref a: <T>[..], exists!i: int, and?: <Then>, else!?)
     i.unsigned < a.len.unsigned
-        ? Then -> [] ? a[i] : then(a[i])
+        ? Then -> [] ? a[i] : and(a[i])
         : else();
 
 fn remove(ref a: <T>[..], at!: int, count = 1)
