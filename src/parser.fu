@@ -2444,7 +2444,8 @@ pub fn parse(
             return createCall(
                 expr.value || fail(),
                 :flags | F_CALL_HAS_ARGPARENS,
-                args);
+                args,
+                :expr.token);
         }
 
         // Call-by-expression.
@@ -2455,9 +2456,9 @@ pub fn parse(
         return make("call_indir", expr ~ args, flags: argFlags);
     }
 
-    fn createCall(id: string, flags: Flags, args?: Node[], syntax?: ParseSyntax): Node
+    fn createCall(id: string, flags: Flags, args?: Node[], syntax?: ParseSyntax, token?: TokenIdx): Node
     {
-        return make("call", args, :flags, :syntax, id);
+        return make("call", args, :flags, :syntax, id, :token);
     }
 
     fn parseArrayLiteral(): Node

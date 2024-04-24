@@ -7974,23 +7974,23 @@ pub fn solve(
         // TODO FAILCASE these dont work for inline fns
         // TODO FAILCASE
         asserts & A_NOTHROW && ext.fx_mask & Fx_Throws && fail(
-            target ~ " is not nothrow, throws here:\n"
+            backtrack: "nothrow", target ~ " is not nothrow, throws here:\n"
                 ~ qSTACK(:target, Fx_Throws, node: _current_fn.out).ALWAYS_TRUE("Empty nothrow qSTACK"));
 
         asserts & A_NOCRASH && ext.fx_mask & Fx_Crashes && fail(
-            target ~ " is not nocrash, can crash here:\n"
+            backtrack: "nocrash", target ~ " is not nocrash, can crash here:\n"
                 ~ qSTACK(:target, Fx_Crashes, node: _current_fn.out).ALWAYS_TRUE("Empty nocrash qSTACK"));
 
         asserts & A_NOIO && ext.fx_mask & (Fx_Input|Fx_Output) && fail(
-            target ~ " is not noio, performs I/O here:\n"
+            backtrack: "noio", target ~ " is not noio, performs I/O here:\n"
                 ~ qSTACK(:target, Fx_Input|Fx_Output, node: _current_fn.out).ALWAYS_TRUE("Empty noio qSTACK"));
 
         asserts & A_PURE_FX && ext.fx_mask & Fx_Output && fail(
-            target ~ " is not purefx, outputs here:\n"
+            backtrack: "purefx", target ~ " is not purefx, outputs here:\n"
                 ~ qSTACK(:target, Fx_Output, node: _current_fn.out).ALWAYS_TRUE("Empty purefx qSTACK"));
 
         asserts & A_NOFLOW && _current_fn.far_jumps && fail(
-            target ~ " is not noflow: contains non-local control flow, jumping out to "
+            backtrack: "noflow", target ~ " is not noflow: contains non-local control flow, jumping out to "
                 ~ localfn(index: _current_fn.far_jumps.keys_asc.first) ~ ".");
 
         if (maybeLast && !mustBecomeInline)

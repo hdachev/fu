@@ -550,7 +550,7 @@ pub extern fn runTests()
         struct Hey { v: i32 }
 
         fn test(x: Hey) {
-            <fail annotation not a type 6:23+1>
+            <fail annotation not a type 6:20+3>
             mut y: Hey(1);              <pass/>
             mut y = Hey(1);             </fail>
             y.v += x.v;
@@ -741,8 +741,9 @@ pub extern fn runTests()
     ZERO(`
         fn incr(a) a++;
         fn main() {
-            mut a = 1;
-            incr: || a;
+            mut a = 1;      <fail inrc not defined 5:13+4>
+            inrc: || a;     <pass/>
+            incr: || a;     </fail>
             return a - 2;
         }
     `);
@@ -1587,7 +1588,7 @@ pub extern fn runTests()
         fn wantsImplicit(implicit ref x: i32) = x++;
     `,`
         fn main() {
-            <fail no implicit x 4:37+1 2:39+1>  <pass/>
+            <fail no implicit x 4:24+13 2:39+1>  <pass/>
             implicit mut x: i32 = 0;            </fail>
             return _0::wantsImplicit();
         }
@@ -1607,7 +1608,7 @@ pub extern fn runTests()
         import _0;
         import _2;
         fn solvePrelude(d: i32) {
-            <fail no implicit in scope 10:25+1 6:27+1 4:17+1 3:26+1><pass/>
+            <fail no implicit in scope 10:13+12 6:20+7 4:13+4 3:26+1><pass/>
             let implicit a: TokenIdx = TokenIdx(2);                 </fail>
             return cleanID(d) + 5;
         }
@@ -1657,7 +1658,7 @@ pub extern fn runTests()
             ];
 
             fn solveNode(
-                <fail solveNode 23:32+1 helpers type both alias 5:17+7>
+                <fail solveNode 23:23+9 helpers type both alias 5:17+7>
                 ref <pass/>
                 mut </fail>
                 type: string) {
@@ -1691,7 +1692,7 @@ pub extern fn runTests()
             fn solveNode(node: Node,
 
                 // TODO fix this is stupid, just documenting the reasoning here
-                <fail arg solveNode:type is ref-returned from fn solveNode 28:33+1><pass/>
+                <fail arg solveNode:type is ref-returned from fn solveNode 28:24+9><pass/>
                 mut
                 </fail>
                 val type?: Type
@@ -1833,7 +1834,7 @@ pub extern fn runTests()
 
     ZERO(`
         struct World { x: i32 };
-        struct Hello {  <fail no implicit world :24+1 because of 6:30+5><pass/>
+        struct Hello {  <fail no implicit world :20+4 because of 6:30+5><pass/>
             implicit    </fail> world: World;
         };
 
@@ -1852,7 +1853,7 @@ pub extern fn runTests()
             event_loop.loop_fd++;
 
         pub fn EventLoop(loop_start!) {
-            <fail implicit event_loop 3:41+10 expects mutref 13:23+1 not mutable 8:27+10 loop_start>
+            <fail implicit event_loop 3:41+10 expects mutref 13:13+10 not mutable 8:27+10 loop_start>
             let implicit <pass/>
             implicit mut </fail> event_loop = {
                 mut loop_fd: int;
@@ -1869,7 +1870,7 @@ pub extern fn runTests()
         }
     `);
 
-    TODO_recursion(currently: "expects struct UsedAgain, got struct UsedAgain 8:54+1", `
+    TODO_recursion(currently: "expects struct UsedAgain, got struct UsedAgain 8:32+22", `
         fn privateTypeWithinRecursion(lt: int[]) {
             fn propagateType(shadow lt: int[]) {
                 struct UsedAgain { i: int };
@@ -1928,7 +1929,7 @@ pub extern fn runTests()
         nothrow fn count(tree: Node) {
             mut count = 0;
             fn visit(node: Node) {
-                count++;                                <fail throws here 8:37+1 via visit 13:18+1>
+                count++;                                <fail not nothrow 4:9+7 throws here 8:32+5 via visit 13:13+5>
                 if (count > 1) throw("What! Throws.");  <pass/></fail>
 
                 node.items.each(fn visit);
@@ -2081,7 +2082,7 @@ pub extern fn runTests()
     `);
 
     ZERO(`
-        noinline fn swap_indirect(          <fail bad call swap 4:21+1>
+        noinline fn swap_indirect(          <fail bad call swap 4:17+4>
             ref a: i32[..], ref b: i32[..]) <pass/>
             ref a: i32[],   ref b: i32[])   </fail>
                 swap(a, b);
@@ -2095,7 +2096,7 @@ pub extern fn runTests()
     `);
 
     ZERO(`
-        noinline fn swap_indirect(          <fail bad call swap 6:17+1>
+        noinline fn swap_indirect(          <fail bad call swap 6:13+4>
             ref a: i32[..])                 <pass/>
             ref a: i32[])                   </fail>
         {
@@ -2426,7 +2427,7 @@ pub extern fn runTests()
                 orig.twos ~= 2;
             }
 
-            <fail COW will break (15:27+4|15:41+4) (15:27+4|34:40+1) (15:27+4|40:19+3)>
+            <fail COW will break (15:27+4|15:41+4) (15:27+4|34:27+13) (15:27+4|40:19+3)>
             ref zero    = orig.ones[orig.ones.len / 2];
             let all     = <alt>orig<alt/>indirect_copy(orig)</alt>;
             <pass/>
@@ -2990,7 +2991,7 @@ pub extern fn runTests()
 
                     if (item.items.len > 1) {
                         escape = root;
-                        <fail both alias root 29:21+1>
+                        <fail both alias root 29:13+8>
                         if (escape.items.len > 3)       <pass/>
                         if (true)                       </fail>
                             fail("#" ~ escape.items.len);
@@ -3786,7 +3787,7 @@ pub extern fn runTests()
     `);
 
     ZERO(`
-        <fail bad call test string, i32 4:23+1>
+        <fail bad call test string, i32 4:19+4>
         fn test(a = "hello") a.len;     <pass/>
         fn test(a = 0) a + 1;           </fail>
         fn main() test(-1);
@@ -4047,7 +4048,7 @@ pub extern fn runTests()
         }
     `);
 
-    TODO_recursion(currently: "Declaration cycle 11:30+1", `
+    TODO_recursion(currently: "Declaration cycle 11:20+10", `
         struct Type { canon: string };
         struct Node { kind: string; value: string };
         struct SolvedNode { value: string; type: Type };
@@ -4104,14 +4105,14 @@ pub extern fn runTests()
 
         fn main() {
             mut res = 0;
-            <fail duplicate explicitly named argument hello 10:17+1>
+            <fail duplicate explicitly named argument hello 10:13+4>
             woot(hello: |one| res += one, hello: |one| res += one); <pass/>
             woot(hello: |one| res += one, world: |two| res += two); </fail>
             return res - 3;
         }
     `);
 
-    TODO_args(currently: "BUG about to implicit bind non-implicit arg pointer 6:24+1", `
+    TODO_args(currently: "BUG about to implicit bind non-implicit arg pointer 6:20+4", `
         struct Node { bullet?: byte; pointer: int }
 
         fn skipNonTrailingDefaultedStructField() {
@@ -4905,7 +4906,7 @@ pub extern fn runTests()
 
         fn main() {
             implicit mut x = -1;
-        <fail nodiscard Errcode return try_incr (13:21+1|14:21+1)>
+        <fail nodiscard Errcode return try_incr (13:13+8|14:13+8)>
             try_incr();
             try_incr();
             return x - 1;
@@ -5542,7 +5543,7 @@ pub extern fn runTests()
 
     ZERO(`
         fn but_is_it_pure(ref x: i32) {
-            <fail not pure 6:9 8:34 4:21>
+            <fail not pure 6:9+4 8:20+14 4:21+2>
             return x++; <pass/>
             return x;   </fail>
         }
@@ -5563,7 +5564,7 @@ pub extern fn runTests()
         }
 
         noinline fn report_write_here(ref x: i32, n: i32) {
-            <fail outer 24:25 report_write_here 16:45 += 8:22>
+            <fail outer 24:20+5 report_write_here 16:28+17 += 8:22+2>
             return x += n;                             <pass/>
             return x + n;                              </fail>
         }
@@ -5894,7 +5895,7 @@ pub extern fn runTests()
     `);
 
     ZERO(`
-        <fail arg a 27:42+1 inval by subseq write injected arg out 27:48+1 via grow 8:21+1>
+        <fail arg a 27:41+1 inval by subseq write injected arg out 27:47+1 via grow 8:17+4>
         nocopy                 <pass/></fail>
         struct Type       { canon: string; };
         struct SolvedNode {  type: Type;   };
@@ -5940,7 +5941,7 @@ pub extern fn runTests()
     `);
 
     ZERO(`
-        <fail arg inval subsequent write 14:23 14:26+4 14:34+4 8:16+2>
+        <fail arg inval subsequent write 14:20+3 14:26+4 14:34+4 8:16+2>
         nocopy <pass/></fail>
         struct X { x: i32; }
         fn sum(a: X, b: X) a.x + b.x;
@@ -5957,7 +5958,7 @@ pub extern fn runTests()
     `);
 
     ZERO(`
-        <fail arg inval subsequent write 23:23 23:26+4 23:34+4 16:18+2>
+        <fail arg inval subsequent write 23:20+3 23:26+4 23:34+4 16:18+2>
         nocopy <pass/></fail>
         struct X { x: i32; }
         struct Y { y: X;   }
@@ -7230,7 +7231,7 @@ pub extern fn runTests()
     ZERO(`
         noinline fn used_after_break_from_block(ref arr: i32[])
         {
-            <fail cannot access first 18:20+5 inval by write to arr 10:34+1>
+            <fail cannot access first 18:20+5 inval by write to arr 10:29+5>
             ref <pass/>
             mut </fail> first = arr[0];
 
@@ -7258,7 +7259,7 @@ pub extern fn runTests()
     //  but the concat_self_ret_last strikes me
     //   as something that should actually work.
     //
-    TODO_slices(currently: "arr 13:19+3 inval by subseq 13:44+1 concat_self_ret_last", `
+    TODO_slices(currently: "hello 13:13+5 arr 13:19+3 inval by subseq concat_self_ret_last 13:24+20", `
         fn hello(ref arr: i32[], ref item: i32)
             arr ~= ++item;
 
@@ -7290,7 +7291,7 @@ pub extern fn runTests()
         fn main() {
             mut arr = [ 1, 2, 3 ];
 
-            <fail write to arr 21:43+1 inval use b 21:30+1 next loop iter>
+            <fail write to arr 21:39+4 inval use b 21:30+1 next loop iter>
             ref <pass/>
             fn  </fail> b = arr.Last;
 
@@ -7806,7 +7807,7 @@ pub extern fn runTests()
         }
     `);
 
-    TODO_borrowck(currently: "Cannot resolve aliasing by temporary copy test:DONT_DANGLE_ME is implicit 24:28+1 14:17+4", `
+    TODO_borrowck(currently: "Cannot resolve aliasing by temporary copy test:DONT_DANGLE_ME is implicit 24:24+4 14:17+4", `
         noinline fn test(ref data: int[]) {
             for (mut i = 0; i < 2; i++)
     <alt>
@@ -7825,7 +7826,7 @@ pub extern fn runTests()
 
         fn main() {
             mut data = [ 1, 2, 3, 4, 5 ];
-            implicit shadow <fail at call to test 24:28+1 both alias mut data 14:17+4>
+            implicit shadow <fail at call to test 24:24+4 both alias mut data 14:17+4>
                         ref <pass/>
                         mut </fail>DONT_DANGLE_ME = data[2 .. 3];
 
@@ -8160,7 +8161,7 @@ pub extern fn runTests()
         }
     `);
 
-    TODO_recursion(currently: "BUG CODEGEN recur without SS_FN_RECUR 13:28+1", `
+    TODO_recursion(currently: "BUG CODEGEN recur without SS_FN_RECUR 13:24+4", `
         nocopy struct Node { items: Node[]; type: Node[] };
 
         fn append_one(ref items: Node[]) {
@@ -10556,7 +10557,7 @@ pub extern fn runTests()
     `);
 
     ZERO(`
-        <fail cannot inline recursive inlineSelfRecursion 8:38+1>
+        <fail cannot inline recursive inlineSelfRecursion 8:19+19>
         inline <pass/></fail>
         fn inlineSelfRecursion(x: int)
             x > 10  ? inlineSelfRecursion(x / 2)
@@ -10566,7 +10567,7 @@ pub extern fn runTests()
     `);
 
     ZERO(`
-        <fail cannot inline recursive inlineMutualRecursion_a 9:46+1>
+        <fail cannot inline recursive inlineMutualRecursion_a 9:23+23>
         inline <pass/></fail>
         fn inlineMutualRecursion_a(x: int)
             x > 10  ? inlineMutualRecursion_b(x / 2)
@@ -12004,7 +12005,7 @@ pub extern fn runTests()
             skip.end - skip.start;
 
         pub fn main()
-            <fail bad call to ScopeSkip 12:22>
+            <fail bad call to ScopeSkip 12:13+9>
             ScopeSkip(min: -1, max: +1)     <pass/>
             ScopeSkip(start: -1, end: +1)   </fail>
                 .end - 1;
@@ -12112,7 +12113,7 @@ pub extern fn runTests()
         }
     `);
 
-    TODO_infer(currently: "Bad call to BINOP 7:25+1", `
+    TODO_infer(currently: "Bad call to BINOP 7:20+5", `
         fn setupOperators(i: i32) {
             <alt>
             struct sB { hey: i32; };
@@ -12425,7 +12426,7 @@ pub extern fn runTests()
         }
 
         <split/>
-        let PRELUDE =           <fail no implicit errout 2:32+6 needed to call fn parse :18+1>
+        let PRELUDE =           <fail no implicit errout 2:32+6 needed to call fn parse :13+5>
             parse("AAB");       <pass/>
             tryParse("AAB");    </fail>
 
@@ -12714,7 +12715,7 @@ pub extern fn runTests()
 
     ZERO(`
         fn incr(ref x: i32) { x++; }
-        fn badRetvalAnnot(ref x: i32)   <fail badRetvalAnnot return type does not match annot bool, void 5:23+1>
+        fn badRetvalAnnot(ref x: i32)   <fail badRetvalAnnot return type does not match annot bool, void 5:19+4>
             : bool                      <pass/></fail>
                 { incr(x) }
 
@@ -14129,7 +14130,7 @@ pub extern fn runTests()
         }
     `);
 
-    TODO_cow(currently: "at call to fn Lifetime_op 20:34+1 both alias ref arg lt 19:33+2", `
+    TODO_cow(currently: "at call to fn Lifetime_op 20:23+11 both alias ref arg lt 19:33+2", `
         <alt>
         inline      <alt/>
         noinline    </alt>
@@ -14243,7 +14244,7 @@ pub extern fn runTests()
 
     ZERO(`
         struct Test {
-        <fail bad call to Test expects 2 arg 11:20>
+        <fail bad call to Test expects 2 arg 11:16+4>
             a: i32;  <pass/>
             a?: i32; </fail>
             b: i32;
@@ -14255,7 +14256,7 @@ pub extern fn runTests()
     ZERO(`
         struct Test {
             b: i32;
-        <fail bad call to Test expects 2 arg 11:20>
+        <fail bad call to Test expects 2 arg 11:16+4>
             a: i32;  <pass/>
             a?: i32; </fail>
         };
@@ -14302,7 +14303,7 @@ pub extern fn runTests()
 
     ZERO(`
         fn test(a: i32, b!: i32 = 1) a + b;
-        <fail bad call to test arg b explicit name 7:20>
+        <fail bad call to test arg b explicit name 7:16+4>
         return test(-2, +2);    <pass/>
         return test(-2, b: +2); </fail>
     `);
@@ -14310,7 +14311,7 @@ pub extern fn runTests()
     ZERO(`
         struct Test { a: i32; b!: i32; };
         fn test(t: Test) t.a + t.b;
-        <fail bad call to Test arg b explicit name 8:20>
+        <fail bad call to Test arg b explicit name 8:16+4>
         return Test(-2, +2).test;    <pass/>
         return Test(-2, b: +2).test; </fail>
     `);
@@ -14318,7 +14319,7 @@ pub extern fn runTests()
     ZERO(`
         struct Test { a?: i32; b!?: i32; };
         fn test(t: Test) t.a + t.b;
-        <fail bad call to Test arg b explicit name 8:20>
+        <fail bad call to Test arg b explicit name 8:16+4>
         return Test(-2, +2).test;    <pass/>
         return Test(b: +2).test - 2; </fail>
     `);
@@ -14450,7 +14451,7 @@ pub extern fn runTests()
                 + a1o0(a?: 1, b?: 2) *     10   //     10
                 + a2o1(a?: 1, b?: 2) *    100   //    300
                 + a2o2(a?: 1, b?: 2) *   1000   //   3000
-                + a2o1(a : 1, <fail bad call a2o1 10:23+1 b not provided c mismatch>
+                + a2o1(a : 1, <fail bad call a2o1 10:19+4 b not provided c mismatch>
                               c       <pass/>
                               b       </fail>
                                ?: 2) *  10000   //  30000
@@ -15270,7 +15271,7 @@ pub extern fn runTests()
     ZERO([`
         fn Arr(type V) struct { items: V[] };
         fn append !V(
-            using ref _:    <fail ARR is not defined 5:20+1>
+            using ref _:    <fail ARR is not defined 5:17+3>
                 ARR(V),     <pass/>
                 Arr(V),     </fail>
             item: V) items ~= item;
@@ -15324,7 +15325,7 @@ pub extern fn runTests()
         }
     `);
 
-    TODO_pub(currently: "List is not defined 3:31+1", [`
+    TODO_pub(currently: "List is not defined 3:27+4", [`
         struct List(type T) { data: T[] }
     `,`
         pub import _0;
@@ -15489,7 +15490,7 @@ pub extern fn runTests()
         return      </fail> 1.originalHello + 2.shadowedHello == 210 ? 0 : 1;
     `);
 
-    TODO_templ_vis(currently: "actual return type i32, got Hello 9:30+1", `
+    TODO_templ_vis(currently: "actual return type i32, got Hello 9:26+4", `
         struct Hello { hello: int };
         fn what(using ref <fail ambig hello hello using 5:16+5 4:27+5 2:24+5>
                           hello     <pass/>
@@ -16796,7 +16797,7 @@ pub extern fn runTests()
         fn main() A(2)<alt>.B</alt>.b - 5;
     `);
 
-    SKETCH(currently: "Bad call to T u32 11:21+1", `
+    SKETCH(currently: "Bad call to T u32 11:20+1", `
         fn Wrap(type T) =
             struct { value!: T };
 
@@ -16896,7 +16897,7 @@ pub extern fn runTests()
         }
     `);
 
-    TODO_autocall(currently: "sqr is not defined here 4:19+1", `
+    TODO_autocall(currently: "sqr is not defined here 4:17+2", `
         fn Each !T(ref a: T[..], fn)
             for (mut i = 0; i < a.len; i++)
                 fn(a[i], i?: i);
@@ -17405,7 +17406,7 @@ pub extern fn runTests()
             let c = not_ambig(:sum, "abc", "de");
             let d = not_ambig(:sum, 3, 3);
             let e = not_ambig(:sum, "abcdef",
-                <fail bad call to not_ambig (23:30+1|25:30+1)>
+                <fail bad call to not_ambig (23:21+9|25:21+9)>
                                      'g'); <pass/>
                                      "g"); </fail>
 
@@ -17413,7 +17414,7 @@ pub extern fn runTests()
         }
     `);
 
-    TODO_varargs(currently: "optional argument ambiguity 6:31+1", `
+    TODO_varargs(currently: "optional argument ambiguity 6:21+10", `
         fn count_args!T (
             <alt>
             inline
@@ -17796,7 +17797,7 @@ pub extern fn runTests()
         }
     `);
 
-    TODO_inline(currently: "BUG reason not assignable string never 11:20+1", `
+    TODO_inline(currently: "BUG reason not assignable string never 11:17+3", `
         struct Overload { name: string };
         struct Target { globid: i32 };
 
@@ -17959,7 +17960,7 @@ pub extern fn runTests()
 
         fn main() {
             implicit mut TRACE_out = "";
-            solve(          <fail wrong number of arguments 29:18+1>
+            solve(          <fail wrong number of arguments 29:13+5>
                 :TRACE_out, <pass/></fail>
                 Target(1), Target(2));
             return TRACE_out == "<Hello 20>World!</Hello 22>" ? 0 : 1;
@@ -18138,7 +18139,7 @@ pub extern fn runTests()
         fn unwrapCall(what) unwrap { defer what() }
 
         fn main() {
-            mut res = -1; <fail unwrapCall as a value 6:46+1 wrap in block>
+            mut res = -1; <fail unwrapCall as a value 6:36+10 wrap in block>
             fn trackVarUsage(what) unwrapCall(fn what);             <pass/>
             fn trackVarUsage(what) { unwrapCall(fn what); }         </fail>
             trackVarUsage(|| res++);
@@ -18427,7 +18428,7 @@ pub extern fn runTests()
 
         fn main() {
             mut x: typeArgRename(
-                <fail explicitly named 7:33+1><pass/>Outer: </fail>
+                <fail explicitly named 7:20+13><pass/>Outer: </fail>
                     i32);
 
             return x;
@@ -18532,7 +18533,7 @@ pub extern fn runTests()
 
     ZERO(`
         struct SillyHash {}
-        struct Map(type Key, <fail missing type arg Value Map 9:24+1>
+        struct Map(type Key, <fail missing type arg Value Map 9:21+3>
                  type Value, <pass/></fail>type Hash = SillyHash) {}
         inline fn set !<Key, Hash>(ref map: Map(:Key, :Hash), key: Key) return []
 
@@ -18626,7 +18627,7 @@ pub extern fn runTests()
     `]);
 
     ZERO([`
-        <fail List not defined 3:29+1><pass/>
+        <fail List not defined 3:25+4><pass/>
         pub </fail>
         struct List(type X) { f: X };
         pub fn make_list(v: int) = List(int)(v);
@@ -20142,7 +20143,7 @@ pub extern fn runTests()
     `);
 
     ZERO(`
-        noinline fn longer(             <fail cannot move from a slice (8:26+1|15:26+1)>
+        noinline fn longer(             <fail cannot move from a slice (8:20+6|15:20+6)>
             l: byte[..], r: byte[..])   <pass/>
             l: $T[..],   r: $T[..])     </fail>
         {
@@ -20575,7 +20576,7 @@ pub extern fn runTests()
         }
     `);
 
-    TODO_borrowck(currently: "Cannot access ref b 16:25+1 inval write u 15:34+1 via 5:31+2", `
+    TODO_borrowck(currently: "Cannot access ref b 16:25+1 inval write u 15:30+4 via 5:31+2", `
         struct Unit { a: string; b: string };
 
         fn bang(ref str: string)
@@ -21689,7 +21690,7 @@ pub extern fn runTests()
 
     ZERO(`
         fn main() {
-            <fail not defined 5:55+1>
+            <fail THIS_DOESNT_EXIST not defined 5:38+17>
             mut <pass/>
             let </fail> se_local_let = false;
             if (se_local_let) return THIS_DOESNT_EXIST();
@@ -21722,7 +21723,7 @@ pub extern fn runTests()
 
     ZERO(`
         fn main() {
-            <fail not defined 6:61+1>
+            <fail THIS_DOESNT_EXIST not defined 6:44+17>
             mut <pass/>
             let </fail> se_closure_let = false;
             fn test() {
@@ -21898,19 +21899,19 @@ pub extern fn runTests()
         fn main() = add(1, 2) - 3;
     `);
 
-    TODO_semantics(currently: "Bad call to add 3:24+1 expects mutref", `
+    TODO_semantics(currently: "Bad call to add 3:21+3 expects mutref", `
         inline fn add(ref a: i32, ref b: i32) a + b;
         fn main() = add(1, 2) - 3;
     `);
 
     // Same as above but ref-returned -
     //  should work for both mutrefs & constrefs.
-    TODO_semantics(currently: "Bad call to add 3:24+1 expects mutref", `
+    TODO_semantics(currently: "Bad call to add 3:21+3 expects mutref", `
         noinline fn add(ref a: i32, ref b: i32) a || b;
         fn main() = add(1, 2) - 1;
     `);
 
-    TODO_semantics(currently: "Bad call to at 3:29+1 expects mutref", `
+    TODO_semantics(currently: "Bad call to at 3:27+2 expects mutref", `
         noinline fn at(ref a: i32[], i: i32) a[i];
         fn main() = [ 1 ].at(0) - 1;
     `);
