@@ -2225,6 +2225,7 @@ pub fn parse(
                 ////////////////////////////////////////////
 
                 expr.value = registerImport(path, id);
+                expr.token.tokidx = _idx - 1;
 
                 return expr;
             }

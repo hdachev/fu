@@ -15283,7 +15283,7 @@ pub extern fn runTests()
     `]);
 
     ZERO([`
-        <fail not defined 3:30+2><pass/>
+        <fail not defined 3:34+10><pass/>
         pub</fail>
         fn not_public(x: i32) x * 2;
         pub fn public(x: i32) x * 3;
@@ -15393,6 +15393,16 @@ pub extern fn runTests()
         </alt>
 
         fn main() three.process(|v| v * 2).int - 6;
+    `]);
+
+    ZERO([`
+        let HELLO = 0;
+    `,`
+        fn main() {
+            <fail HELO 4:24+4 not defined>
+            return _0::HELO;                <pass/>
+            return _0::HELLO;               </fail>
+        }
     `]);
 
     // /Pubs & imports.
