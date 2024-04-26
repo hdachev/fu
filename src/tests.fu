@@ -17248,6 +17248,13 @@ pub extern fn runTests()
         }
     `);
 
+    TODO_conv(currently: "Color, ColorFam, got string 5:19+4", `
+        enum Color { Red = 0; Green; Blue; Yellow; Cyan; Magenta };
+        enum ColorFam { Primary = 0; Secondary = 3 };
+        fn woot(c: Color or ColorFam) c.int;
+        fn main() woot("Yellow") - woot("Secondary");
+    `);
+
     // /Conversion functions.
 
 
