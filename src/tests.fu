@@ -5541,13 +5541,13 @@ pub extern fn runTests()
         fn main() X(0).x;
     `);
 
-    ZERO(`
+    TODO_inline(currently: "<fail> does not throw", `
         fn but_is_it_pure(ref x: i32) {
             <fail not pure 6:9+4 8:20+14 4:21+2>
             return x++; <pass/>
             return x;   </fail>
         }
-        pure fn pure_fn(ref a: i32, ref b: i32) {
+        pure <alt>inline<alt/>noinline</alt> fn pure_fn(ref a: i32, ref b: i32) {
             ref x = a || b;
             return but_is_it_pure(x);
         }
