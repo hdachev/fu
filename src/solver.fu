@@ -3478,7 +3478,7 @@ pub fn solve(
         for (mut i = _current_fn.items.len + FN_ARGS_BACK; i --> 0; )
         {
             let t = _current_fn.items[i].target;
-            if (t && t.isArg.ALWAYS_TRUE)
+            if (t && t.isArg.TEST_true)
                 visit(t, position?: i);
         }
     }
@@ -3488,7 +3488,7 @@ pub fn solve(
         for (mut i = 0; i < _current_fn.items.len + FN_ARGS_BACK; i++)
         {
             let t = _current_fn.items[i].target;
-            if (t && t.isArg.ALWAYS_TRUE)
+            if (t && t.isArg.TEST_true)
                 visit(t, position?: i);
         }
     }
@@ -6418,7 +6418,7 @@ pub fn solve(
 
             fn replaceGlobid(ref t: Target)
             {
-                SELF_TEST(t.parent == original);
+                TEST_true(t.parent == original);
 
                 t = Target(
                     modid:  target.modid,
@@ -6482,7 +6482,7 @@ pub fn solve(
 
                         helpersReplicas.ensure(exists: foreign.index) =
                             node.helpers =
-                                local.ALWAYS_TRUE;
+                                local.TEST_true;
                     }
                 }
                 else if (k == "jump")
@@ -6490,7 +6490,7 @@ pub fn solve(
                     let foreign = node.helpers;
                     let local = helpersReplicas.if(exists: foreign.index);
 
-                    node.helpers = local.ALWAYS_TRUE;
+                    node.helpers = local.TEST_true;
                 }
 
                 // Continue traversal.
@@ -7715,17 +7715,17 @@ pub fn solve(
             // TODO FAILCASE
             if (asserts & A_PURE && written_to)
                 fail(backtrack: "pure", target ~ " is not pure, writes to " ~ argTarget ~ ":\n"
-                    ~ qSTACK(:target, :argTarget.locid,
+                    ~ qSTACK_local(:target, :argTarget.locid,
                                 node: _current_fn.out));
 
             if (asserts & A_PURE_CTX && isImplicit && written_to)
                 fail(backtrack: "purectx", target ~ " is not purectx, writes to " ~ argTarget ~ ":\n"
-                    ~ qSTACK(:target, :argTarget.locid,
+                    ~ qSTACK_local(:target, :argTarget.locid,
                                 node: _current_fn.out));
 
             if (maybeLast && asserts & A_NOVEC && !argNode.isNoVec() && !mustBecomeInline)
                 fail(backtrack: "novec", target ~ " is not novec, " ~ argTarget ~ " is " ~ explainType(argNode.type) ~ ":\n"
-                    ~ qSTACK(:target, :argTarget.locid,
+                    ~ qSTACK_local(:target, :argTarget.locid,
                                 node: _current_fn.out,
                                query: AQ_WhyNotNovec));
 
@@ -7964,19 +7964,19 @@ pub fn solve(
         // TODO FAILCASE
         asserts & A_NOTHROW && ext.fx_mask & Fx_Throws && fail(
             backtrack: "nothrow", target ~ " is not nothrow, throws here:\n"
-                ~ qSTACK(:target, Fx_Throws, node: _current_fn.out).ALWAYS_TRUE("Empty nothrow qSTACK"));
+                ~ qSTACK_effect(:target, Fx_Throws, node: _current_fn.out).TEST_true("Empty nothrow qSTACK"));
 
         asserts & A_NOCRASH && ext.fx_mask & Fx_Crashes && fail(
             backtrack: "nocrash", target ~ " is not nocrash, can crash here:\n"
-                ~ qSTACK(:target, Fx_Crashes, node: _current_fn.out).ALWAYS_TRUE("Empty nocrash qSTACK"));
+                ~ qSTACK_effect(:target, Fx_Crashes, node: _current_fn.out).TEST_true("Empty nocrash qSTACK"));
 
         asserts & A_NOIO && ext.fx_mask & (Fx_Input|Fx_Output) && fail(
             backtrack: "noio", target ~ " is not noio, performs I/O here:\n"
-                ~ qSTACK(:target, Fx_Input|Fx_Output, node: _current_fn.out).ALWAYS_TRUE("Empty noio qSTACK"));
+                ~ qSTACK_effect(:target, Fx_Input|Fx_Output, node: _current_fn.out).TEST_true("Empty noio qSTACK"));
 
         asserts & A_PURE_FX && ext.fx_mask & Fx_Output && fail(
             backtrack: "purefx", target ~ " is not purefx, outputs here:\n"
-                ~ qSTACK(:target, Fx_Output, node: _current_fn.out).ALWAYS_TRUE("Empty purefx qSTACK"));
+                ~ qSTACK_effect(:target, Fx_Output, node: _current_fn.out).TEST_true("Empty purefx qSTACK"));
 
         asserts & A_NOFLOW && _current_fn.far_jumps && fail(
             backtrack: "noflow", target ~ " is not noflow: contains non-local control flow, jumping out to "
@@ -8370,7 +8370,7 @@ pub fn solve(
         {
             // TODO FIX we have an analogous problem with recursive structs
             for (mut i = 0; i < items.len; i++)
-                shape_hasher.hash(items[i].value.ALWAYS_TRUE);
+                shape_hasher.hash(items[i].value.TEST_true);
         }
 
         //
@@ -9673,12 +9673,12 @@ pub fn solve(
 
         _here = node.token;
 
-        return solveLetLike_dontTouchScope(
+        return createLetLike_dontTouchScope(
             node.value, :flags,
             :annot, :init, :asArgument);
     }
 
-    fn solveLetLike_dontTouchScope(
+    fn createLetLike_dontTouchScope(
         id: string, mut flags: Flags,
         mut init!: SolvedNode,
         annot!?: Type,
@@ -9925,7 +9925,7 @@ pub fn solve(
 
     fn createLet(id: string, flags: Flags, init: SolvedNode, setScope!: bool)
     {
-        mut out = solveLetLike_dontTouchScope(
+        mut out = createLetLike_dontTouchScope(
             :flags, :id, :init,
             asArgument: false);
 
@@ -11432,7 +11432,7 @@ pub fn solve(
         }
     }
 
-    fn qSTACK(callsite: SolvedNode, write!: i32)
+    fn qSTACK_rwevent(callsite: SolvedNode, write!: i32)
     {
         let args        = callsite.items;
         let host_args   = callsite.kind == "call" && callsite.target.args;
@@ -11446,24 +11446,24 @@ pub fn solve(
             if !(arg.type.lifetime.Lifetime_has(locid: write))
                 continue;
 
-            return qSTACK(:callsite.target, position: i);
+            return qSTACK_arg(:callsite.target, position: i);
         }
 
         return "";
     }
 
-    fn qSTACK(target: Target, position!: i32, seen!?: Target[], query!?: ArgQuery)
+    fn qSTACK_arg(target: Target, position!: i32, seen!?: Target[], query!?: ArgQuery)
     {
-        return qSTACK(:target, :seen, :query,
+        return qSTACK_local(:target, :seen, :query,
             :target.args[position].target.locid);
     }
 
-    fn qSTACK(target: Target, locid!: i32, seen!?: Target[], query!?: ArgQuery)
+    fn qSTACK_local(target: Target, locid!: i32, seen!?: Target[], query!?: ArgQuery)
     {
-        return qSTACK(target, target.solved, :locid, :seen, :query);
+        return qSTACK_local(target, target.solved, :locid, :seen, :query);
     }
 
-    fn qSTACK(target: Target, node: SolvedNode, locid!: i32, seen!?: Target[], query!?: ArgQuery)
+    fn qSTACK_local(target: Target, node: SolvedNode, locid!: i32, seen!?: Target[], query!?: ArgQuery)
     {
         //////////////////////////////////////////////////
         let nestingFnort0   = _nestingFnort.exchange(target);
@@ -11501,7 +11501,7 @@ pub fn solve(
                 if !(unwound.Lifetime_has(:locid))
                     continue;
 
-                let peek = qSTACK(callsite.target, position: i, :seen, :query);
+                let peek = qSTACK_arg(callsite.target, position: i, :seen, :query);
                 if (!peek && callsite.target.kind == "fn")
                     continue;
 
@@ -11515,7 +11515,7 @@ pub fn solve(
         return "";
     }
 
-    fn qSTACK(target: Target, node: SolvedNode, fx_mask: FxMask, seen!?: Target[])
+    fn qSTACK_effect(target: Target, node: SolvedNode, fx_mask: FxMask, seen!?: Target[])
     {
         //////////////////////////////////////////////////
         let nestingFnort0   = _nestingFnort.exchange(target);
@@ -11534,7 +11534,7 @@ pub fn solve(
             if !(callsite.target.fx_mask & fx_mask)
                 continue;
 
-            let peek = qSTACK(callsite.target, callsite.target.solved, :fx_mask, :seen);
+            let peek = qSTACK_effect(callsite.target, callsite.target.solved, :fx_mask, :seen);
             if (!peek && callsite.target.kind == "fn")
                 continue;
 
@@ -13120,7 +13120,7 @@ pub fn solve(
                             if (host_arg.written_to)
                                 return node.token.addr_and_snippet
                                      ~ "\n\tAt call to " ~ node.target
-                                     ~ qSTACK(node.target, position: i);
+                                     ~ qSTACK_arg(node.target, position: i);
                         }
                     }
                 }
@@ -13411,7 +13411,7 @@ pub fn solve(
                                         ~ " invalidates the use of " ~ read.nested ~ " at "
                                         ~ SLOW_findByReadID(:read, loop_start).token.addr_and_snippet
                                         ~ "\n\t... on next loop iteration.\n\n\tWritten"
-                                        ~ qSTACK(callOrPragma, :write));
+                                        ~ qSTACK_rwevent(callOrPragma, :write));
                         }
                     }
                 }
