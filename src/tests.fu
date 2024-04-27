@@ -5541,13 +5541,13 @@ pub extern fn runTests()
         fn main() X(0).x;
     `);
 
-    TODO_inline(currently: "<fail> does not throw", `
+    ZERO(`
         fn but_is_it_pure(ref x: i32) {
-            <fail not pure 6:9+4 8:20+14 4:21+2>
+            <fail not pure 6:9+4 writes to (a|b) (6:38+1|6:50+1) 8:20+14 4:21+2>
             return x++; <pass/>
             return x;   </fail>
         }
-        pure <alt>inline<alt/>noinline</alt> fn pure_fn(ref a: i32, ref b: i32) {
+        pure <alt>  inline<alt/>noinline</alt> fn pure_fn(ref a: i32, ref b: i32) {
             ref x = a || b;
             return but_is_it_pure(x);
         }
@@ -5564,7 +5564,7 @@ pub extern fn runTests()
         pure fn Verify(ref map: Map) {
             mut count = 0
             for (mut i = 0; i < map.index.len; i++) {
-                <fail Verify not pure 4:9+4 writes to ref arg map 8:41+1>
+                <fail Verify not pure 4:9+4 writes to ref arg map (8:41+1|10:30+1)>
                 ref<pass/>
                 mut</fail> data_pos = map.index[i]
                 while (data_pos > 0 && data_pos <= map.data.len) {

@@ -1697,7 +1697,7 @@ pub fn solve(
         return true;
     }
 
-    fn Binding(id: string, mut type: Type, flags!: Flags, ref shadows!: bool, asArgument!: bool)
+    fn Binding(id: string, mut type: Type, flags!: Flags, asserts!: DeclAsserts, ref shadows!: bool, asArgument!: bool)
     {
         mut name        = id;
         let local_of    = _current_fn.target.globid;
@@ -1720,7 +1720,7 @@ pub fn solve(
 
         let target = Scope_create(_scope,
             nest: local_of, :asArgument,
-            kind: "var", :name, :flags, :status);
+            kind: "var", :name, :flags, :asserts, :status);
 
         // New ref semantics appear to be missing checks upstream.
         if (SELF_TEST && flags & F_REF)
@@ -4018,12 +4018,41 @@ pub fn solve(
                 if (_current_fn.ever_written.add_once(locid, usage))
                 {
                     let t = nested(locid);
+                    let o = GET(t);
+
+                    let asserts = o.asserts;
+                    {
+                        // Assertion fn & backtrack token.
+                        let target          = _current_fn.out.target;
+                        mut fail_fn         = target;
+                        mut fail_arg_token  = t.solved.token;
+                        mut backtrack_token = _current_fn.out.token;
+
+                        // INLINE ATTRIBUTION //////////////
+                        let cid = hacks::tryParseClosureID(id: o.name);
+                        if (cid.target.isLocal)
+                        {
+                            fail_fn         = cid.target.parent;
+                            fail_arg_token  = cid.target.solved.token;
+                            backtrack_token = fail_fn.solved.token;
+                        }
+                        // INLINE ATTRIBUTION //////////////
+
+                        if (asserts & A_PURE)
+                            fail(backtrack: "pure", fail_fn ~ " is not pure, writes to " ~ t ~ ":\n"
+                                ~ qSTACK_local(:target, :locid, :node), token: backtrack_token, highlight: [ fail_arg_token ]);
+
+                        if (asserts & A_PURE_CTX && o.flags & F_INJECTED)
+                            fail(backtrack: "purectx", fail_fn ~ " is not purectx, writes to " ~ t ~ ":\n"
+                                ~ qSTACK_local(:target, :locid, :node), token: backtrack_token, highlight: [ fail_arg_token ]);
+                    }
 
                     if (SELF_TEST)
                         t.type.usage & usage == usage || BUG(
                             "callarg_trackWrites: written_to(" ~ usage ~ ") quals(" ~ t.type.usage ~ ") " ~ t);
 
-                    callarg_trackWrites(Lifetime_climbType(t).lifetime, usage);
+                    if !(o.flags & F_VAL)
+                        callarg_trackWrites(Lifetime_climbType(t).lifetime, usage);
 
                     if (t.isArg)
                         _current_fn.postdom.mayEscapeVia.add(:locid);
@@ -4832,7 +4861,7 @@ pub fn solve(
                             // So this returns a { let a = ...; A(copy(a.x), [], copy(a.y)) }
                             //
                             let letdef = createLet(setScope: false,
-                                "__partcopy_ref", init: item, flags: []);
+                                "__partcopy_ref", init: item, flags: [], asserts: []);
 
                             node.items.only = CallerNode("__partcopy_ref", :letdef.target || BUG());
                             node            = createBlock(letdef, node);
@@ -7709,20 +7738,6 @@ pub fn solve(
             }
             /////////////////////////////////////////////
 
-            // Validate `pure` asserts.
-            // TODO FAILCASE
-            // TODO FAILCASE these dont work for inline fns
-            // TODO FAILCASE
-            if (asserts & A_PURE && written_to)
-                fail(backtrack: "pure", target ~ " is not pure, writes to " ~ argTarget ~ ":\n"
-                    ~ qSTACK_local(:target, :argTarget.locid,
-                                node: _current_fn.out));
-
-            if (asserts & A_PURE_CTX && isImplicit && written_to)
-                fail(backtrack: "purectx", target ~ " is not purectx, writes to " ~ argTarget ~ ":\n"
-                    ~ qSTACK_local(:target, :argTarget.locid,
-                                node: _current_fn.out));
-
             if (maybeLast && asserts & A_NOVEC && !argNode.isNoVec() && !mustBecomeInline)
                 fail(backtrack: "novec", target ~ " is not novec, " ~ argTarget ~ " is " ~ explainType(argNode.type) ~ ":\n"
                     ~ qSTACK_local(:target, :argTarget.locid,
@@ -9141,6 +9156,33 @@ pub fn solve(
         });
     }
 
+    fn Lifetime_unwinds_through(
+        lifetime: Lifetime,
+        locid!needle: int): bool
+    {
+        mut found = false;
+
+        Lifetime_process(:lifetime, each:
+            |locid, continue_keep, continue_climb, paths|
+        {
+            if (!locid || found)
+                continue;
+
+            if (locid == needle)
+            {
+                found = true;
+                continue;
+            }
+
+            let init = nested(locid).Lifetime_climbType;
+            if (init.is_ref)
+                continue_climb(
+                    Lifetime_op_join(init.lifetime, :paths));
+        });
+
+        return found;
+    }
+
     fn Lifetime_F_MOVED_FROM(lifetime: Lifetime)
     {
         Lifetime_each(:lifetime): |locid, isAlwaysMoveable|
@@ -9794,13 +9836,13 @@ pub fn solve(
 
         let id  = out.value;
         return solveLet_createBindingAndGetLetdef(
-            :out, :id, setScope: true,
+            :out, :id, setScope: true, :node.asserts,
             :asArgument);
     }
 
     fn solveLet_createBindingAndGetLetdef(
         mut out!: SolvedNode, id!: string, setScope!: bool,
-        asArgument!isArg: bool): SolvedNode
+        asArgument!isArg: bool, asserts!: DeclAsserts): SolvedNode
     {
         // Dead code elim.
         if (out.kind != "let")
@@ -9861,7 +9903,9 @@ pub fn solve(
                     let target  = init.target;
                     let other   = GET(target);
 
-                    if (other.kind == "var" && !(other.flags & F_INLINE))
+                    if (other.kind == "var"
+                        && !(other.flags & F_INLINE)
+                        && other.asserts & asserts == asserts)
                     {
                         if (isAssignable(host: other.type, out.type))
                         {
@@ -9877,9 +9921,13 @@ pub fn solve(
             }
             ////////////////////////////////////////////////////////////////
 
+            let refArgAsserts = isArg   && !(out.flags & F_VAL)
+                                        && _current_fn.asserts;
+
             let target = out.target = Binding(
                 :id, :out.flags, :out.type, :shadows,
-                asArgument: isArg);
+                asArgument: isArg,
+                :asserts | refArgAsserts);
 
             //
             if (SELF_TEST)
@@ -9923,14 +9971,14 @@ pub fn solve(
         return SolvedNode(kind: "letdef", :target, :target.type);
     }
 
-    fn createLet(id: string, flags: Flags, init: SolvedNode, setScope!: bool)
+    fn createLet(id: string, flags: Flags, asserts: DeclAsserts, init: SolvedNode, setScope!: bool)
     {
         mut out = createLetLike_dontTouchScope(
             :flags, :id, :init,
             asArgument: false);
 
         return solveLet_createBindingAndGetLetdef(
-            :out, :id, :setScope,
+            :out, :id, :setScope, :asserts,
             asArgument: false);
     }
 
@@ -10803,7 +10851,7 @@ pub fn solve(
     fn createLet_implicitArg(id: string, type: Type, flags: Flags, ref shadows!: bool)
     {
         let target  = Binding(id, type, :flags, :shadows,
-            asArgument: true);
+            asArgument: true, :_current_fn.asserts);
 
         let ret     = SolvedNode(
             kind: "let", :flags,
@@ -11497,8 +11545,7 @@ pub fn solve(
                 }
 
                 let arg = args[i];
-                let unwound = Lifetime_unwind(arg.type.lifetime);
-                if !(unwound.Lifetime_has(:locid))
+                if !(arg.type.lifetime.Lifetime_unwinds_through(:locid))
                     continue;
 
                 let peek = qSTACK_arg(callsite.target, position: i, :seen, :query);
@@ -11792,7 +11839,7 @@ pub fn solve(
                             (arg.kind == "call" && arg.target.kind == "var" || arg.kind == "letdef")
                                 ? arg.target
                                 : (arg = createLet(setScope: false,
-                                    "__def_arg_ref", init: arg, flags: [])).target;
+                                    "__def_arg_ref", init: arg, flags: [], asserts: [])).target;
 
                         return replacement;
                     }
@@ -12359,6 +12406,8 @@ pub fn solve(
         mut letdefReplicas: flat::Map(Target, Target);
         let locals_start = GET_next_local_index();
 
+        let revision = target.revision;
+
         let host_args = target.args;
         host_args.len == args.len || BUG("inline: arglen mismatch");
 
@@ -12371,20 +12420,22 @@ pub fn solve(
             if (!host_arg.target)
                 continue;
 
-            let argdef = createLet(
-                id:     host_arg.name,
+            let argdef  = createLet(
+
+                // HACK - using a closure ID here to help with error attribution
+                id:     hacks::ClosureID(:host_arg.target, :revision).serialize(),
+
                 init:   args[i],
                 flags:  host_arg.flags  &~ F_COMPOUND_ID
-
-                                        // TODO FIX mutrefs lost in translation
-                                        | (host_arg.flags & (F_INJECTED | F_REF))
 
                                         // Don't emit unused warnings here,
                                         //  should have been checked on the original,
                                         //   SS_MATCHED there etc
                                         | F_LAX
                                         ,
-                setScope: false);
+                setScope: false,
+
+                :host_arg.target.asserts);
 
             if (SELF_TEST)
             {
