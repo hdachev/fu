@@ -266,8 +266,9 @@ struct Argument
 
     using type?:    Type;
     default?:       SolvedNode;
-    flags?:         Flags;
     target?:        Target;
+
+    flags?:         Flags;
 
     // Original concept was a full-fledged lifetime here,
     //  but we're starting off with a simple usage mask.
