@@ -303,6 +303,7 @@ struct Overload
 
     flags:          Flags;
     status?:        SolverStatus;
+    asserts?:       DeclAsserts;
 
     name:           string;
 

@@ -372,6 +372,7 @@ fn Scope_create(
     name!?:             string,
     type?:              Type,
     flags!?:            Flags,
+    asserts!?:          DeclAsserts,
     status?:            SolverStatus,
     nest!?:             i32,
 
@@ -395,17 +396,10 @@ fn Scope_create(
         globid:     nest || position,
         locid:      nest && position);
 
-    mut item: Overload;
-
-    item.name           = name;
-    item.kind           = kind;
-    item.flags          = flags;
-    item.type           = type;
-    item.status         = status;
-
     overloads.insert(
         asArgument ? 0 : overloads.len,
-        item);
+        Overload(:name, :kind, :flags, :type, :status, :asserts,
+            solved: []));
 
     if (!nest)
     {
