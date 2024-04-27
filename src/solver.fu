@@ -1180,26 +1180,15 @@ pub fn solve(
         return [];
     }
 
-    fn fail(reason: string, backtrack!: string)
-    {
-        if (backtrack)
-            _here = _here.tryBacktrack(backtrack) || _here;
-
-        fail(reason);
-    }
-
-    fn fail(reason: string, token!: TokenIdx)
-    {
-        _here = token;
-        fail(reason);
-    }
-
-    fn fail(reason: string)
+    pure fn fail(reason: string, backtrack!?: string, mut token! = _here)
     {
         reason || BUG("fail(): No reason.");
 
+        if (backtrack)
+            token = token.tryBacktrack(backtrack) || token;
+
         TRACE("FAIL");
-        return FAIL(reason.fail_appendStack());
+        return FAIL(:token, reason.fail_appendStack());
     }
 
     lax fn PERF_slowPath()

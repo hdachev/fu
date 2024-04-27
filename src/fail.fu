@@ -219,7 +219,12 @@ pub fn FAIL_text(
 
 pub fn FAIL(implicit _here: TokenIdx, reason: string): never
 {
-    throw (FAIL_text(token: _here, :reason));
+    FAIL(token: _here, :reason);
+}
+
+pub fn FAIL(token!: TokenIdx, reason: string): never
+{
+    throw (FAIL_text(:token, :reason));
 }
 
 pub fn FAIL(
