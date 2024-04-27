@@ -5559,6 +5559,27 @@ pub extern fn runTests()
     `);
 
     ZERO(`
+        struct Map { index: int[]; data: int[] }
+
+        pure fn Verify(ref map: Map) {
+            mut count = 0
+            for (mut i = 0; i < map.index.len; i++) {
+                <fail Verify not pure 4:9+4 writes to ref arg map 8:41+1>
+                ref<pass/>
+                mut</fail> data_pos = map.index[i]
+                while (data_pos > 0 && data_pos <= map.data.len) {
+                    data_pos = map.data[data_pos - 1]
+                    count++
+                }
+            }
+
+            return count
+        }
+
+        fn main() { mut m: Map; m.Verify }
+    `);
+
+    ZERO(`
         noinline fn inner(ref x: i32, n: i32) {
             return outer(x, n);
         }
