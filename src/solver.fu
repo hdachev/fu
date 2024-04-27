@@ -1180,7 +1180,7 @@ pub fn solve(
         return [];
     }
 
-    pure fn fail(reason: string, backtrack!?: string, mut token! = _here)
+    pure fn fail(reason: string, backtrack!?: string, mut token! = _here, highlight?: TokenIdx[])
     {
         reason || BUG("fail(): No reason.");
 
@@ -1188,7 +1188,7 @@ pub fn solve(
             token = token.tryBacktrack(backtrack) || token;
 
         TRACE("FAIL");
-        return FAIL(:token, reason.fail_appendStack());
+        return FAIL(reason.fail_appendStack(), tokens: token ~ highlight);
     }
 
     lax fn PERF_slowPath()

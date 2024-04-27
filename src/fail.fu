@@ -51,11 +51,6 @@ using pub flags CodeFmt
     NoContext
 };
 
-pub fn formatCodeSnippet(src!: string, token: LineColChars, fmt?: CodeFmt): string
-{
-    return formatCodeSnippet(:src, :fmt, highlight: [ token ]);
-}
-
 pub fn formatCodeSnippet(src!: string, fmt?: CodeFmt, mut highlight!: LineColChars[])
 {
     // TODO should be able to sort without the < 0, moronic
@@ -174,9 +169,14 @@ pub fn formatCodeSnippet(mut tokens: TokenIdx[], from!: i32, fmt?: CodeFmt)
     if (!head)
         return append;
 
-    //
+    // Head token coord will print the filename unless == :from.
     mut result = "";
     result ~= formatTokenCoord(head, :from);
+
+    // The rest of the remaining tokens here are in the same file.
+    for (mut i = 1; i < tokens.len; i++)
+        (result ~= ' ') ~= formatTokenCoord(tokens[i]._token, fname: "");
+
     result ~= ":\n";
 
     if !(fmt & (NoContext | NoLeadContext))
@@ -198,13 +198,19 @@ pub fn formatCodeSnippet(mut tokens: TokenIdx[], from!: i32, fmt?: CodeFmt)
 
 //
 
-pub fn FAIL_text(token: TokenIdx, reason: string): string
-{
-    let src = getModuleSrc(:token.modid);
+implicit ref _here: TokenIdx;
 
-    return FAIL_text(:src, :reason,
-        fname: token._fname,
-        token: token._token);
+pub inline fn HERE(node.token: TokenIdx)
+{
+    if (node)
+        _here = node;
+}
+
+pub fn FAIL_text(tokens: TokenIdx[], reason: string): string
+{
+    let snippet = formatCodeSnippet(:tokens, from: -1);
+
+    return snippet ~ "\n\t" ~ reason ~ "\n";
 }
 
 pub fn FAIL_text(
@@ -212,19 +218,14 @@ pub fn FAIL_text(
     token!: LineColChars, reason!: string): string
 {
     let addr    = formatTokenCoord(:fname, :token);
-    let snippet = formatCodeSnippet(:src, :token);
+    let snippet = formatCodeSnippet(:src, highlight: [ token ]);
 
     return addr ~ ":\n\n" ~ snippet ~ "\n\t" ~ reason ~ "\n";
 }
 
-pub fn FAIL(implicit _here: TokenIdx, reason: string): never
+pub fn FAIL(reason: string, tokens!: TokenIdx[] = [ _here ]): never
 {
-    FAIL(token: _here, :reason);
-}
-
-pub fn FAIL(token!: TokenIdx, reason: string): never
-{
-    throw (FAIL_text(:token, :reason));
+    throw (FAIL_text(:tokens, :reason));
 }
 
 pub fn FAIL(
@@ -232,12 +233,6 @@ pub fn FAIL(
     token!: LineColChars, reason!: string): never
 {
     throw (FAIL_text(:fname, :src, :token, :reason));
-}
-
-pub fn HERE(implicit ref _here: TokenIdx, node.token: TokenIdx)
-{
-    if (node)
-        _here = node;
 }
 
 pub fn BUG(mut reason?: string)

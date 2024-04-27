@@ -23,7 +23,7 @@ fn compile_lexParseDeps(fname: string, via?: TokenIdx[]): ModidAndOrder
         //  module.out is currently being worked on the stack above us somewhere.
         mut error = "";
         via.each: |token, i|
-            error ~= FAIL_text(:token, i == via.len - 1
+            error ~= FAIL_text(tokens: [ token ], i == via.len - 1
                 ? "Resulting in an import circle, not currently supported."
                 : "Imports:\n");
 
@@ -50,7 +50,7 @@ fn compile_lexParseDeps(fname: string, via?: TokenIdx[]): ModidAndOrder
                 err ~=   "\n\tLooking for a file named:\t" ~ fname.slice(dirEnd + 1).qBAD;
             }
 
-            FAIL(_here: token, err);
+            FAIL(tokens: [ token ], err);
         }
 
         throw("Could not load " ~ fname.qBAD ~ ": file does not exist or is empty.");
