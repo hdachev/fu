@@ -114,6 +114,7 @@ pub extern fn runTests()
     let TODO_logic      = fn TODO;
     let TODO_definit    = fn TODO;
     let TODO_specpat    = fn TODO;
+    let TODO_lint       = fn TODO;
 
     let TODO_templ_vis  = fn TODO; // autoshadow needs to go + how do we make nested fns visible?
 
@@ -4957,6 +4958,21 @@ pub extern fn runTests()
         fn main()              <fail parenthesize 3:25+1>
                     6-3 * 2    <pass/>
                     6-(3 * 2)  </fail> ;
+    `);
+
+    TODO_lint(currently: "BUG exit code", `
+        fn main() {
+            mut x = 5;
+            for (mut i = 10; i --> 0; ) {   <fail unparenthesized assignment X:X>
+                if (x = i) {                <pass/>
+                if (x == i) {               </fail>
+                    x += i;
+                    break;
+                }
+            }
+
+            return x - 10;
+        }
     `);
 
     // /Lints.
