@@ -947,6 +947,43 @@ pub extern fn runTests()
         }
     `]);
 
+    ZERO(`
+        fn reduce(array: <T>[], reducer, mut reduct?: T) {
+            for (mut i = array.len; i --> 0; )
+                reduct = reducer(array[i], reduct);
+
+            return reduct;
+        }
+
+        fn parent_fn(orig: <T>[])
+        {
+            struct Item { value: T };
+
+            let mapped = orig.map(
+                fn child_fn(value: T)
+                    Item(:value));
+
+            mut num_items_added = 0;
+            infix fn +(a: Item, b: Item) {
+                num_items_added++;
+                Item(a.value + b.value)
+            }
+                                                <fail type param T already defined 23:28+1>
+            fn sum(array: <T>[])                <pass/>
+            fn sum(array: <U>[])                </fail>
+                reduce(array, |a, b| a + b);
+
+            let sum_orig    = sum(orig);
+            let sum_mapped  = sum(mapped);
+
+            assert(sum_orig == sum_mapped.value);
+            assert(num_items_added == orig.len);
+            return sum_mapped;
+        }
+
+        fn main() [ 1, 2, -3 ].parent_fn().value;
+    `);
+
     // /Template args
 
 

@@ -164,7 +164,7 @@ pub fn parse(
 {
     using mut _ps: ParserState;
 
-    defer {
+    defer:ok {
         for (fieldname i: MustBeZeroAtExit)
             _ps.i && throw("parser: end-cleanup, not empty: " ~ "i");
     }
@@ -2100,7 +2100,10 @@ pub fn parse(
 
         let value = consume("id").value;
         if (_upstreamTypeParams.has(value) || !_expectedTypeParams.add(value))
+        {
+            _idx--;
             fail("A type parameter " ~ value.qID ~ " is already defined.");
+        }
 
         consume("op", endv);
 
