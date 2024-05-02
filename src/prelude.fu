@@ -700,9 +700,9 @@ infix fn <=(a: <T>[..], b: T[..]) case (T -> byte) = a <> b <= 0;
 
 //
 
-fn map(a: <T>[..], fn)
+fn map(ref a: <T>[..], fn)
 {
-    mut res: typeof( fn(T, i?: a.len) )[];
+    mut res: typeof( fn(a[0], i?: 0) )[];
     res.grow_junk(a.len);
     for (mut i = 0; i < a.len; i++)
         res[i] = fn(a[i], i?: i);

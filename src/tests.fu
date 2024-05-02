@@ -2154,6 +2154,16 @@ pub extern fn runTests()
         }
     `);
 
+    ZERO(`
+        fn main() {
+            mut arr = [ 1, 2, 3 ];
+            let cpy = arr.map(|ref v| v++);
+            mut sum_arr = 0; arr.each: |v| sum_arr += v;
+            mut sum_cpy = 0; cpy.each: |v| sum_cpy += v;        ;; DuplicateFunctions
+            return sum_arr == 9 && sum_cpy == 6 ? 0 : 1;
+        }
+    `);
+
     // /Arrays.
 
 
