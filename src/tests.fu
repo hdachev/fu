@@ -4171,6 +4171,16 @@ pub extern fn runTests()
         fn main() skipNonTrailingDefaultedStructField.pointer;
     `);
 
+    TODO_args(currently: "BUG matchReplicaOrInjectForeignLocal expect f32 actual i32 6:20+8", `
+        fn main() {
+            fn approx_p(a: f32, b = a)
+                2 * f32.PI * sqrt(0.5 * (a * a + b * b));
+
+            assert(approx_p(10) == approx_p(10, 10));
+            return 0;
+        }
+    `);
+
     // /Default arguments.
 
 
