@@ -617,6 +617,7 @@ pub fn ZERO(
         }
 
         // Check codegen.
+        if !(options.dev & DEV_IgnoreDefects)
         {
             mut defects: CGDefects;
             for (mut i = 0; i < sources.len; i++)

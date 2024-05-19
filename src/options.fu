@@ -6,6 +6,7 @@ using flags DevOptions {
     DEV_HappyPathOnly
 
     DEV_DontFoldLiterals
+    DEV_IgnoreDefects
 
     DEV_CG_LifetimeAnnots
 };
