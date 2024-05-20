@@ -12227,9 +12227,10 @@ pub fn solve(
             args.resize(host_args.len);
             for (mut i = 0; i < args.len; i++)
             {
+                ref arg         = args[i];
                 let host_arg    = host_args[i];
 
-                if (!args[i])
+                if (!arg)
                 {
                     mut defaultFrom = target;
                     let default     = host_arg.default || {
@@ -12249,14 +12250,40 @@ pub fn solve(
                         host_arg.flags & F_IMPLICIT || BUG(
                             "tryMatch: about to implicit-bind a non-implicit argument: " ~ host_arg);
 
-                        args[i] = bindImplicitArg(
+                        arg = bindImplicitArg(
                             :host_arg.name,
                             :host_arg.type, becauseOf: host_arg.target);
                     }
                 }
 
+                shadow ref arg = args[i];
+
+                if (kind != "field" &&  // <- TODO FIX
+                    kind != "template") // <- TODO FIX follwed by noreturn args, target remains template
+                {
+                    /////////////////
+                    // Literal fixup.
+
+                    // Drop argids at this point, not useful.
+                    if (arg.kind == "argid")
+                        arg = arg.items.only;
+
+                    let expect = host_arg.type;
+                    {
+                        let retype = tryRetyping(arg, expect);
+                        if (retype && isAssignableAsArgument(expect, retype))
+                        {
+                            // TRACE("RETYPE ARG from(" ~ arg.type.explainType(usage: true) ~ ") retype(" ~ retype.explainType(usage: true) ~ ") expect(" ~ expect.explainType(usage: true) ~ ")");
+
+                            applyRetype(arg, retype);
+                        }
+                    }
+                    //        /LITFIX
+                    /////////////////
+                }
+
                 // Dead code elim.
-                if (args[i].is_never && !(host_arg.flags & F_INLINE))
+                if (arg.is_never && !(host_arg.flags & F_INLINE))
                 {
                     args.shrink(i + 1);
                     return deadCall(args);
@@ -12336,37 +12363,6 @@ pub fn solve(
                 // Non-zero-filled type-inits.
                 if (kind == "type")
                     type = clear_Typename(type);
-
-                //
-                let host_args = target.args || BUG("CallerNode: no host args: " ~ target);
-                host_args.len == args.len || BUG("CallerNode: host_arg.len mismatch: " ~ target);
-
-                for (mut i0 = 0; i0 < args.len; i0++)
-                {
-                    let host_arg = host_args[i0];
-
-                    /////////////////
-                    // Literal fixup.
-
-                    // Drop argids at this point, not useful.
-                    ref arg = args[i0];
-                    if (arg.kind == "argid")
-                        arg = arg.items.only;
-
-                    let expect = host_arg.type;
-                    {
-                        let retype = tryRetyping(arg, expect);
-                        if (retype && isAssignableAsArgument(expect, retype))
-                        {
-                            // TRACE("RETYPE ARG from(" ~ arg.type.explainType(usage: true) ~ ") retype(" ~ retype.explainType(usage: true) ~ ") expect(" ~ expect.explainType(usage: true) ~ ")");
-
-                            applyRetype(arg, retype);
-                        }
-                    }
-                    //        /LITFIX
-                    /////////////////
-                }
-                /////////////////////////////////////////////////////////////////////////////////
             }
 
             // Inliner.
