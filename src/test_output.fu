@@ -1,7 +1,7 @@
 
 struct TestOutput
 {
-    code:           i32;
+    status:         spawn::ExitStatus;
     uniq_bytes:     i32;
     uniq_count:     i32;
     arc_bytes:      i32;
@@ -32,31 +32,30 @@ fn parse(data: byte[])
     mut out: TestOutput;
 
     if (data.len == 4)
-        out.code = data.view(of: i32)[0];
+        out.status = data.view(of: spawn::ExitStatus)[0];
     else if (data.len == sizeof_TestOutput)
         out = data.view(of: TestOutput)[0];
     else
-        out.code = 101;
+        out.status = 101;
 
     return out;
 }
 
-fn from(stdout!: string, code!: int)
+fn from(stdout!: string, status!: spawn::ExitStatus)
 {
     mut out: TestOutput;
-    out.code = code;
+    out.status = status;
 
     let parts = stdout.split("  STAT: ");
     for (mut i = 1; i < parts.len; i++)
     {
         let part = parts[i];
 
-        ref slot =
-            part.starts(with: "UNIQ Total Bytes") ? out.uniq_bytes :
-            part.starts(with: "UNIQ Total Count") ? out.uniq_count :
-            part.starts(with: "ARC  Total Bytes") ? out.arc_bytes :
-            part.starts(with: "ARC  Total Count") ? out.arc_count :
-            throw("Unknown stat: " ~ part);
+        ref slot = part.starts(with: "UNIQ Total Bytes") ? out.uniq_bytes
+                 : part.starts(with: "UNIQ Total Count") ? out.uniq_count
+                 : part.starts(with: "ARC  Total Bytes") ? out.arc_bytes
+                 : part.starts(with: "ARC  Total Count") ? out.arc_count
+                 : throw("Unknown stat: " ~ part);
 
         mut firstNewline = part.len;
         for (shadow mut i = 0; i < part.len; i++) {

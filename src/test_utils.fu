@@ -207,7 +207,8 @@ pub fn ZERO(
     implicit ref testdiffs: testdiff::TestDiffs,
     mut sources: string[],
     mut options?: Options,
-    expect_fail?: string): Context
+    expect_fail?: string,
+    expect_exit?: int): Context
 {
     // <fail>x</fail>
     // <fail>x<pass/>y</fail>
@@ -266,7 +267,7 @@ pub fn ZERO(
                 options.dev |= DEV_ExpectFail;
 
                 // Each fail variant must throw.
-                ZERO(:sources, :options, expect_fail: msg);
+                ZERO(:sources, :options, expect_fail: msg, :expect_exit);
             }
 
             // Finally, this should run fine,
@@ -317,7 +318,7 @@ pub fn ZERO(
                 // Re-run everything but the last alt,
                 //  which is gonna run anyway below.
                 if (j)
-                    ZERO(:sources, :options, :expect_fail);
+                    ZERO(:sources, :options, :expect_fail, :expect_exit);
             }
         }
     }
@@ -369,7 +370,7 @@ pub fn ZERO(
                 // Re-run everything but the last alt,
                 //  which is gonna run anyway below.
                 if (j)
-                    ZERO(:sources, :options, :expect_fail);
+                    ZERO(:sources, :options, :expect_fail, :expect_exit);
             }
         }
     }
@@ -396,7 +397,7 @@ pub fn ZERO(
             let without = src[.. start0] ~ src[start1 ..];
 
             sources[i]  = without;
-            ZERO(:sources, :options, :expect_fail);
+            ZERO(:sources, :options, :expect_fail, :expect_exit);
 
             // Continue with the greater modules count here.
             sources[i]  = moduleA;
@@ -412,7 +413,7 @@ pub fn ZERO(
         {
             shadow mut options = options;
             options.dev |= DEV_DontFoldLiterals;
-            ZERO(:sources, :options, :expect_fail);
+            ZERO(:sources, :options, :expect_fail, :expect_exit);
         }
     }
 
@@ -587,10 +588,12 @@ pub fn ZERO(
         let dir_wrk = fudir::DEFAULT_WORKSPACE;
 
         let debug_output = ::build(
-            :ctx, :run, :fudir, :dir_wrk, :onfail, scheme: "debug");
+            :ctx, :fudir, :dir_wrk, :onfail, scheme: "debug",
+            :run, :expect_exit);
 
         ::build(
-            :ctx, :run, :fudir, :dir_wrk, :onfail);
+            :ctx, :fudir, :dir_wrk, :onfail,
+            :run, :expect_exit);
 
         // Check memory use,
         //  currently opt-in, TODO add a superficial guestimator here

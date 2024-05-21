@@ -122,7 +122,7 @@ fn update_file(
 
 fn exec(cmd: string, ref stdout: string)
 {
-    mut status = 0;
+    mut status: spawn::ExitStatus = 0;
     mut err: i32;
 
     if (cmd.has("$("))
@@ -130,7 +130,7 @@ fn exec(cmd: string, ref stdout: string)
     else
         err = ::spawn(cmd.split(' '), :status, :stdout, stderr: stdout);
 
-    return err || status;
+    return err || status.int;
 }
 
 
@@ -160,7 +160,7 @@ pub fn build(
         onfail  !?: DEV_OnFail,
 
         // TODO clean these up, this makes NO SENSE //
-        run     !?: bool,
+        run     !?: bool,       expect_exit!?: int,
         shared  !?: bool,
         hotswap !?: bool,
         nocache !?: bool,
@@ -945,11 +945,13 @@ pub fn build(
         //
         let OPTI_StatusCode = true;
 
+        mut status: spawn::ExitStatus;
+
         //
         fn READ_cachedTestOutput()
         {
             output  = test_output::parse(file::read(F_exe));
-            code    = output.code;
+            status  = output.status;
         }
 
         fn WRITE_cachedTestOutput()
@@ -972,8 +974,9 @@ pub fn build(
             let t0 = now::hr();
             {
                 shadow mut stdout: string;
-                code    = exec(F_exe, :stdout);
-                output  = test_output::from(:stdout, :code);
+
+                code    = ::spawn([ F_exe ], :status, :stdout, stderr: stdout);
+                output  = test_output::from(:stdout, :status);
             }
             let t1 = now::hr();
 
@@ -995,15 +998,16 @@ pub fn build(
                     //
                     READ_cachedTestOutput();
                 }
-                else
+                else if (!code)
                 {
-                    // Don't cache spurious failure codes.
-                    //
-                    if (code != 32512 && code != 35584)
-                        WRITE_cachedTestOutput();
+                    WRITE_cachedTestOutput();
                 }
             }
         }
+
+        if (!code)
+            if !(status.if(code: expect_exit))
+                code = status.int || -1;
     }
 
     if (code)

@@ -1,5 +1,5 @@
 
-fn exec(mut cmd: string, ref status: i32, ref stdout: string): i32
+fn exec(mut cmd: string, ref status: spawn::ExitStatus, ref stdout: string): i32
 {
     pragma include(
         "<errno.h>",

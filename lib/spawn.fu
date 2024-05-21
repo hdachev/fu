@@ -23,6 +23,37 @@ pub struct PosixPipe {
 
 //
 
+pub primitive ExitStatus:   i32;
+
+pub fn if(status: ExitStatus, code!?: <Code>, else!?)
+{
+    if !(Code -> [])
+    {
+        mut exited = false;
+        pragma output(`
+            `exited` = WIFEXITED(`status`);
+        `);
+
+        if (exited)
+        {
+            mut actual: int;
+            pragma output(`
+                `actual` = WEXITSTATUS(`status`);
+            `);
+
+            if (Code -> int)
+                return actual == code;
+
+            return code(actual);
+        }
+    }
+
+    return else();
+}
+
+
+//
+
 fn pipe(ref p: PosixPipe, blocking!: bool) {
     pragma include(
         "<unistd.h>",           // pipe
@@ -234,7 +265,7 @@ static Errno fu_waitpid(
 
 pub fn spawn(
     mut argv: string[],
-    ref status!: i32): i32
+    ref status!: ExitStatus): i32
 {
     mut pid: PID;
     mut err = spawn(argv, :pid);
@@ -267,7 +298,7 @@ fn close_one(fd: ReadEnd or WriteEnd, ref err!: i32)
     `);
 }
 
-pub fn close(child!: Child, ref status: i32) {
+pub fn close(child!: Child, ref status: ExitStatus) {
     mut err = 0;
 
     pragma emit(`
@@ -379,7 +410,7 @@ pub fn spawn(
     ref stdout!stdout_buf: string,
     ref stderr!stderr_buf: string,
 
-    ref status!: i32): i32
+    ref status!: ExitStatus): i32
 {
     mut err = 0;
     mut child: Child;
