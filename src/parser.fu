@@ -1665,6 +1665,37 @@ pub fn parse(
             // TODO FIX forward compat for type <T> //////////////////////
                 : consume("id").value;
 
+        if !(sh_autocall)
+        {
+            // TODO FIX Postfix autocalls.
+            if (xqmark && tryConsume("op", "."))
+            {
+                flags |= F_COMPOUND_ID;
+                id    ~= "." ~ consume("id").value;
+
+                while (tryConsume("op", "::"))
+                    id ~= "\t" ~ consume("id").value;
+            }
+        }
+
+        // Varargs & rest params.
+        if (xqmark && tryConsume("op", "[]"))
+            flags |= F_REST_ARG;
+
+        //
+        if (sh_autocall)
+        {
+            // TODO FIX prefix .autocall postfix id setup,
+            //  probably the one we want to keep
+            //   instead of the one above
+            //
+            let postfix = tryConsume("id");
+
+            flags |= F_COMPOUND_ID;
+            id     = (postfix ? postfix.value : id) ~ "." ~ id;
+        }
+
+        // Lax args.
         if (id == "_")
         {
             if (anonIndex)
@@ -1672,25 +1703,6 @@ pub fn parse(
 
             flags |= F_LAX;
         }
-
-        // Argument autocalls.
-        if (sh_autocall)
-        {
-            flags |= F_COMPOUND_ID;
-            id    ~= "." ~ id;
-        }
-        else if (xqmark && tryConsume("op", "."))
-        {
-            flags |= F_COMPOUND_ID;
-            id    ~= "." ~ consume("id").value;
-
-            while (tryConsume("op", "::"))
-                id ~= "\t" ~ consume("id").value;
-        }
-
-        // Varargs & rest params.
-        if (xqmark && tryConsume("op", "[]"))
-            flags |= F_REST_ARG;
 
         // Explicit external arg name.
         if (xqmark && tryConsume("op", "!"))

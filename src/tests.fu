@@ -17366,7 +17366,7 @@ pub extern fn runTests()
         <alt>
         inline                                                  ;; GNUStmtExpr
         </alt>
-        fn inspect(items.to_debug_str[]) // <- varargs!
+        fn inspect(.to_debug_str[] items) // <- varargs!
         {
             mut a = 0;
             for (mut i = 0; i < items.len; i++)
