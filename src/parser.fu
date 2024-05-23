@@ -716,7 +716,12 @@ pub fn parse(
 
     fn parseUsing(): Node
     {
-        mut out = parseStatement();
+        let out = parseStatement();
+        return createUsing(out);
+    }
+
+    fn createUsing(mut out: Node): Node
+    {
         if (out.kind == "fn")
         {
             // This should probably move within the solver.
@@ -752,6 +757,8 @@ pub fn parse(
             out.flags |= F_USING;
         else if (out.kind == "enum" || out.kind == "flags" || out.kind == "primitive")
             out.flags |= F_USING;
+        else if (out.kind == "call")
+            return createUsing(createLet("_", init: out, syntax: PS_USING_EXPRESSION));
         else
             fail("using".qBAD ~ " cannot be used here.");
 
@@ -1755,9 +1762,9 @@ pub fn parse(
         return tryConsume("op", "=") && parseExpression(precedence);
     }
 
-    fn createLet(id: string, type!?: Node, init!?: Node, flags!?: Flags): Node
+    fn createLet(id: string, type!?: Node, init!?: Node, flags!?: Flags, syntax!?: ParseSyntax): Node
     {
-        return make("let", [ type, init ], :flags, id);
+        return make("let", [ type, init ], :flags, id, :syntax);
     }
 
     fn parseExpression !ParseHead(

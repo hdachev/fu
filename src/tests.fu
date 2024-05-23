@@ -17349,6 +17349,32 @@ pub extern fn runTests()
         fn main() woot("Yellow") - woot("Secondary");
     `);
 
+    ZERO(`
+        struct V { v: int };
+        fn main() {
+            using V();
+            return v;
+        }
+    `);
+
+    ZERO(`
+        struct vec2     { x: f32; y: f32 };
+        struct Player   { position: vec2 };
+
+        fn move(ref player: Player, dist: vec2) {
+            using player.position;
+            x += dist.x;
+            y += dist.y;
+        }
+
+        fn main() {
+            mut p: Player;
+            p.move(vec2(10, 10));
+            assert(p.position.x * p.position.y == 100);
+            return 0;
+        }
+    `);
+
     // /Conversion functions.
 
 

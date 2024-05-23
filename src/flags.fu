@@ -87,6 +87,8 @@ using flags ParseSyntax
     PS_DISCARD_IF_BLOCK_TAIL
     PS_ALWAYS_DISCARD
     PS_NOT_AN_EXPRESSION
+
+    PS_USING_EXPRESSION
 };
 
 
