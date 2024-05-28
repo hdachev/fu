@@ -1,0 +1,30 @@
+#!/bin/bash
+set -e
+
+echo ""
+echo "        Hello!"
+
+mkdir -p ./bin
+
+echo ""
+echo "        Bootstrapping gen 0 ..."
+echo ""
+./bootstrap
+
+echo ""
+echo "        Compiling self 1/3 ..."
+echo ""
+./bin/fu --bin ./bin/fu -c src/cli.fu
+
+echo ""
+echo "        Compiling self 2/3 ..."
+echo ""
+./bin/fu --bin ./bin/fu -c src/cli.fu
+
+echo ""
+echo "        Compiling self 3/3 ..."
+echo ""
+./bin/fu --bin ./bin/fu -c src/cli.fu
+
+echo ""
+echo "Done."
