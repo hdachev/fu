@@ -8416,6 +8416,33 @@ pub extern fn runTests()
         }
     `);
 
+    TODO_cow(currently: "BUG exit code", `
+        nocopy struct NC { v: int };
+
+        fn generate(n: int) {
+            mut v: NC[];
+            for (mut i = 0; i < n; i++) v ~= NC(i);
+            return v;
+        }
+
+        fn test(n: int) {
+    <alt>
+            let a = generate(n);
+            let b = a;
+    <alt/>
+            mut a = generate(n);
+            let b = a;
+    <alt/>
+            mut a = generate(n);
+            mut b = a;
+            b.reverse();
+    </alt>
+            return b;
+        }
+
+        fn main() 7.test.len - 7;
+    `);
+
     // /Borrow checker
 
 
