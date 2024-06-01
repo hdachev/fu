@@ -8443,6 +8443,36 @@ pub extern fn runTests()
         fn main() 7.test.len - 7;
     `);
 
+    ZERO(`
+        nocopy struct AB { a: int; b: int };
+
+        fn main() {
+            mut v0 = AB(1, 2);
+            mut v1 = v0;
+            ref a = v0.a;
+            ref b = v1.b;
+            a += 10;
+            b += a;
+            return b - 13;
+        }
+    `);
+
+    TODO_borrowck(currently: "<fail> does not throw", `
+        <fail copy X:X>
+        nocopy <pass/></fail>
+        struct AB { a: int; b: int };
+
+        fn main() {
+            mut v0 = AB(1, 2);
+            mut v1 = v0;
+            ref a = v0.a;
+            ref b = v1.a;
+            a += 10;
+            b += a;
+            return b - 12;
+        }
+    `);
+
     // /Borrow checker
 
 
