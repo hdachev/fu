@@ -2202,6 +2202,54 @@ pub extern fn runTests()
         }
     `);
 
+    ZERO(`
+        nocopy struct NC { v: int };
+
+        fn main() {
+            mut v: NC[];    assert(v.len == 0);
+            v ~= NC(0);     assert(v.len == 1);
+            v ~= NC(1);     assert(v.len == 2);
+            v ~= NC(2);     assert(v.len == 3);
+            v ~= NC(3);     assert(v.len == 4);
+            v ~= NC(4);     assert(v.len == 5);
+            v ~= NC(5);     assert(v.len == 6);
+            v ~= NC(6);     assert(v.len == 7);
+            v ~= NC(7);     assert(v.len == 8);
+            v ~= NC(8);     assert(v.len == 9);
+            v ~= NC(9);     assert(v.len == 10);
+            mut sum = 0;
+            for (mut i = 0; i < v.len; i++) sum += v[i].v;
+            return sum - 45 + v.len * 101 - 1010;
+        }
+    `);
+
+    ZERO(`
+        nocopy struct NC { v: int };
+
+        fn generate(n: int) {
+            mut v: NC[];
+            for (mut i = 0; i < n; i++) v ~= NC(i);
+            return v;
+        }
+
+        fn test(n: int) {
+    <alt>
+            let a = generate(n);
+            let b = a;
+    <alt/>
+            mut a = generate(n);
+            let b = a;
+    <alt/>
+            mut a = generate(n);
+            mut b = a;
+            b.reverse();
+    </alt>
+            return b;
+        }
+
+        fn main() 7.test.len - 7;
+    `);
+
     // /Arrays.
 
 
@@ -8414,33 +8462,6 @@ pub extern fn runTests()
             ss.search(0);
             ss._warnings.len - 1
         }
-    `);
-
-    TODO_cow(currently: "BUG exit code", `
-        nocopy struct NC { v: int };
-
-        fn generate(n: int) {
-            mut v: NC[];
-            for (mut i = 0; i < n; i++) v ~= NC(i);
-            return v;
-        }
-
-        fn test(n: int) {
-    <alt>
-            let a = generate(n);
-            let b = a;
-    <alt/>
-            mut a = generate(n);
-            let b = a;
-    <alt/>
-            mut a = generate(n);
-            mut b = a;
-            b.reverse();
-    </alt>
-            return b;
-        }
-
-        fn main() 7.test.len - 7;
     `);
 
     ZERO(`

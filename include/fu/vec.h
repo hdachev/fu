@@ -100,7 +100,7 @@ struct fu_VEC
         //  the difference between small & big strings/vectors,
         //   shouldn't happen too often in practice because of the allocation headers -
         //    for ^2 sized things it should never happen if allocations are ^2.
-        if constexpr (PACK_CAPA)
+        if constexpr (HAS_SMALL)
             if (!(IS_BIG_MASK & UNSAFE__Pack(actual)))
             {
                 actual--;
