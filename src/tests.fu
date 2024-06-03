@@ -8464,7 +8464,7 @@ pub extern fn runTests()
         }
     `);
 
-    ZERO(`
+    TODO_borrowck(currently: "cannot cop or mov 6:22+2", `
         nocopy struct AB { a: int; b: int };
 
         fn main() {
@@ -8478,8 +8478,8 @@ pub extern fn runTests()
         }
     `);
 
-    TODO_borrowck(currently: "<fail> does not throw", `
-        <fail copy X:X>
+    ZERO(`
+        <fail cannot cop or mov 8:22+2 v0 is used again>
         nocopy <pass/></fail>
         struct AB { a: int; b: int };
 

@@ -4842,7 +4842,8 @@ pub fn solve(
                     let usage       = node.type.usage;
                     let flatCount   = node.type.getFlatCount();
                     let maxUsage    = getMaxUsage(:flatCount);
-                    if (usage != maxUsage) :PARTIAL_COPY
+                    if (usage != maxUsage &&
+                        node.type.is_rx_copy) :PARTIAL_COPY
                     {
                         let s       = tryLookupUserType(node.type);
                         if (s.kind != "struct")
