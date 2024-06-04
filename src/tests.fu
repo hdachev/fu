@@ -8494,6 +8494,48 @@ pub extern fn runTests()
         }
     `);
 
+    TODO_disjoint(currently: "cannot access t 11:20+1 inval by GET 8:35+1", `
+        struct SolverState  {
+            overloads:          string[];
+            eph?:               int;
+        }
+
+        fn solve(ref ss: SolverState) {
+            fn GET(t) ss.overloads[t];
+            ref t = ss.eph;
+            t.GET = t.GET ~ ", world!";
+            return t.GET;
+        }
+
+        fn main() {
+            mut ss = SolverState(overloads: [ "hello" ] );
+            ss.solve();
+            return ss.overloads.only.len - 13;
+        }
+    `);
+
+    ZERO(`
+        struct SolverState {
+            overloads:          string[];
+            eph:                int;
+        };
+
+        fn solve(ref ss: SolverState) {
+            mut output = "";
+            fn qID(id: string) id || "?";
+            fn name(t: int) ss.overloads[t].qID;
+            ref t = ss.eph;
+            output = t.name();
+            t = [];
+            return output;
+        }
+
+        fn main() {
+            mut ss = SolverState([ "hello", "world!" ], 1);
+            return ss.solve.len + ss.solve.len - 11;
+        }
+    `);
+
     // /Borrow checker
 
 
