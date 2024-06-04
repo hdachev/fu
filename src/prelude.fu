@@ -670,12 +670,12 @@ default {
 
     for (fieldname i: T)
         if (typeof(a.i).is::trivial)
-            if (cmp = a.i <> b.i)
+            if ((cmp = a.i <> b.i))
                 return cmp;
 
     for (fieldname i: T)
         if !(typeof(a.i).is::trivial)
-            if (cmp = a.i <> b.i)
+            if ((cmp = a.i <> b.i))
                 return cmp;
 
     return 0;

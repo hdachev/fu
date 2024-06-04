@@ -5055,10 +5055,10 @@ pub extern fn runTests()
                     6-(3 * 2)  </fail> ;
     `);
 
-    TODO_lint(currently: "BUG exit code", `
+    ZERO(`
         fn main() {
             mut x = 5;
-            for (mut i = 10; i --> 0; ) {   <fail unparenthesized assignment X:X>
+            for (mut i = 10; i --> 0; ) {   <fail unparenthesized assignment 5:23+1>
                 if (x = i) {                <pass/>
                 if (x == i) {               </fail>
                     x += i;
@@ -11463,7 +11463,7 @@ pub extern fn runTests()
             mut uval: u32;
 
             mut result: u32;
-            while (uval = items.search("a", scope_iterator))
+            while ((uval = items.search("a", scope_iterator)))
                 result += uval;
 
             return (result - 6).signed;
@@ -19809,7 +19809,7 @@ pub extern fn runTests()
         fn test(mut _precedence = 0)
         {
             fn parseExpression(p1?: i32): i32 {
-                if !(_precedence = p1)
+                if !((_precedence = p1))
                     return parseExpressionHead();
 
                 return _precedence;

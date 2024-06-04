@@ -2291,12 +2291,12 @@ pub fn solve(
 
             //
             mut shadows: bool;
-            :SHADOWING_GROUP while (overloadIdx =
+            :SHADOWING_GROUP while ((overloadIdx =
                 targets
                     ? search(:targets, scope_iterator)
                     : local_scope
                         ? _SCOPE.search(id, scope_iterator, scope_skip: _SSKIP, :extra_items, :field_items, :shadows)
-                        : misc_scope.items[.. misc_scope.pub_items].search(id, scope_iterator, :field_items))
+                        : misc_scope.items[.. misc_scope.pub_items].search(id, scope_iterator, :field_items)))
             {
                 !local_scope && shadows && BUG("!local_scope but shadows");
 
@@ -6340,15 +6340,12 @@ pub fn solve(
         mut original: Target, mut relaxed_quals: Quals): Target
     {
         // Climb up to the source.
+        while (let up = original.rev_spec.instance.original)
         {
-            mut up: Target;
-            while (up = original.rev_spec.instance.original)
-            {
-                relaxed_quals |= original.rev_spec.instance.relaxed_quals || BUG(
-                    "tryReverseSpecialize: .original set on " ~ original ~ " but !relaxed_quals");
+            relaxed_quals |= original.rev_spec.instance.relaxed_quals || BUG(
+                "tryReverseSpecialize: .original set on " ~ original ~ " but !relaxed_quals");
 
-                original = up;
-            }
+            original = up;
         }
 
         // Not sure about this one -

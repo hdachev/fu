@@ -564,7 +564,7 @@ pub fn ZERO(
                     continue :NEXT_EXPECTATION;
                 }
 
-                if (found = this_cpp.has(rest))
+                if ((found = this_cpp.has(rest)))
                     break;
             }
 

@@ -1806,8 +1806,7 @@ pub fn parse(
             //////////////////////////////////////////////
 
             mut loc0 = _loc = _idx;
-            mut out: Node;
-            while (out = tryParseExpressionTail(:head, :mode))
+            while (let out = tryParseExpressionTail(:head, :mode))
             {
                 // Whitespace lint.
                 {
@@ -2605,6 +2604,17 @@ pub fn parse(
 
     //
 
+    fn parseConditionExpr(): Node
+    {
+        let ret = parseLetOrExpressionStatement();
+
+        if (ret.kind == "call" && ret.value == "=")
+            if !(ret.syntax & PS_PARENS)
+                fail(:ret.token, "Unparenthesized assignment used as a condition.");
+
+        return ret;
+    }
+
     fn parseIfCond(): Node
     {
         // A little bit of syntactic sugar -
@@ -2613,7 +2623,7 @@ pub fn parse(
         let not = tryConsume("op", "!");
 
         consume("op", "(");
-        let cond = parseLetOrExpressionStatement();
+        let cond = parseConditionExpr();
         consume("op", ")");
 
         if (not)
@@ -2719,7 +2729,7 @@ pub fn parse(
         if (init && init.kind != "let")
             fail("`for` expects a `let` statement, got a `" ~ init.kind ~ "`.");
 
-        let pre_cond = !tryConsume("op", ";") && parseLetOrExpressionStatement();
+        let pre_cond = !tryConsume("op", ";") && parseConditionExpr();
 
         let token   = tokens[_idx];
         let post    = !(token.kind == "op" && token.value == ")")
@@ -2767,7 +2777,7 @@ pub fn parse(
         let body = parseSubStatement();
         consume("id", "while");
         consume("op", "(");
-        let post_cond = parseLetOrExpressionStatement();
+        let post_cond = parseConditionExpr();
         consume("op", ")");
         softSemi();
 
