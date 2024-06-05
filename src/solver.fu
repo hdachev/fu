@@ -6326,7 +6326,14 @@ pub fn solve(
         //  Would make the prefix stuff more meaningful.
         //
         let mangle = overloadIdx.modid ~ "#" ~ overloadIdx.globid ~ " " ~ args_mangled;
-        return !error && getSpecs(:parent_idx).get(mangle) || doTrySpecialize(:parent_idx,
+
+        let preexisting = getSpecs(:parent_idx).get(mangle);
+
+        if (preexisting)
+            if (!preexisting.is_SPECFAIL || !error)
+                return preexisting;
+
+        return doTrySpecialize(:parent_idx,
             :overloadIdx, args_in:args, :mangle,
             :reorder, :conversions,
             :REST_START, :REST_TYPE, :error)
@@ -7160,6 +7167,9 @@ pub fn solve(
         mut target: Target;
 
         TRACE_BRACKET("doTrySpecialize " ~ target.globid ~ " " ~ template.node.value ~ " " ~ mangle);
+
+        if (error)
+            BUG("doTrySpecialize: error path about to start solving");
 
         {
             ////////////////////////////////////////////////////////////////

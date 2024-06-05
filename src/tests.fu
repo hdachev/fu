@@ -13145,7 +13145,7 @@ pub extern fn runTests()
         fn main() 0.what;
     `);
 
-    TODO_specpat(currently: "BUG doTrySpec resetMangle/preexisting 4:12+3", `
+    ZERO(`
         enum K { A }
 
         fn Str(n: <T>) case (T.is::enum) {
@@ -13153,8 +13153,8 @@ pub extern fn runTests()
             return "?";
         }
 
-        // TODO error message fail here, passes is: /////
-        // inline fn Print(x: byte)  : string = [ x ]; //
+        <fail bad call concat K byte 23:13+6 cannot match autocall Print 13:12+6 11:19+5 10:19+5><pass/>
+        inline fn Print(x: byte)  : string = [ x ]; </fail>
         inline fn Print(x: string): string = x;
         inline fn Print(x.Str)    : string = x;
 
@@ -13176,25 +13176,25 @@ pub extern fn runTests()
         }
     `);
 
-    TODO_specpat(currently: "BUG doTrySpec resetMangle/preexisting 5:12+12", `
+    ZERO(`
         fn Concat(a: byte[..], b.PrettyPronto) a ~ b;
         fn Concat(a.PrettyPronto, b: byte[..]) a ~ b;
 
         fn PrettyPronto(n: <T>) n & 1 ? "odd" : "even";
-                                                            <fail bad call X:X><pass/>
+                                                            <fail bad call 9:23+6 3:12+6 2:12+6><pass/>
         fn Concat(a.PrettyPronto, b.PrettyPronto) a ~ b;    </fail>
 
         fn main() {
             mut str = Concat(0, 1);
-            return str.len - 2;
+            return str.len - 7;
         }
     `);
 
-    TODO_specpat(currently: "BUG doTrySpec resetMangle/preexisting prelude :4+3", `
-        fn main() {                     <fail bad call X:X>
+    ZERO(`
+        fn main() {                     <fail bad call 3:30+1>
             mut str = 0      ~ 1;       <pass/>
             mut str = 0 ~ "" ~ 1;       </fail>
-            return str.len - 2;
+            return str.len - 2;                                 ;; DuplicateFunctions
         }
     `);
 
