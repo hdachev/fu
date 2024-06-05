@@ -4922,36 +4922,40 @@ pub fn solve(
             // TODO FIX bck doesnt see the `return propagateType` above //
             shadow ref item = node.items.only; ///////////////////////////
 
-            //
-            {
-                if !(isCopy ? item.type.is_rx_copy
-                            : item.type.is_rx_move)
-                {
-                    let extra = explainUsedAgain(usedAgain);
-
-                    fail(
-                        (!isCopy && item.type.is_sliceable
-                            ? "An array value is needed, but cannot be copied or moved from a slice: "
-                            : "A value is needed, but cannot be copied or moved from: ")
-                                ~ item.explainType(lt: true)
-                                ~ (extra && "\n\n\tCannot move: " ~ extra));
-                }
-
-                if (isCopy && !node.type.is_trivial)
-                    makeNote(N_NonTrivAutoCopy);
-
-                let itemSlot = isCopy
-                    ? make_copyable(slot)
-                    : make_moveable(slot);
-
-                propagateType(item, :relax_mask,
-                    slot: itemSlot);
-            }
-
             item.is_ref || BUG("Nothing to copy, item is not a ref: " ~ item);
 
             //
-            if (!isCopy)
+            if !(isCopy ? item.type.is_rx_copy
+                        : item.type.is_rx_move)
+            {
+                let extra = explainUsedAgain(usedAgain);
+
+                fail(
+                    (!isCopy && item.type.is_sliceable
+                        ? "An array value is needed, but cannot be copied or moved from a slice: "
+                        : "A value is needed, but cannot be copied or moved from: ")
+                            ~ item.explainType(lt: true)
+                            ~ (extra && "\n\n\tCannot move: " ~ extra));
+            }
+
+            if (isCopy && !node.type.is_trivial)
+                makeNote(N_NonTrivAutoCopy);
+
+            let itemSlot = isCopy
+                ? make_copyable(slot)
+                : make_moveable(slot);
+
+            propagateType(item, :relax_mask, slot: itemSlot);
+
+            if (!item.is_ref)
+            {
+                // Consider: copy(let x = 1 & 1)
+                //  If propagateType unwraps the letdef, we get copy(1 & 1),
+                //   and 1 & 1 is a value, not a ref, nothing to copy.
+                //
+                node = item;
+            }
+            else if (!isCopy)
             {
                 // TODO FIX C++ codegen uses the F_MOVED_FROM flag
                 //  to remove `const` annotations on locals & refs to locals.

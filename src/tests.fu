@@ -20923,7 +20923,7 @@ pub extern fn runTests()
         fn main() TEST_FunctionNarrowing(Type(), Type()) ? 0 : 1;
     `);
 
-    TODO_relaxer(currently: "BUG Nothing to copy, item not a ref 3:21+6", `
+    TODO_relaxer(currently: "<fail> does not throw", `
         fn what(arg: int) {
             lax mut prefix = arg & 1        <fail does nothing X:X><pass/>
             return prefix;                  </fail>
