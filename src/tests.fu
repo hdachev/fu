@@ -4208,12 +4208,13 @@ pub extern fn runTests()
         }
     `);
 
-    TODO_args(currently: "BUG about to implicit bind non-implicit arg pointer 6:20+4", `
+    ZERO(`
         struct Node { bullet?: byte; pointer: int }
 
         fn skipNonTrailingDefaultedStructField() {
-            mut bullet = byte();
-            return Node(:bullet);
+            mut bullet = byte();        <fail missing required arg pointer 6:20+4>
+            return Node(:bullet);       <pass/>
+            return Node([], :bullet);   </fail>
         }
 
         fn main() skipNonTrailingDefaultedStructField.pointer;
@@ -18780,7 +18781,7 @@ pub extern fn runTests()
 
     ZERO(`
         struct SillyHash {}
-        struct Map(type Key, <fail missing type arg Value Map 9:21+3>
+        struct Map(type Key, <fail missing type arg Value for template Map 9:21+3>
                  type Value, <pass/></fail>type Hash = SillyHash) {}
         inline fn set !<Key, Hash>(ref map: Map(:Key, :Hash), key: Key) return []
 

@@ -1180,7 +1180,7 @@ pub fn solve(
         return [];
     }
 
-    pure fn fail(reason: string, backtrack!?: string, mut token! = _here, highlight?: TokenIdx[])
+    fn fail(reason: string, backtrack!?: string, mut token! = _here, highlight?: TokenIdx[])
     {
         reason || BUG("fail(): No reason.");
 
@@ -1961,10 +1961,12 @@ pub fn solve(
         reorder.applicable = true;
         reorder.map.clear();
 
-        //
-        mut used = 0;
-        mut offset = 0;
-        mut usings_left = num_usings;
+        mut used                = 0;
+        mut offset              = 0;
+        mut usings_left         = num_usings;
+
+        mut ha_required         = 0;
+        mut ha_bound_optional   = 0;
 
         for (mut i = 0; i < host_args.len; i++)
         {
@@ -2006,7 +2008,16 @@ pub fn solve(
             }
 
             reorder.map.push(idx);
+
+            if !(host_arg.default || host_arg.flags & F_IMPLICIT)
+                ha_required++;
+            else if (idx >= 0)
+                ha_bound_optional++;
         }
+
+        // Ensure all required arguments are bound.
+        if (ha_bound_optional + ha_required > names.len + num_usings)
+            return false;
 
         usings_left && BUG("reorderByArgIDs: usings_left != 0");
 
@@ -2062,19 +2073,27 @@ pub fn solve(
 
         // Matches but no need for the reorder stuff.
         reorder.clear();
-
         return true;
     }
 
-    noinline fn ERRMSG_findUnmatchedArgName(reorder: Reorder, names: string[])
+    noinline fn ERRMSG_findUnmatchedArgName(
+        reorder: Reorder, names: string[], host_args: Argument[],
+        target?: Target)
     {
-        mut used: bitset::BitSet;
+        mut used:       bitset::BitSet;
+        mut matched:    bitset::BitSet;
+
         for (mut i = 0; i < reorder.map.len; i++)
         {
             let pos = reorder.map[i];
             if (pos >= 0)
+            {
                 used.add(pos);
+                matched.add(i);
+            }
         }
+
+        let for = target && " for " ~ target.str;
 
         names.each: |name, i|
         {
@@ -2090,12 +2109,18 @@ pub fn solve(
                         first = i;
 
             if (first < i)
-                return "Duplicate :named arguments: " ~ "arg".qBAD_KW ~ " " ~ names[i].qBAD ~ " explicitly provided " ~ count ~ " times.";
+                return "Duplicate :named arguments" ~ for ~ ": " ~ "arg".qBAD_KW ~ " " ~ names[i].qBAD ~ " explicitly provided " ~ count ~ " times.";
 
-            return "Named :argument mismatch: no " ~ "arg".qBAD_KW ~ " " ~ names[i].qBAD ~ ".";
+            return "Named :argument mismatch" ~ for ~ ": no " ~ "arg".qBAD_KW ~ " " ~ names[i].qBAD ~ ".";
         }
 
-        return "Named :argument mismatch: BUG failing to explain what's wrong.";
+        host_args.each: |host_arg, i|
+            if (!host_arg.default && !matched.has(i))
+                return (host_arg.flags & F_TYPENAME
+                         ? "Missing type argument"
+                         : "Missing required argument") ~ for ~ ": " ~ host_arg;
+
+        return "Named :argument mismatch" ~ for ~ ": BUG failing to explain what's wrong.";
     }
 
     fn ERRMSG_optionalArgumentAmbiguity(
@@ -2397,7 +2422,7 @@ pub fn solve(
                 if (!names)
                     reorderByNumUsings(:reorder, host_args, args.len, :num_usings);
                 else if (!reorderByArgIDs(:reorder, names, optional, host_args, :num_usings))
-                    matchFail(ERRMSG_findUnmatchedArgName(:reorder, :names));
+                    matchFail(ERRMSG_findUnmatchedArgName(:reorder, :names, :host_args));
 
                 // Forbid optional argument ambiguities -
                 //  We should either have all optional args satisfied at the receiver or sender part,
@@ -10391,8 +10416,11 @@ pub fn solve(
                     //
                     reorder.clear()
                     if (names)
-                        if (!reorderByArgIDs(:reorder, names, optional, target.args, num_usings: 0))
-                            patternFail(ERRMSG_findUnmatchedArgName(:reorder, :names));
+                    {
+                        let host_args = target.args;
+                        if (!reorderByArgIDs(:reorder, names, optional, host_args, num_usings: 0))
+                            patternFail(ERRMSG_findUnmatchedArgName(:reorder, :names, :host_args, :target));
+                    }
 
                     //
                     mut numArgs = 0;
