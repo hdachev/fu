@@ -5071,6 +5071,44 @@ pub extern fn runTests()
         }
     `);
 
+    TODO_confusing(currently: "subseq return i32 void 4:31+1", `
+        fn main() {
+            mut total = 100;
+            for (mut i = 0; i < total; i++) {
+                if (i & 1) continue;
+                total-- // no semi
+            }
+
+            return total - 66
+        }
+    `);
+
+    ZERO(`
+        fn main() {
+            mut total = 100;
+            for (mut i = 0; i < total; i++) {
+                if (i & 1) continue;
+                if (i & 3) continue <fail actual return does not match annot expects void, got i32>i<pass/></fail>;
+                total--; // no semi
+            }
+
+            return total - 80
+        }
+    `);
+
+    ZERO(`
+        fn main() {
+            mut total = 100;
+            fn iteration(i: int) {
+                if (i & 1) return;
+                total-- <fail subseq return no common supertype void i32 6:22+2><pass/>;</fail>
+            }
+
+            for (mut i = 0; i < total; i++) iteration(i);
+            return total - 66
+        }
+    `);
+
     // /Lints.
 
 
