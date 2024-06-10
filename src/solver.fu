@@ -617,9 +617,9 @@ pub fn solve(
     {
         target!?:           Target;
         pass!?:             SolverPass;
+        mask!?:             HelpersMask;
 
         id?:                string;
-        mask!?:             HelpersMask;
         local_of!?:         i32;
         locals_start!?:     i32;
 
@@ -9404,7 +9404,9 @@ pub fn solve(
             checkAssignable(host: h.ret_expect, type,
                 reason: NICEERR_missingReturn
                     ? h.target ~ " is missing a final return statement"
-                    : "Actual return type does not match annotation");
+                    : h.mask & HM_Function
+                        ? "Actual return type does not match annotation"
+                        : "Bad jump expression");
 
         h.ret_actual = h.ret_actual
             ? superType_neverOK(h.ret_actual, type,
@@ -9597,7 +9599,7 @@ pub fn solve(
         // TODO handle deadcode everywhere
         let pre_cond    = n_pre_cond    && solveNode(n_pre_cond,  t_proposition);
         let pre         = n_pre         && solveBlock(n_pre, type: t_void, mask: HM_LoopPreheader);
-        let body        = n_body        && solveBlock(n_body, type: t_void);
+        let body        = n_body        && solveBlock(n_body, type: t_void, mask: HM_LoopBody);
         let post        = n_post        && solveBlock(n_post, type: t_void);
         let post_cond   = n_post_cond   && solveNode(n_post_cond, t_proposition);
 

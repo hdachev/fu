@@ -5088,7 +5088,7 @@ pub extern fn runTests()
             mut total = 100;
             for (mut i = 0; i < total; i++) {
                 if (i & 1) continue;
-                if (i & 3) continue <fail actual return does not match annot expects void, got i32>i<pass/></fail>;
+                if (i & 3) continue <fail bad jump expression expects void, got i32>i<pass/></fail>;
                 total--; // no semi
             }
 

@@ -28,7 +28,7 @@ using flags SolverStatus: u16
 
 // Solver helpers.
 
-using flags HelpersMask
+using flags HelpersMask: u16
 {
     HM_CanBreak
     HM_CanReturn
@@ -41,7 +41,7 @@ using flags HelpersMask
     // ...
 
     HM_LoopPreheader
-    // ...
+    HM_LoopBody
     // ...
     // ...
 }
