@@ -5513,12 +5513,20 @@ pub fn solve(
         }
         ////////////////////////////////////////////////////////////////
 
-        let items       = solveNodes(
+        mut items       = solveNodes(
             nodes,
             type_all:           t_void,
             type_last:          type,
             use_type_last:      !type.is_void,
             DeadBreak_Always);
+
+        if (type.is_void)
+        {
+            // For blocks that expect void (e.g. loop bodies),
+            //  this allows the omission of the final semicolon.
+            if (items && !items.last.isIrrelevantOrNever)
+                items ~= createEmpty();
+        }
 
         // TODO clean this up, non-return ret-expects
         //

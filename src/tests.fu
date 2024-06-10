@@ -5071,7 +5071,7 @@ pub extern fn runTests()
         }
     `);
 
-    TODO_confusing(currently: "subseq return i32 void 4:31+1", `
+    ZERO(`
         fn main() {
             mut total = 100;
             for (mut i = 0; i < total; i++) {

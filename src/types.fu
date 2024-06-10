@@ -588,6 +588,11 @@ pub fn is_Typename(type: Type)
 
 //
 
+pub fn isIrrelevantOrNever(type: Type)
+{
+    return !type.usage;
+}
+
 pub fn isIrrelevant(type: Type)
 {
     return !type.usage
