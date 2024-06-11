@@ -9362,6 +9362,7 @@ pub fn solve(
             return SolvedNode("__far_jump", type: t_never, :node.flags, items: [ expr ], helpers: h);
         }
 
+        _here = node.token;
         return solveJump_finish(:node.flags, :expr, :h);
     }
 
@@ -9413,7 +9414,7 @@ pub fn solve(
                 reason: NICEERR_missingReturn
                     ? h.target ~ " is missing a final return statement"
                     : h.mask & HM_Function
-                        ? "Actual return type does not match annotation"
+                        ? h.target ~ ": return type does not match annotation"
                         : "Bad jump expression");
 
         h.ret_actual = h.ret_actual
@@ -12136,8 +12137,15 @@ pub fn solve(
 
                 if (node.helpers.local_of == _current_fn.target.globid)
                 {
+                    // TODO FIX solveJump uses tryConvertIfNeeded instead of convertIfNeeded
+                    //  to reuse the error reporting stuff in reportReturnType
+                    let here0 = _here;
+                    _here = node.token;
+
                     TRACE("Fixing up a __far_jump: " ~ node);
                     node = solveJump_finish(:node.flags, h: node.helpers, expr: node.items.only);
+
+                    _here = here0;
                 }
                 else
                 {

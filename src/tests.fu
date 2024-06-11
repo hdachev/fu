@@ -750,7 +750,7 @@ pub extern fn runTests()
     `);
 
     ZERO(`
-        inline fn inl_lies(x: u32)<fail actual return match annot>: i32<pass/></fail> = x;
+        inline fn inl_lies(x: u32)<fail inl_lies: return match annot 2:43+1>: i32<pass/></fail> = x;
         fn main() 0.inl_lies ? 1 : 0;                           ;; PointlessLocal
     `);
 
@@ -1908,7 +1908,7 @@ pub extern fn runTests()
         }
     `);
 
-    TODO_recursion(currently: "expects struct UsedAgain, got struct UsedAgain 8:32+22", `
+    TODO_recursion(currently: "expects struct UsedAgain, got struct UsedAgain 8:25+6", `
         fn privateTypeWithinRecursion(lt: int[]) {
             fn propagateType(shadow lt: int[]) {
                 struct UsedAgain { i: int };
@@ -5105,6 +5105,21 @@ pub extern fn runTests()
             }
 
             for (mut i = 0; i < total; i++) iteration(i);
+            return total - 66
+        }
+    `);
+
+    TODO_lint(currently: "subseq return void | i32 8:22+2", `
+        fn for(ref n: int, what) for (mut i = 0; i < n; i++) what(i);
+
+        fn main(): i32 {
+            mut total = 100;
+            total.for: |i| {            <fail main: return type does not match annot i32, got void 7:28+6>
+                if (i & 1) return;      <pass/>
+                if (i & 1) continue;    </fail>
+                total--
+            };
+
             return total - 66
         }
     `);
@@ -15743,7 +15758,7 @@ pub extern fn runTests()
         return      </fail> 1.originalHello + 2.shadowedHello == 210 ? 0 : 1;
     `);
 
-    TODO_templ_vis(currently: "actual return type i32, got Hello 9:26+4", `
+    TODO_templ_vis(currently: "main: return type i32, got Hello 9:13+6", `
         struct Hello { hello: int };
         fn what(using ref <fail ambig hello hello using 5:16+5 4:27+5 2:24+5>
                           hello     <pass/>
@@ -21523,7 +21538,7 @@ pub extern fn runTests()
     ZERO(`
         fn main() {
             let i: i8 = 0;
-            <fail return type does not match annot i32, got i8 5:20+1>
+            <fail return type does not match annot i32, got i8 5:13+6>
             return i;        <pass/>
             return i.i32;    </fail>
         }
@@ -21534,7 +21549,7 @@ pub extern fn runTests()
 
         fn main() {
             let i: s32 = 0;
-            <fail return type does not match annot expects i32, got prim s32 7:20+1>
+            <fail return type does not match annot expects i32, got prim s32 7:13+6>
             return i;        <pass/>
             return i.i32;    </fail>
         }
@@ -21545,7 +21560,7 @@ pub extern fn runTests()
 
         fn main() {
             let e = Enum.None;
-            <fail return type does not match annot expects i32, got Enum 7:20+1>
+            <fail return type does not match annot expects i32, got Enum 7:13+6>
             return e;        <pass/>
             return e.i32;    </fail>
         }
