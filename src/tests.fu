@@ -16529,8 +16529,19 @@ pub extern fn runTests()
 
     ZERO(`
         fn main() {
+
+            // Previously we considered making the : shorthand available in expression position -
+            //  now we're backing off and making it solely available for void-returning lambdas in stmt position,
+            //   and making the continue/break rewrites more cautious for regular lambdas.
+            //
+            // Brief - we're equating the : shorthand with custom control flow.
+            //
             mut sum = 0;
-            each([ 1, 2, 3 ].map: |x| x * x): |x| sum += x;
+            each([ 1, 2, 3 ]        <fail missing comma 12:21+1>
+                .map: |x| x * x     <pass/>
+                .map(|x| x * x)     </fail>
+                    ): |x| sum += x;
+
             return sum - 14;
         }
     `);

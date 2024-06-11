@@ -2361,7 +2361,14 @@ pub fn parse(
             }
 
             mut expr = parseExpression(P_RESET, mode: M_CALLSITE_ARGUMENT_POS);
-            expr.tryColonPipeline(stmt: false);
+
+            // Experimental - deciding against this,
+            //  we'll be using the : shorthand for custom control-flow only,
+            //   and we'll rely on this to disambiguate unlabelled breaks and continues & co,
+            //    + we'll infer a void-return for the lambda,
+            //     so you can skip the final semi unambiguously.
+            //
+            // expr.tryColonPipeline(stmt: false);
 
             if (autoName)
                 name = getAutoName(expr);
