@@ -27,7 +27,7 @@ let USE_rev_spec            = true;
 //
 
 let RESOLVE_report          = false;
-let TRACE_enable            = false;
+let TRACE_enable            = true;
 
 
 // When you have an if (a -> $T) somewhere,
@@ -13029,7 +13029,7 @@ pub fn solve(
             let t = nested(locid);
             ref o = GET_mut(t);
 
-            TRACE("RESOLVE_byTempCopy: " ~ t);
+            TRACE("RESOLVE_byMutvar: " ~ t ~ " acceptsTempCopies(" ~ o.acceptsTempCopies ~ ") o.type.is_rx_copy(" ~ o.type.is_rx_copy ~ ")");
 
             if (!o.acceptsTempCopies)
                 return false;
@@ -13405,6 +13405,8 @@ pub fn solve(
             PROFILE(|ref p| AAR ? p.AAR_TrackRead
                                 : p.BCK_TrackRead);
 
+            TRACE_BRACKET("bck_trackRead " ~ callsite.lifetime);
+
             // println("bck_trackRead " ~ target ~ " " ~ callsite.value);
 
             _here           = callsite.token;
@@ -13448,6 +13450,8 @@ pub fn solve(
             let loop_start  = callOrPragma._loop_start || BUG("bck_trackWrites: _loop_start not set on callsite.");
             let OPTI_isLoop = loop_start != NO_LOOP && !!events.used_in_a_loop;
             let OPTI_hasPRA = !!events.preceding_ref_args;
+
+            TRACE_BRACKET("bck_trackWrites " ~ lifetime);
 
             //
             lifetime.Lifetime_each: |locid!write, region!write_region, paths!write_paths|
@@ -13601,6 +13605,9 @@ pub fn solve(
                         }
                     }
                 }
+
+                if (invalidates)
+                    TRACE("invalidates ||= " ~ invalidates);
 
                 // Track writes, easy.
                 invalidates.Lifetime_each: |locid!invalidatee|

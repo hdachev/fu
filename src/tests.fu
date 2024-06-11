@@ -17,7 +17,7 @@ pub extern fn runTests()
     // Solo mode, so you can mute all tests
     //  but what you want to work on -
 
-    /*
+    //*
     let SOLO            = fn ZERO;
 
     lax fn SOLO_muteRest (lax a, lax currently?: string, lax options?: options::Options) {}
@@ -8533,7 +8533,7 @@ pub extern fn runTests()
         }
     `);
 
-    TODO_disjoint(currently: "cannot access t 11:20+1 inval by GET 8:35+1", `
+    SOLO(`
         struct SolverState  {
             overloads:          string[];
             eph?:               int;
@@ -8542,7 +8542,7 @@ pub extern fn runTests()
         fn solve(ref ss: SolverState) {
             fn GET(t) ss.overloads[t];
             ref t = ss.eph;
-            t.GET = t.GET ~ ", world!";
+            t.GET = ", world!";
             return t.GET;
         }
 
