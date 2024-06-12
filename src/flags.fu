@@ -140,6 +140,8 @@ using flags Flags: u32
     F_COW_INSIDE
 };
 
+let F_TODO_FIX_TRAILING_RETURN = F_LAMBDA;
+
 
 //
 
@@ -359,3 +361,8 @@ fn isImmediatelyDiscardable(k: Kind)
 {
     return k <= "fn";
 }
+
+
+// Experiments / extensions / dialects?
+
+let X_OPTIONAL_SEMIS = true;

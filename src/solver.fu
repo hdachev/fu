@@ -5473,6 +5473,12 @@ pub fn solve(
         return root;
     }
 
+    fn TODO_FIX_optionalSemis_blockWantsVoid(h: HelpersData)
+    {
+        return X_OPTIONAL_SEMIS
+            && (h.ret_expect || h.ret_actual).is_void;
+    }
+
     fn solveBlock(node: Node, type!: Type, fnbody_of!?: i32, mask! = HM_CanBreak, id!?: string, locals_start!?: i32): SolvedNode
     {
         mut nodes = node.kind == "block"  ? node.items : [ node ];
@@ -5508,7 +5514,11 @@ pub fn solve(
                 last = Node(kind: "return", value: [], :last.token,
                     items: last.kind != "empty" && [ last ],
                     flags: (NICEERR_missingReturn && F_IMPLICIT)
-                         | F_LAMBDA);
+
+                        // TODO FIX both flags are the same, listing for readability -
+                        //  fix this, not every fn is a lambda, historical nonsense.
+                         | F_LAMBDA
+                         | F_TODO_FIX_TRAILING_RETURN);
             }
         }
         ////////////////////////////////////////////////////////////////
@@ -5520,7 +5530,7 @@ pub fn solve(
             use_type_last:      !type.is_void,
             DeadBreak_Always);
 
-        if (type.is_void)
+        if (h.TODO_FIX_optionalSemis_blockWantsVoid)
         {
             // For blocks that expect void (e.g. loop bodies),
             //  this allows the omission of the final semicolon.
@@ -5546,7 +5556,7 @@ pub fn solve(
         {
             let tail = items ? items.last.type : t_void;
             if (!tail.is_never)
-                reportReturnType(:h, items ? items.last.type : t_void);
+                reportReturnType(:h, tail);
             else if (!h.ret_actual)
                 h.ret_actual = t_never;
         }
@@ -9317,7 +9327,7 @@ pub fn solve(
     fn solveJump(node: Node): SolvedNode
     {
         let h = node.kind == "return"
-            ? Scope_lookupReturn(node.value, lambdaOK: !!(node.flags & F_LAMBDA))
+            ? Scope_lookupReturn(node.value, lambdaOK: !!(node.flags & F_TODO_FIX_TRAILING_RETURN))
             : Scope_lookupLabel (node.value, cont: node.kind == "continue");
 
         h || BUG("solveJump: empty jump target");
@@ -9342,6 +9352,11 @@ pub fn solve(
         // Dead code elim.
         if (expr.type.is_never)
             return expr;
+
+        // F_IMPLICIT returns are injected
+        if (node.flags & F_TODO_FIX_TRAILING_RETURN)
+            if (h.TODO_FIX_optionalSemis_blockWantsVoid)
+                expr = createBlock(expr, createEmpty());
 
         // Conversions.
         if (h.ret_expect)

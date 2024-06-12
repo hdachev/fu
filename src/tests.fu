@@ -5101,7 +5101,7 @@ pub extern fn runTests()
             mut total = 100;
             fn iteration(i: int) {
                 if (i & 1) return;
-                total-- <fail subseq return no common supertype void i32 6:22+2><pass/>;</fail>
+                total-- //fail subseq return no common supertype void i32 6:22+2><pass/>;</fail>
             }
 
             for (mut i = 0; i < total; i++) iteration(i);
@@ -5109,8 +5109,8 @@ pub extern fn runTests()
         }
     `);
 
-    TODO_lint(currently: "subseq return void | i32 8:22+2", `
-        fn for(ref n: int, what) for (mut i = 0; i < n; i++) what(i);
+    TODO_semantics(currently: "BUG exit code", `
+        fn for(<alt>const </alt>ref n: int, what) for (mut i = 0; i < n; i++) what(i);
 
         fn main(): i32 {
             mut total = 100;
