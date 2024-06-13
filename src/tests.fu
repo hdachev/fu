@@ -3635,10 +3635,9 @@ pub extern fn runTests()
         fn main()   <fail unterminated string use backticks 3:13+2>
             "c      <fail/>  // "
             "c
-            "       <pass/>
+            "<pass/>
             \`c
-            \`      </fail>
-                [0].i32 - 99;
+            \`</fail>[0].i32 - 99;
     `);
 
     ZERO(`
@@ -7899,8 +7898,8 @@ pub extern fn runTests()
         fn bck_discards_its_edits_to_defer_nodes(
             ref out: i32[][], ref state: i32[])
         {
-            incr_out        (:out, incr_state(state), incr_state(state));
-            defer incr_out  (:out, incr_state(state), incr_state(state));
+            incr_out(:out, incr_state(state), incr_state(state));
+            defer incr_out(:out, incr_state(state), incr_state(state));
             return out;
         }
 
@@ -13515,7 +13514,7 @@ pub extern fn runTests()
     `);
 
     ZERO(`
-        fn Only(s: $T[]) s.len == 1 ? s[0] : throw ("len != 1: " ~ s.len);
+        fn Only(s: $T[]) s.len == 1 ? s[0] : throw("len != 1: " ~ s.len);
 
         struct Node       { kind: string; };
         struct SolvedNode { kind: string; };
@@ -13528,7 +13527,7 @@ pub extern fn runTests()
 
         // the '|| throw' introduces a bullshit lambda during codegen,
         //  which misreturns a dangling reference to its own frame.
-        fn solveDeclExpr(n: Node) solveNodes([ n ]).Only || throw ("!only");
+        fn solveDeclExpr(n: Node) solveNodes([ n ]).Only || throw("!only");
 
         fn main() solveDeclExpr(Node("a")).kind.len - 1;
     `);
@@ -15864,7 +15863,7 @@ pub extern fn runTests()
     `);
 
     ZERO(`
-        fn noReturn() throw ("ex");
+        fn noReturn() throw("ex");
 
         fn doesReturn(a: i32) {
             if (a > 0) return noReturn();
@@ -15900,7 +15899,7 @@ pub extern fn runTests()
     `);
 
     ZERO(`
-        fn noReturn() throw ("ex");
+        fn noReturn() throw("ex");
 
         fn returnVoid(a: i32): void {
             if (a > 0) return noReturn();
@@ -15930,7 +15929,7 @@ pub extern fn runTests()
             fn compile(x: i32)
             {
                 // 1. this throw contributed a 'never' ret_count.
-                x || throw ("x=0");
+                x || throw("x=0");
                 if (x & 1) compile(x + 1); // 2. then this recursion did something.
                 sum += x; // <- also this must be a closure.
                 // 3. finally no ret_actual but non-zero ret_count.
@@ -15948,7 +15947,7 @@ pub extern fn runTests()
             fn getModule(fname: string) fname.len;
             fn compile(fname: string, via: string = "")
             {
-                let module = getModule(fname) || throw ("import circle: '" ~ via ~ fname ~ "'.");
+                let module = getModule(fname) || throw("import circle: '" ~ via ~ fname ~ "'.");
                 if (module & 1) {
                     let fuzimports = fname.split("a");
                     for (mut i = 0; i < fuzimports.len; i++)
@@ -18751,7 +18750,7 @@ pub extern fn runTests()
         struct HasData(type T) { data: T[] };
 
         fn obfuscate !T(l.data: T[..], r.data: T[..], with_left, with_right) {
-            with_left (l0?: 0, l1?: l.len);
+            with_left(l0?: 0, l1?: l.len);
             with_right(right: r[.. r.len]);
         }
 
@@ -19370,7 +19369,7 @@ pub extern fn runTests()
         fn loop2d(x0, x1, y0, y1, fn)
             loop1d(y0, y1, |y|
                 loop1d(x0, x1, |x|
-                    fn (x, y)));
+                    fn(x, y)));
 
         fn main() {
             mut sum = 0;
@@ -21403,8 +21402,8 @@ pub extern fn runTests()
 
     // Function types sketch.
 
-    SKETCH(currently: "expected , got . 2:42+1", `
-        fn apply(num: i32, func: fn (i32): i32) = func(num);
+    SKETCH(currently: "expected , got . 2:41+1", `
+        fn apply(num: i32, func: fn(i32): i32) = func(num);
         fn main()                               = apply([1], |i| i - 1);
     `);
 

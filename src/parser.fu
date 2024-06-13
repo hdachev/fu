@@ -1839,12 +1839,22 @@ pub fn parse(
         return max(0, min(1, next.col - prev.col - prev.chars));
     }
 
+    fn whitespaceBefore(token: Token, tokidx: int)
+    {
+        return whitespaceDiff(tokens.if(exists: tokidx - 1), token);
+    }
+
+    fn whitespaceAfter(token: Token, tokidx: int)
+    {
+        return whitespaceDiff(token, tokens.if(exists: tokidx + 1));
+    }
+
     fn tryParseBinary(left: Node, op: Token, p1: i32): Node
     {
         let miss = p1 > _precedence.formal || p1 == _precedence.formal && !BINOP.RIGHT_TO_LEFT[p1];
 
-        let whitesp_before  = whitespaceDiff(tokens.if(exists: _idx - 1), op);
-        let whitesp_after   = whitespaceDiff(op, tokens.if(exists: _idx + 1));
+        let whitesp_before = whitespaceBefore(op, _idx);
+        let whitesp_after  = whitespaceAfter (op, _idx);
 
         if (X_BINARY_OP_SYMMETRIC_WS && whitesp_before && !whitesp_after)
             return [];
@@ -1993,10 +2003,20 @@ pub fn parse(
                         ~ " and wraps around the whole expression."
                         ~ " Please parenthesize explicitly to make this obvious.");
 
+            fn bracket_ws_ok()
+                !X_CALL_PARENS_NO_LEADING_WS ||
+                !whitespaceBefore(token, _idx - 1);
+
             if (v == ";") return { _idx--; Node() };
             if (v == ".") return { lint(); parseAccessExpression(head) };
-            if (v == "(") return { lint(); parseCallExpression(head) };
-            if (v == "[") return { lint(); parseIndexExpression(head) };
+
+            if ((v == "(" || v == "[") && bracket_ws_ok)
+            {
+                lint();
+                return v == "("
+                    ? parseCallExpression(head)
+                    : parseIndexExpression(head)
+            }
 
             let p1 = BINOP.PRECEDENCE.get(v);
             if (p1)
