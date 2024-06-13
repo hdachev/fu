@@ -225,14 +225,14 @@ pub fn FAIL_text(
 
 pub fn FAIL(reason: string, tokens!: TokenIdx[] = [ _here ]): never
 {
-    throw (FAIL_text(:tokens, :reason));
+    throw(FAIL_text(:tokens, :reason));
 }
 
 pub fn FAIL(
     fname!: string, src!: string,
     token!: LineColChars, reason!: string): never
 {
-    throw (FAIL_text(:fname, :src, :token, :reason));
+    throw(FAIL_text(:fname, :src, :token, :reason));
 }
 
 pub fn BUG(mut reason?: string)

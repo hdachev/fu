@@ -2578,7 +2578,7 @@ pub fn cpp_codegen(
             {
                 if (args.len == 1)
                     return cpp::hasPostfix(id)  ? emitPostfixOp(id.valid_operator)
-                                                : emitPrefixOp (id.valid_operator);
+                                                :  emitPrefixOp(id.valid_operator);
 
                 if (args.len == 2)
                 {
@@ -2809,7 +2809,7 @@ pub fn cpp_codegen(
 
         let cond = n0 && cgNode(n0, M_RETBOOL | (stmt && M_PARENS));
         mut cons = n1 && (stmt ? blockWrapSubstatement(n1) : cgNode(n1));
-        mut alt  = n2 && (stmt ? blockWrap_unlessIf   (n2) : cgNode(n2));
+        mut alt  = n2 && (stmt ?    blockWrap_unlessIf(n2) : cgNode(n2));
 
         if (stmt)
             return "if (" ~ cond ~ ")" ~ cons ~ (alt ? _indent ~ "else" ~ alt : "");

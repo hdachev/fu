@@ -225,7 +225,7 @@ pub fn isCanonAssignable(host: byte[..], guest: byte[..])
                     if (isLastHostPair != isLastGuestPair)
                         break;
 
-                    let hostItem  = host [h0 .. h1];
+                    let hostItem  =  host[h0 .. h1];
                     let guestItem = guest[g0 .. g1];
                     if (isCanonAssignable(hostItem, guestItem))
                         continue :NEXT_HOST_PAIR;

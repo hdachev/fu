@@ -1745,7 +1745,7 @@ pub fn solve(
 
             overload.type = flags & F_MUT
                 ? add_mutref(type, lifetime)
-                : add_ref   (type, lifetime);
+                :    add_ref(type, lifetime);
 
             // Not the best place for this, but we intercept everything here.
             if (overload.type.is_zeroes && ~flags & F_LAX)
@@ -5219,7 +5219,7 @@ pub fn solve(
 
                             shadow let cond = k == "and"
                                 ? createAnd(cond, t_proposition)
-                                : createOr (cond, t_proposition);
+                                :  createOr(cond, t_proposition);
 
                             shadow let alt = createBlock(alt, :alt.last.type);
 
@@ -8945,7 +8945,7 @@ pub fn solve(
         name: string, asserts: DeclAsserts, specPat!: string,
         initialHash!: u64)
     {
-        name[0].u8 - '0'.u8 > 9.u8 || throw (
+        name[0].u8 - '0'.u8 > 9.u8 || throw(
             "Bad struct name, leading digit: `" ~ name ~ "`.");
 
         // Alloc a slot.
@@ -9328,7 +9328,7 @@ pub fn solve(
     {
         let h = node.kind == "return"
             ? Scope_lookupReturn(node.value, lambdaOK: !!(node.flags & F_TODO_FIX_TRAILING_RETURN))
-            : Scope_lookupLabel (node.value, cont: node.kind == "continue");
+            :  Scope_lookupLabel(node.value, cont: node.kind == "continue");
 
         h || BUG("solveJump: empty jump target");
 
@@ -9680,10 +9680,10 @@ pub fn solve(
             {
                 items_ast ~= astReplace(body_template, |ref item: Node|
                 {
-                    let idx = item.value == placeholder        ? 0
-                            : item.value.starts (with: prefix) ? 0
-                            : item.value.ends   (with: suffix) ? item.value.len - placeholder.len
-                            : item.value.find   (inside);
+                    let idx = item.value == placeholder         ? 0
+                            : item.value.starts(with: prefix)   ? 0
+                            : item.value.ends(with: suffix)     ? item.value.len - placeholder.len
+                            : item.value.find(inside);
 
                     if (idx >= 0)
                     {

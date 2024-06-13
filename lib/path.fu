@@ -89,7 +89,7 @@ fn relative(from: string, to: string): string
 
 fn join(a: string, b: string): string
 {
-    return normalize (b.starts  (with: '/') ?           b
-                    : a.ends    (with: '/') ? a       ~ b
-                                            : a ~ '/' ~ b);
+    return normalize(b.starts(with: '/') ?           b
+                   :   a.ends(with: '/') ? a       ~ b
+                                         : a ~ '/' ~ b);
 }
