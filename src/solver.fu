@@ -4668,7 +4668,7 @@ pub fn solve(
                         {
                             // TODO fix this relaxer can't scale up to q_USAGE,
                             //  we gotta replace it with the backwards design.
-                            shadow let relax_mask = relax_mask &~ q_USAGE;
+                            shadow let relax_mask = relax_mask & ~q_USAGE;
 
                             mut type = orig.type;
                             if (type.try_relax(:slot, :relax_mask))
@@ -7511,7 +7511,7 @@ pub fn solve(
                     ref ext = EXT_mut(target);
                     for (mut i = 0; i < ext.args.len; i++)
                         ext.args[i].type.force_relax(
-                            relax_mask: RELAX_all &~ q_USAGE);
+                            relax_mask: RELAX_all & ~q_USAGE);
                 }
                 // RECURSIVE RELAX //////////////////////////////////
 
@@ -12500,7 +12500,7 @@ pub fn solve(
                 id:     hacks::ClosureID(:host_arg.target, :revision).serialize(),
 
                 init:   args[i],
-                flags:  host_arg.flags  &~ F_COMPOUND_ID
+                flags:  host_arg.flags  & ~F_COMPOUND_ID
 
                                         // Don't emit unused warnings here,
                                         //  should have been checked on the original,
