@@ -365,4 +365,5 @@ fn isImmediatelyDiscardable(k: Kind)
 
 // Experiments / extensions / dialects?
 
-let X_OPTIONAL_SEMIS = true;
+let X_OPTIONAL_SEMIS            = true;
+let X_BINARY_OP_SYMMETRIC_WS    = X_OPTIONAL_SEMIS;

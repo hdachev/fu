@@ -2319,7 +2319,7 @@ pub fn cpp_codegen(
                 }
 
                 if (arg.isPointlessMustSeq(ext.args[i])
-                        || MUSTSEQ_mask &~ MUSTSEQ_bit < MUSTSEQ_mask
+                        || MUSTSEQ_mask & ~MUSTSEQ_bit < MUSTSEQ_mask
                             && rest_isPointlessMustSeq)
                 {
                     noteDefect(PointlessMustSeq);
@@ -3691,7 +3691,7 @@ pub fn cpp_codegen(
 
             let isTrail = trail && i == nodes.len - 1 && !node.is_never && !node.isIrrelevant;
 
-            mut src     = node && cgNode(node, isTrail ? mode &~ M_STMT : mode);
+            mut src     = node && cgNode(node, isTrail ? mode & ~M_STMT : mode);
 
             src || mode & M_STMT || BUG("cgNodes: empty output for Node(kind=`" ~ node.kind ~ "` value=`" ~ node.value ~ "`).");
 

@@ -104,8 +104,8 @@ fn areVFactsAssignable(host: VFacts, guest: VFacts)
 {
     if (SELF_TEST)
     {
-        let h = host  &~ Typename;
-        let g = guest &~ Typename;
+        let h = host  & ~Typename;
+        let g = guest & ~Typename;
         if !(h & g == h)
             BUG("areVFactsAssignable: vfacts mismatch: " ~ host ~ " != " ~ guest);
     }
@@ -499,7 +499,7 @@ pub fn despeculateStruct(mut type: Type)
 
 pub fn will_relax(ref type: Type, slot!: Type, relax_mask!: Quals): Quals
 {
-    return (type.quals &~ slot.quals) & relax_mask;
+    return (type.quals & ~slot.quals) & relax_mask;
 }
 
 pub fn try_relax(ref type: Type, slot!: Type, relax_mask!: Quals): Quals

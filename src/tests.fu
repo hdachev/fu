@@ -4505,7 +4505,7 @@ pub extern fn runTests()
         struct Type { i: i32 };
         fn is_mutref (t: Type) !!(t.i & 3);
         fn is_ref    (t: Type) !!(t.i & 1);
-        fn clear_refs(t: Type) Type(t.i &~ 3);
+        fn clear_refs(t: Type) Type(t.i & ~3);
 
         fn tryClearRefs(t: Type, mutref?: bool): Type =     // type-hints vs type-assertions:
             (mutref ? t.is_mutref : t.is_ref)               //  solveBlocks used within '&&' and '?'
@@ -9795,8 +9795,8 @@ pub extern fn runTests()
                 return src.slice(idx, idx1);
             }
 
-            fn err(idx1_x2: i32) err_str(idx1_x2 /2);
-            return err(end *2);
+            fn err(idx1_x2: i32) err_str(idx1_x2 / 2);
+            return err(end * 2);
         }
 
         fn main() lex("    hello").len - 5;
@@ -11584,7 +11584,7 @@ pub extern fn runTests()
             mut sum = 0;            // PARSE DRAMA
             woot: |one| sum += one; //  stmt lambda, followed by
             (sum += 1) += 1;        //   '(' which continued as-if-expr
-            return sum -3;
+            return sum - 3;
         }
     `);
 
@@ -12126,7 +12126,7 @@ pub extern fn runTests()
     `
         let q_mutref = 1;
         pub let RELAX_mutref_only = q_mutref;
-        pub fn what(relax_mask: i32) relax_mask -1;
+        pub fn what(relax_mask: i32) relax_mask - 1;
     `,
     `
         import _0;
@@ -16217,7 +16217,7 @@ pub extern fn runTests()
             return x * 3 + if_err * 5 + if_ok * 7;
         }
 
-        fn main()   (test_defer_if_errok(true)  - 7 *3 - 1*5 - 0*7)
+        fn main()   (test_defer_if_errok(true)  -  7*3 - 1*5 - 0*7)
             + 100 * (test_defer_if_errok(false) - 10*3 - 0*5 - 9*7);
     `);
 

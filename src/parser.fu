@@ -1802,7 +1802,7 @@ pub fn parse(
                 mode & M_LINT_UNARY_PRECEDENCE
                     && (head.kind == "int" || head.kind == "real")
                         ? mode
-                        : mode &~ M_LINT_UNARY_PRECEDENCE;
+                        : mode & ~M_LINT_UNARY_PRECEDENCE;
             //////////////////////////////////////////////
 
             mut loc0 = _loc = _idx;
@@ -1843,10 +1843,14 @@ pub fn parse(
     {
         let miss = p1 > _precedence.formal || p1 == _precedence.formal && !BINOP.RIGHT_TO_LEFT[p1];
 
+        let whitesp_before  = whitespaceDiff(tokens.if(exists: _idx - 1), op);
+        let whitesp_after   = whitespaceDiff(op, tokens.if(exists: _idx + 1));
+
+        if (X_BINARY_OP_SYMMETRIC_WS && whitesp_before && !whitesp_after)
+            return [];
+
         // Whitespace lint -
-        let whitesp_lint = max(
-            whitespaceDiff(tokens.if(exists: _idx - 1), op),
-            whitespaceDiff(op, tokens.if(exists: _idx + 1)));
+        let whitesp_lint = max(whitesp_before, whitesp_after);
 
         if (_precedence.tokidx)
         {
