@@ -165,6 +165,7 @@ struct LineColChars
 struct Token
 {
     true kind:  Kind;
+    flags:      TokenFlags;
     using lcc:  LineColChars;
     value:      string;
 };

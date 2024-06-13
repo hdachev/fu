@@ -362,6 +362,12 @@ fn isImmediatelyDiscardable(k: Kind)
     return k <= "fn";
 }
 
+flags TokenFlags
+{
+    WhitespaceBefore
+    NewlineBefore
+}
+
 
 // Experiments / extensions / dialects?
 
