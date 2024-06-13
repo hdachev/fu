@@ -11636,9 +11636,24 @@ pub extern fn runTests()
         fn main() test(3).i32;
     `);
 
-    TODO_ambig(currently: "actual return Node does not match annot bool 9:21+6", `
+    ZERO(`
         fn main() {
             struct Node {};
+
+            fn evalTypeAnnot(node: Node): bool =        <fail condition is always empty Node use != [] to suppress this warning 6:24+4>
+                return node && [];                      <pass/>
+                return node != [] && [];                </fail>
+
+            fn trySolveTypeParams(node: Node): bool =
+                evalTypeAnnot(node);
+
+            return trySolveTypeParams([]) && 0;
+        }
+    `);
+
+    ZERO(`
+        fn main() {
+            struct Node { v: int };
     <alt>
             fn evalTypeAnnot(node: Node) =
                 return !!node;
@@ -11646,7 +11661,7 @@ pub extern fn runTests()
             fn evalTypeAnnot(node: Node): bool =
                 return node && [];
     </alt>
-            fn trySolveTypeParams(node: Node): bool =   <fail actual return void does not match annot bool 9:21+6>
+            fn trySolveTypeParams(node: Node): bool =   <fail missing final return expects bool, got void 9:21+6>
                 let expect = evalTypeAnnot(node);       <pass/>
                              evalTypeAnnot(node);       </fail>
 

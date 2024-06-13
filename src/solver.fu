@@ -11156,10 +11156,12 @@ pub fn solve(
 
         if (cond.type.isIrrelevant)
         {
-            voidOk || fail("Condition is " ~ explainType(cond.type)
+            voidOk || fail("Condition is an always-empty " ~ explainType(cond.type)
                 ~ (cond.kind == "call"
                     ? ", returned from " ~ cond.target.explainWhichFn(fmt: FullContext)
-                    : ", not meaningful in a boolean context."));
+                    : ", not meaningful in a boolean context.")
+
+                ~ "\n\n\tIf this is expected, use " ~ "!=".qID ~ " " ~ "[]".qKW ~ " to suppress this warning.");
 
             return SE_False;
         }
