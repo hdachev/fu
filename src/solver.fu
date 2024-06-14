@@ -4319,7 +4319,7 @@ pub fn solve(
         {
             ref items = node.items;
 
-            if (PASS_MaybeCopyOrMove && !canDiscard)
+            if (PASS_MaybeCopyOrMove && !canDiscard && !node.type.propositionOK(vfactsOK: true))
                 for (mut i = items.len; i --> 1; )
                     maybeCopyOrMove(items[i], node.type);
 
@@ -11227,6 +11227,8 @@ pub fn solve(
 
         if (cons_isNever && alt_isNever)
             type = t_never;
+        else if (type.propositionOK)
+            type = t_bool;
         else if (!type.is_void)
             type = cons_isNever ?  alt.type
                  :  alt_isNever ? cons.type

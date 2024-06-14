@@ -4647,8 +4647,26 @@ pub extern fn runTests()
         fn main() test(7) - 27;
     `);
 
-    TODO_logic(currently: "no common supertype bool <-> flags State 6:17+1", `
+    ZERO(`
         using flags State: u8 { ReadEOF; WriteEOF; WantsRead; WantsWrite }
+
+        fn mustClose(state: State)
+            !!(state & ReadEOF
+                ? state & WriteEOF || !(state & WantsWrite)
+                : state & WantsRead);
+
+        fn main() = State().mustClose.i32;
+    `);
+
+    ZERO(`
+        struct State { v: u8 };
+
+        let ReadEOF     = State(1);
+        let WriteEOF    = State(2);
+        let WantsRead   = State(4);
+        let WantsWrite  = State(8);
+
+        infix fn &(a: State, b: State) State(a.v & b.v);
 
         fn mustClose(state: State)
             !!(state & ReadEOF

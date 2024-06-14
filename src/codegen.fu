@@ -2814,6 +2814,12 @@ pub fn cpp_codegen(
         if (stmt)
             return "if (" ~ cond ~ ")" ~ cons ~ (alt ? _indent ~ "else" ~ alt : "");
 
+        if (node.type.propositionOK(vfactsOK: true))
+        {
+            if (!n1.propositionOK(vfactsOK: true)) cons = "!!(" ~ cons ~ ")";
+            if (!n2.propositionOK(vfactsOK: true)) alt  = "!!(" ~ alt  ~ ")";
+        }
+
         return "(" ~ cond ~ " ? " ~ cons ~ " : " ~ alt ~ ")";
     }
 
