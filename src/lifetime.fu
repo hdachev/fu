@@ -1283,6 +1283,39 @@ pub fn Lifetime_op_field(lt: Lifetime, flatCount: i32, flatOffset: i32)
     });
 }
 
+pub fn Lifetime_op_mask(lt: Lifetime, quals: Quals)
+{
+    let usage       = quals & usage::q_USAGE;
+    let clz         = usage.bit::clz;
+    let ctz         = usage.bit::ctz;
+
+    let flatOffset  = ctz     - usage::q_USAGE_offset;
+    let flatCount   = usage && (usage::q_USAGE_bitsize - flatOffset - clz);
+
+    if (SELF_TEST)
+        flatCount > 0 || BUG("Lifetime_op_mask: flatCount(" ~ flatCount ~ ") flatOffset(" ~ flatOffset ~ ") clz(" ~ clz ~ ") ctz(" ~ ctz ~ ") usage(" ~ usage ~ ")");
+
+    lt.Lifetime_each: |paths|
+    {
+        mut offset = 0;
+        paths.walkPaths(:offset,
+
+            onLastSubRegion: |isLastSubRegion, isLastPath, raw_prefix, lax flatCount!struct_flatCount|
+            {
+                if (struct_flatCount > usage::q_USAGE_bitsize)
+                    return lt;
+
+                if (SELF_TEST)
+                    struct_flatCount >= flatCount || BUG(
+                        "Lifetime_op_mask: struct_flatCount(" ~ struct_flatCount ~ ") !>= flatCount(" ~ flatCount ~ ")");
+
+                return lt.Lifetime_op_field(:flatCount, :flatOffset);
+            });
+    }
+
+    BUG("Lifetime_op_mask: empty lifetime.");
+}
+
 pub fn Lifetime_op_deref(lt: Lifetime, flatCount!deref_flatCount: i32)
 {
     return lt.Lifetime_op(minPathDepth: 2, |paths, ref result|

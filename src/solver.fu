@@ -13758,7 +13758,9 @@ pub fn solve(
                             arg.is_mutref      || BUG(host_arg.name.human.qID ~ ": host_arg.written but !arg.is_mutref");
                         }
 
-                        bck_writes.Lifetime_add(arg.lifetime);
+                        bck_writes.Lifetime_add(
+                            Lifetime_op_mask(
+                                arg.lifetime, host_arg.written_to));
                     }
 
                     if (!ooe_isLast)

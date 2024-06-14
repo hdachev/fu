@@ -8548,7 +8548,7 @@ pub extern fn runTests()
         }
     `);
 
-    TODO_disjoint(currently: "cannot access t 11:20+1 inval by GET 8:35+1", `
+    ZERO(`
         struct SolverState  {
             overloads:          string[];
             eph?:               int;

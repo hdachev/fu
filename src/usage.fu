@@ -12,6 +12,7 @@ pub let q_USAGE         = ~q_TAGS;
 
 pub let q_TAGS_bitsize  = 3;
 pub let q_USAGE_bitsize = Quals_bitsize - q_TAGS_bitsize;
+pub let q_USAGE_offset  = q_TAGS_bitsize;
 
 
 //
