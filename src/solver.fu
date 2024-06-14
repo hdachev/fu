@@ -11112,8 +11112,8 @@ pub fn solve(
 
         :TRY_CONVERT
         {
-            let aConv = tryConvert(a, expect: b_T);
-            let bConv = tryConvert(b, expect: a_T);
+            let aConv = tryConvert(a, expect: clear_all(b_T));
+            let bConv = tryConvert(b, expect: clear_all(a_T));
 
             if (aConv)
             {

@@ -17449,7 +17449,7 @@ pub extern fn runTests()
         }
     `]);
 
-    TODO_conv(currently: "if/else: No common supertype Type <-> ValueType mutref 6:20+1", `
+    ZERO(`
         struct ValueType { canon: string };
         struct Type { using vtype: ValueType };
         <split/>

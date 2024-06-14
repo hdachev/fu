@@ -585,6 +585,13 @@ pub fn is_Typename(type: Type)
     return !!(type.vfacts & Typename);
 }
 
+pub fn clear_all(mut type: Type)
+{
+    type.quals &= ~q_TAGS;
+    type.vfacts = [];
+    return type;
+}
+
 
 //
 
