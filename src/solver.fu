@@ -2526,7 +2526,8 @@ pub fn solve(
 
                             // No need to bother if annot is trivial,
                             //  e.g. a typeparam, would match whatever.
-                            if (annot.items)
+                            ref a = annot;
+                            if (a.items || a.kind == "__serialized_type")
                             {
                                 PROFILE(.TryConvertGeneric);
 
@@ -2538,7 +2539,7 @@ pub fn solve(
 
                                 let ok = trySolveTypeParams(
                                     type: actual,
-                                    node: annot,
+                                    node: a,
                                     :error,
                                     invariant: false);
 

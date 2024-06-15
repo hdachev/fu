@@ -984,6 +984,22 @@ pub extern fn runTests()
         fn main() [ 1, 2, -3 ].parent_fn().value;
     `);
 
+    ZERO(`
+        struct SocketArrays { v: int };
+        struct Sockets(type X) { x: X; using sa?: SocketArrays }
+
+        fn what(ref s) s.v += s.x;
+        fn socket_accepted(ref sa: SocketArrays, woot) woot(sa.v);
+
+        fn main() {                             <alt>
+            mut sockets = Sockets(int)(3);      <alt/>
+            mut sockets: Sockets(int) = [ 3 ];  </alt>
+            sockets.what();
+            sockets.socket_accepted: |ref v| v *= 7;
+            return sockets.v - 21;
+        }
+    `);
+
     // /Template args
 
 
@@ -17148,7 +17164,7 @@ pub extern fn runTests()
         }
     `);
 
-    TODO_semantics(currently: "bad call generic_ref_x expects A, got C 12:36+13", `
+    TODO_semantics(currently: "bad call generic_ref_x cannot infer ref arg a 17:13+13", `
         struct A { x: i32 };
         struct B { using a: A };
         struct C { b: B };
