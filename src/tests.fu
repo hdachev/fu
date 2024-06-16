@@ -15723,6 +15723,18 @@ pub extern fn runTests()
         }
     `]);
 
+    TODO_pub(currently: "could not resolve this import", [`//file a.fu
+        let v = 1;
+    `,`//file B.fu
+        let v = 2;
+    `,`
+        fn main() {                 <fail case insensitive file systems X:X>
+            let c = a::v + A::v;    <pass/>
+            let c = a::v + B::v;    </fail>
+            return c - 3;
+        }
+    `]);
+
     // /Pubs & imports.
 
 
