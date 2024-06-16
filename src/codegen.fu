@@ -4,7 +4,6 @@ import types;
 import quals;
 import scope;
 import context;
-import bitset;
 import cpp;
 import module;
 import structs;
@@ -180,8 +179,8 @@ pub fn cpp_codegen(
         _ids_dedupe_n?: i32[];
 
         // Hoisting now a little more robust.
-        _hoisted?:      bitset::BitSet;
-        _declared?:     bitset::BitSet;
+        _hoisted?:      ::BitSet;
+        _declared?:     ::BitSet;
 
         // Sanity check.
         _live_locals?:  i32[];
@@ -1643,7 +1642,7 @@ pub fn cpp_codegen(
         //  we we hit a double-declare here, not great.
         let alreadyDeclared =
             isHoistable(:target.locid) &&
-                !_current_fn._declared.add_once(target.locid);
+                !_current_fn._declared.add(target.locid);
 
         let id          = localID(:target, dedupe: !alreadyDeclared);
         let isHoisted   = isHoisted(:target.locid);
@@ -1811,7 +1810,7 @@ pub fn cpp_codegen(
         {
             prefix ~= "/*";
 
-            fn prefix(bitset: bitset::BitSet)
+            fn prefix(bitset: ::BitSet)
             {
                 for (mut i = 0; i < bitset._data.len; i++)
                 {

@@ -17338,12 +17338,12 @@ pub extern fn runTests()
         }
     `);
 
-    ZERO([`//file helpers.fu
+    ZERO([`//file hlprs.fu
         fn grow_if_oob(ref a: $T[], i: i32): &mut $T {
             if (a.len <= i) a.grow(i + 1);
             return a[i];
         }
-    `,`//file bitset.fu
+    `,`//file bs.fu
         struct BitSet { _data: u8[] }
 
         fn rem(using ref _: BitSet, idx: int) {
@@ -17360,7 +17360,7 @@ pub extern fn runTests()
         }
 
         fn add(using ref _: BitSet, idx: int) {
-            _data.helpers::grow_if_oob(idx >> 3) |= 1 << u8(idx & 7);
+            _data.hlprs::grow_if_oob(idx >> 3) |= 1 << u8(idx & 7);
         }
 
         fn _shrink_to_fit(using ref _: BitSet) {
@@ -17370,7 +17370,7 @@ pub extern fn runTests()
         }
     `,`
         fn main() {
-            mut bs: bitset::BitSet;
+            mut bs: bs::BitSet;
             bs.add(100);    let len0 = bs._data.len;
             bs.rem(100);    let len1 = bs._data.len;
             return len0 == 13 && len1 == 0 ? 0 : 1;

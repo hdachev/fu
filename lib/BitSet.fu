@@ -1,4 +1,3 @@
-import helpers;
 
 pub struct BitSet
 {
@@ -29,29 +28,22 @@ pub fn clear(using ref _: BitSet, start!idx: i32)
     _shrink_to_fit();
 }
 
-pub fn add_once(using ref _: BitSet, idx: int): bool
+pub fn add(using ref _: BitSet, idx: int): bool
 {
     let no_neg = idx & int.MIN;
     let bucket = idx >> 3 | no_neg;
     let bit    = idx & 7;
     let mask   = 1 << bit.u8;
 
-    ref entry  = _data.ensure(exists: bucket);
+    if (_data.len <= bucket)
+        _data.grow(bucket + 1);
+
+    ref entry  = _data[bucket];
     let ret    = !(entry & mask);
 
     entry |= mask;
 
     return ret;
-}
-
-pub fn add(using ref _: BitSet, idx: int)
-{
-    let no_neg = idx & int.MIN;
-    let bucket = idx >> 3 | no_neg;
-    let bit    = idx & 7;
-    let mask   = 1 << bit.u8;
-
-    _data.ensure(exists: bucket) |= mask;
 }
 
 pub fn add(using ref _: BitSet, other: BitSet)
@@ -81,21 +73,14 @@ fn _shrink_to_fit(using ref _: BitSet)
     _data.shrink(end + 1);
 }
 
-pub fn rem(using ref _: BitSet, other: BitSet)
+pub fn remove(using ref _: BitSet, other: BitSet)
 {
-    mut N = other._data.len;
-    if (N > _data.len)
-        N = _data.len;
-
-    // TODO zip over in u64s first.
+    let N = _data.len.min(other._data.len);
     for (mut i = 0; i < N; i++)
         _data[i] &= ~other._data[i];
 
-    // Shrink to fit.
     if (N == _data.len)
         _shrink_to_fit();
-
-    throw("NOT TESTED");
 }
 
 pub fn has(using _: BitSet, idx: int)
@@ -109,7 +94,7 @@ pub fn has(using _: BitSet, idx: int)
         && _data[bucket] & mask != 0;
 }
 
-pub fn rem(using ref _: BitSet, idx: int)
+pub fn remove(using ref _: BitSet, idx: int)
 {
     let no_neg = idx & int.MIN;
     let bucket = idx >> 3 | no_neg;
@@ -198,20 +183,6 @@ pub fn each(using _: BitSet, visit)
 }
 
 
-// Ops, this would be nicer as an operator:
-//
-// fn a &= ~b           // but see, what we want is a single `&=~` op
-
-pub fn and_not_assign(ref a: BitSet, b: BitSet)
-{
-    let N = a._data.len.min(b._data.len);
-    for (mut i = 0; i < N; i++)
-        a._data[i] &= ~b._data[i];
-
-    return a;
-}
-
-
 //
 
 pub fn negated(bitset: BitSet, end!: i32)
@@ -219,7 +190,7 @@ pub fn negated(bitset: BitSet, end!: i32)
     mut result: BitSet;
 
     result.add_range(:end);
-    result.and_not_assign(bitset);
+    result.remove(bitset);
 
     return result;
 }

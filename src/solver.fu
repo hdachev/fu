@@ -113,7 +113,7 @@ pub fn solve(
 
     struct LocidSet
     {
-        _bitset:            bitset::BitSet;
+        _bitset:            ::BitSet;
     };
 
     struct LocidMap(type T)
@@ -418,11 +418,6 @@ pub fn solve(
         return set._bitset.add(args_neg + locid);
     }
 
-    fn add_once(ref set: LocidSet, locid: i32) {
-        let args_neg = _current_fn.args_neg;
-        return set._bitset.add_once(args_neg + locid);
-    }
-
     fn each(set: LocidSet, each) {
         let args_neg = _current_fn.args_neg;
         return set._bitset.each(|locid| each(locid - args_neg));
@@ -459,7 +454,7 @@ pub fn solve(
         return map._values.ensure(exists: args_neg + locid);
     }
 
-    fn add_once(ref map: LocidMap(Quals), locid: i32, quals: Quals) {
+    fn add(ref map: LocidMap(Quals), locid: i32, quals: Quals) {
         ref v = map.ensure(exists: locid);
         let v0 = v;
         v |= quals;
@@ -1955,7 +1950,7 @@ pub fn solve(
 
     fn reorderByArgIDs(
         ref reorder: Reorder,
-        names: string[], mut optional: bitset::BitSet,
+        names: string[], mut optional: ::BitSet,
         host_args: Argument[], num_usings!: i32): bool
     {
         reorder.applicable = true;
@@ -2004,7 +1999,7 @@ pub fn solve(
             else
             {
                 used++;
-                optional.rem(idx);
+                optional.remove(idx);
             }
 
             reorder.map.push(idx);
@@ -2080,8 +2075,8 @@ pub fn solve(
         reorder: Reorder, names: string[], host_args: Argument[],
         target?: Target)
     {
-        mut used:       bitset::BitSet;
-        mut matched:    bitset::BitSet;
+        mut used:       ::BitSet;
+        mut matched:    ::BitSet;
 
         for (mut i = 0; i < reorder.map.len; i++)
         {
@@ -2162,7 +2157,7 @@ pub fn solve(
     {
         struct NamedArgs {
             names:      string[]
-            optional:   bitset::BitSet;
+            optional:   ::BitSet;
         }
 
         using mut ret: NamedArgs;
@@ -2255,7 +2250,7 @@ pub fn solve(
 
             if (local_scope && !targets)
             {
-                mut seen: bitset::BitSet;
+                mut seen: ::BitSet;
 
                 fn visitTypeImports(type: Type)
                 {
@@ -2278,7 +2273,7 @@ pub fn solve(
                                     |shadow modid| seen.add(modid));
                         }
 
-                        if (!seen.add_once(modid))
+                        if (!seen.add(modid))
                             continue;
 
                         //
@@ -3970,7 +3965,7 @@ pub fn solve(
                 fn descend(t: Target): UsedAgain
                 {
                     let locid = t.locid;
-                    if (!bitset.add_once(locid))
+                    if (!bitset.add(locid))
                         return UsedAgain(:locid, "UsedAgain");
 
                     just_added.add(locid);
@@ -4041,7 +4036,7 @@ pub fn solve(
                     continue;
 
                 shadow let usage = Lifetime_shiftUsage(:usage, :paths);
-                if (_current_fn.ever_written.add_once(locid, usage))
+                if (_current_fn.ever_written.add(locid, usage))
                 {
                     let t = nested(locid);
                     let o = GET(t);
@@ -7730,8 +7725,8 @@ pub fn solve(
                 && (isNative    ? argNode.type.usage
                                 : _current_fn.ever_written.if(exists: argTarget.locid));
 
-            mut soft_risk: bitset::BitSet;
-            mut hard_risk: bitset::BitSet;
+            mut soft_risk: ::BitSet;
+            mut hard_risk: ::BitSet;
             if (written_to)
             {
                 written_to & argNode.type.usage == written_to || BUG(
@@ -7743,7 +7738,7 @@ pub fn solve(
                 {
                     // Natives: we can't see inside, assume everything restricted.
                     soft_risk.add_range(end: N);
-                    soft_risk.rem(i);
+                    soft_risk.remove(i);
 
                     if (!NativeQualities.MayAlias)
                         hard_risk = soft_risk;
@@ -7751,7 +7746,7 @@ pub fn solve(
                 else
                 {
                     fn ArgsAtRisk_list(
-                        ref output: bitset::BitSet, at_risk: LocidMap(LocidSet))
+                        ref output: ::BitSet, at_risk: LocidMap(LocidSet))
                     {
                         at_risk.if(exists: argTarget.locid).each: |other|
                         {
@@ -7776,7 +7771,7 @@ pub fn solve(
                         ////////////////////////////////////////////////////////////////
 
                         mut soft = soft_risk;
-                        soft.and_not_assign(hard_risk);
+                        soft.remove(hard_risk);
 
                         soft.each: |index: i32|
                         {
@@ -12958,11 +12953,11 @@ pub fn solve(
             // Soft vs hard risk -
             //  Non-direct reads from arguments put the argument at hard risk.
             if (!trySoft || !nested(read).acceptsSoftRisk)
-                if (!_current_fn.flow.at_hard_risk.ensure(exists: write).add_once(read))
+                if (!_current_fn.flow.at_hard_risk.ensure(exists: write).add(read))
                     return true; // Done this already.
 
             // So, on first add -
-            if (!_current_fn.flow.at_soft_risk.ensure(exists: write).add_once(read))
+            if (!_current_fn.flow.at_soft_risk.ensure(exists: write).add(read))
                 return true; // Done this already.
 
             // Shake [1] - decomp write parents on first add.
@@ -15028,7 +15023,7 @@ pub fn solve(
 
     fn nestingFnort_ensureArgSequencing()
     {
-        mut _may_alias: bitset::BitSet[];
+        mut _may_alias: ::BitSet[];
         mut _argPos_1b: i32[];
 
         _nestingFnort.args.each: |host_arg, i|
@@ -15058,7 +15053,7 @@ pub fn solve(
 
         struct Regions {
             locids:     LocidSet;
-            arguments:  bitset::BitSet;
+            arguments:  ::BitSet;
         };
 
         fn has_inter(a: Regions, b: Regions)
@@ -15097,7 +15092,7 @@ pub fn solve(
         {
             lifetime.Lifetime_each: |locid|
             {
-                if (locid && regions.locids.add_once(locid))
+                if (locid && regions.locids.add(locid))
                 {
                     ///////////////////////////////////////
                     // TODO PERF not necessary for moves //
