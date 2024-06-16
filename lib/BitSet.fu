@@ -9,7 +9,7 @@ pub fn clear(using ref _: BitSet)
     _data.clear();
 }
 
-pub fn clear(using ref _: BitSet, start!idx: i32)
+pub fn clear(using ref _: BitSet, start!idx: int)
 {
     let no_neg  = idx & int.MIN;
     let bucket  = idx >> 3 | no_neg;
@@ -185,7 +185,7 @@ pub fn each(using _: BitSet, visit)
 
 //
 
-pub fn negated(bitset: BitSet, end!: i32)
+pub fn negated(bitset: BitSet, end!: int)
 {
     mut result: BitSet;
 

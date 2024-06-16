@@ -1,0 +1,119 @@
+import Errno;
+
+pub primitive FD: i32;
+
+pub fn close(fd: FD): Errno
+{
+    assert(fd > 0);
+
+    pragma include(
+        "<unistd.h>",           // close
+        "<errno.h>");
+
+    mut err: Errno;
+    pragma output(`
+        if (close(`fd`) < 0)
+            `err` = errno;
+    `);
+
+    return err;
+}
+
+pub fn write(fd: FD, data: byte[..], ref bytes_written!: int): Errno
+{
+    assert(fd > 0);
+
+    pragma include(
+        "<unistd.h>",           // write
+        "<errno.h>");
+
+    bytes_written = 0;
+
+    mut err: Errno;
+    pragma output(
+    `
+        `bytes_written` = (fu::i) write(`fd`,
+            `data`.data(), size_t(`data`.size()));
+
+        if (`bytes_written` < 0) {
+            `bytes_written` = 0;
+            `err` = errno;
+        }
+    `);
+
+    return err;
+}
+
+pub fn read(fd: FD, ref buffer: byte[], ref bytes_read!: int, ref maybe_more!: bool): Errno
+{
+    pragma include(
+        "<unistd.h>",           // read
+        "<errno.h>");
+
+    mut err: Errno;
+    pragma input(
+    `
+        char  temp_buffer[64 * 1024];
+        char* out_data = temp_buffer;
+        fu::i out_capa = (fu::i) sizeof(temp_buffer);
+
+        // Try to output directly into the provided user buffer if possible.
+        auto current_size   = `buffer`.size();
+        auto available_capa = `buffer`.capa() - current_size;
+        if (available_capa > 1024)
+        {
+            out_data = `buffer`.data_mut() + current_size;
+            out_capa = available_capa;
+        }
+
+        //
+        `bytes_read` = (fu::i) read(`fd`, out_data, (size_t) out_capa);
+        `maybe_more` = `bytes_read` == out_capa;
+        if (`bytes_read` > 0)
+        {
+            if (out_data == temp_buffer)
+                `buffer`.append_copy(
+                    fu_ZERO(), out_data, `bytes_read`);
+            else
+                `buffer`.UNSAFE__WriteSize(
+                    current_size + `bytes_read`);
+        }
+        else if (`bytes_read` < 0)
+        {
+            `bytes_read` = 0;
+            `err` = errno;
+        }
+    `);
+
+    return err;
+}
+
+
+// TODO not here
+
+pub fn read_exhaustive(fd: FD, ref buffer: byte[], ref bytes_read!total_bytes_read: int): Errno
+{
+    for (;;)
+    {
+        mut bytes_read = 0;
+        mut maybe_more = false;
+        let err = read(:buffer, :fd, :bytes_read, :maybe_more);
+        if (err)
+        {
+            // pragma output(`
+            //     perror("   READ read_exhaustive");
+            // `);
+
+            if (!err.retry_immediately)
+                return err;
+        }
+        else
+        {
+            total_bytes_read += bytes_read;
+            if (!maybe_more)
+                return 0;
+
+            // println("   READ bytes_read(" bytes_read ") / total_bytes_read(" total_bytes_read ")");
+        }
+    }
+}

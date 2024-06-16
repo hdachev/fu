@@ -1,5 +1,5 @@
 
-primitive Errno: int;
+primitive Errno: i32;
 
 fn EBADF(): Errno           = __native("<errno.h>", "EBADF");
 fn ENOENT(): Errno          = __native("<errno.h>", "ENOENT");

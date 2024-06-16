@@ -1,4 +1,5 @@
 import Errno;
+import FD;
 
 pragma include(
     "<alloca.h>",
@@ -13,8 +14,8 @@ pragma include(
 //
 
 pub primitive PID:      i32;
-pub primitive ReadEnd:  i32;
-pub primitive WriteEnd: i32;
+pub primitive ReadEnd:  FD;
+pub primitive WriteEnd: FD;
 
 pub struct PosixPipe {
     r: ReadEnd;
