@@ -1,3 +1,4 @@
+import Errno;
 
 pragma include(
     "<alloca.h>",
@@ -54,14 +55,15 @@ pub fn if(status: ExitStatus, code!?: <Code>, else!?)
 
 //
 
-fn pipe(ref p: PosixPipe, blocking!: bool) {
+fn pipe(ref p: PosixPipe, blocking!: bool): Errno
+{
     pragma include(
         "<unistd.h>",           // pipe
         "<errno.h>");
 
     assert(p.r == 0 && p.w == 0);
 
-    mut err = 0;
+    mut err: Errno;
     pragma emit(
     `
         if (pipe2((int*) &`p.r`, O_CLOEXEC | (`blocking` ? 0 : O_NONBLOCK)))
@@ -117,14 +119,14 @@ pub fn spawn(
     mut argv:   string[],
     stdout?:    PosixPipe,
     stderr?:    PosixPipe,
-    stdin?:     PosixPipe)
+    stdin?:     PosixPipe): Errno
 {
     pragma include(
         "<alloca.h>",
         "<errno.h>",
         "<spawn.h>");
 
-    mut err = 0;
+    mut err: Errno;
     pid     = 0;
 
     if (!argv) {
@@ -265,7 +267,7 @@ static Errno fu_waitpid(
 
 pub fn spawn(
     mut argv: string[],
-    ref status!: ExitStatus): i32
+    ref status!: ExitStatus): Errno
 {
     mut pid: PID;
     mut err = spawn(argv, :pid);
@@ -289,7 +291,7 @@ pub struct Child {
     err_fd:     ReadEnd;
 };
 
-fn close_one(fd: ReadEnd or WriteEnd, ref err!: i32)
+fn close_one(fd: ReadEnd or WriteEnd, ref err!: Errno)
 {
     assert(fd != 0);
     pragma output(`
@@ -298,8 +300,9 @@ fn close_one(fd: ReadEnd or WriteEnd, ref err!: i32)
     `);
 }
 
-pub fn close(child!: Child, ref status: ExitStatus) {
-    mut err = 0;
+pub fn close(child!: Child, ref status: ExitStatus): Errno
+{
+    mut err: Errno;
 
     pragma emit(`
         auto e = fu_waitpid(`child.pid`, `status`);
@@ -327,7 +330,7 @@ fn STDOUT_FILENO(): WriteEnd = __native("<stdio.h>", "STDOUT_FILENO");
 fn STDERR_FILENO(): WriteEnd = __native("<stdio.h>", "STDERR_FILENO");
 fn  STDIN_FILENO(): ReadEnd  = __native("<stdio.h>", "STDIN_FILENO");
 
-fn close_both(pipe: PosixPipe, ref err!: i32)
+fn close_both(pipe: PosixPipe, ref err!: Errno)
 {
     close_one(pipe.r, :err);
     close_one(pipe.w, :err);
@@ -350,10 +353,10 @@ pub fn spawn(
 
     stdout  !out_m?: ChildStream,
     stderr  !err_m?: ChildStream,
-    stdin   !in_m?:  ChildStream)
+    stdin   !in_m?:  ChildStream): Errno
 {
     child = [];
-    mut err = 0;
+    mut err: Errno;
 
     mut stdout: PosixPipe;
     if (out_m == "Pipe" && (err = pipe(stdout, :blocking)))
@@ -410,9 +413,9 @@ pub fn spawn(
     ref stdout!stdout_buf: string,
     ref stderr!stderr_buf: string,
 
-    ref status!: ExitStatus): i32
+    ref status!: ExitStatus): Errno
 {
-    mut err = 0;
+    mut err: Errno;
     mut child: Child;
     if ((err = spawn(:child, :argv, stdout: "Pipe", stderr: "Pipe", blocking: true)))
         return err;

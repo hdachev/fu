@@ -3734,7 +3734,7 @@ pub fn cpp_codegen(
         let orig = HACK_extra_sources[i];
         let file = localPath(orig);
         src ~= "\n// " ~ orig ~ "\n";
-        src ~= file::read(file);
+        file::read(file, into: src);
     }
 
 

@@ -105,7 +105,9 @@ fn update_file(
     fname.starts(with: dir_src) || fail("ensure_local_fname broken");
 
     shadow let fname = dir_out ~ fname.slice(dir_src.len);
-    if (file::read(fname) != data)
+
+    mut xcheck: string;
+    if (file::read(fname, into: xcheck) || xcheck != data)
     {
         let err = atomic_write(:fname, data, :dir_wrk_tmp);
         if (err)
@@ -123,14 +125,14 @@ fn update_file(
 fn exec(cmd: string, ref stdout: string)
 {
     mut status: spawn::ExitStatus = 0;
-    mut err: i32;
+    mut err: ::Errno;
 
     if (cmd.has("$("))
         err = ::exec(cmd, :status, stdout);
     else
         err = ::spawn(cmd.split(' '), :status, :stdout, stderr: stdout);
 
-    return err || status.int;
+    return err.int || status.int;
 }
 
 
@@ -227,7 +229,11 @@ pub fn build(
     fulib ||= path::join(fudir, hotswap ? "include/fu/_sharedlib.cpp"
                                         : "include/fu/_fulib.cpp");
 
-    let fulib_cpp = CodegenOutput(src: file::read(fulib));
+    mut fulib_cpp: string;
+    if (let err = file::read(fulib, into: fulib_cpp))
+        fail("Failed to read fulib @ " ~ fulib ~ ": " ~ err);
+
+    shadow let fulib_cpp = CodegenOutput(src: fulib_cpp);
 
     // Map modules into translation units,
     //  this is the partial unity build thing,
@@ -917,8 +923,8 @@ pub fn build(
             // println("      > ", CMD);
 
             code = exec(CMD, :stdout)
-                || file::chmod(F_tmp, file::RWX_RX_RX)
-                || file::rename(F_tmp, F_exe);
+                || file::chmod(F_tmp, file::RWX_RX_RX).int
+                || file::rename(F_tmp, F_exe).int;
 
             if (code)
             {
@@ -950,7 +956,10 @@ pub fn build(
         //
         fn READ_cachedTestOutput()
         {
-            output  = test_output::parse(file::read(F_exe));
+            mut src: string;
+            file::read(F_exe, into: src);
+
+            output  = test_output::parse(src);
             status  = output.status;
         }
 
@@ -975,7 +984,7 @@ pub fn build(
             {
                 shadow mut stdout: string;
 
-                code    = ::spawn([ F_exe ], :status, :stdout, stderr: stdout);
+                code    = ::spawn([ F_exe ], :status, :stdout, stderr: stdout).int;
                 output  = test_output::from(:stdout, :status);
             }
             let t1 = now::hr();
@@ -1137,7 +1146,7 @@ pub fn build(
     {
         fs::mkdir_p( path::dirname(bin) );
 
-        code = file::rename(F_exe, bin);
+        code = file::rename(F_exe, bin).int;
     }
 
     if (code) return ERR;

@@ -1,12 +1,13 @@
+import Errno;
 
-fn exec(mut cmd: string, ref status: spawn::ExitStatus, ref stdout: string): i32
+fn exec(mut cmd: string, ref status: spawn::ExitStatus, ref stdout: string): Errno
 {
     pragma include(
         "<errno.h>",
         "<stdio.h>",
         "<fu/defer.h>");
 
-    mut err = 0;
+    mut err: Errno;
     status = -1;
 
     // c-str ok

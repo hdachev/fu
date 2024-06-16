@@ -136,9 +136,13 @@ pub fn getFile(
     if (cached)
         return cached == "\v" ? "" : cached;
 
-    let read = file::read(path);
-    ctx.files.set(path, read || "\v");
-    return read;
+    mut data: string;
+    let err = file::read(path, into: data);
+    if (err && err != Errno::ENOENT)
+        throw("getFile: path(" ~ path ~ ") err(" ~ err ~ ")");
+
+    ctx.files.set(path, data || "\v");
+    return data;
 }
 
 pub fn getModule(
