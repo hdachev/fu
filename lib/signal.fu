@@ -1,0 +1,131 @@
+import Errno;
+
+pub primitive Signo: int;
+
+pub fn  SIGHUP(): Signo = __native("<signal.h>", "SIGHUP");
+pub fn  SIGINT(): Signo = __native("<signal.h>", "SIGINT");
+pub fn SIGTERM(): Signo = __native("<signal.h>", "SIGTERM");
+pub fn SIGKILL(): Signo = __native("<signal.h>", "SIGKILL");
+
+pub fn kill(pid!: int, sig: Signo): Errno
+{
+    pragma include(
+        "<signal.h>",
+        "<errno.h>");
+
+    mut err: Errno;
+    pragma output(`
+        if (kill(`pid`, `sig`))
+            `err` = errno;
+    `);
+
+    return err;
+}
+
+
+//
+
+pub primitive SigMask: u32;
+pub let sizeof_SigMask = 4;
+
+type SignalFD = ::FD;
+
+pub struct BlockedSigmask {
+    requested_sigmask:  SigMask;
+    actually_blocked:   SigMask;
+    signal_fd:          SignalFD; // TODO LINUX ONLY
+}
+
+
+//
+
+pub fn block(sigmask: Signo[..], ref err: Errno): BlockedSigmask
+{
+    pragma include(
+        "<signal.h>",
+        "<errno.h>");
+
+    mut sm: BlockedSigmask;
+
+    pragma output(
+    `
+        sigset_t set {};
+        sigemptyset(&set);
+
+        for (fu::i i = 0; i < `sigmask`.size(); i++)
+        {
+            auto signo = `sigmask`[i];
+            sigaddset(&set, signo);
+            `sm.requested_sigmask` |= 1 << signo;
+        }
+
+        sigset_t old_set {};
+        `err` = pthread_sigmask(SIG_BLOCK, &set, &old_set);
+    `);
+
+    if (err)
+        return [];
+
+    pragma output(
+    `
+        for (fu::i i = 0; i < `sigmask`.size(); i++)
+        {
+            auto signo = `sigmask`[i];
+            int was_set = sigismember(&old_set, signo);
+            if (was_set < 0)
+                `err` = errno;
+            else if (was_set == 0)
+                `sm.actually_blocked` |= 1 << signo;
+        }
+    `);
+
+    mut fd: SignalFD;
+
+    pragma emit_top(
+    `
+        #ifdef __linux__
+        #include <sys/signalfd.h>
+        #endif //
+    `);
+
+    pragma input(
+    `
+        #ifdef __linux__
+        `fd` = signalfd(-1, &set, SFD_NONBLOCK | SFD_CLOEXEC);
+        if (`fd` < 0) {
+            `err` = errno;
+            `fd`  = 0;
+        }
+        #endif //
+    `);
+
+    sm.signal_fd = fd;
+
+    return sm;
+}
+
+pub fn unblock(sm: BlockedSigmask): Errno
+{
+    pragma include(
+        "<signal.h>",
+        "<errno.h>");
+
+    mut err: Errno;
+
+    pragma output(
+    `
+        sigset_t set {};
+        sigemptyset(&set);
+
+        for (unsigned i = 0; i < unsigned(`sizeof_SigMask * 8`); i++)
+            if (`sm.actually_blocked` & unsigned(1 << i))
+                sigaddset(&set, (int) i);
+
+        `err` = pthread_sigmask(SIG_UNBLOCK, &set, NULL);
+    `);
+
+    if (sm.signal_fd)
+        err = sm.signal_fd.close();
+
+    return err;
+}
