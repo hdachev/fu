@@ -2,14 +2,25 @@
 #include <stdio.h>
 #include <fu/str.h>
 #include <fu/defer.h>
+#include <fu/vec_range.h>
 #include <fu/vec/concat_one.h>
 
+typedef int Errno_88RA;
+typedef int ExitStatus_iZrm;
+
+                                #ifndef DEF_Errno_88RA
+                                #define DEF_Errno_88RA
+                                #endif
+
+                                #ifndef DEF_ExitStatus_iZrm
+                                #define DEF_ExitStatus_iZrm
+                                #endif
 
 #ifndef fu_NO_fdefs
 
-int exec_sounLutz(fu::str&& cmd, int& status, fu::str& stdout)
+Errno_88RA exec_G82R(fu::str&& cmd, ExitStatus_iZrm& status, fu::vec_range_mut<char> stdout)
 {
-    int err = 0;
+    Errno_88RA err {};
     status = -1;
     cmd += '\x00';
     const auto pipe = popen(cmd.data(), /*rb triggers EINVAL*/"r");

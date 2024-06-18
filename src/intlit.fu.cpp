@@ -2,12 +2,14 @@
 #include <fu/int.h>
 #include <fu/str.h>
 #include <fu/view.h>
+#include <fu/default.h>
+#include <fu/init_priority.h>
 
-struct s_Intlit;
+struct Intlit_tw2d;
 
-                                #ifndef DEF_s_Intlit
-                                #define DEF_s_Intlit
-struct s_Intlit
+                                #ifndef DEF_Intlit_tw2dbMaP9o3
+                                #define DEF_Intlit_tw2dbMaP9o3
+struct Intlit_tw2d
 {
     fu::u8 base;
     fu::u8 minsize_i;
@@ -35,26 +37,44 @@ struct s_Intlit
 };
                                 #endif
 
+                                #ifndef STR_m63yQMgnng8
+                                #define STR_m63yQMgnng8
+static const fu::str str_m63yQMgnng8 fu_INIT_PRIORITY(1002) { "Integer literal overflows a u64."_fu };
+                                #endif
+
+                                #ifndef STR_ce9BYGtcVRi
+                                #define STR_ce9BYGtcVRi
+static const fu::str str_ce9BYGtcVRi fu_INIT_PRIORITY(1002) { "Ambiguous int literal: cannot decide if signed or unsigned."_fu };
+                                #endif
+
+                                #ifndef STR_07FQY2jMIH1
+                                #define STR_07FQY2jMIH1
+static const fu::str str_07FQY2jMIH1 fu_INIT_PRIORITY(1002) { "Oversized signed int literal."_fu };
+                                #endif
+
+                                #ifndef STR_W3xVfvbEuec
+                                #define STR_W3xVfvbEuec
+static const fu::str str_W3xVfvbEuec fu_INIT_PRIORITY(1002) { "Oversized unsigned int literal."_fu };
+                                #endif
+
 #ifndef fu_NO_fdefs
 
-s_Intlit Intlit_LmjxY9JB(const uint64_t absval, const bool negative, /*MOV*/ fu::str&& error, const bool uNsigned, const bool sIgned, const uint64_t base)
+Intlit_tw2d Intlit_MpuZ(const uint64_t absval, const bool negative, /*MOV*/ fu::str&& error, const bool uNsigned, const bool sIgned, const uint64_t base)
 {
     if (!(error))
-    {
-        error = ((sIgned && uNsigned) ? "Ambiguous int literal: cannot decide if signed or unsigned."_fu : fu::str{});
-    };
+        error = ((sIgned && uNsigned) ? str_ce9BYGtcVRi : (*(fu::str*)fu::NIL));
+
     const uint64_t sizeval = ((negative && absval) ? (absval - 1ull) : absval);
     const int minsize_i = ((sizeval < 0x80ull) ? 8 : ((sizeval < 0x8000ull) ? 16 : ((sizeval < 0x80000000ull) ? 32 : ((sizeval < 0x8000000000000000ull) ? 64 : 128))));
     const int minsize_u = (negative ? 255 : ((absval < 0x100ull) ? 8 : ((absval < 0x10000ull) ? 16 : ((absval < 0x100000000ull) ? 32 : 64))));
     const int minsize_f = ((absval < 0x1000000ull) ? 32 : 64);
     if (!(error))
-    {
-        error = (sIgned ? ((minsize_i > 64) ? "Oversized signed int literal."_fu : fu::str{}) : ((minsize_u > 64) ? "Oversized unsigned int literal."_fu : fu::str{}));
-    };
-    return s_Intlit { fu::u8(base), fu::u8(unsigned(minsize_i)), fu::u8(unsigned(minsize_u)), fu::u8(unsigned(minsize_f)), sIgned, uNsigned, negative, absval, static_cast<fu::str&&>(error) };
+        error = (sIgned ? ((minsize_i > 64) ? str_07FQY2jMIH1 : (*(fu::str*)fu::NIL)) : ((minsize_u > 64) ? str_W3xVfvbEuec : (*(fu::str*)fu::NIL)));
+
+    return Intlit_tw2d { fu::u8(base), fu::u8(unsigned(minsize_i)), fu::u8(unsigned(minsize_u)), fu::u8(unsigned(minsize_f)), sIgned, uNsigned, negative, absval, error.destructive_move() };
 }
 
-s_Intlit Intlit_sNwIFkW3(fu::view<char> sign_prefix_value_suffix)
+Intlit_tw2d Intlit_u8re(fu::view<char> sign_prefix_value_suffix)
 {
     const char c_sign = sign_prefix_value_suffix[0];
     const char sign = (((c_sign == '-') || (c_sign == '+')) ? c_sign : char{});
@@ -80,7 +100,7 @@ s_Intlit Intlit_sNwIFkW3(fu::view<char> sign_prefix_value_suffix)
             if (last != (absval / base))
             {
                 if (!(error))
-                    error = "Integer literal overflows a u64."_fu;
+                    error = fu::str(str_m63yQMgnng8);
 
             };
         };
@@ -88,7 +108,7 @@ s_Intlit Intlit_sNwIFkW3(fu::view<char> sign_prefix_value_suffix)
     const bool uNsigned = (suffix == 'u');
     const bool negative = (sign == '-');
     const bool sIgned = (negative || (suffix == 'i'));
-    return Intlit_LmjxY9JB(absval, negative, static_cast<fu::str&&>(error), uNsigned, sIgned, base);
+    return Intlit_MpuZ(absval, negative, static_cast<fu::str&&>(error), uNsigned, sIgned, base);
 }
 
 #endif

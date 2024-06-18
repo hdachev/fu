@@ -2,15 +2,27 @@
 #include <fu/str.h>
 #include <fu/view.h>
 #include <fu/never.h>
-#include <fu/vec/LEGACY_slice.h>
+#include <fu/default.h>
+#include <fu/vec_range.h>
 #include <fu/vec/concat.h>
+#include <fu/init_priority.h>
 #include <fu/vec/concat_one.h>
 #include <fu/vec/view_assign.h>
 
 
+                                #ifndef STR_9rQhCMeuBl1
+                                #define STR_9rQhCMeuBl1
+static const fu::str str_9rQhCMeuBl1 fu_INIT_PRIORITY(1001) { "parseVarint: missing trailer"_fu };
+                                #endif
+
+                                #ifndef STR_JKVsI1EBhHj
+                                #define STR_JKVsI1EBhHj
+static const fu::str str_JKVsI1EBhHj fu_INIT_PRIORITY(1001) { "cleanID: ended up with an empty string"_fu };
+                                #endif
+
 #ifndef fu_NO_fdefs
 
-bool hasIdentifierChars_pZLkTusf(fu::view<char> id)
+bool hasIdentifierChars_V5Iu(fu::view<char> id)
 {
     for (int i = 0; i < id.size(); i++)
     {
@@ -22,7 +34,7 @@ bool hasIdentifierChars_pZLkTusf(fu::view<char> id)
     return false;
 }
 
-bool hasNonIdentifierChars_pZLkTusf(fu::view<char> id)
+bool hasNonIdentifierChars_V5Iu(fu::view<char> id)
 {
     for (int i = 0; i < id.size(); i++)
     {
@@ -34,7 +46,7 @@ bool hasNonIdentifierChars_pZLkTusf(fu::view<char> id)
     return false;
 }
 
-unsigned parse10u32_Fc3p3Wmg(int& offset, fu::view<char> str)
+unsigned parse10u32_V5Iu(int& offset, fu::view<char> str)
 {
     unsigned result {};
     while (offset < str.size())
@@ -51,18 +63,18 @@ unsigned parse10u32_Fc3p3Wmg(int& offset, fu::view<char> str)
     return result;
 }
 
-int parse10s32_Fc3p3Wmg(int& offset, fu::view<char> str)
+int parse10s32_V5Iu(int& offset, fu::view<char> str)
 {
     if ((offset >= str.size()))
         return 0;
     else
     {
         const int mul = ((str[offset] == '-') ? (offset++, -1) : +1);
-        return int(parse10u32_Fc3p3Wmg(offset, str)) * mul;
+        return int(parse10u32_V5Iu(offset, str)) * mul;
     };
 }
 
-unsigned parseVarint_Fc3p3Wmg(int& offset, fu::view<char> str)
+unsigned parseVarint_V5Iu(int& offset, fu::view<char> str)
 {
     unsigned shift {};
     unsigned result {};
@@ -72,11 +84,11 @@ unsigned parseVarint_Fc3p3Wmg(int& offset, fu::view<char> str)
         result |= ((unsigned(fu::u8(c)) & 0x7fu) << shift);
         shift += 7u;
     };
-    const unsigned sub = (((c >= '0') && (c <= '9')) ? unsigned(fu::u8('0')) : (((c >= 'A') && (c <= 'Z')) ? (unsigned(fu::u8('A')) - 10u) : (((c >= '_') && (c <= 'z')) ? (unsigned(fu::u8('_')) - 36u) : fu::fail("parseVarint: missing trailer"_fu))));
+    const unsigned sub = (((c >= '0') && (c <= '9')) ? unsigned(fu::u8('0')) : (((c >= 'A') && (c <= 'Z')) ? (unsigned(fu::u8('A')) - 10u) : (((c >= '_') && (c <= 'z')) ? (unsigned(fu::u8('_')) - 36u) : fu::fail(fu::str(str_9rQhCMeuBl1)))));
     return result | ((unsigned(fu::u8(c)) - sub) << shift);
 }
 
-void appendVarint_YxEMA0h9(fu::str& str, unsigned v)
+void appendVarint_V5Iu(fu::vec_range_mut<char> str, unsigned v)
 {
     while ((v >= 64u))
     {
@@ -87,9 +99,9 @@ void appendVarint_YxEMA0h9(fu::str& str, unsigned v)
     str += char((v + add));
 }
 
-                                #ifndef DEF_join_jCe9HYtvP9c
-                                #define DEF_join_jCe9HYtvP9c
-inline fu::str join_jCe9HYtv(fu::view<fu::str> a, fu::view<char> sep)
+                                #ifndef DEF_join_yqDbqRmcQYi
+                                #define DEF_join_yqDbqRmcQYi
+inline fu::str join_yqDb(fu::view<fu::str> a, fu::view<char> sep)
 {
     if (a.size() < 2)
     {
@@ -125,16 +137,16 @@ inline fu::str join_jCe9HYtv(fu::view<fu::str> a, fu::view<char> sep)
 }
                                 #endif
 
-fu::str print_fOf9hIVR(fu::view<fu::str> arr)
+fu::str print_V5Iu(fu::view<fu::str> arr)
 {
     if (arr)
-        return ("[ \""_fu + join_jCe9HYtv(arr, "\", \""_fu)) + "\" ]"_fu;
+        return ("[ \""_view + join_yqDb(arr, "\", \""_view)) + "\" ]"_view;
     else
-        return "[]"_fu;
+        return fu::str("[]"_fu);
 
 }
 
-fu::str trim_VW4uLx7L(const fu::str& str)
+fu::vec_range<char> trim_V5Iu(fu::vec_range<char> str)
 {
     for (int first = 0; first < str.size(); first++)
     {
@@ -143,21 +155,21 @@ fu::str trim_VW4uLx7L(const fu::str& str)
             for (int last = str.size(); (last-- >= first); )
             {
                 if (str[last] > ' ')
-                    return fu::slice(str, first, (last + 1));
+                    return fu::get_range(str, first, (last + 1));
 
             };
         };
     };
-    return ""_fu;
+    return (*(fu::str*)fu::NIL);
 }
 
-                                #ifndef DEF_find_KonMQ4KBuu5
-                                #define DEF_find_KonMQ4KBuu5
-inline int find_KonMQ4KB(fu::view<char> a, const char b)
+                                #ifndef DEF_find_ZKsG2FXrtpg
+                                #define DEF_find_ZKsG2FXrtpg
+inline int find_ZKsG(fu::view<char> haystack, const char needle)
 {
-    for (int i = 0; i < a.size(); i++)
+    for (int i = 0; i < haystack.size(); i++)
     {
-        if (a[i] == b)
+        if (haystack[i] == needle)
             return i;
 
     };
@@ -165,32 +177,27 @@ inline int find_KonMQ4KB(fu::view<char> a, const char b)
 }
                                 #endif
 
-                                #ifndef DEF_find_T9i966y9wQg
-                                #define DEF_find_T9i966y9wQg
-inline int find_T9i966y9(fu::view<char> a, const char b, int start)
+                                #ifndef DEF_find_rkz0SQgq7mk
+                                #define DEF_find_rkz0SQgq7mk
+inline int find_rkz0(fu::view<char> haystack, const char needle, const int start)
 {
-    start = ((start > 0) ? start : 0);
-    for (int i = start; i < a.size(); i++)
-    {
-        if (a[i] == b)
-            return i;
-
-    };
-    return -1;
+    fu::view<char> slice = fu::get_view(haystack, start);
+    const int res = find_ZKsG(slice, needle);
+    return res + ((res < 0) ? 0 : start);
 }
                                 #endif
 
-fu::str cleanID_j6ljQymd(const fu::str& id)
+fu::vec_range<char> cleanID_V5Iu(fu::vec_range<char> id)
 {
-    const int start = (find_KonMQ4KB(id, '!') + 1);
-    const int end = find_T9i966y9(id, '.', start);
+    const int start = (find_ZKsG(id, '!') + 1);
+    const int end = find_rkz0(id, '.', start);
     if (start || ((end >= 0) && (end < id.size())))
     {
-        fu::str _0 {};
-        return (_0 = fu::slice(id, start, ((end >= 0) ? end : id.size()))) ? static_cast<fu::str&&>(_0) : fu::fail("cleanID: ended up with an empty string"_fu);
+        fu::vec_range<char> _0 {};
+        return (_0.ptr_reassign(fu::get_range(id, start, ((end >= 0) ? end : id.size())))) ? _0 : fu::fail(fu::str(str_JKVsI1EBhHj));
     }
     else
-        return fu::str(id);
+        return id;
 
 }
 

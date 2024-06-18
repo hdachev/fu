@@ -3,14 +3,16 @@
 #include <fu/print.h>
 #include <fu/decstr.h>
 #include <fu/mem/arc.h>
+#include <fu/vec_range.h>
 #include <fu/vec/concat.h>
+#include <fu/init_priority.h>
 
-struct s_ModuleStat;
-double hr_CPFg3qvV();
+struct ModuleStat_sTmh;
+double hr_0pZh();
 
-                                #ifndef DEF_s_ModuleStat
-                                #define DEF_s_ModuleStat
-struct s_ModuleStat
+                                #ifndef DEF_ModuleStat_sTmhPzQmjMb
+                                #define DEF_ModuleStat_sTmhPzQmjMb
+struct ModuleStat_sTmh
 {
     double time;
     int alloc_count;
@@ -26,54 +28,49 @@ struct s_ModuleStat
 };
                                 #endif
 
+                                #ifndef STR_OlhusvNYeug
+                                #define STR_OlhusvNYeug
+static const fu::str str_OlhusvNYeug fu_INIT_PRIORITY(1002) { "s\t"_fu };
+                                #endif
+
 #ifndef fu_NO_fdefs
 
-s_ModuleStat operator+(const s_ModuleStat& a, const s_ModuleStat& b)
+ModuleStat_sTmh operator+(const ModuleStat_sTmh& a, const ModuleStat_sTmh& b)
 {
-    return s_ModuleStat { (a.time + b.time), (a.alloc_count + b.alloc_count), (a.alloc_bytes + b.alloc_bytes) };
+    return ModuleStat_sTmh { (a.time + b.time), (a.alloc_count + b.alloc_count), (a.alloc_bytes + b.alloc_bytes) };
 }
 
-s_ModuleStat operator-(const s_ModuleStat& a, const s_ModuleStat& b)
+ModuleStat_sTmh operator-(const ModuleStat_sTmh& a, const ModuleStat_sTmh& b)
 {
-    return s_ModuleStat { (a.time - b.time), (a.alloc_count - b.alloc_count), (a.alloc_bytes - b.alloc_bytes) };
+    return ModuleStat_sTmh { (a.time - b.time), (a.alloc_count - b.alloc_count), (a.alloc_bytes - b.alloc_bytes) };
 }
 
-void operator+=(s_ModuleStat& a, const s_ModuleStat& b)
+void operator+=(ModuleStat_sTmh& a, const ModuleStat_sTmh& b)
 {
     a.time += b.time;
     a.alloc_count += b.alloc_count;
     a.alloc_bytes += b.alloc_bytes;
 }
 
-s_ModuleStat ModuleStat_now_pUbtfzLn()
+ModuleStat_sTmh ModuleStat_now_aKPw()
 {
-    return s_ModuleStat { hr_CPFg3qvV(), fu_ARC::ALLOC_STAT_COUNT(), fu_ARC::ALLOC_STAT_BYTES() };
+    return ModuleStat_sTmh { hr_0pZh(), fu_ARC::ALLOC_STAT_COUNT(), fu_ARC::ALLOC_STAT_BYTES() };
 }
 
-                                #ifndef DEF_x7E_gCeFmDFw0L8
-                                #define DEF_x7E_gCeFmDFw0L8
-inline fu::str x7E_gCeFmDFw(fu::view<char> a, fu::view<char> b)
+                                #ifndef DEF_x7E_rA003L6Quul
+                                #define DEF_x7E_rA003L6Quul
+inline fu::str x7E_rA00(fu::view<char> a, fu::view<char> b)
 {
     return a + b;
 }
                                 #endif
 
-                                #ifndef DEF_x7E_gCeFmDFw0L8
-                                #define DEF_x7E_gCeFmDFw0L8
-inline fu::str x7E_gCeFmDFw(fu::view<char> a, fu::view<char> b)
+void ModuleStat_print_aKPw(const ModuleStat_sTmh& a, fu::vec_range<char> prefix, fu::view<char> suffix)
 {
-    return a + b;
-}
-                                #endif
-
-void ModuleStat_print_ldE6SCqb(const s_ModuleStat& a, const fu::str& prefix, fu::view<char> suffix)
-{
-    // Hoisted:
     fu::str x {};
-    fu::str x_1 {};
+    const fu::str* x_1;
     fu::str x_2 {};
-
-    fu::println((fu::slate<4, fu::str> { fu::str(prefix), static_cast<fu::str&&>((x = fu::f64dec(a.time), x)), static_cast<fu::str&&>((x_1 = "s\t"_fu, x_1)), static_cast<fu::str&&>((x_2 = (a.alloc_count ? ((x7E_gCeFmDFw(x7E_gCeFmDFw(fu::i64dec(a.alloc_count), " allocs\t"_fu), fu::i64dec(a.alloc_bytes)) + " bytes"_fu) + suffix) : ""_fu), x_2)) }));
+    fu::println(fu::view<fu::str> {{ fu::str(prefix), (x = fu::f64dec(a.time), x).const_cast_mut().destructive_move(), fu::str((x_1 = &(str_OlhusvNYeug), (*x_1))), (x_2 = (a.alloc_count ? ((x7E_rA00(x7E_rA00(fu::i64dec(a.alloc_count), " allocs\t"_view), fu::i64dec(a.alloc_bytes)) + " bytes"_view) + suffix) : fu::str{}), x_2).const_cast_mut().destructive_move() }});
 }
 
 #endif

@@ -7,7 +7,7 @@
 #include <sys/stat.h>
 #include <fu/vec/concat_one.h>
 
-static int visit_DQYlPKj1(fu::view_mut<char>, unsigned);
+static int visit_5u3x(fu::view_mut<char>, unsigned);
 
 #ifndef fu_NO_fdefs
 
@@ -16,15 +16,15 @@ static int visit_DQYlPKj1(fu::view_mut<char>, unsigned);
 inline constexpr unsigned RWX_RWX_RWX = (((0x7u << 6u) | (0x7u << 3u)) | (0x7u << 0u));
                                 #endif
 
-                                #ifndef DEF_ends_Db9eGFmCKDj
-                                #define DEF_ends_Db9eGFmCKDj
-inline bool ends_Db9eGFmC(fu::view<char> a, const char with)
+                                #ifndef DEF_ends_L30JVW8oAb6
+                                #define DEF_ends_L30JVW8oAb6
+inline bool ends_L30J(fu::view<char> a, const char with)
 {
     return a.size() && (a[(a.size() - 1)] == with);
 }
                                 #endif
 
-static int visit_DQYlPKj1(fu::view_mut<char> path, const unsigned mode)
+static int visit_5u3x(fu::view_mut<char> path, const unsigned mode)
 {
     const int N = (path.size() - 1);
     path.mutref(N) = '\x00';
@@ -41,7 +41,7 @@ static int visit_DQYlPKj1(fu::view_mut<char> path, const unsigned mode)
             if (!(path[i] != '/'))
             {
                 fu::view_mut<char> parent = fu::get_view_start0_mut(path, (i + 1));
-                if (visit_DQYlPKj1(parent, mode) == 0)
+                if (visit_5u3x(parent, mode) == 0)
                 {
 
                                         if (mkdir(path.data(), mode_t(mode)))
@@ -55,15 +55,15 @@ static int visit_DQYlPKj1(fu::view_mut<char> path, const unsigned mode)
     return err;
 }
 
-int mkdir_p_K8xLUZUk(fu::str&& path, const unsigned mode)
+int mkdir_p_5u3x(fu::str&& path, const unsigned mode)
 {
-    if (!ends_Db9eGFmC(path, '/'))
+    if (!ends_L30J(path, '/'))
         path += '/';
 
-    return visit_DQYlPKj1(path, mode);
+    return visit_5u3x(path, mode);
 }
 
-fu::str cwd_OvAHpuKu()
+fu::str cwd_5u3x()
 {
     /*MOV*/ fu::str cwd {};
 

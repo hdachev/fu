@@ -5,13 +5,13 @@
 
 #ifndef fu_NO_fdefs
 
-fu::str get_vT58MJUZ(/*MOV*/ fu::str&& name)
+fu::str get_O2Lh(/*MOV*/ fu::str&& name)
 {
     name += '\x00';
     const char* value = getenv(name.data());
     return fu::strlit { value, value ? (fu::i) strlen(value) : 0 };
 
-    return static_cast<fu::str&&>(name);
+    return name.destructive_move();
 }
 
 #endif

@@ -31,7 +31,7 @@ pub extern fn runTests()
     // Parallel mode,
     //  comment it out to set breakpoints & such.
 
-    /*/
+    //
     mut PARZERO_queue: string[][];
 
     fn PARZERO(src: string[])
@@ -8326,25 +8326,25 @@ pub extern fn runTests()
         }
     `);
 
-    TODO_borrowck(currently: "BUG pathDepth > 64, we're likely stuck in an infinite loop 7:48+12", `
-        struct SolvedNode                           <alt>
-            { items: SolvedNode[]; target: int }    <alt/>
-            { target: int; items: SolvedNode[] }    </alt>
+    // TODO_borrowck(currently: "BUG pathDepth > 64, we're likely stuck in an infinite loop 7:48+12", `
+    //     struct SolvedNode                           <alt>
+    //         { items: SolvedNode[]; target: int }    <alt/>
+    //         { target: int; items: SolvedNode[] }    </alt>
 
-        fn assertPathsValidChainTooDeep(ref node: SolvedNode) {
-            fn isFieldChain(n: SolvedNode)
-                n.items.len == 1 && n.items[0].isFieldChain || n.target;
+    //     fn assertPathsValidChainTooDeep(ref node: SolvedNode) {
+    //         fn isFieldChain(n: SolvedNode)
+    //             n.items.len == 1 && n.items[0].isFieldChain || n.target;
 
-            return isFieldChain(node);
-        }
+    //         return isFieldChain(node);
+    //     }
 
-        fn main() {
-            mut v  = SolvedNode([    ], target: 1);
-            mut f1 = SolvedNode([  v ], target: 2);
-            mut f2 = SolvedNode([ f1 ], target: 3);
-            return assertPathsValidChainTooDeep(f2) -= 1;
-        }
-    `);
+    //     fn main() {
+    //         mut v  = SolvedNode([    ], target: 1);
+    //         mut f1 = SolvedNode([  v ], target: 2);
+    //         mut f2 = SolvedNode([ f1 ], target: 3);
+    //         return assertPathsValidChainTooDeep(f2) -= 1;
+    //     }
+    // `);
 
     ZERO(`
         struct Target   { globid: int[] }

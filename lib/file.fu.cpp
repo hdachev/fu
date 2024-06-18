@@ -8,8 +8,52 @@
 #include <fu/view.h>
 #include <fu/defer.h>
 #include <sys/stat.h>
+#include <fu/vec_range.h>
 #include <fu/vec/concat_one.h>
 
+typedef int Errno_88RA;
+struct Stat_EQWk;
+struct Timespec_RdAp;
+
+                                #ifndef DEF_Errno_88RA
+                                #define DEF_Errno_88RA
+                                #endif
+
+                                #ifndef DEF_Timespec_RdAp1SOrifg
+                                #define DEF_Timespec_RdAp1SOrifg
+struct Timespec_RdAp
+{
+    unsigned sec;
+    unsigned nsec;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || sec
+            || nsec
+        ;
+    }
+};
+                                #endif
+
+                                #ifndef DEF_Stat_EQWkITIAK82
+                                #define DEF_Stat_EQWkITIAK82
+struct Stat_EQWk
+{
+    int64_t size;
+    Timespec_RdAp atime;
+    Timespec_RdAp mtime;
+    Timespec_RdAp ctime;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || size
+            || atime
+            || mtime
+            || ctime
+        ;
+    }
+};
+                                #endif
 
 #ifndef fu_NO_fdefs
 
@@ -23,10 +67,10 @@ inline constexpr unsigned RW_RW_RW = (((0x6u << 6u) | (0x6u << 3u)) | (0x6u << 0
 inline constexpr unsigned RWX_RX_RX = (((0x7u << 6u) | (0x5u << 3u)) | (0x5u << 0u));
                                 #endif
 
-int write_t5NVzxJy(fu::str&& path, fu::view<char> data, const unsigned mode)
+Errno_88RA write_VWJw(fu::str&& path, fu::view<char> data, const unsigned mode)
 {
     path += '\x00';
-    int err {};
+    Errno_88RA err {};
     auto fd = open(path.data(), O_WRONLY | O_CREAT | O_TRUNC, mode_t(mode));
     if (fd == -1)
         return (err = errno);
@@ -55,18 +99,18 @@ int write_t5NVzxJy(fu::str&& path, fu::view<char> data, const unsigned mode)
     return err;
 }
 
-                                #ifndef DEF_MAX_5Mxm22OPs0k
-                                #define DEF_MAX_5Mxm22OPs0k
-inline int MAX_5Mxm22OP()
+                                #ifndef DEF_MAX_GzC5uMH53i1
+                                #define DEF_MAX_GzC5uMH53i1
+inline int MAX_GzC5()
 {
     return 2147483647;
 }
                                 #endif
 
-int read_Zg7Moiy2(fu::str&& path, fu::str& output, int64_t size)
+Errno_88RA read_VWJw(fu::str&& path, fu::vec_range_mut<char> output, int64_t size)
 {
     path += '\x00';
-    int err {};
+    Errno_88RA err {};
 
     {
         if ((size <= 0ll))
@@ -80,7 +124,7 @@ int read_Zg7Moiy2(fu::str&& path, fu::str& output, int64_t size)
         };
         int len0 = output.size();
         const int64_t len1 = (int64_t(len0) + size);
-        if (len1 > (int64_t(MAX_5Mxm22OP()) - 16ll))
+        if (len1 > (int64_t(MAX_GzC5()) - 16ll))
             return (err = EFBIG);
 ;
         auto fd = open(path.data(), O_RDONLY);
@@ -120,47 +164,38 @@ int read_Zg7Moiy2(fu::str&& path, fu::str& output, int64_t size)
     return err;
 }
 
-fu::str read_zTt3fZzW(/*MOV*/ fu::str&& path)
-{
-    /*MOV*/ fu::str output {};
-    if (read_Zg7Moiy2(static_cast<fu::str&&>(path), output, 0ll))
-        output.clear();
-
-    return /*NRVO*/ output;
-}
-
-int chmod_a08pEYIk(fu::str&& path, const unsigned mode)
+Errno_88RA chmod_VWJw(fu::str&& path, const unsigned mode)
 {
     path += '\x00';
-    int err {};
+    Errno_88RA err {};
     if (chmod(path.data(), mode_t(mode)))
         err = errno;
 
     return err;
 }
 
-int unlink_zTt3fZzW(fu::str&& path)
+Errno_88RA unlink_VWJw(fu::str&& path)
 {
     path += '\x00';
-    int err {};
+    Errno_88RA err {};
     if (unlink(path.data()))
         err = errno;
 
     return err;
 }
 
-int rename_SX2prLSI(fu::str&& from, fu::str&& to)
+Errno_88RA rename_VWJw(fu::str&& from, fu::str&& to)
 {
     from += '\x00';
     to += '\x00';
-    int err {};
+    Errno_88RA err {};
     if (rename(from.data(), to.data()))
         err = errno;
 
     return err;
 }
 
-int64_t size_zTt3fZzW(fu::str&& path)
+int64_t size_VWJw(fu::str&& path)
 {
     path += '\x00';
     struct stat sb;
@@ -168,6 +203,43 @@ int64_t size_zTt3fZzW(fu::str&& path)
         return (signed long long) sb.st_size;
 
     return -1ll;
+}
+
+Errno_88RA stat_VWJw(fu::str&& path, Stat_EQWk& out)
+{
+    path += '\x00';
+    Errno_88RA err {};
+    out = Stat_EQWk{};
+    struct stat sb;
+    if (stat(path.data(), &sb) != 0)
+    {
+        err = errno;
+    }
+    else
+    {
+        out.size         = (signed long long) sb.st_size;
+
+    #ifdef __APPLE__
+        out.atime.sec    = (unsigned) sb.st_atimespec.tv_sec;
+        out.atime.nsec   = (unsigned) sb.st_atimespec.tv_nsec;
+
+        out.mtime.sec    = (unsigned) sb.st_mtimespec.tv_sec;
+        out.mtime.nsec   = (unsigned) sb.st_mtimespec.tv_nsec;
+
+        out.ctime.sec    = (unsigned) sb.st_ctimespec.tv_sec;
+        out.ctime.nsec   = (unsigned) sb.st_ctimespec.tv_nsec;
+    #else
+        out.atime.sec    = (unsigned) sb.st_atim.tv_sec;
+        out.atime.nsec   = (unsigned) sb.st_atim.tv_nsec;
+
+        out.mtime.sec    = (unsigned) sb.st_mtim.tv_sec;
+        out.mtime.nsec   = (unsigned) sb.st_mtim.tv_nsec;
+
+        out.ctime.sec    = (unsigned) sb.st_ctim.tv_sec;
+        out.ctime.nsec   = (unsigned) sb.st_ctim.tv_nsec;
+    #endif
+    };
+    return err;
 }
 
 #endif

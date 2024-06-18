@@ -2,13 +2,14 @@
 #include <fu/int.h>
 #include <fu/str.h>
 #include <fu/view.h>
+#include <fu/vec_range.h>
 #include <fu/vec/concat_one.h>
 
-struct s_TEA;
+struct TEA_0Daz;
 
-                                #ifndef DEF_s_TEA
-                                #define DEF_s_TEA
-struct s_TEA
+                                #ifndef DEF_TEA_0DazMLEH01f
+                                #define DEF_TEA_0DazMLEH01f
+struct TEA_0Daz
 {
     unsigned v0;
     unsigned v1;
@@ -24,7 +25,7 @@ struct s_TEA
 
 #ifndef fu_NO_fdefs
 
-s_TEA& non_zero_T98svGTs(s_TEA& tea)
+TEA_0Daz& non_zero_lweH(TEA_0Daz& tea)
 {
     if (!tea)
         tea.v0 = 0xffffffffu;
@@ -32,7 +33,7 @@ s_TEA& non_zero_T98svGTs(s_TEA& tea)
     return tea;
 }
 
-void r4_ayNY8hbk(s_TEA& _)
+void r4_lweH(TEA_0Daz& _)
 {
     unsigned sum {};
     const unsigned delta = 0x9e3779b9u;
@@ -44,7 +45,7 @@ void r4_ayNY8hbk(s_TEA& _)
     };
 }
 
-void r8_ayNY8hbk(s_TEA& _)
+void r8_lweH(TEA_0Daz& _)
 {
     unsigned sum {};
     const unsigned delta = 0x9e3779b9u;
@@ -56,7 +57,7 @@ void r8_ayNY8hbk(s_TEA& _)
     };
 }
 
-void r16_ayNY8hbk(s_TEA& _)
+void r16_lweH(TEA_0Daz& _)
 {
     unsigned sum {};
     const unsigned delta = 0x9e3779b9u;
@@ -68,35 +69,35 @@ void r16_ayNY8hbk(s_TEA& _)
     };
 }
 
-void hash_KpbyTrxM(s_TEA& res, const s_TEA& other)
+void hash_lweH(TEA_0Daz& res, const TEA_0Daz& other)
 {
     res.v0 ^= other.v1;
     res.v1 ^= other.v0;
-    r16_ayNY8hbk(res);
+    r16_lweH(res);
 }
 
-void hash_dDLcy6Ao(s_TEA& res, const uint64_t v)
+void hash_qRo1(TEA_0Daz& res, const uint64_t v)
 {
     res.v0 ^= unsigned((v >> 32ull));
     res.v1 ^= unsigned(v);
-    r16_ayNY8hbk(res);
+    r16_lweH(res);
 }
 
-void hash_CwEi37x3(s_TEA& res, const unsigned v)
+void hash_qw8S(TEA_0Daz& res, const unsigned v)
 {
     res.v0 ^= unsigned(v);
-    r16_ayNY8hbk(res);
+    r16_lweH(res);
 }
 
-void hash_okLTgNyg(s_TEA& res, fu::view<char> u8view)
+void hash_l6RU(TEA_0Daz& res, fu::vec_range<char> u8view)
 {
     const int u32len = (u8view.size() & ~3);
-    fu::view<unsigned> u32view = fu::view_of<unsigned>(fu::get_view_start0(u8view, u32len));
+    fu::view<unsigned> u32view = fu::view_of<unsigned>(fu::get_range_start0(u8view, u32len));
     for (int i = 1; i < u32view.size(); (i += 2))
     {
         res.v0 ^= u32view[(i - 1)];
         res.v1 ^= u32view[i];
-        r16_ayNY8hbk(res);
+        r16_lweH(res);
     };
     if (u8view.size() & 7)
     {
@@ -113,11 +114,11 @@ void hash_okLTgNyg(s_TEA& res, fu::view<char> u8view)
             };
             res.v1 ^= last;
         };
-        r16_ayNY8hbk(res);
+        r16_lweH(res);
     };
 }
 
-fu::str digest62_NBz0rQPD(uint64_t v, int chars)
+fu::str digest62_lweH(uint64_t v, int chars)
 {
     chars = (((chars > 0) && (chars < 11)) ? chars : 11);
     /*MOV*/ fu::str res {};
@@ -136,7 +137,7 @@ fu::str digest62_NBz0rQPD(uint64_t v, int chars)
     return /*NRVO*/ res;
 }
 
-fu::str digest16_NBz0rQPD(uint64_t v, int chars)
+fu::str digest16_lweH(uint64_t v, int chars)
 {
     chars = (((chars > 0) && (chars < 16)) ? chars : 16);
     /*MOV*/ fu::str res {};
@@ -153,35 +154,27 @@ fu::str digest16_NBz0rQPD(uint64_t v, int chars)
     return /*NRVO*/ res;
 }
 
-s_TEA hash_yvYDPKX8(fu::view<char> u8view)
+TEA_0Daz hash_s9RC(fu::vec_range<char> u8view)
 {
-    s_TEA res {};
-    hash_okLTgNyg(res, u8view);
+    TEA_0Daz res {};
+    hash_l6RU(res, u8view);
     return res;
 }
 
-fu::str hash62_nHEuzL2I(fu::view<char> str, const int chars)
+fu::str hash62_lweH(fu::vec_range<char> str, const int chars)
 {
-    s_TEA res {};
-    hash_okLTgNyg(res, str);
-    uint64_t BL_1_v {};
-    return digest62_NBz0rQPD((__extension__ (
-    {
-        const s_TEA& tea = res;
-        BL_1_v = ((uint64_t(tea.v0) | (uint64_t(tea.v1) << 32ull)));
-    (void)0;}), BL_1_v), chars);
+    TEA_0Daz res {};
+    hash_l6RU(res, str);
+    const TEA_0Daz* tea;
+    return digest62_lweH((tea = &(res), (uint64_t((*tea).v0) | (uint64_t((*tea).v1) << 32ull))), chars);
 }
 
-fu::str hash16_nHEuzL2I(fu::view<char> str, const int chars)
+fu::str hash16_lweH(fu::vec_range<char> str, const int chars)
 {
-    s_TEA res {};
-    hash_okLTgNyg(res, str);
-    uint64_t BL_1_v {};
-    return digest16_NBz0rQPD((__extension__ (
-    {
-        const s_TEA& tea = res;
-        BL_1_v = ((uint64_t(tea.v0) | (uint64_t(tea.v1) << 32ull)));
-    (void)0;}), BL_1_v), chars);
+    TEA_0Daz res {};
+    hash_l6RU(res, str);
+    const TEA_0Daz* tea;
+    return digest16_lweH((tea = &(res), (uint64_t((*tea).v0) | (uint64_t((*tea).v1) << 32ull))), chars);
 }
 
 #endif

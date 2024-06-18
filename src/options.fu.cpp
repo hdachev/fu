@@ -1,8 +1,8 @@
-struct s_Lint;
+struct Lint_Q9R1;
 
-                                #ifndef DEF_s_Lint
-                                #define DEF_s_Lint
-struct s_Lint
+                                #ifndef DEF_Lint_Q9R1a2Yzb4c
+                                #define DEF_Lint_Q9R1a2Yzb4c
+struct Lint_Q9R1
 {
     int maxwarn;
     explicit operator bool() const noexcept
@@ -16,9 +16,9 @@ struct s_Lint
 
 #ifndef fu_NO_fdefs
 
-s_Lint Lint_lax_KjUu65ky()
+Lint_Q9R1 Lint_lax_sZ7n()
 {
-    return s_Lint { 10 };
+    return Lint_Q9R1 { 10 };
 }
 
 #endif
