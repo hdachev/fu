@@ -29,6 +29,8 @@ pub primitive ExitStatus:   i32;
 
 pub fn if(status: ExitStatus, code!?: <Code>, else!?)
 {
+    pragma include("<sys/wait.h>");
+
     if !(Code -> [])
     {
         mut exited = false;
