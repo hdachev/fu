@@ -61,7 +61,11 @@ struct fu_VEC
     struct Big {
           const T*    data = nullptr;
                 fu::i size = 0;
-        mutable fu::i PACK = 0;
+
+        union {
+            mutable fu::i PACK = 0;
+            unsigned char BYTES[sizeof(fu::i)];
+        };
     };
 
 #ifndef NDEBUG
@@ -94,18 +98,19 @@ struct fu_VEC
         else                     return  actual;
     }
 
-    fu_INL static void UNSAFE__EnsureActualLooksBig(fu::i& actual) noexcept
+    fu_INL static void UNSAFE__HAS_SMALL__EnsureActualLooksBig(fu::i& actual) noexcept
     {
+        static_assert(HAS_SMALL, "!HAS_SMALL");
+
         // We might need to waste a slot to be able to later tell
         //  the difference between small & big strings/vectors,
         //   shouldn't happen too often in practice because of the allocation headers -
         //    for ^2 sized things it should never happen if allocations are ^2.
-        if constexpr (HAS_SMALL)
-            if (!(IS_BIG_MASK & UNSAFE__Pack(actual)))
-            {
-                actual--;
-                assert(actual > 0 && (IS_BIG_MASK & UNSAFE__Pack(actual)));
-            }
+        if (!(IS_BIG_MASK & UNSAFE__Pack(actual)))
+        {
+            actual--;
+            assert(actual > 0 && (IS_BIG_MASK & UNSAFE__Pack(actual)));
+        }
     }
 
     /////////////////////////////////////////////
@@ -170,13 +175,10 @@ struct fu_VEC
     fu_INL void UNSAFE__WriteSmall(fu::i actual_size) noexcept {
         static_assert(SMALL_CAPA);
 
-        if constexpr (PACK_CAPA) {
-            const char s = char(actual_size << 4);
-            std::memcpy((char*)this + (VEC_SIZE - 1), &s, 1);
-        }
-        else {
+        if constexpr (PACK_CAPA)
+            big.BYTES[sizeof(fu::i) - 1] = (unsigned char)(actual_size << 4);
+        else
             big.PACK = (actual_size & SMALL_SIZE_MASK) << SMALL_SIZE_OFFSET;
-        }
     }
 
     fu_INL void UNSAFE__WriteSize(fu::i actual_size) noexcept {
@@ -570,7 +572,9 @@ struct fu_VEC
 
             fu_ALLOC<T, SHAREABLE>(new_data, new_capa);
 
-            UNSAFE__EnsureActualLooksBig(new_capa);
+            if constexpr (HAS_SMALL)
+                UNSAFE__HAS_SMALL__EnsureActualLooksBig(new_capa);
+
             assert(new_capa >= new_size);
 
             // Small-to-big needs to move content
