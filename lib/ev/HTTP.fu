@@ -1,0 +1,454 @@
+
+let MIN_HEAD_PACKET =  1 * 1024
+let MAX_START_LINE  =  4 * 1024
+let MAX_HEADERS     = 64 * 1024
+
+
+//
+
+enum Method {
+    Nil             = 0
+
+    GET
+}
+
+struct Request {
+    true method:    Method;
+    headers:        string;
+    url:            string;
+}
+
+
+//
+
+nocopy struct WriteBuffer {
+    cursor?:        int
+    data?:          byte[]
+}
+
+nocopy struct ReadBuffer {
+    data?:          byte[]
+    headers_start?: int
+    headers_end?:   int
+}
+
+pub fn Pool__next_free(using ref _: WriteBuffer) cursor;
+pub fn Pool__next_free(using ref _: ReadBuffer)  headers_start;
+
+
+//
+
+using enum SocketKind: u8 {
+    Closed          = 0
+    Inbound
+    Outbound
+}
+
+nocopy struct Socket {
+    kind:           SocketKind
+    buf_READ:       int
+    buf_WRITE:      int
+}
+
+pub fn Pool__next_free(using ref _: Socket) buf_READ;
+
+
+//
+
+struct SocketBuffers {
+    buf_READ?:      ::Pool(ReadBuffer)
+    buf_WRITE?:     ::Pool(WriteBuffer)
+}
+
+struct SocketArrays {
+    sockets?:       ::Pool(Socket)
+    using buffers?: SocketBuffers
+}
+
+
+//
+
+struct Sockets(type RequestHandler) {
+    req_handler:    RequestHandler
+    using state?:   SocketArrays
+}
+
+pub fn HTTP(request)
+{
+    type HTTP = Sockets(typeof(fn request))
+    return HTTP()
+}
+
+
+//
+
+pub fn socket_accepted(
+    ref http:       SocketArrays,
+    ref socket_u32: u32,
+    client_addr)
+{
+    dbg::ln("   HTTP ACCEPT socket(" socket_u32 ") client_addr(" client_addr ")")
+
+    socket_u32      = u32(http.sockets.alloc())
+
+    ref socket      = http.sockets[int(socket_u32)]
+    socket.kind     = Inbound
+}
+
+pub fn socket_closed(
+    ref http:       SocketArrays,
+    socket_u32!:    u32,
+    err!:           ::Errno)
+{
+    dbg::ln("   HTTP CLOSE socket(" socket_u32 ") err(" err ")")
+
+    ref socket      = http.sockets[int(socket_u32)]
+
+    for (fieldname i: SocketBuffers)
+        if (socket.i)
+            http.i.free(socket.i);
+
+    mut discard     = int(socket_u32);
+    http.sockets.free(discard)
+}
+
+
+//
+
+fn getReadBuffer(
+    ref http:       SocketArrays,
+    socket_u32!:    u32)
+{
+    ref socket = http.sockets[int(socket_u32)]
+
+    http.buf_READ[
+        socket.buf_READ ||= http.buf_READ.alloc()]
+}
+
+fn getWriteBuffer(
+    ref http:       SocketArrays,
+    socket_u32!:    u32)
+{
+    ref socket = http.sockets[int(socket_u32)]
+
+    http.buf_WRITE[
+        socket.buf_WRITE ||= http.buf_WRITE.alloc()]
+}
+
+
+//
+
+enum RequestParseResult {
+    Incomplete      = 0
+    Success
+    HardFailure
+}
+
+fn tryParseRequest(
+    ref buffer!:    ReadBuffer,
+    data0!:         int,
+    bytes_read!:    int,
+
+    ref fatal!:     string,
+    ref request!:   Request): bool
+{
+    dbg::ln("   HTTP PARSE data0(" data0 ") -> buffer.data.len(" buffer.data.len ")");
+
+    inline fn FATAL(mut reason: string) {
+        fatal = reason
+        return :tryParseRequest false
+    }
+
+    :START_LINE
+    {
+        if (buffer.headers_start)
+            break :START_LINE;
+
+        // Start one byte behind,
+        //  the '\r' could have arrived previously.
+        let start = max(
+            data0 - 1,
+            0)
+
+        let end = min(
+            buffer.data.len,
+            MAX_START_LINE)
+
+        let first_crlf = buffer.data.find("\r\n",
+            :start, :end)
+
+        if (first_crlf >= 0)
+        {
+            // Include the \r\n in the headers range -
+            //  - allows matching headers by looking for \r\nHEADER: substrings
+            //  - handles empty headers == another \r\n after this one
+            buffer.headers_start = first_crlf
+            break :START_LINE;
+        }
+
+        if (buffer.data.len >= end)
+            return FATAL("414 Request-URI Too Long")
+
+        // A valid request start-line can't be shorter than 16 bytes,
+        //  shortest possible is "GET / HTTP/1.1\r\n".
+        if (buffer.headers_start < 16)
+            return FATAL("400 Request Line Too Short")
+    }
+
+    dbg::ln("   HTTP PARSE buffer.headers_start(" buffer.headers_start ")");
+
+    :HEADERS
+    {
+        if (buffer.headers_end)
+            break :HEADERS;
+
+        // Start three bytes back,
+        //  the '\r\n\r' could have arrived previously.
+        let start = max(
+            data0 - 3,
+            buffer.headers_start)
+
+        let end = min(
+            buffer.data.len,
+            buffer.headers_start + MAX_HEADERS)
+
+        let first_crlf_pair = buffer.data.find("\r\n\r\n",
+            :start, :end)
+
+        if (first_crlf_pair >= 0)
+        {
+            // Include the \r\n\r\n in the headers range -
+            //  content begins at header_end.
+            buffer.headers_end = first_crlf_pair + 4
+            break :HEADERS;
+        }
+
+        if (buffer.data.len >= end)
+            return FATAL("431 Request Header Fields Too Large")
+
+        // Feels like allowing single byte packets while
+        //  receiving headers is just asking for trouble.
+        if (bytes_read < MIN_HEAD_PACKET)
+            return FATAL("418 Packet Too Small")
+    }
+
+    dbg::ln("   HTTP PARSE buffer.headers_end(" buffer.headers_end ")");
+
+    // We'll do GETs only for now, so no request bodies,
+    //  otherwise we'd have to keep track of them here.
+    //
+    :BODY
+    {
+        // ...
+    }
+
+    // We're done parsing the headers,
+    //  this request is ready for processing.
+    //
+    // Now currently we don't want to be dealing with
+    //  asyncronous work in the request,
+    //   so we expect the request to complete syncronously.
+    //
+    // This makes HTTP 1/1 pipelining trivial,
+    //  otherwise we'd have to maintain a response queue.
+    //
+    // With multiplexing it'd be easier
+    //  since we could serve requests out of order,
+    //   but there appears to be no way to
+    //    force HTTP 2 without TLS.
+    //
+    // Let's start with the easy stuff.
+    //
+    :SERVE
+    {
+        // Pop the request,
+        //  not terribly efficient.
+        mut headers: byte[]
+        swap(headers, buffer.data[
+            0 .. buffer.headers_end])
+
+        buffer.headers_end = 0;
+
+        // Split request line from headers,
+        //  not terribly efficient either.
+        mut first_line: byte[]
+        swap(first_line, headers[
+            0 .. buffer.headers_start])
+
+        buffer.headers_start = 0;
+
+        //
+        dbg::ln("    first_line: <" ~ first_line ~ ">");
+
+        let space0 = first_line.find(' ')
+        if (space0 < 3)
+            return FATAL("400 Invalid Request Method")
+
+        let space1 = first_line.find(' ', start: space0 + 1)
+        if (space1 < 0)
+            return FATAL("400 Missing HTTP Version")
+
+        mut version:    string;
+        mut url:        string;
+        mut method:     string;
+
+        swap(version,   first_line[space1 + 1 ..]);
+        swap(url,       first_line[space0 + 1 .. space1]);
+        swap(method,    first_line[.. space0]);
+
+        dbg::ln("       version: <" ~ version ~ ">");
+        dbg::ln("           url: <" ~ url ~ ">");
+        dbg::ln("        method: <" ~ method ~ ">");
+
+        if (version != "HTTP/1.1")
+            return FATAL("406 Invalid HTTP Version")
+
+        if (method != "GET")
+            return FATAL("405 Method Not Allowed");
+
+        if (!url.starts(with: '/'))
+            return FATAL("404 No Leading Slash");
+
+        // Serve.
+        request.method  = Method.GET;
+        request.url     = url;
+        request.headers = headers;
+        return true;
+    }
+}
+
+
+//
+
+pub fn socket_event(ref http: Sockets($T), socket_u32!: u32,
+    readable!,  read!,
+    writeable!, write!,
+                close!)
+{
+    dbg::ln("   HTTP EVENT socket(" socket_u32 ") readable(" readable ") writeable(" writeable ")")
+
+
+    // There are a bunch of errors below which
+    //  upon triggering would de-syncronize the protocol,
+    //   so upon hittin a FATAL, we'll return an error,
+    //    and close the connection.
+    //
+    fn FATAL(status: string)
+    {
+        dbg::ln("   HTTP FATAL status(" status ")");
+
+        ref out = http.getWriteBuffer(:socket_u32).data
+
+        out ~= "HTTP/1.1 "
+        out ~= status
+        out ~= "\r\n"
+        out ~= "Connection: Close\r\n"
+        out ~= "\r\n"
+
+        // Will close after writes complete.
+        close();
+    }
+
+    fn respond(with_buffer, status! = "200 OK", headers!?: string)
+    {
+        ref out = http.getWriteBuffer(:socket_u32).data
+
+        out ~= "HTTP/1.1 "
+        out ~= status
+        out ~= "\r\n"
+
+        out ~= "Connection: keep-alive\r\n"
+        out ~= "Content-Length: "
+        let clenval_offset = out.len
+        out ~= "0\r\n"
+        out ~= "XXXXXXXXX: X\r\n"
+
+        if (headers) {
+            assert(headers.ends(with: "\r\n"))
+            out ~= headers
+        }
+
+        out ~= "\r\n"
+
+        let content_start = out.len
+        with_buffer(content: out[content_start ..])
+
+        mut clenval = out.len - content_start
+        if (clenval <= 999999999) {
+            let lenstr = clenval ~ "\r\n"
+            out[clenval_offset .. clenval_offset + lenstr.len]
+                .= lenstr
+        }
+
+        dbg::ln("   HTTP RESPOND status(" status ") Content-Length(" clenval ")");
+    }
+
+
+    // We do the reading & (potentially) responding first,
+    //  so we have a chance to pump out all writes on the same tick.
+    //
+    if (readable) :READ
+    {
+        ref buffer      = http.getReadBuffer(:socket_u32)
+
+        let data0       = buffer.data.len
+        mut bytes_read  = read(buffer.data)
+        if (bytes_read)
+        {
+            mut request:    Request;
+            mut fatal:      string;
+
+            if (tryParseRequest(
+                :buffer, :request, :fatal,
+                :data0, :bytes_read))
+            {
+                let req_handler = http.req_handler;
+
+                req_handler(
+                    :request,
+                    :fn respond);
+            }
+            else if (fatal)
+            {
+                FATAL(fatal);
+            }
+        }
+    }
+
+
+    // Pump out the output buffer.
+    //  Doing this after reading & responding,
+    //   se we have a chance to read & write everything
+    //    within a single tick.
+    //
+
+    if (writeable)
+    {
+        ref socket = http.sockets[int(socket_u32)]
+
+        if (socket.buf_WRITE)
+        {
+            ref buffer = http.buf_WRITE[socket.buf_WRITE]
+
+            dbg::ln("   HTTP buf_WRITE data.len(" ~ buffer.data.len ~ ")");
+
+            mut free = false; // TODO disjoint AAR
+
+            write(buffer.data[buffer.cursor ..],
+
+            // Incomplete write? Advance cursor.
+            if_must_buffer: |bytes_written| {
+                assert: bytes_written + buffer.cursor < buffer.data.len
+                buffer.cursor += bytes_written
+            },
+
+            // Full write? Discard buffer.
+            else: || {
+                free = true;
+            })
+
+            if (free)
+                http.buf_WRITE.free(socket.buf_WRITE);
+        }
+    }
+}

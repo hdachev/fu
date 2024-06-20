@@ -1,0 +1,79 @@
+
+struct Pool(type T)
+{
+    items:          T[]
+    first_free:     int
+
+    // TODO if process::DEBUG
+    // In dafny, this would be a ghost member.
+    debug:          int
+}
+
+fn [] !T(ref pool: Pool(T), i: int)
+{
+    // One based.
+    assert(i > 0);
+    shadow let i = i - 1;
+
+    if (process::DEBUG && i < 32)
+        assert(!!(pool.debug & (1 << i)));
+
+    return pool.items[i];
+}
+
+fn alloc !T(ref pool: Pool(T))
+{
+    let first = pool.first_free
+    assert(first >= 0)
+
+    mut i = first - 1
+    if (i >= 0)
+    {
+        ref item = pool.items[i]
+        ref next = item.Pool__next_free
+        assert(next >= 0)
+
+        pool.first_free = next
+        next = 0
+    }
+    else
+    {
+        i = pool.items.len
+        pool.items.grow(i + 1)
+    }
+
+    if (process::DEBUG && i < 32)
+    {
+        assert(!(pool.debug & (1 << i)));
+        pool.debug |= 1 << i;
+    }
+
+    // One based.
+    return i + 1;
+}
+
+fn free !T(ref pool: Pool(T), mut ref slot: int)
+{
+    // One based.
+    assert(slot > 0);
+    shadow let i = slot - 1;
+    slot = 0;
+
+    ref item = pool.items[i]
+
+    // Replace with a fresh entry,
+    //  we don't want to hold onto big arrays and such,
+    //   not predictable.
+    //
+    mut tombstone: T;
+    tombstone.Pool__next_free = pool.first_free
+    swap(item, tombstone);
+
+    pool.first_free = /*i32_Next*/int(i + 1)
+
+    if (process::DEBUG && i < 32)
+    {
+        assert(!!(pool.debug & (1 << i)));
+        pool.debug &= ~(1 << i);
+    }
+}

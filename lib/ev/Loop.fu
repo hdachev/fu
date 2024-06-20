@@ -1,0 +1,1309 @@
+import Errno;
+import FD;
+
+
+//
+
+struct Meta256 {
+    using meta_u128:    u128
+    using meta_u64:     u64
+    using meta_u32:     u32
+    tail_u32:           u32
+}
+
+union Meta {
+    using meta:         Meta256
+    Pool__next_free:    int
+}
+
+nocopy struct Loop {
+    loop_fd:            FD
+    must_close?:        ::BitSet
+    must_sigkill?:      ::BitSet
+
+    metas?:             ::Pool(Meta)
+}
+
+enum Kind: u8 // Must fit within 4 bits, so capa = 16.
+{
+    ipv4_server
+    ipv4_server_socket
+    blocked_signals
+    // ...
+
+    child_process_pidfd
+    child_process_stdin
+    child_process_stdout
+    child_process_stderr
+
+    // ...
+    // ...
+    // ...
+    // ...
+
+    // ...
+    // ...
+    // ...
+    // ...
+}
+
+
+// Keeping these in pairs, so we can operate on them bitwise.
+//
+// For example, these expressions:
+//   (!readable  || must_read_asap)  && !readEOF
+//   (!writeable || must_write_asap) && !writeEOF
+//
+// Can be performed as:
+//   (~state | state << 4) & ~(state << 2)
+
+using flags SocketState: u8
+{
+    // First four bits are sticky, survivable between event frames,
+    //  we can only fit 4 so we can fit kind + state in 1 byte,
+    //   which along with a 3 byte fd allows us to also keep 4 bytes of user data,
+    //    all packed within a single u64 (which is all we get from epoll).
+    //
+    Readable
+    Writeable
+    ReadEOF
+    WriteEOF
+
+    // Not sticky -
+    WantsReadASAP
+    WantsWriteASAP
+    WillReadLater
+    WillWriteLater
+};
+
+
+//
+
+using flags ServerOptions: u8 {
+    WantsWriteBeforeRead
+}
+
+
+//
+
+let STATE_OFFSET: u64 = 4;
+let STATE_MASK: u64 = 0xf;
+
+inline fn ksfd_pack(
+    kind:       Kind,
+    fd:         FD,
+    state:      SocketState or ServerOptions = SocketState(),
+    user32?:    u32): u64
+{
+    assert(fd >= 0 && fd <= 0xffffff);
+
+    return kind.u64
+         | fd.u64 << 8
+         | (state.u64 & STATE_MASK) << STATE_OFFSET
+         | user32.u64 << 32;
+}
+
+inline fn ksfd_unpack(
+        ksfd:   u64,
+    ref kind:   Kind,
+    ref fd:     int,
+    ref state:  SocketState or ServerOptions,
+    ref user32: u32)
+{
+    type State = typeof(state);
+
+    kind    =  Kind((ksfd & 0xf).u8);
+    state  |= State((ksfd >> STATE_OFFSET & STATE_MASK).u8);
+    user32  =    u32(ksfd >> 32);
+    fd      =    int(ksfd >> 8 & 0xffffff);
+}
+
+
+//
+
+pub fn ipv4_listen(
+    implicit ref event_loop: Loop,
+    port: u16,
+    else,
+
+    want_write_before_read! = false)
+{
+    mut server_fd: FD;
+    let options = want_write_before_read && WantsWriteBeforeRead;
+
+    let err =
+        createSocketAndListen_doesntCloseOnError(:port, :server_fd)
+            || wakeUp_forAccept(server_fd,
+                    user_data: ksfd_pack(
+                        Kind.ipv4_server, server_fd, options));
+
+    if (err)
+    {
+        if (server_fd)
+            server_fd.close();
+
+        (else(:err));
+        return 0;
+    }
+
+    event_loop.must_close.add(server_fd.int);
+    return server_fd;
+}
+
+fn sig_listen(
+    implicit ref event_loop: Loop,
+    blocked_sigmask!sm: signal::BlockedSigmask)
+{
+    let user_data: u64 = ksfd_pack(
+        Kind.blocked_signals, sm.signal_fd);
+
+    mut err: Errno;
+    pragma emit(
+    `
+    #ifdef __linux__
+        if (`sm.signal_fd` > 0) {
+            struct epoll_event ev {};
+            ev.data.u64 = `user_data`;
+            ev.events = EPOLLIN;
+            if (epoll_ctl(`event_loop.loop_fd`, EPOLL_CTL_ADD, `sm.signal_fd`, &ev))
+                `err` = errno;
+        }
+    #else
+        struct kevent evts[`signal::sizeof_SigMask * 8`];
+        int N = 0;
+        for (int signo = 0; signo < `signal::sizeof_SigMask * 8`; signo++)
+            if (sm.requested_sigmask & unsigned(1 << signo))
+                EV_SET(&evts[N++], signo, EVFILT_SIGNAL, EV_ADD, 0, 0, (void*) `user_data`);
+
+        if (N && kevent(`event_loop.loop_fd`, evts, N, NULL, 0, NULL))
+            `err` = errno;
+    #endif //
+    `);
+
+    return err;
+}
+
+pub fn spawn(
+    implicit ref event_loop: Loop,
+    mut argv: string[],
+    else,
+
+    stdout?: spawn::ChildStream,
+    stderr?: spawn::ChildStream,
+    stdin?:  spawn::ChildStream): spawn::PID
+{
+    mut child: spawn::Child;
+    mut err = ::spawn(:argv, :child, :stdout, :stderr, :stdin, blocking: false);
+    if (err) {
+        (else(:err));
+        return 0;
+    }
+
+    assert(child.pid > 0 && child.pid <= 0xffffff);
+
+    // Linux - we don't consistently use pidfds everywhere as we should,
+    //  mostly because we can't really do it portably without a lot of cruft & duplication,
+    //   but we do emit one here so we epoll_ctl it.
+    //
+    pragma emit_top(`
+        #ifdef __linux__
+        #include <sys/syscall.h>    // SYS_pidfd_open
+        #include <unistd.h>         // syscall
+        #include <stdio.h>          // perror
+        #endif //
+    `);
+
+    // TODO FIX here and below we're assuming fd=0
+    //  can't be a valid pid_fd or child pipe or such,
+    //   which is not technically true, so our ad-hoc "fd options" here are leaky.
+    //
+    // Ideally we'd model FDs correctly - as non-negative signed ints (nonneg i32, u31 or smth),
+    //  which gives us a natural optional repr, +1.
+    //
+    // This is a similar problem to array indices,
+    //  where 0 is a valid index, and doesn't map neatly to zero-init == false,
+    //   and we may want a "position" type that's actually offset by one,
+    //    so maps to -1 when zero-initialized.
+    //
+    mut pid_fd: FD;
+    pragma input(`
+        #ifdef __linux
+        `pid_fd` = (int) syscall(SYS_pidfd_open, `child.pid`, 0 /*PIDFD_NONBLOCK*/);
+        if (`pid_fd` < 0) {
+            perror("Loop::spawn::SYS_pidfd_open");
+            `pid_fd` = 0;
+        }
+        #endif //
+    `);
+
+    //
+    let event_id = event_loop.metas.alloc();
+
+    ref meta = event_loop.metas[event_id].meta;
+
+    meta.tail_u32
+        = child.pid.u32;
+
+    meta.meta_u128
+        = pid_fd.u128
+        | child.in_fd.u128  << 32.u128
+        | child.out_fd.u128 << 64.u128
+        | child.err_fd.u128 << 96.u128;
+
+    wakeUp_forChild(
+        :child.pid,
+
+        :pid_fd,
+        :child.in_fd,
+        :child.out_fd,
+        :child.err_fd,
+
+        :event_id, wants_streams: 7 /*all*/, initial: true);
+
+    if (child.pid)      event_loop.must_sigkill.add(child.pid.i32);
+
+    if (pid_fd)         event_loop.must_close.add(pid_fd.i32);
+    if (child.in_fd)    event_loop.must_close.add(child.in_fd.i32);
+    if (child.out_fd)   event_loop.must_close.add(child.out_fd.i32);
+    if (child.err_fd)   event_loop.must_close.add(child.err_fd.i32);
+
+    return child.pid;
+}
+
+
+//
+
+pub nothrow fn Loop(
+    loop_start!,
+    loop_error!,
+
+    socket_accepted!,
+    socket_closed!,
+    socket_event!,
+
+    child_event!,
+    child_closed!)
+{
+    include_epollOrKqueue();
+
+    // Init.
+    mut loop_fd: FD;
+
+    mut err: Errno;
+    pragma output(
+    `
+    #ifdef __linux__
+        `loop_fd` = epoll_create1(EPOLL_CLOEXEC);
+    #else
+        `loop_fd` = kqueue();
+    #endif
+        if (`loop_fd` < 0)
+            `err` = errno;
+    `);
+
+    if (loop_fd < 0)
+        return err;
+
+    // Schedule cleanup.
+    let blocked_sigmask =
+        signal::block(:err,
+            [ signal::SIGHUP, signal::SIGINT, signal::SIGTERM ]);
+
+    implicit mut event_loop = Loop(:loop_fd);
+
+    event_loop.must_close.add(loop_fd.int);
+    defer
+    {
+        event_loop.must_close.each: |fd|
+        {
+            let close_err = fd.FD.close();
+            err ||= close_err;
+
+            dbg::ln(" EVLOOP.defer.must_close fd(" fd ") err(" close_err ")");
+        };
+
+        event_loop.must_sigkill.each: |pid|
+        {
+            // TODO send SIGTERM, wait for 1sec, only then sigkill.
+            // Alternatively, keep this one around, a
+            let kill_err = signal::kill(:pid, signal::SIGKILL);
+            err ||= kill_err;
+
+            dbg::ln(" EVLOOP.defer.must_sigkill fd(" pid ") err(" kill_err ")");
+        };
+
+        // This might exit immediately.
+        signal::unblock(blocked_sigmask);
+    }
+
+    // This is where all listen & co calls are expected to happen.
+    loop_start();
+
+    sig_listen(:blocked_sigmask);
+
+    // Actual event loop.
+    :EVENT_LOOP
+    for (;;)
+    {
+        mut num_new_events: int;
+
+        pragma input(
+        `
+        #ifdef __linux__
+            struct epoll_event events[64];
+
+            RETRY:
+            `num_new_events` = epoll_wait(`event_loop.loop_fd`,
+                events, sizeof(events) / sizeof(struct epoll_event), // buffer & capa
+                -1);                                            // timeout
+        #else
+            struct kevent events[64];
+
+            RETRY:
+            `num_new_events` = kevent(`event_loop.loop_fd`,
+                nullptr, 0,                                     // change events
+                events, sizeof(events) / sizeof(struct kevent), // buffer & capa
+                nullptr);                                       // timeout
+        #endif
+
+            if (`num_new_events` < 0)
+            {
+                `err` = errno;
+
+                // [EINTR] A signal was delivered before the timeout expired
+                //          and before any events were placed on the kqueue for return.
+                //
+                // [EINTR] A cancellation request was delivered to the thread,
+                //          but not yet handled.
+                //
+                // Ignoring because it's triggered when adding breakpoints,
+                //  not sure how to handle/support these correctly.
+                //
+                if (`err` == EINTR)
+                    goto RETRY;
+
+                break;
+            }
+        `);
+
+        //
+        for (mut i = 0; i < num_new_events; i++)
+        {
+            // Grouping these up so they get passed around
+            //  as a single injected argument.
+            //
+            struct LoopEvent {
+
+                // 64
+                user_data:      u64;
+
+                // 32
+                event_ERR:      Errno;
+                event_id:       int;
+
+                // 1
+                kind:           Kind;
+                state:          SocketState;
+                user32:         u32;
+            };
+
+            using mut _: LoopEvent;
+
+            pragma input(
+            `
+                {
+                    auto& ev    = events[`i`];
+
+                #ifdef __linux__
+                    `user_data` = ev.data.u64;
+                    `state`     = (ev.events &  EPOLLIN                 ? `Readable`  : 0)
+                                | (ev.events &  EPOLLOUT                ? `Writeable` : 0)
+                                | (ev.events & (EPOLLHUP | EPOLLRDHUP)  ? `ReadEOF`   : 0)
+                                | (ev.events &  EPOLLHUP                ? `WriteEOF`  : 0);
+                    `event_ERR` = ev.events & EPOLLERR ? EPIPE : 0;
+                #else
+                    `user_data` = (uintptr_t) ev.udata;
+                    `state`     = (ev.filter == EVFILT_READ
+                                                   ? (          ev.data ? `Readable`  : 0)
+                                                   | (ev.flags & EV_EOF ? `ReadEOF`   : 0)
+                                                   : 0)
+                                | (ev.filter == EVFILT_WRITE
+                                                   ? (          ev.data ? `Writeable` : 0)
+                                                   | (ev.flags & EV_EOF ? `WriteEOF`  : 0)
+                                                   : 0);
+                    `event_ERR` = (int) ev.fflags;
+                #endif
+                }
+            `);
+
+            ksfd_unpack(
+                user_data,
+                :kind, event_id, :state, :user32);
+
+
+            // Accepting new sockets.
+
+            :SocketOK_or_Close
+            {
+                :SocketOK
+                {
+                    if (kind == Kind.ipv4_server)
+                    {
+                        let options = ServerOptions(
+                            (user_data >> STATE_OFFSET & STATE_MASK).u8);
+
+                        // Unless `want_write_before_read` is explicitly `true`,
+                        //  we don't initially request wakeUp_forWrite.
+                        //
+                        // This is for efficency - for a protocol like HTTP,
+                        //  you won't be doing anything with the socket before the first request arrives,
+                        //   so there's no need to be woken up as soon as the socket becomes writeable.
+                        //
+                        let initial_state = !(options & WantsWriteBeforeRead) && Writeable;
+
+                        mut socket_fd: FD;
+                        event_ERR ||= acceptSocket_doesntCloseOnError(
+                            server_fd: event_id, :socket_fd);
+
+                        if (event_ERR)
+                        {
+                            loop_error(
+                                kind?:          kind,
+                                server_fd?:     event_id,
+                                err:            event_ERR);
+                        }
+                        else
+                        {
+                            mut socket_u32: u32;
+
+                            socket_accepted(
+                                server_fd?:     event_id,
+                                server_u32?:    user32,
+
+                                socket_fd?:     socket_fd,
+                                socket_u32?:    socket_u32,
+
+                                client_addr?:   "TODO");
+
+                            event_ERR = wakeUp_forRecvOrWrite(socket_fd,
+                                user_data: ksfd_pack(
+                                    Kind.ipv4_server_socket,
+                                    socket_fd,
+                                    initial_state,
+                                    user32: socket_u32),
+
+                                initial:            true,
+                                wakeUp_forRecv:     true,
+                                wakeUp_forWrite:    !(initial_state & Writeable));
+
+                            if (event_ERR)
+                            {
+                                socket_fd.close();
+
+                                event_id        = socket_fd.int;
+                                user32          = socket_u32;
+                                event_ERR       = err;
+
+                                break :SocketOK/* event_id, user32, event_ERR */;
+                            }
+
+                            // We're all good.
+                            event_loop.must_close.add(socket_fd.int);
+                        }
+
+                        continue; // /Kind.ipv4_server.
+                    }
+
+
+                    // Receiving socket data.
+
+                    if (kind == Kind.ipv4_server_socket)
+                    {
+                        dbg::ln("\n   SOCK socket(" event_id ") state(" state ")");
+
+                        fn read(ref buffer: byte[])
+                        {
+                            state |= WantsReadASAP;
+
+                            mut bytes_read = 0;
+                            shadow let err = event_id.FD.read_exhaustive(:buffer, :bytes_read);
+                            if (err)
+                            {
+                                if (!err.retry_later && !event_ERR)
+                                    event_ERR = err;
+                            }
+                            else if (!bytes_read)
+                            {
+                                state |= ReadEOF;
+                            }
+
+                            dbg::ln("   READ bytes_read(" ~ bytes_read ~ ")");
+                            return bytes_read;
+                        }
+
+                        fn write(data: byte[..], if_must_buffer!, else!?)
+                        {
+                            mut bytes_written = 0;
+                            shadow mut err = event_id.FD.write(:data, :bytes_written);
+
+                            if (err.retry_later)
+                                err = 0;
+                            if (err && !event_ERR)
+                                event_ERR = err;
+
+                            if (!event_ERR && bytes_written < data.len)
+                            {
+                                state |= WantsWriteASAP;
+
+                                dbg::ln("  WRITE bytes_written(" ~ bytes_written ~ ") / data.len(" data.len ")");
+                                if_must_buffer(:bytes_written);
+                            }
+                            else
+                            {
+                                dbg::ln("  WRITE bytes_written(" ~ bytes_written ~ ") err(" err ")");
+                                (else());
+                            }
+                        }
+
+                        if (state & (Readable | Writeable))
+                        {
+                            socket_event(
+                                socket_fd?:     event_id,
+                                socket_u32?:    user32,
+
+                                readable:       !!(state & Readable),
+                                writeable?:     !!(state & Writeable),
+
+                                read:           fn read,
+                                write?:         fn write,
+
+                                close?:             || state |= ReadEOF | WriteEOF,
+                                will_read_later?:   || state |= WillReadLater,
+                                will_write_later?:  || state |= WillWriteLater,
+                            );
+                        }
+
+                        let mustClose =
+                            (state & ReadEOF
+                                ? state & WriteEOF || !(state & (WantsWriteASAP | WillWriteLater))
+                                : state & Readable && !(state & (WantsReadASAP  | WillReadLater )));
+
+                        if (!mustClose && !event_ERR)
+                        {
+                            let wakeUp_forRecv =
+                                !(state & ReadEOF)
+                                    && (state & WantsReadASAP || !(state & Readable));
+
+                            let wakeUp_forWrite =
+                                !(state & WriteEOF)
+                                    && (state & WantsWriteASAP || !(state & Writeable));
+
+                            // We'll keep the r/w state we're not going to subscribe for.
+                            let new_state   = (!wakeUp_forRecv  && state & Readable)
+                                            | (!wakeUp_forWrite && state & Writeable)
+
+                                            // EOFs are sticky.
+                                            | state & (ReadEOF | WriteEOF);
+
+                            shadow let user_data = user_data & ~(STATE_MASK << STATE_OFFSET)
+                                                 | new_state.u64 << STATE_OFFSET;
+
+                            event_ERR = wakeUp_forRecvOrWrite(
+                                event_id.FD, :user_data,
+
+                                initial: false,
+                                :wakeUp_forRecv,
+                                :wakeUp_forWrite);
+                        }
+
+                        // NOT AN ELSE - event_ERR will be reset if we fail to resubscribe.
+                        if (mustClose || event_ERR)
+                        {
+                            unsubscribeAndClose(event_id.FD);
+
+                            break :SocketOK/* event_id, user32, event_ERR */;
+                        }
+
+                        dbg::ln("   DONE socket(" event_id ") state(" state ")");
+
+                        continue; // /Kind.ipv4_server_socket.
+                    }
+
+                    break :SocketOK_or_Close;
+                }
+
+                // Either socket accept & sub failed,
+                //  or socket close / error.
+                //
+                socket_closed(
+                    socket_fd?:     event_id,
+                    socket_u32?:    user32,
+                    err?:           event_ERR,
+                );
+
+                continue; // server or socket
+            }
+
+
+            // Child processes.
+
+            if (kind >= Kind.child_process_pidfd &&
+                kind <= Kind.child_process_stderr)
+            {
+                mut meta = event_loop.metas[event_id];
+
+
+                // Here we're multiplexing three file descriptors,
+                //  so there's this extra management going on,
+                //   struggling to clean it up.
+
+                inline fn pid = meta.tail_u32.i32.spawn::PID;
+
+                inline fn get_pid_fd() = i32(meta.meta_u128 & 0x7fffffff.u128).FD;
+
+                inline fn get_fd(which!: i32) {
+                    assert(which >= 0 && which <= 2);
+                    return i32(meta.meta_u128 >> u128((1 + which) * 32) & 0x7fffffff.u128).FD;
+                }
+
+                inline fn close_stream(which!: i32) {
+                    let fd = get_fd(:which);
+                    meta.meta_u128 &= ~(0xffffffff.u128 << u128((1 + which) * 32));
+                    if (fd) unsubscribeAndClose(fd);
+                }
+
+                inline fn is_available(which!: i32) {
+                    assert(which >= 0 && which <= 2);
+                    return !!(meta.meta_u128 & 1.u128 << u128((1 + which) * 32 + 31));
+                }
+
+                inline fn set_available(which!: i32) {
+                    assert(which >= 0 && which <= 2);
+                    meta.meta_u128 |= (1.u128 << u128((1 + which) * 32 + 31));
+                }
+
+                inline fn clear_available(which!: i32) {
+                    assert(which >= 0 && which <= 2);
+                    meta.meta_u128 &= ~(1.u128 << u128((1 + which) * 32 + 31));
+                }
+
+                dbg::ln("  CHILD event(" kind ") state(" state ") pid(" pid ") fd_in(" get_fd(which: 0) ") fd_out(" get_fd(which: 1) ") fd_err(" get_fd(which: 2) ")");
+
+
+                //
+
+                mut wants_streams: u32;
+
+                inline fn out_read(ref buffer: byte[]) = read(which: 1, :buffer);
+                inline fn err_read(ref buffer: byte[]) = read(which: 2, :buffer);
+
+                fn read(which: i32, ref buffer: byte[])
+                {
+                    assert(which > 0);
+                    let fd = get_fd(:which);
+                    if (!fd)
+                    {
+                        dbg::ln("  CHILD READ no fd(" fd ") which(" which ")");
+                        return 0;
+                    }
+
+                    //
+                    wants_streams |= 1 << which.u32;
+
+                    mut bytes_read = 0;
+                    shadow let err = fd.read_exhaustive(:buffer, :bytes_read);
+
+                    dbg::ln("  CHILD READ fd(" fd ") which(" which ") bytes_read(" ~ bytes_read ~ ")");
+
+                    if (err)
+                    {
+                        if (!err.retry_later && !event_ERR)
+                            event_ERR = err;
+                    }
+                    else if (!bytes_read)
+                    {
+                        dbg::ln("    ... EOF, closing.");
+                        close_stream(:which);
+                    }
+
+                    return bytes_read;
+                }
+
+                fn in_write(buffer: byte[], if_must_buffer!, else!?)
+                {
+                    let which = 0;
+                    let fd = get_fd(:which);
+
+                    mut bytes_written = 0;
+                    shadow mut err = fd
+                        ? event_id.FD.write(:data, :bytes_written)
+                        : Errno::EBADF;
+
+                    if (err.retry_later)
+                        err = 0;
+                    if (err && !event_ERR)
+                        event_ERR = err;
+
+                    if (!event_ERR && bytes_written < data.len)
+                    {
+                        wants_streams |= 1 << which.u32;
+
+                        dbg::ln("  CHILD WRITE fd(" fd ")  bytes_written(" ~ bytes_written ~ ") / data.len(" data.len ")");
+                        if_must_buffer(:bytes_written);
+                    }
+                    else
+                    {
+                        dbg::ln("  CHILD WRITE fd(" fd ") bytes_written(" ~ bytes_written ~ ") err(" err ")");
+                        (else());
+                    }
+                }
+
+
+                // Child I/O.
+
+                let which = kind.i32 - Kind.child_process_stdin.i32;
+                if (which >= 0)
+                {
+                    if (state & (Readable | Writeable))
+                    {
+                        dbg::ln("  CHILD RW kind(" kind ") fd(" get_fd(:which) ") state(" state ")");
+
+                        set_available(:which);
+
+                        child_event(
+                            :pid,
+
+                            writeable?:     is_available(which: 0),
+                            out_readable?:  is_available(which: 1),
+                            err_readable?:  is_available(which: 2),
+
+                            write?:         fn in_write,
+                            out_read?:      fn out_read,
+                            err_read?:      fn err_read,
+                        );
+                    }
+
+                    if (state & (ReadEOF | WriteEOF))
+                    {
+                        dbg::ln("  CHILD EOF kind(" kind ") which(" which ") fd(" get_fd(:which) ")");
+
+                        close_stream(:which);
+                    }
+                }
+
+
+                // Which -1: means we got a PID event,
+                //  currently this can only be an exit.
+
+                if (which < 0 || event_ERR)
+                {
+                    // Close any outstanding pipes.
+                    for (shadow mut i = 0; i < 3; i++)
+                        close_stream(which: i);
+
+                    if (which < 0)
+                    {
+                        dbg::ln("  CHILD clean exit, reaping pid(" pid ")");
+
+                        // "Reap" the child - collects exit status & frees pid.
+                        mut waitres: int;
+
+                        pragma include(
+                            "<sys/wait.h>");
+
+                        pragma emit_top(`
+                            #ifdef __linux__
+                            #include <linux/wait.h>
+                            #endif
+                        `);
+
+                        mut pid_fd: FD;
+                        mut code = -1;
+                        mut signo: signal::Signo;
+
+                        pragma output(`
+                            siginfo_t siginfo;
+
+                            #ifdef __linux__
+                            `pid_fd` = `get_pid_fd()`;
+                            #else
+                            assert(!`get_pid_fd()`);
+                            #endif
+
+                            Retry:
+                            `waitres` = waitid(
+
+                                #ifdef __linux__
+                                pid_fd ? (idtype_t) P_PIDFD :
+                                #endif
+                                         (idtype_t) P_PID,
+
+                                #ifdef __linux__
+                                pid_fd ? (id_t) pid_fd :
+                                #endif
+                                         (id_t) `pid`,
+
+                                    &siginfo, WNOHANG | WEXITED);
+
+                            if (`waitres` < 0) {
+                                auto err = errno;
+                                if (err == EINTR)
+                                    goto Retry;
+
+                                `event_ERR` = err;
+                            }
+                            else {
+                                `code`  = siginfo.si_code == CLD_EXITED ? siginfo.si_status : 1;
+                                `signo` = siginfo.si_code == CLD_EXITED ? 0 : siginfo.si_status;
+                            }
+                        `);
+
+                        if (pid_fd)
+                            unsubscribeAndClose(pid_fd);
+
+                        // Forget.
+                        let listed = event_loop.must_sigkill.remove(pid.i32);
+                        assert(listed);
+
+                        event_loop.metas.free(event_id);
+
+                        child_closed(?:pid, ?:code, ?:signo, err?: event_ERR);
+                    }
+                    else
+                    {
+                        dbg::ln("  CHILD err(" event_ERR "), SIGKILL pid(" pid ")");
+
+                        // TODO opt-in clean exit sequence.
+                        //
+                        // When you have open ports & stuff that the OS doesn't clean up nicely,
+                        //  you'd rather get a SIGTERM first. We'd send a SIGTERM, add a timer here,
+                        //   and unless the child exits cleanly before the timer, send off the SIGKILL.
+                        //
+                        signal::kill(pid: pid.i32, signal::SIGKILL);
+                    }
+                }
+                else
+                {
+                    // Same as with sockets but more obtuse -
+                    //  Forget availability on the streams we subscribe for,
+                    //   we'll get it with the next event.
+                    //
+                    for (shadow mut i = 0; i < 3; i++)
+                        if (wants_streams & (1 << i.u32))
+                            clear_available(which: i);
+
+                    event_loop.metas[event_id].meta_u128 = meta.meta_u128;
+
+                    wakeUp_forChild(
+                        :pid,
+
+                        pid_fd:     get_pid_fd(),
+                        in_fd:      get_fd(which: 0).spawn::WriteEnd,
+                        out_fd:     get_fd(which: 1).spawn::ReadEnd,
+                        err_fd:     get_fd(which: 2).spawn::ReadEnd,
+
+                        :event_id, initial: false, :wants_streams);
+                }
+
+                continue; // /Kind.child_process_*
+            }
+
+
+            // Cancellation.
+
+            if (kind == Kind.blocked_signals)
+            {
+                // We will NOT be reading from the file descriptor,
+                //  we want it to remain pending & continue aborting
+                //   other signal-interested parties.
+                //
+                break :EVENT_LOOP;
+            }
+        }
+    }
+
+    return err;
+}
+
+
+// epoll or kqueue -
+
+inline fn include_epollOrKqueue()
+{
+    pragma include(
+        "<errno.h>");
+
+    pragma emit_top(
+    `
+    #ifdef __linux__
+        #include <sys/epoll.h>
+    #else
+        #include <sys/event.h>
+    #endif
+    `);
+}
+
+fn unsubscribeAndClose(
+    implicit ref event_loop: Loop,
+    fd: FD)
+{
+    dbg::ln("  CLOSE fd(" fd ")");
+
+    let exists = event_loop.must_close.remove(fd.int);
+    assert(exists);
+    if (!exists)
+        return Errno::EBADF;
+
+    // TODO if dupable and/or non-CLOEXEC:
+    //  Currently doesn't make sense to waste a syscall here,
+    //   since all sockets are hidden & CLOEXEC'ed.
+    //
+    // pragma output(
+    // `
+    // #ifdef __linux__
+    //     epoll_ctl(`event_loop.loop_fd`, EPOLL_CTL_DEL, `fd`, nullptr);
+    // #else
+    // `);
+
+    return fd.close();
+}
+
+
+// TODO clean these up, better off exposing the primitives
+
+fn createSocketAndListen_doesntCloseOnError(port!: u16, ref server_fd!: FD)
+{
+    pragma include(
+        "<sys/socket.h>",       // socket, bind, listen
+        "<arpa/inet.h>",        // htons
+        "<fcntl.h>",
+        "<errno.h>");
+
+    server_fd = -1;
+
+    mut err: Errno;
+    pragma output(
+    `
+        struct sockaddr_in serv_addr {};
+
+        if ((`server_fd` = socket(AF_INET,
+                #ifdef SOCK_NONBLOCK
+                    SOCK_NONBLOCK |
+                #endif
+                #ifdef SOCK_CLOEXEC
+                    SOCK_CLOEXEC |
+                #endif
+                    SOCK_STREAM, 0)) < 0
+
+            // MacOS fallbacks.
+            #ifndef SOCK_NONBLOCK
+            ||  fcntl(`server_fd`, F_SETFL, O_NONBLOCK) < 0
+            #endif
+            #ifndef SOCK_CLOEXEC
+            ||  fcntl(`server_fd`, F_SETFD, FD_CLOEXEC) < 0
+            #endif
+        ) {
+            `err` = errno;
+            goto DONE;
+        }
+
+        // Create socket structure and bind to ip address.
+        serv_addr.sin_family        = AF_INET;
+        serv_addr.sin_addr.s_addr   = INADDR_ANY;
+        serv_addr.sin_port          = htons(`port`);
+
+        if (bind(server_fd, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0) {
+            `err` = errno;
+            goto DONE;
+        }
+
+        // Start listening.
+        if (listen(server_fd, 128) < 0) {
+            `err` = errno;
+            goto DONE;
+        }
+
+        DONE:
+    `);
+
+    return err;
+}
+
+fn acceptSocket_doesntCloseOnError(server_fd!: int, ref socket_fd!: FD)
+{
+    pragma include(
+        "<sys/socket.h>",       // socket, bind, listen
+        "<arpa/inet.h>",        // client_addr
+        "<fcntl.h>",
+        "<errno.h>");
+
+    mut err: Errno;
+    pragma output(
+    `
+        struct sockaddr_in client_addr;
+        int client_addr_len = sizeof(client_addr);
+
+        // Incoming socket connection on the listening socket.
+        if ((`socket_fd` =
+
+            #ifdef SOCK_NONBLOCK
+                accept4
+            #else
+                accept
+            #endif
+                (
+                    `server_fd`
+                    , (struct sockaddr*)  &client_addr
+                    , (socklen_t*)        &client_addr_len
+
+            #ifdef SOCK_NONBLOCK
+                    , SOCK_NONBLOCK | SOCK_CLOEXEC
+            #endif
+                )) < 0
+
+            // Macos & BSD - accepted sockets inherit NONBLOCK from listener,
+            //  see https://github.com/dotnet/runtime/issues/25069.
+            //
+            // #ifndef SOCK_NONBLOCK
+            // ||  fcntl(`socket_fd`, F_SETFL, O_NONBLOCK) < 0
+            // #endif
+
+            // MacOS fallback.
+            #ifndef SOCK_CLOEXEC
+            ||  fcntl(`socket_fd`, F_SETFD, FD_CLOEXEC) < 0
+            #endif
+        ) {
+            `err` = errno;
+            goto DONE;
+        }
+
+    #ifndef NDEBUG
+        {
+        #ifndef SOCK_NONBLOCK
+            auto flags_fl = fcntl(socket_fd, F_GETFL);
+            assert(flags_fl & O_NONBLOCK);
+        #endif
+        #ifndef SOCK_CLOEXEC
+            auto flags_fd = fcntl(socket_fd, F_GETFD);
+            assert(flags_fd & FD_CLOEXEC);
+        #endif
+        }
+    #endif
+
+        DONE:
+    `);
+
+    return err;
+}
+
+
+//
+
+fn wakeUp_forRecvOrWrite(
+    implicit event_loop: Loop,
+    fd: FD, user_data: u64,
+
+    initial!: bool,
+    wakeUp_forRecv!: bool,
+    wakeUp_forWrite!: bool)
+{
+    dbg::ln("  REARM socket(" fd ") forRecv(" wakeUp_forRecv ") forWrite(" wakeUp_forWrite ")");
+
+    include_epollOrKqueue();
+
+    // https://idea.popcount.org/2017-02-20-epoll-is-fundamentally-broken-12/
+    //  This requests level-triggered + EONESHOT,
+    //   and we have to rearm on each read/write.
+    //
+    // Not necessary for a single-threaded loop - EPOLLET would work for both.
+    //
+    // However:
+    //  - kqueue doesn't have edge-triggered,
+    //     so the two loops would be subtly different.
+    //  - edge-triggered requires an extra `recv` call after each read
+    //     to confirm you've reset the event, otherwise the watch
+    //      may never trigger again, so there goes an extra syscall,
+    //       which is pretty much equivalent to the epoll_ctl call here.
+    //  - I don't think you can have level-triggered EPOLLIN with
+    //     edge-triggered EPOLLOUT, which is what would appear to be ideal here,
+    //      in the single-threaded case at least.
+    //
+    // Finally, kqueue doesn't really need EV_ONESHOT for recv.
+    //  - we still need to rearm the write event.
+    //  - as an opti, all the rearming could be deferred
+    //     to the kevent call in the event loop,
+    //      which should reduce the syscall cost.
+    //
+    mut err: Errno;
+    pragma output(
+    `
+    #ifdef __linux__
+        struct epoll_event ev {};
+        ev.data.u64 = `user_data`;
+
+        ev.events = EPOLLONESHOT
+                  | EPOLLRDHUP;
+
+        ev.events |= `wakeUp_forRecv`  ? EPOLLIN  : (decltype(ev.events)) 0;
+        ev.events |= `wakeUp_forWrite` ? EPOLLOUT : (decltype(ev.events)) 0;
+
+        if (epoll_ctl(`event_loop.loop_fd`, `initial` ? EPOLL_CTL_ADD : EPOLL_CTL_MOD, `fd`, &ev))
+            `err` = errno;
+    #else
+        struct kevent evts[2];
+
+        auto add = EV_ADD | EV_ENABLE |
+            #ifdef EV_DISPATCH
+                   EV_DISPATCH;     // Should be cheaper, no other considerations.
+            #else
+                   EV_ONESHOT;
+            #endif
+
+        (void) initial;
+        auto rem = EV_ADD | EV_DISABLE;
+
+        auto ev_READ  = `wakeUp_forRecv`  ? add : rem;
+        auto ev_WRITE = `wakeUp_forWrite` ? add : rem;
+
+        EV_SET(&evts[0], `fd`, EVFILT_READ,  ev_READ,  0, 0, (void*) `user_data`);
+        EV_SET(&evts[1], `fd`, EVFILT_WRITE, ev_WRITE, 0, 0, (void*) `user_data`);
+
+        const int N = sizeof(evts) / sizeof(struct kevent);
+        if (kevent(`event_loop.loop_fd`, evts, N, nullptr, 0, nullptr) < 0)
+            `err` = errno;
+    #endif //
+    `);
+
+    return err;
+}
+
+fn wakeUp_forAccept(
+    implicit event_loop: Loop,
+    fd: FD, user_data: u64)
+{
+    include_epollOrKqueue();
+
+    // https://idea.popcount.org/2017-02-20-epoll-is-fundamentally-broken-12/
+    //  This requests level-triggered + EPOLLEXCLUSIVE:
+    //
+    mut err: Errno;
+    pragma output(
+    `
+    #ifdef __linux__
+        struct epoll_event ev {};
+        ev.data.u64 = `user_data`;
+
+        ev.events   = EPOLLEXCLUSIVE
+                    | EPOLLIN;
+
+        if (epoll_ctl(`event_loop.loop_fd`, EPOLL_CTL_ADD, `fd`, &ev))
+            `err` = errno;
+    #else
+        struct kevent evts[1];
+
+        EV_SET(&evts[0], `fd`, EVFILT_READ,  EV_ADD, 0, 0, (void*) `user_data`);
+
+        const int N = sizeof(evts) / sizeof(struct kevent);
+        if (kevent(`event_loop.loop_fd`, evts, N, nullptr, 0, nullptr) < 0)
+            `err` = errno;
+    #endif //
+    `);
+
+    return err;
+}
+
+fn wakeUp_forChild(
+    implicit ref event_loop: Loop,
+
+    pid!:           spawn::PID,
+    pid_fd!:        FD,
+
+    in_fd!:         spawn::WriteEnd,
+    out_fd!:        spawn::ReadEnd,
+    err_fd!:        spawn::ReadEnd,
+
+    event_id:       i32,
+    wants_streams:  u32,
+    initial!:       bool)
+{
+    dbg::ln("  REARM child pid(" pid ") in(" in_fd ") out(" out_fd ") err(" err_fd ") wants_streams(" wants_streams ")");
+
+    include_epollOrKqueue();
+
+    let user_data_pid = ksfd_pack(
+        Kind.child_process_pidfd, event_id.FD);
+
+    // Ensures we don't mess up the EPOLL_CTL_ADD vs MOD nonsense.
+    assert(!initial || wants_streams == 7);
+
+    mut err: Errno;
+    pragma output(
+    `
+    #ifdef __linux__
+        struct epoll_event ev {};
+
+        auto add = `initial` ? EPOLL_CTL_ADD : EPOLL_CTL_MOD;
+
+        if (`pid_fd`) {
+            ev.data.u64 = `user_data_pid`;
+            ev.events = EPOLLONESHOT | EPOLLIN;
+            if (epoll_ctl(`event_loop.loop_fd`, add, `pid_fd`, &ev))
+                `err` = errno;
+        }
+
+        if (`in_fd` && `wants_streams` & 1) {
+            ev.data.u64 = `user_data_pid + 1`;
+            ev.events = EPOLLONESHOT | EPOLLOUT;
+            if (epoll_ctl(`event_loop.loop_fd`, add, `in_fd`, &ev))
+                `err` = errno;
+        }
+
+        if (`out_fd` && `wants_streams` & 2) {
+            ev.data.u64 = `user_data_pid + 2`;
+            ev.events = EPOLLONESHOT | EPOLLIN;
+            if (epoll_ctl(`event_loop.loop_fd`, add, `out_fd`, &ev))
+                `err` = errno;
+        }
+
+        if (`err_fd` && `wants_streams` & 4) {
+            ev.data.u64 = `user_data_pid + 3`;
+            ev.events = EPOLLONESHOT | EPOLLIN;
+            if (epoll_ctl(`event_loop.loop_fd`, add, `err_fd`, &ev))
+                `err` = errno;
+        }
+    #else
+        auto add = EV_ADD | EV_ENABLE |
+            #ifdef EV_DISPATCH
+                   EV_DISPATCH;     // Should be cheaper, no other considerations.
+            #else
+                   EV_ONESHOT;
+            #endif
+
+        struct kevent evts[4];
+        int N = 0;
+
+        (void) `pid_fd`;
+
+        if (`initial`)
+            EV_SET(&evts[N++], `pid`, EVFILT_PROC, EV_ADD | EV_ONESHOT, NOTE_EXIT, 0,
+                (void*) `user_data_pid`);
+
+        if (`in_fd` && `wants_streams` & 1)
+            EV_SET(&evts[N++], `in_fd`, EVFILT_WRITE, add, 0, 0,
+                (void*) `user_data_pid + 1`);
+
+        if (`out_fd` && `wants_streams` & 2)
+            EV_SET(&evts[N++], `out_fd`, EVFILT_READ, add, 0, 0,
+                (void*) `user_data_pid + 2`);
+
+        if (`err_fd` && `wants_streams` & 4)
+            EV_SET(&evts[N++], `err_fd`, EVFILT_READ, add, 0, 0,
+                (void*) `user_data_pid + 3`);
+
+        if (N && kevent(`event_loop.loop_fd`, evts, N, nullptr, 0, nullptr) < 0)
+            `err` = errno;
+    #endif //
+    `);
+
+    return err;
+}

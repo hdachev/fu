@@ -1,0 +1,6 @@
+
+//*
+fn ln(parts.print[]: string[..]): void = __native("<fu/print.h>", "fu::println", "|Fx_NotDeadCode");
+/*/
+lax fn ln(lax parts.print[]: string[..]) {};
+//*/
