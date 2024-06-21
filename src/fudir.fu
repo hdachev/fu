@@ -1,24 +1,45 @@
 import helpers;
 
 
-// TODO FIX this is a shim,
-//  we probably want this to get the path
-//   to the current executable.
 //
-// Or do we rely on an envar alla Go?
 
 fn slash(a: string)
     a.if_last == '/' ? a : a ~ '/';
 
-let HOME            = env::get("HOME").slash;
+let HOME            = slash(env::get("HOME"));
 
 fn get_FU_ROOT(): string
 {
-    let FU_ROOT         = slash(env::get("FU_ROOT") || path::join(HOME, "fu"));
+    // Try to grab from the environment.
+    mut FU_ROOT         = env::get("FU_ROOT");
 
-    let compiler_fu     = FU_ROOT ~ "src/compiler.fu";
-    let fs              = file::size(compiler_fu);
-    if (fs < 1000)
+    // Resolve relative to the current executable.
+    if (!FU_ROOT)
+    {
+        let exe         = fs::executable;
+
+        // TODO .find(last: "/bin/"), we don't have one yet
+        mut start       = -1;
+        for (;;)
+        {
+            let match       = exe.find("/bin/", :start + 1);
+            if (match       < 0)
+                break;
+
+            start           = match;
+        }
+
+        if (start > 0)
+            FU_ROOT     = exe.slice(start: 0, end: start + 1)
+    }
+
+    // Finally, assume it's sitting in the user's home dir.
+    FU_ROOT         = slash(FU_ROOT || path::join(HOME, "fu"));
+
+    // Silly check to verify there does indeed seem to be a compiler in there.
+    let compiler_fu = FU_ROOT ~ "src/compiler.fu";
+    let fs          = file::size(compiler_fu);
+    if (fs          < 1000)
         throw("Bad compiler.fu: " ~ compiler_fu ~ ": " ~ fs);
 
     return FU_ROOT;

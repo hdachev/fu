@@ -94,6 +94,52 @@ pub fn cwd(): string
     return cwd;
 }
 
+pub fn executable(): string
+{
+    shadow mut executable: string;
+
+    pragma emit_top(`
+        #ifdef __APPLE__
+        #include <mach-o/dyld.h>
+        #include <assert.h>
+        #endif
+    `);
+
+    pragma emit(`
+
+        const auto& init = []()
+        {
+            #if defined(__APPLE__)
+            fu::str executable;
+
+            uint32_t bufsize = 0;
+            _NSGetExecutablePath(executable.data_mut(), &bufsize);
+            assert(bufsize > 0);
+
+            executable.grow(fu::i(bufsize));
+            _NSGetExecutablePath(executable.data_mut(), &bufsize);
+            return executable;
+
+            #elif defined(__linux__)
+            /*
+                readlink("/proc/self/exe", buf, bufsize) (Linux)
+                readlink("/proc/curproc/file", buf, bufsize) (FreeBSD)
+                readlink("/proc/self/path/a.out", buf, bufsize) (Solaris)
+            */
+
+            #else
+            assert(false && "TODO fs::executable");
+
+            #endif
+        };
+
+        static const fu::str value = init();
+        `executable` = value;
+    `);
+
+    return executable;
+}
+
 
 //
 

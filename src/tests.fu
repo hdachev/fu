@@ -14522,6 +14522,44 @@ pub extern fn runTests()
         }
     `);
 
+    TODO_move(currently: "BUG About to use the wrong move for a slice or vec-range 33:26+7", `
+        fn slash(a: string)
+            a.if_last == '/' ? a : a ~ '/';
+
+        fn join(a: string, b: string)
+            b.starts  (with: '/') ?           b :
+            a.ends    (with: '/') ? a       ~ b :
+                                    a ~ '/' ~ b ;
+
+        let HOME = "/hello/world";
+
+        fn HOME_bang(n: int) {
+            mut res = HOME;
+            for (mut i = 0; i < n; i++) res ~= '!';
+            return res;
+        }
+
+        <split/>
+        fn get_FU_ROOT(n: int): string {
+            let FU_ROOT         = {
+                let exe         = HOME_bang(:n);
+
+                mut start       = -1;
+                for (;;) {
+                    let match   = exe.find("/world", :start + 1);
+                    if (match   < 0) break;
+                    start       = match;
+                }
+
+                start > 0 && exe.slice(start: 0, end: start)
+            };
+
+            return slash(FU_ROOT || join(HOME, "fu"));
+        }
+
+        fn main() get_FU_ROOT(1).len - 7;
+    `);
+
     // /Slices.
 
 
