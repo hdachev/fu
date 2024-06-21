@@ -99,9 +99,13 @@ pub fn executable(): string
     shadow mut executable: string;
 
     pragma emit_top(`
-        #ifdef __APPLE__
+        #if defined(__APPLE__)
         #include <mach-o/dyld.h>
         #include <assert.h>
+
+        #else
+        #include <limits.h>
+
         #endif
     `);
 
@@ -109,18 +113,22 @@ pub fn executable(): string
 
         const auto& init = []()
         {
-            #if defined(__APPLE__)
             fu::str executable;
 
+            #if defined(__APPLE__)
             uint32_t bufsize = 0;
             _NSGetExecutablePath(executable.data_mut(), &bufsize);
             assert(bufsize > 0);
 
             executable.grow(fu::i(bufsize));
             _NSGetExecutablePath(executable.data_mut(), &bufsize);
-            return executable;
 
             #elif defined(__linux__)
+            char buf[PATH_MAX];
+            auto nbytes = readlink("/proc/self/exe", buf, PATH_MAX);
+            if (nbytes > 0 && nbytes < PATH_MAX)
+                executable.UNSAFE__init_copy(buf, PATH_MAX);
+
             /*
                 readlink("/proc/self/exe", buf, bufsize) (Linux)
                 readlink("/proc/curproc/file", buf, bufsize) (FreeBSD)
@@ -131,6 +139,8 @@ pub fn executable(): string
             assert(false && "TODO fs::executable");
 
             #endif
+
+            return executable;
         };
 
         static const fu::str value = init();
