@@ -18208,7 +18208,7 @@ pub extern fn runTests()
         }
     `);
 
-    TODO_inline(currently: "BUG reason not assignable string never 11:17+3", `
+    ZERO(`
         struct Overload { name: string };
         struct Target { globid: i32 };
 

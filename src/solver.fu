@@ -11987,8 +11987,61 @@ pub fn solve(
                     }
                 }
 
+
+                // Dead code elimination during inlining.
+
+                mut children_someNever = false;
+
                 for (mut i = rest; i < node.items.len; i++)
-                    visitNode(node.items[i]);
+                {
+                    ref item = node.items[i];
+                    visitNode(item);
+
+                    if (item.is_never)
+                    {
+                        children_someNever = true;
+
+                        if (node.kind == "and" ||
+                            node.kind == "or"  ||
+                            node.kind == "block")
+                        {
+                            node.items.shrink(i + 1);
+                            break;
+                        }
+
+                        if (node.kind == "not" ||
+                            node.kind == "if" && i == 0)
+                        {
+                            node = item;
+                            break;
+                        }
+                    }
+                }
+
+                if (children_someNever && node.kind == "call")
+                {
+                    let RTL         = node.target.isRTL;
+                    let host_args   = node.target.args;
+
+                    mut block: SolvedNode[] = [];
+
+                    :FOUND_NEVER
+                    {
+                        argsForward(:host_args, :RTL): |host_arg, i|
+                        {
+                            mut item            = node.items[i];
+                            let discard_rest    = item.is_never;
+                            block              ~= item;
+
+                            if (discard_rest)
+                                break :FOUND_NEVER;
+                        }
+
+                        BUG("visitNode(call): !FOUND_NEVER");
+                    }
+
+                    node = createBlock(t_never, block);
+                }
             }
 
             // This is unpleasant -
