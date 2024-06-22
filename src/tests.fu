@@ -22316,6 +22316,39 @@ pub extern fn runTests()
         fn main() what([]);
     `);
 
+    TODO_ooe(currently: "BUG exit code", `
+        fn main() {
+            mut zero = 0; // zero++ must never happen
+            (zero++) = { return :main zero; };
+        }
+    `);
+
+    TODO_ooe(currently: "BUG exit code", `
+        fn main() {
+            mut zero = 0; // zero++ must never happen
+            fn no_return() { return :main zero; }
+            (zero++) = no_return();
+        }
+    `);
+
+    TODO_ooe(currently: "BUG exit code", `
+        fn takes_two_lambdas(inline a, inline b) a = b;
+
+        fn main() {
+            mut zero = 0; // zero++ must never happen
+            takes_two_lambdas(zero++, { return :main zero });
+        }
+    `);
+
+    TODO_ooe(currently: "BUG exit code", `
+        fn takes_two_lambdas(a, b) a() = b();
+
+        fn main() {
+            mut zero = 0; // zero++ must never happen
+            takes_two_lambdas(|| zero++, || { return :main zero });
+        }
+    `);
+
     // /StaticEval
 
 
