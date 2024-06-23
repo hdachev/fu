@@ -168,7 +168,7 @@ fn read(mut path: string, ref into!output: string, mut size?: i64): Errno
         //
         pragma input(
         `
-            auto* buf = `output`.data_mut();
+            auto* buf = `output`.data_mut() + len0;
 
             ssize_t check = `output`.capa() > `len1` ? 1 : 0;
             ssize_t request;
