@@ -530,7 +530,17 @@ pub extern fn runTests()
         }
     `);
 
-    // /using
+    ZERO(`
+        extern struct hello { v: int }
+        fn what(h: hello) h.v;
+        fn main() {
+            mut s: hello;
+            pragma emit(s, " = hello { 10 };");
+            return s.v - 10
+        }
+    `);
+
+    // /Structs /using /structs
 
 
     // Type annotations.

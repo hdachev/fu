@@ -362,6 +362,11 @@ fn isImmediatelyDiscardable(k: Kind)
     return k <= "fn";
 }
 
+fn isFnOrTypeDeclaration(k: Kind)
+{
+    return k >= "struct" && k <= "fn";
+}
+
 
 // Experiments / extensions / dialects?
 

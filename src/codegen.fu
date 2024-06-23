@@ -457,8 +457,7 @@ pub fn cpp_codegen(
 
     fn structID(s: Struct)
     {
-        // TODO extern struct (no shape hashing)
-        if (s.shape.hash)
+        if (s.shape.hash && !(s.target.flags & F_EXTERN))
             return s.name ~ "_" ~ s.shape.hash.tea::digest62(chars: SIGHASH_CHARS);
 
         return s.name;

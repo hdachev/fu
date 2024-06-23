@@ -772,9 +772,19 @@ pub fn parse(
     {
         mut out = parseStatement();
         out.kind == "let" || out.kind == "fn" || fail(
-            "lax".qBAD ~ " cannot be used here.");
+            :out.token, "lax".qBAD ~ " is not supported for this statement or declaration.");
 
         out.flags |= F_LAX;
+        return out;
+    }
+
+    fn parseExtern(): Node
+    {
+        mut out = parseStatement();
+        out.kind.isFnOrTypeDeclaration || fail(
+            :out.token, "extern".qBAD ~ " is not supported for this statement or declaration.");
+
+        out.flags |= F_EXTERN;
         return out;
     }
 
@@ -835,6 +845,7 @@ pub fn parse(
                 if (v == "shadow")      return parseShadow();
                 if (v == "using")       return parseUsing();
                 if (v == "lax")         return parseLax();
+                if (v == "extern")      return parseExtern();
 
                 if (v == "import")      return parseImport();
 
@@ -866,7 +877,6 @@ pub fn parse(
                 if (v == "trivial")     return parseAnnotatedStruct(A_TRIVIAL);
                 if (v == "nodiscard")   return parseAnnotatedType(A_NODISCARD);
 
-                if (v == "extern")      return parseAnnotatedFn(F_EXTERN);
                 if (v == "hotswap")     return parseAnnotatedFn(F_HOTSWAP);
                 if (v == "test")        return parseTestcase();
             }
