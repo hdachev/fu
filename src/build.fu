@@ -1045,99 +1045,24 @@ pub fn build(
             cpp_files.push(fname);
         }
 
-        // TODO FIX
-        let cmake       = false;
-        let CMakeLists  = cmake && path::join(path::dirname(unity), "CMakeLists.txt");
-
-        if (unity || CMakeLists)
+        // .unity.cpp
+        if (unity)
         {
-            // .unity.cpp
-            if (unity)
+            mut data = "#ifdef fu_UNITY_FULIB\n"
+                     ~ "#include <fu/_fulib.cpp>\n"
+                     ~ "#endif\n\n";
+
+            for (mut i = 0; i < cpp_files.len; i++)
             {
-                mut data = "#ifdef fu_UNITY_FULIB\n"
-                         ~ "#include <fu/_fulib.cpp>\n"
-                         ~ "#endif\n\n";
-
-                for (mut i = 0; i < cpp_files.len; i++)
-                {
-                    let incl = cpp_files[i];
-                    if (incl)
-                        data ~= "#include \"" ~ path::relative(unity, incl) ~ "\"\n";
-                }
-
-                update_file(
-                    fname: unity ~ ".unity.cpp", :data,
-                    :dir_src, dir_out: dir_cpp,
-                    :dir_wrk_tmp);
+                let incl = cpp_files[i];
+                if (incl)
+                    data ~= "#include \"" ~ path::relative(unity, incl) ~ "\"\n";
             }
 
-            // CMakeLists.txt
-            if (CMakeLists)
-            {
-                mut data = "cmake_minimum_required(VERSION 3.6)\n\n";
-
-                mut inputs:  string[];
-                mut outputs: string[];
-
-                mut main: string;
-                mut includes: string;
-
-                for (mut i = 1; i < modules.len; i++)
-                {
-                    let module = modules[i];
-                    let input = path::relative(CMakeLists, module.fname);
-                    if (module.compile_index == 1)
-                        main = input;
-
-                    inputs.push(input);
-
-                    // Check for custom cmake files.
-                    let custom = module.fname ~ ".cmake";
-                    if (file::size(custom) > 0)
-                        includes ~= "include(" ~ path::relative(CMakeLists, custom) ~ ")\n";
-                }
-
-                for (mut i = 0; i < cpp_files.len; i++)
-                {
-                    let cpp_file = cpp_files[i];
-                    if (cpp_file)
-                        outputs.push("${CMAKE_CURRENT_SOURCE_DIR}/" ~ path::relative(CMakeLists, cpp_file));
-                }
-
-                let libname = path::noext(path::filename(main));
-
-                data ~= "set(FU_TARGET " ~ libname ~ ")\n\n";
-
-                data ~= "set(FU_MAIN " ~ main ~ ")\n\n";
-                data ~= "set(FU_INPUTS\n    " ~ inputs.join("\n    ") ~ ")\n\n";
-
-                if (unity)
-                    data ~= "set(FU_OUTPUTS\n    " ~ "${CMAKE_CURRENT_SOURCE_DIR}/" ~ path::relative(CMakeLists, unity) ~ ".unity.cpp)\n\n";
-                else
-                    data ~= "set(FU_OUTPUTS\n    " ~ outputs.join("\n    ") ~ ")\n\n";
-
-                data ~= "add_custom_command(\n"
-                      ~ "    OUTPUT ${FU_OUTPUTS}\n"
-                      ~ "    COMMAND $ENV{HOME}/fu/bin/fu\n"
-                      ~ "    ARGS -c ${FU_MAIN}\n"
-                      ~ "    DEPENDS ${FU_INPUTS}\n"
-                      ~ "    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}\n"
-                      ~ "    VERBATIM)\n\n";
-
-                data ~= "add_library(${FU_TARGET} ${FU_OUTPUTS})\n\n";
-
-                data ~= "add_library(fulib SHARED $ENV{HOME}/fu/include/fu/_fulib.cpp)\n"
-                      ~ "target_include_directories(fulib PUBLIC $ENV{HOME}/fu/include/)\n"
-                      ~ "target_link_libraries(${FU_TARGET} PUBLIC fulib)\n\n";
-
-                if (includes)
-                    data ~= includes ~ "\n";
-
-                update_file(
-                    fname: CMakeLists, :data,
-                    :dir_src, dir_out: dir_cpp,
-                    :dir_wrk_tmp);
-            }
+            update_file(
+                fname: unity ~ ".unity.cpp", :data,
+                :dir_src, dir_out: dir_cpp,
+                :dir_wrk_tmp);
         }
     }
 
