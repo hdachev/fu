@@ -1776,9 +1776,15 @@ static fu::str absdir_pPg01rN2(const fu::str& a)
 
 static const fu::str HOME fu_INIT_PRIORITY(1012) = absdir_pPg01rN2(get_vT58MJUZ("HOME"_fu));
 
+fu::str cwd_OvAHpuKu();
+
 fu::str locate_FUDIR_LI96RGZs()
 {
-    /*MOV*/ fu::str dir = (HOME + "fu/"_fu);
+    /*MOV*/ fu::str dir = cwd_OvAHpuKu();
+
+    if (dir && dir[dir.size() - 1] != '/')
+        dir.push('/');
+
     fu::str fn = (dir + "src/compiler.fu"_fu);
     const int64_t fs = size_zTt3fZzW(fu::str(fn));
     if (fs > 1000ll)
