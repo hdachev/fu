@@ -17669,6 +17669,14 @@ pub extern fn runTests()
         }
     `);
 
+    ZERO(`
+        fn segfault_tryRetypingEmptyBlock(a: int)
+            = a & 1 ? a         <fail no common supertype i32 void 3:21+1>
+                    : {};       <pass/>
+                    : [];       </fail>
+        fn main() 0.segfault_tryRetypingEmptyBlock;
+    `);
+
     // /Conversion functions.
 
 

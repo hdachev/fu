@@ -2820,6 +2820,7 @@ pub fn solve(
 
         if (node.kind == "block" || node.kind == "argid")
             return !(node.helpers.mask & HM_LabelUsed)
+                && node.items
                 && tryRetyping(node.items.last, expect);
 
         return [];
