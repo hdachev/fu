@@ -13810,9 +13810,15 @@ pub fn solve(
                             arg.is_mutref      || BUG(host_arg.name.human.qID ~ ": host_arg.written but !arg.is_mutref");
                         }
 
-                        bck_writes.Lifetime_add(
-                            Lifetime_op_mask(
-                                arg.lifetime, host_arg.written_to));
+                        // Breaks for recursive lts -
+                        //  we need to formalize recursive/collapsed
+                        //   LT representations somehow.
+                        //
+                        // bck_writes.Lifetime_add(
+                        //     Lifetime_op_mask(
+                        //         arg.lifetime, host_arg.written_to));
+                        //
+                        bck_writes.Lifetime_add(arg.lifetime);
                     }
 
                     if (!ooe_isLast)

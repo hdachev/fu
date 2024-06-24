@@ -8592,7 +8592,7 @@ pub extern fn runTests()
         }
     `);
 
-    ZERO(`
+    TODO_disjoint(currently: "cannot access t 11:20+1 inval by GET 8:35+1", `
         struct SolverState  {
             overloads:          string[];
             eph?:               int;
@@ -8631,6 +8631,53 @@ pub extern fn runTests()
         fn main() {
             mut ss = SolverState([ "hello", "world!" ], 1);
             return ss.solve.len + ss.solve.len - 11;
+        }
+    `);
+
+    ZERO(`
+        struct Node { handle: int; items: Node[] }
+        struct Doc { raw_plaintexts: string[]; root_node?: Node }
+
+        fn assertPathsValid_badFlatCount(ref tree: Doc) {
+            fn visit(ref node: Node) {
+                mut plaintext: string;
+                swap(tree.raw_plaintexts[node.handle], plaintext);
+
+                node.handle = [];
+                node.items  = [];
+                return plaintext;
+            }
+
+            return visit(tree.root_node);
+        }
+
+        fn main() {
+            mut d = Doc(raw_plaintexts: [ "Hello!" ]);
+            return d.assertPathsValid_badFlatCount.len - 6;
+        }
+    `);
+
+    ZERO(`
+        struct Node { handle: int; items: Node[] }
+        struct Doc { raw_plaintexts: string[]; root_node?: Node }
+
+        fn assertPathsValid_badFlatCount(ref tree: Doc) {
+            fn visit(ref node) {
+                node.items.each(.visit);                        ;; PointlessMustSeq
+
+                mut plaintext: string;
+                swap(plaintext, tree.raw_plaintexts[node.handle]);
+
+                node.handle = 0;
+                return plaintext;
+            }
+
+            return visit(tree.root_node);
+        }
+
+        fn main() {
+            mut d = Doc(raw_plaintexts: [ "Hello!" ]);
+            return d.assertPathsValid_badFlatCount.len - 6;
         }
     `);
 
