@@ -13219,6 +13219,36 @@ pub extern fn runTests()
                            </fail>
     `);
 
+    ZERO(`
+        novec fn test(ref items: int[]) {
+            fn qStackInfLoop(mut v) {                           ;; PointlessMustSeq
+                v--;
+                if      (v > 8) qStackInfLoop(v.u64);
+                else if (v > 7) qStackInfLoop(v.i64);
+                else if (v > 6) qStackInfLoop(v.u32);
+                else if (v > 5) qStackInfLoop(v.i32);
+                else if (v > 4) qStackInfLoop(v.u16);
+                else if (v > 3) qStackInfLoop(v.i16);
+                else if (v > 2) qStackInfLoop(v.u8);
+                else if (v > 1) qStackInfLoop(v.i8);
+                else {                  <fail novec via copy 14:32+5 20:23+13 10:33+13>
+                    let back = items;
+                    for (mut i = 0; i < items.len; i++)
+                        items[i] += back[back.len - 1 - i] + v.int;             <pass/>
+                    items.each: |ref item| item *= 2 + v.int;                   </fail>
+                }
+            }
+
+            items.len.qStackInfLoop();
+        }
+
+        fn main() {
+            mut v = [ 1 ];
+            v.test();
+            return v.only - 2;
+        }
+    `);
+
     // /quite right
 
 

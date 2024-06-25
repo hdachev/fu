@@ -2387,7 +2387,7 @@ pub fn cpp_codegen(
 
         fn affectedByIntegerPromotions(type: Type)
         {
-            if (type.is_ref || /* is int or flags: */ !type.is_bitfield)
+            if (type.is_ref || /* is int or flags: */ !type.is_bitfield || type.isIrrelevant)
                 return false;
 
             let c = type.canon;

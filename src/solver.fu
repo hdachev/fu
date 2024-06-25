@@ -591,6 +591,7 @@ pub fn solve(
         _conv_cache:        flat::Map(ValueType, ConvCache_ColsAndBakes);
 
         _solver_safety:     int;
+        _qstack_safety:     int;
 
         //
         _notes:             SolverNotes;
@@ -11590,11 +11591,28 @@ pub fn solve(
         defer _nestingFnort = nestingFnort0;
         //////////////////////////////////////////////////
 
+        if (!seen)
+            _qstack_safety = 0;
+        else if (_qstack_safety++ > 1024)
+            return "[QSTACK > 1024]";
+
         shadow let seen = seen ~ target;
         SLOW_traverse(node): |callsite|
         {
             if (callsite.kind != "call")
+            {
+                if (query == AQ_WhyNotNovec
+                        && (callsite.kind == "copy" || callsite.kind == "move"))
+                {
+                    let arg = callsite.items.only;
+                    if (arg.type.lifetime.Lifetime_unwinds_through(:locid))
+                        return "\n            "
+                             ~ "via " ~ callsite.kind
+                             ~ " at " ~ callsite.token.addr_and_snippet;
+                }
+
                 continue;
+            }
 
             if (seen.has(callsite.target))
                 continue;

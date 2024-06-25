@@ -1727,6 +1727,7 @@ struct s_SolverState
     fu::vec<s_HelpersData> _helpers_data;
     fu::vec<s_Ephemeral> _ephemeral;
     int _solver_safety;
+    int _qstack_safety;
     fu::vec<fu::str> _spec_errors;
     fu::vec<s_Warning> _warnings;
     fu::str shortModuleName;
@@ -9464,6 +9465,16 @@ static fu::str qSTACK_XVvwRcb5(const s_Target& target, const s_SolvedNode& node,
 {
     const s_Target nestingFnort0 = exchange_jPHBkujO(ss._nestingFnort, s_Target(target));
     fu_DEFER(ss._nestingFnort = nestingFnort0);
+
+    if (!seen)
+    {
+        ss._qstack_safety = 0;
+    }
+    else if (ss._qstack_safety++ > 1024)
+    {
+        return "[QSTACK > 1024]"_fu;
+    }
+
     fu::vec<s_Target> seen_1 = (seen + target);
 
     {
