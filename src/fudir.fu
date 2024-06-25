@@ -11,36 +11,49 @@ let HOME            = slash(env::get("HOME"));
 fn get_FU_ROOT(): string
 {
     // Try to grab from the environment.
-    mut FU_ROOT         = env::get("FU_ROOT");
+    mut FU_ROOT     = env::get("FU_ROOT");
+
+    fn consider(topic: string, mut dir: string, failOK!?: bool)
+    {
+        dir.starts(with: '/') || throw(
+            topic ~ "candidate(" ~ dir ~ "), no leading slash, does not look like an absolute path.");
+
+        dir = dir.slash();
+
+        //
+        let compiler_fu = dir ~ "src/compiler.fu";
+        let fs = file::size(compiler_fu);
+        if (fs > 1000)
+            FU_ROOT = dir;
+        else if (!failOK)
+            throw(topic ~ "file(" ~ compiler_fu ~ ") size(" ~ fs ~ ") !> 1000");
+    }
+
+    if (let env_var = env::get("FU_ROOT"))
+        consider("Bad $FU_ROOT: ", env_var);
 
     // Resolve relative to the current executable.
     if (!FU_ROOT)
     {
-        let exe         = fs::executable;
+        let exe = fs::executable;
 
         // TODO .find(last: "/bin/"), we don't have one yet
-        mut start       = -1;
+        mut start = -1;
         for (;;)
         {
-            let match       = exe.find("/bin/", :start + 1);
-            if (match       < 0)
+            let match = exe.find("/bin/", :start + 1);
+            if (match < 0)
                 break;
 
-            start           = match;
+            start = match;
         }
 
         if (start > 0)
-            FU_ROOT     = exe.slice(start: 0, end: start + 1)
+            consider("fs::executable: ", exe.slice(start: 0, end: start + 1), failOK: true);
+
+        if (!FU_ROOT)
+            consider("$HOME/fu: ", path::join(HOME, "fu"));
     }
-
-    // Finally, assume it's sitting in the user's home dir.
-    FU_ROOT         = slash(FU_ROOT || path::join(HOME, "fu"));
-
-    // Silly check to verify there does indeed seem to be a compiler in there.
-    let compiler_fu = FU_ROOT ~ "src/compiler.fu";
-    let fs          = file::size(compiler_fu);
-    if (fs          < 1000)
-        throw("Bad compiler.fu: " ~ compiler_fu ~ ": " ~ fs);
 
     return FU_ROOT;
 }

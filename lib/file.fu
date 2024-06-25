@@ -82,6 +82,13 @@ fn write(mut path: string, data: byte[..], mode = RW_RW_RW): Errno
     return err;
 }
 
+fn read(mut path: string, else!, mut size?: i64): string
+{
+    mut output: string;
+    let err = read(:path, :size, into: output);
+    return err ? else(?:err) : output;
+}
+
 fn read(mut path: string, ref into!output: string, mut size?: i64): Errno
 {
     // C-str ok.
@@ -168,7 +175,7 @@ fn read(mut path: string, ref into!output: string, mut size?: i64): Errno
         //
         pragma input(
         `
-            auto* buf = `output`.data_mut() + len0;
+            auto* buf = `output`.data_mut() + `len0`;
 
             ssize_t check = `output`.capa() > `len1` ? 1 : 0;
             ssize_t request;
