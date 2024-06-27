@@ -135,6 +135,22 @@ fn exec(cmd: string, ref stdout: string)
     return err.int || status.int;
 }
 
+pub fn gcc_version()
+{
+    mut stdout: string;
+
+    let code = exec("gcc --version", :stdout);
+    if (code)
+    {
+        if (stdout)
+            stdout ~= stdout.ends(with: '\n') ? "\n" : "\n\n";
+
+        stdout ~= "NON-ZERO EXIT CODE: " ~ code ~ "\n";
+    }
+
+    return stdout;
+}
+
 
 //
 

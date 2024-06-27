@@ -3,6 +3,12 @@ import compiler;
 import tests;
 import ansi;
 
+enum Special {
+    Nothing = 1
+    Help
+    Version
+}
+
 fn cli_handle(argv: string[], cwd = fs::cwd())
 {
     mut idx = 0;
@@ -18,25 +24,38 @@ fn cli_handle(argv: string[], cwd = fs::cwd())
     // Consume argv[0].
     let self = next();
 
-    // Exit 0 on no command, else we fail build-checks.
+    mut special: Special;
     if (argv.len == 1)
-    {
-        println("\tTry `" self " file.fu`.\n");
-        return;
-    }
+        special = "Nothing";
+    else if (argv.ends(with: "--help"))
+        special = "Help";
+    else if (argv.ends(with: "--version"))
+        special = "Version";
+
+    if (special)
+        return cli_handle_special(self, special);
+
 
     // Full test suite.
-    if (argv.len == 2 && argv[1] == "self")
+
+    if (argv.len == 2)
     {
-        println("\n\tRunning tests ...\n");
-        runTests();
+        let cmd = argv[1];
+        if (cmd == "self")
+        {
+            println("\n\tRunning tests ...\n");
+            runTests();
 
-        println("\n\tRebuilding self ...\n");
-        buildCompiler();
+            println("\n\tRebuilding self ...\n");
+            buildCompiler();
 
-        println("\n\tRebuilt self.\n");
-        return;
+            println("\n\tRebuilt self.\n");
+            return;
+        }
     }
+
+
+    //
 
     fn abs(path: string)
         path    && path[0] != '-'
@@ -210,3 +229,62 @@ pub extern fn buildCompiler()
     cli_handle(
         cwd: fudir::FU_ROOT,
         [ "fu", "--bin", "bin/fu", "-c", "src/cli.fu" ]);
+
+
+//
+
+fn cli_handle_special(self: string, special: Special)
+{
+    println(`
+fu-0    The Fu Programming Language`);
+
+    if (special == "Nothing")
+    {
+        println(`
+        To get started:
+            echo 'fn main() { println("Hello world!"); 0 }' >> hello.fu
+
+        Build it:
+            `self` -b hello.fu
+
+        Run it:
+            ./hello
+                Hello world!
+`);
+    }
+    else if (special == "Help")
+    {
+        println(`
+USAGE   `self` [options] name.fu
+        Without options, type-check and exit without further effect.
+
+        `self` -b name.fu
+        Build name.fu, output a binary in the same directory.
+
+        `self` --bin ./bin/name name.fu
+        Build name.fu, output a binary at ./bin/name
+
+OPTIONS -b, --bin FILE
+        Emit a binary.
+
+        -c, --cpp DIR
+        Emit intermedite c++ source code.
+
+        -o, --obj DIR
+        Emit object files.
+
+        --debug
+        --release
+        --reldeb
+        --retail
+        Selects build scheme, default is "--release".
+`);
+    }
+    else if (special == "Version")
+    {
+        println(`
+        gcc --version:
+            `build::gcc_version.replace(all: '\n', with: "\n            ")`
+`);
+    }
+}
