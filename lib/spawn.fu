@@ -163,14 +163,22 @@ pub fn spawn(
         {
             if (pipe) {
                 if (which == STDIN_FILENO) {
-                    posix_spawn_file_actions_addclose(&file_actions, pipe.w);
+                    if (pipe.w)
+                        posix_spawn_file_actions_addclose(&file_actions, pipe.w);
+
                     posix_spawn_file_actions_adddup2 (&file_actions, pipe.r, STDIN_FILENO);
-                    posix_spawn_file_actions_addclose(&file_actions, pipe.r);
+
+                    if (pipe.r != STDIN_FILENO)
+                        posix_spawn_file_actions_addclose(&file_actions, pipe.r);
                 }
                 else {
-                    posix_spawn_file_actions_addclose(&file_actions, pipe.r);
+                    if (pipe.r)
+                        posix_spawn_file_actions_addclose(&file_actions, pipe.r);
+
                     posix_spawn_file_actions_adddup2 (&file_actions, pipe.w, which);
-                    posix_spawn_file_actions_addclose(&file_actions, pipe.w);
+
+                    if (pipe.w != which)
+                        posix_spawn_file_actions_addclose(&file_actions, pipe.w);
                 }
             }
             else {

@@ -1,0 +1,93 @@
+
+fn main()
+{
+    mut run_no = 0;
+
+    mut dirty: bool;
+    mut rebuild_now: f64;
+    mut rebuild_pid: spawn::PID;
+
+    mut fswatch_src: spawn::PID;
+    mut fswatch_lib: spawn::PID;
+
+    fn spawn(argv: string[]): spawn::PID
+    {
+        let pid = ev::Loop::spawn(:argv,
+            stdout: "Parent",
+            stderr: "Parent",
+            else: |err|
+            {
+                println("SPWN ER argv(" argv.join(" ") ") err(" err ")");
+            });
+
+        // println("SPAWN   argv(" argv.join(" ") ") pid(" pid ")");
+        return pid;
+    }
+
+    fn respawn_watches()
+    {
+        fswatch_src = spawn([ "fswatch", "--one-event", "-e", ".*", "-i", "\\.fu$", "./src" ]);
+        fswatch_lib = spawn([ "fswatch", "--one-event", "-e", ".*", "-i", "\\.fu$", "./lib" ]);
+    }
+
+    fn respawn_rebuild()
+    {
+        let now = now::utc();
+
+        if (rebuild_pid)
+        {
+            if (abs(now - rebuild_now) > 0.125)
+            {
+                // println("REBUILD Make dirty.");
+                dirty = true;
+            }
+
+            // println("REBUILD Skip, already running.");
+            return;
+        }
+
+        // println("REBUILD Launch.");
+        dirty       = false;
+        rebuild_now = now;
+        rebuild_pid = spawn([ run_no++ ? "./cycle" : "./recycle" ]);
+    }
+
+    ev::Loop(
+
+        loop_start: ||
+        {
+            respawn_watches();
+            respawn_rebuild();
+        },
+
+        loop_error:         |lax err| {},
+        socket_accepted:    [],
+        socket_closed:      [],
+        socket_event:       |lax readable, lax read| {},
+
+        child_event:        |lax pid| {},
+        child_closed:       |pid, lax signo, lax code|
+        {
+            // println("  CHILD EXIT pid(" pid ") signo(" signo ") code(" code ")");
+            if (pid == fswatch_src || pid == fswatch_lib)
+            {
+                // println("REBUILD A watch has triggered pid(" ~ pid ~ ").");
+                (pid == fswatch_src ? fswatch_src : fswatch_lib) = 0;
+                respawn_watches();
+                respawn_rebuild();
+            }
+            else if (pid == rebuild_pid)
+            {
+                // println("REBUILD Done.");
+                rebuild_pid = 0;
+                if (dirty)
+                {
+                    // println("REBUILD Re-run because dirty.");
+                    respawn_rebuild();
+                }
+            }
+        },
+    );
+
+    return 0;
+}
