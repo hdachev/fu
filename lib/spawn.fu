@@ -25,34 +25,42 @@ pub struct PosixPipe {
 
 //
 
-pub primitive ExitStatus:   i32;
+pub primitive ExitStatus: i32;
 
-pub fn if(status: ExitStatus, code!?: <Code>, else!?)
+pub fn exited(status: ExitStatus)
 {
     pragma include("<sys/wait.h>");
 
-    if !(Code -> [])
-    {
-        mut exited = false;
-        pragma output(`
-            `exited` = WIFEXITED(`status`);
-        `);
+    mut ret = bool;
+    pragma emit(ret` = WIFEXITED(`status`);`);
+    return ret;
+}
 
-        if (exited)
-        {
-            mut actual: int;
-            pragma output(`
-                `actual` = WEXITSTATUS(`status`);
-            `);
+pub fn exit(status: ExitStatus)
+{
+    pragma include("<sys/wait.h>");
 
-            if (Code -> int)
-                return actual == code;
+    mut ret: i32;
+    pragma emit(ret` = WEXITSTATUS(`status`);`);
+    return ret;
+}
 
-            return code(actual);
-        }
-    }
+pub fn signalled(status: ExitStatus)
+{
+    pragma include("<sys/wait.h>");
 
-    return else();
+    mut ret = bool;
+    pragma emit(ret` = WIFSIGNALED(`status`);`);
+    return ret;
+}
+
+pub fn signal(status: ExitStatus)
+{
+    pragma include("<sys/wait.h>");
+
+    mut ret: signal::Signo;
+    pragma emit(ret` = WTERMSIG(`status`);`);
+    return ret;
 }
 
 
@@ -454,17 +462,23 @@ pub fn spawn(
     ref stdout!stdout_buf: string,
     ref stderr!stderr_buf: string,
 
-    ref status!: ExitStatus): Errno
+    ref status!: ExitStatus,
+
+    passthrough!?: bool): Errno
 {
+    let cs: ChildStream =
+        passthrough ? "Parent"
+                    : "Pipe";
+
     mut err: Errno;
     mut child: Child;
-    if ((err = spawn(:child, :argv, stdout: "Pipe", stderr: "Pipe", blocking: true)))
+    if ((err = spawn(:child, :argv, stdout: cs, stderr: cs, blocking: true)))
         return err;
 
     defer close(:child, :status);
 
     // Collect output.
-    pragma input(
+    if (!passthrough) pragma input(
     `
         const size_t BUF_SIZE = 64 * 1024;
         fu::byte BUF[BUF_SIZE];

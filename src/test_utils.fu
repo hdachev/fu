@@ -583,7 +583,7 @@ pub fn ZERO(
                 STOP("TODO test is actually passing");
         }
 
-        let run = true;
+        let run = build::RunMode.CompilerTestcase;
         let fudir = ctx.fudir;
         let dir_wrk = fudir::DEFAULT_WORKSPACE;
 

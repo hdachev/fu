@@ -236,7 +236,7 @@ pub fn compile_and_build(
     scheme  !?: string,
 
     // TODO clean these up, this makes NO SENSE //
-    run     !?: bool,
+    run     !?: build::RunMode,
     shared  !?: bool,
     hotswap !?: bool,
     nocache !?: bool,

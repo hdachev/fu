@@ -161,6 +161,13 @@ using flags DEV_OnFail
     OnFail_WriteRepro
 };
 
+pub enum RunMode
+{
+    None        = 0
+    Normally
+    CompilerTestcase
+}
+
 pub fn build(
     implicit ctx: Context,
 
@@ -178,7 +185,7 @@ pub fn build(
         onfail  !?: DEV_OnFail,
 
         // TODO clean these up, this makes NO SENSE //
-        run     !?: bool,       expect_exit!?: int,
+        run     !?: RunMode,    expect_exit!?: int,
         shared  !?: bool,
         hotswap !?: bool,
         nocache !?: bool,
@@ -965,7 +972,7 @@ pub fn build(
         //   includes caching for test results so we don't have to
         //    constantly rerun them.
         //
-        let OPTI_StatusCode = true;
+        let OPTI_StatusCode = run == RunMode.CompilerTestcase;
 
         mut status: spawn::ExitStatus;
 
@@ -994,18 +1001,20 @@ pub fn build(
         }
         else
         {
-            println("    RUN " F_exe);
-
-            let t0 = now::hr();
             {
+                println("    RUN " F_exe);
                 shadow mut stdout: string;
 
-                code    = ::spawn([ F_exe ], :status, :stdout, stderr: stdout).int;
+                let t0  = now::hr();
+                code    = ::spawn([ F_exe ], :status, :stdout, stderr: stdout, passthrough: run == "Normally").int;
                 output  = test_output::from(:stdout, :status);
-            }
-            let t1 = now::hr();
+                let t1  = now::hr();
 
-            println("     OK ", t1 - t0, "s");
+                println("     OK ", t1 - t0, "s",
+                    status.signalled && " signal(" ~ status.signal ~ ")",
+                    status.exited    && " exit(" ~ status.exit ~ ")",
+                    code             && " errno(" ~ code ~ ")");
+            }
 
             //
             if (OPTI_StatusCode)
@@ -1031,7 +1040,7 @@ pub fn build(
         }
 
         if (!code)
-            if !(status.if(code: expect_exit))
+            if !(status.exited && status.exit == expect_exit)
                 code = status.int || -1;
     }
 

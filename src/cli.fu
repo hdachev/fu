@@ -74,7 +74,7 @@ fn cli_handle(argv: string[], cwd = fs::cwd())
     mut options:    i32;
     mut scheme:     string;
 
-    mut run:        bool;
+    mut run:        build::RunMode;
     mut shared:     bool;
     mut hotswap:    bool;
     mut nocache:    bool;
@@ -127,7 +127,7 @@ fn cli_handle(argv: string[], cwd = fs::cwd())
 
         //
         if (opt == "--run" || opt == "r") {
-            run = true;
+            run = "Normally";
             continue;
         }
 
