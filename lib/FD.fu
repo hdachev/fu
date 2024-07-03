@@ -4,7 +4,8 @@ pub primitive FD: i32;
 
 pub fn close(fd: FD): Errno
 {
-    assert(fd > 0);
+    // assert(fd > 0);
+    assert(fd > 2);
 
     pragma include(
         "<unistd.h>",           // close

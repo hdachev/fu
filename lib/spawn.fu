@@ -127,7 +127,8 @@ pub fn spawn(
     pragma include(
         "<alloca.h>",
         "<errno.h>",
-        "<spawn.h>");
+        "<spawn.h>",
+        "<signal.h>"); // sigfillset & sigemptyset
 
     mut err: Errno;
     pid     = 0;
@@ -156,53 +157,82 @@ pub fn spawn(
 
         //
         posix_spawn_file_actions_t file_actions;
-        posix_spawn_file_actions_init(&file_actions);
+        `err` = posix_spawn_file_actions_init(&file_actions);
 
-        const auto& Pipe =
-            [&](const auto& pipe, int which)
+        if (!`err`)
         {
-            if (pipe) {
-                if (which == STDIN_FILENO) {
-                    if (pipe.w)
-                        posix_spawn_file_actions_addclose(&file_actions, pipe.w);
+            posix_spawnattr_t attrs;
+            `err` = posix_spawnattr_init(&attrs);
 
-                    posix_spawn_file_actions_adddup2 (&file_actions, pipe.r, STDIN_FILENO);
+            if (!`err`)
+            {
+                sigset_t signal_set;
 
-                    if (pipe.r != STDIN_FILENO)
-                        posix_spawn_file_actions_addclose(&file_actions, pipe.r);
+                `err` = posix_spawnattr_setflags(&attrs,
+                    POSIX_SPAWN_SETSIGDEF |
+                    POSIX_SPAWN_SETSIGMASK);
+
+                if (!`err`) {
+                    sigfillset(&signal_set);
+                    `err` = posix_spawnattr_setsigdefault(&attrs, &signal_set);
                 }
-                else {
-                    if (pipe.r)
-                        posix_spawn_file_actions_addclose(&file_actions, pipe.r);
 
-                    posix_spawn_file_actions_adddup2 (&file_actions, pipe.w, which);
-
-                    if (pipe.w != which)
-                        posix_spawn_file_actions_addclose(&file_actions, pipe.w);
+                if (!`err`) {
+                    sigemptyset(&signal_set);
+                    `err` = posix_spawnattr_setsigmask(&attrs, &signal_set);
                 }
+
+                if (!`err`)
+                {
+                    const auto& Pipe =
+                        [&](const auto& pipe, int which)
+                    {
+                        if (pipe) {
+                            if (which == STDIN_FILENO) {
+                                if (pipe.w)
+                                    posix_spawn_file_actions_addclose(&file_actions, pipe.w);
+
+                                posix_spawn_file_actions_adddup2 (&file_actions, pipe.r, STDIN_FILENO);
+
+                                if (pipe.r != STDIN_FILENO)
+                                    posix_spawn_file_actions_addclose(&file_actions, pipe.r);
+                            }
+                            else {
+                                if (pipe.r)
+                                    posix_spawn_file_actions_addclose(&file_actions, pipe.r);
+
+                                posix_spawn_file_actions_adddup2 (&file_actions, pipe.w, which);
+
+                                if (pipe.w != which)
+                                    posix_spawn_file_actions_addclose(&file_actions, pipe.w);
+                            }
+                        }
+                        else {
+                            posix_spawn_file_actions_addopen(&file_actions, which,
+                                "/dev/null", which == STDIN_FILENO
+                                    ? O_RDONLY                  | O_CLOEXEC
+                                    : O_WRONLY | O_APPEND       | O_CLOEXEC,
+                                0);
+                        }
+                    };
+
+                    Pipe(`stdin`,  STDIN_FILENO);
+                    Pipe(`stdout`, STDOUT_FILENO);
+                    Pipe(`stderr`, STDERR_FILENO);
+
+                    `err` = posix_spawnp(&pid,
+                        argv_cstr[0],
+                        &file_actions,
+                        &attrs,
+                        argv_cstr,
+                        environ);
+                }
+
+                posix_spawnattr_destroy(&attrs);
             }
-            else {
-                posix_spawn_file_actions_addopen(&file_actions, which,
-                    "/dev/null", which == STDIN_FILENO
-                        ? O_RDONLY                  | O_CLOEXEC
-                        : O_WRONLY | O_APPEND       | O_CLOEXEC,
-                    0);
-            }
-        };
 
-        Pipe(`stdin`,  STDIN_FILENO);
-        Pipe(`stdout`, STDOUT_FILENO);
-        Pipe(`stderr`, STDERR_FILENO);
-
-        //
-        `err` = posix_spawnp(&pid,
-            argv_cstr[0],
-            &file_actions,
-            nullptr,        // posix_spawnattr_t*          attrp
-            argv_cstr,
-            environ);
-
-        posix_spawn_file_actions_destroy(&file_actions);
+            posix_spawn_file_actions_destroy(&file_actions);
+        }
     `);
 
     //

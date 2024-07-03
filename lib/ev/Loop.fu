@@ -324,9 +324,14 @@ pub nothrow fn Loop(
 
         event_loop.must_sigkill.each: |pid|
         {
-            // TODO send SIGTERM, wait for 1sec, only then sigkill.
-            // Alternatively, keep this one around, a
-            let kill_err = signal::kill(:pid, signal::SIGKILL);
+            // Previously this sent SIGKILL, had problems with SIGTERM
+            //  because I had overlooked that posix_spawn would inherit
+            //   the parent process sigmask by default.
+            //
+            // Now only sending SIGTERM.
+            // TODO send SIGTERM, wait for 5sec, then send SIGKILL.
+            //
+            let kill_err = signal::kill(:pid, signal::SIGTERM);
             err ||= kill_err;
 
             dbg::ln(" EVLOOP.defer.must_sigkill fd(" pid ") err(" kill_err ")");
