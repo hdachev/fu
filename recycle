@@ -1,13 +1,15 @@
 #!/bin/bash
 set -e
 
-if [ -f ./bin/fu.works ]; then
-    rm ./bin/fu.works
-fi
+echo ""
+echo "        ################################"
+echo ""
+echo "        Reset & Bootstrap ..."
+echo ""
 
 git reset
-git checkout *.fu.cpp *.fu.unity.cpp *akeLists.txt *.td
-
+git checkout *.fu.cpp *.fu.unity.cpp
 ./bootstrap
 mv ./bin/fu ./bin/fu.works
+
 ./cycle

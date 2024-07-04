@@ -210,6 +210,11 @@ fn cli_handle(argv: string[], cwd = fs::cwd())
         :dir_wrk, :dir_src, :dir_cpp, :dir_obj,
         :scheme,
         :flags_cc, :flags_ld);
+
+    if (!dir_cpp && !dir_obj && !bin && !run)
+        println(
+            "        Neither --bin nor --run options provided, doing nothing.\n",
+            "        "self" --help for more options.\n");
 }
 
 fn main(argv: string[])

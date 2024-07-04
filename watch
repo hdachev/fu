@@ -1,5 +1,0 @@
-#!/bin/bash
-
-mkdir -p       ./bin/fu-util
-./bin/fu --bin ./bin/fu-util/watch util/watch.fu
-               ./bin/fu-util/watch

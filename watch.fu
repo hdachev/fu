@@ -1,4 +1,19 @@
 
+// This builds and tests several generations of the compiler,
+//  immediately and on every compiler source change,
+//   always starting from a base bootstrap of
+//    a known-to-work historical compiler version.
+//
+// Effectively, this limits the dialect of the language
+//  that is usable in the compiler itself
+//   to whatever is supported by the committed-in-repo
+//    known-to-work C++ sources.
+//
+// These sources are periodically updated,
+//  akin to an internal release, making newer syntax
+//   and language features available for compiler development.
+//
+//
 fn main()
 {
     mut run_no = 0;
