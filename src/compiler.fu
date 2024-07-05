@@ -233,11 +233,10 @@ pub fn compile_and_build(
     dir_obj !?: string,
     dir_src !?: string,
     dir_cpp !?: string,
-    scheme  !?: string,
 
     // TODO clean these up, this makes NO SENSE //
     run     !?: build::RunMode,
-    bflags  !?: build::BuildFlags,
+    scheme  !?: build::BuildScheme,
     //////////////////////////////////////////////
 
     flags_cc!?: string[],
@@ -263,7 +262,7 @@ pub fn compile_and_build(
     }
 
     return ::build(
-        :ctx, :run, :bflags, :bin, :scheme,
+        :ctx, :run, :bin, :scheme,
         :dir_wrk, :dir_obj, :dir_src, :dir_cpp,
         :flags_cc, :flags_ld,
         unity: fname,

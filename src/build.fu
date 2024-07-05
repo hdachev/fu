@@ -168,18 +168,42 @@ pub enum RunMode
     CompilerTestcase
 }
 
-pub flags BuildFlags
+pub flags BuildScheme
 {
     shared
     hotswap
     nocache
 
-    // TODO instead of the 'scheme' below, these are orthogonal:
-    // Optimize
-    // DebugSymbols
-    // DefineNDebug
-    // DefineRetail
+    // NOTE re: the weird negations here -
+    //  The zerofilled default == release build, thus:
+    //   - debug-symbols are opt-in,
+    //   - optimizations are opt-out,
+    //   - assertions are opt-in, etc.
+    //
+    debuggable
+    unoptimized
+    assertions
+    TODO_FIX_retail
 }
+
+pub let DEBUG_SCHEME    = BuildScheme.debuggable
+                        | BuildScheme.unoptimized
+                        | BuildScheme.assertions;
+
+pub fn tryGetScheme(name: string)
+{
+    if (name == "debug")
+        return DEBUG_SCHEME;
+
+    if (name == "reldeb")
+        return BuildScheme.debuggable;
+
+    return name == "retail" &&
+        BuildScheme.TODO_FIX_retail;
+}
+
+
+//
 
 pub fn build(
     implicit ctx: Context,
@@ -194,12 +218,11 @@ pub fn build(
     mut dir_src !?: string,
     mut dir_cpp !?: string,
         unity   !?: string,
-        scheme  !?: string,
         onfail  !?: DEV_OnFail,
 
         // TODO clean these up, this makes NO SENSE //
         run     !?: RunMode,    expect_exit!?: int,
-        bflags  !?: BuildFlags,
+        scheme  !?: BuildScheme,
         //////////////////////////////////////////////
 
         flags_cc!?: string[],
@@ -218,25 +241,36 @@ pub fn build(
     if (dir_cpp && dir_cpp.if_last != '/') dir_cpp ~= '/';
 
     // Optimization level.
-    mut O_lvl   = scheme != "debug"
-                ? "-O3 -DNDEBUG -fno-math-errno "
-                : "-Og "
-                ;
+    mut O_lvl   = scheme & "unoptimized"
+                ? "-Og "
+                : "-O3 ";
+
+    // TODO rearrange these, the -fno-math-errno should go back up into the -O3:
+    //  this will thrash all tests, so when doing this,
+    //   also disable 'debuggable' for the debug-built testcases,
+    //    we don't need debug info there, we just want to test
+    //     with and without optimizations.
+    //
+    if !(scheme & "assertions")
+        O_lvl ~= "-DNDEBUG ";
+
+    if !(scheme & "unoptimized")
+        O_lvl ~= "-fno-math-errno ";
 
     // Debug symbols.
-    if (scheme == "debug" || scheme == "reldeb")
+    if (scheme & "debuggable")
         O_lvl ~= "-g ";
 
-    if (scheme == "retail")
+    if (scheme & "TODO_FIX_retail")
         O_lvl ~= "-Dfu_RETAIL ";
 
-    if (bflags & "shared")
+    if (scheme & "shared")
         O_lvl ~= "-fPIC ";
 
     // TODO FIX should be just if (hotswap), currently:
     //  - hotswap builds need a shared fulib;
     //  - the fulib is shared=true, hotswap=false, but needs to include the fu_HOTSWAP stuff.
-    if (bflags & "hotswap" || bflags & "shared")
+    if (scheme & "hotswap" || scheme & "shared")
         O_lvl ~= "-Dfu_HOTSWAP ";
 
     let GCChash = "g++ -std=c++1z " ~ O_lvl;
@@ -251,7 +285,7 @@ pub fn build(
                 ~ TODO_FIX_ignoredWarnings
 
                 // Clang warns extern "C" hotswap fns are incompatible with c
-                ~ (bflags & "hotswap" && process::APPLE && "-Wno-return-type-c-linkage ")
+                ~ (scheme & "hotswap" && process::APPLE && "-Wno-return-type-c-linkage ")
 
                 // TODO request this from within the lib
                 ~ (process::LINUX && "-pthread -ldl ")
@@ -261,7 +295,7 @@ pub fn build(
 
     //
     fulib ||= path::join(fudir,
-        bflags & "hotswap"  ? "include/fu/_sharedlib.cpp"
+        scheme & "hotswap"  ? "include/fu/_sharedlib.cpp"
                             : "include/fu/_fulib.cpp");
 
     mut fulib_cpp: string;
@@ -811,7 +845,7 @@ pub fn build(
             if (!F_cpp || !F_obj)
                 return [];
 
-            if (file::size(F_obj) > 0 && !(bflags & "nocache"))
+            if (file::size(F_obj) > 0 && !(scheme & "nocache"))
                 return [];
 
             // We'll be doing work here.
@@ -928,7 +962,7 @@ pub fn build(
 
         mut cmd = GCC_CMD ~ "-o " ~ F_tmp;
 
-        if (bflags & "shared")
+        if (scheme & "shared")
         {
             cmd ~= " -shared";
 

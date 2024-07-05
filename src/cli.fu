@@ -72,10 +72,10 @@ fn cli_handle(argv: string[], cwd = fs::cwd())
     mut bin:        string;
 
     mut options:    i32;
-    mut scheme:     string;
+    mut scheme:     build::BuildScheme;
 
     mut run:        build::RunMode;
-    mut bflags:     build::BuildFlags;
+    mut bflags:     build::BuildScheme;
 
     mut flags_cc:   string[];
     mut flags_ld:   string[];
@@ -117,9 +117,9 @@ fn cli_handle(argv: string[], cwd = fs::cwd())
         option("b", "--bin", EMIT_BIN,     bin);
 
         // Scheme.
-        if (opt == "--debug" || opt == "--reldeb" || opt == "--release" || opt == "--retail") {
+        if (opt == "--debug" || opt == "--reldeb" || opt == "--retail") {
             scheme && throw(opt ~ ": Scheme already set to `" ~ opt ~ "`.");
-            scheme = opt.slice(2);
+            scheme = build::tryGetScheme(opt.slice(2));
             continue;
         }
 
@@ -204,9 +204,9 @@ fn cli_handle(argv: string[], cwd = fs::cwd())
     // Go.
     compile_and_build(
         :fname, :bin,
-        :run, :bflags,
+        :run,
         :dir_wrk, :dir_src, :dir_cpp, :dir_obj,
-        :scheme,
+        :scheme | bflags,
         :flags_cc, :flags_ld);
 
     if (!dir_cpp && !dir_obj && !bin && !run)
