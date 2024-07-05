@@ -168,6 +168,19 @@ pub enum RunMode
     CompilerTestcase
 }
 
+pub flags BuildFlags
+{
+    shared
+    hotswap
+    nocache
+
+    // TODO instead of the 'scheme' below, these are orthogonal:
+    // Optimize
+    // DebugSymbols
+    // DefineNDebug
+    // DefineRetail
+}
+
 pub fn build(
     implicit ctx: Context,
 
@@ -186,9 +199,7 @@ pub fn build(
 
         // TODO clean these up, this makes NO SENSE //
         run     !?: RunMode,    expect_exit!?: int,
-        shared  !?: bool,
-        hotswap !?: bool,
-        nocache !?: bool,
+        bflags  !?: BuildFlags,
         //////////////////////////////////////////////
 
         flags_cc!?: string[],
@@ -219,13 +230,13 @@ pub fn build(
     if (scheme == "retail")
         O_lvl ~= "-Dfu_RETAIL ";
 
-    if (shared)
+    if (bflags & "shared")
         O_lvl ~= "-fPIC ";
 
     // TODO FIX should be just if (hotswap), currently:
     //  - hotswap builds need a shared fulib;
     //  - the fulib is shared=true, hotswap=false, but needs to include the fu_HOTSWAP stuff.
-    if (hotswap || shared)
+    if (bflags & "hotswap" || bflags & "shared")
         O_lvl ~= "-Dfu_HOTSWAP ";
 
     let GCChash = "g++ -std=c++1z " ~ O_lvl;
@@ -240,7 +251,7 @@ pub fn build(
                 ~ TODO_FIX_ignoredWarnings
 
                 // Clang warns extern "C" hotswap fns are incompatible with c
-                ~ (hotswap && process::APPLE && "-Wno-return-type-c-linkage ")
+                ~ (bflags & "hotswap" && process::APPLE && "-Wno-return-type-c-linkage ")
 
                 // TODO request this from within the lib
                 ~ (process::LINUX && "-pthread -ldl ")
@@ -249,8 +260,9 @@ pub fn build(
     shadow let GCChash = tea::hash(GCChash);
 
     //
-    fulib ||= path::join(fudir, hotswap ? "include/fu/_sharedlib.cpp"
-                                        : "include/fu/_fulib.cpp");
+    fulib ||= path::join(fudir,
+        bflags & "hotswap"  ? "include/fu/_sharedlib.cpp"
+                            : "include/fu/_fulib.cpp");
 
     mut fulib_cpp: string;
     if (let err = file::read(fulib, into: fulib_cpp))
@@ -799,7 +811,7 @@ pub fn build(
             if (!F_cpp || !F_obj)
                 return [];
 
-            if (file::size(F_obj) > 0 && !nocache)
+            if (file::size(F_obj) > 0 && !(bflags & "nocache"))
                 return [];
 
             // We'll be doing work here.
@@ -916,7 +928,7 @@ pub fn build(
 
         mut cmd = GCC_CMD ~ "-o " ~ F_tmp;
 
-        if (shared)
+        if (bflags & "shared")
         {
             cmd ~= " -shared";
 

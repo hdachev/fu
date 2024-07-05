@@ -237,9 +237,7 @@ pub fn compile_and_build(
 
     // TODO clean these up, this makes NO SENSE //
     run     !?: build::RunMode,
-    shared  !?: bool,
-    hotswap !?: bool,
-    nocache !?: bool,
+    bflags  !?: build::BuildFlags,
     //////////////////////////////////////////////
 
     flags_cc!?: string[],
@@ -265,7 +263,7 @@ pub fn compile_and_build(
     }
 
     return ::build(
-        :ctx, :run, :shared, :hotswap, :nocache, :bin, :scheme,
+        :ctx, :run, :bflags, :bin, :scheme,
         :dir_wrk, :dir_obj, :dir_src, :dir_cpp,
         :flags_cc, :flags_ld,
         unity: fname,
