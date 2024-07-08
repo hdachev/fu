@@ -8,7 +8,7 @@ primitive MayEscapeVia: u32;
 
 //
 
-struct NukeableCaches
+struct NukeOnRebuild
 {
     files:      flat::Map(string, string);
     fuzzy:      flat::Map(string, string);
@@ -28,7 +28,7 @@ nocopy struct Context
 
     // Watch mode:
     //  every build should begin by clearing these.
-    using nuke: NukeableCaches;
+    using nuke: NukeOnRebuild;
 };
 
 struct Module

@@ -124,6 +124,11 @@ fn cli_handle(argv: string[], cwd = fs::cwd())
         }
 
         //
+        if (opt == "--watch" || opt == "w") {
+            bflags |= "watch";
+            continue;
+        }
+
         if (opt == "--run" || opt == "r") {
             run = "Normally";
             continue;

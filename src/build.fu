@@ -208,6 +208,7 @@ pub flags BuildScheme
     shared
     hotswap
     nocache
+    watch
 
     // NOTE re: the weird negations here -
     //  The zerofilled default == release build, thus:

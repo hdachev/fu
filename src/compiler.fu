@@ -11,33 +11,11 @@ import ansi;
 
 struct ModidAndOrder { modid: i32; order: ModuleOrder };
 
-struct WatchMode { recheck: ::BitSet; did_nuke: ::BitSet };
-
-fn compile_lexParseDeps(fname: string, via?: TokenIdx[], ref watch!: WatchMode): ModidAndOrder
+fn compile_lexParseDeps(fname: string, via?: TokenIdx[]): ModidAndOrder
 {
-    ref module = getModule(fname);
+    let module = getModule(fname);
     if (module.in)
     {
-        let modid = module.modid;
-
-        // Watch mode - confirm no changes,
-        //  or nuke and invalidate dependents.
-        //
-        if (watch.recheck.remove(module.modid))
-        {
-            if (module.in.src != getFile(fname))
-            {
-                println("  WATCH Invalidated: " ~ fname);
-
-                // Nuke this module.
-                watch.did_nuke.add(modid);
-                getModule(fname) = [];
-            }
-
-            // Rinse and repeat.
-            return compile_lexParseDeps(:fname, :via, :watch);
-        }
-
         if (module.order)
             return [ :module.modid, :module.order ];
 
@@ -121,7 +99,7 @@ fn compile_lexParseDeps(fname: string, via?: TokenIdx[], ref watch!: WatchMode):
             let other =
                 compile_lexParseDeps(
                     fname: resolveFile(pattern),
-                      via: via ~ import.token, :watch);
+                      via: via ~ import.token);
 
             import.modid = other.modid || throw(
                 "BUG: !module.modid after lexParseDeps");
@@ -145,14 +123,51 @@ fn compile_lexParseDeps(fname: string, via?: TokenIdx[], ref watch!: WatchMode):
 
 //
 
-fn watch_nukeDependents(implicit ref ctx: Context, ref did_nuke: ::BitSet)
+fn watch_needsRebuild(implicit ref ctx: Context)
 {
-    if (did_nuke) for (;;)
+    // Nuke file caches.
+    ctx.nuke = [];
+
+    // Invalidate modules whose files
+    //  appear to have changed on disk.
+    //
+    mut did_nuke: ::BitSet;
+
+    fn nuke(ref module: Module)
+    {
+        did_nuke.add(module.modid);
+
+        // Throw everything out the window,
+        //  this currently means that we'll be re-lexing
+        //   & re-parsing a bunch of things unnecessarily.
+        //
+        module = Module(
+            :module.modid,
+            :module.fname);
+    }
+
+    for (mut i = /*PRELUDE*/1; i < ctx.modules.len; i++)
+    {
+        ref module = ctx.modules[i];
+        if (module.in.src != getFile(module.fname))
+        {
+            shadow ref module = ctx.modules[i];
+            println("  WATCH Changed: " ~ module.fname);
+            nuke(module);
+        }
+    }
+
+    if !(did_nuke)
+        return false;
+
+    // Invalidate dependents,
+    //  we'll recheck/rebuild them.
+    //
+    for (;;)
     {
         mut repeat = false;
 
-        :NEXT_MODULE
-        for (mut i = 0; i < ctx.modules.len; i++)
+        for (mut i = /*PRELUDE*/1; i < ctx.modules.len; i++)
         {
             ref module = ctx.modules[i];
 
@@ -161,10 +176,10 @@ fn watch_nukeDependents(implicit ref ctx: Context, ref did_nuke: ::BitSet)
                 if (module.out &&
                     did_nuke.has(import.modid))
                 {
-                    did_nuke.add(module.modid);
-                    module.out  = [];
+                    println("  WATCH Invalidated: " ~ module.fname);
+                    nuke(module);
 
-                    repeat      = true;
+                    repeat = true;
                     break;
                 }
             }
@@ -173,6 +188,8 @@ fn watch_nukeDependents(implicit ref ctx: Context, ref did_nuke: ::BitSet)
         if (!repeat)
             break;
     }
+
+    return true;
 }
 
 
@@ -201,10 +218,16 @@ fn compile_solveCodegen(implicit ref module: Module, implicit options: Options)
     module.stats.codegen = stat2 - stat1;
 }
 
-fn compile_solveCodegenAll(
+
+//
+
+pub fn compile(
     implicit ref ctx: Context,
-    implicit options: Options)
+    implicit options: Options,
+    fname: string)
 {
+    compile_lexParseDeps(:fname);
+
     // Sort the dep order.
     mut dep_order: i32[][];
     for (mut i = 0; i < ctx.modules.len; i++)
@@ -275,27 +298,6 @@ fn compile_solveCodegenAll(
 
 //
 
-pub fn compile(
-    implicit ref ctx: Context,
-    implicit options: Options,
-    fname: string, watch_recheck?: bool)
-{
-    mut watch: WatchMode;
-    if (watch_recheck)
-    {
-        ctx.nuke = [];
-        for (mut i = 0; i < ctx.modules.len; i++)
-            watch.recheck.add(ctx.modules[i].modid);
-    }
-
-    compile_lexParseDeps(:fname, :watch);
-    watch_nukeDependents(:watch.did_nuke);
-    compile_solveCodegenAll();
-}
-
-
-//
-
 pub fn compile_and_build(
 
     fname!:     string,
@@ -320,26 +322,45 @@ pub fn compile_and_build(
     implicit mut ctx = prelude::CTX_PRELUDE.clone();
     implicit options = Options(:shuffle, dev: DEV_Parallel);
 
+    for (;;)
     {
-        println("COMPILE ", fname);
+        {
+            println("COMPILE ", fname);
 
-        let t0 = now::hr();
-        compile(:fname);
-        let t1 = now::hr();
-        let tt = t1 - t0;
+            let t0 = now::hr();
+            compile(:fname);
+            let t1 = now::hr();
+            let tt = t1 - t0;
 
-        if (tt > 0.025)
-            printSlowBuildDiagnostics(ctx);
+            if (tt > 0.025)
+                printSlowBuildDiagnostics(ctx);
 
-        println("        ", tt, "s\n");
+            println("        ", tt, "s\n");
+        }
+
+        let ret = ::build(
+            :ctx, :run, :bin, :scheme,
+            :dir_wrk, :dir_obj, :dir_src, :dir_cpp,
+            :flags_cc, :flags_ld,
+            unity: fname,
+            :ctx.fudir);
+
+        if !(scheme & "watch")
+            return ret;
+
+        // WATCH LOOP
+        for (;;)
+        {
+            if (watch_needsRebuild())
+                break;
+
+            // TODO FIX WE WANT AN ACTUAL WATCH HERE //
+            pragma include("<unistd.h>");
+            pragma emit(`sleep(1)`);
+            println("What wake!");
+            ///////////////////////////////////////////
+        }
     }
-
-    return ::build(
-        :ctx, :run, :bin, :scheme,
-        :dir_wrk, :dir_obj, :dir_src, :dir_cpp,
-        :flags_cc, :flags_ld,
-        unity: fname,
-        :ctx.fudir);
 }
 
 
