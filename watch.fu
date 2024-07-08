@@ -75,13 +75,7 @@ fn main()
             respawn_rebuild();
         },
 
-        loop_error:         |lax err| {},
-        socket_accepted:    [],
-        socket_closed:      [],
-        socket_event:       |lax readable, lax read| {},
-
-        child_event:        |lax pid| {},
-        child_closed:       |pid, lax signo, lax code|
+        child_closed: |pid, lax signo, lax code|
         {
             // println("  CHILD EXIT pid(" pid ") signo(" signo ") code(" code ")");
             if (pid == fswatch_src || pid == fswatch_lib)

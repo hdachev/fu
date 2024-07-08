@@ -122,7 +122,7 @@ inline fn ksfd_unpack(
 //
 
 pub fn ipv4_listen(
-    implicit ref event_loop: Loop,
+    implicit ref Loop_with_socket_handlers!event_loop: Loop,
     port: u16,
     else,
 
@@ -184,7 +184,7 @@ fn sig_listen(
 }
 
 pub fn spawn(
-    implicit ref event_loop: Loop,
+    implicit ref Loop_with_child_handlers!event_loop: Loop,
     mut argv: string[],
     else,
 
@@ -275,16 +275,20 @@ pub fn spawn(
 
 pub nothrow fn Loop(
     loop_start!,
-    loop_error!,
+    loop_error!?,
 
-    socket_accepted!,
-    socket_closed!,
-    socket_event!,
+    socket_accepted!?:  <OnSocketAccepted>,
+    socket_closed!?:    <OnSocketClosed>,
+    socket_event!?:     <OnSocketEvent>,
 
-    child_event!,
-    child_closed!)
+    child_event!?:      <OnChildEvent>,
+    child_closed!?:     <OnChildClosed>)
 {
     include_epollOrKqueue();
+
+    // Capabilities.
+    let WITH_SOCKETS    = !(OnSocketEvent -> []) || !(OnSocketAccepted -> []) || !(OnSocketClosed -> []);
+    let WITH_CHILDREN   = !(OnChildEvent -> []) || !(OnChildClosed -> []);
 
     // Init.
     mut loop_fd: FD;
@@ -310,6 +314,9 @@ pub nothrow fn Loop(
             [ signal::SIGHUP, signal::SIGINT, signal::SIGTERM ]);
 
     implicit mut event_loop = Loop(:loop_fd);
+
+    lax implicit ref Loop_with_socket_handlers  = WITH_SOCKETS  && event_loop;
+    lax implicit ref Loop_with_child_handlers   = WITH_CHILDREN && event_loop;
 
     event_loop.must_close.add(loop_fd.int);
     defer
@@ -448,7 +455,7 @@ pub nothrow fn Loop(
 
             // Accepting new sockets.
 
-            :SocketOK_or_Close
+            if (WITH_SOCKETS) :SocketOK_or_Close
             {
                 :SocketOK
                 {
@@ -652,7 +659,8 @@ pub nothrow fn Loop(
 
             // Child processes.
 
-            if (kind >= Kind.child_process_pidfd &&
+            if (WITH_CHILDREN &&
+                kind >= Kind.child_process_pidfd &&
                 kind <= Kind.child_process_stderr)
             {
                 mut meta = event_loop.metas[event_id];
@@ -775,8 +783,7 @@ pub nothrow fn Loop(
 
                         set_available(:which);
 
-                        child_event(
-                            :pid,
+                        child_event(?:pid,
 
                             writeable?:     is_available(which: 0),
                             out_readable?:  is_available(which: 1),
