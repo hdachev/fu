@@ -167,35 +167,26 @@ fn cli_handle(argv: string[], cwd = fs::cwd())
                 ? fname.slice(0, fname.len - ".fu".len)
                 : fname ~ ".exe";
 
-    // Pass through gcc flags.
+    // Passthrough gcc flags c and linker flags.
+    fn passthrough(opt: string, ref which: string[])
     {
-        let opt = next();
-        if (opt == "--cflags") for (;;)
-        {
-            shadow let val = next();
-            if (!val || val.starts(with: "--"))
-                break;
+        if (next() == opt)
+            for (;;)
+            {
+                shadow let val = next();
+                if (!val || val.starts(with: "--"))
+                    break;
 
-            flags_cc ~= val;
-        }
+                which ~= val;
+            }
 
         idx--;
     }
 
-    {
-        let opt = next();
-        if (opt == "--libs") for (;;)
-        {
-            shadow let val = next();
-            if (!val || val.starts(with: "--"))
-                break;
+    passthrough("--cflags",   flags_cc);
+    passthrough("--libs",     flags_ld);
 
-            flags_ld ~= val;
-        }
-
-        idx--;
-    }
-
+    //
     {
         let opt = next();
         if (opt) throw("Leftover option: `" ~ opt ~ "`.");
