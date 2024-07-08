@@ -4516,6 +4516,9 @@ static s_SolvedNode createBlock_4vpZBLng(const s_Type& type, fu::vec<s_SolvedNod
 
 static s_SolvedNode createBlock_O5z3dG59(/*MOV*/ s_SolvedNode&& a, /*MOV*/ s_SolvedNode&& b, const s_TokenIdx& _here)
 {
+    if (isImmediatelyDiscardable_6wzYjnDc(a.kind))
+        return static_cast<s_SolvedNode&&>(b);
+
     if (b.kind == s_kind_block)
     {
         b.items.unshift(static_cast<s_SolvedNode&&>(a));

@@ -5806,6 +5806,11 @@ pub fn solve(
 
     fn createBlock(mut a: SolvedNode, mut b: SolvedNode)
     {
+        // TODO FIX adding this to help OPTI_dedupe_vars,
+        //  see the ev_WITH_A testcase, remove at will if no longer necessary.
+        if (a.kind.isImmediatelyDiscardable || a.kind == "call" && a.target.kind == "var")
+            return b;
+
         // TODO FAILCASE this is a nice testcase for ensuring no copies are made of a & b -
         //  both are unconditionally & fully copied, so both fnargs, however annotated,
         //   should become vals, and only moves should remain here.

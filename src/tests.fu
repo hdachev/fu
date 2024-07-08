@@ -8681,6 +8681,24 @@ pub extern fn runTests()
         }
     `);
 
+    ZERO(`
+        fn hello(a: <A>, do) {
+            mut ev = [ 10, 20, 30, 40, 50 ];        <alt>
+            ref ev_WITH_A = !(A -> []) && ev;       <alt/>
+            let WITH_A = !(A -> []);
+            ref ev_WITH_A = WITH_A && ev;           </alt>
+            ev ~= 60;
+            (do(ev_WITH_A));
+        }
+
+        fn main() {
+            hello(0): |ref x| {
+                x ~= 70;
+                return x.len - 7;
+            }
+        }
+    `);
+
     // /Borrow checker
 
 
