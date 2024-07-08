@@ -1,9 +1,10 @@
+import Errno;
 
 pub let RWX_RWX_RWX = 0x7 << 6
                     | 0x7 << 3
                     | 0x7 << 0;
 
-pub fn mkdir_p(mut path: string, mode = RWX_RWX_RWX): i32
+pub fn mkdir_p(mut path: string, mode = RWX_RWX_RWX): Errno
 {
     // Try create,
     //  on ENOENT try parent and repeat.
@@ -15,7 +16,7 @@ pub fn mkdir_p(mut path: string, mode = RWX_RWX_RWX): i32
         path[N]         = '\0';
         defer path[N]   = '/';
 
-        mut err: i32;
+        mut err: Errno;
         mut is_ENOENT   = false;
 
         pragma include(
@@ -164,7 +165,7 @@ pub fn DT_CHR(): DirentType = __native("<dirent.h>", "DT_CHR");
 pub fn DT_BLK(): DirentType = __native("<dirent.h>", "DT_BLK");
 pub fn DT_LNK(): DirentType = __native("<dirent.h>", "DT_LNK");
 
-pub fn readdir(mut path: string, yield): int
+pub fn readdir(mut path: string, yield): Errno
 {
     pragma include(
         "<dirent.h>",
@@ -175,7 +176,7 @@ pub fn readdir(mut path: string, yield): int
     path ~= '\0';
 
     // Open & close.
-    mut err = 0;
+    mut err: Errno;
     pragma input(
     `
         DIR* DIR_ptr = opendir(`path`.data());

@@ -151,7 +151,7 @@ fn cli_handle(argv: string[], cwd = fs::cwd())
 
     // Defaulting.
     if (options & EMIT_CPP) {
-        if (!dir_src) dir_src = dir_cpp || cwd;
+        if (!dir_src) dir_src = cwd;
         if (!dir_cpp) dir_cpp = dir_src;
     }
 
@@ -222,7 +222,7 @@ fn main(argv: string[])
 pub extern fn buildCompiler()
     cli_handle(
         cwd: fudir::FU_ROOT,
-        [ "fu", "--bin", "bin/fu", "-c", "src/cli.fu" ]);
+        [ "fu", "--bin", "bin/fu", "--cpp", "cpp", "src/cli.fu" ]);
 
 
 //

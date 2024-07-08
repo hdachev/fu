@@ -94,26 +94,61 @@ fn atomic_write(dir_wrk_tmp!: string, fname!: string, data: string)
     return err;
 }
 
-fn update_file(
+fn update_file_dest(
     fname       !: string,
-    data        !: string,
     dir_src     !: string,
-    dir_out     !: string,
-    dir_wrk_tmp !: string)
+    dir_cpp     !: string)
 {
     shadow let fname = ensure_local_fname(:fname, :dir_src);
     fname.starts(with: dir_src) || fail("ensure_local_fname broken");
 
-    shadow let fname = dir_out ~ fname.slice(dir_src.len);
+    return dir_cpp ~ fname.slice(dir_src.len);
+}
 
+fn update_file(
+    fname       !: string,
+    data        !: string,
+    dir_src     !: string,
+    dir_cpp     !: string,
+    dir_wrk_tmp !: string)
+{
+    return update_file(
+        dest: update_file_dest(:fname, :dir_src, :dir_cpp),
+        :data, :dir_cpp, :dir_wrk_tmp);
+}
+
+fn update_file(
+    dest!fname   : string,
+    data        !: string,
+    dir_cpp     !: string,
+    dir_wrk_tmp !: string)
+{
     mut xcheck: string;
     if (file::read(fname, into: xcheck) || xcheck != data)
     {
-        let err = atomic_write(:fname, data, :dir_wrk_tmp);
-        if (err)
-            fail("Failed to write `" ~ fname ~ "`, error: #" ~ err);
+        for (;;)
+        {
+            let err = atomic_write(:fname, data, :dir_wrk_tmp);
+            if (err)
+            {
+                if (err == Errno::ENOENT)
+                {
+                    mut last = -1;
+                    for (mut i = dir_cpp.len + 1; i < fname.len; i++)
+                        if (fname[i] == '/')
+                            last = i;
 
-        println("  WROTE " ~ fname);
+                    if (last >= 0)
+                        if !(fs::mkdir_p(fname.slice(0, last + 1)))
+                            continue;
+                }
+
+                fail("Failed to write `" ~ fname ~ "`, error: #" ~ err);
+            }
+
+            println("  WROTE " ~ fname);
+            break;
+        }
     }
 
     return fname;
@@ -1110,7 +1145,7 @@ pub fn build(
             let fname           = unit.src && unit.src_output_file;
             shadow let fname    = fname && update_file(
                 :fname, data: unit.src,
-                :dir_src, dir_out: dir_cpp,
+                :dir_src, :dir_cpp,
                 :dir_wrk_tmp);
 
             cpp_files.push(fname);
@@ -1119,21 +1154,18 @@ pub fn build(
         // .unity.cpp
         if (unity)
         {
-            mut data = "#ifdef fu_UNITY_FULIB\n"
-                     ~ "#include <fu/_fulib.cpp>\n"
-                     ~ "#endif\n\n";
+            mut data    = "#ifdef fu_UNITY_FULIB\n"
+                        ~ "#include <fu/_fulib.cpp>\n"
+                        ~ "#endif\n\n";
+
+            let fname   = unity ~ ".unity.cpp";
+            let dest    = update_file_dest(:fname, :dir_src, :dir_cpp);
 
             for (mut i = 0; i < cpp_files.len; i++)
-            {
-                let incl = cpp_files[i];
-                if (incl)
-                    data ~= "#include \"" ~ path::relative(unity, incl) ~ "\"\n";
-            }
+                if (let incl = cpp_files[i])
+                    data ~= "#include \"" ~ path::relative(dest, incl) ~ "\"\n";
 
-            update_file(
-                fname: unity ~ ".unity.cpp", :data,
-                :dir_src, dir_out: dir_cpp,
-                :dir_wrk_tmp);
+            update_file(:dest, :data, :dir_cpp, :dir_wrk_tmp);
         }
     }
 
