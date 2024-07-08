@@ -8,6 +8,12 @@ primitive MayEscapeVia: u32;
 
 //
 
+struct NukeableCaches
+{
+    files:      flat::Map(string, string);
+    fuzzy:      flat::Map(string, string);
+};
+
 nocopy struct Context
 {
     // Default modules & co.
@@ -20,9 +26,9 @@ nocopy struct Context
     modules:    Module[];
     dep_order:  i32[];
 
-    // FS facts.
-    files:      flat::Map(string, string);
-    fuzzy:      flat::Map(string, string);
+    // Watch mode:
+    //  every build should begin by clearing these.
+    using nuke: NukeableCaches;
 };
 
 struct Module
