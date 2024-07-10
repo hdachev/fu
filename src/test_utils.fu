@@ -583,17 +583,16 @@ pub fn ZERO(
                 STOP("TODO test is actually passing");
         }
 
-        let run = build::RunMode.CompilerTestcase;
-        let fudir = ctx.fudir;
+        let runmode = build::RunMode.CompilerTestcase;
         let dir_wrk = fudir::DEFAULT_WORKSPACE;
 
         let debug_output = ::build(
-            :ctx, :fudir, :dir_wrk, :onfail, scheme: build::DEBUG_SCHEME,
-            :run, :expect_exit);
+            :ctx, :dir_wrk, :onfail, bscheme: build::DEBUG_SCHEME,
+            :runmode, :expect_exit);
 
         ::build(
-            :ctx, :fudir, :dir_wrk, :onfail,
-            :run, :expect_exit);
+            :ctx, :dir_wrk, :onfail,
+            :runmode, :expect_exit);
 
         // Check memory use,
         //  currently opt-in, TODO add a superficial guestimator here

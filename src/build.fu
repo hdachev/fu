@@ -246,7 +246,6 @@ pub fn build(
 
     mut dir_wrk  !: string,
 
-        fudir    !: string,
     mut fulib   !?: string,
 
     mut bin     !?: string,
@@ -257,8 +256,8 @@ pub fn build(
         onfail  !?: DEV_OnFail,
 
         // TODO clean these up, this makes NO SENSE //
-        run     !?: RunMode,    expect_exit!?: int,
-        scheme  !?: BuildScheme,
+        runmode !?: RunMode,    expect_exit!?: int,
+        bscheme !?: BuildScheme,
         //////////////////////////////////////////////
 
         flags_cc!?: string[],
@@ -277,7 +276,7 @@ pub fn build(
     if (dir_cpp && dir_cpp.if_last != '/') dir_cpp ~= '/';
 
     // Optimization level.
-    mut O_lvl   = scheme & "unoptimized"
+    mut O_lvl   = bscheme & "unoptimized"
                 ? "-Og "
                 : "-O3 ";
 
@@ -287,26 +286,26 @@ pub fn build(
     //    we don't need debug info there, we just want to test
     //     with and without optimizations.
     //
-    if !(scheme & "assertions")
+    if !(bscheme & "assertions")
         O_lvl ~= "-DNDEBUG ";
 
-    if !(scheme & "unoptimized")
+    if !(bscheme & "unoptimized")
         O_lvl ~= "-fno-math-errno ";
 
     // Debug symbols.
-    if (scheme & "debuggable")
+    if (bscheme & "debuggable")
         O_lvl ~= "-g ";
 
-    if (scheme & "TODO_FIX_retail")
+    if (bscheme & "TODO_FIX_retail")
         O_lvl ~= "-Dfu_RETAIL ";
 
-    if (scheme & "shared")
+    if (bscheme & "shared")
         O_lvl ~= "-fPIC ";
 
     // TODO FIX should be just if (hotswap), currently:
     //  - hotswap builds need a shared fulib;
     //  - the fulib is shared=true, hotswap=false, but needs to include the fu_HOTSWAP stuff.
-    if (scheme & "hotswap" || scheme & "shared")
+    if (bscheme & "hotswap" || bscheme & "shared")
         O_lvl ~= "-Dfu_HOTSWAP ";
 
     let GCChash = "g++ -std=c++1z " ~ O_lvl;
@@ -321,7 +320,7 @@ pub fn build(
                 ~ TODO_FIX_ignoredWarnings
 
                 // Clang warns extern "C" hotswap fns are incompatible with c
-                ~ (scheme & "hotswap" && process::APPLE && "-Wno-return-type-c-linkage ")
+                ~ (bscheme & "hotswap" && process::APPLE && "-Wno-return-type-c-linkage ")
 
                 // TODO request this from within the lib
                 ~ (process::LINUX && "-pthread -ldl ")
@@ -330,8 +329,8 @@ pub fn build(
     shadow let GCChash = tea::hash(GCChash);
 
     //
-    fulib ||= path::join(fudir,
-        scheme & "hotswap"  ? "include/fu/_sharedlib.cpp"
+    fulib ||= path::join(ctx.fudir,
+        bscheme & "hotswap" ? "include/fu/_sharedlib.cpp"
                             : "include/fu/_fulib.cpp");
 
     mut fulib_cpp: string;
@@ -840,7 +839,7 @@ pub fn build(
                 " $(pkg-config --cflags " ~ cflags ~ ")";
     }
 
-    let INCLUDE = (flags_cc && " " ~ flags_cc.join(' ')) ~ " -I " ~ fudir ~ "include"
+    let INCLUDE = (flags_cc && " " ~ flags_cc.join(' ')) ~ " -I " ~ ctx.fudir ~ "include"
                 ~ (HACK_include_dirs && " -I " ~ HACK_include_dirs.keys_asc.join(" -I "));
 
     let LIBS = (flags_ld && " " ~ flags_ld.join(' '))
@@ -866,7 +865,7 @@ pub fn build(
     // TEMP re-run tests without allocation stats //
     ////////////////////////////////////////////////
 
-    if (old_size < 1 && (bin || run))
+    if (old_size < 1 && (bin || runmode))
     {
         struct BuildError {
             code: i32;
@@ -881,7 +880,7 @@ pub fn build(
             if (!F_cpp || !F_obj)
                 return [];
 
-            if (file::size(F_obj) > 0 && !(scheme & "nocache"))
+            if (file::size(F_obj) > 0 && !(bscheme & "nocache"))
                 return [];
 
             // We'll be doing work here.
@@ -913,10 +912,9 @@ pub fn build(
             if (code)
                 return BuildError(:code, :cpp, :stdout);
 
-            // TODO FIX testcases -
-            //  Discard object files after linking.
-            //
-            if (run && i == 1)
+            // Testcases -
+            // Discard object files after linking.
+            if (runmode == "CompilerTestcase" && i > 0)
                 unit.cache_cleanup |= "Obj";
 
             //
@@ -998,7 +996,7 @@ pub fn build(
 
         mut cmd = GCC_CMD ~ "-o " ~ F_tmp;
 
-        if (scheme & "shared")
+        if (bscheme & "shared")
         {
             cmd ~= " -shared";
 
@@ -1047,14 +1045,14 @@ pub fn build(
     //
     mut output: test_output::TestOutput;
 
-    if (run)
+    if (runmode)
     {
         // TODO FIX This needs to get out of here,
         //  but brief this is the compiler test suite runner,
         //   includes caching for test results so we don't have to
         //    constantly rerun them.
         //
-        let OPTI_StatusCode = run == RunMode.CompilerTestcase;
+        let OPTI_StatusCode = runmode == "CompilerTestcase";
 
         mut status: spawn::ExitStatus;
 
@@ -1088,7 +1086,7 @@ pub fn build(
                 shadow mut stdout: string;
 
                 let t0  = now::hr();
-                code    = ::spawn([ F_exe ], :status, :stdout, stderr: stdout, passthrough: run == "Normally").int;
+                code    = ::spawn([ F_exe ], :status, :stdout, stderr: stdout, passthrough: runmode == "Normally").int;
                 output  = test_output::from(:stdout, :status);
                 let t1  = now::hr();
 

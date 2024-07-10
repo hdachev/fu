@@ -72,9 +72,9 @@ fn cli_handle(argv: string[], cwd = fs::cwd())
     mut bin:        string;
 
     mut options:    i32;
-    mut scheme:     build::BuildScheme;
+    mut bscheme:    build::BuildScheme;
 
-    mut run:        build::RunMode;
+    mut runmode:    build::RunMode;
     mut bflags:     build::BuildScheme;
 
     mut flags_cc:   string[];
@@ -118,8 +118,8 @@ fn cli_handle(argv: string[], cwd = fs::cwd())
 
         // Scheme.
         if (opt == "--debug" || opt == "--reldeb" || opt == "--retail") {
-            scheme && throw(opt ~ ": Scheme already set to `" ~ opt ~ "`.");
-            scheme = build::tryGetScheme(opt.slice(2));
+            bscheme && throw(opt ~ ": Scheme already set to `" ~ opt ~ "`.");
+            bscheme = build::tryGetScheme(opt.slice(2));
             continue;
         }
 
@@ -130,7 +130,7 @@ fn cli_handle(argv: string[], cwd = fs::cwd())
         }
 
         if (opt == "--run" || opt == "r") {
-            run = "Normally";
+            runmode = "Normally";
             continue;
         }
 
@@ -200,12 +200,12 @@ fn cli_handle(argv: string[], cwd = fs::cwd())
     // Go.
     compile_and_build(
         :fname, :bin,
-        :run,
+        :runmode,
         :dir_wrk, :dir_src, :dir_cpp, :dir_obj,
-        :scheme | bflags,
+        :bscheme | bflags,
         :flags_cc, :flags_ld);
 
-    if (!dir_cpp && !dir_obj && !bin && !run)
+    if (!dir_cpp && !dir_obj && !bin && !runmode)
         println(
             "        Neither --bin nor --run options provided, doing nothing.\n",
             "        "self" --help for more options.\n");

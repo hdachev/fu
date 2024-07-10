@@ -310,8 +310,8 @@ pub fn compile_and_build(
     dir_cpp !?: string,
 
     // TODO clean these up, this makes NO SENSE //
-    run     !?: build::RunMode,
-    scheme  !?: build::BuildScheme,
+    runmode !?: build::RunMode,
+    bscheme !?: build::BuildScheme,
     //////////////////////////////////////////////
 
     flags_cc!?: string[],
@@ -339,18 +339,17 @@ pub fn compile_and_build(
         }
 
         let ret = ::build(
-            :ctx, :run, :bin, :scheme,
-            :dir_wrk, :dir_obj, :dir_src, :dir_cpp,
-            :flags_cc, :flags_ld,
-            unity: fname,
-            :ctx.fudir);
+            :ctx,
+            :bin, :dir_wrk, :dir_obj, :dir_src, :dir_cpp,
+            :runmode, :bscheme, :flags_cc, :flags_ld,
+            unity: fname);
 
         // Bootstrap doesn't need --watch and --run modes,
         //  which is good because it currently can't compile the ev::Loop stuff.
         if (TODO_REMOVE_bootstrap)
             return ret;
 
-        if !(scheme & "watch")
+        if !(bscheme & "watch")
             return ret;
 
         // WATCH LOOP
