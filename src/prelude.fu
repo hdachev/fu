@@ -771,6 +771,11 @@ fn if_last(ref s: <T>[..], and!then?: <Then>, else!?)
         ? Then -> [] ? s[s.len - 1] : then(s[s.len - 1])
         : else();
 
+
+//
+
+fn TODO_REMOVE_bootstrap() false;
+
 `;
 
 

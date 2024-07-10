@@ -345,6 +345,11 @@ pub fn compile_and_build(
             unity: fname,
             :ctx.fudir);
 
+        // Bootstrap doesn't need --watch and --run modes,
+        //  which is good because it currently can't compile the ev::Loop stuff.
+        if (TODO_REMOVE_bootstrap)
+            return ret;
+
         if !(scheme & "watch")
             return ret;
 
