@@ -201,6 +201,7 @@ pub enum RunMode
     None        = 0
     Normally
     CompilerTestcase
+    EnsureExecutableButDontRun
 }
 
 pub flags BuildScheme
@@ -241,6 +242,14 @@ pub fn tryGetScheme(name: string)
 
 //
 
+struct BuildOutput
+{
+    executable:     string;
+    watch_list:     string[];
+
+    using output:   test_output::TestOutput;
+};
+
 pub fn build(
     implicit ctx: Context,
 
@@ -261,7 +270,7 @@ pub fn build(
         //////////////////////////////////////////////
 
         flags_cc!?: string[],
-        flags_ld!?: string[]): test_output::TestOutput
+        flags_ld!?: string[]): BuildOutput
 {
     // Where we do our dirtywork.
     if (dir_wrk.if_last != '/')
@@ -1045,7 +1054,8 @@ pub fn build(
     //
     mut output: test_output::TestOutput;
 
-    if (runmode)
+    if (runmode &&
+        runmode != "EnsureExecutableButDontRun")
     {
         // TODO FIX This needs to get out of here,
         //  but brief this is the compiler test suite runner,
@@ -1179,5 +1189,26 @@ pub fn build(
     if (code) return ERR;
 
     //
-    return output;
+    fn generateWatchList()
+    {
+        mut watch_list: string[];
+
+        for (mut i = 1; i < modules.len; i++) {
+            let fname = modules[i].fname;
+            if (fname)
+                watch_list ~= fname;
+        }
+
+        file_invariants.each: |file_invariant|
+            if (file_invariant.path)
+                watch_list ~= file_invariant.path;
+
+        return watch_list;
+    }
+
+    //
+    return BuildOutput(
+        executable: bin || F_exe,
+        watch_list: bscheme & "watch" && generateWatchList(),
+        :output);
 }
