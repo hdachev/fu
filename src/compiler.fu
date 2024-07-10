@@ -322,48 +322,95 @@ pub fn compile_and_build(
     implicit mut ctx = prelude::CTX_PRELUDE.clone();
     implicit options = Options(:shuffle, dev: DEV_Parallel);
 
+    :REBUILD_LOOP
     for (;;)
     {
-        {
-            println("COMPILE ", fname);
 
-            let t0 = now::hr();
-            compile(:fname);
-            let t1 = now::hr();
-            let tt = t1 - t0;
+        // Recompile.
 
-            if (tt > 0.025)
-                printSlowBuildDiagnostics(ctx);
+        println("COMPILE ", fname);
 
-            println("        ", tt, "s\n");
-        }
+        let t0 = now::hr();
+        compile(:fname);
+        let t1 = now::hr();
+        let tt = t1 - t0;
+
+        if (tt > 0.025)
+            printSlowBuildDiagnostics(ctx);
+
+        println("        ", tt, "s\n");
+
+
+        // Rebuild.
 
         let ret = ::build(
             :ctx,
             :bin, :dir_wrk, :dir_obj, :dir_src, :dir_cpp,
-            :runmode, :bscheme, :flags_cc, :flags_ld,
-            unity: fname);
+            :bscheme, :flags_cc, :flags_ld,
+            unity: fname,
 
-        // Bootstrap doesn't need --watch and --run modes,
-        //  which is good because it currently can't compile the ev::Loop stuff.
-        if (TODO_REMOVE_bootstrap)
-            return ret;
+            runmode: runmode && bscheme & "watch"
+                ? "EnsureExecutableButDontRun"
+                : runmode);
 
-        if !(bscheme & "watch")
-            return ret;
 
-        // WATCH LOOP
-        for (;;)
+        // Run & watch.
+
+        if (!TODO_REMOVE_bootstrap && bscheme & "watch")
         {
-            if (watch_needsRebuild())
-                break;
+            mut fswatch_pid:    spawn::PID;
+            mut run_pid:        spawn::PID;
 
-            // TODO FIX WE WANT AN ACTUAL WATCH HERE //
-            pragma include("<unistd.h>");
-            pragma emit(`sleep(1)`);
-            println("What wake!");
-            ///////////////////////////////////////////
+            fn spawn(argv: string[]): spawn::PID
+            {
+                let pid = ev::Loop::spawn(:argv,
+                    stdout: "Parent",
+                    stderr: "Parent",
+                    else: |err|
+                    {
+                        println("SPWN ER argv(" argv.join(" ") ") err(" err ")");
+                    });
+
+                // println("SPAWN   argv(" argv.join(" ") ") pid(" pid ")");
+                return pid;
+            }
+
+            // TODO just ev::Loop, bootstrap currently can't handle it
+            ev::Loop::Loop(
+
+                loop_start: ||
+                {
+                    // TODO FIX - instead of this fswatch child process,
+                    //  watch everything in-process, which means the watch_needsRebuild check below
+                    //   will actually work as intended and crosscheck
+                    //    AFTER all watches are already set up and receiving events.
+                    //
+                    fswatch_pid = spawn([ "fswatch", "--one-event" ] ~ ret.watch_list);
+
+                    // Restart immediately if changed in the meantime.
+                    if (watch_needsRebuild)
+                        continue :REBUILD_LOOP;
+
+                    if (runmode)
+                        run_pid = spawn([ ret.executable ]);
+                },
+
+                child_closed: |pid, lax signo, lax code|
+                {
+                    if (pid == fswatch_pid)
+                    {
+                        // Invalidate changed files only.
+                        watch_needsRebuild();
+                        continue :REBUILD_LOOP;
+                    }
+
+                    // Not relevant currently, but
+                    if (pid == run_pid)
+                        run_pid = 0;
+                });
         }
+
+        return ret;
     }
 }
 
