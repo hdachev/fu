@@ -13,7 +13,8 @@ pragma include(
 
 //
 
-pub primitive PID:      i32;
+pub type PID = signal::PID;
+
 pub primitive ReadEnd:  FD;
 pub primitive WriteEnd: FD;
 

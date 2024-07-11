@@ -309,41 +309,33 @@ pub fn compile_and_build(
     dir_src !?: string,
     dir_cpp !?: string,
 
-    // TODO clean these up, this makes NO SENSE //
+    //
     runmode !?: build::RunMode,
     bscheme !?: build::BuildScheme,
-    //////////////////////////////////////////////
 
+    //
     flags_cc!?: string[],
     flags_ld!?: string[],
 
     shuffle!?: u32)
 {
+    import build;
+
     implicit mut ctx = prelude::CTX_PRELUDE.clone();
     implicit options = Options(:shuffle, dev: DEV_Parallel);
 
-    :REBUILD_LOOP
-    for (;;)
+
+    // Hotswap builds need a couple of different artifacts -
+    //  the shared runtime, built first, prelude-only,
+    //   the main executable + any replacement payloads.
+
+    fn build(
+        shadow flags_ld !: string[],
+        shadow runmode  !: RunMode,
+        shadow bscheme  !: BuildScheme,
+        shadow bin      !: string)
     {
-
-        // Recompile.
-
-        println("COMPILE ", fname);
-
-        let t0 = now::hr();
-        compile(:fname);
-        let t1 = now::hr();
-        let tt = t1 - t0;
-
-        if (tt > 0.025)
-            printSlowBuildDiagnostics(ctx);
-
-        println("        ", tt, "s\n");
-
-
-        // Rebuild.
-
-        let ret = ::build(
+        return build(
             :ctx,
             :bin, :dir_wrk, :dir_obj, :dir_src, :dir_cpp,
             :bscheme, :flags_cc, :flags_ld,
@@ -352,6 +344,107 @@ pub fn compile_and_build(
             runmode: runmode && bscheme & "watch"
                 ? "EnsureExecutableButDontRun"
                 : runmode);
+    }
+
+
+    // Modality -
+
+    let LIVE =
+        runmode             &&
+        bscheme & "hotswap" &&
+        bscheme & "watch";
+
+    let LIVE_dirname    = LIVE && (bin ? bin.path::dirname : dir_wrk ~ "bin/");
+    let LIVE_plugin     = LIVE && LIVE_dirname ~ "hotswap";
+
+    // Build the runtime -
+    if (LIVE)
+    {
+        /*
+            This is the original bash script -
+
+            if [ "$1" != "quick" ]; then
+                ~/fu/bin/fu -c           --shared --bin bin/libfu.so  src/libfu.fu  --libs -ldl
+                ~/fu/bin/fu -c --hotswap          --bin bin/launch    src/launch.fu --libs -ldl -L bin -lfu -Wl,-rpath,.
+
+                if [ -f bin/hotswap ]; then
+                    rm bin/hotswap
+                fi
+            else
+                ~/fu/bin/fu -c --hotswap --shared --bin bin/hotswap   src/launch.fu --libs -ldl -L bin -lfu
+            fi
+        */
+
+        build(
+            bin: LIVE_dirname ~ "libfu.so",
+            :bscheme & ~BuildScheme.hotswap | BuildScheme.shared,
+            runmode: "None",
+            :flags_ld ~ [ "-ldl" ]);
+    }
+
+    fn LIVE_build(plugin!: bool)
+    {
+        // Get rid of previously built plugins ASAP.
+        let err = file::unlink(LIVE_plugin);
+        if (err && err != Errno::ENOENT)
+            println("HOTSWAP Could not unlink " LIVE_plugin ": err(" err ")");
+
+        //
+        let libs = [ "-L", LIVE_dirname, "-lfu"/*libfu.so*/ ];
+
+        if (plugin)
+            return build(
+                bin: LIVE_plugin,
+                :bscheme | BuildScheme.shared,
+                runmode: "None",
+                :flags_ld ~ libs);
+        else
+            return build(
+                :bin,
+                :bscheme & ~BuildScheme.shared,
+                :runmode,
+                :flags_ld ~ libs ~ [ "-Wl,-rpath,$$ORIGIN" ]);
+    }
+
+
+    //
+
+    mut watch_list: string[];
+
+    :REBUILD_LOOP
+    for (;;)
+    {
+        fn recompile(plugin!?: bool)
+        {
+            if (plugin)
+                println("COMPILE " fname " for hotswap as " LIVE_plugin);
+            else
+                println("COMPILE " fname);
+
+            let t0 = now::hr();
+            compile(:fname);
+            let t1 = now::hr();
+            let tt = t1 - t0;
+
+            if (tt > 0.025)
+                printSlowBuildDiagnostics(ctx);
+
+            println("        " tt "s\n");
+
+
+            // Rebuild.
+
+            let ret = LIVE
+                ? LIVE_build(:plugin)
+                : build(:bin, :bscheme, :runmode, :flags_ld);
+
+            if (ret.watch_list)
+                watch_list = ret.watch_list;
+
+            return ret;
+        }
+
+        let ret = recompile();
 
 
         // Run & watch.
@@ -375,21 +468,27 @@ pub fn compile_and_build(
                 return pid;
             }
 
+            fn watch_or_rebuild_immediately()
+            {
+                // TODO FIX - instead of this fswatch child process,
+                //  watch everything in-process, which means the watch_needsRebuild check below
+                //   will actually work as intended and crosscheck
+                //    AFTER all watches are already set up and receiving events.
+                //
+                fswatch_pid ||= spawn(
+                    [ "fswatch", "--one-event" ] ~ watch_list);
+
+                // Restart immediately if changed in the meantime.
+                if (watch_needsRebuild)
+                    continue :REBUILD_LOOP;
+            }
+
             // TODO just ev::Loop, bootstrap currently can't handle it
             ev::Loop::Loop(
 
                 loop_start: ||
                 {
-                    // TODO FIX - instead of this fswatch child process,
-                    //  watch everything in-process, which means the watch_needsRebuild check below
-                    //   will actually work as intended and crosscheck
-                    //    AFTER all watches are already set up and receiving events.
-                    //
-                    fswatch_pid = spawn([ "fswatch", "--one-event" ] ~ ret.watch_list);
-
-                    // Restart immediately if changed in the meantime.
-                    if (watch_needsRebuild)
-                        continue :REBUILD_LOOP;
+                    watch_or_rebuild_immediately();
 
                     if (runmode)
                         run_pid = spawn([ ret.executable ]);
@@ -399,12 +498,30 @@ pub fn compile_and_build(
                 {
                     if (pid == fswatch_pid)
                     {
+                        fswatch_pid = 0;
+
                         // Invalidate changed files only.
                         watch_needsRebuild();
+
+                        //
+                        if (LIVE && run_pid)
+                        {
+                            recompile(plugin: true);
+
+                            watch_or_rebuild_immediately();
+
+                            // Send the live-reload signal.
+                            let err = signal::kill(pid: run_pid, signal::SIGUSR1)
+                            if (err)
+                                println("HOTSWAP Could not signal pid(" run_pid ") err(" err ")");
+                            else
+                                continue;
+                        }
+
+                        //
                         continue :REBUILD_LOOP;
                     }
 
-                    // Not relevant currently, but
                     if (pid == run_pid)
                         run_pid = 0;
                 });

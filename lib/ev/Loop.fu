@@ -338,7 +338,7 @@ pub nothrow fn Loop(
             // Now only sending SIGTERM.
             // TODO send SIGTERM, wait for 5sec, then send SIGKILL.
             //
-            let kill_err = signal::kill(:pid, signal::SIGTERM);
+            let kill_err = signal::kill(pid: spawn::PID(pid), signal::SIGTERM);
             err ||= kill_err;
 
             dbg::ln(" EVLOOP.defer.must_sigkill fd(" pid ") err(" kill_err ")");
@@ -891,7 +891,7 @@ pub nothrow fn Loop(
                         //  you'd rather get a SIGTERM first. We'd send a SIGTERM, add a timer here,
                         //   and unless the child exits cleanly before the timer, send off the SIGKILL.
                         //
-                        signal::kill(pid: pid.i32, signal::SIGKILL);
+                        signal::kill(:pid, signal::SIGKILL);
                     }
                 }
                 else

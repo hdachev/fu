@@ -134,7 +134,7 @@ fn cli_handle(argv: string[], cwd = fs::cwd())
             continue;
         }
 
-        if (opt == "--hotswap") {
+        if (opt == "--hotswap" || opt == "h") {
             bflags |= "hotswap";
             continue;
         }

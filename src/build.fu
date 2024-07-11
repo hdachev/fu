@@ -448,6 +448,16 @@ pub fn build(
         for (mut i = 0; i < ctx.dep_order.len; i++)
             result ~= ModuleSortHelper(ctx.dep_order[i]);
 
+        // Empty dep_order -> runtime only
+        if (!result)
+        {
+            modules.len == 1 && bscheme & "shared" || fail(
+                "ctx.dep_order: modules.len(" ~ modules.len ~ ") bscheme(" ~ bscheme ~ ")");
+
+            result ~= ModuleSortHelper(0);
+        }
+
+        //
         result
     };
 
@@ -866,7 +876,7 @@ pub fn build(
     let F_exe = dir_wrk_bin ~ hash_all.digest16 ~ "-" ~ len_all;
 
     //
-    let old_size = file::size(F_exe);
+    let old_size = !(bscheme & "nocache") && file::size(F_exe);
 
     ////////////////////////////////////////////////
     // TEMP re-run tests without allocation stats //

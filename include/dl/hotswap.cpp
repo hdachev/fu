@@ -80,7 +80,7 @@ namespace
                 static int unique_id = rand();
 
                 char tempname[1024];
-                sprintf(tempname, "%s%i", ld.filename, unique_id++);
+                snprintf(tempname, 1024, "%s%i", ld.filename, unique_id++);
 
                 // Linux can rebel, ignores dlclose and then returns the same handle on dlopen.
                 if (rename(ld.filename, tempname))
@@ -226,30 +226,21 @@ namespace
                 h.libs.push(l);
             };
 
-            if (VERBOSE)
-                printf("HOTSWAP Init ...\n");
-
             const char* env = getenv("fu_HOTSWAP_lib");
-            if (env)
+            if (!env)
             {
-                // Libname from an environment variable.
-                add_lib(env);
+                env = "hotswap";
+
+                if (VERBOSE)
+                    printf("HOTSWAP Init, `fu_HOTSWAP_lib` envar is not set, assuming `%s`.\n", env);
             }
-            #ifdef fu_HOTSWAP_lib
-            else
-            {
-                // Build-time default.
-                #define STRING(s) #s
-                add_lib(getenv(STRING(fu_HOTSWAP_lib)));
-                #undef STRING
-            }
-            #else
             else
             {
                 if (VERBOSE)
-                    printf("HOTSWAP No `fu_HOTSWAP_lib` envar set, nothing to load.\n");
+                    printf("HOTSWAP Init, `fu_HOTSWAP_lib` envar is set to: `%s`.\n", env);
             }
-            #endif
+
+            add_lib(env);
         }
 
         //

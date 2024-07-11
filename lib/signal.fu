@@ -1,13 +1,16 @@
 import Errno;
 
 pub primitive Signo: int;
+pub primitive PID: int;
 
 pub fn  SIGHUP(): Signo = __native("<signal.h>", "SIGHUP");
 pub fn  SIGINT(): Signo = __native("<signal.h>", "SIGINT");
 pub fn SIGTERM(): Signo = __native("<signal.h>", "SIGTERM");
 pub fn SIGKILL(): Signo = __native("<signal.h>", "SIGKILL");
 
-pub fn kill(pid!: int, sig: Signo): Errno
+pub fn SIGUSR1(): Signo = __native("<signal.h>", "SIGUSR1");
+
+pub fn kill(pid!: PID, sig: Signo): Errno
 {
     pragma include(
         "<signal.h>",
