@@ -1022,7 +1022,7 @@ pub fn build(
             // Linker -soname
             let soname = path::filename(bin);
             if (process::APPLE)
-                cmd ~= " -Wl,-install_name," ~ soname;
+                cmd ~= " -Wl,-install_name,@rpath/" ~ soname;
             else
                 cmd ~= " -Wl,-soname," ~ soname;
         }

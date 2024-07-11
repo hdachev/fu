@@ -392,6 +392,10 @@ pub fn compile_and_build(
         //
         let libs = [ "-L", LIVE_dirname, "-lfu"/*libfu.so*/ ];
 
+        let ORIGIN = process::APPLE
+            ? "@loader_path"
+            : "$$ORIGIN";
+
         if (plugin)
             return build(
                 bin: LIVE_plugin,
@@ -403,7 +407,7 @@ pub fn compile_and_build(
                 :bin,
                 :bscheme & ~BuildScheme.shared,
                 :runmode,
-                :flags_ld ~ libs ~ [ "-Wl,-rpath,$$ORIGIN" ]);
+                :flags_ld ~ libs ~ [ "-Wl,-rpath," ~ ORIGIN ]);
     }
 
 
