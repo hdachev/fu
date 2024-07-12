@@ -308,7 +308,9 @@ pub fn build(
     if (bscheme & "TODO_FIX_retail")
         O_lvl ~= "-Dfu_RETAIL ";
 
-    if (bscheme & "shared")
+    // Previously just shared,
+    //  now trying to reuse the same objects for both server & client.
+    if (bscheme & "hotswap" || bscheme & "shared")
         O_lvl ~= "-fPIC ";
 
     // TODO FIX should be just if (hotswap), currently:
