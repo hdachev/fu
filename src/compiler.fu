@@ -123,62 +123,57 @@ fn compile_lexParseDeps(fname: string, via?: TokenIdx[]): ModidAndOrder
 
 //
 
-fn watch_needsRebuild(implicit ref ctx: Context)
+fn clear(ref module: Module)
 {
-    // Nuke file caches.
-    ctx.nuke = [];
-
-    // Invalidate modules whose files
-    //  appear to have changed on disk.
+    // Throw everything out the window,
+    //  this currently means that we'll be re-lexing
+    //   & re-parsing a bunch of things unnecessarily.
     //
-    mut did_nuke: ::BitSet;
+    module = Module(:module.modid, :module.fname);
+}
 
-    fn nuke(ref module: Module)
-    {
-        did_nuke.add(module.modid);
-
-        // Throw everything out the window,
-        //  this currently means that we'll be re-lexing
-        //   & re-parsing a bunch of things unnecessarily.
-        //
-        module = Module(
-            :module.modid,
-            :module.fname);
-    }
-
+fn eachButPrelude(implicit ref ctx: Context, action)
     for (mut i = /*PRELUDE*/1; i < ctx.modules.len; i++)
+        action(module: ctx.modules[i], ?:i);
+
+fn watch_pruneModules(implicit ref ctx: Context)
+{
+    mut invalid: ::BitSet;
+
+    eachButPrelude: |ref module|
     {
-        ref module = ctx.modules[i];
-        if (module.in.src != getFile(module.fname))
+        if (!module.out)
         {
-            shadow ref module = ctx.modules[i];
-            println("  WATCH Changed: " ~ module.fname);
-            nuke(module);
+            // println("  WATCH Prune: " ~ module.fname);
+            module.clear();
+            invalid.add(module.modid);
         }
     }
-
-    if !(did_nuke)
-        return false;
 
     // Invalidate dependents,
     //  we'll recheck/rebuild them.
     //
-    for (;;)
+    if (invalid) for (;;)
     {
         mut repeat = false;
 
-        for (mut i = /*PRELUDE*/1; i < ctx.modules.len; i++)
+        eachButPrelude: |ref module|
         {
-            ref module = ctx.modules[i];
-
-            module.in.parse.imports.each: |import|
+            if (!module.out)
             {
-                if (module.out &&
-                    did_nuke.has(import.modid))
+                if (!invalid.has(module.modid))
+                {
+                    invalid.add(module.modid);
+                    repeat = true;
+                }
+            }
+            else module.in.parse.imports.each: |import|
+            {
+                if (invalid.has(import.modid))
                 {
                     println("  WATCH Invalidated: " ~ module.fname);
-                    nuke(module);
-
+                    module.clear();
+                    invalid.add(module.modid);
                     repeat = true;
                     break;
                 }
@@ -188,8 +183,31 @@ fn watch_needsRebuild(implicit ref ctx: Context)
         if (!repeat)
             break;
     }
+}
 
-    return true;
+fn watch_needsRebuild(implicit ref ctx: Context)
+{
+    // Nuke file caches.
+    mut old: NukeOnRebuild;
+    swap(ctx.nuke, old);
+
+    // Invalidate modules whose files
+    //  appear to have changed on disk.
+    //
+    mut some = false;
+
+    eachButPrelude: |module, i|
+    {
+        if (updateFile(module.fname, :old))
+        {
+            shadow ref module = ctx.modules[i];
+            println("  WATCH Changed: " ~ module.fname);
+            module.clear();
+            some = true;
+        }
+    }
+
+    return some;
 }
 
 
@@ -270,13 +288,17 @@ pub fn compile(
                 }
             });
 
+            mut err: string;
             results.each: |result|
             {
                 if (result.error)
-                    throw(result.error);
+                    err ||= result.error;
                 else if (result.module.out)
                     setModule(result.module);
             }
+
+            if (err)
+                throw(err);
         }
         else
         //*/
@@ -297,6 +319,19 @@ pub fn compile(
 
 
 //
+
+pub fn try_or_print_error(action)
+{
+    try {
+        action();
+    }
+    catch (e) {
+        println("\n" ~ "  ERROR ".qBAD ~ e);
+        return 1;
+    }
+
+    return 0;
+}
 
 pub fn compile_and_build(
 
@@ -418,8 +453,20 @@ pub fn compile_and_build(
     :REBUILD_LOOP
     for (;;)
     {
-        fn recompile(plugin!?: bool)
+        fn recompile(plugin!?: bool, dont_try_catch!?: bool)
         {
+            if (bscheme & "watch" && !dont_try_catch)
+            {
+                watch_pruneModules();
+
+                try_or_print_error(|| {
+                    return recompile(:plugin, dont_try_catch: true);
+                });
+
+                return [];
+            }
+
+            //
             if (plugin)
                 println("COMPILE " fname " for hotswap as " LIVE_plugin);
             else
@@ -442,7 +489,7 @@ pub fn compile_and_build(
                 ? LIVE_build(:plugin)
                 : build(:bin, :bscheme, :runmode, :flags_ld);
 
-            if (ret.watch_list)
+            if (ret.watch_list && bscheme & "watch")
                 watch_list = ret.watch_list;
 
             return ret;
@@ -451,9 +498,17 @@ pub fn compile_and_build(
         let ret = recompile();
 
 
+        // TODO FIX shim a watch list if first compile fails.
+
+        if (bscheme & "watch" && !watch_list)
+            eachButPrelude: |module|
+                if (module.fname)
+                    watch_list ~= module.fname;
+
+
         // Run & watch.
 
-        if (!TODO_REMOVE_bootstrap && bscheme & "watch")
+        if (!TODO_REMOVE_bootstrap && watch_list)
         {
             mut fswatch_pid:    spawn::PID;
             mut run_pid:        spawn::PID;
@@ -494,7 +549,7 @@ pub fn compile_and_build(
                 {
                     watch_or_rebuild_immediately();
 
-                    if (runmode)
+                    if (runmode && ret.executable)
                         run_pid = spawn([ ret.executable ]);
                 },
 
@@ -510,16 +565,31 @@ pub fn compile_and_build(
                         //
                         if (LIVE && run_pid)
                         {
-                            recompile(plugin: true);
+                            let ok = recompile(plugin: true);
 
                             watch_or_rebuild_immediately();
 
-                            // Send the live-reload signal.
-                            let err = signal::kill(pid: run_pid, signal::SIGUSR1)
-                            if (err)
-                                println("HOTSWAP Could not signal pid(" run_pid ") err(" err ")");
+                            if (ok)
+                            {
+                                // Send the live-reload signal.
+                                let err = signal::kill(pid: run_pid, signal::SIGUSR1)
+                                if (err)
+                                {
+                                    println("HOTSWAP Could not signal pid(" run_pid ") err(" err ")");
+                                }
+                                else
+                                {
+                                    // Already running, compiled OK, signalled OK -
+                                    //  dont shut down current run.
+                                    continue;
+                                }
+                            }
                             else
+                            {
+                                // Already running, failed to compile latest changes -
+                                //  dont shut down current run.
                                 continue;
+                            }
                         }
 
                         //

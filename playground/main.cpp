@@ -3,14 +3,14 @@
 #define fu_NUM_WORKER_THREADS 0
 
 #ifdef ISOLATE_FAILING_TESTCASE
-#include "../build-cpp/failing-testcase.cpp"
+#include "../../.fu/failing-testcase.cpp"
 #endif
 
 #define fu_UNITY_FULIB
 #ifndef ISOLATE_FAILING_TESTCASE
 
 #define main cli_main
-#include "../src/cli.fu.unity.cpp"
+#include "../cpp/src/cli.fu.unity.cpp"
 #undef  main
 
 

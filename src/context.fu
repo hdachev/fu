@@ -170,6 +170,16 @@ pub fn setModule(
 
 //
 
+pub fn updateFile(fname: string, old: NukeOnRebuild)
+{
+    let expect = old.files.get(fname);
+    let actual = getFile(fname) || "\v";
+    return expect != actual;
+}
+
+
+//
+
 pub fn lookupUserType(
     implicit module: Module,
     implicit ctx: Context,

@@ -213,15 +213,8 @@ fn cli_handle(argv: string[], cwd = fs::cwd())
 
 fn main(argv: string[])
 {
-    try {
-        cli_handle(argv);
-    }
-    catch (e) {
-        println("\n" ~ "  ERROR ".qBAD ~ e);
-        return 1;
-    }
-
-    return 0;
+    return compiler::try_or_print_error(
+        || cli_handle(argv));
 }
 
 pub extern fn buildCompiler()
