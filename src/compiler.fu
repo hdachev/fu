@@ -159,15 +159,7 @@ fn watch_pruneModules(implicit ref ctx: Context)
 
         eachButPrelude: |ref module|
         {
-            if (!module.out)
-            {
-                if (!invalid.has(module.modid))
-                {
-                    invalid.add(module.modid);
-                    repeat = true;
-                }
-            }
-            else module.in.parse.imports.each: |import|
+            module.in.parse.imports.each: |import|
             {
                 if (invalid.has(import.modid))
                 {
@@ -384,16 +376,12 @@ pub fn compile_and_build(
 
     // Modality -
 
-    let LIVE =
-        runmode             &&
-        bscheme & "hotswap" &&
-        bscheme & "watch";
-
-    let LIVE_dirname    = LIVE && (bin ? bin.path::dirname : dir_wrk ~ "bin/");
-    let LIVE_plugin     = LIVE && LIVE_dirname ~ "hotswap";
+    let HOTSWAP         = bscheme & "hotswap";
+    let HOTSWAP_dirname = HOTSWAP && (bin ? bin.path::dirname : dir_wrk ~ "bin/");
+    let HOTSWAP_plugin  = HOTSWAP && HOTSWAP_dirname ~ "hotswap";
 
     // Build the runtime -
-    if (LIVE)
+    if (HOTSWAP)
     {
         /*
             This is the original bash script -
@@ -411,21 +399,21 @@ pub fn compile_and_build(
         */
 
         build(
-            bin: LIVE_dirname ~ "libfu.so",
+            bin: HOTSWAP_dirname ~ "libfu.so",
             :bscheme & ~BuildScheme.hotswap | BuildScheme.shared,
             runmode: "None",
             :flags_ld ~ [ "-ldl" ]);
     }
 
-    fn LIVE_build(plugin!: bool)
+    fn HOTSWAP_build(plugin!: bool)
     {
         // Get rid of previously built plugins ASAP.
-        let err = file::unlink(LIVE_plugin);
+        let err = file::unlink(HOTSWAP_plugin);
         if (err && err != Errno::ENOENT)
-            println("HOTSWAP Could not unlink " LIVE_plugin ": err(" err ")");
+            println("HOTSWAP Could not unlink " HOTSWAP_plugin ": err(" err ")");
 
         //
-        let libs = [ "-L", LIVE_dirname, "-lfu"/*libfu.so*/ ];
+        let libs = [ "-L", HOTSWAP_dirname, "-lfu"/*libfu.so*/ ];
 
         let ORIGIN = process::APPLE
             ? "@loader_path"
@@ -433,7 +421,7 @@ pub fn compile_and_build(
 
         if (plugin)
             return build(
-                bin: LIVE_plugin,
+                bin: HOTSWAP_plugin,
                 :bscheme | BuildScheme.shared,
                 runmode: "None",
                 :flags_ld ~ libs);
@@ -467,10 +455,7 @@ pub fn compile_and_build(
             }
 
             //
-            if (plugin)
-                println("COMPILE " fname " for hotswap as " LIVE_plugin);
-            else
-                println("COMPILE " fname);
+            println("COMPILE " fname);
 
             let t0 = now::hr();
             compile(:fname);
@@ -485,8 +470,8 @@ pub fn compile_and_build(
 
             // Rebuild.
 
-            let ret = LIVE
-                ? LIVE_build(:plugin)
+            let ret = HOTSWAP
+                ? HOTSWAP_build(:plugin)
                 : build(:bin, :bscheme, :runmode, :flags_ld);
 
             if (ret.watch_list && bscheme & "watch")
@@ -563,7 +548,7 @@ pub fn compile_and_build(
                         watch_needsRebuild();
 
                         //
-                        if (LIVE && run_pid)
+                        if (HOTSWAP && run_pid)
                         {
                             let ok = recompile(plugin: true);
 
