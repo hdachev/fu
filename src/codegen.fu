@@ -1601,6 +1601,9 @@ pub fn cpp_codegen(
                 }
             }
 
+            if (expr.kind == "copy")
+                return expr.items.only.isConstexpr;
+
             return false;
         }
 
@@ -1884,7 +1887,9 @@ pub fn cpp_codegen(
 
         if (constexpr)
         {
-            _fdef  ~= "\n                                #ifndef DEF_" ~ node.value
+            // Putting this stuff in ffwd to move it above emit_top.
+            _ffwd_src
+                   ~= "\n                                #ifndef DEF_" ~ node.value
                     ~ "\n                                #define DEF_" ~ node.value
                     ~ "\ninline constexpr " ~ src ~ ";"
                     ~ "\n                                #endif\n";

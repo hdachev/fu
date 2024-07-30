@@ -123,6 +123,33 @@ type  int   = i32; // These may become separate types
 type uint   = u32; //  with a user-selectable size.
 
 
+//
+
+fn x16(v: <T>)
+    case (T -> i8 || T -> i16) v.i16;
+    case (T -> u8 || T -> u16) v.u16;
+
+fn x32(v: <T>)
+    case (T -> i8 || T -> i16 || T -> i32) v.i32;
+    case (T -> u8 || T -> u16 || T -> u32) v.u32;
+
+fn x64(v: <T>)
+    case (T -> i8 || T -> i16 || T -> i32 || T -> i64) v.i64;
+    case (T -> u8 || T -> u16 || T -> u32 || T -> u64) v.u64;
+
+fn trunc64(v: <T>)
+    case (T -> i128 || T -> i64) v.i64;
+    case (T -> u128 || T -> u64) v.u64;
+
+fn trunc32(v: <T>)
+    case (T -> i128 || T -> i64 || T -> i32) v.i32;
+    case (T -> u128 || T -> u64 || T -> u32) v.u32;
+
+fn trunc16(v: <T>)
+    case (T -> i128 || T -> i64 || T -> i32 || T -> i16) v.i16;
+    case (T -> u128 || T -> u64 || T -> u32 || T -> u16) v.u16;
+
+
 // Math.
 
 fn abs(v: <T>)

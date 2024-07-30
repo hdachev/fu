@@ -497,7 +497,7 @@ pub inline fn each(ref map: Map(_, _, _), visit)
     }
 }
 
-pub inline fn ref(ref map: Map(:<Key>, _, _), key: Key, visit)
+pub inline fn ref(ref map: Map(:<Key>, _, _), key: Key, visit = |ref value| value)
 {
     return map.ref(:key, hash: map.hash(key), fn visit);
 }

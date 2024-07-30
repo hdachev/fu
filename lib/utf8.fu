@@ -1,8 +1,12 @@
 
+primitive Codepoint: u32;
+
+fn Codepoint(b: byte) b.u32.Codepoint;
+
 
 // Bytes for unicode point.
 
-fn bytes(unicode: u32)
+fn bytes(unicode: Codepoint)
 {
     if (unicode <= 0x7f)
         return [
@@ -83,7 +87,7 @@ fn codepoints(text: byte[..], each, error)
             // Only called once,
             //  so the each-codepoint block can inline uniquely.
             //
-            each(c, i?: i);
+            each(c.Codepoint, i?: i);
             continue;
         }
 

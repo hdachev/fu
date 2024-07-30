@@ -13267,6 +13267,34 @@ pub extern fn runTests()
         }
     `);
 
+    ZERO([`
+        let T_unorm     = 0x1;
+        let T_8x4       = 0x1 << 8;
+        let T_rgba8un   = T_8x4 | T_unorm;
+    `,`
+        import _0;
+
+        fn extern_integer_constant(x: uint) {
+            mut res = 1;
+            pragma output("switch ("x") { case "T_rgba8un": "res" = 0; }");
+            return res;
+        }
+
+        fn main() T_rgba8un.extern_integer_constant;
+    `]);
+
+    ZERO([`
+        let TWO = 2;
+    `,`
+        import _0;
+        pragma emit_top("int times_TWO(int x) { return x * "TWO"; }");
+        fn main() {
+            mut res = 3;
+            pragma emit(res" = times_TWO(" res ");");
+            return res - 6;
+        }
+    `]);
+
     // /quite right
 
 
@@ -22065,6 +22093,16 @@ pub extern fn runTests()
             return a || !b ? 0 : 1;
         }
     `);
+
+    TODO_confusing(currently: "FaceCull, got string 2:29+14", [`
+        enum FaceCull { Disabled = 0; CullCW; CullCCW }
+        pub fn updateFaceCull(v: FaceCull) v.int;
+    `,`
+        fn test(v: int) _0::updateFaceCull(
+            v == 1 ? "CullCW"   : v == 2    ? "CullCCW"
+                                            : "Disable"); //< should be "Disabled"
+        fn main() 0.test;                                 //   gotta suggest a fix
+    `]);
 
     // /Enums
 
