@@ -1863,18 +1863,26 @@ pub fn cpp_codegen(
             && _current_fn._hoisted.has(locid);
     }
 
-    fn cgLet(node: SolvedNode, global!: bool, mode: Mode, foreign!?: bool): string
+    fn cgLet(target: Target, mode: Mode): string
     {
+        let global      = !target.locid;
+        let foreign     = global && target.modid != module.modid;
+
+        let node        = target.solved;
         if (node.type.isIrrelevant)
+            return "";
+
+        if (global && !_ffwd.add(target))
             return "";
 
         // Hoist let-expressions.
         if !(mode & M_STMT)
-            set_isHoisted(:node.target.locid);
+            if (!global)
+                set_isHoisted(:target.locid);
 
         // GLOBALS ///////////////////////////////////////////////
         let constexpr = global
-            && node.target.globalVar_isConstexpr;
+            && target.globalVar_isConstexpr;
         // GLOBALS ///////////////////////////////////////////////
 
         mut src = binding(node, doInit: !foreign || constexpr, :mode);
@@ -1898,7 +1906,7 @@ pub fn cpp_codegen(
         }
 
         // Static init prio.
-        let prio = !foreign && !node.type.is_primitive && cgInitPrio(:node.target.modid);
+        let prio = !foreign && !node.type.is_primitive && cgInitPrio(:target.modid);
         if (prio)
         {
             let eq = src.find('=');
@@ -1908,7 +1916,7 @@ pub fn cpp_codegen(
         }
 
         // Hide when possible.
-        if !(GET(node.target).isExtLinked)
+        if !(GET(target).isExtLinked)
         {
             // We can't "forward declare" foreign private globals.
             if (!foreign)
@@ -1916,7 +1924,7 @@ pub fn cpp_codegen(
 
             // But we can unity-build ourselves with them.
             else
-                BUG("Cannot codegen, relies on an external static: " ~ node.target.name);
+                BUG("Cannot codegen, relies on an external static: " ~ target.name);
         }
         else
         {
@@ -1926,27 +1934,27 @@ pub fn cpp_codegen(
         return "";
     }
 
-    fn cgGlobal(target: Target)
+    fn ensureGlobal(target: Target)
     {
-        if !(_ffwd.add(target))
-            return "";
+        if (target.locid)
+            BUG("ensureGlobal: not a global, has locid.");
 
-        return cgLet(target.solved,
-            global: true,
-            foreign: target.modid != module.modid,
-            mode: M_STMT);
+        cgLet(target, mode: M_STMT)
+            && BUG("ensureGlobal/cgLet: non-empty output.");
     }
 
     fn cgLetDef(node: SolvedNode, mode: Mode)
     {
-        if (!_current_fn.globid)
-            return node.target.isExtLinked
-                && cgGlobal(node.target);
+        let TODO_FIX_skipPrivateGlobalLetdefs_shouldHaveBeenRemovedFromIR =
+            !_current_fn.globid &&
+            !node.target.isExtLinked;
 
         shadow let mode = mode
             | (node.isIrrelevant && !(mode & M_STMT) && M_VOID_EXPR);
 
-        return cgLet(node.target.solved, global: false, :mode);
+        return !TODO_FIX_skipPrivateGlobalLetdefs_shouldHaveBeenRemovedFromIR
+            && cgLet(node.target, :mode)
+            || (mode & M_STMT ? "" : "void()");
     }
 
 
@@ -2550,9 +2558,9 @@ pub fn cpp_codegen(
 
                 if (!node.target.locid)
                 {
-                    cgGlobal(node.target);
+                    ensureGlobal(node.target);
 
-                    mut ret = rootNS(ID(id)); // TODO ensure const emit.
+                    mut ret = rootNS(localID(:node.target)); // TODO ensure const emit.
 
                     if (node.target.TODO_FIX_useStaticRef)
                         ret ~= ".ref";

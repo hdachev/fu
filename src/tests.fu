@@ -13295,7 +13295,7 @@ pub extern fn runTests()
         }
     `]);
 
-    TODO_inline(currently: "BUG set_isHoisted: Not a local 6:20+10", `
+    ZERO(`
         primitive ROPOptions: u32;
         enum DepthTest: u32 { Always = 0; Gteq; Neq; Gt; Lteq; Eq; Lt; Never };
         inline fn ROPOptions(depth_test: DepthTest) = ROPOptions(depth_test.u32);
