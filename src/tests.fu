@@ -13295,6 +13295,22 @@ pub extern fn runTests()
         }
     `]);
 
+    TODO_inline(currently: "BUG set_isHoisted: Not a local 6:20+10", `
+        primitive ROPOptions: u32;
+        enum DepthTest: u32 { Always = 0; Gteq; Neq; Gt; Lteq; Eq; Lt; Never };
+        inline fn ROPOptions(depth_test: DepthTest) = ROPOptions(depth_test.u32);
+<alt>
+        let rop_Skybox = ROPOptions("Lteq");
+<alt/>
+        pub let rop_Skybox = ROPOptions("Lteq");
+<alt/>
+        let priv = ROPOptions("Lteq");
+        pub fn rop_Skybox() = priv;
+</alt>
+        <split/>
+        fn main() rop_Skybox.int - 4;
+    `);
+
     // /quite right
 
 
