@@ -1,5 +1,5 @@
 
-fn uppercased(ref str: byte[..])
+fn to_upper(ref str: byte[..])
 {
     for (mut i = 0; i < str.len; i++)
     {
@@ -9,7 +9,7 @@ fn uppercased(ref str: byte[..])
     }
 }
 
-fn lowercased(ref str: byte[..])
+fn to_lower(ref str: byte[..])
 {
     for (mut i = 0; i < str.len; i++)
     {
@@ -19,7 +19,7 @@ fn lowercased(ref str: byte[..])
     }
 }
 
-fn uppercase(mut str: string): string
+fn upper(mut str: string): string
 {
     for (mut i = 0; i < str.len; i++)
     {
@@ -31,7 +31,7 @@ fn uppercase(mut str: string): string
     return str;
 }
 
-fn lowercase(mut str: string): string
+fn lower(mut str: string): string
 {
     for (mut i = 0; i < str.len; i++)
     {

@@ -128,6 +128,30 @@ pub fn resolveFile(
 
 //
 
+pub fn setFile(
+    ref files: flat::Map(string, string),
+    path: string,
+    data: string)
+{
+    // Case insensitive file system safeties.
+    if (data)
+    {
+        let caseless = path.ascii::lower ~ '\0';
+
+        let exists = files.get(caseless);
+        if (exists)
+            throw("Two paths differing only in capitalization were accessed:"
+                ~ "\n\n\t" ~ path
+                ~ "\n\n\t" ~ exists
+                ~ "\n\n\tThis creates confusion on case insensitive file systems.");
+
+        files.set(caseless, path);
+    }
+
+    //
+    files.set(path, data || "\v");
+}
+
 pub fn getFile(
     implicit ref ctx: Context,
     mut path: string): string
@@ -141,7 +165,8 @@ pub fn getFile(
     if (err && err != Errno::ENOENT)
         throw("getFile: path(" ~ path ~ ") err(" ~ err ~ ")");
 
-    ctx.files.set(path, data || "\v");
+    ctx.files.setFile(path, data);
+
     return data;
 }
 

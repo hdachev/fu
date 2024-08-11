@@ -177,31 +177,6 @@ fn watch_pruneModules(implicit ref ctx: Context)
     }
 }
 
-fn watch_needsRebuild(implicit ref ctx: Context)
-{
-    // Nuke file caches.
-    mut old: NukeOnRebuild;
-    swap(ctx.nuke, old);
-
-    // Invalidate modules whose files
-    //  appear to have changed on disk.
-    //
-    mut some = false;
-
-    eachButPrelude: |module, i|
-    {
-        if (updateFile(module.fname, :old))
-        {
-            shadow ref module = ctx.modules[i];
-            println("  WATCH Changed: " ~ module.fname);
-            module.clear();
-            some = true;
-        }
-    }
-
-    return some;
-}
-
 
 //
 
@@ -510,6 +485,39 @@ pub fn compile_and_build(
 
                 // println("SPAWN   argv(" argv.join(" ") ") pid(" pid ")");
                 return pid;
+            }
+
+            fn watch_needsRebuild()
+            {
+                // Nuke file caches.
+                mut old: NukeOnRebuild;
+                swap(ctx.nuke, old);
+
+                // Invalidate modules whose files
+                //  appear to have changed on disk.
+                //
+                mut some = false;
+
+                eachButPrelude: |module, i|
+                {
+                    if (updateFile(module.fname, :old))
+                    {
+                        shadow ref module = ctx.modules[i];
+                        println("  WATCH Changed: " ~ module.fname);
+                        module.clear();
+                        some = true;
+                    }
+
+                    // TODO FAILCASE
+                    //  doing this to force-inline the lambda
+                    //   so bck will accept module aliasing ctx
+                    //
+                    // TODO FIX BCK HACK //////
+                    if (1 > 2) return some;  //
+                    ///////////////////////////
+                }
+
+                return some;
             }
 
             fn watch_or_rebuild_immediately()

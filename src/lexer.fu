@@ -346,7 +346,7 @@ pub fn lex(src: string, fname: string): LexerOutput
                 {
                     token(
                         dot || exp ? "real" : "int",
-                        ascii::lowercase(str),
+                        ascii::lower(str),
                         idx0, idx1);
                 }
             }

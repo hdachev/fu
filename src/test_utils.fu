@@ -51,7 +51,7 @@ pub fn compile_snippets(sources: string[], mut fnames?: string[], mut options?: 
                     ? ensure_main(snippet)
                     : snippet;
 
-        ctx.files.set(fnames[i], src);
+        context::setFile(ctx.files, fnames[i], src);
 
         if (snippet.has("/*PRINT*/"))
             options.dev |= DEV_Print;
@@ -148,7 +148,7 @@ fn verify_errmsg(topic: string, e!: string, msg!: string)
         .ERR_TRIM
         .ERR_STRIP_ANSI
         .ERR_STRIP_SNIPPETS
-        .ascii::lowercase();
+        .ascii::lower;
 
     mut BUG_ok = false;
 
@@ -174,7 +174,7 @@ fn verify_errmsg(topic: string, e!: string, msg!: string)
                         return false;
                     }
 
-                    let expect = word.ascii::lowercase();
+                    let expect = word.ascii::lower;
                     return actual.has(expect);
                 }
 

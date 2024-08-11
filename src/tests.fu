@@ -109,6 +109,7 @@ pub extern fn runTests()
     let TODO_zst        = fn TODO;
     let TODO_litfix     = fn TODO;
     let TODO_args       = fn TODO;
+    let TODO_mangle     = fn TODO;
 
     let TODO_confusing  = fn TODO;
     let TODO_logic      = fn TODO;
@@ -15910,15 +15911,14 @@ pub extern fn runTests()
         }
     `]);
 
-    TODO_pub(currently: "could not resolve this import", [`//file a.fu
-        let v = 1;
-    `,`//file B.fu
-        let v = 2;
+    TODO_mangle(currently: "BUG exit code", [`//file a.fu
+        let v = 7;
+    `,`//file <fail creates confusion case insensitive file systems>A.fu<pass/>B.fu</fail>
+        let v = 19;
     `,`
-        fn main() {                 <fail case insensitive file systems X:X>
-            let c = a::v + A::v;    <pass/>
-            let c = a::v + B::v;    </fail>
-            return c - 3;
+        fn main() {
+            let c = a::v + B::v;
+            return c - 26;
         }
     `]);
 
