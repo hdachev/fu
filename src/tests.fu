@@ -13312,6 +13312,15 @@ pub extern fn runTests()
         fn main() rop_Skybox.int - 4;
     `);
 
+    ZERO(`
+        fn test(mut x: int) {
+            if (x > 9) pragma emit(x" += 7; "x" *= 3;");
+            ++x
+        }
+
+        fn main() test(10) == 52 && test(5) == 6 ? 0 : 1;
+    `);
+
     // /quite right
 
 
