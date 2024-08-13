@@ -13321,6 +13321,12 @@ pub extern fn runTests()
         fn main() test(10) == 52 && test(5) == 6 ? 0 : 1;
     `);
 
+    TODO_ambig(currently: "Ambig call to ~ 3:30+1", `
+        let USE_MIPMAPS = false;
+        let glsl_what = "A " ~ (USE_MIPMAPS && "B ") ~ "C";
+        fn main() glsl_what.len - 3;
+    `);
+
     // /quite right
 
 
