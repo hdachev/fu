@@ -121,6 +121,9 @@ fn cli_handle(argv: string[], cwd = fs::cwd())
         option("b", "--bin", EMIT_BIN,     bin);
 
         // Scheme.
+        if (opt == "d")
+            opt = "--debug";
+
         if (opt == "--debug" || opt == "--reldeb" || opt == "--retail") {
             bscheme && throw(opt ~ ": Scheme already set to `" ~ opt ~ "`.");
             bscheme = build::tryGetScheme(opt.slice(2));
