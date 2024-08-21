@@ -164,6 +164,9 @@ fn min(a: <T>, b: T)
     case (T.is::floating_point): T __native("<cmath>", "std::fmax");
     case (T.is::arithmetic) a <= b ? a : b;
 
+fn clamp(v: <T>, gteq: T, lteq: T)
+    case (T.is::arithmetic) v.min(lteq).max(gteq);
+
 fn exp   (a: <T>) case (T.is::floating_point): T __native("<cmath>", "std::exp");
 fn exp2  (a: <T>) case (T.is::floating_point): T __native("<cmath>", "std::exp2");
 fn log   (a: <T>) case (T.is::floating_point): T __native("<cmath>", "std::log");
