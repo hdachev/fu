@@ -255,7 +255,7 @@ pub fn remove(mut ref a.keys_asc: $T[], b.keys_asc: $T[..])
 
 // The new thing potentially.
 
-fn merge(l.keys_asc: $T[..], r.keys_asc: $T[..], left, right, both)
+fn merge(l.keys_asc: $T[..], r.keys_asc: $T[..], left_or_both!?: <LeftOrBoth>, left!?, right!, both!?)
 {
     mut li = 0;
     mut ri = 0;
@@ -272,51 +272,19 @@ fn merge(l.keys_asc: $T[..], r.keys_asc: $T[..], left, right, both)
                          : r_done ? -1
                          : L <> R;
 
-        // TODO come up with a way to combine these nicely,
-        //  unfortunately copy pasted below
-        //
-        if (cmp == 0) {
+        if (!(LeftOrBoth -> []) && cmp <= 0) {
+            left_or_both(L, left?: li, right?: ri);
+            li++;
+            ri += int(cmp == 0);
+        }
+        else if (LeftOrBoth -> [] && cmp == 0) {
             both(L, left?: li, right?: ri);
             li++;
             ri++;
         }
-        else if (cmp < 0) {
+        else if (LeftOrBoth -> [] && cmp < 0) {
             left(L, left?: li, right?: ri);
             li++;
-        }
-        else {
-            right(R, left?: li, right?: ri);
-            ri++;
-        }
-    }
-}
-
-fn merge(l.keys_asc: $T[..], r.keys_asc: $T[..], left_or_both, right)
-{
-    mut li = 0;
-    mut ri = 0;
-
-    for (;;)
-    {
-        inline fn L = l[li];
-        inline fn R = r[ri];
-
-        let l_done = li == l.len;
-        let r_done = ri == r.len;
-
-        let cmp = l_done ? r_done ? { return; } : +1
-                         : r_done ? -1
-                         : L <> R;
-
-        // TODO come up with a way to combine these nicely,
-        //  unfortunately copy pasted above,
-        //   here both case collapsed into left -
-        //    and this is only so that we inline the fns in a single spot.
-        //
-        if (cmp <= 0) {
-            left_or_both(L, left?: li, right?: ri);
-            li++;
-            ri += int(cmp == 0);
         }
         else {
             right(R, left?: li, right?: ri);
