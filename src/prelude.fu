@@ -674,7 +674,45 @@ fn replace(str: <T>[], all: T or T[..], with: T or T[..] or [])
 }
 
 
-// Sketch - so we can use floating point numbers as keys to a hashmap -
+// The floating point partial equality problem.
+//
+// BRIEF: to use a floating point number as a key to e.g. a hashtable,
+//  we need a way to meaningfully tell them apart.
+//
+// Telling two values apart means that if two values can have
+//  any behavioural difference, then the values should be considered different.
+//
+// E.g. you can't consider +0 and -0 equivalent,
+//  if a subsequent call to a collection might behave differently
+//   whether you used -0 or +0 first to refer to the same entry.
+//
+// PROBLEM: The usual ==, !=, >, >=, <, <= operators are not well behaved for floats,
+//  and cannot be used as is to implement robust containers where floats are keys.
+//
+// I came up with three possible courses of action:
+//
+// ----------------------------------------------------------------
+//
+// OPTION A:
+//
+//  1. Make classical equality and comparison ops more c-like:
+//      only implement them on primitives, and nothing else,
+//       these ops will have the usual IEEE float semantics.
+//
+//  2. Provide a second set of strict/total equality and comparison operators
+//      that is automatically implemented for all types,
+//       bitwise-compares floats, fast-compares arrays, etc.
+//
+// When writing container code, if you happen to use a classical operator,
+//  your template will simply not compile when you attempt to use it
+//   with a non-primitive type.
+//
+// CON 1:   This means we'll have two sets of equality operators
+//           that will actually yield different results, not amazing.
+//
+// CON 2:   This only tangentially solves the problem we have,
+//           namely that it is easy to overlook NANs and co when writing templates
+//            that aren't designed for use with floats.
 //
 // infix fn === (a: <T>, b: T)
 //     case (T.is::primitive && !T.is::floating_point): bool __native;
@@ -684,78 +722,67 @@ fn replace(str: <T>[], all: T or T[..], with: T or T[..] or [])
 //     case (T.is::primitive && !T.is::floating_point): bool __native;
 //     default: bool = !!(a <> b);
 //
-// We could perhaps combine these with a warning
-//  on regular equality and comparison operators for floats,
-//   to perhaps be opted out of on a file-by-file basis?
+// ----------------------------------------------------------------
 //
-// Or within a scope? A named warning (or effect)? acknowledge floating_point_equality;
-//  The main problem with floating point comparion and equality
-//   is that it just doesn't just follow the rules,
-//    and thus it breaks generic programming.
+// OPTION B:
 //
-// Alternatively, we can have a gnarlier set of operators for partial equality,
-//  like *== *!=, *>=, *>, *<, *<=. To make this liveable,
-//   we should track float non-nanness and float finiteness,
-//    and allow the usual operators where they'd be fine.
+//  1. Disallow the use of ==, !=, <, <=, >, >= with floating point types.
+//      This redefines them as the "total" equality/comparison operators.
 //
-//  COUNTER:    This would help with nans, but what about signed zeroes?
-//               I always forget -0, but it can also bring about exotic surprises.
+//  2. Provide a second set of gnarlier *==, *!=, *<, *<=, *>, *>=
+//      "partial" equality/comparison operators. These can be used with any type.
 //
-// Rust solves these via checked generics -
-//  all comparisons are simply >, < etc,
-//   but trait bounds ensure you dont get partial equality if you need total equality
-//    (e.g. hashmap key equality check).
+// Now this is all good at first glance because any template code
+//  that wasn't written with floats in mind simply won't accept them.
 //
-// --------------------------------------------
-// PERHAPS A BETTER AND LESS ALIENTATING DESIGN
-// --------------------------------------------
+// HOWEVER, this is actually not sufficient to drive default sort behavior,
+//  or to cleanly implement a container, etc - when you do want to totally order floats,
+//   there's nothing you can do about it, and you have to hack your way around them.
 //
-// Leave >, >=, <, <=, == and != alone for all primitives.
-// DO NOT IMPLEMENT THEM FOR STRINGS or anything else automatically.
+// THUS:
 //
-// Implement <>, ===, !== for EVERYTHING automatically,
-//  - strings not lexicographic,
-//  - floating point numbers not necessarily increasing,
-//  - negative zero perhaps != positive zero,
-//  + but no x!=x self-inequality nonsense
-//  + and a consistent total order.
+//  3. We need to provide a third set of operators, <> and !<>,
+//      to allow the user to explicity request total order/equality for all types.
 //
-// Or perhaps to reduce confusion further,
-//  use >< instead of === and !== to make things
-//   even more explicit.
+// ----------------------------------------------------------------
 //
-// --------------------------------------------
-// Again same thing, had some more notes:
-// --------------------------------------------
+// OPTION C:
 //
-// IDEA:
-// Different ideas === different symbols.
+//  Same as B, except we ditch [2] in favor of a warning system -
+//   whenever ==, !=, <, <=, >, >= are used with a floating point type,
+//    (probably in template code only), a warning is raised,
+//     and there is some way to suppress it locally.
 //
-// Partial equality & comparison (classical).
-//  Meant for use for classical c-style coding.
-//   Only available for primitives.
+// ----------------------------------------------------------------
 //
-//  >, >=, <, <=, ==, !=
+// Tried [A] on a branch: total-eq-neq-alla-js-strict-eq-neq
 //
-// Total equality & comparison (correct).
-//  Meant for use with collection keys.
-//   Automatically implemented for all types.
+// Currently investigating options [B] and [C].
 //
-//  Perhaps:        Or:
-//
-//  <=>             <>              total-order-difference
-//  ===             !<>             total-order-equal
-//  !==             !!<>            is-total-order-different
-//
+fn bitrepr(v: <T>) case (T.is::floating_point)
+{
+    mut bitrepr: (T -> f32 ? u32
+                : T -> f64 ? u64
+                : assert(false));
+
+    pragma emit(\`
+        union { decltype(\`v\`) f; decltype(\`bitrepr\`) u; }
+            p { \`v\` };
+
+        return \`bitrepr\` = p.u;
+    \`);
+
+    return bitrepr;
+}
+
 infix fn <> (a: <T>, b: T)
-// case (T.is::floating_point)
-// {
-//     return a == a ? b == b ? a < b ? -1 : a > b ? +1 : 0
-//                            : +1
-//                   : b == b ? -1
-//                            :  0;
-// }
-case (T.is::primitive) = a < b ? -1 : a > b ? +1 : 0;
+case (T.is::primitive)
+{
+    if (T.is::floating_point)
+        return a.bitrepr <> b.bitrepr;
+
+    return a < b ? -1 : a > b ? +1 : 0;
+}
 case (T -> _[..]) {
     mut cmp = a.len <> b.len;
 
@@ -788,6 +815,8 @@ default {
 
     return 0;
 }
+
+infix fn !<> (a: <T>, b: T) !(a <> b);
 
 infix fn == (a: <T>, b: T)
     case (T.is::primitive): bool __native;

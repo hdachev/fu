@@ -33,16 +33,13 @@ inline fn xorshift64(ref x: u64, value: u64) {
 }
 
 fn hash <Item>(hasher: DefaultHasher, key: <Key>)
-case (Key.is::floating_point): u64
-{
-    "The problem with floating point stuff is the key equality later."
-    "If you get a nan in there you will never be able to recover your item."
-    "We need strict equalities or smth to deal with nans cleanly."
-}
 case (Key.is::primitive)
 {
-    mut x: u64
-    x.xorshift64(key.u64)
+    if (Key.is::floating_point)
+        return hasher.hash(key.bitrepr)
+
+    mut x: u64              // TODO PARTIAL COMPARISON
+    x.xorshift64(key.u64)   // It'd be nice if this didn't compile for floats
     return x
 }
 case (Key -> Item[..] && Item.is::primitive)
@@ -157,8 +154,8 @@ inline fn route(
 
             do {
                 ref data_entry  = map[:data_pos]
-                if (data_entry.key == key)
-                    return found(
+                if (data_entry.key !<> key)     // TODO PARTIAL COMPARISON
+                    return found(               // It'd be nice if a `==` here didn't compile for floats
                         ?: i,
                         ?: data_pos,
                         ?: index_entry,

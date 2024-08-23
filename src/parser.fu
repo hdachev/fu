@@ -67,9 +67,9 @@ fn setupOperators()
     binop([ "^" ]); // We're doing the rust thing her]e.
     binop([ "|" ]);
     binop([ "~" ]); // concat operator - same prec as in lua, as weak as possible
-    binop([ "<=>", "<>" ]);
+    binop([ "<>", "!<>" ]);
     binop([ "=>", "->" ]); // see c# as, is and js in, instanceof
-    binop([ "<", "<=", ">", ">=", "<=>" ]);
+    binop([ "<", "<=", ">", ">=" ]);
     binop([ "==", "!=" ]);
     binop([ "&&" ]);
     binop([ "||" ]);

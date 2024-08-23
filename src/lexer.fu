@@ -10,7 +10,6 @@ let MBOPS =
     "++", "--",
     "<<", ">>",
     "==", "!=", "<=", ">=",
-    "<=>", "<>",
     "=>", "->", "|>", "<|",
     "??", "?:",
     "..", "...", "::",
@@ -27,6 +26,9 @@ let MBOPS =
     // Zig-style saturating arithmetic.
     // "+|",  "-|",
     // "+|=", "-|=",
+
+    // Experimental - total order and total equality.
+    "<>", "!<>",
 ];
 
 let MBOPS_maxLen = 4; // [..]
