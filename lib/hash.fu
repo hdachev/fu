@@ -33,6 +33,12 @@ inline fn xorshift64(ref x: u64, value: u64) {
 }
 
 fn hash <Item>(hasher: DefaultHasher, key: <Key>)
+case (Key.is::floating_point): u64
+{
+    "The problem with floating point stuff is the key equality later."
+    "If you get a nan in there you will never be able to recover your item."
+    "We need strict equalities or smth to deal with nans cleanly."
+}
 case (Key.is::primitive)
 {
     mut x: u64

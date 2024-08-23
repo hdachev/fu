@@ -674,9 +674,87 @@ fn replace(str: <T>[], all: T or T[..], with: T or T[..] or [])
 }
 
 
+// Sketch - so we can use floating point numbers as keys to a hashmap -
 //
-
+// infix fn === (a: <T>, b: T)
+//     case (T.is::primitive && !T.is::floating_point): bool __native;
+//     default: bool = !(a <> b);
+//
+// infix fn !== (a: <T>, b: T)
+//     case (T.is::primitive && !T.is::floating_point): bool __native;
+//     default: bool = !!(a <> b);
+//
+// We could perhaps combine these with a warning
+//  on regular equality and comparison operators for floats,
+//   to perhaps be opted out of on a file-by-file basis?
+//
+// Or within a scope? A named warning (or effect)? acknowledge floating_point_equality;
+//  The main problem with floating point comparion and equality
+//   is that it just doesn't just follow the rules,
+//    and thus it breaks generic programming.
+//
+// Alternatively, we can have a gnarlier set of operators for partial equality,
+//  like *== *!=, *>=, *>, *<, *<=. To make this liveable,
+//   we should track float non-nanness and float finiteness,
+//    and allow the usual operators where they'd be fine.
+//
+//  COUNTER:    This would help with nans, but what about signed zeroes?
+//               I always forget -0, but it can also bring about exotic surprises.
+//
+// Rust solves these via checked generics -
+//  all comparisons are simply >, < etc,
+//   but trait bounds ensure you dont get partial equality if you need total equality
+//    (e.g. hashmap key equality check).
+//
+// --------------------------------------------
+// PERHAPS A BETTER AND LESS ALIENTATING DESIGN
+// --------------------------------------------
+//
+// Leave >, >=, <, <=, == and != alone for all primitives.
+// DO NOT IMPLEMENT THEM FOR STRINGS or anything else automatically.
+//
+// Implement <>, ===, !== for EVERYTHING automatically,
+//  - strings not lexicographic,
+//  - floating point numbers not necessarily increasing,
+//  - negative zero perhaps != positive zero,
+//  + but no x!=x self-inequality nonsense
+//  + and a consistent total order.
+//
+// Or perhaps to reduce confusion further,
+//  use >< instead of === and !== to make things
+//   even more explicit.
+//
+// --------------------------------------------
+// Again same thing, had some more notes:
+// --------------------------------------------
+//
+// IDEA:
+// Different ideas === different symbols.
+//
+// Partial equality & comparison (classical).
+//  Meant for use for classical c-style coding.
+//   Only available for primitives.
+//
+//  >, >=, <, <=, ==, !=
+//
+// Total equality & comparison (correct).
+//  Meant for use with collection keys.
+//   Automatically implemented for all types.
+//
+//  Perhaps:        Or:
+//
+//  <=>             <>              total-order-difference
+//  ===             !<>             total-order-equal
+//  !==             !!<>            is-total-order-different
+//
 infix fn <> (a: <T>, b: T)
+// case (T.is::floating_point)
+// {
+//     return a == a ? b == b ? a < b ? -1 : a > b ? +1 : 0
+//                            : +1
+//                   : b == b ? -1
+//                            :  0;
+// }
 case (T.is::primitive) = a < b ? -1 : a > b ? +1 : 0;
 case (T -> _[..]) {
     mut cmp = a.len <> b.len;
