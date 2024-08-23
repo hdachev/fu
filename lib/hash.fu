@@ -8,7 +8,7 @@ struct IndexEntry {
 
 struct DataEntry(type Key, type Value) {
     key:            Key
-    value?:         Value
+    value:          Value
     hash:           int
     collision:      DataPos
 }
@@ -319,7 +319,8 @@ fn ref(
         key: Key,
         hash!: int,
 
-    visit)
+    visit,
+    init!?)
 {
     mut ref data_entry =
     {
@@ -341,7 +342,8 @@ fn ref(
 
                     type DataEntry      = DataEntry(:Key, :Value)
                     map.data           ~= DataEntry(:key, :hash,
-                        collision: index_entry.data_pos)
+                        collision:  index_entry.data_pos,
+                        value:      init())
 
                     let data_pos        = DataPos(map.data.len)
                     index_entry         = IndexEntry(:hash, :data_pos)
@@ -492,8 +494,24 @@ pub inline fn each(ref map: Map(_, _, _), visit)
 {
     for (mut i = 0; i < map.data.len; i++) {
         ref entry   = map.data[i]
-        let key     = entry.key
-        visit(entry.value, ?:key)
+        let key     = entry.key;
+
+        :BRK_TO_REMOVE
+        {
+            visit(entry.value, ?:key, remove?: || { break :BRK_TO_REMOVE; },
+                                      data_pos?: DataPos(i + 1))
+            continue;
+        }
+
+        ///////////////////////////////
+        assert(false) // NOT TESTED! //
+        ///////////////////////////////
+
+        i--     // move back a step,
+                //  remove below will swap the last data item
+                //   into this slot
+
+        map.remove(:key)
     }
 }
 
