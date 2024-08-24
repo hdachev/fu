@@ -4257,6 +4257,27 @@ pub extern fn runTests()
         }
     `);
 
+    TODO_args(currently: "BUG nested(): bad locid 17:28+6", `
+        struct Layout { atlas_width: u16; atlas_height: u16 }
+        enum Size: u8 { x2 = 1; x4 = 2; x8 = 3; x16 = 4; x32 = 5; x64 = 6 }
+
+        fn Layout(
+            slot_size:      Size,
+            atlas_width   = Size(slot_size.u8 + 2),
+            atlas_height  = atlas_width)
+        {
+            shadow mut slot_size    =  1 << slot_size.min("x32").u16;
+            shadow mut atlas_width  = (1 << atlas_width.u16)    .max(slot_size * 2);
+            shadow mut atlas_height = (1 << atlas_height.u16)   .max(slot_size * 2);
+
+            return Layout(:atlas_width, :atlas_height);
+        }
+
+        let ATLAS_LAYOUT = Layout(slot_size: "x16");
+
+        fn main() ATLAS_LAYOUT.atlas_width == 32 ? 0 : 1;
+    `);
+
     // /Default arguments.
 
 
