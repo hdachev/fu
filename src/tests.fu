@@ -15958,7 +15958,7 @@ pub extern fn runTests()
         }
     `]);
 
-    TODO_pub(currently: "Hello is not defined here 2:23+5", [`
+    ZERO([`
         struct Hey(type T) { world: T };
     `,`
         type Hello = _0::Hey(int);
