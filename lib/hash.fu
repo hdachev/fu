@@ -1,5 +1,5 @@
 
-primitive DataPos:  int
+pub primitive DataPos:  int
 
 struct IndexEntry {
     hash:           int
@@ -88,13 +88,26 @@ inline fn hash_mask(index: IndexEntry[])
 inline fn max_probes(index: IndexEntry[])
     index.len && bit::ctz(index.len.uint).int
 
-inline fn [](ref .data, data_pos: DataPos)
-    data[data_pos.int - 1]
-
 inline fn hash(map: Map(:<Key>, _, _), key: Key) {
     mut hash = map.hasher.hash(key).digest(int)
     return hash < 0 ? ~hash : hash
 }
+
+
+//
+
+inline fn [](ref .data, data_pos: DataPos)
+    data[data_pos.int - 1]
+
+pub inline fn key(.data, data_pos: DataPos) // no ref here, dont want key mutation
+    data[data_pos.int - 1].key
+
+pub inline fn pair(.data, data_pos: DataPos) // again, no ref
+    data[data_pos.int - 1]                   // Wouldn't it be nice if we could WRITE-MASK the key here?
+
+pub inline fn value(ref .data, data_pos: DataPos)
+    data[data_pos.int - 1].value
+
 
 
 //
@@ -363,7 +376,7 @@ fn ref(
         }
     }
 
-    return visit(:data_entry.value)
+    return visit(data_entry.value)
 }
 
 
@@ -506,21 +519,18 @@ pub inline fn each(ref map: Map(_, _, _), visit)
             continue;
         }
 
-        ///////////////////////////////
-        assert(false) // NOT TESTED! //
-        ///////////////////////////////
-
         i--     // move back a step,
                 //  remove below will swap the last data item
                 //   into this slot
 
-        map.remove(:key)
+        // Note we're avoiding the hashing here -
+        map.remove(:key, :entry.hash)
     }
 }
 
-pub inline fn ref(ref map: Map(:<Key>, _, _), key: Key, visit = |ref value| value)
+pub inline fn ref(ref map: Map(:<Key>, _, _), key: Key, visit = |ref value| value, init!?)
 {
-    return map.ref(:key, hash: map.hash(key), fn visit);
+    return map.ref(:key, hash: map.hash(key), :fn visit, :fn init);
 }
 
 pub inline fn if_ref(ref map: Map(:<Key>, _, _), key: Key, visit, else!?)
