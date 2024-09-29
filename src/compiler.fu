@@ -392,7 +392,7 @@ pub fn compile_and_build(
 
         let ORIGIN = process::APPLE
             ? "@loader_path"
-            : "$$ORIGIN";
+            : "$ORIGIN";
 
         if (plugin)
             return build(

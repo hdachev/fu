@@ -162,8 +162,19 @@ fn exec(cmd: string, ref stdout: string)
     mut status: spawn::ExitStatus = 0;
     mut err: ::Errno;
 
+    // TODO FIX remove this nonsense -
+    //  this is currently used for pkg-config queries,
+    //   should run those separately instead of scripting them here
+    //
     if (cmd.has("$("))
+    {
+        // We want "-rpath $ORIGIN" to pass through unchanged.
+        shadow let cmd =
+            cmd.replace(all: "$", with: "\\$")
+               .replace(all: "\\$(", with: "$(");
+
         err = ::exec(cmd, :status, stdout);
+    }
     else
         err = ::spawn(cmd.split(' '), :status, :stdout, stderr: stdout);
 
