@@ -1256,6 +1256,8 @@ fn wakeUp_forChild(
 
         auto add = `initial` ? EPOLL_CTL_ADD : EPOLL_CTL_MOD;
 
+        (void) `pid`;
+
         if (`pid_fd`) {
             ev.data.u64 = `user_data_pid`;
             ev.events = EPOLLONESHOT | EPOLLIN;
