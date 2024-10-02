@@ -143,8 +143,9 @@ namespace
             {
                 static int unique_id = rand();
 
-                char tempname[PATH_MAX];
-                snprintf(tempname, PATH_MAX, "%s%i", ld.filename, unique_id++);
+                auto tempname_capa = strlen(ld.filename) + 10/*strlen("2147483647")*/ + 1/*nullterm*/;
+                char* tempname     = (char*) alloca(tempname_capa);
+                snprintf(tempname, tempname_capa, "%s%i", ld.filename, unique_id++);
 
                 // Linux can rebel, ignores dlclose
                 //  and then returns the same handle on dlopen.
@@ -196,7 +197,11 @@ namespace
         }
 
         if (FU_VERBOSE)
-            printf("HOTSWAP Could not reload `%s`\n", ld.filename);
+        {
+            const char* e = dlerror();
+
+            printf("HOTSWAP Could not reload `%s`: `%s`\n", ld.filename, e ? e : "[null dlerror]");
+        }
 
         return false;
     }
