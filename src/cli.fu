@@ -276,17 +276,17 @@ USAGE   `self` [options] name.fu
 OPTIONS -b, --bin FILE
         Emit a binary,
             -b does not take a FILE argument,
-            and outouts the binary at ./name
+            and outputs the binary at ./name
 
         -c, --cpp DIR
         Emit intermedite c++ source code,
-            short option does not take a DIR argument,
-            outputting a .cpp file next to each .fu file.
+            -c does not take a DIR argument,
+            and outputs a .cpp file next to each .fu file.
 
         -o, --obj DIR
         Emit object files,
-            short option does not take a DIR argument,
-            outputting a .o file next to each .fu file.
+            -o does not take a DIR argument,
+            and outputs an .o file next to each .fu file.
 
         --debug
         --release
