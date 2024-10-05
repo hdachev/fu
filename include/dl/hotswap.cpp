@@ -27,6 +27,9 @@ namespace
     bool FU_HOTSWAP_MANUAL_MODE = false;
     bool FU_HOTSWAP_SIGNALLED   = false;
 
+    fu::OnHotswap FU_HOTSWAP_CB = nullptr;
+    void* FU_HOTSWAP_CB_UDATA   = nullptr;
+
 
     //
 
@@ -282,8 +285,16 @@ namespace
             if (FU_VERBOSE)
                 printf("HOTSWAP Received SIGUSR1, reloading.\n");
 
+            // TODO FIX musn't do any of this here, this is a signal handler.
+            //  Manual mode is fine (except for the print).
+            //
             doReload();
         }
+
+        // TODO FIX same here, this is totally UB.
+        //
+        if (FU_HOTSWAP_CB)
+            FU_HOTSWAP_CB(FU_HOTSWAP_CB_UDATA);
     }
 
     bool attach_onSIGUSR1_reloadLibs()
@@ -405,6 +416,22 @@ namespace
 /*export*/ void fu::hotswap_here()
 {
     onManualReload();
+}
+
+
+// TODO FIX proper impl,
+//  currently only need these for glfwPostEmptyEvent and the like.
+
+/*export*/ void fu::hotswap_callback_add(fu::OnHotswap callback, void* udata)
+{
+    FU_HOTSWAP_CB       = callback;
+    FU_HOTSWAP_CB_UDATA = udata;
+}
+
+/*export*/ void fu::hotswap_callback_remove(fu::OnHotswap, void*)
+{
+    FU_HOTSWAP_CB       = nullptr;
+    FU_HOTSWAP_CB_UDATA = nullptr;
 }
 
 #endif
