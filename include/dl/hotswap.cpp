@@ -168,6 +168,38 @@ namespace
             OpenWithoutRenaming:
             new_handle = dlopen(ld.filename, RTLD_NOW);
 
+            #ifdef __linux__
+            if (!new_handle && !ld.abs_path)
+            {
+                // TODO FIX WORKAROUND on linux I'm failing to make dlopen respect RPATH / RUNPATH -
+                //  This does the same thing, opens /abs-dirname-of-exe/hotswap. Perhaps it's related to the filename,
+                //   here it's just `hotswap` instead of `hotswap.so`, needs a little research.
+                //
+                size_t N        = strlen(ld.filename) + 1/*nullterm*/;
+                size_t bufsiz   = 16 * 1024;
+
+                if (bufsiz < 2 * N)
+                    bufsiz = 2 * N;
+
+                char* buf       = (char*) alloca(bufsiz);
+                size_t exe      = (size_t) readlink("/proc/self/exe", buf, bufsiz);
+
+                if (exe > 0 && exe < bufsiz - N)
+                {
+                    for (size_t i = exe; i --> 0; )
+                    {
+                        if (buf[i] == '/')
+                        {
+                            memcpy(buf + i + 1, ld.filename, N);
+                            new_handle = dlopen(buf, RTLD_NOW);
+
+                            goto Done;
+                        }
+                    }
+                }
+            }
+            #endif
+
             Done:;
         }
 
