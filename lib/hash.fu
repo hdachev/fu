@@ -79,6 +79,12 @@ pub struct Map(type Key, type Value, type Hasher = DefaultHasher) {
     hasher:         Hasher
 }
 
+pub inline fn clear(ref map: Map(_, _, _))
+{
+    map.index.clear();
+    map.data.clear();
+}
+
 
 //
 
