@@ -143,9 +143,9 @@ namespace
             {
                 static int unique_id = rand();
 
-                auto tempname_capa = strlen(ld.filename) + 10/*strlen("2147483647")*/ + 1/*nullterm*/;
+                auto tempname_capa = strlen(ld.abs_path) + 10/*strlen("2147483647")*/ + 1/*nullterm*/;
                 char* tempname     = (char*) alloca(tempname_capa);
-                snprintf(tempname, tempname_capa, "%s%i", ld.filename, unique_id++);
+                snprintf(tempname, tempname_capa, "%s%i", ld.abs_path, unique_id++);
 
                 // Linux can rebel, ignores dlclose
                 //  and then returns the same handle on dlopen.
