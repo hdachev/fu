@@ -22,8 +22,7 @@ fn main()
     mut rebuild_now: f64;
     mut rebuild_pid: spawn::PID;
 
-    mut fswatch_src: spawn::PID;
-    mut fswatch_lib: spawn::PID;
+    mut fswatch: ev::Loop::WatchID;
 
     fn spawn(argv: string[]): spawn::PID
     {
@@ -39,10 +38,43 @@ fn main()
         return pid;
     }
 
-    fn respawn_watches()
+    fn respawn_fswatch()
     {
-        fswatch_src ||= spawn([ "fswatch", "--one-event", "-e", ".*", "-i", "\\.fu$", "./src" ]);
-        fswatch_lib ||= spawn([ "fswatch", "--one-event", "-e", ".*", "-i", "\\.fu$", "./lib" ]);
+        // TODO instead of this, update the watch with the new file list,
+        //  should give the monitor a chance to do something smart
+        //   instead of re-creating the watch from scratch,
+        //    which is what we'd have if we broke out the loop on every event.
+        //
+        if (fswatch)
+            return;
+
+        mut files: string[];
+
+        fn collect(dir: string)
+        {
+            fs::readdir(dir): |path, type, recurse|
+            {
+                if (path.ends(with: ".fu"))
+                    files ~= path;
+                else if (type == fs::DT_DIR || type == fs::DT_UNKNOWN)
+                    recurse();
+            }
+        }
+
+        collect("./src");
+        collect("./lib");
+
+        if !(files)
+        {
+            println("  WATCH Found no source files to watch.");
+        }
+        else
+        {
+            fswatch = ev::Loop::watch_files(files, else: |err|
+            {
+                println("  WATCH err(" err ") files:\n\t" files.join(",\n\t"));
+            });
+        }
     }
 
     fn respawn_rebuild()
@@ -71,29 +103,32 @@ fn main()
 
         loop_start: ||
         {
-            respawn_watches();
+            respawn_fswatch();
+            respawn_rebuild();
+        },
+
+        watch_event: |watch_id!wid|
+        {
+            // println("REBUILD A watch has triggered wid(" ~ wid ~ ").");
+
+            assert(wid == fswatch);
+
+            respawn_fswatch();
             respawn_rebuild();
         },
 
         child_closed: |pid, lax signo, lax code|
         {
             // println("  CHILD EXIT pid(" pid ") signo(" signo ") code(" code ")");
-            if (pid == fswatch_src || pid == fswatch_lib)
+
+            assert(pid == rebuild_pid);
+
+            // println("REBUILD Done.");
+            rebuild_pid = 0;
+            if (dirty)
             {
-                // println("REBUILD A watch has triggered pid(" ~ pid ~ ").");
-                (pid == fswatch_src ? fswatch_src : fswatch_lib) = 0;
-                respawn_watches();
+                // println("REBUILD Re-run because dirty.");
                 respawn_rebuild();
-            }
-            else if (pid == rebuild_pid)
-            {
-                // println("REBUILD Done.");
-                rebuild_pid = 0;
-                if (dirty)
-                {
-                    // println("REBUILD Re-run because dirty.");
-                    respawn_rebuild();
-                }
             }
         },
     );
