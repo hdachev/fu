@@ -470,7 +470,7 @@ pub fn compile_and_build(
 
         if (!TODO_REMOVE_bootstrap && watch_list)
         {
-            mut fswatch_pid:    spawn::PID;
+            mut fswatch_wid:    ev::Loop::WatchID;
             mut run_pid:        spawn::PID;
 
             fn spawn(argv: string[]): spawn::PID
@@ -520,75 +520,80 @@ pub fn compile_and_build(
                 return some;
             }
 
-            fn watch_or_rebuild_immediately()
-            {
-                // TODO FIX - instead of this fswatch child process,
-                //  watch everything in-process, which means the watch_needsRebuild check below
-                //   will actually work as intended and crosscheck
-                //    AFTER all watches are already set up and receiving events.
-                //
-                fswatch_pid ||= spawn(
-                    [ "fswatch", "--one-event" ] ~ watch_list);
-
-                // Restart immediately if changed in the meantime.
-                if (watch_needsRebuild)
-                    continue :REBUILD_LOOP;
-            }
-
             // TODO just ev::Loop, bootstrap currently can't handle it
             ev::Loop::Loop(
 
                 loop_start: ||
                 {
-                    watch_or_rebuild_immediately();
+                    // Once -
+                    assert(!fswatch_wid);
+                    fswatch_wid = ev::Loop::watch_files(watch_list, else: |err|
+                    {
+                        println("  WATCH err(" err ") watch_list:\n\t" watch_list.join(",\n\t"));
+                    });
 
+                    // Restart immediately if some change occurred
+                    //  while we were spinning up the watches,
+                    //   and before we got to spawn the executable.
+                    if (watch_needsRebuild())
+                        continue :REBUILD_LOOP;
+
+                    //
                     if (runmode && ret.executable)
                         run_pid = spawn([ ret.executable ]);
                 },
 
-                child_closed: |pid, lax signo, lax code|
+                watch_event: |watch_id|
                 {
-                    if (pid == fswatch_pid)
+                    assert(watch_id == fswatch_wid);
+
+                    if (!watch_needsRebuild())
                     {
-                        fswatch_pid = 0;
-
-                        // Invalidate changed files only.
-                        watch_needsRebuild();
-
+                        // TODO use whatever information we can get from
+                        //  the file watch to make this test cheaper,
+                        //   these tend to fire unpredictably,
                         //
-                        if (HOTSWAP && run_pid)
+                        println("  WATCH Spurious event, no change.");
+
+                        continue;
+                    }
+
+                    // Invalidate changed files only.
+                    if (HOTSWAP && run_pid)
+                    {
+                        let ok = recompile(plugin: true);
+                        if (ok)
                         {
-                            let ok = recompile(plugin: true);
+                            println("HOTSWAP Signalling pid(" run_pid ") ...");
 
-                            watch_or_rebuild_immediately();
-
-                            if (ok)
+                            // Send the live-reload signal.
+                            let err = signal::kill(pid: run_pid, signal::SIGUSR1)
+                            if (err)
                             {
-                                // Send the live-reload signal.
-                                let err = signal::kill(pid: run_pid, signal::SIGUSR1)
-                                if (err)
-                                {
-                                    println("HOTSWAP Could not signal pid(" run_pid ") err(" err ")");
-                                }
-                                else
-                                {
-                                    // Already running, compiled OK, signalled OK -
-                                    //  dont shut down current run.
-                                    continue;
-                                }
+                                println("HOTSWAP Could not signal pid(" run_pid ") err(" err ")");
                             }
                             else
                             {
-                                // Already running, failed to compile latest changes -
+                                // Already running, compiled OK, signalled OK -
                                 //  dont shut down current run.
                                 continue;
                             }
                         }
-
-                        //
-                        continue :REBUILD_LOOP;
+                        else
+                        {
+                            // Already running, failed to compile latest changes -
+                            //  dont shut down current run.
+                            continue;
+                        }
                     }
 
+                    //
+                    continue :REBUILD_LOOP;
+                },
+
+                child_closed: |pid, lax signo, lax code|
+                {
+                    assert(pid == run_pid);
                     if (pid == run_pid)
                         run_pid = 0;
                 });

@@ -118,3 +118,35 @@ pub fn read_exhaustive(fd: FD, ref buffer: byte[], ref bytes_read!total_bytes_re
         }
     }
 }
+
+pub fn read_discard(fd: FD, ref bytes_discarded!: int): Errno
+{
+    pragma include(
+        "<unistd.h>",           // read
+        "<errno.h>");
+
+    // TODO FIX there must be a way to do this without any of this nonsense
+    mut err: Errno;
+    pragma input(
+    `
+        char  temp_buffer[64 * 1024];
+        char* out_data = temp_buffer;
+        fu::i out_capa = (fu::i) sizeof(temp_buffer);
+
+        for (;;) {
+            auto bytes_read = (fu::i) read(`fd`, out_data, (size_t) out_capa);
+            if (bytes_read < 0) {
+                `err` = errno;
+                break;
+            }
+
+            auto maybe_more = bytes_read == out_capa;
+            `bytes_discarded` += bytes_read;
+
+            if (!maybe_more)
+                break;
+        }
+    `);
+
+    return err;
+}

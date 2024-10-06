@@ -29,7 +29,7 @@ enum Kind: u8 // Must fit within 4 bits, so capa = 16.
     ipv4_server
     ipv4_server_socket
     blocked_signals
-    // ...
+    watched_files
 
     child_process_pidfd
     child_process_stdin
@@ -82,6 +82,8 @@ using flags SocketState: u8
 using flags ServerOptions: u8 {
     WantsWriteBeforeRead
 }
+
+pub primitive WatchID: int;
 
 
 //
@@ -270,6 +272,167 @@ pub fn spawn(
     return child.pid;
 }
 
+pub fn watch_files(
+    implicit ref Loop_with_watch_handlers!event_loop: Loop,
+    mut files: string[],
+    else): WatchID
+{
+    pragma emit_top(`
+    #ifdef __linux__
+        #include <sys/inotify.h>
+        #include <stdio.h>          // perror
+    #else
+        #include <fcntl.h>          // open + O_EVTONLY
+    #endif //
+    `);
+
+    mut watch_id: WatchID = -1;
+    mut err: Errno;
+
+    // TODO emit single kqueue call at the end
+    // lax mut kevents_buffer: u64[];
+
+    if (process::LINUX)
+    {
+        pragma output(`
+            #ifdef __linux__
+            `watch_id` = inotify_init1(IN_NONBLOCK | IN_CLOEXEC);
+            if (`watch_id` == -1)
+                `err `= errno;
+            #endif //
+        `);
+
+        if (watch_id < 0) {
+            else(:err);
+            return 0;
+        }
+    }
+    else
+    {
+        watch_id = WatchID(event_loop.metas.alloc());
+
+        // TODO see comment re: kevents_buffer above
+        // mut sizeof_kevent: u64;
+        // pragma emit(`
+        //     `sizeof_kevent` = sizeof(struct kevent);
+        // `);
+        //
+        // kevents_buffer.grow_junk((sizeof_kevent + 7) / 8);
+    }
+
+    let user_data = ksfd_pack(
+        Kind.watched_files, watch_id.int.FD);
+
+    for (mut i = 0; i < files.len; i++)
+    {
+        ref file = files[i];
+        if (!file.ends(with: '\0'))
+            file ~= '\0';
+
+        if (process::LINUX)
+        {
+            pragma output(
+            `
+            #ifdef __linux__
+                if (inotify_add_watch(`watch_id`, `file`.data(),
+                    // Watched file modified (or file within watched directory modified?) -
+                    IN_MODIFY
+                        // Watched file/directory itself deleted/moved -
+                        | IN_DELETE_SELF | IN_MOVE_SELF
+                        // File/directory created/deleted/moved in/from watched directory -
+                        | IN_CREATE | IN_DELETE | IN_MOVED_FROM | IN_MOVED_TO
+                        // ... to match kqueue behavior below, ignore attribute changes for now (TODO option?)
+                        // | IN_ATTRIB
+                ) < 0) {
+                    `err` = errno;
+                }
+            #endif //
+            `);
+        }
+        else
+        {
+            // Apples and BSDs.
+            mut event_fd: FD;
+            pragma output(
+            `
+            #ifndef __linux__
+                `event_fd` = open(`file`.data(), O_EVTONLY);
+
+                // TODO handle errors -
+                //  not doing it properly now because it's non-trivial -
+                //   we have to close all fds we have already opened to roll this back in isolation,
+                //    which will require using the metas somehow or something
+                //     to chain these into a bitset or some such.
+                //
+                if (`event_fd` <= 0) {
+                    `err` = errno;
+                }
+                else {
+                    // TODO see comment re: kevents_buffer above
+                    //  Currently going for the simplest thing,
+                    //   an individual call for each file, real stupid.
+                    //
+                    struct kevent kevent_data;
+
+                    EV_SET(&kevent_data, `event_fd`,
+                        EVFILT_VNODE, EV_ADD | EV_CLEAR,
+                        NOTE_DELETE | NOTE_WRITE | NOTE_EXTEND
+                                    | NOTE_LINK | NOTE_RENAME | NOTE_REVOKE
+
+                        // TODO FIX silencing NOTE_ATTRIB -
+                        //  it's spammy on OSX, often arrives a second after a NOTE_WRITE.
+                        //   Currently simply suppressing, TODO filter properly.
+                        //
+                        // | NOTE_ATTRIB
+
+                        , 0, (void*) `user_data`);
+
+                    kevent(`event_loop.loop_fd`, &kevent_data, 1, nullptr, 0, nullptr);
+                }
+            #endif //
+            `);
+
+            // TODO see comment re: kevents_buffer above -
+            //  when batching and properly error handling things,
+            //   we'd have to keep track of all these fds together -
+            //    we'll only add them here when everything does work out in the end
+            //     and no rollback is necessary.
+            //
+            if (event_fd > 0)
+                event_loop.must_close.add(event_fd.i32);
+        }
+    }
+
+    if (process::LINUX)
+    {
+        if (!err)
+        {
+            pragma output(
+            `
+            #ifdef __linux__
+                struct epoll_event ev {};
+                ev.data.u64 = `user_data`;
+                ev.events = EPOLLIN;
+                if (epoll_ctl(`event_loop.loop_fd`, EPOLL_CTL_ADD, `watch_id`, &ev))
+                    `err` = errno;
+            #endif //
+            `);
+        }
+
+        if (err)
+        {
+            dbg::ln(" EVLOOP watch_files epoll_ctl err(" err ")");
+
+            watch_id.int.FD.close();
+            return 0;
+        }
+
+        event_loop.must_close.add(watch_id.i32);
+    }
+
+    return watch_id;
+}
+
 
 //
 
@@ -282,13 +445,16 @@ pub nothrow fn Loop(
     socket_event!?:     <OnSocketEvent>,
 
     child_event!?:      <OnChildEvent>,
-    child_closed!?:     <OnChildClosed>)
+    child_closed!?:     <OnChildClosed>,
+
+    watch_event!?:      <OnWatchEvent>)
 {
     include_epollOrKqueue();
 
     // Capabilities.
     let WITH_SOCKETS    = !(OnSocketEvent -> []) || !(OnSocketAccepted -> []) || !(OnSocketClosed -> []);
     let WITH_CHILDREN   = !(OnChildEvent -> []) || !(OnChildClosed -> []);
+    let WITH_WATCHES    = !(OnWatchEvent -> []);
 
     // Init.
     mut loop_fd: FD;
@@ -317,6 +483,7 @@ pub nothrow fn Loop(
 
     lax implicit ref Loop_with_socket_handlers  = WITH_SOCKETS  && event_loop;
     lax implicit ref Loop_with_child_handlers   = WITH_CHILDREN && event_loop;
+    lax implicit ref Loop_with_watch_handlers   = WITH_WATCHES  && event_loop;
 
     event_loop.must_close.add(loop_fd.int);
     defer
@@ -918,6 +1085,42 @@ pub nothrow fn Loop(
                 }
 
                 continue; // /Kind.child_process_*
+            }
+
+
+            // File watches.
+
+            if (WITH_WATCHES && kind == Kind.watched_files)
+            {
+                let watch_id = event_id.int.WatchID;
+
+                // KQueue debug -
+                // pragma include("<stdio.h>");
+                // pragma output(`
+                //     #ifdef NOTE_ATTRIB
+                //     printf("evLOOP WATCH(%d) fflags(%d) ev.fflags(%s%s%s%s%s%s%s)\\n",
+                //         `watch_id`,
+                //         ev.fflags,
+                //         (ev.fflags & NOTE_ATTRIB ? "NOTE_ATTRIB, " : ""),
+                //         (ev.fflags & NOTE_DELETE ? "NOTE_DELETE, " : ""),
+                //         (ev.fflags & NOTE_EXTEND ? "NOTE_EXTEND, " : ""),
+                //         (ev.fflags & NOTE_LINK ? "NOTE_LINK, " : ""),
+                //         (ev.fflags & NOTE_RENAME ? "NOTE_RENAME, " : ""),
+                //         (ev.fflags & NOTE_REVOKE ? "NOTE_REVOKE, " : ""),
+                //         (ev.fflags & NOTE_WRITE ? "NOTE_WRITE, " : ""));
+                //     #endif //
+                // `);
+
+                // On linux we gotta drain the inotify FD.
+                if (process::LINUX)
+                {
+                    mut bytes_discarded = 0;
+                    watch_id.int.FD.read_discard(:bytes_discarded);
+                }
+
+                watch_event(:watch_id);
+
+                continue; // /Kind.watched_files
             }
 
 
