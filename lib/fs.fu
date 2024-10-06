@@ -175,6 +175,8 @@ pub fn readdir(mut path: string, yield): Errno
     if !(path.ends(with: '/')) path ~= '/';
     path ~= '\0';
 
+    shadow let path = path;
+
     // Open & close.
     mut err: Errno;
     pragma input(
@@ -242,7 +244,9 @@ pub fn readdir(mut path: string, yield): Errno
         if (name == "." || name == "..")
             continue;
 
-        yield(:name, ?:type);
+        lax shadow let path = path[.. path.len - 1] ~ name;
+
+        yield(?:name, ?:type, ?:path, recurse?: || readdir(path, fn yield));
     }
 
     //
