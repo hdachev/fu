@@ -1241,7 +1241,7 @@ inline bool operator==(fu::view<char> a, fu::view<char> b)
                                 #endif
 
 static const fu::str TODO_FIX_ignoredWarnings fu_INIT_PRIORITY(1004) = (((""_fu + "-Wno-float-conversion "_fu)
-    + "-Wno-unused-but-set-variable "_fu) + "-Wno-unknown-warning-option -Wno-maybe-uninitialized -Wno-stringop-overflow -Wno-array-bounds -Wno-sequence-point "_fu);
+    + "-Wno-unused-but-set-variable "_fu) + "-Wno-unknown-warning-option -Wno-maybe-uninitialized -Wno-stringop-overflow -Wno-array-bounds -Wno-sequence-point -Wno-error=dangling-reference "_fu);
 
 static const s_Module& GET_O38yHq8T(const s_ModuleSortHelper& _, fu::view<s_Module> modules)
 {
