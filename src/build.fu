@@ -45,7 +45,10 @@ let TODO_FIX_ignoredWarnings = ""
     //  sequence-points for assignments (RTL by standard), etc.
     //   Can't have false positives break builds.
     //
-    ~ "-Wno-maybe-uninitialized -Wno-stringop-overflow -Wno-array-bounds -Wno-sequence-point "
+    // TODO instead of silencing them,
+    //  we probably want to simply not treat them as hard errors.
+    //
+    ~ "-Wno-maybe-uninitialized -Wno-stringop-overflow -Wno-array-bounds -Wno-sequence-point -Wno-error=dangling-reference "
 
     ;
 
