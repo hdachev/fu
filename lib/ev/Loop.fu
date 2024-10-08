@@ -366,9 +366,16 @@ pub fn watch_files(
 
                     EV_SET(&kevent_data, `event_fd`,
                         EVFILT_VNODE, EV_ADD | EV_CLEAR,
-                        NOTE_DELETE | NOTE_WRITE | NOTE_EXTEND | NOTE_ATTRIB
-                                    | NOTE_LINK | NOTE_RENAME | NOTE_REVOKE,
-                        0, (void*) `user_data`);
+                        NOTE_DELETE | NOTE_WRITE | NOTE_EXTEND
+                                    | NOTE_LINK | NOTE_RENAME | NOTE_REVOKE
+
+                        // TODO FIX silencing NOTE_ATTRIB -
+                        //  it's spammy on OSX, often arrives a second after a NOTE_WRITE.
+                        //   Currently simply suppressing, TODO filter properly.
+                        //
+                        // | NOTE_ATTRIB
+
+                        , 0, (void*) `user_data`);
 
                     kevent(`event_loop.loop_fd`, &kevent_data, 1, nullptr, 0, nullptr);
                 }
@@ -1076,6 +1083,23 @@ pub nothrow fn Loop(
             if (WITH_WATCHES && kind == Kind.watched_files)
             {
                 let watch_id = event_id.int.WatchID;
+
+                // KQueue debug -
+                // pragma include("<stdio.h>");
+                // pragma output(`
+                //     #ifdef NOTE_ATTRIB
+                //     printf("evLOOP WATCH(%d) fflags(%d) ev.fflags(%s%s%s%s%s%s%s)\\n",
+                //         `watch_id`,
+                //         ev.fflags,
+                //         (ev.fflags & NOTE_ATTRIB ? "NOTE_ATTRIB, " : ""),
+                //         (ev.fflags & NOTE_DELETE ? "NOTE_DELETE, " : ""),
+                //         (ev.fflags & NOTE_EXTEND ? "NOTE_EXTEND, " : ""),
+                //         (ev.fflags & NOTE_LINK ? "NOTE_LINK, " : ""),
+                //         (ev.fflags & NOTE_RENAME ? "NOTE_RENAME, " : ""),
+                //         (ev.fflags & NOTE_REVOKE ? "NOTE_REVOKE, " : ""),
+                //         (ev.fflags & NOTE_WRITE ? "NOTE_WRITE, " : ""));
+                //     #endif //
+                // `);
 
                 // On linux we gotta drain the inotify FD.
                 if (process::LINUX)
