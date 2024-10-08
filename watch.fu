@@ -85,15 +85,15 @@ fn main()
         {
             if (abs(now - rebuild_now) > 0.125)
             {
-                // println("REBUILD Make dirty.");
+                println("REBUILD Make dirty, running for more than 125ms.");
                 dirty = true;
             }
 
-            // println("REBUILD Skip, already running.");
+            println("REBUILD Skip, just started.");
             return;
         }
 
-        // println("REBUILD Launch.");
+        println("REBUILD Launch.");
         dirty       = false;
         rebuild_now = now;
         rebuild_pid = spawn([ run_no++ ? "./cycle" : "./recycle" ]);
@@ -104,22 +104,22 @@ fn main()
         loop_start: ||
         {
             respawn_fswatch();
-            respawn_rebuild();
+            // respawn_rebuild();
         },
 
         watch_event: |watch_id!wid|
         {
-            // println("REBUILD A watch has triggered wid(" ~ wid ~ ").");
+            println("REBUILD A watch has triggered wid(" ~ wid ~ ").");
 
             assert(wid == fswatch);
 
             respawn_fswatch();
-            respawn_rebuild();
+            // respawn_rebuild();
         },
 
         child_closed: |pid, lax signo, lax code|
         {
-            // println("  CHILD EXIT pid(" pid ") signo(" signo ") code(" code ")");
+            println("  CHILD EXIT pid(" pid ") signo(" signo ") code(" code ")");
 
             assert(pid == rebuild_pid);
 
@@ -128,7 +128,7 @@ fn main()
             if (dirty)
             {
                 // println("REBUILD Re-run because dirty.");
-                respawn_rebuild();
+                // respawn_rebuild();
             }
         },
     );

@@ -580,29 +580,27 @@ pub nothrow fn Loop(
 
             pragma input(
             `
-                {
-                    auto& ev    = events[`i`];
+                auto& ev    = events[`i`];
 
-                #ifdef __linux__
-                    `user_data` = ev.data.u64;
-                    `state`     = (ev.events &  EPOLLIN                 ? `Readable`  : 0)
-                                | (ev.events &  EPOLLOUT                ? `Writeable` : 0)
-                                | (ev.events & (EPOLLHUP | EPOLLRDHUP)  ? `ReadEOF`   : 0)
-                                | (ev.events &  EPOLLHUP                ? `WriteEOF`  : 0);
-                    `event_ERR` = ev.events & EPOLLERR ? EPIPE : 0;
-                #else
-                    `user_data` = (uintptr_t) ev.udata;
-                    `state`     = (ev.filter == EVFILT_READ
-                                                   ? (          ev.data ? `Readable`  : 0)
-                                                   | (ev.flags & EV_EOF ? `ReadEOF`   : 0)
-                                                   : 0)
-                                | (ev.filter == EVFILT_WRITE
-                                                   ? (          ev.data ? `Writeable` : 0)
-                                                   | (ev.flags & EV_EOF ? `WriteEOF`  : 0)
-                                                   : 0);
-                    `event_ERR` = (int) ev.fflags;
-                #endif
-                }
+            #ifdef __linux__
+                `user_data` = ev.data.u64;
+                `state`     = (ev.events &  EPOLLIN                 ? `Readable`  : 0)
+                            | (ev.events &  EPOLLOUT                ? `Writeable` : 0)
+                            | (ev.events & (EPOLLHUP | EPOLLRDHUP)  ? `ReadEOF`   : 0)
+                            | (ev.events &  EPOLLHUP                ? `WriteEOF`  : 0);
+                `event_ERR` = ev.events & EPOLLERR ? EPIPE : 0;
+            #else
+                `user_data` = (uintptr_t) ev.udata;
+                `state`     = (ev.filter == EVFILT_READ
+                                               ? (          ev.data ? `Readable`  : 0)
+                                               | (ev.flags & EV_EOF ? `ReadEOF`   : 0)
+                                               : 0)
+                            | (ev.filter == EVFILT_WRITE
+                                               ? (          ev.data ? `Writeable` : 0)
+                                               | (ev.flags & EV_EOF ? `WriteEOF`  : 0)
+                                               : 0);
+                `event_ERR` = (int) ev.fflags;
+            #endif //
             `);
 
             ksfd_unpack(
