@@ -93,19 +93,19 @@ pub fn cpp_codegen(
 
         // type definitions
         // TODO track separately, we dont need all types defined
-        _tdef:              string;
+        _tdef_src:          string;
 
         _tdef_stack:        StructDecl[];
 
         // fn definitions
         _fdef_started:      flat::Set(Target);
         _fdef_complete:     flat::Set(Target);
-        _fdef:              string;
+        _fdef_src:          string;
 
         // misc garbage
         _indent:            string;
         _hasMain:           i32;
-        _test_cases:        string;
+        _test_suite:        string;
 
         _static_strings:    flat::Set(u64);
         _static_string_src: string;
@@ -542,7 +542,7 @@ pub fn cpp_codegen(
                     || a.declDepth == b.declDepth && a.def <> b.def < 0);
 
             for (mut i = 0; i < _tdef_stack.len; i++)
-                _tdef ~= _tdef_stack[i].def;
+                _tdef_src ~= _tdef_stack[i].def;
 
             _tdef_stack.clear();
         }
@@ -612,7 +612,7 @@ pub fn cpp_codegen(
         def ~= "\n                                #endif\n";
 
         //
-        _tdef ~= def;
+        _tdef_src ~= def;
     }
 
 
@@ -710,11 +710,44 @@ pub fn cpp_codegen(
         let src    = cgStatements(root.items, :count);
 
         //
-        for (mut i = 0; i < scope.len; i++)
+        mut hasTestcasePass = 1;
+        for (mut isTestcasePass = 0; isTestcasePass < hasTestcasePass; isTestcasePass++)
         {
-            let t = scope[i].target;
-            if (t.modid == module.modid && t.kind == "fn" && t.isExtLinked)
-                ensureFnDef(t);
+            if (isTestcasePass)
+            {
+                _tfwd_src ~= "                                #ifdef fu_TESTSUITE\n";
+                _ffwd_src ~= "                                #ifdef fu_TESTSUITE\n";
+                _tdef_src ~= "                                #ifdef fu_TESTSUITE\n";
+                _fdef_src ~= "                                #ifdef fu_TESTSUITE\n";
+            }
+
+            defer if (isTestcasePass)
+            {
+                _tfwd_src ~= "                                #endif\n";
+                _ffwd_src ~= "                                #endif\n";
+                _tdef_src ~= "                                #endif\n";
+                _fdef_src ~= "                                #endif\n";
+            }
+
+            for (mut i = 0; i < scope.len; i++)
+            {
+                let t = scope[i].target;
+                if (t.modid == module.modid && t.kind == "fn" && t.isExtLinked)
+                {
+                    // We do testcases second so we can isolate all their nonsense out of the main executable.
+                    //  Looking at how this is evolving, I guess we'll be compiling one executable per module.
+                    //   The build system would build and run them on change, which also means
+                    //    we'll have to ideally force them to be fully deterministic.
+                    //
+                    if (!!(t.flags & F_TESTCASE) != !!isTestcasePass)
+                    {
+                        hasTestcasePass = 2;
+                        continue;
+                    }
+
+                    ensureFnDef(t);
+                }
+            }
         }
 
         //
@@ -729,14 +762,14 @@ pub fn cpp_codegen(
             ~ _ffwd_src
 
             // Hotswap fwd-decls grouped up in two ifdef branches.
-            ~ (_ffwd_live_client && "\n                                #ifdef fu_HOTSWAP\n")
+            ~ (_ffwd_live_client && "                                #ifdef fu_HOTSWAP\n")
             ~ (_ffwd_live_client)
             ~ (_ffwd_live_client && "                                #else\n")
             ~ (_ffwd_live_nclient)
             ~ (_ffwd_live_client && "                                #endif\n")
 
             // Type definitions.
-            ~ _tdef
+            ~ _tdef_src
 
             // String literals.
             ~ _static_string_src
@@ -749,9 +782,9 @@ pub fn cpp_codegen(
             ~ _top_emits.join()
 
             // Function definitions.
-            ~ (_fdef && "\n#ifndef fu_NO_fdefs\n")
-            ~ (_fdef)
-            ~ (_fdef && "\n#endif\n")
+            ~ (_fdef_src && "\n#ifndef fu_NO_fdefs\n")
+            ~ (_fdef_src)
+            ~ (_fdef_src && "\n#endif\n")
 
             // Rest.
             ~ src
@@ -766,29 +799,12 @@ pub fn cpp_codegen(
     {
         mut src = "";
 
-        // So ideally everything test-related should be ifdefed.
-        //  This means everything that's only used by test fns too,
-        //   template specializations, etc.
-        //
-        // This basically implies we want to layer an entire cg scope,
-        //  and run & ifdef everything it emits under an ifdef TESTSUITE
-        //   or smth.
-        //
-        if (_test_cases)
-        {
-            src ~= "\n#define TESTSUITE TESTSUITE ## __COUNTER__\n"
-            src ~= "\nstatic int TESTSUITE = (" ~ _test_cases ~ "\n    0);\n"
-            src ~= "\n#undef TESTSUITE\n"
-        }
-
         //
         if (_hasMain)
         {
             mut zst = "";
             if (_hasMain & MAIN_zst)
                 zst = ", 0";
-
-            src ~= "\nint main() { return fu_MAIN()" ~ zst ~ "; }";
 
             if (_hasMain & MAIN_argv)
             {
@@ -806,9 +822,40 @@ pub fn cpp_codegen(
                     ~ "\n    return fu_MAIN(static_cast<fu::vec<fu::str>&&>(args))" ~ zst ~ ";"
                     ~ "\n}";
             }
+            else
+            {
+                src = "\nint main() { return fu_MAIN()" ~ zst ~ "; }";
 
-            src ~= "\n";
+                // src = "\nint main()"
+                //     ~ "\n{"
+                //     ~ "\n    return fu_MAIN()" ~ zst ~ ";"
+                //     ~ "\n}";
+            }
         }
+
+        //
+        if (_test_suite)
+        {
+            if (src)
+                src = "\n                                #else"
+                    ~ src;
+
+            src = "\n                                #ifdef fu_TESTSUITE"
+                ~ "\nint main()"
+                ~ "\n{"
+                ~ "\n    puts(\"   TEST Running test suite ...\\n\");"
+                ~ "\n"
+                ~ _test_suite
+                ~ "\n"
+                ~ "\n    puts(\"    ... All tests OK.\\n\");"
+                ~ "\n    return 0;"
+                ~ "\n}"
+                ~ src
+                ~ "\n                                #endif";
+        }
+
+        if (src)
+            src ~= "\n";
 
         return src;
     }
@@ -1564,18 +1611,22 @@ pub fn cpp_codegen(
         if (overload.flags & F_TESTCASE)
         {
             target.modid == module.modid || BUG();
-            _test_cases ~= "\n    " ~ id ~ "(),";
+
+            include("<stdio.h>");
+            _test_suite ~= "\n    puts(\"   TEST " ~ id ~ " ...\");";
+            _test_suite ~= "\n    " ~ id ~ "();";
+            _test_suite ~= "\n    puts(\"    ... " ~ id ~ " OK\");";
         }
         ////////////////////////////////
 
         if (dedupe)
-            _fdef ~= "\n                                #ifndef DEF_" ~ dedupe
-                   ~ "\n                                #define DEF_" ~ dedupe;
+            _fdef_src ~= "\n                                #ifndef DEF_" ~ dedupe
+                       ~ "\n                                #define DEF_" ~ dedupe;
 
-        _fdef ~= "\n" ~ src ~ "\n";
+        _fdef_src ~= "\n" ~ src ~ "\n";
 
         if (dedupe)
-            _fdef ~= "                                #endif\n";
+            _fdef_src ~= "                                #endif\n";
     }
 
 
@@ -1924,7 +1975,7 @@ pub fn cpp_codegen(
         {
             // We can't "forward declare" foreign private globals.
             if (!foreign)
-                _fdef  ~= "\nstatic const " ~ src ~ ";\n";
+                _fdef_src ~= "\nstatic const " ~ src ~ ";\n";
 
             // But we can unity-build ourselves with them.
             else
@@ -1932,7 +1983,7 @@ pub fn cpp_codegen(
         }
         else
         {
-            _fdef  ~= "\nextern const " ~ src ~ ";";
+            _fdef_src ~= "\nextern const " ~ src ~ ";";
         }
 
         return "";
