@@ -70,6 +70,8 @@ fn main()
         }
         else
         {
+            // println("  WATCH files:\n\t" ~ files.join(",\n\t"));
+
             fswatch = ev::Loop::watch_files(files, else: |err|
             {
                 println("  WATCH err(" err ") files:\n\t" files.join(",\n\t"));
