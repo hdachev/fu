@@ -714,7 +714,7 @@ pub fn build(
                     let hash = getContentHash(
                         include:        cpp.includes_headers[i],
                         start_fname:    module.fname,
-                        include_dirs:   cpp.include_dirs.keys_asc);
+                        include_dirs:   cpp.hacks.include_dirs.keys_asc);
 
                     if (hash)
                         includes_hash.hash(hash);
@@ -795,7 +795,7 @@ pub fn build(
         let module = modules[i];
 
         //
-        let include_dirs = module.out.cpp.include_dirs;
+        let include_dirs = module.out.cpp.hacks.include_dirs;
         if (include_dirs)
         {
             let dir = path::dirname(module.fname);
@@ -809,7 +809,7 @@ pub fn build(
         //
         mut cflags = "";
 
-        mut libs = module.out.cpp.link;
+        mut libs = module.out.cpp.hacks.link;
         for (shadow mut i = 0; i < libs.len; i++)
         {
             mut lib = libs[i];

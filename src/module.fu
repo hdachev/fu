@@ -139,17 +139,21 @@ struct SolverOutput
     notes:      SolverNotes;
 };
 
+struct BuildHacks
+{
+    // Libraries and such.
+    link?:              flat::Set(string);
+    include_dirs?:      flat::Set(string);
+    extra_sources?:     flat::Set(string);
+};
+
 struct CodegenOutput
 {
     using src:  string;
 
-    // Libraries and such.
-    link?:              flat::Set(string);
-    extra_sources?:     flat::Set(string);
-
-    // Includes such & such headers from such & such dirs.
+    // #includes for change tracking.
     includes_headers?:  flat::Set(string);
-    include_dirs?:      flat::Set(string);
+    hacks?:             BuildHacks;
 
     // Live exports.
     live?:              i32[];
