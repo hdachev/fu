@@ -205,7 +205,6 @@ pub fn gcc_version()
 
 using flags DEV_OnFail
 {
-    OnFail_PrintInput
     OnFail_PrintOutput
     OnFail_WriteRepro
 };
@@ -879,16 +878,14 @@ pub fn build(
         {
             explain = "\n\n\tCOMPILER BUG or INCORRECT TESTCASE:\n\n";
 
-            for (mut i = 1; i < modules.len; i++)
-                explain ~= onfail & OnFail_PrintInput
-                    ? modules[i].in.src
-                    : modules[i].fname ~ "\n";
+            units.each: |unit|
+                explain ~= unit.human ~ "\n";
 
             if (onfail & OnFail_PrintOutput)
             {
                 explain ~= "\n\n\tGenerated code:\n\n";
-                for (mut i = 1; i < modules.len; i++)
-                    explain ~= modules[i].out.cpp.src;
+                units.each: |unit|
+                    explain ~= unit.src;
             }
         }
 
