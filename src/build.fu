@@ -778,57 +778,6 @@ pub fn build(
         unit.cpp_cache_file = dir_wrk_cpp ~ unit.cpp_cache_file ~ ".cpp";
     }
 
-    //
-    mut code:   i32;
-    mut stdout: string;
-
-    fn ERR(mut cpp?: string)
-    {
-        units.each: |ref unit|
-            unit.cache_cleanup &= ~CacheCleanup.Cpp;
-
-        if (onfail & OnFail_WriteRepro)
-        {
-            if (!cpp) for (mut i = units.len; i --> 0; )
-            {
-                ref unit = units[i];
-                if (unit.cpp_cache_file)
-                    cpp ~= "#include \"" ~ unit.cpp_cache_file ~ "\"\n";
-            }
-
-            let fname = dir_wrk ~ "failing-testcase.cpp";
-            println("  WRITE " ~ fname);
-            atomic_write(:fname, cpp, :dir_wrk_tmp);
-        }
-
-        // Print exit code.
-        if (stdout)
-            stdout ~= "\n\n";
-
-        stdout ~= "   EXIT code: " ~ code;
-
-        //
-        mut explain = "";
-        if (onfail)
-        {
-            explain = "\n\n\tCOMPILER BUG or INCORRECT TESTCASE:\n\n";
-
-            for (mut i = 1; i < modules.len; i++)
-                explain ~= onfail & OnFail_PrintInput
-                    ? modules[i].in.src
-                    : modules[i].fname ~ "\n";
-
-            if (onfail & OnFail_PrintOutput)
-            {
-                explain ~= "\n\n\tGenerated code:\n\n";
-                for (mut i = 1; i < modules.len; i++)
-                    explain ~= modules[i].out.cpp.src;
-            }
-        }
-
-        return fail(stdout ~ explain);
-    }
-
     ////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////
@@ -895,10 +844,60 @@ pub fn build(
     len_all += LIBS.len;
     hash_all.hash(LIBS);
 
-    let F_exe = dir_wrk_bin ~ hash_all.digest16 ~ "-" ~ len_all;
+    //
+    mut code:   i32;
+    mut stdout: string;
+
+    fn ERR(mut cpp?: string)
+    {
+        units.each: |ref unit|
+            unit.cache_cleanup &= ~CacheCleanup.Cpp;
+
+        if (onfail & OnFail_WriteRepro)
+        {
+            if (!cpp) for (mut i = units.len; i --> 0; )
+            {
+                ref unit = units[i];
+                if (unit.cpp_cache_file)
+                    cpp ~= "#include \"" ~ unit.cpp_cache_file ~ "\"\n";
+            }
+
+            let fname = dir_wrk ~ "failing-testcase.cpp";
+            println("  WRITE " ~ fname);
+            atomic_write(:fname, cpp, :dir_wrk_tmp);
+        }
+
+        // Print exit code.
+        if (stdout)
+            stdout ~= "\n\n";
+
+        stdout ~= "   EXIT code: " ~ code;
+
+        //
+        mut explain = "";
+        if (onfail)
+        {
+            explain = "\n\n\tCOMPILER BUG or INCORRECT TESTCASE:\n\n";
+
+            for (mut i = 1; i < modules.len; i++)
+                explain ~= onfail & OnFail_PrintInput
+                    ? modules[i].in.src
+                    : modules[i].fname ~ "\n";
+
+            if (onfail & OnFail_PrintOutput)
+            {
+                explain ~= "\n\n\tGenerated code:\n\n";
+                for (mut i = 1; i < modules.len; i++)
+                    explain ~= modules[i].out.cpp.src;
+            }
+        }
+
+        return fail(stdout ~ explain);
+    }
 
     //
-    let old_size = !(bscheme & "nocache") && file::size(F_exe);
+    let F_exe       = dir_wrk_bin ~ hash_all.digest16 ~ "-" ~ len_all;
+    let old_size    = !(bscheme & "nocache") && file::size(F_exe);
 
     ////////////////////////////////////////////////
     // TEMP re-run tests without allocation stats //
