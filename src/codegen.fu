@@ -111,9 +111,7 @@ pub fn cpp_codegen(
         _static_string_src: string;
 
         // experimentals
-        HACK_link:          flat::Set(string);
-        HACK_include_dirs:  flat::Set(string);
-        HACK_extra_sources: flat::Set(string);
+        _build_hacks:       BuildHacks;
 
         // live
         _live_targets:      i32[];
@@ -3362,15 +3360,15 @@ pub fn cpp_codegen(
 
         if (cmd == "link")
             eachStringLiteral: |i|
-                HACK_link.add(i);
+                _build_hacks.link.add(i);
 
         if (cmd == "include_dirs")
             eachStringLiteral: |i|
-                HACK_include_dirs.add(i);
+                _build_hacks.include_dirs.add(i);
 
         if (cmd == "sources")
             eachStringLiteral: |i|
-                HACK_extra_sources.add(i);
+                _build_hacks.extra_sources.add(i);
 
         if (cmd == "include")
             eachStringLiteral: |i|
@@ -3795,9 +3793,9 @@ pub fn cpp_codegen(
     //  need proper hashing and everything, so they should just skip over compile & cg
     //   but otherwise work like our own generated sources.
 
-    for (mut i = 0; i < HACK_extra_sources.len; i++)
+    for (mut i = 0; i < _build_hacks.extra_sources.len; i++)
     {
-        let orig = HACK_extra_sources[i];
+        let orig = _build_hacks.extra_sources[i];
         let file = localPath(orig);
         src ~= "\n// " ~ orig ~ "\n";
         file::read(file, into: src);
@@ -3807,9 +3805,7 @@ pub fn cpp_codegen(
     //
 
     return CodegenOutput(:src,
-        link:               HACK_link,
-        extra_sources:      HACK_extra_sources,
-        include_dirs:       HACK_include_dirs,
+        hacks:              _build_hacks,
         includes_headers:   _libs,
         defects:            _defects);
 }
