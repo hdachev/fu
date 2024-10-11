@@ -421,6 +421,7 @@ pub fn build(
 
         //
         HACK_pkgConfig_cflags?: string;
+        hacks?:             BuildHacks;
     };
 
     mut units: TranslationUnit[];
@@ -777,39 +778,70 @@ pub fn build(
         unit.cpp_cache_file = dir_wrk_cpp ~ unit.cpp_cache_file ~ ".cpp";
     }
 
-    ////////////////////////////////////////////////////////////////
-    ////////////////////////////////////////////////////////////////
-    ////////////////////////////////////////////////////////////////
-    ////
-    ////  Total nonsense, tbd how we're gonna do this,
-    ////   but I'd like us to have something that
-    ////    just-works for the simplest things like your local glfw.
-    ////
-    mut HACK_linkFlags:         flat::Set(string);
-    mut HACK_pkgConfig_libs:    flat::Set(string);
-
-    mut HACK_include_dirs:      flat::Set(string);
-
+    //
     for (mut i = 0; i < modules.len; i++)
     {
         let module = modules[i];
+        if (!module.out.cpp.hacks)
+            continue;
 
-        //
+        let unit_index = unit_mapping[i];
+        if (unit_index < 0)
+            fail("!!unit.hacks but unit_index < 0");
+
+        ref unit = units[unit_index];
+
+        unit.hacks.link.add(module.out.cpp.hacks.link);
+
         let include_dirs = module.out.cpp.hacks.include_dirs;
         if (include_dirs)
         {
             let dir = path::dirname(module.fname);
             include_dirs.each: |incl|
-                HACK_include_dirs.add(
+                unit.hacks.include_dirs.add(
                     incl.starts(with: '.')
                         ? path::join(dir, incl)
                         : incl);
         }
+    }
 
-        //
+    //
+    fn generateWatchList()
+    {
+        mut watch_list: string[];
+
+        for (mut i = 1; i < modules.len; i++) {
+            let fname = modules[i].fname;
+            if (fname)
+                watch_list ~= fname;
+        }
+
+        file_invariants.each: |file_invariant|
+            if (file_invariant.path)
+                watch_list ~= file_invariant.path;
+
+        return watch_list;
+    }
+
+    ////////////////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////////////////
+    //
+    // Translation unit-only land starts here.
+    //
+    shadow let modules: void;
+
+    mut HACK_linkFlags:         flat::Set(string);
+    mut HACK_pkgConfig_libs:    flat::Set(string);
+    mut HACK_include_dirs:      flat::Set(string);
+
+    units.each: |ref unit|
+    {
+        HACK_include_dirs.add(unit.hacks.include_dirs);
+
         mut cflags = "";
 
-        mut libs = module.out.cpp.hacks.link;
+        mut libs = unit.hacks.link;
         for (shadow mut i = 0; i < libs.len; i++)
         {
             mut lib = libs[i];
@@ -824,7 +856,7 @@ pub fn build(
         }
 
         if (cflags)
-            units[unit_mapping[i]].HACK_pkgConfig_cflags =
+            unit.HACK_pkgConfig_cflags =
                 " $(pkg-config --cflags " ~ cflags ~ ")";
     }
 
@@ -834,10 +866,6 @@ pub fn build(
     let LIBS = (flags_ld && " " ~ flags_ld.join(' '))
              ~ (HACK_linkFlags      && " "                     ~ HACK_linkFlags.keys_asc.join(" "))
              ~ (HACK_pkgConfig_libs && " $(pkg-config --libs " ~ HACK_pkgConfig_libs.keys_asc.join(" ") ~ ")");
-    ////
-    ////////////////////////////////////////////////////////////////
-    ////////////////////////////////////////////////////////////////
-    ////////////////////////////////////////////////////////////////
 
     //
     len_all += LIBS.len;
@@ -1215,24 +1243,6 @@ pub fn build(
     }
 
     if (code) return ERR;
-
-    //
-    fn generateWatchList()
-    {
-        mut watch_list: string[];
-
-        for (mut i = 1; i < modules.len; i++) {
-            let fname = modules[i].fname;
-            if (fname)
-                watch_list ~= fname;
-        }
-
-        file_invariants.each: |file_invariant|
-            if (file_invariant.path)
-                watch_list ~= file_invariant.path;
-
-        return watch_list;
-    }
 
     //
     return BuildOutput(
