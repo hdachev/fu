@@ -384,6 +384,9 @@ pub fn build(
         // Dirname to resolve #includes "with quotes" relative to.
         iquote?:            string;
 
+        // Unit own-source-code.
+        self_src_hash?:     tea::TEA;
+
         // Hash of all mutable headers this unit #includes in the src.
         includes_hash?:     tea::TEA;
 
@@ -731,6 +734,11 @@ pub fn build(
     //
     fn  dir_wrk_tmp = dir_wrk ~ "tmp/";     fs::mkdir_p(dir_wrk_tmp);
 
+    // Hash unit content.
+    units.each: |ref unit|
+        if (unit.src)
+            unit.self_src_hash.hash(unit.src);
+
     //
     mut len_all: i32;
     mut hash_all: tea::TEA;
@@ -742,13 +750,11 @@ pub fn build(
         if (!cpp)
             continue;
 
-        mut hash: tea::TEA;
-
         // Cpp cache file -
         //  we only care about the immediate content hash here,
         //   no includes, no dependencies, no gcc flags, nothing.
         //
-        hash.hash(cpp);
+        mut hash = unit.self_src_hash;
 
         unit.cpp_cache_file = hash.digest16 ~ "-" ~ cpp.len;
 
