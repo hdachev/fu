@@ -420,7 +420,6 @@ pub fn build(
         cache_cleanup?:     CacheCleanup;
 
         //
-        HACK_pkgConfig_cflags?: string;
         hacks?:             BuildHacks;
     };
 
@@ -835,29 +834,25 @@ pub fn build(
     mut HACK_pkgConfig_libs:    flat::Set(string);
     mut HACK_include_dirs:      flat::Set(string);
 
+    fn link_each(link: flat::Set(string), each)
+    {
+        for (mut i = 0; i < link.keys_asc.len; i++)
+        {
+            let item = link[i];
+            let isFlag = item.starts(with: '-');
+            each(flag?: isFlag && item, lib?: !isFlag && item);
+        }
+    }
+
     units.each: |ref unit|
     {
         HACK_include_dirs.add(unit.hacks.include_dirs);
 
-        mut cflags = "";
-
-        mut libs = unit.hacks.link;
-        for (shadow mut i = 0; i < libs.len; i++)
-        {
-            mut lib = libs[i];
-
-            if (lib.starts(with: "-")) {
-                HACK_linkFlags.add(lib);
-            }
-            else {
-                cflags ~= lib;
+        unit.hacks.link.link_each: |flag, lib|
+            if (flag)
+                HACK_linkFlags.add(flag);
+            else if (lib)
                 HACK_pkgConfig_libs.add(lib);
-            }
-        }
-
-        if (cflags)
-            unit.HACK_pkgConfig_cflags =
-                " $(pkg-config --cflags " ~ cflags ~ ")";
     }
 
     let INCLUDE = (flags_cc && " " ~ flags_cc.join(' ')) ~ " -I " ~ ctx.fudir ~ "include"
@@ -960,8 +955,29 @@ pub fn build(
 
             let t0 = now::hr();
 
+            //
+            mut HACK_pkgConfig_cflags: string;
+
+            unit.hacks.link.link_each: |lib|
+            {
+                if (!lib)
+                    continue;
+                if (!HACK_pkgConfig_cflags)
+                    HACK_pkgConfig_cflags = " $(pkg-config --cflags";
+
+                HACK_pkgConfig_cflags ~=
+                    HACK_pkgConfig_cflags
+                        ? " "
+                        : " $(pkg-config --cflags ";
+
+                HACK_pkgConfig_cflags ~= lib;
+            }
+
+            if (HACK_pkgConfig_cflags)
+                HACK_pkgConfig_cflags ~= ")";
+
             ///////////////////////////////////////////////////////////////////
-            shadow let INCLUDE = INCLUDE ~ unit.HACK_pkgConfig_cflags;
+            shadow let INCLUDE = INCLUDE ~ HACK_pkgConfig_cflags;
             ///////////////////////////////////////////////////////////////////
 
             ////////////////////////////////////////////////////////////////////////////////////////////////
