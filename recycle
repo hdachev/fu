@@ -10,6 +10,6 @@ echo ""
 git reset
 git checkout *.fu.cpp *.fu.unity.cpp
 ./bootstrap
-mv ./bin/fu ./bin/fu.works
+ln -f ./bin/fu ./bin/fu.works
 
 ./cycle
