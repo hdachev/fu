@@ -155,9 +155,6 @@ struct CodegenOutput
     includes_headers?:  flat::Set(string);
     hacks?:             BuildHacks;
 
-    // Live exports.
-    live?:              i32[];
-
     //
     defects?:           CGDefects;
 };
