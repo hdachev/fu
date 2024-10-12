@@ -241,11 +241,12 @@ pub enum RunMode
     EnsureExecutableButDontRun
 }
 
-pub flags BuildScheme
+pub flags BuildScheme: u16
 {
     shared
     hotswap
     nocache
+    notest
     watch
 
     // NOTE re: the weird negations here -
@@ -821,21 +822,9 @@ pub fn build(
     }
 
     //
-    fn generateWatchList()
+    if !(bscheme & "notest")
     {
-        mut watch_list: string[];
-
-        for (mut i = 1; i < modules.len; i++) {
-            let fname = modules[i].fname;
-            if (fname)
-                watch_list ~= fname;
-        }
-
-        file_invariants.each: |file_invariant|
-            if (file_invariant.path)
-                watch_list ~= file_invariant.path;
-
-        return watch_list;
+        // ...
     }
 
     //
@@ -848,8 +837,18 @@ pub fn build(
 
     if (bscheme & "watch")
     {
+        // Previously generateWatchList:
         assert(!ret.watch_list);
-        ret.watch_list = generateWatchList();
+
+        for (mut i = 1; i < modules.len; i++) {
+            let fname = modules[i].fname;
+            if (fname)
+                ret.watch_list ~= fname;
+        }
+
+        file_invariants.each: |file_invariant|
+            if (file_invariant.path)
+                ret.watch_list ~= file_invariant.path;
     }
 
     return ret;

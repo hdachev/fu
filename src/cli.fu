@@ -156,6 +156,11 @@ fn cli_handle(argv: string[], cwd = fs::cwd())
             continue;
         }
 
+        if (opt == "--notest") {
+            bflags |= "notest";
+            continue;
+        }
+
         //
         else if (opt)
             throw("Unknown option: `" ~ opt ~ "`.");
