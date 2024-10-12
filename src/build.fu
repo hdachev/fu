@@ -408,6 +408,7 @@ pub fn build(
         //  to multiple object files, and we want new object files
         //   when we fiddle with e.g. the builtin headers or whatever.
         //
+        obj_hash?:          tea::TEA;
         obj_cache_file?:    string;
 
         // In case we need to build this unit,
@@ -739,8 +740,6 @@ pub fn build(
             unit.self_src_hash.hash(unit.src);
 
     //
-    mut len_all: i32;
-    mut hash_all: tea::TEA;
     for (mut i = 0; i < units.len; i++)
     {
         ref unit = units[i];
@@ -753,7 +752,7 @@ pub fn build(
         //  we only care about the immediate content hash here,
         //   no includes, no dependencies, no gcc flags, nothing.
         //
-        mut hash = unit.self_src_hash;
+        ref hash = (unit.obj_hash = unit.self_src_hash);
 
         unit.cpp_cache_file = hash.digest16 ~ "-" ~ cpp.len;
 
@@ -769,9 +768,6 @@ pub fn build(
         //
         // TODO FIX we should probably care about compiler version too,
         //  we could resolve it once on boot by gcc --version and hash its output.
-
-        len_all += cpp.len;
-        hash_all.hash(hash);
 
         unit.obj_cache_file = dir_wrk_obj ~ unit.cpp_cache_file ~ "-" ~ hash.digest16 ~ ".o";
         unit.cpp_cache_file = dir_wrk_cpp ~ unit.cpp_cache_file ~ ".cpp";
@@ -844,8 +840,17 @@ pub fn build(
         }
     }
 
+    mut len_all: i32;
+    mut hash_all: tea::TEA;
+
     units.each: |ref unit|
     {
+        if (unit.src)
+        {
+            len_all += unit.src.len;
+            hash_all.hash(unit.obj_hash);
+        }
+
         HACK_include_dirs.add(unit.hacks.include_dirs);
 
         unit.hacks.link.link_each: |flag, lib|
