@@ -53,6 +53,30 @@ let TODO_FIX_ignoredWarnings = ""
     ;
 
 
+//
+
+nocopy struct DirWrk
+{
+    cpp: string;
+    obj: string;
+    bin: string;
+    tmp: string;
+};
+
+fn DirWrk(dir_wrk!: string)
+{
+    let ret = DirWrk(
+        cpp: dir_wrk ~ "cpp/",
+        obj: dir_wrk ~ "obj/",
+        bin: dir_wrk ~ "bin/",
+        tmp: dir_wrk ~ "tmp/");
+
+    for (fieldname i: DirWrk)
+        fs::mkdir_p(ret.i);
+
+    return ret;
+}
+
 
 //
 
@@ -71,8 +95,10 @@ fn ensure_local_fname(fname: string, dir_src: string): string
     return foreign ~ rel;
 }
 
-fn tmpfile(mut dir_wrk_tmp!fname: string)
+fn tmpfile(implicit dir_wrk: DirWrk)
 {
+    mut fname = dir_wrk.tmp;
+
     mut r = rand::next_u64();
     for (mut i = 0; i < 8; i++)
     {
@@ -86,9 +112,9 @@ fn tmpfile(mut dir_wrk_tmp!fname: string)
     return fname;
 }
 
-fn atomic_write(dir_wrk_tmp!: string, fname!: string, data: string)
+fn atomic_write(fname!: string, data: string)
 {
-    let tmp = tmpfile(:dir_wrk_tmp);
+    let tmp = tmpfile();
 
     let err = file::write(tmp, data) || file::rename(tmp, fname);
     if (err)
@@ -112,26 +138,24 @@ fn update_file(
     fname       !: string,
     data        !: string,
     dir_src     !: string,
-    dir_cpp     !: string,
-    dir_wrk_tmp !: string)
+    dir_cpp     !: string)
 {
     return update_file(
         dest: update_file_dest(:fname, :dir_src, :dir_cpp),
-        :data, :dir_cpp, :dir_wrk_tmp);
+        :data, :dir_cpp);
 }
 
 fn update_file(
     dest!fname   : string,
     data        !: string,
-    dir_cpp     !: string,
-    dir_wrk_tmp !: string)
+    dir_cpp     !: string)
 {
     mut xcheck: string;
     if (file::read(fname, into: xcheck) || xcheck != data)
     {
         for (;;)
         {
-            let err = atomic_write(:fname, data, :dir_wrk_tmp);
+            let err = atomic_write(:fname, data);
             if (err)
             {
                 if (err == Errno::ENOENT)
@@ -725,14 +749,7 @@ pub fn build(
     }
 
     //
-    let dir_wrk_cpp = dir_wrk ~ "cpp/";     fs::mkdir_p(dir_wrk_cpp);
-    let dir_wrk_obj = dir_wrk ~ "obj/";     fs::mkdir_p(dir_wrk_obj);
-    let dir_wrk_bin = dir_wrk ~ "bin/";     fs::mkdir_p(dir_wrk_bin);
-
-    // TODO FIX - the novec on parallel_for prevents us from binding to dir_wrk_tmp as a variable,
-    //  the novec has to go, we'd rather have something
-    //
-    fn  dir_wrk_tmp = dir_wrk ~ "tmp/";     fs::mkdir_p(dir_wrk_tmp);
+    shadow let implicit dir_wrk = DirWrk(:dir_wrk);
 
     // Hash unit content.
     units.each: |ref unit|
@@ -769,8 +786,8 @@ pub fn build(
         // TODO FIX we should probably care about compiler version too,
         //  we could resolve it once on boot by gcc --version and hash its output.
 
-        unit.obj_cache_file = dir_wrk_obj ~ unit.cpp_cache_file ~ "-" ~ hash.digest16 ~ ".o";
-        unit.cpp_cache_file = dir_wrk_cpp ~ unit.cpp_cache_file ~ ".cpp";
+        unit.obj_cache_file = dir_wrk.obj ~ unit.cpp_cache_file ~ "-" ~ hash.digest16 ~ ".o";
+        unit.cpp_cache_file = dir_wrk.cpp ~ unit.cpp_cache_file ~ ".cpp";
     }
 
     //
@@ -889,9 +906,9 @@ pub fn build(
                     cpp ~= "#include \"" ~ unit.cpp_cache_file ~ "\"\n";
             }
 
-            let fname = dir_wrk ~ "failing-testcase.cpp";
+            let fname = dir_wrk.cpp ~ "failing-testcase.cpp";
             println("  WRITE " ~ fname);
-            atomic_write(:fname, cpp, :dir_wrk_tmp);
+            atomic_write(:fname, cpp);
         }
 
         // Print exit code.
@@ -921,7 +938,7 @@ pub fn build(
     }
 
     //
-    let F_exe       = dir_wrk_bin ~ hash_all.digest16 ~ "-" ~ len_all;
+    let F_exe       = dir_wrk.bin ~ hash_all.digest16 ~ "-" ~ len_all;
     let old_size    = !(bscheme & "nocache") && file::size(F_exe);
 
     ////////////////////////////////////////////////
@@ -949,12 +966,12 @@ pub fn build(
                 return [];
 
             // We'll be doing work here.
-            unit.tmp_file = tmpfile(:dir_wrk_tmp);
+            unit.tmp_file = tmpfile();
 
             unit.cache_cleanup |= "Cpp";
 
             let cpp = unit.src;
-            atomic_write(fname: F_cpp, cpp, :dir_wrk_tmp);
+            atomic_write(fname: F_cpp, cpp);
 
             println("  BUILD ", unit.human, " ", F_cpp);
 
@@ -1078,7 +1095,7 @@ pub fn build(
 
         // Link.
 
-        let F_tmp = tmpfile(:dir_wrk_tmp);
+        let F_tmp = tmpfile();
 
         mut cmd = GCC_CMD ~ "-o " ~ F_tmp;
 
@@ -1157,7 +1174,7 @@ pub fn build(
         {
             let out = test_output::serialize(output);
             out.len == 20 || fail("TestOutput.len != 20");
-            atomic_write(fname: F_exe, out, :dir_wrk_tmp);
+            atomic_write(fname: F_exe, out);
         }
 
         //
@@ -1231,8 +1248,7 @@ pub fn build(
             let fname           = unit.src && unit.src_output_file;
             shadow let fname    = fname && update_file(
                 :fname, data: unit.src,
-                :dir_src, :dir_cpp,
-                :dir_wrk_tmp);
+                :dir_src, :dir_cpp);
 
             cpp_files.push(fname);
         }
@@ -1251,7 +1267,7 @@ pub fn build(
                 if (let incl = cpp_files[i])
                     data ~= "#include \"" ~ path::relative(dest, incl) ~ "\"\n";
 
-            update_file(:dest, :data, :dir_cpp, :dir_wrk_tmp);
+            update_file(:dest, :data, :dir_cpp);
         }
     }
 
