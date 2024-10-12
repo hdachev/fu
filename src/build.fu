@@ -282,10 +282,73 @@ pub fn tryGetScheme(name: string)
 struct BuildOutput
 {
     executable:     string;
-    watch_list:     string[];
+    watch_list?:    string[];
 
     using output:   test_output::TestOutput;
 };
+
+flags CacheCleanup { Obj; Cpp }
+
+struct TranslationUnit
+{
+    // Original filename or whatever describes what this is,
+    //  we'll print it out in case of error.
+    human?:             string;
+
+    // Zero/one/many modules' codegen output.
+    src?:               string;
+
+    // Dirname to resolve #includes "with quotes" relative to.
+    iquote?:            string;
+
+    // Unit own-source-code.
+    self_src_hash?:     tea::TEA;
+
+    // Hash of all mutable headers this unit #includes in the src.
+    includes_hash?:     tea::TEA;
+
+    // Where this goes to if cpp-source output is requested.
+    src_output_file?:   string;
+
+    // .fu-cache cpp file, what we feed to gcc/clang & co - ideally temp,
+    //  but there's some benefit to leaving these around
+    //   when investigating failing tests.
+    //
+    // The ideal generated filename is a shallow hash
+    //  of just the text contents of the file itself.
+    //
+    cpp_cache_file?:    string;
+
+    // .fu-cache obj file, ideal filename is -
+    //  .fu-cache/cache_cpp_file-[hash includes + build options]
+    //
+    // We want a clean mapping from one single source file
+    //  to multiple object files, and we want new object files
+    //   when we fiddle with e.g. the builtin headers or whatever.
+    //
+    obj_hash?:          tea::TEA;
+    obj_cache_file?:    string;
+
+    // In case we need to build this unit,
+    //  this is the tmp file
+    //
+    tmp_file?:          string;
+
+    //
+    //
+    cache_cleanup?:     CacheCleanup;
+
+    //
+    hacks?:             BuildHacks;
+};
+
+struct FileInvariants {
+    path:   string;
+    stat:   file::Stat;
+};
+
+
+//
 
 pub fn build(
     implicit ctx: Context,
@@ -393,61 +456,6 @@ pub fn build(
     //    access to private values & optimize build time.
     mut unit_mapping: i32[];
 
-    flags CacheCleanup { Obj; Cpp }
-
-    struct TranslationUnit
-    {
-        // Original filename or whatever describes what this is,
-        //  we'll print it out in case of error.
-        human?:             string;
-
-        // Zero/one/many modules' codegen output.
-        src?:               string;
-
-        // Dirname to resolve #includes "with quotes" relative to.
-        iquote?:            string;
-
-        // Unit own-source-code.
-        self_src_hash?:     tea::TEA;
-
-        // Hash of all mutable headers this unit #includes in the src.
-        includes_hash?:     tea::TEA;
-
-        // Where this goes to if cpp-source output is requested.
-        src_output_file?:   string;
-
-        // .fu-cache cpp file, what we feed to gcc/clang & co - ideally temp,
-        //  but there's some benefit to leaving these around
-        //   when investigating failing tests.
-        //
-        // The ideal generated filename is a shallow hash
-        //  of just the text contents of the file itself.
-        //
-        cpp_cache_file?:    string;
-
-        // .fu-cache obj file, ideal filename is -
-        //  .fu-cache/cache_cpp_file-[hash includes + build options]
-        //
-        // We want a clean mapping from one single source file
-        //  to multiple object files, and we want new object files
-        //   when we fiddle with e.g. the builtin headers or whatever.
-        //
-        obj_hash?:          tea::TEA;
-        obj_cache_file?:    string;
-
-        // In case we need to build this unit,
-        //  this is the tmp file
-        //
-        tmp_file?:          string;
-
-        //
-        //
-        cache_cleanup?:     CacheCleanup;
-
-        //
-        hacks?:             BuildHacks;
-    };
-
     mut units: TranslationUnit[];
 
 
@@ -554,11 +562,6 @@ pub fn build(
     }
 
     // Concat unit sources.
-    struct FileInvariants {
-        path:   string;
-        stat:   file::Stat;
-    };
-
     mut file_invariants: FileInvariants[];
     {
         mut content_hashes: flat::Map(string, u64);
@@ -835,14 +838,61 @@ pub fn build(
         return watch_list;
     }
 
-    ////////////////////////////////////////////////////////////////
-    ////////////////////////////////////////////////////////////////
-    ////////////////////////////////////////////////////////////////
     //
-    // Translation unit-only land starts here.
-    //
-    shadow let modules: void;
+    mut ret = build_target(
+        :units, :file_invariants,
+        :flags_cc, :flags_ld, :onfail,
+        :bscheme, :runmode, :expect_exit,
+        :bin, :dir_src, :dir_cpp, :unity,
+        :GCC_CMD);
 
+    if (bscheme & "watch")
+    {
+        assert(!ret.watch_list);
+        ret.watch_list = generateWatchList();
+    }
+
+    return ret;
+}
+
+
+// No modules past this point.
+
+fn build_target(
+    implicit ctx:       Context,
+    implicit dir_wrk:   DirWrk,
+
+    // TODO we need to clean up two things here -
+    //  one, mutating units here doesn't make sense if we want to build targets in parallel -
+    //   two - there's this file_invariants check before we commit temp files to the obj cache,
+    //    which is also an effort we don't want to duplicate between build targets
+    //     if we're gonna build them in parallel.
+    //
+    ref units:          TranslationUnit[],
+    file_invariants:    FileInvariants[],
+
+    //
+    flags_cc!:          string[],
+    flags_ld!:          string[],
+
+    // TODO FIX all of these -
+    onfail!:            DEV_OnFail,
+    runmode!:           RunMode,
+    expect_exit!:       int,
+    bscheme!:           BuildScheme,
+    ////////////////////////////////
+
+    // Now it's obvious a single bin can't make sense
+    //  if we'll want to build multiple libs and executables in one go
+    bin!:               string,
+    // dir_obj!:           string,  // <never implemented it seems
+    dir_src!:           string,
+    dir_cpp!:           string,
+    unity!:             string,
+
+    //
+    GCC_CMD!:           string)
+{
     mut HACK_linkFlags:         flat::Set(string);
     mut HACK_pkgConfig_libs:    flat::Set(string);
     mut HACK_include_dirs:      flat::Set(string);
@@ -1282,8 +1332,5 @@ pub fn build(
     if (code) return ERR;
 
     //
-    return BuildOutput(
-        executable: bin || F_exe,
-        watch_list: bscheme & "watch" && generateWatchList(),
-        :output);
+    return BuildOutput(executable: bin || F_exe, :output);
 }
