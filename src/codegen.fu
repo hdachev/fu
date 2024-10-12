@@ -88,8 +88,8 @@ pub fn cpp_codegen(
         _ffwd:              flat::Set(Target);
         _ffwd_src:          string;
 
-        _ffwd_live_client:  string;
-        _ffwd_live_nclient: string;
+        _ifdef_hotswap:     string;
+        _ifndef_hotswap:    string;
 
         // type definitions
         // TODO track separately, we dont need all types defined
@@ -112,9 +112,6 @@ pub fn cpp_codegen(
 
         // experimentals
         _build_hacks:       BuildHacks;
-
-        // live
-        _live_targets:      i32[];
 
         // testing
         _defects:           CGDefects;
@@ -760,11 +757,11 @@ pub fn cpp_codegen(
             ~ _ffwd_src
 
             // Hotswap fwd-decls grouped up in two ifdef branches.
-            ~ (_ffwd_live_client && "                                #ifdef fu_HOTSWAP\n")
-            ~ (_ffwd_live_client)
-            ~ (_ffwd_live_client && "                                #else\n")
-            ~ (_ffwd_live_nclient)
-            ~ (_ffwd_live_client && "                                #endif\n")
+            ~ (_ifdef_hotswap && "                                #ifdef fu_HOTSWAP\n")
+            ~ (_ifdef_hotswap)
+            ~ (_ifdef_hotswap && "                                #else\n")
+            ~ (_ifndef_hotswap)
+            ~ (_ifdef_hotswap && "                                #endif\n")
 
             // Type definitions.
             ~ _tdef_src
@@ -1419,8 +1416,8 @@ pub fn cpp_codegen(
         {
             let fnPtr = "extern " ~ target.cgFnPrototype(fnptr: true) ~ ";\n";
 
-            _ffwd_live_client  ~= fnPtr;
-            _ffwd_live_nclient ~= fwdDecl;
+            _ifdef_hotswap  ~= fnPtr;
+            _ifndef_hotswap ~= fwdDecl;
         }
         else
         {
@@ -1579,7 +1576,6 @@ pub fn cpp_codegen(
         if (overload.flags & F_HOTSWAP)
         {
             target.modid == module.modid || BUG();
-            _live_targets ~= target.globid;
 
             //
             let fnID        = target.fnID;
