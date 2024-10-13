@@ -455,7 +455,8 @@ pub fn build(
     //  this is the partial unity build thing,
     //   we could use this to guarantee static init order,
     //    access to private values & optimize build time.
-    mut unit_mapping: i32[];
+    //
+    mut unit_indices = ctx.modules.map(|_| -1);
 
     mut units: TranslationUnit[];
 
@@ -662,10 +663,7 @@ pub fn build(
         let cpp     = i ? module.out.cpp
                         : fulib_cpp;
         if (!cpp.src)
-        {
-            unit_mapping ~= -1;
             continue;
-        }
 
         let fname   = i ? module.fname
                         : "fulib runtime";
@@ -676,14 +674,15 @@ pub fn build(
         let iquote  = i ? module.fname.path::dirname
                         : "";
 
-        let unit_index = i;
-
-        unit_mapping ~= unit_index;
-        ref unit = units.ensure(exists: unit_index) =
+        //
+        units.push(
             TranslationUnit(
                 src_output_file: fname ~ ".cpp",
                 :human, :iquote,
-                :cpp.src);
+                :cpp.src));
+
+        let unit_index  = unit_indices[modid] = units.len - 1;
+        ref unit        = units[unit_index];
 
         //
         ref includes_hash = unit.includes_hash;
@@ -725,9 +724,7 @@ pub fn build(
     {
         ref unit = units[i];
 
-        let cpp = unit.src;
-        if (!cpp)
-            continue;
+        let cpp = unit.src || fail("Empty translation unit.");
 
         assert(!unit.self_src_hash);
         unit.self_src_hash.hash(unit.src);
@@ -848,11 +845,8 @@ fn build_target(
 
     units.each: |ref unit|
     {
-        if (unit.src)
-        {
-            len_all += unit.src.len;
-            hash_all.hash(unit.obj_hash);
-        }
+        len_all += unit.src.len;
+        hash_all.hash(unit.obj_hash);
 
         HACK_include_dirs.add(unit.hacks.include_dirs);
 
@@ -1230,9 +1224,8 @@ fn build_target(
 
             // TODO NEXT BOOTSTRAP failcase exits + fixed
             // TODO let data    = unit.src; + replace unit.src below with data
-
-            let fname           = unit.src && unit.src_output_file;
-            shadow let fname    = fname && update_file(
+            let fname           = unit.src_output_file || fail("Translation unit has no src_output_file.");
+            shadow let fname    = update_file(
                 :fname, data: unit.src,
                 :dir_src, :dir_cpp);
 
