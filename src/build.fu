@@ -348,7 +348,8 @@ struct TranslationUnit
     // Unlike module.testsuite_modids,
     //  here we have unit indices.
     //
-    testsuite_units?:   i32[];
+    testsuite_units?:   flat::Set(i32);
+    testsuite_hash?:    tea::TEA;
 };
 
 struct FileInvariants {
@@ -738,13 +739,56 @@ pub fn build(
         unit.cpp_cache_file = dir_wrk.cpp ~ unit.cpp_cache_file ~ ".cpp";
     }
 
-    //
-    if !(bscheme & "notest")
-    {
-        // ...
-    }
 
     //
+
+    if !(bscheme & "notest")
+    {
+        // Now that all modules are assigned to translation units,
+        //  and all units have their content and dependencies hashed,
+        //   we can go and determine the exact dependencies of each testcase.
+        //
+        for (mut i = 1; i < ctx.modules.len; i++)
+        {
+            let testsuite_modids = ctx.modules[i].out.cpp.testsuite_modids;
+            if (!testsuite_modids)
+                continue;
+
+            let unit_index = unit_indices[i];
+            unit_index > 0 || fail("Testsuite without a translation unit.");
+
+            ref unit = units[unit_index];
+            testsuite_modids.each: |modid|
+            {
+                shadow let unit_index = unit_indices[modid];
+                if (unit_index < 0)
+                    continue;
+
+                unit.testsuite_units.add(unit_index);
+            }
+        }
+
+        for (mut i = 0; i < units.len; i++)
+        {
+            ref unit = units[i];
+            if (!unit.testsuite_units)
+                continue;
+
+            mut hash: tea::TEA;
+            unit.testsuite_units.each: |unit_index|
+            {
+                let other = units[unit_index];
+                hash.hash(other.obj_hash);
+            }
+
+            hash.hash(unit.obj_hash);
+            unit.testsuite_hash = hash;
+        }
+    }
+
+
+    //
+
     mut ret = buildTarget(
         :units, :file_invariants,
         :flags_cc, :flags_ld, :onfail,
