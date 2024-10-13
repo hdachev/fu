@@ -155,6 +155,9 @@ struct CodegenOutput
     includes_headers?:  flat::Set(string);
     hacks?:             BuildHacks;
 
+    // Testsuite dep modids (empty == no testsuite).
+    testsuite_modids?:  flat::Set(i32);
+
     //
     defects?:           CGDefects;
 };
