@@ -105,7 +105,7 @@ pub fn cpp_codegen(
         // misc garbage
         _indent:            string;
         _hasMain:           i32;
-        _test_suite:        string;
+        _testsuite:         string;
 
         _static_strings:    flat::Set(u64);
         _static_string_src: string;
@@ -829,7 +829,7 @@ pub fn cpp_codegen(
         }
 
         //
-        if (_test_suite)
+        if (_testsuite)
         {
             if (src)
                 src = "\n                                #else"
@@ -840,7 +840,7 @@ pub fn cpp_codegen(
                 ~ "\n{"
                 ~ "\n    puts(\"   TEST Running test suite ...\\n\");"
                 ~ "\n"
-                ~ _test_suite
+                ~ _testsuite
                 ~ "\n"
                 ~ "\n    puts(\"    ... All tests OK.\\n\");"
                 ~ "\n    return 0;"
@@ -1607,9 +1607,9 @@ pub fn cpp_codegen(
             target.modid == module.modid || BUG();
 
             include("<stdio.h>");
-            _test_suite ~= "\n    puts(\"   TEST " ~ id ~ " ...\");";
-            _test_suite ~= "\n    " ~ id ~ "();";
-            _test_suite ~= "\n    puts(\"    ... " ~ id ~ " OK\");";
+            _testsuite ~= "\n    puts(\"   TEST " ~ id ~ " ...\");";
+            _testsuite ~= "\n    " ~ id ~ "();";
+            _testsuite ~= "\n    puts(\"    ... " ~ id ~ " OK\");";
         }
         ////////////////////////////////
 
@@ -3798,10 +3798,35 @@ pub fn cpp_codegen(
     }
 
 
+    // TODO FIX testsuite needs list of all deps, direct and indirect -
+    //  this doesn't make amazing sense here, except for us trying
+    //   to reduce the amount of work that needs to later be done by the build system.
+
+    mut testsuite_modids: flat::Set(i32);
+
+    if (_testsuite)
+    {
+        testsuite_modids.add(0);
+
+        fn visit(m: Module)
+        {
+            for (mut i = 0; i < m.in.parse.imports.len; i++)
+            {
+                let modid = m.in.parse.imports[i].modid;
+                if (testsuite_modids.add(modid))
+                    visit(ctx.modules[modid]);
+            }
+        }
+
+        visit(module);
+    }
+
+
     //
 
     return CodegenOutput(:src,
         hacks:              _build_hacks,
+        :testsuite_modids,
         includes_headers:   _libs,
         defects:            _defects);
 }
