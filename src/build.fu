@@ -484,35 +484,6 @@ pub fn build(
             try_unlink(unit.obj_cache_file);
     }
 
-    //
-    let modules = ctx.modules;
-
-
-    // Depedency sort.
-
-    struct ModuleSortHelper { compile_index: i32; };
-
-    using fn GET(using _: ModuleSortHelper) modules[compile_index];
-
-    shadow let modules =
-    {
-        mut result: ModuleSortHelper[];
-        for (mut i = 0; i < ctx.dep_order.len; i++)
-            result ~= ModuleSortHelper(ctx.dep_order[i]);
-
-        // Empty dep_order -> runtime only
-        if (!result)
-        {
-            modules.len == 1 && bscheme & "shared" || fail(
-                "ctx.dep_order: modules.len(" ~ modules.len ~ ") bscheme(" ~ bscheme ~ ")");
-
-            result ~= ModuleSortHelper(0);
-        }
-
-        //
-        result
-    };
-
 
     //
 
@@ -681,9 +652,13 @@ pub fn build(
 
     //
 
-    for (mut i = 0; i < modules.len; i++)
+    let dep_order = ctx.dep_order || [ 0 ]; // TODO FIX Empty dep_order -> runtime only
+
+    for (mut i = 0; i < dep_order.len; i++)
     {
-        let module  = modules[i];
+        let modid   = dep_order[i];
+        let module  = ctx.modules[modid];
+
         let cpp     = i ? module.out.cpp
                         : fulib_cpp;
         if (!cpp.src)
@@ -802,8 +777,8 @@ pub fn build(
         // Previously generateWatchList:
         assert(!ret.watch_list);
 
-        for (mut i = 1; i < modules.len; i++) {
-            let fname = modules[i].fname;
+        for (mut i = 1; i < ctx.modules.len; i++) {
+            let fname = ctx.modules[i].fname;
             if (fname)
                 ret.watch_list ~= fname;
         }
