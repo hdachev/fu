@@ -238,6 +238,7 @@ pub enum RunMode
 {
     None        = 0
     Normally
+    Testsuite
     CompilerTestcase
     EnsureExecutableButDontRun
 }
@@ -303,9 +304,6 @@ struct TranslationUnit
     // Dirname to resolve #includes "with quotes" relative to.
     iquote?:            string;
 
-    // Unit own-source-code.
-    self_src_hash?:     tea::TEA;
-
     // Hash of all mutable headers this unit #includes in the src.
     includes_hash?:     tea::TEA;
 
@@ -332,16 +330,20 @@ struct TranslationUnit
     obj_cache_file?:    string;
 
     // In case we need to build this unit,
-    //  this is the tmp file
+    //  this is the tmp file we're going to have the cpp compiler emit,
+    //   to only be renamed to the cache-persisted obj_cache_file
+    //    if no headers&co changed in the meantime.
     //
     tmp_file?:          string;
-
-    //
-    //
     cache_cleanup?:     CacheCleanup;
 
-    //
+    // TODO FIX unwrap these, not using all members, overall bad idea
     hacks?:             BuildHacks;
+
+    // Unlike module.testsuite_modids,
+    //  here we have unit indices.
+    //
+    testsuite_units?:   flat::Set(i32);
 };
 
 struct FileInvariants {
@@ -702,16 +704,14 @@ pub fn build(
 
         let cpp = unit.src || fail("Empty translation unit.");
 
-        assert(!unit.self_src_hash);
-        unit.self_src_hash.hash(unit.src);
+        ref hash = unit.obj_hash; assert(!hash);
+
+        hash.hash(unit.src);
 
         // Cpp cache file -
         //  we only care about the immediate content hash here,
         //   no includes, no dependencies, no gcc flags, nothing.
         //
-        assert(!unit.obj_hash);
-        ref hash = (unit.obj_hash = unit.self_src_hash);
-
         unit.cpp_cache_file = hash.digest16 ~ "-" ~ cpp.len;
 
         // Obj cache file -
@@ -731,13 +731,9 @@ pub fn build(
         unit.cpp_cache_file = dir_wrk.cpp ~ unit.cpp_cache_file ~ ".cpp";
     }
 
-    //
-    if !(bscheme & "notest")
-    {
-        // ...
-    }
 
     //
+
     mut ret = buildTarget(
         :units, :file_invariants,
         :flags_cc, :flags_ld, :onfail,
@@ -758,6 +754,67 @@ pub fn build(
         file_invariants.each: |file_invariant|
             if (file_invariant.path)
                 ret.watch_list ~= file_invariant.path;
+    }
+
+
+    //
+
+    if !(bscheme & "notest")
+    {
+        // Now that all modules are assigned to translation units,
+        //  and all units have their content and dependencies hashed,
+        //   we can go and determine the exact dependencies of each testcase.
+        //
+        for (mut i = 1; i < ctx.modules.len; i++)
+        {
+            let testsuite_modids = ctx.modules[i].out.cpp.testsuite_modids;
+            if (!testsuite_modids)
+                continue;
+
+            let unit_index = unit_indices[i];
+            unit_index > 0 || fail("Testsuite without a translation unit.");
+
+            ref unit = units[unit_index];
+            testsuite_modids.each: |modid|
+            {
+                shadow let unit_index = unit_indices[modid];
+                if (unit_index < 0)
+                    continue;
+
+                unit.testsuite_units.add(unit_index);
+            }
+        }
+
+        for (mut i = 0; i < units.len; i++)
+        {
+            ref unit = units[i];
+            if (!unit.testsuite_units)
+                continue;
+
+            // TODO FIX this is a POC, should be doable without rampant copying
+            mut testsuite = unit;
+
+            // We need to bump the obj_hash here, will be compiled with different options -
+            testsuite.obj_hash.hash(".testsuite");
+            testsuite.obj_cache_file ~= ".testsuite";
+            testsuite.src_output_file ~= ".testsuite";
+
+            mut testsuite_units =
+                unit.testsuite_units.keys_asc.map(|unit_index|
+                    units[unit_index])
+                        ~ testsuite;
+
+            buildTarget(
+                testsuite_units, :file_invariants,
+                :bscheme, :flags_cc, :flags_ld, :GCC_CMD,
+
+                onfail: onfail
+                      | OnFail_PrintInput
+                      | OnFail_WriteRepro,
+
+                runmode: "Testsuite",
+                expect_exit: 0);
+        }
     }
 
 
@@ -800,7 +857,7 @@ fn buildTarget(
 
     // Now it's obvious a single bin can't make sense
     //  if we'll want to build multiple libs and executables in one go
-    bin!:               string,
+    bin!?:              string,
 
     //
     GCC_CMD!:           string)
@@ -906,13 +963,17 @@ fn buildTarget(
 
         //
         mut explain = "";
+
         if (onfail & OnFail_PrintInput)
         {
-            explain ~= "\n\n\tCOMPILER BUG or INCORRECT TESTCASE:\n\n";
+            explain ~= runmode == "CompilerTestcase"
+                ? "\n\n\tCOMPILER BUG or INCORRECT TESTCASE:\n\n"
+                : "\n\n\tFAILING TESTCASE:\n\n";
 
             units.each: |unit|
                 explain ~= unit.human ~ "\n";
         }
+
         if (onfail & OnFail_PrintOutput)
         {
             explain ~= "\n\n\tGenerated code:\n\n";
@@ -992,7 +1053,12 @@ fn buildTarget(
             shadow let INCLUDE = INCLUDE ~ (unit.iquote && " -iquote " ~ unit.iquote);
             ////////////////////////////////////////////////////////////////////////////////////////////////
 
-            let CMD = GCC_CMD ~ "-c" ~ INCLUDE ~ " -o " ~ unit.tmp_file ~ " " ~ F_cpp;
+            let TODO_FIX_define_fu_TESTSUITE =
+                F_obj.ends(with: ".o.testsuite") && "-Dfu_TESTSUITE ";
+
+            let CMD = GCC_CMD
+                    ~ TODO_FIX_define_fu_TESTSUITE
+                    ~ "-c" ~ INCLUDE ~ " -o " ~ unit.tmp_file ~ " " ~ F_cpp;
 
             // println("      > ", CMD);
             shadow mut stdout: string;
@@ -1142,7 +1208,8 @@ fn buildTarget(
         //   includes caching for test results so we don't have to
         //    constantly rerun them.
         //
-        let OPTI_StatusCode = runmode == "CompilerTestcase";
+        let OPTI_StatusCode = runmode == "CompilerTestcase"
+                           || runmode == "Testsuite";
 
         mut status: spawn::ExitStatus;
 
