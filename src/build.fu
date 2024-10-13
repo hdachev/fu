@@ -536,30 +536,30 @@ pub fn build(
         let iquote  = i ? module.fname.path::dirname
                         : "";
 
-        mut unit_index = i;
-/*
-        for (shadow mut i = 0; i < cpp.unity.len; i++)
-        {
-            let u = unit_mapping[cpp.unity[i]];
-            if (unit_index > u)
-                unit_index = u;
-        }
+        let unit_index = i;
 
-        for (shadow mut i = 0; i < cpp.unity.len; i++)
-        {
-            let m = cpp.unity[i];
-            let u = unit_mapping[m];
-            if (u != unit_index)
-                for (shadow mut i = u; i < unit_mapping.len; i++)
-                    if (unit_mapping[i] == u)
-                        unit_mapping[i] = unit_index;
-        }
-*/
         unit_mapping ~= unit_index;
-        units.ensure(exists: unit_index) =
+        ref unit = units.ensure(exists: unit_index) =
             TranslationUnit(
                 src_output_file: fname ~ ".cpp",
                 :human, :iquote);
+
+        //
+        if (module.out.cpp.hacks)
+        {
+            unit.hacks.link.add(module.out.cpp.hacks.link);
+
+            let include_dirs = module.out.cpp.hacks.include_dirs;
+            if (include_dirs)
+            {
+                let dir = path::dirname(module.fname);
+                include_dirs.each: |incl|
+                    unit.hacks.include_dirs.add(
+                        incl.starts(with: '.')
+                            ? path::join(dir, incl)
+                            : incl);
+            }
+        }
     }
 
     // Concat unit sources.
@@ -755,12 +755,7 @@ pub fn build(
     //
     shadow let implicit dir_wrk = DirWrk(:dir_wrk);
 
-    // Hash unit content.
-    units.each: |ref unit|
-        if (unit.src)
-            unit.self_src_hash.hash(unit.src);
-
-    //
+    // Hash unit content & generate all intermediate filenames.
     for (mut i = 0; i < units.len; i++)
     {
         ref unit = units[i];
@@ -769,10 +764,14 @@ pub fn build(
         if (!cpp)
             continue;
 
+        assert(!unit.self_src_hash);
+        unit.self_src_hash.hash(unit.src);
+
         // Cpp cache file -
         //  we only care about the immediate content hash here,
         //   no includes, no dependencies, no gcc flags, nothing.
         //
+        assert(!unit.obj_hash);
         ref hash = (unit.obj_hash = unit.self_src_hash);
 
         unit.cpp_cache_file = hash.digest16 ~ "-" ~ cpp.len;
@@ -792,33 +791,6 @@ pub fn build(
 
         unit.obj_cache_file = dir_wrk.obj ~ unit.cpp_cache_file ~ "-" ~ hash.digest16 ~ ".o";
         unit.cpp_cache_file = dir_wrk.cpp ~ unit.cpp_cache_file ~ ".cpp";
-    }
-
-    //
-    for (mut i = 0; i < modules.len; i++)
-    {
-        let module = modules[i];
-        if (!module.out.cpp.hacks)
-            continue;
-
-        let unit_index = unit_mapping[i];
-        if (unit_index < 0)
-            fail("!!unit.hacks but unit_index < 0");
-
-        ref unit = units[unit_index];
-
-        unit.hacks.link.add(module.out.cpp.hacks.link);
-
-        let include_dirs = module.out.cpp.hacks.include_dirs;
-        if (include_dirs)
-        {
-            let dir = path::dirname(module.fname);
-            include_dirs.each: |incl|
-                unit.hacks.include_dirs.add(
-                    incl.starts(with: '.')
-                        ? path::join(dir, incl)
-                        : incl);
-        }
     }
 
     //
