@@ -332,7 +332,9 @@ struct TranslationUnit
     obj_cache_file?:    string;
 
     // In case we need to build this unit,
-    //  this is the tmp file
+    //  this is the tmp file we're going to have the cpp compiler emit,
+    //   to only be renamed to the cache-persisted obj_cache_file
+    //    if no headers&co changed in the meantime.
     //
     tmp_file?:          string;
 
@@ -342,6 +344,11 @@ struct TranslationUnit
 
     //
     hacks?:             BuildHacks;
+
+    // Unlike module.testsuite_modids,
+    //  here we have unit indices.
+    //
+    testsuite_units?:   i32[];
 };
 
 struct FileInvariants {
