@@ -516,6 +516,171 @@ pub fn build(
 
     //
 
+    mut file_invariants: FileInvariants[];
+    mut include_hashes: flat::Map(string, u64);
+
+    fn getIncludeHash(
+        include: string,
+        start_fname: string,
+        include_dirs: string[])
+    {
+        shadow let fail = |reason|
+            fail("Failed to hash the #includes of:\n\t" ~ include.qID ~ "\n\n\t" ~ reason);
+
+        fn tryFollow(dir: string, file: string): u64
+        {
+            let path = path::join(dir, file);
+
+            ref hash = include_hashes.ref(path);
+            if (hash)
+                return hash;
+
+            mut stat: file::Stat;
+            if (let err = file::stat(:path, into: stat))
+                fail(("E" ~ err).qBAD ~ " while attempting to stat: " ~ path.qBAD);
+
+            // We want to make sure these remain unchanged
+            //  while we're building object files.
+            //
+            file_invariants ~= FileInvariants(:path, stat);
+
+            //
+            mut src: string;
+            if (let err = file::read(:path, into: src))
+                fail(("E" ~ err).qBAD ~ " while attempting to read: " ~ path.qBAD);
+
+            shadow let hash = (hash = tea::hash(src).u64);
+
+            // Traverse #includes recursively.
+            mut hash_deep = parseIncludes(:path, :src);
+            if (hash_deep)
+            {
+                shadow ref hash = include_hashes.ref(path);
+
+                hash_deep.hash(hash);
+                return hash = hash_deep.u64;
+            }
+
+            // TODO FIX parse & follow #includes inside
+            return hash;
+        }
+
+        fn parseIncludes(path: string, src: string): tea::TEA
+        {
+            mut hash_all: tea::TEA;
+
+            :NEXT_INCLUDE
+            src.split("#include", each: |match, first|
+            {
+                if (first)
+                    continue :NEXT_INCLUDE;
+
+                fn matchFail(lax reason: string)
+                {
+                    let firstNewline = match.find('\n');
+                    shadow let match = firstNewline > 0
+                             ? match.slice(start: 0, end: firstNewline)
+                             : match;
+
+                    shadow let match = match.len > 90
+                             ? match.slice(start: 0, end: 80)
+                             : match;
+
+                    println("  FISHY #include in " ~ path ~ " (" ~ reason ~ "):\n\n" ~ match.qBAD);
+
+                    continue :NEXT_INCLUDE;
+                }
+
+                // Trim leading whitespace.
+                mut trimLeft = 0;
+                for (mut i = 0; i < match.len; i++)
+                {
+                    if (match[i] > ' ') {
+                        trimLeft = i;
+                        break;
+                    }
+                }
+
+                shadow let match = match.slice(start: trimLeft);
+
+                //
+                let lead = match.len > 2 && match[0];
+
+                let endChar = lead == '"' ? '"'
+                            : lead == '<' ? '>'
+                            : matchFail("no leading " ~ "\"".qKW ~ " or " ~ "<".qKW);
+
+                //
+                for (mut i = 1; i < match.len; i++)
+                {
+                    let c = match[i];
+                    if (c <= ' ')
+                        matchFail("contains whitespace");
+
+                    if (c == endChar)
+                    {
+                        shadow let include = match.slice(0, i + 1);
+                        hash_all.hash(visitInclude(:include, start_fname: path));
+                        continue :NEXT_INCLUDE;
+                    }
+                }
+
+                matchFail("no trailing " ~ (endChar ~ "").qKW);
+            });
+
+            return hash_all;
+        }
+
+        fn visitInclude(shadow include: string, shadow start_fname: string): u64
+        {
+            let f = include.slice(1, include.len - 1);
+
+            if (include.starts(with: '"'))
+                return tryFollow(path::dirname(start_fname), f);
+
+            // TODO FIX not all of our headers start with fu/,
+            //  there's the par/ and dl/ nonsense,
+            //   gotta move those back in.
+            //
+            if (include.starts(with: "<fu/"))
+                return tryFollow(fudir::FU_INCLUDE, f);
+
+            if (include_dirs)
+            {
+                // TODO FIX the include_dirs stuff doesn't make amazing sense,
+                //  we need to skope them somehow so we know
+                //   which headers need to be looked up where.
+            }
+
+            // TODO FIX we need to tell the system headers from
+            //  whatever custom stuff people add to their include_dirs
+            //
+            // Maybe we want to introduce an extra #include convension,
+            //  e.g. <<sys/time.h>>, to explicitly opt-out of content hashing.
+            //
+            // Alternatively, we'd have to locate the std headers on disk
+            //  and just treat them like any other header.
+            //   Here's one way to do it (see https://stackoverflow.com/a/33485647):
+            //
+            //  LC_ALL=C gcc -v -E -xc - < /dev/null 2>&1 |
+            //  LC_ALL=C sed -ne '/starts here/,/End of/p'
+            //
+            // Basically, we'd ignore includes without an extension (std cpp),
+            //  and check the ones with an extension & treat them as usual,
+            //   or ignore when found / error when not found?
+            //    What's the point i wonder.
+            //
+            // println("  CACHE TODO FIX Assuming " ~ include.qID ~ " is immutable, TODO resolve + hash + follow.");
+
+            return 0;
+        }
+
+        return visitInclude(:include, :start_fname);
+    }
+
+
+    //
+
     for (mut i = 0; i < modules.len; i++)
     {
         let module  = modules[i];
@@ -542,14 +707,28 @@ pub fn build(
         ref unit = units.ensure(exists: unit_index) =
             TranslationUnit(
                 src_output_file: fname ~ ".cpp",
-                :human, :iquote);
+                :human, :iquote,
+                :cpp.src);
 
         //
-        if (module.out.cpp.hacks)
+        ref includes_hash = unit.includes_hash;
+        for (shadow mut i = 0; i < cpp.includes_headers.len; i++)
         {
-            unit.hacks.link.add(module.out.cpp.hacks.link);
+            let hash = getIncludeHash(
+                include:        cpp.includes_headers[i],
+                start_fname:    module.fname,
+                include_dirs:   cpp.hacks.include_dirs.keys_asc);
 
-            let include_dirs = module.out.cpp.hacks.include_dirs;
+            if (hash)
+                includes_hash.hash(hash);
+        }
+
+        //
+        if (cpp.hacks)
+        {
+            unit.hacks.link.add(cpp.hacks.link);
+
+            let include_dirs = cpp.hacks.include_dirs;
             if (include_dirs)
             {
                 let dir = path::dirname(module.fname);
@@ -562,200 +741,11 @@ pub fn build(
         }
     }
 
-    // Concat unit sources.
-    mut file_invariants: FileInvariants[];
-    {
-        mut content_hashes: flat::Map(string, u64);
-
-        fn getContentHash(
-            include: string,
-            start_fname: string,
-            include_dirs: string[])
-        {
-            shadow let fail = |reason|
-                fail("Failed to hash the #includes of:\n\t" ~ include.qID ~ "\n\n\t" ~ reason);
-
-            fn tryFollow(dir: string, file: string): u64
-            {
-                let path = path::join(dir, file);
-
-                ref hash = content_hashes.ref(path);
-                if (hash)
-                    return hash;
-
-                mut stat: file::Stat;
-                if (let err = file::stat(:path, into: stat))
-                    fail(("E" ~ err).qBAD ~ " while attempting to stat: " ~ path.qBAD);
-
-                // We want to make sure these remain unchanged
-                //  while we're building object files.
-                //
-                file_invariants ~= FileInvariants(:path, stat);
-
-                //
-                mut src: string;
-                if (let err = file::read(:path, into: src))
-                    fail(("E" ~ err).qBAD ~ " while attempting to read: " ~ path.qBAD);
-
-                shadow let hash = (hash = tea::hash(src).u64);
-
-                // Traverse #includes recursively.
-                mut hash_deep = parseIncludes(:path, :src);
-                if (hash_deep)
-                {
-                    shadow ref hash = content_hashes.ref(path);
-
-                    hash_deep.hash(hash);
-                    return hash = hash_deep.u64;
-                }
-
-                // TODO FIX parse & follow #includes inside
-                return hash;
-            }
-
-            fn parseIncludes(path: string, src: string): tea::TEA
-            {
-                mut hash_all: tea::TEA;
-
-                :NEXT_INCLUDE
-                src.split("#include", each: |match, first|
-                {
-                    if (first)
-                        continue :NEXT_INCLUDE;
-
-                    fn matchFail(lax reason: string)
-                    {
-                        let firstNewline = match.find('\n');
-                        shadow let match = firstNewline > 0
-                                 ? match.slice(start: 0, end: firstNewline)
-                                 : match;
-
-                        shadow let match = match.len > 90
-                                 ? match.slice(start: 0, end: 80)
-                                 : match;
-
-                        println("  FISHY #include in " ~ path ~ " (" ~ reason ~ "):\n\n" ~ match.qBAD);
-
-                        continue :NEXT_INCLUDE;
-                    }
-
-                    // Trim leading whitespace.
-                    mut trimLeft = 0;
-                    for (mut i = 0; i < match.len; i++)
-                    {
-                        if (match[i] > ' ') {
-                            trimLeft = i;
-                            break;
-                        }
-                    }
-
-                    shadow let match = match.slice(start: trimLeft);
-
-                    //
-                    let lead = match.len > 2 && match[0];
-
-                    let endChar = lead == '"' ? '"'
-                                : lead == '<' ? '>'
-                                : matchFail("no leading " ~ "\"".qKW ~ " or " ~ "<".qKW);
-
-                    //
-                    for (mut i = 1; i < match.len; i++)
-                    {
-                        let c = match[i];
-                        if (c <= ' ')
-                            matchFail("contains whitespace");
-
-                        if (c == endChar)
-                        {
-                            shadow let include = match.slice(0, i + 1);
-                            hash_all.hash(visitInclude(:include, start_fname: path));
-                            continue :NEXT_INCLUDE;
-                        }
-                    }
-
-                    matchFail("no trailing " ~ (endChar ~ "").qKW);
-                });
-
-                return hash_all;
-            }
-
-            fn visitInclude(shadow include: string, shadow start_fname: string): u64
-            {
-                let f = include.slice(1, include.len - 1);
-
-                if (include.starts(with: '"'))
-                    return tryFollow(path::dirname(start_fname), f);
-
-                // TODO FIX not all of our headers start with fu/,
-                //  there's the par/ and dl/ nonsense,
-                //   gotta move those back in.
-                //
-                if (include.starts(with: "<fu/"))
-                    return tryFollow(fudir::FU_INCLUDE, f);
-
-                if (include_dirs)
-                {
-                    // TODO FIX the include_dirs stuff doesn't make amazing sense,
-                    //  we need to skope them somehow so we know
-                    //   which headers need to be looked up where.
-                }
-
-                // TODO FIX we need to tell the system headers from
-                //  whatever custom stuff people add to their include_dirs
-                //
-                // Maybe we want to introduce an extra #include convension,
-                //  e.g. <<sys/time.h>>, to explicitly opt-out of content hashing.
-                //
-                // Alternatively, we'd have to locate the std headers on disk
-                //  and just treat them like any other header.
-                //   Here's one way to do it (see https://stackoverflow.com/a/33485647):
-                //
-                //  LC_ALL=C gcc -v -E -xc - < /dev/null 2>&1 |
-                //  LC_ALL=C sed -ne '/starts here/,/End of/p'
-                //
-                // Basically, we'd ignore includes without an extension (std cpp),
-                //  and check the ones with an extension & treat them as usual,
-                //   or ignore when found / error when not found?
-                //    What's the point i wonder.
-                //
-                // println("  CACHE TODO FIX Assuming " ~ include.qID ~ " is immutable, TODO resolve + hash + follow.");
-
-                return 0;
-            }
-
-            return visitInclude(:include, :start_fname);
-        }
-
-        for (mut i = 0; i < modules.len; i++)
-        {
-            let module  = modules[i];
-            let cpp     = i ? module.out.cpp
-                            : fulib_cpp;
-            if (cpp.src)
-            {
-                ref unit = units[unit_mapping[i]];
-                unit.src ~= cpp.src;
-
-                //
-                ref includes_hash = unit.includes_hash;
-                for (shadow mut i = 0; i < cpp.includes_headers.len; i++)
-                {
-                    let hash = getContentHash(
-                        include:        cpp.includes_headers[i],
-                        start_fname:    module.fname,
-                        include_dirs:   cpp.hacks.include_dirs.keys_asc);
-
-                    if (hash)
-                        includes_hash.hash(hash);
-                }
-            }
-        }
-    }
-
-    //
-    shadow let implicit dir_wrk = DirWrk(:dir_wrk);
 
     // Hash unit content & generate all intermediate filenames.
+
+    shadow let implicit dir_wrk = DirWrk(:dir_wrk);
+
     for (mut i = 0; i < units.len; i++)
     {
         ref unit = units[i];
