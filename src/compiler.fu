@@ -343,9 +343,9 @@ pub fn compile_and_build(
             :bscheme, :flags_cc, :flags_ld,
             unity: fname,
 
-            runmode: runmode && bscheme & "watch"
-                ? "EnsureExecutableButDontRun"
-                : runmode);
+            runmode: TODO_REMOVE_bootstrap
+                ? runmode
+                : runmode && "EnsureExecutableButDontRun");
     }
 
 
@@ -468,7 +468,7 @@ pub fn compile_and_build(
 
         // Run & watch.
 
-        if (!TODO_REMOVE_bootstrap && watch_list)
+        if (!TODO_REMOVE_bootstrap && (watch_list || runmode)) :EVENT_LOOP
         {
             mut fswatch_wid:    ev::Loop::WatchID;
             mut run_pid:        spawn::PID;
@@ -520,27 +520,37 @@ pub fn compile_and_build(
                 return some;
             }
 
+            fn break_ifIdle()
+            {
+                if (!run_pid && !fswatch_wid)
+                    break :EVENT_LOOP;
+            }
+
             // TODO just ev::Loop, bootstrap currently can't handle it
             ev::Loop::Loop(
 
                 loop_start: ||
                 {
-                    // Once -
-                    assert(!fswatch_wid);
-                    fswatch_wid = ev::Loop::watch_files(watch_list, else: |err|
+                    assert(!fswatch_wid && !run_pid);
+
+                    if (watch_list)
                     {
-                        println("  WATCH err(" err ") watch_list:\n\t" watch_list.join(",\n\t"));
-                    });
+                        fswatch_wid = ev::Loop::watch_files(watch_list, else: |err|
+                        {
+                            println("  WATCH err(" err ") watch_list:\n\t" watch_list.join(",\n\t"));
+                        });
 
-                    // Restart immediately if some change occurred
-                    //  while we were spinning up the watches,
-                    //   and before we got to spawn the executable.
-                    if (watch_needsRebuild())
-                        continue :REBUILD_LOOP;
+                        // Restart immediately if some change occurred
+                        //  while we were spinning up the watches,
+                        //   and before we got to spawn the executable.
+                        if (watch_needsRebuild())
+                            continue :REBUILD_LOOP;
+                    }
 
-                    //
                     if (runmode && ret.executable)
                         run_pid = spawn([ ret.executable ]);
+
+                    break_ifIdle();
                 },
 
                 watch_event: |watch_id|
@@ -596,6 +606,8 @@ pub fn compile_and_build(
                     assert(pid == run_pid);
                     if (pid == run_pid)
                         run_pid = 0;
+
+                    break_ifIdle();
                 });
         }
 
