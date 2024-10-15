@@ -18,122 +18,97 @@ fn main()
 {
     mut run_no = 0;
 
-    mut dirty: bool;
-    mut rebuild_now: f64;
-    mut rebuild_pid: spawn::PID;
-
-    mut fswatch: ev::Loop::WatchID;
-
-    fn spawn(argv: string[]): spawn::PID
+    :REBUILD_LOOP for (;;)
     {
-        let pid = ev::Loop::spawn(:argv,
-            stdout: "Parent",
-            stderr: "Parent",
-            else: |err|
-            {
-                println("SPWN ER argv(" argv.join(" ") ") err(" err ")");
-            });
+        let start = now::utc();
 
-        // println("SPAWN   argv(" argv.join(" ") ") pid(" pid ")");
-        return pid;
+        mut run_pid: spawn::PID;
+        mut dirty: bool;
+
+        ev::Loop(
+
+            loop_start: ||
+            {
+
+                // Track changes ///////////////
+
+                mut files: string[];
+
+                fn collect(dir: string)
+                {
+                    fs::readdir(dir): |path, type, recurse|
+                    {
+                        if (path.ends(with: ".fu"))
+                            files ~= path;
+                        else if (type == fs::DT_DIR || type == fs::DT_UNKNOWN)
+                            recurse();
+                    }
+                }
+
+                collect("./src");
+                collect("./lib");
+
+                if !(files)
+                {
+                    println("  WATCH Found no source files to watch.");
+                }
+                else
+                {
+                    // println("  WATCH files:\n\t" ~ files.join(",\n\t"));
+
+                    ev::Loop::watch_files(files,
+                        else: |err|
+                            println("  WATCH err(" err ") files:\n\t" files.join(",\n\t")));
+                }
+
+
+                // Launch rebuild //////////////
+
+                let argv    = [ run_no++ ? "./cycle" : "./recycle" ];
+
+                // println("REBUILD Spawning argv(" argv.join(" ") ").");
+
+                run_pid     = ev::Loop::spawn(:argv,
+                    stdout: "Parent",
+                    stderr: "Parent",
+                    else: |err|
+                        println("SPWN ER argv(" argv.join(" ") ") err(" err ")"));
+            },
+
+            watch_event: |lax watch_id|
+            {
+                // println("  WATCH A watch has triggered watch_id(" ~ watch_id ~ ").");
+
+                let now = now::utc();
+                if (abs(now - start) > 0.125/*s*/)
+                {
+                    if (run_pid)
+                    {
+                        // println("  WATCH Still running, setting dirty = true.");
+                        dirty = true;
+                    }
+                    else
+                    {
+                        continue :REBUILD_LOOP;
+                    }
+                }
+            },
+
+            child_closed: |lax pid, lax signo, lax code|
+            {
+                // println("  CHILD EXIT pid(" pid ") signo(" signo ") code(" code ")");
+
+                assert(pid == run_pid);
+                run_pid = 0;
+
+                if (dirty)
+                {
+                    // println("  CHILD Re-running because dirty == true.");
+                    continue :REBUILD_LOOP;
+                }
+            },
+        );
+
+        return 0;
     }
-
-    fn respawn_fswatch()
-    {
-        // TODO instead of this, update the watch with the new file list,
-        //  should give the monitor a chance to do something smart
-        //   instead of re-creating the watch from scratch,
-        //    which is what we'd have if we broke out the loop on every event.
-        //
-        if (fswatch)
-            return;
-
-        mut files: string[];
-
-        fn collect(dir: string)
-        {
-            fs::readdir(dir): |path, type, recurse|
-            {
-                if (path.ends(with: ".fu"))
-                    files ~= path;
-                else if (type == fs::DT_DIR || type == fs::DT_UNKNOWN)
-                    recurse();
-            }
-        }
-
-        collect("./src");
-        collect("./lib");
-
-        if !(files)
-        {
-            println("  WATCH Found no source files to watch.");
-        }
-        else
-        {
-            // println("  WATCH files:\n\t" ~ files.join(",\n\t"));
-
-            fswatch = ev::Loop::watch_files(files, else: |err|
-            {
-                println("  WATCH err(" err ") files:\n\t" files.join(",\n\t"));
-            });
-        }
-    }
-
-    fn respawn_rebuild()
-    {
-        let now = now::utc();
-
-        if (rebuild_pid)
-        {
-            if (abs(now - rebuild_now) > 0.125)
-            {
-                // println("REBUILD Make dirty.");
-                dirty = true;
-            }
-
-            // println("REBUILD Skip, already running.");
-            return;
-        }
-
-        // println("REBUILD Launch.");
-        dirty       = false;
-        rebuild_now = now;
-        rebuild_pid = spawn([ run_no++ ? "./cycle" : "./recycle" ]);
-    }
-
-    ev::Loop(
-
-        loop_start: ||
-        {
-            respawn_fswatch();
-            respawn_rebuild();
-        },
-
-        watch_event: |watch_id!wid|
-        {
-            // println("REBUILD A watch has triggered wid(" ~ wid ~ ").");
-
-            assert(wid == fswatch);
-
-            respawn_fswatch();
-            respawn_rebuild();
-        },
-
-        child_closed: |pid, lax signo, lax code|
-        {
-            // println("  CHILD EXIT pid(" pid ") signo(" signo ") code(" code ")");
-
-            assert(pid == rebuild_pid);
-
-            // println("REBUILD Done.");
-            rebuild_pid = 0;
-            if (dirty)
-            {
-                // println("REBUILD Re-run because dirty.");
-                respawn_rebuild();
-            }
-        },
-    );
-
-    return 0;
 }
