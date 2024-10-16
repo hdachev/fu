@@ -75,7 +75,16 @@ pub extern fn runTests()
         }
 
         if (error)
+        {
+            ////////////////////////////////
+            // TODO FIX remove this nonsense - something re: throwing here calls std::terminate, this pointless mantra avoids it, unclear how
+            // NOTE - it's probably that we're in a defer:ok, which translates to a cpp destructor even if it does check for any currently thrown exceptions
+            mut l = error.len;
+            if (l == 0x7fffffff) error ~= l;
+            ////////////////////////////////
+
             throw(error);
+        }
     }
 
     shadow let ZERO = fn PARZERO;
