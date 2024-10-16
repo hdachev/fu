@@ -461,31 +461,6 @@ pub fn build(
     mut units: TranslationUnit[];
 
 
-    // Delete temp files, if any.
-
-    defer for (mut i = 0; i < units.len; i++)
-    {
-        let unit = units[i];
-
-        // Unlink + print & ignore errors.
-        fn try_unlink(path: string) {
-            if (path) {
-                let err = file::unlink(:path);
-                if (err)
-                    println(" UNLINK " ~ ("E" ~ err).qBAD ~ " " ~ path);
-            }
-        }
-
-        try_unlink(unit.tmp_file);
-
-        //
-        if (unit.cache_cleanup & "Cpp")
-            try_unlink(unit.cpp_cache_file);
-        if (unit.cache_cleanup & "Obj")
-            try_unlink(unit.obj_cache_file);
-    }
-
-
     //
 
     mut file_invariants: FileInvariants[];
@@ -762,7 +737,7 @@ pub fn build(
     }
 
     //
-    mut ret = build_target(
+    mut ret = buildTarget(
         :units, :file_invariants,
         :flags_cc, :flags_ld, :onfail,
         :bscheme, :runmode, :expect_exit,
@@ -791,7 +766,7 @@ pub fn build(
 
 // No modules past this point.
 
-fn build_target(
+fn buildTarget(
     implicit ctx:       Context,
     implicit dir_wrk:   DirWrk,
 
@@ -826,6 +801,34 @@ fn build_target(
     //
     GCC_CMD!:           string)
 {
+
+    // Schedule cleanup - will delete temp files, if any.
+
+    defer for (mut i = 0; i < units.len; i++)
+    {
+        let unit = units[i];
+
+        // Unlink + print & ignore errors.
+        fn try_unlink(path: string) {
+            if (path) {
+                let err = file::unlink(:path);
+                if (err)
+                    println(" UNLINK " ~ ("E" ~ err).qBAD ~ " " ~ path);
+            }
+        }
+
+        try_unlink(unit.tmp_file);
+
+        //
+        if (unit.cache_cleanup & "Cpp")
+            try_unlink(unit.cpp_cache_file);
+        if (unit.cache_cleanup & "Obj")
+            try_unlink(unit.obj_cache_file);
+    }
+
+
+    //
+
     mut HACK_linkFlags:         flat::Set(string);
     mut HACK_pkgConfig_libs:    flat::Set(string);
     mut HACK_include_dirs:      flat::Set(string);
