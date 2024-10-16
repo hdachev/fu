@@ -741,8 +741,7 @@ pub fn build(
         :units, :file_invariants,
         :flags_cc, :flags_ld, :onfail,
         :bscheme, :runmode, :expect_exit,
-        :bin, :dir_src, :dir_cpp, :unity,
-        :GCC_CMD);
+        :bin, :GCC_CMD);
 
     if (bscheme & "watch")
     {
@@ -759,6 +758,14 @@ pub fn build(
             if (file_invariant.path)
                 ret.watch_list ~= file_invariant.path;
     }
+
+
+    //
+
+    outputSources(units, :dir_cpp, :dir_src, :unity);
+
+
+    //
 
     return ret;
 }
@@ -793,10 +800,6 @@ fn buildTarget(
     // Now it's obvious a single bin can't make sense
     //  if we'll want to build multiple libs and executables in one go
     bin!:               string,
-    // dir_obj!:           string,  // <never implemented it seems
-    dir_src!:           string,
-    dir_cpp!:           string,
-    unity!:             string,
 
     //
     GCC_CMD!:           string)
@@ -1214,6 +1217,29 @@ fn buildTarget(
     if (code)
         return ERR;
 
+    // output binary.
+    if (bin)
+    {
+        fs::mkdir_p( path::dirname(bin) );
+
+        code = file::rename(F_exe, bin).int;
+    }
+
+    if (code) return ERR;
+
+    //
+    return BuildOutput(executable: bin || F_exe, :output);
+}
+
+
+//
+
+fn outputSources(
+    units:              TranslationUnit[],
+    dir_src!:           string,
+    dir_cpp!:           string,
+    unity!:             string)
+{
     // .cpp file output.
     if (dir_cpp && dir_src)
     {
@@ -1252,17 +1278,4 @@ fn buildTarget(
             update_file(:dest, :data, :dir_cpp);
         }
     }
-
-    // output binary.
-    if (bin)
-    {
-        fs::mkdir_p( path::dirname(bin) );
-
-        code = file::rename(F_exe, bin).int;
-    }
-
-    if (code) return ERR;
-
-    //
-    return BuildOutput(executable: bin || F_exe, :output);
 }
