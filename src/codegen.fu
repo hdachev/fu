@@ -837,6 +837,7 @@ pub fn cpp_codegen(
 
             src = "\n                                #ifdef fu_TESTSUITE"
                 ~ "\nint main()"
+                ~ "\n{"
                 ~ "\n    puts(\"   TEST Running test suite ...\\n\");"
                 ~ "\n"
                 ~ _testsuite
