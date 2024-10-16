@@ -48,7 +48,7 @@ let TODO_FIX_ignoredWarnings = ""
     // TODO instead of silencing them,
     //  we probably want to simply not treat them as hard errors.
     //
-    ~ "-Wno-maybe-uninitialized -Wno-stringop-overflow -Wno-array-bounds -Wno-sequence-point -Wno-error=dangling-reference "
+    ~ "-Wno-maybe-uninitialized -Wno-stringop-overflow -Wno-array-bounds -Wno-sequence-point -Wno-dangling-reference "
 
     ;
 
