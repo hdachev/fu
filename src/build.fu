@@ -238,6 +238,7 @@ pub enum RunMode
 {
     None        = 0
     Normally
+    Testsuite
     CompilerTestcase
     EnsureExecutableButDontRun
 }
@@ -733,6 +734,31 @@ pub fn build(
 
     //
 
+    mut ret = buildTarget(
+        :units, :file_invariants,
+        :flags_cc, :flags_ld, :onfail,
+        :bscheme, :runmode, :expect_exit,
+        :bin, :GCC_CMD);
+
+    if (bscheme & "watch")
+    {
+        // Previously generateWatchList:
+        assert(!ret.watch_list);
+
+        for (mut i = 1; i < ctx.modules.len; i++) {
+            let fname = ctx.modules[i].fname;
+            if (fname)
+                ret.watch_list ~= fname;
+        }
+
+        file_invariants.each: |file_invariant|
+            if (file_invariant.path)
+                ret.watch_list ~= file_invariant.path;
+    }
+
+
+    //
+
     if !(bscheme & "notest")
     {
         // Now that all modules are assigned to translation units,
@@ -765,40 +791,27 @@ pub fn build(
             if (!unit.testsuite_units)
                 continue;
 
-            mut hash: tea::TEA;
-            unit.testsuite_units.each: |unit_index|
-            {
-                let other = units[unit_index];
-                hash.hash(other.obj_hash);
-            }
+            // TODO FIX this is a POC, should be doable without rampant copying
+            mut testsuite = unit;
 
-            hash.hash(unit.obj_hash);
+            // We need to bump the obj_hash here, will be compiled with different options -
+            testsuite.obj_hash.hash(".testsuite");
+            testsuite.obj_cache_file ~= ".testsuite";
+            testsuite.src_output_file ~= ".testsuite";
+
+            mut testsuite_units =
+                unit.testsuite_units.keys_asc.map(|unit_index|
+                    units[unit_index])
+                        ~ testsuite;
+
+            buildTarget(
+                testsuite_units, :file_invariants,
+                :bscheme, :flags_cc, :flags_ld, :GCC_CMD,
+
+                onfail: OnFail_WriteRepro,
+                runmode: "Testsuite",
+                expect_exit: 0);
         }
-    }
-
-
-    //
-
-    mut ret = buildTarget(
-        :units, :file_invariants,
-        :flags_cc, :flags_ld, :onfail,
-        :bscheme, :runmode, :expect_exit,
-        :bin, :GCC_CMD);
-
-    if (bscheme & "watch")
-    {
-        // Previously generateWatchList:
-        assert(!ret.watch_list);
-
-        for (mut i = 1; i < ctx.modules.len; i++) {
-            let fname = ctx.modules[i].fname;
-            if (fname)
-                ret.watch_list ~= fname;
-        }
-
-        file_invariants.each: |file_invariant|
-            if (file_invariant.path)
-                ret.watch_list ~= file_invariant.path;
     }
 
 
@@ -841,7 +854,7 @@ fn buildTarget(
 
     // Now it's obvious a single bin can't make sense
     //  if we'll want to build multiple libs and executables in one go
-    bin!:               string,
+    bin!?:              string,
 
     //
     GCC_CMD!:           string)
@@ -1033,7 +1046,12 @@ fn buildTarget(
             shadow let INCLUDE = INCLUDE ~ (unit.iquote && " -iquote " ~ unit.iquote);
             ////////////////////////////////////////////////////////////////////////////////////////////////
 
-            let CMD = GCC_CMD ~ "-c" ~ INCLUDE ~ " -o " ~ unit.tmp_file ~ " " ~ F_cpp;
+            let TODO_FIX_define_fu_TESTSUITE =
+                F_obj.ends(with: ".o.testsuite") && "-Dfu_TESTSUITE ";
+
+            let CMD = GCC_CMD
+                    ~ TODO_FIX_define_fu_TESTSUITE
+                    ~ "-c" ~ INCLUDE ~ " -o " ~ unit.tmp_file ~ " " ~ F_cpp;
 
             // println("      > ", CMD);
             shadow mut stdout: string;
@@ -1183,7 +1201,8 @@ fn buildTarget(
         //   includes caching for test results so we don't have to
         //    constantly rerun them.
         //
-        let OPTI_StatusCode = runmode == "CompilerTestcase";
+        let OPTI_StatusCode = runmode == "CompilerTestcase"
+                           || runmode == "Testsuite";
 
         mut status: spawn::ExitStatus;
 
