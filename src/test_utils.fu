@@ -418,7 +418,9 @@ pub fn ZERO(
     }
 
     //
-    mut onfail = build::OnFail_PrintOutput;
+    mut onfail = build::OnFail_PrintInput
+               | build::OnFail_PrintOutput;
+
     if !(options.dev & DEV_ExpectFail)
     {
         onfail |= build::OnFail_WriteRepro;
