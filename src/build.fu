@@ -303,9 +303,6 @@ struct TranslationUnit
     // Dirname to resolve #includes "with quotes" relative to.
     iquote?:            string;
 
-    // Unit own-source-code.
-    self_src_hash?:     tea::TEA;
-
     // Hash of all mutable headers this unit #includes in the src.
     includes_hash?:     tea::TEA;
 
@@ -337,19 +334,15 @@ struct TranslationUnit
     //    if no headers&co changed in the meantime.
     //
     tmp_file?:          string;
-
-    //
-    //
     cache_cleanup?:     CacheCleanup;
 
-    //
+    // TODO FIX unwrap these, not using all members, overall bad idea
     hacks?:             BuildHacks;
 
     // Unlike module.testsuite_modids,
     //  here we have unit indices.
     //
     testsuite_units?:   flat::Set(i32);
-    testsuite_hash?:    tea::TEA;
 };
 
 struct FileInvariants {
@@ -710,16 +703,14 @@ pub fn build(
 
         let cpp = unit.src || fail("Empty translation unit.");
 
-        assert(!unit.self_src_hash);
-        unit.self_src_hash.hash(unit.src);
+        ref hash = unit.obj_hash; assert(!hash);
+
+        hash.hash(unit.src);
 
         // Cpp cache file -
         //  we only care about the immediate content hash here,
         //   no includes, no dependencies, no gcc flags, nothing.
         //
-        assert(!unit.obj_hash);
-        ref hash = (unit.obj_hash = unit.self_src_hash);
-
         unit.cpp_cache_file = hash.digest16 ~ "-" ~ cpp.len;
 
         // Obj cache file -
@@ -782,7 +773,6 @@ pub fn build(
             }
 
             hash.hash(unit.obj_hash);
-            unit.testsuite_hash = hash;
         }
     }
 
