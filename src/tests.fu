@@ -125,6 +125,7 @@ pub extern fn runTests()
     let TODO_definit    = fn TODO;
     let TODO_specpat    = fn TODO;
     let TODO_lint       = fn TODO;
+    let TODO_tests      = fn TODO;
 
     let TODO_templ_vis  = fn TODO; // autoshadow needs to go + how do we make nested fns visible?
 
@@ -22844,6 +22845,23 @@ pub extern fn runTests()
 
         fn main() licm_hoist_var(2) == 204 ? 0 : 1;
     `);
+
+
+    // Testing.
+
+    TODO_tests(currently: "X:X not present", [`
+        struct Hello { v: i32 }
+        test a_simple_test() {
+            <fail failing testcase X:X>
+            assert(!!Hello().v)     <pass/>
+            assert(!Hello().v)      </fail>
+        }
+    `,
+    `
+        fn main() _0::Hello().v;
+    `]);
+
+    // /Tests.
 
 
     // ZERO(`

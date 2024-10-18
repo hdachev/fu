@@ -1608,7 +1608,7 @@ pub fn cpp_codegen(
 
             include("<stdio.h>");
             _testsuite ~= "\n    puts(\"   TEST " ~ id ~ " ...\");";
-            _testsuite ~= "\n    " ~ id ~ "();";
+            _testsuite ~= "\n    " ~ fnID(target) ~ "();";
             _testsuite ~= "\n    puts(\"    ... " ~ id ~ " OK\");";
         }
         ////////////////////////////////
