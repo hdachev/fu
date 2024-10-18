@@ -748,7 +748,18 @@ pub fn cpp_codegen(
         //
         let main   = cgMain();
 
-        return collectDedupes(_libs, prefix: "#include ")
+        return
+            // TODO FIX silly hack to force-enable assertions for testsuite units,
+            //  real silly because you'll end up compiling the same unit twice
+            //   if you build your tests in release and release+assertions.
+            (
+                _testsuite  ?
+                  "                                #ifdef fu_TESTSUITE\n"
+                ~ "#undef NDEBUG\n"
+                ~ "                                #endif\n"
+                            : "")
+
+            ~ collectDedupes(_libs, prefix: "#include ")
 
             // Fwd-declared structs & enums.
             ~ _tfwd_src

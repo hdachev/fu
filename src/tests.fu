@@ -22849,7 +22849,7 @@ pub extern fn runTests()
 
     // Testing.
 
-    TODO_tests(currently: "X:X not present", [`
+    TODO_tests(currently: "BUG FAILING TESTCASE X:X not present", [`
         struct Hello { v: i32 }
         test a_simple_test() {
             <fail failing testcase X:X>
