@@ -60,6 +60,7 @@ nocopy struct DirWrk
     cpp: string;
     obj: string;
     bin: string;
+    out: string;
     tmp: string;
 };
 
@@ -69,6 +70,7 @@ fn DirWrk(dir_wrk!: string)
         cpp: dir_wrk ~ "cpp/",
         obj: dir_wrk ~ "obj/",
         bin: dir_wrk ~ "bin/",
+        out: dir_wrk ~ "out/",
         tmp: dir_wrk ~ "tmp/");
 
     for (fieldname i: DirWrk)
@@ -1211,6 +1213,8 @@ fn buildTarget(
         let OPTI_StatusCode = runmode == "CompilerTestcase"
                            || runmode == "Testsuite";
 
+        let F_out = OPTI_StatusCode && dir_wrk.out ~ F_exe[dir_wrk.bin.len ..];
+
         mut status: spawn::ExitStatus;
 
         //
@@ -1218,6 +1222,7 @@ fn buildTarget(
         {
             mut src: string;
             file::read(F_exe, into: src);
+            file::read(F_out, into: stdout);
 
             output  = test_output::parse(src);
             status  = output.status;
@@ -1228,9 +1233,14 @@ fn buildTarget(
             let out = test_output::serialize(output);
             out.len == 20 || fail("TestOutput.len != 20");
             atomic_write(fname: F_exe, out);
+
+            if (stdout)
+                atomic_write(fname: F_out, stdout);
         }
 
         //
+        stdout = "";
+
         if (OPTI_StatusCode
             && old_size.test_output::looks_legit)
         {
@@ -1240,7 +1250,6 @@ fn buildTarget(
         {
             {
                 println("    RUN " F_exe);
-                shadow mut stdout: string;
 
                 let t0  = now::hr();
                 code    = ::spawn([ F_exe ], :status, :stdout, stderr: stdout, passthrough: runmode == "Normally").int;
