@@ -1214,6 +1214,7 @@ fn buildTarget(
                            || runmode == "Testsuite";
 
         let F_out = OPTI_StatusCode && dir_wrk.out ~ F_exe[dir_wrk.bin.len ..];
+        let READ_LAZILY = "\read lazily";
 
         mut status: spawn::ExitStatus;
 
@@ -1222,10 +1223,10 @@ fn buildTarget(
         {
             mut src: string;
             file::read(F_exe, into: src);
-            file::read(F_out, into: stdout);
 
             output  = test_output::parse(src);
             status  = output.status;
+            stdout  = READ_LAZILY;
         }
 
         fn WRITE_cachedTestOutput()
@@ -1288,6 +1289,12 @@ fn buildTarget(
         if (!code)
             if !(status.exited && status.exit == expect_exit)
                 code = status.int || -1;
+
+        // Only read cached outputs when we're about to abort.
+        if (OPTI_StatusCode && code && stdout == READ_LAZILY) {
+            stdout = "";
+            file::read(F_out, into: stdout);
+        }
     }
 
     if (code)
