@@ -849,11 +849,7 @@ pub fn cpp_codegen(
             src = "\n                                #ifdef fu_TESTSUITE"
                 ~ "\nint main()"
                 ~ "\n{"
-                ~ "\n    puts(\"   TEST Running test suite ...\\n\");"
-                ~ "\n"
                 ~ _testsuite
-                ~ "\n"
-                ~ "\n    puts(\"    ... All tests OK.\\n\");"
                 ~ "\n    return 0;"
                 ~ "\n}"
                 ~ src
@@ -1620,7 +1616,8 @@ pub fn cpp_codegen(
             include("<stdio.h>");
             _testsuite ~= "\n    puts(\"   TEST " ~ id ~ " ...\");";
             _testsuite ~= "\n    " ~ fnID(target) ~ "();";
-            _testsuite ~= "\n    puts(\"    ... " ~ id ~ " OK\");";
+            _testsuite ~= "\n    puts(\"    ... " ~ id ~ " OK\\n\");";
+            _testsuite ~= "\n";
         }
         ////////////////////////////////
 

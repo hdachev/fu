@@ -957,33 +957,52 @@ fn buildTarget(
             atomic_write(:fname, cpp);
         }
 
-        // Print exit code.
-        if (stdout)
-            stdout ~= "\n\n";
-
-        stdout ~= "   EXIT code: " ~ code;
-
         //
         mut explain = "";
 
+        fn ensureOneEmptyLine()
+            if (explain && !explain.ends(with: "\n\n"))
+                explain ~= explain.ends(with: '\n') ? "\n" : "\n\n";
+
+        //
         if (onfail & OnFail_PrintInput)
         {
             explain ~= runmode == "CompilerTestcase"
-                ? "\n\n\tCOMPILER BUG or INCORRECT TESTCASE:\n\n"
-                : "\n\n\tFAILING TESTCASE:\n\n";
+                ? "COMPILER BUG or INCORRECT TESTCASE:\n\n"
+                : "Testsuite failed: ";
 
-            units.each: |unit|
+            units.each: |unit, i|
+            {
+                if (runmode == "Testsuite" && i != units.len - 1)
+                    continue;
+
                 explain ~= unit.human ~ "\n";
+            }
         }
 
+        //
+        if (stdout)
+            ensureOneEmptyLine();
+
+        explain ~= stdout;
+
+        //
         if (onfail & OnFail_PrintOutput)
         {
-            explain ~= "\n\n\tGenerated code:\n\n";
+            ensureOneEmptyLine();
+
+            explain ~= "\tGenerated code:\n\n";
             units.each: |unit|
                 explain ~= unit.src;
         }
 
-        return fail(stdout ~ explain);
+        // Print exit code.
+        ensureOneEmptyLine();
+
+        explain ~= "   EXIT code: " ~ code;
+
+        //
+        return fail(explain);
     }
 
     //
@@ -1288,7 +1307,10 @@ fn buildTarget(
 
         if (!code)
             if !(status.exited && status.exit == expect_exit)
-                code = status.int || -1;
+                code = status.exited && status.exit
+                    || status.signalled && status.signal.int
+                    || status.int
+                    || -1;
 
         // Only read cached outputs when we're about to abort.
         if (OPTI_StatusCode && code && stdout == READ_LAZILY) {

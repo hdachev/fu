@@ -199,8 +199,18 @@ fn verify_errmsg(topic: string, e!: string, msg!: string)
         }
     }
 
-    if (!BUG_ok && e.has("BUG"))
-        throw(topic ~ " error message contains BUG:\n\n" ~ e);
+    if (!BUG_ok)
+    {
+        mut start = -1;
+        while ((start = e.find("BUG", :start + 1)) >= 0)
+        {
+            // BUG can match on things like NDEBUG etc.
+            if (start > 2 && e[start - 2 .. start + 3] == "DEBUG")
+                continue;
+
+            throw(topic ~ " error message contains BUG:\n\n" ~ e);
+        }
+    }
 }
 
 pub fn ZERO(
@@ -771,7 +781,8 @@ fn ERR_STRIP_SNIPPETS(mut e: string)
             continue;
 
         // Snippets start with a line number or a pipe.
-        let snippet = c >= '0' && c <= '9' || c == '|';
+        mut pipe    = c == '|';
+        mut snippet = c >= '0' && c <= '9' || pipe;
 
         i++;
         for ( ; i < e.len; i++)
@@ -781,7 +792,7 @@ fn ERR_STRIP_SNIPPETS(mut e: string)
             {
                 i++; // inclusive
 
-                if (snippet)
+                if (pipe)
                 {
                     // println(" SPLICE " ~ e[i0 : i - 1]);
                     e.splice(i0, i - i0);
@@ -794,6 +805,24 @@ fn ERR_STRIP_SNIPPETS(mut e: string)
 
                 i--; // revisit
                 break;
+            }
+            else if (snippet && !pipe)
+            {
+                if (c >= '0' && c <= '9' || c == ' ')
+                {
+                    // OK, nothing new, this can still be the line number -
+                    //  continue.
+                }
+                else if (c == '|')
+                {
+                    // Done, we found the pipe, definitely a snippet.
+                    pipe = true;
+                }
+                else
+                {
+                    // Turns out this wasn't a line number after all.
+                    snippet = false;
+                }
             }
         }
     }
