@@ -425,6 +425,9 @@ pub fn compile_and_build(
     :REBUILD_LOOP
     for (;;)
     {
+        lax mut last_recompile_ok: bool;
+        lax mut last_spurious_watch_notif: f64;
+
         fn recompile(plugin!?: bool, dont_try_catch!?: bool)
         {
             if (bscheme & "watch" && !dont_try_catch)
@@ -438,7 +441,13 @@ pub fn compile_and_build(
                 return [];
             }
 
+
             //
+
+            last_recompile_ok = false;
+            defer:ok    last_recompile_ok = true;
+            defer       last_spurious_watch_notif = now::hr();
+
             println("COMPILE " fname);
 
             let t0 = now::hr();
@@ -566,13 +575,28 @@ pub fn compile_and_build(
                 {
                     assert(watch_id == fswatch_wid);
 
-                    if (!watch_needsRebuild())
-                    {
-                        // TODO use whatever information we can get from
-                        //  the file watch to make this test cheaper,
-                        //   these tend to fire unpredictably,
+                    // TODO use whatever information we can get from
+                    //  the file watch to make this test cheaper,
+                    //   these tend to fire unpredictably,
+                    //
+                    if (!watch_needsRebuild()
+
+                        // Note - if not currently running & last_recompile_ok,
+                        //  we let this event through so that the user's program
+                        //   will be rerun, otherwise we complain and noop.
                         //
-                        println("  WATCH Spurious event, no change.");
+                        && (run_pid || !last_recompile_ok))
+                    {
+                        let now = now::hr();
+                        if (abs(last_spurious_watch_notif - now) > 1)
+                        {
+                            last_spurious_watch_notif = now;
+
+                            println(
+                                last_recompile_ok
+                                    ? "  WATCH Nothing changed."
+                                    : "\a  WATCH Nothing changed, note error message above.");
+                        }
 
                         continue;
                     }
