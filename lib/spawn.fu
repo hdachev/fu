@@ -91,6 +91,10 @@ fn pipe(ref p: PosixPipe, blocking!: bool): Errno
         template <typename i32, typename = decltype(*((i32**)1) = (int*)1)>
         i32 pipe2(i32 fildes[2], i32 flags, ...)
         {
+            #ifdef __linux__
+            return void("pipe2 does not require this shim on linux, why is it getting compiled?");
+            #endif
+
             auto err = pipe(fildes);
             if (err)
                 return err;
