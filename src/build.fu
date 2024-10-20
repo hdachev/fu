@@ -927,13 +927,26 @@ fn buildTarget(
     let INCLUDE = (flags_cc && " " ~ flags_cc.join(' ')) ~ " -I " ~ ctx.fudir ~ "include"
                 ~ (HACK_include_dirs && " -I " ~ HACK_include_dirs.keys_asc.join(" -I "));
 
-    let LIBS = (flags_ld && " " ~ flags_ld.join(' '))
+    mut LINK = (flags_ld && " " ~ flags_ld.join(' '))
              ~ (HACK_linkFlags      && " "                     ~ HACK_linkFlags.keys_asc.join(" "))
              ~ (HACK_pkgConfig_libs && " $(pkg-config --libs " ~ HACK_pkgConfig_libs.keys_asc.join(" ") ~ ")");
 
     //
-    len_all += LIBS.len;
-    hash_all.hash(LIBS);
+    if (bscheme & "shared" && runmode != "Testsuite")
+    {
+        LINK ~= " -shared";
+
+        // Linker -soname
+        let soname = path::filename(bin);
+        if (process::APPLE)
+            LINK ~= " -Wl,-install_name,@rpath/" ~ soname;
+        else
+            LINK ~= " -Wl,-soname," ~ soname;
+    }
+
+    //
+    len_all += LINK.len;
+    hash_all.hash(LINK);
 
     //
     mut code:   i32;
@@ -1174,18 +1187,6 @@ fn buildTarget(
 
         mut cmd = GCC_CMD ~ "-o " ~ F_tmp;
 
-        if (bscheme & "shared")
-        {
-            cmd ~= " -shared";
-
-            // Linker -soname
-            let soname = path::filename(bin);
-            if (process::APPLE)
-                cmd ~= " -Wl,-install_name,@rpath/" ~ soname;
-            else
-                cmd ~= " -Wl,-soname," ~ soname;
-        }
-
         for (mut i = 0; i < units.len; i++)
         {
             let unit = units[i];
@@ -1195,11 +1196,11 @@ fn buildTarget(
 
         //
         {
-            println("   LINK ", F_exe, LIBS);
+            println("   LINK ", F_exe, LINK);
 
             let t0 = now::hr();
 
-            let CMD = cmd ~ LIBS;
+            let CMD = cmd ~ LINK;
 
             // println("      > ", CMD);
 
