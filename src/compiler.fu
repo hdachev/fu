@@ -387,12 +387,18 @@ pub fn compile_and_build(
         if (err && err != Errno::ENOENT)
             println("HOTSWAP Could not unlink " HOTSWAP_plugin ": err(" err ")");
 
-        //
-        let libs = [ "-L", HOTSWAP_dirname, "-lfu"/*libfu.so*/ ];
-
+        // Why is this such a mess?
         let ORIGIN = process::APPLE
             ? "@loader_path"
             : "$ORIGIN";
+
+        let libs = [
+
+            // Static linker.
+            "-L", HOTSWAP_dirname, "-lfu"/*libfu.so*/,
+
+            // Dynamic linker.
+            "-Wl,-rpath," ~ ORIGIN ];
 
         if (plugin)
             return build(
@@ -405,7 +411,7 @@ pub fn compile_and_build(
                 :bin,
                 :bscheme & ~BuildScheme.shared,
                 :runmode,
-                :flags_ld ~ libs ~ [ "-Wl,-rpath," ~ ORIGIN ]);
+                :flags_ld ~ libs);
     }
 
 
