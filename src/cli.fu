@@ -156,8 +156,14 @@ fn cli_handle(argv: string[], cwd = fs::cwd())
             continue;
         }
 
+        //
         if (opt == "--notest") {
             bflags |= "notest";
+            continue;
+        }
+
+        if (opt == "--test" || opt == "t") {
+            bflags |= "nocache_tests";
             continue;
         }
 
@@ -209,6 +215,10 @@ fn cli_handle(argv: string[], cwd = fs::cwd())
         if (opt) throw("Leftover option: `" ~ opt ~ "`.");
     }
 
+    //
+    if (bflags & "notest" && bflags & "nocache_tests")
+        throw("Both --test and --notest options provided.");
+
     // Go.
     compile_and_build(
         :fname, :bin,
@@ -226,7 +236,7 @@ fn cli_handle(argv: string[], cwd = fs::cwd())
     if (bflags & "hotswap") if (!(bflags & "watch") || !runmode)
     {
         hints = true;
-        println("   HINT "self" --hotswap is not very useful without both --watch and --run.");
+        println("   HINT --hotswap is not very useful without both --watch and --run.");
     }
 }
 

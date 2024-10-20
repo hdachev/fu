@@ -251,6 +251,7 @@ pub flags BuildScheme: u16
     hotswap
     nocache
     notest
+    nocache_tests
     watch
 
     // NOTE re: the weird negations here -
@@ -1007,7 +1008,8 @@ fn buildTarget(
 
     //
     let F_exe       = dir_wrk.bin ~ hash_all.digest16 ~ "-" ~ len_all;
-    let old_size    = !(bscheme & "nocache") && file::size(F_exe);
+    let old_size    = !(bscheme & "nocache" || runmode == "Testsuite" && bscheme & "nocache_tests")
+                        && file::size(F_exe);
 
     ////////////////////////////////////////////////
     // TEMP re-run tests without allocation stats //
