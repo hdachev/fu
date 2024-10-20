@@ -811,9 +811,9 @@ pub fn build(
                 testsuite_units, :file_invariants,
                 :bscheme, :flags_cc, :flags_ld, :GCC_CMD,
 
-                onfail: onfail
-                      | OnFail_PrintInput
-                      | OnFail_WriteRepro,
+                onfail: runmode == "CompilerTestcase"
+                    ? onfail
+                    : OnFail_PrintInput | OnFail_WriteRepro,
 
                 runmode: "Testsuite",
                 expect_exit: 0);
