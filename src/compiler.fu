@@ -287,13 +287,16 @@ pub fn compile(
 
 //
 
-pub fn try_or_print_error(action)
+pub fn try_or_print_error(action, beep!?: bool)
 {
     try {
         action();
     }
     catch (e) {
-        println("\n" ~ "  ERROR ".qBAD ~ e ~ (!e.ends(with: "\n") && "\n"));
+        println("\n"
+                ~ (beep && "\a")
+                ~ "  ERROR ".qBAD ~ e
+                ~ (!e.ends(with: "\n") && "\n"));
         return 1;
     }
 
@@ -428,7 +431,7 @@ pub fn compile_and_build(
             {
                 watch_pruneModules();
 
-                try_or_print_error(|| {
+                try_or_print_error(beep: true, || {
                     return recompile(:plugin, dont_try_catch: true);
                 });
 
