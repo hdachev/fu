@@ -8,13 +8,19 @@ fn EAGAIN(): Errno          = __native("<errno.h>", "EAGAIN");
 fn EWOULDBLOCK(): Errno     = __native("<errno.h>", "EWOULDBLOCK");
 fn EINTR(): Errno           = __native("<errno.h>", "EINTR");
 
-inline fn retry_immediately(err: Errno)
+inline fn should_retry_immediately(err: Errno)
 {
     return err == EINTR;
 }
 
-inline fn retry_later(err: Errno)
+inline fn should_retry_later(err: Errno)
 {
     return err == EAGAIN
         || err == EWOULDBLOCK;
+}
+
+inline fn should_retry(err: Errno)
+{
+    return err.should_retry_immediately
+        || err.should_retry_later;
 }

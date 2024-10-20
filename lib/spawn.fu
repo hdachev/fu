@@ -473,7 +473,7 @@ pub fn spawn(
 
     mut err: Errno;
     mut child: Child;
-    if ((err = spawn(:child, :argv, stdout: cs, stderr: cs, blocking: true)))
+    if ((err = spawn(:child, :argv, stdout: cs, stderr: cs, blocking: false)))
         return err;
 
     defer close(:child, :status);
@@ -544,11 +544,13 @@ pub fn spawn(
         {
             if (poll_ret < 0)
             {
-                auto e = errno;
-                if (e == EINTR || e == EAGAIN)
+                `err` = errno;
+                if (`err.should_retry`)
+                {
+                    `err` = 0;
                     continue;
+                }
 
-                `err` = e;
                 break;
             }
 

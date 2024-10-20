@@ -105,7 +105,7 @@ pub fn read_exhaustive(fd: FD, ref buffer: byte[], ref bytes_read!total_bytes_re
             //     perror("   READ read_exhaustive");
             // `);
 
-            if (!err.retry_immediately)
+            if (!err.should_retry_immediately)
                 return err;
         }
         else
