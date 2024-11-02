@@ -26,6 +26,10 @@ infix fn -= (mut ref a: <T>, b: T) case (T.is::arithmetic): &mut T __native;
 infix fn *= (mut ref a: <T>, b: T) case (T.is::arithmetic): &mut T __native;
 infix fn /= (mut ref a: <T>, b: T) case (T.is::arithmetic): &mut T __native;
 
+infix fn %= (mut ref a: <T>, b: T)
+    case (T.is::integral): &mut T __native;
+    case (T.is::floating_point) = (a = a % b);
+
 infix fn >  (a: <T>, b: T) case (T.is::primitive): bool __native;
 infix fn <  (a: <T>, b: T) case (T.is::primitive): bool __native;
 infix fn >= (a: <T>, b: T) case (T.is::primitive): bool __native;
