@@ -14159,6 +14159,16 @@ pub extern fn runTests()
         fn main() = litfix_order(a: 2, b: 0.5) == 7 ? 0 : 1;
     `);
 
+    TODO_litfix(currently: "ambig ||, incompatible operands in non-bool context i16 i32 2:44+2", `
+        fn next_mip(ref s: i16) s = s >> 1 || 1;
+        fn main() {
+            mut v = 3.i16;
+            let a = v.next_mip();
+            let b = v.next_mip();
+            return int(a + b) - 2;
+        }
+    `);
+
     // /Usability of numeric literals.
 
 
