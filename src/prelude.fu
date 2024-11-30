@@ -921,6 +921,13 @@ fn if(ref a: <T>[..], exists!i: int, and!then?: <Then>, else!?)
         ? Then -> [] ? a[i] : then(a[i])
         : else();
 
+fn ensure(ref a: <T>[], exists!i: int) {
+    if (a.len <= i)
+        a.grow(i + 1);
+
+    return a[i];
+}
+
 fn remove(ref a: <T>[..], at!: int, count = 1)
     a.splice(at, count);
 

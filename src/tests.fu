@@ -8568,7 +8568,7 @@ pub extern fn runTests()
     `);
 
     ZERO(`
-        fn ensure(ref a: <T>[], exists!i: int) {
+        fn Ensure(ref a: <T>[], exists!i: int) {
             if (a.len <= i) a.grow(i + 1);
             return a[i];
         }
@@ -8585,7 +8585,7 @@ pub extern fn runTests()
         }
 
         fn search(using ref ss: SolverState, t: int)
-            _warnings.ensure(exists: t) ||= t;
+            _warnings.Ensure(exists: t) ||= t;
 
         fn main() {
             mut ss: SolverState;
