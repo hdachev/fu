@@ -22221,6 +22221,20 @@ pub extern fn runTests()
         fn main() 0.test;                                 //   gotta suggest a fix
     `]);
 
+    TODO_litfix(currently: "Incompat types for T Token string byte 5:24+3", `
+        enum Token { KEY_X }
+
+        fn update(ref state: int, tokens: Token[])
+            if (tokens.has("KEY_X"))
+                state++;
+
+        fn main() {
+            mut state = -1;
+            state.update([ Token.KEY_X ]);
+            return state;
+        }
+    `);
+
     // /Enums
 
 
