@@ -13388,7 +13388,7 @@ pub extern fn runTests()
         fn main() glsl_what.len - 3;
     `);
 
-    TODO_zst(currently: "BUG VIEW_QUADS place is irrelevant 4:13+10", `
+    ZERO(`
         struct Batch {};
         type ViewQuads = Batch;
         let VIEW_QUADS: ViewQuads = [];

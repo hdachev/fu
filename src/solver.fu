@@ -14833,7 +14833,8 @@ pub fn solve(
         else if (k == "let")
         {
             if (node.type.isIrrelevant && pass >= RelaxMut)
-                node.target.isArg || BUG(node.target ~ " place.type is irrelevant: " ~ explainType(node.type, usage: true));
+                node.target.isArg || !node.target.isLocal || BUG(
+                    node.target ~ " place.type is irrelevant: " ~ explainType(node.type, usage: true));
 
             if (node.items.len != 2)
             {
