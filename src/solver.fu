@@ -10821,21 +10821,6 @@ pub fn solve(
         return CallerNode(id, callTargIdx, args, :reorder, :conversions);
     }
 
-    fn deadCall(args: SolvedNode[]): SolvedNode
-    {
-        // TODO FIX deadCall order of eval is kinda broken -
-        //  a dead default arg will respect LTR but not RTL order of eval,
-        //   a dead arg pre-match won't respect any order at all.
-        //
-        // This would be kinda solved if we decide that order of eval
-        //  is as written at each callsite, and not dependent on the target fn,
-        //   and we'll enforce RTL for assignments just because that's what's written,
-        //    e.g. if invoked as a regular fn it'd be LTR.
-        //
-        makeNote(N_DeadCall);
-        return createBlock(t_never, args);
-    }
-
 
     // TODO we have to get rid of this.
 
@@ -12392,11 +12377,11 @@ pub fn solve(
             let spec_of_args    = spec_of && spec_of.args;
 
             args.resize(host_args.len);
-            for (mut i = 0; i < args.len; i++)
+
+            let RTL = target.isRTL;
+            argsForward(:RTL, :host_args): |i, host_arg|
             {
                 ref arg         = args[i];
-                let host_arg    = host_args[i];
-
                 if (!arg)
                 {
                     mut defaultFrom = target;
@@ -12452,8 +12437,16 @@ pub fn solve(
                 // Dead code elim.
                 if (arg.is_never && !(host_arg.flags & F_INLINE))
                 {
-                    args.shrink(i + 1);
-                    return deadCall(args);
+                    mut ooe: SolvedNode[];
+                    argsForward(:RTL, :host_args): |i!j|
+                    {
+                        ooe ~= args[j];
+                        if (i == j)
+                            break;
+                    }
+
+                    makeNote(N_DeadCall);
+                    return createBlock(t_never, ooe);
                 }
             }
         }

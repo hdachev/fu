@@ -22598,14 +22598,14 @@ pub extern fn runTests()
         fn main() what([]);
     `);
 
-    TODO_ooe(currently: "BUG exit code", `
+    ZERO(`
         fn main() {
             mut zero = 0; // zero++ must never happen
             (zero++) = { return :main zero; };
         }
     `);
 
-    TODO_ooe(currently: "BUG exit code", `
+    ZERO(`
         fn main() {
             mut zero = 0; // zero++ must never happen
             fn no_return() { return :main zero; }
@@ -22613,7 +22613,7 @@ pub extern fn runTests()
         }
     `);
 
-    TODO_ooe(currently: "BUG exit code", `
+    ZERO(`
         fn takes_two_lambdas(inline a, inline b) a = b;
 
         fn main() {
@@ -22622,7 +22622,7 @@ pub extern fn runTests()
         }
     `);
 
-    TODO_ooe(currently: "BUG exit code", `
+    ZERO(`
         fn takes_two_lambdas(a, b) a() = b();
 
         fn main() {
