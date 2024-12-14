@@ -551,6 +551,24 @@ pub extern fn runTests()
         }
     `);
 
+    TODO_lint(currently: "BUG exit code", `
+        struct vec3 { v: i32 };
+        struct mat34 { mx: vec3; my: vec3; mo: vec3 };
+        fn translate = vec3(0);
+
+        fn mat34(using scale: vec3)
+            mat34(
+                vec3(v),    // Intent of using was just to destructure the vec3 here.
+                vec3(v),
+                // translate, Forgot this, compiles without it, got really confused.
+                            // It's surprising when usings feed into constructors,
+                            //  but i don't like the idea of making them special either.
+                            //   Perhaps require argnames when multiple members have same type?
+            );
+
+        fn main() mat34(vec3(1)).mo.v;
+    `);
+
     // /Structs /using /structs
 
 
