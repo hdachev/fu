@@ -9753,8 +9753,10 @@ pub fn solve(
         at_most_one_set(flags & (F_CONST | F_MUT)) || BUG("F_CONST & F_MUT both set");
 
         //
+        let n_annot = node.items[LET_TYPE];
+
         shadow let annot
-            = specType ?
+            = specType && (!n_annot || !specType.is_zeroes) ?
             {
                 shadow let specType = !(flags & F_REF) || flags & F_CONST
                     ? clear_mutref(specType)
@@ -9768,7 +9770,6 @@ pub fn solve(
                 //  Noticed it because the redundancy was covering up incorrect
                 //   .pub_items handling in trySolveTypeParams>solveAddrOfFn(:imports).
                 //
-                let n_annot = node.items[LET_TYPE];
                 let annot   = n_annot && evalTypeAnnot(n_annot);
 
                 // Upgrade to mutref if `ref` set -
@@ -10335,12 +10336,9 @@ pub fn solve(
             {
                 let t   = node.value == "&"    ? tryClear_ref(type)     || matchFail("Not a reference: " ~ type.explainType)
                         : node.value == "&mut" ? tryClear_mutref(type)  || matchFail("Not a mutref: " ~ type.explainType)
-                        : node.value == "[]"   ? tryClear_array(type)   || matchFail("Not an array: " ~ type.explainType)
-                        : node.value == "[..]" ? tryClear_sliceable(type) || matchFail("Not sliceable: " ~ type.explainType)
+                        : node.value == "[]"   ? (type.is_zeroes ? t_zeroes : { invariant = true; tryClear_array(type)     }) || matchFail("Not an array: " ~ type.explainType)
+                        : node.value == "[..]" ? (type.is_zeroes ? t_zeroes : { invariant = true; tryClear_sliceable(type) }) || matchFail("Not sliceable: " ~ type.explainType)
                         : { break :UNARY; };
-
-                if (node.value == "[]" || node.value == "[..]")
-                    invariant = true;
 
                 return trySolveTypeParams(
                     node.items[0] || BUG(), t || BUG(), :error,
