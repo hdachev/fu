@@ -6964,7 +6964,7 @@ pub fn solve(
                     //  to let all type params solve normally.
                     let host_arg = original.args[i];
 
-                    // Don't infer [] if possible.
+                    // TODO FIX ZEROES Don't infer [] if possible.
                     shadow let inValue =
                         (!host_arg.default || !inValue.is_zeroes)
                             && inValue;
@@ -9756,7 +9756,10 @@ pub fn solve(
         let n_annot = node.items[LET_TYPE];
 
         shadow let annot
-            = specType && (!n_annot || !specType.is_zeroes) ?
+            = specType
+
+                // TODO FIX ZEROES try not to infer t_zeroes if possible
+                && (!n_annot || n_annot.kind == "typeunion" || !specType.is_zeroes) ?
             {
                 shadow let specType = !(flags & F_REF) || flags & F_CONST
                     ? clear_mutref(specType)
