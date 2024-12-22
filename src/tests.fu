@@ -128,6 +128,7 @@ pub extern fn runTests()
     let TODO_tests      = fn TODO;
 
     let TODO_templ_vis  = fn TODO; // autoshadow needs to go + how do we make nested fns visible?
+    let TODO_StaticEval = fn TODO;
 
     let LEGACY_Map      = fn TODO;
 
@@ -22662,6 +22663,13 @@ pub extern fn runTests()
         fn main() {
             mut zero = 0; // zero++ must never happen
             takes_two_lambdas(|| zero++, || { return :main zero });
+        }
+    `);
+
+    TODO_StaticEval(currently: "DOESNT_EXIST is not defined here 3:24+12", `
+        fn main() {
+            if (int[]) DOESNT_EXIST();
+            return 0;
         }
     `);
 
