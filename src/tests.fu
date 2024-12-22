@@ -13423,6 +13423,11 @@ pub extern fn runTests()
         fn main() glsl_what == "A \\0 C" ? 0 : 1;
     `);
 
+    TODO_ambig(currently: "BUG exit code", `
+        fn must_not_match(other: <fail X:X>byte<pass/>string</fail>) "Hello" ~ other;
+        fn main() must_not_match(false && "!").len - 5;         ;; !DEV_DontFoldLiterals
+    `);
+
     TODO_ambig(currently: "Ambig call to ~ 3:30+1", `
         let USE_MIPMAPS = false;
         let glsl_what = "A " ~ (USE_MIPMAPS && "B ") ~ "C";
