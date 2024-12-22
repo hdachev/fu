@@ -6964,7 +6964,7 @@ pub fn solve(
                     //  to let all type params solve normally.
                     let host_arg = original.args[i];
 
-                    // Don't infer [] if possible.
+                    // TODO FIX ZEROES don't infer [] if possible.
                     shadow let inValue =
                         (!host_arg.default || !inValue.is_zeroes)
                             && inValue;
@@ -9753,8 +9753,17 @@ pub fn solve(
         at_most_one_set(flags & (F_CONST | F_MUT)) || BUG("F_CONST & F_MUT both set");
 
         //
+        let n_annot = node.items[LET_TYPE];
+
         shadow let annot
-            = specType ?
+            = specType
+
+                // TODO FIX ZEROES don't infer t_zeroes if possible
+                //
+                // TODO FIX can we get rid of typeunions earlier?
+                // Alteratively, eval all branches use first applicable
+                && (!n_annot || n_annot.kind == "typeunion"
+                             || !specType.is_zeroes) ?
             {
                 shadow let specType = !(flags & F_REF) || flags & F_CONST
                     ? clear_mutref(specType)
@@ -9768,7 +9777,6 @@ pub fn solve(
                 //  Noticed it because the redundancy was covering up incorrect
                 //   .pub_items handling in trySolveTypeParams>solveAddrOfFn(:imports).
                 //
-                let n_annot = node.items[LET_TYPE];
                 let annot   = n_annot && evalTypeAnnot(n_annot);
 
                 // Upgrade to mutref if `ref` set -
