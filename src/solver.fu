@@ -10343,12 +10343,9 @@ pub fn solve(
             {
                 let t   = node.value == "&"    ? tryClear_ref(type)     || matchFail("Not a reference: " ~ type.explainType)
                         : node.value == "&mut" ? tryClear_mutref(type)  || matchFail("Not a mutref: " ~ type.explainType)
-                        : node.value == "[]"   ? tryClear_array(type)   || matchFail("Not an array: " ~ type.explainType)
-                        : node.value == "[..]" ? tryClear_sliceable(type) || matchFail("Not sliceable: " ~ type.explainType)
+                        : node.value == "[]"   ? (type.is_zeroes ? t_zeroes : { invariant = true; tryClear_array(type)     }) || matchFail("Not an array: " ~ type.explainType)
+                        : node.value == "[..]" ? (type.is_zeroes ? t_zeroes : { invariant = true; tryClear_sliceable(type) }) || matchFail("Not sliceable: " ~ type.explainType)
                         : { break :UNARY; };
-
-                if (node.value == "[]" || node.value == "[..]")
-                    invariant = true;
 
                 return trySolveTypeParams(
                     node.items[0] || BUG(), t || BUG(), :error,
@@ -15558,7 +15555,7 @@ pub fn solve(
                     //  because even `clone` doesn't fool it,
                     //   it just really hates copying.
                     //
-                    let TODO_FIX = o.solved.items ~ [];
+                    let TODO_FIX = o.solved.items ~ SolvedNode[];
 
                     // Note, previously this was sighashNode(o.solved):
                     //  no longer works because kind.fn isImmediatelyDiscardable

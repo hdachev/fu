@@ -13085,7 +13085,7 @@ pub extern fn runTests()
                         }
                     }
 
-                    map.data_entries ~= []
+                    map.data_entries ~= <fail ambig ~= 32:38+2>[]<pass/>typeof(map.data_entries[0])()</fail>
                     let data_pos = DataPos(map.data_entries.len)
                     map.index_entries ~= data_pos
                     break :SEARCH map[:data_pos]
@@ -13401,17 +13401,17 @@ pub extern fn runTests()
         fn main() test(10) == 52 && test(5) == 6 ? 0 : 1;
     `);
 
-    TODO_specpat(currently: "Not sliceable: nocopy [] 3:19+21", `
-        fn why_doesnt_this_match(list: <T>[..], other: T[..]) list ~ item;
+    ZERO(`
+        fn why_doesnt_this_match(list: <T><alt>[..]<alt/>[]</alt>, other: T<alt>[..]<alt/>[]</alt>) list ~ other;
         fn main() why_doesnt_this_match([ 1, 2, 3 ], []).len - 3;
     `);
 
-    TODO_ambig(currently: "BUG exit code", `
-        let glsl_what = [ 1, 2, 3 ] ~ [];
+    ZERO(`
+        let glsl_what = [ 1, 2, 3 ] ~ <fail ambig ~ 2:37+1>[]<pass/>int[]</fail>;
         fn main() glsl_what.len - 3;
     `);
 
-    TODO_ambig(currently: "BUG exit code", `
+    TODO_ambig(currently: "Ambig call to ~ 3:30+1", `
         let USE_MIPMAPS = false;
         let glsl_what = "A " ~ (USE_MIPMAPS ? "B " : []) ~ "C";
         fn main() glsl_what.len - 3;
@@ -13419,8 +13419,20 @@ pub extern fn runTests()
 
     TODO_ambig(currently: "Ambig call to ~ 3:30+1", `
         let USE_MIPMAPS = false;
+        let glsl_what = "A " ~ (USE_MIPMAPS ? 'B' : []) ~ " C";
+        fn main() glsl_what == "A \\0 C" ? 0 : 1;
+    `);
+
+    TODO_ambig(currently: "Ambig call to ~ 3:30+1", `
+        let USE_MIPMAPS = false;
         let glsl_what = "A " ~ (USE_MIPMAPS && "B ") ~ "C";
         fn main() glsl_what.len - 3;
+    `);
+
+    ZERO(`
+        let USE_MIPMAPS = false;
+        let glsl_what = "A " ~ (USE_MIPMAPS && 'B') ~ " C";
+        fn main() glsl_what == "A \\0 C" ? 0 : 1;
     `);
 
     ZERO(`
@@ -22802,7 +22814,7 @@ pub extern fn runTests()
             mut things: NonTriv[];
             for (mut i = 0; i < 10; i++) {
                 mut thing: NonTriv;
-                for (mut j = 0; j < i; j++) thing.items ~= [];
+                for (mut j = 0; j < i; j++) thing.items ~= <fail ambig ~= 23:57+2>[]<pass/>NonTriv()</fail>;
                 things ~= thing;
             }
 
