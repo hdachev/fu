@@ -3396,7 +3396,7 @@ pub fn solve(
         if (k == "real")        return solveReal(node, type);
         if (k == "str")         return solveString(node, type);
         if (k == "char")        return solveChar(node);
-        if (k == "bool")        return createBool(:node.value);
+        if (k == "bool")        return solveBool(:node.value);
 
         if (k == "definit")     return solveDefinit(type);
 
@@ -6051,6 +6051,15 @@ pub fn solve(
                     : BUG();
 
         return SolvedNode(kind: "bool", :value, :type);
+    }
+
+    fn solveBool(value: string)
+    {
+        mut ret = createBool(value);
+        if (options.dev & options::DEV_DontFoldLiterals)
+            ret.vfacts = [];
+
+        return ret;
     }
 
 

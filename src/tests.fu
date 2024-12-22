@@ -1627,7 +1627,7 @@ pub extern fn runTests()
         fn log_append(implicit ref log_out: string, str: string)
             log_out ~= str;
 
-        let VERBOSE = false;
+        let VERBOSE = false;                                    ;; !DEV_DontFoldLiterals
 
         fn verbose(implicit ref log_events: i32, inline stuff: string)
         {
@@ -3145,7 +3145,7 @@ pub extern fn runTests()
                         escape = root;
                         <fail both alias root 29:13+8>
                         if (escape.items.len > 3)       <pass/>
-                        if (true)                       </fail>
+                        if (true)                       </fail> ;; !DEV_DontFoldLiterals
                             fail("#" ~ escape.items.len);
                     }
                 }
@@ -7096,7 +7096,7 @@ pub extern fn runTests()
                     thing = NCThing();
                     <fail write 15:27 inval use items next loop iter 10:33>
                     if (sum > 20)                                   <pass/>
-                    if (true)                                       </fail>
+                    if (true)                                       </fail> ;; !DEV_DontFoldLiterals
                         break;
                 }
 
@@ -11639,7 +11639,7 @@ pub extern fn runTests()
     `);
 
     ZERO(`
-        let SMTH = false;
+        let SMTH = false;                                       ;; !DEV_DontFoldLiterals
         fn LITFIX(reason: f32) reason;
         fn litfix(lax mut reason: string) LITFIX(SMTH ? reason : 0);
         fn main() litfix("hello").i32;
@@ -11779,7 +11779,7 @@ pub extern fn runTests()
     `);
 
     ZERO([`
-        let PROFILE = <alt>true<alt/>false</alt>;
+        let PROFILE = <alt>true<alt/>false</alt>;               ;; !DEV_DontFoldLiterals
 
         struct Empty {};
         struct NonEmpty { v: i32 };
@@ -13523,7 +13523,7 @@ pub extern fn runTests()
     `);
 
     ZERO(`
-        let OK = true;
+        let OK = true;                                          ;; !DEV_DontFoldLiterals
         fn what(a: int) case (OK) a;
         fn main() 0.what;
     `);
@@ -16464,7 +16464,7 @@ pub extern fn runTests()
     `);
 
     ZERO(`
-        fn main() {
+        fn main() {                                             ;; !DEV_DontFoldLiterals
             <alt>
             if (true) return 0;     <alt/>
             if (!false) return 0;   <alt/>
@@ -22415,7 +22415,7 @@ pub extern fn runTests()
     // Static eval.
 
     ZERO(`
-        let se_global_false = false;
+        let se_global_false = false;                            ;; !DEV_DontFoldLiterals
         <split/>
         fn main() {
             if (se_global_false) return THIS_DOESNT_EXIST();
@@ -22424,7 +22424,7 @@ pub extern fn runTests()
     `);
 
     ZERO(`
-        let se_global_true = true;
+        let se_global_true = true;                              ;; !DEV_DontFoldLiterals
         <split/>
         fn main() {
             if (!se_global_true) return THIS_DOESNT_EXIST();
@@ -22433,7 +22433,7 @@ pub extern fn runTests()
     `);
 
     ZERO(`
-        let se_global_let_from_closure = false;
+        let se_global_let_from_closure = false;                 ;; !DEV_DontFoldLiterals
         <split/>
         fn main() {
             fn test() {
@@ -22448,7 +22448,7 @@ pub extern fn runTests()
         fn main() {
             <fail THIS_DOESNT_EXIST not defined 5:38+17>
             mut <pass/>
-            let </fail> se_local_let = false;
+            let </fail> se_local_let = false;                   ;; !DEV_DontFoldLiterals
             if (se_local_let) return THIS_DOESNT_EXIST();
             return 0;
         }
@@ -22481,7 +22481,7 @@ pub extern fn runTests()
         fn main() {
             <fail THIS_DOESNT_EXIST not defined 6:44+17>
             mut <pass/>
-            let </fail> se_closure_let = false;
+            let </fail> se_closure_let = false;                 ;; !DEV_DontFoldLiterals
             fn test() {
                 if (se_closure_let) return THIS_DOESNT_EXIST();
                 return 0;
@@ -22606,7 +22606,7 @@ pub extern fn runTests()
 
     ZERO(`
         novec fn build(ref a: string, b: string) {
-            let cmake       = false;
+            let cmake       = false;                            ;; !DEV_DontFoldLiterals
             <alt>
             let CMakeLists  = cmake && (a ~= b);
             <alt/>
@@ -22626,7 +22626,7 @@ pub extern fn runTests()
 
     ZERO(`
         fn doesntSkipIfWithTrailingFalse(x: i32) {
-            if (x && false)
+            if (x && false)                                     ;; !DEV_DontFoldLiterals
                 return DOESNT_EXIST;
             else
                 return x;

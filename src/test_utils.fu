@@ -417,7 +417,8 @@ pub fn ZERO(
 
     // Try running this without some of
     //  the most code-change inducing optimizations.
-    if (!sources.first.has(";; EXPECT"))
+    if (!sources.first.has(";; EXPECT") &&
+        !sources.first.has(";; !DEV_DontFoldLiterals"))
     {
         if (~options.dev & DEV_DontFoldLiterals)
         {
@@ -487,7 +488,7 @@ pub fn ZERO(
                     {
                         options.break_defects |= defects;
                     }
-                    else
+                    else if (i != 0 || parseWild(annot, as: DevOptions) != "DEV_DontFoldLiterals")
                     {
                         throw("Bad break_note/defect: `;; " ~ annot ~ "`.")
                     }
@@ -641,9 +642,14 @@ pub fn ZERO(
             }
 
             //
-            let unexpected  =  defects & ~ok_defects;
+            mut unexpected  =  defects & ~ok_defects;
             let unnecessary = ~defects &  ok_defects;
 
+            //
+            if (options.dev & DEV_DontFoldLiterals)
+                unexpected &= ~CGDefects.LocalConstBool;
+
+            //
             if (unexpected)
                 throw("Unwanted CGDefect: " ~ unexpected.str.ansi::qBAD ~ " in:\n" ~ all_src ~ "\n\nOutput is:\n\n" ~ all_cpp);
             if (unnecessary)
