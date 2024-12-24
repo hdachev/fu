@@ -1765,25 +1765,9 @@ pub fn solve(
             imports:   !_current_fn && _scope.imports);
     }
 
-
-    //
-
-    fn createDefinit(type: Type): SolvedNode
+    fn solveDefinit(type: Type): SolvedNode
     {
-        if (type.is_ref)
-        {
-            if (CANNOT_definit_mutrefs && type.is_mutref)
-                BUG("createDefinit: Cannot definit a mutref: " ~ type.explainType(lt: true));
-            if (!type.lifetime.hasStatic)
-                BUG("createDefinit: Cannot definit a non-static reference: " ~ type.explainType(lt: true));
-        }
-
-        // TODO FIX several issues, most trivial,
-        //  importantly we have to start adding AlwaysTrue/AlwaysFalse to numeric literals,
-        //   so there's a bit of fiddling i'm leaving for later
-        //
-        // if !(type.vfacts & AlwaysFalse)
-        //     BUG("createDefinit: Missing vfacts.AlwaysFalse: " ~ type.explainType(lt: true));
+        shadow let type = definitType(type);
 
         // TODO FIX this is backwards, its not always practical -
         //  tryRetype just switches the type but doesn't switch from definit to int/real lit.
@@ -1799,11 +1783,6 @@ pub fn solve(
             return createBool(value: "false", :type);
 
         return SolvedNode(kind: "definit", :type);
-    }
-
-    fn solveDefinit(type: Type): SolvedNode
-    {
-        return createDefinit(definitType(:type));
     }
 
     fn getModule(modid!: i32)
@@ -4910,7 +4889,7 @@ pub fn solve(
 
                                 if (usedFieldType.isIrrelevant)
                                 {
-                                    args ~= createDefinit(field.type);
+                                    args ~= createEmpty(usedFieldType);
                                 }
                                 else
                                 {
@@ -8928,7 +8907,7 @@ pub fn solve(
                         type:       member.type  || BUG(),
                         flags:      member.flags & F_MUSTNAME,
                         default:    member.items[LET_INIT]
-                            || isUnion && createDefinit(member.type));
+                            || isUnion && createEmpty(member.type));
 
                     if (!arg.default)
                         min++;
