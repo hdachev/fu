@@ -2829,7 +2829,7 @@ pub fn solve(
 
     fn applyRetype(ref node: SolvedNode, retype: Type)
     {
-        if (node.type.is_zeroes)
+        if (node.kind == "definit" || node.type.is_zeroes)
             return definitWrap(:node, retype);
 
         if (node.kind == "if")
@@ -14824,11 +14824,20 @@ pub fn solve(
             err.kind == "letdef" || err.kind == "empty" || BUG(
                 "TRY_ERR not a letdef/empty: " ~ node.items[TRY_ERR]);
         }
-        else if (k == "empty")
+        else if (k == "empty" || k == "definit")
         {
             if (node.lifetime)
                 node.lifetime == Lifetime_static_moveable || BUG(
-                    "empty: non-static lifetime: " ~ node.lifetime);
+                    k ~ ": non-static lifetime: " ~ node.lifetime);
+
+            node.vfacts & "AlwaysFalse" || node.type.isIrrelevant
+
+                // TODO FIX Type expressions currently are not considered AlwaysFalse -
+                || node.vfacts & "Typename" ///////////////////////////////////////////
+                // revisit this after passing `if (int[]) DOESNT_EXIST();` ////////////
+                ///////////////////////////////////////////////////////////////////////
+
+                || BUG(k ~ ": value is neither AlwaysFalse nor irrelevant: " ~ explainType(node.type, lt: true, usage: true))
         }
         else if (k == "letdef")
         {
