@@ -22287,6 +22287,18 @@ pub extern fn runTests()
         }
     `);
 
+    ZERO(`
+        enum RunMode { None = 0; Normally; EnsureExecutableButDontRun }
+
+        fn build(runmode: RunMode) runmode.i32;
+        fn build(runmode: RunMode, bootstrap: bool)
+            build(runmode: bootstrap
+                ? runmode
+                : runmode && "EnsureExecutableButDontRun");
+
+        fn main() build("Normally", false) - 2;
+    `);
+
     // /Enums
 
 
