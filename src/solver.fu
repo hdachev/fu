@@ -10304,7 +10304,7 @@ pub fn solve(
             fail("Invalid type annotation: evaluates to a value, not a type."
                 ~ " Consider wrapping it in typeof().");
 
-        return clear_Typename(exprType);
+        return clear_Typename(exprType, clearAlwaysFalse: true);
     }
 
     fn trySolveTypeParams(
@@ -10823,13 +10823,14 @@ pub fn solve(
     fn Scope_lookupType(id: string, flags?: Flags): Type
     {
         let callsite = solveCall(id, :flags);
-        if (callsite.target.kind != "type")
+        if (callsite.kind != "empty")
             return fail("No type " ~ id.qBAD ~ " in scope.");
 
-        if (callsite.items)
-            return fail("Scope_lookupType: Wasting time setting up callargs.");
+        if (SELF_TEST)
+            callsite.type.vfacts & Typename || BUG(
+                "Scope_lookupType: empty, but no vfacts.Typename");
 
-        return callsite.target.type;
+        return callsite.type;
     }
 
 
@@ -12531,6 +12532,9 @@ pub fn solve(
                     Lifetime_replaceArgsAtCallsite(target, args),
                     tempsOK: true);
         }
+
+        if (isZeroInit)
+            return createEmpty(type);
 
         return SolvedNode(
             "call", flags: [], value: debug,

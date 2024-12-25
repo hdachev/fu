@@ -2575,7 +2575,7 @@ pub fn cpp_codegen(
         if (kind == "type")
         {
             if (!args)
-                return cgDefault(target.type);
+                BUG("cgCall: call(type).args.len == 0, should be 'empty' instead.");
 
             let t = tryLookupUserType(target.type) || BUG(
                 "cgCall: defctor/type not a struct nor a user primitive.");

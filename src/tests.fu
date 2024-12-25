@@ -22695,7 +22695,7 @@ pub extern fn runTests()
         }
     `);
 
-    TODO_StaticEval(currently: "DOESNT_EXIST is not defined here 3:24+12", `
+    ZERO(`
         fn main() {
             if (int[]) DOESNT_EXIST();
             return 0;

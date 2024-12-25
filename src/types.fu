@@ -574,9 +574,11 @@ pub fn relax_typeParam(mut type: Type)
     return into_Typename(type);
 }
 
-pub fn clear_Typename(mut type: Type)
+pub fn clear_Typename(mut type: Type, clearAlwaysFalse?: bool)
 {
-    type.vfacts &= ~Typename;
+    // TODO don't clear always false if type is a ZST
+    // TODO enable clearAlwaysFalse on each callsite progressively and then remove it
+    type.vfacts &= ~(Typename | (clearAlwaysFalse && AlwaysFalse));
     return type;
 }
 
