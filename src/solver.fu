@@ -4969,6 +4969,9 @@ pub fn solve(
         }
         else if (k == "arrlit")
         {
+            if (!node.items.len)
+                return node.intoEmpty();
+
             if (canDiscard)
             {
                 makeNote(N_UnusedArrlit);

@@ -2228,9 +2228,8 @@ pub fn cpp_codegen(
         if (node.isIrrelevant)
             noteDefect(IrrelevantLiteral);
 
-        let items = cgNodes(node.items, mode: M_CHECK_NEVER_LTR);
-        if (!items.len)
-            return cgDefault(node.type);
+        let items = cgNodes(node.items, mode: M_CHECK_NEVER_LTR)
+            || BUG("cgArrayLiteral: arrlit.items.len == 0, should be 'empty' instead");
 
         let src = items.join(", ");
         let T = typeAnnotBase(clear_sliceable(node.type));
