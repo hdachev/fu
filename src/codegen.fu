@@ -2608,9 +2608,8 @@ pub fn cpp_codegen(
         {
             if (target.kind == "var")
             {
-                // So we don't look for variables that aren't there.
                 if (target.type.isIrrelevant)
-                    return cgDefault(target.type);
+                    BUG("cgCall: reading an irrelevant var");
 
                 if (!node.target.locid)
                 {
@@ -2816,16 +2815,15 @@ pub fn cpp_codegen(
 
     fn cgEmpty(node: SolvedNode, mode: Mode): string
     {
-        if (SELF_TEST)
-            node.type || BUG("cgEmpty: !node.type");
+        let type = node.type || BUG("cgEmpty: !node.type");
 
         if (mode & M_STMT)
             return "";
 
-        if (mode & M_ARG_TO_NATIVE && node.type.isAddrOfFn)
+        if (mode & M_ARG_TO_NATIVE && type.isAddrOfFn)
         {
             mut last: Target;
-            unpackAddrOfFn(node.type.canon, |target|
+            unpackAddrOfFn(type.canon, |target|
             {
                 last && BUG("Codegen cannot decine which fn to pass as a c++ lambda at __native callsite: " ~ last.name ~ " vs " ~ target.name);
                 last = target;
@@ -2843,7 +2841,26 @@ pub fn cpp_codegen(
             return "&" ~ fnID(last);
         }
 
-        return cgDefault(node.type);
+        // Previously cgDefault.
+        type.is_mutref && BUG("Cannot definit mutrefs.");
+
+        if (type.isIrrelevant)
+        {
+            noteDefect(IrrelevantLiteral);
+            return "void()";
+        }
+
+        if (type.is_ref && !type.isPassByValue)
+        {
+            if (!type.is_sliceable || type.ifArray_annotateAsVec)
+            {
+                include("<fu/default.h>");
+                type.is_primitive && BUG("cgDefault: Genering NIL refs to primitives.");
+                return "(*(" ~ typeAnnot(clear_refs(type)) ~ "*)fu::NIL)";
+            }
+        }
+
+        return typeAnnot(type) ~ "{}";
     }
 
 
@@ -3077,29 +3094,6 @@ pub fn cpp_codegen(
             else
                 src ~= term;
         }
-    }
-
-    fn cgDefault(type: Type): string
-    {
-        type.is_mutref && BUG("Cannot definit mutrefs.");
-
-        if (type.isIrrelevant)
-        {
-            noteDefect(IrrelevantLiteral);
-            return "void()";
-        }
-
-        if (type.is_ref && !type.isPassByValue)
-        {
-            if (!type.is_sliceable || type.ifArray_annotateAsVec)
-            {
-                include("<fu/default.h>");
-                type.is_primitive && BUG("cgDefault: Genering NIL refs to primitives.");
-                return "(*(" ~ typeAnnot(clear_refs(type)) ~ "*)fu::NIL)";
-            }
-        }
-
-        return typeAnnot(type) ~ "{}";
     }
 
 
