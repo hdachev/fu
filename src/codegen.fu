@@ -2747,19 +2747,32 @@ pub fn cpp_codegen(
         return "void";
     }
 
-    fn cgLiteral(node: SolvedNode, mode: Mode): string
+    fn cgBoolLiteral(value: string): string
+    {
+        if (value != "true" && value != "false")
+            BUG("cgBoolLiteral: bad value(" ~ value ~ ")");
+
+        return value;
+    }
+
+    fn cgArithmeticLiteral(node: SolvedNode, mode: Mode): string
     {
         if (node.isIrrelevant)
             noteDefect(IrrelevantLiteral);
 
-        mut src = node.value;
+        return cgArithmeticLiteral(:node.type, :node.value, :mode);
+    }
+
+    fn cgArithmeticLiteral(type: Type, value: string, mode: Mode): string
+    {
+        mut src = value;
 
         // Remove underscores, if any.
         mut idx: int;
         while ((idx = src.find('_', start: idx)) >= 0)
             src.splice(idx, 1);
 
-        let base = tryLookupUserType(node.type).basePrim || node.type.canon;
+        let base = tryLookupUserType(type).basePrim || type.canon;
 
         if (base.starts(with: 'u'))
             if (!src.has('u'))
@@ -2805,7 +2818,7 @@ pub fn cpp_codegen(
                 // Don't do this for enums,
                 //  the type declaration ends up with casts to itself.
                 if !(mode & M_ENUM_DECL)
-                    return typeAnnotBase(node.type) ~ "(" ~ src ~ ")";
+                    return typeAnnotBase(type) ~ "(" ~ src ~ ")";
             }
         }
 
@@ -3385,12 +3398,12 @@ pub fn cpp_codegen(
         if (k == "not")         return cgNot(node);
         if (k == "call")        return cgCall(node, :mode);
 
-        if (k == "int")         return cgLiteral(node, :mode);
-        if (k == "real")        return cgLiteral(node, :mode);
+        if (k == "int")         return cgArithmeticLiteral(node, :mode);
+        if (k == "real")        return cgArithmeticLiteral(node, :mode);
         if (k == "char")        return cgCharLiteral(node);
         if (k == "str")         return cgStringLiteral(node);
         if (k == "arrlit")      return cgArrayLiteral(node, :callarg);
-        if (k == "bool")        return node.value;
+        if (k == "bool")        return cgBoolLiteral(:node.value);
 
         if (k == "copy")        return cgCopyOrMove(node, :mode);
         if (k == "move")        return cgCopyOrMove(node, :mode);
