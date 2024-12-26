@@ -1769,19 +1769,6 @@ pub fn solve(
     {
         shadow let type = definitType(type);
 
-        // TODO FIX this is backwards, its not always practical -
-        //  tryRetype just switches the type but doesn't switch from definit to int/real lit.
-        //   what'd be more useful is to have int & real literals snap to definit instead of these two.
-        //
-        if (type.is_integral)
-            return SolvedNode(kind: "int", :type, value: "0");
-
-        if (type.is_floating_pt)
-            return SolvedNode(kind: "real", :type, value: "0");
-
-        if (type.is_boolean)
-            return createBool(value: "false", :type);
-
         return SolvedNode(kind: "definit", :type);
     }
 
