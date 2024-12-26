@@ -1792,10 +1792,13 @@ pub fn cpp_codegen(
 
         if (!init || init.kind == "empty" && !init.type.is_ref)
         {
-            if (isHoisted)
-                return HOIST_init(init: "{}");
+            let pretty = init.kind == "empty"
+                      && try_cgPrettierEmpty(init.type);
 
-            return head ~ " {}";
+            if (isHoisted)
+                return HOIST_init(init: pretty || "{}");
+
+            return head ~= (pretty ? " = " ~ pretty : " {}");
         }
 
         // A less verbose copy init.
@@ -2873,7 +2876,26 @@ pub fn cpp_codegen(
             }
         }
 
-        return typeAnnot(type) ~ "{}";
+        //
+        return try_cgPrettierEmpty(type)
+            || typeAnnot(type) ~ "{}";
+    }
+
+    fn try_cgPrettierEmpty(type: Type)
+    {
+        // Previously, we did smth similar in createDefinit/solveDefinit,
+        //  emitting literals instead of definits when possible.
+        //   Bad idea - it meant that different types
+        //    could have subtly different litfix behavior.
+        //
+        // Now we only generate literals from empties for prettier output.
+        //
+        if (type.is_arithmetic)
+            return cgArithmeticLiteral(:type, "0", mode: []);
+        if (type.is_boolean)
+            return cgBoolLiteral("false");
+
+        return "";
     }
 
 
