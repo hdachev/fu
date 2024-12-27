@@ -5906,7 +5906,13 @@ pub fn solve(
 
     fn solveChar(node: Node): SolvedNode
     {
-        return solved(node, t_byte);
+        mut type = t_byte;
+        if !(options.dev & options::DEV_DontFoldLiterals)
+            type.vfacts = node.value.only
+                ? AlwaysTrue
+                : AlwaysFalse;
+
+        return solved(node, type);
     }
 
     fn solveString(v: string, type: Type): Type
