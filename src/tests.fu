@@ -13424,8 +13424,26 @@ pub extern fn runTests()
     `);
 
     TODO_ambig(currently: "BUG exit code", `
+        fn must_not_match(other: <fail X:X>string<pass/>byte</fail>) "Hello" ~ other;
+        fn main() must_not_match(false && '!').len - 6;         ;; !DEV_DontFoldLiterals
+    `);
+
+    TODO_ambig(currently: "BUG exit code", `
         fn must_not_match(other: <fail X:X>byte<pass/>string</fail>) "Hello" ~ other;
         fn main() must_not_match(false && "!").len - 5;         ;; !DEV_DontFoldLiterals
+    `);
+
+    ZERO(`
+        fn must_not_match(hello: <T>[..], other: <fail bad call must_not_match arg other not sliceable: byte 5:19+14>
+                                                 T[..]<pass/>
+                                                 T    </fail>) hello ~ other;
+
+        fn main() must_not_match("Hello", 0 && '!').len - 6;    ;; !DEV_DontFoldLiterals
+    `);
+
+    TODO_ambig(currently: "BUG exit code", `
+        fn must_not_match(hello: <T>[..], other: <fail X:X>T<pass/>T[..]</fail>) hello ~ other;
+        fn main() must_not_match("Hello", 0 && "!").len - 5;    ;; !DEV_DontFoldLiterals
     `);
 
     TODO_ambig(currently: "Ambig call to ~ 3:30+1", `
