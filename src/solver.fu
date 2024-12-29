@@ -1193,6 +1193,11 @@ pub fn solve(
             println("DEV_HappyPathOnly: we ended up on a slow path.");
     }
 
+    fn str_IDns(from: Target)
+    {
+        return from && GET(from).name.human.qID ~ ":";
+    }
+
     fn str(t: Target, brief!?: bool)
     {
         let o       = GET(t);
@@ -1223,11 +1228,7 @@ pub fn solve(
         // field sname:fname
         mut ns = "";
         if (kind == "field")
-        {
-            let from = o.field_getParentStruct();
-            if (from)
-                ns = GET(from).name.human.qID ~ ":";
-        }
+            ns = str_IDns(o.field_getParentStruct());
 
         return (prefix && prefix.qKW ~ " ") ~ ns ~ o.name.human.qID;
     }
@@ -1240,15 +1241,15 @@ pub fn solve(
 
         prefix ~= "arg";
 
-        mut fn = "";
+        mut ns = "";
         if (arg.target && !brief)
         {
             let parent = arg.target.parent;
             if (parent != _current_fn.target)
-                fn = GET(parent).name.human.qID ~ ":";
+                ns = str_IDns(parent);
         }
 
-        return prefix.qKW ~ " " ~ fn ~ arg.name.human.qID;
+        return prefix.qKW ~ " " ~ ns ~ arg.name.human.qID;
     }
 
     fn human(id: string)
@@ -7063,7 +7064,7 @@ pub fn solve(
                         // Type check.
                         if (annot && !exactType)
                         {
-                            shadow mut error = error && "arg".qKW ~ " " ~ argName.qID ~ ":";
+                            shadow mut error = error && "arg".qKW ~ " " ~ str_IDns(original) ~ argName.qID ~ ":";
 
                             if (!trySolveTypeParams(
                                     annot, inType, :error,
