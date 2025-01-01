@@ -122,13 +122,10 @@ pub extern fn runTests()
 
     let TODO_confusing  = fn TODO;
     let TODO_logic      = fn TODO;
-    let TODO_definit    = fn TODO;
     let TODO_specpat    = fn TODO;
     let TODO_lint       = fn TODO;
-    let TODO_tests      = fn TODO;
 
     let TODO_templ_vis  = fn TODO; // autoshadow needs to go + how do we make nested fns visible?
-    let TODO_StaticEval = fn TODO;
 
     let LEGACY_Map      = fn TODO;
 
@@ -13402,72 +13399,6 @@ pub extern fn runTests()
     `);
 
     ZERO(`
-        fn why_doesnt_this_match(list: <T><alt>[..]<alt/>[]</alt>, other: T<alt>[..]<alt/>[]</alt>) list ~ other;
-        fn main() why_doesnt_this_match([ 1, 2, 3 ], []).len - 3;
-    `);
-
-    ZERO(`
-        let glsl_what = [ 1, 2, 3 ] ~ <fail ambig ~ 2:37+1>[]<pass/>int[]</fail>;
-        fn main() glsl_what.len - 3;
-    `);
-
-    TODO_ambig(currently: "Ambig call to ~ 3:30+1", `
-        let USE_MIPMAPS = false;
-        let glsl_what = "A " ~ (USE_MIPMAPS ? "B " : []) ~ "C";
-        fn main() glsl_what.len - 3;
-    `);
-
-    TODO_ambig(currently: "Ambig call to ~ 3:30+1", `
-        let USE_MIPMAPS = false;
-        let glsl_what = "A " ~ (USE_MIPMAPS ? 'B' : []) ~ " C";
-        fn main() glsl_what == "A \\0 C" ? 0 : 1;
-    `);
-
-    ZERO(`
-        fn must_not_match(other: <fail bad call arg must_not_match:other string, got byte 5:19+14>
-                                 string<pass/>
-                                 byte  </fail>) "Hello" ~ other;
-
-        fn main() must_not_match(false && '!').len - 6;         ;; !DEV_DontFoldLiterals
-    `);
-
-    ZERO(`
-        fn must_not_match(other: <fail bad call arg must_not_match:other byte, got string 5:19+14>
-                                 byte  <pass/>
-                                 string</fail>) "Hello" ~ other;
-
-        fn main() must_not_match(false && "!").len - 5;         ;; !DEV_DontFoldLiterals
-    `);
-
-    ZERO(`
-        fn must_not_match(hello: <T>[..], other: <fail bad call arg must_not_match:other not sliceable: byte 5:19+14>
-                                                 T[..]<pass/>
-                                                 T    </fail>) hello ~ other;
-
-        fn main() must_not_match("Hello", 0 && '!').len - 6;    ;; !DEV_DontFoldLiterals
-    `);
-
-    ZERO(`
-        fn must_not_match(hello: <T>[..], other: <fail bad call arg must_not_match:hello incompatible T string byte 5:19+14>
-                                                 T    <pass/>
-                                                 T[..]</fail>) hello ~ other;
-
-        fn main() must_not_match("Hello", 0 && "!").len - 5;    ;; !DEV_DontFoldLiterals
-    `);
-
-    ZERO(`
-        let USE_MIPMAPS = false;
-        let glsl_what = "A " ~ (USE_MIPMAPS && "B ") ~ "C";
-        fn main() glsl_what.len - 3;
-    `);
-
-    ZERO(`
-        let USE_MIPMAPS = false;
-        let glsl_what = "A " ~ (USE_MIPMAPS && 'B') ~ " C";
-        fn main() glsl_what == "A \\0 C" ? 0 : 1;
-    `);
-
-    ZERO(`
         struct Batch {};
         type ViewQuads = Batch;
         let VIEW_QUADS: ViewQuads = [];
@@ -14249,6 +14180,77 @@ pub extern fn runTests()
     `);
 
     // /Usability of numeric literals.
+
+
+    // Litfix & definits.
+
+    ZERO(`
+        fn why_doesnt_this_match(list: <T><alt>[..]<alt/>[]</alt>, other: T<alt>[..]<alt/>[]</alt>) list ~ other;
+        fn main() why_doesnt_this_match([ 1, 2, 3 ], []).len - 3;
+    `);
+
+    ZERO(`
+        let glsl_what = [ 1, 2, 3 ] ~ <fail ambig ~ 2:37+1>[]<pass/>int[]</fail>;
+        fn main() glsl_what.len - 3;
+    `);
+
+    TODO_ambig(currently: "Ambig call to ~ 3:30+1", `
+        let USE_MIPMAPS = false;
+        let glsl_what = "A " ~ (USE_MIPMAPS ? "B " : []) ~ "C";
+        fn main() glsl_what.len - 3;
+    `);
+
+    TODO_ambig(currently: "Ambig call to ~ 3:30+1", `
+        let USE_MIPMAPS = false;
+        let glsl_what = "A " ~ (USE_MIPMAPS ? 'B' : []) ~ " C";
+        fn main() glsl_what == "A \\0 C" ? 0 : 1;
+    `);
+
+    ZERO(`
+        fn must_not_match(other: <fail bad call arg must_not_match:other string, got byte 5:19+14>
+                                 string<pass/>
+                                 byte  </fail>) "Hello" ~ other;
+
+        fn main() must_not_match(false && '!').len - 6;         ;; !DEV_DontFoldLiterals
+    `);
+
+    ZERO(`
+        fn must_not_match(other: <fail bad call arg must_not_match:other byte, got string 5:19+14>
+                                 byte  <pass/>
+                                 string</fail>) "Hello" ~ other;
+
+        fn main() must_not_match(false && "!").len - 5;         ;; !DEV_DontFoldLiterals
+    `);
+
+    ZERO(`
+        fn must_not_match(hello: <T>[..], other: <fail bad call arg must_not_match:other not sliceable: byte 5:19+14>
+                                                 T[..]<pass/>
+                                                 T    </fail>) hello ~ other;
+
+        fn main() must_not_match("Hello", 0 && '!').len - 6;    ;; !DEV_DontFoldLiterals
+    `);
+
+    ZERO(`
+        fn must_not_match(hello: <T>[..], other: <fail bad call arg must_not_match:hello incompatible T string byte 5:19+14>
+                                                 T    <pass/>
+                                                 T[..]</fail>) hello ~ other;
+
+        fn main() must_not_match("Hello", 0 && "!").len - 5;    ;; !DEV_DontFoldLiterals
+    `);
+
+    ZERO(`
+        let USE_MIPMAPS = false;
+        let glsl_what = "A " ~ (USE_MIPMAPS && "B ") ~ "C";
+        fn main() glsl_what.len - 3;
+    `);
+
+    ZERO(`
+        let USE_MIPMAPS = false;
+        let glsl_what = "A " ~ (USE_MIPMAPS && 'B') ~ " C";
+        fn main() glsl_what == "A \\0 C" ? 0 : 1;
+    `);
+
+    // /Litfix /Definit
 
 
     // Typedefs.
