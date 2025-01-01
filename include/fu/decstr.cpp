@@ -3,7 +3,7 @@
 // TODO use decstr.fu instead,
 //  currently having issues with importing things from prelude.
 
-fu::str fu::u64dec(uint64_t num)
+fu_EXPORT fu::str fu::u64dec(uint64_t num)
 {
     fu::str res;
 
@@ -17,7 +17,7 @@ fu::str fu::u64dec(uint64_t num)
     return res;
 }
 
-fu::str fu::i64dec(int64_t num)
+fu_EXPORT fu::str fu::i64dec(int64_t num)
 {
     if (num < 0)
     {
@@ -37,7 +37,7 @@ fu::str fu::i64dec(int64_t num)
 
 #include <stdio.h>
 
-fu::str fu::f64dec(double num)
+fu_EXPORT fu::str fu::f64dec(double num)
 {
     char buffer[64];
     int len = snprintf(buffer, 64, "%f", num);
@@ -55,7 +55,7 @@ fu::str fu::f64dec(double num)
 //  Needed to pass the `a ~ (smth && SelfRecursiveCall())` test.
 //   Stringifying bools feels off, but everyone does it, so I guess it is fine.
 
-fu::str fu::booldec(bool num)
+fu_EXPORT fu::str fu::booldec(bool num)
 {
     return num ? "1"_fu : "0"_fu;
 }

@@ -396,17 +396,12 @@ pub fn build(
                 ? "-Og "
                 : "-O3 ";
 
-    // TODO rearrange these, the -fno-math-errno should go back up into the -O3:
-    //  this will thrash all tests, so when doing this,
-    //   also disable 'debuggable' for the debug-built testcases,
-    //    we don't need debug info there, we just want to test
-    //     with and without optimizations.
-    //
     if !(bscheme & "assertions")
         O_lvl ~= "-DNDEBUG ";
 
-    if !(bscheme & "unoptimized")
-        O_lvl ~= "-fno-math-errno ";
+    // Previously only did this for debug builds,
+    //  not sure why, since it has observable side-effects.
+    O_lvl ~= "-fno-math-errno ";
 
     // Debug symbols.
     if (bscheme & "debuggable")
@@ -414,6 +409,14 @@ pub fn build(
 
     if (bscheme & "TODO_FIX_retail")
         O_lvl ~= "-Dfu_RETAIL ";
+
+    // TODO RESEARCH should we only do this for shared libs?
+    //  Or does it provide some benefit for executables too?
+    //
+    // NOTE to test if this works as expected -
+    //  try a hotswap run of something and remove the fu_EXPORTS from decstr.cpp,
+    //   you'll need --nocache, but runtime link should fail.
+    O_lvl ~= "-fvisibility=hidden ";
 
     // Previously just shared,
     //  now trying to reuse the same objects for both server & client.
