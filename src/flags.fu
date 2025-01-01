@@ -343,6 +343,8 @@ enum Kind
     __serialized_type               // Stepping stone towards fully-presolved type patterns,
     __serialized_addrof_type_fn     //  we'll just ad-hoc replace stuff we can resolve in type pattern ASTs for now
 
+    __litfix_bound
+
 
     // Scope: overload types.
 

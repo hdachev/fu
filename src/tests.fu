@@ -13423,30 +13423,39 @@ pub extern fn runTests()
         fn main() glsl_what == "A \\0 C" ? 0 : 1;
     `);
 
-    TODO_ambig(currently: "BUG exit code", `
-        fn must_not_match(other: <fail X:X>string<pass/>byte</fail>) "Hello" ~ other;
+    ZERO(`
+        fn must_not_match(other: <fail bad call arg must_not_match:other string, got byte 5:19+14>
+                                 string<pass/>
+                                 byte  </fail>) "Hello" ~ other;
+
         fn main() must_not_match(false && '!').len - 6;         ;; !DEV_DontFoldLiterals
     `);
 
-    TODO_ambig(currently: "BUG exit code", `
-        fn must_not_match(other: <fail X:X>byte<pass/>string</fail>) "Hello" ~ other;
+    ZERO(`
+        fn must_not_match(other: <fail bad call arg must_not_match:other byte, got string 5:19+14>
+                                 byte  <pass/>
+                                 string</fail>) "Hello" ~ other;
+
         fn main() must_not_match(false && "!").len - 5;         ;; !DEV_DontFoldLiterals
     `);
 
     ZERO(`
-        fn must_not_match(hello: <T>[..], other: <fail bad call must_not_match arg other not sliceable: byte 5:19+14>
+        fn must_not_match(hello: <T>[..], other: <fail bad call arg must_not_match:other not sliceable: byte 5:19+14>
                                                  T[..]<pass/>
                                                  T    </fail>) hello ~ other;
 
         fn main() must_not_match("Hello", 0 && '!').len - 6;    ;; !DEV_DontFoldLiterals
     `);
 
-    TODO_ambig(currently: "BUG exit code", `
-        fn must_not_match(hello: <T>[..], other: <fail X:X>T<pass/>T[..]</fail>) hello ~ other;
+    ZERO(`
+        fn must_not_match(hello: <T>[..], other: <fail bad call arg must_not_match:hello incompatible T string byte 5:19+14>
+                                                 T    <pass/>
+                                                 T[..]</fail>) hello ~ other;
+
         fn main() must_not_match("Hello", 0 && "!").len - 5;    ;; !DEV_DontFoldLiterals
     `);
 
-    TODO_ambig(currently: "Ambig call to ~ 3:30+1", `
+    ZERO(`
         let USE_MIPMAPS = false;
         let glsl_what = "A " ~ (USE_MIPMAPS && "B ") ~ "C";
         fn main() glsl_what.len - 3;

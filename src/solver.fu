@@ -4977,10 +4977,10 @@ pub fn solve(
                 propagateType(items[i], :relax_mask,
                     slot: itemSlot);
         }
-        else if (k == "argid")
+        else if (k == "argid" || k == "__litfix_bound")
         {
-            node = node.items.only;
-            node.propagateType(:relax_mask, :slot);
+            node = node.items.first;
+            return node.propagateType(:relax_mask, :slot);
         }
         else if (k == "jump")
         {
@@ -11194,6 +11194,21 @@ pub fn solve(
         return createIf(cond, cons, alt, :type);
     }
 
+    fn litfix_bound(expr: SolvedNode, bound!: SolvedNode)
+    {
+        // Weird, the plan with __litfix_bounds
+        //  was to also impl support for them in couldRetype & co,
+        //   but currently passing tests without it?
+        //
+        if (expr.couldRetype)
+            return SolvedNode(
+                kind: "__litfix_bound",
+                items: [ expr, bound.couldRetype && bound ],
+                type: expr.type);
+
+        return expr;
+    }
+
     fn createIf(cond: SolvedNode, mut cons: SolvedNode, mut alt: SolvedNode, mut type?: Type): SolvedNode
     {
         // Control flow.
@@ -11207,9 +11222,12 @@ pub fn solve(
         //  and pass the ae_cond from solveIf above to avoid this.
         //
         if (let ae_cond = tryAbstractEvalAsBool(cond))
+        {
             return createBlock(cond,
-                ae_cond == SE_True ? cons :
-                ae_cond == SE_False ? alt : BUG("createIf: ae_cond, neither True nor False."));
+                ae_cond == SE_True  ? litfix_bound(cons, bound: alt) :
+                ae_cond == SE_False ? litfix_bound(alt, bound: cons) :
+                    BUG("createIf: ae_cond, neither True nor False."));
+        }
 
         //
         let cons_isNever = cons.type.is_never;
