@@ -14846,6 +14846,18 @@ pub extern fn runTests()
         }
     `);
 
+    TODO_move(currently: "BUG About to use the wrong move for a slice or vec-range 7:20+7", `
+        let HOME = "Hello";
+        fn HOME_bang(lax n: int) <alt>n & 1 && </alt>HOME ~ <alt>"!"<alt/>'!'</alt>;
+
+        fn get_FU_ROOT(n: int) {
+            let FU_ROOT = HOME_bang(n);
+            return FU_ROOT || HOME ~ "!!";
+        }
+
+        fn main() get_FU_ROOT(1).len - 6;
+    `);
+
     TODO_move(currently: "BUG About to use the wrong move for a slice or vec-range 33:26+7", `
         fn slash(a: string)
             a.if_last == '/' ? a : a ~ '/';
