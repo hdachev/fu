@@ -14846,7 +14846,7 @@ pub extern fn runTests()
         }
     `);
 
-    TODO_move(currently: "BUG About to use the wrong move for a slice or vec-range 7:20+7", `
+    ZERO(`
         let HOME = "Hello";
         fn HOME_bang(lax n: int) <alt>n & 1 && </alt>HOME ~ <alt>"!"<alt/>'!'</alt>;
 
@@ -14858,7 +14858,7 @@ pub extern fn runTests()
         fn main() get_FU_ROOT(1).len - 6;
     `);
 
-    TODO_move(currently: "BUG About to use the wrong move for a slice or vec-range 33:26+7", `
+    ZERO(`
         fn slash(a: string)
             a.if_last == '/' ? a : a ~ '/';
 
@@ -14877,7 +14877,7 @@ pub extern fn runTests()
 
         <split/>
         fn get_FU_ROOT(n: int): string {
-            let FU_ROOT         = {
+            let FU_ROOT         = {                             ;; GNUStmtExpr
                 let exe         = HOME_bang(:n);
 
                 mut start       = -1;

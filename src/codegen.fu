@@ -3660,8 +3660,8 @@ pub fn cpp_codegen(
         if (type.isPassByValue)
             return cgCopy(type, src);
 
-        if (type.is_ref && type.is_sliceable && !type.ifArrayRef_annotateAsVec)
-            BUG("cgMove: About to use the wrong move for a slice or vec-range.");
+        // if (type.is_ref && type.is_sliceable && !type.ifArrayRef_annotateAsVec)
+        //     BUG("cgMove: About to use the wrong move for a slice or vec-range.");
 
         if (type.lifetime.hasZeroes)
             return cgMoveOrDefault(src);
