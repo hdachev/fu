@@ -263,6 +263,8 @@ pub fn cpp_codegen(
 
     fn ifArrayRef_annotateAsVec(lax type: Type)
     {
+        println("ifArrayRef_annotateAsVec type.ifArrayRef_annotateAsSlice(" type.ifArrayRef_annotateAsSlice ") vfacts(" type.vfacts ")");
+
         return !type.ifArrayRef_annotateAsSlice()
             &&  type.vfacts & LeftAligned
             &&  type.vfacts & RightAligned;
@@ -3660,8 +3662,8 @@ pub fn cpp_codegen(
         if (type.isPassByValue)
             return cgCopy(type, src);
 
-        // if (type.is_ref && type.is_sliceable && !type.ifArrayRef_annotateAsVec)
-        //     BUG("cgMove: About to use the wrong move for a slice or vec-range.");
+        if (type.is_ref && type.is_sliceable && !type.ifArrayRef_annotateAsVec)
+            BUG("cgMove: About to use the wrong move for a slice or vec-range.");
 
         if (type.lifetime.hasZeroes)
             return cgMoveOrDefault(src);
