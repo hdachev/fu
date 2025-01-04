@@ -3034,26 +3034,24 @@ pub fn cpp_codegen(
         return src;
     }
 
-    fn via(ref tv: TEMPVAR, type: Type, expr: SolvedNode): string
+    fn via(ref tv: TEMPVAR, type: Type, node: SolvedNode): string
     {
-        if (expr.isFieldChain)
+        if (node.isFieldChain)
         {
-            let trivial = cgNode(expr);
+            let trivial = cgNode(node);
             return trivial ~ " ? " ~ trivial ~ " : ";
         }
 
-        if (expr.kind == "copy" || expr.kind == "move")
+        if (node.kind == "copy" || node.kind == "move")
         {
             // TODO FIX make this work for non-field-chains too,
             //  just gotta transform the via thing to perform the copy on the cons.
             //
-            let kind = expr.kind;
-            shadow let expr = expr.items.only;
+            let expr = node.items.only;
+
+            // NOTE, re: double cgNode here, it's a fieldchain, nothing horrible.
             if (expr.isFieldChain)
-            {
-                let fieldChain = cgNode(expr);
-                return fieldChain ~ " ? " ~ cgCopyOrMove(:kind, :expr.type, fieldChain) ~ " : ";
-            }
+                return cgNode(expr) ~ " ? " ~ cgNode(node) ~ " : ";
 
             // TODO fix the copies -
             //  we can copy AFTER the test,
@@ -3066,7 +3064,7 @@ pub fn cpp_codegen(
             // But copies are the worst.
         }
 
-        return via(:tv, :type, expr: cgNode(expr));
+        return via(:tv, :type, expr: cgNode(node));
     }
 
     fn via(ref tv: TEMPVAR, type: Type, expr!: string): string
