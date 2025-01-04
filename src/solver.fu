@@ -8400,7 +8400,7 @@ pub fn solve(
         let isUnion     = kind == "union";
 
         let isPrimDecl  = !isStruct && !isUnion;
-        let items       = node.items && node.items[STRUCT_MEMBERS].items;
+        let memberNodes = node.items && node.items[STRUCT_MEMBERS].items;
 
         //
         mut basePrimType:   Type;
@@ -8439,8 +8439,8 @@ pub fn solve(
         else
         {
             // TODO FIX we have an analogous problem with recursive structs
-            for (mut i = 0; i < items.len; i++)
-                shape_hasher.hash(items[i].value.TEST_true);
+            for (mut i = 0; i < memberNodes.len; i++)
+                shape_hasher.hash(memberNodes[i].value.TEST_true);
         }
 
         //
@@ -8536,12 +8536,12 @@ pub fn solve(
             return ret;
         }
 
-        let members = items.map(fn solveMember);
+        let members = memberNodes.map(fn solveMember);
 
         // (Re)poplate fields.
         {
             ref s = lookupUserType_mut(instType.canon);
-            if (!s.items && members)
+            if (!s.items && memberNodes)
             {
                 let isUnscoped = !!(node.flags & F_USING);
 
@@ -8555,15 +8555,16 @@ pub fn solve(
                               default: isUnscoped
                                     && createEmpty(type: out_Typename)) ];
 
-                for (mut i = 0; i < members.len; i++)
+                for (mut i = 0; i < memberNodes.len; i++)
                 {
-                    let item    = items[i];
-                    let id      = item.value;
+                           //// TODO FIX the let here too verbose
+                    shadow let node = memberNodes[i];
+                    let id      = node.value;
 
                     // `true` fields.
-                    let flags   = item.flags & (F_PREDICATE | F_IMPLICIT);
+                    let flags   = node.flags & (F_PREDICATE | F_IMPLICIT);
 
-                    flags && isPrimDecl && fail(token: item.token,
+                    flags && isPrimDecl && fail(:node.token,
                         "Unexpected " ~ "true".qKW ~ " or " ~ "implicit".qKW ~ " qualifier.");
 
                     let target = Scope_create(
@@ -8576,7 +8577,7 @@ pub fn solve(
                     ext.max     = args.len;
 
                     // For snippets -
-                    ext.template.node.token = items[i].token;
+                    ext.template.node.token = memberNodes[i].token;
 
                     Scope_set(s.items, :id, :target, shadows: false);
 
@@ -8606,7 +8607,7 @@ pub fn solve(
 
             // Update field types.
             s.items.len == members.len || BUG(
-                "solveStructMembers_3: field lens mismatch: " ~ s.items.len ~ " vs " ~ members.len ~ "/" ~ items.len ~ ": `struct " ~ name ~ "`.");
+                "solveStructMembers_3: field lens mismatch: " ~ s.items.len ~ " vs " ~ members.len ~ "/" ~ memberNodes.len ~ ": `struct " ~ name ~ "`.");
 
             for (mut i = 0; i < s.items.len; i++)
             {
@@ -8797,7 +8798,7 @@ pub fn solve(
                     non_triv_reason < 1
                         ? " because it is " ~ "nocopy".qKW ~ "."
                         : " because of non-trivial member "
-                            ~ items.if(exists: non_triv_reason - 1).value.qID));
+                            ~ memberNodes.if(exists: non_triv_reason - 1).value.qID));
 
             if (SELF_TEST)
                 shape.non_triv_mask || non_triv_reason < 0 || BUG(

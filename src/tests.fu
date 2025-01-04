@@ -23070,54 +23070,5 @@ pub extern fn runTests()
         fn main() _0::Hello().v;
     `]);
 
-    // /Tests.
-
-
-    // ZERO(`
-    //     enum Thing {
-    //         None;
-    //         enum Animal { Cat; Dog; }
-    //         enum Food { Apple; Orange; }
-    //     };
-    //
-    //     fn main() Apple.i32 - Dog.i32 - 1;
-    // `);
-
-    // ZERO(`
-    //     tuple enum TextureType: u32 {
-    //
-    //         enum Kind {
-    //             None;
-    //
-    //             T_unorm; T_snorm;  T_uint; T_int;
-    //             T_float; T_ufloat; T_srgb; T_depth;
-    //         };
-    //
-    //         enum Size {
-    //             None;
-    //
-    //             T_8x4; T_16x4; T_32x4;
-    //             T_8x3; T_16x3; T_32x3;
-    //             T_8x2; T_16x2; T_32x2;
-    //             T_8x1; T_16x1; T_32x1;
-    //
-    //             T_10x3_2; T_11x2_10; T_24x1_8;
-    //         };
-    //
-    //         flags enum Usage {
-    //             T_nosample;
-    //             T_nomips;
-    //             T_fmin_nearest;
-    //             T_fmag_nearest;
-    //             T_clamp_u;
-    //             T_clamp_v;
-    //         };
-    //     };
-    //
-    //     pub let T_d24_s8            = T_24x1_8 | T_depth;
-    //     pub let T_DepthRenderBuffer = T_d24_s8 | T_nosample;
-    //
-    //     fn main()
-    //         TODO;
-    // `);
+    // /Tests
 }
