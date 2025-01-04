@@ -4795,6 +4795,14 @@ pub extern fn runTests()
         }
     `);
 
+    ZERO([`
+        fn either(a: string, b: string) // dont copy before either branch taken
+            a || "Hello, " ~ b ~ "!";   ;; EXPECT return a ? fu::str(a) :
+    `,`
+        import _0;
+        fn main() either(either("", "World"), "") == "Hello, World!" ? 0 : 1;
+    `]);
+
     // /Logic and selectors.
 
 
