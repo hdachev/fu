@@ -3,19 +3,24 @@
 
 struct s_Type;
 struct s_ValueType;
-struct s_Lifetime;
 typedef fu::u8 s_VFacts;
+struct s_Lifetime;
+struct s_RWQuals;
 
                                 #ifndef DEF_s_VFacts
                                 #define DEF_s_VFacts
 inline constexpr s_VFacts s_VFacts_AlwaysTrue = s_VFacts(1u);
 inline constexpr s_VFacts s_VFacts_AlwaysFalse = s_VFacts(2u);
 inline constexpr s_VFacts s_VFacts_Typename = s_VFacts(4u);
+inline constexpr s_VFacts s_VFacts_LeftAligned = s_VFacts(8u);
+inline constexpr s_VFacts s_VFacts_RightAligned = s_VFacts(16u);
 
 inline constexpr s_VFacts MASK_s_VFacts
     = s_VFacts_AlwaysTrue
     | s_VFacts_AlwaysFalse
-    | s_VFacts_Typename;
+    | s_VFacts_Typename
+    | s_VFacts_LeftAligned
+    | s_VFacts_RightAligned;
                                 #endif
 
                                 #ifndef DEF_s_Lifetime
@@ -37,11 +42,13 @@ struct s_Lifetime
 struct s_ValueType
 {
     unsigned quals;
+    s_VFacts vfacts;
     fu::str canon;
     explicit operator bool() const noexcept
     {
         return false
             || quals
+            || vfacts
             || canon
         ;
     }
@@ -54,13 +61,27 @@ struct s_Type
 {
     s_ValueType vtype;
     s_Lifetime lifetime;
-    s_VFacts vfacts;
     explicit operator bool() const noexcept
     {
         return false
             || vtype
             || lifetime
-            || vfacts
+        ;
+    }
+};
+                                #endif
+
+                                #ifndef DEF_s_RWQuals
+                                #define DEF_s_RWQuals
+struct s_RWQuals
+{
+    unsigned usage;
+    unsigned written_to;
+    explicit operator bool() const noexcept
+    {
+        return false
+            || usage
+            || written_to
         ;
     }
 };
@@ -108,7 +129,12 @@ inline constexpr int Quals_bitsize = 32;
 extern const int q_USAGE_bitsize = (Quals_bitsize - q_TAGS_bitsize);
                                 #endif
 
-unsigned getMaxUsage_YfHAfesl(const int flatCount)
+                                #ifndef DEF_q_USAGE_offset
+                                #define DEF_q_USAGE_offset
+inline constexpr int q_USAGE_offset = q_TAGS_bitsize;
+                                #endif
+
+unsigned getMaxUsage_CaGDtmWo(const int flatCount)
 {
     if ((flatCount >= q_USAGE_bitsize))
         return q_USAGE;
@@ -117,12 +143,7 @@ unsigned getMaxUsage_YfHAfesl(const int flatCount)
 
 }
 
-void USAGE_setMaxUsage_TB5Kkwh9(s_Type& type, const int flatCount)
-{
-    type.vtype.quals = ((type.vtype.quals & q_TAGS) | getMaxUsage_YfHAfesl(flatCount));
-}
-
-static unsigned USAGE_shiftLeft_L39cSlw5(const unsigned quals, int offset)
+static unsigned USAGE_shiftLeft_CaGDtmWo(const unsigned quals, int offset)
 {
     const unsigned keep = (quals & q_TAGS);
     unsigned usage = (quals & q_USAGE);
@@ -133,13 +154,22 @@ static unsigned USAGE_shiftLeft_L39cSlw5(const unsigned quals, int offset)
     return keep | (usage & q_USAGE);
 }
 
-s_Type USAGE_structUsageFromFieldUsage_ngdSJBk9(/*MOV*/ s_Type&& slot, const int memberFlatOffset)
+unsigned getRegionUsage_CaGDtmWo(const int flatOffset, const int flatCount)
 {
-    slot.vtype.quals = USAGE_shiftLeft_L39cSlw5(slot.vtype.quals, memberFlatOffset);
-    return static_cast<s_Type&&>(slot);
+    return USAGE_shiftLeft_CaGDtmWo(getMaxUsage_CaGDtmWo(flatCount), flatOffset);
 }
 
-static unsigned USAGE_shiftRight_L39cSlw5(const unsigned quals, int offset)
+void USAGE_setMaxUsage_CaGDtmWo(s_Type& type, const int flatCount)
+{
+    type.vtype.quals = ((type.vtype.quals & q_TAGS) | getMaxUsage_CaGDtmWo(flatCount));
+}
+
+unsigned USAGE_structUsageFromFieldUsage_CaGDtmWo(const unsigned quals, const int memberFlatOffset)
+{
+    return USAGE_shiftLeft_CaGDtmWo(quals, memberFlatOffset);
+}
+
+static unsigned USAGE_shiftRight_CaGDtmWo(const unsigned quals, int offset)
 {
     const unsigned keep = (quals & q_TAGS);
     unsigned usage = (quals & q_USAGE);
@@ -150,13 +180,30 @@ static unsigned USAGE_shiftRight_L39cSlw5(const unsigned quals, int offset)
     return keep | (usage & q_USAGE);
 }
 
-s_Type USAGE_fieldUsageFromStructUsage_nUuDM8fi(/*MOV*/ s_Type&& slot, const unsigned structUsage, const int memberFlatOffset, const int memberFlatCount)
+unsigned USAGE_fieldUsageFromStructUsage_CaGDtmWo(unsigned quals, const unsigned structUsage, const int memberFlatOffset, const int memberFlatCount)
 {
-    slot.vtype.quals &= ~q_USAGE;
-    slot.vtype.quals |= structUsage;
-    slot.vtype.quals = USAGE_shiftRight_L39cSlw5(slot.vtype.quals, memberFlatOffset);
-    slot.vtype.quals &= (q_TAGS | getMaxUsage_YfHAfesl(memberFlatCount));
+    quals &= ~q_USAGE;
+    quals |= structUsage;
+    quals = USAGE_shiftRight_CaGDtmWo(quals, memberFlatOffset);
+    quals &= (q_TAGS | getMaxUsage_CaGDtmWo(memberFlatCount));
+    return quals;
+}
+
+s_Type USAGE_structUsageFromFieldUsage_GgXYS4ZV(/*MOV*/ s_Type&& slot, const int memberFlatOffset)
+{
+    slot.vtype.quals = USAGE_structUsageFromFieldUsage_CaGDtmWo(slot.vtype.quals, memberFlatOffset);
     return static_cast<s_Type&&>(slot);
+}
+
+s_Type USAGE_fieldUsageFromStructUsage_GgXYS4ZV(/*MOV*/ s_Type&& slot, const unsigned structUsage, const int memberFlatOffset, const int memberFlatCount)
+{
+    slot.vtype.quals = USAGE_fieldUsageFromStructUsage_CaGDtmWo(slot.vtype.quals, structUsage, memberFlatOffset, memberFlatCount);
+    return static_cast<s_Type&&>(slot);
+}
+
+s_RWQuals USAGE_structUsageFromFieldUsage_z5tFO59K(const s_RWQuals& rw, const int memberFlatOffset)
+{
+    return s_RWQuals { USAGE_structUsageFromFieldUsage_CaGDtmWo(rw.usage, memberFlatOffset), USAGE_structUsageFromFieldUsage_CaGDtmWo(rw.written_to, memberFlatOffset) };
 }
 
 #endif

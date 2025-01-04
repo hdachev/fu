@@ -37,7 +37,7 @@ struct s_Intlit
 
 #ifndef fu_NO_fdefs
 
-s_Intlit Intlit_LmjxY9JB(const uint64_t absval, const bool negative, /*MOV*/ fu::str&& error, const bool uNsigned, const bool sIgned, const uint64_t base)
+s_Intlit Intlit_MpuZ8TbN(const uint64_t absval, const bool negative, /*MOV*/ fu::str&& error, const bool uNsigned, const bool sIgned, const uint64_t base)
 {
     if (!(error))
     {
@@ -54,7 +54,7 @@ s_Intlit Intlit_LmjxY9JB(const uint64_t absval, const bool negative, /*MOV*/ fu:
     return s_Intlit { fu::u8(base), fu::u8(unsigned(minsize_i)), fu::u8(unsigned(minsize_u)), fu::u8(unsigned(minsize_f)), sIgned, uNsigned, negative, absval, static_cast<fu::str&&>(error) };
 }
 
-s_Intlit Intlit_sNwIFkW3(fu::view<char> sign_prefix_value_suffix)
+s_Intlit Intlit_u8re8TwO(fu::view<char> sign_prefix_value_suffix)
 {
     const char c_sign = sign_prefix_value_suffix[0];
     const char sign = (((c_sign == '-') || (c_sign == '+')) ? c_sign : char{});
@@ -88,7 +88,7 @@ s_Intlit Intlit_sNwIFkW3(fu::view<char> sign_prefix_value_suffix)
     const bool uNsigned = (suffix == 'u');
     const bool negative = (sign == '-');
     const bool sIgned = (negative || (suffix == 'i'));
-    return Intlit_LmjxY9JB(absval, negative, static_cast<fu::str&&>(error), uNsigned, sIgned, base);
+    return Intlit_MpuZ8TbN(absval, negative, static_cast<fu::str&&>(error), uNsigned, sIgned, base);
 }
 
 #endif

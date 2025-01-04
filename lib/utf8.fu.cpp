@@ -1,9 +1,20 @@
+#include <fu/int.h>
 #include <fu/str.h>
 
+typedef unsigned s_Codepoint;
+
+                                #ifndef DEF_s_Codepoint
+                                #define DEF_s_Codepoint
+                                #endif
 
 #ifndef fu_NO_fdefs
 
-fu::str bytes_EvFLFmIM(const unsigned unicode)
+s_Codepoint Codepoint_QxwWuQiD(const char b)
+{
+    return s_Codepoint(unsigned(fu::u8(b)));
+}
+
+fu::str bytes_QxwWuQiD(const s_Codepoint unicode)
 {
     if ((unicode <= 0x7fu))
     {

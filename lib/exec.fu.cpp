@@ -4,12 +4,22 @@
 #include <fu/defer.h>
 #include <fu/vec/concat_one.h>
 
+typedef int s_Errno;
+typedef int s_ExitStatus;
+
+                                #ifndef DEF_s_Errno
+                                #define DEF_s_Errno
+                                #endif
+
+                                #ifndef DEF_s_ExitStatus
+                                #define DEF_s_ExitStatus
+                                #endif
 
 #ifndef fu_NO_fdefs
 
-int exec_sounLutz(fu::str&& cmd, int& status, fu::str& stdout)
+s_Errno exec_G82RIYwh(fu::str&& cmd, s_ExitStatus& status, fu::str& stdout)
 {
-    int err = 0;
+    s_Errno err {};
     status = -1;
     cmd += '\x00';
     const auto pipe = popen(cmd.data(), /*rb triggers EINVAL*/"r");

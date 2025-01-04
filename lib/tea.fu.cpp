@@ -24,7 +24,7 @@ struct s_TEA
 
 #ifndef fu_NO_fdefs
 
-s_TEA& non_zero_T98svGTs(s_TEA& tea)
+s_TEA& non_zero_lweHUmk8(s_TEA& tea)
 {
     if (!tea)
         tea.v0 = 0xffffffffu;
@@ -32,7 +32,7 @@ s_TEA& non_zero_T98svGTs(s_TEA& tea)
     return tea;
 }
 
-void r4_ayNY8hbk(s_TEA& _)
+void r4_lweHUmk8(s_TEA& _)
 {
     unsigned sum {};
     const unsigned delta = 0x9e3779b9u;
@@ -44,7 +44,7 @@ void r4_ayNY8hbk(s_TEA& _)
     };
 }
 
-void r8_ayNY8hbk(s_TEA& _)
+void r8_lweHUmk8(s_TEA& _)
 {
     unsigned sum {};
     const unsigned delta = 0x9e3779b9u;
@@ -56,7 +56,7 @@ void r8_ayNY8hbk(s_TEA& _)
     };
 }
 
-void r16_ayNY8hbk(s_TEA& _)
+void r16_lweHUmk8(s_TEA& _)
 {
     unsigned sum {};
     const unsigned delta = 0x9e3779b9u;
@@ -68,27 +68,27 @@ void r16_ayNY8hbk(s_TEA& _)
     };
 }
 
-void hash_KpbyTrxM(s_TEA& res, const s_TEA& other)
+void hash_lweHUmk8(s_TEA& res, const s_TEA& other)
 {
     res.v0 ^= other.v1;
     res.v1 ^= other.v0;
-    r16_ayNY8hbk(res);
+    r16_lweHUmk8(res);
 }
 
-void hash_dDLcy6Ao(s_TEA& res, const uint64_t v)
+void hash_qRo1x0wq(s_TEA& res, const uint64_t v)
 {
     res.v0 ^= unsigned((v >> 32ull));
     res.v1 ^= unsigned(v);
-    r16_ayNY8hbk(res);
+    r16_lweHUmk8(res);
 }
 
-void hash_CwEi37x3(s_TEA& res, const unsigned v)
+void hash_qw8SyzVJ(s_TEA& res, const unsigned v)
 {
     res.v0 ^= unsigned(v);
-    r16_ayNY8hbk(res);
+    r16_lweHUmk8(res);
 }
 
-void hash_okLTgNyg(s_TEA& res, fu::view<char> u8view)
+void hash_l6RUR9Sz(s_TEA& res, fu::view<char> u8view)
 {
     const int u32len = (u8view.size() & ~3);
     fu::view<unsigned> u32view = fu::view_of<unsigned>(fu::get_view_start0(u8view, u32len));
@@ -96,7 +96,7 @@ void hash_okLTgNyg(s_TEA& res, fu::view<char> u8view)
     {
         res.v0 ^= u32view[(i - 1)];
         res.v1 ^= u32view[i];
-        r16_ayNY8hbk(res);
+        r16_lweHUmk8(res);
     };
     if (u8view.size() & 7)
     {
@@ -113,11 +113,11 @@ void hash_okLTgNyg(s_TEA& res, fu::view<char> u8view)
             };
             res.v1 ^= last;
         };
-        r16_ayNY8hbk(res);
+        r16_lweHUmk8(res);
     };
 }
 
-fu::str digest62_NBz0rQPD(uint64_t v, int chars)
+fu::str digest62_lweHUmk8(uint64_t v, int chars)
 {
     chars = (((chars > 0) && (chars < 11)) ? chars : 11);
     /*MOV*/ fu::str res {};
@@ -136,7 +136,7 @@ fu::str digest62_NBz0rQPD(uint64_t v, int chars)
     return /*NRVO*/ res;
 }
 
-fu::str digest16_NBz0rQPD(uint64_t v, int chars)
+fu::str digest16_lweHUmk8(uint64_t v, int chars)
 {
     chars = (((chars > 0) && (chars < 16)) ? chars : 16);
     /*MOV*/ fu::str res {};
@@ -153,31 +153,31 @@ fu::str digest16_NBz0rQPD(uint64_t v, int chars)
     return /*NRVO*/ res;
 }
 
-s_TEA hash_yvYDPKX8(fu::view<char> u8view)
+s_TEA hash_s9RCxn8L(fu::view<char> u8view)
 {
     s_TEA res {};
-    hash_okLTgNyg(res, u8view);
+    hash_l6RUR9Sz(res, u8view);
     return res;
 }
 
-fu::str hash62_nHEuzL2I(fu::view<char> str, const int chars)
+fu::str hash62_lweHUmk8(fu::view<char> str, const int chars)
 {
     s_TEA res {};
-    hash_okLTgNyg(res, str);
+    hash_l6RUR9Sz(res, str);
     uint64_t BL_1_v {};
-    return digest62_NBz0rQPD((__extension__ (
+    return digest62_lweHUmk8((__extension__ (
     {
         const s_TEA& tea = res;
         BL_1_v = ((uint64_t(tea.v0) | (uint64_t(tea.v1) << 32ull)));
     (void)0;}), BL_1_v), chars);
 }
 
-fu::str hash16_nHEuzL2I(fu::view<char> str, const int chars)
+fu::str hash16_lweHUmk8(fu::view<char> str, const int chars)
 {
     s_TEA res {};
-    hash_okLTgNyg(res, str);
+    hash_l6RUR9Sz(res, str);
     uint64_t BL_1_v {};
-    return digest16_NBz0rQPD((__extension__ (
+    return digest16_lweHUmk8((__extension__ (
     {
         const s_TEA& tea = res;
         BL_1_v = ((uint64_t(tea.v0) | (uint64_t(tea.v1) << 32ull)));

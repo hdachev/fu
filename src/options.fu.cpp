@@ -16,7 +16,7 @@ struct s_Lint
 
 #ifndef fu_NO_fdefs
 
-s_Lint Lint_lax_KjUu65ky()
+s_Lint Lint_lax_sZ7n7JdP()
 {
     return s_Lint { 10 };
 }
