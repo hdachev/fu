@@ -8504,41 +8504,8 @@ pub fn solve(
             "solveStruct: no out_target: `" ~ origId ~ "`.")));
         ///////////////////////////////////////////////
 
-        // Struct fields only.
-        mut structConverts: Target[];
-        mut structImports:  flat::Set(i32);
-
-        mut non_triv_reason = !instType.is_rx_copy && -1;
-
-        // Solve members & check defaults.
-        let primType = isPrimDecl && (
-            instType || BUG("Falsy isPrimDecl.instType"));
-
-        fn solveMember(shadow node: Node)
-        {
-            node.kind == "let" || BUG("solveStructMembers_1: " ~ node.kind);
-
-            if (!isPrimDecl)
-                node.items[LET_INIT] &&
-                node.items[LET_INIT].kind != "definit" &&
-                    fail("All structs must be zerofilled by default."
-                        ~ " Please remove the initializer of struct member " ~ node.value.qBAD ~ ".");
-
-            mut ret = solveLetLike_dontTouchScope(
-                node, :primType,
-                asArgument: false);
-
-            // TODO FIX VFACTS //
-            ret.type.vfacts = [];
-            // TODO FIX VFACTS //
-
-            // Can't continue/return back/fwd compat.
-            return ret;
-        }
-
-        let members = memberNodes.map(fn solveMember);
-
-        // (Re)poplate fields.
+        // Pre-initialize field targets -
+        //  we're only supposed to do this on first solve.
         {
             ref s = lookupUserType_mut(instType.canon);
             if (!s.items && memberNodes)
@@ -8604,6 +8571,44 @@ pub fn solve(
                         _scope.globals ~= s.items;
                 }
             }
+        }
+
+        // Solve members & check defaults.
+        let primType = isPrimDecl && (
+            instType || BUG("Falsy isPrimDecl.instType"));
+
+        fn solveMember(shadow node: Node)
+        {
+            node.kind == "let" || BUG("solveStructMembers_1: " ~ node.kind);
+
+            if (!isPrimDecl)
+                node.items[LET_INIT] &&
+                node.items[LET_INIT].kind != "definit" &&
+                    fail("All structs must be zerofilled by default."
+                        ~ " Please remove the initializer of struct member " ~ node.value.qBAD ~ ".");
+
+            mut ret = solveLetLike_dontTouchScope(
+                node, :primType,
+                asArgument: false);
+
+            // TODO FIX VFACTS //
+            ret.type.vfacts = [];
+            // TODO FIX VFACTS //
+
+            // Can't continue/return back/fwd compat.
+            return ret;
+        }
+
+        let members = memberNodes.map(fn solveMember);
+
+        // Struct fields only.
+        mut structConverts: Target[];
+        mut structImports:  flat::Set(i32);
+
+        mut non_triv_reason = !instType.is_rx_copy && -1;
+
+        {
+            ref s = lookupUserType_mut(instType.canon);
 
             // Update field types.
             s.items.len == members.len || BUG(
@@ -8749,31 +8754,33 @@ pub fn solve(
 
                         last.error = "Cannot auto-increment, please provide an explicit value.";
                     }
-
-                    // Auto-increment.
-                    last.error      && fail(last.error);
-                    last.negative   && fail(
-                        "Previous constant is negative, not sure how to increment, please specify an explicit value.");
-
-                    let next = intlit::Intlit(:signed, :unsigned,
-                        absval: kind == "flags"
-                            ? (i ? last.absval << 1 : 1)
-                            :      last.absval  + 1);
-
-                    next.error || next.absval > last.absval || fail(
-                        next.error || "Failed to auto-increment, range exhausted.");
-
-                    let minsize = signed ? next.minsize_i : next.minsize_u;
-                    if (minsize > size)
-                        fail("Primitive range exhausted: requires " ~ minsize ~ " bits, got " ~ size ~ ".");
-
-                    last = next;
-
-                    //
-                    if (signed || unsigned)
-                        init = SolvedNode(kind: "int", type: primType, value: (next.negative && "-") ~ next.absval);
                     else
-                        fail("Cannot auto-increment this type: " ~ basePrim);
+                    {
+                        // Auto-increment.
+                        last.error      && fail(last.error);
+                        last.negative   && fail(
+                            "Previous constant is negative, not sure how to increment, please specify an explicit value.");
+
+                        let next = intlit::Intlit(:signed, :unsigned,
+                            absval: kind == "flags"
+                                ? (i ? last.absval << 1 : 1)
+                                :      last.absval  + 1);
+
+                        next.error || next.absval > last.absval || fail(
+                            next.error || "Failed to auto-increment, range exhausted.");
+
+                        let minsize = signed ? next.minsize_i : next.minsize_u;
+                        if (minsize > size)
+                            fail("Primitive range exhausted: requires " ~ minsize ~ " bits, got " ~ size ~ ".");
+
+                        last = next;
+
+                        //
+                        if (signed || unsigned)
+                            init = SolvedNode(kind: "int", type: primType, value: (next.negative && "-") ~ next.absval);
+                        else
+                            fail("Cannot auto-increment this type: " ~ basePrim);
+                    }
                 }
             }
         }

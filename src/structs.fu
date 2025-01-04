@@ -68,13 +68,12 @@ pub fn createStructCanon(
 
 pub fn isStruct(type: ValueType): bool
 {
-    let c = type.canon[0];
-    return c.u8 >= 128;
+    return type.canon.if_first.u8 >= 128;
 }
 
 pub fn isStructOrUnion(type: ValueType): bool
 {
-    // TODO FIX createStructCanon gives both the '/' prefix.
+    // TODO FIX createStructCanon does not differentiate between structs and unions.
     return type.isStruct;
 }
 
