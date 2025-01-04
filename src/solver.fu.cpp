@@ -21512,7 +21512,7 @@ static s_SolvedNode __solveStruct_gDsnGKHT(const bool solve, const s_Node& node,
     const bool isStruct = (kind == s_Kind_struct);
     const bool isUnion = (kind == s_Kind_union);
     const bool isPrimDecl = (!isStruct ? !isUnion : false);
-    fu::view<s_Node> items = (!node.items ? node.items : node.items[STRUCT_MEMBERS].items);
+    fu::view<s_Node> memberNodes = (!node.items ? node.items : node.items[STRUCT_MEMBERS].items);
     /*MOV*/ s_Type basePrimType {};
     fu::str basePrim {};
     if (isPrimDecl)
@@ -21526,10 +21526,10 @@ static s_SolvedNode __solveStruct_gDsnGKHT(const bool solve, const s_Node& node,
         hash_l6RUR9Sz(shape_hasher, ss.shortModuleName);
     else
     {
-        for (int i = 0; i < items.size(); i++)
+        for (int i = 0; i < memberNodes.size(); i++)
         {
             fu::view<char> _1 {};
-            hash_l6RUR9Sz(shape_hasher, ((_1 = items[i].value) ? static_cast<fu::view<char>&&>(_1) : BUG_u9Gbkniv(fu::str{}, _here, ctx)));
+            hash_l6RUR9Sz(shape_hasher, ((_1 = memberNodes[i].value) ? static_cast<fu::view<char>&&>(_1) : BUG_u9Gbkniv(fu::str{}, _here, ctx)));
         };
     };
     uint64_t BL_6_v {};
@@ -21572,22 +21572,22 @@ static s_SolvedNode __solveStruct_gDsnGKHT(const bool solve, const s_Node& node,
         /*MOV*/ s_Set_95BJOojOc45 structImports {};
         int non_triv_reason = (!is_rx_copy_9CJmuVSD(instType.vtype) ? -1 : 0);
         const s_Type& primType = (isPrimDecl ? (instType ? instType : BUG_gDsnGKHT("Falsy isPrimDecl.instType"_fu, ss, _helpers, _here, ctx, module, options)) : (*(const s_Type*)fu::NIL));
-        fu::vec<s_SolvedNode> members = map_8qoGTAkV(items, isPrimDecl, primType, _current_fn, ss, _helpers, _here, ctx, module, options);
+        fu::vec<s_SolvedNode> members = map_8qoGTAkV(memberNodes, isPrimDecl, primType, _current_fn, ss, _helpers, _here, ctx, module, options);
 
         {
             s_Struct& s = lookupUserType_mut_1qjplDUo(instType.vtype.canon, module, _here, ctx);
-            if (!s.items && members)
+            if (!s.items && memberNodes)
             {
                 const bool isUnscoped = !!(node.flags & s_Flags_F_USING);
                 fu::vec<s_Argument> args = (!isPrimDecl ? fu::vec<s_Argument> { fu::slate<1, s_Argument> { s_Argument { "this"_fu, fu::str{}, despeculateStruct_9CJmuVSD(s_Type(instType)), s_SolvedNode{}, s_Target{}, s_Flags{}, 0u, s_BitSet{}, s_BitSet{} } } } : fu::vec<s_Argument> { fu::slate<1, s_Argument> { s_Argument { "This"_fu, fu::str{}, s_Type(out_Typename), (isUnscoped ? createEmpty_gDsnGKHT(out_Typename, s_Target{}, ss, _helpers, _here, ctx, module, options) : s_SolvedNode{}), s_Target{}, s_Flags{}, 0u, s_BitSet{}, s_BitSet{} } } });
-                for (int i = 0; i < members.size(); i++)
+                for (int i = 0; i < memberNodes.size(); i++)
                 {
-                    const s_Node& item = items[i];
-                    const fu::str& id = item.value;
-                    const s_Flags flags = (item.flags & (s_Flags_F_PREDICATE | s_Flags_F_IMPLICIT));
+                    const s_Node& node_1 = memberNodes[i];
+                    const fu::str& id = node_1.value;
+                    const s_Flags flags = (node_1.flags & (s_Flags_F_PREDICATE | s_Flags_F_IMPLICIT));
                     if (flags && isPrimDecl)
                     {
-                        fail_gDsnGKHT((((("Unexpected "_fu + qKW_e44UlzzA("true"_fu)) + " or "_fu) + qKW_e44UlzzA("implicit"_fu)) + " qualifier."_fu), fu::view<char>{}, s_TokenIdx(item.token), fu::view<s_TokenIdx>{}, ss, _helpers, _here, ctx, module, options);
+                        fail_gDsnGKHT((((("Unexpected "_fu + qKW_e44UlzzA("true"_fu)) + " or "_fu) + qKW_e44UlzzA("implicit"_fu)) + " qualifier."_fu), fu::view<char>{}, s_TokenIdx(node_1.token), fu::view<s_TokenIdx>{}, ss, _helpers, _here, ctx, module, options);
                     }
                     else
                     {
@@ -21596,7 +21596,7 @@ static s_SolvedNode __solveStruct_gDsnGKHT(const bool solve, const s_Node& node,
                         ext.args = args;
                         ext.min = ((isUnscoped && isPrimDecl) ? 0 : args.size());
                         ext.max = args.size();
-                        ext.tEmplate.node.token = items[i].token;
+                        ext.tEmplate.node.token = memberNodes[i].token;
                         Scope_set_FjkYY9fz(s.items, id, target, false);
                         field_setParentStruct_gDsnGKHT(GET_mut_gDsnGKHT(target, ss, module), out_target, _here, ctx);
                     };
@@ -21615,11 +21615,11 @@ static s_SolvedNode __solveStruct_gDsnGKHT(const bool solve, const s_Node& node,
             {
                 for (int i_1 = 0; i_1 < s.items.size(); i_1++)
                 {
-                    const s_ScopeItem& item_1 = s.items[i_1];
+                    const s_ScopeItem& item = s.items[i_1];
                     const s_SolvedNode& member = members[i_1];
-                    if (item_1.id == member.value)
+                    if (item.id == member.value)
                     {
-                        const s_Target field_target = target_z0QqoZ5t(item_1);
+                        const s_Target field_target = target_z0QqoZ5t(item);
                         s_Overload& field = GET_mut_gDsnGKHT(field_target, ss, module);
                         field.type = member.type;
                         s_Shape member_shape = getShape_1qjplDUo(member.type.vtype, _here, ctx, module);
@@ -21666,7 +21666,7 @@ static s_SolvedNode __solveStruct_gDsnGKHT(const bool solve, const s_Node& node,
                         {
                             if (member.flags & s_Flags_F_USING)
                             {
-                                structConverts.push(target_z0QqoZ5t(item_1));
+                                structConverts.push(target_z0QqoZ5t(item));
                                 const int m = modidOfOrigin_p1TNFlvR(field.type);
                                 if (m && (m != module.modid))
                                     add_8Ex4Hrql(structImports, m);
@@ -21753,7 +21753,7 @@ static s_SolvedNode __solveStruct_gDsnGKHT(const bool solve, const s_Node& node,
                 };
             }
             else
-                BUG_gDsnGKHT((((x7E_3lDd4lqo((x7E_3lDd4lqo((x7E_3lDd4lqo("solveStructMembers_3: field lens mismatch: "_fu, fu::i64dec(s.items.size())) + " vs "_fu), fu::i64dec(members.size())) + "/"_fu), fu::i64dec(items.size())) + ": `struct "_fu) + name) + "`."_fu), ss, _helpers, _here, ctx, module, options);
+                BUG_gDsnGKHT((((x7E_3lDd4lqo((x7E_3lDd4lqo((x7E_3lDd4lqo("solveStructMembers_3: field lens mismatch: "_fu, fu::i64dec(s.items.size())) + " vs "_fu), fu::i64dec(members.size())) + "/"_fu), fu::i64dec(memberNodes.size())) + ": `struct "_fu) + name) + "`."_fu), ss, _helpers, _here, ctx, module, options);
 
         };
         uint64_t BL_57_v {};
@@ -21769,7 +21769,7 @@ static s_SolvedNode __solveStruct_gDsnGKHT(const bool solve, const s_Node& node,
         {
             if (asserts & s_DeclAsserts_A_TRIVIAL)
             {
-                fail_gDsnGKHT((("Struct is not "_fu + qKW_e44UlzzA("trivial"_fu)) + ((non_triv_reason < 1) ? ((" because it is "_fu + qKW_e44UlzzA("nocopy"_fu)) + "."_fu) : (" because of non-trivial member "_fu + qID_e44UlzzA(iF_2dYjj0V8(items, (non_triv_reason - 1)).value)))), fu::view<char>{}, s_TokenIdx(_here), fu::view<s_TokenIdx>{}, ss, _helpers, _here, ctx, module, options);
+                fail_gDsnGKHT((("Struct is not "_fu + qKW_e44UlzzA("trivial"_fu)) + ((non_triv_reason < 1) ? ((" because it is "_fu + qKW_e44UlzzA("nocopy"_fu)) + "."_fu) : (" because of non-trivial member "_fu + qID_e44UlzzA(iF_2dYjj0V8(memberNodes, (non_triv_reason - 1)).value)))), fu::view<char>{}, s_TokenIdx(_here), fu::view<s_TokenIdx>{}, ss, _helpers, _here, ctx, module, options);
             }
             else if (shape.non_triv_mask || (non_triv_reason < 0))
                 shape.non_triv_mask |= (1ull << (shape.hash & 63ull));
