@@ -17,7 +17,7 @@ pub extern fn runTests()
     // Solo mode, so you can mute all tests
     //  but what you want to work on -
 
-    /*
+    //*
     let SOLO            = fn ZERO;
 
     lax fn SOLO_muteRest (lax a, lax currently?: string, lax options?: options::Options) {}
@@ -4283,7 +4283,7 @@ pub extern fn runTests()
         }
     `);
 
-    TODO_args(currently: "BUG nested(): bad locid 17:28+6", `
+    SOLO(`
         struct Layout { atlas_width: u16; atlas_height: u16 }
         enum Size: u8 { x2 = 1; x4 = 2; x8 = 3; x16 = 4; x32 = 5; x64 = 6 }
 

@@ -4202,7 +4202,7 @@ pub fn solve(
                     maybeCopyOrMove(init, node.type);
             }
 
-            if (!canDiscard)
+            if (!canDiscard && node.target.isLocal)
             {
                 // TODO FIX!
                 //  This is nonsense but better than what i had before,
