@@ -13859,7 +13859,11 @@ pub fn solve(
                         //     Lifetime_op_mask(
                         //         arg.lifetime, host_arg.written_to));
                         //
-                        bck_writes.Lifetime_add(arg.lifetime);
+                        bck_writes.Lifetime_add(arg.lifetime,
+
+                            // We're batching disparate arguments together here,
+                            //  we can't expect them to have the same flatcount.
+                            flatCountMismatchOK: true);
                     }
 
                     if (!ooe_isLast)

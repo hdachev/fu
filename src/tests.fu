@@ -8755,7 +8755,7 @@ pub extern fn runTests()
         }
     `);
 
-    TODO_borrowck(currently: "BUG assertPathsValid expect_flatCount(1) != flatCount(2) 10:45+2", `
+    ZERO(`
         struct TEA          { v0: int; v1: int }
         struct RenderCache  { tea: TEA; noise: int };
 
@@ -8769,7 +8769,7 @@ pub extern fn runTests()
         }
     `);
 
-    TODO_borrowck(currently: "BUG assertPathsValid expect_flatCount(1) != flatCount(2) 12:45+2", `
+    ZERO(`
         struct TEA { v0: u32; v1: u32 }
 
         noinline fn r8(using ref _: TEA)
