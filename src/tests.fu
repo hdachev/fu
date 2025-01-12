@@ -8412,7 +8412,7 @@ pub extern fn runTests()
         }
     `);
 
-    TODO_ooe(currently: "BUG exit code", `
+    ZERO(`
         <alt>
         nocopy struct NC { v: i32 };                <alt/>
         struct NC { v: i32 };                       <alt/>
@@ -8444,7 +8444,7 @@ pub extern fn runTests()
         }
     `);
 
-    TODO_ooe(currently: "BUG exit code", `
+    ZERO(`
         <alt>
         nocopy struct NC { v: i32 };                <alt/>
         struct NC { v: i32 };                       <alt/>

@@ -651,18 +651,22 @@ struct fu_VEC
         //  It's actually the faster option for trivial data,
         //   because we skip the checks & the refc-hit,
         //    since it's a memcpy anyway.
-        if constexpr (!is_Clear && SHAREABLE)
+        //
+        if constexpr (TRIVIAL/*always copy*/ || SHAREABLE/*if couldn't move above*/)
         {
-            if constexpr (fu_MAYBE_POS(idx))
-                CPY_ctor_range(
-                    new_data,
-                    old_data,
-                    idx);
+            if constexpr (!is_Clear)
+            {
+                if constexpr (fu_MAYBE_POS(idx))
+                    CPY_ctor_range(
+                        new_data,
+                        old_data,
+                        idx);
 
-            CPY_ctor_range(
-                new_data + (idx + insert),
-                old_data + (idx + del),
-                old_size - (idx + del + pop));
+                CPY_ctor_range(
+                    new_data + (idx + insert),
+                    old_data + (idx + del),
+                    old_size - (idx + del + pop));
+            }
         }
 
         // Release the old mem, running destructors
