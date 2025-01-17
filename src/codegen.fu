@@ -15,26 +15,37 @@ let SMALL_STRING_OPTI   = 15;
 let SIGHASH_CHARS       = 4;
 
 using flags Mode: u32 {
+
     M_STMT
     M_RETBOOL
     M_CONST
     M_RETVAL
+
     M_ARGUMENT
     M_RETURN
     M_FWDECL
     M_PARENS
+
     M_OPT_CURLIES
     M_LOOP_BODY
     M_MUTVAR
     M_MOVABLE
+
     M_ARG_TO_NATIVE
     M_ENUM_DECL
     M_CHECK_NEVER_LTR
+
     M_STATIC_REF
     M_VOID_EXPR
     M_FN_BODY
     M_IGNORE_REFERENCE
+
+    M_ABBREVIATE_ALL_COPIES
+    M_ABBREVIATE_NONVEC_COPIES
+    M_ABBREVIATE_PASSBYVAL_COPIES
 }
+
+let Mode_PASSTHROUGH    = M_ABBREVIATE_ALL_COPIES | M_ABBREVIATE_NONVEC_COPIES | M_ABBREVIATE_PASSBYVAL_COPIES;
 
 
 let MAIN_needed         = 1 << 0;
@@ -1072,13 +1083,14 @@ pub fn cpp_codegen(
         if (expr && items.exprOK)
             return cgComma(items);
 
-        return cgBlock(items, skipCurlies: !!(mode & M_OPT_CURLIES), gnuStmtExpr: expr,
-            :helpers, type: expr && node.type);
+        return cgBlock(items, gnuStmtExpr: expr,
+            :helpers, type: expr && node.type, :mode);
     }
 
     fn cgBlock(
-        nodes: SolvedNode[], skipCurlies!: bool, gnuStmtExpr!: bool,
-        helpers!: Helpers, type: Type): string
+        nodes: SolvedNode[], gnuStmtExpr!: bool,
+        helpers!: Helpers, type: Type,
+        mode: Mode): string
     {
         ///////////////////////////////////////////////
         let indent0         = _indent;
@@ -1135,7 +1147,8 @@ pub fn cpp_codegen(
                 :type, isMovedFrom && M_MOVABLE,
                 :annot, :ptr_flip, name && name ~ "_v");
 
-            let outval  = TEMPVAR_consume(:ptr_flip, :id, :type);
+            let outval  = TEMPVAR_consume(:ptr_flip, :id, :type,
+                :mode & Mode_PASSTHROUGH);
 
             close       = "    (void)0;"
                         ~ indent0 ~ "}), " ~ outval ~ ")";
@@ -1169,6 +1182,7 @@ pub fn cpp_codegen(
         }
 
         //
+        let skipCurlies = !!(mode & M_OPT_CURLIES);
         if (!skipCurlies
                 || nodes.len != 1 || count != 1
                 || labelUsed
@@ -1770,11 +1784,6 @@ pub fn cpp_codegen(
         return head;
     }
 
-    fn isAbbreviatedCopy(n: SolvedNode, sliceOK!?: bool)
-    {
-        return n.kind == "copy" && (!n.is_sliceable || sliceOK);
-    }
-
     fn binding(target!: Target, init: SolvedNode, mode: Mode, doInit!: bool)
     {
         mut head = binding(:target);
@@ -1802,13 +1811,6 @@ pub fn cpp_codegen(
         }
 
         // A less verbose copy init.
-        let isAbbreviatedCopy =
-            init.isAbbreviatedCopy();
-
-        shadow let init = isAbbreviatedCopy
-            ? init.items.only
-            : init;
-
         if (init.kind == "bool" && !(target.flags & F_PUB) && !target.type.is_mutref)
             noteDefect(LocalConstBool);
 
@@ -1822,7 +1824,7 @@ pub fn cpp_codegen(
             swap(initTEMPVARs, _current_fn.TEMPVARs);
         /////////////////////////////////////////////
         ///
-        mut expr = cgNode(init);
+        mut expr = cgNode(init, mode: M_ABBREVIATE_NONVEC_COPIES);
         ///
         /////////////////////////////////////////////
         if (use_initTEMPVARs)
@@ -2098,7 +2100,7 @@ pub fn cpp_codegen(
             }
 
             // I think the prefix keywords beat everything re: precedence.
-            return "return " ~ cgNode(expr, M_PARENS|M_RETURN);
+            return "return " ~ cgNode(expr, M_PARENS|M_RETURN|M_ABBREVIATE_PASSBYVAL_COPIES);
         }
 
         //
@@ -2231,7 +2233,7 @@ pub fn cpp_codegen(
         if (node.isIrrelevant)
             noteDefect(IrrelevantLiteral);
 
-        let items = cgNodes(node.items, mode: M_CHECK_NEVER_LTR)
+        let items = cgNodes(node.items, mode: M_CHECK_NEVER_LTR|M_ABBREVIATE_PASSBYVAL_COPIES)
             || BUG("cgArrayLiteral: arrlit.items.len == 0, should be 'empty' instead");
 
         let src = items.join(", ");
@@ -2315,12 +2317,6 @@ pub fn cpp_codegen(
         {
             let arg = args[i];
 
-            // Skip explicit copies on assignment, pointless.
-            shadow let arg = isSimpleCpyMovAssign && i == 1
-                    && arg.isAbbreviatedCopy(sliceOK: true)
-                ? arg.items.only
-                : arg;
-
             mut junk = false;
             mut mustDiscard = arg.isIrrelevant;
             if (mustDiscard)
@@ -2341,10 +2337,15 @@ pub fn cpp_codegen(
             let MUSTSEQ_bit = 1 << (i & 31);
             let mustSeq_useTemporary = MUSTSEQ_mask & MUSTSEQ_bit;
 
+            let mode_canAbbreviateCopies =
+                isSimpleCpyMovAssign    ? M_ABBREVIATE_ALL_COPIES
+                                        : (!isNative || !(host_arg.flags & F_MUT)) && M_ABBREVIATE_PASSBYVAL_COPIES;
+
             mut src = junk ? "" : cgNode(
                 arg,
                 callarg: !mustSeq_useTemporary && host_arg.type,
-                mode: isNative && M_ARG_TO_NATIVE) || BUG("Empty arg src.");
+                mode: (isNative && M_ARG_TO_NATIVE)
+                    | mode_canAbbreviateCopies) || BUG("Empty arg src.");
 
             //
             if (mustDiscard && src)
@@ -2412,7 +2413,8 @@ pub fn cpp_codegen(
 
                     let id      = TEMPVAR_declare(type: arg, :ptr_flip, :annot);
                     ooe_header ~= TEMPVAR_init(:id, :ptr_flip, init: src);
-                    src         = TEMPVAR_consume(:id, :arg.type, :ptr_flip);
+                    src         = TEMPVAR_consume(:id, :arg.type, :ptr_flip,
+                                    mode: mode_canAbbreviateCopies);
                 }
             }
 
@@ -2927,8 +2929,8 @@ pub fn cpp_codegen(
                 : blockWrapSubstatement(node);
 
         let cond = n0 && cgNode(n0, M_RETBOOL | (stmt && M_PARENS));
-        mut cons = n1 && (stmt ? blockWrapSubstatement(n1) : cgNode(n1));
-        mut alt  = n2 && (stmt ? blockWrap_unlessIf   (n2) : cgNode(n2));
+        mut cons = n1 && (stmt ? blockWrapSubstatement(n1) : cgNode(n1, :mode & Mode_PASSTHROUGH));
+        mut alt  = n2 && (stmt ? blockWrap_unlessIf   (n2) : cgNode(n2, :mode & Mode_PASSTHROUGH));
 
         if (stmt)
             return "if (" ~ cond ~ ")" ~ cons ~ (alt ? _indent ~ "else" ~ alt : "");
@@ -2972,7 +2974,7 @@ pub fn cpp_codegen(
             {
                 let item = items[i];
                 if (i < items.len - 1)
-                    src ~= "!" ~ via(:tv, :type, item);
+                    src ~= "!" ~ via(:tv, :type, item, mode: []);
                 else
                     src ~= cgNode(item);
             }
@@ -3023,18 +3025,18 @@ pub fn cpp_codegen(
                 }
 
                 //
-                src ~= via(:tv, :type, tail);
+                src ~= via(:tv, :type, tail, :mode & Mode_PASSTHROUGH);
             }
 
             let tail = items[items.len - 1] || BUG();
-            src ~= cgNode(tail);
+            src ~= cgNode(tail, :mode & Mode_PASSTHROUGH);
         }
 
         if !(mode & M_PARENS) src ~= ")";
         return src;
     }
 
-    fn via(ref tv: TEMPVAR, type: Type, node: SolvedNode): string
+    fn via(ref tv: TEMPVAR, type: Type, node: SolvedNode, mode: Mode): string
     {
         if (node.isFieldChain)
         {
@@ -3051,7 +3053,7 @@ pub fn cpp_codegen(
 
             // NOTE, re: double cgNode here, it's a fieldchain, nothing horrible.
             if (expr.isFieldChain)
-                return cgNode(expr) ~ " ? " ~ cgNode(node) ~ " : ";
+                return cgNode(expr) ~ " ? " ~ cgNode(node, :mode) ~ " : ";
 
             // TODO fix the copies -
             //  we can copy AFTER the test,
@@ -3064,10 +3066,10 @@ pub fn cpp_codegen(
             // But copies are the worst.
         }
 
-        return via(:tv, :type, expr: cgNode(node));
+        return via(:tv, :type, expr: cgNode(node), :mode);
     }
 
-    fn via(ref tv: TEMPVAR, type: Type, expr!: string): string
+    fn via(ref tv: TEMPVAR, type: Type, expr!: string, mode: Mode): string
     {
         if (!tv.id)
             tv.id = TEMPVAR_declare(:tv.annot, :type, :tv.ptr_flip);
@@ -3076,7 +3078,7 @@ pub fn cpp_codegen(
             "(" ~ TEMPVAR_init(:tv.id, init: expr, :tv.ptr_flip) ~ ")");
 
         let cons = TEMPVAR_consume(
-            :tv.id, :tv.ptr_flip, :type);
+            :tv.id, :tv.ptr_flip, :type, :mode);
 
         return cond ~ " ? " ~ cons ~ " : ";
     }
@@ -3425,8 +3427,8 @@ pub fn cpp_codegen(
         if (k == "arrlit")      return cgArrayLiteral(node, :callarg);
         if (k == "bool")        return cgBoolLiteral(:node.value);
 
-        if (k == "copy")        return cgCopyOrMove(node, :mode);
-        if (k == "move")        return cgCopyOrMove(node, :mode);
+        if (k == "copy" || k == "move")
+            return cgCopyOrMove(node, :mode);
 
         if (k == "if")          return cgIf(node, :mode);
         if (k == "or")          return cgOr(node, :mode);
@@ -3639,24 +3641,24 @@ pub fn cpp_codegen(
             src = "/*" ~ node.value ~ "*/ " ~ src;
         }
 
-        return cgCopyOrMove(node.kind, expr.type, src);
+        return cgCopyOrMove(node.kind, expr.type, src, :mode);
     }
 
-    fn cgCopyOrMove(kind: Kind, type: Type, src: string): string
+    fn cgCopyOrMove(kind: Kind, type: Type, src: string, mode: Mode): string
     {
         if (kind == "move")
-            return cgMove(type, src);
+            return cgMove(type, src, :mode);
 
-        return cgCopy(type, src);
+        return cgCopy(type, src, :mode);
     }
 
-    fn cgMove(type: Type, src: string, notRefOK!?: bool): string
+    fn cgMove(type: Type, src: string, mode: Mode, notRefOK!?: bool): string
     {
         if !(notRefOK || type.is_ref)
             BUG("cgMove: Not a reference.");
 
         if (type.isPassByValue)
-            return cgCopy(type, src);
+            return cgCopy(type, src, :mode);
 
         if (type.is_ref && type.is_sliceable && !type.ifArrayRef_annotateAsVec)
             BUG("cgMove: About to use the wrong move for a slice or vec-range.");
@@ -3673,10 +3675,14 @@ pub fn cpp_codegen(
         return "fu::move_or_default(" ~ src ~ ")";
     }
 
-    fn cgCopy(type: Type, src: string): string
+    fn cgCopy(type: Type, src: string, mode: Mode): string
     {
-        if (type.isPassByValue)
+        if (mode & M_ABBREVIATE_ALL_COPIES ||
+            mode & M_ABBREVIATE_NONVEC_COPIES && !type.is_sliceable ||
+            mode & M_ABBREVIATE_PASSBYVAL_COPIES && type.isPassByValue)
+        {
             return src;
+        }
 
         return typeAnnotBase(type, M_IGNORE_REFERENCE) ~ "(" ~ src ~ ")";
     }
@@ -3742,10 +3748,10 @@ pub fn cpp_codegen(
         return id ~ " = " ~ init;
     }
 
-    fn TEMPVAR_consume(id: string, type: Type, ptr_flip: PointerFlip)
+    fn TEMPVAR_consume(id: string, type: Type, ptr_flip: PointerFlip, mode: Mode)
     {
         if (ptr_flip == PointerFlip.None)
-            return cgMove(:type, id, notRefOK: true);
+            return cgMove(:type, id, notRefOK: true, :mode);
 
         if (ptr_flip == PointerFlip.RawPointer)
             return "*" ~ id;

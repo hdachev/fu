@@ -8360,7 +8360,7 @@ pub extern fn runTests()
         }
     `);
 
-    TODO_ooe(currently: "BUG exit code", `
+    ZERO(`
         noinline fn sliceRelaxDanglesView(ref array: i32[], ref view: i32[], reps: int) {
             for (mut j = 0; j < reps; j++)
                 for (mut i = view.len; i --> 0; )
