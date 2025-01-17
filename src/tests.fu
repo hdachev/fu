@@ -115,14 +115,12 @@ pub extern fn runTests()
     let TODO_cow        = fn TODO;
     let TODO_ooe        = fn TODO;
     let TODO_pub        = fn TODO;
-    let TODO_zst        = fn TODO;
     let TODO_litfix     = fn TODO;
     let TODO_args       = fn TODO;
     let TODO_mangle     = fn TODO;
 
     let TODO_confusing  = fn TODO;
     let TODO_logic      = fn TODO;
-    let TODO_specpat    = fn TODO;
     let TODO_lint       = fn TODO;
 
     let TODO_templ_vis  = fn TODO; // autoshadow needs to go + how do we make nested fns visible?
@@ -20936,19 +20934,22 @@ pub extern fn runTests()
         }
     `);
 
-    TODO_zst(currently: "BUG invalid c++ void[] 5:17+1", `
+    ZERO(`
         struct Empty {};
 
         fn main() {
-            mut e = [ Empty(), Empty() ];
+            mut e = [ Empty(), Empty() ];                       ;; IrrelevantLiteral
             fn GET(idx: i32) e.len > idx && e[idx];
             return GET(0) == GET(1) ? 0 : 1;
         }
     `);
 
-    TODO_zst(currently: "BUG invalid c++ void[] 19:17+2", `
+    ZERO(`
         struct Module { modid: i32 };
-        struct Ephemeral { <alt>broke_when_zst?: i32</alt> };
+        struct Ephemeral {                                      <alt>
+                                                                ;; IrrelevantLiteral<alt/>
+            broke_when_zst?: i32                                </alt>
+        };
         struct SolverState { _ephemeral: Ephemeral[] };
         struct Target { modid: i32; globid: i32 };
 

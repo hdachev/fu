@@ -394,7 +394,10 @@ pub fn cpp_codegen(
         if (arrayItem)
         {
             if (arrayItem.isIrrelevant)
-                BUG("cg: We generate invalid c++ for void[]");
+            {
+                include("<fu/void_vec.h>");
+                return "fu::void_vec";
+            }
 
             // Arrays & strings.
             if (type.ifArray_annotateAsVec || mode & M_IGNORE_REFERENCE)
@@ -2237,7 +2240,15 @@ pub fn cpp_codegen(
             || BUG("cgArrayLiteral: arrlit.items.len == 0, should be 'empty' instead");
 
         let src = items.join(", ");
-        let T = typeAnnotBase(clear_sliceable(node.type));
+
+        let itemType = clear_sliceable(node.type);
+        if (itemType.isIrrelevant)
+        {
+            include("<fu/void_vec.h>");
+            return "(" ~ src ~ ", fu::void_vec { " ~ items.len ~ " })";
+        }
+
+        let T = typeAnnotBase(itemType);
 
         // fu::slate literals
         if (callarg.is_ref &&
@@ -2402,7 +2413,7 @@ pub fn cpp_codegen(
                     //     ideally the sequencing should go just once after BCK and AAR have finished.
                     //  - There's probably more coming, this shit is impenetrable.
                 }
-                else
+                else if (src)
                 {
                     if (ooe_header)
                         ooe_header ~= ", ";
