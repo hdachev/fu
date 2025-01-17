@@ -33,7 +33,7 @@ inline V&& operator+=(V&& a, T&& b) noexcept {
     return static_cast<V&&>(a);
 }
 
-
+#ifdef TODO_FIX_REMOVE_copying_push
 // Single item appends (copy-one).
 
 template <typename T, typename Conv,
@@ -65,6 +65,7 @@ inline V&& operator+=(V&& a, const Conv& b) noexcept {
     a.push(b);
     return static_cast<V&&>(a);
 }
+#endif
 
 
 // Single item appends (copy).
@@ -95,6 +96,7 @@ inline fu::vec<T> operator+(T&& a, const V& b) noexcept {
     return vec;
 }
 
+#ifdef TODO_FIX_REMOVE_copying_push
 template <typename V, typename Conv,
     typename T = typename V::fu_ANY_value_type,
     typename = decltype( *((T*)1) = T(*(Conv*)1) )>
@@ -120,3 +122,4 @@ inline fu::vec<T> operator+(const Conv& a, const V& b) noexcept {
 
     return vec;
 }
+#endif

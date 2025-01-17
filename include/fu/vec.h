@@ -831,13 +831,18 @@ struct fu_VEC
         MUT_back(Zero, One); MOV_ctor(new_data + old_size, item);
     }
 
-    void push(const T& item) noexcept {
-        MUT_back(Zero, One); CPY_ctor(new_data + old_size, item);
-    }
-
     template <typename I>
     void insert(I i, T&& item) noexcept {
         MUT_mid(i, Zero, One); MOV_ctor(new_data + i, item);
+    }
+
+    void unshift(T&& item) noexcept {
+        MUT_front(Zero, One); MOV_ctor(new_data, item);
+    }
+
+#ifdef TODO_FIX_REMOVE_copying_push
+    void push(const T& item) noexcept {
+        MUT_back(Zero, One); CPY_ctor(new_data + old_size, item);
     }
 
     template <typename I>
@@ -845,13 +850,10 @@ struct fu_VEC
         MUT_mid(i, Zero, One); CPY_ctor(new_data + i, item);
     }
 
-    void unshift(T&& item) noexcept {
-        MUT_front(Zero, One); MOV_ctor(new_data, item);
-    }
-
     void unshift(const T& item) noexcept {
         MUT_front(Zero, One); CPY_ctor(new_data, item);
     }
+#endif
 
 
     //

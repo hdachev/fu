@@ -1,3 +1,5 @@
+#define TODO_FIX_REMOVE_copying_push
+
 #ifdef fu_UNITY_FULIB
 #include <fu/_fulib.cpp>
 #endif

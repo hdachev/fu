@@ -220,12 +220,6 @@ struct vec_range_mut
             static_cast<T&&>(item));
     }
 
-    void push(const T& item) noexcept {
-        m_vec->insert(
-            m_vec->size() - Right(),
-            /*const ref*/ item);
-    }
-
     template <typename I>
     void insert(I idx, T&& item) noexcept
     {
@@ -240,6 +234,17 @@ struct vec_range_mut
         m_vec->insert(
             Left() + idx,
             static_cast<T&&>(item));
+    }
+
+    fu_INL void unshift(T&& item) noexcept {
+        insert(fu_ZERO(), static_cast<T&&>(item));
+    }
+
+#ifdef TODO_FIX_REMOVE_copying_push
+    void push(const T& item) noexcept {
+        m_vec->insert(
+            m_vec->size() - Right(),
+            /*const ref*/ item);
     }
 
     template <typename I>
@@ -258,13 +263,10 @@ struct vec_range_mut
             /*const ref*/ item);
     }
 
-    fu_INL void unshift(T&& item) noexcept {
-        insert(fu_ZERO(), static_cast<T&&>(item));
-    }
-
     fu_INL void unshift(const T& item) noexcept {
         insert(fu_ZERO(), /*const ref*/ item);
     }
+#endif
 
 
     //
