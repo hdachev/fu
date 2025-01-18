@@ -20949,48 +20949,6 @@ pub extern fn runTests()
     `);
 
     ZERO(`
-        struct Empty {};
-
-        fn main() {
-            mut e = [ Empty(), Empty() ];                       ;; IrrelevantLiteral
-            fn GET(idx: i32) e.len > idx && e[idx];
-            return GET(0) == GET(1) ? 0 : 1;
-        }
-    `);
-
-    ZERO(`
-        struct Module { modid: i32 };
-        struct Ephemeral {                                      <alt>
-                                                                ;; IrrelevantLiteral<alt/>
-            broke_when_zst?: i32                                </alt>
-        };
-        struct SolverState { _ephemeral: Ephemeral[] };
-        struct Target { modid: i32; globid: i32 };
-
-        fn test(implicit ref module: Module, using ref ss: SolverState, target: Target): Ephemeral {
-    <alt>
-            fn EPH(shadow target: Target)
-                return target.modid == module.modid
-                    && _ephemeral[target.globid];
-
-            return EPH(target);
-    <alt/>
-            using fn EPH(shadow target: Target)
-                return target.modid == module.modid
-                    && _ephemeral[target.globid];
-
-            return target;
-    </alt>
-        }
-
-        fn main() {
-            implicit mut module = Module(1);
-            mut ss = SolverState([ Ephemeral(), Ephemeral(), Ephemeral() ]);
-            return test(ss, Target(modid: 1, globid: 2)) == [] ? 0 : 1;
-        }
-    `);
-
-    ZERO(`
         fn Map(type K, type V) struct {
             keys: K[];
             vals: V[];
@@ -21646,6 +21604,65 @@ pub extern fn runTests()
     `);
 
     // /Usage.
+
+
+    // Zero-sized types.
+
+    TODO_zst(currently: "Not a struct nor custom primitive: nocopy void 814:5+3", `
+        mut nothing = void;
+        mut other_nothing = nothing;
+        return other_nothing == [] ? 0 : 1;
+    `);
+
+    TODO_zst(currently: "Cannot move: mut arr is used again 6:22+3", `
+        mut arr = [void];
+        arr ~= arr ~ arr;
+        return arr.len - 3;
+    `);
+
+    ZERO(`
+        struct Empty {};
+
+        fn main() {
+            mut e = [ Empty(), Empty() ];                       ;; IrrelevantLiteral
+            fn GET(idx: i32) e.len > idx && e[idx];
+            return GET(0) == GET(1) ? 0 : 1;
+        }
+    `);
+
+    ZERO(`
+        struct Module { modid: i32 };
+        struct Ephemeral {                                      <alt>
+                                                                ;; IrrelevantLiteral<alt/>
+            broke_when_zst?: i32                                </alt>
+        };
+        struct SolverState { _ephemeral: Ephemeral[] };
+        struct Target { modid: i32; globid: i32 };
+
+        fn test(implicit ref module: Module, using ref ss: SolverState, target: Target): Ephemeral {
+    <alt>
+            fn EPH(shadow target: Target)
+                return target.modid == module.modid
+                    && _ephemeral[target.globid];
+
+            return EPH(target);
+    <alt/>
+            using fn EPH(shadow target: Target)
+                return target.modid == module.modid
+                    && _ephemeral[target.globid];
+
+            return target;
+    </alt>
+        }
+
+        fn main() {
+            implicit mut module = Module(1);
+            mut ss = SolverState([ Ephemeral(), Ephemeral(), Ephemeral() ]);
+            return test(ss, Target(modid: 1, globid: 2)) == [] ? 0 : 1;
+        }
+    `);
+
+    // /ZSTs /Zero-sized types
 
 
     // Mangling.
