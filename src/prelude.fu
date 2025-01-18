@@ -477,8 +477,8 @@ fn ends(a: <T>[..], with: T[..]): bool
 // D-style concats.
 
 infix fn ~ (a: <T>[..], b: T[..]): T[] __native("<fu/vec/concat.h>",     "+");
-infix fn ~ (a: <T>[..], b: T    ): T[] __native("<fu/vec/concat_one.h>", "+");
-infix fn ~ (a: <T>    , b: T[..]): T[] __native("<fu/vec/concat_one.h>", "+");
+infix fn ~ (a: <T>[..], mut b: T): T[] __native("<fu/vec/concat_one.h>", "+");
+infix fn ~ (mut a: <T>, b: T[..]): T[] __native("<fu/vec/concat_one.h>", "+");
 
 infix fn ~= (mut ref a: <T>[],     b: T[..]): &mut T[] __native("<fu/vec/concat.h>",     "+=");
 infix fn ~= (mut ref a: <T>[], mut b: T    ): &mut T[] __native("<fu/vec/concat_one.h>", "+=");
