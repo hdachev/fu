@@ -114,6 +114,7 @@ pub extern fn runTests()
     let TODO_slices     = fn TODO;
     let TODO_cow        = fn TODO;
     let TODO_ooe        = fn TODO;
+    let TODO_zst        = fn TODO;
     let TODO_pub        = fn TODO;
     let TODO_litfix     = fn TODO;
     let TODO_args       = fn TODO;
@@ -2075,26 +2076,39 @@ pub extern fn runTests()
 
     // Arrays.
 
-    ZERO(`
-        mut arr = [0, 1, 2, 3, 4];
-        arr.push(5);
-
-        fn test(view: &i32[]): i32 {
-            mut sum = 0;
-            for (mut i = 0; i < view.len; i++)
-                sum += view[i];
-
-            return sum - 15;
-        }
-
-        return test(arr);
-    `);
-
-    ZERO(`
+    TODO_zst(currently: "cannot move arr used again 8:22+3", `
+                                                    <alt>
         mut arr: i32[] = [1, 2, 3, 4];
         arr.push(5);
-
-        fn test(view: &i32[]): i32 {
+        type T = i32;
+                                                    <alt/>
+        mut arr = [0, 1, 2, 3, 4];
+        arr.push(5);
+        type T = i32;
+                                                    <alt/>
+        mut arr = [i32[], [1], [2, 2], [3, 3, 3], [4, 4, 4, 4]];
+        arr.push([5, 5, 5, 5, 5]);
+        infix fn += (ref sum: i32, v: i32[]) sum += v.len;
+        type T = i32[];
+                                                    <alt/>
+        mut arr = [1, 1, 1, 1];
+        arr.push(1);
+        arr ~= arr ~ arr;
+        type T = i32;
+                                                    <alt/>
+        mut arr = [[1], [1], [1], [1]];
+        arr.push([1]);
+        arr ~= arr ~ arr;
+        infix fn += (ref sum: i32, v: i32[]) sum += v.len;
+        type T = i32[];
+                                                    <alt/>
+        mut arr = [void, void, void, void];
+        arr.push(void);
+        arr ~= arr ~ arr;
+        infix fn += (ref sum: i32, v: void) ++sum;
+        type T = void;
+                                                    </alt>
+        fn test(view: &T[]): i32 {
             mut sum = 0;
             for (mut i = 0; i < view.len; i++)
                 sum += view[i];
