@@ -1,6 +1,6 @@
 import flags;
 import types;
-import structs;
+import usertypes;
 import helpers;
 import module;
 import fail;

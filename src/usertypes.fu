@@ -2,11 +2,11 @@ import flags;
 import helpers;
 import module;
 
-pub struct StructCanon { modid: i32; index: i32 };
+pub struct UserTypeCanon { modid: i32; index: i32 };
 
 let ONE_BASED = 1;
 
-pub fn parseStructCanon(canon: string): StructCanon
+pub fn parseUserTypeCanon(canon: string): UserTypeCanon
 {
     mut offset = 1;
     {
@@ -20,12 +20,12 @@ pub fn parseStructCanon(canon: string): StructCanon
 
     offset == canon.len
         || canon[offset] == '(' // TODO FIX SPECPATs
-        || throw("parseStructCanon: trailing garbage in `" ~ canon ~ "`: " ~ offset ~ "|" ~ canon.len);
+        || throw("parseUserTypeCanon: trailing garbage in `" ~ canon ~ "`: " ~ offset ~ "|" ~ canon.len);
 
-    return StructCanon(:modid, globid - ONE_BASED);
+    return UserTypeCanon(:modid, globid - ONE_BASED);
 }
 
-pub fn createStructCanon(
+pub fn createUserTypeCanon(
     kind!: Kind, basePrim!: string,
     modid: i32, index: i32, lax name: string, specPat: string,
     mut initialHash!hash: u64): string
@@ -42,7 +42,7 @@ pub fn createStructCanon(
     mut res = basePrim ~ sigil;
 
     modid >= 0 && index >= 0 || throw(
-        "createStructCanon: bad modid/index");
+        "createUserTypeCanon: bad modid/index");
 
     res.appendVarint(modid.u32);
     res.appendVarint((index + ONE_BASED).u32);
@@ -52,7 +52,7 @@ pub fn createStructCanon(
     {
         ref c = res[0];
         if (c == 'e' || c == 'm')
-            throw("createStructCanon: bad basePrim: " ~ basePrim);
+            throw("createUserTypeCanon: bad basePrim: " ~ basePrim);
 
         if (kind == "enum")
             c = 'e';
@@ -66,16 +66,10 @@ pub fn createStructCanon(
     return res;
 }
 
-pub fn isStruct(type: ValueType): bool
+pub fn isUserType(type: ValueType): bool
 {
     let c = type.canon[0];
     return c.u8 >= 128;
-}
-
-pub fn isStructOrUnion(type: ValueType): bool
-{
-    // TODO FIX createStructCanon gives both the '/' prefix.
-    return type.isStruct;
 }
 
 
@@ -83,9 +77,9 @@ pub fn isStructOrUnion(type: ValueType): bool
 
 pub fn modidOfOrigin(type: Type)
 {
-    if (type.isStruct)
+    if (type.isUserType)
     {
-        let scp = parseStructCanon(type.canon);
+        let scp = parseUserTypeCanon(type.canon);
         return scp.modid;
     }
 

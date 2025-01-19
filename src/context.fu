@@ -1,6 +1,6 @@
 import helpers;
 import module;
-import structs;
+import usertypes;
 import quals;
 import usage;
 import fail;
@@ -10,7 +10,7 @@ import fail;
 
 pub fn lookupUserType_mut(implicit ref module: Module, canon: string)
 {
-    let scp = parseStructCanon(canon);
+    let scp = parseUserTypeCanon(canon);
     scp.modid == module.modid || BUG("lookupUserType_mut: Not from this module (" ~ module.modid ~ ": " ~ canon ~ ")");
     return module.out.types[scp.index];
 }
@@ -208,7 +208,7 @@ pub fn updateFile(fname: string, old: NukeOnRebuild)
 pub fn lookupUserType(
     implicit module: Module,
     implicit ctx: Context,
-    scp: StructCanon)
+    scp: UserTypeCanon)
 {
     if (scp.modid == module.modid)
         return module.out.types[scp.index]
@@ -220,12 +220,12 @@ pub fn lookupUserType(
 
 pub fn lookupUserType(type: ValueType)
 {
-    return lookupUserType(parseStructCanon(type.canon));
+    return lookupUserType(parseUserTypeCanon(type.canon));
 }
 
 pub fn is_trivial(type: ValueType)
     type.is_primitive
-        || type.isStruct && !lookupUserType(type).non_triv_mask;
+        || type.isUserType && !lookupUserType(type).non_triv_mask;
 
 pub fn is_reinterpretable(type: ValueType)
 {
@@ -238,20 +238,20 @@ pub fn is_reinterpretable(type: ValueType)
 
 //
 
-inline fn canParseStructCanon(type: ValueType)
-    type.isStruct || type.is_primitive && type.canon.quals::basePrimPrefixLen() < type.canon.len;
+inline fn canParseUserTypeCanon(type: ValueType)
+    type.isUserType || type.is_primitive && type.canon.quals::basePrimPrefixLen() < type.canon.len;
 
-pub fn tryParseStructCanon(type: ValueType): StructCanon
+pub fn tryParseUserTypeCanon(type: ValueType): UserTypeCanon
 {
-    if (type.canParseStructCanon)
-        return parseStructCanon(type.canon);
+    if (type.canParseUserTypeCanon)
+        return parseUserTypeCanon(type.canon);
 
     return [];
 }
 
-pub fn tryLookupUserType(type: ValueType): Struct
+pub fn tryLookupUserType(type: ValueType): UserType
 {
-    if (type.canParseStructCanon)
+    if (type.canParseUserTypeCanon)
         return lookupUserType(type);
 
     return [];

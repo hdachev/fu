@@ -6,7 +6,7 @@ import scope;
 import context;
 import cpp;
 import module;
-import structs;
+import usertypes;
 import lifetime;
 import usage;
 import fail;
@@ -92,7 +92,7 @@ pub fn cpp_codegen(
         _top_emits:         string[];
 
         // struct fwd decls
-        _tfwd:              flat::Set(StructCanon);
+        _tfwd:              flat::Set(UserTypeCanon);
         _tfwd_src:          string;
 
         // fn fwd decls
@@ -457,14 +457,14 @@ pub fn cpp_codegen(
         let s   = lookupUserType(type) || BUG("TODO: " ~ type.canon);
         let id  = structID(s);
 
-        let scp = parseStructCanon(type.canon);
+        let scp = parseUserTypeCanon(type.canon);
         if (_tfwd.add(scp))
             declareStruct(id, s);
 
         return id;
     }
 
-    fn structID(s: Struct)
+    fn structID(s: UserType)
     {
         if (s.shape.hash && !(s.target.flags & F_EXTERN))
             return s.name ~ "_" ~ s.shape.hash.tea::digest62(chars: SIGHASH_CHARS);
@@ -472,7 +472,7 @@ pub fn cpp_codegen(
         return s.name;
     }
 
-    fn declareStruct(id: string, s: Struct)
+    fn declareStruct(id: string, s: UserType)
     {
         if (s.basePrim)
             return declarePrimitive(id, s);
@@ -557,7 +557,7 @@ pub fn cpp_codegen(
         }
     }
 
-    fn declarePrimitive(id: string, s: Struct)
+    fn declarePrimitive(id: string, s: UserType)
     {
         let basePrim    = primAnnotBase(s.basePrim);
         let members     = s.items;

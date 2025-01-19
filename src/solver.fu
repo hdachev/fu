@@ -6,7 +6,7 @@ import context;
 import types;
 import quals;
 import usage;
-import structs;
+import usertypes;
 import effects;
 import lifetime;
 import module;
@@ -1377,7 +1377,7 @@ pub fn solve(
     }
 
     fn isFnOrType(h: Helpers): bool
-        !!(h.mask & (HM_Function | HM_Struct));
+        !!(h.mask & (HM_Function | HM_UserType));
 
     using fn GET(target: Target)
     {
@@ -1417,7 +1417,7 @@ pub fn solve(
         BUG(reason);
     }
 
-    shadow fn lookupUserType(type: Type): Struct
+    shadow fn lookupUserType(type: Type): UserType
     {
         return tryLookupUserType(type)
             || fail("Not a struct nor custom primitive: " ~ explainType(type));
@@ -2984,7 +2984,7 @@ pub fn solve(
         mut path: Target[];
         mut must_see: i32[];
 
-        fn descend(from: Type, nullary!: bool, isStruct!: bool)
+        fn descend(from: Type, nullary!: bool, isUserType!: bool)
         {
             fn foreach(target: Target, i!at_index: i32)
             {
@@ -3042,7 +3042,7 @@ pub fn solve(
                             // See conversionTailType //////////
                             TODO_FIX_useTemporaryLifetime: true);
 
-                    shadow let isStruct = convertType.isStruct;
+                    shadow let isUserType = convertType.isUserType;
 
                     if (target.modid == module.modid)
                         target.GET_mut.status |= SS_OBSERVED_BY_CONV_CACHE;
@@ -3081,7 +3081,7 @@ pub fn solve(
                         result.must_see ~= must_see;
 
                         // We've found something.
-                        if (isStruct || _scope.converts.len)
+                        if (isUserType || _scope.converts.len)
                         {
                             // Forbid cyclic conversions.
                             //  Delaying the error check to speed up the general case.
@@ -3109,7 +3109,7 @@ pub fn solve(
                             }
 
                             ///////////////////////////////
-                            descend(convertType, nullary: false, :isStruct);
+                            descend(convertType, nullary: false, :isUserType);
                             ///////////////////////////////
                         }
 
@@ -3130,7 +3130,7 @@ pub fn solve(
             else
             {
                 // Conversions.
-                if (isStruct)
+                if (isUserType)
                 {
                     let inner = lookupUserType(from).converts;
 
@@ -3152,13 +3152,13 @@ pub fn solve(
         descend(
             from:       startType,
             nullary:   !startType,
-            isStruct:   startType && startType.isStruct);
+            isUserType: startType && startType.isUserType);
 
         // NOTE - we can end up with duplicates here -
         //  two usings in currently open but exclusive scopes
         //   can have the same type, so we end up traversing them twice.
         //
-        mut seen: flat::Set(StructCanon);
+        mut seen: flat::Set(UserTypeCanon);
 
         // Collect all reachable field_items & field_implicits.
         //  NOTE: At -1 we reexplore the startType because the `result` here
@@ -3168,7 +3168,7 @@ pub fn solve(
         {
             let t = i < 0 ? startType.vtype : result.types[i];
 
-            shadow let t = tryParseStructCanon(t);
+            shadow let t = tryParseUserTypeCanon(t);
             if (t && seen.add(t))
             {
                 let s = lookupUserType(t);
@@ -3547,7 +3547,7 @@ pub fn solve(
 
     fn SLOW_type_maybeInside(host!: ValueType, guest!: ValueType, guest_non_triv_mask!: u64)
     {
-        mut seen: flat::Set(StructCanon);
+        mut seen: flat::Set(UserTypeCanon);
 
         fn type_maybeInside(shadow host: ValueType, usage?: <Usage/*: Quals or []*/>, flatCount?: <FlatCount>)
         {
@@ -3560,9 +3560,9 @@ pub fn solve(
             host.if_sliceable: |host_sliceT|
                 return type_maybeInside(host_sliceT);
 
-            if (host.isStruct)
+            if (host.isUserType)
             {
-                let scp = parseStructCanon(host.canon);
+                let scp = parseUserTypeCanon(host.canon);
                 let s   = lookupUserType(scp);
 
                 if (s.non_triv_mask & guest_non_triv_mask
@@ -8470,7 +8470,7 @@ pub fn solve(
             //
             let out_target = createRawTypedef(id: origId, :name,
                 :node.flags, status: SS_LAZY,
-                type: initStruct(
+                type: initUserType(
                     :kind, :shape, :name, :asserts, :specPat,
                     initialHash: shape.hash));
 
@@ -8500,7 +8500,7 @@ pub fn solve(
             _helpers_data.shrink(helpers_data0);
         }
 
-        push(HelpersData(mask: HM_Struct, target: out_target || BUG(
+        push(HelpersData(mask: HM_UserType, target: out_target || BUG(
             "solveStruct: no out_target: `" ~ origId ~ "`.")));
         ///////////////////////////////////////////////
 
@@ -8650,7 +8650,7 @@ pub fn solve(
                     let actual = bit::popcount(member.type.usage);
 
                     actual == expect
-                        || member.type.isStruct // TODO FIX fails for type recursions
+                        || member.type.isUserType // TODO FIX fails for type recursions
                         || BUG("member.type.usage popcount(" ~ actual ~ ")"
                             ~ " != member_shape.flatCount(" ~ member_shape.flatCount ~ ")");
 
@@ -8666,13 +8666,13 @@ pub fn solve(
                 // Probably this along with sizeof/alignof/flatCount & company
                 //  can all be done in one pass.
                 //
-                fn TODO_FIX_getRecursionError(other: Struct)
+                fn TODO_FIX_getRecursionError(other: UserType)
                 {
                     for (shadow mut i = 0; i < other.items.len; i++)
                     {
                         shadow let item = other.items[i].target;
                         let itemType = item.type;
-                        if (itemType.isStruct)
+                        if (itemType.isUserType)
                         {
                             mut rec = "";
                             if (itemType.canon == instType.canon
@@ -8687,7 +8687,7 @@ pub fn solve(
                     return "";
                 }
 
-                let recursionError = member.type.isStruct
+                let recursionError = member.type.isUserType
                     && TODO_FIX_getRecursionError(tryLookupUserType(member.type));
 
                 if (recursionError)
@@ -8941,7 +8941,7 @@ pub fn solve(
         return SolvedNode();
     }
 
-    fn initStruct(
+    fn initUserType(
         kind!: Kind, shape!: Shape,
         name: string, asserts: DeclAsserts, specPat!: string,
         initialHash!: u64)
@@ -8951,10 +8951,10 @@ pub fn solve(
 
         // Alloc a slot.
         let index = module.out.types.len;
-        module.out.types ~= Struct(:kind, :name, :shape);
+        module.out.types ~= UserType(:kind, :name, :shape);
 
         //
-        let canon = createStructCanon(
+        let canon = createUserTypeCanon(
             :kind, :shape.basePrim, :module.modid, :index,
             :name, :specPat, :initialHash);
 
@@ -10837,7 +10837,7 @@ pub fn solve(
         mut itemType = type && tryClear_sliceable(type);
 
         // Default constructor calls.
-        if (!itemType && type && type.isStruct)
+        if (!itemType && type && type.isUserType)
             return solveCall(node, targets: [ lookupUserType(type).target ]);
 
         // Dead code elim.
