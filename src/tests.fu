@@ -15028,6 +15028,13 @@ pub extern fn runTests()
         fn main() get_FU_ROOT(1).len - 7;
     `);
 
+    ZERO(`
+        // Currently cg's two redundant .append_one() specs, one returns view<int>, the other returns vec_range<int>
+        noinline fn append_one(ref arr: int[]) arr ~= 1;
+        fn sum(arr: int[]) { mut sum = 0; for (mut i = 0; i < arr.len; i++) sum += arr[i]; sum }
+        fn main() { mut arr = [ 3, 2 ]; arr.append_one.append_one.sum - 7 }
+    `);
+
     // /Slices.
 
 
