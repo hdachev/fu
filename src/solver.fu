@@ -11,6 +11,10 @@ import effects;
 import lifetime;
 import module;
 import fail;
+import experiments;
+
+
+let BUG_missing_SS_FN_REC   = true;
 
 
 //
@@ -28,27 +32,6 @@ let USE_rev_spec            = true;
 
 let RESOLVE_report          = false;
 let TRACE_enable            = false;
-
-
-// When you have an if (a -> $T) somewhere,
-//  it's just not very useful for -> to match on default-anything,
-//   so let's define `->` to be the `is` operator.
-//
-// We have the `=>` as the `as` operator,
-//  we need a counterpart for an `assigns to` operator,
-//   which can naturally fit zeroes.
-//
-let DONT_match_zeroes       = true;
-let TODO_FIX_static_ZSTs    = true;
-let BUG_missing_SS_FN_REC   = true;
-
-
-// Experimental -
-//  conversion loops are manageable + very expressive,
-//   previously disallowed but they shouldn't be a problem
-//    if ambiguity == error as usual.
-//
-let ALLOW_conv_loops        = true;
 
 
 //
@@ -9677,9 +9660,10 @@ pub fn solve(
         let suffix          = "_" ~ placeholder;
         let inside          = "_" ~ placeholder ~ "_";
 
-        let fields          = evalTypeAnnot(node.items[0])
-                                .lookupUserType()
-                                .items;
+        let reflected_type  = evalTypeAnnot(node.items[0]);
+        let fields          =
+            !(IDEA_void_empty_struct && reflected_type.is_void)
+                && reflected_type.lookupUserType().items;
 
         mut items_ast: Node[];
         for (mut i = 0; i < fields.len; i++)

@@ -1,0 +1,32 @@
+
+// Experimental -
+//  approximating `void` being defined as an empty struct,
+//   as if it were a regular user-defined ZST.
+//
+let IDEA_void_empty_struct  = true;
+
+// Lifetimes to ZSTs always static -
+//  ... but unlike regular statics, ZSTs always moveable,
+//   might not have been the most brilliant idea.
+//
+// Special-casing ZSTs like this might be ok for trivial types,
+//  but makes them unfit for e.g. expressing effects.
+//
+let TODO_FIX_static_ZSTs = true;
+
+// Experimental -
+//  conversion loops are manageable + very expressive,
+//   previously disallowed but they shouldn't be a problem
+//    if ambiguity == error as usual.
+//
+let ALLOW_conv_loops = true;
+
+// When you have an if (a -> $T) somewhere,
+//  it's just not very useful for -> to match on default-anything,
+//   so let's define `->` to be the `is` operator.
+//
+// We have the `=>` as the `as` operator,
+//  we need a counterpart for an `assigns to` operator,
+//   which can naturally fit zeroes.
+//
+let DONT_match_zeroes = true;

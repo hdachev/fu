@@ -21615,7 +21615,7 @@ pub extern fn runTests()
 
     // Zero-sized types.
 
-    TODO_zst(currently: "Not a struct nor custom primitive: nocopy void 814:5+3", `
+    ZERO(`
         mut nothing = void;
         mut other_nothing = nothing;
         return other_nothing == [] ? 0 : 1;
