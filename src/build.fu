@@ -1375,16 +1375,15 @@ fn outputSources(
         // .unity.cpp
         if (unity)
         {
-            mut data    = "#ifdef fu_UNITY_FULIB\n"
-                        ~ "#include <fu/_fulib.cpp>\n"
-                        ~ "#endif\n\n";
-
             let fname   = unity ~ ".unity.cpp";
             let dest    = update_file_dest(:fname, :dir_src, :dir_cpp);
 
+            mut data: string;
             for (mut i = 0; i < cpp_files.len; i++)
                 if (let incl = cpp_files[i])
                     data ~= "#include \"" ~ path::relative(dest, incl) ~ "\"\n";
+
+            data ~= "\n#ifdef fu_UNITY_FULIB\n#include <fu/_fulib.cpp>\n#endif\n";
 
             update_file(:dest, :data, :dir_cpp);
         }

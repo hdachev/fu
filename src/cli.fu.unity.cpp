@@ -1,9 +1,5 @@
 #define TODO_FIX_REMOVE_copying_push
 
-#ifdef fu_UNITY_FULIB
-#include <fu/_fulib.cpp>
-#endif
-
 #include "helpers.fu.cpp"
 #include "profiler.fu.cpp"
 #include "../lib/now.fu.cpp"
@@ -50,3 +46,7 @@
 #include "test_utils.fu.cpp"
 #include "tests.fu.cpp"
 #include "cli.fu.cpp"
+
+#ifdef fu_UNITY_FULIB
+#include <fu/_fulib.cpp>
+#endif

@@ -1985,7 +1985,7 @@ void build_dvjTrKQM(fu::str&& dir_wrk, fu::view<char> fudir, /*MOV*/ fu::str&& f
             {
                 if (unity)
                 {
-                    fu::str data_1 = (("#ifdef fu_UNITY_FULIB\n"_fu + "#include <fu/_fulib.cpp>\n"_fu) + "#endif\n\n"_fu);
+                    fu::str data_1;
                     for (int i_9 = 0; i_9 < cpp_files.size(); i_9++)
                     {
                         const fu::str& incl = cpp_files[i_9];
@@ -1993,6 +1993,9 @@ void build_dvjTrKQM(fu::str&& dir_wrk, fu::view<char> fudir, /*MOV*/ fu::str&& f
                             data_1 += (("#include \""_fu + relative_PkLpPlOh(unity, incl)) + "\"\n"_fu);
 
                     };
+
+                    data_1 += "\n#ifdef fu_UNITY_FULIB\n#include <fu/_fulib.cpp>\n#endif\n"_fu;
+
                     update_file_9sMLOsMG((unity + ".unity.cpp"_fu), data_1, dir_src, dir_cpp);
                 };
             };
