@@ -224,8 +224,8 @@ pub fn lookupUserType(type: ValueType)
 }
 
 pub fn is_trivial(type: ValueType)
-    type.is_primitive
-        || type.isUserType && !lookupUserType(type).non_triv_mask;
+    type.isUserType ? !lookupUserType(type).non_triv_mask
+                    : !type.is_sliceable;
 
 pub fn is_reinterpretable(type: ValueType)
 {
