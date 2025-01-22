@@ -22003,7 +22003,7 @@ static SolvedNode_efhg solveNode_gDsn(const Node_JjyR& node, const Type_OiTm& ty
 
 static void hash_gDsn(TEA_0Daz& hash, const Type_OiTm& type, const Context_Zsw9& ctx, const TokenIdx_5581& _here, const Module_cdtC& module)
 {
-    hash_lweH(hash, TEA_0Daz { unsigned((type.vtype.quals & q_TAGS)), (type.lifetime.uni0n.size() ? unsigned(1) : 0u) });
+    hash_lweH(hash, TEA_0Daz { (!is_void_9CJm(type.vtype) ? unsigned((type.vtype.quals & q_TAGS)) : 0u), (type.lifetime.uni0n.size() ? unsigned(1) : 0u) });
     hash_qRo1(hash, getShape_1qjp(type.vtype, ctx, _here, module).hash);
 }
 

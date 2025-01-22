@@ -22810,7 +22810,7 @@ static s_SolvedNode solveNode_gDsnGKHT(const s_Node& node, const s_Type& type, s
 
 static void hash_gDsnGKHT(s_TEA& hash, const s_Type& type, const s_TokenIdx& _here, const s_Context& ctx, const s_Module& module)
 {
-    hash_lweHUmk8(hash, s_TEA { unsigned((type.vtype.quals & q_TAGS)), (type.lifetime.uni0n.size() ? unsigned(1) : 0u) });
+    hash_lweHUmk8(hash, s_TEA { (!is_void_9CJmuVSD(type.vtype) ? unsigned((type.vtype.quals & q_TAGS)) : 0u), (type.lifetime.uni0n.size() ? unsigned(1) : 0u) });
     hash_qRo1x0wq(hash, getShape_1qjplDUo(type.vtype, _here, ctx, module).hash);
 }
 
