@@ -5436,7 +5436,7 @@ pub fn solve(
         push(HelpersData());
 
         //
-        let items = solveNodes(node.items, DeadBreak_Always, t_void);
+        let items = solveNodes(node.items, DeadBreak_Always, t_irrelevant);
         if (items.if_last.is_never)
         {
             _here = items.last.token;
@@ -5500,9 +5500,9 @@ pub fn solve(
 
         mut items       = solveNodes(
             nodes,
-            type_all:           t_void,
+            type_all:           t_irrelevant,
             type_last:          type,
-            use_type_last:      !type.is_void,
+            use_type_last:      true,
             DeadBreak_Always);
 
         if (h.TODO_FIX_optionalSemis_blockWantsVoid)
@@ -5707,7 +5707,7 @@ pub fn solve(
                 o.status & SS_UNUSED && BUG("relaxBlockVar: previously SS_UNUSED " ~ t ~ " now used as " ~ explainType(usage));
 
             if (isUnused && canDiscard)
-                o.solved.type = t_void;
+                o.solved.type = t_irrelevant;
 
             //////////////////////////////////////////////
             // TODO one of these two is redundant       //
@@ -9630,9 +9630,9 @@ pub fn solve(
 
         // TODO handle deadcode everywhere
         let pre_cond    = n_pre_cond    && solveNode(n_pre_cond,  t_proposition);
-        let pre         = n_pre         && solveBlock(n_pre, type: t_void, mask: HM_LoopPreheader);
-        let body        = n_body        && solveBlock(n_body, type: t_void, mask: HM_LoopBody);
-        let post        = n_post        && solveBlock(n_post, type: t_void);
+        let pre         = n_pre         && solveBlock(n_pre, type: t_irrelevant, mask: HM_LoopPreheader);
+        let body        = n_body        && solveBlock(n_body, type: t_irrelevant, mask: HM_LoopBody);
+        let post        = n_post        && solveBlock(n_post, type: t_irrelevant);
         let post_cond   = n_post_cond   && solveNode(n_post_cond, t_proposition);
 
         // Control flow.
@@ -9717,7 +9717,7 @@ pub fn solve(
 
         // Control flow & deadcode elim.
         //  TODO break & continue.
-        let items = solveNodes(items_ast, DeadBreak_Always, type_all: t_void);
+        let items = solveNodes(items_ast, DeadBreak_Always, type_all: t_irrelevant);
         let type  = items.if_last.type.is_never ? t_never : t_void;
 
         return createBlock(type, items);
@@ -10083,7 +10083,7 @@ pub fn solve(
         let scope0  = Scope_snap();
         /////////////////////////////////
 
-        let try     = solveNode(node.items[0], t_void);
+        let try     = solveNode(node.items[0], t_irrelevant);
 
         ///////////////////////////////////////
         Scope_pop(scope0);
@@ -10091,7 +10091,7 @@ pub fn solve(
         ///////////////////////////////////////
 
         let err     = solveLetStatement(node.items[1]);
-        let catch   = solveNode(node.items[2], t_void);
+        let catch   = solveNode(node.items[2], t_irrelevant);
 
         //////////////////////////
         Scope_pop(scope0);
@@ -10160,7 +10160,7 @@ pub fn solve(
         // TODO unless defer:ok, must be noexcept //
         ////////////////////////////////////////////
 
-        let item = solveNode(node.items.only, t_void);
+        let item = solveNode(node.items.only, t_irrelevant);
         return solved(node, t_void, [ item ]);
     }
 
