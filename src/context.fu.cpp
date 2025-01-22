@@ -76,10 +76,10 @@ fu::str dirname_qZI0kCzt(const fu::str&);
 fu::str resolveFile(const fu::str&, fu::view<char>, s_Context&);
 fu::str lower_KPhiKsnb(fu::str&&);
 s_Errno read_VWJwj7Fs(fu::str&&, fu::str&, int64_t);
-bool is_primitive_hxWWgdZ1(const s_ValueType&);
 bool isUserType_27MV22ZA(const s_ValueType&);
-int basePrimPrefixLen_hxWWgdZ1(fu::view<char>);
 bool is_sliceable_hxWWgdZ1(const s_ValueType&);
+bool is_primitive_hxWWgdZ1(const s_ValueType&);
+int basePrimPrefixLen_hxWWgdZ1(fu::view<char>);
 unsigned parseVarint_V5IuMsej(int&, fu::view<char>);
 unsigned getMaxUsage_CaGDtmWo(int);
 s_Shape getShape_1qjplDUo(const s_ValueType&, const s_TokenIdx&, const s_Context&, const s_Module&);
@@ -1899,7 +1899,11 @@ const s_UserType& lookupUserType_SqDqFcFw(const s_ValueType& type, const s_Token
 
 bool is_trivial_1qjplDUo(const s_ValueType& type, const s_TokenIdx& _here, const s_Context& ctx, const s_Module& module)
 {
-    return is_primitive_hxWWgdZ1(type) || (isUserType_27MV22ZA(type) ? !lookupUserType_SqDqFcFw(type, _here, ctx, module).shape.non_triv_mask : false);
+    if (isUserType_27MV22ZA(type))
+        return !lookupUserType_SqDqFcFw(type, _here, ctx, module).shape.non_triv_mask;
+    else
+        return !is_sliceable_hxWWgdZ1(type);
+
 }
 
 bool is_reinterpretable_1qjplDUo(const s_ValueType& type, const s_TokenIdx& _here, const s_Context& ctx, const s_Module& module)
