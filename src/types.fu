@@ -63,14 +63,16 @@ pub fn propositionOK(type: Type, vfactsOK!?: bool)
 }
 
 
-// I think these should also be non-refereable?
+// Void & co must NOT be primitives -
+//  if for no other reason than for the fact that we have explicit conversions between primiives,
+//   and we definitely don't want anyone converting from void or never to e.g. an int.
 
-fn NotSure(canon: string, quals?: Quals)
+fn NotPrimitive(canon: string, quals?: Quals)
     Type(ValueType(:canon, :quals));
 
-pub let t_void      = NotSure("void");
-pub let t_never     = NotSure("never");
-pub let t_zeroes    = NotSure("zeroes");
+pub let t_void      = NotPrimitive("void");
+pub let t_never     = NotPrimitive("never");
+pub let t_zeroes    = NotPrimitive("zeroes");
 
 pub fn is_void  (t: ValueType) t.canon == t_void  .canon;
 pub fn is_never (t: ValueType) t.canon == t_never .canon;
@@ -85,11 +87,26 @@ pub fn is_void_or_propositionOK(type: Type, vfactsOK!?: bool)
 
 //
 
+fn QualsAdd(mut t: Type, quals: Quals) {
+    t.quals |= quals;
+    return t;
+}
+
+fn QualsClear(mut t: Type) {
+    t.quals = [];
+    return t;
+}
+
 pub let t_AssumeNever_WhileSolvingRecursion =
-    NotSure("never", q_rx_resize);
+    QualsAdd(t_never, q_rx_resize);
 
 pub fn is_AssumeNever_WhileSolvingRecursion(t: ValueType) =
     t.canon == "never" && t.quals & q_rx_resize;
+
+
+//
+
+pub let t_irrelevant = QualsClear(t_void);
 
 
 //
