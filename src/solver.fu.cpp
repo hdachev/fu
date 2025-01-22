@@ -3088,6 +3088,11 @@ inline s_Node steal_3blx9gas(s_Node& v)
 }
                                 #endif
 
+                                #ifndef DEF_t_irrelevant
+                                #define DEF_t_irrelevant
+extern const s_Type t_irrelevant;
+                                #endif
+
 static bool isTypeDecl_gDsnGKHT(const s_Kind kind)
 {
     return (kind == s_Kind_struct) || (kind == s_Kind_union) || (kind == s_Kind_primitive) || (kind == s_Kind_enum) || (kind == s_Kind_flags);
@@ -6541,7 +6546,7 @@ static void relaxBlockVar_gDsnGKHT(const s_Target& t, const unsigned relax_mask,
                 BUG_gDsnGKHT(((x7E_3lDd4lqo("relaxBlockVar: previously SS_UNUSED "_fu, str_FDl5ha9X(t, false, ss, _here, ctx, module, options)) + " now used as "_fu) + explainType_gDsnGKHT(usage, false, false, false, false, false, (*(const s_Type*)fu::NIL), ss, _here, ctx, module, options)), ss, _helpers, _here, ctx, module, options);
 
             if (isUnused && canDiscard)
-                o_1.solved.type = t_void;
+                o_1.solved.type = t_irrelevant;
 
             try_relax_9CJmuVSD(o_1.type, usage, relax_mask);
             s_SolvedNode& node = o_1.solved;
@@ -13594,7 +13599,7 @@ static s_SolvedNode solveBlock_gDsnGKHT(const s_Node& node, const s_Type& type, 
             last = s_Node { s_Kind_return, s_DeclAsserts{}, s_ParseSyntax{}, (((NICEERR_missingReturn ? s_Flags_F_IMPLICIT : s_Flags{}) | s_Flags_F_LAMBDA) | F_TODO_FIX_TRAILING_RETURN), fu::str{}, ((last.kind != s_Kind_empty) ? fu::vec<s_Node> { fu::slate<1, s_Node> { s_Node(last) } } : fu::vec<s_Node>{}), s_TokenIdx(last.token) };
         };
     };
-    fu::vec<s_SolvedNode> items = solveNodes_gDsnGKHT(nodes, s_DeadBreak_DeadBreak_Always, t_void, type, !is_void_9CJmuVSD(type.vtype), s_StaticEval{}, false, _current_fn, ss, _helpers, _here, ctx, module, options);
+    fu::vec<s_SolvedNode> items = solveNodes_gDsnGKHT(nodes, s_DeadBreak_DeadBreak_Always, t_irrelevant, type, true, s_StaticEval{}, false, _current_fn, ss, _helpers, _here, ctx, module, options);
     if (TODO_FIX_optionalSemis_blockWantsVoid_gDsnGKHT((((h.index >= 0) && (h.index < ss._helpers_data.size())) ? ss._helpers_data[h.index] : BUG_u9Gbkniv("Helpers.GET: h.index is oob"_fu, _here, ctx))))
     {
         if (items && !isIrrelevantOrNever_9CJmuVSD(last_31malqbt(items).type))
@@ -15437,7 +15442,7 @@ static bool tryInjectJumps_gDsnGKHT(s_SolvedNode& expr, const s_Helpers& h, cons
         {
             if (expr.kind != s_Kind_block)
             {
-                expr = createBlock_gDsnGKHT(t_void, fu::vec<s_SolvedNode> { fu::slate<1, s_SolvedNode> { s_SolvedNode(expr) } }, s_Helpers{}, _here);
+                expr = createBlock_gDsnGKHT(t_irrelevant, fu::vec<s_SolvedNode> { fu::slate<1, s_SolvedNode> { s_SolvedNode(expr) } }, s_Helpers{}, _here);
             };
             if (is_void_9CJmuVSD(if_last_iOPO4E2X(expr.items).type.vtype))
                 BUG_gDsnGKHT(("tryInjectJumps: Block tail is void, but block.type isn't: "_fu + explainType_gDsnGKHT(expr.type, false, false, false, false, false, (*(const s_Type*)fu::NIL), ss, _here, ctx, module, options)), ss, _helpers, _here, ctx, module, options);
@@ -15714,12 +15719,12 @@ static void propagateType_gDsnGKHT(s_SolvedNode& node, const s_Type& slot, const
             }
             else if (isDiscardable_FDl5ha9X(items[1], ss, _helpers, _here, ctx, module, options))
             {
-                node = createOr_gDsnGKHT(fu::vec<s_SolvedNode> { fu::slate<2, s_SolvedNode> { s_SolvedNode(items[0]), s_SolvedNode(items[2]) } }, s_Type(t_void), _current_fn, ss, _helpers, _here, ctx, module, options);
+                node = createOr_gDsnGKHT(fu::vec<s_SolvedNode> { fu::slate<2, s_SolvedNode> { s_SolvedNode(items[0]), s_SolvedNode(items[2]) } }, s_Type(t_irrelevant), _current_fn, ss, _helpers, _here, ctx, module, options);
             }
             else if (isDiscardable_FDl5ha9X(items[2], ss, _helpers, _here, ctx, module, options))
-                node = createAnd_gDsnGKHT(fu::slice(items, 0, 2), s_Type(t_void), _current_fn, ss, _helpers, _here, ctx, module, options);
+                node = createAnd_gDsnGKHT(fu::slice(items, 0, 2), s_Type(t_irrelevant), _current_fn, ss, _helpers, _here, ctx, module, options);
             else
-                node.type = t_void;
+                node.type = t_irrelevant;
 
         }
         else if (kills)
@@ -15731,13 +15736,28 @@ static void propagateType_gDsnGKHT(s_SolvedNode& node, const s_Type& slot, const
     else if (k == s_Kind_try)
     {
         s_Postdom postdom0 { _current_fn.postdom };
-        propagateType_gDsnGKHT(recover_gDsnGKHT(node), t_void, relax_mask, s_Helpers{}, _current_fn, ss, _helpers, _here, ctx, module, options);
+
+        {
+            const s_Helpers& kills_1 = (*(const s_Helpers*)fu::NIL);
+            s_SolvedNode& node_1 = recover_gDsnGKHT(node);
+            propagateType_gDsnGKHT(node_1, t_irrelevant, relax_mask, kills_1, _current_fn, ss, _helpers, _here, ctx, module, options);
+        };
         branch_gDsnGKHT(_current_fn.postdom, postdom0, _here, ctx);
-        propagateType_gDsnGKHT(error_gDsnGKHT(node), t_void, relax_mask, s_Helpers{}, _current_fn, ss, _helpers, _here, ctx, module, options);
+
+        {
+            const s_Helpers& kills_1 = (*(const s_Helpers*)fu::NIL);
+            s_SolvedNode& node_1 = error_gDsnGKHT(node);
+            propagateType_gDsnGKHT(node_1, t_irrelevant, relax_mask, kills_1, _current_fn, ss, _helpers, _here, ctx, module, options);
+        };
         const s_FxMask throws0 = s_FxMask((_current_fn.effects.fx_mask & s_FxMask_Fx_Throws));
         _current_fn.effects.fx_mask &= s_FxMask(~s_FxMask_Fx_Throws);
         _current_fn.TODO_FIX_catches++;
-        propagateType_gDsnGKHT(attempt_gDsnGKHT(node), t_void, relax_mask, s_Helpers{}, _current_fn, ss, _helpers, _here, ctx, module, options);
+
+        {
+            const s_Helpers& kills_1 = (*(const s_Helpers*)fu::NIL);
+            s_SolvedNode& node_1 = attempt_gDsnGKHT(node);
+            propagateType_gDsnGKHT(node_1, t_irrelevant, relax_mask, kills_1, _current_fn, ss, _helpers, _here, ctx, module, options);
+        };
         _current_fn.TODO_FIX_catches--;
         if (!s_FxMask((_current_fn.effects.fx_mask & s_FxMask_Fx_Throws)))
         {
@@ -15763,13 +15783,13 @@ static void propagateType_gDsnGKHT(s_SolvedNode& node, const s_Type& slot, const
         Breakable_begin_gDsnGKHT(true, node, relax_mask, _current_fn, ss, _here, ctx);
         const int read_loop0 = (_current_fn.postdom.read_loop_start ? _current_fn.postdom.read_loop_start : BUG_gDsnGKHT(fu::str{}, ss, _helpers, _here, ctx, module, options));
         const int write_loop0 = (_current_fn.postdom.write_loop_start ? _current_fn.postdom.write_loop_start : BUG_gDsnGKHT(fu::str{}, ss, _helpers, _here, ctx, module, options));
-        const s_HelpersData* BL_51_v;
+        const s_HelpersData* BL_54_v;
         int _3 {};
         _current_fn.postdom.read_loop_start = (_current_fn.postdom.write_loop_start = ((_3 = (__extension__ (
         {
             const s_Helpers& h = node.helpers;
-            BL_51_v = &((((h.index >= 0) && (h.index < ss._helpers_data.size())) ? ss._helpers_data[h.index] : BUG_u9Gbkniv("Helpers.GET: h.index is oob"_fu, _here, ctx)));
-        (void)0;}), *BL_51_v).locals_start) ? _3 : BUG_gDsnGKHT(fu::str{}, ss, _helpers, _here, ctx, module, options)));
+            BL_54_v = &((((h.index >= 0) && (h.index < ss._helpers_data.size())) ? ss._helpers_data[h.index] : BUG_u9Gbkniv("Helpers.GET: h.index is oob"_fu, _here, ctx)));
+        (void)0;}), *BL_54_v).locals_start) ? _3 : BUG_gDsnGKHT(fu::str{}, ss, _helpers, _here, ctx, module, options)));
         if (post_cond_FDl5ha9X(node))
         {
             propagateType_gDsnGKHT(post_cond_gDsnGKHT(node), t_proposition, relax_mask, s_Helpers{}, _current_fn, ss, _helpers, _here, ctx, module, options);
@@ -15782,7 +15802,9 @@ static void propagateType_gDsnGKHT(s_SolvedNode& node, const s_Type& slot, const
             }
             else
             {
-                propagateType_gDsnGKHT(post_gDsnGKHT(node), t_void, relax_mask, s_Helpers{}, _current_fn, ss, _helpers, _here, ctx, module, options);
+                const s_Helpers& kills_1 = (*(const s_Helpers*)fu::NIL);
+                s_SolvedNode& node_1 = post_gDsnGKHT(node);
+                propagateType_gDsnGKHT(node_1, t_irrelevant, relax_mask, kills_1, _current_fn, ss, _helpers, _here, ctx, module, options);
             };
         };
         if (body_FDl5ha9X(node))
@@ -15793,7 +15815,9 @@ static void propagateType_gDsnGKHT(s_SolvedNode& node, const s_Type& slot, const
             }
             else
             {
-                propagateType_gDsnGKHT(body_gDsnGKHT(node), t_void, relax_mask, s_Helpers{}, _current_fn, ss, _helpers, _here, ctx, module, options);
+                const s_Helpers& kills_1 = (*(const s_Helpers*)fu::NIL);
+                s_SolvedNode& node_1 = body_gDsnGKHT(node);
+                propagateType_gDsnGKHT(node_1, t_irrelevant, relax_mask, kills_1, _current_fn, ss, _helpers, _here, ctx, module, options);
             };
         };
         if (pre_FDl5ha9X(node))
@@ -15805,7 +15829,9 @@ static void propagateType_gDsnGKHT(s_SolvedNode& node, const s_Type& slot, const
             }
             else
             {
-                propagateType_gDsnGKHT(pre_gDsnGKHT(node), t_void, relax_mask, s_Helpers{}, _current_fn, ss, _helpers, _here, ctx, module, options);
+                const s_Helpers& kills_1 = (*(const s_Helpers*)fu::NIL);
+                s_SolvedNode& node_1 = pre_gDsnGKHT(node);
+                propagateType_gDsnGKHT(node_1, t_irrelevant, relax_mask, kills_1, _current_fn, ss, _helpers, _here, ctx, module, options);
             };
             branch_gDsnGKHT(_current_fn.postdom, postdom0, _here, ctx);
         };
@@ -15829,7 +15855,9 @@ static void propagateType_gDsnGKHT(s_SolvedNode& node, const s_Type& slot, const
         };
         if (init_FDl5ha9X(node))
         {
-            propagateType_gDsnGKHT(init_gDsnGKHT(node), t_void, relax_mask, s_Helpers{}, _current_fn, ss, _helpers, _here, ctx, module, options);
+            const s_Helpers& kills_1 = (*(const s_Helpers*)fu::NIL);
+            s_SolvedNode& node_1 = init_gDsnGKHT(node);
+            propagateType_gDsnGKHT(node_1, t_irrelevant, relax_mask, kills_1, _current_fn, ss, _helpers, _here, ctx, module, options);
         };
         if (!node._loop_start || (node._loop_start == _current_fn.postdom.write_loop_start))
         {
@@ -15855,7 +15883,8 @@ static void propagateType_gDsnGKHT(s_SolvedNode& node, const s_Type& slot, const
         if (canDiscard)
         {
             node = only_LqU08rcL(node.items);
-            propagateType_gDsnGKHT(node, t_void, relax_mask, s_Helpers{}, _current_fn, ss, _helpers, _here, ctx, module, options);
+            const s_Helpers& kills_1 = (*(const s_Helpers*)fu::NIL);
+            propagateType_gDsnGKHT(node, t_irrelevant, relax_mask, kills_1, _current_fn, ss, _helpers, _here, ctx, module, options);
         }
         else
         {
@@ -15889,12 +15918,12 @@ static void propagateType_gDsnGKHT(s_SolvedNode& node, const s_Type& slot, const
             }
             else if (isLocal_gDsnGKHT(t))
             {
-                int BL_82_v {};
+                int BL_85_v {};
                 trackVarUsage_gDsnGKHT((__extension__ (
                 {
                     const unsigned v = unsigned((t._packed & 0xfffffull));
-                    BL_82_v = (int(((v >> 1u) ^ ((v & 1u) ? 0xffffffffu : 0x0u))));
-                (void)0;}), BL_82_v), node.type, _current_fn, ss, _helpers, _here, ctx, module, options);
+                    BL_85_v = (int(((v >> 1u) ^ ((v & 1u) ? 0xffffffffu : 0x0u))));
+                (void)0;}), BL_85_v), node.type, _current_fn, ss, _helpers, _here, ctx, module, options);
                 trackUsedAgain_gDsnGKHT(node.type.lifetime, relax_mask, _current_fn, ss, _helpers, _here, ctx, module, options);
             };
         }
@@ -15988,12 +16017,12 @@ static void propagateType_gDsnGKHT(s_SolvedNode& node, const s_Type& slot, const
                 { {
                     if (GET_gDsnGKHT(t, ss, _here, ctx, module).kind == s_Kind_type)
                     {
-                        s_UserType BL_109_v {};
+                        s_UserType BL_112_v {};
                         s_UserType s = (__extension__ (
                         {
                             const s_UserType& __partcopy_ref = tryLookupUserType_1qjplDUo(GET_gDsnGKHT(t, ss, _here, ctx, module).type.vtype, _here, ctx, module);
-                            BL_109_v = (s_UserType { __partcopy_ref.kind, {}, {}, fu::vec<s_ScopeItem>(__partcopy_ref.items), {}, {}, {}, {} });
-                        (void)0;}), static_cast<s_UserType&&>(BL_109_v));
+                            BL_112_v = (s_UserType { __partcopy_ref.kind, {}, {}, fu::vec<s_ScopeItem>(__partcopy_ref.items), {}, {}, {}, {} });
+                        (void)0;}), static_cast<s_UserType&&>(BL_112_v));
                         if (!(s.kind != s_Kind_struct))
                         {
                             if (s.items.size() == node.items.size())
@@ -16003,18 +16032,18 @@ static void propagateType_gDsnGKHT(s_SolvedNode& node, const s_Type& slot, const
                                     const s_Overload& field = GET_gDsnGKHT(target_z0QqoZ5t(s.items[i]), ss, _here, ctx, module);
                                     s_SolvedNode& arg = node.items.mutref(i);
                                     const s_UnpackedOffset _ = field_unpackOffset_gDsnGKHT(field, _here, ctx);
-                                    unsigned BL_114_v {};
+                                    unsigned BL_117_v {};
                                     s_Type slot_1 = USAGE_fieldUsageFromStructUsage_GgXYS4ZV(s_Type(field.type), (__extension__ (
                                     {
                                         const s_ValueType& type = slot.vtype;
-                                        BL_114_v = ((type.quals & q_USAGE));
-                                    (void)0;}), BL_114_v), _.memberFlatOffset, _.memberFlatCount);
+                                        BL_117_v = ((type.quals & q_USAGE));
+                                    (void)0;}), BL_117_v), _.memberFlatOffset, _.memberFlatCount);
                                     if (relax_mask == RELAX_all)
                                         maybeCopyOrMove_gDsnGKHT(arg, slot_1, true, (*(const fu::str*)fu::NIL), _current_fn, ss, _helpers, _here, ctx, module, options);
 
                                     propagateType_gDsnGKHT(arg, slot_1, relax_mask, s_Helpers{}, _current_fn, ss, _helpers, _here, ctx, module, options);
                                 };
-                                goto BL_107;
+                                goto BL_110;
                             }
                             else
                                 BUG_gDsnGKHT("Call(type): struct.items.len != call.items.len"_fu, ss, _helpers, _here, ctx, module, options);
@@ -16028,7 +16057,7 @@ static void propagateType_gDsnGKHT(s_SolvedNode& node, const s_Type& slot, const
                     else
                         BUG_gDsnGKHT(x7E_3lDd4lqo("propagateType(call) args.len != host_args.len at call to "_fu, str_FDl5ha9X(node.target, false, ss, _here, ctx, module, options)), ss, _helpers, _here, ctx, module, options);
 
-                  } BL_107:;
+                  } BL_110:;
                 };
             };
         };
@@ -16065,22 +16094,22 @@ static void propagateType_gDsnGKHT(s_SolvedNode& node, const s_Type& slot, const
                     {
                         validateCOW_gDsnGKHT(item, s_TokenIdx(_here), s_Target{}, (*(const s_Argument*)fu::NIL), false, _current_fn, ss, _helpers, _here, ctx, module, options);
                     };
-                    unsigned BL_131_v {};
+                    unsigned BL_134_v {};
                     const unsigned usage = (__extension__ (
                     {
                         const s_ValueType& type = node.type.vtype;
-                        BL_131_v = ((type.quals & q_USAGE));
-                    (void)0;}), BL_131_v);
+                        BL_134_v = ((type.quals & q_USAGE));
+                    (void)0;}), BL_134_v);
                     const int flatCount = getFlatCount_1qjplDUo(node.type.vtype, _here, ctx, module);
                     const unsigned maxUsage = getMaxUsage_CaGDtmWo(flatCount);
                     if ((usage != maxUsage) && is_rx_copy_9CJmuVSD(node.type.vtype))
                     {
-                        s_UserType BL_133_v {};
+                        s_UserType BL_136_v {};
                         s_UserType s = (__extension__ (
                         {
                             const s_UserType& __partcopy_ref = tryLookupUserType_1qjplDUo(node.type.vtype, _here, ctx, module);
-                            BL_133_v = (s_UserType { __partcopy_ref.kind, {}, s_Target(__partcopy_ref.target), fu::vec<s_ScopeItem>(__partcopy_ref.items), {}, {}, {}, {} });
-                        (void)0;}), static_cast<s_UserType&&>(BL_133_v));
+                            BL_136_v = (s_UserType { __partcopy_ref.kind, {}, s_Target(__partcopy_ref.target), fu::vec<s_ScopeItem>(__partcopy_ref.items), {}, {}, {}, {} });
+                        (void)0;}), static_cast<s_UserType&&>(BL_136_v));
                         if (!(s.kind != s_Kind_struct))
                         {
                             if (!USAGE_justOneThing_9CJmuVSD(usage, flatCount) && !isFieldChain_gDsnGKHT(item, ss, _here, ctx, module))
@@ -16204,45 +16233,45 @@ static void propagateType_gDsnGKHT(s_SolvedNode& node, const s_Type& slot, const
     else if (k == s_Kind_jump)
     {
         s_Helpers h { node.helpers };
-        const s_HelpersData* BL_164_v;
+        const s_HelpersData* BL_167_v;
         while ((__extension__ (
         {
             const s_Helpers& h_1 = h;
-            BL_164_v = &((((h_1.index >= 0) && (h_1.index < ss._helpers_data.size())) ? ss._helpers_data[h_1.index] : BUG_u9Gbkniv("Helpers.GET: h.index is oob"_fu, _here, ctx)));
-        (void)0;}), *BL_164_v).kills)
+            BL_167_v = &((((h_1.index >= 0) && (h_1.index < ss._helpers_data.size())) ? ss._helpers_data[h_1.index] : BUG_u9Gbkniv("Helpers.GET: h.index is oob"_fu, _here, ctx)));
+        (void)0;}), *BL_167_v).kills)
         {
-            const s_HelpersData* BL_167_v;
+            const s_HelpersData* BL_170_v;
             h = (node.helpers = (__extension__ (
             {
                 const s_Helpers& h_1 = h;
-                BL_167_v = &((((h_1.index >= 0) && (h_1.index < ss._helpers_data.size())) ? ss._helpers_data[h_1.index] : BUG_u9Gbkniv("Helpers.GET: h.index is oob"_fu, _here, ctx)));
-            (void)0;}), *BL_167_v).kills);
+                BL_170_v = &((((h_1.index >= 0) && (h_1.index < ss._helpers_data.size())) ? ss._helpers_data[h_1.index] : BUG_u9Gbkniv("Helpers.GET: h.index is oob"_fu, _here, ctx)));
+            (void)0;}), *BL_170_v).kills);
         };
-        const s_HelpersData* BL_168_v;
+        const s_HelpersData* BL_171_v;
         if ((__extension__ (
         {
             const s_Helpers& h_1 = h;
-            BL_168_v = &((((h_1.index >= 0) && (h_1.index < ss._helpers_data.size())) ? ss._helpers_data[h_1.index] : BUG_u9Gbkniv("Helpers.GET: h.index is oob"_fu, _here, ctx)));
-        (void)0;}), *BL_168_v).ret_actual)
+            BL_171_v = &((((h_1.index >= 0) && (h_1.index < ss._helpers_data.size())) ? ss._helpers_data[h_1.index] : BUG_u9Gbkniv("Helpers.GET: h.index is oob"_fu, _here, ctx)));
+        (void)0;}), *BL_171_v).ret_actual)
         {
             s_SolvedNode& expr = only_n3dv4p6e(node.items);
 
             {
                 const int read_loop0 = _current_fn.postdom.read_loop_start;
-                const s_HelpersData* BL_171_v;
+                const s_HelpersData* BL_174_v;
                 const s_Postdom* _5;
                 _current_fn.postdom = (*(_5 = &((__extension__ (
                 {
                     const s_Helpers& h_1 = h;
-                    BL_171_v = &((((h_1.index >= 0) && (h_1.index < ss._helpers_data.size())) ? ss._helpers_data[h_1.index] : BUG_u9Gbkniv("Helpers.GET: h.index is oob"_fu, _here, ctx)));
-                (void)0;}), *BL_171_v).postdom)) ? *_5 : BUG_gDsnGKHT(x7E_3lDd4lqo("propagateType(jump): h.loop_start not available: #"_fu, fu::i64dec(h.index)), ss, _helpers, _here, ctx, module, options));
+                    BL_174_v = &((((h_1.index >= 0) && (h_1.index < ss._helpers_data.size())) ? ss._helpers_data[h_1.index] : BUG_u9Gbkniv("Helpers.GET: h.index is oob"_fu, _here, ctx)));
+                (void)0;}), *BL_174_v).postdom)) ? *_5 : BUG_gDsnGKHT(x7E_3lDd4lqo("propagateType(jump): h.loop_start not available: #"_fu, fu::i64dec(h.index)), ss, _helpers, _here, ctx, module, options));
                 _current_fn.postdom.read_loop_start = read_loop0;
-                const s_HelpersData* BL_172_v;
+                const s_HelpersData* BL_175_v;
                 if ((__extension__ (
                 {
                     const s_Helpers& h_1 = h;
-                    BL_172_v = &((((h_1.index >= 0) && (h_1.index < ss._helpers_data.size())) ? ss._helpers_data[h_1.index] : BUG_u9Gbkniv("Helpers.GET: h.index is oob"_fu, _here, ctx)));
-                (void)0;}), *BL_172_v).mask & s_HelpersMask_HM_Function)
+                    BL_175_v = &((((h_1.index >= 0) && (h_1.index < ss._helpers_data.size())) ? ss._helpers_data[h_1.index] : BUG_u9Gbkniv("Helpers.GET: h.index is oob"_fu, _here, ctx)));
+                (void)0;}), *BL_175_v).mask & s_HelpersMask_HM_Function)
                 {
                     const s_Kind kind = expr.kind;
                     _current_fn.postdom.snap.exitPaths = (((kind == s_Kind_empty) || (kind == s_Kind_definit)) ? s_ExitPaths_XP_EmptyReturn : s_ExitPaths_XP_NonEmptyReturn);
@@ -16252,54 +16281,54 @@ static void propagateType_gDsnGKHT(s_SolvedNode& node, const s_Type& slot, const
             const s_Helpers& kills_1 = (redundant ? kills : h);
             if (relax_mask == RELAX_all)
             {
-                const s_HelpersData* BL_175_v;
+                const s_HelpersData* BL_178_v;
                 maybeCopyOrMove_gDsnGKHT(expr, (__extension__ (
                 {
                     const s_Helpers& h_1 = h;
-                    BL_175_v = &((((h_1.index >= 0) && (h_1.index < ss._helpers_data.size())) ? ss._helpers_data[h_1.index] : BUG_u9Gbkniv("Helpers.GET: h.index is oob"_fu, _here, ctx)));
-                (void)0;}), *BL_175_v).ret_actual, false, (*(const fu::str*)fu::NIL), _current_fn, ss, _helpers, _here, ctx, module, options);
+                    BL_178_v = &((((h_1.index >= 0) && (h_1.index < ss._helpers_data.size())) ? ss._helpers_data[h_1.index] : BUG_u9Gbkniv("Helpers.GET: h.index is oob"_fu, _here, ctx)));
+                (void)0;}), *BL_178_v).ret_actual, false, (*(const fu::str*)fu::NIL), _current_fn, ss, _helpers, _here, ctx, module, options);
             };
-            const s_HelpersData* BL_176_v;
+            const s_HelpersData* BL_179_v;
             propagateType_gDsnGKHT(expr, s_Type((__extension__ (
             {
                 const s_Helpers& h_1 = h;
-                BL_176_v = &((((h_1.index >= 0) && (h_1.index < ss._helpers_data.size())) ? ss._helpers_data[h_1.index] : BUG_u9Gbkniv("Helpers.GET: h.index is oob"_fu, _here, ctx)));
-            (void)0;}), *BL_176_v).ret_actual), relax_mask, kills_1, _current_fn, ss, _helpers, _here, ctx, module, options);
+                BL_179_v = &((((h_1.index >= 0) && (h_1.index < ss._helpers_data.size())) ? ss._helpers_data[h_1.index] : BUG_u9Gbkniv("Helpers.GET: h.index is oob"_fu, _here, ctx)));
+            (void)0;}), *BL_179_v).ret_actual), relax_mask, kills_1, _current_fn, ss, _helpers, _here, ctx, module, options);
             if (redundant)
                 node = expr;
             else
             {
-                s_HelpersData* BL_179_v;
+                s_HelpersData* BL_182_v;
                 (__extension__ (
                 {
                     const s_Helpers& h_1 = h;
-                    BL_179_v = &((((h_1.index >= 0) && (h_1.index < ss._helpers_data.size())) ? ss._helpers_data.mutref(h_1.index) : BUG_u9Gbkniv("Helpers.GET: h.index is oob"_fu, _here, ctx)));
-                (void)0;}), *BL_179_v).mask |= s_HelpersMask_HM_LabelUsed;
-                const s_HelpersData* BL_180_v;
+                    BL_182_v = &((((h_1.index >= 0) && (h_1.index < ss._helpers_data.size())) ? ss._helpers_data.mutref(h_1.index) : BUG_u9Gbkniv("Helpers.GET: h.index is oob"_fu, _here, ctx)));
+                (void)0;}), *BL_182_v).mask |= s_HelpersMask_HM_LabelUsed;
+                const s_HelpersData* BL_183_v;
                 if (isIrrelevant_9CJmuVSD((__extension__ (
                 {
                     const s_Helpers& h_1 = h;
-                    BL_180_v = &((((h_1.index >= 0) && (h_1.index < ss._helpers_data.size())) ? ss._helpers_data[h_1.index] : BUG_u9Gbkniv("Helpers.GET: h.index is oob"_fu, _here, ctx)));
-                (void)0;}), *BL_180_v).ret_actual))
+                    BL_183_v = &((((h_1.index >= 0) && (h_1.index < ss._helpers_data.size())) ? ss._helpers_data[h_1.index] : BUG_u9Gbkniv("Helpers.GET: h.index is oob"_fu, _here, ctx)));
+                (void)0;}), *BL_183_v).ret_actual))
                 {
                     if (expr.kind == s_Kind_empty)
                     {
-                        const s_HelpersData* BL_183_v;
+                        const s_HelpersData* BL_186_v;
                         expr.type = (__extension__ (
                         {
                             const s_Helpers& h_1 = h;
-                            BL_183_v = &((((h_1.index >= 0) && (h_1.index < ss._helpers_data.size())) ? ss._helpers_data[h_1.index] : BUG_u9Gbkniv("Helpers.GET: h.index is oob"_fu, _here, ctx)));
-                        (void)0;}), *BL_183_v).ret_actual;
+                            BL_186_v = &((((h_1.index >= 0) && (h_1.index < ss._helpers_data.size())) ? ss._helpers_data[h_1.index] : BUG_u9Gbkniv("Helpers.GET: h.index is oob"_fu, _here, ctx)));
+                        (void)0;}), *BL_186_v).ret_actual;
                         intoEmpty_gDsnGKHT(expr, ss, _helpers, _here, ctx, module, options);
                     }
                     else
                     {
-                        const s_HelpersData* BL_185_v;
+                        const s_HelpersData* BL_188_v;
                         /*MOV*/ s_SolvedNode not_empty = createEmpty_gDsnGKHT((__extension__ (
                         {
                             const s_Helpers& h_1 = h;
-                            BL_185_v = &((((h_1.index >= 0) && (h_1.index < ss._helpers_data.size())) ? ss._helpers_data[h_1.index] : BUG_u9Gbkniv("Helpers.GET: h.index is oob"_fu, _here, ctx)));
-                        (void)0;}), *BL_185_v).ret_actual, s_Target{}, ss, _helpers, _here, ctx, module, options);
+                            BL_188_v = &((((h_1.index >= 0) && (h_1.index < ss._helpers_data.size())) ? ss._helpers_data[h_1.index] : BUG_u9Gbkniv("Helpers.GET: h.index is oob"_fu, _here, ctx)));
+                        (void)0;}), *BL_188_v).ret_actual, s_Target{}, ss, _helpers, _here, ctx, module, options);
                         std::swap(expr, not_empty);
                         node = createBlock_FDl5ha9X(static_cast<s_SolvedNode&&>(not_empty), s_SolvedNode(node), ss, _here, ctx, module);
                     };
@@ -16345,7 +16374,11 @@ static void propagateType_gDsnGKHT(s_SolvedNode& node, const s_Type& slot, const
                 {
                     TEST_paintNode_gDsnGKHT(node_1, ss, _helpers, _here, ctx, module, options);
                     s_SolvedNode& expr = only_n3dv4p6e(node_1.items);
-                    propagateType_gDsnGKHT(expr, t_void, relax_mask, s_Helpers{}, _current_fn, ss, _helpers, _here, ctx, module, options);
+
+                    {
+                        const s_Helpers& kills_1 = (*(const s_Helpers*)fu::NIL);
+                        propagateType_gDsnGKHT(expr, t_irrelevant, relax_mask, kills_1, _current_fn, ss, _helpers, _here, ctx, module, options);
+                    };
                     if (isDiscardable_FDl5ha9X(expr, ss, _helpers, _here, ctx, module, options))
                     {
 
@@ -16383,12 +16416,12 @@ static void propagateType_gDsnGKHT(s_SolvedNode& node, const s_Type& slot, const
                     {
                         if (relax_mask == RELAX_before_bck)
                         {
-                            const s_HelpersData* BL_206_v;
+                            const s_HelpersData* BL_210_v;
                             if ((node_1.kind == s_Kind_block) && !s_HelpersMask(((__extension__ (
                             {
                                 const s_Helpers& h_1 = node_1.helpers;
-                                BL_206_v = &((((h_1.index >= 0) && (h_1.index < ss._helpers_data.size())) ? ss._helpers_data[h_1.index] : BUG_u9Gbkniv("Helpers.GET: h.index is oob"_fu, _here, ctx)));
-                            (void)0;}), *BL_206_v).mask & s_HelpersMask_HM_LabelUsed)))
+                                BL_210_v = &((((h_1.index >= 0) && (h_1.index < ss._helpers_data.size())) ? ss._helpers_data[h_1.index] : BUG_u9Gbkniv("Helpers.GET: h.index is oob"_fu, _here, ctx)));
+                            (void)0;}), *BL_210_v).mask & s_HelpersMask_HM_LabelUsed)))
                             {
                                 items.splice(i, 1, steal_aoGMoHr9(node_1.items, 0, (node_1.items.size() - 1)));
                                 i--;
@@ -16431,7 +16464,11 @@ static void propagateType_gDsnGKHT(s_SolvedNode& node, const s_Type& slot, const
                 s_SolvedNode& expr = items.mutref(i_1);
                 if (expr.kind != s_Kind_defer)
                 {
-                    propagateType_gDsnGKHT(expr, t_void, relax_mask, s_Helpers{}, _current_fn, ss, _helpers, _here, ctx, module, options);
+
+                    {
+                        const s_Helpers& kills_1 = (*(const s_Helpers*)fu::NIL);
+                        propagateType_gDsnGKHT(expr, t_irrelevant, relax_mask, kills_1, _current_fn, ss, _helpers, _here, ctx, module, options);
+                    };
                     if (isDiscardable_FDl5ha9X(expr, ss, _helpers, _here, ctx, module, options))
                         items.splice(i_1, 1);
 
@@ -16471,12 +16508,12 @@ static void propagateType_gDsnGKHT(s_SolvedNode& node, const s_Type& slot, const
                 };
             };
             const s_SolvedNode& tail = if_last_iOPO4E2X(node.items);
-            const s_HelpersData* BL_231_v;
+            const s_HelpersData* BL_236_v;
             if ((tail.kind == s_Kind_block) && !s_HelpersMask(((__extension__ (
             {
                 const s_Helpers& h_1 = tail.helpers;
-                BL_231_v = &((((h_1.index >= 0) && (h_1.index < ss._helpers_data.size())) ? ss._helpers_data[h_1.index] : BUG_u9Gbkniv("Helpers.GET: h.index is oob"_fu, _here, ctx)));
-            (void)0;}), *BL_231_v).mask & s_HelpersMask_HM_LabelUsed)))
+                BL_236_v = &((((h_1.index >= 0) && (h_1.index < ss._helpers_data.size())) ? ss._helpers_data[h_1.index] : BUG_u9Gbkniv("Helpers.GET: h.index is oob"_fu, _here, ctx)));
+            (void)0;}), *BL_236_v).mask & s_HelpersMask_HM_LabelUsed)))
                 node.items.splice((node.items.size() - 1), 1, fu::vec<s_SolvedNode>(tail.items));
 
         };
@@ -16485,7 +16522,9 @@ static void propagateType_gDsnGKHT(s_SolvedNode& node, const s_Type& slot, const
     {
         for (int i = node.items.size(); i-- > 0; )
         {
-            propagateType_gDsnGKHT(node.items.mutref(i), t_void, relax_mask, s_Helpers{}, _current_fn, ss, _helpers, _here, ctx, module, options);
+            const s_Helpers& kills_1 = (*(const s_Helpers*)fu::NIL);
+            s_SolvedNode& node_1 = node.items.mutref(i);
+            propagateType_gDsnGKHT(node_1, t_irrelevant, relax_mask, kills_1, _current_fn, ss, _helpers, _here, ctx, module, options);
         };
     }
     else if (k == s_Kind_pragma)
@@ -16497,12 +16536,12 @@ static void propagateType_gDsnGKHT(s_SolvedNode& node, const s_Type& slot, const
             propagateType_gDsnGKHT(item, s_Type(node.items[i].type), relax_mask, s_Helpers{}, _current_fn, ss, _helpers, _here, ctx, module, options);
             if (is_mutref_9CJmuVSD(item.type, _here, ctx))
             {
-                unsigned BL_240_v {};
+                unsigned BL_245_v {};
                 callarg_trackWrites_gDsnGKHT(item.type.lifetime, (__extension__ (
                 {
                     const s_ValueType& type = item.type.vtype;
-                    BL_240_v = ((type.quals & q_USAGE));
-                (void)0;}), BL_240_v), node, _current_fn, ss, _helpers, _here, ctx, module, options);
+                    BL_245_v = ((type.quals & q_USAGE));
+                (void)0;}), BL_245_v), node, _current_fn, ss, _helpers, _here, ctx, module, options);
             };
         };
         if (node.value == "clock"_fu)
@@ -22036,7 +22075,7 @@ static s_SolvedNode solveRoot_gDsnGKHT(const s_Node& node, s_CurrentFn& _current
 {
     const s_Helpers helpers = s_Helpers { _helpers.size() };
     push_gDsnGKHT(s_HelpersData{}, ss, _helpers);
-    fu::vec<s_SolvedNode> items = solveNodes_gDsnGKHT(node.items, s_DeadBreak_DeadBreak_Always, t_void, (*(const s_Type*)fu::NIL), false, s_StaticEval{}, false, _current_fn, ss, _helpers, _here, ctx, module, options);
+    fu::vec<s_SolvedNode> items = solveNodes_gDsnGKHT(node.items, s_DeadBreak_DeadBreak_Always, t_irrelevant, (*(const s_Type*)fu::NIL), false, s_StaticEval{}, false, _current_fn, ss, _helpers, _here, ctx, module, options);
     if (is_never_9CJmuVSD(if_last_iOPO4E2X(items).type.vtype))
     {
         _here = last_31malqbt(items).token;
@@ -22218,9 +22257,9 @@ static s_SolvedNode solveLoop_gDsnGKHT(const s_Node& node, s_CurrentFn& _current
     else
     {
         /*MOV*/ s_SolvedNode pre_cond = (n_pre_cond ? solveNode_gDsnGKHT(n_pre_cond, t_proposition, _current_fn, ss, _helpers, _here, ctx, module, options) : s_SolvedNode{});
-        /*MOV*/ s_SolvedNode pre = (n_pre ? solveBlock_gDsnGKHT(n_pre, t_void, 0, s_HelpersMask_HM_LoopPreheader, (*(const fu::str*)fu::NIL), 0, _current_fn, ss, _helpers, _here, ctx, module, options) : s_SolvedNode{});
-        /*MOV*/ s_SolvedNode body = (n_body ? solveBlock_gDsnGKHT(n_body, t_void, 0, s_HelpersMask_HM_LoopBody, (*(const fu::str*)fu::NIL), 0, _current_fn, ss, _helpers, _here, ctx, module, options) : s_SolvedNode{});
-        /*MOV*/ s_SolvedNode post = (n_post ? solveBlock_gDsnGKHT(n_post, t_void, 0, s_HelpersMask_HM_CanBreak, (*(const fu::str*)fu::NIL), 0, _current_fn, ss, _helpers, _here, ctx, module, options) : s_SolvedNode{});
+        /*MOV*/ s_SolvedNode pre = (n_pre ? solveBlock_gDsnGKHT(n_pre, t_irrelevant, 0, s_HelpersMask_HM_LoopPreheader, (*(const fu::str*)fu::NIL), 0, _current_fn, ss, _helpers, _here, ctx, module, options) : s_SolvedNode{});
+        /*MOV*/ s_SolvedNode body = (n_body ? solveBlock_gDsnGKHT(n_body, t_irrelevant, 0, s_HelpersMask_HM_LoopBody, (*(const fu::str*)fu::NIL), 0, _current_fn, ss, _helpers, _here, ctx, module, options) : s_SolvedNode{});
+        /*MOV*/ s_SolvedNode post = (n_post ? solveBlock_gDsnGKHT(n_post, t_irrelevant, 0, s_HelpersMask_HM_CanBreak, (*(const fu::str*)fu::NIL), 0, _current_fn, ss, _helpers, _here, ctx, module, options) : s_SolvedNode{});
         /*MOV*/ s_SolvedNode post_cond = (n_post_cond ? solveNode_gDsnGKHT(n_post_cond, t_proposition, _current_fn, ss, _helpers, _here, ctx, module, options) : s_SolvedNode{});
         const s_Helpers& h = _helpers[brk_idx];
         const s_Type& type = ((!pre_cond && !post_cond && !s_HelpersMask(((((h.index >= 0) && (h.index < ss._helpers_data.size())) ? ss._helpers_data[h.index] : BUG_u9Gbkniv("Helpers.GET: h.index is oob"_fu, _here, ctx)).mask & s_HelpersMask_HM_LabelUsed))) ? t_never : t_void);
@@ -22483,7 +22522,7 @@ static s_SolvedNode solveImport_gDsnGKHT(const s_Node& node, const s_CurrentFn& 
 
 static s_SolvedNode solveDefer_gDsnGKHT(const s_Node& node, s_CurrentFn& _current_fn, s_SolverState& ss, fu::vec<s_Helpers>& _helpers, s_TokenIdx& _here, const s_Context& ctx, s_Module& module, const s_Options& options)
 {
-    /*MOV*/ s_SolvedNode item = solveNode_gDsnGKHT(only_CiCfNZS0(node.items), t_void, _current_fn, ss, _helpers, _here, ctx, module, options);
+    /*MOV*/ s_SolvedNode item = solveNode_gDsnGKHT(only_CiCfNZS0(node.items), t_irrelevant, _current_fn, ss, _helpers, _here, ctx, module, options);
     return solved_gDsnGKHT(node, t_void, fu::vec<s_SolvedNode> { fu::slate<1, s_SolvedNode> { static_cast<s_SolvedNode&&>(item) } }, s_Target{}, _here);
 }
 
@@ -22497,11 +22536,11 @@ static s_SolvedNode solveTryCatch_gDsnGKHT(const s_Node& node, s_CurrentFn& _cur
     if (node.items.size() == 3)
     {
         const s_ScopeMemo scope0 = Scope_snap_gDsnGKHT(ss, _helpers);
-        /*MOV*/ s_SolvedNode tRy = solveNode_gDsnGKHT(node.items[0], t_void, _current_fn, ss, _helpers, _here, ctx, module, options);
+        /*MOV*/ s_SolvedNode tRy = solveNode_gDsnGKHT(node.items[0], t_irrelevant, _current_fn, ss, _helpers, _here, ctx, module, options);
         Scope_pop_gDsnGKHT(scope0, ss, _helpers);
         const s_ScopeMemo scope0_1 = Scope_snap_gDsnGKHT(ss, _helpers);
         /*MOV*/ s_SolvedNode err = solveLetStatement_gDsnGKHT(node.items[1], _current_fn, ss, _helpers, _here, ctx, module, options);
-        /*MOV*/ s_SolvedNode cAtch = solveNode_gDsnGKHT(node.items[2], t_void, _current_fn, ss, _helpers, _here, ctx, module, options);
+        /*MOV*/ s_SolvedNode cAtch = solveNode_gDsnGKHT(node.items[2], t_irrelevant, _current_fn, ss, _helpers, _here, ctx, module, options);
         Scope_pop_gDsnGKHT(scope0_1, ss, _helpers);
         if ((err.kind == s_Kind_letdef) && isAssignableAsArgument_9CJmuVSD(GET_gDsnGKHT(err.target, ss, _here, ctx, module).solved.type.vtype, definitType_9CJmuVSD(s_Type(t_string), false, _here, ctx).vtype, false, _here, ctx))
         {
@@ -22609,7 +22648,7 @@ static s_SolvedNode solveForFieldsOf_gDsnGKHT(const s_Node& node, s_CurrentFn& _
         const s_ScopeItem& field = fields[i];
         items_ast += astReplace_ewRvu3bY(body_template, placeholder, prefix, suffix, inside, field);
     };
-    fu::vec<s_SolvedNode> items = solveNodes_gDsnGKHT(items_ast, s_DeadBreak_DeadBreak_Always, t_void, (*(const s_Type*)fu::NIL), false, s_StaticEval{}, false, _current_fn, ss, _helpers, _here, ctx, module, options);
+    fu::vec<s_SolvedNode> items = solveNodes_gDsnGKHT(items_ast, s_DeadBreak_DeadBreak_Always, t_irrelevant, (*(const s_Type*)fu::NIL), false, s_StaticEval{}, false, _current_fn, ss, _helpers, _here, ctx, module, options);
     const s_Type& type = (is_never_9CJmuVSD(if_last_iOPO4E2X(items).type.vtype) ? t_never : t_void);
     return createBlock_gDsnGKHT(type, items, s_Helpers{}, _here);
 }

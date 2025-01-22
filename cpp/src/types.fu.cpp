@@ -1360,16 +1360,29 @@ extern const Type_OiTm t_f64 fu_INIT_PRIORITY(1009) = Primitive_9CJm(str_gz4KnAf
 extern const Type_OiTm t_bool fu_INIT_PRIORITY(1009) = Primitive_9CJm(str_u0519LQuAo8);
 extern const Type_OiTm t_byte fu_INIT_PRIORITY(1009) = Primitive_9CJm(str_XY3l2WlaWSg);
 extern const Type_OiTm t_proposition fu_INIT_PRIORITY(1009) = Type_OiTm { ValueType_JtNg { q_USAGE, VFacts_xhRf{}, fu::str(t_bool.vtype.canon) }, Lifetime_llCF{} };
-Type_OiTm NotSure_9CJm(fu::vec_range<char> canon, const unsigned quals)
+Type_OiTm NotPrimitive_9CJm(fu::vec_range<char> canon, const unsigned quals)
 {
     return Type_OiTm { ValueType_JtNg { quals, VFacts_xhRf{}, fu::str(canon) }, Lifetime_llCF{} };
 }
 
-extern const Type_OiTm t_void fu_INIT_PRIORITY(1009) = NotSure_9CJm(str_KiGuEGIuqEg, 0u);
-extern const Type_OiTm t_never fu_INIT_PRIORITY(1009) = NotSure_9CJm(str_scsjXZQ1yH3, 0u);
-extern const Type_OiTm t_zeroes fu_INIT_PRIORITY(1009) = NotSure_9CJm(str_8HO0vFfS8Nh, 0u);
+extern const Type_OiTm t_void fu_INIT_PRIORITY(1009) = NotPrimitive_9CJm(str_KiGuEGIuqEg, 0u);
+extern const Type_OiTm t_never fu_INIT_PRIORITY(1009) = NotPrimitive_9CJm(str_scsjXZQ1yH3, 0u);
+extern const Type_OiTm t_zeroes fu_INIT_PRIORITY(1009) = NotPrimitive_9CJm(str_8HO0vFfS8Nh, 0u);
 extern const unsigned q_rx_resize;
-extern const Type_OiTm t_AssumeNever_WhileSolvingRecursion fu_INIT_PRIORITY(1009) = NotSure_9CJm(str_scsjXZQ1yH3, q_rx_resize);
+Type_OiTm QualsAdd_9CJm(/*MOV*/ Type_OiTm&& t, const unsigned quals)
+{
+    t.vtype.quals |= quals;
+    return static_cast<Type_OiTm&&>(t);
+}
+
+extern const Type_OiTm t_AssumeNever_WhileSolvingRecursion fu_INIT_PRIORITY(1009) = QualsAdd_9CJm(Type_OiTm(t_never), q_rx_resize);
+Type_OiTm QualsClear_9CJm(/*MOV*/ Type_OiTm&& t)
+{
+    t.vtype.quals = 0u;
+    return static_cast<Type_OiTm&&>(t);
+}
+
+extern const Type_OiTm t_irrelevant fu_INIT_PRIORITY(1009) = QualsClear_9CJm(Type_OiTm(t_void));
 Type_OiTm createArray_9CJm(const Type_OiTm& item)
 {
     /*MOV*/ fu::str canon = (("["_view + serializeType_1qjp(item.vtype, "createArray"_view)) + "]"_view);

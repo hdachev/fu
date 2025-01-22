@@ -1353,24 +1353,24 @@ extern const s_Type t_byte fu_INIT_PRIORITY(1009) = Primitive("c8"_fu);
 extern const s_Type t_proposition fu_INIT_PRIORITY(1009) = s_Type { s_ValueType { q_USAGE, s_VFacts{}, fu::str(t_bool.vtype.canon) }, s_Lifetime{} };
                                 #endif
 
-s_Type NotSure(const fu::str& canon, const unsigned quals)
+s_Type NotPrimitive(const fu::str& canon, const unsigned quals)
 {
     return s_Type { s_ValueType { quals, s_VFacts{}, fu::str(canon) }, s_Lifetime{} };
 }
 
                                 #ifndef DEF_t_void
                                 #define DEF_t_void
-extern const s_Type t_void fu_INIT_PRIORITY(1009) = NotSure("void"_fu, 0u);
+extern const s_Type t_void fu_INIT_PRIORITY(1009) = NotPrimitive("void"_fu, 0u);
                                 #endif
 
                                 #ifndef DEF_t_never
                                 #define DEF_t_never
-extern const s_Type t_never fu_INIT_PRIORITY(1009) = NotSure("never"_fu, 0u);
+extern const s_Type t_never fu_INIT_PRIORITY(1009) = NotPrimitive("never"_fu, 0u);
                                 #endif
 
                                 #ifndef DEF_t_zeroes
                                 #define DEF_t_zeroes
-extern const s_Type t_zeroes fu_INIT_PRIORITY(1009) = NotSure("zeroes"_fu, 0u);
+extern const s_Type t_zeroes fu_INIT_PRIORITY(1009) = NotPrimitive("zeroes"_fu, 0u);
                                 #endif
 
                                 #ifndef DEF_q_rx_resize
@@ -1378,9 +1378,26 @@ extern const s_Type t_zeroes fu_INIT_PRIORITY(1009) = NotSure("zeroes"_fu, 0u);
 extern const unsigned q_rx_resize;
                                 #endif
 
+s_Type QualsAdd(/*MOV*/ s_Type&& t, const unsigned quals)
+{
+    t.vtype.quals |= quals;
+    return static_cast<s_Type&&>(t);
+}
+
                                 #ifndef DEF_t_AssumeNever_WhileSolvingRecursion
                                 #define DEF_t_AssumeNever_WhileSolvingRecursion
-extern const s_Type t_AssumeNever_WhileSolvingRecursion fu_INIT_PRIORITY(1009) = NotSure("never"_fu, q_rx_resize);
+extern const s_Type t_AssumeNever_WhileSolvingRecursion fu_INIT_PRIORITY(1009) = QualsAdd(s_Type(t_never), q_rx_resize);
+                                #endif
+
+s_Type QualsClear(/*MOV*/ s_Type&& t)
+{
+    t.vtype.quals = unsigned{};
+    return static_cast<s_Type&&>(t);
+}
+
+                                #ifndef DEF_t_irrelevant
+                                #define DEF_t_irrelevant
+extern const s_Type t_irrelevant fu_INIT_PRIORITY(1009) = QualsClear(s_Type(t_void));
                                 #endif
 
                                 #ifndef DEF_CANNOT_definit_mutrefs

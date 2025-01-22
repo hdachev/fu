@@ -3459,6 +3459,7 @@ inline Node_JjyR steal_9ubk(Node_JjyR& v)
 }
                                 #endif
 
+extern const Type_OiTm t_irrelevant;
 static bool isTypeDecl_gDsn(const Kind_Idfg kind)
 {
     return (kind == Kind_Idfg_struct) || (kind == Kind_Idfg_union) || (kind == Kind_Idfg_primitive) || (kind == Kind_Idfg_enum) || (kind == Kind_Idfg_flags);
@@ -6722,7 +6723,7 @@ static void relaxBlockVar_gDsn(const Target_VZrr& t, const unsigned relax_mask, 
                 BUG_gDsn(((x7E_rA00("relaxBlockVar: previously SS_UNUSED "_view, str_FDl5(t, false, ss, ctx, _here, module, options)) + " now used as "_view) + explainType_gDsn(usage, false, false, false, false, false, (*(Type_OiTm*)fu::NIL), ss, ctx, _here, module, options)), ss, ctx, _here, module, options, _helpers);
 
             if (isUnused && canDiscard)
-                o_1.solved.type = t_void;
+                o_1.solved.type = t_irrelevant;
 
             try_relax_9CJm(o_1.type, usage, relax_mask);
             SolvedNode_efhg& node = o_1.solved;
@@ -13362,7 +13363,7 @@ static SolvedNode_efhg solveBlock_gDsn(const Node_JjyR& node, const Type_OiTm& t
             last = Node_JjyR { Kind_Idfg_return, DeclAsserts_taUG{}, ParseSyntax_Lay2{}, (((NICEERR_missingReturn ? Flags_Lzg8_F_IMPLICIT : Flags_Lzg8{}) | Flags_Lzg8_F_LAMBDA) | F_TODO_FIX_TRAILING_RETURN), fu::str{}, ((last.kind != Kind_Idfg_empty) ? fu::vec<Node_JjyR> {{ Node_JjyR(last) }} : fu::vec<Node_JjyR>{}), TokenIdx_5581(last.token) };
         };
     };
-    fu::vec<SolvedNode_efhg> items = solveNodes_gDsn(nodes, DeadBreak_Z4ob_DeadBreak_Always, t_void, type, !is_void_9CJm(type.vtype), StaticEval_IZio{}, false, _current_fn, ss, ctx, _here, module, options, _helpers);
+    fu::vec<SolvedNode_efhg> items = solveNodes_gDsn(nodes, DeadBreak_Z4ob_DeadBreak_Always, t_irrelevant, type, true, StaticEval_IZio{}, false, _current_fn, ss, ctx, _here, module, options, _helpers);
     if (TODO_FIX_optionalSemis_blockWantsVoid_gDsn((((h.index >= 0) && (h.index < ss._helpers_data.size())) ? ss._helpers_data[h.index] : BUG_u9Gb("Helpers.GET: h.index is oob"_view, ctx, _here))))
     {
         if (items && !isIrrelevantOrNever_9CJm(last_c4M9(items).type))
@@ -15098,7 +15099,7 @@ static bool tryInjectJumps_gDsn(SolvedNode_efhg& expr, const Helpers_DyqV& h, co
         {
             if (expr.kind != Kind_Idfg_block)
             {
-                expr = createBlock_gDsn(t_void, fu::vec<SolvedNode_efhg> {{ SolvedNode_efhg(expr) }}, Helpers_DyqV{}, _here);
+                expr = createBlock_gDsn(t_irrelevant, fu::vec<SolvedNode_efhg> {{ SolvedNode_efhg(expr) }}, Helpers_DyqV{}, _here);
             };
             if (is_void_9CJm(if_last_Xdw0(expr.items).type.vtype))
                 BUG_gDsn(("tryInjectJumps: Block tail is void, but block.type isn't: "_view + explainType_gDsn(expr.type, false, false, false, false, false, (*(Type_OiTm*)fu::NIL), ss, ctx, _here, module, options)), ss, ctx, _here, module, options, _helpers);
@@ -15355,12 +15356,12 @@ static void propagateType_gDsn(SolvedNode_efhg& node, const Type_OiTm& slot, con
             }
             else if (isDiscardable_FDl5(items[1], ss, ctx, _here, module, options, _helpers))
             {
-                node = createOr_gDsn(fu::vec<SolvedNode_efhg> {{ SolvedNode_efhg(items[0]), SolvedNode_efhg(items[2]) }}, Type_OiTm(t_void), _current_fn, ss, ctx, _here, module, options, _helpers);
+                node = createOr_gDsn(fu::vec<SolvedNode_efhg> {{ SolvedNode_efhg(items[0]), SolvedNode_efhg(items[2]) }}, Type_OiTm(t_irrelevant), _current_fn, ss, ctx, _here, module, options, _helpers);
             }
             else if (isDiscardable_FDl5(items[2], ss, ctx, _here, module, options, _helpers))
-                node = createAnd_gDsn(fu::vec<SolvedNode_efhg>(fu::get_range(items, 0, 2)), Type_OiTm(t_void), _current_fn, ss, ctx, _here, module, options, _helpers);
+                node = createAnd_gDsn(fu::vec<SolvedNode_efhg>(fu::get_range(items, 0, 2)), Type_OiTm(t_irrelevant), _current_fn, ss, ctx, _here, module, options, _helpers);
             else
-                node.type = t_void;
+                node.type = t_irrelevant;
 
         }
         else if (kills)
@@ -15372,13 +15373,28 @@ static void propagateType_gDsn(SolvedNode_efhg& node, const Type_OiTm& slot, con
     else if (k == Kind_Idfg_try)
     {
         Postdom_Vy5u postdom0 = _current_fn.postdom;
-        propagateType_gDsn(recover_gDsn(node), t_void, relax_mask, Helpers_DyqV{}, _current_fn, ss, ctx, _here, module, options, _helpers);
+
+        {
+            const Helpers_DyqV& kills_1 = (*(Helpers_DyqV*)fu::NIL);
+            SolvedNode_efhg& node_1 = recover_gDsn(node);
+            propagateType_gDsn(node_1, t_irrelevant, relax_mask, kills_1, _current_fn, ss, ctx, _here, module, options, _helpers);
+        };
         branch_gDsn(_current_fn.postdom, postdom0, ctx, _here);
-        propagateType_gDsn(error_gDsn(node), t_void, relax_mask, Helpers_DyqV{}, _current_fn, ss, ctx, _here, module, options, _helpers);
+
+        {
+            const Helpers_DyqV& kills_1 = (*(Helpers_DyqV*)fu::NIL);
+            SolvedNode_efhg& node_1 = error_gDsn(node);
+            propagateType_gDsn(node_1, t_irrelevant, relax_mask, kills_1, _current_fn, ss, ctx, _here, module, options, _helpers);
+        };
         const FxMask_2dRz throws0 = FxMask_2dRz((_current_fn.effects.fx_mask & FxMask_2dRz_Fx_Throws));
         _current_fn.effects.fx_mask &= FxMask_2dRz(~FxMask_2dRz_Fx_Throws);
         _current_fn.TODO_FIX_catches++;
-        propagateType_gDsn(attempt_gDsn(node), t_void, relax_mask, Helpers_DyqV{}, _current_fn, ss, ctx, _here, module, options, _helpers);
+
+        {
+            const Helpers_DyqV& kills_1 = (*(Helpers_DyqV*)fu::NIL);
+            SolvedNode_efhg& node_1 = attempt_gDsn(node);
+            propagateType_gDsn(node_1, t_irrelevant, relax_mask, kills_1, _current_fn, ss, ctx, _here, module, options, _helpers);
+        };
         _current_fn.TODO_FIX_catches--;
         if (!FxMask_2dRz((_current_fn.effects.fx_mask & FxMask_2dRz_Fx_Throws)))
         {
@@ -15419,7 +15435,9 @@ static void propagateType_gDsn(SolvedNode_efhg& node, const Type_OiTm& slot, con
             }
             else
             {
-                propagateType_gDsn(post_gDsn(node), t_void, relax_mask, Helpers_DyqV{}, _current_fn, ss, ctx, _here, module, options, _helpers);
+                const Helpers_DyqV& kills_1 = (*(Helpers_DyqV*)fu::NIL);
+                SolvedNode_efhg& node_1 = post_gDsn(node);
+                propagateType_gDsn(node_1, t_irrelevant, relax_mask, kills_1, _current_fn, ss, ctx, _here, module, options, _helpers);
             };
         };
         if (body_FDl5(node))
@@ -15430,7 +15448,9 @@ static void propagateType_gDsn(SolvedNode_efhg& node, const Type_OiTm& slot, con
             }
             else
             {
-                propagateType_gDsn(body_gDsn(node), t_void, relax_mask, Helpers_DyqV{}, _current_fn, ss, ctx, _here, module, options, _helpers);
+                const Helpers_DyqV& kills_1 = (*(Helpers_DyqV*)fu::NIL);
+                SolvedNode_efhg& node_1 = body_gDsn(node);
+                propagateType_gDsn(node_1, t_irrelevant, relax_mask, kills_1, _current_fn, ss, ctx, _here, module, options, _helpers);
             };
         };
         if (pre_FDl5(node))
@@ -15442,7 +15462,9 @@ static void propagateType_gDsn(SolvedNode_efhg& node, const Type_OiTm& slot, con
             }
             else
             {
-                propagateType_gDsn(pre_gDsn(node), t_void, relax_mask, Helpers_DyqV{}, _current_fn, ss, ctx, _here, module, options, _helpers);
+                const Helpers_DyqV& kills_1 = (*(Helpers_DyqV*)fu::NIL);
+                SolvedNode_efhg& node_1 = pre_gDsn(node);
+                propagateType_gDsn(node_1, t_irrelevant, relax_mask, kills_1, _current_fn, ss, ctx, _here, module, options, _helpers);
             };
             branch_gDsn(_current_fn.postdom, postdom0, ctx, _here);
         };
@@ -15466,7 +15488,9 @@ static void propagateType_gDsn(SolvedNode_efhg& node, const Type_OiTm& slot, con
         };
         if (init_FDl5(node))
         {
-            propagateType_gDsn(init_gDsn(node), t_void, relax_mask, Helpers_DyqV{}, _current_fn, ss, ctx, _here, module, options, _helpers);
+            const Helpers_DyqV& kills_1 = (*(Helpers_DyqV*)fu::NIL);
+            SolvedNode_efhg& node_1 = init_gDsn(node);
+            propagateType_gDsn(node_1, t_irrelevant, relax_mask, kills_1, _current_fn, ss, ctx, _here, module, options, _helpers);
         };
         if (!node._loop_start || (node._loop_start == _current_fn.postdom.write_loop_start))
         {
@@ -15492,7 +15516,8 @@ static void propagateType_gDsn(SolvedNode_efhg& node, const Type_OiTm& slot, con
         if (canDiscard)
         {
             node = only_S4ER(node.items);
-            propagateType_gDsn(node, t_void, relax_mask, Helpers_DyqV{}, _current_fn, ss, ctx, _here, module, options, _helpers);
+            const Helpers_DyqV& kills_1 = (*(Helpers_DyqV*)fu::NIL);
+            propagateType_gDsn(node, t_irrelevant, relax_mask, kills_1, _current_fn, ss, ctx, _here, module, options, _helpers);
         }
         else
         {
@@ -15639,7 +15664,7 @@ static void propagateType_gDsn(SolvedNode_efhg& node, const Type_OiTm& slot, con
 
                                     propagateType_gDsn(arg, slot_1, relax_mask, Helpers_DyqV{}, _current_fn, ss, ctx, _here, module, options, _helpers);
                                 };
-                                goto BL_104;
+                                goto BL_107;
                             }
                             else
                                 BUG_gDsn("Call(type): struct.items.len != call.items.len"_view, ss, ctx, _here, module, options, _helpers);
@@ -15653,7 +15678,7 @@ static void propagateType_gDsn(SolvedNode_efhg& node, const Type_OiTm& slot, con
                     else
                         BUG_gDsn(x7E_rA00("propagateType(call) args.len != host_args.len at call to "_view, str_FDl5(node.target, false, ss, ctx, _here, module, options)), ss, ctx, _here, module, options, _helpers);
 
-                  } BL_104:;
+                  } BL_107:;
                 };
             };
         };
@@ -15918,7 +15943,11 @@ static void propagateType_gDsn(SolvedNode_efhg& node, const Type_OiTm& slot, con
                 {
                     TEST_paintNode_gDsn(node_1, ss, ctx, _here, module, options, _helpers);
                     SolvedNode_efhg& expr = only_krrB(node_1.items);
-                    propagateType_gDsn(expr, t_void, relax_mask, Helpers_DyqV{}, _current_fn, ss, ctx, _here, module, options, _helpers);
+
+                    {
+                        const Helpers_DyqV& kills_1 = (*(Helpers_DyqV*)fu::NIL);
+                        propagateType_gDsn(expr, t_irrelevant, relax_mask, kills_1, _current_fn, ss, ctx, _here, module, options, _helpers);
+                    };
                     if (isDiscardable_FDl5(expr, ss, ctx, _here, module, options, _helpers))
                     {
 
@@ -16001,7 +16030,11 @@ static void propagateType_gDsn(SolvedNode_efhg& node, const Type_OiTm& slot, con
                 SolvedNode_efhg& expr = items.mutref(i_1);
                 if (expr.kind != Kind_Idfg_defer)
                 {
-                    propagateType_gDsn(expr, t_void, relax_mask, Helpers_DyqV{}, _current_fn, ss, ctx, _here, module, options, _helpers);
+
+                    {
+                        const Helpers_DyqV& kills_1 = (*(Helpers_DyqV*)fu::NIL);
+                        propagateType_gDsn(expr, t_irrelevant, relax_mask, kills_1, _current_fn, ss, ctx, _here, module, options, _helpers);
+                    };
                     if (isDiscardable_FDl5(expr, ss, ctx, _here, module, options, _helpers))
                         items.splice(i_1, 1);
 
@@ -16051,7 +16084,9 @@ static void propagateType_gDsn(SolvedNode_efhg& node, const Type_OiTm& slot, con
     {
         for (int i = node.items.size(); i-- > 0; )
         {
-            propagateType_gDsn(node.items.mutref(i), t_void, relax_mask, Helpers_DyqV{}, _current_fn, ss, ctx, _here, module, options, _helpers);
+            const Helpers_DyqV& kills_1 = (*(Helpers_DyqV*)fu::NIL);
+            SolvedNode_efhg& node_1 = node.items.mutref(i);
+            propagateType_gDsn(node_1, t_irrelevant, relax_mask, kills_1, _current_fn, ss, ctx, _here, module, options, _helpers);
         };
     }
     else if (k == Kind_Idfg_pragma)
@@ -21244,7 +21279,7 @@ static SolvedNode_efhg solveRoot_gDsn(const Node_JjyR& node, CurrentFn_QbLp& _cu
 {
     const Helpers_DyqV helpers = Helpers_DyqV { _helpers.size() };
     push_gDsn(HelpersData_uG6I{}, ss, _helpers);
-    fu::vec<SolvedNode_efhg> items = solveNodes_gDsn(node.items, DeadBreak_Z4ob_DeadBreak_Always, t_void, (*(Type_OiTm*)fu::NIL), false, StaticEval_IZio{}, false, _current_fn, ss, ctx, _here, module, options, _helpers);
+    fu::vec<SolvedNode_efhg> items = solveNodes_gDsn(node.items, DeadBreak_Z4ob_DeadBreak_Always, t_irrelevant, (*(Type_OiTm*)fu::NIL), false, StaticEval_IZio{}, false, _current_fn, ss, ctx, _here, module, options, _helpers);
     if (is_never_9CJm(if_last_Xdw0(items).type.vtype))
     {
         _here = last_c4M9(items).token;
@@ -21422,9 +21457,9 @@ static SolvedNode_efhg solveLoop_gDsn(const Node_JjyR& node, CurrentFn_QbLp& _cu
     else
     {
         /*MOV*/ SolvedNode_efhg pre_cond = (n_pre_cond ? solveNode_gDsn(n_pre_cond, t_proposition, _current_fn, ss, ctx, _here, module, options, _helpers) : SolvedNode_efhg{});
-        /*MOV*/ SolvedNode_efhg pre = (n_pre ? solveBlock_gDsn(n_pre, t_void, 0, HelpersMask_w1sv_HM_LoopPreheader, (*(fu::str*)fu::NIL), 0, _current_fn, ss, ctx, _here, module, options, _helpers) : SolvedNode_efhg{});
-        /*MOV*/ SolvedNode_efhg body = (n_body ? solveBlock_gDsn(n_body, t_void, 0, HelpersMask_w1sv_HM_LoopBody, (*(fu::str*)fu::NIL), 0, _current_fn, ss, ctx, _here, module, options, _helpers) : SolvedNode_efhg{});
-        /*MOV*/ SolvedNode_efhg post = (n_post ? solveBlock_gDsn(n_post, t_void, 0, HelpersMask_w1sv_HM_CanBreak, (*(fu::str*)fu::NIL), 0, _current_fn, ss, ctx, _here, module, options, _helpers) : SolvedNode_efhg{});
+        /*MOV*/ SolvedNode_efhg pre = (n_pre ? solveBlock_gDsn(n_pre, t_irrelevant, 0, HelpersMask_w1sv_HM_LoopPreheader, (*(fu::str*)fu::NIL), 0, _current_fn, ss, ctx, _here, module, options, _helpers) : SolvedNode_efhg{});
+        /*MOV*/ SolvedNode_efhg body = (n_body ? solveBlock_gDsn(n_body, t_irrelevant, 0, HelpersMask_w1sv_HM_LoopBody, (*(fu::str*)fu::NIL), 0, _current_fn, ss, ctx, _here, module, options, _helpers) : SolvedNode_efhg{});
+        /*MOV*/ SolvedNode_efhg post = (n_post ? solveBlock_gDsn(n_post, t_irrelevant, 0, HelpersMask_w1sv_HM_CanBreak, (*(fu::str*)fu::NIL), 0, _current_fn, ss, ctx, _here, module, options, _helpers) : SolvedNode_efhg{});
         /*MOV*/ SolvedNode_efhg post_cond = (n_post_cond ? solveNode_gDsn(n_post_cond, t_proposition, _current_fn, ss, ctx, _here, module, options, _helpers) : SolvedNode_efhg{});
         const Helpers_DyqV& h = _helpers[brk_idx];
         const Type_OiTm& type = ((!pre_cond && !post_cond && !HelpersMask_w1sv(((((h.index >= 0) && (h.index < ss._helpers_data.size())) ? ss._helpers_data[h.index] : BUG_u9Gb("Helpers.GET: h.index is oob"_view, ctx, _here)).mask & HelpersMask_w1sv_HM_LabelUsed))) ? t_never : t_void);
@@ -21683,7 +21718,7 @@ static SolvedNode_efhg solveImport_gDsn(const Node_JjyR& node, const CurrentFn_Q
 
 static SolvedNode_efhg solveDefer_gDsn(const Node_JjyR& node, CurrentFn_QbLp& _current_fn, SolverState_aGlN& ss, const Context_Zsw9& ctx, TokenIdx_5581& _here, Module_cdtC& module, const Options_TBgD& options, fu::vec<Helpers_DyqV>& _helpers)
 {
-    /*MOV*/ SolvedNode_efhg item = solveNode_gDsn(only_hN9E(node.items), t_void, _current_fn, ss, ctx, _here, module, options, _helpers);
+    /*MOV*/ SolvedNode_efhg item = solveNode_gDsn(only_hN9E(node.items), t_irrelevant, _current_fn, ss, ctx, _here, module, options, _helpers);
     return solved_gDsn(node, t_void, fu::vec<SolvedNode_efhg> {{ static_cast<SolvedNode_efhg&&>(item) }}, Target_VZrr{}, _here);
 }
 
@@ -21693,11 +21728,11 @@ static SolvedNode_efhg solveTryCatch_gDsn(const Node_JjyR& node, CurrentFn_QbLp&
     if (node.items.size() == 3)
     {
         const ScopeMemo_9hVQ scope0 = Scope_snap_gDsn(ss, _helpers);
-        /*MOV*/ SolvedNode_efhg tRy = solveNode_gDsn(node.items[0], t_void, _current_fn, ss, ctx, _here, module, options, _helpers);
+        /*MOV*/ SolvedNode_efhg tRy = solveNode_gDsn(node.items[0], t_irrelevant, _current_fn, ss, ctx, _here, module, options, _helpers);
         Scope_pop_gDsn(scope0, ss, _helpers);
         const ScopeMemo_9hVQ scope0_1 = Scope_snap_gDsn(ss, _helpers);
         /*MOV*/ SolvedNode_efhg err = solveLetStatement_gDsn(node.items[1], _current_fn, ss, ctx, _here, module, options, _helpers);
-        /*MOV*/ SolvedNode_efhg cAtch = solveNode_gDsn(node.items[2], t_void, _current_fn, ss, ctx, _here, module, options, _helpers);
+        /*MOV*/ SolvedNode_efhg cAtch = solveNode_gDsn(node.items[2], t_irrelevant, _current_fn, ss, ctx, _here, module, options, _helpers);
         Scope_pop_gDsn(scope0_1, ss, _helpers);
         if ((err.kind == Kind_Idfg_letdef) && isAssignableAsArgument_9CJm(GET_gDsn(err.target, ss, ctx, _here, module).solved.type.vtype, definitType_9CJm(Type_OiTm(t_string), false, ctx, _here).vtype, false, ctx, _here))
         {
@@ -21808,7 +21843,7 @@ static SolvedNode_efhg solveForFieldsOf_gDsn(const Node_JjyR& node, CurrentFn_Qb
         const ScopeItem_xiLD& field = fields[i];
         items_ast += astReplace_NzH5(body_template, placeholder, prefix, suffix, inside, field);
     };
-    fu::vec<SolvedNode_efhg> items = solveNodes_gDsn(items_ast, DeadBreak_Z4ob_DeadBreak_Always, t_void, (*(Type_OiTm*)fu::NIL), false, StaticEval_IZio{}, false, _current_fn, ss, ctx, _here, module, options, _helpers);
+    fu::vec<SolvedNode_efhg> items = solveNodes_gDsn(items_ast, DeadBreak_Z4ob_DeadBreak_Always, t_irrelevant, (*(Type_OiTm*)fu::NIL), false, StaticEval_IZio{}, false, _current_fn, ss, ctx, _here, module, options, _helpers);
     const Type_OiTm& type = (is_never_9CJm(if_last_Xdw0(items).type.vtype) ? t_never : t_void);
     return createBlock_gDsn(type, items, Helpers_DyqV{}, _here);
 }
