@@ -4138,7 +4138,14 @@ pub fn solve(
         let canDiscard      = slot.isIrrelevant;
         let relaxed_quals   = node.type.try_relax(:slot, :relax_mask);
 
-        //
+        inline fn discardType(
+            shadow ref node: SolvedNode,
+            shadow relax_mask!: Quals,
+            shadow kills!?: Helpers)
+        {
+            return propagateType(node, t_irrelevant, :relax_mask, :kills);
+        }
+
         fn discardIntoBlock()
         {
             node = createBlock(:node.items, slot);
@@ -4333,15 +4340,15 @@ pub fn solve(
                 }
                 else if (items[1].isDiscardable)
                 {
-                    node = createOr([ items[0], items[2] ], t_void);
+                    node = createOr([ items[0], items[2] ], t_irrelevant);
                 }
                 else if (items[2].isDiscardable)
                 {
-                    node = createAnd(items.slice(0, 2), t_void);
+                    node = createAnd(items.slice(0, 2), t_irrelevant);
                 }
                 else
                 {
-                    node.type = t_void;
+                    node.type = t_irrelevant;
                 }
             }
             else if (kills)
@@ -4367,13 +4374,13 @@ pub fn solve(
             // Relax in reverse, catch goes first.
             let postdom0    = _current_fn.postdom;
 
-            propagateType(recover, t_void, :relax_mask);
+            discardType(recover, :relax_mask);
 
             // The catch is conditional -
             //  only executes if try block throws.
             _current_fn.postdom.branch(postdom0);
 
-            propagateType(error, t_void, :relax_mask);
+            discardType(error, :relax_mask);
 
             //////////////////////////////////////////////
             let throws0 = _current_fn.fx_mask & Fx_Throws;
@@ -4381,7 +4388,7 @@ pub fn solve(
             //////////////////////////////////////////////
 
             _current_fn.TODO_FIX_catches++;
-            propagateType(attempt, t_void, :relax_mask);
+            discardType(attempt, :relax_mask);
             _current_fn.TODO_FIX_catches--;
 
             // Drop the whole catch if possible,
@@ -4425,7 +4432,7 @@ pub fn solve(
                 if (post.isDiscardable)
                     post = [];
                 else
-                    propagateType(post, t_void, :relax_mask);
+                    discardType(post, :relax_mask);
             }
 
             if (body)
@@ -4433,7 +4440,7 @@ pub fn solve(
                 if (body.isDiscardable)
                     body = [];
                 else
-                    propagateType(body, t_void, :relax_mask);
+                    discardType(body, :relax_mask);
             }
 
             if (pre)
@@ -4445,7 +4452,7 @@ pub fn solve(
                 if (pre.isDiscardable)
                     pre = [];
                 else
-                    propagateType(pre, t_void, :relax_mask);
+                    discardType(pre, :relax_mask);
 
                 // The preheader is conditional -
                 //  only executes before first entry to loop body.
@@ -4467,7 +4474,7 @@ pub fn solve(
             }
             // MOVE ON LAST USE ////////////////////////////////////////////
 
-            if (init)       propagateType(init, t_void, :relax_mask);
+            if (init)       discardType(init, :relax_mask);
 
             // bck_loop uses its parent write_loop_start
             //  to temporarily "switch off" all the used-in-a-loops
@@ -4494,7 +4501,7 @@ pub fn solve(
             if (canDiscard)
             {
                 node = node.items.only;
-                return node.propagateType(t_void, :relax_mask);
+                return discardType(node, :relax_mask);
             }
 
             return node.items.only.propagateType(t_proposition, :relax_mask);
@@ -5083,7 +5090,7 @@ pub fn solve(
                     if (h.ret_actual.is_void && !expr.is_void)
                     {
                         if (expr.kind != "block")
-                            expr = createBlock(t_void, items: [ expr ]);
+                            expr = createBlock(t_irrelevant, items: [ expr ]);
 
                         expr.items.if_last.is_void && BUG(
                             "tryInjectJumps: Block tail is void, but block.type isn't: " ~ expr.type.explainType);
@@ -5155,7 +5162,7 @@ pub fn solve(
                         TEST_paintNode(node);
 
                         ref expr = node.items.only;
-                        propagateType(expr, :relax_mask, t_void);
+                        discardType(expr, :relax_mask);
 
                         //
                         if (expr.isDiscardable)
@@ -5266,7 +5273,7 @@ pub fn solve(
                     ref expr = items[i];
                     if (expr.kind != "defer")
                     {
-                        propagateType(expr, :relax_mask, t_void);
+                        discardType(expr, :relax_mask);
 
                         if (expr.isDiscardable)
                             items.splice(i, 1);
@@ -5361,7 +5368,7 @@ pub fn solve(
             //     - they can see private stuff from module scope, so can't relax those either.
             //
             for (mut i = node.items.len; i --> 0; )
-                propagateType(node.items[i], t_void, :relax_mask);
+                discardType(node.items[i], :relax_mask);
         }
         else if (k == "pragma")
         {
