@@ -394,7 +394,7 @@ pub fn cpp_codegen(
         if (arrayItem)
         {
             let prefix = options.dev & options::DEV_CG_LifetimeAnnots
-                      && "/*" ~ type.vfacts ~ "*/";
+                      && "/*" ~ type.quals ~ ":" ~ type.vfacts ~ "*/";
 
             if (arrayItem.isIrrelevant)
             {
