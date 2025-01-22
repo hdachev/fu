@@ -393,22 +393,25 @@ pub fn cpp_codegen(
         let arrayItem = tryClear_sliceable(type);
         if (arrayItem)
         {
+            let prefix = options.dev & options::DEV_CG_LifetimeAnnots
+                      && "/*" ~ type.vfacts ~ "*/";
+
             if (arrayItem.isIrrelevant)
             {
                 include("<fu/void_vec.h>");
-                return "fu::void_vec";
+                return prefix ~ "fu::void_vec";
             }
 
             // Arrays & strings.
             if (type.ifArray_annotateAsVec || mode & M_IGNORE_REFERENCE)
             {
                 if (arrayItem == t_byte)
-                    return annotateString();
+                    return prefix ~ annotateString();
 
                 let itemAnnot = typeAnnot(arrayItem);
 
                 include("<fu/vec.h>");
-                return "fu::vec<" ~ itemAnnot ~ ">";
+                return prefix ~ "fu::vec<" ~ itemAnnot ~ ">";
             }
 
             // vec_range - mutref to a window into an array/string,
@@ -436,9 +439,9 @@ pub fn cpp_codegen(
             {
                 include("<fu/vec_range.h>");
                 if (type.is_mutref || mode & M_MUTVAR)
-                    return "fu::vec_range_mut<" ~ itemAnnot ~ ">";
+                    return prefix ~ "fu::vec_range_mut<" ~ itemAnnot ~ ">";
                 else
-                    return "fu::vec_range<" ~ itemAnnot ~ ">";
+                    return prefix ~ "fu::vec_range<" ~ itemAnnot ~ ">";
             }
 
             // Slices - non-resizable/non-copiable windows into an array/string,
@@ -448,9 +451,9 @@ pub fn cpp_codegen(
 
             include("<fu/view.h>");
             if (type.is_mutref || mode & M_MUTVAR)
-                return "fu::view_mut<" ~ itemAnnot ~ ">";
+                return prefix ~ "fu::view_mut<" ~ itemAnnot ~ ">";
             else
-                return "fu::view<" ~ itemAnnot ~ ">";
+                return prefix ~ "fu::view<" ~ itemAnnot ~ ">";
         }
 
         //
