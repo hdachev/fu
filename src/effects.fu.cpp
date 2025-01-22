@@ -1,3 +1,5 @@
+#define TODO_FIX_REMOVE_copying_push
+
 #include <cstdint>
 
 typedef uint16_t s_FxMask;
